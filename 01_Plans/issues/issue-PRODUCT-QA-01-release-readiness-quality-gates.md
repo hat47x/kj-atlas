@@ -1125,3 +1125,56 @@ DoDテンプレ（Draft→Open）
 - Run `docker compose config` and, for release shipment, a full running Compose startup on a Docker-capable host.
 - Keep full release shipment No-Go until product value gates, release-candidate E2E/viewport/screenshot evidence, Compose service startup, and final program approval are recorded together.
 - No new ADR is needed for this intake. New ADR work is required only if the team changes the accepted `ADR-0029` private-adapter boundary or makes missing `external_http` endpoint fail-fast by default.
+
+## Productization Gate Record 2026-06-03: Chrome UI operation evidence intake
+
+- Candidate: `codex/ui-evidence-human-task-queue-20260603`
+- Base: `origin/main@3abccd34`
+- Decision date (JST): 2026-06-03
+- Reviewer: Codex
+- Scope: Chrome UI operation evidence for first-run start, sample document loading, card selection, domain-state surfacing, share/export preflight, and narrow viewport layout. This record changes internal release-gate evidence only; it does not change runtime behavior, UI copy, SafeMode defaults, public documentation publication, release authority, or schema/API contracts.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Latest `main` was fast-forwarded before this run, and the active triage script reports no stopper.
+- G1 safety defaults: Go for observed UI. Start panel and share/export preflight both display `セーフモード: ON`; the share panel keeps fixed masking for share/review-pack output and keeps unreviewed content excluded under SafeMode.
+- G2 primary user operations: Conditional Go. Mouse operation successfully opened the standard sample, selected a card, filtered cards by search text, and opened share/export preflight after backend startup. Full user-journey shipment evidence still requires physical keyboard traversal and screenshots.
+- G3 Japanese UI: Go for observed scope. The tested start, selection, domain-state, and share/export surfaces were Japanese. No untranslated label was observed in this focused pass.
+- G4 viewport and operability: Conditional Go. At 390px viewport, DOM layout measurements showed the share dialog and review-pack export button did not clip on the right edge. Screenshot capture from the in-app browser timed out, so release-candidate screenshot evidence remains a human task.
+- G5 public documentation and configuration contract: Unchanged. This UI run used the documented local-dev variables `KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db` and `KJ_ATLAS_LLM_PROVIDER=none`.
+- G6 diagnostics and support: Conditional Go. Frontend-only startup showed the documented backend-missing recovery message; after backend startup, `/healthz` and `/api/docs/doc_phase1_canvas` succeeded. Whether the sample button should offer an offline fallback remains a product decision, not a code change in this record.
+- G7 regression: Go for planning/evidence checks only. No frontend/backend regression suite was rerun in this UI evidence slice.
+- Value gates: Conditional Go for observed `PRODUCT-VALUE-01`/`PRODUCT-VALUE-02` evidence. A sample card can be selected and its review/domain state is visible, but the value-gate issues remain Draft until their Open gates and human acceptance are complete.
+- Final: **Conditional Go for focused Chrome UI operation evidence / No-Go for full release shipment**.
+
+### Evidence
+
+- Processes started:
+  - Frontend: `node .\node_modules\vite\bin\vite.js --host 127.0.0.1 --port 4173` -> `http://127.0.0.1:4173/`.
+  - Backend: `KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db`, `KJ_ATLAS_LLM_PROVIDER=none`, `python -m alembic upgrade head`, `python -m uvicorn kj_atlas_api.main:app --host 127.0.0.1 --port 8000`.
+- Health checks:
+  - `http://127.0.0.1:8000/healthz` -> `{"status":"ok"}`.
+  - `http://127.0.0.1:4173/api/docs/doc_phase1_canvas` -> HTTP 200.
+- Chrome UI operations:
+  - Frontend-only preflight: before backend startup, initial document load displayed `HTTP 500: Internal Server Error` recovery guidance. Pressing `サンプルを開く` closed the start panel but did not create an offline sample; this matched the documented backend requirement but remains a product decision point.
+  - Normal local-dev run: after backend startup and reload, start panel displayed SafeMode ON and the current document `doc_phase1_canvas`.
+  - Mouse operation: `サンプルを開く` -> sample cards displayed; selecting `ユーザー課題を集める` updated `現在の選択` with `対象: ユーザー課題を集める` and `レビュー状態: 未レビュー`.
+  - Domain-state surfacing: selected-card details showed `主張タイプ`, `カード本文をレビュー済みにする`, `根拠`, `矛盾トレース`, `トレース分析`, `批評メモ`, and critique tags.
+  - Search operation: entering `観察` in `カードを検索` narrowed the result counter to `1/1` and highlighted `観察メモをカード化する`.
+  - Share/export operation: `共有と再現` opened a dialog with SafeMode status, fixed masking copy, reviewer id, view/pack visibility, preflight checks, export buttons, review-pack export options, import/recovery controls, patch checks, and diff controls.
+  - 390px measurement: viewport `{ width: 390, height: 720 }`; share dialog rectangle `left=16/right=356`; review-pack export button rectangle `left=26.8/right=330.0`; both stayed within viewport width.
+
+### Human Task Queue
+
+| Task | Owner | Required action | Exit criteria |
+| --- | --- | --- | --- |
+| H-UI-01 release screenshots | Productization Program Owner / QA Lead | Capture 1440px, 960px, 768px, and 390px screenshots for start panel, selected card state, share/export preflight, and 390px share panel. | Screenshots are attached to the relevant internal issue or release evidence bundle without secrets. |
+| H-UI-02 physical keyboard traversal | UX reviewer | In real Chrome, verify Tab/Shift+Tab/Enter/Space from start panel, search, card selection, share dialog, close button, and critique memo. | Confirm focus order is natural, or file a focused UI fix issue with exact step and expected next focus. |
+| H-UI-03 backend-required sample decision | Productization Program Owner | Decide whether `サンプルを開く` may require backend in local-dev, or whether an offline sample fallback is required for first-run value activation. | Decision recorded as Go/Hold/Stop with either documentation-only acceptance or a new implementation issue. |
+| H-UI-04 domain-state acceptance | Productization Program Owner / UX reviewer | Review whether the currently visible claim/review/evidence/critique controls satisfy `DOMAIN-EXPR-01` Phase 1, or whether filter/read-only boundaries need refinement before Open. | `DOMAIN-EXPR-01` Open gate is updated with accepted evidence or a specific No-Go reason. |
+
+### Follow-ups
+
+- Keep full release shipment No-Go until release-candidate screenshots, physical keyboard evidence, product value Open gates, Compose service startup, and final program approval are recorded together.
+- Treat in-app browser screenshot timeout as evidence-collection limitation, not as a UI defect. A human-operated Chrome screenshot pass is still required.
+- No ADR is needed for this record. ADR work is required only if the team changes the first-run product boundary, SafeMode/share-export policy, or schema/API responsibilities.
