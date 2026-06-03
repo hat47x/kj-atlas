@@ -481,6 +481,77 @@
 
 ---
 
+## 18) Convergence checkpoint 2026-06-03: UI/E2E gate sync merged and CI signal hygiene
+
+### Observation
+
+- Observed after `git fetch --prune origin`, `git pull --ff-only origin main`, GitHub connector open-PR search, and GitHub Actions recent-run inspection on 2026-06-03.
+- `origin/main`: `181b077e6b4fb963d99bbd4439e78b3425ed902b`
+- remote branch count: 2306
+- `origin/codex/` remote branch count: 2283
+- open PR count returned by GitHub connector search: 0
+- internal issue triage on current `main`:
+  - `active_issues=52`
+  - `ready=15`
+  - `blocked=37`
+  - `actionable_adrs=1`
+  - stopper: none
+- Latest main CI:
+  - GitHub Actions run `26877196688`
+  - event: `push`
+  - head branch: `main`
+  - head SHA: `181b077e6b4fb963d99bbd4439e78b3425ed902b`
+  - conclusion: `success`
+
+### Recent PR lane resolution
+
+| PR | State | Governance result |
+| --- | --- | --- |
+| #2304 | merged | Chrome UI operation evidence and human task queue are on `main`. |
+| #2305 | merged | First-run sample E2E coverage and the frontend `setup-node` cache dependency path fix are on `main`. |
+| #2306 | merged | Invalid locale fallback E2E coverage is on `main`; its old CI failure belongs to the pre-#2305 workflow state. |
+| #2307 | merged | Latest main UI/E2E gate sync for `PROJECT-BASELINE-01`, `PRODUCT-QA-01`, and `MVP-EXIT-01` is on `main`. |
+
+### CI signal hygiene classification
+
+| Signal | Current classification | Operational treatment |
+| --- | --- | --- |
+| `main@181b077e` CI run `26877196688` | current canonical CI signal | Treat as the governing latest-main CI result for this checkpoint. |
+| PR #2307 pull-request CI run `26875216218` | current PR evidence, now merged | Retain as supporting evidence for the merged gate-sync PR. |
+| Branch `codex/i18n-invalid-locale-e2e-20260603` runs `26874271586` and `26874320457` | stale failure history | Do not treat as a current blocker after #2305/#2306/#2307 are merged and latest `main` CI is green. |
+| Earlier `codex/first-run-sample-e2e-20260603@420d03ad...` failure runs | superseded failure history | Do not treat as a current blocker because the branch was later updated and PR #2305 merged with successful CI. |
+
+### Decision
+
+- The UI/E2E evidence lane from #2304 through #2307 is converged into `main`.
+- Current latest-main CI is green. Historical red GitHub Actions runs remain visible in repository history, but they are not release or merge blockers unless they match the current candidate SHA, an open PR head SHA, or an intentionally tracked release-candidate SHA.
+- When investigating a CI error, use this order before filing or fixing new work:
+  1. identify the candidate SHA and whether it is `main`, an open PR head, a merge queue candidate, or a stale branch head;
+  2. inspect the latest run for that exact SHA;
+  3. classify older failing runs as `current blocker`, `superseded`, `stale history`, or `external/report-only`;
+  4. only create implementation work when the current candidate still fails after the relevant workflow and branch have been refreshed.
+- No branch deletion, PR closure, rerun, or ADR status change is executed from this checkpoint.
+- No new ADR is required. ADR-0034 governs mainline convergence and branch hygiene; this update only clarifies CI signal interpretation inside that governance boundary.
+- Full release shipment remains No-Go until product-value Open gates, release-candidate screenshot and physical keyboard evidence, full regression evidence, Compose startup evidence, and final program approval are recorded together.
+
+### Cleanup candidate table
+
+| Branch | Current classification | Cleanup recommendation |
+| --- | --- | --- |
+| `origin/codex/ui-evidence-human-task-queue-20260603` | merged UI evidence lane | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/first-run-sample-e2e-20260603` | merged E2E coverage lane; old failing run superseded | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/i18n-invalid-locale-e2e-20260603` | merged E2E coverage lane; old failing run superseded | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/latest-main-ui-e2e-gate-sync-20260603` | merged latest-main gate-sync lane | Delete only after repository maintainer confirms no post-merge audit need. |
+
+### Updated recommendation
+
+1. Start the next independent work from `origin/main@181b077e6b4fb963d99bbd4439e78b3425ed902b`.
+2. Treat old red GitHub Actions runs as investigation inputs, not as blockers, until they are matched to the current candidate SHA.
+3. If the user reports a CI error without a PR number or run URL, first inspect open PRs and the latest `main` run before changing files.
+4. Continue recording branch cleanup candidates, but leave deletion to a maintainer-approved repository maintenance action.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
