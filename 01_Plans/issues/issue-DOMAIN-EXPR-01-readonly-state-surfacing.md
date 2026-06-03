@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex (UI evidence steward; accountable acceptance owner remains Productization Program Owner / UX reviewer)
 - Scope: `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `DOMAIN-EXPR-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `00_Prompt/domain.md`, `02_Architecture/schemas.md`
@@ -60,3 +60,45 @@
 ## 7) Additional context
 
 - ADR化が必要になる条件: 表示のために永続状態を追加する必要が出た場合（その時点で `DOMAIN-EXPR-02` または新schema issueへ送る）。
+
+## 8) Chrome UI evidence intake（2026-06-03）
+
+### Scope
+
+- 対象: `origin/main@3abccd34` の local-dev UI。
+- 起動: frontend `http://127.0.0.1:4173/`、backend `http://127.0.0.1:8000/`。
+- 環境: `KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db`、`KJ_ATLAS_LLM_PROVIDER=none`。
+- この追記は Draft gate の証跡整理であり、Status変更、schema変更、API変更、SafeMode変更、実装着手許可ではない。
+
+### Observed UI evidence
+
+| Observation | Result | Gate impact |
+| --- | --- | --- |
+| Sample load | backend 起動後、`サンプルを開く` で `doc_phase1_canvas` のカードが表示された。 | `PRODUCT-VALUE-01` の初回価値導線に使える候補。 |
+| Card selection | `ユーザー課題を集める` を選択すると、`現在の選択` に対象名と `レビュー状態: 未レビュー` が表示された。 | claim/review state の入口は画面上で確認可能。 |
+| Claim/review controls | 選択カード詳細に `主張タイプ`、`カード本文をレビュー済みにする` が表示された。 | AC1 の一部は実装済み候補。ただし受入には人間確認が必要。 |
+| Evidence/contradiction | `根拠`、`根拠トレース`、`矛盾トレース`、`トレース分析` が表示された。 | evidence/contradiction の読取UI候補が存在する。 |
+| Critique | `批評メモ` と `too_close` / `too_far` / `belongs_together` / `unrelated` / `unclear_boundary` が表示された。 | `DOMAIN-EXPR-03` へ渡す前に、Phase 1 の読取/入力境界を人間が確認する必要がある。 |
+| Search | `カードを検索` に `観察` を入力すると `1/1` になり、該当カードが表示された。 | 絞り込みACの入口はあるが、`未レビュー` / `根拠なし` / `違和感あり` 固有フィルタは未確認。 |
+
+### Human acceptance tasks
+
+| Task | Owner | Required action | Exit criteria |
+| --- | --- | --- | --- |
+| H-DX1 Phase 1 acceptance | Productization Program Owner / UX reviewer | 上表の visible controls が `DOMAIN-EXPR-01` Phase 1 の「読取UI第一級化」として十分か確認する。 | 十分なら Draft->Open 候補へ進める。不十分なら不足UIを1つずつACへ戻す。 |
+| H-DX2 Filter boundary | UX reviewer | `未レビュー` / `根拠なし` / `違和感あり` の固有フィルタが現UIで足りるか、追加UIが必要か判断する。 | フィルタ追加が必要なら Frontend-only issue とE2E条件を明記する。 |
+| H-DX3 Keyboard acceptance | UX reviewer | 実Chromeで選択カード、主張タイプ、レビュー済みチェック、批評メモ、批評タグへキーボードだけで到達できるか確認する。 | 到達できるなら evidence として記録。到達できない場合はフォーカス順修正を別issue化する。 |
+| H-DX4 Schema stop check | Architecture owner | Phase 1 が schema変更なしで成立するか再確認する。 | schema追加が必要なら本IssueではStopし、`DOMAIN-EXPR-02` または別schema issueへ送る。 |
+
+### Proceed / Stop
+
+- Proceed: Phase 1 の読取UIを現行schemaで受け入れられ、固有フィルタとキーボード到達性の扱いが明確になった場合に限り Draft->Open を検討する。
+- Hold: 画面上の状態表示は存在するが、固有フィルタ、キーボード到達性、スクリーンショット証跡が未確定の間は Draft 維持。
+- Stop: schema変更、AIによる `human_reviewed` 自動昇格、SafeMode/share-export境界の緩和、または `DOMAIN-EXPR-02/03` 相当の入力・永続化拡張を本Issueへ混在させる要求を検知した場合。
+
+### Verification commands
+
+- `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
+- `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py`
+- `git diff --check -- 01_Plans\issues\issue-DOMAIN-EXPR-01-readonly-state-surfacing.md 01_Plans\issues\issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+- `rg -n "Chrome UI evidence intake|Human acceptance tasks|H-DX1|H-DX2|H-DX3|H-DX4|Productization Gate Record 2026-06-03|Human Task Queue|H-UI-01|H-UI-02|H-UI-03|H-UI-04" 01_Plans\issues\issue-DOMAIN-EXPR-01-readonly-state-surfacing.md 01_Plans\issues\issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
