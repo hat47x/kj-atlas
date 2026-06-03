@@ -49,6 +49,7 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.version }}
           cache: ${{ steps.pm.outputs.manager }}
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
 
       - name: Enable corepack (pnpm/yarn)
         if: steps.pm.outputs.manager != 'npm'
@@ -116,6 +117,7 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.version }}
           cache: ${{ steps.pm.outputs.manager }}
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
 
       - name: Enable corepack (pnpm/yarn)
         if: steps.pm.outputs.manager != 'npm'
@@ -182,6 +184,7 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.version }}
           cache: ${{ steps.pm.outputs.manager }}
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
 
       - name: Enable corepack (pnpm/yarn)
         if: steps.pm.outputs.manager != 'npm'
@@ -250,6 +253,7 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.version }}
           cache: ${{ steps.pm.outputs.manager }}
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
 
       - name: Enable corepack (pnpm/yarn)
         if: steps.pm.outputs.manager != 'npm'
@@ -351,6 +355,7 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.version }}
           cache: ${{ steps.pm.outputs.manager }}
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
 
       - name: Enable corepack (pnpm/yarn)
         if: steps.pm.outputs.manager != 'npm'
@@ -422,6 +427,7 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.version }}
           cache: ${{ steps.pm.outputs.manager }}
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
 
       - name: Enable corepack (pnpm/yarn)
         if: steps.pm.outputs.manager != 'npm'
