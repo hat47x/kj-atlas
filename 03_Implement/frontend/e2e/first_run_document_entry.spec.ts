@@ -24,6 +24,29 @@ function seedDocumentJson(): string {
   );
 }
 
+function buildDocument(cardTexts: string[]): unknown {
+  return {
+    version: 2,
+    id: "doc_phase1_canvas",
+    title: "First run sample",
+    createdAt: "2026-06-03T00:00:00.000Z",
+    updatedAt: "2026-06-03T00:00:00.000Z",
+    transform: { panX: 0, panY: 0, zoom: 1 },
+    cards: cardTexts.map((text, index) => ({
+      id: `sample-card-${index + 1}`,
+      text,
+      x: 120 + index * 260,
+      y: 120 + (index % 2) * 150,
+    })),
+    edges: [],
+    islands: [],
+    readingOrder: [],
+    narratives: [],
+    evidenceLinks: [],
+    mergeSuggestionDecisions: [],
+  };
+}
+
 test("first-run panel presents safe document entry choices", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 720 });
   await page.goto("/");
@@ -63,6 +86,47 @@ test("first-run document file entry opens the validation-before-replace flow", a
   await expect(shareDialog).toContainText("first-run-import.document.json");
   await expect(shareDialog).toContainText(/カード: 1|cards: 1/);
   await expect(page.getByRole("button", { name: /現在のドキュメントを置換|Replace current document/ })).toBeVisible();
+});
+
+test("first-run sample entry opens the sample and exposes selection context", async ({ page }) => {
+  await page.route("**/packs/index.json", async (route) => {
+    await route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
+  });
+
+  let shouldReturnSample = false;
+  await page.route("**/docs/doc_phase1_canvas", async (route) => {
+    const document = shouldReturnSample
+      ? buildDocument(["ユーザー課題を集める", "観察メモをカード化する", "似ている内容を近くに置く"])
+      : buildDocument([]);
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { ETag: shouldReturnSample ? '"first-run-sample-loaded"' : '"first-run-sample-empty"' },
+      body: JSON.stringify(document),
+    });
+  });
+
+  await page.goto("/");
+  await expect(page.locator(START_PANEL)).toBeVisible();
+  await expect(page.getByRole("option", { name: "ユーザー課題を集める" })).toHaveCount(0);
+
+  shouldReturnSample = true;
+  await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
+
+  await expect(page.locator(START_PANEL)).toBeHidden();
+  const sampleCard = page.getByRole("option", { name: "ユーザー課題を集める" });
+  await expect(sampleCard).toBeVisible();
+  await expect(page.getByRole("option", { name: "観察メモをカード化する" })).toBeVisible();
+  await expect(page.getByRole("option", { name: "似ている内容を近くに置く" })).toBeVisible();
+
+  await sampleCard.click();
+
+  const selectionContext = page.locator('[data-panel="selection-context"]');
+  await expect(selectionContext).toContainText(/現在の選択|Current selection/);
+  await expect(selectionContext).toContainText(/カードを選択中|Card selected/);
+  await expect(selectionContext).toContainText(/対象: ユーザー課題を集める|Target: ユーザー課題を集める/);
+  await expect(selectionContext).toContainText(/レビュー状態: 未レビュー|Review state: Unreviewed/);
 });
 
 test("first-run panel can create a new document from keyboard activation", async ({ page }) => {
