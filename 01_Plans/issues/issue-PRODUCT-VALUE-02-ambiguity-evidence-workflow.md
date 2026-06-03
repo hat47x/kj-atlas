@@ -21,7 +21,7 @@
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
 - DecisionStatus（Fixed / Pending）: Fixed（`ADR-0040` で schema 判断確定 / `ADR-0032` Accepted）
-- DecisionQueueRef（未確定時の参照先）: `ADR-0040`
+- DecisionQueueRef（未確定時の参照先）: N/A（`ADR-0040` で確定済み。実行は `DOMAIN-EXPR-01..04` と証跡ゲートへ分離）
 
 ## 1) 課題 / Problem statement
 
