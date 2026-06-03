@@ -97,6 +97,13 @@ Compose不可環境でも SQLite 代替経路で品質ゲートを継続でき�
 - Draft-AC-G2: locale query 不正値（例: `?locale=zz`）時に `requested -> ja -> key` へ収束する E2E を 1 本追加すること。
 - Draft-DoD-G3: 失敗時は I18N lane 単独で再現可能な最小 fixture（document 1件）を保持すること。
 
+### Gap resolution note (2026-06-03)
+
+- `Draft-AC-G2` は `03_Implement/frontend/e2e/i18n_locale_query_equivalence.spec.ts` で検証済み。
+- シナリオ: `/?locale=zz` で日本語の主要ボタン（`共有と再現`, `表示`）が表示され、英語ボタン（`Share & Reproduce`, `View`）が表示されないことを確認する。
+- Browser check: `http://127.0.0.1:4173/?locale=zz` -> `共有と再現`: 1, `表示`: 1, `Share & Reproduce`: 0, `View`: 0。
+- Validation: `node .\node_modules\playwright\cli.js test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line` -> 3 passed。
+
 ## Stream I Done/Completed Audit (2026-04-23)
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
