@@ -258,6 +258,19 @@ function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
   return true;
 }
 
+function isKeyboardInputTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  const tagName = target.tagName.toLowerCase();
+  if (tagName === "input" || tagName === "textarea" || tagName === "select" || tagName === "button") {
+    return true;
+  }
+
+  return target.isContentEditable;
+}
+
 export function CanvasShell({
   document,
   onCardMove,
@@ -339,6 +352,10 @@ export function CanvasShell({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || isKeyboardInputTarget(event.target)) {
+        return;
+      }
+
       if (event.code === "Space") {
         event.preventDefault();
         setIsSpacePressed(true);
@@ -346,6 +363,10 @@ export function CanvasShell({
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || isKeyboardInputTarget(event.target)) {
+        return;
+      }
+
       if (event.code === "Space") {
         setIsSpacePressed(false);
       }
