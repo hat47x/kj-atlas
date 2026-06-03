@@ -782,3 +782,32 @@
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next product value evidence review.
 - Re-decision date: after the value evidence packets and H-UI-01/H-UI-02 evidence are recorded, or after a full release-candidate run is completed.
+
+## MVP-EXIT Program Gate Decision 2026-06-03: full local regression and Chrome smoke refresh
+
+- Candidate: `origin/main@92b4e3f2bdf91d185f56ab3b7a54cb458b7d4e33`
+- Decision date: 2026-06-03
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-03: full local regression and Chrome smoke refresh`.
+  - PROJECT-BASELINE-01 record: `Baseline Record 2026-06-03: full local regression and Chrome smoke refresh`.
+  - Local verification: planning validation, full frontend Vitest, backend pytest, full Playwright E2E, production build, local Vite/Uvicorn startup, and focused full-stack Chrome smoke.
+
+### Decision
+
+- Final: **Conditional Go for latest-main full local regression and focused Chrome smoke / No-Go for full release shipment**
+- Reason summary: The latest `main` now has fresh local evidence across planning validation, frontend typecheck, full Vitest, backend pytest, production build, full Playwright E2E, local backend health, and a focused Chrome smoke covering first-run entry, sample open, share/export preflight, SafeMode copy, dialog fit, keyboard close, and browser console cleanliness. This is still not a final shipment approval because release screenshots, physical keyboard evidence, product value Open gates/evidence packets, full Docker Compose startup, and final program approval remain incomplete.
+- Escalation route: keep `PRODUCT-QA-01` as the release evidence steward. Treat the current result as a stronger release-candidate input, not as shipment approval. Route screenshots/keyboard evidence through H-UI-01/H-UI-02 and value evidence through `PRODUCT-VALUE-01..03`.
+
+### Conditional controls
+
+- Remaining risks:
+  - In-app browser screenshot capture timed out twice, so release screenshots are not attached to the evidence bundle.
+  - Physical keyboard traversal in real Chrome remains required for final G2/G4 approval.
+  - `PRODUCT-VALUE-01` and `PRODUCT-VALUE-03` remain Draft pending replayable evidence packets and human acceptance.
+  - `PRODUCT-VALUE-02` remains dependent on staged `DOMAIN-EXPR-01..04` execution evidence.
+  - Full running Docker Compose startup was not executed; local Vite/Uvicorn startup is not a replacement for the environment gate.
+  - Support diagnostics bundle policy and final operational rehearsal remain separate release gates.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next release-candidate evidence review.
+- Re-decision date: after H-UI-01/H-UI-02 evidence, value-gate evidence packets, and full Compose startup evidence are recorded, or after a material runtime/product change reaches `main`.

@@ -1235,3 +1235,48 @@ DoDテンプレ（Draft→Open）
 - Do not describe `PRODUCT-VALUE-01..03` as blocked by `ADR-0032` acceptance in new gate records; describe the remaining blockers as evidence-route and human approval gaps.
 - Keep full release shipment No-Go until value-gate evidence packets, release-candidate screenshots, physical keyboard evidence, full regression, Compose startup, and final program approval are recorded together.
 - No new ADR is needed for this sync.
+
+## Productization Gate Record 2026-06-03: full local regression and Chrome smoke refresh
+
+- Candidate: `origin/main@92b4e3f2bdf91d185f56ab3b7a54cb458b7d4e33`
+- Decision date (JST): 2026-06-03
+- Reviewer: Codex
+- Scope: latest-main full local regression and focused full-stack Chrome smoke after #2309 was merged. This record changes internal gate evidence only; it does not change runtime behavior, UI copy, SafeMode defaults, schema/API contracts, public documentation, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation and triage pass on the latest `main` with no stopper.
+- G1 safety defaults: Go for tested scope. Full frontend regression passes, SafeMode ON is visible in Chrome, and fixed-mask Share / Review Pack copy is present in the share dialog.
+- G2 primary user operations: Go for tested scope. Full Playwright E2E passes, and focused Chrome smoke covers first-run entry, sample open, share/export preflight, and keyboard dialog close.
+- G3 Japanese UI / i18n: Go for tested scope. Full Vitest and full Playwright pass, and observed Chrome flow labels were Japanese.
+- G4 viewport and operability: Conditional Go improved. Full Playwright viewport/operability tests pass and the focused Chrome share dialog measured within the observed viewport without right-edge clipping. Release screenshot capture remains human-owned because in-app screenshot capture timed out.
+- G5 public documentation and configuration contract: Unchanged / Conditional Go. Public docs and runtime configuration were not changed or republished in this refresh.
+- G6 diagnostics and support: Conditional Go improved. Local backend migration and `/healthz` passed, and the focused full-stack Chrome smoke had no browser console errors. Support diagnostics bundle policy and final operational rehearsal remain separate gates.
+- G7 regression: Go. Frontend typecheck, full Vitest, backend pytest, production build, and full Playwright E2E pass locally.
+- E1..E3 environment contract: Conditional Go. Local Vite/Uvicorn startup and SQLite migration pass, but full Docker Compose startup was not executed.
+- Value gates: No-Go for full shipment. `PRODUCT-VALUE-01` and `PRODUCT-VALUE-03` still need replayable evidence packets and human acceptance; `PRODUCT-VALUE-02` still needs staged `DOMAIN-EXPR-01..04` evidence.
+- Final: **Conditional Go for latest-main full local regression and focused Chrome smoke / No-Go for full release shipment**.
+
+### Evidence
+
+- Planning:
+  - `python 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `python 01_Plans/triage_actionable_plans.py --root 01_Plans --format text` -> pass (`active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none`).
+- Regression:
+  - Frontend typecheck -> pass.
+  - Full Vitest -> pass: 160 files / 734 tests.
+  - Backend pytest -> pass: 260 passed / 19 skipped.
+  - Full Playwright E2E -> pass: 38 tests.
+  - Frontend production build -> pass with the existing chunk-size warning only.
+- Full-stack Chrome smoke:
+  - Temporary backend `/healthz` -> `{"status":"ok"}`.
+  - Initial reload after backend startup -> no `HTTP 500` document-load error.
+  - SafeMode ON visible, first-run choices visible, sample open worked, share dialog opened, fixed-mask copy was present, and dialog rect `{ x: 16, y: 227, right: 356, bottom: 678, width: 340, height: 451 }` stayed inside viewport `{ width: 562, height: 694, scrollWidth: 562 }`.
+  - `Escape` closed the dialog; browser error log count was 0.
+  - In-app screenshot capture timed out twice; release screenshots remain a human task rather than Codex-completed evidence.
+
+### Follow-ups
+
+- Keep H-UI-01 release screenshots and H-UI-02 physical keyboard traversal human-owned until actual Chrome screenshots and physical-keyboard evidence are attached.
+- Keep full release shipment No-Go until product value Open gates, full Compose startup, and final program approval are recorded together.
+- No ADR is needed for this refresh. ADR work is required only if the project changes SafeMode/share-export policy, first-run product boundaries, or schema/API responsibilities.
