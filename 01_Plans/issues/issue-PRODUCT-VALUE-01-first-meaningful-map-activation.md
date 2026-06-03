@@ -311,3 +311,20 @@ No-Go conditions for this value gate:
   - screenshot or trace storage location;
   - `PRODUCT-QA-01` and `MVP-EXIT-01` decision record linkage.
 - This sync does not authorize implementation, public documentation publication, or release approval.
+
+## Evidence route update 2026-06-04: representative keyboard trace candidate
+
+- Candidate: `codex/keyboard-operation-evidence-20260604`
+- Status impact: **Draft remains**. This update adds a replayable keyboard-operation evidence candidate but does not by itself open the value gate.
+- Evidence added:
+  - `03_Implement/frontend/e2e/keyboard_release_candidate_flow.spec.ts` covers a keyboard-only route from the first-run start panel to sample loading, search, card selection, critique memo input, share preflight, close, and focus return.
+  - `03_Implement/frontend/src/canvas/CanvasShell.tsx` no longer lets global Space-pan handling suppress Space activation for focused controls.
+- Evidence packet mapping:
+  - Keyboard operation trace: partially satisfied for the representative route.
+  - Scenario fixture: partially satisfied by `doc_keyboard_release_candidate`; the fixture still needs product-owner acceptance as a meaningful first-map scenario.
+  - Safe entry evidence: partially satisfied by SafeMode copy in the share preflight; screenshot/trace storage remains pending.
+  - Decision record: linked through `PRODUCT-QA-01` and `MVP-EXIT-01` gate records dated 2026-06-04.
+- Remaining blockers before Open:
+  - Productization Program Owner must accept the representative sample/fixture as value-bearing rather than merely operability-bearing.
+  - Mouse trace, screenshot/trace bundle location, and first-map grouping/hold-point expectations remain incomplete.
+  - Full shipment still depends on `PRODUCT-QA-01` release gates, including screenshots, full regression, Compose startup, and final program approval.

@@ -258,6 +258,32 @@ function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
   return true;
 }
 
+function shouldUseSpacePan(eventTarget: EventTarget | null, viewport: HTMLElement | null): boolean {
+  if (!(eventTarget instanceof Element)) return true;
+  if (eventTarget === document.body) return true;
+  if (!viewport?.contains(eventTarget)) return false;
+
+  return !eventTarget.closest(
+    [
+      "a",
+      "button",
+      "input",
+      "select",
+      "textarea",
+      '[contenteditable="true"]',
+      '[role="button"]',
+      '[role="checkbox"]',
+      '[role="link"]',
+      '[role="menuitem"]',
+      '[role="option"]',
+      '[role="radio"]',
+      '[role="switch"]',
+      '[role="tab"]',
+      '[role="textbox"]',
+    ].join(",")
+  );
+}
+
 export function CanvasShell({
   document,
   onCardMove,
@@ -339,7 +365,7 @@ export function CanvasShell({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code === "Space") {
+      if (event.code === "Space" && shouldUseSpacePan(event.target, viewportRef.current)) {
         event.preventDefault();
         setIsSpacePressed(true);
       }
