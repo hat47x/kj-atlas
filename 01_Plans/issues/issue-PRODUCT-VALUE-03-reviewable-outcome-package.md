@@ -20,8 +20,8 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / public-exposure）: SafeMode / share-export / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `ADR-0032`
+- DecisionStatus（Fixed / Pending）: Pending（`ADR-0032` はAccepted済み。Open前のreviewable package fixture、共有前確認、trace-back証跡が未固定）
+- DecisionQueueRef（未確定時の参照先）: `PRODUCT-QA-01` value gate evidence packet / `MVP-EXIT-01`
 
 ## 1) 課題 / Problem statement
 
@@ -308,6 +308,20 @@ No-Go conditions for this value gate:
 - The evidence requires organization-wide approval workflow or signature semantics not covered by `ADR-0032`.
 
 - Reopen/Open condition:
-  - `ADR-0032` がAcceptedになる、またはProductization Program Ownerが上記Reviewable package minimumを価値ゲートの暫定正本として明示承認する。
+  - `ADR-0032` Accepted は充足済み。以後はProductization Program Ownerが上記Reviewable package minimumの証跡パケットをOpen前提として承認する。
   - review pack、narrative、共有前確認、back-linkの代表fixtureと保存先が本文で固定される。
   - 上記完了後、StatusをOpenへ変更し、`PRODUCT-QA-01` のValue Gate V4へ戻す。
+
+## Current status sync 2026-06-03: ADR accepted, package evidence still pending
+
+- Current decision source:
+  - `ADR-0032-product-value-realization-model.md` is `Accepted` as of 2026-05-31 and fixes V4 as the reviewable outcome loop.
+  - `ADR-0040-domain-expression-first-class-strategy.md` connects unresolved/hold/evidence/contradiction work to staged domain-expression issues, including `DOMAIN-EXPR-04` for evidence/claim/contradiction review.
+- Current gate result: **Draft維持**. The value model is fixed, but this issue still needs a replayable package evidence route before Open.
+- Remaining blocker now:
+  - a narrative or review-pack fixture with summary, evidence references, unresolved items, and SafeMode result;
+  - a pre-share confirmation state showing reviewed/unreviewed content and masking result;
+  - trace-back proof from package item to source card/evidence;
+  - read-only review proof after import or share;
+  - `PRODUCT-QA-01` and `MVP-EXIT-01` decision record linkage.
+- This sync does not authorize export format changes, public publishing changes, organization approval workflow, or release approval.

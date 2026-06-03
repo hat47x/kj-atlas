@@ -1212,3 +1212,26 @@ DoDテンプレ（Draft→Open）
 - Keep H-UI-01 release screenshots and H-UI-02 physical keyboard traversal as human-owned release evidence tasks.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, Compose startup, and final program approval are recorded together.
 - No ADR is needed for this gate sync.
+
+## Productization Gate Record 2026-06-03: product value gate status sync
+
+- Candidate: `origin/main@929ae165472c7da00bea6b47370d45c040cc697e`
+- Decision date (JST): 2026-06-03
+- Reviewer: Codex
+- Scope: documentation and gate-state synchronization for `PRODUCT-VALUE-01..03` after `ADR-0032` and `ADR-0040` were confirmed as accepted. This record does not change runtime behavior, UI copy, SafeMode defaults, schema/API contracts, public documentation, release authority, or the product value model.
+
+### Gate Summary
+
+- G0 planning integrity: Go for this sync. The active issue validator and triage still pass with no stopper.
+- Value model status: Go. `ADR-0032` is Accepted and the core V0-V4 loop is active.
+- Domain expression status: Conditional Go. `ADR-0040` fixes the `PRODUCT-VALUE-02` representation decision and routes implementation through `DOMAIN-EXPR-01..04`.
+- `PRODUCT-VALUE-01`: Draft remains. The blocker is no longer ADR acceptance; it is the missing repeatable first-run fixture, mouse/keyboard traces, screenshot/trace storage, and decision linkage.
+- `PRODUCT-VALUE-02`: DecisionStatus is Fixed by `ADR-0040`, but product shipment still depends on staged domain-expression execution and evidence.
+- `PRODUCT-VALUE-03`: Draft remains. The blocker is no longer ADR acceptance; it is the missing package fixture, pre-share confirmation, trace-back proof, read-only review proof, and decision linkage.
+- Final: **Conditional Go for value-gate decision-state synchronization / No-Go for full release shipment**.
+
+### Follow-ups
+
+- Do not describe `PRODUCT-VALUE-01..03` as blocked by `ADR-0032` acceptance in new gate records; describe the remaining blockers as evidence-route and human approval gaps.
+- Keep full release shipment No-Go until value-gate evidence packets, release-candidate screenshots, physical keyboard evidence, full regression, Compose startup, and final program approval are recorded together.
+- No new ADR is needed for this sync.

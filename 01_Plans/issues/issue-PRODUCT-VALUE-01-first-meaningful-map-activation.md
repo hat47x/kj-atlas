@@ -20,8 +20,8 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / import-sanitize
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `ADR-0032`
+- DecisionStatus（Fixed / Pending）: Pending（`ADR-0032` はAccepted済み。Open前の反復E2E手順、fixture、証跡保存先が未固定）
+- DecisionQueueRef（未確定時の参照先）: `PRODUCT-QA-01` value gate evidence packet / `MVP-EXIT-01`
 
 ## 1) 課題 / Problem statement
 
@@ -294,6 +294,20 @@ No-Go conditions for this value gate:
 - The scenario cannot be replayed with a stable fixture and saved evidence.
 
 - Reopen/Open condition:
-  - `ADR-0032` がAcceptedになる、またはProductization Program Ownerが本Issue単独の価値ゲート定義を明示承認する。
+  - `ADR-0032` Accepted は充足済み。以後はProductization Program Ownerが本Issueの証跡パケットをOpen前提として承認する。
   - 反復E2E手順、入力fixture、画面状態の保存先が本文で固定される。
   - 上記完了後、StatusをOpenへ変更し、`PRODUCT-QA-01` のValue Gate V0/V1へ戻す。
+
+## Current status sync 2026-06-03: ADR accepted, evidence route still pending
+
+- Current decision source:
+  - `ADR-0032-product-value-realization-model.md` is `Accepted` as of 2026-05-31.
+  - `ADR-0040-domain-expression-first-class-strategy.md` records the Maintainer delegated decision that breaks the previous `ADR-0032 Proposed` loop.
+- Current gate result: **Draft維持**. The value model itself is no longer waiting on ADR acceptance, but this issue still needs a fixed, replayable evidence route before Open.
+- Remaining blocker now:
+  - a representative first-run fixture or sample name;
+  - expected card/grouping/hold-point state;
+  - mouse and keyboard operation traces;
+  - screenshot or trace storage location;
+  - `PRODUCT-QA-01` and `MVP-EXIT-01` decision record linkage.
+- This sync does not authorize implementation, public documentation publication, or release approval.

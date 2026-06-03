@@ -754,3 +754,31 @@
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next release-candidate evidence review.
 - Re-decision date: after H-UI-01/H-UI-02 evidence is recorded, after product value gates are opened/approved, or after a full release-candidate run is completed.
+
+## MVP-EXIT Program Gate Decision 2026-06-03: product value gate status sync
+
+- Candidate: `origin/main@929ae165472c7da00bea6b47370d45c040cc697e`
+- Decision date: 2026-06-03
+- Reviewer: Codex
+- Input sources:
+  - `ADR-0032-product-value-realization-model.md`: `Accepted`, core V0-V4 value loop active.
+  - `ADR-0040-domain-expression-first-class-strategy.md`: `Accepted`, `PRODUCT-VALUE-02` representation decision fixed and routed to `DOMAIN-EXPR-01..04`.
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-03: product value gate status sync`.
+  - `PRODUCT-VALUE-01`, `PRODUCT-VALUE-02`, and `PRODUCT-VALUE-03` current status sync notes.
+
+### Decision
+
+- Final: **Conditional Go for product value decision-state synchronization / No-Go for full release shipment**
+- Reason summary: The project no longer needs to wait for `ADR-0032` acceptance to treat the value model as canonical; `ADR-0032` is Accepted and `ADR-0040` fixes the domain-expression decision for `PRODUCT-VALUE-02`. Full shipment still cannot proceed because `PRODUCT-VALUE-01` and `PRODUCT-VALUE-03` lack replayable evidence packets, `PRODUCT-VALUE-02` requires staged domain-expression evidence, H-UI-01/H-UI-02 human evidence is still pending, and full regression plus Compose startup are not assembled as one release-candidate bundle.
+- Escalation route: route the next value-gate work through concrete evidence packets and human acceptance rather than reopening the old `ADR-0032 Proposed` blocker.
+
+### Conditional controls
+
+- Remaining risks:
+  - `PRODUCT-VALUE-01` needs first-run fixture, mouse/keyboard trace, SafeMode/import evidence, and decision linkage.
+  - `PRODUCT-VALUE-02` needs staged `DOMAIN-EXPR-01..04` evidence before shipment Go.
+  - `PRODUCT-VALUE-03` needs package fixture, pre-share confirmation, trace-back proof, read-only review proof, and decision linkage.
+  - Release-candidate screenshots, physical keyboard evidence, full frontend/backend regression, and full running Compose startup remain required together.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next product value evidence review.
+- Re-decision date: after the value evidence packets and H-UI-01/H-UI-02 evidence are recorded, or after a full release-candidate run is completed.
