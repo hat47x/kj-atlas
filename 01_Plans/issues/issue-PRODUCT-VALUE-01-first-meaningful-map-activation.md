@@ -338,9 +338,32 @@ No-Go conditions for this value gate:
   - Scenario fixture: partially satisfied by `doc_first_meaningful_map_mouse`.
   - Mouse operation trace: partially satisfied for the representative route.
   - Expected grouping/hold-point state: partially satisfied by `Island 1` containing the two selected first-value cards.
-  - Keyboard operation trace: still separate; a candidate exists in PR #2312 but is not part of this branch or main until merged.
+  - Keyboard operation trace: covered separately by #2312, which is now part of mainline evidence.
   - Safe entry evidence and screenshot/trace storage remain pending.
 - Remaining blockers before Open:
   - Productization Program Owner must accept the fixture and `Island 1` grouping as a value-bearing first-map scenario.
   - Safe entry screenshot/trace bundle location and decision linkage into `PRODUCT-QA-01` / `MVP-EXIT-01` remain incomplete.
   - Full shipment still depends on release gates, screenshots, full regression, Compose startup, and final program approval.
+
+## Mainline evidence intake 2026-06-04: keyboard and mouse traces landed
+
+- Candidate mainline: `origin/main@f04c45c473422047472af35cec1c431b835f621d`
+- Status impact: **Draft remains**. The required replayable keyboard and mouse traces are now on `main`, but this issue still needs human product-value acceptance and a stable screenshot/trace bundle location before Open.
+- Evidence now canonical on `main`:
+  - #2312 merged `03_Implement/frontend/e2e/keyboard_release_candidate_flow.spec.ts`, covering keyboard-only sample opening, search, card selection, critique memo input, share preflight, close, and focus return.
+  - #2313 merged `03_Implement/frontend/e2e/first_meaningful_map_mouse_flow.spec.ts`, covering mouse sample opening, two-card selection, `Create Island`, and visible `Island 1` confirmation.
+- Evidence packet status:
+
+| Evidence item | Current status | Remaining Open blocker |
+| --- | --- | --- |
+| Scenario fixture | Partially satisfied by `doc_keyboard_release_candidate` and `doc_first_meaningful_map_mouse`. | Productization Program Owner must accept these fixtures as value-bearing first-map scenarios, not only operability fixtures. |
+| Mouse operation trace | Satisfied for the representative route by #2313. | Confirm that `Island 1` with two selected first-value cards is the intended first meaningful grouping/hold point. |
+| Keyboard operation trace | Satisfied for the representative route by #2312. | UX reviewer must accept the Tab/Enter/Space path as natural enough for release-candidate operation. |
+| Safe entry evidence | Partially satisfied by SafeMode/share-preflight visibility in the keyboard route. | Store or reference a first-value-specific screenshot/trace bundle that shows SafeMode, import/sample entry state, and the resulting first island. |
+| Decision record | Partially satisfied by 2026-06-04 PRODUCT-QA / MVP-EXIT evidence records. | Final product-value gate decision must explicitly cite this issue after human fixture, screenshot, and grouping acceptance. |
+
+- Next human task queue:
+  - H-PV1: Productization Program Owner reviews both fixtures and decides whether they represent the promised first value moment for a standard user.
+  - H-PV2: UX reviewer confirms that the keyboard and mouse paths are natural enough for a representative release-candidate workflow.
+  - H-PV3: QA Lead approves where the first-value screenshot/trace bundle will live and what file names or artifact references must be cited from this issue.
+- No ADR is needed for this intake. ADR routing is required only if the accepted first-value scenario changes the product value model, release authority, SafeMode/share policy, or first-run product boundary.
