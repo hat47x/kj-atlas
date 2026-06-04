@@ -325,3 +325,19 @@ No-Go conditions for this value gate:
   - read-only review proof after import or share;
   - `PRODUCT-QA-01` and `MVP-EXIT-01` decision record linkage.
 - This sync does not authorize export format changes, public publishing changes, organization approval workflow, or release approval.
+
+## Evidence route update 2026-06-04: review-pack trace export consistency candidate
+
+- Candidate branch: `codex/review-pack-trace-ui-20260604`
+- Status impact: **Draft remains**. This update adds a replayable trace-back evidence candidate, but it does not by itself open the value gate.
+- Evidence added:
+  - `03_Implement/frontend/e2e/review_pack_trace_export.spec.ts` covers a user path that imports a document, selects a source card, opens Share & Reproduce, switches review-pack granularity, exports ZIP files, and verifies whether trace files are actually present.
+  - `03_Implement/frontend/src/ui/SharePanel.tsx` now keeps the selected-card trace checkbox disabled and visually unchecked when overview granularity is selected, matching the exported ZIP behavior.
+- Evidence packet mapping:
+  - Trace-back proof: partially satisfied by checking `evidence_trace_c-target.md`, `contradiction_trace_c-target.md`, and `trace_analytics_c-target.md` in detail export.
+  - Pre-share confirmation: partially satisfied by the SharePanel hint that explains selected-card trace availability and overview-mode exclusion before export.
+  - Package fixture: partially satisfied by `doc_review_pack_trace_export`.
+  - Read-only review proof and final decision linkage remain pending.
+- Remaining blockers before Open:
+  - Productization Program Owner must accept this fixture as representative of a reviewable outcome package.
+  - SafeMode masking result, unresolved/unreviewed summary readability, read-only review import, and `PRODUCT-QA-01` / `MVP-EXIT-01` decision linkage remain incomplete.
