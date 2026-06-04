@@ -1380,3 +1380,49 @@ DoDテンプレ（Draft→Open）
 - Keep draft PR #2315 outside mainline release evidence until merged; after merge, route its keyboard evidence through `DOMAIN-EXPR-01`.
 - Keep full release shipment No-Go until product value Open gates, full Compose startup, and final program approval are recorded together.
 - No ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, first-run product boundaries, schema/API responsibilities, or release authority.
+
+## Productization Gate Record 2026-06-04: post-2318 mainline evidence sync
+
+- Candidate: `origin/main@f04c45c473422047472af35cec1c431b835f621d`
+- Decision date (JST): 2026-06-04
+- Reviewer: Codex
+- Scope: post-merge sync after #2311, #2312, #2313, #2314, #2315, #2316, and #2318 landed on `main`. This supersedes the #2310-only delta as the latest release-readiness planning record. The current mainline now includes screenshot capture automation, representative keyboard/mouse/review-pack E2E evidence, DOMAIN-EXPR-01 keyboard evidence, the post-#2310 baseline record, and the `KJ_ATLAS_*` verification-harness environment-variable prefix fix. It still does not grant final shipment approval.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Latest main is `f04c45c473422047472af35cec1c431b835f621d`, GitHub reports no open PRs, active issue validation passes, and triage has no stopper.
+- G1 safety defaults: Conditional Go. SafeMode defaults and share/import safety policy remain unchanged. #2318 improves safety-adjacent configuration hygiene by removing non-prefixed project verification harness keys and adding an env-prefix regression guard.
+- G2 primary user operations: Conditional Go. Representative keyboard, mouse, review-pack export, and domain-expression keyboard paths are now mainline evidence through #2312, #2313, #2314, and #2315. #2318 restored the intended `CanvasShell` Space-pan guard after the merged mainline syntax break. Final physical-keyboard acceptance remains human-owned.
+- G3 Japanese UI / i18n: Conditional Go. The merged evidence lane includes SharePanel i18n regression coverage from #2314 and the #2318 frontend typecheck/build fix. A final release-language pass remains required because these PRs changed user-facing UI copy and screenshots.
+- G4 viewport and operability: Conditional Go. #2311 makes release screenshot capture reproducible and the regenerated public screenshot assets are on `main`. Human screenshot review is still required to approve framing, content safety, and release suitability.
+- G5 public documentation and configuration contract: Conditional Go. Public screenshot assets and the runtime parameter registry are more current, and #2318 aligns verification-harness names with the project-wide `KJ_ATLAS_*` rule. Public publication/re-publication approval and full runtime configuration rehearsal remain separate gates.
+- G6 diagnostics and support: Unchanged / Conditional Go. No support diagnostics bundle policy or operational recovery rehearsal was completed in this sync.
+- G7 regression: Conditional Go. #2318 CI run `9306` succeeded after fixing the merged `CanvasShell.tsx` syntax issue, and planning validation still passes locally. A full release-candidate regression, including Compose startup, was not executed from this checkpoint.
+- E1..E3 environment contract: Conditional Go. The env-name contract is cleaner after #2318, but full Docker Compose startup and environment rehearsal remain required.
+- Final: **Conditional Go for post-2318 mainline evidence sync / No-Go for full release shipment**.
+
+### Evidence
+
+- Mainline intake:
+  - `git rev-parse HEAD origin/main` -> both `f04c45c473422047472af35cec1c431b835f621d`.
+  - GitHub PR search for open PRs in `hat47x/kj-atlas` -> `0`.
+- Incorporated mainline PRs:
+  - #2311 `[codex] Add reproducible release screenshot capture` -> merged at `2026-06-04T08:43:57Z`.
+  - #2312 `[codex] Add keyboard operation evidence` -> merged at `2026-06-04T08:44:27Z`.
+  - #2313 `[codex] Add first value mouse evidence` -> merged at `2026-06-04T08:42:19Z`.
+  - #2314 `[codex] Align review pack trace export controls` -> merged at `2026-06-04T08:42:12Z`.
+  - #2315 `[codex] Add domain expression keyboard evidence` -> merged at `2026-06-04T08:42:06Z`.
+  - #2316 `[codex] Record post-2310 mainline baseline sync` -> merged at `2026-06-04T08:41:58Z`.
+  - #2318 `[codex] Prefix verification harness env vars` -> merged at `2026-06-04T09:41:44Z`.
+- CI and local planning:
+  - GitHub Actions run `9306` on #2318 head `cdc47f6b23f4ee75af6449107488f85073f22593` -> success.
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` -> pass (`active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none`).
+
+### Follow-ups
+
+- Keep H-UI-01 screenshot approval human-owned even though capture is automated; approval must confirm the images are release-suitable and contain no secrets or organization-specific data.
+- Keep H-UI-02 final physical-keyboard acceptance human-owned; automated keyboard E2E is supporting evidence, not the final release authority.
+- Keep `PRODUCT-VALUE-01`, `PRODUCT-VALUE-02`, `PRODUCT-VALUE-03`, and `DOMAIN-EXPR-01` in their current issue states until Productization Program Owner / QA Lead acceptance turns the evidence packets into Open-gate release evidence.
+- Keep full release shipment No-Go until product value Open gates, full Compose startup, support diagnostics/recovery rehearsal, and final program approval are recorded together.
+- No ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, first-run product boundaries, schema/API responsibilities, environment naming policy, or release authority.
