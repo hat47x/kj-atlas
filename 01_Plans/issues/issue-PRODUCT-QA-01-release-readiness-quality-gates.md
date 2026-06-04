@@ -1280,3 +1280,41 @@ DoDテンプレ（Draft→Open）
 - Keep H-UI-01 release screenshots and H-UI-02 physical keyboard traversal human-owned until actual Chrome screenshots and physical-keyboard evidence are attached.
 - Keep full release shipment No-Go until product value Open gates, full Compose startup, and final program approval are recorded together.
 - No ADR is needed for this refresh. ADR work is required only if the project changes SafeMode/share-export policy, first-run product boundaries, or schema/API responsibilities.
+
+## Productization Gate Record 2026-06-04: #2310 documentation-only main sync
+
+- Candidate: `origin/main@cb277db730da9f91d22c08cee0cc8af348a92220`
+- Decision date (JST): 2026-06-04
+- Reviewer: Codex
+- Scope: post-merge sync after #2310 landed the 2026-06-03 full local regression and Chrome smoke evidence records. This record only confirms that the mainline delta since the prior full-regression candidate is internal planning documentation. It does not change runtime behavior, UI copy, SafeMode defaults, schema/API contracts, public documentation, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Latest main is `cb277db730da9f91d22c08cee0cc8af348a92220`, the diff since the section-20 full-regression candidate is limited to three `01_Plans/issues` files, active issue validation passes, and triage has no stopper.
+- G1 safety defaults: Unchanged / Go for previously tested scope. #2310 did not change SafeMode, share/export, import sanitize, or access-control behavior.
+- G2 primary user operations: Unchanged / Go for previously tested scope. #2310 did not change frontend behavior; the 2026-06-03 full Playwright and Chrome smoke evidence remains the latest runtime evidence.
+- G3 Japanese UI / i18n: Unchanged / Go for previously tested scope. PR #2310 CI i18n guard jobs succeeded and no UI string files changed in the merge.
+- G4 viewport and operability: Unchanged / Conditional Go. No release screenshots or physical-keyboard evidence were added in this sync.
+- G5 public documentation and configuration contract: Unchanged / Conditional Go. No public documentation publication or runtime configuration change occurred.
+- G6 diagnostics and support: Unchanged / Conditional Go. No support diagnostics or recovery behavior changed.
+- G7 regression: Go for this delta. PR #2310 CI succeeded across frontend lint/typecheck/test/build, i18n/regression guards, and backend lint/test; full local regression was not rerun because no implementation files changed after the 2026-06-03 full-regression record.
+- E1..E3 environment contract: Unchanged / Conditional Go. Full Docker Compose startup remains a separate gate.
+- Final: **Conditional Go for #2310 documentation-only main sync / No-Go for full release shipment**.
+
+### Evidence
+
+- Mainline diff boundary:
+  - `git diff --name-status 92b4e3f2bdf91d185f56ab3b7a54cb458b7d4e33..origin/main` -> only `issue-MVP-EXIT-01-productization-readiness.md`, `issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, and `issue-PROJECT-BASELINE-01-latest-mainline-health-baseline.md`.
+- CI:
+  - GitHub Actions run `26881310930` on PR #2310 head `35e1eed54d27db52d469dfe26d6245697acf254e` -> success.
+  - Successful jobs: `Backend lint + test`, `Frontend lint (staged rollout)`, `Frontend typecheck`, `Frontend test + build`, `Frontend i18n safe-mode leakage guards`, `Frontend i18n document hash regression`, and `Frontend regression guards (import/serialization/shape)`.
+- Planning:
+  - `python 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `python 01_Plans/triage_actionable_plans.py --root 01_Plans --format text` -> pass (`active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none`).
+
+### Follow-ups
+
+- Keep H-UI-01 release screenshots and H-UI-02 physical keyboard traversal human-owned until actual Chrome screenshots and physical-keyboard evidence are attached.
+- Keep draft PR #2315 outside mainline release evidence until merged; after merge, route its keyboard evidence through `DOMAIN-EXPR-01`.
+- Keep full release shipment No-Go until product value Open gates, full Compose startup, and final program approval are recorded together.
+- No ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, first-run product boundaries, schema/API responsibilities, or release authority.
