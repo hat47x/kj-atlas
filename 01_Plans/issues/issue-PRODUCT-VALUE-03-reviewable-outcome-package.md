@@ -341,3 +341,27 @@ No-Go conditions for this value gate:
 - Remaining blockers before Open:
   - Productization Program Owner must accept this fixture as representative of a reviewable outcome package.
   - SafeMode masking result, unresolved/unreviewed summary readability, read-only review import, and `PRODUCT-QA-01` / `MVP-EXIT-01` decision linkage remain incomplete.
+
+## Mainline evidence intake 2026-06-04: review-pack trace controls landed
+
+- Candidate mainline: `origin/main@d1dfa3a0c50892d8d7aa354a5e83ba760e043919`
+- Status impact: **Draft remains**. The selected-card trace export behavior and representative ZIP-content proof are now on `main`, but this issue still needs product-value acceptance, read-only review proof, and SafeMode/unreviewed readability evidence before Open.
+- Evidence now canonical on `main`:
+  - #2314 merged `03_Implement/frontend/e2e/review_pack_trace_export.spec.ts`, covering document import, card selection, Share & Reproduce, overview/detail granularity switching, ZIP export, and trace-file presence/absence.
+  - #2314 merged SharePanel behavior that disables and visually unchecks selected-card trace export in Overview mode, then re-enables it in Detail mode.
+  - #2319 records the post-2318 PRODUCT-QA / MVP-EXIT mainline gate sync, keeping full shipment No-Go while acknowledging the merged review-pack evidence lane.
+- Evidence packet status:
+
+| Evidence item | Current status | Remaining Open blocker |
+| --- | --- | --- |
+| Package fixture | Partially satisfied by `doc_review_pack_trace_export`. | Productization Program Owner must accept the fixture as representative of a reviewable outcome package, including summary, evidence, contradiction, and unresolved context. |
+| Pre-share confirmation | Partially satisfied by SharePanel hints for selected-card traces and Overview-mode exclusion. | Confirm that SafeMode masking, reviewed/unreviewed status, and recipient-facing risk are understandable before export. |
+| Trace-back proof | Satisfied for the selected-card trace files in Detail export. | Confirm that this trace-file proof is sufficient for V4, or require an additional in-app backlink/read-only inspection path. |
+| Read-only review proof | Not yet satisfied by this evidence lane. | Add or cite an import/read-only review path that lets a reviewer inspect the package without mutating source data. |
+| Decision record | Partially satisfied by PRODUCT-QA / MVP-EXIT post-2318 gate records. | Final product-value gate decision must explicitly cite this issue after fixture, SafeMode, and read-only review acceptance. |
+
+- Next human task queue:
+  - H-PV3-1: Productization Program Owner decides whether the review-pack fixture represents the promised reviewable outcome package.
+  - H-PV3-2: QA Lead confirms whether ZIP file-name checks are enough trace-back evidence, or whether a reader-facing backlink/read-only UI proof is required.
+  - H-PV3-3: UX reviewer confirms that Overview/Detail trace-control behavior is understandable before export.
+- No ADR is needed for this intake. ADR routing is required only if the accepted package changes the product value model, review authority, SafeMode/share policy, or review-pack contract.
