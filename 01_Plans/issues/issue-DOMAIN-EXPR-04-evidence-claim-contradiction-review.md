@@ -61,6 +61,19 @@
 - 影響範囲: export/bundle、narratives、SharePanel、schemas。
 - ロールバック: 成果物への根拠包含を無効化し、表示のみへ縮退（共有安全側へ倒す）。
 
+## Open gate sync 2026-06-04
+
+- 現在の基準: `origin/main` は `0133c744b60e4cc5f0c48435a62c72fbb5ca9f52`。DOMAIN-EXPR-01 の evidence intake と PRODUCT-VALUE-03 の reviewable outcome package 整理を参照する。
+- ステータスへの影響: このissueは引き続き `Draft`。根拠・主張・矛盾は成果物と共有境界に直結するため、UI実装より先に、保存対象・表示対象・共有対象の境界を確定する。
+- Phase 1 依存ゲート: DOMAIN-EXPR-01 が読み取り専用の `claimType` / `reviewState` / `evidenceLinks` 表示基準として受け入れられてから、このissueで人間レビュー用の操作導線を広げる。
+- PRODUCT-VALUE-03 ゲート: review pack / narrative / export に含める最小要素を、確定点・保留点・未レビュー情報・根拠への戻り方として確認する。成果物契約を変更する場合は、PRODUCT-VALUE-03側のissueまたはADRと同期する。
+- 根拠・主張契約ゲート: 最初の実装で既存の `EvidenceLink` / `claimType` / ContextBundle `evidence` をそのまま表示するのか、新しいレビュー状態や矛盾状態を永続化するのかを決める。スキーマを増やす場合は `02_Architecture/schemas.md` を先に更新する。
+- 矛盾状態ゲート: AIや検出ロジックは「矛盾かもしれない箇所」を示すに留める。未確認、確認済み、保留、解決済みなどの状態を永続化する場合は、人間が変更した事実とAIが提案した事実を分けて記録する。
+- SafeMode / share-export ゲート: UI/APIの `safeMode` 既定ON、`allowUnreviewedText=false`、`KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` などの安全境界を後退させない。共有・エクスポート時は、未レビュー本文、生根拠、未確認矛盾が誤って確定情報として見えないことを先に検証する。
+- ADRゲート: 既存フィールドの読み取り表示だけならADR不要。矛盾状態遷移の永続化、review pack要素の変更、AIが真偽判定を行うように見える表示、SafeMode/share-export境界の変更が必要な場合は、実装前にADRを作成または更新する。
+- 推奨する次のスライス: まずスキーマ中立で、選択中カードまたは関係に紐づく `evidenceLinks` と `claimType` を表示し、成果物に「根拠へ戻るための参照」と「未レビュー/保留の明示」を含める設計メモとE2E観点を作る。矛盾状態の永続化とAI補助は後続判断に分離する。
+- この同期は実装を承認しない。成果物価値、安全境界、AIの役割を1つのPRに混ぜないため、次の判断単位を切り出す更新である。
+
 ## 7) Additional context
 
 - ADR化が必要になる条件: 矛盾状態遷移を永続化する、または成果物契約（review pack要素）を変更する場合は `PRODUCT-VALUE-03` と同期してADR化する。
