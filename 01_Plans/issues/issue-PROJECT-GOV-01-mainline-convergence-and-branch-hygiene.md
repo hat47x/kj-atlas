@@ -550,6 +550,77 @@
 3. If the user reports a CI error without a PR number or run URL, first inspect open PRs and the latest `main` run before changing files.
 4. Continue recording branch cleanup candidates, but leave deletion to a maintainer-approved repository maintenance action.
 
+## 19) Convergence checkpoint 2026-06-04: product value and baseline evidence draft lane
+
+### Observation
+
+- Observed after `git fetch --prune origin`, `git pull --ff-only`, GitHub connector open-PR search, PR metadata inspection, changed-file inspection, and head-SHA workflow inspection on 2026-06-04.
+- `origin/main`: `cb277db730da9f91d22c08cee0cc8af348a92220`
+- remote branch count: 2316
+- `origin/codex/` remote branch count: 2292
+- open PR count returned by GitHub connector search: 6
+- internal issue triage on current `main`:
+  - `active_issues=52`
+  - `ready=15`
+  - `blocked=37`
+  - `actionable_adrs=1`
+  - stopper: none
+
+### Open PR inventory
+
+| PR | Branch | Topic | Head CI | Governance classification | Recommended action |
+| --- | --- | --- | --- | --- | --- |
+| #2311 | `codex/release-screenshot-capture-20260603` | Reproducible release screenshot script and regenerated public screenshot assets | Success: run `26894285735` | canonical but order-sensitive | Rebase/regenerate after #2314 if #2314 changes the share panel screenshot surface; keep human screenshot approval as a separate release gate. |
+| #2312 | `codex/keyboard-operation-evidence-20260604` | H-UI-02 keyboard evidence and `CanvasShell` Space handling fix | Success: run `26896299227` | canonical shared keyboard fix | Prefer before #2315 because both touch `03_Implement/frontend/src/canvas/CanvasShell.tsx`; #2315 should rebase after this PR and drop duplicate Space-handler changes if they become redundant. |
+| #2313 | `codex/first-value-mouse-evidence-20260604` | PRODUCT-VALUE-01 first meaningful map mouse evidence | Success: run `26897242309` | canonical evidence candidate | Merge after #2312 or rebase after #2312 because both update PRODUCT-VALUE-01 evidence state; keep PRODUCT-VALUE-01 Draft until human acceptance and release-gate linkage are recorded. |
+| #2314 | `codex/review-pack-trace-ui-20260604` | PRODUCT-VALUE-03 review-pack trace UI and E2E evidence | Success: run `26910917230` | canonical UI/evidence candidate | Review before #2311 so screenshot assets can reflect the latest share/export UI copy and layout. |
+| #2315 | `codex/domain-expression-keyboard-evidence-20260604` | DOMAIN-EXPR-01 keyboard reachability evidence and the same `CanvasShell` Space-handler guard | Success: run `26917029876` | canonical but overlaps #2312 | Rebase after #2312, then keep only DOMAIN-EXPR-specific E2E/issue evidence plus any still-needed implementation delta. |
+| #2316 | `codex/project-baseline-post-2310-20260604` | #2310 documentation-only mainline baseline sync | Success: run `26917382664` | canonical / low-risk docs-only | Merge first if reviewers want the latest `main` evidence baseline before reviewing the product-value and UI evidence lane. |
+
+### Overlap and merge-order notes
+
+| Overlap | PRs | Risk | Recommended handling |
+| --- | --- | --- | --- |
+| `03_Implement/frontend/src/canvas/CanvasShell.tsx` | #2312 / #2315 | Duplicate Space-handler guard and likely textual conflict if merged independently. | Treat #2312 as the broader keyboard-operation fix, then rebase #2315 on top and keep DOMAIN-EXPR evidence focused. |
+| PRODUCT-QA / MVP-EXIT gate records | #2311 / #2312 / #2316 | Append-only planning sections can conflict during merge or produce confusing chronology if merged out of order. | Merge #2316 first as the post-#2310 baseline, then rebase later evidence PRs if the files conflict. |
+| PRODUCT-VALUE-01 issue | #2312 / #2313 | Keyboard and mouse evidence for the same value gate may be recorded in separate candidate sections. | Merge or rebase #2312 before #2313 so PRODUCT-VALUE-01 can read as keyboard evidence first, mouse evidence second. |
+| Share/export UI surface and screenshots | #2311 / #2314 | Screenshots in #2311 may become stale if #2314 changes share-panel copy or controls. | Review #2314 first; rerun #2311 screenshot capture if share/export screenshot content changes. |
+
+### Recommended merge lane
+
+1. Merge #2316 first if maintainers want the current #2310 documentation-only baseline on `main` before product-value evidence PRs.
+2. Review #2314 before #2311, then rebase or regenerate #2311 screenshot assets if the share/export surface changed.
+3. Review #2312 before #2315 because #2312 is the broader keyboard-operation fix for the shared `CanvasShell` Space handling.
+4. Rebase #2315 after #2312 and treat it as DOMAIN-EXPR-01 evidence, not as a second copy of the generic keyboard fix.
+5. Merge or rebase #2313 after #2312 so PRODUCT-VALUE-01 evidence chronology stays coherent.
+6. Keep every PR as draft until the maintainer decides whether these evidence slices should be reviewed as release-candidate inputs or held for a bundled productization pass.
+
+### Cleanup candidate table
+
+| Branch | Current classification | Cleanup recommendation |
+| --- | --- | --- |
+| `origin/codex/release-screenshot-capture-20260603` | open canonical screenshot evidence PR | Keep until #2311 is merged/closed; delete only after maintainer confirms no post-merge audit need. |
+| `origin/codex/keyboard-operation-evidence-20260604` | open canonical keyboard operation PR | Keep until #2312 is merged/closed; delete only after maintainer confirms no post-merge audit need. |
+| `origin/codex/first-value-mouse-evidence-20260604` | open canonical PRODUCT-VALUE-01 mouse evidence PR | Keep until #2313 is merged/closed; delete only after maintainer confirms no post-merge audit need. |
+| `origin/codex/review-pack-trace-ui-20260604` | open canonical PRODUCT-VALUE-03 review-pack evidence PR | Keep until #2314 is merged/closed; delete only after maintainer confirms no post-merge audit need. |
+| `origin/codex/domain-expression-keyboard-evidence-20260604` | open canonical DOMAIN-EXPR-01 keyboard evidence PR with #2312 overlap | Keep until #2315 is merged/closed; rebase after #2312 if #2312 lands first. |
+| `origin/codex/project-baseline-post-2310-20260604` | open canonical baseline-sync PR | Keep until #2316 is merged/closed; delete only after maintainer confirms no post-merge audit need. |
+
+### Decision
+
+- The current open PR lane is healthy from a CI perspective: all six open PR head SHAs have successful CI runs and are reported mergeable.
+- The lane is not safe to merge blindly because there are known textual or evidence-order overlaps in `CanvasShell.tsx`, PRODUCT-QA/MVP-EXIT gate records, PRODUCT-VALUE-01, and release screenshot assets.
+- No branch deletion, PR closure, ready-for-review transition, merge, rerun, or ADR status change is executed from this checkpoint.
+- No new ADR is required. ADR-0034 governs mainline convergence and branch hygiene; this update only refreshes the active PR lane and recommended review order.
+- Full release shipment remains No-Go until product-value Open gates, release-candidate screenshot and physical keyboard evidence, full regression evidence, Compose startup evidence, and final program approval are recorded together.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@cb277db730da9f91d22c08cee0cc8af348a92220` unless intentionally updating one of #2311..#2316.
+2. Before changing `CanvasShell.tsx`, inspect #2312 and #2315 because they already carry a shared Space-key fix.
+3. Before regenerating release screenshots, inspect #2314 because it can change the share/export surface.
+4. Treat the six open branches as cleanup candidates only after their PRs are merged or closed, and leave deletion to a maintainer-approved repository maintenance action.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）
