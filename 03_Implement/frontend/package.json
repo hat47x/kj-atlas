@@ -14,6 +14,7 @@
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
     "publish:static": "node ./scripts/build_static_publish.mjs",
+    "capture:release-screenshots": "node ./scripts/capture_release_screenshots.mjs",
     "test:i18n": "vitest run src/i18n/translate.test.ts src/i18n/key_consistency.test.ts src/i18n/ui_hardcode_guard.test.ts src/i18n/catalog_integrity.test.ts",
     "test:i18n-security": "vitest run src/i18n/locale_conversion_guard.test.ts",
     "test:i18n-regression": "vitest run src/i18n/view_locale_resolution.test.ts src/i18n/document_locale_invariance.test.ts",

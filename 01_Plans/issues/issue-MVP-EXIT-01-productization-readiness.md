@@ -812,6 +812,21 @@
 - Due date: next release-candidate evidence review.
 - Re-decision date: after H-UI-01/H-UI-02 evidence, value-gate evidence packets, and full Compose startup evidence are recorded, or after a material runtime/product change reaches `main`.
 
+## MVP-EXIT Program Gate Decision 2026-06-03: reproducible screenshot capture
+
+- Candidate: `codex/release-screenshot-capture-20260603`
+- Decision date: 2026-06-03
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-03: reproducible screenshot capture`.
+  - Frontend script: `03_Implement/frontend/scripts/capture_release_screenshots.mjs`.
+  - Public-documentation screenshot assets under `04_Documentation/assets/screenshots/`.
+
+### Decision
+
+- Final: **Conditional Go for reproducible screenshot capture / No-Go for full release shipment**
+- Reason summary: The release screenshot capture path is now reproducible through a deterministic Playwright script, and current public-documentation screenshot assets were refreshed from the current UI. This reduces H-UI-01 manual effort but does not replace final human approval, physical keyboard traversal, product value Open gates, full Compose startup, or final program approval.
+- Escalation route: keep `PRODUCT-QA-01` as the screenshot evidence steward. Treat the generated screenshots as candidate evidence that Productization Program Owner / QA Lead still need to approve.
 ## MVP-EXIT Program Gate Decision 2026-06-04: #2310 documentation-only main sync
 
 - Candidate: `origin/main@cb277db730da9f91d22c08cee0cc8af348a92220`
@@ -832,6 +847,12 @@
 ### Conditional controls
 
 - Remaining risks:
+  - Human review must still confirm that the regenerated screenshots are acceptable release evidence and contain no secrets or organization-specific data.
+  - Physical keyboard traversal remains unapproved.
+  - Product value evidence packets and full Compose startup remain required before shipment.
+- Owner: Codex for evidence automation; Productization Program Owner / QA Lead required for evidence acceptance.
+- Due date: next release-candidate evidence review.
+- Re-decision date: after screenshot approval, H-UI-02 evidence, value-gate evidence packets, and full Compose startup evidence are recorded.
   - Release screenshots remain human-owned and are not attached to the final evidence bundle.
   - Physical keyboard traversal in real Chrome remains required for final G2/G4 approval.
   - `PRODUCT-VALUE-01` and `PRODUCT-VALUE-03` remain Draft pending replayable evidence packets and human acceptance.

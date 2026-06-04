@@ -1281,6 +1281,36 @@ DoDテンプレ（Draft→Open）
 - Keep full release shipment No-Go until product value Open gates, full Compose startup, and final program approval are recorded together.
 - No ADR is needed for this refresh. ADR work is required only if the project changes SafeMode/share-export policy, first-run product boundaries, or schema/API responsibilities.
 
+## Productization Gate Record 2026-06-03: reproducible screenshot capture
+
+- Candidate: `codex/release-screenshot-capture-20260603`
+- Decision date (JST): 2026-06-03
+- Reviewer: Codex
+- Scope: release screenshot regeneration for public documentation and H-UI-01 evidence support. This record adds a deterministic Playwright capture script and refreshes the current public-documentation screenshots. It does not change runtime behavior, UI copy, SafeMode defaults, schema/API contracts, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G2 primary user operations: Conditional Go improved. The screenshot script opens the start panel, opens the sample, selects a card, opens the share/export preflight, and captures the 390px mobile toolbar state from deterministic sample data.
+- G3 Japanese UI / i18n: Go for captured scope. Regenerated screenshots use `?locale=ja` and current Japanese UI labels.
+- G4 viewport and operability: Conditional Go improved. The capture set includes a 390px mobile screenshot and desktop start/overview/selection/share screenshots.
+- G5 public documentation: Conditional Go improved. Existing public-documentation screenshot assets were regenerated from the current UI, and the screenshot README now records the regeneration command.
+- Final: **Conditional Go for reproducible screenshot capture / No-Go for full release shipment**.
+
+### Evidence
+
+- Command: `node .\scripts\capture_release_screenshots.mjs`
+- Output files:
+  - `04_Documentation/assets/screenshots/start-document-entry.png`
+  - `04_Documentation/assets/screenshots/app-canvas-overview.png`
+  - `04_Documentation/assets/screenshots/selection-context-card.png`
+  - `04_Documentation/assets/screenshots/share-export-safe-mode.png`
+  - `04_Documentation/assets/screenshots/mobile-toolbar-smoke-390.png`
+- Server behavior: script starts temporary Vite when port 4173 is free and stops it after capture.
+
+### Follow-ups
+
+- H-UI-01 is now partially automated. Human review is still required to approve the screenshots as release evidence and confirm no secrets or organization-specific data are visible.
+- H-UI-02 physical keyboard traversal remains human-owned unless a later task adds equivalent real-browser evidence.
 ## Productization Gate Record 2026-06-04: #2310 documentation-only main sync
 
 - Candidate: `origin/main@cb277db730da9f91d22c08cee0cc8af348a92220`
