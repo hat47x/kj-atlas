@@ -1,14 +1,100 @@
 from __future__ import annotations
 
+import ast
 import os
+import re
+from pathlib import Path
 
 from kj_atlas_api.settings import LEGACY_ENV_KEYS, Settings
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+ENV_SCAN_ROOTS = [
+    REPO_ROOT / "03_Implement" / "backend",
+    REPO_ROOT / "03_Implement" / "frontend" / "src",
+    REPO_ROOT / "03_Implement" / "frontend" / "scripts",
+    REPO_ROOT / "03_Implement" / "frontend" / "vite.config.ts",
+]
+IGNORED_SCAN_PARTS = {".venv", "__pycache__", ".pytest_cache", "node_modules", "dist"}
+ALLOWED_NON_PROJECT_ENV_KEYS = {"DEV", "PYTHONPATH"}
 
 
 def _unset_related_envs() -> None:
     for key in list(os.environ):
         if key.startswith("KJ_ATLAS_") or key in LEGACY_ENV_KEYS:
             os.environ.pop(key, None)
+
+
+def _iter_scan_files() -> list[Path]:
+    files: list[Path] = []
+    for root in ENV_SCAN_ROOTS:
+        if root.is_file():
+            files.append(root)
+            continue
+        for path in root.rglob("*"):
+            if path.is_file() and path.suffix in {".py", ".sh", ".ts", ".tsx", ".js", ".mjs"}:
+                if not any(part in IGNORED_SCAN_PARTS for part in path.parts):
+                    files.append(path)
+    return files
+
+
+def _python_env_reads(path: Path) -> list[tuple[int, str]]:
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    constants: dict[str, str] = {}
+    env_names: list[tuple[int, str]] = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target = node.targets[0]
+            if isinstance(target, ast.Name) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                constants[target.id] = node.value.value
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            func = node.func
+            is_getenv = (
+                isinstance(func, ast.Attribute)
+                and func.attr == "getenv"
+                and isinstance(func.value, ast.Name)
+                and func.value.id == "os"
+            )
+            if is_getenv and node.args:
+                arg = node.args[0]
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    env_names.append((node.lineno, arg.value))
+                elif isinstance(arg, ast.Name) and arg.id in constants:
+                    env_names.append((node.lineno, constants[arg.id]))
+
+        if isinstance(node, ast.Subscript):
+            value = node.value
+            is_os_environ = (
+                isinstance(value, ast.Attribute)
+                and value.attr == "environ"
+                and isinstance(value.value, ast.Name)
+                and value.value.id == "os"
+            )
+            if is_os_environ and isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, str):
+                env_names.append((node.lineno, node.slice.value))
+
+    return env_names
+
+
+def _text_env_reads(path: Path) -> list[tuple[int, str]]:
+    text = path.read_text(encoding="utf-8")
+    env_names: list[tuple[int, str]] = []
+
+    for pattern in [
+        re.compile(r"(?:process|import\.meta)\.env\.([A-Za-z_][A-Za-z0-9_]*)"),
+        re.compile(r"^\s*export\s+([A-Z][A-Z0-9_]*)=", re.MULTILINE),
+    ]:
+        for match in pattern.finditer(text):
+            env_names.append((text[: match.start()].count("\n") + 1, match.group(1)))
+
+    return env_names
+
+
+def _is_allowed_project_env_name(name: str) -> bool:
+    return name.startswith("KJ_ATLAS_") or name in ALLOWED_NON_PROJECT_ENV_KEYS
 
 
 def test_settings_uses_prefixed_key(monkeypatch) -> None:  # type: ignore[no-untyped-def]
@@ -18,6 +104,19 @@ def test_settings_uses_prefixed_key(monkeypatch) -> None:  # type: ignore[no-unt
     loaded = Settings()
 
     assert loaded.database_url == "sqlite:///./canonical.db"
+
+
+def test_project_env_access_points_use_kj_atlas_prefix() -> None:
+    violations: list[str] = []
+
+    for path in _iter_scan_files():
+        relative_path = path.relative_to(REPO_ROOT)
+        env_reads = _python_env_reads(path) if path.suffix == ".py" else _text_env_reads(path)
+        for line_number, name in env_reads:
+            if not _is_allowed_project_env_name(name):
+                violations.append(f"{relative_path}:{line_number}:{name}")
+
+    assert violations == []
 
 
 def test_settings_rejects_legacy_key_only(monkeypatch) -> None:  # type: ignore[no-untyped-def]

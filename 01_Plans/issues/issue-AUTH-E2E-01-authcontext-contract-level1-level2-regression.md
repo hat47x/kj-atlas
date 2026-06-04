@@ -164,7 +164,7 @@
 
 #### Verify
 
-- `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh`
+- `cd 03_Implement/backend && KJ_ATLAS_AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh`
 - 判定: `tests/test_auth_provider_profile_fixture.py` が 4件 pass し、Level 2実行可能。
 
 #### Proceed
@@ -245,7 +245,7 @@
 - Plan: Level 1/Level 2 契約回帰を再実行し、fixture 差分有無を確認。
 - Execute:
   - `cd 03_Implement/frontend && npx playwright test -g "auth" --reporter=line`
-  - `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh`
+  - `cd 03_Implement/backend && KJ_ATLAS_AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh`
 - Verify:
   - Level 1 は Playwright browser binary 未導入のため環境警告で停止（契約テスト自体は未実行）。
   - Level 2 は `tests/test_auth_provider_profile_fixture.py` が pass（fixture 破壊なし）。
@@ -290,8 +290,8 @@
 ## Stream F verification refresh (2026-04-30)
 - Scope: AUTH backend contract regression only（models/alembic/admin route/test_auth_* + AUTH issue memos）。
 - Verify (attempt 1): `pytest 03_Implement/backend/tests/test_auth_*.py -q` -> 20 passed, 3 skipped.
-- Verify (attempt 2, self-heal): `AUTH_PROVIDER_PROFILE_DIR=03_Implement/backend/tests/federation/profiles 03_Implement/backend/tests/scripts/run_auth_level2.sh` -> 実行パス誤りで失敗（exit 255）。
-- Verify (attempt 3, self-heal): `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh` -> 1 passed, 3 skipped.
+- Verify (attempt 2, self-heal): `KJ_ATLAS_AUTH_PROVIDER_PROFILE_DIR=03_Implement/backend/tests/federation/profiles 03_Implement/backend/tests/scripts/run_auth_level2.sh` -> 実行パス誤りで失敗（exit 255）。
+- Verify (attempt 3, self-heal): `cd 03_Implement/backend && KJ_ATLAS_AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh` -> 1 passed, 3 skipped.
 - Result: 3回以内の自己修復で回帰確認を完了。コード/DBスキーマ変更は不要。
 
 ## Stream E serial execution log (2026-05-01)

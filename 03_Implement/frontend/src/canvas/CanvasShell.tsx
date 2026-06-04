@@ -282,17 +282,6 @@ function shouldUseSpacePan(eventTarget: EventTarget | null, viewport: HTMLElemen
       '[role="textbox"]',
     ].join(",")
   );
-function isKeyboardInputTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-
-  const tagName = target.tagName.toLowerCase();
-  if (tagName === "input" || tagName === "textarea" || tagName === "select" || tagName === "button") {
-    return true;
-  }
-
-  return target.isContentEditable;
 }
 
 export function CanvasShell({
@@ -376,19 +365,18 @@ export function CanvasShell({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code === "Space" && shouldUseSpacePan(event.target, viewportRef.current)) {
-      if (event.defaultPrevented || isKeyboardInputTarget(event.target)) {
+      if (event.defaultPrevented) {
         return;
       }
 
-      if (event.code === "Space") {
+      if (event.code === "Space" && shouldUseSpacePan(event.target, viewportRef.current)) {
         event.preventDefault();
         setIsSpacePressed(true);
       }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || isKeyboardInputTarget(event.target)) {
+      if (event.defaultPrevented) {
         return;
       }
 

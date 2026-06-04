@@ -90,7 +90,7 @@ PostgreSQL roundtrip test を実行する場合:
 
 ```bash
 export KJ_ATLAS_DATABASE_URL="postgresql+psycopg://kj_atlas:kj_atlas@localhost:5432/kj_atlas"
-export RUN_PG_TESTS=1
+export KJ_ATLAS_RUN_PG_TESTS=1
 alembic upgrade head
 pytest -m postgres
 ```

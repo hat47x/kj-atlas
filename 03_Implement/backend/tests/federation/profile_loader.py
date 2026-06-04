@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def profiles_dir() -> Path:
-    override = os.getenv("AUTH_PROVIDER_PROFILE_DIR")
+    override = os.getenv("KJ_ATLAS_AUTH_PROVIDER_PROFILE_DIR")
     if override:
         return Path(override)
     return Path(__file__).parent / "profiles"
