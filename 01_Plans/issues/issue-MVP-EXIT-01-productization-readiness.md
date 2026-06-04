@@ -888,3 +888,33 @@
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next release-candidate evidence review.
 - Re-decision date: after H-UI-01/H-UI-02 evidence, value-gate evidence packets, full Compose startup evidence, or a material runtime/product change reaches `main`.
+
+## MVP-EXIT Program Gate Decision 2026-06-04: post-2318 mainline evidence sync
+
+- Candidate: `origin/main@f04c45c473422047472af35cec1c431b835f621d`
+- Decision date: 2026-06-04
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-04: post-2318 mainline evidence sync`.
+  - PROJECT-BASELINE-01 record: `Baseline delta 2026-06-04: post-2318 mainline evidence sync`.
+  - PROJECT-GOV-01 record: `Post-2318 mainline convergence checkpoint`.
+  - Merged PRs: #2311, #2312, #2313, #2314, #2315, #2316, and #2318.
+  - CI source: GitHub Actions run `9306` on #2318 head `cdc47f6b23f4ee75af6449107488f85073f22593`.
+
+### Decision
+
+- Final: **Conditional Go for post-2318 mainline evidence sync / No-Go for full release shipment**
+- Reason summary: The latest `main` is no longer a documentation-only delta from #2310. It now includes reproducible screenshot capture, representative keyboard/mouse/review-pack/domain-expression E2E evidence, a restored `CanvasShell` Space-pan guard, and `KJ_ATLAS_*` verification-harness environment-variable alignment. This materially improves productization evidence and mainline hygiene, but it does not replace human release acceptance, full product-value gate approval, full Compose startup, support diagnostics/recovery rehearsal, or final program approval.
+- Escalation route: keep `PRODUCT-QA-01` as the release evidence steward, `PROJECT-BASELINE-01` as the mainline health record, and `PROJECT-GOV-01` as the branch hygiene record. Productization Program Owner / QA Lead remain accountable for final shipment approval.
+
+### Conditional controls
+
+- Remaining risks:
+  - Human review must still approve the generated screenshots as release evidence and confirm that they contain no secrets or organization-specific data.
+  - Physical keyboard traversal remains a human-owned release acceptance step even though representative Playwright keyboard paths are now on `main`.
+  - Product value evidence packets remain issue-gated; merged candidate evidence is not sufficient by itself to move the program to shipment Go.
+  - Full running Docker Compose startup, environment rehearsal, support diagnostics, and recovery rehearsal were not executed from this checkpoint.
+  - Final release-language and public-publication approval remain required because the merged lane includes user-facing copy and public screenshot assets.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next release-candidate evidence review.
+- Re-decision date: after screenshot approval, physical-keyboard acceptance, product value Open-gate approvals, full Compose startup evidence, support diagnostics/recovery rehearsal, or a material runtime/product change reaches `main`.

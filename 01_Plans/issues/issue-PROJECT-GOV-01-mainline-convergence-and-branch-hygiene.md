@@ -623,6 +623,50 @@
 
 ---
 
+## Post-2318 mainline convergence checkpoint
+
+- Checkpoint date (JST): 2026-06-04
+- Latest main: `origin/main@f04c45c473422047472af35cec1c431b835f621d`
+- GitHub open PR search result: `0`
+- Scope: refreshes the prior open-PR lane record after #2311, #2312, #2313, #2314, #2315, #2316, and #2318 were merged. This checkpoint supersedes the older merge-lane ordering guidance; it does not delete remote branches or change ADR status.
+
+### Merged lane result
+
+| PR | Former branch | Merge result | Governance outcome |
+| --- | --- | --- | --- |
+| #2311 | `codex/release-screenshot-capture-20260603` | Merged as `c2ec54680dd7907bbf77c329b4a386b97d034d17` | Screenshot capture lane is now canonical on `main`; human screenshot approval remains a release gate. |
+| #2312 | `codex/keyboard-operation-evidence-20260604` | Merged as `fb22b7c6600fbb0871ca2f2caf15dee0d018e3f6` | Generic keyboard-operation evidence is canonical; physical-keyboard acceptance remains a release gate. |
+| #2313 | `codex/first-value-mouse-evidence-20260604` | Merged as `cfeedc4635d47978e9f8f01f838d7490ddb2a62b` | PRODUCT-VALUE-01 mouse evidence candidate is canonical but not yet product-value Open approval. |
+| #2314 | `codex/review-pack-trace-ui-20260604` | Merged as `0c5253fc252a4cbd1bd795252258993355cf933c` | Review-pack trace UI/evidence is canonical; PRODUCT-VALUE-03 remains issue-gated. |
+| #2315 | `codex/domain-expression-keyboard-evidence-20260604` | Merged as `7514aeca94a615fa13e36598ea919ca1d0219b11` | DOMAIN-EXPR-01 keyboard evidence candidate is canonical; acceptance remains routed through DOMAIN-EXPR issue state. |
+| #2316 | `codex/project-baseline-post-2310-20260604` | Merged as `46043beca958319d1345b7ff4ff908cde9a0f8db` | #2310 documentation-only baseline was canonical, then superseded by the post-2318 baseline sync. |
+| #2318 | `codex/env-test-harness-prefix-20260604` | Merged as `f04c45c473422047472af35cec1c431b835f621d` | Env-prefix harness alignment and current frontend CI repair are canonical on `main`. |
+
+### Residual branch hygiene
+
+| Item | Current state | Recommended handling |
+| --- | --- | --- |
+| Open PR lane | No open PRs returned by GitHub connector search | Start new work from `origin/main@f04c45c473422047472af35cec1c431b835f621d`. |
+| Previously overlapping `CanvasShell.tsx` fixes | Resolved by merged #2312/#2315 and repaired by #2318 | Inspect current `main` before further Space-key or canvas shortcut changes; do not resurrect branch-local handler variants. |
+| Remote branch cleanup | Merged branch refs may still exist on `origin` | Treat deletion as a maintainer-owned repository maintenance action; do not delete branches from this checkpoint. |
+| Release evidence records | PRODUCT-QA, MVP-EXIT, and PROJECT-BASELINE are aligned by the post-2318 records in this sync | Route release-readiness status through those issues; do not rely on the superseded #2310-only decision. |
+
+### Decision
+
+- The previous open-PR convergence lane is complete: all seven relevant PRs are merged, and the open PR count is now zero.
+- No branch deletion, rerun, ADR status change, or release approval is executed from this checkpoint.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene; this update only records the changed repository state.
+- Full release shipment remains No-Go until product-value Open gates, release-candidate screenshot and physical keyboard approval, full regression evidence, Compose startup evidence, support diagnostics/recovery rehearsal, and final program approval are recorded together.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@f04c45c473422047472af35cec1c431b835f621d`.
+2. Treat #2311..#2316 and #2318 as mainline evidence, not candidate PR evidence.
+3. Before opening new UI/E2E evidence work, check the current issue state for `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, and the relevant product-value/domain-expression issue.
+4. Leave remote branch deletion to a maintainer-approved cleanup action after any required post-merge audit window.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。

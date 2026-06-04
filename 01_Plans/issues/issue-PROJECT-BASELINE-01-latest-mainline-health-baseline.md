@@ -721,6 +721,67 @@
 
 ---
 
+## 22) Baseline delta 2026-06-04: post-2318 mainline evidence sync
+
+### Candidate
+
+- Target main: `origin/main` = `f04c45c473422047472af35cec1c431b835f621d`
+- Previous recorded mainline baseline: `origin/main@cb277db730da9f91d22c08cee0cc8af348a92220` in section 21.
+- Merged PRs in this sync: #2311, #2312, #2313, #2314, #2315, #2316, and #2318.
+- Scope note: this delta incorporates real frontend E2E evidence, screenshot assets and capture tooling, SharePanel UI/i18n changes, `CanvasShell` Space-key handling repair, backend verification-harness env-prefix alignment, and additional internal evidence records. It is not a documentation-only delta and must not inherit the #2310 release-readiness conclusion without qualification.
+- Executor: Codex
+- Environment: Windows / PowerShell / backend virtualenv Python / GitHub connector for PR and CI inspection / RTK used for compact status output where exact command text was not required.
+
+### Command and CI evidence
+
+| Area | Command or source | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git rev-parse HEAD origin/main`; `git log --oneline --decorate -12` | Pass: both refs resolve to `f04c45c473422047472af35cec1c431b835f621d`, merge commit for #2318 | G0 |
+| Open PR check | GitHub connector PR search for open PRs in `hat47x/kj-atlas` | Pass: `0` open PRs | G0 |
+| Mainline delta boundary | `git diff --name-status cb277db730da9f91d22c08cee0cc8af348a92220..origin/main` | Pass for intake: delta includes frontend E2E/screenshot/UI files, backend test harness env-prefix files, architecture registry updates, and internal issue records; this is no longer a documentation-only delta | G0 / G7 |
+| PR #2318 CI | GitHub Actions run `9306` on head `cdc47f6b23f4ee75af6449107488f85073f22593` | Pass: #2318 restored frontend typecheck/build health after the merged `CanvasShell.tsx` syntax issue and verified env-prefix guard coverage | G1 / G2 / G7 / E1 |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Incorporated mainline changes
+
+| PR | Mainline result | Baseline impact |
+| --- | --- | --- |
+| #2311 | Merged as `c2ec54680dd7907bbf77c329b4a386b97d034d17` | Adds deterministic release screenshot capture and refreshed public screenshot assets; improves H-UI-01 evidence but still requires human release approval. |
+| #2312 | Merged as `fb22b7c6600fbb0871ca2f2caf15dee0d018e3f6` | Adds representative keyboard-operation E2E and the first `CanvasShell` Space-handler repair; improves H-UI-02 evidence but does not replace physical-keyboard acceptance. |
+| #2313 | Merged as `cfeedc4635d47978e9f8f01f838d7490ddb2a62b` | Adds PRODUCT-VALUE-01 mouse-flow evidence candidate; product value gate remains issue- and human-acceptance gated. |
+| #2314 | Merged as `0c5253fc252a4cbd1bd795252258993355cf933c` | Aligns review-pack trace export controls and adds SharePanel/i18n/E2E evidence; PRODUCT-VALUE-03 remains Draft pending release acceptance. |
+| #2315 | Merged as `7514aeca94a615fa13e36598ea919ca1d0219b11` | Adds DOMAIN-EXPR-01 keyboard evidence candidate and overlapping Space-handler repair; evidence remains routed through DOMAIN-EXPR issue state. |
+| #2316 | Merged as `46043beca958319d1345b7ff4ff908cde9a0f8db` | Records the #2310 documentation-only baseline that this section now supersedes as the latest mainline checkpoint. |
+| #2318 | Merged as `f04c45c473422047472af35cec1c431b835f621d` | Prefixes verification-harness env vars with `KJ_ATLAS_*`, updates runtime parameter evidence, adds env access regression guard, and restores current frontend CI health. |
+
+### Gate classification
+
+| Gate | 2026-06-04 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, no open PRs, active issue validation, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go | SafeMode/share/import policy is unchanged; #2318 improves env naming hygiene and guards against non-prefixed project keys. |
+| G2 primary user operations | Conditional Go | Representative keyboard, mouse, review-pack, and domain-expression E2E evidence is now on main; final physical-keyboard release acceptance remains required. |
+| G3 Japanese UI / i18n | Conditional Go | SharePanel UI/i18n evidence improved, but a final release-language review is still required after user-facing copy and screenshot changes. |
+| G4 viewport and operability | Conditional Go | Screenshot capture and public assets are reproducible; human screenshot and physical-keyboard approval remain required. |
+| G5 public docs and config | Conditional Go | Public screenshot assets and runtime parameter registry evidence are more current; public publication approval and full runtime rehearsal remain required. |
+| G6 diagnostics and support | Unchanged / Conditional Go | No support diagnostics bundle policy or operational recovery rehearsal was completed in this sync. |
+| G7 regression | Conditional Go | #2318 CI succeeded and local planning validation passes; full release-candidate regression and Compose startup were not rerun from this checkpoint. |
+| E1..E3 environment contract | Conditional Go | `KJ_ATLAS_*` naming is cleaner, but full Compose startup and environment rehearsal remain outside this sync. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the post-2318 mainline evidence sync.
+- Release readiness decision remains **No-Go** for full shipment until screenshot approval, physical keyboard acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, and final program approval are recorded together.
+- Follow-up routing:
+  - H-UI-01 release screenshots and H-UI-02 physical keyboard traversal: `PRODUCT-QA-01`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - DOMAIN-EXPR-01 evidence acceptance: `issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`.
+  - Full Compose startup and environment rehearsal: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Branch cleanup after merged PRs: `PROJECT-GOV-01`.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
