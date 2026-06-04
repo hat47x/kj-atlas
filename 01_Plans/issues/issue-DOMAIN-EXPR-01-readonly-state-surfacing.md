@@ -118,3 +118,28 @@
   - UX reviewer must accept the focused-card -> Tab path as natural enough for representative keyboard operation.
   - Dedicated filters for unreviewed, no-evidence, and critique-present states remain undecided.
   - Architecture owner must confirm no schema expansion is required for Phase 1 acceptance.
+
+## Mainline evidence intake 2026-06-04: keyboard reachability landed
+
+- Candidate mainline: `origin/main@70b6269a24d01c6f4b386e5b7a724738dd02e2bd`
+- Status impact: **Draft remains**. The keyboard reachability E2E and Space-key repair are now on `main`, but this issue still needs UX/product acceptance for the Phase 1 domain-expression surface and a decision on dedicated filters before Open.
+- Evidence now canonical on `main`:
+  - #2315 merged `03_Implement/frontend/e2e/domain_expression_keyboard_access.spec.ts`, covering keyboard selection and Tab reachability for claim type, card review state, critique memo, and critique tag controls.
+  - #2318 restored the current `CanvasShell` Space-pan guard on `main`, keeping Space activation available for focused form controls while preserving canvas Space-pan outside controls.
+  - #2319 records the post-2318 PRODUCT-QA / MVP-EXIT mainline gate sync, keeping full shipment No-Go while acknowledging the merged DOMAIN-EXPR evidence lane.
+- Evidence packet status:
+
+| Evidence item | Current status | Remaining Open blocker |
+| --- | --- | --- |
+| Read-only state surfacing | Partially satisfied by visible claim type, unreviewed state, evidence, contradiction, critique note, and critique tags after keyboard card selection. | Productization Program Owner / UX reviewer must accept this as sufficient for Phase 1 first-class read UI. |
+| Keyboard reachability | Satisfied for the representative focused-card to form-control path. | UX reviewer must confirm the Tab path is natural enough for release-candidate operation. |
+| Fixed filter boundary | Not yet satisfied. | Decide whether unreviewed, no-evidence, and critique-present states need dedicated filters in this issue or a follow-up frontend issue. |
+| Schema stop check | Partially satisfied by using existing DocumentV2 fields only. | Architecture owner must confirm no Phase 1 schema expansion is required. |
+| Decision record | Partially satisfied by PRODUCT-QA / MVP-EXIT post-2318 gate records. | Final domain-expression gate decision must explicitly cite this issue after UX/product/filter/schema acceptance. |
+
+- Next human task queue:
+  - H-DX1: Productization Program Owner / UX reviewer accepts or rejects the current visible controls as the Phase 1 domain-expression read UI.
+  - H-DX2: UX reviewer decides whether dedicated filters are required before Open.
+  - H-DX3: UX reviewer confirms keyboard operation is natural in real Chrome, not only replayable in Playwright.
+  - H-DX4: Architecture owner confirms that Phase 1 can remain schema-neutral.
+- No ADR is needed for this intake. ADR routing is required only if acceptance changes schema ownership, AI review authority, SafeMode/share policy, or the staged DOMAIN-EXPR boundary.
