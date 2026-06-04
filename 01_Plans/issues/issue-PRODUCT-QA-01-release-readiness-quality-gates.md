@@ -1236,6 +1236,38 @@ DoDテンプレ（Draft→Open）
 - Keep full release shipment No-Go until value-gate evidence packets, release-candidate screenshots, physical keyboard evidence, full regression, Compose startup, and final program approval are recorded together.
 - No new ADR is needed for this sync.
 
+## Productization Gate Record 2026-06-04: keyboard operation evidence and Space activation fix
+
+- Candidate: `codex/keyboard-operation-evidence-20260604`
+- Decision date (JST): 2026-06-04
+- Reviewer: Codex
+- Scope: representative keyboard-only operation evidence for H-UI-02. This record adds browser-level Playwright coverage for start-panel sample opening, search input, Shift+Tab return, card selection, critique memo input, share-dialog open, close-button activation, and focus return. It also fixes the Canvas Space-pan handler so it no longer prevents native Space activation on buttons and other interactive controls.
+
+### Gate Summary
+
+- G1 safety defaults: Unchanged. SafeMode/share-export policy is not changed.
+- G2 primary user operations: Conditional Go improved. The new E2E verifies a keyboard-only path across start, search, selection, critique, share, and close/focus-return actions.
+- G3 Japanese UI / i18n: Go for tested shell scope. The flow runs with `?locale=ja` and asserts Japanese UI surfaces such as the selection context and SafeMode copy.
+- G4 viewport and operability: Conditional Go improved. The fix removes a keyboard trap where global Space-pan handling could suppress Space activation for focused controls.
+- G7 regression: Go for targeted E2E. Full release-candidate regression remains a separate gate.
+- Final: **Conditional Go for representative keyboard-operation evidence / No-Go for full release shipment**.
+
+### Evidence
+
+- Implementation:
+  - `03_Implement/frontend/src/canvas/CanvasShell.tsx`: Space-pan now applies only to non-interactive canvas targets.
+  - `03_Implement/frontend/e2e/keyboard_release_candidate_flow.spec.ts`: representative keyboard-only flow.
+- Targeted Playwright:
+  - `node .\node_modules\playwright\cli.js test e2e/keyboard_release_candidate_flow.spec.ts --reporter=line` -> 1 passed.
+- Local server note:
+  - The Codex host has no `npm` on PATH, so Vite was started with `node .\node_modules\vite\bin\vite.js --host 127.0.0.1 --port 4173`; Playwright reused the existing server.
+
+### Follow-ups
+
+- H-UI-02 is now partially automated for the representative path. Human physical-keyboard approval may still be required for final release acceptance, especially if the QA Lead requires real-device confirmation.
+- Keep full shipment No-Go until release screenshots, product value Open gates/evidence packets, full regression, Compose startup, and final program approval are recorded together.
+- No ADR is needed. ADR work is required only if the project changes the accepted keyboard operation model or Space-pan product behavior.
+
 ## Productization Gate Record 2026-06-03: full local regression and Chrome smoke refresh
 
 - Candidate: `origin/main@92b4e3f2bdf91d185f56ab3b7a54cb458b7d4e33`

@@ -783,6 +783,32 @@
 - Due date: next product value evidence review.
 - Re-decision date: after the value evidence packets and H-UI-01/H-UI-02 evidence are recorded, or after a full release-candidate run is completed.
 
+## MVP-EXIT Program Gate Decision 2026-06-04: keyboard operation evidence
+
+- Candidate: `codex/keyboard-operation-evidence-20260604`
+- Decision date: 2026-06-04
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-04: keyboard operation evidence and Space activation fix`.
+  - Frontend implementation: `03_Implement/frontend/src/canvas/CanvasShell.tsx`.
+  - Frontend E2E: `03_Implement/frontend/e2e/keyboard_release_candidate_flow.spec.ts`.
+
+### Decision
+
+- Final: **Conditional Go for representative keyboard-operation evidence / No-Go for full release shipment**
+- Reason summary: H-UI-02 now has a replayable browser-level E2E path for keyboard-only start, search, selection, critique memo, share open, close, and focus return. The implementation also removes the global Space-pan interception that could block native Space activation on focused controls. This improves G2/G4 evidence, but it does not replace final human release approval, release screenshots, product value Open gates, full regression, Compose startup, or final program approval.
+- Escalation route: keep `PRODUCT-QA-01` as the keyboard evidence steward and route final acceptance through the Productization Program Owner / QA Lead.
+
+### Conditional controls
+
+- Remaining risks:
+  - The new evidence covers a representative automated Chromium path, not an exhaustive physical-keyboard matrix.
+  - Release-candidate screenshots remain a separate acceptance item.
+  - Product value evidence packets, full regression, and full running Docker Compose startup remain required before shipment.
+- Owner: Codex for keyboard evidence automation; Productization Program Owner / QA Lead required for final acceptance.
+- Due date: next release-candidate evidence review.
+- Re-decision date: after human acceptance of H-UI-02 scope, release screenshots, value-gate evidence packets, and Compose startup evidence are recorded.
+
 ## MVP-EXIT Program Gate Decision 2026-06-03: full local regression and Chrome smoke refresh
 
 - Candidate: `origin/main@92b4e3f2bdf91d185f56ab3b7a54cb458b7d4e33`
