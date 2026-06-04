@@ -84,6 +84,8 @@
   "share.panel.export.bundle_include_traces": "Include traces for selected card",
   "share.panel.export.bundle_title": "Bundle export (.zip)",
   "share.panel.export.bundle_trace_hint": "Traces require a selected card.",
+  "share.panel.export.bundle_trace_hint_available": "Evidence, contradiction, and analytics traces for the selected card will be included.",
+  "share.panel.export.bundle_trace_hint_overview": "Overview exports do not include trace files. Select Detail when trace files are needed.",
   "share.panel.export.bundle_working": "Working...",
   "share.panel.export.enable_safe_mode": "Enable SafeMode",
   "share.panel.export.include_drafts": "Include unreviewed drafts",

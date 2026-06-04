@@ -84,6 +84,8 @@
   "share.panel.export.bundle_include_traces": "選択カードのトレースを含める",
   "share.panel.export.bundle_title": "レビューパックの書き出し (.zip)",
   "share.panel.export.bundle_trace_hint": "トレースを含めるには、先にカードを選択してください。",
+  "share.panel.export.bundle_trace_hint_available": "選択中のカードについて、根拠・矛盾・分析トレースを同梱します。",
+  "share.panel.export.bundle_trace_hint_overview": "概要ではトレースを同梱しません。トレースが必要な場合は「詳細」を選択してください。",
   "share.panel.export.bundle_working": "処理中...",
   "share.panel.export.enable_safe_mode": "セーフモードを有効化",
   "share.panel.export.include_drafts": "未レビューのドラフトを含める",
