@@ -61,6 +61,30 @@ domain.md は `HoldState`（判断を確定させない状態）と `PendingItem
 - 影響範囲: DocumentV2、import/export、validate、canvas。
 - ロールバック: 加算フィールドのため、UIを無効化し読取保存のみへ縮退できる。
 
+## Open gate sync 2026-06-04: Phase 2 remains blocked by schema and acceptance decisions
+
+- Candidate mainline: `origin/main@0133c744b60e4cc5f0c48435a62c72fbb5ca9f52`
+- Status impact: **Draft remains**. `DOMAIN-EXPR-01` keyboard/read-state evidence is now on `main`, but it is not the same as approval to add persistent Hold/Shelf state.
+- Current prerequisite state:
+  - #2322 records `DOMAIN-EXPR-01` mainline evidence intake and keeps Phase 1 Draft pending UX/product/schema acceptance.
+  - #2323 records that PRODUCT-VALUE-02 still lacks a combined hold/ambiguity/evidence-gap/contradiction workflow fixture.
+  - `ADR-0040` permits Phase 2 as an additive schema direction, but this issue still needs an implementation contract before Open.
+- Open gate checklist before implementation:
+
+| Gate | Current status | Required decision before Open |
+| --- | --- | --- |
+| Phase 1 acceptance | Not complete. | Productization Program Owner / UX reviewer must accept the current DOMAIN-EXPR-01 read UI as the base for adding Hold/Shelf controls. |
+| Schema contract | Not complete. | Architecture owner must approve exact field names, allowed values, missing-field defaults, and import/export compatibility for `holdState` and Shelf membership. |
+| User workflow boundary | Not complete. | Decide whether Hold and Shelf are one workflow slice or two separate PRs, and whether Shelf needs a visible list before card-level Hold ships. |
+| PRODUCT-VALUE-02 fixture | Not complete. | Define whether the four-state value fixture will use the new Hold/Shelf fields, or whether Phase 2 can ship with a smaller Hold/Shelf-specific fixture first. |
+| ADR need | Conditional. | No new ADR is needed for additive fields matching ADR-0040; create an ADR if the work changes review authority, SafeMode/share policy, or introduces breaking schema behavior. |
+
+- Recommended next slice:
+  - Start with a schema-contract PR only: update `02_Architecture/schemas.md` and validation expectations for optional `holdState` plus Shelf membership, without UI behavior.
+  - Add old/new document fixtures proving missing fields still read as default active/non-shelf state.
+  - Defer UI controls until the schema contract and PRODUCT-VALUE-02 fixture boundary are accepted.
+- No implementation is authorized by this sync. It only records the minimum decisions needed before `DOMAIN-EXPR-02` can move from Draft to Open.
+
 ## 7) Additional context
 
 - 本issueは schema を加算拡張するため `ADR-0040` の確定方針に直接対応する。破壊的変更が必要になった場合は新ADRを起票する。
