@@ -314,3 +314,27 @@ No-Go conditions for this value gate:
   - 違和感 / 根拠 / 矛盾 / claimType / レビュー境界 → **schema変更なし**。既存往復フィールドを読取UIへ露出（`DOMAIN-EXPR-01`）。
   - 保留 Hold / 未統合 Shelf → **加算的・任意フィールドを新設**（`DOMAIN-EXPR-02`、後方互換・欠落は従来挙動）。
 - 本issueは「保留・違和感・根拠不足・反対意見の作業フロー」の価値仮説の正本を維持し、実装は段階分割した `DOMAIN-EXPR-01..04`（`ADR-0040`）が担う。本issue自体の Open化は個人OSS段階（`ADR-0039`）では延期し、Phase 1（`DOMAIN-EXPR-01`、schema変更なし）から着手可能とする。
+
+## Mainline gap assessment 2026-06-04: partial domain-expression evidence only
+
+- Candidate mainline: `origin/main@70b6269a24d01c6f4b386e5b7a724738dd02e2bd`
+- Status impact: **Draft remains**. Current `main` contains partial evidence for reading and reaching ambiguity-related fields, but it does not yet provide the complete PRODUCT-VALUE-02 workflow evidence packet.
+- Mainline evidence now available:
+  - #2315 adds keyboard reachability for claim type, unreviewed state, evidence/contradiction text, critique memo, and critique tags through `DOMAIN-EXPR-01`.
+  - #2314 adds review-pack trace export consistency for selected-card evidence, contradiction, and trace analytics files through `PRODUCT-VALUE-03`.
+  - #2319 records the post-2318 release-gate sync and keeps full shipment No-Go.
+- Evidence packet status:
+
+| Required evidence item | Current status | Remaining Draft blocker |
+| --- | --- | --- |
+| State fixture | Not satisfied as a combined PRODUCT-VALUE-02 fixture. | Need one scenario that includes hold, ambiguity, evidence gap, and contradiction, or an explicit decision to split them across `DOMAIN-EXPR-01..04`. |
+| Review boundary proof | Partially satisfied by visible unreviewed state and the absence of automated `human_reviewed` promotion in the current UI path. | Need a targeted guard or evidence note proving AI/worker/API automation cannot mark the value-gate state as human-reviewed. |
+| Share/export proof | Partially satisfied by SafeMode/share preflight and review-pack trace export behavior. | Need proof that unresolved or unreviewed ambiguity/evidence state is visible or safely excluded before sharing for the PRODUCT-VALUE-02 scenario. |
+| AI-input proof | Not satisfied by current mainline evidence. | Need ContextBundle or equivalent evidence showing ambiguity/evidence/contradiction is preserved as a constraint, not converted into a solved fact. |
+| Decision record | Partially satisfied by PRODUCT-QA / MVP-EXIT post-2318 records. | Final PRODUCT-VALUE-02 decision must cite this issue after the state fixture, review boundary, share/export, and AI-input proof are complete. |
+
+- Next work proposal:
+  - Keep this issue Draft and create a follow-up implementation/evidence slice only when the Productization Program Owner accepts whether the four value states should be tested in one fixture or split by `DOMAIN-EXPR-01..04`.
+  - If the four-state fixture requires persistent Hold/Pending/Shelf fields, route that through `DOMAIN-EXPR-02` and ADR/schema review before implementation.
+  - If the proof can remain schema-neutral, define a Playwright scenario that uses existing `claimType`, `textReviewed`, `critique`, `critiqueTags`, and `evidenceLinks` fields and records the SafeMode/share outcome.
+- No ADR is needed for this gap assessment. ADR routing is required only if the next slice changes the value-state model, adds persistent Hold/Shelf fields, changes AI review authority, or changes SafeMode/share policy.
