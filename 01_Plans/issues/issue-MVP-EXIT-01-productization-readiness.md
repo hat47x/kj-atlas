@@ -837,3 +837,33 @@
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next release-candidate evidence review.
 - Re-decision date: after H-UI-01/H-UI-02 evidence, value-gate evidence packets, and full Compose startup evidence are recorded, or after a material runtime/product change reaches `main`.
+
+## MVP-EXIT Program Gate Decision 2026-06-04: #2310 documentation-only main sync
+
+- Candidate: `origin/main@cb277db730da9f91d22c08cee0cc8af348a92220`
+- Decision date: 2026-06-04
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-04: #2310 documentation-only main sync`.
+  - PROJECT-BASELINE-01 record: `Baseline delta 2026-06-04: #2310 documentation-only main sync`.
+  - Merged PR: #2310 `[codex] Record latest main regression baseline`.
+  - CI source: GitHub Actions run `26881310930` on #2310 head `35e1eed54d27db52d469dfe26d6245697acf254e`.
+
+### Decision
+
+- Final: **Conditional Go for #2310 documentation-only main sync / No-Go for full release shipment**
+- Reason summary: The current `main` only adds internal evidence records after the 2026-06-03 full-regression candidate. PR #2310 CI succeeded, local active issue validation and triage still pass, and the diff boundary shows no runtime, UI, SafeMode, schema/API, public documentation, or Compose changes. This keeps the prior full-regression evidence current for mainline planning, but it does not add the remaining human or environment evidence required for shipment.
+- Escalation route: keep `PRODUCT-QA-01` as the release evidence steward and `PROJECT-BASELINE-01` as the mainline health record. Treat #2315 as candidate DOMAIN-EXPR-01 evidence until it lands on `main`.
+
+### Conditional controls
+
+- Remaining risks:
+  - Release screenshots remain human-owned and are not attached to the final evidence bundle.
+  - Physical keyboard traversal in real Chrome remains required for final G2/G4 approval.
+  - `PRODUCT-VALUE-01` and `PRODUCT-VALUE-03` remain Draft pending replayable evidence packets and human acceptance.
+  - `PRODUCT-VALUE-02` remains dependent on staged `DOMAIN-EXPR-01..04` execution evidence; draft PR #2315 is not yet mainline evidence.
+  - Full running Docker Compose startup was not executed.
+  - Support diagnostics bundle policy and final operational rehearsal remain separate release gates.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next release-candidate evidence review.
+- Re-decision date: after H-UI-01/H-UI-02 evidence, value-gate evidence packets, full Compose startup evidence, or a material runtime/product change reaches `main`.

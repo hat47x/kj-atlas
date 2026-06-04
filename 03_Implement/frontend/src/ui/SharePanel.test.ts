@@ -4,8 +4,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { SharePanel } from "./SharePanel";
 import { setActiveLocale } from "../i18n/translate";
 
-function buildProps(safeMode: boolean) {
-  return {
+function buildProps(safeMode: boolean, overrides: Partial<React.ComponentProps<typeof SharePanel>> = {}) {
+  const props: React.ComponentProps<typeof SharePanel> = {
     isOpen: true,
     onToggleOpen: vi.fn(),
     hasDocument: true,
@@ -78,6 +78,8 @@ function buildProps(safeMode: boolean) {
     onCopyPatchApplyLogEntry: vi.fn(),
     structuralDiffSection: null,
   };
+
+  return { ...props, ...overrides };
 }
 
 afterEach(() => {
@@ -143,6 +145,16 @@ describe("SharePanel bundle granularity", () => {
     expect(html).toContain("Export granularity");
     expect(html).toContain("Detail (full trace exports)");
     expect(html).toContain("Overview (high-level summary)");
+  });
+
+  it("explains selected-card trace availability in English", () => {
+    setActiveLocale("en");
+
+    const unavailableHtml = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true, { canIncludeTraces: false })));
+    expect(unavailableHtml).toContain("Traces require a selected card.");
+
+    const availableHtml = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true, { canIncludeTraces: true })));
+    expect(availableHtml).toContain("Evidence, contradiction, and analytics traces for the selected card will be included.");
   });
 });
 

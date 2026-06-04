@@ -102,3 +102,19 @@
 - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py`
 - `git diff --check -- 01_Plans\issues\issue-DOMAIN-EXPR-01-readonly-state-surfacing.md 01_Plans\issues\issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
 - `rg -n "Chrome UI evidence intake|Human acceptance tasks|H-DX1|H-DX2|H-DX3|H-DX4|Productization Gate Record 2026-06-03|Human Task Queue|H-UI-01|H-UI-02|H-UI-03|H-UI-04" 01_Plans\issues\issue-DOMAIN-EXPR-01-readonly-state-surfacing.md 01_Plans\issues\issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+
+## Evidence route update 2026-06-04: keyboard reachability candidate
+
+- Candidate branch: `codex/domain-expression-keyboard-evidence-20260604`
+- Status impact: **Draft remains**. This update adds a replayable keyboard-reachability evidence candidate, but it does not by itself open the domain-expression gate.
+- Evidence added:
+  - `03_Implement/frontend/e2e/domain_expression_keyboard_access.spec.ts` covers a keyboard path from a focused card to card selection, then `Tab` navigation through claim type, card review state, critique memo, and critique tag controls.
+  - `03_Implement/frontend/src/canvas/CanvasShell.tsx` no longer intercepts Space for focused form controls, so checkbox and button keyboard activation remains available while canvas Space-pan still works outside controls.
+- Evidence packet mapping:
+  - H-DX3 Keyboard acceptance: partially satisfied for card selection and the first-class read UI controls already present in the selection context panel.
+  - Read-only state surfacing: partially satisfied by asserting `claimType`, unreviewed state, incoming evidence, contradiction, and critique text are visible after keyboard selection.
+  - Fixed filter boundary and human acceptance tasks H-DX1/H-DX2/H-DX4 remain pending.
+- Remaining blockers before Open:
+  - UX reviewer must accept the focused-card -> Tab path as natural enough for representative keyboard operation.
+  - Dedicated filters for unreviewed, no-evidence, and critique-present states remain undecided.
+  - Architecture owner must confirm no schema expansion is required for Phase 1 acceptance.

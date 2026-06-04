@@ -455,6 +455,13 @@ export function SharePanel({
     : includeUnreviewedDrafts
       ? t("share.panel.preflight.unreviewed.included")
       : t("share.panel.preflight.unreviewed.excluded");
+  const canUseSelectedCardTraces = canIncludeTraces && bundleExportGranularity === "detail";
+  const selectedCardTracesChecked = bundleIncludeSelectedCardTraces && canUseSelectedCardTraces;
+  const selectedCardTraceHint = !canIncludeTraces
+    ? t("share.panel.export.bundle_trace_hint")
+    : bundleExportGranularity === "overview"
+      ? t("share.panel.export.bundle_trace_hint_overview")
+      : t("share.panel.export.bundle_trace_hint_available");
 
   const shortFingerprint = (value: string | undefined): string => {
     if (!value) return t("share.panel.patch.not_available");
@@ -734,11 +741,11 @@ export function SharePanel({
                 />
                 {t("share.panel.export.bundle_include_diagnostics")}
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: canIncludeTraces ? "#334155" : "#94a3b8", ...wrapRowStyle }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: canUseSelectedCardTraces ? "#334155" : "#94a3b8", ...wrapRowStyle }}>
                 <input
                   type="checkbox"
-                  checked={bundleIncludeSelectedCardTraces}
-                  disabled={!canIncludeTraces}
+                  checked={selectedCardTracesChecked}
+                  disabled={!canUseSelectedCardTraces}
                   onChange={(event) => {
                     setBundleIncludeSelectedCardTraces(event.target.checked);
                   }}
@@ -768,14 +775,14 @@ export function SharePanel({
                   {t("share.panel.export.bundle_granularity_overview")}
                 </label>
               </div>
-              <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.export.bundle_trace_hint")}</div>
+              <div style={{ fontSize: 11, color: "#64748b" }}>{selectedCardTraceHint}</div>
               <button
                 type="button"
                 onClick={() => {
                   onExportBundleZip({
                     includeOutline: bundleIncludeOutline,
                     includeDiagnostics: bundleIncludeDiagnostics,
-                    includeSelectedCardTraces: bundleIncludeSelectedCardTraces && canIncludeTraces && bundleExportGranularity === "detail",
+                    includeSelectedCardTraces: selectedCardTracesChecked,
                     exportGranularity: bundleExportGranularity,
                   });
                 }}

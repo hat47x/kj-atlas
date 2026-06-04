@@ -328,3 +328,19 @@ No-Go conditions for this value gate:
   - Productization Program Owner must accept the representative sample/fixture as value-bearing rather than merely operability-bearing.
   - Mouse trace, screenshot/trace bundle location, and first-map grouping/hold-point expectations remain incomplete.
   - Full shipment still depends on `PRODUCT-QA-01` release gates, including screenshots, full regression, Compose startup, and final program approval.
+## Evidence route update 2026-06-04: first meaningful map mouse trace candidate
+
+- Candidate branch: `codex/first-value-mouse-evidence-20260604`
+- Status impact: **Draft remains**. This update adds a replayable mouse-operation evidence candidate, but it does not by itself open the value gate.
+- Evidence added:
+  - `03_Implement/frontend/e2e/first_meaningful_map_mouse_flow.spec.ts` covers a mouse path from the first-run start panel to sample loading, two-card selection, and first visible island creation.
+- Evidence packet mapping:
+  - Scenario fixture: partially satisfied by `doc_first_meaningful_map_mouse`.
+  - Mouse operation trace: partially satisfied for the representative route.
+  - Expected grouping/hold-point state: partially satisfied by `Island 1` containing the two selected first-value cards.
+  - Keyboard operation trace: still separate; a candidate exists in PR #2312 but is not part of this branch or main until merged.
+  - Safe entry evidence and screenshot/trace storage remain pending.
+- Remaining blockers before Open:
+  - Productization Program Owner must accept the fixture and `Island 1` grouping as a value-bearing first-map scenario.
+  - Safe entry screenshot/trace bundle location and decision linkage into `PRODUCT-QA-01` / `MVP-EXIT-01` remain incomplete.
+  - Full shipment still depends on release gates, screenshots, full regression, Compose startup, and final program approval.

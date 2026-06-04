@@ -667,6 +667,58 @@
   - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
   - Full Compose startup and environment rehearsal: `ENV-CONFIG-DRIFT-01` / platform operator lane.
 
+## 21) Baseline delta 2026-06-04: #2310 documentation-only main sync
+
+### Candidate
+
+- Target main: `origin/main` = `cb277db730da9f91d22c08cee0cc8af348a92220`
+- Previous full-regression baseline: `origin/main@92b4e3f2bdf91d185f56ab3b7a54cb458b7d4e33` in section 20.
+- Merged PR: #2310 `[codex] Record latest main regression baseline`.
+- Scope note: #2310 only merged internal evidence records in `01_Plans/issues`. This delta records the post-merge main state and CI health for that documentation-only merge. It does not change runtime behavior, UI copy, SafeMode defaults, schema/API contracts, public documentation, release authority, or Compose configuration.
+- Executor: Codex
+- Environment: Windows / PowerShell / bundled Python / GitHub connector for CI inspection / RTK used for compact status output where exact command text was not required.
+
+### Command and CI evidence
+
+| Area | Command or source | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only`; `git rev-parse origin/main`; `git log -1 --format="%h %cI %s" origin/main` | Pass: `cb277db7` at `2026-06-03T22:01:31+09:00`, merge commit for #2310 | G0 |
+| Mainline diff boundary | `git diff --name-status 92b4e3f2bdf91d185f56ab3b7a54cb458b7d4e33..origin/main` | Pass: only `issue-MVP-EXIT-01-productization-readiness.md`, `issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, and this issue changed | G0 / G7 |
+| PR #2310 CI | GitHub Actions run `26881310930` on head `35e1eed54d27db52d469dfe26d6245697acf254e` | Pass: frontend lint, typecheck, frontend test/build, i18n guards, import/serialization/shape regression guards, and backend lint/test all succeeded | G1 / G3 / G7 |
+| Planning metadata | `python 01_Plans/issues/validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `python 01_Plans/triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Incorporated mainline change
+
+| PR | Mainline result | Baseline impact |
+| --- | --- | --- |
+| #2310 | Merged into `main` as `cb277db730da9f91d22c08cee0cc8af348a92220` | Section 20 full local regression evidence is now canonical on `main`; no implementation, runtime, public-doc, or configuration files changed after that full-regression candidate. |
+
+### Gate classification
+
+| Gate | 2026-06-04 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, documentation-only diff boundary, active issue validation, and triage pass with no stopper. |
+| G1 safety defaults | Unchanged / Go for previously tested scope | #2310 did not change SafeMode, share/export, import sanitize, or access-control behavior. Section 20 remains the latest runtime evidence. |
+| G2 primary user operations | Unchanged / Go for previously tested scope | #2310 did not change frontend behavior. Section 20 remains the latest full Playwright and Chrome smoke evidence. |
+| G3 Japanese UI / i18n | Unchanged / Go for previously tested scope | #2310 did not change UI strings. PR #2310 CI i18n guard jobs succeeded. |
+| G4 viewport and operability | Unchanged / Conditional Go | No new viewport, screenshot, or physical-keyboard evidence was added. Section 20 remains the latest automated and Chrome-smoke evidence. |
+| G5 public docs and config | Unchanged / Conditional Go | No public documentation publication or runtime configuration change occurred in #2310. |
+| G6 diagnostics and support | Unchanged / Conditional Go | No support diagnostics or operational recovery behavior changed in #2310. |
+| G7 regression | Go for this delta | PR #2310 CI succeeded and the post-merge diff is limited to internal planning evidence records. Full local regression is not rerun because no implementation files changed after section 20. |
+| E1..E3 environment contract | Unchanged / Conditional Go | Full Docker Compose startup remains outside this documentation-only sync. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the #2310 documentation-only main sync.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard evidence, product value Open gates/evidence packets, full Compose startup, and final program approval are recorded together.
+- Open-PR note: draft PR #2315 (`codex/domain-expression-keyboard-evidence-20260604`) is not included in this mainline baseline. Its DOMAIN-EXPR-01 keyboard evidence should be treated as candidate evidence until merged.
+- Follow-up routing:
+  - H-UI-01 release screenshots and H-UI-02 physical keyboard traversal: `PRODUCT-QA-01`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - DOMAIN-EXPR-01 keyboard evidence intake after merge: `issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`.
+  - Full Compose startup and environment rehearsal: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）
