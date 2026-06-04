@@ -596,6 +596,7 @@ Non-goals:
 - Updated backend README and AUTH-E2E internal issue examples so copied commands no longer introduce legacy non-prefixed names.
 - Added a non-public "Verification harness keys" table to `runtime_parameter_registry.md`, including Auth Level2, PostgreSQL test, and recovery rehearsal keys.
 - Removed uppercase local variable names in `mock_sp.py` that looked like env names during drift scans.
+- Added `test_project_env_access_points_use_kj_atlas_prefix` to keep backend/frontend direct env access points from reintroducing non-prefixed project keys.
 
 ### Verify
 
@@ -605,6 +606,7 @@ Non-goals:
 - Pass: `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> validated 5 active issue memos.
 - Pass: `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` -> 10 tests passed.
 - Pass: `03_Implement\backend\.venv\Scripts\python.exe -m pytest 03_Implement\backend\tests\test_settings_env_prefix_migration.py -q --basetemp 03_Implement\backend\.pytest_tmp_env_prefix_migration -p no:cacheprovider` -> 12 tests passed.
+- Pass: `03_Implement\backend\.venv\Scripts\python.exe -m pytest 03_Implement\backend\tests\test_settings_env_prefix_migration.py -q --basetemp 03_Implement\backend\.pytest_tmp_env_prefix_scan -p no:cacheprovider` -> 13 tests passed.
 
 ### Proceed/Stop
 
