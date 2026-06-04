@@ -580,3 +580,33 @@ Non-goals:
 - Pass: `03_Implement\backend\.venv\Scripts\python.exe -m pytest 03_Implement\backend\tests\test_settings_env_prefix_migration.py -q --basetemp 03_Implement\backend\.pytest_tmp_env_config_readiness -p no:cacheprovider` -> 12 tests passed.
 - Reviewed: key scan for `VITE_API_BASE`, `POSTGRES_*`, `DATABASE_URL`, `WEB_PORT`, and `FRONTEND_API_BASE` showed public docs/config using `KJ_ATLAS_*`; `POSTGRES_*` appears only in private-boundary documentation or Compose adapter mapping.
 - Not run: `docker compose config`; this host does not have the `docker` command. Final Done still requires a real Compose config/build verification on a Docker-capable host.
+
+## 19) Verification harness prefix sync (2026-06-04)
+
+### Scope
+
+- Read: `runtime_parameter_registry.md`, backend test harness scripts, Auth Level2 fixtures, PostgreSQL roundtrip test opt-in, and related internal issue examples.
+- Finding: product runtime public keys already used `KJ_ATLAS_*`, but local verification harness keys still had non-prefixed PostgreSQL opt-in, provider profile, and Auth Level2 names.
+- Decision: verification harness keys are not public runtime settings and remain out of `04_Documentation/configuration.md`; however, the "no prefix exception" rule still applies to names used by kj-atlas scripts and tests.
+
+### Execute
+
+- Renamed PostgreSQL roundtrip opt-in to `KJ_ATLAS_RUN_PG_TESTS`.
+- Renamed Auth Level2 harness inputs and derived URLs to `KJ_ATLAS_AUTH_LEVEL2_*` and `KJ_ATLAS_AUTH_PROVIDER_PROFILE_DIR`.
+- Updated backend README and AUTH-E2E internal issue examples so copied commands no longer introduce legacy non-prefixed names.
+- Added a non-public "Verification harness keys" table to `runtime_parameter_registry.md`, including Auth Level2, PostgreSQL test, and recovery rehearsal keys.
+- Removed uppercase local variable names in `mock_sp.py` that looked like env names during drift scans.
+
+### Verify
+
+- Pass: legacy-name scan over `01_Plans`, `02_Architecture`, `03_Implement`, and `04_Documentation` -> no matches.
+- Pass: direct env-read scan over backend/frontend/deploy found no non-`KJ_ATLAS_*` env reads, excluding `import.meta.env.DEV`.
+- Pass: `03_Implement\backend\.venv\Scripts\python.exe -m pytest 03_Implement\backend\tests\test_docs_roundtrip.py::test_docs_put_get_roundtrip_sqlite 03_Implement\backend\tests\test_docs_roundtrip.py::test_docs_put_get_roundtrip_postgres 03_Implement\backend\tests\test_auth_provider_profile_fixture.py::test_provider_profile_fixture_google_oidc_roundtrip -q --basetemp 03_Implement\backend\.pytest_tmp_env_harness_prefix -p no:cacheprovider` -> 2 passed, 1 skipped.
+- Pass: `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> validated 5 active issue memos.
+- Pass: `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` -> 10 tests passed.
+- Pass: `03_Implement\backend\.venv\Scripts\python.exe -m pytest 03_Implement\backend\tests\test_settings_env_prefix_migration.py -q --basetemp 03_Implement\backend\.pytest_tmp_env_prefix_migration -p no:cacheprovider` -> 12 tests passed.
+
+### Proceed/Stop
+
+- Proceed: no product runtime behavior change and no new ADR required.
+- Remaining Done blocker: Docker-capable host verification for `docker compose config` is still required before this issue can be closed.

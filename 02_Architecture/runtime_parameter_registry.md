@@ -128,6 +128,22 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `POSTGRES_USER` | `docker-compose.yml` `db` service | `KJ_ATLAS_POSTGRES_USER` | PostgreSQL container internal env |
 | `POSTGRES_PASSWORD` | `docker-compose.yml` `db` service | `KJ_ATLAS_POSTGRES_PASSWORD` | PostgreSQL container internal env |
 
+## Verification harness keys (non-public)
+
+以下は製品ランタイムの公開設定ではなく、ローカル検証・CI・リハーサル用の環境変数です。利用者向けの 04 文書では公開ランタイム設定として扱いませんが、名前の例外を作らないため `KJ_ATLAS_*` を使います。
+
+| Key | Owner | Default | Purpose |
+| --- | --- | --- | --- |
+| `KJ_ATLAS_RUN_PG_TESTS` | backend pytest | 未設定 | PostgreSQL roundtrip tests を明示的に実行する opt-in flag |
+| `KJ_ATLAS_AUTH_PROVIDER_PROFILE_DIR` | Auth Level2 test harness | `03_Implement/backend/tests/federation/profiles` | provider profile fixture の読み込み先 |
+| `KJ_ATLAS_AUTH_LEVEL2_BACKEND_PORT` | `tests/scripts/run_auth_level2.sh` | `18000` | Auth Level2 mock 検証で起動する backend port |
+| `KJ_ATLAS_AUTH_LEVEL2_SP_PORT` | `tests/scripts/run_auth_level2.sh` | `18080` | Auth Level2 mock SP port |
+| `KJ_ATLAS_AUTH_LEVEL2_IDP_PORT` | `tests/scripts/run_auth_level2.sh` | `18081` | Auth Level2 mock IdP port |
+| `KJ_ATLAS_AUTH_LEVEL2_BACKEND_BASE_URL` | Auth Level2 mock SP | `http://127.0.0.1:18000` | mock SP から backend へ転送する base URL |
+| `KJ_ATLAS_AUTH_LEVEL2_MOCK_IDP_BASE_URL` | Auth Level2 mock SP | `http://127.0.0.1:18081` | mock SP から mock IdP を参照する base URL |
+| `KJ_ATLAS_AUTH_LEVEL2_SP_BASE_URL` | Auth Level2 tests | `http://127.0.0.1:18080` | pytest から mock SP を参照する base URL |
+| `KJ_ATLAS_RECOVERY_DOC_ID` | data maintenance rehearsal | `doc-data-maint-pg-recovery-20260525` | PostgreSQL recovery rehearsal の対象 document id |
+
 ## Validation rules
 
 - `KJ_ATLAS_LLM_PROVIDER=large-scale`, `large_scale`, `external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` と `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` を必須にします。

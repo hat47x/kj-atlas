@@ -5,8 +5,8 @@ import os
 import httpx
 from fastapi import FastAPI, HTTPException
 
-IDP_BASE_URL = os.getenv("MOCK_IDP_BASE_URL", "http://127.0.0.1:18081")
-BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://127.0.0.1:18000")
+idp_base_url = os.getenv("KJ_ATLAS_AUTH_LEVEL2_MOCK_IDP_BASE_URL", "http://127.0.0.1:18081")
+backend_base_url = os.getenv("KJ_ATLAS_AUTH_LEVEL2_BACKEND_BASE_URL", "http://127.0.0.1:18000")
 
 app = FastAPI(title="auth-level2-mock-sp")
 
@@ -25,15 +25,15 @@ def _norm_groups(groups: object, groups_format: str) -> str | None:
 def healthz() -> dict:
     return {
         "ok": True,
-        "idp": IDP_BASE_URL,
-        "backend": BACKEND_BASE_URL,
+        "idp": idp_base_url,
+        "backend": backend_base_url,
     }
 
 
 @app.post("/sp/profile/{profile_name}/docs/{doc_id}")
 def forward_put_doc(profile_name: str, doc_id: str, payload: dict) -> dict:
     with httpx.Client(timeout=10.0) as client:
-        idp_resp = client.get(f"{IDP_BASE_URL}/idp/profile/{profile_name}")
+        idp_resp = client.get(f"{idp_base_url}/idp/profile/{profile_name}")
         if idp_resp.status_code != 200:
             raise HTTPException(status_code=502, detail=f"IdP profile fetch failed: {idp_resp.text}")
         idp_data = idp_resp.json()
@@ -68,8 +68,8 @@ def forward_put_doc(profile_name: str, doc_id: str, payload: dict) -> dict:
         if acr_key and claims.get(acr_key):
             headers["x-auth-acr"] = str(claims[acr_key])
 
-        put_resp = client.put(f"{BACKEND_BASE_URL}/docs/{doc_id}", headers=headers, json=payload)
-        get_resp = client.get(f"{BACKEND_BASE_URL}/docs/{doc_id}", headers=headers)
+        put_resp = client.put(f"{backend_base_url}/docs/{doc_id}", headers=headers, json=payload)
+        get_resp = client.get(f"{backend_base_url}/docs/{doc_id}", headers=headers)
 
     return {
         "profile": profile_name,
