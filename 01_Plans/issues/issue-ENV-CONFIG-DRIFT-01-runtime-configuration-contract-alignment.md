@@ -612,3 +612,22 @@ Non-goals:
 
 - Proceed: no product runtime behavior change and no new ADR required.
 - Remaining Done blocker: Docker-capable host verification for `docker compose config` is still required before this issue can be closed.
+
+## 20) ADR-0021 readability and public-prefix contract sync (2026-06-06)
+
+### Scope
+
+- Read: `ADR-0021`, `runtime_parameter_registry.md`, public configuration docs, backend settings, frontend env prefix, and deploy Compose inputs.
+- Finding: the implementation and public documentation keep the public runtime contract on `KJ_ATLAS_*`, but `ADR-0021` had become hard to read and could no longer serve as the decision record for the no-exception prefix policy.
+- Finding: older historical ADRs still contain legacy examples such as `LLM_PROVIDER=none` or `LLM_ESCALATION_ENABLED=false`. These are documentation-quality debt, not current runtime behavior. They should be normalized in a separate ADR/readability slice so encoding repair does not get mixed with runtime contract work.
+
+### Execute
+
+- Rewrote `ADR-0021` in readable Japanese while preserving the Accepted decision: public kj-atlas environment variables must start with `KJ_ATLAS_` without exception.
+- Clarified that `POSTGRES_*` and build-tool internal names are private adapter boundary names, not user-facing kj-atlas configuration.
+- Kept the issue boundary unchanged: no SafeMode, share/export, LLM opt-in, audit, access-control, Compose behavior, backend settings, or frontend runtime behavior change.
+
+### Proceed/Stop
+
+- Proceed: the public-prefix decision record is readable again and matches the current implementation/documentation contract.
+- Stop before Done: Docker-capable `docker compose config` verification is still required, and historical ADR readability cleanup should remain a separate documentation-quality slice.
