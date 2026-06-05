@@ -782,6 +782,67 @@
 
 ---
 
+## 23) Baseline delta 2026-06-06: post-2326 internal evidence sync
+
+### Candidate
+
+- Target main: `origin/main` = `ba66911b55e70adff946e11fea7eecacd841807a`
+- Previous recorded mainline baseline: `origin/main@f04c45c473422047472af35cec1c431b835f621d` in section 22.
+- Merged PRs in this sync: #2319, #2320, #2321, #2322, #2323, #2324, #2325, and #2326.
+- Scope note: this delta incorporates internal issue evidence and gate-synchronization records only. It does not change runtime behavior, UI copy, SafeMode defaults, schema/API contracts, public documentation, release authority, or Compose configuration.
+- Executor: Codex
+- Environment: Windows / PowerShell / backend virtualenv Python / GitHub connector for PR inspection / RTK used for compact status and diff-boundary checks where exact output was not required.
+
+### Command and PR evidence
+
+| Area | Command or source | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git fetch origin main`; `git rev-parse origin/main`; `git log --format="%h %cI %s" -12 origin/main` | Pass: latest `origin/main` is `ba66911b55e70adff946e11fea7eecacd841807a`, merge commit for #2324 after #2325 and #2326 were already merged | G0 |
+| Mainline diff boundary | `git diff --name-status f04c45c473422047472af35cec1c431b835f621d..origin/main` | Pass for intake: changed paths are limited to `01_Plans/issues/*.md` internal issue records | G0 / G7 |
+| PR merge inspection | GitHub connector `_get_pr_info` for #2319..#2326 | Pass: all eight PRs are closed and merged | G0 |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Incorporated mainline changes
+
+| PR | Mainline result | Baseline impact |
+| --- | --- | --- |
+| #2319 | Merged as `d1dfa3a0c50892d8d7aa354a5e83ba760e043919` | Records post-2318 PRODUCT-QA, MVP-EXIT, PROJECT-BASELINE, and PROJECT-GOV gate sync. It updates release-readiness evidence without granting release approval. |
+| #2320 | Merged as `70b6269a24d01c6f4b386e5b7a724738dd02e2bd` | Records PRODUCT-VALUE-01 mainline evidence intake for first meaningful map activation. The issue remains Draft pending human product-value acceptance. |
+| #2321 | Merged as `3037f4ae80d75eb1957f81d3d1039f8ffdaa94b7` | Records PRODUCT-VALUE-03 mainline evidence intake for reviewable outcome package evidence. The issue remains Draft pending acceptance work. |
+| #2322 | Merged as `8f3ea92a36d080f278931393e727abf242ce6fb5` | Records DOMAIN-EXPR-01 mainline evidence intake. Read-only state surfacing evidence is now canonical, but the issue remains Draft. |
+| #2323 | Merged as `0133c744b60e4cc5f0c48435a62c72fbb5ca9f52` | Records PRODUCT-VALUE-02 evidence gap sync and keeps the ambiguity/evidence workflow in Draft until a complete value evidence packet exists. |
+| #2324 | Merged as `ba66911b55e70adff946e11fea7eecacd841807a` | Records DOMAIN-EXPR-02 open-gate sync for hold and pending/shelf decisions. It does not authorize schema or workflow implementation. |
+| #2325 | Merged as `5b2aeb90ef7514797856b3bab57b74970d6bb9fc` | Records DOMAIN-EXPR-03 open-gate sync for critique/reproposal contracts, non-AI behavior, diff UI, and ADR triggers. |
+| #2326 | Merged as `7bc630e50882985defeccc635bef6f61210942e3` | Records DOMAIN-EXPR-04 open-gate sync for evidence/claim/contradiction review, PRODUCT-VALUE-03 alignment, and SafeMode/share-export boundaries. |
+
+### Gate classification
+
+| Gate | 2026-06-06 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, merged-PR inspection, active issue validation, and triage pass with no stopper. |
+| G1 safety defaults | Unchanged / Conditional Go | #2319..#2326 do not change SafeMode, share/export, import sanitize, access-control runtime behavior, or public exposure defaults. |
+| G2 primary user operations | Unchanged / Conditional Go | No new UI implementation was merged in this delta. Previous post-2318 evidence remains the latest runtime evidence. |
+| G3 Japanese UI / i18n | Unchanged / Conditional Go | No UI strings changed in this delta. Existing release-language review remains required. |
+| G4 viewport and operability | Unchanged / Conditional Go | No screenshot, viewport matrix, or physical-keyboard evidence was added after section 22. |
+| G5 public docs and config | Unchanged / Conditional Go | No public documentation publication or runtime configuration change occurred in this delta. |
+| G6 diagnostics and support | Unchanged / Conditional Go | No support diagnostics bundle policy or operational recovery rehearsal was completed in this sync. |
+| G7 regression | Go for this delta | The diff is limited to internal issue records, and planning validation/triage pass. Full frontend/backend regression is not rerun because no implementation files changed. |
+| E1..E3 environment contract | Unchanged / Conditional Go | Full Docker Compose startup and environment rehearsal remain outside this internal-evidence sync. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the post-2326 internal evidence sync.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, and final program approval are recorded together.
+- Follow-up routing:
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - DOMAIN-EXPR Phase 1 acceptance and schema/interaction decisions: `DOMAIN-EXPR-01..04`.
+  - H-UI-01 release screenshots and H-UI-02 physical keyboard traversal: `PRODUCT-QA-01`.
+  - Full Compose startup and environment rehearsal: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Branch cleanup after merged PRs: `PROJECT-GOV-01`.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
