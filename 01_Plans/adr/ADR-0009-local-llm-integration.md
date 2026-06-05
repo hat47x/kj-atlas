@@ -73,7 +73,7 @@ This is a phased checklist plan for local LLM integration in kj-atlas, covering 
 - Unit（PR必須）を以下で固定する：`schema validation` / `post-processing deterministic check` / `safeMode leak prevention`。
 - Regression（PR必須）を以下で固定する：`FixtureProvider snapshot + golden diff` / `必須セクション欠落検知` / `citation coverage 下限チェック`。
 - Integration（定期監査のみ）を以下で固定する：`external provider による curated 小規模セット` を夜間実行し、PR必須ゲートから分離する。
-- fail-safe を明記する：`LLM_ESCALATION_ENABLED=false` の環境では integration 経路を起動しない。
+- fail-safe を明記する：`KJ_ATLAS_LLM_ESCALATION_ENABLED=false` の環境では integration 経路を起動しない。
 
 **Consequences**
 - 「PR必須テスト」と「定期監査テスト」の境界は本ADRで確定し、実装側は同境界を破らない形でCI定義を行う。
