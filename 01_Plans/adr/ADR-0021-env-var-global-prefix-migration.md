@@ -7,64 +7,95 @@
 
 ## Context
 
-同一サーバ上で複数アプリが共存する運用では、`DATABASE_URL` や `API_KEY` のような一般名キーが他アプリと衝突し得る。
+同じサーバや CI 環境では、kj-atlas 以外のアプリケーション、データベース、ビルドツールも環境変数を利用する。
 
-この衝突は次の実害を生む。
+`DATABASE_URL`、`API_KEY`、`LLM_PROVIDER` のような一般名を公開設定として使うと、次の問題が起きやすい。
 
-- 誤った環境値の注入（誤接続・誤送信・誤認可）
-- デプロイ自動化時の変数上書き
-- 運用監査時の識別困難（どのアプリの値か判別不能）
+- 別アプリケーションの設定を誤って kj-atlas が読み込む。
+- 運用者がどのアプリの設定値か判断しにくい。
+- 公開設定、第三者コンテナ内部名、ビルドツール内部名の境界が曖昧になる。
+- 古い互換キーが残り、意図しない外部連携や接続先変更につながる。
 
-主要選択肢:
-
-1. 段階移行（旧キー互換あり）
-2. **一括移行（互換なし）**（採用）
-3. 互換を無期限維持
+そのため、kj-atlas が利用者・運用者に公開する環境変数は、アプリケーション固有の名前空間へ統一する必要がある。
 
 ## Decision
 
-**全ランタイム環境変数は `KJ_ATLAS_*` のみを正規契約として受理する。**
+kj-atlas の公開環境変数は、すべて例外なく `KJ_ATLAS_` で始まる名前だけを正規キーとして扱う。
 
-### 長期的に維持する契約
+### 規則
 
-1. 正規キーは `KJ_ATLAS_*` のみ受理する。
-2. 旧キー（プレフィックスなし）は受理しない。
-3. 新旧同時指定は不正設定として扱う。
-4. 旧キー互換・警告・猶予期限（deprecation date）は採用しない。
+1. 利用者・運用者が設定する公開キーは `KJ_ATLAS_*` のみとする。
+2. 旧キー、短縮キー、互換キーは公開設定として受け付けない。
+3. 新旧キーの同時指定を許容する移行期間は設けない。
+4. 旧キーを自動変換する deprecation window は設けない。
+5. 新しい環境変数を追加する場合も、必ず `KJ_ATLAS_` で始める。
 
-### 非目標
+### 代表例
 
-- 互換期間の運用や旧キー延命のための暫定フラグ。
-- プレフィックス方針以外の設定体系再設計。
-- 既存安全契約（SafeMode優先、PII最小化、監査最小化）の変更。
+| 目的 | 正規キー |
+| --- | --- |
+| DB 接続先 | `KJ_ATLAS_DATABASE_URL` |
+| LLM provider | `KJ_ATLAS_LLM_PROVIDER` |
+| large-scale LLM 昇格許可 | `KJ_ATLAS_LLM_ESCALATION_ENABLED` |
+| API key | `KJ_ATLAS_API_KEY` |
+| frontend の API base path | `KJ_ATLAS_FRONTEND_API_BASE` |
+| Docker Compose の web 公開 port | `KJ_ATLAS_WEB_PORT` |
+| Docker Compose の PostgreSQL 入力 | `KJ_ATLAS_POSTGRES_DB`, `KJ_ATLAS_POSTGRES_USER`, `KJ_ATLAS_POSTGRES_PASSWORD` |
+
+### Private Adapter Boundary
+
+第三者コンテナやビルドツールが内部的に別名を要求する場合がある。
+
+この場合でも、利用者・運用者に公開する kj-atlas の入力は `KJ_ATLAS_*` のままとする。内部名への写像は private adapter boundary として扱い、公開設定とはみなさない。
+
+例:
+
+- Docker Compose の PostgreSQL image へ渡す `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+- frontend build tool の内部処理で使われる互換 shim
+
+これらは利用者が直接設定する kj-atlas の公開キーではない。公開文書では、正規キーと内部写像の境界を明示する。
+
+## Non-Goals
+
+- 既存の安全既定値を変更しない。
+- SafeMode、共有前確認、LLM opt-in、audit 連携、access control の方針をこの ADR では変更しない。
+- 第三者コンテナ内部から非 `KJ_ATLAS_*` 名を完全に排除する deployment 再設計は、この ADR の範囲外とする。採用する場合は別 ADR で扱う。
 
 ## Consequences
 
-期待効果:
+期待される効果:
 
-- 設定契約の単純化（運用ミス余地の削減）。
-- 旧キー由来の衝突リスクの排除。
-- 参照ドキュメントの命名規約統一。
+- 設定値の所有境界が明確になる。
+- 誤接続、誤送信、別アプリ設定の混入を減らせる。
+- 公開文書、runtime registry、backend settings、Compose 入力の対応を監査しやすくなる。
 
-副作用/制約:
+制約:
 
-- 旧キー依存環境は起動失敗する。
-- 設定変更は関連ドキュメント・実装・テストの同時更新を要する。
+- 旧キーを使っていた環境は起動時に修正が必要になる。
+- 設定変更時は、実装、設計文書、公開文書、テストを同時に更新する必要がある。
+- 第三者コンテナ内部名を公開設定と誤読しないよう、文書で private adapter boundary を維持する必要がある。
 
-## Separation of concerns（ADRとIssueの役割分離）
+## Verification Expectations
 
-- 本ADRは「長期的に維持する意思決定（What/Why）」のみを保持する。
-- 実装順序、進捗、受入条件、具体タスク管理（How/When）は `ENV-ARCH-01` issue memo で管理する。
-- 進捗状態・未完タスクは本ADRへ追記しない。
+この ADR を維持するため、次を継続的に確認する。
 
-### ADRに書かない内容（Issueへ委譲）
+- backend settings が `KJ_ATLAS_*` の validation alias のみを公開入力として受け付ける。
+- frontend build が `KJ_ATLAS_FRONTEND_API_BASE` を正規キーとして扱う。
+- Docker Compose の利用者入力が `KJ_ATLAS_*` のみである。
+- `04_Documentation/configuration.md` と `02_Architecture/runtime_parameter_registry.md` が同じ公開キー集合を説明している。
+- 旧キー名は、拒否対象、履歴説明、private adapter boundary の説明としてのみ現れる。
 
-- 実装チェックリスト（`[ ]` 形式の作業項目）
-- 期日・担当者アサイン・進捗率
-- テスト実行ログ、PR単位の作業メモ、日次の運用記録
+## Separation of Concerns
+
+この ADR は、長期的に維持する意思決定を記録する。
+
+実装作業、検証ログ、Done 判定、残タスクは issue memo で管理する。
+
+- Execution tracking: `01_Plans/issues/issue-ENV-ARCH-01-global-env-prefix-migration.md`
+- Runtime contract tracking: `01_Plans/issues/issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md`
+- Policy SSOT: `02_Architecture/runtime_parameter_registry.md`
 
 ## Traceability
 
-- Policy SSOT: `02_Architecture/runtime_parameter_registry.md`
-- Execution tracking: `01_Plans/issues/issue-ENV-ARCH-01-global-env-prefix-migration.md`
 - Derived-from: `01_Plans/adr/ADR-0001-value-to-requirements.md`
+- Related: `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md`
