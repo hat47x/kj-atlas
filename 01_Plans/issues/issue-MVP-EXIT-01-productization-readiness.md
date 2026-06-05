@@ -8,7 +8,7 @@
 - Owner: Codex
 - Scope: `00_Prompt/`, `01_Plans/`, `02_Architecture/`, `03_Implement/`, `04_Documentation/`
 - Related Backlog: `MVP-EXIT-01`
-- Related ADR/Spec: `README.md`, `ROADMAP.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0005-phase2-qualitative-integration.md`, `01_Plans/adr/ADR-0006-phase3-review-governance.md`, `02_Architecture/architecture.md`, `02_Architecture/enterprise_architecture.md`, `04_Documentation/public_index.md`
+- Related ADR/Spec: `README.md`, `ROADMAP.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0005-phase2-qualitative-integration.md`, `01_Plans/adr/ADR-0006-phase3-review-governance.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/architecture.md`, `02_Architecture/enterprise_architecture.md`, `02_Architecture/data_model_operations_overview.md`, `04_Documentation/public_index.md`
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）
@@ -918,3 +918,33 @@
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next release-candidate evidence review.
 - Re-decision date: after screenshot approval, physical-keyboard acceptance, product value Open-gate approvals, full Compose startup evidence, support diagnostics/recovery rehearsal, or a material runtime/product change reaches `main`.
+
+## MVP-EXIT Program Gate Decision 2026-06-06: high-privilege data lifecycle boundary intake
+
+- Candidate: `origin/main@cde40a54f75883876b51225b75670dd4f2f2cae6`
+- Decision date: 2026-06-06
+- Reviewer: Codex
+- Input sources:
+  - `ADR-0035-privileged-data-lifecycle-boundary.md`: Proposed boundary for high-privilege data lifecycle operations.
+  - `DATA-MAINT-03`: high-privilege operation classification, decision handoff matrix, and `DecisionStatus=Pending`.
+  - `DATA-MAINT-04`: Draft candidate for metadata-only audit viewing.
+  - `data_model_operations_overview.md`: MVP data support levels, CRUD boundary, and stakeholder maintenance responsibilities.
+  - `PRODUCT-QA-01` and previous MVP-EXIT gate records through post-2318/post-2329 planning evidence.
+
+### Decision
+
+- Final: **Conditional Go for high-privilege data lifecycle boundary intake / No-Go for full release shipment**
+- Reason summary: The project now has a clear proposed boundary that deletion, archive, ownership transfer, admin body browsing, cross-document body search, and retention automation are not hidden MVP omissions. They are high-privilege lifecycle decisions that must remain outside the standard product path unless a later ADR accepts them. This reduces productization ambiguity, but it does not create shipment approval because `ADR-0035` is still Proposed, `DATA-MAINT-03` remains Pending, `DATA-MAINT-04` remains Draft, and organizations that require these operations may still need them as explicit release conditions.
+- Escalation route: keep high-privilege lifecycle operations routed through `ADR-0035` and `DATA-MAINT-03`. Do not treat admin mutation APIs, admin body browsing, deletion, archive, ownership transfer, or retention automation as implementation-ready from this Program Gate entry.
+
+### Conditional controls
+
+- Remaining risks:
+  - `ADR-0035` still requires Project Maintainer acceptance before `DATA-MAINT-03` can move from `DecisionStatus=Pending` to `Fixed`.
+  - `DATA-MAINT-04` is only a Draft candidate for metadata-only audit viewing and must not expand into body browsing, cross-search, retention, deletion, or ownership transfer without separate ADR work.
+  - A deployment organization may still require deletion, archive, ownership transfer, retention automation, or admin body access before production use; if so, those requirements must return to `PRODUCT-QA-01` / this issue as release blockers.
+  - This intake changes no API, UI, CLI, runtime behavior, SafeMode default, share/export behavior, or public documentation.
+  - Full shipment still requires product value evidence, release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, and final program approval.
+- Owner: Codex for evidence maintenance; Project Maintainers for `ADR-0035`; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next data-lifecycle or release-candidate gate review.
+- Re-decision date: after `ADR-0035` is accepted/rejected, after `DATA-MAINT-04` Open readiness is decided, or after a release candidate includes any high-privilege lifecycle operation.
