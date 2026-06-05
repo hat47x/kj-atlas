@@ -1426,3 +1426,53 @@ DoDテンプレ（Draft→Open）
 - Keep `PRODUCT-VALUE-01`, `PRODUCT-VALUE-02`, `PRODUCT-VALUE-03`, and `DOMAIN-EXPR-01` in their current issue states until Productization Program Owner / QA Lead acceptance turns the evidence packets into Open-gate release evidence.
 - Keep full release shipment No-Go until product value Open gates, full Compose startup, support diagnostics/recovery rehearsal, and final program approval are recorded together.
 - No ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, first-run product boundaries, schema/API responsibilities, environment naming policy, or release authority.
+
+## Productization Gate Record 2026-06-06: post-2329 internal evidence and governance sync
+
+- Candidate: `origin/main@cde40a54f75883876b51225b75670dd4f2f2cae6`
+- Decision date (JST): 2026-06-06
+- Reviewer: Codex
+- Scope: post-merge sync after #2319 through #2329 landed on `main`. This record incorporates PRODUCT-VALUE evidence intake, DOMAIN-EXPR open-gate synchronization, PROJECT-BASELINE updates, and PROJECT-GOV branch/PR governance checkpoints. It does not change runtime behavior, UI copy, SafeMode defaults, schema/API contracts, public documentation, branch deletion state, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Latest main is `cde40a54f75883876b51225b75670dd4f2f2cae6`; #2329 is closed and merged; active issue validation passes; triage has no stopper.
+- G1 safety defaults: Unchanged / Conditional Go. The merged sync PRs do not change SafeMode, share/export, import sanitize, access-control runtime behavior, or public exposure defaults.
+- G2 primary user operations: Unchanged / Conditional Go. No new UI implementation or user-flow runtime evidence was merged after the post-2318 record.
+- G3 Japanese UI / i18n: Unchanged / Conditional Go. No UI strings changed in the post-2318 internal evidence/governance sync.
+- G4 viewport and operability: Unchanged / Conditional Go. No new screenshot approval, viewport matrix, or physical-keyboard evidence was added after the post-2318 record.
+- G5 public documentation and configuration contract: Unchanged / Conditional Go. No public documentation publication, screenshot publication approval, or runtime configuration change occurred in this sync.
+- G6 diagnostics and support: Unchanged / Conditional Go. No support diagnostics bundle policy or operational recovery rehearsal was completed in this sync.
+- G7 regression: Go for this delta. The post-2318 to post-2329 changes are internal planning/evidence records, and each PR-level CI check succeeded before merge. Full release-candidate regression was not rerun because no implementation files changed in the post-2329 delta.
+- E1..E3 environment contract: Unchanged / Conditional Go. Full Docker Compose startup and environment rehearsal remain required.
+- Value gates: No-Go for full shipment. `PRODUCT-VALUE-01` and `PRODUCT-VALUE-03` now have clearer mainline evidence intake; `PRODUCT-VALUE-02` has a clearer evidence gap record; `DOMAIN-EXPR-01..04` now identify remaining acceptance and contract gates. None of these updates grants product-value Open status.
+- Final: **Conditional Go for post-2329 internal evidence/governance sync / No-Go for full release shipment**.
+
+### Evidence
+
+- Mainline intake:
+  - `git fetch origin main` updated `origin/main` to `cde40a54f75883876b51225b75670dd4f2f2cae6`.
+  - `git diff --name-status 4306ed1e687a8ae20f1298c5c36c104b8e6edc6f..origin/main` -> only `issue-PROJECT-BASELINE-01-latest-mainline-health-baseline.md`.
+- Incorporated mainline PRs after the post-2318 record:
+  - #2319 `[codex] Record post-2318 mainline gate sync`
+  - #2320 `[codex] Record PRODUCT-VALUE-01 mainline evidence intake`
+  - #2321 `[codex] Record PRODUCT-VALUE-03 mainline evidence intake`
+  - #2322 `[codex] Record DOMAIN-EXPR-01 mainline evidence intake`
+  - #2323 `[codex] Record PRODUCT-VALUE-02 evidence gap sync`
+  - #2324 `[codex] Record DOMAIN-EXPR-02 open gate sync`
+  - #2325 `[codex] Record DOMAIN-EXPR-03 open gate sync`
+  - #2326 `[codex] Record DOMAIN-EXPR-04 open gate sync`
+  - #2327 `[codex] Record post-2326 mainline baseline sync`
+  - #2328 `[codex] Record post-2327 project governance checkpoint`
+  - #2329 `[codex] Record post-2328 baseline governance sync`
+- Local planning checks:
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` -> pass (`active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none`).
+
+### Follow-ups
+
+- Keep product-value Open decisions routed through `PRODUCT-VALUE-01..03`; evidence intake alone is not release approval.
+- Keep DOMAIN-EXPR implementation decisions routed through `DOMAIN-EXPR-01..04`; schema, SafeMode/share-export, and AI authority changes still require their issue/ADR gates.
+- Keep H-UI-01 screenshot approval and H-UI-02 final physical-keyboard traversal human-owned.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, and final program approval are recorded together.
+- No ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, product-value authority, schema/API responsibilities, environment naming policy, branch deletion policy, or release authority.
