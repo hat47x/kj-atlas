@@ -1476,3 +1476,39 @@ DoDテンプレ（Draft→Open）
 - Keep H-UI-01 screenshot approval and H-UI-02 final physical-keyboard traversal human-owned.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, and final program approval are recorded together.
 - No ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, product-value authority, schema/API responsibilities, environment naming policy, branch deletion policy, or release authority.
+
+## Productization Gate Record 2026-06-06: post-2332 high-privilege lifecycle and audit-readiness sync
+
+- Candidate: `origin/main@ed29ea9049cc7879ce3ea964b4b12dcacc60ae10`
+- Decision date (JST): 2026-06-06
+- Reviewer: Codex
+- Scope: post-merge sync after #2330, #2331, and #2332 landed on `main`. #2330 refreshed this issue through the post-2329 internal evidence/governance state, #2331 added an MVP-EXIT Program Gate entry for the high-privilege data lifecycle boundary, and #2332 clarified the `DATA-MAINT-04` Open-readiness decision packet for metadata-only audit viewing. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, ADR status, or release authority.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Latest main includes the post-2329 PRODUCT-QA refresh, the MVP-EXIT high-privilege lifecycle boundary intake, and the DATA-MAINT-04 Open-readiness decision packet; active issue validation and triage remain the required local checks for this docs-only delta.
+- G1 safety defaults: Conditional Go / unchanged. `ADR-0035` remains Proposed and keeps deletion, archive, ownership transfer, admin body browsing, cross-document body search, and retention automation outside the standard product path unless later ADR work accepts them.
+- G5 public documentation and configuration contract: Unchanged / Conditional Go. #2331 does not publish or change public documentation; it only clarifies program-gate interpretation of the internal data-lifecycle boundary.
+- G6 diagnostics and support: Conditional Go. Metadata-only audit viewing remains routed through `DATA-MAINT-04` as a Draft candidate with A1 share/export event lookup identified as the narrow first human-decision candidate. Support/admin body browsing, body search, and metadata-sharing standard paths are not implementation-authorized.
+- G7 regression: Go for this delta. The merged changes are internal issue records only, and #2330/#2331 CI succeeded before merge. Full release-candidate regression was not rerun because no implementation files changed.
+- Value/data lifecycle gates: Conditional Go for boundary clarity / No-Go for full shipment. The project can now treat high-privilege lifecycle operations as explicit product-boundary decisions rather than hidden MVP omissions, but `ADR-0035` is still Proposed, `DATA-MAINT-03` is still Pending, and `DATA-MAINT-04` is still Draft.
+- Final: **Conditional Go for post-2332 high-privilege lifecycle and audit-readiness sync / No-Go for full release shipment**.
+
+### Evidence
+
+- Incorporated PRs:
+  - #2330 `[codex] Record post-2329 product QA gate sync`
+  - #2331 `[codex] Record MVP exit data lifecycle boundary sync`
+  - #2332 `[codex] Clarify DATA-MAINT-04 open readiness decisions`
+- Mainline decision inputs:
+  - MVP-EXIT Program Gate Decision `2026-06-06: high-privilege data lifecycle boundary intake`
+  - `ADR-0035-privileged-data-lifecycle-boundary.md` remains `Proposed`
+  - `DATA-MAINT-03` remains `DecisionStatus=Pending`
+  - `DATA-MAINT-04` remains Draft with the 2026-06-06 human decision packet on `main`
+
+### Follow-ups
+
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- If a deployment organization requires deletion, archive, ownership transfer, retention automation, admin body browsing, or cross-document body search before production use, route that requirement back through `ADR-0035` or a successor ADR and then through this release gate.
+- Do not treat metadata-only audit viewing as implementation-ready until `DATA-MAINT-04` leaves Draft through the documented Open readiness path.
+- No new ADR is needed for this sync. ADR work is required only if the project changes the high-privilege lifecycle boundary, SafeMode/share-export policy, schema/API responsibilities, or release authority.
