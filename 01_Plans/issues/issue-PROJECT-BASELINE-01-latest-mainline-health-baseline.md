@@ -843,6 +843,54 @@
 
 ---
 
+## 24) Baseline delta 2026-06-06: post-2328 governance-only sync
+
+### Candidate
+
+- Target main: `origin/main` = `4306ed1e687a8ae20f1298c5c36c104b8e6edc6f`
+- Previous recorded mainline baseline: `origin/main@ba66911b55e70adff946e11fea7eecacd841807a` in section 23.
+- Merged PR in this sync: #2328.
+- Scope note: this delta incorporates the PROJECT-GOV post-2327 convergence checkpoint only. It does not change runtime behavior, UI copy, SafeMode defaults, schema/API contracts, public documentation, release authority, branch deletion state, or Compose configuration.
+- Executor: Codex
+- Environment: Windows / PowerShell / backend virtualenv Python / GitHub connector for PR and open-PR inspection / RTK used for compact status output where exact output was not required.
+
+### Command and PR evidence
+
+| Area | Command or source | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git fetch origin main`; `git rev-parse origin/main`; `git diff --name-status 0161e54f191ba2600796680bf605ec571d948b94..origin/main` | Pass: latest `origin/main` is `4306ed1e687a8ae20f1298c5c36c104b8e6edc6f`; changed path is limited to `issue-PROJECT-GOV-01-mainline-convergence-and-branch-hygiene.md` | G0 / G7 |
+| Open PR inspection | GitHub connector search for `repo:hat47x/kj-atlas is:pr is:open` | Pass: no open PRs | G0 |
+| PR #2328 inspection | GitHub connector `_get_pr_info` | Pass: #2328 is closed and merged as `4306ed1e687a8ae20f1298c5c36c104b8e6edc6f` | G0 |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Gate classification
+
+| Gate | 2026-06-06 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, open-PR inspection, #2328 merge inspection, active issue validation, and triage pass with no stopper. |
+| G1 safety defaults | Unchanged / Conditional Go | #2328 records governance state only and does not change SafeMode, share/export, import sanitize, access-control runtime behavior, or public exposure defaults. |
+| G2 primary user operations | Unchanged / Conditional Go | No UI implementation or user-flow evidence was merged in this delta. |
+| G3 Japanese UI / i18n | Unchanged / Conditional Go | No UI strings changed in this delta. |
+| G4 viewport and operability | Unchanged / Conditional Go | No screenshot, viewport matrix, or physical-keyboard evidence was added. |
+| G5 public docs and config | Unchanged / Conditional Go | No public documentation publication or runtime configuration change occurred in this delta. |
+| G6 diagnostics and support | Unchanged / Conditional Go | No support diagnostics bundle policy or operational recovery rehearsal was completed in this sync. |
+| G7 regression | Go for this delta | The diff is limited to one internal governance issue record; planning validation and triage pass. Full frontend/backend regression is not rerun because no implementation files changed. |
+| E1..E3 environment contract | Unchanged / Conditional Go | Full Docker Compose startup and environment rehearsal remain outside this governance-only sync. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the post-2328 governance-only sync.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, and final program approval are recorded together.
+- Follow-up routing:
+  - Branch deletion or remote cleanup: repository maintainer-owned action routed through `PROJECT-GOV-01`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - DOMAIN-EXPR Phase 1 acceptance and schema/interaction decisions: `DOMAIN-EXPR-01..04`.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Full Compose startup and environment rehearsal: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
