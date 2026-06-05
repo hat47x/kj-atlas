@@ -135,7 +135,7 @@
   - `DATA-07-1`: Provider設定を保持しつつ既定値は無効（none）にする。
   - `DATA-07-2`: 最小限の利用監査情報を記録可能にする。
 - AI
-  - `AI-07-1`: 既定値は `LLM_PROVIDER=none` を維持する。
+  - `AI-07-1`: 既定値は `KJ_ATLAS_LLM_PROVIDER=none` を維持する。
   - `AI-07-2`: 外部Providerは明示設定時のみ利用する。
 
 ---
