@@ -142,6 +142,21 @@
 - Support または Platform operator が、利用者本文、未レビュー情報、Document JSON全体、review pack本文、diff本文を標準導線で閲覧できる。
 - 監査メタデータを外部へ共有する標準導線を製品が持つ。必要な場合は目的、共有先、除外項目、記録、無効化手順を別ADRで固定する。
 
+## 6.3) Open化前の人間判断パケット（2026-06-06）
+
+本IssueはまだDraftであり、以下は実装許可ではない。`ADR-0035` がAcceptedまたは同等ADRで置き換えられた後、Security officer / Productization Program Owner / Project Maintainers がOpen化可否を短時間で判断できるようにするための確認パケットである。
+
+| 判断項目 | 推奨初期値 | 人間が確認すること | 未確認時の扱い |
+| --- | --- | --- | --- |
+| Open化可否 | Hold | `ADR-0035` の境界がAccepted済みであり、本文を含まない監査メタデータ閲覧だけを検討対象にしてよいか | Draft継続 |
+| 最初の候補 | A1 share/export event lookup | 共有/エクスポートの安全境界確認が、本文閲覧なしでも運用価値を持つか | 候補未選択として分割しない |
+| 提供面 | APIまたはCLI優先、UIは後続 | 管理画面を先に作る必要があるか。UIを持つ場合はマウス/キーボード/e2e証跡を用意できるか | UI着手不可 |
+| 閲覧主体 | Audit operator / Security officer | SupportやPlatform operatorを本文閲覧主体にしないことで運用上問題がないか | Support向け本文閲覧要求は別ADR |
+| 返却項目 | A1-A4の許可項目に限定 | `policyRef` 生値、roles/groups生値、IdP subject、本文、diff、review pack本文が返らないこと | integration未達 |
+| リリースゲート扱い | 製品境界 / 条件付き証跡 | 監査メタデータ閲覧の未実装を単独No-Goにしないか、導入組織が必須とするか | `PRODUCT-QA-01` / `MVP-EXIT-01` へ戻す |
+
+初期実装候補を選ぶ場合は、A1だけを独立issueに分割する。A2-A4、UI、外部監査連携、メタデータ共有導線は同じPRに混ぜない。A1であっても、検索条件に本文語句を受け付ける、review pack本文を返す、共有先の個人情報を返す、またはSupport向け標準導線にする場合は、本Issueでは進めず別ADRを先行する。
+
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
