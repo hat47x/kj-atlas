@@ -667,6 +667,65 @@
 
 ---
 
+## Post-2327 convergence checkpoint
+
+- Checkpoint date (JST): 2026-06-06
+- Latest main: `origin/main@0161e54f191ba2600796680bf605ec571d948b94`
+- Remote branch count: 2327
+- `origin/codex/` remote branch count: 2303
+- GitHub open PR search result: `0`
+- Internal issue triage:
+  - `active_issues=52`
+  - `ready=15`
+  - `blocked=37`
+  - `actionable_adrs=1`
+  - stopper: none
+- Scope: refreshes branch/PR governance after #2319 through #2327 were merged. This checkpoint does not delete remote branches, close PRs, change ADR status, change runtime behavior, or approve release readiness.
+
+### Merged lane result
+
+| PR | Former branch | Merge result | Governance outcome |
+| --- | --- | --- | --- |
+| #2319 | `codex/post-2318-mainline-gate-sync-20260604` | Merged as `d1dfa3a0c50892d8d7aa354a5e83ba760e043919` | Post-2318 PRODUCT-QA, MVP-EXIT, PROJECT-BASELINE, and PROJECT-GOV gate sync is canonical on `main`. |
+| #2320 | `codex/product-value-01-mainline-evidence-intake-20260604` | Merged as `70b6269a24d01c6f4b386e5b7a724738dd02e2bd` | PRODUCT-VALUE-01 mainline evidence intake is canonical; product-value acceptance remains Draft-gated. |
+| #2321 | `codex/product-value-03-mainline-evidence-intake-20260604` | Merged as `3037f4ae80d75eb1957f81d3d1039f8ffdaa94b7` | PRODUCT-VALUE-03 mainline evidence intake is canonical; reviewable outcome acceptance remains Draft-gated. |
+| #2322 | `codex/domain-expr-01-mainline-evidence-intake-20260604` | Merged as `8f3ea92a36d080f278931393e727abf242ce6fb5` | DOMAIN-EXPR-01 mainline evidence intake is canonical; Phase 1 acceptance remains Draft-gated. |
+| #2323 | `codex/product-value-02-evidence-gap-sync-20260604` | Merged as `0133c744b60e4cc5f0c48435a62c72fbb5ca9f52` | PRODUCT-VALUE-02 evidence gap sync is canonical; implementation remains gated by a complete value evidence packet. |
+| #2324 | `codex/domain-expr-02-open-gate-sync-20260604` | Merged as `ba66911b55e70adff946e11fea7eecacd841807a` | DOMAIN-EXPR-02 open-gate sync is canonical; Hold/Shelf schema and workflow implementation remain unapproved. |
+| #2325 | `codex/domain-expr-03-open-gate-sync-20260604` | Merged as `5b2aeb90ef7514797856b3bab57b74970d6bb9fc` | DOMAIN-EXPR-03 open-gate sync is canonical; critique/reproposal contracts remain pending. |
+| #2326 | `codex/domain-expr-04-open-gate-sync-20260604` | Merged as `7bc630e50882985defeccc635bef6f61210942e3` | DOMAIN-EXPR-04 open-gate sync is canonical; evidence/claim/contradiction implementation remains contract-gated. |
+| #2327 | `codex/project-baseline-post-2326-sync-20260606` | Merged as `0161e54f191ba2600796680bf605ec571d948b94` | PROJECT-BASELINE post-2326 internal evidence sync is canonical on `main`. |
+
+### Cleanup candidate table
+
+| Branch | Current classification | Cleanup recommendation |
+| --- | --- | --- |
+| `origin/codex/post-2318-mainline-gate-sync-20260604` | merged internal gate sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/product-value-01-mainline-evidence-intake-20260604` | merged product-value evidence intake | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/product-value-03-mainline-evidence-intake-20260604` | merged product-value evidence intake | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/domain-expr-01-mainline-evidence-intake-20260604` | merged domain-expression evidence intake | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/product-value-02-evidence-gap-sync-20260604` | merged product-value gap sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/domain-expr-02-open-gate-sync-20260604` | merged domain-expression open-gate sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/domain-expr-03-open-gate-sync-20260604` | merged domain-expression open-gate sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/domain-expr-04-open-gate-sync-20260604` | merged domain-expression open-gate sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/project-baseline-post-2326-sync-20260606` | merged latest-main baseline sync | Delete only after repository maintainer confirms no post-merge audit need. |
+
+### Decision
+
+- The post-2318 and post-2326 internal evidence lane is converged into `main`; the GitHub connector reports no open PRs.
+- No branch deletion, PR closure, rerun, ADR status change, implementation authorization, or release approval is executed from this checkpoint.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene; this update only records the changed repository state.
+- Full release shipment remains No-Go until product-value Open gates, release-candidate screenshot and physical-keyboard approval, full regression evidence, Compose startup evidence, support diagnostics/recovery rehearsal, and final program approval are recorded together.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@0161e54f191ba2600796680bf605ec571d948b94`.
+2. Treat #2319..#2327 as mainline evidence, not open candidate PR evidence.
+3. Keep branch deletion as a maintainer-approved repository maintenance action. The table above is an audit aid, not execution permission.
+4. Route product-value and domain-expression implementation decisions through their Draft issues before changing schema, SafeMode/share-export behavior, or AI authority.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
