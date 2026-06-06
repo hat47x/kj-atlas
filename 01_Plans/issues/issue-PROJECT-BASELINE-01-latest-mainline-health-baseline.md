@@ -891,6 +891,68 @@
 
 ---
 
+## 25) Baseline delta 2026-06-06: post-2336 environment-contract and governance sync
+
+### Candidate
+
+- Target main: `origin/main` = `a8d9ce08cb9a6597661df4902d53ee17e18f6279`
+- Previous recorded mainline baseline: `origin/main@4306ed1e687a8ae20f1298c5c36c104b8e6edc6f` in section 24.
+- Merged PRs in this sync: #2329, #2330, #2331, #2332, #2333, #2334, #2335, and #2336.
+- Scope note: this delta incorporates release-gate records, high-privilege data lifecycle boundary intake, `DATA-MAINT-04` decision-packet clarification, `ADR-0021` readability restoration, historical ADR `KJ_ATLAS_*` key-name normalization, and PROJECT-GOV mainline checkpoint evidence. It does not change runtime behavior, UI copy, SafeMode defaults, schema/API contracts, public documentation, release authority, branch deletion state, or Compose configuration.
+- Executor: Codex
+- Environment: Windows / PowerShell / backend virtualenv Python / GitHub connector for open-PR inspection / RTK used for compact status output where exact output was not required.
+
+### Command and PR evidence
+
+| Area | Command or source | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git fetch --prune origin`; `git rev-parse origin/main`; `git log --merges --oneline 4306ed1e687a8ae20f1298c5c36c104b8e6edc6f..origin/main` | Pass: latest `origin/main` is `a8d9ce08cb9a6597661df4902d53ee17e18f6279`; #2329 through #2336 are now merged on main | G0 |
+| Mainline diff boundary | `git diff --name-status 4306ed1e687a8ae20f1298c5c36c104b8e6edc6f..origin/main` | Pass for intake: changed paths are limited to ADRs and internal issue records | G0 / G5 / G7 |
+| Open PR inspection | GitHub connector search for `repo:hat47x/kj-atlas is:pr is:open` | Pass: no open PRs after closing superseded draft #2337 without merge | G0 |
+| Historical env-key scan | `rg --pcre2 -n '(?<!KJ_ATLAS_)(DATABASE_URL|LLM_PROVIDER|LLM_ESCALATION_ENABLED|LLM_LARGE_SCALE_OPT_IN)' <target ADR files>` | Pass: no matches in the normalized ADR set | E1..E3 |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Incorporated mainline changes
+
+| PR | Baseline impact |
+| --- | --- |
+| #2329 | Records the post-2328 PROJECT-BASELINE governance-only sync. |
+| #2330 | Records PRODUCT-QA post-2329 release-gate synchronization. |
+| #2331 | Records MVP-EXIT intake for the high-privilege data lifecycle boundary. |
+| #2332 | Clarifies `DATA-MAINT-04` Open-readiness decisions for metadata-only audit viewing. |
+| #2333 | Records PRODUCT-QA post-2332 data-lifecycle and audit-readiness synchronization. |
+| #2334 | Restores `ADR-0021` as the readable source of truth for the no-exception public `KJ_ATLAS_*` configuration policy. |
+| #2335 | Normalizes older accepted ADR examples to the current `KJ_ATLAS_*` environment-variable names. |
+| #2336 | Records the PROJECT-GOV post-2334 mainline convergence checkpoint and branch-cleanup candidate evidence. |
+
+### Gate classification
+
+| Gate | 2026-06-06 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, merged-PR review, open-PR inspection, active issue validation, and triage pass with no stopper. |
+| G1 safety defaults | Unchanged / Conditional Go | The sync changes decision records and issue evidence only; SafeMode, share/export, import sanitize, access-control runtime behavior, and public exposure defaults are unchanged. |
+| G2 primary user operations | Unchanged / Conditional Go | No UI implementation or user-flow runtime evidence was merged in this delta. |
+| G3 Japanese UI / i18n | Unchanged / Conditional Go | No UI strings changed in this delta. |
+| G4 viewport and operability | Unchanged / Conditional Go | No screenshot, viewport matrix, or physical-keyboard evidence was added. |
+| G5 public docs and config | Conditional Go | `ADR-0021` and historical ADR examples now align with the current `KJ_ATLAS_*` public configuration contract, but public publication approval and full runtime rehearsal remain separate gates. |
+| G6 diagnostics and support | Unchanged / Conditional Go | No support diagnostics bundle policy or operational recovery rehearsal was completed in this sync. |
+| G7 regression | Go for this delta | The diff is limited to ADRs and internal issue records; planning validation and triage pass. Full frontend/backend regression is not rerun because no implementation files changed. |
+| E1..E3 environment contract | Conditional Go | The documented public env-var naming contract is cleaner after #2334/#2335, but Docker-capable `docker compose config`, full Compose startup, and environment rehearsal remain required. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the post-2336 environment-contract and governance sync.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- Follow-up routing:
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - High-privilege lifecycle decisions: `ADR-0035`, `DATA-MAINT-03`, and `DATA-MAINT-04`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - Branch cleanup after merged PRs: `PROJECT-GOV-01`.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。

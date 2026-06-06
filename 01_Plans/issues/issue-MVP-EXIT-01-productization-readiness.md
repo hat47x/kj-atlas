@@ -948,3 +948,34 @@
 - Owner: Codex for evidence maintenance; Project Maintainers for `ADR-0035`; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next data-lifecycle or release-candidate gate review.
 - Re-decision date: after `ADR-0035` is accepted/rejected, after `DATA-MAINT-04` Open readiness is decided, or after a release candidate includes any high-privilege lifecycle operation.
+
+## MVP-EXIT Program Gate Decision 2026-06-06: post-2336 environment-contract and governance sync
+
+- Candidate: `origin/main@a8d9ce08cb9a6597661df4902d53ee17e18f6279`
+- Decision date: 2026-06-06
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-06: post-2336 environment-contract and governance sync`.
+  - PROJECT-BASELINE-01 record: `Baseline delta 2026-06-06: post-2336 environment-contract and governance sync`.
+  - ENV-CONFIG-DRIFT-01 records for `ADR-0021` readability and historical ADR env-key normalization.
+  - PROJECT-GOV-01 record: `Post-2334 convergence checkpoint`.
+  - Merged PRs: #2333, #2334, #2335, and #2336.
+
+### Decision
+
+- Final: **Conditional Go for post-2336 environment-contract and governance sync / No-Go for full release shipment**
+- Reason summary: The latest `main` improves release-readiness evidence by making the accepted `KJ_ATLAS_*` public configuration policy easier to read, aligning older accepted ADR examples with the current key names, and recording the post-2334 branch/governance checkpoint. This reduces configuration-contract ambiguity and mainline-management risk, but it does not create shipment approval because no full Compose startup, operator rehearsal, product value Open-gate acceptance, support diagnostics/recovery rehearsal, or final program approval was completed.
+- Escalation route: keep `PRODUCT-QA-01` as the release evidence steward, `PROJECT-BASELINE-01` as the mainline health record, `ENV-CONFIG-DRIFT-01` as the environment rehearsal lane, and `PROJECT-GOV-01` as the branch hygiene record. Productization Program Owner / QA Lead remain accountable for final shipment approval.
+
+### Conditional controls
+
+- Remaining risks:
+  - `docker compose config`, full Compose startup, and environment rehearsal are still required before environment-contract readiness can become final release evidence.
+  - Public env-var documentation and ADR consistency do not by themselves validate deployment behavior.
+  - Product value evidence packets and Open-gate acceptance remain required before shipment.
+  - High-privilege lifecycle decisions remain gated by `ADR-0035`, `DATA-MAINT-03`, and `DATA-MAINT-04`.
+  - Branch deletion and remote cleanup remain repository-maintainer actions and were not performed by this sync.
+  - This sync changes no API, UI, CLI, runtime behavior, SafeMode default, share/export behavior, or public documentation.
+- Owner: Codex for evidence maintenance; Platform Operator for environment rehearsal approval; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next environment-contract or release-candidate gate review.
+- Re-decision date: after Compose verification/startup evidence, product value Open-gate acceptance, high-privilege lifecycle boundary decisions, support diagnostics/recovery rehearsal, or a material runtime/product change reaches `main`.

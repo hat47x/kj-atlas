@@ -1512,3 +1512,39 @@ DoDテンプレ（Draft→Open）
 - If a deployment organization requires deletion, archive, ownership transfer, retention automation, admin body browsing, or cross-document body search before production use, route that requirement back through `ADR-0035` or a successor ADR and then through this release gate.
 - Do not treat metadata-only audit viewing as implementation-ready until `DATA-MAINT-04` leaves Draft through the documented Open readiness path.
 - No new ADR is needed for this sync. ADR work is required only if the project changes the high-privilege lifecycle boundary, SafeMode/share-export policy, schema/API responsibilities, or release authority.
+
+## Productization Gate Record 2026-06-06: post-2336 environment-contract and governance sync
+
+- Candidate: `origin/main@a8d9ce08cb9a6597661df4902d53ee17e18f6279`
+- Decision date (JST): 2026-06-06
+- Reviewer: Codex
+- Scope: post-merge sync after #2333, #2334, #2335, and #2336 landed on `main`. This record incorporates the post-2332 PRODUCT-QA data-lifecycle sync, `ADR-0021` readability restoration, historical ADR `KJ_ATLAS_*` key normalization, and the PROJECT-GOV post-2334 checkpoint. It does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, ADR status, branch deletion state, or release authority.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Latest main is `a8d9ce08cb9a6597661df4902d53ee17e18f6279`, open PR inspection returns none, active issue validation passes, and triage has no stopper.
+- G1 safety defaults: Unchanged / Conditional Go. The merged records do not change SafeMode, share/export, import sanitize, access-control runtime behavior, or public exposure defaults.
+- G5 public documentation and configuration contract: Conditional Go. `ADR-0021` is readable again as the accepted no-exception `KJ_ATLAS_*` public env-var policy, and older accepted ADR examples now use the current key names. Public publication approval and full runtime rehearsal remain separate gates.
+- G6 diagnostics and support: Unchanged / Conditional Go. No support diagnostics bundle policy, metadata-only audit implementation, or recovery rehearsal was completed in this sync.
+- G7 regression: Go for this delta. The changed paths are ADRs and internal issue records only; planning validation and triage pass. Full release-candidate regression was not rerun because no implementation files changed.
+- E1..E3 environment contract: Conditional Go. The decision-record layer is now more consistent with the `KJ_ATLAS_*` runtime contract, but Docker-capable `docker compose config`, full Compose startup, and operator rehearsal remain required.
+- Final: **Conditional Go for post-2336 environment-contract and governance sync / No-Go for full release shipment**.
+
+### Evidence
+
+- Incorporated PRs:
+  - #2333 `[codex] Record post-2332 product QA data lifecycle sync`
+  - #2334 `[codex] Clarify env prefix ADR readability`
+  - #2335 `[codex] Normalize legacy ADR env references`
+  - #2336 `[codex] Record post-2334 project governance checkpoint`
+- Local planning checks:
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` -> pass (`active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none`).
+  - Targeted ADR env-key scan for `DATABASE_URL`, `LLM_PROVIDER`, `LLM_ESCALATION_ENABLED`, and `LLM_LARGE_SCALE_OPT_IN` without the `KJ_ATLAS_` prefix -> no matches in the normalized ADR set.
+
+### Follow-ups
+
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- Keep environment rehearsal under `ENV-CONFIG-DRIFT-01`; ADR/document consistency is not a substitute for Docker-capable Compose verification.
+- Keep branch deletion and remote cleanup human/repository-maintainer owned through `PROJECT-GOV-01`.
+- No new ADR is needed for this sync. ADR work is required only if the project changes the public env-var prefix policy, high-privilege lifecycle boundary, SafeMode/share-export policy, schema/API responsibilities, or release authority.
