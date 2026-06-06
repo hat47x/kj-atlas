@@ -1806,3 +1806,31 @@ DoDテンプレ（Draft→Open）
 - Keep physical keyboard acceptance, screen-reader acceptance, real Chrome visual review, and diagnostics wording review human-owned; automated Playwright is supporting evidence, not final release authority.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, hierarchy data contract, diagnostics metric contract, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-07: i18n parity and import validation rerun sync
+
+- Candidate: `origin/main@ec08690eb98124820dfbc946f202b081eb7a2c0d`.
+- Decision date (JST): 2026-06-07.
+- Reviewer: Codex.
+- Scope: targeted current-main rerun of `FB-RM-I18N-03` ja/en readOnly + SafeMode locked-context equivalence and `PRODUCT-UX-01` document import validation for invalid polygon fallback. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, or release authority.
+
+### Gate Summary
+
+- G1 safety defaults: Conditional Go improved for readOnly + SafeMode locked-context freshness. Current `main` reran and passed disabled layout suggestion checks and locked redaction-context copy visibility in both ja and en.
+- G2 primary user operations: Conditional Go improved for safe import/export freshness. Current `main` reran and passed file-picker import, replace confirmation, review-bundle export, and invalid polygon fallback persistence checks.
+- G3 Japanese UI / i18n: Conditional Go improved for functional parity. Automated ja/en equivalence passed for this readOnly + SafeMode path, while human translation-quality review remains separate.
+- G5 import/public compatibility: Conditional Go improved for malformed shape handling. The rerun confirms one invalid geometry case degrades safely, but it does not replace broader malicious ZIP/document security regression coverage.
+- G7 regression: Go for this targeted slice. The targeted Playwright pair passed locally; full release-candidate regression and Compose startup were not executed from this checkpoint.
+- Final: **Conditional Go for targeted i18n parity and import-validation evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Local E2E rerun:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/i18n_locale_functional_equivalence.spec.ts e2e/polygon_import_validation.spec.ts --reporter=line` -> pass, 2 tests.
+
+### Follow-ups
+
+- Keep human translation-quality review, real Chrome import-validation wording review, physical keyboard acceptance, and screen-reader acceptance human-owned; automated Playwright is supporting evidence, not final release authority.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, locale authority, import sanitization policy, malformed geometry contract, product-value authority, runtime environment policy, or release authority.
