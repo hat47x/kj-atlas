@@ -297,3 +297,22 @@ Open化ゲートを次の3カテゴリで固定する。
 - `cd 03_Implement/frontend && node .\node_modules\vitest\vitest.mjs run src/ui/ux_operability_regression.test.ts`
 - `python3 01_Plans/issues/validate_active_issue_memos.py`
 - `git diff --check -- 03_Implement/frontend/package.json 03_Implement/frontend/docs/e2e_testing.md 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
+
+## Stream H evidence rerun 2026-06-06: first-value user operation pair
+
+- Scope: current-main representative E2E evidence only. `Status=Draft (Open-Readiness Prepared / Execution Hold)` and `Execution: Hold` remain unchanged because Pending-1 / Pending-2 and release approval are still outside this rerun.
+- Candidate mainline: `origin/main@762aad281792a508034d0ba9715c77d2432d84b2`.
+- Execution path: SQLite/local frontend path with Vite started directly by bundled Node.js because this Codex host does not expose `npm` on PATH.
+- Command:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/keyboard_release_candidate_flow.spec.ts e2e/first_meaningful_map_mouse_flow.spec.ts --reporter=line`
+- Result: **pass, 2 tests**.
+
+### Gate consumption
+
+| Scenario | Evidence consumed | Gate impact | Still not covered |
+| --- | --- | --- | --- |
+| S1 Authoring Continuity | Mouse path opens the first-value sample, selects two cards, creates `Island 1`, and verifies the selected island context. | Improves G2 / V0 / V1 evidence on current `main`. | Human product-value acceptance and release screenshot bundle. |
+| S2 Review Governance | Keyboard path selects a card, reaches critique input, enters a critique note, and preserves focus after share panel close. | Improves G2 / V2 / V3 operability evidence. | Physical keyboard acceptance by UX reviewer. |
+| S3 Safe Sharing Gate | Keyboard path opens share preflight and verifies `セーフモード: ON`. | Improves G1 / G2 / V4 safety-entry evidence. | Full release-candidate share/export screenshot and program approval. |
+
+- Stopper classification: none introduced by this rerun. It is evidence-consumption only and does not change execution scope, product behavior, or public documentation.
