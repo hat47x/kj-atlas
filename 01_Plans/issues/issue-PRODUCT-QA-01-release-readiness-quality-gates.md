@@ -1752,3 +1752,30 @@ DoDテンプレ（Draft→Open）
 - Keep automated support bundle generation routed through `PRODUCT-OPS-02` and ADR review if bundle format, collection, transmission, support integration, or retention policy changes.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, diagnostics/support policy, automated support bundle policy, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-06: canvas and polygon operability rerun sync
+
+- Candidate: `origin/main@7472004655500e3f737e1ef1abd22577a1f9a56b`.
+- Decision date (JST): 2026-06-06.
+- Reviewer: Codex.
+- Scope: targeted current-main rerun of `UX-OPERABILITY-01` canvas pointer/keyboard selection, selection-context reachability, and polygon boundary edit evidence. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, or release authority.
+
+### Gate Summary
+
+- G2 primary user operations: Conditional Go improved for canvas manipulation freshness. Current `main` reran and passed card keyboard selection, island keyboard selection, selection-context panel reachability, polygon mouse drag, polygon keyboard nudge/delete, and polygon JSON persistence checks.
+- G4 viewport and operability: Conditional Go improved for focus-scope freshness. The rerun confirms representative Tab traversal from canvas objects into selected-card and selected-island panel actions, but it remains sampled evidence rather than exhaustive assistive-technology approval.
+- G7 regression: Go for this targeted slice. The targeted Playwright trio passed locally; full release-candidate regression and Compose startup were not executed from this checkpoint.
+- Canvas / polygon UX: Conditional Go for automated evidence freshness / No-Go for full release shipment. Physical keyboard acceptance, screen-reader acceptance, real Chrome visual review, and final program approval remain outside this automated rerun.
+- Final: **Conditional Go for targeted canvas and polygon operability evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Local E2E rerun:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/polygon_vertex_edit.spec.ts e2e/polygon_autofit_qa_boundary.spec.ts e2e/canvas_focus_order.spec.ts --reporter=line` -> pass, 6 tests.
+
+### Follow-ups
+
+- Keep physical keyboard acceptance, screen-reader acceptance, and real Chrome visual review human-owned; automated Playwright is supporting evidence, not final release authority.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, canvas interaction model, polygon data contract, product-value authority, runtime environment policy, or release authority.
