@@ -390,3 +390,15 @@
 - Verify: 上流契約とのドリフトなし。
 - Self-correction (<=3): 0回（修正不要）。
 - 報告: 次工程へ **Go**（下流は既存契約参照のみ許可）。
+
+## Current-main Evidence Refresh (2026-06-07)
+
+- Candidate: `origin/main@556d54e3b50fdb5d0cf5f875407056514108a745`.
+- Scope: targeted rerun of the AuthContext Level1 frontend smoke that keeps the read-only boundary visible without requiring Level2 IdP integration. This is an evidence refresh only; it does not change authentication policy, strict provisioning behavior, Level1/Level2 applicability, issue status, or release authority.
+- Command:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/auth_context_level1_smoke.spec.ts --reporter=line` -> pass, 1 test.
+- Evidence detail:
+  - Opened `?locale=en&readOnly=true`.
+  - Confirmed the read-only boundary message is visible.
+  - Confirmed Share & Reproduce remains visible, preserving a safe review/export entry point while editing actions are blocked.
+- Decision impact: Done status remains valid. No ADR is required because this refresh does not change AuthContext contract, strict-mode exception policy, IdP boundary, or reviewer/owner attribution semantics.

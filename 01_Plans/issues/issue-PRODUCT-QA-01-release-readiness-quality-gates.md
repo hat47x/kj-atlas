@@ -1834,3 +1834,30 @@ DoDテンプレ（Draft→Open）
 - Keep human translation-quality review, real Chrome import-validation wording review, physical keyboard acceptance, and screen-reader acceptance human-owned; automated Playwright is supporting evidence, not final release authority.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, locale authority, import sanitization policy, malformed geometry contract, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-07: CE3 workspace and Auth Level1 rerun sync
+
+- Candidate: `origin/main@556d54e3b50fdb5d0cf5f875407056514108a745`.
+- Decision date (JST): 2026-06-07.
+- Reviewer: Codex.
+- Scope: targeted current-main rerun of the CE3 patch workspace representative user path and AuthContext Level1 read-only boundary smoke. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, or release authority.
+
+### Gate Summary
+
+- G1 safety defaults: Conditional Go improved for read-only boundary freshness. Current `main` reran and passed the visible read-only message plus safe Share & Reproduce entry point in `?locale=en&readOnly=true`.
+- G2 primary user operations: Conditional Go improved for CE3 advanced-workspace freshness. Current `main` reran and passed document import, candidate collection, three-candidate comparison, adopt/reject decision independence, rollback recovery, preset save, preset replay, and reload persistence checks.
+- G4 viewport and operability: Conditional Go / sampled. The CE3 rerun exercises browser-visible controls and state feedback, but it does not replace physical keyboard, screen-reader, or full viewport acceptance.
+- G7 regression: Go for this targeted slice. The targeted Playwright pair passed locally; full release-candidate regression and Compose startup were not executed from this checkpoint.
+- Final: **Conditional Go for targeted CE3 workspace and Auth Level1 evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Local E2E rerun:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/ce3_patch_workspace.spec.ts e2e/auth_context_level1_smoke.spec.ts --reporter=line` -> pass, 2 tests.
+
+### Follow-ups
+
+- Keep physical keyboard acceptance, screen-reader acceptance, real Chrome CE3 visual review, Auth Level2 boundary evidence, and final program approval human-owned or separately gated; automated Playwright is supporting evidence, not final release authority.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, CE3 audit semantics, Core/Consensus ownership, AuthContext contract, Level1/Level2 applicability, product-value authority, runtime environment policy, or release authority.

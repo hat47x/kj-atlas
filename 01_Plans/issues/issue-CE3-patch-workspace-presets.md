@@ -768,3 +768,16 @@
 ### Phase 5 Proceed
 - AC/DoDが未成立、または依存解除条件未達の場合は Proceed せず Hold を維持する。
 - 共有ファイル更新が必要な場合は本Issueからの「更新要求メモ」作成に留め、直接編集しない。
+
+## Current-main Evidence Refresh (2026-06-07)
+
+- Candidate: `origin/main@556d54e3b50fdb5d0cf5f875407056514108a745`.
+- Scope: targeted rerun of the CE3 patch workspace browser path for candidate comparison, independent decision state, rollback recovery, preset normalization, and preset replay. This is an evidence refresh only; it does not change runtime behavior, CE3 state-machine policy, SafeMode/share-export policy, issue status, or release authority.
+- Command:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/ce3_patch_workspace.spec.ts --reporter=line` -> pass, 1 test.
+- Evidence detail:
+  - Loaded a five-card document through the browser file picker and replace-confirmation flow.
+  - Collected three CE3 candidates from the mocked suggestion endpoint and confirmed candidate count, selector options, diff preview, and token-delta display.
+  - Adopted one candidate, rejected another, rolled the rejected candidate back to hold, and confirmed rollback is visible in the candidate audit display.
+  - Saved a local preset, confirmed normalized query output, ran the preset before and after reload, and confirmed normalized filters remain reproducible.
+- Decision impact: Done status remains valid. No ADR is required because this refresh does not change CE3 scope, local-state/localStorage boundary, Core/Consensus ownership, or audit semantics.
