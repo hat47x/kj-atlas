@@ -1779,3 +1779,30 @@ DoDテンプレ（Draft→Open）
 - Keep physical keyboard acceptance, screen-reader acceptance, and real Chrome visual review human-owned; automated Playwright is supporting evidence, not final release authority.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, canvas interaction model, polygon data contract, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-06: hierarchy and diagnostics determinism rerun sync
+
+- Candidate: `origin/main@eca7c4979374a264a50820b14598be5eb760bde0`.
+- Decision date (JST): 2026-06-06.
+- Reviewer: Codex.
+- Scope: targeted current-main rerun of `FB-RM-MID-04` / `FB-RM-MID-05` hierarchy visibility/export persistence and `FB-RM-RS-02` diagnostics structural metrics determinism. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, or release authority.
+
+### Gate Summary
+
+- G2 primary user operations: Conditional Go improved for structural navigation freshness. Current `main` reran and passed Chrome file import, View panel structure-level switching, placard/member visibility checks, Share & Reproduce bundle export, and hierarchy field persistence checks.
+- G6 diagnostics and support: Conditional Go improved for deterministic diagnostics freshness. Current `main` reran and passed bundle diagnostics generation for connected-component and bridge/isolation/connectivity metrics, including a repeated-export equality check.
+- G7 regression: Go for this targeted slice. The targeted Playwright pair passed locally; full release-candidate regression and Compose startup were not executed from this checkpoint.
+- Hierarchy / diagnostics UX: Conditional Go for automated evidence freshness / No-Go for full release shipment. Human real-Chrome visual acceptance, physical keyboard review, screen-reader acceptance, and final diagnostics wording review remain outside this automated rerun.
+- Final: **Conditional Go for targeted hierarchy and diagnostics determinism evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Local E2E rerun:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/hierarchy_level_persistence.spec.ts e2e/diagnostics_structural_metrics.spec.ts --reporter=line` -> pass, 2 tests.
+
+### Follow-ups
+
+- Keep physical keyboard acceptance, screen-reader acceptance, real Chrome visual review, and diagnostics wording review human-owned; automated Playwright is supporting evidence, not final release authority.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, hierarchy data contract, diagnostics metric contract, product-value authority, runtime environment policy, or release authority.
