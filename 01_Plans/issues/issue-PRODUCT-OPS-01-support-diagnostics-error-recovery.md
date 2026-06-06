@@ -171,6 +171,22 @@
   - `git diff --check -- 01_Plans/issues/issue-PRODUCT-OPS-01-support-diagnostics-error-recovery.md`: Pass.
 - ADR impact: no ADR required. This closeout records existing evidence and keeps the remaining policy-changing work in `PRODUCT-OPS-02`.
 
+## Evidence Refresh 2026-06-06: current-main recovery guidance rerun
+
+- Candidate: `origin/main@6a4aef91558800da26232c953634da11a60c8535`.
+- Reviewer: Codex.
+- Scope: current-main browser automation rerun for user-facing recovery guidance and slow-operation cancellation. This is an evidence refresh only; it does not change runtime behavior, UI copy, SafeMode/share-export policy, diagnostics policy, public documentation, issue status, or release authority.
+- Local execution:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/large_document_operability.spec.ts e2e/ops_recovery_guidance.spec.ts --reporter=line` -> pass, 6 tests.
+- Covered recovery operations:
+  - API load failure at 390px shows `/api/healthz`, backend startup checks, and no-secret sharing guidance while the status message fits the viewport.
+  - Save failure keeps content available and points the user to retry or JSON export.
+  - Slow diagnostics, review-pack export, and review diff all show progress/cancel affordances and localized cancellation status.
+- Human follow-ups:
+  - Keep incident/support wording review human-owned before release because automated tests check flow presence, not support-quality nuance.
+  - Keep automated support bundle generation outside this issue; `PRODUCT-OPS-02` remains the decision route if bundle format, collection, transmission, support integration, or retention policy changes.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）

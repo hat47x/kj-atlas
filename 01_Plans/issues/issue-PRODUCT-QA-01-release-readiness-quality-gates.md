@@ -1723,3 +1723,32 @@ DoDテンプレ（Draft→Open）
 - Keep release screenshot approval, physical keyboard acceptance, screen-reader acceptance, and Japanese copy quality review human-owned; automated Playwright is supporting evidence, not final release authority.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, primary toolbar task model, responsive-navigation strategy, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-06: large-document and recovery rerun sync
+
+- Candidate: `origin/main@6a4aef91558800da26232c953634da11a60c8535`.
+- Decision date (JST): 2026-06-06.
+- Reviewer: Codex.
+- Scope: targeted current-main rerun of `PRODUCT-UX-04` large-document operability and `PRODUCT-OPS-01` recovery guidance evidence. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, or release authority.
+
+### Gate Summary
+
+- G2 primary user operations: Conditional Go improved for large-document freshness. Current `main` reran and passed deterministic 120-card import, rare-card search, hide non-matches, View/Share panel fit, review-bundle export, and diagnostics inclusion checks.
+- G4 viewport and operability: Conditional Go improved for narrow recovery freshness. Current `main` reran and passed 390px API-load failure, save failure, slow diagnostics cancellation, slow review-pack export cancellation, and slow review-diff cancellation status-fit checks.
+- G6 diagnostics and support: Conditional Go improved for manual recovery guidance. The rerun confirms no-secret guidance and retry/export/cancel paths remain visible, while automated support bundle generation remains split to `PRODUCT-OPS-02`.
+- G7 regression: Go for this targeted slice. The targeted Playwright pair passed locally; full release-candidate regression and Compose startup were not executed from this checkpoint.
+- Large-document / recovery UX: Conditional Go for automated evidence freshness / No-Go for full release shipment. Human real-Chrome acceptance, physical keyboard review, screen-reader acceptance, support wording review, and final program approval remain outside this automated rerun.
+- Final: **Conditional Go for targeted large-document and recovery evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Local E2E rerun:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/large_document_operability.spec.ts e2e/ops_recovery_guidance.spec.ts --reporter=line` -> pass, 6 tests.
+
+### Follow-ups
+
+- Keep real Chrome visual acceptance, physical keyboard review, screen-reader acceptance, and support wording review human-owned; automated Playwright is supporting evidence, not final release authority.
+- Keep automated support bundle generation routed through `PRODUCT-OPS-02` and ADR review if bundle format, collection, transmission, support integration, or retention policy changes.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, diagnostics/support policy, automated support bundle policy, product-value authority, runtime environment policy, or release authority.
