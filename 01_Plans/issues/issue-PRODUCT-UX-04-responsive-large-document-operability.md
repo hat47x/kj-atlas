@@ -328,3 +328,21 @@
   - 実装PRでは、変更がviewport、focus、large document、slow/failure recoveryのどれに影響するかを分類し、対応E2Eまたは明示的な未実施理由を添付する。
   - Product shipmentは本Issue OpenだけではGoにしない。残Completion bucketが閉じた時点で`PRODUCT-QA-01`へ戻す。
 
+## Evidence Refresh 2026-06-06: current-main large-document and recovery rerun
+
+- Candidate: `origin/main@6a4aef91558800da26232c953634da11a60c8535`.
+- Reviewer: Codex.
+- Scope: current-main browser automation rerun for large-document operability and adjacent slow/failure recovery coverage. This is an evidence refresh only; it does not change runtime behavior, UI copy, SafeMode/share-export policy, diagnostics policy, public documentation, issue status, or release authority.
+- Local execution:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/large_document_operability.spec.ts e2e/ops_recovery_guidance.spec.ts --reporter=line` -> pass, 6 tests.
+- Covered user operations:
+  - Load a deterministic 120-card / 12-island / 119-edge document at 768px width.
+  - Search for `rare-signal-87`, hide non-matches, and confirm the matching card remains visible.
+  - Open View and Share & Reproduce panels without fixed-panel viewport overflow.
+  - Export a review bundle and confirm `diagnostics.md` includes `connectivityScore`.
+  - Exercise API load failure, save failure, slow diagnostics cancellation, slow review-pack export cancellation, and slow review-diff cancellation at 390px width.
+- Human follow-ups:
+  - Keep real Chrome visual acceptance, physical keyboard review, and screen-reader acceptance human-owned.
+  - Keep automated support bundle generation outside this issue; it remains split to `PRODUCT-OPS-02` and requires policy review/ADR if the product scope changes.
+
