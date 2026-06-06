@@ -143,3 +143,38 @@
   - H-DX3: UX reviewer confirms keyboard operation is natural in real Chrome, not only replayable in Playwright.
   - H-DX4: Architecture owner confirms that Phase 1 can remain schema-neutral.
 - No ADR is needed for this intake. ADR routing is required only if acceptance changes schema ownership, AI review authority, SafeMode/share policy, or the staged DOMAIN-EXPR boundary.
+
+## Open route packet 2026-06-06: human-operability check before Phase 1 Open
+
+- Candidate baseline: current `main` after the post-2338/2339/2340 release-gate sync.
+- Status impact: **Draft remains**. This packet makes the remaining human judgement concrete; it does not authorize implementation, schema expansion, AI authority changes, or SafeMode/share relaxation.
+- Product value link: `DOMAIN-EXPR-01` is the smallest visible slice of `PRODUCT-VALUE-02`. It should prove that existing ambiguity-related state can be found and inspected by a general user before the project adds Hold/Shelf schema or critique-to-reproposal flows.
+
+### Representative Chrome operation checks
+
+| Check | Mouse operation | Keyboard operation | Naturalness criteria | Gate mapping |
+| --- | --- | --- | --- | --- |
+| Open a representative document | Click `サンプルを開く` or equivalent document entry. | Reach the entry action with `Tab`, then activate it with `Enter` or `Space`. | The entry action is discoverable without reading internal docs, and focus does not disappear after load. | H-DX1 / PRODUCT-VALUE-01 handoff |
+| Select a card with domain state | Click a card that has claim/review/evidence/critique state. | Move focus to the card and activate selection with `Enter` or `Space`. | Selection feedback is visible, and canvas keyboard behavior does not block form-control activation. | H-DX3 |
+| Inspect read-only state | Read `主張タイプ`, `レビュー状態`, evidence/contradiction, and critique memo/tags in the selection context. | Move through the same controls with `Tab` / `Shift+Tab`. | Labels are Japanese, grouped near the selected object, and do not imply that AI has resolved or reviewed the state. | H-DX1 / H-DX4 |
+| Find unresolved state | Use search or visible filters to locate unreviewed, no-evidence, or critique-present items. | Reach the same search/filter controls with `Tab`, type a query, and confirm the result count. | A general user can re-find the state later; if dedicated filters are absent, the gap is explicit before Open. | H-DX2 |
+| Leave the panel safely | Click outside, change selection, or use the visible close/navigation affordance if present. | Use `Esc` or predictable focus movement where available. | The user can recover from selection without losing the document state or triggering share/export. | H-DX3 / PRODUCT-UX handoff |
+
+### Open decision options
+
+| Option | Meaning | When to choose | Required follow-up |
+| --- | --- | --- | --- |
+| Proceed as Phase 1 Open | Current read UI plus the chosen findability path is sufficient for read-only state surfacing. | H-DX1, H-DX2, H-DX3, and H-DX4 all pass with Chrome evidence. | Move this issue to Open and connect the evidence to `PRODUCT-QA-01` V2/V3. |
+| Hold for dedicated filters | The visible state is acceptable, but search alone is not enough to find `未レビュー` / `根拠なし` / `違和感あり`. | H-DX2 fails or is undecided. | Keep Draft and add a frontend-only implementation slice for dedicated filters before Open. |
+| Stop and route to schema/ADR | Existing DocumentV2 fields are not enough to explain the state honestly. | H-DX4 fails, or the UI needs persistent Hold/Shelf fields. | Stop this issue and route through `DOMAIN-EXPR-02` plus schema/ADR review. |
+
+### Human task queue update
+
+| Task | Owner | Action | Evidence to attach before Open |
+| --- | --- | --- | --- |
+| H-DX1 Visible-state acceptance | Productization Program Owner / UX reviewer | Confirm whether claim/review/evidence/critique exposure is sufficient as a first-class read UI. | Screenshot or short note naming the selected card and visible fields. |
+| H-DX2 Findability boundary | UX reviewer | Choose between search-only acceptance and dedicated filters before Open. | Result count or filter screenshot for at least one unresolved state. |
+| H-DX3 Real Chrome keyboard naturalness | UX reviewer | Confirm the focused-card -> state inspection path in Chrome, not only Playwright. | Key sequence and observed focus order. |
+| H-DX4 Schema-neutral stop check | Architecture owner | Confirm Phase 1 can remain schema-neutral. | Citation to `DocumentV2` fields used, or Stop route if new persistence is needed. |
+
+- ADR need: none for Proceed or Hold. ADR/schema routing is required only for Stop, AI review authority changes, SafeMode/share policy changes, or adding persistent Hold/Shelf state to this Phase 1 issue.

@@ -338,3 +338,41 @@ No-Go conditions for this value gate:
   - If the four-state fixture requires persistent Hold/Pending/Shelf fields, route that through `DOMAIN-EXPR-02` and ADR/schema review before implementation.
   - If the proof can remain schema-neutral, define a Playwright scenario that uses existing `claimType`, `textReviewed`, `critique`, `critiqueTags`, and `evidenceLinks` fields and records the SafeMode/share outcome.
 - No ADR is needed for this gap assessment. ADR routing is required only if the next slice changes the value-state model, adds persistent Hold/Shelf fields, changes AI review authority, or changes SafeMode/share policy.
+
+## Open route proposal 2026-06-06: split value-state evidence, then integrate
+
+- Candidate baseline: current `main` after post-2338/2339/2340 planning sync.
+- Status impact: **Draft remains**. `DecisionStatus=Fixed` stays valid because `ADR-0040` fixed the schema strategy, but Open still requires value evidence and human acceptance.
+- Recommendation: do **not** force hold, ambiguity, evidence gap, and contradiction into one first implementation fixture. Split evidence across `DOMAIN-EXPR-01..04`, then add one umbrella PRODUCT-VALUE-02 review packet that confirms the four states remain understandable together.
+
+### Why split first
+
+| Value state | Best first slice | Reason | Escalation trigger |
+| --- | --- | --- | --- |
+| Ambiguity / critique visible | `DOMAIN-EXPR-01` | Existing `claimType`, critique text/tags, evidence, contradiction, and review state can be inspected without schema expansion. | If users cannot re-find the state without dedicated filters, keep Draft or add a frontend-only filter slice. |
+| Hold / pending | `DOMAIN-EXPR-02` | `ADR-0040` already says first-class Hold/Shelf requires additive optional schema. | Any persistent Hold/Shelf field needs schema-first review and migration/compatibility tests. |
+| Critique -> reproposal | `DOMAIN-EXPR-03` | This is an action loop, not only a read UI; it needs proposal-only and reversible review boundaries. | If AI output can resolve or overwrite critique, route through ADR/CE review before implementation. |
+| Evidence / contradiction review | `DOMAIN-EXPR-04` | The user must inspect both support and contradiction without auto-resolution before it becomes a reviewable package element. | If evidence state changes review attribution, route through review schema/policy review. |
+
+### Umbrella PRODUCT-VALUE-02 evidence packet
+
+The final value gate should be evaluated only after the slice evidence exists. The packet should include:
+
+| Evidence item | Minimum content | Human judgement needed |
+| --- | --- | --- |
+| State inventory | A small scenario that names at least one ambiguity/critique, one hold or pending item, one evidence gap, and one contradiction. | Productization Program Owner confirms these states are meaningful to a general user. |
+| Findability proof | Search/filter/review panel evidence showing each state can be found again after navigation. | UX reviewer confirms the operation is natural with mouse and keyboard. |
+| Safety proof | Share/export or Review Pack evidence showing unresolved/unreviewed state is visible or safely excluded. | Safety reviewer confirms the result cannot be mistaken for a fully reviewed conclusion. |
+| AI-boundary proof | ContextBundle or equivalent evidence showing states are carried as constraints, not solved facts. | Architecture owner confirms AI remains proposal-only and cannot set `human_reviewed`. |
+| Integration decision | Go / Hold / Stop decision citing the four slice issues. | Productization Program Owner decides whether PRODUCT-VALUE-02 can move from Draft to Open. |
+
+### Current human decision queue
+
+| Decision | Owner | Recommended default | Consequence |
+| --- | --- | --- | --- |
+| PV2-D1 Evidence strategy | Productization Program Owner | Split by `DOMAIN-EXPR-01..04`, then integrate. | Avoids a monolithic fixture that pressures premature schema or UI scope. |
+| PV2-D2 Phase 1 findability | UX reviewer | Require either dedicated filters or explicit acceptance that search is enough for Phase 1. | Determines whether `DOMAIN-EXPR-01` can Open as-is. |
+| PV2-D3 Schema boundary | Architecture owner | Keep `DOMAIN-EXPR-01` schema-neutral; route Hold/Shelf to `DOMAIN-EXPR-02`. | Preserves `ADR-0040` staging and avoids hidden schema drift. |
+| PV2-D4 Safety boundary | Safety reviewer / Maintainer | Keep SafeMode/share and human review authority unchanged. | Any relaxation requires ADR before implementation. |
+
+- ADR need: none for the split-first evidence strategy itself because it follows `ADR-0040`. New ADR/schema work is required only if a slice changes persistence, AI review authority, SafeMode/share policy, or the value-state model.
