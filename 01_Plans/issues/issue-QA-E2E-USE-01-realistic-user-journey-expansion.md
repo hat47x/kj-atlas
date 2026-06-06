@@ -316,3 +316,22 @@ Open化ゲートを次の3カテゴリで固定する。
 | S3 Safe Sharing Gate | Keyboard path opens share preflight and verifies `セーフモード: ON`. | Improves G1 / G2 / V4 safety-entry evidence. | Full release-candidate share/export screenshot and program approval. |
 
 - Stopper classification: none introduced by this rerun. It is evidence-consumption only and does not change execution scope, product behavior, or public documentation.
+
+## Stream H evidence rerun 2026-06-06: S1-S3 realistic journey
+
+- Scope: current-main representative E2E evidence only. `Status=Draft (Open-Readiness Prepared / Execution Hold)` and `Execution: Hold` remain unchanged because Pending-1 / Pending-2, Compose approval, and release approval are still outside this rerun.
+- Candidate mainline: `origin/main@cf6f74cddce0f3c04c70b3d88f0bbc82a9a15a43`.
+- Execution path: SQLite/local frontend path with Vite started directly by bundled Node.js because this Codex host does not expose `npm` on PATH.
+- Command:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/realistic_user_journey_expansion.spec.ts --reporter=line`
+- Result: **pass, 1 test**.
+
+### Gate consumption
+
+| Scenario | Evidence consumed | Gate impact | Still not covered |
+| --- | --- | --- | --- |
+| S1 Authoring Continuity | Deterministic fixture import replaces the current document and verifies three cards remain visible. | Improves current-main G2 / S1 evidence. | Full persistence/reload rehearsal and release screenshot bundle. |
+| S2 Review Governance | Read-only mode is entered and layout suggestion is disabled while the read-only indicator is visible. | Improves current-main S2 boundary evidence. | Human UX acceptance and broader review-state transition proof. |
+| S3 Safe Sharing Gate | Share preflight opens in read-only mode and shows locked redaction contexts for Share / Review Pack. | Improves current-main G1 / G2 / S3 evidence. | Full share/export screenshot approval and Compose-backed release rehearsal. |
+
+- Stopper classification: none introduced by this rerun. It is evidence-consumption only and does not change execution scope, product behavior, public documentation, SafeMode policy, or release authority.

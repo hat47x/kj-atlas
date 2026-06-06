@@ -1639,3 +1639,31 @@ DoDテンプレ（Draft→Open）
 - Keep `PRODUCT-VALUE-02` Draft until the split `DOMAIN-EXPR-01..04` evidence can be integrated into a complete value-gate packet.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, domain-expression schema ownership, AI review authority, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-06: S1-S3 realistic journey rerun sync
+
+- Candidate: `origin/main@cf6f74cddce0f3c04c70b3d88f0bbc82a9a15a43`.
+- Decision date (JST): 2026-06-06.
+- Reviewer: Codex.
+- Scope: targeted current-main rerun of `QA-E2E-USE-01` S1-S3 realistic user journey evidence. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, or release authority.
+
+### Gate Summary
+
+- G1 safety defaults: Conditional Go / unchanged. The rerun verifies locked redaction context copy in read-only share preflight; it does not change SafeMode or masking policy.
+- G2 primary user operations: Conditional Go improved for the S1-S3 representative path. Current `main` reran and passed deterministic document import, card visibility, visibility selection, read-only mode, share preflight, and disabled layout suggestion checks.
+- G4 viewport and operability: Conditional Go / unchanged for release. The rerun supports operability evidence, but it does not replace release screenshot approval, physical keyboard acceptance, or viewport matrix review.
+- G7 regression: Go for this targeted slice. The targeted Playwright realistic journey test passed locally; full release-candidate regression and Compose startup were not executed from this checkpoint.
+- QA-E2E-USE: Conditional Go for evidence freshness / Execution Hold unchanged. Pending-1/Pending-2 and environment approval remain unresolved.
+- Final: **Conditional Go for targeted S1-S3 evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Local E2E rerun:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/realistic_user_journey_expansion.spec.ts --reporter=line` -> pass, 1 test.
+
+### Follow-ups
+
+- Keep `QA-E2E-USE-01` in Execution Hold until Pending-1/Pending-2, Compose/SQLite/exception-path approval, and gate evidence columns are formally accepted.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, E2E execution authority, product-value authority, runtime environment policy, or release authority.
