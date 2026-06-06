@@ -92,6 +92,22 @@
 
 - Closeout: ADR is not required for this repair because the change preserves the existing product navigation and only stabilizes responsive layout, panel placement, and legacy label presentation.
 
+## Evidence Refresh 2026-06-06: current-main header and panel rerun
+
+- Candidate: `origin/main@f9c042f595aa96754b6da83e0e62ca946f48ac27`.
+- Reviewer: Codex.
+- Scope: current-main Playwright rerun of the fixed header toolbar responsive-overlap path. This is an evidence refresh only; it does not change layout code, navigation information architecture, SafeMode/share-export behavior, issue status, or release authority.
+- Local execution:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/first_run_document_entry.spec.ts e2e/header_toolbar_layout.spec.ts --reporter=line` -> pass, 11 tests.
+- Covered user operations:
+  - Toolbar button bounds and horizontal readability at 1440x900, 1280x720, 920x720, 768x720, and 390x720.
+  - View panel and Share & Reproduce panel opening without crossing the header or viewport edge.
+  - Keyboard focus into View / Share & Reproduce panels and `Escape` return to the originating button at 1440x900 and 768x720.
+- Human follow-ups:
+  - Confirm real Chrome visual screenshot approval remains required before release because Playwright geometry checks do not judge visual polish or Japanese copy quality.
+  - Keep ADR escalation unnecessary unless the product changes the primary toolbar task model or global responsive-navigation strategy.
+
 - ADR化が必要になる条件: Product-level navigation or responsive strategy is redefined.
 
 ---

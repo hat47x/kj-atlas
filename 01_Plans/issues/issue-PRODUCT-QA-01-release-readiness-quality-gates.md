@@ -1696,3 +1696,30 @@ DoDテンプレ（Draft→Open）
 - Keep human translation-quality review separate from automated flow-parity evidence.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, public exposure policy, I18N authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-06: first-run and header operability rerun sync
+
+- Candidate: `origin/main@f9c042f595aa96754b6da83e0e62ca946f48ac27`.
+- Decision date (JST): 2026-06-06.
+- Reviewer: Codex.
+- Scope: targeted current-main rerun of `PRODUCT-UX-01` first-run document entry and `QA-MONKEY-06` header/panel responsive operability evidence. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, or release authority.
+
+### Gate Summary
+
+- G2 primary user operations: Conditional Go improved for first-run entry freshness. Current `main` reran and passed first-run panel fit, document-file validation-before-replace, sample open, card selection, selection-context surfacing, and keyboard new-document activation.
+- G4 viewport and operability: Conditional Go improved for header/panel freshness. Current `main` reran and passed toolbar bounds/readability checks at 1440x900, 1280x720, 920x720, 768x720, and 390x720, plus keyboard focus and `Escape` return for View and Share & Reproduce panels.
+- G7 regression: Go for this targeted slice. The targeted Playwright pair passed locally; full release-candidate regression and Compose startup were not executed from this checkpoint.
+- First-run / header UX: Conditional Go for automated evidence freshness / No-Go for full release shipment. Human real-Chrome screenshot approval, physical keyboard acceptance, screen-reader acceptance, and final Japanese copy quality review remain outside this automated rerun.
+- Final: **Conditional Go for targeted first-run and header operability evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Local E2E rerun:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/first_run_document_entry.spec.ts e2e/header_toolbar_layout.spec.ts --reporter=line` -> pass, 11 tests.
+
+### Follow-ups
+
+- Keep release screenshot approval, physical keyboard acceptance, screen-reader acceptance, and Japanese copy quality review human-owned; automated Playwright is supporting evidence, not final release authority.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, primary toolbar task model, responsive-navigation strategy, product-value authority, runtime environment policy, or release authority.

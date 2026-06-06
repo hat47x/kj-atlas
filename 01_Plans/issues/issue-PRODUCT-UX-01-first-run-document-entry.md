@@ -252,3 +252,21 @@
   - bundled node `playwright test first_run_document_entry header_toolbar_layout --reporter=line`: Pass, 10 tests.
   - Browser plugin / in-app browser で `http://127.0.0.1:4173/?locale=ja` を開き、開始パネルの表示文言を確認した。
 
+## Evidence Refresh 2026-06-06: current-main first-run entry rerun
+
+- Candidate: `origin/main@f9c042f595aa96754b6da83e0e62ca946f48ac27`.
+- Reviewer: Codex.
+- Scope: current-main browser automation rerun for the first-run document entry and adjacent header/panel operability. This is an evidence refresh only; it does not change runtime behavior, UI copy, SafeMode policy, import/export behavior, public documentation, issue status, or release authority.
+- Local execution:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/first_run_document_entry.spec.ts e2e/header_toolbar_layout.spec.ts --reporter=line` -> pass, 11 tests.
+- Covered user operations:
+  - 390x720 first-run panel fit and safe entry choices.
+  - Document-file selection with validation-before-replace dialog.
+  - Sample open, card selection, and selection-context surfacing.
+  - Keyboard focus and `Enter` activation for new-document creation.
+  - Header View / Share & Reproduce panel placement and `Escape` focus return across desktop/tablet/narrow viewports.
+- Human follow-ups:
+  - Confirm real Chrome copy quality and screenshot approval for the first-run panel remains human-owned.
+  - Confirm physical keyboard and screen-reader acceptance before using this as final release evidence.
+
