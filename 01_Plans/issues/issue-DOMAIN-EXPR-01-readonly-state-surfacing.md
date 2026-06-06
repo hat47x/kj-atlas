@@ -178,3 +178,26 @@
 | H-DX4 Schema-neutral stop check | Architecture owner | Confirm Phase 1 can remain schema-neutral. | Citation to `DocumentV2` fields used, or Stop route if new persistence is needed. |
 
 - ADR need: none for Proceed or Hold. ADR/schema routing is required only for Stop, AI review authority changes, SafeMode/share policy changes, or adding persistent Hold/Shelf state to this Phase 1 issue.
+
+## Mainline E2E rerun 2026-06-06: domain-expression keyboard access
+
+- Candidate mainline: `origin/main@b8a1619d20aad91713800f3f0c209af3de14ff8b`.
+- Status impact: **Draft remains**. This rerun proves the representative keyboard access path is executable on current `main`; it does not replace human UX/product acceptance, dedicated filter decisions, schema-neutral confirmation, release screenshots, or final program approval.
+- Environment note: Vite and Playwright were executed with bundled Node.js because this Codex host does not expose `npm` on PATH for Playwright webServer startup:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe`
+  - Vite was started directly with `node .\node_modules\vite\bin\vite.js --host 127.0.0.1 --port 4173`.
+- Verification command:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/domain_expression_keyboard_access.spec.ts --reporter=line`
+- Result: **pass, 1 test**.
+
+### Evidence packet update
+
+| Evidence item | Current status after rerun | Remaining Open blocker |
+| --- | --- | --- |
+| Read-only state surfacing | Reconfirmed keyboard route to claim type, review state, evidence, contradiction, critique memo, and critique tags. | Productization Program Owner / UX reviewer must accept the surface as sufficient Phase 1 read UI. |
+| Keyboard reachability | Reconfirmed by Playwright on current `main`. | UX reviewer must still judge whether the path feels natural in real Chrome operation. |
+| Fixed filter boundary | Unchanged. | Decide whether search is enough or dedicated `未レビュー` / `根拠なし` / `違和感あり` filters are required before Open. |
+| Schema stop check | Unchanged; rerun uses existing DocumentV2 fields only. | Architecture owner must confirm no Phase 1 schema expansion is required. |
+| Decision record | This section adds a current-main rerun record. | Final Open decision must cite H-DX1/H-DX2/H-DX3/H-DX4 outcomes. |
+
+- No ADR is needed for this rerun. ADR routing remains limited to schema ownership changes, AI review authority changes, SafeMode/share policy changes, or staged DOMAIN-EXPR boundary changes.

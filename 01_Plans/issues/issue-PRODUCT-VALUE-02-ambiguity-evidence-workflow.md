@@ -376,3 +376,20 @@ The final value gate should be evaluated only after the slice evidence exists. T
 | PV2-D4 Safety boundary | Safety reviewer / Maintainer | Keep SafeMode/share and human review authority unchanged. | Any relaxation requires ADR before implementation. |
 
 - ADR need: none for the split-first evidence strategy itself because it follows `ADR-0040`. New ADR/schema work is required only if a slice changes persistence, AI review authority, SafeMode/share policy, or the value-state model.
+
+## Evidence rerun sync 2026-06-06: DOMAIN-EXPR-01 keyboard slice
+
+- Candidate mainline: `origin/main@b8a1619d20aad91713800f3f0c209af3de14ff8b`.
+- Status impact: **Draft remains**. This sync improves the freshness of the ambiguity/critique read-only evidence slice, but it does not complete the umbrella PRODUCT-VALUE-02 value gate.
+- Evidence consumed:
+  - `e2e/domain_expression_keyboard_access.spec.ts` rerun with bundled Node.js and Vite direct startup -> **pass, 1 test**.
+- Value-gate impact:
+  - Ambiguity / critique visible: current-main evidence is fresh for keyboard access to claim type, review state, evidence, contradiction, critique memo, and critique tags.
+  - Hold / pending: unchanged; first-class Hold/Shelf remains routed to `DOMAIN-EXPR-02`.
+  - Critique -> reproposal: unchanged; action-loop evidence remains routed to `DOMAIN-EXPR-03`.
+  - Evidence / contradiction review: partially supported by read-only visibility, but review workflow remains routed to `DOMAIN-EXPR-04`.
+- Remaining blockers before PRODUCT-VALUE-02 Open:
+  - Human acceptance of whether `DOMAIN-EXPR-01` is a meaningful read-only slice for standard users.
+  - Decision on search-only versus dedicated unresolved-state filters.
+  - Evidence for Hold/Pending, critique-to-reproposal, AI-boundary proof, share/export proof, and umbrella integration decision.
+- No ADR is needed for this sync. ADR/schema routing remains required if a later slice changes persistence, AI review authority, SafeMode/share policy, or the value-state model.
