@@ -9,6 +9,8 @@ from kj_atlas_api.settings import LEGACY_ENV_KEYS, Settings
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+RUNTIME_REGISTRY_DOC = REPO_ROOT / "02_Architecture" / "runtime_parameter_registry.md"
+PUBLIC_CONFIGURATION_DOC = REPO_ROOT / "04_Documentation" / "configuration.md"
 ENV_SCAN_ROOTS = [
     REPO_ROOT / "03_Implement" / "backend",
     REPO_ROOT / "03_Implement" / "frontend" / "src",
@@ -17,6 +19,8 @@ ENV_SCAN_ROOTS = [
 ]
 IGNORED_SCAN_PARTS = {".venv", "__pycache__", ".pytest_cache", "node_modules", "dist"}
 ALLOWED_NON_PROJECT_ENV_KEYS = {"DEV", "PYTHONPATH"}
+ENV_KEY_PATTERN = re.compile(r"KJ_ATLAS_[A-Z0-9_]+")
+ENV_WILDCARD_PATTERN = re.compile(r"`KJ_ATLAS_[A-Z0-9]+[A-Z0-9_]*\*`")
 
 
 def _unset_related_envs() -> None:
@@ -97,6 +101,16 @@ def _is_allowed_project_env_name(name: str) -> bool:
     return name.startswith("KJ_ATLAS_") or name in ALLOWED_NON_PROJECT_ENV_KEYS
 
 
+def _env_keys(text: str) -> set[str]:
+    return set(ENV_KEY_PATTERN.findall(text))
+
+
+def _public_registry_env_keys() -> set[str]:
+    text = RUNTIME_REGISTRY_DOC.read_text(encoding="utf-8")
+    public_text = text.split("以下は製品ランタイムの公開設定ではなく", maxsplit=1)[0]
+    return _env_keys(public_text)
+
+
 def test_settings_uses_prefixed_key(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
     monkeypatch.setenv("KJ_ATLAS_DATABASE_URL", "sqlite:///./canonical.db")
@@ -117,6 +131,13 @@ def test_project_env_access_points_use_kj_atlas_prefix() -> None:
                 violations.append(f"{relative_path}:{line_number}:{name}")
 
     assert violations == []
+
+
+def test_public_configuration_doc_lists_exact_public_runtime_keys() -> None:
+    configuration_text = PUBLIC_CONFIGURATION_DOC.read_text(encoding="utf-8")
+
+    assert ENV_WILDCARD_PATTERN.findall(configuration_text) == []
+    assert _env_keys(configuration_text) == _public_registry_env_keys()
 
 
 def test_settings_rejects_legacy_key_only(monkeypatch) -> None:  # type: ignore[no-untyped-def]

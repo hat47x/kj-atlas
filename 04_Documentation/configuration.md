@@ -19,7 +19,7 @@
 
 | 区分 | 利用者が設定するか | 例 | 取り扱いルール |
 | --- | --- | --- | --- |
-| 公開設定（public contract） | はい | `KJ_ATLAS_DATABASE_URL`, `KJ_ATLAS_WEB_PORT`, `KJ_ATLAS_POSTGRES_*` | `KJ_ATLAS_*` のみを設定対象とします。 |
+| 公開設定（public contract） | はい | `KJ_ATLAS_DATABASE_URL`, `KJ_ATLAS_WEB_PORT`, `KJ_ATLAS_POSTGRES_DB`, `KJ_ATLAS_POSTGRES_USER`, `KJ_ATLAS_POSTGRES_PASSWORD` | `KJ_ATLAS_*` のみを設定対象とします。 |
 | 内部adapter設定（private boundary） | いいえ | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | third-party コンテナ内部でのみ使用します。公開設定としては受け付けません。 |
 
 ## 設定を変える前に

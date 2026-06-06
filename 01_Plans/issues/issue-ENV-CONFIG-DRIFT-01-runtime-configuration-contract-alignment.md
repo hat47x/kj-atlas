@@ -649,3 +649,26 @@ Non-goals:
 
 - Proceed: historical decision records no longer contradict the accepted no-exception public prefix policy in their current-key examples.
 - Stop before Done remains unchanged: Docker-capable `docker compose config` verification is still required before closing this issue.
+
+## 22) Public configuration exact-key guard (2026-06-07)
+
+### Scope
+
+- Read: `02_Architecture/runtime_parameter_registry.md`, `04_Documentation/configuration.md`, `03_Implement/backend/tests/test_settings_env_prefix_migration.py`, and the deploy/runtime references touched by the current public configuration contract.
+- Finding: `04_Documentation/configuration.md` already listed the concrete PostgreSQL Compose keys in the full environment-variable table, but the earlier boundary example still used `KJ_ATLAS_POSTGRES_*` as a shorthand.
+- Decision: public user-facing configuration examples should not use shorthand wildcard names when the requirement is to list every supported environment variable. The general policy phrase `KJ_ATLAS_*` remains acceptable for describing the namespace rule, but concrete configuration examples must enumerate exact keys.
+
+### Execute
+
+- Replaced the public-boundary example `KJ_ATLAS_POSTGRES_*` with `KJ_ATLAS_POSTGRES_DB`, `KJ_ATLAS_POSTGRES_USER`, and `KJ_ATLAS_POSTGRES_PASSWORD`.
+- Added `test_public_configuration_doc_lists_exact_public_runtime_keys` so `04_Documentation/configuration.md` must contain the same public runtime key set as the public section of `runtime_parameter_registry.md`.
+- Added a guard that rejects concrete-key wildcard shorthand such as `KJ_ATLAS_POSTGRES_*` in the public configuration document, while still allowing the namespace policy phrase `KJ_ATLAS_*`.
+
+### Verify
+
+- Pass: `.venv\Scripts\python.exe -m pytest tests\test_settings_env_prefix_migration.py --basetemp ..\..\.pytest_tmp_env_config_exact_keys -p no:cacheprovider` from `03_Implement/backend` -> 14 tests passed.
+
+### Proceed/Stop
+
+- Proceed: public configuration docs now enumerate exact public runtime keys and have a regression guard against future wildcard shorthand drift.
+- Stop before Done remains unchanged: Docker-capable `docker compose config` verification is still required before closing this issue.
