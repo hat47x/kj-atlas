@@ -726,6 +726,69 @@
 
 ---
 
+## Post-2334 convergence checkpoint
+
+- Checkpoint date (JST): 2026-06-06
+- Latest main: `origin/main@27862b21c71cbb1c26ddb58722e2f9dee3046b20`
+- Remote branch count: 2335
+- `origin/codex/` remote branch count: 2311
+- GitHub open PR search result: 1
+- Internal issue triage:
+  - `active_issues=52`
+  - `ready=15`
+  - `blocked=37`
+  - `actionable_adrs=1`
+  - stopper: none
+- Scope: refreshes repository governance after #2328 through #2334 were merged and while #2335 remains the single open PR. This checkpoint does not delete remote branches, close PRs, rerun CI, change ADR status, change runtime behavior, or approve release readiness.
+
+### Merged lane result
+
+| PR | Former branch | Merge result | Governance outcome |
+| --- | --- | --- | --- |
+| #2328 | `codex/project-gov-post-2327-checkpoint-20260606` | Merged as `4306ed1e` | Post-2327 project-governance checkpoint is canonical on `main`. |
+| #2329 | `codex/project-baseline-post-2328-sync-20260606` | Merged as `cde40a54` | Post-2328 project-baseline sync is canonical on `main`. |
+| #2330 | `codex/product-qa-post-2329-gate-sync-20260606` | Merged as `091e49cd` | PRODUCT-QA post-2329 gate sync is canonical on `main`. |
+| #2331 | `codex/mvp-exit-data-lifecycle-boundary-sync-20260606` | Merged as `0fc84859` | MVP-EXIT high-privilege data lifecycle boundary sync is canonical on `main`. |
+| #2332 | `codex/data-maint-04-open-readiness-20260606` | Merged as `ed29ea90` | DATA-MAINT-04 Open-readiness decision packet clarification is canonical on `main`; the issue remains Draft-gated. |
+| #2333 | `codex/product-qa-post-2331-data-lifecycle-sync-20260606` | Merged as `3f894ca7` | PRODUCT-QA post-2332 data lifecycle release-gate interpretation is canonical on `main`. |
+| #2334 | `codex/env-prefix-adr-readability-sync-20260606` | Merged as `27862b21` | ADR-0021 public-prefix readability sync is canonical on `main`; public env keys remain `KJ_ATLAS_*` only. |
+
+### Open PR inventory
+
+| PR | Branch | Topic | Governance classification | Recommended action |
+| --- | --- | --- | --- | --- |
+| #2335 | `codex/legacy-env-reference-adr-sync-20260606` | Historical ADR key-name normalization from legacy env examples to `KJ_ATLAS_*` | independent canonical / merge-ready | Review and merge independently. It is documentation-only and does not authorize runtime, SafeMode, share/export, LLM, audit, access-control, or Compose behavior changes. |
+
+### Cleanup candidate table
+
+| Branch | Current classification | Cleanup recommendation |
+| --- | --- | --- |
+| `origin/codex/project-gov-post-2327-checkpoint-20260606` | merged project-governance checkpoint | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/project-baseline-post-2328-sync-20260606` | merged project-baseline sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/product-qa-post-2329-gate-sync-20260606` | merged PRODUCT-QA gate sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/mvp-exit-data-lifecycle-boundary-sync-20260606` | merged MVP-EXIT boundary sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/data-maint-04-open-readiness-20260606` | merged DATA-MAINT-04 readiness clarification | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/product-qa-post-2331-data-lifecycle-sync-20260606` | merged PRODUCT-QA data lifecycle sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/env-prefix-adr-readability-sync-20260606` | merged ADR-0021 readability sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/legacy-env-reference-adr-sync-20260606` | open canonical documentation-only PR | Keep until #2335 is merged or closed. |
+
+### Decision
+
+- The post-2327 internal governance, baseline, product QA, MVP-EXIT, DATA-MAINT, and ADR-0021 readability lane is converged into `main`.
+- The only open PR is #2335. It is independent and documentation-only, so it should not block unrelated work that starts from `origin/main@27862b21c71cbb1c26ddb58722e2f9dee3046b20`.
+- No branch deletion, PR closure, rerun, ADR status change, implementation authorization, or release approval is executed from this checkpoint.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene; this update only records the changed repository state.
+- Full release shipment remains No-Go until product-value Open gates, release-candidate screenshot and physical-keyboard approval, full regression evidence, Compose startup evidence, support diagnostics/recovery rehearsal, and final program approval are recorded together.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@27862b21c71cbb1c26ddb58722e2f9dee3046b20` unless intentionally updating #2335.
+2. Treat #2328..#2334 as mainline evidence, not open candidate PR evidence.
+3. Treat #2335 as the only current open PR lane and keep its branch until merge or closure.
+4. Keep remote branch deletion as a maintainer-approved repository maintenance action. The cleanup table is an audit aid, not execution permission.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
