@@ -270,3 +270,19 @@
   - Confirm real Chrome copy quality and screenshot approval for the first-run panel remains human-owned.
   - Confirm physical keyboard and screen-reader acceptance before using this as final release evidence.
 
+
+## Evidence Refresh 2026-06-07: current-main import validation rerun
+
+- Candidate: `origin/main@ec08690eb98124820dfbc946f202b081eb7a2c0d`.
+- Reviewer: Codex.
+- Scope: current-main browser automation rerun for the document/review-pack ingestion validation route that `O-OPEN-03` names as a representative first-run safety path. This is an evidence refresh only; it does not change runtime behavior, UI copy, SafeMode policy, import/export behavior, public documentation, issue status, or release authority.
+- Local execution:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/polygon_import_validation.spec.ts --reporter=line` -> pass, 1 test.
+- Covered user operations:
+  - Opened Share & Reproduce, selected an invalid `document.json` through the file picker, and used the replace confirmation flow.
+  - Imported a self-intersecting island polygon and exported a review bundle.
+  - Confirmed exported `document.json` does not preserve the invalid polygon shape and falls back to a non-polygon shape.
+- Human follow-ups:
+  - Keep real Chrome copy quality and visible import-validation messaging review human-owned before release.
+  - Keep malicious/large-file import breadth covered by import/security regression suites rather than treating this single E2E as exhaustive import assurance.

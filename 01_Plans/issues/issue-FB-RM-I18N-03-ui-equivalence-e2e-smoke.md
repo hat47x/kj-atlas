@@ -179,3 +179,15 @@ Compose不可環境でも SQLite 代替経路で品質ゲートを継続でき�
 - 判定: ✅ Done維持（docs整合）。
 - 根拠: 決定論 / 監査性 / 後方互換 / 最小E2E観点が既存AC/DoDと矛盾しない。
 - Stop条件: 依存矛盾またはAC欠落が観測された場合は3回自己修復後にFail-safe停止。
+
+## Current-main Evidence Refresh (2026-06-07)
+
+- Candidate: `origin/main@ec08690eb98124820dfbc946f202b081eb7a2c0d`.
+- Scope: targeted rerun of the ja/en readOnly + SafeMode locked-context equivalence path. This is an evidence refresh only; it does not change locale catalogs, fallback order, SafeMode policy, readOnly behavior, public documentation, issue status, or release authority.
+- Command:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/i18n_locale_functional_equivalence.spec.ts --reporter=line` -> pass, 1 test.
+- Evidence detail:
+  - Opened `?locale=ja&readOnly=1` and `?locale=en&readOnly=1` in the same browser test.
+  - Confirmed the layout suggestion action remains disabled in read-only mode for both locales.
+  - Opened Share & Reproduce and confirmed the SafeMode locked redaction-context message is visible in each locale.
+- Decision impact: Done status remains valid. No ADR is required because this refresh does not change i18n authority, SafeMode/share policy, or readOnly semantics.
