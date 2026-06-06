@@ -1888,3 +1888,39 @@ DoDテンプレ（Draft→Open）
 - Keep human translation-quality review, physical keyboard acceptance, screen-reader acceptance, real Chrome keyboard-flow visual review, first-value fixture acceptance, and final program approval human-owned or separately gated; automated Playwright is supporting evidence, not final release authority.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes locale fallback policy, SafeMode/share-export policy, first-value model, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-07: latest-main UI-operability and config-contract sync
+
+- Candidate: `origin/main@147171584988b60b1edca4547cc32fd158818568`.
+- Decision date (JST): 2026-06-07.
+- Reviewer: Codex.
+- Scope: targeted latest-main rerun of planning metadata, frontend Japanese/i18n/share regression, backend `KJ_ATLAS_*` settings-prefix and document roundtrip regression, and representative browser UI operability across locale query, keyboard-only release-candidate flow, and header/panel viewport + focus behavior. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation passed and triage reported `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none`.
+- G1 safety defaults: Conditional Go improved. SharePanel and safe-mode copy regression passed in the focused frontend suite.
+- G2 primary user operations: Conditional Go improved. Browser automation passed keyboard-only sample loading, search, card selection, critique memo input, share preflight, close, and focus return.
+- G3 Japanese UI / i18n: Conditional Go improved. Locale query English path, invalid-locale Japanese fallback, English document replace equivalence, i18n equivalence, and hardcode guard tests passed.
+- G4 viewport and operability: Conditional Go improved. Header/panel fit passed at 1440px, 1280px, 920px, 768px, and 390px; keyboard focus and Escape return passed at 1440px and 768px.
+- G5 public docs and config: Conditional Go / sampled. This run did not republish public docs, but backend settings-prefix tests passed for the no-exception `KJ_ATLAS_*` configuration contract.
+- G6 diagnostics and support: Unchanged / Conditional Go. This run did not rehearse diagnostics bundle or recovery flows.
+- G7 regression: Go for this targeted slice. Typecheck, focused frontend regression, focused backend regression, and representative Playwright all passed.
+- E1/E2 environment contract: Conditional Go improved. Settings-prefix and document roundtrip tests passed; full Compose startup and environment rehearsal remain outside this slice.
+- Final: **Conditional Go for targeted latest-main UI-operability and config-contract evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Local validation:
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass.
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` -> pass, stopper none.
+  - Bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` -> pass.
+  - Bundled `node.exe .\node_modules\vitest\vitest.mjs run src/i18n/ui_hardcode_guard.test.ts src/ui/i18n_equivalence.integration.test.ts src/ui/SharePanel.test.ts` -> pass, 28 tests.
+  - `.venv\Scripts\python.exe -m pytest tests\test_settings_env_prefix_migration.py tests\test_docs_roundtrip.py --basetemp ..\..\.pytest_tmp_baseline_20260607 -p no:cacheprovider` -> pass, 30 passed / 16 skipped.
+  - Bundled `node.exe .\node_modules\playwright\cli.js test e2e/i18n_locale_query_equivalence.spec.ts e2e/keyboard_release_candidate_flow.spec.ts e2e/header_toolbar_layout.spec.ts --reporter=line` with Vite on `127.0.0.1:4173` -> pass, 11 tests.
+
+### Follow-ups
+
+- Keep physical keyboard acceptance, screen-reader acceptance, real Chrome visual review, human release screenshots, and final program approval human-owned or separately gated; automated Playwright is supporting evidence, not final release authority.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes locale fallback policy, SafeMode/share-export policy, public configuration policy, UI architecture, product-value authority, runtime environment policy, or release authority.
