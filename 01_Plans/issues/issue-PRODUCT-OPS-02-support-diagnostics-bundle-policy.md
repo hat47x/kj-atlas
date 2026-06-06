@@ -118,6 +118,50 @@
   - サポート基盤、チケットシステム、外部ストレージと連携する。
   - 組織横断の保持期間、送信先、承認者を製品側で一律規定する。
 
+## 11) Draft-to-Open readiness packet（2026-06-06）
+
+本Issueは、現時点では Draft のまま維持する。Open化の判断は「診断バンドルを実装するか」ではなく、「どの範囲なら安全に仕様検討を始められるか」を確認するために行う。
+
+### Open化候補
+
+| 候補 | Open化可否 | ADR要否 | 理由 |
+| --- | --- | --- | --- |
+| A. 手動診断メモの改善 | Open化不要。`PRODUCT-OPS-01` と公開診断文書の範囲で継続できる | 不要 | 既存方針内で、利用者が手作業で非機微情報を整理するだけである。 |
+| B. ローカル生成・手動共有の診断バンドル | 条件付きでOpen化候補 | 原則不要。ただし形式を製品仕様として固定する場合はADR | 自動送信せず、利用者がプレビューしてコピー/ダウンロードする範囲なら、まず内部issueで設計できる。 |
+| C. 自動収集または自動送信 | Open化前にADR必須 | 必須 | 利用者同意、組織承認、保持責任、送信先、監査責任が変わる。 |
+| D. サポート基盤・チケットシステム連携 | Open化前にADR必須 | 必須 | 外部システム、保持期間、アクセス権限、削除/訂正責任を固定する必要がある。 |
+| E. 組織横断の保持期間・送信先・承認者を製品既定にする | Open化前にADR必須 | 必須 | 組織ごとの法務・契約・監査判断を製品が一律に決めることになる。 |
+
+### Minimum safe bundle boundary
+
+条件付きでOpen化できる最小候補は、Bの「ローカル生成・手動共有」に限る。この場合も、次をすべて満たすまでは実装Issueへ進めない。
+
+- 作成は利用者の明示操作だけで開始する。
+- 共有前に、含まれる情報、除外された情報、マスク状態をプレビューできる。
+- 自動送信、外部保存、チケット起票、バックグラウンド収集は行わない。
+- SafeMode ON/OFF に関わらず、未加工本文、カード本文、取り込みファイル全文、API key、token、password、cookie、個人名、メールアドレス、機密メモ、内部URLの機微部分を既定除外にする。
+- document id や内部URLなど、組織内識別子になりうる値は、必要性を説明できる場合だけマスク済みで含める。
+- UIを持つ場合は、プレビュー、キャンセル、コピー/ダウンロード、禁止項目不在を e2e で確認する。
+
+### Human decision route
+
+- Productization Program Owner: 診断バンドルが、利用者の復帰と問い合わせ準備に本当に必要かを判断する。
+- Security officer: 含めてよい情報、必ず除外する情報、マスク後でも残る組織識別子の扱いを確認する。
+- Platform Operator: サポートに渡す情報が、復旧判断に足りるか、かつ秘密情報なしで再現調査に使えるかを確認する。
+- Support owner: 受け取った診断情報で確定判断をせず、再現手順・環境・非機微ログとして扱う運用に合意する。
+
+### Proceed / Hold / Stop
+
+- Proceed: Bの範囲に限定し、ADR不要なローカル生成・手動共有候補として、Open化可否をProductization Program Owner / Security officerが承認した場合。
+- Hold: バンドル形式、含める値、UI導線、マスク規則、検証レベルのいずれかが曖昧な場合。
+- Stop: 自動送信、外部保存、チケット連携、固定保持期間、組織横断の送信先、未加工本文または秘密情報を含む診断出力を要求された場合。
+
+### Verify
+
+- `git diff --check -- 01_Plans/issues/issue-PRODUCT-OPS-02-support-diagnostics-bundle-policy.md`
+- `rg -n "Draft-to-Open readiness|Minimum safe bundle boundary|自動送信|外部保存|チケット|未加工本文|API key|token|password|Proceed|Hold|Stop" 01_Plans/issues/issue-PRODUCT-OPS-02-support-diagnostics-bundle-policy.md`
+- Proceed for this slice: docs-only の判断整理として継続可能。Issue status、ADR status、API/UI/runtime behavior は変更しない。
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）
