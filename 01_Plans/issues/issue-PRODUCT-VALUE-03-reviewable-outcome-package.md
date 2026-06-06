@@ -365,3 +365,26 @@ No-Go conditions for this value gate:
   - H-PV3-2: QA Lead confirms whether ZIP file-name checks are enough trace-back evidence, or whether a reader-facing backlink/read-only UI proof is required.
   - H-PV3-3: UX reviewer confirms that Overview/Detail trace-control behavior is understandable before export.
 - No ADR is needed for this intake. ADR routing is required only if the accepted package changes the product value model, review authority, SafeMode/share policy, or review-pack contract.
+
+## Mainline E2E rerun 2026-06-06: review-pack trace export
+
+- Candidate mainline: `origin/main@04e578abbb0c46fb5cb4cd41a8fb37a138ee0700`.
+- Status impact: **Draft remains**. This rerun proves the review-pack trace export path is executable on current `main`; it does not replace Productization Program Owner acceptance, read-only review proof, release screenshot approval, Compose startup, or final program approval.
+- Environment note: Vite and Playwright were executed with bundled Node.js because this Codex host does not expose `npm` on PATH for Playwright webServer startup:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe`
+  - Vite was started directly with `node .\node_modules\vite\bin\vite.js --host 127.0.0.1 --port 4173`.
+- Verification command:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/review_pack_trace_export.spec.ts --reporter=line`
+- Result: **pass, 1 test**.
+
+### Evidence packet update
+
+| Evidence item | Current status after rerun | Remaining Open blocker |
+| --- | --- | --- |
+| Package fixture | Reconfirmed executable for `doc_review_pack_trace_export`. | Productization Program Owner must accept the fixture as representative of a reviewable outcome package. |
+| Pre-share confirmation | Reconfirmed Overview/Detail trace-control hints before export. | Confirm that SafeMode masking and reviewed/unreviewed status are understandable to a standard reviewer. |
+| Trace-back proof | Reconfirmed ZIP behavior: Overview excludes selected-card trace files; Detail includes evidence, contradiction, and trace analytics files. | QA Lead must decide whether ZIP file-name proof is sufficient or whether reader-facing backlink/read-only UI proof is required. |
+| Read-only review proof | Still not satisfied by this rerun. | Add or cite an import/read-only inspection path that lets a reviewer inspect the package without mutating source data. |
+| Decision record | This section adds a current-main rerun record. | Final Open decision must cite H-PV3-1/H-PV3-2/H-PV3-3 outcomes. |
+
+- No ADR is needed for this rerun. ADR routing remains limited to changes in the product value model, review authority, SafeMode/share policy, or review-pack contract.
