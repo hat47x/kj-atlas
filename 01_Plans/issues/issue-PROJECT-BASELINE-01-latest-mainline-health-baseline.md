@@ -953,6 +953,60 @@
 
 ---
 
+## 26) Baseline delta 2026-06-07: post-2353 UI-operability and configuration-contract sync
+
+### Candidate
+
+- Target main: `origin/main` = `147171584988b60b1edca4547cc32fd158818568`.
+- Previous recorded mainline baseline: `origin/main@a8d9ce08cb9a6597661df4902d53ee17e18f6279` in section 25.
+- Scope note: this delta refreshes latest-main evidence after the locale-query and keyboard release-candidate evidence lane was merged. It records planning integrity, frontend Japanese/i18n unit coverage, backend settings/docs API coverage, and representative browser UI operation coverage. It does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, release authority, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / bundled Node.js (`C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe`) / backend virtualenv Python / Vite manually started on `127.0.0.1:4173` for frontend-only Playwright.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+| Frontend typecheck | bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` | Pass | G7 |
+| Frontend i18n/share regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run src/i18n/ui_hardcode_guard.test.ts src/ui/i18n_equivalence.integration.test.ts src/ui/SharePanel.test.ts` | Pass: 3 files / 28 tests | G1 / G3 / G7 |
+| Backend settings/docs API regression | `.venv\Scripts\python.exe -m pytest tests\test_settings_env_prefix_migration.py tests\test_docs_roundtrip.py --basetemp ..\..\.pytest_tmp_baseline_20260607 -p no:cacheprovider` with `.venv\Scripts` prepended to `PATH` | Pass: 30 passed / 16 skipped | E1 / E2 / G7 |
+| Representative browser UI E2E | bundled `node.exe .\node_modules\playwright\cli.js test e2e/i18n_locale_query_equivalence.spec.ts e2e/keyboard_release_candidate_flow.spec.ts e2e/header_toolbar_layout.spec.ts --reporter=line` with Vite running on `127.0.0.1:4173` | Pass: 11 tests | G2 / G3 / G4 / G7 |
+
+### Findings and routing
+
+- No latest-main blocker was found in this targeted baseline refresh. The covered scope confirms planning metadata, `KJ_ATLAS_*` settings-prefix handling, document roundtrip compatibility, Japanese/i18n hardcode guards, SharePanel copy regression, locale query fallback, keyboard-only release-candidate flow, and header/panel keyboard focus and viewport fit.
+- Vite emitted the known `/docs/doc_phase1_canvas` proxy `ECONNREFUSED` warning when the frontend was run without the backend. The Playwright target passed; the warning remains an environment/runbook condition and does not create a new issue in this slice.
+- No new ADR is required. The run records evidence against already accepted policies and contracts; it does not change locale fallback policy, SafeMode/share-export policy, public configuration policy, UI architecture, or release authority.
+
+### Gate classification
+
+| Gate | 2026-06-07 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Active issue validation and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go improved | SharePanel regression passed, including the current safe-mode copy surface covered by unit tests. Full shipment still needs final release-candidate review. |
+| G2 primary user operations | Conditional Go improved | Keyboard-only sample load, search, selection, critique memo, share preflight, close, and focus return passed in browser automation. |
+| G3 Japanese UI / i18n | Conditional Go improved | Locale query English path, invalid-locale Japanese fallback, document replace equivalence, and hardcode/i18n regression tests passed. |
+| G4 viewport and operability | Conditional Go improved | Header and panel fit passed at 1440px, 1280px, 920px, 768px, and 390px, with keyboard focus/Escape return checks at 1440px and 768px. |
+| G5 public docs and config | Unchanged / Conditional Go | This run did not republish public documentation. Runtime configuration prefix behavior was sampled through backend settings tests. |
+| G6 diagnostics and support | Unchanged / Conditional Go | This run did not rehearse support diagnostics or operational recovery flows. |
+| G7 regression | Go for targeted slice | Typecheck, focused frontend regression, focused backend regression, and representative Playwright all pass. |
+| E1..E3 environment contract | Conditional Go improved | Backend settings-prefix tests passed for the no-exception `KJ_ATLAS_*` public configuration contract; Docker-capable Compose rehearsal remains separate. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the post-2353 UI-operability and configuration-contract sync.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- Follow-up routing:
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Physical keyboard, screen-reader, and real Chrome visual acceptance: human-owned release acceptance lane.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
