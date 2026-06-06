@@ -256,6 +256,37 @@
 
 ---
 
+## 18) ADR-0035 maintainer decision packet（2026-06-06）
+
+### Context
+
+- `ADR-0035` は `Proposed` のままであり、本Issueは `Status=Open` / `DecisionStatus=Pending` を維持する。
+- 製品境界の提案内容は、Project Maintainers が Accepted 化できるかを判断できる段階まで整理された。
+- この更新では `ADR-0035` のStatus、`DATA-MAINT-04` のStatus、API/UI/CLI/runtime behavior、SafeMode、share/export、公開文書、リリース権限を変更しない。
+
+### Decision handoff
+
+Maintainer への推奨判断経路:
+
+1. 現在の製品化段階では高権限ライフサイクル操作を標準機能にしない、という境界に合意できる場合に限り `ADR-0035` を Accepted にする。
+2. 削除、アーカイブ、所有者移管、管理者本文閲覧/横断検索、保持期限自動化は、特定操作を後続ADRでAcceptedするまで実装対象外に置く。
+3. 本文を含まない監査メタデータ閲覧だけを低リスク寄りの候補として `DATA-MAINT-04` に残し、Draft-to-Open gate で止める。
+4. 組織ごとの保持期間、法的削除義務、承認経路、保管先、暗号化詳細は、プロジェクト共通の既定値ではなく導入組織の判断事項として扱う。
+
+### Proceed / Hold / Stop
+
+- Proceed: `ADR-0035` が現行内容でAcceptedされた場合、後続sliceで本Issueを `DecisionStatus=Fixed` 候補へ進め、`DATA-MAINT-04` のOpen-readinessを別途確認する。
+- Hold: Maintainer が追加証跡や文言修正を必要とする場合、本IssueをPendingのまま維持し、実装issueを開く前に `ADR-0035` を更新する。
+- Stop: この引き渡しを、管理系mutation API、管理UI、本文閲覧、文書横断検索、削除/アーカイブ、所有者移管、保持期限自動化の実装許可として扱う要求を検知した場合は停止する。
+
+### Verify
+
+- `git diff --check -- 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
+- `rg -n "Maintainer decision packet|ADR-0035 maintainer decision packet|Accept as written|Request changes|Reject|DecisionStatus=Pending|DATA-MAINT-04" 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
+- Proceed for this slice: docs-only の判断引き渡し改善として継続可能。ADR status と実装状態は変更しない。
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している。
