@@ -1583,3 +1583,31 @@ DoDテンプレ（Draft→Open）
 - Keep release screenshot approval and physical keyboard acceptance human-owned; automated Playwright is supporting evidence, not final release authority.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, product-value authority, schema/API responsibilities, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-06: review-pack trace export rerun sync
+
+- Candidate: `origin/main@04e578abbb0c46fb5cb4cd41a8fb37a138ee0700`.
+- Decision date (JST): 2026-06-06.
+- Reviewer: Codex.
+- Scope: targeted current-main rerun of `PRODUCT-VALUE-03` review-pack trace export evidence. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, or release authority.
+
+### Gate Summary
+
+- G1 safety defaults: Conditional Go / unchanged. The rerun verifies review-pack export control consistency but does not change SafeMode or masking policy.
+- G2 primary user operations: Conditional Go improved for the V4 review-pack path. Current `main` reran and passed import, card selection, Share & Reproduce, Overview/Detail switching, ZIP export, and trace-file presence/absence checks.
+- G5 public documentation and configuration contract: Unchanged / Conditional Go. No public documentation or screenshot assets changed in this slice.
+- G7 regression: Go for this targeted slice. The targeted Playwright review-pack trace export test passed locally; full release-candidate regression and Compose startup were not executed from this checkpoint.
+- V4 reviewable outcome package: Conditional Go for trace-back freshness / No-Go for full shipment. `PRODUCT-VALUE-03` still needs fixture acceptance, SafeMode/unreviewed readability acceptance, read-only review proof, and final decision linkage.
+- Final: **Conditional Go for targeted review-pack trace evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Local E2E rerun:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/review_pack_trace_export.spec.ts --reporter=line` -> pass, 1 test.
+
+### Follow-ups
+
+- Keep `PRODUCT-VALUE-03` Draft until H-PV3-1 fixture acceptance, H-PV3-2 trace-back sufficiency/read-only proof decision, and H-PV3-3 Overview/Detail UX acceptance are recorded.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, review-pack contract, product-value authority, schema/API responsibilities, runtime environment policy, or release authority.
