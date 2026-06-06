@@ -1548,3 +1548,38 @@ DoDテンプレ（Draft→Open）
 - Keep environment rehearsal under `ENV-CONFIG-DRIFT-01`; ADR/document consistency is not a substitute for Docker-capable Compose verification.
 - Keep branch deletion and remote cleanup human/repository-maintainer owned through `PROJECT-GOV-01`.
 - No new ADR is needed for this sync. ADR work is required only if the project changes the public env-var prefix policy, high-privilege lifecycle boundary, SafeMode/share-export policy, schema/API responsibilities, or release authority.
+
+## Productization Gate Record 2026-06-06: post-2341 first-value E2E rerun sync
+
+- Candidate: `origin/main@762aad281792a508034d0ba9715c77d2432d84b2`.
+- Decision date (JST): 2026-06-06.
+- Reviewer: Codex.
+- Scope: post-merge sync after #2341 landed and a current-main rerun of the first-value keyboard/mouse E2E pair. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, or release authority.
+
+### Gate Summary
+
+- G0 planning integrity: Go. #2341 is merged on `main`; active issue validation and triage remain clean for this planning delta.
+- G1 safety defaults: Conditional Go / unchanged. The keyboard route still verifies SafeMode share preflight, and no policy relaxation occurred.
+- G2 primary user operations: Conditional Go improved. Current `main` reran and passed the representative keyboard and mouse first-value paths: sample open, search, card selection, critique entry, share preflight, close/focus return, two-card selection, and `Island 1` creation.
+- G4 viewport and operability: Conditional Go / unchanged for release. The rerun supports operability, but it does not replace human release screenshot approval or physical keyboard acceptance.
+- G7 regression: Go for this targeted slice. The targeted Playwright pair passed locally; full release-candidate regression and Compose startup were not executed from this checkpoint.
+- Value gates: Conditional Go for evidence freshness / No-Go for full shipment. `PRODUCT-VALUE-01` now has a current-main rerun record, but it remains Draft until Productization Program Owner / UX reviewer / QA Lead acceptance resolves H-PV1..H-PV3.
+- Final: **Conditional Go for targeted first-value evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Incorporated PR:
+  - #2341 `[codex] Clarify domain expression open route` -> merged at `2026-06-06T05:50:29Z`.
+- Local E2E rerun:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/keyboard_release_candidate_flow.spec.ts e2e/first_meaningful_map_mouse_flow.spec.ts --reporter=line` -> pass, 2 tests.
+- Local planning checks:
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` -> pass (`active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none`).
+
+### Follow-ups
+
+- Keep `PRODUCT-VALUE-01` Draft until H-PV1 fixture value acceptance, H-PV2 UX keyboard/mouse naturalness acceptance, and H-PV3 screenshot/trace bundle approval are recorded.
+- Keep release screenshot approval and physical keyboard acceptance human-owned; automated Playwright is supporting evidence, not final release authority.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, product-value authority, schema/API responsibilities, runtime environment policy, or release authority.
