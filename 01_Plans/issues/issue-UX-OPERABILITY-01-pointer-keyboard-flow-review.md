@@ -73,3 +73,22 @@ UI 操作モデルを 4 分類（到達性 / フォーカススコープ / 段�
 - `03_Implement/frontend/src/canvas/CardView.tsx` における keyboard 選択契約（`Enter/Space`, `aria-selected`, `data-focus="card"`）を回帰対象として固定。
 - `03_Implement/frontend/src/ui/SidePanel.tsx` で `selection-context` / `advanced` の段階開示契約（`data-panel`, `data-panel-group`, `aria-expanded`）を実装・検証。
 - `03_Implement/frontend/src/ui/SharePanel.tsx` と `03_Implement/frontend/src/App.tsx` の `Escape` 閉鎖 + フォーカス復帰契約を回帰対象として維持。
+
+## Evidence Refresh 2026-06-06: current-main canvas and polygon operability rerun
+
+- Candidate: `origin/main@7472004655500e3f737e1ef1abd22577a1f9a56b`.
+- Reviewer: Codex.
+- Scope: current-main browser automation rerun for pointer/keyboard canvas selection, selection-panel reachability, and polygon boundary editing. This is an evidence refresh only; it does not change runtime behavior, UI copy, SafeMode/share-export policy, issue status, or release authority.
+- Local execution:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/polygon_vertex_edit.spec.ts e2e/polygon_autofit_qa_boundary.spec.ts e2e/canvas_focus_order.spec.ts --reporter=line` -> pass, 6 tests.
+- Covered user operations:
+  - Card selection by keyboard `Enter`, `aria-selected` confirmation, and selection-context panel visibility at 960px width.
+  - Tab traversal from canvas selection into selected-card and selected-island panel actions.
+  - Island selection by keyboard activation and localized island editor label checks.
+  - Polygon vertex drag with persisted point changes.
+  - Polygon vertex keyboard nudge, Shift+Arrow larger nudge, and Delete removal.
+  - Deterministic polygon export, self-intersecting import fallback, and self-intersection edit rejection.
+- Human follow-ups:
+  - Keep physical keyboard acceptance, screen-reader acceptance, and real Chrome visual review human-owned before release.
+  - Keep broader advanced-panel traversal as sampled evidence rather than exhaustive proof unless UX scope expands.
