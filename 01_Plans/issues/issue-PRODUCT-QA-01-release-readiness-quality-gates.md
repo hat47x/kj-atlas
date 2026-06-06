@@ -1611,3 +1611,31 @@ DoDテンプレ（Draft→Open）
 - Keep `PRODUCT-VALUE-03` Draft until H-PV3-1 fixture acceptance, H-PV3-2 trace-back sufficiency/read-only proof decision, and H-PV3-3 Overview/Detail UX acceptance are recorded.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, review-pack contract, product-value authority, schema/API responsibilities, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-06: domain-expression keyboard rerun sync
+
+- Candidate: `origin/main@b8a1619d20aad91713800f3f0c209af3de14ff8b`.
+- Decision date (JST): 2026-06-06.
+- Reviewer: Codex.
+- Scope: targeted current-main rerun of `DOMAIN-EXPR-01` keyboard access evidence and `PRODUCT-VALUE-02` ambiguity/critique read-only slice sync. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, or release authority.
+
+### Gate Summary
+
+- G2 primary user operations: Conditional Go improved for the domain-expression read-only keyboard path. Current `main` reran and passed access to claim type, review state, evidence, contradiction, critique memo, and critique tags after keyboard card selection.
+- G4 viewport and operability: Conditional Go / unchanged for release. The rerun supports keyboard operability evidence, but it does not replace real-Chrome UX acceptance, physical keyboard review, or release screenshot approval.
+- V2 ambiguity/evidence workflow: Conditional Go for the `DOMAIN-EXPR-01` read-only slice / No-Go for full value gate. PRODUCT-VALUE-02 still needs Hold/Pending, critique-to-reproposal, share/export proof, AI-boundary proof, and umbrella integration acceptance.
+- G7 regression: Go for this targeted slice. The targeted Playwright domain-expression keyboard test passed locally; full release-candidate regression and Compose startup were not executed from this checkpoint.
+- Final: **Conditional Go for targeted domain-expression keyboard evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Local E2E rerun:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/domain_expression_keyboard_access.spec.ts --reporter=line` -> pass, 1 test.
+
+### Follow-ups
+
+- Keep `DOMAIN-EXPR-01` Draft until H-DX1 visible-state acceptance, H-DX2 filter-boundary decision, H-DX3 real-Chrome keyboard naturalness acceptance, and H-DX4 schema-neutral confirmation are recorded.
+- Keep `PRODUCT-VALUE-02` Draft until the split `DOMAIN-EXPR-01..04` evidence can be integrated into a complete value-gate packet.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, domain-expression schema ownership, AI review authority, product-value authority, runtime environment policy, or release authority.
