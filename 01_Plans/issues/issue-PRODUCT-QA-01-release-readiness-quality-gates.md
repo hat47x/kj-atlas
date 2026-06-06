@@ -1667,3 +1667,32 @@ DoDテンプレ（Draft→Open）
 - Keep `QA-E2E-USE-01` in Execution Hold until Pending-1/Pending-2, Compose/SQLite/exception-path approval, and gate evidence columns are formally accepted.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, E2E execution authority, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-06: public visibility / I18N / readOnly rerun sync
+
+- Candidate: `origin/main@ccea3b27c8b56271c4702504f9b216adaf902713`.
+- Decision date (JST): 2026-06-06.
+- Reviewer: Codex.
+- Scope: targeted current-main rerun of `QA-PUB-01` public visibility, I18N flow parity, and readOnly/SafeMode boundary evidence. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, or release authority.
+
+### Gate Summary
+
+- G1 safety defaults: Conditional Go / unchanged. The rerun verifies readOnly + SafeMode locked redaction context behavior but does not change policy.
+- G3 Japanese UI / i18n: Conditional Go improved for flow parity. `locale=en` visibility/edit-replace equivalence passed, while human translation-quality review remains required.
+- G5 public documentation and configuration contract: Conditional Go improved for public-pack compatibility. Legacy pack visibility fallback and missing view visibility behavior passed, but public publication approval remains separate.
+- G7 regression: Go for this targeted slice. The targeted Playwright public visibility/I18N/readOnly pair passed locally; full release-candidate regression and Compose startup were not executed from this checkpoint.
+- QA-PUB / I18N boundary: Conditional Go for evidence freshness / Execution Hold unchanged. PUB/I18N approval IDs and execution-path approval remain unresolved.
+- Final: **Conditional Go for targeted public/I18N/readOnly evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Local E2E rerun:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/pub_visibility_i18n_readonly_flow.spec.ts e2e/public_pack_visibility_compat.spec.ts --reporter=line` -> pass, 5 tests.
+
+### Follow-ups
+
+- Keep `QA-PUB-01` in Execution Hold until PUB-01 approval, I18N-03 approval, and Compose/SQLite/exception execution-path approval are formally recorded.
+- Keep human translation-quality review separate from automated flow-parity evidence.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, public exposure policy, I18N authority, runtime environment policy, or release authority.
