@@ -223,3 +223,22 @@ Open化ゲートを「3軸境界 + 承認証跡 + 実行経路固定」で定義
 | 境界判定性 | `rg -n "公開互換|I18N等価|安全境界|parity|translation quality|Execution: Hold|Pending" 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md` | 必須語彙ヒット |
 | メタ整合 | `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md` | exit 0 |
 | 差分健全性 | `git diff --check -- 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md` | 警告なし |
+
+## Stream H evidence rerun 2026-06-06: public visibility / I18N / readOnly boundary pair
+
+- Scope: current-main representative E2E evidence only. `Status=Draft (Open-Readiness Prepared / Execution Hold)` and `Execution: Hold` remain unchanged because PUB/I18N approvals, execution-path approval, and release approval are still outside this rerun.
+- Candidate mainline: `origin/main@ccea3b27c8b56271c4702504f9b216adaf902713`.
+- Execution path: SQLite/local frontend path with Vite started directly by bundled Node.js because this Codex host does not expose `npm` on PATH.
+- Command:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/pub_visibility_i18n_readonly_flow.spec.ts e2e/public_pack_visibility_compat.spec.ts --reporter=line`
+- Result: **pass, 5 tests**.
+
+### Boundary consumption
+
+| Boundary axis | Evidence consumed | Gate impact | Still not covered |
+| --- | --- | --- | --- |
+| 公開互換 | Visibility edits persist after reload; legacy public packs without visibility metadata load without invalid-pack errors; fallback view visibility is Restricted when missing. | Improves current-main PUB-01 compatibility evidence. | Product/Reviewer approval ID for the public boundary. |
+| I18N等価 | `locale=en` keeps visibility edit and document replacement flow equivalent. | Improves current-main I18N flow parity evidence. | Human translation-quality review and I18N-03 external publication approval. |
+| 安全境界 | `readOnly=1` shows read-only state, disables layout suggestion, and keeps locked redaction contexts visible in share preflight. | Improves current-main readOnly + SafeMode boundary evidence. | Release screenshot approval and full release-candidate environment rehearsal. |
+
+- Stopper classification: none introduced by this rerun. It is evidence-consumption only and does not change execution scope, product behavior, public documentation, SafeMode policy, or release authority.
