@@ -173,3 +173,16 @@
 - 判定: ✅ Done維持（docs整合）。
 - 根拠: 決定論 / 監査性 / 後方互換 / 最小E2E観点が既存AC/DoDと矛盾しない。
 - Stop条件: 依存矛盾またはAC欠落が観測された場合は3回自己修復後にFail-safe停止。
+
+## Current-main Evidence Refresh (2026-06-06)
+
+- Candidate: `origin/main@eca7c4979374a264a50820b14598be5eb760bde0`.
+- Scope: targeted rerun of the user-facing bundle export path that verifies structural metrics are included in `diagnostics.md` and remain deterministic across repeated exports from the same document.
+- Command:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/diagnostics_structural_metrics.spec.ts --reporter=line` -> pass, 1 test.
+- Evidence detail:
+  - Imported a four-card, two-component document through the Chrome file picker flow.
+  - Exported the review bundle from Share & Reproduce.
+  - Confirmed `diagnostics.md` contains `connectedComponentCount=2`, `largestComponentRatio=0.75`, `bridgeEdgeCount=2`, `isolationRate=0.25`, `connectivityScore=0.6667`, and `degreeSkewRatio=2`.
+  - Exported a second time and confirmed the diagnostics markdown is byte-for-byte identical.
+- Decision impact: Done status remains valid. No ADR is required because the metric contract, SafeMode/share policy, and diagnostics authority did not change.

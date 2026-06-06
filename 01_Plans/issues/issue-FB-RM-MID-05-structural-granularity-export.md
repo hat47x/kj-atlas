@@ -109,3 +109,16 @@ overview/detail を使い分けた再現可能な出力モードがなかった�
 - 判定: ✅ Done維持（docs整合）。
 - 根拠: 決定論 / 監査性 / 後方互換 / 最小E2E観点が既存AC/DoDと矛盾しない。
 - Stop条件: 依存矛盾またはAC欠落が観測された場合は3回自己修復後にFail-safe停止。
+
+## Current-main Evidence Refresh (2026-06-06)
+
+- Candidate: `origin/main@eca7c4979374a264a50820b14598be5eb760bde0`.
+- Scope: targeted rerun of hierarchy level visibility and bundle export persistence for the related `FB-RM-MID-04` / `FB-RM-MID-05` structural granularity path.
+- Command:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/hierarchy_level_persistence.spec.ts --reporter=line` -> pass, 1 test.
+- Evidence detail:
+  - Imported a hierarchy document through the Chrome file picker flow.
+  - Switched View -> Structure level to `overview` and confirmed only the root placard remains visible while child/member cards are hidden.
+  - Switched back to `detail` and confirmed root/child member cards are visible again.
+  - Exported a review bundle and confirmed `document.json` preserves `parentIslandId` and `placardCardId` for the child and root islands.
+- Decision impact: Done status remains valid. No ADR is required because this refresh does not change the hierarchy data contract, export granularity policy, or UI authority.
