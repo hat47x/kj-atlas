@@ -390,3 +390,24 @@ No-Go conditions for this value gate:
 | Decision record | This section adds a current-main rerun record. | Final Open decision must cite H-PV1/H-PV2/H-PV3 outcomes. |
 
 - No ADR is needed for this rerun. ADR routing remains limited to changes in product value model, release authority, SafeMode/share policy, or first-run product boundary.
+
+## Mainline E2E rerun 2026-06-07: keyboard release-candidate trace
+
+- Candidate mainline: `origin/main@14b2d9d44cbae54aee10ab9f13e3396a3f153035`.
+- Status impact: **Draft remains**. This rerun proves the representative keyboard trace is still executable on current `main`; it does not replace human product-value acceptance, release screenshots, Compose startup, or final program approval.
+- Environment note: the Codex host did not expose `npm` or PATH `node.exe` for this run. Vite and Playwright were executed with bundled Node.js:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe`
+  - Vite was started directly with `node .\node_modules\vite\bin\vite.js --host 127.0.0.1 --port 4173`.
+- Verification command:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/keyboard_release_candidate_flow.spec.ts --reporter=line`
+- Result: **pass, 1 test**.
+
+### Evidence packet update
+
+| Evidence item | Current status after rerun | Remaining Open blocker |
+| --- | --- | --- |
+| Keyboard operation trace | Reconfirmed pass for sample open, search, card selection, critique memo, share preflight, close, and focus return. | UX reviewer must accept the Tab/Enter/Space path as natural enough for representative operation. |
+| Safe entry evidence | Reconfirmed through the keyboard route's SafeMode share-preflight assertion. | QA Lead still needs a release evidence bundle or screenshot reference that can be cited from this issue. |
+| Decision record | This section adds a current-main rerun record and is synchronized into `PRODUCT-QA-01`. | Final Open decision must cite H-PV1/H-PV2/H-PV3 outcomes. |
+
+- No ADR is needed for this rerun. ADR routing remains limited to changes in product value model, release authority, SafeMode/share policy, or first-run product boundary.

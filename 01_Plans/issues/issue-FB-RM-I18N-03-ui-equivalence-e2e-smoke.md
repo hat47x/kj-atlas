@@ -191,3 +191,15 @@ Compose不可環境でも SQLite 代替経路で品質ゲートを継続でき�
   - Confirmed the layout suggestion action remains disabled in read-only mode for both locales.
   - Opened Share & Reproduce and confirmed the SafeMode locked redaction-context message is visible in each locale.
 - Decision impact: Done status remains valid. No ADR is required because this refresh does not change i18n authority, SafeMode/share policy, or readOnly semantics.
+
+## Current-main Evidence Refresh (2026-06-07): locale query fallback
+
+- Candidate: `origin/main@14b2d9d44cbae54aee10ab9f13e3396a3f153035`.
+- Scope: targeted rerun of locale query shell-label switching, invalid-locale fallback, and English document replace flow. This is an evidence refresh only; it does not change locale catalogs, fallback order, SafeMode policy, readOnly behavior, public documentation, issue status, or release authority.
+- Command:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line` -> pass, 3 tests.
+- Evidence detail:
+  - Confirmed `?locale=en` shows English shell labels for Share & Reproduce and View.
+  - Confirmed invalid `?locale=zz` falls back to Japanese shell labels and does not show the English shell buttons.
+  - Confirmed `?locale=en` preserves the browser document-load and replace-confirmation flow through to visible card rendering.
+- Decision impact: Done status remains valid. No ADR is required because this refresh does not change i18n authority, locale fallback policy, import behavior, or share/export policy.
