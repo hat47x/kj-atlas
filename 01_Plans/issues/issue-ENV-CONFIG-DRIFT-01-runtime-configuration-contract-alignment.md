@@ -631,3 +631,21 @@ Non-goals:
 
 - Proceed: the public-prefix decision record is readable again and matches the current implementation/documentation contract.
 - Stop before Done: Docker-capable `docker compose config` verification is still required, and historical ADR readability cleanup should remain a separate documentation-quality slice.
+
+## 21) Historical ADR legacy environment reference sync (2026-06-06)
+
+### Scope
+
+- Read: historical ADRs that still described runtime settings with legacy unprefixed examples.
+- Finding: current implementation, registry, and public docs use `KJ_ATLAS_*`, but several older accepted ADRs still referenced `DATABASE_URL`, `LLM_PROVIDER`, `LLM_ESCALATION_ENABLED`, or `LLM_LARGE_SCALE_OPT_IN` as if they were current setting keys.
+- Decision: normalize those references to the accepted `KJ_ATLAS_*` names without changing the historical ADR decisions or product runtime behavior.
+
+### Execute
+
+- Updated `ADR-0001`, `ADR-0003`, `ADR-0007`, `ADR-0009-local-llm-integration`, and `ADR-0009-phase-a-review` to use current `KJ_ATLAS_*` key names.
+- Kept the changes limited to environment-variable names. No design conclusion, implementation scope, LLM policy, SafeMode behavior, or public documentation contract was changed.
+
+### Proceed/Stop
+
+- Proceed: historical decision records no longer contradict the accepted no-exception public prefix policy in their current-key examples.
+- Stop before Done remains unchanged: Docker-capable `docker compose config` verification is still required before closing this issue.

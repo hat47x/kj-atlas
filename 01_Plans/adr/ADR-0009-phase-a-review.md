@@ -15,8 +15,8 @@ Phase Aでは、以下4観点で文書間照合を実施した。
 2. 責務境界
    - provider spec は「I/Fと監査契約」、runtime constraints は「実行環境制約」、quality strategy は「ゲート基準」、escalation policy は「外部送信の運用条件」に責務分離。
 3. fail-safe
-   - default無効（`LLM_PROVIDER=none`）と `LLM_ESCALATION_ENABLED=false` を4文書で一致。
-   - `LLM_ESCALATION_ENABLED=false` 時に external へフォールバックしない規則を固定。
+   - default無効（`KJ_ATLAS_LLM_PROVIDER=none`）と `KJ_ATLAS_LLM_ESCALATION_ENABLED=false` を4文書で一致。
+   - `KJ_ATLAS_LLM_ESCALATION_ENABLED=false` 時に external へフォールバックしない規則を固定。
 4. 運用条件
    - opt-in条件（local/external）と allowlist-only outbound を明文化。
 
@@ -26,7 +26,7 @@ Phase Aでは、以下4観点で文書間照合を実施した。
 |---|---|---|
 | provider既定 | provider specは`none`既定、escalation policyはLocal既定で不一致 | システム既定を`none`で統一。localは「有効化時の標準経路」に変更 |
 | provider語彙 | `large-scale` / `external strong-model` / `openai` が混在 | `none | fixture | local | external` に統一 |
-| opt-in条件 | local/externalの有効化条件が文書ごとに曖昧 | localは明示opt-in、externalは`LLM_ESCALATION_ENABLED=true`+allowlist-only outbound必須 |
+| opt-in条件 | local/externalの有効化条件が文書ごとに曖昧 | localは明示opt-in、externalは`KJ_ATLAS_LLM_ESCALATION_ENABLED=true`+allowlist-only outbound必須 |
 | fail-safe | 無効時の外部フォールバック禁止が明示不足 | runtime + qualityで「無効時external不使用」を明文化 |
 | 監査整合 | provider監査キーの値集合が分散 | provider監査値を4文書の語彙に合わせて固定 |
 
@@ -34,8 +34,8 @@ Phase Aでは、以下4観点で文書間照合を実施した。
 
 確認結果:
 
-- 4文書とも `LLM_PROVIDER=none` を既定として扱う。
-- 4文書とも external送信は opt-in + 制約付き（`LLM_ESCALATION_ENABLED=true` と allowlist-only outbound）で一致。
+- 4文書とも `KJ_ATLAS_LLM_PROVIDER=none` を既定として扱う。
+- 4文書とも external送信は opt-in + 制約付き（`KJ_ATLAS_LLM_ESCALATION_ENABLED=true` と allowlist-only outbound）で一致。
 - quality strategyの必須ゲートに safeMode と fail-safe（外部不使用）を含め、escalation policyと矛盾なし。
 - runtime constraints の実行モードは provider語彙と整合し、default無効・外部禁止（通常時）を保持。
 
