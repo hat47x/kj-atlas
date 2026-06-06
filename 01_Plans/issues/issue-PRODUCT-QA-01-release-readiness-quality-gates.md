@@ -1861,3 +1861,30 @@ DoDテンプレ（Draft→Open）
 - Keep physical keyboard acceptance, screen-reader acceptance, real Chrome CE3 visual review, Auth Level2 boundary evidence, and final program approval human-owned or separately gated; automated Playwright is supporting evidence, not final release authority.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes SafeMode/share-export policy, CE3 audit semantics, Core/Consensus ownership, AuthContext contract, Level1/Level2 applicability, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-07: locale query and keyboard release-candidate rerun sync
+
+- Candidate: `origin/main@14b2d9d44cbae54aee10ab9f13e3396a3f153035`.
+- Decision date (JST): 2026-06-07.
+- Reviewer: Codex.
+- Scope: targeted current-main rerun of `FB-RM-I18N-03` locale query fallback/English replace flow and `PRODUCT-VALUE-01` keyboard-only release-candidate trace. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, or release authority.
+
+### Gate Summary
+
+- G2 primary user operations: Conditional Go improved for keyboard release-candidate freshness. Current `main` reran and passed keyboard-only sample loading, search, card selection, critique memo input, share preflight, close, and focus return.
+- G3 Japanese UI / i18n: Conditional Go improved for locale-query freshness. Current `main` reran and passed `?locale=en` shell labels, invalid `?locale=zz` Japanese fallback, and English document replace behavior.
+- G4 viewport and operability: Conditional Go / sampled. The keyboard route verifies Tab/Enter/Space operation across a representative flow, but it does not replace physical keyboard, screen-reader, or full viewport acceptance.
+- G7 regression: Go for this targeted slice. The targeted Playwright pair passed locally; full release-candidate regression and Compose startup were not executed from this checkpoint.
+- Final: **Conditional Go for targeted locale query and keyboard release-candidate evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Local E2E rerun:
+  - Bundled Node.js started Vite directly on `127.0.0.1:4173` because this Codex host did not expose `npm` on PATH.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/i18n_locale_query_equivalence.spec.ts e2e/keyboard_release_candidate_flow.spec.ts --reporter=line` -> pass, 4 tests.
+
+### Follow-ups
+
+- Keep human translation-quality review, physical keyboard acceptance, screen-reader acceptance, real Chrome keyboard-flow visual review, first-value fixture acceptance, and final program approval human-owned or separately gated; automated Playwright is supporting evidence, not final release authority.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes locale fallback policy, SafeMode/share-export policy, first-value model, product-value authority, runtime environment policy, or release authority.
