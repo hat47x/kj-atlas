@@ -942,5 +942,11 @@
   "search_bar.placeholder": "Search cards",
   "search_bar.prev": "Prev",
   "search_bar.next": "Next",
-  "search_bar.hide_non_matches": "Hide non-matches"
+  "search_bar.hide_non_matches": "Hide non-matches",
+  "state_filter.label": "Filter by state",
+  "state_filter.unreviewed": "Unreviewed",
+  "state_filter.no_evidence": "No evidence",
+  "state_filter.has_critique": "Has critique",
+  "state_filter.hide_non_matches": "Hide non-matching",
+  "state_filter.match_count": "{count} match(es)"
 }
