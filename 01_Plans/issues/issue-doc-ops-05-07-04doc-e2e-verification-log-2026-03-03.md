@@ -448,3 +448,22 @@
   - `rg -n "Open readiness:|状態分類:|Phase 5: Proceed" 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
   - `git diff --check`
 - Proceed verdict (Phase 6): `条件付き`
+
+## Stream G documentation/public boundary pass (2026-06-13)
+
+### Plan
+- 対象: `e2e verification log`。
+- Scope: Docs-only。`03_Implement/` と `02_Architecture/` は編集しない。
+- Acceptance: 公開/保守/開発者/内部計画の分類が追跡でき、SafeMode・share/export・AI提案レビューの安全境界が後退しない。
+
+### Execute
+- RequirementID `DOC-OPS-05-07` の公開境界を再確認。
+- Decision: e2e_verification_log は開発者/検証記録向けに分類し、公開利用ガイドやGist本文には含めない境界を明記した。
+
+### Verify
+- docs-check 対象として issue memo metadata、Markdown整形、リンク導線、公開不可情報の混入有無を確認する。
+- Self-correction budget: 0/3 から開始し、4回目相当は停止する。
+
+### Proceed
+- 判定: Ready for verification。
+- 残課題: 実ファイル移動や開発者向け正本の再配置が必要な場合は、別PRで allowlist と移動先を明示して扱う。

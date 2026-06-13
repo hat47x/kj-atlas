@@ -162,3 +162,21 @@
 - 用語・役割・導線・D1〜D4 の4観点でドリフト検知を再利用できる。
 - SafeMode既定ONとshare/export保護を崩す変更は、AUTH関連の文書更新でも禁止のまま維持される。
 
+## Stream G documentation/public boundary pass (2026-06-13)
+
+### Plan
+- 対象: `cross-document drift`。
+- Scope: Docs-only。`03_Implement/` と `02_Architecture/` は編集しない。
+- Acceptance: 公開/保守/開発者/内部計画の分類が追跡でき、SafeMode・share/export・AI提案レビューの安全境界が後退しない。
+
+### Execute
+- RequirementID `DOC-OPS-02` の公開境界を再確認。
+- Decision: 今回の04文書更新は02層を変更せず、公開文書側で役割・導線・安全境界を同期する範囲に限定した。
+
+### Verify
+- docs-check 対象として issue memo metadata、Markdown整形、リンク導線、公開不可情報の混入有無を確認する。
+- Self-correction budget: 0/3 から開始し、4回目相当は停止する。
+
+### Proceed
+- 判定: Ready for verification。
+- 残課題: 実ファイル移動や開発者向け正本の再配置が必要な場合は、別PRで allowlist と移動先を明示して扱う。
