@@ -1924,3 +1924,36 @@ DoDテンプレ（Draft→Open）
 - Keep physical keyboard acceptance, screen-reader acceptance, real Chrome visual review, human release screenshots, and final program approval human-owned or separately gated; automated Playwright is supporting evidence, not final release authority.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes locale fallback policy, SafeMode/share-export policy, public configuration policy, UI architecture, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-13: share/readOnly UI and public-doc boundary sync
+
+- Candidate: `origin/main@ae78dc309558f92231f00d585a7b6a680ab4d97f`.
+- Decision date (JST): 2026-06-13.
+- Reviewer: Codex.
+- Scope: targeted latest-main rerun after SharePanel/UI copy and public documentation-boundary updates. The run covered focused SharePanel/i18n regression and representative browser UI operation across ja/en safe-mode locked contexts, readOnly action blocking, visibility/edit-replace persistence, keyboard-only release-candidate flow, and header/panel viewport + focus behavior. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation publication authority, issue statuses, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation passed and triage reported `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none`.
+- G1 safety defaults: Conditional Go improved. Focused SharePanel regression and readOnly + SafeMode locked-context E2E passed in ja/en representative paths.
+- G2 primary user operations: Conditional Go improved. Browser automation passed visibility edit/reload persistence, English edit-replace flow, keyboard-only sample loading, search, card selection, critique memo input, share preflight, close, and focus return.
+- G3 Japanese UI / i18n: Conditional Go improved. SharePanel copy regression, i18n equivalence, hardcode guard, and ja/en safe-share E2E passed after the latest mainline UI copy updates.
+- G4 viewport and operability: Conditional Go improved. Header/panel fit passed at 1440px, 1280px, 920px, 768px, and 390px; keyboard focus and Escape return passed at 1440px and 768px.
+- G5 public docs and config: Conditional Go / sampled. Mainline documentation-boundary updates were included in the candidate, but public publication approval and full external-index review remain separate.
+- G6 diagnostics and support: Unchanged / Conditional Go. This run did not rehearse diagnostics bundle or recovery flows.
+- G7 regression: Go for this targeted slice. Focused frontend regression and representative Playwright both passed.
+- Final: **Conditional Go for targeted share/readOnly UI and public-doc boundary evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- Local validation:
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass.
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` -> pass, stopper none.
+  - Bundled `node.exe .\node_modules\vitest\vitest.mjs run src/ui/SharePanel.test.ts src/ui/i18n_equivalence.integration.test.ts src/i18n/ui_hardcode_guard.test.ts` -> pass, 29 tests.
+  - Bundled `node.exe .\node_modules\playwright\cli.js test e2e/i18n_locale_functional_equivalence.spec.ts e2e/pub_visibility_i18n_readonly_flow.spec.ts e2e/keyboard_release_candidate_flow.spec.ts e2e/header_toolbar_layout.spec.ts --reporter=line` with Vite on `127.0.0.1:4173` -> pass, 12 tests.
+
+### Follow-ups
+
+- Keep physical keyboard acceptance, screen-reader acceptance, real Chrome visual review, human release screenshots, public documentation publication approval, and final program approval human-owned or separately gated; automated Playwright is supporting evidence, not final release authority.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes locale fallback policy, SafeMode/share-export policy, readOnly authority, public documentation publication authority, UI architecture, product-value authority, runtime environment policy, or release authority.

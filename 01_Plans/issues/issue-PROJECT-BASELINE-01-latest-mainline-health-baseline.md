@@ -1007,6 +1007,59 @@
 
 ---
 
+## 27) Baseline delta 2026-06-13: post-2360 share/readOnly UI and public-doc boundary sync
+
+### Candidate
+
+- Target main: `origin/main` = `ae78dc309558f92231f00d585a7b6a680ab4d97f`.
+- Previous recorded mainline baseline: `origin/main@147171584988b60b1edca4547cc32fd158818568` in section 26.
+- Scope note: this delta refreshes evidence after the latest mainline documentation-boundary and SharePanel/UI updates. It records planning integrity, focused SharePanel/i18n regression, and representative browser UI operation coverage for safe sharing, readOnly behavior, locale equivalence, keyboard-only release-candidate flow, and header/panel viewport + focus behavior. It does not change runtime behavior, API/CLI behavior, SafeMode defaults, share/export policy, public documentation publication authority, issue statuses, release authority, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / bundled Node.js (`C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe`) / backend virtualenv Python / Vite manually started on `127.0.0.1:4173` for frontend-only Playwright.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `ae78dc309558f92231f00d585a7b6a680ab4d97f` | G0 |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+| Frontend SharePanel/i18n regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run src/ui/SharePanel.test.ts src/ui/i18n_equivalence.integration.test.ts src/i18n/ui_hardcode_guard.test.ts` | Pass: 3 files / 29 tests | G1 / G3 / G7 |
+| Representative browser UI E2E | bundled `node.exe .\node_modules\playwright\cli.js test e2e/i18n_locale_functional_equivalence.spec.ts e2e/pub_visibility_i18n_readonly_flow.spec.ts e2e/keyboard_release_candidate_flow.spec.ts e2e/header_toolbar_layout.spec.ts --reporter=line` with Vite running on `127.0.0.1:4173` | Pass: 12 tests | G1 / G2 / G3 / G4 / G7 |
+
+### Findings and routing
+
+- No latest-main blocker was found in this targeted baseline refresh. The covered scope confirms the updated SharePanel copy surface, fixed safe-mode locked-context wording in Japanese and English, readOnly action blocking, visibility/edit-replace persistence, keyboard-only release-candidate flow, and header/panel viewport + focus behavior.
+- Documentation-boundary changes were ingested from main, but this run did not republish public documentation or perform a full Gist/publication rehearsal.
+- No new ADR is required. The run records evidence against existing SafeMode/share-export, readOnly, locale, public-documentation-boundary, and release-authority policies.
+
+### Gate classification
+
+| Gate | 2026-06-13 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, active issue validation, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go improved | SharePanel regression and readOnly + SafeMode locked-context E2E passed for ja/en representative paths. |
+| G2 primary user operations | Conditional Go improved | Keyboard-only sample load, search, selection, critique memo, share preflight, close, visibility edit, replace flow, and reload persistence passed in browser automation. |
+| G3 Japanese UI / i18n | Conditional Go improved | Focused i18n tests and ja/en readOnly/safe-share equivalence passed after the latest UI copy updates. |
+| G4 viewport and operability | Conditional Go improved | Header and panel fit passed at 1440px, 1280px, 920px, 768px, and 390px, with keyboard focus/Escape return checks at 1440px and 768px. |
+| G5 public docs and config | Conditional Go / sampled | Mainline documentation-boundary updates were included in the candidate, but public publication approval and full external-index review remain separate. |
+| G6 diagnostics and support | Unchanged / Conditional Go | This run did not rehearse diagnostics bundle or operational recovery flows. |
+| G7 regression | Go for targeted slice | Focused SharePanel/i18n regression and representative Playwright pass. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the post-2360 share/readOnly UI and public-doc boundary sync.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- Follow-up routing:
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Physical keyboard, screen-reader, and real Chrome visual acceptance: human-owned release acceptance lane.
+  - Public documentation publication approval and final external-index review: `DOC-PUBLIC-BOUNDARY-01` / documentation owner lane.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
