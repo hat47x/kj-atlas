@@ -744,3 +744,36 @@ Classification: **Done-ready for the runtime configuration contract; environment
 - Residual drift: none found in the reviewed runtime configuration contract.
 - Remaining non-drift hold: Docker-capable `docker compose config` evidence.
 - Changed file in this stream: this issue memo only; no code, UI, CE contract, data lifecycle, or public-boundary feature changes.
+
+## 24) Docker-capable host handoff refresh (2026-06-13)
+
+### Scope
+
+- Rechecked the current Codex host after the latest `main` sync.
+- `docker --version` still fails with `docker: The term 'docker' is not recognized...`.
+- `03_Implement/deploy/docker-compose.yml` remains the Compose source for this issue. No root-level `docker-compose.yml` is expected.
+- This update does not change Compose, backend settings, frontend env handling, public docs, SafeMode, share/export, or release authority.
+
+### Current classification
+
+- Runtime configuration contract: **Done-ready**.
+- Closure state: **Hold** until a Docker-capable host records live `docker compose config` evidence.
+- Drift state: none found in the reviewed public key contract. The remaining blocker is evidence availability, not a known configuration mismatch.
+
+### Human-owned verification task
+
+Run the following from a host with Docker Compose available:
+
+```powershell
+cd 03_Implement\deploy
+docker compose config
+```
+
+Expected result:
+
+- Command exits 0.
+- User-facing inputs in the rendered config are driven by `KJ_ATLAS_WEB_PORT`, `KJ_ATLAS_POSTGRES_DB`, `KJ_ATLAS_POSTGRES_USER`, `KJ_ATLAS_POSTGRES_PASSWORD`, `KJ_ATLAS_FRONTEND_API_BASE`, `KJ_ATLAS_DATABASE_URL`, and `KJ_ATLAS_LLM_PROVIDER`.
+- `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` appear only under the PostgreSQL third-party container as private adapter names mapped from `KJ_ATLAS_POSTGRES_*`.
+- No additional public non-`KJ_ATLAS_*` setting is introduced.
+
+If the command fails because Docker is unavailable, keep this issue `In Progress`. If it fails because the rendered config exposes a new public non-`KJ_ATLAS_*` input or cannot expand the current public keys, treat that as new drift and update this issue before closing it.
