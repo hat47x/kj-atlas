@@ -64,26 +64,26 @@ Non-goals:
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `runtime_parameter_registry.md` lists every public environment variable.
-- [ ] `04_Documentation/configuration.md` lists every public environment variable.
-- [ ] Public docs and run guides do not instruct users to set non-`KJ_ATLAS_*` environment variables.
-- [ ] Frontend build can be configured with `KJ_ATLAS_FRONTEND_API_BASE`.
-- [ ] Docker Compose public inputs use `KJ_ATLAS_WEB_PORT`, `KJ_ATLAS_POSTGRES_DB`, `KJ_ATLAS_POSTGRES_USER`, `KJ_ATLAS_POSTGRES_PASSWORD`, and `KJ_ATLAS_FRONTEND_API_BASE`.
+- [x] `runtime_parameter_registry.md` lists every public environment variable.
+- [x] `04_Documentation/configuration.md` lists every public environment variable.
+- [x] Public docs and run guides do not instruct users to set non-`KJ_ATLAS_*` environment variables.
+- [x] Frontend build can be configured with `KJ_ATLAS_FRONTEND_API_BASE`.
+- [x] Docker Compose public inputs use `KJ_ATLAS_WEB_PORT`, `KJ_ATLAS_POSTGRES_DB`, `KJ_ATLAS_POSTGRES_USER`, `KJ_ATLAS_POSTGRES_PASSWORD`, and `KJ_ATLAS_FRONTEND_API_BASE`.
 - [x] Third-party container environment boundaries are resolved through `ADR-0029`; replacing the PostgreSQL deployment path is only required if the team later adopts a stricter no-vendor-env policy.
-- [ ] Backend settings and `runtime_parameter_registry.md` agree on all `KJ_ATLAS_CE4_*` keys, including legacy-key rejection behavior.
-- [ ] Invalid access-control adapter and fail-safe values fail validation or are explicitly justified by ADR.
-- [ ] `external_http` without endpoint is either fail-fast or explicitly retained by ADR with user-facing warning text.
-- [ ] Integration-level verification covers Compose build args, backend settings load, frontend build, and relevant docs-checks.
+- [x] Backend settings and `runtime_parameter_registry.md` agree on all `KJ_ATLAS_CE4_*` keys, including legacy-key rejection behavior.
+- [x] Invalid access-control adapter and fail-safe values fail validation or are explicitly justified by ADR.
+- [x] `external_http` without endpoint is either fail-fast or explicitly retained by ADR with user-facing warning text.
+- [x] Integration-level verification covers Compose build args, backend settings load, frontend build, and relevant docs-checks (Docker execution is recorded as environment-limited when unavailable).
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: Reconcile frontend API base across Dockerfile, Compose, Vite config, `client.ts`, and docs.
-- [ ] T2: Reconcile Compose public input keys with the `KJ_ATLAS_*` contract.
-- [ ] T3: Reconcile CE4 runtime keys across registry, settings, legacy-key rejection, and tests.
-- [ ] T4: Add settings validation for access-control adapter and fail-safe mode.
+- [x] T1: Reconcile frontend API base across Dockerfile, Compose, Vite config, `client.ts`, and docs.
+- [x] T2: Reconcile Compose public input keys with the `KJ_ATLAS_*` contract.
+- [x] T3: Reconcile CE4 runtime keys across registry, settings, legacy-key rejection, and tests.
+- [x] T4: Add settings validation for access-control adapter and fail-safe mode.
 - [x] T5: Resolve the third-party container boundary through `ADR-0029`; replacement of the PostgreSQL deployment path is only required if stricter no-vendor-env policy is later adopted.
-- [ ] T6: Update 02/03/04 docs after implementation alignment.
-- [ ] T7: Add or update tests for the agreed runtime contract.
+- [x] T6: Update 02/03/04 docs after implementation alignment.
+- [x] T7: Add or update tests for the agreed runtime contract.
 
 ## 7) 検証計画 / Validation plan
 
@@ -672,3 +672,75 @@ Non-goals:
 
 - Proceed: public configuration docs now enumerate exact public runtime keys and have a regression guard against future wildcard shorthand drift.
 - Stop before Done remains unchanged: Docker-capable `docker compose config` verification is still required before closing this issue.
+
+
+## 23) Stream E runtime configuration re-validation (2026-06-13)
+
+### Phase 1 — Runtime contract read
+
+- Read `ADR-0021`, `runtime_parameter_registry.md`, `deployment.md`, `llm_runtime_constraints.md`, `configuration.md`, backend `settings.py`, frontend `client.ts`, frontend `Dockerfile`, and `docker-compose.yml`.
+- Canonical public runtime keys remain `KJ_ATLAS_*` only. Legacy unprefixed keys are rejection targets, not compatibility aliases.
+- External LLM escalation remains default-off: `KJ_ATLAS_LLM_PROVIDER=none`, `KJ_ATLAS_LLM_ESCALATION_ENABLED=false`, and `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=false`.
+
+### Phase 2 — ENV-CONFIG-DRIFT-01 resolution
+
+Drift list by setting-name group:
+
+| Setting group | Current canonical state | Drift classification | Action |
+| --- | --- | --- | --- |
+| Backend runtime keys | Registry, configuration doc, and `Settings` aliases use `KJ_ATLAS_*`. | None | Marked AC/T1-T7 complete. |
+| Legacy backend keys | `LEGACY_ENV_KEYS` rejects unprefixed historical names. | None | Verified by backend prefix tests. |
+| CE4 keys | Registry and settings agree on `KJ_ATLAS_CE4_*`, including `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS`. | None | Verified by backend prefix tests. |
+| Access-control enum keys | Registry values match settings validation for adapter, fail-safe, auth mode, and reviewer resolver. | None | Verified by backend prefix tests. |
+| Frontend API base | `KJ_ATLAS_FRONTEND_API_BASE` is the public build key and invalid values fall back to `/api`. | None | Verified by frontend API client unit test and typecheck. |
+| Compose public inputs | Compose public inputs are `KJ_ATLAS_WEB_PORT`, `KJ_ATLAS_POSTGRES_DB`, `KJ_ATLAS_POSTGRES_USER`, `KJ_ATLAS_POSTGRES_PASSWORD`, `KJ_ATLAS_FRONTEND_API_BASE`, `KJ_ATLAS_DATABASE_URL`, and `KJ_ATLAS_LLM_PROVIDER`. | None | Verified by static Compose review; Docker binary unavailable for live config expansion. |
+| Private adapter names | `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` appear only as PostgreSQL container internal names mapped from `KJ_ATLAS_POSTGRES_*`. | Accepted boundary | Keep under ADR-0029; no public alias added. |
+| `external_http` endpoint absence | User-facing docs warn that missing endpoint is treated like `noop`; fail-fast is a separate ADR-level decision. | Governance-only hold, not contract drift | No behavior change in this stream. |
+
+Classification: **Done-ready for the runtime configuration contract; environment-limited Hold only for Docker-capable `docker compose config` evidence in this container.**
+
+### Phase 3 — ENV-ARCH-01 prefix migration
+
+- Prefix migration residuals: none in the runtime configuration surface reviewed here.
+- No old-key compatibility alias was added.
+- Deploy examples and docs continue to show user-set keys with `KJ_ATLAS_` only.
+
+### Phase 4 — ENV-PROFILE-01 runtime profiles
+
+- Profile guidance remains connected through `runtime_parameter_registry.md` and `configuration.md`.
+- No new profile was introduced. Existing profile names remain `local-dev`, `evaluation`, and `enterprise-production`.
+- Safe defaults are preserved: LLM provider `none`, escalation disabled, audit HTTP disabled, and access-control fail-safe defaults documented separately from enterprise recommendations.
+
+### Phase 5 — Backend config check
+
+- Backend setting aliases, defaults, enum validation, and legacy-key rejection are aligned with the registry.
+- No backend implementation change was required.
+
+### Phase 6 — Frontend config check
+
+- Frontend env reading is limited to `KJ_ATLAS_FRONTEND_API_BASE`.
+- Invalid, empty, or non-path values continue to normalize to `/api`.
+- No UI component or feature behavior was changed.
+
+### Phase 7 — Deploy / docs sync
+
+- Deploy and configuration docs already use the registry key names.
+- Compose does not embed secrets; PostgreSQL defaults are demonstrative local/evaluation values and remain configurable through `KJ_ATLAS_POSTGRES_*`.
+- No `nginx.conf` setting drift was found; it does not expose public runtime keys.
+
+### Phase 8 — Verification
+
+- Pass: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` -> validated 5 active issue memos.
+- Pass: `git diff --check` -> no whitespace errors.
+- Pass: `cd 03_Implement/backend && python -m pytest tests/test_settings_env_prefix_migration.py -q --basetemp ../../.pytest_tmp_env_prefix -p no:cacheprovider` -> 14 tests passed.
+- Pass: `cd 03_Implement/frontend && npm test -- --run src/api/client.test.ts` -> 4 tests passed.
+- Pass: `cd 03_Implement/frontend && npm run lint` -> typecheck passed. npm emitted an environment warning for `http-proxy`, but the command exited 0.
+- Warning: `cd 03_Implement/deploy && docker compose config` -> Docker is unavailable in this container (`docker: command not found`), so live Compose expansion remains to be rerun on a Docker-capable host.
+
+### Phase 9 — Final report
+
+- Fixed / verified setting names: registry public keys used by backend settings, the frontend build key, and Compose public inputs listed above.
+- Registry alignment: public user-facing keys are `KJ_ATLAS_*`; private adapter names remain non-public.
+- Residual drift: none found in the reviewed runtime configuration contract.
+- Remaining non-drift hold: Docker-capable `docker compose config` evidence.
+- Changed file in this stream: this issue memo only; no code, UI, CE contract, data lifecycle, or public-boundary feature changes.
