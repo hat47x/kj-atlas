@@ -1115,6 +1115,56 @@
 
 ---
 
+## 29) Baseline delta 2026-06-13: post-2370 FB-P0 planning-boundary sync
+
+### Candidate
+
+- Target main: `origin/main` = `87272a3b25c8d5c8d5c025a51bca15062e266cdd`.
+- Previous recorded mainline baseline: `origin/main@73d68c7e1d9c2bd65ec05c4920ba9b3d850442f6` in section 28.
+- Scope note: this delta refreshes baseline tracking after the FB-P0 Stream H current-main checkpoint and PRODUCT-QA planning-boundary gate record were merged. It records planning integrity and release-routing clarity only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export policy, public documentation publication authority, issue statuses, release authority, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python. No frontend, backend service, or Docker execution was required for this documentation-only planning baseline slice.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `87272a3b25c8d5c8d5c025a51bca15062e266cdd` | G0 |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning validator regression | `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` | Pass: 10 tests | G0 / G7 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+| Markdown whitespace | `git diff --check -- 01_Plans\issues\issue-PROJECT-BASELINE-01-latest-mainline-health-baseline.md` | Pass: no whitespace errors; only CRLF conversion warning for the touched Markdown file | G7 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this planning-baseline refresh. The project still has `active_issues=52`, with `ready=15`, `blocked=37`, `actionable_adrs=1`, and no triage stopper.
+- `FB-P0-2A2B2C` now has a current-main checkpoint recording `fixedKeyDrift=0` and `pendingBypassDetected=false` for the checked FB-P0/P2C planning boundary.
+- P2C A1/A2/A3 planning records are internally consistent enough to serve as handoff inputs, but FB-P0 remains Open/P0 because `Approval Record=Pending` and `HIL-RS-02-GOV-EXCEPTION-01=held` remain unresolved.
+- No new ADR is required for this baseline sync. ADR work is required only if the project changes HIL/FB governance authority, A2/A3 start criteria, SafeMode/share-export policy, product-value authority, runtime environment policy, or release authority.
+
+### Gate classification
+
+| Gate | 2026-06-13 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, active issue validation, validator regression, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go / unchanged | SafeMode and share/export policy were not changed; the FB-P0 checkpoint explicitly keeps `safeModeDefault=ON` and `SAFE_MODE_STRICT_ON` out of weakening scope. |
+| G6 diagnostics and support | Conditional Go / clarified | The checked planning boundary now records no fixed-key drift and no bypass request, while keeping approval/held decisions human-governed. |
+| G7 regression | Go for planning slice | Planning validator, validator unit tests, triage, and whitespace checks pass for this documentation-only baseline update. |
+| HIL/FB planning boundary | Conditional / Needs-decision | P2C planning handoff inputs are clearer, but `Approval Record=Pending` and `HIL-RS-02-GOV-EXCEPTION-01=held` prevent Go. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the post-2370 FB-P0 planning-boundary sync.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- Follow-up routing:
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - FB-P0 approval/held decisions: `FB-P0-2A2B2C`, project governance, and human approval lane.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
