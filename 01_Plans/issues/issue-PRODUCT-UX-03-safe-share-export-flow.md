@@ -288,3 +288,10 @@
   - Browser check at `1280x720`: `共有前チェック`、`SafeMode ON のため未レビューのドラフトは含めません。`、`SVG / PNG / view.json / 概念マップレポート / レビューパック.zip` を確認。panel `left=16`, `right=356`, `width=340`, `scrollWidth=338`, `clientWidth=338`, `horizontalOverflow=false`。
   - Screenshot: `04_Documentation/assets/screenshots/share-export-safe-mode.png`。
 
+
+## Stream F Frontend implementation note (2026-06-13)
+
+- Scope: `03_Implement/frontend` share/export preflight only; no backend, schema, or 04 documentation edits.
+- Added a domain-expression readiness block to the share/export preflight so users can see unresolved review signals before exporting: unreviewed cards/islands, hold/unknown claims, critique targets, evidence links, contradictions, and evidence gaps.
+- Safety boundary: SafeMode default remains ON, SafeMode warning copy remains visible, and the block is read-only; it does not mark `human_reviewed`, resolve holds, or apply AI proposals.
+- Verification target: `npm --prefix 03_Implement/frontend run test -- src/ui/SharePanel.test.ts` covers the preflight copy and counts.

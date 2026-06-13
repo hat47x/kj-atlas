@@ -37,6 +37,15 @@ function buildProps(safeMode: boolean, overrides: Partial<React.ComponentProps<t
     onCancelBundleExport: vi.fn(),
     computeProgressMessage: null,
     canIncludeTraces: false,
+    domainExpressionSummary: {
+      unreviewedCards: 0,
+      unreviewedIslands: 0,
+      holdCards: 0,
+      critiqueTargets: 0,
+      evidenceLinks: 0,
+      contradictionLinks: 0,
+      evidenceGapCards: 0,
+    },
     onLoadViewMetadataFile: vi.fn(),
     onLoadDocumentFile: vi.fn(),
     onImportReviewPackFile: vi.fn(),
@@ -109,6 +118,30 @@ describe("SharePanel safe mode copy", () => {
     expect(html).toContain("出力形式");
     expect(html).toContain("SVG / PNG / view.json / 概念マップレポート / レビューパック.zip");
     expect(html).not.toContain("未レビューのドラフトを含める");
+  });
+
+
+  it("surfaces domain-expression readiness in the share preflight", () => {
+    setActiveLocale("en");
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true, {
+      domainExpressionSummary: {
+        unreviewedCards: 2,
+        unreviewedIslands: 1,
+        holdCards: 3,
+        critiqueTargets: 4,
+        evidenceLinks: 5,
+        contradictionLinks: 1,
+        evidenceGapCards: 2,
+      },
+    })));
+
+    expect(html).toContain("Domain readiness");
+    expect(html).toContain("13 review signals remain");
+    expect(html).toContain("Ambiguity / evidence / review summary");
+    expect(html).toContain("Unreviewed: cards 2, islands 1");
+    expect(html).toContain("Hold / unknown claims: 3");
+    expect(html).toContain("Critique or pending feedback targets: 4");
+    expect(html).toContain("Evidence links 5, contradictions 1, evidence gaps 2");
   });
 
   it("shows consistent English safe-mode-off warnings", () => {

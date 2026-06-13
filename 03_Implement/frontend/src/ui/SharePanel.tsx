@@ -11,6 +11,16 @@ import { t } from "../i18n/translate";
 import type { ExportGranularity } from "../export/bundle_export";
 import { PUBLISH_VISIBILITY_VALUES, type PublishVisibility } from "../domain/policy/publish_visibility";
 
+export type DomainExpressionShareSummary = {
+  unreviewedCards: number;
+  unreviewedIslands: number;
+  holdCards: number;
+  critiqueTargets: number;
+  evidenceLinks: number;
+  contradictionLinks: number;
+  evidenceGapCards: number;
+};
+
 type SharePanelProps = {
   isOpen: boolean;
   onToggleOpen: () => void;
@@ -43,6 +53,7 @@ type SharePanelProps = {
   onCancelBundleExport: () => void;
   computeProgressMessage: string | null;
   canIncludeTraces: boolean;
+  domainExpressionSummary: DomainExpressionShareSummary;
   onLoadViewMetadataFile: (file: File) => void;
   onLoadDocumentFile: (file: File) => void;
   onImportReviewPackFile: (file: File) => void;
@@ -310,6 +321,7 @@ export function SharePanel({
   onCancelBundleExport,
   computeProgressMessage,
   canIncludeTraces,
+  domainExpressionSummary,
   onLoadViewMetadataFile,
   onLoadDocumentFile,
   onImportReviewPackFile,
@@ -462,6 +474,9 @@ export function SharePanel({
     : bundleExportGranularity === "overview"
       ? t("share.panel.export.bundle_trace_hint_overview")
       : t("share.panel.export.bundle_trace_hint_available");
+  const unreviewedTotal = domainExpressionSummary.unreviewedCards + domainExpressionSummary.unreviewedIslands;
+  const unresolvedDomainSignals = domainExpressionSummary.holdCards + domainExpressionSummary.critiqueTargets + domainExpressionSummary.evidenceGapCards + domainExpressionSummary.contradictionLinks;
+  const domainReadinessTone = unresolvedDomainSignals === 0 && unreviewedTotal === 0 ? "safe" : "warn";
 
   const shortFingerprint = (value: string | undefined): string => {
     if (!value) return t("share.panel.patch.not_available");
@@ -669,7 +684,35 @@ export function SharePanel({
                   <dt style={preflightTermStyle}>{t("share.panel.preflight.bundle_granularity")}</dt>
                   <dd style={preflightValueStyle}>{bundleGranularityLabel(bundleExportGranularity)}</dd>
                 </div>
+                <div style={preflightRowStyle}>
+                  <dt style={preflightTermStyle}>{t("share.panel.preflight.domain_readiness")}</dt>
+                  <dd style={{ ...preflightValueStyle, color: domainReadinessTone === "safe" ? "#166534" : "#9a3412", fontWeight: 700 }}>
+                    {domainReadinessTone === "safe"
+                      ? t("share.panel.preflight.domain_readiness_clear")
+                      : t("share.panel.preflight.domain_readiness_attention", { count: unresolvedDomainSignals + unreviewedTotal })}
+                  </dd>
+                </div>
               </dl>
+              <div
+                data-testid="share-domain-expression-summary"
+                style={{
+                  display: "grid",
+                  gap: 4,
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 6,
+                  padding: 6,
+                  backgroundColor: "#ffffff",
+                  fontSize: 11,
+                  color: "#334155",
+                }}
+              >
+                <div style={{ fontWeight: 800, color: "#0f172a" }}>{t("share.panel.preflight.domain_summary_title")}</div>
+                <div>{t("share.panel.preflight.domain_summary_review", { cards: domainExpressionSummary.unreviewedCards, islands: domainExpressionSummary.unreviewedIslands })}</div>
+                <div>{t("share.panel.preflight.domain_summary_hold", { count: domainExpressionSummary.holdCards })}</div>
+                <div>{t("share.panel.preflight.domain_summary_critique", { count: domainExpressionSummary.critiqueTargets })}</div>
+                <div>{t("share.panel.preflight.domain_summary_evidence", { links: domainExpressionSummary.evidenceLinks, contradictions: domainExpressionSummary.contradictionLinks, gaps: domainExpressionSummary.evidenceGapCards })}</div>
+                <div style={{ color: "#64748b" }}>{t("share.panel.preflight.domain_summary_hint")}</div>
+              </div>
             </div>
             <button type="button" onClick={onExportSvgViewport} disabled={!hasDocument || isLoading} style={actionButtonStyle}>
               {t("share.panel.export.svg_viewport")}
