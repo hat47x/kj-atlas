@@ -69,6 +69,35 @@ test("first-run panel presents safe document entry choices", async ({ page }) =>
   expect(box!.y + box!.height).toBeLessThanOrEqual(720);
 });
 
+test("first-run panel keeps keyboard focus inside the entry dialog", async ({ page }) => {
+  await page.goto("/");
+
+  const startPanel = page.locator(START_PANEL);
+  await expect(startPanel).toBeVisible();
+  await expect(startPanel).toHaveAttribute("role", "dialog");
+  await expect(startPanel).toHaveAttribute("aria-modal", "true");
+
+  await expect(page.getByRole("button", { name: /開始パネルを閉じる|Close start panel/ })).toBeFocused();
+
+  for (let index = 0; index < 10; index += 1) {
+    await page.keyboard.press("Tab");
+    const isFocusInsideStartPanel = await page.evaluate(() => {
+      const panel = document.querySelector('[data-panel="start-document-entry"]');
+      return Boolean(panel && document.activeElement && panel.contains(document.activeElement));
+    });
+    expect(isFocusInsideStartPanel).toBe(true);
+  }
+
+  await page.keyboard.down("Shift");
+  await page.keyboard.press("Tab");
+  await page.keyboard.up("Shift");
+  const isFocusInsideStartPanelAfterReverseTab = await page.evaluate(() => {
+    const panel = document.querySelector('[data-panel="start-document-entry"]');
+    return Boolean(panel && document.activeElement && panel.contains(document.activeElement));
+  });
+  expect(isFocusInsideStartPanelAfterReverseTab).toBe(true);
+});
+
 test("first-run document file entry opens the validation-before-replace flow", async ({ page }) => {
   await page.goto("/");
 

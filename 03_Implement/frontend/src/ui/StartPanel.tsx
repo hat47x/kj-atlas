@@ -1,3 +1,5 @@
+import { useEffect, useRef, type KeyboardEvent } from "react";
+
 import { t } from "../i18n/translate";
 
 type StartPanelProps = {
@@ -40,6 +42,15 @@ const disabledStartActionStyle = {
   cursor: "not-allowed",
 } as const;
 
+const focusableSelector = [
+  "button:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "input:not([disabled])",
+  "a[href]",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
 export function StartPanel({
   currentDocumentId,
   isDirty,
@@ -57,13 +68,62 @@ export function StartPanel({
   onOpenSample,
   onSelectedRecentDocumentChange,
 }: StartPanelProps) {
+  const panelRef = useRef<HTMLElement | null>(null);
   const isBusy = isLoading || isSaving;
   const canOpenRecent = selectedRecentDocumentId.length > 0 && selectedRecentDocumentId !== currentDocumentId;
 
+  useEffect(() => {
+    const firstFocusable = panelRef.current?.querySelector<HTMLElement>(focusableSelector);
+    firstFocusable?.focus();
+  }, []);
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    const panel = panelRef.current;
+    if (!panel) {
+      return;
+    }
+
+    const focusableElements = Array.from(panel.querySelectorAll<HTMLElement>(focusableSelector)).filter((element) => {
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      return rect.width > 0 && rect.height > 0 && style.visibility !== "hidden" && style.display !== "none";
+    });
+
+    if (focusableElements.length === 0) {
+      event.preventDefault();
+      panel.focus();
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    const activeElement = window.document.activeElement;
+
+    if (event.shiftKey && activeElement === firstElement) {
+      event.preventDefault();
+      lastElement.focus();
+      return;
+    }
+
+    if (!event.shiftKey && activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  };
+
   return (
     <section
+      ref={panelRef}
       data-panel="start-document-entry"
+      role="dialog"
+      aria-modal="true"
       aria-label={t("start_panel.title")}
+      tabIndex={-1}
+      onKeyDown={handleKeyDown}
       style={{
         position: "absolute",
         inset: "16px auto auto 16px",
