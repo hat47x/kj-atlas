@@ -2021,3 +2021,34 @@ DoDテンプレ（Draft→Open）
 - Platform Operator or Codex on a Docker-capable host must still run `cd 03_Implement\deploy; docker compose config` and attach the result to `ENV-CONFIG-DRIFT-01`.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, environment rehearsal evidence, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes the public `KJ_ATLAS_*` configuration contract, private adapter variable boundary, deployment topology, runtime environment policy, product-value authority, or release authority.
+
+## Productization Gate Record 2026-06-13: FB-P0 planning-boundary checkpoint sync
+
+- Candidate: `origin/main@97194275ea50456893af5df35e4c75ac48446c4c`.
+- Decision date (JST): 2026-06-13.
+- Reviewer: Codex.
+- Scope: post-#2369 planning sync for `FB-P0-2A2B2C` Stream H current-main checkpoint. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation passed, the validator unit tests passed, and triage reported `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none`.
+- G6 diagnostics and support: Conditional Go / clarified. The FB-P0 checkpoint now records `fixedKeyDrift=0` and `pendingBypassDetected=false` for the checked FB-P0/P2C planning boundary, while keeping downstream implementation and approval evidence out of Stream H scope.
+- HIL/FB planning boundary: Conditional / Needs-decision. P2C A1/A2/A3 planning records are internally consistent enough for handoff inputs, but `Approval Record=Pending` and `HIL-RS-02-GOV-EXCEPTION-01=held` keep FB-P0 Open/P0 and prevent Go.
+- Final: **Conditional Go for FB-P0 planning-boundary traceability / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2369 `[codex] Record FB-P0 current-main checkpoint` merged into `main`.
+- Local validation before merge:
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass.
+  - `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` -> pass, 10 tests.
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` -> pass, stopper none.
+  - `git diff --check -- 01_Plans\issues\issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` -> no whitespace errors; only CRLF conversion warning for the touched Markdown file.
+- GitHub Actions CI on PR #2369 passed all jobs.
+
+### Follow-ups
+
+- Human/project governance must still decide `Approval Record` fields (`approved_by`, `approved_at`, `evidence`) and `HIL-RS-02-GOV-EXCEPTION-01`.
+- Downstream implementation stream must attach real A2 mock pass evidence before treating A3 implementation as startable.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes HIL/FB governance authority, A2/A3 start criteria, SafeMode/share-export policy, product-value authority, runtime environment policy, or release authority.
