@@ -2052,3 +2052,42 @@ DoDテンプレ（Draft→Open）
 - Downstream implementation stream must attach real A2 mock pass evidence before treating A3 implementation as startable.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes HIL/FB governance authority, A2/A3 start criteria, SafeMode/share-export policy, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-14: start-panel focus-scope repair
+
+- Candidate: `origin/main@cdbe4f9d02ebe241153152810d5ae3841210f463`.
+- Decision date (JST): 2026-06-14.
+- Reviewer: Codex.
+- Scope: post-#2374 release-gate intake for `QA-MONKEY-09` and the first-run start-panel focus-scope repair. This record changes release-readiness evidence only; it does not change schema, API, backend behavior, SafeMode rules, share/export output, public documentation, product authority, or release authority.
+
+### Gate Summary
+
+- G0 planning integrity: Go. The internal issue memo `QA-MONKEY-09` records the browser finding, fix, acceptance criteria, rollback, and validation route. Active issue validation, validator unit tests, and triage passed with no stopper.
+- G2 primary user operations: Conditional Go improved. The first-run start panel now receives initial focus and keeps `Tab` / `Shift+Tab` within the entry dialog while it is visible, so keyboard users are not routed into background header, canvas, or right-panel controls before choosing a start action.
+- G3 Japanese UI / i18n: Conditional Go / unchanged. The fix uses existing localized labels and does not add new catalog keys or hard-coded user-facing copy.
+- G4 viewport and operability: Conditional Go improved. The repaired start-panel dialog has `role="dialog"` and `aria-modal="true"`, with E2E coverage for forward and reverse tab containment. This improves automated keyboard evidence, but it does not replace human physical-keyboard or screen-reader acceptance.
+- G7 regression: Go for this targeted slice. Frontend typecheck, targeted first-run Playwright E2E, active issue validation, validator unit tests, triage, and GitHub Actions CI passed.
+- Final: **Conditional Go for start-panel keyboard focus-scope repair / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2374 `[codex] Trap keyboard focus in start panel` merged into `main`.
+- Internal issue: `QA-MONKEY-09` is recorded as Done and indexed in `01_Plans/issues/README.md`.
+- Browser evidence:
+  - Before the fix, in-app browser focusable-control inspection showed header and right-panel controls before the visible start-panel controls while the start panel was open.
+  - After the fix, in-app browser inspection reported `role=dialog`, `aria-modal=true`, and initial focus inside the start panel on `開始パネルを閉じる`.
+- Local validation before merge:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\typescript\bin\tsc --noEmit` -> pass.
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/first_run_document_entry.spec.ts --reporter=line` -> pass, 5 tests.
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass.
+  - `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` -> pass, 10 tests.
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` -> pass, stopper none.
+  - `git diff --check` -> no whitespace errors; only CRLF conversion warnings for touched text files.
+- GitHub Actions CI on PR #2374 passed all jobs: backend lint + test, frontend lint, frontend typecheck, frontend test + build, i18n document hash regression, safe-mode leakage guards, and import/serialization/shape regression guards.
+
+### Follow-ups
+
+- Keep physical keyboard acceptance, screen-reader acceptance, real Chrome visual review, human release screenshots, public documentation publication approval, and final program approval human-owned or separately gated; automated Playwright is supporting evidence, not final release authority.
+- If the project later redefines the start surface as full-screen onboarding, route that larger information-architecture change through `ADR-0031` or a successor ADR rather than extending `QA-MONKEY-09`.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this repair. ADR work is required only if the project changes the global modal strategy, first-run routing architecture, SafeMode/share-export policy, product-value authority, runtime environment policy, or release authority.
