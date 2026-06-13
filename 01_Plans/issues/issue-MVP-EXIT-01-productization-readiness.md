@@ -1012,3 +1012,32 @@
 - Owner: Codex for evidence maintenance; Project Maintainers for `ADR-0035`; Platform Operator for environment rehearsal approval; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next Program Gate review after high-privilege lifecycle decisioning or Docker-capable environment rehearsal.
 - Re-decision date: after `ADR-0035` is accepted/replaced/rejected, after Docker-capable Compose verification/startup evidence is recorded, after product value Open-gate acceptance, after support diagnostics/recovery rehearsal, or after a material runtime/product change reaches `main`.
+
+## MVP-EXIT Program Gate Decision 2026-06-13: post-2371 FB-P0 planning-boundary sync
+
+- Candidate: `origin/main@eea5973907545967dd5cd0332686da09f8005210`
+- Decision date: 2026-06-13
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-13: FB-P0 planning-boundary checkpoint sync`.
+  - PROJECT-BASELINE-01 record: `Baseline delta 2026-06-13: post-2370 FB-P0 planning-boundary sync`.
+  - FB-P0 Stream H current-main checkpoint: `fixedKeyDrift=0`, `pendingBypassDetected=false`.
+  - Merged PRs: #2369, #2370, and #2371.
+
+### Decision
+
+- Final: **Conditional Go for post-2371 FB-P0 planning-boundary traceability / No-Go for full release shipment**
+- Reason summary: The latest `main` clarifies that the checked FB-P0/P2C planning boundary has no fixed-key drift and no bypass request, and that P2C A1/A2/A3 planning records can serve as handoff inputs. This improves Program Gate traceability, but it does not create shipment approval because `Approval Record=Pending` and `HIL-RS-02-GOV-EXCEPTION-01=held` still keep FB-P0 in Needs-decision, and the broader productization blockers remain unresolved.
+- Escalation route: keep `PRODUCT-QA-01` as the release evidence steward, `PROJECT-BASELINE-01` as the mainline health record, `FB-P0-2A2B2C` as the planning-boundary issue, and human/project governance as the owner for approval/held decisions. Productization Program Owner / QA Lead remain accountable for final shipment approval.
+
+### Conditional controls
+
+- Remaining risks:
+  - `Approval Record` fields (`approved_by`, `approved_at`, `evidence`) remain unset.
+  - `HIL-RS-02-GOV-EXCEPTION-01` remains `held` and requires human/project governance decisioning.
+  - Downstream implementation must still attach real A2 mock pass evidence before treating A3 implementation as startable.
+  - Product value Open-gate acceptance, human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle decisions, and final program approval remain incomplete.
+  - This sync changes no API, UI, CLI, runtime behavior, SafeMode default, share/export behavior, public documentation, or Compose configuration.
+- Owner: Codex for evidence maintenance; human/project governance for FB-P0 approval/held decisions; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next Program Gate review after FB-P0 approval/held decisioning or product-value/environment evidence changes.
+- Re-decision date: after `Approval Record` and `HIL-RS-02-GOV-EXCEPTION-01` are decided, after product value Open-gate acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, or after a material runtime/product change reaches `main`.
