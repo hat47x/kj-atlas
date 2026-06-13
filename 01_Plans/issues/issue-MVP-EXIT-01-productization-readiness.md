@@ -1041,3 +1041,39 @@
 - Owner: Codex for evidence maintenance; human/project governance for FB-P0 approval/held decisions; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next Program Gate review after FB-P0 approval/held decisioning or product-value/environment evidence changes.
 - Re-decision date: after `Approval Record` and `HIL-RS-02-GOV-EXCEPTION-01` are decided, after product value Open-gate acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, or after a material runtime/product change reaches `main`.
+
+## MVP-EXIT Program Gate Decision 2026-06-14: post-2376 start-panel focus-scope sync
+
+- Candidate: `origin/main@0d18a663f4a619cb601592b3767176926ca55f8a`
+- Decision date: 2026-06-14
+- Reviewer: Codex
+- Input sources:
+  - `QA-MONKEY-09` internal issue: start-panel focus-scope repair is Done on `main`.
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-14: start-panel focus-scope repair`.
+  - PROJECT-BASELINE-01 record: `Baseline delta 2026-06-14: post-2375 start-panel focus-scope sync`.
+  - Merged PRs: #2374, #2375, and #2376.
+
+### Decision
+
+- Final: **Conditional Go for first-run keyboard focus-scope traceability / No-Go for full release shipment**
+- Reason summary: The latest `main` fixes a concrete first-run UX/accessibility defect: while the start panel is visible, initial focus enters the panel and `Tab` / `Shift+Tab` stay inside the entry dialog instead of reaching background header, canvas, or right-panel controls. This improves MVP-exit evidence for first-run operability and keyboard accessibility. It does not create shipment approval because final human release screenshots, physical keyboard acceptance, screen-reader acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval remain incomplete.
+- Escalation route: keep `PRODUCT-QA-01` as the release evidence steward, `PROJECT-BASELINE-01` as the latest-main health record, and `PRODUCT-UX-01` / `QA-MONKEY-09` as the first-run UX evidence trail. If the start surface is redesigned beyond a focus repair, route that larger change through `ADR-0031` or a successor ADR.
+
+### Gate Mapping
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, and GitHub Actions CI passed for the related PRs.
+- G2 primary user operations: Conditional Go improved. The first-run start action path is now safer for keyboard users because focus is scoped to the entry dialog while it is visible.
+- G3 Japanese UI / i18n: Conditional Go / unchanged. The repair reused existing localized labels and did not add new user-facing copy.
+- G4 viewport and operability: Conditional Go improved. Automated evidence now covers start-panel dialog semantics and forward/reverse Tab containment, but physical keyboard and screen-reader acceptance remain human-owned release gates.
+- G7 regression: Go for the targeted slice. Local frontend typecheck, targeted Playwright E2E, planning validation, and CI passed before merge.
+
+### Conditional controls
+
+- Remaining risks:
+  - Productization Program Owner / QA Lead still need to confirm whether the repaired start-panel focus behavior is acceptable in real Chrome as part of release visual/keyboard review.
+  - Screen-reader acceptance for the first-run entry dialog and main operation path remains human-owned.
+  - Product value Open-gate acceptance, human release screenshots, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle decisions, FB-P0 approval/held decisions, and final program approval remain incomplete.
+  - This sync changes no API, UI copy, CLI, backend behavior, SafeMode default, share/export behavior, public documentation, or Compose configuration.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead and relevant human reviewers remain accountable for final shipment approval.
+- Due date: next Program Gate review after human first-run accessibility acceptance, product-value evidence changes, environment evidence, high-privilege lifecycle decisioning, or FB-P0 approval/held decisioning.
+- Re-decision date: after human first-run accessibility acceptance, after product value Open-gate acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, or after a material runtime/product change reaches `main`.
