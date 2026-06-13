@@ -442,3 +442,24 @@
 ### Phase 8: Final status
 - 判定: **Hold/Needs-decision**（`pendingDecisionQueueCount>0` のため）。
 - Stop条件適用: なし（検証失敗・未定義競合は検出せず）。
+
+## Stream D HIL-RS governance contract clarification（2026-06-13）
+
+### Context
+- 本追記は HIL-RS 系の契約・統治・承認在庫整理に限定し、Frontend/UI/E2E/04運用文書の実装・編集には進まない。
+- 依存順は `HIL-RS-01-A1 minimum I/F -> HIL-RS-02-A1 governance hardening -> HIL-RS-01 parent Proceed` を維持する。
+- `Approval Record` が `Pending` の間は `pendingDecisionQueueCount>0` とみなし、Proceed Go を出してはならない。
+
+### Decision
+- HIL-RS 最小 I/F は次の契約語彙を read-only で下流へ渡す。
+  - inputs: `issueId`, `phase`, `sourceBundleHash`, `proposalId`, `approvalRecord`, `policySnapshot`。
+  - outputs: `gateStatus`, `held[]`, `patchDraft`, `riskLabels[]`, `applyResult`, `rollbackRef`。
+  - audit events: `query`, `bundle`, `proposal`, `apply`。4種のうち欠損がある場合は No-Go または Hold とする。
+- `Approval Record` は `approved_by`, `approved_at`, `evidence`, `decision`, `segregation_of_duties_check` が揃うまで `Pending` として扱う。
+- AI候補は常に proposal-only であり、`human_reviewed` 昇格、auto-apply、SafeMode後退、未承認の共有/export解放を禁止する。
+- rollback は `rollbackRef` を必須証跡とし、適用判断の前後を可逆に辿れる状態だけを契約上の成立条件にする。
+
+### Consequences
+- ADR の Status は変更しない。人間承認の証跡なしに `Accepted` 以外の新状態や Proceed Go を推定しない。
+- A2 は Frontend 実装レーン、A3 は Docs/Ops 同期レーンへ渡す準備情報だけを受け取り、本Streamでは実装や `04_Documentation/` 編集を行わない。
+- Parent issue は `Approval Record=Pending` または held item 残存時に `In Progress継続 / Hold` と分類し、`pendingDecisionQueueCount==0` になるまで Go を保留する。

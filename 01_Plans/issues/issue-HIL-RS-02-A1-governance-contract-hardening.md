@@ -645,3 +645,34 @@
 ### Phase 8: Final status
 - 判定: **Hold/Needs-decision**（`pendingDecisionQueueCount>0` のため）。
 - Stop条件適用: なし（検証失敗・未定義競合は検出せず）。
+
+## Stream D governance hardening inventory（2026-06-13）
+
+### Fixed keys（A1 read-only / 再定義禁止）
+- `freezeContractId`
+- `contractIds`
+- `schemaVersion`
+- `overridePolicy=human_dual_control_only`
+- `safeModeDefault=ON`
+- `safeModeBoundary=SAFE_MODE_STRICT_ON`
+- `pendingDecisionQueueCount`
+- `approvalRecord`
+- `rollbackRef`
+- audit events: `query|bundle|proposal|apply`
+
+### Held items / Approval Record
+| Item | State | Required resolution |
+|---|---|---|
+| `Approval Record` | Pending | `approved_by`, `approved_at`, `evidence`, `decision`, `segregation_of_duties_check` を記録する。 |
+| `HIL-RS-02-GOV-EXCEPTION-01` | held | 例外の一時性、責務分離、rollbackRef、再判定日を人間承認で確定する。 |
+| future incompatible changes | backlog | 必須キー変更・承認主体変更・状態遷移追加は `v2/future-version` へ隔離する。 |
+
+### Governance gate
+- Proceed Go: `a1Status==Done && pendingDecisionQueueCount==0 && fixedKeyDrift==0 && safeModeRetreat==false`。
+- Proceed Hold: `pendingDecisionQueueCount>0`、A1 Done証跡なし、または held item 残存。
+- Proceed Stop: pending bypass、固定キー再定義、SafeMode後退、approval inference、verifyAttempts>3。
+
+### A2/A3 handoff conditions
+- A2へ渡すもの: read-only API signatures、`riskLabels[]`、`rollbackRef` 必須、proposal-only、Stop条件。
+- A3へ渡すもの: 同期対象候補、Open化条件、DOC-OPS-02観点、Stop条件。
+- 渡さないもの: Frontend実装詳細、UI仕様、`04_Documentation/` 本文、承認済みの推定。

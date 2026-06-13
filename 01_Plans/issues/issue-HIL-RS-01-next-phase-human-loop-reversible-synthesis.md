@@ -415,3 +415,41 @@
 ### Phase 8: Final status
 - 判定: **Hold/Needs-decision**（`pendingDecisionQueueCount>0` のため）。
 - Stop条件適用: なし（検証失敗・未定義競合は検出せず）。
+
+## Stream D governance inventory and parent Proceed gate（2026-06-13）
+
+### Phase 1 State Read（Status / Priority / Scope / Dependency / Pending）
+| Item | Status | Priority | Scope | Dependency | Pending / held | Stream D classification |
+|---|---|---|---|---|---|---|
+| HIL-RS-01 parent | In Progress | P1 | docs-only parent governance | HIL-RS-01-A1 + HIL-RS-02-A1 | `pendingDecisionQueueCount>0` | In Progress継続 / Hold |
+| HIL-RS-01-A1 minimum I/F | In Progress | P1 | docs-only contract | none | `Approval Record=Pending` | approval pending |
+| HIL-RS-02-A1 governance hardening | Open | P1 | docs-only governance | HIL-RS-01-A1 freeze values | `HIL-RS-02-GOV-EXCEPTION-01=held` | Hold until A1 Done + queue zero |
+| HIL-RS-02-A2 frontend application | Done | P1 | frontend implementation issue | read-only A1/A2 contract | no implementation in this Stream | handoff record only |
+| HIL-RS-02-A3 ops docs sync | Draft | P1 | docs planning only | A1 completion evidence | Open化 pending | Docs Stream handoff only |
+| HIL-RS-02 delivery plan | Open | P1 | docs-only delivery plan | A1 gate + Program evidence | Go evidence incomplete | Open/Hold |
+
+### Proceed Go conditions
+- `a1Status==Done`。
+- `pendingDecisionQueueCount==0`（`Approval Record` と held items がすべて解消済み）。
+- `fixedKeyDrift==0` かつ `contractRedefinitionRequested==false`。
+- `safeModeRetreat==false`、auto-apply経路なし、AIによる `human_reviewed` 昇格なし。
+- `rollbackRef` と `query|bundle|proposal|apply` audit event の扱いが下流契約で追跡可能。
+
+### Conditional-Go conditions
+- A2/A3 が read-only contract を参照して mock準備・手順整理だけを行う。
+- `executeAllowed=false` を維持し、`Pending -> Approved|Rejected` の実遷移を推測しない。
+- 未解決在庫を明示したまま、下流へ「実装開始」ではなく「handoff準備」を渡す。
+
+### Hold conditions
+- `pendingDecisionQueueCount>0`。
+- `Approval Record=Pending`、または `HIL-RS-02-GOV-EXCEPTION-01=held`。
+- A1 Done 証跡がなく、A2/A3/parent Proceed へ Go を伝播できない。
+
+### Stop conditions
+- Pending bypass、approval inference、contract redefinition、SafeMode後退、auto-apply要求、AIによる `human_reviewed` 昇格要求。
+- Frontend/UI/E2E/`04_Documentation/` 編集が本Streamに要求される。
+- verifyAttempts が3回を超える。
+
+### Parent Proceed classification
+- 現時点の判定: **In Progress継続 / Hold**。
+- 理由: `Approval Record=Pending` と held item 残存により `pendingDecisionQueueCount==0` が未成立。
