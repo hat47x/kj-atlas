@@ -176,3 +176,24 @@
   - `npm --prefix 03_Implement/frontend run lint` ✅
   - 自己修復回数: `1/3`（typecheck失敗をfixture修正で解消）
 - Phase 5 (Proceed): 変更は `03_Implement/frontend/**` と本Issueのみ。`contractId/schemaVersion/overridePolicy` の契約値変更なし。
+
+## Stream D handoff-only boundary（2026-06-13）
+
+### A1/A2 boundary
+- A2 は Frontend実装issueであり、Stream D は実装・UI仕様確定・E2E追加を行わない。
+- Stream D から渡す契約は read-only の `HIL_RS_DECISION_GATE_V1`, `HIL_RS_PATCH_PROPOSAL_V1`, `HIL_RS_APPLY_JUDGEMENT_V1` とする。
+- A2 は `Approval Record=Pending` の間、`executeAllowed=false` と `proposal-only` を維持する。
+
+### Implementation pre-read conditions
+- 実装Streamは着手前に ADR-0026/0027/0028 と A1/RS-02-A1 issue の最新契約を再読する。
+- `rollbackRef`, `riskLabels[]`, `query|bundle|proposal|apply` audit events の扱いを、実装前の受入条件に落とす。
+- SafeMode既定ON、auto-apply禁止、AIによる `human_reviewed` 昇格禁止を非交渉条件にする。
+
+### Stop conditions for A2 handoff
+- `pendingDecisionQueueCount>0` のまま Proceed Go を求める。
+- Frontend実装で A1固定キーを再定義する。
+- 未承認proposalを自動適用・自動公開・レビュー済み化する。
+
+### Handoff classification
+- Stream D 判定: **handoff record only**。
+- A2の実装可否は別Frontend Streamが A1承認・queue zero・固定キーdrift 0 を検証して判断する。

@@ -217,3 +217,28 @@
 - Context: A1の承認・固定値整合が未確定であり、A3がOpen化するとDOC-OPS-02の固定順序に対して誤同期リスクがある。
 - Decision: A3は `Current: Hold` を維持し、実施は「準備項目の文書化・検証手順・ロールバック定義」に限定する。
 - Consequences: A1完了ログ受領までは運用本文のOpen遷移を停止。承認待ちの論点を明示的に残し、後続で可逆に再開できる。
+
+## Stream D docs-sync readiness handoff（2026-06-13）
+
+### Sync targets（準備対象 / 本Streamでは編集しない）
+- `04_Documentation/operations.md`
+- `04_Documentation/security.md`
+- `04_Documentation/data_handling.md`
+- `04_Documentation/narratives.md`
+- 必要時のみ `03_Implement/frontend/docs/e2e_testing.md` を開発者向け検証手順として参照する。
+
+### Open化条件
+- A1 Done 証跡が存在する。
+- `pendingDecisionQueueCount==0`。
+- `Approval Record` と held items が人間承認で解消済み。
+- DOC-OPS-02 の4観点（用語、役割、導線、固定値）を A3の受入条件へ転記できる。
+
+### Stop conditions
+- A1未完了のまま `04_Documentation/` 本文更新を要求する。
+- `Pending` を承認済みとして説明する。
+- SafeMode/share/export 境界を弱める運用文書にする。
+- Frontend実装詳細をDocs同期の前提として確定する。
+
+### Handoff classification
+- Stream D 判定: **Docs Stream handoff ready / Draft-Hold維持**。
+- 本Streamでは同期対象とStop条件のみを記録し、`04_Documentation/` は編集しない。

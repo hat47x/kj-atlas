@@ -563,3 +563,29 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
 ### Phase 4: Proceed / Stopper
 - 判定: **Hold**（承認待ち）。
 - Stopper: `Approval Record` 未充足。
+
+## Stream D minimum interface contract inventory（2026-06-13）
+
+### Contract inputs（mock検証可能な署名のみ）
+| Signature | Required input | Notes |
+|---|---|---|
+| `HIL_RS_DECISION_GATE_V1` | `issueId`, `phase`, `approvalRecord`, `pendingDecisionQueueCount`, `policySnapshot` | Go/Hold/Stop 判定だけを返す。承認確定は行わない。 |
+| `HIL_RS_PATCH_PROPOSAL_V1` | `sourceBundleHash`, `proposalId`, `actor`, `contextBundleRef` | AI候補は proposal-only。Core/Consensus Graph 直接更新は禁止。 |
+| `HIL_RS_APPLY_JUDGEMENT_V1` | `proposalId`, `humanDecision`, `approvedBy`, `approvalRecord` | 人間判断後の適用判定契約。AIによる `human_reviewed` 昇格は禁止。 |
+
+### Contract outputs
+| Signature | Required output | Notes |
+|---|---|---|
+| `HIL_RS_DECISION_GATE_V1` | `gateStatus`, `held[]`, `reasonCodes[]`, `executeAllowed` | `Pending` 残存時は `executeAllowed=false`。 |
+| `HIL_RS_PATCH_PROPOSAL_V1` | `patchDraft`, `riskLabels[]`, `auditEventRef` | `riskLabels[]` は `safe_mode`, `approval_pending`, `rollback_required` を表現可能にする。 |
+| `HIL_RS_APPLY_JUDGEMENT_V1` | `applyResult`, `rollbackRef`, `auditEventRef` | `rollbackRef` 欠損時は No-Go。 |
+
+### Audit events and rollback
+- Required audit events: `query`, `bundle`, `proposal`, `apply`。
+- `apply` は人間承認後のイベントであり、AI候補生成段階で発火済みとして扱わない。
+- `rollbackRef` は採用/保留/破棄のどれでも後から辿れる参照を要求する。実装方式は未確定のまま下流へ渡す。
+
+### Proceed classification
+- 現時点の判定: **approval pending**。
+- Done-ready条件: `Approval Record` 完備、`fixedKeyDrift==0`、`pendingDecisionQueueCount==0`、SafeMode後退なし。
+- Hold条件: Approval Record Pending、または `Pending -> Execute` の推測遷移が必要になった場合。

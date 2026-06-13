@@ -202,3 +202,28 @@
 ### Phase 4: Stopper（外部ファイル要求時）
 - `PRODUCT-QA-01` または `ENV-CONFIG-DRIFT-01` 本文更新が必須になった時点で `Proceed=Stop`。
 - `A1 not done` なのに Goを確定しようとする要求は `pending bypass` として即Stop。
+
+## Stream D delivery plan consolidation（2026-06-13）
+
+### Ordered lane plan
+1. A1: 最小I/F契約を Approval Record 付きで Done-ready にする。
+2. RS-02-A1: A1固定値を再定義せず、承認例外・held items・future-version隔離を硬化する。
+3. A2: Frontend Streamへ read-only contract と Stop条件だけを handoff する。
+4. A3: Docs Streamへ同期対象・Open化条件・Stop条件だけを handoff する。
+5. Parent Proceed: `pendingDecisionQueueCount==0` と A1/RS-02-A1 の証跡が揃った後にだけ Go 判定する。
+
+### Non-dependent handoff policy
+- A2/A3 は他Streamの完了待ちを要求せず、参照契約・mock境界・Stop条件を受け取るだけで準備可能にする。
+- mock活用は型、イベント、Hold判定、`executeAllowed=false` の確認に限定する。
+- 実装完了や運用文書本文の同期完了を、本delivery plan自体の完了条件にしない。
+
+### Stop conditions
+- `Approval Record=Pending` のまま Proceed Go を出す。
+- `pendingDecisionQueueCount>0` を無視する。
+- A1固定キー、rollbackRef、audit events、riskLabels を下流で再定義する。
+- SafeMode後退、auto-apply、AIによる `human_reviewed` 昇格を許可する。
+- verifyAttempts が3回を超える。
+
+### Proceed judgement
+- 現時点の判定: **Open/Hold**。
+- 理由: A1 Done と queue zero の証跡が未成立。A2/A3へは handoff のみ可能で、Go伝播は不可。

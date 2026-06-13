@@ -496,3 +496,18 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 - `DQ-CE0-001`: `ProposalPatchV1` の `diffFormat` 列挙（`json_patch` / `semantic_patch`）の初期値固定。
 - `DQ-CE0-002`: `AuditEventV1` の `command` マスキング規則（引数長上限・伏字方式）。
 - `DQ-CE0-003`: `classification != ok` 時の CLI 終了コードの数値割当（非0固定のみ確定、具体値は未承認）。
+
+## Stream D HIL-RS cognitive externalization guardrails（2026-06-13）
+
+### Context
+- HIL-RS の可逆統合は、認知外在化要件上の ContextQuery / ContextBundle / proposal-only 統治と同じ安全境界に置かれる。
+- AI出力は探索候補であり、Core Graph / Consensus Graph / `human_reviewed` を直接更新する権限を持たない。
+
+### Decision
+- HIL-RS proposal は ContextBundle の `sourceBundleHash` と `proposalId` を持ち、出所・切り詰め・根拠・矛盾・保留の監査に接続できる場合だけ下流へ渡す。
+- `riskLabels[]` は最低限 `safe_mode`, `unreviewed_content`, `conflict`, `rollback_required`, `approval_pending` を扱える契約として記録し、UI表現や実装詳細は確定しない。
+- `apply` 系イベントは人間判断後の監査イベントであり、AI候補生成時点では `proposal` までに留める。
+
+### Consequences
+- A2/A3 への引き渡しは proposal-only と rollbackRef 必須の制約を含むが、Frontend実装仕様や運用文書本文はこのStreamで確定しない。
+- `Pending` を無視した自動適用、SafeMode既定ONの後退、AIによるレビュー済み化は認知外在化要件違反として Stop する。

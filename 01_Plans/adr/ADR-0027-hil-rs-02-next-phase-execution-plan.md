@@ -538,3 +538,19 @@ A2/A3はモックI/Fで先行実装可能だが、承認確定の責務はA1ガ�
 ### Phase 8: Final status
 - 判定: **Hold/Needs-decision**（`pendingDecisionQueueCount>0` のため）。
 - Stop条件適用: なし（検証失敗・未定義競合は検出せず）。
+
+## Stream D execution contract clarification（2026-06-13）
+
+### Context
+- HIL-RS-02 は HIL-RS-01-A1 の最小 I/F を再定義せず、統治契約を硬化して A2/A3 へ read-only handoff する段階である。
+- `Approval Record` と `HIL-RS-02-GOV-EXCEPTION-01` に未解決在庫が残るため、Proceed Go は未成立である。
+
+### Decision
+- 固定順序は `A1 -> RS-02-A1 -> A2 handoff -> A3 handoff -> delivery plan` とし、A2/A3 の実作業は各専任Streamに分離する。
+- RS-02-A1 の実行許可は `a1Status==Done && pendingDecisionQueueCount==0 && fixedKeyDrift==0 && safeModeRetreat==false` のときだけ成立する。
+- mockで先行可能な範囲は `decision`, `executeAllowed`, `reasonCodes`, `auditEventRef` の読取・検証までに限定する。
+- 将来版に隔離する事項は、必須キー追加/削除、承認主体変更、新規状態遷移、GOV例外の恒久化、SafeMode境界変更である。
+
+### Consequences
+- A2/A3 へは「参照契約」と「Stop条件」を渡し、Frontend/UI/E2E/04文書の実装完了を本計画の前提にしない。
+- Pending bypass、contract redefinition、approval inference が検出された場合は `Proceed=Stop` とし、承認在庫へ戻す。
