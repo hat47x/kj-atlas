@@ -1165,6 +1165,57 @@
 
 ---
 
+## 30) Baseline delta 2026-06-14: post-2375 start-panel focus-scope sync
+
+### Candidate
+
+- Target main: `origin/main` = `44c3dcd327b10860e51e7b2b04e07893fcd21213`.
+- Previous recorded mainline baseline: `origin/main@87272a3b25c8d5c8d5c025a51bca15062e266cdd` in section 29.
+- Scope note: this delta refreshes baseline tracking after the `QA-MONKEY-09` start-panel focus-scope repair and PRODUCT-QA gate record were merged. It records mainline health and release-routing clarity only; it does not change runtime behavior, UI copy, API/backend behavior, SafeMode defaults, share/export policy, public documentation publication authority, issue statuses, product authority, release authority, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python. No frontend, backend service, or Docker execution was required for this documentation-only baseline slice.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `44c3dcd327b10860e51e7b2b04e07893fcd21213` | G0 |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning validator regression | `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` | Pass: 10 tests | G0 / G7 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+| Markdown whitespace | `git diff --check -- 01_Plans\issues\issue-PROJECT-BASELINE-01-latest-mainline-health-baseline.md` | Pass: no whitespace errors; only CRLF conversion warning for the touched Markdown file | G7 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this planning-baseline refresh. The project still has `active_issues=52`, with `ready=15`, `blocked=37`, `actionable_adrs=1`, and no triage stopper.
+- `QA-MONKEY-09` is now Done on `main`, and the first-run start panel records dialog semantics plus focus containment for `Tab` / `Shift+Tab`.
+- `PRODUCT-QA-01` now treats the start-panel focus-scope repair as improved G2/G4 evidence, while keeping physical keyboard acceptance, screen-reader acceptance, release screenshots, and final program approval outside automated proof.
+- No new ADR is required for this baseline sync. ADR work is required only if the project changes the global modal strategy, first-run routing architecture, SafeMode/share-export policy, product-value authority, runtime environment policy, or release authority.
+
+### Gate classification
+
+| Gate | 2026-06-14 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, active issue validation, validator regression, and triage pass with no stopper. |
+| G2 primary user operations | Conditional Go improved | Start-panel keyboard focus now begins inside the entry dialog and does not leak to background controls while the panel is visible. |
+| G3 Japanese UI / i18n | Conditional Go / unchanged | The repair reused existing localized labels and did not add new UI copy. |
+| G4 viewport and operability | Conditional Go improved | PRODUCT-QA now records the start-panel dialog/focus-scope repair and the targeted E2E coverage for forward/reverse Tab containment. |
+| G7 regression | Go for planning slice | Planning validator, validator unit tests, triage, and whitespace checks pass for this documentation-only baseline update. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the post-2375 start-panel focus-scope sync.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- Follow-up routing:
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - First-run / product UX acceptance: `PRODUCT-UX-01` evidence history and any successor issue if the start surface is redesigned.
+  - Physical keyboard and screen-reader acceptance: human-owned release acceptance lane.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
