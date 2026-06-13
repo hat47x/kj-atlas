@@ -789,6 +789,62 @@
 
 ---
 
+## Post-2366 convergence checkpoint
+
+- Checkpoint date (JST): 2026-06-13
+- Latest main: `origin/main@4a632f68cebd8888cfff1338d2ae7ca885177fb4`
+- GitHub open PR search result: `0`
+- Recent merged branch refs still present on origin:
+  - `codex/data-maint-03-decision-freshness-20260613`
+  - `codex/product-qa-data-lifecycle-gate-sync-20260613`
+  - `codex/env-config-docker-handoff-20260613`
+  - `codex/product-qa-env-config-docker-gate-20260613`
+  - `codex/project-baseline-post-2365-20260613`
+- Internal issue triage:
+  - `active_issues=52`
+  - `ready=15`
+  - `blocked=37`
+  - `actionable_adrs=1`
+  - stopper: none
+- Scope: refreshes repository governance after #2362 through #2366 were merged. This checkpoint records current mainline convergence and cleanup candidates only; it does not delete remote branches, close PRs, rerun CI, change ADR status, change runtime behavior, or approve release readiness.
+
+### Merged lane result
+
+| PR | Former branch | Merge result | Governance outcome |
+| --- | --- | --- | --- |
+| #2362 | `codex/data-maint-03-decision-freshness-20260613` | Merged as `dd5dfb8d` | High-privilege data-lifecycle decision handoff is canonical on `main`; `ADR-0035` and related issues remain decision-gated. |
+| #2363 | `codex/product-qa-data-lifecycle-gate-sync-20260613` | Merged as `4c445b42` | PRODUCT-QA high-privilege lifecycle freshness gate is canonical; full release remains No-Go. |
+| #2364 | `codex/env-config-docker-handoff-20260613` | Merged as `44b2256b` | ENV-CONFIG Docker-capable host handoff is canonical; `docker compose config` evidence remains platform-operator owned. |
+| #2365 | `codex/product-qa-env-config-docker-gate-20260613` | Merged as `73d68c7e` | PRODUCT-QA environment-config handoff gate is canonical; live Compose rehearsal remains Hold. |
+| #2366 | `codex/project-baseline-post-2365-20260613` | Merged as `4a632f68` | PROJECT-BASELINE post-2365 data-lifecycle and environment-handoff sync is canonical on `main`. |
+
+### Cleanup candidate table
+
+| Branch | Current classification | Cleanup recommendation |
+| --- | --- | --- |
+| `origin/codex/data-maint-03-decision-freshness-20260613` | merged data-lifecycle decision handoff | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/product-qa-data-lifecycle-gate-sync-20260613` | merged PRODUCT-QA gate sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/env-config-docker-handoff-20260613` | merged environment-config handoff | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/product-qa-env-config-docker-gate-20260613` | merged PRODUCT-QA environment gate sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/project-baseline-post-2365-20260613` | merged latest-main baseline sync | Delete only after repository maintainer confirms no post-merge audit need. |
+
+### Decision
+
+- The post-2362 data-lifecycle, PRODUCT-QA, environment-config, and PROJECT-BASELINE lane is converged into `main`.
+- GitHub connector search reports no open PRs for the repository at this checkpoint.
+- No branch deletion, PR closure, rerun, ADR status change, implementation authorization, or release approval is executed from this checkpoint.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene; this update only records the changed repository state.
+- Full release shipment remains No-Go until product-value Open gates, human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, environment rehearsal evidence, and final program approval are recorded together.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@4a632f68cebd8888cfff1338d2ae7ca885177fb4`.
+2. Treat #2362..#2366 as mainline evidence, not open candidate PR evidence.
+3. Keep the five recent remote branch refs as cleanup candidates only; deletion remains a maintainer-approved repository maintenance action.
+4. Route remaining release blockers through `PRODUCT-QA-01`, `MVP-EXIT-01`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
