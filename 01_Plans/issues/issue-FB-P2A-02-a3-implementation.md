@@ -53,3 +53,12 @@
 - [x] A1/A2/A3依存順が崩れていない。
 - [x] shared resourceの直接編集を行っていない。
 - [x] 本Streamが03_Implement実コードに非干渉である。
+
+
+## Stream H classification（2026-06-13）
+
+- Phase: A3 Implementation Plan.
+- Classification: Hold for implementation stream: this memo is an implementation plan only, not permission for Stream H to edit code.
+- Mock-first dependency handling: Dependency is cut by A1+A2; implementation may start only in a downstream stream after A2 pass evidence.
+- Scope lock: Stream H does not edit `03_Implement/`, shared architecture files, or documentation; conflict-prone files remain handoff candidates only.
+- Stop condition: contract mismatch, missing A2 mock evidence, SafeMode default weakening, or any request to start implementation inside this planning stream.

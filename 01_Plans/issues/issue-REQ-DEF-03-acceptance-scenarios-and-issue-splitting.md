@@ -281,3 +281,11 @@
 - Verify合格条件: 価値仮説とACの1対1追跡が可能で、非検証要件が残っていない。
 - Proceed条件: 実装ストリームが「どのACをどのテストで満たすか」を追加解釈なしで決定できる。
 - フェイルセーフ: 上流価値定義との矛盾・非検証要件・競合編集を検出した場合はOpen化を停止する。
+
+
+## 11) Stream H acceptance-splitting lock（2026-06-13）
+
+- Classification: Open-ready planning rule; current memo remains Done and acts as the split-rule reference.
+- Split order: RequirementStatement → AcceptanceScenario（前提/操作/期待結果/除外）→ VerificationLevel → Issue split.
+- Mock-first rule: if a dependency can be severed with an A1 contract and A2 mock validation, A3 must remain an implementation plan until mock evidence is available.
+- Stop condition: if an issue needs both real users and implementation changes, keep it Hold/Deferred and split planning from activation.

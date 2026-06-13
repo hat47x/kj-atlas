@@ -79,6 +79,19 @@
 
 ---
 
+## Stream H activation baseline（2026-06-13）
+
+| VR | Planning classification | Open/activation rule | Non-goal lock |
+| --- | --- | --- | --- |
+| VR0 | Active backbone | Open/Done may proceed through safety regressions and docs-checks. | SafeMode/provider/review invariants are never relaxed. |
+| VR1 | Active backbone | Open/Done may proceed when first-value scenarios are acceptance-testable. | No new value principle is added here. |
+| VR2 | Active backbone | Open/Done may proceed through domain-expression work already delegated to product/domain issues. | Ambiguity is preserved; AI does not auto-resolve Hold/Critique. |
+| VR3 | Active backbone | Open/Done may proceed when reviewable outcome package criteria are traceable. | Share/export cannot omit unreviewed, held, or evidence state. |
+| VR4 | Deferred backlog | Direction is retained, but activation waits for real users/cooperators or maintainer-approved surrogate evidence; it is not a release blocker in solo OSS/pre-release. | No surveillance KPI, individual scoring, or mandatory frontend E2E harness is introduced by this ADR. |
+| VR5 | Deferred backlog | Direction is retained, but activation waits for real users/cooperators and a safe public/share path; it is not implementation-mandatory now. | No social diffusion KPI requiring real external participants is made mandatory before the milestone exists. |
+
+This baseline keeps `ADR-0039` governance right-sizing intact: Stream H may refine planning issue memos, but must not edit implementation files or force VR4/VR5 Open while activation is deferred.
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] 必須ヘッダ（Status/Date/Deciders/Scope）を記載した。

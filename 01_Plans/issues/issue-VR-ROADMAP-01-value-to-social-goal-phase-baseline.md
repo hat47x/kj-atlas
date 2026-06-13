@@ -6,7 +6,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: TBD（A=Productization Program Owner / R=Plan Owner）
-- Scope: `01_Plans/`, `02_Architecture/value_traceability.md`, `AGENTS.md`
+- Scope: `01_Plans/` only（`02_Architecture/value_traceability.md` / `AGENTS.md` は本Streamでは変更提案のみ）
 - Related Backlog: `VR-ROADMAP-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0036-value-to-social-goal-realization-roadmap.md`, `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `02_Architecture/value_traceability.md`
 - Expected verification level: `docs-check`
@@ -52,7 +52,7 @@
 - [ ] VR0–VR5 の各フェーズに、正担当issue（既存または新規）が1件以上対応している。
 - [ ] 各VRの Exit Gate が、対応issueの受入条件またはKPIへ追跡できる。
 - [ ] 全VR共通の非後退不変条件（SafeMode既定ON / `human_reviewed`人手昇格 / patch+approval / `provider=none`既定）が明文化されている。
-- [ ] `value_traceability.md` に VR系列と社会的目標接続が追記され、`AGENTS.md` のADR参照範囲が ADR-0038 まで更新される。
+- [ ] `value_traceability.md` と `AGENTS.md` の更新が必要な場合は、本Streamでは直接編集せず変更提案として記録されている。
 - [ ] 本ベースラインは `ADR-0036` がAcceptedになるまで実装着手を要求しない（docs-only）。
 - [ ] 検証（docs-check）として validator / triage / `rg` の実行結果が記録される。
 
@@ -60,8 +60,8 @@
 
 - [ ] T1 VR0–VR5 と既存issue/新規issueの対応表を確定する。
 - [ ] T2 各VRの Exit Gate を対応issueのAC/KPIへリンクする。
-- [ ] T3 `value_traceability.md` に社会的目標接続節を追記する。
-- [ ] T4 `AGENTS.md` のADR参照範囲を更新する。
+- [ ] T3 `value_traceability.md` に社会的目標接続節を追記する変更提案を記録する（本Streamでは未編集）。
+- [ ] T4 `AGENTS.md` のADR参照範囲を更新する変更提案を記録する（本Streamでは未編集）。
 - [ ] T5 docs-check（validator/triage/rg）で整合を確認する。
 
 ## 7) 検証計画 / Validation plan
@@ -90,3 +90,21 @@
 
 - 関連: VR4は `VALUE-MEASURE-01/02`、VR5は `SOCIAL-DIFFUSION-01..04` が新規担当。VR0–VR3は既存 `PRODUCT-VALUE-*` / `PRODUCT-UX-*` / `CE*` を再利用。
 - ADR化が必要になる条件: VR系列をプロジェクト恒久のフェーズ正本へ昇格し、既存フェーズADRをsupersedeする場合。
+
+
+## 11) Stream H phase baseline（2026-06-13）
+
+| VR | State | Primary issues | Exit condition | Open / activation condition |
+| --- | --- | --- | --- | --- |
+| VR0 | Active | CE0 / safety policy / threat model lineage | SafeMode default ON, `provider=none` default, patch+approval, and manual `human_reviewed` promotion remain non-regressed. | Already active as invariant backbone; only regression-fix issues open. |
+| VR1 | Active | `PRODUCT-VALUE-01`, `PRODUCT-UX-01` | First-use path reaches meaningful card placement plus grouping/hold state. | Product-value/UX issues may open when their AC and docs-check/unit scope are fixed. |
+| VR2 | Active | `PRODUCT-VALUE-02`, `PRODUCT-UX-02`, CE1/CE2, DOMAIN-EXPR sequence | Hold/Critique/Evidence/Contradiction can be retained as work state and not auto-resolved. | Domain-expression issues may open in phase order; schema changes must be separately approved. |
+| VR3 | Active | `PRODUCT-VALUE-03`, `PRODUCT-UX-03`, CE3 | Reviewable outcome package preserves confirmed, held, unreviewed, and evidence-linked information with safe return path. | Outcome-package issues may open when SafeMode/share-export AC are explicit. |
+| VR4 | Deferred | `VALUE-MEASURE-01`, `VALUE-MEASURE-02`, `MVP-EXIT-01`, `PRODUCT-QA-01` | Measurement harness and scorecard are defined as reproducible planning artifacts. | Open only after real-user/cooperator milestone or maintainer-approved surrogate evidence; not a solo pre-release blocker. |
+| VR5 | Deferred | `SOCIAL-DIFFUSION-01..04`, CE4, public roadmap operations | Reproducibility, revisability, evidence-anchored diffusion, and non-surveillance signals are defined without mandating external participants. | Open only after safe sharing/publishing path and real-user/cooperator milestone exist. |
+
+### Cross-stream guardrails
+
+- Do not edit `02_Architecture/value_traceability.md`, `AGENTS.md`, `03_Implement/`, or `04_Documentation/` from this Stream; record proposals only.
+- VR4/VR5 remain directionally accepted but activation-deferred under `ADR-0039`; do not convert them into release blockers.
+- Solo OSS/pre-release governance stays lightweight: Maintainer ownership is sufficient unless a later activation milestone introduces real participants.

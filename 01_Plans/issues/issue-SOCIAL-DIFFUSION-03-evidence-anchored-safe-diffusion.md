@@ -88,3 +88,21 @@
 
 - 関連: 経時的見直しは `SOCIAL-DIFFUSION-02`、非監視観測は `SOCIAL-DIFFUSION-04`。
 - ADR化が必要になる条件: 公開配布形式や匿名化方式を新しい互換契約として固定する場合。
+
+
+## 11) Stream H deferred activation lock（2026-06-13）
+
+| Item | Planning decision |
+| --- | --- |
+| Classification | Hold / deferred-open-ready（VR5 direction retained, activation postponed） |
+| Direction retained | 広域配布時も保留・反対・未レビュー・根拠参照が欠落しない安全配布方向を保持する。 |
+| Activation condition | SafeMode/share-export境界を保つ公開またはレビューパック配布候補が存在する。 |
+| Open condition | Real-user/cooperator milestone exists, SafeMode/share-export impact is explicitly reviewed, and this issue can remain docs/planning-first. |
+| Explicit non-goal | 根拠や未レビュー状態を削った公開、SafeMode解除を前提にした配布。 |
+| Deferral reason | `ADR-0039` keeps social-diffusion work out of mandatory implementation until social participants or a safe pilot exist. |
+
+### Safe-diffusion guardrails
+
+- Do not require real external participants while none exist.
+- Do not add surveillance telemetry, user-level adoption scoring, or administrator-centered monitoring.
+- Preserve evidence, hold, review, and SafeMode/share-export states in any future handoff.

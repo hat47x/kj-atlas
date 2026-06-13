@@ -90,3 +90,19 @@
 
 - 関連: 観測単位と証拠は `VALUE-MEASURE-01`、社会的普及の観測は `SOCIAL-DIFFUSION-04`（非監視シグナル）。
 - ADR化が必要になる条件: 判定式やゲート閾値そのものを変更する場合（本issueは様式・運用のみ）。
+
+
+## 11) Stream H scorecard lock（2026-06-13）
+
+| Item | Planning decision |
+| --- | --- |
+| Classification | Hold / deferred-open-ready（VR4 scorecard direction retained, activation postponed） |
+| Scorecard axes | Value realization evidence × governance/safety guardrail evidence. |
+| Minimal evidence while deferred | One row per candidate gate with evidence ID, owner=Maintainer, Go/No-Go wording, and rollback/hold destination. |
+| Activation condition | Measurement-harness artifacts exist and there is a real-user/cooperator or maintainer-approved surrogate-evidence milestone. |
+| No-Go condition | Scorecard is treated as mandatory release blocker, introduces individual scoring, weakens SafeMode/share-export, or requires multi-role RACI before collaborators exist. |
+| Lightweight governance | Maintainer is sufficient A/R in solo OSS/pre-release; expand roles only after activation. |
+
+### Non-goals
+
+- Do not require dashboards, telemetry collection, admin-centered KPI monitoring, or external-participant metrics before activation.

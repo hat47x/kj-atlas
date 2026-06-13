@@ -43,3 +43,12 @@
 - [x] A2 pass criteria を明文化（MV-01..04）。
 - [x] A3への handoff keys を固定（`mockCaseId/result/evidence`）。
 - [x] 失敗時の差戻し先を定義（A1=契約不備、A2=モック不備）。
+
+
+## Stream H classification（2026-06-13）
+
+- Phase: A2 Mock Validation.
+- Classification: Open-ready / Done: mock dataset/checks cover success, missing-key, invariant/error mapping, and audit-event-name verification.
+- Mock-first dependency handling: Dependency is mock-first; A3 remains blocked if A2 evidence is absent or contract ID mismatches.
+- Scope lock: Stream H does not edit `03_Implement/`, shared architecture files, or documentation; conflict-prone files remain handoff candidates only.
+- Stop condition: contract mismatch, missing A2 mock evidence, SafeMode default weakening, or any request to start implementation inside this planning stream.

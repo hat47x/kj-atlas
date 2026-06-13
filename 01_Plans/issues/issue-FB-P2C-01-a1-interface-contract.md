@@ -62,3 +62,12 @@
 - [x] `ContractID` と `DecisionStatus=Fixed` を記録。
 - [x] 依存順 `A1 -> A2 -> A3` を明示。
 - [x] A1未確定項目ゼロ。
+
+
+## Stream H classification（2026-06-13）
+
+- Phase: A1 Interface Contract.
+- Classification: Open-ready / Done: I/F signature, inputs, outputs, errors, audit events, and AC are fixed; A2 may proceed without implementation files.
+- Mock-first dependency handling: Dependency is cut at the contract boundary; downstream work must not alter A1 without reopening this memo.
+- Scope lock: Stream H does not edit `03_Implement/`, shared architecture files, or documentation; conflict-prone files remain handoff candidates only.
+- Stop condition: contract mismatch, missing A2 mock evidence, SafeMode default weakening, or any request to start implementation inside this planning stream.

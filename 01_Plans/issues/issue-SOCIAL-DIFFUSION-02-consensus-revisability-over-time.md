@@ -89,3 +89,21 @@
 
 - 関連: 複数レビュア再現性は `SOCIAL-DIFFUSION-01`、安全配布は `SOCIAL-DIFFUSION-03`。
 - ADR化が必要になる条件: 版・再オープンのためにスキーマへ新しい永続構造を追加する場合。
+
+
+## 11) Stream H deferred activation lock（2026-06-13）
+
+| Item | Planning decision |
+| --- | --- |
+| Classification | Hold / deferred-open-ready（VR5 direction retained, activation postponed） |
+| Direction retained | 共有済み成果物を版越しに再オープンし、差分・根拠・保留理由を失わず見直せることを保持する。 |
+| Activation condition | 版管理されたレビュー成果物と再オープン候補フローが存在する。 |
+| Open condition | Real-user/cooperator milestone exists, SafeMode/share-export impact is explicitly reviewed, and this issue can remain docs/planning-first. |
+| Explicit non-goal | 過去合意の不可逆固定、自動再承認、合意ロックイン。 |
+| Deferral reason | `ADR-0039` keeps social-diffusion work out of mandatory implementation until social participants or a safe pilot exist. |
+
+### Safe-diffusion guardrails
+
+- Do not require real external participants while none exist.
+- Do not add surveillance telemetry, user-level adoption scoring, or administrator-centered monitoring.
+- Preserve evidence, hold, review, and SafeMode/share-export states in any future handoff.
