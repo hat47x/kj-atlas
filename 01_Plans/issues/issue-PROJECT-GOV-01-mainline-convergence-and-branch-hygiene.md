@@ -845,6 +845,59 @@
 
 ---
 
+## Post-2372 convergence checkpoint
+
+- Checkpoint date (JST): 2026-06-13
+- Latest main: `origin/main@865e2514e266825bac9f504c1d27b65c5b76a533`
+- GitHub open PR search result: `0`
+- Recent merged branch refs still present on origin:
+  - `codex/fb-p0-current-main-checkpoint-20260613`
+  - `codex/product-qa-fb-p0-checkpoint-20260613`
+  - `codex/project-baseline-fb-p0-checkpoint-20260613`
+  - `codex/mvp-exit-fb-p0-boundary-20260613`
+- Internal issue triage:
+  - `active_issues=52`
+  - `ready=15`
+  - `blocked=37`
+  - `actionable_adrs=1`
+  - stopper: none
+- Scope: refreshes repository governance after #2369 through #2372 were merged. This checkpoint records current mainline convergence and cleanup candidates only; it does not delete remote branches, close PRs, rerun CI, change ADR status, change runtime behavior, change FB-P0 approval state, or approve release readiness.
+
+### Merged lane result
+
+| PR | Former branch | Merge result | Governance outcome |
+| --- | --- | --- | --- |
+| #2369 | `codex/fb-p0-current-main-checkpoint-20260613` | Merged as `97194275` | FB-P0/P2C current-main checkpoint is canonical on `main`; `fixedKeyDrift=0` and `pendingBypassDetected=false` are recorded as planning-boundary evidence. |
+| #2370 | `codex/product-qa-fb-p0-checkpoint-20260613` | Merged as `87272a3b` | PRODUCT-QA FB-P0 planning-boundary gate is canonical; full release remains No-Go. |
+| #2371 | `codex/project-baseline-fb-p0-checkpoint-20260613` | Merged as `eea59739` | PROJECT-BASELINE FB-P0 checkpoint sync is canonical on `main`. |
+| #2372 | `codex/mvp-exit-fb-p0-boundary-20260613` | Merged as `865e2514` | MVP-EXIT FB-P0 planning-boundary Program Gate intake is canonical; final shipment approval remains blocked. |
+
+### Cleanup candidate table
+
+| Branch | Current classification | Cleanup recommendation |
+| --- | --- | --- |
+| `origin/codex/fb-p0-current-main-checkpoint-20260613` | merged FB-P0 current-main checkpoint | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/product-qa-fb-p0-checkpoint-20260613` | merged PRODUCT-QA FB-P0 gate sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/project-baseline-fb-p0-checkpoint-20260613` | merged PROJECT-BASELINE FB-P0 sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/mvp-exit-fb-p0-boundary-20260613` | merged MVP-EXIT FB-P0 boundary sync | Delete only after repository maintainer confirms no post-merge audit need. |
+
+### Decision
+
+- The post-2369 FB-P0 planning-boundary lane is converged into `main`.
+- GitHub connector search reports no open PRs for the repository at this checkpoint.
+- No branch deletion, PR closure, rerun, ADR status change, implementation authorization, FB-P0 approval change, or release approval is executed from this checkpoint.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene; this update only records the changed repository state.
+- Full release shipment remains No-Go until product-value Open gates, human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, environment rehearsal evidence, FB-P0 approval/held decisioning, and final program approval are recorded together.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@865e2514e266825bac9f504c1d27b65c5b76a533`.
+2. Treat #2369..#2372 as mainline evidence, not open candidate PR evidence.
+3. Keep the four recent FB-P0 remote branch refs as cleanup candidates only; deletion remains a maintainer-approved repository maintenance action.
+4. Route remaining release blockers through `PRODUCT-QA-01`, `MVP-EXIT-01`, `FB-P0-2A2B2C`, `HIL-RS-02-GOV-EXCEPTION-01`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
