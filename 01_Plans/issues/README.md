@@ -375,6 +375,7 @@ issue補助メモには、最低でも次の項目を含める。
 | QA-MONKEY-06 | `issue-QA-MONKEY-06-header-toolbar-responsive-overlap.md` | Done | N/A | ヘッダーツールバーの折返し・長いlegacyラベル・View/共有パネル配置を安定化し、1280x720/920x720のE2E回帰を追加。 |
 | QA-MONKEY-07 | `issue-QA-MONKEY-07-local-generated-artifacts-ignore.md` | Done | N/A | 手順通りのローカル起動で生成されるnode_modules/SQLite DBをignore対象へ追加。 |
 | QA-MONKEY-08 | `issue-QA-MONKEY-08-active-issue-metadata-validator-drift.md` | Done | N/A | Active issue metadata/index driftを解消し、validator/unittest通過を確認。 |
+| QA-MONKEY-09 | `issue-QA-MONKEY-09-start-panel-focus-scope.md` | Done | N/A | 開始パネル表示中のTab順が背後UIへ抜ける問題を修正し、dialog semanticsとフォーカス循環E2Eを追加。 |
 
 | AUTH-E2E-01 | `issue-AUTH-E2E-01-authcontext-contract-level1-level2-regression.md` | Done | N/A | Level1/Level2運用固定、fixture回帰、PR記録テンプレを確定。 |
 
