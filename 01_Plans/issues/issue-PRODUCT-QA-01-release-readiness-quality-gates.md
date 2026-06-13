@@ -1957,3 +1957,35 @@ DoDテンプレ（Draft→Open）
 - Keep physical keyboard acceptance, screen-reader acceptance, real Chrome visual review, human release screenshots, public documentation publication approval, and final program approval human-owned or separately gated; automated Playwright is supporting evidence, not final release authority.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes locale fallback policy, SafeMode/share-export policy, readOnly authority, public documentation publication authority, UI architecture, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-13: high-privilege lifecycle decision freshness sync
+
+- Candidate: `origin/main@dd5dfb8d81f11cf1a9b3c9524b3678c2faafbd38`.
+- Decision date (JST): 2026-06-13.
+- Reviewer: Codex.
+- Scope: post-#2362 planning sync for `ADR-0035` and `DATA-MAINT-03`. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation passed, the validator unit tests passed, and triage reported `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none`.
+- G1 safety defaults: Conditional Go / unchanged. `ADR-0035` remains `Proposed` and continues to keep deletion, archive, ownership transfer, admin body browsing, cross-document body search, and retention automation outside the standard product path unless a later ADR accepts them.
+- G6 diagnostics and support: Conditional Go / clarified. `DATA-MAINT-03` now names the human-owned decision checklist, and `DATA-MAINT-04` remains the only Draft route for metadata-only audit viewing. This does not authorize support/admin body browsing or audit body access.
+- Value/data lifecycle gates: Conditional Go for decision clarity / No-Go for full shipment. The project can identify the exact maintainer and productization decisions still needed, but `ADR-0035` is still Proposed, `DATA-MAINT-03` is still Pending, and `DATA-MAINT-04` is still Draft.
+- Final: **Conditional Go for high-privilege lifecycle decision freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2362 `[codex] Refresh data lifecycle decision handoff` merged into `main`.
+- Local validation before merge:
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass.
+  - `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` -> pass, 10 tests.
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` -> pass, stopper none.
+  - `git diff --check -- 01_Plans\adr\ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans\issues\issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md` -> no whitespace errors; only CRLF conversion warnings for touched Markdown files.
+- GitHub Actions CI on PR #2362 passed all jobs: backend lint + test, frontend lint, frontend typecheck, frontend test + build, i18n document hash regression, safe-mode leakage guards, and import/serialization/shape regression guards.
+
+### Follow-ups
+
+- Project Maintainers must still decide `ADR-0035` as Accept as written / Request changes / Reject.
+- Productization Program Owner must confirm whether the deployment target requires deletion, archive, ownership transfer, retention automation, admin body browsing, or cross-document body search before production use.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes the high-privilege lifecycle boundary, SafeMode/share-export policy, metadata-only audit-viewing boundary, product-value authority, runtime environment policy, or release authority.
