@@ -638,6 +638,7 @@ Non-goals:
 
 - Read: historical ADRs that still described runtime settings with legacy unprefixed examples.
 - Finding: current implementation, registry, and public docs use `KJ_ATLAS_*`, but several older accepted ADRs still referenced `DATABASE_URL`, `LLM_PROVIDER`, `LLM_ESCALATION_ENABLED`, or `LLM_LARGE_SCALE_OPT_IN` as if they were current setting keys.
+- Finding: PR #2335 carried this normalization, but the current `origin/main` checkpoint after PR #2336 still contains the legacy examples. This slice reapplies the same documentation-only correction to the current mainline.
 - Decision: normalize those references to the accepted `KJ_ATLAS_*` names without changing the historical ADR decisions or product runtime behavior.
 
 ### Execute
