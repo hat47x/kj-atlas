@@ -1216,6 +1216,59 @@
 
 ---
 
+## 31) Baseline delta 2026-06-14: post-2378 governance convergence sync
+
+### Candidate
+
+- Target main: `origin/main` = `0fadf823566a282fd00ef6aadd881ff8d7ab606c`.
+- Previous recorded mainline baseline: `origin/main@44c3dcd327b10860e51e7b2b04e07893fcd21213` in section 30.
+- Scope note: this delta refreshes baseline tracking after the start-panel focus-scope repair lane was fully recorded in `MVP-EXIT-01` and `PROJECT-GOV-01`. It records latest-main health, governance convergence, and cleanup routing only; it does not change runtime behavior, UI behavior, UI copy, API/backend behavior, SafeMode defaults, share/export policy, public documentation publication authority, issue statuses, release authority, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python. No frontend, backend service, browser, or Docker execution was required for this documentation-only planning baseline slice.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `0fadf823566a282fd00ef6aadd881ff8d7ab606c` | G0 |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning validator regression | `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` | Pass: 10 tests | G0 / G7 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+| Markdown whitespace | `git diff --check -- 01_Plans\issues\issue-PROJECT-BASELINE-01-latest-mainline-health-baseline.md` | Pass: no whitespace errors; only CRLF conversion warning for the touched Markdown file | G7 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this planning-baseline refresh. The project still has `active_issues=52`, with `ready=15`, `blocked=37`, `actionable_adrs=1`, and no triage stopper.
+- `MVP-EXIT-01` now records the post-2376 start-panel focus-scope Program Gate intake as a targeted Conditional Go for first-run keyboard focus traceability while keeping full shipment No-Go.
+- `PROJECT-GOV-01` now records the post-2377 convergence checkpoint: #2374..#2377 are canonical on `main`, GitHub open PR search reports 0, and the related remote branches are cleanup candidates only.
+- The start-panel focus lane is therefore internally converged across implementation evidence, PRODUCT-QA, PROJECT-BASELINE, MVP-EXIT, and PROJECT-GOV, but it still does not satisfy human physical keyboard acceptance, screen-reader acceptance, release screenshots, product-value gates, Compose evidence, support rehearsal, high-privilege lifecycle decisions, FB-P0 decisions, or final shipment approval.
+- No new ADR is required for this baseline sync. ADR work is required only if the project changes the modal/focus architecture, productization screen IA, branch cleanup authority, SafeMode/share-export policy, product-value authority, runtime environment policy, or release authority.
+
+### Gate classification
+
+| Gate | 2026-06-14 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, active issue validation, validator regression, triage, and governance convergence records pass with no stopper. |
+| G2 primary user operations | Conditional Go improved / unchanged from section 30 | The first-run start-panel focus repair remains canonical on `main`; this sync only records downstream governance convergence. |
+| G4 viewport and operability | Conditional Go improved / unchanged from section 30 | Automated focus containment evidence remains in place, while human physical keyboard and screen-reader acceptance remain outside automated proof. |
+| G7 regression | Go for planning slice | Planning validator, validator unit tests, triage, and whitespace checks pass for this documentation-only baseline update. |
+| Repository governance | Conditional Go improved | #2374..#2377 are merged, no open PRs are reported, and residual branch refs are explicitly classified as cleanup candidates rather than active work. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the post-2378 governance convergence sync.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- Follow-up routing:
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - First-run / product UX acceptance: `PRODUCT-UX-01` evidence history and any successor issue if the start surface is redesigned.
+  - Repository cleanup authority: `PROJECT-GOV-01` and repository maintainer approval.
+  - Physical keyboard and screen-reader acceptance: human-owned release acceptance lane.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
