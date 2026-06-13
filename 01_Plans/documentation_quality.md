@@ -126,6 +126,18 @@ Gist リリース前に、少なくとも次を記録する。
 - 本基準自体は内部文書のため `01_Plans/` に置き、`04_Documentation/` へは配置しない。
 - `04_Documentation/` は外部読者向けに編集し、内部検討メモを混在させない。
 
+
+## 8.1 公開境界分類（DOC-PUBLIC）
+
+| 区分 | 主な文書 | 品質判定 |
+| --- | --- | --- |
+| 一般利用者向け公開 | `04_Documentation/public_index.md`, `installation.md`, `configuration.md`, `data_handling.md`, `operations.md`, `security.md`, `security_operational_guidelines.md`, `acceptance_check.md`, `diagnostics.md`, `canonicalization.md`, `ce2_low_risk_ai_assist.md`, `local_llm_ops_guide.md`, `narratives.md` | QG-1〜QG-6 を満たし、実装済み事実と安全境界だけを書く |
+| 04文書保守者向け | `04_Documentation/README.md`, `04_Documentation/release.md` | 公開準備・除外方針・リリース確認を扱い、Gist本文には原則含めない |
+| 開発者/AI運用向け | `04_Documentation/codex_skill_operations.md`, `04_Documentation/e2e_verification_log_2026-03-03.md`, `03_Implement/frontend/docs/e2e_testing.md` | 一般利用者向け公開入口から直接誘導しない。必要な場合は開発者向け入口から参照する |
+| 内部計画/判断ログ | `00_Prompt/`, `01_Plans/`, `02_Architecture/` | 公開文書へ混ぜず、利用者に必要な確定済み事実だけを04文書へ要約する |
+
+公開利用ガイドへ出す前に、SafeMode既定ON、share/export前確認、未レビュー本文・AI提案の人間レビュー、external provider/escalation既定OFFの説明が後退していないことを確認する。
+
 ## 9. AIエージェント運用メモ
 
 - 本基準は **公開文書の本文ではなく、公開前レビューの内部チェックリスト** として使う。

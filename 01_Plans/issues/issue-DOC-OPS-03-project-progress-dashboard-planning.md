@@ -148,3 +148,22 @@
   1. 週次: triage実行→KPI集計→decision-pack更新（推測更新禁止）。
   2. 日次: invalid metadata件数と Blocked→Ready 遷移の差分監査。
   3. フェイルセーフ: invalid metadata多発が継続し3回修復を超える場合、意思決定者へエスカレーション。
+
+## Stream G documentation/public boundary pass (2026-06-13)
+
+### Plan
+- 対象: `progress dashboard planning`。
+- Scope: Docs-only。`03_Implement/` と `02_Architecture/` は編集しない。
+- Acceptance: 公開/保守/開発者/内部計画の分類が追跡でき、SafeMode・share/export・AI提案レビューの安全境界が後退しない。
+
+### Execute
+- RequirementID `DOC-OPS-03` の公開境界を再確認。
+- Decision: ダッシュボード計画そのものは変更せず、残Open化準備をDOC-PUBLICとDOC-OPS-05各票に分散記録する方針を維持した。
+
+### Verify
+- docs-check 対象として issue memo metadata、Markdown整形、リンク導線、公開不可情報の混入有無を確認する。
+- Self-correction budget: 0/3 から開始し、4回目相当は停止する。
+
+### Proceed
+- 判定: Ready for verification。
+- 残課題: 実ファイル移動や開発者向け正本の再配置が必要な場合は、別PRで allowlist と移動先を明示して扱う。

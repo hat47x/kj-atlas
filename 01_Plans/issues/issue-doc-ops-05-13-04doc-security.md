@@ -689,3 +689,22 @@
 ### 4) 失敗回数管理（max 3）
 - self-repair count: 0/3。
 - 停止条件: 4回目修復要求が発生した場合は `Hold` に遷移。
+
+## Stream G documentation/public boundary pass (2026-06-13)
+
+### Plan
+- 対象: `security`。
+- Scope: Docs-only。`03_Implement/` と `02_Architecture/` は編集しない。
+- Acceptance: 公開/保守/開発者/内部計画の分類が追跡でき、SafeMode・share/export・AI提案レビューの安全境界が後退しない。
+
+### Execute
+- RequirementID `DOC-OPS-05-13` の公開境界を再確認。
+- Decision: security は公開可能な安全基底方針として、SafeMode/share/export/外部連携の境界を維持した。
+
+### Verify
+- docs-check 対象として issue memo metadata、Markdown整形、リンク導線、公開不可情報の混入有無を確認する。
+- Self-correction budget: 0/3 から開始し、4回目相当は停止する。
+
+### Proceed
+- 判定: Ready for verification。
+- 残課題: 実ファイル移動や開発者向け正本の再配置が必要な場合は、別PRで allowlist と移動先を明示して扱う。

@@ -10,6 +10,19 @@
 
 上記3系統は混在させず、公開本文に管理情報を混入させません。
 
+
+## 文書公開境界マトリクス
+
+| 区分 | 文書 | 公開配布での扱い |
+| --- | --- | --- |
+| 一般利用者向け公開入口 | `public_index.md` | Gist や外部共有の先頭に使う |
+| 一般利用者/運用者向け公開文書 | `installation.md`, `configuration.md`, `data_handling.md`, `operations.md`, `security.md`, `security_operational_guidelines.md`, `acceptance_check.md`, `diagnostics.md`, `canonicalization.md`, `ce2_low_risk_ai_assist.md`, `local_llm_ops_guide.md`, `narratives.md` | 公開候補。実装済み事実、安全境界、手動確認に限定する |
+| 04文書保守者向け | `README.md`, `release.md` | 公開準備やリリース確認の管理用。Gist本文には原則含めない |
+| 開発者/AIエージェント向け | `codex_skill_operations.md`, `e2e_verification_log_2026-03-03.md` | 公開利用ガイドには含めず、開発・検証・AI運用の文脈で参照する |
+| 内部計画/判断ログ | `../01_Plans/issues/*.md`, `../01_Plans/adr/*.md`, `../00_Prompt/*.md` | 公開本文へ混入しない。必要な場合も利用者向けに確定済み事実へ要約してから別途反映する |
+
+分類に迷う場合は、一般利用者が安全に操作するための確定済み手順か、開発・保守・内部判断のための記録かで判定します。未承認仕様、内部 issue、ADR の詳細、AIエージェント作業ログは公開入口へ入れません。
+
 公開向けの入口は [public_index.md](public_index.md) です。公開用の Gist は、利用者が kj-atlas を使うための説明だけで構成し、文書管理、作業ログ、issue、ADR、Gist 更新手順などのプロジェクト管理情報を含めません。
 
 ## 公開向けインデックス

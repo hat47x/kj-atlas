@@ -32,11 +32,24 @@ kj-atlas の目的は、
 この README は **人間向けの入口**です。詳細な運用規約やAI向けの読み順は、役割に応じて次を参照してください。
 
 - **AIエージェント向けの入口**: [`AGENTS.md`](AGENTS.md)
-- **利用者向け公開入口**: [`04_Documentation/public_index.md`](04_Documentation/public_index.md)
+- **利用者向け公開入口**: [`04_Documentation/public_index.md`](04_Documentation/public_index.md)（一般利用者に最初に案内する入口）
+- **04文書の保守者入口**: [`04_Documentation/README.md`](04_Documentation/README.md)（公開入口ではなく、公開対象/除外対象の管理用）
 - **コントリビューション手順**: [`CONTRIBUTING.md`](CONTRIBUTING.md)
-- **実装ガイド（実行方法）**: [`03_Implement/README.md`](03_Implement/README.md)
+- **実装ガイド（開発者向け実行方法）**: [`03_Implement/README.md`](03_Implement/README.md)
 
 > 開発レイヤ（`00_Prompt`〜`04_Documentation`）の詳細な説明・Read Order・Project Map は `AGENTS.md` に集約しています。
+
+
+### 文書公開境界（迷ったとき）
+
+| 区分 | 入口 | 公開配布での扱い |
+| --- | --- | --- |
+| 一般利用者向け | [`04_Documentation/public_index.md`](04_Documentation/public_index.md) | Gist など外部共有時の先頭に使う |
+| 04文書保守者向け | [`04_Documentation/README.md`](04_Documentation/README.md) | 公開対象一覧・除外対象の管理用。Gist本文には含めない |
+| 開発者向け | [`CONTRIBUTING.md`](CONTRIBUTING.md), [`03_Implement/README.md`](03_Implement/README.md) | 開発・テスト・実装手順として案内する |
+| 内部計画/AI運用向け | `00_Prompt/`, `01_Plans/`, `AGENTS.md` | 公開利用ガイドには混ぜず、必要な根拠として参照する |
+
+公開利用ガイドには、内部 issue、ADR の詳細、AIエージェント作業ログ、未承認仕様、組織固有の秘密設定を混ぜません。
 
 ---
 
