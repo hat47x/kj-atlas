@@ -667,6 +667,8 @@
   - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
   - Full Compose startup and environment rehearsal: `ENV-CONFIG-DRIFT-01` / platform operator lane.
 
+---
+
 ## 21) Baseline delta 2026-06-04: #2310 documentation-only main sync
 
 ### Candidate
@@ -1054,6 +1056,59 @@
   - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
   - Physical keyboard, screen-reader, and real Chrome visual acceptance: human-owned release acceptance lane.
   - Public documentation publication approval and final external-index review: `DOC-PUBLIC-BOUNDARY-01` / documentation owner lane.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+
+---
+
+## 28) Baseline delta 2026-06-13: post-2365 data-lifecycle and environment-handoff sync
+
+### Candidate
+
+- Target main: `origin/main` = `73d68c7e1d9c2bd65ec05c4920ba9b3d850442f6`.
+- Previous recorded mainline baseline: `origin/main@ae78dc309558f92231f00d585a7b6a680ab4d97f` in section 27.
+- Scope note: this delta refreshes baseline tracking after the data-lifecycle decision handoff, PRODUCT-QA gate sync, environment-configuration Docker handoff, and PRODUCT-QA handoff gate record were merged. It records planning integrity and release-routing clarity only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export policy, public documentation publication authority, issue statuses, release authority, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python. Docker remains unavailable on this Codex host, so Docker-capable host evidence is still routed to `ENV-CONFIG-DRIFT-01`.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `73d68c7e1d9c2bd65ec05c4920ba9b3d850442f6` | G0 |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning validator regression | `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` | Pass: 10 tests | G0 / G7 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+| Markdown whitespace | `git diff --check -- 01_Plans\issues\issue-PROJECT-BASELINE-01-latest-mainline-health-baseline.md` | Pass: no whitespace errors; only CRLF conversion warning for the touched Markdown file | G7 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this planning-baseline refresh. The project still has `active_issues=52`, with `ready=15`, `blocked=37`, `actionable_adrs=1`, and no triage stopper.
+- `ADR-0035` and `DATA-MAINT-03` are now fresher and clearer for maintainer decision-making, but the privileged data-lifecycle boundary is still not accepted. High-privilege deletion, archive, ownership transfer, retention automation, admin body browsing, and cross-document body search remain outside the standard product path unless later accepted through ADR/issue closure.
+- `ENV-CONFIG-DRIFT-01` now has a clearer Docker-capable host handoff for `docker compose config`. This improves operator routing, but it does not replace the missing Docker evidence on the current Codex host.
+- `PRODUCT-QA-01` now records both the high-privilege lifecycle freshness sync and the environment-config Docker handoff sync. These records improve release-readiness traceability, but the full release decision remains No-Go.
+- No new ADR is required for this baseline sync. ADR work is required only if the project changes the high-privilege lifecycle boundary, public `KJ_ATLAS_*` configuration contract, private adapter variable boundary, deployment topology, product-value authority, runtime environment policy, or release authority.
+
+### Gate classification
+
+| Gate | 2026-06-13 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, active issue validation, validator regression, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go / unchanged | SafeMode and share/export policy were not changed. Privileged lifecycle capabilities remain gated by `ADR-0035` and related issues. |
+| G5 public docs and config | Conditional Go improved | Environment-config handoff now preserves the no-exception public `KJ_ATLAS_*` contract while clarifying private PostgreSQL adapter variables and Docker-capable verification ownership. |
+| G6 diagnostics and support | Conditional Go / clarified | Data-lifecycle and environment-handoff records make support/operator routing clearer, but diagnostics bundle and recovery rehearsal remain separate gates. |
+| G7 regression | Go for planning slice | Planning validator, validator unit tests, triage, and whitespace checks pass for this documentation-only baseline update. |
+| E1/E2 environment contract | Conditional Go improved | Config-contract decision and handoff clarity improved. Full Compose config/startup evidence remains pending on a Docker-capable host. |
+| E3 Compose/live environment | Hold | Current Codex host still lacks Docker; `docker compose config` and live environment rehearsal remain platform-operator evidence. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the post-2365 data-lifecycle and environment-handoff sync.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, environment rehearsal evidence, and final program approval are recorded together.
+- Follow-up routing:
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - High-privilege lifecycle boundary decision: `ADR-0035`, `DATA-MAINT-03`, and `DATA-MAINT-04`.
   - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
   - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
   - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
