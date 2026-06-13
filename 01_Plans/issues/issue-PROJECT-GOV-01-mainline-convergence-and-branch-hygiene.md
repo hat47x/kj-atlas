@@ -898,6 +898,64 @@
 
 ---
 
+## Post-2377 convergence checkpoint
+
+- Checkpoint date (JST): 2026-06-14
+- Latest main: `origin/main@76b3fe22c34a389fe30bfbaf45a3c8ef4d5aaf5c`
+- Remote branch count: 2372
+- `origin/codex/` remote branch count: 2348
+- GitHub open PR search result: `0`
+- Recent merged branch refs still present on origin:
+  - `codex/start-panel-focus-scope-20260613`
+  - `codex/product-qa-start-panel-focus-gate-20260614`
+  - `codex/project-baseline-start-panel-focus-20260614`
+  - `codex/mvp-exit-start-panel-focus-20260614`
+- Prior governance checkpoint branch still present on origin:
+  - `codex/project-gov-post-2372-checkpoint-20260613`
+- Internal issue triage:
+  - `active_issues=52`
+  - `ready=15`
+  - `blocked=37`
+  - `actionable_adrs=1`
+  - stopper: none
+- Scope: refreshes repository governance after #2374 through #2377 were merged. This checkpoint records current mainline convergence and cleanup candidates only; it does not delete remote branches, close PRs, rerun CI, change ADR status, change runtime behavior, change UI behavior, or approve release readiness.
+
+### Merged lane result
+
+| PR | Former branch | Merge result | Governance outcome |
+| --- | --- | --- | --- |
+| #2374 | `codex/start-panel-focus-scope-20260613` | Merged as `cdbe4f9d` | First-run start-panel focus-scope repair is canonical on `main`; `QA-MONKEY-09` is Done for the targeted focus containment defect. |
+| #2375 | `codex/product-qa-start-panel-focus-gate-20260614` | Merged as `44c3dcd3` | PRODUCT-QA start-panel focus gate record is canonical; full release remains No-Go. |
+| #2376 | `codex/project-baseline-start-panel-focus-20260614` | Merged as `0d18a663` | PROJECT-BASELINE post-2375 start-panel focus sync is canonical on `main`. |
+| #2377 | `codex/mvp-exit-start-panel-focus-20260614` | Merged as `76b3fe22` | MVP-EXIT post-2376 start-panel focus Program Gate intake is canonical; final shipment approval remains blocked. |
+
+### Cleanup candidate table
+
+| Branch | Current classification | Cleanup recommendation |
+| --- | --- | --- |
+| `origin/codex/start-panel-focus-scope-20260613` | merged first-run focus-scope repair | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/product-qa-start-panel-focus-gate-20260614` | merged PRODUCT-QA gate sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/project-baseline-start-panel-focus-20260614` | merged PROJECT-BASELINE sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/mvp-exit-start-panel-focus-20260614` | merged MVP-EXIT gate sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/project-gov-post-2372-checkpoint-20260613` | merged prior governance checkpoint | Delete only after repository maintainer confirms no post-merge audit need. |
+
+### Decision
+
+- The post-2374 first-run focus-scope repair, PRODUCT-QA gate record, PROJECT-BASELINE sync, and MVP-EXIT Program Gate intake lane is converged into `main`.
+- GitHub connector search reports no open PRs for the repository at this checkpoint.
+- No branch deletion, PR closure, rerun, ADR status change, implementation authorization, UI redesign approval, accessibility acceptance, or release approval is executed from this checkpoint.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene; ADR-0030 and ADR-0031 continue to govern broader UI operability and productization screen architecture.
+- Full release shipment remains No-Go until product-value Open gates, human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, environment rehearsal evidence, FB-P0 approval/held decisioning, and final program approval are recorded together.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@76b3fe22c34a389fe30bfbaf45a3c8ef4d5aaf5c`.
+2. Treat #2374..#2377 as mainline evidence, not open candidate PR evidence.
+3. Keep the four recent start-panel remote branch refs and the prior governance checkpoint branch as cleanup candidates only; deletion remains a maintainer-approved repository maintenance action.
+4. Route remaining release blockers through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
