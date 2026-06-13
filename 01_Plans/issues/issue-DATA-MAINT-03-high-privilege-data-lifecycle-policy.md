@@ -287,6 +287,35 @@ Maintainer への推奨判断経路:
 
 ---
 
+## 19) Current-main decision freshness（2026-06-13）
+
+### Context
+
+- `main` は高権限データライフサイクル操作の分類、ADR-0035の提案、DATA-MAINT-04のDraft分離を含んでいる。
+- ただし `ADR-0035` はまだ `Proposed` であり、本Issueは `Status=Open` / `DecisionStatus=Pending` のまま維持する。
+- この更新は、2026-06-13時点で人間が次に判断すべき内容を短く取り出すためのdocs-only更新である。API/UI/CLI/runtime behavior、SafeMode、share/export、公開文書、ADR status、`DATA-MAINT-04` status は変更しない。
+
+### Human-owned decision checklist
+
+- Project Maintainers: `ADR-0035` を Accept as written / Request changes / Reject のどれで扱うかを明示する。
+- Productization Program Owner: 導入想定組織が、削除、アーカイブ、所有者移管、保持期限自動化、管理者本文閲覧、文書横断検索を本番導入の前提条件にしているか確認する。
+- QA Lead: 上記のいずれかが前提条件になる場合、`PRODUCT-QA-01` / `MVP-EXIT-01` のリリースゲートへ明示的に戻す。
+- Codex: 判断が出るまで、高権限ライフサイクル操作の実装issueを開かず、既存のStop条件と検証証跡を維持する。
+
+### Proceed / Hold / Stop
+
+- Proceed: Maintainers が `ADR-0035` を現行内容でAcceptedにした場合、後続sliceで本Issueを `DecisionStatus=Fixed` 候補へ進める。
+- Hold: Maintainers の判断が未完了、または導入想定組織の必須条件確認が未完了の場合、本IssueをPendingのまま維持する。
+- Stop: この更新を、削除、アーカイブ、所有者移管、保持期限自動化、管理者本文閲覧、文書横断検索、監査本文閲覧、本文共有の実装許可として扱う要求を検知した場合は停止する。
+
+### Verify
+
+- `git diff --check -- 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
+- `rg -n "Current-main decision freshness|Human-owned decision checklist|Accept as written|Request changes|Reject|DecisionStatus=Pending|DATA-MAINT-04" 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
+- Proceed for this slice: docs-only の判断鮮度更新として継続可能。ADR status と実装状態は変更しない。
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している。

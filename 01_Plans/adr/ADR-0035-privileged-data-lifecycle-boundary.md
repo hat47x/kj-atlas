@@ -90,6 +90,24 @@ Maintainer の選択肢:
 - `data_model_operations_overview.md` は、MVPで支援するデータ、埋め込み構造、派生情報、未支援のライフサイクル操作を区別している。
 - `PRODUCT-QA-01` と `MVP-EXIT-01` は、未解決の高権限操作を隠れた実装漏れではなく、リリースゲート対象の製品境界判断として扱っている。
 
+## Current-main decision freshness（2026-06-13）
+
+この更新は、本ADRをAcceptedにするものではない。2026-06-13時点の `main` では、判断材料はそろっているが、Project Maintainers の明示判断がまだ残っている。
+
+Project Maintainers が次に行う判断:
+
+1. Accept as written: 高権限ライフサイクル操作を標準機能にしない境界を固定する。
+2. Request changes: 不足するリスク、ステークホルダー、導入条件を指定し、本ADRを更新してから再判断する。
+3. Reject: 標準機能に含めるべき高権限操作を明示し、その操作ごとの後続ADRを起票する。
+
+Productization Program Owner / QA Lead が次に確認する事項:
+
+- 導入想定組織が、削除、アーカイブ、所有者移管、保持期限自動化、管理者本文閲覧、文書横断検索のいずれかを本番導入の前提条件として求めているか。
+- 求めている場合、それは本ADRのAccepted化では解決せず、後続ADRと実装issueを通してリリースゲートへ戻す必要がある。
+- 求めていない場合、未実装状態は隠れた欠落ではなく、明示された製品境界として扱える。
+
+この確認では、API、UI、CLI、runtime behavior、SafeMode、share/export、公開文書、`DATA-MAINT-04` のDraft状態を変更しない。
+
 ## Consequences
 
 期待される効果:
