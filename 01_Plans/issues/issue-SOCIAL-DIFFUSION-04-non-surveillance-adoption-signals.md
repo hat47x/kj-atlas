@@ -88,3 +88,21 @@
 
 - 関連: 観測運用は `VALUE-MEASURE-02`、安全配布は `SOCIAL-DIFFUSION-03`。
 - ADR化が必要になる条件: 採用シグナルを配布契約や公開ダッシュボードの恒久指標として固定する場合。
+
+
+## 11) Stream H deferred activation lock（2026-06-13）
+
+| Item | Planning decision |
+| --- | --- |
+| Classification | Hold / deferred-open-ready（VR5 direction retained, activation postponed） |
+| Direction retained | opt-in・集計・ローカルファースト・成果物ベースの採用シグナルだけを候補にする。 |
+| Activation condition | 個人追跡を伴わない採用シグナル設計と、漏洩経路にならない確認手順が存在する。 |
+| Open condition | Real-user/cooperator milestone exists, SafeMode/share-export impact is explicitly reviewed, and this issue can remain docs/planning-first. |
+| Explicit non-goal | 個人追跡、行動スコアリング、管理者中心の監視KPI。 |
+| Deferral reason | `ADR-0039` keeps social-diffusion work out of mandatory implementation until social participants or a safe pilot exist. |
+
+### Safe-diffusion guardrails
+
+- Do not require real external participants while none exist.
+- Do not add surveillance telemetry, user-level adoption scoring, or administrator-centered monitoring.
+- Preserve evidence, hold, review, and SafeMode/share-export states in any future handoff.

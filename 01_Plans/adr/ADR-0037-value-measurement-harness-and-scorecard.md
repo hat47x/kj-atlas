@@ -64,6 +64,13 @@
 
 ---
 
+## Stream H deferred-backlog baseline（2026-06-13）
+
+- `VALUE-MEASURE-01` is **Hold / deferred-open-ready**: the measurement harness may define Value Hypothesis, Evidence Artifact, and Go/No-Go artifact shapes, but must stay a planning contract until a real-user/cooperator milestone or maintainer-approved surrogate-evidence milestone exists.
+- `VALUE-MEASURE-02` is **Hold / deferred-open-ready**: the two-axis scorecard may define value KPI × governance guardrail rows, but must not become a release blocker while kj-atlas remains solo OSS/pre-release.
+- Minimal acceptable evidence while deferred is limited to issue text, mock/synthetic fixtures, command logs, and proposed evidence IDs; no frontend E2E implementation, telemetry expansion, or real-user KPI collection is required.
+- No-Go conditions are: surveillance-style telemetry, individual scoring, SafeMode/share-export weakening, heavyweight RACI beyond Maintainer ownership, or mandatory external-participant KPI before activation.
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] 必須ヘッダ（Status/Date/Deciders/Scope）を記載した。

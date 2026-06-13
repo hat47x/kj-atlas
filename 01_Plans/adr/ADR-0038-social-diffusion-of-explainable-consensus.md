@@ -73,6 +73,19 @@ V4 の先に、社会的普及を扱う層 VR5 を次の4本柱で定義する�
 
 ---
 
+## Stream H deferred-backlog baseline（2026-06-13）
+
+All `SOCIAL-DIFFUSION-01..04` items remain **Hold / deferred-open-ready** until real users/cooperators or an explicit public-sharing pilot exist. They are retained as design direction only.
+
+| Issue | Direction retained | Activation waits for | Explicit non-goal |
+| --- | --- | --- | --- |
+| `SOCIAL-DIFFUSION-01` | Multi-reviewer reproducibility of understanding. | At least two independent reviewers or a maintainer-approved surrogate protocol. | Correctness scoring or forced consensus. |
+| `SOCIAL-DIFFUSION-02` | Revisability of consensus over time. | Versioned review package/re-open workflow candidate. | Lock-in, immutable agreement, or automatic re-approval. |
+| `SOCIAL-DIFFUSION-03` | Evidence-anchored safe diffusion. | Safe publish/share path that preserves hold/review/evidence state. | Public distribution that strips SafeMode/share-export safeguards. |
+| `SOCIAL-DIFFUSION-04` | Non-surveillance adoption signals. | Opt-in aggregate or artifact-based signal design. | Individual tracking, behavior scoring, or admin-centered surveillance KPI. |
+
+These constraints intentionally keep VR5 from becoming an implementation requirement before the social milestone exists.
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] 必須ヘッダ（Status/Date/Deciders/Scope）を記載した。

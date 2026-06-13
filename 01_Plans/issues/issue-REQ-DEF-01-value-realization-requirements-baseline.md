@@ -253,3 +253,11 @@
 
 ### Stop条件
 - self-repair 3回以内で整合不能な場合は停止し、`原因/影響/再開条件` を記録する。
+
+
+## 11) Stream H requirements baseline lock（2026-06-13）
+
+- Classification: Open-ready planning rule; current memo remains Done until a new activation request reopens it.
+- Value→Requirement flow: `ADR-0001` value principle → `ADR-0032/0040` product/domain value loop → requirement statement → acceptance scenario → split issue.
+- AC minimum: every requirement must state the user/social value protected, the acceptance evidence type, and the non-goal that prevents early collapse or surveillance expansion.
+- Scope lock: this issue defines planning rules only; it does not require implementation or documentation edits outside `01_Plans/issues/`.

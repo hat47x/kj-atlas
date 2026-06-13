@@ -302,3 +302,11 @@
 - Verify合格条件: 価値仮説とACの1対1追跡が可能で、非検証要件が残っていない。
 - Proceed条件: 実装ストリームが「どのACをどのテストで満たすか」を追加解釈なしで決定できる。
 - フェイルセーフ: 上流価値定義との矛盾・非検証要件・競合編集を検出した場合はOpen化を停止する。
+
+
+## 11) Stream H responsibility-boundary lock（2026-06-13）
+
+- Classification: Open-ready planning rule; current memo remains Done unless contract-boundary drift is detected.
+- Responsibility checkpoints: value owner, contract owner, verification owner, and SafeMode/share-export reviewer must be named or explicitly deferred to Maintainer in solo OSS/pre-release.
+- Contract checkpoints: schema/api/policy/ops impact must be classified before issue split; if impact crosses layers, split or record an exception.
+- Scope lock: planning-only; no `02_Architecture`, `03_Implement`, or `04_Documentation` edits are implied by this memo.

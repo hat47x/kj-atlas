@@ -90,3 +90,20 @@
 
 - 関連: 集計運用（スコアカード）は `VALUE-MEASURE-02`、Program Gate入力は `MVP-EXIT-01` / `PRODUCT-QA-01`。
 - ADR化が必要になる条件: 証拠成果物を新しい永続契約（保存形式/保管期限）として固定する場合。
+
+
+## 11) Stream H planning lock（2026-06-13）
+
+| Item | Planning decision |
+| --- | --- |
+| Classification | Hold / deferred-open-ready（VR4 direction retained, activation postponed） |
+| Measurement target | Value Hypothesis, User Action, Evidence Artifact, Decision Gate linkage for VR1–VR3 outcomes. |
+| Evidence artifact types | Issue text, mock/synthetic scenario notes, proposed evidence IDs, command logs, and manual review notes; no implementation artifact is required now. |
+| Go condition | Real-user/cooperator milestone or maintainer-approved surrogate-evidence milestone exists, and SafeMode/share-export invariants are represented in every gate. |
+| No-Go condition | Frontend E2E implementation is required by this planning issue, real-user KPI is fixed before users exist, or telemetry expands into individual tracking. |
+| Deferral reason | `ADR-0039` keeps VR4 observation mechanisms deferred during solo OSS/pre-release to avoid heavyweight governance. |
+
+### Non-goals
+
+- Do not require `03_Implement/` changes, Playwright scenario creation, telemetry, or real participant recruitment.
+- Do not make the harness a release blocker before activation.
