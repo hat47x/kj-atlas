@@ -1989,3 +1989,35 @@ DoDテンプレ（Draft→Open）
 - Productization Program Owner must confirm whether the deployment target requires deletion, archive, ownership transfer, retention automation, admin body browsing, or cross-document body search before production use.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes the high-privilege lifecycle boundary, SafeMode/share-export policy, metadata-only audit-viewing boundary, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-13: environment-config Docker handoff sync
+
+- Candidate: `origin/main@44b2256bdfa3a5ef948fb9e15a210790d8a80c16`.
+- Decision date (JST): 2026-06-13.
+- Reviewer: Codex.
+- Scope: post-#2364 planning sync for `ENV-CONFIG-DRIFT-01` and the Docker-capable host handoff. This record changes planning evidence only; it does not change runtime behavior, UI copy, API/CLI behavior, SafeMode defaults, share/export behavior, public documentation, issue statuses, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation passed, the validator unit tests passed, and triage reported `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none`.
+- G5 public docs and config: Conditional Go improved. `ENV-CONFIG-DRIFT-01` now points platform operators to `03_Implement/deploy/docker-compose.yml` as the Compose source and clarifies that public configuration inputs must remain under `KJ_ATLAS_*`, with `POSTGRES_*` limited to PostgreSQL's private adapter surface.
+- E1/E2 environment contract: Conditional Go improved. The handoff now names the exact Docker-capable-host command, expected confirmation points, and Done-ready / Hold split for the runtime configuration contract.
+- E3 Compose/live environment: Hold. This Codex host still does not expose Docker, so `docker compose config`, full Compose startup, and any live environment rehearsal remain human/platform-operator tasks on a Docker-capable host.
+- Final: **Conditional Go for environment-config handoff clarity / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2364 `[codex] Refresh env config Docker handoff` merged into `main`.
+- Local evidence before merge:
+  - `docker --version` remained unavailable on this Codex host, so Docker execution was not attempted locally.
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass.
+  - `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` -> pass, 10 tests.
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` -> pass, stopper none.
+  - `git diff --check -- 01_Plans\issues\issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md` -> no whitespace errors; only CRLF conversion warnings for the touched Markdown file.
+- GitHub Actions CI on PR #2364 passed all jobs: backend lint + test, frontend lint, frontend typecheck, frontend test + build, i18n document hash regression, safe-mode leakage guards, and import/serialization/shape regression guards.
+
+### Follow-ups
+
+- Platform Operator or Codex on a Docker-capable host must still run `cd 03_Implement\deploy; docker compose config` and attach the result to `ENV-CONFIG-DRIFT-01`.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle boundary decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes the public `KJ_ATLAS_*` configuration contract, private adapter variable boundary, deployment topology, runtime environment policy, product-value authority, or release authority.
