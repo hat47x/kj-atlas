@@ -201,3 +201,9 @@
 | Decision record | This section adds a current-main rerun record. | Final Open decision must cite H-DX1/H-DX2/H-DX3/H-DX4 outcomes. |
 
 - No ADR is needed for this rerun. ADR routing remains limited to schema ownership changes, AI review authority changes, SafeMode/share policy changes, or staged DOMAIN-EXPR boundary changes.
+
+## Stream F Frontend implementation note (2026-06-13)
+
+- Scope: schema-free read-only surfacing in `03_Implement/frontend`.
+- The share/export preflight now summarizes existing document state without adding fields: review state (`textReviewed` / `summaryReviewed`), hold proxy (`claimType=unknown`), critique fields, evidence links, contradictions, and evidence-gap candidates.
+- This satisfies the Phase 1 boundary by making existing round-tripped states visible before sharing while preserving import/export compatibility.

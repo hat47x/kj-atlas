@@ -393,3 +393,9 @@ The final value gate should be evaluated only after the slice evidence exists. T
   - Decision on search-only versus dedicated unresolved-state filters.
   - Evidence for Hold/Pending, critique-to-reproposal, AI-boundary proof, share/export proof, and umbrella integration decision.
 - No ADR is needed for this sync. ADR/schema routing remains required if a later slice changes persistence, AI review authority, SafeMode/share policy, or the value-state model.
+
+## Stream F Frontend implementation note (2026-06-13)
+
+- Scope: current-schema frontend workflow only; no schema expansion was performed.
+- Ambiguity/evidence signals are now bundled into the share/export preflight as a review checkpoint: unresolved holds, critiques, contradictions, evidence gaps, and unreviewed content are visible before outcome sharing.
+- The flow remains proposal/readiness-only: it does not auto-resolve ambiguity, auto-apply AI output, or auto-promote `human_reviewed`.

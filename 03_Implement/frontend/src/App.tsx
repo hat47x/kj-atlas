@@ -132,7 +132,7 @@ import { StartPanel } from "./ui/StartPanel";
 import type { MergeItem } from "./diff/merge_items";
 import { applyMergeTransaction, buildMergeAuditEntry } from "./diff/merge_apply";
 import { evaluateMergeSelection } from "./diff/merge_dependencies";
-import { SharePanel } from "./ui/SharePanel";
+import { SharePanel, type DomainExpressionShareSummary } from "./ui/SharePanel";
 import { getSafeModeIndicator } from "./ui/safe_mode_status";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
 import { buildPatchForExport } from "./domain/patch/patch_generate";
@@ -573,6 +573,48 @@ function clipSnippet(value: string | undefined, maxLength = 80): string {
   }
 
   return `${text.slice(0, maxLength)}…`;
+}
+
+function buildDomainExpressionShareSummary(document: DocumentV2 | null): DomainExpressionShareSummary {
+  if (!document) {
+    return {
+      unreviewedCards: 0,
+      unreviewedIslands: 0,
+      holdCards: 0,
+      critiqueTargets: 0,
+      evidenceLinks: 0,
+      contradictionLinks: 0,
+      evidenceGapCards: 0,
+    };
+  }
+
+  const evidenceLinks = document.evidenceLinks ?? [];
+  const linkedCardIds = new Set<string>();
+  for (const link of evidenceLinks) {
+    linkedCardIds.add(link.fromCardId);
+    linkedCardIds.add(link.toCardId);
+  }
+
+  const unreviewedCards = document.cards.filter((card) => card.textReviewed !== true).length;
+  const unreviewedIslands = document.islands.filter((island) => island.summaryText && island.summaryReviewed !== true).length;
+  const holdCards = document.cards.filter((card) => (card.claimType ?? "unknown") === "unknown").length;
+  const critiqueTargets = document.cards.filter((card) => Boolean(card.critique?.trim()) || (card.critiqueTags ?? []).length > 0).length
+    + document.islands.filter((island) => Boolean(island.critique?.trim()) || (island.critiqueTags ?? []).length > 0).length
+    + (document.critiqueInputs ?? []).length;
+  const evidenceGapCards = document.cards.filter((card) => {
+    const claimType = card.claimType ?? "unknown";
+    return (claimType === "claim" || claimType === "hypothesis") && !linkedCardIds.has(card.id);
+  }).length;
+
+  return {
+    unreviewedCards,
+    unreviewedIslands,
+    holdCards,
+    critiqueTargets,
+    evidenceLinks: evidenceLinks.length,
+    contradictionLinks: evidenceLinks.filter((link) => link.type === "contradicts").length,
+    evidenceGapCards,
+  };
 }
 
 function formatPatchEntitySnippet(value: unknown, safeMode: boolean): string {
@@ -8099,6 +8141,8 @@ ${parsedDocument.error}`);
     });
   }, [document, hilRsCritiqueInputs, hilRsStubClient, suggestedDocument, suggestionId, suggestionIteration]);
 
+  const domainExpressionShareSummary = useMemo(() => buildDomainExpressionShareSummary(document), [document]);
+
   const headerShareControls = (
     <SharePanel
       isOpen={isSharePanelOpen}
@@ -8156,6 +8200,7 @@ ${parsedDocument.error}`);
       onCancelBundleExport={() => { bundleRunnerRef.current.cancel(); bundleAbortRef.current?.abort(); }}
       computeProgressMessage={computeProgressMessage}
       canIncludeTraces={Boolean(selectedCard)}
+      domainExpressionSummary={domainExpressionShareSummary}
       onLoadViewMetadataFile={(file) => {
         void handleLoadViewMetadataFile(file);
       }}
