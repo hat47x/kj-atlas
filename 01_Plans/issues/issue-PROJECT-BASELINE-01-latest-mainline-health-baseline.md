@@ -1216,6 +1216,42 @@
 
 ---
 
+## 33) Baseline delta 2026-06-14: post-2383 final branch-tip reachability sync
+
+### Candidate
+
+- Target main: `origin/main` = `0d7a90634f24c3a8fa738f4f8c68dc61f7ec646e`.
+- Previous recorded mainline baseline: `origin/main@3085195ed5b56f29cd4e9d125078f561a042e0d2` in section 32.
+- Scope note: this delta refreshes baseline tracking after #2383 made the post-#2380 documentation branch tips reachable from `main`. It records repository reachability and planning health only; it does not delete branches, approve release readiness, change runtime behavior, alter UI/API behavior, change SafeMode/share-export policy, change issue status, or change Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python. No frontend, backend service, browser, or Docker execution was required for this documentation-only planning baseline slice.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `0d7a90634f24c3a8fa738f4f8c68dc61f7ec646e` | G0 |
+| Branch reachability | `git merge-base --is-ancestor` over 2026-06-06-or-later `origin/codex/*` branches | Pass: `since_20260606_codex_count=57`, `unmerged_count=0` | G0 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this branch-reachability refresh.
+- `PROJECT-GOV-01` records that the 2026-06-06-or-later `codex/*` reachability audit is complete for the observed remote refs.
+- Remote branch deletion remains out of scope and requires repository-maintainer approval.
+- No new ADR is required unless the project changes branch cleanup authority, stale-ref retention policy, or release authority.
+
+### Decision
+
+- Baseline decision: **Go** for branch-tip reachability after #2383.
+- Release readiness decision remains **No-Go** for full shipment until the existing product-value, human acceptance, environment, diagnostics, high-privilege lifecycle, FB-P0, and final approval gates are completed.
+- Follow-up routing:
+  - Branch deletion / remote-ref cleanup authority: `PROJECT-GOV-01` and repository maintainer approval.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+
+---
+
 ## 31) Baseline delta 2026-06-14: post-2378 governance convergence sync
 
 ### Candidate
