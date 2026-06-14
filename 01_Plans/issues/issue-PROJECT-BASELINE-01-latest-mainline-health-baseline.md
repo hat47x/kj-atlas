@@ -1517,6 +1517,62 @@
 
 ---
 
+## 37) Baseline delta 2026-06-15: post-2399 DATA-MAINT and CI recovery sync
+
+### Candidate
+
+- Target main: `origin/main` = `e2daa3b3120e30e0d39f5c7ac35ee1b4243b79d4`.
+- Previous recorded mainline baseline: `origin/main@43b82fc7461becba28eb8286ff8a44badd40fdf1` in section 36.
+- Scope note: this delta records #2395 through #2399 becoming canonical on `main`, with special focus on #2399's DATA-MAINT-03 governance-context checkpoint and backend CI recovery. It does not change runtime behavior, UI/API behavior, SafeMode/share-export policy, issue status, ADR status, release authority, public documentation, downstream implementation permission, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python / GitHub connector for PR and CI inspection / RTK used for compact status output where exact command text was not required.
+
+### Command and CI evidence
+
+| Area | Command or source | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git checkout main`; `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `e2daa3b3120e30e0d39f5c7ac35ee1b4243b79d4` | G0 |
+| PR #2399 CI | GitHub Actions CI run `9563` on head `3f374d719bdea557b5168900f519d95e544bff96` | Pass: CI completed successfully after capping backend `fastapi<0.137` | G7 |
+| Open PR check | GitHub PR search for open PRs in `hat47x/kj-atlas` | Pass: 0 open PRs returned | G0 / repository governance |
+| Branch reachability | `git merge-base --is-ancestor` over 2026-06-06-or-later `origin/codex/*` branches | Pass: `since_20260606_codex_count=73`, `unmerged_count=0` | G0 / repository governance |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+| Backend regression | `$env:DATABASE_URL='sqlite:///./kj_atlas.db'; ... pytest -p no:cacheprovider -m "not postgres and not auth_level1 and not auth_level2" 03_Implement\backend\tests --basetemp ...` | Pass: `248 passed, 3 skipped, 30 deselected` | G7 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this planning-baseline refresh.
+- #2395 through #2398 refreshed CE0, CE1, CE2, and CE4 readiness checkpoints on `main`; those records improve planning freshness but do not unlock held implementation gates by themselves.
+- #2399 refreshed `DATA-MAINT-03` and `ADR-0035` after `ADR-0039` became canonical. The decision boundary remains intentionally human-owned: `ADR-0035` is still `Proposed`, `DATA-MAINT-03` remains `Status=Open` / `DecisionStatus=Pending`, and `DATA-MAINT-04` remains Draft.
+- #2399 also fixed a CI dependency drift where `fastapi 0.137.0 / starlette 1.3.1` changed the application route shape enough to break existing backend route-contract tests. The current project dependency now caps backend FastAPI as `fastapi<0.137`; future FastAPI/Starlette upgrades should be treated as a deliberate dependency-upgrade slice with route-contract test updates.
+- The 2026-06-06-or-later `codex/*` branch reachability audit remains clean with `unmerged_count=0`; remote branch deletion is still out of scope and remains repository-maintainer-owned.
+- No new ADR is required for this baseline sync. ADR work is required only if the project changes dependency-upgrade authority, route-contract compatibility policy, branch cleanup authority, release authority, SafeMode/share-export policy, product-value authority, runtime environment policy, public documentation authority, or high-privilege data-lifecycle policy.
+
+### Gate classification
+
+| Gate | 2026-06-15 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, open PR check, branch reachability audit, active issue validation, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go / unchanged | No SafeMode, share/export, import, high-privilege data lifecycle implementation, or runtime security default changed in this slice. |
+| G6 governance and decision traceability | Conditional Go improved | DATA-MAINT and ADR records now explicitly state that ADR-0039 is not implicit acceptance of ADR-0035. |
+| G7 regression | Go for current backend/planning slice | PR #2399 CI passed, and local backend SQLite regression plus planning validation passed after FastAPI was capped below the route-shape regression. |
+| Repository governance | Conditional Go improved | Open PR search returned 0; all observed 2026-06-06-or-later `codex/*` branch tips remain reachable from `main`. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for post-2399 planning integrity, branch reachability, DATA-MAINT decision-boundary freshness, and current backend CI recovery.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- Follow-up routing:
+  - Dependency upgrade / route-shape compatibility: future backend dependency-upgrade slice if FastAPI/Starlette is raised past the capped range.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Branch deletion / remote-ref cleanup authority: `PROJECT-GOV-01` and repository maintainer approval.
+  - High-privilege data-lifecycle decision: `DATA-MAINT-03`, `ADR-0035`, and `DATA-MAINT-04`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+
+---
+
 ## Authoring Checklist・井ｺｺ髢・逕滓・AI 蜈ｱ騾夲ｼ・
 
 - [x] `Source Issue` 縺碁°逕ｨ迥ｶ諷九→謨ｴ蜷医＠縺ｦ縺・ｋ・域悴驕狗畑譎ゅ・ `N/A`・峨・
