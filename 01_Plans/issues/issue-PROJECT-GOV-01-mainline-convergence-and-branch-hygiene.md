@@ -1033,3 +1033,40 @@
 - The remaining remote `codex/*` refs are cleanup candidates only. Deletion still requires repository-maintainer approval and a final deletion audit list.
 - No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene.
 - Future documentation PRs that exist only to record branch reachability should be normal-merged when the purpose is ancestry repair; otherwise they will recreate the same squash-merge reachability gap.
+
+---
+
+## Post-2388 governance reachability checkpoint
+
+- Checkpoint date (JST): 2026-06-14
+- Latest main: `origin/main@1f87e01c5a3c083b32997500435298c082158d2e`
+- Recent normal-merge PRs included in this checkpoint:
+  - #2384 `[codex] Record final branch reachability`
+  - #2385 `[codex] Order project baseline reachability sections`
+  - #2386 `[codex] Record branch reachability release gates`
+  - #2387 `[codex] Refresh DATA-MAINT-03 decision status`
+  - #2388 `[codex] Record post-2387 mainline baseline`
+- Integration method: normal merge commits, not squash/rebase, so the related `codex/*` branch tips remain reachable from `main`.
+- Remote branch count: 2364
+- `origin/codex/*` branches updated on or after 2026-06-06: 44
+- `origin/codex/*` branches updated on or after 2026-06-06 that are not ancestors of `origin/main`: 0
+- GitHub open PR search result: `0`
+- Internal issue validation:
+  - `validate_active_issue_memos.py`: pass, `ok: validated 5 active issue memos`
+  - `test_validate_active_issue_memos.py`: pass, 10 tests
+- Scope: records repository governance after #2384 through #2388 were merged. This checkpoint does not delete remote branches, close PRs, change issue status, change ADR status, change runtime behavior, change UI/API behavior, or approve release readiness.
+
+### Decision
+
+- The observed 2026-06-06-or-later `codex/*` branch reachability state remains clean after the post-2383 documentation and release-gate records: no checked branch remains outside `main` ancestry.
+- #2387 confirms the high-privilege data-lifecycle decision boundary is still human-owned: `DATA-MAINT-03` remains `DecisionStatus=Pending`, `ADR-0035` remains `Proposed`, and `DATA-MAINT-04` remains Draft.
+- #2388 confirms the latest PROJECT-BASELINE record is canonical on `main`, with full release readiness still No-Go.
+- The remaining remote `codex/*` refs are cleanup candidates only. Deletion still requires repository-maintainer approval and a final deletion audit list.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene unless the project changes stale-ref retention, branch cleanup authority, or release authority.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@1f87e01c5a3c083b32997500435298c082158d2e`.
+2. Keep using normal merge commits for PRs whose purpose is to preserve `codex/*` branch-tip reachability.
+3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
+4. Route release blockers through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
