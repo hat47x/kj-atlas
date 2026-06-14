@@ -1360,6 +1360,59 @@
 
 ---
 
+## 34) Baseline delta 2026-06-14: post-2387 decision-boundary sync
+
+### Candidate
+
+- Target main: `origin/main` = `f46744e4dd12b58b5729e484f2efda73c1a9a3e1`.
+- Previous recorded mainline baseline: `origin/main@0d7a90634f24c3a8fa738f4f8c68dc61f7ec646e` in section 33.
+- Scope note: this delta refreshes baseline tracking after #2384, #2385, #2386, and #2387 were merged. It records repository reachability, release-gate evidence freshness, baseline-section ordering, and the current high-privilege data-lifecycle decision boundary only. It does not change runtime behavior, UI/API behavior, SafeMode/share-export policy, issue status, ADR status, release authority, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python. No frontend, backend service, browser, or Docker execution was required for this documentation-only planning baseline slice.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `f46744e4dd12b58b5729e484f2efda73c1a9a3e1` | G0 |
+| Branch reachability | `git merge-base --is-ancestor` over 2026-06-06-or-later `origin/codex/*` branches | Pass: `since_20260606_codex_count=43`, `unmerged_count=0` | G0 |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning validator regression | `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` | Pass: 10 tests | G0 / G7 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+| Markdown whitespace | `git diff --check -- 01_Plans\issues\issue-PROJECT-BASELINE-01-latest-mainline-health-baseline.md` | Pass: no whitespace errors; only CRLF conversion warning for the touched Markdown file | G7 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this planning-baseline refresh.
+- #2384 and #2386 added release-gate and branch-reachability evidence to `PROJECT-GOV-01`, `PRODUCT-QA-01`, and `MVP-EXIT-01`; #2385 repaired section ordering in this baseline document; #2387 refreshed `DATA-MAINT-03` after those records became canonical on `main`.
+- The 2026-06-06-or-later `codex/*` branch reachability audit remains clean with `unmerged_count=0`. Remote branch deletion is still out of scope and remains repository-maintainer-owned.
+- `DATA-MAINT-03` remains `Status=Open` / `DecisionStatus=Pending`, `ADR-0035` remains `Proposed`, and `DATA-MAINT-04` remains Draft. This is an intentional decision boundary, not a missing implementation.
+- No new ADR is required for this baseline sync. ADR work is required only if the project changes high-privilege data-lifecycle policy, branch cleanup authority, release authority, SafeMode/share-export policy, product-value authority, runtime environment policy, or stale-ref retention policy.
+
+### Gate classification
+
+| Gate | 2026-06-14 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, branch reachability audit, active issue validation, validator regression, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go / unchanged | No SafeMode, share/export, import, data-lifecycle implementation, or runtime security default changed in this slice. |
+| G6 governance and decision traceability | Conditional Go improved | Branch reachability and DATA-MAINT decision-boundary evidence are current on `main`; maintainer decisions remain explicit gates. |
+| G7 regression | Go for planning slice | Planning validator, validator unit tests, triage, and whitespace checks pass for this documentation-only baseline update. |
+| Repository governance | Conditional Go improved | All observed 2026-06-06-or-later `codex/*` branch tips remain reachable from `main`; branch deletion remains maintainer-owned. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for post-2387 planning integrity, branch reachability, and decision-boundary freshness.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- Follow-up routing:
+  - High-privilege data-lifecycle decision: `DATA-MAINT-03`, `ADR-0035`, and `DATA-MAINT-04`.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Branch deletion / remote-ref cleanup authority: `PROJECT-GOV-01` and repository maintainer approval.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+
+---
+
 ## Authoring Checklist・井ｺｺ髢・逕滓・AI 蜈ｱ騾夲ｼ・
 
 - [x] `Source Issue` 縺碁°逕ｨ迥ｶ諷九→謨ｴ蜷医＠縺ｦ縺・ｋ・域悴驕狗畑譎ゅ・ `N/A`・峨・
