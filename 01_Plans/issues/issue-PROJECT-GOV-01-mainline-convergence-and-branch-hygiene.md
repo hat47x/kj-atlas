@@ -1112,3 +1112,42 @@
 3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
 4. Treat FastAPI/Starlette upgrades past the current cap as a deliberate dependency-upgrade task, not an incidental CI repair.
 5. Route release blockers through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
+
+---
+
+## Post-2402 governance reachability and release-gate traceability checkpoint
+
+- Checkpoint date (JST): 2026-06-15
+- Latest main: `origin/main@9c9dbd68084e56d2a4d1430f0331bddf191b4d23`
+- Recent normal-merge PRs included in this checkpoint:
+  - #2400 `[codex] Record post-2399 project baseline`
+  - #2401 `[codex] Sync HIL/FB hold gates after post-2400 baseline`
+  - #2402 `[codex] Sync release gates after HIL/FB hold update`
+- Integration method: normal merge commits, not squash/rebase, so the related `codex/*` branch tips remain reachable from `main`.
+- GitHub Actions CI:
+  - #2400 CI run `9566`: passed.
+  - #2401 CI run `9569`: passed.
+  - #2402 CI run `9572`: passed on head `e94fe7f0852720d91d1b1644e7b24ad4518552eb`.
+- GitHub open PR search result: `0`.
+- `origin/codex/*` branches updated on or after 2026-06-06: 76.
+- `origin/codex/*` branches updated on or after 2026-06-06 that are not ancestors of `origin/main`: 0.
+- Internal issue validation:
+  - `validate_active_issue_memos.py`: pass, `ok: validated 5 active issue memos`.
+  - `triage_actionable_plans.py`: pass, `active_issues=52`, `ready=15`, `blocked=37`, `actionable_adrs=1`, stopper none.
+- Scope: records repository governance after #2400 through #2402 were merged. This checkpoint does not delete remote branches, close PRs, change issue status, change ADR status, change runtime behavior, change UI/API behavior, change SafeMode/share-export policy, approve HIL/FB held exceptions, or approve release readiness.
+
+### Decision
+
+- The observed 2026-06-06-or-later `codex/*` branch reachability state remains clean: no checked branch remains outside `main` ancestry.
+- #2401 and #2402 align the HIL/FB hold-gate state across `HIL-RS-02-A1`, `FB-P0-2A2B2C`, `PRODUCT-QA-01`, and `MVP-EXIT-01`: `fixedKeyDrift=0`, `pendingBypassDetected=false`, `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`, `pendingDecisionQueueCount>0`, and `executeAllowed=false`.
+- The current governance interpretation is traceability-only. It is not approval to bypass held gates, start downstream A2/A3 work, weaken SafeMode defaults, change share/export policy, or ship the product.
+- The remaining remote `codex/*` refs are cleanup candidates only. Deletion still requires repository-maintainer approval and a final deletion audit list.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene unless the project changes stale-ref retention, branch cleanup authority, CI signal authority, dependency-upgrade authority, HIL/FB held-gate authority, or release authority.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@9c9dbd68084e56d2a4d1430f0331bddf191b4d23`.
+2. Keep using normal merge commits for PRs whose purpose is to preserve `codex/*` branch-tip reachability.
+3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
+4. Keep HIL/FB downstream execution blocked until the human-owned approval and held-gate decision records are explicitly resolved.
+5. Route release blockers through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `HIL-RS-02-A1`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
