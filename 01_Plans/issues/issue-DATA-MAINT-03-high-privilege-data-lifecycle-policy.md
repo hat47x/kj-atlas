@@ -316,6 +316,37 @@ Maintainer への推奨判断経路:
 
 ---
 
+## 20) Post-2386 current-main decision freshness (2026-06-14)
+
+### Context
+
+- Candidate mainline reviewed: `origin/main@4a8156ffccddbfbcb3704a34899d3f644eda0185`.
+- The post-2386 branch reachability and release-gate records are current, and no unmerged `codex/*` branch updated on or after 2026-06-06 remains outside main.
+- This does not change the high-privilege data lifecycle decision. `ADR-0035` is still `Proposed`, this issue remains `Status=Open` / `DecisionStatus=Pending`, and `DATA-MAINT-04` remains a Draft issue.
+- This update is docs-only. It does not change API, UI, CLI, runtime behavior, SafeMode, share/export defaults, public documentation, ADR status, or release authority.
+
+### Current boundary
+
+- No implementation permission is granted from this issue for deletion, archive, ownership transfer, admin body browsing, cross-document body search, retention automation, or broad audit viewing.
+- The only lower-risk candidate still separated from this issue is metadata-only audit viewing in `DATA-MAINT-04`, and it remains blocked by the Draft-to-Open gate until `ADR-0035` is Accepted or replaced by an equivalent accepted ADR.
+- If maintainers decide that any high-privilege operation should become a standard product capability, that decision requires a separate accepted ADR and a split implementation issue.
+
+### Proceed / Hold / Stop
+
+- Proceed: Project Maintainers explicitly Accept, replace, or reject `ADR-0035`; if accepted as written, a later slice may move this issue toward `DecisionStatus=Fixed` without opening implementation work.
+- Hold: `ADR-0035` remains `Proposed`, or `DATA-MAINT-04` remains Draft without the required maintainer/security/productization confirmation.
+- Stop: any request to implement high-privilege lifecycle operations, admin body access, cross-document body search, retention automation, or broad audit viewing directly from this issue.
+
+### Verify
+
+- `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
+- `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py`
+- `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text`
+- `git diff --check -- 01_Plans\issues\issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
+- `rg -n "Post-2386 current-main decision freshness|4a8156ffccddb|DecisionStatus=Pending|DATA-MAINT-04|ADR-0035|metadata-only audit viewing" 01_Plans\issues\issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している。
