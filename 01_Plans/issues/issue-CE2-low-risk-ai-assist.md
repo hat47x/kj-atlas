@@ -445,3 +445,35 @@
 
 ### Phase 4: Stopper
 - CE1契約曖昧化、またはCE0承認証跡をmock代替する要求が出た時点で `Hold/Stop(held)` を維持する。
+
+## Current-main checkpoint（2026-06-14 / post-2396 CE2 Draft readiness）
+
+### Context
+- Baseline: `main@0fef652c` after PR #2396.
+- Scope: docs-only readiness checkpoint for CE2 low-risk AI assist. This update does not change `Status: Draft`, does not approve implementation, and does not substitute human approval.
+- Upstream reference state:
+  - CE0 contract freeze and CE0 graph boundary now have post-2394 checkpoints.
+  - CE1 ContextQuery/ContextBundle handoff now has a post-2395 checkpoint and keeps bundle-key reconciliation out of implementation source-of-truth status.
+
+### Readiness Evidence
+| Gate | Current evidence | Current result |
+| --- | --- | --- |
+| CE0 reference | Read-only checkpoint available; CE2 must not redefine Contract IDs, No-Go IDs, SafeMode, graph roles, or `patch+approval` authority | reference usable, not approval substitute |
+| CE1 reference | `ContextQueryV1` / `ContextBundleV1` checkpoint available; `sourceBundleHash/items/schemaVersion` reconciliation remains implementation blocker | mock-first reference usable |
+| Approval Record | `approved_at`, `approved_by`, `decision`, and `evidence` remain `TBD` / `missing` | Open gate not satisfied |
+| Proposal boundary | `proposal-only / human-final / no-auto / fail-closed` remains unchanged | no regression |
+| Hash and audit gate | `sourceBundleHash === bundleHash` and audit four-point completeness remain fail-closed gates | no regression |
+
+### Decision
+- Keep CE2 in `Draft` / `Hold`; do not promote to Open from the current evidence.
+- Treat CE0/CE1 checkpoints as read-only references only. They reduce ambiguity for future CE2 review, but they do not fill the Approval Record.
+- No ADR is required for this checkpoint because it preserves existing CE2 proposal-only policy and records the remaining approval gap rather than changing the decision model.
+
+### Human Tasks Before Open Review
+- Fill the Approval Record with real `approved_at`, `approved_by`, `decision`, and `evidence` values.
+- Confirm that CE2 review accepts CE0/CE1 references as sufficient read-only inputs without requesting CE2-side redefinition.
+- Confirm that `proposal-only`, `human-final`, `no-auto`, and `fail-closed` remain non-negotiable release constraints.
+
+### Stop Conditions
+- Stop immediately if CE2 uses CE0/CE1 checkpoints as permission to auto-apply, auto-confirm, auto-publish, or promote `unreviewed` output to `human_reviewed`.
+- Stop immediately if a future change treats missing Approval Record fields as acceptable for Open promotion.
