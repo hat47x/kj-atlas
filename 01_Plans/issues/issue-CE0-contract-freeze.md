@@ -3931,3 +3931,29 @@ export type AuditEventV1 = {
   - `rg -n "Stream B handoff readiness|CE0-CTX-IF|preview_bypass|safeMode default ON|decision|executeAllowed|reasonCodes|query/bundle/proposal/apply" 01_Plans\issues\issue-CE0-contract-freeze.md`
 - Proceed: Conditional-Go for downstream read-only reference.
 - Stop: Any implementation change, Contract ID mutation, No-Go aliasing, or SafeMode default relaxation.
+
+## Current-main checkpoint（2026-06-14 / post-2394 CE0 contract freeze）
+
+### Context
+- Baseline: `main@69fcafdeff23` after PR #2394.
+- Scope: docs-only checkpoint for CE0 contract freeze. This update does not approve implementation, add API behavior, rename IDs, or relax SafeMode.
+- Purpose: keep downstream CE0/CE1/CE2/CE4 work aligned with the frozen contract boundary before any productization task consumes these terms.
+
+### Frozen Contract Evidence
+| Area | Current frozen value | Check result |
+| --- | --- | --- |
+| Contract IDs | `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05` | `contract_id_mutation=0` |
+| No-Go IDs | `preview_bypass`, `consensus_direct_write`, `auto_apply_or_publish`, `ai_review_auto_promotion`, `safemode_default_relaxation` | no alias / no priority change |
+| SafeMode | default ON, `allowUnreviewedText=false` | `safeMode_regression=0` |
+| Decision I/F | `freezeDecision = { decision: Proceed|Hold|Stop, executeAllowed: boolean, reasonCodes: string[] }` | signature unchanged |
+| Audit minimum | `timestamp`, `actor`, `phase`, `gateResult`, `reason`, `nextAction` | audit key set unchanged |
+| Dependency direction | CE0 is the read-only upstream SSOT for downstream reference | `dependency_cycle=0` |
+
+### Decision
+- Proceed as Conditional-Go for downstream read-only reference only.
+- Keep this issue Open until the downstream implementation lane records evidence that it consumes the frozen IDs without redefining them.
+- No ADR is required for this checkpoint because no contract value, release authority, SafeMode boundary, or implementation responsibility changed.
+
+### Stop Conditions
+- Hold immediately if a future change mutates a Contract ID, introduces a synonym for a No-Go ID, changes SafeMode defaults, or lets this CE0 issue approve implementation behavior.
+- Hold immediately if downstream work treats this checkpoint as permission to bypass review, auto-apply proposals, or publish unreviewed text.

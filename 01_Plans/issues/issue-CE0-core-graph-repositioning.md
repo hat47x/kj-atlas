@@ -2308,3 +2308,30 @@
   - `rg -n "Stream D handoff readiness|working|context_projection|consensus|ConsensusGraph|patch\\+approval|consensus_direct_write|contract_freeze_verified|freeze_hold_invoked|allowUnreviewedText=false" 01_Plans\issues\issue-CE0-core-graph-repositioning.md`
 - Proceed: Conditional-Go for downstream read-only graph role and transition reference.
 - Stop: Contract ID mutation, graph role redefinition, `Core Graph` re-canonicalization, direct write, auto-apply/auto-publish, SafeMode default relaxation, or missing audit reason.
+
+## Current-main checkpoint（2026-06-14 / post-2394 CE0 graph boundary）
+
+### Context
+- Baseline: `main@69fcafdeff23` after PR #2394.
+- Scope: docs-only checkpoint for CE0 graph role / transition / audit vocabulary. This update does not approve implementation, add storage behavior, or change graph naming.
+- Upstream: `issue-CE0-contract-freeze.md` remains the read-only SSOT for Contract IDs, No-Go IDs, SafeMode, decision I/F, and audit minimums.
+
+### Frozen Graph Evidence
+| Area | Current frozen value | Check result |
+| --- | --- | --- |
+| Graph roles | `working`, `context_projection`, `consensus` | no role addition / rename |
+| Canonical term | `ConsensusGraph`; `Core Graph` remains a legacy/read-only explanatory alias | no re-canonicalization |
+| Allowed transition | `working -> consensus` only through `patch+approval` | direct write remains No-Go |
+| Context projection | read-only projection only | no projection-side write path |
+| No-Go IDs | `preview_bypass`, `consensus_direct_write`, `auto_apply_or_publish`, `ai_review_auto_promotion`, `safemode_default_relaxation` | no alias / no priority change |
+| SafeMode | default ON, `allowUnreviewedText=false` | `safeMode_regression=0` |
+| Audit minimum | `timestamp`, `actor`, `phase`, `inputSnapshot`, `gateResult`, `reason`, `nextAction` | audit key set unchanged |
+
+### Decision
+- Proceed as Conditional-Go for downstream read-only graph role and transition reference only.
+- Keep this issue Open until an implementation lane records evidence that UI, worker, and API surfaces consume these graph roles without creating direct write, auto-apply, or auto-publish paths.
+- No ADR is required for this checkpoint because canonical naming, transition authority, SafeMode, audit evidence, and release authority remain unchanged.
+
+### Stop Conditions
+- Hold immediately if `Core Graph` is reintroduced as a canonical product term, if any code or document creates a `context_projection -> consensus` shortcut, or if `working -> consensus` is permitted without `patch+approval`.
+- Hold immediately if a future implementation treats AI review as human approval or converts proposal-only output into consensus state without explicit review evidence.
