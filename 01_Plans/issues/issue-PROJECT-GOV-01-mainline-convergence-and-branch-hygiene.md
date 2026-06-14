@@ -1070,3 +1070,45 @@
 2. Keep using normal merge commits for PRs whose purpose is to preserve `codex/*` branch-tip reachability.
 3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
 4. Route release blockers through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
+
+---
+
+## Post-2399 governance reachability and CI recovery checkpoint
+
+- Checkpoint date (JST): 2026-06-15
+- Latest main: `origin/main@e2daa3b3120e30e0d39f5c7ac35ee1b4243b79d4`
+- Recent normal-merge PRs included in this checkpoint:
+  - #2395 `[codex] Refresh CE0 current-main checkpoint`
+  - #2396 `[codex] Refresh CE1 contract handoff checkpoint`
+  - #2397 `[codex] Record CE2 draft readiness after CE checkpoints`
+  - #2398 `[codex] Record CE4 draft readiness after CE checkpoints`
+  - #2399 `[codex] Refresh DATA-MAINT-03 governance checkpoint`
+- Integration method: normal merge commits, not squash/rebase, so the related `codex/*` branch tips remain reachable from `main`.
+- GitHub Actions CI:
+  - #2399 initial CI run `9561`: failed in backend SQLite tests after dependency resolution selected `fastapi 0.137.0 / starlette 1.3.1`.
+  - #2399 final CI run `9563`: passed after backend dependency was capped as `fastapi<0.137`.
+- GitHub open PR search result: `0`.
+- Remote branch count: 2375.
+- `origin/codex/*` branches updated on or after 2026-06-06: 73.
+- `origin/codex/*` branches updated on or after 2026-06-06 that are not ancestors of `origin/main`: 0.
+- Internal issue validation:
+  - `validate_active_issue_memos.py`: pass, `ok: validated 5 active issue memos`.
+  - `triage_actionable_plans.py`: pass, `active_issues=52`, `ready=15`, `blocked=37`, `actionable_adrs=1`, stopper none.
+- Scope: records repository governance after #2395 through #2399 were merged. This checkpoint does not delete remote branches, close PRs, change issue status, change ADR status, change runtime behavior beyond the already-merged dependency cap, change UI/API behavior, or approve release readiness.
+
+### Decision
+
+- The observed 2026-06-06-or-later `codex/*` branch reachability state remains clean: no checked branch remains outside `main` ancestry.
+- The #2399 CI failure is classified as dependency drift, not an application-behavior failure in the docs-only DATA-MAINT changes. The canonical signal is CI run `9563` success on head `3f374d719bdea557b5168900f519d95e544bff96`.
+- Backend FastAPI remains capped below `0.137` until a deliberate dependency-upgrade slice updates route-contract expectations against the newer FastAPI/Starlette route shape.
+- #2399 confirms the high-privilege data-lifecycle decision boundary is still human-owned: `DATA-MAINT-03` remains `DecisionStatus=Pending`, `ADR-0035` remains `Proposed`, and `DATA-MAINT-04` remains Draft.
+- The remaining remote `codex/*` refs are cleanup candidates only. Deletion still requires repository-maintainer approval and a final deletion audit list.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene unless the project changes stale-ref retention, branch cleanup authority, CI signal authority, dependency-upgrade authority, or release authority.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@e2daa3b3120e30e0d39f5c7ac35ee1b4243b79d4`.
+2. Keep using normal merge commits for PRs whose purpose is to preserve `codex/*` branch-tip reachability.
+3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
+4. Treat FastAPI/Starlette upgrades past the current cap as a deliberate dependency-upgrade task, not an incidental CI repair.
+5. Route release blockers through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
