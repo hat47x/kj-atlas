@@ -1111,3 +1111,39 @@
 - Owner: Codex for evidence maintenance; Repository Maintainer for any branch deletion; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next Program Gate review after branch cleanup approval, product-value evidence changes, environment evidence, high-privilege lifecycle decisioning, or FB-P0 approval/held decisioning.
 - Re-decision date: after remote branch deletion is approved/executed, after product value Open-gate acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, or after a material runtime/product change reaches `main`.
+
+## MVP-EXIT Program Gate Decision 2026-06-14: post-2389 governance reachability sync
+
+- Candidate: `origin/main@22bff0275ac4127b344ffe03659e2aec7212ef82`
+- Decision date: 2026-06-14
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-14: post-2389 governance reachability sync`.
+  - PROJECT-GOV-01 record: `Post-2388 governance reachability checkpoint`.
+  - PROJECT-BASELINE-01 record: `Baseline delta 2026-06-14: post-2387 decision-boundary sync`.
+  - DATA-MAINT-03 record: `Post-2386 current-main decision freshness`.
+  - Merged PRs: #2387, #2388, and #2389.
+
+### Decision
+
+- Final: **Conditional Go for governance reachability and decision-boundary traceability / No-Go for full release shipment**
+- Reason summary: The latest `main` keeps the observed 2026-06-06-or-later `origin/codex/*` reachability gap closed, with `since_20260606_codex_count=45` and `unmerged_count=0`, and now aligns PROJECT-GOV, PROJECT-BASELINE, PRODUCT-QA, MVP-EXIT, and DATA-MAINT evidence around the same release-blocking decision boundaries. This improves Program Gate traceability but does not create shipment approval because branch reachability is repository hygiene, while product value, human acceptance, environment rehearsal, support rehearsal, FB-P0 decisioning, and high-privilege lifecycle decisions remain incomplete.
+- Escalation route: keep `PROJECT-GOV-01` as the branch hygiene record, `PROJECT-BASELINE-01` as the latest-main health record, `PRODUCT-QA-01` as the release evidence steward, and `ADR-0035` / `DATA-MAINT-03/04` as the high-privilege lifecycle decision lane. Repository Maintainer approval remains required before deleting remote branch refs. Productization Program Owner / QA Lead remain accountable for final shipment approval.
+
+### Gate Mapping
+
+- G0 planning integrity: Go improved / current. The checked 2026-06-06-or-later `codex/*` branch set reports `unmerged_count=0`, active issue validation and validator tests pass, triage reports no stopper, and the relevant GitHub Actions CI runs passed.
+- G1 safety defaults: Conditional Go / unchanged. The governance and decision-boundary sync did not change SafeMode, share/export, import, runtime security defaults, ADR status, public documentation authority, or any high-privilege lifecycle implementation.
+- G6 governance and decision traceability: Conditional Go improved. The branch hygiene and high-privilege lifecycle decision boundaries are now current across PROJECT-GOV, PROJECT-BASELINE, PRODUCT-QA, MVP-EXIT, and DATA-MAINT records.
+- G7 regression: Go for planning slice. The effective runtime/product diff is documentation evidence only; no code path or configuration behavior changed.
+
+### Conditional controls
+
+- Remaining risks:
+  - Remote `codex/*` refs still exist and require repository-maintainer approval before deletion.
+  - `ADR-0035` remains `Proposed`, `DATA-MAINT-03` remains `DecisionStatus=Pending`, and `DATA-MAINT-04` remains Draft.
+  - Product value Open-gate acceptance, human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval remain incomplete.
+  - This sync changes no API, UI, CLI, runtime behavior, SafeMode default, share/export behavior, public documentation, issue status, ADR status, or Compose configuration.
+- Owner: Codex for evidence maintenance; Repository Maintainer for any branch deletion; Project Maintainers for `ADR-0035`; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next Program Gate review after branch cleanup approval, high-privilege lifecycle decisioning, product-value evidence changes, environment evidence, or FB-P0 approval/held decisioning.
+- Re-decision date: after remote branch deletion is approved/executed, after `ADR-0035` is accepted/replaced/rejected, after product value Open-gate acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, or after a material runtime/product change reaches `main`.

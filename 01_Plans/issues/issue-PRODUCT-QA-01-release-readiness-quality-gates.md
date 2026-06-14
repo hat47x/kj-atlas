@@ -2121,3 +2121,31 @@ DoDテンプレ（Draft→Open）
 - Repository Maintainer must still approve any remote `codex/*` branch deletion and preserve a final deletion audit list.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes branch cleanup authority, stale-ref retention policy, release authority, SafeMode/share-export policy, runtime environment policy, or product-value authority.
+
+## Productization Gate Record 2026-06-14: post-2389 governance reachability sync
+
+- Candidate: `origin/main@22bff0275ac4127b344ffe03659e2aec7212ef82`.
+- Decision date (JST): 2026-06-14.
+- Reviewer: Codex.
+- Scope: post-#2389 release-gate intake for repository branch governance freshness after the post-2387 baseline and post-2388 governance records became canonical on `main`. This record changes release-readiness evidence only; it does not delete branches, close issues, change runtime behavior, alter UI/API behavior, change SafeMode rules, change share/export output, change ADR status, or approve release shipment.
+
+### Gate Summary
+
+- G0 planning integrity: Go improved / current. The branch reachability audit now reports `since_20260606_codex_count=45` and `unmerged_count=0` for `origin/codex/*` branches updated on or after 2026-06-06. Active issue validation, validator unit tests, triage, diff checks, and CI passed for the post-2389 governance record.
+- Repository governance: Conditional Go improved. `PROJECT-GOV-01` now records the post-2388 governance reachability checkpoint on `main`, and the remaining remote `codex/*` refs are still classified as cleanup candidates only.
+- Decision-boundary hygiene: Conditional Go clarified. `PROJECT-BASELINE-01` and `DATA-MAINT-03` now agree that branch reachability is clean while `ADR-0035` remains `Proposed`, `DATA-MAINT-03` remains `DecisionStatus=Pending`, and `DATA-MAINT-04` remains Draft.
+- Final: **Conditional Go for post-2389 governance evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2387 `[codex] Refresh DATA-MAINT-03 decision status` merged with normal merge history.
+- PR #2388 `[codex] Record post-2387 mainline baseline` merged with normal merge history.
+- PR #2389 `[codex] Record post-2388 branch governance` merged with normal merge history.
+- Latest local verification after #2389: `since_20260606_codex_count=45`, `unmerged_count=0`, active issue validation passed, validator unit tests passed, triage reported no stopper, and GitHub Actions CI passed for #2389.
+
+### Follow-ups
+
+- Repository Maintainer must still approve any remote `codex/*` branch deletion and preserve a final deletion audit list.
+- Project Maintainers must still accept, replace, or reject `ADR-0035` before high-privilege data-lifecycle boundary work can be treated as fixed product policy.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes branch cleanup authority, stale-ref retention policy, release authority, SafeMode/share-export policy, runtime environment policy, product-value authority, or high-privilege data-lifecycle policy.
