@@ -1147,3 +1147,38 @@
 - Owner: Codex for evidence maintenance; Repository Maintainer for any branch deletion; Project Maintainers for `ADR-0035`; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next Program Gate review after branch cleanup approval, high-privilege lifecycle decisioning, product-value evidence changes, environment evidence, or FB-P0 approval/held decisioning.
 - Re-decision date: after remote branch deletion is approved/executed, after `ADR-0035` is accepted/replaced/rejected, after product value Open-gate acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, or after a material runtime/product change reaches `main`.
+
+## MVP-EXIT Program Gate Decision 2026-06-14: post-2392 FB-P0 current-main checkpoint
+
+- Candidate: `origin/main@e72392c34ebc2c0762bab855a9cbe533a92a8cae`
+- Decision date: 2026-06-14
+- Reviewer: Codex
+- Input sources:
+  - FB-P0 Stream H current-main checkpoint: `fixedKeyDrift=0`, `pendingBypassDetected=false`.
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-14: post-2392 FB-P0 current-main checkpoint`.
+  - Merged PR: #2392.
+
+### Decision
+
+- Final: **Conditional Go for refreshed FB-P0 planning-boundary traceability / No-Go for full release shipment**
+- Reason summary: The latest `main` confirms that the checked FB-P0/P2C planning boundary still has no fixed-key drift and no bypass request, and that P2C A1/A2/A3 planning records remain internally consistent as handoff inputs. This improves Program Gate traceability but does not create shipment approval because `Approval Record=Pending` and `HIL-RS-02-GOV-EXCEPTION-01=held` still keep FB-P0 in Needs-decision, while broader productization blockers remain unresolved.
+- Escalation route: keep `PRODUCT-QA-01` as the release evidence steward, `PROJECT-BASELINE-01` as the latest-main health record, `FB-P0-2A2B2C` as the planning-boundary issue, and human/project governance as the owner for approval/held decisions. Productization Program Owner / QA Lead remain accountable for final shipment approval.
+
+### Gate Mapping
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, and GitHub Actions CI passed for the related PR.
+- G1 safety defaults: Conditional Go / unchanged. The checkpoint keeps `safeModeDefault=ON` and `SAFE_MODE_STRICT_ON`, and no implementation or runtime behavior changed.
+- G6 governance and decision traceability: Conditional Go improved. The current-main FB-P0 evidence is fresher, while the human-owned approval/held gate remains explicit.
+- G7 regression: Go for planning slice. The effective runtime/product diff is documentation evidence only.
+
+### Conditional controls
+
+- Remaining risks:
+  - `Approval Record` fields (`approved_by`, `approved_at`, `evidence`) remain unset.
+  - `HIL-RS-02-GOV-EXCEPTION-01` remains `held` and requires human/project governance decisioning.
+  - Downstream implementation must still attach real A2 mock pass evidence before treating A3 implementation as startable.
+  - Product value Open-gate acceptance, human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, high-privilege lifecycle decisions, environment rehearsal evidence, and final program approval remain incomplete.
+  - This sync changes no API, UI, CLI, runtime behavior, SafeMode default, share/export behavior, public documentation, issue status, ADR status, or Compose configuration.
+- Owner: Codex for evidence maintenance; human/project governance for FB-P0 approval/held decisions; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next Program Gate review after FB-P0 approval/held decisioning or product-value/environment evidence changes.
+- Re-decision date: after `Approval Record` and `HIL-RS-02-GOV-EXCEPTION-01` are decided, after product value Open-gate acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, or after a material runtime/product change reaches `main`.

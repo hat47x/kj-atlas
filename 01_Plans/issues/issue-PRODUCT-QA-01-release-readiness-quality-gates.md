@@ -2149,3 +2149,31 @@ DoDテンプレ（Draft→Open）
 - Project Maintainers must still accept, replace, or reject `ADR-0035` before high-privilege data-lifecycle boundary work can be treated as fixed product policy.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes branch cleanup authority, stale-ref retention policy, release authority, SafeMode/share-export policy, runtime environment policy, product-value authority, or high-privilege data-lifecycle policy.
+
+## Productization Gate Record 2026-06-14: post-2392 FB-P0 current-main checkpoint
+
+- Candidate: `origin/main@e72392c34ebc2c0762bab855a9cbe533a92a8cae`.
+- Decision date (JST): 2026-06-14.
+- Reviewer: Codex.
+- Scope: post-#2392 release-gate intake for the refreshed `FB-P0-2A2B2C` Stream H current-main checkpoint. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, issue status, release authority, or downstream implementation permission.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, diff checks, and CI passed for the post-2392 checkpoint.
+- HIL/FB planning boundary: Conditional / Needs-decision. The refreshed checkpoint reports `fixedKeyDrift=0` and `pendingBypassDetected=false`; P2C A1/A2/A3 planning records remain internally consistent as handoff inputs.
+- G1 safety defaults: Conditional Go / unchanged. The checkpoint keeps `safeModeDefault=ON` and `safeModeBoundary=SAFE_MODE_STRICT_ON`; no weakening or runtime change occurred.
+- Final: **Conditional Go for FB-P0 planning-boundary freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2392 `[codex] Refresh FB-P0 current-main checkpoint` merged with normal merge history.
+- `FB-P0-2A2B2C` now records candidate `origin/main@4e269023c7cf87c0e23484513682acb55bcb25ae`, `fixedKeyDrift=0`, and `pendingBypassDetected=false`.
+- Local verification before merge passed: active issue validation, validator unit tests, triage with no stopper, and `git diff --check` for the touched FB-P0 issue.
+- GitHub Actions CI on PR #2392 passed all jobs.
+
+### Follow-ups
+
+- Human/project governance must still decide `Approval Record` fields (`approved_by`, `approved_at`, `evidence`) and `HIL-RS-02-GOV-EXCEPTION-01`.
+- Downstream implementation stream must still attach real A2 mock pass evidence before treating A3 implementation as startable.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes HIL/FB governance authority, A2/A3 start criteria, SafeMode/share-export policy, runtime environment policy, product-value authority, or release authority.
