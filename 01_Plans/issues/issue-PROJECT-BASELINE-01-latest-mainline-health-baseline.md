@@ -1,4 +1,4 @@
-# Issue Draft: PROJECT-BASELINE-01 最新mainの健康状態ベースライン確定
+﻿# Issue Draft: PROJECT-BASELINE-01 譛譁ｰmain縺ｮ蛛･蠎ｷ迥ｶ諷九・繝ｼ繧ｹ繝ｩ繧､繝ｳ遒ｺ螳・
 
 - Type: Process
 - Status: Open
@@ -11,103 +11,103 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0034-mainline-convergence-and-branch-hygiene.md`, `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `02_Architecture/architecture.md`
 - Expected verification level: `integration`
 
-## Requirement meta I/F（共通キー）
+## Requirement meta I/F・亥・騾壹く繝ｼ・・
 
 - RequirementID: PROJECT-BASELINE-01
-- RequirementStatement: 最新mainに大きな変更が取り込まれた後、製品化判断に使える candidate 単位の健康状態ベースラインを作成し、既知の未達項目を既存issueまたは新規issueへ戻せる状態にする。
-- PriorityClass（Must / Should / Could）: Must
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=ローカル `main` が `origin/main` の最新SHAへfast-forward済み / 操作=docs, frontend, backend, E2Eまたは代替smokeの最小ゲートを実行する / 期待結果=最新mainのGo/Conditional/No-Go材料が `PRODUCT-QA-01` へ渡せる / 除外=検出した不具合をすべて本Issueで修正すること。
-- GoNoGoGate（Required / Optional / N/A）: Required
-- SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
+- RequirementStatement: 譛譁ｰmain縺ｫ螟ｧ縺阪↑螟画峩縺悟叙繧願ｾｼ縺ｾ繧後◆蠕後∬｣ｽ蜩∝喧蛻､譁ｭ縺ｫ菴ｿ縺医ｋ candidate 蜊倅ｽ阪・蛛･蠎ｷ迥ｶ諷九・繝ｼ繧ｹ繝ｩ繧､繝ｳ繧剃ｽ懈・縺励∵里遏･縺ｮ譛ｪ驕秘・岼繧呈里蟄亙ssue縺ｾ縺溘・譁ｰ隕淑ssue縺ｸ謌ｻ縺帙ｋ迥ｶ諷九↓縺吶ｋ縲・
+- PriorityClass・・ust / Should / Could・・ Must
+- AcceptanceScenario・亥燕謠・/ 謫堺ｽ・/ 譛溷ｾ・ｵ先棡 / 髯､螟厄ｼ・ 蜑肴署=繝ｭ繝ｼ繧ｫ繝ｫ `main` 縺・`origin/main` 縺ｮ譛譁ｰSHA縺ｸfast-forward貂医∩ / 謫堺ｽ・docs, frontend, backend, E2E縺ｾ縺溘・莉｣譖ｿsmoke縺ｮ譛蟆上ご繝ｼ繝医ｒ螳溯｡後☆繧・/ 譛溷ｾ・ｵ先棡=譛譁ｰmain縺ｮGo/Conditional/No-Go譚先侭縺・`PRODUCT-QA-01` 縺ｸ貂｡縺帙ｋ / 髯､螟・讀懷・縺励◆荳榊・蜷医ｒ縺吶∋縺ｦ譛ｬIssue縺ｧ菫ｮ豁｣縺吶ｋ縺薙→縲・
+- GoNoGoGate・・equired / Optional / N/A・・ Required
+- SecurityGateImpact・・afeMode / share-export / import-sanitize / public-exposure・・ SafeMode / share-export / import-sanitize / public-exposure
+- VerificationLevel・・ocs-check / unit / integration / e2e・・ integration
+- DecisionStatus・・ixed / Pending・・ Fixed
+- DecisionQueueRef・域悴遒ｺ螳壽凾縺ｮ蜿ら・蜈茨ｼ・ N/A
 
-## 1) 課題 / Problem statement
+## 1) 隱ｲ鬘・/ Problem statement
 
-- 最新mainは 2026-05-21 に `2a93c95e` へ更新され、173ファイル規模のfast-forward差分が取り込まれた。
-- `04_Documentation`、`02_Architecture`、frontend/backend、issue/ADRにまたがる更新が同時に入っており、現時点の「動く範囲」「未達範囲」「製品化ゲート上の戻し先」が一枚で確認できない。
-- `PRODUCT-QA-01` は品質ゲートを定義済みだが、最新main candidate に対する実行結果レコードが不足している。
-- この状態で個別修正を進めると、すでにmainで解消済みの課題や、逆に新しく発生した回帰を見落とす可能性がある。
+- 譛譁ｰmain縺ｯ 2026-05-21 縺ｫ `2a93c95e` 縺ｸ譖ｴ譁ｰ縺輔ｌ縲・73繝輔ぃ繧､繝ｫ隕乗ｨ｡縺ｮfast-forward蟾ｮ蛻・′蜿悶ｊ霎ｼ縺ｾ繧後◆縲・
+- `04_Documentation`縲～02_Architecture`縲’rontend/backend縲（ssue/ADR縺ｫ縺ｾ縺溘′繧区峩譁ｰ縺悟酔譎ゅ↓蜈･縺｣縺ｦ縺翫ｊ縲∫樟譎らせ縺ｮ縲悟虚縺冗ｯ・峇縲阪梧悴驕皮ｯ・峇縲阪瑚｣ｽ蜩∝喧繧ｲ繝ｼ繝井ｸ翫・謌ｻ縺怜・縲阪′荳譫壹〒遒ｺ隱阪〒縺阪↑縺・・
+- `PRODUCT-QA-01` 縺ｯ蜩∬ｳｪ繧ｲ繝ｼ繝医ｒ螳夂ｾｩ貂医∩縺縺後∵怙譁ｰmain candidate 縺ｫ蟇ｾ縺吶ｋ螳溯｡檎ｵ先棡繝ｬ繧ｳ繝ｼ繝峨′荳崎ｶｳ縺励※縺・ｋ縲・
+- 縺薙・迥ｶ諷九〒蛟句挨菫ｮ豁｣繧帝ｲ繧√ｋ縺ｨ縲√☆縺ｧ縺ｫmain縺ｧ隗｣豸域ｸ医∩縺ｮ隱ｲ鬘後ｄ縲・・↓譁ｰ縺励￥逋ｺ逕溘＠縺溷屓蟶ｰ繧定ｦ玖誠縺ｨ縺吝庄閭ｽ諤ｧ縺後≠繧九・
 
-## 2) 背景 / Context
+## 2) 閭梧勹 / Context
 
-- `MVP-EXIT-01` は Program Gate として、`PRODUCT-QA-01` と `ENV-CONFIG-DRIFT-01` の最新結果を必要としている。
-- `PRODUCT-QA-01` は `G0..G7 + Value gates + E1..E3` の判定モデルを持つ。
-- `ADR-0019` はE2EをPR必須証跡または未実施理由つき代替証跡として扱う方針を定めている。
-- `ADR-0034` は、最新mainを唯一の開発入力にする intake 統治を提案している。
+- `MVP-EXIT-01` 縺ｯ Program Gate 縺ｨ縺励※縲～PRODUCT-QA-01` 縺ｨ `ENV-CONFIG-DRIFT-01` 縺ｮ譛譁ｰ邨先棡繧貞ｿ・ｦ√→縺励※縺・ｋ縲・
+- `PRODUCT-QA-01` 縺ｯ `G0..G7 + Value gates + E1..E3` 縺ｮ蛻､螳壹Δ繝・Ν繧呈戟縺､縲・
+- `ADR-0019` 縺ｯE2E繧単R蠢・郁ｨｼ霍｡縺ｾ縺溘・譛ｪ螳滓命逅・罰縺､縺堺ｻ｣譖ｿ險ｼ霍｡縺ｨ縺励※謇ｱ縺・婿驥昴ｒ螳壹ａ縺ｦ縺・ｋ縲・
+- `ADR-0034` 縺ｯ縲∵怙譁ｰmain繧貞髪荳縺ｮ髢狗匱蜈･蜉帙↓縺吶ｋ intake 邨ｱ豐ｻ繧呈署譯医＠縺ｦ縺・ｋ縲・
 
-## 3) 判断基準による優先度評価
+## 3) 蛻､譁ｭ蝓ｺ貅悶↓繧医ｋ蜆ｪ蜈亥ｺｦ隧穂ｾ｡
 
-- 価値・判断軸（ADR-0001）: 利用者価値を実現するには、現在のmainで開始、外在化、構造化、共有前確認がどこまで成立するかを測定する必要がある。
-- 安全（THREAT_MODEL / SafeMode）: SafeMode既定ON、share/export前確認、import sanitize はリリース阻害になり得るため、baselineで最初に確認する。
-- 企業・行政要件（enterprise_architecture）: 組織導入では、候補バージョンごとに検証結果、未達項目、再判定条件を説明できる必要がある。
-- 後方互換（schemas）: 最新mainで既存fixtureやレビューパック、document/view/pack互換が壊れていないか確認する。
+- 萓｡蛟､繝ｻ蛻､譁ｭ霆ｸ・・DR-0001・・ 蛻ｩ逕ｨ閠・ｾ｡蛟､繧貞ｮ溽樟縺吶ｋ縺ｫ縺ｯ縲∫樟蝨ｨ縺ｮmain縺ｧ髢句ｧ九∝､門惠蛹悶∵ｧ矩蛹悶∝・譛牙燕遒ｺ隱阪′縺ｩ縺薙∪縺ｧ謌千ｫ九☆繧九°繧呈ｸｬ螳壹☆繧句ｿ・ｦ√′縺ゅｋ縲・
+- 螳牙・・・HREAT_MODEL / SafeMode・・ SafeMode譌｢螳唹N縲《hare/export蜑咲｢ｺ隱阪（mport sanitize 縺ｯ繝ｪ繝ｪ繝ｼ繧ｹ髦ｻ螳ｳ縺ｫ縺ｪ繧雁ｾ励ｋ縺溘ａ縲｜aseline縺ｧ譛蛻昴↓遒ｺ隱阪☆繧九・
+- 莨∵･ｭ繝ｻ陦梧帆隕∽ｻｶ・・nterprise_architecture・・ 邨・ｹ泌ｰ主・縺ｧ縺ｯ縲∝呵｣懊ヰ繝ｼ繧ｸ繝ｧ繝ｳ縺斐→縺ｫ讀懆ｨｼ邨先棡縲∵悴驕秘・岼縲∝・蛻､螳壽擅莉ｶ繧定ｪｬ譏弱〒縺阪ｋ蠢・ｦ√′縺ゅｋ縲・
+- 蠕梧婿莠呈鋤・・chemas・・ 譛譁ｰmain縺ｧ譌｢蟄惑ixture繧・Ξ繝薙Η繝ｼ繝代ャ繧ｯ縲‥ocument/view/pack莠呈鋤縺悟｣翫ｌ縺ｦ縺・↑縺・°遒ｺ隱阪☆繧九・
 
-## 4) 提案する解決策 / Proposed solution
+## 4) 謠先｡医☆繧玖ｧ｣豎ｺ遲・/ Proposed solution
 
-- 変更対象:
-  - 最新main candidate の baseline record。
-  - 検証コマンド、手動smoke、失敗分類、戻し先issueの記録。
-- 変更の最小単位:
-  - `PRODUCT-QA-01` の Gate Record に渡せる形式で、最新mainの状態を1回分記録する。
-  - 失敗は Blocker/Critical/Major/Minor に分類し、既存issueがあれば戻し先へ紐付ける。
-- 非目標:
-  - このIssue単体でUI再設計、データモデル拡張、全E2E安定化を完了すること。
-  - 仕様判断をテスト結果だけで確定すること。
+- 螟画峩蟇ｾ雎｡:
+  - 譛譁ｰmain candidate 縺ｮ baseline record縲・
+  - 讀懆ｨｼ繧ｳ繝槭Φ繝峨∵焔蜍不moke縲∝､ｱ謨怜・鬘槭∵綾縺怜・issue縺ｮ險倬鹸縲・
+- 螟画峩縺ｮ譛蟆丞腰菴・
+  - `PRODUCT-QA-01` 縺ｮ Gate Record 縺ｫ貂｡縺帙ｋ蠖｢蠑上〒縲∵怙譁ｰmain縺ｮ迥ｶ諷九ｒ1蝗槫・險倬鹸縺吶ｋ縲・
+  - 螟ｱ謨励・ Blocker/Critical/Major/Minor 縺ｫ蛻・｡槭＠縲∵里蟄亙ssue縺後≠繧後・謌ｻ縺怜・縺ｸ邏蝉ｻ倥￠繧九・
+- 髱樒岼讓・
+  - 縺薙・Issue蜊倅ｽ薙〒UI蜀崎ｨｭ險医√ョ繝ｼ繧ｿ繝｢繝・Ν諡｡蠑ｵ縲∝・E2E螳牙ｮ壼喧繧貞ｮ御ｺ・☆繧九％縺ｨ縲・
+  - 莉墓ｧ伜愛譁ｭ繧偵ユ繧ｹ繝育ｵ先棡縺縺代〒遒ｺ螳壹☆繧九％縺ｨ縲・
 
-## 5) 受入条件 / Acceptance criteria
+## 5) 蜿怜・譚｡莉ｶ / Acceptance criteria
 
-- [ ] 対象candidateとして `origin/main` SHA、取得日時、検証者、検証環境が記録されている。
-- [ ] docs-check、frontend typecheck/unit、backend unit/settings、import/exportまたはshare/export安全境界の最小検証結果が記録されている。
-- [ ] E2Eを実行した場合はシナリオと結果、実行できない場合は未実施理由、代替smoke、再開条件が記録されている。
-- [ ] SafeMode、share/export、import sanitize、public exposure の結果が `PRODUCT-QA-01` の G1/G5/G7 へ対応付けられている。
-- [ ] 失敗や未確認項目が、既存issueまたは新規issueへ戻されている。
-- [ ] 最終判定が Go / Conditional Go / No-Go のいずれかで記録され、Conditional/No-Goの場合は owner/due/re-decision date がある。
-- [ ] 必要な検証（integration）が `Expected verification level` と一致する。
+- [ ] 蟇ｾ雎｡candidate縺ｨ縺励※ `origin/main` SHA縲∝叙蠕玲律譎ゅ∵､懆ｨｼ閠・∵､懆ｨｼ迺ｰ蠅・′險倬鹸縺輔ｌ縺ｦ縺・ｋ縲・
+- [ ] docs-check縲’rontend typecheck/unit縲｜ackend unit/settings縲（mport/export縺ｾ縺溘・share/export螳牙・蠅・阜縺ｮ譛蟆乗､懆ｨｼ邨先棡縺瑚ｨ倬鹸縺輔ｌ縺ｦ縺・ｋ縲・
+- [ ] E2E繧貞ｮ溯｡後＠縺溷ｴ蜷医・繧ｷ繝翫Μ繧ｪ縺ｨ邨先棡縲∝ｮ溯｡後〒縺阪↑縺・ｴ蜷医・譛ｪ螳滓命逅・罰縲∽ｻ｣譖ｿsmoke縲∝・髢区擅莉ｶ縺瑚ｨ倬鹸縺輔ｌ縺ｦ縺・ｋ縲・
+- [ ] SafeMode縲《hare/export縲（mport sanitize縲｝ublic exposure 縺ｮ邨先棡縺・`PRODUCT-QA-01` 縺ｮ G1/G5/G7 縺ｸ蟇ｾ蠢應ｻ倥￠繧峨ｌ縺ｦ縺・ｋ縲・
+- [ ] 螟ｱ謨励ｄ譛ｪ遒ｺ隱埼・岼縺後∵里蟄亙ssue縺ｾ縺溘・譁ｰ隕淑ssue縺ｸ謌ｻ縺輔ｌ縺ｦ縺・ｋ縲・
+- [ ] 譛邨ょ愛螳壹′ Go / Conditional Go / No-Go 縺ｮ縺・★繧後°縺ｧ險倬鹸縺輔ｌ縲，onditional/No-Go縺ｮ蝣ｴ蜷医・ owner/due/re-decision date 縺後≠繧九・
+- [ ] 蠢・ｦ√↑讀懆ｨｼ・・ntegration・峨′ `Expected verification level` 縺ｨ荳閾ｴ縺吶ｋ縲・
 
-## 6) 実装タスク分解 / Task breakdown
+## 6) 螳溯｣・ち繧ｹ繧ｯ蛻・ｧ｣ / Task breakdown
 
-- [ ] T1 最新main candidate record を作成する。
-- [ ] T2 `validate_active_issue_memos.py` と `triage_actionable_plans.py` を実行し、計画整合を確認する。
-- [ ] T3 frontend/backend/docs の最小回帰コマンドを実行し、pass/fail/未実施理由を記録する。
-- [ ] T4 ChromeまたはPlaywrightで代表操作をsmokeし、開始、カード操作、共有前確認、SafeMode表示を観測する。
-- [ ] T5 未達項目を `PRODUCT-QA-01`, `PRODUCT-UX-*`, `ENV-CONFIG-DRIFT-01`, `QA-*` などへ戻す。
+- [ ] T1 譛譁ｰmain candidate record 繧剃ｽ懈・縺吶ｋ縲・
+- [ ] T2 `validate_active_issue_memos.py` 縺ｨ `triage_actionable_plans.py` 繧貞ｮ溯｡後＠縲∬ｨ育判謨ｴ蜷医ｒ遒ｺ隱阪☆繧九・
+- [ ] T3 frontend/backend/docs 縺ｮ譛蟆丞屓蟶ｰ繧ｳ繝槭Φ繝峨ｒ螳溯｡後＠縲｝ass/fail/譛ｪ螳滓命逅・罰繧定ｨ倬鹸縺吶ｋ縲・
+- [ ] T4 Chrome縺ｾ縺溘・Playwright縺ｧ莉｣陦ｨ謫堺ｽ懊ｒsmoke縺励・幕蟋九√き繝ｼ繝画桃菴懊∝・譛牙燕遒ｺ隱阪ヾafeMode陦ｨ遉ｺ繧定ｦｳ貂ｬ縺吶ｋ縲・
+- [ ] T5 譛ｪ驕秘・岼繧・`PRODUCT-QA-01`, `PRODUCT-UX-*`, `ENV-CONFIG-DRIFT-01`, `QA-*` 縺ｪ縺ｩ縺ｸ謌ｻ縺吶・
 
-## 7) 検証計画 / Validation plan
+## 7) 讀懆ｨｼ險育判 / Validation plan
 
-- 実行コマンド:
+- 螳溯｡後さ繝槭Φ繝・
   - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `python 01_Plans/triage_actionable_plans.py`
   - `cd 03_Implement/frontend && node .\\node_modules\\typescript\\bin\\tsc --noEmit`
   - `cd 03_Implement/frontend && node .\\node_modules\\vitest\\vitest.mjs run`
   - `cd 03_Implement/backend && .\\.venv\\Scripts\\python.exe -m pytest`
   - `git diff --check`
-- 期待結果:
-  - 最新mainの健康状態が candidate 単位で記録され、製品化ゲートの入力として使える。
-  - 失敗が未分類のまま残らない。
-- 未実施時の理由・代替検証:
-  - npm/node/python環境や外部依存で一部コマンドが実行できない場合は、実行不能理由、代替コマンド、再開条件を記録する。
+- 譛溷ｾ・ｵ先棡:
+  - 譛譁ｰmain縺ｮ蛛･蠎ｷ迥ｶ諷九′ candidate 蜊倅ｽ阪〒險倬鹸縺輔ｌ縲∬｣ｽ蜩∝喧繧ｲ繝ｼ繝医・蜈･蜉帙→縺励※菴ｿ縺医ｋ縲・
+  - 螟ｱ謨励′譛ｪ蛻・｡槭・縺ｾ縺ｾ谿九ｉ縺ｪ縺・・
+- 譛ｪ螳滓命譎ゅ・逅・罰繝ｻ莉｣譖ｿ讀懆ｨｼ:
+  - npm/node/python迺ｰ蠅・ｄ螟夜Κ萓晏ｭ倥〒荳驛ｨ繧ｳ繝槭Φ繝峨′螳溯｡後〒縺阪↑縺・ｴ蜷医・縲∝ｮ溯｡御ｸ崎・逅・罰縲∽ｻ｣譖ｿ繧ｳ繝槭Φ繝峨∝・髢区擅莉ｶ繧定ｨ倬鹸縺吶ｋ縲・
 
-## 8) 代替案 / Alternatives considered
+## 8) 莉｣譖ｿ譯・/ Alternatives considered
 
-- 代替案A: 個別issueごとに都度テストを実行し、baselineを作らない。却下理由: 最新main全体の既知状態が残らず、製品化判定に使いにくい。
-- 代替案B: CI結果だけを正本にする。却下理由: UI手動smoke、公開文書、SafeMode表示など、CIだけでは観測しにくい利用者視点が残る。
+- 莉｣譖ｿ譯・: 蛟句挨issue縺斐→縺ｫ驛ｽ蠎ｦ繝・せ繝医ｒ螳溯｡後＠縲｜aseline繧剃ｽ懊ｉ縺ｪ縺・ょ唆荳狗炊逕ｱ: 譛譁ｰmain蜈ｨ菴薙・譌｢遏･迥ｶ諷九′谿九ｉ縺壹∬｣ｽ蜩∝喧蛻､螳壹↓菴ｿ縺・↓縺上＞縲・
+- 莉｣譖ｿ譯・: CI邨先棡縺縺代ｒ豁｣譛ｬ縺ｫ縺吶ｋ縲ょ唆荳狗炊逕ｱ: UI謇句虚smoke縲∝・髢区枚譖ｸ縲ヾafeMode陦ｨ遉ｺ縺ｪ縺ｩ縲，I縺縺代〒縺ｯ隕ｳ貂ｬ縺励↓縺上＞蛻ｩ逕ｨ閠・ｦ也せ縺梧ｮ九ｋ縲・
 
-## 9) リスクとロールバック / Risks & rollback
+## 9) 繝ｪ繧ｹ繧ｯ縺ｨ繝ｭ繝ｼ繝ｫ繝舌ャ繧ｯ / Risks & rollback
 
-- 失敗モード: baseline実行範囲が広すぎて、修正作業と混線する。
-- 影響範囲: 製品化ゲート、公開文書、frontend/backend回帰、E2E証跡。
-- ロールバック手順: baseline recordは削除せず、誤分類だけを追記訂正する。実装修正は別issue/PRへ分離する。
+- 螟ｱ謨励Δ繝ｼ繝・ baseline螳溯｡檎ｯ・峇縺悟ｺ・☆縺弱※縲∽ｿｮ豁｣菴懈･ｭ縺ｨ豺ｷ邱壹☆繧九・
+- 蠖ｱ髻ｿ遽・峇: 陬ｽ蜩∝喧繧ｲ繝ｼ繝医∝・髢区枚譖ｸ縲’rontend/backend蝗槫ｸｰ縲・2E險ｼ霍｡縲・
+- 繝ｭ繝ｼ繝ｫ繝舌ャ繧ｯ謇矩・ baseline record縺ｯ蜑企勁縺帙★縲∬ｪ､蛻・｡槭□縺代ｒ霑ｽ險倩ｨよｭ｣縺吶ｋ縲ょｮ溯｣・ｿｮ豁｣縺ｯ蛻･issue/PR縺ｸ蛻・屬縺吶ｋ縲・
 
 ## 10) Additional context
 
 - 2026-05-21 intake:
-  - `git pull --ff-only origin main`: local `main` を `2a93c95e` へ更新。
+  - `git pull --ff-only origin main`: local `main` 繧・`2a93c95e` 縺ｸ譖ｴ譁ｰ縲・
   - `python 01_Plans/issues/validate_active_issue_memos.py`: `ok: validated 5 active issue memos`
   - `python 01_Plans/triage_actionable_plans.py`: `active_issues=43 / ready=15 / blocked=28 / actionable_adrs=1`
   - triage stopper: none
-- ADR化済み: `ADR-0034`
+- ADR蛹匁ｸ医∩: `ADR-0034`
 
 ## 11) Baseline Record 2026-05-21: latest main + PR #2251 planning branch
 
@@ -116,7 +116,7 @@
 - Target main: `origin/main` = `2a93c95e`
 - Baseline branch: `codex/current-project-risk-analysis-issues`
 - Baseline commit: `50f43e4c`
-- Scope note: `50f43e4c` は `01_Plans` / `AGENTS.md` の計画・起票差分のみで、`03_Implement` の実装コード差分はない。
+- Scope note: `50f43e4c` 縺ｯ `01_Plans` / `AGENTS.md` 縺ｮ險育判繝ｻ襍ｷ逾ｨ蟾ｮ蛻・・縺ｿ縺ｧ縲～03_Implement` 縺ｮ螳溯｣・さ繝ｼ繝牙ｷｮ蛻・・縺ｪ縺・・
 - Reviewer/executor: Codex
 - Environment: Windows / PowerShell / bundled Node (`C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe`) / backend `.venv`
 
@@ -130,16 +130,16 @@
 | Frontend unit/regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run` | Pass: 160 files / 732 tests | G1 / G3 / G7 |
 | Backend pytest | `.venv\Scripts\python.exe -m pytest --basetemp ... -p no:cacheprovider` with `.venv\Scripts` prepended to `PATH` | Pass: 256 passed / 19 skipped | G7 / E2 |
 | Playwright mock E2E | bundled `node.exe .\node_modules\playwright\cli.js test e2e/ce3_patch_workspace.spec.ts e2e/auth_context_level1_smoke.spec.ts --reporter=line` | Pass: 2 passed after installing Playwright Chromium and starting Vite manually | G2 / G4 |
-| Browser smoke | Codex in-app browser against `http://127.0.0.1:4173/` | Conditional pass: app title `kj-atlas`, `セーフモード: ON`, `共有と再現` dialog, Japanese fixed mask text visible, browser warning/error logs empty | G1 / G2 / G3 |
-| Public documentation boundary | `rg -n "04_Documentation|AGENTS.md|01_Plans|ADR-|PUBLICATION_MANIFEST|内部管理|作業ログ|issue-|Issue|PRODUCT-|MVP|Stream [A-Z]|Draft Proposal|DOC-OPS|AUTH-OPS|Gate Record|Productization" <public target 04 docs>` | Pass: no matches after separating user-facing text from maintainer/project-management content | G5 |
+| Browser smoke | Codex in-app browser against `http://127.0.0.1:4173/` | Conditional pass: app title `kj-atlas`, `繧ｻ繝ｼ繝輔Δ繝ｼ繝・ ON`, `蜈ｱ譛峨→蜀咲樟` dialog, Japanese fixed mask text visible, browser warning/error logs empty | G1 / G2 / G3 |
+| Public documentation boundary | `rg -n "04_Documentation|AGENTS.md|01_Plans|ADR-|PUBLICATION_MANIFEST|蜀・Κ邂｡逅・菴懈･ｭ繝ｭ繧ｰ|issue-|Issue|PRODUCT-|MVP|Stream [A-Z]|Draft Proposal|DOC-OPS|AUTH-OPS|Gate Record|Productization" <public target 04 docs>` | Pass: no matches after separating user-facing text from maintainer/project-management content | G5 |
 
 ### Environment findings
 
 - `npm` is not available in the current PowerShell `PATH`. Direct `node.exe` invocation works for `tsc`, `vitest`, `vite`, and `playwright`.
 - Playwright config uses `webServer.command = "npm run dev -- --host 127.0.0.1 --port 4173"`, so E2E startup fails in this environment unless Vite is started manually or `npm` is made available.
 - Playwright browsers were installed during this baseline pass with bundled `node.exe .\node_modules\playwright\cli.js install chromium`; the initial blocker is resolved for this workstation.
-- `ce3_patch_workspace.spec.ts` initially failed after browser install because the test expected English-only `Collect candidates` while the current UI shows `候補を収集`. The test was updated to accept both English and Japanese labels for the same operation contract.
-- Standalone frontend smoke produced a Vite proxy warning for `/docs/doc_phase1_canvas` because backend was not running. This aligns with `PRODUCT-OPS-01` backend未接続 recovery scope and does not by itself indicate a frontend regression.
+- `ce3_patch_workspace.spec.ts` initially failed after browser install because the test expected English-only `Collect candidates` while the current UI shows `蛟呵｣懊ｒ蜿朱寔`. The test was updated to accept both English and Japanese labels for the same operation contract.
+- Standalone frontend smoke produced a Vite proxy warning for `/docs/doc_phase1_canvas` because backend was not running. This aligns with `PRODUCT-OPS-01` backend譛ｪ謗･邯・recovery scope and does not by itself indicate a frontend regression.
 - The first backend pytest run failed due `PermissionError` under `C:\Users\yhata\AppData\Local\Temp\pytest-of-hat47x`; rerunning with an explicit repo-external `--basetemp` resolved the environment limitation.
 - Backend migration/index tests require `alembic` on `PATH`; prepending `.venv\Scripts` fixed the remaining subprocess failures.
 
@@ -147,14 +147,14 @@
 
 | Gate | Baseline result | Reason |
 | --- | --- | --- |
-| G0 計画整合 | Go | issue metadata and triage pass with no stopper. |
-| G1 安全既定 | Conditional Go | unit coverage, browser smoke, and auth smoke E2E pass; full share/export E2E is still outside this slice. |
-| G2 主要操作 | Go for sampled mock E2E | CE3 workspace and auth read-only smoke pass after i18n-tolerant E2E fix. |
-| G3 日本語UI | Go | frontend i18n/UI tests pass, and share panel smoke shows Japanese labels for observed flow. |
-| G4 画面耐性 | Conditional | Playwright browser execution works, but viewport matrix was not executed in this baseline pass. |
-| G5 公開文書 | Go for public-target boundary scan | public-target 04 docs no longer contain internal management terms in the forbidden-term scan; GitHub links to design specs are allowed where they clarify source-of-truth details. |
-| G6 診断とサポート | Conditional Go | backend未接続 proxy warning is classified under `PRODUCT-OPS-01`; user-facing recovery path still needs product gate evidence. |
-| G7 回帰 | Go | frontend typecheck/test and backend pytest pass after environment normalization. |
+| G0 險育判謨ｴ蜷・| Go | issue metadata and triage pass with no stopper. |
+| G1 螳牙・譌｢螳・| Conditional Go | unit coverage, browser smoke, and auth smoke E2E pass; full share/export E2E is still outside this slice. |
+| G2 荳ｻ隕∵桃菴・| Go for sampled mock E2E | CE3 workspace and auth read-only smoke pass after i18n-tolerant E2E fix. |
+| G3 譌･譛ｬ隱朸I | Go | frontend i18n/UI tests pass, and share panel smoke shows Japanese labels for observed flow. |
+| G4 逕ｻ髱｢閠先ｧ | Conditional | Playwright browser execution works, but viewport matrix was not executed in this baseline pass. |
+| G5 蜈ｬ髢区枚譖ｸ | Go for public-target boundary scan | public-target 04 docs no longer contain internal management terms in the forbidden-term scan; GitHub links to design specs are allowed where they clarify source-of-truth details. |
+| G6 險ｺ譁ｭ縺ｨ繧ｵ繝昴・繝・| Conditional Go | backend譛ｪ謗･邯・proxy warning is classified under `PRODUCT-OPS-01`; user-facing recovery path still needs product gate evidence. |
+| G7 蝗槫ｸｰ | Go | frontend typecheck/test and backend pytest pass after environment normalization. |
 
 ### Decision
 
@@ -162,7 +162,7 @@
 - Release readiness decision: **No-Go** until viewport matrix and full release-candidate E2E evidence are recorded.
 - Follow-up routing:
   - E2E evidence gap: `QA-E2E-USE-01` remains for realistic journey expansion beyond the two mock scenarios verified here.
-  - Backend未接続 recovery messaging: `PRODUCT-OPS-01`
+  - Backend譛ｪ謗･邯・recovery messaging: `PRODUCT-OPS-01`
   - E2E runtime ergonomics: create a dedicated DX issue if `npm` PATH absence continues to make `playwright.config.ts` unusable without manual Vite startup.
 
 ## 12) Baseline Record 2026-05-22: frontend E2E recovery on PR #2251 branch
@@ -205,10 +205,10 @@
 
 | Gate | 2026-05-22 delta | Reason |
 | --- | --- | --- |
-| G2 主要操作 | Go for covered frontend flows | full Playwright suite covers document replacement, visibility selection, read-only safety, bundle export, polygon vertex drag, polygon vertex keyboard nudge/removal, keyboard card selection, keyboard island selection, and side-panel focus reachability. |
-| G3 日本語UI | Go for covered frontend flows | stale English-only/mojibake expectations were centralized and updated in E2E helpers, and residual island/side-panel labels are i18n-backed. |
-| G4 画面耐性 | Conditional Go | 390px/768px/920px/1280px/1440px header-panel fit, Share/View keyboard focus return, canvas hit-testing, synthetic large-document operability, 390px API/save recovery status fit, slow diagnostics progress/cancel, and slow review-pack export progress/cancel are now covered; broader slow worker/API delay states remain open. |
-| G7 回帰 | Go for frontend scope | typecheck, targeted regression, full Vitest, and full Playwright pass. |
+| G2 荳ｻ隕∵桃菴・| Go for covered frontend flows | full Playwright suite covers document replacement, visibility selection, read-only safety, bundle export, polygon vertex drag, polygon vertex keyboard nudge/removal, keyboard card selection, keyboard island selection, and side-panel focus reachability. |
+| G3 譌･譛ｬ隱朸I | Go for covered frontend flows | stale English-only/mojibake expectations were centralized and updated in E2E helpers, and residual island/side-panel labels are i18n-backed. |
+| G4 逕ｻ髱｢閠先ｧ | Conditional Go | 390px/768px/920px/1280px/1440px header-panel fit, Share/View keyboard focus return, canvas hit-testing, synthetic large-document operability, 390px API/save recovery status fit, slow diagnostics progress/cancel, and slow review-pack export progress/cancel are now covered; broader slow worker/API delay states remain open. |
+| G7 蝗槫ｸｰ | Go for frontend scope | typecheck, targeted regression, full Vitest, and full Playwright pass. |
 
 ## 13) Baseline Record 2026-05-25: latest main health refresh
 
@@ -243,14 +243,14 @@
 
 | Gate | 2026-05-25 result | Reason |
 | --- | --- | --- |
-| G0 計画整合 | Go | active issue validation and triage pass with no stopper. |
-| G1 安全既定 | Go for tested scope | full frontend regression and Playwright pass, including current share/export and read-only safety coverage in the suite. |
-| G2 主要操作 | Go for tested scope | full Playwright pass covers representative authoring, import/visibility, read-only, canvas, diagnostics, and sharing flows. |
-| G3 日本語UI | Go for tested scope | full frontend regression and Playwright pass after the current Japanese UI/i18n hardening. |
-| G4 画面耐性 | Conditional Go | full Playwright pass includes the current viewport and keyboard scenarios, but release-candidate breadth still depends on the open product QA lane. |
-| G5 公開文書 | N/A for this run | this refresh changed internal baseline evidence only and did not republish public documentation. |
-| G6 診断とサポート | Conditional Go | diagnostics and recovery tests pass, while support-bundle policy follow-up remains tracked separately. |
-| G7 回帰 | Go | frontend typecheck, full Vitest, backend pytest, and full Playwright pass. |
+| G0 險育判謨ｴ蜷・| Go | active issue validation and triage pass with no stopper. |
+| G1 螳牙・譌｢螳・| Go for tested scope | full frontend regression and Playwright pass, including current share/export and read-only safety coverage in the suite. |
+| G2 荳ｻ隕∵桃菴・| Go for tested scope | full Playwright pass covers representative authoring, import/visibility, read-only, canvas, diagnostics, and sharing flows. |
+| G3 譌･譛ｬ隱朸I | Go for tested scope | full frontend regression and Playwright pass after the current Japanese UI/i18n hardening. |
+| G4 逕ｻ髱｢閠先ｧ | Conditional Go | full Playwright pass includes the current viewport and keyboard scenarios, but release-candidate breadth still depends on the open product QA lane. |
+| G5 蜈ｬ髢区枚譖ｸ | N/A for this run | this refresh changed internal baseline evidence only and did not republish public documentation. |
+| G6 險ｺ譁ｭ縺ｨ繧ｵ繝昴・繝・| Conditional Go | diagnostics and recovery tests pass, while support-bundle policy follow-up remains tracked separately. |
+| G7 蝗槫ｸｰ | Go | frontend typecheck, full Vitest, backend pytest, and full Playwright pass. |
 
 ### Decision
 
@@ -338,15 +338,15 @@
 
 | Gate | 2026-05-26 result | Reason |
 | --- | --- | --- |
-| G0 計画整合 | Go | active issue validation and triage pass with no stopper. |
-| G1 安全既定 | Go for tested scope | targeted SharePanel/i18n/UX regression, full Vitest, and Playwright safe-mode/read-only/safe-sharing flows pass. |
-| G2 主要操作 | Go for tested scope | full Playwright pass covers realistic journey, authoring continuity, safe sharing gate, keyboard focus, canvas/polygon operations, visibility, and recovery paths. |
-| G3 日本語UI | Go for tested scope | targeted i18n checks and full frontend regression pass. |
-| G4 画面耐性 | Go for tested scope | full Playwright includes header layout, 390px recovery paths, large document, progress/cancel, and focus return coverage. |
-| G5 公開文書/設定契約 | Conditional Go | public env contract scan and Compose config pass; public documentation was not republished. |
-| G6 診断とサポート | Conditional Go | recovery guidance E2E passes; support diagnostics bundle policy remains a follow-up boundary. |
-| G7 回帰 | Go | frontend typecheck/full Vitest/build, backend pytest, and full Playwright pass after environment normalization. |
-| E1..E3 環境契約 | Conditional Go | settings tests/build/env scan/Compose config pass; full running Compose service startup was not executed. |
+| G0 險育判謨ｴ蜷・| Go | active issue validation and triage pass with no stopper. |
+| G1 螳牙・譌｢螳・| Go for tested scope | targeted SharePanel/i18n/UX regression, full Vitest, and Playwright safe-mode/read-only/safe-sharing flows pass. |
+| G2 荳ｻ隕∵桃菴・| Go for tested scope | full Playwright pass covers realistic journey, authoring continuity, safe sharing gate, keyboard focus, canvas/polygon operations, visibility, and recovery paths. |
+| G3 譌･譛ｬ隱朸I | Go for tested scope | targeted i18n checks and full frontend regression pass. |
+| G4 逕ｻ髱｢閠先ｧ | Go for tested scope | full Playwright includes header layout, 390px recovery paths, large document, progress/cancel, and focus return coverage. |
+| G5 蜈ｬ髢区枚譖ｸ/險ｭ螳壼･醍ｴ・| Conditional Go | public env contract scan and Compose config pass; public documentation was not republished. |
+| G6 險ｺ譁ｭ縺ｨ繧ｵ繝昴・繝・| Conditional Go | recovery guidance E2E passes; support diagnostics bundle policy remains a follow-up boundary. |
+| G7 蝗槫ｸｰ | Go | frontend typecheck/full Vitest/build, backend pytest, and full Playwright pass after environment normalization. |
+| E1..E3 迺ｰ蠅・･醍ｴ・| Conditional Go | settings tests/build/env scan/Compose config pass; full running Compose service startup was not executed. |
 
 ### Decision
 
@@ -396,15 +396,15 @@
 
 | Gate | 2026-05-31 result | Reason |
 | --- | --- | --- |
-| G0 計画整合 | Go | latest main intake, active issue validation, and triage pass with no stopper. |
-| G1 安全既定 | Go for tested scope | SharePanel, SafeMode status, import/export, and targeted regression tests pass. |
-| G2 主要操作 | Go for tested scope | representative Playwright smoke covers CE3 patch workspace, read-only auth boundary, and recovery guidance flows. |
-| G3 日本語UI | Go for tested scope | targeted i18n guard and catalog tests pass. |
-| G4 画面耐性 | Go for tested scope | representative Playwright smoke passes; full viewport matrix was not rerun. |
-| G5 公開文書/設定契約 | Conditional Go | settings/env-prefix and docs contract tests pass; public documentation was not republished in this run. |
-| G6 診断とサポート | Conditional Go | recovery guidance smoke and data-maintenance recovery tests pass; support diagnostics bundle policy remains a follow-up boundary. |
-| G7 回帰 | Go for tested scope | frontend typecheck, targeted Vitest, build, backend selected regression, and Playwright smoke pass. |
-| E1..E3 環境契約 | Conditional Go | frontend build and env-prefix tests pass; full running Compose stack was not started in this run. |
+| G0 險育判謨ｴ蜷・| Go | latest main intake, active issue validation, and triage pass with no stopper. |
+| G1 螳牙・譌｢螳・| Go for tested scope | SharePanel, SafeMode status, import/export, and targeted regression tests pass. |
+| G2 荳ｻ隕∵桃菴・| Go for tested scope | representative Playwright smoke covers CE3 patch workspace, read-only auth boundary, and recovery guidance flows. |
+| G3 譌･譛ｬ隱朸I | Go for tested scope | targeted i18n guard and catalog tests pass. |
+| G4 逕ｻ髱｢閠先ｧ | Go for tested scope | representative Playwright smoke passes; full viewport matrix was not rerun. |
+| G5 蜈ｬ髢区枚譖ｸ/險ｭ螳壼･醍ｴ・| Conditional Go | settings/env-prefix and docs contract tests pass; public documentation was not republished in this run. |
+| G6 險ｺ譁ｭ縺ｨ繧ｵ繝昴・繝・| Conditional Go | recovery guidance smoke and data-maintenance recovery tests pass; support diagnostics bundle policy remains a follow-up boundary. |
+| G7 蝗槫ｸｰ | Go for tested scope | frontend typecheck, targeted Vitest, build, backend selected regression, and Playwright smoke pass. |
+| E1..E3 迺ｰ蠅・･醍ｴ・| Conditional Go | frontend build and env-prefix tests pass; full running Compose stack was not started in this run. |
 
 ### Decision
 
@@ -460,15 +460,15 @@
 
 | Gate | 2026-06-01 result | Reason |
 | --- | --- | --- |
-| G0 計画整合 | Go | latest main intake, active issue validation, triage, validator unit tests, and triage unit test pass with no stopper. |
-| G1 安全既定 | Unchanged / Conditional Go | This slice does not change SafeMode, share/export, import sanitize, or data access behavior. ADR-0035 keeps high-privilege body/destructive operations outside standard MVP/productization behavior unless a future ADR changes that boundary. |
-| G2 主要操作 | Unchanged / Conditional Go | No browser or application workflow was re-tested in this planning-only refresh. Prior evidence remains valid for its recorded scope. |
-| G3 日本語UI | Unchanged | No UI copy changed. |
-| G4 画面耐性 | Unchanged / Conditional Go | No viewport matrix or screenshot run was executed in this refresh. |
-| G5 公開文書/設定契約 | Unchanged / Conditional Go | Public documentation and runtime configuration were not republished or changed in this refresh. |
-| G6 診断とサポート | Conditional Go | DATA-MAINT-02 recovery evidence is closed out on `main`; support diagnostics bundle policy remains a separate follow-up boundary. |
-| G7 回帰 | Go for planning checks | Planning validators and their unit tests pass. Runtime/frontend/backend regression suites were intentionally not rerun because this slice records merged planning and ADR state only. |
-| E1..E3 環境契約 | Unchanged / Conditional Go | Full running Compose service startup was not executed. |
+| G0 險育判謨ｴ蜷・| Go | latest main intake, active issue validation, triage, validator unit tests, and triage unit test pass with no stopper. |
+| G1 螳牙・譌｢螳・| Unchanged / Conditional Go | This slice does not change SafeMode, share/export, import sanitize, or data access behavior. ADR-0035 keeps high-privilege body/destructive operations outside standard MVP/productization behavior unless a future ADR changes that boundary. |
+| G2 荳ｻ隕∵桃菴・| Unchanged / Conditional Go | No browser or application workflow was re-tested in this planning-only refresh. Prior evidence remains valid for its recorded scope. |
+| G3 譌･譛ｬ隱朸I | Unchanged | No UI copy changed. |
+| G4 逕ｻ髱｢閠先ｧ | Unchanged / Conditional Go | No viewport matrix or screenshot run was executed in this refresh. |
+| G5 蜈ｬ髢区枚譖ｸ/險ｭ螳壼･醍ｴ・| Unchanged / Conditional Go | Public documentation and runtime configuration were not republished or changed in this refresh. |
+| G6 險ｺ譁ｭ縺ｨ繧ｵ繝昴・繝・| Conditional Go | DATA-MAINT-02 recovery evidence is closed out on `main`; support diagnostics bundle policy remains a separate follow-up boundary. |
+| G7 蝗槫ｸｰ | Go for planning checks | Planning validators and their unit tests pass. Runtime/frontend/backend regression suites were intentionally not rerun because this slice records merged planning and ADR state only. |
+| E1..E3 迺ｰ蠅・･醍ｴ・| Unchanged / Conditional Go | Full running Compose service startup was not executed. |
 
 ### Decision
 
@@ -525,15 +525,15 @@
 
 | Gate | 2026-06-02 result | Reason |
 | --- | --- | --- |
-| G0 險育判謨ｴ蜷・| Go | latest main intake, active issue validation, triage, validator unit tests, triage unit test, and open PR inventory pass with no stopper. |
-| G1 螳牙・譌｢螳・| Unchanged / Conditional Go | This delta records merged planning and governance evidence only. SafeMode, share/export, import sanitize, and data-access behavior were not changed or re-tested. |
-| G2 荳ｻ隕∵桃菴・| Unchanged / Conditional Go | No browser or representative user workflow was re-tested in this delta. Prior evidence remains valid only for its recorded scope. |
-| G3 譌･譛ｬ隱朸I | Unchanged | No UI copy changed in this baseline delta. |
-| G4 逕ｻ髱｢閠先ｧ | Unchanged / Conditional Go | No viewport matrix, screenshot run, or mouse/keyboard operation review was executed in this delta. |
-| G5 蜈ｬ髢区枚譖ｸ/險ｭ螳壼･醍ｴ・| Unchanged / Conditional Go | Public documentation and runtime configuration were not republished or changed in this delta. |
-| G6 險ｺ譁ｭ縺ｨ繧ｵ繝昴・繝・| Unchanged / Conditional Go | Support diagnostics and operations behavior were not re-tested; prior follow-up boundaries remain in force. |
-| G7 蝗槫ｸｰ | Go for planning checks | Planning validators and their unit tests pass. Runtime/frontend/backend regression suites were intentionally not rerun because this delta only records merged gate/governance state. |
-| E1..E3 迺ｰ蠅・･醍ｴ・| Unchanged / Conditional Go | Full running Compose service startup was not executed. |
+| G0 髫ｪ閧ｲ蛻､隰ｨ・ｴ陷ｷ繝ｻ| Go | latest main intake, active issue validation, triage, validator unit tests, triage unit test, and open PR inventory pass with no stopper. |
+| G1 陞ｳ迚吶・隴鯉ｽ｢陞ｳ繝ｻ| Unchanged / Conditional Go | This delta records merged planning and governance evidence only. SafeMode, share/export, import sanitize, and data-access behavior were not changed or re-tested. |
+| G2 闕ｳ・ｻ髫補扱譯・抄繝ｻ| Unchanged / Conditional Go | No browser or representative user workflow was re-tested in this delta. Prior evidence remains valid only for its recorded scope. |
+| G3 隴鯉ｽ･隴幢ｽｬ髫ｱ譛ｸI | Unchanged | No UI copy changed in this baseline delta. |
+| G4 騾包ｽｻ鬮ｱ・｢髢蜈按・ｧ | Unchanged / Conditional Go | No viewport matrix, screenshot run, or mouse/keyboard operation review was executed in this delta. |
+| G5 陷茨ｽｬ鬮｢蛹ｺ譫夊ｭ厄ｽｸ/髫ｪ・ｭ陞ｳ螢ｼ・･驢搾ｽｴ繝ｻ| Unchanged / Conditional Go | Public documentation and runtime configuration were not republished or changed in this delta. |
+| G6 髫ｪ・ｺ隴・ｽｭ邵ｺ・ｨ郢ｧ・ｵ郢晄亢繝ｻ郢昴・| Unchanged / Conditional Go | Support diagnostics and operations behavior were not re-tested; prior follow-up boundaries remain in force. |
+| G7 陜玲ｧｫ・ｸ・ｰ | Go for planning checks | Planning validators and their unit tests pass. Runtime/frontend/backend regression suites were intentionally not rerun because this delta only records merged gate/governance state. |
+| E1..E3 霑ｺ・ｰ陟・・・･驢搾ｽｴ繝ｻ| Unchanged / Conditional Go | Full running Compose service startup was not executed. |
 
 ### Decision
 
@@ -1216,40 +1216,6 @@
 
 ---
 
-## 33) Baseline delta 2026-06-14: post-2383 final branch-tip reachability sync
-
-### Candidate
-
-- Target main: `origin/main` = `0d7a90634f24c3a8fa738f4f8c68dc61f7ec646e`.
-- Previous recorded mainline baseline: `origin/main@3085195ed5b56f29cd4e9d125078f561a042e0d2` in section 32.
-- Scope note: this delta refreshes baseline tracking after #2383 made the post-#2380 documentation branch tips reachable from `main`. It records repository reachability and planning health only; it does not delete branches, approve release readiness, change runtime behavior, alter UI/API behavior, change SafeMode/share-export policy, change issue status, or change Compose configuration.
-- Executor: Codex.
-- Environment: Windows / PowerShell / backend virtualenv Python. No frontend, backend service, browser, or Docker execution was required for this documentation-only planning baseline slice.
-
-### Command evidence
-
-| Area | Command | Result | Gate mapping |
-| --- | --- | --- | --- |
-| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `0d7a90634f24c3a8fa738f4f8c68dc61f7ec646e` | G0 |
-| Branch reachability | `git merge-base --is-ancestor` over 2026-06-06-or-later `origin/codex/*` branches | Pass: `since_20260606_codex_count=57`, `unmerged_count=0` | G0 |
-| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
-
-### Findings and routing
-
-- No latest-main stopper was found in this branch-reachability refresh.
-- `PROJECT-GOV-01` records that the 2026-06-06-or-later `codex/*` reachability audit is complete for the observed remote refs.
-- Remote branch deletion remains out of scope and requires repository-maintainer approval.
-- No new ADR is required unless the project changes branch cleanup authority, stale-ref retention policy, or release authority.
-
-### Decision
-
-- Baseline decision: **Go** for branch-tip reachability after #2383.
-- Release readiness decision remains **No-Go** for full shipment until the existing product-value, human acceptance, environment, diagnostics, high-privilege lifecycle, FB-P0, and final approval gates are completed.
-- Follow-up routing:
-  - Branch deletion / remote-ref cleanup authority: `PROJECT-GOV-01` and repository maintainer approval.
-  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
-  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
-
 ---
 
 ## 31) Baseline delta 2026-06-14: post-2378 governance convergence sync
@@ -1305,15 +1271,6 @@
 
 ---
 
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`）。
-- [x] `Related ADR/Spec` が最低1件ある。
-- [x] 受入条件に「安全」「互換」「検証」が含まれる。
-- [x] `Validation plan` に具体コマンドがある。
-- [x] 非目標が明記されスコープ逸脱を防いでいる。
-- [x] PROJECT-BASELINE post-2381 branch reachability baseline appended below.
-
 ---
 
 ## 32) Baseline delta 2026-06-14: post-2381 codex branch reachability sync
@@ -1364,3 +1321,49 @@
   - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
   - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
   - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+
+---
+
+## 33) Baseline delta 2026-06-14: post-2383 final branch-tip reachability sync
+
+### Candidate
+
+- Target main: `origin/main` = `0d7a90634f24c3a8fa738f4f8c68dc61f7ec646e`.
+- Previous recorded mainline baseline: `origin/main@3085195ed5b56f29cd4e9d125078f561a042e0d2` in section 32.
+- Scope note: this delta refreshes baseline tracking after #2383 made the post-#2380 documentation branch tips reachable from `main`. It records repository reachability and planning health only; it does not delete branches, approve release readiness, change runtime behavior, alter UI/API behavior, change SafeMode/share-export policy, change issue status, or change Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python. No frontend, backend service, browser, or Docker execution was required for this documentation-only planning baseline slice.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `0d7a90634f24c3a8fa738f4f8c68dc61f7ec646e` | G0 |
+| Branch reachability | `git merge-base --is-ancestor` over 2026-06-06-or-later `origin/codex/*` branches | Pass: `since_20260606_codex_count=57`, `unmerged_count=0` | G0 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this branch-reachability refresh.
+- `PROJECT-GOV-01` records that the 2026-06-06-or-later `codex/*` reachability audit is complete for the observed remote refs.
+- Remote branch deletion remains out of scope and requires repository-maintainer approval.
+- No new ADR is required unless the project changes branch cleanup authority, stale-ref retention policy, or release authority.
+
+### Decision
+
+- Baseline decision: **Go** for branch-tip reachability after #2383.
+- Release readiness decision remains **No-Go** for full shipment until the existing product-value, human acceptance, environment, diagnostics, high-privilege lifecycle, FB-P0, and final approval gates are completed.
+- Follow-up routing:
+  - Branch deletion / remote-ref cleanup authority: `PROJECT-GOV-01` and repository maintainer approval.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+
+---
+
+## Authoring Checklist・井ｺｺ髢・逕滓・AI 蜈ｱ騾夲ｼ・
+
+- [x] `Source Issue` 縺碁°逕ｨ迥ｶ諷九→謨ｴ蜷医＠縺ｦ縺・ｋ・域悴驕狗畑譎ゅ・ `N/A`・峨・
+- [x] `Related ADR/Spec` 縺梧怙菴・莉ｶ縺ゅｋ縲・
+- [x] 蜿怜・譚｡莉ｶ縺ｫ縲悟ｮ牙・縲阪御ｺ呈鋤縲阪梧､懆ｨｼ縲阪′蜷ｫ縺ｾ繧後ｋ縲・
+- [x] `Validation plan` 縺ｫ蜈ｷ菴薙さ繝槭Φ繝峨′縺ゅｋ縲・
+- [x] 髱樒岼讓吶′譏手ｨ倥＆繧後せ繧ｳ繝ｼ繝鈴ｸ閼ｱ繧帝亟縺・〒縺・ｋ縲・
