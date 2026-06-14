@@ -1276,3 +1276,55 @@
 - [x] 受入条件に「安全」「互換」「検証」が含まれる。
 - [x] `Validation plan` に具体コマンドがある。
 - [x] 非目標が明記されスコープ逸脱を防いでいる。
+- [x] PROJECT-BASELINE post-2381 branch reachability baseline appended below.
+
+---
+
+## 32) Baseline delta 2026-06-14: post-2381 codex branch reachability sync
+
+### Candidate
+
+- Target main: `origin/main` = `3085195ed5b56f29cd4e9d125078f561a042e0d2`.
+- Previous recorded mainline baseline: `origin/main@0fadf823566a282fd00ef6aadd881ff8d7ab606c` in section 31.
+- Scope note: this delta refreshes baseline tracking after #2380 made selected 2026-06-06-or-later `codex/*` branch tips reachable from `main` and #2381 recorded that result in `PROJECT-GOV-01`. It records latest-main health and branch-reachability governance only; it does not delete branches, change runtime behavior, alter UI behavior, modify API/backend behavior, change SafeMode defaults, change share/export policy, change issue statuses, approve release readiness, or change Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python. No frontend, backend service, browser, or Docker execution was required for this documentation-only planning baseline slice.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `3085195ed5b56f29cd4e9d125078f561a042e0d2` | G0 |
+| Branch reachability | `git merge-base --is-ancestor` over 2026-06-06-or-later `origin/codex/*` branches | Pass: `unmerged_count=0` after #2380/#2381 | G0 |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning validator regression | `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` | Pass: 10 tests | G0 / G7 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+| Markdown whitespace | `git diff --check -- 01_Plans\issues\issue-PROJECT-BASELINE-01-latest-mainline-health-baseline.md` | Pass: no whitespace errors; only CRLF conversion warning for the touched Markdown file | G7 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this planning-baseline refresh. The project still has `active_issues=52`, with `ready=15`, `blocked=37`, `actionable_adrs=1`, and no triage stopper.
+- `PROJECT-GOV-01` now records the post-2380 branch reachability checkpoint: 54 `origin/codex/*` branches updated on or after 2026-06-06 were checked, and 0 remain outside `origin/main` ancestry.
+- #2380 was a repository-history convergence PR. Its effective content delta was limited to one historical `ENV-CONFIG-DRIFT-01` finding line; the remaining branch tips were made reachable without reapplying already-present patch content.
+- Remote branch deletion remains explicitly out of scope. The remaining `origin/codex/*` refs are cleanup candidates only, pending repository-maintainer approval.
+- No new ADR is required for this baseline sync. ADR work is required only if the project changes branch cleanup authority, release authority, SafeMode/share-export policy, product-value authority, runtime environment policy, or the governance model for stale branch retirement.
+
+### Gate classification
+
+| Gate | 2026-06-14 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, branch reachability audit, active issue validation, validator regression, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go / unchanged | #2380/#2381 did not change SafeMode, share/export behavior, import behavior, or runtime security defaults. |
+| G7 regression | Go for planning slice | Planning validator, validator unit tests, triage, and whitespace checks pass for this documentation-only baseline update. |
+| Repository governance | Conditional Go improved | 2026-06-06-or-later `codex/*` branch tips are now reachable from `main`; deletion remains maintainer-owned rather than automated. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the post-2381 codex branch reachability sync.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- Follow-up routing:
+  - Branch deletion / remote-ref cleanup authority: `PROJECT-GOV-01` and repository maintainer approval.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
