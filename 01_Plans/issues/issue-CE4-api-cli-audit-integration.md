@@ -1467,3 +1467,37 @@
 
 ### Phase 4: Stopper
 - CE1契約が曖昧化した場合、またはCE4から他ストリーム実装領域編集が必要になった場合は停止・照会とする。
+
+## Current-main checkpoint（2026-06-14 / post-2397 CE4 Draft readiness）
+
+### Context
+- Baseline: `main@cd5a087f` after PR #2397.
+- Scope: docs-only checkpoint for CE4 API/CLI/Audit contract readiness. This update does not change `Status: Draft (Contract Freeze Candidate)`, does not approve implementation, and does not update ADR/API/CLI/runtime files.
+- Upstream reference state:
+  - CE0 contract and graph checkpoints are available as read-only references.
+  - CE1 ContextQuery/ContextBundle checkpoint is available as a read-only mock-first reference.
+  - CE2 remains `Draft` / `Hold`; its Approval Record gap must not be bypassed by CE4.
+
+### Readiness Evidence
+| Gate | Current evidence | Current result |
+| --- | --- | --- |
+| API/CLI mode | `mode=proposal-only` remains the only successful mode | no regression |
+| Equivalence | success requires `equivalenceKey AND bundleHash` | no weakening |
+| Audit sequence | `query -> bundle -> proposal -> apply` remains the required four-event sequence | fail-closed unchanged |
+| CE1 mock bridge | `sourceBundleHash=mock:<64hex>` remains allowed only for contract verification | not production source-of-truth |
+| CE2 dependency | CE2 remains Draft/Hold because Approval Record is missing | no Open substitute |
+| Implementation details | HTTP status mapping, CLI exit-code mapping, storage/transport guarantees, and masking/signature scheme remain unresolved | implementation blocked |
+
+### Decision
+- Keep CE4 in Draft/Hold for implementation. The contract is useful as a reviewable reference, but the Open gate remains blocked by unresolved approval and implementation-detail boundaries.
+- Treat CE0/CE1/CE2 checkpoints as read-only references. CE4 must not turn their checkpoint text into implementation permission, release authority, or automatic proposal acceptance.
+- No ADR is required for this checkpoint because it preserves the existing CE4 contract and records the remaining blockers rather than changing equivalence, audit, or release authority.
+
+### Human / Upstream Tasks Before Open Review
+- Confirm the CE4 Approval Record and source issue number when Draft is promoted.
+- Resolve whether CLI exit-code mapping, audit transport/storage guarantees, and principal masking/signature rules belong in CE4 ADR scope or separate implementation issues.
+- Confirm that CE2 remains proposal-only and human-final before CE4 treats proposal verification as a release gate.
+
+### Stop Conditions
+- Stop immediately if CE4 accepts a mode other than `proposal-only`, treats `equivalenceKey` or `bundleHash` alone as sufficient, or lets a missing audit event pass.
+- Stop immediately if CE4 uses CE2 Draft material or CE1 mock data to auto-apply, auto-confirm, auto-publish, or promote unreviewed output.
