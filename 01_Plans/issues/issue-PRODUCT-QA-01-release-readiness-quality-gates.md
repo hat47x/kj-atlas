@@ -2177,3 +2177,34 @@ DoDテンプレ（Draft→Open）
 - Downstream implementation stream must still attach real A2 mock pass evidence before treating A3 implementation as startable.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes HIL/FB governance authority, A2/A3 start criteria, SafeMode/share-export policy, runtime environment policy, product-value authority, or release authority.
+
+## Productization Gate Record 2026-06-15: post-2401 HIL/FB hold-gate sync
+
+- Candidate: `origin/main@bb359f8a976c8ecf91cb074a4d0c7c5d9be829e9`.
+- Decision date (JST): 2026-06-15.
+- Reviewer: Codex.
+- Scope: post-#2401 release-gate intake for the refreshed HIL-RS-02-A1 and FB-P0 hold-gate records. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, issue status, release authority, or downstream implementation permission.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, diff checks, and GitHub Actions CI passed for #2401.
+- G1 safety defaults: Conditional Go / unchanged. The hold-gate sync explicitly keeps `safeModeDefault=ON` and `safeModeBoundary=SAFE_MODE_STRICT_ON`; no weakening or runtime change occurred.
+- G6 governance and decision traceability: Conditional Go improved. The current HIL/FB records now agree that #2399/#2400 baseline freshness and CI recovery are not approval, implementation permission, or SafeMode/default-governance weakening.
+- HIL/FB planning boundary: Conditional / Needs-decision. The refreshed checkpoint reports `fixedKeyDrift=0` and `pendingBypassDetected=false`, but `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`, and `pendingDecisionQueueCount>0` keep the gate in Hold.
+- Final: **Conditional Go for HIL/FB hold-gate traceability / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2401 `[codex] Sync HIL/FB hold gates after post-2400 baseline` merged with normal merge history.
+- HIL-RS-02-A1 now records candidate `origin/main@7fcb253b57738229123b9c82581528fb4684caa9`, `Gate result: Hold / Needs-decision`, `pendingBypassDetected=false`, and `fixedKeyDrift=0`.
+- FB-P0 now records candidate `origin/main@7fcb253b57738229123b9c82581528fb4684caa9`, `fixedKeyDrift=0`, and `pendingBypassDetected=false`.
+- GitHub Actions CI run `9569` on #2401 passed.
+- Local verification after #2401 merge: active issue validation passed, triage reported no stopper, and the 2026-06-06-or-later `codex/*` branch reachability audit reported `unmerged_count=0`.
+
+### Follow-ups
+
+- Human/project governance must still decide `Approval Record` fields (`approved_by`, `approved_at`, `evidence`) and `HIL-RS-02-GOV-EXCEPTION-01`.
+- HIL-RS-02 must keep `executeAllowed=false` and `Hold / Needs-decision` until pending/held records are explicitly resolved.
+- Downstream implementation stream must still attach real A2 mock pass evidence before treating A3 implementation as startable.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes HIL/FB governance authority, A2/A3 start criteria, SafeMode/share-export policy, runtime environment policy, product-value authority, release authority, or approval inference policy.
