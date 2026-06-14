@@ -2952,3 +2952,35 @@ handoffKeys:
   - `rg -n "Stream E open-readiness|CE1-CTXQ-IF|ContextQuery shape|ContextBundle shape|Reconciliation gate|sourceBundleHash|A2-minimal-v1|preview_bypass" 01_Plans\issues\issue-CE1-context-query-bundle-foundation.md`
 - Proceed: Conditional-Go for CE1 read-only contract handoff and mock-first implementation planning.
 - Stop: Contract ID mutation, CE0 guard redefinition, preview bypass, unresolved bundle-key discrepancy being treated as implementation source, or mock-first boundary regression.
+
+## Current-main checkpoint（2026-06-14 / post-2395 CE1 contract handoff）
+
+### Context
+- Baseline: `main@b4f0a5f6c073` after PR #2395.
+- Scope: docs-only checkpoint for CE1 `ContextQueryV1` / `ContextBundleV1` handoff. This update does not approve handler, UI, DB, worker, LLM, or provider implementation.
+- Upstream: CE0 contract freeze and CE0 graph boundary remain read-only inputs. CE1 must not redefine CE0 Contract IDs, No-Go IDs, SafeMode, graph roles, or `patch+approval` transition authority.
+
+### Frozen CE1 Evidence
+| Area | Current frozen value | Check result |
+| --- | --- | --- |
+| CE1 Contract IDs | `CE1-CTXQ-IF`, `CE1-CTXB-IF`, `CE1-HASH-DET-IF`, `CE1-PREVIEW-GATE-IF` | no ID mutation |
+| Query contract | `ContextQueryV1` closed-world, `previewConfirmed=true` required | `preview_bypass=0` |
+| Bundle contract | `ContextBundleV1` closed-world with `queryCanonicalHash` and `bundleHash` as required deterministic keys | no implementation source approval |
+| Error semantics | `422 preview_required`, `400 unknown_contract_key`, `409 nondeterministic_bundle` | fixed error vocabulary unchanged |
+| Hash determinism | same canonical query must produce stable `queryCanonicalHash` / `bundleHash` across repeated mock runs | nondeterminism remains fail-closed |
+| SafeMode | CE0 default ON and `allowUnreviewedText=false` are inherited as guards only | `safeMode_regression=0` |
+| Downstream handoff | CE2 uses `sourceBundleHash === bundleHash`; CE4 uses `equivalenceKey + bundleHash` | read-only handoff only |
+
+### Reconciliation Required Before Implementation
+- `ContextBundleV1` still has a documented reconciliation point: the minimum bundle output set and the derived/transport keys `sourceBundleHash`, `items`, and `schemaVersion` must be separated before implementation treats any field list as a source of truth.
+- Until that reconciliation is recorded, implementation work may use only mock-first contract tests and must not persist, publish, or expose bundle payloads as production behavior.
+- If the reconciliation changes required fields, versioning, HTTP semantics, or downstream audit keys, raise an ADR before implementation proceeds.
+
+### Decision
+- Proceed as Conditional-Go for CE1 read-only contract handoff and mock-first implementation planning only.
+- Keep this issue Open until a downstream implementation lane records evidence for closed-world validation, preview gating, deterministic hashing, and bundle-key reconciliation.
+- No ADR is required for this checkpoint because this update preserves the existing CE1 contract and records a blocker boundary rather than changing it.
+
+### Stop Conditions
+- Hold immediately if unknown keys are accepted, preview confirmation is defaulted or bypassed, nondeterministic bundle output is treated as a warning instead of `409`, or CE0 SafeMode guards are relaxed.
+- Hold immediately if `sourceBundleHash/items/schemaVersion` are treated as canonical `ContextBundleV1` fields without the reconciliation record and, if needed, an ADR.
