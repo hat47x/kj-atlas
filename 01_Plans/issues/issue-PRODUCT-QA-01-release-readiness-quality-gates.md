@@ -2091,3 +2091,33 @@ DoDテンプレ（Draft→Open）
 - If the project later redefines the start surface as full-screen onboarding, route that larger information-architecture change through `ADR-0031` or a successor ADR rather than extending `QA-MONKEY-09`.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
 - No new ADR is needed for this repair. ADR work is required only if the project changes the global modal strategy, first-run routing architecture, SafeMode/share-export policy, product-value authority, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-14: codex branch reachability convergence
+
+- Candidate: `origin/main@609c82496ddda48b016a23a005287c7dfb042b70`.
+- Decision date (JST): 2026-06-14.
+- Reviewer: Codex.
+- Scope: post-#2380 through #2385 release-gate intake for repository branch reachability and planning evidence hygiene. This record changes release-readiness evidence only; it does not delete branches, close issues, change runtime behavior, alter UI/API behavior, change SafeMode rules, change share/export output, change ADR status, or approve release shipment.
+
+### Gate Summary
+
+- G0 planning integrity: Go improved. The branch reachability audit now reports `since_20260606_codex_count=59` and `unmerged_count=0` for `origin/codex/*` branches updated on or after 2026-06-06, with active issue validation, validator unit tests, triage, diff checks, and CI passing for the recording PRs.
+- Repository governance: Conditional Go improved. #2380 and #2383 used normal merge history to make previously squash-equivalent `codex/*` branch tips reachable from `main`; #2381, #2382, #2384, and #2385 recorded and ordered the resulting evidence.
+- Release evidence hygiene: Conditional Go improved. PROJECT-GOV and PROJECT-BASELINE now agree that the observed 2026-06-06-or-later `codex/*` reachability gap is closed and that remote branch deletion remains a maintainer-approved cleanup action.
+- Final: **Conditional Go for branch-reachability evidence hygiene / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2380 `[codex] Merge codex branches since 2026-06-06` merged with normal merge history.
+- PR #2381 `[codex] Record post-2380 branch reachability` merged after CI success.
+- PR #2382 `[codex] Record post-2381 baseline sync` merged after CI success.
+- PR #2383 `[codex] Merge post-2381 branch tips` merged with normal merge history.
+- PR #2384 `[codex] Record final branch reachability` merged with normal merge history.
+- PR #2385 `[codex] Order project baseline reachability sections` merged with normal merge history.
+- Latest local verification after #2385: `since_20260606_codex_count=59`, `unmerged_count=0`, and no triage stopper.
+
+### Follow-ups
+
+- Repository Maintainer must still approve any remote `codex/*` branch deletion and preserve a final deletion audit list.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes branch cleanup authority, stale-ref retention policy, release authority, SafeMode/share-export policy, runtime environment policy, or product-value authority.
