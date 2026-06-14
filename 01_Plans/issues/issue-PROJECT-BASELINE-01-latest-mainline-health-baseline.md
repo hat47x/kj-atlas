@@ -1573,6 +1573,64 @@
 
 ---
 
+## 38) Baseline delta 2026-06-15: post-2402 release-gate and hold-gate traceability sync
+
+### Candidate
+
+- Target main: `origin/main` = `9c9dbd68084e56d2a4d1430f0331bddf191b4d23`.
+- Previous recorded mainline baseline: `origin/main@e2daa3b3120e30e0d39f5c7ac35ee1b4243b79d4` in section 37.
+- Scope note: this delta records #2400 through #2402 becoming canonical on `main`. It captures the post-2399 baseline, HIL/FB hold-gate synchronization, and release-gate / MVP-EXIT alignment only; it does not change runtime behavior, UI/API behavior, SafeMode/share-export policy, issue status, ADR status, release authority, public documentation, downstream implementation permission, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python / GitHub connector for PR and CI inspection / RTK used for compact status output where exact command text was not required.
+
+### Command and CI evidence
+
+| Area | Command or source | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `9c9dbd68084e56d2a4d1430f0331bddf191b4d23` | G0 |
+| PR #2400 CI | GitHub Actions CI run `9566` on the post-2399 baseline branch | Pass: CI completed successfully | G7 |
+| PR #2401 CI | GitHub Actions CI run `9569` on the HIL/FB hold-gate sync branch | Pass: CI completed successfully | G7 |
+| PR #2402 CI | GitHub Actions CI run `9572` on head `e94fe7f0852720d91d1b1644e7b24ad4518552eb` | Pass: CI completed successfully | G7 |
+| Open PR check | GitHub PR search for open PRs in `hat47x/kj-atlas` | Pass: 0 open PRs returned | G0 / repository governance |
+| Branch reachability | `git merge-base --is-ancestor` over 2026-06-06-or-later `origin/codex/*` branches | Pass: `since_20260606_codex_count=76`, `unmerged_count=0` | G0 / repository governance |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this planning-baseline refresh.
+- #2400 made the post-2399 project baseline canonical on `main`, keeping the FastAPI dependency cap and release No-Go boundary explicit.
+- #2401 synchronized `HIL-RS-02-A1` and `FB-P0-2A2B2C` after the post-2400 baseline. The records keep `fixedKeyDrift=0`, `pendingBypassDetected=false`, `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`, `pendingDecisionQueueCount>0`, and `executeAllowed=false`.
+- #2402 synchronized `PRODUCT-QA-01` and `MVP-EXIT-01` with the same HIL/FB hold-gate interpretation. The release-gate result is Conditional Go for hold-gate traceability and No-Go for full shipment.
+- The 2026-06-06-or-later `codex/*` branch reachability audit remains clean with `unmerged_count=0`; remote branch deletion remains repository-maintainer-owned and out of scope for this issue.
+- No new ADR is required for this baseline sync. ADR work is required only if the project changes HIL/FB governance authority, held-gate exception authority, release authority, branch cleanup authority, dependency-upgrade authority, SafeMode/share-export policy, product-value authority, runtime environment policy, public documentation authority, or high-privilege data-lifecycle policy.
+
+### Gate classification
+
+| Gate | 2026-06-15 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, open PR check, branch reachability audit, active issue validation, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go / unchanged | No SafeMode, share/export, import, high-privilege data lifecycle implementation, runtime security default, or public documentation boundary changed in this slice. |
+| G6 governance and decision traceability | Conditional Go improved | HIL/FB hold-gate fields are aligned across HIL-RS-02, FB-P0, PRODUCT-QA, and MVP-EXIT while explicitly preserving the human-owned held decision. |
+| G7 regression | Go for current planning slice | PR #2400, #2401, and #2402 CI succeeded; local planning validation and triage passed after the post-2402 main sync. |
+| Repository governance | Conditional Go improved | Open PR search returned 0; all observed 2026-06-06-or-later `codex/*` branch tips remain reachable from `main`. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for post-2402 planning integrity, branch reachability, and HIL/FB hold-gate traceability alignment.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- Follow-up routing:
+  - HIL/FB approval and held decision: `HIL-RS-02-A1`, `FB-P0-2A2B2C`, project governance, and human approval lane.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Branch deletion / remote-ref cleanup authority: `PROJECT-GOV-01` and repository maintainer approval.
+  - Dependency upgrade / route-shape compatibility: future backend dependency-upgrade slice if FastAPI/Starlette is raised past the capped range.
+  - High-privilege data-lifecycle decision: `DATA-MAINT-03`, `ADR-0035`, and `DATA-MAINT-04`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+
+---
+
 ## Authoring Checklist・井ｺｺ髢・逕滓・AI 蜈ｱ騾夲ｼ・
 
 - [x] `Source Issue` 縺碁°逕ｨ迥ｶ諷九→謨ｴ蜷医＠縺ｦ縺・ｋ・域悴驕狗畑譎ゅ・ `N/A`・峨・
