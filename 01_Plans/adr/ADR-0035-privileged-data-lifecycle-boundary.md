@@ -130,6 +130,15 @@ Productization Program Owner / QA Lead が次に確認する事項:
 - `data_model_operations_overview.md` と `api.md` は、高権限データライフサイクル操作の標準提供なし、メタデータ限定の監査閲覧候補のみissueで検討可、という境界へ同期する。
 - `PRODUCT-QA-01` / `MVP-EXIT-01` は、削除や管理者本文閲覧の未実装を単独のリリース阻害ではなく、明示された製品境界として扱う。ただし本番運用で必須と判断される場合は、別ADR/issueをリリース条件へ戻す。
 
+## Post-2398 governance-context note (2026-06-14)
+
+- Current mainline reviewed: `origin/main@e6a72667dbd3794b1903264887642932f11515d9`.
+- `ADR-0039` is Accepted and right-sizes governance for the personal-OSS / pre-release phase. That process decision does not change this ADR's decision state.
+- This ADR remains `Status: Proposed` until Project Maintainers explicitly choose Accept as written, Request changes, or Reject for this high-privilege lifecycle boundary.
+- `DATA-MAINT-03` remains `Status=Open` / `DecisionStatus=Pending`; `DATA-MAINT-04` remains Draft.
+- This note grants no implementation permission for deletion, archive, ownership transfer, admin body browsing, cross-document body search, retention automation, broad audit viewing, or metadata-only audit viewing.
+- Stop condition: do not treat `ADR-0039`, recent CE checkpoint merges, or this freshness note as implicit acceptance of `ADR-0035`.
+
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`
