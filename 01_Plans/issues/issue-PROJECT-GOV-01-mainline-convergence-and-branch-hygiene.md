@@ -1008,3 +1008,28 @@
 2. Treat #2380 as a reachability merge only. It makes selected branch tips ancestors of `main`; it does not re-open their old implementation or evidence decisions.
 3. Before deleting any remote `codex/*` branch, require repository-maintainer approval and preserve a final audit list of deleted refs.
 4. Continue routing release blockers through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
+
+---
+
+## Post-2383 final branch-tip reachability checkpoint
+
+- Checkpoint date (JST): 2026-06-14
+- Latest main: `origin/main@0d7a90634f24c3a8fa738f4f8c68dc61f7ec646e`
+- Integration PR: #2383 `[codex] Merge post-2381 branch tips`
+- Integration method: normal merge commit, not squash/rebase.
+- `origin/codex/*` branches updated on or after 2026-06-06: 57
+- `origin/codex/*` branches updated on or after 2026-06-06 that are not ancestors of `origin/main`: 0
+- Internal issue triage:
+  - `active_issues=52`
+  - `ready=15`
+  - `blocked=37`
+  - `actionable_adrs=1`
+  - stopper: none
+- Scope: records the final branch-tip reachability state after #2383 made the post-#2380 documentation branch tips reachable from `main`. This checkpoint does not delete branches, change release readiness, change runtime behavior, alter ADR status, or close any issue.
+
+### Decision
+
+- The 2026-06-06-or-later `codex/*` branch reachability audit is complete for the observed remote refs: no checked branch remains outside `main` ancestry.
+- The remaining remote `codex/*` refs are cleanup candidates only. Deletion still requires repository-maintainer approval and a final deletion audit list.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene.
+- Future documentation PRs that exist only to record branch reachability should be normal-merged when the purpose is ancestry repair; otherwise they will recreate the same squash-merge reachability gap.
