@@ -1182,3 +1182,40 @@
 - Owner: Codex for evidence maintenance; human/project governance for FB-P0 approval/held decisions; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next Program Gate review after FB-P0 approval/held decisioning or product-value/environment evidence changes.
 - Re-decision date: after `Approval Record` and `HIL-RS-02-GOV-EXCEPTION-01` are decided, after product value Open-gate acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, or after a material runtime/product change reaches `main`.
+
+## MVP-EXIT Program Gate Decision 2026-06-15: post-2401 HIL/FB hold-gate sync
+
+- Candidate: `origin/main@bb359f8a976c8ecf91cb074a4d0c7c5d9be829e9`.
+- Decision date: 2026-06-15.
+- Reviewer: Codex.
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-15: post-2401 HIL/FB hold-gate sync`.
+  - HIL-RS-02-A1 record: `Post-2400 current-main hold sync`.
+  - FB-P0 Stream H current-main checkpoint: `Stream H current-main checkpoint (2026-06-15 post-2400)`.
+  - Merged PR: #2401.
+
+### Decision
+
+- Final: **Conditional Go for HIL/FB hold-gate traceability / No-Go for full release shipment**.
+- Reason summary: The latest `main` confirms that HIL/FB planning records remain internally consistent after #2400, with `fixedKeyDrift=0` and `pendingBypassDetected=false`. This improves Program Gate traceability, but it does not create shipment approval because `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`, and `pendingDecisionQueueCount>0` keep HIL/FB in Hold / Needs-decision while broader productization blockers remain unresolved.
+- Escalation route: keep `PRODUCT-QA-01` as the release evidence steward, `PROJECT-BASELINE-01` as the latest-main health record, `FB-P0-2A2B2C` and `HIL-RS-02-A1` as the planning-boundary issues, and human/project governance as the owner for approval/held decisions. Productization Program Owner / QA Lead remain accountable for final shipment approval.
+
+### Gate Mapping
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, and GitHub Actions CI passed for #2401.
+- G1 safety defaults: Conditional Go / unchanged. The checkpoint keeps `safeModeDefault=ON` and `SAFE_MODE_STRICT_ON`, and no implementation or runtime behavior changed.
+- G6 governance and decision traceability: Conditional Go improved. The current-main HIL/FB evidence is fresher, while the human-owned approval/held gate remains explicit.
+- G7 regression: Go for planning slice. The effective runtime/product diff is documentation evidence only.
+
+### Conditional controls
+
+- Remaining risks:
+  - `Approval Record` fields (`approved_by`, `approved_at`, `evidence`) remain unset.
+  - `HIL-RS-02-GOV-EXCEPTION-01` remains `held` and requires human/project governance decisioning.
+  - `executeAllowed=false` remains required in HIL-RS-02 until pending/held records are explicitly resolved.
+  - Downstream implementation must still attach real A2 mock pass evidence before treating A3 implementation as startable.
+  - Product value Open-gate acceptance, human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle decisions, environment rehearsal evidence, and final program approval remain incomplete.
+  - This sync changes no API, UI, CLI, runtime behavior, SafeMode default, share/export behavior, public documentation, issue status, ADR status, or Compose configuration.
+- Owner: Codex for evidence maintenance; human/project governance for FB-P0/HIL-RS approval/held decisions; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next Program Gate review after FB-P0/HIL-RS approval/held decisioning or product-value/environment evidence changes.
+- Re-decision date: after `Approval Record` and `HIL-RS-02-GOV-EXCEPTION-01` are decided, after product value Open-gate acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, or after a material runtime/product change reaches `main`.
