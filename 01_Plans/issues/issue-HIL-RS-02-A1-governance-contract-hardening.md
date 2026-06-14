@@ -672,6 +672,49 @@
 - Proceed Hold: `pendingDecisionQueueCount>0`、A1 Done証跡なし、または held item 残存。
 - Proceed Stop: pending bypass、固定キー再定義、SafeMode後退、approval inference、verifyAttempts>3。
 
+---
+
+## Post-2400 current-main hold sync (2026-06-15)
+
+### Input read
+
+- Candidate mainline reviewed: `origin/main@7fcb253b57738229123b9c82581528fb4684caa9`.
+- Recent merged planning records included in this sync:
+  - #2399 `DATA-MAINT-03` governance checkpoint and backend CI recovery.
+  - #2400 project baseline / governance checkpoint after #2399.
+- Scope note: this sync is planning-only. It does not edit implementation files, public documentation, architecture contracts, SafeMode policy, runtime behavior, API/UI behavior, issue status, ADR status, or release authority.
+
+### Current classification
+
+| Item | Current state | Interpretation |
+| --- | --- | --- |
+| `Approval Record` | Pending | Human-owned approval fields are still absent; AI must not infer approval. |
+| `HIL-RS-02-GOV-EXCEPTION-01` | held | Exception finalization remains human/project-governance work. |
+| Fixed keys | `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `pendingDecisionQueueCount`, `approvalRecord`, `rollbackRef` | No new fixed-key drift is introduced by #2399/#2400. |
+| Proceed gate | `a1Status==Done && pendingDecisionQueueCount==0 && fixedKeyDrift==0 && safeModeRetreat==false` | Not satisfied while approval/held items remain unresolved. |
+| Backend CI dependency cap | `fastapi<0.137` | CI recovery evidence only; it does not alter HIL-RS governance state. |
+
+### Decision
+
+- Gate result: **Hold / Needs-decision**.
+- `pendingDecisionQueueCount>0` remains the controlling condition because `Approval Record=Pending` and `HIL-RS-02-GOV-EXCEPTION-01=held` are unresolved.
+- `executeAllowed=false` remains required for downstream execution decisions that depend on this governance contract.
+- `pendingBypassDetected=false` for this sync: no new request was made to treat pending/held records as approved.
+- `fixedKeyDrift=0` for the checked HIL-RS-02-A1 governance boundary.
+
+### Proceed / Hold / Stop
+
+- Proceed: only after human/project governance records an explicit approval or rejection path for `Approval Record` and `HIL-RS-02-GOV-EXCEPTION-01`, with `pendingDecisionQueueCount==0` if moving to Go.
+- Hold: current state. Continue using the contract as a read-only handoff boundary while pending/held records remain visible.
+- Stop: any request treats #2399/#2400, CI recovery, baseline freshness, or this sync note as implicit approval, implementation permission, or permission to weaken SafeMode/default governance keys.
+
+### Verify
+
+- `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
+- `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py`
+- `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text`
+- `git diff --check -- 01_Plans\issues\issue-HIL-RS-02-A1-governance-contract-hardening.md 01_Plans\issues\issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
+
 ### A2/A3 handoff conditions
 - A2へ渡すもの: read-only API signatures、`riskLabels[]`、`rollbackRef` 必須、proposal-only、Stop条件。
 - A3へ渡すもの: 同期対象候補、Open化条件、DOC-OPS-02観点、Stop条件。

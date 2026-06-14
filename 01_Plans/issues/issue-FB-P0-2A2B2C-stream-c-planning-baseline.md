@@ -777,3 +777,50 @@
 - `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py`
 - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text`
 - `git diff --check -- 01_Plans\issues\issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
+
+---
+
+## Stream H current-main checkpoint (2026-06-15 post-2400)
+
+### Input read
+
+- Candidate: `origin/main@7fcb253b57738229123b9c82581528fb4684caa9`.
+- Recent merged planning records included in this sync:
+  - #2399 `DATA-MAINT-03` governance checkpoint and backend CI recovery.
+  - #2400 project baseline / governance checkpoint after #2399.
+- Read files:
+  - `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
+  - `issue-HIL-RS-02-A1-governance-contract-hardening.md`
+  - `issue-PROJECT-BASELINE-01-latest-mainline-health-baseline.md`
+  - `issue-PROJECT-GOV-01-mainline-convergence-and-branch-hygiene.md`
+- Scope note: this checkpoint records planning-boundary freshness only. It does not edit `03_Implement/`, architecture files, public documentation, SafeMode policy, runtime behavior, API/UI behavior, ADR status, or downstream P2C issue state.
+
+### Current classification
+
+| Item | Current state | Baseline interpretation |
+| --- | --- | --- |
+| FB-P0 fixed keys | `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON` | No fixed-key drift found in this checkpoint. |
+| HIL-RS-02 governance gate | `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`, `pendingDecisionQueueCount>0` | Program remains `Hold / Needs-decision`, not Go. |
+| Project baseline | #2400 records latest-main health at `origin/main@7fcb253b57738229123b9c82581528fb4684caa9` | Baseline freshness improved; release readiness remains No-Go. |
+| CI recovery | #2399 final CI run `9563` passed after `fastapi<0.137` cap | CI recovery evidence only; it does not unlock FB-P0 approval/held gates. |
+
+### Decision
+
+- `fixedKeyDrift=0` for the checked FB-P0 / HIL-RS planning boundary.
+- `pendingBypassDetected=false` for this checkpoint: no request was made to treat pending/held records as approved.
+- FB-P0 remains **Open / P0**. Do not mark this issue Done while `Approval Record=Pending` and `HIL-RS-02-GOV-EXCEPTION-01=held` remain unresolved.
+- A2/A3 implementation work remains downstream-owned. This checkpoint only confirms that the planning records remain internally consistent as handoff inputs after #2400.
+
+### Next action routing
+
+1. Human/project governance: decide `Approval Record` fields (`approved_by`, `approved_at`, `evidence`) and `HIL-RS-02-GOV-EXCEPTION-01`.
+2. HIL-RS-02 governance lane: keep `executeAllowed=false` and `Hold / Needs-decision` until pending/held records are explicitly resolved.
+3. Program/release lane: keep final shipment No-Go through `MVP-EXIT-01` until product-value, environment, support, accessibility, high-privilege lifecycle, and FB-P0 approval/held gates are accepted.
+4. Stream H/Codex: continue updating this issue only for planning-boundary evidence; stop if asked to edit implementation files, infer approval, or weaken `safeModeDefault=ON` / `SAFE_MODE_STRICT_ON`.
+
+### Verify
+
+- `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
+- `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py`
+- `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text`
+- `git diff --check -- 01_Plans\issues\issue-HIL-RS-02-A1-governance-contract-hardening.md 01_Plans\issues\issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
