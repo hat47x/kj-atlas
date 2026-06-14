@@ -347,6 +347,39 @@ Maintainer への推奨判断経路:
 
 ---
 
+## 21) Post-2398 governance-context decision freshness (2026-06-14)
+
+### Context
+
+- Current mainline reviewed: `origin/main@e6a72667dbd3794b1903264887642932f11515d9`.
+- Recent CE checkpoint merges (#2395 through #2398) refreshed contract, context-bundle, AI-assist, and audit-integration readiness records, but did not change the high-privilege data lifecycle boundary.
+- `ADR-0039` right-sizes project governance for the personal-OSS / pre-release phase. It reduces process weight for ordinary documentation and planning updates, but it does not implicitly accept `ADR-0035` or authorize high-privilege lifecycle implementation.
+- This update is docs-only. It does not change API, UI, CLI, runtime behavior, SafeMode, share/export defaults, public documentation, ADR status, or release authority.
+
+### Current boundary
+
+- `ADR-0035` remains `Status: Proposed`.
+- This issue remains `Status=Open` / `DecisionStatus=Pending`.
+- `DATA-MAINT-04` remains Draft; metadata-only audit viewing is still a candidate discussion area, not implementation permission.
+- No implementation permission is granted for deletion, archive, ownership transfer, admin body browsing, cross-document body search, retention automation, or broad audit viewing.
+- If maintainers want any high-privilege operation to become a standard product capability, that choice still requires an explicit accepted ADR or an explicitly accepted replacement decision.
+
+### Proceed / Hold / Stop
+
+- Proceed: Project Maintainers explicitly choose Accept as written, Request changes, or Reject for `ADR-0035`; if accepted as written, a later slice may move this issue toward `DecisionStatus=Fixed` without opening implementation work.
+- Hold: `ADR-0035` remains `Proposed`, or a maintainer response only says to continue general work without selecting a decision option for this high-privilege boundary.
+- Stop: any request treats `ADR-0039`, this issue update, or recent CE checkpoint merges as implicit acceptance of `ADR-0035` or as permission to implement high-privilege lifecycle operations.
+
+### Verify
+
+- `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
+- `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py`
+- `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text`
+- `git diff --check -- 01_Plans\issues\issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans\adr\ADR-0035-privileged-data-lifecycle-boundary.md`
+- `rg -n "Post-2398 governance-context decision freshness|e6a72667dbd3794|ADR-0039|DecisionStatus=Pending|Status: Proposed|DATA-MAINT-04|implicit acceptance" 01_Plans\issues\issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans\adr\ADR-0035-privileged-data-lifecycle-boundary.md`
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している。
