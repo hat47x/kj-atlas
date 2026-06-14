@@ -732,3 +732,48 @@
 ### 4) Stopper（他ストリーム要求時の停止）
 - `issue-FB-P2A-*` / `issue-FB-P2B-*` / `issue-FB-P2C-*` への直接編集要求が来た場合は停止。
 - 本Issueは統合入力I/Fの固定のみを担い、他ストリームの進行管理は行わない。
+
+---
+
+## Stream H current-main checkpoint (2026-06-14 post-2391)
+
+### Input read
+
+- Candidate: `origin/main@4e269023c7cf87c0e23484513682acb55bcb25ae`.
+- Read files:
+  - `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
+  - `issue-FB-P2C-01-a1-interface-contract.md`
+  - `issue-FB-P2C-01-a2-mock-validation.md`
+  - `issue-FB-P2C-01-a3-implementation.md`
+- Scope note: this checkpoint records planning-boundary freshness only. It does not edit `03_Implement/`, architecture files, public documentation, SafeMode policy, runtime behavior, API/UI behavior, or downstream P2C issue state.
+
+### Current classification
+
+| Item | Current state | Baseline interpretation |
+| --- | --- | --- |
+| P2C A1 interface contract | `Status=Done`, `DecisionStatus=Fixed`, `ContractID=CTR-FB-P2C-01-V1` | A1 contract remains fixed enough for mock-validation planning. |
+| P2C A2 mock validation | `Status=Done`, `DecisionStatus=Fixed`, `MV-01..04` defined | A2 mock evidence requirements remain fixed; downstream implementation still needs actual evidence attachment in its own lane. |
+| P2C A3 implementation plan | `Status=Done`, `DecisionStatus=Fixed`, implementation plan only | A3 planning handoff remains fixed, but Stream H still has no permission to edit implementation files. |
+| FB-P0 fixed keys | `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON` | No fixed-key drift found in this checkpoint. |
+| Approval / held state | `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held` | Program remains `Conditional / Needs-decision`, not Go. |
+
+### Decision
+
+- `fixedKeyDrift=0` for the checked FB-P0/P2C planning boundary.
+- `pendingBypassDetected=false` for this checkpoint: no request was made to treat A2/A3 as implementation-ready without the required approval/evidence boundary.
+- FB-P0 remains **Open / P0**. Do not mark this issue Done while `Approval Record=Pending` and `HIL-RS-02-GOV-EXCEPTION-01=held` remain unresolved.
+- A2/A3 implementation work remains downstream-owned. This checkpoint only confirms that P2C planning records are still internally consistent as handoff inputs after #2391.
+
+### Next action routing
+
+1. Human/project governance: decide `Approval Record` fields (`approved_by`, `approved_at`, `evidence`) and `HIL-RS-02-GOV-EXCEPTION-01`.
+2. Downstream implementation stream: attach real A2 mock pass evidence before treating A3 implementation as startable.
+3. Program/release lane: keep final shipment No-Go through `MVP-EXIT-01` until product-value, environment, support, accessibility, high-privilege lifecycle, and FB-P0 approval/held gates are accepted.
+4. Stream H/Codex: continue updating this issue only for planning-boundary evidence; stop if asked to edit implementation files or to weaken `safeModeDefault=ON` / `SAFE_MODE_STRICT_ON`.
+
+### Verify
+
+- `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
+- `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py`
+- `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text`
+- `git diff --check -- 01_Plans\issues\issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
