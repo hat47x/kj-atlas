@@ -963,3 +963,48 @@
 - [x] 受入条件に「安全」「互換」「検証」が含まれる。
 - [x] `Validation plan` に具体コマンドがある。
 - [x] 非目標が明記されスコープ逸脱を防いでいる。
+- [x] PROJECT-GOV post-2380 branch reachability checkpoint appended below.
+
+---
+
+## Post-2380 codex branch reachability checkpoint
+
+- Checkpoint date (JST): 2026-06-14
+- Latest main: `origin/main@7cd251f0bc4943f14dd8c2c416c45083b783ca02`
+- Integration PR: #2380 `[codex] Merge codex branches since 2026-06-06`
+- Integration method: normal merge commit, not squash/rebase, so selected `codex/*` branch tips are reachable from `main`.
+- Remote branch count: 2381
+- `origin/codex/` remote branch count: 2356
+- `origin/codex/*` branches updated on or after 2026-06-06: 54
+- `origin/codex/*` branches updated on or after 2026-06-06 that are not ancestors of `origin/main`: 0
+- GitHub open PR search result: `0`
+- Internal issue triage at integration time:
+  - `active_issues=52`
+  - `ready=15`
+  - `blocked=37`
+  - `actionable_adrs=1`
+  - stopper: none
+- Scope: records the branch-reachability result after #2380 merged 34 previously non-ancestor `codex/*` branch tips from 2026-06-06 onward. This checkpoint does not delete remote branches, close PRs, rerun old branch CI, change ADR status, change runtime behavior, or approve release readiness.
+
+### Merged lane result
+
+| Merge group | Count | Merge behavior | Governance outcome |
+| --- | ---: | --- | --- |
+| Real content delta | 1 branch | Normal merge with conflict resolution | `codex/reapply-legacy-env-reference-sync-20260606` restored one historical finding line in `ENV-CONFIG-DRIFT-01`; no runtime behavior changed. |
+| Squash-equivalent branch tips | 33 branches | `-s ours` merge commits after `git cherry origin/main <branch>` showed patch-equivalent content already present on `main` | Branch tips are now reachable from `main` without reapplying duplicate document/test changes. |
+| Total integrated branch tips | 34 branches | Normal merge PR #2380 | 6/6-or-later `codex/*` branch reachability audit now reports zero non-ancestor branches. |
+
+### Decision
+
+- The 2026-06-06-or-later `codex/*` branch reachability lane is converged into `main`.
+- GitHub connector search reports no open PRs for the repository at this checkpoint.
+- No branch deletion is executed. The remote `codex/*` refs remain cleanup candidates until the repository maintainer explicitly approves deletion.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene; this update records repository state rather than changing branch-governance policy.
+- Full release shipment remains No-Go until product-value Open gates, human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted high-privilege lifecycle boundary decisions, environment rehearsal evidence, FB-P0 approval/held decisioning, and final program approval are recorded together.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@7cd251f0bc4943f14dd8c2c416c45083b783ca02`.
+2. Treat #2380 as a reachability merge only. It makes selected branch tips ancestors of `main`; it does not re-open their old implementation or evidence decisions.
+3. Before deleting any remote `codex/*` branch, require repository-maintainer approval and preserve a final audit list of deleted refs.
+4. Continue routing release blockers through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
