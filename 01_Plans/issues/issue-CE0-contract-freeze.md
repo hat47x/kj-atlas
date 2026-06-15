@@ -11,6 +11,46 @@
 - Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約SSOT）, `01_Plans/issues/issue-CE0-core-graph-repositioning.md` / `issue-CE1-context-query-bundle-foundation.md` / `issue-CE2-low-risk-ai-assist.md` / `issue-CE4-api-cli-audit-integration.md` が参照
 - Verification: `docs-check`
 
+## Current Canonical Summary 2026-06-15
+
+This issue is the read-only SSOT for the CE0 contract freeze. Downstream CE0 core graph, CE1, CE2, and CE4 work may reference this issue, but this issue does not approve implementation, release readiness, SafeMode relaxation, or review bypass.
+
+### Canonical Contract
+
+| Area | Frozen value | Downstream rule |
+| --- | --- | --- |
+| Contract IDs | `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05` | Reference these IDs without adding aliases, renaming them, deleting them, or changing their meaning. |
+| No-Go canonical IDs | `preview_bypass`, `consensus_direct_write`, `auto_apply_or_publish`, `ai_review_auto_promotion`, `safemode_default_relaxation` | Use these exact IDs for stop reasons, tests, and audit evidence. Do not replace them with local synonyms. |
+| Decision I/F | `freezeDecision = { decision: Proceed|Hold|Stop, executeAllowed: boolean, reasonCodes: string[] }` | Treat this as the minimum gate interface. It does not authorize the actual `Pending -> Approved/Rejected` transition. |
+| Mock-first boundary | `decision`, `executeAllowed`, and `reasonCodes` only | Mock or fixture work may validate the gate result, but must not imply production approval behavior. |
+| Human-owned hold conditions | `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`, and `pendingDecisionQueueCount>0` | Keep `decision=Hold` and `executeAllowed=false` while any of these conditions remains unresolved. |
+
+### Current Completion Assessment
+
+| Checkpoint | Status | Note |
+| --- | --- | --- |
+| Contract ID freeze | Pass | The frozen ID set is established and must remain read-only. |
+| No-Go ID freeze | Pass | The five canonical IDs are stable and are the comparison keys. |
+| SafeMode boundary | Pass | SafeMode remains default ON, with `allowUnreviewedText=false` as the default boundary. |
+| Review boundary | Pass | `human_reviewed` promotion remains a human action only. |
+| Decision I/F | Conditional Go | The interface is stable for mock-first gate evidence only. |
+| Downstream handoff | Conditional Go | Downstream issues may reference this issue as SSOT, but may not redefine the contract. |
+| Implementation approval | Not granted | Implementation authority belongs to downstream implementation issues and their acceptance evidence. |
+| Release readiness | Not granted | Product/release readiness must be judged by Product QA and MVP Exit gates. |
+
+### Allowed Next Work
+
+- Update downstream documents to link back to this issue when they need CE0 contract IDs, No-Go IDs, SafeMode boundary, or review boundary.
+- Add tests or evidence in downstream implementation lanes proving that these IDs are consumed without redefinition.
+- Open an ADR or held issue before proposing any alias, ID change, SafeMode relaxation, review automation, or implementation authority change.
+
+### Recommended Closure Path
+
+1. Confirm current-main drift checks for `02_Architecture/schemas.md`, `02_Architecture/architecture.md`, CE0 core graph, and CE1.
+2. Resolve or explicitly continue holding `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`, and `pendingDecisionQueueCount>0`.
+3. Ensure downstream CE0/CE1/CE2/CE4 documents reference this issue instead of copying or redefining the contract.
+4. Keep Product QA and MVP Exit documents clear that CE0 provides contract readiness only, not release approval.
+
 ## Stream A Phase 1 Metadata Snapshot（2026-05-18）
 
 | Issue | Status | Priority | Depends | Blockers | Delta vs prior run |
