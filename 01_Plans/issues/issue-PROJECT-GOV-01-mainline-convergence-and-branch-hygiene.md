@@ -1151,3 +1151,45 @@
 3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
 4. Keep HIL/FB downstream execution blocked until the human-owned approval and held-gate decision records are explicitly resolved.
 5. Route release blockers through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `HIL-RS-02-A1`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
+
+---
+
+## Post-2407 governance reachability and canonical-summary checkpoint
+
+- Checkpoint date (JST): 2026-06-15
+- Latest main: `origin/main@68a1a792883fde21e95bd45034323c0eaa17ea43`
+- Recent normal-merge PRs included in this checkpoint:
+  - #2403 `[codex] Record post-2402 project baseline`
+  - #2404 `[codex] Add CE1 canonical handoff summary`
+  - #2405 `[codex] Add CE0 graph canonical handoff summary`
+  - #2406 `[codex] Add CE0 freeze canonical handoff summary`
+  - #2407 `[codex] Record post-2406 project baseline`
+- Integration method: normal merge commits, not squash/rebase, so the related `codex/*` branch tips remain reachable from `main`.
+- GitHub Actions CI:
+  - #2403 CI run `9575`: passed.
+  - #2404 CI run `9578`: passed.
+  - #2405 CI run `9581`: passed.
+  - #2406 CI run `9584`: passed.
+  - #2407 CI run `9587`: passed on head `0a7e84d414ab963bd9e76f1b097041c6000a7671`.
+- `origin/codex/*` branches updated on or after 2026-06-06: 81.
+- `origin/codex/*` branches updated on or after 2026-06-06 that are not ancestors of `origin/main`: 0.
+- Internal issue validation:
+  - `validate_active_issue_memos.py`: pass, `ok: validated 5 active issue memos`.
+  - `triage_actionable_plans.py`: pass, `active_issues=52`, `ready=15`, `blocked=37`, `actionable_adrs=1`, stopper none.
+- Scope: records repository governance after #2403 through #2407 were merged. This checkpoint does not delete remote branches, close PRs, change issue status, change ADR status, change runtime behavior, change UI/API behavior, change SafeMode/share-export policy, approve CE0/CE1 implementation authority, or approve release readiness.
+
+### Decision
+
+- The observed 2026-06-06-or-later `codex/*` branch reachability state remains clean: no checked branch remains outside `main` ancestry.
+- #2404, #2405, and #2406 improve CE1 and CE0 handoff readability by adding current canonical summaries to the upstream issue records. These summaries are governance/readability evidence only; they are not permission to redefine fixed IDs, relax SafeMode, bypass Query Preview, auto-promote review state, write directly to Consensus, auto-apply proposals, or publish unreviewed content.
+- #2407 records the post-2406 baseline on `main` and preserves the release No-Go boundary.
+- The remaining remote `codex/*` refs are cleanup candidates only. Deletion still requires repository-maintainer approval and a final deletion audit list.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene unless the project changes stale-ref retention, branch cleanup authority, CI signal authority, CE0/CE1 contract authority, HIL/FB held-gate authority, or release authority.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@68a1a792883fde21e95bd45034323c0eaa17ea43`.
+2. Keep using normal merge commits for PRs whose purpose is to preserve `codex/*` branch-tip reachability.
+3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
+4. Treat CE0/CE1 canonical summaries as read-only planning SSOTs. Any fixed contract value or authority-boundary change needs an ADR or held issue path.
+5. Keep release blockers routed through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `HIL-RS-02-A1`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
