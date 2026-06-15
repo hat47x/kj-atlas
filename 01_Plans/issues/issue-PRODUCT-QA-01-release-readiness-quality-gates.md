@@ -2208,3 +2208,35 @@ DoDテンプレ（Draft→Open）
 - Downstream implementation stream must still attach real A2 mock pass evidence before treating A3 implementation as startable.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes HIL/FB governance authority, A2/A3 start criteria, SafeMode/share-export policy, runtime environment policy, product-value authority, release authority, or approval inference policy.
+
+## Productization Gate Record 2026-06-15: post-2408 CE0/CE1 canonical-summary and governance reachability sync
+
+- Candidate: `origin/main@ccc596a07c2843cb893d1d71ee9aec8ca48a971d`.
+- Decision date (JST): 2026-06-15.
+- Reviewer: Codex.
+- Scope: post-#2408 release-gate intake for CE0/CE1 canonical-summary readability, project baseline freshness, and repository governance reachability after #2403 through #2408 became canonical on `main`. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, issue status, ADR status, CE0/CE1 implementation authority, branch deletion authority, or release authority.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation and triage passed after #2408, with no stopper.
+- G1 safety defaults: Conditional Go / unchanged. The CE0/CE1 summary work explicitly preserves SafeMode default ON, `allowUnreviewedText=false`, Query Preview gating, review human-approval boundaries, and No-Go IDs as read-only contract evidence.
+- G6 governance and decision traceability: Conditional Go improved. `PROJECT-BASELINE-01` and `PROJECT-GOV-01` now record #2403 through #2408, including CE1, CE0 core graph, and CE0 contract-freeze canonical summaries plus post-2407 branch reachability.
+- Repository governance: Conditional Go improved. The 2026-06-06-or-later `origin/codex/*` reachability audit remains clean with `unmerged_count=0`; remote branch deletion remains repository-maintainer-owned.
+- Final: **Conditional Go for CE0/CE1 canonical-summary and governance evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2403 `[codex] Record post-2402 project baseline` merged with normal merge history; CI run `9575` passed.
+- PR #2404 `[codex] Add CE1 canonical handoff summary` merged with normal merge history; CI run `9578` passed.
+- PR #2405 `[codex] Add CE0 graph canonical handoff summary` merged with normal merge history; CI run `9581` passed.
+- PR #2406 `[codex] Add CE0 freeze canonical handoff summary` merged with normal merge history; CI run `9584` passed.
+- PR #2407 `[codex] Record post-2406 project baseline` merged with normal merge history; CI run `9587` passed.
+- PR #2408 `[codex] Record post-2407 governance reachability` merged with normal merge history; CI run `9590` passed.
+- Latest local verification after #2408: active issue validation passed, triage reported no stopper, and the 2026-06-06-or-later `codex/*` branch reachability audit reported `since_20260606_codex_count=82`, `unmerged_count=0`.
+
+### Follow-ups
+
+- Treat CE0/CE1 canonical summaries as read-only planning SSOTs. Any fixed contract value, SafeMode boundary, review authority, Query Preview gate, or implementation-authority change requires an ADR or held issue path.
+- Repository Maintainer must still approve any remote `codex/*` branch deletion and preserve a final deletion audit list.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes CE0/CE1 contract authority, HIL/FB governance authority, branch cleanup authority, stale-ref retention policy, SafeMode/share-export policy, runtime environment policy, product-value authority, or release authority.
