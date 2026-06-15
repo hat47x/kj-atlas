@@ -1631,6 +1631,66 @@
 
 ---
 
+## 39) Baseline delta 2026-06-15: post-2406 CE0/CE1 canonical summary sync
+
+### Candidate
+
+- Target main: `origin/main` = `92b22fc15dd6fc03dbc10a8d09b6dfa389e18dcb`.
+- Previous recorded mainline baseline: `origin/main@9c9dbd68084e56d2a4d1430f0331bddf191b4d23` in section 38.
+- Scope note: this delta records #2403 through #2406 becoming canonical on `main`. It captures the post-2402 project baseline/governance record, CE1 context-query/bundle canonical handoff summary, CE0 core-graph canonical handoff summary, and CE0 contract-freeze canonical handoff summary only; it does not change runtime behavior, UI/API behavior, SafeMode/share-export policy, issue status, ADR status, release authority, public documentation, downstream implementation permission, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python / GitHub connector for PR and CI inspection / RTK used for compact status output where exact command text was not required.
+
+### Command and CI evidence
+
+| Area | Command or source | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `92b22fc15dd6fc03dbc10a8d09b6dfa389e18dcb` | G0 |
+| PR #2403 CI | GitHub Actions CI run `9575` on the post-2402 project baseline branch | Pass: CI completed successfully | G7 |
+| PR #2404 CI | GitHub Actions CI run `9578` on the CE1 canonical handoff summary branch | Pass: CI completed successfully | G7 |
+| PR #2405 CI | GitHub Actions CI run `9581` on the CE0 core-graph canonical summary branch | Pass: CI completed successfully | G7 |
+| PR #2406 CI | GitHub Actions CI run `9584` on head `3a748a4e612b95f9e6000edfb42632455c9a8ced` | Pass: CI completed successfully | G7 |
+| Branch reachability | `git merge-base --is-ancestor` over 2026-06-06-or-later `origin/codex/*` branches | Pass: `since_20260606_codex_count=80`, `unmerged_count=0` | G0 / repository governance |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this planning-baseline refresh.
+- #2403 made the post-2402 project baseline/governance record canonical on `main`, keeping branch reachability and release No-Go boundaries explicit after the HIL/FB hold-gate sync.
+- #2404 added a reader-facing current canonical summary to `CE1-context-query-bundle-foundation`, making the ContextQuery/ContextBundle contract, Query Preview gate, deterministic bundle hash, and remaining hold conditions easier to consume without changing implementation authority.
+- #2405 added a reader-facing current canonical summary to `CE0-core-graph-repositioning`, keeping Working / ContextProjection / Consensus / patch+approval boundaries explicit for downstream reference.
+- #2406 added a reader-facing current canonical summary to `CE0-contract-freeze`, making the frozen CE0 contract IDs, No-Go IDs, decision I/F, SafeMode/review boundaries, and human-owned hold conditions visible at the top of the SSOT issue.
+- The CE0/CE1 summary work improves handoff readability and drift resistance. It does not approve implementation, release readiness, `Pending -> Approved/Rejected` transition behavior, SafeMode relaxation, review automation, direct consensus writes, auto-apply, or unreviewed publication.
+- The 2026-06-06-or-later `codex/*` branch reachability audit remains clean with `unmerged_count=0`; remote branch deletion remains repository-maintainer-owned and out of scope for this issue.
+- No new ADR is required for this baseline sync. ADR work is required only if the project changes CE0/CE1 contract authority, HIL/FB governance authority, held-gate exception authority, release authority, branch cleanup authority, dependency-upgrade authority, SafeMode/share-export policy, product-value authority, runtime environment policy, public documentation authority, or high-privilege data-lifecycle policy.
+
+### Gate classification
+
+| Gate | 2026-06-15 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, branch reachability audit, active issue validation, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go / unchanged | No SafeMode, share/export, import, high-privilege data lifecycle implementation, runtime security default, or public documentation boundary changed in this slice. |
+| G6 governance and decision traceability | Conditional Go improved | CE0/CE1 canonical summaries now surface fixed IDs, No-Go IDs, and held human-owned decisions at the top of their SSOT issues. |
+| G7 regression | Go for current planning slice | PR #2403, #2404, #2405, and #2406 CI succeeded; local planning validation and triage passed after the post-2406 main sync. |
+| Repository governance | Conditional Go improved | All observed 2026-06-06-or-later `codex/*` branch tips remain reachable from `main`. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for post-2406 planning integrity, branch reachability, and CE0/CE1 canonical summary readability.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- Follow-up routing:
+  - CE0/CE1 contract drift or authority changes: `CE0-contract-freeze`, `CE0-core-graph-repositioning`, `CE1-context-query-bundle-foundation`, and ADR if any fixed contract value or authority boundary changes.
+  - HIL/FB approval and held decision: `HIL-RS-02-A1`, `FB-P0-2A2B2C`, project governance, and human approval lane.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Branch deletion / remote-ref cleanup authority: `PROJECT-GOV-01` and repository maintainer approval.
+  - High-privilege data-lifecycle decision: `DATA-MAINT-03`, `ADR-0035`, and `DATA-MAINT-04`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+
+---
+
 ## Authoring Checklist・井ｺｺ髢・逕滓・AI 蜈ｱ騾夲ｼ・
 
 - [x] `Source Issue` 縺碁°逕ｨ迥ｶ諷九→謨ｴ蜷医＠縺ｦ縺・ｋ・域悴驕狗畑譎ゅ・ `N/A`・峨・
