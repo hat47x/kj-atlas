@@ -11,6 +11,80 @@
 - Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存; mockで並行検証可能）
 - Verification: `docs-check`
 
+## Current Canonical Summary 2026-06-15
+
+This section is the current readable handoff point for CE0 Core Graph repositioning. Older execution records below are retained for audit history, but new work should start from this summary and the canonical references listed here.
+
+### Purpose
+
+CE0 fixes the graph responsibility boundary before downstream implementation work expands it. The issue is contract-only: it defines how working data, context projection, and consensus state are separated, and it prevents direct consensus writes, automatic application, review auto-promotion, and SafeMode relaxation.
+
+### Canonical Vocabulary
+
+- `WorkingGraph`: exploration and work-in-progress surface for humans, agents, and roles.
+- `ContextProjectionGraph`: read-only projection surface used to build `ContextBundle` outputs.
+- `ConsensusGraph`: the canonical graph term for approved integrated state.
+- `Core Graph`: legacy/read-only explanatory alias only. It must not be reintroduced as the canonical product or schema term.
+
+### Canonical Contract
+
+- Contract references:
+  - `02_Architecture/architecture.md` section `7A. CE-0`
+  - `02_Architecture/schemas.md` section `1.1 CE0 Contract Freeze`
+  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+- Contract IDs are read-only references:
+  - `CE0-CTX-IF`
+  - `CE0-SAFEMODE-IF`
+  - `CE0-REVIEW-IF`
+  - `CG-01..05`
+- Allowed transition:
+  - `WorkingGraph -> ConsensusGraph` only through `patch + approval`.
+  - `WorkingGraph -> ContextProjectionGraph` only as read-only projection, not persistent update.
+- No-Go canonical IDs:
+  - `preview_bypass`
+  - `consensus_direct_write`
+  - `auto_apply_or_publish`
+  - `ai_review_auto_promotion`
+  - `safemode_default_relaxation`
+- SafeMode boundary:
+  - safeMode default remains ON.
+  - `allowUnreviewedText=false` remains the protected default.
+  - Graph repositioning must not relax SafeMode or make unreviewed text eligible for automatic AI input.
+
+### Current Completion Assessment
+
+| Item | Result | Evidence |
+| --- | --- | --- |
+| Graph vocabulary fixed | Pass | `WorkingGraph`, `ContextProjectionGraph`, `ConsensusGraph` are canonical; `Core Graph` is legacy alias only |
+| Allowed transition fixed | Pass | `WorkingGraph -> ConsensusGraph` requires `patch + approval` |
+| Direct write and auto-apply blocked | Pass | `consensus_direct_write` and `auto_apply_or_publish` remain No-Go IDs |
+| Review auto-promotion blocked | Pass | `CE0-REVIEW-IF` keeps `human_reviewed` promotion human-owned |
+| SafeMode boundary preserved | Pass | `CE0-SAFEMODE-IF`, safeMode default ON, and `allowUnreviewedText=false` remain unchanged |
+| Implementation approval | Not granted | This issue does not authorize UI, API, worker, storage, or migration changes |
+| Full product release readiness | Not granted | CE0 graph readiness does not resolve product-value gates, HIL/FB approvals, Compose evidence, or final release approval |
+
+### Validation Evidence
+
+- 2026-06-15 frontend CE0 graph contract: `npm run test -- src/domain/ce0_core_graph_repositioning.test.ts` -> 4 passed.
+- 2026-06-15 planning metadata: `validate_active_issue_memos.py` -> pass.
+- 2026-06-15 vocabulary trace: `rg` confirmed the current summary contains `WorkingGraph`, `ContextProjectionGraph`, `ConsensusGraph`, `patch + approval`, the No-Go canonical IDs, and `allowUnreviewedText=false`.
+
+### Allowed Next Work
+
+- Use this issue as a read-only contract handoff for CE1/CE2/CE4 planning and mock-first validation.
+- Treat new terms, aliases, or transition shortcuts as drift unless an ADR explicitly changes the contract.
+- Record any request for direct write, auto-apply, auto-publish, AI review promotion, SafeMode relaxation, or `Core Graph` re-canonicalization as `held`.
+- Keep implementation work in a separate issue or PR with explicit validation evidence that it consumes these boundaries without redefining them.
+
+### Recommended Closure Path
+
+CE0 Core Graph repositioning can move toward closeout when these are recorded together:
+
+1. Current-main checks confirm no drift in `architecture.md`, `schemas.md`, and `issue-CE0-contract-freeze.md`.
+2. CE1/CE2/CE4 references use `ConsensusGraph` and the canonical No-Go IDs without introducing aliases.
+3. Implementation-facing work has separate evidence that no direct write, auto-apply, auto-publish, review auto-promotion, or SafeMode relaxation path exists.
+4. `PRODUCT-QA-01` and `MVP-EXIT-01` continue to classify this as contract readiness only, not release approval.
+
 ## Stream A Phase 1 Metadata Snapshot（2026-05-18）
 
 | Issue | Status | Priority | Depends | Blockers | Delta vs prior run |
