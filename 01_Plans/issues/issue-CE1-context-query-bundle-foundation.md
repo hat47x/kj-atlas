@@ -3,7 +3,75 @@
 - Type: Feature request
 - Status: Open
 - Priority: P1
-- Owner: Stream E（CE1基盤: ContextQuery/ContextBundle Foundation）
+- Owner: Stream E (CE1 ContextQuery/ContextBundle Foundation)
+
+## Current Canonical Summary 2026-06-15
+
+This section is the current readable handoff point for CE1. Older execution logs below are retained for audit history, but several inherited records contain mojibake and should not be used as the primary reading path for new work.
+
+### Purpose
+
+CE1 defines the minimum contract for turning a reviewed query preview into a deterministic context bundle. It exists so CE2 and CE4 can continue mock-first validation without waiting for every backend, worker, or LLM implementation detail to be finished.
+
+### Canonical Contract
+
+- Contract IDs:
+  - `CE1-CTXQ-IF`: `ContextQueryV1`
+  - `CE1-CTXB-IF`: `ContextBundleV1`
+  - `CE1-HASH-DET-IF`: deterministic hash rules
+  - `CE1-PREVIEW-GATE-IF`: preview confirmation gate
+- Canonical references:
+  - `02_Architecture/api.md`
+  - `02_Architecture/schemas.md`
+  - `02_Architecture/architecture.md`
+  - `03_Implement/backend/src/kj_atlas_api/routes/context.py`
+  - `03_Implement/backend/tests/test_context_bundle_routes.py`
+  - `03_Implement/frontend/src/domain/context/query_preview.ts`
+  - `03_Implement/frontend/src/domain/context/query_preview.test.ts`
+- Required error semantics:
+  - `previewConfirmed != true` -> `422 preview_required`
+  - unknown key / enum / range violation -> `400 unknown_contract_key`
+  - same canonical query with inconsistent `bundleHash` -> `409 nondeterministic_bundle`
+- Required handoff keys:
+  - `queryCanonicalHash`
+  - `bundleHash`
+  - `sourceBundleHash`
+- Downstream rule:
+  - CE2 and CE4 may consume the CE1 mock contract as read-only handoff evidence.
+  - CE2 and CE4 must not redefine CE1 keys, relax preview confirmation, or treat a non-deterministic bundle as successful.
+
+### Current Completion Assessment
+
+| Item | Result | Evidence |
+| --- | --- | --- |
+| `ContextQueryV1` / `ContextBundleV1` fixed in architecture | Pass | `02_Architecture/api.md`, `02_Architecture/schemas.md` |
+| Preview gate fixed | Pass | `422 preview_required` is specified and tested |
+| Unknown key rejection fixed | Pass | `400 unknown_contract_key` is specified and tested |
+| Deterministic bundle failure fixed | Pass | `409 nondeterministic_bundle` is specified and tested |
+| Backend route contract present | Pass | `/context/query`, `/context/bundle`, `/context/bundles:resolve` tests exist |
+| Frontend mock-first validation present | Pass | `query_preview.ts` and `query_preview.test.ts` cover the same contract terms |
+| Full product release readiness | Not granted | CE1 readiness does not resolve product-value gates, HIL/FB approvals, Compose evidence, or final release approval |
+
+### Validation Evidence
+
+- 2026-06-15 backend route contract: `03_Implement\backend\.venv\Scripts\python.exe -m pytest -p no:cacheprovider 03_Implement\backend\tests\test_context_bundle_routes.py` -> 17 passed.
+- 2026-06-15 frontend mock-first contract: `npm run test -- src/domain/context/query_preview.test.ts src/ui/ContextQueryPreviewPanel.test.ts` -> 12 passed. The first sandboxed attempt failed before test execution because `vite.config.ts` could not be read; the same command passed when rerun with the normal project file access required by Vitest.
+
+### Allowed Next Work
+
+- Keep CE1 as a mock-first, contract-first interface until a separate implementation slice explicitly expands the provider/runtime behavior.
+- Use the existing backend and frontend tests as the regression guard for CE1 v1.
+- If the project changes required keys, error semantics, preview rules, or deterministic hashing, create or update an ADR before implementation.
+- Do not use this issue to approve HIL/FB held gates, SafeMode relaxation, automatic review promotion, direct consensus writes, or release shipment.
+
+### Recommended Closure Path
+
+CE1 can move from `Open` toward closeout when the following are recorded together:
+
+1. Backend CE1 route-contract tests pass on current `main`.
+2. Frontend mock-first CE1 tests pass on current `main`.
+3. CE2 and CE4 references point to the same handoff keys without redefining them.
+4. `PRODUCT-QA-01` and `MVP-EXIT-01` continue to classify this as contract readiness only, not release approval.
 
 
 ## Stream B update（2026-05-10 / CE1 mock-first contract baseline）
