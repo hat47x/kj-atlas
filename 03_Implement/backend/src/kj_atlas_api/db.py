@@ -11,11 +11,14 @@ def _normalize_database_url(database_url: str) -> str:
     """Normalize async SQLAlchemy URLs to sync drivers for this Phase 1 sync stack."""
     url = make_url(database_url)
 
+    # NOTE: use render_as_string(hide_password=False), not str(url). SQLAlchemy's
+    # str(URL) masks the password as "***", which would otherwise be passed verbatim
+    # to the driver and cause "password authentication failed" on the postgres path.
     if url.drivername == "sqlite+aiosqlite":
-        return str(url.set(drivername="sqlite"))
+        return url.set(drivername="sqlite").render_as_string(hide_password=False)
 
     if url.drivername == "postgresql+asyncpg":
-        return str(url.set(drivername="postgresql+psycopg"))
+        return url.set(drivername="postgresql+psycopg").render_as_string(hide_password=False)
 
     return database_url
 

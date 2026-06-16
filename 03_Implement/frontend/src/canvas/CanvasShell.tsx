@@ -160,6 +160,12 @@ type CanvasShellProps = {
   flashReference?: FocusReference | null;
   flashRequestSeq?: number;
   isPickingEdgeTarget?: boolean;
+  editingCardId?: string | null;
+  onBeginEditCard?: (cardId: string) => void;
+  onCommitEditCard?: (cardId: string, text: string) => void;
+  onCancelEditCard?: () => void;
+  onCardContextMenu?: (cardId: string, clientX: number, clientY: number) => void;
+  onBackgroundContextMenu?: (clientX: number, clientY: number, worldX: number, worldY: number) => void;
   suggestionMoveDiffs?: SuggestionMoveDiff[];
   selectedEdgeId?: string | null;
   onEdgeSelect?: (edgeId: string) => void;
@@ -318,6 +324,12 @@ export function CanvasShell({
   flashReference = null,
   flashRequestSeq = 0,
   isPickingEdgeTarget = false,
+  editingCardId,
+  onBeginEditCard,
+  onCommitEditCard,
+  onCancelEditCard,
+  onCardContextMenu,
+  onBackgroundContextMenu,
   suggestionMoveDiffs,
   selectedEdgeId,
   onEdgeSelect,
@@ -1234,6 +1246,20 @@ export function CanvasShell({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
       onWheel={handleWheel}
+      onContextMenu={(event) => {
+        if (!onBackgroundContextMenu) {
+          return;
+        }
+        const viewport = viewportRef.current;
+        if (!viewport) {
+          return;
+        }
+        event.preventDefault();
+        const rect = viewport.getBoundingClientRect();
+        const worldX = (event.clientX - rect.left - transform.panX) / transform.zoom;
+        const worldY = (event.clientY - rect.top - transform.panY) / transform.zoom;
+        onBackgroundContextMenu(event.clientX, event.clientY, worldX, worldY);
+      }}
       style={{
         position: "relative",
         width: "100%",
@@ -1340,6 +1366,11 @@ export function CanvasShell({
               compactMode={Boolean(lod?.rules.compactCards)}
               markerMode={Boolean(lod && lod.level === "far" && lodShowLoneWolvesWhenFar && loneWolfCardIdSet.has(card.id))}
               showLabelText={acceptedLabelIds.has(buildCardLabelId(card.id))}
+              isEditing={editingCardId === card.id}
+              onBeginEdit={onBeginEditCard}
+              onCommitEdit={onCommitEditCard}
+              onCancelEdit={onCancelEditCard}
+              onCardContextMenu={onCardContextMenu}
             />
           );
         })}
