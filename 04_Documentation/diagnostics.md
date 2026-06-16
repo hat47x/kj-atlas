@@ -72,8 +72,9 @@ curl -fsS http://127.0.0.1:8000/healthz
 | 症状 | 主な確認 |
 | --- | --- |
 | 画面が真っ白 | frontend build、console error、nginx logs |
-| `Internal Server Error` が表示される | backend が起動しているか、`/api/healthz` と `/api/docs/doc_phase1_canvas` が成功するか |
+| `Internal Server Error` が表示される | backend が起動しているか、`/api/healthz` が成功するか。標準サンプル `doc_phase1_canvas` は初回ブラウザ表示時に作成されるため、初回表示前の `/api/docs/doc_phase1_canvas` は 404 が正常（5xx の場合のみ backend を調査） |
 | 保存に失敗 | API status、`X-API-Key`、backend logs、DB 接続 |
+| `password authentication failed for user "kj_atlas"` が backend logs に出る | まず `env \| grep -i kj_atlas`（export 済み変数が compose を上書きし `down -v` でも直らない）と `docker compose config`（db 側パスワードと `KJ_ATLAS_DATABASE_URL` 内パスワードの一致）。次に古い `kj_atlas_pgdata` volume の残存（`pg_isready` は認証未検証のため db は healthy に見える）。詳細と復旧手順は installation.md の同名項目を参照 |
 | AI 提案が出ない | `KJ_ATLAS_LLM_PROVIDER`、provider endpoint、SafeMode |
 | 書き出しが失敗、または長時間終わらない | 対象ドキュメントの schema、画面上の進捗・中止メッセージ、ブラウザ console |
 | worker が落ちる | 入力データ、worker console、該当 worker の単体テスト |

@@ -18,6 +18,7 @@ import {
   type NarrativeIssueReference,
 } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
+import { ContextMenu, type ContextMenuItem } from "./ui/ContextMenu";
 import type { AggregatedEdgeMeta, CameraTransformRequest, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
@@ -164,6 +165,18 @@ import type { DiagnosticsProgressStage } from "./worker/diagnostics_protocol";
 import type { DiffProgressStage } from "./worker/diff_protocol";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
+const ADVANCED_UI_STORAGE_KEY = "kj-atlas.advanced-ui-enabled";
+
+function loadAdvancedUiEnabled(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  try {
+    return window.localStorage.getItem(ADVANCED_UI_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
 const HISTORY_LIMIT = 50;
 const GRID_SNAP_SIZE = 10;
 const SUGGESTION_MOVE_THRESHOLD = 1;
@@ -1007,6 +1020,18 @@ function applyFocusScope(document: DocumentV2, focusTarget: FocusTarget): Docume
 export default function App() {
   const [history, setHistory] = useState<DocumentHistory | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [isAdvancedUiEnabled, setIsAdvancedUiEnabled] = useState<boolean>(loadAdvancedUiEnabled);
+  const [contextMenu, setContextMenu] = useState<
+    | {
+        x: number;
+        y: number;
+        target:
+          | { kind: "card"; cardId: string }
+          | { kind: "background"; worldX: number; worldY: number };
+      }
+    | null
+  >(null);
   const [selectedIslandId, setSelectedIslandId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -3598,6 +3623,134 @@ ${parsedDocument.error}`);
     },
     [applyDocumentChange, connectEdgeType, document, isPickingEdgeTarget, selectedCardIds, selectedIslandId]
   );
+
+  const createCardAtPosition = useCallback(
+    (x: number, y: number) => {
+      if (!document) {
+        return;
+      }
+
+      const newCardId = crypto.randomUUID();
+      const newCard = { id: newCardId, text: "新しいカード", x, y };
+
+      const applied = applyDocumentChange(
+        {
+          ...document,
+          cards: [...document.cards, newCard],
+        },
+        "Added a new card"
+      );
+
+      if (applied) {
+        setSelectedIslandId(null);
+        setSelectedEdgeId(null);
+        setSelectedCardIds([newCardId]);
+        setEditingCardId(newCardId);
+      }
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleAddCard = useCallback(() => {
+    if (!document) {
+      return;
+    }
+
+    const anchorCard =
+      (selectedCardIds.length > 0
+        ? document.cards.find((card) => card.id === selectedCardIds[0])
+        : document.cards[document.cards.length - 1]) ?? null;
+    createCardAtPosition(anchorCard ? anchorCard.x + 40 : 120, anchorCard ? anchorCard.y + 40 : 120);
+  }, [createCardAtPosition, document, selectedCardIds]);
+
+  const handleAddCardAtPoint = useCallback(
+    (worldX: number, worldY: number) => {
+      createCardAtPosition(worldX - CARD_WIDTH / 2, worldY - CARD_HEIGHT / 2);
+    },
+    [createCardAtPosition]
+  );
+
+  const handleEditCard = useCallback((cardId: string) => {
+    setSelectedIslandId(null);
+    setSelectedEdgeId(null);
+    setSelectedCardIds([cardId]);
+    setEditingCardId(cardId);
+  }, []);
+
+  const handleConnectFromCard = useCallback((cardId: string) => {
+    setSelectedIslandId(null);
+    setSelectedEdgeId(null);
+    setSelectedCardIds([cardId]);
+    setIsPickingEdgeTarget(true);
+    setStatusMessage("Select a target card or island");
+  }, []);
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
+
+  const handleCardContextMenu = useCallback(
+    (cardId: string, clientX: number, clientY: number) => {
+      setSelectedCardIds((previous) => (previous.includes(cardId) ? previous : [cardId]));
+      setContextMenu({ x: clientX, y: clientY, target: { kind: "card", cardId } });
+    },
+    []
+  );
+
+  const handleBackgroundContextMenu = useCallback(
+    (clientX: number, clientY: number, worldX: number, worldY: number) => {
+      setContextMenu({ x: clientX, y: clientY, target: { kind: "background", worldX, worldY } });
+    },
+    []
+  );
+
+  const handleToggleAdvancedUi = useCallback(() => {
+    setIsAdvancedUiEnabled((previous) => {
+      const next = !previous;
+      try {
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(ADVANCED_UI_STORAGE_KEY, String(next));
+        }
+      } catch {
+        // Ignore persistence failures (e.g. storage disabled).
+      }
+      return next;
+    });
+  }, []);
+
+  const handleCommitCardText = useCallback(
+    (cardId: string, text: string) => {
+      setEditingCardId(null);
+      if (!document) {
+        return;
+      }
+
+      const targetCard = document.cards.find((card) => card.id === cardId);
+      if (!targetCard) {
+        return;
+      }
+
+      const nextText = text.trim();
+      if (nextText.length === 0 || nextText === targetCard.text) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: document.cards.map((card) =>
+            card.id === cardId ? { ...card, text: nextText } : card
+          ),
+        },
+        "Edited card text"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleCancelEditCard = useCallback(() => {
+    setEditingCardId(null);
+  }, []);
 
   const handleCreateIsland = useCallback(() => {
     if (!document || selectedCardIds.length === 0) {
@@ -6762,22 +6915,41 @@ ${parsedDocument.error}`);
       </button>
       <button
         type="button"
-        onClick={() => {
-          void handleSuggestLayout();
-        }}
-        disabled={isReadOnly || isLoading || !document || isSuggesting}
+        onClick={handleToggleAdvancedUi}
+        aria-pressed={isAdvancedUiEnabled}
+        title={t("app.toolbar.advanced_ui_hint")}
         style={{
           border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
+          backgroundColor: isAdvancedUiEnabled ? "#e0e7ff" : "#ffffff",
           color: "#0f172a",
           borderRadius: 6,
           padding: "6px 12px",
           fontWeight: 600,
-          cursor: isReadOnly || isLoading || !document || isSuggesting ? "not-allowed" : "pointer",
+          cursor: "pointer",
         }}
       >
-        {isSuggesting ? t("suggestion.panel.suggesting") : t("suggestion.panel.suggest_layout")}
+        {t("app.toolbar.advanced_ui")}
       </button>
+      {isAdvancedUiEnabled ? (
+        <button
+          type="button"
+          onClick={() => {
+            void handleSuggestLayout();
+          }}
+          disabled={isReadOnly || isLoading || !document || isSuggesting}
+          style={{
+            border: "1px solid #cbd5e1",
+            backgroundColor: "#ffffff",
+            color: "#0f172a",
+            borderRadius: 6,
+            padding: "6px 12px",
+            fontWeight: 600,
+            cursor: isReadOnly || isLoading || !document || isSuggesting ? "not-allowed" : "pointer",
+          }}
+        >
+          {isSuggesting ? t("suggestion.panel.suggesting") : t("suggestion.panel.suggest_layout")}
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={handleUndo}
@@ -6872,6 +7044,22 @@ ${parsedDocument.error}`);
       </details>
       <button
         type="button"
+        onClick={handleAddCard}
+        disabled={isLoading || !document}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: isLoading || !document ? "not-allowed" : "pointer",
+        }}
+      >
+        {t("app.toolbar.new_card")}
+      </button>
+      <button
+        type="button"
         onClick={handleCreateIsland}
         disabled={isLoading || !document || !canCreateIsland}
         style={{
@@ -6885,6 +7073,25 @@ ${parsedDocument.error}`);
         }}
       >
         {t("app.toolbar.create_island")}
+      </button>
+      <button
+        type="button"
+        onClick={handleDeleteSelection}
+        disabled={isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor:
+            isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)
+              ? "not-allowed"
+              : "pointer",
+        }}
+      >
+        {t("app.toolbar.delete_selection")}
       </button>
       <button
         type="button"
@@ -8316,6 +8523,7 @@ ${parsedDocument.error}`);
           importedPackSnapshotUrl={importedPackSnapshotUrl}
           importedPackDiagnosticsMd={importedPackDiagnosticsMd}
           topContent={
+            isAdvancedUiEnabled ? (
             <>
               <section
                 style={{
@@ -8437,6 +8645,7 @@ ${parsedDocument.error}`);
                 </>}
               />
             </>
+            ) : null
           }
           selectedIsland={selectedIsland ? { ...selectedIsland, shapeStale: stalePolygonIslandIdSet.has(selectedIsland.id) } : null}
           selectedCardCount={selectedCardIds.length}
@@ -8896,6 +9105,12 @@ ${parsedDocument.error}`);
             flashReference={flashReference}
             flashRequestSeq={flashRequestSeq}
             isPickingEdgeTarget={isPickingEdgeTarget}
+            editingCardId={editingCardId}
+            onBeginEditCard={setEditingCardId}
+            onCommitEditCard={handleCommitCardText}
+            onCancelEditCard={handleCancelEditCard}
+            onCardContextMenu={handleCardContextMenu}
+            onBackgroundContextMenu={handleBackgroundContextMenu}
             suggestionMoveDiffs={suggestionMoveDiffs}
             selectedEdgeId={selectedEdgeId}
             onEdgeSelect={handleEdgeSelect}
@@ -8941,6 +9156,60 @@ ${parsedDocument.error}`);
       >
         {statusMessage}
       </div>
+      {contextMenu
+        ? (() => {
+            const target = contextMenu.target;
+            const items: ContextMenuItem[] =
+              target.kind === "background"
+                ? [
+                    {
+                      kind: "action",
+                      label: t("context_menu.new_card_here"),
+                      onSelect: () => handleAddCardAtPoint(target.worldX, target.worldY),
+                    },
+                    { kind: "separator" },
+                    {
+                      kind: "action",
+                      label: t("context_menu.clear_selection"),
+                      onSelect: handleClearSelection,
+                      disabled:
+                        selectedCardIds.length === 0 && !selectedIslandId && !selectedEdgeId,
+                    },
+                  ]
+                : [
+                    {
+                      kind: "action",
+                      label: t("context_menu.edit_card"),
+                      onSelect: () => handleEditCard(target.cardId),
+                    },
+                    {
+                      kind: "action",
+                      label: t("context_menu.connect"),
+                      onSelect: () => handleConnectFromCard(target.cardId),
+                    },
+                    {
+                      kind: "action",
+                      label: t("app.toolbar.create_island"),
+                      onSelect: handleCreateIsland,
+                      disabled: selectedCardIds.length === 0,
+                    },
+                    { kind: "separator" },
+                    {
+                      kind: "action",
+                      label: t("app.toolbar.delete_selection"),
+                      onSelect: handleDeleteSelection,
+                    },
+                  ];
+            return (
+              <ContextMenu
+                x={contextMenu.x}
+                y={contextMenu.y}
+                items={items}
+                onClose={closeContextMenu}
+              />
+            );
+          })()
+        : null}
     </Shell>
   );
 }

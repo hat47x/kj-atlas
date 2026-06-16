@@ -164,7 +164,7 @@ export KJ_ATLAS_API_KEY='change-me'
 
 ## Frontend の API 接続先
 
-frontend の API 接続先は `KJ_ATLAS_FRONTEND_API_BASE` で指定します。未設定なら `/api` を使います。
+frontend の API 接続先は `KJ_ATLAS_FRONTEND_API_BASE` で指定します。未設定なら `/api` を使います。値は `/` で始まる path のみ受理し、それ以外を指定した場合は frontend 側で `/api` にフォールバックします。
 
 ローカル開発サーバーと Docker Compose の標準構成では `/api` が backend へ proxy されるため、通常は変更不要です。
 
@@ -186,6 +186,8 @@ export KJ_ATLAS_API_KEY='change-me'
 ```bash
 curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 ```
+
+ブラウザで動く同梱の画面（SPA）は `X-API-Key` を付与しません。そのため `KJ_ATLAS_API_KEY` を設定すると画面からの読み込み・保存は 401 になります。API キーは `curl` などプログラムからのアクセス保護を想定したものです。ブラウザでの動作検証では未設定（既定）のまま使い、ブラウザ配信自体を保護する場合は前段に認証 proxy を置いてください（[security.md](security.md) 参照）。
 
 ## local LLM を使う
 
