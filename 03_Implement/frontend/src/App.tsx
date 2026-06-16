@@ -20,7 +20,6 @@ import {
 import { CanvasShell } from "./canvas/CanvasShell";
 import { ContextMenu, type ContextMenuItem } from "./ui/ContextMenu";
 import { MenuButton } from "./ui/MenuButton";
-import { getIslandWorldBounds } from "./domain/geometry/bounds";
 import type { AggregatedEdgeMeta, CameraTransformRequest, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
@@ -2164,10 +2163,56 @@ export default function App() {
         return;
       }
 
-      // 1) Commit the move as exactly one undo step (unchanged from before).
+      // Commit the move as a SINGLE undo step. If the dropped card's center now
+      // lands inside an island it is not yet a member of, fold that membership
+      // change into the same commit so one undo reverts both the move and the
+      // join. The membership computation is wrapped in try/catch so any geometry
+      // error falls back to a plain move and can never break card dragging.
       setHistory((previousHistory) => {
         if (!previousHistory) {
           return previousHistory;
+        }
+
+        let present = previousHistory.present;
+
+        if (draggedCardId && !isReadOnly) {
+          try {
+            const draggedCard = present.cards.find((card) => card.id === draggedCardId);
+            if (draggedCard) {
+              const centerX = draggedCard.x + CARD_WIDTH / 2;
+              const centerY = draggedCard.y + CARD_HEIGHT / 2;
+              const localCardsById = new Map(
+                present.cards.map((card): [string, typeof card] => [card.id, card])
+              );
+              const targetIsland = present.islands.find((island) => {
+                if (island.cardIds.includes(draggedCardId)) {
+                  return false;
+                }
+                const bounds = getIslandWorldBounds(island, localCardsById);
+                if (!bounds) {
+                  return false;
+                }
+                return (
+                  centerX >= bounds.x &&
+                  centerX <= bounds.x + bounds.w &&
+                  centerY >= bounds.y &&
+                  centerY <= bounds.y + bounds.h
+                );
+              });
+              if (targetIsland) {
+                present = {
+                  ...present,
+                  islands: present.islands.map((island) =>
+                    island.id === targetIsland.id
+                      ? { ...island, cardIds: [...island.cardIds, draggedCardId] }
+                      : island
+                  ),
+                };
+              }
+            }
+          } catch {
+            present = previousHistory.present;
+          }
         }
 
         const nextPast = [...previousHistory.past, dragSnapshot];
@@ -2176,74 +2221,11 @@ export default function App() {
 
         return {
           past: trimmedPast,
-          present: cloneDocument(previousHistory.present),
+          present: cloneDocument(present),
           future: [],
         };
       });
       setStatusMessage("Moved card");
-
-      // 2) Isolated, best-effort: if the dropped card's center now lies inside an
-      //    island it is not yet a member of, add it as a separate undo step.
-      //    Reads the post-move present via a follow-up setHistory updater so the
-      //    move commit above stays untouched; a throw here never breaks dragging.
-      if (!draggedCardId || isReadOnly) {
-        return;
-      }
-
-      setHistory((latestHistory) => {
-        if (!latestHistory) {
-          return latestHistory;
-        }
-
-        const present = latestHistory.present;
-        const draggedCard = present.cards.find((card) => card.id === draggedCardId);
-        if (!draggedCard) {
-          return latestHistory;
-        }
-
-        const centerX = draggedCard.x + CARD_WIDTH / 2;
-        const centerY = draggedCard.y + CARD_HEIGHT / 2;
-        const localCardsById = new Map(present.cards.map((card): [string, typeof card] => [card.id, card]));
-
-        const targetIsland = present.islands.find((island) => {
-          if (island.cardIds.includes(draggedCardId)) {
-            return false;
-          }
-          const bounds = getIslandWorldBounds(island, localCardsById);
-          if (!bounds) {
-            return false;
-          }
-          return (
-            centerX >= bounds.x &&
-            centerX <= bounds.x + bounds.w &&
-            centerY >= bounds.y &&
-            centerY <= bounds.y + bounds.h
-          );
-        });
-
-        if (!targetIsland) {
-          return latestHistory;
-        }
-
-        const nextDocument: DocumentV2 = {
-          ...present,
-          islands: present.islands.map((island) =>
-            island.id === targetIsland.id
-              ? { ...island, cardIds: [...island.cardIds, draggedCardId] }
-              : island
-          ),
-        };
-
-        const nextPast = [...latestHistory.past, cloneDocument(present)];
-        const trimmedPast =
-          nextPast.length > HISTORY_LIMIT ? nextPast.slice(nextPast.length - HISTORY_LIMIT) : nextPast;
-
-        return {
-          past: trimmedPast,
-          present: cloneDocument(nextDocument),
-          future: [],
-        };
-      });
     };
 
     window.addEventListener("pointerup", commitCardDragSnapshot);
@@ -9228,18 +9210,20 @@ ${parsedDocument.error}`);
                     handleIslandShapeKindChange(target.islandId, "polygon");
                     setIsPolygonVertexEditEnabled(true);
                   },
+                  disabled: isReadOnly,
                 },
                 {
                   kind: "action",
                   label: t("context_menu.add_cards_to_island"),
                   onSelect: () => handleAddSelectedCardsToIslandById(target.islandId),
-                  disabled: selectedCardIds.length === 0,
+                  disabled: isReadOnly || selectedCardIds.length === 0,
                 },
                 { kind: "separator" },
                 {
                   kind: "action",
                   label: t("context_menu.delete_island"),
                   onSelect: () => handleDeleteIslandById(target.islandId),
+                  disabled: isReadOnly,
                 },
               ];
             } else {
