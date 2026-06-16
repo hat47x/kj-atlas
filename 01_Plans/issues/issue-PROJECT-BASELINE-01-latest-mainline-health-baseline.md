@@ -1691,6 +1691,71 @@
 
 ---
 
+## 40) Baseline delta 2026-06-16: post-2412 manual authoring and Advanced UI evidence sync
+
+### Candidate
+
+- Target main: `origin/main` = `3235d8973c15323d053a4d443fdc0f4efd2c7df7`.
+- Previous recorded mainline baseline: `origin/main@92b22fc15dd6fc03dbc10a8d09b6dfa389e18dcb` in section 39.
+- Scope note: this delta records #2407 through #2412 and the `mvp-manual-authoring-ui` merge becoming canonical on `main`. It captures project baseline/governance continuity, Product QA and MVP-EXIT synchronization, manual card authoring / canvas context-menu / Advanced UI intake, the realistic-journey E2E adjustment, and the internal QA evidence refresh only; it does not change runtime policy, SafeMode/share-export policy, issue status, ADR status, release authority, public documentation authority, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python / GitHub connector for PR and CI inspection / RTK used for compact status output where exact command text was not required.
+
+### Command and CI evidence
+
+| Area | Command or source | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `3235d8973c15323d053a4d443fdc0f4efd2c7df7` | G0 |
+| PR #2407 CI | GitHub Actions CI run `9587` | Pass: CI completed successfully | G7 |
+| PR #2408 CI | GitHub Actions CI run `9590` | Pass: CI completed successfully | G7 |
+| PR #2409 CI | GitHub Actions CI run `9593` | Pass: CI completed successfully | G7 |
+| PR #2410 CI | GitHub Actions CI run `9599` | Pass: CI completed successfully | G7 |
+| PR #2411 CI | GitHub Actions CI run `9602` | Pass: CI completed successfully; representative realistic journey E2E was updated for the Advanced UI path | G2 / G7 |
+| PR #2412 CI | GitHub Actions CI run `9605` | Pass: CI completed successfully | G7 |
+| Manual authoring merge intake | `0cffb2ec` / `mvp-manual-authoring-ui` | Canonical on `main`: DB password preservation, Docker first-run hardening, MVP verification docs, manual card authoring, canvas context menu, and Advanced UI toggle | G2 / productization evidence |
+| Open PR check | GitHub PR search for open PRs in `hat47x/kj-atlas` | Pass: 0 open PRs returned | G0 / repository governance |
+| Branch reachability | `git merge-base --is-ancestor` over 2026-06-06-or-later `origin/codex/*` branches | Pass: `since_20260606_codex_count=68`, `unmerged_count=0` | G0 / repository governance |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this planning-baseline refresh.
+- #2407 recorded the post-2406 baseline; #2408 recorded post-2407 governance reachability; #2409 synchronized Product QA after the governance record; #2410 synchronized MVP-EXIT after Product QA.
+- `mvp-manual-authoring-ui` moved the MVP toward a less LLM-dependent first-run path by adding manual card authoring, a canvas context menu, and an Advanced UI toggle while also hardening the first-run Docker/verification path.
+- #2411 updated the representative realistic journey so the read-only `Suggest layout` boundary is verified through the Advanced UI path rather than through a control that is hidden on the default first-run surface.
+- #2412 recorded the post-2411 realistic-journey evidence in `QA-E2E-USE-01`, keeping `Execution: Hold` unchanged while refreshing S1-S3 evidence on current `main`.
+- The 2026-06-06-or-later `codex/*` branch reachability audit remains clean with `unmerged_count=0`; remote branch deletion remains repository-maintainer-owned and out of scope for this issue.
+- No new ADR is required for this baseline sync. ADR work is required only if the project changes manual-authoring authority, Advanced UI/default-surface policy, release authority, SafeMode/share-export policy, branch cleanup authority, runtime environment policy, public documentation authority, or high-privilege data-lifecycle policy.
+
+### Gate classification
+
+| Gate | 2026-06-16 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, open PR check, branch reachability audit, active issue validation, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go / unchanged | SafeMode/share-export policy and high-privilege data lifecycle policy were not changed by this baseline sync. |
+| G2 user-operability evidence | Conditional Go improved | Manual authoring, canvas context-menu, Advanced UI decluttering, and the updated realistic journey improve first-run and read-only boundary evidence. |
+| G6 governance and decision traceability | Conditional Go improved | Product QA, MVP-EXIT, and QA-E2E evidence records are aligned through #2412 while keeping release approval and Execution Hold outside this sync. |
+| G7 regression | Go for current planning slice | PR #2407, #2408, #2409, #2410, #2411, and #2412 CI succeeded; local planning validation and triage passed after the post-2412 main sync. |
+| Repository governance | Conditional Go improved | Open PR search returned 0; all observed 2026-06-06-or-later `codex/*` branch tips remain reachable from `main`. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for post-2412 planning integrity, branch reachability, manual-authoring intake, Advanced UI evidence alignment, and realistic-journey evidence freshness.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, product value Open gates/evidence packets, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- Follow-up routing:
+  - Manual-authoring or Advanced UI behavior changes: Product UX / `PRODUCT-QA-01` / `MVP-EXIT-01`, with ADR only if default-surface authority or workflow policy changes.
+  - Representative E2E and realistic journey freshness: `QA-E2E-USE-01`.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Branch deletion / remote-ref cleanup authority: `PROJECT-GOV-01` and repository maintainer approval.
+  - HIL/FB approval and held decision: `HIL-RS-02-A1`, `FB-P0-2A2B2C`, project governance, and human approval lane.
+  - High-privilege data-lifecycle decision: `DATA-MAINT-03`, `ADR-0035`, and `DATA-MAINT-04`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+
+---
+
 ## Authoring Checklist・井ｺｺ髢・逕滓・AI 蜈ｱ騾夲ｼ・
 
 - [x] `Source Issue` 縺碁°逕ｨ迥ｶ諷九→謨ｴ蜷医＠縺ｦ縺・ｋ・域悴驕狗畑譎ゅ・ `N/A`・峨・
