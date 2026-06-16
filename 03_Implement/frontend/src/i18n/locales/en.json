@@ -513,6 +513,8 @@
   "app.toolbar.new_card": "New card",
   "app.toolbar.delete_selection": "Delete",
   "app.toolbar.save": "Save",
+  "app.toolbar.file_menu": "File",
+  "app.toolbar.edit_menu": "Edit",
   "app.toolbar.advanced_ui": "Advanced",
   "app.toolbar.advanced_ui_hint": "Toggle AI and advanced features",
   "context_menu.new_card_here": "New card here",
