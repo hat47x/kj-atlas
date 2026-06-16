@@ -19,6 +19,7 @@ import {
 } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
 import { ContextMenu, type ContextMenuItem } from "./ui/ContextMenu";
+import { MenuButton } from "./ui/MenuButton";
 import type { AggregatedEdgeMeta, CameraTransformRequest, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
@@ -1028,6 +1029,7 @@ export default function App() {
         y: number;
         target:
           | { kind: "card"; cardId: string }
+          | { kind: "island"; islandId: string }
           | { kind: "background"; worldX: number; worldY: number };
       }
     | null
@@ -1708,6 +1710,7 @@ export default function App() {
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
+  const lastDraggedCardIdRef = useRef<string | null>(null);
   const suppressNextTransformPersistRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const compareImportInputRef = useRef<HTMLInputElement | null>(null);
@@ -2091,6 +2094,7 @@ export default function App() {
       if (!pendingCardDragSnapshotRef.current) {
         pendingCardDragSnapshotRef.current = cloneDocument(document);
       }
+      lastDraggedCardIdRef.current = cardId;
 
       setIsDirty(true);
       setHistory((previousHistory) => {
@@ -2152,14 +2156,63 @@ export default function App() {
     const commitCardDragSnapshot = () => {
       const dragSnapshot = pendingCardDragSnapshotRef.current;
       pendingCardDragSnapshotRef.current = null;
+      const draggedCardId = lastDraggedCardIdRef.current;
+      lastDraggedCardIdRef.current = null;
 
       if (!dragSnapshot) {
         return;
       }
 
+      // Commit the move as a SINGLE undo step. If the dropped card's center now
+      // lands inside an island it is not yet a member of, fold that membership
+      // change into the same commit so one undo reverts both the move and the
+      // join. The membership computation is wrapped in try/catch so any geometry
+      // error falls back to a plain move and can never break card dragging.
       setHistory((previousHistory) => {
         if (!previousHistory) {
           return previousHistory;
+        }
+
+        let present = previousHistory.present;
+
+        if (draggedCardId && !isReadOnly) {
+          try {
+            const draggedCard = present.cards.find((card) => card.id === draggedCardId);
+            if (draggedCard) {
+              const centerX = draggedCard.x + CARD_WIDTH / 2;
+              const centerY = draggedCard.y + CARD_HEIGHT / 2;
+              const localCardsById = new Map(
+                present.cards.map((card): [string, typeof card] => [card.id, card])
+              );
+              const targetIsland = present.islands.find((island) => {
+                if (island.cardIds.includes(draggedCardId)) {
+                  return false;
+                }
+                const bounds = getIslandWorldBounds(island, localCardsById);
+                if (!bounds) {
+                  return false;
+                }
+                return (
+                  centerX >= bounds.x &&
+                  centerX <= bounds.x + bounds.w &&
+                  centerY >= bounds.y &&
+                  centerY <= bounds.y + bounds.h
+                );
+              });
+              if (targetIsland) {
+                present = {
+                  ...present,
+                  islands: present.islands.map((island) =>
+                    island.id === targetIsland.id
+                      ? { ...island, cardIds: [...island.cardIds, draggedCardId] }
+                      : island
+                  ),
+                };
+              }
+            }
+          } catch {
+            present = previousHistory.present;
+          }
         }
 
         const nextPast = [...previousHistory.past, dragSnapshot];
@@ -2168,7 +2221,7 @@ export default function App() {
 
         return {
           past: trimmedPast,
-          present: cloneDocument(previousHistory.present),
+          present: cloneDocument(present),
           future: [],
         };
       });
@@ -2182,7 +2235,7 @@ export default function App() {
       window.removeEventListener("pointerup", commitCardDragSnapshot);
       window.removeEventListener("pointercancel", commitCardDragSnapshot);
     };
-  }, [abstractMapView, summaryView]);
+  }, [abstractMapView, summaryView, isReadOnly]);
 
   const handleSave = async () => {
     if (!document || isSaving || !isDirty) {
@@ -3699,9 +3752,76 @@ ${parsedDocument.error}`);
 
   const handleBackgroundContextMenu = useCallback(
     (clientX: number, clientY: number, worldX: number, worldY: number) => {
+      if (document) {
+        const localCardsById = new Map(document.cards.map((card): [string, typeof card] => [card.id, card]));
+        const hitIsland = document.islands.find((island) => {
+          const bounds = getIslandWorldBounds(island, localCardsById);
+          if (!bounds) {
+            return false;
+          }
+          return (
+            worldX >= bounds.x &&
+            worldX <= bounds.x + bounds.w &&
+            worldY >= bounds.y &&
+            worldY <= bounds.y + bounds.h
+          );
+        });
+        if (hitIsland) {
+          setContextMenu({ x: clientX, y: clientY, target: { kind: "island", islandId: hitIsland.id } });
+          return;
+        }
+      }
       setContextMenu({ x: clientX, y: clientY, target: { kind: "background", worldX, worldY } });
     },
-    []
+    [document]
+  );
+
+  const handleAddSelectedCardsToIslandById = useCallback(
+    (islandId: string) => {
+      if (!document || selectedCardIds.length === 0) {
+        return;
+      }
+      const island = document.islands.find((candidate) => candidate.id === islandId);
+      if (!island) {
+        return;
+      }
+      const mergedCardIds = Array.from(new Set([...island.cardIds, ...selectedCardIds]));
+      if (mergedCardIds.length === island.cardIds.length) {
+        return;
+      }
+      applyDocumentChange(
+        {
+          ...document,
+          islands: document.islands.map((candidate) =>
+            candidate.id === islandId ? { ...candidate, cardIds: mergedCardIds } : candidate
+          ),
+        },
+        "Added selected cards to island"
+      );
+    },
+    [applyDocumentChange, document, selectedCardIds]
+  );
+
+  const handleDeleteIslandById = useCallback(
+    (islandId: string) => {
+      if (!document) {
+        return;
+      }
+      const nextIslands = document.islands.filter((candidate) => candidate.id !== islandId);
+      if (nextIslands.length === document.islands.length) {
+        return;
+      }
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+          readingOrder: (document.readingOrder ?? []).filter((entryId) => entryId !== islandId),
+        },
+        "Deleted island"
+      );
+      setSelectedIslandId((previous) => (previous === islandId ? null : previous));
+    },
+    [applyDocumentChange, document]
   );
 
   const handleToggleAdvancedUi = useCallback(() => {
@@ -6837,40 +6957,26 @@ ${parsedDocument.error}`);
     onReadingPathDisable: readingNavEnabled ? handleReadingDisable : undefined,
   });
 
+  const fileMenuItems: ContextMenuItem[] = [
+    { kind: "action", label: t("app.toolbar.new"), onSelect: handleNewDocument, disabled: isLoading || isSaving },
+    { kind: "action", label: t("app.toolbar.duplicate"), onSelect: handleDuplicateDocument, disabled: isLoading || isSaving || !document },
+    { kind: "separator" },
+    { kind: "action", label: t("app.toolbar.import_doc_json_legacy_short"), onSelect: handleImportClick, disabled: isLoading },
+    { kind: "action", label: t("app.toolbar.export_doc_json_legacy_short"), onSelect: handleExport, disabled: isLoading || !document },
+  ];
+
+  const editMenuItems: ContextMenuItem[] = [
+    { kind: "action", label: t("app.toolbar.undo"), onSelect: handleUndo, disabled: isReadOnly || isLoading || !document || !canUndo },
+    { kind: "action", label: t("app.toolbar.redo"), onSelect: handleRedo, disabled: isReadOnly || isLoading || !document || !canRedo },
+  ];
+  if (focusHistory.length > 0) {
+    editMenuItems.push({ kind: "action", label: t("app.toolbar.back"), onSelect: handleFocusBack });
+  }
+
   const headerRight = (
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", rowGap: 6, whiteSpace: "nowrap", maxWidth: "100%" }}>
-      <button
-        type="button"
-        onClick={handleNewDocument}
-        disabled={isLoading || isSaving}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isLoading || isSaving ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.new")}
-      </button>
-      <button
-        type="button"
-        onClick={handleDuplicateDocument}
-        disabled={isLoading || isSaving || !document}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isLoading || isSaving || !document ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.duplicate")}
-      </button>
+      <MenuButton label={t("app.toolbar.file_menu")} items={fileMenuItems} />
+      <MenuButton label={t("app.toolbar.edit_menu")} items={editMenuItems} />
       <select
         value={selectedRecentDocumentId}
         onChange={(event) => {
@@ -6950,98 +7056,6 @@ ${parsedDocument.error}`);
           {isSuggesting ? t("suggestion.panel.suggesting") : t("suggestion.panel.suggest_layout")}
         </button>
       ) : null}
-      <button
-        type="button"
-        onClick={handleUndo}
-        disabled={isReadOnly || isLoading || !document || !canUndo}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isReadOnly || isLoading || !document || !canUndo ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.undo")}
-      </button>
-      <button
-        type="button"
-        onClick={handleRedo}
-        disabled={isReadOnly || isLoading || !document || !canRedo}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isReadOnly || isLoading || !document || !canRedo ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.redo")}
-      </button>
-      {focusHistory.length > 0 ? (
-        <button
-          type="button"
-          onClick={handleFocusBack}
-          style={{
-            border: "1px solid #cbd5e1",
-            backgroundColor: "#ffffff",
-            color: "#0f172a",
-            borderRadius: 6,
-            padding: "6px 12px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          {t("app.toolbar.back")}
-        </button>
-      ) : null}
-      <details style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", backgroundColor: "#f8fafc", minWidth: 132, boxSizing: "border-box" }}>
-        <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#334155" }}>{t("app.toolbar.legacy_json_group")}</summary>
-        <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
-          <button
-            type="button"
-            onClick={handleImportClick}
-            disabled={isLoading}
-            aria-label={t("app.toolbar.import_doc_json_legacy")}
-            title={t("app.toolbar.import_doc_json_legacy")}
-            style={{
-              border: "1px solid #cbd5e1",
-              backgroundColor: "#ffffff",
-              color: "#0f172a",
-              borderRadius: 6,
-              padding: "6px 12px",
-              fontWeight: 600,
-              cursor: isLoading ? "not-allowed" : "pointer",
-              width: "100%",
-            }}
-          >
-            {t("app.toolbar.import_doc_json_legacy_short")}
-          </button>
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={isLoading || !document}
-            aria-label={t("app.toolbar.export_doc_json_legacy")}
-            title={t("app.toolbar.export_doc_json_legacy")}
-            style={{
-              border: "1px solid #cbd5e1",
-              backgroundColor: "#ffffff",
-              color: "#0f172a",
-              borderRadius: 6,
-              padding: "6px 12px",
-              fontWeight: 600,
-              cursor: isLoading || !document ? "not-allowed" : "pointer",
-              width: "100%",
-            }}
-          >
-            {t("app.toolbar.export_doc_json_legacy_short")}
-          </button>
-        </div>
-      </details>
       <button
         type="button"
         onClick={handleAddCard}
@@ -9159,47 +9173,85 @@ ${parsedDocument.error}`);
       {contextMenu
         ? (() => {
             const target = contextMenu.target;
-            const items: ContextMenuItem[] =
-              target.kind === "background"
-                ? [
-                    {
-                      kind: "action",
-                      label: t("context_menu.new_card_here"),
-                      onSelect: () => handleAddCardAtPoint(target.worldX, target.worldY),
-                    },
-                    { kind: "separator" },
-                    {
-                      kind: "action",
-                      label: t("context_menu.clear_selection"),
-                      onSelect: handleClearSelection,
-                      disabled:
-                        selectedCardIds.length === 0 && !selectedIslandId && !selectedEdgeId,
-                    },
-                  ]
-                : [
-                    {
-                      kind: "action",
-                      label: t("context_menu.edit_card"),
-                      onSelect: () => handleEditCard(target.cardId),
-                    },
-                    {
-                      kind: "action",
-                      label: t("context_menu.connect"),
-                      onSelect: () => handleConnectFromCard(target.cardId),
-                    },
-                    {
-                      kind: "action",
-                      label: t("app.toolbar.create_island"),
-                      onSelect: handleCreateIsland,
-                      disabled: selectedCardIds.length === 0,
-                    },
-                    { kind: "separator" },
-                    {
-                      kind: "action",
-                      label: t("app.toolbar.delete_selection"),
-                      onSelect: handleDeleteSelection,
-                    },
-                  ];
+            let items: ContextMenuItem[];
+            if (target.kind === "background") {
+              items = [
+                {
+                  kind: "action",
+                  label: t("context_menu.new_card_here"),
+                  onSelect: () => handleAddCardAtPoint(target.worldX, target.worldY),
+                },
+                { kind: "separator" },
+                {
+                  kind: "action",
+                  label: t("context_menu.clear_selection"),
+                  onSelect: handleClearSelection,
+                  disabled: selectedCardIds.length === 0 && !selectedIslandId && !selectedEdgeId,
+                },
+              ];
+            } else if (target.kind === "island") {
+              items = [
+                {
+                  kind: "action",
+                  label: t("context_menu.edit_island"),
+                  onSelect: () => {
+                    setSelectedCardIds([]);
+                    setSelectedEdgeId(null);
+                    setSelectedIslandId(target.islandId);
+                  },
+                },
+                {
+                  kind: "action",
+                  label: t("context_menu.resize_island"),
+                  onSelect: () => {
+                    setSelectedCardIds([]);
+                    setSelectedEdgeId(null);
+                    setSelectedIslandId(target.islandId);
+                    handleIslandShapeKindChange(target.islandId, "polygon");
+                    setIsPolygonVertexEditEnabled(true);
+                  },
+                  disabled: isReadOnly,
+                },
+                {
+                  kind: "action",
+                  label: t("context_menu.add_cards_to_island"),
+                  onSelect: () => handleAddSelectedCardsToIslandById(target.islandId),
+                  disabled: isReadOnly || selectedCardIds.length === 0,
+                },
+                { kind: "separator" },
+                {
+                  kind: "action",
+                  label: t("context_menu.delete_island"),
+                  onSelect: () => handleDeleteIslandById(target.islandId),
+                  disabled: isReadOnly,
+                },
+              ];
+            } else {
+              items = [
+                {
+                  kind: "action",
+                  label: t("context_menu.edit_card"),
+                  onSelect: () => handleEditCard(target.cardId),
+                },
+                {
+                  kind: "action",
+                  label: t("context_menu.connect"),
+                  onSelect: () => handleConnectFromCard(target.cardId),
+                },
+                {
+                  kind: "action",
+                  label: t("app.toolbar.create_island"),
+                  onSelect: handleCreateIsland,
+                  disabled: selectedCardIds.length === 0,
+                },
+                { kind: "separator" },
+                {
+                  kind: "action",
+                  label: t("app.toolbar.delete_selection"),
+                  onSelect: handleDeleteSelection,
+                },
+              ];
+            }
             return (
               <ContextMenu
                 x={contextMenu.x}
