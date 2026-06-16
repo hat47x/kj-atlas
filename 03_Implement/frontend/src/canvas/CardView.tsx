@@ -28,6 +28,7 @@ type CardViewProps = {
   onBeginEdit?: (cardId: string) => void;
   onCommitEdit?: (cardId: string, text: string) => void;
   onCancelEdit?: () => void;
+  onCardContextMenu?: (cardId: string, clientX: number, clientY: number) => void;
 };
 
 function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
@@ -98,6 +99,7 @@ function CardViewComponent({
   onBeginEdit,
   onCommitEdit,
   onCancelEdit,
+  onCardContextMenu,
 }: CardViewProps) {
   const dragRef = useRef<CardDragState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -262,6 +264,14 @@ function CardViewComponent({
         }
         event.stopPropagation();
         onBeginEdit(card.id);
+      }}
+      onContextMenu={(event) => {
+        if (markerMode || !onCardContextMenu) {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        onCardContextMenu(card.id, event.clientX, event.clientY);
       }}
     >
       {!markerMode && representativeCount > 0 ? (

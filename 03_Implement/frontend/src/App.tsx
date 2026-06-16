@@ -18,6 +18,7 @@ import {
   type NarrativeIssueReference,
 } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
+import { ContextMenu, type ContextMenuItem } from "./ui/ContextMenu";
 import type { AggregatedEdgeMeta, CameraTransformRequest, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
@@ -1008,6 +1009,16 @@ export default function App() {
   const [history, setHistory] = useState<DocumentHistory | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<
+    | {
+        x: number;
+        y: number;
+        target:
+          | { kind: "card"; cardId: string }
+          | { kind: "background"; worldX: number; worldY: number };
+      }
+    | null
+  >(null);
   const [selectedIslandId, setSelectedIslandId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -3600,38 +3611,85 @@ ${parsedDocument.error}`);
     [applyDocumentChange, connectEdgeType, document, isPickingEdgeTarget, selectedCardIds, selectedIslandId]
   );
 
+  const createCardAtPosition = useCallback(
+    (x: number, y: number) => {
+      if (!document) {
+        return;
+      }
+
+      const newCardId = crypto.randomUUID();
+      const newCard = { id: newCardId, text: "新しいカード", x, y };
+
+      const applied = applyDocumentChange(
+        {
+          ...document,
+          cards: [...document.cards, newCard],
+        },
+        "Added a new card"
+      );
+
+      if (applied) {
+        setSelectedIslandId(null);
+        setSelectedEdgeId(null);
+        setSelectedCardIds([newCardId]);
+        setEditingCardId(newCardId);
+      }
+    },
+    [applyDocumentChange, document]
+  );
+
   const handleAddCard = useCallback(() => {
     if (!document) {
       return;
     }
 
-    const newCardId = crypto.randomUUID();
     const anchorCard =
       (selectedCardIds.length > 0
         ? document.cards.find((card) => card.id === selectedCardIds[0])
         : document.cards[document.cards.length - 1]) ?? null;
-    const newCard = {
-      id: newCardId,
-      text: "新しいカード",
-      x: anchorCard ? anchorCard.x + 40 : 120,
-      y: anchorCard ? anchorCard.y + 40 : 120,
-    };
+    createCardAtPosition(anchorCard ? anchorCard.x + 40 : 120, anchorCard ? anchorCard.y + 40 : 120);
+  }, [createCardAtPosition, document, selectedCardIds]);
 
-    const applied = applyDocumentChange(
-      {
-        ...document,
-        cards: [...document.cards, newCard],
-      },
-      "Added a new card"
-    );
+  const handleAddCardAtPoint = useCallback(
+    (worldX: number, worldY: number) => {
+      createCardAtPosition(worldX - CARD_WIDTH / 2, worldY - CARD_HEIGHT / 2);
+    },
+    [createCardAtPosition]
+  );
 
-    if (applied) {
-      setSelectedIslandId(null);
-      setSelectedEdgeId(null);
-      setSelectedCardIds([newCardId]);
-      setEditingCardId(newCardId);
-    }
-  }, [applyDocumentChange, document, selectedCardIds]);
+  const handleEditCard = useCallback((cardId: string) => {
+    setSelectedIslandId(null);
+    setSelectedEdgeId(null);
+    setSelectedCardIds([cardId]);
+    setEditingCardId(cardId);
+  }, []);
+
+  const handleConnectFromCard = useCallback((cardId: string) => {
+    setSelectedIslandId(null);
+    setSelectedEdgeId(null);
+    setSelectedCardIds([cardId]);
+    setIsPickingEdgeTarget(true);
+    setStatusMessage("Select a target card or island");
+  }, []);
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
+
+  const handleCardContextMenu = useCallback(
+    (cardId: string, clientX: number, clientY: number) => {
+      setSelectedCardIds((previous) => (previous.includes(cardId) ? previous : [cardId]));
+      setContextMenu({ x: clientX, y: clientY, target: { kind: "card", cardId } });
+    },
+    []
+  );
+
+  const handleBackgroundContextMenu = useCallback(
+    (clientX: number, clientY: number, worldX: number, worldY: number) => {
+      setContextMenu({ x: clientX, y: clientY, target: { kind: "background", worldX, worldY } });
+    },
+    []
+  );
 
   const handleCommitCardText = useCallback(
     (cardId: string, text: string) => {
@@ -9003,6 +9061,8 @@ ${parsedDocument.error}`);
             onBeginEditCard={setEditingCardId}
             onCommitEditCard={handleCommitCardText}
             onCancelEditCard={handleCancelEditCard}
+            onCardContextMenu={handleCardContextMenu}
+            onBackgroundContextMenu={handleBackgroundContextMenu}
             suggestionMoveDiffs={suggestionMoveDiffs}
             selectedEdgeId={selectedEdgeId}
             onEdgeSelect={handleEdgeSelect}
@@ -9048,6 +9108,60 @@ ${parsedDocument.error}`);
       >
         {statusMessage}
       </div>
+      {contextMenu
+        ? (() => {
+            const target = contextMenu.target;
+            const items: ContextMenuItem[] =
+              target.kind === "background"
+                ? [
+                    {
+                      kind: "action",
+                      label: t("context_menu.new_card_here"),
+                      onSelect: () => handleAddCardAtPoint(target.worldX, target.worldY),
+                    },
+                    { kind: "separator" },
+                    {
+                      kind: "action",
+                      label: t("context_menu.clear_selection"),
+                      onSelect: handleClearSelection,
+                      disabled:
+                        selectedCardIds.length === 0 && !selectedIslandId && !selectedEdgeId,
+                    },
+                  ]
+                : [
+                    {
+                      kind: "action",
+                      label: t("context_menu.edit_card"),
+                      onSelect: () => handleEditCard(target.cardId),
+                    },
+                    {
+                      kind: "action",
+                      label: t("context_menu.connect"),
+                      onSelect: () => handleConnectFromCard(target.cardId),
+                    },
+                    {
+                      kind: "action",
+                      label: t("app.toolbar.create_island"),
+                      onSelect: handleCreateIsland,
+                      disabled: selectedCardIds.length === 0,
+                    },
+                    { kind: "separator" },
+                    {
+                      kind: "action",
+                      label: t("app.toolbar.delete_selection"),
+                      onSelect: handleDeleteSelection,
+                    },
+                  ];
+            return (
+              <ContextMenu
+                x={contextMenu.x}
+                y={contextMenu.y}
+                items={items}
+                onClose={closeContextMenu}
+              />
+            );
+          })()
+        : null}
     </Shell>
   );
 }
