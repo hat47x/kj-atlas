@@ -1711,6 +1711,7 @@ export default function App() {
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
+  const lastDraggedCardIdRef = useRef<string | null>(null);
   const suppressNextTransformPersistRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const compareImportInputRef = useRef<HTMLInputElement | null>(null);
@@ -2094,6 +2095,7 @@ export default function App() {
       if (!pendingCardDragSnapshotRef.current) {
         pendingCardDragSnapshotRef.current = cloneDocument(document);
       }
+      lastDraggedCardIdRef.current = cardId;
 
       setIsDirty(true);
       setHistory((previousHistory) => {
@@ -2155,11 +2157,14 @@ export default function App() {
     const commitCardDragSnapshot = () => {
       const dragSnapshot = pendingCardDragSnapshotRef.current;
       pendingCardDragSnapshotRef.current = null;
+      const draggedCardId = lastDraggedCardIdRef.current;
+      lastDraggedCardIdRef.current = null;
 
       if (!dragSnapshot) {
         return;
       }
 
+      // 1) Commit the move as exactly one undo step (unchanged from before).
       setHistory((previousHistory) => {
         if (!previousHistory) {
           return previousHistory;
@@ -2176,6 +2181,69 @@ export default function App() {
         };
       });
       setStatusMessage("Moved card");
+
+      // 2) Isolated, best-effort: if the dropped card's center now lies inside an
+      //    island it is not yet a member of, add it as a separate undo step.
+      //    Reads the post-move present via a follow-up setHistory updater so the
+      //    move commit above stays untouched; a throw here never breaks dragging.
+      if (!draggedCardId || isReadOnly) {
+        return;
+      }
+
+      setHistory((latestHistory) => {
+        if (!latestHistory) {
+          return latestHistory;
+        }
+
+        const present = latestHistory.present;
+        const draggedCard = present.cards.find((card) => card.id === draggedCardId);
+        if (!draggedCard) {
+          return latestHistory;
+        }
+
+        const centerX = draggedCard.x + CARD_WIDTH / 2;
+        const centerY = draggedCard.y + CARD_HEIGHT / 2;
+        const localCardsById = new Map(present.cards.map((card): [string, typeof card] => [card.id, card]));
+
+        const targetIsland = present.islands.find((island) => {
+          if (island.cardIds.includes(draggedCardId)) {
+            return false;
+          }
+          const bounds = getIslandWorldBounds(island, localCardsById);
+          if (!bounds) {
+            return false;
+          }
+          return (
+            centerX >= bounds.x &&
+            centerX <= bounds.x + bounds.w &&
+            centerY >= bounds.y &&
+            centerY <= bounds.y + bounds.h
+          );
+        });
+
+        if (!targetIsland) {
+          return latestHistory;
+        }
+
+        const nextDocument: DocumentV2 = {
+          ...present,
+          islands: present.islands.map((island) =>
+            island.id === targetIsland.id
+              ? { ...island, cardIds: [...island.cardIds, draggedCardId] }
+              : island
+          ),
+        };
+
+        const nextPast = [...latestHistory.past, cloneDocument(present)];
+        const trimmedPast =
+          nextPast.length > HISTORY_LIMIT ? nextPast.slice(nextPast.length - HISTORY_LIMIT) : nextPast;
+
+        return {
+          past: trimmedPast,
+          present: cloneDocument(nextDocument),
+          future: [],
+        };
+      });
     };
 
     window.addEventListener("pointerup", commitCardDragSnapshot);
@@ -2185,7 +2253,7 @@ export default function App() {
       window.removeEventListener("pointerup", commitCardDragSnapshot);
       window.removeEventListener("pointercancel", commitCardDragSnapshot);
     };
-  }, [abstractMapView, summaryView]);
+  }, [abstractMapView, summaryView, isReadOnly]);
 
   const handleSave = async () => {
     if (!document || isSaving || !isDirty) {
@@ -9148,6 +9216,17 @@ ${parsedDocument.error}`);
                     setSelectedCardIds([]);
                     setSelectedEdgeId(null);
                     setSelectedIslandId(target.islandId);
+                  },
+                },
+                {
+                  kind: "action",
+                  label: t("context_menu.resize_island"),
+                  onSelect: () => {
+                    setSelectedCardIds([]);
+                    setSelectedEdgeId(null);
+                    setSelectedIslandId(target.islandId);
+                    handleIslandShapeKindChange(target.islandId, "polygon");
+                    setIsPolygonVertexEditEnabled(true);
                   },
                 },
                 {

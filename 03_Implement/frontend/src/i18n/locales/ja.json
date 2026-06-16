@@ -522,6 +522,7 @@
   "context_menu.connect": "関係線でつなぐ",
   "context_menu.clear_selection": "選択を解除",
   "context_menu.edit_island": "島を編集（名前変更）",
+  "context_menu.resize_island": "サイズ変更 / 形状編集",
   "context_menu.add_cards_to_island": "選択カードをこの島に追加",
   "context_menu.delete_island": "島を削除",
   "start_panel.action.import_review_pack": "レビューパックを取り込む",

@@ -522,6 +522,7 @@
   "context_menu.connect": "Connect",
   "context_menu.clear_selection": "Clear selection",
   "context_menu.edit_island": "Edit island (rename)",
+  "context_menu.resize_island": "Resize / edit shape",
   "context_menu.add_cards_to_island": "Add selected cards to this island",
   "context_menu.delete_island": "Delete island",
   "start_panel.action.import_review_pack": "Import review pack",
