@@ -1193,3 +1193,55 @@
 3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
 4. Treat CE0/CE1 canonical summaries as read-only planning SSOTs. Any fixed contract value or authority-boundary change needs an ADR or held issue path.
 5. Keep release blockers routed through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `HIL-RS-02-A1`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
+
+---
+
+## Post-2416 governance reachability and productization-gate sync checkpoint
+
+- Checkpoint date (JST): 2026-06-16
+- Latest main: `origin/main@22bcefb6b768dbb1a877fe028b7ad7b971504d43`
+- Recent normal-merge PRs included in this checkpoint:
+  - #2408 `[codex] Record post-2407 governance reachability`
+  - #2409 `[codex] Sync Product QA after post-2408 governance`
+  - #2410 `[codex] Sync MVP Exit after post-2409 Product QA`
+  - #2411 `[codex] Update realistic journey E2E for Advanced UI toggle`
+  - #2412 `[codex] Record post-2411 realistic journey evidence`
+  - #2413 `[codex] Record post-2412 project baseline`
+  - #2414 `[codex] Sync Product QA after post-2413 baseline`
+  - #2415 `[codex] Sync MVP Exit after post-2414 Product QA`
+  - #2416 `[codex] Record post-2415 project baseline`
+- Additional mainline intake: `mvp-manual-authoring-ui` merge `0cffb2ec`, which made manual card authoring, canvas context-menu editing, Advanced UI, MVP verification docs, first-run Docker hardening, and DB password preservation canonical on `main`.
+- Integration method: normal merge commits for the `codex/*` PRs, so the related branch tips remain reachable from `main`.
+- GitHub Actions CI:
+  - #2408 CI run `9590`: passed.
+  - #2409 CI run `9593`: passed.
+  - #2410 CI run `9599`: passed.
+  - #2411 CI run `9602`: passed.
+  - #2412 CI run `9605`: passed.
+  - #2413 CI run `9608`: passed.
+  - #2414 CI run `9611`: passed.
+  - #2415 CI run `9614`: passed.
+  - #2416 CI run `9617`: passed.
+- `origin/codex/*` branches updated on or after 2026-06-06: 72.
+- `origin/codex/*` branches updated on or after 2026-06-06 that are not ancestors of `origin/main`: 0.
+- Internal issue validation:
+  - `validate_active_issue_memos.py`: pass, `ok: validated 5 active issue memos`.
+  - `triage_actionable_plans.py`: pass, `active_issues=52`, `ready=15`, `blocked=37`, `actionable_adrs=1`, stopper none.
+- Scope: records repository governance after #2408 through #2416 and the manual-authoring mainline merge became canonical. This checkpoint does not delete remote branches, close PRs, change issue status, change ADR status, change runtime behavior, change UI/API behavior, change SafeMode/share-export policy, approve manual-authoring or Advanced UI authority changes, or approve release readiness.
+
+### Decision
+
+- The observed 2026-06-06-or-later `codex/*` branch reachability state remains clean: no checked branch remains outside `main` ancestry.
+- #2411 through #2413 refresh the realistic-journey evidence after Advanced UI moved non-essential first-run controls out of the default surface.
+- #2414 through #2416 align `PRODUCT-QA-01`, `MVP-EXIT-01`, and `PROJECT-BASELINE-01` around the same interpretation: manual authoring, canvas context-menu editing, Advanced UI, and realistic-journey evidence improve productization evidence but do not create release approval.
+- The current governance interpretation is traceability-only. It is not approval to delete remote refs, weaken SafeMode defaults, change share/export policy, treat `QA-E2E-USE-01` as Open, bypass human acceptance, or ship the product.
+- The remaining remote `codex/*` refs are cleanup candidates only. Deletion still requires repository-maintainer approval and a final deletion audit list.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene unless the project changes stale-ref retention, branch cleanup authority, CI signal authority, manual-authoring authority, Advanced UI/default-surface policy, SafeMode/share-export policy, product-value authority, or release authority.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@22bcefb6b768dbb1a877fe028b7ad7b971504d43`.
+2. Keep using normal merge commits for PRs whose purpose is to preserve `codex/*` branch-tip reachability.
+3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
+4. Treat manual-authoring and Advanced UI evidence as productization freshness, not release approval.
+5. Keep release blockers routed through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `QA-E2E-USE-01`, `HIL-RS-02-A1`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
