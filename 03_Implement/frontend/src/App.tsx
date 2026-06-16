@@ -20,6 +20,7 @@ import {
 import { CanvasShell } from "./canvas/CanvasShell";
 import { ContextMenu, type ContextMenuItem } from "./ui/ContextMenu";
 import { MenuButton } from "./ui/MenuButton";
+import { getIslandWorldBounds } from "./domain/geometry/bounds";
 import type { AggregatedEdgeMeta, CameraTransformRequest, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
@@ -1029,6 +1030,7 @@ export default function App() {
         y: number;
         target:
           | { kind: "card"; cardId: string }
+          | { kind: "island"; islandId: string }
           | { kind: "background"; worldX: number; worldY: number };
       }
     | null
@@ -3700,9 +3702,76 @@ ${parsedDocument.error}`);
 
   const handleBackgroundContextMenu = useCallback(
     (clientX: number, clientY: number, worldX: number, worldY: number) => {
+      if (document) {
+        const localCardsById = new Map(document.cards.map((card): [string, typeof card] => [card.id, card]));
+        const hitIsland = document.islands.find((island) => {
+          const bounds = getIslandWorldBounds(island, localCardsById);
+          if (!bounds) {
+            return false;
+          }
+          return (
+            worldX >= bounds.x &&
+            worldX <= bounds.x + bounds.w &&
+            worldY >= bounds.y &&
+            worldY <= bounds.y + bounds.h
+          );
+        });
+        if (hitIsland) {
+          setContextMenu({ x: clientX, y: clientY, target: { kind: "island", islandId: hitIsland.id } });
+          return;
+        }
+      }
       setContextMenu({ x: clientX, y: clientY, target: { kind: "background", worldX, worldY } });
     },
-    []
+    [document]
+  );
+
+  const handleAddSelectedCardsToIslandById = useCallback(
+    (islandId: string) => {
+      if (!document || selectedCardIds.length === 0) {
+        return;
+      }
+      const island = document.islands.find((candidate) => candidate.id === islandId);
+      if (!island) {
+        return;
+      }
+      const mergedCardIds = Array.from(new Set([...island.cardIds, ...selectedCardIds]));
+      if (mergedCardIds.length === island.cardIds.length) {
+        return;
+      }
+      applyDocumentChange(
+        {
+          ...document,
+          islands: document.islands.map((candidate) =>
+            candidate.id === islandId ? { ...candidate, cardIds: mergedCardIds } : candidate
+          ),
+        },
+        "Added selected cards to island"
+      );
+    },
+    [applyDocumentChange, document, selectedCardIds]
+  );
+
+  const handleDeleteIslandById = useCallback(
+    (islandId: string) => {
+      if (!document) {
+        return;
+      }
+      const nextIslands = document.islands.filter((candidate) => candidate.id !== islandId);
+      if (nextIslands.length === document.islands.length) {
+        return;
+      }
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+          readingOrder: (document.readingOrder ?? []).filter((entryId) => entryId !== islandId),
+        },
+        "Deleted island"
+      );
+      setSelectedIslandId((previous) => (previous === islandId ? null : previous));
+    },
+    [applyDocumentChange, document]
   );
 
   const handleToggleAdvancedUi = useCallback(() => {
@@ -9054,47 +9123,72 @@ ${parsedDocument.error}`);
       {contextMenu
         ? (() => {
             const target = contextMenu.target;
-            const items: ContextMenuItem[] =
-              target.kind === "background"
-                ? [
-                    {
-                      kind: "action",
-                      label: t("context_menu.new_card_here"),
-                      onSelect: () => handleAddCardAtPoint(target.worldX, target.worldY),
-                    },
-                    { kind: "separator" },
-                    {
-                      kind: "action",
-                      label: t("context_menu.clear_selection"),
-                      onSelect: handleClearSelection,
-                      disabled:
-                        selectedCardIds.length === 0 && !selectedIslandId && !selectedEdgeId,
-                    },
-                  ]
-                : [
-                    {
-                      kind: "action",
-                      label: t("context_menu.edit_card"),
-                      onSelect: () => handleEditCard(target.cardId),
-                    },
-                    {
-                      kind: "action",
-                      label: t("context_menu.connect"),
-                      onSelect: () => handleConnectFromCard(target.cardId),
-                    },
-                    {
-                      kind: "action",
-                      label: t("app.toolbar.create_island"),
-                      onSelect: handleCreateIsland,
-                      disabled: selectedCardIds.length === 0,
-                    },
-                    { kind: "separator" },
-                    {
-                      kind: "action",
-                      label: t("app.toolbar.delete_selection"),
-                      onSelect: handleDeleteSelection,
-                    },
-                  ];
+            let items: ContextMenuItem[];
+            if (target.kind === "background") {
+              items = [
+                {
+                  kind: "action",
+                  label: t("context_menu.new_card_here"),
+                  onSelect: () => handleAddCardAtPoint(target.worldX, target.worldY),
+                },
+                { kind: "separator" },
+                {
+                  kind: "action",
+                  label: t("context_menu.clear_selection"),
+                  onSelect: handleClearSelection,
+                  disabled: selectedCardIds.length === 0 && !selectedIslandId && !selectedEdgeId,
+                },
+              ];
+            } else if (target.kind === "island") {
+              items = [
+                {
+                  kind: "action",
+                  label: t("context_menu.edit_island"),
+                  onSelect: () => {
+                    setSelectedCardIds([]);
+                    setSelectedEdgeId(null);
+                    setSelectedIslandId(target.islandId);
+                  },
+                },
+                {
+                  kind: "action",
+                  label: t("context_menu.add_cards_to_island"),
+                  onSelect: () => handleAddSelectedCardsToIslandById(target.islandId),
+                  disabled: selectedCardIds.length === 0,
+                },
+                { kind: "separator" },
+                {
+                  kind: "action",
+                  label: t("context_menu.delete_island"),
+                  onSelect: () => handleDeleteIslandById(target.islandId),
+                },
+              ];
+            } else {
+              items = [
+                {
+                  kind: "action",
+                  label: t("context_menu.edit_card"),
+                  onSelect: () => handleEditCard(target.cardId),
+                },
+                {
+                  kind: "action",
+                  label: t("context_menu.connect"),
+                  onSelect: () => handleConnectFromCard(target.cardId),
+                },
+                {
+                  kind: "action",
+                  label: t("app.toolbar.create_island"),
+                  onSelect: handleCreateIsland,
+                  disabled: selectedCardIds.length === 0,
+                },
+                { kind: "separator" },
+                {
+                  kind: "action",
+                  label: t("app.toolbar.delete_selection"),
+                  onSelect: handleDeleteSelection,
+                },
+              ];
+            }
             return (
               <ContextMenu
                 x={contextMenu.x}
