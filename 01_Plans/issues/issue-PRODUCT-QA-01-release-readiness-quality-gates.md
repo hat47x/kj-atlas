@@ -2240,3 +2240,35 @@ DoDテンプレ（Draft→Open）
 - Repository Maintainer must still approve any remote `codex/*` branch deletion and preserve a final deletion audit list.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes CE0/CE1 contract authority, HIL/FB governance authority, branch cleanup authority, stale-ref retention policy, SafeMode/share-export policy, runtime environment policy, product-value authority, or release authority.
+
+## Productization Gate Record 2026-06-16: post-2413 manual-authoring and Advanced UI evidence sync
+
+- Candidate: `origin/main@26cb71422723c7a546bca1ee41ecd6372a55a6a4`.
+- Decision date (JST): 2026-06-16.
+- Reviewer: Codex.
+- Scope: post-#2413 release-gate intake for the latest-main baseline after #2407 through #2413, the `mvp-manual-authoring-ui` merge, and the post-Advanced-UI realistic journey evidence became canonical on `main`. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, issue status, ADR status, release authority, branch deletion authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, diff checks, open PR search, branch reachability audit, and GitHub Actions CI passed for the post-2413 baseline slice.
+- G1 safety defaults: Conditional Go / unchanged. The baseline sync keeps SafeMode/share-export policy unchanged; #2412 refreshed QA-E2E evidence while preserving `Execution: Hold`.
+- G2 user-operability evidence: Conditional Go improved. Manual card authoring, canvas context-menu access, Advanced UI first-run decluttering, and the updated realistic journey improve evidence for first-run operation and read-only boundary behavior.
+- G6 governance and decision traceability: Conditional Go improved. `PROJECT-BASELINE-01`, `QA-E2E-USE-01`, Product QA, and MVP-EXIT records now have a clear path to consume the post-Advanced-UI evidence without inferring release approval.
+- G7 regression: Go for current planning slice. PR #2407 through #2413 CI succeeded; the representative realistic journey was updated in #2411 and the evidence was recorded in #2412.
+- Final: **Conditional Go for post-2413 manual-authoring / Advanced UI evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- `mvp-manual-authoring-ui` became canonical on `main` via merge `0cffb2ec`, adding DB password preservation for URL normalization, Docker first-run hardening, MVP verification documentation, manual card authoring, canvas right-click editing, and the Advanced UI toggle.
+- PR #2411 `[codex] Update realistic journey E2E for Advanced UI toggle` merged with normal merge history; CI run `9602` passed.
+- PR #2412 `[codex] Record post-2411 realistic journey evidence` merged with normal merge history; CI run `9605` passed.
+- PR #2413 `[codex] Record post-2412 project baseline` merged with normal merge history; CI run `9608` passed.
+- Latest local verification after #2413: active issue validation passed, triage reported no stopper, open PR search returned 0, and the 2026-06-06-or-later `codex/*` branch reachability audit reported `since_20260606_codex_count=69`, `unmerged_count=0`.
+
+### Follow-ups
+
+- Treat manual authoring and Advanced UI as improved MVP/productization evidence, not as release approval. Human release screenshots, physical keyboard acceptance, and screen-reader acceptance remain required.
+- Continue routing representative end-to-end journey freshness through `QA-E2E-USE-01`; keep `Execution: Hold` until its pending approval and environment prerequisites are explicitly resolved.
+- Product value Open gates and evidence packets still need to be completed before this issue can support a full shipment recommendation.
+- Keep full release shipment No-Go until full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes manual-authoring authority, Advanced UI/default-surface policy, SafeMode/share-export policy, runtime environment policy, product-value authority, release authority, or branch cleanup authority.
