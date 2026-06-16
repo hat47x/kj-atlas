@@ -5,7 +5,10 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:8000",
+        // Use 127.0.0.1 (not localhost) so the dev proxy matches the documented
+        // backend bind (uvicorn --host 127.0.0.1) and avoids IPv6 (::1) resolution
+        // failures on hosts where localhost resolves to ::1 first (e.g. Windows).
+        target: "http://127.0.0.1:8000",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
