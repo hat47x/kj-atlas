@@ -1219,3 +1219,40 @@
 - Owner: Codex for evidence maintenance; human/project governance for FB-P0/HIL-RS approval/held decisions; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next Program Gate review after FB-P0/HIL-RS approval/held decisioning or product-value/environment evidence changes.
 - Re-decision date: after `Approval Record` and `HIL-RS-02-GOV-EXCEPTION-01` are decided, after product value Open-gate acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, or after a material runtime/product change reaches `main`.
+
+## MVP-EXIT Program Gate Decision 2026-06-16: post-2409 CE0/CE1 canonical-summary and governance evidence sync
+
+- Candidate: `origin/main@03b4bb74b556fba8dc9e4bf69dbbcb6150d06dd3`.
+- Decision date: 2026-06-16.
+- Reviewer: Codex.
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-15: post-2408 CE0/CE1 canonical-summary and governance reachability sync`.
+  - PROJECT-GOV-01 record: `Post-2407 governance reachability and canonical-summary checkpoint`.
+  - PROJECT-BASELINE-01 record: `Baseline delta 2026-06-15: post-2406 CE0/CE1 canonical summary sync`.
+  - CE0/CE1 SSOT records: `CE0-contract-freeze`, `CE0-core-graph-repositioning`, and `CE1-context-query-bundle-foundation`.
+  - Merged PRs: #2403, #2404, #2405, #2406, #2407, #2408, and #2409.
+
+### Decision
+
+- Final: **Conditional Go for CE0/CE1 canonical-summary and governance evidence freshness / No-Go for full release shipment**.
+- Reason summary: The latest `main` aligns CE0/CE1 canonical summaries, project baseline, repository governance, and Product QA release-gate evidence around the same read-only planning boundaries. This improves Program Gate traceability because fixed contract IDs, No-Go IDs, Query Preview gating, SafeMode defaults, review human-approval boundaries, and branch reachability are now easier to audit. It does not create shipment approval because the changes are evidence and readability records only, while product-value, human-acceptance, environment, support, high-privilege lifecycle, and FB/HIL decision gates remain unresolved.
+- Escalation route: keep `PRODUCT-QA-01` as the release evidence steward, `PROJECT-BASELINE-01` as the latest-main health record, `PROJECT-GOV-01` as the branch hygiene record, CE0/CE1 issues as read-only contract SSOTs, and human/project governance as the owner for held decisions. Productization Program Owner / QA Lead remain accountable for final shipment approval.
+
+### Gate Mapping
+
+- G0 planning integrity: Go. Active issue validation, triage, and GitHub Actions CI passed for the related PRs, and the 2026-06-06-or-later `codex/*` reachability audit remains at `unmerged_count=0`.
+- G1 safety defaults: Conditional Go / unchanged. The CE0/CE1 records keep SafeMode default ON, `allowUnreviewedText=false`, Query Preview gating, exact No-Go IDs, and human-owned review promotion boundaries; no runtime behavior changed.
+- G6 governance and decision traceability: Conditional Go improved. PROJECT-BASELINE, PROJECT-GOV, PRODUCT-QA, and MVP-EXIT now agree that CE0/CE1 summary work is read-only evidence and not implementation or release authority.
+- G7 regression: Go for planning slice. The effective runtime/product diff is documentation evidence only; no code path or configuration behavior changed.
+
+### Conditional controls
+
+- Remaining risks:
+  - CE0/CE1 canonical summaries must remain read-only SSOT references; any fixed contract value, SafeMode boundary, review authority, Query Preview gate, or implementation-authority change requires an ADR or held issue path.
+  - Remote `codex/*` refs still exist and require repository-maintainer approval before deletion.
+  - `Approval Record` fields remain unset, `HIL-RS-02-GOV-EXCEPTION-01` remains `held`, and `pendingDecisionQueueCount>0` keeps HIL/FB in Hold / Needs-decision.
+  - Product value Open-gate acceptance, human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle decisions, environment rehearsal evidence, and final program approval remain incomplete.
+  - This sync changes no API, UI, CLI, runtime behavior, SafeMode default, share/export behavior, public documentation, issue status, ADR status, or Compose configuration.
+- Owner: Codex for evidence maintenance; Repository Maintainer for any branch deletion; human/project governance for CE0/CE1 authority changes and FB-P0/HIL-RS approval/held decisions; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next Program Gate review after CE0/CE1 authority changes, branch cleanup approval, FB-P0/HIL-RS approval/held decisioning, or product-value/environment evidence changes.
+- Re-decision date: after any CE0/CE1 fixed contract boundary change, after remote branch deletion is approved/executed, after `Approval Record` and `HIL-RS-02-GOV-EXCEPTION-01` are decided, after product value Open-gate acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, or after a material runtime/product change reaches `main`.
