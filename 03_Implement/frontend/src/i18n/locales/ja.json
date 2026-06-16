@@ -510,6 +510,8 @@
   "app.toolbar.back": "戻る",
   "app.toolbar.legacy_json_group": "旧式JSON",
   "app.toolbar.create_island": "島を作成",
+  "app.toolbar.new_card": "新規カード",
+  "app.toolbar.delete_selection": "削除",
   "app.toolbar.save": "保存",
   "start_panel.action.import_review_pack": "レビューパックを取り込む",
   "start_panel.action.import_review_pack_hint": "共有された .zip を検証し、表示設定と診断情報を確認します。",

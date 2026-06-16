@@ -510,6 +510,8 @@
   "app.toolbar.back": "Back",
   "app.toolbar.legacy_json_group": "Legacy JSON",
   "app.toolbar.create_island": "Create Island",
+  "app.toolbar.new_card": "New card",
+  "app.toolbar.delete_selection": "Delete",
   "app.toolbar.save": "Save",
   "start_panel.action.import_review_pack": "Import review pack",
   "start_panel.action.import_review_pack_hint": "Validate a shared .zip and review its view settings and diagnostics.",

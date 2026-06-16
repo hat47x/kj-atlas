@@ -1007,6 +1007,7 @@ function applyFocusScope(document: DocumentV2, focusTarget: FocusTarget): Docume
 export default function App() {
   const [history, setHistory] = useState<DocumentHistory | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [selectedIslandId, setSelectedIslandId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -3598,6 +3599,73 @@ ${parsedDocument.error}`);
     },
     [applyDocumentChange, connectEdgeType, document, isPickingEdgeTarget, selectedCardIds, selectedIslandId]
   );
+
+  const handleAddCard = useCallback(() => {
+    if (!document) {
+      return;
+    }
+
+    const newCardId = crypto.randomUUID();
+    const anchorCard =
+      (selectedCardIds.length > 0
+        ? document.cards.find((card) => card.id === selectedCardIds[0])
+        : document.cards[document.cards.length - 1]) ?? null;
+    const newCard = {
+      id: newCardId,
+      text: "新しいカード",
+      x: anchorCard ? anchorCard.x + 40 : 120,
+      y: anchorCard ? anchorCard.y + 40 : 120,
+    };
+
+    const applied = applyDocumentChange(
+      {
+        ...document,
+        cards: [...document.cards, newCard],
+      },
+      "Added a new card"
+    );
+
+    if (applied) {
+      setSelectedIslandId(null);
+      setSelectedEdgeId(null);
+      setSelectedCardIds([newCardId]);
+      setEditingCardId(newCardId);
+    }
+  }, [applyDocumentChange, document, selectedCardIds]);
+
+  const handleCommitCardText = useCallback(
+    (cardId: string, text: string) => {
+      setEditingCardId(null);
+      if (!document) {
+        return;
+      }
+
+      const targetCard = document.cards.find((card) => card.id === cardId);
+      if (!targetCard) {
+        return;
+      }
+
+      const nextText = text.trim();
+      if (nextText.length === 0 || nextText === targetCard.text) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: document.cards.map((card) =>
+            card.id === cardId ? { ...card, text: nextText } : card
+          ),
+        },
+        "Edited card text"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleCancelEditCard = useCallback(() => {
+    setEditingCardId(null);
+  }, []);
 
   const handleCreateIsland = useCallback(() => {
     if (!document || selectedCardIds.length === 0) {
@@ -6872,6 +6940,22 @@ ${parsedDocument.error}`);
       </details>
       <button
         type="button"
+        onClick={handleAddCard}
+        disabled={isLoading || !document}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: isLoading || !document ? "not-allowed" : "pointer",
+        }}
+      >
+        {t("app.toolbar.new_card")}
+      </button>
+      <button
+        type="button"
         onClick={handleCreateIsland}
         disabled={isLoading || !document || !canCreateIsland}
         style={{
@@ -6885,6 +6969,25 @@ ${parsedDocument.error}`);
         }}
       >
         {t("app.toolbar.create_island")}
+      </button>
+      <button
+        type="button"
+        onClick={handleDeleteSelection}
+        disabled={isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor:
+            isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)
+              ? "not-allowed"
+              : "pointer",
+        }}
+      >
+        {t("app.toolbar.delete_selection")}
       </button>
       <button
         type="button"
@@ -8896,6 +8999,10 @@ ${parsedDocument.error}`);
             flashReference={flashReference}
             flashRequestSeq={flashRequestSeq}
             isPickingEdgeTarget={isPickingEdgeTarget}
+            editingCardId={editingCardId}
+            onBeginEditCard={setEditingCardId}
+            onCommitEditCard={handleCommitCardText}
+            onCancelEditCard={handleCancelEditCard}
             suggestionMoveDiffs={suggestionMoveDiffs}
             selectedEdgeId={selectedEdgeId}
             onEdgeSelect={handleEdgeSelect}

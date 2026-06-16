@@ -24,6 +24,10 @@ type CardViewProps = {
   compactMode?: boolean;
   markerMode?: boolean;
   showLabelText?: boolean;
+  isEditing?: boolean;
+  onBeginEdit?: (cardId: string) => void;
+  onCommitEdit?: (cardId: string, text: string) => void;
+  onCancelEdit?: () => void;
 };
 
 function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
@@ -90,6 +94,10 @@ function CardViewComponent({
   compactMode = false,
   markerMode = false,
   showLabelText = true,
+  isEditing = false,
+  onBeginEdit,
+  onCommitEdit,
+  onCancelEdit,
 }: CardViewProps) {
   const dragRef = useRef<CardDragState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -108,6 +116,12 @@ function CardViewComponent({
   };
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (isEditing) {
+      // While the inline text editor is open, let the textarea own pointer input
+      // (do not start a card drag or change selection).
+      return;
+    }
+
     if (isPickingEdgeTarget) {
       event.stopPropagation();
       onSelect(card.id, false);
@@ -242,6 +256,13 @@ function CardViewComponent({
       onKeyDown={handleKeyDown}
       onFocus={handleFocus}
       onBlur={handleBlur}
+      onDoubleClick={(event) => {
+        if (markerMode || !onBeginEdit) {
+          return;
+        }
+        event.stopPropagation();
+        onBeginEdit(card.id);
+      }}
     >
       {!markerMode && representativeCount > 0 ? (
         <span
@@ -275,11 +296,45 @@ function CardViewComponent({
           }}
         />
       ) : null}
-      {!markerMode && showLabelText
-        ? compactMode
+      {!markerMode && isEditing ? (
+        <textarea
+          defaultValue={card.text}
+          autoFocus
+          onFocus={(event) => event.currentTarget.select()}
+          onPointerDown={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => {
+            event.stopPropagation();
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              onCommitEdit?.(card.id, event.currentTarget.value);
+            } else if (event.key === "Escape") {
+              event.preventDefault();
+              onCancelEdit?.();
+            }
+          }}
+          onBlur={(event) => onCommitEdit?.(card.id, event.currentTarget.value)}
+          style={{
+            width: "100%",
+            minHeight: compactMode ? 36 : 56,
+            boxSizing: "border-box",
+            border: "none",
+            outline: "none",
+            resize: "none",
+            padding: 0,
+            margin: 0,
+            fontFamily: "inherit",
+            fontSize: compactMode ? 12 : 14,
+            lineHeight: compactMode ? 1.25 : 1.4,
+            color: "inherit",
+            backgroundColor: "transparent",
+          }}
+        />
+      ) : !markerMode && showLabelText ? (
+        compactMode
           ? renderHighlightedText(compactText, searchQuery)
           : renderHighlightedText(card.text, searchQuery)
-        : null}
+      ) : null}
     </div>
   );
 }

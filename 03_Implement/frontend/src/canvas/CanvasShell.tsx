@@ -160,6 +160,10 @@ type CanvasShellProps = {
   flashReference?: FocusReference | null;
   flashRequestSeq?: number;
   isPickingEdgeTarget?: boolean;
+  editingCardId?: string | null;
+  onBeginEditCard?: (cardId: string) => void;
+  onCommitEditCard?: (cardId: string, text: string) => void;
+  onCancelEditCard?: () => void;
   suggestionMoveDiffs?: SuggestionMoveDiff[];
   selectedEdgeId?: string | null;
   onEdgeSelect?: (edgeId: string) => void;
@@ -318,6 +322,10 @@ export function CanvasShell({
   flashReference = null,
   flashRequestSeq = 0,
   isPickingEdgeTarget = false,
+  editingCardId,
+  onBeginEditCard,
+  onCommitEditCard,
+  onCancelEditCard,
   suggestionMoveDiffs,
   selectedEdgeId,
   onEdgeSelect,
@@ -1340,6 +1348,10 @@ export function CanvasShell({
               compactMode={Boolean(lod?.rules.compactCards)}
               markerMode={Boolean(lod && lod.level === "far" && lodShowLoneWolvesWhenFar && loneWolfCardIdSet.has(card.id))}
               showLabelText={acceptedLabelIds.has(buildCardLabelId(card.id))}
+              isEditing={editingCardId === card.id}
+              onBeginEdit={onBeginEditCard}
+              onCommitEdit={onCommitEditCard}
+              onCancelEdit={onCancelEditCard}
             />
           );
         })}
