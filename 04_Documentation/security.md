@@ -58,7 +58,7 @@ export KJ_ATLAS_API_KEY='change-me'
 curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 ```
 
-API key は簡易保護です。公開ネットワークでの本格運用では、TLS、認証 proxy、アクセス制御、監査を組み合わせてください。
+ブラウザで動く同梱の画面（SPA）は `X-API-Key` を送らないため、`KJ_ATLAS_API_KEY` を設定すると画面からの操作は 401 になります。API key は `curl` などプログラムからのアクセスを保護するための簡易保護です。ブラウザ配信を保護する場合は、画面に鍵を持たせるのではなく前段の認証 proxy で行います。公開ネットワークでの本格運用では、TLS、認証 proxy、アクセス制御、監査を組み合わせてください。
 
 ## SafeMode の画面確認
 

@@ -82,7 +82,7 @@ cd 03_Implement/deploy
 docker compose down
 ```
 
-データベース volume も削除する場合だけ、次を使います。
+データベース volume も削除する場合だけ、次を使います。（データベースに保存したデータがすべて失われますのでご注意ください）
 
 ```bash
 docker compose down -v
@@ -106,12 +106,15 @@ alembic upgrade head
 python -m uvicorn kj_atlas_api.main:app --host 127.0.0.1 --port 8000
 ```
 
-Windows PowerShell では環境変数を次のように設定します。
+Windows PowerShell では、仮想環境の有効化と環境変数の設定を次のように行います（`. .venv/bin/activate` と `export` の代わり）。
 
 ```powershell
+.venv\Scripts\Activate.ps1
 $env:KJ_ATLAS_DATABASE_URL="sqlite:///./kj_atlas.db"
 $env:KJ_ATLAS_LLM_PROVIDER="none"
 ```
+
+`Activate.ps1` の実行が PowerShell の実行ポリシーで拒否される場合は、`.venv\Scripts\activate.bat`（コマンドプロンプト）を使うか、現在のセッションだけ `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` を実行してから有効化します。
 
 この手順では `pip install -e ".[test]"` によって backend package が開発用に登録されるため、Python の import path を個別に設定する必要はありません。
 
@@ -156,6 +159,80 @@ http://127.0.0.1:4173
 
 Docker Engine と Docker Compose v2 をインストールしてください。Docker を使えない場合は「Docker を使わない最小起動」を使います。
 
+### `permission denied while trying to connect to the Docker API at unix:///var/run/docker.sock`
+
+これは Dockerfile やファイル配置の問題ではなく、Docker デーモン（ソケット）への接続権限がない状態です。`docker compose up --build` はイメージをビルドする前のデーモン接続の段階で失敗します。同時に表示される `unable to get image 'deploy-api'` は異常な image 名ではなく、「Compose のプロジェクト名（compose ファイルのあるディレクトリ名 `deploy`）＋ サービス名 `api`」という既定の命名で、デーモンへ接続できずに image 情報を取得できなかったことを示しています。利用環境に応じて次を確認します。
+
+- Docker Desktop（Windows / macOS、WSL2 を含む）: Docker Desktop が起動しているか確認します。WSL2 上で実行している場合は、Docker Desktop の `Settings` → `Resources` → `WSL Integration` で対象のディストリビューションを有効化し、シェルを開き直してから再試行します。
+- Linux（Docker Engine を直接利用）: 実行ユーザーを `docker` グループに追加します。
+
+  ```bash
+  sudo usermod -aG docker $USER
+  ```
+
+  追加後はログインし直すか、`newgrp docker` を実行してから再試行します。デーモンが停止している場合は `sudo systemctl start docker` で起動します。一時的に確認するだけであれば `sudo docker compose up --build -d` でも実行できます。
+
+### `password authentication failed for user "kj_atlas"`
+
+`docker compose logs api` に次のようなエラーが出て、API が起動できず、`alembic upgrade head` や DB 接続の段階で失敗する状態です。
+
+```text
+sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed:
+connection to server at "172.19.0.2", port 5432 failed: FATAL:  password authentication failed for user "kj_atlas"
+```
+
+`db` サービスは起動して `docker compose ps` 上は healthy に見えることがあります。これは `db` の healthcheck が `pg_isready` を使っており、サーバーが接続を受け付けるかだけを確認し、パスワード認証までは検証しないためです。そのため `db` が healthy でも API からの認証だけが失敗します。
+
+この症状には主に2つの原因があります。まず次のコマンドで切り分けます。
+
+```bash
+# シェルに KJ_ATLAS_* が export されていないか（compose の既定値を上書きします）
+env | grep -i kj_atlas
+
+# compose が実際に解決している値（db 側パスワードと、API 側 URL 内のパスワードが一致するか）
+cd 03_Implement/deploy
+docker compose config | grep -iE 'POSTGRES_PASSWORD|POSTGRES_USER|KJ_ATLAS_DATABASE_URL'
+```
+
+**原因A: シェルに残った `KJ_ATLAS_*` 環境変数が compose の既定値を上書きしている**
+
+`KJ_ATLAS_POSTGRES_PASSWORD` や `KJ_ATLAS_DATABASE_URL` がシェルに export されていると、`db` の初期化パスワードと API が送るパスワードが食い違い、この認証失敗が起きます。よくあるのは、同じシェルで「Docker を使わない最小起動」の `export KJ_ATLAS_...` を実行したまま `docker compose` を起動した場合です。この場合は **`docker compose down -v` では解消しません**（環境変数が残っているため、volume を作り直しても同じ食い違いが再発します）。`env | grep -i kj_atlas` で出た変数を解除してから起動し直します。
+
+```bash
+unset KJ_ATLAS_DATABASE_URL KJ_ATLAS_POSTGRES_PASSWORD KJ_ATLAS_POSTGRES_USER KJ_ATLAS_POSTGRES_DB
+cd 03_Implement/deploy
+docker compose down -v
+docker compose up --build -d
+```
+
+独自の認証情報を使いたい場合は、解除する代わりに `db` 側の `KJ_ATLAS_POSTGRES_PASSWORD` と API 側の `KJ_ATLAS_DATABASE_URL` のパスワードを一致させてください（本リポジトリの compose は、`KJ_ATLAS_POSTGRES_PASSWORD` だけを設定すれば既定値どうしが一致するよう構成済みです。ただし `KJ_ATLAS_DATABASE_URL` を別値で設定するとそちらが優先されます）。
+
+**原因B: 過去に別の認証情報で初期化された volume `kj_atlas_pgdata` が残っている**
+
+PostgreSQL は volume が空のときの初回起動でのみ `POSTGRES_USER` / `POSTGRES_PASSWORD` を反映します。一度初期化された volume が残っていると、設定を変えても既存の認証情報は更新されません。`docker compose config` 上は db と API のパスワードが一致して見えても、volume 内に古い認証情報が残っていればこの症状が出ます。
+
+注意: `docker compose down -v` でも volume を削除できますが、コンテナが使用中などの理由で削除されず、`down -v` 後も `docker volume ls` に volume が残ることがあります。確実に消すため、明示的に削除して確認してから起動し直します（volume 名は `<project>_kj_atlas_pgdata`。標準手順では project 名が `deploy` のため `deploy_kj_atlas_pgdata`。実際の名前は `docker volume ls` で確認）。
+
+```bash
+cd 03_Implement/deploy
+docker compose down                       # コンテナを止めて volume を解放
+docker volume rm deploy_kj_atlas_pgdata   # volume を明示的に削除
+docker volume ls | grep pgdata            # 何も表示されない（消えた）ことを確認してから次へ
+docker compose up --build -d
+```
+
+`volume is in use` で失敗する場合は、`docker compose down --remove-orphans` で残存コンテナを止めてから再実行します。
+
+正しく初期化し直せたかは db のログで確認できます。
+
+```bash
+docker compose logs db | grep -iE 'initdb|skipping initialization|ready to accept'
+```
+
+`Skipping initialization` と出る場合はまだ古い volume が使われています（初期化されていません）。新しい起動で `initdb` や `ready to accept connections` が出れば、現在の認証情報で初期化できています。
+
+volume を削除すると保存済みのドキュメントもすべて消えます。実行前に必要なドキュメントを export してください。検証環境で実データを入れていない場合はそのまま実行して問題ありません。設定の詳細は [configuration.md](configuration.md) を参照してください。
+
 ### `port is already allocated`
 
 `KJ_ATLAS_WEB_PORT` を変えて起動します。
@@ -168,6 +245,8 @@ KJ_ATLAS_WEB_PORT=8081 docker compose up --build -d
 
 `KJ_ATLAS_API_KEY` を設定している環境では、`/healthz` 以外の API に `X-API-Key` ヘッダーが必要です。詳しくは [configuration.md](configuration.md) を参照してください。
 
+なお、ブラウザで動く同梱の画面（SPA）は `X-API-Key` を付与しません。そのため `KJ_ATLAS_API_KEY` を設定すると、画面からの読み込み・保存はすべて 401 になります。ブラウザでの動作検証では `KJ_ATLAS_API_KEY` を未設定（既定）にしてください。API キーは `curl` などのプログラムからのアクセス保護を想定しており、ブラウザ配信を保護する場合は前段に認証 proxy を置きます（[security.md](security.md) 参照）。
+
 ### 画面は開くが保存できない
 
 まず API と DB を確認します。
@@ -179,7 +258,7 @@ docker compose logs api --tail=100
 docker compose logs db --tail=100
 ```
 
-API key を有効にしている場合は、ブラウザ側の API 呼び出しにもキー設定が必要です。
+`KJ_ATLAS_API_KEY` を設定している場合は注意が必要です。ブラウザの同梱画面（SPA）は `X-API-Key` を送れないため、キーを設定すると画面からの保存・読み込みが 401 になります。ブラウザでの動作検証中は `KJ_ATLAS_API_KEY` を未設定（既定）にしてください。
 
 ## 関連文書
 

@@ -10,18 +10,23 @@
 
 ## 確認前の準備
 
-標準構成で起動します。
+標準構成で起動し、API が応答することを確認します。
 
 ```bash
 cd 03_Implement/deploy
 docker compose up --build -d
 curl -fsS http://localhost:8080/api/healthz
+```
+
+次にブラウザで `http://localhost:8080` を開きます。Docker を使わない起動方法は [導入手順](installation.md) を参照してください。
+
+標準サンプル `doc_phase1_canvas` は、サーバー側にあらかじめ保存されているわけではなく、**初回にブラウザで画面を開いたとき** に frontend が自動作成します。そのため、初回表示より前に標準サンプルの API を確認すると 404 になります（これは異常ではありません）。一度画面を開いたあとであれば、次のように標準サンプルが保存されていることを確認できます。
+
+```bash
 curl -fsS http://localhost:8080/api/docs/doc_phase1_canvas
 ```
 
-ブラウザで `http://localhost:8080` を開きます。Docker を使わない起動方法は [導入手順](installation.md) を参照してください。
-
-標準サンプルの確認で `Internal Server Error` が表示される場合は、まず backend が起動しているかを確認します。Docker を使わない場合は、frontend だけでなく backend も別端末で起動してから、`http://127.0.0.1:<frontend-port>/api/docs/doc_phase1_canvas` が成功することを確認してください。
+この確認で `Internal Server Error`（5xx）や接続失敗が表示される場合は、まず backend が起動しているかを確認します。Docker を使わない場合は、frontend だけでなく backend も別端末で起動し、一度画面を開いたうえで、`http://127.0.0.1:<frontend-port>/api/docs/doc_phase1_canvas` が応答することを確認してください。
 
 ## 画面全体を見る
 
