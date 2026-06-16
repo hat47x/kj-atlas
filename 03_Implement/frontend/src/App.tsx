@@ -165,6 +165,18 @@ import type { DiagnosticsProgressStage } from "./worker/diagnostics_protocol";
 import type { DiffProgressStage } from "./worker/diff_protocol";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
+const ADVANCED_UI_STORAGE_KEY = "kj-atlas.advanced-ui-enabled";
+
+function loadAdvancedUiEnabled(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  try {
+    return window.localStorage.getItem(ADVANCED_UI_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
 const HISTORY_LIMIT = 50;
 const GRID_SNAP_SIZE = 10;
 const SUGGESTION_MOVE_THRESHOLD = 1;
@@ -1009,6 +1021,7 @@ export default function App() {
   const [history, setHistory] = useState<DocumentHistory | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [isAdvancedUiEnabled, setIsAdvancedUiEnabled] = useState<boolean>(loadAdvancedUiEnabled);
   const [contextMenu, setContextMenu] = useState<
     | {
         x: number;
@@ -3690,6 +3703,20 @@ ${parsedDocument.error}`);
     },
     []
   );
+
+  const handleToggleAdvancedUi = useCallback(() => {
+    setIsAdvancedUiEnabled((previous) => {
+      const next = !previous;
+      try {
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(ADVANCED_UI_STORAGE_KEY, String(next));
+        }
+      } catch {
+        // Ignore persistence failures (e.g. storage disabled).
+      }
+      return next;
+    });
+  }, []);
 
   const handleCommitCardText = useCallback(
     (cardId: string, text: string) => {
@@ -6888,22 +6915,41 @@ ${parsedDocument.error}`);
       </button>
       <button
         type="button"
-        onClick={() => {
-          void handleSuggestLayout();
-        }}
-        disabled={isReadOnly || isLoading || !document || isSuggesting}
+        onClick={handleToggleAdvancedUi}
+        aria-pressed={isAdvancedUiEnabled}
+        title={t("app.toolbar.advanced_ui_hint")}
         style={{
           border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
+          backgroundColor: isAdvancedUiEnabled ? "#e0e7ff" : "#ffffff",
           color: "#0f172a",
           borderRadius: 6,
           padding: "6px 12px",
           fontWeight: 600,
-          cursor: isReadOnly || isLoading || !document || isSuggesting ? "not-allowed" : "pointer",
+          cursor: "pointer",
         }}
       >
-        {isSuggesting ? t("suggestion.panel.suggesting") : t("suggestion.panel.suggest_layout")}
+        {t("app.toolbar.advanced_ui")}
       </button>
+      {isAdvancedUiEnabled ? (
+        <button
+          type="button"
+          onClick={() => {
+            void handleSuggestLayout();
+          }}
+          disabled={isReadOnly || isLoading || !document || isSuggesting}
+          style={{
+            border: "1px solid #cbd5e1",
+            backgroundColor: "#ffffff",
+            color: "#0f172a",
+            borderRadius: 6,
+            padding: "6px 12px",
+            fontWeight: 600,
+            cursor: isReadOnly || isLoading || !document || isSuggesting ? "not-allowed" : "pointer",
+          }}
+        >
+          {isSuggesting ? t("suggestion.panel.suggesting") : t("suggestion.panel.suggest_layout")}
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={handleUndo}
@@ -8477,6 +8523,7 @@ ${parsedDocument.error}`);
           importedPackSnapshotUrl={importedPackSnapshotUrl}
           importedPackDiagnosticsMd={importedPackDiagnosticsMd}
           topContent={
+            isAdvancedUiEnabled ? (
             <>
               <section
                 style={{
@@ -8598,6 +8645,7 @@ ${parsedDocument.error}`);
                 </>}
               />
             </>
+            ) : null
           }
           selectedIsland={selectedIsland ? { ...selectedIsland, shapeStale: stalePolygonIslandIdSet.has(selectedIsland.id) } : null}
           selectedCardCount={selectedCardIds.length}
