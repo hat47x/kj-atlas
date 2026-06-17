@@ -2336,3 +2336,34 @@ DoDテンプレ（Draft→Open）
 - Convert the shared fixtures into explicit Product Value evidence packets only after Productization Program Owner / QA Lead accepts the fixture intent, screenshot or trace requirements, and Go/No-Go thresholds.
 - Keep `PRODUCT-VALUE-01..03` in Draft until fixture execution evidence, human acceptance, and release-suitable screenshots/traces are recorded.
 - No new ADR is needed for this sync. ADR work is required only if the project changes the product-value fixture meaning, persistent schema authority, SafeMode/share-export policy, review attribution authority, automatic resolution/scoring, LLM dependency for value gates, public package contract, signature/approval semantics, or release authority.
+
+## Productization Gate Record 2026-06-17: post-2424 baseline and governance reachability sync
+
+- Candidate: `origin/main@592788ee7f2cc05393f782d9f1af1e77071704c4`.
+- Decision date (JST): 2026-06-17.
+- Reviewer: Codex.
+- Scope: post-#2424 release-gate intake for the latest Project Baseline and Project Governance records after #2423 and #2424 became canonical on `main`. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, issue status, ADR status, Product Value Open-gate status, branch deletion authority, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, open PR search, GitHub Actions CI, local `main` fast-forward, and the 2026-06-06-or-later `codex/*` reachability audit passed after #2424.
+- G1 safety defaults: Conditional Go / unchanged. The baseline/governance sync keeps SafeMode/share-export, import-sanitize, public documentation authority, high-privilege lifecycle policy, and Product Value authority unchanged.
+- G2 user-operability evidence: Conditional Go / unchanged from #2421. This sync does not add new UI or E2E evidence; it keeps the Product Value fixture foundation traceable through latest-main baseline and branch-governance records.
+- G6 governance and decision traceability: Conditional Go improved. `PROJECT-BASELINE-01`, `PROJECT-GOV-01`, Product QA, and MVP-EXIT now have a consistent path to cite #2417 through #2424 as evidence-foundation work, not release approval.
+- G7 regression: Go for planning slice. #2423 and #2424 CI succeeded, and the effective diff is internal issue evidence only.
+- Final: **Conditional Go for post-2424 baseline/governance traceability / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2423 `[codex] Record post-2422 project baseline` merged with normal merge history; CI run `9638` passed.
+- PR #2424 `[codex] Record post-2423 governance reachability` merged with normal merge history; CI run `9641` passed.
+- `PROJECT-BASELINE-01` now records `Baseline delta 2026-06-17: post-2422 Product Value evidence foundation sync`.
+- `PROJECT-GOV-01` now records `Post-2423 governance reachability and Product Value evidence-foundation checkpoint`.
+- Latest local verification after #2424: active issue validation passed, triage reported no stopper, and the 2026-06-06-or-later `codex/*` branch reachability audit reported `since_20260606_codex_count=80`, `unmerged_count=0`.
+
+### Follow-ups
+
+- Treat #2423/#2424 as latest-main and repository-governance evidence only. They do not convert Product Value Draft issues to Open, approve remote branch deletion, or approve shipment.
+- Product Value Open-gate acceptance still requires replayable evidence packets, screenshots or traces, and Productization Program Owner / QA Lead acceptance.
+- Keep full release shipment No-Go until human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes stale-ref retention, branch cleanup authority, Product Value definitions, SafeMode/share-export policy, public package contract, runtime environment policy, or release authority.
