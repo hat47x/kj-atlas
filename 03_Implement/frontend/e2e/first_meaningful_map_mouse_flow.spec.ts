@@ -1,31 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
+import { buildFirstMeaningfulMapDocument } from "./helpers/product_value_fixtures";
 
 const START_PANEL = '[data-panel="start-document-entry"]';
-
-function buildDocument(cardTexts: string[]) {
-  const now = "2026-06-04T00:00:00.000Z";
-  return {
-    version: 2,
-    id: "doc_first_meaningful_map_mouse",
-    title: "First meaningful map mouse fixture",
-    createdAt: now,
-    updatedAt: now,
-    transform: { panX: 0, panY: 0, zoom: 1 },
-    cards: cardTexts.map((text, index) => ({
-      id: `mouse-value-card-${index + 1}`,
-      text,
-      x: 140 + index * 270,
-      y: 150 + (index % 2) * 150,
-      textReviewed: index === 0,
-    })),
-    edges: [],
-    islands: [],
-    readingOrder: ["mouse-value-card-1", "mouse-value-card-2", "mouse-value-card-3"],
-    narratives: [],
-    evidenceLinks: [],
-    mergeSuggestionDecisions: [],
-  };
-}
 
 async function routeFirstValueFixture(page: Page): Promise<{ enableSample: () => void }> {
   let shouldReturnSample = false;
@@ -36,8 +12,8 @@ async function routeFirstValueFixture(page: Page): Promise<{ enableSample: () =>
 
   await page.route("**/docs/doc_phase1_canvas", async (route) => {
     const document = shouldReturnSample
-      ? buildDocument(["first value user problem", "first value observation memo", "first value decision anchor"])
-      : buildDocument([]);
+      ? buildFirstMeaningfulMapDocument()
+      : buildFirstMeaningfulMapDocument([]);
 
     await route.fulfill({
       status: 200,
