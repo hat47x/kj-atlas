@@ -60,6 +60,19 @@ No new ADR is needed for this summary. An ADR is required only if the project ch
 - This rerun does not satisfy Productization Program Owner / QA Lead acceptance, release-suitable screenshot or trace bundle approval, SafeMode/import/sample-entry screenshot evidence, physical keyboard acceptance, screen-reader acceptance, or shipment approval.
 - Status impact: **Draft remains**. This is execution freshness evidence only.
 
+## Screenshot Evidence Refresh 2026-06-17: PV01 first meaningful island
+
+- Candidate mainline: `origin/main@e92710bfcbb4`.
+- Capture script: `03_Implement/frontend/scripts/capture_product_value_screenshots.mjs`.
+- Screenshot: `04_Documentation/assets/screenshots/product-value-first-island.png`.
+- Fixture state: `doc_first_meaningful_map_mouse`, Japanese UI locale, two cards selected and grouped into `Island 1`.
+- Regeneration command:
+  - `node .\scripts\capture_product_value_screenshots.mjs`
+- Evidence packet impact:
+  - Adds a release-documentation-suitable visual proof for sample opening, card selection, first island creation, SafeMode visibility, and selection-context confirmation.
+  - Does not satisfy Productization Program Owner / QA Lead acceptance, keyboard acceptance, screen-reader acceptance, full share preflight approval, or shipment approval.
+  - Status impact: **Draft remains**.
+
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
