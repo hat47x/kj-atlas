@@ -41,6 +41,7 @@ type AggregatedEdgeInspectorItem = {
 
 type SidePanelProps = {
   isReadOnly?: boolean;
+  isAdvancedUiEnabled?: boolean;
   selectedCard: Card | null;
   sourceCardsForSelectedCanonical: Card[];
   missingSourceCardIdsForSelectedCanonical: string[];
@@ -367,6 +368,7 @@ export function SidePanel({
   importedPackDiagnosticsMd,
   mergeAuditLog,
   isReadOnly = false,
+  isAdvancedUiEnabled = false,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
   const [summaryDraft, setSummaryDraft] = useState("");
@@ -2186,14 +2188,16 @@ export function SidePanel({
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             {t("side_panel.summary.label")}
           </label>
-          <button
-            type="button"
-            onClick={onSuggestIslandSummary}
-            disabled={isSuggestingIslandSummary}
-            style={{ width: "100%", marginBottom: 8, cursor: isSuggestingIslandSummary ? "not-allowed" : "pointer" }}
-          >
-            {isSuggestingIslandSummary ? t("side_panel.summary.suggesting") : t("side_panel.summary.suggest_ai")}
-          </button>
+          {isAdvancedUiEnabled ? (
+            <button
+              type="button"
+              onClick={onSuggestIslandSummary}
+              disabled={isSuggestingIslandSummary}
+              style={{ width: "100%", marginBottom: 8, cursor: isSuggestingIslandSummary ? "not-allowed" : "pointer" }}
+            >
+              {isSuggestingIslandSummary ? t("side_panel.summary.suggesting") : t("side_panel.summary.suggest_ai")}
+            </button>
+          ) : null}
           {islandSummaryProposal ? (
             <div style={{ border: "1px solid #bfdbfe", borderRadius: 6, backgroundColor: "#eff6ff", padding: 8, marginBottom: 8, display: "grid", gap: 6 }}>
               <div style={{ fontSize: 11, color: "#1e3a8a" }}>
@@ -2779,9 +2783,11 @@ export function SidePanel({
             </div>
           ) : null}
           <div style={{ marginTop: 12, borderTop: "1px solid #e2e8f0", paddingTop: 12 }}>
-            <button type="button" onClick={onGenerateRelationSummary} disabled={isGeneratingRelationSummary}>
-              {isGeneratingRelationSummary ? t("side_panel.relation_summary.generating") : t("side_panel.relation_summary.generate_ai")}
-            </button>
+            {isAdvancedUiEnabled ? (
+              <button type="button" onClick={onGenerateRelationSummary} disabled={isGeneratingRelationSummary}>
+                {isGeneratingRelationSummary ? t("side_panel.relation_summary.generating") : t("side_panel.relation_summary.generate_ai")}
+              </button>
+            ) : null}
             <div style={{ marginTop: 8, fontSize: 12, color: "#7f1d1d" }}>
               {t("side_panel.relation_summary.draft_warning")}
             </div>
