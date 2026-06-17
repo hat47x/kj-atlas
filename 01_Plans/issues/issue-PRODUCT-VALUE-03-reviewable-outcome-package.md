@@ -388,3 +388,24 @@ No-Go conditions for this value gate:
 | Decision record | This section adds a current-main rerun record. | Final Open decision must cite H-PV3-1/H-PV3-2/H-PV3-3 outcomes. |
 
 - No ADR is needed for this rerun. ADR routing remains limited to changes in the product value model, review authority, SafeMode/share policy, or review-pack contract.
+
+## Fixture manifest 2026-06-17: PV03 reviewable package packet entry
+
+- Candidate mainline: `origin/main@4fe6740678dd970a18eacab094ec4e99c53496c5`.
+- Fixture source: `03_Implement/frontend/e2e/helpers/product_value_fixtures.ts`.
+- Fixture builder: `buildReviewPackTraceDocument()`.
+- Fixture document ID: `doc_review_pack_trace_export`.
+- Representative E2E: `03_Implement/frontend/e2e/review_pack_trace_export.spec.ts`.
+- Status impact: **Draft remains**. This manifest names the reusable fixture entry for the PV03 evidence packet; it does not create Productization Program Owner / QA Lead acceptance, package contract approval, or shipment approval.
+
+### Evidence packet mapping
+
+| Evidence item | Manifest status | Remaining Open blocker |
+| --- | --- | --- |
+| Package fixture | Named and stored in `product_value_fixtures.ts`; includes a reviewed target claim, reviewed support note, unreviewed contradiction, a reviewable island, and support/contradiction links. | Productization Program Owner must accept this fixture as representative of the promised reviewable outcome package. |
+| Pre-share confirmation | Existing E2E verifies Overview mode excludes selected-card traces and Detail mode enables them before ZIP export. | Confirm that SafeMode masking, reviewed/unreviewed status, and recipient-facing risk are understandable before export. |
+| Trace-back proof | Existing E2E verifies Detail export contains `evidence_trace_c-target.md`, `contradiction_trace_c-target.md`, and `trace_analytics_c-target.md`. | QA Lead must decide whether ZIP file-name proof is sufficient or whether a reader-facing backlink/read-only UI proof is required. |
+| Read-only review proof | Not added by this manifest. | Need import/read-only inspection evidence that a reviewer can inspect the package without mutating source data. |
+| Decision record | This section provides the fixture identity that Product QA and MVP-EXIT can cite later. | Final Open decision must cite H-PV3-1/H-PV3-2/H-PV3-3 outcomes and the screenshot/trace bundle location. |
+
+- No ADR is needed for this manifest. ADR routing remains limited to changes in product value model, review authority, SafeMode/share policy, review-pack public contract, approval/signature semantics, or automatic publication behavior.

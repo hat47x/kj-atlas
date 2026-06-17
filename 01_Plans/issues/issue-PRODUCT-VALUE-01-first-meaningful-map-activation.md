@@ -411,3 +411,24 @@ No-Go conditions for this value gate:
 | Decision record | This section adds a current-main rerun record and is synchronized into `PRODUCT-QA-01`. | Final Open decision must cite H-PV1/H-PV2/H-PV3 outcomes. |
 
 - No ADR is needed for this rerun. ADR routing remains limited to changes in product value model, release authority, SafeMode/share policy, or first-run product boundary.
+
+## Fixture manifest 2026-06-17: PV01 first meaningful map evidence packet entry
+
+- Candidate mainline: `origin/main@4fe6740678dd970a18eacab094ec4e99c53496c5`.
+- Fixture source: `03_Implement/frontend/e2e/helpers/product_value_fixtures.ts`.
+- Fixture builder: `buildFirstMeaningfulMapDocument()`.
+- Fixture document ID: `doc_first_meaningful_map_mouse`.
+- Representative E2E: `03_Implement/frontend/e2e/first_meaningful_map_mouse_flow.spec.ts`.
+- Status impact: **Draft remains**. This manifest names the reusable fixture entry for the PV01 evidence packet; it does not create Productization Program Owner / QA Lead acceptance, release screenshots, or shipment approval.
+
+### Evidence packet mapping
+
+| Evidence item | Manifest status | Remaining Open blocker |
+| --- | --- | --- |
+| Scenario fixture | Named and stored in `product_value_fixtures.ts`; default cards are `first value user problem`, `first value observation memo`, and `first value decision anchor`. | Productization Program Owner must accept this as a value-bearing first-map scenario for a standard user. |
+| Mouse operation trace | Existing E2E opens the sample, selects the first two cards, creates `Island 1`, and verifies the selection context. | UX reviewer must accept the mouse route as natural enough for release-candidate evidence. |
+| Keyboard operation trace | Still covered by the separate keyboard release-candidate route, not by this PV01 fixture builder. | Decide whether the PV01 packet can cite the existing keyboard route or needs a fixture-specific keyboard trace. |
+| Safe entry evidence | Not added by this manifest. | QA Lead still needs screenshot or trace evidence showing SafeMode/import/sample-entry state with this fixture. |
+| Decision record | This section provides the fixture identity that Product QA and MVP-EXIT can cite later. | Final Open decision must cite human acceptance and the screenshot/trace bundle location. |
+
+- No ADR is needed for this manifest. ADR routing remains limited to changes in the first-value definition, release authority, SafeMode/share policy, first-run product boundary, or fixture meaning.

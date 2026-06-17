@@ -399,3 +399,24 @@ The final value gate should be evaluated only after the slice evidence exists. T
 - Scope: current-schema frontend workflow only; no schema expansion was performed.
 - Ambiguity/evidence signals are now bundled into the share/export preflight as a review checkpoint: unresolved holds, critiques, contradictions, evidence gaps, and unreviewed content are visible before outcome sharing.
 - The flow remains proposal/readiness-only: it does not auto-resolve ambiguity, auto-apply AI output, or auto-promote `human_reviewed`.
+
+## Fixture manifest 2026-06-17: PV02 ambiguity/evidence packet entry
+
+- Candidate mainline: `origin/main@4fe6740678dd970a18eacab094ec4e99c53496c5`.
+- Fixture source: `03_Implement/frontend/e2e/helpers/product_value_fixtures.ts`.
+- Fixture builder: `buildDomainExpressionDocument()`.
+- Fixture document ID: `doc_domain_expression_keyboard_access`.
+- Representative E2E: `03_Implement/frontend/e2e/domain_expression_keyboard_access.spec.ts`.
+- Status impact: **Draft remains**. This manifest names the reusable fixture entry for the PV02 evidence packet; it does not complete the umbrella Product Value ambiguity/evidence gate or approve Open status.
+
+### Evidence packet mapping
+
+| Evidence item | Manifest status | Remaining Draft blocker |
+| --- | --- | --- |
+| State fixture | Named and stored in `product_value_fixtures.ts`; includes one ambiguous target claim, one reviewed supporting field note, one unreviewed contradicting stakeholder signal, critique text, critique tag, and support/contradiction links. | Hold/pending remains split to `DOMAIN-EXPR-02`; Productization Program Owner must accept whether PV02 can proceed with split evidence rather than one monolithic four-state fixture. |
+| Review boundary proof | Existing E2E verifies the selected target starts as `Review state: Unreviewed` and requires keyboard action to check `Card text reviewed`. | Need a targeted guard or evidence note that AI/worker/API paths cannot promote `human_reviewed` for this value-gate state. |
+| Findability proof | Existing E2E verifies keyboard reachability of claim type, evidence/contradiction text, critique note, and critique tag controls after card selection. | UX reviewer must decide whether this read-only reachability is enough or whether dedicated unresolved-state filters are required. |
+| Share/export proof | Not added by this manifest. | Need share/export preflight evidence showing unresolved or unreviewed ambiguity/evidence state is visible or safely excluded. |
+| AI-boundary proof | Not added by this manifest. | Need ContextBundle or equivalent evidence that ambiguity/evidence/contradiction is carried as a constraint, not solved fact. |
+
+- No ADR is needed for this manifest because it follows the `ADR-0040` split-first strategy. ADR/schema routing remains required if a later slice adds persistent Hold/Shelf fields, changes AI review authority, changes SafeMode/share policy, or changes the value-state model.
