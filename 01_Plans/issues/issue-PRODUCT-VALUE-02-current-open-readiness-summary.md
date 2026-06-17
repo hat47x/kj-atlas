@@ -25,10 +25,11 @@ This is not a request for automatic truth scoring, automatic resolution, ranking
 - `ADR-0040` resolves the earlier circular blocker between `ADR-0032` and `PRODUCT-VALUE-02`. Existing schema concepts such as `claimType`, `critiqueInputs`, `evidenceLinks`, `reviewState`, and review attribution can be surfaced first without forcing a broad schema migration.
 - The phase boundary is clear: Phase 1 should expose existing reversible state as readable UI and evidence; later phases may add optional hold/shelf fields only after a separate issue or ADR confirms the data contract.
 - The recent mainline convergence through PR #2418 records that manual authoring and first-value readiness are improving, but it does not yet prove the ambiguity workflow.
+- Current fixture manifest: PR #2428 names `buildDomainExpressionDocument()` in `03_Implement/frontend/e2e/helpers/product_value_fixtures.ts` as the PV02 reusable fixture, with document ID `doc_domain_expression_keyboard_access` and representative E2E `03_Implement/frontend/e2e/domain_expression_keyboard_access.spec.ts`.
 
 ### Open-Readiness Gaps
 
-- The source issue remains `Draft` because the product has not fixed a concrete ambiguity fixture, user action sequence, evidence packet, and owner-reviewed Go/No-Go rule.
+- The source issue remains `Draft` because the product has not completed the owner-reviewed Go/No-Go rule for the ambiguity evidence workflow. The Phase 1 fixture identity is now fixed, but hold/pending evidence, share/export proof, AI-boundary proof, and UX acceptance of findability remain open.
 - Current documentation names the concepts, but the representative user journey still needs to show exactly how a person notices, preserves, filters, reviews, and shares unresolved material.
 - The UI must distinguish "unresolved", "needs review", "evidence missing", and "counter-opinion present" from final answers. These states must not be silently collapsed into a normal card, island, or final narrative.
 - SafeMode and share/export behavior must prove that unresolved or unreviewed material is handled deliberately. The product should show what will be included, excluded, or masked before the user shares a package.
@@ -36,10 +37,10 @@ This is not a request for automatic truth scoring, automatic resolution, ranking
 
 ### Next Implementation Slice
 
-1. Define one deterministic ambiguity fixture with at least: a normal card, one hold or unresolved point, one critique or counter-opinion, one evidence gap, and one reviewed item.
-2. Add a focused UI/E2E path that verifies the user can surface those states from the canvas or detail panel without relying on an LLM.
-3. Verify filtering or focus behavior: unresolved material must be findable again after the user moves between canvas, detail, and share/export preflight.
-4. Capture share/export preflight evidence showing whether unresolved and unreviewed material is included, excluded, or masked.
+1. Review `doc_domain_expression_keyboard_access` as the Phase 1 ambiguity/evidence fixture and decide whether split-first evidence is acceptable for standard users.
+2. Add or cite share/export preflight evidence showing that the ambiguous target claim, unreviewed contradiction, critique note, and evidence links remain visible or safely excluded before sharing.
+3. Add or cite AI-boundary proof showing that ambiguity/evidence/contradiction is carried as a constraint and cannot be converted into `human_reviewed` by a worker, AI assist path, import path, or API shortcut.
+4. Decide whether read-only reachability is enough for Phase 1 findability, or whether dedicated unresolved-state filters must be added before Open.
 5. Record the result in `PRODUCT-QA-01` before changing the source issue from `Draft` to `Open`.
 
 ### ADR Boundary
@@ -49,7 +50,7 @@ No new ADR is needed for the Phase 1 summary. A new ADR is required if implement
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
-- [ ] AC-02: The deterministic ambiguity fixture is named, stored, and reusable before implementation starts.
+- [x] AC-02: The deterministic ambiguity fixture is named, stored, and reusable before implementation starts. Current fixture: `buildDomainExpressionDocument()` / `doc_domain_expression_keyboard_access`.
 - [ ] AC-03: The UI/E2E evidence distinguishes unresolved, unreviewed, evidence-missing, and counter-opinion states from final conclusions.
 - [ ] AC-04: Share/export preflight evidence shows how unresolved and unreviewed material is handled under SafeMode.
 - [ ] AC-05: Any schema expansion or review-authority change is routed through issue/ADR before code changes.
