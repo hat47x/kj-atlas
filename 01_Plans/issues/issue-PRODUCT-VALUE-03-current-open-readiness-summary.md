@@ -47,6 +47,23 @@ The output package is not just a polished narrative or export file. It must carr
 
 No new ADR is needed to define the minimum package evidence. A new ADR is required if the package format becomes a stable public contract, if electronic signature or formal approval semantics are introduced, if review attribution authority changes, if SafeMode/share-export policy changes, or if the product starts publishing packages automatically.
 
+## Current-Main Evidence Rerun 2026-06-17: PV03 reviewable package fixture
+
+- Candidate mainline: `origin/main@659c3097b90078dc7aa559fe7239cf7068678524`.
+- Fixture: `buildReviewPackTraceDocument()` / `doc_review_pack_trace_export`.
+- Representative E2E: `03_Implement/frontend/e2e/review_pack_trace_export.spec.ts`.
+- Execution note: Playwright config could not start its `npm run dev` webServer on this Codex host because `npm` is not on the normal PATH. Vite was started directly with bundled Node.js, then Playwright was run against `http://127.0.0.1:4173`.
+- Verification command:
+  - `node .\node_modules\playwright\cli.js test e2e/first_meaningful_map_mouse_flow.spec.ts e2e/domain_expression_keyboard_access.spec.ts e2e/review_pack_trace_export.spec.ts --reporter=line`
+- Result: **pass, 3 tests total; PV03 representative E2E passed**.
+
+### Evidence packet impact
+
+- The PV03 review-pack trace fixture remains executable on current `main` after the post-2430 baseline/governance sync.
+- Review-pack export evidence is refreshed for importing the fixture, selecting the target claim, verifying Overview trace exclusion, verifying Detail trace inclusion, and confirming ZIP contents for evidence, contradiction, and trace analytics files.
+- This rerun does not satisfy Productization Program Owner / QA Lead package acceptance, SafeMode/readability screenshot evidence, read-only reviewer inspection, release-suitable screenshot or trace bundle approval, approval/signature authority, or shipment approval.
+- Status impact: **Draft remains**. This is execution freshness evidence only.
+
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
