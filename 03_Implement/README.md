@@ -5,7 +5,7 @@
 
 ## Nix 開発環境（プロジェクト標準）
 
-ローカルのツールチェーン（Node 20 / Python 3.12 / Ruff）は、リポジトリ直下の `flake.nix` で一元管理します。バージョンは `flake.lock` で固定され、全員が同一環境になります。frontend/backend の Dockerfile（`node:20-alpine` / `python:3.12-slim`）と揃えています。
+ローカルのツールチェーン（Node 20 / Python 3.12 / Ruff）は、`03_Implement/flake.nix` で一元管理します。バージョンは `03_Implement/flake.lock` で固定され、全員が同一環境になります。frontend/backend の Dockerfile（`node:20-alpine` / `python:3.12-slim`）と揃えています。
 
 1. Nix を導入します（WSL2 / systemd 環境で確認済み。flakes が既定で有効になる Determinate Systems 版を推奨。`sudo` のパスワード入力を求められます）。
 
@@ -22,24 +22,24 @@ mkdir -p ~/.config/nix && printf 'experimental-features = nix-command flakes\n' 
 
 導入後はシェルを開き直して `nix --version` が通ることを確認します。
 
-2. リポジトリ直下で開発シェルに入ります。以降の `npm` / `python` / `ruff` コマンドはこのシェル内で実行します。
+2. リポジトリ直下から開発シェルに入ります（カレントはリポジトリ直下のまま。以降の表のコマンドが `cd 03_Implement/...` 前提のため）。`npm` / `python` / `ruff` はこのシェル内で実行します。
 
 ```bash
 cd /path/to/kj-atlas
-nix develop
+nix develop ./03_Implement
 ```
 
 flakes を未有効化のまま一時的に使う場合は次の形でも実行できます。
 
 ```bash
-nix --extra-experimental-features 'nix-command flakes' develop
+nix --extra-experimental-features 'nix-command flakes' develop ./03_Implement
 ```
 
-3. （任意）direnv を使うと `cd` で自動的にこのシェルへ入れます。`.envrc` はリポジトリでは追跡しないため、同梱のテンプレートをコピーして有効化します。
+3. （任意）direnv を使うと `03_Implement` 以下に入ったとき自動的にこのシェルへ切り替わります。`.envrc` は追跡しないため、テンプレートをコピーして有効化します。
 
 ```bash
-cp .envrc.example .envrc
-direnv allow
+cp 03_Implement/.envrc.example 03_Implement/.envrc
+cd 03_Implement && direnv allow
 ```
 
 補足:
