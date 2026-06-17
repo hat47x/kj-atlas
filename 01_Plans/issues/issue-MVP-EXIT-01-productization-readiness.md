@@ -1330,3 +1330,39 @@
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead for product-value and final shipment decisions; human/project governance for FB-P0/HIL-RS approval/held decisions; Project Maintainers for high-privilege lifecycle decisions.
 - Due date: next Program Gate review after product-value fixture evidence, human acceptance evidence, Compose/environment evidence, support rehearsal evidence, or FB/HIL/high-privilege lifecycle decisioning.
 - Re-decision date: after product value Open-gate acceptance, after release screenshot / keyboard / screen-reader acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, after `Approval Record` and `HIL-RS-02-GOV-EXCEPTION-01` are decided, after `ADR-0035` is accepted/replaced/rejected, or after a material runtime/product change reaches `main`.
+
+## MVP-EXIT Program Gate Decision 2026-06-17: post-2421 product-value E2E fixture foundation
+
+- Candidate: `origin/main@6db7fd5f0edc7f6e303313c2385d06c000db7b0f`.
+- Decision date: 2026-06-17.
+- Reviewer: Codex.
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-17: post-2421 product-value E2E fixture foundation`.
+  - Shared fixture helper: `03_Implement/frontend/e2e/helpers/product_value_fixtures.ts`.
+  - Merged PR: #2421.
+
+### Decision
+
+- Final: **Conditional Go for product-value fixture evidence foundation / No-Go for full release shipment**.
+- Reason summary: The latest `main` now centralizes deterministic E2E fixture builders for PV01, PV02, and PV03. This is a useful step from readable readiness summaries toward replayable evidence packets because fixture identity, document IDs, reviewed/unreviewed state, evidence links, contradictions, and review-pack trace inputs are now easier to cite and reuse. It does not create shipment approval because the source Product Value issues remain Draft and Productization Program Owner / QA Lead have not accepted the fixture intent, screenshots/traces, human-operability evidence, or Go/No-Go thresholds.
+- Escalation route: keep `PRODUCT-QA-01` as the release evidence steward, `PRODUCT-VALUE-01..03` as the value-gate owners for fixture evidence packets, and Productization Program Owner / QA Lead as accountable final shipment approvers.
+
+### Gate Mapping
+
+- G0 planning integrity: Go. Active issue validation, targeted Playwright reruns, frontend typecheck, GitHub Actions CI, local `main` fast-forward, and branch reachability checks passed for #2421.
+- G1 safety defaults: Conditional Go / unchanged. The fixture refactor did not change SafeMode/share-export, import-sanitize, review attribution, or `human_reviewed` authority.
+- G2 user-operability evidence: Conditional Go improved for evidence assembly. Existing browser-level flows keep the same assertions while their input data is now explicit and reusable.
+- G6 governance and decision traceability: Conditional Go improved. Program Gate records can now refer to the shared fixture helper as the implementation evidence source for the next Product Value evidence packets.
+- G7 regression: Go for fixture refactor. The effective runtime/product diff is E2E test fixture organization only.
+
+### Conditional controls
+
+- Remaining risks:
+  - `PRODUCT-VALUE-01..03` remain Draft until replayable evidence packets are reviewed and accepted.
+  - Human release screenshots, physical keyboard acceptance, screen-reader acceptance, final Japanese UX/copy review, full Compose startup, support diagnostics/recovery rehearsal, environment rehearsal evidence, and final program approval remain incomplete.
+  - High-privilege lifecycle decisions remain governed by `DATA-MAINT-03`, `ADR-0035`, and `DATA-MAINT-04`.
+  - `Approval Record` fields remain unset, `HIL-RS-02-GOV-EXCEPTION-01` remains `held`, and `pendingDecisionQueueCount>0` keeps HIL/FB in Hold / Needs-decision.
+  - This sync changes no API, UI, CLI, runtime behavior, SafeMode default, share/export behavior, public documentation, issue status, ADR status, release authority, branch cleanup authority, or Compose configuration.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead for product-value and final shipment decisions; human/project governance for FB-P0/HIL-RS approval/held decisions; Project Maintainers for high-privilege lifecycle decisions.
+- Due date: next Program Gate review after product-value fixture evidence, human acceptance evidence, Compose/environment evidence, support rehearsal evidence, or FB/HIL/high-privilege lifecycle decisioning.
+- Re-decision date: after product value Open-gate acceptance, after release screenshot / keyboard / screen-reader acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, after `Approval Record` and `HIL-RS-02-GOV-EXCEPTION-01` are decided, after `ADR-0035` is accepted/replaced/rejected, or after a material runtime/product change reaches `main`.
