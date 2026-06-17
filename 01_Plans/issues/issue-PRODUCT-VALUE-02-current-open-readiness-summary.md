@@ -47,6 +47,23 @@ This is not a request for automatic truth scoring, automatic resolution, ranking
 
 No new ADR is needed for the Phase 1 summary. A new ADR is required if implementation introduces new persistent schema fields for hold/shelf membership, changes the meaning of `human_reviewed`, adds automatic resolution or scoring, changes SafeMode/share-export policy, or makes LLM assistance mandatory for ambiguity handling.
 
+## Current-Main Evidence Rerun 2026-06-17: PV02 ambiguity/evidence fixture
+
+- Candidate mainline: `origin/main@659c3097b90078dc7aa559fe7239cf7068678524`.
+- Fixture: `buildDomainExpressionDocument()` / `doc_domain_expression_keyboard_access`.
+- Representative E2E: `03_Implement/frontend/e2e/domain_expression_keyboard_access.spec.ts`.
+- Execution note: Playwright config could not start its `npm run dev` webServer on this Codex host because `npm` is not on the normal PATH. Vite was started directly with bundled Node.js, then Playwright was run against `http://127.0.0.1:4173`.
+- Verification command:
+  - `node .\node_modules\playwright\cli.js test e2e/first_meaningful_map_mouse_flow.spec.ts e2e/domain_expression_keyboard_access.spec.ts e2e/review_pack_trace_export.spec.ts --reporter=line`
+- Result: **pass, 3 tests total; PV02 representative E2E passed**.
+
+### Evidence packet impact
+
+- The PV02 Phase 1 fixture remains executable on current `main` after the post-2430 baseline/governance sync.
+- Keyboard evidence is refreshed for selecting the ambiguous target claim, reading `Review state: Unreviewed`, reaching claim type, evidence/contradiction text, critique note, review checkbox, and critique tag controls.
+- This rerun does not satisfy hold/pending split acceptance, share/export preflight evidence for unresolved or unreviewed ambiguity state, AI-boundary proof, UX acceptance of findability, physical keyboard acceptance, screen-reader acceptance, or shipment approval.
+- Status impact: **Draft remains**. This is execution freshness evidence only.
+
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
