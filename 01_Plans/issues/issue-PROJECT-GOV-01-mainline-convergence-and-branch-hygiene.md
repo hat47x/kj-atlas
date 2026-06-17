@@ -1376,3 +1376,49 @@
 3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
 4. Treat #2428 through #2430 as fixture-summary and release-gate traceability work only. Product Value Open-gate acceptance still needs replayable evidence packets, release-suitable screenshots or traces, and Productization Program Owner / QA Lead acceptance.
 5. Keep release blockers routed through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `QA-E2E-USE-01`, `HIL-RS-02-A1`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
+
+---
+
+## Post-2435 governance reachability and Product Value screenshot checkpoint
+
+- Checkpoint date (JST): 2026-06-17
+- Latest main: `origin/main@5c5783766063c04071d72ce476d418a90be0f797`
+- Recent PRs included in this checkpoint:
+  - #2431 `[codex] Record post 2430 project baseline`
+  - #2432 `[codex] Record Product Value E2E rerun`
+  - #2433 `[codex] Sync Product QA after E2E rerun`
+  - #2434 `[codex] Add Product Value screenshot evidence`
+  - #2435 `[codex] Sync release gates after screenshot evidence`
+- Integration method: #2431 through #2433 used normal merge commits; #2434 and #2435 were squash merged and their temporary remote branches were deleted after merge.
+- GitHub Actions CI:
+  - #2431 CI run `9662`: passed.
+  - #2432 CI run `9665`: passed.
+  - #2433 CI run `9668`: passed.
+  - #2434 CI run `9671`: passed.
+  - #2435 CI run `9674`: passed.
+- GitHub open PR search result: `0`.
+- `origin/codex/*` branches updated on or after 2026-06-06: 107.
+- `origin/codex/*` branches updated on or after 2026-06-06 that are not ancestors of `origin/main`: 0.
+- Internal issue validation:
+  - `validate_active_issue_memos.py`: pass, `ok: validated 5 active issue memos`.
+  - `test_validate_active_issue_memos.py`: pass, 10 tests.
+  - `triage_actionable_plans.py`: pass, `active_issues=55`, `ready=15`, `blocked=40`, `actionable_adrs=1`, stopper none.
+- Scope: records repository governance after #2431 through #2435 became canonical. This checkpoint does not delete long-lived remote branches, close unrelated PRs, change issue status, change ADR status, change runtime behavior, change UI/API behavior, change SafeMode/share-export policy, approve Product Value Open gates, or approve release readiness.
+
+### Decision
+
+- The observed 2026-06-06-or-later `codex/*` branch reachability state remains clean: no checked branch remains outside `main` ancestry.
+- #2432 refreshed executable Product Value evidence for PV01/PV02/PV03 on current main.
+- #2434 added deterministic Japanese UI screenshot evidence for PV01 first-island creation, PV02 ambiguity-state inspection, and PV03 trace-enabled Share & Reproduce export.
+- #2433 and #2435 aligned Product QA and MVP-EXIT with the same interpretation: evidence traceability improved, Product Value source issues remain Draft, and full release shipment remains No-Go.
+- The current governance interpretation is traceability-only. It is not approval to delete long-lived remote refs, weaken SafeMode defaults, change share/export policy, treat Product Value Draft issues as Open, bypass human acceptance, or ship the product.
+- The remaining remote `codex/*` refs are cleanup candidates only. Deletion still requires repository-maintainer approval and a final deletion audit list.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene unless the project changes stale-ref retention, branch cleanup authority, CI signal authority, Product Value definitions, screenshot/public documentation authority, SafeMode/share-export policy, review attribution authority, public package contract, or release authority.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@5c5783766063c04071d72ce476d418a90be0f797`.
+2. Keep using normal merge commits for PRs whose purpose is to preserve `codex/*` branch-tip reachability. Squash merge is acceptable for short-lived evidence branches when the branch is deleted immediately after merge and governance records cite the resulting main commit.
+3. Do not delete long-lived remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
+4. Treat #2431 through #2435 as baseline, E2E, screenshot, and release-gate traceability work only. Product Value Open-gate acceptance still needs Productization Program Owner / QA Lead acceptance plus any required human keyboard, screen-reader, read-only reviewer, or share-package evidence.
+5. Keep release blockers routed through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `QA-E2E-USE-01`, `HIL-RS-02-A1`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
