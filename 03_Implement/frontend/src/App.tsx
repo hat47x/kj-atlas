@@ -8367,6 +8367,7 @@ ${parsedDocument.error}`);
   const headerShareControls = (
     <SharePanel
       isOpen={isSharePanelOpen}
+      isAdvancedUiEnabled={isAdvancedUiEnabled}
       onToggleOpen={() => {
         setIsSharePanelOpen((previousOpen) => {
           const nextOpen = !previousOpen;
