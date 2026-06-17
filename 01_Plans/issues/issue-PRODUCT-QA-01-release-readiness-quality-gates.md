@@ -2431,3 +2431,39 @@ DoDテンプレ（Draft→Open）
 - Next evidence work should capture or cite release-suitable screenshots/traces, including SafeMode/share-export visibility, import/sample-entry state, and read-only reviewer inspection.
 - Keep full release shipment No-Go until Productization Program Owner / QA Lead acceptance, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes Product Value definitions, fixture meaning, persistent schema authority, SafeMode/share-export policy, review attribution authority, automatic resolution/scoring, LLM dependency for value gates, public package contract, signature/approval semantics, or release authority.
+
+## Productization Gate Record 2026-06-17: post-2434 Product Value screenshot evidence
+
+- Candidate: `origin/main@a3cae51964b135ce55c07ea86a283558571f868a`.
+- Decision date (JST): 2026-06-17.
+- Reviewer: Codex.
+- Scope: post-#2434 release-gate intake for deterministic Japanese UI screenshots covering PV01 first-island creation, PV02 ambiguity-state inspection, and PV03 trace-enabled Share & Reproduce export. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, source issue status, ADR status, Product Value Open-gate status, release authority, branch cleanup authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, screenshot generation, diff check, GitHub Actions CI, local `main` fast-forward, and the 2026-06-06-or-later `codex/*` reachability audit passed after #2434.
+- G1 safety defaults: Conditional Go / unchanged. The screenshot evidence shows SafeMode ON and Share & Reproduce context, but the PR does not alter SafeMode, export granularity, review attribution, import sanitization, or `human_reviewed` authority.
+- G2 user-operability evidence: Conditional Go improved. PV01/PV02/PV03 now have release-documentation-suitable visual evidence attached to their current-open summaries, in addition to the earlier E2E execution freshness record.
+- G6 governance and decision traceability: Conditional Go improved. The Product Value summaries now separate visual evidence availability from Productization Program Owner / QA Lead acceptance and shipment approval.
+- G7 regression: Go for screenshot evidence slice. #2434 CI succeeded, and the local capture script regenerated the three PNG files from deterministic fixtures.
+- Final: **Conditional Go for Product Value screenshot evidence traceability / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2434 `[codex] Add Product Value screenshot evidence` merged as `a3cae51964b135ce55c07ea86a283558571f868a`; CI run `9671` passed.
+- Capture script: `03_Implement/frontend/scripts/capture_product_value_screenshots.mjs`.
+- Local screenshot command:
+  - `node .\scripts\capture_product_value_screenshots.mjs`
+- Generated screenshots:
+  - `04_Documentation/assets/screenshots/product-value-first-island.png`
+  - `04_Documentation/assets/screenshots/product-value-ambiguity-state.png`
+  - `04_Documentation/assets/screenshots/product-value-review-pack-trace.png`
+- Product Value summaries now cite the screenshot evidence while preserving **Draft remains** for PV01/PV02/PV03.
+- Local validation before #2434: active issue validation passed, validator unit tests passed, and `git diff --check` passed for the touched issue and screenshot documentation files.
+
+### Follow-ups
+
+- Treat #2434 as visual evidence traceability only. It does not convert `PRODUCT-VALUE-01..03` from Draft to Open and does not approve shipment.
+- Productization Program Owner / QA Lead still need to decide whether these screenshots, together with the E2E evidence, satisfy Product Value Open-gate expectations or require additional read-only reviewer, keyboard, screen-reader, or share-package inspection evidence.
+- Keep full release shipment No-Go until Productization Program Owner / QA Lead acceptance, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes Product Value definitions, fixture meaning, public screenshot/public documentation authority, SafeMode/share-export policy, review attribution authority, public package contract, signature/approval semantics, or release authority.
