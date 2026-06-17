@@ -2304,3 +2304,35 @@ DoDテンプレ（Draft→Open）
 - Prioritize the next UI/E2E work around deterministic fixtures for first-value, ambiguity/evidence, and reviewable-package flows instead of expanding product scope.
 - Keep human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, environment rehearsal evidence, FB/HIL held decisions, high-privilege lifecycle decisions, and final program approval outside this automated planning sync.
 - No new ADR is needed for this sync. ADR work is required only if the project changes product-value definitions, persistent schema authority, SafeMode/share-export policy, review attribution authority, automatic resolution/scoring, LLM dependency for value gates, public package contract, signature/approval semantics, or release authority.
+
+## Productization Gate Record 2026-06-17: post-2421 product-value E2E fixture foundation
+
+- Candidate: `origin/main@6db7fd5f0edc7f6e303313c2385d06c000db7b0f`.
+- Decision date (JST): 2026-06-17.
+- Reviewer: Codex.
+- Scope: post-#2421 release-gate intake for the shared Product Value E2E fixture builders. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, issue status, ADR status, release authority, branch deletion authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, targeted Playwright reruns, frontend typecheck, GitHub Actions CI, local `main` fast-forward, and the 2026-06-06-or-later `codex/*` reachability audit passed after #2421.
+- G2 user-operability evidence: Conditional Go improved. `product_value_fixtures.ts` now names and centralizes the deterministic PV01 first-meaningful-map, PV02 domain-expression, and PV03 review-pack trace data used by the existing browser-level tests.
+- G6 governance and decision traceability: Conditional Go improved. Product value evidence packets can now cite one shared fixture helper instead of rediscovering embedded test data in three separate specs.
+- G7 regression: Go for fixture refactor. #2421 CI succeeded, and local targeted Playwright reruns passed for `first_meaningful_map_mouse_flow`, `domain_expression_keyboard_access`, and `review_pack_trace_export`.
+- Final: **Conditional Go for product-value fixture evidence foundation / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2421 `[codex] Share Product Value E2E fixtures` merged with normal merge history; CI run `9632` passed.
+- Shared fixture helper: `03_Implement/frontend/e2e/helpers/product_value_fixtures.ts`.
+- Refactored E2E specs:
+  - `03_Implement/frontend/e2e/first_meaningful_map_mouse_flow.spec.ts`
+  - `03_Implement/frontend/e2e/domain_expression_keyboard_access.spec.ts`
+  - `03_Implement/frontend/e2e/review_pack_trace_export.spec.ts`
+- Local targeted verification before #2421: frontend typecheck passed, active issue validation passed, and the three targeted Playwright specs passed.
+- Latest local verification after #2421: active issue validation passed, triage reported no stopper, and the 2026-06-06-or-later `codex/*` branch reachability audit reported `since_20260606_codex_count=77`, `unmerged_count=0`.
+
+### Follow-ups
+
+- Convert the shared fixtures into explicit Product Value evidence packets only after Productization Program Owner / QA Lead accepts the fixture intent, screenshot or trace requirements, and Go/No-Go thresholds.
+- Keep `PRODUCT-VALUE-01..03` in Draft until fixture execution evidence, human acceptance, and release-suitable screenshots/traces are recorded.
+- No new ADR is needed for this sync. ADR work is required only if the project changes the product-value fixture meaning, persistent schema authority, SafeMode/share-export policy, review attribution authority, automatic resolution/scoring, LLM dependency for value gates, public package contract, signature/approval semantics, or release authority.
