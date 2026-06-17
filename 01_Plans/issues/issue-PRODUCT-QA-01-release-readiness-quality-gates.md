@@ -2398,3 +2398,36 @@ DoDテンプレ（Draft→Open）
 - Next evidence work should capture or cite release-suitable screenshot/trace bundles for PV01/PV02/PV03, including SafeMode/share-export visibility and read-only reviewer inspection where applicable.
 - Keep full release shipment No-Go until Productization Program Owner / QA Lead acceptance, human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes Product Value definitions, fixture meaning, persistent schema authority, SafeMode/share-export policy, review attribution authority, automatic resolution/scoring, LLM dependency for value gates, public package contract, signature/approval semantics, or release authority.
+
+## Productization Gate Record 2026-06-17: post-2432 Product Value current-main E2E rerun
+
+- Candidate: `origin/main@4e73aedf25b4820f2037e86114403e0a2a009b35`.
+- Decision date (JST): 2026-06-17.
+- Reviewer: Codex.
+- Scope: post-#2432 release-gate intake for the current-main PV01/PV02/PV03 representative E2E rerun. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, source issue status, ADR status, Product Value Open-gate status, branch deletion authority, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, GitHub Actions CI, local `main` fast-forward, and the 2026-06-06-or-later `codex/*` reachability audit passed after #2432.
+- G1 safety defaults: Conditional Go / unchanged. The rerun does not alter SafeMode/share-export policy, import-sanitize behavior, review attribution, or `human_reviewed` authority.
+- G2 user-operability evidence: Conditional Go improved. PV01 mouse first-value flow, PV02 keyboard domain-expression controls, and PV03 review-pack trace export remain executable on current `main`.
+- G6 governance and decision traceability: Conditional Go improved. Product Value summaries now record both fixture identity and current-main execution freshness while preserving human acceptance and screenshot/trace blockers.
+- G7 regression: Go for targeted Product Value E2E rerun. The local representative E2E command passed 3 tests, and #2432 CI succeeded.
+- Final: **Conditional Go for Product Value current-main E2E freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2432 `[codex] Record Product Value E2E rerun` merged with normal merge history; CI run `9665` passed.
+- Local targeted command, with Vite started directly by bundled Node.js because this Codex host does not expose `npm` on the normal PATH:
+  - `node .\node_modules\playwright\cli.js test e2e/first_meaningful_map_mouse_flow.spec.ts e2e/domain_expression_keyboard_access.spec.ts e2e/review_pack_trace_export.spec.ts --reporter=line`
+- Local targeted result: **3 passed**.
+- PV01 execution refreshed: sample opening, two-card selection, `Create Island`, visible `Island 1`, and selection-context confirmation.
+- PV02 execution refreshed: ambiguous target selection, unreviewed state, claim type, evidence/contradiction text, critique note, review checkbox, and critique tag keyboard reachability.
+- PV03 execution refreshed: fixture import, selected target claim, Overview trace exclusion, Detail trace inclusion, and ZIP contents for evidence, contradiction, and trace analytics files.
+
+### Follow-ups
+
+- Treat #2432 as execution freshness evidence only. It does not convert `PRODUCT-VALUE-01..03` from Draft to Open and does not approve shipment.
+- Next evidence work should capture or cite release-suitable screenshots/traces, including SafeMode/share-export visibility, import/sample-entry state, and read-only reviewer inspection.
+- Keep full release shipment No-Go until Productization Program Owner / QA Lead acceptance, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes Product Value definitions, fixture meaning, persistent schema authority, SafeMode/share-export policy, review attribution authority, automatic resolution/scoring, LLM dependency for value gates, public package contract, signature/approval semantics, or release authority.
