@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import { expect, test, type Download, type Page } from "@playwright/test";
+import { buildReviewPackTraceDocument } from "./helpers/product_value_fixtures";
 
 async function readDownloadToBuffer(download: Download): Promise<Buffer> {
   const stream = await download.createReadStream();
@@ -28,32 +29,6 @@ async function exportBundleFileNames(page: Page): Promise<string[]> {
   return Object.keys(zip.files).sort();
 }
 
-function buildTraceDocument() {
-  const now = "2026-06-04T00:00:00.000Z";
-  return {
-    version: 2,
-    id: "doc_review_pack_trace_export",
-    title: "review pack trace export fixture",
-    createdAt: now,
-    updatedAt: now,
-    transform: { panX: 0, panY: 0, zoom: 1 },
-    cards: [
-      { id: "c-target", text: "trace target claim", x: 140, y: 130, claimType: "claim", textReviewed: true },
-      { id: "c-support", text: "supporting field note", x: 430, y: 130, claimType: "fact", textReviewed: true },
-      { id: "c-counter", text: "contradicting stakeholder signal", x: 430, y: 290, claimType: "claim", textReviewed: false },
-    ],
-    edges: [],
-    islands: [{ id: "i-review", title: "reviewable trace package", cardIds: ["c-target", "c-support", "c-counter"] }],
-    readingOrder: ["c-target", "c-support", "c-counter"],
-    evidenceLinks: [
-      { id: "e-support", type: "supports", fromCardId: "c-support", toCardId: "c-target", createdAt: now },
-      { id: "e-counter", type: "contradicts", fromCardId: "c-counter", toCardId: "c-target", createdAt: now },
-    ],
-    narratives: [],
-    mergeSuggestionDecisions: [],
-  };
-}
-
 test("review pack export keeps trace controls consistent with actual zip contents", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/?locale=en");
@@ -67,7 +42,7 @@ test("review pack export keeps trace controls consistent with actual zip content
   await fileChooser.setFiles({
     name: "review-pack-trace-export.json",
     mimeType: "application/json",
-    buffer: Buffer.from(JSON.stringify(buildTraceDocument()), "utf-8"),
+    buffer: Buffer.from(JSON.stringify(buildReviewPackTraceDocument()), "utf-8"),
   });
   await page.getByRole("button", { name: "Replace current document" }).click();
   await expect(page.getByText("Replaced current document")).toBeVisible();

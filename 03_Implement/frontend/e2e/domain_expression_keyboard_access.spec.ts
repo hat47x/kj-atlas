@@ -1,55 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
+import { buildDomainExpressionDocument, withoutProductValueContent } from "./helpers/product_value_fixtures";
 
 const START_PANEL = '[data-panel="start-document-entry"]';
-
-function buildDomainExpressionDocument() {
-  const now = "2026-06-04T00:00:00.000Z";
-  return {
-    version: 2,
-    id: "doc_domain_expression_keyboard_access",
-    title: "domain expression keyboard access fixture",
-    createdAt: now,
-    updatedAt: now,
-    transform: { panX: 0, panY: 0, zoom: 1 },
-    cards: [
-      {
-        id: "domain-target",
-        text: "ambiguous target claim",
-        x: 140,
-        y: 130,
-        claimType: "unknown",
-        textReviewed: false,
-        critique: "needs review before acceptance",
-        critiqueTags: ["unclear_boundary"],
-      },
-      {
-        id: "domain-support",
-        text: "supporting field note",
-        x: 430,
-        y: 130,
-        claimType: "fact",
-        textReviewed: true,
-      },
-      {
-        id: "domain-counter",
-        text: "contradicting stakeholder signal",
-        x: 430,
-        y: 290,
-        claimType: "claim",
-        textReviewed: false,
-      },
-    ],
-    edges: [],
-    islands: [{ id: "domain-island", title: "unresolved review cluster", cardIds: ["domain-target", "domain-support", "domain-counter"] }],
-    readingOrder: ["domain-target", "domain-support", "domain-counter"],
-    evidenceLinks: [
-      { id: "domain-support-link", type: "supports", fromCardId: "domain-support", toCardId: "domain-target", createdAt: now },
-      { id: "domain-counter-link", type: "contradicts", fromCardId: "domain-counter", toCardId: "domain-target", createdAt: now },
-    ],
-    narratives: [],
-    mergeSuggestionDecisions: [],
-  };
-}
 
 async function routeDomainExpressionFixture(page: Page): Promise<{ enableSample: () => void }> {
   let shouldReturnSample = false;
@@ -59,15 +11,7 @@ async function routeDomainExpressionFixture(page: Page): Promise<{ enableSample:
   });
 
   await page.route("**/docs/doc_phase1_canvas", async (route) => {
-    const document = shouldReturnSample
-      ? buildDomainExpressionDocument()
-      : {
-          ...buildDomainExpressionDocument(),
-          cards: [],
-          islands: [],
-          evidenceLinks: [],
-          readingOrder: [],
-        };
+    const document = shouldReturnSample ? buildDomainExpressionDocument() : withoutProductValueContent(buildDomainExpressionDocument());
 
     await route.fulfill({
       status: 200,
