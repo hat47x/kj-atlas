@@ -2367,3 +2367,34 @@ DoDテンプレ（Draft→Open）
 - Product Value Open-gate acceptance still requires replayable evidence packets, screenshots or traces, and Productization Program Owner / QA Lead acceptance.
 - Keep full release shipment No-Go until human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes stale-ref retention, branch cleanup authority, Product Value definitions, SafeMode/share-export policy, public package contract, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-17: post-2429 Product Value fixture-summary alignment
+
+- Candidate: `origin/main@06316e6c1bb8e728e00046a9fdc67ba3adb8a081`.
+- Decision date (JST): 2026-06-17.
+- Reviewer: Codex.
+- Scope: post-#2429 release-gate intake for Product Value current-open summaries after #2428 fixture manifests became canonical and #2429 synchronized those summaries. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, source issue status, ADR status, Product Value Open-gate status, branch deletion authority, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, GitHub Actions CI, local `main` fast-forward, and the 2026-06-06-or-later `codex/*` reachability audit passed after #2429.
+- G1 safety defaults: Conditional Go / unchanged. The summaries keep SafeMode/share-export, import-sanitize, review attribution, public-exposure, and `human_reviewed` human-only boundaries unchanged.
+- G2 user-operability evidence: Conditional Go improved for planning clarity. PV01, PV02, and PV03 now point to the named reusable fixture builders and document IDs, so the next user-operation evidence can start from the accepted fixture identity instead of re-defining inputs.
+- G6 governance and decision traceability: Conditional Go improved. The current-open summaries now distinguish "fixture defined" from "value accepted", preserving the remaining human acceptance, screenshot/trace, SafeMode, share/export, read-only review, and Product QA / MVP-EXIT linkage blockers.
+- G7 regression: Go for planning slice. #2429 CI succeeded, and the effective diff is internal issue evidence only.
+- Final: **Conditional Go for Product Value fixture-summary traceability / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2429 `[codex] Sync Product Value fixture readiness summaries` merged with normal merge history; CI run `9656` passed.
+- `PRODUCT-VALUE-01-current-open-readiness-summary` now marks only the deterministic first-value fixture definition as complete: `buildFirstMeaningfulMapDocument()` / `doc_first_meaningful_map_mouse`.
+- `PRODUCT-VALUE-02-current-open-readiness-summary` now marks only the deterministic ambiguity fixture definition as complete: `buildDomainExpressionDocument()` / `doc_domain_expression_keyboard_access`.
+- `PRODUCT-VALUE-03-current-open-readiness-summary` now marks only the deterministic reviewable-package fixture definition as complete: `buildReviewPackTraceDocument()` / `doc_review_pack_trace_export`.
+- Latest local verification after #2429: active issue validation passed, triage reported no stopper, and the 2026-06-06-or-later `codex/*` branch reachability audit reported `since_20260606_codex_count=103`, `unmerged_count=0`.
+
+### Follow-ups
+
+- Treat #2429 as readiness-summary alignment only. It does not convert `PRODUCT-VALUE-01..03` from Draft to Open and does not approve shipment.
+- Next evidence work should capture or cite release-suitable screenshot/trace bundles for PV01/PV02/PV03, including SafeMode/share-export visibility and read-only reviewer inspection where applicable.
+- Keep full release shipment No-Go until Productization Program Owner / QA Lead acceptance, human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes Product Value definitions, fixture meaning, persistent schema authority, SafeMode/share-export policy, review attribution authority, automatic resolution/scoring, LLM dependency for value gates, public package contract, signature/approval semantics, or release authority.
