@@ -1812,6 +1812,72 @@
 
 ---
 
+## 42) Baseline delta 2026-06-17: post-2422 Product Value evidence foundation sync
+
+### Candidate
+
+- Target main: `origin/main` = `8bdcce0c201c4bad39675b8032f3df92a80ab123`.
+- Previous recorded mainline baseline: `origin/main@73021bcc9fa5e7f5a4b0ebce72136c4ed41d5ba7` in section 41.
+- Scope note: this delta records #2416 through #2422 becoming canonical on `main`. It captures the post-2415 project baseline/governance continuity, readable Product Value readiness summaries, shared Product Value E2E fixture foundation, and the Product QA / MVP-EXIT synchronization that consumes that evidence foundation. It does not change runtime behavior, UI/API behavior, SafeMode/share-export policy, issue status, ADR status, release authority, branch deletion authority, public documentation authority, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python / GitHub connector for PR and open-PR inspection.
+
+### Command and CI evidence
+
+| Area | Command or source | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `8bdcce0c201c4bad39675b8032f3df92a80ab123` | G0 |
+| PR #2416 | `[codex] Record post-2415 project baseline` | Merged with normal merge history | G0 / G6 |
+| PR #2417 | `[codex] Record post-2416 governance reachability` | Merged with normal merge history | G0 / repository governance |
+| PR #2418 | `[codex] Add Product Value 01 readiness summary` | Merged with normal merge history; CI run `9623` passed | G2 / G6 / G7 |
+| PR #2419 | `[codex] Add Product Value 02/03 readiness summaries` | Merged with normal merge history; CI run `9626` passed | G2 / G6 / G7 |
+| PR #2420 | `[codex] Sync Product QA after value readiness summaries` | Merged with normal merge history; CI run `9629` passed | G0 / G6 / G7 |
+| PR #2421 | `[codex] Share Product Value E2E fixtures` | Merged with normal merge history; CI run `9632` passed | G2 / G7 |
+| PR #2422 | `[codex] Sync Product QA after value E2E fixtures` | Merged with normal merge history; CI run `9635` passed | G0 / G6 / G7 |
+| Open PR check | GitHub PR search for open PRs in `hat47x/kj-atlas` | Pass: 0 open PRs returned | G0 / repository governance |
+| Branch reachability | `git merge-base --is-ancestor` over 2026-06-06-or-later `origin/codex/*` branches | Pass: `since_20260606_codex_count=78`, `unmerged_count=0` | G0 / repository governance |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning validator regression | `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` | Pass: 10 tests | G7 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=55 / ready=15 / blocked=40 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this planning-baseline refresh.
+- #2416 and #2417 kept the latest-main baseline and repository-governance reachability current after the post-2415 Product QA / MVP-EXIT sync.
+- #2418 and #2419 added readable internal readiness summaries for PV01 first meaningful map, PV02 ambiguity/evidence workflow, and PV03 reviewable outcome package. These summaries reduce the amount of hidden context needed to understand what remains before Product Value Open-gate acceptance.
+- #2420 synchronized Product QA and MVP-EXIT with the Product Value readiness summaries while preserving full-shipment No-Go.
+- #2421 introduced shared deterministic Product Value E2E fixture builders for PV01/PV02/PV03, making future evidence packets easier to reference from issue and gate records.
+- #2422 synchronized Product QA and MVP-EXIT again after the fixture foundation became canonical on `main`.
+- The 2026-06-06-or-later `codex/*` branch reachability audit remains clean with `unmerged_count=0`; remote branch deletion remains repository-maintainer-owned and out of scope for this issue.
+- No new ADR is required for this baseline sync. ADR work is required only if the project changes Product Value definitions, persistent schema authority, SafeMode/share-export policy, review attribution authority, automatic resolution/scoring, LLM dependency for value gates, public package contract, signature/approval semantics, release authority, branch cleanup authority, or runtime environment policy.
+
+### Gate classification
+
+| Gate | 2026-06-17 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, open PR check, branch reachability audit, active issue validation, validator unit tests, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go / unchanged | SafeMode/share-export, import-sanitize, public documentation authority, and high-privilege data lifecycle policy were not changed by this sync. |
+| G2 user-operability evidence | Conditional Go improved | Product Value readiness summaries and shared E2E fixtures clarify the deterministic evidence path for first meaningful map, ambiguity/evidence, and reviewable package flows. |
+| G6 governance and decision traceability | Conditional Go improved | PROJECT-BASELINE, PROJECT-GOV, PRODUCT-QA, MVP-EXIT, and Product Value readiness records now agree that this lane is evidence-foundation work, not release approval. |
+| G7 regression | Go for current planning slice | PR #2418 through #2422 CI succeeded; local planning validation, validator unit tests, and triage passed after the post-2422 main sync. |
+| Repository governance | Conditional Go improved | Open PR search returned 0; all observed 2026-06-06-or-later `codex/*` branch tips remain reachable from `main`. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for post-2422 planning integrity, branch reachability, Product Value evidence-foundation traceability, and Product QA / MVP-EXIT synchronization.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, Product Value Open-gate acceptance with replayable evidence packets, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- Follow-up routing:
+  - Product Value evidence packets and Open-gate acceptance: `PRODUCT-VALUE-01..03`, `PRODUCT-QA-01`, and `MVP-EXIT-01`.
+  - Representative E2E and realistic journey freshness: `QA-E2E-USE-01`.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Branch deletion / remote-ref cleanup authority: `PROJECT-GOV-01` and repository maintainer approval.
+  - HIL/FB approval and held decision: `HIL-RS-02-A1`, `FB-P0-2A2B2C`, project governance, and human approval lane.
+  - High-privilege data-lifecycle decision: `DATA-MAINT-03`, `ADR-0035`, and `DATA-MAINT-04`.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+
+---
+
 ## Authoring Checklist・井ｺｺ髢・逕滓・AI 蜈ｱ騾夲ｼ・
 
 - [x] `Source Issue` 縺碁°逕ｨ迥ｶ諷九→謨ｴ蜷医＠縺ｦ縺・ｋ・域悴驕狗畑譎ゅ・ `N/A`・峨・
