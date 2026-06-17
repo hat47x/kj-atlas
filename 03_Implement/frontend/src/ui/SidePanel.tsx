@@ -1172,6 +1172,7 @@ export function SidePanel({
           ) : null}
         </section>
       ) : null}
+      {isAdvancedUiEnabled ? (
       <section data-panel="merge-history" style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <details
           data-panel-group="advanced"
@@ -1245,6 +1246,7 @@ export function SidePanel({
           </div>
         </details>
       </section>
+      ) : null}
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.guided_flow.title")}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", marginBottom: 8 }}>
@@ -1314,6 +1316,7 @@ export function SidePanel({
           </ul>
         ) : null}
       </section>
+      {isAdvancedUiEnabled ? (
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.aggregated_edges.title")}</div>
         {aggregatedEdgeInspectorItems.length === 0 ? (
@@ -1337,6 +1340,7 @@ export function SidePanel({
           </div>
         )}
       </section>
+      ) : null}
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.layout.title")}</div>
         <label
