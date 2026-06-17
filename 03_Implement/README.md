@@ -45,6 +45,7 @@ cd 03_Implement && direnv allow
 補足:
 
 - Docker はホスト側（Docker Desktop / WSL 統合）で用意します。`flake.nix` には含めません。統合起動（`docker compose up --build`）はローカルの Node/Python 不要で、Docker だけで動きます。
+- WSL2 から Windows ファイルシステム上（`/mnt/c/...`）の本リポジトリで `npm ci` を実行すると、9p 経由の展開でファイルが壊れて失敗することがあります（esbuild の install.js が `SyntaxError` になる等）。その場合はリポジトリを WSL ネイティブ FS（例 `~/`）に置いて Node 系コマンドを実行するか、統合確認は Docker（`docker compose up --build`）を使ってください。`python` / `ruff` や `nix develop` 自体は `/mnt/c` 上でも動作します。
 - Playwright（`npx playwright test`）はブラウザバイナリの追加取得が必要で、Nix シェル単体では動かないことがあります。E2E は Docker か別途のブラウザ導入で実行してください。
 
 ## 主要コマンド（本リポジトリ準拠）
