@@ -68,6 +68,31 @@ Response:
 
 `text` が文字列でない場合、provider validation error として扱われます。
 
+この `/generate` は kj-atlas 独自の契約で、OpenAI 互換 API や Ollama の API とは**互換性がありません**。`KJ_ATLAS_LOCAL_LLM_BASE_URL` を Ollama 等へ直接向けても動作しません。接続するには、この契約（`POST /generate`、応答 `{"text": "<JSON文字列>"}`）を満たす薄いアダプタ層が必要です。
+
+## GPU なしで動作イメージを確認する（モックアダプタ）
+
+各 AI タスクは `text` の中に**タスクごとの厳密な JSON**（例: レイアウト提案は元の全カードを過不足なく含む、島サマリの根拠IDはその島のメンバーである、ナラティブは読み順と完全一致する等）を要求します。GPU 非搭載 PC で動く小規模・低精度モデルでは、この JSON を安定して生成できず検証エラー（422）が頻発しがちです。
+
+「動作イメージ」だけを GPU なしで確認したい場合は、リポジトリ同梱の決定論的モックアダプタを使えます。これは LLM ではなく、各タスクに**最小限の妥当な JSON** を返すだけのスタブです（レイアウトは単純なグリッド配置、要約・ナラティブは定型の下書き、統合候補・整合性チェックは空）。UI 上で AI 連携の往復と表示の流れを確認する用途に限定してください。
+
+```bash
+# 別端末でモックアダプタを起動（Python 標準ライブラリのみ・依存なし）
+python3 03_Implement/deploy/tools/mock_local_llm.py --host 127.0.0.1 --port 8001
+
+# backend 側で local provider を有効化し、モックに向ける
+export KJ_ATLAS_LLM_PROVIDER=local
+export KJ_ATLAS_LOCAL_LLM_BASE_URL=http://localhost:8001
+export KJ_ATLAS_LOCAL_LLM_MODEL=mock
+```
+
+モック有効時に画面で確認できる AI 機能:
+
+- 既定の画面（「詳細」トグル OFF）: 島を選択して「AIで提案」（島サマリ）、島どうしの関係線を選択して「AIで生成」（関係サマリ）。
+- 「詳細」トグル ON: 上記に加えて、レイアウト提案・統合候補・ナラティブ生成／整合性チェック。
+
+モックの出力は内容を持たない定型です。実際の示唆を得るには、`/generate` 契約に合わせて十分な JSON 追従性を持つ LLM を接続してください（通常は薄いアダプタ層が必要です）。
+
 ## 疎通確認
 
 まず local endpoint 側を直接確認します。
