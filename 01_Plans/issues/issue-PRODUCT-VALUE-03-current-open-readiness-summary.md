@@ -64,6 +64,19 @@ No new ADR is needed to define the minimum package evidence. A new ADR is requir
 - This rerun does not satisfy Productization Program Owner / QA Lead package acceptance, SafeMode/readability screenshot evidence, read-only reviewer inspection, release-suitable screenshot or trace bundle approval, approval/signature authority, or shipment approval.
 - Status impact: **Draft remains**. This is execution freshness evidence only.
 
+## Screenshot Evidence Refresh 2026-06-17: PV03 traceable review package
+
+- Candidate mainline: `origin/main@e92710bfcbb4`.
+- Capture script: `03_Implement/frontend/scripts/capture_product_value_screenshots.mjs`.
+- Screenshot: `04_Documentation/assets/screenshots/product-value-review-pack-trace.png`.
+- Fixture state: `doc_review_pack_trace_export`, Japanese UI locale, selected reviewed claim, Share & Reproduce panel open, selected-card traces enabled, detail granularity selected.
+- Regeneration command:
+  - `node .\scripts\capture_product_value_screenshots.mjs`
+- Evidence packet impact:
+  - Adds a visual proof that the current sharing surface can expose SafeMode context, reviewed/unreviewed state, trace inclusion, and detail export granularity together.
+  - Does not satisfy Productization Program Owner / QA Lead package acceptance, read-only reviewer inspection, ZIP content acceptance, approval/signature authority, or shipment approval.
+  - Status impact: **Draft remains**.
+
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.

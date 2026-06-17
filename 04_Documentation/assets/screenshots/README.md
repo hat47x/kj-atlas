@@ -40,3 +40,22 @@ Optional environment variables:
 - `KJ_ATLAS_SCREENSHOT_BASE_URL`: target URL. Defaults to `http://127.0.0.1:4173/?locale=ja`.
 - `KJ_ATLAS_SCREENSHOT_HOST`: Vite host. Defaults to `127.0.0.1`.
 - `KJ_ATLAS_SCREENSHOT_PORT`: Vite port. Defaults to `4173`.
+
+## Product Value Evidence Screenshots
+
+The following screenshots are generated from deterministic Product Value fixtures and are intended for public documentation or release-evidence review. They show representative states only; they do not by themselves approve Product Value gates or final release shipment.
+
+| File | Purpose |
+| --- | --- |
+| `product-value-first-island.png` | PV01: first meaningful grouping after opening a sample, selecting two cards, and creating an island. |
+| `product-value-ambiguity-state.png` | PV02: an unresolved/ambiguous claim selected in a grouped context, with review state visible in the side panel. |
+| `product-value-review-pack-trace.png` | PV03: the Share & Reproduce panel with selected-card traces included at detail granularity. |
+
+Regenerate these screenshots when Product Value fixtures, Japanese UI labels, canvas layout, or Share & Reproduce controls change:
+
+```powershell
+cd 03_Implement/frontend
+C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\scripts\capture_product_value_screenshots.mjs
+```
+
+The script starts a temporary Vite server when `KJ_ATLAS_SCREENSHOT_PORT` is free, loads the app with `?locale=ja`, injects deterministic fixture data through Playwright routes, captures the three PNG files above, and stops the server when it started it.

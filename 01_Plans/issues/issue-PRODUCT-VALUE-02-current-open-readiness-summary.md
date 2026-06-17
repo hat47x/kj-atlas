@@ -64,6 +64,19 @@ No new ADR is needed for the Phase 1 summary. A new ADR is required if implement
 - This rerun does not satisfy hold/pending split acceptance, share/export preflight evidence for unresolved or unreviewed ambiguity state, AI-boundary proof, UX acceptance of findability, physical keyboard acceptance, screen-reader acceptance, or shipment approval.
 - Status impact: **Draft remains**. This is execution freshness evidence only.
 
+## Screenshot Evidence Refresh 2026-06-17: PV02 ambiguity state
+
+- Candidate mainline: `origin/main@e92710bfcbb4`.
+- Capture script: `03_Implement/frontend/scripts/capture_product_value_screenshots.mjs`.
+- Screenshot: `04_Documentation/assets/screenshots/product-value-ambiguity-state.png`.
+- Fixture state: `doc_domain_expression_keyboard_access`, Japanese UI locale, ambiguous target claim selected inside a review cluster with review state visible.
+- Regeneration command:
+  - `node .\scripts\capture_product_value_screenshots.mjs`
+- Evidence packet impact:
+  - Adds a visual proof that an unresolved claim, supporting note, counter-opinion, grouped context, SafeMode visibility, and side-panel review state can be inspected in the current UI.
+  - Does not satisfy hold/pending split acceptance, share/export preflight evidence for unresolved material, AI-boundary proof, UX acceptance of findability, physical keyboard acceptance, screen-reader acceptance, or shipment approval.
+  - Status impact: **Draft remains**.
+
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
