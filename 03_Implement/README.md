@@ -3,6 +3,49 @@
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 
+## Nix 開発環境（プロジェクト標準）
+
+ローカルのツールチェーン（Node 20 / Python 3.12 / Ruff）は、リポジトリ直下の `flake.nix` で一元管理します。バージョンは `flake.lock` で固定され、全員が同一環境になります。frontend/backend の Dockerfile（`node:20-alpine` / `python:3.12-slim`）と揃えています。
+
+1. Nix を導入します（WSL2 / systemd 環境で確認済み。flakes が既定で有効になる Determinate Systems 版を推奨。`sudo` のパスワード入力を求められます）。
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+```
+
+公式インストーラを使う場合は、導入後に flakes を有効化します。
+
+```bash
+sh <(curl -L https://nixos.org/nix/install) --daemon
+mkdir -p ~/.config/nix && printf 'experimental-features = nix-command flakes\n' >> ~/.config/nix/nix.conf
+```
+
+導入後はシェルを開き直して `nix --version` が通ることを確認します。
+
+2. リポジトリ直下で開発シェルに入ります。以降の `npm` / `python` / `ruff` コマンドはこのシェル内で実行します。
+
+```bash
+cd /path/to/kj-atlas
+nix develop
+```
+
+flakes を未有効化のまま一時的に使う場合は次の形でも実行できます。
+
+```bash
+nix --extra-experimental-features 'nix-command flakes' develop
+```
+
+3. （任意）direnv を使うと `cd` で自動的にこのシェルへ入れます。同梱の `.envrc`（`use flake`）を有効化します。
+
+```bash
+direnv allow
+```
+
+補足:
+
+- Docker はホスト側（Docker Desktop / WSL 統合）で用意します。`flake.nix` には含めません。統合起動（`docker compose up --build`）はローカルの Node/Python 不要で、Docker だけで動きます。
+- Playwright（`npx playwright test`）はブラウザバイナリの追加取得が必要で、Nix シェル単体では動かないことがあります。E2E は Docker か別途のブラウザ導入で実行してください。
+
 ## 主要コマンド（本リポジトリ準拠）
 
 | アクション | コマンド | 用途 |
