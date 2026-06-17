@@ -1,0 +1,69 @@
+# Issue Draft: PRODUCT-VALUE-02 current open-readiness summary
+
+- Type: Process
+- Status: Draft
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: `01_Plans/issues/issue-PRODUCT-VALUE-02-ambiguity-evidence-workflow.md`
+- Priority: P1
+- Owner: Codex (Product Value evidence steward; accountable owner remains Productization Program Owner / QA Lead)
+- Scope: `01_Plans/issues/issue-PRODUCT-VALUE-02-ambiguity-evidence-workflow.md`, `02_Architecture/value_traceability.md`, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `03_Implement/frontend/e2e/`
+- Related Backlog: `PRODUCT-VALUE-02`
+- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `02_Architecture/value_traceability.md`
+- Expected verification level: `docs-check`
+
+## Current Open-Readiness Summary 2026-06-17
+
+### Product Value Intent
+
+`PRODUCT-VALUE-02` is the ambiguity and evidence workflow gate. It exists to prove that kj-atlas can keep unresolved material useful instead of turning it into accidental certainty. A user should be able to preserve holds, critiques, evidence gaps, contradictions, and counter-opinions as work states that remain visible, filterable, reviewable, and safe to include or exclude before sharing.
+
+This is not a request for automatic truth scoring, automatic resolution, ranking, or AI-driven removal of uncertainty. The value is that the product lets people keep ambiguous material in a disciplined shape until a human decides what to do with it.
+
+### Current Mainline Status
+
+- `ADR-0032` is accepted and keeps V1/V2/V3 active: externalization, structuring, and human review are product-value loops, not optional polish.
+- `ADR-0040` resolves the earlier circular blocker between `ADR-0032` and `PRODUCT-VALUE-02`. Existing schema concepts such as `claimType`, `critiqueInputs`, `evidenceLinks`, `reviewState`, and review attribution can be surfaced first without forcing a broad schema migration.
+- The phase boundary is clear: Phase 1 should expose existing reversible state as readable UI and evidence; later phases may add optional hold/shelf fields only after a separate issue or ADR confirms the data contract.
+- The recent mainline convergence through PR #2418 records that manual authoring and first-value readiness are improving, but it does not yet prove the ambiguity workflow.
+
+### Open-Readiness Gaps
+
+- The source issue remains `Draft` because the product has not fixed a concrete ambiguity fixture, user action sequence, evidence packet, and owner-reviewed Go/No-Go rule.
+- Current documentation names the concepts, but the representative user journey still needs to show exactly how a person notices, preserves, filters, reviews, and shares unresolved material.
+- The UI must distinguish "unresolved", "needs review", "evidence missing", and "counter-opinion present" from final answers. These states must not be silently collapsed into a normal card, island, or final narrative.
+- SafeMode and share/export behavior must prove that unresolved or unreviewed material is handled deliberately. The product should show what will be included, excluded, or masked before the user shares a package.
+- `human_reviewed` remains a human-only state. No worker, AI assist path, import path, or API convenience behavior may set it automatically.
+
+### Next Implementation Slice
+
+1. Define one deterministic ambiguity fixture with at least: a normal card, one hold or unresolved point, one critique or counter-opinion, one evidence gap, and one reviewed item.
+2. Add a focused UI/E2E path that verifies the user can surface those states from the canvas or detail panel without relying on an LLM.
+3. Verify filtering or focus behavior: unresolved material must be findable again after the user moves between canvas, detail, and share/export preflight.
+4. Capture share/export preflight evidence showing whether unresolved and unreviewed material is included, excluded, or masked.
+5. Record the result in `PRODUCT-QA-01` before changing the source issue from `Draft` to `Open`.
+
+### ADR Boundary
+
+No new ADR is needed for the Phase 1 summary. A new ADR is required if implementation introduces new persistent schema fields for hold/shelf membership, changes the meaning of `human_reviewed`, adds automatic resolution or scoring, changes SafeMode/share-export policy, or makes LLM assistance mandatory for ambiguity handling.
+
+## Acceptance Criteria
+
+- [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
+- [ ] AC-02: The deterministic ambiguity fixture is named, stored, and reusable before implementation starts.
+- [ ] AC-03: The UI/E2E evidence distinguishes unresolved, unreviewed, evidence-missing, and counter-opinion states from final conclusions.
+- [ ] AC-04: Share/export preflight evidence shows how unresolved and unreviewed material is handled under SafeMode.
+- [ ] AC-05: Any schema expansion or review-authority change is routed through issue/ADR before code changes.
+
+## Validation Plan
+
+- `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
+- `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py`
+- `git diff --check -- 01_Plans/issues/issue-PRODUCT-VALUE-02-current-open-readiness-summary.md`
+
+## Authoring Checklist
+
+- [x] `Source Issue` is aligned with the current work.
+- [x] `Related ADR/Spec` contains the minimum references.
+- [x] Acceptance criteria include safety, exchange, and verification.
+- [x] `Validation plan` contains concrete commands.
+- [x] Non-goals prevent scope creep.
