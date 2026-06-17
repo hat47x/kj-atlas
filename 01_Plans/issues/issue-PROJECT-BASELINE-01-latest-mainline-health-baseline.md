@@ -1946,3 +1946,60 @@
 - [x] 蜿怜・譚｡莉ｶ縺ｫ縲悟ｮ牙・縲阪御ｺ呈鋤縲阪梧､懆ｨｼ縲阪′蜷ｫ縺ｾ繧後ｋ縲・
 - [x] `Validation plan` 縺ｫ蜈ｷ菴薙さ繝槭Φ繝峨′縺ゅｋ縲・
 - [x] 髱樒岼讓吶′譏手ｨ倥＆繧後せ繧ｳ繝ｼ繝鈴ｸ閼ｱ繧帝亟縺・〒縺・ｋ縲・
+
+## 44) Baseline delta 2026-06-17: post-2430 Product Value fixture-summary gate sync
+
+### Candidate
+
+- Target main: `origin/main` = `18909809cf0465c880c23d3406f5a2814c22155c`.
+- Previous recorded mainline baseline: `origin/main@bfbaaf0cf8f12be0e3f528530b8b9c99aae8dad6` in section 43.
+- Scope note: this delta records #2428 through #2430 becoming canonical on `main`. It captures Product Value fixture manifests, current-open summary alignment, and Product QA / MVP-EXIT gate synchronization. It does not change runtime behavior, UI/API behavior, SafeMode/share-export policy, issue status, ADR status, Product Value Open-gate status, branch deletion authority, public documentation authority, release authority, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python / GitHub connector for PR and CI inspection.
+
+### Command and CI evidence
+
+| Area | Command or source | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `18909809cf0465c880c23d3406f5a2814c22155c` | G0 |
+| PR #2428 | `[codex] Add Product Value fixture manifests` | Merged with normal merge history; CI run `9653` passed | G0 / G2 / G6 / G7 |
+| PR #2429 | `[codex] Sync Product Value fixture readiness summaries` | Merged with normal merge history; CI run `9656` passed | G0 / G6 / G7 |
+| PR #2430 | `[codex] Sync Product QA after fixture summaries` | Merged with normal merge history; CI run `9659` passed | G0 / G6 / G7 |
+| Branch reachability | `git merge-base --is-ancestor` over 2026-06-06-or-later `origin/codex/*` branches | Pass: `since_20260606_codex_count=104`, `unmerged_count=0` | G0 / repository governance |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=55 / ready=15 / blocked=40 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this planning-baseline refresh.
+- #2428 fixed Product Value fixture identities for PV01/PV02/PV03 in the source issues while preserving Draft status and human acceptance requirements.
+- #2429 aligned the current-open readiness summaries with those fixture manifests, marking only fixture definition as complete.
+- #2430 synchronized Product QA and MVP-EXIT with that interpretation: fixture-summary traceability improved, but full shipment remains No-Go.
+- This latest-main slice improves traceability only. It does not convert Product Value Draft issues to Open, approve Product Value Open-gate acceptance, approve remote branch deletion, infer human acceptance, or approve release shipment.
+- The 2026-06-06-or-later `codex/*` branch reachability audit remains clean with `unmerged_count=0`; remote branch deletion remains repository-maintainer-owned and out of scope for this issue.
+- No new ADR is required for this baseline sync. ADR work is required only if the project changes Product Value definitions, fixture meaning, persistent schema authority, SafeMode/share-export policy, review attribution authority, automatic resolution/scoring, LLM dependency for value gates, public package contract, signature/approval semantics, stale-ref retention, branch cleanup authority, runtime environment policy, or release authority.
+
+### Gate classification
+
+| Gate | 2026-06-17 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, branch reachability audit, active issue validation, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go / unchanged | SafeMode/share-export, import-sanitize, review attribution, public documentation authority, high-privilege lifecycle policy, and Product Value authority were not changed by this sync. |
+| G2 user-operability evidence | Conditional Go improved for evidence assembly | PV01/PV02/PV03 fixture identities are now explicit and reusable, but release-suitable screenshot/trace evidence and human acceptance remain open. |
+| G6 governance and decision traceability | Conditional Go improved | PROJECT-BASELINE, PRODUCT-QA, and MVP-EXIT now agree that fixture definition is complete while Product Value Open-gate acceptance is not. |
+| G7 regression | Go for current planning slice | PR #2428, #2429, and #2430 CI succeeded; local planning validation and triage passed after the post-2430 main sync. |
+| Repository governance | Conditional Go improved | All observed 2026-06-06-or-later `codex/*` branch tips remain reachable from `main`. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for post-2430 planning integrity, branch reachability, Product Value fixture-summary traceability, and latest-main governance alignment.
+- Release readiness decision remains **No-Go** for full shipment until Productization Program Owner / QA Lead acceptance, release-suitable screenshot/trace bundles, SafeMode/share-export evidence, read-only reviewer inspection, human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- Follow-up routing:
+  - Product Value evidence packets and Open-gate acceptance: `PRODUCT-VALUE-01..03`, `PRODUCT-QA-01`, and `MVP-EXIT-01`.
+  - Release-suitable screenshots/traces and representative UI evidence: `QA-E2E-USE-01` and Product Value source issues.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Branch deletion / remote-ref cleanup authority: `PROJECT-GOV-01` and repository maintainer approval.
+  - HIL/FB approval and held decision: `HIL-RS-02-A1`, `FB-P0-2A2B2C`, project governance, and human approval lane.
+  - High-privilege data-lifecycle decision: `DATA-MAINT-03`, `ADR-0035`, and `DATA-MAINT-04`.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
