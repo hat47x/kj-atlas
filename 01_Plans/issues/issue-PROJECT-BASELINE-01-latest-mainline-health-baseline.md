@@ -1878,6 +1878,67 @@
 
 ---
 
+## 43) Baseline delta 2026-06-17: post-2425 release-gate governance sync
+
+### Candidate
+
+- Target main: `origin/main` = `bfbaaf0cf8f12be0e3f528530b8b9c99aae8dad6`.
+- Previous recorded mainline baseline: `origin/main@8bdcce0c201c4bad39675b8032f3df92a80ab123` in section 42.
+- Scope note: this delta records #2423 through #2425 becoming canonical on `main`. It captures the post-2422 Project Baseline refresh, the matching Project Governance reachability checkpoint, and the Product QA / MVP-EXIT release-gate synchronization that consumes those records. It does not change runtime behavior, UI/API behavior, SafeMode/share-export policy, issue status, ADR status, Product Value Open-gate status, branch deletion authority, public documentation authority, release authority, or Compose configuration.
+- Executor: Codex.
+- Environment: Windows / PowerShell / backend virtualenv Python / GitHub connector for PR and open-PR inspection.
+
+### Command and CI evidence
+
+| Area | Command or source | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: local `main` fast-forwarded to `bfbaaf0cf8f12be0e3f528530b8b9c99aae8dad6` | G0 |
+| PR #2423 | `[codex] Record post-2422 project baseline` | Merged with normal merge history; CI run `9638` passed | G0 / G6 / G7 |
+| PR #2424 | `[codex] Record post-2423 governance reachability` | Merged with normal merge history; CI run `9641` passed | G0 / repository governance / G7 |
+| PR #2425 | `[codex] Sync release gates after post-2424 governance` | Merged with normal merge history; CI run `9644` passed | G0 / G6 / G7 |
+| Open PR check | GitHub PR search for open PRs in `hat47x/kj-atlas` | Pass: 0 open PRs returned | G0 / repository governance |
+| Branch reachability | `git merge-base --is-ancestor` over 2026-06-06-or-later `origin/codex/*` branches | Pass: `since_20260606_codex_count=81`, `unmerged_count=0` | G0 / repository governance |
+| Planning metadata | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning validator regression | `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` | Pass: 10 tests | G7 |
+| Planning triage | `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=55 / ready=15 / blocked=40 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Findings and routing
+
+- No latest-main stopper was found in this planning-baseline refresh.
+- #2423 made the post-2422 Product Value evidence-foundation baseline canonical on `main`.
+- #2424 made the matching repository-governance reachability checkpoint canonical on `main`, keeping open PR count, branch-tip reachability, and branch deletion authority explicit.
+- #2425 synchronized Product QA and MVP-EXIT with the post-2424 baseline/governance records while preserving full-shipment No-Go.
+- This latest-main slice improves traceability only. It does not convert Product Value Draft issues to Open, approve Product Value Open-gate acceptance, approve remote branch deletion, infer human acceptance, or approve release shipment.
+- The 2026-06-06-or-later `codex/*` branch reachability audit remains clean with `unmerged_count=0`; remote branch deletion remains repository-maintainer-owned and out of scope for this issue.
+- No new ADR is required for this baseline sync. ADR work is required only if the project changes stale-ref retention, branch cleanup authority, Product Value definitions, SafeMode/share-export policy, review attribution authority, public package contract, runtime environment policy, or release authority.
+
+### Gate classification
+
+| Gate | 2026-06-17 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, open PR check, branch reachability audit, active issue validation, validator unit tests, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go / unchanged | SafeMode/share-export, import-sanitize, public documentation authority, high-privilege lifecycle policy, and Product Value authority were not changed by this sync. |
+| G2 user-operability evidence | Conditional Go / unchanged from #2421 | No new UI/E2E evidence was added; this slice keeps existing Product Value fixture evidence traceable through Project Baseline, Project Governance, Product QA, and MVP-EXIT. |
+| G6 governance and decision traceability | Conditional Go improved | PROJECT-BASELINE, PROJECT-GOV, PRODUCT-QA, and MVP-EXIT now agree on the post-2424 interpretation: evidence foundation and governance readiness, not Product Value Open-gate acceptance or release approval. |
+| G7 regression | Go for current planning slice | PR #2423, #2424, and #2425 CI succeeded; local planning validation, validator unit tests, and triage passed after the post-2425 main sync. |
+| Repository governance | Conditional Go improved | Open PR search returned 0; all observed 2026-06-06-or-later `codex/*` branch tips remain reachable from `main`. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for post-2425 planning integrity, branch reachability, release-gate traceability, and latest-main governance alignment.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard acceptance, screen-reader acceptance, Product Value Open-gate acceptance with replayable evidence packets, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- Follow-up routing:
+  - Product Value evidence packets and Open-gate acceptance: `PRODUCT-VALUE-01..03`, `PRODUCT-QA-01`, and `MVP-EXIT-01`.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Branch deletion / remote-ref cleanup authority: `PROJECT-GOV-01` and repository maintainer approval.
+  - Representative E2E and realistic journey freshness: `QA-E2E-USE-01`.
+  - HIL/FB approval and held decision: `HIL-RS-02-A1`, `FB-P0-2A2B2C`, project governance, and human approval lane.
+  - High-privilege data-lifecycle decision: `DATA-MAINT-03`, `ADR-0035`, and `DATA-MAINT-04`.
+  - Environment rehearsal and Compose evidence: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+  - Support diagnostics/recovery rehearsal: `PRODUCT-OPS-01`.
+
+---
+
 ## Authoring Checklist・井ｺｺ髢・逕滓・AI 蜈ｱ騾夲ｼ・
 
 - [x] `Source Issue` 縺碁°逕ｨ迥ｶ諷九→謨ｴ蜷医＠縺ｦ縺・ｋ・域悴驕狗畑譎ゅ・ `N/A`・峨・
