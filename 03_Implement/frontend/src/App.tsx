@@ -8530,6 +8530,7 @@ ${parsedDocument.error}`);
       sidePanel={
         <SidePanel
           isReadOnly={isReadOnly}
+          isAdvancedUiEnabled={isAdvancedUiEnabled}
           selectedCard={selectedCard}
           sourceCardsForSelectedCanonical={sourceCardsForSelectedCanonical}
           missingSourceCardIdsForSelectedCanonical={missingSourceCardIdsForSelectedCanonical}
