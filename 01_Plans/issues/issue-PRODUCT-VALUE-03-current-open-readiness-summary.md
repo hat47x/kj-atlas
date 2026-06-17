@@ -25,10 +25,11 @@ The output package is not just a polished narrative or export file. It must carr
 - `ADR-0031` and the current documentation already emphasize screen information architecture, SafeMode visibility, and share/export confirmation.
 - `data_handling.md` describes the user's responsibility to confirm what is shared and what is excluded. It also anchors the expectation that unreviewed material and sensitive content must not be exposed accidentally.
 - Recent mainline PRs improved evidence governance and project baseline records, but no current PR proves that an exported outcome can be reviewed end to end as a product artifact.
+- Current fixture manifest: PR #2428 names `buildReviewPackTraceDocument()` in `03_Implement/frontend/e2e/helpers/product_value_fixtures.ts` as the PV03 reusable fixture, with document ID `doc_review_pack_trace_export` and representative E2E `03_Implement/frontend/e2e/review_pack_trace_export.spec.ts`.
 
 ### Open-Readiness Gaps
 
-- The source issue remains `Draft` because the minimum reviewable package structure is not yet fixed as a concrete fixture, screenshot set, and Go/No-Go evidence packet.
+- The source issue remains `Draft` because the minimum reviewable package has not yet been accepted as a Go/No-Go evidence packet. The fixture identity and trace-export E2E are fixed, but SafeMode/readability evidence, read-only reviewer inspection, screenshot or trace bundle location, and final Product QA / MVP-EXIT decision linkage remain open.
 - The reviewable package must identify at least: summary, settled claims, unresolved points, evidence links or source references, review status, SafeMode/share-export result, and trace-back path to the source map.
 - The reader must be able to return from the outcome package to the originating card, island, relation, or review state. A final-looking text export without trace-back is not enough.
 - SafeMode ON must demonstrate masking or exclusion of unreviewed raw content, sensitive details, and unnecessary identity information.
@@ -36,11 +37,11 @@ The output package is not just a polished narrative or export file. It must carr
 
 ### Next Implementation Slice
 
-1. Define one deterministic reviewable-package fixture that starts from the first-value/ambiguity fixtures and includes settled and unresolved material.
-2. Add a focused pre-share/export verification path that checks the required package elements before output.
-3. Capture screenshots of the package preview, SafeMode/share-export confirmation, and trace-back from output to source material.
+1. Review `doc_review_pack_trace_export` and decide whether it represents the promised reviewable outcome package for a standard reviewer.
+2. Capture or cite screenshots of package preview, SafeMode/share-export confirmation, reviewed/unreviewed status, and trace-back from output to source material.
+3. Add or cite read-only reviewer inspection evidence that a package recipient can inspect the outcome without mutating source data.
 4. Add an evidence record to `PRODUCT-QA-01` and cross-reference it from `MVP-EXIT-01` only after the package can be regenerated.
-5. Keep organizational approval, signatures, and multi-reviewer workflow outside this issue unless a new ADR expands the authority model.
+5. Keep organizational approval, signatures, automatic publication, and multi-reviewer workflow outside this issue unless a new ADR expands the authority model.
 
 ### ADR Boundary
 
@@ -49,7 +50,7 @@ No new ADR is needed to define the minimum package evidence. A new ADR is requir
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
-- [ ] AC-02: The reviewable-package fixture is named, stored, and reusable before implementation starts.
+- [x] AC-02: The reviewable-package fixture is named, stored, and reusable before implementation starts. Current fixture: `buildReviewPackTraceDocument()` / `doc_review_pack_trace_export`.
 - [ ] AC-03: The package includes summary, settled claims, unresolved points, evidence/source references, review status, SafeMode/share-export result, and trace-back path.
 - [ ] AC-04: SafeMode ON evidence shows that unreviewed raw content, sensitive details, and unnecessary identity information are masked or excluded.
 - [ ] AC-05: The package does not imply formal approval, signature, or organizational authorization outside the accepted review model.
