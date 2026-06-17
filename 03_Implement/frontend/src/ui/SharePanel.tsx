@@ -24,6 +24,7 @@ export type DomainExpressionShareSummary = {
 type SharePanelProps = {
   isOpen: boolean;
   onToggleOpen: () => void;
+  isAdvancedUiEnabled?: boolean;
   hasDocument: boolean;
   isLoading: boolean;
   onExportSvgViewport: () => void;
@@ -292,6 +293,7 @@ const sharePanelLayoutCss = `
 export function SharePanel({
   isOpen,
   onToggleOpen,
+  isAdvancedUiEnabled = false,
   hasDocument,
   isLoading,
   onExportSvgViewport,
@@ -542,7 +544,13 @@ export function SharePanel({
           <div style={sectionStyle}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.purpose.section_title")}</div>
             <div style={purposeGridStyle}>
-              {purposeLinks.map((link) => (
+              {purposeLinks
+                .filter(
+                  (link) =>
+                    isAdvancedUiEnabled ||
+                    (link.id !== "share-panel-purpose-patch" && link.id !== "share-panel-purpose-diff")
+                )
+                .map((link) => (
                 <button
                   key={link.id}
                   type="button"
@@ -601,6 +609,7 @@ export function SharePanel({
               </div>
               <div style={{ fontSize: 11, color: "#64748b" }}>{getSafeModeLockedContextLabel()}</div>
             </div>
+            {isAdvancedUiEnabled ? (
             <div style={{ display: "grid", gap: 4, border: "1px solid #e2e8f0", borderRadius: 8, padding: 8, ...borderedPanelStyle }}>
               <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
                 <span style={{ fontWeight: 600, color: "#0f172a" }}>
@@ -656,6 +665,7 @@ export function SharePanel({
               <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.visibility.view_fallback")}</div>
               <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.visibility.pack_fallback")}</div>
             </div>
+            ) : null}
             <div style={preflightPanelStyle}>
               <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a" }}>{t("share.panel.preflight.title")}</div>
               <div style={{ fontSize: 11, color: "#475569" }}>{t("share.panel.preflight.hint")}</div>
@@ -906,6 +916,8 @@ export function SharePanel({
             ) : null}
           </div>
 
+          {isAdvancedUiEnabled ? (
+          <>
           <div id="share-panel-purpose-patch" tabIndex={-1} style={{ ...sectionStyle, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.patch.section_title")}</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
@@ -1214,6 +1226,8 @@ export function SharePanel({
             </div>
             {structuralDiffSection}
           </div>
+          </>
+          ) : null}
           </section>
         </>
       ) : null}
