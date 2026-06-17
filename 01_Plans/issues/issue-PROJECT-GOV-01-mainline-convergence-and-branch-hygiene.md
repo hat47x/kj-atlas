@@ -1294,3 +1294,45 @@
 3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
 4. Treat Product Value readiness summaries and shared E2E fixtures as evidence-foundation work. Product Value Open-gate acceptance still needs replayable evidence packets, screenshots or traces, and human acceptance.
 5. Keep release blockers routed through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `QA-E2E-USE-01`, `HIL-RS-02-A1`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
+
+---
+
+## Post-2426 governance reachability and release-gate baseline checkpoint
+
+- Checkpoint date (JST): 2026-06-17
+- Latest main: `origin/main@eab2ec6b0f99050437b7c2eee34d042b0b29699e`
+- Recent normal-merge PRs included in this checkpoint:
+  - #2424 `[codex] Record post-2423 governance reachability`
+  - #2425 `[codex] Sync release gates after post-2424 governance`
+  - #2426 `[codex] Record post-2425 project baseline`
+- Integration method: normal merge commits for the `codex/*` PRs, so the related branch tips remain reachable from `main`.
+- GitHub Actions CI:
+  - #2424 CI run `9641`: passed.
+  - #2425 CI run `9644`: passed.
+  - #2426 CI run `9647`: passed.
+- GitHub open PR search result: `0`.
+- `origin/codex/*` branches updated on or after 2026-06-06: 82.
+- `origin/codex/*` branches updated on or after 2026-06-06 that are not ancestors of `origin/main`: 0.
+- Internal issue validation:
+  - `validate_active_issue_memos.py`: pass, `ok: validated 5 active issue memos`.
+  - `test_validate_active_issue_memos.py`: pass, 10 tests.
+  - `triage_actionable_plans.py`: pass, `active_issues=55`, `ready=15`, `blocked=40`, `actionable_adrs=1`, stopper none.
+- Scope: records repository governance after #2424 through #2426 became canonical. This checkpoint does not delete remote branches, close PRs, change issue status, change ADR status, change runtime behavior, change UI/API behavior, change SafeMode/share-export policy, approve Product Value Open gates, or approve release readiness.
+
+### Decision
+
+- The observed 2026-06-06-or-later `codex/*` branch reachability state remains clean: no checked branch remains outside `main` ancestry.
+- #2424 keeps the branch-reachability and repository-governance state current after the Product Value evidence-foundation lane.
+- #2425 aligns Product QA and MVP-EXIT with the post-2424 governance interpretation while preserving full-shipment No-Go.
+- #2426 records the same interpretation in `PROJECT-BASELINE-01`, so latest-main health, repository governance, Product QA, and MVP-EXIT now point to the same post-2425 traceability boundary.
+- The current governance interpretation is traceability-only. It is not approval to delete remote refs, weaken SafeMode defaults, change share/export policy, treat Product Value Draft issues as Open, bypass human acceptance, or ship the product.
+- The remaining remote `codex/*` refs are cleanup candidates only. Deletion still requires repository-maintainer approval and a final deletion audit list.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene unless the project changes stale-ref retention, branch cleanup authority, CI signal authority, Product Value definitions, SafeMode/share-export policy, review attribution authority, public package contract, or release authority.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@eab2ec6b0f99050437b7c2eee34d042b0b29699e`.
+2. Keep using normal merge commits for PRs whose purpose is to preserve `codex/*` branch-tip reachability.
+3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
+4. Treat #2424 through #2426 as governance and release-gate traceability work only. Product Value Open-gate acceptance still needs replayable evidence packets, screenshots or traces, and human acceptance.
+5. Keep release blockers routed through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `QA-E2E-USE-01`, `HIL-RS-02-A1`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
