@@ -35,9 +35,10 @@ flakes を未有効化のまま一時的に使う場合は次の形でも実行�
 nix --extra-experimental-features 'nix-command flakes' develop
 ```
 
-3. （任意）direnv を使うと `cd` で自動的にこのシェルへ入れます。同梱の `.envrc`（`use flake`）を有効化します。
+3. （任意）direnv を使うと `cd` で自動的にこのシェルへ入れます。`.envrc` はリポジトリでは追跡しないため、同梱のテンプレートをコピーして有効化します。
 
 ```bash
+cp .envrc.example .envrc
 direnv allow
 ```
 
