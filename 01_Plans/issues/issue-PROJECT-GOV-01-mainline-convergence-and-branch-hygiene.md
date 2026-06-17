@@ -1245,3 +1245,52 @@
 3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
 4. Treat manual-authoring and Advanced UI evidence as productization freshness, not release approval.
 5. Keep release blockers routed through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `QA-E2E-USE-01`, `HIL-RS-02-A1`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
+
+---
+
+## Post-2423 governance reachability and Product Value evidence-foundation checkpoint
+
+- Checkpoint date (JST): 2026-06-17
+- Latest main: `origin/main@e91204f04fcbfdf2b1a50af923127adeef99a085`
+- Recent normal-merge PRs included in this checkpoint:
+  - #2417 `[codex] Record post-2416 governance reachability`
+  - #2418 `[codex] Add Product Value 01 readiness summary`
+  - #2419 `[codex] Add Product Value 02/03 readiness summaries`
+  - #2420 `[codex] Sync Product QA after value readiness summaries`
+  - #2421 `[codex] Share Product Value E2E fixtures`
+  - #2422 `[codex] Sync Product QA after value E2E fixtures`
+  - #2423 `[codex] Record post-2422 project baseline`
+- Integration method: normal merge commits for the `codex/*` PRs, so the related branch tips remain reachable from `main`.
+- GitHub Actions CI:
+  - #2418 CI run `9623`: passed.
+  - #2419 CI run `9626`: passed.
+  - #2420 CI run `9629`: passed.
+  - #2421 CI run `9632`: passed.
+  - #2422 CI run `9635`: passed.
+  - #2423 CI run `9638`: passed.
+- GitHub open PR search result: `0`.
+- `origin/codex/*` branches updated on or after 2026-06-06: 79.
+- `origin/codex/*` branches updated on or after 2026-06-06 that are not ancestors of `origin/main`: 0.
+- Internal issue validation:
+  - `validate_active_issue_memos.py`: pass, `ok: validated 5 active issue memos`.
+  - `test_validate_active_issue_memos.py`: pass, 10 tests.
+  - `triage_actionable_plans.py`: pass, `active_issues=55`, `ready=15`, `blocked=40`, `actionable_adrs=1`, stopper none.
+- Scope: records repository governance after #2417 through #2423 became canonical. This checkpoint does not delete remote branches, close PRs, change issue status, change ADR status, change runtime behavior, change UI/API behavior, change SafeMode/share-export policy, approve Product Value Open gates, or approve release readiness.
+
+### Decision
+
+- The observed 2026-06-06-or-later `codex/*` branch reachability state remains clean: no checked branch remains outside `main` ancestry.
+- #2418 and #2419 make Product Value readiness easier to review by splitting PV01/PV02/PV03 into readable internal summaries instead of relying on scattered historical context.
+- #2421 makes the next Product Value evidence-packet work more repeatable by sharing deterministic E2E fixtures for first meaningful map, ambiguity/evidence, and reviewable package flows.
+- #2420, #2422, and #2423 align Product QA, MVP-EXIT, and PROJECT-BASELINE around the same interpretation: this is evidence-foundation and traceability work, not Product Value Open-gate acceptance or release approval.
+- The current governance interpretation is traceability-only. It is not approval to delete remote refs, weaken SafeMode defaults, change share/export policy, treat Product Value Draft issues as Open, bypass human acceptance, or ship the product.
+- The remaining remote `codex/*` refs are cleanup candidates only. Deletion still requires repository-maintainer approval and a final deletion audit list.
+- No new ADR is required. ADR-0034 remains sufficient for mainline convergence and branch hygiene unless the project changes stale-ref retention, branch cleanup authority, CI signal authority, Product Value definitions, SafeMode/share-export policy, review attribution authority, public package contract, or release authority.
+
+### Updated recommendation
+
+1. Start new independent work from `origin/main@e91204f04fcbfdf2b1a50af923127adeef99a085`.
+2. Keep using normal merge commits for PRs whose purpose is to preserve `codex/*` branch-tip reachability.
+3. Do not delete remote `codex/*` branches from this issue; route that action through repository-maintainer approval.
+4. Treat Product Value readiness summaries and shared E2E fixtures as evidence-foundation work. Product Value Open-gate acceptance still needs replayable evidence packets, screenshots or traces, and human acceptance.
+5. Keep release blockers routed through `PRODUCT-QA-01`, `MVP-EXIT-01`, `PROJECT-BASELINE-01`, `QA-E2E-USE-01`, `HIL-RS-02-A1`, `FB-P0-2A2B2C`, `ENV-CONFIG-DRIFT-01`, `PRODUCT-OPS-01`, `PRODUCT-VALUE-01..03`, `ADR-0035`, and `DATA-MAINT-03/04`.
