@@ -1366,3 +1366,41 @@
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead for product-value and final shipment decisions; human/project governance for FB-P0/HIL-RS approval/held decisions; Project Maintainers for high-privilege lifecycle decisions.
 - Due date: next Program Gate review after product-value fixture evidence, human acceptance evidence, Compose/environment evidence, support rehearsal evidence, or FB/HIL/high-privilege lifecycle decisioning.
 - Re-decision date: after product value Open-gate acceptance, after release screenshot / keyboard / screen-reader acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, after `Approval Record` and `HIL-RS-02-GOV-EXCEPTION-01` are decided, after `ADR-0035` is accepted/replaced/rejected, or after a material runtime/product change reaches `main`.
+
+## MVP-EXIT Program Gate Decision 2026-06-17: post-2424 baseline and governance reachability sync
+
+- Candidate: `origin/main@592788ee7f2cc05393f782d9f1af1e77071704c4`.
+- Decision date: 2026-06-17.
+- Reviewer: Codex.
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-17: post-2424 baseline and governance reachability sync`.
+  - PROJECT-BASELINE-01 record: `Baseline delta 2026-06-17: post-2422 Product Value evidence foundation sync`.
+  - PROJECT-GOV-01 record: `Post-2423 governance reachability and Product Value evidence-foundation checkpoint`.
+  - Merged PRs: #2423 and #2424.
+
+### Decision
+
+- Final: **Conditional Go for post-2424 baseline/governance traceability / No-Go for full release shipment**.
+- Reason summary: The latest `main` now has aligned Project Baseline and Project Governance records for the Product Value evidence-foundation lane through #2424. This improves Program Gate traceability because Product QA, MVP-EXIT, branch reachability, open PR state, and latest-main baseline now agree that #2417 through #2424 are evidence-foundation and governance-readiness work. It does not create shipment approval because Product Value source issues remain Draft and human acceptance, environment, support, FB/HIL, high-privilege lifecycle, and final approval gates remain incomplete.
+- Escalation route: keep `PRODUCT-QA-01` as the release evidence steward, `PROJECT-BASELINE-01` as the latest-main health record, `PROJECT-GOV-01` as the branch hygiene record, `PRODUCT-VALUE-01..03` as the value-gate evidence owners, and Productization Program Owner / QA Lead as accountable final shipment approvers.
+
+### Gate Mapping
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, open PR search, GitHub Actions CI, local `main` fast-forward, and branch reachability checks passed for the related PRs.
+- G1 safety defaults: Conditional Go / unchanged. The sync did not change SafeMode defaults, share/export policy, import-sanitize behavior, public documentation authority, high-privilege lifecycle policy, issue status, ADR status, or Compose configuration.
+- G2 user-operability evidence: Conditional Go / unchanged from #2421. This sync carries the shared Product Value E2E fixture foundation into latest-main and governance records but does not add new UI execution evidence.
+- G6 governance and decision traceability: Conditional Go improved. PROJECT-BASELINE, PROJECT-GOV, PRODUCT-QA, and MVP-EXIT now agree that this lane is traceability/evidence foundation, not Product Value Open-gate acceptance or release approval.
+- G7 regression: Go for planning slice. #2423 and #2424 CI succeeded, and the effective runtime/product diff is internal issue evidence only.
+
+### Conditional controls
+
+- Remaining risks:
+  - `PRODUCT-VALUE-01..03` remain Draft until replayable evidence packets are reviewed and accepted.
+  - Remote `codex/*` refs still exist and require repository-maintainer approval before deletion.
+  - Human release screenshots, physical keyboard acceptance, screen-reader acceptance, final Japanese UX/copy review, full Compose startup, support diagnostics/recovery rehearsal, environment rehearsal evidence, and final program approval remain incomplete.
+  - High-privilege lifecycle decisions remain governed by `DATA-MAINT-03`, `ADR-0035`, and `DATA-MAINT-04`.
+  - `Approval Record` fields remain unset, `HIL-RS-02-GOV-EXCEPTION-01` remains `held`, and `pendingDecisionQueueCount>0` keeps HIL/FB in Hold / Needs-decision.
+  - This sync changes no API, UI, CLI, runtime behavior, SafeMode default, share/export behavior, public documentation, issue status, ADR status, release authority, branch cleanup authority, or Compose configuration.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead for product-value and final shipment decisions; Repository Maintainer for branch cleanup approval; human/project governance for FB-P0/HIL-RS approval/held decisions; Project Maintainers for high-privilege lifecycle decisions.
+- Due date: next Program Gate review after product-value evidence, human acceptance evidence, Compose/environment evidence, support rehearsal evidence, branch cleanup approval, or FB/HIL/high-privilege lifecycle decisioning.
+- Re-decision date: after product value Open-gate acceptance, after release screenshot / keyboard / screen-reader acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, after remote branch deletion is approved/executed, after `Approval Record` and `HIL-RS-02-GOV-EXCEPTION-01` are decided, after `ADR-0035` is accepted/replaced/rejected, or after a material runtime/product change reaches `main`.
