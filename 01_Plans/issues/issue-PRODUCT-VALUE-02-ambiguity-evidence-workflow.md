@@ -420,3 +420,29 @@ The final value gate should be evaluated only after the slice evidence exists. T
 | AI-boundary proof | Not added by this manifest. | Need ContextBundle or equivalent evidence that ambiguity/evidence/contradiction is carried as a constraint, not solved fact. |
 
 - No ADR is needed for this manifest because it follows the `ADR-0040` split-first strategy. ADR/schema routing remains required if a later slice adds persistent Hold/Shelf fields, changes AI review authority, changes SafeMode/share policy, or changes the value-state model.
+
+## Share preflight evidence 2026-06-18: unresolved signals remain explicit
+
+- Candidate mainline: `origin/main@2e1f0edd38a089005269da91b213914500ec3af5`.
+- Representative E2E: `03_Implement/frontend/e2e/domain_expression_keyboard_access.spec.ts`.
+- Screenshot: `04_Documentation/assets/screenshots/product-value-ambiguity-share-preflight.png`.
+- Fixture: `buildDomainExpressionDocument()` / `doc_domain_expression_keyboard_access`.
+- Automated evidence:
+  - Share & Reproduce reports 5 remaining review signals.
+  - The preflight summary reports 2 unreviewed cards, 1 Hold/unknown claim, 1 critique/pending-feedback target, 2 evidence links, 1 contradiction, and 0 evidence gaps.
+  - SafeMode ON explicitly excludes unreviewed drafts, and the control to include them is not presented.
+  - The summary tells the reviewer to review the material or keep holds explicit before sharing.
+- Verification result: targeted Playwright **2 passed**, covering both keyboard reachability and share-preflight safety.
+
+### Evidence packet update
+
+| Required evidence item | Current status after this slice | Remaining Draft blocker |
+| --- | --- | --- |
+| State fixture | Phase 1 ambiguity/critique/evidence/contradiction fixture remains replayable. | First-class Hold/Pending remains split to `DOMAIN-EXPR-02`; umbrella acceptance remains human-owned. |
+| Review boundary proof | The fixture remains unreviewed until a user explicitly changes review state. | Targeted AI/worker/API non-promotion proof remains required. |
+| Findability proof | Keyboard reachability and selected-card inspection remain covered. | UX reviewer must decide whether dedicated unresolved-state filters are required. |
+| Share/export proof | **Satisfied for the Phase 1 fixture.** Unreviewed and unresolved signals are visible before sharing, and SafeMode excludes unreviewed drafts by default. | Human safety/UX acceptance of the wording and counts remains required. |
+| AI-input proof | Not changed by this slice. | ContextBundle or equivalent proof must preserve ambiguity/evidence/contradiction as constraints. |
+
+- Status impact: **Draft remains**. The Phase 1 share/export proof blocker is addressed, but Hold/Pending, AI-boundary proof, umbrella integration, and human acceptance remain incomplete.
+- No new ADR is needed. The slice verifies the existing SafeMode/share policy and does not change persistence, review authority, or the value-state model.

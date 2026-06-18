@@ -19,6 +19,7 @@ const outputDir =
 const files = {
   firstValue: path.join(outputDir, "product-value-first-island.png"),
   ambiguity: path.join(outputDir, "product-value-ambiguity-state.png"),
+  ambiguityPreflight: path.join(outputDir, "product-value-ambiguity-share-preflight.png"),
   reviewPack: path.join(outputDir, "product-value-review-pack-trace.png"),
   readOnlyReview: path.join(outputDir, "product-value-review-pack-readonly.png"),
 };
@@ -272,6 +273,25 @@ async function captureAmbiguity(browser) {
   await page.close();
 }
 
+async function captureAmbiguityPreflight(browser) {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const fixture = await routeDocument(
+    page,
+    buildDomainExpressionDocument(),
+    withoutProductValueContent(buildDomainExpressionDocument()),
+  );
+  await page.goto(baseUrl);
+  fixture.enableSample();
+  await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
+  await page.getByRole("option", { name: "まだ曖昧な主張" }).click();
+  await page.getByRole("button", { name: /共有と再現|Share & Reproduce/ }).click();
+  const summary = page.getByTestId("share-domain-expression-summary");
+  await summary.waitFor({ state: "visible" });
+  await summary.scrollIntoViewIfNeeded();
+  await captureScreenshot(page, files.ambiguityPreflight);
+  await page.close();
+}
+
 async function captureReviewPack(browser) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const fixture = await routeDocument(
@@ -319,6 +339,7 @@ async function capture() {
   try {
     await captureFirstValue(browser);
     await captureAmbiguity(browser);
+    await captureAmbiguityPreflight(browser);
     await captureReviewPack(browser);
     await captureReadOnlyReview(browser);
     console.log(
