@@ -1,6 +1,9 @@
+import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from kj_atlas_api.main import app
+from kj_atlas_api.models_ai import ProposalEnvelope
 from kj_atlas_api.routes import ai
 
 
@@ -44,6 +47,28 @@ def test_propose_island_summary_returns_proposal_without_auto_apply() -> None:
     assert body["sourceBundleHash"] == "a" * 64
     assert body["diff"]["before"] == "old summary"
     assert isinstance(body["diff"]["after"], str) and body["diff"]["after"].strip() != ""
+
+
+def test_ai_proposal_envelope_rejects_review_promotion() -> None:
+    body = {
+        "proposalId": "proposal-1",
+        "type": "island_summary",
+        "status": "proposed",
+        "reviewState": "reviewed",
+        "sourceBundleHash": "a" * 64,
+        "diff": {
+            "entityType": "island_summary",
+            "targetId": "i1",
+            "field": "summaryText",
+            "before": "old",
+            "after": "new",
+            "groundingIds": ["c1"],
+        },
+        "rationale": "AI proposal",
+    }
+
+    with pytest.raises(ValidationError):
+        ProposalEnvelope.model_validate(body)
 
 
 def test_record_proposal_decision_maps_to_lifecycle_status_without_review_promotion() -> None:

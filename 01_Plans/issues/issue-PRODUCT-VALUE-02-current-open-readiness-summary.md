@@ -92,6 +92,23 @@ No new ADR is needed for the Phase 1 summary. A new ADR is required if implement
   - Hold/Pending schema work, AI-boundary proof, human findability acceptance, keyboard/screen-reader acceptance, and umbrella Product Value approval remain open.
   - Status impact: **Draft remains**.
 
+## AI Review-Boundary Evidence 2026-06-19
+
+- Candidate mainline: `origin/main@219eec7ed1e9e36c87905bae04cd917b1b98efa5`.
+- Implementation evidence:
+  - `03_Implement/backend/src/kj_atlas_api/models_ai.py`
+  - `03_Implement/frontend/src/domain/hil_rs_contract.ts`
+  - `03_Implement/frontend/src/domain/hil_rs_apply.ts`
+- Result:
+  - AI proposal responses are limited to `unreviewed`.
+  - HIL rediff validation and application reject direct or nested review-state injection.
+  - Valid human review attribution remains an import/persistence responsibility rather than an AI-generated state.
+- Verification: backend 6 passed; frontend targeted 23 passed; typecheck passed.
+- Evidence packet impact:
+  - The AI/worker automatic `human_reviewed` promotion blocker is addressed with defense in depth.
+  - ContextBundle constraint-preservation proof, Hold/Pending work, human findability/accessibility acceptance, and umbrella Product Value approval remain open.
+  - Status impact: **Draft remains**.
+
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.

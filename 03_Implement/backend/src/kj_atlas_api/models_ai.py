@@ -124,7 +124,7 @@ class ProposalEnvelope(BaseModel):
     proposalId: str = Field(min_length=1)
     type: Literal["island_summary"]
     status: Literal["proposed", "accepted", "rejected", "held"]
-    reviewState: Literal["unreviewed", "reviewed"] = "unreviewed"
+    reviewState: Literal["unreviewed"] = "unreviewed"
     sourceBundleHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
     diff: ProposalDiff
     rationale: str = Field(min_length=1)

@@ -446,3 +446,28 @@ The final value gate should be evaluated only after the slice evidence exists. T
 
 - Status impact: **Draft remains**. The Phase 1 share/export proof blocker is addressed, but Hold/Pending, AI-boundary proof, umbrella integration, and human acceptance remain incomplete.
 - No new ADR is needed. The slice verifies the existing SafeMode/share policy and does not change persistence, review authority, or the value-state model.
+
+## AI review-boundary guard 2026-06-19
+
+- Candidate mainline: `origin/main@219eec7ed1e9e36c87905bae04cd917b1b98efa5`.
+- Guarded paths:
+  - Backend AI proposal envelopes now accept only `reviewState="unreviewed"`.
+  - HIL rediff contract validation rejects review-protected fields such as `textReviewed`, `reviewState`, `reviewedAt`, `reviewerRef`, and `reviewAttribution`, including nested occurrences.
+  - HIL rediff application repeats the same protection so typed or otherwise prevalidated callers cannot inject review state through an `add` operation.
+  - Normal document import remains able to preserve valid human review attribution; it is not an AI-promotion path.
+- Verification:
+  - Backend CE2 proposal API: 6 passed.
+  - Frontend HIL contract/apply, CE2 candidate, and document-import tests: 23 passed.
+  - Frontend typecheck: pass.
+
+### Evidence packet update
+
+| Required evidence item | Current status after this guard | Remaining Draft blocker |
+| --- | --- | --- |
+| Review boundary proof | **Satisfied for AI proposal and HIL worker/apply paths.** AI proposals remain unreviewed and rediff payloads cannot inject review-protected fields. | Human review transition authorization and audit remain governed by the existing review-attribution contract. |
+| Import boundary | Valid human-reviewed documents remain preservable through document import. | Productization Program Owner / QA Lead must accept this separation as sufficient value-gate evidence. |
+| Share/export proof | Phase 1 preflight evidence is already replayable. | Human wording and findability acceptance remain open. |
+| AI-input proof | Promotion is blocked, but ContextBundle semantic preservation is not changed by this slice. | Need explicit proof that ambiguity/evidence/contradiction are carried as constraints rather than solved facts. |
+
+- Status impact: **Draft remains**. The automated review-promotion blocker is addressed, but ContextBundle constraint proof, Hold/Pending, umbrella integration, and human acceptance remain incomplete.
+- No new ADR is needed. This change enforces the accepted `CE0-REVIEW-IF` and does not change review authority or state vocabulary.

@@ -7,6 +7,27 @@ export type HilRsApplyResult = {
   skippedOpIds: string[];
 };
 
+const REVIEW_PROTECTED_KEYS = new Set([
+  "textReviewed",
+  "reviewed",
+  "reviewState",
+  "reviewedAt",
+  "reviewerRef",
+  "reviewAttribution",
+]);
+
+function hasReviewProtectedField(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some(hasReviewProtectedField);
+  }
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  return Object.entries(value).some(
+    ([key, nested]) => REVIEW_PROTECTED_KEYS.has(key) || hasReviewProtectedField(nested),
+  );
+}
+
 function parseTargetRef(targetRef: string): { kind: "card" | "island"; id: string } | null {
   const [kind, id] = targetRef.split(":");
   if ((kind !== "card" && kind !== "island") || !id) return null;
@@ -33,6 +54,7 @@ function cloneDocument(document: Document): Document {
 function applyCardOp(document: Document, op: HilRsDiffOp): boolean {
   const target = parseTargetRef(op.targetRef);
   if (!target || target.kind !== "card") return false;
+  if (hasReviewProtectedField(op.before) || hasReviewProtectedField(op.after)) return false;
   const index = document.cards.findIndex((card) => card.id === target.id);
 
   if (op.opType === "add") {
