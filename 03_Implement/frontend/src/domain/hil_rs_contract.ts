@@ -118,6 +118,14 @@ const HIL_RS_CRITIQUE_ALLOWED_KEYS = new Set([
 const HIL_RS_REDIFF_ALLOWED_KEYS = new Set(["schemaVersion", "proposalId", "basedOnIteration", "diffOps", "traceKey", "rationale"]);
 
 const HIL_RS_DIFF_OP_ALLOWED_KEYS = new Set(["opId", "opType", "targetRef", "before", "after", "rationale"]);
+const HIL_RS_REVIEW_PROTECTED_KEYS = new Set([
+  "textReviewed",
+  "reviewed",
+  "reviewState",
+  "reviewedAt",
+  "reviewerRef",
+  "reviewAttribution",
+]);
 
 const HIL_RS_ATTRIBUTION_ALLOWED_KEYS = new Set([
   "schemaVersion",
@@ -163,6 +171,18 @@ function hasOnlyAllowedKeys(value: Record<string, unknown>, allowedKeys: Readonl
   return Object.keys(value).every((key) => allowedKeys.has(key));
 }
 
+function hasReviewProtectedField(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some(hasReviewProtectedField);
+  }
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  return Object.entries(value).some(
+    ([key, nested]) => HIL_RS_REVIEW_PROTECTED_KEYS.has(key) || hasReviewProtectedField(nested),
+  );
+}
+
 export function validateHilRsCritiqueInput(value: unknown): value is HilRsCritiqueInput {
   if (typeof value !== "object" || value === null) return false;
   const input = value as Record<string, unknown>;
@@ -206,6 +226,7 @@ export function validateHilRsRediffPayload(value: unknown): value is HilRsRediff
     if (parsed.before === null && parsed.after === null) return false;
     if (parsed.before !== null && !isPlainPayloadObject(parsed.before)) return false;
     if (parsed.after !== null && !isPlainPayloadObject(parsed.after)) return false;
+    if (hasReviewProtectedField(parsed.before) || hasReviewProtectedField(parsed.after)) return false;
     if (parsed.rationale !== undefined && typeof parsed.rationale !== "string") return false;
   }
 
