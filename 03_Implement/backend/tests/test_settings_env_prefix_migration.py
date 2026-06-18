@@ -11,6 +11,7 @@ from kj_atlas_api.settings import LEGACY_ENV_KEYS, Settings
 REPO_ROOT = Path(__file__).resolve().parents[3]
 RUNTIME_REGISTRY_DOC = REPO_ROOT / "02_Architecture" / "runtime_parameter_registry.md"
 PUBLIC_CONFIGURATION_DOC = REPO_ROOT / "04_Documentation" / "configuration.md"
+PUBLIC_ENV_CONTRACT_DOCS = [RUNTIME_REGISTRY_DOC, PUBLIC_CONFIGURATION_DOC]
 ENV_SCAN_ROOTS = [
     REPO_ROOT / "03_Implement" / "backend",
     REPO_ROOT / "03_Implement" / "frontend" / "src",
@@ -21,6 +22,7 @@ IGNORED_SCAN_PARTS = {".venv", "__pycache__", ".pytest_cache", "node_modules", "
 ALLOWED_NON_PROJECT_ENV_KEYS = {"DEV", "PYTHONPATH"}
 ENV_KEY_PATTERN = re.compile(r"KJ_ATLAS_[A-Z0-9_]+")
 ENV_WILDCARD_PATTERN = re.compile(r"`KJ_ATLAS_[A-Z0-9]+[A-Z0-9_]*\*`")
+LEGACY_FRONTEND_ENV_KEYS = {"VITE_API_BASE", "FRONTEND_API_BASE"}
 
 
 def _unset_related_envs() -> None:
@@ -138,6 +140,19 @@ def test_public_configuration_doc_lists_exact_public_runtime_keys() -> None:
 
     assert ENV_WILDCARD_PATTERN.findall(configuration_text) == []
     assert _env_keys(configuration_text) == _public_registry_env_keys()
+
+
+def test_public_env_contract_docs_do_not_advertise_legacy_frontend_keys() -> None:
+    violations: list[str] = []
+
+    for path in PUBLIC_ENV_CONTRACT_DOCS:
+        text = path.read_text(encoding="utf-8")
+        for key in sorted(LEGACY_FRONTEND_ENV_KEYS):
+            legacy_key_pattern = re.compile(rf"(?<!KJ_ATLAS_)\b{re.escape(key)}\b")
+            if legacy_key_pattern.search(text):
+                violations.append(f"{path.relative_to(REPO_ROOT)}:{key}")
+
+    assert violations == []
 
 
 def test_settings_rejects_legacy_key_only(monkeypatch) -> None:  # type: ignore[no-untyped-def]
