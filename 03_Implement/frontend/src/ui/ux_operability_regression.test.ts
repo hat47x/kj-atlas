@@ -75,8 +75,8 @@ describe("UX Operability regression contracts", () => {
     );
 
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
-    expect(sidePanelSource).toContain("value={selectedCard.claimType ?? \"unknown\"}\n                disabled={isReadOnly}");
-    expect(sidePanelSource).toContain("checked={selectedCard.textReviewed === true}\n                  disabled={isReadOnly}");
-    expect(sidePanelSource).toContain("value={selectedCard.critique ?? \"\"}\n                disabled={isReadOnly}");
+    expect(sidePanelSource).toMatch(/value=\{selectedCard\.claimType \?\? "unknown"\}\s+disabled=\{isReadOnly\}/);
+    expect(sidePanelSource).toMatch(/checked=\{selectedCard\.textReviewed === true\}\s+disabled=\{isReadOnly\}/);
+    expect(sidePanelSource).toMatch(/value=\{selectedCard\.critique \?\? ""\}\s+disabled=\{isReadOnly\}/);
   });
 });
