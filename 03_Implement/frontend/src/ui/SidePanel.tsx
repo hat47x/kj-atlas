@@ -3073,6 +3073,7 @@ export function SidePanel({
               </div>
               <select
                 value={selectedCard.claimType ?? "unknown"}
+                disabled={isReadOnly}
                 onChange={(event) => {
                   onCardClaimTypeChange(event.target.value as ClaimType);
                 }}
@@ -3106,6 +3107,7 @@ export function SidePanel({
                 <input
                   type="checkbox"
                   checked={selectedCard.textReviewed === true}
+                  disabled={isReadOnly}
                   onChange={(event) => {
                     onCardTextReviewedChange(event.target.checked);
                   }}
@@ -3125,7 +3127,7 @@ export function SidePanel({
                           <div>{link.type} → {target ? target.text.slice(0, 60) : link.toCardId}</div>
                           <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
                             <button type="button" style={{ fontSize: 10 }} onClick={() => { onFocusCardById(link.toCardId); }}>{t("side_panel.focus")}</button>
-                            <button type="button" style={{ fontSize: 10 }} onClick={() => { onRemoveEvidenceLink(link.id); }}>{t("side_panel.remove")}</button>
+                            <button type="button" disabled={isReadOnly} style={{ fontSize: 10 }} onClick={() => { onRemoveEvidenceLink(link.id); }}>{t("side_panel.remove")}</button>
                           </div>
                         </div>
                       );
@@ -3141,7 +3143,7 @@ export function SidePanel({
                     })}
                   </div>
                 )}
-                <button type="button" style={{ marginTop: 8, width: "100%" }} onClick={() => {
+                <button type="button" disabled={isReadOnly} style={{ marginTop: 8, width: "100%" }} onClick={() => {
                   setIsEvidenceModalOpen(true);
                   setPendingEvidenceType("supports");
                   setEvidenceTargetQuery("");
@@ -3274,6 +3276,7 @@ export function SidePanel({
               </label>
               <textarea
                 value={selectedCard.critique ?? ""}
+                disabled={isReadOnly}
                 onChange={(event) => {
                   onCardCritiqueChange(event.target.value);
                 }}
@@ -3296,6 +3299,7 @@ export function SidePanel({
                     <input
                       type="checkbox"
                       checked={(selectedCard.critiqueTags ?? []).includes(tag)}
+                      disabled={isReadOnly}
                       onChange={() => {
                         onCardCritiqueTagsChange(toggleCritiqueTag(selectedCard.critiqueTags, tag));
                       }}

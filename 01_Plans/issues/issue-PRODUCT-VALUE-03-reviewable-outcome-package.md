@@ -409,3 +409,29 @@ No-Go conditions for this value gate:
 | Decision record | This section provides the fixture identity that Product QA and MVP-EXIT can cite later. | Final Open decision must cite H-PV3-1/H-PV3-2/H-PV3-3 outcomes and the screenshot/trace bundle location. |
 
 - No ADR is needed for this manifest. ADR routing remains limited to changes in product value model, review authority, SafeMode/share policy, review-pack public contract, approval/signature semantics, or automatic publication behavior.
+
+## Read-only reviewer evidence 2026-06-18
+
+- Candidate mainline: `origin/main@d2b5f8cfab8d5ac49388f0f130dae1eeb2315049`.
+- Implementation scope:
+  - `03_Implement/frontend/src/App.tsx` disables the primary document-edit actions in read-only mode, including legacy import, new card, island creation, deletion, and save.
+  - `03_Implement/frontend/src/ui/SidePanel.tsx` disables claim type, reviewed state, evidence-link mutation, critique note, and critique-tag editing while keeping source/evidence inspection available.
+  - `03_Implement/frontend/e2e/review_pack_trace_export.spec.ts` adds a read-only reviewer scenario using `doc_review_pack_trace_export`.
+  - `04_Documentation/assets/screenshots/product-value-review-pack-readonly.png` records the Japanese UI state.
+- Verification result:
+  - Targeted Playwright: **2 passed**, including the existing trace-export test and the new read-only reviewer test.
+  - Frontend typecheck: pass.
+  - UX operability regression: pass, 6 tests.
+
+### Evidence packet update
+
+| Evidence item | Current status after read-only work | Remaining Open blocker |
+| --- | --- | --- |
+| Package fixture | Reused `doc_review_pack_trace_export` with reviewed target, evidence, contradiction, and unreviewed counter-signal. | Productization Program Owner must accept the fixture as representative. |
+| Pre-share confirmation | Existing trace/SafeMode screenshot evidence remains available. | Human reviewer must confirm wording and risk comprehension. |
+| Trace-back proof | Existing Detail export trace-file proof remains available. | QA Lead must decide whether file-level proof is sufficient for V4 acceptance. |
+| Read-only review proof | **Implemented and replayable.** A reviewer can select the target, inspect reviewed state, supporting and contradicting evidence, and open Share & Reproduce while primary and card-level edit controls are disabled. | Physical keyboard and screen-reader acceptance remain human tasks. |
+| Decision record | This issue now contains implementation, E2E, and screenshot locations. | Product QA / MVP-EXIT must consume the merged evidence before Open-gate decision. |
+
+- Status impact: **Draft remains**. The automated read-only review blocker is addressed, but Productization Program Owner / QA Lead acceptance and human accessibility/operability acceptance remain required.
+- No new ADR is needed. The change enforces the existing read-only authority boundary and does not change the review-pack contract, SafeMode policy, approval semantics, or release authority.
