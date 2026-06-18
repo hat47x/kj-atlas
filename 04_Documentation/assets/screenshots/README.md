@@ -50,6 +50,7 @@ The following screenshots are generated from deterministic Product Value fixture
 | `product-value-first-island.png` | PV01: first meaningful grouping after opening a sample, selecting two cards, and creating an island. |
 | `product-value-ambiguity-state.png` | PV02: an unresolved/ambiguous claim selected in a grouped context, with review state visible in the side panel. |
 | `product-value-review-pack-trace.png` | PV03: the Share & Reproduce panel with selected-card traces included at detail granularity. |
+| `product-value-review-pack-readonly.png` | PV03: a review-pack fixture inspected in read-only mode with review state and disabled edit actions visible. |
 
 Regenerate these screenshots when Product Value fixtures, Japanese UI labels, canvas layout, or Share & Reproduce controls change:
 
@@ -58,4 +59,4 @@ cd 03_Implement/frontend
 C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\scripts\capture_product_value_screenshots.mjs
 ```
 
-The script starts a temporary Vite server when `KJ_ATLAS_SCREENSHOT_PORT` is free, loads the app with `?locale=ja`, injects deterministic fixture data through Playwright routes, captures the three PNG files above, and stops the server when it started it.
+The script starts a temporary Vite server when `KJ_ATLAS_SCREENSHOT_PORT` is free, loads the app with `?locale=ja`, injects deterministic fixture data through Playwright routes, captures the four PNG files above, and stops the server when it started it.

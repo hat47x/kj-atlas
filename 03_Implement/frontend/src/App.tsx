@@ -6842,7 +6842,7 @@ ${parsedDocument.error}`);
       <button
         type="button"
         onClick={handleNewDocument}
-        disabled={isLoading || isSaving}
+        disabled={isReadOnly || isLoading || isSaving}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -6850,7 +6850,7 @@ ${parsedDocument.error}`);
           borderRadius: 6,
           padding: "6px 12px",
           fontWeight: 600,
-          cursor: isLoading || isSaving ? "not-allowed" : "pointer",
+          cursor: isReadOnly || isLoading || isSaving ? "not-allowed" : "pointer",
         }}
       >
         {t("app.toolbar.new")}
@@ -6858,7 +6858,7 @@ ${parsedDocument.error}`);
       <button
         type="button"
         onClick={handleDuplicateDocument}
-        disabled={isLoading || isSaving || !document}
+        disabled={isReadOnly || isLoading || isSaving || !document}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -6866,7 +6866,7 @@ ${parsedDocument.error}`);
           borderRadius: 6,
           padding: "6px 12px",
           fontWeight: 600,
-          cursor: isLoading || isSaving || !document ? "not-allowed" : "pointer",
+          cursor: isReadOnly || isLoading || isSaving || !document ? "not-allowed" : "pointer",
         }}
       >
         {t("app.toolbar.duplicate")}
@@ -7005,7 +7005,7 @@ ${parsedDocument.error}`);
           <button
             type="button"
             onClick={handleImportClick}
-            disabled={isLoading}
+            disabled={isReadOnly || isLoading}
             aria-label={t("app.toolbar.import_doc_json_legacy")}
             title={t("app.toolbar.import_doc_json_legacy")}
             style={{
@@ -7015,7 +7015,7 @@ ${parsedDocument.error}`);
               borderRadius: 6,
               padding: "6px 12px",
               fontWeight: 600,
-              cursor: isLoading ? "not-allowed" : "pointer",
+              cursor: isReadOnly || isLoading ? "not-allowed" : "pointer",
               width: "100%",
             }}
           >
@@ -7045,7 +7045,7 @@ ${parsedDocument.error}`);
       <button
         type="button"
         onClick={handleAddCard}
-        disabled={isLoading || !document}
+        disabled={isReadOnly || isLoading || !document}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -7053,7 +7053,7 @@ ${parsedDocument.error}`);
           borderRadius: 6,
           padding: "6px 12px",
           fontWeight: 600,
-          cursor: isLoading || !document ? "not-allowed" : "pointer",
+          cursor: isReadOnly || isLoading || !document ? "not-allowed" : "pointer",
         }}
       >
         {t("app.toolbar.new_card")}
@@ -7061,7 +7061,7 @@ ${parsedDocument.error}`);
       <button
         type="button"
         onClick={handleCreateIsland}
-        disabled={isLoading || !document || !canCreateIsland}
+        disabled={isReadOnly || isLoading || !document || !canCreateIsland}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -7069,7 +7069,7 @@ ${parsedDocument.error}`);
           borderRadius: 6,
           padding: "6px 12px",
           fontWeight: 600,
-          cursor: isLoading || !document || !canCreateIsland ? "not-allowed" : "pointer",
+          cursor: isReadOnly || isLoading || !document || !canCreateIsland ? "not-allowed" : "pointer",
         }}
       >
         {t("app.toolbar.create_island")}
@@ -7077,7 +7077,7 @@ ${parsedDocument.error}`);
       <button
         type="button"
         onClick={handleDeleteSelection}
-        disabled={isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)}
+        disabled={isReadOnly || isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -7086,7 +7086,7 @@ ${parsedDocument.error}`);
           padding: "6px 12px",
           fontWeight: 600,
           cursor:
-            isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)
+            isReadOnly || isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)
               ? "not-allowed"
               : "pointer",
         }}
@@ -7098,7 +7098,7 @@ ${parsedDocument.error}`);
         onClick={() => {
           void handleSave();
         }}
-        disabled={isLoading || !document || isSaving || !isDirty}
+        disabled={isReadOnly || isLoading || !document || isSaving || !isDirty}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: isSaving ? "#f8fafc" : "#ffffff",
@@ -7106,7 +7106,7 @@ ${parsedDocument.error}`);
           borderRadius: 6,
           padding: "6px 12px",
           fontWeight: 600,
-          cursor: isLoading || !document || isSaving || !isDirty ? "not-allowed" : "pointer",
+          cursor: isReadOnly || isLoading || !document || isSaving || !isDirty ? "not-allowed" : "pointer",
         }}
       >
         {isSaving ? t("app.status.saving") : t("app.toolbar.save")}

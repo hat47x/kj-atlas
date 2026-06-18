@@ -20,6 +20,7 @@ const files = {
   firstValue: path.join(outputDir, "product-value-first-island.png"),
   ambiguity: path.join(outputDir, "product-value-ambiguity-state.png"),
   reviewPack: path.join(outputDir, "product-value-review-pack-trace.png"),
+  readOnlyReview: path.join(outputDir, "product-value-review-pack-readonly.png"),
 };
 
 const fixedTimestamp = "2026-06-04T00:00:00.000Z";
@@ -291,6 +292,25 @@ async function captureReviewPack(browser) {
   await page.close();
 }
 
+async function captureReadOnlyReview(browser) {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const fixture = await routeDocument(
+    page,
+    buildReviewPackTraceDocument(),
+    withoutProductValueContent(buildReviewPackTraceDocument()),
+  );
+  const readOnlyUrl = new URL(baseUrl);
+  readOnlyUrl.searchParams.set("readOnly", "1");
+
+  await page.goto(readOnlyUrl.toString());
+  fixture.enableSample();
+  await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
+  await page.getByRole("option", { name: "共有前に確認する主張" }).click();
+  await page.getByText(/読み取り専用モードが有効|Read-only mode is active/).waitFor({ state: "visible" });
+  await captureScreenshot(page, files.readOnlyReview);
+  await page.close();
+}
+
 async function capture() {
   await mkdir(outputDir, { recursive: true });
   const server = await ensureViteServer();
@@ -300,6 +320,7 @@ async function capture() {
     await captureFirstValue(browser);
     await captureAmbiguity(browser);
     await captureReviewPack(browser);
+    await captureReadOnlyReview(browser);
     console.log(
       JSON.stringify(
         {

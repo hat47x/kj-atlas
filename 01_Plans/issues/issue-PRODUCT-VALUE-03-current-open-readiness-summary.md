@@ -77,6 +77,24 @@ No new ADR is needed to define the minimum package evidence. A new ADR is requir
   - Does not satisfy Productization Program Owner / QA Lead package acceptance, read-only reviewer inspection, ZIP content acceptance, approval/signature authority, or shipment approval.
   - Status impact: **Draft remains**.
 
+## Read-only Reviewer Evidence 2026-06-18
+
+- Candidate mainline: `origin/main@d2b5f8cfab8d5ac49388f0f130dae1eeb2315049`.
+- Representative E2E: `03_Implement/frontend/e2e/review_pack_trace_export.spec.ts`.
+- Screenshot: `04_Documentation/assets/screenshots/product-value-review-pack-readonly.png`.
+- Evidence:
+  - A reviewer can open the PV03 fixture in read-only mode, select the reviewed target claim, and inspect supporting and contradicting evidence.
+  - Primary editing actions and card-level claim/review/evidence/critique controls are disabled before interaction rather than failing only after activation.
+  - Share & Reproduce remains available for inspection and continues to show the fixed SafeMode redaction context.
+- Verification:
+  - Targeted Playwright: 2 passed.
+  - Frontend typecheck: pass.
+  - UX operability regression: 6 passed.
+- Evidence packet impact:
+  - The automated read-only reviewer inspection requirement is now replayable and has a Japanese UI screenshot.
+  - Productization Program Owner / QA Lead package acceptance, physical keyboard acceptance, screen-reader acceptance, and final shipment approval remain open.
+  - Status impact: **Draft remains**.
+
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
