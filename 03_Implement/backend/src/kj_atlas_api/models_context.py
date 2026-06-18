@@ -102,18 +102,62 @@ class Ce4ResolveBundleResponse(BaseModel):
 
 _STUB_DATASET = {
     "selected": [
-        {"id": "card-reviewed-01", "reviewed": True, "title": "Reviewed card"},
-        {"id": "card-unreviewed-01", "reviewed": False, "title": "Unreviewed card"},
+        {
+            "id": "card-reviewed-01",
+            "reviewed": True,
+            "title": "Reviewed working hypothesis",
+            "claimType": "hypothesis",
+            "resolutionState": "unresolved",
+            "aiDisposition": "constraint",
+            "autoResolve": False,
+        },
+        {
+            "id": "card-unreviewed-01",
+            "reviewed": False,
+            "title": "Unreviewed counter-opinion",
+            "claimType": "unknown",
+            "resolutionState": "unresolved",
+            "aiDisposition": "constraint",
+            "autoResolve": False,
+        },
     ],
     "relations": [
-        {"type": "supports", "from": "card-reviewed-01", "to": "card-unreviewed-01"},
+        {
+            "type": "supports",
+            "from": "card-reviewed-01",
+            "to": "card-unreviewed-01",
+            "resolutionState": "unresolved",
+            "aiDisposition": "constraint",
+            "autoResolve": False,
+        },
     ],
     "evidence": [
-        {"cardId": "card-reviewed-01", "kind": "note"},
-        {"cardId": "card-unreviewed-01", "kind": "note"},
+        {
+            "cardId": "card-reviewed-01",
+            "kind": "support",
+            "reviewed": True,
+            "resolutionState": "unresolved",
+            "aiDisposition": "constraint",
+            "autoResolve": False,
+        },
+        {
+            "cardId": "card-unreviewed-01",
+            "kind": "counter_opinion",
+            "reviewed": False,
+            "resolutionState": "unresolved",
+            "aiDisposition": "constraint",
+            "autoResolve": False,
+        },
     ],
     "contradictions": [
-        {"id": "ctr-01", "weight": 2, "label": "open conflict"},
+        {
+            "id": "ctr-01",
+            "weight": 2,
+            "label": "open conflict",
+            "resolutionState": "unresolved",
+            "aiDisposition": "constraint",
+            "autoResolve": False,
+        },
     ],
 }
 
