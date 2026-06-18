@@ -108,3 +108,27 @@ test("domain expression state controls are reachable with keyboard after card se
   await page.keyboard.press("Space");
   await expect(page.getByLabel("too_close")).toBeChecked();
 });
+
+test("share preflight keeps unresolved domain signals visible and unreviewed drafts excluded", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = await routeDomainExpressionFixture(page);
+
+  await page.goto("/?locale=en");
+  fixture.enableSample();
+  await page.getByRole("button", { name: "Open sample" }).click();
+  await page.getByRole("option", { name: "ambiguous target claim" }).click();
+  await page.getByRole("button", { name: "Share & Reproduce" }).click();
+
+  const summary = page.getByTestId("share-domain-expression-summary");
+  await expect(page.getByText("SafeMode is ON, so unreviewed drafts are excluded.")).toBeVisible();
+  await expect(page.getByText("5 review signals remain")).toBeVisible();
+  await expect(summary).toContainText("Ambiguity / evidence / review summary");
+  await expect(summary).toContainText("Unreviewed: cards 2, islands 0");
+  await expect(summary).toContainText("Hold / unknown claims: 1");
+  await expect(summary).toContainText("Critique or pending feedback targets: 1");
+  await expect(summary).toContainText("Evidence links 2, contradictions 1, evidence gaps 0");
+  await expect(summary).toContainText(
+    "SafeMode keeps draft and unreviewed body exposure constrained; review or keep holds explicit before sharing.",
+  );
+  await expect(page.getByLabel("Include unreviewed drafts")).toHaveCount(0);
+});

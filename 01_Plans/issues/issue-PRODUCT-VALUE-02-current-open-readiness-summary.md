@@ -77,6 +77,21 @@ No new ADR is needed for the Phase 1 summary. A new ADR is required if implement
   - Does not satisfy hold/pending split acceptance, share/export preflight evidence for unresolved material, AI-boundary proof, UX acceptance of findability, physical keyboard acceptance, screen-reader acceptance, or shipment approval.
   - Status impact: **Draft remains**.
 
+## Share Preflight Evidence 2026-06-18
+
+- Candidate mainline: `origin/main@2e1f0edd38a089005269da91b213914500ec3af5`.
+- Representative E2E: `03_Implement/frontend/e2e/domain_expression_keyboard_access.spec.ts`.
+- Screenshot: `04_Documentation/assets/screenshots/product-value-ambiguity-share-preflight.png`.
+- Evidence:
+  - Share & Reproduce keeps unresolved-domain counts visible before export.
+  - The deterministic fixture reports 2 unreviewed cards, 1 Hold/unknown claim, 1 critique target, 2 evidence links, 1 contradiction, and 0 evidence gaps.
+  - SafeMode ON states that unreviewed drafts are excluded and does not expose the include-drafts control.
+- Verification: targeted Playwright **2 passed**.
+- Evidence packet impact:
+  - The Phase 1 share/export proof requirement is now replayable and has a Japanese UI screenshot.
+  - Hold/Pending schema work, AI-boundary proof, human findability acceptance, keyboard/screen-reader acceptance, and umbrella Product Value approval remain open.
+  - Status impact: **Draft remains**.
+
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
