@@ -73,6 +73,21 @@ No new ADR is needed for this summary. An ADR is required only if the project ch
   - Does not satisfy Productization Program Owner / QA Lead acceptance, keyboard acceptance, screen-reader acceptance, full share preflight approval, or shipment approval.
   - Status impact: **Draft remains**.
 
+## First-Value Share Preflight Evidence 2026-06-19
+
+- Candidate mainline: `origin/main@bd7e7ee35275b25f0f17defe02cbde619dbaa0a8`.
+- Representative E2E: `03_Implement/frontend/e2e/first_value_share_preflight.spec.ts`.
+- Screenshot: `04_Documentation/assets/screenshots/product-value-first-island-share-preflight.png`.
+- Evidence:
+  - SafeMode ON is visible in the start panel before sample loading.
+  - The same deterministic fixture proceeds through two-card selection, first-island creation, and Share & Reproduce.
+  - SafeMode ON excludes unreviewed drafts at preflight and reports 5 remaining review signals.
+- Verification: targeted Playwright **1 passed**; screenshot capture regenerated six Product Value images.
+- Evidence packet impact:
+  - Automated SafeMode/sample-entry/first-island/share-preflight evidence is now connected by one fixture.
+  - Productization Program Owner / QA Lead fixture acceptance, mouse/keyboard naturalness, keyboard-fixture sufficiency, physical keyboard acceptance, screen-reader acceptance, and shipment approval remain open.
+  - Status impact: **Draft remains**.
+
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.

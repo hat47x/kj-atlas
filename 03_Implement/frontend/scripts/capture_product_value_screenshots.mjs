@@ -18,6 +18,7 @@ const outputDir =
 
 const files = {
   firstValue: path.join(outputDir, "product-value-first-island.png"),
+  firstValuePreflight: path.join(outputDir, "product-value-first-island-share-preflight.png"),
   ambiguity: path.join(outputDir, "product-value-ambiguity-state.png"),
   ambiguityPreflight: path.join(outputDir, "product-value-ambiguity-share-preflight.png"),
   reviewPack: path.join(outputDir, "product-value-review-pack-trace.png"),
@@ -257,6 +258,23 @@ async function captureFirstValue(browser) {
   await page.close();
 }
 
+async function captureFirstValuePreflight(browser) {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const fixture = await routeDocument(page, buildFirstMeaningfulMapDocument(), buildFirstMeaningfulMapDocument([]));
+  await page.goto(baseUrl);
+  fixture.enableSample();
+  await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
+  await page.getByRole("option", { name: "利用者が最初に困ること" }).click();
+  await page.getByRole("option", { name: "観察メモから見えた根拠" }).click({ modifiers: ["Shift"] });
+  await page.getByRole("button", { name: /島を作成|Create Island/ }).click();
+  await page.getByRole("button", { name: /共有と再現|Share & Reproduce/ }).click();
+  const summary = page.getByTestId("share-domain-expression-summary");
+  await summary.waitFor({ state: "visible" });
+  await summary.scrollIntoViewIfNeeded();
+  await captureScreenshot(page, files.firstValuePreflight);
+  await page.close();
+}
+
 async function captureAmbiguity(browser) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const fixture = await routeDocument(
@@ -338,6 +356,7 @@ async function capture() {
 
   try {
     await captureFirstValue(browser);
+    await captureFirstValuePreflight(browser);
     await captureAmbiguity(browser);
     await captureAmbiguityPreflight(browser);
     await captureReviewPack(browser);
