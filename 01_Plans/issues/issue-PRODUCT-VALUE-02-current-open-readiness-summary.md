@@ -109,6 +109,21 @@ No new ADR is needed for the Phase 1 summary. A new ADR is required if implement
   - ContextBundle constraint-preservation proof, Hold/Pending work, human findability/accessibility acceptance, and umbrella Product Value approval remain open.
   - Status impact: **Draft remains**.
 
+## ContextBundle Constraint Evidence 2026-06-19
+
+- Candidate mainline: `origin/main@8f81e5d70112d9570bf5c940a206a216cd468293`.
+- Fixed profile: `A2-minimal-v1`.
+- Evidence:
+  - The reviewed selected item remains a hypothesis rather than becoming a fact.
+  - Selected items, relations, evidence, counter-opinions, and contradictions are explicitly unresolved, constraint-only, and not eligible for automatic resolution.
+  - Strict SafeMode excludes unreviewed counter-opinion text while preserving non-textual evidence and contradiction signals for downstream review.
+  - The route-level test verifies the semantics through `/context/bundle`, in addition to the existing deterministic hash and preview-gate checks.
+- Evidence packet impact:
+  - The fixed-profile ContextBundle constraint-preservation blocker is addressed.
+  - Real data-source projection parity remains held by the existing CE1 integration boundary.
+  - Hold/Pending, human findability/accessibility acceptance, and umbrella Product Value approval remain open.
+  - Status impact: **Draft remains**.
+
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.

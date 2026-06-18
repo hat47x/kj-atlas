@@ -563,6 +563,18 @@ A2 contract test では次を機械判定する。
 - 機械判定式: `canonical(queryA)==canonical(queryB) && hashA==hashB` が真であること。
 - CE4監査では `queryId` / `queryCanonicalHash` / `bundleHash` / `excludedReason` の4キーを欠落させてはならない。
 
+#### A2-minimal-v1 ambiguity semantics
+
+`A2-minimal-v1` は、曖昧さを解決済みの事実へ変換しないことも検証する。固定stub内の選択項目、関係、根拠、反対意見は、次の意味情報を持つ。
+
+- `claimType` は既存のドメイン語彙を使い、レビュー済みであっても仮説を事実として扱わない。
+- `resolutionState="unresolved"` は、利用者による判断がまだ完了していないことを示す。
+- `aiDisposition="constraint"` は、AI入力で結論ではなく制約として扱うことを示す。
+- `autoResolve=false` は、AI、worker、APIが自動的に解決済みへ変更してはならないことを示す。
+- `safeModePolicy=strict` では未レビュー本文を `selected` から除外する一方、本文を含まない根拠・反対意見・矛盾の存在は制約として保持できる。
+
+これらは `ContextBundleV1` のトップレベルキーを増やすものではなく、固定stubの意味論を検証するための値である。永続データの状態語彙やレビュー権限を変更する場合は、別issue/ADRで扱う。
+
 ---
 
 ## Stream A CE0/HIL Contract Snapshot Linkage (2026-04-16)

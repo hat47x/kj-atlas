@@ -471,3 +471,26 @@ The final value gate should be evaluated only after the slice evidence exists. T
 
 - Status impact: **Draft remains**. The automated review-promotion blocker is addressed, but ContextBundle constraint proof, Hold/Pending, umbrella integration, and human acceptance remain incomplete.
 - No new ADR is needed. This change enforces the accepted `CE0-REVIEW-IF` and does not change review authority or state vocabulary.
+
+## ContextBundle constraint-preservation proof 2026-06-19
+
+- Candidate mainline: `origin/main@8f81e5d70112d9570bf5c940a206a216cd468293`.
+- Fixed profile: `A2-minimal-v1`.
+- Implementation and contract evidence:
+  - The reviewed selected item remains a `hypothesis`; review does not convert it into a fact.
+  - Selected items, relations, evidence, counter-opinions, and contradictions carry `resolutionState="unresolved"`, `aiDisposition="constraint"`, and `autoResolve=false`.
+  - Strict SafeMode excludes the unreviewed counter-opinion text from `selected` while retaining text-free evidence and contradiction signals as constraints.
+  - A backend route test asserts these semantics through the public `/context/bundle` boundary.
+- Verification target: `03_Implement/backend/tests/test_context_bundle_routes.py`.
+
+### Evidence packet update
+
+| Required evidence item | Current status after this proof | Remaining Draft blocker |
+| --- | --- | --- |
+| AI-input proof | **Satisfied for the fixed CE1 mock profile.** Ambiguity, evidence, counter-opinion, and contradiction signals remain unresolved constraints and cannot be marked for automatic resolution. | Real repository projection remains on the existing CE1 data-source hold; production parity must be reverified when that hold is lifted. |
+| SafeMode boundary | Unreviewed text is excluded while non-textual unresolved signals remain traceable. | Human safety/UX acceptance remains required. |
+| Hold/Pending | Not changed by this slice. | First-class Hold/Pending remains routed to `DOMAIN-EXPR-02`. |
+| Umbrella decision | Automated evidence is now available for state, share/export, review-promotion, and fixed-profile AI-input boundaries. | Productization Program Owner / QA Lead acceptance and findability/accessibility review remain open. |
+
+- Status impact: **Draft remains**. Fixed-profile AI-input proof is addressed, but real data-source parity, Hold/Pending, human findability/accessibility acceptance, and umbrella approval remain incomplete.
+- No new ADR is needed. This change clarifies the accepted CE1 mock profile without changing top-level contract keys, persistent schema, review authority, or SafeMode policy.
