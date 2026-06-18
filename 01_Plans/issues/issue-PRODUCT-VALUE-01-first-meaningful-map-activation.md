@@ -432,3 +432,29 @@ No-Go conditions for this value gate:
 | Decision record | This section provides the fixture identity that Product QA and MVP-EXIT can cite later. | Final Open decision must cite human acceptance and the screenshot/trace bundle location. |
 
 - No ADR is needed for this manifest. ADR routing remains limited to changes in the first-value definition, release authority, SafeMode/share policy, first-run product boundary, or fixture meaning.
+
+## First-value share preflight evidence 2026-06-19
+
+- Candidate mainline: `origin/main@bd7e7ee35275b25f0f17defe02cbde619dbaa0a8`.
+- Fixture: `buildFirstMeaningfulMapDocument()` / `doc_first_meaningful_map_mouse`.
+- Representative E2E: `03_Implement/frontend/e2e/first_value_share_preflight.spec.ts`.
+- Screenshot: `04_Documentation/assets/screenshots/product-value-first-island-share-preflight.png`.
+- Automated evidence:
+  - The start panel exposes `SafeMode: ON` before the user opens the sample.
+  - The user selects two cards and creates the first visible island.
+  - Share & Reproduce continues to show SafeMode ON, excludes unreviewed drafts, and reports 5 remaining review signals.
+  - The preflight reports 2 unreviewed cards, 3 unknown claims, no critique targets, and no evidence links, contradictions, or evidence gaps.
+- Verification result: targeted Playwright **1 passed**; the Product Value capture script regenerated all six screenshots.
+
+### Evidence packet update
+
+| Evidence item | Current status after this slice | Remaining Open blocker |
+| --- | --- | --- |
+| Scenario fixture | Replayed from start panel through first island and share preflight with one deterministic fixture. | Productization Program Owner must accept the fixture as a meaningful first-value scenario. |
+| Mouse operation trace | Existing first-island E2E remains available. | UX reviewer must accept the route as natural for standard users. |
+| Keyboard operation trace | Existing keyboard release-candidate flow remains available. | Decide whether separate-fixture keyboard evidence is sufficient for PV01 acceptance. |
+| Safe entry evidence | **Satisfied for automated evidence.** SafeMode is visible at entry and again before sharing; unreviewed drafts are excluded. | Human screenshot/copy and accessibility acceptance remain required. |
+| Decision record | This issue now names the E2E and screenshot locations. | Product QA / MVP-EXIT must consume the merged evidence before Open-gate decision. |
+
+- Status impact: **Draft remains**. The automated first-value and SafeMode evidence packet is now connected, but fixture meaning, natural operation, keyboard evidence sufficiency, and human accessibility acceptance remain human decisions.
+- No new ADR is needed. The slice verifies the accepted first-value and SafeMode boundaries without changing product scope, persistence, or release authority.
