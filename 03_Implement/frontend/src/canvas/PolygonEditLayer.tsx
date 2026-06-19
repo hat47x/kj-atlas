@@ -1,6 +1,7 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
 import type { Point } from "../domain/types";
+import { t } from "../i18n/translate";
 
 type PolygonEditLayerProps = {
   points: Point[];
@@ -157,9 +158,9 @@ export function PolygonEditLayer({
             key={index}
             role="button"
             tabIndex={0}
-            aria-label={`Move polygon vertex ${index + 1}`}
+            aria-label={t("canvas.polygon.vertex_handle", { index: index + 1 })}
             aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Shift+ArrowLeft Shift+ArrowRight Shift+ArrowUp Shift+ArrowDown Delete Backspace"
-            title="Drag to move / Arrow keys to move / Delete to remove / Alt+Click to remove"
+            title={t("canvas.polygon.vertex_handle_help")}
             onPointerDown={(event) => {
               handlePointerDown(event, index);
             }}

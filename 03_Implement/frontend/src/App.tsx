@@ -4583,9 +4583,9 @@ export default function App() {
 
       if (shapeUnchanged) {
         setStatusMessage(
-          nextShape.kind === "rect"
-            ? "Polygon generation fell back to rect (not enough unique corners)"
-            : "Polygon already up to date"
+          t(nextShape.kind === "rect"
+            ? "app.status.polygon.fallback_rect"
+            : "app.status.polygon.already_current")
         );
         return;
       }
@@ -4602,13 +4602,11 @@ export default function App() {
               : island
           ),
         },
-        nextShape.kind === "rect" ? "Fell back to rect island shape" : "Generated polygon island shape"
+        t(nextShape.kind === "rect" ? "app.status.polygon.fallback_rect" : "app.status.polygon.generated")
       );
 
       setStatusMessage(
-        nextShape.kind === "rect"
-          ? "Polygon generation fell back to rect (not enough unique corners)"
-          : "Generated polygon from member cards"
+        t(nextShape.kind === "rect" ? "app.status.polygon.fallback_rect" : "app.status.polygon.generated")
       );
     },
     [applyDocumentChange, document]
@@ -4656,15 +4654,15 @@ export default function App() {
           ...document,
           islands: nextIslands,
         },
-        "Switched island shape to rect"
+        t("app.status.polygon.switched_to_rect")
       );
-      setStatusMessage("Switched island shape to rect");
+      setStatusMessage(t("app.status.polygon.switched_to_rect"));
     },
     [applyDocumentChange, document, handleGenerateIslandPolygon]
   );
 
   const handlePolygonVertexDragStart = useCallback((_islandId: string, _vertexIndex: number) => {
-    setStatusMessage("Polygon vertex drag started");
+    setStatusMessage(t("app.status.polygon.drag_started"));
   }, []);
 
   const handlePolygonVertexDragMove = useCallback(
@@ -4680,7 +4678,7 @@ export default function App() {
 
       const nextPolygon = movePolygonVertex(island.shape.points, vertexIndex, point);
       if (!nextPolygon.ok && nextPolygon.error === "self_intersection") {
-        setStatusMessage("Polygon must not self-intersect");
+        setStatusMessage(t("app.status.polygon.self_intersection"));
       }
     },
     [document]
@@ -4701,7 +4699,7 @@ export default function App() {
         const nextPolygon = movePolygonVertex(island.shape.points, vertexIndex, point);
         if (!nextPolygon.ok) {
           if (nextPolygon.error === "self_intersection") {
-            statusMessage = "Polygon must not self-intersect";
+            statusMessage = t("app.status.polygon.self_intersection");
           }
           return island;
         }
@@ -4734,14 +4732,14 @@ export default function App() {
           ...document,
           islands: nextIslands,
         },
-        "Moved polygon vertex"
+        t("app.status.polygon.vertex_moved")
       );
     },
     [applyDocumentChange, document]
   );
 
   const handlePolygonVertexDragCancel = useCallback((_islandId: string, _vertexIndex: number) => {
-    setStatusMessage("Polygon vertex drag canceled");
+    setStatusMessage(t("app.status.polygon.drag_cancelled"));
   }, []);
 
   const handlePolygonVertexAdd = useCallback(
@@ -4758,7 +4756,7 @@ export default function App() {
         const nextPolygon = addPolygonVertex(island.shape.points, segmentStartIndex, point);
         if (!nextPolygon.ok) {
           if (nextPolygon.error === "self_intersection") {
-            setStatusMessage("Polygon must not self-intersect");
+            setStatusMessage(t("app.status.polygon.self_intersection"));
           }
           return island;
         }
@@ -4782,7 +4780,7 @@ export default function App() {
           ...document,
           islands: nextIslands,
         },
-        "Added polygon vertex"
+        t("app.status.polygon.vertex_added")
       );
     },
     [applyDocumentChange, document]
@@ -4803,9 +4801,9 @@ export default function App() {
         const nextPolygon = removePolygonVertex(island.shape.points, vertexIndex);
         if (!nextPolygon.ok) {
           if (nextPolygon.error === "min_vertex_count") {
-            statusMessage = "Polygon needs at least 3 points";
+            statusMessage = t("app.status.polygon.minimum_vertices");
           } else if (nextPolygon.error === "self_intersection") {
-            statusMessage = "Polygon must not self-intersect";
+            statusMessage = t("app.status.polygon.self_intersection");
           }
           return island;
         }
@@ -4834,7 +4832,7 @@ export default function App() {
           ...document,
           islands: nextIslands,
         },
-        "Removed polygon vertex"
+        t("app.status.polygon.vertex_removed")
       );
     },
     [applyDocumentChange, document]

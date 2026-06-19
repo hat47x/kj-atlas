@@ -2563,3 +2563,20 @@ DoDテンプレ（Draft→Open）
   - G7 regression: targeted E2E, i18n guard, typecheck, full frontend regression, and build are required.
 - Final release remains **No-Go**. Polygon editing, AI-assisted summaries, trace exports, human terminology review, and accessibility acceptance remain separate.
 - No ADR is needed because edit semantics, history behavior, graph structure, persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: polygon editing feedback localization
+
+- Scope: polygon generation and fallback, shape switching, vertex drag/add/remove, self-intersection prevention, minimum-vertex validation, and vertex-handle accessible names.
+- Finding: Japanese controls exposed English-only polygon status messages and English-only keyboard handle names.
+- Correction:
+  - Polygon editing feedback and constraints now use the Japanese and English locale catalogs.
+  - Vertex handles expose localized accessible names and help text.
+  - Existing pointer and keyboard E2E scenarios now verify Japanese movement, removal, and self-intersection feedback.
+  - Hardcode guards prevent the removed English polygon UI strings from returning.
+- Gate impact:
+  - G3 Japanese UI: improved for visible and assistive polygon-editing interfaces.
+  - G2 primary operations: improved for pointer and keyboard boundary editing.
+  - G1 safety defaults: unchanged; self-intersection and minimum-vertex constraints remain fail-closed.
+  - G7 regression: polygon E2E, i18n guard, typecheck, full frontend regression, and build are required.
+- Final release remains **No-Go**. Screen-reader acceptance, human terminology review, AI workflows, and final program approval remain separate.
+- No ADR is needed because polygon geometry rules, edit constraints, persistence, SafeMode, and release authority are unchanged.
