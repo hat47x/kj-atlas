@@ -2619,8 +2619,7 @@ export default function App() {
       const parsedDocument = extractComparisonDocument(parsedJson);
 
       if (!parsedDocument.ok) {
-        setStatusMessage(`Failed to load comparison file:
-${parsedDocument.error}`);
+        setStatusMessage(t("app.status.comparison.invalid_document", { detail: parsedDocument.error }));
         return;
       }
 
@@ -2635,33 +2634,35 @@ ${parsedDocument.error}`);
       setSelectedMergeItemIdSet(new Set());
       setLastMergeSnapshot(null);
       setMergeWarningConfirmationKey(null);
-      setStatusMessage("Loaded comparison document (view-only)");
+      setStatusMessage(t("app.status.comparison.loaded_view_only"));
     } catch (error) {
       if (error instanceof SyntaxError) {
-        setStatusMessage("Failed to parse comparison JSON file");
+        setStatusMessage(t("app.status.comparison.invalid_json"));
         return;
       }
 
-      setStatusMessage(error instanceof Error ? error.message : "Failed to load comparison document");
+      setStatusMessage(t("app.status.comparison.load_failed", {
+        detail: error instanceof Error ? error.message : t("app.status.error_detail_unknown"),
+      }));
     }
   }, [document]);
 
 
   const handleApplySelectedMergeItems = useCallback(() => {
     if (!document || !comparisonDocument || !reviewDiffBaseSnapshot) {
-      setStatusMessage("Load comparison document first");
+      setStatusMessage(t("app.status.comparison.load_first"));
       return;
     }
 
     const selectedItems = mergeItems.filter((item) => mergeEvaluation.selectedIdsWithPrerequisites.has(item.id));
     if (selectedItems.length === 0) {
-      setStatusMessage("No merge item selected");
+      setStatusMessage(t("app.status.comparison.no_merge_item_selected"));
       return;
     }
 
     const hasBlocker = mergeEvaluation.evaluations.some((entry) => mergeEvaluation.selectedIdsWithPrerequisites.has(entry.item.id) && entry.status !== "ok");
     if (hasBlocker) {
-      setStatusMessage("Resolve merge blockers before applying");
+      setStatusMessage(t("app.status.comparison.resolve_blockers"));
       return;
     }
 
@@ -2682,16 +2683,16 @@ ${parsedDocument.error}`);
     const auditEntry = buildMergeAuditEntry(selectedItems, mergeSourceInfo);
     setMergeAuditLog((current) => appendMergeAuditLog(current, auditEntry));
     setLastMergeSnapshot(cloneDocument(document));
-    applyDocumentChange(applyResult.document, "Applied selective merge");
+    applyDocumentChange(applyResult.document, t("app.status.comparison.merge_applied"));
   }, [applyDocumentChange, comparisonDocument, document, mergeEvaluation.evaluations, mergeEvaluation.selectedIdsWithPrerequisites, mergeItems, mergeSourceInfo, mergeWarningConfirmationKey, reviewDiffBaseSnapshot]);
 
   const handleUndoLastMerge = useCallback(() => {
     if (!lastMergeSnapshot) {
-      setStatusMessage("No merge snapshot to revert");
+      setStatusMessage(t("app.status.comparison.no_merge_to_revert"));
       return;
     }
 
-    applyDocumentChange(cloneDocument(lastMergeSnapshot), "Reverted selective merge");
+    applyDocumentChange(cloneDocument(lastMergeSnapshot), t("app.status.comparison.merge_reverted"));
     setLastMergeSnapshot(null);
     setMergeWarningConfirmationKey(null);
   }, [applyDocumentChange, lastMergeSnapshot]);

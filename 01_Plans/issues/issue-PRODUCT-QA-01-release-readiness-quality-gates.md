@@ -2483,3 +2483,18 @@ DoDテンプレ（Draft→Open）
   - G7 regression: pending the implementation PR validation and CI result.
 - Final release remains **No-Go**. This slice does not replace human Japanese copy review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, support rehearsal, or final program approval.
 - No ADR is needed because locale authority, read-only semantics, persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: comparison workflow status localization
+
+- Scope: comparison document loading and selective-merge status guidance.
+- Finding: comparison success, parse failure, missing selection, blocker, apply, and revert statuses were hard-coded in English even when the Japanese locale was active.
+- Correction:
+  - Fixed workflow statuses now use the Japanese and English locale catalogs.
+  - Detailed schema and transaction errors remain visible as diagnostic detail rather than being discarded.
+  - The App hardcode guard prevents the removed comparison and selective-merge English literals from returning.
+- Gate impact:
+  - G3 Japanese UI: improved for the comparison and selective-merge path.
+  - G2 primary operations: improved because missing prerequisites, selection, blockers, apply, and revert outcomes use actionable localized guidance.
+  - G7 regression: targeted i18n tests, comparison recovery E2E, typecheck, full frontend regression, and build are required for this slice.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, and final program approval remain separate.
+- No ADR is needed because comparison semantics, merge authority, persistence, review policy, and release authority are unchanged.

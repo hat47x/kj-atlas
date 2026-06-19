@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
-import { EXPORT_BUNDLE_BUTTON, SHARE_REPRODUCE_BUTTON } from "./helpers/i18n";
+import { ADVANCED_UI_BUTTON, EXPORT_BUNDLE_BUTTON, SHARE_REPRODUCE_BUTTON } from "./helpers/i18n";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
 
@@ -296,7 +296,7 @@ test("save failure keeps content and points to export or retry", async ({ page }
   await page.goto("/");
   await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
 
-  await page.getByRole("button", { name: /新規|New/ }).click();
+  await page.getByRole("button", { name: /^新規$|^New$/ }).click();
   await page.getByRole("button", { name: /^保存$|^Save$/ }).click();
 
   const status = page.getByTestId("status-message");
@@ -361,6 +361,8 @@ test("slow review diff shows localized progress and can be cancelled", async ({ 
 
   await page.goto("/");
   await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+  await page.getByRole("button", { name: /開始パネルを閉じる|Close start panel/ }).click();
+  await page.getByRole("button", { name: ADVANCED_UI_BUTTON }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: /比較対象ドキュメントを読み込む|Load comparison document/ }).first().click();
@@ -371,10 +373,31 @@ test("slow review diff shows localized progress and can be cancelled", async ({ 
     buffer: Buffer.from(JSON.stringify(comparisonDocument), "utf-8"),
   });
 
+  await expect(page.getByTestId("status-message")).not.toContainText("Loaded comparison document (view-only)");
   await expect(page.getByText("差分を計算中: カード（10%）").first()).toBeVisible();
   await expect(page.getByText(/項目数: 0.*処理中|Items: 0.*Working/).first()).toBeVisible();
 
   await page.getByRole("button", { name: /^キャンセル$|^Cancel$/ }).first().click();
   await expect(page.getByTestId("status-message")).toContainText("差分計算を中止しました");
+  await expectStatusFitsViewport(page);
+});
+
+test("invalid comparison JSON shows localized recovery guidance", async ({ page }) => {
+  await routeDocumentApi(page, {});
+  await page.goto("/?locale=ja");
+  await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+  await page.getByRole("button", { name: /開始パネルを閉じる|Close start panel/ }).click();
+  await page.getByRole("button", { name: ADVANCED_UI_BUTTON }).click();
+
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: /比較対象ドキュメントを読み込む|Load comparison document/ }).first().click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles({
+    name: "invalid-comparison.json",
+    mimeType: "application/json",
+    buffer: Buffer.from("{ invalid json", "utf-8"),
+  });
+
+  await expect(page.getByTestId("status-message")).toContainText("比較対象のJSONファイルを解析できませんでした");
   await expectStatusFitsViewport(page);
 });
