@@ -3060,40 +3060,46 @@ export default function App() {
       const entries = zipImportResult.entries;
       const paths = detectReviewPackFiles(entries);
       if (!paths.documentPath) {
-        setPackImportError("document.json not found in zip");
-        setStatusMessage("document.json not found in zip");
+        const message = t("app.status.import.review_pack_document_missing");
+        setPackImportError(message);
+        setStatusMessage(message);
         return;
       }
       if (!paths.viewPath) {
-        setPackImportError("view.json not found in zip");
-        setStatusMessage("view.json not found in zip");
+        const message = t("app.status.import.review_pack_view_missing");
+        setPackImportError(message);
+        setStatusMessage(message);
         return;
       }
 
       const documentRaw = entries.get(paths.documentPath);
       const viewRaw = entries.get(paths.viewPath);
       if (typeof documentRaw !== "string") {
-        setPackImportError("Unsupported format");
-        setStatusMessage("Unsupported format");
+        const message = t("app.status.import.review_pack_document_text_required");
+        setPackImportError(message);
+        setStatusMessage(message);
         return;
       }
       if (typeof viewRaw !== "string") {
-        setPackImportError("Unsupported format");
-        setStatusMessage("Unsupported format");
+        const message = t("app.status.import.review_pack_view_text_required");
+        setPackImportError(message);
+        setStatusMessage(message);
         return;
       }
 
       const parsedDocument = parseDocumentJson(documentRaw);
       if (!parsedDocument.ok) {
-        setPackImportError(parsedDocument.error);
-        setStatusMessage(parsedDocument.error);
+        const message = t("app.status.import.review_pack_document_invalid");
+        setPackImportError(message);
+        setStatusMessage(message);
         return;
       }
 
       const parsedView = parseViewJson(viewRaw);
       if (!parsedView.ok) {
-        setPackImportError(parsedView.error.includes("Invalid JSON") ? "Invalid JSON in view.json" : parsedView.error);
-        setStatusMessage("Failed to load view metadata");
+        const message = t("app.status.import.review_pack_view_invalid");
+        setPackImportError(message);
+        setStatusMessage(message);
         return;
       }
 
@@ -3109,28 +3115,32 @@ export default function App() {
       if (paths.integrityPath) {
         const integrityRaw = entries.get(paths.integrityPath);
         if (typeof integrityRaw !== "string") {
-          setPackImportError("integrity.json must be UTF-8 JSON text");
-          setStatusMessage("integrity.json must be UTF-8 JSON text");
+          const message = t("app.status.import.review_pack_integrity_text_required");
+          setPackImportError(message);
+          setStatusMessage(message);
           return;
         }
         let parsedIntegrityJson: unknown;
         try {
           parsedIntegrityJson = JSON.parse(integrityRaw);
         } catch {
-          setPackImportError("Invalid JSON in integrity.json");
-          setStatusMessage("Invalid JSON in integrity.json");
+          const message = t("app.status.import.review_pack_integrity_json_invalid");
+          setPackImportError(message);
+          setStatusMessage(message);
           return;
         }
         const parsedIntegrity = parseIntegrityManifest(parsedIntegrityJson);
         if (!parsedIntegrity.ok) {
-          setPackImportError(parsedIntegrity.error);
-          setStatusMessage(parsedIntegrity.error);
+          const message = t("app.status.import.review_pack_integrity_manifest_invalid");
+          setPackImportError(message);
+          setStatusMessage(message);
           return;
         }
         const verification = await verifyIntegrityManifest(parsedIntegrity.manifest, entries);
         if (!verification.ok) {
-          setPackImportError(`Integrity verification failed: ${verification.error}`);
-          setStatusMessage(`Integrity verification failed: ${verification.error}`);
+          const message = t("app.status.import.review_pack_integrity_verification_failed");
+          setPackImportError(message);
+          setStatusMessage(message);
           return;
         }
       }
@@ -3189,17 +3199,20 @@ export default function App() {
       if (previousSnapshotUrl) {
         URL.revokeObjectURL(previousSnapshotUrl);
       }
-      applyImportedViewMetadata(parsedView.metadata, parsedDocument.document, importedViewMode, "Review pack imported");
+      applyImportedViewMetadata(
+        parsedView.metadata,
+        parsedDocument.document,
+        importedViewMode,
+        t("app.status.import.review_pack_imported_prefix"),
+      );
       setSafeMode(true);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unsupported format";
       if (error instanceof ZipImportError) {
+        const message = t(`app.status.import.review_pack_zip_error_${error.code.toLowerCase()}`);
         setPackImportError(message);
         setStatusMessage(message);
-      } else if (message.includes("Zip too large")) {
-        setPackImportError("Z001: Zip too large / exceeds limit");
-        setStatusMessage("Z001: Zip too large / exceeds limit");
       } else {
+        const message = t("app.status.import.review_pack_unsupported");
         setPackImportError(message);
         setStatusMessage(message);
       }

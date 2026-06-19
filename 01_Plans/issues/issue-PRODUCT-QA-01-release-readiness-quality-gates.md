@@ -2515,3 +2515,22 @@ DoDテンプレ（Draft→Open）
   - G7 regression: targeted i18n and recovery E2E, typecheck, full frontend regression, and build are required.
 - Final release remains **No-Go**. Human terminology review, accessibility acceptance, environment rehearsal, and final approval remain separate.
 - No ADR is needed because patch schema, trust semantics, lint blocking, apply authority, persistence, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: review-pack import recovery localization
+
+- Scope: review-pack ZIP validation, required-file checks, integrity verification, and import completion feedback.
+- Finding: missing `document.json` / `view.json`, malformed integrity data, ZIP safety rejection, and successful import still surfaced English-only status text in the Japanese UI.
+- Correction:
+  - Fixed review-pack outcomes now use the Japanese and English locale catalogs.
+  - ZIP safety failures keep the stable `Z001` / `Z002` / `Z003` codes while presenting an understandable localized explanation.
+  - Missing `document.json` tells the user to recreate the review pack at its source.
+  - A browser E2E selects a real ZIP missing `document.json` and verifies localized recovery guidance without viewport overflow.
+  - The App hardcode guard prevents the removed English review-pack statuses from returning.
+- Gate impact:
+  - G3 Japanese UI: improved for the review-pack import path.
+  - G1 safety defaults: unchanged; unsafe paths, oversized archives, invalid images, and failed integrity verification still stop import.
+  - G2 primary operations: improved because failed import now names the problem and the next recovery action.
+  - G6 diagnostics and support: improved because internal parser details are no longer the only user-facing guidance.
+  - G7 regression: targeted i18n and recovery E2E, typecheck, full frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, accessibility acceptance, environment rehearsal, and final approval remain separate.
+- No ADR is needed because ZIP limits, integrity policy, import sanitization, SafeMode, persistence, and release authority are unchanged.

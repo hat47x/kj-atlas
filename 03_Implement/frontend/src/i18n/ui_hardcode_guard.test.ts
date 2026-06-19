@@ -99,6 +99,13 @@ const guardCases: GuardCase[] = [
       "Patch apply log entry not found",
       "Copied patch apply log entry (Markdown)",
       "Failed to copy patch apply log entry",
+      "document.json not found in zip",
+      "view.json not found in zip",
+      "integrity.json must be UTF-8 JSON text",
+      "Invalid JSON in integrity.json",
+      "Integrity verification failed:",
+      "Review pack imported",
+      "Z001: Zip too large / exceeds limit",
     ],
   },
   {

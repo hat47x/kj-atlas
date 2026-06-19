@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
+import JSZip from "jszip";
 import { ADVANCED_UI_BUTTON, EXPORT_BUNDLE_BUTTON, SHARE_REPRODUCE_BUTTON } from "./helpers/i18n";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
@@ -340,6 +341,36 @@ test("slow review pack export shows progress and can be cancelled", async ({ pag
 
   await page.locator("button:not([disabled])", { hasText: /^キャンセル$|^Cancel$/ }).last().click();
   await expect(page.getByTestId("status-message")).toContainText("レビューパックの書き出しを中止しました");
+  await expectStatusFitsViewport(page);
+});
+
+test("review pack missing document.json shows localized recovery guidance", async ({ page }) => {
+  await routeDocumentApi(page, {});
+  await page.goto("/?locale=ja");
+  await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+
+  const zip = new JSZip();
+  zip.file("view.json", JSON.stringify({
+    schemaVersion: "1.0.0",
+    visibility: "Restricted",
+    viewState: {},
+  }));
+  const buffer = await zip.generateAsync({ type: "nodebuffer" });
+
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: /ZIPファイルを選択|Choose ZIP/ }).click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles({
+    name: "missing-document.zip",
+    mimeType: "application/zip",
+    buffer,
+  });
+
+  const status = page.getByTestId("status-message");
+  await expect(status).toContainText("レビューパックに document.json がありません");
+  await expect(status).toContainText("作り直してください");
+  await expect(status).not.toContainText("document.json not found in zip");
   await expectStatusFitsViewport(page);
 });
 
