@@ -1806,7 +1806,7 @@ export default function App() {
   }, [isReadOnly, locationSearch]);
 
   const loadDocument = useCallback(
-    async (docId: string, options?: { allowCreateOnNotFound?: boolean; isReload?: boolean }) => {
+    async (docId: string, options?: { allowCreateOnNotFound?: boolean; isReload?: boolean }): Promise<boolean> => {
       const allowCreateOnNotFound = options?.allowCreateOnNotFound ?? false;
       const isReload = options?.isReload ?? false;
       if (isReload) {
@@ -1851,6 +1851,7 @@ export default function App() {
         setPackVisibility(persistedVisibility.packVisibility);
         pendingCardDragSnapshotRef.current = null;
         setStatusMessage(t("app.status.document_loaded"));
+        return true;
       } catch (error) {
         if (allowCreateOnNotFound && error instanceof ApiError && error.status === 404) {
           const defaultDocument = createDefaultDocument(docId);
@@ -1891,8 +1892,10 @@ export default function App() {
             setPackVisibility(persistedVisibility.packVisibility);
             pendingCardDragSnapshotRef.current = null;
             setStatusMessage(t("app.status.document_created"));
+            return true;
           } catch (saveError) {
             setStatusMessage(formatCreateDocumentFailure(saveError));
+            return false;
           }
         } else {
           if (error instanceof ApiError && error.status === 404) {
@@ -1900,6 +1903,7 @@ export default function App() {
           } else {
             setStatusMessage(formatLoadDocumentFailure(error));
           }
+          return false;
         }
       } finally {
         setIsLoading(false);
@@ -2874,6 +2878,62 @@ ${parsedDocument.error}`);
     return true;
   }, [applyImportedViewMetadata]);
 
+  const openBuiltInSample = useCallback(() => {
+    const builtInSample = createDefaultDocument(DEFAULT_DOCUMENT_ID);
+    const sampleViewMode = loadViewModeForDocument(builtInSample.id) ?? "explore";
+
+    pendingCardDragSnapshotRef.current = null;
+    setHistory({
+      past: [],
+      present: cloneDocument(builtInSample),
+      future: [],
+    });
+    setActiveDocumentId(builtInSample.id);
+    setViewMode(sampleViewMode);
+    applyResolvedLocaleForView({
+      docId: builtInSample.id,
+      viewMode: sampleViewMode,
+      persistedLocale: loadViewLocaleForDocumentView(builtInSample.id, sampleViewMode),
+    });
+    setSelectedRecentDocumentId("");
+    setDocEtag(null);
+    setSelectedCardIds([]);
+    setSelectedIslandId(null);
+    setSelectedEdgeId(null);
+    setIsPickingEdgeTarget(false);
+    setFocusCardId(null);
+    setFocusTarget({});
+    setFocusWorldPoint(null);
+    setPeekIslandId(undefined);
+    setFlashReference(null);
+    setTemporaryRevealCardIds(new Set());
+    setSummaryRevealIslandIds(new Set());
+    setRevealedSourceCardIds(new Set());
+    setComparisonDocument(null);
+    setComparisonFileName(null);
+    setGroundingVisibilityMessage(null);
+    setIsDirty(false);
+    setHasSaveConflict(false);
+    setSuggestedDocument(null);
+    setSuggestionId(null);
+    setSuggestionNotes(null);
+    setSuggestionError(null);
+    setPendingImportedDocument(null);
+    setImportDocumentError(null);
+    setPackImportError(null);
+    setMergeSourceInfo({ kind: "unknown" });
+    setImportedPackSummary(null);
+    setImportedPackDiagnosticsMd(null);
+    setImportedPackSnapshotUrl(null);
+    setMergeAuditLog([]);
+    setReviewEvents([]);
+    setSafeMode(true);
+    const persistedVisibility = loadViewVisibilityForDocument(builtInSample.id);
+    setViewVisibility(persistedVisibility.viewVisibility);
+    setPackVisibility(persistedVisibility.packVisibility);
+    setStatusMessage(t("app.status.start.built_in_sample_opened"));
+  }, [applyResolvedLocaleForView]);
+
   const handleOpenSampleDocument = useCallback(async () => {
     setIsStartPanelVisible(false);
     setIsLoading(true);
@@ -2882,15 +2942,17 @@ ${parsedDocument.error}`);
     try {
       const loadedFromPack = await loadPublicPack(null);
       if (!loadedFromPack) {
-        await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
+        const loadedFromApi = await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
+        if (!loadedFromApi) {
+          openBuiltInSample();
+        }
       }
-    } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : t("app.status.start.sample_failed"));
-      await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
+    } catch {
+      openBuiltInSample();
     } finally {
       setIsLoading(false);
     }
-  }, [loadDocument, loadPublicPack]);
+  }, [loadDocument, loadPublicPack, openBuiltInSample]);
 
   const handleStartCreateNewDocument = useCallback(() => {
     setIsStartPanelVisible(false);

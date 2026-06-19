@@ -158,6 +158,29 @@ test("first-run sample entry opens the sample and exposes selection context", as
   await expect(selectionContext).toContainText(/レビュー状態: 未レビュー|Review state: Unreviewed/);
 });
 
+test("read-only first-run entry falls back to the built-in sample when services are unavailable", async ({ page }) => {
+  await page.route("**/packs/index.json", async (route) => {
+    await route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
+  });
+  await page.route("**/docs/doc_phase1_canvas", async (route) => {
+    await route.fulfill({ status: 503, contentType: "application/json", body: '{"detail":"service unavailable"}' });
+  });
+
+  await page.goto("/?locale=en&readOnly=1");
+
+  const createButton = page.getByRole("button", { name: /Create new document/ });
+  const sampleButton = page.getByRole("button", { name: /Open sample/ });
+  await expect(createButton).toBeDisabled();
+  await expect(sampleButton).toBeEnabled();
+
+  await sampleButton.click();
+
+  await expect(page.locator(START_PANEL)).toBeHidden();
+  await expect(page.locator('[data-ui-region="primary-flow"]').getByRole("option")).toHaveCount(3);
+  await expect(page.locator("header")).toContainText("Read-only");
+  await expect(page.locator("body")).toContainText("Opened the built-in sample");
+});
+
 test("first-run panel can create a new document from keyboard activation", async ({ page }) => {
   await page.goto("/");
 

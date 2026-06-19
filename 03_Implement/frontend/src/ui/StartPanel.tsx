@@ -70,6 +70,7 @@ export function StartPanel({
 }: StartPanelProps) {
   const panelRef = useRef<HTMLElement | null>(null);
   const isBusy = isLoading || isSaving;
+  const canCreateNew = !isBusy && !isReadOnly;
   const canOpenRecent = selectedRecentDocumentId.length > 0 && selectedRecentDocumentId !== currentDocumentId;
 
   useEffect(() => {
@@ -193,7 +194,12 @@ export function StartPanel({
       </dl>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 8 }}>
-        <button type="button" onClick={onCreateNew} disabled={isBusy} style={isBusy ? disabledStartActionStyle : startActionStyle}>
+        <button
+          type="button"
+          onClick={onCreateNew}
+          disabled={!canCreateNew}
+          style={canCreateNew ? startActionStyle : disabledStartActionStyle}
+        >
           <span style={{ fontWeight: 800 }}>{t("start_panel.action.new")}</span>
           <span style={{ fontSize: 12, color: "#475569" }}>{t("start_panel.action.new_hint")}</span>
         </button>
