@@ -2498,3 +2498,20 @@ DoDテンプレ（Draft→Open）
   - G7 regression: targeted i18n tests, comparison recovery E2E, typecheck, full frontend regression, and build are required for this slice.
 - Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, and final program approval remain separate.
 - No ADR is needed because comparison semantics, merge authority, persistence, review policy, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: patch workflow status localization
+
+- Scope: patch JSON validation, fingerprint inspection, optional baseline loading, lint/fix guidance, patch application, reset, and apply-log copy feedback.
+- Finding: the patch workflow mixed localized controls with English-only success, failure, trust, and recovery statuses.
+- Correction:
+  - Fixed workflow guidance now uses the Japanese and English locale catalogs.
+  - Invalid patch JSON has browser-level Japanese recovery evidence.
+  - Fingerprint mismatch remains explicitly untrusted; this change does not soften trust or SafeMode boundaries.
+  - The App hardcode guard prevents the removed English patch statuses from returning.
+- Gate impact:
+  - G3 Japanese UI: improved for the patch import and application path.
+  - G1 safety defaults: unchanged; fingerprint mismatch remains untrusted and patch lint still blocks application.
+  - G2 primary operations: improved through localized validation, selection, baseline, apply, reset, and audit feedback.
+  - G7 regression: targeted i18n and recovery E2E, typecheck, full frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, accessibility acceptance, environment rehearsal, and final approval remain separate.
+- No ADR is needed because patch schema, trust semantics, lint blocking, apply authority, persistence, and release authority are unchanged.

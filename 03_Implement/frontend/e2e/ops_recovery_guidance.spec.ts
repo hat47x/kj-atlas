@@ -401,3 +401,24 @@ test("invalid comparison JSON shows localized recovery guidance", async ({ page 
   await expect(page.getByTestId("status-message")).toContainText("比較対象のJSONファイルを解析できませんでした");
   await expectStatusFitsViewport(page);
 });
+
+test("invalid patch JSON shows localized validation guidance", async ({ page }) => {
+  await routeDocumentApi(page, {});
+  await page.goto("/?locale=ja");
+  await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
+
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: /patch\.json を読み込む|Load patch\.json/ }).click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles({
+    name: "invalid-patch.json",
+    mimeType: "application/json",
+    buffer: Buffer.from("{ invalid json", "utf-8"),
+  });
+
+  await expect(page.getByTestId("status-message")).toContainText("パッチJSONを読み込めませんでした");
+  await expect(page.getByText(/パッチを検証できませんでした/)).toBeVisible();
+  await expect(page.getByText(/JSONの構文が正しくありません/)).toBeVisible();
+  await expectStatusFitsViewport(page);
+});
