@@ -127,6 +127,7 @@ const guardCases: GuardCase[] = [
       "Parent island",
       "Placard card",
       "Placard card text",
+      "(none)",
     ],
   },
   {
