@@ -3230,25 +3230,25 @@ export default function App() {
         setPendingPatchImport(null);
         setPatchFingerprintStatus(null);
         setPatchTrustLabel("unknown");
-        setPatchImportError("Patch validation failed:\n- invalid patch schema");
-        setStatusMessage("Failed to load patch JSON");
+        setPatchImportError(t("app.status.patch.validation_failed", { detail: t("app.status.patch.invalid_schema") }));
+        setStatusMessage(t("app.status.patch.load_failed"));
         return;
       }
 
       const fingerprintVerification = await verifyPatchFingerprint(parsedPatch);
       if (!parsedPatch.patchFingerprint) {
-        setPatchFingerprintStatus({ status: "No fingerprint (Unknown)" });
+        setPatchFingerprintStatus({ status: t("app.status.patch.fingerprint_missing") });
         setPatchTrustLabel("unknown");
       } else if (fingerprintVerification.ok) {
         setPatchFingerprintStatus({
-          status: "Fingerprint OK",
+          status: t("app.status.patch.fingerprint_ok"),
           expected: fingerprintVerification.expected,
           actual: fingerprintVerification.actual,
         });
         setPatchTrustLabel("unknown");
       } else {
         setPatchFingerprintStatus({
-          status: "Fingerprint mismatch (Untrusted)",
+          status: t("app.status.patch.fingerprint_mismatch"),
           expected: fingerprintVerification.expected,
           actual: fingerprintVerification.actual,
         });
@@ -3268,18 +3268,18 @@ export default function App() {
       setPatchResolutionsByOpId(nextResolutions);
       setPatchImportError(null);
       setSelectedFixProposalIdSet(new Set());
-      setStatusMessage("Patch loaded");
+      setStatusMessage(t("app.status.patch.loaded"));
     } catch (error) {
       setPendingPatchImport(null);
       setPatchFingerprintStatus(null);
       setPatchTrustLabel("unknown");
       if (error instanceof SyntaxError) {
-        setPatchImportError("Patch validation failed:\n- invalid JSON syntax");
+        setPatchImportError(t("app.status.patch.validation_failed", { detail: t("app.status.patch.invalid_json") }));
       } else {
-        const message = error instanceof Error ? error.message : "Unknown error";
-        setPatchImportError(`Patch validation failed:\n- ${message}`);
+        const message = error instanceof Error ? error.message : t("app.status.error_detail_unknown");
+        setPatchImportError(t("app.status.patch.validation_failed", { detail: message }));
       }
-      setStatusMessage("Failed to load patch JSON");
+      setStatusMessage(t("app.status.patch.load_failed"));
     }
   }, [abstractMapView, summaryView]);
 
@@ -3288,13 +3288,13 @@ export default function App() {
     if (!parseResult.ok) {
       setPatchBaselineDoc(null);
       setPatchBaselineFileName(null);
-      setStatusMessage("Failed to load baseline document JSON");
+      setStatusMessage(t("app.status.patch.baseline_load_failed"));
       return;
     }
 
     setPatchBaselineDoc(parseResult.document);
     setPatchBaselineFileName(selectedFile.name);
-    setStatusMessage("Loaded baseline for patch conflict detection");
+    setStatusMessage(t("app.status.patch.baseline_loaded"));
   }, [abstractMapView, summaryView]);
 
   const handleFixProposalCheckedChange = useCallback((fixId: string, checked: boolean) => {
@@ -3311,7 +3311,7 @@ export default function App() {
 
   const handleApplySelectedPatchFixes = useCallback(() => {
     if (!pendingPatchImport || selectedFixProposalIdSet.size === 0) {
-      setStatusMessage("No fix selected");
+      setStatusMessage(t("app.status.patch.no_fix_selected"));
       return;
     }
 
@@ -3370,7 +3370,7 @@ export default function App() {
       nextResolutions[op.id] = "skip";
     }
     setPatchResolutionsByOpId(nextResolutions);
-    setStatusMessage("Patch reset to original");
+    setStatusMessage(t("app.status.patch.reset"));
   }, [pendingPatchImport]);
 
   const handleApplyPatch = useCallback(() => {
@@ -3380,7 +3380,7 @@ export default function App() {
     }
 
     if (shouldBlockPatchApplyByLint(patchLintResult)) {
-      setStatusMessage("Resolve lint errors first");
+      setStatusMessage(t("app.status.patch.resolve_lint"));
       return;
     }
 
@@ -3398,22 +3398,22 @@ export default function App() {
       baseDocSignature: patchBaselineDoc ? `${patchBaselineDoc.id}:${patchBaselineDoc.updatedAt}` : undefined,
     });
 
-    applyDocumentChange(nextDocument, "Applied patch");
+    applyDocumentChange(nextDocument, t("app.status.patch.applied"));
   }, [applyDocumentChange, document, patchBaselineDoc, patchLintResult, patchResolutionsByOpId, patchSelectedOpIdSet, pendingPatchImport]);
 
 
   const handleCopyPatchApplyLogEntry = useCallback(async (entryId: string) => {
     const entry = document?.patchApplyLog?.find((item) => item.id === entryId);
     if (!entry) {
-      setStatusMessage("Patch apply log entry not found");
+      setStatusMessage(t("app.status.patch.apply_log_not_found"));
       return;
     }
 
     try {
       await navigator.clipboard.writeText(formatPatchApplyLogEntryMarkdown(entry));
-      setStatusMessage("Copied patch apply log entry (Markdown)");
+      setStatusMessage(t("app.status.patch.apply_log_copied"));
     } catch {
-      setStatusMessage("Failed to copy patch apply log entry");
+      setStatusMessage(t("app.status.patch.apply_log_copy_failed"));
     }
   }, [document]);
 
