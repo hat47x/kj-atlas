@@ -3432,7 +3432,7 @@ ${parsedDocument.error}`);
 
   const handleReplaceCurrentDocument = useCallback(() => {
     if (!pendingImportedDocument) {
-      setStatusMessage("No validated document is pending replacement");
+      setStatusMessage(t("app.status.import.no_validated_document"));
       return;
     }
 
@@ -3460,7 +3460,7 @@ ${parsedDocument.error}`);
     setComparisonDocument(null);
     setComparisonFileName(null);
     setGroundingVisibilityMessage(null);
-    setIsDirty(true);
+    setIsDirty(!isReadOnly);
     setHasSaveConflict(false);
     setSuggestedDocument(null);
     setSuggestionId(null);
@@ -3468,8 +3468,8 @@ ${parsedDocument.error}`);
     setSuggestionError(null);
     setPendingImportedDocument(null);
     setImportDocumentError(null);
-    setStatusMessage("Replaced current document");
-  }, [pendingImportedDocument]);
+    setStatusMessage(t(isReadOnly ? "app.status.import.document_opened_read_only" : "app.status.import.document_replaced"));
+  }, [isReadOnly, pendingImportedDocument]);
 
   const handleEdgeSelect = useCallback((edgeId: string) => {
     setSelectedEdgeId(edgeId);
@@ -8426,6 +8426,7 @@ ${parsedDocument.error}`);
       }}
       hasDocument={Boolean(document)}
       isLoading={isLoading}
+      isReadOnly={isReadOnly}
       onExportSvgViewport={handleExportSvgViewport}
       onExportSvgVisibleBounds={handleExportSvgVisibleBounds}
       pngExportScale={pngExportScale}

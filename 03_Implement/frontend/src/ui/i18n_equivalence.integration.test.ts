@@ -35,6 +35,7 @@ function buildShareProps() {
     onToggleOpen: vi.fn(),
     hasDocument: true,
     isLoading: false,
+    isReadOnly: false,
     onExportSvgViewport: vi.fn(),
     onExportSvgVisibleBounds: vi.fn(),
     pngExportScale: 1 as const,
