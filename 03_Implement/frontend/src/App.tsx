@@ -2305,15 +2305,15 @@ export default function App() {
     }
 
     setIsSuggestingIslandSummary(true);
-    setStatusMessage("Requesting island summary suggestion...");
+    setStatusMessage(t("app.status.island_summary.requesting"));
 
     try {
       const proposal = await proposeIslandSummary(document, targetIsland.id, `${document.id}:${document.updatedAt}`);
       setIslandSummaryProposal(proposal);
-      setStatusMessage(`Island summary proposal ready (${proposal.proposalId})`);
+      setStatusMessage(t("app.status.island_summary.ready_unreviewed"));
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : "Failed to suggest island summary";
-      setStatusMessage(message);
+      const detail = error instanceof ApiError ? error.message : t("app.status.error_detail_unknown");
+      setStatusMessage(t("app.status.island_summary.failed", { detail }));
     } finally {
       setIsSuggestingIslandSummary(false);
     }
@@ -2333,7 +2333,7 @@ export default function App() {
       },
       { changeKind: "ai" }
     );
-    applyDocumentChange(nextDocument, "Adopted island summary proposal");
+    applyDocumentChange(nextDocument, t("app.status.island_summary.adopted_unreviewed"));
     setIslandSummarySuggestionWarningsByIslandId((previousWarnings) => ({
       ...previousWarnings,
       [selectedIslandId]: islandSummaryProposal.diff.warnings ?? [],
@@ -2350,6 +2350,7 @@ export default function App() {
     await recordProposalDecision(islandSummaryProposal.proposalId, "reject", "human");
     setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} rejected ${islandSummaryProposal.proposalId}`]);
     setIslandSummaryProposal(null);
+    setStatusMessage(t("app.status.island_summary.rejected"));
   }, [islandSummaryProposal]);
 
   const handleHoldIslandSummaryProposal = useCallback(async () => {
@@ -2358,6 +2359,7 @@ export default function App() {
     }
     await recordProposalDecision(islandSummaryProposal.proposalId, "hold", "human");
     setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} held ${islandSummaryProposal.proposalId}`]);
+    setStatusMessage(t("app.status.island_summary.held"));
   }, [islandSummaryProposal]);
 
   const handleSuggestLayout = useCallback(async (mode: "suggest" | "resuggest" = "suggest") => {
@@ -5523,7 +5525,7 @@ export default function App() {
     }
 
     setIsGeneratingRelationSummary(true);
-    setStatusMessage("Requesting AI relation summary draft...");
+    setStatusMessage(t("app.status.relation_summary.requesting"));
 
     try {
       const payload = buildSummarizeIslandRelationPayload(document, selectedIslandRelationEdge);
@@ -5542,9 +5544,10 @@ export default function App() {
         changeKind: "ai",
       });
 
-      applyDocumentChange(nextDocument, "Generated relation summary draft (unreviewed)");
+      applyDocumentChange(nextDocument, t("app.status.relation_summary.generated_unreviewed"));
     } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "Failed to summarize relation");
+      const detail = error instanceof Error ? error.message : t("app.status.error_detail_unknown");
+      setStatusMessage(t("app.status.relation_summary.failed", { detail }));
     } finally {
       setIsGeneratingRelationSummary(false);
     }
@@ -5572,7 +5575,7 @@ export default function App() {
         return;
       }
 
-      applyDocumentChange(nextDocument, "Updated relation summary");
+      applyDocumentChange(nextDocument, t("app.status.relation_summary.updated"));
     },
     [applyDocumentChange, document, selectedRelationSummary]
   );
@@ -5600,7 +5603,10 @@ export default function App() {
         return;
       }
 
-      applyDocumentChange(nextDocument, "Updated relation summary reviewed state");
+      applyDocumentChange(
+        nextDocument,
+        t(reviewed ? "app.status.relation_summary.marked_reviewed" : "app.status.relation_summary.marked_unreviewed"),
+      );
       setReviewEvents((previous) => appendReviewEvent(previous, {
         target: { kind: "summary", id: selectedRelationSummary.id },
         reviewed,
@@ -5619,7 +5625,7 @@ export default function App() {
 
       const entry = selectedRelationSummary.history?.find((item) => item.id === historyEntryId);
       if (!entry || !entry.toText || entry.toText.trim().length === 0) {
-        setStatusMessage("Cannot restore empty relation summary history entry");
+        setStatusMessage(t("app.status.relation_summary.restore_empty_blocked"));
         return;
       }
 
@@ -5641,7 +5647,7 @@ export default function App() {
         return;
       }
 
-      applyDocumentChange(nextDocument, "Restored relation summary history entry");
+      applyDocumentChange(nextDocument, t("app.status.relation_summary.restored"));
     },
     [applyDocumentChange, document, selectedRelationSummary]
   );
