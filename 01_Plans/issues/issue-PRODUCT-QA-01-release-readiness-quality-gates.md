@@ -2580,3 +2580,21 @@ DoDテンプレ（Draft→Open）
   - G7 regression: polygon E2E, i18n guard, typecheck, full frontend regression, and build are required.
 - Final release remains **No-Go**. Screen-reader acceptance, human terminology review, AI workflows, and final program approval remain separate.
 - No ADR is needed because polygon geometry rules, edit constraints, persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: AI summary feedback localization
+
+- Scope: island-summary proposal generation and human decisions, plus island-relation summary generation, editing, review-state changes, and history restoration.
+- Finding: these AI-assisted paths still returned English-only statuses and did not consistently state that generated or adopted drafts remained unreviewed.
+- Correction:
+  - Island and relation summary feedback now uses the Japanese and English locale catalogs.
+  - Generated and adopted AI content explicitly remains unreviewed and directs the user to grounding evidence.
+  - Island-summary adopt, hold, and reject decisions now provide visible completion feedback in addition to audit records.
+  - Relation-summary review-state and history restoration outcomes are localized.
+  - Hardcode guards prevent the removed English summary statuses from returning.
+- Gate impact:
+  - G3 Japanese UI: improved for AI-assisted summary workflows.
+  - G1 safety defaults: strengthened in presentation; generated and adopted summaries remain unreviewed until a human changes review state.
+  - G2 primary operations: improved because proposal decisions and history operations provide visible outcomes.
+  - G7 regression: i18n guard, key consistency, typecheck, full frontend regression, and build are required.
+- Final release remains **No-Go**. Live provider acceptance, human terminology review, screen-reader acceptance, and final program approval remain separate.
+- No ADR is needed because proposal-only behavior, human review authority, grounding data, persistence, SafeMode, and release authority are unchanged.

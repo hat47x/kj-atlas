@@ -106,6 +106,18 @@ describe("translate", () => {
     expect(resolveTemplate("safe_mode.indicator.on.label", "en")).toBe("SafeMode: ON");
   });
 
+  it("keeps AI summary drafts explicitly unreviewed and grounded", () => {
+    expect(t("app.status.island_summary.ready_unreviewed", undefined, "ja")).toContain("未レビュー");
+    expect(t("app.status.island_summary.ready_unreviewed", undefined, "ja")).toContain("根拠カード");
+    expect(t("app.status.relation_summary.generated_unreviewed", undefined, "ja")).toContain("未レビュー");
+    expect(t("app.status.relation_summary.generated_unreviewed", undefined, "ja")).toContain("根拠カードと関係線");
+
+    expect(t("app.status.island_summary.ready_unreviewed", undefined, "en")).toContain("unreviewed");
+    expect(t("app.status.island_summary.ready_unreviewed", undefined, "en")).toContain("grounding cards");
+    expect(t("app.status.relation_summary.generated_unreviewed", undefined, "en")).toContain("unreviewed");
+    expect(t("app.status.relation_summary.generated_unreviewed", undefined, "en")).toContain("grounding cards and edges");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
