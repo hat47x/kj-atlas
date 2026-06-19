@@ -2467,3 +2467,19 @@ DoDテンプレ（Draft→Open）
 - Productization Program Owner / QA Lead still need to decide whether these screenshots, together with the E2E evidence, satisfy Product Value Open-gate expectations or require additional read-only reviewer, keyboard, screen-reader, or share-package inspection evidence.
 - Keep full release shipment No-Go until Productization Program Owner / QA Lead acceptance, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes Product Value definitions, fixture meaning, public screenshot/public documentation authority, SafeMode/share-export policy, review attribution authority, public package contract, signature/approval semantics, or release authority.
+
+## Productization Gate Record 2026-06-19: document-entry status localization
+
+- Candidate: post-#2445 `main`.
+- Finding: Chrome inspection showed `Loading document...` in the Japanese UI, and read-only validation still instructed the reviewer to click `Replace current document`.
+- Correction:
+  - Document loading and reloading messages now come from the locale catalog.
+  - Read-only validation instructs the reviewer to select `確認用に開く` / `Open for inspection`.
+  - Editable validation retains the explicit replace instruction.
+  - The i18n hardcode guard rejects the observed raw English loading and reloading strings in `App.tsx`.
+- Gate impact:
+  - G3 Japanese UI: improved for document-entry status and read-only action consistency.
+  - G2 primary operations: improved because status guidance now names the action the user can perform.
+  - G7 regression: pending the implementation PR validation and CI result.
+- Final release remains **No-Go**. This slice does not replace human Japanese copy review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, support rehearsal, or final program approval.
+- No ADR is needed because locale authority, read-only semantics, persistence, SafeMode, and release authority are unchanged.

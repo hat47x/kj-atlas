@@ -68,10 +68,14 @@ const guardCases: GuardCase[] = [
   },
   {
     file: "App.tsx",
+    matchAnywhere: true,
     forbiddenLiterals: [
       "Import doc JSON (legacy, confirm in Share)",
       "Export doc JSON (legacy)",
       "Legacy entry point. Use “Share &amp; Reproduce” for ordered Diff/Verify flow.",
+      '"Loading document..."',
+      '"Reloading document..."',
+      "Document validated. Review the summary, then click Replace current document.",
     ],
   },
   {
