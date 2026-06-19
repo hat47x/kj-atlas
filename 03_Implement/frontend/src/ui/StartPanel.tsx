@@ -209,7 +209,9 @@ export function StartPanel({
         </button>
         <button type="button" onClick={onLoadDocumentFile} disabled={isBusy} style={isBusy ? disabledStartActionStyle : startActionStyle}>
           <span style={{ fontWeight: 800 }}>{t("start_panel.action.load_document")}</span>
-          <span style={{ fontSize: 12, color: "#475569" }}>{t("start_panel.action.load_document_hint")}</span>
+          <span style={{ fontSize: 12, color: "#475569" }}>
+            {t(isReadOnly ? "start_panel.action.load_document_hint_read_only" : "start_panel.action.load_document_hint")}
+          </span>
         </button>
         <button type="button" onClick={onImportReviewPack} disabled={isBusy} style={isBusy ? disabledStartActionStyle : startActionStyle}>
           <span style={{ fontWeight: 800 }}>{t("start_panel.action.import_review_pack")}</span>

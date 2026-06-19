@@ -172,6 +172,7 @@ test("read-only first-run entry falls back to the built-in sample when services 
   const sampleButton = page.getByRole("button", { name: /Open sample/ });
   await expect(createButton).toBeDisabled();
   await expect(sampleButton).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Load document file/ })).toContainText("open it for inspection without saving");
 
   await sampleButton.click();
 
@@ -179,6 +180,28 @@ test("read-only first-run entry falls back to the built-in sample when services 
   await expect(page.locator('[data-ui-region="primary-flow"]').getByRole("option")).toHaveCount(3);
   await expect(page.locator("header")).toContainText("Read-only");
   await expect(page.locator("body")).toContainText("Opened the built-in sample");
+});
+
+test("read-only document file entry opens validated content for inspection without unsaved changes", async ({ page }) => {
+  await page.goto("/?locale=en&readOnly=1");
+
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: /Load document file/ }).click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles({
+    name: "read-only-inspection.document.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(seedDocumentJson(), "utf-8"),
+  });
+
+  await expect(page.getByText("Validate DocumentV2 JSON, then open it for inspection without saving.")).toBeVisible();
+  await page.getByRole("button", { name: "Open for inspection" }).click();
+
+  await expect(page.getByRole("option", { name: "first run imported card" })).toBeVisible();
+  await expect(page.locator("header")).toContainText("Read-only");
+  await expect(page.locator("header")).not.toContainText("Unsaved changes");
+  await expect(page.getByRole("button", { name: "Save" })).toBeDisabled();
+  await expect(page.locator("body")).toContainText("Opened the document for inspection");
 });
 
 test("first-run panel can create a new document from keyboard activation", async ({ page }) => {

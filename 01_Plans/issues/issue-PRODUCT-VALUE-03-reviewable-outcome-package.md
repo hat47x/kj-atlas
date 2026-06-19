@@ -435,3 +435,12 @@ No-Go conditions for this value gate:
 
 - Status impact: **Draft remains**. The automated read-only review blocker is addressed, but Productization Program Owner / QA Lead acceptance and human accessibility/operability acceptance remain required.
 - No new ADR is needed. The change enforces the existing read-only authority boundary and does not change the review-pack contract, SafeMode policy, approval semantics, or release authority.
+
+## Read-only local-document inspection wording 2026-06-19
+
+- Browser and code inspection found that the read-only document-file route still presented `Replace current document` and marked the opened local file as unsaved, even though saving and editing were disabled.
+- The route now presents `Open for inspection` in read-only mode, explains that the validated file is opened without saving, and keeps the document clean rather than reporting unsaved changes.
+- Editable mode retains the explicit replace wording and dirty-state behavior.
+- Regression coverage: `03_Implement/frontend/e2e/first_run_document_entry.spec.ts` verifies file selection, validation copy, inspection activation, visible imported content, read-only state, disabled save, and absence of an unsaved-change indicator.
+- Status impact: **Draft remains**. This improves the read-only recipient journey without replacing human keyboard, screen-reader, wording, or package-acceptance review.
+- No ADR is needed because the change clarifies and enforces the accepted read-only authority boundary without changing persistence, package contracts, SafeMode, or release authority.
