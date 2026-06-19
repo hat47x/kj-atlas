@@ -1813,7 +1813,7 @@ export default function App() {
         setIsReloadingDocument(true);
       }
       setIsLoading(true);
-      setStatusMessage(isReload ? "Reloading document..." : "Loading document...");
+      setStatusMessage(t(isReload ? "app.status.document_reloading" : "app.status.document_loading"));
 
       try {
         const loaded = await getDocument(docId);
@@ -2592,9 +2592,9 @@ export default function App() {
         document: parseResult.document,
       });
       setImportDocumentError(null);
-      setStatusMessage(t("app.status.import.document_validated"));
+      setStatusMessage(t(isReadOnly ? "app.status.import.document_validated_read_only" : "app.status.import.document_validated"));
     },
-    []
+    [isReadOnly]
   );
 
   const handleImportClick = useCallback(() => {
@@ -3038,8 +3038,8 @@ ${parsedDocument.error}`);
       document: parseResult.document,
     });
     setImportDocumentError(null);
-    setStatusMessage(t("app.status.import.document_validated"));
-  }, [abstractMapView, summaryView]);
+    setStatusMessage(t(isReadOnly ? "app.status.import.document_validated_read_only" : "app.status.import.document_validated"));
+  }, [isReadOnly]);
 
   const handleInvalidReviewPackFileType = useCallback(() => {
     setPackImportError(t("app.status.import.review_pack_zip_required"));

@@ -194,6 +194,7 @@ test("read-only document file entry opens validated content for inspection witho
     buffer: Buffer.from(seedDocumentJson(), "utf-8"),
   });
 
+  await expect(page.locator("body")).toContainText("Document validated. Review the summary, then click Open for inspection.");
   await expect(page.getByText("Validate DocumentV2 JSON, then open it for inspection without saving.")).toBeVisible();
   await page.getByRole("button", { name: "Open for inspection" }).click();
 
