@@ -206,6 +206,10 @@ function getViewModeDisplayLabel(mode: ViewMode): string {
   return t("app.view_mode.explore");
 }
 
+function getEntityKindDisplayLabel(kind: "card" | "island"): string {
+  return t(kind === "card" ? "app.entity.card" : "app.entity.island");
+}
+
 function describeRecoverableError(error: unknown): string {
   if (error instanceof ApiError) {
     return `HTTP ${error.status}: ${error.message}`;
@@ -2138,14 +2142,20 @@ export default function App() {
 
   const handleAlign = useCallback(
     (direction: AlignDirection) => {
-      applyLayoutOperation(`Aligned ${direction}`, (cards) => alignSelectedCards(cards, selectedCardIds, direction, {}));
+      const statusKey = {
+        left: "app.status.edit.aligned_left",
+        right: "app.status.edit.aligned_right",
+        top: "app.status.edit.aligned_top",
+        bottom: "app.status.edit.aligned_bottom",
+      }[direction];
+      applyLayoutOperation(t(statusKey), (cards) => alignSelectedCards(cards, selectedCardIds, direction, {}));
     },
     [applyLayoutOperation, selectedCardIds]
   );
 
   const handleDistribute = useCallback(
     (direction: DistributeDirection) => {
-      const status = direction === "horizontal" ? "Distributed horizontally" : "Distributed vertically";
+      const status = t(direction === "horizontal" ? "app.status.edit.distributed_horizontally" : "app.status.edit.distributed_vertically");
       applyLayoutOperation(status, (cards) => distributeSelectedCards(cards, selectedCardIds, direction, {}));
     },
     [applyLayoutOperation, selectedCardIds]
@@ -2176,7 +2186,7 @@ export default function App() {
           future: [],
         };
       });
-      setStatusMessage("Moved card");
+      setStatusMessage(t("app.status.edit.moved_card"));
     };
 
     window.addEventListener("pointerup", commitCardDragSnapshot);
@@ -3522,7 +3532,10 @@ export default function App() {
           ...document,
           edges: [...document.edges, edgeWithKinds],
         },
-        `Connected ${source.kind} → card`
+        t("app.status.edit.connected", {
+          source: getEntityKindDisplayLabel(source.kind),
+          target: getEntityKindDisplayLabel("card"),
+        })
       );
       setIsPickingEdgeTarget(false);
       return;
@@ -3598,7 +3611,7 @@ export default function App() {
   const handleClearSelection = useCallback(() => {
     if (isPickingEdgeTarget) {
       setIsPickingEdgeTarget(false);
-      setStatusMessage("Canceled connect");
+      setStatusMessage(t("app.status.edit.connect_cancelled"));
       return;
     }
 
@@ -3657,7 +3670,7 @@ export default function App() {
     }
 
     setIsPickingEdgeTarget(true);
-    setStatusMessage("Select a target card or island");
+    setStatusMessage(t("app.status.edit.select_connect_target"));
   }, [edgeConnectSource]);
 
   const handleCancelConnect = useCallback(() => {
@@ -3666,7 +3679,7 @@ export default function App() {
     }
 
     setIsPickingEdgeTarget(false);
-    setStatusMessage("Canceled connect");
+    setStatusMessage(t("app.status.edit.connect_cancelled"));
   }, [isPickingEdgeTarget]);
 
   const handleConnectToTarget = useCallback(
@@ -3693,7 +3706,10 @@ export default function App() {
           ...document,
           edges: [...document.edges, edgeWithKinds],
         },
-        `Connected ${edgeConnectSource.kind} → ${target.kind}`
+        t("app.status.edit.connected", {
+          source: getEntityKindDisplayLabel(edgeConnectSource.kind),
+          target: getEntityKindDisplayLabel(target.kind),
+        })
       );
       setIsPickingEdgeTarget(false);
     },
@@ -3714,7 +3730,7 @@ export default function App() {
           ...document,
           cards: [...document.cards, newCard],
         },
-        "Added a new card"
+        t("app.status.edit.added_card")
       );
 
       if (applied) {
@@ -3758,7 +3774,7 @@ export default function App() {
     setSelectedEdgeId(null);
     setSelectedCardIds([cardId]);
     setIsPickingEdgeTarget(true);
-    setStatusMessage("Select a target card or island");
+    setStatusMessage(t("app.status.edit.select_connect_target"));
   }, []);
 
   const closeContextMenu = useCallback(() => {
@@ -3818,7 +3834,7 @@ export default function App() {
             card.id === cardId ? { ...card, text: nextText } : card
           ),
         },
-        "Edited card text"
+        t("app.status.edit.edited_card_text")
       );
     },
     [applyDocumentChange, document]
@@ -3842,7 +3858,7 @@ export default function App() {
       islands: [...document.islands, newIsland],
     });
     setSelectedIslandId(newIsland.id);
-    setStatusMessage(`Created island from ${selectedCardIds.length} selected card(s)`);
+    setStatusMessage(t("app.status.edit.created_island", { count: selectedCardIds.length }));
   }, [applyDocumentChange, document, selectedCardIds]);
 
   const handleCreateRepresentativeCard = useCallback(() => {
@@ -3851,13 +3867,13 @@ export default function App() {
     }
 
     const selectedCards = document.cards.filter((card) => selectedCardIds.includes(card.id));
-    const representativeText = window.prompt("Enter representative card text", selectedCards[0]?.text ?? "");
+    const representativeText = window.prompt(t("app.prompt.representative_card_text"), selectedCards[0]?.text ?? "");
     if (representativeText === null) {
       return;
     }
 
     const shouldRewire = window.confirm(
-      "Rewire island membership and card edges to the representative card?"
+      t("app.confirm.rewire_representative_card")
     );
 
     const mergeResult = createRepresentativeMerge(document, selectedCardIds, representativeText, {
@@ -3865,19 +3881,20 @@ export default function App() {
     });
 
     if (!mergeResult) {
-      setStatusMessage("Representative card text is required");
+      setStatusMessage(t("app.status.edit.representative_card_text_required"));
       return;
     }
 
-    applyDocumentChange(mergeResult.nextDocument, "Created representative card");
+    applyDocumentChange(mergeResult.nextDocument, t("app.status.edit.created_representative_card"));
     setSelectedIslandId(null);
     setSelectedEdgeId(null);
     setSelectedCardIds([mergeResult.representativeCardId]);
-    setStatusMessage(
-      `Created representative card from ${mergeResult.mergedCardCount} originals${
-        shouldRewire ? " (rewired)" : ""
-      }`
-    );
+    setStatusMessage(t(
+      shouldRewire
+        ? "app.status.edit.created_representative_card_rewired"
+        : "app.status.edit.created_representative_card_from_originals",
+      { count: mergeResult.mergedCardCount },
+    ));
   }, [applyDocumentChange, document, selectedCardIds]);
 
   const handleIslandTitleChange = useCallback(
@@ -4838,7 +4855,7 @@ export default function App() {
 
       const visibilityContract = buildIslandVisibilityContractPayload(document, nextCollapsedIslandIds, islandId);
       if (!visibilityContract.ok) {
-        setStatusMessage(`Failed to toggle collapse: ${visibilityContract.error}`);
+        setStatusMessage(t("app.status.edit.island_collapse_failed", { detail: visibilityContract.error }));
         return;
       }
 
@@ -4848,17 +4865,17 @@ export default function App() {
       const { changed, nextDocument, rejectedReason } = setIslandCollapsed(document, islandId, collapsed);
       if (!changed) {
         if (rejectedReason === "island-not-found") {
-          setStatusMessage("Failed to toggle collapse: island not found");
+          setStatusMessage(t("app.status.edit.island_not_found"));
           return;
         }
 
         if (alreadyCollapsed !== collapsed) {
-          setStatusMessage(collapsed ? "Collapsed island" : "Expanded island");
+          setStatusMessage(t(collapsed ? "app.status.edit.collapsed_island" : "app.status.edit.expanded_island"));
         }
         return;
       }
 
-      applyDocumentChange(nextDocument, collapsed ? "Collapsed island" : "Expanded island");
+      applyDocumentChange(nextDocument, t(collapsed ? "app.status.edit.collapsed_island" : "app.status.edit.expanded_island"));
     },
     [applyDocumentChange, collapsedIslandIds, document]
   );
@@ -4873,11 +4890,11 @@ export default function App() {
 
     const { changed, nextDocument } = setAllIslandsCollapsed(document, true);
     if (!changed) {
-      setStatusMessage("Collapsed all islands");
+      setStatusMessage(t("app.status.edit.collapsed_all_islands"));
       return;
     }
 
-    applyDocumentChange(nextDocument, "Collapsed all islands");
+    applyDocumentChange(nextDocument, t("app.status.edit.collapsed_all_islands"));
   }, [applyDocumentChange, document]);
 
   const handleExpandAllIslands = useCallback(() => {
@@ -4889,11 +4906,11 @@ export default function App() {
 
     const { changed, nextDocument } = setAllIslandsCollapsed(document, false);
     if (!changed) {
-      setStatusMessage("Expanded all islands");
+      setStatusMessage(t("app.status.edit.expanded_all_islands"));
       return;
     }
 
-    applyDocumentChange(nextDocument, "Expanded all islands");
+    applyDocumentChange(nextDocument, t("app.status.edit.expanded_all_islands"));
   }, [applyDocumentChange, document]);
 
   useEffect(() => {
@@ -5005,7 +5022,7 @@ export default function App() {
       };
     });
     setIsDirty(true);
-    setStatusMessage("Undo");
+    setStatusMessage(t("app.status.edit.undo"));
   }, [abstractMapView, summaryView]);
 
   const handleRedo = useCallback(() => {
@@ -5028,7 +5045,7 @@ export default function App() {
       };
     });
     setIsDirty(true);
-    setStatusMessage("Redo");
+    setStatusMessage(t("app.status.edit.redo"));
   }, [abstractMapView, summaryView]);
 
   useEffect(() => {

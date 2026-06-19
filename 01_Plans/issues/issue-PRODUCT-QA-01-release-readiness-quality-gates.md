@@ -2548,3 +2548,18 @@ DoDテンプレ（Draft→Open）
   - G7 regression: i18n guard, typecheck, frontend regression, build, and browser inspection are required.
 - Final release remains **No-Go**. This correction does not replace human terminology or accessibility acceptance.
 - No ADR is needed because data semantics, navigation behavior, evidence-link behavior, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: core editing feedback localization
+
+- Scope: card movement and editing, layout operations, card/island connection, island creation and collapse, representative-card creation, undo, and redo.
+- Finding: Japanese controls still produced English-only completion, cancellation, validation, and recovery feedback during routine editing.
+- Correction:
+  - Core editing feedback and representative-card dialogs now use the Japanese and English locale catalogs.
+  - The first meaningful map E2E verifies Japanese island creation, undo, and redo feedback through mouse operations.
+  - The App hardcode guard prevents the removed English editing statuses from returning.
+- Gate impact:
+  - G3 Japanese UI: improved for routine canvas editing.
+  - G2 primary operations: improved because action completion, cancellation, and recovery are expressed in the active locale.
+  - G7 regression: targeted E2E, i18n guard, typecheck, full frontend regression, and build are required.
+- Final release remains **No-Go**. Polygon editing, AI-assisted summaries, trace exports, human terminology review, and accessibility acceptance remain separate.
+- No ADR is needed because edit semantics, history behavior, graph structure, persistence, SafeMode, and release authority are unchanged.
