@@ -797,7 +797,7 @@
   "side_panel.summary.warnings_with_count": "警告 ({count})",
   "side_panel.summary.placeholder": "折りたたみ表示用の要約（任意）",
   "side_panel.empty": "(空)",
-  "side_panel.none": "(なし)",
+  "side_panel.none": "なし",
   "side_panel.unchanged": "(変更なし)",
   "side_panel.boolean.true": "true",
   "side_panel.boolean.false": "false",

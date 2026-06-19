@@ -963,7 +963,7 @@ export function SidePanel({
       <div style={{ marginTop: 8 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>{t("side_panel.metrics.island_size_distribution")}</div>
         {structuralMetrics.islandSizeDistribution.length === 0 ? (
-          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>(none)</div>
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>{t("side_panel.none")}</div>
         ) : (
           <ul style={{ margin: "4px 0 0", paddingLeft: 18, display: "grid", gap: 4 }}>
             {structuralMetrics.islandSizeDistribution.map((bin) => (
@@ -1927,7 +1927,7 @@ export function SidePanel({
             ? t("side_panel.reading_path.no_items")
             : t("side_panel.guided_flow.step", { step: readingStep, total: readingTotal })}
         </div>
-        <div style={{ fontSize: 12, color: "#64748b" }}>{currentReadingLabel ?? "(none)"}</div>
+        <div style={{ fontSize: 12, color: "#64748b" }}>{currentReadingLabel ?? t("side_panel.none")}</div>
       </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.reading_order.title")}</div>
@@ -3118,7 +3118,7 @@ export function SidePanel({
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.evidence.title")}</div>
                 <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>{t("side_panel.evidence.outgoing")}</div>
-                {outgoingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#94a3b8" }}>(none)</div> : (
+                {outgoingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#94a3b8" }}>{t("side_panel.none")}</div> : (
                   <div style={{ display: "grid", gap: 4, marginBottom: 8 }}>
                     {outgoingEvidenceLinks.map((link) => {
                       const target = document?.cards.find((card) => card.id === link.toCardId);
@@ -3135,7 +3135,7 @@ export function SidePanel({
                   </div>
                 )}
                 <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>{t("side_panel.evidence.incoming_readonly")}</div>
-                {incomingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#94a3b8" }}>(none)</div> : (
+                {incomingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#94a3b8" }}>{t("side_panel.none")}</div> : (
                   <div style={{ display: "grid", gap: 4 }}>
                     {incomingEvidenceLinks.map((link) => {
                       const source = document?.cards.find((card) => card.id === link.fromCardId);

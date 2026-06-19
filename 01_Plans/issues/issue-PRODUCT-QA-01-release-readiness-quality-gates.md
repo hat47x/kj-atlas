@@ -2534,3 +2534,17 @@ DoDテンプレ（Draft→Open）
   - G7 regression: targeted i18n and recovery E2E, typecheck, full frontend regression, and build are required.
 - Final release remains **No-Go**. Human terminology review, accessibility acceptance, environment rehearsal, and final approval remain separate.
 - No ADR is needed because ZIP limits, integrity policy, import sanitization, SafeMode, persistence, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: side-panel empty-state localization
+
+- Scope: side-panel island-size metrics, reading navigation, and incoming/outgoing evidence-link empty states.
+- Finding: the Japanese UI still displayed the raw English placeholder `(none)` in four side-panel locations.
+- Correction:
+  - Empty states now use the existing localized `side_panel.none` catalog entry.
+  - The SidePanel hardcode guard rejects future raw `(none)` placeholders.
+- Gate impact:
+  - G3 Japanese UI: improved for visible side-panel empty states.
+  - G2 primary operations: improved because empty results are expressed consistently in the active locale.
+  - G7 regression: i18n guard, typecheck, frontend regression, build, and browser inspection are required.
+- Final release remains **No-Go**. This correction does not replace human terminology or accessibility acceptance.
+- No ADR is needed because data semantics, navigation behavior, evidence-link behavior, and release authority are unchanged.
