@@ -458,3 +458,12 @@ No-Go conditions for this value gate:
 
 - Status impact: **Draft remains**. The automated first-value and SafeMode evidence packet is now connected, but fixture meaning, natural operation, keyboard evidence sufficiency, and human accessibility acceptance remain human decisions.
 - No new ADR is needed. The slice verifies the accepted first-value and SafeMode boundaries without changing product scope, persistence, or release authority.
+
+## Offline/read-only sample-entry correction 2026-06-19
+
+- Browser verification found that `Open sample` depended on either a public pack or the document API. When both were unavailable, the start panel closed but no sample appeared, preventing the first-value route despite an existing built-in sample fixture.
+- The corrected route now falls back to the built-in sample after public-pack and API loading fail.
+- In read-only mode, `Create new document` is disabled because it creates an unsavable editing task, while sample, document import, and review-pack import remain available for inspection.
+- Regression coverage: `03_Implement/frontend/e2e/first_run_document_entry.spec.ts` verifies a `503` document API, missing public-pack index, read-only entry, three visible built-in cards, and the read-only state.
+- Status impact: **Draft remains**. This removes an avoidable first-value availability failure; it does not satisfy the remaining human acceptance gates.
+- No ADR is needed because this change restores the existing sample-entry intent without changing persistence, SafeMode, release authority, or product scope.

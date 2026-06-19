@@ -424,6 +424,7 @@
   "app.status.public_pack.loaded": "Public pack loaded: {packId} (visibility: {visibility})",
   "app.status.public_pack.loaded_prefix": "Public pack loaded",
   "app.status.start.opening_sample": "Opening sample...",
+  "app.status.start.built_in_sample_opened": "Opened the built-in sample. You can review it even when the server is unavailable.",
   "app.status.start.sample_failed": "Failed to open sample",
   "app.status.patch.exported_fingerprint": "Exported patch with fingerprint",
   "app.status.patch.none_loaded": "No patch loaded",

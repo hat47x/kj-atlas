@@ -424,6 +424,7 @@
   "app.status.public_pack.loaded": "公開パックを読み込みました: {packId}（公開範囲: {visibility}）",
   "app.status.public_pack.loaded_prefix": "公開パックを読み込みました",
   "app.status.start.opening_sample": "サンプルを読み込んでいます...",
+  "app.status.start.built_in_sample_opened": "組み込みサンプルを開きました。サーバーに接続できない場合でも内容を確認できます。",
   "app.status.start.sample_failed": "サンプルを読み込めませんでした",
   "app.status.patch.exported_fingerprint": "フィンガープリント付きのパッチを書き出しました",
   "app.status.patch.none_loaded": "パッチが読み込まれていません",
