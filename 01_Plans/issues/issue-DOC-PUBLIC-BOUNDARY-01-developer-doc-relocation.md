@@ -1,15 +1,18 @@
 # Issue Draft: DOC-PUBLIC-BOUNDARY-01 開発者向け文書の公開文書境界見直し
 
 - Type: Documentation quality
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex
 - Scope: `04_Documentation/public_index.md`, Gist公開候補の `04_Documentation/*.md`, `04_Documentation/README.md`, `README.md`（必要最小限の導線整合）, `01_Plans/issues/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`
 - Related Backlog: `DOC-PUBLIC-BOUNDARY-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`, `01_Plans/documentation_quality.md`, `04_Documentation/README.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`, `01_Plans/documentation_quality.md`, `04_Documentation/README.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `docs-check`
+
+## Draft→Open 2026-06-20
+DOC-PUBLIC-BOUNDARY-01 Open化。DecisionStatus=Fixed、scope定義済み。ADR-0039により重量RACI不要。docs-check levelで着手可能。
 
 ## Requirement meta I/F（共通キー）
 

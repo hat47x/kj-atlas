@@ -1,15 +1,19 @@
 # Issue Draft: PRODUCT-VALUE-02 保留・違和感・根拠不足を扱う作業フロー
 
 - Type: Feature request
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex (Product Value contract steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `02_Architecture/schemas.md`, `02_Architecture/value_traceability.md`
 - Related Backlog: `PRODUCT-VALUE-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/llm_input_ir_spec.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/llm_input_ir_spec.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `e2e`
+
+## Draft→Open 2026-06-20
+PRODUCT-VALUE-02 Open化。循環デッドロック解消済み（ADR-0040: ADR-0032 Accepted + PV-02 schema判断確定）。
+DOMAIN-EXPR-01..04のPhase 1から着手可能。DecisionStatus=Fixed。
 
 ## Requirement meta I/F（共通キー）
 

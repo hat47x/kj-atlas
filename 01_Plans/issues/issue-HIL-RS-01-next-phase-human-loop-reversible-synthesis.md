@@ -1,18 +1,22 @@
 # Issue Plan: HIL-RS-01 次フェーズ実行計画（Human-in-the-loop / Reversible Synthesis, Stream D）
 
 - Type: Process
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Stream A（contract freeze and minimum interface agreement）
 - Scope: 本ファイルのみ（docs-only）
 - Dependencies:
-  - `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
-  - `issue-HIL-RS-02-A1-governance-contract-hardening.md`
+  - `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（Done 2026-06-20）
+  - `issue-HIL-RS-02-A1-governance-contract-hardening.md`（Done 2026-06-20）
 - ADR Reference (read-only): `01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`
-- Related ADR/Spec: `01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`, `01_Plans/adr/ADR-0027-hil-rs-02-next-phase-execution-plan.md`, `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`, `01_Plans/adr/ADR-0027-hil-rs-02-next-phase-execution-plan.md`, `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `docs-check`
+
+## Done 2026-06-20
+A2A3_UNLOCK satisfied: HIL-RS-01-A1 Done + HIL-RS-02-A1 Done + pendingDecisionQueueCount=0 (ADR-0039).
+HIL-RS-01 next-phase planning complete. A2/A3 unblocked for downstream implementation.
 
 ## Stream A Phase 1 Metadata Snapshot（2026-05-18）
 

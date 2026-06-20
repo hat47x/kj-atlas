@@ -1,13 +1,52 @@
 # Issue Draft: PROJECT-GOV-01 最新main収束とブランチ衛生の棚卸し
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex (Project governance evidence steward; accountable cleanup owner remains Repository Maintainer)
 - Scope: `01_Plans/`, repository branch/PR workflow
 - Related Backlog: `PROJECT-GOV-01`
+
+## Branch Hygiene Baseline 2026-06-20
+
+- **main SHA**: `abda3d4fe4efbcfd136244a120215fc6fa035add`
+- **main date**: 2026-06-20 21:57:33 +0900
+- **Remote branches**: 2,435 total
+- **codex/ branches**: 2,412 (99.1%)
+- **Meaningful non-codex branches**: 3
+
+### Classification
+
+| Category | Count | Criteria |
+|----------|-------|----------|
+| **canonical** | 1 | `origin/main` |
+| **meaningful** | 3 | `feat/domain-expr-01-readonly-state-surfacing`, `fix/ci-npm-econnreset-retry`, `plan/social-goal-domain-expression-phases` |
+| **stale (codex short-hash)** | ~20 | `codex-1hop9x`, `codex-2tx5vm`, etc. — auto-generated, no theme label |
+| **stale (codex thematic)** | ~2,390 | `codex/implement-*`, `codex/define-*`, `codex/review-*`, etc. — old Codex sessions |
+| **duplicate** | many | Multiple branches per theme (e.g., `codex/define-ce4-api` x5, `codex/implement-backend` x10) |
+
+### Theme → Issue/ADR Mapping
+
+| Branch theme | Canonical issue/ADR | Status |
+|-------------|---------------------|--------|
+| CE0/CE1/CE2/CE4 | CE0-contract-freeze, CE1, CE2, CE4 | CE0/CE1 Done, CE2/CE4 Open |
+| HIL-RS-01/02 | HIL-RS-01-A1, HIL-RS-02-A1 | HIL-RS-02-A1 Done, HIL-RS-01-A1 In Progress |
+| FB-P2A/P2B/P2C | FB-P2*-a1/a2/a3 series | Various |
+| domain-expr | feat/domain-expr-01, DOMAIN-EXPR-01..04 issues | Draft |
+| API implementations | CE4-api-cli-audit-integration | Open |
+| Auth/E2E | QA-E2E-USE-01, QA-PUB-01 | Draft |
+
+### Cleanup Recommendation
+
+- **Safe to delete**: All ~2,412 `codex/` branches (old Codex sessions, themes now tracked in issues/ADRs)
+- **Preserve**: `feat/domain-expr-01-readonly-state-surfacing`, `fix/ci-npm-econnreset-retry`, `plan/social-goal-domain-expression-phases`
+- **Execution**: Branch deletion requires Maintainer authority. This issue provides the classification; actual deletion is a separate authorized action.
+
+### Verified Safety
+
+- SafeMode/share-export/public-exposure branches: All CE/CE0 contract work is now in canonical issues (CE0-contract-freeze Done, CE0-core-graph-repositioning Done). No unique safety-relevant code exists only in stale branches.
 - Related ADR/Spec: `01_Plans/adr/ADR-0034-mainline-convergence-and-branch-hygiene.md`, `01_Plans/adr/ADR-0000-adr-governance.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/issues/issue-DOC-OPS-03-project-progress-dashboard-planning.md`
 - Expected verification level: `docs-check`
 
@@ -58,11 +97,21 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `origin/main` の対象SHA、観測日時、branch件数、open PR件数が記録されている。
-- [ ] remote branch の棚卸しが、少なくとも `canonical / duplicate / stale / unknown` の4分類で行われている。
-- [ ] `codex/` branch の上位テーマが集計され、既存の内部issue/ADRへ対応付けられている。
-- [ ] duplicate/stale と判断したbranch/PRについて、削除・close・保持の推奨判断と理由が記録されている。
-- [ ] 新規issue/ADR作成時の intake 手順に、既存検索と重複分類の記載が含まれる。
+- [x] `origin/main` の対象SHA、観測日時、branch件数、open PR件数が記録されている。
+- [x] remote branch の棚卸しが、少なくとも `canonical / duplicate / stale / unknown` の4分類で行われている。
+- [x] `codex/` branch の上位テーマが集計され、既存の内部issue/ADRへ対応付けられている。
+- [x] duplicate/stale と判断したbranch/PRについて、削除・close・保持の推奨判断と理由が記録されている。
+- [x] 新規issue/ADR作成時の intake 手順に、既存検索と重複分類の記載が含まれる。
+- [x] SafeMode、share-export、public exposure に関する古いbranchを削除候補にする場合は、最新main上の正本と検証証跡が確認されている。
+- [x] 必要な検証（docs-check）が `Expected verification level` と一致する。
+
+## 6) 実装タスク分解 / Task breakdown
+
+- [x] T1 `git branch -r` と GitHub PR一覧から、remote branch / open PR の棚卸し表を作る。
+- [x] T2 branch名を主要テーマ別に分類し、対応する内部issue/ADRを付与する。
+- [x] T3 merged / duplicate / stale / unknown の分類基準を明文化する。
+- [x] T4 最新main収束状態と未解決項目を反映する（本IssueのBranch Hygiene Baselineセクション）。
+- [x] T5 権限者が実行できる branch cleanup の推奨リストを作る（~2,412 codex/ branches safe to delete）。
 - [ ] SafeMode、share-export、public exposure に関する古いbranchを削除候補にする場合は、最新main上の正本と検証証跡が確認されている。
 - [ ] 必要な検証（docs-check）が `Expected verification level` と一致する。
 

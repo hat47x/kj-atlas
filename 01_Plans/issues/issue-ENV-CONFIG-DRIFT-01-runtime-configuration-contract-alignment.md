@@ -1,7 +1,7 @@
 # Issue Draft: ENV-CONFIG-DRIFT-01 Runtime configuration contract alignment
 
 - Type: Bug
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2

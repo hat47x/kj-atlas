@@ -1,16 +1,35 @@
 # Issue Draft: CE2 Low-Risk AI Assist（CE2意思決定準備 / proposal-only contract lock）
 
 - Type: Process / Decision preparation
-- Status: Draft
+- Status: Done
 - Priority: P1
 - Owner: Stream F（CE2 Open化準備専任 / proposal-only）
+
+## Done 2026-06-20
+CE2 low-risk AI assist decision gate satisfied. All Go conditions met:
+- G-01..G-05: proposal-only / human-final / no-auto / fail-closed / read-only dependency 成立
+- CE0 Done + CE1 Done = dependency chain complete
+- SafeMode invariants preserved (proposal-only, no auto-apply, CE0-SAFEMODE-IF)
+- Implementation: Separate implementation issues for island title candidates, B-type drafts, counter-perspective proposals (per ADR-0028 Phase B)
 - Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
 - Related Backlog: `CE-2`
-- Related ADR/Spec: `ADR-0028`, `ADR-0001`, `02_Architecture/schemas.md`
-- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存）, `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（I/F依存; mockで切断可能）
-- Dependency status: `未確定（CE-2 Open判定待ち）`
-- CE1 contract status: `参照限定（CE1完了待ちは不要。mock contract参照のみ）`
+- Related ADR/Spec: `ADR-0028`, `ADR-0001`, `ADR-0039`, `02_Architecture/schemas.md`
+- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（Done 2026-06-20）, `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（Done 2026-06-20）
+- Dependency status: `確定（CE0 Done + CE1 Done = CE2 Open化条件充足）`
+- CE1 contract status: `read-only handoff ready（CE1 Done, mock contract参照可能）`
 - Expected verification level: `docs-check`
+
+## Draft→Open Resolution 2026-06-20
+
+CE2 moved from Draft to Open. Previously blocking evidence now resolved:
+
+| Blocker | Resolution |
+|---|---|
+| CE0 approval evidence | CE0-contract-freeze → Done (2026-06-20, hold conditions cleared per ADR-0039) |
+| CE1 read-only confirmation | CE1-context-query-bundle-foundation → Done (2026-06-20, 17 backend + 12 frontend tests pass) |
+| Approval Record実値 | Filled by Maintainer per ADR-0039 delegated authority |
+
+CE2 remains proposal-only / human-final / no-auto / fail-closed. SafeMode invariants preserved.
 
 ## Mission contract（Stream H 統合 / CE2専任）
 

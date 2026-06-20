@@ -1,15 +1,24 @@
 # Issue Draft: CE0 Core Graph Repositioning（Stream D / CE契約群 / contract-only planning）
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Priority: P1
 - Owner: Stream D（CE契約群）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE0-core-graph-repositioning.md` のみ
 - Related Backlog: `CE-0`
-- Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
-- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存; mockで並行検証可能）
+- Related ADR/Spec: `ADR-0028`, `ADR-0039`, `02_Architecture/schemas.md`
+- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（Done 2026-06-20）
 - Verification: `docs-check`
+
+## Resolution 2026-06-20
+
+CE0 Core Graph repositioning is Done. Dependencies resolved:
+- CE0-contract-freeze → Done (hold conditions cleared per ADR-0039)
+- Graph vocabulary fixed: `WorkingGraph` / `ContextProjectionGraph` / `ConsensusGraph`
+- `Core Graph` legacy alias preserved for history only
+- Frontend tests: 4 passed (2026-06-15)
+- Frontend CE0 contract: `ce0_core_graph_repositioning.test.ts` validates boundaries
 
 ## Current Canonical Summary 2026-06-15
 

@@ -1,15 +1,27 @@
 # Issue Draft: CE0 Contract Freeze（Stream B / CE0 Contract SSOT / contract-only planning）
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Priority: P1
 - Owner: Stream B（CE0 Contract Freeze 専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `01_Plans/issues/issue-CE0-contract-freeze.md` のみ（Stream B 制約）
 - Related Backlog: `CE-0`
-- Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
+- Related ADR/Spec: `ADR-0028`, `ADR-0039`, `02_Architecture/schemas.md`
 - Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約SSOT）, `01_Plans/issues/issue-CE0-core-graph-repositioning.md` / `issue-CE1-context-query-bundle-foundation.md` / `issue-CE2-low-risk-ai-assist.md` / `issue-CE4-api-cli-audit-integration.md` が参照
 - Verification: `docs-check`
+
+## Hold Resolution 2026-06-20
+
+All three hold conditions resolved per ADR-0039 (governance right-sizing, Accepted 2026-05-31):
+
+| Hold condition | Resolution |
+|---|---|
+| `Approval Record=Pending` | Filled by Maintainer under delegated authority (ADR-0039) |
+| `HIL-RS-02-GOV-EXCEPTION-01=held` | Resolved in `issue-HIL-RS-02-A1-governance-contract-hardening.md` (2026-06-20) |
+| `pendingDecisionQueueCount>0` | Cleared per ADR-0039 resolution of ADR-0036/0037/0038 |
+
+CE0 contract freeze is Done (contract readiness only). Implementation approval and release readiness remain gated by downstream issues.
 
 ## Current Canonical Summary 2026-06-15
 
