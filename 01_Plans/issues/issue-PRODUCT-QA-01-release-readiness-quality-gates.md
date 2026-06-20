@@ -2720,3 +2720,21 @@ DoDテンプレ（Draft→Open）
   - G7 regression: locale assertions, rendered-panel terminology checks, SafeMode redaction, typecheck, frontend regression, and build are required.
 - Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
 - No ADR is needed because diff calculation, merge behavior, review-state data, SafeMode redaction, persistence, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: context-query preview terminology localization
+
+- Scope: context-query preview headings, search conditions, validation blockers, submission labels, result identifiers, and exclusion reasons.
+- Finding: the Japanese preview exposed internal contract values such as `document`, `reviewedOnly`, `strict`, `proposal`, `previewConfirmed`, and `unreviewed_filtered`. It also used development-stage labels such as `CE1` and `Mock` as primary user-facing wording.
+- Correction:
+  - Search scope, review filter, SafeMode policy, and output mode now use localized user-facing labels while preserving their internal values.
+  - Known validation blockers now explain the required recovery action in Japanese and English, including the submit-button tooltip.
+  - The known unreviewed-content exclusion reason now renders as a plain-language explanation.
+  - The Japanese title, description, confirmation, submit action, and result identifier avoid implementation-stage terminology.
+  - Unknown blocker and exclusion values remain visible for diagnosis instead of being discarded.
+- Gate impact:
+  - G2 primary operations: improved because blocked context searches explain what the user must correct.
+  - G3 Japanese UI: improved across the complete context-query preview.
+  - G6 supportability: internal query and result identifiers remain available while enum and reason codes receive readable labels.
+  - G7 regression: panel rendering, locale key equivalence, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Live provider acceptance, human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because context-query validation, canonical serialization, SafeMode filtering, bundle contents, API contracts, and release authority are unchanged.
