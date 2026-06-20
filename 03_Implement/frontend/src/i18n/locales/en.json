@@ -1164,5 +1164,7 @@
   "domain_state.hypothesis": "Hyp",
   "domain_state.unknown": "?",
   "domain_state.unreviewed": "Unreviewed",
-  "domain_state.critique": "Critique"
+  "domain_state.critique": "Critique",
+  "domain_state.map_progress_cards": "Add {target} cards to start building meaning ({current} so far)",
+  "domain_state.map_progress_structure": "Try grouping cards into an island or linking with a relation"
 }

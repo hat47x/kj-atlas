@@ -1175,7 +1175,13 @@ export function SidePanel({
           <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.4 }}>{t("side_panel.context.empty_hint")}</div>
         )}
       </section>
-      {document?.cards ? <DomainStateSummary cards={document.cards} /> : null}
+      {document?.cards ? (
+        <DomainStateSummary
+          cards={document.cards}
+          islandCount={document.islands?.length ?? 0}
+          relationCount={(document.edges?.length ?? 0) + (document.relationSummaries?.length ?? 0)}
+        />
+      ) : null}
       {topContent}
       {importedPackSnapshotUrl || importedPackDiagnosticsMd ? (
         <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0", display: "grid", gap: 8 }}>

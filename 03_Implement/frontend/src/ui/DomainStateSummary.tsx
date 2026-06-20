@@ -4,6 +4,8 @@ import { t } from "../i18n/translate";
 
 type DomainStateSummaryProps = {
   cards: Card[];
+  islandCount?: number;
+  relationCount?: number;
 };
 
 type StateCounts = {
@@ -12,14 +14,16 @@ type StateCounts = {
   unreviewed: number;
   withCritique: number;
   withCritiqueTags: number;
+  withReview: number;
 };
 
-export function DomainStateSummary({ cards }: DomainStateSummaryProps) {
+export function DomainStateSummary({ cards, islandCount = 0, relationCount = 0 }: DomainStateSummaryProps) {
   const counts: StateCounts = useMemo(() => {
     const byClaimType: Record<string, number> = { fact: 0, claim: 0, hypothesis: 0, unknown: 0 };
     let unreviewed = 0;
     let withCritique = 0;
     let withCritiqueTags = 0;
+    let withReview = 0;
 
     for (const card of cards) {
       const ct = card.claimType ?? "unknown";
@@ -27,6 +31,8 @@ export function DomainStateSummary({ cards }: DomainStateSummaryProps) {
 
       if (card.textReviewed !== true) {
         unreviewed += 1;
+      } else {
+        withReview += 1;
       }
       if (typeof card.critique === "string" && card.critique.trim().length > 0) {
         withCritique += 1;
@@ -42,6 +48,7 @@ export function DomainStateSummary({ cards }: DomainStateSummaryProps) {
       unreviewed,
       withCritique,
       withCritiqueTags,
+      withReview,
     };
   }, [cards]);
 
@@ -65,6 +72,12 @@ export function DomainStateSummary({ cards }: DomainStateSummaryProps) {
     whiteSpace: "nowrap",
   } as const;
 
+  // First meaningful map criteria (PRODUCT-VALUE-01):
+  // 3+ cards, 1+ island or 1+ relation or 1+ critique
+  const hasEnoughCards = counts.total >= 3;
+  const hasStructure = islandCount > 0 || relationCount > 0 || counts.withCritique > 0;
+  const firstMapComplete = hasEnoughCards && hasStructure;
+
   return (
     <section
       aria-label={t("domain_state.title")}
@@ -76,8 +89,17 @@ export function DomainStateSummary({ cards }: DomainStateSummaryProps) {
         marginBottom: 8,
       }}
     >
-      <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>
-        {t("domain_state.title")} ({counts.total})
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>
+          {t("domain_state.title")} ({counts.total})
+        </div>
+        {!firstMapComplete ? (
+          <div style={{ fontSize: 10, color: "#64748b", fontStyle: "italic" }}>
+            {!hasEnoughCards
+              ? t("domain_state.map_progress_cards", { current: counts.total, target: 3 })
+              : t("domain_state.map_progress_structure")}
+          </div>
+        ) : null}
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {(["fact", "claim", "hypothesis"] as const).map((ct) =>
