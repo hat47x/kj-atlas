@@ -12,6 +12,7 @@ import {
   type QueryPreset,
   type QueryScope,
   type WorkspaceDecision,
+  type WorkspacePhase,
   type WorkspaceState,
 } from "../../domain/patch/workspace/ce3_patch_workspace";
 import { t } from "../../i18n/translate";
@@ -43,6 +44,41 @@ function formatQueryScope(scope: QueryScope): string {
   if (scope === "selection") return t("patch_workspace.scope.selection");
   if (scope === "island") return t("patch_workspace.scope.island");
   return t("patch_workspace.scope.all");
+}
+
+function formatWorkspacePhase(phase: WorkspacePhase): string {
+  return t(`patch_workspace.phase.${phase}`);
+}
+
+function formatFailureMessage(message: string): string {
+  if (message === "No rollback point available.") {
+    return t("patch_workspace.failure.no_rollback_point");
+  }
+  if (message === "No candidates available. Collect candidates before preset execution.") {
+    return t("patch_workspace.failure.no_candidates");
+  }
+  return message;
+}
+
+function formatExecutedQuery(query: string): string {
+  try {
+    const parsed = JSON.parse(query) as Partial<{ scope: QueryScope; depth: number; filters: string[] }>;
+    if (
+      (parsed.scope === "all" || parsed.scope === "selection" || parsed.scope === "island")
+      && typeof parsed.depth === "number"
+      && Array.isArray(parsed.filters)
+      && parsed.filters.every((filter) => typeof filter === "string")
+    ) {
+      return t("patch_workspace.executed_query_summary", {
+        scope: formatQueryScope(parsed.scope),
+        depth: parsed.depth,
+        filters: parsed.filters.length > 0 ? parsed.filters.join(", ") : t("patch_workspace.no_filters"),
+      });
+    }
+  } catch {
+    // Keep unknown diagnostic values visible.
+  }
+  return query;
 }
 
 function loadPresets(): QueryPreset[] {
@@ -118,7 +154,10 @@ export function PatchWorkspacePanel({
     const latest = new Map<string, string>();
     for (const entry of workspaceState.auditLog) {
       const suffix = entry.reason === "rollback" ? t("patch_workspace.rollback_suffix") : "";
-      latest.set(entry.candidateId, `${formatWorkspaceDecision(entry.from)} -> ${formatWorkspaceDecision(entry.to)}${suffix}`);
+      latest.set(entry.candidateId, `${t("patch_workspace.transition", {
+        from: formatWorkspaceDecision(entry.from),
+        to: formatWorkspaceDecision(entry.to),
+      })}${suffix}`);
     }
     return latest;
   }, [workspaceState.auditLog]);
@@ -248,7 +287,7 @@ export function PatchWorkspacePanel({
       <div data-testid="ce3-decision-state" style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
         {t("patch_workspace.decision_state", {
           decision: activeCandidateId ? formatWorkspaceDecision(workspaceState.decisions[activeCandidateId] ?? "hold") : formatWorkspaceDecision("none"),
-          phase: workspaceState.phase,
+          phase: formatWorkspacePhase(workspaceState.phase),
         })}
       </div>
       <div
@@ -348,14 +387,18 @@ export function PatchWorkspacePanel({
         {t("patch_workspace.run_current_preset")}
       </button>
       <div data-testid="ce3-normalized-query" style={{ fontSize: 12, color: "#334155", marginTop: 8 }}>
-        {t("patch_workspace.normalized_query", { query: workspaceState.lastExecutedQuery ?? t("patch_workspace.not_executed") })}
+        {t("patch_workspace.normalized_query", {
+          query: workspaceState.lastExecutedQuery
+            ? formatExecutedQuery(workspaceState.lastExecutedQuery)
+            : t("patch_workspace.not_executed"),
+        })}
       </div>
       <div data-testid="ce3-audit-log-size" style={{ fontSize: 12, color: "#334155", marginTop: 6 }}>
         {t("patch_workspace.audit_transitions", { count: workspaceState.auditLog.length })}
       </div>
       {workspaceState.failureMessage ? (
         <div data-testid="ce3-failure" style={{ marginTop: 8, fontSize: 12, color: "#b91c1c" }}>
-          {workspaceState.failureMessage}
+          {formatFailureMessage(workspaceState.failureMessage)}
         </div>
       ) : null}
       <div style={{ marginTop: 8, fontSize: 11, color: "#64748b" }}>

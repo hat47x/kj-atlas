@@ -266,6 +266,12 @@ function getWorkspaceDecisionDisplayLabel(decision: string | undefined): string 
   return t("patch_workspace.decision.none");
 }
 
+function getWorkspaceScopeDisplayLabel(scope: "all" | "selection" | "island"): string {
+  if (scope === "selection") return t("patch_workspace.scope.selection");
+  if (scope === "island") return t("patch_workspace.scope.island");
+  return t("patch_workspace.scope.all");
+}
+
 function isPerspectiveModeValue(value: unknown): value is PerspectiveMode {
   return typeof value === "string" && PERSPECTIVE_MODE_VALUES.includes(value as PerspectiveMode);
 }
@@ -5360,7 +5366,7 @@ export default function App() {
     }
 
     if (effectiveEvidenceOverlayScope === "selection" && !selectedCard) {
-      return "Select a card to explore evidence links";
+      return t("app.perspective_hint.select_card_for_evidence");
     }
 
     return null;
@@ -5374,11 +5380,22 @@ export default function App() {
     }
 
     if (evidenceOverlayLodLevel === "far") {
-      return "Zoom in to use perspective filters";
+      return t("app.perspective_hint.zoom_in");
     }
 
     if (perspectiveRendering.notes.length === 0) {
       return null;
+    }
+
+    if (perspectiveMode === "review") {
+      return t("app.perspective_hint.review");
+    }
+
+    if (
+      (perspectiveMode === "evidence" || perspectiveMode === "contradiction")
+      && perspectiveRendering.notes[0] === "Select a card to explore neighborhood."
+    ) {
+      return t("app.perspective_hint.select_card_for_neighborhood");
     }
 
     return perspectiveRendering.notes[0];
@@ -8726,7 +8743,10 @@ export default function App() {
                       isReadOnly={isReadOnly}
                       candidates={mergeSuggestions.map((suggestion) => ({
                         id: suggestion.groupId,
-                        label: `${suggestion.groupId} (${suggestion.cardIds.length} cards)`,
+                        label: t("patch_workspace.candidate_label", {
+                          id: suggestion.groupId,
+                          count: suggestion.cardIds.length,
+                        }),
                         note: suggestion.rationale,
                         preview: {
                           sourceSnippets: suggestion.cardIds.map((cardId) => cardsById.get(cardId)?.text ?? `[missing:${cardId}]`),
@@ -8747,8 +8767,12 @@ export default function App() {
                       onPresetSaved={(preset) => {
                         setStatusMessage(t("patch_workspace.status.preset_saved", { name: preset.name }));
                       }}
-                      onPresetExecuted={({ query }) => {
-                        setStatusMessage(t("patch_workspace.status.preset_executed", { query }));
+                      onPresetExecuted={({ scope, depth, filters }) => {
+                        setStatusMessage(t("patch_workspace.status.preset_executed", {
+                          scope: getWorkspaceScopeDisplayLabel(scope),
+                          depth,
+                          filters: filters.length > 0 ? filters.join(", ") : t("patch_workspace.no_filters"),
+                        }));
                       }}
                     />
                   </>

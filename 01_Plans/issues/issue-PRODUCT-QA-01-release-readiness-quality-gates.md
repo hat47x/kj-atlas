@@ -2738,3 +2738,22 @@ DoDテンプレ（Draft→Open）
   - G7 regression: panel rendering, locale key equivalence, typecheck, frontend regression, and build are required.
 - Final release remains **No-Go**. Live provider acceptance, human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
 - No ADR is needed because context-query validation, canonical serialization, SafeMode filtering, bundle contents, API contracts, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: patch-workspace terminology localization
+
+- Scope: patch-candidate labels, decision state and history, change preview, search-condition sets, execution feedback, and recovery errors.
+- Finding: the Japanese workspace exposed development-stage names and internal representations including `CE3`, `phase: idle`, transition arrows, token delta notation, raw normalized-query JSON, English card counts, and English domain errors.
+- Correction:
+  - Workspace phases, decisions, and transitions now use localized user-facing labels while retaining internal state-machine and audit values.
+  - Candidate card counts are localized at the application boundary.
+  - Patch preview labels and change counts use added/removed wording instead of token and `+/-` notation.
+  - Executed search conditions render as target, depth, and filter summaries instead of raw JSON.
+  - Known rollback and missing-candidate errors provide actionable localized recovery guidance; unknown diagnostics remain visible.
+  - Browser verification also found and corrected English-only review, evidence-neighborhood, and zoom guidance shown by adjacent display modes.
+- Gate impact:
+  - G2 primary operations: improved because candidate decisions, condition execution, and recovery paths can be understood without implementation knowledge.
+  - G3 Japanese UI: improved across the patch-workspace flow and its application status feedback.
+  - G6 traceability: internal state, normalized query, and audit data remain unchanged while visible labels are understandable.
+  - G7 regression: panel rendering, locale key equivalence, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Live provider acceptance, human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because workspace state transitions, rollback semantics, normalized-query storage, audit persistence, SafeMode, and release authority are unchanged.

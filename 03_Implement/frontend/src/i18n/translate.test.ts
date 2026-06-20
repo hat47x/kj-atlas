@@ -201,6 +201,16 @@ describe("translate", () => {
     expect(t("diff.panel.review_state_unknown", undefined, "ja")).toBe("記録なし");
   });
 
+  it("provides localized perspective guidance", () => {
+    expect(t("app.perspective_hint.review", undefined, "ja")).toContain("未レビュー");
+    expect(t("app.perspective_hint.review", undefined, "ja")).toContain("主張種別");
+    expect(t("app.perspective_hint.select_card_for_evidence", undefined, "ja")).toContain("カードを選択");
+    expect(t("app.perspective_hint.zoom_in", undefined, "ja")).toContain("拡大");
+
+    expect(t("app.perspective_hint.review", undefined, "en")).toContain("unreviewed");
+    expect(t("app.perspective_hint.select_card_for_neighborhood", undefined, "en")).toContain("Select a card");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
