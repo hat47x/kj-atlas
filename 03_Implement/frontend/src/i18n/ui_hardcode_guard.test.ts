@@ -200,6 +200,9 @@ const guardCases: GuardCase[] = [
       "Failed to load public pack",
       "No document loaded",
       "Failed to load view metadata:",
+      "Review mode highlights unreviewed summaries and unknown claim types.",
+      "Select a card to explore evidence links",
+      "Zoom in to use perspective filters",
     ],
   },
   {
