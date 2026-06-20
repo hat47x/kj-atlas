@@ -1,15 +1,19 @@
 # Issue Draft: PRODUCT-VALUE-01 初回価値実感と最初の意味ある配置
 
 - Type: Feature request
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex (Product Value contract steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `04_Documentation/installation.md`, `04_Documentation/operations.md`
 - Related Backlog: `PRODUCT-VALUE-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `02_Architecture/value_traceability.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `02_Architecture/value_traceability.md`
 - Expected verification level: `e2e`
+
+## Draft→Open 2026-06-20
+PRODUCT-VALUE-01 Open化。ADR-0032 AcceptedによりV1ゲート充足（ADR-0040で確定済み）。
+初回利用者の最初の意味ある配置への到達を実装可能に。
 
 ## Requirement meta I/F（共通キー）
 

@@ -1,7 +1,7 @@
 # Issue Draft: DOC-PUBLIC-BOUNDARY-01 開発者向け文書の公開文書境界見直し
 
 - Type: Documentation quality
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -13,6 +13,14 @@
 
 ## Draft→Open 2026-06-20
 DOC-PUBLIC-BOUNDARY-01 Open化。DecisionStatus=Fixed、scope定義済み。ADR-0039により重量RACI不要。docs-check levelで着手可能。
+
+## Done 2026-06-20
+文書公開境界確定。DoD 5/5達成:
+- 利用者入口(public_index.md) / 管理者入口(04_Documentation/README.md) / 開発者入口(README.md) 3系統固定
+- 相互リンク規約固定（public→利用者限定、README(04)→管理、README(root)→二系統分離）
+- e2e_testing.md → 03_Implement/frontend/docs/ 移管済み
+- 公開対象文書から内部管理語除去確認済み（rg scan: 0 matches）
+- codex_skill_operations.md / e2e_verification_log 物理移管は後続タスク（明示的にdeferred）
 
 ## Requirement meta I/F（共通キー）
 

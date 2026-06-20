@@ -1,15 +1,19 @@
 # Issue Draft: PRODUCT-VALUE-03 レビュー可能な成果物パッケージ
 
 - Type: Feature request
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex (Product Value contract steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `02_Architecture/value_traceability.md`, `04_Documentation/narratives.md`, `04_Documentation/data_handling.md`
 - Related Backlog: `PRODUCT-VALUE-03`
-- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `02_Architecture/review_attribution.md`, `02_Architecture/value_traceability.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `02_Architecture/review_attribution.md`, `02_Architecture/value_traceability.md`
 - Expected verification level: `e2e`
+
+## Draft→Open 2026-06-20
+PRODUCT-VALUE-03 Open化。ADR-0032 AcceptedによりV3ゲート充足（ADR-0040で確定済み）。
+レビュー可能な成果物パッケージの実装着手可能。
 
 ## Requirement meta I/F（共通キー）
 

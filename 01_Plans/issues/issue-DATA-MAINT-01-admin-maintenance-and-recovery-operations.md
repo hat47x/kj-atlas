@@ -20,8 +20,8 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure / share-export
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `DATA-MAINT-03` / `ADR-0035` / `DATA-MAINT-04`
+- DecisionStatus（Fixed / Pending）: Fixed（DATA-MAINT-03 Done 2026-06-20 / ADR-0035 Accepted）
+- DecisionQueueRef（未確定時の参照先）: N/A（DATA-MAINT-03 Done, 高権限操作分類確定済み）
 
 ## Dependency graph（Stream I）
 

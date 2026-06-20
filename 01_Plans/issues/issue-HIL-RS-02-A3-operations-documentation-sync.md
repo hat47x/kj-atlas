@@ -1,9 +1,9 @@
 # Issue Draft: HIL-RS-02 A3 Operations Documentation Sync（Stream G preflight）
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Ready -> Hold -> Open -> In Progress -> Done
-- Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
+- Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（Done 2026-06-20）
 - Priority: P1
 - Owner: Stream B（HIL-RS-02-A3 運用文書同期準備）
 - Scope: `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`（docs planning only）
@@ -12,9 +12,13 @@
 - Dependencies: `issue-HIL-RS-02-A1-governance-contract-hardening.md`（Done 2026-06-20）, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
 
-## Draft→Open 2026-06-20
-HIL-RS-02-A3 Open化。A1 gate充足（HIL-RS-01-A1 Done + HIL-RS-02-A1 Done + pendingDecisionQueueCount=0 per ADR-0039）。
-運用文書同期準備を開始可能。SafeMode不変条件維持。
+## Done 2026-06-20
+HIL-RS-02-A3 operations documentation sync planning complete.
+- A1 gate satisfied: HIL-RS-01-A1 Done + HIL-RS-02-A1 Done + pendingDecisionQueueCount=0
+- Draft解除条件: 5/5 ✅ / Ready定義: 4/4 ✅ / 依存切断条件: 3/3 ✅
+- DOC-OPS-02 4観点（用語/役割/導線/固定値D1-D4）保持
+- M1-M3 milestones defined: 用語同期・同期導線固定・Gateログ記録
+- fixed key再定義・pending bypass・scope外編集: 0件
 
 ## Contract Freeze Reference（read-only）
 - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
