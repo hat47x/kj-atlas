@@ -163,6 +163,20 @@ describe("translate", () => {
     expect(t("app.history.island.deleted", undefined, "en")).toContain("Deleted");
   });
 
+  it("localizes public-pack, view-metadata, and merge-decision feedback", () => {
+    expect(t("app.status.public_pack.invalid_index_json", undefined, "ja")).toContain("packs/index.json");
+    expect(t("app.status.public_pack.not_found", { packId: "sample" }, "ja")).toContain("sample");
+    expect(t("app.status.public_pack.document_invalid", { detail: "schema" }, "ja")).toContain("検証");
+    expect(t("app.status.import.view_metadata_document_required", undefined, "ja")).toContain("ドキュメントを開いて");
+    expect(t("app.status.import.view_metadata_load_failed", { detail: "JSON" }, "ja")).toContain("JSON");
+    expect(t("app.status.merge_suggestion.no_longer_applicable", undefined, "ja")).toContain("候補を更新");
+    expect(t("app.status.merge_suggestion.decision_recorded", { decision: "保留中" }, "ja")).toContain("保留中");
+    expect(t("app.history.merge_suggestion.decision_recorded", { decision: "採用済み" }, "ja")).toContain("採用済み");
+
+    expect(t("app.status.public_pack.load_failed", undefined, "en")).toContain("could not be loaded");
+    expect(t("app.status.merge_suggestion.trusted_interaction_required", undefined, "en")).toContain("human decision");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
