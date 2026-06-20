@@ -2598,3 +2598,19 @@ DoDテンプレ（Draft→Open）
   - G7 regression: i18n guard, key consistency, typecheck, full frontend regression, and build are required.
 - Final release remains **No-Go**. Live provider acceptance, human terminology review, screen-reader acceptance, and final program approval remain separate.
 - No ADR is needed because proposal-only behavior, human review authority, grounding data, persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: guided-flow and reading-outline feedback localization
+
+- Scope: guided-flow editor guidance, missing-document diagnostics, and reading-outline copy/download outcomes.
+- Finding: the Japanese UI still returned English-only instructions and completion or recovery messages for these operations.
+- Correction:
+  - Guided-flow guidance now names the relevant Japanese UI field or panel and tells the user what to do next.
+  - Diagnostics with no open document now directs the user to open a document first.
+  - Reading-outline copy, clipboard-permission recovery, and download completion feedback now use the locale catalogs.
+  - Hardcode guards prevent the removed English literals from returning.
+- Gate impact:
+  - G2 primary operations: improved because guided review and outline-export outcomes provide actionable feedback.
+  - G3 Japanese UI: improved for guided-flow, diagnostics, and reading-outline operations.
+  - G7 regression: locale key equivalence, actionable-copy assertions, hardcode guards, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because guided-flow semantics, diagnostic calculations, outline contents, SafeMode, persistence, and release authority are unchanged.
