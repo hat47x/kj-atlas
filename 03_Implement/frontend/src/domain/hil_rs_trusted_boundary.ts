@@ -5,10 +5,8 @@ export type MergeDecisionTrustBoundaryInput = {
 
 export type MergeDecisionTrustBoundaryResult = {
   allowDecision: boolean;
-  errorMessage: string | null;
+  rejectionReason: "read_only" | "untrusted_event" | null;
 };
-
-const TRUSTED_DECISION_ERROR = "Merge decision must be triggered by a trusted human interaction.";
 
 export function evaluateMergeDecisionTrustBoundary({
   isReadOnly,
@@ -17,21 +15,19 @@ export function evaluateMergeDecisionTrustBoundary({
   if (isReadOnly) {
     return {
       allowDecision: false,
-      errorMessage: null,
+      rejectionReason: "read_only",
     };
   }
 
   if (!isTrustedEvent) {
     return {
       allowDecision: false,
-      errorMessage: TRUSTED_DECISION_ERROR,
+      rejectionReason: "untrusted_event",
     };
   }
 
   return {
     allowDecision: true,
-    errorMessage: null,
+    rejectionReason: null,
   };
 }
-
-export const MERGE_DECISION_TRUSTED_ERROR_MESSAGE = TRUSTED_DECISION_ERROR;

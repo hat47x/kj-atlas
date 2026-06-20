@@ -203,6 +203,13 @@ const guardCases: GuardCase[] = [
     ],
   },
   {
+    file: "domain/hil_rs_trusted_boundary.ts",
+    matchAnywhere: true,
+    forbiddenLiterals: [
+      "Merge decision must be triggered by a trusted human interaction.",
+    ],
+  },
+  {
     file: "canvas/PolygonEditLayer.tsx",
     matchAnywhere: true,
     forbiddenLiterals: [

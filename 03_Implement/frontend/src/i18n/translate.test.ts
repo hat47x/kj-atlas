@@ -177,6 +177,17 @@ describe("translate", () => {
     expect(t("app.status.merge_suggestion.trusted_interaction_required", undefined, "en")).toContain("human decision");
   });
 
+  it("localizes merge-review boundary and representative-resolution labels", () => {
+    expect(t("merge_suggestions.trust_boundary.read_only", undefined, "ja")).toContain("マージ判断");
+    expect(t("merge_suggestions.trust_boundary.untrusted_event", undefined, "ja")).toContain("人間");
+    expect(t("merge_suggestions.representative_resolution.source_mapping", undefined, "ja")).toContain("参照元");
+    expect(t("merge_suggestions.representative_resolution.merged_target", undefined, "ja")).toContain("統合先");
+    expect(t("merge_suggestions.representative_resolution.fallback", undefined, "ja")).toContain("暫定");
+
+    expect(t("merge_suggestions.trust_boundary.read_only", undefined, "en")).toContain("open for inspection");
+    expect(t("merge_suggestions.representative_resolution.fallback", undefined, "en")).toContain("fallback");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
