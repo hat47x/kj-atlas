@@ -2685,3 +2685,20 @@ DoDテンプレ（Draft→Open）
   - G7 regression: locale key equivalence, copy assertions, hardcode guards, typecheck, frontend regression, and build are required.
 - Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
 - No ADR is needed because public-pack resolution, view metadata semantics, merge authority, audit persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: merge-review boundary presentation localization
+
+- Scope: merge-decision trust-boundary rejection, representative-card resolution labels, and recorded audit-decision display.
+- Finding: the review panel still exposed an English domain error, internal resolution identifiers such as `fallback`, and raw decision values such as `defer`.
+- Correction:
+  - The trust-boundary domain now returns stable rejection reason codes instead of user-facing English text.
+  - The review panel maps read-only and untrusted-event rejection reasons to actionable locale messages.
+  - Representative-card resolution methods and audit decisions use localized labels instead of internal enum values.
+  - Regression tests prevent the English domain error and raw fallback/decision display from returning.
+- Gate impact:
+  - G2 primary operations: improved because blocked review actions explain the recovery path.
+  - G3 Japanese UI: improved for merge-review metadata and audit presentation.
+  - G6 traceability: internal audit values remain unchanged while their visible labels are understandable.
+  - G7 regression: trust-boundary unit tests, panel rendering, locale equivalence, hardcode guards, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because trust evaluation, merge authority, decision enums, audit persistence, SafeMode, and release authority are unchanged.
