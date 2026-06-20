@@ -118,6 +118,17 @@ describe("translate", () => {
     expect(t("app.status.relation_summary.generated_unreviewed", undefined, "en")).toContain("grounding cards and edges");
   });
 
+  it("provides actionable guided-flow and outline feedback", () => {
+    expect(t("app.status.guided_flow.use_claim_type", undefined, "ja")).toContain("主張種別");
+    expect(t("app.status.guided_flow.use_review_fields", undefined, "ja")).toContain("右側");
+    expect(t("app.status.guided_flow.use_contradiction_links", undefined, "ja")).toContain("矛盾");
+    expect(t("app.status.diagnostics.no_document", undefined, "ja")).toContain("ドキュメントを開いて");
+    expect(t("app.status.outline.copy_failed", undefined, "ja")).toContain("クリップボード権限");
+
+    expect(t("app.status.guided_flow.use_claim_type", undefined, "en")).toContain("Claim Type");
+    expect(t("app.status.outline.downloaded", undefined, "en")).toContain("outline.md");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {

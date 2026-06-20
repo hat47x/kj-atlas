@@ -6186,7 +6186,7 @@ export default function App() {
 
   const handleGuidedFlowOpenRelevantEditor = useCallback(() => {
     if (currentGuidedFlowStep?.id === "classify") {
-      setStatusMessage("Use Claim Type in the card editor.");
+      setStatusMessage(t("app.status.guided_flow.use_claim_type"));
       return;
     }
 
@@ -6204,11 +6204,11 @@ export default function App() {
     }
 
     if (currentGuidedFlowStep?.id === "review") {
-      setStatusMessage("Use island/card review fields in the side panel.");
+      setStatusMessage(t("app.status.guided_flow.use_review_fields"));
       return;
     }
 
-    setStatusMessage("Use contradiction links in card evidence editor.");
+    setStatusMessage(t("app.status.guided_flow.use_contradiction_links"));
     setGuidedFlowOpenEditorRequestSeq((previousSeq) => previousSeq + 1);
   }, [currentGuidedFlowStep?.id, document?.cards, focusItem, guidedFlowTargets, selectedCardIds.length]);
 
@@ -6282,7 +6282,7 @@ export default function App() {
 
   const handleRunOutlineDiagnostics = useCallback(() => {
     if (!document) {
-      setStatusMessage("Nothing to analyze");
+      setStatusMessage(t("app.status.diagnostics.no_document"));
       return;
     }
     if (!diagnosticsWorkerClientRef.current) {
@@ -6448,9 +6448,9 @@ export default function App() {
     try {
       const safeText = safeMode ? outline : outline;
       await navigator.clipboard.writeText(safeText);
-      setStatusMessage("Copied reading outline (Markdown)");
+      setStatusMessage(t("app.status.outline.copied"));
     } catch {
-      setStatusMessage("Failed to copy reading outline");
+      setStatusMessage(t("app.status.outline.copy_failed"));
     }
   }, [buildReadingOutline]);
 
@@ -6461,7 +6461,7 @@ export default function App() {
     }
 
     downloadTextFile("outline.md", "text/markdown", outline);
-    setStatusMessage("Downloaded outline.md");
+    setStatusMessage(t("app.status.outline.downloaded"));
   }, [buildReadingOutline]);
 
   const handleReadingDisable = useCallback(() => {

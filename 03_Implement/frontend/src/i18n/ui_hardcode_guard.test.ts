@@ -150,6 +150,13 @@ const guardCases: GuardCase[] = [
       "Updated relation summary reviewed state",
       "Cannot restore empty relation summary history entry",
       "Restored relation summary history entry",
+      "Use Claim Type in the card editor",
+      "Use island/card review fields in the side panel",
+      "Use contradiction links in card evidence editor",
+      "Nothing to analyze",
+      "Copied reading outline (Markdown)",
+      "Failed to copy reading outline",
+      "Downloaded outline.md",
     ],
   },
   {
