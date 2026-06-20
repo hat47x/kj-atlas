@@ -3555,7 +3555,7 @@ export default function App() {
             ...document,
             readingOrder: nextReadingOrder,
           },
-          "Added card to reading order"
+          t("app.history.reading_order.card_added")
         );
         return;
       }
@@ -5714,7 +5714,7 @@ export default function App() {
             ...document,
             readingOrder: nextReadingOrder,
           },
-          "Added island to reading order"
+          t("app.history.reading_order.island_added")
         );
         return;
       }
@@ -6668,7 +6668,7 @@ export default function App() {
         ...document,
         readingOrder: nextReadingOrder,
       },
-      "Added item to reading order"
+      t("app.history.reading_order.item_added")
     );
   }, [applyDocumentChange, document, selectedCard?.id, selectedIsland?.id, visibleCardIdSet, visibleIslandIdSet]);
 
@@ -6692,7 +6692,7 @@ export default function App() {
           ...document,
           readingOrder,
         },
-        "Reordered reading order"
+        t("app.history.reading_order.reordered")
       );
     },
     [applyDocumentChange, document]
@@ -6719,7 +6719,7 @@ export default function App() {
           ...document,
           readingOrder: nextReadingOrder,
         },
-        "Removed item from reading order"
+        t("app.history.reading_order.item_removed")
       );
     },
     [applyDocumentChange, document]
@@ -6742,7 +6742,7 @@ export default function App() {
           ...document,
           readingOrder: nextReadingOrder,
         },
-        "Removed item from reading order"
+        t("app.history.reading_order.item_removed")
       );
     },
     [applyDocumentChange, document]
@@ -6764,7 +6764,7 @@ export default function App() {
           ...document,
           readingOrder: nextReadingOrder,
         },
-        "Reordered reading order"
+        t("app.history.reading_order.reordered")
       );
     },
     [applyDocumentChange, document]
@@ -6790,7 +6790,7 @@ export default function App() {
           island.id === selectedIsland.id ? { ...island, cardIds: mergedCardIds } : island
         ),
       },
-      "Added selected cards to island"
+      t("app.history.island.selected_cards_added")
     );
   }, [applyDocumentChange, document, selectedCardIds, selectedIsland]);
 
@@ -6813,7 +6813,7 @@ export default function App() {
           island.id === selectedIsland.id ? { ...island, cardIds: nextCardIds } : island
         ),
       },
-      "Removed selected cards from island"
+      t("app.history.island.selected_cards_removed")
     );
   }, [applyDocumentChange, document, selectedCardIds, selectedIsland]);
 
@@ -6829,7 +6829,7 @@ export default function App() {
         islands: nextIslands,
         readingOrder: (document.readingOrder ?? []).filter((id) => id !== selectedIsland.id),
       },
-      "Deleted island"
+      t("app.history.island.deleted")
     );
     setSelectedIslandId(null);
   }, [applyDocumentChange, document, selectedIsland]);
