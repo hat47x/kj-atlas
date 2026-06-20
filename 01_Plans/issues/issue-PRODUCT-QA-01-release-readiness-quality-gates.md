@@ -2702,3 +2702,21 @@ DoDテンプレ（Draft→Open）
   - G7 regression: trust-boundary unit tests, panel rendering, locale equivalence, hardcode guards, typecheck, frontend regression, and build are required.
 - Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
 - No ADR is needed because trust evaluation, merge authority, decision enums, audit persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: diff-panel terminology localization
+
+- Scope: comparison summary, section headings, review-state transitions, source/comparison labels, and reading-order detail labels.
+- Finding: the Japanese comparison panel still exposed English headings, `true/false`, `A/B`, delta abbreviations, and implementation terms such as array and index.
+- Correction:
+  - Card, island, relation-summary, and reading-order sections now use plain Japanese labels.
+  - Current and comparison documents are named explicitly instead of `A/B`.
+  - Review-state values render as reviewed or unreviewed labels instead of booleans.
+  - Summary counts use addition, deletion, and change wording instead of `+/-` and delta abbreviations.
+  - Reading-order detail uses user-facing item and position terminology instead of array and index.
+- Gate impact:
+  - G2 primary operations: improved because comparison results can be interpreted without implementation knowledge.
+  - G3 Japanese UI: improved across the complete structural-diff panel.
+  - G6 supportability: current/comparison and review-state direction are explicit in captured evidence.
+  - G7 regression: locale assertions, rendered-panel terminology checks, SafeMode redaction, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because diff calculation, merge behavior, review-state data, SafeMode redaction, persistence, and release authority are unchanged.
