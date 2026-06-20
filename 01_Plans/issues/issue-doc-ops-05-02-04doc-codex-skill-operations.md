@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-05-02 04_Documentation/codex_skill_operations.md のOpen化準備
 
 - Type: Documentation quality
-- Status: Draft
+- Status: Done
 - Lifecycle: Ready
 - Source Issue: N/A
 - Priority: P2

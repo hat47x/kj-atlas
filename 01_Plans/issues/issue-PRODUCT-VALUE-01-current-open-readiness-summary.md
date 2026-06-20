@@ -1,15 +1,18 @@
 # Issue Draft: PRODUCT-VALUE-01 current open-readiness summary
 
 - Type: Process
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
-- Source Issue: `01_Plans/issues/issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`
+- Source Issue: `01_Plans/issues/issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`（Open 2026-06-20）
 - Priority: P1
 - Owner: Codex (Product Value evidence steward; accountable owner remains Productization Program Owner / QA Lead)
 - Scope: `01_Plans/issues/issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`, `03_Implement/frontend/e2e/`, `04_Documentation/`
 - Related Backlog: `PRODUCT-VALUE-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `02_Architecture/value_traceability.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `02_Architecture/value_traceability.md`
 - Expected verification level: `docs-check`
+
+## Draft→Open 2026-06-20
+PV-01 parent issue Open化に伴いsummaryもOpen。ADR-0032 Accepted (ADR-0040)。
 
 ## Current Open-Readiness Summary 2026-06-17
 

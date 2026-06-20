@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-05-04 04_Documentation/diagnostics.md の配置見直し
 
 - Type: Documentation quality
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: TBD

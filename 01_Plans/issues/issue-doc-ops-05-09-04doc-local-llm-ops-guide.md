@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-05-09 04_Documentation/local_llm_ops_guide.md の配置見直し
 
 - Type: Documentation quality
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: TBD

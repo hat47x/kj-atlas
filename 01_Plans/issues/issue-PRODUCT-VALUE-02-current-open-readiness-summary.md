@@ -1,15 +1,18 @@
 # Issue Draft: PRODUCT-VALUE-02 current open-readiness summary
 
 - Type: Process
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
-- Source Issue: `01_Plans/issues/issue-PRODUCT-VALUE-02-ambiguity-evidence-workflow.md`
+- Source Issue: `01_Plans/issues/issue-PRODUCT-VALUE-02-ambiguity-evidence-workflow.md`（Open 2026-06-20）
 - Priority: P1
 - Owner: Codex (Product Value evidence steward; accountable owner remains Productization Program Owner / QA Lead)
 - Scope: `01_Plans/issues/issue-PRODUCT-VALUE-02-ambiguity-evidence-workflow.md`, `02_Architecture/value_traceability.md`, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `03_Implement/frontend/e2e/`
 - Related Backlog: `PRODUCT-VALUE-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `02_Architecture/value_traceability.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `02_Architecture/value_traceability.md`
 - Expected verification level: `docs-check`
+
+## Draft→Open 2026-06-20
+PV-02 parent issue Open化（ADR-0040で循環デッドロック解消済み）に伴いsummaryもOpen。
 
 ## Current Open-Readiness Summary 2026-06-17
 
