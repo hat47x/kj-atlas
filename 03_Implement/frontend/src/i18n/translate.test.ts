@@ -151,6 +151,18 @@ describe("translate", () => {
     expect(t("app.history.card.marked_unreviewed", undefined, "en")).toContain("unreviewed");
   });
 
+  it("provides localized reading-order and island-membership history", () => {
+    expect(t("app.history.reading_order.card_added", undefined, "ja")).toContain("カード");
+    expect(t("app.history.reading_order.island_added", undefined, "ja")).toContain("島");
+    expect(t("app.history.reading_order.reordered", undefined, "ja")).toContain("並べ替え");
+    expect(t("app.history.reading_order.item_removed", undefined, "ja")).toContain("読み順から削除");
+    expect(t("app.history.island.selected_cards_added", undefined, "ja")).toContain("島に追加");
+    expect(t("app.history.island.selected_cards_removed", undefined, "ja")).toContain("島から外");
+
+    expect(t("app.history.reading_order.reordered", undefined, "en")).toContain("Reordered");
+    expect(t("app.history.island.deleted", undefined, "en")).toContain("Deleted");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {

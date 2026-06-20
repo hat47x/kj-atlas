@@ -2649,3 +2649,20 @@ DoDテンプレ（Draft→Open）
   - G7 regression: locale tests, hardcode guards, typecheck, frontend regression, and build are required.
 - Final release remains **No-Go**. Human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
 - No ADR is needed because editing semantics, review-event attribution, history persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: reading-order and island-membership history localization
+
+- Scope: reading-order addition, removal, and reordering through canvas and side-panel operations, plus island membership changes and island deletion.
+- Finding: these operations still wrote English-only entries into the visible editing history in the Japanese UI.
+- Correction:
+  - Card, island, and generic selected-item additions to reading order now use localized history messages.
+  - Reading-order reordering and removal are localized consistently across both side-panel and canvas paths.
+  - Adding selected cards to an island, removing them from an island, and deleting an island now produce Japanese history entries.
+  - Hardcode guards prevent the removed English history literals from returning.
+- Gate impact:
+  - G2 primary operations: improved for reading-flow maintenance and island membership editing.
+  - G3 Japanese UI: improved for visible edit history.
+  - G6 traceability: improved because canvas and side-panel paths use consistent history vocabulary.
+  - G7 regression: locale tests, hardcode guards, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because reading-order semantics, island membership rules, persistence, SafeMode, and release authority are unchanged.
