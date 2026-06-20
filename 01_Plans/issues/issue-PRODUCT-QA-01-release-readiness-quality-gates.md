@@ -2666,3 +2666,22 @@ DoDテンプレ（Draft→Open）
   - G7 regression: locale tests, hardcode guards, typecheck, frontend regression, and build are required.
 - Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
 - No ADR is needed because reading-order semantics, island membership rules, persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: public-pack, view-metadata, and merge-decision feedback localization
+
+- Scope: public-pack startup failures, view-metadata import prerequisites and validation failures, plus merge-suggestion decision validation, completion status, and editing history.
+- Finding: these paths still exposed English-only errors or raw decision values in the Japanese UI.
+- Correction:
+  - Public-pack index JSON parsing, manifest validation, pack selection, document retrieval/validation, and view retrieval/validation failures now use the locale catalogs while preserving diagnostic details.
+  - An explicitly requested missing or invalid pack now keeps its error visible instead of allowing the API-document fallback to overwrite the real cause.
+  - Loading view metadata without an open document now states the prerequisite; invalid metadata reports a localized failure prefix.
+  - Merge decisions now display localized decision labels in both visible status and editing history.
+  - Stale suggestions and untrusted decision entry paths provide actionable Japanese recovery guidance.
+  - Hardcode guards prevent the removed English literals from returning.
+- Gate impact:
+  - G2 primary operations: improved for startup recovery, view restoration, and merge-review decisions.
+  - G3 Japanese UI: improved for errors, validation, completion feedback, and editing history.
+  - G6 supportability: preserved technical paths and validation details under localized explanations.
+  - G7 regression: locale key equivalence, copy assertions, hardcode guards, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because public-pack resolution, view metadata semantics, merge authority, audit persistence, SafeMode, and release authority are unchanged.

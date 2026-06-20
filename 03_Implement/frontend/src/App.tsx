@@ -2506,7 +2506,7 @@ export default function App() {
       }
 
       if (!options.isTrusted) {
-        setMergeSuggestionError("Merge decision must be triggered by a trusted human interaction.");
+        setMergeSuggestionError(t("app.status.merge_suggestion.trusted_interaction_required"));
         return;
       }
 
@@ -2517,7 +2517,7 @@ export default function App() {
 
       const availableCardCount = document.cards.filter((card) => suggestion.cardIds.includes(card.id)).length;
       if (availableCardCount < 2) {
-        setMergeSuggestionError("Merge suggestion is no longer applicable.");
+        setMergeSuggestionError(t("app.status.merge_suggestion.no_longer_applicable"));
         return;
       }
 
@@ -2530,7 +2530,16 @@ export default function App() {
         rationale: suggestion.rationale,
         decisionReason: options.decisionReason,
       });
-      applyDocumentChange(nextDocument, `Recorded merge decision: ${decision}`);
+      const decisionLabel = t({
+        accept: "merge_suggestions.decision.accepted",
+        partial: "merge_suggestions.decision.partially_accepted",
+        reject: "merge_suggestions.decision.rejected",
+        defer: "merge_suggestions.decision.deferred",
+      }[decision]);
+      applyDocumentChange(
+        nextDocument,
+        t("app.history.merge_suggestion.decision_recorded", { decision: decisionLabel })
+      );
 
       const decidedAt = nextDocument.mergeSuggestionDecisions?.at(-1)?.decidedAt ?? new Date().toISOString();
       const decisionId = nextDocument.mergeSuggestionDecisions?.at(-1)?.decisionId ?? crypto.randomUUID();
@@ -2556,7 +2565,7 @@ export default function App() {
         )
       );
       setMergeSuggestionError(null);
-      setStatusMessage(`Merge decision recorded (${decision})`);
+      setStatusMessage(t("app.status.merge_suggestion.decision_recorded", { decision: decisionLabel }));
     },
     [applyDocumentChange, document, mergeSuggestions]
   );
@@ -2802,25 +2811,33 @@ export default function App() {
       return false;
     }
 
-    const manifestValidation = validatePublicPackManifest(await manifestResponse.json());
+    let manifestPayload: unknown;
+    try {
+      manifestPayload = JSON.parse(await manifestResponse.text()) as unknown;
+    } catch {
+      throw new Error(t("app.status.public_pack.invalid_index_json"));
+    }
+    const manifestValidation = validatePublicPackManifest(manifestPayload);
     if (!manifestValidation.ok) {
       const detail = manifestValidation.errors.map((error) => `${error.path}: ${error.message}`).join("; ");
-      throw new Error(`Invalid packs/index.json: ${detail}`);
+      throw new Error(t("app.status.public_pack.invalid_index", { detail }));
     }
     const manifest = manifestValidation.manifest;
     const packs = manifest.packs;
     const targetPack = packs.find((pack) => pack.id === (requestedPackId ?? manifest.defaultPackId ?? "")) ?? null;
     if (!targetPack) {
-      throw new Error(`Pack not found: ${requestedPackId ?? manifest.defaultPackId ?? "(default)"}`);
+      throw new Error(t("app.status.public_pack.not_found", {
+        packId: requestedPackId ?? manifest.defaultPackId ?? t("app.status.public_pack.default_id"),
+      }));
     }
 
     const documentResponse = await fetch(`./packs/${targetPack.documentPath}`, { cache: "no-store" });
     if (!documentResponse.ok) {
-      throw new Error(`Failed to fetch pack document: ${targetPack.documentPath}`);
+      throw new Error(t("app.status.public_pack.document_fetch_failed", { path: targetPack.documentPath }));
     }
     const documentParseResult = parseDocumentJson(await documentResponse.text());
     if (!documentParseResult.ok) {
-      throw new Error(`Invalid pack document: ${documentParseResult.error}`);
+      throw new Error(t("app.status.public_pack.document_invalid", { detail: documentParseResult.error }));
     }
 
     pendingCardDragSnapshotRef.current = null;
@@ -2873,11 +2890,11 @@ export default function App() {
     if (targetPack.viewPath) {
       const viewResponse = await fetch(`./packs/${targetPack.viewPath}`, { cache: "no-store" });
       if (!viewResponse.ok) {
-        throw new Error(`Failed to fetch pack view metadata: ${targetPack.viewPath}`);
+        throw new Error(t("app.status.public_pack.view_fetch_failed", { path: targetPack.viewPath }));
       }
       const viewParseResult = parseViewJson(await viewResponse.text());
       if (!viewParseResult.ok) {
-        throw new Error(`Invalid pack view metadata: ${viewParseResult.error}`);
+        throw new Error(t("app.status.public_pack.view_invalid", { detail: viewParseResult.error }));
       }
       applyImportedViewMetadata(viewParseResult.metadata, documentParseResult.document, importedViewMode, t("app.status.public_pack.loaded_prefix"));
     }
@@ -3006,7 +3023,11 @@ export default function App() {
           return;
         }
       } catch (error) {
-        setStatusMessage(error instanceof Error ? error.message : "Failed to load public pack");
+        setStatusMessage(error instanceof Error ? error.message : t("app.status.public_pack.load_failed"));
+        if (requestedPackId) {
+          setIsLoading(false);
+          return;
+        }
       }
 
       await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
@@ -3022,13 +3043,13 @@ export default function App() {
   const handleLoadViewMetadataFile = useCallback(
     async (selectedFile: File) => {
       if (!document) {
-        setStatusMessage("No document loaded");
+        setStatusMessage(t("app.status.import.view_metadata_document_required"));
         return;
       }
 
       const parseResult = parseViewJson(await selectedFile.text());
       if (!parseResult.ok) {
-        setStatusMessage(`Failed to load view metadata: ${parseResult.error}`);
+        setStatusMessage(t("app.status.import.view_metadata_load_failed", { detail: parseResult.error }));
         return;
       }
 

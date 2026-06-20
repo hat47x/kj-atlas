@@ -64,6 +64,42 @@ test("loads legacy public pack without visibility and legacy view metadata witho
   await expect(page.getByText("Invalid pack view metadata")).toHaveCount(0);
 });
 
+test("keeps an explicit missing-pack error visible without falling back to the API document", async ({ page }) => {
+  let apiDocumentRequested = false;
+
+  await page.route("**/packs/index.json", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        defaultPackId: "available",
+        packs: [{ id: "available", documentPath: "available.document.json", visibility: "Public" }],
+      }),
+    });
+  });
+  await page.route("**/api/docs/**", async (route) => {
+    apiDocumentRequested = true;
+    await route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
+  });
+
+  await page.goto("/?locale=ja&pack=missing-pack");
+
+  await expect(page.getByRole("status")).toContainText("公開パックが見つかりません: missing-pack");
+  await expect.poll(() => apiDocumentRequested).toBe(false);
+});
+
+test("localizes a malformed public-pack index response", async ({ page }) => {
+  await page.route("**/packs/index.json", async (route) => {
+    await route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html>" });
+  });
+
+  await page.goto("/?locale=ja&pack=missing-pack");
+
+  await expect(page.getByRole("status")).toContainText(
+    "公開パックの一覧情報をJSONとして読み込めませんでした。packs/index.json を確認してください。"
+  );
+});
+
 
 test("shows visibility controls with fallback view visibility and pack visibility", async ({ page }) => {
   const now = new Date().toISOString();
