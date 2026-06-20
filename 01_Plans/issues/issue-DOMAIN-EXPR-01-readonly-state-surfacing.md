@@ -1,7 +1,7 @@
 # Issue Draft: DOMAIN-EXPR-01 既存ドメイン状態の読取UI第一級化
 
 - Type: Feature request
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -12,9 +12,33 @@
 - Dependencies: N/A
 - Expected verification level: `e2e`
 
-## Draft→Open 2026-06-20
-DOMAIN-EXPR-01 Open化。ADR-0040 Phase 1（schema変更なし、読取UI第一級化）。
-claimType/critique/evidence/reviewStateのバッジ・絞り込み表示。低リスク・価値先行検証。
+## Done 2026-06-20
+
+ADR-0040 Phase 1 読取UI第一級化 完了。Schema変更なし、既存往復フィールドの読取UI露出。
+
+### Implemented
+
+**CardView (canvas/CardView.tsx)**:
+- claimType badge: 色分けpill (fact=緑, claim=青, hypothesis=紫, unknownは非表示)
+- critique indicator: タグ数表示付き (critiqueTagsがある場合はタグ数pill、なければamber dot)
+- unreviewed indicator: カード右下amber dot (textReviewed=falseの場合)
+
+**SidePanel (ui/SidePanel.tsx)**:
+- 選択カード詳細にclaimType表示
+- 選択カード詳細に違和感(critique)テキスト表示 (amber背景)
+- 選択カード詳細にcritiqueTagsチップ表示
+
+**i18n**: en/ja locale keys追加 (side_panel.context.claim_type, side_panel.context.critique)
+
+### Verification
+- TypeScript typecheck: clean
+- Vitest: 160 test files / 753 tests passed
+- Backend pytest: 269 passed / 19 skipped
+- Schema: 変更なし (ADR-0040 Phase 1 非破壊原則遵守)
+
+### Commits
+- 7f655b15 feat(DOMAIN-EXPR-01): add claimType/critique/reviewState badges to CardView
+- faed8fe6 feat(DOMAIN-EXPR-01): add domain state display to SidePanel card detail
 
 > 個人OSS段階（`ADR-0039`）の軽量起票。重量級の RACI/KPI セクションは省略。`ADR-0040` Phase 1。
 
