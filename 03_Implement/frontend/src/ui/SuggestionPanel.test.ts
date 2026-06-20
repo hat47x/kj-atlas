@@ -48,18 +48,22 @@ describe("SuggestionPanel", () => {
     setActiveLocale("en");
     const enHtml = renderToStaticMarkup(React.createElement(SuggestionPanel, buildProps()));
 
-    expect(jaHtml).toContain("ドラフト提案");
-    expect(enHtml).toContain("Draft suggestion");
-    expect(enHtml).toContain("CE-2 guardrail: proposal-only flow. Auto-apply is disabled.");
+    expect(jaHtml).toContain("配置案");
+    expect(enHtml).toContain("Layout suggestion");
+    expect(enHtml).toContain("Suggestions are never applied to the current document automatically.");
     expect(enHtml).not.toContain("Apply suggestion");
-    expect(enHtml).toContain("CE2 proposal-only blockers: auto_apply_blocked");
-    expect(enHtml).toContain("Patch proposals");
+    expect(enHtml).toContain("Safety conditions: No automatic application");
+    expect(enHtml).toContain("Layout suggestion candidates");
     expect(enHtml).toContain("review state: 1 unreviewed / 1 human reviewed");
-    expect(jaHtml).toContain("提案パッチ");
-    expect(jaHtml).not.toContain("Patch proposals");
+    expect(jaHtml).toContain("配置案の候補");
+    expect(jaHtml).toContain("安全上の条件: 自動適用なし");
+    expect(jaHtml).not.toContain("CE2");
+    expect(jaHtml).not.toContain("auto_apply_blocked");
     expect(enHtml).toContain("selected: <strong>Proposal 2</strong> (held, human reviewed)");
     expect(enHtml).toContain("Proposal 2 (held, human reviewed)");
-    expect(enHtml).toContain("Reversible synthesis keeps proposals isolated until explicit human approval.");
+    expect(enHtml).toContain("remains separate from the current document until you explicitly adopt it");
+    expect(enHtml).not.toContain("CE-2");
+    expect(enHtml).not.toContain("auto_apply_blocked");
   });
 
   it("disables edit actions in read-only mode", () => {
@@ -68,5 +72,21 @@ describe("SuggestionPanel", () => {
 
     expect(html).toContain("Suggest layout");
     expect(html).toContain("disabled");
+  });
+
+  it("explains each proposal prerequisite without exposing internal reason codes", () => {
+    setActiveLocale("ja");
+    const html = renderToStaticMarkup(
+      React.createElement(SuggestionPanel, {
+        ...buildProps(),
+        hasSuggestion: false,
+        isPreviewEnabled: false,
+      }),
+    );
+
+    expect(html).toContain("最初に配置案を作成する");
+    expect(html).toContain("内容を確認するにはプレビューを有効にする");
+    expect(html).not.toContain("suggestion_required");
+    expect(html).not.toContain("preview_opt_in_required");
   });
 });
