@@ -1130,6 +1130,23 @@ export function SidePanel({
             <div style={{ fontSize: 12, color: "#475569" }}>
               {t("side_panel.context.review_state", { value: selectedCardReviewState })}
             </div>
+            {selectedCard?.claimType && selectedCard.claimType !== "unknown" ? (
+              <div style={{ fontSize: 12, color: "#475569" }}>
+                {t("side_panel.context.claim_type", { value: selectedCard.claimType })}
+              </div>
+            ) : null}
+            {selectedCard?.critique ? (
+              <div style={{ fontSize: 12, color: "#b45309", backgroundColor: "#fef3c7", borderRadius: 6, padding: "4px 8px", marginTop: 2 }}>
+                {t("side_panel.context.critique")}: {selectedCard.critique.slice(0, 120)}{selectedCard.critique.length > 120 ? "..." : ""}
+              </div>
+            ) : null}
+            {selectedCard?.critiqueTags && selectedCard.critiqueTags.length > 0 ? (
+              <div style={{ fontSize: 11, color: "#92400e", display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {selectedCard.critiqueTags.map((tag) => (
+                  <span key={tag} style={{ backgroundColor: "#fed7aa", borderRadius: 999, padding: "1px 6px" }}>{tag}</span>
+                ))}
+              </div>
+            ) : null}
             <button
               type="button"
               onClick={onFocusCard}
