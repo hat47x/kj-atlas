@@ -1,7 +1,7 @@
 # Issue Draft: PRODUCT-VALUE-02 保留・違和感・根拠不足を扱う作業フロー
 
 - Type: Feature request
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -14,6 +14,25 @@
 ## Draft→Open 2026-06-20
 PRODUCT-VALUE-02 Open化。循環デッドロック解消済み（ADR-0040: ADR-0032 Accepted + PV-02 schema判断確定）。
 DOMAIN-EXPR-01..04のPhase 1から着手可能。DecisionStatus=Fixed。
+
+## Implementation Progress 2026-06-21
+
+### Done
+- **CardView claimType badges**: fact/claim/hypothesis color-coded pills (DOMAIN-EXPR-01)
+- **CardView critique indicators**: tag count pills + unreviewed dots (DOMAIN-EXPR-01)
+- **SidePanel card detail**: claimType, critique text, critiqueTags chips, evidence link counts, contradiction counts
+- **DomainStateSummary**: document-level card state distribution with map progress hints
+- No schema changes (reads existing card.claimType, card.critique, card.critiqueTags, card.textReviewed, document.evidenceLinks)
+
+### Remaining
+- holdState / PendingItems / Shelf (ADR-0040 Phase 2, schema拡張必要)
+- Critique→Reproposal daily loop UI (DOMAIN-EXPR-03)
+- E2E verification of ambiguity/evidence workflow
+
+### Commits
+- 7f655b15 CardView domain state badges
+- a8309640 SidePanel card detail domain state
+- 89d9fdc1 evidence/contradiction counts in SidePanel
 
 ## Requirement meta I/F（共通キー）
 

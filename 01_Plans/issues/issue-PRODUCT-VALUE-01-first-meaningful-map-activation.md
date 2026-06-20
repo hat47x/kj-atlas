@@ -1,7 +1,7 @@
 # Issue Draft: PRODUCT-VALUE-01 初回価値実感と最初の意味ある配置
 
 - Type: Feature request
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -13,7 +13,24 @@
 
 ## Draft→Open 2026-06-20
 PRODUCT-VALUE-01 Open化。ADR-0032 AcceptedによりV1ゲート充足（ADR-0040で確定済み）。
-初回利用者の最初の意味ある配置への到達を実装可能に。
+
+## Implementation Progress 2026-06-21
+
+### Done
+- **StartPanel value proposition**: en/ja description updated to convey kj-atlas core value (曖昧さを保持する空間的思考ツール)
+- **DomainStateSummary**: document-level card state counts with first-meaningful-map progress hints
+- **CardView badges**: claimType/critique/reviewState visual indicators (DOMAIN-EXPR-01)
+- **SidePanel domain state**: claimType, critique, evidence links, contradiction counts in card detail
+
+### Remaining
+- Playwright E2E first-meaningful-map user journey (T4)
+- Installation/operations doc sync with first-run path (T5)
+- Keyboard accessibility verification for first-run path (T3)
+
+### Commits
+- 35895ba8 StartPanel value proposition messaging
+- fa62d7be DomainStateSummary component
+- 79ce46c8 first-meaningful-map progress hints
 
 ## Requirement meta I/F（共通キー）
 
