@@ -105,8 +105,19 @@ function CardViewComponent({
   const [isDragging, setIsDragging] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const hasCritique = typeof card.critique === "string" && card.critique.trim().length > 0;
+  const critiqueTagCount = card.critiqueTags?.length ?? 0;
+  const claimType = card.claimType;
+  const isTextReviewed = card.textReviewed === true;
   const representativeCount = card.repOf?.length ?? 0;
   const compactText = card.text.trim().split(/\n+/).join(" ").slice(0, 72);
+
+  // Domain state badge styling (DOMAIN-EXPR-01)
+  const CLAIM_TYPE_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
+    fact: { bg: "#dcfce7", fg: "#166534", label: "Fact" },
+    claim: { bg: "#dbeafe", fg: "#1e40af", label: "Claim" },
+    hypothesis: { bg: "#f3e8ff", fg: "#6b21a8", label: "Hyp" },
+    unknown: { bg: "#f1f5f9", fg: "#475569", label: "?" },
+  };
 
   const clearDragState = (event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
@@ -291,20 +302,63 @@ function CardViewComponent({
           Rep ({representativeCount})
         </span>
       ) : null}
+      {!markerMode && claimType && claimType !== "unknown" ? (
+        <span
+          aria-label={`Card claim type: ${claimType}`}
+          title={`Claim type: ${claimType}`}
+          style={{
+            position: "absolute",
+            top: representativeCount > 0 ? 28 : 6,
+            left: 6,
+            borderRadius: 999,
+            backgroundColor: CLAIM_TYPE_STYLE[claimType]?.bg ?? "#f1f5f9",
+            color: CLAIM_TYPE_STYLE[claimType]?.fg ?? "#475569",
+            fontSize: 10,
+            fontWeight: 600,
+            padding: "1px 6px",
+            lineHeight: "16px",
+          }}
+        >
+          {CLAIM_TYPE_STYLE[claimType]?.label ?? claimType}
+        </span>
+      ) : null}
+      {!markerMode && !isTextReviewed ? (
+        <span
+          aria-label="Card text is unreviewed"
+          title="Card text is unreviewed"
+          style={{
+            position: "absolute",
+            bottom: 6,
+            right: 6,
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            backgroundColor: "#f59e0b",
+            opacity: 0.7,
+          }}
+        />
+      ) : null}
       {!markerMode && hasCritique ? (
         <span
-          aria-label="Card has critique note"
-          title="Card has critique note"
+          aria-label={critiqueTagCount > 0 ? `Card has critique + ${critiqueTagCount} tag(s)` : "Card has critique note"}
+          title={critiqueTagCount > 0 ? `Critique + ${critiqueTagCount} tag(s)` : "Card has critique note"}
           style={{
             position: "absolute",
             top: 6,
             right: 6,
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            backgroundColor: "#f59e0b",
+            width: critiqueTagCount > 0 ? "auto" : 8,
+            height: critiqueTagCount > 0 ? "auto" : 8,
+            borderRadius: critiqueTagCount > 0 ? 999 : "50%",
+            backgroundColor: critiqueTagCount > 0 ? "#fef3c7" : "#f59e0b",
+            color: critiqueTagCount > 0 ? "#92400e" : "transparent",
+            fontSize: 9,
+            fontWeight: 600,
+            padding: critiqueTagCount > 0 ? "1px 5px" : 0,
+            lineHeight: critiqueTagCount > 0 ? "14px" : undefined,
           }}
-        />
+        >
+          {critiqueTagCount > 0 ? `${critiqueTagCount} tag` : null}
+        </span>
       ) : null}
       {!markerMode && isEditing ? (
         <textarea
