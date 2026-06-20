@@ -140,6 +140,17 @@ describe("translate", () => {
     expect(t("app.status.aggregated_edge.not_found", undefined, "en")).toContain("select it again");
   });
 
+  it("distinguishes reviewed and unreviewed editing history", () => {
+    expect(t("app.history.card.marked_reviewed", undefined, "ja")).toContain("レビュー済み");
+    expect(t("app.history.card.marked_unreviewed", undefined, "ja")).toContain("未レビュー");
+    expect(t("app.history.island.title_marked_unreviewed", undefined, "ja")).toContain("タイトル");
+    expect(t("app.history.island.summary_version_restored", undefined, "ja")).toContain("履歴");
+    expect(t("app.history.island.image_marked_reviewed", undefined, "ja")).toContain("画像");
+
+    expect(t("app.history.card.marked_reviewed", undefined, "en")).toContain("reviewed");
+    expect(t("app.history.card.marked_unreviewed", undefined, "en")).toContain("unreviewed");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {

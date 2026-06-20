@@ -3932,7 +3932,7 @@ export default function App() {
           ...document,
           islands: nextIslands,
         },
-        "Updated island title"
+        t("app.history.island.title_updated")
       );
     },
     [applyDocumentChange, document]
@@ -3974,7 +3974,7 @@ export default function App() {
           : island
       );
 
-      applyDocumentChange({ ...document, islands: nextIslands }, "Updated island hierarchy");
+      applyDocumentChange({ ...document, islands: nextIslands }, t("app.history.island.hierarchy_updated"));
     },
     [applyDocumentChange, document]
   );
@@ -4000,7 +4000,7 @@ export default function App() {
         };
       });
 
-      applyDocumentChange({ ...document, islands: nextIslands }, "Updated island placard");
+      applyDocumentChange({ ...document, islands: nextIslands }, t("app.history.island.placard_updated"));
     },
     [applyDocumentChange, document]
   );
@@ -4028,7 +4028,7 @@ export default function App() {
         return;
       }
 
-      applyDocumentChange(nextDocument, "Updated island summary");
+      applyDocumentChange(nextDocument, t("app.history.island.summary_updated"));
     },
     [applyDocumentChange, document]
   );
@@ -4066,7 +4066,7 @@ export default function App() {
           ...document,
           islands: nextIslands,
         },
-        "Updated island image URL"
+        t("app.history.island.image_url_updated")
       );
     },
     [applyDocumentChange, document]
@@ -4104,7 +4104,7 @@ export default function App() {
           ...document,
           cards: nextCards,
         },
-        "Updated card critique",
+        t("app.history.card.critique_updated"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -4143,7 +4143,7 @@ export default function App() {
           ...document,
           cards: nextCards,
         },
-        "Updated card claim type",
+        t("app.history.card.claim_type_updated"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -4181,7 +4181,7 @@ export default function App() {
           ...document,
           cards: nextCards,
         },
-        "Updated card reviewed state",
+        t(reviewed ? "app.history.card.marked_reviewed" : "app.history.card.marked_unreviewed"),
         { preserveSuggestionPreview: true }
       );
       setReviewEvents((previous) => appendReviewEvent(previous, {
@@ -4221,7 +4221,7 @@ export default function App() {
             },
           ],
         },
-        "Added evidence link",
+        t("app.history.evidence_link.added"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -4244,7 +4244,7 @@ export default function App() {
           ...document,
           evidenceLinks: nextEvidenceLinks,
         },
-        "Removed evidence link",
+        t("app.history.evidence_link.removed"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -4286,7 +4286,7 @@ export default function App() {
           ...document,
           cards: nextCards,
         },
-        "Updated card critique tags",
+        t("app.history.card.critique_tags_updated"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -4325,7 +4325,7 @@ export default function App() {
           ...document,
           islands: nextIslands,
         },
-        "Updated island critique",
+        t("app.history.island.critique_updated"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -4368,7 +4368,7 @@ export default function App() {
           ...document,
           islands: nextIslands,
         },
-        "Updated island critique tags",
+        t("app.history.island.critique_tags_updated"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -4406,7 +4406,7 @@ export default function App() {
           ...document,
           islands: nextIslands,
         },
-        "Updated island title reviewed state"
+        t(reviewed ? "app.history.island.title_marked_reviewed" : "app.history.island.title_marked_unreviewed")
       );
       setReviewEvents((previous) => appendReviewEvent(previous, {
         target: { kind: "island", id: islandId },
@@ -4449,7 +4449,7 @@ export default function App() {
         return;
       }
 
-      applyDocumentChange(nextDocument, "Restored island summary version");
+      applyDocumentChange(nextDocument, t("app.history.island.summary_version_restored"));
     },
     [applyDocumentChange, document]
   );
@@ -4485,7 +4485,7 @@ export default function App() {
           ...document,
           islands: nextIslands,
         },
-        "Updated island summary reviewed state"
+        t(reviewed ? "app.history.island.summary_marked_reviewed" : "app.history.island.summary_marked_unreviewed")
       );
       setReviewEvents((previous) => appendReviewEvent(previous, {
         target: { kind: "summary", id: islandId },
@@ -4528,7 +4528,7 @@ export default function App() {
           ...document,
           islands: nextIslands,
         },
-        "Updated island image reviewed state"
+        t(reviewed ? "app.history.island.image_marked_reviewed" : "app.history.island.image_marked_unreviewed")
       );
       setReviewEvents((previous) => appendReviewEvent(previous, {
         target: { kind: "island", id: islandId },
@@ -8844,7 +8844,7 @@ export default function App() {
                 : card
             );
 
-            applyDocumentChange({ ...document, cards: nextCards }, "Updated island placard card");
+            applyDocumentChange({ ...document, cards: nextCards }, t("app.history.island.placard_card_updated"));
           }}
           onTitleReviewedChange={(value) => {
             if (!selectedIsland) {

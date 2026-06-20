@@ -2632,3 +2632,20 @@ DoDテンプレ（Draft→Open）
   - G7 regression: locale tests, hardcode guards, typecheck, frontend regression, and build are required.
 - Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
 - No ADR is needed because focus semantics, visibility rules, edge derivation, edit authority, persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: island and card editing-history localization
+
+- Scope: island metadata and summary editing, card critique and claim classification, evidence relationships, and island/card review-state changes.
+- Finding: the visible history panel recorded these routine operations in English even when the Japanese locale was active. Review-state changes also used a generic message that did not identify whether the content became reviewed or unreviewed.
+- Correction:
+  - Island title, hierarchy, placard, summary, image, critique, and summary-history restoration records now use the locale catalogs.
+  - Card critique, claim type, critique tags, and evidence-relationship records are localized.
+  - Card text and island title, summary, and image history now explicitly distinguish reviewed from unreviewed transitions.
+  - Hardcode guards prevent the removed English history literals from returning.
+- Gate impact:
+  - G2 primary operations: improved because the history panel describes the operation the user performed.
+  - G3 Japanese UI: improved for routine editing and review history.
+  - G6 traceability: improved because review direction is explicit instead of being represented as a generic state update.
+  - G7 regression: locale tests, hardcode guards, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because editing semantics, review-event attribution, history persistence, SafeMode, and release authority are unchanged.
