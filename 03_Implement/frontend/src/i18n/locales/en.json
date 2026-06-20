@@ -669,7 +669,7 @@
   "start_panel.action.sample": "Open sample",
   "start_panel.action.sample_hint": "Open the standard sample to try the main interactions.",
   "start_panel.close": "Close start panel",
-  "start_panel.description": "Start a new map, try a sample, or load a local document.json or review pack.",
+  "start_panel.description": "A spatial thinking tool for holding ambiguity. Place cards, group ideas, mark what is uncertain — and review safely before sharing.",
   "start_panel.recent.label": "Recent documents",
   "start_panel.recent.open": "Open previous document",
   "start_panel.recent.placeholder": "Select a document to open",

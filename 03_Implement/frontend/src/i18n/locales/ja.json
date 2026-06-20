@@ -669,7 +669,7 @@
   "start_panel.action.sample": "サンプルを開く",
   "start_panel.action.sample_hint": "操作感を確認できる標準サンプルを開きます。",
   "start_panel.close": "開始パネルを閉じる",
-  "start_panel.description": "新しく整理する、サンプルで試す、手元の document.json やレビューパックを読み込む入口です。",
+  "start_panel.description": "曖昧さを保持する空間的思考ツール。カードを置き、まとめ、まだ決めていないことを記し、共有前に安全に確認します。",
   "start_panel.recent.label": "最近のドキュメント",
   "start_panel.recent.open": "前回の文書を開く",
   "start_panel.recent.placeholder": "開く文書を選択",
