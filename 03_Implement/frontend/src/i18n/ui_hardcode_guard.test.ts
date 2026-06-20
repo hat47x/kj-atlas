@@ -157,6 +157,11 @@ const guardCases: GuardCase[] = [
       "Copied reading outline (Markdown)",
       "Failed to copy reading outline",
       "Downloaded outline.md",
+      "Item not found:",
+      "Item is hidden by current view controls",
+      "This card is hidden by Focus/Depth view controls",
+      "Aggregated edge not found",
+      "Promoted aggregated edge to real edge",
     ],
   },
   {

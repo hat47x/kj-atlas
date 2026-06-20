@@ -5462,14 +5462,17 @@ export default function App() {
 
     const hasTargetCard = document.cards.some((card) => card.id === cardId);
     if (!hasTargetCard) {
-      setStatusMessage(`Item not found: card:${cardId}`);
+      setStatusMessage(t("app.status.focus.item_not_found", {
+        kind: getEntityKindDisplayLabel("card"),
+        id: cardId,
+      }));
       return;
     }
 
     const isInFocusScope = focusedVisibleDocument?.cards.some((card) => card.id === cardId) ?? false;
     const isWithinDepth = maxDepth === "all" || (cardMinDepthById.get(cardId) ?? 0) <= maxDepth;
     if (!isTemporaryRevealEligible({ isInFocusScope, isWithinDepth })) {
-      setGroundingVisibilityMessage("This card is hidden by Focus/Depth view controls.");
+      setGroundingVisibilityMessage(t("app.status.focus.grounding_card_hidden"));
       return;
     }
 
@@ -5747,14 +5750,20 @@ export default function App() {
 
       const island = document.islands.find((item) => item.id === islandId);
       if (!island) {
-        setStatusMessage(`Item not found: island:${islandId}`);
+        setStatusMessage(t("app.status.focus.item_not_found", {
+          kind: getEntityKindDisplayLabel("island"),
+          id: islandId,
+        }));
         return;
       }
 
       const cardsById = new Map(document.cards.map((card) => [card.id, card]));
       const islandBounds = getIslandWorldBounds(island, cardsById);
       if (!islandBounds) {
-        setStatusMessage(`Item not found: island:${islandId}`);
+        setStatusMessage(t("app.status.focus.item_bounds_unavailable", {
+          kind: getEntityKindDisplayLabel("island"),
+          id: islandId,
+        }));
         return;
       }
 
@@ -5787,7 +5796,10 @@ export default function App() {
 
       const card = document.cards.find((item) => item.id === cardId);
       if (!card) {
-        setStatusMessage(`Item not found: card:${cardId}`);
+        setStatusMessage(t("app.status.focus.item_not_found", {
+          kind: getEntityKindDisplayLabel("card"),
+          id: cardId,
+        }));
         return;
       }
 
@@ -5934,13 +5946,18 @@ export default function App() {
     if (kind === "card") {
       const targetCard = document.cards.find((card) => card.id === id);
       if (!targetCard) {
-        setStatusMessage(`Item not found: ${kind}:${id}`);
+        setStatusMessage(t("app.status.focus.item_not_found", {
+          kind: getEntityKindDisplayLabel(kind),
+          id,
+        }));
         return;
       }
 
       const isHiddenBySourceControl = hideSourceCards && isSourceCard(targetCard) && !revealedSourceCardIds.has(id);
       if (!focusedVisibleDocument?.cards.some((card) => card.id === id) || hiddenCardIdSet.has(id) || isHiddenBySourceControl) {
-        setStatusMessage("Item is hidden by current view controls");
+        setStatusMessage(t("app.status.focus.item_hidden", {
+          kind: getEntityKindDisplayLabel(kind),
+        }));
         return;
       }
     }
@@ -5948,12 +5965,17 @@ export default function App() {
     if (kind === "island") {
       const hasIsland = document.islands.some((island) => island.id === id);
       if (!hasIsland) {
-        setStatusMessage(`Item not found: ${kind}:${id}`);
+        setStatusMessage(t("app.status.focus.item_not_found", {
+          kind: getEntityKindDisplayLabel(kind),
+          id,
+        }));
         return;
       }
 
       if (!visibleIslandIdSet.has(id)) {
-        setStatusMessage("Item is hidden by current view controls");
+        setStatusMessage(t("app.status.focus.item_hidden", {
+          kind: getEntityKindDisplayLabel(kind),
+        }));
         return;
       }
     }
@@ -6598,10 +6620,11 @@ export default function App() {
         (edge) => edge.id === aggregateEdgeId && edge.isDerived
       );
       if (!aggregatedEdge) {
-        setStatusMessage("Aggregated edge not found");
+        setStatusMessage(t("app.status.aggregated_edge.not_found"));
         return;
       }
 
+      const promotedMessage = t("app.status.aggregated_edge.promoted");
       applyDocumentChange(
         {
           ...document,
@@ -6617,9 +6640,9 @@ export default function App() {
             },
           ],
         },
-        "Promoted aggregated edge to real edge"
+        promotedMessage
       );
-      setStatusMessage("Promoted aggregated edge to real edge");
+      setStatusMessage(promotedMessage);
     },
     [applyDocumentChange, document]
   );
