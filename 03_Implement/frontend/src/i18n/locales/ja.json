@@ -1155,5 +1155,12 @@
   "search_bar.placeholder": "カードを検索",
   "search_bar.prev": "前へ",
   "search_bar.next": "次へ",
-  "search_bar.hide_non_matches": "非一致を非表示"
+  "search_bar.hide_non_matches": "非一致を非表示",
+  "domain_state.title": "ドメイン状態",
+  "domain_state.fact": "事実",
+  "domain_state.claim": "主張",
+  "domain_state.hypothesis": "仮説",
+  "domain_state.unknown": "未分類",
+  "domain_state.unreviewed": "未レビュー",
+  "domain_state.critique": "違和感"
 }

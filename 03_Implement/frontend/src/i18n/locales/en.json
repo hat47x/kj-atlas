@@ -1155,5 +1155,12 @@
   "search_bar.placeholder": "Search cards",
   "search_bar.prev": "Prev",
   "search_bar.next": "Next",
-  "search_bar.hide_non_matches": "Hide non-matches"
+  "search_bar.hide_non_matches": "Hide non-matches",
+  "domain_state.title": "Domain state",
+  "domain_state.fact": "Fact",
+  "domain_state.claim": "Claim",
+  "domain_state.hypothesis": "Hyp",
+  "domain_state.unknown": "?",
+  "domain_state.unreviewed": "Unreviewed",
+  "domain_state.critique": "Critique"
 }

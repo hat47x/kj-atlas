@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { t } from "../i18n/translate";
 
 import { CRITIQUE_TAGS } from "../domain/types";
+import { DomainStateSummary } from "./DomainStateSummary";
 import type { AggregatedEdgeMeta } from "../canvas/CanvasShell";
 import {
   buildIslandRelationExplanation,
@@ -1164,6 +1165,7 @@ export function SidePanel({
           <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.4 }}>{t("side_panel.context.empty_hint")}</div>
         )}
       </section>
+      {document?.cards ? <DomainStateSummary cards={document.cards} /> : null}
       {topContent}
       {importedPackSnapshotUrl || importedPackDiagnosticsMd ? (
         <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0", display: "grid", gap: 8 }}>
