@@ -2614,3 +2614,21 @@ DoDテンプレ（Draft→Open）
   - G7 regression: locale key equivalence, actionable-copy assertions, hardcode guards, typecheck, frontend regression, and build are required.
 - Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
 - No ADR is needed because guided-flow semantics, diagnostic calculations, outline contents, SafeMode, persistence, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: focus and aggregated-edge feedback localization
+
+- Scope: card/island focus navigation, summary-grounding inspection, and conversion of derived aggregated edges.
+- Finding: missing or hidden focus targets and aggregated-edge conversion outcomes still returned English-only messages in the Japanese UI.
+- Correction:
+  - Missing-target feedback preserves the entity type and ID for diagnosis.
+  - Hidden-target feedback names the focus scope, hierarchy depth, and source-card visibility settings the user can review.
+  - Grounding-card visibility feedback now explains the focus/depth constraint in Japanese.
+  - Aggregated-edge conversion failure provides a refresh-and-reselect recovery action; success uses the same localized message in visible status and edit history.
+  - Hardcode guards prevent the removed English literals from returning.
+- Gate impact:
+  - G2 primary operations: improved for search, diagnostic-reference navigation, guided flow, and relationship editing.
+  - G3 Japanese UI: improved for focus recovery and aggregated-edge conversion.
+  - G6 supportability: improved because missing entities retain type and ID without exposing an English-only diagnostic.
+  - G7 regression: locale tests, hardcode guards, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because focus semantics, visibility rules, edge derivation, edit authority, persistence, SafeMode, and release authority are unchanged.

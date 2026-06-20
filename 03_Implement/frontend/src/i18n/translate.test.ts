@@ -129,6 +129,17 @@ describe("translate", () => {
     expect(t("app.status.outline.downloaded", undefined, "en")).toContain("outline.md");
   });
 
+  it("provides actionable focus and aggregated-edge recovery feedback", () => {
+    expect(t("app.status.focus.item_not_found", { kind: "カード", id: "card-1" }, "ja")).toContain("card-1");
+    expect(t("app.status.focus.item_hidden", { kind: "カード" }, "ja")).toContain("階層の深さ");
+    expect(t("app.status.focus.item_hidden", { kind: "カード" }, "ja")).toContain("ソースカード表示");
+    expect(t("app.status.aggregated_edge.not_found", undefined, "ja")).toContain("選び直して");
+    expect(t("app.status.aggregated_edge.promoted", undefined, "ja")).toContain("編集可能");
+
+    expect(t("app.status.focus.item_hidden", { kind: "card" }, "en")).toContain("hierarchy depth");
+    expect(t("app.status.aggregated_edge.not_found", undefined, "en")).toContain("select it again");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
