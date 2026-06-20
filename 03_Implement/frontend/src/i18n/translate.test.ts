@@ -188,6 +188,19 @@ describe("translate", () => {
     expect(t("merge_suggestions.representative_resolution.fallback", undefined, "en")).toContain("fallback");
   });
 
+  it("uses plain Japanese terminology throughout the diff panel", () => {
+    expect(t("diff.panel.section.cards", undefined, "ja")).toBe("カード");
+    expect(t("diff.panel.section.islands", undefined, "ja")).toBe("島");
+    expect(t("diff.panel.section.reading_order", undefined, "ja")).toBe("読み順");
+    expect(t("diff.panel.section.relation_summaries", undefined, "ja")).toBe("関係要約");
+    expect(t("diff.panel.item.reviewed_changed", undefined, "ja")).toContain("レビュー状態");
+    expect(t("diff.panel.summary.cards", { added: 1, removed: 2, changedText: 3 }, "ja")).toContain("本文変更");
+    expect(t("diff.panel.first_differing_index", { index: 2 }, "ja")).toContain("相違位置");
+    expect(t("diff.panel.label.a_strong", undefined, "ja")).toBe("現在の文書");
+    expect(t("diff.panel.label.b_strong", undefined, "ja")).toBe("比較対象");
+    expect(t("diff.panel.review_state_unknown", undefined, "ja")).toBe("記録なし");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
