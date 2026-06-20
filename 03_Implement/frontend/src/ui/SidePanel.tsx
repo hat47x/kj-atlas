@@ -1136,6 +1136,16 @@ export function SidePanel({
                 {t("side_panel.context.claim_type", { value: selectedCard.claimType })}
               </div>
             ) : null}
+            {outgoingEvidenceLinks.length > 0 || incomingEvidenceLinks.length > 0 ? (
+              <div style={{ fontSize: 12, color: "#475569" }}>
+                {t("side_panel.context.evidence_links", { outgoing: outgoingEvidenceLinks.length, incoming: incomingEvidenceLinks.length })}
+              </div>
+            ) : null}
+            {selectedCardContradictionsCount > 0 ? (
+              <div style={{ fontSize: 12, color: "#9a3412", fontWeight: 600 }}>
+                {t("side_panel.context.contradictions", { count: selectedCardContradictionsCount })}
+              </div>
+            ) : null}
             {selectedCard?.critique ? (
               <div style={{ fontSize: 12, color: "#b45309", backgroundColor: "#fef3c7", borderRadius: 6, padding: "4px 8px", marginTop: 2 }}>
                 {t("side_panel.context.critique")}: {selectedCard.critique.slice(0, 120)}{selectedCard.critique.length > 120 ? "..." : ""}
