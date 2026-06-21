@@ -25,6 +25,21 @@ describe("validateDocumentV2Strict", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("accepts supported card hold states and rejects unknown values", () => {
+    expect(validateDocumentV2Strict({
+      ...validDocument,
+      cards: [{ ...validDocument.cards[0], holdState: "shelved" }],
+    }).ok).toBe(true);
+
+    const invalid = validateDocumentV2Strict({
+      ...validDocument,
+      cards: [{ ...validDocument.cards[0], holdState: "resolved" }],
+    });
+    expect(invalid.ok).toBe(false);
+    if (invalid.ok) return;
+    expect(invalid.errors).toContain("cards[0].holdState: must be 'held' | 'pending' | 'shelved' when provided");
+  });
+
   it("rejects unknown root fields", () => {
     const result = validateDocumentV2Strict({
       ...validDocument,

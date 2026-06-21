@@ -100,7 +100,7 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
     return false;
   }
 
-  hasOnlyKeys(item, ["id", "text", "x", "y", "claimType", "mergedIntoCardId", "repOf", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed"], path, errors);
+  hasOnlyKeys(item, ["id", "text", "x", "y", "claimType", "mergedIntoCardId", "repOf", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed", "holdState"], path, errors);
 
   let valid = true;
   if (typeof item.id !== "string") {
@@ -146,6 +146,15 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
   }
   if (item.textReviewed !== undefined && typeof item.textReviewed !== "boolean") {
     errors.push(`${path}.textReviewed: must be a boolean when provided`);
+    valid = false;
+  }
+  if (
+    item.holdState !== undefined
+    && item.holdState !== "held"
+    && item.holdState !== "pending"
+    && item.holdState !== "shelved"
+  ) {
+    errors.push(`${path}.holdState: must be 'held' | 'pending' | 'shelved' when provided`);
     valid = false;
   }
 

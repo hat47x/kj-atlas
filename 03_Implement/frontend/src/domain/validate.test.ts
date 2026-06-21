@@ -4,6 +4,25 @@ import workerFixtureRaw from "../../tests/fixtures/worker/doc.small.json?raw";
 import { validateAndUpgradeImportedDocument } from "./validate";
 
 describe("validateAndUpgradeImportedDocument", () => {
+  it("keeps card hold state from imported v2 JSON", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_hold_state",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0, holdState: "pending" }],
+      edges: [],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.document.cards[0]?.holdState).toBe("pending");
+  });
+
   it("keeps island parentIslandId from imported v2 JSON", () => {
     const now = new Date().toISOString();
     const result = validateAndUpgradeImportedDocument({
