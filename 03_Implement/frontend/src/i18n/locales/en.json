@@ -924,6 +924,7 @@
   "side_panel.context.critique": "Critique",
   "side_panel.context.evidence_links": "Evidence: {outgoing} out / {incoming} in",
   "side_panel.context.contradictions": "Contradictions: {count}",
+  "side_panel.context.hold_state": "Hold state: {value}",
   "side_panel.context.multi_card_hint": "Select one card to edit details, or use the layout and island actions below.",
   "side_panel.summary.label": "Summary",
   "side_panel.summary.suggesting": "Suggesting...",

@@ -6,10 +6,13 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Codex
-- Scope: `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/api.md`
+- Scope: `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`（Done 2026-06-20）, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/api.md`
 - Related Backlog: `DATA-MAINT-04`
-- Related ADR/Spec: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/api.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/api.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `integration`
+
+## Draft→Open 2026-06-21
+DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデータ閲覧の製品境界定義を開始可能。
 
 ## Requirement meta I/F（共通キー）
 

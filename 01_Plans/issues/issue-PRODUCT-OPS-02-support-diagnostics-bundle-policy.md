@@ -1,15 +1,18 @@
 # Issue Draft: PRODUCT-OPS-02 サポート診断バンドル方針の策定
 
 - Type: Feature request
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Codex
 - Scope: `03_Implement/frontend/src/`, `03_Implement/backend/`, `04_Documentation/diagnostics.md`, `04_Documentation/operations.md`, `SUPPORT.md`, `01_Plans/adr/`
 - Related Backlog: `PRODUCT-OPS-02`
-- Related ADR/Spec: `01_Plans/issues/issue-PRODUCT-OPS-01-support-diagnostics-error-recovery.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `THREAT_MODEL.md`, `04_Documentation/diagnostics.md`
+- Related ADR/Spec: `01_Plans/issues/issue-PRODUCT-OPS-01-support-diagnostics-error-recovery.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `THREAT_MODEL.md`, `04_Documentation/diagnostics.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `e2e`
+
+## Draft→Open 2026-06-21
+診断バンドル方針策定を開始可能。優先度Could、GoNoGoGate=Optional。
 
 ## Requirement meta I/F（共通キー）
 

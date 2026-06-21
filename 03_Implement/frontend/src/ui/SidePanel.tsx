@@ -1147,6 +1147,11 @@ export function SidePanel({
                 {t("side_panel.context.contradictions", { count: selectedCardContradictionsCount })}
               </div>
             ) : null}
+            {selectedCard?.holdState ? (
+              <div style={{ fontSize: 12, color: "#92400e", backgroundColor: "#fef3c7", borderRadius: 4, padding: "2px 6px", display: "inline-block", marginTop: 2 }}>
+                {t("side_panel.context.hold_state", { value: selectedCard.holdState })}
+              </div>
+            ) : null}
             {selectedCard?.critique ? (
               <div style={{ fontSize: 12, color: "#b45309", backgroundColor: "#fef3c7", borderRadius: 6, padding: "4px 8px", marginTop: 2 }}>
                 {t("side_panel.context.critique")}: {selectedCard.critique.slice(0, 120)}{selectedCard.critique.length > 120 ? "..." : ""}
