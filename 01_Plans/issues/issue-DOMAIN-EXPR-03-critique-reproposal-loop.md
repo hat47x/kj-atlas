@@ -1,16 +1,20 @@
 # Issue Draft: DOMAIN-EXPR-03 違和感→再提案の日常ループUI
 
 - Type: Feature request
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Codex
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `02_Architecture/schemas.md`
 - Related Backlog: `DOMAIN-EXPR-03`
-- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `00_Prompt/domain.md`, `02_Architecture/schemas.md`
-- Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `00_Prompt/domain.md`, `02_Architecture/schemas.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
+- Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
 - Expected verification level: `e2e`
+
+## Draft→Open 2026-06-21
+DOMAIN-EXPR-01 Doneにより依存充足。ADR-0040 Phase 3（違和感→再提案の日常ループUI）。
+既存のcritiqueInputs/reproposalDiffsを日常導線へ接続。
 
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0040` Phase 3。
 

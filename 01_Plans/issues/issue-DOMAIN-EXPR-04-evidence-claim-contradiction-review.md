@@ -1,16 +1,20 @@
 # Issue Draft: DOMAIN-EXPR-04 根拠・主張・矛盾の人間レビュー第一級化と成果物接続
 
 - Type: Feature request
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Codex
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/e2e/`, `02_Architecture/schemas.md`, `04_Documentation/`
 - Related Backlog: `DOMAIN-EXPR-04`
-- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/issues/issue-PRODUCT-VALUE-03-reviewable-outcome-package.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/schemas.md`
-- Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/issues/issue-PRODUCT-VALUE-03-reviewable-outcome-package.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/schemas.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
+- Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
 - Expected verification level: `e2e`
+
+## Draft→Open 2026-06-21
+DOMAIN-EXPR-01 Doneにより依存充足。ADR-0040 Phase 4（根拠・主張・矛盾を人間レビュー第一級対象＋成果物要素へ接続）。
+PRODUCT-VALUE-03と連携。
 
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0040` Phase 4。`PRODUCT-VALUE-03`（成果物化）と連携。
 
