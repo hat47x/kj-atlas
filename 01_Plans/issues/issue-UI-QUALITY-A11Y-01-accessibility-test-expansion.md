@@ -40,15 +40,19 @@ ADR-0044 は UQ-2（a11y）を「現状薄い → 拡充対象」と判定した
 
 - [x] DomainStateSummary.accessibility.test.ts (4 tests) — aria-label, label visibility, empty state
 - [x] ShelfPanel.accessibility.test.ts (4 tests) — aria-label, restore button, empty state, reason text
-- [ ] CardView.accessibility.test.ts — claimType badge aria-labels, critique indicator, holdState badge
-- [ ] 既存コンポーネント（SharePanel, NarrativesPanel, StartPanel 等）のa11y baseline
+- [x] CardView.accessibility.test.ts (7 tests) — role, aria-selected, claimType/critique/holdState/unreviewed aria-labels, tabIndex
+- [x] StartPanel.accessibility.test.ts (6 tests) — dialog role, aria-modal, SafeMode, button labels
+- [ ] 既存コンポーネント（SharePanel, NarrativesPanel 等）のa11y baseline
 
 ## 5) タスク分解
 
 - [x] T1 DomainStateSummary a11y test
 - [x] T2 ShelfPanel a11y test
-- [ ] T3 CardView domain badge a11y test
+- [x] T3 CardView domain badge a11y test
+- [x] T3.5 StartPanel a11y test
 - [ ] T4 Existing component a11y baseline scan
 
 ## Commits
-- e0db0d79 test(UQ-2): add accessibility tests for DomainStateSummary + ShelfPanel (8 tests)
+- e0db0d79 DomainStateSummary + ShelfPanel (8 tests)
+- 46ee3189 CardView (7 tests) + UI-QUALITY-A11Y-01 issue
+- 3276c90b StartPanel (6 tests)
