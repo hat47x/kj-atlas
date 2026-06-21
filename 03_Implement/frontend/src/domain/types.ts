@@ -4,6 +4,8 @@ export type Transform = {
   zoom: number;
 };
 
+export type HoldState = "held" | "pending" | "shelved";
+
 export type Card = {
   id: string;
   text: string;
@@ -18,7 +20,7 @@ export type Card = {
   critiqueTags?: string[];
   textReviewed?: boolean;
   /** DOMAIN-EXPR-02: optional hold state. Absent = not held (conventional card). */
-  holdState?: "held" | "pending" | "shelved";
+  holdState?: HoldState;
 };
 
 /** DOMAIN-EXPR-02: a shelved item — set aside from the main canvas without deletion. */
