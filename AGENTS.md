@@ -34,7 +34,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 9) **全体アーキテクチャ**: `02_Architecture/architecture.md`
 10) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
 11) **MVPデータ運用境界**: `02_Architecture/data_model_operations_overview.md`
-12) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0043`（価値→社会的目標の実現フェーズ索引は `ADR-0036`、ガバナンス適正化方針は `ADR-0039`、ドメイン表現第一級化は `ADR-0040`、根幹価値の保護は `ADR-0041`〜`ADR-0043`）
+12) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0045`（価値→社会的目標の実現フェーズ索引は `ADR-0036`、ガバナンス適正化方針は `ADR-0039`、ドメイン表現第一級化は `ADR-0040`、根幹価値の保護は `ADR-0041`〜`ADR-0043`、UI/UX品質基準は `ADR-0044`、エージェント分担は `ADR-0045`）
 13) **実装（03_Implement）**: 対象領域のソースへ
 14) **運用・手順**: `04_Documentation/*`（必要に応じて）
 15) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -67,6 +67,12 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `.github/ISSUE_TEMPLATE/*`：Issueテンプレ。
 - `.github/pull_request_template.md`：PRテンプレ。
 
+### 2.3 `.claude/`（Claude Code プロジェクト設定）
+
+- `.claude/README.md`：Claude Code 導入手順の正本（推奨 permission・MCP拡張・検証前提。`ADR-0045` / `agent_collaboration.md`）。
+- `.claude/settings.json`：プロジェクト共有設定（秘匿情報なし。`KJ_ATLAS_LLM_PROVIDER=none` 既定）。
+- `.claude/settings.local.json`：個人ローカル設定（git管理外、`.gitignore`）。
+
 ---
 
 ## 3. 00〜04 レイヤ構造（AI開発スタイル）
@@ -82,6 +88,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `00_Prompt/ai_cognitive_externalization_requirements.md`：生成AIの認知外在化フレームワーク要件（ContextQuery/ContextBundle/safeMode統治）。
 - `00_Prompt/meta_prompt.md`：ショートハンド（フェーズ完了判定 / 次フェーズ企画 / 並列実行 / 開発継続）を展開する自律進行メタプロンプト。
 - `00_Prompt/virtual_stakeholder_consensus.md`：人間判断待ち論点を扱う仮想ステークホルダー会議プロトコル。
+- `00_Prompt/agent_collaboration.md`：Cowork/Claude Code/Codex の責務分担と協働プロトコル（`ADR-0045` の運用正本）。並行作業の衝突回避（CP-1..6）と Claude Code 拡張導入の入口。
 - `00_Prompt/skills/gsd-kj-atlas/SKILL.md`：`codex_gsd_skill_ops.md` に準拠した Codex スキル定義（配布テンプレート）。
 - `00_Prompt/skills/markdown-mermaid-docops/SKILL.md`：Markdown + Mermaid.js 文書整備とMCP確認の補助スキル（配布テンプレート）。
 
@@ -123,6 +130,8 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0041-core-value-invariants-single-guard.md`：根幹価値の非後退不変条件（CVI-1..7）を単一の砦（横断テスト）で守る。正本は `value_traceability.md` §2.5。
 - `01_Plans/adr/ADR-0042-value-realness-validation-and-notice-exit.md`：価値実在の最小ドッグフード検証と README NOTICE の段階的脱却基準（段階A/B/C）。
 - `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`：機能増加が認知負荷で根幹価値を侵さないための複雑性予算（CB-1..4）と追加時の自己申告。
+- `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`：UI/UX品質基準（UQ-1..6：操作到達性/a11y/i18n等価性/レイアウト堅牢性/状態可視性/認知負荷節度）と検証観点の統合。正本は `value_traceability.md` §2.7。
+- `01_Plans/adr/ADR-0045-agent-division-of-labor-cowork-code-codex.md`：Cowork/Claude Code/Codex の責務分担と協働プロトコル（CP-1..6：ブランチ消失・採番衝突の恒久対策）。運用正本は `00_Prompt/agent_collaboration.md`。
 - `01_Plans/documentation_quality.md`：AIエージェントが対外文書を作成する際の内部品質基準。
 - `01_Plans/minimal-context-triage.md`：未処理ADR/issueを最小読取で抽出する手順。
 - `01_Plans/triage_actionable_plans.py`：ADR/issueメタデータだけを走査して Ready/保留/関連ADR を抽出する軽量CLI。
