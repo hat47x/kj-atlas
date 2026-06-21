@@ -3,6 +3,8 @@ import { t } from "../i18n/translate";
 
 import { CRITIQUE_TAGS } from "../domain/types";
 import { DomainStateSummary } from "./DomainStateSummary";
+import { DomainStateFilterBar } from "./DomainStateFilterBar";
+import type { DomainStateFilter } from "../domain/domain_state_filter";
 import { ShelfPanel } from "./ShelfPanel";
 import type { AggregatedEdgeMeta } from "../canvas/CanvasShell";
 import {
@@ -378,6 +380,7 @@ export function SidePanel({
   const [expandedMergeAuditEntryId, setExpandedMergeAuditEntryId] = useState<string | null>(null);
   const [isAdvancedPanelOpen, setIsAdvancedPanelOpen] = useState(false);
   const [relationSummaryFeedback, setRelationSummaryFeedback] = useState<string | null>(null);
+  const [domainFilter, setDomainFilter] = useState<DomainStateFilter>({});
   const [copyExplanationFeedback, setCopyExplanationFeedback] = useState<"idle" | "copied" | "failed">("idle");
   const [showOnlyHighImpactRecommendations, setShowOnlyHighImpactRecommendations] = useState(false);
   const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState(false);
@@ -1182,12 +1185,18 @@ export function SidePanel({
         )}
       </section>
       {document?.cards ? (
-        <DomainStateSummary
-          cards={document.cards}
-          islandCount={document.islands?.length ?? 0}
-          relationCount={(document.edges?.length ?? 0) + (document.relationSummaries?.length ?? 0)}
-          safeMode={safeMode}
-        />
+        <>
+          <DomainStateSummary
+            cards={document.cards}
+            islandCount={document.islands?.length ?? 0}
+            relationCount={(document.edges?.length ?? 0) + (document.relationSummaries?.length ?? 0)}
+            safeMode={safeMode}
+          />
+          <DomainStateFilterBar
+            filter={domainFilter}
+            onFilterChange={setDomainFilter}
+          />
+        </>
       ) : null}
       {document?.shelf && document.shelf.length > 0 ? (
         <ShelfPanel
