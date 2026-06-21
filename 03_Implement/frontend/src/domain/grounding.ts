@@ -7,6 +7,10 @@ export type GroundingCardItem = {
   text: string;
   kind: "canonical" | "source";
   canonicalId?: string;
+  /** DOMAIN-EXPR: claim type for reviewable outcome visibility (PV-03) */
+  claimType?: "fact" | "claim" | "hypothesis" | "unknown";
+  /** DOMAIN-EXPR: whether the card text has been human-reviewed */
+  textReviewed?: boolean;
 };
 
 export type GroundingEntry = {
@@ -24,20 +28,16 @@ export function toGroundingCardItem(card: Card, maxTextLength = DEFAULT_CARD_TEX
   const normalizedText = card.text.trim();
   const text = normalizedText.length > maxTextLength ? `${normalizedText.slice(0, maxTextLength)}…` : normalizedText;
 
-  if (isCanonicalCard(card)) {
-    return {
-      id: card.id,
-      text,
-      kind: "canonical",
-    };
-  }
-
-  return {
+  const base: GroundingCardItem = {
     id: card.id,
     text,
-    kind: "source",
+    kind: isCanonicalCard(card) ? "canonical" : "source",
     canonicalId: card.canonicalId,
+    claimType: card.claimType,
+    textReviewed: card.textReviewed,
   };
+
+  return base;
 }
 
 export function buildNarrativeGrounding(
