@@ -163,13 +163,15 @@ UI/UX 品質を次元（UQ）で定義し、各次元の担保（既存テスト
 | UQ ID | 品質次元 | 主な担保（既存テスト） | 充足度 |
 |---|---|---|---|
 | UQ-1 | 操作到達性（ポインタ/キーボード両対応・フォーカス順序） | `ui/ux_operability_regression.test.ts`, e2e `canvas_focus_order` / `keyboard_release_candidate_flow` | おおむね充足 |
-| UQ-2 | アクセシビリティ（role/aria/ラベル） | `canvas/IslandView.accessibility.test.ts` のみ | **薄い（最優先改善）** |
+| UQ-2 | アクセシビリティ（role/aria/ラベル） | `canvas/IslandView.accessibility.test.ts` + `canvas/CardView.accessibility.test.ts` + `ui/DomainStateSummary.accessibility.test.ts` + `ui/ShelfPanel.accessibility.test.ts` + `ui/StartPanel.accessibility.test.ts`（計5ファイル, 28 tests） | **改善中**（2026-06-21: 1→5ファイル, `UI-QUALITY-A11Y-01` 追跡中） |
 | UQ-3 | 国際化等価性（ja/enキー一致・ハードコード無・未訳ゼロ） | `src/i18n/` 9テスト＋`ui/i18n_equivalence.integration.test.ts` | 充足 |
 | UQ-4 | レイアウト堅牢性（代表viewport・大規模文書） | e2e `header_toolbar_layout` / `large_document_operability` | おおむね充足 |
 | UQ-5 | 状態の可視性（待機/読取専用/SafeMode/選択対象） | `ui/safe_mode_status.test.ts`, selection-context contract | おおむね充足 |
 | UQ-6 | 認知負荷の節度（初期の静けさ・保留の容易さ） | 複雑性予算（§2.6, `ADR-0043`）＋UX回帰アンカー | 運用で担保 |
 
 **判定（2026-06-10）**: UQ-3 充足、UQ-1/4/5/6 はおおむね充足。**UQ-2（a11y）が薄い**＝UI/UX品質の最優先改善対象（`UI-QUALITY-A11Y-01` 候補）。UI を増やす issue は触れる UQ 次元を明記し、`ADR-0043` 複雑性予算1行と合わせて自己申告する。
+
+**更新（2026-06-21）**: UQ-2 改善中。a11yテスト 1ファイル（IslandViewのみ）→ 5ファイル（+CardView, DomainStateSummary, ShelfPanel, StartPanel）、21→28 tests。`UI-QUALITY-A11Y-01` issueで追跡継続中。
 
 ---
 
