@@ -1,16 +1,37 @@
 # Issue Draft: DOMAIN-EXPR-02 保留(Hold)と未統合(Pending/Shelf)の第一級化
 
 - Type: Feature request
-- Status: Draft
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex
 - Scope: `02_Architecture/schemas.md`, `03_Implement/frontend/src/`, `03_Implement/frontend/src/import/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/tests/`
 - Related Backlog: `DOMAIN-EXPR-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `00_Prompt/domain.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `02_Architecture/schemas.md`
-- Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `00_Prompt/domain.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `02_Architecture/schemas.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
+- Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
 - Expected verification level: `integration`
+
+## Draft→In Progress 2026-06-21
+
+DOMAIN-EXPR-01 Doneにより依存充足。ADR-0040 Phase 2着手。
+
+### Done
+- **Schema**: `02_Architecture/schemas.md` §14 DOMAIN-EXPR-02 加算スキーマ拡張
+  - Card.holdState (`"held" | "pending" | "shelved"`, optional, L2.5)
+  - ShelfEntry type (`{ cardId, shelvedAt, reason? }`)
+  - DocumentV2.shelf (`ShelfEntry[]`, optional)
+  - 後方互換: version 2維持、全フィールドoptional
+- **Types**: `types.ts` Card.holdState, ShelfEntry, DocumentV2.shelf
+- **CardView**: holdStateバッジ (Held=amber, Pending=indigo, Shelved=gray)
+
+### Remaining
+- Shelf UI component (退避カード一覧・復帰操作)
+- import/export support for shelf entries
+- E2E tests
+
+### Commit
+- 277f2411 feat(DOMAIN-EXPR-02): add holdState + ShelfEntry schema and CardView badge
 
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0040` Phase 2。加算的・後方互換のschema拡張を含む。
 
