@@ -26,12 +26,13 @@ DOMAIN-EXPR-01 Doneにより依存充足。ADR-0040 Phase 2着手。
 - **CardView**: holdStateバッジ (Held=amber, Pending=indigo, Shelved=gray)
 
 ### Remaining
-- Shelf UI component (退避カード一覧・復帰操作)
+- Shelf API (backend route for shelf add/remove)
 - import/export support for shelf entries
 - E2E tests
 
-### Commit
-- 277f2411 feat(DOMAIN-EXPR-02): add holdState + ShelfEntry schema and CardView badge
+### Commits
+- 277f2411 holdState + ShelfEntry schema and CardView badge
+- 261839ea ShelfPanel component
 
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0040` Phase 2。加算的・後方互換のschema拡張を含む。
 
