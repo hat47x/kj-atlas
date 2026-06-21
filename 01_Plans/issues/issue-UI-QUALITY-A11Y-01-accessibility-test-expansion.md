@@ -1,7 +1,7 @@
 # Issue Draft: UI-QUALITY-A11Y-01 アクセシビリティテストの体系化と拡充
 
 - Type: Documentation quality
-- Status: In Progress
+- Status: In Progress（T1-T3.8完了, 8コンポーネント/41 tests, T4未着手）
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -42,6 +42,9 @@ ADR-0044 は UQ-2（a11y）を「現状薄い → 拡充対象」と判定した
 - [x] ShelfPanel.accessibility.test.ts (4 tests) — aria-label, restore button, empty state, reason text
 - [x] CardView.accessibility.test.ts (7 tests) — role, aria-selected, claimType/critique/holdState/unreviewed aria-labels, tabIndex
 - [x] StartPanel.accessibility.test.ts (6 tests) — dialog role, aria-modal, SafeMode, button labels
+- [x] SearchBar.accessibility.test.ts (5 tests) — text input, prev/next, match counter, checkbox
+- [x] ImportPanel.accessibility.test.ts (4 tests) — title, file input, drop zone, button
+- [x] DomainStateFilterBar.test.ts (4 tests) — filter chips, highlight, clear button
 - [ ] 既存コンポーネント（SharePanel, NarrativesPanel 等）のa11y baseline
 
 ## 5) タスク分解
@@ -50,9 +53,16 @@ ADR-0044 は UQ-2（a11y）を「現状薄い → 拡充対象」と判定した
 - [x] T2 ShelfPanel a11y test
 - [x] T3 CardView domain badge a11y test
 - [x] T3.5 StartPanel a11y test
+- [x] T3.6 SearchBar a11y test
+- [x] T3.7 ImportPanel a11y test
+- [x] T3.8 DomainStateFilterBar a11y test
 - [ ] T4 Existing component a11y baseline scan
 
 ## Commits
-- e0db0d79 DomainStateSummary + ShelfPanel (8 tests)
-- 46ee3189 CardView (7 tests) + UI-QUALITY-A11Y-01 issue
-- 3276c90b StartPanel (6 tests)
+- e0db0d79 DomainStateSummary + ShelfPanel (8)
+- 46ee3189 CardView (7) + UI-QUALITY-A11Y-01 issue
+- 3276c90b StartPanel (6)
+- d9d8cd1b SearchBar (5)
+- 8eee93f4 ImportPanel (4)
+- 549b72fa DomainStateFilterBar (4)
+- **Total: 8 components, 41 a11y tests**
