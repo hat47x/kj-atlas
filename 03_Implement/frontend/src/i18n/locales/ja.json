@@ -1187,5 +1187,11 @@
   "domain_filter.label": "絞込:",
   "domain_filter.unreviewed_only": "未レビュー",
   "domain_filter.has_critique": "違和感あり",
-  "domain_filter.clear": "解除"
+  "domain_filter.clear": "解除",
+  "state_filter.label": "状態フィルタ",
+  "state_filter.unreviewed": "未レビュー",
+  "state_filter.no_evidence": "根拠なし",
+  "state_filter.has_critique": "違和感あり",
+  "state_filter.hide_non_matches": "非一致を非表示",
+  "state_filter.match_count": "{count}件一致"
 }

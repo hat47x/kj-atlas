@@ -1187,5 +1187,11 @@
   "domain_filter.label": "Filter:",
   "domain_filter.unreviewed_only": "unreviewed",
   "domain_filter.has_critique": "critique",
-  "domain_filter.clear": "clear"
+  "domain_filter.clear": "clear",
+  "state_filter.label": "State filter",
+  "state_filter.unreviewed": "unreviewed",
+  "state_filter.no_evidence": "no evidence",
+  "state_filter.has_critique": "has critique",
+  "state_filter.hide_non_matches": "Hide non-matches",
+  "state_filter.match_count": "{count} matching"
 }
