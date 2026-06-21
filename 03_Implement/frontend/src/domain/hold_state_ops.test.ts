@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Card } from "./types";
-import { updateCardHoldState } from "./hold_state_ops";
+import type { Card, DocumentV2 } from "./types";
+import { updateCardHoldState, updateCardHoldStateAndShelf } from "./hold_state_ops";
 
 const cards: Card[] = [
   { id: "card-1", text: "one", x: 0, y: 0 },
@@ -27,5 +27,42 @@ describe("updateCardHoldState", () => {
 
     expect(result[0]).toBe(cards[0]);
     expect(result[1]).toBe(cards[1]);
+  });
+});
+
+describe("updateCardHoldStateAndShelf", () => {
+  const document: DocumentV2 = {
+    version: 2,
+    id: "doc-1",
+    createdAt: "2026-06-21T00:00:00.000Z",
+    updatedAt: "2026-06-21T00:00:00.000Z",
+    transform: { panX: 0, panY: 0, zoom: 1 },
+    cards,
+    edges: [],
+    islands: [],
+  };
+
+  it("shelves a card without changing its position", () => {
+    const result = updateCardHoldStateAndShelf(document, "card-1", "shelved", "2026-06-21T01:00:00.000Z");
+
+    expect(result.cards[0]).toEqual({ ...cards[0], holdState: "shelved" });
+    expect(result.cards[0]?.x).toBe(0);
+    expect(result.cards[0]?.y).toBe(0);
+    expect(result.shelf).toEqual([{ cardId: "card-1", shelvedAt: "2026-06-21T01:00:00.000Z" }]);
+  });
+
+  it("keeps the original shelf timestamp when shelving again", () => {
+    const shelved = updateCardHoldStateAndShelf(document, "card-1", "shelved", "2026-06-21T01:00:00.000Z");
+    const result = updateCardHoldStateAndShelf(shelved, "card-1", "shelved", "2026-06-21T02:00:00.000Z");
+
+    expect(result.shelf?.[0]?.shelvedAt).toBe("2026-06-21T01:00:00.000Z");
+  });
+
+  it("restores a shelved card and removes the optional shelf field", () => {
+    const shelved = updateCardHoldStateAndShelf(document, "card-1", "shelved", "2026-06-21T01:00:00.000Z");
+    const result = updateCardHoldStateAndShelf(shelved, "card-1", "active", "2026-06-21T02:00:00.000Z");
+
+    expect(result.cards[0]).toEqual(cards[0]);
+    expect(result.shelf).toBeUndefined();
   });
 });
