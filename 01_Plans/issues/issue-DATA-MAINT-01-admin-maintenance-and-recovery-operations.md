@@ -1,8 +1,12 @@
 # Issue Draft: DATA-MAINT-01 管理・復旧・棚卸し運用の整備
 
 - Type: Feature request
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
+
+## Done 2026-06-21
+全5タスク完了（T1-T5 at contract/docs-check level）。DecisionStatus Fixed（DATA-MAINT-03 Doneにより高権限操作分類確定済み）。
+実装（管理API/CLI/UI、PostgreSQL実環境復旧演習）は別issueに分離。
 - Source Issue: N/A
 - Priority: P2 (Stream D third)
 - Owner: Codex

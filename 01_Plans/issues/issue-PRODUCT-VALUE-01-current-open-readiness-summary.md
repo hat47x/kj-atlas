@@ -14,6 +14,16 @@
 ## Draft→Open 2026-06-20
 PV-01 parent issue Open化に伴いsummaryもOpen。ADR-0032 Accepted (ADR-0040)。
 
+## Status Update 2026-06-21
+
+Parent issue in Progress. Implementation evidence:
+- **StartPanel**: value proposition messaging updated (en/ja)
+- **DomainStateSummary**: card state counts with first-meaningful-map progress hints
+- **CardView**: claimType/critique/reviewState visual badges (DOMAIN-EXPR-01)
+- **SidePanel**: domain state display in card detail
+
+Remaining: E2E tests (Playwright), keyboard accessibility verification, installation/ops doc sync.
+
 ## Current Open-Readiness Summary 2026-06-17
 
 ### Product Value Intent

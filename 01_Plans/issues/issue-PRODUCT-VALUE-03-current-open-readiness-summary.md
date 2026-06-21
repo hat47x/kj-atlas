@@ -14,6 +14,16 @@
 ## Draft→Open 2026-06-20
 PV-03 parent issue Open化に伴いsummaryもOpen。ADR-0032 Accepted。
 
+## Status Update 2026-06-21
+
+PV-03 remains Open (not yet In Progress). Prerequisites developing:
+- DOMAIN-EXPR-01 Done (readonly state surfacing enables review state visibility)
+- PRODUCT-VALUE-01/02 In Progress (first-meaningful-map + ambiguity workflow)
+- SharePanel and NarrativesPanel already exist in codebase
+- Share preflight with SafeMode already implemented
+
+Next: integrate domain state (claimType/reviewState/critique) into share/export previews so reviewers see what is decided, pending, and unreviewed.
+
 ## Current Open-Readiness Summary 2026-06-17
 
 ### Product Value Intent

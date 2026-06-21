@@ -14,6 +14,16 @@
 ## Draft→Open 2026-06-20
 PV-02 parent issue Open化（ADR-0040で循環デッドロック解消済み）に伴いsummaryもOpen。
 
+## Status Update 2026-06-21
+
+Parent issue in Progress. Implementation evidence:
+- **CardView**: claimType color-coded pills, critique tag counts, unreviewed indicator
+- **SidePanel**: claimType, critique text+tags, evidence link counts (in/out), contradiction counts
+- **DomainStateSummary**: document-level state distribution with map progress hints
+- No schema changes (reads existing fields)
+
+Remaining: holdState/PendingItems schema (ADR-0040 Phase 2), Critique→Reproposal loop UI (DOMAIN-EXPR-03), E2E tests.
+
 ## Current Open-Readiness Summary 2026-06-17
 
 ### Product Value Intent
