@@ -340,6 +340,11 @@ issue補助メモには、最低でも次の項目を含める。
 | HIL-RS-02 | `issue-HIL-RS-02-next-phase-delivery-plan.md` | Done | N/A | 次フェーズの実行計画とA2/A3着手条件の整理を完了（2026-06-20）。 |
 | HIL-RS-02-A1 | `issue-HIL-RS-02-A1-governance-contract-hardening.md` | Done | N/A | ガバナンス契約の固定と例外判断の解消を完了（2026-06-20）。 |
 | HIL-RS-02-A3 | `issue-HIL-RS-02-A3-operations-documentation-sync.md` | Done | `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（Done 2026-06-20） | 運用文書同期の計画と引き継ぎを完了（2026-06-20）。 |
+| HIL-RS-01 | `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` | Done | N/A | ADR-0039に基づく次フェーズ計画と下位作業への引き継ぎを完了（2026-06-20）。 |
+| HIL-RS-01-A1 | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | Done | N/A | 最小インターフェース契約の固定と承認記録を完了（2026-06-20）。 |
+| HIL-RS-02 | `issue-HIL-RS-02-next-phase-delivery-plan.md` | Done | N/A | 次フェーズの実行計画とA2/A3着手条件の整理を完了（2026-06-20）。 |
+| HIL-RS-02-A1 | `issue-HIL-RS-02-A1-governance-contract-hardening.md` | Done | N/A | ガバナンス契約の固定と例外判断の解消を完了（2026-06-20）。 |
+| HIL-RS-02-A3 | `issue-HIL-RS-02-A3-operations-documentation-sync.md` | Done | `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（Done 2026-06-20） | 運用文書同期の計画と引き継ぎを完了（2026-06-20）。 |
 | DX-CODEX-01 | `issue-DX-CODEX-01-codex-skill-adoption-and-validation.md` | Done | N/A | Codex skill導入手順・役割分担・正本/補助境界・試行ログテンプレートを整備。 |
 | DX-CODEX-02 | `issue-DX-CODEX-02-markdown-mermaid-mcp-doc-ops-adoption.md` | Done | N/A | markdown-mermaid-docops skill運用とMermaid/MCP証跡方針を標準化。 |
 | AUTH-ARCH-01 | `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md` | Done | N/A | AuthContext/JIT境界、strict責務、承認記録を確定。 |
