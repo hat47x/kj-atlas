@@ -3,6 +3,7 @@ import { t } from "../i18n/translate";
 
 import { CRITIQUE_TAGS } from "../domain/types";
 import { DomainStateSummary } from "./DomainStateSummary";
+import { ShelfPanel } from "./ShelfPanel";
 import type { AggregatedEdgeMeta } from "../canvas/CanvasShell";
 import {
   buildIslandRelationExplanation,
@@ -1181,6 +1182,13 @@ export function SidePanel({
           islandCount={document.islands?.length ?? 0}
           relationCount={(document.edges?.length ?? 0) + (document.relationSummaries?.length ?? 0)}
           safeMode={safeMode}
+        />
+      ) : null}
+      {document?.shelf && document.shelf.length > 0 ? (
+        <ShelfPanel
+          cards={document.cards}
+          shelf={document.shelf}
+          onFocusCard={(cardId) => onFocusCardById(cardId)}
         />
       ) : null}
       {topContent}
