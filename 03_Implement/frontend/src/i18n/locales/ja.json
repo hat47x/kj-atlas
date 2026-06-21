@@ -1171,5 +1171,9 @@
   "domain_state.share_readiness_unreviewed": "SafeMode ON: {count}件の未レビュー項目は共有時に非表示になります",
   "shelf_panel.title": "Shelf（退避中）",
   "shelf_panel.description": "削除せずに脇に置いたカードです。復帰でキャンバスに戻せます。",
-  "shelf_panel.restore": "復帰"
+  "shelf_panel.restore": "復帰",
+  "domain_filter.label": "絞込:",
+  "domain_filter.unreviewed_only": "未レビュー",
+  "domain_filter.has_critique": "違和感あり",
+  "domain_filter.clear": "解除"
 }

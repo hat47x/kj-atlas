@@ -1171,5 +1171,9 @@
   "domain_state.share_readiness_unreviewed": "SafeMode ON: {count} unreviewed items will be hidden when sharing",
   "shelf_panel.title": "Shelf (set aside)",
   "shelf_panel.description": "Cards set aside without deletion. Restore to bring them back to the canvas.",
-  "shelf_panel.restore": "Restore"
+  "shelf_panel.restore": "Restore",
+  "domain_filter.label": "Filter:",
+  "domain_filter.unreviewed_only": "unreviewed",
+  "domain_filter.has_critique": "critique",
+  "domain_filter.clear": "clear"
 }
