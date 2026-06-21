@@ -108,15 +108,21 @@ function CardViewComponent({
   const critiqueTagCount = card.critiqueTags?.length ?? 0;
   const claimType = card.claimType;
   const isTextReviewed = card.textReviewed === true;
+  const holdState = card.holdState;
   const representativeCount = card.repOf?.length ?? 0;
   const compactText = card.text.trim().split(/\n+/).join(" ").slice(0, 72);
 
-  // Domain state badge styling (DOMAIN-EXPR-01)
+  // Domain state badge styling (DOMAIN-EXPR-01/02)
   const CLAIM_TYPE_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
     fact: { bg: "#dcfce7", fg: "#166534", label: "Fact" },
     claim: { bg: "#dbeafe", fg: "#1e40af", label: "Claim" },
     hypothesis: { bg: "#f3e8ff", fg: "#6b21a8", label: "Hyp" },
     unknown: { bg: "#f1f5f9", fg: "#475569", label: "?" },
+  };
+  const HOLD_STATE_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
+    held: { bg: "#fef3c7", fg: "#92400e", label: "Held" },
+    pending: { bg: "#e0e7ff", fg: "#3730a3", label: "Pending" },
+    shelved: { bg: "#f1f5f9", fg: "#64748b", label: "Shelved" },
   };
 
   const clearDragState = (event: PointerEvent<HTMLDivElement>) => {
@@ -320,6 +326,26 @@ function CardViewComponent({
           }}
         >
           {CLAIM_TYPE_STYLE[claimType]?.label ?? claimType}
+        </span>
+      ) : null}
+      {!markerMode && holdState ? (
+        <span
+          aria-label={`Card hold state: ${holdState}`}
+          title={`Hold state: ${holdState}`}
+          style={{
+            position: "absolute",
+            top: (representativeCount > 0 ? 28 : 6) + (claimType && claimType !== "unknown" ? 22 : 0),
+            left: 6,
+            borderRadius: 999,
+            backgroundColor: HOLD_STATE_STYLE[holdState]?.bg ?? "#f1f5f9",
+            color: HOLD_STATE_STYLE[holdState]?.fg ?? "#475569",
+            fontSize: 10,
+            fontWeight: 600,
+            padding: "1px 6px",
+            lineHeight: "16px",
+          }}
+        >
+          {HOLD_STATE_STYLE[holdState]?.label ?? holdState}
         </span>
       ) : null}
       {!markerMode && !isTextReviewed ? (
