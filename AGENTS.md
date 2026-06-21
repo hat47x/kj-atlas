@@ -34,7 +34,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 9) **全体アーキテクチャ**: `02_Architecture/architecture.md`
 10) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
 11) **MVPデータ運用境界**: `02_Architecture/data_model_operations_overview.md`
-12) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0040`（価値→社会的目標の実現フェーズ索引は `ADR-0036`、ガバナンス適正化方針は `ADR-0039`、ドメイン表現第一級化は `ADR-0040`）
+12) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0043`（価値→社会的目標の実現フェーズ索引は `ADR-0036`、ガバナンス適正化方針は `ADR-0039`、ドメイン表現第一級化は `ADR-0040`、根幹価値の保護は `ADR-0041`〜`ADR-0043`）
 13) **実装（03_Implement）**: 対象領域のソースへ
 14) **運用・手順**: `04_Documentation/*`（必要に応じて）
 15) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -120,6 +120,9 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0038-social-diffusion-of-explainable-consensus.md`：説明可能な合意形成の社会的普及モデル（VR5）。
 - `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`：個人OSS・プレリリース段階のガバナンス適正化（KEEP/RELAX-DEFER/緩和禁止の不変条件、多役割→Maintainer集約）。
 - `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`：中核ドメイン概念（保留/違和感/根拠/矛盾）の第一級化戦略。`DOMAIN-EXPR-01..04` へ段階分割し、`ADR-0032` Accepted化と `PRODUCT-VALUE-02` 循環デッドロックを解消。
+- `01_Plans/adr/ADR-0041-core-value-invariants-single-guard.md`：根幹価値の非後退不変条件（CVI-1..7）を単一の砦（横断テスト）で守る。正本は `value_traceability.md` §2.5。
+- `01_Plans/adr/ADR-0042-value-realness-validation-and-notice-exit.md`：価値実在の最小ドッグフード検証と README NOTICE の段階的脱却基準（段階A/B/C）。
+- `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`：機能増加が認知負荷で根幹価値を侵さないための複雑性予算（CB-1..4）と追加時の自己申告。
 - `01_Plans/documentation_quality.md`：AIエージェントが対外文書を作成する際の内部品質基準。
 - `01_Plans/minimal-context-triage.md`：未処理ADR/issueを最小読取で抽出する手順。
 - `01_Plans/triage_actionable_plans.py`：ADR/issueメタデータだけを走査して Ready/保留/関連ADR を抽出する軽量CLI。

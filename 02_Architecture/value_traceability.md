@@ -30,6 +30,8 @@
 | 企業・行政運用に接続できる | 組織の認証、認可、監査基盤へ安全に接続できる | `02_Architecture/enterprise_architecture.md` | AuthContext、AccessControlAdapter、audit transport をアプリ本体から分離する | アプリ本体に role/group 判定ロジックを持ち込まない |
 | 環境変数の混乱を防ぐ | 利用者が設定すべきキーを迷わない | `02_Architecture/runtime_parameter_registry.md` | 公開設定キーは例外なく `KJ_ATLAS_*` に統一する | 04文書、Compose、runbook が正本と同期している |
 | データ運用境界を誤解させない | MVPで保守できるデータと将来契約を区別できる | `02_Architecture/data_model_operations_overview.md`, `ADR-0033` | 物理ER、論理ER、CRUD表、ステークホルダー別保守責任を分けて示す | 型の存在を標準CRUD対応と誤読させない |
+| 価値を裏切らない（不変条件の保護） | 機能が増えても保留/proposal-only/人手昇格/SafeModeが崩れない | `02_Architecture/value_traceability.md` §2.5, `ADR-0041` | 散在する非後退テストを CVI-1..7 として単一の砦へ索引化する | CVI 横断テストが赤になる変更を検知できる |
+| 思考を雑にしない（認知負荷の予算） | 機能が増えても初期の静けさと保留の容易さが保たれる | `00_Prompt/domain.md`, `ADR-0043`, `ADR-0030` | 複雑性予算（CB-1..4）で初期表示の純増と保留距離を抑える | UI追加issueで複雑性予算を申告し悪化時にゲート確認 |
 
 ---
 
@@ -124,6 +126,32 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 | ドメイン: 用語整合 | 00↔02語彙同期 | `domain.md` | `DOMAIN-ALIGN-01`(Done) | 被覆 |
 
 **判定（2026-06-02）**: 全観点が担当issue/ADRへ接続済み（未接続=0件）。プロダクト価値・UI/UX・ドメイン表現の要件は VR0–VR5 のフェーズへ落とし込み済みであり、新規起票すべき本物の穴は無い。実装順序は DOMAIN-EXPR は Phase 1→4、VR4/VR5 は実ユーザー/協力者参加まで延期（`ADR-0039`）。
+
+---
+
+## 2.5 根幹価値の不変条件（CVI）正本対応表（`ADR-0041`）
+
+機能が出揃った段階で根幹価値を守るため、非後退の不変条件を ID 付きで固定する。本表を CVI の正本とし、`ADR-0041` の「単一の砦」テスト（`CORE-VALUE-GUARD-01`）は各 CVI をこの表へ参照づける（実装の散在テストを索引化し、欠落のみ新規カバー）。
+
+| CVI ID | 不変条件 | 主な担保（既存テスト/契約） |
+|---|---|---|
+| CVI-1 | SafeMode 既定ON・共有/exportで未レビュー本文を漏らさない | `domain/policy/safe_mode.test.ts`, `ui/safe_mode_status.test.ts` |
+| CVI-2 | proposal-only（auto-apply/confirm/publish 禁止） | `domain/ce2_proposal_only.test.ts`, backend `test_ce2_proposal_api.py` |
+| CVI-3 | `human_reviewed` 昇格は人手のみ（AI/worker/API 自動禁止） | `domain/ce2_suggestion_candidates.test.ts`, `hil_rs_contract.test.ts` |
+| CVI-4 | Consensus 直接更新禁止（`patch + approval` のみ） | CE0 契約テスト群（`ce0_core_graph_repositioning`） |
+| CVI-5 | `dryRun=true` 無副作用（永続化/共有/昇格なし） | backend `test_audit.py`, `routes/context.py` 契約 |
+| CVI-6 | `KJ_ATLAS_LLM_PROVIDER=none` 既定でも主要価値が成立 | provider `NoneProvider` + 既定構成E2E |
+| CVI-7 | 保留/違和感の非破壊・表示制御と内容削除の分離 | collapse/visibility テスト, `state_filter`（hidden≠delete） |
+
+## 2.6 認知負荷を守る複雑性予算（`ADR-0043`）
+
+機能追加が根幹価値（思考を雑にしない）を侵さないための予算。詳細は `ADR-0043`。
+
+- CB-1 既定の静けさ（初期表示の主要操作を限定、高度機能は progressive disclosure 背後）。
+- CB-2 保留の容易さ最優先（保留/違和感が確定操作より遠くならない）。
+- CB-3 追加は置換/包含/モード分離で（初期表示の常設要素を純増させない）。
+- CB-4 可逆の明示（取り消し導線が同じ文脈に）。
+- UI系issueは「複雑性予算」1行を自己申告し、悪化時は価値ゲート（`PRODUCT-QA-01`）で確認する。
 
 ## 3. 設計判断の扱い
 
