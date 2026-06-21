@@ -34,7 +34,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 9) **全体アーキテクチャ**: `02_Architecture/architecture.md`
 10) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
 11) **MVPデータ運用境界**: `02_Architecture/data_model_operations_overview.md`
-12) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0045`（価値→社会的目標の実現フェーズ索引は `ADR-0036`、ガバナンス適正化方針は `ADR-0039`、ドメイン表現第一級化は `ADR-0040`、根幹価値の保護は `ADR-0041`〜`ADR-0043`、UI/UX品質基準は `ADR-0044`、エージェント分担は `ADR-0045`）
+12) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0046`（価値→社会的目標の実現フェーズ索引は `ADR-0036`、ガバナンス適正化方針は `ADR-0039`、ドメイン表現第一級化は `ADR-0040`、根幹価値の保護は `ADR-0041`〜`ADR-0043`、UI/UX品質基準は `ADR-0044`、エージェント分担は `ADR-0045`、性能予算は `ADR-0046`）
 13) **実装（03_Implement）**: 対象領域のソースへ
 14) **運用・手順**: `04_Documentation/*`（必要に応じて）
 15) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`

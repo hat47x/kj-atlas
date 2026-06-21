@@ -1,3 +1,8 @@
+/**
+ * DOMAIN-EXPR-01: Domain state filter for cards.
+ *
+ * ADR-0046 性能予算: 代表規模での主要操作=不変（O(n)単一パス、n≦300）/ メインスレッド100ms超の同期処理=なし
+ */
 import type { Card } from "./types";
 
 export type DomainStateFilter = {
