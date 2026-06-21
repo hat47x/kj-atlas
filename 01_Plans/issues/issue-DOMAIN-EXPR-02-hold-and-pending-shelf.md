@@ -1,7 +1,7 @@
 # Issue Draft: DOMAIN-EXPR-02 保留(Hold)と未統合(Pending/Shelf)の第一級化
 
 - Type: Feature request
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
