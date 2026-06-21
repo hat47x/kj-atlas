@@ -53,6 +53,7 @@ type SidePanelProps = {
   onCardCritiqueTagsChange: (value: string[]) => void;
   onCardClaimTypeChange: (value: ClaimType) => void;
   onCardHoldStateChange: (value: HoldState | "active") => void;
+  onRestoreShelvedCard: (cardId: string) => void;
   onCardTextReviewedChange: (value: boolean) => void;
   onAddEvidenceLink: (payload: { toCardId: string; type: EvidenceLink["type"] }) => void;
   onRemoveEvidenceLink: (evidenceLinkId: string) => void;
@@ -220,6 +221,7 @@ export function SidePanel({
   onCardCritiqueTagsChange,
   onCardClaimTypeChange,
   onCardHoldStateChange,
+  onRestoreShelvedCard,
   onCardTextReviewedChange,
   onAddEvidenceLink,
   onRemoveEvidenceLink,
@@ -1184,6 +1186,52 @@ export function SidePanel({
           relationCount={(document.edges?.length ?? 0) + (document.relationSummaries?.length ?? 0)}
           safeMode={safeMode}
         />
+      ) : null}
+      {(document?.shelf?.length ?? 0) > 0 ? (
+        <section
+          data-panel="shelf"
+          style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
+            {t("side_panel.shelf.title", { count: document?.shelf?.length ?? 0 })}
+          </div>
+          <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.5, marginBottom: 8 }}>
+            {t("side_panel.shelf.description")}
+          </div>
+          <div style={{ display: "grid", gap: 8 }}>
+            {document?.shelf?.map((entry) => {
+              const card = document.cards.find((candidate) => candidate.id === entry.cardId);
+              return (
+                <div
+                  key={entry.cardId}
+                  style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc" }}
+                >
+                  <div style={{ fontSize: 12, color: "#0f172a", lineHeight: 1.45, marginBottom: 4 }}>
+                    {card?.text ?? t("side_panel.shelf.missing_card", { id: entry.cardId })}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#64748b", marginBottom: entry.reason ? 4 : 8 }}>
+                    {t("side_panel.shelf.shelved_at", { value: formatSummaryHistoryTimestamp(entry.shelvedAt) })}
+                  </div>
+                  {entry.reason ? (
+                    <div style={{ fontSize: 11, color: "#475569", marginBottom: 8 }}>
+                      {t("side_panel.shelf.reason", { value: entry.reason })}
+                    </div>
+                  ) : null}
+                  <button
+                    type="button"
+                    disabled={isReadOnly || !card}
+                    onClick={() => {
+                      onRestoreShelvedCard(entry.cardId);
+                    }}
+                    style={{ width: "100%" }}
+                  >
+                    {t("side_panel.shelf.restore")}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       ) : null}
       {topContent}
       {importedPackSnapshotUrl || importedPackDiagnosticsMd ? (
@@ -3162,7 +3210,9 @@ export function SidePanel({
                 <option value="shelved">{t("side_panel.hold_state.shelved")}</option>
               </select>
               <div style={{ fontSize: 11, color: "#64748b", marginBottom: 12 }}>
-                {t("side_panel.hold_state.hint")}
+                {selectedCard.holdState === "shelved"
+                  ? t("side_panel.hold_state.shelved_hint")
+                  : t("side_panel.hold_state.hint")}
               </div>
 
               <label

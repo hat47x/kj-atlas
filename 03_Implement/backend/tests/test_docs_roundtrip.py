@@ -173,6 +173,41 @@ def _sample_payload_v2_with_canonical(doc_id: str) -> dict:
     }
 
 
+def _sample_payload_v2_with_shelf(doc_id: str) -> dict:
+    return {
+        "version": 2,
+        "id": doc_id,
+        "title": "roundtrip-v2-shelf",
+        "createdAt": "2026-06-21T00:00:00Z",
+        "updatedAt": "2026-06-21T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [
+            {
+                "id": "card-shelved",
+                "text": "revisit later",
+                "x": 42.5,
+                "y": -18.0,
+                "holdState": "shelved",
+            },
+            {
+                "id": "card-active",
+                "text": "keep visible",
+                "x": 200.0,
+                "y": 100.0,
+            },
+        ],
+        "edges": [],
+        "islands": [],
+        "shelf": [
+            {
+                "cardId": "card-shelved",
+                "shelvedAt": "2026-06-21T01:23:45Z",
+                "reason": "Needs another interview",
+            }
+        ],
+    }
+
+
 
 
 
@@ -362,6 +397,31 @@ def _assert_v2_canonical_roundtrip(client: TestClient) -> None:
     get_cards_by_id = {card["id"]: card for card in get_json["cards"]}
     assert get_cards_by_id["card-source"]["canonicalId"] == "card-canonical"
     assert get_cards_by_id["card-canonical"]["sources"] == ["card-source"]
+
+
+def _assert_v2_shelf_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-shelf"
+    payload = _sample_payload_v2_with_shelf(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_json = put_response.json()
+    put_card = next(card for card in put_json["cards"] if card["id"] == "card-shelved")
+    assert put_card["holdState"] == "shelved"
+    assert put_card["x"] == 42.5
+    assert put_card["y"] == -18.0
+    assert put_json["shelf"][0]["cardId"] == "card-shelved"
+    assert put_json["shelf"][0]["reason"] == "Needs another interview"
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_json = get_response.json()
+    get_card = next(card for card in get_json["cards"] if card["id"] == "card-shelved")
+    assert get_card["holdState"] == "shelved"
+    assert get_card["x"] == 42.5
+    assert get_card["y"] == -18.0
+    assert get_json["shelf"][0]["cardId"] == "card-shelved"
+    assert get_json["shelf"][0]["reason"] == "Needs another interview"
 
 
 def _assert_v2_collapsed_roundtrip(client: TestClient) -> None:
@@ -751,6 +811,15 @@ def test_docs_v2_canonical_roundtrip_sqlite(sqlite_client: TestClient) -> None:
 @pytest.mark.postgres
 def test_docs_v2_canonical_roundtrip_postgres(postgres_client: TestClient) -> None:
     _assert_v2_canonical_roundtrip(postgres_client)
+
+
+def test_docs_v2_shelf_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_shelf_roundtrip(sqlite_client)
+
+
+@pytest.mark.postgres
+def test_docs_v2_shelf_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_shelf_roundtrip(postgres_client)
 
 
 

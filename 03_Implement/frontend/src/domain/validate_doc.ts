@@ -161,6 +161,30 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
   return valid;
 }
 
+function validateShelfEntry(item: unknown, index: number, errors: string[]): item is NonNullable<DocumentV2["shelf"]>[number] {
+  const path = `shelf[${index}]`;
+  if (!isRecord(item)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(item, ["cardId", "shelvedAt", "reason"], path, errors);
+  let valid = true;
+  if (!isNonEmptyString(item.cardId)) {
+    errors.push(`${path}.cardId: must be a non-empty string`);
+    valid = false;
+  }
+  if (!isIsoTimestamp(item.shelvedAt)) {
+    errors.push(`${path}.shelvedAt: must be an ISO timestamp`);
+    valid = false;
+  }
+  if (item.reason !== undefined && typeof item.reason !== "string") {
+    errors.push(`${path}.reason: must be a string when provided`);
+    valid = false;
+  }
+  return valid;
+}
+
 function validateEdge(item: unknown, index: number, errors: string[]): item is DocumentV2["edges"][number] {
   const path = `edges[${index}]`;
   if (!isRecord(item)) {
@@ -1068,6 +1092,7 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
       "reproposalDiffs",
       "reviewAttribution",
       "deterministicTieBreak",
+      "shelf",
     ],
     "document",
     errors
@@ -1138,6 +1163,36 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
     } else {
       value.narratives.forEach((item, index) => {
         validateNarrative(item, index, errors);
+      });
+    }
+  }
+
+  if (value.shelf !== undefined) {
+    if (!Array.isArray(value.shelf)) {
+      errors.push("document.shelf: must be an array when provided");
+    } else {
+      const cardById = new Map(
+        Array.isArray(value.cards)
+          ? value.cards
+              .filter((card): card is Record<string, unknown> => isRecord(card) && typeof card.id === "string")
+              .map((card) => [card.id as string, card])
+          : [],
+      );
+      const seenCardIds = new Set<string>();
+      value.shelf.forEach((item, index) => {
+        if (!validateShelfEntry(item, index, errors)) {
+          return;
+        }
+        if (seenCardIds.has(item.cardId)) {
+          errors.push(`shelf[${index}].cardId: duplicate card id '${item.cardId}'`);
+        }
+        seenCardIds.add(item.cardId);
+        const card = cardById.get(item.cardId);
+        if (!card) {
+          errors.push(`shelf[${index}].cardId: unknown card '${item.cardId}'`);
+        } else if (card.holdState !== "shelved") {
+          errors.push(`shelf[${index}].cardId: card '${item.cardId}' must have holdState 'shelved'`);
+        }
       });
     }
   }

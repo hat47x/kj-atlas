@@ -1,4 +1,4 @@
-import type { Card, HoldState } from "./types";
+import type { Card, DocumentV2, HoldState } from "./types";
 
 export type HoldStateSelection = HoldState | "active";
 
@@ -19,4 +19,31 @@ export function updateCardHoldState(
       ? { ...cardWithoutHoldState, holdState: nextHoldState }
       : cardWithoutHoldState;
   });
+}
+
+export function updateCardHoldStateAndShelf(
+  document: DocumentV2,
+  cardId: string,
+  selection: HoldStateSelection,
+  shelvedAt: string,
+): DocumentV2 {
+  const cards = updateCardHoldState(document.cards, cardId, selection);
+  const cardsChanged = cards.some((card, index) => card !== document.cards[index]);
+  const currentShelf = document.shelf ?? [];
+  const existingEntry = currentShelf.find((entry) => entry.cardId === cardId);
+  const shelf = selection === "shelved"
+    ? existingEntry
+      ? currentShelf
+      : [...currentShelf, { cardId, shelvedAt }]
+    : currentShelf.filter((entry) => entry.cardId !== cardId);
+
+  if (!cardsChanged && shelf === currentShelf) {
+    return document;
+  }
+
+  return {
+    ...document,
+    cards: cardsChanged ? cards : document.cards,
+    ...(shelf.length > 0 ? { shelf } : { shelf: undefined }),
+  };
 }
