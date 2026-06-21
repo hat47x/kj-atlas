@@ -9,7 +9,7 @@ import {
   formatIslandRelationExplanationMarkdown,
   type IslandRelationEdgeSelection,
 } from "../domain/island_relation_explain";
-import type { Card, CritiqueTag, DocumentV2, EvidenceLink, Island, RelationSummary } from "../domain/types";
+import type { Card, CritiqueTag, DocumentV2, EvidenceLink, HoldState, Island, RelationSummary } from "../domain/types";
 import { RELATION_SUMMARY_TEXT_MAX_LENGTH } from "../domain/relation_summary_ops";
 import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
@@ -52,6 +52,7 @@ type SidePanelProps = {
   onCardCritiqueChange: (value: string) => void;
   onCardCritiqueTagsChange: (value: string[]) => void;
   onCardClaimTypeChange: (value: ClaimType) => void;
+  onCardHoldStateChange: (value: HoldState | "active") => void;
   onCardTextReviewedChange: (value: boolean) => void;
   onAddEvidenceLink: (payload: { toCardId: string; type: EvidenceLink["type"] }) => void;
   onRemoveEvidenceLink: (evidenceLinkId: string) => void;
@@ -218,6 +219,7 @@ export function SidePanel({
   onCardCritiqueChange,
   onCardCritiqueTagsChange,
   onCardClaimTypeChange,
+  onCardHoldStateChange,
   onCardTextReviewedChange,
   onAddEvidenceLink,
   onRemoveEvidenceLink,
@@ -3129,6 +3131,39 @@ export function SidePanel({
                 <option value="hypothesis">{claimTypeLabels.hypothesis}</option>
                 <option value="unknown">{claimTypeLabels.unknown}</option>
               </select>
+
+              <label
+                htmlFor="selected-card-hold-state"
+                style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}
+              >
+                {t("side_panel.hold_state.label")}
+              </label>
+              <select
+                id="selected-card-hold-state"
+                value={selectedCard.holdState ?? "active"}
+                disabled={isReadOnly}
+                onChange={(event) => {
+                  onCardHoldStateChange(event.target.value as HoldState | "active");
+                }}
+                style={{
+                  width: "100%",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 6,
+                  padding: "6px 8px",
+                  boxSizing: "border-box",
+                  marginBottom: 4,
+                  backgroundColor: "#ffffff",
+                  color: "#0f172a",
+                }}
+              >
+                <option value="active">{t("side_panel.hold_state.active")}</option>
+                <option value="held">{t("side_panel.hold_state.held")}</option>
+                <option value="pending">{t("side_panel.hold_state.pending")}</option>
+                <option value="shelved">{t("side_panel.hold_state.shelved")}</option>
+              </select>
+              <div style={{ fontSize: 11, color: "#64748b", marginBottom: 12 }}>
+                {t("side_panel.hold_state.hint")}
+              </div>
 
               <label
                 style={{

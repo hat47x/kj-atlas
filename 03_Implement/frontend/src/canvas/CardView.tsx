@@ -2,6 +2,7 @@ import { memo, useRef, useState } from "react";
 import type { FocusEvent, KeyboardEvent, PointerEvent } from "react";
 
 import type { Card } from "../domain/types";
+import { t } from "../i18n/translate";
 
 type CardDragState = {
   pointerId: number;
@@ -119,11 +120,12 @@ function CardViewComponent({
     hypothesis: { bg: "#f3e8ff", fg: "#6b21a8", label: "Hyp" },
     unknown: { bg: "#f1f5f9", fg: "#475569", label: "?" },
   };
-  const HOLD_STATE_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
-    held: { bg: "#fef3c7", fg: "#92400e", label: "Held" },
-    pending: { bg: "#e0e7ff", fg: "#3730a3", label: "Pending" },
-    shelved: { bg: "#f1f5f9", fg: "#64748b", label: "Shelved" },
+  const HOLD_STATE_STYLE: Record<string, { bg: string; fg: string }> = {
+    held: { bg: "#fef3c7", fg: "#92400e" },
+    pending: { bg: "#e0e7ff", fg: "#3730a3" },
+    shelved: { bg: "#f1f5f9", fg: "#64748b" },
   };
+  const holdStateLabel = holdState ? t(`side_panel.hold_state.${holdState}`) : "";
 
   const clearDragState = (event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
@@ -330,8 +332,8 @@ function CardViewComponent({
       ) : null}
       {!markerMode && holdState ? (
         <span
-          aria-label={`Card hold state: ${holdState}`}
-          title={`Hold state: ${holdState}`}
+          aria-label={t("card_view.hold_state.aria", { state: holdStateLabel })}
+          title={t("card_view.hold_state.title", { state: holdStateLabel })}
           style={{
             position: "absolute",
             top: (representativeCount > 0 ? 28 : 6) + (claimType && claimType !== "unknown" ? 22 : 0),
@@ -345,7 +347,7 @@ function CardViewComponent({
             lineHeight: "16px",
           }}
         >
-          {HOLD_STATE_STYLE[holdState]?.label ?? holdState}
+          {holdStateLabel}
         </span>
       ) : null}
       {!markerMode && !isTextReviewed ? (

@@ -36,6 +36,7 @@ import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geome
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
+import { updateCardHoldState, type HoldStateSelection } from "./domain/hold_state_ops";
 import { resolveDecisionOriginTrace, resolveRepresentativeOriginTrace } from "./domain/merge_traceability";
 import { collectMergeCandidates } from "./domain/merge_candidates";
 import {
@@ -4171,6 +4172,30 @@ export default function App() {
           cards: nextCards,
         },
         t("app.history.card.claim_type_updated"),
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleCardHoldStateChange = useCallback(
+    (cardId: string, selection: HoldStateSelection) => {
+      if (!document) {
+        return;
+      }
+
+      const nextCards = updateCardHoldState(document.cards, cardId, selection);
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+        },
+        t("app.history.card.hold_state_updated"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -8836,6 +8861,13 @@ export default function App() {
             }
 
             handleCardClaimTypeChange(selectedCard.id, value);
+          }}
+          onCardHoldStateChange={(value) => {
+            if (!selectedCard) {
+              return;
+            }
+
+            handleCardHoldStateChange(selectedCard.id, value);
           }}
           onCardTextReviewedChange={(value) => {
             if (!selectedCard) {

@@ -33,6 +33,17 @@ DOMAIN-EXPR-01 Doneにより依存充足。ADR-0040 Phase 2着手。
 ### Commit
 - 277f2411 feat(DOMAIN-EXPR-02): add holdState + ShelfEntry schema and CardView badge
 
+## Implementation checkpoint 2026-06-21: card decision-status control
+
+- Added a card-inspector control for `通常 / 保留 / 未決 / 棚上げ`.
+- The control is keyboard-operable through a labeled native select and is disabled in read-only review mode.
+- Returning to `通常` removes the optional `holdState` field instead of writing a new default value.
+- Import parsing and strict validation now preserve supported `holdState` values and reject unknown values.
+- Document history records the change while keeping suggestion preview state intact.
+- Browser verification confirmed card selection, `通常 -> 保留`, localized card badge/accessible name, status feedback, and undo restoration.
+- Remaining scope is unchanged: a visible Shelf list, set-aside/restore operations, ShelfEntry import/export, and E2E coverage belong to the next slice.
+- No ADR is required because the accepted optional schema, review authority, SafeMode behavior, and sharing policy are unchanged.
+
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0040` Phase 2。加算的・後方互換のschema拡張を含む。
 
 ## Dependencies

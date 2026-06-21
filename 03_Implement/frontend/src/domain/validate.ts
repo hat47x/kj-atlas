@@ -103,6 +103,10 @@ function parseCards(value: unknown): Card[] | null {
       critique: typeof item.critique === "string" ? item.critique : undefined,
       critiqueTags: parseCritiqueTags(item.critiqueTags),
       textReviewed: typeof item.textReviewed === "boolean" ? item.textReviewed : undefined,
+      holdState:
+        item.holdState === "held" || item.holdState === "pending" || item.holdState === "shelved"
+          ? item.holdState
+          : undefined,
     });
   }
 
