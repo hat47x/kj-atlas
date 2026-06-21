@@ -271,8 +271,8 @@ describe("i18n functional equivalence", () => {
     const enHtml = renderToStaticMarkup(React.createElement(SuggestionPanel, props));
 
     expect(metrics(enHtml)).toEqual(metrics(jaHtml));
-    expect(jaHtml).toContain("安全上の条件");
-    expect(jaHtml).toContain("自動適用なし");
+    expect(jaHtml).toContain("安全条件");
+    expect(jaHtml).toContain("自動適用は無効");
     expect(jaHtml).not.toContain("CE2");
     expect(enHtml).toContain("Safety conditions");
     expect(enHtml).not.toContain("auto_apply_blocked");
