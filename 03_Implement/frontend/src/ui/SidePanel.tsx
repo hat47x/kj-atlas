@@ -1180,6 +1180,7 @@ export function SidePanel({
           cards={document.cards}
           islandCount={document.islands?.length ?? 0}
           relationCount={(document.edges?.length ?? 0) + (document.relationSummaries?.length ?? 0)}
+          safeMode={safeMode}
         />
       ) : null}
       {topContent}

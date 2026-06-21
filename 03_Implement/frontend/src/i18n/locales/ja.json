@@ -1166,5 +1166,6 @@
   "domain_state.unreviewed": "未レビュー",
   "domain_state.critique": "違和感",
   "domain_state.map_progress_cards": "あと{target}枚のカードを追加して意味の配置を始めましょう（現在{current}枚）",
-  "domain_state.map_progress_structure": "カードを島にまとめるか、関係線でつないでみましょう"
+  "domain_state.map_progress_structure": "カードを島にまとめるか、関係線でつないでみましょう",
+  "domain_state.share_readiness_unreviewed": "SafeMode ON: {count}件の未レビュー項目は共有時に非表示になります"
 }

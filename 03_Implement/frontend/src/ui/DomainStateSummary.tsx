@@ -6,6 +6,7 @@ type DomainStateSummaryProps = {
   cards: Card[];
   islandCount?: number;
   relationCount?: number;
+  safeMode?: boolean;
 };
 
 type StateCounts = {
@@ -17,7 +18,7 @@ type StateCounts = {
   withReview: number;
 };
 
-export function DomainStateSummary({ cards, islandCount = 0, relationCount = 0 }: DomainStateSummaryProps) {
+export function DomainStateSummary({ cards, islandCount = 0, relationCount = 0, safeMode = true }: DomainStateSummaryProps) {
   const counts: StateCounts = useMemo(() => {
     const byClaimType: Record<string, number> = { fact: 0, claim: 0, hypothesis: 0, unknown: 0 };
     let unreviewed = 0;
@@ -148,6 +149,19 @@ export function DomainStateSummary({ cards, islandCount = 0, relationCount = 0 }
           </span>
         ) : null}
       </div>
+      {safeMode && counts.unreviewed > 0 ? (
+        <div style={{
+          fontSize: 11,
+          color: "#92400e",
+          backgroundColor: "#fffbeb",
+          border: "1px solid #fde68a",
+          borderRadius: 6,
+          padding: "4px 8px",
+          marginTop: 4,
+        }}>
+          {t("domain_state.share_readiness_unreviewed", { count: counts.unreviewed })}
+        </div>
+      ) : null}
     </section>
   );
 }
