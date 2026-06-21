@@ -1,7 +1,7 @@
 # Issue Draft: PRODUCT-VALUE-03 レビュー可能な成果物パッケージ
 
 - Type: Feature request
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -10,6 +10,22 @@
 - Related Backlog: `PRODUCT-VALUE-03`
 - Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `02_Architecture/review_attribution.md`, `02_Architecture/value_traceability.md`
 - Expected verification level: `e2e`
+
+## Implementation Progress 2026-06-21
+
+### Done
+- **DomainStateSummary share readiness**: SafeMode連動で未レビュー項目数の共有時非表示警告
+- **CardView domain badges**: claimType/critique/reviewState (DOMAIN-EXPR-01)
+- **SidePanel domain state**: evidence/contradiction/critique counts
+- **StartPanel**: value proposition messaging
+
+### Remaining
+- Narratives panel: integrate review state/claim type into narrative output
+- Share preflight: domain state summary in export flow
+- E2E: reviewable outcome package verification
+
+### Commit
+- f9883f68 share readiness indicator in DomainStateSummary
 
 ## Draft→Open 2026-06-20
 PRODUCT-VALUE-03 Open化。ADR-0032 AcceptedによりV3ゲート充足（ADR-0040で確定済み）。
