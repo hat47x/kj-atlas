@@ -2757,3 +2757,21 @@ DoDテンプレ（Draft→Open）
   - G7 regression: panel rendering, locale key equivalence, typecheck, frontend regression, and build are required.
 - Final release remains **No-Go**. Live provider acceptance, human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
 - No ADR is needed because workspace state transitions, rollback semantics, normalized-query storage, audit persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: layout-suggestion safety terminology
+
+- Scope: layout-suggestion title, unreviewed guidance, proposal-only safety explanation, prerequisite reasons, retry-limit wording, and candidate separation guidance.
+- Finding: the user-facing panel exposed development-stage names and internal reason codes including `CE-2`, `auto_apply_blocked`, `suggestion_required`, and `preview_opt_in_required`. Japanese copy also used implementation-oriented terms such as guardrail, reversible synthesis, self-repair stopper, and document in English.
+- Correction:
+  - The panel now explains that suggestions are unreviewed, remain separate, and are never applied automatically.
+  - Internal prerequisite codes render as concrete next actions such as creating a suggestion, enabling preview, or enabling SafeMode.
+  - Retry status and stopping controls use re-suggestion wording instead of self-repair implementation terminology.
+  - Hardcode guards prevent the removed development labels and reason codes from returning to the component.
+- Gate impact:
+  - G1 safety defaults: improved in presentation because human adoption authority and no-auto-apply behavior are explicit.
+  - G2 primary operations: improved because unmet prerequisites state the action required.
+  - G3 Japanese UI: improved across the layout-suggestion review flow.
+  - G7 regression: panel rendering, locale key equivalence, hardcode guards, typecheck, frontend regression, and build are required.
+- Browser verification: the advanced panel at `http://127.0.0.1:4173/` displayed `配置案` and `安全上の条件: 自動適用なし / 最初に配置案を作成する`; `CE2` and `auto_apply_blocked` were absent from the rendered page.
+- Final release remains **No-Go**. Live provider acceptance, human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because proposal-only behavior, blocker codes, preview semantics, human adoption authority, SafeMode, and persistence are unchanged.

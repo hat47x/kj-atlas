@@ -46,6 +46,9 @@ const guardCases: GuardCase[] = [
       "Suggest layout",
       "Apply suggestion",
       "Preview suggestion",
+      "CE-2 guardrail",
+      "CE2 proposal-only blockers",
+      "auto_apply_blocked",
     ],
   },
   {
