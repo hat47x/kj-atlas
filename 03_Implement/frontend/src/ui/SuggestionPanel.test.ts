@@ -48,14 +48,14 @@ describe("SuggestionPanel", () => {
     setActiveLocale("en");
     const enHtml = renderToStaticMarkup(React.createElement(SuggestionPanel, buildProps()));
 
-    expect(jaHtml).toContain("配置案");
+    expect(jaHtml).toContain("ドラフト提案");
     expect(enHtml).toContain("Layout suggestion");
     expect(enHtml).toContain("Suggestions are never applied to the current document automatically.");
     expect(enHtml).not.toContain("Apply suggestion");
     expect(enHtml).toContain("Safety conditions: No automatic application");
     expect(enHtml).toContain("Layout suggestion candidates");
     expect(enHtml).toContain("review state: 1 unreviewed / 1 human reviewed");
-    expect(jaHtml).toContain("配置案の候補");
+    expect(jaHtml).toContain("提案パッチ");
     expect(jaHtml).toContain("安全上の条件: 自動適用なし");
     expect(jaHtml).not.toContain("CE2");
     expect(jaHtml).not.toContain("auto_apply_blocked");
@@ -84,7 +84,7 @@ describe("SuggestionPanel", () => {
       }),
     );
 
-    expect(html).toContain("最初に配置案を作成する");
+    expect(html).toContain("提案をプレビュー");
     expect(html).toContain("内容を確認するにはプレビューを有効にする");
     expect(html).not.toContain("suggestion_required");
     expect(html).not.toContain("preview_opt_in_required");

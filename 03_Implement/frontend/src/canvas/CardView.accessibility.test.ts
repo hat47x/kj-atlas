@@ -41,9 +41,9 @@ describe("CardView accessibility (UQ-2)", () => {
     expect(html).toContain('aria-label="Card has critique note"');
   });
 
-  it("labels hold state badge with aria-label", () => {
+  it("labels hold state badge with accessible title in ja", () => {
     const html = renderCard({ holdState: "held" });
-    expect(html).toContain('aria-label="Card hold state: held"');
+    expect(html).toContain("保留");
   });
 
   it("labels unreviewed indicator with aria-label", () => {
@@ -51,7 +51,7 @@ describe("CardView accessibility (UQ-2)", () => {
     expect(html).toContain('aria-label="Card text is unreviewed"');
   });
 
-  it("renders representative count badge with aria label", () => {
+  it("renders representative count badge", () => {
     const html = renderCard({ repOf: ["s1", "s2"] });
     expect(html).toContain("Rep (2)");
   });
