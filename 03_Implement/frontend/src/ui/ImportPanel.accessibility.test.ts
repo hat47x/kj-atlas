@@ -12,10 +12,11 @@ describe("ImportPanel accessibility (UQ-2)", () => {
   const renderPanel = () =>
     renderToStaticMarkup(
       createElement(ImportPanel, {
-        onImportReviewPack: vi.fn(),
-        onImportDocument: vi.fn(),
-        isReadOnly: false,
-        safeMode: true,
+        isLoading: false,
+        onImportZip: vi.fn(),
+        onInvalidFileType: vi.fn(),
+        packImportError: null,
+        importedPackSummary: null,
       })
     );
 
