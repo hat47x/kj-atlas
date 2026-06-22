@@ -18,11 +18,28 @@ describe("DomainStateFilterBar", () => {
       })
     );
     expect(html).toContain("Filter:");
-    expect(html).toContain("fact");
-    expect(html).toContain("claim");
-    expect(html).toContain("hypothesis");
+    expect(html).toContain("Fact");
+    expect(html).toContain("Claim");
+    expect(html).toContain("Hypothesis");
     expect(html).toContain("unreviewed");
     expect(html).toContain("critique");
+  });
+
+  it("renders Japanese claim-type labels without internal enum values", () => {
+    setActiveLocale("ja");
+    const html = renderToStaticMarkup(
+      createElement(DomainStateFilterBar, {
+        filter: {},
+        onFilterChange: vi.fn(),
+      })
+    );
+
+    expect(html).toContain("事実");
+    expect(html).toContain("主張");
+    expect(html).toContain("仮説");
+    expect(html).not.toContain(">fact<");
+    expect(html).not.toContain(">claim<");
+    expect(html).not.toContain(">hypothesis<");
   });
 
   it("highlights active filter chips with blue border", () => {

@@ -22,17 +22,30 @@ DOMAIN-EXPR-01..04のPhase 1から着手可能。DecisionStatus=Fixed。
 - **CardView critique indicators**: tag count pills + unreviewed dots (DOMAIN-EXPR-01)
 - **SidePanel card detail**: claimType, critique text, critiqueTags chips, evidence link counts, contradiction counts
 - **DomainStateSummary**: document-level card state distribution with map progress hints
+- **Domain-expression keyboard E2E**: claim classification, review state, critique note/tag, evidence/contradiction visibility, hold/shelf restoration, and SafeMode share preflight
+- **Localized domain-state labels**: selection context and critique controls render localized claim, hold, and critique-tag labels while preserving stored enum values
 - No schema changes (reads existing card.claimType, card.critique, card.critiqueTags, card.textReviewed, document.evidenceLinks)
 
 ### Remaining
-- holdState / PendingItems / Shelf (ADR-0040 Phase 2, schema拡張必要)
 - Critique→Reproposal daily loop UI (DOMAIN-EXPR-03)
-- E2E verification of ambiguity/evidence workflow
+- Human acceptance of the ambiguity/evidence workflow for the Product Value gate
 
 ### Commits
 - 7f655b15 CardView domain state badges
 - a8309640 SidePanel card detail domain state
 - 89d9fdc1 evidence/contradiction counts in SidePanel
+
+### Domain-state localization evidence 2026-06-22
+
+- The Japanese UI no longer exposes stored enum values such as `fact`, `claim`, `hypothesis`, `held`, or `too_close` in the state filters, card badges, selection context, or critique controls.
+- Card claim type, review state, hold state, critique presence, and representative-count accessibility labels now use the active locale catalog.
+- Unknown legacy critique tags remain visible as their stored value instead of being discarded, preserving backward-compatible diagnosis.
+- Chrome verification on `http://127.0.0.1:4173/` confirmed `事実 / 主張 / 仮説` filters and the selected-card summary `主張種別: 主張（解釈） / 保留状態: 保留 / 近すぎる`, with no matching internal enum text in that UI region.
+- Verification:
+  - TypeScript `--noEmit`: pass.
+  - Focused i18n, accessibility, filter, and operability tests: pass.
+  - `domain_expression_keyboard_access.spec.ts`: 3 passed.
+- No ADR is required because stored values, schema, SafeMode, proposal authority, and share/export behavior are unchanged.
 
 ## Requirement meta I/F（共通キー）
 

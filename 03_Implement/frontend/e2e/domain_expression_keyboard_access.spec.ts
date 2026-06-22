@@ -127,11 +127,11 @@ test("domain expression state controls are reachable with keyboard after card se
 
   await tabUntilFocused(
     page,
-    (element) => element instanceof HTMLInputElement && element.type === "checkbox" && element.closest("label")?.textContent?.includes("too_close") === true,
+    (element) => element instanceof HTMLInputElement && element.type === "checkbox" && element.closest("label")?.textContent?.includes("Too close") === true,
     "critique tag checkbox",
   );
   await page.keyboard.press("Space");
-  await expect(page.getByLabel("too_close")).toBeChecked();
+  await expect(page.getByLabel("Too close")).toBeChecked();
 });
 
 test("share preflight keeps unresolved domain signals visible and unreviewed drafts excluded", async ({ page }) => {

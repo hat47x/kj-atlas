@@ -258,6 +258,18 @@ const guardCases: GuardCase[] = [
       "Island has critique note",
     ],
   },
+  {
+    file: "canvas/CardView.tsx",
+    matchAnywhere: true,
+    forbiddenLiterals: [
+      "Card text is unreviewed",
+      "Card has critique note",
+      "Card claim type:",
+      "Claim type:",
+      "Rep (",
+      " tag",
+    ],
+  },
 ];
 
 describe("i18n UI hardcoded text guard", () => {
