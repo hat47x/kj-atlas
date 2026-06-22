@@ -78,6 +78,14 @@ DOMAIN-EXPR-01 Doneにより依存充足。ADR-0040 Phase 2着手。
 - Chrome verification confirmed card selection, `通常 -> 棚上げ`, canvas removal, Shelf rendering, restore, and zero console warnings/errors.
 - This is a regression repair within the accepted ADR-0040 contract. No new ADR is required.
 
+## E2E checkpoint 2026-06-22: keyboard and persisted reload
+
+- Added a maintained Playwright scenario covering keyboard selection, keyboard traversal to the Hold state control, `End` selection of `shelved`, keyboard Save, reload, keyboard Restore, a second Save, and a final reload.
+- The fixture now persists PUT requests and returns the saved document on later GET requests, so the scenario verifies the same whole-document API contract used by the application.
+- Assertions confirm that Shelf membership and `holdState: "shelved"` survive the first reload, restoration removes both fields after the second save, and the card returns at the original canvas coordinates.
+- Verification: TypeScript passed; all 3 scenarios in `domain_expression_keyboard_access.spec.ts` passed.
+- This closes the remaining automated E2E evidence noted in the Shelf workflow checkpoint. No ADR is required because no product or data-contract decision changed.
+
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0040` Phase 2。加算的・後方互換のschema拡張を含む。
 
 ## Dependencies
