@@ -1183,6 +1183,7 @@
   "domain_filter.has_critique": "違和感あり",
   "domain_filter.clear": "解除",
   "side_panel.critique_summary": "違和感: {critiques}件 / 再提案: {reproposals}件",
+  "side_panel.evidence_summary": "根拠: {total}件（支持 {supports}, 反証 {contradicts}）",
   "state_filter.label": "状態フィルタ",
   "state_filter.unreviewed": "未レビュー",
   "state_filter.no_evidence": "根拠なし",

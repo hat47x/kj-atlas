@@ -1212,6 +1212,15 @@ export function SidePanel({
           {t("side_panel.critique_summary", { critiques: document?.critiqueInputs?.length ?? 0, reproposals: document?.reproposalDiffs?.length ?? 0 })}
         </section>
       ) : null}
+      {(document?.evidenceLinks?.length ?? 0) > 0 ? (
+        <section style={{ fontSize: 11, color: "#0369a1", padding: "4px 0", borderBottom: "1px solid #bae6fd", marginBottom: 6 }}>
+          {t("side_panel.evidence_summary", {
+            total: document?.evidenceLinks?.length ?? 0,
+            supports: (document?.evidenceLinks ?? []).filter((e) => e.type === "supports").length,
+            contradicts: (document?.evidenceLinks ?? []).filter((e) => e.type === "contradicts").length,
+          })}
+        </section>
+      ) : null}
       {topContent}
       {importedPackSnapshotUrl || importedPackDiagnosticsMd ? (
         <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0", display: "grid", gap: 8 }}>
