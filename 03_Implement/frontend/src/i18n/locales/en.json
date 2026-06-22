@@ -1182,6 +1182,7 @@
   "domain_filter.unreviewed_only": "unreviewed",
   "domain_filter.has_critique": "critique",
   "domain_filter.clear": "clear",
+  "side_panel.critique_summary": "Critiques: {critiques} / Reproposals: {reproposals}",
   "state_filter.label": "State filter",
   "state_filter.unreviewed": "unreviewed",
   "state_filter.no_evidence": "no evidence",

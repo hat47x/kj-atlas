@@ -1207,6 +1207,11 @@ export function SidePanel({
           onFocusCard={(cardId) => onFocusCardById(cardId)}
         />
       ) : null}
+      {(document?.critiqueInputs?.length ?? 0) > 0 || (document?.reproposalDiffs?.length ?? 0) > 0 ? (
+        <section style={{ fontSize: 11, color: "#92400e", padding: "4px 0", borderBottom: "1px solid #fde68a", marginBottom: 6 }}>
+          {t("side_panel.critique_summary", { critiques: document?.critiqueInputs?.length ?? 0, reproposals: document?.reproposalDiffs?.length ?? 0 })}
+        </section>
+      ) : null}
       {topContent}
       {importedPackSnapshotUrl || importedPackDiagnosticsMd ? (
         <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0", display: "grid", gap: 8 }}>
