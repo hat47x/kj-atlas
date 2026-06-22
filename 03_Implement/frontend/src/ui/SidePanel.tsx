@@ -745,6 +745,15 @@ export function SidePanel({
     unknown: t("side_panel.claim_type.unknown"),
   };
 
+  const critiqueTagLabels: Record<CritiqueTag, string> = {
+    too_close: t("side_panel.critique.tag.too_close"),
+    too_far: t("side_panel.critique.tag.too_far"),
+    belongs_together: t("side_panel.critique.tag.belongs_together"),
+    unrelated: t("side_panel.critique.tag.unrelated"),
+    unclear_boundary: t("side_panel.critique.tag.unclear_boundary"),
+  };
+  const getCritiqueTagLabel = (tag: string): string => critiqueTagLabels[tag as CritiqueTag] ?? tag;
+
   const claimTypeBadgeColors: Record<ClaimType, { backgroundColor: string; color: string }> = {
     fact: { backgroundColor: "#dcfce7", color: "#166534" },
     claim: { backgroundColor: "#dbeafe", color: "#1d4ed8" },
@@ -1143,7 +1152,7 @@ export function SidePanel({
             </div>
             {selectedCard?.claimType && selectedCard.claimType !== "unknown" ? (
               <div style={{ fontSize: 12, color: "#475569" }}>
-                {t("side_panel.context.claim_type", { value: selectedCard.claimType })}
+                {t("side_panel.context.claim_type", { value: claimTypeLabels[selectedCard.claimType] })}
               </div>
             ) : null}
             {outgoingEvidenceLinks.length > 0 || incomingEvidenceLinks.length > 0 ? (
@@ -1158,7 +1167,7 @@ export function SidePanel({
             ) : null}
             {selectedCard?.holdState ? (
               <div style={{ fontSize: 12, color: "#92400e", backgroundColor: "#fef3c7", borderRadius: 4, padding: "2px 6px", display: "inline-block", marginTop: 2 }}>
-                {t("side_panel.context.hold_state", { value: selectedCard.holdState })}
+                {t("side_panel.context.hold_state", { value: t(`side_panel.hold_state.${selectedCard.holdState}`) })}
               </div>
             ) : null}
             {selectedCard?.critique ? (
@@ -1169,7 +1178,7 @@ export function SidePanel({
             {selectedCard?.critiqueTags && selectedCard.critiqueTags.length > 0 ? (
               <div style={{ fontSize: 11, color: "#92400e", display: "flex", gap: 4, flexWrap: "wrap" }}>
                 {selectedCard.critiqueTags.map((tag) => (
-                  <span key={tag} style={{ backgroundColor: "#fed7aa", borderRadius: 999, padding: "1px 6px" }}>{tag}</span>
+                  <span key={tag} style={{ backgroundColor: "#fed7aa", borderRadius: 999, padding: "1px 6px" }}>{getCritiqueTagLabel(tag)}</span>
                 ))}
               </div>
             ) : null}
@@ -2571,7 +2580,7 @@ export function SidePanel({
                     onIslandCritiqueTagsChange(toggleCritiqueTag(selectedIsland.critiqueTags, tag));
                   }}
                 />
-                {tag}
+                {critiqueTagLabels[tag]}
               </label>
             ))}
           </div>
@@ -3416,7 +3425,7 @@ export function SidePanel({
                         onCardCritiqueTagsChange(toggleCritiqueTag(selectedCard.critiqueTags, tag));
                       }}
                     />
-                    {tag}
+                    {critiqueTagLabels[tag]}
                   </label>
                 ))}
               </div>

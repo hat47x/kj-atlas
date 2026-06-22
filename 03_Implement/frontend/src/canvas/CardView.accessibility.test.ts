@@ -33,12 +33,12 @@ describe("CardView accessibility (UQ-2)", () => {
 
   it("labels claim type badge with aria-label", () => {
     const html = renderCard({ claimType: "fact" });
-    expect(html).toContain('aria-label="Card claim type: fact"');
+    expect(html).toContain('aria-label="カードの主張種別: 事実"');
   });
 
   it("labels critique indicator with aria-label", () => {
     const html = renderCard({ critique: "something off" });
-    expect(html).toContain('aria-label="Card has critique note"');
+    expect(html).toContain('aria-label="カードに違和感メモがあります"');
   });
 
   it("labels hold state badge with accessible title in ja", () => {
@@ -48,12 +48,12 @@ describe("CardView accessibility (UQ-2)", () => {
 
   it("labels unreviewed indicator with aria-label", () => {
     const html = renderCard({ textReviewed: false });
-    expect(html).toContain('aria-label="Card text is unreviewed"');
+    expect(html).toContain('aria-label="カード本文は未レビューです"');
   });
 
   it("renders representative count badge", () => {
     const html = renderCard({ repOf: ["s1", "s2"] });
-    expect(html).toContain("Rep (2)");
+    expect(html).toContain("代表 (2)");
   });
 
   it("uses tabIndex 0 for keyboard focusability", () => {
