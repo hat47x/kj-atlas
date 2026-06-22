@@ -1297,6 +1297,27 @@
 
 ---
 
+## 2026-06-22 complete legacy `codex/*` ancestry integration
+
+- Baseline: `origin/main@e6d82290`.
+- Scope: every remote `origin/codex/*` ref reported by `git branch -r --no-merged origin/main` at the start of this checkpoint.
+- Initial count: 80 branch tips.
+- GitHub PR audit: 16 previously merged PRs, 59 closed unmerged PRs, 4 open PRs, and 1 branch without a PR.
+- Risk assessment: the oldest tips were about 4,900 commits behind current `main`. Applying their historical trees through ordinary content conflict resolution would risk restoring obsolete requirements, UI, and implementation.
+- Integration method: four explicit multi-parent merge commits using the `ours` merge strategy. This keeps current `main` as the canonical tree while making every observed legacy branch tip reachable from the integration branch.
+  - `014827ac` batch 1
+  - `bb943aa2` batch 2
+  - `856a23a3` batch 3
+  - `9c071080` batch 4
+- Verification: `git branch -r --no-merged HEAD` returned zero `origin/codex/*` refs after the four merges.
+- Content impact: none from the legacy branches. Their history and branch-tip ancestry are preserved without overwriting the current product, documentation, security, or SafeMode contracts.
+- Baseline repair discovered during CI: `origin/main@e6d82290` passed `isAdvancedUiEnabled` and `onRestoreShelvedCard` to `SidePanel`, but its accepted-ours SidePanel sync had removed both props and the related Advanced UI / Shelf restore behavior. The integration branch restored the last verified SidePanel contract, retained the newly added critique/reproposal summary, and revalidated TypeScript plus Shelf and operability tests.
+- Merge requirement: the integration PR must use a normal merge commit, not squash or rebase, so all branch-tip parents remain reachable from `main`.
+- Remote branch deletion remains out of scope. Deletion still requires repository-maintainer approval and a separate final deletion audit.
+- No new ADR is required. This applies the existing ADR-0034 and PROJECT-GOV-01 branch-reachability policy without changing product or governance authority.
+
+---
+
 ## Post-2423 governance reachability and Product Value evidence-foundation checkpoint
 
 - Checkpoint date (JST): 2026-06-17
