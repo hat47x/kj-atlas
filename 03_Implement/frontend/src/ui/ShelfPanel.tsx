@@ -5,11 +5,12 @@ import { t } from "../i18n/translate";
 type ShelfPanelProps = {
   cards: Card[];
   shelf: ShelfEntry[];
+  isReadOnly?: boolean;
   onRestoreCard?: (cardId: string) => void;
   onFocusCard?: (cardId: string) => void;
 };
 
-export function ShelfPanel({ cards, shelf, onRestoreCard, onFocusCard }: ShelfPanelProps) {
+export function ShelfPanel({ cards, shelf, isReadOnly = false, onRestoreCard, onFocusCard }: ShelfPanelProps) {
   const shelvedCards = useMemo(() => {
     if (shelf.length === 0) return [];
     const cardMap = new Map(cards.map((c) => [c.id, c]));
@@ -81,6 +82,7 @@ export function ShelfPanel({ cards, shelf, onRestoreCard, onFocusCard }: ShelfPa
           {onRestoreCard ? (
             <button
               type="button"
+              disabled={isReadOnly}
               onClick={() => onRestoreCard(entry.cardId)}
               style={{
                 flex: "0 0 auto",
@@ -90,7 +92,7 @@ export function ShelfPanel({ cards, shelf, onRestoreCard, onFocusCard }: ShelfPa
                 color: "#0f172a",
                 fontSize: 11,
                 padding: "2px 8px",
-                cursor: "pointer",
+                cursor: isReadOnly ? "not-allowed" : "pointer",
               }}
             >
               {t("shelf_panel.restore")}
