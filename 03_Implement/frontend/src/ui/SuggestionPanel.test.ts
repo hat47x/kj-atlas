@@ -1,65 +1,84 @@
-import { createElement } from "react";
+import React from "react";
+import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { SuggestionPanel } from "./SuggestionPanel";
 import { setActiveLocale } from "../i18n/translate";
-import type { Ce2SuggestionCandidate } from "./suggestion_panel_adapter";
 
-const mockCandidates: Ce2SuggestionCandidate[] = [{
-  id: "p1", label: "Proposal 1", status: "proposed", reviewState: "unreviewed",
-  cardCount: 3, summary: "Draft proposal alpha", sourceBundleHash: "abc123",
-}, {
-  id: "p2", label: "Proposal 2", status: "held", reviewState: "human_reviewed",
-  cardCount: 2, summary: "Draft proposal beta", sourceBundleHash: "def456",
-}];
-
-beforeEach(() => { setActiveLocale("ja"); });
+function buildProps() {
+  return {
+    instruction: "layout hints",
+    onInstructionChange: vi.fn(),
+    onSuggest: vi.fn(),
+    onResuggest: vi.fn(),
+    onDiscard: vi.fn(),
+    hasSuggestion: true,
+    suggestionId: "proposal-ui-1",
+    proposalCandidates: [
+      {
+        proposalId: "proposal-ui-1",
+        label: "Proposal 1",
+        status: "proposed" as const,
+        reviewState: "unreviewed" as const,
+      },
+      {
+        proposalId: "proposal-ui-2",
+        label: "Proposal 2",
+        status: "held" as const,
+        reviewState: "human_reviewed" as const,
+      },
+    ],
+    selectedProposalId: "proposal-ui-2",
+    onSelectProposalCandidate: vi.fn(),
+    isPreviewEnabled: true,
+    onPreviewToggle: vi.fn(),
+    isAnnotateOverlayEnabled: false,
+    onAnnotateOverlayToggle: vi.fn(),
+    isSuggesting: false,
+    errorMessage: null,
+    notes: "draft note",
+  };
+}
 
 describe("SuggestionPanel", () => {
   it("renders localized draft suggestion controls", () => {
     setActiveLocale("ja");
-    const jaHtml = renderToStaticMarkup(createElement(SuggestionPanel, {
-      onSuggest: vi.fn(), onResuggest: vi.fn(), onDiscard: vi.fn(),
-      onAnnotateCritiques: vi.fn(), suggestionId: null, hasSuggestion: false,
-      isSuggesting: false, layoutHints: "", onLayoutHintsChange: vi.fn(),
-      onStopAnnotating: vi.fn(), notes: "", proposalCandidates: [],
-      isPreviewEnabled: false, onPreviewToggle: vi.fn(),
-    }));
-    expect(jaHtml).toContain("ドラフト提案");
-    
+    const jaHtml = renderToStaticMarkup(React.createElement(SuggestionPanel, buildProps()));
+
     setActiveLocale("en");
-    const enHtml = renderToStaticMarkup(createElement(SuggestionPanel, {
-      onSuggest: vi.fn(), onResuggest: vi.fn(), onDiscard: vi.fn(),
-      onAnnotateCritiques: vi.fn(), suggestionId: "s1", hasSuggestion: true,
-      isSuggesting: false, layoutHints: "layout hints", onLayoutHintsChange: vi.fn(),
-      onStopAnnotating: vi.fn(), notes: "draft note",
-      proposalCandidates: mockCandidates, selectedProposalId: "p2",
-      onSelectProposalCandidate: vi.fn(), isPreviewEnabled: false, onPreviewToggle: vi.fn(),
-    }));
-    expect(enHtml).toContain("Draft suggestion");
-    expect(enHtml).toContain("This is an unreviewed suggestion proposal.");
+    const enHtml = renderToStaticMarkup(React.createElement(SuggestionPanel, buildProps()));
+
+    expect(jaHtml).toContain("配置案");
+    expect(enHtml).toContain("Layout suggestion");
+    expect(enHtml).toContain("Suggestions are never applied to the current document automatically.");
     expect(enHtml).not.toContain("Apply suggestion");
-    expect(enHtml).toContain("Safety conditions");
-    expect(enHtml).toContain("Patch proposals");
+    expect(enHtml).toContain("Safety conditions: No automatic application");
+    expect(enHtml).toContain("Layout suggestion candidates");
     expect(enHtml).toContain("review state: 1 unreviewed / 1 human reviewed");
-    expect(enHtml).toContain("Suggest layout");
-    expect(enHtml).toContain("CE-2 guardrail: proposal-only flow");
+    expect(enHtml).toContain("selected: <strong>Proposal 2</strong> (held, human reviewed)");
     expect(enHtml).not.toContain("auto_apply_blocked");
-    expect(jaHtml).toContain("提案パッチ");
-    expect(jaHtml).toContain("安全条件");
-    expect(jaHtml).toContain("配置を提案");
   });
 
-  it("explains each proposal prerequisite without exposing internal reason codes", () => {
+  it("disables edit actions in read-only mode", () => {
+    setActiveLocale("en");
+    const html = renderToStaticMarkup(React.createElement(SuggestionPanel, { ...buildProps(), isReadOnly: true }));
+
+    expect(html).toContain("Suggest layout");
+    expect(html).toContain("disabled");
+  });
+
+  it("explains proposal prerequisites without exposing internal reason codes", () => {
     setActiveLocale("ja");
-    const html = renderToStaticMarkup(createElement(SuggestionPanel, {
-      onSuggest: vi.fn(), onResuggest: vi.fn(), onDiscard: vi.fn(),
-      onAnnotateCritiques: vi.fn(), suggestionId: null, hasSuggestion: false,
-      isSuggesting: false, layoutHints: "", onLayoutHintsChange: vi.fn(),
-      onStopAnnotating: vi.fn(), notes: "", proposalCandidates: [],
-      isPreviewEnabled: false, onPreviewToggle: vi.fn(),
-    }));
-    expect(html).toContain("配置を提案");
+    const html = renderToStaticMarkup(
+      React.createElement(SuggestionPanel, {
+        ...buildProps(),
+        hasSuggestion: false,
+        isPreviewEnabled: false,
+      }),
+    );
+
+    expect(html).toContain("最初に配置案を作成する");
+    expect(html).toContain("内容を確認するにはプレビューを有効にする");
     expect(html).not.toContain("suggestion_required");
     expect(html).not.toContain("preview_opt_in_required");
   });

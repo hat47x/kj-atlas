@@ -37,7 +37,7 @@ import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geome
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
-import { updateCardHoldState, type HoldStateSelection } from "./domain/hold_state_ops";
+import { updateCardHoldStateAndShelf, type HoldStateSelection } from "./domain/hold_state_ops";
 import { resolveDecisionOriginTrace, resolveRepresentativeOriginTrace } from "./domain/merge_traceability";
 import { collectMergeCandidates } from "./domain/merge_candidates";
 import {
@@ -1591,6 +1591,7 @@ export default function App() {
     const summaryHiddenCardIds = new Set<string>();
     const searchHiddenCardIds = new Set<string>();
     const mergedHiddenCardIds = new Set<string>();
+    const shelvedCardIds = new Set<string>();
 
     if (focusedVisibleDocument) {
       // 1) collapseで隠れるカード
@@ -1673,14 +1674,19 @@ export default function App() {
       }
     }
 
+    for (const entry of focusedVisibleDocument?.shelf ?? []) {
+      shelvedCardIds.add(entry.cardId);
+    }
+
     // merge
     const hiddenCardIds = new Set<string>(collapsedHiddenCardIds);
     for (const cardId of depthHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of summaryHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of searchHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of mergedHiddenCardIds) hiddenCardIds.add(cardId);
+    for (const cardId of shelvedCardIds) hiddenCardIds.add(cardId);
     for (const cardId of temporaryRevealCardIds) {
-      if (!depthHiddenCardIds.has(cardId)) {
+      if (!depthHiddenCardIds.has(cardId) && !shelvedCardIds.has(cardId)) {
         hiddenCardIds.delete(cardId);
       }
     }
@@ -4333,20 +4339,37 @@ export default function App() {
         return;
       }
 
-      const nextCards = updateCardHoldState(document.cards, cardId, selection);
-      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
-      if (!hasChanges) {
+      const nextDocument = updateCardHoldStateAndShelf(document, cardId, selection, new Date().toISOString());
+      if (nextDocument === document) {
         return;
       }
 
       applyDocumentChange(
-        {
-          ...document,
-          cards: nextCards,
-        },
-        t("app.history.card.hold_state_updated"),
+        nextDocument,
+        t("app.history.card.hold_state_updated", { value: selection }),
         { preserveSuggestionPreview: true }
       );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleRestoreShelvedCard = useCallback(
+    (cardId: string) => {
+      if (!document) {
+        return;
+      }
+
+      const nextDocument = updateCardHoldStateAndShelf(document, cardId, "active", new Date().toISOString());
+      if (nextDocument === document) {
+        return;
+      }
+
+      applyDocumentChange(
+        nextDocument,
+        t("app.history.card.shelf_restored"),
+        { preserveSuggestionPreview: true }
+      );
+      setSelectedCardIds([cardId]);
     },
     [applyDocumentChange, document]
   );
@@ -8969,6 +8992,7 @@ export default function App() {
 
             handleCardHoldStateChange(selectedCard.id, value);
           }}
+          onRestoreShelvedCard={handleRestoreShelvedCard}
           onCardTextReviewedChange={(value) => {
             if (!selectedCard) {
               return;
