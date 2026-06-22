@@ -88,6 +88,9 @@ class Card(BaseModel):
 
 class CardV2(Card):
     textReviewed: bool | None = None
+    holdState: Literal["held", "pending", "shelved"] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
 
 
 class EdgeV1(BaseModel):
@@ -597,6 +600,13 @@ class PolygonHandoffContractVerificationResponse(BaseModel):
 
         return self
 
+
+class ShelfEntry(BaseModel):
+    cardId: str
+    shelvedAt: datetime
+    reason: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
 class DocumentV2(BaseModel):
     version: Literal[2]
     id: str
@@ -617,6 +627,7 @@ class DocumentV2(BaseModel):
     reproposalDiffs: list[ReproposalDiff] | None = Field(default=None, exclude_if=lambda value: value is None)
     reviewAttribution: ReviewAttribution | None = Field(default=None, exclude_if=lambda value: value is None)
     deterministicTieBreak: DeterministicTieBreak | None = Field(default=None, exclude_if=lambda value: value is None)
+    shelf: list[ShelfEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 DocumentPayload = Annotated[DocumentV1 | DocumentV2, Field(discriminator="version")]

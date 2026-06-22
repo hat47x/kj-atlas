@@ -45,6 +45,30 @@ DOMAIN-EXPR-01 Doneにより依存充足。ADR-0040 Phase 2着手。
 - Remaining scope is unchanged: a visible Shelf list, set-aside/restore operations, ShelfEntry import/export, and E2E coverage belong to the next slice.
 - No ADR is required because the accepted optional schema, review authority, SafeMode behavior, and sharing policy are unchanged.
 
+## Implementation checkpoint 2026-06-21: card decision-status control
+
+- Added a card-inspector control for `通常 / 保留 / 未決 / 棚上げ`.
+- The control is keyboard-operable through a labeled native select and is disabled in read-only review mode.
+- Returning to `通常` removes the optional `holdState` field instead of writing a new default value.
+- Import parsing and strict validation now preserve supported `holdState` values and reject unknown values.
+- Document history records the change while keeping suggestion preview state intact.
+- Browser verification confirmed card selection, `通常 -> 保留`, localized card badge/accessible name, status feedback, and undo restoration.
+- Remaining scope is unchanged: a visible Shelf list, set-aside/restore operations, ShelfEntry import/export, and E2E coverage belong to the next slice.
+- No ADR is required because the accepted optional schema, review authority, SafeMode behavior, and sharing policy are unchanged.
+
+## Implementation checkpoint 2026-06-21: Shelf workflow and persistence
+
+- Selecting `棚上げ` now adds a `ShelfEntry`, preserves the card body and coordinates, and removes the card from the canvas.
+- The side panel shows a visible Shelf list with the card text, shelved timestamp, optional reason, and a read-only-aware restore action.
+- Restoring removes both Shelf membership and the optional `holdState`, returns the card at its original coordinates, selects it, and records one reversible history operation.
+- Tolerant JSON import keeps valid Shelf entries, normalizes their cards to `holdState: "shelved"`, and drops invalid, duplicate, or orphaned entries.
+- Strict frontend validation accepts only typed Shelf entries, rejects duplicate or unknown card references, and requires Shelf members to use `holdState: "shelved"`.
+- Backend `DocumentV2` now models `CardV2.holdState` and `DocumentV2.shelf`; SQLite PUT/GET coverage proves that status, coordinates, timestamp, and reason survive persistence.
+- Browser verification confirmed `通常 -> 棚上げ`, canvas removal, Shelf list rendering, restore, and the exact pre/post viewport bounds `(80, 166, 245.6 x 105.6)`.
+- At a 280 px side-panel width, the Shelf section had no horizontal overflow (`scrollWidth == clientWidth`) and emitted no browser console warning or error.
+- Remaining scope: add a maintained automated E2E scenario for keyboard traversal and persisted reload. The native select and button are keyboard-capable, but the in-app browser key simulation did not activate the focused restore button reliably, so this must be verified in the Playwright E2E harness.
+- No ADR is required: this implements the already accepted additive schema and reversible Shelf behavior without changing authority, SafeMode, sharing, or compatibility policy.
+
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0040` Phase 2。加算的・後方互換のschema拡張を含む。
 
 ## Dependencies
