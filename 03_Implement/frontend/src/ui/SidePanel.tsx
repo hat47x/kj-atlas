@@ -56,6 +56,7 @@ type SidePanelProps = {
   onCardCritiqueTagsChange: (value: string[]) => void;
   onCardClaimTypeChange: (value: ClaimType) => void;
   onCardHoldStateChange: (value: HoldState | "active") => void;
+  onRestoreShelvedCard: (cardId: string) => void;
   onCardTextReviewedChange: (value: boolean) => void;
   onAddEvidenceLink: (payload: { toCardId: string; type: EvidenceLink["type"] }) => void;
   onRemoveEvidenceLink: (evidenceLinkId: string) => void;
@@ -223,6 +224,7 @@ export function SidePanel({
   onCardCritiqueTagsChange,
   onCardClaimTypeChange,
   onCardHoldStateChange,
+  onRestoreShelvedCard,
   onCardTextReviewedChange,
   onAddEvidenceLink,
   onRemoveEvidenceLink,
@@ -1204,7 +1206,8 @@ export function SidePanel({
         <ShelfPanel
           cards={document.cards}
           shelf={document.shelf}
-          onFocusCard={(cardId) => onFocusCardById(cardId)}
+          isReadOnly={isReadOnly}
+          onRestoreCard={onRestoreShelvedCard}
         />
       ) : null}
       {topContent}
