@@ -209,6 +209,7 @@ type SidePanelProps = {
   importedPackSnapshotUrl?: string | null;
   importedPackDiagnosticsMd?: string | null;
   mergeAuditLog: MergeAuditEntry[];
+  onRestoreShelvedCard?: (cardId: string) => void;
 };
 
 export function SidePanel({
@@ -372,6 +373,7 @@ export function SidePanel({
   importedPackSnapshotUrl,
   importedPackDiagnosticsMd,
   mergeAuditLog,
+  onRestoreShelvedCard,
   isReadOnly = false,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
