@@ -1,7 +1,7 @@
 # Issue Draft: UI-QUALITY-A11Y-01 アクセシビリティテストの体系化と拡充
 
 - Type: Documentation quality
-- Status: In Progress（T1-T3.8完了, 8コンポーネント/41 tests, T4未着手）
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -10,6 +10,7 @@
 - Related Backlog: `UI-QUALITY-A11Y-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `unit`
+- Progress: T1-T3.8 complete (8 components / 41 tests); T4 not started.
 
 ## Requirement meta I/F
 
