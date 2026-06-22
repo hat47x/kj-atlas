@@ -1134,19 +1134,18 @@ export function SidePanel({
             <div style={{ fontSize: 12, color: "#334155", overflowWrap: "anywhere" }}>
               {t("side_panel.context.target", { value: selectedCardText })}
             </div>
-            <div style={{ fontSize: 12, color: "#475569" }}>
-              {t("side_panel.context.review_state", { value: selectedCardReviewState })}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 12, color: "#475569", marginBottom: 2 }}>
+              <span>{t("side_panel.context.review_state", { value: selectedCardReviewState })}</span>
+              {selectedCard?.claimType && selectedCard.claimType !== "unknown" ? (
+                <span>{t("side_panel.context.claim_type", { value: selectedCard.claimType })}</span>
+              ) : null}
+              {(outgoingEvidenceLinks.length > 0 || incomingEvidenceLinks.length > 0) ? (
+                <span style={{ color: "#0369a1" }}>{t("side_panel.context.evidence_brief", { n: outgoingEvidenceLinks.length + incomingEvidenceLinks.length })}</span>
+              ) : null}
+              {selectedCard?.holdState ? (
+                <span style={{ color: "#92400e" }}>{t("side_panel.context.hold_brief", { value: selectedCard.holdState })}</span>
+              ) : null}
             </div>
-            {selectedCard?.claimType && selectedCard.claimType !== "unknown" ? (
-              <div style={{ fontSize: 12, color: "#475569" }}>
-                {t("side_panel.context.claim_type", { value: selectedCard.claimType })}
-              </div>
-            ) : null}
-            {outgoingEvidenceLinks.length > 0 || incomingEvidenceLinks.length > 0 ? (
-              <div style={{ fontSize: 12, color: "#475569" }}>
-                {t("side_panel.context.evidence_links", { outgoing: outgoingEvidenceLinks.length, incoming: incomingEvidenceLinks.length })}
-              </div>
-            ) : null}
             {selectedCardContradictionsCount > 0 ? (
               <div style={{ fontSize: 12, color: "#9a3412", fontWeight: 600 }}>
                 {t("side_panel.context.contradictions", { count: selectedCardContradictionsCount })}
