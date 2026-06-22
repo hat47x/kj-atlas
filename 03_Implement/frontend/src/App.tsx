@@ -3947,10 +3947,10 @@ export default function App() {
             candidate.id === islandId ? { ...candidate, cardIds: mergedCardIds } : candidate
           ),
         },
-        "Added selected cards to island"
+        t("app.history.island.selected_cards_added")
       );
     },
-    [applyDocumentChange, document, selectedCardIds]
+    [applyDocumentChange, document, selectedCardIds, t]
   );
 
   const handleDeleteIslandById = useCallback(
@@ -3968,11 +3968,11 @@ export default function App() {
           islands: nextIslands,
           readingOrder: (document.readingOrder ?? []).filter((entryId) => entryId !== islandId),
         },
-        "Deleted island"
+        t("app.history.island.deleted")
       );
       setSelectedIslandId((previous) => (previous === islandId ? null : previous));
     },
-    [applyDocumentChange, document]
+    [applyDocumentChange, document, t]
   );
 
   const handleToggleAdvancedUi = useCallback(() => {
