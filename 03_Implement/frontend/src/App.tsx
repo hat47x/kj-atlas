@@ -37,6 +37,7 @@ import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geome
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
+import { updateCardHoldStateAndShelf, type HoldStateSelection } from "./domain/hold_state_ops";
 import { resolveDecisionOriginTrace, resolveRepresentativeOriginTrace } from "./domain/merge_traceability";
 import { collectMergeCandidates } from "./domain/merge_candidates";
 import {
@@ -207,6 +208,10 @@ function getViewModeDisplayLabel(mode: ViewMode): string {
   return t("app.view_mode.explore");
 }
 
+function getEntityKindDisplayLabel(kind: "card" | "island"): string {
+  return t(kind === "card" ? "app.entity.card" : "app.entity.island");
+}
+
 function describeRecoverableError(error: unknown): string {
   if (error instanceof ApiError) {
     return `HTTP ${error.status}: ${error.message}`;
@@ -261,6 +266,12 @@ function getWorkspaceDecisionDisplayLabel(decision: string | undefined): string 
   if (decision === "reject") return t("patch_workspace.decision.reject");
   if (decision === "hold") return t("patch_workspace.decision.hold");
   return t("patch_workspace.decision.none");
+}
+
+function getWorkspaceScopeDisplayLabel(scope: "all" | "selection" | "island"): string {
+  if (scope === "selection") return t("patch_workspace.scope.selection");
+  if (scope === "island") return t("patch_workspace.scope.island");
+  return t("patch_workspace.scope.all");
 }
 
 function isPerspectiveModeValue(value: unknown): value is PerspectiveMode {
@@ -1562,6 +1573,7 @@ export default function App() {
     const summaryHiddenCardIds = new Set<string>();
     const searchHiddenCardIds = new Set<string>();
     const mergedHiddenCardIds = new Set<string>();
+    const shelvedCardIds = new Set<string>();
 
     if (focusedVisibleDocument) {
       // 1) collapseで隠れるカード
@@ -1635,12 +1647,17 @@ export default function App() {
       }
     }
 
+    for (const entry of focusedVisibleDocument?.shelf ?? []) {
+      shelvedCardIds.add(entry.cardId);
+    }
+
     // merge
     const hiddenCardIds = new Set<string>(collapsedHiddenCardIds);
     for (const cardId of depthHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of summaryHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of searchHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of mergedHiddenCardIds) hiddenCardIds.add(cardId);
+    for (const cardId of shelvedCardIds) hiddenCardIds.add(cardId);
     for (const cardId of temporaryRevealCardIds) {
       if (!depthHiddenCardIds.has(cardId)) {
         hiddenCardIds.delete(cardId);
@@ -1809,14 +1826,14 @@ export default function App() {
   }, [isReadOnly, locationSearch]);
 
   const loadDocument = useCallback(
-    async (docId: string, options?: { allowCreateOnNotFound?: boolean; isReload?: boolean }) => {
+    async (docId: string, options?: { allowCreateOnNotFound?: boolean; isReload?: boolean }): Promise<boolean> => {
       const allowCreateOnNotFound = options?.allowCreateOnNotFound ?? false;
       const isReload = options?.isReload ?? false;
       if (isReload) {
         setIsReloadingDocument(true);
       }
       setIsLoading(true);
-      setStatusMessage(isReload ? "Reloading document..." : "Loading document...");
+      setStatusMessage(t(isReload ? "app.status.document_reloading" : "app.status.document_loading"));
 
       try {
         const loaded = await getDocument(docId);
@@ -1854,6 +1871,7 @@ export default function App() {
         setPackVisibility(persistedVisibility.packVisibility);
         pendingCardDragSnapshotRef.current = null;
         setStatusMessage(t("app.status.document_loaded"));
+        return true;
       } catch (error) {
         if (allowCreateOnNotFound && error instanceof ApiError && error.status === 404) {
           const defaultDocument = createDefaultDocument(docId);
@@ -1894,8 +1912,10 @@ export default function App() {
             setPackVisibility(persistedVisibility.packVisibility);
             pendingCardDragSnapshotRef.current = null;
             setStatusMessage(t("app.status.document_created"));
+            return true;
           } catch (saveError) {
             setStatusMessage(formatCreateDocumentFailure(saveError));
+            return false;
           }
         } else {
           if (error instanceof ApiError && error.status === 404) {
@@ -1903,6 +1923,7 @@ export default function App() {
           } else {
             setStatusMessage(formatLoadDocumentFailure(error));
           }
+          return false;
         }
       } finally {
         setIsLoading(false);
@@ -2138,14 +2159,20 @@ export default function App() {
 
   const handleAlign = useCallback(
     (direction: AlignDirection) => {
-      applyLayoutOperation(`Aligned ${direction}`, (cards) => alignSelectedCards(cards, selectedCardIds, direction, {}));
+      const statusKey = {
+        left: "app.status.edit.aligned_left",
+        right: "app.status.edit.aligned_right",
+        top: "app.status.edit.aligned_top",
+        bottom: "app.status.edit.aligned_bottom",
+      }[direction];
+      applyLayoutOperation(t(statusKey), (cards) => alignSelectedCards(cards, selectedCardIds, direction, {}));
     },
     [applyLayoutOperation, selectedCardIds]
   );
 
   const handleDistribute = useCallback(
     (direction: DistributeDirection) => {
-      const status = direction === "horizontal" ? "Distributed horizontally" : "Distributed vertically";
+      const status = t(direction === "horizontal" ? "app.status.edit.distributed_horizontally" : "app.status.edit.distributed_vertically");
       applyLayoutOperation(status, (cards) => distributeSelectedCards(cards, selectedCardIds, direction, {}));
     },
     [applyLayoutOperation, selectedCardIds]
@@ -2225,7 +2252,7 @@ export default function App() {
           future: [],
         };
       });
-      setStatusMessage("Moved card");
+      setStatusMessage(t("app.status.edit.moved_card"));
     };
 
     window.addEventListener("pointerup", commitCardDragSnapshot);
@@ -2344,15 +2371,15 @@ export default function App() {
     }
 
     setIsSuggestingIslandSummary(true);
-    setStatusMessage("Requesting island summary suggestion...");
+    setStatusMessage(t("app.status.island_summary.requesting"));
 
     try {
       const proposal = await proposeIslandSummary(document, targetIsland.id, `${document.id}:${document.updatedAt}`);
       setIslandSummaryProposal(proposal);
-      setStatusMessage(`Island summary proposal ready (${proposal.proposalId})`);
+      setStatusMessage(t("app.status.island_summary.ready_unreviewed"));
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : "Failed to suggest island summary";
-      setStatusMessage(message);
+      const detail = error instanceof ApiError ? error.message : t("app.status.error_detail_unknown");
+      setStatusMessage(t("app.status.island_summary.failed", { detail }));
     } finally {
       setIsSuggestingIslandSummary(false);
     }
@@ -2372,7 +2399,7 @@ export default function App() {
       },
       { changeKind: "ai" }
     );
-    applyDocumentChange(nextDocument, "Adopted island summary proposal");
+    applyDocumentChange(nextDocument, t("app.status.island_summary.adopted_unreviewed"));
     setIslandSummarySuggestionWarningsByIslandId((previousWarnings) => ({
       ...previousWarnings,
       [selectedIslandId]: islandSummaryProposal.diff.warnings ?? [],
@@ -2389,6 +2416,7 @@ export default function App() {
     await recordProposalDecision(islandSummaryProposal.proposalId, "reject", "human");
     setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} rejected ${islandSummaryProposal.proposalId}`]);
     setIslandSummaryProposal(null);
+    setStatusMessage(t("app.status.island_summary.rejected"));
   }, [islandSummaryProposal]);
 
   const handleHoldIslandSummaryProposal = useCallback(async () => {
@@ -2397,6 +2425,7 @@ export default function App() {
     }
     await recordProposalDecision(islandSummaryProposal.proposalId, "hold", "human");
     setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} held ${islandSummaryProposal.proposalId}`]);
+    setStatusMessage(t("app.status.island_summary.held"));
   }, [islandSummaryProposal]);
 
   const handleSuggestLayout = useCallback(async (mode: "suggest" | "resuggest" = "suggest") => {
@@ -2543,7 +2572,7 @@ export default function App() {
       }
 
       if (!options.isTrusted) {
-        setMergeSuggestionError("Merge decision must be triggered by a trusted human interaction.");
+        setMergeSuggestionError(t("app.status.merge_suggestion.trusted_interaction_required"));
         return;
       }
 
@@ -2554,7 +2583,7 @@ export default function App() {
 
       const availableCardCount = document.cards.filter((card) => suggestion.cardIds.includes(card.id)).length;
       if (availableCardCount < 2) {
-        setMergeSuggestionError("Merge suggestion is no longer applicable.");
+        setMergeSuggestionError(t("app.status.merge_suggestion.no_longer_applicable"));
         return;
       }
 
@@ -2567,7 +2596,16 @@ export default function App() {
         rationale: suggestion.rationale,
         decisionReason: options.decisionReason,
       });
-      applyDocumentChange(nextDocument, `Recorded merge decision: ${decision}`);
+      const decisionLabel = t({
+        accept: "merge_suggestions.decision.accepted",
+        partial: "merge_suggestions.decision.partially_accepted",
+        reject: "merge_suggestions.decision.rejected",
+        defer: "merge_suggestions.decision.deferred",
+      }[decision]);
+      applyDocumentChange(
+        nextDocument,
+        t("app.history.merge_suggestion.decision_recorded", { decision: decisionLabel })
+      );
 
       const decidedAt = nextDocument.mergeSuggestionDecisions?.at(-1)?.decidedAt ?? new Date().toISOString();
       const decisionId = nextDocument.mergeSuggestionDecisions?.at(-1)?.decisionId ?? crypto.randomUUID();
@@ -2593,7 +2631,7 @@ export default function App() {
         )
       );
       setMergeSuggestionError(null);
-      setStatusMessage(`Merge decision recorded (${decision})`);
+      setStatusMessage(t("app.status.merge_suggestion.decision_recorded", { decision: decisionLabel }));
     },
     [applyDocumentChange, document, mergeSuggestions]
   );
@@ -2641,9 +2679,9 @@ export default function App() {
         document: parseResult.document,
       });
       setImportDocumentError(null);
-      setStatusMessage(t("app.status.import.document_validated"));
+      setStatusMessage(t(isReadOnly ? "app.status.import.document_validated_read_only" : "app.status.import.document_validated"));
     },
-    []
+    [isReadOnly]
   );
 
   const handleImportClick = useCallback(() => {
@@ -2668,8 +2706,7 @@ export default function App() {
       const parsedDocument = extractComparisonDocument(parsedJson);
 
       if (!parsedDocument.ok) {
-        setStatusMessage(`Failed to load comparison file:
-${parsedDocument.error}`);
+        setStatusMessage(t("app.status.comparison.invalid_document", { detail: parsedDocument.error }));
         return;
       }
 
@@ -2684,33 +2721,35 @@ ${parsedDocument.error}`);
       setSelectedMergeItemIdSet(new Set());
       setLastMergeSnapshot(null);
       setMergeWarningConfirmationKey(null);
-      setStatusMessage("Loaded comparison document (view-only)");
+      setStatusMessage(t("app.status.comparison.loaded_view_only"));
     } catch (error) {
       if (error instanceof SyntaxError) {
-        setStatusMessage("Failed to parse comparison JSON file");
+        setStatusMessage(t("app.status.comparison.invalid_json"));
         return;
       }
 
-      setStatusMessage(error instanceof Error ? error.message : "Failed to load comparison document");
+      setStatusMessage(t("app.status.comparison.load_failed", {
+        detail: error instanceof Error ? error.message : t("app.status.error_detail_unknown"),
+      }));
     }
   }, [document]);
 
 
   const handleApplySelectedMergeItems = useCallback(() => {
     if (!document || !comparisonDocument || !reviewDiffBaseSnapshot) {
-      setStatusMessage("Load comparison document first");
+      setStatusMessage(t("app.status.comparison.load_first"));
       return;
     }
 
     const selectedItems = mergeItems.filter((item) => mergeEvaluation.selectedIdsWithPrerequisites.has(item.id));
     if (selectedItems.length === 0) {
-      setStatusMessage("No merge item selected");
+      setStatusMessage(t("app.status.comparison.no_merge_item_selected"));
       return;
     }
 
     const hasBlocker = mergeEvaluation.evaluations.some((entry) => mergeEvaluation.selectedIdsWithPrerequisites.has(entry.item.id) && entry.status !== "ok");
     if (hasBlocker) {
-      setStatusMessage("Resolve merge blockers before applying");
+      setStatusMessage(t("app.status.comparison.resolve_blockers"));
       return;
     }
 
@@ -2731,16 +2770,16 @@ ${parsedDocument.error}`);
     const auditEntry = buildMergeAuditEntry(selectedItems, mergeSourceInfo);
     setMergeAuditLog((current) => appendMergeAuditLog(current, auditEntry));
     setLastMergeSnapshot(cloneDocument(document));
-    applyDocumentChange(applyResult.document, "Applied selective merge");
+    applyDocumentChange(applyResult.document, t("app.status.comparison.merge_applied"));
   }, [applyDocumentChange, comparisonDocument, document, mergeEvaluation.evaluations, mergeEvaluation.selectedIdsWithPrerequisites, mergeItems, mergeSourceInfo, mergeWarningConfirmationKey, reviewDiffBaseSnapshot]);
 
   const handleUndoLastMerge = useCallback(() => {
     if (!lastMergeSnapshot) {
-      setStatusMessage("No merge snapshot to revert");
+      setStatusMessage(t("app.status.comparison.no_merge_to_revert"));
       return;
     }
 
-    applyDocumentChange(cloneDocument(lastMergeSnapshot), "Reverted selective merge");
+    applyDocumentChange(cloneDocument(lastMergeSnapshot), t("app.status.comparison.merge_reverted"));
     setLastMergeSnapshot(null);
     setMergeWarningConfirmationKey(null);
   }, [applyDocumentChange, lastMergeSnapshot]);
@@ -2838,25 +2877,33 @@ ${parsedDocument.error}`);
       return false;
     }
 
-    const manifestValidation = validatePublicPackManifest(await manifestResponse.json());
+    let manifestPayload: unknown;
+    try {
+      manifestPayload = JSON.parse(await manifestResponse.text()) as unknown;
+    } catch {
+      throw new Error(t("app.status.public_pack.invalid_index_json"));
+    }
+    const manifestValidation = validatePublicPackManifest(manifestPayload);
     if (!manifestValidation.ok) {
       const detail = manifestValidation.errors.map((error) => `${error.path}: ${error.message}`).join("; ");
-      throw new Error(`Invalid packs/index.json: ${detail}`);
+      throw new Error(t("app.status.public_pack.invalid_index", { detail }));
     }
     const manifest = manifestValidation.manifest;
     const packs = manifest.packs;
     const targetPack = packs.find((pack) => pack.id === (requestedPackId ?? manifest.defaultPackId ?? "")) ?? null;
     if (!targetPack) {
-      throw new Error(`Pack not found: ${requestedPackId ?? manifest.defaultPackId ?? "(default)"}`);
+      throw new Error(t("app.status.public_pack.not_found", {
+        packId: requestedPackId ?? manifest.defaultPackId ?? t("app.status.public_pack.default_id"),
+      }));
     }
 
     const documentResponse = await fetch(`./packs/${targetPack.documentPath}`, { cache: "no-store" });
     if (!documentResponse.ok) {
-      throw new Error(`Failed to fetch pack document: ${targetPack.documentPath}`);
+      throw new Error(t("app.status.public_pack.document_fetch_failed", { path: targetPack.documentPath }));
     }
     const documentParseResult = parseDocumentJson(await documentResponse.text());
     if (!documentParseResult.ok) {
-      throw new Error(`Invalid pack document: ${documentParseResult.error}`);
+      throw new Error(t("app.status.public_pack.document_invalid", { detail: documentParseResult.error }));
     }
 
     pendingCardDragSnapshotRef.current = null;
@@ -2909,11 +2956,11 @@ ${parsedDocument.error}`);
     if (targetPack.viewPath) {
       const viewResponse = await fetch(`./packs/${targetPack.viewPath}`, { cache: "no-store" });
       if (!viewResponse.ok) {
-        throw new Error(`Failed to fetch pack view metadata: ${targetPack.viewPath}`);
+        throw new Error(t("app.status.public_pack.view_fetch_failed", { path: targetPack.viewPath }));
       }
       const viewParseResult = parseViewJson(await viewResponse.text());
       if (!viewParseResult.ok) {
-        throw new Error(`Invalid pack view metadata: ${viewParseResult.error}`);
+        throw new Error(t("app.status.public_pack.view_invalid", { detail: viewParseResult.error }));
       }
       applyImportedViewMetadata(viewParseResult.metadata, documentParseResult.document, importedViewMode, t("app.status.public_pack.loaded_prefix"));
     }
@@ -2927,6 +2974,62 @@ ${parsedDocument.error}`);
     return true;
   }, [applyImportedViewMetadata]);
 
+  const openBuiltInSample = useCallback(() => {
+    const builtInSample = createDefaultDocument(DEFAULT_DOCUMENT_ID);
+    const sampleViewMode = loadViewModeForDocument(builtInSample.id) ?? "explore";
+
+    pendingCardDragSnapshotRef.current = null;
+    setHistory({
+      past: [],
+      present: cloneDocument(builtInSample),
+      future: [],
+    });
+    setActiveDocumentId(builtInSample.id);
+    setViewMode(sampleViewMode);
+    applyResolvedLocaleForView({
+      docId: builtInSample.id,
+      viewMode: sampleViewMode,
+      persistedLocale: loadViewLocaleForDocumentView(builtInSample.id, sampleViewMode),
+    });
+    setSelectedRecentDocumentId("");
+    setDocEtag(null);
+    setSelectedCardIds([]);
+    setSelectedIslandId(null);
+    setSelectedEdgeId(null);
+    setIsPickingEdgeTarget(false);
+    setFocusCardId(null);
+    setFocusTarget({});
+    setFocusWorldPoint(null);
+    setPeekIslandId(undefined);
+    setFlashReference(null);
+    setTemporaryRevealCardIds(new Set());
+    setSummaryRevealIslandIds(new Set());
+    setRevealedSourceCardIds(new Set());
+    setComparisonDocument(null);
+    setComparisonFileName(null);
+    setGroundingVisibilityMessage(null);
+    setIsDirty(false);
+    setHasSaveConflict(false);
+    setSuggestedDocument(null);
+    setSuggestionId(null);
+    setSuggestionNotes(null);
+    setSuggestionError(null);
+    setPendingImportedDocument(null);
+    setImportDocumentError(null);
+    setPackImportError(null);
+    setMergeSourceInfo({ kind: "unknown" });
+    setImportedPackSummary(null);
+    setImportedPackDiagnosticsMd(null);
+    setImportedPackSnapshotUrl(null);
+    setMergeAuditLog([]);
+    setReviewEvents([]);
+    setSafeMode(true);
+    const persistedVisibility = loadViewVisibilityForDocument(builtInSample.id);
+    setViewVisibility(persistedVisibility.viewVisibility);
+    setPackVisibility(persistedVisibility.packVisibility);
+    setStatusMessage(t("app.status.start.built_in_sample_opened"));
+  }, [applyResolvedLocaleForView]);
+
   const handleOpenSampleDocument = useCallback(async () => {
     setIsStartPanelVisible(false);
     setIsLoading(true);
@@ -2935,15 +3038,17 @@ ${parsedDocument.error}`);
     try {
       const loadedFromPack = await loadPublicPack(null);
       if (!loadedFromPack) {
-        await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
+        const loadedFromApi = await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
+        if (!loadedFromApi) {
+          openBuiltInSample();
+        }
       }
-    } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : t("app.status.start.sample_failed"));
-      await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
+    } catch {
+      openBuiltInSample();
     } finally {
       setIsLoading(false);
     }
-  }, [loadDocument, loadPublicPack]);
+  }, [loadDocument, loadPublicPack, openBuiltInSample]);
 
   const handleStartCreateNewDocument = useCallback(() => {
     setIsStartPanelVisible(false);
@@ -2984,7 +3089,11 @@ ${parsedDocument.error}`);
           return;
         }
       } catch (error) {
-        setStatusMessage(error instanceof Error ? error.message : "Failed to load public pack");
+        setStatusMessage(error instanceof Error ? error.message : t("app.status.public_pack.load_failed"));
+        if (requestedPackId) {
+          setIsLoading(false);
+          return;
+        }
       }
 
       await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
@@ -3000,13 +3109,13 @@ ${parsedDocument.error}`);
   const handleLoadViewMetadataFile = useCallback(
     async (selectedFile: File) => {
       if (!document) {
-        setStatusMessage("No document loaded");
+        setStatusMessage(t("app.status.import.view_metadata_document_required"));
         return;
       }
 
       const parseResult = parseViewJson(await selectedFile.text());
       if (!parseResult.ok) {
-        setStatusMessage(`Failed to load view metadata: ${parseResult.error}`);
+        setStatusMessage(t("app.status.import.view_metadata_load_failed", { detail: parseResult.error }));
         return;
       }
 
@@ -3029,8 +3138,8 @@ ${parsedDocument.error}`);
       document: parseResult.document,
     });
     setImportDocumentError(null);
-    setStatusMessage(t("app.status.import.document_validated"));
-  }, [abstractMapView, summaryView]);
+    setStatusMessage(t(isReadOnly ? "app.status.import.document_validated_read_only" : "app.status.import.document_validated"));
+  }, [isReadOnly]);
 
   const handleInvalidReviewPackFileType = useCallback(() => {
     setPackImportError(t("app.status.import.review_pack_zip_required"));
@@ -3050,40 +3159,46 @@ ${parsedDocument.error}`);
       const entries = zipImportResult.entries;
       const paths = detectReviewPackFiles(entries);
       if (!paths.documentPath) {
-        setPackImportError("document.json not found in zip");
-        setStatusMessage("document.json not found in zip");
+        const message = t("app.status.import.review_pack_document_missing");
+        setPackImportError(message);
+        setStatusMessage(message);
         return;
       }
       if (!paths.viewPath) {
-        setPackImportError("view.json not found in zip");
-        setStatusMessage("view.json not found in zip");
+        const message = t("app.status.import.review_pack_view_missing");
+        setPackImportError(message);
+        setStatusMessage(message);
         return;
       }
 
       const documentRaw = entries.get(paths.documentPath);
       const viewRaw = entries.get(paths.viewPath);
       if (typeof documentRaw !== "string") {
-        setPackImportError("Unsupported format");
-        setStatusMessage("Unsupported format");
+        const message = t("app.status.import.review_pack_document_text_required");
+        setPackImportError(message);
+        setStatusMessage(message);
         return;
       }
       if (typeof viewRaw !== "string") {
-        setPackImportError("Unsupported format");
-        setStatusMessage("Unsupported format");
+        const message = t("app.status.import.review_pack_view_text_required");
+        setPackImportError(message);
+        setStatusMessage(message);
         return;
       }
 
       const parsedDocument = parseDocumentJson(documentRaw);
       if (!parsedDocument.ok) {
-        setPackImportError(parsedDocument.error);
-        setStatusMessage(parsedDocument.error);
+        const message = t("app.status.import.review_pack_document_invalid");
+        setPackImportError(message);
+        setStatusMessage(message);
         return;
       }
 
       const parsedView = parseViewJson(viewRaw);
       if (!parsedView.ok) {
-        setPackImportError(parsedView.error.includes("Invalid JSON") ? "Invalid JSON in view.json" : parsedView.error);
-        setStatusMessage("Failed to load view metadata");
+        const message = t("app.status.import.review_pack_view_invalid");
+        setPackImportError(message);
+        setStatusMessage(message);
         return;
       }
 
@@ -3099,28 +3214,32 @@ ${parsedDocument.error}`);
       if (paths.integrityPath) {
         const integrityRaw = entries.get(paths.integrityPath);
         if (typeof integrityRaw !== "string") {
-          setPackImportError("integrity.json must be UTF-8 JSON text");
-          setStatusMessage("integrity.json must be UTF-8 JSON text");
+          const message = t("app.status.import.review_pack_integrity_text_required");
+          setPackImportError(message);
+          setStatusMessage(message);
           return;
         }
         let parsedIntegrityJson: unknown;
         try {
           parsedIntegrityJson = JSON.parse(integrityRaw);
         } catch {
-          setPackImportError("Invalid JSON in integrity.json");
-          setStatusMessage("Invalid JSON in integrity.json");
+          const message = t("app.status.import.review_pack_integrity_json_invalid");
+          setPackImportError(message);
+          setStatusMessage(message);
           return;
         }
         const parsedIntegrity = parseIntegrityManifest(parsedIntegrityJson);
         if (!parsedIntegrity.ok) {
-          setPackImportError(parsedIntegrity.error);
-          setStatusMessage(parsedIntegrity.error);
+          const message = t("app.status.import.review_pack_integrity_manifest_invalid");
+          setPackImportError(message);
+          setStatusMessage(message);
           return;
         }
         const verification = await verifyIntegrityManifest(parsedIntegrity.manifest, entries);
         if (!verification.ok) {
-          setPackImportError(`Integrity verification failed: ${verification.error}`);
-          setStatusMessage(`Integrity verification failed: ${verification.error}`);
+          const message = t("app.status.import.review_pack_integrity_verification_failed");
+          setPackImportError(message);
+          setStatusMessage(message);
           return;
         }
       }
@@ -3179,17 +3298,20 @@ ${parsedDocument.error}`);
       if (previousSnapshotUrl) {
         URL.revokeObjectURL(previousSnapshotUrl);
       }
-      applyImportedViewMetadata(parsedView.metadata, parsedDocument.document, importedViewMode, "Review pack imported");
+      applyImportedViewMetadata(
+        parsedView.metadata,
+        parsedDocument.document,
+        importedViewMode,
+        t("app.status.import.review_pack_imported_prefix"),
+      );
       setSafeMode(true);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unsupported format";
       if (error instanceof ZipImportError) {
+        const message = t(`app.status.import.review_pack_zip_error_${error.code.toLowerCase()}`);
         setPackImportError(message);
         setStatusMessage(message);
-      } else if (message.includes("Zip too large")) {
-        setPackImportError("Z001: Zip too large / exceeds limit");
-        setStatusMessage("Z001: Zip too large / exceeds limit");
       } else {
+        const message = t("app.status.import.review_pack_unsupported");
         setPackImportError(message);
         setStatusMessage(message);
       }
@@ -3220,25 +3342,25 @@ ${parsedDocument.error}`);
         setPendingPatchImport(null);
         setPatchFingerprintStatus(null);
         setPatchTrustLabel("unknown");
-        setPatchImportError("Patch validation failed:\n- invalid patch schema");
-        setStatusMessage("Failed to load patch JSON");
+        setPatchImportError(t("app.status.patch.validation_failed", { detail: t("app.status.patch.invalid_schema") }));
+        setStatusMessage(t("app.status.patch.load_failed"));
         return;
       }
 
       const fingerprintVerification = await verifyPatchFingerprint(parsedPatch);
       if (!parsedPatch.patchFingerprint) {
-        setPatchFingerprintStatus({ status: "No fingerprint (Unknown)" });
+        setPatchFingerprintStatus({ status: t("app.status.patch.fingerprint_missing") });
         setPatchTrustLabel("unknown");
       } else if (fingerprintVerification.ok) {
         setPatchFingerprintStatus({
-          status: "Fingerprint OK",
+          status: t("app.status.patch.fingerprint_ok"),
           expected: fingerprintVerification.expected,
           actual: fingerprintVerification.actual,
         });
         setPatchTrustLabel("unknown");
       } else {
         setPatchFingerprintStatus({
-          status: "Fingerprint mismatch (Untrusted)",
+          status: t("app.status.patch.fingerprint_mismatch"),
           expected: fingerprintVerification.expected,
           actual: fingerprintVerification.actual,
         });
@@ -3258,18 +3380,18 @@ ${parsedDocument.error}`);
       setPatchResolutionsByOpId(nextResolutions);
       setPatchImportError(null);
       setSelectedFixProposalIdSet(new Set());
-      setStatusMessage("Patch loaded");
+      setStatusMessage(t("app.status.patch.loaded"));
     } catch (error) {
       setPendingPatchImport(null);
       setPatchFingerprintStatus(null);
       setPatchTrustLabel("unknown");
       if (error instanceof SyntaxError) {
-        setPatchImportError("Patch validation failed:\n- invalid JSON syntax");
+        setPatchImportError(t("app.status.patch.validation_failed", { detail: t("app.status.patch.invalid_json") }));
       } else {
-        const message = error instanceof Error ? error.message : "Unknown error";
-        setPatchImportError(`Patch validation failed:\n- ${message}`);
+        const message = error instanceof Error ? error.message : t("app.status.error_detail_unknown");
+        setPatchImportError(t("app.status.patch.validation_failed", { detail: message }));
       }
-      setStatusMessage("Failed to load patch JSON");
+      setStatusMessage(t("app.status.patch.load_failed"));
     }
   }, [abstractMapView, summaryView]);
 
@@ -3278,13 +3400,13 @@ ${parsedDocument.error}`);
     if (!parseResult.ok) {
       setPatchBaselineDoc(null);
       setPatchBaselineFileName(null);
-      setStatusMessage("Failed to load baseline document JSON");
+      setStatusMessage(t("app.status.patch.baseline_load_failed"));
       return;
     }
 
     setPatchBaselineDoc(parseResult.document);
     setPatchBaselineFileName(selectedFile.name);
-    setStatusMessage("Loaded baseline for patch conflict detection");
+    setStatusMessage(t("app.status.patch.baseline_loaded"));
   }, [abstractMapView, summaryView]);
 
   const handleFixProposalCheckedChange = useCallback((fixId: string, checked: boolean) => {
@@ -3301,7 +3423,7 @@ ${parsedDocument.error}`);
 
   const handleApplySelectedPatchFixes = useCallback(() => {
     if (!pendingPatchImport || selectedFixProposalIdSet.size === 0) {
-      setStatusMessage("No fix selected");
+      setStatusMessage(t("app.status.patch.no_fix_selected"));
       return;
     }
 
@@ -3360,7 +3482,7 @@ ${parsedDocument.error}`);
       nextResolutions[op.id] = "skip";
     }
     setPatchResolutionsByOpId(nextResolutions);
-    setStatusMessage("Patch reset to original");
+    setStatusMessage(t("app.status.patch.reset"));
   }, [pendingPatchImport]);
 
   const handleApplyPatch = useCallback(() => {
@@ -3370,7 +3492,7 @@ ${parsedDocument.error}`);
     }
 
     if (shouldBlockPatchApplyByLint(patchLintResult)) {
-      setStatusMessage("Resolve lint errors first");
+      setStatusMessage(t("app.status.patch.resolve_lint"));
       return;
     }
 
@@ -3388,22 +3510,22 @@ ${parsedDocument.error}`);
       baseDocSignature: patchBaselineDoc ? `${patchBaselineDoc.id}:${patchBaselineDoc.updatedAt}` : undefined,
     });
 
-    applyDocumentChange(nextDocument, "Applied patch");
+    applyDocumentChange(nextDocument, t("app.status.patch.applied"));
   }, [applyDocumentChange, document, patchBaselineDoc, patchLintResult, patchResolutionsByOpId, patchSelectedOpIdSet, pendingPatchImport]);
 
 
   const handleCopyPatchApplyLogEntry = useCallback(async (entryId: string) => {
     const entry = document?.patchApplyLog?.find((item) => item.id === entryId);
     if (!entry) {
-      setStatusMessage("Patch apply log entry not found");
+      setStatusMessage(t("app.status.patch.apply_log_not_found"));
       return;
     }
 
     try {
       await navigator.clipboard.writeText(formatPatchApplyLogEntryMarkdown(entry));
-      setStatusMessage("Copied patch apply log entry (Markdown)");
+      setStatusMessage(t("app.status.patch.apply_log_copied"));
     } catch {
-      setStatusMessage("Failed to copy patch apply log entry");
+      setStatusMessage(t("app.status.patch.apply_log_copy_failed"));
     }
   }, [document]);
 
@@ -3423,7 +3545,7 @@ ${parsedDocument.error}`);
 
   const handleReplaceCurrentDocument = useCallback(() => {
     if (!pendingImportedDocument) {
-      setStatusMessage("No validated document is pending replacement");
+      setStatusMessage(t("app.status.import.no_validated_document"));
       return;
     }
 
@@ -3451,7 +3573,7 @@ ${parsedDocument.error}`);
     setComparisonDocument(null);
     setComparisonFileName(null);
     setGroundingVisibilityMessage(null);
-    setIsDirty(true);
+    setIsDirty(!isReadOnly);
     setHasSaveConflict(false);
     setSuggestedDocument(null);
     setSuggestionId(null);
@@ -3459,8 +3581,8 @@ ${parsedDocument.error}`);
     setSuggestionError(null);
     setPendingImportedDocument(null);
     setImportDocumentError(null);
-    setStatusMessage("Replaced current document");
-  }, [pendingImportedDocument]);
+    setStatusMessage(t(isReadOnly ? "app.status.import.document_opened_read_only" : "app.status.import.document_replaced"));
+  }, [isReadOnly, pendingImportedDocument]);
 
   const handleEdgeSelect = useCallback((edgeId: string) => {
     setSelectedEdgeId(edgeId);
@@ -3499,7 +3621,10 @@ ${parsedDocument.error}`);
           ...document,
           edges: [...document.edges, edgeWithKinds],
         },
-        `Connected ${source.kind} → card`
+        t("app.status.edit.connected", {
+          source: getEntityKindDisplayLabel(source.kind),
+          target: getEntityKindDisplayLabel("card"),
+        })
       );
       setIsPickingEdgeTarget(false);
       return;
@@ -3517,7 +3642,7 @@ ${parsedDocument.error}`);
             ...document,
             readingOrder: nextReadingOrder,
           },
-          "Added card to reading order"
+          t("app.history.reading_order.card_added")
         );
         return;
       }
@@ -3575,7 +3700,7 @@ ${parsedDocument.error}`);
   const handleClearSelection = useCallback(() => {
     if (isPickingEdgeTarget) {
       setIsPickingEdgeTarget(false);
-      setStatusMessage("Canceled connect");
+      setStatusMessage(t("app.status.edit.connect_cancelled"));
       return;
     }
 
@@ -3634,7 +3759,7 @@ ${parsedDocument.error}`);
     }
 
     setIsPickingEdgeTarget(true);
-    setStatusMessage("Select a target card or island");
+    setStatusMessage(t("app.status.edit.select_connect_target"));
   }, [edgeConnectSource]);
 
   const handleCancelConnect = useCallback(() => {
@@ -3643,7 +3768,7 @@ ${parsedDocument.error}`);
     }
 
     setIsPickingEdgeTarget(false);
-    setStatusMessage("Canceled connect");
+    setStatusMessage(t("app.status.edit.connect_cancelled"));
   }, [isPickingEdgeTarget]);
 
   const handleConnectToTarget = useCallback(
@@ -3670,7 +3795,10 @@ ${parsedDocument.error}`);
           ...document,
           edges: [...document.edges, edgeWithKinds],
         },
-        `Connected ${edgeConnectSource.kind} → ${target.kind}`
+        t("app.status.edit.connected", {
+          source: getEntityKindDisplayLabel(edgeConnectSource.kind),
+          target: getEntityKindDisplayLabel(target.kind),
+        })
       );
       setIsPickingEdgeTarget(false);
     },
@@ -3691,7 +3819,7 @@ ${parsedDocument.error}`);
           ...document,
           cards: [...document.cards, newCard],
         },
-        "Added a new card"
+        t("app.status.edit.added_card")
       );
 
       if (applied) {
@@ -3735,7 +3863,7 @@ ${parsedDocument.error}`);
     setSelectedEdgeId(null);
     setSelectedCardIds([cardId]);
     setIsPickingEdgeTarget(true);
-    setStatusMessage("Select a target card or island");
+    setStatusMessage(t("app.status.edit.select_connect_target"));
   }, []);
 
   const closeContextMenu = useCallback(() => {
@@ -3862,7 +3990,7 @@ ${parsedDocument.error}`);
             card.id === cardId ? { ...card, text: nextText } : card
           ),
         },
-        "Edited card text"
+        t("app.status.edit.edited_card_text")
       );
     },
     [applyDocumentChange, document]
@@ -3886,7 +4014,7 @@ ${parsedDocument.error}`);
       islands: [...document.islands, newIsland],
     });
     setSelectedIslandId(newIsland.id);
-    setStatusMessage(`Created island from ${selectedCardIds.length} selected card(s)`);
+    setStatusMessage(t("app.status.edit.created_island", { count: selectedCardIds.length }));
   }, [applyDocumentChange, document, selectedCardIds]);
 
   const handleCreateRepresentativeCard = useCallback(() => {
@@ -3895,13 +4023,13 @@ ${parsedDocument.error}`);
     }
 
     const selectedCards = document.cards.filter((card) => selectedCardIds.includes(card.id));
-    const representativeText = window.prompt("Enter representative card text", selectedCards[0]?.text ?? "");
+    const representativeText = window.prompt(t("app.prompt.representative_card_text"), selectedCards[0]?.text ?? "");
     if (representativeText === null) {
       return;
     }
 
     const shouldRewire = window.confirm(
-      "Rewire island membership and card edges to the representative card?"
+      t("app.confirm.rewire_representative_card")
     );
 
     const mergeResult = createRepresentativeMerge(document, selectedCardIds, representativeText, {
@@ -3909,19 +4037,20 @@ ${parsedDocument.error}`);
     });
 
     if (!mergeResult) {
-      setStatusMessage("Representative card text is required");
+      setStatusMessage(t("app.status.edit.representative_card_text_required"));
       return;
     }
 
-    applyDocumentChange(mergeResult.nextDocument, "Created representative card");
+    applyDocumentChange(mergeResult.nextDocument, t("app.status.edit.created_representative_card"));
     setSelectedIslandId(null);
     setSelectedEdgeId(null);
     setSelectedCardIds([mergeResult.representativeCardId]);
-    setStatusMessage(
-      `Created representative card from ${mergeResult.mergedCardCount} originals${
-        shouldRewire ? " (rewired)" : ""
-      }`
-    );
+    setStatusMessage(t(
+      shouldRewire
+        ? "app.status.edit.created_representative_card_rewired"
+        : "app.status.edit.created_representative_card_from_originals",
+      { count: mergeResult.mergedCardCount },
+    ));
   }, [applyDocumentChange, document, selectedCardIds]);
 
   const handleIslandTitleChange = useCallback(
@@ -3957,7 +4086,7 @@ ${parsedDocument.error}`);
           ...document,
           islands: nextIslands,
         },
-        "Updated island title"
+        t("app.history.island.title_updated")
       );
     },
     [applyDocumentChange, document]
@@ -3999,7 +4128,7 @@ ${parsedDocument.error}`);
           : island
       );
 
-      applyDocumentChange({ ...document, islands: nextIslands }, "Updated island hierarchy");
+      applyDocumentChange({ ...document, islands: nextIslands }, t("app.history.island.hierarchy_updated"));
     },
     [applyDocumentChange, document]
   );
@@ -4025,7 +4154,7 @@ ${parsedDocument.error}`);
         };
       });
 
-      applyDocumentChange({ ...document, islands: nextIslands }, "Updated island placard");
+      applyDocumentChange({ ...document, islands: nextIslands }, t("app.history.island.placard_updated"));
     },
     [applyDocumentChange, document]
   );
@@ -4053,7 +4182,7 @@ ${parsedDocument.error}`);
         return;
       }
 
-      applyDocumentChange(nextDocument, "Updated island summary");
+      applyDocumentChange(nextDocument, t("app.history.island.summary_updated"));
     },
     [applyDocumentChange, document]
   );
@@ -4091,7 +4220,7 @@ ${parsedDocument.error}`);
           ...document,
           islands: nextIslands,
         },
-        "Updated island image URL"
+        t("app.history.island.image_url_updated")
       );
     },
     [applyDocumentChange, document]
@@ -4129,7 +4258,7 @@ ${parsedDocument.error}`);
           ...document,
           cards: nextCards,
         },
-        "Updated card critique",
+        t("app.history.card.critique_updated"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -4168,9 +4297,50 @@ ${parsedDocument.error}`);
           ...document,
           cards: nextCards,
         },
-        "Updated card claim type",
+        t("app.history.card.claim_type_updated"),
         { preserveSuggestionPreview: true }
       );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleCardHoldStateChange = useCallback(
+    (cardId: string, selection: HoldStateSelection) => {
+      if (!document) {
+        return;
+      }
+
+      const nextDocument = updateCardHoldStateAndShelf(document, cardId, selection, new Date().toISOString());
+      if (nextDocument === document) {
+        return;
+      }
+
+      applyDocumentChange(
+        nextDocument,
+        t("app.history.card.hold_state_updated"),
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleRestoreShelvedCard = useCallback(
+    (cardId: string) => {
+      if (!document) {
+        return;
+      }
+
+      const nextDocument = updateCardHoldStateAndShelf(document, cardId, "active", new Date().toISOString());
+      if (nextDocument === document) {
+        return;
+      }
+
+      applyDocumentChange(
+        nextDocument,
+        t("app.history.card.shelf_restored"),
+        { preserveSuggestionPreview: true }
+      );
+      setSelectedCardIds([cardId]);
     },
     [applyDocumentChange, document]
   );
@@ -4206,7 +4376,7 @@ ${parsedDocument.error}`);
           ...document,
           cards: nextCards,
         },
-        "Updated card reviewed state",
+        t(reviewed ? "app.history.card.marked_reviewed" : "app.history.card.marked_unreviewed"),
         { preserveSuggestionPreview: true }
       );
       setReviewEvents((previous) => appendReviewEvent(previous, {
@@ -4246,7 +4416,7 @@ ${parsedDocument.error}`);
             },
           ],
         },
-        "Added evidence link",
+        t("app.history.evidence_link.added"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -4269,7 +4439,7 @@ ${parsedDocument.error}`);
           ...document,
           evidenceLinks: nextEvidenceLinks,
         },
-        "Removed evidence link",
+        t("app.history.evidence_link.removed"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -4311,7 +4481,7 @@ ${parsedDocument.error}`);
           ...document,
           cards: nextCards,
         },
-        "Updated card critique tags",
+        t("app.history.card.critique_tags_updated"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -4350,7 +4520,7 @@ ${parsedDocument.error}`);
           ...document,
           islands: nextIslands,
         },
-        "Updated island critique",
+        t("app.history.island.critique_updated"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -4393,7 +4563,7 @@ ${parsedDocument.error}`);
           ...document,
           islands: nextIslands,
         },
-        "Updated island critique tags",
+        t("app.history.island.critique_tags_updated"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -4431,7 +4601,7 @@ ${parsedDocument.error}`);
           ...document,
           islands: nextIslands,
         },
-        "Updated island title reviewed state"
+        t(reviewed ? "app.history.island.title_marked_reviewed" : "app.history.island.title_marked_unreviewed")
       );
       setReviewEvents((previous) => appendReviewEvent(previous, {
         target: { kind: "island", id: islandId },
@@ -4474,7 +4644,7 @@ ${parsedDocument.error}`);
         return;
       }
 
-      applyDocumentChange(nextDocument, "Restored island summary version");
+      applyDocumentChange(nextDocument, t("app.history.island.summary_version_restored"));
     },
     [applyDocumentChange, document]
   );
@@ -4510,7 +4680,7 @@ ${parsedDocument.error}`);
           ...document,
           islands: nextIslands,
         },
-        "Updated island summary reviewed state"
+        t(reviewed ? "app.history.island.summary_marked_reviewed" : "app.history.island.summary_marked_unreviewed")
       );
       setReviewEvents((previous) => appendReviewEvent(previous, {
         target: { kind: "summary", id: islandId },
@@ -4553,7 +4723,7 @@ ${parsedDocument.error}`);
           ...document,
           islands: nextIslands,
         },
-        "Updated island image reviewed state"
+        t(reviewed ? "app.history.island.image_marked_reviewed" : "app.history.island.image_marked_unreviewed")
       );
       setReviewEvents((previous) => appendReviewEvent(previous, {
         target: { kind: "island", id: islandId },
@@ -4610,9 +4780,9 @@ ${parsedDocument.error}`);
 
       if (shapeUnchanged) {
         setStatusMessage(
-          nextShape.kind === "rect"
-            ? "Polygon generation fell back to rect (not enough unique corners)"
-            : "Polygon already up to date"
+          t(nextShape.kind === "rect"
+            ? "app.status.polygon.fallback_rect"
+            : "app.status.polygon.already_current")
         );
         return;
       }
@@ -4629,13 +4799,11 @@ ${parsedDocument.error}`);
               : island
           ),
         },
-        nextShape.kind === "rect" ? "Fell back to rect island shape" : "Generated polygon island shape"
+        t(nextShape.kind === "rect" ? "app.status.polygon.fallback_rect" : "app.status.polygon.generated")
       );
 
       setStatusMessage(
-        nextShape.kind === "rect"
-          ? "Polygon generation fell back to rect (not enough unique corners)"
-          : "Generated polygon from member cards"
+        t(nextShape.kind === "rect" ? "app.status.polygon.fallback_rect" : "app.status.polygon.generated")
       );
     },
     [applyDocumentChange, document]
@@ -4683,15 +4851,15 @@ ${parsedDocument.error}`);
           ...document,
           islands: nextIslands,
         },
-        "Switched island shape to rect"
+        t("app.status.polygon.switched_to_rect")
       );
-      setStatusMessage("Switched island shape to rect");
+      setStatusMessage(t("app.status.polygon.switched_to_rect"));
     },
     [applyDocumentChange, document, handleGenerateIslandPolygon]
   );
 
   const handlePolygonVertexDragStart = useCallback((_islandId: string, _vertexIndex: number) => {
-    setStatusMessage("Polygon vertex drag started");
+    setStatusMessage(t("app.status.polygon.drag_started"));
   }, []);
 
   const handlePolygonVertexDragMove = useCallback(
@@ -4707,7 +4875,7 @@ ${parsedDocument.error}`);
 
       const nextPolygon = movePolygonVertex(island.shape.points, vertexIndex, point);
       if (!nextPolygon.ok && nextPolygon.error === "self_intersection") {
-        setStatusMessage("Polygon must not self-intersect");
+        setStatusMessage(t("app.status.polygon.self_intersection"));
       }
     },
     [document]
@@ -4728,7 +4896,7 @@ ${parsedDocument.error}`);
         const nextPolygon = movePolygonVertex(island.shape.points, vertexIndex, point);
         if (!nextPolygon.ok) {
           if (nextPolygon.error === "self_intersection") {
-            statusMessage = "Polygon must not self-intersect";
+            statusMessage = t("app.status.polygon.self_intersection");
           }
           return island;
         }
@@ -4761,14 +4929,14 @@ ${parsedDocument.error}`);
           ...document,
           islands: nextIslands,
         },
-        "Moved polygon vertex"
+        t("app.status.polygon.vertex_moved")
       );
     },
     [applyDocumentChange, document]
   );
 
   const handlePolygonVertexDragCancel = useCallback((_islandId: string, _vertexIndex: number) => {
-    setStatusMessage("Polygon vertex drag canceled");
+    setStatusMessage(t("app.status.polygon.drag_cancelled"));
   }, []);
 
   const handlePolygonVertexAdd = useCallback(
@@ -4785,7 +4953,7 @@ ${parsedDocument.error}`);
         const nextPolygon = addPolygonVertex(island.shape.points, segmentStartIndex, point);
         if (!nextPolygon.ok) {
           if (nextPolygon.error === "self_intersection") {
-            setStatusMessage("Polygon must not self-intersect");
+            setStatusMessage(t("app.status.polygon.self_intersection"));
           }
           return island;
         }
@@ -4809,7 +4977,7 @@ ${parsedDocument.error}`);
           ...document,
           islands: nextIslands,
         },
-        "Added polygon vertex"
+        t("app.status.polygon.vertex_added")
       );
     },
     [applyDocumentChange, document]
@@ -4830,9 +4998,9 @@ ${parsedDocument.error}`);
         const nextPolygon = removePolygonVertex(island.shape.points, vertexIndex);
         if (!nextPolygon.ok) {
           if (nextPolygon.error === "min_vertex_count") {
-            statusMessage = "Polygon needs at least 3 points";
+            statusMessage = t("app.status.polygon.minimum_vertices");
           } else if (nextPolygon.error === "self_intersection") {
-            statusMessage = "Polygon must not self-intersect";
+            statusMessage = t("app.status.polygon.self_intersection");
           }
           return island;
         }
@@ -4861,7 +5029,7 @@ ${parsedDocument.error}`);
           ...document,
           islands: nextIslands,
         },
-        "Removed polygon vertex"
+        t("app.status.polygon.vertex_removed")
       );
     },
     [applyDocumentChange, document]
@@ -4882,7 +5050,7 @@ ${parsedDocument.error}`);
 
       const visibilityContract = buildIslandVisibilityContractPayload(document, nextCollapsedIslandIds, islandId);
       if (!visibilityContract.ok) {
-        setStatusMessage(`Failed to toggle collapse: ${visibilityContract.error}`);
+        setStatusMessage(t("app.status.edit.island_collapse_failed", { detail: visibilityContract.error }));
         return;
       }
 
@@ -4892,17 +5060,17 @@ ${parsedDocument.error}`);
       const { changed, nextDocument, rejectedReason } = setIslandCollapsed(document, islandId, collapsed);
       if (!changed) {
         if (rejectedReason === "island-not-found") {
-          setStatusMessage("Failed to toggle collapse: island not found");
+          setStatusMessage(t("app.status.edit.island_not_found"));
           return;
         }
 
         if (alreadyCollapsed !== collapsed) {
-          setStatusMessage(collapsed ? "Collapsed island" : "Expanded island");
+          setStatusMessage(t(collapsed ? "app.status.edit.collapsed_island" : "app.status.edit.expanded_island"));
         }
         return;
       }
 
-      applyDocumentChange(nextDocument, collapsed ? "Collapsed island" : "Expanded island");
+      applyDocumentChange(nextDocument, t(collapsed ? "app.status.edit.collapsed_island" : "app.status.edit.expanded_island"));
     },
     [applyDocumentChange, collapsedIslandIds, document]
   );
@@ -4917,11 +5085,11 @@ ${parsedDocument.error}`);
 
     const { changed, nextDocument } = setAllIslandsCollapsed(document, true);
     if (!changed) {
-      setStatusMessage("Collapsed all islands");
+      setStatusMessage(t("app.status.edit.collapsed_all_islands"));
       return;
     }
 
-    applyDocumentChange(nextDocument, "Collapsed all islands");
+    applyDocumentChange(nextDocument, t("app.status.edit.collapsed_all_islands"));
   }, [applyDocumentChange, document]);
 
   const handleExpandAllIslands = useCallback(() => {
@@ -4933,11 +5101,11 @@ ${parsedDocument.error}`);
 
     const { changed, nextDocument } = setAllIslandsCollapsed(document, false);
     if (!changed) {
-      setStatusMessage("Expanded all islands");
+      setStatusMessage(t("app.status.edit.expanded_all_islands"));
       return;
     }
 
-    applyDocumentChange(nextDocument, "Expanded all islands");
+    applyDocumentChange(nextDocument, t("app.status.edit.expanded_all_islands"));
   }, [applyDocumentChange, document]);
 
   useEffect(() => {
@@ -5049,7 +5217,7 @@ ${parsedDocument.error}`);
       };
     });
     setIsDirty(true);
-    setStatusMessage("Undo");
+    setStatusMessage(t("app.status.edit.undo"));
   }, [abstractMapView, summaryView]);
 
   const handleRedo = useCallback(() => {
@@ -5072,7 +5240,7 @@ ${parsedDocument.error}`);
       };
     });
     setIsDirty(true);
-    setStatusMessage("Redo");
+    setStatusMessage(t("app.status.edit.redo"));
   }, [abstractMapView, summaryView]);
 
   useEffect(() => {
@@ -5366,7 +5534,7 @@ ${parsedDocument.error}`);
     }
 
     if (effectiveEvidenceOverlayScope === "selection" && !selectedCard) {
-      return "Select a card to explore evidence links";
+      return t("app.perspective_hint.select_card_for_evidence");
     }
 
     return null;
@@ -5380,11 +5548,22 @@ ${parsedDocument.error}`);
     }
 
     if (evidenceOverlayLodLevel === "far") {
-      return "Zoom in to use perspective filters";
+      return t("app.perspective_hint.zoom_in");
     }
 
     if (perspectiveRendering.notes.length === 0) {
       return null;
+    }
+
+    if (perspectiveMode === "review") {
+      return t("app.perspective_hint.review");
+    }
+
+    if (
+      (perspectiveMode === "evidence" || perspectiveMode === "contradiction")
+      && perspectiveRendering.notes[0] === "Select a card to explore neighborhood."
+    ) {
+      return t("app.perspective_hint.select_card_for_neighborhood");
     }
 
     return perspectiveRendering.notes[0];
@@ -5489,14 +5668,17 @@ ${parsedDocument.error}`);
 
     const hasTargetCard = document.cards.some((card) => card.id === cardId);
     if (!hasTargetCard) {
-      setStatusMessage(`Item not found: card:${cardId}`);
+      setStatusMessage(t("app.status.focus.item_not_found", {
+        kind: getEntityKindDisplayLabel("card"),
+        id: cardId,
+      }));
       return;
     }
 
     const isInFocusScope = focusedVisibleDocument?.cards.some((card) => card.id === cardId) ?? false;
     const isWithinDepth = maxDepth === "all" || (cardMinDepthById.get(cardId) ?? 0) <= maxDepth;
     if (!isTemporaryRevealEligible({ isInFocusScope, isWithinDepth })) {
-      setGroundingVisibilityMessage("This card is hidden by Focus/Depth view controls.");
+      setGroundingVisibilityMessage(t("app.status.focus.grounding_card_hidden"));
       return;
     }
 
@@ -5552,7 +5734,7 @@ ${parsedDocument.error}`);
     }
 
     setIsGeneratingRelationSummary(true);
-    setStatusMessage("Requesting AI relation summary draft...");
+    setStatusMessage(t("app.status.relation_summary.requesting"));
 
     try {
       const payload = buildSummarizeIslandRelationPayload(document, selectedIslandRelationEdge);
@@ -5571,9 +5753,10 @@ ${parsedDocument.error}`);
         changeKind: "ai",
       });
 
-      applyDocumentChange(nextDocument, "Generated relation summary draft (unreviewed)");
+      applyDocumentChange(nextDocument, t("app.status.relation_summary.generated_unreviewed"));
     } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "Failed to summarize relation");
+      const detail = error instanceof Error ? error.message : t("app.status.error_detail_unknown");
+      setStatusMessage(t("app.status.relation_summary.failed", { detail }));
     } finally {
       setIsGeneratingRelationSummary(false);
     }
@@ -5601,7 +5784,7 @@ ${parsedDocument.error}`);
         return;
       }
 
-      applyDocumentChange(nextDocument, "Updated relation summary");
+      applyDocumentChange(nextDocument, t("app.status.relation_summary.updated"));
     },
     [applyDocumentChange, document, selectedRelationSummary]
   );
@@ -5629,7 +5812,10 @@ ${parsedDocument.error}`);
         return;
       }
 
-      applyDocumentChange(nextDocument, "Updated relation summary reviewed state");
+      applyDocumentChange(
+        nextDocument,
+        t(reviewed ? "app.status.relation_summary.marked_reviewed" : "app.status.relation_summary.marked_unreviewed"),
+      );
       setReviewEvents((previous) => appendReviewEvent(previous, {
         target: { kind: "summary", id: selectedRelationSummary.id },
         reviewed,
@@ -5648,7 +5834,7 @@ ${parsedDocument.error}`);
 
       const entry = selectedRelationSummary.history?.find((item) => item.id === historyEntryId);
       if (!entry || !entry.toText || entry.toText.trim().length === 0) {
-        setStatusMessage("Cannot restore empty relation summary history entry");
+        setStatusMessage(t("app.status.relation_summary.restore_empty_blocked"));
         return;
       }
 
@@ -5670,7 +5856,7 @@ ${parsedDocument.error}`);
         return;
       }
 
-      applyDocumentChange(nextDocument, "Restored relation summary history entry");
+      applyDocumentChange(nextDocument, t("app.status.relation_summary.restored"));
     },
     [applyDocumentChange, document, selectedRelationSummary]
   );
@@ -5734,7 +5920,7 @@ ${parsedDocument.error}`);
             ...document,
             readingOrder: nextReadingOrder,
           },
-          "Added island to reading order"
+          t("app.history.reading_order.island_added")
         );
         return;
       }
@@ -5770,14 +5956,20 @@ ${parsedDocument.error}`);
 
       const island = document.islands.find((item) => item.id === islandId);
       if (!island) {
-        setStatusMessage(`Item not found: island:${islandId}`);
+        setStatusMessage(t("app.status.focus.item_not_found", {
+          kind: getEntityKindDisplayLabel("island"),
+          id: islandId,
+        }));
         return;
       }
 
       const cardsById = new Map(document.cards.map((card) => [card.id, card]));
       const islandBounds = getIslandWorldBounds(island, cardsById);
       if (!islandBounds) {
-        setStatusMessage(`Item not found: island:${islandId}`);
+        setStatusMessage(t("app.status.focus.item_bounds_unavailable", {
+          kind: getEntityKindDisplayLabel("island"),
+          id: islandId,
+        }));
         return;
       }
 
@@ -5810,7 +6002,10 @@ ${parsedDocument.error}`);
 
       const card = document.cards.find((item) => item.id === cardId);
       if (!card) {
-        setStatusMessage(`Item not found: card:${cardId}`);
+        setStatusMessage(t("app.status.focus.item_not_found", {
+          kind: getEntityKindDisplayLabel("card"),
+          id: cardId,
+        }));
         return;
       }
 
@@ -5957,13 +6152,18 @@ ${parsedDocument.error}`);
     if (kind === "card") {
       const targetCard = document.cards.find((card) => card.id === id);
       if (!targetCard) {
-        setStatusMessage(`Item not found: ${kind}:${id}`);
+        setStatusMessage(t("app.status.focus.item_not_found", {
+          kind: getEntityKindDisplayLabel(kind),
+          id,
+        }));
         return;
       }
 
       const isHiddenBySourceControl = hideSourceCards && isSourceCard(targetCard) && !revealedSourceCardIds.has(id);
       if (!focusedVisibleDocument?.cards.some((card) => card.id === id) || hiddenCardIdSet.has(id) || isHiddenBySourceControl) {
-        setStatusMessage("Item is hidden by current view controls");
+        setStatusMessage(t("app.status.focus.item_hidden", {
+          kind: getEntityKindDisplayLabel(kind),
+        }));
         return;
       }
     }
@@ -5971,12 +6171,17 @@ ${parsedDocument.error}`);
     if (kind === "island") {
       const hasIsland = document.islands.some((island) => island.id === id);
       if (!hasIsland) {
-        setStatusMessage(`Item not found: ${kind}:${id}`);
+        setStatusMessage(t("app.status.focus.item_not_found", {
+          kind: getEntityKindDisplayLabel(kind),
+          id,
+        }));
         return;
       }
 
       if (!visibleIslandIdSet.has(id)) {
-        setStatusMessage("Item is hidden by current view controls");
+        setStatusMessage(t("app.status.focus.item_hidden", {
+          kind: getEntityKindDisplayLabel(kind),
+        }));
         return;
       }
     }
@@ -6209,7 +6414,7 @@ ${parsedDocument.error}`);
 
   const handleGuidedFlowOpenRelevantEditor = useCallback(() => {
     if (currentGuidedFlowStep?.id === "classify") {
-      setStatusMessage("Use Claim Type in the card editor.");
+      setStatusMessage(t("app.status.guided_flow.use_claim_type"));
       return;
     }
 
@@ -6227,11 +6432,11 @@ ${parsedDocument.error}`);
     }
 
     if (currentGuidedFlowStep?.id === "review") {
-      setStatusMessage("Use island/card review fields in the side panel.");
+      setStatusMessage(t("app.status.guided_flow.use_review_fields"));
       return;
     }
 
-    setStatusMessage("Use contradiction links in card evidence editor.");
+    setStatusMessage(t("app.status.guided_flow.use_contradiction_links"));
     setGuidedFlowOpenEditorRequestSeq((previousSeq) => previousSeq + 1);
   }, [currentGuidedFlowStep?.id, document?.cards, focusItem, guidedFlowTargets, selectedCardIds.length]);
 
@@ -6305,7 +6510,7 @@ ${parsedDocument.error}`);
 
   const handleRunOutlineDiagnostics = useCallback(() => {
     if (!document) {
-      setStatusMessage("Nothing to analyze");
+      setStatusMessage(t("app.status.diagnostics.no_document"));
       return;
     }
     if (!diagnosticsWorkerClientRef.current) {
@@ -6471,9 +6676,9 @@ ${parsedDocument.error}`);
     try {
       const safeText = safeMode ? outline : outline;
       await navigator.clipboard.writeText(safeText);
-      setStatusMessage("Copied reading outline (Markdown)");
+      setStatusMessage(t("app.status.outline.copied"));
     } catch {
-      setStatusMessage("Failed to copy reading outline");
+      setStatusMessage(t("app.status.outline.copy_failed"));
     }
   }, [buildReadingOutline]);
 
@@ -6484,7 +6689,7 @@ ${parsedDocument.error}`);
     }
 
     downloadTextFile("outline.md", "text/markdown", outline);
-    setStatusMessage("Downloaded outline.md");
+    setStatusMessage(t("app.status.outline.downloaded"));
   }, [buildReadingOutline]);
 
   const handleReadingDisable = useCallback(() => {
@@ -6621,10 +6826,11 @@ ${parsedDocument.error}`);
         (edge) => edge.id === aggregateEdgeId && edge.isDerived
       );
       if (!aggregatedEdge) {
-        setStatusMessage("Aggregated edge not found");
+        setStatusMessage(t("app.status.aggregated_edge.not_found"));
         return;
       }
 
+      const promotedMessage = t("app.status.aggregated_edge.promoted");
       applyDocumentChange(
         {
           ...document,
@@ -6640,9 +6846,9 @@ ${parsedDocument.error}`);
             },
           ],
         },
-        "Promoted aggregated edge to real edge"
+        promotedMessage
       );
-      setStatusMessage("Promoted aggregated edge to real edge");
+      setStatusMessage(promotedMessage);
     },
     [applyDocumentChange, document]
   );
@@ -6668,7 +6874,7 @@ ${parsedDocument.error}`);
         ...document,
         readingOrder: nextReadingOrder,
       },
-      "Added item to reading order"
+      t("app.history.reading_order.item_added")
     );
   }, [applyDocumentChange, document, selectedCard?.id, selectedIsland?.id, visibleCardIdSet, visibleIslandIdSet]);
 
@@ -6692,7 +6898,7 @@ ${parsedDocument.error}`);
           ...document,
           readingOrder,
         },
-        "Reordered reading order"
+        t("app.history.reading_order.reordered")
       );
     },
     [applyDocumentChange, document]
@@ -6719,7 +6925,7 @@ ${parsedDocument.error}`);
           ...document,
           readingOrder: nextReadingOrder,
         },
-        "Removed item from reading order"
+        t("app.history.reading_order.item_removed")
       );
     },
     [applyDocumentChange, document]
@@ -6742,7 +6948,7 @@ ${parsedDocument.error}`);
           ...document,
           readingOrder: nextReadingOrder,
         },
-        "Removed item from reading order"
+        t("app.history.reading_order.item_removed")
       );
     },
     [applyDocumentChange, document]
@@ -6764,7 +6970,7 @@ ${parsedDocument.error}`);
           ...document,
           readingOrder: nextReadingOrder,
         },
-        "Reordered reading order"
+        t("app.history.reading_order.reordered")
       );
     },
     [applyDocumentChange, document]
@@ -6790,7 +6996,7 @@ ${parsedDocument.error}`);
           island.id === selectedIsland.id ? { ...island, cardIds: mergedCardIds } : island
         ),
       },
-      "Added selected cards to island"
+      t("app.history.island.selected_cards_added")
     );
   }, [applyDocumentChange, document, selectedCardIds, selectedIsland]);
 
@@ -6813,7 +7019,7 @@ ${parsedDocument.error}`);
           island.id === selectedIsland.id ? { ...island, cardIds: nextCardIds } : island
         ),
       },
-      "Removed selected cards from island"
+      t("app.history.island.selected_cards_removed")
     );
   }, [applyDocumentChange, document, selectedCardIds, selectedIsland]);
 
@@ -6829,7 +7035,7 @@ ${parsedDocument.error}`);
         islands: nextIslands,
         readingOrder: (document.readingOrder ?? []).filter((id) => id !== selectedIsland.id),
       },
-      "Deleted island"
+      t("app.history.island.deleted")
     );
     setSelectedIslandId(null);
   }, [applyDocumentChange, document, selectedIsland]);
@@ -7059,7 +7265,7 @@ ${parsedDocument.error}`);
       <button
         type="button"
         onClick={handleAddCard}
-        disabled={isLoading || !document}
+        disabled={isReadOnly || isLoading || !document}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -7067,7 +7273,7 @@ ${parsedDocument.error}`);
           borderRadius: 6,
           padding: "6px 12px",
           fontWeight: 600,
-          cursor: isLoading || !document ? "not-allowed" : "pointer",
+          cursor: isReadOnly || isLoading || !document ? "not-allowed" : "pointer",
         }}
       >
         {t("app.toolbar.new_card")}
@@ -7075,7 +7281,7 @@ ${parsedDocument.error}`);
       <button
         type="button"
         onClick={handleCreateIsland}
-        disabled={isLoading || !document || !canCreateIsland}
+        disabled={isReadOnly || isLoading || !document || !canCreateIsland}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -7083,7 +7289,7 @@ ${parsedDocument.error}`);
           borderRadius: 6,
           padding: "6px 12px",
           fontWeight: 600,
-          cursor: isLoading || !document || !canCreateIsland ? "not-allowed" : "pointer",
+          cursor: isReadOnly || isLoading || !document || !canCreateIsland ? "not-allowed" : "pointer",
         }}
       >
         {t("app.toolbar.create_island")}
@@ -7091,7 +7297,7 @@ ${parsedDocument.error}`);
       <button
         type="button"
         onClick={handleDeleteSelection}
-        disabled={isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)}
+        disabled={isReadOnly || isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -7100,7 +7306,7 @@ ${parsedDocument.error}`);
           padding: "6px 12px",
           fontWeight: 600,
           cursor:
-            isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)
+            isReadOnly || isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)
               ? "not-allowed"
               : "pointer",
         }}
@@ -7112,7 +7318,7 @@ ${parsedDocument.error}`);
         onClick={() => {
           void handleSave();
         }}
-        disabled={isLoading || !document || isSaving || !isDirty}
+        disabled={isReadOnly || isLoading || !document || isSaving || !isDirty}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: isSaving ? "#f8fafc" : "#ffffff",
@@ -7120,7 +7326,7 @@ ${parsedDocument.error}`);
           borderRadius: 6,
           padding: "6px 12px",
           fontWeight: 600,
-          cursor: isLoading || !document || isSaving || !isDirty ? "not-allowed" : "pointer",
+          cursor: isReadOnly || isLoading || !document || isSaving || !isDirty ? "not-allowed" : "pointer",
         }}
       >
         {isSaving ? t("app.status.saving") : t("app.toolbar.save")}
@@ -8379,6 +8585,7 @@ ${parsedDocument.error}`);
       }}
       hasDocument={Boolean(document)}
       isLoading={isLoading}
+      isReadOnly={isReadOnly}
       onExportSvgViewport={handleExportSvgViewport}
       onExportSvgVisibleBounds={handleExportSvgVisibleBounds}
       pngExportScale={pngExportScale}
@@ -8600,7 +8807,10 @@ ${parsedDocument.error}`);
                       isReadOnly={isReadOnly}
                       candidates={mergeSuggestions.map((suggestion) => ({
                         id: suggestion.groupId,
-                        label: `${suggestion.groupId} (${suggestion.cardIds.length} cards)`,
+                        label: t("patch_workspace.candidate_label", {
+                          id: suggestion.groupId,
+                          count: suggestion.cardIds.length,
+                        }),
                         note: suggestion.rationale,
                         preview: {
                           sourceSnippets: suggestion.cardIds.map((cardId) => cardsById.get(cardId)?.text ?? `[missing:${cardId}]`),
@@ -8621,8 +8831,12 @@ ${parsedDocument.error}`);
                       onPresetSaved={(preset) => {
                         setStatusMessage(t("patch_workspace.status.preset_saved", { name: preset.name }));
                       }}
-                      onPresetExecuted={({ query }) => {
-                        setStatusMessage(t("patch_workspace.status.preset_executed", { query }));
+                      onPresetExecuted={({ scope, depth, filters }) => {
+                        setStatusMessage(t("patch_workspace.status.preset_executed", {
+                          scope: getWorkspaceScopeDisplayLabel(scope),
+                          depth,
+                          filters: filters.length > 0 ? filters.join(", ") : t("patch_workspace.no_filters"),
+                        }));
                       }}
                     />
                   </>
@@ -8687,6 +8901,14 @@ ${parsedDocument.error}`);
 
             handleCardClaimTypeChange(selectedCard.id, value);
           }}
+          onCardHoldStateChange={(value) => {
+            if (!selectedCard) {
+              return;
+            }
+
+            handleCardHoldStateChange(selectedCard.id, value);
+          }}
+          onRestoreShelvedCard={handleRestoreShelvedCard}
           onCardTextReviewedChange={(value) => {
             if (!selectedCard) {
               return;
@@ -8739,7 +8961,7 @@ ${parsedDocument.error}`);
                 : card
             );
 
-            applyDocumentChange({ ...document, cards: nextCards }, "Updated island placard card");
+            applyDocumentChange({ ...document, cards: nextCards }, t("app.history.island.placard_card_updated"));
           }}
           onTitleReviewedChange={(value) => {
             if (!selectedIsland) {

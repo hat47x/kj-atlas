@@ -1,7 +1,7 @@
 # Issue Draft: ENV-CONFIG-DRIFT-01 Runtime configuration contract alignment
 
 - Type: Bug
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
@@ -778,3 +778,23 @@ Expected result:
 - No additional public non-`KJ_ATLAS_*` setting is introduced.
 
 If the command fails because Docker is unavailable, keep this issue `In Progress`. If it fails because the rendered config exposes a new public non-`KJ_ATLAS_*` input or cannot expand the current public keys, treat that as new drift and update this issue before closing it.
+
+## 25) Legacy frontend key documentation guard (2026-06-19)
+
+### Finding
+
+- The frontend implementation already reads only `KJ_ATLAS_FRONTEND_API_BASE` through Vite's `KJ_ATLAS_` prefix.
+- The runtime registry still described `VITE_API_BASE` as an internal compatibility shim even though no such shim exists.
+- That description contradicted the accepted no-exception prefix policy and could lead maintainers to reintroduce an unsupported legacy key.
+
+### Execute
+
+- Removed the obsolete compatibility-shim statement from `runtime_parameter_registry.md`.
+- Clarified that the frontend build reads only `KJ_ATLAS_FRONTEND_API_BASE` and does not provide a legacy frontend-key shim.
+- Added a regression test that rejects `VITE_API_BASE` and `FRONTEND_API_BASE` in the runtime registry and public configuration guide.
+
+### Proceed / Stop
+
+- Proceed: the documented contract now matches the frontend implementation and the `KJ_ATLAS_*`-only policy.
+- No ADR is needed because this removes inaccurate compatibility documentation and does not change runtime behavior.
+- Stop before Done remains unchanged: Docker is still unavailable on this host, so live `docker compose config` evidence remains human/platform-operator work.

@@ -259,11 +259,6 @@ issue補助メモには、最低でも次の項目を含める。
 
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
-| HIL-RS-01 | `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` | In Progress | N/A |
-| HIL-RS-01-A1 | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | In Progress | N/A |
-| HIL-RS-02 | `issue-HIL-RS-02-next-phase-delivery-plan.md` | Open | N/A |
-| HIL-RS-02-A1 | `issue-HIL-RS-02-A1-governance-contract-hardening.md` | Open | N/A |
-| HIL-RS-02-A3 | `issue-HIL-RS-02-A3-operations-documentation-sync.md` | Draft | `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md` |
 
 - Stream D Phase 1-5 同期（2026-04-29 rerun-58）: Read & Reconcile（3共有ファイル再読、件数47/Active=5/Done=26、Decision Queue Ready=1/Open=2、依存順 `A1→A2→A3` を再確認）→ Plan Sync（同期項目と停止条件を固定、AC/DoD不足なし）→ Execute Single-Set（3ファイル同時更新）→ Verify（`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md`）→ Proceed（再開判定チェックリスト1行確定: 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件 / 停止条件違反なし）。
 
@@ -340,6 +335,16 @@ issue補助メモには、最低でも次の項目を含める。
 
 | Backlog ID | Memo | Status | Source Issue | Notes |
 |---|---|---|---|---|
+| HIL-RS-01 | `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` | Done | N/A | ADR-0039に基づく次フェーズ計画と下位作業への引き継ぎを完了（2026-06-20）。 |
+| HIL-RS-01-A1 | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | Done | N/A | 最小インターフェース契約の固定と承認記録を完了（2026-06-20）。 |
+| HIL-RS-02 | `issue-HIL-RS-02-next-phase-delivery-plan.md` | Done | N/A | 次フェーズの実行計画とA2/A3着手条件の整理を完了（2026-06-20）。 |
+| HIL-RS-02-A1 | `issue-HIL-RS-02-A1-governance-contract-hardening.md` | Done | N/A | ガバナンス契約の固定と例外判断の解消を完了（2026-06-20）。 |
+| HIL-RS-02-A3 | `issue-HIL-RS-02-A3-operations-documentation-sync.md` | Done | `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（Done 2026-06-20） | 運用文書同期の計画と引き継ぎを完了（2026-06-20）。 |
+| HIL-RS-01 | `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` | Done | N/A | ADR-0039に基づく次フェーズ計画と下位作業への引き継ぎを完了（2026-06-20）。 |
+| HIL-RS-01-A1 | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | Done | N/A | 最小インターフェース契約の固定と承認記録を完了（2026-06-20）。 |
+| HIL-RS-02 | `issue-HIL-RS-02-next-phase-delivery-plan.md` | Done | N/A | 次フェーズの実行計画とA2/A3着手条件の整理を完了（2026-06-20）。 |
+| HIL-RS-02-A1 | `issue-HIL-RS-02-A1-governance-contract-hardening.md` | Done | N/A | ガバナンス契約の固定と例外判断の解消を完了（2026-06-20）。 |
+| HIL-RS-02-A3 | `issue-HIL-RS-02-A3-operations-documentation-sync.md` | Done | `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（Done 2026-06-20） | 運用文書同期の計画と引き継ぎを完了（2026-06-20）。 |
 | DX-CODEX-01 | `issue-DX-CODEX-01-codex-skill-adoption-and-validation.md` | Done | N/A | Codex skill導入手順・役割分担・正本/補助境界・試行ログテンプレートを整備。 |
 | DX-CODEX-02 | `issue-DX-CODEX-02-markdown-mermaid-mcp-doc-ops-adoption.md` | Done | N/A | markdown-mermaid-docops skill運用とMermaid/MCP証跡方針を標準化。 |
 | AUTH-ARCH-01 | `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md` | Done | N/A | AuthContext/JIT境界、strict責務、承認記録を確定。 |

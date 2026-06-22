@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-05-06 04_Documentation/e2e_testing.md のOpen化準備
 
 - Type: Documentation quality
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft
 - Source Issue: N/A
 - Priority: P2

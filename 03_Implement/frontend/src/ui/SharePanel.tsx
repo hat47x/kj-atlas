@@ -27,6 +27,7 @@ type SharePanelProps = {
   isAdvancedUiEnabled?: boolean;
   hasDocument: boolean;
   isLoading: boolean;
+  isReadOnly: boolean;
   onExportSvgViewport: () => void;
   onExportSvgVisibleBounds: () => void;
   pngExportScale: 1 | 2;
@@ -296,6 +297,7 @@ export function SharePanel({
   isAdvancedUiEnabled = false,
   hasDocument,
   isLoading,
+  isReadOnly,
   onExportSvgViewport,
   onExportSvgVisibleBounds,
   pngExportScale,
@@ -873,7 +875,7 @@ export function SharePanel({
           <div style={sectionStyle}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.load_document.section_title")}</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
-              {t("share.panel.load_document.section_hint")}
+              {t(isReadOnly ? "share.panel.load_document.section_hint_read_only" : "share.panel.load_document.section_hint")}
             </div>
             <button
               type="button"
@@ -910,7 +912,7 @@ export function SharePanel({
                   {t("share.panel.load_document.summary", { cardCount: pendingImportedDocumentSummary.cardCount, islandCount: pendingImportedDocumentSummary.islandCount, edgeCount: pendingImportedDocumentSummary.edgeCount })}
                 </div>
                 <button type="button" onClick={onReplaceCurrentDocument} disabled={isLoading}>
-                  {t("share.panel.load_document.replace")}
+                  {t(isReadOnly ? "share.panel.load_document.open_read_only" : "share.panel.load_document.replace")}
                 </button>
               </div>
             ) : null}

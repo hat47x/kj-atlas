@@ -63,4 +63,23 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain('t("app.toolbar.undo")');
     expect(appSource).toContain('t("app.toolbar.save")');
   });
+
+  it("Phase 6: read-only-review-disables-edit-surfaces", () => {
+    const appSource = readSource("src/App.tsx");
+    expect(appSource).toContain("disabled={isReadOnly || isLoading || isSaving}");
+    expect(appSource).toContain("disabled={isReadOnly || isLoading || isSaving || !document}");
+    expect(appSource).toContain("disabled={isReadOnly || isLoading || !document}");
+    expect(appSource).toContain("disabled={isReadOnly || isLoading || !document || !canCreateIsland}");
+    expect(appSource).toContain(
+      "disabled={isReadOnly || isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)}",
+    );
+
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    expect(sidePanelSource).toMatch(/value=\{selectedCard\.claimType \?\? "unknown"\}\s+disabled=\{isReadOnly\}/);
+    expect(sidePanelSource).toMatch(/value=\{selectedCard\.holdState \?\? "active"\}\s+disabled=\{isReadOnly\}/);
+    expect(sidePanelSource).toContain("disabled={isReadOnly || !card}");
+    expect(sidePanelSource).toContain('data-panel="shelf"');
+    expect(sidePanelSource).toMatch(/checked=\{selectedCard\.textReviewed === true\}\s+disabled=\{isReadOnly\}/);
+    expect(sidePanelSource).toMatch(/value=\{selectedCard\.critique \?\? ""\}\s+disabled=\{isReadOnly\}/);
+  });
 });

@@ -67,6 +67,10 @@ export function DiffPanel({
   safeMode,
 }: DiffPanelProps) {
   const hasComparisonDocument = Boolean(comparisonDocument);
+  const reviewStateLabel = (reviewed: boolean | undefined) =>
+    reviewed === undefined
+      ? t("diff.panel.review_state_unknown")
+      : t(reviewed ? "diff.panel.reviewed" : "diff.panel.unreviewed");
 
   return (
     <section
@@ -178,14 +182,14 @@ export function DiffPanel({
                   {t("diff.panel.item.summary_changed")} {renderItemReference("island", entry.id, currentIslandIdSet.has(entry.id), onJumpToItem)}
                   <details>
                     <summary>
-                      {t("diff.panel.label.a_strong")}[{String(entry.aReviewed)}]: {formatPreview(entry.aSummary, safeMode)} / {t("diff.panel.label.b_strong")}[{String(entry.bReviewed)}]: {formatPreview(entry.bSummary, safeMode)}
+                      {t("diff.panel.label.a_strong")}[{reviewStateLabel(entry.aReviewed)}]: {formatPreview(entry.aSummary, safeMode)} / {t("diff.panel.label.b_strong")}[{reviewStateLabel(entry.bReviewed)}]: {formatPreview(entry.bSummary, safeMode)}
                     </summary>
                     <div style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>
                       <div>
-                        <strong>{t("diff.panel.label.a_strong")}</strong> [{String(entry.aReviewed)}]: {safeMode ? SafeModePolicy.redactText(entry.aSummary ?? "", true) : entry.aSummary ?? ""}
+                        <strong>{t("diff.panel.label.a_strong")}</strong> [{reviewStateLabel(entry.aReviewed)}]: {safeMode ? SafeModePolicy.redactText(entry.aSummary ?? "", true) : entry.aSummary ?? ""}
                       </div>
                       <div>
-                        <strong>{t("diff.panel.label.b_strong")}</strong> [{String(entry.bReviewed)}]: {safeMode ? SafeModePolicy.redactText(entry.bSummary ?? "", true) : entry.bSummary ?? ""}
+                        <strong>{t("diff.panel.label.b_strong")}</strong> [{reviewStateLabel(entry.bReviewed)}]: {safeMode ? SafeModePolicy.redactText(entry.bSummary ?? "", true) : entry.bSummary ?? ""}
                       </div>
                     </div>
                   </details>
@@ -224,7 +228,7 @@ export function DiffPanel({
               ))}
               {diffResult.relationSummaries.changedReviewed.map((entry) => (
                 <li key={`relations-reviewed-${entry.id}`}>
-                  {t("diff.panel.item.reviewed_changed")} {entry.id} ({String(entry.aReviewed)} → {String(entry.bReviewed)})
+                  {t("diff.panel.item.reviewed_changed")} {entry.id} ({reviewStateLabel(entry.aReviewed)} → {reviewStateLabel(entry.bReviewed)})
                 </li>
               ))}
               {diffResult.relationSummaries.warningsChanged.map((entry) => (

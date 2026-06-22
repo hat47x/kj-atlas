@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
-import { EXPORT_BUNDLE_BUTTON, SHARE_REPRODUCE_BUTTON } from "./helpers/i18n";
+import JSZip from "jszip";
+import { ADVANCED_UI_BUTTON, EXPORT_BUNDLE_BUTTON, SHARE_REPRODUCE_BUTTON } from "./helpers/i18n";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
 
@@ -296,7 +297,7 @@ test("save failure keeps content and points to export or retry", async ({ page }
   await page.goto("/");
   await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
 
-  await page.getByRole("button", { name: /新規|New/ }).click();
+  await page.getByRole("button", { name: /^新規$|^New$/ }).click();
   await page.getByRole("button", { name: /^保存$|^Save$/ }).click();
 
   const status = page.getByTestId("status-message");
@@ -343,6 +344,36 @@ test("slow review pack export shows progress and can be cancelled", async ({ pag
   await expectStatusFitsViewport(page);
 });
 
+test("review pack missing document.json shows localized recovery guidance", async ({ page }) => {
+  await routeDocumentApi(page, {});
+  await page.goto("/?locale=ja");
+  await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+
+  const zip = new JSZip();
+  zip.file("view.json", JSON.stringify({
+    schemaVersion: "1.0.0",
+    visibility: "Restricted",
+    viewState: {},
+  }));
+  const buffer = await zip.generateAsync({ type: "nodebuffer" });
+
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: /ZIPファイルを選択|Choose ZIP/ }).click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles({
+    name: "missing-document.zip",
+    mimeType: "application/zip",
+    buffer,
+  });
+
+  const status = page.getByTestId("status-message");
+  await expect(status).toContainText("レビューパックに document.json がありません");
+  await expect(status).toContainText("作り直してください");
+  await expect(status).not.toContainText("document.json not found in zip");
+  await expectStatusFitsViewport(page);
+});
+
 test("slow review diff shows localized progress and can be cancelled", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 720 });
   await installSlowDiffWorker(page);
@@ -361,6 +392,8 @@ test("slow review diff shows localized progress and can be cancelled", async ({ 
 
   await page.goto("/");
   await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+  await page.getByRole("button", { name: /開始パネルを閉じる|Close start panel/ }).click();
+  await page.getByRole("button", { name: ADVANCED_UI_BUTTON }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: /比較対象ドキュメントを読み込む|Load comparison document/ }).first().click();
@@ -371,10 +404,52 @@ test("slow review diff shows localized progress and can be cancelled", async ({ 
     buffer: Buffer.from(JSON.stringify(comparisonDocument), "utf-8"),
   });
 
+  await expect(page.getByTestId("status-message")).not.toContainText("Loaded comparison document (view-only)");
   await expect(page.getByText("差分を計算中: カード（10%）").first()).toBeVisible();
   await expect(page.getByText(/項目数: 0.*処理中|Items: 0.*Working/).first()).toBeVisible();
 
   await page.getByRole("button", { name: /^キャンセル$|^Cancel$/ }).first().click();
   await expect(page.getByTestId("status-message")).toContainText("差分計算を中止しました");
+  await expectStatusFitsViewport(page);
+});
+
+test("invalid comparison JSON shows localized recovery guidance", async ({ page }) => {
+  await routeDocumentApi(page, {});
+  await page.goto("/?locale=ja");
+  await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+  await page.getByRole("button", { name: /開始パネルを閉じる|Close start panel/ }).click();
+  await page.getByRole("button", { name: ADVANCED_UI_BUTTON }).click();
+
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: /比較対象ドキュメントを読み込む|Load comparison document/ }).first().click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles({
+    name: "invalid-comparison.json",
+    mimeType: "application/json",
+    buffer: Buffer.from("{ invalid json", "utf-8"),
+  });
+
+  await expect(page.getByTestId("status-message")).toContainText("比較対象のJSONファイルを解析できませんでした");
+  await expectStatusFitsViewport(page);
+});
+
+test("invalid patch JSON shows localized validation guidance", async ({ page }) => {
+  await routeDocumentApi(page, {});
+  await page.goto("/?locale=ja");
+  await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
+
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: /patch\.json を読み込む|Load patch\.json/ }).click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles({
+    name: "invalid-patch.json",
+    mimeType: "application/json",
+    buffer: Buffer.from("{ invalid json", "utf-8"),
+  });
+
+  await expect(page.getByTestId("status-message")).toContainText("パッチJSONを読み込めませんでした");
+  await expect(page.getByText(/パッチを検証できませんでした/)).toBeVisible();
+  await expect(page.getByText(/JSONの構文が正しくありません/)).toBeVisible();
   await expectStatusFitsViewport(page);
 });

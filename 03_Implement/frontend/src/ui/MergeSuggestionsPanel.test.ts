@@ -74,9 +74,13 @@ describe("MergeSuggestionsPanel", () => {
     expect(html).toContain(t("merge_suggestions.decision_label", { decision: t("merge_suggestions.decision.deferred") }));
     expect(html).toContain("a: Risk mitigation");
     expect(html).toContain("b: risk mitigation");
-    expect(html).toContain(`${t("merge_suggestions.representative")}: a [fallback]${t("merge_suggestions.source_count_suffix", { count: 1 })}`);
+    expect(html).toContain(
+      `${t("merge_suggestions.representative")}: a [${t("merge_suggestions.representative_resolution.fallback")}]${t("merge_suggestions.source_count_suffix", { count: 1 })}`
+    );
     expect(html).toContain(`${t("merge_suggestions.rationale")}: heuristic:normalized-text`);
-    expect(html).toContain("判断=defer");
+    expect(html).toContain(`判断=${t("merge_suggestions.decision.deferred")}`);
+    expect(html).not.toContain("[fallback]");
+    expect(html).not.toContain("判断=defer");
     expect(html).toContain(t("merge_suggestions.export_audit"));
     expect(html).toContain(t("merge_suggestions.events_count", { count: 1 }));
     expect(html).toContain(`${t("merge_suggestions.draft_diff_preview")}:`);
@@ -106,5 +110,10 @@ describe("MergeSuggestionsPanel", () => {
     );
 
     expect(html).toContain(t("merge_suggestions.no_audit_events"));
+  });
+
+  it("provides localized trust-boundary recovery messages", () => {
+    expect(t("merge_suggestions.trust_boundary.read_only", undefined, "ja")).toContain("確認用");
+    expect(t("merge_suggestions.trust_boundary.untrusted_event", undefined, "ja")).toContain("判断ボタン");
   });
 });

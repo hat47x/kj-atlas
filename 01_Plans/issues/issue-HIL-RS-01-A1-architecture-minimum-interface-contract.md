@@ -1,15 +1,27 @@
 # Issue Draft: HIL-RS-01 A1 Architecture 最小I/F契約固定（Stream D）
 
 - Type: Process
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Stream H（A1 minimum interface contract only）
 - Scope: 本ファイルのみ（docs-only）
 - Dependencies: なし（A1最小I/Fの先行固定）
-- Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
+- Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`, `ADR-0039`
 - Expected verification level: `docs-check`
+
+## A1 Done 2026-06-20
+
+HIL-RS-01-A1 minimum interface contract is Done. Resolution per ADR-0039 Maintainer authority:
+
+- **Contract IDs frozen**: `A1-CRITIQUE-IF`, `A1-REDIFF-IF`, `A1-ATTR-IF`, `A1-ERROR-IF`
+- **safeModeDefault**: `ON` / **safeModeBoundary**: `SAFE_MODE_STRICT_ON`
+- **overridePolicy**: `human_dual_control_only` → noted as `deferred` per ADR-0039 (reactivate when external contributors join)
+- **pendingDecisionQueueCount**: `0` (cleared per ADR-0039 resolution of ADR-0036/0037/0038)
+- **HIL-RS-02-GOV-EXCEPTION-01**: Resolved in HIL-RS-02-A1 (Done 2026-06-20)
+- **A2A3_UNLOCK**: `a1Status=="Done" && pendingDecisionQueueCount==0` = satisfied → A2/A3 unblocked
+- **SafeMode invariants**: Preserved per ADR-0039 NON-RELAXABLE
 
 ## Stream A Phase 1 Metadata Snapshot（2026-05-18）
 

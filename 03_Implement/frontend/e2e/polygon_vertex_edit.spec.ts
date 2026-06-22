@@ -57,7 +57,7 @@ function buildPolygonDocument(id: string) {
 }
 
 async function replaceCurrentDocumentWithPolygon(page: import("@playwright/test").Page, id: string): Promise<void> {
-  await page.goto("/");
+  await page.goto("/?locale=ja");
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
@@ -70,7 +70,7 @@ async function replaceCurrentDocumentWithPolygon(page: import("@playwright/test"
   });
 
   await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
-  await expect(page.getByText("Replaced current document")).toBeVisible();
+  await expect(page.getByTestId("status-message")).toContainText(/現在のドキュメントを置換しました|Replaced the current document/);
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   await page.getByRole("button", { name: /Select island i1|島 i1 を選択/ }).dispatchEvent("click");
@@ -94,7 +94,7 @@ async function exportCurrentDocument(page: import("@playwright/test").Page) {
 test("polygon vertex drag keeps constraints and persists edited points", async ({ page }) => {
   await replaceCurrentDocumentWithPolygon(page, "doc_e2e_polygon_vertex_edit");
 
-  const firstVertexHandle = page.getByRole("button", { name: "Move polygon vertex 1" });
+  const firstVertexHandle = page.getByRole("button", { name: "多角形の頂点 1 を移動" });
   await expect(firstVertexHandle).toBeVisible();
   const handleBox = await firstVertexHandle.boundingBox();
   expect(handleBox).toBeTruthy();
@@ -105,6 +105,7 @@ test("polygon vertex drag keeps constraints and persists edited points", async (
     sourcePosition: { x: (handleBox?.width ?? 10) / 2, y: (handleBox?.height ?? 10) / 2 },
     targetPosition: { x: startX + 40, y: startY + 28 },
   });
+  await expect(page.getByTestId("status-message")).toContainText("多角形の頂点を移動しました");
 
   const exportedDocument = await exportCurrentDocument(page);
 
@@ -121,17 +122,18 @@ test("polygon vertex drag keeps constraints and persists edited points", async (
 test("polygon vertex handles support keyboard nudging and removal", async ({ page }) => {
   await replaceCurrentDocumentWithPolygon(page, "doc_e2e_polygon_vertex_keyboard_edit");
 
-  const firstVertexHandle = page.getByRole("button", { name: "Move polygon vertex 1" });
+  const firstVertexHandle = page.getByRole("button", { name: "多角形の頂点 1 を移動" });
   await expect(firstVertexHandle).toBeVisible();
   await firstVertexHandle.focus();
   await expect(firstVertexHandle).toBeFocused();
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("Shift+ArrowDown");
 
-  const fourthVertexHandle = page.getByRole("button", { name: "Move polygon vertex 4" });
+  const fourthVertexHandle = page.getByRole("button", { name: "多角形の頂点 4 を移動" });
   await fourthVertexHandle.focus();
   await expect(fourthVertexHandle).toBeFocused();
   await page.keyboard.press("Delete");
+  await expect(page.getByTestId("status-message")).toContainText("多角形の頂点を削除しました");
 
   const exportedDocument = await exportCurrentDocument(page);
   const editedIsland = exportedDocument.islands.find((island) => island.id === "i1");

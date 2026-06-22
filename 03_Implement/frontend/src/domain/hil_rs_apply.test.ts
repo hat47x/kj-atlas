@@ -53,4 +53,23 @@ describe("applyHilRsRediffPayload", () => {
     expect(result.skippedOpIds).toEqual(["bad-kind", "bad-move"]);
     expect(result.document.cards[0].textReviewed).toBeUndefined();
   });
+
+  it("rejects rediff operations that attempt to inject review state", () => {
+    const result = applyHilRsRediffPayload(BASE, {
+      ...PAYLOAD,
+      diffOps: [
+        {
+          opId: "review-injection",
+          opType: "add",
+          targetRef: "card:c2",
+          before: null,
+          after: { id: "c2", text: "beta", x: 10, y: 20, textReviewed: true },
+        },
+      ],
+    });
+
+    expect(result.appliedOpIds).toEqual([]);
+    expect(result.skippedOpIds).toEqual(["review-injection"]);
+    expect(result.document.cards).toEqual(BASE.cards);
+  });
 });

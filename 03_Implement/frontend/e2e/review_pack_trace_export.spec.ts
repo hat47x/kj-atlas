@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import { expect, test, type Download, type Page } from "@playwright/test";
+import { buildReviewPackTraceDocument, withoutProductValueContent } from "./helpers/product_value_fixtures";
 
 async function readDownloadToBuffer(download: Download): Promise<Buffer> {
   const stream = await download.createReadStream();
@@ -28,29 +29,29 @@ async function exportBundleFileNames(page: Page): Promise<string[]> {
   return Object.keys(zip.files).sort();
 }
 
-function buildTraceDocument() {
-  const now = "2026-06-04T00:00:00.000Z";
+async function routeReviewPackFixture(page: Page): Promise<{ enableSample: () => void }> {
+  let shouldReturnSample = false;
+
+  await page.route("**/packs/index.json", async (route) => {
+    await route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
+  });
+
+  await page.route("**/docs/doc_phase1_canvas", async (route) => {
+    const document = shouldReturnSample
+      ? buildReviewPackTraceDocument()
+      : withoutProductValueContent(buildReviewPackTraceDocument());
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { ETag: shouldReturnSample ? '"review-pack-readonly-loaded"' : '"review-pack-readonly-empty"' },
+      body: JSON.stringify(document),
+    });
+  });
+
   return {
-    version: 2,
-    id: "doc_review_pack_trace_export",
-    title: "review pack trace export fixture",
-    createdAt: now,
-    updatedAt: now,
-    transform: { panX: 0, panY: 0, zoom: 1 },
-    cards: [
-      { id: "c-target", text: "trace target claim", x: 140, y: 130, claimType: "claim", textReviewed: true },
-      { id: "c-support", text: "supporting field note", x: 430, y: 130, claimType: "fact", textReviewed: true },
-      { id: "c-counter", text: "contradicting stakeholder signal", x: 430, y: 290, claimType: "claim", textReviewed: false },
-    ],
-    edges: [],
-    islands: [{ id: "i-review", title: "reviewable trace package", cardIds: ["c-target", "c-support", "c-counter"] }],
-    readingOrder: ["c-target", "c-support", "c-counter"],
-    evidenceLinks: [
-      { id: "e-support", type: "supports", fromCardId: "c-support", toCardId: "c-target", createdAt: now },
-      { id: "e-counter", type: "contradicts", fromCardId: "c-counter", toCardId: "c-target", createdAt: now },
-    ],
-    narratives: [],
-    mergeSuggestionDecisions: [],
+    enableSample: () => {
+      shouldReturnSample = true;
+    },
   };
 }
 
@@ -67,7 +68,7 @@ test("review pack export keeps trace controls consistent with actual zip content
   await fileChooser.setFiles({
     name: "review-pack-trace-export.json",
     mimeType: "application/json",
-    buffer: Buffer.from(JSON.stringify(buildTraceDocument()), "utf-8"),
+    buffer: Buffer.from(JSON.stringify(buildReviewPackTraceDocument()), "utf-8"),
   });
   await page.getByRole("button", { name: "Replace current document" }).click();
   await expect(page.getByText("Replaced current document")).toBeVisible();
@@ -105,4 +106,38 @@ test("review pack export keeps trace controls consistent with actual zip content
   expect(detailFileNames.some((name) => name.endsWith("evidence_trace_c-target.md"))).toBe(true);
   expect(detailFileNames.some((name) => name.endsWith("contradiction_trace_c-target.md"))).toBe(true);
   expect(detailFileNames.some((name) => name.endsWith("trace_analytics_c-target.md"))).toBe(true);
+});
+
+test("reviewer can inspect review-pack evidence without editing in read-only mode", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = await routeReviewPackFixture(page);
+
+  await page.goto("/?locale=en&readOnly=1");
+  fixture.enableSample();
+  await page.getByRole("button", { name: "Open sample" }).click();
+
+  await expect(page.getByText("Read-only mode is active. Editing actions are disabled.")).toBeVisible();
+  const targetCard = page.getByRole("option", { name: "trace target claim" });
+  await targetCard.click();
+
+  const selectionSummary = page.locator('[data-panel="selection-context"]');
+  const selectionPanel = page.locator('[data-ui-region="selection-context"]');
+  await expect(selectionSummary).toContainText("Card selected");
+  await expect(selectionSummary).toContainText("Review state: Reviewed");
+  await expect(selectionPanel).toContainText("Evidence");
+  await expect(selectionPanel).toContainText("supporting field note supports this");
+  await expect(selectionPanel).toContainText("contradicting stakeholder signal contradicts this");
+
+  await expect(page.getByRole("button", { name: "New", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Duplicate" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "New card" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Create Island" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Delete" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Save" })).toBeDisabled();
+  await expect(page.getByLabel("Card text reviewed")).toBeDisabled();
+  await expect(page.getByPlaceholder("Optional feedback about this card")).toBeDisabled();
+
+  await page.getByRole("button", { name: "Share & Reproduce" }).click();
+  await expect(page.getByText("Locked redaction contexts: Share / Review Pack (cannot be disabled).")).toBeVisible();
+  await expect(page.getByText("Evidence links 2, contradictions 1, evidence gaps 0")).toBeVisible();
 });

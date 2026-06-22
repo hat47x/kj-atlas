@@ -11,6 +11,7 @@ function buildProps(safeMode: boolean, overrides: Partial<React.ComponentProps<t
     onToggleOpen: vi.fn(),
     hasDocument: true,
     isLoading: false,
+    isReadOnly: false,
     onExportSvgViewport: vi.fn(),
     onExportSvgVisibleBounds: vi.fn(),
     pngExportScale: 1 as const,
@@ -154,6 +155,25 @@ describe("SharePanel safe mode copy", () => {
     expect(html).toContain("Preflight check");
     expect(html).toContain("Unreviewed drafts are excluded. Enable them only when the recipient expects draft content.");
     expect(html).toContain("Include unreviewed drafts");
+  });
+});
+
+describe("SharePanel read-only document loading", () => {
+  it("describes opening a validated document for inspection instead of replacing it", () => {
+    setActiveLocale("en");
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true, {
+      isReadOnly: true,
+      pendingImportedDocumentSummary: {
+        fileName: "inspection.document.json",
+        cardCount: 1,
+        islandCount: 0,
+        edgeCount: 0,
+      },
+    })));
+
+    expect(html).toContain("open it for inspection without saving");
+    expect(html).toContain("Open for inspection");
+    expect(html).not.toContain("Replace current document");
   });
 });
 

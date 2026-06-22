@@ -1,4 +1,4 @@
-import type { Card, DeterministicTieBreak, DocumentV2, EvidenceLink, Island, Transform } from "./types";
+import type { Card, DeterministicTieBreak, DocumentV2, EvidenceLink, Island, ShelfEntry, Transform } from "./types";
 import { canUsePolygonPoints } from "./geometry/polygon_edit";
 import {
   validateHilRsCritiqueInput,
@@ -103,6 +103,10 @@ function parseCards(value: unknown): Card[] | null {
       critique: typeof item.critique === "string" ? item.critique : undefined,
       critiqueTags: parseCritiqueTags(item.critiqueTags),
       textReviewed: typeof item.textReviewed === "boolean" ? item.textReviewed : undefined,
+      holdState:
+        item.holdState === "held" || item.holdState === "pending" || item.holdState === "shelved"
+          ? item.holdState
+          : undefined,
     });
   }
 
@@ -361,6 +365,37 @@ function parseCritiqueInputs(value: unknown): DocumentV2["critiqueInputs"] | und
   return value.filter(validateHilRsCritiqueInput);
 }
 
+function parseShelf(value: unknown, cardIds: Set<string>): ShelfEntry[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const shelf: ShelfEntry[] = [];
+  const seenCardIds = new Set<string>();
+  for (const item of value) {
+    if (
+      !isRecord(item)
+      || typeof item.cardId !== "string"
+      || !cardIds.has(item.cardId)
+      || seenCardIds.has(item.cardId)
+      || typeof item.shelvedAt !== "string"
+      || Number.isNaN(Date.parse(item.shelvedAt))
+      || (item.reason !== undefined && typeof item.reason !== "string")
+    ) {
+      continue;
+    }
+
+    seenCardIds.add(item.cardId);
+    shelf.push({
+      cardId: item.cardId,
+      shelvedAt: new Date(item.shelvedAt).toISOString(),
+      ...(typeof item.reason === "string" ? { reason: item.reason } : {}),
+    });
+  }
+
+  return shelf.length > 0 ? shelf : undefined;
+}
+
 function parseReproposalDiffs(value: unknown): DocumentV2["reproposalDiffs"] | undefined {
   if (!Array.isArray(value)) {
     return undefined;
@@ -463,6 +498,11 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
   const reproposalDiffs = parseReproposalDiffs(value.reproposalDiffs);
   const reviewAttribution = parseReviewAttribution(value.reviewAttribution);
   const deterministicTieBreak = parseDeterministicTieBreak(value.deterministicTieBreak);
+  const shelf = parseShelf(value.shelf, new Set(cards.map((card) => card.id)));
+  const shelvedCardIds = new Set((shelf ?? []).map((entry) => entry.cardId));
+  const normalizedCards = shelvedCardIds.size === 0
+    ? cards
+    : cards.map((card) => shelvedCardIds.has(card.id) ? { ...card, holdState: "shelved" as const } : card);
 
   return {
     ok: true,
@@ -473,7 +513,7 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
       createdAt,
       updatedAt,
       transform,
-      cards,
+      cards: normalizedCards,
       edges: parseEdges(value.edges),
       islands: version === 1 ? [] : parseIslands(value.islands),
       evidenceLinks: parseEvidenceLinks(value.evidenceLinks) ?? [],
@@ -481,6 +521,7 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
       ...(reproposalDiffs !== undefined ? { reproposalDiffs } : {}),
       ...(reviewAttribution !== undefined ? { reviewAttribution } : {}),
       ...(deterministicTieBreak !== undefined ? { deterministicTieBreak } : {}),
+      ...(shelf !== undefined ? { shelf } : {}),
     },
   };
 }

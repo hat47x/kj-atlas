@@ -1,16 +1,61 @@
 # Issue Draft: DOMAIN-EXPR-02 保留(Hold)と未統合(Pending/Shelf)の第一級化
 
 - Type: Feature request
-- Status: Draft
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex
 - Scope: `02_Architecture/schemas.md`, `03_Implement/frontend/src/`, `03_Implement/frontend/src/import/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/tests/`
 - Related Backlog: `DOMAIN-EXPR-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `00_Prompt/domain.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `02_Architecture/schemas.md`
-- Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `00_Prompt/domain.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `02_Architecture/schemas.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
+- Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
 - Expected verification level: `integration`
+
+## Draft→In Progress 2026-06-21
+
+DOMAIN-EXPR-01 Doneにより依存充足。ADR-0040 Phase 2着手。
+
+### Done
+- **Schema**: `02_Architecture/schemas.md` §14 DOMAIN-EXPR-02 加算スキーマ拡張
+  - Card.holdState (`"held" | "pending" | "shelved"`, optional, L2.5)
+  - ShelfEntry type (`{ cardId, shelvedAt, reason? }`)
+  - DocumentV2.shelf (`ShelfEntry[]`, optional)
+  - 後方互換: version 2維持、全フィールドoptional
+- **Types**: `types.ts` Card.holdState, ShelfEntry, DocumentV2.shelf
+- **CardView**: holdStateバッジ (Held=amber, Pending=indigo, Shelved=gray)
+
+### Remaining
+- Shelf UI component (退避カード一覧・復帰操作)
+- import/export support for shelf entries
+- E2E tests
+
+### Commit
+- 277f2411 feat(DOMAIN-EXPR-02): add holdState + ShelfEntry schema and CardView badge
+
+## Implementation checkpoint 2026-06-21: card decision-status control
+
+- Added a card-inspector control for `通常 / 保留 / 未決 / 棚上げ`.
+- The control is keyboard-operable through a labeled native select and is disabled in read-only review mode.
+- Returning to `通常` removes the optional `holdState` field instead of writing a new default value.
+- Import parsing and strict validation now preserve supported `holdState` values and reject unknown values.
+- Document history records the change while keeping suggestion preview state intact.
+- Browser verification confirmed card selection, `通常 -> 保留`, localized card badge/accessible name, status feedback, and undo restoration.
+- Remaining scope is unchanged: a visible Shelf list, set-aside/restore operations, ShelfEntry import/export, and E2E coverage belong to the next slice.
+- No ADR is required because the accepted optional schema, review authority, SafeMode behavior, and sharing policy are unchanged.
+
+## Implementation checkpoint 2026-06-21: Shelf workflow and persistence
+
+- Selecting `棚上げ` now adds a `ShelfEntry`, preserves the card body and coordinates, and removes the card from the canvas.
+- The side panel shows a visible Shelf list with the card text, shelved timestamp, optional reason, and a read-only-aware restore action.
+- Restoring removes both Shelf membership and the optional `holdState`, returns the card at its original coordinates, selects it, and records one reversible history operation.
+- Tolerant JSON import keeps valid Shelf entries, normalizes their cards to `holdState: "shelved"`, and drops invalid, duplicate, or orphaned entries.
+- Strict frontend validation accepts only typed Shelf entries, rejects duplicate or unknown card references, and requires Shelf members to use `holdState: "shelved"`.
+- Backend `DocumentV2` now models `CardV2.holdState` and `DocumentV2.shelf`; SQLite PUT/GET coverage proves that status, coordinates, timestamp, and reason survive persistence.
+- Browser verification confirmed `通常 -> 棚上げ`, canvas removal, Shelf list rendering, restore, and the exact pre/post viewport bounds `(80, 166, 245.6 x 105.6)`.
+- At a 280 px side-panel width, the Shelf section had no horizontal overflow (`scrollWidth == clientWidth`) and emitted no browser console warning or error.
+- Remaining scope: add a maintained automated E2E scenario for keyboard traversal and persisted reload. The native select and button are keyboard-capable, but the in-app browser key simulation did not activate the focused restore button reliably, so this must be verified in the Playwright E2E harness.
+- No ADR is required: this implements the already accepted additive schema and reversible Shelf behavior without changing authority, SafeMode, sharing, or compatibility policy.
 
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0040` Phase 2。加算的・後方互換のschema拡張を含む。
 

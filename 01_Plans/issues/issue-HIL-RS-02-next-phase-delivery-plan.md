@@ -1,16 +1,21 @@
 # Issue Draft: HIL-RS-02 Next-Phase Delivery Plan（Stream H delivery planning lane）
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Stream H Agent（delivery planning only）
 - Scope: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md` のみ
 - Out of scope: 上記以外すべてのファイル編集、`03_Implement/**`、`04_Documentation/**`、実装コード編集
-- Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
-- Dependencies (read-only): `issue-HIL-RS-02-A1-governance-contract-hardening.md`（A1）
+- Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`, `ADR-0039`
+- Dependencies (read-only): `issue-HIL-RS-02-A1-governance-contract-hardening.md`（Done 2026-06-20）
 - Expected verification level: `docs-check`
+
+## Done 2026-06-20
+A2A3_UNLOCK satisfied: a1Status=="Done" (HIL-RS-01-A1 + HIL-RS-02-A1 both Done) && pendingDecisionQueueCount==0 (ADR-0039).
+All Phases 1-6 previously ran with Proceed=Hold (A1 gate). Now A1 gate satisfied → delivery plan Done.
+SafeMode invariants preserved; contract redefinition block maintained.
 
 ## Canonical Gate Equation（A1 unlock single predicate）
 - `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)`

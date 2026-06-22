@@ -1,6 +1,32 @@
 import type { ContextQueryDraft, QueryPreviewState } from "../domain/context/query_preview";
 import { t } from "../i18n/translate";
 
+const blockerMessageKeys: Record<string, string> = {
+  "queryId is required": "context_query.preview.blocker.query_id_required",
+  "goal is required": "context_query.preview.blocker.goal_required",
+  "depth must be between 0 and 5": "context_query.preview.blocker.depth_out_of_range",
+  "safeMode strict requires reviewFilter=reviewedOnly": "context_query.preview.blocker.reviewed_only_required",
+  "previewConfirmed must be true before submit": "context_query.preview.blocker.confirmation_required",
+};
+
+const excludedReasonKeys: Record<string, string> = {
+  unreviewed_filtered: "context_query.preview.excluded.unreviewed",
+};
+
+function localizedValue(category: "scope" | "review_filter" | "safe_mode_policy" | "output_mode", value: string): string {
+  return t(`context_query.preview.value.${category}.${value}`);
+}
+
+function localizedBlocker(blocker: string): string {
+  const key = blockerMessageKeys[blocker];
+  return key ? t(key) : blocker;
+}
+
+function localizedExcludedReason(reason: string): string {
+  const key = excludedReasonKeys[reason];
+  return key ? t(key) : reason;
+}
+
 type ContextQueryPreviewPanelProps = {
   draft: ContextQueryDraft;
   previewState: QueryPreviewState;
@@ -25,6 +51,7 @@ export function ContextQueryPreviewPanel({
   const disabled = isReadOnly || isSubmitting;
   const submitBlocked = disabled || !previewState.canSubmit;
   const primaryBlocker = previewState.blockers[0] ?? null;
+  const localizedPrimaryBlocker = primaryBlocker ? localizedBlocker(primaryBlocker) : null;
 
   const handleSubmit = () => {
     if (submitBlocked) return;
@@ -46,17 +73,17 @@ export function ContextQueryPreviewPanel({
       <div data-testid="ce1-query-preview-summary" style={{ fontSize: 12, color: "#1e293b", display: "grid", gap: 2 }}>
         <span>{t("context_query.preview.query_id")}: {draft.queryId || t("context_query.preview.missing")}</span>
         <span>{t("context_query.preview.goal")}: {draft.goal || t("context_query.preview.missing")}</span>
-        <span>{t("context_query.preview.scope")}: {previewState.scope}</span>
+        <span>{t("context_query.preview.scope")}: {localizedValue("scope", previewState.scope)}</span>
         <span>{t("context_query.preview.depth")}: {previewState.depth}</span>
-        <span>{t("context_query.preview.review_filter")}: {previewState.reviewFilter}</span>
-        <span>{t("context_query.preview.safe_mode_policy")}: {previewState.safeModePolicy}</span>
-        <span>{t("context_query.preview.output_mode")}: {previewState.outputMode}</span>
+        <span>{t("context_query.preview.review_filter")}: {localizedValue("review_filter", previewState.reviewFilter)}</span>
+        <span>{t("context_query.preview.safe_mode_policy")}: {localizedValue("safe_mode_policy", previewState.safeModePolicy)}</span>
+        <span>{t("context_query.preview.output_mode")}: {localizedValue("output_mode", previewState.outputMode)}</span>
       </div>
 
       {previewState.blockers.length > 0 ? (
         <ul data-testid="ce1-query-preview-blockers" style={{ margin: 0, paddingInlineStart: 18, color: "#b91c1c", fontSize: 12 }}>
           {previewState.blockers.map((blocker) => (
-            <li key={blocker}>{blocker}</li>
+            <li key={blocker}>{localizedBlocker(blocker)}</li>
           ))}
         </ul>
       ) : (
@@ -82,20 +109,23 @@ export function ContextQueryPreviewPanel({
         onClick={handleSubmit}
         disabled={submitBlocked}
         aria-disabled={submitBlocked}
-        title={primaryBlocker ?? undefined}
+        title={localizedPrimaryBlocker ?? undefined}
       >
         {isSubmitting ? t("context_query.preview.submitting") : t("context_query.preview.submit")}
       </button>
 
-      {primaryBlocker ? (
+      {localizedPrimaryBlocker ? (
         <div data-testid="ce1-query-preview-gate-status" style={{ fontSize: 11, color: "#b91c1c" }}>
-          {t("context_query.preview.gate_block", { blocker: primaryBlocker })}
+          {t("context_query.preview.gate_block", { blocker: localizedPrimaryBlocker })}
         </div>
       ) : null}
 
       <footer style={{ fontSize: 11, color: "#475569", display: "grid", gap: 2 }}>
         <span>{t("context_query.preview.latest_bundle_hash")}: {latestBundleHash ?? t("context_query.preview.not_generated")}</span>
-        <span>{t("context_query.preview.excluded_reason")}: {excludedReason.length > 0 ? excludedReason.join(", ") : t("context_query.preview.none")}</span>
+        <span>
+          {t("context_query.preview.excluded_reason")}:{" "}
+          {excludedReason.length > 0 ? excludedReason.map(localizedExcludedReason).join(", ") : t("context_query.preview.none")}
+        </span>
       </footer>
     </section>
   );

@@ -1,15 +1,25 @@
 # Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening（Stream A）
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Hold -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Stream A（HIL-RS governance contract freeze lead）
 - Scope: 本ファイルのみ（docs-only）
 - Dependency: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
-- Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
+- Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`, `ADR-0039`
 - Expected verification level: `docs-check`
+
+## Governance Exception Resolution 2026-06-20
+
+HIL-RS-02-GOV-EXCEPTION-01 resolved per ADR-0039 (governance right-sizing, Accepted 2026-05-31):
+
+- **Resolution**: Multi-role SoD (Architecture Owner / Governance reviewer / Platform Operator) collapsed to single Maintainer authority as decided in ADR-0039.
+- **overridePolicy**: `human_dual_control_only` → noted as `deferred` per ADR-0039 RELAX/DEFER. Reintroduce when external contributors join (ADR-0039 reactivation trigger).
+- **Approval Record**: Filled by Maintainer under delegated authority per ADR-0039.
+- **PendingDecisionQueue**: Cleared per ADR-0039 resolution of ADR-0036/0037/0038 and deferred backlog items.
+- **SafeMode invariants preserved**: safeMode default ON, `allowUnreviewedText=false`, proposal-only, `human_reviewed` human-only promotion remain unchanged per ADR-0039 NON-RELAXABLE.
 
 ## Stream A Phase 1 Metadata Snapshot（2026-05-18）
 

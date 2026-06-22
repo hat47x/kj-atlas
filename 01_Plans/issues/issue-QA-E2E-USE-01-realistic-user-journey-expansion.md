@@ -335,3 +335,24 @@ Open化ゲートを次の3カテゴリで固定する。
 | S3 Safe Sharing Gate | Share preflight opens in read-only mode and shows locked redaction contexts for Share / Review Pack. | Improves current-main G1 / G2 / S3 evidence. | Full share/export screenshot approval and Compose-backed release rehearsal. |
 
 - Stopper classification: none introduced by this rerun. It is evidence-consumption only and does not change execution scope, product behavior, public documentation, SafeMode policy, or release authority.
+
+## Stream H evidence rerun 2026-06-16: S1-S3 realistic journey after Advanced UI
+
+- Scope: current-main representative E2E evidence only. `Status=Draft (Open-Readiness Prepared / Execution Hold)` and `Execution: Hold` remain unchanged because Pending-1 / Pending-2, Compose approval, release approval, and human acceptance are still outside this rerun.
+- Candidate mainline: `origin/main@6a6db549fc76ff4f5a53c3c3c32f6829fb66d0f6`.
+- Trigger: `Advanced UI` now keeps non-essential first-run controls out of the default surface. The realistic journey needed to verify the read-only `Suggest layout` boundary through the advanced control path instead of assuming that the control is visible immediately after entering read-only mode.
+- Execution path: SQLite/local frontend path with Vite started directly by bundled Node.js because this Codex host does not expose `npm` on PATH.
+- Command:
+  - `C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\node_modules\playwright\cli.js test e2e/realistic_user_journey_expansion.spec.ts --reporter=line`
+- Result: **pass, 1 test**.
+- CI reference: GitHub Actions run `9602` for PR `#2411` completed successfully before merge.
+
+### Gate consumption
+
+| Scenario | Evidence consumed | Gate impact | Still not covered |
+| --- | --- | --- | --- |
+| S1 Authoring Continuity | Deterministic fixture import still replaces the current document and keeps the three expected cards visible after the first-run UI decluttering change. | Refreshes current-main G2 / S1 evidence after the Advanced UI merge. | Full persistence/reload rehearsal and release screenshot bundle. |
+| S2 Review Governance | Read-only mode is entered, the share panel is closed, `Advanced UI` is opened, and the disabled `Suggest layout` control is verified through the visible advanced path. | Refreshes current-main S2 boundary evidence for the post-MVP default surface. | Human UX acceptance, physical keyboard review, and broader review-state transition proof. |
+| S3 Safe Sharing Gate | Share preflight still opens in read-only mode and shows locked redaction contexts for Share / Review Pack before the advanced-control assertion. | Refreshes current-main G1 / G2 / S3 evidence without changing SafeMode policy. | Full share/export screenshot approval and Compose-backed release rehearsal. |
+
+- Stopper classification: none introduced by this rerun. It is evidence-consumption only and does not change execution scope, product behavior, public documentation, SafeMode policy, or release authority.

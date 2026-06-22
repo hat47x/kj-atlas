@@ -1,15 +1,38 @@
 # Issue Draft: PRODUCT-VALUE-02 保留・違和感・根拠不足を扱う作業フロー
 
 - Type: Feature request
-- Status: Draft
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex (Product Value contract steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `02_Architecture/schemas.md`, `02_Architecture/value_traceability.md`
 - Related Backlog: `PRODUCT-VALUE-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/llm_input_ir_spec.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/llm_input_ir_spec.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `e2e`
+
+## Draft→Open 2026-06-20
+PRODUCT-VALUE-02 Open化。循環デッドロック解消済み（ADR-0040: ADR-0032 Accepted + PV-02 schema判断確定）。
+DOMAIN-EXPR-01..04のPhase 1から着手可能。DecisionStatus=Fixed。
+
+## Implementation Progress 2026-06-21
+
+### Done
+- **CardView claimType badges**: fact/claim/hypothesis color-coded pills (DOMAIN-EXPR-01)
+- **CardView critique indicators**: tag count pills + unreviewed dots (DOMAIN-EXPR-01)
+- **SidePanel card detail**: claimType, critique text, critiqueTags chips, evidence link counts, contradiction counts
+- **DomainStateSummary**: document-level card state distribution with map progress hints
+- No schema changes (reads existing card.claimType, card.critique, card.critiqueTags, card.textReviewed, document.evidenceLinks)
+
+### Remaining
+- holdState / PendingItems / Shelf (ADR-0040 Phase 2, schema拡張必要)
+- Critique→Reproposal daily loop UI (DOMAIN-EXPR-03)
+- E2E verification of ambiguity/evidence workflow
+
+### Commits
+- 7f655b15 CardView domain state badges
+- a8309640 SidePanel card detail domain state
+- 89d9fdc1 evidence/contradiction counts in SidePanel
 
 ## Requirement meta I/F（共通キー）
 
@@ -399,3 +422,98 @@ The final value gate should be evaluated only after the slice evidence exists. T
 - Scope: current-schema frontend workflow only; no schema expansion was performed.
 - Ambiguity/evidence signals are now bundled into the share/export preflight as a review checkpoint: unresolved holds, critiques, contradictions, evidence gaps, and unreviewed content are visible before outcome sharing.
 - The flow remains proposal/readiness-only: it does not auto-resolve ambiguity, auto-apply AI output, or auto-promote `human_reviewed`.
+
+## Fixture manifest 2026-06-17: PV02 ambiguity/evidence packet entry
+
+- Candidate mainline: `origin/main@4fe6740678dd970a18eacab094ec4e99c53496c5`.
+- Fixture source: `03_Implement/frontend/e2e/helpers/product_value_fixtures.ts`.
+- Fixture builder: `buildDomainExpressionDocument()`.
+- Fixture document ID: `doc_domain_expression_keyboard_access`.
+- Representative E2E: `03_Implement/frontend/e2e/domain_expression_keyboard_access.spec.ts`.
+- Status impact: **Draft remains**. This manifest names the reusable fixture entry for the PV02 evidence packet; it does not complete the umbrella Product Value ambiguity/evidence gate or approve Open status.
+
+### Evidence packet mapping
+
+| Evidence item | Manifest status | Remaining Draft blocker |
+| --- | --- | --- |
+| State fixture | Named and stored in `product_value_fixtures.ts`; includes one ambiguous target claim, one reviewed supporting field note, one unreviewed contradicting stakeholder signal, critique text, critique tag, and support/contradiction links. | Hold/pending remains split to `DOMAIN-EXPR-02`; Productization Program Owner must accept whether PV02 can proceed with split evidence rather than one monolithic four-state fixture. |
+| Review boundary proof | Existing E2E verifies the selected target starts as `Review state: Unreviewed` and requires keyboard action to check `Card text reviewed`. | Need a targeted guard or evidence note that AI/worker/API paths cannot promote `human_reviewed` for this value-gate state. |
+| Findability proof | Existing E2E verifies keyboard reachability of claim type, evidence/contradiction text, critique note, and critique tag controls after card selection. | UX reviewer must decide whether this read-only reachability is enough or whether dedicated unresolved-state filters are required. |
+| Share/export proof | Not added by this manifest. | Need share/export preflight evidence showing unresolved or unreviewed ambiguity/evidence state is visible or safely excluded. |
+| AI-boundary proof | Not added by this manifest. | Need ContextBundle or equivalent evidence that ambiguity/evidence/contradiction is carried as a constraint, not solved fact. |
+
+- No ADR is needed for this manifest because it follows the `ADR-0040` split-first strategy. ADR/schema routing remains required if a later slice adds persistent Hold/Shelf fields, changes AI review authority, changes SafeMode/share policy, or changes the value-state model.
+
+## Share preflight evidence 2026-06-18: unresolved signals remain explicit
+
+- Candidate mainline: `origin/main@2e1f0edd38a089005269da91b213914500ec3af5`.
+- Representative E2E: `03_Implement/frontend/e2e/domain_expression_keyboard_access.spec.ts`.
+- Screenshot: `04_Documentation/assets/screenshots/product-value-ambiguity-share-preflight.png`.
+- Fixture: `buildDomainExpressionDocument()` / `doc_domain_expression_keyboard_access`.
+- Automated evidence:
+  - Share & Reproduce reports 5 remaining review signals.
+  - The preflight summary reports 2 unreviewed cards, 1 Hold/unknown claim, 1 critique/pending-feedback target, 2 evidence links, 1 contradiction, and 0 evidence gaps.
+  - SafeMode ON explicitly excludes unreviewed drafts, and the control to include them is not presented.
+  - The summary tells the reviewer to review the material or keep holds explicit before sharing.
+- Verification result: targeted Playwright **2 passed**, covering both keyboard reachability and share-preflight safety.
+
+### Evidence packet update
+
+| Required evidence item | Current status after this slice | Remaining Draft blocker |
+| --- | --- | --- |
+| State fixture | Phase 1 ambiguity/critique/evidence/contradiction fixture remains replayable. | First-class Hold/Pending remains split to `DOMAIN-EXPR-02`; umbrella acceptance remains human-owned. |
+| Review boundary proof | The fixture remains unreviewed until a user explicitly changes review state. | Targeted AI/worker/API non-promotion proof remains required. |
+| Findability proof | Keyboard reachability and selected-card inspection remain covered. | UX reviewer must decide whether dedicated unresolved-state filters are required. |
+| Share/export proof | **Satisfied for the Phase 1 fixture.** Unreviewed and unresolved signals are visible before sharing, and SafeMode excludes unreviewed drafts by default. | Human safety/UX acceptance of the wording and counts remains required. |
+| AI-input proof | Not changed by this slice. | ContextBundle or equivalent proof must preserve ambiguity/evidence/contradiction as constraints. |
+
+- Status impact: **Draft remains**. The Phase 1 share/export proof blocker is addressed, but Hold/Pending, AI-boundary proof, umbrella integration, and human acceptance remain incomplete.
+- No new ADR is needed. The slice verifies the existing SafeMode/share policy and does not change persistence, review authority, or the value-state model.
+
+## AI review-boundary guard 2026-06-19
+
+- Candidate mainline: `origin/main@219eec7ed1e9e36c87905bae04cd917b1b98efa5`.
+- Guarded paths:
+  - Backend AI proposal envelopes now accept only `reviewState="unreviewed"`.
+  - HIL rediff contract validation rejects review-protected fields such as `textReviewed`, `reviewState`, `reviewedAt`, `reviewerRef`, and `reviewAttribution`, including nested occurrences.
+  - HIL rediff application repeats the same protection so typed or otherwise prevalidated callers cannot inject review state through an `add` operation.
+  - Normal document import remains able to preserve valid human review attribution; it is not an AI-promotion path.
+- Verification:
+  - Backend CE2 proposal API: 6 passed.
+  - Frontend HIL contract/apply, CE2 candidate, and document-import tests: 23 passed.
+  - Frontend typecheck: pass.
+
+### Evidence packet update
+
+| Required evidence item | Current status after this guard | Remaining Draft blocker |
+| --- | --- | --- |
+| Review boundary proof | **Satisfied for AI proposal and HIL worker/apply paths.** AI proposals remain unreviewed and rediff payloads cannot inject review-protected fields. | Human review transition authorization and audit remain governed by the existing review-attribution contract. |
+| Import boundary | Valid human-reviewed documents remain preservable through document import. | Productization Program Owner / QA Lead must accept this separation as sufficient value-gate evidence. |
+| Share/export proof | Phase 1 preflight evidence is already replayable. | Human wording and findability acceptance remain open. |
+| AI-input proof | Promotion is blocked, but ContextBundle semantic preservation is not changed by this slice. | Need explicit proof that ambiguity/evidence/contradiction are carried as constraints rather than solved facts. |
+
+- Status impact: **Draft remains**. The automated review-promotion blocker is addressed, but ContextBundle constraint proof, Hold/Pending, umbrella integration, and human acceptance remain incomplete.
+- No new ADR is needed. This change enforces the accepted `CE0-REVIEW-IF` and does not change review authority or state vocabulary.
+
+## ContextBundle constraint-preservation proof 2026-06-19
+
+- Candidate mainline: `origin/main@8f81e5d70112d9570bf5c940a206a216cd468293`.
+- Fixed profile: `A2-minimal-v1`.
+- Implementation and contract evidence:
+  - The reviewed selected item remains a `hypothesis`; review does not convert it into a fact.
+  - Selected items, relations, evidence, counter-opinions, and contradictions carry `resolutionState="unresolved"`, `aiDisposition="constraint"`, and `autoResolve=false`.
+  - Strict SafeMode excludes the unreviewed counter-opinion text from `selected` while retaining text-free evidence and contradiction signals as constraints.
+  - A backend route test asserts these semantics through the public `/context/bundle` boundary.
+- Verification target: `03_Implement/backend/tests/test_context_bundle_routes.py`.
+
+### Evidence packet update
+
+| Required evidence item | Current status after this proof | Remaining Draft blocker |
+| --- | --- | --- |
+| AI-input proof | **Satisfied for the fixed CE1 mock profile.** Ambiguity, evidence, counter-opinion, and contradiction signals remain unresolved constraints and cannot be marked for automatic resolution. | Real repository projection remains on the existing CE1 data-source hold; production parity must be reverified when that hold is lifted. |
+| SafeMode boundary | Unreviewed text is excluded while non-textual unresolved signals remain traceable. | Human safety/UX acceptance remains required. |
+| Hold/Pending | Not changed by this slice. | First-class Hold/Pending remains routed to `DOMAIN-EXPR-02`. |
+| Umbrella decision | Automated evidence is now available for state, share/export, review-promotion, and fixed-profile AI-input boundaries. | Productization Program Owner / QA Lead acceptance and findability/accessibility review remain open. |
+
+- Status impact: **Draft remains**. Fixed-profile AI-input proof is addressed, but real data-source parity, Hold/Pending, human findability/accessibility acceptance, and umbrella approval remain incomplete.
+- No new ADR is needed. This change clarifies the accepted CE1 mock profile without changing top-level contract keys, persistent schema, review authority, or SafeMode policy.

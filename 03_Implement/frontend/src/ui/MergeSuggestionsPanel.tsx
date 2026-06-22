@@ -65,15 +65,15 @@ function representativeResolvedLabel(
 ): string {
   switch (resolvedBy) {
     case "repOf":
-      return "repOf";
+      return t("merge_suggestions.representative_resolution.source_mapping");
     case "mergedIntoCardId":
-      return "mergedIntoCardId";
+      return t("merge_suggestions.representative_resolution.merged_target");
     case "fallback":
-      return "fallback";
+      return t("merge_suggestions.representative_resolution.fallback");
     case "unresolved":
-      return "unresolved";
+      return t("merge_suggestions.representative_resolution.unresolved");
     default:
-      return "unresolved";
+      return t("merge_suggestions.representative_resolution.unresolved");
   }
 }
 
@@ -173,7 +173,11 @@ export function MergeSuggestionsPanel({
     });
 
     if (!trustBoundary.allowDecision) {
-      setTrustBoundaryErrorMessage(trustBoundary.errorMessage);
+      setTrustBoundaryErrorMessage(
+        trustBoundary.rejectionReason === "read_only"
+          ? t("merge_suggestions.trust_boundary.read_only")
+          : t("merge_suggestions.trust_boundary.untrusted_event")
+      );
       return;
     }
 
@@ -362,7 +366,7 @@ export function MergeSuggestionsPanel({
             <div style={{ fontSize: 11, color: "#334155", marginBottom: 6 }}>
               {t("merge_suggestions.audit_event_recorded", {
                 decidedAt: new Date(latestAuditEventByGroup.get(suggestion.groupId)!.decidedAt).toLocaleString(),
-                decision: latestAuditEventByGroup.get(suggestion.groupId)!.decision,
+                decision: decisionLabel(latestAuditEventByGroup.get(suggestion.groupId)!.decision),
               })}
             </div>
           ) : null}

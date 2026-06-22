@@ -1,16 +1,44 @@
 # Issue Draft: DOMAIN-EXPR-01 既存ドメイン状態の読取UI第一級化
 
 - Type: Feature request
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex (UI evidence steward; accountable acceptance owner remains Productization Program Owner / UX reviewer)
 - Scope: `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `DOMAIN-EXPR-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `00_Prompt/domain.md`, `02_Architecture/schemas.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `00_Prompt/domain.md`, `02_Architecture/schemas.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Dependencies: N/A
 - Expected verification level: `e2e`
+
+## Done 2026-06-20
+
+ADR-0040 Phase 1 読取UI第一級化 完了。Schema変更なし、既存往復フィールドの読取UI露出。
+
+### Implemented
+
+**CardView (canvas/CardView.tsx)**:
+- claimType badge: 色分けpill (fact=緑, claim=青, hypothesis=紫, unknownは非表示)
+- critique indicator: タグ数表示付き (critiqueTagsがある場合はタグ数pill、なければamber dot)
+- unreviewed indicator: カード右下amber dot (textReviewed=falseの場合)
+
+**SidePanel (ui/SidePanel.tsx)**:
+- 選択カード詳細にclaimType表示
+- 選択カード詳細に違和感(critique)テキスト表示 (amber背景)
+- 選択カード詳細にcritiqueTagsチップ表示
+
+**i18n**: en/ja locale keys追加 (side_panel.context.claim_type, side_panel.context.critique)
+
+### Verification
+- TypeScript typecheck: clean
+- Vitest: 160 test files / 753 tests passed
+- Backend pytest: 269 passed / 19 skipped
+- Schema: 変更なし (ADR-0040 Phase 1 非破壊原則遵守)
+
+### Commits
+- 7f655b15 feat(DOMAIN-EXPR-01): add claimType/critique/reviewState badges to CardView
+- faed8fe6 feat(DOMAIN-EXPR-01): add domain state display to SidePanel card detail
 
 > 個人OSS段階（`ADR-0039`）の軽量起票。重量級の RACI/KPI セクションは省略。`ADR-0040` Phase 1。
 

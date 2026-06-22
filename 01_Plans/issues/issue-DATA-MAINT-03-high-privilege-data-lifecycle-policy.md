@@ -1,15 +1,17 @@
 # Issue Draft: DATA-MAINT-03 高権限データライフサイクル方針の判断
 
-- Type: Security
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex
 - Scope: `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/enterprise_architecture.md`, `02_Architecture/api.md`
 - Related Backlog: `DATA-MAINT-03`
-- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/data_model_operations_overview.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/data_model_operations_overview.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `docs-check`
+
+## Done 2026-06-20
+全AC(5/5)・全タスク(5/5)達成。高権限操作の分類表完成。ADR-0035により削除/アーカイブ/所有者移管/管理者本文閲覧/保持期限管理を組織判断領域として分離。
 
 ## Requirement meta I/F（共通キー）
 

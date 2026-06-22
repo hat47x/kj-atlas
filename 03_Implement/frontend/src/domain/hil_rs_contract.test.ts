@@ -146,6 +146,44 @@ describe("hil_rs_contract validators", () => {
     ).toBe(false);
   });
 
+  it("rejects rediff payloads that attempt to mutate review protections", () => {
+    expect(
+      validateHilRsRediffPayload({
+        schemaVersion: "1.0.0",
+        proposalId: "proposal-review-injection",
+        basedOnIteration: 1,
+        traceKey: "trace-review-injection",
+        diffOps: [
+          {
+            opId: "op-review-injection",
+            opType: "add",
+            targetRef: "card:c2",
+            before: null,
+            after: { id: "c2", text: "beta", x: 10, y: 20, textReviewed: true },
+          },
+        ],
+      }),
+    ).toBe(false);
+
+    expect(
+      validateHilRsRediffPayload({
+        schemaVersion: "1.0.0",
+        proposalId: "proposal-nested-review-injection",
+        basedOnIteration: 1,
+        traceKey: "trace-nested-review-injection",
+        diffOps: [
+          {
+            opId: "op-nested-review-injection",
+            opType: "relabel",
+            targetRef: "island:i1",
+            before: { metadata: { reviewState: "unreviewed" } },
+            after: { metadata: { reviewState: "human_reviewed" } },
+          },
+        ],
+      }),
+    ).toBe(false);
+  });
+
   it("enforces review attribution state transition requirements", () => {
     expect(
       validateHilRsReviewAttribution({

@@ -1,9 +1,24 @@
 # Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream E / CE1専任 / contract-only planning）
 
 - Type: Feature request
-- Status: Open
+- Status: Done
 - Priority: P1
 - Owner: Stream E (CE1 ContextQuery/ContextBundle Foundation)
+
+## Closure Record 2026-06-20
+
+CE1 v1 contract foundation closed. All conditions verified:
+
+| Condition | Result | Evidence |
+|---|---|---|
+| 1. Backend route-contract tests pass | ✅ | 17 passed (2026-06-15) |
+| 2. Frontend mock-first tests pass | ✅ | 12 passed (2026-06-15) |
+| 3. CE2/CE4 handoff keys aligned | ✅ | read-only refs to `bundleHash`/`sourceBundleHash`/`queryCanonicalHash` |
+| 4. PRODUCT-QA-01/MVP-EXIT-01 classification | ✅ | contract readiness only, not release approval |
+
+Contract IDs frozen: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+Error semantics: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+Unblocks: CE2, CE4 (mock-first handoff ready)
 
 ## Current Canonical Summary 2026-06-15
 

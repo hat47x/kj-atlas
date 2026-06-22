@@ -175,6 +175,38 @@ def test_context_bundle_strict_safemode_filters_unreviewed_even_when_included() 
         settings.api_key = original_api_key
 
 
+def test_context_bundle_preserves_ambiguity_as_constraints_not_solved_facts() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            response = client.post("/context/bundle", json=_bundle_payload())
+            assert response.status_code == 200
+            body = response.json()
+
+            assert body["selected"] == [
+                {
+                    "id": "card-reviewed-01",
+                    "reviewed": True,
+                    "title": "Reviewed working hypothesis",
+                    "claimType": "hypothesis",
+                    "resolutionState": "unresolved",
+                    "aiDisposition": "constraint",
+                    "autoResolve": False,
+                }
+            ]
+            assert {item["kind"] for item in body["evidence"]} == {"support", "counter_opinion"}
+            assert any(item["reviewed"] is False for item in body["evidence"])
+
+            semantic_items = body["selected"] + body["relations"] + body["evidence"] + body["contradictions"]
+            assert semantic_items
+            assert all(item["resolutionState"] == "unresolved" for item in semantic_items)
+            assert all(item["aiDisposition"] == "constraint" for item in semantic_items)
+            assert all(item["autoResolve"] is False for item in semantic_items)
+    finally:
+        settings.api_key = original_api_key
+
+
 def test_context_resolve_route_contract_paths_are_unique() -> None:
     routes = [
         (route.path, ",".join(sorted(route.methods)))

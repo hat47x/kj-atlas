@@ -25,6 +25,50 @@ describe("validateDocumentV2Strict", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("accepts supported card hold states and rejects unknown values", () => {
+    expect(validateDocumentV2Strict({
+      ...validDocument,
+      cards: [{ ...validDocument.cards[0], holdState: "shelved" }],
+    }).ok).toBe(true);
+
+    const invalid = validateDocumentV2Strict({
+      ...validDocument,
+      cards: [{ ...validDocument.cards[0], holdState: "resolved" }],
+    });
+    expect(invalid.ok).toBe(false);
+    if (invalid.ok) return;
+    expect(invalid.errors).toContain("cards[0].holdState: must be 'held' | 'pending' | 'shelved' when provided");
+  });
+
+  it("accepts a shelf entry that points to a shelved card", () => {
+    const result = validateDocumentV2Strict({
+      ...validDocument,
+      cards: [{ ...validDocument.cards[0], holdState: "shelved" }],
+      shelf: [{ cardId: "c1", shelvedAt: now, reason: "Revisit later" }],
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects invalid, duplicate, orphaned, and inconsistent shelf entries", () => {
+    const result = validateDocumentV2Strict({
+      ...validDocument,
+      shelf: [
+        { cardId: "c1", shelvedAt: now },
+        { cardId: "c1", shelvedAt: now },
+        { cardId: "missing", shelvedAt: now },
+        { cardId: "c1", shelvedAt: "not-a-date" },
+      ],
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toContain("shelf[0].cardId: card 'c1' must have holdState 'shelved'");
+    expect(result.errors).toContain("shelf[1].cardId: duplicate card id 'c1'");
+    expect(result.errors).toContain("shelf[2].cardId: unknown card 'missing'");
+    expect(result.errors).toContain("shelf[3].shelvedAt: must be an ISO timestamp");
+  });
+
   it("rejects unknown root fields", () => {
     const result = validateDocumentV2Strict({
       ...validDocument,

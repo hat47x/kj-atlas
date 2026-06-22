@@ -4,6 +4,72 @@ import workerFixtureRaw from "../../tests/fixtures/worker/doc.small.json?raw";
 import { validateAndUpgradeImportedDocument } from "./validate";
 
 describe("validateAndUpgradeImportedDocument", () => {
+  it("keeps card hold state from imported v2 JSON", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_hold_state",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0, holdState: "pending" }],
+      edges: [],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.document.cards[0]?.holdState).toBe("pending");
+  });
+
+  it("keeps shelf entries and normalizes their cards as shelved", () => {
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_shelf",
+      createdAt: "2026-06-21T00:00:00.000Z",
+      updatedAt: "2026-06-21T00:00:00.000Z",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 12, y: 34 }],
+      edges: [],
+      islands: [],
+      shelf: [{ cardId: "c1", shelvedAt: "2026-06-21T01:00:00+09:00", reason: "Later" }],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.document.cards[0]).toMatchObject({ id: "c1", x: 12, y: 34, holdState: "shelved" });
+    expect(result.document.shelf).toEqual([{
+      cardId: "c1",
+      shelvedAt: "2026-06-20T16:00:00.000Z",
+      reason: "Later",
+    }]);
+  });
+
+  it("drops invalid, duplicate, and orphaned shelf entries during tolerant import", () => {
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_shelf_invalid",
+      createdAt: "2026-06-21T00:00:00.000Z",
+      updatedAt: "2026-06-21T00:00:00.000Z",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [],
+      islands: [],
+      shelf: [
+        { cardId: "c1", shelvedAt: "2026-06-21T01:00:00.000Z" },
+        { cardId: "c1", shelvedAt: "2026-06-21T02:00:00.000Z" },
+        { cardId: "missing", shelvedAt: "2026-06-21T03:00:00.000Z" },
+        { cardId: "c1", shelvedAt: "not-a-date" },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.shelf).toHaveLength(1);
+  });
+
   it("keeps island parentIslandId from imported v2 JSON", () => {
     const now = new Date().toISOString();
     const result = validateAndUpgradeImportedDocument({

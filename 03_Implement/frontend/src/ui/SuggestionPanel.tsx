@@ -65,6 +65,18 @@ function proposalCandidateState(candidate: Ce2SuggestionCandidate): string {
   });
 }
 
+const proposalConditionKeys: Record<string, string> = {
+  auto_apply_blocked: "suggestion.panel.condition.no_auto_apply",
+  safe_mode_required: "suggestion.panel.condition.safe_mode_required",
+  suggestion_required: "suggestion.panel.condition.suggestion_required",
+  preview_opt_in_required: "suggestion.panel.condition.preview_required",
+};
+
+function proposalConditionLabel(condition: string): string {
+  const key = proposalConditionKeys[condition];
+  return key ? t(key) : condition;
+}
+
 export function SuggestionPanel({
   instruction,
   onInstructionChange,
@@ -246,7 +258,9 @@ export function SuggestionPanel({
       ) : null}
       {notes ? <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>{t("suggestion.panel.notes", { notes })}</div> : null}
       <div data-testid="ce2-proposal-only-state" style={{ fontSize: 11, color: "#64748b" }}>
-        {t("suggestion.panel.proposal_only_blockers", { blockers: ce2State.blockers.join(",") })}
+        {t("suggestion.panel.safety_conditions", {
+          conditions: ce2State.blockers.map(proposalConditionLabel).join(" / "),
+        })}
       </div>
       {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c" }}>{errorMessage}</div> : null}
     </section>

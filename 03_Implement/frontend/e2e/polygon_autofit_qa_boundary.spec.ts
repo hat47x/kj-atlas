@@ -70,7 +70,7 @@ test("QA-1: polygon export stays deterministic for identical input", async ({ pa
   });
 
   await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
-  await expect(page.getByText("Replaced current document")).toBeVisible();
+  await expect(page.getByTestId("status-message")).toContainText(/現在のドキュメントを置換しました|Replaced the current document/);
   await closeSharePanelIfOpen(page);
   await openLegacyJsonMenu(page);
 
@@ -130,7 +130,7 @@ test("QA-2: importing self-intersecting polygon degrades invalid polygon to a no
   });
 
   await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
-  await expect(page.getByText("Replaced current document")).toBeVisible();
+  await expect(page.getByTestId("status-message")).toContainText(/現在のドキュメントを置換しました|Replaced the current document/);
 
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: EXPORT_BUNDLE_BUTTON }).click();
@@ -147,7 +147,7 @@ test("QA-2: importing self-intersecting polygon degrades invalid polygon to a no
 });
 
 test("QA-3: self-intersection edit is rejected and last valid polygon is kept", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/?locale=ja");
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   const now = new Date().toISOString();
@@ -187,13 +187,13 @@ test("QA-3: self-intersection edit is rejected and last valid polygon is kept", 
   });
 
   await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
-  await expect(page.getByText("Replaced current document")).toBeVisible();
+  await expect(page.getByTestId("status-message")).toContainText(/現在のドキュメントを置換しました|Replaced the current document/);
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   await page.getByRole("button", { name: /Select island i1|島 i1 を選択/ }).dispatchEvent("click");
   await page.getByRole("checkbox", { name: EDIT_ISLAND_BOUNDARY_CHECKBOX }).check();
 
-  const secondVertexHandle = page.getByRole("button", { name: "Move polygon vertex 2" });
+  const secondVertexHandle = page.getByRole("button", { name: "多角形の頂点 2 を移動" });
   const handleBox = await secondVertexHandle.boundingBox();
   expect(handleBox).toBeTruthy();
   const startX = (handleBox?.x ?? 0) + (handleBox?.width ?? 0) / 2;
@@ -204,7 +204,7 @@ test("QA-3: self-intersection edit is rejected and last valid polygon is kept", 
     targetPosition: { x: startX - 250, y: startY + 170 },
   });
 
-  await expect(page.getByText("Polygon must not self-intersect")).toBeVisible();
+  await expect(page.getByText("多角形の辺が交差する配置にはできません")).toBeVisible();
 
   await closeSharePanelIfOpen(page);
   await openLegacyJsonMenu(page);

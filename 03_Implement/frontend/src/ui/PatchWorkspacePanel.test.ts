@@ -27,19 +27,19 @@ describe("PatchWorkspacePanel", () => {
       })
     );
 
-    expect(html).toContain("CE3 Patch workspace");
+    expect(html).toContain("Review patch candidates");
     expect(html).toContain("Adopt (partial)");
     expect(html).toContain("Hold");
     expect(html).toContain("Discard");
-    expect(html).toContain("Perspective controls remain display-only");
+    expect(html).toContain("Display settings affect only the current view");
     expect(html).toContain("Roll back last workspace decision");
-    expect(html).toContain("Run current preset");
-    expect(html).toContain("phase: idle");
-    expect(html).toContain("No saved presets.");
+    expect(html).toContain("Run current conditions");
+    expect(html).toContain("status: Ready");
+    expect(html).toContain("No saved condition sets.");
     expect(html).toContain("Audit transitions");
-    expect(html).toContain("Normalized query");
-    expect(html).toContain("Patch diff preview");
-    expect(html).toContain("Token delta:");
+    expect(html).toContain("Last executed conditions");
+    expect(html).toContain("Review changes");
+    expect(html).toContain("Word changes:");
     expect(html).toContain("ce3-candidate-count");
     expect(html).toContain("(3)");
     expect(html).toContain("Recovery path:");
@@ -66,7 +66,7 @@ describe("PatchWorkspacePanel", () => {
     expect(html).toContain('data-testid="ce3-candidate-audit-cand-gamma"');
     expect(html).toContain('data-testid="ce3-audit-log-size"');
     expect(html).toMatch(/data-testid="ce3-audit-log-size"[^>]*>Audit transitions: \d+</);
-    expect(html).toContain("no transition");
+    expect(html).toContain("No decision changes");
     expect(html).not.toContain("share");
     expect(html).not.toContain("export");
   });
@@ -87,5 +87,32 @@ describe("PatchWorkspacePanel", () => {
     expect(html).toMatch(/data-testid="ce3-preset-depth"[^>]*disabled=""/);
     expect(html).toMatch(/data-testid="ce3-preset-filters"[^>]*disabled=""/);
     expect(html).toContain('data-testid="ce3-run-inline-preset" disabled=""');
+  });
+
+  it("uses plain Japanese terminology instead of implementation phases and delta notation", () => {
+    setActiveLocale("ja");
+    const html = renderToStaticMarkup(
+      React.createElement(PatchWorkspacePanel, {
+        candidates: [{
+          id: "candidate-1",
+          label: "候補 1（カード 3 件）",
+          preview: {
+            sourceSnippets: ["変更前の本文"],
+            draftText: "変更後の本文",
+          },
+        }],
+      }),
+    );
+
+    expect(html).toContain("パッチ候補の判断");
+    expect(html).toContain("現在の判断: 保留（処理状態: 操作待ち）");
+    expect(html).toContain("変更内容の確認");
+    expect(html).toContain("語句の変更量: 追加");
+    expect(html).toContain("直前に実行した条件: (未実行)");
+    expect(html).toContain("変更履歴なし");
+    expect(html).not.toContain("CE3");
+    expect(html).not.toContain("phase:");
+    expect(html).not.toContain("トークン差分");
+    expect(html).not.toContain("+");
   });
 });

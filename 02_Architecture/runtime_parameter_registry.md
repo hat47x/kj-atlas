@@ -190,17 +190,17 @@ Stopper条件:
 - 上記 1〜6 のうち未充足がある場合は変更を停止し、承認待ちに切り替える。
 
 
-## Global prefix migration compatibility layer design（Stream D contract）
+## Global prefix migration adapter boundary（Stream D contract）
 
 `ADR-0021` に基づき backend runtime key は互換期間なしで `KJ_ATLAS_*` へ移行済みです。
-一方で deploy/frontend build には、利用者向け公開キーと実装内部adapterの境界があるため、互換レイヤを次の2層で固定します。
+一方で deploy/frontend build には、利用者向け公開キーと実装内部adapterの境界があるため、次の2層で固定します。
 
 1. **Public contract layer（利用者入力）**
    - 受理する公開キーは `KJ_ATLAS_*` のみ。
    - 旧prefix/無接頭辞キーは fail-fast で拒否する。
 2. **Private adapter layer（実装内部写像）**
    - third-party container が要求する `POSTGRES_*` 等は内部写像に限定する。
-   - frontend の `VITE_API_BASE` は公開契約ではなく互換shimとして扱い、正規キーは `KJ_ATLAS_FRONTEND_API_BASE` を維持する。
+   - frontend build は `envPrefix: "KJ_ATLAS_"` とし、`KJ_ATLAS_FRONTEND_API_BASE` だけを読み取る。旧frontendキーの互換shimは設けない。
 
 ### Plan → Execute → Verify → Proceed gate
 

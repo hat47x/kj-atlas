@@ -4,6 +4,8 @@ export type Transform = {
   zoom: number;
 };
 
+export type HoldState = "held" | "pending" | "shelved";
+
 export type Card = {
   id: string;
   text: string;
@@ -17,6 +19,15 @@ export type Card = {
   critique?: string;
   critiqueTags?: string[];
   textReviewed?: boolean;
+  /** DOMAIN-EXPR-02: optional hold state. Absent = not held (conventional card). */
+  holdState?: HoldState;
+};
+
+/** DOMAIN-EXPR-02: a shelved item — set aside from the main canvas without deletion. */
+export type ShelfEntry = {
+  cardId: string;
+  shelvedAt: string;
+  reason?: string;
 };
 
 export function isCanonicalCard(card: Card): boolean {
@@ -277,6 +288,8 @@ export type DocumentV2 = {
   reproposalDiffs?: ReproposalDiff[];
   reviewAttribution?: ReviewAttribution;
   deterministicTieBreak?: DeterministicTieBreak;
+  /** DOMAIN-EXPR-02: optional shelf — cards set aside without deletion. */
+  shelf?: ShelfEntry[];
 };
 
 export type MergeSuggestionDecision = "accept" | "partial" | "reject" | "defer";

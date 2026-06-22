@@ -35,6 +35,7 @@ function buildShareProps() {
     onToggleOpen: vi.fn(),
     hasDocument: true,
     isLoading: false,
+    isReadOnly: false,
     onExportSvgViewport: vi.fn(),
     onExportSvgVisibleBounds: vi.fn(),
     pngExportScale: 1 as const,
@@ -270,9 +271,11 @@ describe("i18n functional equivalence", () => {
     const enHtml = renderToStaticMarkup(React.createElement(SuggestionPanel, props));
 
     expect(metrics(enHtml)).toEqual(metrics(jaHtml));
-    expect(jaHtml).toContain("提案のみ運用");
-    expect(jaHtml).not.toContain("CE2 proposal-only blockers");
-    expect(enHtml).toContain("proposal-only");
+    expect(jaHtml).toContain("安全上の条件");
+    expect(jaHtml).toContain("自動適用なし");
+    expect(jaHtml).not.toContain("CE2");
+    expect(enHtml).toContain("Safety conditions");
+    expect(enHtml).not.toContain("auto_apply_blocked");
     expect(enHtml).not.toContain("Apply suggestion");
   });
 

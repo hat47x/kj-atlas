@@ -1,10 +1,14 @@
 # Issue Draft: FB-P0 baseline / Stream B critical-path planning baseline（legacy filename: stream-c）
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Priority: P0
 - Owner: Stream H（FB Open/P0 planning convergence）
 - Scope: allowlist 2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）の計画・契約整合のみ
+
+## Done 2026-06-20
+A2A3_OPEN_ALLOWED satisfied: HIL-RS-01-A1 Done + HIL-RS-02-A1 Done + pendingDecisionQueueCount=0 (ADR-0039).
+FB-P2C-01-a1 Done. All freeze key conditions verified. P0 planning baseline converged.
 - Dependencies: `01_Plans/issues/issue-FB-P2A-01-a1-interface-contract.md -> issue-FB-P2A-01-a2-mock-validation.md -> issue-FB-P2A-01-a3-implementation.md`, `01_Plans/issues/issue-FB-P2B-01-a1-interface-contract.md -> issue-FB-P2B-01-a2-mock-validation.md -> issue-FB-P2B-01-a3-implementation.md`, `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md -> issue-FB-P2C-01-a2-mock-validation.md -> issue-FB-P2C-01-a3-implementation.md` （いずれもA2/A3はmockで並行準備可能）
 - Related ADR: `ADR-0001`, `ADR-0019`, `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Verification level: `docs-check`

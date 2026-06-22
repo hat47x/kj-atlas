@@ -2,13 +2,14 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { t } from "../i18n/translate";
 
 import { CRITIQUE_TAGS } from "../domain/types";
+import { DomainStateSummary } from "./DomainStateSummary";
 import type { AggregatedEdgeMeta } from "../canvas/CanvasShell";
 import {
   buildIslandRelationExplanation,
   formatIslandRelationExplanationMarkdown,
   type IslandRelationEdgeSelection,
 } from "../domain/island_relation_explain";
-import type { Card, CritiqueTag, DocumentV2, EvidenceLink, Island, RelationSummary } from "../domain/types";
+import type { Card, CritiqueTag, DocumentV2, EvidenceLink, HoldState, Island, RelationSummary } from "../domain/types";
 import { RELATION_SUMMARY_TEXT_MAX_LENGTH } from "../domain/relation_summary_ops";
 import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
@@ -52,6 +53,8 @@ type SidePanelProps = {
   onCardCritiqueChange: (value: string) => void;
   onCardCritiqueTagsChange: (value: string[]) => void;
   onCardClaimTypeChange: (value: ClaimType) => void;
+  onCardHoldStateChange: (value: HoldState | "active") => void;
+  onRestoreShelvedCard: (cardId: string) => void;
   onCardTextReviewedChange: (value: boolean) => void;
   onAddEvidenceLink: (payload: { toCardId: string; type: EvidenceLink["type"] }) => void;
   onRemoveEvidenceLink: (evidenceLinkId: string) => void;
@@ -218,6 +221,8 @@ export function SidePanel({
   onCardCritiqueChange,
   onCardCritiqueTagsChange,
   onCardClaimTypeChange,
+  onCardHoldStateChange,
+  onRestoreShelvedCard,
   onCardTextReviewedChange,
   onAddEvidenceLink,
   onRemoveEvidenceLink,
@@ -965,7 +970,7 @@ export function SidePanel({
       <div style={{ marginTop: 8 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>{t("side_panel.metrics.island_size_distribution")}</div>
         {structuralMetrics.islandSizeDistribution.length === 0 ? (
-          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>(none)</div>
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>{t("side_panel.none")}</div>
         ) : (
           <ul style={{ margin: "4px 0 0", paddingLeft: 18, display: "grid", gap: 4 }}>
             {structuralMetrics.islandSizeDistribution.map((bin) => (
@@ -1132,6 +1137,33 @@ export function SidePanel({
             <div style={{ fontSize: 12, color: "#475569" }}>
               {t("side_panel.context.review_state", { value: selectedCardReviewState })}
             </div>
+            {selectedCard?.claimType && selectedCard.claimType !== "unknown" ? (
+              <div style={{ fontSize: 12, color: "#475569" }}>
+                {t("side_panel.context.claim_type", { value: selectedCard.claimType })}
+              </div>
+            ) : null}
+            {outgoingEvidenceLinks.length > 0 || incomingEvidenceLinks.length > 0 ? (
+              <div style={{ fontSize: 12, color: "#475569" }}>
+                {t("side_panel.context.evidence_links", { outgoing: outgoingEvidenceLinks.length, incoming: incomingEvidenceLinks.length })}
+              </div>
+            ) : null}
+            {selectedCardContradictionsCount > 0 ? (
+              <div style={{ fontSize: 12, color: "#9a3412", fontWeight: 600 }}>
+                {t("side_panel.context.contradictions", { count: selectedCardContradictionsCount })}
+              </div>
+            ) : null}
+            {selectedCard?.critique ? (
+              <div style={{ fontSize: 12, color: "#b45309", backgroundColor: "#fef3c7", borderRadius: 6, padding: "4px 8px", marginTop: 2 }}>
+                {t("side_panel.context.critique")}: {selectedCard.critique.slice(0, 120)}{selectedCard.critique.length > 120 ? "..." : ""}
+              </div>
+            ) : null}
+            {selectedCard?.critiqueTags && selectedCard.critiqueTags.length > 0 ? (
+              <div style={{ fontSize: 11, color: "#92400e", display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {selectedCard.critiqueTags.map((tag) => (
+                  <span key={tag} style={{ backgroundColor: "#fed7aa", borderRadius: 999, padding: "1px 6px" }}>{tag}</span>
+                ))}
+              </div>
+            ) : null}
             <button
               type="button"
               onClick={onFocusCard}
@@ -1149,6 +1181,60 @@ export function SidePanel({
           <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.4 }}>{t("side_panel.context.empty_hint")}</div>
         )}
       </section>
+      {document?.cards ? (
+        <DomainStateSummary
+          cards={document.cards}
+          islandCount={document.islands?.length ?? 0}
+          relationCount={(document.edges?.length ?? 0) + (document.relationSummaries?.length ?? 0)}
+          safeMode={safeMode}
+        />
+      ) : null}
+      {(document?.shelf?.length ?? 0) > 0 ? (
+        <section
+          data-panel="shelf"
+          style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
+            {t("side_panel.shelf.title", { count: document?.shelf?.length ?? 0 })}
+          </div>
+          <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.5, marginBottom: 8 }}>
+            {t("side_panel.shelf.description")}
+          </div>
+          <div style={{ display: "grid", gap: 8 }}>
+            {document?.shelf?.map((entry) => {
+              const card = document.cards.find((candidate) => candidate.id === entry.cardId);
+              return (
+                <div
+                  key={entry.cardId}
+                  style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc" }}
+                >
+                  <div style={{ fontSize: 12, color: "#0f172a", lineHeight: 1.45, marginBottom: 4 }}>
+                    {card?.text ?? t("side_panel.shelf.missing_card", { id: entry.cardId })}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#64748b", marginBottom: entry.reason ? 4 : 8 }}>
+                    {t("side_panel.shelf.shelved_at", { value: formatSummaryHistoryTimestamp(entry.shelvedAt) })}
+                  </div>
+                  {entry.reason ? (
+                    <div style={{ fontSize: 11, color: "#475569", marginBottom: 8 }}>
+                      {t("side_panel.shelf.reason", { value: entry.reason })}
+                    </div>
+                  ) : null}
+                  <button
+                    type="button"
+                    disabled={isReadOnly || !card}
+                    onClick={() => {
+                      onRestoreShelvedCard(entry.cardId);
+                    }}
+                    style={{ width: "100%" }}
+                  >
+                    {t("side_panel.shelf.restore")}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
       {topContent}
       {importedPackSnapshotUrl || importedPackDiagnosticsMd ? (
         <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0", display: "grid", gap: 8 }}>
@@ -1933,7 +2019,7 @@ export function SidePanel({
             ? t("side_panel.reading_path.no_items")
             : t("side_panel.guided_flow.step", { step: readingStep, total: readingTotal })}
         </div>
-        <div style={{ fontSize: 12, color: "#64748b" }}>{currentReadingLabel ?? "(none)"}</div>
+        <div style={{ fontSize: 12, color: "#64748b" }}>{currentReadingLabel ?? t("side_panel.none")}</div>
       </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.reading_order.title")}</div>
@@ -3083,6 +3169,7 @@ export function SidePanel({
               </div>
               <select
                 value={selectedCard.claimType ?? "unknown"}
+                disabled={isReadOnly}
                 onChange={(event) => {
                   onCardClaimTypeChange(event.target.value as ClaimType);
                 }}
@@ -3104,6 +3191,41 @@ export function SidePanel({
               </select>
 
               <label
+                htmlFor="selected-card-hold-state"
+                style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}
+              >
+                {t("side_panel.hold_state.label")}
+              </label>
+              <select
+                id="selected-card-hold-state"
+                value={selectedCard.holdState ?? "active"}
+                disabled={isReadOnly}
+                onChange={(event) => {
+                  onCardHoldStateChange(event.target.value as HoldState | "active");
+                }}
+                style={{
+                  width: "100%",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 6,
+                  padding: "6px 8px",
+                  boxSizing: "border-box",
+                  marginBottom: 4,
+                  backgroundColor: "#ffffff",
+                  color: "#0f172a",
+                }}
+              >
+                <option value="active">{t("side_panel.hold_state.active")}</option>
+                <option value="held">{t("side_panel.hold_state.held")}</option>
+                <option value="pending">{t("side_panel.hold_state.pending")}</option>
+                <option value="shelved">{t("side_panel.hold_state.shelved")}</option>
+              </select>
+              <div style={{ fontSize: 11, color: "#64748b", marginBottom: 12 }}>
+                {selectedCard.holdState === "shelved"
+                  ? t("side_panel.hold_state.shelved_hint")
+                  : t("side_panel.hold_state.hint")}
+              </div>
+
+              <label
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -3116,6 +3238,7 @@ export function SidePanel({
                 <input
                   type="checkbox"
                   checked={selectedCard.textReviewed === true}
+                  disabled={isReadOnly}
                   onChange={(event) => {
                     onCardTextReviewedChange(event.target.checked);
                   }}
@@ -3126,7 +3249,7 @@ export function SidePanel({
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.evidence.title")}</div>
                 <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>{t("side_panel.evidence.outgoing")}</div>
-                {outgoingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#94a3b8" }}>(none)</div> : (
+                {outgoingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#94a3b8" }}>{t("side_panel.none")}</div> : (
                   <div style={{ display: "grid", gap: 4, marginBottom: 8 }}>
                     {outgoingEvidenceLinks.map((link) => {
                       const target = document?.cards.find((card) => card.id === link.toCardId);
@@ -3135,7 +3258,7 @@ export function SidePanel({
                           <div>{link.type} → {target ? target.text.slice(0, 60) : link.toCardId}</div>
                           <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
                             <button type="button" style={{ fontSize: 10 }} onClick={() => { onFocusCardById(link.toCardId); }}>{t("side_panel.focus")}</button>
-                            <button type="button" style={{ fontSize: 10 }} onClick={() => { onRemoveEvidenceLink(link.id); }}>{t("side_panel.remove")}</button>
+                            <button type="button" disabled={isReadOnly} style={{ fontSize: 10 }} onClick={() => { onRemoveEvidenceLink(link.id); }}>{t("side_panel.remove")}</button>
                           </div>
                         </div>
                       );
@@ -3143,7 +3266,7 @@ export function SidePanel({
                   </div>
                 )}
                 <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>{t("side_panel.evidence.incoming_readonly")}</div>
-                {incomingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#94a3b8" }}>(none)</div> : (
+                {incomingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#94a3b8" }}>{t("side_panel.none")}</div> : (
                   <div style={{ display: "grid", gap: 4 }}>
                     {incomingEvidenceLinks.map((link) => {
                       const source = document?.cards.find((card) => card.id === link.fromCardId);
@@ -3151,7 +3274,7 @@ export function SidePanel({
                     })}
                   </div>
                 )}
-                <button type="button" style={{ marginTop: 8, width: "100%" }} onClick={() => {
+                <button type="button" disabled={isReadOnly} style={{ marginTop: 8, width: "100%" }} onClick={() => {
                   setIsEvidenceModalOpen(true);
                   setPendingEvidenceType("supports");
                   setEvidenceTargetQuery("");
@@ -3284,6 +3407,7 @@ export function SidePanel({
               </label>
               <textarea
                 value={selectedCard.critique ?? ""}
+                disabled={isReadOnly}
                 onChange={(event) => {
                   onCardCritiqueChange(event.target.value);
                 }}
@@ -3306,6 +3430,7 @@ export function SidePanel({
                     <input
                       type="checkbox"
                       checked={(selectedCard.critiqueTags ?? []).includes(tag)}
+                      disabled={isReadOnly}
                       onChange={() => {
                         onCardCritiqueTagsChange(toggleCritiqueTag(selectedCard.critiqueTags, tag));
                       }}

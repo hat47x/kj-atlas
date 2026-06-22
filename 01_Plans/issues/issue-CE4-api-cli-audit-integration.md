@@ -2,17 +2,23 @@
 
 - Type: Feature request
 - Lifecycle: Draft -> Open -> In Progress -> Done
-- Status: Draft (Contract Freeze Candidate)
-- Source Issue: TBD (DraftのためOpen化時に採番)
+- Status: Done
+- Source Issue: N/A (Done 2026-06-20)
 - Priority: P2
 - Owner: Stream C（CE4 API/CLI/監査契約 proposal-only）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
-- Related ADR/Spec: `ADR-0028`, `ADR-0016`, `ADR-0017`, `02_Architecture/api.md`
-- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存）, `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（ContextBundle I/F依存; mockで先行可能）
+- Related ADR/Spec: `ADR-0028`, `ADR-0016`, `ADR-0017`, `ADR-0039`, `02_Architecture/api.md`
+- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（Done 2026-06-20）, `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（Done 2026-06-20）
 - Verification: `docs-check`
 - Expected verification level: `docs-check`
+
+## Done 2026-06-20
+CE4 API/CLI/Audit contract frozen in architecture.md. equivalenceKey AND bundleHash, Audit 4-event set, fail-closed, dryRun sideEffect=none, CE1 mock接続確立。実装詳細（HTTP/CLI数値コード/監査配送）は実装フェーズに委譲。
+
+## Draft→Open 2026-06-20
+CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（proposal-only, fail-closed, 監査4点セット）。
 
 ## Mission（実装非依存の契約固定）
 - CE4 API/CLI/監査統合を、実装方式から独立した**契約レベル**で固定する。

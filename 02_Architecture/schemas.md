@@ -1055,3 +1055,37 @@ Phase直列実行（Read必須）で Data Contract & Model Ops を確認した�
 ### Consequences
 - Stream B から下流への引き渡しは mock-first で再現可能になり、実装進捗待ちなしで契約検証を継続できる。
 - CRUD保証の主張は `data_model_operations_overview.md` 側に限定され、契約文書単体の誤読リスクを抑制できる。
+
+## 14. DOMAIN-EXPR-02 加算スキーマ拡張（2026-06-21）
+
+ADR-0040 Phase 2: 保留 Hold + 未統合 Shelf の第一級化。加算原則に従い、全フィールドは optional。
+
+### 14.1 Card.holdState
+
+- 型: `"held" | "pending" | "shelved"` (optional)
+- Support level: `L2.5`（未分類。実装検証後にL2以上へ昇格）
+- 欠落時: 従来挙動（holdしていない通常カード）
+- 意味:
+  - `"held"`: 意図的に判断を保留しているカード
+  - `"pending"`: 未処理/未着手のカード
+  - `"shelved"`: Shelfへ退避中（本文は保持、配置からは一時的に除外）
+
+### 14.2 ShelfEntry
+
+- 型: `{ cardId: string; shelvedAt: string; reason?: string; }`
+- 位置: `DocumentV2.shelf?: ShelfEntry[]`
+- Support level: `L2.5`
+- 欠落時: Shelfは空と解釈
+- 不変条件: Shelf退避は可逆（cardIdのカード本文は削除されない）。Shelfからの復帰はカード削除と分離された独立操作。
+
+### 14.3 後方互換
+
+- 新フィールドはすべて optional。未対応クライアント・旧データは欠落を従来挙動として解釈
+- `version: 2` のまま（破壊的変更なし）
+- import/export/validate は未知フィールドを許容し、欠落時にデフォルト解釈する
+
+### 14.4 参照
+
+- ADR: `ADR-0040-domain-expression-first-class-strategy.md`
+- Issue: `DOMAIN-EXPR-02-hold-and-pending-shelf`
+- Frontend: `03_Implement/frontend/src/domain/types.ts` (Card.holdState, ShelfEntry, DocumentV2.shelf)

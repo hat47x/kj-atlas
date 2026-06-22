@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 
 export const SHARE_REPRODUCE_BUTTON = /Share & Reproduce|共有と再現/;
 export const VIEW_BUTTON = /^View$|^表示$/;
+export const ADVANCED_UI_BUTTON = /^Advanced$|^詳細$/;
 export const SUGGEST_LAYOUT_BUTTON = /Suggest layout|配置を提案/;
 export const LOAD_DOCUMENT_BUTTON = /^Load document\.json$|^document\.json を読み込む$/;
 export const REPLACE_DOCUMENT_BUTTON = /Replace current document|現在のドキュメントを置換/;

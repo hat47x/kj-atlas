@@ -2240,3 +2240,538 @@ DoDテンプレ（Draft→Open）
 - Repository Maintainer must still approve any remote `codex/*` branch deletion and preserve a final deletion audit list.
 - Keep full release shipment No-Go until product value Open gates, full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
 - No new ADR is needed for this sync. ADR work is required only if the project changes CE0/CE1 contract authority, HIL/FB governance authority, branch cleanup authority, stale-ref retention policy, SafeMode/share-export policy, runtime environment policy, product-value authority, or release authority.
+
+## Productization Gate Record 2026-06-16: post-2413 manual-authoring and Advanced UI evidence sync
+
+- Candidate: `origin/main@26cb71422723c7a546bca1ee41ecd6372a55a6a4`.
+- Decision date (JST): 2026-06-16.
+- Reviewer: Codex.
+- Scope: post-#2413 release-gate intake for the latest-main baseline after #2407 through #2413, the `mvp-manual-authoring-ui` merge, and the post-Advanced-UI realistic journey evidence became canonical on `main`. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, issue status, ADR status, release authority, branch deletion authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, diff checks, open PR search, branch reachability audit, and GitHub Actions CI passed for the post-2413 baseline slice.
+- G1 safety defaults: Conditional Go / unchanged. The baseline sync keeps SafeMode/share-export policy unchanged; #2412 refreshed QA-E2E evidence while preserving `Execution: Hold`.
+- G2 user-operability evidence: Conditional Go improved. Manual card authoring, canvas context-menu access, Advanced UI first-run decluttering, and the updated realistic journey improve evidence for first-run operation and read-only boundary behavior.
+- G6 governance and decision traceability: Conditional Go improved. `PROJECT-BASELINE-01`, `QA-E2E-USE-01`, Product QA, and MVP-EXIT records now have a clear path to consume the post-Advanced-UI evidence without inferring release approval.
+- G7 regression: Go for current planning slice. PR #2407 through #2413 CI succeeded; the representative realistic journey was updated in #2411 and the evidence was recorded in #2412.
+- Final: **Conditional Go for post-2413 manual-authoring / Advanced UI evidence freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- `mvp-manual-authoring-ui` became canonical on `main` via merge `0cffb2ec`, adding DB password preservation for URL normalization, Docker first-run hardening, MVP verification documentation, manual card authoring, canvas right-click editing, and the Advanced UI toggle.
+- PR #2411 `[codex] Update realistic journey E2E for Advanced UI toggle` merged with normal merge history; CI run `9602` passed.
+- PR #2412 `[codex] Record post-2411 realistic journey evidence` merged with normal merge history; CI run `9605` passed.
+- PR #2413 `[codex] Record post-2412 project baseline` merged with normal merge history; CI run `9608` passed.
+- Latest local verification after #2413: active issue validation passed, triage reported no stopper, open PR search returned 0, and the 2026-06-06-or-later `codex/*` branch reachability audit reported `since_20260606_codex_count=69`, `unmerged_count=0`.
+
+### Follow-ups
+
+- Treat manual authoring and Advanced UI as improved MVP/productization evidence, not as release approval. Human release screenshots, physical keyboard acceptance, and screen-reader acceptance remain required.
+- Continue routing representative end-to-end journey freshness through `QA-E2E-USE-01`; keep `Execution: Hold` until its pending approval and environment prerequisites are explicitly resolved.
+- Product value Open gates and evidence packets still need to be completed before this issue can support a full shipment recommendation.
+- Keep full release shipment No-Go until full release-candidate regression, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes manual-authoring authority, Advanced UI/default-surface policy, SafeMode/share-export policy, runtime environment policy, product-value authority, release authority, or branch cleanup authority.
+
+## Productization Gate Record 2026-06-17: post-2419 product-value readiness summaries
+
+- Candidate: `origin/main@e72e06dd512c4e91bfc7e714589966c06b6bfc3e`.
+- Decision date (JST): 2026-06-17.
+- Reviewer: Codex.
+- Scope: post-#2419 release-gate intake for readable internal Product Value readiness summaries after #2418 and #2419 became canonical on `main`. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, issue status, ADR status, release authority, branch deletion authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, diff checks, GitHub Actions CI, local `main` fast-forward, and the 2026-06-06-or-later `codex/*` reachability audit passed after #2419.
+- G1 safety defaults: Conditional Go / unchanged. The new readiness summaries preserve SafeMode ON, share/export preflight, import-sanitize, and `human_reviewed` human-only boundaries. They explicitly route any change to SafeMode, review authority, automatic resolution, or schema permanence through issue/ADR review.
+- G2 user-operability evidence: Conditional Go improved for planning clarity. `PRODUCT-VALUE-01` now has a readable first-meaningful-map readiness summary, while `PRODUCT-VALUE-02` and `PRODUCT-VALUE-03` now describe the ambiguity/evidence and reviewable-package evidence packets needed before Open-gate acceptance.
+- G6 governance and decision traceability: Conditional Go improved. Product value gate gaps are now stated in readable internal issue memos without changing the source issue statuses or inferring final shipment approval.
+- G7 regression: Go for planning slice. #2418 and #2419 CI succeeded, and the effective diff is internal issue evidence only.
+- Final: **Conditional Go for product-value readiness traceability / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2418 `[codex] Add Product Value 01 readiness summary` merged with normal merge history; CI run `9623` passed.
+- PR #2419 `[codex] Add Product Value 02/03 readiness summaries` merged with normal merge history; CI run `9626` passed.
+- `PRODUCT-VALUE-01-current-open-readiness-summary` records the first-value fixture, mouse/keyboard evidence, screenshot packet, and ADR-boundary needs.
+- `PRODUCT-VALUE-02-current-open-readiness-summary` records the ambiguity/evidence fixture, unresolved/unreviewed distinction, SafeMode/share-export proof, `human_reviewed` boundary, and ADR-boundary needs.
+- `PRODUCT-VALUE-03-current-open-readiness-summary` records the reviewable package fixture, trace-back proof, SafeMode masking/exclusion proof, and authority boundary for approval/signature semantics.
+- Latest local verification after #2419: active issue validation passed, triage reported no stopper, and the 2026-06-06-or-later `codex/*` branch reachability audit reported `since_20260606_codex_count=75`, `unmerged_count=0`.
+
+### Follow-ups
+
+- Keep `PRODUCT-VALUE-01..03` in Draft until Productization Program Owner / QA Lead acceptance converts the readable summaries into replayable evidence packets with fixtures, screenshots or traces, and Go/No-Go decisions.
+- Prioritize the next UI/E2E work around deterministic fixtures for first-value, ambiguity/evidence, and reviewable-package flows instead of expanding product scope.
+- Keep human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, environment rehearsal evidence, FB/HIL held decisions, high-privilege lifecycle decisions, and final program approval outside this automated planning sync.
+- No new ADR is needed for this sync. ADR work is required only if the project changes product-value definitions, persistent schema authority, SafeMode/share-export policy, review attribution authority, automatic resolution/scoring, LLM dependency for value gates, public package contract, signature/approval semantics, or release authority.
+
+## Productization Gate Record 2026-06-17: post-2421 product-value E2E fixture foundation
+
+- Candidate: `origin/main@6db7fd5f0edc7f6e303313c2385d06c000db7b0f`.
+- Decision date (JST): 2026-06-17.
+- Reviewer: Codex.
+- Scope: post-#2421 release-gate intake for the shared Product Value E2E fixture builders. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, issue status, ADR status, release authority, branch deletion authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, targeted Playwright reruns, frontend typecheck, GitHub Actions CI, local `main` fast-forward, and the 2026-06-06-or-later `codex/*` reachability audit passed after #2421.
+- G2 user-operability evidence: Conditional Go improved. `product_value_fixtures.ts` now names and centralizes the deterministic PV01 first-meaningful-map, PV02 domain-expression, and PV03 review-pack trace data used by the existing browser-level tests.
+- G6 governance and decision traceability: Conditional Go improved. Product value evidence packets can now cite one shared fixture helper instead of rediscovering embedded test data in three separate specs.
+- G7 regression: Go for fixture refactor. #2421 CI succeeded, and local targeted Playwright reruns passed for `first_meaningful_map_mouse_flow`, `domain_expression_keyboard_access`, and `review_pack_trace_export`.
+- Final: **Conditional Go for product-value fixture evidence foundation / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2421 `[codex] Share Product Value E2E fixtures` merged with normal merge history; CI run `9632` passed.
+- Shared fixture helper: `03_Implement/frontend/e2e/helpers/product_value_fixtures.ts`.
+- Refactored E2E specs:
+  - `03_Implement/frontend/e2e/first_meaningful_map_mouse_flow.spec.ts`
+  - `03_Implement/frontend/e2e/domain_expression_keyboard_access.spec.ts`
+  - `03_Implement/frontend/e2e/review_pack_trace_export.spec.ts`
+- Local targeted verification before #2421: frontend typecheck passed, active issue validation passed, and the three targeted Playwright specs passed.
+- Latest local verification after #2421: active issue validation passed, triage reported no stopper, and the 2026-06-06-or-later `codex/*` branch reachability audit reported `since_20260606_codex_count=77`, `unmerged_count=0`.
+
+### Follow-ups
+
+- Convert the shared fixtures into explicit Product Value evidence packets only after Productization Program Owner / QA Lead accepts the fixture intent, screenshot or trace requirements, and Go/No-Go thresholds.
+- Keep `PRODUCT-VALUE-01..03` in Draft until fixture execution evidence, human acceptance, and release-suitable screenshots/traces are recorded.
+- No new ADR is needed for this sync. ADR work is required only if the project changes the product-value fixture meaning, persistent schema authority, SafeMode/share-export policy, review attribution authority, automatic resolution/scoring, LLM dependency for value gates, public package contract, signature/approval semantics, or release authority.
+
+## Productization Gate Record 2026-06-17: post-2424 baseline and governance reachability sync
+
+- Candidate: `origin/main@592788ee7f2cc05393f782d9f1af1e77071704c4`.
+- Decision date (JST): 2026-06-17.
+- Reviewer: Codex.
+- Scope: post-#2424 release-gate intake for the latest Project Baseline and Project Governance records after #2423 and #2424 became canonical on `main`. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, issue status, ADR status, Product Value Open-gate status, branch deletion authority, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, open PR search, GitHub Actions CI, local `main` fast-forward, and the 2026-06-06-or-later `codex/*` reachability audit passed after #2424.
+- G1 safety defaults: Conditional Go / unchanged. The baseline/governance sync keeps SafeMode/share-export, import-sanitize, public documentation authority, high-privilege lifecycle policy, and Product Value authority unchanged.
+- G2 user-operability evidence: Conditional Go / unchanged from #2421. This sync does not add new UI or E2E evidence; it keeps the Product Value fixture foundation traceable through latest-main baseline and branch-governance records.
+- G6 governance and decision traceability: Conditional Go improved. `PROJECT-BASELINE-01`, `PROJECT-GOV-01`, Product QA, and MVP-EXIT now have a consistent path to cite #2417 through #2424 as evidence-foundation work, not release approval.
+- G7 regression: Go for planning slice. #2423 and #2424 CI succeeded, and the effective diff is internal issue evidence only.
+- Final: **Conditional Go for post-2424 baseline/governance traceability / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2423 `[codex] Record post-2422 project baseline` merged with normal merge history; CI run `9638` passed.
+- PR #2424 `[codex] Record post-2423 governance reachability` merged with normal merge history; CI run `9641` passed.
+- `PROJECT-BASELINE-01` now records `Baseline delta 2026-06-17: post-2422 Product Value evidence foundation sync`.
+- `PROJECT-GOV-01` now records `Post-2423 governance reachability and Product Value evidence-foundation checkpoint`.
+- Latest local verification after #2424: active issue validation passed, triage reported no stopper, and the 2026-06-06-or-later `codex/*` branch reachability audit reported `since_20260606_codex_count=80`, `unmerged_count=0`.
+
+### Follow-ups
+
+- Treat #2423/#2424 as latest-main and repository-governance evidence only. They do not convert Product Value Draft issues to Open, approve remote branch deletion, or approve shipment.
+- Product Value Open-gate acceptance still requires replayable evidence packets, screenshots or traces, and Productization Program Owner / QA Lead acceptance.
+- Keep full release shipment No-Go until human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes stale-ref retention, branch cleanup authority, Product Value definitions, SafeMode/share-export policy, public package contract, runtime environment policy, or release authority.
+
+## Productization Gate Record 2026-06-17: post-2429 Product Value fixture-summary alignment
+
+- Candidate: `origin/main@06316e6c1bb8e728e00046a9fdc67ba3adb8a081`.
+- Decision date (JST): 2026-06-17.
+- Reviewer: Codex.
+- Scope: post-#2429 release-gate intake for Product Value current-open summaries after #2428 fixture manifests became canonical and #2429 synchronized those summaries. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, source issue status, ADR status, Product Value Open-gate status, branch deletion authority, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, GitHub Actions CI, local `main` fast-forward, and the 2026-06-06-or-later `codex/*` reachability audit passed after #2429.
+- G1 safety defaults: Conditional Go / unchanged. The summaries keep SafeMode/share-export, import-sanitize, review attribution, public-exposure, and `human_reviewed` human-only boundaries unchanged.
+- G2 user-operability evidence: Conditional Go improved for planning clarity. PV01, PV02, and PV03 now point to the named reusable fixture builders and document IDs, so the next user-operation evidence can start from the accepted fixture identity instead of re-defining inputs.
+- G6 governance and decision traceability: Conditional Go improved. The current-open summaries now distinguish "fixture defined" from "value accepted", preserving the remaining human acceptance, screenshot/trace, SafeMode, share/export, read-only review, and Product QA / MVP-EXIT linkage blockers.
+- G7 regression: Go for planning slice. #2429 CI succeeded, and the effective diff is internal issue evidence only.
+- Final: **Conditional Go for Product Value fixture-summary traceability / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2429 `[codex] Sync Product Value fixture readiness summaries` merged with normal merge history; CI run `9656` passed.
+- `PRODUCT-VALUE-01-current-open-readiness-summary` now marks only the deterministic first-value fixture definition as complete: `buildFirstMeaningfulMapDocument()` / `doc_first_meaningful_map_mouse`.
+- `PRODUCT-VALUE-02-current-open-readiness-summary` now marks only the deterministic ambiguity fixture definition as complete: `buildDomainExpressionDocument()` / `doc_domain_expression_keyboard_access`.
+- `PRODUCT-VALUE-03-current-open-readiness-summary` now marks only the deterministic reviewable-package fixture definition as complete: `buildReviewPackTraceDocument()` / `doc_review_pack_trace_export`.
+- Latest local verification after #2429: active issue validation passed, triage reported no stopper, and the 2026-06-06-or-later `codex/*` branch reachability audit reported `since_20260606_codex_count=103`, `unmerged_count=0`.
+
+### Follow-ups
+
+- Treat #2429 as readiness-summary alignment only. It does not convert `PRODUCT-VALUE-01..03` from Draft to Open and does not approve shipment.
+- Next evidence work should capture or cite release-suitable screenshot/trace bundles for PV01/PV02/PV03, including SafeMode/share-export visibility and read-only reviewer inspection where applicable.
+- Keep full release shipment No-Go until Productization Program Owner / QA Lead acceptance, human release screenshots, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes Product Value definitions, fixture meaning, persistent schema authority, SafeMode/share-export policy, review attribution authority, automatic resolution/scoring, LLM dependency for value gates, public package contract, signature/approval semantics, or release authority.
+
+## Productization Gate Record 2026-06-17: post-2432 Product Value current-main E2E rerun
+
+- Candidate: `origin/main@4e73aedf25b4820f2037e86114403e0a2a009b35`.
+- Decision date (JST): 2026-06-17.
+- Reviewer: Codex.
+- Scope: post-#2432 release-gate intake for the current-main PV01/PV02/PV03 representative E2E rerun. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, public documentation, source issue status, ADR status, Product Value Open-gate status, branch deletion authority, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, triage, GitHub Actions CI, local `main` fast-forward, and the 2026-06-06-or-later `codex/*` reachability audit passed after #2432.
+- G1 safety defaults: Conditional Go / unchanged. The rerun does not alter SafeMode/share-export policy, import-sanitize behavior, review attribution, or `human_reviewed` authority.
+- G2 user-operability evidence: Conditional Go improved. PV01 mouse first-value flow, PV02 keyboard domain-expression controls, and PV03 review-pack trace export remain executable on current `main`.
+- G6 governance and decision traceability: Conditional Go improved. Product Value summaries now record both fixture identity and current-main execution freshness while preserving human acceptance and screenshot/trace blockers.
+- G7 regression: Go for targeted Product Value E2E rerun. The local representative E2E command passed 3 tests, and #2432 CI succeeded.
+- Final: **Conditional Go for Product Value current-main E2E freshness / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2432 `[codex] Record Product Value E2E rerun` merged with normal merge history; CI run `9665` passed.
+- Local targeted command, with Vite started directly by bundled Node.js because this Codex host does not expose `npm` on the normal PATH:
+  - `node .\node_modules\playwright\cli.js test e2e/first_meaningful_map_mouse_flow.spec.ts e2e/domain_expression_keyboard_access.spec.ts e2e/review_pack_trace_export.spec.ts --reporter=line`
+- Local targeted result: **3 passed**.
+- PV01 execution refreshed: sample opening, two-card selection, `Create Island`, visible `Island 1`, and selection-context confirmation.
+- PV02 execution refreshed: ambiguous target selection, unreviewed state, claim type, evidence/contradiction text, critique note, review checkbox, and critique tag keyboard reachability.
+- PV03 execution refreshed: fixture import, selected target claim, Overview trace exclusion, Detail trace inclusion, and ZIP contents for evidence, contradiction, and trace analytics files.
+
+### Follow-ups
+
+- Treat #2432 as execution freshness evidence only. It does not convert `PRODUCT-VALUE-01..03` from Draft to Open and does not approve shipment.
+- Next evidence work should capture or cite release-suitable screenshots/traces, including SafeMode/share-export visibility, import/sample-entry state, and read-only reviewer inspection.
+- Keep full release shipment No-Go until Productization Program Owner / QA Lead acceptance, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes Product Value definitions, fixture meaning, persistent schema authority, SafeMode/share-export policy, review attribution authority, automatic resolution/scoring, LLM dependency for value gates, public package contract, signature/approval semantics, or release authority.
+
+## Productization Gate Record 2026-06-17: post-2434 Product Value screenshot evidence
+
+- Candidate: `origin/main@a3cae51964b135ce55c07ea86a283558571f868a`.
+- Decision date (JST): 2026-06-17.
+- Reviewer: Codex.
+- Scope: post-#2434 release-gate intake for deterministic Japanese UI screenshots covering PV01 first-island creation, PV02 ambiguity-state inspection, and PV03 trace-enabled Share & Reproduce export. This record changes release-readiness evidence only; it does not change runtime behavior, UI/API behavior, SafeMode defaults, share/export behavior, source issue status, ADR status, Product Value Open-gate status, release authority, branch cleanup authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, validator unit tests, screenshot generation, diff check, GitHub Actions CI, local `main` fast-forward, and the 2026-06-06-or-later `codex/*` reachability audit passed after #2434.
+- G1 safety defaults: Conditional Go / unchanged. The screenshot evidence shows SafeMode ON and Share & Reproduce context, but the PR does not alter SafeMode, export granularity, review attribution, import sanitization, or `human_reviewed` authority.
+- G2 user-operability evidence: Conditional Go improved. PV01/PV02/PV03 now have release-documentation-suitable visual evidence attached to their current-open summaries, in addition to the earlier E2E execution freshness record.
+- G6 governance and decision traceability: Conditional Go improved. The Product Value summaries now separate visual evidence availability from Productization Program Owner / QA Lead acceptance and shipment approval.
+- G7 regression: Go for screenshot evidence slice. #2434 CI succeeded, and the local capture script regenerated the three PNG files from deterministic fixtures.
+- Final: **Conditional Go for Product Value screenshot evidence traceability / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2434 `[codex] Add Product Value screenshot evidence` merged as `a3cae51964b135ce55c07ea86a283558571f868a`; CI run `9671` passed.
+- Capture script: `03_Implement/frontend/scripts/capture_product_value_screenshots.mjs`.
+- Local screenshot command:
+  - `node .\scripts\capture_product_value_screenshots.mjs`
+- Generated screenshots:
+  - `04_Documentation/assets/screenshots/product-value-first-island.png`
+  - `04_Documentation/assets/screenshots/product-value-ambiguity-state.png`
+  - `04_Documentation/assets/screenshots/product-value-review-pack-trace.png`
+- Product Value summaries now cite the screenshot evidence while preserving **Draft remains** for PV01/PV02/PV03.
+- Local validation before #2434: active issue validation passed, validator unit tests passed, and `git diff --check` passed for the touched issue and screenshot documentation files.
+
+### Follow-ups
+
+- Treat #2434 as visual evidence traceability only. It does not convert `PRODUCT-VALUE-01..03` from Draft to Open and does not approve shipment.
+- Productization Program Owner / QA Lead still need to decide whether these screenshots, together with the E2E evidence, satisfy Product Value Open-gate expectations or require additional read-only reviewer, keyboard, screen-reader, or share-package inspection evidence.
+- Keep full release shipment No-Go until Productization Program Owner / QA Lead acceptance, physical keyboard acceptance, screen-reader acceptance, full Compose startup, support diagnostics/recovery rehearsal, accepted or replaced high-privilege lifecycle boundary decisions, FB-P0 approval/held decisions, environment rehearsal evidence, and final program approval are recorded together.
+- No new ADR is needed for this sync. ADR work is required only if the project changes Product Value definitions, fixture meaning, public screenshot/public documentation authority, SafeMode/share-export policy, review attribution authority, public package contract, signature/approval semantics, or release authority.
+
+## Productization Gate Record 2026-06-19: document-entry status localization
+
+- Candidate: post-#2445 `main`.
+- Finding: Chrome inspection showed `Loading document...` in the Japanese UI, and read-only validation still instructed the reviewer to click `Replace current document`.
+- Correction:
+  - Document loading and reloading messages now come from the locale catalog.
+  - Read-only validation instructs the reviewer to select `確認用に開く` / `Open for inspection`.
+  - Editable validation retains the explicit replace instruction.
+  - The i18n hardcode guard rejects the observed raw English loading and reloading strings in `App.tsx`.
+- Gate impact:
+  - G3 Japanese UI: improved for document-entry status and read-only action consistency.
+  - G2 primary operations: improved because status guidance now names the action the user can perform.
+  - G7 regression: pending the implementation PR validation and CI result.
+- Final release remains **No-Go**. This slice does not replace human Japanese copy review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, support rehearsal, or final program approval.
+- No ADR is needed because locale authority, read-only semantics, persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: comparison workflow status localization
+
+- Scope: comparison document loading and selective-merge status guidance.
+- Finding: comparison success, parse failure, missing selection, blocker, apply, and revert statuses were hard-coded in English even when the Japanese locale was active.
+- Correction:
+  - Fixed workflow statuses now use the Japanese and English locale catalogs.
+  - Detailed schema and transaction errors remain visible as diagnostic detail rather than being discarded.
+  - The App hardcode guard prevents the removed comparison and selective-merge English literals from returning.
+- Gate impact:
+  - G3 Japanese UI: improved for the comparison and selective-merge path.
+  - G2 primary operations: improved because missing prerequisites, selection, blockers, apply, and revert outcomes use actionable localized guidance.
+  - G7 regression: targeted i18n tests, comparison recovery E2E, typecheck, full frontend regression, and build are required for this slice.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, and final program approval remain separate.
+- No ADR is needed because comparison semantics, merge authority, persistence, review policy, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: patch workflow status localization
+
+- Scope: patch JSON validation, fingerprint inspection, optional baseline loading, lint/fix guidance, patch application, reset, and apply-log copy feedback.
+- Finding: the patch workflow mixed localized controls with English-only success, failure, trust, and recovery statuses.
+- Correction:
+  - Fixed workflow guidance now uses the Japanese and English locale catalogs.
+  - Invalid patch JSON has browser-level Japanese recovery evidence.
+  - Fingerprint mismatch remains explicitly untrusted; this change does not soften trust or SafeMode boundaries.
+  - The App hardcode guard prevents the removed English patch statuses from returning.
+- Gate impact:
+  - G3 Japanese UI: improved for the patch import and application path.
+  - G1 safety defaults: unchanged; fingerprint mismatch remains untrusted and patch lint still blocks application.
+  - G2 primary operations: improved through localized validation, selection, baseline, apply, reset, and audit feedback.
+  - G7 regression: targeted i18n and recovery E2E, typecheck, full frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, accessibility acceptance, environment rehearsal, and final approval remain separate.
+- No ADR is needed because patch schema, trust semantics, lint blocking, apply authority, persistence, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: review-pack import recovery localization
+
+- Scope: review-pack ZIP validation, required-file checks, integrity verification, and import completion feedback.
+- Finding: missing `document.json` / `view.json`, malformed integrity data, ZIP safety rejection, and successful import still surfaced English-only status text in the Japanese UI.
+- Correction:
+  - Fixed review-pack outcomes now use the Japanese and English locale catalogs.
+  - ZIP safety failures keep the stable `Z001` / `Z002` / `Z003` codes while presenting an understandable localized explanation.
+  - Missing `document.json` tells the user to recreate the review pack at its source.
+  - A browser E2E selects a real ZIP missing `document.json` and verifies localized recovery guidance without viewport overflow.
+  - The App hardcode guard prevents the removed English review-pack statuses from returning.
+- Gate impact:
+  - G3 Japanese UI: improved for the review-pack import path.
+  - G1 safety defaults: unchanged; unsafe paths, oversized archives, invalid images, and failed integrity verification still stop import.
+  - G2 primary operations: improved because failed import now names the problem and the next recovery action.
+  - G6 diagnostics and support: improved because internal parser details are no longer the only user-facing guidance.
+  - G7 regression: targeted i18n and recovery E2E, typecheck, full frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, accessibility acceptance, environment rehearsal, and final approval remain separate.
+- No ADR is needed because ZIP limits, integrity policy, import sanitization, SafeMode, persistence, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: side-panel empty-state localization
+
+- Scope: side-panel island-size metrics, reading navigation, and incoming/outgoing evidence-link empty states.
+- Finding: the Japanese UI still displayed the raw English placeholder `(none)` in four side-panel locations.
+- Correction:
+  - Empty states now use the existing localized `side_panel.none` catalog entry.
+  - The SidePanel hardcode guard rejects future raw `(none)` placeholders.
+- Gate impact:
+  - G3 Japanese UI: improved for visible side-panel empty states.
+  - G2 primary operations: improved because empty results are expressed consistently in the active locale.
+  - G7 regression: i18n guard, typecheck, frontend regression, build, and browser inspection are required.
+- Final release remains **No-Go**. This correction does not replace human terminology or accessibility acceptance.
+- No ADR is needed because data semantics, navigation behavior, evidence-link behavior, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: core editing feedback localization
+
+- Scope: card movement and editing, layout operations, card/island connection, island creation and collapse, representative-card creation, undo, and redo.
+- Finding: Japanese controls still produced English-only completion, cancellation, validation, and recovery feedback during routine editing.
+- Correction:
+  - Core editing feedback and representative-card dialogs now use the Japanese and English locale catalogs.
+  - The first meaningful map E2E verifies Japanese island creation, undo, and redo feedback through mouse operations.
+  - The App hardcode guard prevents the removed English editing statuses from returning.
+- Gate impact:
+  - G3 Japanese UI: improved for routine canvas editing.
+  - G2 primary operations: improved because action completion, cancellation, and recovery are expressed in the active locale.
+  - G7 regression: targeted E2E, i18n guard, typecheck, full frontend regression, and build are required.
+- Final release remains **No-Go**. Polygon editing, AI-assisted summaries, trace exports, human terminology review, and accessibility acceptance remain separate.
+- No ADR is needed because edit semantics, history behavior, graph structure, persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: polygon editing feedback localization
+
+- Scope: polygon generation and fallback, shape switching, vertex drag/add/remove, self-intersection prevention, minimum-vertex validation, and vertex-handle accessible names.
+- Finding: Japanese controls exposed English-only polygon status messages and English-only keyboard handle names.
+- Correction:
+  - Polygon editing feedback and constraints now use the Japanese and English locale catalogs.
+  - Vertex handles expose localized accessible names and help text.
+  - Existing pointer and keyboard E2E scenarios now verify Japanese movement, removal, and self-intersection feedback.
+  - Hardcode guards prevent the removed English polygon UI strings from returning.
+- Gate impact:
+  - G3 Japanese UI: improved for visible and assistive polygon-editing interfaces.
+  - G2 primary operations: improved for pointer and keyboard boundary editing.
+  - G1 safety defaults: unchanged; self-intersection and minimum-vertex constraints remain fail-closed.
+  - G7 regression: polygon E2E, i18n guard, typecheck, full frontend regression, and build are required.
+- Final release remains **No-Go**. Screen-reader acceptance, human terminology review, AI workflows, and final program approval remain separate.
+- No ADR is needed because polygon geometry rules, edit constraints, persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-19: AI summary feedback localization
+
+- Scope: island-summary proposal generation and human decisions, plus island-relation summary generation, editing, review-state changes, and history restoration.
+- Finding: these AI-assisted paths still returned English-only statuses and did not consistently state that generated or adopted drafts remained unreviewed.
+- Correction:
+  - Island and relation summary feedback now uses the Japanese and English locale catalogs.
+  - Generated and adopted AI content explicitly remains unreviewed and directs the user to grounding evidence.
+  - Island-summary adopt, hold, and reject decisions now provide visible completion feedback in addition to audit records.
+  - Relation-summary review-state and history restoration outcomes are localized.
+  - Hardcode guards prevent the removed English summary statuses from returning.
+- Gate impact:
+  - G3 Japanese UI: improved for AI-assisted summary workflows.
+  - G1 safety defaults: strengthened in presentation; generated and adopted summaries remain unreviewed until a human changes review state.
+  - G2 primary operations: improved because proposal decisions and history operations provide visible outcomes.
+  - G7 regression: i18n guard, key consistency, typecheck, full frontend regression, and build are required.
+- Final release remains **No-Go**. Live provider acceptance, human terminology review, screen-reader acceptance, and final program approval remain separate.
+- No ADR is needed because proposal-only behavior, human review authority, grounding data, persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: guided-flow and reading-outline feedback localization
+
+- Scope: guided-flow editor guidance, missing-document diagnostics, and reading-outline copy/download outcomes.
+- Finding: the Japanese UI still returned English-only instructions and completion or recovery messages for these operations.
+- Correction:
+  - Guided-flow guidance now names the relevant Japanese UI field or panel and tells the user what to do next.
+  - Diagnostics with no open document now directs the user to open a document first.
+  - Reading-outline copy, clipboard-permission recovery, and download completion feedback now use the locale catalogs.
+  - Hardcode guards prevent the removed English literals from returning.
+- Gate impact:
+  - G2 primary operations: improved because guided review and outline-export outcomes provide actionable feedback.
+  - G3 Japanese UI: improved for guided-flow, diagnostics, and reading-outline operations.
+  - G7 regression: locale key equivalence, actionable-copy assertions, hardcode guards, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because guided-flow semantics, diagnostic calculations, outline contents, SafeMode, persistence, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: focus and aggregated-edge feedback localization
+
+- Scope: card/island focus navigation, summary-grounding inspection, and conversion of derived aggregated edges.
+- Finding: missing or hidden focus targets and aggregated-edge conversion outcomes still returned English-only messages in the Japanese UI.
+- Correction:
+  - Missing-target feedback preserves the entity type and ID for diagnosis.
+  - Hidden-target feedback names the focus scope, hierarchy depth, and source-card visibility settings the user can review.
+  - Grounding-card visibility feedback now explains the focus/depth constraint in Japanese.
+  - Aggregated-edge conversion failure provides a refresh-and-reselect recovery action; success uses the same localized message in visible status and edit history.
+  - Hardcode guards prevent the removed English literals from returning.
+- Gate impact:
+  - G2 primary operations: improved for search, diagnostic-reference navigation, guided flow, and relationship editing.
+  - G3 Japanese UI: improved for focus recovery and aggregated-edge conversion.
+  - G6 supportability: improved because missing entities retain type and ID without exposing an English-only diagnostic.
+  - G7 regression: locale tests, hardcode guards, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because focus semantics, visibility rules, edge derivation, edit authority, persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: island and card editing-history localization
+
+- Scope: island metadata and summary editing, card critique and claim classification, evidence relationships, and island/card review-state changes.
+- Finding: the visible history panel recorded these routine operations in English even when the Japanese locale was active. Review-state changes also used a generic message that did not identify whether the content became reviewed or unreviewed.
+- Correction:
+  - Island title, hierarchy, placard, summary, image, critique, and summary-history restoration records now use the locale catalogs.
+  - Card critique, claim type, critique tags, and evidence-relationship records are localized.
+  - Card text and island title, summary, and image history now explicitly distinguish reviewed from unreviewed transitions.
+  - Hardcode guards prevent the removed English history literals from returning.
+- Gate impact:
+  - G2 primary operations: improved because the history panel describes the operation the user performed.
+  - G3 Japanese UI: improved for routine editing and review history.
+  - G6 traceability: improved because review direction is explicit instead of being represented as a generic state update.
+  - G7 regression: locale tests, hardcode guards, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because editing semantics, review-event attribution, history persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: reading-order and island-membership history localization
+
+- Scope: reading-order addition, removal, and reordering through canvas and side-panel operations, plus island membership changes and island deletion.
+- Finding: these operations still wrote English-only entries into the visible editing history in the Japanese UI.
+- Correction:
+  - Card, island, and generic selected-item additions to reading order now use localized history messages.
+  - Reading-order reordering and removal are localized consistently across both side-panel and canvas paths.
+  - Adding selected cards to an island, removing them from an island, and deleting an island now produce Japanese history entries.
+  - Hardcode guards prevent the removed English history literals from returning.
+- Gate impact:
+  - G2 primary operations: improved for reading-flow maintenance and island membership editing.
+  - G3 Japanese UI: improved for visible edit history.
+  - G6 traceability: improved because canvas and side-panel paths use consistent history vocabulary.
+  - G7 regression: locale tests, hardcode guards, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because reading-order semantics, island membership rules, persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: public-pack, view-metadata, and merge-decision feedback localization
+
+- Scope: public-pack startup failures, view-metadata import prerequisites and validation failures, plus merge-suggestion decision validation, completion status, and editing history.
+- Finding: these paths still exposed English-only errors or raw decision values in the Japanese UI.
+- Correction:
+  - Public-pack index JSON parsing, manifest validation, pack selection, document retrieval/validation, and view retrieval/validation failures now use the locale catalogs while preserving diagnostic details.
+  - An explicitly requested missing or invalid pack now keeps its error visible instead of allowing the API-document fallback to overwrite the real cause.
+  - Loading view metadata without an open document now states the prerequisite; invalid metadata reports a localized failure prefix.
+  - Merge decisions now display localized decision labels in both visible status and editing history.
+  - Stale suggestions and untrusted decision entry paths provide actionable Japanese recovery guidance.
+  - Hardcode guards prevent the removed English literals from returning.
+- Gate impact:
+  - G2 primary operations: improved for startup recovery, view restoration, and merge-review decisions.
+  - G3 Japanese UI: improved for errors, validation, completion feedback, and editing history.
+  - G6 supportability: preserved technical paths and validation details under localized explanations.
+  - G7 regression: locale key equivalence, copy assertions, hardcode guards, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because public-pack resolution, view metadata semantics, merge authority, audit persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: merge-review boundary presentation localization
+
+- Scope: merge-decision trust-boundary rejection, representative-card resolution labels, and recorded audit-decision display.
+- Finding: the review panel still exposed an English domain error, internal resolution identifiers such as `fallback`, and raw decision values such as `defer`.
+- Correction:
+  - The trust-boundary domain now returns stable rejection reason codes instead of user-facing English text.
+  - The review panel maps read-only and untrusted-event rejection reasons to actionable locale messages.
+  - Representative-card resolution methods and audit decisions use localized labels instead of internal enum values.
+  - Regression tests prevent the English domain error and raw fallback/decision display from returning.
+- Gate impact:
+  - G2 primary operations: improved because blocked review actions explain the recovery path.
+  - G3 Japanese UI: improved for merge-review metadata and audit presentation.
+  - G6 traceability: internal audit values remain unchanged while their visible labels are understandable.
+  - G7 regression: trust-boundary unit tests, panel rendering, locale equivalence, hardcode guards, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because trust evaluation, merge authority, decision enums, audit persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: diff-panel terminology localization
+
+- Scope: comparison summary, section headings, review-state transitions, source/comparison labels, and reading-order detail labels.
+- Finding: the Japanese comparison panel still exposed English headings, `true/false`, `A/B`, delta abbreviations, and implementation terms such as array and index.
+- Correction:
+  - Card, island, relation-summary, and reading-order sections now use plain Japanese labels.
+  - Current and comparison documents are named explicitly instead of `A/B`.
+  - Review-state values render as reviewed or unreviewed labels instead of booleans.
+  - Summary counts use addition, deletion, and change wording instead of `+/-` and delta abbreviations.
+  - Reading-order detail uses user-facing item and position terminology instead of array and index.
+- Gate impact:
+  - G2 primary operations: improved because comparison results can be interpreted without implementation knowledge.
+  - G3 Japanese UI: improved across the complete structural-diff panel.
+  - G6 supportability: current/comparison and review-state direction are explicit in captured evidence.
+  - G7 regression: locale assertions, rendered-panel terminology checks, SafeMode redaction, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Human terminology review, physical keyboard acceptance, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because diff calculation, merge behavior, review-state data, SafeMode redaction, persistence, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: context-query preview terminology localization
+
+- Scope: context-query preview headings, search conditions, validation blockers, submission labels, result identifiers, and exclusion reasons.
+- Finding: the Japanese preview exposed internal contract values such as `document`, `reviewedOnly`, `strict`, `proposal`, `previewConfirmed`, and `unreviewed_filtered`. It also used development-stage labels such as `CE1` and `Mock` as primary user-facing wording.
+- Correction:
+  - Search scope, review filter, SafeMode policy, and output mode now use localized user-facing labels while preserving their internal values.
+  - Known validation blockers now explain the required recovery action in Japanese and English, including the submit-button tooltip.
+  - The known unreviewed-content exclusion reason now renders as a plain-language explanation.
+  - The Japanese title, description, confirmation, submit action, and result identifier avoid implementation-stage terminology.
+  - Unknown blocker and exclusion values remain visible for diagnosis instead of being discarded.
+- Gate impact:
+  - G2 primary operations: improved because blocked context searches explain what the user must correct.
+  - G3 Japanese UI: improved across the complete context-query preview.
+  - G6 supportability: internal query and result identifiers remain available while enum and reason codes receive readable labels.
+  - G7 regression: panel rendering, locale key equivalence, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Live provider acceptance, human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because context-query validation, canonical serialization, SafeMode filtering, bundle contents, API contracts, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: patch-workspace terminology localization
+
+- Scope: patch-candidate labels, decision state and history, change preview, search-condition sets, execution feedback, and recovery errors.
+- Finding: the Japanese workspace exposed development-stage names and internal representations including `CE3`, `phase: idle`, transition arrows, token delta notation, raw normalized-query JSON, English card counts, and English domain errors.
+- Correction:
+  - Workspace phases, decisions, and transitions now use localized user-facing labels while retaining internal state-machine and audit values.
+  - Candidate card counts are localized at the application boundary.
+  - Patch preview labels and change counts use added/removed wording instead of token and `+/-` notation.
+  - Executed search conditions render as target, depth, and filter summaries instead of raw JSON.
+  - Known rollback and missing-candidate errors provide actionable localized recovery guidance; unknown diagnostics remain visible.
+  - Browser verification also found and corrected English-only review, evidence-neighborhood, and zoom guidance shown by adjacent display modes.
+- Gate impact:
+  - G2 primary operations: improved because candidate decisions, condition execution, and recovery paths can be understood without implementation knowledge.
+  - G3 Japanese UI: improved across the patch-workspace flow and its application status feedback.
+  - G6 traceability: internal state, normalized query, and audit data remain unchanged while visible labels are understandable.
+  - G7 regression: panel rendering, locale key equivalence, typecheck, frontend regression, and build are required.
+- Final release remains **No-Go**. Live provider acceptance, human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because workspace state transitions, rollback semantics, normalized-query storage, audit persistence, SafeMode, and release authority are unchanged.
+
+## Productization Gate Record 2026-06-20: layout-suggestion safety terminology
+
+- Scope: layout-suggestion title, unreviewed guidance, proposal-only safety explanation, prerequisite reasons, retry-limit wording, and candidate separation guidance.
+- Finding: the user-facing panel exposed development-stage names and internal reason codes including `CE-2`, `auto_apply_blocked`, `suggestion_required`, and `preview_opt_in_required`. Japanese copy also used implementation-oriented terms such as guardrail, reversible synthesis, self-repair stopper, and document in English.
+- Correction:
+  - The panel now explains that suggestions are unreviewed, remain separate, and are never applied automatically.
+  - Internal prerequisite codes render as concrete next actions such as creating a suggestion, enabling preview, or enabling SafeMode.
+  - Retry status and stopping controls use re-suggestion wording instead of self-repair implementation terminology.
+  - Hardcode guards prevent the removed development labels and reason codes from returning to the component.
+- Gate impact:
+  - G1 safety defaults: improved in presentation because human adoption authority and no-auto-apply behavior are explicit.
+  - G2 primary operations: improved because unmet prerequisites state the action required.
+  - G3 Japanese UI: improved across the layout-suggestion review flow.
+  - G7 regression: panel rendering, locale key equivalence, hardcode guards, typecheck, frontend regression, and build are required.
+- Browser verification: the advanced panel at `http://127.0.0.1:4173/` displayed `配置案` and `安全上の条件: 自動適用なし / 最初に配置案を作成する`; `CE2` and `auto_apply_blocked` were absent from the rendered page.
+- Final release remains **No-Go**. Live provider acceptance, human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because proposal-only behavior, blocker codes, preview semantics, human adoption authority, SafeMode, and persistence are unchanged.

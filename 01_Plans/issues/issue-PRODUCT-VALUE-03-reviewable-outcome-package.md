@@ -1,15 +1,35 @@
 # Issue Draft: PRODUCT-VALUE-03 レビュー可能な成果物パッケージ
 
 - Type: Feature request
-- Status: Draft
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex (Product Value contract steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `02_Architecture/value_traceability.md`, `04_Documentation/narratives.md`, `04_Documentation/data_handling.md`
 - Related Backlog: `PRODUCT-VALUE-03`
-- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `02_Architecture/review_attribution.md`, `02_Architecture/value_traceability.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `02_Architecture/review_attribution.md`, `02_Architecture/value_traceability.md`
 - Expected verification level: `e2e`
+
+## Implementation Progress 2026-06-21
+
+### Done
+- **DomainStateSummary share readiness**: SafeMode連動で未レビュー項目数の共有時非表示警告
+- **CardView domain badges**: claimType/critique/reviewState (DOMAIN-EXPR-01)
+- **SidePanel domain state**: evidence/contradiction/critique counts
+- **StartPanel**: value proposition messaging
+
+### Remaining
+- Narratives panel: integrate review state/claim type into narrative output
+- Share preflight: domain state summary in export flow
+- E2E: reviewable outcome package verification
+
+### Commit
+- f9883f68 share readiness indicator in DomainStateSummary
+
+## Draft→Open 2026-06-20
+PRODUCT-VALUE-03 Open化。ADR-0032 AcceptedによりV3ゲート充足（ADR-0040で確定済み）。
+レビュー可能な成果物パッケージの実装着手可能。
 
 ## Requirement meta I/F（共通キー）
 
@@ -388,3 +408,59 @@ No-Go conditions for this value gate:
 | Decision record | This section adds a current-main rerun record. | Final Open decision must cite H-PV3-1/H-PV3-2/H-PV3-3 outcomes. |
 
 - No ADR is needed for this rerun. ADR routing remains limited to changes in the product value model, review authority, SafeMode/share policy, or review-pack contract.
+
+## Fixture manifest 2026-06-17: PV03 reviewable package packet entry
+
+- Candidate mainline: `origin/main@4fe6740678dd970a18eacab094ec4e99c53496c5`.
+- Fixture source: `03_Implement/frontend/e2e/helpers/product_value_fixtures.ts`.
+- Fixture builder: `buildReviewPackTraceDocument()`.
+- Fixture document ID: `doc_review_pack_trace_export`.
+- Representative E2E: `03_Implement/frontend/e2e/review_pack_trace_export.spec.ts`.
+- Status impact: **Draft remains**. This manifest names the reusable fixture entry for the PV03 evidence packet; it does not create Productization Program Owner / QA Lead acceptance, package contract approval, or shipment approval.
+
+### Evidence packet mapping
+
+| Evidence item | Manifest status | Remaining Open blocker |
+| --- | --- | --- |
+| Package fixture | Named and stored in `product_value_fixtures.ts`; includes a reviewed target claim, reviewed support note, unreviewed contradiction, a reviewable island, and support/contradiction links. | Productization Program Owner must accept this fixture as representative of the promised reviewable outcome package. |
+| Pre-share confirmation | Existing E2E verifies Overview mode excludes selected-card traces and Detail mode enables them before ZIP export. | Confirm that SafeMode masking, reviewed/unreviewed status, and recipient-facing risk are understandable before export. |
+| Trace-back proof | Existing E2E verifies Detail export contains `evidence_trace_c-target.md`, `contradiction_trace_c-target.md`, and `trace_analytics_c-target.md`. | QA Lead must decide whether ZIP file-name proof is sufficient or whether a reader-facing backlink/read-only UI proof is required. |
+| Read-only review proof | Not added by this manifest. | Need import/read-only inspection evidence that a reviewer can inspect the package without mutating source data. |
+| Decision record | This section provides the fixture identity that Product QA and MVP-EXIT can cite later. | Final Open decision must cite H-PV3-1/H-PV3-2/H-PV3-3 outcomes and the screenshot/trace bundle location. |
+
+- No ADR is needed for this manifest. ADR routing remains limited to changes in product value model, review authority, SafeMode/share policy, review-pack public contract, approval/signature semantics, or automatic publication behavior.
+
+## Read-only reviewer evidence 2026-06-18
+
+- Candidate mainline: `origin/main@d2b5f8cfab8d5ac49388f0f130dae1eeb2315049`.
+- Implementation scope:
+  - `03_Implement/frontend/src/App.tsx` disables the primary document-edit actions in read-only mode, including legacy import, new card, island creation, deletion, and save.
+  - `03_Implement/frontend/src/ui/SidePanel.tsx` disables claim type, reviewed state, evidence-link mutation, critique note, and critique-tag editing while keeping source/evidence inspection available.
+  - `03_Implement/frontend/e2e/review_pack_trace_export.spec.ts` adds a read-only reviewer scenario using `doc_review_pack_trace_export`.
+  - `04_Documentation/assets/screenshots/product-value-review-pack-readonly.png` records the Japanese UI state.
+- Verification result:
+  - Targeted Playwright: **2 passed**, including the existing trace-export test and the new read-only reviewer test.
+  - Frontend typecheck: pass.
+  - UX operability regression: pass, 6 tests.
+
+### Evidence packet update
+
+| Evidence item | Current status after read-only work | Remaining Open blocker |
+| --- | --- | --- |
+| Package fixture | Reused `doc_review_pack_trace_export` with reviewed target, evidence, contradiction, and unreviewed counter-signal. | Productization Program Owner must accept the fixture as representative. |
+| Pre-share confirmation | Existing trace/SafeMode screenshot evidence remains available. | Human reviewer must confirm wording and risk comprehension. |
+| Trace-back proof | Existing Detail export trace-file proof remains available. | QA Lead must decide whether file-level proof is sufficient for V4 acceptance. |
+| Read-only review proof | **Implemented and replayable.** A reviewer can select the target, inspect reviewed state, supporting and contradicting evidence, and open Share & Reproduce while primary and card-level edit controls are disabled. | Physical keyboard and screen-reader acceptance remain human tasks. |
+| Decision record | This issue now contains implementation, E2E, and screenshot locations. | Product QA / MVP-EXIT must consume the merged evidence before Open-gate decision. |
+
+- Status impact: **Draft remains**. The automated read-only review blocker is addressed, but Productization Program Owner / QA Lead acceptance and human accessibility/operability acceptance remain required.
+- No new ADR is needed. The change enforces the existing read-only authority boundary and does not change the review-pack contract, SafeMode policy, approval semantics, or release authority.
+
+## Read-only local-document inspection wording 2026-06-19
+
+- Browser and code inspection found that the read-only document-file route still presented `Replace current document` and marked the opened local file as unsaved, even though saving and editing were disabled.
+- The route now presents `Open for inspection` in read-only mode, explains that the validated file is opened without saving, and keeps the document clean rather than reporting unsaved changes.
+- Editable mode retains the explicit replace wording and dirty-state behavior.
+- Regression coverage: `03_Implement/frontend/e2e/first_run_document_entry.spec.ts` verifies file selection, validation copy, inspection activation, visible imported content, read-only state, disabled save, and absence of an unsaved-change indicator.
+- Status impact: **Draft remains**. This improves the read-only recipient journey without replacing human keyboard, screen-reader, wording, or package-acceptance review.
+- No ADR is needed because the change clarifies and enforces the accepted read-only authority boundary without changing persistence, package contracts, SafeMode, or release authority.

@@ -1,15 +1,36 @@
 # Issue Draft: PRODUCT-VALUE-01 初回価値実感と最初の意味ある配置
 
 - Type: Feature request
-- Status: Draft
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex (Product Value contract steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `04_Documentation/installation.md`, `04_Documentation/operations.md`
 - Related Backlog: `PRODUCT-VALUE-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `02_Architecture/value_traceability.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `02_Architecture/value_traceability.md`
 - Expected verification level: `e2e`
+
+## Draft→Open 2026-06-20
+PRODUCT-VALUE-01 Open化。ADR-0032 AcceptedによりV1ゲート充足（ADR-0040で確定済み）。
+
+## Implementation Progress 2026-06-21
+
+### Done
+- **StartPanel value proposition**: en/ja description updated to convey kj-atlas core value (曖昧さを保持する空間的思考ツール)
+- **DomainStateSummary**: document-level card state counts with first-meaningful-map progress hints
+- **CardView badges**: claimType/critique/reviewState visual indicators (DOMAIN-EXPR-01)
+- **SidePanel domain state**: claimType, critique, evidence links, contradiction counts in card detail
+
+### Remaining
+- Playwright E2E first-meaningful-map user journey (T4)
+- Installation/operations doc sync with first-run path (T5)
+- Keyboard accessibility verification for first-run path (T3)
+
+### Commits
+- 35895ba8 StartPanel value proposition messaging
+- fa62d7be DomainStateSummary component
+- 79ce46c8 first-meaningful-map progress hints
 
 ## Requirement meta I/F（共通キー）
 
@@ -411,3 +432,59 @@ No-Go conditions for this value gate:
 | Decision record | This section adds a current-main rerun record and is synchronized into `PRODUCT-QA-01`. | Final Open decision must cite H-PV1/H-PV2/H-PV3 outcomes. |
 
 - No ADR is needed for this rerun. ADR routing remains limited to changes in product value model, release authority, SafeMode/share policy, or first-run product boundary.
+
+## Fixture manifest 2026-06-17: PV01 first meaningful map evidence packet entry
+
+- Candidate mainline: `origin/main@4fe6740678dd970a18eacab094ec4e99c53496c5`.
+- Fixture source: `03_Implement/frontend/e2e/helpers/product_value_fixtures.ts`.
+- Fixture builder: `buildFirstMeaningfulMapDocument()`.
+- Fixture document ID: `doc_first_meaningful_map_mouse`.
+- Representative E2E: `03_Implement/frontend/e2e/first_meaningful_map_mouse_flow.spec.ts`.
+- Status impact: **Draft remains**. This manifest names the reusable fixture entry for the PV01 evidence packet; it does not create Productization Program Owner / QA Lead acceptance, release screenshots, or shipment approval.
+
+### Evidence packet mapping
+
+| Evidence item | Manifest status | Remaining Open blocker |
+| --- | --- | --- |
+| Scenario fixture | Named and stored in `product_value_fixtures.ts`; default cards are `first value user problem`, `first value observation memo`, and `first value decision anchor`. | Productization Program Owner must accept this as a value-bearing first-map scenario for a standard user. |
+| Mouse operation trace | Existing E2E opens the sample, selects the first two cards, creates `Island 1`, and verifies the selection context. | UX reviewer must accept the mouse route as natural enough for release-candidate evidence. |
+| Keyboard operation trace | Still covered by the separate keyboard release-candidate route, not by this PV01 fixture builder. | Decide whether the PV01 packet can cite the existing keyboard route or needs a fixture-specific keyboard trace. |
+| Safe entry evidence | Not added by this manifest. | QA Lead still needs screenshot or trace evidence showing SafeMode/import/sample-entry state with this fixture. |
+| Decision record | This section provides the fixture identity that Product QA and MVP-EXIT can cite later. | Final Open decision must cite human acceptance and the screenshot/trace bundle location. |
+
+- No ADR is needed for this manifest. ADR routing remains limited to changes in the first-value definition, release authority, SafeMode/share policy, first-run product boundary, or fixture meaning.
+
+## First-value share preflight evidence 2026-06-19
+
+- Candidate mainline: `origin/main@bd7e7ee35275b25f0f17defe02cbde619dbaa0a8`.
+- Fixture: `buildFirstMeaningfulMapDocument()` / `doc_first_meaningful_map_mouse`.
+- Representative E2E: `03_Implement/frontend/e2e/first_value_share_preflight.spec.ts`.
+- Screenshot: `04_Documentation/assets/screenshots/product-value-first-island-share-preflight.png`.
+- Automated evidence:
+  - The start panel exposes `SafeMode: ON` before the user opens the sample.
+  - The user selects two cards and creates the first visible island.
+  - Share & Reproduce continues to show SafeMode ON, excludes unreviewed drafts, and reports 5 remaining review signals.
+  - The preflight reports 2 unreviewed cards, 3 unknown claims, no critique targets, and no evidence links, contradictions, or evidence gaps.
+- Verification result: targeted Playwright **1 passed**; the Product Value capture script regenerated all six screenshots.
+
+### Evidence packet update
+
+| Evidence item | Current status after this slice | Remaining Open blocker |
+| --- | --- | --- |
+| Scenario fixture | Replayed from start panel through first island and share preflight with one deterministic fixture. | Productization Program Owner must accept the fixture as a meaningful first-value scenario. |
+| Mouse operation trace | Existing first-island E2E remains available. | UX reviewer must accept the route as natural for standard users. |
+| Keyboard operation trace | Existing keyboard release-candidate flow remains available. | Decide whether separate-fixture keyboard evidence is sufficient for PV01 acceptance. |
+| Safe entry evidence | **Satisfied for automated evidence.** SafeMode is visible at entry and again before sharing; unreviewed drafts are excluded. | Human screenshot/copy and accessibility acceptance remain required. |
+| Decision record | This issue now names the E2E and screenshot locations. | Product QA / MVP-EXIT must consume the merged evidence before Open-gate decision. |
+
+- Status impact: **Draft remains**. The automated first-value and SafeMode evidence packet is now connected, but fixture meaning, natural operation, keyboard evidence sufficiency, and human accessibility acceptance remain human decisions.
+- No new ADR is needed. The slice verifies the accepted first-value and SafeMode boundaries without changing product scope, persistence, or release authority.
+
+## Offline/read-only sample-entry correction 2026-06-19
+
+- Browser verification found that `Open sample` depended on either a public pack or the document API. When both were unavailable, the start panel closed but no sample appeared, preventing the first-value route despite an existing built-in sample fixture.
+- The corrected route now falls back to the built-in sample after public-pack and API loading fail.
+- In read-only mode, `Create new document` is disabled because it creates an unsavable editing task, while sample, document import, and review-pack import remain available for inspection.
+- Regression coverage: `03_Implement/frontend/e2e/first_run_document_entry.spec.ts` verifies a `503` document API, missing public-pack index, read-only entry, three visible built-in cards, and the read-only state.
+- Status impact: **Draft remains**. This removes an avoidable first-value availability failure; it does not satisfy the remaining human acceptance gates.
+- No ADR is needed because this change restores the existing sample-entry intent without changing persistence, SafeMode, release authority, or product scope.

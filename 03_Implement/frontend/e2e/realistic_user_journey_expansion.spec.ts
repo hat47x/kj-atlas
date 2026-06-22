@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
+  ADVANCED_UI_BUTTON,
+  closeSharePanelIfOpen,
   LOAD_DOCUMENT_BUTTON,
   READ_ONLY_INDICATOR,
   REPLACE_DOCUMENT_BUTTON,
@@ -77,5 +79,7 @@ test("S1-S3 realistic journey: authoring continuity + safe sharing gate with det
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
   await expect(page.getByText("Locked redaction contexts: Share / Review Pack (cannot be disabled)."))
     .toBeVisible();
+  await closeSharePanelIfOpen(page);
+  await page.getByRole("button", { name: ADVANCED_UI_BUTTON }).click();
   await expect(page.getByRole("button", { name: SUGGEST_LAYOUT_BUTTON }).first()).toBeDisabled();
 });

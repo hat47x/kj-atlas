@@ -1,31 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
+import { buildFirstMeaningfulMapDocument } from "./helpers/product_value_fixtures";
 
 const START_PANEL = '[data-panel="start-document-entry"]';
-
-function buildDocument(cardTexts: string[]) {
-  const now = "2026-06-04T00:00:00.000Z";
-  return {
-    version: 2,
-    id: "doc_first_meaningful_map_mouse",
-    title: "First meaningful map mouse fixture",
-    createdAt: now,
-    updatedAt: now,
-    transform: { panX: 0, panY: 0, zoom: 1 },
-    cards: cardTexts.map((text, index) => ({
-      id: `mouse-value-card-${index + 1}`,
-      text,
-      x: 140 + index * 270,
-      y: 150 + (index % 2) * 150,
-      textReviewed: index === 0,
-    })),
-    edges: [],
-    islands: [],
-    readingOrder: ["mouse-value-card-1", "mouse-value-card-2", "mouse-value-card-3"],
-    narratives: [],
-    evidenceLinks: [],
-    mergeSuggestionDecisions: [],
-  };
-}
 
 async function routeFirstValueFixture(page: Page): Promise<{ enableSample: () => void }> {
   let shouldReturnSample = false;
@@ -36,8 +12,8 @@ async function routeFirstValueFixture(page: Page): Promise<{ enableSample: () =>
 
   await page.route("**/docs/doc_phase1_canvas", async (route) => {
     const document = shouldReturnSample
-      ? buildDocument(["first value user problem", "first value observation memo", "first value decision anchor"])
-      : buildDocument([]);
+      ? buildFirstMeaningfulMapDocument()
+      : buildFirstMeaningfulMapDocument([]);
 
     await route.fulfill({
       status: 200,
@@ -79,6 +55,7 @@ test("mouse first-value flow creates a visible first island from the sample", as
   const createIslandButton = page.getByRole("button", { name: /島を作成|Create Island/ });
   await expect(createIslandButton).toBeEnabled();
   await createIslandButton.click();
+  await expect(page.getByTestId("status-message")).toContainText("選択したカード 2 件から島を作成しました");
 
   const islandSelect = page.getByRole("button", { name: /島 .* を選択|Select island/ });
   await expect(islandSelect).toBeVisible();
@@ -90,4 +67,10 @@ test("mouse first-value flow creates a visible first island from the sample", as
   await expect(selectionPanel).toContainText("first value user problem");
   await expect(selectionPanel).toContainText("first value observation memo");
   await expect(selectionPanel).toContainText(/選択: 2 件のカードを選択中|Selection: 2 cards selected/);
+
+  await page.getByRole("button", { name: /^元に戻す$|^Undo$/ }).click();
+  await expect(page.getByTestId("status-message")).toContainText("操作を元に戻しました");
+  await page.getByRole("button", { name: /^やり直す$|^Redo$/ }).click();
+  await expect(page.getByTestId("status-message")).toContainText("操作をやり直しました");
+  await expect(islandSelect).toBeVisible();
 });
