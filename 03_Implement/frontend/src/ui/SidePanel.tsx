@@ -211,6 +211,8 @@ type SidePanelProps = {
   importedPackSnapshotUrl?: string | null;
   importedPackDiagnosticsMd?: string | null;
   mergeAuditLog: MergeAuditEntry[];
+  onRestoreShelvedCard?: (cardId: string) => void;
+  isAdvancedUiEnabled?: boolean;
 };
 
 export function SidePanel({
@@ -375,6 +377,8 @@ export function SidePanel({
   importedPackSnapshotUrl,
   importedPackDiagnosticsMd,
   mergeAuditLog,
+  onRestoreShelvedCard,
+  isAdvancedUiEnabled,
   isReadOnly = false,
   isAdvancedUiEnabled = false,
 }: SidePanelProps) {
@@ -1201,6 +1205,16 @@ export function SidePanel({
       </section>
       {document?.cards ? (
         <>
+          <div style={{ display: "flex", gap: 10, fontSize: 11, color: "#64748b", padding: "2px 0", flexWrap: "wrap" }}>
+            <span>{t("side_panel.doc_bar.cards", { n: document.cards.length })}</span>
+            <span>{t("side_panel.doc_bar.islands", { n: document.islands?.length ?? 0 })}</span>
+            {(document.evidenceLinks?.length ?? 0) > 0 ? (
+              <span>{t("side_panel.doc_bar.evidence", { n: document.evidenceLinks?.length ?? 0 })}</span>
+            ) : null}
+            {(document.critiqueInputs?.length ?? 0) > 0 ? (
+              <span>{t("side_panel.doc_bar.critiques", { n: document.critiqueInputs?.length ?? 0 })}</span>
+            ) : null}
+          </div>
           <DomainStateSummary
             cards={document.cards}
             islandCount={document.islands?.length ?? 0}
