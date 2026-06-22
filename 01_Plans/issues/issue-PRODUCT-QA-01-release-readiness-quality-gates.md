@@ -2775,3 +2775,18 @@ DoDテンプレ（Draft→Open）
 - Browser verification: the advanced panel at `http://127.0.0.1:4173/` displayed `配置案` and `安全上の条件: 自動適用なし / 最初に配置案を作成する`; `CE2` and `auto_apply_blocked` were absent from the rendered page.
 - Final release remains **No-Go**. Live provider acceptance, human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
 - No ADR is needed because proposal-only behavior, blocker codes, preview semantics, human adoption authority, SafeMode, and persistence are unchanged.
+
+## Productization Gate Record 2026-06-22: human-in-the-loop workflow headings
+
+- Scope: candidate comparison, critique capture, and change-review headings in the advanced human-in-the-loop workflow.
+- Finding: the visible headings exposed internal development-stage identifiers `A2-1`, `A2-2`, and `A2-3`; the English empty state also described the re-proposal result as a mock.
+- Correction:
+  - The workflow now uses task-oriented headings: compare candidates, record critique, and review changes.
+  - Japanese wording uses the project term `違和感` instead of the more abstract `批評`.
+  - The empty state describes the absence of re-proposal changes without exposing fixture terminology.
+- Gate impact:
+  - G2 primary operations: improved because each section names the action expected from the user.
+  - G3 Japanese UI: improved by removing internal stage identifiers and aligning with domain terminology.
+  - G7 regression: locale equivalence, workflow rendering, typecheck, frontend tests, and build are required.
+- Final release remains **No-Go**. Human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
+- No ADR is needed because workflow order, proposal-only behavior, human approval authority, persistence, SafeMode, and audit contracts are unchanged.
