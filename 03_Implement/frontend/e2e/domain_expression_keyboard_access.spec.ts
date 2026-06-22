@@ -1,22 +1,46 @@
 import { expect, test, type Page } from "@playwright/test";
+import type { DocumentV2 } from "../src/domain/types";
 import { buildDomainExpressionDocument, withoutProductValueContent } from "./helpers/product_value_fixtures";
 
 const START_PANEL = '[data-panel="start-document-entry"]';
 
-async function routeDomainExpressionFixture(page: Page): Promise<{ enableSample: () => void }> {
+async function routeDomainExpressionFixture(page: Page): Promise<{
+  enableSample: () => void;
+  getStoredDocument: () => DocumentV2;
+}> {
   let shouldReturnSample = false;
+  let storedDocument = buildDomainExpressionDocument() as unknown as DocumentV2;
+  let revision = 0;
 
   await page.route("**/packs/index.json", async (route) => {
     await route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
   });
 
-  await page.route("**/docs/doc_phase1_canvas", async (route) => {
-    const document = shouldReturnSample ? buildDomainExpressionDocument() : withoutProductValueContent(buildDomainExpressionDocument());
+  await page.route("**/docs/*", async (route) => {
+    if (route.request().method() === "PUT") {
+      storedDocument = route.request().postDataJSON() as DocumentV2;
+      revision += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        headers: { ETag: `"domain-expression-keyboard-access-${revision}"` },
+        body: JSON.stringify(storedDocument),
+      });
+      return;
+    }
+
+    const document = shouldReturnSample
+      ? storedDocument
+      : withoutProductValueContent(buildDomainExpressionDocument());
 
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      headers: { ETag: shouldReturnSample ? '"domain-expression-keyboard-access-loaded"' : '"domain-expression-keyboard-access-empty"' },
+      headers: {
+        ETag: shouldReturnSample
+          ? `"domain-expression-keyboard-access-${revision}"`
+          : '"domain-expression-keyboard-access-empty"',
+      },
       body: JSON.stringify(document),
     });
   });
@@ -25,6 +49,7 @@ async function routeDomainExpressionFixture(page: Page): Promise<{ enableSample:
     enableSample: () => {
       shouldReturnSample = true;
     },
+    getStoredDocument: () => storedDocument,
   };
 }
 
@@ -131,4 +156,79 @@ test("share preflight keeps unresolved domain signals visible and unreviewed dra
     "SafeMode keeps draft and unreviewed body exposure constrained; review or keep holds explicit before sharing.",
   );
   await expect(page.getByLabel("Include unreviewed drafts")).toHaveCount(0);
+});
+
+test("keyboard shelf and restore remain stable across saves and reloads", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = await routeDomainExpressionFixture(page);
+
+  await page.goto("/?locale=en");
+  fixture.enableSample();
+  await page.getByRole("button", { name: "Open sample" }).click();
+  await expect(page.locator(START_PANEL)).toBeHidden();
+
+  const targetCard = page.getByRole("option", { name: "ambiguous target claim" });
+  await expect(targetCard).toBeVisible();
+  const initialBox = await targetCard.boundingBox();
+  expect(initialBox).not.toBeNull();
+
+  await targetCard.focus();
+  await page.keyboard.press("Enter");
+  await expect(targetCard).toHaveAttribute("aria-selected", "true");
+
+  await tabUntilFocused(
+    page,
+    (element) => element instanceof HTMLSelectElement && element.labels?.[0]?.textContent?.includes("Hold state") === true,
+    "hold state select",
+  );
+  const holdStateSelect = page.getByLabel("Hold state");
+  await expect(holdStateSelect).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(holdStateSelect).toHaveValue("shelved");
+
+  await expect(targetCard).toHaveCount(0);
+  const shelf = page.getByRole("region", { name: "Shelf (set aside)" });
+  await expect(shelf).toContainText("ambiguous target claim");
+
+  const saveButton = page.getByRole("button", { name: "Save" });
+  await saveButton.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+
+  const storedAfterShelving = fixture.getStoredDocument();
+  expect(storedAfterShelving.cards.find((card) => card.id === "domain-target")?.holdState).toBe("shelved");
+  expect(storedAfterShelving.shelf?.map((entry) => entry.cardId)).toContain("domain-target");
+  expect(storedAfterShelving.cards.find((card) => card.id === "domain-target")).toMatchObject({ x: 140, y: 130 });
+
+  await page.reload();
+  await page.getByRole("button", { name: "Close start panel" }).click();
+  await expect(page.getByRole("option", { name: "ambiguous target claim" })).toHaveCount(0);
+
+  const restoredShelf = page.getByRole("region", { name: "Shelf (set aside)" });
+  await expect(restoredShelf).toContainText("ambiguous target claim");
+  const restoreButton = restoredShelf.getByRole("button", { name: "Restore" });
+  await restoreButton.focus();
+  await expect(restoreButton).toBeFocused();
+  await page.keyboard.press("Enter");
+
+  await expect(restoredShelf).toHaveCount(0);
+  const restoredCard = page.getByRole("option", { name: "ambiguous target claim" });
+  await expect(restoredCard).toBeVisible();
+  const restoredBox = await restoredCard.boundingBox();
+  expect(restoredBox).not.toBeNull();
+  expect(restoredBox?.x).toBeCloseTo(initialBox?.x ?? 0, 0);
+  expect(restoredBox?.y).toBeCloseTo(initialBox?.y ?? 0, 0);
+
+  await saveButton.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+
+  const storedAfterRestore = fixture.getStoredDocument();
+  expect(storedAfterRestore.cards.find((card) => card.id === "domain-target")?.holdState).toBeUndefined();
+  expect(storedAfterRestore.shelf ?? []).toHaveLength(0);
+
+  await page.reload();
+  await page.getByRole("button", { name: "Close start panel" }).click();
+  await expect(page.getByRole("option", { name: "ambiguous target claim" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Shelf (set aside)" })).toHaveCount(0);
 });
