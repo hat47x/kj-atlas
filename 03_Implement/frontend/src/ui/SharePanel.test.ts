@@ -266,3 +266,26 @@ describe("SharePanel advanced gating", () => {
     expect(html).toContain('id="share-panel-purpose-import"');
   });
 });
+
+describe("SharePanel accessibility baseline (UQ-2)", () => {
+  it("connects the trigger to the open dialog and exposes its state", () => {
+    setActiveLocale("en");
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
+
+    expect(html).toContain('aria-haspopup="dialog"');
+    expect(html).toContain('aria-expanded="true"');
+    expect(html).toContain('aria-controls="share-replay-panel"');
+    expect(html).toContain('id="share-replay-panel"');
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain('aria-label="Share &amp; Reproduce"');
+    expect(html).toContain('aria-label="Close panel"');
+  });
+
+  it("exposes the closed state without rendering the dialog", () => {
+    setActiveLocale("en");
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true, { isOpen: false })));
+
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).not.toContain('role="dialog"');
+  });
+});

@@ -1,7 +1,7 @@
 # Issue Draft: UI-QUALITY-A11Y-01 アクセシビリティテストの体系化と拡充
 
 - Type: Documentation quality
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -10,7 +10,7 @@
 - Related Backlog: `UI-QUALITY-A11Y-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `unit`
-- Progress: T1-T3.8 complete (8 components / 41 tests); T4 not started.
+- Progress: T1-T4 complete (10 components / 46 tests).
 
 ## Requirement meta I/F
 
@@ -46,7 +46,7 @@ ADR-0044 は UQ-2（a11y）を「現状薄い → 拡充対象」と判定した
 - [x] SearchBar.accessibility.test.ts (5 tests) — text input, prev/next, match counter, checkbox
 - [x] ImportPanel.accessibility.test.ts (4 tests) — title, file input, drop zone, button
 - [x] DomainStateFilterBar.test.ts (4 tests) — filter chips, highlight, clear button
-- [ ] 既存コンポーネント（SharePanel, NarrativesPanel 等）のa11y baseline
+- [x] 既存コンポーネント（SharePanel, NarrativesPanel 等）のa11y baseline
 
 ## 5) タスク分解
 
@@ -57,7 +57,7 @@ ADR-0044 は UQ-2（a11y）を「現状薄い → 拡充対象」と判定した
 - [x] T3.6 SearchBar a11y test
 - [x] T3.7 ImportPanel a11y test
 - [x] T3.8 DomainStateFilterBar a11y test
-- [ ] T4 Existing component a11y baseline scan
+- [x] T4 Existing component a11y baseline scan
 
 ## Commits
 - e0db0d79 DomainStateSummary + ShelfPanel (8)
@@ -66,4 +66,6 @@ ADR-0044 は UQ-2（a11y）を「現状薄い → 拡充対象」と判定した
 - d9d8cd1b SearchBar (5)
 - 8eee93f4 ImportPanel (4)
 - 549b72fa DomainStateFilterBar (4)
-- **Total: 8 components, 41 a11y tests**
+- SharePanel baseline (2): trigger/dialog relationship, expanded state, accessible dialog and close labels
+- NarrativesPanel baseline (3): labelled region/input, selected and expanded states, alert announcements
+- **Total: 10 components, 46 a11y tests**

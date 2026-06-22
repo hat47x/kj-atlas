@@ -494,6 +494,9 @@ export function SharePanel({
         ref={triggerButtonRef}
         data-focus-return-id="share-panel-trigger"
         type="button"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        aria-controls="share-replay-panel"
         onClick={onToggleOpen}
         style={{
           border: "1px solid #cbd5e1",
@@ -512,6 +515,7 @@ export function SharePanel({
         <>
           <style>{sharePanelLayoutCss}</style>
           <section
+            id="share-replay-panel"
             ref={panelRef}
             className="kj-atlas-share-panel"
             data-panel="share-replay"
