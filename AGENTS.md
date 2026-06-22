@@ -132,6 +132,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`：機能増加が認知負荷で根幹価値を侵さないための複雑性予算（CB-1..4）と追加時の自己申告。
 - `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`：UI/UX品質基準（UQ-1..6：操作到達性/a11y/i18n等価性/レイアウト堅牢性/状態可視性/認知負荷節度）と検証観点の統合。正本は `value_traceability.md` §2.7。
 - `01_Plans/adr/ADR-0045-agent-division-of-labor-cowork-code-codex.md`：Cowork/Claude Code/Codex の責務分担と協働プロトコル（CP-1..6：ブランチ消失・採番衝突の恒久対策）。運用正本は `00_Prompt/agent_collaboration.md`。
+- `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`：応答性の性能予算（PB-1..5：代表規模/worker化100ms基準/劣化可視化）。`ADR-0043` 認知負荷予算と対をなす計算負荷の予算。正本は `value_traceability.md` §2.8。
 - `01_Plans/documentation_quality.md`：AIエージェントが対外文書を作成する際の内部品質基準。
 - `01_Plans/minimal-context-triage.md`：未処理ADR/issueを最小読取で抽出する手順。
 - `01_Plans/triage_actionable_plans.py`：ADR/issueメタデータだけを走査して Ready/保留/関連ADR を抽出する軽量CLI。
