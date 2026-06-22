@@ -75,7 +75,9 @@ function buildGroundingMarkdown(entries: GroundingEntry[]): string {
 
       if (entry.kind === "card" && entry.card) {
         const canonicalLabel = entry.card.kind === "canonical" ? "canonical" : `source (canonicalId: ${entry.card.canonicalId})`;
-        return `${index + 1}. ${entry.anchor} Card ${entry.card.id} [${canonicalLabel}] — ${entry.card.text || "(empty)"}`;
+        const claimLabel = entry.card.claimType && entry.card.claimType !== "unknown" ? ` [${entry.card.claimType}]` : "";
+        const reviewLabel = entry.card.textReviewed === false ? " (unreviewed)" : entry.card.textReviewed === true ? " (reviewed)" : "";
+        return `${index + 1}. ${entry.anchor} Card ${entry.card.id} [${canonicalLabel}]${claimLabel}${reviewLabel} — ${entry.card.text || "(empty)"}`;
       }
 
       const members = (entry.islandMembers ?? [])
@@ -110,7 +112,9 @@ function buildGroundingHtml(entries: GroundingEntry[]): string {
           entry.card.kind === "canonical"
             ? "canonical"
             : `source (canonicalId: ${escapeHtml(entry.card.canonicalId ?? "")})`;
-        return `<li><strong>${escapeHtml(entry.anchor)}</strong> Card <code>${escapeHtml(entry.card.id)}</code> [${canonicalLabel}] — ${escapeHtml(entry.card.text || "(empty)")}</li>`;
+        const claimLabel = entry.card.claimType && entry.card.claimType !== "unknown" ? ` [${escapeHtml(entry.card.claimType)}]` : "";
+        const reviewLabel = entry.card.textReviewed === false ? " (unreviewed)" : entry.card.textReviewed === true ? " (reviewed)" : "";
+        return `<li><strong>${escapeHtml(entry.anchor)}</strong> Card <code>${escapeHtml(entry.card.id)}</code> [${canonicalLabel}]${claimLabel}${reviewLabel} — ${escapeHtml(entry.card.text || "(empty)")}</li>`;
       }
 
       const members = (entry.islandMembers ?? [])
