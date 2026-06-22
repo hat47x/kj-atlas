@@ -84,7 +84,9 @@ function buildGroundingMarkdown(entries: GroundingEntry[]): string {
         .map((member) => {
           const canonicalLabel =
             member.kind === "canonical" ? "canonical" : `source (canonicalId: ${member.canonicalId})`;
-          return `   - ${member.id} [${canonicalLabel}] — ${member.text || "(empty)"}`;
+          const memberClaimLabel = member.claimType && member.claimType !== "unknown" ? ` [${member.claimType}]` : "";
+          const memberReviewLabel = member.textReviewed === false ? " (unreviewed)" : member.textReviewed === true ? " (reviewed)" : "";
+          return `   - ${member.id} [${canonicalLabel}]${memberClaimLabel}${memberReviewLabel} — ${member.text || "(empty)"}`;
         })
         .join("\n");
       const summary = entry.islandSummaryText
@@ -123,7 +125,9 @@ function buildGroundingHtml(entries: GroundingEntry[]): string {
             member.kind === "canonical"
               ? "canonical"
               : `source (canonicalId: ${escapeHtml(member.canonicalId ?? "")})`;
-          return `<li><code>${escapeHtml(member.id)}</code> [${canonicalLabel}] — ${escapeHtml(member.text || "(empty)")}</li>`;
+          const memberClaimLabel = member.claimType && member.claimType !== "unknown" ? ` [${escapeHtml(member.claimType)}]` : "";
+          const memberReviewLabel = member.textReviewed === false ? " (unreviewed)" : member.textReviewed === true ? " (reviewed)" : "";
+          return `<li><code>${escapeHtml(member.id)}</code> [${canonicalLabel}]${memberClaimLabel}${memberReviewLabel} — ${escapeHtml(member.text || "(empty)")}</li>`;
         })
         .join("");
       const summary = entry.islandSummaryText
