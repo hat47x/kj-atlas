@@ -45,6 +45,7 @@ type AggregatedEdgeInspectorItem = {
 
 type SidePanelProps = {
   isReadOnly?: boolean;
+  isAdvancedUiEnabled?: boolean;
   selectedCard: Card | null;
   sourceCardsForSelectedCanonical: Card[];
   missingSourceCardIdsForSelectedCanonical: string[];
@@ -56,6 +57,7 @@ type SidePanelProps = {
   onCardCritiqueTagsChange: (value: string[]) => void;
   onCardClaimTypeChange: (value: ClaimType) => void;
   onCardHoldStateChange: (value: HoldState | "active") => void;
+  onRestoreShelvedCard: (cardId: string) => void;
   onCardTextReviewedChange: (value: boolean) => void;
   onAddEvidenceLink: (payload: { toCardId: string; type: EvidenceLink["type"] }) => void;
   onRemoveEvidenceLink: (evidenceLinkId: string) => void;
@@ -223,6 +225,7 @@ export function SidePanel({
   onCardCritiqueTagsChange,
   onCardClaimTypeChange,
   onCardHoldStateChange,
+  onRestoreShelvedCard,
   onCardTextReviewedChange,
   onAddEvidenceLink,
   onRemoveEvidenceLink,
@@ -373,6 +376,7 @@ export function SidePanel({
   importedPackDiagnosticsMd,
   mergeAuditLog,
   isReadOnly = false,
+  isAdvancedUiEnabled = false,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
   const [summaryDraft, setSummaryDraft] = useState("");
@@ -1204,6 +1208,8 @@ export function SidePanel({
         <ShelfPanel
           cards={document.cards}
           shelf={document.shelf}
+          isReadOnly={isReadOnly}
+          onRestoreCard={onRestoreShelvedCard}
           onFocusCard={(cardId) => onFocusCardById(cardId)}
         />
       ) : null}
@@ -1235,6 +1241,7 @@ export function SidePanel({
           ) : null}
         </section>
       ) : null}
+      {isAdvancedUiEnabled ? (
       <section data-panel="merge-history" style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <details
           data-panel-group="advanced"
@@ -1308,6 +1315,7 @@ export function SidePanel({
           </div>
         </details>
       </section>
+      ) : null}
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.guided_flow.title")}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", marginBottom: 8 }}>
@@ -1377,6 +1385,7 @@ export function SidePanel({
           </ul>
         ) : null}
       </section>
+      {isAdvancedUiEnabled ? (
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.aggregated_edges.title")}</div>
         {aggregatedEdgeInspectorItems.length === 0 ? (
@@ -1400,6 +1409,7 @@ export function SidePanel({
           </div>
         )}
       </section>
+      ) : null}
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.layout.title")}</div>
         <label
@@ -2251,14 +2261,16 @@ export function SidePanel({
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             {t("side_panel.summary.label")}
           </label>
-          <button
-            type="button"
-            onClick={onSuggestIslandSummary}
-            disabled={isSuggestingIslandSummary}
-            style={{ width: "100%", marginBottom: 8, cursor: isSuggestingIslandSummary ? "not-allowed" : "pointer" }}
-          >
-            {isSuggestingIslandSummary ? t("side_panel.summary.suggesting") : t("side_panel.summary.suggest_ai")}
-          </button>
+          {isAdvancedUiEnabled ? (
+            <button
+              type="button"
+              onClick={onSuggestIslandSummary}
+              disabled={isSuggestingIslandSummary}
+              style={{ width: "100%", marginBottom: 8, cursor: isSuggestingIslandSummary ? "not-allowed" : "pointer" }}
+            >
+              {isSuggestingIslandSummary ? t("side_panel.summary.suggesting") : t("side_panel.summary.suggest_ai")}
+            </button>
+          ) : null}
           {islandSummaryProposal ? (
             <div style={{ border: "1px solid #bfdbfe", borderRadius: 6, backgroundColor: "#eff6ff", padding: 8, marginBottom: 8, display: "grid", gap: 6 }}>
               <div style={{ fontSize: 11, color: "#1e3a8a" }}>
@@ -2844,9 +2856,11 @@ export function SidePanel({
             </div>
           ) : null}
           <div style={{ marginTop: 12, borderTop: "1px solid #e2e8f0", paddingTop: 12 }}>
-            <button type="button" onClick={onGenerateRelationSummary} disabled={isGeneratingRelationSummary}>
-              {isGeneratingRelationSummary ? t("side_panel.relation_summary.generating") : t("side_panel.relation_summary.generate_ai")}
-            </button>
+            {isAdvancedUiEnabled ? (
+              <button type="button" onClick={onGenerateRelationSummary} disabled={isGeneratingRelationSummary}>
+                {isGeneratingRelationSummary ? t("side_panel.relation_summary.generating") : t("side_panel.relation_summary.generate_ai")}
+              </button>
+            ) : null}
             <div style={{ marginTop: 8, fontSize: 12, color: "#7f1d1d" }}>
               {t("side_panel.relation_summary.draft_warning")}
             </div>

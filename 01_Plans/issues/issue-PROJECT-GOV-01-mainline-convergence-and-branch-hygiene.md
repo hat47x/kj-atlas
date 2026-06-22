@@ -1311,6 +1311,7 @@
   - `9c071080` batch 4
 - Verification: `git branch -r --no-merged HEAD` returned zero `origin/codex/*` refs after the four merges.
 - Content impact: none from the legacy branches. Their history and branch-tip ancestry are preserved without overwriting the current product, documentation, security, or SafeMode contracts.
+- Baseline repair discovered during CI: `origin/main@e6d82290` passed `isAdvancedUiEnabled` and `onRestoreShelvedCard` to `SidePanel`, but its accepted-ours SidePanel sync had removed both props and the related Advanced UI / Shelf restore behavior. The integration branch restored the last verified SidePanel contract, retained the newly added critique/reproposal summary, and revalidated TypeScript plus Shelf and operability tests.
 - Merge requirement: the integration PR must use a normal merge commit, not squash or rebase, so all branch-tip parents remain reachable from `main`.
 - Remote branch deletion remains out of scope. Deletion still requires repository-maintainer approval and a separate final deletion audit.
 - No new ADR is required. This applies the existing ADR-0034 and PROJECT-GOV-01 branch-reachability policy without changing product or governance authority.
