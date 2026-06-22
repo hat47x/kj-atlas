@@ -3,6 +3,9 @@ import { t } from "../i18n/translate";
 
 import { CRITIQUE_TAGS } from "../domain/types";
 import { DomainStateSummary } from "./DomainStateSummary";
+import { DomainStateFilterBar } from "./DomainStateFilterBar";
+import type { DomainStateFilter } from "../domain/domain_state_filter";
+import { ShelfPanel } from "./ShelfPanel";
 import type { AggregatedEdgeMeta } from "../canvas/CanvasShell";
 import {
   buildIslandRelationExplanation,
@@ -54,7 +57,6 @@ type SidePanelProps = {
   onCardCritiqueTagsChange: (value: string[]) => void;
   onCardClaimTypeChange: (value: ClaimType) => void;
   onCardHoldStateChange: (value: HoldState | "active") => void;
-  onRestoreShelvedCard: (cardId: string) => void;
   onCardTextReviewedChange: (value: boolean) => void;
   onAddEvidenceLink: (payload: { toCardId: string; type: EvidenceLink["type"] }) => void;
   onRemoveEvidenceLink: (evidenceLinkId: string) => void;
@@ -222,7 +224,6 @@ export function SidePanel({
   onCardCritiqueTagsChange,
   onCardClaimTypeChange,
   onCardHoldStateChange,
-  onRestoreShelvedCard,
   onCardTextReviewedChange,
   onAddEvidenceLink,
   onRemoveEvidenceLink,
@@ -383,6 +384,7 @@ export function SidePanel({
   const [expandedMergeAuditEntryId, setExpandedMergeAuditEntryId] = useState<string | null>(null);
   const [isAdvancedPanelOpen, setIsAdvancedPanelOpen] = useState(false);
   const [relationSummaryFeedback, setRelationSummaryFeedback] = useState<string | null>(null);
+  const [domainFilter, setDomainFilter] = useState<DomainStateFilter>({});
   const [copyExplanationFeedback, setCopyExplanationFeedback] = useState<"idle" | "copied" | "failed">("idle");
   const [showOnlyHighImpactRecommendations, setShowOnlyHighImpactRecommendations] = useState(false);
   const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState(false);
@@ -1152,6 +1154,11 @@ export function SidePanel({
                 {t("side_panel.context.contradictions", { count: selectedCardContradictionsCount })}
               </div>
             ) : null}
+            {selectedCard?.holdState ? (
+              <div style={{ fontSize: 12, color: "#92400e", backgroundColor: "#fef3c7", borderRadius: 4, padding: "2px 6px", display: "inline-block", marginTop: 2 }}>
+                {t("side_panel.context.hold_state", { value: selectedCard.holdState })}
+              </div>
+            ) : null}
             {selectedCard?.critique ? (
               <div style={{ fontSize: 12, color: "#b45309", backgroundColor: "#fef3c7", borderRadius: 6, padding: "4px 8px", marginTop: 2 }}>
                 {t("side_panel.context.critique")}: {selectedCard.critique.slice(0, 120)}{selectedCard.critique.length > 120 ? "..." : ""}
@@ -1182,58 +1189,25 @@ export function SidePanel({
         )}
       </section>
       {document?.cards ? (
-        <DomainStateSummary
-          cards={document.cards}
-          islandCount={document.islands?.length ?? 0}
-          relationCount={(document.edges?.length ?? 0) + (document.relationSummaries?.length ?? 0)}
-          safeMode={safeMode}
-        />
+        <>
+          <DomainStateSummary
+            cards={document.cards}
+            islandCount={document.islands?.length ?? 0}
+            relationCount={(document.edges?.length ?? 0) + (document.relationSummaries?.length ?? 0)}
+            safeMode={safeMode}
+          />
+          <DomainStateFilterBar
+            filter={domainFilter}
+            onFilterChange={setDomainFilter}
+          />
+        </>
       ) : null}
-      {(document?.shelf?.length ?? 0) > 0 ? (
-        <section
-          data-panel="shelf"
-          style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}
-        >
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
-            {t("side_panel.shelf.title", { count: document?.shelf?.length ?? 0 })}
-          </div>
-          <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.5, marginBottom: 8 }}>
-            {t("side_panel.shelf.description")}
-          </div>
-          <div style={{ display: "grid", gap: 8 }}>
-            {document?.shelf?.map((entry) => {
-              const card = document.cards.find((candidate) => candidate.id === entry.cardId);
-              return (
-                <div
-                  key={entry.cardId}
-                  style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc" }}
-                >
-                  <div style={{ fontSize: 12, color: "#0f172a", lineHeight: 1.45, marginBottom: 4 }}>
-                    {card?.text ?? t("side_panel.shelf.missing_card", { id: entry.cardId })}
-                  </div>
-                  <div style={{ fontSize: 10, color: "#64748b", marginBottom: entry.reason ? 4 : 8 }}>
-                    {t("side_panel.shelf.shelved_at", { value: formatSummaryHistoryTimestamp(entry.shelvedAt) })}
-                  </div>
-                  {entry.reason ? (
-                    <div style={{ fontSize: 11, color: "#475569", marginBottom: 8 }}>
-                      {t("side_panel.shelf.reason", { value: entry.reason })}
-                    </div>
-                  ) : null}
-                  <button
-                    type="button"
-                    disabled={isReadOnly || !card}
-                    onClick={() => {
-                      onRestoreShelvedCard(entry.cardId);
-                    }}
-                    style={{ width: "100%" }}
-                  >
-                    {t("side_panel.shelf.restore")}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+      {document?.shelf && document.shelf.length > 0 ? (
+        <ShelfPanel
+          cards={document.cards}
+          shelf={document.shelf}
+          onFocusCard={(cardId) => onFocusCardById(cardId)}
+        />
       ) : null}
       {topContent}
       {importedPackSnapshotUrl || importedPackDiagnosticsMd ? (
@@ -3220,9 +3194,7 @@ export function SidePanel({
                 <option value="shelved">{t("side_panel.hold_state.shelved")}</option>
               </select>
               <div style={{ fontSize: 11, color: "#64748b", marginBottom: 12 }}>
-                {selectedCard.holdState === "shelved"
-                  ? t("side_panel.hold_state.shelved_hint")
-                  : t("side_panel.hold_state.hint")}
+                {t("side_panel.hold_state.hint")}
               </div>
 
               <label

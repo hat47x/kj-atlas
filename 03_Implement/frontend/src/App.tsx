@@ -37,7 +37,7 @@ import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geome
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
-import { updateCardHoldStateAndShelf, type HoldStateSelection } from "./domain/hold_state_ops";
+import { updateCardHoldState, type HoldStateSelection } from "./domain/hold_state_ops";
 import { resolveDecisionOriginTrace, resolveRepresentativeOriginTrace } from "./domain/merge_traceability";
 import { collectMergeCandidates } from "./domain/merge_candidates";
 import {
@@ -100,6 +100,14 @@ import { buildReadingList, clampReadingIndex, type ReadingItem, type ReadingMode
 import { buildReadingOutlineMd } from "./domain/view/reading_outline";
 import { maxDepthForHierarchyLevel, resolveHierarchyLevel, type HierarchyLevel } from "./domain/view/hierarchy_level";
 import { collectHierarchyHiddenIslandIds, collectHierarchyPlacardHiddenCardIds } from "./domain/view/hierarchy_visibility";
+import {
+  ALL_DOMAIN_STATE_FILTER_KINDS,
+  createEmptyDomainStateFilter,
+  isDomainStateFilterActive,
+  selectCardIdsByDomainState,
+  toggleDomainStateFilter,
+  type DomainStateFilterKind,
+} from "./domain/view/state_filter";
 import type { OutlineQualityReport } from "./domain/view/outline_quality";
 import { generateRecommendations } from "./domain/view/recommendations";
 import type { ContradictionReport, ContradictionSignal } from "./domain/view/contradiction_checks";
@@ -1073,6 +1081,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [hideNonMatches, setHideNonMatches] = useState(false);
+  const [domainStateFilter, setDomainStateFilter] = useState(() => createEmptyDomainStateFilter());
+  const [hideNonStateMatches, setHideNonStateMatches] = useState(false);
   const [hideSourceCards, setHideSourceCards] = useState(true);
   const [hideMergedOriginals, setHideMergedOriginals] = useState(false);
   const [summaryView, setSummaryView] = useState(false);
@@ -1486,6 +1496,14 @@ export default function App() {
       .map((card) => card.id);
   }, [focusedVisibleDocument, normalizedSearchQuery]);
   const matchedCardIdSet = useMemo(() => new Set(matchedCardIds), [matchedCardIds]);
+  const domainStateFilterActive = isDomainStateFilterActive(domainStateFilter);
+  const domainStateMatchedIdSet = useMemo(() => {
+    if (!focusedVisibleDocument || !domainStateFilterActive) {
+      return null;
+    }
+    return selectCardIdsByDomainState(focusedVisibleDocument, domainStateFilter);
+  }, [focusedVisibleDocument, domainStateFilter, domainStateFilterActive]);
+  const domainStateMatchCount = domainStateMatchedIdSet?.size ?? 0;
   const activeMatchIndex = matchedCardIds.length > 0 ? ((currentMatchIndex % matchedCardIds.length) + matchedCardIds.length) % matchedCardIds.length : 0;
   const activeMatchedCardId = matchedCardIds.length > 0 ? matchedCardIds[activeMatchIndex] : null;
   const collapseLodLevel = useMemo(() => {
@@ -1573,7 +1591,6 @@ export default function App() {
     const summaryHiddenCardIds = new Set<string>();
     const searchHiddenCardIds = new Set<string>();
     const mergedHiddenCardIds = new Set<string>();
-    const shelvedCardIds = new Set<string>();
 
     if (focusedVisibleDocument) {
       // 1) collapseで隠れるカード
@@ -1629,6 +1646,15 @@ export default function App() {
       }
     }
 
+    // 3b) ドメイン状態フィルタ（未レビュー/根拠なし/違和感）の非該当を隠す（DOMAIN-EXPR-01）
+    if (hideNonStateMatches && domainStateMatchedIdSet && focusedVisibleDocument) {
+      for (const card of focusedVisibleDocument.cards) {
+        if (!domainStateMatchedIdSet.has(card.id)) {
+          searchHiddenCardIds.add(card.id);
+        }
+      }
+    }
+
     // 4) peek中の島のカードは collapse 隠しから除外
     if (peekIslandId && focusedVisibleDocument) {
       const peekIsland = focusedVisibleDocument.islands.find((island) => island.id === peekIslandId);
@@ -1647,17 +1673,12 @@ export default function App() {
       }
     }
 
-    for (const entry of focusedVisibleDocument?.shelf ?? []) {
-      shelvedCardIds.add(entry.cardId);
-    }
-
     // merge
     const hiddenCardIds = new Set<string>(collapsedHiddenCardIds);
     for (const cardId of depthHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of summaryHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of searchHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of mergedHiddenCardIds) hiddenCardIds.add(cardId);
-    for (const cardId of shelvedCardIds) hiddenCardIds.add(cardId);
     for (const cardId of temporaryRevealCardIds) {
       if (!depthHiddenCardIds.has(cardId)) {
         hiddenCardIds.delete(cardId);
@@ -1671,6 +1692,8 @@ export default function App() {
     focusTarget.focusIslandId,
     focusedVisibleDocument,
     hideNonMatches,
+    hideNonStateMatches,
+    domainStateMatchedIdSet,
     hideMergedOriginals,
     matchedCardIdSet,
     maxDepth,
@@ -4310,37 +4333,20 @@ export default function App() {
         return;
       }
 
-      const nextDocument = updateCardHoldStateAndShelf(document, cardId, selection, new Date().toISOString());
-      if (nextDocument === document) {
+      const nextCards = updateCardHoldState(document.cards, cardId, selection);
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
         return;
       }
 
       applyDocumentChange(
-        nextDocument,
+        {
+          ...document,
+          cards: nextCards,
+        },
         t("app.history.card.hold_state_updated"),
         { preserveSuggestionPreview: true }
       );
-    },
-    [applyDocumentChange, document]
-  );
-
-  const handleRestoreShelvedCard = useCallback(
-    (cardId: string) => {
-      if (!document) {
-        return;
-      }
-
-      const nextDocument = updateCardHoldStateAndShelf(document, cardId, "active", new Date().toISOString());
-      if (nextDocument === document) {
-        return;
-      }
-
-      applyDocumentChange(
-        nextDocument,
-        t("app.history.card.shelf_restored"),
-        { preserveSuggestionPreview: true }
-      );
-      setSelectedCardIds([cardId]);
     },
     [applyDocumentChange, document]
   );
@@ -6445,6 +6451,8 @@ export default function App() {
   useEffect(() => {
     setSearchQuery("");
     setHideNonMatches(false);
+    setDomainStateFilter(createEmptyDomainStateFilter());
+    setHideNonStateMatches(false);
     setCurrentMatchIndex(0);
   }, [activeDocumentId]);
 
@@ -7040,20 +7048,73 @@ export default function App() {
     setSelectedIslandId(null);
   }, [applyDocumentChange, document, selectedIsland]);
 
+  const domainStateFilterLabels: Record<DomainStateFilterKind, string> = {
+    unreviewed: t("state_filter.unreviewed"),
+    no_evidence: t("state_filter.no_evidence"),
+    has_critique: t("state_filter.has_critique"),
+  };
+
   const headerCenter = (
-    <SearchBar
-      query={searchQuery}
-      totalMatches={matchedCardIds.length}
-      currentMatchIndex={activeMatchIndex}
-      hideNonMatches={hideNonMatches}
-      onQueryChange={(nextQuery) => {
-        setSearchQuery(nextQuery);
-        setCurrentMatchIndex(0);
-      }}
-      onPrev={handleSearchPrev}
-      onNext={handleSearchNext}
-      onHideNonMatchesChange={setHideNonMatches}
-    />
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <SearchBar
+        query={searchQuery}
+        totalMatches={matchedCardIds.length}
+        currentMatchIndex={activeMatchIndex}
+        hideNonMatches={hideNonMatches}
+        onQueryChange={(nextQuery) => {
+          setSearchQuery(nextQuery);
+          setCurrentMatchIndex(0);
+        }}
+        onPrev={handleSearchPrev}
+        onNext={handleSearchNext}
+        onHideNonMatchesChange={setHideNonMatches}
+      />
+      <div
+        data-ui-region="domain-state-filter"
+        role="group"
+        aria-label={t("state_filter.label")}
+        style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, fontSize: 11, color: "#475569" }}
+      >
+        <span style={{ fontWeight: 600 }}>{t("state_filter.label")}</span>
+        {ALL_DOMAIN_STATE_FILTER_KINDS.map((kind) => {
+          const isActive = domainStateFilter.active.has(kind);
+          return (
+            <button
+              key={kind}
+              type="button"
+              aria-pressed={isActive}
+              data-state-filter={kind}
+              onClick={() => { setDomainStateFilter((current) => toggleDomainStateFilter(current, kind)); }}
+              style={{
+                fontSize: 10,
+                borderRadius: 4,
+                padding: "2px 8px",
+                cursor: "pointer",
+                border: isActive ? "1px solid #6366f1" : "1px solid #cbd5e1",
+                backgroundColor: isActive ? "#eef2ff" : "#ffffff",
+                color: isActive ? "#3730a3" : "#475569",
+                fontWeight: isActive ? 600 : 400,
+              }}
+            >
+              {domainStateFilterLabels[kind]}
+            </button>
+          );
+        })}
+        {domainStateFilterActive ? (
+          <>
+            <span data-testid="domain-state-filter-count">{t("state_filter.match_count", { count: domainStateMatchCount })}</span>
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={hideNonStateMatches}
+                onChange={(event) => { setHideNonStateMatches(event.target.checked); }}
+              />
+              {t("state_filter.hide_non_matches")}
+            </label>
+          </>
+        ) : null}
+      </div>
+    </div>
   );
 
   const handleDeleteSelection = useCallback(() => {
@@ -8908,7 +8969,6 @@ export default function App() {
 
             handleCardHoldStateChange(selectedCard.id, value);
           }}
-          onRestoreShelvedCard={handleRestoreShelvedCard}
           onCardTextReviewedChange={(value) => {
             if (!selectedCard) {
               return;

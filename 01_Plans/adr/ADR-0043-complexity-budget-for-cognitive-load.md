@@ -1,0 +1,65 @@
+# ADR-0043: 認知負荷を守る複雑性予算
+
+- Status: Accepted
+- Date: 2026-06-10
+- Deciders: Maintainer（委譲された意思決定権限）
+- Scope: `01_Plans/`, `02_Architecture/value_traceability.md`, `03_Implement/frontend/`
+
+## Context
+
+`domain.md` と `ai_cognitive_externalization_requirements.md` の判断基準は、機能の有無ではなく「これは人間の思考を雑にしないか」「早すぎる収束を与えないか」を第一に置く。kj-atlas の価値は **少ない操作で曖昧さを保持できること** にあり、機能の多さではない。
+
+一方で現状、機能は急速に増えている。選択コンテキスト（SidePanel）は既に claimType・evidence・critique・review・diff・narrative・trace・metrics・diagnostics 等を抱え、DOMAIN-EXPR-01..04／PRODUCT-VALUE-01..03 がさらに UI 要素を追加しつつある。個々の機能は妥当でも、**総体としての認知負荷が根幹価値（思考を雑にしない）を侵す**閾値が定義されていない。
+
+価値最大化の観点で、これは3番目の欠落である。1（不変条件の砦）と2（価値実在の検証）が「価値を裏切らない／届くか確かめる」のに対し、本ADRは「機能を足し続けても価値の核（軽さ・保留のしやすさ）が薄まらない」ための歯止めを与える。これが無いと、良い機能の集積がかえって価値を損なう。
+
+`ADR-0030`（progressive disclosure）と `ADR-0031`（画面情報設計）は配置の原則を定めたが、「追加してよい複雑性の上限」と「追加時に何を確認するか」の予算は未定義である。
+
+## Decision
+
+機能追加が認知負荷で根幹価値を侵さないための **複雑性予算（Complexity Budget）** と、追加時の軽量チェックを定義する。
+
+### 複雑性予算の原則
+
+- **CB-1 既定の静けさ**: 初期表示（空状態・単一選択直後）に見える主要操作は限定数に保つ。高度機能は progressive disclosure（折りたたみ／作業モード／タブ）の背後に置く（`ADR-0030` を予算として運用）。
+- **CB-2 保留の容易さは最優先**: 「迷う・決めない・脇に置く」操作が、確定操作より遠くならない。保留・違和感の付与が常に少ない操作数で到達できる。
+- **CB-3 追加は代替か包含で**: 新 UI 要素は、原則として既存要素の置換・包含・モード分離で導入し、初期表示の常設要素を純増させない。純増が必要なら理由を issue に記す。
+- **CB-4 可逆の明示**: 追加機能が状態を変えるなら、その取り消し方（undo／フィルタ解除／復帰）が同じ文脈で分かる（表示制御は内容削除と分離）。
+
+### 追加時チェック（軽量・任意様式）
+
+UI/操作を増やす issue では、本文に1行で次を自己申告する（重量級テンプレは課さない、`ADR-0039` 準拠）。
+
+```
+複雑性予算: 初期表示への純増=<なし/+N（理由）> / 保留操作の距離=<不変/改善/悪化（理由）> / 取り消し導線=<あり/N/A>
+```
+
+- いずれも「悪化」を含む場合は、`PRODUCT-QA-01`（または該当する価値ゲート）で明示確認の対象とする。
+- 既存テスト資産（`ux_operability_regression.test.ts` 等の source-string 契約）に、初期表示の常設要素を固定するアンカーがあれば、それを予算の事実上の上限として扱う。
+
+### 非目標
+
+- 機能追加そのものの抑制・凍結（本ADRは抑制でなく、価値を守る確認の付与）。
+- 定量的な UI 要素数の厳密な上限値の固定（段階・画面で変動するため、原則と自己申告で運用）。
+- デザインシステムやコンポーネント設計の刷新。
+
+## Consequences
+
+- 期待される効果:
+  - 機能が増えても「初期の静けさ」と「保留の容易さ」が事実として守られる。
+  - 追加判断が「便利そう」でなく「認知負荷で価値を侵さないか」で行える。
+  - レビュー時に複雑性の悪化を1行で検知できる。
+- 想定される副作用/制約:
+  - 自己申告は形骸化しうる → 「悪化」時のみゲート確認に接続して最小限の強制力を持たせる。
+  - 予算の主観性 → value ゲート（`PRODUCT-QA-01`）と既存 UX 回帰テストのアンカーで客観性を補う。
+- 移行時に必要な対応:
+  - `02_Architecture/value_traceability.md` に「認知負荷を守る複雑性予算」の行を価値判断として追記する。
+  - UI 系 issue テンプレ運用に複雑性予算1行を推奨として加える（必須化はしない）。
+
+## Traceability
+
+- Related: `00_Prompt/domain.md`（思考を雑にしない）, `00_Prompt/ai_cognitive_externalization_requirements.md`（判断基準）
+- Related: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `ADR-0031-productization-screen-information-architecture.md`
+- Related: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`（軽量運用）, `ADR-0040-domain-expression-first-class-strategy.md`
+- Related: `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+- Derived-from: 2026-06-10 価値最大化の不足分析（機能増加に対する認知負荷の歯止めが未定義）

@@ -30,6 +30,9 @@
 | 企業・行政運用に接続できる | 組織の認証、認可、監査基盤へ安全に接続できる | `02_Architecture/enterprise_architecture.md` | AuthContext、AccessControlAdapter、audit transport をアプリ本体から分離する | アプリ本体に role/group 判定ロジックを持ち込まない |
 | 環境変数の混乱を防ぐ | 利用者が設定すべきキーを迷わない | `02_Architecture/runtime_parameter_registry.md` | 公開設定キーは例外なく `KJ_ATLAS_*` に統一する | 04文書、Compose、runbook が正本と同期している |
 | データ運用境界を誤解させない | MVPで保守できるデータと将来契約を区別できる | `02_Architecture/data_model_operations_overview.md`, `ADR-0033` | 物理ER、論理ER、CRUD表、ステークホルダー別保守責任を分けて示す | 型の存在を標準CRUD対応と誤読させない |
+| 価値を裏切らない（不変条件の保護） | 機能が増えても保留/proposal-only/人手昇格/SafeModeが崩れない | `02_Architecture/value_traceability.md` §2.5, `ADR-0041` | 散在する非後退テストを CVI-1..7 として単一の砦へ索引化する | CVI 横断テストが赤になる変更を検知できる |
+| 思考を雑にしない（認知負荷の予算） | 機能が増えても初期の静けさと保留の容易さが保たれる | `00_Prompt/domain.md`, `ADR-0043`, `ADR-0030` | 複雑性予算（CB-1..4）で初期表示の純増と保留距離を抑える | UI追加issueで複雑性予算を申告し悪化時にゲート確認 |
+| 待たされて思考が途切れない（性能予算） | 大規模文書でも対話操作が即応し、重い処理は待機表示される | `02_Architecture/architecture.md`, `ADR-0046` | 性能予算（PB-1..5）で代表規模・worker化基準（100ms超）・劣化可視化を固定 | 代表規模fixtureの最小性能アサーション＋性能影響issueの予算申告 |
 
 ---
 
@@ -124,6 +127,64 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 | ドメイン: 用語整合 | 00↔02語彙同期 | `domain.md` | `DOMAIN-ALIGN-01`(Done) | 被覆 |
 
 **判定（2026-06-02）**: 全観点が担当issue/ADRへ接続済み（未接続=0件）。プロダクト価値・UI/UX・ドメイン表現の要件は VR0–VR5 のフェーズへ落とし込み済みであり、新規起票すべき本物の穴は無い。実装順序は DOMAIN-EXPR は Phase 1→4、VR4/VR5 は実ユーザー/協力者参加まで延期（`ADR-0039`）。
+
+---
+
+## 2.5 根幹価値の不変条件（CVI）正本対応表（`ADR-0041`）
+
+機能が出揃った段階で根幹価値を守るため、非後退の不変条件を ID 付きで固定する。本表を CVI の正本とし、`ADR-0041` の「単一の砦」テスト（`CORE-VALUE-GUARD-01`）は各 CVI をこの表へ参照づける（実装の散在テストを索引化し、欠落のみ新規カバー）。
+
+| CVI ID | 不変条件 | 主な担保（既存テスト/契約） |
+|---|---|---|
+| CVI-1 | SafeMode 既定ON・共有/exportで未レビュー本文を漏らさない | `domain/policy/safe_mode.test.ts`, `ui/safe_mode_status.test.ts` |
+| CVI-2 | proposal-only（auto-apply/confirm/publish 禁止） | `domain/ce2_proposal_only.test.ts`, backend `test_ce2_proposal_api.py` |
+| CVI-3 | `human_reviewed` 昇格は人手のみ（AI/worker/API 自動禁止） | `domain/ce2_suggestion_candidates.test.ts`, `hil_rs_contract.test.ts` |
+| CVI-4 | Consensus 直接更新禁止（`patch + approval` のみ） | CE0 契約テスト群（`ce0_core_graph_repositioning`） |
+| CVI-5 | `dryRun=true` 無副作用（永続化/共有/昇格なし） | backend `test_audit.py`, `routes/context.py` 契約 |
+| CVI-6 | `KJ_ATLAS_LLM_PROVIDER=none` 既定でも主要価値が成立 | provider `NoneProvider` + 既定構成E2E |
+| CVI-7 | 保留/違和感の非破壊・表示制御と内容削除の分離 | collapse/visibility テスト, `state_filter`（hidden≠delete） |
+
+## 2.6 認知負荷を守る複雑性予算（`ADR-0043`）
+
+機能追加が根幹価値（思考を雑にしない）を侵さないための予算。詳細は `ADR-0043`。
+
+- CB-1 既定の静けさ（初期表示の主要操作を限定、高度機能は progressive disclosure 背後）。
+- CB-2 保留の容易さ最優先（保留/違和感が確定操作より遠くならない）。
+- CB-3 追加は置換/包含/モード分離で（初期表示の常設要素を純増させない）。
+- CB-4 可逆の明示（取り消し導線が同じ文脈に）。
+- UI系issueは「複雑性予算」1行を自己申告し、悪化時は価値ゲート（`PRODUCT-QA-01`）で確認する。
+
+---
+
+## 2.7 UI/UX品質次元（UQ）正本対応表（`ADR-0044`）
+
+UI/UX 品質を次元（UQ）で定義し、各次元の担保（既存テスト）と充足度を索引化する。本表を UQ の正本とし、薄い／未の次元のみを改善 issue 化する（物量網羅はしない、`ADR-0039`）。
+
+| UQ ID | 品質次元 | 主な担保（既存テスト） | 充足度 |
+|---|---|---|---|
+| UQ-1 | 操作到達性（ポインタ/キーボード両対応・フォーカス順序） | `ui/ux_operability_regression.test.ts`, e2e `canvas_focus_order` / `keyboard_release_candidate_flow` | おおむね充足 |
+| UQ-2 | アクセシビリティ（role/aria/ラベル） | `canvas/IslandView.accessibility.test.ts` + `canvas/CardView.accessibility.test.ts` + `ui/DomainStateSummary.accessibility.test.ts` + `ui/ShelfPanel.accessibility.test.ts` + `ui/StartPanel.accessibility.test.ts`（計5ファイル, 28 tests） | **改善中**（2026-06-21: 1→5ファイル, `UI-QUALITY-A11Y-01` 追跡中） |
+| UQ-3 | 国際化等価性（ja/enキー一致・ハードコード無・未訳ゼロ） | `src/i18n/` 9テスト＋`ui/i18n_equivalence.integration.test.ts` | 充足 |
+| UQ-4 | レイアウト堅牢性（代表viewport・大規模文書） | e2e `header_toolbar_layout` / `large_document_operability` | おおむね充足 |
+| UQ-5 | 状態の可視性（待機/読取専用/SafeMode/選択対象） | `ui/safe_mode_status.test.ts`, selection-context contract | おおむね充足 |
+| UQ-6 | 認知負荷の節度（初期の静けさ・保留の容易さ） | 複雑性予算（§2.6, `ADR-0043`）＋UX回帰アンカー | 運用で担保 |
+
+**判定（2026-06-10）**: UQ-3 充足、UQ-1/4/5/6 はおおむね充足。**UQ-2（a11y）が薄い**＝UI/UX品質の最優先改善対象（`UI-QUALITY-A11Y-01` 候補）。UI を増やす issue は触れる UQ 次元を明記し、`ADR-0043` 複雑性予算1行と合わせて自己申告する。
+
+**更新（2026-06-21）**: UQ-2 改善中。a11yテスト 1ファイル（IslandViewのみ）→ 5ファイル（+CardView, DomainStateSummary, ShelfPanel, StartPanel）、21→28 tests。`UI-QUALITY-A11Y-01` issueで追跡継続中。
+
+---
+
+## 2.8 応答性の性能予算（PB）（`ADR-0046`）
+
+計算負荷の歯止め。`ADR-0043`（認知負荷の複雑性予算）と対をなし、根幹価値「思考を雑にしない（待たされて途切れない）」を計算軸で守る。詳細は `ADR-0046`。
+
+- PB-1 代表規模（カード約300・島約30、超過しても degrade gracefully）。
+- PB-2 初期表示は待機表示なしで数秒以内、超える場合は待機可視化。
+- PB-3 メインスレッドを長時間（目安100ms超）ブロックしない＝worker化の判断基準。
+- PB-4 対話操作（選択/パン/ズーム/フィルタ/保留トグル）は即応、重い再計算は debounce/メモ化/worker。
+- PB-5 大規模・低速時は「反応なし」に見せず待機/進捗/キャンセルを提示（UQ-4/UQ-5 と一体）。
+- 性能影響 issue は「性能予算」1行を申告し、悪化・100ms超未worker化は `PRODUCT-QA-01` で確認。代表規模fixtureで最小の性能アサーションを置く（回帰検知が目的）。
 
 ## 3. 設計判断の扱い
 
