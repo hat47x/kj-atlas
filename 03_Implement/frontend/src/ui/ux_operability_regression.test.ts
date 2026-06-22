@@ -66,13 +66,13 @@ describe("UX Operability regression contracts", () => {
 
   it("Phase 6: read-only-review-disables-edit-surfaces", () => {
     const appSource = readSource("src/App.tsx");
-    expect(appSource).toContain("disabled={isReadOnly || isLoading || isSaving}");
-    expect(appSource).toContain("disabled={isReadOnly || isLoading || isSaving || !document}");
+    expect(appSource).toContain("disabled={isReadOnly || isLoading || !document || isSuggesting}");
     expect(appSource).toContain("disabled={isReadOnly || isLoading || !document}");
     expect(appSource).toContain("disabled={isReadOnly || isLoading || !document || !canCreateIsland}");
     expect(appSource).toContain(
       "disabled={isReadOnly || isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)}",
     );
+    expect(appSource).toContain("disabled={isReadOnly || isLoading || !document || isSaving || !isDirty}");
 
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
     expect(sidePanelSource).toMatch(/value=\{selectedCard\.claimType \?\? "unknown"\}\s+disabled=\{isReadOnly\}/);

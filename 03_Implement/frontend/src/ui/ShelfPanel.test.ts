@@ -45,6 +45,21 @@ describe("ShelfPanel", () => {
     expect(html).toContain("revisit after review");
   });
 
+  it("disables restore in read-only mode", () => {
+    setActiveLocale("en");
+    const html = renderToStaticMarkup(
+      React.createElement(ShelfPanel, {
+        cards: [makeCard()],
+        shelf: [makeShelfEntry()],
+        isReadOnly: true,
+        onRestoreCard: () => {},
+      })
+    );
+
+    expect(html).toContain("<button");
+    expect(html).toContain("disabled");
+  });
+
   it("filters out shelf entries for missing cards", () => {
     setActiveLocale("en");
     const cards: Card[] = [makeCard({ id: "keep", text: "kept card" })];

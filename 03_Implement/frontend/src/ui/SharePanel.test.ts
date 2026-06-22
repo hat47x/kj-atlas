@@ -7,6 +7,7 @@ import { setActiveLocale } from "../i18n/translate";
 function buildProps(safeMode: boolean, overrides: Partial<React.ComponentProps<typeof SharePanel>> = {}) {
   const props: React.ComponentProps<typeof SharePanel> = {
     isOpen: true,
+    isAdvancedUiEnabled: true,
     onToggleOpen: vi.fn(),
     hasDocument: true,
     isLoading: false,
@@ -244,5 +245,47 @@ describe("SharePanel visibility controls", () => {
     expect(html).toContain('option value="Restricted">制限付き</option>');
     expect(html).toContain("view の公開範囲が未指定の場合は、制限付きとして扱います。");
     expect(html).toContain("パックの公開範囲が未指定の場合は、公開として扱います。");
+  });
+});
+
+describe("SharePanel advanced gating", () => {
+  it("hides patch/diff/visibility sections unless Advanced is enabled", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SharePanel, buildProps(true, { isAdvancedUiEnabled: false }))
+    );
+    // Enterprise/reviewer-exchange sections are gated behind the Advanced toggle.
+    expect(html).not.toContain("share-panel-purpose-patch");
+    expect(html).not.toContain("share-panel-purpose-diff");
+    // The visibility selector block (and its fallback hint, unique to that block) is hidden.
+    // Note: the preflight summary still shows a "公開範囲（view）" read-only row, so assert on
+    // the selector-only fallback copy instead.
+    expect(html).not.toContain("view の公開範囲が未指定の場合は、制限付きとして扱います。");
+    expect(html).not.toContain('option value="Unlisted"');
+    // Core manual sharing/import stays visible.
+    expect(html).toContain("共有用に書き出す");
+    expect(html).toContain('id="share-panel-purpose-import"');
+  });
+});
+
+describe("SharePanel accessibility baseline (UQ-2)", () => {
+  it("connects the trigger to the open dialog and exposes its state", () => {
+    setActiveLocale("en");
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
+
+    expect(html).toContain('aria-haspopup="dialog"');
+    expect(html).toContain('aria-expanded="true"');
+    expect(html).toContain('aria-controls="share-replay-panel"');
+    expect(html).toContain('id="share-replay-panel"');
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain('aria-label="Share &amp; Reproduce"');
+    expect(html).toContain('aria-label="Close panel"');
+  });
+
+  it("exposes the closed state without rendering the dialog", () => {
+    setActiveLocale("en");
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true, { isOpen: false })));
+
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).not.toContain('role="dialog"');
   });
 });

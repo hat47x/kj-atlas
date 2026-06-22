@@ -1,0 +1,5 @@
+# direnv template for the Nix dev shell (the live .envrc is gitignored).
+# Copy to .envrc and run `direnv allow` to auto-enter `nix develop` on cd.
+# Requires direnv (ideally with nix-direnv). If you do not use direnv, run
+# `nix develop` manually instead.
+use flake
