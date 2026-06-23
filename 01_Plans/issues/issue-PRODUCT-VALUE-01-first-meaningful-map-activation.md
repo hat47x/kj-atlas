@@ -14,18 +14,21 @@
 ## Draft→Open 2026-06-20
 PRODUCT-VALUE-01 Open化。ADR-0032 AcceptedによりV1ゲート充足（ADR-0040で確定済み）。
 
-## Implementation Progress 2026-06-21
+## Implementation Progress 2026-06-24
 
 ### Done
 - **StartPanel value proposition**: en/ja description updated to convey kj-atlas core value (曖昧さを保持する空間的思考ツール)
 - **DomainStateSummary**: document-level card state counts with first-meaningful-map progress hints
 - **CardView badges**: claimType/critique/reviewState visual indicators (DOMAIN-EXPR-01)
 - **SidePanel domain state**: claimType, critique, evidence links, contradiction counts in card detail
+- **T4 E2E first-meaningful-map journey**: mouse flow (first_meaningful_map_mouse_flow.spec.ts), keyboard flow (keyboard_release_candidate_flow.spec.ts), first-run entry (first_run_document_entry.spec.ts), share preflight (first_value_share_preflight.spec.ts)
+- **T5 Docs sync**: installation.md, operations.md, public_index.md reference first-run path with StartPanel + SafeMode. acceptance_check.md covers mouse/keyboard + critique flow.
+- **T3 Keyboard accessibility**: keyboard_release_candidate_flow.spec.ts verifies Tab/Enter/Space path. acceptance_check.md §キーボードで確認すること documents keyboard checks.
 
 ### Remaining
-- Playwright E2E first-meaningful-map user journey (T4)
-- Installation/operations doc sync with first-run path (T5)
-- Keyboard accessibility verification for first-run path (T3)
+- Human product-value acceptance (H-PV1): Productization Program Owner acceptance of fixtures as value-bearing
+- Human UX acceptance (H-PV2): UX reviewer confirmation of natural mouse/keyboard operation
+- Human QA acceptance (H-PV3): QA Lead screenshot/trace bundle location decision
 
 ### Commits
 - 35895ba8 StartPanel value proposition messaging

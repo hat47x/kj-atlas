@@ -22,8 +22,15 @@
 - **Narrative panel grounding display**: claimType + reviewState annotations in in-app grounding UI (ea3af977)
 
 ### Remaining
-- Share preflight: domain state summary in export flow
-- E2E: reviewable outcome package verification
+- Human product-value acceptance of reviewable package fixture + SafeMode readability
+- Human UX/accessibility acceptance of read-only reviewer journey
+- Final program approval (MVP-EXIT-01)
+
+### Note
+Share preflight domain state summary is already implemented in SharePanel
+(domainExpressionSummary with review/hold/critique/evidence/contradiction counts).
+E2E review-pack trace export verification exists (review_pack_trace_export.spec.ts).
+Read-only reviewer inspection E2E is implemented.
 
 ### Commits
 - f9883f68 share readiness indicator in DomainStateSummary
