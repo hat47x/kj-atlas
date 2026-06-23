@@ -120,7 +120,14 @@ export function Shell({
               </span>
             ) : null}
             {headerViewControls ? <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", whiteSpace: "nowrap" }}>{headerViewControls}</div> : null}
-            {headerShareControls ? <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", whiteSpace: "nowrap" }}>{headerShareControls}</div> : null}
+            {headerShareControls ? (
+              <div
+                data-ui-complexity-tier="core-share"
+                style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", whiteSpace: "nowrap" }}
+              >
+                {headerShareControls}
+              </div>
+            ) : null}
           </div>
           {subtitle ? <div style={{ fontSize: 12, color: "#475569", fontWeight: 500 }}>{subtitle}</div> : null}
           {saveConflictMessage ? (

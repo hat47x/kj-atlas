@@ -56,8 +56,16 @@ describe("UX Operability regression contracts", () => {
 
   it("Phase 5: primary-toolbar-task-prioritization", () => {
     const appSource = readSource("src/App.tsx");
+    const shellSource = readSource("src/ui/Shell.tsx");
 
     expect(appSource).toContain('data-ui-region="primary-flow"');
+    expect(appSource).toContain('data-ui-complexity-tier="core-context"');
+    expect(appSource).toContain('data-ui-complexity-tier="core-view"');
+    expect(shellSource).toContain('data-ui-complexity-tier="core-share"');
+    expect(appSource).toContain('data-ui-complexity-tier="core-toolbar"');
+    expect(appSource).toContain('data-ui-complexity-tier="advanced-disclosure"');
+    expect(appSource).toContain('data-ui-complexity-tier="advanced-content"');
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(4);
     expect(appSource).toContain('t("app.toolbar.new")');
     expect(appSource).toContain('t("app.toolbar.open")');
     expect(appSource).toContain('t("app.toolbar.undo")');
