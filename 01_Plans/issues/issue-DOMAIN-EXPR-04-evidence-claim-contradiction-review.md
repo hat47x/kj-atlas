@@ -1,7 +1,7 @@
 # Issue Draft: DOMAIN-EXPR-04 根拠・主張・矛盾の人間レビュー第一級化と成果物接続
 
 - Type: Feature request
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
@@ -11,6 +11,20 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/issues/issue-PRODUCT-VALUE-03-reviewable-outcome-package.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/schemas.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
 - Expected verification level: `e2e`
+
+## Implementation Progress 2026-06-24
+
+### Done
+- Narrative export evidence/contradiction links section: EvidenceLink supports/contradicts for reading order cards now appear in markdown and HTML narrative exports (2f44227a)
+- Existing infrastructure: SidePanel evidence link display, contradiction report, evidence gap analysis, trace export, SharePanel evidence summary
+
+### Remaining
+- Contradiction state management (unconfirmed/confirmed/held/resolved) - requires schema decision
+- Evidence link editing from card context (currently read-only inspection)
+- E2E: evidence confirmation → outcome connection verification
+
+### Commits
+- 2f44227a evidence/contradiction links section in narrative export
 
 ## Draft→Open 2026-06-21
 DOMAIN-EXPR-01 Doneにより依存充足。ADR-0040 Phase 4（根拠・主張・矛盾を人間レビュー第一級対象＋成果物要素へ接続）。
