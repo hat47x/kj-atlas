@@ -1039,6 +1039,7 @@
   "side_panel.critique.tag.unrelated": "関係が薄い",
   "side_panel.critique.tag.unclear_boundary": "境界が曖昧",
   "side_panel.critique.reproposal_hint": "違和感の種別とメモは文書に保存されます。再提案は「詳細」から確認できます。AIが無効な構成では、違和感は保持されますが再提案候補は生成されません。",
+  "side_panel.critique.open_reproposal": "再提案を確認",
   "side_panel.image.preview_error": "画像プレビューを読み込めません。",
   "side_panel.image.preview_alt": "島の画像プレビュー",
   "side_panel.image.no_image": "画像はありません",

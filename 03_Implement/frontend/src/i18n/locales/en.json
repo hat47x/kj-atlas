@@ -1039,6 +1039,7 @@
   "side_panel.critique.tag.unrelated": "Weakly related",
   "side_panel.critique.tag.unclear_boundary": "Unclear boundary",
   "side_panel.critique.reproposal_hint": "The critique type and note are saved in the document. Review reproposals from Advanced. When AI is disabled, the critique remains saved but no reproposal candidate is generated.",
+  "side_panel.critique.open_reproposal": "Review reproposal",
   "side_panel.image.preview_error": "Unable to load image preview.",
   "side_panel.image.preview_alt": "Island preview",
   "side_panel.image.no_image": "No image",

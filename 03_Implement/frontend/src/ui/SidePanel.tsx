@@ -55,6 +55,7 @@ type SidePanelProps = {
   onCreateRepresentativeCard: () => void;
   onCardCritiqueChange: (value: string) => void;
   onCardCritiqueTagsChange: (value: string[]) => void;
+  onOpenCritiqueWorkflow: () => void;
   onCardClaimTypeChange: (value: ClaimType) => void;
   onCardHoldStateChange: (value: HoldState | "active") => void;
   onRestoreShelvedCard: (cardId: string) => void;
@@ -223,6 +224,7 @@ export function SidePanel({
   onCreateRepresentativeCard,
   onCardCritiqueChange,
   onCardCritiqueTagsChange,
+  onOpenCritiqueWorkflow,
   onCardClaimTypeChange,
   onCardHoldStateChange,
   onRestoreShelvedCard,
@@ -2607,6 +2609,18 @@ export function SidePanel({
           >
             {t("side_panel.critique.reproposal_hint")}
           </div>
+          <button
+            data-domain-action="open-critique-workflow"
+            type="button"
+            onClick={onOpenCritiqueWorkflow}
+            disabled={
+              !(selectedIsland.critique?.trim())
+              && (selectedIsland.critiqueTags?.length ?? 0) === 0
+            }
+            style={{ width: "100%", marginBottom: 10 }}
+          >
+            {t("side_panel.critique.open_reproposal")}
+          </button>
 
           <div
             style={{
@@ -3459,6 +3473,18 @@ export function SidePanel({
               >
                 {t("side_panel.critique.reproposal_hint")}
               </div>
+              <button
+                data-domain-action="open-critique-workflow"
+                type="button"
+                onClick={onOpenCritiqueWorkflow}
+                disabled={
+                  !(selectedCard.critique?.trim())
+                  && (selectedCard.critiqueTags?.length ?? 0) === 0
+                }
+                style={{ width: "100%", marginBottom: 12 }}
+              >
+                {t("side_panel.critique.open_reproposal")}
+              </button>
             </>
           )}
         </>
