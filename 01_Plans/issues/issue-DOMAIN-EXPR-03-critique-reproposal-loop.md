@@ -1,7 +1,7 @@
 # Issue Draft: DOMAIN-EXPR-03 違和感→再提案の日常ループUI
 
 - Type: Feature request
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
@@ -11,6 +11,20 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `00_Prompt/domain.md`, `02_Architecture/schemas.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
 - Expected verification level: `e2e`
+
+## Implementation Progress 2026-06-23
+
+### Done
+- SidePanel reproposal diff preview: Shows 3 most recent reproposalDiffs with ops, rationale, iteration (2f170b17)
+- Existing infrastructure: critique note + tags editing in SidePanel, SuggestionPanel for resuggest, HilRsRediffPreview for diff details, DomainStateFilterBar hasCritique filter
+
+### Remaining
+- "Suggest re-proposal" action button from SidePanel critique context → SuggestionPanel
+- `KJ_ATLAS_LLM_PROVIDER=none` explicit "no AI candidates" messaging in re-proposal context
+- E2E: critique→reproposal→diff daily loop verification
+
+### Commits
+- 2f170b17 reproposal diff preview section in SidePanel
 
 ## Draft→Open 2026-06-21
 DOMAIN-EXPR-01 Doneにより依存充足。ADR-0040 Phase 3（違和感→再提案の日常ループUI）。
