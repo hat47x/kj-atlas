@@ -211,8 +211,6 @@ type SidePanelProps = {
   importedPackSnapshotUrl?: string | null;
   importedPackDiagnosticsMd?: string | null;
   mergeAuditLog: MergeAuditEntry[];
-  onRestoreShelvedCard?: (cardId: string) => void;
-  isAdvancedUiEnabled?: boolean;
 };
 
 export function SidePanel({
@@ -377,8 +375,6 @@ export function SidePanel({
   importedPackSnapshotUrl,
   importedPackDiagnosticsMd,
   mergeAuditLog,
-  onRestoreShelvedCard,
-  isAdvancedUiEnabled,
   isReadOnly = false,
   isAdvancedUiEnabled = false,
 }: SidePanelProps) {
