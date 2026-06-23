@@ -1042,6 +1042,7 @@ export default function App() {
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [isAdvancedUiEnabled, setIsAdvancedUiEnabled] = useState<boolean>(loadAdvancedUiEnabled);
+  const [critiqueWorkflowFocusRequest, setCritiqueWorkflowFocusRequest] = useState(0);
   const [contextMenu, setContextMenu] = useState<
     | {
         x: number;
@@ -3994,6 +3995,32 @@ export default function App() {
       return next;
     });
   }, []);
+
+  const handleOpenCritiqueWorkflow = useCallback(() => {
+    setIsAdvancedUiEnabled(true);
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(ADVANCED_UI_STORAGE_KEY, "true");
+      }
+    } catch {
+      // Ignore persistence failures (e.g. storage disabled).
+    }
+    setCritiqueWorkflowFocusRequest((current) => current + 1);
+  }, []);
+
+  useEffect(() => {
+    if (!isAdvancedUiEnabled || critiqueWorkflowFocusRequest === 0) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const workflow = window.document.querySelector<HTMLElement>('[data-domain-workflow="critique-reproposal"]');
+      workflow?.focus();
+      workflow?.scrollIntoView({ block: "start" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [critiqueWorkflowFocusRequest, isAdvancedUiEnabled]);
 
   const handleCommitCardText = useCallback(
     (cardId: string, text: string) => {
@@ -8990,6 +9017,7 @@ export default function App() {
 
             handleCardCritiqueTagsChange(selectedCard.id, value);
           }}
+          onOpenCritiqueWorkflow={handleOpenCritiqueWorkflow}
           onCardClaimTypeChange={(value) => {
             if (!selectedCard) {
               return;

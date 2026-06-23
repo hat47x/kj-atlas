@@ -146,6 +146,14 @@ test("domain expression state controls are reachable with keyboard after card se
     .toBe("keyboard review note");
   await expect.poll(() => fixture.getStoredDocument().cards.find((card) => card.id === "domain-target")?.critiqueTags)
     .toContain("too_close");
+
+  await page.getByRole("button", { name: "Review reproposal" }).click();
+  await expect(page.getByRole("button", { name: "Advanced" })).toHaveAttribute("aria-pressed", "true");
+  const critiqueWorkflow = page.locator('[data-domain-workflow="critique-reproposal"]');
+  await expect(critiqueWorkflow).toBeVisible();
+  await expect(critiqueWorkflow).toContainText("Record critique");
+  await expect(critiqueWorkflow).toContainText("Layout suggestion");
+  await expect(critiqueWorkflow).toBeFocused();
 });
 
 test("share preflight keeps unresolved domain signals visible and unreviewed drafts excluded", async ({ page }) => {
