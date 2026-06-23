@@ -1,12 +1,12 @@
 # Issue Draft: DOMAIN-EXPR-03 違和感→再提案の日常ループUI
 
 - Type: Feature request
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Codex
-- Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `02_Architecture/schemas.md`
+- Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `02_Architecture/schemas.md`, `04_Documentation/acceptance_check.md`
 - Related Backlog: `DOMAIN-EXPR-03`
 - Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `00_Prompt/domain.md`, `02_Architecture/schemas.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
@@ -80,3 +80,22 @@ domain.md の Critique（理由の有無を問わない否定・ツッコミ）�
 ## 7) Additional context
 
 - ADR化が必要になる条件: Critique種別やreproposal契約を変更する場合（HIL-RS契約と整合が必要）。
+
+## 実装記録（2026-06-23）: AI非依存の違和感入力
+
+### 完了した範囲
+
+- カードと島の違和感入力を、HIL-RS正本の5種（`too_close` / `too_far` / `not_the_same` / `feels_off` / `no_articulable_reason`）へ統一した。
+- 任意メモと種別は既存の `critique` / `critiqueTags` に保存し、既存の `CritiqueInput` 変換経路で往復できる。schema変更は行っていない。
+- 旧タグ（`belongs_together` / `unrelated` / `unclear_boundary`）は既存文書から削除せず、読み取り時の表示互換を維持する。新規入力候補には出さない。
+- 違和感は文書に保存され、AIが無効な構成でも保持される一方、再提案候補は生成されないことを選択コンテキストに明示した。
+- キーボードE2Eで5種の表示、メモ入力、種別選択、保存後のdocument反映を検証する。
+- 一般利用者向けの受け入れ手順に、5種の違和感とAI無効時の挙動を同期した。
+
+### 残る範囲
+
+- AI有効時の再提案開始操作と proposal-only 候補生成。
+- 前案と再提案の差分確認、採用・却下・保留後も元の違和感を保持する操作。
+- 上記は再提案権限と差分意思決定UIを含むため、本Issueの後続スライスとして分離する。
+
+複雑性予算: 初期表示への純増=説明1件（AI無効時の挙動を誤解させないため） / 保留・違和感操作の距離=不変 / 取り消し導線=タグ解除・メモ削除
