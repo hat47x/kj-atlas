@@ -2790,3 +2790,49 @@ DoDテンプレ（Draft→Open）
   - G7 regression: locale equivalence, workflow rendering, typecheck, frontend tests, and build are required.
 - Final release remains **No-Go**. Human terminology review, screen-reader acceptance, environment rehearsal, and final program approval remain separate.
 - No ADR is needed because workflow order, proposal-only behavior, human approval authority, persistence, SafeMode, and audit contracts are unchanged.
+
+## Productization Gate Record 2026-06-24: DOMAIN-EXPR-03/04 + PRODUCT-VALUE-03 narrative grounding
+
+- Candidate: `feat/product-value-03-and-domain-expr-03-progress` (PR #2486)
+- Date (JST): 2026-06-24
+- Reviewer: Codex (automated evidence)
+- Scope: Narrative grounding domain state, critique type migration, reproposal diff preview, evidence links in narrative export
+
+### Gate Evaluation
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| G0 計画整合 | **Go** | `triage_actionable_plans.py`: active=23, ready=12, blocked=11, stopper=none. All ADRs Accepted. |
+| G1 安全既定 | **Go** | SafeMode ON default, `human_reviewed` human-only promotion, proposal-only enforced by CE contracts. SharePanel preflight shows unresolved signals with SafeMode masking. |
+| G2 主要操作 | **Conditional Go** | Mouse/kb first-meaningful-map E2E exist (first_meaningful_map_mouse_flow, keyboard_release_candidate_flow, first_value_share_preflight). Critique→reproposal daily loop via SidePanel "Open Reproposal" button. Human UX acceptance of natural operation pending. |
+| G3 日本語UI | **Go** | `ui_hardcode_guard`: 13/13 passed. `key_consistency`: 1/1 passed. `catalog_integrity`: 2/2 passed. Critique types localized (近すぎる/遠すぎる/同じものではない/違和感がある/理由は言葉にできない). |
+| G4 画面耐性 | **Conditional Go** | `ux_operability_regression`: 6/6 passed. Viewport E2E exist (header_toolbar_layout). Large-document operability E2E exists. Compose startup via Docker. |
+| G5 公開文書 | **Go** | `public_index.md`, `installation.md`, `operations.md`, `data_handling.md`, `acceptance_check.md`: 0 internal-management references (issue IDs, Decision Queue, Stream logs). acceptance_check.md covers critique types + reproposal flow. |
+| G6 診断とサポート | **Conditional Go** | Diagnostics worker + error boundaries exist. Support diagnostics bundle policy in `PRODUCT-OPS-02` (Draft). `SUPPORT.md` exists. |
+| G7 ビルドと回帰 | **Go** | `tsc --noEmit`: pass. `vitest` ux_operability: 6/6. `vitest` hardcode_guard: 13/13. `vitest` catalog_integrity: 2/2. `vitest` NarrativesPanel: 3/3. |
+
+### Value Gate Evaluation
+
+| Value Gate | Status | Evidence |
+| --- | --- | --- |
+| V0/V1 初回価値実感 | **Conditional Go** | StartPanel value proposition, DomainStateSummary, CardView badges (claimType/critique/reviewState). First-meaningful-map E2E exist (mouse + keyboard routes). First-run offline/read-only sample-entry fallback. Human product-value acceptance pending. |
+| V2 保留・違和感の作業化 | **Conditional Go** | DOMAIN-EXPR-01 readonly state surfacing (Done). Domain-state keyboard E2E. Critique→reproposal SidePanel integration. 5 domain.md critique types with legacy compatibility. AI review-boundary guard (HIL-RS contract). ContextBundle constraint-preservation proof. Hold/Pending first-class schema (DOMAIN-EXPR-02) remains pending. |
+| V3 人間レビュー中心 | **Go** | proposal-only enforced. `human_reviewed` auto-promotion blocked in backend CE2 + frontend HIL contracts. AI proposals accept only `reviewState="unreviewed"`. |
+| V4 レビュー可能な成果物 | **Conditional Go** | Narrative grounding: claimType + reviewState annotations. Evidence/contradiction links in narrative export. Read-only reviewer inspection. Share preflight domain expression summary. Review-pack trace export E2E. Human package-acceptance + accessibility review pending. |
+| 横断 LLM任意性 | **Go** | `KJ_ATLAS_LLM_PROVIDER=none` default. All core values (start, externalize, structure, share preflight) function without LLM. Critique is saved without AI reproposal when disabled. |
+
+### Blocker Inventory
+
+- **No current blockers**. SafeMode boundary, review-promotion guard, and proposal-only contracts are preserved.
+- **Major follow-up needed**: human product-value acceptance (H-PV1/H-PV2/H-PV3), UX natural-operation review, screen-reader acceptance, Compose rehearsal, final program approval.
+
+### Decision
+
+**Conditional Go** — domain-expression infrastructure and narrative outcome quality are advancing as planned. Full Go requires: (1) Productization Program Owner acceptance of value-bearing fixtures, (2) UX reviewer acceptance of keyboard/mouse natural operation, (3) QA Lead screenshot/trace bundle location decision, (4) Compose startup rehearsal evidence, (5) final program approval.
+
+### Required follow-up issues
+- `PRODUCT-VALUE-01` — human fixture/acceptance for first meaningful map
+- `PRODUCT-VALUE-02` — ambiguity/evidence umbrella integration decision  
+- `PRODUCT-VALUE-03` — reviewable package human acceptance
+- `PRODUCT-QA-01` — next gate evaluation cycle
+- `MVP-EXIT-01` — final productization program decision
