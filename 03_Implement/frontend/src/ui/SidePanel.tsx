@@ -1237,6 +1237,37 @@ export function SidePanel({
           {t("side_panel.critique_summary", { critiques: document?.critiqueInputs?.length ?? 0, reproposals: document?.reproposalDiffs?.length ?? 0 })}
         </section>
       ) : null}
+      {(document?.reproposalDiffs?.length ?? 0) > 0 ? (
+        <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 8 }}>
+            {t("side_panel.reproposal_diffs.latest_title")}
+          </div>
+          {[...document!.reproposalDiffs!].reverse().slice(0, 3).map((diff) => (
+            <div key={diff.proposalId} style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 6 }}>
+              <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>
+                <strong>{t("hil_rs_rediff_preview.proposal")}:</strong> {diff.proposalId}
+                {" "}|{" "}
+                <strong>{t("hil_rs_rediff_preview.based_on_iteration")}:</strong> {diff.basedOnIteration}
+                {" "}|{" "}
+                <strong>{t("hil_rs_rediff_preview.diff_operations")}:</strong> {diff.diffOps.length}
+              </div>
+              {diff.rationale ? (
+                <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>
+                  <strong>{t("side_panel.reproposal_diffs.rationale")}:</strong> {diff.rationale.slice(0, 200)}{diff.rationale.length > 200 ? "…" : ""}
+                </div>
+              ) : null}
+              <ul style={{ margin: "4px 0 0", paddingLeft: 16, fontSize: 11, color: "#334155" }}>
+                {diff.diffOps.map((op) => (
+                  <li key={op.opId}>
+                    {op.opType} / {op.targetRef}
+                    {op.rationale ? <span style={{ color: "#64748b" }}> — {op.rationale.slice(0, 80)}{op.rationale.length > 80 ? "…" : ""}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      ) : null}
       {topContent}
       {importedPackSnapshotUrl || importedPackDiagnosticsMd ? (
         <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0", display: "grid", gap: 8 }}>

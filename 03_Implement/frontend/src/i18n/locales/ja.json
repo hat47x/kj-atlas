@@ -1203,6 +1203,8 @@
   "side_panel.doc_bar.evidence": "根拠: {n}",
   "side_panel.doc_bar.critiques": "違和感: {n}",
   "side_panel.critique_summary": "違和感: {critiques}件 / 再提案: {reproposals}件",
+  "side_panel.reproposal_diffs.latest_title": "最新の再提案",
+  "side_panel.reproposal_diffs.rationale": "根拠",
   "state_filter.label": "状態フィルタ",
   "state_filter.unreviewed": "未レビュー",
   "state_filter.no_evidence": "根拠なし",
