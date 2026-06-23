@@ -7078,7 +7078,7 @@ export default function App() {
   };
 
   const headerCenter = (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <div data-ui-complexity-tier="core-context" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <SearchBar
         query={searchQuery}
         totalMatches={matchedCardIds.length}
@@ -7264,7 +7264,10 @@ export default function App() {
   }
 
   const headerRight = (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", rowGap: 6, whiteSpace: "nowrap", maxWidth: "100%" }}>
+    <div
+      data-ui-complexity-tier="core-toolbar"
+      style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", rowGap: 6, whiteSpace: "nowrap", maxWidth: "100%" }}
+    >
       <MenuButton label={t("app.toolbar.file_menu")} items={fileMenuItems} />
       <MenuButton label={t("app.toolbar.edit_menu")} items={editMenuItems} />
       <select
@@ -7310,6 +7313,7 @@ export default function App() {
         {t("app.toolbar.open")}
       </button>
       <button
+        data-ui-complexity-tier="advanced-disclosure"
         type="button"
         onClick={handleToggleAdvancedUi}
         aria-pressed={isAdvancedUiEnabled}
@@ -7328,6 +7332,7 @@ export default function App() {
       </button>
       {isAdvancedUiEnabled ? (
         <button
+          data-ui-complexity-tier="advanced-content"
           type="button"
           onClick={() => {
             void handleSuggestLayout();
@@ -7347,6 +7352,7 @@ export default function App() {
         </button>
       ) : null}
       <button
+        data-ui-core-action="create-card"
         type="button"
         onClick={handleAddCard}
         disabled={isReadOnly || isLoading || !document}
@@ -7363,6 +7369,7 @@ export default function App() {
         {t("app.toolbar.new_card")}
       </button>
       <button
+        data-ui-core-action="create-island"
         type="button"
         onClick={handleCreateIsland}
         disabled={isReadOnly || isLoading || !document || !canCreateIsland}
@@ -7379,6 +7386,7 @@ export default function App() {
         {t("app.toolbar.create_island")}
       </button>
       <button
+        data-ui-core-action="delete-selection"
         type="button"
         onClick={handleDeleteSelection}
         disabled={isReadOnly || isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)}
@@ -7398,6 +7406,7 @@ export default function App() {
         {t("app.toolbar.delete_selection")}
       </button>
       <button
+        data-ui-core-action="save"
         type="button"
         onClick={() => {
           void handleSave();
@@ -8381,7 +8390,10 @@ export default function App() {
   }, [isViewControlsOpen]);
 
   const headerViewControls = (
-    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
+    <div
+      data-ui-complexity-tier="core-view"
+      style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", whiteSpace: "nowrap" }}
+    >
       <button
         type="button"
         onClick={() => {

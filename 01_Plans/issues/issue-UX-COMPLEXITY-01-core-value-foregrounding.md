@@ -1,7 +1,7 @@
 # Issue Draft: UX-COMPLEXITY-01 MVP主要価値の前景化と複雑性予算の継続適合
 
 - Type: Feature request
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -87,3 +87,32 @@
 - Related: `01_Plans/issues/issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`
 - Related: `ROADMAP.md`
 - Derived-from: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
+
+## 完了記録（2026-06-23）
+
+### 初期表示／段階開示インベントリ
+
+| ADR-0031 の領域 | 初期表示で前景化する内容 | 「詳細」の背後に置く内容 | ADR-0043 判定 |
+| --- | --- | --- | --- |
+| 入口 | ファイル、最近の文書、開く | 旧式JSONはファイルメニュー内 | 適合 |
+| キャンバス | 新規カード、島を作成、削除、保存 | AIによる配置提案 | 適合 |
+| 選択コンテキスト | 選択対象、レビュー状態、保留、違和感 | トレース、メトリクス、診断、HIL-RS | 適合 |
+| 作業モード面 | SafeMode、探索／レビュー／要約、表示、検索 | 高度な表示・証拠オーバーレイ等は表示パネル内 | 適合 |
+| 共有前確認面 | 共有と再現、SafeMode、公開範囲、未レビュー情報、出力形式 | パッチ、差分、詳細な出力設定 | 適合 |
+
+### 実装と検証
+
+- `App.tsx` に `data-ui-complexity-tier` と `data-ui-core-action` を付与し、見た目を変えずに前景／段階開示の境界を機械判定可能にした。
+- `ux_operability_regression.test.ts` で前景領域、開示操作、高度機能、主要4操作のアンカーを固定した。
+- `complexity_budget_foregrounding.spec.ts` で既定時に高度機能が非表示であること、主要4操作が見えること、「詳細」の開閉で可逆に戻ることを実ブラウザで固定した。
+- `04_Documentation/acceptance_check.md` に一般利用者が通常表示と詳細表示を確認する手順を追加した。
+- `.github/pull_request_template.md` に UI 変更時の複雑性予算自己申告を追加した。
+
+### 受け入れ条件の判定
+
+- AC-1: Pass。5領域のインベントリと CB-1 適合判定を上表へ記録した。
+- AC-2: Pass。既定表示と段階開示を Playwright で固定した。
+- AC-3: Pass。PRテンプレの自己申告と source-string 回帰アンカーを追加した。
+- AC-4: Pass。純増時の理由記載をPRテンプレで要求した。
+
+複雑性予算: 初期表示への純増=なし / 保留操作の距離=不変 / 取り消し導線=あり（「詳細」を再度選択）
