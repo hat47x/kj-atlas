@@ -11,6 +11,13 @@ import {
 } from "../export/narrative_export";
 import { t } from "../i18n/translate";
 
+const claimTypeLabels: Record<string, string> = {
+  fact: t("side_panel.claim_type.fact"),
+  claim: t("side_panel.claim_type.claim"),
+  hypothesis: t("side_panel.claim_type.hypothesis"),
+  unknown: t("side_panel.claim_type.unknown"),
+};
+
 type NarrativesPanelProps = {
   narrativeText: string;
   onNarrativeTextChange: (value: string) => void;
@@ -333,6 +340,16 @@ export function NarrativesPanel({
                         </button>{" "}
                         [{entry.card.kind}
                         {entry.card.kind === "source" ? ` canonicalId: ${entry.card.canonicalId}` : ""}]
+                        {entry.card.claimType && entry.card.claimType !== "unknown" ? (
+                          <span style={{ color: "#334155", marginLeft: 4 }}>
+                            [{claimTypeLabels[entry.card.claimType] ?? entry.card.claimType}]
+                          </span>
+                        ) : null}
+                        {entry.card.textReviewed === false ? (
+                          <span style={{ color: "#b45309", marginLeft: 4 }}>({t("side_panel.unreviewed")})</span>
+                        ) : entry.card.textReviewed === true ? (
+                          <span style={{ color: "#166534", marginLeft: 4 }}>({t("side_panel.reviewed")})</span>
+                        ) : null}
                       </div>
                       <div style={{ whiteSpace: "pre-wrap", color: "#475569" }}>{entry.card.text || t("narratives.panel.empty")}</div>
                     </div>
@@ -369,7 +386,18 @@ export function NarrativesPanel({
                               {member.id}
                             </button>{" "}
                             [{member.kind}
-                            {member.kind === "source" ? ` canonicalId: ${member.canonicalId}` : ""}] - {member.text || t("narratives.panel.empty")}
+                            {member.kind === "source" ? ` canonicalId: ${member.canonicalId}` : ""}]
+                            {member.claimType && member.claimType !== "unknown" ? (
+                              <span style={{ color: "#334155", marginLeft: 4 }}>
+                                [{claimTypeLabels[member.claimType] ?? member.claimType}]
+                              </span>
+                            ) : null}
+                            {member.textReviewed === false ? (
+                              <span style={{ color: "#b45309", marginLeft: 4 }}>({t("side_panel.unreviewed")})</span>
+                            ) : member.textReviewed === true ? (
+                              <span style={{ color: "#166534", marginLeft: 4 }}>({t("side_panel.reviewed")})</span>
+                            ) : null}{" "}
+                            - {member.text || t("narratives.panel.empty")}
                           </li>
                         ))}
                         {(entry.islandMembers ?? []).length === 0 ? <li>{t("narratives.panel.no_member_cards")}</li> : null}
