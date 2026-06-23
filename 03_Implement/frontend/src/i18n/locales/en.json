@@ -1208,6 +1208,8 @@
   "side_panel.doc_bar.evidence": "Evidence: {n}",
   "side_panel.doc_bar.critiques": "Critiques: {n}",
   "side_panel.critique_summary": "Critiques: {critiques} / Reproposals: {reproposals}",
+  "side_panel.reproposal_diffs.latest_title": "Latest re-proposal",
+  "side_panel.reproposal_diffs.rationale": "Rationale",
   "state_filter.label": "State filter",
   "state_filter.unreviewed": "unreviewed",
   "state_filter.no_evidence": "no evidence",
