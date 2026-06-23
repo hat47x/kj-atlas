@@ -98,7 +98,7 @@ export function NarrativesPanel({
       return;
     }
 
-    const content = buildNarrativeMarkdown(selectedNarrative, readingOrderSnippets, groundingEntries);
+    const content = buildNarrativeMarkdown(selectedNarrative, readingOrderSnippets, groundingEntries, document.evidenceLinks ?? []);
     const fileStem = sanitizeFileStem(selectedNarrative.title || selectedNarrative.id);
     downloadTextFile(`${fileStem}.md`, "text/markdown", content);
   };
@@ -108,7 +108,7 @@ export function NarrativesPanel({
       return;
     }
 
-    const content = buildNarrativeHtml(selectedNarrative, readingOrderSnippets, groundingEntries);
+    const content = buildNarrativeHtml(selectedNarrative, readingOrderSnippets, groundingEntries, document.evidenceLinks ?? []);
     const fileStem = sanitizeFileStem(selectedNarrative.title || selectedNarrative.id);
     downloadTextFile(`${fileStem}.html`, "text/html", content);
   };
