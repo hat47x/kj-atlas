@@ -748,11 +748,17 @@ export function SidePanel({
   const critiqueTagLabels: Record<CritiqueTag, string> = {
     too_close: t("side_panel.critique.tag.too_close"),
     too_far: t("side_panel.critique.tag.too_far"),
+    not_the_same: t("side_panel.critique.tag.not_the_same"),
+    feels_off: t("side_panel.critique.tag.feels_off"),
+    no_articulable_reason: t("side_panel.critique.tag.no_articulable_reason"),
+  };
+  const legacyCritiqueTagLabels: Record<string, string> = {
     belongs_together: t("side_panel.critique.tag.belongs_together"),
     unrelated: t("side_panel.critique.tag.unrelated"),
     unclear_boundary: t("side_panel.critique.tag.unclear_boundary"),
   };
-  const getCritiqueTagLabel = (tag: string): string => critiqueTagLabels[tag as CritiqueTag] ?? tag;
+  const getCritiqueTagLabel = (tag: string): string =>
+    critiqueTagLabels[tag as CritiqueTag] ?? legacyCritiqueTagLabels[tag] ?? tag;
 
   const claimTypeBadgeColors: Record<ClaimType, { backgroundColor: string; color: string }> = {
     fact: { backgroundColor: "#dcfce7", color: "#166534" },
@@ -2594,6 +2600,13 @@ export function SidePanel({
               </label>
             ))}
           </div>
+          <div
+            data-domain-flow="critique-reproposal"
+            role="note"
+            style={{ fontSize: 11, lineHeight: 1.5, color: "#475569", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 10 }}
+          >
+            {t("side_panel.critique.reproposal_hint")}
+          </div>
 
           <div
             style={{
@@ -3438,6 +3451,13 @@ export function SidePanel({
                     {critiqueTagLabels[tag]}
                   </label>
                 ))}
+              </div>
+              <div
+                data-domain-flow="critique-reproposal"
+                role="note"
+                style={{ fontSize: 11, lineHeight: 1.5, color: "#475569", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}
+              >
+                {t("side_panel.critique.reproposal_hint")}
               </div>
             </>
           )}
