@@ -63,6 +63,30 @@ describe("hil_rs_payload", () => {
     });
   });
 
+  it("maps every first-class critique type without changing the schema", () => {
+    const result = buildHilRsCritiqueInputs(
+      {
+        ...BASE_DOC,
+        cards: [
+          { id: "c1", text: "one", x: 0, y: 0, critiqueTags: ["not_the_same"] },
+          { id: "c2", text: "two", x: 10, y: 0, critiqueTags: ["feels_off"] },
+          { id: "c3", text: "three", x: 20, y: 0, critiqueTags: ["no_articulable_reason"] },
+        ],
+        islands: [],
+      },
+      {
+        iteration: 3,
+        createdAt: "2026-06-23T00:00:00.000Z",
+      },
+    );
+
+    expect(result.map((item) => item.critiqueType)).toEqual([
+      "not_the_same",
+      "feels_off",
+      "no_articulable_reason",
+    ]);
+  });
+
   it("returns empty list for invalid iteration", () => {
     const result = buildHilRsCritiqueInputs(BASE_DOC, {
       iteration: 0,

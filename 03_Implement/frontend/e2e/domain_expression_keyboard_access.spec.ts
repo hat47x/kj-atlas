@@ -99,6 +99,14 @@ test("domain expression state controls are reachable with keyboard after card se
   await expect(selectionPanel).toContainText("contradicting stakeholder signal contradicts this");
   await expect(selectionPanel).toContainText("Critique note");
   await expect(selectionPanel).toContainText("needs review before acceptance");
+  await expect(selectionPanel.getByRole("checkbox", { name: "Too close" })).toBeVisible();
+  await expect(selectionPanel.getByRole("checkbox", { name: "Too far" })).toBeVisible();
+  await expect(selectionPanel.getByRole("checkbox", { name: "Not the same" })).toBeVisible();
+  await expect(selectionPanel.getByRole("checkbox", { name: "Feels off" })).toBeVisible();
+  await expect(selectionPanel.getByRole("checkbox", { name: "No articulable reason" })).toBeVisible();
+  await expect(selectionPanel.locator('[data-domain-flow="critique-reproposal"]')).toContainText(
+    "When AI is disabled, the critique remains saved but no reproposal candidate is generated.",
+  );
 
   await tabUntilFocused(
     page,
@@ -132,6 +140,20 @@ test("domain expression state controls are reachable with keyboard after card se
   );
   await page.keyboard.press("Space");
   await expect(page.getByLabel("Too close")).toBeChecked();
+
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect.poll(() => fixture.getStoredDocument().cards.find((card) => card.id === "domain-target")?.critique)
+    .toBe("keyboard review note");
+  await expect.poll(() => fixture.getStoredDocument().cards.find((card) => card.id === "domain-target")?.critiqueTags)
+    .toContain("too_close");
+
+  await page.getByRole("button", { name: "Review reproposal" }).click();
+  await expect(page.getByRole("button", { name: "Advanced" })).toHaveAttribute("aria-pressed", "true");
+  const critiqueWorkflow = page.locator('[data-domain-workflow="critique-reproposal"]');
+  await expect(critiqueWorkflow).toBeVisible();
+  await expect(critiqueWorkflow).toContainText("Record critique");
+  await expect(critiqueWorkflow).toContainText("Layout suggestion");
+  await expect(critiqueWorkflow).toBeFocused();
 });
 
 test("share preflight keeps unresolved domain signals visible and unreviewed drafts excluded", async ({ page }) => {

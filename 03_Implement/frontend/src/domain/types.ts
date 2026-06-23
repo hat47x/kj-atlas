@@ -41,9 +41,9 @@ export function isSourceCard(card: Card): boolean {
 export const CRITIQUE_TAGS = [
   "too_close",
   "too_far",
-  "belongs_together",
-  "unrelated",
-  "unclear_boundary",
+  "not_the_same",
+  "feels_off",
+  "no_articulable_reason",
 ] as const;
 
 export type CritiqueTag = (typeof CRITIQUE_TAGS)[number];

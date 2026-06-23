@@ -36,8 +36,13 @@ export function HilRsWorkflowPanel({ candidateComparison, critiqueInput, diffVis
         <div style={DESCRIPTION_STYLE}>{t("hil_rs_workflow.candidate.description")}</div>
         {candidateComparison}
       </section>
-      <section style={SECTION_STYLE}>
-        <div style={TITLE_STYLE}>{t("hil_rs_workflow.critique.title")}</div>
+      <section
+        data-domain-workflow="critique-reproposal"
+        aria-labelledby="critique-reproposal-title"
+        tabIndex={-1}
+        style={SECTION_STYLE}
+      >
+        <div id="critique-reproposal-title" style={TITLE_STYLE}>{t("hil_rs_workflow.critique.title")}</div>
         <div style={DESCRIPTION_STYLE}>{t("hil_rs_workflow.critique.description")}</div>
         {critiqueInput}
       </section>

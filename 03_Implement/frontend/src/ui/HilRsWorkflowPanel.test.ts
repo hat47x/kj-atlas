@@ -26,6 +26,9 @@ describe("HilRsWorkflowPanel", () => {
     expect(html).toContain("候補を比較");
     expect(html).toContain("違和感を記録");
     expect(html).toContain("変更内容を確認");
+    expect(html).toContain('data-domain-workflow="critique-reproposal"');
+    expect(html).toContain('aria-labelledby="critique-reproposal-title"');
+    expect(html).toContain('tabindex="-1"');
     expect(html).not.toContain("A2-1");
     expect(html).not.toContain("A2-2");
     expect(html).not.toContain("A2-3");
