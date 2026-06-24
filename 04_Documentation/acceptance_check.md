@@ -34,6 +34,8 @@ curl -fsS http://localhost:8080/api/docs/doc_phase1_canvas
 
 ![起動後の標準画面](assets/screenshots/app-canvas-overview.png)
 
+> すべてのUI要素の現行スクリーンショット（ヘッダー詳細、カードのバッジ、右クリックメニュー、作業モード面、共有前確認、レスポンシブ各幅など）は [現行UIカタログ](ui_catalog.md) にまとめています。
+
 ## 通常表示と詳細表示を見分ける
 
 通常表示では、文書を開く、カードを作る、島を作る、選択内容を削除する、保存する、表示を切り替える、共有前に確認する、といった基本操作が先に見えます。AIによる提案、差分確認、パッチ、診断などは「詳細」を選ぶまで表示されません。
@@ -152,6 +154,7 @@ curl -fsS http://localhost:8080/api/docs/doc_phase1_canvas
 
 ## 関連文書
 
+- [現行UIカタログ（全UI要素のスクリーンショット）](ui_catalog.md)
 - [導入手順](installation.md)
 - [運用手順](operations.md)
 - [診断と障害調査](diagnostics.md)
