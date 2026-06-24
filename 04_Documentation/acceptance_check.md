@@ -34,6 +34,8 @@ curl -fsS http://localhost:8080/api/docs/doc_phase1_canvas
 
 ![起動後の標準画面](assets/screenshots/app-canvas-overview.png)
 
+> すべてのUI要素の現行スクリーンショット（ヘッダー詳細、カードのバッジ、右クリックメニュー、作業モード面、共有前確認、レスポンシブ各幅など）は [現行UIカタログ](ui_catalog.md) にまとめています。
+
 ## マウスで確認すること（LLM 不要の手動操作）
 
 既定（`KJ_ATLAS_LLM_PROVIDER=none`）でも、次の手動操作だけで「書く・並べる・束ねる・つなぐ」が完結します。AI 機能は使いません。
@@ -137,6 +139,7 @@ curl -fsS http://localhost:8080/api/docs/doc_phase1_canvas
 
 ## 関連文書
 
+- [現行UIカタログ（全UI要素のスクリーンショット）](ui_catalog.md)
 - [導入手順](installation.md)
 - [運用手順](operations.md)
 - [診断と障害調査](diagnostics.md)
