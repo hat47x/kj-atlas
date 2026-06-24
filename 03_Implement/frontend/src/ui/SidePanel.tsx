@@ -55,6 +55,7 @@ type SidePanelProps = {
   onCreateRepresentativeCard: () => void;
   onCardCritiqueChange: (value: string) => void;
   onCardCritiqueTagsChange: (value: string[]) => void;
+  onOpenCritiqueWorkflow: () => void;
   onCardClaimTypeChange: (value: ClaimType) => void;
   onCardHoldStateChange: (value: HoldState | "active") => void;
   onRestoreShelvedCard: (cardId: string) => void;
@@ -223,6 +224,7 @@ export function SidePanel({
   onCreateRepresentativeCard,
   onCardCritiqueChange,
   onCardCritiqueTagsChange,
+  onOpenCritiqueWorkflow,
   onCardClaimTypeChange,
   onCardHoldStateChange,
   onRestoreShelvedCard,
@@ -745,6 +747,21 @@ export function SidePanel({
     unknown: t("side_panel.claim_type.unknown"),
   };
 
+  const critiqueTagLabels: Record<CritiqueTag, string> = {
+    too_close: t("side_panel.critique.tag.too_close"),
+    too_far: t("side_panel.critique.tag.too_far"),
+    not_the_same: t("side_panel.critique.tag.not_the_same"),
+    feels_off: t("side_panel.critique.tag.feels_off"),
+    no_articulable_reason: t("side_panel.critique.tag.no_articulable_reason"),
+  };
+  const legacyCritiqueTagLabels: Record<string, string> = {
+    belongs_together: t("side_panel.critique.tag.belongs_together"),
+    unrelated: t("side_panel.critique.tag.unrelated"),
+    unclear_boundary: t("side_panel.critique.tag.unclear_boundary"),
+  };
+  const getCritiqueTagLabel = (tag: string): string =>
+    critiqueTagLabels[tag as CritiqueTag] ?? legacyCritiqueTagLabels[tag] ?? tag;
+
   const claimTypeBadgeColors: Record<ClaimType, { backgroundColor: string; color: string }> = {
     fact: { backgroundColor: "#dcfce7", color: "#166534" },
     claim: { backgroundColor: "#dbeafe", color: "#1d4ed8" },
@@ -1143,7 +1160,7 @@ export function SidePanel({
             </div>
             {selectedCard?.claimType && selectedCard.claimType !== "unknown" ? (
               <div style={{ fontSize: 12, color: "#475569" }}>
-                {t("side_panel.context.claim_type", { value: selectedCard.claimType })}
+                {t("side_panel.context.claim_type", { value: claimTypeLabels[selectedCard.claimType] })}
               </div>
             ) : null}
             {outgoingEvidenceLinks.length > 0 || incomingEvidenceLinks.length > 0 ? (
@@ -1158,7 +1175,7 @@ export function SidePanel({
             ) : null}
             {selectedCard?.holdState ? (
               <div style={{ fontSize: 12, color: "#92400e", backgroundColor: "#fef3c7", borderRadius: 4, padding: "2px 6px", display: "inline-block", marginTop: 2 }}>
-                {t("side_panel.context.hold_state", { value: selectedCard.holdState })}
+                {t("side_panel.context.hold_state", { value: t(`side_panel.hold_state.${selectedCard.holdState}`) })}
               </div>
             ) : null}
             {selectedCard?.critique ? (
@@ -1169,7 +1186,7 @@ export function SidePanel({
             {selectedCard?.critiqueTags && selectedCard.critiqueTags.length > 0 ? (
               <div style={{ fontSize: 11, color: "#92400e", display: "flex", gap: 4, flexWrap: "wrap" }}>
                 {selectedCard.critiqueTags.map((tag) => (
-                  <span key={tag} style={{ backgroundColor: "#fed7aa", borderRadius: 999, padding: "1px 6px" }}>{tag}</span>
+                  <span key={tag} style={{ backgroundColor: "#fed7aa", borderRadius: 999, padding: "1px 6px" }}>{getCritiqueTagLabel(tag)}</span>
                 ))}
               </div>
             ) : null}
@@ -1192,6 +1209,16 @@ export function SidePanel({
       </section>
       {document?.cards ? (
         <>
+          <div style={{ display: "flex", gap: 10, fontSize: 11, color: "#64748b", padding: "2px 0", flexWrap: "wrap" }}>
+            <span>{t("side_panel.doc_bar.cards", { n: document.cards.length })}</span>
+            <span>{t("side_panel.doc_bar.islands", { n: document.islands?.length ?? 0 })}</span>
+            {(document.evidenceLinks?.length ?? 0) > 0 ? (
+              <span>{t("side_panel.doc_bar.evidence", { n: document.evidenceLinks?.length ?? 0 })}</span>
+            ) : null}
+            {(document.critiqueInputs?.length ?? 0) > 0 ? (
+              <span>{t("side_panel.doc_bar.critiques", { n: document.critiqueInputs?.length ?? 0 })}</span>
+            ) : null}
+          </div>
           <DomainStateSummary
             cards={document.cards}
             islandCount={document.islands?.length ?? 0}
@@ -1210,7 +1237,44 @@ export function SidePanel({
           shelf={document.shelf}
           isReadOnly={isReadOnly}
           onRestoreCard={onRestoreShelvedCard}
+          onFocusCard={(cardId) => onFocusCardById(cardId)}
         />
+      ) : null}
+      {(document?.critiqueInputs?.length ?? 0) > 0 || (document?.reproposalDiffs?.length ?? 0) > 0 ? (
+        <section style={{ fontSize: 11, color: "#92400e", padding: "4px 0", borderBottom: "1px solid #fde68a", marginBottom: 6 }}>
+          {t("side_panel.critique_summary", { critiques: document?.critiqueInputs?.length ?? 0, reproposals: document?.reproposalDiffs?.length ?? 0 })}
+        </section>
+      ) : null}
+      {(document?.reproposalDiffs?.length ?? 0) > 0 ? (
+        <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 8 }}>
+            {t("side_panel.reproposal_diffs.latest_title")}
+          </div>
+          {[...document!.reproposalDiffs!].reverse().slice(0, 3).map((diff) => (
+            <div key={diff.proposalId} style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 6 }}>
+              <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>
+                <strong>{t("hil_rs_rediff_preview.proposal")}:</strong> {diff.proposalId}
+                {" "}|{" "}
+                <strong>{t("hil_rs_rediff_preview.based_on_iteration")}:</strong> {diff.basedOnIteration}
+                {" "}|{" "}
+                <strong>{t("hil_rs_rediff_preview.diff_operations")}:</strong> {diff.diffOps.length}
+              </div>
+              {diff.rationale ? (
+                <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>
+                  <strong>{t("side_panel.reproposal_diffs.rationale")}:</strong> {diff.rationale.slice(0, 200)}{diff.rationale.length > 200 ? "…" : ""}
+                </div>
+              ) : null}
+              <ul style={{ margin: "4px 0 0", paddingLeft: 16, fontSize: 11, color: "#334155" }}>
+                {diff.diffOps.map((op) => (
+                  <li key={op.opId}>
+                    {op.opType} / {op.targetRef}
+                    {op.rationale ? <span style={{ color: "#64748b" }}> — {op.rationale.slice(0, 80)}{op.rationale.length > 80 ? "…" : ""}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
       ) : null}
       {topContent}
       {importedPackSnapshotUrl || importedPackDiagnosticsMd ? (
@@ -2565,10 +2629,29 @@ export function SidePanel({
                     onIslandCritiqueTagsChange(toggleCritiqueTag(selectedIsland.critiqueTags, tag));
                   }}
                 />
-                {tag}
+                {critiqueTagLabels[tag]}
               </label>
             ))}
           </div>
+          <div
+            data-domain-flow="critique-reproposal"
+            role="note"
+            style={{ fontSize: 11, lineHeight: 1.5, color: "#475569", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 10 }}
+          >
+            {t("side_panel.critique.reproposal_hint")}
+          </div>
+          <button
+            data-domain-action="open-critique-workflow"
+            type="button"
+            onClick={onOpenCritiqueWorkflow}
+            disabled={
+              !(selectedIsland.critique?.trim())
+              && (selectedIsland.critiqueTags?.length ?? 0) === 0
+            }
+            style={{ width: "100%", marginBottom: 10 }}
+          >
+            {t("side_panel.critique.open_reproposal")}
+          </button>
 
           <div
             style={{
@@ -3410,10 +3493,29 @@ export function SidePanel({
                         onCardCritiqueTagsChange(toggleCritiqueTag(selectedCard.critiqueTags, tag));
                       }}
                     />
-                    {tag}
+                    {critiqueTagLabels[tag]}
                   </label>
                 ))}
               </div>
+              <div
+                data-domain-flow="critique-reproposal"
+                role="note"
+                style={{ fontSize: 11, lineHeight: 1.5, color: "#475569", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}
+              >
+                {t("side_panel.critique.reproposal_hint")}
+              </div>
+              <button
+                data-domain-action="open-critique-workflow"
+                type="button"
+                onClick={onOpenCritiqueWorkflow}
+                disabled={
+                  !(selectedCard.critique?.trim())
+                  && (selectedCard.critiqueTags?.length ?? 0) === 0
+                }
+                style={{ width: "100%", marginBottom: 12 }}
+              >
+                {t("side_panel.critique.open_reproposal")}
+              </button>
             </>
           )}
         </>

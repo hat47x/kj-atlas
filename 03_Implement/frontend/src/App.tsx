@@ -19,6 +19,7 @@ import {
 } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
 import { ContextMenu, type ContextMenuItem } from "./ui/ContextMenu";
+import { MenuButton } from "./ui/MenuButton";
 import type { AggregatedEdgeMeta, CameraTransformRequest, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
@@ -1041,6 +1042,7 @@ export default function App() {
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [isAdvancedUiEnabled, setIsAdvancedUiEnabled] = useState<boolean>(loadAdvancedUiEnabled);
+  const [critiqueWorkflowFocusRequest, setCritiqueWorkflowFocusRequest] = useState(0);
   const [contextMenu, setContextMenu] = useState<
     | {
         x: number;
@@ -3993,6 +3995,32 @@ export default function App() {
       return next;
     });
   }, []);
+
+  const handleOpenCritiqueWorkflow = useCallback(() => {
+    setIsAdvancedUiEnabled(true);
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(ADVANCED_UI_STORAGE_KEY, "true");
+      }
+    } catch {
+      // Ignore persistence failures (e.g. storage disabled).
+    }
+    setCritiqueWorkflowFocusRequest((current) => current + 1);
+  }, []);
+
+  useEffect(() => {
+    if (!isAdvancedUiEnabled || critiqueWorkflowFocusRequest === 0) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const workflow = window.document.querySelector<HTMLElement>('[data-domain-workflow="critique-reproposal"]');
+      workflow?.focus();
+      workflow?.scrollIntoView({ block: "start" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [critiqueWorkflowFocusRequest, isAdvancedUiEnabled]);
 
   const handleCommitCardText = useCallback(
     (cardId: string, text: string) => {
@@ -7077,7 +7105,7 @@ export default function App() {
   };
 
   const headerCenter = (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <div data-ui-complexity-tier="core-context" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <SearchBar
         query={searchQuery}
         totalMatches={matchedCardIds.length}
@@ -7246,40 +7274,29 @@ export default function App() {
     onReadingPathDisable: readingNavEnabled ? handleReadingDisable : undefined,
   });
 
+  const fileMenuItems: ContextMenuItem[] = [
+    { kind: "action", label: t("app.toolbar.new"), onSelect: handleNewDocument, disabled: isLoading || isSaving },
+    { kind: "action", label: t("app.toolbar.duplicate"), onSelect: handleDuplicateDocument, disabled: isLoading || isSaving || !document },
+    { kind: "separator" },
+    { kind: "action", label: t("app.toolbar.import_doc_json_legacy_short"), onSelect: handleImportClick, disabled: isLoading },
+    { kind: "action", label: t("app.toolbar.export_doc_json_legacy_short"), onSelect: handleExport, disabled: isLoading || !document },
+  ];
+
+  const editMenuItems: ContextMenuItem[] = [
+    { kind: "action", label: t("app.toolbar.undo"), onSelect: handleUndo, disabled: isReadOnly || isLoading || !document || !canUndo },
+    { kind: "action", label: t("app.toolbar.redo"), onSelect: handleRedo, disabled: isReadOnly || isLoading || !document || !canRedo },
+  ];
+  if (focusHistory.length > 0) {
+    editMenuItems.push({ kind: "action", label: t("app.toolbar.back"), onSelect: handleFocusBack });
+  }
+
   const headerRight = (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", rowGap: 6, whiteSpace: "nowrap", maxWidth: "100%" }}>
-      <button
-        type="button"
-        onClick={handleNewDocument}
-        disabled={isReadOnly || isLoading || isSaving}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isReadOnly || isLoading || isSaving ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.new")}
-      </button>
-      <button
-        type="button"
-        onClick={handleDuplicateDocument}
-        disabled={isReadOnly || isLoading || isSaving || !document}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isReadOnly || isLoading || isSaving || !document ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.duplicate")}
-      </button>
+    <div
+      data-ui-complexity-tier="core-toolbar"
+      style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", rowGap: 6, whiteSpace: "nowrap", maxWidth: "100%" }}
+    >
+      <MenuButton label={t("app.toolbar.file_menu")} items={fileMenuItems} />
+      <MenuButton label={t("app.toolbar.edit_menu")} items={editMenuItems} />
       <select
         value={selectedRecentDocumentId}
         onChange={(event) => {
@@ -7323,6 +7340,7 @@ export default function App() {
         {t("app.toolbar.open")}
       </button>
       <button
+        data-ui-complexity-tier="advanced-disclosure"
         type="button"
         onClick={handleToggleAdvancedUi}
         aria-pressed={isAdvancedUiEnabled}
@@ -7341,6 +7359,7 @@ export default function App() {
       </button>
       {isAdvancedUiEnabled ? (
         <button
+          data-ui-complexity-tier="advanced-content"
           type="button"
           onClick={() => {
             void handleSuggestLayout();
@@ -7360,98 +7379,7 @@ export default function App() {
         </button>
       ) : null}
       <button
-        type="button"
-        onClick={handleUndo}
-        disabled={isReadOnly || isLoading || !document || !canUndo}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isReadOnly || isLoading || !document || !canUndo ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.undo")}
-      </button>
-      <button
-        type="button"
-        onClick={handleRedo}
-        disabled={isReadOnly || isLoading || !document || !canRedo}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isReadOnly || isLoading || !document || !canRedo ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.redo")}
-      </button>
-      {focusHistory.length > 0 ? (
-        <button
-          type="button"
-          onClick={handleFocusBack}
-          style={{
-            border: "1px solid #cbd5e1",
-            backgroundColor: "#ffffff",
-            color: "#0f172a",
-            borderRadius: 6,
-            padding: "6px 12px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          {t("app.toolbar.back")}
-        </button>
-      ) : null}
-      <details style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", backgroundColor: "#f8fafc", minWidth: 132, boxSizing: "border-box" }}>
-        <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#334155" }}>{t("app.toolbar.legacy_json_group")}</summary>
-        <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
-          <button
-            type="button"
-            onClick={handleImportClick}
-            disabled={isReadOnly || isLoading}
-            aria-label={t("app.toolbar.import_doc_json_legacy")}
-            title={t("app.toolbar.import_doc_json_legacy")}
-            style={{
-              border: "1px solid #cbd5e1",
-              backgroundColor: "#ffffff",
-              color: "#0f172a",
-              borderRadius: 6,
-              padding: "6px 12px",
-              fontWeight: 600,
-              cursor: isReadOnly || isLoading ? "not-allowed" : "pointer",
-              width: "100%",
-            }}
-          >
-            {t("app.toolbar.import_doc_json_legacy_short")}
-          </button>
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={isLoading || !document}
-            aria-label={t("app.toolbar.export_doc_json_legacy")}
-            title={t("app.toolbar.export_doc_json_legacy")}
-            style={{
-              border: "1px solid #cbd5e1",
-              backgroundColor: "#ffffff",
-              color: "#0f172a",
-              borderRadius: 6,
-              padding: "6px 12px",
-              fontWeight: 600,
-              cursor: isLoading || !document ? "not-allowed" : "pointer",
-              width: "100%",
-            }}
-          >
-            {t("app.toolbar.export_doc_json_legacy_short")}
-          </button>
-        </div>
-      </details>
-      <button
+        data-ui-core-action="create-card"
         type="button"
         onClick={handleAddCard}
         disabled={isReadOnly || isLoading || !document}
@@ -7468,6 +7396,7 @@ export default function App() {
         {t("app.toolbar.new_card")}
       </button>
       <button
+        data-ui-core-action="create-island"
         type="button"
         onClick={handleCreateIsland}
         disabled={isReadOnly || isLoading || !document || !canCreateIsland}
@@ -7484,6 +7413,7 @@ export default function App() {
         {t("app.toolbar.create_island")}
       </button>
       <button
+        data-ui-core-action="delete-selection"
         type="button"
         onClick={handleDeleteSelection}
         disabled={isReadOnly || isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId)}
@@ -7503,6 +7433,7 @@ export default function App() {
         {t("app.toolbar.delete_selection")}
       </button>
       <button
+        data-ui-core-action="save"
         type="button"
         onClick={() => {
           void handleSave();
@@ -8486,7 +8417,10 @@ export default function App() {
   }, [isViewControlsOpen]);
 
   const headerViewControls = (
-    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
+    <div
+      data-ui-complexity-tier="core-view"
+      style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", whiteSpace: "nowrap" }}
+    >
       <button
         type="button"
         onClick={() => {
@@ -9083,6 +9017,7 @@ export default function App() {
 
             handleCardCritiqueTagsChange(selectedCard.id, value);
           }}
+          onOpenCritiqueWorkflow={handleOpenCritiqueWorkflow}
           onCardClaimTypeChange={(value) => {
             if (!selectedCard) {
               return;

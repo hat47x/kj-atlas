@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 
 import type { NarrativeIssue, NarrativeIssueReference } from "../api/client";
 import { buildNarrativeGrounding } from "../domain/grounding";
@@ -10,6 +10,13 @@ import {
   type ReadingOrderSnippetMap,
 } from "../export/narrative_export";
 import { t } from "../i18n/translate";
+
+const claimTypeLabels: Record<string, string> = {
+  fact: t("side_panel.claim_type.fact"),
+  claim: t("side_panel.claim_type.claim"),
+  hypothesis: t("side_panel.claim_type.hypothesis"),
+  unknown: t("side_panel.claim_type.unknown"),
+};
 
 type NarrativesPanelProps = {
   narrativeText: string;
@@ -59,6 +66,7 @@ export function NarrativesPanel({
   hideSourceCards,
   onFocusItem,
 }: NarrativesPanelProps) {
+  const panelTitleId = useId();
   const [selectedNarrativeId, setSelectedNarrativeId] = useState<string | null>(null);
   const [expandedCheckIds, setExpandedCheckIds] = useState<Set<string>>(new Set());
 
@@ -90,7 +98,7 @@ export function NarrativesPanel({
       return;
     }
 
-    const content = buildNarrativeMarkdown(selectedNarrative, readingOrderSnippets, groundingEntries);
+    const content = buildNarrativeMarkdown(selectedNarrative, readingOrderSnippets, groundingEntries, document.evidenceLinks ?? []);
     const fileStem = sanitizeFileStem(selectedNarrative.title || selectedNarrative.id);
     downloadTextFile(`${fileStem}.md`, "text/markdown", content);
   };
@@ -100,7 +108,7 @@ export function NarrativesPanel({
       return;
     }
 
-    const content = buildNarrativeHtml(selectedNarrative, readingOrderSnippets, groundingEntries);
+    const content = buildNarrativeHtml(selectedNarrative, readingOrderSnippets, groundingEntries, document.evidenceLinks ?? []);
     const fileStem = sanitizeFileStem(selectedNarrative.title || selectedNarrative.id);
     downloadTextFile(`${fileStem}.html`, "text/html", content);
   };
@@ -122,12 +130,13 @@ export function NarrativesPanel({
   };
 
   return (
-    <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("narratives.panel.title")}</div>
+    <section aria-labelledby={panelTitleId} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+      <div id={panelTitleId} style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("narratives.panel.title")}</div>
       <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
         {t("narratives.panel.advisory_hint")}
       </div>
       <textarea
+        aria-label={t("narratives.panel.title")}
         value={narrativeText}
         onChange={(event) => {
           onNarrativeTextChange(event.target.value);
@@ -175,7 +184,7 @@ export function NarrativesPanel({
       <div style={{ fontSize: 11, color: "#7c2d12", marginBottom: 8 }}>
         {t("narratives.panel.generated_draft_warning")}
       </div>
-      {generationErrorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{generationErrorMessage}</div> : null}
+      {generationErrorMessage ? <div role="alert" style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{generationErrorMessage}</div> : null}
       {generatedNarratives.length > 0 ? (
         <ul style={{ margin: "0 0 8px", paddingLeft: 18, display: "grid", gap: 8 }}>
           {generatedNarratives.map((entry) => {
@@ -184,6 +193,7 @@ export function NarrativesPanel({
               <li key={entry.id} style={{ fontSize: 12, color: "#1e293b" }}>
                 <button
                   type="button"
+                  aria-pressed={isSelected}
                   onClick={() => {
                     setSelectedNarrativeId(entry.id);
                     onNarrativeTextChange(entry.text);
@@ -255,6 +265,7 @@ export function NarrativesPanel({
                   <li key={check.id} style={{ fontSize: 12 }}>
                     <button
                       type="button"
+                      aria-expanded={isExpanded}
                       onClick={() => {
                         setExpandedCheckIds((previous) => {
                           const next = new Set(previous);
@@ -329,6 +340,16 @@ export function NarrativesPanel({
                         </button>{" "}
                         [{entry.card.kind}
                         {entry.card.kind === "source" ? ` canonicalId: ${entry.card.canonicalId}` : ""}]
+                        {entry.card.claimType && entry.card.claimType !== "unknown" ? (
+                          <span style={{ color: "#334155", marginLeft: 4 }}>
+                            [{claimTypeLabels[entry.card.claimType] ?? entry.card.claimType}]
+                          </span>
+                        ) : null}
+                        {entry.card.textReviewed === false ? (
+                          <span style={{ color: "#b45309", marginLeft: 4 }}>({t("side_panel.unreviewed")})</span>
+                        ) : entry.card.textReviewed === true ? (
+                          <span style={{ color: "#166534", marginLeft: 4 }}>({t("side_panel.reviewed")})</span>
+                        ) : null}
                       </div>
                       <div style={{ whiteSpace: "pre-wrap", color: "#475569" }}>{entry.card.text || t("narratives.panel.empty")}</div>
                     </div>
@@ -365,7 +386,18 @@ export function NarrativesPanel({
                               {member.id}
                             </button>{" "}
                             [{member.kind}
-                            {member.kind === "source" ? ` canonicalId: ${member.canonicalId}` : ""}] - {member.text || t("narratives.panel.empty")}
+                            {member.kind === "source" ? ` canonicalId: ${member.canonicalId}` : ""}]
+                            {member.claimType && member.claimType !== "unknown" ? (
+                              <span style={{ color: "#334155", marginLeft: 4 }}>
+                                [{claimTypeLabels[member.claimType] ?? member.claimType}]
+                              </span>
+                            ) : null}
+                            {member.textReviewed === false ? (
+                              <span style={{ color: "#b45309", marginLeft: 4 }}>({t("side_panel.unreviewed")})</span>
+                            ) : member.textReviewed === true ? (
+                              <span style={{ color: "#166534", marginLeft: 4 }}>({t("side_panel.reviewed")})</span>
+                            ) : null}{" "}
+                            - {member.text || t("narratives.panel.empty")}
                           </li>
                         ))}
                         {(entry.islandMembers ?? []).length === 0 ? <li>{t("narratives.panel.no_member_cards")}</li> : null}
@@ -378,7 +410,7 @@ export function NarrativesPanel({
           )}
         </div>
       ) : null}
-      {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{errorMessage}</div> : null}
+      {errorMessage ? <div role="alert" style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{errorMessage}</div> : null}
       <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("narratives.panel.consistency_issues")}</div>
       {issues.length === 0 ? (
         <div style={{ fontSize: 12, color: "#64748b" }}>{t("narratives.panel.no_issues")}</div>

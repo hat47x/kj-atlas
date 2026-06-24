@@ -11,7 +11,8 @@ describe("HilRsRediffPreview", () => {
 
   it("renders empty state when payload is null", () => {
     const html = renderToStaticMarkup(React.createElement(HilRsRediffPreview, { payload: null }));
-    expect(html).toContain("No mock re-proposal diff yet");
+    expect(html).toContain("No re-proposal changes yet.");
+    expect(html).not.toContain("mock");
   });
 
   it("renders payload summary with human-review guard and actions", () => {

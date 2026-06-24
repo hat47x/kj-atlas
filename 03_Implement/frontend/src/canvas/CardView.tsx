@@ -115,9 +115,9 @@ function CardViewComponent({
 
   // Domain state badge styling (DOMAIN-EXPR-01/02)
   const CLAIM_TYPE_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
-    fact: { bg: "#dcfce7", fg: "#166534", label: "Fact" },
-    claim: { bg: "#dbeafe", fg: "#1e40af", label: "Claim" },
-    hypothesis: { bg: "#f3e8ff", fg: "#6b21a8", label: "Hyp" },
+    fact: { bg: "#dcfce7", fg: "#166534", label: t("card_view.claim_type.fact") },
+    claim: { bg: "#dbeafe", fg: "#1e40af", label: t("card_view.claim_type.claim") },
+    hypothesis: { bg: "#f3e8ff", fg: "#6b21a8", label: t("card_view.claim_type.hypothesis") },
     unknown: { bg: "#f1f5f9", fg: "#475569", label: "?" },
   };
   const HOLD_STATE_STYLE: Record<string, { bg: string; fg: string }> = {
@@ -307,13 +307,13 @@ function CardViewComponent({
             padding: "2px 8px",
           }}
         >
-          Rep ({representativeCount})
+          {t("card_view.representative_count", { count: representativeCount })}
         </span>
       ) : null}
       {!markerMode && claimType && claimType !== "unknown" ? (
         <span
-          aria-label={`Card claim type: ${claimType}`}
-          title={`Claim type: ${claimType}`}
+          aria-label={t("card_view.claim_type.aria", { value: CLAIM_TYPE_STYLE[claimType]?.label ?? claimType })}
+          title={t("card_view.claim_type.title", { value: CLAIM_TYPE_STYLE[claimType]?.label ?? claimType })}
           style={{
             position: "absolute",
             top: representativeCount > 0 ? 28 : 6,
@@ -332,8 +332,8 @@ function CardViewComponent({
       ) : null}
       {!markerMode && holdState ? (
         <span
-          aria-label={t("card_view.hold_state.aria", { state: holdStateLabel })}
-          title={t("card_view.hold_state.title", { state: holdStateLabel })}
+          aria-label={t("card_view.hold_state.aria", { value: holdStateLabel })}
+          title={t("card_view.hold_state.title", { value: holdStateLabel })}
           style={{
             position: "absolute",
             top: (representativeCount > 0 ? 28 : 6) + (claimType && claimType !== "unknown" ? 22 : 0),
@@ -352,8 +352,8 @@ function CardViewComponent({
       ) : null}
       {!markerMode && !isTextReviewed ? (
         <span
-          aria-label="Card text is unreviewed"
-          title="Card text is unreviewed"
+          aria-label={t("card_view.unreviewed")}
+          title={t("card_view.unreviewed")}
           style={{
             position: "absolute",
             bottom: 6,
@@ -368,8 +368,12 @@ function CardViewComponent({
       ) : null}
       {!markerMode && hasCritique ? (
         <span
-          aria-label={critiqueTagCount > 0 ? `Card has critique + ${critiqueTagCount} tag(s)` : "Card has critique note"}
-          title={critiqueTagCount > 0 ? `Critique + ${critiqueTagCount} tag(s)` : "Card has critique note"}
+          aria-label={critiqueTagCount > 0
+            ? t("card_view.critique_with_tags", { count: critiqueTagCount })
+            : t("card_view.critique_note")}
+          title={critiqueTagCount > 0
+            ? t("card_view.critique_with_tags_title", { count: critiqueTagCount })
+            : t("card_view.critique_note")}
           style={{
             position: "absolute",
             top: 6,
@@ -385,7 +389,7 @@ function CardViewComponent({
             lineHeight: critiqueTagCount > 0 ? "14px" : undefined,
           }}
         >
-          {critiqueTagCount > 0 ? `${critiqueTagCount} tag` : null}
+          {critiqueTagCount > 0 ? t("card_view.critique_tag_count", { count: critiqueTagCount }) : null}
         </span>
       ) : null}
       {!markerMode && isEditing ? (

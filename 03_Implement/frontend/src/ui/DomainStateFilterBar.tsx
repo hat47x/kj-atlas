@@ -20,6 +20,12 @@ const chipStyle = (active: boolean): React.CSSProperties => ({
 });
 
 export function DomainStateFilterBar({ filter, onFilterChange }: DomainStateFilterBarProps) {
+  const claimTypeLabels = {
+    fact: t("domain_filter.claim_type.fact"),
+    claim: t("domain_filter.claim_type.claim"),
+    hypothesis: t("domain_filter.claim_type.hypothesis"),
+  };
+
   const toggleClaimType = (ct: "fact" | "claim" | "hypothesis") => {
     const current = filter.claimTypes ?? [];
     const next = current.includes(ct) ? current.filter((c) => c !== ct) : [...current, ct];
@@ -54,7 +60,7 @@ export function DomainStateFilterBar({ filter, onFilterChange }: DomainStateFilt
           onClick={() => toggleClaimType(ct)}
           style={chipStyle(filter.claimTypes?.includes(ct) ?? false)}
         >
-          {ct}
+          {claimTypeLabels[ct]}
         </button>
       ))}
       <button

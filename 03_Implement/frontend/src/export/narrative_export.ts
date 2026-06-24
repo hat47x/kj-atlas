@@ -1,4 +1,5 @@
 import type { GroundingEntry } from "../domain/grounding";
+import type { EvidenceLink } from "../domain/types";
 
 export type NarrativeExportItem = {
   id: string;
@@ -62,6 +63,45 @@ function buildReadingOrderHtml(ids: string[] = [], snippets: ReadingOrderSnippet
   return `<ol>\n${items}\n</ol>`;
 }
 
+function buildEvidenceLinksMarkdown(links: EvidenceLink[], cardIds: Set<string>): string {
+  const relevant = links.filter(
+    (link) => cardIds.has(link.fromCardId) || cardIds.has(link.toCardId)
+  );
+
+  if (relevant.length === 0) {
+    return "_No evidence links for the reading order entries._";
+  }
+
+  return relevant
+    .map((link, index) => {
+      const kind = link.type === "supports" ? "supports" : "contradicts";
+      const noteSuffix = link.note ? ` — ${link.note}` : "";
+      return `${index + 1}. ${link.fromCardId} ${kind} ${link.toCardId}${noteSuffix}`;
+    })
+    .join("\n");
+}
+
+function buildEvidenceLinksHtml(links: EvidenceLink[], cardIds: Set<string>): string {
+  const relevant = links.filter(
+    (link) => cardIds.has(link.fromCardId) || cardIds.has(link.toCardId)
+  );
+
+  if (relevant.length === 0) {
+    return "<p><em>No evidence links for the reading order entries.</em></p>";
+  }
+
+  const items = relevant
+    .map((link) => {
+      const kind = link.type === "supports" ? "supports" : "contradicts";
+      const kindClass = link.type === "supports" ? "supports" : "contradicts";
+      const noteSuffix = link.note ? ` — ${escapeHtml(link.note)}` : "";
+      return `<li><code>${escapeHtml(link.fromCardId)}</code> <span class="${kindClass}">${kind}</span> <code>${escapeHtml(link.toCardId)}</code>${noteSuffix}</li>`;
+    })
+    .join("\n");
+
+  return `<ul class="evidence-links">\n${items}\n</ul>`;
+}
+
 function buildGroundingMarkdown(entries: GroundingEntry[]): string {
   if (entries.length === 0) {
     return "_No grounding entries._";
@@ -75,14 +115,18 @@ function buildGroundingMarkdown(entries: GroundingEntry[]): string {
 
       if (entry.kind === "card" && entry.card) {
         const canonicalLabel = entry.card.kind === "canonical" ? "canonical" : `source (canonicalId: ${entry.card.canonicalId})`;
-        return `${index + 1}. ${entry.anchor} Card ${entry.card.id} [${canonicalLabel}] — ${entry.card.text || "(empty)"}`;
+        const claimLabel = entry.card.claimType && entry.card.claimType !== "unknown" ? ` [${entry.card.claimType}]` : "";
+        const reviewLabel = entry.card.textReviewed === false ? " (unreviewed)" : entry.card.textReviewed === true ? " (reviewed)" : "";
+        return `${index + 1}. ${entry.anchor} Card ${entry.card.id} [${canonicalLabel}]${claimLabel}${reviewLabel} — ${entry.card.text || "(empty)"}`;
       }
 
       const members = (entry.islandMembers ?? [])
         .map((member) => {
           const canonicalLabel =
             member.kind === "canonical" ? "canonical" : `source (canonicalId: ${member.canonicalId})`;
-          return `   - ${member.id} [${canonicalLabel}] — ${member.text || "(empty)"}`;
+          const memberClaimLabel = member.claimType && member.claimType !== "unknown" ? ` [${member.claimType}]` : "";
+          const memberReviewLabel = member.textReviewed === false ? " (unreviewed)" : member.textReviewed === true ? " (reviewed)" : "";
+          return `   - ${member.id} [${canonicalLabel}]${memberClaimLabel}${memberReviewLabel} — ${member.text || "(empty)"}`;
         })
         .join("\n");
       const summary = entry.islandSummaryText
@@ -110,7 +154,9 @@ function buildGroundingHtml(entries: GroundingEntry[]): string {
           entry.card.kind === "canonical"
             ? "canonical"
             : `source (canonicalId: ${escapeHtml(entry.card.canonicalId ?? "")})`;
-        return `<li><strong>${escapeHtml(entry.anchor)}</strong> Card <code>${escapeHtml(entry.card.id)}</code> [${canonicalLabel}] — ${escapeHtml(entry.card.text || "(empty)")}</li>`;
+        const claimLabel = entry.card.claimType && entry.card.claimType !== "unknown" ? ` [${escapeHtml(entry.card.claimType)}]` : "";
+        const reviewLabel = entry.card.textReviewed === false ? " (unreviewed)" : entry.card.textReviewed === true ? " (reviewed)" : "";
+        return `<li><strong>${escapeHtml(entry.anchor)}</strong> Card <code>${escapeHtml(entry.card.id)}</code> [${canonicalLabel}]${claimLabel}${reviewLabel} — ${escapeHtml(entry.card.text || "(empty)")}</li>`;
       }
 
       const members = (entry.islandMembers ?? [])
@@ -119,7 +165,9 @@ function buildGroundingHtml(entries: GroundingEntry[]): string {
             member.kind === "canonical"
               ? "canonical"
               : `source (canonicalId: ${escapeHtml(member.canonicalId ?? "")})`;
-          return `<li><code>${escapeHtml(member.id)}</code> [${canonicalLabel}] — ${escapeHtml(member.text || "(empty)")}</li>`;
+          const memberClaimLabel = member.claimType && member.claimType !== "unknown" ? ` [${escapeHtml(member.claimType)}]` : "";
+          const memberReviewLabel = member.textReviewed === false ? " (unreviewed)" : member.textReviewed === true ? " (reviewed)" : "";
+          return `<li><code>${escapeHtml(member.id)}</code> [${canonicalLabel}]${memberClaimLabel}${memberReviewLabel} — ${escapeHtml(member.text || "(empty)")}</li>`;
         })
         .join("");
       const summary = entry.islandSummaryText
@@ -134,7 +182,8 @@ function buildGroundingHtml(entries: GroundingEntry[]): string {
 export function buildNarrativeMarkdown(
   item: NarrativeExportItem,
   snippets: ReadingOrderSnippetMap = {},
-  groundingEntries: GroundingEntry[] = []
+  groundingEntries: GroundingEntry[] = [],
+  evidenceLinks: EvidenceLink[] = []
 ): string {
   const lines: string[] = [];
 
@@ -154,18 +203,24 @@ export function buildNarrativeMarkdown(
   lines.push("## BasedOnReadingOrder", "", buildReadingOrderMarkdown(item.basedOnReadingOrder ?? [], snippets));
   lines.push("", "## Grounding / Citations", "", buildGroundingMarkdown(groundingEntries));
 
+  const readingOrderCardIds = new Set(item.basedOnReadingOrder ?? []);
+  lines.push("", "## Evidence / Contradiction Links", "", buildEvidenceLinksMarkdown(evidenceLinks, readingOrderCardIds));
+
   return lines.join("\n");
 }
 
 export function buildNarrativeHtml(
   item: NarrativeExportItem,
   snippets: ReadingOrderSnippetMap = {},
-  groundingEntries: GroundingEntry[] = []
+  groundingEntries: GroundingEntry[] = [],
+  evidenceLinks: EvidenceLink[] = []
 ): string {
   const title = item.title && item.title.trim().length > 0 ? item.title.trim() : "Narrative Export";
   const reviewBlock = item.reviewed
     ? '<div class="reviewed">Reviewed by human</div>'
     : '<div class="draft-banner">DRAFT (UNREVIEWED) — Please verify against the diagram.</div><div class="status">Status: Unreviewed draft</div>';
+
+  const readingOrderCardIds = new Set(item.basedOnReadingOrder ?? []);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -182,6 +237,10 @@ export function buildNarrativeHtml(
     .reviewed { padding: 8px 0; color: #166534; font-weight: 700; margin-bottom: 16px; }
     .narrative { white-space: pre-wrap; }
     code { background: #f1f5f9; padding: 1px 4px; border-radius: 4px; }
+    .evidence-links { list-style: none; padding: 0; margin: 0 0 16px; }
+    .evidence-links li { padding: 4px 0; font-size: 14px; }
+    .supports { color: #166534; font-weight: 600; }
+    .contradicts { color: #b91c1c; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -194,6 +253,8 @@ export function buildNarrativeHtml(
   ${buildReadingOrderHtml(item.basedOnReadingOrder ?? [], snippets)}
   <h2>Grounding / Citations</h2>
   ${buildGroundingHtml(groundingEntries)}
+  <h2>Evidence / Contradiction Links</h2>
+  ${buildEvidenceLinksHtml(evidenceLinks, readingOrderCardIds)}
 </body>
 </html>`;
 }
