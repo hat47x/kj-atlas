@@ -27,13 +27,14 @@ DOMAIN-EXPR-01..04のPhase 1から着手可能。DecisionStatus=Fixed。
 - No schema changes (reads existing card.claimType, card.critique, card.critiqueTags, card.textReviewed, document.evidenceLinks)
 
 ### Remaining
-- Critique→Reproposal daily loop UI (DOMAIN-EXPR-03)
 - Human acceptance of the ambiguity/evidence workflow for the Product Value gate
 
 ### Commits
 - 7f655b15 CardView domain state badges
 - a8309640 SidePanel card detail domain state
 - 89d9fdc1 evidence/contradiction counts in SidePanel
+- PR #2486 DOMAIN-EXPR-03: critique types migrated to domain.md 5 types, SidePanel reproposal diff preview, Open Reproposal button
+- PR #2486 DOMAIN-EXPR-04: evidence/contradiction links in narrative export
 
 ### Domain-state localization evidence 2026-06-22
 
