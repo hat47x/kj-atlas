@@ -14,15 +14,19 @@
 ## Draft→Open 2026-06-20
 PV-01 parent issue Open化に伴いsummaryもOpen。ADR-0032 Accepted (ADR-0040)。
 
-## Status Update 2026-06-21
+## Status Update 2026-06-24
 
-Parent issue in Progress. Implementation evidence:
-- **StartPanel**: value proposition messaging updated (en/ja)
-- **DomainStateSummary**: card state counts with first-meaningful-map progress hints
-- **CardView**: claimType/critique/reviewState visual badges (DOMAIN-EXPR-01)
+Parent issue In Progress. All implementation (T1-T5) complete:
+- **StartPanel**: value proposition messaging (en/ja)
+- **DomainStateSummary**: card state counts + progress hints
+- **CardView**: claimType/critique/reviewState badges (DOMAIN-EXPR-01)
 - **SidePanel**: domain state display in card detail
+- **T3 Keyboard accessibility**: keyboard_release_candidate_flow E2E covers Tab/Enter/Space. acceptance_check.md covers keyboard checks.
+- **T4 E2E first-meaningful-map**: first_meaningful_map_mouse_flow, keyboard_release_candidate_flow, first_run_document_entry, first_value_share_preflight E2E all exist and passed (mainline evidence).
+- **T5 Docs sync**: installation.md, operations.md, public_index.md, acceptance_check.md reference first-run path with StartPanel + SafeMode.
 
-Remaining: E2E tests (Playwright), keyboard accessibility verification, installation/ops doc sync.
+Remaining: Human product-value acceptance (H-PV1/H-PV2/H-PV3). No implementation blockers.
+Full unit test suite: 173 files, 826 tests passed (2026-06-24).
 
 ## Current Open-Readiness Summary 2026-06-17
 

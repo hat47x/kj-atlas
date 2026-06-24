@@ -14,15 +14,17 @@
 ## Draft→Open 2026-06-20
 PV-03 parent issue Open化に伴いsummaryもOpen。ADR-0032 Accepted。
 
-## Status Update 2026-06-21
+## Status Update 2026-06-24
 
-PV-03 remains Open (not yet In Progress). Prerequisites developing:
-- DOMAIN-EXPR-01 Done (readonly state surfacing enables review state visibility)
-- PRODUCT-VALUE-01/02 In Progress (first-meaningful-map + ambiguity workflow)
-- SharePanel and NarrativesPanel already exist in codebase
-- Share preflight with SafeMode already implemented
+PV-03 In Progress. Implementation status:
+- **Narrative grounding**: claimType + reviewState annotations in both markdown/HTML export AND in-app NarrativesPanel grounding display
+- **Evidence/Contradiction Links**: narrative export now includes Evidence/Contradiction Links section (DOMAIN-EXPR-04)
+- **Share preflight domain summary**: SharePanel already includes comprehensive domainExpressionSummary (unreviewed cards/islands, hold/unknown claims, critique targets, evidence/contradiction links, evidence gaps) with SafeMode masking
+- **Read-only reviewer**: E2E verifies reviewer can inspect evidence without mutating source data
+- **Review-pack trace export**: E2E verifies trace files (evidence, contradiction, analytics) in Detail export
+- Full unit test suite: 173 files, 826 tests passed (2026-06-24).
 
-Next: integrate domain state (claimType/reviewState/critique) into share/export previews so reviewers see what is decided, pending, and unreviewed.
+Remaining: Human product-value acceptance of reviewable package fixture + SafeMode readability. Human UX/accessibility acceptance of read-only reviewer journey. No implementation blockers.
 
 ## Current Open-Readiness Summary 2026-06-17
 

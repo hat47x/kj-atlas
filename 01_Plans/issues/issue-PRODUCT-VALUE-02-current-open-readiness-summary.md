@@ -14,15 +14,17 @@
 ## Draft→Open 2026-06-20
 PV-02 parent issue Open化（ADR-0040で循環デッドロック解消済み）に伴いsummaryもOpen。
 
-## Status Update 2026-06-21
+## Status Update 2026-06-24
 
-Parent issue in Progress. Implementation evidence:
-- **CardView**: claimType color-coded pills, critique tag counts, unreviewed indicator
-- **SidePanel**: claimType, critique text+tags, evidence link counts (in/out), contradiction counts
-- **DomainStateSummary**: document-level state distribution with map progress hints
-- No schema changes (reads existing fields)
+Parent issue In Progress. Key implementation milestones:
+- **DOMAIN-EXPR-01** (Done): Readonly state surfacing — claimType, critique, evidence, contradiction visible in CardView + SidePanel
+- **DOMAIN-EXPR-03**: Critique types migrated to domain.md 5 types (too_close/too_far/not_the_same/feels_off/no_articulable_reason) with legacy compatibility. SidePanel reproposal diff preview. Open Reproposal button connects SidePanel → HilRsWorkflowPanel.
+- **DOMAIN-EXPR-04**: Evidence/Contradiction Links section added to narrative export (markdown+HTML). SharePanel domain expression summary shows evidence/contradiction/hold/critique counts pre-share.
+- AI review-boundary guard: Backend CE2 + frontend HIL contracts block auto-promotion of `human_reviewed`. ContextBundle preserves unresolved signals as constraints.
+- Narrative grounding export + in-app display: claimType + reviewState annotations visible in both export and UI.
+- Full unit test suite: 173 files, 826 tests passed (2026-06-24).
 
-Remaining: holdState/PendingItems schema (ADR-0040 Phase 2), Critique→Reproposal loop UI (DOMAIN-EXPR-03), E2E tests.
+Remaining: Human umbrella evidence packet acceptance (PV2-D1..D4). First-class Hold/Shelf (DOMAIN-EXPR-02) remains pending per ADR-0040 staging. No implementation blockers.
 
 ## Current Open-Readiness Summary 2026-06-17
 
