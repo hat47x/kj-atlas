@@ -48,21 +48,26 @@
 | V3: レビュー | AI候補や要約を人間が採否判断できる | ContextProjectionGraph、proposal-only、patch + approval、reviewStateを分離する | auto-applyなし、`human_reviewed` 自動昇格なし、sourceBundleHash追跡あり | `PRODUCT-VALUE-02`, `CE-*` |
 | V4: 共有と学習 | 読者が確定点、保留点、根拠を理解できる | Narrative、Review Pack、SafeMode、review attribution、source traceを共有前確認へ接続する | 共有物に未レビュー情報、保留点、根拠参照、安全状態が明示される | `PRODUCT-UX-03`, `PRODUCT-VALUE-03` |
 
-### 2.1.1 現状不足している設計観点
+### 2.1.1 実装状態（2026-06-24 更新）
 
-| 不足観点 | 現状の偏り | 設計上の補強方針 | 起票先 |
-|---|---|---|---|
-| 初回価値実感 | 文書を開くことと価値を得ることが混同されやすい | 「最初の意味ある配置」をカード、まとまり、保留点を含む状態として定義する | `PRODUCT-VALUE-01` |
-| 保留・違和感の日常操作 | 上流概念とAI IRにはあるが、UI作業語彙が不足している | Hold/Critique/Evidence/Contradictionを選択コンテキスト、絞り込み、共有前確認へ接続する | `PRODUCT-VALUE-02`, `DOMAIN-EXPR-01/02/03`（`ADR-0040`） |
-| 根拠・主張・反対意見の追跡 | ContextBundleには含まれるが、利用者が見て操作する境界が弱い | EvidenceLink/ClaimType/contradictionを、AI入力だけでなく人間レビューの確認対象にする | `PRODUCT-VALUE-02`, `DOMAIN-EXPR-04`（`ADR-0040`） |
-| 成果物化 | 安全な共有に寄っており、読者が判断できる成果物単位が未固定 | 確定点、保留点、未レビュー情報、根拠への戻り方を成果物パッケージに含める | `PRODUCT-VALUE-03` |
-| 価値実現ゲート | UI/安全/文書/診断ゲートはあるが、価値ループ別の合否が薄い | V0〜V4の代表シナリオを `PRODUCT-QA-01` のGo/No-Goへ接続する | `PRODUCT-QA-01` |
+| 設計観点 | 状態 | 実装証跡 | 残課題 | 起票先 |
+|---|---|---|---|---|
+| 初回価値実感 | ✅ 実装完了 | StartPanel value proposition, DomainStateSummary, CardView badges, E2E (mouse+kb, first_run, share_preflight), docs sync | 人間判断(H-PV1/H-PV2/H-PV3) | `PRODUCT-VALUE-01` |
+| 保留・違和感の日常操作 | ✅ Phase 1 完了 | DOMAIN-EXPR-01 Done (readonly state surfacing). DOMAIN-EXPR-03: critique types→domain.md 5種, SidePanel reproposal diff preview, Open Reproposal button. AI review-boundary guard (CE2+HIL). ContextBundle constraint-preservation proof. | Hold/Shelf 第一級化 (DOMAIN-EXPR-02, schema判断待ち). AI有効時再提案生成証跡. | `PRODUCT-VALUE-02`, `DOMAIN-EXPR-01` (Done), `DOMAIN-EXPR-03` (In Progress), `DOMAIN-EXPR-02` (deferred) |
+| 根拠・主張・反対意見の追跡 | ✅ Phase 1 完了 | Evidence/Contradiction Links in narrative export. SharePanel domain expression summary (evidence/contradiction/hold/critique counts). SidePanel evidence link display + contradiction report. | 矛盾状態管理 (unconfirmed/confirmed/held/resolved, schema判断待ち). E2E証跡. | `PRODUCT-VALUE-02`, `DOMAIN-EXPR-04` (In Progress) |
+| 成果物化 | ✅ 実装完了 | Narrative grounding: claimType+reviewState in export + in-app. Share preflight domain summary. Read-only reviewer inspection E2E. Review-pack trace export E2E. | 人間成果物承認, UX/accessibilityレビュー | `PRODUCT-VALUE-03` |
+| 価値実現ゲート | ✅ ゲート定義完了 | PRODUCT-QA-01 gate record (G0-G7 + V0-V4 + 横断 LLM任意性). Gate record 2026-06-24: Conditional Go. | 全ゲート Conditional Go→Go には人間承認が必要 | `PRODUCT-QA-01`, `MVP-EXIT-01` |
+
+### テスト健全性（2026-06-24）
+- フロントエンド全ユニットテスト: 173 files, 826 tests passed
+- 回帰ガード: i18n hardcode (13), UX operability (6), HIL-RS contract (4), safe_mode (2) — 全pass
+- TypeScript: clean（App.tsx MenuButton pre-existing issueを除く）
 
 ---
 
-## 2.2 Product value evidence route（2026-06-02）
+## 2.2 Product value evidence route（2026-06-24 更新）
 
-`PRODUCT-VALUE-01..03` はまだ Draft であり、この表は実装許可ではなく、Open 化前に不足を確認するための証跡設計である。価値ゲートは「便利そうな機能があるか」ではなく、「利用者が考え途中の材料を、安全に配置し、保留や根拠不足を残し、他者が再確認できる形にできるか」で判断する。
+`PRODUCT-VALUE-01..03` は In Progress（実装完了、人間判断待ち）。この表は各価値ゲートの証跡状態を示す。
 
 | Value gate | Representative user action | Evidence packet | Stop condition |
 | --- | --- | --- | --- |
