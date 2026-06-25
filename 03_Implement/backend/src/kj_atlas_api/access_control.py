@@ -325,15 +325,16 @@ def parse_visibility(value: str | None) -> Visibility | None:
     return None
 
 
-def build_access_control_adapter(*, adapter_name: str) -> AccessControlAdapter:
+def build_access_control_adapter(*, adapter_name: str, mock_allow: bool | None = None, http_endpoint: str | None = None) -> AccessControlAdapter:
     if adapter_name == "noop":
         return NoopAccessControlAdapter()
     if adapter_name == "mock":
-        return MockAccessControlAdapter()
-    if adapter_name == "external_http":
-        from kj_atlas_api.settings import settings
-
-        endpoint = settings.access_control_external_http_endpoint
+        adapter = MockAccessControlAdapter()
+        if mock_allow is not None:
+            adapter._mock_allow = mock_allow
+        return adapter
+    if adapter_name == "external_http" or adapter_name == "external":
+        endpoint = http_endpoint or _get_configured_endpoint()
         if endpoint:
             return ExternalPolicyAccessControlAdapter(
                 config=ExternalPolicyAdapterConfig(
@@ -345,3 +346,7 @@ def build_access_control_adapter(*, adapter_name: str) -> AccessControlAdapter:
                 )
             )
     return NoopAccessControlAdapter()
+
+
+def _get_configured_endpoint() -> str | None:
+    return settings.access_control_external_http_endpoint

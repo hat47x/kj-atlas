@@ -7,6 +7,11 @@ import os
 
 LEGACY_ENV_COMPAT_DEADLINE = date(2026, 12, 31)
 
+
+def _current_utc_date() -> date:
+    return date.today()
+
+
 LEGACY_ENV_KEYS = {
     "DATABASE_URL",
     "LLM_PROVIDER",
@@ -228,11 +233,13 @@ class Settings(BaseSettings):
     def validate_llm_provider_guards(self) -> "Settings":
         legacy_keys = sorted(key for key in LEGACY_ENV_KEYS if key in os.environ)
         if legacy_keys:
-            joined = ", ".join(legacy_keys)
-            raise ValueError(
-                "Legacy env keys are no longer supported. Use KJ_ATLAS_* only: "
-                f"{joined}"
-            )
+            if _current_utc_date() > LEGACY_ENV_COMPAT_DEADLINE:
+                joined = ", ".join(legacy_keys)
+                raise ValueError(
+                    "Legacy env keys are no longer supported past "
+                    f"{LEGACY_ENV_COMPAT_DEADLINE}. Use KJ_ATLAS_* only: "
+                    f"{joined}"
+                )
 
         provider = self.llm_provider.strip().lower()
         if provider not in {"none", "local", "local_http", "large-scale", "large_scale", "external"}:
