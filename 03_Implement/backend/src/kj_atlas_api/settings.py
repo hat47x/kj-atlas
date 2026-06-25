@@ -1,7 +1,11 @@
+from datetime import date
+
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 
+
+LEGACY_ENV_COMPAT_DEADLINE = date(2026, 12, 31)
 
 LEGACY_ENV_KEYS = {
     "DATABASE_URL",

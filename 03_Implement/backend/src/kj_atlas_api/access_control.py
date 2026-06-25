@@ -37,6 +37,14 @@ class AuthContext:
 
 
 @dataclass(frozen=True)
+class AccessSubject:
+    """Public API alias for AuthContext-compatible subject reference."""
+    actor_ref: str | None = None
+    roles: tuple[str, ...] = ()
+    groups: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class AccessResource:
     doc_id: str
     visibility: Visibility | None = None
