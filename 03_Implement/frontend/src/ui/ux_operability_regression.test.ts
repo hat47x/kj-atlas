@@ -65,7 +65,7 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain('data-ui-complexity-tier="core-toolbar"');
     expect(appSource).toContain('data-ui-complexity-tier="advanced-disclosure"');
     expect(appSource).toContain('data-ui-complexity-tier="advanced-content"');
-    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(4);
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(6);
     expect(appSource).toContain('t("app.toolbar.new")');
     expect(appSource).toContain('t("app.toolbar.open")');
     expect(appSource).toContain('t("app.toolbar.undo")');
