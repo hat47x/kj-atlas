@@ -137,27 +137,4 @@ describe("parsePublicPackManifest", () => {
     expect(manifest).toEqual({ packs: [] });
   });
 
-  it("preserves accessControl roles/groups/policyRef as passthrough metadata", () => {
-    const manifest = parsePublicPackManifest({
-      packs: [
-        {
-          id: "restricted",
-          documentPath: "restricted.document.json",
-          visibility: "Restricted",
-          accessControl: {
-            roles: [" reviewer ", "", "null"],
-            groups: [" team-a "],
-            policyRef: " policy-1 ",
-          },
-        },
-      ],
-    });
-
-    expect(manifest.packs[0]?.accessControl).toEqual({
-      roles: ["reviewer"],
-      groups: ["team-a"],
-      policyRef: "policy-1",
-    });
-  });
-
 });

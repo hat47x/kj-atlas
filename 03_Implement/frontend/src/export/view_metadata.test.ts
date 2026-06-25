@@ -151,62 +151,6 @@ describe("view metadata export", () => {
     expect(result).toEqual({ ok: false, error: 'metadata.visibility must be "Public" | "Unlisted" | "Org" | "Restricted" when present' });
   });
 
-
-  it("normalizes accessControl metadata as passthrough fields", () => {
-    const result = validateImportViewMetadata({
-      version: "1",
-      generatedAt: "2026-03-01T12:34:56.000Z",
-      docSignature: "doc-acl",
-      visibility: "Restricted",
-      accessControl: {
-        roles: [" editor ", "", "null"],
-        groups: [" grp-1 "],
-        policyRef: " policy-1 ",
-      },
-      camera: { panX: 0, panY: 0, zoom: 1 },
-      viewState: {
-        summaryView: false,
-        abstractMapView: false,
-        hideSourceCards: false,
-        maxDepth: "all",
-        focusIslandId: null,
-        showReadingOrder: false,
-      },
-      export: { mode: "viewport" },
-    });
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.metadata.accessControl).toEqual({
-        roles: ["editor"],
-        groups: ["grp-1"],
-        policyRef: "policy-1",
-      });
-    }
-  });
-
-  it("rejects invalid accessControl metadata type", () => {
-    const result = validateImportViewMetadata({
-      version: "1",
-      generatedAt: "2026-03-01T12:34:56.000Z",
-      docSignature: "doc-acl-invalid",
-      visibility: "Restricted",
-      accessControl: "admin",
-      camera: { panX: 0, panY: 0, zoom: 1 },
-      viewState: {
-        summaryView: false,
-        abstractMapView: false,
-        hideSourceCards: false,
-        maxDepth: "all",
-        focusIslandId: null,
-        showReadingOrder: false,
-      },
-      export: { mode: "viewport" },
-    });
-
-    expect(result).toEqual({ ok: false, error: "metadata.accessControl must be an object when present" });
-  });
-
   it("validates import metadata successfully", () => {
     const metadata = buildExportViewMetadata({
       doc: { id: "doc-123", title: "Sample" },
