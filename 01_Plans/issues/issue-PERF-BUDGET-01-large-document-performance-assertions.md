@@ -3,11 +3,19 @@
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0046` の実装入口。回帰検知が目的（厳密ベンチではない）。
 
 - Type: Process
-- Status: Draft
+- Status: In Progress
+## Implementation Progress 2026-06-27
+
+- Fixture scaled to 288 cards + 30 islands (ADR-0046 PB-1)
+- Total render+search+export timing assertion <30s added
+- Degradation visibility check (PB-5) added
+- Existing E2E passes (cannot verify locally; CI only)
+
+Remaining: CI Playwright verification of timing budget
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Codex
 - Scope: `03_Implement/frontend/e2e/`, `03_Implement/frontend/src/`
 - Related Backlog: `PERF-BUDGET-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `02_Architecture/value_traceability.md`（§2.8 PB）, `01_Plans/issues/issue-PRODUCT-UX-04-responsive-large-document-operability.md`

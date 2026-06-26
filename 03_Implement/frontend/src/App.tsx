@@ -19,7 +19,6 @@ import {
 } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
 import { ContextMenu, type ContextMenuItem } from "./ui/ContextMenu";
-import { MenuButton } from "./ui/MenuButton";
 import type { AggregatedEdgeMeta, CameraTransformRequest, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
@@ -7274,29 +7273,109 @@ export default function App() {
     onReadingPathDisable: readingNavEnabled ? handleReadingDisable : undefined,
   });
 
-  const fileMenuItems: ContextMenuItem[] = [
-    { kind: "action", label: t("app.toolbar.new"), onSelect: handleNewDocument, disabled: isLoading || isSaving },
-    { kind: "action", label: t("app.toolbar.duplicate"), onSelect: handleDuplicateDocument, disabled: isLoading || isSaving || !document },
-    { kind: "separator" },
-    { kind: "action", label: t("app.toolbar.import_doc_json_legacy_short"), onSelect: handleImportClick, disabled: isLoading },
-    { kind: "action", label: t("app.toolbar.export_doc_json_legacy_short"), onSelect: handleExport, disabled: isLoading || !document },
-  ];
-
-  const editMenuItems: ContextMenuItem[] = [
-    { kind: "action", label: t("app.toolbar.undo"), onSelect: handleUndo, disabled: isReadOnly || isLoading || !document || !canUndo },
-    { kind: "action", label: t("app.toolbar.redo"), onSelect: handleRedo, disabled: isReadOnly || isLoading || !document || !canRedo },
-  ];
-  if (focusHistory.length > 0) {
-    editMenuItems.push({ kind: "action", label: t("app.toolbar.back"), onSelect: handleFocusBack });
-  }
-
   const headerRight = (
     <div
       data-ui-complexity-tier="core-toolbar"
       style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", rowGap: 6, whiteSpace: "nowrap", maxWidth: "100%" }}
     >
-      <MenuButton label={t("app.toolbar.file_menu")} items={fileMenuItems} />
-      <MenuButton label={t("app.toolbar.edit_menu")} items={editMenuItems} />
+      <button
+        type="button"
+        onClick={handleNewDocument}
+        disabled={isReadOnly || isLoading || isSaving}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: isReadOnly || isLoading || isSaving ? "not-allowed" : "pointer",
+        }}
+      >
+        {t("app.toolbar.new")}
+      </button>
+      <button
+        type="button"
+        onClick={handleDuplicateDocument}
+        disabled={isReadOnly || isLoading || isSaving || !document}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: isReadOnly || isLoading || isSaving || !document ? "not-allowed" : "pointer",
+        }}
+      >
+        {t("app.toolbar.duplicate")}
+      </button>
+      <button
+        type="button"
+        onClick={handleImportClick}
+        disabled={isReadOnly || isLoading}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 500,
+          cursor: isReadOnly || isLoading ? "not-allowed" : "pointer",
+        }}
+      >
+        {t("app.toolbar.import_doc_json_legacy_short")}
+      </button>
+      <button
+        type="button"
+        onClick={handleExport}
+        disabled={isReadOnly || isLoading || !document}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 500,
+          cursor: isReadOnly || isLoading || !document ? "not-allowed" : "pointer",
+        }}
+      >
+        {t("app.toolbar.export_doc_json_legacy_short")}
+      </button>
+      <button
+        type="button"
+        onClick={handleUndo}
+        disabled={isReadOnly || isLoading || !document || !canUndo}
+        data-ui-core-action="undo"
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 500,
+          cursor: isReadOnly || isLoading || !document || !canUndo ? "not-allowed" : "pointer",
+        }}
+      >
+        {t("app.toolbar.undo")}
+      </button>
+      <button
+        type="button"
+        onClick={handleRedo}
+        disabled={isReadOnly || isLoading || !document || !canRedo}
+        data-ui-core-action="redo"
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 500,
+          cursor: isReadOnly || isLoading || !document || !canRedo ? "not-allowed" : "pointer",
+        }}
+      >
+        {t("app.toolbar.redo")}
+      </button>
       <select
         value={selectedRecentDocumentId}
         onChange={(event) => {

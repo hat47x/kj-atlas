@@ -19,7 +19,7 @@ from tests.level2.mock_idp import app as mock_idp_app
 from tests.level2.mock_sp import MockSpRuntime
 
 FIXTURE_DIR = Path(__file__).parent / "level2" / "fixtures"
-DIAG_DIR = Path(os.getenv("LEVEL2_DIAG_DIR", ".tmp/level2-diagnostics"))
+DIAG_DIR = Path(os.getenv("KJ_ATLAS_LEVEL2_DIAG_DIR", ".tmp/level2-diagnostics"))
 
 
 @contextmanager

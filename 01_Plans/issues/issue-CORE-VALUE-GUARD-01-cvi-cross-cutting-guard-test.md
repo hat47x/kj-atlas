@@ -3,11 +3,11 @@
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0041` の実装入口。重量級RACI/KPIは課さない。
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0
-- Owner: TBD
+- Owner: Codex
 - Scope: `03_Implement/frontend/`, `03_Implement/backend/tests/`, `02_Architecture/value_traceability.md`
 - Related Backlog: `CORE-VALUE-GUARD-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0041-core-value-invariants-single-guard.md`, `02_Architecture/value_traceability.md`（§2.5 CVI 正本）

@@ -8,6 +8,8 @@ from urllib import request as urllib_request
 
 from fastapi import HTTPException
 
+from kj_atlas_api.settings import settings
+
 AccessAction = Literal["read", "write", "export", "share"]
 Visibility = Literal["Public", "Unlisted", "Org", "Restricted"]
 FailSafeMode = Literal["deny", "read_only"]
@@ -37,6 +39,14 @@ class AuthContext:
 
 
 @dataclass(frozen=True)
+class AccessSubject:
+    """Public API alias for AuthContext-compatible subject reference."""
+    actor_ref: str | None = None
+    roles: tuple[str, ...] = ()
+    groups: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class AccessResource:
     doc_id: str
     visibility: Visibility | None = None
@@ -46,10 +56,11 @@ class AccessResource:
 @dataclass(frozen=True)
 class AccessRequest:
     action: AccessAction
-    auth: AuthContext
-    resource: AccessResource
-    safe_mode: bool
-    read_only: bool
+    auth: AuthContext | None = None
+    resource: AccessResource | None = None
+    safe_mode: bool = False
+    read_only: bool = False
+    subject: AccessSubject | None = None
 
 
 @dataclass(frozen=True)
@@ -97,7 +108,13 @@ class MockAccessControlAdapter:
 
     name = "mock"
 
+    def __init__(self, *, mock_allow: bool = True, mock_reason: str = "mock") -> None:
+        self._mock_allow = mock_allow
+        self._mock_reason = mock_reason
+
     def authorize(self, request: AccessRequest) -> AccessDecision:
+        if not self._mock_allow:
+            return AccessDecision(allow=False, reason=self._mock_reason)
         token = request.resource.policy_ref
         if token == "mock:deny":
             return AccessDecision(allow=False, reason="mock_deny")
@@ -131,34 +148,50 @@ class ExternalPolicyAccessControlAdapter:
         self._config = config
 
     def authorize(self, request: AccessRequest) -> AccessDecision:
+        auth_source = request.auth
+        subject_key = "auth"
+        if auth_source is None and request.subject is not None:
+            auth_source = AuthContext(
+                actor_ref=request.subject.actor_ref,
+                roles=request.subject.roles,
+                groups=request.subject.groups,
+            )
+            subject_key = "subject"
+
         auth_payload: dict[str, object] = {
-            "actorRef": request.auth.actor_ref,
-            "roles": list(request.auth.roles),
-            "groups": list(request.auth.groups),
-            "traceId": request.auth.trace_id,
+            "actorRef": auth_source.actor_ref,
+            "roles": list(auth_source.roles),
+            "groups": list(auth_source.groups),
         }
-        if request.auth.user_id is not None:
-            auth_payload["userId"] = request.auth.user_id
-        if request.auth.provider is not None:
-            auth_payload["provider"] = request.auth.provider
-        if request.auth.external_uid is not None:
-            auth_payload["externalUid"] = request.auth.external_uid
-        if request.auth.amr is not None:
-            auth_payload["amr"] = request.auth.amr
-        if request.auth.acr is not None:
-            auth_payload["acr"] = request.auth.acr
-        if request.auth.aal is not None:
-            auth_payload["aal"] = request.auth.aal
-        if request.auth.auth_time is not None:
-            auth_payload["authTime"] = request.auth.auth_time
+        trace_id = getattr(auth_source, "trace_id", None)
+        if trace_id is not None:
+            auth_payload["traceId"] = trace_id
+        if auth_source.user_id is not None:
+            auth_payload["userId"] = auth_source.user_id
+        if auth_source.provider is not None:
+            auth_payload["provider"] = auth_source.provider
+        if auth_source.external_uid is not None:
+            auth_payload["externalUid"] = auth_source.external_uid
+        if auth_source.amr is not None:
+            auth_payload["amr"] = auth_source.amr
+        if auth_source.acr is not None:
+            auth_payload["acr"] = auth_source.acr
+        if auth_source.aal is not None:
+            auth_payload["aal"] = auth_source.aal
+        if auth_source.auth_time is not None:
+            auth_payload["authTime"] = auth_source.auth_time
+
+        resource_source = request.resource
+        if resource_source is None:
+            resource_source = AccessResource(doc_id="")
 
         payload = {
             "action": request.action,
-            "auth": auth_payload,
+            subject_key: auth_payload,
             "resource": {
-                "docId": request.resource.doc_id,
-                "visibility": request.resource.visibility,
-                "policyRef": request.resource.policy_ref,
+                "docId": resource_source.doc_id,
+                "visibility": resource_source.visibility,
+                "policyRef": resource_source.policy_ref,
             },
             "safeMode": request.safe_mode,
             "readOnly": request.read_only,
@@ -170,8 +203,8 @@ class ExternalPolicyAccessControlAdapter:
             "accept": "application/json",
             "x-acl-auth-mode": self._config.auth_mode,
         }
-        if request.auth.trace_id:
-            headers["x-trace-id"] = request.auth.trace_id
+        if auth_source.trace_id:
+            headers["x-trace-id"] = auth_source.trace_id
         if self._config.idp_issuer:
             headers["x-idp-issuer"] = self._config.idp_issuer
         if self._config.static_bearer_token:
@@ -317,23 +350,33 @@ def parse_visibility(value: str | None) -> Visibility | None:
     return None
 
 
-def build_access_control_adapter(*, adapter_name: str) -> AccessControlAdapter:
+def build_access_control_adapter(*, adapter_name: str, mock_allow: bool | None = None, mock_reason: str | None = None, http_endpoint: str | None = None, http_api_key: str | None = None, http_timeout_seconds: float | None = None) -> AccessControlAdapter:
     if adapter_name == "noop":
         return NoopAccessControlAdapter()
-    if adapter_name == "mock":
-        return MockAccessControlAdapter()
-    if adapter_name == "external_http":
-        from kj_atlas_api.settings import settings
+    if adapter_name in ("mock", "http", "external_http", "external"):
+        pass  # handled below
+    else:
+        return NoopAccessControlAdapter()
 
-        endpoint = settings.access_control_external_http_endpoint
-        if endpoint:
-            return ExternalPolicyAccessControlAdapter(
-                config=ExternalPolicyAdapterConfig(
-                    endpoint=endpoint,
-                    timeout_seconds=settings.access_control_external_http_timeout_seconds,
-                    auth_mode=cast(AdapterAuthMode, settings.access_control_external_http_auth_mode),
-                    static_bearer_token=settings.access_control_external_http_static_bearer_token,
-                    idp_issuer=settings.access_control_external_http_idp_issuer,
-                )
+    if adapter_name == "mock":
+        return MockAccessControlAdapter(
+            mock_allow=mock_allow if mock_allow is not None else True,
+            mock_reason=mock_reason if mock_reason is not None else "mock",
+        )
+
+    endpoint = http_endpoint or _get_configured_endpoint()
+    if endpoint:
+        return ExternalPolicyAccessControlAdapter(
+            config=ExternalPolicyAdapterConfig(
+                endpoint=endpoint,
+                timeout_seconds=http_timeout_seconds or settings.access_control_external_http_timeout_seconds,
+                auth_mode=cast(AdapterAuthMode, settings.access_control_external_http_auth_mode),
+                static_bearer_token=http_api_key or settings.access_control_external_http_static_bearer_token,
+                idp_issuer=settings.access_control_external_http_idp_issuer,
             )
+        )
     return NoopAccessControlAdapter()
+
+
+def _get_configured_endpoint() -> str | None:
+    return settings.access_control_external_http_endpoint

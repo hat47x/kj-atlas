@@ -1,6 +1,15 @@
+from datetime import date
+
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
+
+
+LEGACY_ENV_COMPAT_DEADLINE = date(2026, 12, 31)
+
+
+def _current_utc_date() -> date:
+    return date.today()
 
 
 LEGACY_ENV_KEYS = {
@@ -222,9 +231,9 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_llm_provider_guards(self) -> "Settings":
-        legacy_keys = sorted(key for key in LEGACY_ENV_KEYS if key in os.environ)
-        if legacy_keys:
-            joined = ", ".join(legacy_keys)
+        detected_legacy = sorted(key for key in LEGACY_ENV_KEYS if key in os.environ)
+        if detected_legacy:
+            joined = ", ".join(detected_legacy)
             raise ValueError(
                 "Legacy env keys are no longer supported. Use KJ_ATLAS_* only: "
                 f"{joined}"

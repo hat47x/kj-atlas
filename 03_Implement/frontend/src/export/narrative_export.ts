@@ -76,7 +76,9 @@ function buildEvidenceLinksMarkdown(links: EvidenceLink[], cardIds: Set<string>)
     .map((link, index) => {
       const kind = link.type === "supports" ? "supports" : "contradicts";
       const noteSuffix = link.note ? ` — ${link.note}` : "";
-      return `${index + 1}. ${link.fromCardId} ${kind} ${link.toCardId}${noteSuffix}`;
+      const stateSuffix = link.type === "contradicts" && link.contradictionState
+        ? ` [${link.contradictionState}]` : "";
+      return `${index + 1}. ${link.fromCardId} ${kind} ${link.toCardId}${stateSuffix}${noteSuffix}`;
     })
     .join("\n");
 }
@@ -95,7 +97,9 @@ function buildEvidenceLinksHtml(links: EvidenceLink[], cardIds: Set<string>): st
       const kind = link.type === "supports" ? "supports" : "contradicts";
       const kindClass = link.type === "supports" ? "supports" : "contradicts";
       const noteSuffix = link.note ? ` — ${escapeHtml(link.note)}` : "";
-      return `<li><code>${escapeHtml(link.fromCardId)}</code> <span class="${kindClass}">${kind}</span> <code>${escapeHtml(link.toCardId)}</code>${noteSuffix}</li>`;
+      const stateSuffix = link.type === "contradicts" && link.contradictionState
+        ? ` <span class="contradiction-state">[${escapeHtml(link.contradictionState)}]</span>` : "";
+      return `<li><code>${escapeHtml(link.fromCardId)}</code> <span class="${kindClass}">${kind}</span> <code>${escapeHtml(link.toCardId)}</code>${stateSuffix}${noteSuffix}</li>`;
     })
     .join("\n");
 
