@@ -8,6 +8,8 @@ from urllib import request as urllib_request
 
 from fastapi import HTTPException
 
+from kj_atlas_api.settings import settings
+
 AccessAction = Literal["read", "write", "export", "share"]
 Visibility = Literal["Public", "Unlisted", "Org", "Restricted"]
 FailSafeMode = Literal["deny", "read_only"]
