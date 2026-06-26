@@ -50,7 +50,7 @@ def test_canonical_env_key_wins_over_legacy_key(
     assert getattr(loaded, field_name) == canonical_value
 
 
-def test_legacy_key_is_accepted_before_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_legacy_key_is_rejected_before_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATABASE_URL", "sqlite:///./legacy-before-deadline.db")
     monkeypatch.delenv("KJ_ATLAS_DATABASE_URL", raising=False)
     monkeypatch.setattr(
@@ -59,9 +59,8 @@ def test_legacy_key_is_accepted_before_deadline(monkeypatch: pytest.MonkeyPatch)
         lambda: LEGACY_ENV_COMPAT_DEADLINE - timedelta(days=1),
     )
 
-    loaded = Settings()
-
-    assert loaded.database_url == "sqlite:///./legacy-before-deadline.db"
+    with pytest.raises(ValueError, match="Legacy env keys are no longer supported"):
+        Settings()
 
 
 def test_legacy_key_fails_after_deadline_when_canonical_is_missing(
@@ -75,7 +74,7 @@ def test_legacy_key_fails_after_deadline_when_canonical_is_missing(
         lambda: LEGACY_ENV_COMPAT_DEADLINE + timedelta(days=1),
     )
 
-    with pytest.raises(ValueError, match="DATABASE_URL is deprecated"):
+    with pytest.raises(ValueError, match="Legacy env keys are no longer supported"):
         Settings()
 
 

@@ -56,10 +56,11 @@ class AccessResource:
 @dataclass(frozen=True)
 class AccessRequest:
     action: AccessAction
-    auth: AuthContext
-    resource: AccessResource
-    safe_mode: bool
-    read_only: bool
+    auth: AuthContext | None = None
+    resource: AccessResource | None = None
+    safe_mode: bool = False
+    read_only: bool = False
+    subject: AccessSubject | None = None
 
 
 @dataclass(frozen=True)

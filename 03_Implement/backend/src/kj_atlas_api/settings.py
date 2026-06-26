@@ -227,19 +227,18 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        populate_by_name=True,
     )
 
     @model_validator(mode="after")
     def validate_llm_provider_guards(self) -> "Settings":
         legacy_keys = sorted(key for key in LEGACY_ENV_KEYS if key in os.environ)
         if legacy_keys:
-            if _current_utc_date() > LEGACY_ENV_COMPAT_DEADLINE:
-                joined = ", ".join(legacy_keys)
-                raise ValueError(
-                    "Legacy env keys are no longer supported past "
-                    f"{LEGACY_ENV_COMPAT_DEADLINE}. Use KJ_ATLAS_* only: "
-                    f"{joined}"
-                )
+            joined = ", ".join(legacy_keys)
+            raise ValueError(
+                "Legacy env keys are no longer supported. Use KJ_ATLAS_* only: "
+                f"{joined}"
+            )
 
         provider = self.llm_provider.strip().lower()
         if provider not in {"none", "local", "local_http", "large-scale", "large_scale", "external"}:
