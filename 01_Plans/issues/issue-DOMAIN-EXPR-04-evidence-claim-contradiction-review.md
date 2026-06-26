@@ -12,19 +12,25 @@
 - Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
 - Expected verification level: `e2e`
 
-## Implementation Progress 2026-06-24
+## Implementation Progress 2026-06-27
 
 ### Done
-- Narrative export evidence/contradiction links section: EvidenceLink supports/contradicts for reading order cards now appear in markdown and HTML narrative exports (2f44227a)
-- Existing infrastructure: SidePanel evidence link display, contradiction report, evidence gap analysis, trace export, SharePanel evidence summary
+- **Schema**: EvidenceLink.contradictionState (unconfirmed/confirmed/held/resolved) — backward-compatible, optional field
+  - Frontend: `types.ts`, Backend: `models.py`, Schema docs: `schemas.md` §15
+- **UI**: SidePanel contradiction state selector dropdown for outgoing contradiction links
+- **App.tsx**: `handleUpdateEvidenceLink` wired for state changes
+- **i18n**: en/ja labels for all 4 states + history entry
+- **Narrative export**: Evidence/Contradiction Links section in markdown/HTML (2f44227a)
+- Existing infrastructure: SidePanel evidence display, contradiction report, trace export, SharePanel summary
 
 ### Remaining
-- Contradiction state management (unconfirmed/confirmed/held/resolved) - requires schema decision
-- Evidence link editing from card context (currently read-only inspection)
-- E2E: evidence confirmation → outcome connection verification
+- E2E: contradiction state selection → outcome package verification
+- Contradiction state integration with narrative grounding summary counts
 
 ### Commits
-- 2f44227a evidence/contradiction links section in narrative export
+- 2f44227a evidence/contradiction links in narrative export
+- ea3af977 contradictionState schema (schemas.md + types.ts + models.py)
+- 668138e3 contradiction state UI (SidePanel selector + App.tsx handler + i18n)
 
 ## Draft→Open 2026-06-21
 DOMAIN-EXPR-01 Doneにより依存充足。ADR-0040 Phase 4（根拠・主張・矛盾を人間レビュー第一級対象＋成果物要素へ接続）。
