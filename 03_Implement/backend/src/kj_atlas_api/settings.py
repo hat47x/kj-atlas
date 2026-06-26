@@ -227,15 +227,11 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
-        populate_by_name=True,
     )
 
     @model_validator(mode="after")
     def validate_llm_provider_guards(self) -> "Settings":
         detected_legacy = sorted(key for key in LEGACY_ENV_KEYS if key in os.environ)
-        if not detected_legacy:
-            return self
-
         kj_prefix = "KJ_ATLAS_"
         orphaned = [
             key for key in detected_legacy
@@ -247,7 +243,6 @@ class Settings(BaseSettings):
                 "Legacy env keys are no longer supported. Use KJ_ATLAS_* only: "
                 f"{joined}"
             )
-        return self
 
         provider = self.llm_provider.strip().lower()
         if provider not in {"none", "local", "local_http", "large-scale", "large_scale", "external"}:
