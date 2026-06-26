@@ -3,7 +3,7 @@
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0041` の実装入口。重量級RACI/KPIは課さない。
 
 - Type: Process
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0

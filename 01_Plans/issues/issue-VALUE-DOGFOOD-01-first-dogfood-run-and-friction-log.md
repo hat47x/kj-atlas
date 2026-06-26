@@ -3,11 +3,11 @@
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0042` の実装入口。定性・非監視のみ。
 
 - Type: Process
-- Status: Draft
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD（Maintainer 自身）
+- Owner: Codex (Maintainer dogfood steward)
 - Scope: `01_Plans/`, `README.md`（NOTICE 段階更新の判断のみ）
 - Related Backlog: `VALUE-DOGFOOD-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0042-value-realness-validation-and-notice-exit.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（R-1 起動）
