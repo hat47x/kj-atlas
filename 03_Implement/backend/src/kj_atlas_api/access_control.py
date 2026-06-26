@@ -199,8 +199,8 @@ class ExternalPolicyAccessControlAdapter:
             "accept": "application/json",
             "x-acl-auth-mode": self._config.auth_mode,
         }
-        if request.auth.trace_id:
-            headers["x-trace-id"] = request.auth.trace_id
+        if auth_source.trace_id:
+            headers["x-trace-id"] = auth_source.trace_id
         if self._config.idp_issuer:
             headers["x-idp-issuer"] = self._config.idp_issuer
         if self._config.static_bearer_token:
