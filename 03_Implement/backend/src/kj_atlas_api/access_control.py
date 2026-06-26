@@ -105,7 +105,13 @@ class MockAccessControlAdapter:
 
     name = "mock"
 
+    def __init__(self, *, mock_allow: bool = True, mock_reason: str = "mock") -> None:
+        self._mock_allow = mock_allow
+        self._mock_reason = mock_reason
+
     def authorize(self, request: AccessRequest) -> AccessDecision:
+        if not self._mock_allow:
+            return AccessDecision(allow=False, reason=self._mock_reason)
         token = request.resource.policy_ref
         if token == "mock:deny":
             return AccessDecision(allow=False, reason="mock_deny")
@@ -325,26 +331,31 @@ def parse_visibility(value: str | None) -> Visibility | None:
     return None
 
 
-def build_access_control_adapter(*, adapter_name: str, mock_allow: bool | None = None, http_endpoint: str | None = None) -> AccessControlAdapter:
+def build_access_control_adapter(*, adapter_name: str, mock_allow: bool | None = None, mock_reason: str | None = None, http_endpoint: str | None = None, http_api_key: str | None = None, http_timeout_seconds: float | None = None) -> AccessControlAdapter:
     if adapter_name == "noop":
         return NoopAccessControlAdapter()
+    if adapter_name in ("mock", "http", "external_http", "external"):
+        pass  # handled below
+    else:
+        return NoopAccessControlAdapter()
+
     if adapter_name == "mock":
-        adapter = MockAccessControlAdapter()
-        if mock_allow is not None:
-            adapter._mock_allow = mock_allow
-        return adapter
-    if adapter_name == "external_http" or adapter_name == "external":
-        endpoint = http_endpoint or _get_configured_endpoint()
-        if endpoint:
-            return ExternalPolicyAccessControlAdapter(
-                config=ExternalPolicyAdapterConfig(
-                    endpoint=endpoint,
-                    timeout_seconds=settings.access_control_external_http_timeout_seconds,
-                    auth_mode=cast(AdapterAuthMode, settings.access_control_external_http_auth_mode),
-                    static_bearer_token=settings.access_control_external_http_static_bearer_token,
-                    idp_issuer=settings.access_control_external_http_idp_issuer,
-                )
+        return MockAccessControlAdapter(
+            mock_allow=mock_allow if mock_allow is not None else True,
+            mock_reason=mock_reason if mock_reason is not None else "mock",
+        )
+
+    endpoint = http_endpoint or _get_configured_endpoint()
+    if endpoint:
+        return ExternalPolicyAccessControlAdapter(
+            config=ExternalPolicyAdapterConfig(
+                endpoint=endpoint,
+                timeout_seconds=http_timeout_seconds or settings.access_control_external_http_timeout_seconds,
+                auth_mode=cast(AdapterAuthMode, settings.access_control_external_http_auth_mode),
+                static_bearer_token=http_api_key or settings.access_control_external_http_static_bearer_token,
+                idp_issuer=settings.access_control_external_http_idp_issuer,
             )
+        )
     return NoopAccessControlAdapter()
 
 
