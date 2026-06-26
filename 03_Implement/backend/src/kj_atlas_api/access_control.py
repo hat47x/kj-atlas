@@ -148,34 +148,46 @@ class ExternalPolicyAccessControlAdapter:
         self._config = config
 
     def authorize(self, request: AccessRequest) -> AccessDecision:
+        auth_source = request.auth
+        if auth_source is None and request.subject is not None:
+            auth_source = AuthContext(
+                actor_ref=request.subject.actor_ref,
+                roles=request.subject.roles,
+                groups=request.subject.groups,
+            )
+
         auth_payload: dict[str, object] = {
-            "actorRef": request.auth.actor_ref,
-            "roles": list(request.auth.roles),
-            "groups": list(request.auth.groups),
-            "traceId": request.auth.trace_id,
+            "actorRef": auth_source.actor_ref,
+            "roles": list(auth_source.roles),
+            "groups": list(auth_source.groups),
+            "traceId": getattr(auth_source, "trace_id", None),
         }
-        if request.auth.user_id is not None:
-            auth_payload["userId"] = request.auth.user_id
-        if request.auth.provider is not None:
-            auth_payload["provider"] = request.auth.provider
-        if request.auth.external_uid is not None:
-            auth_payload["externalUid"] = request.auth.external_uid
-        if request.auth.amr is not None:
-            auth_payload["amr"] = request.auth.amr
-        if request.auth.acr is not None:
-            auth_payload["acr"] = request.auth.acr
-        if request.auth.aal is not None:
-            auth_payload["aal"] = request.auth.aal
-        if request.auth.auth_time is not None:
-            auth_payload["authTime"] = request.auth.auth_time
+        if auth_source.user_id is not None:
+            auth_payload["userId"] = auth_source.user_id
+        if auth_source.provider is not None:
+            auth_payload["provider"] = auth_source.provider
+        if auth_source.external_uid is not None:
+            auth_payload["externalUid"] = auth_source.external_uid
+        if auth_source.amr is not None:
+            auth_payload["amr"] = auth_source.amr
+        if auth_source.acr is not None:
+            auth_payload["acr"] = auth_source.acr
+        if auth_source.aal is not None:
+            auth_payload["aal"] = auth_source.aal
+        if auth_source.auth_time is not None:
+            auth_payload["authTime"] = auth_source.auth_time
+
+        resource_source = request.resource
+        if resource_source is None:
+            resource_source = AccessResource(doc_id="")
 
         payload = {
             "action": request.action,
             "auth": auth_payload,
             "resource": {
-                "docId": request.resource.doc_id,
-                "visibility": request.resource.visibility,
-                "policyRef": request.resource.policy_ref,
+                "docId": resource_source.doc_id,
+                "visibility": resource_source.visibility,
+                "policyRef": resource_source.policy_ref,
             },
             "safeMode": request.safe_mode,
             "readOnly": request.read_only,
