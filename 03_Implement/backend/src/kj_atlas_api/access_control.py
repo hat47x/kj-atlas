@@ -149,12 +149,14 @@ class ExternalPolicyAccessControlAdapter:
 
     def authorize(self, request: AccessRequest) -> AccessDecision:
         auth_source = request.auth
+        subject_key = "auth"
         if auth_source is None and request.subject is not None:
             auth_source = AuthContext(
                 actor_ref=request.subject.actor_ref,
                 roles=request.subject.roles,
                 groups=request.subject.groups,
             )
+            subject_key = "subject"
 
         auth_payload: dict[str, object] = {
             "actorRef": auth_source.actor_ref,
@@ -183,7 +185,7 @@ class ExternalPolicyAccessControlAdapter:
 
         payload = {
             "action": request.action,
-            "auth": auth_payload,
+            subject_key: auth_payload,
             "resource": {
                 "docId": resource_source.doc_id,
                 "visibility": resource_source.visibility,

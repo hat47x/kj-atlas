@@ -232,13 +232,8 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_llm_provider_guards(self) -> "Settings":
         detected_legacy = sorted(key for key in LEGACY_ENV_KEYS if key in os.environ)
-        kj_prefix = "KJ_ATLAS_"
-        orphaned = [
-            key for key in detected_legacy
-            if f"{kj_prefix}{key}" not in os.environ
-        ]
-        if orphaned:
-            joined = ", ".join(orphaned)
+        if detected_legacy:
+            joined = ", ".join(detected_legacy)
             raise ValueError(
                 "Legacy env keys are no longer supported. Use KJ_ATLAS_* only: "
                 f"{joined}"
