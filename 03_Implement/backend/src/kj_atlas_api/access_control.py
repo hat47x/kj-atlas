@@ -162,8 +162,10 @@ class ExternalPolicyAccessControlAdapter:
             "actorRef": auth_source.actor_ref,
             "roles": list(auth_source.roles),
             "groups": list(auth_source.groups),
-            "traceId": getattr(auth_source, "trace_id", None),
         }
+        trace_id = getattr(auth_source, "trace_id", None)
+        if trace_id is not None:
+            auth_payload["traceId"] = trace_id
         if auth_source.user_id is not None:
             auth_payload["userId"] = auth_source.user_id
         if auth_source.provider is not None:
