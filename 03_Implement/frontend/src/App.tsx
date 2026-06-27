@@ -8950,20 +8950,6 @@ export default function App() {
           topContent={
             isAdvancedUiEnabled ? (
             <>
-              <section
-                style={{
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 8,
-                  padding: 8,
-                  marginBottom: 12,
-                  backgroundColor: "#f8fafc",
-                }}
-              >
-                <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
-                  {t("app.legacy.share_reproduce_hint")}
-                </div>
-                {structuralDiffPanel}
-              </section>
               <NarrativesPanel
                 narrativeText={narrativeText}
                 onNarrativeTextChange={setNarrativeText}
