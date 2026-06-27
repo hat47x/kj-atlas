@@ -8939,6 +8939,7 @@ export default function App() {
   );
 
   return (
+    <>
     <Shell
       title={t("app.title")}
       subtitle={t("app.subtitle.document", {
@@ -9708,5 +9709,6 @@ export default function App() {
         {t("work_mode.content_pending")}
       </div>
     </WorkModePanel>
+    </>
   );
 }
