@@ -144,6 +144,8 @@ export type EvidenceLink = {
   toCardId: string;
   note?: string;
   createdAt?: string;
+  /** DOMAIN-EXPR-04: reversible contradiction review state */
+  contradictionState?: "unconfirmed" | "confirmed" | "held" | "resolved";
 };
 
 export type A1TargetRef = `card:${string}` | `island:${string}` | `cluster:${string}` | `edge:${string}` | `proposal:${string}`;

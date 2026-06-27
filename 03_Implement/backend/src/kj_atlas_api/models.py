@@ -224,6 +224,8 @@ class EvidenceLink(BaseModel):
     toCardId: str
     note: str | None = Field(default=None, exclude_if=lambda value: value is None)
     createdAt: datetime | None = Field(default=None, exclude_if=lambda value: value is None)
+    # DOMAIN-EXPR-04 (2026-06-27): reversible contradiction review state
+    contradictionState: Literal["unconfirmed", "confirmed", "held", "resolved"] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 class NarrativeCheckReference(BaseModel):
