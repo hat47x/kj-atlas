@@ -57,6 +57,7 @@ import { ViewControlsPanel } from "./ui/ViewControlsPanel";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
 import { PatchWorkspacePanel } from "./ui/workspace/PatchWorkspacePanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
+import { WorkModePanel } from "./ui/WorkModePanel";
 import type { IslandRelationEdgeSelection } from "./domain/island_relation_explain";
 import {
   buildRelationSummarySourceSignature,
@@ -1041,6 +1042,8 @@ export default function App() {
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [isAdvancedUiEnabled, setIsAdvancedUiEnabled] = useState<boolean>(loadAdvancedUiEnabled);
+  const [isWorkModeOpen, setIsWorkModeOpen] = useState(false);
+  const workModeTriggerRef = useRef<HTMLButtonElement>(null);
   const [critiqueWorkflowFocusRequest, setCritiqueWorkflowFocusRequest] = useState(0);
   const [contextMenu, setContextMenu] = useState<
     | {
@@ -7436,6 +7439,26 @@ export default function App() {
       >
         {t("app.toolbar.advanced_ui")}
       </button>
+      <button
+        ref={workModeTriggerRef}
+        data-ui-complexity-tier="advanced-disclosure"
+        data-ui-core-action="work-mode"
+        type="button"
+        onClick={() => setIsWorkModeOpen((prev) => !prev)}
+        aria-pressed={isWorkModeOpen}
+        title={t("work_mode.title")}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: isWorkModeOpen ? "#e0e7ff" : "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
+      >
+        {t("work_mode.title")}
+      </button>
       {isAdvancedUiEnabled ? (
         <button
           data-ui-complexity-tier="advanced-content"
@@ -9676,5 +9699,14 @@ export default function App() {
           })()
         : null}
     </Shell>
+    <WorkModePanel
+      isOpen={isWorkModeOpen}
+      onClose={() => setIsWorkModeOpen(false)}
+      triggerRef={workModeTriggerRef}
+    >
+      <div style={{ fontSize: 13, color: "#64748b", padding: 16 }}>
+        {t("work_mode.content_pending")}
+      </div>
+    </WorkModePanel>
   );
 }
