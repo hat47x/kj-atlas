@@ -1064,6 +1064,8 @@
   "side_panel.evidence.state_confirmed": "Confirmed",
   "side_panel.evidence.state_held": "Held",
   "side_panel.evidence.state_resolved": "Resolved",
+  "work_mode.title": "Work mode",
+  "work_mode.close": "Close work mode",
   "side_panel.evidence_gap.title_e004": "Contradictions needing grounding",
   "side_panel.evidence_gap.focus_card": "Focus card: {cardId}",
   "side_panel.distribution.title": "Distribution signals ({count})",
