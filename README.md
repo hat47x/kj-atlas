@@ -1,6 +1,6 @@
 # kj-atlas
 
-** NOTICE: 本ツールは生成AIを用いた開発中であり、現時点では人的レビュー・利用を伴っていないことをここに明示します。 **
+**NOTICE: 本ツールは生成AIを用いた開発中であり、現時点では人的レビュー・利用を伴っていません（ADR-0042 段階A: 開発者によるドッグフード走行のみ完了。外部利用者の検証は未実施）。**
 
 A tool for keeping ambiguous meanings suspended, not for finding a single correct answer.
 
