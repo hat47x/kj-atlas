@@ -57,4 +57,33 @@ describe("hil_rs_client_apply integration", () => {
     expect(result.document.cards.find((card) => card.id === "c1")?.x).toBe(10);
     expect(result.document.cards.some((card) => card.x === 230 && card.y === 70)).toBe(true);
   });
+
+  it("preserves critique data through full preview-rediff-apply loop (DOMAIN-EXPR-03)", () => {
+    const docWithCritique: DocumentV2 = {
+      id: "doc-critique", version: 2, title: "with critique",
+      createdAt: "2026-05-10T00:00:00.000Z", updatedAt: "2026-05-10T00:00:00.000Z",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [
+        { id: "c1", text: "alpha", x: 0, y: 0, critique: "too close", critiqueTags: ["too_close"] },
+        { id: "c2", text: "beta", x: 100, y: 50, critique: "feels off", critiqueTags: ["feels_off"] },
+      ],
+      islands: [], edges: [],
+    };
+    const suggested: DocumentV2 = { ...docWithCritique, cards: [
+      { id: "c1", text: "alpha (edited)", x: 10, y: 15, critique: "too close", critiqueTags: ["too_close"] },
+      { id: "c2", text: "beta", x: 100, y: 50, critique: "feels off", critiqueTags: ["feels_off"] },
+      { id: "c3", text: "gamma", x: 230, y: 70 },
+    ]};
+    const client = createHilRsClient();
+    const critiqueInputs = client.collectCritiqueInputs({ document: docWithCritique, iteration: 3, createdAt: "2026-05-10T00:00:00.000Z" });
+    expect(critiqueInputs.length).toBeGreaterThan(0);
+    const payload = client.previewRediff({ currentDocument: docWithCritique, suggestedDocument: suggested, suggestionId: "sg-critique", iteration: 3, critiqueInputs });
+    expect(payload).not.toBeNull();
+    const result = applyHilRsRediffPayload(docWithCritique, payload!);
+    expect(result.appliedOpIds.length).toBeGreaterThan(0);
+    const c1 = result.document.cards.find((c) => c.id === "c1")!;
+    expect(c1.critique).toBe("too close");
+    expect(c1.critiqueTags).toEqual(["too_close"]);
+    expect(docWithCritique.cards[0].x).toBe(0);
+  });
 });

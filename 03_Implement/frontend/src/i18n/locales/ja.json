@@ -1068,6 +1068,7 @@
   "side_panel.evidence.state_resolved": "解決済み",
   "work_mode.title": "作業モード",
   "work_mode.close": "作業モードを閉じる",
+  "work_mode.content_pending": "高度な作業機能はここで開く予定です。現在は詳細表示を有効にしてサイドバーから利用できます。",
   "side_panel.evidence.state_held": "保留",
   "side_panel.evidence.state_resolved": "解決済み",
   "side_panel.distribution.title": "分布シグナル ({count})",
