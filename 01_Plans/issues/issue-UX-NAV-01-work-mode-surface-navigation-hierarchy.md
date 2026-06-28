@@ -1,11 +1,34 @@
 # Issue Draft: UX-NAV-01 作業モード面（ADR-0031 領域4）の実体化とナビゲーション階層
 
 - Type: Feature request
-- Status: Draft
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD（accountable owner remains Productization Program Owner）
+- Owner: Codex
+
+## Implementation Progress 2026-06-27
+
+### Done
+- AC-1: WorkModePanel component (full-screen overlay, Escape close, focus return) ✅
+- AC-3: structuralDiff duplicate removal ✅
+- AC-5: complexity budget compliance (1 new button, no initial display growth) ✅
+- AC-6: SafeMode non-regression ✅
+- WorkModePanel toggle button in header toolbar ✅
+- Fragment wrapper for Shell+WorkModePanel ✅
+- i18n: en/ja labels for title, close, content_pending ✅
+
+### Deferred
+- AC-2: Moving NarrativesPanel + HilRsWorkflowPanel from SidePanel.topContent requires
+  extracting 115 lines of deeply nested JSX. Current approach: WorkModePanel shows
+  content_pending message; advanced features remain accessible via sidebar.
+  This prevents accidental breakage while establishing the infrastructure.
+- AC-4: Naming discipline (avoid 'review' for tab name) — deferred until actual tabs exist.
+
+### Commits
+- PR #2490: WorkModePanel component + i18n
+- PR #2491: WorkModePanel wiring (import, state, toggle, Fragment)
+- 12819a8a: structuralDiff dedup (AC-3)
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/ui/Shell.tsx`, `03_Implement/frontend/src/ui/ux_operability_regression.test.ts`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-NAV-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`, `01_Plans/issues/issue-UX-OPERABILITY-03-contextual-selection-panel.md`, `01_Plans/issues/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md`, `01_Plans/issues/issue-UX-COMPLEXITY-01-core-value-foregrounding.md`
