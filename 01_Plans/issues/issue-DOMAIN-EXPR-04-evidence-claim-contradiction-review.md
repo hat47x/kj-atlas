@@ -23,12 +23,15 @@
 - **Narrative export**: Evidence/Contradiction Links section in markdown/HTML (2f44227a)
 - Existing infrastructure: SidePanel evidence display, contradiction report, trace export, SharePanel summary
 
-### Remaining
-- E2E: contradiction state selection → outcome package verification
+### Remaining（2026-06-29 更新）
+- E2E: contradiction state selection → outcome package verification（Playwright環境依存）
 - Contradiction state integration with narrative grounding summary counts
 
 ### Commits
 - 2f44227a evidence/contradiction links in narrative export
+- ea3af977 contradictionState schema (schemas.md + types.ts + models.py)
+- 668138e3 contradiction state UI (SidePanel selector + App.tsx handler + i18n)
+- c77082d0 contradictionState in narrative export (markdown + HTML)
 - ea3af977 contradictionState schema (schemas.md + types.ts + models.py)
 - 668138e3 contradiction state UI (SidePanel selector + App.tsx handler + i18n)
 
