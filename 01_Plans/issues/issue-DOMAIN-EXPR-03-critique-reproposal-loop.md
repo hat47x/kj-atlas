@@ -95,6 +95,15 @@ domain.md の Critique（理由の有無を問わない否定・ツッコミ）�
 
 - ADR化が必要になる条件: Critique種別やreproposal契約を変更する場合（HIL-RS契約と整合が必要）。
 
+## E2E追認 2026-06-29: DOMAIN-EXPR-03
+
+- 利用者指示に基づき、人間作業として残っていた Playwright E2E 実行を Codex が代行した。
+- 実行対象: `domain_expression_keyboard_access.spec.ts` を含む対象Playwrightセット（first value / share preflight / domain expression / review pack / complexity budget / performance budget）。
+- 結果: 2026-06-29 の対象Playwrightセットで **10 passed**。
+- 判定: 現在のスキーマ中立スライスは **Go**。カード選択、違和感入力、5種タグ、AI無効時の保存・表示、共有前確認への接続は代表操作として再現可能。
+- 残る範囲: AI provider 有効時の再提案候補生成、前案との差分意思決定、採用・却下・保留後も元の違和感を保持する操作は後続スライスとして残す。
+- ADR影響: 既存 `critique` / `critiqueTags` / proposal-only 表示の確認に留まるため、この追認単体ではADR不要。再提案権限、永続化契約、AIと人間判断の境界を変える場合はADR更新が必要。
+
 ## 実装記録（2026-06-23）: AI非依存の違和感入力
 
 ### 完了した範囲

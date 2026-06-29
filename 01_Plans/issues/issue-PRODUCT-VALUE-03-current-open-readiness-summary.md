@@ -110,6 +110,31 @@ No new ADR is needed to define the minimum package evidence. A new ADR is requir
   - Productization Program Owner / QA Lead package acceptance, physical keyboard acceptance, screen-reader acceptance, and final shipment approval remain open.
   - Status impact: **Draft remains**.
 
+## Delegated Human Approval 2026-06-29: H-PV3
+
+- 委任元: 利用者指示「人間承認（PRODUCT-VALUE-01/02/03 H-PV1/H-PV2/H-PV3）を代行」。
+- 扱い: Codex が Productization Program Owner / QA Lead / UX reviewer の確認観点を代理レビューする。これは正式な組織承認、電子署名、公開配布契約、最終出荷承認の代替ではない。
+- 参照E2E:
+  - `review_pack_trace_export.spec.ts`
+  - `domain_expression_keyboard_access.spec.ts`
+  - `first_value_share_preflight.spec.ts`
+- 参照スクリーンショット:
+  - `04_Documentation/assets/screenshots/product-value-review-pack-trace.png`
+  - `04_Documentation/assets/screenshots/product-value-review-pack-readonly.png`
+  - `04_Documentation/assets/screenshots/product-value-ambiguity-share-preflight.png`
+- 実行結果: 2026-06-29 対象Playwrightセット **10 passed**。
+
+### H-PV3 decision
+
+| Decision | Proxy outcome | Rationale |
+| --- | --- | --- |
+| H-PV3-1 package fixture | Go | `doc_review_pack_trace_export` は reviewed target、support、contradiction、unreviewed counter-signal、reviewable island、trace files を含み、レビュー可能成果物の最小説明に足る。 |
+| H-PV3-2 trace-back proof | Go | ZIP file-name proofに加え、read-only reviewer E2Eが元カード・根拠・矛盾の画面検査を確認している。現段階では追加のreader-facing backlink UIをOpen前必須にはしない。 |
+| H-PV3-3 Overview/Detail trace controls | Go | Overviewではselected-card traceが無効化され、Detailでは有効化される。文言もexport結果と一致しており、標準レビュアーに対して誤解を招きにくい。 |
+| SafeMode/read-only authority | Go | Share/Review Packの固定マスク文言とread-only編集無効化をE2Eで再確認した。 |
+
+- Status impact: H-PV3のfixture/package acceptance、trace-back sufficiency、Overview/Detail UX acceptanceは代理レビュー済みとして扱う。正式なpackage public contract、署名/承認workflow、物理キーボード/スクリーンリーダー受入、最終出荷承認は残す。
+
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.

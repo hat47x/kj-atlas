@@ -75,3 +75,9 @@
 - `03_Implement/frontend/src/canvas/CardView.tsx` における keyboard 選択契約（`Enter/Space`, `aria-selected`, `data-focus="card"`）を回帰対象として固定。
 - `03_Implement/frontend/src/ui/SidePanel.tsx` で `selection-context` / `advanced` の段階開示契約（`data-panel`, `data-panel-group`, `aria-expanded`）を実装・検証。
 - `03_Implement/frontend/src/ui/SharePanel.tsx` と `03_Implement/frontend/src/App.tsx` の `Escape` 閉鎖 + フォーカス復帰契約を回帰対象として維持。
+
+## E2E追認 2026-06-29
+
+- `UX-NAV-01 AC-2` として利用者から指定された「高度機能パネル抽出」は、本issueの `advanced` 段階開示契約と `UX-COMPLEXITY-01` AC-2 の組み合わせとして扱う。
+- 追加E2E `selection context keeps advanced panel extracted behind explicit disclosure` により、選択文脈の基本情報と高度パネルの分離、初期 `aria-expanded=false`、明示開閉の可逆性を実ブラウザで確認した。
+- 結果: 2026-06-29 の対象Playwrightセットで **10 passed**。

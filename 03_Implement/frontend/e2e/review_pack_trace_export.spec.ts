@@ -71,7 +71,7 @@ test("review pack export keeps trace controls consistent with actual zip content
     buffer: Buffer.from(JSON.stringify(buildReviewPackTraceDocument()), "utf-8"),
   });
   await page.getByRole("button", { name: "Replace current document" }).click();
-  await expect(page.getByText("Replaced current document")).toBeVisible();
+  await expect(page.getByText("Replaced the current document")).toBeVisible();
 
   await page.getByRole("button", { name: "Close panel" }).click();
   await expect(page.locator('[data-panel="share-replay"]')).toBeHidden();

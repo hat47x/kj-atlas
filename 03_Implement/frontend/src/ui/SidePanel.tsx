@@ -212,8 +212,6 @@ type SidePanelProps = {
   importedPackSnapshotUrl?: string | null;
   importedPackDiagnosticsMd?: string | null;
   mergeAuditLog: MergeAuditEntry[];
-  onRestoreShelvedCard?: (cardId: string) => void;
-  isAdvancedUiEnabled?: boolean;
 };
 
 export function SidePanel({
@@ -379,8 +377,6 @@ export function SidePanel({
   importedPackSnapshotUrl,
   importedPackDiagnosticsMd,
   mergeAuditLog,
-  onRestoreShelvedCard,
-  isAdvancedUiEnabled,
   isReadOnly = false,
   isAdvancedUiEnabled = false,
 }: SidePanelProps) {
@@ -1168,7 +1164,9 @@ export function SidePanel({
                 <span style={{ color: "#0369a1" }}>{t("side_panel.context.evidence_brief", { n: outgoingEvidenceLinks.length + incomingEvidenceLinks.length })}</span>
               ) : null}
               {selectedCard?.holdState ? (
-                <span style={{ color: "#92400e" }}>{t("side_panel.context.hold_brief", { value: selectedCard.holdState })}</span>
+                <span style={{ color: "#92400e" }}>
+                  {t("side_panel.context.hold_brief", { value: t(`side_panel.hold_state.${selectedCard.holdState}`) })}
+                </span>
               ) : null}
             </div>
             {selectedCard?.claimType && selectedCard.claimType !== "unknown" ? (

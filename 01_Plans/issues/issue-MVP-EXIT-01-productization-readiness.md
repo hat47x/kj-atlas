@@ -1520,3 +1520,41 @@
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead for product-value and final shipment decisions; human/project governance for FB-P0/HIL-RS approval/held decisions; Project Maintainers for high-privilege lifecycle decisions.
 - Due date: next Program Gate review after product-value acceptance evidence, human acceptance evidence, Compose/environment evidence, support rehearsal evidence, or FB/HIL/high-privilege lifecycle decisioning.
 - Re-decision date: after Product Value Open-gate acceptance, after release screenshot / keyboard / screen-reader acceptance, after Docker-capable Compose verification/startup evidence, after support diagnostics/recovery rehearsal, after `Approval Record` and `HIL-RS-02-GOV-EXCEPTION-01` are decided, after `ADR-0035` is accepted/replaced/rejected, or after a material runtime/product change reaches `main`.
+
+## MVP-EXIT Program Gate Decision 2026-06-29: delegated H-PV approvals and targeted E2E
+
+- Candidate: current working baseline after PERF-BUDGET-01 / H-PV / UX advanced-panel evidence updates.
+- Decision date: 2026-06-29.
+- Reviewer: Codex, under explicit user delegation for the listed human tasks.
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-29: delegated H-PV approvals and targeted E2E`.
+  - `PRODUCT-VALUE-01-current-open-readiness-summary.md` H-PV1 delegated approval.
+  - `PRODUCT-VALUE-02-current-open-readiness-summary.md` H-PV2 delegated approval.
+  - `PRODUCT-VALUE-03-current-open-readiness-summary.md` H-PV3 delegated approval.
+  - `PERF-BUDGET-01`, `DOMAIN-EXPR-03`, `DOMAIN-EXPR-04`, and `UX-COMPLEXITY-01` / `UX-OPERABILITY-03` evidence records.
+
+### Decision
+
+- Final: **Conditional Go for delegated Product Value gate evidence and targeted E2E freshness / No-Go for full release shipment**.
+- Reason summary: The delegated H-PV1/H-PV2/H-PV3 decisions remove the specific human-acceptance blockers named by the user for the current evidence packets. The targeted Playwright set passed 10 tests, covering first-value operation, SafeMode share preflight, domain-expression critique/evidence flows, review-pack read-only inspection, advanced-panel extraction, and representative performance budget. This does not create shipment approval because final program approval, Compose/environment rehearsal, support rehearsal, physical keyboard acceptance, screen-reader acceptance, release screenshot approval, FB/HIL/high-privilege decisions, and any formal organization approval remain outside this delegation.
+- Escalation route: keep `PRODUCT-QA-01` as release evidence steward; keep `PRODUCT-VALUE-01..03` as value-gate records; route any change to SafeMode/share policy, review authority, package public contract, persistence schema, or release authority through issue/ADR before implementation.
+
+### Gate Mapping
+
+- G0 planning integrity: Conditional Go. Internal issue records are updated; validator/typecheck/full regression still need to be run for this PR-sized slice.
+- G1 safety defaults: Go / unchanged. SafeMode, fixed redaction contexts, and read-only inspection are revalidated without policy changes.
+- G2 user-operability evidence: Conditional Go improved. H-PV proxy approvals and Playwright evidence cover the named representative flows.
+- G5 share/export safety: Conditional Go improved. Share preflight and Review Pack trace/read-only behavior passed.
+- G6 governance and decision traceability: Conditional Go improved. The delegation source and limits are explicit.
+- G7 regression: Go for targeted E2E command, **10 passed**.
+
+### Conditional controls
+
+- Remaining risks:
+  - Full release shipment remains blocked by final program approval, Compose startup/environment rehearsal, support diagnostics/recovery rehearsal, physical keyboard acceptance, screen-reader acceptance, final release screenshot approval, and non-delegated governance decisions.
+  - H-PV proxy approvals are scoped to the current evidence packets. They do not authorize formal organization approval, signatures, automatic publication, package public contract changes, or release authority changes.
+  - DOMAIN-EXPR-03 still has AI-provider reproposal generation and post-decision critique-retention work remaining.
+  - DOMAIN-EXPR-04 still excludes persistent contradiction-state transitions unless a future issue/ADR approves them.
+  - PERF-BUDGET-01 is a lightweight regression budget, not a strict SLA.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead for final shipment decisions; Project Maintainers for release authority and high-privilege lifecycle decisions.
+- Re-decision date: after full regression/CI, Compose-backed rehearsal, accessibility acceptance, support rehearsal, or any material runtime/product change.
