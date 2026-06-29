@@ -1,8 +1,37 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-05-20 (UTC, Stream F shared sync rerun-78)
+最終更新: 2026-06-29
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
+
+## 現状スナップショット（2026-06-29）
+
+### ADR 状態
+- ADR-0000〜0046: すべて Accepted
+- ADR-0047（設計判断ADRの一巡完了とexecution-first転換）: Accepted
+
+### Issue 状態（triage）
+- Active: 26 (Ready: 15, Blocked: 11)
+- P0: PRODUCT-QA-01 (Open), CORE-VALUE-GUARD-01 (Done)
+- P1: PRODUCT-VALUE-01/02/03 (In Progress, 人間判断待ち), UX-NAV-01 (In Progress), VALUE-DOGFOOD-01 (In Progress)
+- P2: DOMAIN-EXPR-03/04 (In Progress), PERF-BUDGET-01 (In Progress)
+
+### DOMAIN-EXPR 実装状態 (ADR-0040)
+| Phase | Issue | 状態 |
+|---|---|---|
+| 1 | DOMAIN-EXPR-01 (読取UI) | ✅ Done |
+| 2 | DOMAIN-EXPR-02 (Hold/Shelf) | Schema追加済み、UI実装済み |
+| 3 | DOMAIN-EXPR-03 (Critique→Reproposal) | 5種critique移行、diff preview、Open Reproposal button、統合テスト完了 |
+| 4 | DOMAIN-EXPR-04 (Evidence/Contradiction) | contradictionState schema + SidePanel UI + narrative export完了 |
+
+### テスト
+- Frontend: 175 files, 849 tests passed
+- CI: 全グリーン
+
+### 安全不変条件
+- ✅ SafeMode既定ON / human_reviewed人手昇格 / proposal-only / provider=none既定 / patch+approval
+- ✅ DOMAIN-EXPR全Phaseで主要価値成立
+- ✅ CVI-1..7 横断ガードテスト緑
 
 ## 次フェーズ計画レイヤ（価値→社会的目標, 2026-05-31 決定済み）
 
