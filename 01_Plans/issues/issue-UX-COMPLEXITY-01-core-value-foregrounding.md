@@ -116,3 +116,11 @@
 - AC-4: Pass。純増時の理由記載をPRテンプレで要求した。
 
 複雑性予算: 初期表示への純増=なし / 保留操作の距離=不変 / 取り消し導線=あり（「詳細」を再度選択）
+
+## E2E追認 2026-06-29: UX-NAV-01 AC-2 equivalent
+
+- 利用者指定の `UX-NAV-01 AC-2（高度機能パネル抽出）` は、本Issueの AC-2 と `UX-OPERABILITY-03` の選択コンテキスト段階開示契約として扱う。
+- 追加E2E `selection context keeps advanced panel extracted behind explicit disclosure` により、既定表示では高度パネルが出ないこと、明示的に「詳細」を選ぶまで `[data-panel-group="advanced"]` が現れないこと、表示後も初期 `aria-expanded=false` であることを確認した。
+- 選択コンテキストの基本情報（選択対象、レビュー状態、違和感）は高度パネルの開閉中も維持されることを確認した。
+- 結果: 2026-06-29 の対象Playwrightセットで **10 passed**。
+- 判定: AC-2 は代表操作として **Pass**。ただし、画面全体の情報設計や実機アクセシビリティ承認は別ゲートに残る。

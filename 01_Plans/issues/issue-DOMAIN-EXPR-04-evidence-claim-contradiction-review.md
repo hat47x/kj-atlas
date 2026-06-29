@@ -104,3 +104,12 @@ PRODUCT-VALUE-03と連携。
 ## 7) Additional context
 
 - ADR化が必要になる条件: 矛盾状態遷移を永続化する、または成果物契約（review pack要素）を変更する場合は `PRODUCT-VALUE-03` と同期してADR化する。
+
+## E2E追認 2026-06-29: DOMAIN-EXPR-04
+
+- 利用者指示に基づき、人間作業として残っていた Playwright E2E 実行を Codex が代行した。
+- 実行対象: `review_pack_trace_export.spec.ts` と `domain_expression_keyboard_access.spec.ts` を含む対象Playwrightセット。
+- 結果: 2026-06-29 の対象Playwrightセットで **10 passed**。
+- 判定: 現在のスキーマ中立スライスは **Go**。根拠・矛盾の画面検査、Review Pack Detail export の trace file 確認、read-only reviewer の編集不可境界を代表操作として再現できる。
+- 残る範囲: 矛盾状態の永続的な状態遷移、AI補助による矛盾候補生成、成果物契約の拡張は本追認に含めない。
+- ADR影響: 既存 `evidenceLinks` / `claimType` / Review Pack trace の確認に留まるため、この追認単体ではADR不要。成果物契約、SafeMode/share-export境界、矛盾状態遷移を変える場合はADR更新が必要。

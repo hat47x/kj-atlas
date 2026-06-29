@@ -105,6 +105,29 @@ No new ADR is needed for this summary. An ADR is required only if the project ch
   - Productization Program Owner / QA Lead fixture acceptance, mouse/keyboard naturalness, keyboard-fixture sufficiency, physical keyboard acceptance, screen-reader acceptance, and shipment approval remain open.
   - Status impact: **Draft remains**.
 
+## Delegated Human Approval 2026-06-29: H-PV1
+
+- 委任元: 利用者指示「人間承認（PRODUCT-VALUE-01/02/03 H-PV1/H-PV2/H-PV3）を代行」。
+- 扱い: Codex が Productization Program Owner / QA Lead / UX reviewer の確認観点を代理レビューする。これは製品出荷承認、物理キーボード実機受入、スクリーンリーダー受入、Compose-backed release rehearsal の代替ではない。
+- 参照E2E:
+  - `first_meaningful_map_mouse_flow.spec.ts`
+  - `first_value_share_preflight.spec.ts`
+  - `domain_expression_keyboard_access.spec.ts`（keyboard route sufficiency）
+- 参照スクリーンショット:
+  - `04_Documentation/assets/screenshots/product-value-first-island.png`
+  - `04_Documentation/assets/screenshots/product-value-first-island-share-preflight.png`
+- 実行結果: 2026-06-29 対象Playwrightセット **10 passed**。
+
+### H-PV1 decision
+
+| Decision | Proxy outcome | Rationale |
+| --- | --- | --- |
+| Fixture represents first value moment | Go | `doc_first_meaningful_map_mouse` は3カードから2カードを束ね、`Island 1` と未レビュー状態を同時に見せる。標準利用者が「置いたもの」と「まだ決めていないこと」を理解できる最小シナリオとして妥当。 |
+| Mouse path naturalness | Go | サンプルを開く、2カードを選択する、`Create Island` を押す、共有前確認へ進む経路が画面上の主要操作だけで完結する。 |
+| Keyboard evidence sufficiency | Conditional Go | 既存 keyboard route はサンプル、検索、カード選択、違和感入力、共有前確認、フォーカス復帰を確認している。PV01専用fixtureの完全なkeyboard再演は将来強化でよい。 |
+| Evidence bundle location | Go | 既存スクリーンショットとE2E名で再実行・参照できる。 |
+
+- Status impact: H-PV1の「fixture意味」「操作自然性」「証跡場所」ブロッカーは代理レビュー済みとして扱う。Shipment No-Go要素（実機アクセシビリティ、release screenshot approval、Compose startup、最終program approval）は残す。
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.

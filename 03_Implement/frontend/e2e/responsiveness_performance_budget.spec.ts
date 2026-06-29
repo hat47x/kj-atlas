@@ -1,0 +1,143 @@
+import { expect, test, type Page } from "@playwright/test";
+
+type DurationRecord = {
+  label: string;
+  durationMs: number;
+};
+
+function buildPerformanceBudgetDocument() {
+  const now = "2026-06-29T00:00:00.000Z";
+  const cards = Array.from({ length: 300 }, (_, index) => {
+    const row = Math.floor(index / 20);
+    const col = index % 20;
+    return {
+      id: `perf-card-${index + 1}`,
+      text: index === 286 ? "rare performance signal 287" : `performance budget card ${index + 1}`,
+      x: 100 + col * 150,
+      y: 100 + row * 100,
+      textReviewed: index % 4 === 0,
+      claimType: index % 5 === 0 ? "hypothesis" : index % 3 === 0 ? "claim" : "fact",
+    };
+  });
+  const islands = Array.from({ length: 30 }, (_, index) => {
+    const firstCardIndex = index * 10;
+    return {
+      id: `perf-island-${index + 1}`,
+      title: `performance cluster ${index + 1}`,
+      cardIds: cards.slice(firstCardIndex, firstCardIndex + 10).map((card) => card.id),
+      shape: { kind: "rect" as const },
+    };
+  });
+  const edges = Array.from({ length: 299 }, (_, index) => ({
+    id: `perf-edge-${index + 1}`,
+    fromId: `perf-card-${index + 1}`,
+    toId: `perf-card-${index + 2}`,
+    type: "related",
+  }));
+
+  return {
+    version: 2,
+    id: "doc_perf_budget_01_representative",
+    title: "PERF-BUDGET-01 representative document",
+    createdAt: now,
+    updatedAt: now,
+    transform: { panX: 0, panY: 0, zoom: 1 },
+    cards,
+    edges,
+    islands,
+    readingOrder: cards.map((card) => card.id),
+    narratives: [],
+    evidenceLinks: [],
+    mergeSuggestionDecisions: [],
+  };
+}
+
+async function measure(records: DurationRecord[], label: string, action: () => Promise<void>) {
+  const startedAt = Date.now();
+  await action();
+  records.push({ label, durationMs: Date.now() - startedAt });
+}
+
+async function installLongTaskProbe(page: Page) {
+  await page.addInitScript(() => {
+    const longTasks: Array<{ duration: number; name: string }> = [];
+    (window as unknown as { __kjAtlasLongTasks: typeof longTasks }).__kjAtlasLongTasks = longTasks;
+    if (!("PerformanceObserver" in window)) return;
+    try {
+      const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          longTasks.push({ duration: entry.duration, name: entry.name });
+        }
+      });
+      observer.observe({ entryTypes: ["longtask"] });
+    } catch {
+      // Some browser contexts do not expose longtask entries. Duration assertions still cover the budget.
+    }
+  });
+}
+
+test("PERF-BUDGET-01 representative document keeps core operations responsive", async ({ page }) => {
+  test.slow();
+  const durations: DurationRecord[] = [];
+  await installLongTaskProbe(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/?locale=en");
+
+  await page.getByRole("button", { name: "Share & Reproduce" }).click();
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: "Load document.json" }).click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles({
+    name: "perf-budget-01-representative.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(buildPerformanceBudgetDocument()), "utf-8"),
+  });
+
+  await measure(durations, "replace-document", async () => {
+    await page.getByRole("button", { name: "Replace current document" }).click();
+    await expect(page.getByText("Replaced the current document")).toBeVisible({ timeout: 10_000 });
+  });
+  await page.getByRole("button", { name: "Close panel" }).click();
+  const closeStartPanel = page.getByRole("button", { name: "Close start panel" });
+  if (await closeStartPanel.isVisible()) {
+    await closeStartPanel.click();
+  }
+
+  await measure(durations, "search-filter", async () => {
+    await page.getByPlaceholder("Search cards").fill("rare performance signal");
+    await expect(page.getByText("1/1")).toBeVisible();
+    await page.getByRole("checkbox", { name: "Hide non-matches" }).check();
+    await expect(page.getByText("rare performance signal 287")).toBeVisible();
+  });
+
+  await measure(durations, "card-selection", async () => {
+    const rareSignalCard = page.getByRole("option", { name: "rare performance signal 287" });
+    await rareSignalCard.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.locator('[data-panel="selection-context"]')).toContainText("Card selected");
+  });
+
+  await measure(durations, "view-panel-open", async () => {
+    await page.getByRole("button", { name: "View", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "View", exact: true })).toBeVisible();
+  });
+  await page.keyboard.press("Escape");
+
+  await measure(durations, "share-panel-open", async () => {
+    await page.getByRole("button", { name: "Share & Reproduce" }).click();
+    await expect(page.locator('[data-panel="share-replay"]')).toBeVisible();
+  });
+
+  const byLabel = Object.fromEntries(durations.map((record) => [record.label, record.durationMs]));
+  expect(byLabel["replace-document"]).toBeLessThan(8_000);
+  expect(byLabel["search-filter"]).toBeLessThan(2_500);
+  expect(byLabel["card-selection"]).toBeLessThan(2_000);
+  expect(byLabel["view-panel-open"]).toBeLessThan(2_000);
+  expect(byLabel["share-panel-open"]).toBeLessThan(2_500);
+
+  const maxLongTaskMs = await page.evaluate(() => {
+    const tasks = (window as unknown as { __kjAtlasLongTasks?: Array<{ duration: number }> }).__kjAtlasLongTasks ?? [];
+    return tasks.reduce((max, task) => Math.max(max, task.duration), 0);
+  });
+  expect(maxLongTaskMs).toBeLessThan(2_500);
+});

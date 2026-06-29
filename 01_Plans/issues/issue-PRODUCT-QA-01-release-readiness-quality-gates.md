@@ -2832,7 +2832,37 @@ DoDテンプレ（Draft→Open）
 
 ### Required follow-up issues
 - `PRODUCT-VALUE-01` — human fixture/acceptance for first meaningful map
-- `PRODUCT-VALUE-02` — ambiguity/evidence umbrella integration decision  
+- `PRODUCT-VALUE-02` — ambiguity/evidence umbrella integration decision
 - `PRODUCT-VALUE-03` — reviewable package human acceptance
 - `PRODUCT-QA-01` — next gate evaluation cycle
 - `MVP-EXIT-01` — final productization program decision
+
+## Productization Gate Record 2026-06-29: delegated H-PV approvals and targeted E2E
+
+- Candidate: current working baseline after PERF-BUDGET-01 / DOMAIN-EXPR-03/04 / H-PV / UX advanced-panel evidence updates.
+- Date (JST): 2026-06-29
+- Reviewer: Codex acting under explicit user delegation for named human tasks. This is not final shipment approval.
+- Scope: Playwright E2E execution for PERF-BUDGET-01 and DOMAIN-EXPR-03/04, delegated H-PV1/H-PV2/H-PV3 approval records, and UX-NAV-01 AC-2 equivalent advanced-panel extraction evidence.
+
+### Evidence
+
+- Target Playwright set: **10 passed**.
+- TypeScript: `tsc --noEmit` passed.
+- Focused frontend tests: `ux_operability_regression.test.ts` and `SharePanel.test.ts`, **20 tests passed**.
+- Full Vitest: **826 tests passed**.
+- Production build: passed; Vite still reports the existing large chunk warning.
+- Issue validator: active issue memo validator passed; validator unittest **10 tests OK**.
+
+### Gate impact
+
+- G1 safety defaults: Conditional Go improved. SafeMode/share preflight and read-only reviewer boundaries were rechecked; no safety contract change.
+- G2 primary operations: Conditional Go improved. First-value, domain-expression, review-pack, and advanced-panel representative routes passed in browser E2E.
+- G4 viewport/operability: Conditional Go improved. UX-NAV-01 AC-2 is treated as `UX-COMPLEXITY-01` AC-2 plus `UX-OPERABILITY-03` advanced disclosure evidence.
+- G6 governance and decision traceability: Conditional Go improved. H-PV1/H-PV2/H-PV3 delegation source and limits are recorded in the Product Value summaries and MVP-EXIT.
+- G7 regression: Go for this PR-sized slice based on local typecheck, Vitest, targeted Playwright, build, and issue validators.
+
+### Decision
+
+**Conditional Go for delegated Product Value gate evidence and targeted E2E freshness / No-Go for full release shipment**.
+
+The delegated H-PV1/H-PV2/H-PV3 decisions remove the specific human-acceptance blockers named by the user for the current evidence packets. Full release remains **No-Go** because final program approval, Compose/environment rehearsal, support rehearsal, physical keyboard acceptance, screen-reader acceptance, release screenshot approval, and formal organization approval remain outside this delegation.

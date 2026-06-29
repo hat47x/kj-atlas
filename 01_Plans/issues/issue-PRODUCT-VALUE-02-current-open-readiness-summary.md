@@ -139,6 +139,27 @@ No new ADR is needed for the Phase 1 summary. A new ADR is required if implement
   - Hold/Pending, human findability/accessibility acceptance, and umbrella Product Value approval remain open.
   - Status impact: **Draft remains**.
 
+## Delegated Human Approval 2026-06-29: H-PV2
+
+- 委任元: 利用者指示「人間承認（PRODUCT-VALUE-01/02/03 H-PV1/H-PV2/H-PV3）を代行」。
+- 扱い: Codex が Productization Program Owner / QA Lead / UX reviewer / Architecture owner の確認観点を代理レビューする。これは製品出荷承認、実機アクセシビリティ受入、実データソースのCE1 production parity確認の代替ではない。
+- 参照E2E:
+  - `domain_expression_keyboard_access.spec.ts`
+  - `review_pack_trace_export.spec.ts`
+  - `responsiveness_performance_budget.spec.ts`（代表規模で状態表示が操作不能化しないことの補助）
+- 実行結果: 2026-06-29 対象Playwrightセット **10 passed**。
+
+### H-PV2 decision
+
+| Decision | Proxy outcome | Rationale |
+| --- | --- | --- |
+| Split evidence strategy | Go | `ADR-0040` の段階分割に従い、Hold/Pendingを待たずに critique/evidence/contradiction のschema-neutral evidenceをPhase 1として評価するのが妥当。 |
+| Phase 1 fixture meaning | Go | `doc_domain_expression_keyboard_access` は ambiguous target、support、counter signal、critique、evidence links、contradiction を含み、未確定情報を通常カードに潰さない。 |
+| Findability | Conditional Go | 選択コンテキスト、状態summary、keyboard traversal、share preflightで再発見できる。専用 unresolved-state filter は反復利用で混乱が出た場合の後続改善でよい。 |
+| Safety/share boundary | Go | SafeMode ONで unreviewed drafts は含めず、preflight counts が未解決状態を共有前に表示する。 |
+| AI/review boundary | Go for fixed profile | `human_reviewed` 自動昇格防止と ContextBundle constraint-preservation 証跡を受け入れる。実データソース parity は既存CE1 holdの範囲に残す。 |
+
+- Status impact: H-PV2のumbrella human acceptance blockerは、Phase 1 / split-first方針に限り代理レビュー済みとして扱う。Hold/Pendingの第一級化、実データソース parity、物理キーボード/スクリーンリーダー受入、最終出荷承認は残す。
 ## Acceptance Criteria
 
 - [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.

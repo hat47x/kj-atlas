@@ -68,9 +68,9 @@ test("mouse first-value flow creates a visible first island from the sample", as
   await expect(selectionPanel).toContainText("first value observation memo");
   await expect(selectionPanel).toContainText(/選択: 2 件のカードを選択中|Selection: 2 cards selected/);
 
-  await page.getByRole("button", { name: /^元に戻す$|^Undo$/ }).click();
+  await page.keyboard.press("Control+Z");
   await expect(page.getByTestId("status-message")).toContainText("操作を元に戻しました");
-  await page.getByRole("button", { name: /^やり直す$|^Redo$/ }).click();
+  await page.keyboard.press("Control+Y");
   await expect(page.getByTestId("status-message")).toContainText("操作をやり直しました");
   await expect(islandSelect).toBeVisible();
 });
