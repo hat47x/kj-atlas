@@ -107,10 +107,17 @@ domain.md の Critique（理由の有無を問わない否定・ツッコミ）�
 - 一般利用者向けの受け入れ手順に、5種の違和感とAI無効時の挙動を同期した。
 - 違和感入力欄から「再提案を確認」を実行すると、詳細表示を開き、既存のproposal-only再提案面へフォーカスする導線を追加した。
 
-### 残る範囲
+### 残る範囲（2026-06-29 更新）
 
-- AI有効時の再提案候補生成自体は既存機構を利用する。provider別の成功経路をリリース候補環境で確認する証跡は未完了。
-- 前案と再提案の差分確認、採用・却下・保留後も元の違和感を保持する操作。
-- 上記は再提案権限と差分意思決定UIを含むため、本Issueの後続スライスとして分離する。
+- AI有効時の再提案候補生成は既存機構（hil_rs_client + rediffProvider）で対応済み。
+  provider別の成功経路をリリース候補環境で確認するPlaywright証跡は未完了（環境依存）。
+- 採用・却下・保留後も元の違和感を保持する操作: 統合テスト追加済み
+  （hil_rs_client_apply.integration.test.ts: critique→preview→apply→critique preserved）。
+- 前案と再提案の差分確認UI: HilRsRediffPreview + SuggestionPanel 実装済み。
+
+### テスト
+- 単体: hil_rs_apply.test.ts（4 tests, critique保存検証含む）✅
+- 統合: hil_rs_client_apply.integration.test.ts（2 tests, 完全ループ検証）✅
+- E2E: Playwright環境依存で未完了
 
 複雑性予算: 初期表示への純増=説明1件（AI無効時の挙動を誤解させないため） / 保留・違和感操作の距離=不変 / 取り消し導線=タグ解除・メモ削除
