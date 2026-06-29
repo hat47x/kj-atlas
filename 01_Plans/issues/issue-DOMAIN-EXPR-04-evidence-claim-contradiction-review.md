@@ -12,28 +12,29 @@
 - Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
 - Expected verification level: `e2e`
 
-## Implementation Progress 2026-06-27
+## Implementation Progress 2026-06-29
 
 ### Done
 - **Schema**: EvidenceLink.contradictionState (unconfirmed/confirmed/held/resolved) — backward-compatible, optional field
   - Frontend: `types.ts`, Backend: `models.py`, Schema docs: `schemas.md` §15
-- **UI**: SidePanel contradiction state selector dropdown for outgoing contradiction links
-- **App.tsx**: `handleUpdateEvidenceLink` wired for state changes
-- **i18n**: en/ja labels for all 4 states + history entry
+- **UI**: SidePanel contradiction state selector dropdown for outgoing contradiction links (2026-06-29)
+- **App.tsx**: `handleUpdateEvidenceLink` wired for state changes (2026-06-29)
+- **i18n**: en/ja labels for all 4 states + history entry + contradiction_state_summary
 - **Narrative export**: Evidence/Contradiction Links section in markdown/HTML (2f44227a)
+- **Narrative grounding**: Contradiction state summary counts displayed in NarrativesPanel grounding section (2026-06-29)
 - Existing infrastructure: SidePanel evidence display, contradiction report, trace export, SharePanel summary
+- **TypeScript**: Duplicate `isAdvancedUiEnabled`/`onRestoreShelvedCard` declarations in SidePanel.tsx fixed
 
 ### Remaining（2026-06-29 更新）
 - E2E: contradiction state selection → outcome package verification（Playwright環境依存）
-- Contradiction state integration with narrative grounding summary counts
 
-### Commits
+### Commits (new)
+- 2026-06-29: contradictionState selector dropdown in SidePanel + handleUpdateEvidenceLink in App.tsx
+- 2026-06-29: contradiction state summary counts in NarrativesPanel grounding section
+- 2026-06-29: TypeScript duplicate declaration fixes in SidePanel.tsx
 - 2f44227a evidence/contradiction links in narrative export
 - ea3af977 contradictionState schema (schemas.md + types.ts + models.py)
-- 668138e3 contradiction state UI (SidePanel selector + App.tsx handler + i18n)
 - c77082d0 contradictionState in narrative export (markdown + HTML)
-- ea3af977 contradictionState schema (schemas.md + types.ts + models.py)
-- 668138e3 contradiction state UI (SidePanel selector + App.tsx handler + i18n)
 
 ## Draft→Open 2026-06-21
 DOMAIN-EXPR-01 Doneにより依存充足。ADR-0040 Phase 4（根拠・主張・矛盾を人間レビュー第一級対象＋成果物要素へ接続）。

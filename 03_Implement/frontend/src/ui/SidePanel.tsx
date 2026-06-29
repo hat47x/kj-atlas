@@ -62,6 +62,7 @@ type SidePanelProps = {
   onCardTextReviewedChange: (value: boolean) => void;
   onAddEvidenceLink: (payload: { toCardId: string; type: EvidenceLink["type"] }) => void;
   onRemoveEvidenceLink: (evidenceLinkId: string) => void;
+  onUpdateEvidenceLink: (evidenceLinkId: string, patch: Partial<Pick<EvidenceLink, "contradictionState">>) => void;
   onFocusCardById: (cardId: string) => void;
   onTitleChange: (value: string) => void;
   onParentIslandChange: (value: string | undefined) => void;
@@ -212,6 +213,7 @@ type SidePanelProps = {
   importedPackSnapshotUrl?: string | null;
   importedPackDiagnosticsMd?: string | null;
   mergeAuditLog: MergeAuditEntry[];
+  providerUnavailableMessage?: string | null;
 };
 
 export function SidePanel({
@@ -231,6 +233,7 @@ export function SidePanel({
   onCardTextReviewedChange,
   onAddEvidenceLink,
   onRemoveEvidenceLink,
+  onUpdateEvidenceLink,
   onFocusCardById,
   onTitleChange,
   onParentIslandChange,
@@ -377,6 +380,7 @@ export function SidePanel({
   importedPackSnapshotUrl,
   importedPackDiagnosticsMd,
   mergeAuditLog,
+  providerUnavailableMessage,
   isReadOnly = false,
   isAdvancedUiEnabled = false,
 }: SidePanelProps) {
@@ -2644,6 +2648,14 @@ export function SidePanel({
               </label>
             ))}
           </div>
+          {providerUnavailableMessage ? (
+            <div
+              role="alert"
+              style={{ fontSize: 11, lineHeight: 1.5, color: "#92400e", backgroundColor: "#fef3c7", border: "1px solid #f59e0b", borderRadius: 6, padding: 8, marginBottom: 10 }}
+            >
+              {t("side_panel.critique.provider_disabled")}
+            </div>
+          ) : null}
           <div
             data-domain-flow="critique-reproposal"
             role="note"
@@ -3325,6 +3337,21 @@ export function SidePanel({
                       return (
                         <div key={link.id} style={{ fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 6, padding: 6 }}>
                           <div>{link.type} → {target ? target.text.slice(0, 60) : link.toCardId}</div>
+                          {link.type === "contradicts" ? (
+                            <select
+                              value={link.contradictionState ?? "unconfirmed"}
+                              disabled={isReadOnly}
+                              style={{ fontSize: 10, marginTop: 4, width: "100%" }}
+                              onChange={(event) => {
+                                onUpdateEvidenceLink(link.id, { contradictionState: event.target.value as EvidenceLink["contradictionState"] });
+                              }}
+                            >
+                              <option value="unconfirmed">{t("side_panel.evidence.state_unconfirmed")}</option>
+                              <option value="confirmed">{t("side_panel.evidence.state_confirmed")}</option>
+                              <option value="held">{t("side_panel.evidence.state_held")}</option>
+                              <option value="resolved">{t("side_panel.evidence.state_resolved")}</option>
+                            </select>
+                          ) : null}
                           <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
                             <button type="button" style={{ fontSize: 10 }} onClick={() => { onFocusCardById(link.toCardId); }}>{t("side_panel.focus")}</button>
                             <button type="button" disabled={isReadOnly} style={{ fontSize: 10 }} onClick={() => { onRemoveEvidenceLink(link.id); }}>{t("side_panel.remove")}</button>
@@ -3508,6 +3535,14 @@ export function SidePanel({
                   </label>
                 ))}
               </div>
+              {providerUnavailableMessage ? (
+                <div
+                  role="alert"
+                  style={{ fontSize: 11, lineHeight: 1.5, color: "#92400e", backgroundColor: "#fef3c7", border: "1px solid #f59e0b", borderRadius: 6, padding: 8, marginBottom: 12 }}
+                >
+                  {t("side_panel.critique.provider_disabled")}
+                </div>
+              ) : null}
               <div
                 data-domain-flow="critique-reproposal"
                 role="note"

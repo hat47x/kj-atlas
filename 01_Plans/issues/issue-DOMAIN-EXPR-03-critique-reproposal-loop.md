@@ -12,18 +12,23 @@
 - Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
 - Expected verification level: `e2e`
 
-## Implementation Progress 2026-06-23
+## Implementation Progress 2026-06-29
 
 ### Done
 - SidePanel reproposal diff preview: Shows 3 most recent reproposalDiffs with ops, rationale, iteration (2f170b17)
+- "Open Reproposal" action button in SidePanel (island + card critique sections) → opens advanced UI + focuses critique workflow
+- `KJ_ATLAS_LLM_PROVIDER=none` explicit warning banner in critique sections (2026-06-29)
+  - Detects provider-disabled errors from suggest-layout API
+  - Shows amber warning: "AI-powered re-proposals are unavailable (KJ_ATLAS_LLM_PROVIDER=none). Critique notes and tags are still saved."
+  - i18n: `side_panel.critique.provider_disabled` (en/ja)
 - Existing infrastructure: critique note + tags editing in SidePanel, SuggestionPanel for resuggest, HilRsRediffPreview for diff details, DomainStateFilterBar hasCritique filter
+- Integration test: critique→preview→apply→critique preserved (hil_rs_client_apply.integration.test.ts)
 
-### Remaining
-- "Suggest re-proposal" action button from SidePanel critique context → SuggestionPanel
-- `KJ_ATLAS_LLM_PROVIDER=none` explicit "no AI candidates" messaging in re-proposal context
-- E2E: critique→reproposal→diff daily loop verification
+### Remaining（2026-06-29 更新）
+- E2E: critique→reproposal→diff daily loop verification（Playwright環境依存）
 
-### Commits
+### Commits (new)
+- 2026-06-29: providerUnavailableMessage state + detection + explicit warning banner in SidePanel critique sections
 - 2f170b17 reproposal diff preview section in SidePanel
 
 ## Draft→Open 2026-06-21

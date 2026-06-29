@@ -2,7 +2,7 @@ import { useId, useMemo, useState } from "react";
 
 import type { NarrativeIssue, NarrativeIssueReference } from "../api/client";
 import { buildNarrativeGrounding } from "../domain/grounding";
-import type { DocumentV2, Narrative } from "../domain/types";
+import type { DocumentV2, EvidenceLink, Narrative } from "../domain/types";
 import {
   buildNarrativeHtml,
   buildNarrativeMarkdown,
@@ -92,6 +92,43 @@ export function NarrativesPanel({
       hideSourceCards,
     });
   }, [document, hideSourceCards, selectedNarrative]);
+
+  const contradictionStateCounts = useMemo(() => {
+    if (!document) {
+      return null;
+    }
+
+    const groundingCardIds = new Set<string>();
+    for (const entry of groundingEntries) {
+      groundingCardIds.add(entry.sourceId);
+      if (entry.kind === "card" && entry.card) {
+        groundingCardIds.add(entry.card.id);
+      }
+      if (entry.kind === "island" && entry.islandMembers) {
+        for (const member of entry.islandMembers) {
+          groundingCardIds.add(member.id);
+        }
+      }
+    }
+
+    const relevantLinks = (document.evidenceLinks ?? []).filter(
+      (link) =>
+        link.type === "contradicts" &&
+        (groundingCardIds.has(link.fromCardId) || groundingCardIds.has(link.toCardId))
+    );
+
+    if (relevantLinks.length === 0) {
+      return null;
+    }
+
+    const counts: Record<string, number> = { unconfirmed: 0, confirmed: 0, held: 0, resolved: 0 };
+    for (const link of relevantLinks) {
+      const state = link.contradictionState ?? "unconfirmed";
+      counts[state] = (counts[state] ?? 0) + 1;
+    }
+
+    return { total: relevantLinks.length, counts };
+  }, [document, groundingEntries]);
 
   const handleExportMarkdown = () => {
     if (!selectedNarrative || !document) {
@@ -314,6 +351,17 @@ export function NarrativesPanel({
               })}
             </ul>
           )}
+          {contradictionStateCounts ? (
+            <div style={{ fontSize: 11, lineHeight: 1.5, color: "#475569", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 8 }}>
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>{t("side_panel.evidence.contradiction_state_summary", { total: contradictionStateCounts.total })}</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <span>{t("side_panel.evidence.state_unconfirmed")}: {contradictionStateCounts.counts.unconfirmed}</span>
+                <span>{t("side_panel.evidence.state_confirmed")}: {contradictionStateCounts.counts.confirmed}</span>
+                <span>{t("side_panel.evidence.state_held")}: {contradictionStateCounts.counts.held}</span>
+                <span>{t("side_panel.evidence.state_resolved")}: {contradictionStateCounts.counts.resolved}</span>
+              </div>
+            </div>
+          ) : null}
           <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("narratives.panel.grounding_citations")}</div>
           {groundingEntries.length === 0 ? (
             <div style={{ fontSize: 12, color: "#64748b" }}>{t("narratives.panel.no_grounding")}</div>

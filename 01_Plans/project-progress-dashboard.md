@@ -21,8 +21,8 @@
 |---|---|---|
 | 1 | DOMAIN-EXPR-01 (読取UI) | ✅ Done |
 | 2 | DOMAIN-EXPR-02 (Hold/Shelf) | Schema追加済み、UI実装済み |
-| 3 | DOMAIN-EXPR-03 (Critique→Reproposal) | 5種critique移行、diff preview、Open Reproposal button、統合テスト完了 |
-| 4 | DOMAIN-EXPR-04 (Evidence/Contradiction) | contradictionState schema + SidePanel UI + narrative export完了 |
+| 3 | DOMAIN-EXPR-03 (Critique→Reproposal) | 5種critique移行、diff preview、Open Reproposal button、provider=none警告、統合テスト完了 |
+| 4 | DOMAIN-EXPR-04 (Evidence/Contradiction) | contradictionState selector、handleUpdateEvidenceLink、narrative grounding集計、narrative export完了 |
 
 ### テスト
 - Frontend: 175 files, 849 tests passed

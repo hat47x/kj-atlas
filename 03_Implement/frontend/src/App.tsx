@@ -44,7 +44,7 @@ import {
   getLatestMergeSuggestionDecisionByGroup,
   type MergeSuggestionDecision,
 } from "./domain/merge_suggestion_decisions";
-import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point, type RelationSummary } from "./domain/types";
+import { isSourceCard, Document, DocumentV2, Island, Narrative, type EvidenceLink, type Point, type RelationSummary } from "./domain/types";
 import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -1081,6 +1081,7 @@ export default function App() {
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [isSuggestionPreviewEnabled, setIsSuggestionPreviewEnabled] = useState(true);
   const [isAnnotateOverlayEnabled, setIsAnnotateOverlayEnabled] = useState(false);
+  const [providerUnavailableMessage, setProviderUnavailableMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [hideNonMatches, setHideNonMatches] = useState(false);
@@ -2494,6 +2495,9 @@ export default function App() {
       setSuggestedDocument(null);
       setSuggestionId(null);
       setSuggestionNotes(null);
+      if (/AI is disabled|provider.*disabled/i.test(message)) {
+        setProviderUnavailableMessage(message);
+      }
       if (mode === "resuggest") {
         setResuggestAttemptCount((previous) => {
           const next = previous + 1;
@@ -4498,6 +4502,31 @@ export default function App() {
           evidenceLinks: nextEvidenceLinks,
         },
         t("app.history.evidence_link.removed"),
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleUpdateEvidenceLink = useCallback(
+    (evidenceLinkId: string, patch: Partial<Pick<EvidenceLink, "contradictionState">>) => {
+      if (!document) {
+        return;
+      }
+
+      const nextEvidenceLinks = (document.evidenceLinks ?? []).map((link) => {
+        if (link.id !== evidenceLinkId) {
+          return link;
+        }
+        return { ...link, ...patch };
+      });
+
+      applyDocumentChange(
+        {
+          ...document,
+          evidenceLinks: nextEvidenceLinks,
+        },
+        t("app.history.evidence_link.updated"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -9137,6 +9166,7 @@ export default function App() {
             handleAddEvidenceLink(selectedCard.id, payload);
           }}
           onRemoveEvidenceLink={handleRemoveEvidenceLink}
+          onUpdateEvidenceLink={handleUpdateEvidenceLink}
           onFocusCardById={focusCardById}
           onTitleChange={(value) => {
             if (!selectedIsland) {
@@ -9441,6 +9471,7 @@ export default function App() {
           evidenceOverlayEnabled={evidenceOverlayEnabled}
           evidenceOverlayScope={evidenceOverlayScope}
           mergeAuditLog={mergeAuditLog}
+          providerUnavailableMessage={providerUnavailableMessage}
           onEnableEvidenceOverlaySelectionExplore={() => {
             if (!selectedCard) {
               return;
