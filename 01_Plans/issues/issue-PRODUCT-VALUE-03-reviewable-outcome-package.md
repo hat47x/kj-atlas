@@ -22,9 +22,15 @@
 - **Narrative panel grounding display**: claimType + reviewState annotations in in-app grounding UI (ea3af977)
 
 ### Remaining
-- Human product-value acceptance of reviewable package fixture + SafeMode readability
-- Human UX/accessibility acceptance of read-only reviewer journey
-- Final program approval (MVP-EXIT-01)
+- H-PV3 proxy acceptance for the current reviewable package packet is recorded in `issue-PRODUCT-VALUE-03-current-open-readiness-summary.md` and carried forward on 2026-07-02.
+- Current evidence packet links are recorded in `PRODUCT-QA-01` and `MVP-EXIT-01`.
+- Remaining shipment / authority gates: formal package public contract if introduced, signature/approval workflow if introduced, physical keyboard acceptance, screen-reader acceptance, and final program approval.
+
+### Human Work Delegation Sync 2026-07-02
+
+- 2026-06-29 H-PV3 delegated approval accepts the package fixture, trace-back sufficiency, Overview/Detail trace controls, SafeMode/read-only authority, and evidence bundle location for the current packet.
+- The previous package-acceptance / read-only reviewer human blocker is fixed for this issue's current evidence packet.
+- This does not introduce formal organizational approval, signature semantics, automatic publication, package public contract changes, SafeMode/share policy changes, or final shipment authority.
 
 ### Note
 Share preflight domain state summary is already implemented in SharePanel
@@ -51,7 +57,7 @@ PRODUCT-VALUE-03 Open化。ADR-0032 AcceptedによりV3ゲート充足（ADR-004
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / public-exposure）: SafeMode / share-export / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending（`ADR-0032` はAccepted済み。Open前のreviewable package fixture、共有前確認、trace-back証跡が未固定）
+- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0032` Accepted。reviewable package fixture、共有前確認、trace-back証跡、H-PV3代理承認は現行証跡packetで固定済み。package public contract / 署名 / 最終出荷ゲートは別判断として継続）
 - DecisionQueueRef（未確定時の参照先）: `PRODUCT-QA-01` value gate evidence packet / `MVP-EXIT-01`
 
 ## 1) 課題 / Problem statement

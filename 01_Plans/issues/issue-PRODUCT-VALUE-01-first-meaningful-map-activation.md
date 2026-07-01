@@ -26,9 +26,15 @@ PRODUCT-VALUE-01 Open化。ADR-0032 AcceptedによりV1ゲート充足（ADR-004
 - **T3 Keyboard accessibility**: keyboard_release_candidate_flow.spec.ts verifies Tab/Enter/Space path. acceptance_check.md §キーボードで確認すること documents keyboard checks.
 
 ### Remaining
-- Human product-value acceptance (H-PV1): Productization Program Owner acceptance of fixtures as value-bearing
-- Human UX acceptance (H-PV2): UX reviewer confirmation of natural mouse/keyboard operation
-- Human QA acceptance (H-PV3): QA Lead screenshot/trace bundle location decision
+- H-PV1 proxy acceptance for the current first-value evidence packet is recorded in `issue-PRODUCT-VALUE-01-current-open-readiness-summary.md` and carried forward on 2026-07-02.
+- Current evidence packet links are recorded in `PRODUCT-QA-01` and `MVP-EXIT-01`.
+- Shipment gates remain: physical keyboard acceptance, screen-reader acceptance, release screenshot approval, Compose/environment rehearsal, support rehearsal, and final program approval.
+
+### Human Work Delegation Sync 2026-07-02
+
+- 2026-06-29 H-PV1 delegated approval accepts the fixture meaning, representative mouse path, keyboard evidence sufficiency for this packet, and evidence bundle location.
+- The previous human-acceptance / fixture / screenshot-location blocker is fixed for this issue's current evidence packet.
+- This does not change SafeMode, import, share/export, review authority, release authority, or any final shipment gate.
 
 ### Commits
 - 35895ba8 StartPanel value proposition messaging
@@ -44,7 +50,7 @@ PRODUCT-VALUE-01 Open化。ADR-0032 AcceptedによりV1ゲート充足（ADR-004
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / import-sanitize
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending（`ADR-0032` はAccepted済み。Open前の反復E2E手順、fixture、証跡保存先が未固定）
+- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0032` Accepted。反復E2E手順、fixture、証跡保存先、H-PV1代理承認は現行証跡packetで固定済み。最終出荷ゲートは `PRODUCT-QA-01` / `MVP-EXIT-01` で継続）
 - DecisionQueueRef（未確定時の参照先）: `PRODUCT-QA-01` value gate evidence packet / `MVP-EXIT-01`
 
 ## 1) 課題 / Problem statement

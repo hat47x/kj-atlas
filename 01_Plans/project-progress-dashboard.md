@@ -1,19 +1,19 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-07-01
+最終更新: 2026-07-02
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
-## 現状スナップショット（2026-06-29）
+## 現状スナップショット（2026-07-02）
 
 ### ADR 状態
 - ADR-0000〜0046: すべて Accepted
 - ADR-0047（設計判断ADRの一巡完了とexecution-first転換）: Accepted
 
 ### Issue 状態（triage）
-- Active: 26 (Ready: 15, Blocked: 11)
+- Active: 27 (Ready: 16, Blocked: 11)
 - P0: PRODUCT-QA-01 (Open), CORE-VALUE-GUARD-01 (Done)
-- P1: PRODUCT-VALUE-01/02/03 (In Progress, 人間判断待ち), UX-NAV-01 (In Progress), VALUE-DOGFOOD-01 (In Progress)
+- P1: PRODUCT-VALUE-01/02/03 (In Progress, H-PV委任承認済み・最終出荷ゲート継続), UX-NAV-01 (In Progress), VALUE-DOGFOOD-01 (In Progress)
 - P2: DOMAIN-EXPR-03/04 (In Progress), PERF-BUDGET-01 (In Progress)
 
 ### DOMAIN-EXPR 実装状態 (ADR-0040)
@@ -32,6 +32,13 @@
 - ✅ SafeMode既定ON / human_reviewed人手昇格 / proposal-only / provider=none既定 / patch+approval
 - ✅ DOMAIN-EXPR全Phaseで主要価値成立
 - ✅ CVI-1..7 横断ガードテスト緑
+
+## 委任判断同期（2026-07-02 JST）
+
+- `PRODUCT-VALUE-01..03`: 2026-06-29 に記録済みの H-PV1/H-PV2/H-PV3 代理承認を、現行の内部issue状態として引き継ぐ。現行証跡packetの人間受入ブロッカーは解消済みとして扱う。
+- `HIL/FB`: 2026-06-20 の `ADR-0039` / Maintainer 解決により、現行正本上の Approval Record、GOV exception、pending queue は解消済み。古い Hold / Needs-decision 記録は履歴として扱い、現在の停止条件にはしない。
+- 残る非委任ゲート: 最終program approval、Compose/環境リハーサル、サポートリハーサル、実機キーボード受入、スクリーンリーダー受入、release screenshot approval、正式な組織承認。
+- 不変条件: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`provider=none`既定、patch+approval、share/export境界は変更しない。
 
 ## 委任判断同期（2026-07-01 JST）
 

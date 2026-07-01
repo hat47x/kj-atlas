@@ -48,15 +48,15 @@
 | V3: レビュー | AI候補や要約を人間が採否判断できる | ContextProjectionGraph、proposal-only、patch + approval、reviewStateを分離する | auto-applyなし、`human_reviewed` 自動昇格なし、sourceBundleHash追跡あり | `PRODUCT-VALUE-02`, `CE-*` |
 | V4: 共有と学習 | 読者が確定点、保留点、根拠を理解できる | Narrative、Review Pack、SafeMode、review attribution、source traceを共有前確認へ接続する | 共有物に未レビュー情報、保留点、根拠参照、安全状態が明示される | `PRODUCT-UX-03`, `PRODUCT-VALUE-03` |
 
-### 2.1.1 実装状態（2026-06-24 更新）
+### 2.1.1 実装状態（2026-07-02 更新）
 
 | 設計観点 | 状態 | 実装証跡 | 残課題 | 起票先 |
 |---|---|---|---|---|
-| 初回価値実感 | ✅ 実装完了 | StartPanel value proposition, DomainStateSummary, CardView badges, E2E (mouse+kb, first_run, share_preflight), docs sync | 人間判断(H-PV1/H-PV2/H-PV3) | `PRODUCT-VALUE-01` |
-| 保留・違和感の日常操作 | ✅ Phase 1 完了 | DOMAIN-EXPR-01 Done (readonly state surfacing). DOMAIN-EXPR-03: critique types→domain.md 5種, SidePanel reproposal diff preview, Open Reproposal button. AI review-boundary guard (CE2+HIL). ContextBundle constraint-preservation proof. | Hold/Shelf 第一級化 (DOMAIN-EXPR-02, schema判断待ち). AI有効時再提案生成証跡. | `PRODUCT-VALUE-02`, `DOMAIN-EXPR-01` (Done), `DOMAIN-EXPR-03` (In Progress), `DOMAIN-EXPR-02` (deferred) |
+| 初回価値実感 | ✅ 実装完了 / H-PV1代理承認済み | StartPanel value proposition, DomainStateSummary, CardView badges, E2E (mouse+kb, first_run, share_preflight), docs sync | 実機アクセシビリティ、release screenshot approval、Compose/環境リハーサル、最終program approval | `PRODUCT-VALUE-01` |
+| 保留・違和感の日常操作 | ✅ Phase 1 完了 / H-PV2代理承認済み | DOMAIN-EXPR-01 Done (readonly state surfacing). DOMAIN-EXPR-03: critique types→domain.md 5種, SidePanel reproposal diff preview, Open Reproposal button. AI review-boundary guard (CE2+HIL). ContextBundle constraint-preservation proof. | Hold/Shelf 第一級化 (DOMAIN-EXPR-02, schema判断待ち). AI有効時再提案生成証跡. 実データソース parity、実機アクセシビリティ、最終program approval. | `PRODUCT-VALUE-02`, `DOMAIN-EXPR-01` (Done), `DOMAIN-EXPR-03` (In Progress), `DOMAIN-EXPR-02` (deferred) |
 | 根拠・主張・反対意見の追跡 | ✅ Phase 1 完了 | Evidence/Contradiction Links in narrative export. SharePanel domain expression summary (evidence/contradiction/hold/critique counts). SidePanel evidence link display + contradiction report. | 矛盾状態管理 (unconfirmed/confirmed/held/resolved, schema判断待ち). E2E証跡. | `PRODUCT-VALUE-02`, `DOMAIN-EXPR-04` (In Progress) |
-| 成果物化 | ✅ 実装完了 | Narrative grounding: claimType+reviewState in export + in-app. Share preflight domain summary. Read-only reviewer inspection E2E. Review-pack trace export E2E. | 人間成果物承認, UX/accessibilityレビュー | `PRODUCT-VALUE-03` |
-| 価値実現ゲート | ✅ ゲート定義完了 | PRODUCT-QA-01 gate record (G0-G7 + V0-V4 + 横断 LLM任意性). Gate record 2026-06-24: Conditional Go. | 全ゲート Conditional Go→Go には人間承認が必要 | `PRODUCT-QA-01`, `MVP-EXIT-01` |
+| 成果物化 | ✅ 実装完了 / H-PV3代理承認済み | Narrative grounding: claimType+reviewState in export + in-app. Share preflight domain summary. Read-only reviewer inspection E2E. Review-pack trace export E2E. | package public contract、署名/承認workflow、実機アクセシビリティ、最終program approval | `PRODUCT-VALUE-03` |
+| 価値実現ゲート | ✅ ゲート定義完了 / H-PV委任判断反映済み | PRODUCT-QA-01 gate record (G0-G7 + V0-V4 + 横断 LLM任意性). Gate records 2026-06-24 / 2026-06-29: Conditional Go. | 全ゲート Conditional Go→Go には Compose/環境リハーサル、サポートリハーサル、実機アクセシビリティ、最終program approval が必要 | `PRODUCT-QA-01`, `MVP-EXIT-01` |
 
 ### テスト健全性（2026-06-24）
 - フロントエンド全ユニットテスト: 173 files, 826 tests passed
@@ -65,9 +65,9 @@
 
 ---
 
-## 2.2 Product value evidence route（2026-06-24 更新）
+## 2.2 Product value evidence route（2026-07-02 更新）
 
-`PRODUCT-VALUE-01..03` は In Progress（実装完了、人間判断待ち）。この表は各価値ゲートの証跡状態を示す。
+`PRODUCT-VALUE-01..03` は In Progress（現行証跡packetに対する H-PV1/H-PV2/H-PV3 代理承認は反映済み、最終出荷ゲートは継続）。この表は各価値ゲートの証跡状態を示す。
 
 | Value gate | Representative user action | Evidence packet | Stop condition |
 | --- | --- | --- | --- |
@@ -84,6 +84,8 @@ Open 化前の共通条件:
 3. mouse操作とkeyboard操作の両方で、代表アクションに到達できることを検証対象に含める。
 4. SafeMode、share/export、import sanitize、review attributionへの影響が`PRODUCT-QA-01`へ戻せる。
 5. 追加の永続schema、review semantics、署名、組織承認workflowが必要になった場合は、実装PRではなくissue/ADRを先行する。
+
+2026-07-02追補: 条件1は `ADR-0032` Accepted と 2026-06-29 の H-PV 委任判断により、現行証跡packetの範囲では解消済みとして扱う。これは製品出荷承認、実機キーボード/スクリーンリーダー受入、Compose/環境リハーサル、サポートリハーサル、正式な組織承認、package public contract の承認を代替しない。
 
 ---
 

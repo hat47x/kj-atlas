@@ -27,7 +27,15 @@ DOMAIN-EXPR-01..04のPhase 1から着手可能。DecisionStatus=Fixed。
 - No schema changes (reads existing card.claimType, card.critique, card.critiqueTags, card.textReviewed, document.evidenceLinks)
 
 ### Remaining
-- Human acceptance of the ambiguity/evidence workflow for the Product Value gate
+- H-PV2 proxy acceptance for the current Phase 1 ambiguity/evidence packet is recorded in `issue-PRODUCT-VALUE-02-current-open-readiness-summary.md` and carried forward on 2026-07-02.
+- Current evidence packet links are recorded in `PRODUCT-QA-01` and `MVP-EXIT-01`.
+- Remaining non-H-PV gates: Hold/Shelf first-class follow-up (`DOMAIN-EXPR-02`), CE1 real data-source parity, physical keyboard acceptance, screen-reader acceptance, and final program approval.
+
+### Human Work Delegation Sync 2026-07-02
+
+- 2026-06-29 H-PV2 delegated approval accepts the split-first Phase 1 strategy, fixture meaning, findability sufficiency, SafeMode/share boundary, and fixed-profile AI/review boundary for the current packet.
+- The previous umbrella human-acceptance blocker is fixed for this issue's current Phase 1 evidence packet.
+- This does not approve persistent Hold/Shelf semantics, automatic resolution, `human_reviewed` authority changes, SafeMode/share policy changes, or final shipment.
 
 ### Commits
 - 7f655b15 CardView domain state badges

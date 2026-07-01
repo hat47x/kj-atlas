@@ -22,6 +22,14 @@ Decisionは ADR、Action は issue memo で管理する。GitHub Issues は未�
 4. 受入条件（Acceptance criteria）と検証計画（Validation plan）を先に確定する。
 5. `Source Issue` は運用状態に応じて記載する（未運用時は `N/A`、GitHub Issues運用時はURL）。
 
+## 委任判断ログ（2026-07-02 JST）
+
+- 入力: ユーザーが「ADR/issueの人間作業を代行してください」と指示したため、Codex が記録者兼実行者として、現行証跡packetに残る人間受入待ちの同期を行う。
+- `PRODUCT-VALUE-01..03`: 2026-06-29 の H-PV1/H-PV2/H-PV3 代理承認を現行状態へ引き継ぐ。各親issue、current-open summary、`PRODUCT-QA-01`、`MVP-EXIT-01`、`02_Architecture/value_traceability.md`、`project-progress-dashboard.md` で、人間受入ブロッカーを「現行証跡packetでは解消済み」として扱う。
+- `HIL/FB`: 2026-06-20 の `ADR-0039` / Maintainer 解決により、現行正本では Approval Record、GOV exception、pending queue は解消済み。古い Hold / Needs-decision 記録は履歴であり、現在の停止条件として再起票しない。
+- 残る非委任ゲート: 最終program approval、Compose/環境リハーサル、サポートリハーサル、実機キーボード受入、スクリーンリーダー受入、release screenshot approval、正式な組織承認、package public contract / 署名 / 承認workflow の導入判断。
+- 不変条件: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`provider=none`既定、patch+approval、share/export境界は変更しない。新ADRは不要。
+
 ## 委任判断ログ（2026-07-01 JST）
 
 - 入力: ユーザーが「ADR/issueの人間作業を代行してください」と指示したため、Codex が記録者兼実行者として、既存Decision Queueの人間判断待ち2件を処理する。

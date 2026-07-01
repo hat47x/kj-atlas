@@ -25,7 +25,7 @@ Parent issue In Progress. All implementation (T1-T5) complete:
 - **T4 E2E first-meaningful-map**: first_meaningful_map_mouse_flow, keyboard_release_candidate_flow, first_run_document_entry, first_value_share_preflight E2E all exist and passed (mainline evidence).
 - **T5 Docs sync**: installation.md, operations.md, public_index.md, acceptance_check.md reference first-run path with StartPanel + SafeMode.
 
-Remaining: Human product-value acceptance (H-PV1/H-PV2/H-PV3). No implementation blockers.
+Remaining: H-PV1 acceptance for the current evidence packet is proxy-approved (2026-06-29, carried forward 2026-07-02). Shipment No-Go gates remain: physical keyboard acceptance, screen-reader acceptance, release screenshot approval, Compose/environment rehearsal, support rehearsal, and final program approval. No implementation blockers.
 Full unit test suite: 173 files, 826 tests passed (2026-06-24).
 
 ## Current Open-Readiness Summary 2026-06-17
@@ -44,17 +44,17 @@ Full unit test suite: 173 files, 826 tests passed (2026-06-24).
 
 ### Open-Readiness Gaps
 
-- The source issue remains `Draft` because the first meaningful map gate has not yet been accepted as a value-bearing evidence packet by the Productization Program Owner / QA Lead. The fixture identity is now fixed, but human acceptance, screenshot or trace bundle location, and release decision linkage remain open.
-- Manual card authoring lowers the risk of LLM dependency, but the product still needs evidence that the user can complete the first-value path with mouse and keyboard in a natural flow.
+- The source issue is In Progress. The first meaningful map fixture, H-PV1 proxy acceptance, screenshot/trace bundle location, and Product QA / MVP-EXIT decision linkage are recorded for the current evidence packet.
+- Manual card authoring lowers the risk of LLM dependency, and automated mouse/keyboard evidence exists for representative routes. Physical keyboard acceptance, screen-reader acceptance, and final release-candidate approval remain separate shipment gates.
 - The minimum evidence packet should include: input text or sample name, resulting cards, first grouping or focus point, visible undecided or pending state, SafeMode/import validation visibility, and the save/share preflight boundary.
-- Human acceptance remains outside the automated evidence. Physical keyboard review, screen-reader acceptance, and release screenshots must be recorded in `PRODUCT-QA-01` / `MVP-EXIT-01` before this can support shipment.
+- H-PV proxy acceptance is recorded for the evidence packet. Physical keyboard review, screen-reader acceptance, release screenshot approval, Compose/environment rehearsal, support rehearsal, and final program approval must still be recorded in `PRODUCT-QA-01` / `MVP-EXIT-01` before this can support shipment.
 
 ### Next Implementation Slice
 
-1. Review `doc_first_meaningful_map_mouse` and decide whether the three default cards and `Island 1` grouping represent the promised first value moment for a standard user.
-2. Capture or cite a release evidence bundle that shows sample/import entry, first island creation, SafeMode visibility, and the save/share preflight boundary for this fixture.
-3. Decide whether the existing keyboard release-candidate route can stand beside the PV01 mouse fixture, or whether PV01 needs its own fixture-specific keyboard trace.
-4. Keep `PRODUCT-VALUE-01` in `Draft` until Productization Program Owner / QA Lead acceptance and `PRODUCT-QA-01` / `MVP-EXIT-01` decision linkage are recorded.
+1. Keep `doc_first_meaningful_map_mouse` replayable and cited from Product QA / MVP-EXIT gate records.
+2. Refresh release evidence bundle paths when screenshots or traces are regenerated for a release candidate.
+3. Add a PV01-specific keyboard trace if practical before shipment; the existing keyboard route remains acceptable for the current proxy-reviewed evidence packet.
+4. Keep full shipment No-Go until physical keyboard acceptance, screen-reader acceptance, release screenshot approval, Compose/environment rehearsal, support rehearsal, and final program approval are recorded.
 
 ### ADR Boundary
 
@@ -75,7 +75,7 @@ No new ADR is needed for this summary. An ADR is required only if the project ch
 - The PV01 fixture remains executable on current `main` after the post-2430 baseline/governance sync.
 - Mouse-operation evidence is refreshed for sample opening, two-card selection, `Create Island`, visible `Island 1`, and selection-context confirmation.
 - This rerun does not satisfy Productization Program Owner / QA Lead acceptance, release-suitable screenshot or trace bundle approval, SafeMode/import/sample-entry screenshot evidence, physical keyboard acceptance, screen-reader acceptance, or shipment approval.
-- Status impact: **Draft remains**. This is execution freshness evidence only.
+- Historical status impact at the time: **Draft remained**. Current H-PV carry-forward is recorded below.
 
 ## Screenshot Evidence Refresh 2026-06-17: PV01 first meaningful island
 
@@ -88,7 +88,7 @@ No new ADR is needed for this summary. An ADR is required only if the project ch
 - Evidence packet impact:
   - Adds a release-documentation-suitable visual proof for sample opening, card selection, first island creation, SafeMode visibility, and selection-context confirmation.
   - Does not satisfy Productization Program Owner / QA Lead acceptance, keyboard acceptance, screen-reader acceptance, full share preflight approval, or shipment approval.
-  - Status impact: **Draft remains**.
+  - Historical status impact at the time: **Draft remained**. Current H-PV carry-forward is recorded below.
 
 ## First-Value Share Preflight Evidence 2026-06-19
 
@@ -103,7 +103,7 @@ No new ADR is needed for this summary. An ADR is required only if the project ch
 - Evidence packet impact:
   - Automated SafeMode/sample-entry/first-island/share-preflight evidence is now connected by one fixture.
   - Productization Program Owner / QA Lead fixture acceptance, mouse/keyboard naturalness, keyboard-fixture sufficiency, physical keyboard acceptance, screen-reader acceptance, and shipment approval remain open.
-  - Status impact: **Draft remains**.
+  - Historical status impact at the time: **Draft remained**. Current H-PV carry-forward is recorded below.
 
 ## Delegated Human Approval 2026-06-29: H-PV1
 
@@ -128,11 +128,12 @@ No new ADR is needed for this summary. An ADR is required only if the project ch
 | Evidence bundle location | Go | 既存スクリーンショットとE2E名で再実行・参照できる。 |
 
 - Status impact: H-PV1の「fixture意味」「操作自然性」「証跡場所」ブロッカーは代理レビュー済みとして扱う。Shipment No-Go要素（実機アクセシビリティ、release screenshot approval、Compose startup、最終program approval）は残す。
+
 ## Acceptance Criteria
 
-- [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
+- [x] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
 - [x] AC-02: A deterministic first-value fixture is defined before implementation work starts. Current fixture: `buildFirstMeaningfulMapDocument()` / `doc_first_meaningful_map_mouse`.
-- [ ] AC-03: The evidence packet requirements are mapped to `PRODUCT-QA-01` and `MVP-EXIT-01`.
+- [x] AC-03: The evidence packet requirements are mapped to `PRODUCT-QA-01` and `MVP-EXIT-01`.
 - [ ] AC-04: Any change to the meaning of "first meaningful map" is routed through ADR.
 
 ## Validation Plan

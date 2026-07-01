@@ -2866,3 +2866,27 @@ DoDテンプレ（Draft→Open）
 **Conditional Go for delegated Product Value gate evidence and targeted E2E freshness / No-Go for full release shipment**.
 
 The delegated H-PV1/H-PV2/H-PV3 decisions remove the specific human-acceptance blockers named by the user for the current evidence packets. Full release remains **No-Go** because final program approval, Compose/environment rehearsal, support rehearsal, physical keyboard acceptance, screen-reader acceptance, release screenshot approval, and formal organization approval remain outside this delegation.
+
+## Productization Gate Record 2026-07-02: delegated human-work carry-forward
+
+- Candidate: current internal issue state after H-PV parent issue / summary synchronization.
+- Date (JST): 2026-07-02
+- Reviewer: Codex acting under explicit user delegation for ADR/issue human-work handling. This is not final shipment approval.
+- Scope: carry forward the 2026-06-29 H-PV1/H-PV2/H-PV3 proxy approvals into parent Product Value issues, current-open summaries, dashboard, and value traceability.
+
+### Decision
+
+**Conditional Go for issue-layer human-work synchronization / No-Go for full release shipment**.
+
+- H-PV1/H-PV2/H-PV3 remain accepted for the current evidence packets.
+- The HIL/FB governance records are treated as resolved in the current SSOT per 2026-06-20 `ADR-0039` / Maintainer records; older Hold / Needs-decision lines remain historical evidence only.
+- No new ADR is required because no policy boundary changes: SafeMode, share/export, `human_reviewed`, proposal-only, provider defaults, package authority, and release authority are unchanged.
+
+### Remaining non-delegated gates
+
+- Final program approval.
+- Compose/environment rehearsal.
+- Support diagnostics/recovery rehearsal.
+- Physical keyboard acceptance and screen-reader acceptance.
+- Release screenshot approval.
+- Formal organization approval or package public contract / signature / approval workflow, if introduced.
