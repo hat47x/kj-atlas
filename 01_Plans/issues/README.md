@@ -28,6 +28,7 @@ Decisionは ADR、Action は issue memo で管理する。GitHub Issues は未�
 - `PRODUCT-VALUE-01..03`: 2026-06-29 の H-PV1/H-PV2/H-PV3 代理承認を現行状態へ引き継ぐ。各親issue、current-open summary、`PRODUCT-QA-01`、`MVP-EXIT-01`、`02_Architecture/value_traceability.md`、`project-progress-dashboard.md` で、人間受入ブロッカーを「現行証跡packetでは解消済み」として扱う。
 - `HIL/FB`: 2026-06-20 の `ADR-0039` / Maintainer 解決により、現行正本では Approval Record、GOV exception、pending queue は解消済み。古い Hold / Needs-decision 記録は履歴であり、現在の停止条件として再起票しない。
 - 残る非委任ゲート: 最終program approval、Compose/環境リハーサル、サポートリハーサル、実機キーボード受入、スクリーンリーダー受入、release screenshot approval、正式な組織承認、package public contract / 署名 / 承認workflow の導入判断。
+- 同日再確認: ADR/issue層でCodexが代理処理できる人間判断待ちは残0。残る非委任ゲートは出荷権限、実機アクセシビリティ、環境/サポート実行証跡であり、内部issue上は未解決ゲートとして維持するが、ADR/issueの人間作業としてAIだけで確定しない。
 - 不変条件: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`provider=none`既定、patch+approval、share/export境界は変更しない。新ADRは不要。
 
 ## 委任判断ログ（2026-07-01 JST）

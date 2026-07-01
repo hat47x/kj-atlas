@@ -37,6 +37,7 @@
 
 - `PRODUCT-VALUE-01..03`: 2026-06-29 に記録済みの H-PV1/H-PV2/H-PV3 代理承認を、現行の内部issue状態として引き継ぐ。現行証跡packetの人間受入ブロッカーは解消済みとして扱う。
 - `HIL/FB`: 2026-06-20 の `ADR-0039` / Maintainer 解決により、現行正本上の Approval Record、GOV exception、pending queue は解消済み。古い Hold / Needs-decision 記録は履歴として扱い、現在の停止条件にはしない。
+- ADR/issue人間作業ステータス: Codexが代理処理できる判断待ちは残0。追加ADRは不要。
 - 残る非委任ゲート: 最終program approval、Compose/環境リハーサル、サポートリハーサル、実機キーボード受入、スクリーンリーダー受入、release screenshot approval、正式な組織承認。
 - 不変条件: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`provider=none`既定、patch+approval、share/export境界は変更しない。
 

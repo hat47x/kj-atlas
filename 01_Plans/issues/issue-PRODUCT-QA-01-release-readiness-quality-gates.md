@@ -2890,3 +2890,10 @@ The delegated H-PV1/H-PV2/H-PV3 decisions remove the specific human-acceptance b
 - Physical keyboard acceptance and screen-reader acceptance.
 - Release screenshot approval.
 - Formal organization approval or package public contract / signature / approval workflow, if introduced.
+
+### Delegation boundary closeout 2026-07-02
+
+- ADR/issue human-decision backlog for current records: **0**.
+- Codex may prepare supporting evidence for screenshots, Compose/environment checks, support runbooks, automated keyboard routes, and accessibility scans in later work.
+- Codex must not mark final shipment Go, formal organization approval, package public contract, signature/approval workflow, physical assistive-technology acceptance, or release authority as complete without the corresponding release evidence or explicit authority change.
+- No ADR is required for this closeout because SafeMode, share/export policy, `human_reviewed`, proposal-only, provider defaults, package authority, and release authority are unchanged.

@@ -1586,3 +1586,10 @@
   - DOMAIN-EXPR-03, DOMAIN-EXPR-04, and PERF-BUDGET-01 follow-up limits remain as recorded in their own issues.
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead for final shipment decisions; Project Maintainers for release authority and high-privilege lifecycle decisions.
 - Re-decision date: after full regression/CI, Compose-backed rehearsal, accessibility acceptance, support rehearsal, or any material runtime/product change.
+
+### Delegation boundary closeout 2026-07-02
+
+- ADR/issue human-decision backlog for the current program records: **0**.
+- The remaining gates are not ADR/issue human-work items. They are release authority or execution-evidence gates: final program approval, Compose/environment rehearsal, support diagnostics/recovery rehearsal, physical keyboard acceptance, screen-reader acceptance, final release screenshot approval, and any formal organization approval.
+- Codex may prepare or run supporting evidence in later implementation/QA work, but must not convert these gates to shipment Go without the corresponding evidence and authority.
+- No ADR is required for this closeout because it does not change SafeMode/share policy, review authority, package public contract, persistence schema, or release authority.
