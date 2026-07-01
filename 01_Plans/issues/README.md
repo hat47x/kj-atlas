@@ -1,7 +1,7 @@
 # 01_Plans Issue Memo Index
 
-このディレクトリは、GitHub Issue（正本）を補助する **短命メモ** を管理する。
-Decisionは ADR、Action は issue memo で管理し、本ディレクトリは再開性の補助に限定する。
+このディレクトリは、現在の内部運用における **issue memo 正本** を管理する。
+Decisionは ADR、Action は issue memo で管理する。GitHub Issues は未運用であり、明示的な開始宣言があるまで補助参照としても必須にしない。
 
 > Performance note for AI agents: issue memo が増えても全件を都度読む必要はない。対象Backlog ID/関連ADR/作業スコープに一致するメモのみ参照する。
 > Minimal triage: `python 01_Plans/triage_actionable_plans.py` で Ready issue / 保留 issue / Active issue連動ADR を先に抽出し、その出力に出たファイルだけを読む。
@@ -21,6 +21,14 @@ Decisionは ADR、Action は issue memo で管理し、本ディレクトリは�
 3. `Expected verification level`（`docs-check` / `unit` / `integration` / `e2e`）を先に宣言する。
 4. 受入条件（Acceptance criteria）と検証計画（Validation plan）を先に確定する。
 5. `Source Issue` は運用状態に応じて記載する（未運用時は `N/A`、GitHub Issues運用時はURL）。
+
+## 委任判断ログ（2026-07-01 JST）
+
+- 入力: ユーザーが「ADR/issueの人間作業を代行してください」と指示したため、Codex が記録者兼実行者として、既存Decision Queueの人間判断待ち2件を処理する。
+- `DQ-FB-P2C-01`: **Decision (Final): Conditional Go**。Gate 0承認は、計画再開と下流ハンドオフに限って有効化する。A1/A2/A3 memo が Done/Fixed であることを根拠に待ち状態を解消するが、この判断だけで `03_Implement` のコード変更許可や SafeMode 緩和は発生しない。
+- `DQ-OPS-SOURCE-01`: **Decision (Final): No**。GitHub Issues 正本運用は開始しない。`Source Issue: N/A` を継続し、内部 issue memo を正本として扱う。
+- 影響: 上記2件の人間判断待ち Open は解消済みとして扱う。`DQ-HIL-EXEC-01` の Ready 監視は別レーンのため継続する。
+- 再開条件: validator / unittest / `rg` による共有3ファイル同期確認が通ること。今後GitHub Issues運用へ切り替える場合は、明示的な開始宣言、RACI-I通知、READMEと対象memoの同日同期を必須とする。
 
 
 ## DOC-OPS-02 同期チェック（実行前に確認）
@@ -46,6 +54,7 @@ Decisionは ADR、Action は issue memo で管理し、本ディレクトリは�
 - 判定: **GitHub Issues 正本運用は未開始**。
 - 根拠: 本READMEの `Scope` に「GitHub Issues は未運用」と明記され、`Active issue memos` の `Source Issue` が `N/A` で統一されている。
 - 実務ルール: PM/Triage の開始宣言が行われるまで、`Source Issue` は `N/A` を維持する。
+- 2026-07-01追補: `DQ-OPS-SOURCE-01` は Final/No とし、GitHub Issues 正本運用を開始しない。ユーザー委任にもとづき、内部 issue memo 正本の運用を継続する。
 
 ### `Source Issue: N/A` を継続できる条件
 

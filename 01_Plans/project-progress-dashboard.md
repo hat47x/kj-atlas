@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-06-29
+最終更新: 2026-07-01
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -32,6 +32,15 @@
 - ✅ SafeMode既定ON / human_reviewed人手昇格 / proposal-only / provider=none既定 / patch+approval
 - ✅ DOMAIN-EXPR全Phaseで主要価値成立
 - ✅ CVI-1..7 横断ガードテスト緑
+
+## 委任判断同期（2026-07-01 JST）
+
+> 正本: `01_Plans/issues/decision-pack-2026-03-human-judgement.md` と `01_Plans/issues/README.md`。本節は参照レイヤとして同日同期する。
+
+- `DQ-FB-P2C-01`: **Final / Conditional Go**。Gate 0承認は、計画再開と下流ハンドオフに限って有効化する。A1/A2/A3 memo が Done/Fixed であることを根拠に、人間判断待ちを解消する。
+- `DQ-OPS-SOURCE-01`: **Final / No**。GitHub Issues 正本運用は開始しない。内部 issue memo を正本とし、`Source Issue: N/A` を継続する。
+- Queue影響: 上記2件の人間判断待ち Open は解消済み。`DQ-HIL-EXEC-01` の Ready 監視は別レーンとして継続する。
+- 不変条件: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`provider=none`既定、patch+approval は変更しない。この判断だけで `03_Implement` のコード変更許可は発生しない。
 
 ## 次フェーズ計画レイヤ（価値→社会的目標, 2026-05-31 決定済み）
 
