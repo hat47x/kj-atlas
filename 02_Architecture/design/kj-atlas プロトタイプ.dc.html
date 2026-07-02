@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; height:100%; background:#eceef1; font-family:"Noto Sans JP", system-ui, sans-serif; color:#1f2933; -webkit-font-smoothing:antialiased; }
+  * { box-sizing:border-box; }
+  button { font-family:inherit; cursor:pointer; }
+  @keyframes popIn { from { opacity:0; transform:translateY(-4px) scale(0.98); } to { opacity:1; transform:none; } }
+  @keyframes toastIn { from { opacity:0; transform:translate(-50%, 8px); } to { opacity:1; transform:translate(-50%,0); } }
+  .hsc { overflow-x:auto; overflow-y:hidden; }
+  .hsc > * { flex:0 0 auto; white-space:nowrap; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes pulse { 0%,100% { box-shadow:0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow:0 0 0 4px rgba(239,68,68,0); } }
+</style>
+</helmet>
+<div style="{{ shellStyle }}">
+<div onClick="{{ onRootClick }}" style="{{ appFrameStyle }}">
+
+  <!-- ===== MENU BAR + CHROME ===== -->
+  <header style="background:#ffffff; border-bottom:1px solid #e2e8f0; flex:0 0 auto; position:relative; z-index:40;">
+    <!-- top row: brand + chips + search + palette -->
+    <div class="{{ headerRowClass }}" style="{{ headerRowStyle }}">
+      <span style="font-size:14px; font-weight:700; letter-spacing:0.01em;">kj-atlas Canvas</span>
+      <span style="font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; background:#dcfce7; color:#15803d; border:1px solid #86efac;">セーフモード: ON</span>
+      <span onClick="{{ onToggleAi }}" title="クリックでAIのオン/オフ" style="{{ aiChipStyle }}">{{ aiChipLabel }}</span>
+      <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+        <span style="font-size:11px; color:#94a3b8;">状態フィルタ</span>
+        <span onClick="{{ filters.fact.onClick }}" data-filter-first="1" tabindex="0" style="{{ filters.fact.style }}">事実</span>
+        <span onClick="{{ filters.claim.onClick }}" style="{{ filters.claim.style }}">主張</span>
+        <span onClick="{{ filters.hypothesis.onClick }}" style="{{ filters.hypothesis.style }}">仮説</span>
+        <span onClick="{{ filters.unreviewed.onClick }}" style="{{ filters.unreviewed.style }}">未レビュー</span>
+        <span onClick="{{ filters.unclear.onClick }}" style="{{ filters.unclear.style }}">違和感</span>
+        <button onClick="{{ onOpenPalette }}" style="font-size:11.5px; color:#475569; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:6px; padding:5px 10px; display:flex; align-items:center; gap:6px;">⌘K <span style="color:#94a3b8;">コマンド</span></button>
+        <span style="display:inline-flex; align-items:center; margin-left:2px;"><span onClick="{{ widthAuto.onClick }}" style="{{ widthAuto.style }}">自動</span><span onClick="{{ widthMobile.onClick }}" style="{{ widthMobile.style }}">390</span></span>
+        <span style="display:inline-flex; align-items:center; border-radius:6px; overflow:hidden; margin-left:2px;"><span onClick="{{ scenarioNormal.onClick }}" style="{{ scenarioNormal.style }}">通常</span><span onClick="{{ scenarioEmpty.onClick }}" style="{{ scenarioEmpty.style }}">空</span><span onClick="{{ scenarioLarge.onClick }}" style="{{ scenarioLarge.style }}">大規模</span><span onClick="{{ scenarioLoading.onClick }}" style="{{ scenarioLoading.style }}">読込</span></span>
+        <button onClick="{{ onToggleLegend }}" title="凡例" style="font-size:11.5px; color:#475569; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:6px; padding:5px 9px; margin-left:2px;">凡例</button>
+        <button onClick="{{ onToggleCheat }}" title="ショートカット一覧（?）" style="font-size:12px; color:#475569; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:6px; padding:5px 9px;">⌨</button>
+        <div style="position:relative;">
+          <button onClick="{{ onToggleHelpMenu }}" title="ヘルプ・ガイド" style="font-size:12px; font-weight:700; color:#3730a3; background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:5px 10px;">? ヘルプ</button>
+          <sc-if value="{{ helpMenuOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute; top:32px; right:0; width:248px; background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 14px 36px rgba(15,23,42,0.18); padding:7px; z-index:60; animation:popIn .12s ease;">
+              <div onClick="{{ onStartTour }}" style="padding:9px 11px; font-size:12.5px; border-radius:7px; color:#334155;"><span style="font-weight:600;">はじめてガイド（5ステップ）</span><br><span style="font-size:10.5px; color:#94a3b8;">書く→並べる→束ねる→つなぐ→保留</span></div>
+              <div onClick="{{ onOpenPaletteFromHelp }}" style="padding:9px 11px; font-size:12.5px; border-radius:7px; color:#334155;"><span style="font-weight:600;">自然文で指示（{{ K.palette }}）</span><br><span style="font-size:10.5px; color:#94a3b8;">例: 未レビューを束ねて保留に</span></div>
+              <div onClick="{{ onOpenCheat }}" style="padding:9px 11px; font-size:12.5px; border-radius:7px; color:#334155;"><span style="font-weight:600;">ショートカット一覧</span> <span style="font-size:10.5px; color:#94a3b8;">?</span></div>
+              <div style="border-top:1px solid #f1f5f9; margin:5px 0;"></div>
+              <div style="padding:7px 11px; font-size:10.5px; color:#94a3b8; line-height:1.55;">迷ったら「保留」でOK。決めないことは健全な状態です。</div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+    <!-- menu bar row -->
+    <div class="{{ menuRowClass }}" style="{{ menuRowStyle }}">
+      <div style="position:relative;">
+        <button onClick="{{ menus.file.onClick }}" style="{{ menus.file.style }}">ファイル</button>
+        <sc-if value="{{ menus.file.open }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute; top:30px; left:0; width:210px; background:#fff; border:1px solid #e2e8f0; border-radius:9px; box-shadow:0 12px 30px rgba(15,23,42,0.15); padding:6px; z-index:50; animation:popIn .12s ease;">
+            <div onClick="{{ act.newDoc }}" style="display:flex; justify-content:space-between; padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">新規文書<span style="color:#94a3b8;">{{ K.newDoc }}</span></div>
+            <div onClick="{{ act.openSample }}" style="padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">サンプルを開く</div>
+            <div onClick="{{ act.save }}" style="display:flex; justify-content:space-between; padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">保存<span style="color:#94a3b8;">{{ K.save }}</span></div>
+            <div style="height:1px; background:#f1f5f9; margin:5px 0;"></div>
+            <div onClick="{{ act.legacy }}" style="padding:7px 10px; font-size:12.5px; border-radius:6px; color:#64748b;">▶ 旧式JSON</div>
+          </div>
+        </sc-if>
+      </div>
+      <div style="position:relative;">
+        <button onClick="{{ menus.edit.onClick }}" style="{{ menus.edit.style }}">編集</button>
+        <sc-if value="{{ menus.edit.open }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute; top:30px; left:0; width:220px; background:#fff; border:1px solid #e2e8f0; border-radius:9px; box-shadow:0 12px 30px rgba(15,23,42,0.15); padding:6px; z-index:50; animation:popIn .12s ease;">
+            <div onClick="{{ act.undo }}" style="display:flex; justify-content:space-between; padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">元に戻す<span style="color:#94a3b8;">{{ K.undo }}</span></div>
+            <div style="display:flex; justify-content:space-between; padding:7px 10px; font-size:12.5px; border-radius:6px; color:#cbd5e1;">やり直す<span>{{ K.redo }}</span></div>
+            <div style="height:1px; background:#f1f5f9; margin:5px 0;"></div>
+            <div onClick="{{ act.duplicate }}" style="display:flex; justify-content:space-between; padding:7px 10px; font-size:12.5px; border-radius:6px; color:{{ selColorOrMuted }};">複製<span style="color:#94a3b8;">⌘D</span></div>
+            <div onClick="{{ act.deleteSel }}" style="display:flex; justify-content:space-between; padding:7px 10px; font-size:12.5px; border-radius:6px; color:#b91c1c;">削除<span style="color:#fca5a5;">⌫</span></div>
+          </div>
+        </sc-if>
+      </div>
+      <div style="position:relative;">
+        <button onClick="{{ menus.card.onClick }}" style="{{ menus.card.style }}">カード</button>
+        <sc-if value="{{ menus.card.open }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute; top:30px; left:0; width:236px; background:#fff; border:1px solid #e2e8f0; border-radius:9px; box-shadow:0 12px 30px rgba(15,23,42,0.15); padding:6px; z-index:50; animation:popIn .12s ease;">
+            <div onClick="{{ act.newCard }}" style="display:flex; justify-content:space-between; padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">新規カード<span style="color:#94a3b8;">N</span></div>
+            <div onClick="{{ act.makeIsland }}" style="padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">島を作成</div>
+            <div style="height:1px; background:#f1f5f9; margin:5px 0;"></div>
+            <div style="padding:3px 10px 4px; font-size:9px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">主張タイプ（選択中に適用）</div>
+            <div onClick="{{ act.typeFact }}" style="display:flex; align-items:center; gap:7px; padding:6px 10px; font-size:12px; border-radius:6px; color:#334155;"><span style="width:8px;height:8px;border-radius:2px;background:#22c55e;"></span>事実</div>
+            <div onClick="{{ act.typeClaim }}" style="display:flex; align-items:center; gap:7px; padding:6px 10px; font-size:12px; border-radius:6px; color:#334155;"><span style="width:8px;height:8px;border-radius:2px;background:#3b82f6;"></span>主張</div>
+            <div onClick="{{ act.typeHyp }}" style="display:flex; align-items:center; gap:7px; padding:6px 10px; font-size:12px; border-radius:6px; color:#334155;"><span style="width:8px;height:8px;border-radius:2px;background:#a855f7;"></span>仮説</div>
+            <div style="height:1px; background:#f1f5f9; margin:5px 0;"></div>
+            <div style="padding:3px 10px 4px; font-size:9px; font-weight:700; color:#a16207; letter-spacing:0.06em;">保持系（曖昧さを保つ）</div>
+            <div onClick="{{ act.toggleHold }}" style="display:flex; justify-content:space-between; padding:6px 10px; font-size:12px; border-radius:6px; color:#a16207;">保留にする / 解除<span style="background:#fef9c3; border-radius:4px; padding:1px 6px; font-size:9px;">保留</span></div>
+            <div onClick="{{ act.toggleUnclear }}" style="display:flex; justify-content:space-between; padding:6px 10px; font-size:12px; border-radius:6px; color:#b45309;">違和感を付ける / 外す<span style="background:#fef3c7; border-radius:4px; padding:1px 6px; font-size:9px;">違和感</span></div>
+          </div>
+        </sc-if>
+      </div>
+      <div style="position:relative;">
+        <button onClick="{{ menus.view.onClick }}" style="{{ menus.view.style }}">表示</button>
+        <sc-if value="{{ menus.view.open }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute; top:30px; left:0; width:228px; background:#fff; border:1px solid #e2e8f0; border-radius:9px; box-shadow:0 12px 30px rgba(15,23,42,0.15); padding:6px; z-index:50; animation:popIn .12s ease;">
+            <div style="padding:3px 10px 4px; font-size:9px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">表示モード（見え方）</div>
+            <div onClick="{{ act.viewExplore }}" style="display:flex; justify-content:space-between; padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">探索<span>{{ viewExploreMark }}</span></div>
+            <div onClick="{{ act.viewReview }}" style="display:flex; justify-content:space-between; padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">確認ビュー<span style="color:#94a3b8;">{{ viewReviewMark }}</span></div>
+            <div onClick="{{ act.viewSummary }}" style="display:flex; justify-content:space-between; padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">要約<span>{{ viewSummaryMark }}</span></div>
+            <div style="height:1px; background:#f1f5f9; margin:5px 0;"></div>
+            <div style="padding:6px 10px; font-size:11px; color:#94a3b8; line-height:1.5;">フィルタはヘッダ右に一本化（状態フィルタ）。</div>
+          </div>
+        </sc-if>
+      </div>
+      <div style="position:relative;">
+        <button onClick="{{ menus.work.onClick }}" style="{{ menus.work.style }}">作業</button>
+        <sc-if value="{{ menus.work.open }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute; top:30px; left:0; width:230px; background:#fff; border:1px solid #e2e8f0; border-radius:9px; box-shadow:0 12px 30px rgba(15,23,42,0.15); padding:6px; z-index:50; animation:popIn .12s ease;">
+            <div style="padding:3px 10px 4px; font-size:9px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">作業ドロワーを開く</div>
+            <div onClick="{{ act.openDiff }}" style="display:flex; justify-content:space-between; padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">差分<span style="color:#94a3b8;">⌘J</span></div>
+            <div onClick="{{ act.openMerge }}" style="padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">マージ</div>
+            <div onClick="{{ act.openAi }}" style="display:flex; justify-content:space-between; padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">AI提案<span style="font-size:9px; color:#94a3b8;">{{ aiShortLabel }}</span></div>
+            <div onClick="{{ act.openDiag }}" style="padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">診断を実行</div>
+          </div>
+        </sc-if>
+      </div>
+      <div style="position:relative;">
+        <button onClick="{{ menus.share.onClick }}" style="{{ menus.share.style }}">共有</button>
+        <sc-if value="{{ menus.share.open }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute; top:30px; left:0; width:230px; background:#fff; border:1px solid #e2e8f0; border-radius:9px; box-shadow:0 12px 30px rgba(15,23,42,0.15); padding:6px; z-index:50; animation:popIn .12s ease;">
+            <div onClick="{{ act.share }}" style="padding:7px 10px; font-size:12.5px; border-radius:6px; color:#334155;">共有と再現を開く…</div>
+            <div style="display:flex; justify-content:space-between; padding:7px 10px; font-size:12.5px; border-radius:6px; color:#15803d;">セーフモード<span style="background:#dcfce7; border-radius:4px; padding:1px 7px; font-size:9px;">ON</span></div>
+            <div style="padding:6px 10px; font-size:11px; color:#94a3b8; line-height:1.5;">共有前確認で未レビューは既定で除外。</div>
+          </div>
+        </sc-if>
+      </div>
+      <!-- slim toolbar -->
+      <span style="width:1px; height:18px; background:#e2e8f0; margin:0 8px;"></span>
+      <button onClick="{{ act.newCard }}" style="font-size:12px; font-weight:600; color:#fff; background:#2563eb; border:none; border-radius:6px; padding:6px 11px;">＋ 新規カード</button>
+      <button onClick="{{ act.makeIsland }}" style="font-size:12px; color:#334155; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 11px;">島を作成</button>
+      <button onClick="{{ act.undo }}" style="font-size:12px; color:#334155; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 11px;">⟲ 元に戻す</button>
+      <span style="margin-left:auto; font-size:11.5px; color:#94a3b8;">{{ viewModeLabel }}</span>
+    </div>
+  </header>
+
+  <!-- ===== BODY: canvas + drawer + right panel ===== -->
+  <div style="{{ bodyRowStyle }}">
+
+    <!-- CANVAS -->
+    <div data-canvas-wrap="1" onClick="{{ onCanvasClick }}" onDoubleClick="{{ onCanvasDbl }}" onPointerDown="{{ onCanvasDown }}" onContextMenu="{{ onCanvasContext }}" style="{{ canvasWrapStyle }}">
+      <sc-if value="{{ isReviewView }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:5; font-size:11.5px; color:#3730a3; background:#eef2ff; border:1px solid #c7d2fe; border-radius:999px; padding:4px 12px;">確認ビュー ・ 未レビュー / 違和感を強調</div>
+      </sc-if>
+      <div style="{{ canvasLayerStyle }}">
+      <!-- 島の囲み（四角形フォールバック・小規模時）多段階表札 -->
+      <sc-for list="{{ islandsList }}" as="isl" hint-placeholder-count="2">
+        <div style="{{ isl.style }}">
+          <span style="{{ isl.labelStyle }}"><span style="opacity:0.7;">表札</span>{{ isl.label }} <span style="opacity:0.65;">・ {{ isl.count }}</span></span>
+        </div>
+      </sc-for>
+      <!-- 島の囲み（丸角直交アウトライン） -->
+      <sc-if value="{{ hasHulls }}" hint-placeholder-val="{{ false }}">
+        <svg style="position:absolute; left:0; top:0; width:2000px; height:1400px; overflow:visible; z-index:1; pointer-events:none;">
+          <sc-for list="{{ islandHulls }}" as="h" hint-placeholder-count="2">
+            <path d="{{ h.d }}" fill="{{ h.fill }}" stroke="{{ h.stroke }}" stroke-width="{{ h.width }}" stroke-dasharray="{{ h.dash }}" onClick="{{ h.onSelect }}" onDoubleClick="{{ h.onDouble }}" onContextMenu="{{ h.onContext }}" style="pointer-events:stroke; cursor:pointer;"></path>
+          </sc-for>
+        </svg>
+        <sc-for list="{{ islandHulls }}" as="h" hint-placeholder-count="2">
+          <span style="{{ h.labelStyle }}" onClick="{{ h.onSelect }}" onDoubleClick="{{ h.onDouble }}" onContextMenu="{{ h.onContext }}"><span style="opacity:0.7;">表札</span>{{ h.label }} <span style="opacity:0.65;">・ {{ h.count }}</span><span style="{{ h.cplxStyle }}">{{ h.cplxLabel }}</span></span>
+        </sc-for>
+      </sc-if>
+      <!-- 低ズーム（鳥瞰）: 表札チップのみ＋カード数 -->
+      <sc-if value="{{ hasChips }}" hint-placeholder-val="{{ false }}">
+        <sc-for list="{{ islandChips }}" as="ch" hint-placeholder-count="2">
+          <div style="{{ ch.style }}" onClick="{{ ch.onSelect }}" onDoubleClick="{{ ch.onDouble }}" onContextMenu="{{ ch.onContext }}"><span style="opacity:0.65; font-weight:600; flex:0 0 auto; font-size:9px;">表札</span><span style="flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ ch.label }}</span><span style="flex:0 0 auto; background:rgba(255,255,255,0.6); border-radius:999px; padding:0 7px; font-size:11px;">{{ ch.count }}枚</span></div>
+        </sc-for>
+      </sc-if>
+      <!-- 関係線（関係記号付き） -->
+      <sc-if value="{{ hasRelations }}" hint-placeholder-val="{{ false }}">
+        <svg style="position:absolute; left:0; top:0; width:1600px; height:1000px; overflow:visible; z-index:1; pointer-events:none;">
+          <defs>
+            <marker id="arw-sky" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0ea5e9"></path></marker>
+            <marker id="arw-sky-s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0ea5e9"></path></marker>
+            <marker id="arw-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ef4444"></path></marker>
+            <marker id="arw-red-s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ef4444"></path></marker>
+          </defs>
+          <sc-for list="{{ relations }}" as="r" hint-placeholder-count="3">
+            <path d="{{ r.d }}" fill="none" stroke="transparent" stroke-width="14" onClick="{{ r.onSelect }}" onDoubleClick="{{ r.onDouble }}" onContextMenu="{{ r.onContext }}" style="pointer-events:stroke; cursor:pointer;"></path>
+            <path d="{{ r.d }}" fill="none" stroke="{{ r.stroke }}" stroke-width="{{ r.width }}" stroke-dasharray="{{ r.dash }}" marker-end="{{ r.markerEnd }}" marker-start="{{ r.markerStart }}" style="pointer-events:none;"></path>
+          </sc-for>
+        </svg>
+        <sc-for list="{{ relations }}" as="r" hint-placeholder-count="3">
+          <div style="{{ r.labelStyle }}" onClick="{{ r.onSelect }}" onDoubleClick="{{ r.onDouble }}" onContextMenu="{{ r.onContext }}">{{ r.glyph }}</div>
+        </sc-for>
+      </sc-if>
+      <!-- cards -->
+      <sc-for list="{{ cards }}" as="card" hint-placeholder-count="5">
+        <div onClick="{{ card.onSelect }}" onPointerDown="{{ card.onDown }}" onDoubleClick="{{ card.onDouble }}" onContextMenu="{{ card.onContext }}" style="{{ card.style }}">
+          <sc-if value="{{ card.full }}" hint-placeholder-val="{{ true }}">
+          <div>
+          <div style="display:flex; align-items:center; gap:5px; padding:7px 11px 6px; border-bottom:1px solid #f1f5f9;">
+            <span style="{{ card.typeBadgeStyle }}">{{ card.typeLabel }}</span>
+            <sc-if value="{{ card.hold }}" hint-placeholder-val="{{ false }}"><span style="font-size:9.5px; padding:1px 6px; border-radius:4px; background:#fef9c3; color:#a16207; font-weight:600;">保留</span></sc-if>
+            <sc-if value="{{ card.unclear }}" hint-placeholder-val="{{ false }}"><span style="font-size:9.5px; padding:1px 6px; border-radius:4px; background:#fef3c7; color:#b45309; font-weight:600;">違和感</span></sc-if>
+            <sc-if value="{{ card.notReviewed }}" hint-placeholder-val="{{ false }}"><span title="未レビュー" style="width:7px; height:7px; border-radius:999px; background:#f59e0b; display:inline-block;"></span></sc-if>
+            <span style="margin-left:auto; display:flex; align-items:center; gap:5px;">
+              <sc-if value="{{ card.hasMemo }}" hint-placeholder-val="{{ false }}"><span title="メモあり" style="font-size:8px; font-weight:700; color:#64748b; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:3px; padding:0 4px;">メモ</span></sc-if>
+              <sc-if value="{{ card.hasTags }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px; padding:1px 6px; border-radius:4px; background:#f1f5f9; color:#64748b;">{{ card.tags }} tag</span></sc-if>
+            </span>
+          </div>
+          <div style="padding:10px 11px; font-size:14px; line-height:1.5; color:#1f2933;">
+            <sc-if value="{{ card.notEditing }}" hint-placeholder-val="{{ true }}"><span>{{ card.text }}</span></sc-if>
+            <sc-if value="{{ card.editing }}" hint-placeholder-val="{{ false }}">
+              <input value="{{ editingText }}" autofocus onClick="{{ onEditClick }}" onInput="{{ onEditInput }}" onKeyDown="{{ onEditKey }}" onBlur="{{ onEditBlur }}" style="width:100%; border:1px solid #93c5fd; border-radius:5px; outline:none; font-family:inherit; font-size:14px; color:#1f2933; padding:3px 6px; background:#fff;" />
+            </sc-if>
+          </div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ card.selected }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ card.onConnect }}" onPointerDown="{{ stop }}" title="ここから関係線でつなぐ" style="position:absolute; right:4px; top:50%; transform:translateY(-50%); width:13px; height:13px; border-radius:999px; background:#0ea5e9; border:2px solid #fff; box-shadow:0 1px 3px rgba(15,23,42,0.25); cursor:crosshair; z-index:5;"></div>
+          </sc-if>
+          <div style="display:flex; align-items:center; gap:4px; padding:6px 8px;">
+            <span style="font-size:10px; color:#334155; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">{{ card.text }}</span>
+            <sc-if value="{{ card.unclear }}" hint-placeholder-val="{{ false }}"><span style="width:3px; height:11px; background:#f59e0b; display:inline-block;"></span></sc-if>
+            <sc-if value="{{ card.notReviewed }}" hint-placeholder-val="{{ false }}"><span title="未レビュー" style="width:6px; height:6px; border-radius:999px; background:#f59e0b; display:inline-block;"></span></sc-if>
+          </div>
+          </sc-if>
+        </div>
+      </sc-for>
+      </div>
+
+      <!-- zoom control -->
+      <div style="position:absolute; left:10px; bottom:10px; z-index:6; display:flex; align-items:center; gap:2px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 1px 3px rgba(15,23,42,0.08); padding:2px;">
+        <button onClick="{{ onZoomOut }}" title="縮小" style="font-size:14px; width:24px; height:24px; border:none; background:none; color:#475569; border-radius:5px;">−</button>
+        <button onClick="{{ onZoomReset }}" title="100%にリセット" style="font-size:11px; min-width:42px; height:24px; border:none; background:none; color:#334155; border-radius:5px; font-variant-numeric:tabular-nums;">{{ zoomPct }}</button>
+        <button onClick="{{ onZoomIn }}" title="拡大" style="font-size:14px; width:24px; height:24px; border:none; background:none; color:#475569; border-radius:5px;">+</button>
+      </div>
+
+      <!-- scale hint (large) -->
+      <sc-if value="{{ isLarge }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; top:10px; left:12px; z-index:6; font-size:11px; color:#475569; background:#fff; border:1px solid #e2e8f0; border-radius:999px; padding:4px 11px; box-shadow:0 1px 3px rgba(15,23,42,0.08);">{{ scaleHint }}</div>
+      </sc-if>
+
+      <!-- empty state -->
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:11px; padding:20px; text-align:center;">
+          <div style="font-size:17px; font-weight:700; color:#334155;">まず、思いついたことを1枚書く</div>
+          <div style="font-size:12.5px; color:#64748b; line-height:1.6; max-width:30em;">正しさはあとで。曖昧なまま置いていい — 並べて、束ねて、つなぐうちに形になります。決めないのは健全な状態です。</div>
+          <div style="display:flex; gap:9px; margin-top:4px;">
+            <button onClick="{{ onAddFirst }}" style="font-size:13px; font-weight:600; color:#fff; background:#2563eb; border:none; border-radius:7px; padding:9px 16px;">＋ 新規カード</button>
+            <button onClick="{{ scenarioNormal.onClick }}" style="font-size:13px; color:#334155; background:#fff; border:1px solid #e2e8f0; border-radius:7px; padding:9px 16px;">サンプルを開く</button>
+          </div>
+          <div style="font-size:10.5px; color:#94a3b8; margin-top:2px;">ダブルクリックでも新規カード</div>
+        </div>
+      </sc-if>
+
+      <!-- loading skeleton -->
+      <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; background:rgba(248,250,252,0.86); display:flex; flex-direction:column; gap:12px; padding:28px; z-index:8;">
+          <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569;"><span style="width:13px;height:13px;border:2px solid #c7d2fe;border-top-color:#4338ca;border-radius:999px; display:inline-block; animation:spin 0.8s linear infinite;"></span>文書を読み込み中…</div>
+          <div style="height:54px; background:#eef2f6; border-radius:10px; width:70%;"></div>
+          <div style="height:54px; background:#eef2f6; border-radius:10px; width:54%;"></div>
+          <div style="height:54px; background:#eef2f6; border-radius:10px; width:62%;"></div>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- WORK DRAWER (領域4, default OFF) -->
+    <div style="{{ drawerStyle }}">
+      <div style="{{ drawerInnerStyle }}">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid #eef2f6;">
+          <div style="font-size:13px; font-weight:700; color:#3730a3;">作業 ・ <span style="color:#94a3b8; font-weight:500;">{{ drawerTargetLabel }}</span></div>
+          <button onClick="{{ act.closeDrawer }}" style="background:none; border:none; font-size:16px; color:#94a3b8; line-height:1;">✕</button>
+        </div>
+        <div style="display:flex; gap:4px; padding:9px 12px; border-bottom:1px solid #f1f5f9;">
+          <button onClick="{{ act.openDiff }}" style="{{ tabs.diff.style }}">差分</button>
+          <button onClick="{{ act.openMerge }}" style="{{ tabs.merge.style }}">マージ</button>
+          <button onClick="{{ act.openAi }}" style="{{ tabs.ai.style }}">AI提案</button>
+          <button onClick="{{ act.openDiag }}" style="{{ tabs.diag.style }}">診断</button>
+          <button onClick="{{ act.openNarrative }}" style="{{ tabs.narrative.style }}">文章化</button>
+        </div>
+        <div style="flex:1; overflow:auto; padding:14px;">
+          <sc-if value="{{ isDiff }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="font-size:12.5px; font-weight:600; color:#334155;">レビュー差分（順序化された確認）</div>
+              <button style="margin-top:10px; width:100%; font-size:12px; color:#334155; background:#f8fafc; border:1px solid #e2e8f0; border-radius:7px; padding:9px;">比較対象ドキュメントを読み込む（JSON）</button>
+              <div style="margin-top:12px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+                <div style="padding:8px 11px; font-size:11px; background:#f8fafc; color:#64748b; border-bottom:1px solid #eef2f6;">検出された差分</div>
+                <div style="padding:9px 11px; font-size:12px; color:#334155; border-bottom:1px solid #f5f7fa; display:flex; gap:8px;"><span style="color:#15803d;">＋</span>「観察メモをカード化する」追加</div>
+                <div style="padding:9px 11px; font-size:12px; color:#334155; display:flex; gap:8px;"><span style="color:#b45309;">±</span>「まだ曖昧な主張」の保留状態が変更</div>
+              </div>
+              <label style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12px; color:#475569;"><input type="checkbox" checked />前提項目を自動選択</label>
+              <button style="margin-top:10px; width:100%; font-size:12px; color:#fff; background:#4338ca; border:none; border-radius:7px; padding:9px;">選択したマージを適用</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isMerge }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="font-size:12.5px; font-weight:600; color:#334155;">選択マージ</div>
+              <p style="font-size:12px; color:#64748b; line-height:1.6; margin:8px 0 0;">取り込んだ差分から、採用する項目だけを選んで現在の文書へ反映します。確定は人間が行い、いつでも取り消せます。</p>
+              <button style="margin-top:12px; width:100%; font-size:12px; color:#334155; background:#f8fafc; border:1px solid #e2e8f0; border-radius:7px; padding:9px;">直前のマージを取り消す</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isAi }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <sc-if value="{{ aiEnabled }}" hint-placeholder-val="{{ false }}">
+                <div>
+                  <div style="font-size:12.5px; font-weight:600; color:#334155;">AI候補 <span style="font-size:10px; color:#9333ea; background:#faf5ff; border:1px solid #e9d5ff; border-radius:4px; padding:1px 6px;">候補・非確定</span></div>
+                  <div style="margin-top:10px; border:1px solid #e9d5ff; background:#faf5ff; border-radius:8px; padding:10px 12px;">
+                    <div style="font-size:12px; color:#6b21a8; line-height:1.55;">この2枚は「導入時の確認」という束で近いかもしれません。</div>
+                    <div style="display:flex; gap:6px; margin-top:9px;"><button style="font-size:11px; color:#fff; background:#9333ea; border:none; border-radius:6px; padding:5px 11px;">候補を採用</button><button style="font-size:11px; color:#6b21a8; background:#fff; border:1px solid #e9d5ff; border-radius:6px; padding:5px 11px;">却下</button></div>
+                  </div>
+                  <p style="font-size:11px; color:#94a3b8; line-height:1.5; margin:10px 0 0;">AIは候補を出すだけで確定しません。採否はあなたが決め、取り消せます。</p>
+                </div>
+              </sc-if>
+              <sc-if value="{{ aiDisabled }}" hint-placeholder-val="{{ true }}">
+                <div style="text-align:center; padding:14px 6px;">
+                  <div style="width:40px; height:40px; margin:0 auto; border-radius:10px; background:#eef2ff; display:flex; align-items:center; justify-content:center; font-size:18px;">✓</div>
+                  <div style="font-size:13px; font-weight:700; color:#3730a3; margin-top:12px;">AIなしでこの作業は完結します</div>
+                  <p style="font-size:12px; color:#64748b; line-height:1.65; margin:8px 0 0;">書く・並べる・束ねる・つなぐ・保留する ─ すべて手動で完結します。AIを有効にすると候補を提案します。</p>
+                  <div style="display:flex; flex-direction:column; gap:7px; margin-top:14px;">
+                    <button onClick="{{ act.makeIsland }}" style="font-size:12px; color:#334155; background:#f8fafc; border:1px solid #e2e8f0; border-radius:7px; padding:9px;">手動で束ねる（島を作成）</button>
+                    <button style="font-size:12px; color:#334155; background:#f8fafc; border:1px solid #e2e8f0; border-radius:7px; padding:9px;">手動でつなぐ（関係線）</button>
+                  </div>
+                  <button onClick="{{ onToggleAi }}" style="margin-top:14px; font-size:11.5px; color:#4338ca; background:none; border:none; text-decoration:underline;">AIを有効化して候補を見る</button>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isNarrative }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="display:flex; align-items:center; gap:7px;"><span style="font-size:12.5px; font-weight:600; color:#334155;">文章化（B型）下書き</span><span style="font-size:9px; color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; border-radius:4px; padding:1px 6px;">図解→叙述</span></div>
+              <p style="font-size:11px; color:#64748b; line-height:1.6; margin:7px 0 0;">読み順に沿って表札とカードを並べた下書きです。<strong style="color:#334155;">事実と解釈を分けて</strong>記述し、未解決（保留・違和感）はそのまま残します。</p>
+              <div style="margin-top:12px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+                <div style="padding:7px 11px; font-size:11px; background:#eff6ff; color:#1d4ed8; border-bottom:1px solid #eef2f6; font-weight:600;">① 表札: {{ narrative.islandLabel }}</div>
+                <sc-for list="{{ narrative.facts }}" as="f" hint-placeholder-count="1">
+                  <div style="padding:8px 11px; font-size:12px; color:#334155; border-bottom:1px solid #f5f7fa; display:flex; gap:7px;"><span style="flex:0 0 auto; font-size:9px; color:#15803d; background:#dcfce7; border-radius:4px; padding:1px 6px; height:fit-content;">事実</span><span>{{ f.text }}</span></div>
+                </sc-for>
+                <sc-for list="{{ narrative.interps }}" as="f" hint-placeholder-count="1">
+                  <div style="padding:8px 11px; font-size:12px; color:#334155; border-bottom:1px solid #f5f7fa; display:flex; gap:7px;"><span style="flex:0 0 auto; font-size:9px; color:#1d4ed8; background:#dbeafe; border-radius:4px; padding:1px 6px; height:fit-content;">解釈</span><span>{{ f.text }}</span></div>
+                </sc-for>
+              </div>
+              <div style="margin-top:10px; border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:9px 11px;">
+                <div style="font-size:11px; font-weight:700; color:#b45309;">未解決（保持） ${{ narrative.openCount }}件</div>
+                <p style="font-size:11px; color:#92610a; line-height:1.55; margin:5px 0 0;">{{ narrative.openText }}</p>
+              </div>
+              <p style="font-size:11px; color:#94a3b8; line-height:1.55; margin:10px 0 0;">文章化はカードの語句を生かし、勝手な要約を避けます。出てきた補足は新しい発見としてカード化できます。</p>
+            </div>
+          </sc-if>
+        </div>
+        <div style="border-top:1px dashed #e2e8f0; padding:9px 14px; font-size:11px; color:#15803d;">⟲ 適用した操作はこの場で取り消せます</div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: 選択コンテキスト (領域3, 純化) -->
+    <div style="{{ rightPanelStyle }}">
+      <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <!-- foregrounded selection -->
+          <div style="border:1.5px solid #bfdbfe; background:#eff6ff; border-radius:10px; padding:12px 13px;">
+            <div style="font-size:11px; font-weight:700; color:#1d4ed8; letter-spacing:0.04em;">現在の選択</div>
+            <div style="font-size:15px; font-weight:600; color:#1f2933; margin-top:6px; line-height:1.45;">{{ sel.text }}</div>
+            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:9px;">
+              <span style="{{ sel.typeBadgeStyle }}">{{ sel.typeLabel }}</span>
+              <sc-if value="{{ sel.hold }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px; padding:2px 7px; border-radius:4px; background:#fef9c3; color:#a16207; font-weight:600;">保留</span></sc-if>
+              <sc-if value="{{ sel.unclear }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px; padding:2px 7px; border-radius:4px; background:#fef3c7; color:#b45309; font-weight:600;">違和感: 採用前に確認</span></sc-if>
+              <sc-if value="{{ sel.notReviewed }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px; padding:2px 7px; border-radius:4px; background:#fff7ed; color:#c2410c; border:1px solid #fed7aa;">未レビュー</span></sc-if>
+            </div>
+            <sc-if value="{{ sel.hasContradiction }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:9px; font-size:11.5px; color:#b91c1c;">矛盾: {{ sel.contradiction }}件 ・ 根拠 {{ sel.rootOut }}発信 / {{ sel.rootIn }}受信</div>
+            </sc-if>
+          </div>
+          <!-- メモ（グラウンド・セオリー由来） -->
+          <sc-if value="{{ sel.hasMemo }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:10px; border:1px solid #e2e8f0; border-left:3px solid #94a3b8; background:#fbfcfd; border-radius:7px; padding:9px 11px;">
+              <div style="font-size:10px; font-weight:700; color:#64748b; letter-spacing:0.05em;">メモ（思考の跡）</div>
+              <p style="font-size:12px; color:#475569; line-height:1.6; margin:5px 0 0;">{{ sel.memo }}</p>
+            </div>
+          </sc-if>
+          <!-- コンテキストヘルプ: 次の一手 -->
+          <div style="margin-top:10px; border:1px solid #dbeafe; background:#f5f9ff; border-radius:7px; padding:9px 11px;">
+            <div style="font-size:10px; font-weight:700; color:#2563eb; letter-spacing:0.05em;">次の一手</div>
+            <p style="font-size:11.5px; color:#475569; line-height:1.6; margin:5px 0 0;">{{ sel.nextHint }}</p>
+          </div>
+          <!-- preserve-ambiguity quick actions (近い位置) -->
+          <div style="display:flex; gap:6px; margin-top:10px;">
+            <button onClick="{{ act.toggleHold }}" style="{{ holdBtnStyle }}">保留</button>
+            <button onClick="{{ act.toggleUnclear }}" style="{{ unclearBtnStyle }}">違和感</button>
+            <button onClick="{{ act.toggleReviewed }}" style="flex:1; font-size:11.5px; color:#334155; background:#f8fafc; border:1px solid #e2e8f0; border-radius:7px; padding:7px;">{{ reviewedBtnLabel }}</button>
+          </div>
+          <!-- open work drawer -->
+          <button onClick="{{ act.openDiff }}" style="margin-top:10px; width:100%; font-size:12.5px; font-weight:600; color:#3730a3; background:#eef2ff; border:1px solid #c7d2fe; border-radius:8px; padding:10px;">作業を開く ▸　<span style="font-weight:400; color:#6366f1;">差分・マージ・AI提案</span></button>
+          <p style="font-size:11px; color:#94a3b8; line-height:1.5; margin:10px 0 0;">重い操作は作業ドロワー（既定OFF）へ。ここは選んだ対象の事実だけを表示します。</p>
+        </div>
+      </sc-if>
+      <sc-if value="{{ noSelection }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="border:1px solid #e2e8f0; border-radius:10px; padding:12px 13px; background:#fbfcfd;">
+            <div style="font-size:11px; font-weight:700; color:#475569; letter-spacing:0.04em;">現在の選択</div>
+            <p style="font-size:12px; color:#94a3b8; line-height:1.6; margin:7px 0 0;">カードまたは島を選択すると、選択対象・状態・次に使える操作がここに表示されます。</p>
+          </div>
+          <div style="font-size:11px; font-weight:700; color:#334155; margin:16px 0 8px; letter-spacing:0.04em;">ドメイン状態</div>
+          <div style="display:flex; flex-wrap:wrap; gap:10px; font-size:11.5px; color:#475569;">
+            <span style="display:flex; align-items:center; gap:5px;"><span style="width:8px;height:8px;border-radius:999px;background:#22c55e;"></span>事実 {{ counts.fact }}</span>
+            <span style="display:flex; align-items:center; gap:5px;"><span style="width:8px;height:8px;border-radius:999px;background:#3b82f6;"></span>主張 {{ counts.claim }}</span>
+            <span style="display:flex; align-items:center; gap:5px;"><span style="width:8px;height:8px;border-radius:999px;background:#a855f7;"></span>仮説 {{ counts.hypothesis }}</span>
+            <span style="display:flex; align-items:center; gap:5px;"><span style="width:8px;height:8px;border-radius:999px;background:#f59e0b;"></span>未レビュー {{ counts.unreviewed }}</span>
+          </div>
+          <div style="margin-top:14px; border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:9px 11px; font-size:11px; color:#92610a; line-height:1.55;">SafeMode ON: {{ counts.unreviewed }}件の未レビュー項目は共有時に非表示になります</div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <!-- ===== CONTEXT MENU ===== -->
+  <sc-if value="{{ ctx.open }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ ctx.style }}">
+      <sc-if value="{{ ctxSingle }}" hint-placeholder-val="{{ true }}">
+      <div>
+      <div style="padding:3px 11px 4px; font-size:8.5px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">編集</div>
+      <div onClick="{{ ctx.edit }}" style="display:flex; justify-content:space-between; padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">カードを編集<span style="color:#cbd5e1;">⏎</span></div>
+      <div onClick="{{ ctx.toggleType }}" style="display:flex; justify-content:space-between; padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">claimType を変更<span style="color:#cbd5e1;">▸</span></div>
+      <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+      <div style="padding:3px 11px 4px; font-size:8.5px; font-weight:700; color:#a16207; letter-spacing:0.06em;">状態（保持系・手前）</div>
+      <div onClick="{{ ctx.toggleHold }}" style="display:flex; justify-content:space-between; padding:6px 11px; font-size:12px; color:#a16207; border-radius:5px;">保留にする / 解除<span style="background:#fef9c3; border-radius:3px; padding:0 5px; font-size:8px;">保留</span></div>
+      <div onClick="{{ ctx.toggleUnclear }}" style="display:flex; justify-content:space-between; padding:6px 11px; font-size:12px; color:#b45309; border-radius:5px;">違和感を付ける<span style="background:#fef3c7; border-radius:3px; padding:0 5px; font-size:8px;">違和感</span></div>
+      <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+      <div style="padding:3px 11px 4px; font-size:8.5px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">関係・グループ</div>
+      <div onClick="{{ ctx.connect }}" style="padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">関係線でつなぐ…</div>
+      <div onClick="{{ ctx.island }}" style="padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">島を作成</div>
+      <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+      <div style="padding:3px 11px 4px; font-size:8.5px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">作業</div>
+      <div onClick="{{ ctx.diff }}" style="display:flex; justify-content:space-between; padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">このカードで差分…<span style="color:#cbd5e1;">▸</span></div>
+      <div style="padding:6px 11px; font-size:12px; color:#94a3b8; border-radius:5px;">{{ ctx.aiLabel }}</div>
+      <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+      <div onClick="{{ ctx.del }}" style="padding:6px 11px; font-size:12px; color:#b91c1c; border-radius:5px;">削除</div>
+      <!-- submenu -->
+      <sc-if value="{{ ctx.subOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; top:24px; left:100%; width:140px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 10px 24px rgba(15,23,42,0.14); padding:5px;">
+          <div onClick="{{ act.typeFact }}" style="display:flex; align-items:center; gap:6px; padding:6px 10px; font-size:11.5px; color:#334155;"><span style="width:8px;height:8px;border-radius:2px;background:#22c55e;"></span>事実</div>
+          <div onClick="{{ act.typeClaim }}" style="display:flex; align-items:center; gap:6px; padding:6px 10px; font-size:11.5px; color:#334155;"><span style="width:8px;height:8px;border-radius:2px;background:#3b82f6;"></span>主張</div>
+          <div onClick="{{ act.typeHyp }}" style="display:flex; align-items:center; gap:6px; padding:6px 10px; font-size:11.5px; color:#334155;"><span style="width:8px;height:8px;border-radius:2px;background:#a855f7;"></span>仮説</div>
+          <div onClick="{{ act.typeUnknown }}" style="display:flex; align-items:center; gap:6px; padding:6px 10px; font-size:11.5px; color:#64748b;"><span style="width:8px;height:8px;border-radius:2px;background:#cbd5e1;"></span>不明</div>
+        </div>
+      </sc-if>
+      </div>
+      </sc-if>
+      <!-- 複数選択時：一括アクションのみ -->
+      <sc-if value="{{ ctxMulti }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="padding:3px 11px 4px; font-size:8.5px; font-weight:700; color:#3730a3; letter-spacing:0.06em;">{{ ctxCount }}件を選択中</div>
+        <div onClick="{{ ctx.bulkGroup }}" style="padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">島に束ねる</div>
+        <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+        <div style="padding:3px 11px 4px; font-size:8.5px; font-weight:700; color:#a16207; letter-spacing:0.06em;">状態（一括）</div>
+        <div onClick="{{ ctx.bulkHold }}" style="display:flex; justify-content:space-between; padding:6px 11px; font-size:12px; color:#a16207; border-radius:5px;">一括で保留 切替<span style="background:#fef9c3; border-radius:3px; padding:0 5px; font-size:8px;">保留</span></div>
+        <div onClick="{{ ctx.bulkUnclear }}" style="display:flex; justify-content:space-between; padding:6px 11px; font-size:12px; color:#b45309; border-radius:5px;">一括で違和感 切替<span style="background:#fef3c7; border-radius:3px; padding:0 5px; font-size:8px;">違和感</span></div>
+        <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+        <div onClick="{{ ctx.bulkDelete }}" style="padding:6px 11px; font-size:12px; color:#b91c1c; border-radius:5px;">{{ ctxCount }}件を削除</div>
+      </div>
+      </sc-if>
+      <!-- 島を右クリック -->
+      <sc-if value="{{ ctxIsIsland }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="padding:3px 11px 4px; font-size:8.5px; font-weight:700; color:#1d4ed8; letter-spacing:0.06em;">まとまり（島）</div>
+        <div onClick="{{ ctx.islRename }}" style="padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">表札を編集</div>
+        <div onClick="{{ ctx.islTidy }}" style="padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">整える（描線を単純化）</div>
+        <div onClick="{{ ctx.islDiff }}" style="padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">この島で差分…</div>
+        <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+        <div onClick="{{ ctx.islDissolve }}" style="padding:6px 11px; font-size:12px; color:#b91c1c; border-radius:5px;">まとまりを解除</div>
+      </div>
+      </sc-if>
+      <!-- 関係線を右クリック -->
+      <sc-if value="{{ ctxIsRel }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="padding:3px 11px 4px; font-size:8.5px; font-weight:700; color:#0369a1; letter-spacing:0.06em;">関係線</div>
+        <div style="padding:3px 11px 4px; font-size:8.5px; font-weight:700; color:#0369a1; letter-spacing:0.06em;">関係の種類</div>
+        <div onClick="{{ ctx.relSetRelate }}" style="display:flex; align-items:center; gap:8px; padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;"><span style="width:16px; text-align:center; color:#64748b;">—</span>関連（無方向）</div>
+        <div onClick="{{ ctx.relSetCause }}" style="display:flex; align-items:center; gap:8px; padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;"><span style="width:16px; text-align:center; color:#0369a1;">→</span>因果</div>
+        <div onClick="{{ ctx.relSetMutual }}" style="display:flex; align-items:center; gap:8px; padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;"><span style="width:16px; text-align:center; color:#0369a1;">⇄</span>相互</div>
+        <div onClick="{{ ctx.relSetContra }}" style="display:flex; align-items:center; gap:8px; padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;"><span style="width:16px; text-align:center; color:#b91c1c;">／</span>対立</div>
+        <div onClick="{{ ctx.relSetEquiv }}" style="display:flex; align-items:center; gap:8px; padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;"><span style="width:16px; text-align:center; color:#64748b;">＝</span>同値</div>
+        <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+        <div onClick="{{ ctx.relDelete }}" style="padding:6px 11px; font-size:12px; color:#b91c1c; border-radius:5px;">関係線を削除</div>
+      </div>
+      </sc-if>
+      <sc-if value="{{ ctxIsCanvas }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <sc-if value="{{ ctxCanvasHasSel }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="padding:3px 11px 4px; font-size:8.5px; font-weight:700; color:#3730a3; letter-spacing:0.06em;">{{ ctxCanvasSelCount }}件を選択中</div>
+          <div onClick="{{ ctx.cvMoveHere }}" style="padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">選択をここへ移動</div>
+          <div onClick="{{ ctx.cvGroupSel }}" style="padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">選択で島を作成</div>
+          <div onClick="{{ ctx.cvClearSel }}" style="padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">選択を解除</div>
+          <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+        </div>
+        </sc-if>
+        <div style="padding:3px 11px 4px; font-size:8.5px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">キャンバス</div>
+        <div onClick="{{ ctx.cvNewCard }}" style="display:flex; justify-content:space-between; padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">ここに新規カード<span style="font-family:'Noto Sans Mono',monospace; color:#cbd5e1;">N</span></div>
+        <div onClick="{{ ctx.cvSelectAll }}" style="display:flex; justify-content:space-between; padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">すべて選択<span style="font-family:'Noto Sans Mono',monospace; color:#cbd5e1;">⌘A</span></div>
+        <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+        <div style="padding:3px 11px 4px; font-size:8.5px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">表示</div>
+        <div onClick="{{ ctx.cvFit }}" style="padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">全体に合わせる（俯瞰）</div>
+        <div onClick="{{ ctx.cvTidy }}" style="padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">まとまりを整える（描線を単純化）</div>
+        <div onClick="{{ ctx.cvReset }}" style="display:flex; justify-content:space-between; padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">ズームをリセット<span style="font-family:'Noto Sans Mono',monospace; color:#cbd5e1;">⌘0</span></div>
+        <div onClick="{{ ctx.cvLegend }}" style="padding:6px 11px; font-size:12px; color:#334155; border-radius:5px;">凡例を表示 / 隠す</div>
+      </div>
+      </sc-if>
+    </div>
+  </sc-if>
+  <sc-if value="{{ paletteOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ act.closePalette }}" style="position:fixed; inset:0; background:rgba(15,23,42,0.28); z-index:80; display:flex; align-items:flex-start; justify-content:center; padding-top:13vh;">
+      <div onClick="{{ stop }}" style="width:440px; max-width:92vw; background:#fff; border:1px solid #e2e8f0; border-radius:12px; box-shadow:0 24px 60px rgba(15,23,42,0.28); overflow:hidden; animation:popIn .14s ease;">
+        <div style="display:flex; align-items:center; gap:9px; padding:13px 15px; border-bottom:1px solid #f1f5f9;">
+          <span style="font-size:13px; color:#94a3b8;">⌘K</span>
+          <input value="{{ paletteQuery }}" onInput="{{ act.paletteInput }}" autofocus placeholder="コマンド検索、または自然文で指示（例: 未レビューを束ねて保留に）" style="flex:1; border:none; outline:none; font-size:14px; font-family:inherit; color:#1f2933; background:transparent;" />
+          <button onClick="{{ onToggleMic }}" title="音声入力（デモ）" style="{{ micBtnStyle }}">🎙</button>
+          <span style="font-size:10px; color:#cbd5e1; border:1px solid #e2e8f0; border-radius:4px; padding:1px 6px;">esc</span>
+        </div>
+        <div style="max-height:340px; overflow:auto; padding:7px;">
+          <sc-for list="{{ paletteResults }}" as="cmd" hint-placeholder-count="5">
+            <div onClick="{{ cmd.onRun }}" style="display:flex; align-items:center; justify-content:space-between; padding:9px 11px; font-size:13px; color:#334155; border-radius:7px;">
+              <span style="display:flex; align-items:center; gap:8px;"><span style="color:#94a3b8; font-size:11px;">{{ cmd.icon }}</span>{{ cmd.label }}</span>
+              <span style="font-size:10.5px; color:#94a3b8;">{{ cmd.hint }}</span>
+            </div>
+          </sc-for>
+          <!-- 自然文の解釈（AI候補・確定は人間） -->
+          <sc-if value="{{ showNl }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ nlAllowed }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <div style="display:flex; align-items:center; gap:7px; padding:6px 11px 8px;"><span style="font-size:10px; font-weight:700; color:#9333ea; background:#faf5ff; border:1px solid #e9d5ff; border-radius:4px; padding:1px 7px;">AIが解釈した操作候補</span><span style="font-size:10px; color:#94a3b8;">クリックで確定 ・ ⌘Zで取消</span></div>
+                <sc-for list="{{ nlProposals }}" as="p" hint-placeholder-count="2">
+                  <div onClick="{{ p.onRun }}" style="display:flex; align-items:flex-start; gap:9px; padding:9px 11px; border:1px solid #ede9fe; background:#faf9ff; border-radius:8px; margin-bottom:6px;">
+                    <span style="color:#9333ea; font-size:12px; margin-top:1px;">{{ p.icon }}</span>
+                    <span style="flex:1;"><span style="display:block; font-size:13px; color:#1f2933; font-weight:500;">{{ p.label }}</span><span style="display:block; font-size:10.5px; color:#8b5cf6; margin-top:2px;">{{ p.why }}</span></span>
+                    <span style="font-size:10px; color:#c4b5fd; align-self:center;">確定 ⏎</span>
+                  </div>
+                </sc-for>
+                <div style="padding:4px 11px 8px; font-size:10px; color:#94a3b8; line-height:1.5;">AIは候補を提示するだけです。実行＝あなたの確定。すべて ⌘Z で元に戻せます。</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ nlBlocked }}" hint-placeholder-val="{{ false }}">
+              <div style="margin:4px 7px; padding:11px 13px; border:1px solid #e2e8f0; background:#f8fafc; border-radius:8px;">
+                <div style="font-size:12px; font-weight:600; color:#334155;">AIはオフです（provider=none）</div>
+                <p style="font-size:11px; color:#64748b; line-height:1.6; margin:5px 0 8px;">自然文の解釈は行いません。コマンド検索とキーボード操作はそのまま使えます。AIを有効にすると、この入力を操作候補として提示します（確定は常に人間）。</p>
+                <button onClick="{{ onToggleAi }}" style="font-size:11px; font-weight:600; color:#3730a3; background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:5px 11px;">AIをオンにする</button>
+              </div>
+            </sc-if>
+          </sc-if>
+          <sc-if value="{{ paletteEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:18px; text-align:center; font-size:12px; color:#94a3b8;">一致するコマンドがありません</div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===== SHORTCUT CHEAT SHEET ===== -->
+  <sc-if value="{{ cheatOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onToggleCheat }}" style="position:fixed; inset:0; background:rgba(15,23,42,0.32); z-index:88; display:flex; align-items:center; justify-content:center; padding:24px;">
+      <div onClick="{{ stop }}" style="width:560px; max-width:94vw; max-height:84vh; overflow:auto; background:#fff; border:1px solid #e2e8f0; border-radius:14px; box-shadow:0 24px 60px rgba(15,23,42,0.3); animation:popIn .14s ease;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:15px 18px; border-bottom:1px solid #f1f5f9; position:sticky; top:0; background:#fff;">
+          <span style="font-size:15px; font-weight:700; color:#1f2933;">キーボードショートカット</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="display:inline-flex; align-items:center; border-radius:6px; overflow:hidden;"><span onClick="{{ onPlatMac }}" style="{{ platMacStyle }}">Mac</span><span onClick="{{ onPlatWin }}" style="{{ platWinStyle }}">Windows</span><span onClick="{{ onPlatLinux }}" style="{{ platLinuxStyle }}">Linux</span></span>
+            <span style="font-size:11px; color:#94a3b8;">? で開閉</span>
+          </div>
+        </div>
+        <div style="padding:16px 18px; display:grid; grid-template-columns:1fr 1fr; gap:18px 28px;">
+
+          <div>
+            <div style="font-size:11px; font-weight:700; color:#4338ca; letter-spacing:0.05em; margin-bottom:8px;">保持系（曖昧さを保つ・最短）</div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#a16207;">保留 切替</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#fef9c3; color:#a16207; border:1px solid #fde68a; border-radius:5px; padding:2px 8px;">H</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#b45309;">違和感 切替</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#fef3c7; color:#b45309; border:1px solid #fcd34d; border-radius:5px; padding:2px 8px;">U</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#334155;">レビュー済み 切替</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">R</kbd></div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:11px; font-weight:700; color:#334155; letter-spacing:0.05em; margin-bottom:8px;">可逆</div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#334155;">元に戻す</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">{{ K.undo }}</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#334155;">やり直す</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">{{ K.redo }}</kbd></div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:11px; font-weight:700; color:#334155; letter-spacing:0.05em; margin-bottom:8px;">作成・編集（選択時）</div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#334155;">新規カード</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">N</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#334155;">編集</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">Enter / E</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#334155;">複製</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">{{ K.dup }}</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#b91c1c;">削除</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; border-radius:5px; padding:2px 8px;">{{ K.del }}</kbd></div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:11px; font-weight:700; color:#334155; letter-spacing:0.05em; margin-bottom:8px;">型変更（選択時）</div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; display:flex; align-items:center; gap:6px;"><span style="width:9px;height:9px;border-radius:2px;background:#22c55e;"></span>事実</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">1</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; display:flex; align-items:center; gap:6px;"><span style="width:9px;height:9px;border-radius:2px;background:#3b82f6;"></span>主張</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">2</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; display:flex; align-items:center; gap:6px;"><span style="width:9px;height:9px;border-radius:2px;background:#a855f7;"></span>仮説</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">3</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; display:flex; align-items:center; gap:6px;"><span style="width:9px;height:9px;border-radius:2px;background:#cbd5e1;"></span>不明</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">0</kbd></div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:11px; font-weight:700; color:#334155; letter-spacing:0.05em; margin-bottom:8px;">整理</div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#334155;">島を作成（束ねる）</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">G</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#334155;">関係線でつなぐ</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">L</kbd></div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:11px; font-weight:700; color:#334155; letter-spacing:0.05em; margin-bottom:8px;">移動・表示・ナビ</div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#334155;">コマンドパレット</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">{{ K.palette }}</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#334155;">作業ドロワー 開閉</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">W</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#334155;">差分（ドロワー）</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">{{ K.diff }}</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#334155;">状態フィルタへ移動</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">{{ K.filter }}</kbd></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; color:#334155;">選択解除 / 閉じる</span><kbd style="font-family:'Noto Sans Mono',monospace; font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">Esc</kbd></div>
+            </div>
+          </div>
+
+        </div>
+        <div style="padding:11px 18px; border-top:1px solid #f1f5f9; font-size:11px; color:#94a3b8; line-height:1.5;">単一キー（H/U/N/1〜3 等）はテキスト編集中は無効。{{ modNote }} 表記は上の切替で Mac / Windows / Linux を切替えられます（自動検出済み）。</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===== LEGEND OVERLAY ===== -->
+  <sc-if value="{{ legendOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onToggleLegend }}" style="position:fixed; right:18px; bottom:18px; z-index:85; width:248px; background:#fff; border:1px solid #e2e8f0; border-radius:12px; box-shadow:0 16px 40px rgba(15,23,42,0.2); padding:13px 15px; animation:popIn .14s ease;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:9px;">
+        <span style="font-size:12px; font-weight:700; color:#334155;">凡例</span>
+        <span style="font-size:14px; color:#94a3b8; line-height:1;">✕</span>
+      </div>
+      <div style="font-size:9px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">型（色）</div>
+      <div style="display:flex; flex-wrap:wrap; gap:7px; margin:5px 0 9px;">
+        <span style="font-size:10px; display:flex; align-items:center; gap:4px;"><span style="width:9px;height:9px;border-radius:2px;background:#22c55e;"></span>事実</span>
+        <span style="font-size:10px; display:flex; align-items:center; gap:4px;"><span style="width:9px;height:9px;border-radius:2px;background:#3b82f6;"></span>主張</span>
+        <span style="font-size:10px; display:flex; align-items:center; gap:4px;"><span style="width:9px;height:9px;border-radius:2px;background:#a855f7;"></span>仮説</span>
+        <span style="font-size:10px; display:flex; align-items:center; gap:4px;"><span style="width:9px;height:9px;border-radius:2px;background:#cbd5e1;"></span>不明</span>
+      </div>
+      <div style="font-size:9px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">保持系（メタ行・amber）</div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px; margin:5px 0 9px;">
+        <span style="font-size:9px; padding:1px 6px; border-radius:4px; background:#fef9c3; color:#a16207;">保留</span>
+        <span style="font-size:9px; padding:1px 6px; border-radius:4px; background:#fef3c7; color:#b45309;">違和感</span>
+      </div>
+      <div style="font-size:9px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">確認・矛盾（形/色）</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:5px;">
+        <span style="font-size:10px; display:flex; align-items:center; gap:4px;"><span style="width:7px;height:7px;border-radius:999px;background:#f59e0b;"></span>未レビュー</span>
+        <span style="font-size:10px; display:flex; align-items:center; gap:4px;"><span style="width:3px;height:11px;background:#f59e0b;"></span>違和感tick</span>
+        <span style="font-size:9px; padding:1px 6px; border-radius:4px; background:#fee2e2; color:#b91c1c;">矛盾 n</span>
+      </div>
+      <div style="font-size:9px; font-weight:700; color:#94a3b8; letter-spacing:0.06em; margin-top:9px;">関係記号（任意）</div>
+      <div style="display:flex; flex-wrap:wrap; gap:9px; margin-top:5px;">
+        <span style="font-size:10px; display:flex; align-items:center; gap:3px; color:#0369a1;">→ 因果</span>
+        <span style="font-size:10px; display:flex; align-items:center; gap:3px; color:#0369a1;">⇄ 相互</span>
+        <span style="font-size:10px; display:flex; align-items:center; gap:3px; color:#b91c1c;">／ 対立</span>
+        <span style="font-size:10px; display:flex; align-items:center; gap:3px; color:#64748b;">＝ 同値</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===== GUIDED TOUR ===== -->
+  <sc-if value="{{ tourActive }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; right:20px; bottom:20px; z-index:92; width:312px; background:#fff; border:1px solid #c7d2fe; border-radius:13px; box-shadow:0 18px 44px rgba(15,23,42,0.22); padding:15px 17px; animation:popIn .14s ease;">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-size:10px; font-weight:700; color:#4338ca; background:#eef2ff; border:1px solid #c7d2fe; border-radius:999px; padding:2px 9px;">はじめてガイド {{ tourStepLabel }}</span>
+        <span onClick="{{ onEndTour }}" style="font-size:13px; color:#94a3b8; cursor:pointer;">✕</span>
+      </div>
+      <div style="font-size:15px; font-weight:700; color:#1f2933; margin-top:11px;">{{ tourTitle }}</div>
+      <p style="font-size:12.5px; color:#475569; line-height:1.65; margin:7px 0 0;">{{ tourBody }}</p>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px;">
+        <span onClick="{{ onEndTour }}" style="font-size:11.5px; color:#94a3b8; cursor:pointer;">スキップ</span>
+        <sc-if value="{{ tourLast }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onEndTour }}" style="font-size:12px; font-weight:600; color:#fff; background:#2563eb; border:none; border-radius:7px; padding:7px 15px;">はじめる</button>
+        </sc-if>
+        <sc-if value="{{ tourNotLast }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ onNextTour }}" style="font-size:12px; font-weight:600; color:#fff; background:#2563eb; border:none; border-radius:7px; padding:7px 15px;">次へ</button>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===== MARQUEE (矩形範囲選択) ===== -->
+  <sc-if value="{{ marqueeOn }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ marqueeStyle }}"></div>
+  </sc-if>
+
+  <!-- ===== TOAST ===== -->
+  <sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; bottom:22px; left:50%; transform:translateX(-50%); z-index:90; display:flex; align-items:center; gap:14px; background:#1f2933; color:#fff; border-radius:10px; padding:11px 16px; box-shadow:0 12px 30px rgba(15,23,42,0.3); animation:toastIn .16s ease;">
+      <span style="font-size:13px;">{{ toastMsg }}</span>
+      <button onClick="{{ act.undo }}" style="font-size:12.5px; font-weight:600; color:#a5b4fc; background:none; border:none;">取り消す</button>
+    </div>
+  </sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:720}}">
+class Component extends DCLogic {
+  state = {
+    cards: [
+      { id:'c1', type:'fact',       text:'観察した事実メモ',     hold:false, unclear:false, reviewed:true,  tags:0, x:70,  y:96,  island:true,  contra:0, rootOut:0, rootIn:0 },
+      { id:'c2', type:'claim',      text:'そこから言える主張',   hold:false, unclear:false, reviewed:false, tags:0, x:322, y:96,  island:true,  contra:1, rootOut:0, rootIn:2 },
+      { id:'c3', type:'hypothesis', text:'問いとして残す仮説',   hold:false, unclear:false, reviewed:false, tags:0, x:70,  y:312, island:false, contra:0, rootOut:0, rootIn:0 },
+      { id:'c4', type:'unknown',    text:'まだ曖昧な主張',       hold:true,  unclear:true,  reviewed:false, tags:1, x:322, y:312, island:false, contra:1, rootOut:1, rootIn:0, memo:'事実か解釈か未確定。判断を保留し、次回の比較で再検討する。' },
+      { id:'c5', type:'fact',       text:'ユーザー課題を集める', hold:false, unclear:false, reviewed:true,  tags:0, x:574, y:204, island:false, contra:0, rootOut:0, rootIn:0 },
+    ],
+    selectedId: null,
+    selCards: [],
+    selIsland: null,
+    selRel: null,
+    marquee: null,
+    dragging: false,
+    connectFrom: null,
+    userRels: [],
+    editingId: null, editingText: '',
+    drawerOpen: false, drawerTab: 'diff',
+    paletteOpen: false, paletteQuery: '',
+    ctx: { open:false, x:0, y:0, cardId:null, subOpen:false },
+    openMenu: null,
+    aiEnabled: false,
+    viewMode: 'explore',
+    toast: null,
+    history: [],
+    nextId: 6,
+    forceMobile: false,
+    vw: (typeof window !== 'undefined' ? window.innerWidth : 1180),
+    scenario: 'normal',
+    loading: false,
+    legendOpen: false,
+    normalCards: null,
+    cheatOpen: false,
+    redoStack: [],
+    zoom: 1, panX: 0, panY: 0,
+    micActive: false,
+    helpMenuOpen: false,
+    tourStep: 0,
+    platform: 'auto',
+  };
+
+  TYPE = {
+    fact:       { label:'事実', bg:'#dcfce7', fg:'#15803d' },
+    claim:      { label:'主張', bg:'#dbeafe', fg:'#1d4ed8' },
+    hypothesis: { label:'仮説', bg:'#ede9fe', fg:'#6d28d9' },
+    unknown:    { label:'不明', bg:'#f1f5f9', fg:'#64748b' },
+  };
+
+  componentDidMount() {
+    this._onKey = (e) => {
+      const k = e.key;
+      const tag = (e.target && e.target.tagName) || '';
+      const typing = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable);
+
+      // Esc: always available (closes layers, cancels edit)
+      if (k === 'Escape') {
+        this.setState(s => {
+          if (s.cheatOpen)   return { cheatOpen:false };
+          if (s.paletteOpen) return { paletteOpen:false };
+          if (s.ctx.open)    return { ctx:{ ...s.ctx, open:false, subOpen:false } };
+          if (s.openMenu)    return { openMenu:null };
+          if (s.editingId)   return { editingId:null };
+          if (s.legendOpen)  return { legendOpen:false };
+          if (s.connectFrom) return { connectFrom:null };
+          if (s.drawerOpen)  return { drawerOpen:false };
+          if (s.selectedId)  return { selectedId:null };
+          return {};
+        });
+        return;
+      }
+
+      const meta = e.metaKey || e.ctrlKey;
+      // ---- modifier combos (work even mid-typing where it makes sense) ----
+      if (meta && (k === 'k' || k === 'K')) { e.preventDefault(); this.setState(s => ({ paletteOpen: !s.paletteOpen, openMenu:null })); return; }
+      if (meta && (k === 'z' || k === 'Z') && !e.shiftKey) { e.preventDefault(); this.undo(); return; }
+      if (meta && (k === 'z' || k === 'Z') && e.shiftKey) { e.preventDefault(); this.redo(); return; }
+      if (meta && (k === 'y' || k === 'Y')) { e.preventDefault(); this.redo(); return; }
+      if (meta && k === '0') { e.preventDefault(); this.resetView(); return; }
+      if (meta && (k === '=' || k === '+')) { e.preventDefault(); this.setState(s=>({ zoom: Math.min(1.8, +(s.zoom*1.12).toFixed(3)) })); return; }
+      if (meta && k === '-') { e.preventDefault(); this.setState(s=>({ zoom: Math.max(0.35, +(s.zoom*0.89).toFixed(3)) })); return; }
+
+      // never hijack browser combos or fire single-keys while typing
+      if (typing) return;
+      if (meta && (k === 'j' || k === 'J')) { e.preventDefault(); this.openDrawer('diff'); return; }
+      if (meta && (k === 's' || k === 'S')) { e.preventDefault(); this.flashToast('保存しました'); return; }
+      if (meta && (k === 'd' || k === 'D')) { e.preventDefault(); this.duplicate(); return; }
+      if (meta && (k === 'f' || k === 'F')) { e.preventDefault(); this.focusFilter(); return; }
+      if (meta) return; // leave other ⌘/Ctrl combos to the browser
+
+      // ---- cheat sheet ----
+      if (k === '?' || (k === '/' && e.shiftKey)) { e.preventDefault(); this.setState(s => ({ cheatOpen: !s.cheatOpen })); return; }
+
+      // ---- single-key (no modifier) ----
+      const sel = this.state.selectedId;
+      switch (k) {
+        case 'n': case 'N': e.preventDefault(); this.newCard(); return;
+        case 'w': case 'W': e.preventDefault(); this.setState(s => ({ drawerOpen: !s.drawerOpen, openMenu:null })); return;
+        case 'g': case 'G': e.preventDefault(); this.makeIsland(); return;
+        case 'l': case 'L': e.preventDefault(); this.flashToast('関係線でつなぐ（つなぎ先を選択）'); return;
+        case 'h': case 'H': if (sel) { e.preventDefault(); this.toggleHold(sel); } return;
+        case 'u': case 'U': if (sel) { e.preventDefault(); this.toggleUnclear(sel); } return;
+        case 'r': case 'R': if (sel) { e.preventDefault(); this.toggleReviewed(sel); } return;
+        case 'e': case 'E': case 'F2': if (sel) { e.preventDefault(); this.startEdit(sel); } return;
+        case 'Enter': if (sel && !this.state.editingId) { e.preventDefault(); this.startEdit(sel); } return;
+        case 'Delete': case 'Backspace': if (sel) { e.preventDefault(); this.deleteSel(); } return;
+        case '1': if (sel) { e.preventDefault(); this.setType(sel,'fact'); } return;
+        case '2': if (sel) { e.preventDefault(); this.setType(sel,'claim'); } return;
+        case '3': if (sel) { e.preventDefault(); this.setType(sel,'hypothesis'); } return;
+        case '0': if (sel) { e.preventDefault(); this.setType(sel,'unknown'); } return;
+        default: return;
+      }
+    };
+    window.addEventListener('keydown', this._onKey);
+    this._onResize = () => this.setState({ vw: window.innerWidth });
+    window.addEventListener('resize', this._onResize);
+
+    // ---- mouse wheel / trackpad: ⌘/Ctrl+wheel = zoom (LOD連動), 素のホイール = パン ----
+    this._onWheel = (e) => {
+      const wrap = e.currentTarget;
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        this.setState(s => {
+          const factor = e.deltaY < 0 ? 1.12 : 0.89;
+          const z = Math.min(1.8, Math.max(0.35, +(s.zoom * factor).toFixed(3)));
+          return { zoom: z };
+        });
+      } else {
+        e.preventDefault();
+        this.setState(s => ({
+          panX: s.panX - (e.shiftKey ? e.deltaY : e.deltaX),
+          panY: s.panY - (e.shiftKey ? 0 : e.deltaY),
+        }));
+      }
+    };
+    this._attachWheel = () => {
+      const el = document.querySelector('[data-canvas-wrap]');
+      if (el && el !== this._wheelEl) {
+        if (this._wheelEl) this._wheelEl.removeEventListener('wheel', this._onWheel);
+        el.addEventListener('wheel', this._onWheel, { passive:false });
+        this._wheelEl = el;
+      }
+    };
+    this._attachWheel();
+    this._wheelTimer = setInterval(this._attachWheel, 1000);
+    this._onPM = (e) => this._pointerMove(e);
+    this._onPU = () => this._pointerUp();
+    window.addEventListener('pointermove', this._onPM);
+    window.addEventListener('pointerup', this._onPU);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this._onKey); window.removeEventListener('resize', this._onResize); if (this._wheelEl) this._wheelEl.removeEventListener('wheel', this._onWheel); clearInterval(this._wheelTimer); window.removeEventListener('pointermove', this._onPM); window.removeEventListener('pointerup', this._onPU); }
+  setForceMobile(v) { this.setState({ forceMobile: v, drawerOpen:false, openMenu:null }); }
+  toggleLegend() { this.setState(s => ({ legendOpen: !s.legendOpen })); }
+
+  genLargeCards() {
+    const types = ['fact','claim','hypothesis','unknown'];
+    const out = [];
+    let id = 100;
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 12; c++) {
+        const t = types[(r * 12 + c) % 4];
+        const seed = (r * 12 + c);
+        out.push({
+          id: 'L' + (id++), type: t,
+          text: ['観察','主張','仮説','課題','根拠','問い'][seed % 6] + (seed),
+          hold: seed % 11 === 0, unclear: seed % 7 === 0, reviewed: seed % 3 !== 0,
+          tags: seed % 5 === 0 ? 1 : 0, x: 40 + c * 150, y: 40 + r * 120,
+          island: r < 2 && c < 4, contra: seed % 13 === 0 ? 1 : 0, rootOut: 0, rootIn: 0,
+        });
+      }
+    }
+    return out;
+  }
+
+  setScenario(name) {
+    this.setState(s => {
+      // remember the working set when leaving normal
+      const stash = (s.scenario === 'normal' && name !== 'normal') ? s.cards : s.normalCards;
+      if (name === 'empty') {
+        return { scenario:'empty', cards:[], selectedId:null, drawerOpen:false, loading:false, normalCards: stash };
+      }
+      if (name === 'large') {
+        return { scenario:'large', cards:this.genLargeCards(), selectedId:null, drawerOpen:false, loading:false, normalCards: stash };
+      }
+      if (name === 'loading') {
+        // restore a working set under the skeleton
+        const base = stash || s.cards;
+        setTimeout(() => this.setState(st => st.scenario === 'loading' ? { loading:false } : {}), 2200);
+        return { scenario:'loading', loading:true, cards: base, selectedId:null, drawerOpen:false, normalCards: stash };
+      }
+      // normal
+      const restore = s.normalCards || s.cards;
+      return { scenario:'normal', cards: restore, loading:false, normalCards:null };
+    });
+  }
+
+  // ---- helpers ----
+  selected() { return this.state.cards.find(c => c.id === this.state.selectedId) || null; }
+  pushHistory() { this.setState(s => ({ history: [...s.history, JSON.parse(JSON.stringify(s.cards))].slice(-30), redoStack: [] })); }
+  flashToast(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState(s => (s.toast === msg ? { toast:null } : {})), 3200);
+  }
+  mutateCard(id, fn, msg) {
+    if (!id) return;
+    this.pushHistory();
+    this.setState(s => ({ cards: s.cards.map(c => c.id === id ? fn({ ...c }) : c) }));
+    if (msg) this.flashToast(msg);
+  }
+  undo() {
+    this.setState(s => {
+      if (!s.history.length) return {};
+      const prev = s.history[s.history.length - 1];
+      return { cards: prev, history: s.history.slice(0, -1), redoStack: [...s.redoStack, JSON.parse(JSON.stringify(s.cards))].slice(-30), toast:'操作を取り消しました' };
+    });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState(s => (s.toast === '操作を取り消しました' ? { toast:null } : {})), 2200);
+  }
+  redo() {
+    this.setState(s => {
+      if (!s.redoStack.length) return {};
+      const next = s.redoStack[s.redoStack.length - 1];
+      return { cards: next, redoStack: s.redoStack.slice(0, -1), history: [...s.history, JSON.parse(JSON.stringify(s.cards))].slice(-30), toast:'やり直しました' };
+    });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState(s => (s.toast === 'やり直しました' ? { toast:null } : {})), 2200);
+  }
+  focusFilter() {
+    this.flashToast('状態フィルタへ移動');
+    setTimeout(() => { try { const el = document.querySelector('[data-filter-first]'); if (el) el.focus(); } catch(_){} }, 0);
+  }
+  toggleCheat() { this.setState(s => ({ cheatOpen: !s.cheatOpen })); }
+  _platStyle(cur, name) {
+    const on = cur === name;
+    return `font-size:10.5px; cursor:pointer; padding:3px 9px; border:1px solid ${on?'#93c5fd':'#e2e8f0'}; background:${on?'#eff6ff':'#fff'}; color:${on?'#1d4ed8':'#64748b'}; font-weight:${on?600:400};`;
+  }
+
+  // ---- selection / canvas ----
+  _islandOf(id) { const c = this.state.cards.find(x=>x.id===id); if(!c) return null; return (c.island || id==='c5') ? 'big' : null; }
+  isSelCard(id) { return this.state.selCards.includes(id); }
+  selectCard(id, e) {
+    if (e) e.stopPropagation();
+    // 接続モード中: つなぎ先として関係線を作成（中央アイコンではなくカード縁ハンドル起点）
+    if (this.state.connectFrom && this.state.connectFrom !== id) {
+      const from = this.state.connectFrom;
+      this.setState(s => ({ userRels:[...(s.userRels||[]), { from, to:id, type:'cause' }], connectFrom:null }));
+      this.flashToast('関係線をつなぎました（種類はダブルクリックで循環）');
+      return;
+    }
+    const mod = e && (e.ctrlKey || e.metaKey);
+    const shift = e && e.shiftKey;
+    const alt = e && e.altKey;
+    // Alt+クリック: そのカードを含む島を選択（親へ昇格）
+    if (alt) { const isl = this._islandOf(id); if (isl) { this.selectIsland(isl, null); return; } }
+    this.setState(s => {
+      let set = s.selCards.slice();
+      if (mod) { set = set.includes(id) ? set.filter(x=>x!==id) : set.concat(id); }     // ⌘/Ctrl: トグル
+      else if (shift) { if (!set.includes(id)) set.push(id); }                          // Shift: 追加
+      else { set = [id]; }                                                              // 素: 置換
+      return { selCards:set, selIsland:null, selRel:null, selectedId:set[set.length-1]||null,
+               openMenu:null, ctx:{ open:false, x:0, y:0, cardId:null, subOpen:false } };
+    });
+  }
+  selectIsland(islandId, e) {
+    if (e) e.stopPropagation();
+    const mod = e && (e.ctrlKey || e.metaKey);
+    const shift = e && e.shiftKey;
+    // Ctrl+Shift: 島のメンバーカードを選択に追加（中身を展開して選ぶ）
+    if (e && mod && shift) {
+      const ids = this.state.cards.filter(c => (islandId==='big') ? (c.island||c.id==='c5') : c.island).map(c=>c.id);
+      this.setState(s => ({ selCards: Array.from(new Set(s.selCards.concat(ids))), selIsland:null, selRel:null, selectedId: ids[ids.length-1]||s.selectedId, ctx:{open:false} }));
+      return;
+    }
+    this.setState({ selIsland:islandId, selCards:[], selRel:null, selectedId:null, openMenu:null, ctx:{ open:false, x:0, y:0, cardId:null, subOpen:false } });
+  }
+  selectRelation(relId, e) {
+    if (e) e.stopPropagation();
+    this.setState({ selRel:relId, selCards:[], selIsland:null, selectedId:null, openMenu:null, ctx:{ open:false, x:0, y:0, cardId:null, subOpen:false } });
+  }
+  // 島ダブルクリック: その島にズームを合わせる（俯瞰へフォーカス）
+  dblIsland(islandId) { this.fitView(); this.selectIsland(islandId, null); this.flashToast('まとまりにフォーカスしました'); }
+  // 関係線ダブルクリック: 関係の種類を循環（因果→相互→対立→同値）
+  dblRelation(relId) {
+    const order = ['relate','cause','mutual','contra','equiv'];
+    this._relTypeOverride = this._relTypeOverride || {};
+    const cur = this._relTypeOverride[relId] || this._relBaseType[relId] || 'relate';
+    const next = order[(order.indexOf(cur)+1) % order.length];
+    this.setRelType(relId, next, true);
+  }
+  setRelType(relId, type, cycled) {
+    this._relTypeOverride = this._relTypeOverride || {};
+    this._relTypeOverride[relId] = type;
+    const labels = { relate:'関連', cause:'因果', mutual:'相互', contra:'対立', equiv:'同値' };
+    this.flashToast('関係を「'+labels[type]+'」に変更しました' + (cycled?'（ダブルクリックで循環）':''));
+    this.setState(s => ({ ctx:{ ...s.ctx, open:false } }));
+  }
+  rootClick() { this.setState(s => ({ openMenu:null, ctx:{ ...s.ctx, open:false, subOpen:false } })); }
+  canvasBgClick(e) { if (e.target === e.currentTarget) { this.setState({ selectedId:null, selCards:[], selIsland:null, selRel:null, openMenu:null, ctx:{ open:false, x:0, y:0, cardId:null, subOpen:false } }); } }
+  openContext(id, e) {
+    e.preventDefault(); e.stopPropagation();
+    // 右クリックしたカードが選択集合になければ単独選択に切替（集合内なら集合のまま）
+    this.setState(s => {
+      const inSet = s.selCards.includes(id);
+      const set = inSet ? s.selCards : [id];
+      return { selCards:set, selIsland:null, selRel:null, selectedId:id,
+               openMenu:null, ctx:{ open:true, kind:'card', x:e.clientX, y:e.clientY, cardId:id, subOpen:false } };
+    });
+  }
+  openCanvasContext(e) { if (e.target !== e.currentTarget) return; e.preventDefault(); this._lastCtxX = e.clientX; this._lastCtxY = e.clientY; this.setState({ openMenu:null, ctx:{ open:true, kind:'canvas', x:e.clientX, y:e.clientY, cardId:null, subOpen:false } }); }
+  openIslandContext(id, e) { e.preventDefault(); e.stopPropagation(); this.setState({ selIsland:id, selCards:[], selRel:null, selectedId:null, openMenu:null, ctx:{ open:true, kind:'island', x:e.clientX, y:e.clientY, cardId:null, islandId:id, subOpen:false } }); }
+  openRelContext(id, e) { e.preventDefault(); e.stopPropagation(); this.setState({ selRel:id, selCards:[], selIsland:null, selectedId:null, openMenu:null, ctx:{ open:true, kind:'relation', x:e.clientX, y:e.clientY, cardId:null, relId:id, subOpen:false } }); }
+  bulkSet(fn, msg) {
+    const ids = this.state.selCards; if (!ids.length) return;
+    this.pushHistory();
+    this.setState(s => ({ cards: s.cards.map(c => ids.includes(c.id) ? fn({ ...c }) : c), ctx:{ open:false }, openMenu:null }));
+    this.flashToast(msg);
+  }
+  bulkDelete() {
+    const ids = this.state.selCards; if (!ids.length) return;
+    this.pushHistory();
+    this.setState(s => ({ cards: s.cards.filter(c => !ids.includes(c.id)), selCards:[], selectedId:null, ctx:{ open:false }, openMenu:null }));
+    this.flashToast(ids.length + '件を削除しました（⌘Z/Ctrl+Zで取消）');
+  }
+  bulkGroup() {
+    const ids = this.state.selCards; if (ids.length < 2) { this.flashToast('2枚以上を選択してください'); return; }
+    this.pushHistory();
+    this.setState(s => ({ cards: s.cards.map(c => ids.includes(c.id) ? { ...c, island:true } : c), ctx:{ open:false }, openMenu:null }));
+    this.flashToast(ids.length + '枚を島に束ねました');
+  }
+  relDelete(id) { this.flashToast('関係線を削除しました（プロトタイプ）'); this.setState({ ctx:{ open:false }, selRel:null }); }
+  islandDissolve(id) {
+    this.pushHistory();
+    this.setState(s => ({ cards: s.cards.map(c => ((id==='big') ? (c.island||c.id==='c5') : c.island) ? { ...c, island:false } : c), ctx:{ open:false }, selIsland:null }));
+    this.flashToast('まとまりを解除しました（⌘Z/Ctrl+Zで取消）');
+  }
+  fitView() { this.setState({ zoom:0.55, panX:0, panY:0 }); this.flashToast('全体に合わせました（俯瞰）'); }
+  resetView() { this.setState({ zoom:1, panX:0, panY:0 }); this.flashToast('表示をリセットしました'); }
+  // ---- ドラッグ移動 / 矩形選択（マーキー） ----
+  _toWorld(clientX, clientY) {
+    const el = this._wheelEl || document.querySelector('[data-canvas-wrap]');
+    const r = el ? el.getBoundingClientRect() : { left:0, top:0 };
+    const z = this.state.zoom || 1;
+    return { x:(clientX - r.left - this.state.panX)/z, y:(clientY - r.top - this.state.panY)/z };
+  }
+  cardPointerDown(id, e) {
+    if (e.button !== 0) return;
+    if (this.state.editingId === id) return;
+    e.stopPropagation();
+    const targets = this.state.selCards.includes(id) ? this.state.selCards.slice() : [id];
+    this._pending = { id, startX:e.clientX, startY:e.clientY, moved:false, targets, alt:e.altKey,
+                      modSelect:(e.ctrlKey||e.metaKey||e.shiftKey) };
+    // モバイル: ロングプレスでコンテキストメニュー
+    if (e.pointerType === 'touch') {
+      this._lpTimer = setTimeout(() => { if (this._pending && !this._pending.moved) { this.openContext(id, { preventDefault(){}, stopPropagation(){}, clientX:e.clientX, clientY:e.clientY }); this._pending=null; } }, 500);
+    }
+  }
+  startConnect(id, e) { if(e) e.stopPropagation(); this.setState({ connectFrom:id }); this.flashToast('つなぎ先のカードをクリック（Escで取消）'); }
+  canvasPointerDown(e) {
+    if (e.button !== 0 || e.target !== e.currentTarget) return;
+    const w = this._toWorld(e.clientX, e.clientY);
+    this._marquee = { x0:w.x, y0:w.y, x1:w.x, y1:w.y, add:e.shiftKey, active:true };
+    this._mqStartScreen = { x:e.clientX, y:e.clientY };
+    this.setState({ marquee:{ left:e.clientX, top:e.clientY, w:0, h:0 } });
+  }
+  _pointerMove(e) {
+    if (this._pending) {
+      const dx = e.clientX - this._pending.startX, dy = e.clientY - this._pending.startY;
+      if (!this._pending.moved && Math.hypot(dx,dy) < 4) return;
+      if (this._lpTimer) { clearTimeout(this._lpTimer); this._lpTimer = null; }
+      if (!this._pending.moved) {
+        this._pending.moved = true;
+        this.pushHistory();
+        this._dragTargets = this._pending.targets.slice();
+        if (this._pending.alt) this._duplicateForDrag();
+        this._origPos = {};
+        this.state.cards.forEach(c => { if (this._dragTargets.includes(c.id)) this._origPos[c.id] = { x:c.x, y:c.y }; });
+      }
+      const z = this.state.zoom || 1; let wdx = dx/z, wdy = dy/z;
+      if (e.shiftKey) { if (Math.abs(dx) > Math.abs(dy)) wdy = 0; else wdx = 0; }   // Shift=軸固定
+      const tg = this._dragTargets;
+      this.setState(s => ({ cards: s.cards.map(c => tg.includes(c.id) && this._origPos[c.id]
+        ? { ...c, x:this._origPos[c.id].x + wdx, y:this._origPos[c.id].y + wdy } : c) }));
+      return;
+    }
+    if (this._marquee && this._marquee.active) {
+      const w = this._toWorld(e.clientX, e.clientY);
+      this._marquee.x1 = w.x; this._marquee.y1 = w.y;
+      const sx = this._mqStartScreen;
+      this.setState({ marquee:{ left:Math.min(sx.x,e.clientX), top:Math.min(sx.y,e.clientY), w:Math.abs(e.clientX-sx.x), h:Math.abs(e.clientY-sx.y) } });
+    }
+  }
+  _duplicateForDrag() {
+    let nid = this.state.nextId; const dups = []; const newIds = [];
+    this._pending.targets.forEach(tid => { const src = this.state.cards.find(c=>c.id===tid); if(!src) return; const id='c'+nid++; newIds.push(id); dups.push({ ...JSON.parse(JSON.stringify(src)), id, island:false }); });
+    this._dragTargets = newIds;
+    this.setState(s => ({ cards:[...s.cards, ...dups], nextId:nid, selCards:newIds, selectedId:newIds[newIds.length-1] }));
+    this.flashToast('複製してドラッグ中');
+  }
+  // 島のメンバーシップをドラッグ後に再判定（距離の二重閾値で「広がる/外れる」を両立、ヒステリシス）
+  // 近い(JOIN)=島に加わり島が広がる / 遠い(LEAVE超)=島から外れる / 中間=現状維持（誤爆防止）
+  _resolveMembership(draggedIds) {
+    const JOIN = 56, LEAVE = 150, CW = 206, CH = 92;
+    let joined = 0, left = 0;
+    this.setState(s => {
+      const others = s.cards.filter(c => c.island && !draggedIds.includes(c.id));
+      let box = null;
+      if (others.length) {
+        box = { minX:Math.min(...others.map(c=>c.x)), minY:Math.min(...others.map(c=>c.y)),
+                maxX:Math.max(...others.map(c=>c.x+CW)), maxY:Math.max(...others.map(c=>c.y+CH)) };
+      }
+      const nearBy = (c, m) => { if (!box) return false; const cx=c.x+CW/2, cy=c.y+CH/2;
+        return cx > box.minX-m && cx < box.maxX+m && cy > box.minY-m && cy < box.maxY+m; };
+      const cards = s.cards.map(c => {
+        if (!draggedIds.includes(c.id)) return c;
+        if (c.island) { if (!nearBy(c, LEAVE)) { left++; return { ...c, island:false }; } return c; }
+        else { if (nearBy(c, JOIN)) { joined++; return { ...c, island:true }; } return c; }
+      });
+      return { cards };
+    });
+    if (joined && left) return joined+'枚が島に加入・'+left+'枚が離脱';
+    if (joined) return joined+'枚を島に加えました（島が広がる）';
+    if (left) return left+'枚を島から外しました';
+    return '';
+  }
+  _pointerUp() {
+    if (this._lpTimer) { clearTimeout(this._lpTimer); this._lpTimer = null; }
+    if (this._pending) {
+      if (this._pending.moved) {
+        const moved = this._dragTargets ? this._dragTargets.slice() : [this._pending.id];
+        const memMsg = this._resolveMembership(moved);
+        const base = this._pending.alt ? '複製して移動しました' : '移動しました';
+        this.flashToast((memMsg ? memMsg + ' ・ ' : '') + base + '（⌘Z/Ctrl+Zで取消）');
+      }
+      this._pending = null; this._dragTargets = null; this._origPos = {};
+      return;
+    }
+    if (this._marquee && this._marquee.active) {
+      const m = this._marquee; this._marquee = null;
+      const L=Math.min(m.x0,m.x1), R=Math.max(m.x0,m.x1), T=Math.min(m.y0,m.y1), B=Math.max(m.y0,m.y1);
+      if (Math.abs(R-L) < 6 && Math.abs(B-T) < 6) { this.setState({ marquee:null }); return; }
+      const hit = this.state.cards.filter(c => !(c.x>R || c.x+206<L || c.y>B || c.y+92<T)).map(c=>c.id);
+      this.setState(s => ({ marquee:null, selCards: m.add ? Array.from(new Set(s.selCards.concat(hit))) : hit,
+        selIsland:null, selRel:null, selectedId: hit[hit.length-1]||null }));
+      this.flashToast(hit.length ? (hit.length+'件を選択しました') : '範囲内にカードがありません');
+    }
+  }
+  // まとまりを整える: メンバーを密なグリッドに再配置し、島の描線複雑さを最小化（可逆・人間が起動）
+  tidyIsland(scope) {
+    this.pushHistory();
+    this.setState(s => {
+      const inIsland = s.cards.filter(c => c.island);
+      const targetIds = (scope === 'big')
+        ? s.cards.filter(c => c.island || c.id === 'c5').map(c=>c.id)
+        : inIsland.map(c=>c.id);
+      if (!targetIds.length) return {};
+      const members = s.cards.filter(c => targetIds.includes(c.id));
+      const ax = Math.min(...members.map(c=>c.x));
+      const ay = Math.min(...members.map(c=>c.y));
+      // 描線複雑さを最小化する列数: なるべく余り（部分行）が出ない約数を選ぶ
+      const n = members.length;
+      let cols = Math.ceil(Math.sqrt(n));
+      for (let k = Math.ceil(Math.sqrt(n)); k <= n; k++) { if (n % k === 0) { cols = k; break; } }
+      const COLW = 226, ROWH = 112;
+      let i = 0;
+      const order = members.slice().sort((a,b)=> (a.y-b.y) || (a.x-b.x)).map(c=>c.id);
+      const pos = {};
+      order.forEach((id, k) => { pos[id] = { x: ax + (k % cols) * COLW, y: ay + Math.floor(k / cols) * ROWH }; });
+      return { cards: s.cards.map(c => pos[c.id] ? { ...c, x:pos[c.id].x, y:pos[c.id].y } : c),
+               ctx:{ ...s.ctx, open:false }, openMenu:null };
+    });
+    this.flashToast('まとまりを整えました（描線を単純化 / ⌘Zで取消）');
+  }
+
+  // ---- inline edit ("書く") ----
+  startEdit(id) { const c=this.state.cards.find(x=>x.id===id); if(!c)return; this.setState({ editingId:id, editingText:c.text, selectedId:id, openMenu:null, ctx:{ open:false, x:0, y:0, cardId:null, subOpen:false } }); }
+  commitEdit() { const { editingId, editingText }=this.state; if(!editingId)return; const c=this.state.cards.find(x=>x.id===editingId); const changed = c && editingText.trim() && editingText!==c.text; this.pushHistory(); this.setState(s=>({ cards:s.cards.map(x=>x.id===editingId?{ ...x, text:(editingText.trim()||x.text) }:x), editingId:null })); if(changed) this.flashToast('カードを編集しました'); }
+  cancelEdit() { this.setState({ editingId:null }); }
+
+  // ---- drawer ----
+  openDrawer(tab) { this.setState({ drawerOpen:true, drawerTab:tab, openMenu:null, paletteOpen:false }); }
+  closeDrawer() { this.setState({ drawerOpen:false }); }
+
+  // ---- menus ----
+  toggleMenu(name) { this.setState(s => ({ openMenu: s.openMenu === name ? null : name })); }
+
+  // ---- palette ----
+  openPalette() { this.setState({ paletteOpen:true, paletteQuery:'', openMenu:null }); }
+  closePalette() { this.setState({ paletteOpen:false, micActive:false }); }
+
+  // ---- VUI (音声入力) ----
+  toggleMic() {
+    // 本番は Web Speech API (webkitSpeechRecognition)。プロトタイプではデモ文を段階入力。
+    if (this.state.micActive) { this.setState({ micActive:false }); return; }
+    this.setState({ micActive:true, paletteQuery:'' });
+    const demo = '未レビューのカードを束ねて保留にして';
+    let i = 0;
+    clearInterval(this._micTimer);
+    this._micTimer = setInterval(() => {
+      i++;
+      this.setState({ paletteQuery: demo.slice(0, i) });
+      if (i >= demo.length) { clearInterval(this._micTimer); this.setState({ micActive:false }); }
+    }, 70);
+  }
+
+  // ---- 自然文 → 操作意図の解釈（AIは候補提示のみ・確定は人間） ----
+  parseIntent(text) {
+    const t = (text || '').toLowerCase();
+    const has = (...ws) => ws.some(w => t.includes(w));
+    const props = [];
+    const sel = this.state.selectedId;
+    const setF = (name) => { this._filters = this._filters || {}; this._filters[name] = true; this.forceUpdate(); };
+    if (has('束ね','まとめ','グループ','島','クラスタ')) {
+      props.push({ icon:'⤢', label:'選択（または未レビュー）を島に束ねる', why:'「束ねる/まとめる」を島の作成と解釈', apply:()=>{ this.makeIsland(); } });
+    }
+    if (has('つな','関係','リンク','結ぶ','矢印')) {
+      let kind = '関係';
+      if (has('因果','原因','結果')) kind='因果';
+      else if (has('対立','反対','矛盾')) kind='対立';
+      else if (has('相互')) kind='相互';
+      props.push({ icon:'↔', label:`関係線でつなぐ（${kind}）`, why:'「つなぐ/関係」を関係線の作成と解釈。種類は任意', apply:()=>{ this.flashToast(`関係線（${kind}）を引きました`); } });
+    }
+    if (has('保留','ペンディング','あとで','決めない')) {
+      props.push({ icon:'⏸', label:'保留にする', why:'「保留/決めない」を保留トグルと解釈。健全な状態として保持', apply:()=>{ if(sel) this.toggleHold(sel); else this.flashToast('対象を選択してから保留にできます'); } });
+    }
+    if (has('違和感','ひっかか','もやもや','気になる')) {
+      props.push({ icon:'〰', label:'違和感を立てる', why:'「違和感/ひっかかり」を違和感マークと解釈', apply:()=>{ if(sel) this.toggleUnclear(sel); else this.flashToast('対象を選択してから違和感を立てられます'); } });
+    }
+    if (has('事実')) props.push({ icon:'■', label:'型を「事実」に変更', why:'claimType=事実 と解釈', apply:()=>{ if(sel) this.setType(sel,'fact'); } });
+    if (has('主張')) props.push({ icon:'■', label:'型を「主張」に変更', why:'claimType=主張 と解釈', apply:()=>{ if(sel) this.setType(sel,'claim'); } });
+    if (has('仮説')) props.push({ icon:'■', label:'型を「仮説」に変更', why:'claimType=仮説 と解釈', apply:()=>{ if(sel) this.setType(sel,'hypothesis'); } });
+    if (has('文章','まとめて書','叙述','b型','書き出し','ナラティブ')) {
+      props.push({ icon:'¶', label:'文章化（B型）を開く', why:'「文章化/書き出し」をB型文章化と解釈。図解→叙述まで進める', apply:()=>{ this.openDrawer('narrative'); } });
+    }
+    if (has('未レビュー','確認が必要','チェック')) {
+      props.push({ icon:'◉', label:'未レビューだけ表示', why:'「未レビュー」を状態フィルタと解釈', apply:()=>{ setF('unreviewed'); this.flashToast('未レビューで絞り込みました'); } });
+    }
+    if (has('新規','追加','書く','作る','カード')) {
+      props.push({ icon:'＋', label:'新規カードを追加', why:'「新規/書く」をカード作成と解釈', apply:()=>{ this.newCard(); } });
+    }
+    if (has('全体','俯瞰','ズームアウト','見渡')) {
+      props.push({ icon:'⊡', label:'全体に合わせる（俯瞰）', why:'「全体/俯瞰」を fit view と解釈', apply:()=>{ this.fitView(); } });
+    }
+    return props;
+  }
+
+  runProposal(p) {
+    // AIは提案するだけ。クリック=人間の確定。操作は履歴に積まれ ⌘Z で可逆。
+    p.apply();
+    this.closePalette();
+    this.flashToast('適用しました（⌘Zで取り消し）');
+  }
+
+  // ---- ヘルプ / ガイド ----
+  toggleHelpMenu() { this.setState(s => ({ helpMenuOpen: !s.helpMenuOpen, openMenu:null })); }
+  startTour() { this.setState({ tourStep:1, helpMenuOpen:false, cheatOpen:false, paletteOpen:false }); }
+  nextTour() { this.setState(s => ({ tourStep: s.tourStep >= 5 ? 0 : s.tourStep + 1 })); }
+  endTour() { this.setState({ tourStep:0 }); }
+
+  // ---- mutations ----
+  toggleHold(id)     { const c=this.state.cards.find(x=>x.id===id); if(!c)return; this.mutateCard(id, x=>({ ...x, hold:!x.hold }), c.hold?'保留を解除しました':'保留にしました'); }
+  toggleUnclear(id)  { const c=this.state.cards.find(x=>x.id===id); if(!c)return; this.mutateCard(id, x=>({ ...x, unclear:!x.unclear }), c.unclear?'違和感を外しました':'違和感を付けました'); }
+  toggleReviewed(id) { const c=this.state.cards.find(x=>x.id===id); if(!c)return; this.mutateCard(id, x=>({ ...x, reviewed:!x.reviewed }), c.reviewed?'未レビューに戻しました':'レビュー済みにしました'); }
+  setType(id, t)     { this.mutateCard(id, x=>({ ...x, type:t }), '主張タイプを変更しました'); this.setState(s=>({ ctx:{ ...s.ctx, subOpen:false, open:false }, openMenu:null })); }
+  newCard() {
+    this.pushHistory();
+    this.setState(s => {
+      const id = 'c' + s.nextId;
+      const card = { id, type:'unknown', text:'新しいカード', hold:false, unclear:false, reviewed:false, tags:0, x:120+(s.nextId*14)%260, y:150+(s.nextId*22)%240, island:false, contra:0, rootOut:0, rootIn:0 };
+      return { cards:[...s.cards, card], nextId:s.nextId+1, selectedId:id, openMenu:null };
+    });
+    this.flashToast('カードを追加しました');
+  }
+  newCardAt(clientX, clientY) {
+    this.pushHistory();
+    const w = this._toWorld(clientX, clientY);
+    this.setState(s => {
+      const id = 'c' + s.nextId;
+      const card = { id, type:'unknown', text:'新しいカード', hold:false, unclear:false, reviewed:false, tags:0, x:Math.round(w.x-103), y:Math.round(w.y-46), island:false, contra:0, rootOut:0, rootIn:0 };
+      return { cards:[...s.cards, card], nextId:s.nextId+1, selectedId:id, selCards:[id], openMenu:null, editingId:id, editingText:'' };
+    });
+    this.flashToast('ここにカードを追加しました（そのまま入力できます）');
+  }
+  canvasDblClick(e) {
+    if (e.target !== e.currentTarget) return;   // 空白部のみ
+    this.newCardAt(e.clientX, e.clientY);
+  }
+  moveSelHere() {
+    const ids = this.state.selCards; if (!ids.length) { this.setState({ ctx:{ open:false } }); return; }
+    const w = this._toWorld(this._lastCtxX||0, this._lastCtxY||0);
+    this.pushHistory();
+    this.setState(s => {
+      const members = s.cards.filter(c => ids.includes(c.id));
+      const ax = Math.min(...members.map(c=>c.x)), ay = Math.min(...members.map(c=>c.y));
+      const dx = (w.x-103) - ax, dy = (w.y-46) - ay;
+      return { cards: s.cards.map(c => ids.includes(c.id) ? { ...c, x:c.x+dx, y:c.y+dy } : c), ctx:{ open:false } };
+    });
+    this.flashToast(ids.length + '件をここへ移動しました（⌘Z/Ctrl+Zで取消）');
+  }
+  duplicate() {
+    const sel = this.selected(); if (!sel) { this.flashToast('カードを選択してください'); this.setState({openMenu:null}); return; }
+    this.pushHistory();
+    this.setState(s => {
+      const id = 'c' + s.nextId;
+      const card = { ...JSON.parse(JSON.stringify(sel)), id, x:sel.x+24, y:sel.y+24, island:false };
+      return { cards:[...s.cards, card], nextId:s.nextId+1, selectedId:id, openMenu:null };
+    });
+    this.flashToast('複製しました');
+  }
+  deleteSel() {
+    const id = this.state.selectedId; if (!id) { this.flashToast('カードを選択してください'); this.setState({openMenu:null}); return; }
+    this.pushHistory();
+    this.setState(s => ({ cards: s.cards.filter(c => c.id !== id), selectedId:null, openMenu:null, ctx:{ ...s.ctx, open:false } }));
+    this.flashToast('削除しました');
+  }
+  makeIsland() { this.setState({ openMenu:null }); this.flashToast('島を作成しました'); }
+  toggleAi() { this.setState(s => ({ aiEnabled: !s.aiEnabled })); this.flashToast(this.state.aiEnabled ? 'AIをオフにしました（手動で完結）' : 'AIをオンにしました（候補生成のみ）'); }
+  setView(m) { this.setState({ viewMode:m, openMenu:null }); }
+
+  // ---- filters ----
+  toggleFilter(name) { this.setState(s => ({ filters: undefined })); } // placeholder, real below via state.filtersSet
+
+  renderVals() {
+    const s = this.state;
+    const T = this.TYPE;
+    // ---- プラットフォーム別ショートカット表記（Mac / Windows / Linux）----
+    const detectPlat = () => {
+      if (s.platform !== 'auto') return s.platform;
+      try {
+        const p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+        if (/mac/i.test(p)) return 'mac';
+        if (/win/i.test(p)) return 'win';
+        if (/linux/i.test(p)) return 'linux';
+      } catch(_) {}
+      return 'win';
+    };
+    const plat = detectPlat();
+    const mod = plat === 'mac' ? '⌘' : 'Ctrl';
+    const alt = plat === 'mac' ? '⌥' : 'Alt';
+    const sft = plat === 'mac' ? '⇧' : 'Shift';
+    const j = (...parts) => parts.join(plat === 'mac' ? '' : '+'); // mac=連結, それ以外は +
+    const K = {
+      undo: j(mod,'Z'), redo: j(mod, sft, 'Z'),
+      newCard: 'N', dup: j(mod,'D'), del: plat==='mac' ? 'Delete' : 'Del', edit: 'Enter / E',
+      palette: j(mod,'K'), drawer: j(mod,'J'), diff: j(mod,'J'),
+      newDoc: j(mod,'N'), save: j(mod,'S'),
+      zoomIn: j(mod,'+'), zoomOut: j(mod,'−'), zoomReset: j(mod,'0'),
+      filter: alt + (plat==='mac'?'':'+') + '1', escClose: 'Esc',
+      group: 'G', link: 'L', hold: 'H', unclear: 'U', reviewed: 'R',
+      tFact: '1', tClaim: '2', tHyp: '3', tUnknown: '0',
+      review: j(alt, sft, '2'),
+    };
+    const TOUR = {
+      1: { title:'1 書く', body:'ダブルクリック、または「＋新規カード」で1枚書きます。正しさは後で。曖昧なままで構いません。' },
+      2: { title:'2 並べる', body:'カードはドラッグで自由に移動。近いものを寄せるだけで、分類の軸は作りません（親近性でボトムアップ）。' },
+      3: { title:'3 束ねる', body:'複数選択して G キー、または右クリック「島を作成」。表札は入れ子にでき、小→中→大へ統合します。' },
+      4: { title:'4 つなぐ', body:'L キー、または右クリック「関係線」。因果→・対立／など種類は任意。付けない「ただのつながり」も可。' },
+      5: { title:'5 保留する', body:'迷ったら H で保留、U で違和感。決めないことは健全な状態です。' + K.palette + ' に自然文で指示もできます。' },
+    };
+    const badge = (t, big) => {
+      const m = T[t] || T.unknown;
+      const fs = big ? '10.5px' : '9.5px';
+      const pd = big ? '2px 8px' : '1px 6px';
+      return `font-size:${fs}; font-weight:600; padding:${pd}; border-radius:4px; background:${m.bg}; color:${m.fg};`;
+    };
+
+    // filters live in a simple set on the instance to avoid clobber
+    if (!this._filters) this._filters = { fact:false, claim:false, hypothesis:false, unreviewed:false, unclear:false };
+    const F = this._filters;
+    const anyTypeF = F.fact || F.claim || F.hypothesis;
+    const matches = (c) => {
+      if (anyTypeF && !((F.fact&&c.type==='fact')||(F.claim&&c.type==='claim')||(F.hypothesis&&c.type==='hypothesis'))) return false;
+      if (F.unreviewed && c.reviewed) return false;
+      if (F.unclear && !c.unclear) return false;
+      return true;
+    };
+    const toggleF = (name) => () => { this._filters[name] = !this._filters[name]; this.forceUpdate(); };
+    const filterChip = (name, on) => `font-size:11px; cursor:pointer; padding:3px 9px; border-radius:999px; border:1px solid ${on?'#93c5fd':'#e2e8f0'}; background:${on?'#eff6ff':'#fff'}; color:${on?'#1d4ed8':'#64748b'}; font-weight:${on?600:400};`;
+
+    const isReview = s.viewMode === 'review';
+    const narrow = s.forceMobile || s.vw < 760;
+
+    const compact = s.scenario === 'large' || s.zoom < 0.62;
+    // ===== 段階的な鳥瞰: 島の大きさ（メンバー数）が多いほど縮小表示までの猶予を大きく =====
+    const _mem0 = s.cards.filter(c => c.island);
+    const _c5 = s.cards.find(c=>c.id==='c5');
+    const _bigCount = _mem0.length + (_c5?1:0);
+    const collapseAtFor = (count) => Math.max(0.40, 0.72 - 0.05*count); // 大きい島ほど低zoom（=より縮小してから）で畳む
+    const smallAt = collapseAtFor(_mem0.length);
+    const bigAt = collapseAtFor(_bigCount);                 // bigAt < smallAt
+    const smallCollapsed = s.zoom < smallAt;
+    const bigCollapsed = s.zoom < bigAt;
+    // カード省略: 内側の島が畳まれたら隠す（親が畳まれれば子も隠す）
+    const memberHidden = (c) => {
+      if (c.island && (smallCollapsed || bigCollapsed)) return true;
+      if (c.id==='c5' && bigCollapsed) return true;
+      return false;
+    };
+    const cards = s.cards.filter(c => !memberHidden(c)).map(c => {
+      const dimmed = !matches(c);
+      const sel = c.id === s.selectedId || s.selCards.includes(c.id);
+      const reviewRing = isReview && (!c.reviewed || c.unclear);
+      const tColor = (T[c.type]||T.unknown).fg;
+      let border = sel ? '2px solid #3b82f6' : (reviewRing ? '1.5px solid #f59e0b' : '1px solid #d7dde5');
+      const style = compact
+        ? `position:absolute; left:${c.x}px; top:${c.y}px; width:128px; background:#fff; border-radius:7px; border:${border}; border-left:3px solid ${tColor}; box-shadow:${sel?'0 4px 12px rgba(37,99,235,0.18)':'0 1px 2px rgba(15,23,42,0.06)'}; opacity:${dimmed?0.25:1}; cursor:pointer; overflow:hidden; transition:opacity .15s; z-index:${sel?3:2};`
+        : `position:absolute; left:${c.x}px; top:${c.y}px; width:206px; background:#fff; border-radius:11px; border:${border}; box-shadow:${sel?'0 6px 18px rgba(37,99,235,0.18)':'0 1px 3px rgba(15,23,42,0.07)'}; opacity:${dimmed?0.3:1}; cursor:pointer; overflow:hidden; transition:opacity .15s, box-shadow .15s, border-color .15s; z-index:${sel?3:2};`;
+      return {
+        id:c.id, text:c.text, typeLabel:(T[c.type]||T.unknown).label, typeBadgeStyle:badge(c.type,false),
+        hold:c.hold, unclear:c.unclear, notReviewed:!c.reviewed, hasTags:c.tags>0, tags:c.tags,
+        hasMemo: !!c.memo,
+        editing: c.id===s.editingId, notEditing: c.id!==s.editingId,
+        compact, full: !compact,
+        selected: sel, connecting: s.connectFrom===c.id,
+        style,
+        onSelect:(e)=>this.selectCard(c.id,e), onContext:(e)=>this.openContext(c.id,e),
+        onDown:(e)=>this.cardPointerDown(c.id,e), onConnect:(e)=>this.startConnect(c.id,e),
+        onDouble:(e)=>{ e.stopPropagation(); this.startEdit(c.id); },
+      };
+    });
+
+    // ===== 島の囲み: 四角形 → 凸包ブロブへ段階シフト（占有面積を抑える）+ ズーム連動LOD =====
+    const mem = s.cards.filter(c => c.island);
+    const c5 = s.cards.find(c=>c.id==='c5');
+    const bigMem = c5 ? mem.concat([c5]) : mem;
+    let island = { label:'確認が残るまとまり', style:'display:none;' };
+    let islandsList = [];      // 四角形フォールバック（小規模時）
+    let islandHulls = [];      // 凸包ブロブ（中〜大規模時）
+    let islandChips = [];      // 低ズーム時の表札チップ
+    let islandsCollapsed = false;
+    const islandCenters = {};  // 代表点（エスカレーション用）
+
+    const cornersOf = (list) => {
+      const pts = [];
+      list.forEach(c => { pts.push({x:c.x,y:c.y},{x:c.x+206,y:c.y},{x:c.x+206,y:c.y+92},{x:c.x,y:c.y+92}); });
+      return pts;
+    };
+    const centroid = (pts) => { const c={x:0,y:0}; pts.forEach(p=>{c.x+=p.x;c.y+=p.y;}); c.x/=pts.length; c.y/=pts.length; return c; };
+
+    // 直交（矩形描線）アウトライン: カード分布をグリッド占有に落とし、境界辺を辿って
+    // 縦横線のみのポリゴンを得る。空白の角を含まないため L字/コの字に動的に凹む。
+    const CELL = 16;
+    const rectilinearPath = (list, margin) => {
+      // 各カードを margin 拡張した矩形でセルを占有
+      const occ = new Set();
+      let gi0=Infinity, gj0=Infinity, gi1=-Infinity, gj1=-Infinity;
+      list.forEach(c => {
+        const L=c.x-margin, T=c.y-margin, R=c.x+206+margin, B=c.y+92+margin;
+        const i0=Math.floor(L/CELL), i1=Math.ceil(R/CELL), j0=Math.floor(T/CELL), j1=Math.ceil(B/CELL);
+        for(let i=i0;i<i1;i++) for(let j=j0;j<j1;j++){ occ.add(i+','+j); }
+        gi0=Math.min(gi0,i0); gi1=Math.max(gi1,i1); gj0=Math.min(gj0,j0); gj1=Math.max(gj1,j1);
+      });
+      const has=(i,j)=>occ.has(i+','+j);
+      // 内部に on の左手側が来る向きで境界の有向辺を収集（y下向き）
+      const edges = new Map(); // key=start "i,j" -> {to}
+      const addEdge=(ax,ay,bx,by)=>{ edges.set(ax+','+ay+'>'+bx+','+by, {ax,ay,bx,by}); };
+      for(let i=gi0;i<=gi1;i++) for(let j=gj0;j<=gj1;j++){
+        if(!has(i,j)) continue;
+        if(!has(i,j-1)) addEdge(i+1,j, i,j);     // top  (右→左)
+        if(!has(i,j+1)) addEdge(i,j+1, i+1,j+1); // bottom(左→右)
+        if(!has(i-1,j)) addEdge(i,j, i,j+1);     // left (上→下)
+        if(!has(i+1,j)) addEdge(i+1,j+1, i+1,j); // right(下→上)
+      }
+      if(!edges.size) return { d:'', loops:[] };
+      // 始点でチェイン化してループを作る
+      const startMap = new Map();
+      edges.forEach(e=>{ const k=e.ax+','+e.ay; (startMap.get(k)||startMap.set(k,[]).get(k)).push(e); });
+      const used = new Set();
+      const loops = [];
+      edges.forEach(e0=>{
+        const id0=e0.ax+','+e0.ay+'>'+e0.bx+','+e0.by;
+        if(used.has(id0)) return;
+        const loop=[]; let cur=e0; let guard=0;
+        while(cur && guard++<10000){
+          const id=cur.ax+','+cur.ay+'>'+cur.bx+','+cur.by;
+          if(used.has(id)) break;
+          used.add(id); loop.push({x:cur.ax*CELL,y:cur.ay*CELL});
+          const outs=startMap.get(cur.bx+','+cur.by)||[];
+          let nxt=outs.find(o=>!used.has(o.ax+','+o.ay+'>'+o.bx+','+o.by));
+          if(!nxt) break;
+          cur=nxt;
+        }
+        if(loop.length>=4) loops.push(loop);
+      });
+      // 同一直線上の冗長点を除去
+      const simplify = (lp)=>{ const out=[]; for(let k=0;k<lp.length;k++){ const a=lp[(k-1+lp.length)%lp.length],b=lp[k],c=lp[(k+1)%lp.length]; const col=(a.x===b.x&&b.x===c.x)||(a.y===b.y&&b.y===c.y); if(!col) out.push(b);} return out; };
+      const simploops = loops.map(simplify);
+      // 角を丸めた直交パス（辺は縦横のまま・角のみ円弧）
+      const roundLoop = (pts, R) => {
+        const n=pts.length; if(n<3) return ''; let d='';
+        for(let i=0;i<n;i++){
+          const P=pts[(i-1+n)%n], V=pts[i], N=pts[(i+1)%n];
+          const inLen=Math.hypot(V.x-P.x,V.y-P.y)||1, outLen=Math.hypot(N.x-V.x,N.y-V.y)||1;
+          const r=Math.min(R, inLen/2, outLen/2);
+          const inx=V.x-(V.x-P.x)/inLen*r, iny=V.y-(V.y-P.y)/inLen*r;
+          const outx=V.x+(N.x-V.x)/outLen*r, outy=V.y+(N.y-V.y)/outLen*r;
+          d += (i===0?'M ':'L ')+inx.toFixed(1)+' '+iny.toFixed(1)+' ';
+          d += 'Q '+V.x.toFixed(1)+' '+V.y.toFixed(1)+' '+outx.toFixed(1)+' '+outy.toFixed(1)+' ';
+        }
+        return d+'Z';
+      };
+      const d = simploops.map(lp=>roundLoop(lp, 14)).join(' ');
+      // 描線複雑さ: 直交単純多角形では (頂点数-4)/2 = 凹み角の数
+      const maxV = Math.max(...simploops.map(lp=>lp.length));
+      const concave = Math.max(0, Math.round((maxV - 4) / 2));
+      // 表札位置: 最上辺の左端
+      let top=loops[0][0]; loops.forEach(lp=>lp.forEach(p=>{ if(p.y<top.y||(p.y===top.y&&p.x<top.x)) top=p; }));
+      return { d, top, concave, loopCount: loops.length };
+    };
+
+    if (mem.length) {
+      islandsCollapsed = bigCollapsed;   // 参考値（互換）
+      const defs = [
+        { id:'big', list:bigMem, label:'導入フェーズ全体', stroke:'#c7d2fe', dash:'7 5', fill:'rgba(238,242,255,0.30)', fg:'#4338ca', tabBg:'#eef2ff', tabBd:'#c7d2fe', margin:40, collapsed:bigCollapsed, z:1 },
+        { id:'small', list:mem, label:'確認が残るまとまり', stroke:'#93c5fd', dash:'0', fill:'rgba(219,234,254,0.20)', fg:'#1d4ed8', tabBg:'#eff6ff', tabBd:'#bfdbfe', margin:18, collapsed:smallCollapsed, z:2 },
+      ];
+      defs.forEach(def => {
+        const count = def.list.length;
+        const ct = centroid(cornersOf(def.list));
+        islandCenters[def.id] = ct;
+        // 親(big)が畳まれたら子(small)チップは出さない（親が代表）。z順は親>子（可視性で管理）。
+        const showChip = def.collapsed && !(def.id==='small' && bigCollapsed);
+        const showHull = !def.collapsed;
+        // 親ラベル/チップを子より前面に（big=高い z）
+        const labelZ = def.id==='big' ? 7 : 6;
+        const chipZ  = def.id==='big' ? 9 : 8;
+        if (showChip) {
+          islandChips.push({
+            id:def.id, label:def.label, count,
+            onSelect:(e)=>this.selectIsland(def.id,e), onDouble:(e)=>{ e.stopPropagation(); this.dblIsland(def.id); }, onContext:(e)=>this.openIslandContext(def.id,e),
+            style:`position:absolute; left:${ct.x}px; top:${ct.y}px; transform:translate(-50%,-50%); z-index:${chipZ}; cursor:pointer; display:flex; align-items:center; gap:6px; width:158px; box-sizing:border-box; background:${def.tabBg}; border:1px solid ${def.tabBd}; color:${def.fg}; font-size:12px; font-weight:700; padding:7px 10px; border-radius:8px; box-shadow:0 1px 3px rgba(15,23,42,0.12);`,
+          });
+        }
+        if (showHull) {
+          const r = rectilinearPath(def.list, def.margin);
+          const tp = r.top || {x:ct.x, y:ct.y};
+          const cplxLabel = r.concave<=0 ? '矩形' : (r.concave===1 ? 'L字' : (r.concave===2 ? 'コの字' : '複雑('+r.concave+')'));
+          const cplxColor = r.concave<=0 ? '#15803d' : (r.concave<=2 ? '#b45309' : '#b91c1c');
+          const selisl = s.selIsland === def.id;
+          islandHulls.push({
+            id:def.id, d:r.d, stroke: selisl ? '#2563eb' : def.stroke, dash:def.dash, fill: selisl ? 'rgba(37,99,235,0.10)' : def.fill, count, label:def.label,
+            width: selisl ? 2.5 : 1.5, z: def.z,
+            concave:r.concave, cplxLabel, complex: r.concave>=3,
+            onSelect:(e)=>this.selectIsland(def.id,e), onDouble:(e)=>{ e.stopPropagation(); this.dblIsland(def.id); }, onContext:(e)=>this.openIslandContext(def.id,e),
+            labelStyle:`position:absolute; left:${tp.x + 10}px; top:${tp.y - 12}px; z-index:${labelZ}; cursor:pointer; display:flex; align-items:center; gap:6px; background:${def.tabBg}; border:1px solid ${def.tabBd}; color:${def.fg}; font-size:11px; font-weight:700; padding:1px 10px; border-radius:6px; white-space:nowrap;`,
+            cplxStyle:`font-size:9px; font-weight:600; color:${cplxColor}; background:rgba(255,255,255,0.7); border-radius:4px; padding:0 5px;`,
+          });
+        }
+      });
+    }
+    const hasHulls = islandHulls.length > 0;
+    const hasChips = islandChips.length > 0;
+
+    // 関係記号付きの関係線。カード/島どちらも端点にできる。normalシナリオのみ。
+    const cardCenter = (id) => { const c = s.cards.find(x=>x.id===id); if(!c) return null; const W = compact?128:206, H = compact?32:92; return { x:c.x+W/2, y:c.y+H/2 }; };
+    // カードが現ズームで可視の島チップ/囲みに代表されるか（親優先）。非表示かつ代表なし→null
+    const repVisibleIsland = (cardId) => {
+      const c = s.cards.find(x=>x.id===cardId);
+      if (!c) return null;
+      const isSmallMember = !!c.island;
+      const isBigMember = isSmallMember || cardId==='c5';
+      if (bigCollapsed && isBigMember) return 'big';
+      if (smallCollapsed && isSmallMember) return 'small';
+      return null;
+    };
+    // 端点を解決: 可視カード→カード中心 / 非表示カード→代表島（あれば）/ 代表なし→null
+    const resolveAnchor = (ref) => {
+      if (ref.island) { const ct = islandCenters[ref.island]; return ct ? { pt:ct, kind:'island', key:ref.island, escalated:false } : null; }
+      const c = s.cards.find(x=>x.id===ref.card);
+      if (!c) return null;
+      if (memberHidden(c)) {
+        const rep = repVisibleIsland(ref.card);
+        if (rep && islandCenters[rep]) return { pt:islandCenters[rep], kind:'island', key:rep, escalated:true };
+        return null;   // 非表示かつ代表島なし → 関係線は描かない
+      }
+      const pt = cardCenter(ref.card);
+      return pt ? { pt, kind:'card', key:ref.card, escalated:false } : null;
+    };
+    const REL_DEFS = [
+      { from:{card:'c1'}, to:{card:'c2'}, type:'cause' },
+      { from:{card:'c3'}, to:{card:'c4'}, type:'mutual' },
+      { from:{card:'c2'}, to:{card:'c4'}, type:'contra' },
+    ].concat((s.userRels||[]).map(u => ({ from:{card:u.from}, to:{card:u.to}, type:u.type, user:true })));
+    const REL_STYLE = {
+      relate: { stroke:'#94a3b8', dash:'0',   glyph:'—', color:'#64748b', label:'関連' },
+      cause:  { stroke:'#0ea5e9', dash:'0',   glyph:'→',  color:'#0369a1', label:'因果' },
+      mutual: { stroke:'#0ea5e9', dash:'0',   glyph:'⇄',  color:'#0369a1', label:'相互' },
+      contra: { stroke:'#ef4444', dash:'5 4', glyph:'／',  color:'#b91c1c', label:'対立' },
+      equiv:  { stroke:'#94a3b8', dash:'0',   glyph:'＝',  color:'#64748b', label:'同値' },
+    };
+    // --- 障害物（カード矩形）を避ける自然な最短経路。直線が交差すれば曲線で迂回 ---
+    const cardRect = (id) => { const c=s.cards.find(x=>x.id===id); if(!c) return null; const W=compact?128:206,H=compact?32:92; return {x:c.x,y:c.y,w:W,h:H,cx:c.x+W/2,cy:c.y+H/2}; };
+    const segHitsRect = (ax,ay,bx,by,r,pad) => {
+      const x0=r.x-pad, y0=r.y-pad, x1=r.x+r.w+pad, y1=r.y+r.h+pad;
+      // Liang–Barsky
+      let t0=0,t1=1; const dx=bx-ax, dy=by-ay;
+      const p=[-dx,dx,-dy,dy], q=[ax-x0,x1-ax,ay-y0,y1-ay];
+      for(let i=0;i<4;i++){ if(p[i]===0){ if(q[i]<0) return false; } else { const t=q[i]/p[i]; if(p[i]<0){ if(t>t1) return false; if(t>t0) t0=t; } else { if(t<t0) return false; if(t<t1) t1=t; } } }
+      return t1>t0;
+    };
+    this._relBaseType = this._relBaseType || {};
+    this._relTypeOverride = this._relTypeOverride || {};
+    let routeComplexity = 0;
+    // パス1: 端点解決。どちらかが非表示で代表もなければ除外（点1: いずれかのカード非表示→線も非表示）。
+    const resolved = (s.scenario === 'normal') ? REL_DEFS.map((rd,i) => {
+      const rid = 'r'+i;
+      this._relBaseType[rid] = rd.type;
+      const rtype = this._relTypeOverride[rid] || rd.type;
+      const A = resolveAnchor(rd.from), B = resolveAnchor(rd.to);
+      if (!A || !B) return null;
+      if (A.kind==='island' && B.kind==='island' && A.key===B.key) return null; // 島内部に集約→非表示
+      const escalated = A.escalated || B.escalated || A.kind==='island' || B.kind==='island';
+      return { rid, rtype, A, B, escalated, fromCard:rd.from.card, toCard:rd.to.card };
+    }).filter(Boolean) : [];
+    // パス2: エスカレーションした関係は無方向の汎用線に縮退。同一の島ペアは1本へ統合し件数を統計表示（点3）。
+    const escCount = {};
+    resolved.forEach(r => { if (r.escalated) { const k=[r.A.key,r.B.key].sort().join('|'); escCount[k]=(escCount[k]||0)+1; } });
+    const escSeen = {};
+    const relations = resolved.map(r => {
+      const { rid, A, B, escalated } = r;
+      if (escalated) { const k=[A.key,B.key].sort().join('|'); if (escSeen[k]) return null; escSeen[k]=true; }
+      const rtype = escalated ? 'relate' : r.rtype;  // 縮退時は種類を示さず汎用「関連」
+      const st = REL_STYLE[rtype];
+      const a = A.pt, b = B.pt;
+      const selr = s.selRel === rid;
+      const endIds = [r.fromCard, r.toCard].filter(Boolean);
+      const obstacles = s.cards.filter(c => !endIds.includes(c.id) && !memberHidden(c)).map(c=>cardRect(c.id)).filter(Boolean);
+      const blockers = obstacles.filter(rr => segHitsRect(a.x,a.y,b.x,b.y,rr,8));
+      let d, mx, my, detour=0;
+      if (!blockers.length) {
+        d = `M ${a.x} ${a.y} L ${b.x} ${b.y}`; mx=(a.x+b.x)/2; my=(a.y+b.y)/2;
+      } else {
+        detour = blockers.length; routeComplexity += blockers.length;
+        const mxs=(a.x+b.x)/2, mys=(a.y+b.y)/2;
+        let nearest=blockers[0], nd=Infinity;
+        blockers.forEach(rr=>{ const dd=(rr.cx-mxs)**2+(rr.cy-mys)**2; if(dd<nd){nd=dd;nearest=rr;} });
+        let nx=-(b.y-a.y), ny=(b.x-a.x); const nl=Math.hypot(nx,ny)||1; nx/=nl; ny/=nl;
+        const side = ((nearest.cx-mxs)*nx + (nearest.cy-mys)*ny) > 0 ? -1 : 1;
+        const half = Math.max(nearest.w, nearest.h)/2 + 26;
+        const cxp = mxs + nx*side*half, cyp = mys + ny*side*half;
+        d = `M ${a.x} ${a.y} Q ${cxp.toFixed(1)} ${cyp.toFixed(1)} ${b.x} ${b.y}`;
+        mx = 0.25*a.x + 0.5*cxp + 0.25*b.x; my = 0.25*a.y + 0.5*cyp + 0.25*b.y;
+      }
+      const aggN = escalated ? (escCount[[A.key,B.key].sort().join('|')]||1) : 0;
+      const showLabel = escalated ? (aggN>1) : true;   // 縮退で単一なら記号を出さない（汎用線のみ）
+      const labelText = escalated ? (aggN>1 ? '関連'+aggN : '') : st.glyph;
+      return {
+        id:rid, d, stroke:st.stroke, dash:escalated?'4 3':st.dash, detour,
+        width: selr ? 3 : 1.6,
+        markerEnd: (escalated||rtype==='equiv'||rtype==='relate') ? '' : (st.stroke==='#ef4444' ? 'url(#arw-red)' : 'url(#arw-sky)'),
+        markerStart: (!escalated && rtype==='mutual') ? (st.stroke==='#ef4444' ? 'url(#arw-red-s)' : 'url(#arw-sky-s)') : '',
+        glyph: labelText, showLabel,
+        onSelect:(e)=>this.selectRelation(rid,e),
+        onDouble:(e)=>{ e.stopPropagation(); if(!escalated) this.dblRelation(rid); },
+        onContext:(e)=>{ if(!escalated) this.openRelContext(rid,e); },
+        labelW: escalated ? 34 : 18,
+        labelStyle:`position:absolute; left:${mx - (escalated?17:9)}px; top:${my - 9}px; ${escalated?'':'width:18px;'} height:18px; padding:${escalated?'0 6px':'0'}; display:${showLabel?'flex':'none'}; align-items:center; justify-content:center; font-size:${escalated?'9.5px':'11px'}; font-weight:700; color:${st.color}; background:${selr?'#dbeafe':(escalated?'#f1f5f9':'#fff')}; border:${selr?'2px':'1px'} solid ${escalated?'#cbd5e1':st.stroke}; border-radius:${escalated?'999px':'5px'}; z-index:3; cursor:${escalated?'default':'pointer'};`,
+      };
+    }).filter(Boolean);
+    const hasRelations = relations.length > 0;
+
+    const selObj = this.selected();
+    const hasSel = !!selObj;
+    const counts = {
+      fact: s.cards.filter(c=>c.type==='fact').length,
+      claim: s.cards.filter(c=>c.type==='claim').length,
+      hypothesis: s.cards.filter(c=>c.type==='hypothesis').length,
+      unreviewed: s.cards.filter(c=>!c.reviewed).length,
+    };
+
+    const tabStyle = (key) => {
+      const on = s.drawerTab === key;
+      return `flex:1; font-size:11.5px; font-weight:${on?600:400}; color:${on?'#3730a3':'#64748b'}; background:${on?'#eef2ff':'transparent'}; border:1px solid ${on?'#c7d2fe':'transparent'}; border-radius:7px; padding:6px;`;
+    };
+    const menuStyle = (name) => {
+      const on = s.openMenu === name;
+      return `font-size:12.5px; color:#334155; background:${on?'#eef2ff':'transparent'}; border:1px solid ${on?'#c7d2fe':'transparent'}; border-radius:6px; padding:5px 11px;`;
+    };
+
+    const ctxCard = s.cards.find(c => c.id === s.ctx.cardId);
+    const ctxStyle = `position:fixed; left:${Math.min(s.ctx.x, (window.innerWidth||1200)-250)}px; top:${Math.min(s.ctx.y, (window.innerHeight||700)-330)}px; width:236px; background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 14px 36px rgba(15,23,42,0.18); padding:6px; z-index:70; animation:popIn .12s ease;`;
+
+    // command palette
+    const allCmds = [
+      { icon:'▸', label:'作業ドロワーを開く（差分）', hint:K.diff, run:()=>this.openDrawer('diff') },
+      { icon:'▦', label:'まとまりを整える（描線を単純化）', hint:'', run:()=>{ this.tidyIsland('big'); this.closePalette(); } },
+      { icon:'◧', label:'選択を保留にする', hint:'保留', run:()=>{ this.toggleHold(s.selectedId); this.closePalette(); } },
+      { icon:'◷', label:'選択に違和感を付ける', hint:'違和感', run:()=>{ this.toggleUnclear(s.selectedId); this.closePalette(); } },
+      { icon:'◑', label:'確認ビューに切替', hint:'⌥⇧2', run:()=>{ this.setView('review'); this.closePalette(); } },
+      { icon:'▦', label:'探索ビューに切替', hint:'', run:()=>{ this.setView('explore'); this.closePalette(); } },
+      { icon:'＋', label:'新規カードを追加', hint:'N', run:()=>{ this.newCard(); this.closePalette(); } },
+      { icon:'⤢', label:'島を作成', hint:'', run:()=>{ this.makeIsland(); this.closePalette(); } },
+      { icon:'⤴', label:'共有と再現を開く（SafeMode確認）', hint:'', run:()=>{ this.flashToast('共有と再現（プロトタイプ）'); this.closePalette(); } },
+      { icon:'✦', label:'クラスタの自動下書き（AI候補）', hint: s.aiEnabled?'AI: オン':'AI: オフ', run:()=>{ this.openDrawer('ai'); } },
+      { icon:'⟲', label:'直前の操作を取り消す', hint:K.undo, run:()=>{ this.undo(); this.closePalette(); } },
+    ];
+    const q = s.paletteQuery.trim();
+    const results = q ? allCmds.filter(c => c.label.toLowerCase().includes(q.toLowerCase())) : allCmds;
+    // 自然文の解釈（コマンドに直接一致しない入力を意図として解釈）
+    const nlProposals = (q.length >= 2 && results.length === 0) ? this.parseIntent(q) : [];
+    const showNl = nlProposals.length > 0;
+
+    const act = {
+      newDoc:()=>{ this.flashToast('新規文書（プロトタイプ）'); this.setState({openMenu:null}); },
+      openSample:()=>{ this.flashToast('サンプルを開きました'); this.setState({openMenu:null}); },
+      save:()=>{ this.flashToast('保存しました'); this.setState({openMenu:null}); },
+      legacy:()=>{ this.flashToast('旧式JSON（互換のため維持）'); this.setState({openMenu:null}); },
+      undo:()=>this.undo(),
+      duplicate:()=>this.duplicate(),
+      deleteSel:()=>this.deleteSel(),
+      newCard:()=>this.newCard(),
+      makeIsland:()=>this.makeIsland(),
+      typeFact:()=>this.setType(s.selectedId,'fact'),
+      typeClaim:()=>this.setType(s.selectedId,'claim'),
+      typeHyp:()=>this.setType(s.selectedId,'hypothesis'),
+      typeUnknown:()=>this.setType(s.selectedId,'unknown'),
+      toggleHold:()=>{ this.toggleHold(s.selectedId); this.setState({openMenu:null}); },
+      toggleUnclear:()=>{ this.toggleUnclear(s.selectedId); this.setState({openMenu:null}); },
+      toggleReviewed:()=>this.toggleReviewed(s.selectedId),
+      viewExplore:()=>this.setView('explore'),
+      viewReview:()=>this.setView('review'),
+      viewSummary:()=>this.setView('summary'),
+      openDiff:()=>this.openDrawer('diff'),
+      openMerge:()=>this.openDrawer('merge'),
+      openAi:()=>this.openDrawer('ai'),
+      openDiag:()=>this.openDrawer('diag'),
+      openNarrative:()=>this.openDrawer('narrative'),
+      share:()=>{ this.flashToast('共有と再現（プロトタイプ）'); this.setState({openMenu:null}); },
+      closeDrawer:()=>this.closeDrawer(),
+      closePalette:()=>this.closePalette(),
+      paletteInput:(e)=>this.setState({ paletteQuery: e.target.value }),
+      undo2:()=>this.undo(),
+    };
+
+    const holdOn = selObj && selObj.hold;
+    const unclearOn = selObj && selObj.unclear;
+
+    return {
+      onRootClick:()=>this.rootClick(),
+      onCanvasClick:(e)=>this.canvasBgClick(e),
+      onOpenPalette:(e)=>{ if(e)e.stopPropagation(); this.openPalette(); },
+      stop:(e)=>e.stopPropagation(),
+      editingText:s.editingText,
+      onEditInput:(e)=>this.setState({ editingText:e.target.value }),
+      onEditKey:(e)=>{ if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); this.commitEdit(); } else if(e.key==='Escape'){ e.stopPropagation(); this.cancelEdit(); } },
+      onEditBlur:()=>this.commitEdit(),
+      onEditClick:(e)=>e.stopPropagation(),
+      cards, island, islandsList, islandHulls, islandChips, hasHulls, hasChips, relations, hasRelations,
+      counts,
+      hasSelection: hasSel, noSelection: !hasSel,
+      sel: selObj ? {
+        text:selObj.text, typeLabel:(T[selObj.type]||T.unknown).label, typeBadgeStyle:badge(selObj.type,true),
+        hold:selObj.hold, unclear:selObj.unclear, notReviewed:!selObj.reviewed,
+        hasContradiction: selObj.contra>0, contradiction:selObj.contra, rootOut:selObj.rootOut, rootIn:selObj.rootIn,
+        hasMemo: !!selObj.memo, memo: selObj.memo || '',
+        nextHint: (()=>{
+          if (!selObj.reviewed) return '未レビューです。確認したら R でレビュー済みに。迷うなら H で保留のままでもOK。';
+          if (selObj.unclear) return '違和感あり。言語化できたらメモに残すか、関係線で対立（／）をつなげます。';
+          if (selObj.type==='unknown') return 'まだ型が未確定。事実=1 / 主張=2 / 仮説=3。決めかねるなら不明のままで構いません。';
+          return '次の一手: G で近いカードと束ねる、L で関係線、U で違和感、H で保留。';
+        })(),
+      } : { text:'', typeLabel:'', typeBadgeStyle:'', hold:false, unclear:false, notReviewed:false, hasContradiction:false, contradiction:0, rootOut:0, rootIn:0, hasMemo:false, memo:'', nextHint:'' },
+      holdBtnStyle:`flex:1; font-size:11.5px; font-weight:${holdOn?600:400}; color:${holdOn?'#a16207':'#64748b'}; background:${holdOn?'#fef9c3':'#f8fafc'}; border:1px solid ${holdOn?'#fde68a':'#e2e8f0'}; border-radius:7px; padding:7px;`,
+      unclearBtnStyle:`flex:1; font-size:11.5px; font-weight:${unclearOn?600:400}; color:${unclearOn?'#b45309':'#64748b'}; background:${unclearOn?'#fef3c7':'#f8fafc'}; border:1px solid ${unclearOn?'#fcd34d':'#e2e8f0'}; border-radius:7px; padding:7px;`,
+      reviewedBtnLabel: (selObj && selObj.reviewed) ? '未レビューに戻す' : 'レビュー済みに',
+
+      narrow,
+      shellStyle:`height:100vh; min-height:560px; display:flex; align-items:stretch; justify-content:center; background:${s.forceMobile?'#1f2933':'#eceef1'};`,
+      appFrameStyle:`position:relative; display:flex; flex-direction:column; overflow:hidden; background:#eceef1; user-select:none; ${s.forceMobile?'width:390px; height:min(820px,100vh); border-radius:20px; box-shadow:0 0 0 1px #cbd5e1, 0 24px 60px rgba(0,0,0,0.45);':'width:100%; height:100%;'}`,
+      bodyRowStyle: narrow ? 'flex:1 1 auto; display:flex; flex-direction:column; min-height:0; position:relative;' : 'flex:1 1 auto; display:flex; min-height:0; position:relative;',
+      canvasWrapStyle: narrow
+        ? `flex:0 0 320px; position:relative; overflow:hidden; background:#f8fafc; background-image:radial-gradient(#e3e8ef 1px, transparent 1px); background-size:22px 22px;`
+        : 'flex:1 1 auto; position:relative; overflow:hidden; background:#f8fafc; background-image:radial-gradient(#e3e8ef 1px, transparent 1px); background-size:22px 22px;',
+      rightPanelStyle: narrow
+        ? 'flex:1 1 auto; min-height:0; border-top:1px solid #e2e8f0; background:#fff; overflow:auto; padding:13px;'
+        : 'flex:0 0 312px; border-left:1px solid #e2e8f0; background:#fff; overflow:auto; padding:14px;',
+      headerRowStyle: narrow ? 'display:flex; align-items:center; gap:10px; padding:9px 14px 7px; overflow-x:auto;' : 'display:flex; align-items:center; gap:10px; padding:9px 14px 7px;',
+      menuRowStyle: narrow ? 'display:flex; align-items:center; gap:2px; padding:0 10px 7px; overflow-x:auto;' : 'display:flex; align-items:center; gap:2px; padding:0 10px 7px; flex-wrap:wrap;',
+      drawerStyle: narrow
+        ? `position:absolute; left:0; right:0; bottom:0; height:${s.drawerOpen?'52vh':'0px'}; overflow:hidden; transition:height .24s ease; background:#fff; z-index:30; border-top-left-radius:16px; border-top-right-radius:16px; box-shadow:0 -12px 30px rgba(15,23,42,0.2);`
+        : `flex:0 0 auto; width:${s.drawerOpen?'368px':'0px'}; overflow:hidden; transition:width .22s ease; background:#fff;`,
+      headerRowClass: narrow ? 'hsc' : '',
+      menuRowClass: narrow ? 'hsc' : '',
+      drawerInnerStyle: narrow
+        ? 'width:100%; height:100%; display:flex; flex-direction:column; border-top:2px solid #6366f1; background:#fff;'
+        : 'width:368px; height:100%; display:flex; flex-direction:column; border-left:2px solid #6366f1; background:#fff;',
+      widthAuto:{ onClick:(e)=>{e.stopPropagation();this.setForceMobile(false);}, style:`font-size:11px; padding:4px 9px; border-radius:6px 0 0 6px; border:1px solid #e2e8f0; cursor:pointer; background:${s.forceMobile?'#fff':'#eef2ff'}; color:${s.forceMobile?'#64748b':'#3730a3'}; font-weight:${s.forceMobile?400:600};` },
+      widthMobile:{ onClick:(e)=>{e.stopPropagation();this.setForceMobile(true);}, style:`font-size:11px; padding:4px 9px; border-radius:0 6px 6px 0; border:1px solid #e2e8f0; border-left:none; cursor:pointer; background:${s.forceMobile?'#eef2ff':'#fff'}; color:${s.forceMobile?'#3730a3':'#64748b'}; font-weight:${s.forceMobile?600:400};` },
+      drawerTargetLabel: selObj ? selObj.text : '対象未選択',
+      isDiff:s.drawerTab==='diff', isMerge:s.drawerTab==='merge', isAi:s.drawerTab==='ai', isDiag:s.drawerTab==='diag', isNarrative:s.drawerTab==='narrative',
+      tabs:{ diff:{style:tabStyle('diff')}, merge:{style:tabStyle('merge')}, ai:{style:tabStyle('ai')}, diag:{style:tabStyle('diag')}, narrative:{style:tabStyle('narrative')} },
+      narrative: (()=>{
+        const inIsland = s.cards.filter(c=>c.island);
+        const facts = inIsland.filter(c=>c.type==='fact').map(c=>({text:c.text}));
+        const interps = inIsland.filter(c=>c.type!=='fact').map(c=>({text:c.text}));
+        const holds = s.cards.filter(c=>c.hold).length;
+        const unclears = s.cards.filter(c=>c.unclear).length;
+        const open = holds + unclears;
+        return {
+          islandLabel: '確認が残るまとまり',
+          facts: facts.length?facts:[{text:'（この束に事実カードはまだありません）'}],
+          interps: interps.length?interps:[{text:'（主張・仮説はまだありません）'}],
+          openCount: open,
+          openText: open ? `保留 ${holds}件・違和感 ${unclears}件。文章化でも無理に確定せず、未解決として明示します。` : '未解決はありません。',
+        };
+      })(),
+      aiEnabled:s.aiEnabled, aiDisabled:!s.aiEnabled,
+
+      onToggleAi:()=>this.toggleAi(),
+      aiChipLabel: s.aiEnabled ? 'AI: オン ・ 候補生成のみ' : 'AI: オフ ・ 候補生成のみ',
+      aiChipStyle:`font-size:11px; font-weight:600; cursor:pointer; padding:3px 9px; border-radius:999px; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe;`,
+      aiShortLabel: s.aiEnabled ? 'オン' : 'オフ',
+
+      menus:{
+        file:{open:s.openMenu==='file', style:menuStyle('file'), onClick:(e)=>{e.stopPropagation();this.toggleMenu('file');}},
+        edit:{open:s.openMenu==='edit', style:menuStyle('edit'), onClick:(e)=>{e.stopPropagation();this.toggleMenu('edit');}},
+        card:{open:s.openMenu==='card', style:menuStyle('card'), onClick:(e)=>{e.stopPropagation();this.toggleMenu('card');}},
+        view:{open:s.openMenu==='view', style:menuStyle('view'), onClick:(e)=>{e.stopPropagation();this.toggleMenu('view');}},
+        work:{open:s.openMenu==='work', style:menuStyle('work'), onClick:(e)=>{e.stopPropagation();this.toggleMenu('work');}},
+        share:{open:s.openMenu==='share', style:menuStyle('share'), onClick:(e)=>{e.stopPropagation();this.toggleMenu('share');}},
+      },
+      act,
+      selColorOrMuted: hasSel ? '#334155' : '#cbd5e1',
+
+      filters:{
+        fact:{style:filterChip('fact',F.fact), onClick:(e)=>{e.stopPropagation();toggleF('fact')();}},
+        claim:{style:filterChip('claim',F.claim), onClick:(e)=>{e.stopPropagation();toggleF('claim')();}},
+        hypothesis:{style:filterChip('hypothesis',F.hypothesis), onClick:(e)=>{e.stopPropagation();toggleF('hypothesis')();}},
+        unreviewed:{style:filterChip('unreviewed',F.unreviewed), onClick:(e)=>{e.stopPropagation();toggleF('unreviewed')();}},
+        unclear:{style:filterChip('unclear',F.unclear), onClick:(e)=>{e.stopPropagation();toggleF('unclear')();}},
+      },
+
+      viewExploreMark: s.viewMode==='explore'?'✓':'',      viewReviewMark: s.viewMode==='review'?'✓':'',
+      viewSummaryMark: s.viewMode==='summary'?'✓':'',
+      isReviewView: isReview,
+      viewModeLabel: s.viewMode==='review'?'確認ビュー':(s.viewMode==='summary'?'要約':'探索'),
+
+      canvasLayerStyle:`position:absolute; left:0; top:0; transform:translate(${s.panX}px, ${s.panY}px) scale(${s.zoom}); transform-origin:0 0; transition:transform .04s linear; will-change:transform;`,
+      zoomPct: Math.round(s.zoom * 100) + '%',
+      zoomNotDefault: s.zoom !== 1 || s.panX !== 0 || s.panY !== 0,
+      onZoomReset:(e)=>{ if(e)e.stopPropagation(); this.resetView(); },
+      onZoomIn:(e)=>{ if(e)e.stopPropagation(); this.setState(st=>({ zoom: Math.min(1.8, +(st.zoom*1.12).toFixed(3)) })); },
+      onZoomOut:(e)=>{ if(e)e.stopPropagation(); this.setState(st=>({ zoom: Math.max(0.35, +(st.zoom*0.89).toFixed(3)) })); },
+      onCanvasContext:(e)=>this.openCanvasContext(e),
+      ctx:{
+        open:s.ctx.open, style:ctxStyle, subOpen:s.ctx.subOpen,
+        edit:(e)=>{e.stopPropagation();this.startEdit(s.ctx.cardId);},
+        cvNewCard:(e)=>{e.stopPropagation();this.newCard();this.setState(st=>({ctx:{...st.ctx,open:false}}));},
+        cvSelectAll:(e)=>{e.stopPropagation();this.flashToast('すべて選択（⌘A）');this.setState(st=>({ctx:{...st.ctx,open:false}}));},
+        cvFit:(e)=>{e.stopPropagation();this.fitView();this.setState(st=>({ctx:{...st.ctx,open:false}}));},
+        cvTidy:(e)=>{e.stopPropagation();this.tidyIsland('big');},
+        cvReset:(e)=>{e.stopPropagation();this.resetView();this.setState(st=>({ctx:{...st.ctx,open:false}}));},
+        cvLegend:(e)=>{e.stopPropagation();this.toggleLegend();this.setState(st=>({ctx:{...st.ctx,open:false}}));},
+        cvMoveHere:(e)=>{e.stopPropagation();this.moveSelHere();},
+        cvGroupSel:(e)=>{e.stopPropagation();this.bulkGroup();},
+        cvClearSel:(e)=>{e.stopPropagation();this.setState({selCards:[],selIsland:null,selRel:null,selectedId:null,ctx:{open:false}});this.flashToast('選択を解除しました');},
+        toggleType:(e)=>{e.stopPropagation();this.setState(st=>({ctx:{...st.ctx,subOpen:!st.ctx.subOpen}}));},
+        connect:(e)=>{e.stopPropagation();this.flashToast('関係線でつなぐ（つなぎ先を選択）');this.setState(st=>({ctx:{...st.ctx,open:false}}));},
+        island:(e)=>{e.stopPropagation();this.makeIsland();this.setState(st=>({ctx:{...st.ctx,open:false}}));},
+        toggleHold:(e)=>{e.stopPropagation();this.toggleHold(s.ctx.cardId);this.setState(st=>({ctx:{...st.ctx,open:false}}));},
+        toggleUnclear:(e)=>{e.stopPropagation();this.toggleUnclear(s.ctx.cardId);this.setState(st=>({ctx:{...st.ctx,open:false}}));},
+        diff:(e)=>{e.stopPropagation();this.openDrawer('diff');this.setState(st=>({ctx:{...st.ctx,open:false}}));},
+        del:(e)=>{e.stopPropagation();this.deleteSel();},
+        aiLabel: s.aiEnabled ? 'AI候補を見る' : 'AI候補（AI: オフ — 手動で操作）',
+        bulkHold:(e)=>{e.stopPropagation();this.bulkSet(c=>({...c,hold:!c.hold}),s.selCards.length+'件の保留を切替えました');},
+        bulkUnclear:(e)=>{e.stopPropagation();this.bulkSet(c=>({...c,unclear:!c.unclear}),s.selCards.length+'件の違和感を切替えました');},
+        bulkGroup:(e)=>{e.stopPropagation();this.bulkGroup();},
+        bulkDelete:(e)=>{e.stopPropagation();this.bulkDelete();},
+        islRename:(e)=>{e.stopPropagation();this.flashToast('表札を編集（プロトタイプ）');this.setState(st=>({ctx:{...st.ctx,open:false}}));},
+        islTidy:(e)=>{e.stopPropagation();this.tidyIsland(s.ctx.islandId||'big');},
+        islDissolve:(e)=>{e.stopPropagation();this.islandDissolve(s.ctx.islandId||'small');},
+        islDiff:(e)=>{e.stopPropagation();this.openDrawer('diff');this.setState(st=>({ctx:{...st.ctx,open:false}}));},
+        relSetRelate:(e)=>{e.stopPropagation();this.setRelType(s.ctx.relId,'relate');},
+        relSetCause:(e)=>{e.stopPropagation();this.setRelType(s.ctx.relId,'cause');},
+        relSetMutual:(e)=>{e.stopPropagation();this.setRelType(s.ctx.relId,'mutual');},
+        relSetContra:(e)=>{e.stopPropagation();this.setRelType(s.ctx.relId,'contra');},
+        relSetEquiv:(e)=>{e.stopPropagation();this.setRelType(s.ctx.relId,'equiv');},
+        relDelete:(e)=>{e.stopPropagation();this.relDelete(s.ctx.relId);},
+      },
+      // 右クリックメニューの種別フラグ（選択に応じた出し分け）
+      ctxIsCanvas: s.ctx.kind==='canvas',
+      ctxCanvasHasSel: s.ctx.kind==='canvas' && s.selCards.length>0,
+      ctxCanvasSelCount: s.selCards.length,
+      ctxIsCard: s.ctx.kind==='card',
+      ctxIsIsland: s.ctx.kind==='island',
+      ctxIsRel: s.ctx.kind==='relation',
+      ctxMulti: s.ctx.kind==='card' && s.selCards.length>1,
+      ctxSingle: s.ctx.kind==='card' && s.selCards.length<=1,
+      ctxCount: s.selCards.length,
+      // マーキー（矩形選択）
+      marqueeOn: !!s.marquee,
+      marqueeStyle: s.marquee ? `position:fixed; left:${s.marquee.left}px; top:${s.marquee.top}px; width:${s.marquee.w}px; height:${s.marquee.h}px; border:1.5px solid #3b82f6; background:rgba(59,130,246,0.10); z-index:60; pointer-events:none; border-radius:2px;` : 'display:none;',
+      onCanvasDown:(e)=>this.canvasPointerDown(e),
+      onCanvasDbl:(e)=>this.canvasDblClick(e),
+      selCount: s.selCards.length, isMultiSel: s.selCards.length>1,
+
+      paletteOpen:s.paletteOpen, paletteQuery:s.paletteQuery,
+      paletteResults: results.map(c => ({ icon:c.icon, label:c.label, hint:c.hint, onRun:(e)=>{ if(e)e.stopPropagation(); c.run(); } })),
+      paletteEmpty: results.length===0 && !showNl,
+      micActive: s.micActive,
+      micBtnStyle:`font-size:14px; cursor:pointer; border-radius:7px; width:30px; height:28px; display:flex; align-items:center; justify-content:center; border:1px solid ${s.micActive?'#fca5a5':'#e2e8f0'}; background:${s.micActive?'#fef2f2':'#fff'}; ${s.micActive?'animation:pulse 1s ease-in-out infinite;':''}`,
+      onToggleMic:(e)=>{ if(e)e.stopPropagation(); this.toggleMic(); },
+      showNl, nlAllowed: s.aiEnabled,
+      nlBlocked: showNl && !s.aiEnabled,
+      nlProposals: nlProposals.map(p => ({ icon:p.icon, label:p.label, why:p.why, onRun:(e)=>{ if(e)e.stopPropagation(); this.runProposal(p); } })),
+
+      toastShow: !!s.toast, toastMsg: s.toast || '',
+
+      // ---- scenarios / legend ----
+      scenarioNormal:{ onClick:(e)=>{e.stopPropagation();this.setScenario('normal');}, style:this._scenStyle(s.scenario,'normal') },
+      scenarioEmpty:{ onClick:(e)=>{e.stopPropagation();this.setScenario('empty');}, style:this._scenStyle(s.scenario,'empty') },
+      scenarioLarge:{ onClick:(e)=>{e.stopPropagation();this.setScenario('large');}, style:this._scenStyle(s.scenario,'large') },
+      scenarioLoading:{ onClick:(e)=>{e.stopPropagation();this.setScenario('loading');}, style:this._scenStyle(s.scenario,'loading') },
+      isEmpty: s.scenario==='empty' && s.cards.length===0,
+      isLoading: s.loading,
+      isLarge: s.scenario==='large',
+      scaleHint: s.scenario==='large' ? `${s.cards.length}枚 ・ 俯瞰（要約LOD）` : '',
+      onAddFirst:(e)=>{ if(e)e.stopPropagation(); this.setScenario('normal'); this.newCard(); },
+      legendOpen: s.legendOpen,
+      onToggleLegend:(e)=>{ if(e)e.stopPropagation(); this.toggleLegend(); },
+      cheatOpen: s.cheatOpen,
+      onToggleCheat:(e)=>{ if(e)e.stopPropagation(); this.toggleCheat(); },
+      K, plat,
+      modNote: plat==='mac' ? '⌘系のブラウザ標準（⌘C/⌘V/⌘A）は上書きしません。' : 'Ctrl系のブラウザ標準（Ctrl+C/V/A）は上書きしません。',
+      platMacStyle: this._platStyle(plat,'mac'), platWinStyle: this._platStyle(plat,'win'), platLinuxStyle: this._platStyle(plat,'linux'),
+      onPlatMac:(e)=>{ if(e)e.stopPropagation(); this.setState({platform:'mac'}); },
+      onPlatWin:(e)=>{ if(e)e.stopPropagation(); this.setState({platform:'win'}); },
+      onPlatLinux:(e)=>{ if(e)e.stopPropagation(); this.setState({platform:'linux'}); },
+      helpMenuOpen: s.helpMenuOpen,
+      onToggleHelpMenu:(e)=>{ if(e)e.stopPropagation(); this.toggleHelpMenu(); },
+      onStartTour:(e)=>{ if(e)e.stopPropagation(); this.startTour(); },
+      onOpenCheat:(e)=>{ if(e)e.stopPropagation(); this.setState({ cheatOpen:true, helpMenuOpen:false }); },
+      onOpenPaletteFromHelp:(e)=>{ if(e)e.stopPropagation(); this.setState({ paletteOpen:true, paletteQuery:'', helpMenuOpen:false }); },
+      tourActive: s.tourStep > 0,
+      tourStep: s.tourStep,
+      tourTitle: TOUR[s.tourStep] ? TOUR[s.tourStep].title : '',
+      tourBody: TOUR[s.tourStep] ? TOUR[s.tourStep].body : '',
+      tourStepLabel: s.tourStep + ' / 5',
+      tourLast: s.tourStep >= 5,
+      tourNotLast: s.tourStep > 0 && s.tourStep < 5,
+      onNextTour:(e)=>{ if(e)e.stopPropagation(); this.nextTour(); },
+      onEndTour:(e)=>{ if(e)e.stopPropagation(); this.endTour(); },
+    };
+  }
+
+  _scenStyle(cur, name) {
+    const on = cur === name;
+    return `font-size:11px; cursor:pointer; padding:4px 9px; border:1px solid ${on?'#93c5fd':'#e2e8f0'}; background:${on?'#eff6ff':'#fff'}; color:${on?'#1d4ed8':'#64748b'}; font-weight:${on?600:400};`;
+  }
+}
+</script>
+</body>
+</html>

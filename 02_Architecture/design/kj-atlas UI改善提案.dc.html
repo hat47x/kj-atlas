@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #f1f3f5; }
+  * { box-sizing: border-box; }
+  body { font-family: "Noto Sans JP", system-ui, sans-serif; color: #1f2933; -webkit-font-smoothing: antialiased; }
+  @page { size: A4; margin: 0; }
+  @media print {
+    html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body { margin: 0; padding: 0; background: #fff; }
+    .doc { max-width: none !important; margin: 0 !important; padding: 0 0.7in !important; box-shadow: none !important; background: #fff !important; }
+    .hdr-space, .ftr-space { display: table-cell !important; height: 0.6in; }
+    h1, h2, h3, h4 { break-after: avoid; }
+    figure, .wf, .card-note, .axis, tr, .issue { break-inside: avoid; }
+    p, li { orphans: 3; widows: 3; }
+    .screen-only { display: none !important; }
+  }
+</style>
+</helmet>
+<main class="doc" style="box-sizing:border-box; max-width:8.5in; margin:0 auto; background:#ffffff; padding:0 clamp(20px,5vw,0.85in); box-shadow:0 1px 3px rgba(15,23,42,0.08), 0 12px 40px rgba(15,23,42,0.06);">
+  <table class="doc-frame" role="presentation" style="width:100%; border-collapse:collapse;">
+    <thead><tr><td class="hdr-space" style="display:none; padding:0;"></td></tr></thead>
+    <tbody><tr><td style="padding:0;">
+
+      <!-- ===== COVER ===== -->
+      <header style="padding:64px 0 28px; border-bottom:1px solid #e5e7eb;">
+        <div style="display:flex; align-items:center; gap:10px; font-size:12.5px; letter-spacing:0.14em; color:#6b7280; text-transform:uppercase; font-weight:500;">
+          <span style="width:8px; height:8px; border-radius:2px; background:#2563eb; display:inline-block;"></span>
+          kj-atlas ・ Design Review
+        </div>
+        <h1 style="font-size:33px; line-height:1.32; font-weight:700; margin:18px 0 0; letter-spacing:0.01em; text-wrap:balance;">対象を絞った IA・インタラクション改善提案</h1>
+        <p style="font-size:15.5px; line-height:1.7; color:#52606d; margin:14px 0 0; max-width:34em; text-wrap:pretty;">白紙からの reskin ではなく、プロダクトの核（保留・違和感・可逆性／キャンバス主・チャット従／反スコアリング／provider=none 完結／SafeMode 既定ON）を厳守したまま、5領域の情報設計を維持・洗練する。</p>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:22px;">
+          <span style="font-size:12px; font-weight:500; padding:5px 11px; border-radius:999px; background:#ecfdf5; color:#15803d; border:1px solid #bbf7d0;">SafeMode 既定ON 維持</span>
+          <span style="font-size:12px; font-weight:500; padding:5px 11px; border-radius:999px; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe;">キャンバス主・チャット従 維持</span>
+          <span style="font-size:12px; font-weight:500; padding:5px 11px; border-radius:999px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0;">スキーマ変更なし</span>
+          <span style="font-size:12px; font-weight:500; padding:5px 11px; border-radius:999px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0;">キーボード/フォーカス契約 不破壊</span>
+        </div>
+      </header>
+
+      <!-- ===== 前提と方針 ===== -->
+      <section style="padding:30px 0 8px;">
+        <div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#2563eb;">前提と本提案の読み方</div>
+        <p style="font-size:14.5px; line-height:1.75; color:#3e4c59; margin:12px 0 0; text-wrap:pretty;">添付スクリーンショット（locale=ja / provider=none / SafeMode ON / sample=doc_phase1_canvas）から現行構造を確定し、課題1〜5に対し<strong style="font-weight:700;">優先度順</strong>に改善案を示す。各案には ① 解く課題 ② ローファイ・ワイヤー（before→after） ③ 5軸ルーブリック自己採点 ④ 複雑性予算 CB-1〜4 への影響（特に<strong style="font-weight:700;">初期表示への純増の有無</strong>）⑤ トレードオフと移行コスト、を併記する。視覚トーンは現行の中立トーンを踏襲し、reskin はしない。</p>
+      </section>
+
+      <!-- ===== PART 1: 5領域要約 ===== -->
+      <section style="padding:34px 0 0;">
+        <div style="display:flex; align-items:baseline; gap:12px;">
+          <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">01</span>
+          <h2 style="font-size:23px; font-weight:700; margin:0; letter-spacing:0.01em;">現行UIの構造 ─ 5領域要約</h2>
+        </div>
+        <p style="font-size:14.5px; line-height:1.75; color:#3e4c59; margin:14px 0 22px; text-wrap:pretty;">現行画面は意図された5領域の枠組みを概ね保持している。下図は実画面のどの要素がどの領域に属するかのマップ。色は領域、注記は観察された問題の所在を示す。</p>
+
+        <!-- WIREFRAME: current layout map -->
+        <figure style="margin:0 0 10px;">
+          <div class="wf" style="border:1px solid #d8dee9; border-radius:8px; overflow:hidden; background:#fbfcfd;">
+            <!-- header band (領域1相当の入口/モード) -->
+            <div style="background:#eef2ff; border-bottom:1px dashed #c7d2fe; padding:8px 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span style="font-size:11px; font-weight:700; color:#3730a3;">kj-atlas Canvas</span>
+              <span style="font-size:10px; padding:2px 7px; border-radius:999px; background:#dcfce7; color:#15803d; border:1px solid #86efac;">セーフモード: ON</span>
+              <span style="font-size:10.5px; padding:2px 8px; border-radius:5px; background:#fff; border:1px solid #c7d2fe; color:#3730a3;">探索</span>
+              <span style="font-size:10.5px; padding:2px 8px; border-radius:5px; background:#fff; border:1px solid #e2e8f0; color:#64748b;">レビュー</span>
+              <span style="font-size:10.5px; padding:2px 8px; border-radius:5px; background:#fff; border:1px solid #e2e8f0; color:#64748b;">要約</span>
+              <span style="font-size:10.5px; padding:2px 8px; border-radius:5px; background:#fff; border:1px solid #e2e8f0; color:#64748b;">表示</span>
+              <span style="font-size:10.5px; padding:2px 8px; border-radius:5px; background:#fff; border:1px solid #e2e8f0; color:#64748b;">共有と再現</span>
+              <span style="margin-left:auto; font-size:10px; color:#64748b; background:#fff; border:1px solid #e2e8f0; border-radius:5px; padding:2px 8px;">🔍 カードを検索 ・ 状態フィルタ</span>
+            </div>
+            <!-- toolbar band -->
+            <div style="background:#f8fafc; border-bottom:1px dashed #cbd5e1; padding:6px 12px; display:flex; gap:6px; flex-wrap:wrap;">
+              <span style="font-size:10px; color:#475569; background:#fff; border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">新規 / 複製 / 開く</span>
+              <span style="font-size:10px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:4px; padding:2px 7px;">詳細（トグル）</span>
+              <span style="font-size:10px; color:#475569; background:#fff; border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">元に戻す / やり直す</span>
+              <span style="font-size:10px; color:#475569; background:#fff; border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">新規カード / 島を作成 / 削除 / 保存</span>
+            </div>
+            <!-- main split -->
+            <div style="display:flex; min-height:230px;">
+              <!-- canvas (領域2) -->
+              <div style="flex:1.55; position:relative; background:linear-gradient(0deg,#f8fafc 0,#f8fafc 100%); padding:14px;">
+                <span style="position:absolute; top:8px; left:10px; font-size:9.5px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">領域2 ・ キャンバス（主役）</span>
+                <div style="margin-top:20px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                  <div style="background:#fff; border:1px solid #93c5fd; border-radius:6px; height:54px; box-shadow:0 1px 2px rgba(0,0,0,0.04); position:relative;"><span style="position:absolute; top:5px; left:6px; font-size:8px; padding:1px 4px; border-radius:3px; background:#dcfce7; color:#15803d;">Fact</span></div>
+                  <div style="background:#fff; border:1px solid #cbd5e1; border-radius:6px; height:54px; box-shadow:0 1px 2px rgba(0,0,0,0.04); position:relative;"><span style="position:absolute; top:5px; left:6px; font-size:8px; padding:1px 4px; border-radius:3px; background:#fef9c3; color:#a16207;">保留</span></div>
+                  <div style="background:#fff; border:1px solid #cbd5e1; border-radius:6px; height:48px; box-shadow:0 1px 2px rgba(0,0,0,0.04);"></div>
+                  <div style="background:#fff; border:1px solid #cbd5e1; border-radius:6px; height:48px; box-shadow:0 1px 2px rgba(0,0,0,0.04);"></div>
+                </div>
+              </div>
+              <!-- right rail (領域3 + 4 が混在) -->
+              <div style="flex:1; border-left:1px solid #d8dee9; background:#fff; padding:10px; position:relative;">
+                <div style="font-size:9.5px; font-weight:700; color:#4338ca; letter-spacing:0.04em; margin-bottom:6px;">領域3 ・ 選択コンテキスト</div>
+                <div style="border:1px solid #c7d2fe; background:#eef2ff; border-radius:5px; padding:6px 8px; font-size:9.5px; color:#3730a3; line-height:1.5;">現在の選択 / レビュー状態 / 保留 / 違和感</div>
+                <div style="font-size:9px; color:#64748b; margin:7px 0 3px;">ドメイン状態 ・ 絞込チップ <span style="color:#dc2626;">（ヘッダ状態フィルタと重複）</span></div>
+                <div style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:7px;">
+                  <span style="font-size:8px; border:1px solid #cbd5e1; border-radius:999px; padding:1px 6px; color:#475569;">fact</span>
+                  <span style="font-size:8px; border:1px solid #cbd5e1; border-radius:999px; padding:1px 6px; color:#475569;">claim</span>
+                  <span style="font-size:8px; border:1px solid #cbd5e1; border-radius:999px; padding:1px 6px; color:#475569;">未レビュー</span>
+                </div>
+                <div style="font-size:9px; color:#64748b; margin-bottom:3px;">ガイド付きフロー <span style="color:#dc2626;">（常設）</span></div>
+                <div style="border:1px dashed #fca5a5; background:#fef2f2; border-radius:5px; padding:6px 8px; font-size:9px; color:#b91c1c; line-height:1.5;">領域4 ・ 作業モード（差分 / 選択マージ / AI提案）が「詳細」ON でこの中に積層 ↓</div>
+                <div style="margin-top:5px; border:1px solid #fdba74; background:#fff7ed; border-radius:5px; height:40px;"></div>
+              </div>
+            </div>
+          </div>
+          <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.5;">図1 ─ 現行レイアウトの領域マップ。<span style="color:#b91c1c;">赤注記</span>が本提案で解く問題の所在。領域4（作業モード面）が独立した居場所を持たず、領域3に積層している点が中心課題。</figcaption>
+        </figure>
+
+        <!-- 5領域の説明テーブル -->
+        <div style="margin-top:22px; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+          <table style="width:100%; border-collapse:collapse; font-size:13px;">
+            <thead>
+              <tr style="background:#f8fafc; text-align:left;">
+                <th style="padding:9px 12px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:24%;">領域</th>
+                <th style="padding:9px 12px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:40%;">現行の中身</th>
+                <th style="padding:9px 12px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">観察された状態</th>
+              </tr>
+            </thead>
+            <tbody style="color:#3e4c59; line-height:1.55;">
+              <tr><td style="padding:10px 12px; border-bottom:1px solid #f1f5f9; font-weight:500;">1 開始/入口</td><td style="padding:10px 12px; border-bottom:1px solid #f1f5f9;">「作業を開始」パネル（新規/サンプル/読込/復元、最近の文書）。ヘッダのモードタブ・ロゴ。</td><td style="padding:10px 12px; border-bottom:1px solid #f1f5f9; color:#15803d;">健全。安全状態を冒頭提示。</td></tr>
+              <tr><td style="padding:10px 12px; border-bottom:1px solid #f1f5f9; font-weight:500;">2 キャンバス</td><td style="padding:10px 12px; border-bottom:1px solid #f1f5f9;">カード・島・関係線。右クリックメニュー、インライン編集、折りたたみ。</td><td style="padding:10px 12px; border-bottom:1px solid #f1f5f9; color:#b45309;">主役だがバッジが本文に重なる（課題5）。</td></tr>
+              <tr><td style="padding:10px 12px; border-bottom:1px solid #f1f5f9; font-weight:500;">3 選択コンテキスト</td><td style="padding:10px 12px; border-bottom:1px solid #f1f5f9;">現在の選択・レビュー状態・保留・違和感・根拠・矛盾。右レール先頭。</td><td style="padding:10px 12px; border-bottom:1px solid #f1f5f9; color:#b91c1c;">作業モードが積層し選択対象が埋没（課題1）。絞込が重複（課題2）。</td></tr>
+              <tr><td style="padding:10px 12px; border-bottom:1px solid #f1f5f9; font-weight:500;">4 作業モード面</td><td style="padding:10px 12px; border-bottom:1px solid #f1f5f9;">差分 / 選択マージ / AI提案 / 診断など重い機能。「詳細」トグルで展開。</td><td style="padding:10px 12px; border-bottom:1px solid #f1f5f9; color:#b91c1c;">独立した居場所が無い（課題1）。</td></tr>
+              <tr><td style="padding:10px 12px; font-weight:500;">5 共有前確認</td><td style="padding:10px 12px;">「共有と再現」パネル。SafeMode・公開範囲・共有前チェック・取込/復元。</td><td style="padding:10px 12px; color:#15803d;">健全。SafeMode と確認導線が機能。</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size:13px; line-height:1.7; color:#52606d; margin:16px 0 0; text-wrap:pretty;">「レビュー」という語は<strong style="font-weight:700;">表示モードタブ（領域1）</strong>と<strong style="font-weight:700;">作業モード／カード状態（領域3・4）</strong>の双方で使われ衝突している（課題3）。また AI 無効（provider=none）が劣化フォールバックの体で、第一級状態として明示されていない（課題4）。</p>
+      </section>
+
+      <!-- ===== PART 2 INTRO ===== -->
+      <section style="padding:38px 0 0;">
+        <div style="display:flex; align-items:baseline; gap:12px;">
+          <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">02</span>
+          <h2 style="font-size:23px; font-weight:700; margin:0; letter-spacing:0.01em;">課題1〜5 ─ 改善案（優先度順）</h2>
+        </div>
+        <p style="font-size:14.5px; line-height:1.75; color:#3e4c59; margin:14px 0 18px; text-wrap:pretty;">優先度は <strong style="font-weight:700;">構造的影響 × 核の保護 ÷ 移行コスト</strong> で判断した。P1（課題1）は他の課題の前提となるキーストーン。P2〜P3（課題2・3）は初期表示の静けさと語義の明確化で、P1の効果を確定させる。P4（課題4）は思想の可視化、P5（課題5）は仕上げ。</p>
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:6px;">
+          <div style="border:1px solid #c7d2fe; background:#eef2ff; border-radius:7px; padding:9px 8px;"><div style="font-size:10px; font-weight:700; color:#4338ca;">P1</div><div style="font-size:11px; color:#3730a3; line-height:1.4; margin-top:2px;">課題1 領域4の独立</div></div>
+          <div style="border:1px solid #e2e8f0; background:#f8fafc; border-radius:7px; padding:9px 8px;"><div style="font-size:10px; font-weight:700; color:#475569;">P2</div><div style="font-size:11px; color:#475569; line-height:1.4; margin-top:2px;">課題2 純増・重複</div></div>
+          <div style="border:1px solid #e2e8f0; background:#f8fafc; border-radius:7px; padding:9px 8px;"><div style="font-size:10px; font-weight:700; color:#475569;">P3</div><div style="font-size:11px; color:#475569; line-height:1.4; margin-top:2px;">課題3 語義衝突</div></div>
+          <div style="border:1px solid #e2e8f0; background:#f8fafc; border-radius:7px; padding:9px 8px;"><div style="font-size:10px; font-weight:700; color:#475569;">P4</div><div style="font-size:11px; color:#475569; line-height:1.4; margin-top:2px;">課題4 provider=none</div></div>
+          <div style="border:1px solid #e2e8f0; background:#f8fafc; border-radius:7px; padding:9px 8px;"><div style="font-size:10px; font-weight:700; color:#475569;">P5</div><div style="font-size:11px; color:#475569; line-height:1.4; margin-top:2px;">課題5 バッジ重なり</div></div>
+        </div>
+      </section>
+
+      <!-- ===== ISSUE 1 ===== -->
+      <section class="issue" style="padding:30px 0 0; margin-top:26px; border-top:3px solid #eef2ff;">
+        <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+          <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px; letter-spacing:0.04em;">P1</span>
+          <span style="font-size:12px; font-weight:700; color:#94a3b8;">課題1</span>
+          <h3 style="font-size:19px; font-weight:700; margin:0;">作業モード面（領域4）に独立した居場所を与える</h3>
+        </div>
+
+        <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;"><strong style="font-weight:700; color:#b91c1c;">問題 ─</strong> 差分・選択マージ・AI提案・診断といった重い機能が「詳細」トグルで<strong style="font-weight:700;">選択コンテキスト（領域3）の中に積層</strong>する。結果、選択直後に最も見たい「いま選んでいるカード／島」が下方に押し下げられ、保留・違和感・矛盾といった一級データが作業ツールに埋もれる。領域4は独立した面を持たない。</p>
+
+        <!-- BEFORE / AFTER WIREFRAME -->
+        <figure style="margin:18px 0 6px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <!-- BEFORE -->
+            <div class="wf" style="border:1px solid #fecaca; border-radius:8px; overflow:hidden; background:#fff;">
+              <div style="background:#fef2f2; border-bottom:1px solid #fecaca; padding:6px 10px; font-size:11px; font-weight:700; color:#b91c1c;">Before ・ 領域3に積層</div>
+              <div style="padding:10px; display:flex; flex-direction:column; gap:6px;">
+                <div style="border:1px solid #c7d2fe; background:#eef2ff; border-radius:5px; padding:6px 8px; font-size:10px; color:#3730a3;">現在の選択（埋もれがち）</div>
+                <div style="border:1px solid #e2e8f0; border-radius:5px; padding:6px 8px; font-size:10px; color:#64748b;">ドメイン状態 / 絞込</div>
+                <div style="border:1px solid #e2e8f0; border-radius:5px; padding:6px 8px; font-size:10px; color:#64748b;">ガイド付きフロー（常設）</div>
+                <div style="border:1px dashed #fdba74; background:#fff7ed; border-radius:5px; padding:6px 8px; font-size:10px; color:#b45309;">レビュー差分（選択マージ）</div>
+                <div style="border:1px dashed #fdba74; background:#fff7ed; border-radius:5px; padding:6px 8px; font-size:10px; color:#b45309;">比較対象を読み込む / 適用 / 取消</div>
+                <div style="border:1px dashed #fdba74; background:#fff7ed; border-radius:5px; padding:6px 8px; font-size:10px; color:#b45309;">AI提案・診断…（積層が続く）</div>
+              </div>
+            </div>
+            <!-- AFTER -->
+            <div class="wf" style="border:1px solid #bbf7d0; border-radius:8px; overflow:hidden; background:#fff; position:relative;">
+              <div style="background:#ecfdf5; border-bottom:1px solid #bbf7d0; padding:6px 10px; font-size:11px; font-weight:700; color:#15803d;">After ・ 領域3は選択を前景化、領域4は独立ドロワー</div>
+              <div style="display:flex; min-height:170px;">
+                <div style="flex:1; padding:10px; display:flex; flex-direction:column; gap:6px; border-right:1px dashed #cbd5e1;">
+                  <div style="font-size:9px; font-weight:700; color:#4338ca;">領域3（選択直後に前景化）</div>
+                  <div style="border:1.5px solid #3b82f6; background:#eff6ff; border-radius:5px; padding:7px 8px; font-size:10px; color:#1d4ed8;">選択中: まだ曖昧な主張</div>
+                  <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                    <span style="font-size:8.5px; background:#fef9c3; color:#a16207; border-radius:4px; padding:2px 6px;">保留</span>
+                    <span style="font-size:8.5px; background:#fef3c7; color:#b45309; border-radius:4px; padding:2px 6px;">違和感</span>
+                    <span style="font-size:8.5px; background:#fee2e2; color:#b91c1c; border-radius:4px; padding:2px 6px;">矛盾 1</span>
+                  </div>
+                  <div style="border:1px solid #e2e8f0; border-radius:5px; padding:6px 8px; font-size:10px; color:#64748b;">根拠 / レビュー状態</div>
+                  <button style="margin-top:auto; border:1px solid #cbd5e1; background:#f8fafc; border-radius:5px; padding:6px; font-size:9.5px; color:#334155; font-family:inherit;">作業を開く ▸（差分・マージ・AI提案）</button>
+                </div>
+                <!-- drawer overlay -->
+                <div style="position:absolute; right:0; top:30px; bottom:0; width:54%; background:#fff; border-left:2px solid #6366f1; box-shadow:-8px 0 18px rgba(15,23,42,0.1); padding:10px; display:flex; flex-direction:column; gap:6px;">
+                  <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <span style="font-size:9.5px; font-weight:700; color:#4338ca;">作業ドロワー（既定OFF）</span>
+                    <span style="font-size:11px; color:#94a3b8;">✕</span>
+                  </div>
+                  <div style="display:flex; gap:4px;"><span style="font-size:8.5px; border:1px solid #c7d2fe; background:#eef2ff; color:#3730a3; border-radius:999px; padding:2px 7px;">差分</span><span style="font-size:8.5px; border:1px solid #e2e8f0; color:#64748b; border-radius:999px; padding:2px 7px;">マージ</span><span style="font-size:8.5px; border:1px solid #e2e8f0; color:#64748b; border-radius:999px; padding:2px 7px;">AI提案</span></div>
+                  <div style="border:1px solid #e2e8f0; border-radius:5px; padding:6px 8px; font-size:9.5px; color:#64748b; line-height:1.5;">選択マージ・比較対象の読込・適用・取消はここ。選択対象を覆い隠さない。</div>
+                  <div style="margin-top:auto; border-top:1px dashed #e2e8f0; padding-top:6px; font-size:9px; color:#15803d;">⟲ 適用は同じ文脈で取消可能（CB-4）</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図2 ─ 領域4を「作業ドロワー」（既定OFF・右からのオーバーレイ）に分離。選択直後の領域3は<strong style="font-weight:600; color:#1d4ed8;">選択対象を前景化</strong>し、重い操作はユーザーが「作業を開く」を押したときだけ出現。チャットUI同様、作業面も従であり前面を奪わない。</figcaption>
+        </figure>
+
+        <p style="font-size:13.5px; line-height:1.7; color:#3e4c59; margin:12px 0 0;"><strong style="font-weight:700;">具体仕様 ─</strong> ① 領域3は選択時、最上部に「選択対象＋保留／違和感／矛盾」を固定表示。② 「詳細」トグルは廃止し、領域3末尾の<strong style="font-weight:700;">「作業を開く ▸」</strong>1ボタンへ置換（純増ではなく置換＝CB-3）。③ ドロワー内はタブ（差分／マージ／AI提案／診断）。④ ドロワーは選択対象を覆わない幅で右からスライド、Escで閉じる。⑤ 適用系の操作には必ず「直前の操作を取り消す」を同じドロワー内に併置（CB-4）。</p>
+
+        <!-- meta blocks -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:18px;">
+          <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+            <div style="font-size:11px; font-weight:700; color:#4338ca; letter-spacing:0.06em;">解く課題</div>
+            <p style="font-size:12.5px; line-height:1.6; color:#475569; margin:7px 0 0;">課題1（直接）。副次的に課題2の積層緩和、課題3の語義整理（作業面の「差分／レビュー」が領域4に集約され表示モードと分離）。</p>
+          </div>
+          <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+            <div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">複雑性予算 CB-1〜4</div>
+            <ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.6; color:#475569;">
+              <li><strong>CB-1</strong>: 初期表示から作業面が消え<strong style="color:#15803d;">純減</strong>。静けさ向上。</li>
+              <li><strong>CB-2</strong>: 保留・違和感は領域3最上部に固定、確定操作より<strong style="color:#15803d;">近い</strong>。</li>
+              <li><strong>CB-3</strong>: 「詳細」を「作業を開く」に置換、純増なし。</li>
+              <li><strong>CB-4</strong>: 取消をドロワー内に併置。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:12px 14px; margin-top:12px;">
+          <div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">トレードオフ・移行コスト</div>
+          <p style="font-size:12.5px; line-height:1.65; color:#854d0e; margin:7px 0 0;">「詳細」トグルの操作記憶を持つユーザーへの再学習が発生する（移行中は「作業を開く」に旧称ツールチップを併記して緩和）。作業が常時見えていた運用では1クリック増。スクリーンショット資産（ui-advanced-work-mode-panels.png 等）は撮り直し必要。<strong style="font-weight:700;">キーボード/フォーカス契約</strong>: ドロワーは開時にフォーカストラップ＋Escで閉じ、閉時はトリガーボタンへフォーカス復帰。既存ショートカット（Alt+Shift+1/2/3 等）は領域4へ移譲せず据え置き。</p>
+        </div>
+
+        <!-- 5-axis self score -->
+        <div class="axis" style="margin-top:14px; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+          <div style="background:#f8fafc; padding:7px 14px; font-size:11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; letter-spacing:0.04em;">5判断軸 自己評価</div>
+          <table style="width:100%; border-collapse:collapse; font-size:12px;">
+            <tbody style="color:#3e4c59;">
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9; width:46%;">1. 人間の思考を雑にしないか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; width:5%; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">選択対象に集中でき、思考の手を急がせない。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">2. AIに早すぎる収束を与えないか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">AI提案はドロワー内・要明示展開。常時露出しない。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">3. 保留・対立・未レビューを保持できるか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">最上部固定で確定より近い位置に保持。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">4. 差分・監査・レビューに載るか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">差分は維持。ドロワーが閉じている間も導線は残す。</td></tr>
+              <tr><td style="padding:7px 14px;">5. 人間/AI 文脈を混同しないか</td><td style="padding:7px 8px; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; color:#64748b;">AI提案を独立タブに隔離し人間の選択面と分離。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== ISSUE 2 ===== -->
+      <section class="issue" style="padding:30px 0 0; margin-top:26px; border-top:3px solid #f1f5f9;">
+        <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+          <span style="font-size:11px; font-weight:700; color:#475569; background:#e2e8f0; border-radius:5px; padding:3px 9px;">P2</span>
+          <span style="font-size:12px; font-weight:700; color:#94a3b8;">課題2</span>
+          <h3 style="font-size:19px; font-weight:700; margin:0;">既定表示への純増・重複を解消する</h3>
+        </div>
+
+        <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;"><strong style="font-weight:700; color:#b91c1c;">問題 ─</strong> ① <strong style="font-weight:700;">ドメイン状態フィルタが二重化</strong>している（ヘッダ右の「状態フィルタ: 未レビュー／根拠なし／違和感あり」と、領域3内の「絞込: fact / claim / hypothesis / 未レビュー / 違和感あり」）。どちらが効くか不明で、二重メンテになる。② <strong style="font-weight:700;">「ガイド付きフロー」が領域3に常設</strong>され、未選択時から初期表示の主要操作を増やしている（CB-1 に反する純増）。</p>
+
+        <figure style="margin:16px 0 6px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div class="wf" style="border:1px solid #fecaca; border-radius:8px; overflow:hidden; background:#fff;">
+              <div style="background:#fef2f2; border-bottom:1px solid #fecaca; padding:6px 10px; font-size:11px; font-weight:700; color:#b91c1c;">Before ・ 二重化＋常設</div>
+              <div style="padding:10px; display:flex; flex-direction:column; gap:7px;">
+                <div style="border:1px dashed #fca5a5; border-radius:5px; padding:5px 8px; font-size:9.5px; color:#b91c1c;">ヘッダ: 状態フィルタ（未レビュー / 根拠なし / 違和感あり）</div>
+                <div style="border:1px dashed #fca5a5; border-radius:5px; padding:5px 8px; font-size:9.5px; color:#b91c1c;">領域3: 絞込（fact / claim / hypothesis / 未レビュー / 違和感あり）← 重複</div>
+                <div style="border:1px dashed #fca5a5; background:#fef2f2; border-radius:5px; padding:5px 8px; font-size:9.5px; color:#b91c1c;">領域3: ガイド付きフロー（未選択でも常設）</div>
+              </div>
+            </div>
+            <div class="wf" style="border:1px solid #bbf7d0; border-radius:8px; overflow:hidden; background:#fff;">
+              <div style="background:#ecfdf5; border-bottom:1px solid #bbf7d0; padding:6px 10px; font-size:11px; font-weight:700; color:#15803d;">After ・ 単一の出所＋必要時に呼ぶ</div>
+              <div style="padding:10px; display:flex; flex-direction:column; gap:7px;">
+                <div style="border:1px solid #93c5fd; background:#eff6ff; border-radius:5px; padding:5px 8px; font-size:9.5px; color:#1d4ed8;">フィルタは<strong style="font-weight:700;">ヘッダの検索近傍に一本化</strong>（キャンバス全体のクエリ）。claimType も同列に統合。</div>
+                <div style="border:1px solid #e2e8f0; border-radius:5px; padding:5px 8px; font-size:9.5px; color:#64748b;">領域3の「絞込」は<strong style="font-weight:700;">削除</strong>（選択コンテキストはフィルタUIを持たない）。</div>
+                <div style="border:1px solid #e2e8f0; border-radius:5px; padding:5px 8px; font-size:9.5px; color:#64748b;">ガイドは「レビュー」モード内の任意起動へ移設。未選択の初期表示から除外。</div>
+              </div>
+            </div>
+          </div>
+          <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図3 ─ フィルタの出所を一本化（重複削除＝置換）し、ガイドを初期表示から退避。領域3は「選ばれた対象の事実」だけを語る面に純化。</figcaption>
+        </figure>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;">
+          <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+            <div style="font-size:11px; font-weight:700; color:#4338ca; letter-spacing:0.06em;">解く課題</div>
+            <p style="font-size:12.5px; line-height:1.6; color:#475569; margin:7px 0 0;">課題2（直接）。フィルタの単一出所化は課題1のドロワー分離とも整合（領域3が純化）。</p>
+          </div>
+          <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+            <div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">複雑性予算 CB-1〜4</div>
+            <ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.6; color:#475569;">
+              <li><strong>CB-1</strong>: 初期表示から重複フィルタ＋常設ガイドが<strong style="color:#15803d;">純減</strong>。</li>
+              <li><strong>CB-2</strong>: 「違和感あり」フィルタは1階層で維持、遠ざけない。</li>
+              <li><strong>CB-3</strong>: 重複の<strong style="color:#15803d;">削除（包含）</strong>で実現。新UI追加なし。</li>
+              <li><strong>CB-4</strong>: フィルタ解除はワンクリックで原状復帰。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:12px 14px; margin-top:12px;">
+          <div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">トレードオフ・移行コスト</div>
+          <p style="font-size:12.5px; line-height:1.65; color:#854d0e; margin:7px 0 0;">領域3内の絞込チップで操作していたユーザーはヘッダへ視線移動が必要。claimType フィルタを状態フィルタへ統合する際、ラベルの和訳（fact→事実 等）を揃えること。常設ガイドに依存した初回学習導線は、入口（領域1）の「サンプルを開く」近傍に1リンクで残す。<strong style="font-weight:700;">フォーカス契約</strong>: フィルタchipのタブ順はヘッダ内で連続させ、検索→フィルタ→ナビの順を保つ。</p>
+        </div>
+
+        <div class="axis" style="margin-top:14px; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+          <div style="background:#f8fafc; padding:7px 14px; font-size:11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; letter-spacing:0.04em;">5判断軸 自己評価</div>
+          <table style="width:100%; border-collapse:collapse; font-size:12px;">
+            <tbody style="color:#3e4c59;">
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9; width:46%;">1. 人間の思考を雑にしないか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; width:5%; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">迷い（どちらが効くか）を除き、判断に集中。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">2. AIに早すぎる収束を与えないか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#64748b; font-weight:700;">−</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">AIに直接影響なし（中立）。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">3. 保留・対立・未レビューを保持できるか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">「未レビュー／違和感」フィルタは一級のまま維持。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">4. 差分・監査・レビューに載るか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">フィルタ状態を view.json に一意保存しやすくなる。</td></tr>
+              <tr><td style="padding:7px 14px;">5. 人間/AI 文脈を混同しないか</td><td style="padding:7px 8px; color:#15803d; font-weight:700;">○</td><td style="padding:7px 14px 7px 0; color:#64748b;">フィルタ=人間の閲覧制御として一箇所に明確化。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== ISSUE 3 ===== -->
+      <section class="issue" style="padding:30px 0 0; margin-top:26px; border-top:3px solid #f1f5f9;">
+        <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+          <span style="font-size:11px; font-weight:700; color:#475569; background:#e2e8f0; border-radius:5px; padding:3px 9px;">P3</span>
+          <span style="font-size:12px; font-weight:700; color:#94a3b8;">課題3</span>
+          <h3 style="font-size:19px; font-weight:700; margin:0;">「レビュー」の語義衝突を分離する</h3>
+        </div>
+
+        <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;"><strong style="font-weight:700; color:#b91c1c;">問題 ─</strong> 「レビュー」が <strong style="font-weight:700;">表示モードのタブ名</strong>と <strong style="font-weight:700;">作業モード（レビュー差分）</strong>、さらに<strong style="font-weight:700;">カードの状態（レビュー済み/未レビュー）</strong>で多義に使われ衝突している。同じ語が「見え方の切替」と「重い操作」と「データ状態」の3つを指すため、ユーザーは何が起こるか予測できない。</p>
+
+        <p style="font-size:13.5px; line-height:1.7; color:#3e4c59; margin:12px 0 0;"><strong style="font-weight:700;">方針 ─</strong> 「レビュー」は<strong style="font-weight:700;">人間による検証＝データ状態</strong>（未レビュー／レビュー済み、および共有用「レビューパック」）に予約する。見え方と操作には別語を割り当てる。</p>
+
+        <figure style="margin:16px 0 6px;">
+          <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+            <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+              <thead><tr style="background:#f8fafc; text-align:left;">
+                <th style="padding:8px 12px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:30%;">どこ（種別）</th>
+                <th style="padding:8px 12px; font-weight:700; color:#b91c1c; border-bottom:1px solid #e5e7eb; width:30%;">Before</th>
+                <th style="padding:8px 12px; font-weight:700; color:#15803d; border-bottom:1px solid #e5e7eb;">After</th>
+              </tr></thead>
+              <tbody style="color:#3e4c59; line-height:1.5;">
+                <tr><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9;">表示モードタブ（見え方）</td><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9; color:#b91c1c;">レビュー</td><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:600;">確認ビュー（未レビュー・違和感を強調する視点）</td></tr>
+                <tr><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9;">作業モード（操作）</td><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9; color:#b91c1c;">レビュー差分（選択マージ）</td><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:600;">差分・マージ（作業ドロワー内のタブ）</td></tr>
+                <tr><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9;">カード状態（データ）</td><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9;">未レビュー / レビュー済み</td><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:600;">据え置き（＝この意味に予約）</td></tr>
+                <tr><td style="padding:9px 12px;">共有成果物（名詞）</td><td style="padding:9px 12px;">レビューパック</td><td style="padding:9px 12px; color:#15803d; font-weight:600;">据え置き（検証＝レビューの意味で一貫）</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図4 ─ 語の役割分担。「レビュー」を検証状態に予約し、見え方は「確認ビュー」、操作は「差分・マージ」へ。1語=1意味に整理する命名のみで、機能は不変。</figcaption>
+        </figure>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;">
+          <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+            <div style="font-size:11px; font-weight:700; color:#4338ca; letter-spacing:0.06em;">解く課題</div>
+            <p style="font-size:12.5px; line-height:1.6; color:#475569; margin:7px 0 0;">課題3（直接）。課題1のドロワー化で作業側の「レビュー差分」が物理的にも別の面へ移るため、命名分離と相互補強する。</p>
+          </div>
+          <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+            <div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">複雑性予算 CB-1〜4</div>
+            <ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.6; color:#475569;">
+              <li><strong>CB-1</strong>: 操作数・要素数は不変（純増なし、語の置換のみ）。</li>
+              <li><strong>CB-2</strong>: 影響なし。</li>
+              <li><strong>CB-3</strong>: ラベルの置換であり追加でない。</li>
+              <li><strong>CB-4</strong>: 影響なし。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:12px 14px; margin-top:12px;">
+          <div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">トレードオフ・移行コスト</div>
+          <p style="font-size:12.5px; line-height:1.65; color:#854d0e; margin:7px 0 0;">「レビュー」タブの位置記憶を持つユーザーは新ラベル「確認ビュー」を一度学び直す。i18n キー（ja/他ロケール）と視点プリセット名「Review」（ui-view-controls の英語プリセット）の整合も必要。スキーマは変えないため、保存済み view.json のプリセット内部名は維持し<strong style="font-weight:700;">表示ラベルだけ</strong>差し替える。スクリーンショットとヘルプ文の文言更新コストが発生。</p>
+        </div>
+
+        <div class="axis" style="margin-top:14px; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+          <div style="background:#f8fafc; padding:7px 14px; font-size:11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; letter-spacing:0.04em;">5判断軸 自己評価</div>
+          <table style="width:100%; border-collapse:collapse; font-size:12px;">
+            <tbody style="color:#3e4c59;">
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9; width:46%;">1. 人間の思考を雑にしないか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; width:5%; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">予測可能性が上がり誤操作が減る。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">2. AIに早すぎる収束を与えないか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#64748b; font-weight:700;">−</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">中立。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">3. 保留・対立・未レビューを保持できるか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">「未レビュー」状態の語が明確になり保持が容易。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">4. 差分・監査・レビューに載るか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">レビュー＝検証ログの語が一意になり監査が明瞭。</td></tr>
+              <tr><td style="padding:7px 14px;">5. 人間/AI 文脈を混同しないか</td><td style="padding:7px 8px; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; color:#64748b;">「見え方／操作／状態」を語で分離。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== ISSUE 4 ===== -->
+      <section class="issue" style="padding:30px 0 0; margin-top:26px; border-top:3px solid #f1f5f9;">
+        <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+          <span style="font-size:11px; font-weight:700; color:#475569; background:#e2e8f0; border-radius:5px; padding:3px 9px;">P4</span>
+          <span style="font-size:12px; font-weight:700; color:#94a3b8;">課題4</span>
+          <h3 style="font-size:19px; font-weight:700; margin:0;">provider=none を第一級の状態として提示する</h3>
+        </div>
+
+        <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;"><strong style="font-weight:700; color:#b91c1c;">問題 ─</strong> AI 無効（provider=none）が「機能が欠けた劣化フォールバック」のように扱われ、第一級の状態として肯定的に提示されていない。プロダクトの核は <strong style="font-weight:700;">「provider=none でも書く・並べる・束ねる・つなぐ・保留するが完結する」</strong>こと。現状の表示はこの設計意図を伝えていない。</p>
+
+        <p style="font-size:13.5px; line-height:1.7; color:#3e4c59; margin:12px 0 0;"><strong style="font-weight:700;">方針 ─</strong> ① <strong style="font-weight:700;">プロバイダ状態を SafeMode と同格のヘッダ・チップ</strong>として常時提示（「AI: オフ ・ 候補生成のみ」）。② AI が ON でも役割は<strong style="font-weight:700;">「候補」</strong>のみで確定しないことをラベルで明示。③ AI 無効時、作業ドロワーの AI タブはエラー/警告色を使わず、<strong style="font-weight:700;">「AIなしでこの作業は完結します」</strong>と肯定提示し、手動操作への導線を主役にする。</p>
+
+        <figure style="margin:16px 0 6px;">
+          <div style="display:grid; grid-template-columns:0.95fr 1.05fr; gap:14px;">
+            <div class="wf" style="border:1px solid #fecaca; border-radius:8px; overflow:hidden; background:#fff;">
+              <div style="background:#fef2f2; border-bottom:1px solid #fecaca; padding:6px 10px; font-size:11px; font-weight:700; color:#b91c1c;">Before ・ 劣化として暗黙</div>
+              <div style="padding:12px; display:flex; flex-direction:column; gap:8px; min-height:120px;">
+                <div style="border:1px solid #e2e8f0; border-radius:5px; padding:6px 8px; font-size:10px; color:#94a3b8;">AI 状態の表示なし（無効が暗黙）</div>
+                <div style="border:1px dashed #fca5a5; border-radius:5px; padding:6px 8px; font-size:10px; color:#b91c1c;">AI機能は灰色・「利用できません」風に見える</div>
+              </div>
+            </div>
+            <div class="wf" style="border:1px solid #bbf7d0; border-radius:8px; overflow:hidden; background:#fff;">
+              <div style="background:#ecfdf5; border-bottom:1px solid #bbf7d0; padding:6px 10px; font-size:11px; font-weight:700; color:#15803d;">After ・ 第一級の状態として肯定提示</div>
+              <div style="padding:12px; display:flex; flex-direction:column; gap:9px;">
+                <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                  <span style="font-size:9.5px; padding:3px 9px; border-radius:999px; background:#dcfce7; color:#15803d; border:1px solid #86efac; font-weight:600;">セーフモード: ON</span>
+                  <span style="font-size:9.5px; padding:3px 9px; border-radius:999px; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe; font-weight:600;">AI: オフ ・ 候補生成のみ</span>
+                </div>
+                <div style="border:1px solid #c7d2fe; background:#f5f7ff; border-radius:6px; padding:8px 10px; font-size:10px; color:#3730a3; line-height:1.55;">この文書は <strong style="font-weight:700;">AIなしで完結</strong>します ─ 書く・並べる・束ねる・つなぐ・保留する。AIを有効にすると<strong style="font-weight:700;">候補</strong>を提案します（確定は常に人間）。</div>
+                <div style="border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; font-size:9.5px; color:#64748b; line-height:1.5;">ドロワーの「AI提案」タブ（無効時）: <span style="color:#334155;">エラー色を使わず「手動で束ねる／つなぐ」操作を主役に表示。</span></div>
+              </div>
+            </div>
+          </div>
+          <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図5 ─ AI状態を SafeMode と同格のチップに昇格。無効を<strong style="font-weight:600; color:#15803d;">既定の完結状態</strong>として端的に提示する。AI ON 時も「候補」であることを常時明示し、早すぎる収束を防ぐ。</figcaption>
+        </figure>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;">
+          <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+            <div style="font-size:11px; font-weight:700; color:#4338ca; letter-spacing:0.06em;">解く課題</div>
+            <p style="font-size:12.5px; line-height:1.6; color:#475569; margin:7px 0 0;">課題4（直接）。AI を「候補生成役・非確定」と明示する点で反スコアリング方針とも一致。</p>
+          </div>
+          <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+            <div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">複雑性予算 CB-1〜4</div>
+            <ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.6; color:#475569;">
+              <li><strong>CB-1</strong>: 追加はヘッダ・チップ1個のみ。SafeMode と同型で認知負荷小。</li>
+              <li><strong>CB-2</strong>: AI候補は確定より<strong style="color:#15803d;">遠い</strong>位置（ドロワー内）に維持。</li>
+              <li><strong>CB-3</strong>: チップは状態表示の置換的追加。AI機能の純増ではない。</li>
+              <li><strong>CB-4</strong>: 候補の採用/不採用は可逆、同じ場で取消可能。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:12px 14px; margin-top:12px;">
+          <div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">トレードオフ・移行コスト</div>
+          <p style="font-size:12.5px; line-height:1.65; color:#854d0e; margin:7px 0 0;">ヘッダにチップが1個増えるため、横幅の狭いビュー（768/390px）でのヘッダ折返し設計の見直しが要る（SafeMode チップと同じ折返し規則に従えば追加コストは小）。「AI: オフ」を肯定的に出すコピーはマーケ的に過剰にならないトーンに抑える。AI 有効時の「候補」ラベルは既存の提案UI全体に一貫適用する文言作業が発生。スキーマ・キーボード契約への影響なし。</p>
+        </div>
+
+        <div class="axis" style="margin-top:14px; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+          <div style="background:#f8fafc; padding:7px 14px; font-size:11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; letter-spacing:0.04em;">5判断軸 自己評価</div>
+          <table style="width:100%; border-collapse:collapse; font-size:12px;">
+            <tbody style="color:#3e4c59;">
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9; width:46%;">1. 人間の思考を雑にしないか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; width:5%; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">手動完結を主役に据え、思考を外注させない。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">2. AIに早すぎる収束を与えないか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">「候補・非確定」を常時明示し収束を防ぐ。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">3. 保留・対立・未レビューを保持できるか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">AIが保留を埋めにくる構図を避ける。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">4. 差分・監査・レビューに載るか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">provider状態を view メタに記録し再現性を担保。</td></tr>
+              <tr><td style="padding:7px 14px;">5. 人間/AI 文脈を混同しないか</td><td style="padding:7px 8px; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; color:#64748b;">AI出力を「候補」と銘打ち人間の確定と峻別。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== ISSUE 5 ===== -->
+      <section class="issue" style="padding:30px 0 0; margin-top:26px; border-top:3px solid #f1f5f9;">
+        <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+          <span style="font-size:11px; font-weight:700; color:#475569; background:#e2e8f0; border-radius:5px; padding:3px 9px;">P5</span>
+          <span style="font-size:12px; font-weight:700; color:#94a3b8;">課題5</span>
+          <h3 style="font-size:19px; font-weight:700; margin:0;">カードのバッジが本文に重なる等の細部</h3>
+        </div>
+
+        <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;"><strong style="font-weight:700; color:#b91c1c;">問題 ─</strong> claimType（事実/主張/仮説）・保留・違和感・未レビュー・tag数のバッジがカード<strong style="font-weight:700;">本文1行目に重なり</strong>、文頭が読めない（ui-card-domain-badges.png）。一級データであるはずの状態表示が、本文と取り合って双方の可読性を損なっている。</p>
+
+        <figure style="margin:16px 0 6px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start;">
+            <!-- BEFORE card -->
+            <div>
+              <div style="font-size:11px; font-weight:700; color:#b91c1c; margin-bottom:6px;">Before</div>
+              <div class="wf" style="position:relative; background:#fff; border:1.5px solid #93c5fd; border-radius:10px; height:96px; box-shadow:0 1px 3px rgba(0,0,0,0.06); padding:12px 14px; overflow:hidden;">
+                <span style="position:absolute; top:8px; left:10px; font-size:9px; padding:1px 5px; border-radius:4px; background:#dcfce7; color:#15803d; font-weight:600;">Fact</span>
+                <span style="position:absolute; top:24px; left:10px; font-size:9px; padding:1px 5px; border-radius:4px; background:#ede9fe; color:#6d28d9; font-weight:600;">未決</span>
+                <span style="position:absolute; top:8px; right:10px; font-size:9px; padding:1px 5px; border-radius:4px; background:#fef9c3; color:#a16207;">1 tag</span>
+                <div style="font-size:14px; color:#1f2933; line-height:1.5;"><span style="color:#cbd5e1;">認</span>した事実メモ</div>
+                <div style="position:absolute; left:10px; top:18px; font-size:9px; color:#dc2626; transform:rotate(-4deg); opacity:0.0;">×</div>
+              </div>
+              <p style="font-size:11px; color:#b91c1c; margin:6px 0 0; line-height:1.4;">バッジが本文「認…」に重なり文頭が欠ける。</p>
+            </div>
+            <!-- AFTER card -->
+            <div>
+              <div style="font-size:11px; font-weight:700; color:#15803d; margin-bottom:6px;">After</div>
+              <div class="wf" style="background:#fff; border:1.5px solid #93c5fd; border-radius:10px; height:96px; box-shadow:0 1px 3px rgba(0,0,0,0.06); overflow:hidden; display:flex; flex-direction:column;">
+                <div style="display:flex; align-items:center; gap:5px; padding:7px 12px 6px; border-bottom:1px solid #f1f5f9;">
+                  <span style="font-size:9px; padding:1px 6px; border-radius:4px; background:#dcfce7; color:#15803d; font-weight:600;">事実</span>
+                  <span style="font-size:9px; padding:1px 6px; border-radius:4px; background:#ede9fe; color:#6d28d9; font-weight:600;">未決</span>
+                  <span style="margin-left:auto; font-size:9px; padding:1px 6px; border-radius:4px; background:#f1f5f9; color:#64748b;">1 tag</span>
+                </div>
+                <div style="padding:9px 12px; font-size:14px; color:#1f2933; line-height:1.5;">確認した事実メモ</div>
+              </div>
+              <p style="font-size:11px; color:#15803d; margin:6px 0 0; line-height:1.4;">メタ行を本文の上に分離。文頭が常に読める。</p>
+            </div>
+          </div>
+          <figcaption style="font-size:12px; color:#7b8794; margin-top:10px; line-height:1.55;">図6 ─ カードに<strong style="font-weight:600;">専用メタ行</strong>（claimType・保留/違和感/未レビュー・tag数）を本文の上へ確保。状態は一級のまま可視、本文は文頭から読める。極小カードではメタ行を1行省略せず本文側を省略表示にする（状態 &gt; 本文プレビュー）。</figcaption>
+        </figure>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;">
+          <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+            <div style="font-size:11px; font-weight:700; color:#4338ca; letter-spacing:0.06em;">解く課題</div>
+            <p style="font-size:12.5px; line-height:1.6; color:#475569; margin:7px 0 0;">課題5（直接）。あわせて claimType の英語/和訳混在（Fact/事実）も和訳へ統一し、課題3の命名整理と歩調を合わせる。</p>
+          </div>
+          <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+            <div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">複雑性予算 CB-1〜4</div>
+            <ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.6; color:#475569;">
+              <li><strong>CB-1</strong>: 要素は同数、配置の整理のみ。純増なし。</li>
+              <li><strong>CB-2</strong>: 保留・違和感をカード面に明示し続け、遠ざけない。</li>
+              <li><strong>CB-3</strong>: 既存バッジの再配置（置換）。</li>
+              <li><strong>CB-4</strong>: 影響なし。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:12px 14px; margin-top:12px;">
+          <div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">トレードオフ・移行コスト</div>
+          <p style="font-size:12.5px; line-height:1.65; color:#854d0e; margin:7px 0 0;">メタ行のぶんカードの最小高さが数px増える（密なキャンバスでの占有面積が微増）。折りたたみカードや極小ズーム時のメタ行表示規則を1つ追加する。座標・サイズはスキーマ不変で、保存済みレイアウトに影響しない。スクリーンショット資産の撮り直しが必要。キーボード/フォーカス契約への影響なし。</p>
+        </div>
+
+        <div class="axis" style="margin-top:14px; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+          <div style="background:#f8fafc; padding:7px 14px; font-size:11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; letter-spacing:0.04em;">5判断軸 自己評価</div>
+          <table style="width:100%; border-collapse:collapse; font-size:12px;">
+            <tbody style="color:#3e4c59;">
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9; width:46%;">1. 人間の思考を雑にしないか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; width:5%; color:#15803d; font-weight:700;">○</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">本文が読め、状態も読め、誤読が減る。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">2. AIに早すぎる収束を与えないか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#64748b; font-weight:700;">−</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">中立。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">3. 保留・対立・未レビューを保持できるか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">状態バッジの可読性が上がり保持が明確に。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">4. 差分・監査・レビューに載るか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#64748b; font-weight:700;">−</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">中立（表示のみ）。</td></tr>
+              <tr><td style="padding:7px 14px;">5. 人間/AI 文脈を混同しないか</td><td style="padding:7px 8px; color:#64748b; font-weight:700;">−</td><td style="padding:7px 14px 7px 0; color:#64748b;">中立。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== SECTION 03: SCALABLE COMMAND HOUSING ===== -->
+      <section style="padding:38px 0 0; margin-top:30px; border-top:3px solid #eef2ff;">
+        <div style="display:flex; align-items:baseline; gap:12px; margin-top:18px;">
+          <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">03</span>
+          <h2 style="font-size:23px; font-weight:700; margin:0; letter-spacing:0.01em;">将来拡張の収納戦略 ─ メニューバー / コンテキストメニュー / コマンドパレット</h2>
+        </div>
+        <p style="font-size:14.5px; line-height:1.75; color:#3e4c59; margin:14px 0 4px; text-wrap:pretty;">将来の機能増加を、<strong style="font-weight:700;">初期表示の静けさ（CB-1）を保ったまま</strong>安定して吸収するための収納構造を定義する。現行のフラットなツールバー（新規/複製/開く/詳細/元に戻す…12要素が横一列）は、機能が増えるほど膨張し CB-1 に反する。そこで<strong style="font-weight:700;">「常時見える量」を増やさずに「到達できる量」を増やす</strong>収納の階層化を導入する。</p>
+
+        <!-- 4-layer housing model -->
+        <figure style="margin:18px 0 6px;">
+          <div class="wf" style="border:1px solid #d8dee9; border-radius:10px; overflow:hidden; background:#fbfcfd; padding:14px;">
+            <div style="font-size:11px; font-weight:700; color:#334155; margin-bottom:10px; letter-spacing:0.04em;">収納の5層モデル ─ 下に行くほど常時表示は減り、収容力は増える</div>
+            <div style="display:flex; flex-direction:column; gap:7px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="flex:0 0 130px; font-size:11px; font-weight:700; color:#0e7490;">① キャンバス面</span>
+                <div style="flex:1; height:24px; background:linear-gradient(90deg,#cffafe,#ecfeff); border:1px solid #a5f3fc; border-radius:5px; display:flex; align-items:center; padding:0 9px; font-size:10px; color:#155e75;">直接操作＋状態バッジ（保留・違和感・未レビュー）</div>
+                <span style="flex:0 0 96px; font-size:9px; color:#64748b; text-align:right;">常時表示: 最大</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="flex:0 0 130px; font-size:11px; font-weight:700; color:#1d4ed8;">② スリムツールバー</span>
+                <div style="flex:1; height:24px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:5px; display:flex; align-items:center; padding:0 9px; font-size:10px; color:#1d4ed8;">最頻の数個（新規カード・島を作成・元に戻す）＋ メニュー起点</div>
+                <span style="flex:0 0 96px; font-size:9px; color:#64748b; text-align:right;">常時表示: 小・固定</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="flex:0 0 130px; font-size:11px; font-weight:700; color:#4338ca;">③ メニューバー</span>
+                <div style="flex:1; height:24px; background:#eef2ff; border:1px solid #c7d2fe; border-radius:5px; display:flex; align-items:center; padding:0 9px; font-size:10px; color:#3730a3;">分類済みコマンドの恒久的な住所（ファイル/編集/カード/表示/作業/共有）</div>
+                <span style="flex:0 0 96px; font-size:9px; color:#64748b; text-align:right;">収容力: 大</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="flex:0 0 130px; font-size:11px; font-weight:700; color:#6d28d9;">④ コンテキストメニュー</span>
+                <div style="flex:1; height:24px; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:5px; display:flex; align-items:center; padding:0 9px; font-size:10px; color:#6d28d9;">対象依存。いま選んでいる物に関係するコマンドだけを出す</div>
+                <span style="flex:0 0 96px; font-size:9px; color:#64748b; text-align:right;">常時表示: 0</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="flex:0 0 130px; font-size:11px; font-weight:700; color:#9333ea;">⑤ コマンドパレット</span>
+                <div style="flex:1; height:24px; background:#faf5ff; border:1px solid #e9d5ff; border-radius:5px; display:flex; align-items:center; padding:0 9px; font-size:10px; color:#9333ea;">⌘K で全コマンドを検索（オーバーフロー弁・将来機能の既定の住所）</div>
+                <span style="flex:0 0 96px; font-size:9px; color:#64748b; text-align:right;">収容力: 無限</span>
+              </div>
+            </div>
+            <div style="margin-top:11px; border-top:1px dashed #e2e8f0; padding-top:9px; font-size:10px; color:#b45309; line-height:1.5;">⚠ ガードレール ─ <strong style="font-weight:700;">保留・違和感・未レビューを保持する操作は①②より奥へ下げない</strong>（CB-2）。メニュー・パレットへ収めてよいのは「重い・まれ・分類可能」なコマンドに限る。</div>
+          </div>
+          <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図7 ─ 機能はこの5層のどこに住むかを必ず決める。新機能は原則 ③〜⑤ から始め、利用実績が高いものだけ ② へ昇格。①の状態保持操作は不可侵。これにより機能が増えても初期表示の要素数は一定に保てる。</figcaption>
+        </figure>
+
+        <!-- 3-1 MENU BAR before/after -->
+        <h4 style="font-size:15px; font-weight:700; margin:26px 0 0;">3-1 メニューバー ─ フラットなツールバーを分類済みメニューへ包含</h4>
+        <p style="font-size:13.5px; line-height:1.7; color:#3e4c59; margin:10px 0 0;">12個並ぶ現行ツールバーを、6つのメニュー＋最頻3操作のスリムバーへ<strong style="font-weight:700;">包含（CB-3）</strong>する。常時見える要素はむしろ<strong style="font-weight:700;">減り</strong>、かつ将来のコマンドは該当メニューに足すだけで安定して収まる。</p>
+        <figure style="margin:14px 0 6px;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <!-- before flat toolbar -->
+            <div class="wf" style="border:1px solid #fecaca; border-radius:8px; overflow:hidden; background:#fff;">
+              <div style="background:#fef2f2; border-bottom:1px solid #fecaca; padding:5px 10px; font-size:10.5px; font-weight:700; color:#b91c1c;">Before ・ フラット12要素（機能追加で右へ膨張）</div>
+              <div style="padding:9px 10px; display:flex; gap:5px; flex-wrap:wrap;">
+                <span style="font-size:9.5px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:3px 7px; color:#475569;">新規</span>
+                <span style="font-size:9.5px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:3px 7px; color:#475569;">複製</span>
+                <span style="font-size:9.5px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:3px 7px; color:#475569;">doc ▾</span>
+                <span style="font-size:9.5px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:3px 7px; color:#475569;">開く</span>
+                <span style="font-size:9.5px; background:#fffbeb; border:1px solid #fde68a; border-radius:4px; padding:3px 7px; color:#b45309;">詳細</span>
+                <span style="font-size:9.5px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:3px 7px; color:#475569;">元に戻す</span>
+                <span style="font-size:9.5px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:3px 7px; color:#475569;">やり直す</span>
+                <span style="font-size:9.5px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:3px 7px; color:#475569;">▶旧式JSON</span>
+                <span style="font-size:9.5px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:3px 7px; color:#475569;">新規カード</span>
+                <span style="font-size:9.5px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:3px 7px; color:#475569;">島を作成</span>
+                <span style="font-size:9.5px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:3px 7px; color:#475569;">削除</span>
+                <span style="font-size:9.5px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:3px 7px; color:#475569;">保存</span>
+                <span style="font-size:9.5px; color:#dc2626; padding:3px 4px;">＋将来機能…→</span>
+              </div>
+            </div>
+            <!-- after menu bar -->
+            <div class="wf" style="border:1px solid #bbf7d0; border-radius:8px; overflow:hidden; background:#fff;">
+              <div style="background:#ecfdf5; border-bottom:1px solid #bbf7d0; padding:5px 10px; font-size:10.5px; font-weight:700; color:#15803d;">After ・ 6メニュー＋最頻3操作＋⌘K（増えても常時表示は一定）</div>
+              <div style="padding:9px 10px;">
+                <div style="display:flex; align-items:center; gap:3px; flex-wrap:wrap;">
+                  <span style="font-size:10px; padding:3px 9px; color:#334155; border-radius:4px;">ファイル</span>
+                  <span style="font-size:10px; padding:3px 9px; color:#334155; border-radius:4px; background:#eef2ff; border:1px solid #c7d2fe;">編集 ▾</span>
+                  <span style="font-size:10px; padding:3px 9px; color:#334155; border-radius:4px;">カード</span>
+                  <span style="font-size:10px; padding:3px 9px; color:#334155; border-radius:4px;">表示</span>
+                  <span style="font-size:10px; padding:3px 9px; color:#334155; border-radius:4px;">作業</span>
+                  <span style="font-size:10px; padding:3px 9px; color:#334155; border-radius:4px;">共有</span>
+                  <span style="width:1px; height:16px; background:#e2e8f0; margin:0 6px;"></span>
+                  <span style="font-size:9.5px; background:#2563eb; color:#fff; border-radius:4px; padding:3px 8px;">＋ 新規カード</span>
+                  <span style="font-size:9.5px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:3px 8px; color:#475569;">島を作成</span>
+                  <span style="font-size:9.5px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:3px 8px; color:#475569;">⟲ 元に戻す</span>
+                  <span style="margin-left:auto; font-size:9.5px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:4px; padding:3px 8px; color:#64748b;">⌘K コマンド…</span>
+                </div>
+                <!-- open "編集" menu -->
+                <div style="position:relative; height:0;">
+                  <div style="position:absolute; top:6px; left:64px; width:210px; background:#fff; border:1px solid #e2e8f0; border-radius:7px; box-shadow:0 10px 28px rgba(15,23,42,0.14); padding:5px; z-index:2;">
+                    <div style="display:flex; justify-content:space-between; padding:5px 9px; font-size:10px; color:#334155;">元に戻す <span style="color:#94a3b8;">⌘Z</span></div>
+                    <div style="display:flex; justify-content:space-between; padding:5px 9px; font-size:10px; color:#334155;">やり直す <span style="color:#94a3b8;">⌘⇧Z</span></div>
+                    <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+                    <div style="display:flex; justify-content:space-between; padding:5px 9px; font-size:10px; color:#334155;">複製 <span style="color:#94a3b8;">⌘D</span></div>
+                    <div style="display:flex; justify-content:space-between; padding:5px 9px; font-size:10px; color:#334155;">すべて選択 <span style="color:#94a3b8;">⌘A</span></div>
+                    <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+                    <div style="display:flex; justify-content:space-between; padding:5px 9px; font-size:10px; color:#b91c1c;">削除 <span style="color:#fca5a5;">⌫</span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="height:64px;"></div>
+            </div>
+          </div>
+          <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図8 ─ メニューバーは分類済みコマンドの恒久的な住所。<strong style="font-weight:600;">ショートカットをメニュー内に併記</strong>してキーボード操作を発見可能にする（フォーカス契約の強化）。「作業」メニューは課題1の作業ドロワーを開く起点を兼ねる。</figcaption>
+        </figure>
+
+        <!-- 3-2 context menu -->
+        <h4 style="font-size:15px; font-weight:700; margin:26px 0 0;">3-2 コンテキストメニュー ─ 対象依存で関連コマンドだけを出す</h4>
+        <p style="font-size:13.5px; line-height:1.7; color:#3e4c59; margin:10px 0 0;">現行の4項目（編集/関係線でつなぐ/島を作成/削除）を<strong style="font-weight:700;">グループ化＋対象依存</strong>へ拡張。常時表示は0のまま、選択対象（カード1枚／複数／島／空白）に応じて出る項目が変わるため、機能が増えても画面は静かなまま。</p>
+        <figure style="margin:14px 0 6px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start;">
+            <div>
+              <div style="font-size:11px; font-weight:700; color:#b91c1c; margin-bottom:6px;">Before ・ フラット4項目</div>
+              <div class="wf" style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 8px 20px rgba(15,23,42,0.1); padding:6px; width:190px;">
+                <div style="padding:6px 10px; font-size:11px; color:#334155;">カードを編集</div>
+                <div style="padding:6px 10px; font-size:11px; color:#334155;">関係線でつなぐ</div>
+                <div style="padding:6px 10px; font-size:11px; color:#334155;">島を作成</div>
+                <div style="height:1px; background:#f1f5f9; margin:3px 0;"></div>
+                <div style="padding:6px 10px; font-size:11px; color:#334155;">削除</div>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11px; font-weight:700; color:#15803d; margin-bottom:6px;">After ・ グループ化＋対象依存＋サブメニュー</div>
+              <div class="wf" style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 8px 20px rgba(15,23,42,0.12); padding:6px; width:228px; position:relative;">
+                <div style="padding:2px 10px 4px; font-size:8.5px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">編集</div>
+                <div style="display:flex; justify-content:space-between; padding:5px 10px; font-size:11px; color:#334155;">カードを編集 <span style="color:#cbd5e1;">⏎</span></div>
+                <div style="display:flex; justify-content:space-between; padding:5px 10px; font-size:11px; color:#334155;">claimType を変更 <span style="color:#cbd5e1;">▸</span></div>
+                <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+                <div style="padding:2px 10px 4px; font-size:8.5px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">状態（保持系・常に手前）</div>
+                <div style="display:flex; justify-content:space-between; padding:5px 10px; font-size:11px; color:#a16207;">保留にする / 解除 <span style="background:#fef9c3; border-radius:3px; padding:0 5px; font-size:8px;">保留</span></div>
+                <div style="display:flex; justify-content:space-between; padding:5px 10px; font-size:11px; color:#b45309;">違和感を付ける <span style="background:#fef3c7; border-radius:3px; padding:0 5px; font-size:8px;">違和感</span></div>
+                <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+                <div style="padding:2px 10px 4px; font-size:8.5px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">関係・グループ</div>
+                <div style="padding:5px 10px; font-size:11px; color:#334155;">関係線でつなぐ…</div>
+                <div style="padding:5px 10px; font-size:11px; color:#cbd5e1;">島を作成（2枚以上で有効）</div>
+                <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+                <div style="padding:2px 10px 4px; font-size:8.5px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">作業</div>
+                <div style="display:flex; justify-content:space-between; padding:5px 10px; font-size:11px; color:#334155;">このカードで差分… <span style="color:#cbd5e1;">▸</span></div>
+                <div style="padding:5px 10px; font-size:11px; color:#94a3b8;">AI候補（AI: オフ — 手動で操作）</div>
+                <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+                <div style="padding:5px 10px; font-size:11px; color:#b91c1c;">削除</div>
+                <!-- submenu -->
+                <div style="position:absolute; top:30px; right:-150px; width:150px; background:#fff; border:1px solid #e2e8f0; border-radius:7px; box-shadow:0 8px 20px rgba(15,23,42,0.12); padding:5px;">
+                  <div style="display:flex; align-items:center; gap:5px; padding:5px 9px; font-size:10px; color:#15803d;"><span style="width:7px;height:7px;border-radius:2px;background:#22c55e;"></span>事実</div>
+                  <div style="display:flex; align-items:center; gap:5px; padding:5px 9px; font-size:10px; color:#2563eb;"><span style="width:7px;height:7px;border-radius:2px;background:#3b82f6;"></span>主張</div>
+                  <div style="display:flex; align-items:center; gap:5px; padding:5px 9px; font-size:10px; color:#7c3aed;"><span style="width:7px;height:7px;border-radius:2px;background:#a855f7;"></span>仮説</div>
+                  <div style="display:flex; align-items:center; gap:5px; padding:5px 9px; font-size:10px; color:#64748b;"><span style="width:7px;height:7px;border-radius:2px;background:#cbd5e1;"></span>不明</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <figcaption style="font-size:12px; color:#7b8794; margin-top:10px; line-height:1.55;">図9 ─ 区切り見出しで「編集／状態／関係・グループ／作業」を整理。<strong style="font-weight:600; color:#a16207;">保持系（保留・違和感）はメニュー内でも上位</strong>に置き手前を保つ（CB-2）。非該当コマンドは淡色の無効表示で文脈を保ち、AI無効時も「手動で操作」と肯定提示（課題4と整合）。</figcaption>
+        </figure>
+
+        <!-- 3-3 command palette -->
+        <h4 style="font-size:15px; font-weight:700; margin:26px 0 0;">3-3 コマンドパレット（⌘K）─ 将来機能の既定の住所</h4>
+        <p style="font-size:13.5px; line-height:1.7; color:#3e4c59; margin:10px 0 12px;">常時表示ゼロで収容力は無限。<strong style="font-weight:700;">新機能はまずパレットに登録</strong>し、UI へ恒久配置するかは利用実績で判断する。これにより「とりあえずツールバーに足す」純増を構造的に防げる（CB-1/CB-3）。</p>
+        <figure style="margin:0 0 6px;">
+          <div class="wf" style="border:1px solid #e9d5ff; border-radius:10px; overflow:hidden; background:#faf5ff; padding:18px; display:flex; justify-content:center;">
+            <div style="width:340px; background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 18px 40px rgba(15,23,42,0.16); overflow:hidden;">
+              <div style="display:flex; align-items:center; gap:8px; padding:11px 13px; border-bottom:1px solid #f1f5f9;">
+                <span style="font-size:12px; color:#94a3b8;">⌘K</span>
+                <span style="font-size:12px; color:#cbd5e1;">コマンドや文書を検索…</span>
+              </div>
+              <div style="padding:6px;">
+                <div style="padding:3px 10px 4px; font-size:8.5px; font-weight:700; color:#94a3b8; letter-spacing:0.06em;">よく使う</div>
+                <div style="display:flex; justify-content:space-between; padding:6px 10px; font-size:11px; color:#334155; background:#eef2ff; border-radius:5px;">作業ドロワーを開く（差分） <span style="color:#94a3b8;">⌘J</span></div>
+                <div style="display:flex; justify-content:space-between; padding:6px 10px; font-size:11px; color:#334155;">選択を保留にする <span style="background:#fef9c3; border-radius:3px; padding:0 5px; font-size:8px; color:#a16207;">保留</span></div>
+                <div style="display:flex; justify-content:space-between; padding:6px 10px; font-size:11px; color:#334155;">確認ビューに切替 <span style="color:#94a3b8;">⌥⇧2</span></div>
+                <div style="display:flex; justify-content:space-between; padding:6px 10px; font-size:11px; color:#334155;">共有と再現を開く（SafeMode確認） <span style="color:#94a3b8;"></span></div>
+                <div style="padding:3px 10px 4px; font-size:8.5px; font-weight:700; color:#94a3b8; letter-spacing:0.06em; margin-top:3px;">将来機能（パレット先行登録）</div>
+                <div style="display:flex; justify-content:space-between; padding:6px 10px; font-size:11px; color:#64748b;">クラスタの自動下書き（AI候補） <span style="font-size:8px; color:#94a3b8;">AI: オフ</span></div>
+              </div>
+            </div>
+          </div>
+          <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図10 ─ ⌘K は ② のスリムバーからも開ける。検索→Enter で実行、結果にショートカットを併記して学習を促す。閉じれば痕跡ゼロ。</figcaption>
+        </figure>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:18px;">
+          <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+            <div style="font-size:11px; font-weight:700; color:#4338ca; letter-spacing:0.06em;">解く課題</div>
+            <p style="font-size:12.5px; line-height:1.6; color:#475569; margin:7px 0 0;">将来の機能拡張に対する<strong style="font-weight:700;">恒久的な収納先</strong>を用意し、課題2（純増）の再発を構造的に防止。課題1の作業ドロワーへの起点（「作業」メニュー／⌘K）も提供。</p>
+          </div>
+          <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+            <div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">複雑性予算 CB-1〜4</div>
+            <ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.6; color:#475569;">
+              <li><strong>CB-1</strong>: ツールバー12→（6メニュー＋3操作）で常時表示は<strong style="color:#15803d;">純減</strong>。以後の追加は表示数を増やさない。</li>
+              <li><strong>CB-2</strong>: 保留・違和感は①②とメニュー上位に固定、奥へ下げない。</li>
+              <li><strong>CB-3</strong>: メニューは既存コマンドの<strong style="color:#15803d;">包含</strong>。純増ではない。</li>
+              <li><strong>CB-4</strong>: 破壊的コマンドは確認＋取消、メニューにも⌘Z併記。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:12px 14px; margin-top:12px;">
+          <div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">トレードオフ・移行コスト</div>
+          <p style="font-size:12.5px; line-height:1.65; color:#854d0e; margin:7px 0 0;">メニューバーは「常に1クリック余分」になる操作が生じる（最頻3操作をスリムバーに残して緩和）。フラットなツールバーの位置記憶を持つユーザーには再学習が必要 ─ 移行期は旧ツールバーのボタン名を該当メニュー先頭に同名で配置し、ツールチップで「○○メニューへ移動」と案内。コマンド分類とショートカット表の整備が一度きりのコストとして発生。<strong style="font-weight:700;">キーボード/フォーカス契約</strong>: メニューは Alt/方向キーで巡回、Esc で閉じトリガーへ復帰。⌘K は既存ショートカットと衝突しないキーを選定。コンテキストメニューの項目順（既存4項目の相対順）は維持し、追加分はグループ末尾に置く。スキーマ変更なし。</p>
+        </div>
+
+        <div class="axis" style="margin-top:14px; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+          <div style="background:#f8fafc; padding:7px 14px; font-size:11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; letter-spacing:0.04em;">5判断軸 自己評価</div>
+          <table style="width:100%; border-collapse:collapse; font-size:12px;">
+            <tbody style="color:#3e4c59;">
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9; width:46%;">1. 人間の思考を雑にしないか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; width:5%; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">常時表示を抑え、いま必要な操作だけに集中させる。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">2. AIに早すぎる収束を与えないか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">AI候補もメニュー/パレットの一項目に留め前面化させない。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">3. 保留・対立・未レビューを保持できるか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">ガードレールで保持系を①②・メニュー上位に固定。</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid #f1f5f9;">4. 差分・監査・レビューに載るか</td><td style="padding:7px 8px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td><td style="padding:7px 14px 7px 0; border-bottom:1px solid #f1f5f9; color:#64748b;">コマンドを一意名で持てば操作ログ・監査に載せやすい。</td></tr>
+              <tr><td style="padding:7px 14px;">5. 人間/AI 文脈を混同しないか</td><td style="padding:7px 8px; color:#15803d; font-weight:700;">◎</td><td style="padding:7px 14px 7px 0; color:#64748b;">AI項目を明示分類・無効時も肯定提示で人間操作と峻別。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== SUMMARY MATRIX + NON-GOALS ===== -->
+      <section style="padding:38px 0 0; margin-top:30px; border-top:3px solid #eef2ff;">
+        <div style="display:flex; align-items:baseline; gap:12px; margin-top:18px;">
+          <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">04</span>
+          <h2 style="font-size:23px; font-weight:700; margin:0;">総括 ─ 初期表示への純増と核の保護</h2>
+        </div>
+        <p style="font-size:14.5px; line-height:1.75; color:#3e4c59; margin:14px 0 18px; text-wrap:pretty;">5案＋収納戦略（03）を通じて<strong style="font-weight:700;">初期表示（未選択時）は純減</strong>する。追加した恒常要素は「AI状態チップ」1個のみで、これも SafeMode と同型・状態表示であり操作の純増ではない。重い機能は領域4のドロワーへ退避し、ツールバーは6メニュー＋最頻3操作へ包含。<strong style="font-weight:700;">将来の機能はメニュー/コンテキストメニュー/コマンドパレット（③〜⑤層）に収め、常時表示の要素数を一定に保つ</strong>。</p>
+
+        <div style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+          <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+            <thead><tr style="background:#f8fafc; text-align:left;">
+              <th style="padding:9px 12px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">案</th>
+              <th style="padding:9px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">初期表示への純増</th>
+              <th style="padding:9px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">置換/包含/分離</th>
+              <th style="padding:9px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">可逆の明示</th>
+              <th style="padding:9px 12px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">スキーマ</th>
+            </tr></thead>
+            <tbody style="color:#3e4c59; line-height:1.5;">
+              <tr><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9; font-weight:500;">課題1 領域4独立</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9; color:#15803d;">純減</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9;">分離＋置換</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9; color:#15803d;">○ ドロワー内に取消</td><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9;">不変</td></tr>
+              <tr><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9; font-weight:500;">課題2 純増・重複</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9; color:#15803d;">純減</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9;">削除（包含）</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9; color:#15803d;">○ 解除1クリック</td><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9;">不変</td></tr>
+              <tr><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9; font-weight:500;">課題3 語義衝突</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9; color:#64748b;">なし</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9;">ラベル置換</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9; color:#64748b;">— </td><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9;">不変（内部名維持）</td></tr>
+              <tr><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9; font-weight:500;">課題4 provider=none</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9; color:#b45309;">チップ1個（状態）</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9;">状態表示の追加</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9; color:#15803d;">○ 候補は採否可逆</td><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9;">不変</td></tr>
+              <tr><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9; font-weight:500;">課題5 バッジ重なり</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9; color:#64748b;">なし</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9;">再配置（置換）</td><td style="padding:9px 10px; border-bottom:1px solid #f1f5f9; color:#64748b;">—</td><td style="padding:9px 12px; border-bottom:1px solid #f1f5f9;">不変</td></tr>
+              <tr><td style="padding:9px 12px; font-weight:500;">収納戦略（メニュー等）</td><td style="padding:9px 10px; color:#15803d;">純減</td><td style="padding:9px 10px;">包含＋分離</td><td style="padding:9px 10px; color:#15803d;">○ ⌘Z併記</td><td style="padding:9px 12px;">不変</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:22px; border:1px solid #c7d2fe; background:#f5f7ff; border-radius:10px; padding:16px 18px;">
+          <div style="font-size:12px; font-weight:700; color:#3730a3; letter-spacing:0.06em;">非目標の遵守確認</div>
+          <ul style="margin:10px 0 0; padding-left:18px; font-size:13px; line-height:1.7; color:#3e4c59;">
+            <li>全画面の一括 reskin はしない（視覚トーン据え置き、構造とIAのみ調整）。</li>
+            <li>反スコアリング・キャンバス主従・SafeMode 既定ON の方針は転換しない。むしろ課題4で核を補強。</li>
+            <li>スキーマ変更なし／レガシー機能の削除なし（「旧式JSON」「レビューパック」等は維持）。</li>
+            <li>キーボード/フォーカス契約を破壊しない（ドロワーはトラップ＋Esc＋復帰、ショートカット据え置き）。</li>
+          </ul>
+        </div>
+
+        <p style="font-size:13px; line-height:1.7; color:#7b8794; margin:20px 0 56px; text-wrap:pretty;">次の検討候補（本提案外）: ① 作業ドロワー・メニューをモバイル（390px）で下部シート／ハンバーガーに切替える際の規則、② 「確認ビュー」と視点プリセット（Explore/Review/Summary）の表示名整合、③ AI候補の「採否」操作を差分・監査ログへ載せる表現、④ コマンドのレジストリ化（各機能に一意ID・分類・ショートカットを持たせ、メニュー／コンテキスト／パレットへ自動配信する単一の出所）。いずれも本提案の方向と矛盾せず、別タスクで詳細化できます。</p>
+      </section>
+
+
+
+    </td></tr></tbody>
+    <tfoot><tr><td class="ftr-space" style="display:none; padding:0;"></td></tr></tfoot>
+  </table>
+</main>
+</x-dc>
+</body>
+</html>
