@@ -115,3 +115,7 @@
 - Related: `01_Plans/issues/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md`（パネル閉鎖・focus 復帰契約）
 - Related: `01_Plans/issues/issue-UX-COMPLEXITY-01-core-value-foregrounding.md`（可視性規律。本Issueは構造実体化の別軸）
 - Derived-from: `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`（明示的に先送りされたナビゲーション階層 issue）
+
+## 実装設計の到着（2026-07-04）
+
+- Claude Design Round 4 成果（`02_Architecture/design/kj-atlas 拡張提案.dc.html` §領域4）に、Deferred 中の AC-2 実装に必要な**5タブ（差分/選択マージ/AI提案/診断/文章化）の完全設計**（状態機械・監査ログ・provider=none 肯定提示・診断の反スコアリング所在提示・role=tablist/Esc段階の a11y 仕様）が到着。プロトタイプで差分タブ全状態が操作可能。AC-2 着手時の設計正本として参照のこと。

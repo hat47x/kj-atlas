@@ -80,3 +80,7 @@
 - Related: `01_Plans/issues/issue-PRODUCT-UX-01-first-run-document-entry.md`（スコープ境界）, `issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`（連携先）
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（観点1・図C）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
+
+## 実装設計の到着（2026-07-04）
+
+- Claude Design Round 4 成果（同上 §段階1レッドライン）に空状態ヒントの出現・消滅条件（カード0枚時のみ・最初のカード作成で消滅・コーチマークは一度実行で再表示なし=localStorage）の仕様が確定。プロトタイプが参照実装。

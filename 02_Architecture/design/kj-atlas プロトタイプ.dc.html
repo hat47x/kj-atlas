@@ -209,7 +209,7 @@
             <sc-if value="{{ card.unclear }}" hint-placeholder-val="{{ false }}"><span style="font-size:9.5px; padding:1px 6px; border-radius:4px; background:#fef3c7; color:#b45309; font-weight:600;">違和感</span></sc-if>
             <sc-if value="{{ card.notReviewed }}" hint-placeholder-val="{{ false }}"><span title="未レビュー" style="width:7px; height:7px; border-radius:999px; background:#f59e0b; display:inline-block;"></span></sc-if>
             <span style="margin-left:auto; display:flex; align-items:center; gap:5px;">
-              <sc-if value="{{ card.lone }}" hint-placeholder-val="{{ false }}"><span title="少数意見（一匹狼）— 保護対象" style="font-size:8px; font-weight:700; color:#be185d; background:#fce7f3; border:1px solid #fbcfe8; border-radius:3px; padding:0 4px;">少数</span></sc-if>
+              <sc-if value="{{ card.lone }}" hint-placeholder-val="{{ false }}"><span title="保護対象（無理に分類しない）" style="font-size:8px; font-weight:700; color:#475569; background:#f1f5f9; border:1px dashed #cbd5e1; border-radius:3px; padding:0 4px;">保護</span></sc-if>
               <sc-if value="{{ card.hasMemo }}" hint-placeholder-val="{{ false }}"><span title="メモあり" style="font-size:8px; font-weight:700; color:#64748b; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:3px; padding:0 4px;">メモ</span></sc-if>
               <sc-if value="{{ card.hasTags }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px; padding:1px 6px; border-radius:4px; background:#f1f5f9; color:#64748b;">{{ card.tags }} tag</span></sc-if>
             </span>
@@ -289,14 +289,35 @@
           <sc-if value="{{ isDiff }}" hint-placeholder-val="{{ true }}">
             <div>
               <div style="font-size:12.5px; font-weight:600; color:#334155;">レビュー差分（順序化された確認）</div>
-              <button style="margin-top:10px; width:100%; font-size:12px; color:#334155; background:#f8fafc; border:1px solid #e2e8f0; border-radius:7px; padding:9px;">比較対象ドキュメントを読み込む（JSON）</button>
-              <div style="margin-top:12px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
-                <div style="padding:8px 11px; font-size:11px; background:#f8fafc; color:#64748b; border-bottom:1px solid #eef2f6;">検出された差分</div>
-                <div style="padding:9px 11px; font-size:12px; color:#334155; border-bottom:1px solid #f5f7fa; display:flex; gap:8px;"><span style="color:#15803d;">＋</span>「観察メモをカード化する」追加</div>
-                <div style="padding:9px 11px; font-size:12px; color:#334155; display:flex; gap:8px;"><span style="color:#b45309;">±</span>「まだ曖昧な主張」の保留状態が変更</div>
-              </div>
-              <label style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12px; color:#475569;"><input type="checkbox" checked />前提項目を自動選択</label>
-              <button style="margin-top:10px; width:100%; font-size:12px; color:#fff; background:#4338ca; border:none; border-radius:7px; padding:9px;">選択したマージを適用</button>
+              <sc-if value="{{ diffIdle }}" hint-placeholder-val="{{ true }}">
+                <div>
+                  <p style="font-size:11.5px; color:#64748b; line-height:1.6; margin:8px 0 0;">比較対象のドキュメントを読み込むと、順序化された差分が一覧されます。適用は人間が行い、いつでも取り消せます。</p>
+                  <button onClick="{{ onDiffLoad }}" style="margin-top:12px; width:100%; font-size:12px; color:#334155; background:#f8fafc; border:1px solid #e2e8f0; border-radius:7px; padding:9px; cursor:pointer;">比較対象ドキュメントを読み込む（JSON）</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ diffLoading }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px;">
+                  <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569;"><span style="width:13px;height:13px;border:2px solid #c7d2fe;border-top-color:#4338ca;border-radius:999px; display:inline-block; animation:spin 0.8s linear infinite;"></span>差分を読み込み中…</div>
+                  <button onClick="{{ onDiffCancel }}" style="margin-top:12px; font-size:11px; color:#b91c1c; background:#fff; border:1px solid #fecaca; border-radius:6px; padding:5px 11px; cursor:pointer;">キャンセル</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ diffList }}" hint-placeholder-val="{{ false }}">
+                <div>
+                  <div style="margin-top:12px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+                    <div style="padding:8px 11px; font-size:11px; background:#f8fafc; color:#64748b; border-bottom:1px solid #eef2f6;">検出された差分（2件）</div>
+                    <div style="padding:9px 11px; font-size:12px; color:#334155; border-bottom:1px solid #f5f7fa; display:flex; gap:8px;"><span style="color:#15803d;">＋</span>「観察メモをカード化する」追加</div>
+                    <div style="padding:9px 11px; font-size:12px; color:#334155; display:flex; gap:8px;"><span style="color:#b45309;">±</span>「まだ曖昧な主張」の保留状態が変更</div>
+                  </div>
+                  <div onClick="{{ onDiffAuto }}" style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12px; color:#475569; cursor:pointer;"><span style="{{ autoChkStyle }}">✓</span>前提項目を自動選択</div>
+                  <button onClick="{{ onDiffApply }}" style="margin-top:10px; width:100%; font-size:12px; color:#fff; background:#4338ca; border:none; border-radius:7px; padding:9px; cursor:pointer;">選択したマージを適用</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ diffApplied }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px;">
+                  <div style="border:1px solid #bbf7d0; background:#f0fdf4; border-radius:8px; padding:10px 12px; font-size:12px; color:#15803d;">✓ マージを適用しました（2件）。監査ログに記録済み。</div>
+                  <button onClick="{{ onDiffUndo }}" style="margin-top:10px; width:100%; font-size:12px; color:#b91c1c; background:#fff; border:1px solid #fecaca; border-radius:7px; padding:9px; cursor:pointer;">適用を取り消す</button>
+                </div>
+              </sc-if>
             </div>
           </sc-if>
           <sc-if value="{{ isMerge }}" hint-placeholder-val="{{ false }}">
@@ -374,7 +395,43 @@
             <sc-if value="{{ sel.hasContradiction }}" hint-placeholder-val="{{ false }}">
               <div style="margin-top:9px; font-size:11.5px; color:#b91c1c;">矛盾: {{ sel.contradiction }}件 ・ 根拠 {{ sel.rootOut }}発信 / {{ sel.rootIn }}受信</div>
             </sc-if>
+            <div style="display:flex; gap:6px; margin-top:9px;">
+              <button onClick="{{ onToggleContra }}" style="font-size:10.5px; color:#b91c1c; background:#fff; border:1px solid #fecaca; border-radius:6px; padding:4px 9px; cursor:pointer;">矛盾フラグを切替（可逆）</button>
+              <button onClick="{{ onCritiqueToggle }}" style="font-size:10.5px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:4px 9px; cursor:pointer;">違和感→再提案</button>
+            </div>
           </div>
+          <!-- 違和感→再提案ループ -->
+          <sc-if value="{{ critiqueOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:10px; border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:10px 12px;">
+              <sc-if value="{{ critiqueEdit }}" hint-placeholder-val="{{ true }}">
+                <div>
+                  <div style="font-size:10.5px; font-weight:700; color:#b45309; letter-spacing:0.05em;">違和感を言語化 → 制約として再提案</div>
+                  <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:8px;">
+                    <span onClick="{{ ctag.gap.onClick }}" style="{{ ctag.gap.style }}">論理の飛躍</span>
+                    <span onClick="{{ ctag.vague.onClick }}" style="{{ ctag.vague.style }}">曖昧</span>
+                    <span onClick="{{ ctag.overreach.onClick }}" style="{{ ctag.overreach.style }}">言い過ぎ</span>
+                    <span onClick="{{ ctag.bias.onClick }}" style="{{ ctag.bias.style }}">偏り</span>
+                    <span onClick="{{ ctag.missing.onClick }}" style="{{ ctag.missing.style }}">根拠不足</span>
+                  </div>
+                  <textarea value="{{ critiqueNote }}" onInput="{{ onCritiqueNote }}" placeholder="自由記述（任意）" style="margin-top:8px; width:100%; box-sizing:border-box; font-family:inherit; font-size:11.5px; color:#334155; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px; resize:vertical; min-height:42px;"></textarea>
+                  <button onClick="{{ onCritiqueRepropose }}" style="margin-top:8px; width:100%; font-size:11.5px; color:#fff; background:#b45309; border:none; border-radius:6px; padding:8px; cursor:pointer;">この違和感を制約に再提案</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ critiqueCompare }}" hint-placeholder-val="{{ false }}">
+                <div>
+                  <div style="font-size:10.5px; font-weight:700; color:#b45309; letter-spacing:0.05em;">差分比較（採否は可逆）</div>
+                  <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+                    <div style="border:1px solid #e2e8f0; background:#fff; border-radius:6px; padding:7px 9px; font-size:11px; color:#64748b;"><span style="color:#94a3b8;">現在:</span> {{ sel.text }}</div>
+                    <div style="border:1px solid #bbf7d0; background:#f0fdf4; border-radius:6px; padding:7px 9px; font-size:11px; color:#15803d;"><span style="color:#16a34a;">再提案:</span> {{ sel.text }}（再提案反映）</div>
+                  </div>
+                  <div style="display:flex; gap:6px; margin-top:8px;">
+                    <button onClick="{{ onCritiqueAdopt }}" style="flex:1; font-size:11.5px; color:#fff; background:#15803d; border:none; border-radius:6px; padding:8px; cursor:pointer;">採用</button>
+                    <button onClick="{{ onCritiqueReject }}" style="flex:1; font-size:11.5px; color:#334155; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:8px; cursor:pointer;">却下（保持）</button>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
           <!-- メモ（グラウンド・セオリー由来） -->
           <sc-if value="{{ sel.hasKa }}" hint-placeholder-val="{{ false }}">
             <div style="margin-top:10px; border:1px solid #fbcfe8; background:#fdf2f8; border-radius:7px; padding:9px 11px;">
@@ -677,6 +734,14 @@
         <span style="font-size:10px; display:flex; align-items:center; gap:3px; color:#b91c1c;">／ 対立</span>
         <span style="font-size:10px; display:flex; align-items:center; gap:3px; color:#64748b;">＝ 同値</span>
       </div>
+      <div style="font-size:9px; font-weight:700; color:#94a3b8; letter-spacing:0.06em; margin-top:9px;">その他</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:5px;">
+        <span style="font-size:10px; display:flex; align-items:center; gap:4px;"><span style="font-size:8px; font-weight:700; color:#475569; background:#f1f5f9; border:1px dashed #cbd5e1; border-radius:3px; padding:0 4px;">保護</span>保護対象（無理に分類しない）</span>
+      </div>
+      <div onClick="{{ onToggleSeq }}" style="margin-top:11px; padding-top:9px; border-top:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; cursor:pointer;">
+        <span style="font-size:10.5px; color:#475569;">通し番号をカードに表示</span>
+        <span style="{{ seqToggleStyle }}">{{ seqToggleLabel }}</span>
+      </div>
     </div>
   </sc-if>
 
@@ -725,18 +790,21 @@ class Component extends DCLogic {
       { id:'c2', type:'claim',      text:'そこから言える主張',   hold:false, unclear:false, reviewed:false, tags:0, x:322, y:96,  island:true,  contra:1, rootOut:0, rootIn:2, seq:2, source:'IV-01 p.3 l.02' },
       { id:'c3', type:'hypothesis', text:'問いとして残す仮説',   hold:false, unclear:false, reviewed:false, tags:0, x:70,  y:312, island:false, contra:0, rootOut:0, rootIn:0, seq:3, source:'IV-02 p.1 l.20' },
       { id:'c4', type:'unknown',    text:'まだ曖昧な主張',       hold:true,  unclear:true,  reviewed:false, tags:1, x:322, y:312, island:false, contra:1, rootOut:1, rootIn:0, seq:4, source:'IV-02 p.4 l.08', memo:'事実か解釈か未確定。判断を保留し、次回の比較で再検討する。' },
-      { id:'c5', type:'ka',         text:'締切前夜に一気に書く', hold:false, unclear:false, reviewed:true,  tags:0, x:574, y:204, island:false, contra:0, rootOut:0, rootIn:0, seq:5, source:'IV-03 p.2 l.05', kaVoice:'一気にやらないと乗らない', kaValue:'集中を一度で作りたい' },
+      { id:'c5', type:'fact',       text:'締切前夜に一気に書く', hold:false, unclear:false, reviewed:true,  tags:0, x:574, y:204, island:false, contra:0, rootOut:0, rootIn:0, seq:5, source:'IV-03 p.2 l.05', ka:true, kaVoice:'一気にやらないと乗らない', kaValue:'集中を一度で作りたい' },
     ],
     selectedId: null,
     selCards: [],
     selIsland: null,
     selRel: null,
+    showSeq: false,
+    critiqueOpen: false, critiqueTags: [], critiqueNote: '', critiquePhase: 'edit',
     marquee: null,
     dragging: false,
     connectFrom: null,
     userRels: [],
     editingId: null, editingText: '',
     drawerOpen: false, drawerTab: 'diff',
+    diffPhase: 'idle', diffAutoSelect: true, diffApplied: false,
     paletteOpen: false, paletteQuery: '',
     ctx: { open:false, x:0, y:0, cardId:null, subOpen:false },
     openMenu: null,
@@ -765,7 +833,6 @@ class Component extends DCLogic {
     claim:      { label:'主張', bg:'#dbeafe', fg:'#1d4ed8' },
     hypothesis: { label:'仮説', bg:'#ede9fe', fg:'#6d28d9' },
     unknown:    { label:'不明', bg:'#f1f5f9', fg:'#64748b' },
-    ka:         { label:'KA', bg:'#fce7f3', fg:'#be185d' },
   };
 
   componentDidMount() {
@@ -1201,6 +1268,27 @@ class Component extends DCLogic {
   // ---- drawer ----
   openDrawer(tab) { this.setState({ drawerOpen:true, drawerTab:tab, openMenu:null, paletteOpen:false }); }
   closeDrawer() { this.setState({ drawerOpen:false }); }
+  // 差分の状態機械: idle→loading→list→applied（取消でlistへ）
+  diffLoad() {
+    this.setState({ diffPhase:'loading' });
+    clearTimeout(this._diffTimer);
+    this._diffTimer = setTimeout(()=> this.setState(st => st.diffPhase==='loading' ? { diffPhase:'list' } : {}), 1400);
+  }
+  diffCancelLoad() { clearTimeout(this._diffTimer); this.setState({ diffPhase:'idle' }); this.flashToast('読み込みをキャンセルしました'); }
+  diffToggleAuto() { this.setState(s => ({ diffAutoSelect: !s.diffAutoSelect })); }
+  diffApply() { this.pushHistory(); this.setState({ diffPhase:'applied', diffApplied:true }); this.flashToast('マージを適用しました（取消可能）'); }
+  diffUndo() { this.undo(); this.setState({ diffPhase:'list', diffApplied:false }); this.flashToast('マージを取り消しました'); }
+  diffReset() { this.setState({ diffPhase:'idle', diffApplied:false }); }
+  // 違和感→再提案ループ: edit(5タグ+自由記述)→compare(差分比較)→採否(可逆)
+  critiqueToggle() { this.setState(s=>({ critiqueOpen:!s.critiqueOpen, critiquePhase:'edit' })); }
+  critiqueTag(t) { this.setState(s=>({ critiqueTags: s.critiqueTags.includes(t) ? s.critiqueTags.filter(x=>x!==t) : s.critiqueTags.concat(t) })); }
+  critiqueNoteInput(v) { this.setState({ critiqueNote:v }); }
+  critiqueRepropose() { if(!this.state.critiqueTags.length && !this.state.critiqueNote){ this.flashToast('違和感のタグか記述を入れてください'); return; } this.setState({ critiquePhase:'compare' }); }
+  critiqueAdopt() { this.pushHistory(); const id=this.state.selectedId; this.setState(s=>({ cards:s.cards.map(c=>c.id===id?{...c, text:c.text+'（再提案反映）', unclear:false}:c), critiqueOpen:false, critiquePhase:'edit', critiqueTags:[], critiqueNote:'' })); this.flashToast('再提案を採用しました（⌘Z/Ctrl+Zで取消）'); }
+  critiqueReject() { this.setState({ critiquePhase:'edit' }); this.flashToast('再提案を却下（元のまま保持）'); }
+  // 矛盾状態の可逆遷移
+  toggleContra(id) { this.pushHistory(); this.setState(s=>({ cards:s.cards.map(c=>c.id===id?{...c, contra: c.contra>0?0:1}:c) })); this.flashToast('矛盾フラグを切替えました（可逆）'); }
+  _cTag(on){ return `font-size:10.5px; padding:3px 9px; border-radius:999px; cursor:pointer; border:1px solid ${on?'#f59e0b':'#e2e8f0'}; background:${on?'#fef3c7':'#fff'}; color:${on?'#b45309':'#64748b'};`; }
 
   // ---- menus ----
   toggleMenu(name) { this.setState(s => ({ openMenu: s.openMenu === name ? null : name })); }
@@ -1433,7 +1521,7 @@ class Component extends DCLogic {
         : `position:absolute; left:${c.x}px; top:${c.y}px; width:206px; background:#fff; border-radius:11px; border:${border}; box-shadow:${sel?'0 6px 18px rgba(37,99,235,0.18)':'0 1px 3px rgba(15,23,42,0.07)'}; opacity:${dimmed?0.3:1}; cursor:pointer; overflow:hidden; transition:opacity .15s, box-shadow .15s, border-color .15s; z-index:${sel?3:2};`;
       return {
         id:c.id, text:c.text, typeLabel:(T[c.type]||T.unknown).label, typeBadgeStyle:badge(c.type,false),
-        seq:c.seq||'', hasSeq:!!c.seq, lone,
+        seq:c.seq||'', hasSeq: !!c.seq && s.showSeq, lone,
         hold:c.hold, unclear:c.unclear, notReviewed:!c.reviewed, hasTags:c.tags>0, tags:c.tags,
         hasMemo: !!c.memo,
         editing: c.id===s.editingId, notEditing: c.id!==s.editingId,
@@ -1781,7 +1869,7 @@ class Component extends DCLogic {
         hasContradiction: selObj.contra>0, contradiction:selObj.contra, rootOut:selObj.rootOut, rootIn:selObj.rootIn,
         hasMemo: !!selObj.memo, memo: selObj.memo || '',
         seq: selObj.seq||'', hasSource: !!selObj.source, source: selObj.source||'',
-        hasKa: selObj.type==='ka', kaVoice: selObj.kaVoice||'', kaValue: selObj.kaValue||'',
+        hasKa: !!selObj.ka, kaVoice: selObj.kaVoice||'', kaValue: selObj.kaValue||'',
         nextHint: (()=>{
           if (!selObj.reviewed) return '未レビューです。確認したら R でレビュー済みに。迷うなら H で保留のままでもOK。';
           if (selObj.unclear) return '違和感あり。言語化できたらメモに残すか、関係線で対立（／）をつなげます。';
@@ -1817,6 +1905,24 @@ class Component extends DCLogic {
       widthMobile:{ onClick:(e)=>{e.stopPropagation();this.setForceMobile(true);}, style:`font-size:11px; padding:4px 9px; border-radius:0 6px 6px 0; border:1px solid #e2e8f0; border-left:none; cursor:pointer; background:${s.forceMobile?'#eef2ff':'#fff'}; color:${s.forceMobile?'#3730a3':'#64748b'}; font-weight:${s.forceMobile?600:400};` },
       drawerTargetLabel: selObj ? selObj.text : '対象未選択',
       isDiff:s.drawerTab==='diff', isMerge:s.drawerTab==='merge', isAi:s.drawerTab==='ai', isDiag:s.drawerTab==='diag', isNarrative:s.drawerTab==='narrative',
+      diffIdle:s.diffPhase==='idle', diffLoading:s.diffPhase==='loading', diffList:s.diffPhase==='list', diffApplied:s.diffPhase==='applied',
+      diffAutoSelect:s.diffAutoSelect,
+      onDiffLoad:()=>this.diffLoad(), onDiffCancel:()=>this.diffCancelLoad(), onDiffAuto:()=>this.diffToggleAuto(),
+      onDiffApply:()=>this.diffApply(), onDiffUndo:()=>this.diffUndo(), onDiffReset:()=>this.diffReset(),
+      autoChkStyle:`width:15px;height:15px;border-radius:3px;border:1px solid ${s.diffAutoSelect?'#4338ca':'#cbd5e1'};background:${s.diffAutoSelect?'#4338ca':'#fff'};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;`,
+      critiqueOpen:s.critiqueOpen, critiqueEdit:s.critiquePhase==='edit', critiqueCompare:s.critiquePhase==='compare',
+      critiqueNote:s.critiqueNote, critiqueTags:s.critiqueTags,
+      onCritiqueToggle:()=>this.critiqueToggle(), onCritiqueRepropose:()=>this.critiqueRepropose(),
+      onCritiqueAdopt:()=>this.critiqueAdopt(), onCritiqueReject:()=>this.critiqueReject(),
+      onCritiqueNote:(e)=>this.critiqueNoteInput(e.target.value),
+      ctag:{
+        gap:{onClick:()=>this.critiqueTag('gap'), style:this._cTag(s.critiqueTags.includes('gap'))},
+        vague:{onClick:()=>this.critiqueTag('vague'), style:this._cTag(s.critiqueTags.includes('vague'))},
+        overreach:{onClick:()=>this.critiqueTag('overreach'), style:this._cTag(s.critiqueTags.includes('overreach'))},
+        bias:{onClick:()=>this.critiqueTag('bias'), style:this._cTag(s.critiqueTags.includes('bias'))},
+        missing:{onClick:()=>this.critiqueTag('missing'), style:this._cTag(s.critiqueTags.includes('missing'))},
+      },
+      onToggleContra:()=>this.toggleContra(s.selectedId),
       tabs:{ diff:{style:tabStyle('diff')}, merge:{style:tabStyle('merge')}, ai:{style:tabStyle('ai')}, diag:{style:tabStyle('diag')}, narrative:{style:tabStyle('narrative')} },
       narrative: (()=>{
         const inIsland = s.cards.filter(c=>c.island);
@@ -1947,6 +2053,9 @@ class Component extends DCLogic {
       onAddFirst:(e)=>{ if(e)e.stopPropagation(); this.setScenario('normal'); this.newCard(); },
       legendOpen: s.legendOpen,
       onToggleLegend:(e)=>{ if(e)e.stopPropagation(); this.toggleLegend(); },
+      onToggleSeq:(e)=>{ if(e)e.stopPropagation(); this.setState(st=>({ showSeq: !st.showSeq })); },
+      seqToggleLabel: s.showSeq ? 'ON' : 'OFF',
+      seqToggleStyle: `font-size:9.5px; font-weight:700; padding:1px 8px; border-radius:999px; ${s.showSeq?'background:#dbeafe;color:#1d4ed8;':'background:#f1f5f9;color:#94a3b8;'}`,
       cheatOpen: s.cheatOpen,
       onToggleCheat:(e)=>{ if(e)e.stopPropagation(); this.toggleCheat(); },
       K, plat,

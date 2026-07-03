@@ -83,3 +83,7 @@
 - Related: `02_Architecture/schemas.md`（§5 `Card.meta` 予約・`Card.sources` 現行意味）
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（仕様精査 C）, `02_Architecture/design/kj-atlas プロトタイプ.dc.html`
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
+
+## 実装設計の到着（2026-07-04）
+
+- Claude Design Round 4 プロトタイプに「通し番号をカードに表示」トグル（既定OFF）と選択時のみの原データ表示が実装され、本Issueの AC-3 の参照実装となった。共有前チェックの出典参照トグル（既定OFF＋警告1行）の設計も同成果 §領域5 に確定。

@@ -1958,6 +1958,138 @@
     </div>
   </section>
 
+  <!-- ===== P21 作業モード面（領域4）完全設計 ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P21</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">領域4</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">作業モード面の中身 ― 5タブの完全設計</h3>
+    </div>
+    <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;"><strong style="font-weight:700; color:#b91c1c;">問題 ─</strong> 全画面オーバーレイの器（Escape段階閉鎖・フォーカス復帰）は実装済みだが中身が空。差分／選択マージ／AI提案／診断／文章化の各タブを、状態遷移まで含めて設計する。タブは <code style="font-family:'Noto Sans Mono',monospace;">role=tablist</code>、矢印キーで移動、Escape段階処理と整合。</p>
+    <figure style="margin:14px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+          <thead><tr style="background:#f8fafc; text-align:left;">
+            <th style="padding:8px 11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:15%;">タブ</th>
+            <th style="padding:8px 11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">状態遷移と要点</th>
+          </tr></thead>
+          <tbody style="color:#3e4c59; line-height:1.55;">
+            <tr><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9; font-weight:700;">差分</td><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9;"><strong style="font-weight:700;">idle→loading（進捗+キャンセル）→list→applied</strong>。listで順序化差分＋「前提項目を自動選択」トグル。appliedは緑確認＋<strong style="font-weight:700;">取消</strong>でlistへ戻す。全状態を実装（プロトタイプで操作可）。</td></tr>
+            <tr><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9; font-weight:700;">選択マージ</td><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9;">採用項目のみ現文書へ反映。<strong style="font-weight:700;">監査ログ</strong>に記録、確定は人間、いつでも取消。差分applied結果の粒度別採否。</td></tr>
+            <tr><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9; font-weight:700;">AI提案</td><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9;">候補は「候補・非確定」バッジ付き。<strong style="font-weight:700;">provider=none 時は「AIなしで完結」を肯定提示</strong>し手動操作へ誘導。確定は人間のみ。</td></tr>
+            <tr><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9; font-weight:700;">診断</td><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9;"><strong style="font-weight:700;">点数・ランク・%を使わない</strong>（反スコアリング）。「未レビューn・根拠なしn・矛盾n」を<strong style="font-weight:700;">確認が要る箇所への導線</strong>として列挙（数は所在提示であり評価ではない）。</td></tr>
+            <tr><td style="padding:8px 11px; font-weight:700;">文章化</td><td style="padding:8px 11px;">B型: <span style="color:#15803d; font-weight:700;">事実=green</span>／<span style="color:#1d4ed8; font-weight:700;">解釈=blue</span> 峻別、未解決（保留・違和感）を「保持」として明示。原文の語句を生かし要約しない。400字結論目安（任意）。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図AA ─ 差分タブの状態機械（idle→loading→list→applied、取消でlistへ）はプロトタイプで操作可能。読込中は進捗＋キャンセル、適用は監査記録＋取消。</figcaption>
+    </figure>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px;">
+      <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;"><div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">CB-1〜4 自己申告</div><ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.6; color:#475569;"><li><strong>CB-1</strong>: 器は既定OFF。中身は開いた時のみ。初期表示の純増なし。</li><li><strong>CB-2</strong>: 診断は数で所在を示すのみ、保留・違和感を確定へ追い込まない。</li><li><strong>CB-3</strong>: 空の器を埋める（純増でなく充填）。</li><li><strong>CB-4</strong>: 差分適用・マージは監査＋取消で可逆。</li></ul></div>
+      <div class="axis" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;"><div style="background:#f8fafc; padding:7px 13px; font-size:11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">5判断軸 自己評価</div><table style="width:100%; border-collapse:collapse; font-size:11.5px;"><tbody style="color:#3e4c59;"><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">1 思考を雑にしない</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">2 早すぎる収束を防ぐ</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">3 保留・対立を保持</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">4 差分・監査に載る</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td></tr><tr><td style="padding:5px 13px;">5 人間/AI文脈の峻別</td><td style="padding:5px 10px; color:#15803d; font-weight:700;">◎</td></tr></tbody></table></div>
+    </div>
+    <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:11px 14px; margin-top:12px;"><div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">移行コスト</div><p style="font-size:12.5px; line-height:1.6; color:#854d0e; margin:6px 0 0;">差分は状態機械＋非同期（進捗・キャンセル・監査）で中コスト。診断の反スコアリング文言は低コスト。文章化は実装済み。<strong style="font-weight:700;">差分タブの全状態（読込→一覧→適用→取消）はプロトタイプで操作可能。</strong></p></div>
+  </section>
+
+  <!-- ===== P22 選択コンテキスト（領域3）完全設計 ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P22</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">領域3</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">選択コンテキストの完全設計 ― 違和感→再提案・矛盾レビュー・採択分の統合</h3>
+    </div>
+    <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;"><strong style="font-weight:700; color:#b91c1c;">問題 ─</strong> 選択対象を前景化しつつ、違和感の言語化から再提案までのループ、根拠・矛盾の人間レビュー、今回採択分（KA 3欄・#番号/原データ）の配置を定める。</p>
+    <div class="card-note" style="border:1px solid #c7d2fe; background:#f5f7ff; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <ul style="margin:0; padding-left:16px; font-size:12.5px; line-height:1.7; color:#3e4c59;">
+        <li><strong style="font-weight:700;">「現在の選択」を最上部固定</strong>。型・保留・違和感・未レビュー・矛盾を1カードに集約表示（4チャネル）。</li>
+        <li><strong style="font-weight:700;">違和感→再提案ループ</strong>: 5種タグ（論理の飛躍/曖昧/言い過ぎ/偏り/根拠不足）＋自由記述 → <strong style="font-weight:700;">制約として再提案</strong> → 現在/再提案の<strong style="font-weight:700;">差分比較</strong> → 採用/却下（却下は元のまま保持、採用は可逆）。プロトタイプで操作可。</li>
+        <li><strong style="font-weight:700;">矛盾の人間レビュー</strong>: supports/contradicts と矛盾フラグの<strong style="font-weight:700;">可逆トグル</strong>。矛盾は解消を強制せず保持できる。プロトタイプで可逆遷移を実装。</li>
+        <li><strong style="font-weight:700;">採択分の統合</strong>: KA 3欄（出来事=本文正本／心の声・価値は基本編集群内、未入力時は控えめ・カード面に常時表示しない）、<strong style="font-weight:700;">#番号・原データは選択時のみ</strong>表示（カード面バッジは既定OFF）。</li>
+      </ul>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px;">
+      <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;"><div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">CB-1〜4 自己申告</div><ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.6; color:#475569;"><li><strong>CB-1</strong>: 再提案・KA・番号は選択時/起動時のみ。純増なし。</li><li><strong>CB-2</strong>: 保留・違和感トグルを最上部近くに。矛盾は保持可。</li><li><strong>CB-3</strong>: 既存選択パネルに包含。</li><li><strong>CB-4</strong>: 再提案採否・矛盾遷移すべて可逆。</li></ul></div>
+      <div class="axis" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;"><div style="background:#f8fafc; padding:7px 13px; font-size:11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">5判断軸 自己評価</div><table style="width:100%; border-collapse:collapse; font-size:11.5px;"><tbody style="color:#3e4c59;"><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">1 思考を雑にしない</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">2 早すぎる収束を防ぐ</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">3 保留・対立を保持</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">4 差分・監査に載る</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td></tr><tr><td style="padding:5px 13px;">5 人間/AI文脈の峻別</td><td style="padding:5px 10px; color:#15803d; font-weight:700;">◎</td></tr></tbody></table></div>
+    </div>
+    <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:11px 14px; margin-top:12px;"><div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">移行コスト</div><p style="font-size:12.5px; line-height:1.6; color:#854d0e; margin:6px 0 0;">再提案ループ・矛盾トグル・KA/番号配置はプロトタイプに実装済み。再提案の「制約→生成」は provider=none では定型変換、AI有効時は候補生成（確定は人間）。スキーマは既存範囲。</p></div>
+  </section>
+
+  <!-- ===== P23 共有前確認（領域5）詳細 ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P23</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">領域5</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">共有前確認の詳細 ― 安全ゲートと出典参照</h3>
+    </div>
+    <div class="card-note" style="border:1px solid #bbf7d0; background:#f0fdf4; border-radius:8px; padding:12px 14px; margin-top:12px;">
+      <ul style="margin:0; padding-left:16px; font-size:12.5px; line-height:1.7; color:#3e4c59;">
+        <li><strong style="font-weight:700;">共有直前サマリ</strong>: 未レビューn件・違和感m件・矛盾k件は<strong style="font-weight:700;">既定で非表示</strong>である旨を明示（数は所在提示・評価でない）。</li>
+        <li><strong style="font-weight:700;">公開範囲</strong>とレビューパック粒度（要約/全カード/差分のみ）を選択。</li>
+        <li><strong style="font-weight:700;">取込・復元プレビュー</strong>: 差分で確認してから復元。SafeMode下で未レビューは要確認表示。</li>
+        <li><strong style="font-weight:700;">出典参照を含める可否</strong>（今回追加）: 原データ参照は内部情報を含み得るため、共有前チェックに<strong style="font-weight:700;">「出典参照を含める」明示トグル（既定OFF）</strong>。含める場合は警告を1行。</li>
+        <li><strong style="font-weight:700;">SafeMode 既定ON</strong>の明示性強化。出力の安全境界を弱める導線は設けない。準備度スコア等は出さない（反スコアリング）。</li>
+      </ul>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px;">
+      <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;"><div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">CB-1〜4 自己申告</div><ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.6; color:#475569;"><li><strong>CB-1</strong>: 共有操作時のみ1枚。純増なし。</li><li><strong>CB-2</strong>: 未レビュー・違和感・矛盾を明示し保持を後押し。</li><li><strong>CB-3</strong>: 既存フローに確認を挿入。</li><li><strong>CB-4</strong>: 戻って編集でき可逆。</li></ul></div>
+      <div class="axis" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;"><div style="background:#f8fafc; padding:7px 13px; font-size:11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">5判断軸 自己評価</div><table style="width:100%; border-collapse:collapse; font-size:11.5px;"><tbody style="color:#3e4c59;"><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">1 思考を雑にしない</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">2 早すぎる収束を防ぐ</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">3 保留・対立を保持</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">4 差分・監査に載る</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">◎</td></tr><tr><td style="padding:5px 13px;">5 人間/AI文脈の峻別</td><td style="padding:5px 10px; color:#15803d; font-weight:700;">○</td></tr></tbody></table></div>
+    </div>
+    <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:11px 14px; margin-top:12px;"><div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">移行コスト</div><p style="font-size:12.5px; line-height:1.6; color:#854d0e; margin:6px 0 0;">既存共有フローへの1枚挿入＋出典参照トグル（低コスト）。取込プレビューは差分機構を流用。スキーマ不変。</p></div>
+  </section>
+
+  <!-- ===== P24 段階1レッドライン寸法仕様 ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P24</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">実装仕様</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">段階1のレッドライン仕様（寸法・余白・タイポ）</h3>
+    </div>
+    <figure style="margin:14px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+          <tbody style="color:#3e4c59; line-height:1.55;">
+            <tr><td style="padding:7px 11px; border-bottom:1px solid #f1f5f9; font-weight:700; width:24%;">タイポ</td><td style="padding:7px 11px; border-bottom:1px solid #f1f5f9;">本文13 / メタ12 / 補助11 / 凡例10。ウェイト 強調600・見出し700。行間1.5前後。</td></tr>
+            <tr><td style="padding:7px 11px; border-bottom:1px solid #f1f5f9; font-weight:700;">間隔・角丸</td><td style="padding:7px 11px; border-bottom:1px solid #f1f5f9;">間隔スケール 2/4/6/8。角丸 6=チップ / 8=カード・パネル / 999=ピル・点。</td></tr>
+            <tr><td style="padding:7px 11px; border-bottom:1px solid #f1f5f9; font-weight:700;">カードメタ行</td><td style="padding:7px 11px; border-bottom:1px solid #f1f5f9;">左帯3px（型色）、メタ行 padding 7/11、バッジ内 padding 1/6・角丸4・9.5px。右上に未レビュー点7px、右端に tag/保護。</td></tr>
+            <tr><td style="padding:7px 11px; border-bottom:1px solid #f1f5f9; font-weight:700;">状態組合せ代表例</td><td style="padding:7px 11px; border-bottom:1px solid #f1f5f9;">claimType×保留×未レビュー×違和感×矛盾×保護 を1枚に衝突なく配置（色=型/位置=保持系メタ行先頭/形=確認点・tick/密度=違和感数、保護は中立淡色）。</td></tr>
+            <tr><td style="padding:7px 11px; border-bottom:1px solid #f1f5f9; font-weight:700;">凡例開閉</td><td style="padding:7px 11px; border-bottom:1px solid #f1f5f9;">既定OFF。右下オーバーレイ、popIn 0.14s。⌘/Ctrl+/ またはボタンで開閉。</td></tr>
+            <tr><td style="padding:7px 11px; font-weight:700;">空状態ヒント</td><td style="padding:7px 11px;">カード0枚時のみ出現（「まず1枚書く」＋新規/サンプル）。<strong style="font-weight:700;">最初のカード作成で消滅</strong>。コーチマークは一度実行で再表示しない（localStorage）。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図BB ─ 段階1（低コスト・高効果）の実装レッドライン。採択済み視覚言語（slate構造・amber保持系予約・4チャネル・凡例既定OFF）に準拠。</figcaption>
+    </figure>
+    <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:11px 14px; margin-top:12px;"><div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">CB・移行</div><p style="font-size:12.5px; line-height:1.6; color:#854d0e; margin:6px 0 0;">CB-1: 初期はカードメタ行＋空状態のみ、凡例・番号は既定OFF。低コスト。プロトタイプが寸法の参照実装。</p></div>
+  </section>
+
+  <!-- ===== P25 a11y 画面別仕様表 ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P25</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">a11y</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">アクセシビリティ画面別仕様</h3>
+    </div>
+    <figure style="margin:14px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+          <thead><tr style="background:#f8fafc; text-align:left;">
+            <th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:17%;">面</th>
+            <th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">フォーカス初期／Tab順／Escape／読み上げ・aria</th>
+          </tr></thead>
+          <tbody style="color:#3e4c59; line-height:1.5;">
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">作業モードタブ</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">開で最初のタブへ。<code style="font-family:monospace;">role=tablist</code>＋矢印移動、<code style="font-family:monospace;">aria-selected</code>。Tabで本文→操作。Escは段階（サブ→タブ→閉じてトリガーへ復帰）。<code style="font-family:monospace;">role=dialog aria-modal</code>。</td></tr>
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">選択コンテキスト</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">選択で「現在の選択」見出しへ<code style="font-family:monospace;">aria-live=polite</code>通知。Tab順=状態→保留/違和感→再提案→作業を開く。読み上げ順 <strong style="font-weight:700;">型→保持系→確認→根拠→本文</strong>。</td></tr>
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">共有前確認</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">開でサマリ見出しへ。トラップ。出典トグルは<code style="font-family:monospace;">aria-describedby</code>で警告文を関連付け。Escで取消しトリガーへ復帰。</td></tr>
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">凡例</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">開で先頭項目。<code style="font-family:monospace;">role=dialog</code>非モーダル、Escで閉じボタンへ復帰。純装飾は<code style="font-family:monospace;">aria-hidden</code>、記号は<code style="font-family:monospace;">aria-label</code>。</td></tr>
+            <tr><td style="padding:7px 10px; font-weight:700;">一括操作バー</td><td style="padding:7px 10px;">選択発生で出現、<code style="font-family:monospace;">aria-live</code>で「n件選択」。Tabで各操作、Escで選択解除。件数は所在情報として読み上げ（評価語は使わない）。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図CC ─ 面ごとのフォーカス／Tab順／Escape／読み上げ順・aria 仕様。読み上げ順は P2 の4チャネル順（型→保持系→確認→根拠→本文）で全面統一。既存のキーボード/フォーカス契約は破壊しない。</figcaption>
+    </figure>
+    <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:11px 14px; margin-top:12px;"><div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">移行コスト</div><p style="font-size:12.5px; line-height:1.6; color:#854d0e; margin:6px 0 0;">ARIA属性・フォーカス管理は段階2で全面対応が効率的。読み上げ順の統一は P2 と共有。スキーマ不変。</p></div>
+  </section>
+
   <!-- CLOSING -->
   <section style="padding:34px 0 56px; margin-top:28px; border-top:3px solid #eef2ff;">
     <div style="display:flex; align-items:baseline; gap:12px; margin-top:18px;">
