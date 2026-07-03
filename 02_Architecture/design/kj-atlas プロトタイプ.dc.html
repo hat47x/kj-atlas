@@ -204,10 +204,12 @@
           <div>
           <div style="display:flex; align-items:center; gap:5px; padding:7px 11px 6px; border-bottom:1px solid #f1f5f9;">
             <span style="{{ card.typeBadgeStyle }}">{{ card.typeLabel }}</span>
+            <sc-if value="{{ card.hasSeq }}" hint-placeholder-val="{{ false }}"><span title="通し番号" style="font-size:8.5px; font-weight:700; color:#94a3b8; font-family:monospace;">#{{ card.seq }}</span></sc-if>
             <sc-if value="{{ card.hold }}" hint-placeholder-val="{{ false }}"><span style="font-size:9.5px; padding:1px 6px; border-radius:4px; background:#fef9c3; color:#a16207; font-weight:600;">保留</span></sc-if>
             <sc-if value="{{ card.unclear }}" hint-placeholder-val="{{ false }}"><span style="font-size:9.5px; padding:1px 6px; border-radius:4px; background:#fef3c7; color:#b45309; font-weight:600;">違和感</span></sc-if>
             <sc-if value="{{ card.notReviewed }}" hint-placeholder-val="{{ false }}"><span title="未レビュー" style="width:7px; height:7px; border-radius:999px; background:#f59e0b; display:inline-block;"></span></sc-if>
             <span style="margin-left:auto; display:flex; align-items:center; gap:5px;">
+              <sc-if value="{{ card.lone }}" hint-placeholder-val="{{ false }}"><span title="少数意見（一匹狼）— 保護対象" style="font-size:8px; font-weight:700; color:#be185d; background:#fce7f3; border:1px solid #fbcfe8; border-radius:3px; padding:0 4px;">少数</span></sc-if>
               <sc-if value="{{ card.hasMemo }}" hint-placeholder-val="{{ false }}"><span title="メモあり" style="font-size:8px; font-weight:700; color:#64748b; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:3px; padding:0 4px;">メモ</span></sc-if>
               <sc-if value="{{ card.hasTags }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px; padding:1px 6px; border-radius:4px; background:#f1f5f9; color:#64748b;">{{ card.tags }} tag</span></sc-if>
             </span>
@@ -374,6 +376,17 @@
             </sc-if>
           </div>
           <!-- メモ（グラウンド・セオリー由来） -->
+          <sc-if value="{{ sel.hasKa }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:10px; border:1px solid #fbcfe8; background:#fdf2f8; border-radius:7px; padding:9px 11px;">
+              <div style="font-size:10px; font-weight:700; color:#be185d; letter-spacing:0.05em;">KAカード</div>
+              <div style="font-size:11px; color:#475569; line-height:1.6; margin-top:5px;"><span style="color:#94a3b8;">出来事:</span> {{ sel.text }}</div>
+              <div style="font-size:11px; color:#475569; line-height:1.6;"><span style="color:#94a3b8;">心の声:</span> {{ sel.kaVoice }}</div>
+              <div style="font-size:11px; color:#be185d; line-height:1.6; font-weight:600;"><span style="color:#94a3b8; font-weight:400;">価値:</span> {{ sel.kaValue }}</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ sel.hasSource }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:8px; font-size:10.5px; color:#94a3b8; display:flex; align-items:center; gap:6px;"><span style="font-family:monospace; color:#64748b;">#{{ sel.seq }}</span><span>原データ: {{ sel.source }}</span></div>
+          </sc-if>
           <sc-if value="{{ sel.hasMemo }}" hint-placeholder-val="{{ false }}">
             <div style="margin-top:10px; border:1px solid #e2e8f0; border-left:3px solid #94a3b8; background:#fbfcfd; border-radius:7px; padding:9px 11px;">
               <div style="font-size:10px; font-weight:700; color:#64748b; letter-spacing:0.05em;">メモ（思考の跡）</div>
@@ -708,11 +721,11 @@
 class Component extends DCLogic {
   state = {
     cards: [
-      { id:'c1', type:'fact',       text:'観察した事実メモ',     hold:false, unclear:false, reviewed:true,  tags:0, x:70,  y:96,  island:true,  contra:0, rootOut:0, rootIn:0 },
-      { id:'c2', type:'claim',      text:'そこから言える主張',   hold:false, unclear:false, reviewed:false, tags:0, x:322, y:96,  island:true,  contra:1, rootOut:0, rootIn:2 },
-      { id:'c3', type:'hypothesis', text:'問いとして残す仮説',   hold:false, unclear:false, reviewed:false, tags:0, x:70,  y:312, island:false, contra:0, rootOut:0, rootIn:0 },
-      { id:'c4', type:'unknown',    text:'まだ曖昧な主張',       hold:true,  unclear:true,  reviewed:false, tags:1, x:322, y:312, island:false, contra:1, rootOut:1, rootIn:0, memo:'事実か解釈か未確定。判断を保留し、次回の比較で再検討する。' },
-      { id:'c5', type:'fact',       text:'ユーザー課題を集める', hold:false, unclear:false, reviewed:true,  tags:0, x:574, y:204, island:false, contra:0, rootOut:0, rootIn:0 },
+      { id:'c1', type:'fact',       text:'観察した事実メモ',     hold:false, unclear:false, reviewed:true,  tags:0, x:70,  y:96,  island:true,  contra:0, rootOut:0, rootIn:0, seq:1, source:'IV-01 p.2 l.14' },
+      { id:'c2', type:'claim',      text:'そこから言える主張',   hold:false, unclear:false, reviewed:false, tags:0, x:322, y:96,  island:true,  contra:1, rootOut:0, rootIn:2, seq:2, source:'IV-01 p.3 l.02' },
+      { id:'c3', type:'hypothesis', text:'問いとして残す仮説',   hold:false, unclear:false, reviewed:false, tags:0, x:70,  y:312, island:false, contra:0, rootOut:0, rootIn:0, seq:3, source:'IV-02 p.1 l.20' },
+      { id:'c4', type:'unknown',    text:'まだ曖昧な主張',       hold:true,  unclear:true,  reviewed:false, tags:1, x:322, y:312, island:false, contra:1, rootOut:1, rootIn:0, seq:4, source:'IV-02 p.4 l.08', memo:'事実か解釈か未確定。判断を保留し、次回の比較で再検討する。' },
+      { id:'c5', type:'ka',         text:'締切前夜に一気に書く', hold:false, unclear:false, reviewed:true,  tags:0, x:574, y:204, island:false, contra:0, rootOut:0, rootIn:0, seq:5, source:'IV-03 p.2 l.05', kaVoice:'一気にやらないと乗らない', kaValue:'集中を一度で作りたい' },
     ],
     selectedId: null,
     selCards: [],
@@ -752,6 +765,7 @@ class Component extends DCLogic {
     claim:      { label:'主張', bg:'#dbeafe', fg:'#1d4ed8' },
     hypothesis: { label:'仮説', bg:'#ede9fe', fg:'#6d28d9' },
     unknown:    { label:'不明', bg:'#f1f5f9', fg:'#64748b' },
+    ka:         { label:'KA', bg:'#fce7f3', fg:'#be185d' },
   };
 
   componentDidMount() {
@@ -1403,7 +1417,12 @@ class Component extends DCLogic {
       if (c.id==='c5' && bigCollapsed) return true;
       return false;
     };
+    // 少数意見の可視化: 一匹狼（島に属さず関係も無い孤立カード）を保護対象として淡く強調
+    const _relPairs = [['c1','c2'],['c3','c4'],['c2','c4']].concat((s.userRels||[]).map(u=>[u.from,u.to]));
+    const _connected = new Set(); _relPairs.forEach(p=>{ _connected.add(p[0]); _connected.add(p[1]); });
+    const isLoneWolf = (c) => !c.island && c.id!=='c5' ? !_connected.has(c.id) : (!c.island && !_connected.has(c.id));
     const cards = s.cards.filter(c => !memberHidden(c)).map(c => {
+      const lone = !c.island && !_connected.has(c.id);   // 孤立カード=少数意見として保護
       const dimmed = !matches(c);
       const sel = c.id === s.selectedId || s.selCards.includes(c.id);
       const reviewRing = isReview && (!c.reviewed || c.unclear);
@@ -1414,6 +1433,7 @@ class Component extends DCLogic {
         : `position:absolute; left:${c.x}px; top:${c.y}px; width:206px; background:#fff; border-radius:11px; border:${border}; box-shadow:${sel?'0 6px 18px rgba(37,99,235,0.18)':'0 1px 3px rgba(15,23,42,0.07)'}; opacity:${dimmed?0.3:1}; cursor:pointer; overflow:hidden; transition:opacity .15s, box-shadow .15s, border-color .15s; z-index:${sel?3:2};`;
       return {
         id:c.id, text:c.text, typeLabel:(T[c.type]||T.unknown).label, typeBadgeStyle:badge(c.type,false),
+        seq:c.seq||'', hasSeq:!!c.seq, lone,
         hold:c.hold, unclear:c.unclear, notReviewed:!c.reviewed, hasTags:c.tags>0, tags:c.tags,
         hasMemo: !!c.memo,
         editing: c.id===s.editingId, notEditing: c.id!==s.editingId,
@@ -1760,6 +1780,8 @@ class Component extends DCLogic {
         hold:selObj.hold, unclear:selObj.unclear, notReviewed:!selObj.reviewed,
         hasContradiction: selObj.contra>0, contradiction:selObj.contra, rootOut:selObj.rootOut, rootIn:selObj.rootIn,
         hasMemo: !!selObj.memo, memo: selObj.memo || '',
+        seq: selObj.seq||'', hasSource: !!selObj.source, source: selObj.source||'',
+        hasKa: selObj.type==='ka', kaVoice: selObj.kaVoice||'', kaValue: selObj.kaValue||'',
         nextHint: (()=>{
           if (!selObj.reviewed) return '未レビューです。確認したら R でレビュー済みに。迷うなら H で保留のままでもOK。';
           if (selObj.unclear) return '違和感あり。言語化できたらメモに残すか、関係線で対立（／）をつなげます。';
