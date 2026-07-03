@@ -80,3 +80,7 @@
 - Related: `01_Plans/issues/issue-UX-VISUAL-01-card-meta-row-and-canvas-legend.md`
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（仕様精査 B）, `02_Architecture/design/kj-atlas プロトタイプ.dc.html`
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
+
+## 実装設計の到着（2026-07-04）
+
+- Claude Design Round 4 でマークのラベルが「少数」から**「保護」**（保護対象・無理に分類しない）へ改訂された。実装時は「保護」系ラベルを採用し、本文の「少数」表記は読み替える（意味・条件は不変: 淡い強調・非スコア・CB-1）。

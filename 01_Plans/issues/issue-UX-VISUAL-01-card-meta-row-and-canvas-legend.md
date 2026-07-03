@@ -83,3 +83,7 @@
 - Related: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`, `issue-DOMAIN-EXPR-02-hold-and-pending-shelf.md`
 - Related: `04_Documentation/ui_catalog.md`（§4 現行バッジ）, `02_Architecture/design/kj-atlas 拡張提案.dc.html`（観点3・図B）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
+
+## 実装設計の到着（2026-07-04）
+
+- Claude Design Round 4 成果（`02_Architecture/design/kj-atlas 拡張提案.dc.html` §段階1レッドライン・図BB）に本Issueの実装仕様（タイポ 本文13/メタ12/補助11/凡例10・左帯3px・メタ行 padding 7/11・バッジ角丸4・未レビュー点7px・凡例右下オーバーレイ ⌘/ 開閉）が確定。実装時はこれを参照実装（プロトタイプ同梱）とする。
