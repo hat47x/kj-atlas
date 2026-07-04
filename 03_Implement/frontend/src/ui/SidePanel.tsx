@@ -3340,23 +3340,29 @@ export function SidePanel({
                   <div style={{ display: "grid", gap: 4, marginBottom: 8 }}>
                     {outgoingEvidenceLinks.map((link) => {
                       const target = document?.cards.find((card) => card.id === link.toCardId);
+                      const targetLabel = target ? target.text.slice(0, 60) : link.toCardId;
+                      const linkTypeLabel = link.type === "supports" ? t("side_panel.evidence.supports") : t("side_panel.evidence.contradicts");
                       return (
                         <div key={link.id} style={{ fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 6, padding: 6 }}>
-                          <div>{link.type} → {target ? target.text.slice(0, 60) : link.toCardId}</div>
+                          <div>{t("side_panel.evidence.outgoing_item", { type: linkTypeLabel, target: targetLabel })}</div>
                           {link.type === "contradicts" ? (
-                            <select
-                              value={link.contradictionState ?? "unconfirmed"}
-                              disabled={isReadOnly}
-                              style={{ fontSize: 10, marginTop: 4, width: "100%" }}
-                              onChange={(event) => {
-                                onUpdateEvidenceLink(link.id, { contradictionState: event.target.value as EvidenceLink["contradictionState"] });
-                              }}
-                            >
-                              <option value="unconfirmed">{t("side_panel.evidence.state_unconfirmed")}</option>
-                              <option value="confirmed">{t("side_panel.evidence.state_confirmed")}</option>
-                              <option value="held">{t("side_panel.evidence.state_held")}</option>
-                              <option value="resolved">{t("side_panel.evidence.state_resolved")}</option>
-                            </select>
+                            <label style={{ display: "grid", gap: 3, marginTop: 4 }}>
+                              <span style={{ color: "#475569" }}>{t("side_panel.evidence.contradiction_state_label", { target: targetLabel })}</span>
+                              <select
+                                value={link.contradictionState ?? "unconfirmed"}
+                                disabled={isReadOnly}
+                                aria-label={t("side_panel.evidence.contradiction_state_label", { target: targetLabel })}
+                                style={{ fontSize: 10, width: "100%" }}
+                                onChange={(event) => {
+                                  onUpdateEvidenceLink(link.id, { contradictionState: event.target.value as EvidenceLink["contradictionState"] });
+                                }}
+                              >
+                                <option value="unconfirmed">{t("side_panel.evidence.state_unconfirmed")}</option>
+                                <option value="confirmed">{t("side_panel.evidence.state_confirmed")}</option>
+                                <option value="held">{t("side_panel.evidence.state_held")}</option>
+                                <option value="resolved">{t("side_panel.evidence.state_resolved")}</option>
+                              </select>
+                            </label>
                           ) : null}
                           <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
                             <button type="button" style={{ fontSize: 10 }} onClick={() => { onFocusCardById(link.toCardId); }}>{t("side_panel.focus")}</button>
@@ -3372,7 +3378,8 @@ export function SidePanel({
                   <div style={{ display: "grid", gap: 4 }}>
                     {incomingEvidenceLinks.map((link) => {
                       const source = document?.cards.find((card) => card.id === link.fromCardId);
-                      return <div key={link.id} style={{ fontSize: 11 }}>{t("side_panel.evidence.incoming_item", { source: source ? source.text.slice(0, 60) : link.fromCardId, type: link.type })}</div>;
+                      const linkTypeLabel = link.type === "supports" ? t("side_panel.evidence.supports") : t("side_panel.evidence.contradicts");
+                      return <div key={link.id} style={{ fontSize: 11 }}>{t("side_panel.evidence.incoming_item", { source: source ? source.text.slice(0, 60) : link.fromCardId, type: linkTypeLabel })}</div>;
                     })}
                   </div>
                 )}

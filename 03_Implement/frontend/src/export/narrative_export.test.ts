@@ -66,4 +66,29 @@ describe("narrative_export", () => {
     expect(output).toContain("Grounding / Citations");
     expect(output).toContain("Summary (unreviewed): Summary text");
   });
+
+  it("keeps contradiction review state in markdown and html evidence links", () => {
+    const item = {
+      id: "n3",
+      title: "Contradiction package",
+      text: "Reviewed narrative",
+      reviewed: true,
+      basedOnReadingOrder: ["card_1"],
+    };
+    const evidenceLinks = [
+      {
+        id: "e-held",
+        type: "contradicts" as const,
+        fromCardId: "card_2",
+        toCardId: "card_1",
+        contradictionState: "held" as const,
+      },
+    ];
+
+    const markdown = buildNarrativeMarkdown(item, {}, [], evidenceLinks);
+    const html = buildNarrativeHtml(item, {}, [], evidenceLinks);
+
+    expect(markdown).toContain("card_2 contradicts card_1 [held]");
+    expect(html).toContain('<span class="contradiction-state">[held]</span>');
+  });
 });
