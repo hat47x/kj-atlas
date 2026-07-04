@@ -58,6 +58,7 @@ import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
 import { PatchWorkspacePanel } from "./ui/workspace/PatchWorkspacePanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { WorkModePanel } from "./ui/WorkModePanel";
+import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import type { IslandRelationEdgeSelection } from "./domain/island_relation_explain";
 import {
   buildRelationSummarySourceSignature,
@@ -769,14 +770,7 @@ function createNewDocument(docId: string): DocumentV2 {
       panY: 0,
       zoom: 1,
     },
-    cards: [
-      {
-        id: crypto.randomUUID(),
-        text: "新しいカード",
-        x: 120,
-        y: 120,
-      },
-    ],
+    cards: [],
     edges: [],
     islands: [],
     narratives: [],
@@ -9090,6 +9084,13 @@ export default function App() {
     </>
   );
 
+  const shouldShowEmptyCanvasHint =
+    !isStartPanelVisible &&
+    !isReadOnly &&
+    !isLoading &&
+    Boolean(document) &&
+    (document?.cards.length ?? 0) === 0;
+
   return (
     <>
     <Shell
@@ -9547,7 +9548,7 @@ export default function App() {
         </div>
       ) : (
         <>
-          <div data-ui-region="primary-flow" style={{ height: "100%", minHeight: 0 }}>
+          <div data-ui-region="primary-flow" style={{ position: "relative", height: "100%", minHeight: 0 }}>
           <CanvasShell
             document={focusedVisibleDocument}
             onCardMove={handleCardMove}
@@ -9619,6 +9620,14 @@ export default function App() {
           >
             {islandViews}
           </CanvasShell>
+          {shouldShowEmptyCanvasHint ? (
+            <EmptyCanvasHint
+              onCreateCard={handleAddCard}
+              onOpenSample={() => {
+                void handleOpenSampleDocument();
+              }}
+            />
+          ) : null}
           </div>
         </>
       )}

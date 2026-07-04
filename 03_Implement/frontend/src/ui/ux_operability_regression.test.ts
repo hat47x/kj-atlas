@@ -124,4 +124,19 @@ describe("UX Operability regression contracts", () => {
     expect(sidePanelSource).toMatch(/checked=\{selectedCard\.textReviewed === true\}\s+disabled=\{isReadOnly\}/);
     expect(sidePanelSource).toMatch(/value=\{selectedCard\.critique \?\? ""\}\s+disabled=\{isReadOnly\}/);
   });
+
+  it("Phase 7: empty-canvas-onboarding-stays-operable", () => {
+    const appSource = readSource("src/App.tsx");
+    const emptyCanvasHintSource = readSource("src/ui/EmptyCanvasHint.tsx");
+
+    expect(appSource).toContain("cards: []");
+    expect(appSource).toContain("const shouldShowEmptyCanvasHint =");
+    expect(appSource).toContain("!isStartPanelVisible");
+    expect(appSource).toContain("!isReadOnly");
+    expect(appSource).toContain("(document?.cards.length ?? 0) === 0");
+    expect(appSource).toContain("<EmptyCanvasHint");
+    expect(emptyCanvasHintSource).toContain('data-ui-region="empty-canvas-hint"');
+    expect(emptyCanvasHintSource).toContain('aria-live="polite"');
+    expect(emptyCanvasHintSource).not.toContain("autoFocus");
+  });
 });
