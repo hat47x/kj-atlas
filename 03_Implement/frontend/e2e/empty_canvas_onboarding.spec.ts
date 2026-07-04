@@ -62,4 +62,14 @@ test("empty canvas hint appears after creating a new document and disappears aft
 
   await expect(hint).toHaveCount(0);
   await expect(page.locator(PRIMARY_FLOW).getByRole("option")).toHaveCount(1);
+
+  await page.getByRole("button", { name: "New", exact: true }).click();
+  await expect(page.locator(PRIMARY_FLOW).getByRole("option")).toHaveCount(0);
+  await expect(hint).toHaveCount(0);
+
+  await page.getByRole("button", { name: "View", exact: true }).click();
+  await page.getByRole("button", { name: "Show empty canvas tips again" }).click();
+
+  await expect(hint).toBeVisible();
+  await expect(page.getByTestId("status-message")).toContainText("Empty canvas tips will appear again");
 });

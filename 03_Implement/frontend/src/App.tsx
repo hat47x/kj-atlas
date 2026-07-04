@@ -68,6 +68,7 @@ import {
 } from "./domain/relation_summary_ops";
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
+import { loadEmptyCanvasHintCompleted, saveEmptyCanvasHintCompleted } from "./storage/empty_canvas_hint";
 import { loadViewModeForDocument, saveViewModeForDocument } from "./storage/view_mode";
 import { loadViewLocaleForDocumentView, saveViewLocaleForDocumentView } from "./storage/view_locale";
 import { loadViewVisibilityForDocument, saveViewVisibilityForDocument } from "./storage/view_visibility";
@@ -1090,6 +1091,7 @@ export default function App() {
   const [lodLevelOverride, setLodLevelOverride] = useState<LODLevel | null>(null);
   const [lodShowLoneWolvesWhenFar, setLodShowLoneWolvesWhenFar] = useState(true);
   const [safeMode, setSafeMode] = useState(true);
+  const [emptyCanvasHintCompleted, setEmptyCanvasHintCompleted] = useState(loadEmptyCanvasHintCompleted);
   const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(
     () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
   );
@@ -3841,6 +3843,17 @@ export default function App() {
     [applyDocumentChange, connectEdgeType, document, isPickingEdgeTarget, selectedCardIds, selectedIslandId]
   );
 
+  const markEmptyCanvasHintCompleted = useCallback(() => {
+    saveEmptyCanvasHintCompleted(true);
+    setEmptyCanvasHintCompleted(true);
+  }, []);
+
+  const handleResetEmptyCanvasHint = useCallback(() => {
+    saveEmptyCanvasHintCompleted(false);
+    setEmptyCanvasHintCompleted(false);
+    setStatusMessage(t("app.status.empty_canvas_hint_reset"));
+  }, []);
+
   const createCardAtPosition = useCallback(
     (x: number, y: number) => {
       if (!document) {
@@ -3849,6 +3862,7 @@ export default function App() {
 
       const newCardId = crypto.randomUUID();
       const newCard = { id: newCardId, text: "新しいカード", x, y };
+      const isFirstCard = document.cards.length === 0;
 
       const applied = applyDocumentChange(
         {
@@ -3859,13 +3873,16 @@ export default function App() {
       );
 
       if (applied) {
+        if (isFirstCard) {
+          markEmptyCanvasHintCompleted();
+        }
         setSelectedIslandId(null);
         setSelectedEdgeId(null);
         setSelectedCardIds([newCardId]);
         setEditingCardId(newCardId);
       }
     },
-    [applyDocumentChange, document]
+    [applyDocumentChange, document, markEmptyCanvasHintCompleted]
   );
 
   const handleAddCard = useCallback(() => {
@@ -8701,6 +8718,8 @@ export default function App() {
             }}
             safeMode={safeMode}
             onSafeModeChange={handleSafeModeChange}
+            emptyCanvasHintCompleted={emptyCanvasHintCompleted}
+            onResetEmptyCanvasHint={handleResetEmptyCanvasHint}
             lodEnabled={lodEnabled}
             onLodEnabledChange={setLodEnabled}
             lodThresholds={lodThresholds}
@@ -9088,6 +9107,7 @@ export default function App() {
     !isStartPanelVisible &&
     !isReadOnly &&
     !isLoading &&
+    !emptyCanvasHintCompleted &&
     Boolean(document) &&
     (document?.cards.length ?? 0) === 0;
 
