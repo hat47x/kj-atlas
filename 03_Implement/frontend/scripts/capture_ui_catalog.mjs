@@ -214,14 +214,15 @@ async function capture() {
       await page.close();
     });
 
-    // 5. Advanced ON -> work-mode panels surfaced in the side panel
+    // 5. Advanced ON -> work-mode panels surfaced in the dedicated work-mode region
     await step("ui-advanced-work-mode-panels", async () => {
       const page = await openSample(browser);
       await page.getByRole("option", { name: /まだ曖昧な主張/ }).click();
       await page.getByRole("button", { name: /^詳細$|^Advanced$/ }).click();
-      await page.locator('[data-ui-region="selection-context"]').waitFor({ state: "visible" });
+      await page.getByRole("button", { name: /^作業モード$|^Work mode$/ }).click();
+      await page.locator('[data-ui-region="work-mode"]').waitFor({ state: "visible" });
       await hideTransientStatus(page);
-      await page.locator('[data-ui-region="selection-context"]').screenshot({ path: out("ui-advanced-work-mode-panels.png") });
+      await page.locator('[data-ui-region="work-mode"]').screenshot({ path: out("ui-advanced-work-mode-panels.png") });
       await page.close();
     });
 

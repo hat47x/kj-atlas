@@ -1240,10 +1240,14 @@ export function SidePanel({
             relationCount={(document.edges?.length ?? 0) + (document.relationSummaries?.length ?? 0)}
             safeMode={safeMode}
           />
-          <DomainStateFilterBar
-            filter={domainFilter}
-            onFilterChange={setDomainFilter}
-          />
+          {isAdvancedUiEnabled ? (
+            <div data-panel="domain-detail-filters" data-ui-complexity-tier="advanced-content">
+              <DomainStateFilterBar
+                filter={domainFilter}
+                onFilterChange={setDomainFilter}
+              />
+            </div>
+          ) : null}
         </>
       ) : null}
       {document?.shelf && document.shelf.length > 0 ? (
@@ -1389,7 +1393,8 @@ export function SidePanel({
         </details>
       </section>
       ) : null}
-      <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+      {isAdvancedUiEnabled ? (
+      <section data-panel="guided-flow" data-ui-complexity-tier="advanced-content" style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.guided_flow.title")}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", marginBottom: 8 }}>
           <input
@@ -1458,6 +1463,7 @@ export function SidePanel({
           </ul>
         ) : null}
       </section>
+      ) : null}
       {isAdvancedUiEnabled ? (
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.aggregated_edges.title")}</div>

@@ -1,10 +1,10 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-06-29
+最終更新: 2026-07-04
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
-## 現状スナップショット（2026-06-29）
+## 現状スナップショット（2026-07-04）
 
 ### ADR 状態
 - ADR-0000〜0046: すべて Accepted
@@ -13,7 +13,8 @@
 ### Issue 状態（triage）
 - Active: 26 (Ready: 15, Blocked: 11)
 - P0: PRODUCT-QA-01 (Open), CORE-VALUE-GUARD-01 (Done)
-- P1: PRODUCT-VALUE-01/02/03 (In Progress, 人間判断待ち), UX-NAV-01 (In Progress), VALUE-DOGFOOD-01 (In Progress)
+- P1: PRODUCT-VALUE-01/02/03 (In Progress, H-PV委任承認済み・最終出荷ゲート継続), VALUE-DOGFOOD-01 (In Progress)
+- Recently Done: UX-NAV-01 (2026-07-04, 作業モード面へ Narrative/HIL/差分を移設し、選択コンテキストから分離), UX-COMPLEXITY-01追認 (2026-07-04, 右パネルの詳細フィルタ/Guided Flowを詳細表示配下へ移動)
 - P2: DOMAIN-EXPR-03/04 (In Progress), PERF-BUDGET-01 (In Progress)
 
 ### DOMAIN-EXPR 実装状態 (ADR-0040)
@@ -32,6 +33,23 @@
 - ✅ SafeMode既定ON / human_reviewed人手昇格 / proposal-only / provider=none既定 / patch+approval
 - ✅ DOMAIN-EXPR全Phaseで主要価値成立
 - ✅ CVI-1..7 横断ガードテスト緑
+
+## 委任判断同期（2026-07-02 JST）
+
+- `PRODUCT-VALUE-01..03`: 2026-06-29 に記録済みの H-PV1/H-PV2/H-PV3 代理承認を、現行の内部issue状態として引き継ぐ。現行証跡packetの人間受入ブロッカーは解消済みとして扱う。
+- `HIL/FB`: 2026-06-20 の `ADR-0039` / Maintainer 解決により、現行正本上の Approval Record、GOV exception、pending queue は解消済み。古い Hold / Needs-decision 記録は履歴として扱い、現在の停止条件にはしない。
+- ADR/issue人間作業ステータス: Codexが代理処理できる判断待ちは残0。追加ADRは不要。
+- 残る非委任ゲート: 最終program approval、Compose/環境リハーサル、サポートリハーサル、実機キーボード受入、スクリーンリーダー受入、release screenshot approval、正式な組織承認。
+- 不変条件: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`provider=none`既定、patch+approval、share/export境界は変更しない。
+
+## 委任判断同期（2026-07-01 JST）
+
+> 正本: `01_Plans/issues/decision-pack-2026-03-human-judgement.md` と `01_Plans/issues/README.md`。本節は参照レイヤとして同日同期する。
+
+- `DQ-FB-P2C-01`: **Final / Conditional Go**。Gate 0承認は、計画再開と下流ハンドオフに限って有効化する。A1/A2/A3 memo が Done/Fixed であることを根拠に、人間判断待ちを解消する。
+- `DQ-OPS-SOURCE-01`: **Final / No**。GitHub Issues 正本運用は開始しない。内部 issue memo を正本とし、`Source Issue: N/A` を継続する。
+- Queue影響: 上記2件の人間判断待ち Open は解消済み。`DQ-HIL-EXEC-01` の Ready 監視は別レーンとして継続する。
+- 不変条件: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`provider=none`既定、patch+approval は変更しない。この判断だけで `03_Implement` のコード変更許可は発生しない。
 
 ## 次フェーズ計画レイヤ（価値→社会的目標, 2026-05-31 決定済み）
 

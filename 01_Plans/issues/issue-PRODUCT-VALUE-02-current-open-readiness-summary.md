@@ -24,7 +24,7 @@ Parent issue In Progress. Key implementation milestones:
 - Narrative grounding export + in-app display: claimType + reviewState annotations visible in both export and UI.
 - Full unit test suite: 173 files, 826 tests passed (2026-06-24).
 
-Remaining: Human umbrella evidence packet acceptance (PV2-D1..D4). First-class Hold/Shelf (DOMAIN-EXPR-02) remains pending per ADR-0040 staging. No implementation blockers.
+Remaining: H-PV2 umbrella acceptance for the Phase 1 evidence packet is proxy-approved (2026-06-29, carried forward 2026-07-02). First-class Hold/Shelf (DOMAIN-EXPR-02), CE1 real data-source parity, physical keyboard acceptance, screen-reader acceptance, and final program approval remain outside this approval. No implementation blockers.
 
 ## Current Open-Readiness Summary 2026-06-17
 
@@ -44,19 +44,19 @@ This is not a request for automatic truth scoring, automatic resolution, ranking
 
 ### Open-Readiness Gaps
 
-- The source issue remains `Draft` because the product has not completed the owner-reviewed Go/No-Go rule for the ambiguity evidence workflow. The Phase 1 fixture identity is now fixed, but hold/pending evidence, share/export proof, AI-boundary proof, and UX acceptance of findability remain open.
+- The source issue is In Progress. The Phase 1 fixture identity, split-first evidence strategy, share/export proof, AI-boundary proof, and UX findability assessment are proxy-approved for the current evidence packet.
 - Current documentation names the concepts, but the representative user journey still needs to show exactly how a person notices, preserves, filters, reviews, and shares unresolved material.
 - The UI must distinguish "unresolved", "needs review", "evidence missing", and "counter-opinion present" from final answers. These states must not be silently collapsed into a normal card, island, or final narrative.
-- SafeMode and share/export behavior must prove that unresolved or unreviewed material is handled deliberately. The product should show what will be included, excluded, or masked before the user shares a package.
+- SafeMode and share/export behavior now have replayable evidence showing that unresolved or unreviewed material is handled deliberately before sharing. Future changes must preserve the visible include/exclude/masking boundary.
 - `human_reviewed` remains a human-only state. No worker, AI assist path, import path, or API convenience behavior may set it automatically.
 
 ### Next Implementation Slice
 
-1. Review `doc_domain_expression_keyboard_access` as the Phase 1 ambiguity/evidence fixture and decide whether split-first evidence is acceptable for standard users.
-2. Add or cite share/export preflight evidence showing that the ambiguous target claim, unreviewed contradiction, critique note, and evidence links remain visible or safely excluded before sharing.
-3. Add or cite AI-boundary proof showing that ambiguity/evidence/contradiction is carried as a constraint and cannot be converted into `human_reviewed` by a worker, AI assist path, import path, or API shortcut.
-4. Decide whether read-only reachability is enough for Phase 1 findability, or whether dedicated unresolved-state filters must be added before Open.
-5. Record the result in `PRODUCT-QA-01` before changing the source issue from `Draft` to `Open`.
+1. Keep `doc_domain_expression_keyboard_access` replayable as the Phase 1 ambiguity/evidence fixture.
+2. Preserve the share/export preflight evidence that shows ambiguous claims, unreviewed contradictions, critique notes, and evidence links before sharing.
+3. Preserve the AI-boundary proof that ambiguity/evidence/contradiction is carried as a constraint and cannot be converted into `human_reviewed` by a worker, AI assist path, import path, or API shortcut.
+4. Progress first-class Hold/Shelf and any persistent contradiction-state transition only through `DOMAIN-EXPR-02` or a future issue/ADR.
+5. Keep full shipment No-Go until CE1 real data-source parity, physical keyboard acceptance, screen-reader acceptance, and final program approval are recorded.
 
 ### ADR Boundary
 
@@ -77,7 +77,7 @@ No new ADR is needed for the Phase 1 summary. A new ADR is required if implement
 - The PV02 Phase 1 fixture remains executable on current `main` after the post-2430 baseline/governance sync.
 - Keyboard evidence is refreshed for selecting the ambiguous target claim, reading `Review state: Unreviewed`, reaching claim type, evidence/contradiction text, critique note, review checkbox, and critique tag controls.
 - This rerun does not satisfy hold/pending split acceptance, share/export preflight evidence for unresolved or unreviewed ambiguity state, AI-boundary proof, UX acceptance of findability, physical keyboard acceptance, screen-reader acceptance, or shipment approval.
-- Status impact: **Draft remains**. This is execution freshness evidence only.
+- Historical status impact at the time: **Draft remained**. Current H-PV carry-forward is recorded below.
 
 ## Screenshot Evidence Refresh 2026-06-17: PV02 ambiguity state
 
@@ -90,7 +90,7 @@ No new ADR is needed for the Phase 1 summary. A new ADR is required if implement
 - Evidence packet impact:
   - Adds a visual proof that an unresolved claim, supporting note, counter-opinion, grouped context, SafeMode visibility, and side-panel review state can be inspected in the current UI.
   - Does not satisfy hold/pending split acceptance, share/export preflight evidence for unresolved material, AI-boundary proof, UX acceptance of findability, physical keyboard acceptance, screen-reader acceptance, or shipment approval.
-  - Status impact: **Draft remains**.
+  - Historical status impact at the time: **Draft remained**. Current H-PV carry-forward is recorded below.
 
 ## Share Preflight Evidence 2026-06-18
 
@@ -105,7 +105,7 @@ No new ADR is needed for the Phase 1 summary. A new ADR is required if implement
 - Evidence packet impact:
   - The Phase 1 share/export proof requirement is now replayable and has a Japanese UI screenshot.
   - Hold/Pending schema work, AI-boundary proof, human findability acceptance, keyboard/screen-reader acceptance, and umbrella Product Value approval remain open.
-  - Status impact: **Draft remains**.
+  - Historical status impact at the time: **Draft remained**. Current H-PV carry-forward is recorded below.
 
 ## AI Review-Boundary Evidence 2026-06-19
 
@@ -122,7 +122,7 @@ No new ADR is needed for the Phase 1 summary. A new ADR is required if implement
 - Evidence packet impact:
   - The AI/worker automatic `human_reviewed` promotion blocker is addressed with defense in depth.
   - ContextBundle constraint-preservation proof, Hold/Pending work, human findability/accessibility acceptance, and umbrella Product Value approval remain open.
-  - Status impact: **Draft remains**.
+  - Historical status impact at the time: **Draft remained**. Current H-PV carry-forward is recorded below.
 
 ## ContextBundle Constraint Evidence 2026-06-19
 
@@ -137,7 +137,7 @@ No new ADR is needed for the Phase 1 summary. A new ADR is required if implement
   - The fixed-profile ContextBundle constraint-preservation blocker is addressed.
   - Real data-source projection parity remains held by the existing CE1 integration boundary.
   - Hold/Pending, human findability/accessibility acceptance, and umbrella Product Value approval remain open.
-  - Status impact: **Draft remains**.
+  - Historical status impact at the time: **Draft remained**. Current H-PV carry-forward is recorded below.
 
 ## Delegated Human Approval 2026-06-29: H-PV2
 
@@ -160,13 +160,14 @@ No new ADR is needed for the Phase 1 summary. A new ADR is required if implement
 | AI/review boundary | Go for fixed profile | `human_reviewed` 自動昇格防止と ContextBundle constraint-preservation 証跡を受け入れる。実データソース parity は既存CE1 holdの範囲に残す。 |
 
 - Status impact: H-PV2のumbrella human acceptance blockerは、Phase 1 / split-first方針に限り代理レビュー済みとして扱う。Hold/Pendingの第一級化、実データソース parity、物理キーボード/スクリーンリーダー受入、最終出荷承認は残す。
+
 ## Acceptance Criteria
 
-- [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
+- [x] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
 - [x] AC-02: The deterministic ambiguity fixture is named, stored, and reusable before implementation starts. Current fixture: `buildDomainExpressionDocument()` / `doc_domain_expression_keyboard_access`.
-- [ ] AC-03: The UI/E2E evidence distinguishes unresolved, unreviewed, evidence-missing, and counter-opinion states from final conclusions.
-- [ ] AC-04: Share/export preflight evidence shows how unresolved and unreviewed material is handled under SafeMode.
-- [ ] AC-05: Any schema expansion or review-authority change is routed through issue/ADR before code changes.
+- [x] AC-03: The UI/E2E evidence distinguishes unresolved, unreviewed, evidence-missing, and counter-opinion states from final conclusions.
+- [x] AC-04: Share/export preflight evidence shows how unresolved and unreviewed material is handled under SafeMode.
+- [x] AC-05: Any schema expansion or review-authority change is routed through issue/ADR before code changes.
 
 ## Validation Plan
 

@@ -895,3 +895,18 @@ AUTH-OPS-03 再検証同期（Stream G / 2026-05-20）
   1. 週次KPI更新（処理速度 / ブロッカー解消率 / 再オープン率）
   2. 日次監査（invalid metadata件数、Blocked→Ready遷移件数）
   3. 3回修復超過時は意思決定者へエスカレーション
+
+## Delegated ADR/Issue Human Decision Record（2026-07-01 JST）
+
+- Human instruction source: user request on 2026-07-01 JST, "ADR/issueの人間作業を代行してください。"
+- Recorder/executor: Codex.
+- Scope: `DQ-FB-P2C-01` and `DQ-OPS-SOURCE-01` only. This record does not change ADR accepted/proposed state, SafeMode defaults, implementation authority, or Source Issue migration rules outside the decisions below.
+
+| Queue ID | Decision (Final) | Rationale | Follow-up |
+|---|---|---|---|
+| `DQ-FB-P2C-01` | Conditional Go. Gate 0 approval is active for planning restart and downstream handoff only. | A1/A2/A3 memos are Done/Fixed, and the A2 mock-validation contract is documented. The human waiting point can be resolved without changing implementation safety. | Treat A2/A3 as unblocked for downstream planning. Actual code changes still require their own issue/PR validation and must not weaken SafeMode or proposal-only behavior. |
+| `DQ-OPS-SOURCE-01` | No. Do not start GitHub Issues canonical source operation; keep `Source Issue: N/A`. | Current project instruction and `issues/README.md` keep internal issue memos as the operational source. URL migration still requires an explicit start declaration. | Reopen only if a future explicit declaration requests GitHub Issues operation with RACI-I notification and README/memo synchronization. |
+
+- Queue impact: the human-approval Open items in this lane are resolved as of 2026-07-01 JST. `DQ-HIL-EXEC-01` Ready monitoring, if still listed elsewhere, remains outside this delegated decision.
+- Approval log: user-delegated ADR/issue human work accepted by Codex as recorder/executor on 2026-07-01 JST; the decisions above are final within the stated scope.
+- Stop conditions preserved: inferred approval without user instruction, Source Issue URL migration without start declaration, SafeMode weakening, A1/A2/A3 contract mismatch, or treating this record as direct implementation permission.

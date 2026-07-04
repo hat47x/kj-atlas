@@ -2842,7 +2842,7 @@ DoDテンプレ（Draft→Open）
 - Candidate: current working baseline after PERF-BUDGET-01 / DOMAIN-EXPR-03/04 / H-PV / UX advanced-panel evidence updates.
 - Date (JST): 2026-06-29
 - Reviewer: Codex acting under explicit user delegation for named human tasks. This is not final shipment approval.
-- Scope: Playwright E2E execution for PERF-BUDGET-01 and DOMAIN-EXPR-03/04, delegated H-PV1/H-PV2/H-PV3 approval records, and UX-NAV-01 AC-2 equivalent advanced-panel extraction evidence.
+- Scope: Playwright E2E execution for PERF-BUDGET-01 and DOMAIN-EXPR-03/04, delegated H-PV1/H-PV2/H-PV3 approval records, and UX-NAV-01 AC-2 work-mode extraction evidence.
 
 ### Evidence
 
@@ -2857,7 +2857,7 @@ DoDテンプレ（Draft→Open）
 
 - G1 safety defaults: Conditional Go improved. SafeMode/share preflight and read-only reviewer boundaries were rechecked; no safety contract change.
 - G2 primary operations: Conditional Go improved. First-value, domain-expression, review-pack, and advanced-panel representative routes passed in browser E2E.
-- G4 viewport/operability: Conditional Go improved. UX-NAV-01 AC-2 is treated as `UX-COMPLEXITY-01` AC-2 plus `UX-OPERABILITY-03` advanced disclosure evidence.
+- G4 viewport/operability: Conditional Go improved. UX-NAV-01 AC-2 now has direct work-mode evidence: Narrative/HIL/diff surfaces are outside the selection-context side panel, and Escape returns focus to the work-mode trigger.
 - G6 governance and decision traceability: Conditional Go improved. H-PV1/H-PV2/H-PV3 delegation source and limits are recorded in the Product Value summaries and MVP-EXIT.
 - G7 regression: Go for this PR-sized slice based on local typecheck, Vitest, targeted Playwright, build, and issue validators.
 
@@ -2866,3 +2866,34 @@ DoDテンプレ（Draft→Open）
 **Conditional Go for delegated Product Value gate evidence and targeted E2E freshness / No-Go for full release shipment**.
 
 The delegated H-PV1/H-PV2/H-PV3 decisions remove the specific human-acceptance blockers named by the user for the current evidence packets. Full release remains **No-Go** because final program approval, Compose/environment rehearsal, support rehearsal, physical keyboard acceptance, screen-reader acceptance, release screenshot approval, and formal organization approval remain outside this delegation.
+
+## Productization Gate Record 2026-07-02: delegated human-work carry-forward
+
+- Candidate: current internal issue state after H-PV parent issue / summary synchronization.
+- Date (JST): 2026-07-02
+- Reviewer: Codex acting under explicit user delegation for ADR/issue human-work handling. This is not final shipment approval.
+- Scope: carry forward the 2026-06-29 H-PV1/H-PV2/H-PV3 proxy approvals into parent Product Value issues, current-open summaries, dashboard, and value traceability.
+
+### Decision
+
+**Conditional Go for issue-layer human-work synchronization / No-Go for full release shipment**.
+
+- H-PV1/H-PV2/H-PV3 remain accepted for the current evidence packets.
+- The HIL/FB governance records are treated as resolved in the current SSOT per 2026-06-20 `ADR-0039` / Maintainer records; older Hold / Needs-decision lines remain historical evidence only.
+- No new ADR is required because no policy boundary changes: SafeMode, share/export, `human_reviewed`, proposal-only, provider defaults, package authority, and release authority are unchanged.
+
+### Remaining non-delegated gates
+
+- Final program approval.
+- Compose/environment rehearsal.
+- Support diagnostics/recovery rehearsal.
+- Physical keyboard acceptance and screen-reader acceptance.
+- Release screenshot approval.
+- Formal organization approval or package public contract / signature / approval workflow, if introduced.
+
+### Delegation boundary closeout 2026-07-02
+
+- ADR/issue human-decision backlog for current records: **0**.
+- Codex may prepare supporting evidence for screenshots, Compose/environment checks, support runbooks, automated keyboard routes, and accessibility scans in later work.
+- Codex must not mark final shipment Go, formal organization approval, package public contract, signature/approval workflow, physical assistive-technology acceptance, or release authority as complete without the corresponding release evidence or explicit authority change.
+- No ADR is required for this closeout because SafeMode, share/export policy, `human_reviewed`, proposal-only, provider defaults, package authority, and release authority are unchanged.

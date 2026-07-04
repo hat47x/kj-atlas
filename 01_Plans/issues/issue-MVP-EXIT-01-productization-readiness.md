@@ -1558,3 +1558,38 @@
   - PERF-BUDGET-01 is a lightweight regression budget, not a strict SLA.
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead for final shipment decisions; Project Maintainers for release authority and high-privilege lifecycle decisions.
 - Re-decision date: after full regression/CI, Compose-backed rehearsal, accessibility acceptance, support rehearsal, or any material runtime/product change.
+
+## MVP-EXIT Program Gate Decision 2026-07-02: delegated human-work carry-forward
+
+- Candidate: current internal issue state after H-PV parent issue / summary synchronization.
+- Decision date: 2026-07-02.
+- Reviewer: Codex, under explicit user delegation for ADR/issue human-work handling.
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-07-02: delegated human-work carry-forward`.
+  - `PRODUCT-VALUE-01-current-open-readiness-summary.md` H-PV1 carry-forward.
+  - `PRODUCT-VALUE-02-current-open-readiness-summary.md` H-PV2 carry-forward.
+  - `PRODUCT-VALUE-03-current-open-readiness-summary.md` H-PV3 carry-forward.
+  - `02_Architecture/value_traceability.md` 2026-07-02 Product Value evidence route.
+
+### Decision
+
+- Final: **Conditional Go for issue-layer human-work synchronization / No-Go for full release shipment**.
+- Reason summary: The existing H-PV1/H-PV2/H-PV3 proxy approvals remain valid for the current evidence packets and are now reflected in the parent Product Value issues, current-open summaries, dashboard, Product QA, and value traceability. This does not create shipment approval because final program approval, Compose/environment rehearsal, support rehearsal, physical keyboard acceptance, screen-reader acceptance, release screenshot approval, and formal organization approval remain outside this delegation.
+- HIL/FB note: current SSOT records resolve the Approval Record / GOV exception / pending queue through 2026-06-20 `ADR-0039` / Maintainer decisions. Older Hold / Needs-decision text is historical and must not be treated as a new active blocker unless a current issue reopens it.
+- Escalation route: keep `PRODUCT-QA-01` as release evidence steward; route any change to SafeMode/share policy, review authority, package public contract, persistence schema, or release authority through issue/ADR before implementation.
+
+### Conditional controls
+
+- Remaining risks:
+  - Full release shipment remains blocked by final program approval, Compose startup/environment rehearsal, support diagnostics/recovery rehearsal, physical keyboard acceptance, screen-reader acceptance, final release screenshot approval, and any formal organization approval.
+  - H-PV proxy approvals are scoped to the current evidence packets. They do not authorize signatures, automatic publication, package public contract changes, or release authority changes.
+  - DOMAIN-EXPR-03, DOMAIN-EXPR-04, and PERF-BUDGET-01 follow-up limits remain as recorded in their own issues.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead for final shipment decisions; Project Maintainers for release authority and high-privilege lifecycle decisions.
+- Re-decision date: after full regression/CI, Compose-backed rehearsal, accessibility acceptance, support rehearsal, or any material runtime/product change.
+
+### Delegation boundary closeout 2026-07-02
+
+- ADR/issue human-decision backlog for the current program records: **0**.
+- The remaining gates are not ADR/issue human-work items. They are release authority or execution-evidence gates: final program approval, Compose/environment rehearsal, support diagnostics/recovery rehearsal, physical keyboard acceptance, screen-reader acceptance, final release screenshot approval, and any formal organization approval.
+- Codex may prepare or run supporting evidence in later implementation/QA work, but must not convert these gates to shipment Go without the corresponding evidence and authority.
+- No ADR is required for this closeout because it does not change SafeMode/share policy, review authority, package public contract, persistence schema, or release authority.

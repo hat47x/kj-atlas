@@ -73,7 +73,7 @@ These images form a comprehensive catalog of current UI elements for the user-fa
 | `ui-card-domain-badges.png` | カードの claimType（事実/主張/仮説/unknown）・保留状態・違和感・未レビューのバッジ表示 |
 | `ui-selection-context-holdstate.png` | カード選択時の選択コンテキスト（レビュー状態・判断保留・違和感） |
 | `ui-selection-context-island.png` | 島選択時の選択コンテキスト |
-| `ui-advanced-work-mode-panels.png` | 「詳細」ON 時に選択コンテキスト内へ展開される作業モード群（差分・マージ等） |
+| `ui-advanced-work-mode-panels.png` | 「詳細」ON + `作業モード` で開く独立した作業モード面（ナラティブ・HIL・差分等） |
 | `ui-view-controls.png` | 「表示」パネル（表示モード・視点プリセット・SafeMode） |
 | `ui-card-context-menu.png` | カード右クリックのコンテキストメニュー（編集/関係線でつなぐ/島を作成/削除） |
 | `ui-card-inline-edit.png` | カードのダブルクリックによる本文インライン編集 |

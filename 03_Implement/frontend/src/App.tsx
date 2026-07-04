@@ -1139,6 +1139,12 @@ export default function App() {
   const [guidedFlowTargetIndex, setGuidedFlowTargetIndex] = useState(0);
   const [guidedFlowOpenEditorRequestSeq, setGuidedFlowOpenEditorRequestSeq] = useState(0);
 
+  useEffect(() => {
+    if (!isAdvancedUiEnabled) {
+      setGuidedFlowEnabled(false);
+    }
+  }, [isAdvancedUiEnabled]);
+
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
@@ -8967,6 +8973,123 @@ export default function App() {
     />
   );
 
+  const advancedWorkModeContent = (
+    <>
+      <NarrativesPanel
+        narrativeText={narrativeText}
+        onNarrativeTextChange={setNarrativeText}
+        onCheckConsistency={(selectedNarrativeId) => {
+          void handleCheckNarrativeConsistency(selectedNarrativeId);
+        }}
+        onGenerateFromReadingOrder={() => {
+          void handleGenerateNarrativeFromReadingOrder();
+        }}
+        isChecking={isCheckingNarrative}
+        isGenerating={isGeneratingNarrative}
+        errorMessage={narrativeCheckError}
+        generationErrorMessage={narrativeGenerationError}
+        issues={narrativeIssues}
+        generatedNarratives={generatedNarratives}
+        onReferenceClick={handleNarrativeReferenceFocus}
+        onFocusItem={focusItem}
+        readingOrderSnippets={readingOrderSnippets}
+        document={document}
+        hideSourceCards={hideSourceCards}
+      />
+      <HilRsWorkflowPanel
+        candidateComparison={
+          <>
+            <MergeSuggestionsPanel
+              isReadOnly={isReadOnly}
+              instruction={mergeSuggestionInstruction}
+              onInstructionChange={setMergeSuggestionInstruction}
+              onSuggest={() => {
+                void handleSuggestMerges();
+              }}
+              isSuggesting={isSuggestingMerges}
+              errorMessage={mergeSuggestionError}
+              suggestions={mergeSuggestions}
+              cardsById={cardsById}
+              onMergedTextChange={handleMergeSuggestionTextChange}
+              onDecide={handleRecordMergeSuggestionDecision}
+              latestAuditEventByGroup={latestMergeDecisionAuditByGroup}
+              auditEvents={mergeDecisionAuditEvents}
+              onExportAuditEvents={handleExportMergeDecisionAuditEvents}
+            />
+            <PatchWorkspacePanel
+              isReadOnly={isReadOnly}
+              candidates={mergeSuggestions.map((suggestion) => ({
+                id: suggestion.groupId,
+                label: t("patch_workspace.candidate_label", {
+                  id: suggestion.groupId,
+                  count: suggestion.cardIds.length,
+                }),
+                note: suggestion.rationale,
+                preview: {
+                  sourceSnippets: suggestion.cardIds.map((cardId) => cardsById.get(cardId)?.text ?? `[missing:${cardId}]`),
+                  draftText: suggestion.mergedTextDraft,
+                  editedText: suggestion.editedText,
+                },
+              }))}
+              onDecisionCommitted={({ candidateId, decision, previousDecision }) => {
+                setStatusMessage(t("patch_workspace.status.decision", {
+                  candidateId,
+                  previousDecision: getWorkspaceDecisionDisplayLabel(previousDecision),
+                  decision: getWorkspaceDecisionDisplayLabel(decision),
+                }));
+              }}
+              onDecisionRolledBack={({ restoredCandidateIds }) => {
+                setStatusMessage(t("patch_workspace.status.rollback_restored", { ids: restoredCandidateIds.join(", ") }));
+              }}
+              onPresetSaved={(preset) => {
+                setStatusMessage(t("patch_workspace.status.preset_saved", { name: preset.name }));
+              }}
+              onPresetExecuted={({ scope, depth, filters }) => {
+                setStatusMessage(t("patch_workspace.status.preset_executed", {
+                  scope: getWorkspaceScopeDisplayLabel(scope),
+                  depth,
+                  filters: filters.length > 0 ? filters.join(", ") : t("patch_workspace.no_filters"),
+                }));
+              }}
+            />
+          </>
+        }
+        critiqueInput={
+          <SuggestionPanel
+            isReadOnly={isReadOnly}
+            instruction={suggestionInstruction}
+            onInstructionChange={setSuggestionInstruction}
+            onSuggest={() => {
+              void handleSuggestLayout("suggest");
+            }}
+            onResuggest={() => {
+              void handleSuggestLayout("resuggest");
+            }}
+            onStopResuggest={() => {
+              setResuggestStopperEnabled(true);
+              setStatusMessage(t("suggestion.panel.status.stopper_enabled_manually"));
+            }}
+            onDiscard={handleDiscardSuggestion}
+            hasSuggestion={Boolean(suggestedDocument && suggestionId)}
+            isPreviewEnabled={isSuggestionPreviewEnabled}
+            onPreviewToggle={setIsSuggestionPreviewEnabled}
+            isAnnotateOverlayEnabled={isAnnotateOverlayEnabled}
+            onAnnotateOverlayToggle={setIsAnnotateOverlayEnabled}
+            isSuggesting={isSuggesting}
+            errorMessage={suggestionError}
+            notes={suggestionNotes}
+            resuggestAttemptCount={resuggestAttemptCount}
+            resuggestAttemptLimit={resuggestAttemptLimit}
+          />
+        }
+        diffVisualization={<>
+          <HilRsRediffPreview payload={hilRsRediffPreviewPayload} />
+          {structuralDiffPanel}
+        </>}
+      />
+    </>
+  );
+
   return (
     <>
     <Shell
@@ -9000,124 +9123,6 @@ export default function App() {
           revealedSourceCardIds={revealedSourceCardIds}
           importedPackSnapshotUrl={importedPackSnapshotUrl}
           importedPackDiagnosticsMd={importedPackDiagnosticsMd}
-          topContent={
-            isAdvancedUiEnabled ? (
-            <>
-              <NarrativesPanel
-                narrativeText={narrativeText}
-                onNarrativeTextChange={setNarrativeText}
-                onCheckConsistency={(selectedNarrativeId) => {
-                  void handleCheckNarrativeConsistency(selectedNarrativeId);
-                }}
-                onGenerateFromReadingOrder={() => {
-                  void handleGenerateNarrativeFromReadingOrder();
-                }}
-                isChecking={isCheckingNarrative}
-                isGenerating={isGeneratingNarrative}
-                errorMessage={narrativeCheckError}
-                generationErrorMessage={narrativeGenerationError}
-                issues={narrativeIssues}
-                generatedNarratives={generatedNarratives}
-                onReferenceClick={handleNarrativeReferenceFocus}
-                onFocusItem={focusItem}
-                readingOrderSnippets={readingOrderSnippets}
-                document={document}
-                hideSourceCards={hideSourceCards}
-              />
-              <HilRsWorkflowPanel
-                candidateComparison={
-                  <>
-                    <MergeSuggestionsPanel
-                      isReadOnly={isReadOnly}
-                      instruction={mergeSuggestionInstruction}
-                      onInstructionChange={setMergeSuggestionInstruction}
-                      onSuggest={() => {
-                        void handleSuggestMerges();
-                      }}
-                      isSuggesting={isSuggestingMerges}
-                      errorMessage={mergeSuggestionError}
-                      suggestions={mergeSuggestions}
-                      cardsById={cardsById}
-                      onMergedTextChange={handleMergeSuggestionTextChange}
-                      onDecide={handleRecordMergeSuggestionDecision}
-                      latestAuditEventByGroup={latestMergeDecisionAuditByGroup}
-                      auditEvents={mergeDecisionAuditEvents}
-                      onExportAuditEvents={handleExportMergeDecisionAuditEvents}
-                    />
-                    <PatchWorkspacePanel
-                      isReadOnly={isReadOnly}
-                      candidates={mergeSuggestions.map((suggestion) => ({
-                        id: suggestion.groupId,
-                        label: t("patch_workspace.candidate_label", {
-                          id: suggestion.groupId,
-                          count: suggestion.cardIds.length,
-                        }),
-                        note: suggestion.rationale,
-                        preview: {
-                          sourceSnippets: suggestion.cardIds.map((cardId) => cardsById.get(cardId)?.text ?? `[missing:${cardId}]`),
-                          draftText: suggestion.mergedTextDraft,
-                          editedText: suggestion.editedText,
-                        },
-                      }))}
-                      onDecisionCommitted={({ candidateId, decision, previousDecision }) => {
-                        setStatusMessage(t("patch_workspace.status.decision", {
-                          candidateId,
-                          previousDecision: getWorkspaceDecisionDisplayLabel(previousDecision),
-                          decision: getWorkspaceDecisionDisplayLabel(decision),
-                        }));
-                      }}
-                      onDecisionRolledBack={({ restoredCandidateIds }) => {
-                        setStatusMessage(t("patch_workspace.status.rollback_restored", { ids: restoredCandidateIds.join(", ") }));
-                      }}
-                      onPresetSaved={(preset) => {
-                        setStatusMessage(t("patch_workspace.status.preset_saved", { name: preset.name }));
-                      }}
-                      onPresetExecuted={({ scope, depth, filters }) => {
-                        setStatusMessage(t("patch_workspace.status.preset_executed", {
-                          scope: getWorkspaceScopeDisplayLabel(scope),
-                          depth,
-                          filters: filters.length > 0 ? filters.join(", ") : t("patch_workspace.no_filters"),
-                        }));
-                      }}
-                    />
-                  </>
-                }
-                critiqueInput={
-                  <SuggestionPanel
-                    isReadOnly={isReadOnly}
-                    instruction={suggestionInstruction}
-                    onInstructionChange={setSuggestionInstruction}
-                    onSuggest={() => {
-                      void handleSuggestLayout("suggest");
-                    }}
-                    onResuggest={() => {
-                      void handleSuggestLayout("resuggest");
-                    }}
-                    onStopResuggest={() => {
-                      setResuggestStopperEnabled(true);
-                      setStatusMessage(t("suggestion.panel.status.stopper_enabled_manually"));
-                    }}
-                    onDiscard={handleDiscardSuggestion}
-                    hasSuggestion={Boolean(suggestedDocument && suggestionId)}
-                    isPreviewEnabled={isSuggestionPreviewEnabled}
-                    onPreviewToggle={setIsSuggestionPreviewEnabled}
-                    isAnnotateOverlayEnabled={isAnnotateOverlayEnabled}
-                    onAnnotateOverlayToggle={setIsAnnotateOverlayEnabled}
-                    isSuggesting={isSuggesting}
-                    errorMessage={suggestionError}
-                    notes={suggestionNotes}
-                    resuggestAttemptCount={resuggestAttemptCount}
-                    resuggestAttemptLimit={resuggestAttemptLimit}
-                  />
-                }
-                diffVisualization={<>
-                  <HilRsRediffPreview payload={hilRsRediffPreviewPayload} />
-                  {structuralDiffPanel}
-                </>}
-              />
-            </>
-            ) : null
-          }
           selectedIsland={selectedIsland ? { ...selectedIsland, shapeStale: stalePolygonIslandIdSet.has(selectedIsland.id) } : null}
           selectedCardCount={selectedCardIds.length}
           onCreateRepresentativeCard={handleCreateRepresentativeCard}
@@ -9736,9 +9741,11 @@ export default function App() {
       onClose={() => setIsWorkModeOpen(false)}
       triggerRef={workModeTriggerRef}
     >
-      <div style={{ fontSize: 13, color: "#64748b", padding: 16 }}>
-        {t("work_mode.content_pending")}
-      </div>
+      {isAdvancedUiEnabled ? advancedWorkModeContent : (
+        <div style={{ fontSize: 13, color: "#64748b", padding: 16 }}>
+          {t("work_mode.content_pending")}
+        </div>
+      )}
     </WorkModePanel>
     </>
   );

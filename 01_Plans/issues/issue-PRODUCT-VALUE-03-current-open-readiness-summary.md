@@ -24,7 +24,7 @@ PV-03 In Progress. Implementation status:
 - **Review-pack trace export**: E2E verifies trace files (evidence, contradiction, analytics) in Detail export
 - Full unit test suite: 173 files, 826 tests passed (2026-06-24).
 
-Remaining: Human product-value acceptance of reviewable package fixture + SafeMode readability. Human UX/accessibility acceptance of read-only reviewer journey. No implementation blockers.
+Remaining: H-PV3 acceptance of the current reviewable package fixture, trace-back proof, SafeMode readability, and read-only reviewer journey is proxy-approved (2026-06-29, carried forward 2026-07-02). Formal package public contract, signature/approval workflow, physical keyboard acceptance, screen-reader acceptance, and final program approval remain outside this approval. No implementation blockers.
 
 ## Current Open-Readiness Summary 2026-06-17
 
@@ -44,7 +44,7 @@ The output package is not just a polished narrative or export file. It must carr
 
 ### Open-Readiness Gaps
 
-- The source issue remains `Draft` because the minimum reviewable package has not yet been accepted as a Go/No-Go evidence packet. The fixture identity and trace-export E2E are fixed, but SafeMode/readability evidence, read-only reviewer inspection, screenshot or trace bundle location, and final Product QA / MVP-EXIT decision linkage remain open.
+- The source issue is In Progress. The minimum reviewable package evidence packet is proxy-approved for the current fixture, including trace-export E2E, SafeMode/readability evidence, read-only reviewer inspection, screenshot or trace bundle location, and Product QA / MVP-EXIT decision linkage.
 - The reviewable package must identify at least: summary, settled claims, unresolved points, evidence links or source references, review status, SafeMode/share-export result, and trace-back path to the source map.
 - The reader must be able to return from the outcome package to the originating card, island, relation, or review state. A final-looking text export without trace-back is not enough.
 - SafeMode ON must demonstrate masking or exclusion of unreviewed raw content, sensitive details, and unnecessary identity information.
@@ -52,11 +52,11 @@ The output package is not just a polished narrative or export file. It must carr
 
 ### Next Implementation Slice
 
-1. Review `doc_review_pack_trace_export` and decide whether it represents the promised reviewable outcome package for a standard reviewer.
-2. Capture or cite screenshots of package preview, SafeMode/share-export confirmation, reviewed/unreviewed status, and trace-back from output to source material.
-3. Add or cite read-only reviewer inspection evidence that a package recipient can inspect the outcome without mutating source data.
-4. Add an evidence record to `PRODUCT-QA-01` and cross-reference it from `MVP-EXIT-01` only after the package can be regenerated.
-5. Keep organizational approval, signatures, automatic publication, and multi-reviewer workflow outside this issue unless a new ADR expands the authority model.
+1. Keep `doc_review_pack_trace_export` replayable as the reviewable outcome package fixture.
+2. Refresh screenshots of package preview, SafeMode/share-export confirmation, reviewed/unreviewed status, and trace-back paths when release-candidate evidence is regenerated.
+3. Preserve read-only reviewer inspection as a non-mutating path for package recipients.
+4. Keep `PRODUCT-QA-01` and `MVP-EXIT-01` cross-references current whenever the package evidence bundle changes.
+5. Keep organizational approval, signatures, automatic publication, package public contract, and multi-reviewer workflow outside this issue unless a new ADR expands the authority model.
 
 ### ADR Boundary
 
@@ -77,7 +77,7 @@ No new ADR is needed to define the minimum package evidence. A new ADR is requir
 - The PV03 review-pack trace fixture remains executable on current `main` after the post-2430 baseline/governance sync.
 - Review-pack export evidence is refreshed for importing the fixture, selecting the target claim, verifying Overview trace exclusion, verifying Detail trace inclusion, and confirming ZIP contents for evidence, contradiction, and trace analytics files.
 - This rerun does not satisfy Productization Program Owner / QA Lead package acceptance, SafeMode/readability screenshot evidence, read-only reviewer inspection, release-suitable screenshot or trace bundle approval, approval/signature authority, or shipment approval.
-- Status impact: **Draft remains**. This is execution freshness evidence only.
+- Historical status impact at the time: **Draft remained**. Current H-PV carry-forward is recorded below.
 
 ## Screenshot Evidence Refresh 2026-06-17: PV03 traceable review package
 
@@ -90,7 +90,7 @@ No new ADR is needed to define the minimum package evidence. A new ADR is requir
 - Evidence packet impact:
   - Adds a visual proof that the current sharing surface can expose SafeMode context, reviewed/unreviewed state, trace inclusion, and detail export granularity together.
   - Does not satisfy Productization Program Owner / QA Lead package acceptance, read-only reviewer inspection, ZIP content acceptance, approval/signature authority, or shipment approval.
-  - Status impact: **Draft remains**.
+  - Historical status impact at the time: **Draft remained**. Current H-PV carry-forward is recorded below.
 
 ## Read-only Reviewer Evidence 2026-06-18
 
@@ -108,7 +108,7 @@ No new ADR is needed to define the minimum package evidence. A new ADR is requir
 - Evidence packet impact:
   - The automated read-only reviewer inspection requirement is now replayable and has a Japanese UI screenshot.
   - Productization Program Owner / QA Lead package acceptance, physical keyboard acceptance, screen-reader acceptance, and final shipment approval remain open.
-  - Status impact: **Draft remains**.
+  - Historical status impact at the time: **Draft remained**. Current H-PV carry-forward is recorded below.
 
 ## Delegated Human Approval 2026-06-29: H-PV3
 
@@ -137,11 +137,11 @@ No new ADR is needed to define the minimum package evidence. A new ADR is requir
 
 ## Acceptance Criteria
 
-- [ ] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
+- [x] AC-01: The source issue has a reader-facing current summary or clearly links to this summary.
 - [x] AC-02: The reviewable-package fixture is named, stored, and reusable before implementation starts. Current fixture: `buildReviewPackTraceDocument()` / `doc_review_pack_trace_export`.
-- [ ] AC-03: The package includes summary, settled claims, unresolved points, evidence/source references, review status, SafeMode/share-export result, and trace-back path.
-- [ ] AC-04: SafeMode ON evidence shows that unreviewed raw content, sensitive details, and unnecessary identity information are masked or excluded.
-- [ ] AC-05: The package does not imply formal approval, signature, or organizational authorization outside the accepted review model.
+- [x] AC-03: The package includes summary, settled claims, unresolved points, evidence/source references, review status, SafeMode/share-export result, and trace-back path.
+- [x] AC-04: SafeMode ON evidence shows that unreviewed raw content, sensitive details, and unnecessary identity information are masked or excluded.
+- [x] AC-05: The package does not imply formal approval, signature, or organizational authorization outside the accepted review model.
 
 ## Validation Plan
 
