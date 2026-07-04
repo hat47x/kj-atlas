@@ -40,6 +40,12 @@
 - Residual scope: broader review-pack bundle gate and product-value outcome package acceptance remain owned by `PRODUCT-VALUE-03` / `PRODUCT-QA-01`; this slice closes the direct UI operation and narrative artifact regression for contradiction state.
 - No ADR is required because this uses the existing `EvidenceLink.contradictionState` contract and does not change SafeMode/share policy, schema shape, AI authority, or release authority.
 
+## Implementation Evidence 2026-07-04: labeled evidence-link editor
+
+- The SidePanel evidence-link editor now exposes explicit visible labels for link type, target search, and target selection. This reduces placeholder-only operation and lets mouse users and keyboard/screen-reader users identify the same fields.
+- Added targeted Playwright coverage in `e2e/domain_expression_keyboard_access.spec.ts`: select a card, open the evidence-link editor, search for a target card by label, choose the target by label, confirm the link, save, and assert the document preserves the new `supports` evidence link.
+- No ADR is required because this is an accessibility and operability improvement inside the existing `EvidenceLink` contract; it does not alter schema, sharing policy, SafeMode behavior, or AI authority.
+
 ### Commits (new)
 - 2026-06-29: contradictionState selector dropdown in SidePanel + handleUpdateEvidenceLink in App.tsx
 - 2026-06-29: contradiction state summary counts in NarrativesPanel grounding section

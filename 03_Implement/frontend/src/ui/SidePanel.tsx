@@ -3393,17 +3393,30 @@ export function SidePanel({
                 </button>
                 {isEvidenceModalOpen ? (
                   <div style={{ marginTop: 8, border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 6, backgroundColor: "#f8fafc" }}>
-                    <select value={pendingEvidenceType} onChange={(event) => { setPendingEvidenceType(event.target.value as EvidenceLink["type"]); }}>
-                      <option value="supports">{t("side_panel.evidence.supports")}</option>
-                      <option value="contradicts">{t("side_panel.evidence.contradicts")}</option>
-                    </select>
-                    <input value={evidenceTargetQuery} onChange={(event) => { setEvidenceTargetQuery(event.target.value); }} placeholder={t("side_panel.evidence.search_target")} />
-                    <select value={pendingEvidenceTargetId} onChange={(event) => { setPendingEvidenceTargetId(event.target.value); }}>
-                      <option value="">{t("side_panel.evidence.select_target")}</option>
-                      {availableEvidenceTargets.map((card) => (
-                        <option key={card.id} value={card.id}>{card.text.slice(0, 80)}</option>
-                      ))}
-                    </select>
+                    <label style={{ display: "grid", gap: 3, fontSize: 11, color: "#334155" }}>
+                      <span>{t("side_panel.evidence.type_label")}</span>
+                      <select value={pendingEvidenceType} onChange={(event) => { setPendingEvidenceType(event.target.value as EvidenceLink["type"]); }}>
+                        <option value="supports">{t("side_panel.evidence.supports")}</option>
+                        <option value="contradicts">{t("side_panel.evidence.contradicts")}</option>
+                      </select>
+                    </label>
+                    <label style={{ display: "grid", gap: 3, fontSize: 11, color: "#334155" }}>
+                      <span>{t("side_panel.evidence.search_target_label")}</span>
+                      <input
+                        value={evidenceTargetQuery}
+                        onChange={(event) => { setEvidenceTargetQuery(event.target.value); }}
+                        placeholder={t("side_panel.evidence.search_target")}
+                      />
+                    </label>
+                    <label style={{ display: "grid", gap: 3, fontSize: 11, color: "#334155" }}>
+                      <span>{t("side_panel.evidence.target_label")}</span>
+                      <select value={pendingEvidenceTargetId} onChange={(event) => { setPendingEvidenceTargetId(event.target.value); }}>
+                        <option value="">{t("side_panel.evidence.select_target")}</option>
+                        {availableEvidenceTargets.map((card) => (
+                          <option key={card.id} value={card.id}>{card.text.slice(0, 80)}</option>
+                        ))}
+                      </select>
+                    </label>
                     <div style={{ display: "flex", gap: 6 }}>
                       <button type="button" disabled={!pendingEvidenceTargetId} onClick={() => {
                         if (!pendingEvidenceTargetId) return;
