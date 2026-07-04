@@ -51,14 +51,19 @@ test("default workspace foregrounds core actions and keeps advanced content reve
   const advancedToggle = page.getByRole("button", { name: "Advanced" });
   await expect(advancedToggle).toHaveAttribute("aria-pressed", "false");
   await expect(page.locator('[data-ui-complexity-tier="advanced-content"]')).toHaveCount(0);
+  await expect(page.locator('[data-panel="domain-detail-filters"]')).toHaveCount(0);
+  await expect(page.locator('[data-panel="guided-flow"]')).toHaveCount(0);
 
   await advancedToggle.click();
   await expect(advancedToggle).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator('[data-ui-complexity-tier="advanced-content"]')).toBeVisible();
+  await expect(page.locator('[data-ui-complexity-tier="advanced-content"]').first()).toBeVisible();
+  await expect(page.locator('[data-panel="guided-flow"]')).toBeVisible();
 
   await advancedToggle.click();
   await expect(advancedToggle).toHaveAttribute("aria-pressed", "false");
   await expect(page.locator('[data-ui-complexity-tier="advanced-content"]')).toHaveCount(0);
+  await expect(page.locator('[data-panel="domain-detail-filters"]')).toHaveCount(0);
+  await expect(page.locator('[data-panel="guided-flow"]')).toHaveCount(0);
 });
 
 test("selection context keeps advanced panel extracted behind explicit disclosure", async ({ page }) => {
@@ -82,6 +87,7 @@ test("selection context keeps advanced panel extracted behind explicit disclosur
   const advancedToggle = page.getByRole("button", { name: "Advanced" });
   await advancedToggle.click();
   await expect(advancedToggle).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('[data-panel="domain-detail-filters"]')).toBeVisible();
 
   const advancedPanel = page.locator('[data-panel-group="advanced"]');
   await expect(advancedPanel).toBeVisible();

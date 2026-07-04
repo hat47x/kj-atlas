@@ -124,3 +124,12 @@
 - 選択コンテキストの基本情報（選択対象、レビュー状態、違和感）は高度パネルの開閉中も維持されることを確認した。
 - 結果: 2026-06-29 の対象Playwrightセットで **10 passed**。
 - 判定: AC-2 は代表操作として **Pass**。ただし、画面全体の情報設計や実機アクセシビリティ承認は別ゲートに残る。
+
+## E2E追認 2026-07-04: 右パネルの詳細フィルタ / Guided Flow の段階開示
+
+- UIカタログで残課題として扱っていた CB-3（ドメイン状態フィルタの二重化、Guided Flow の常設リーク）について、右側パネル側の詳細ドメインフィルタと Guided Flow を `isAdvancedUiEnabled` の背後へ移した。
+- 既定表示では選択コンテキスト先頭の「現在の選択」、文書状態サマリ、基本編集/レビュー導線を優先し、詳細な絞り込み・Guided Flow は「詳細」ON時にだけ表示する。
+- `詳細` をOFFにした場合、Guided Flow が見えないまま有効に残らないよう `setGuidedFlowEnabled(false)` で状態を閉じる。
+- 回帰固定: `ux_operability_regression.test.ts` に `domain-detail-filters` / `guided-flow` の advanced-content 契約を追加し、`complexity_budget_foregrounding.spec.ts` で既定OFF・詳細ON・再OFFの可視性を確認した。
+- 結果: 2026-07-04 の対象検証で `tsc --noEmit`、`vitest run src/ui/ux_operability_regression.test.ts src/ui/DomainStateFilterBar.test.ts`、`playwright test e2e/complexity_budget_foregrounding.spec.ts --reporter=line` が通過。
+- ADR影響: ADR-0043 の既存方針（CB-1/CB-3/CB-4）に沿う段階開示の是正であり、新ADRは不要。

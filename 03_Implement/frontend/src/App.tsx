@@ -1138,6 +1138,12 @@ export default function App() {
   const [guidedFlowTargetIndex, setGuidedFlowTargetIndex] = useState(0);
   const [guidedFlowOpenEditorRequestSeq, setGuidedFlowOpenEditorRequestSeq] = useState(0);
 
+  useEffect(() => {
+    if (!isAdvancedUiEnabled) {
+      setGuidedFlowEnabled(false);
+    }
+  }, [isAdvancedUiEnabled]);
+
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});

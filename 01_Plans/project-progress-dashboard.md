@@ -1,10 +1,10 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-07-02
+最終更新: 2026-07-04
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
-## 現状スナップショット（2026-07-02）
+## 現状スナップショット（2026-07-04）
 
 ### ADR 状態
 - ADR-0000〜0046: すべて Accepted
@@ -14,7 +14,7 @@
 - Active: 26 (Ready: 15, Blocked: 11)
 - P0: PRODUCT-QA-01 (Open), CORE-VALUE-GUARD-01 (Done)
 - P1: PRODUCT-VALUE-01/02/03 (In Progress, H-PV委任承認済み・最終出荷ゲート継続), VALUE-DOGFOOD-01 (In Progress)
-- Recently Done: UX-NAV-01 (2026-07-04, 作業モード面へ Narrative/HIL/差分を移設し、選択コンテキストから分離)
+- Recently Done: UX-NAV-01 (2026-07-04, 作業モード面へ Narrative/HIL/差分を移設し、選択コンテキストから分離), UX-COMPLEXITY-01追認 (2026-07-04, 右パネルの詳細フィルタ/Guided Flowを詳細表示配下へ移動)
 - P2: DOMAIN-EXPR-03/04 (In Progress), PERF-BUDGET-01 (In Progress)
 
 ### DOMAIN-EXPR 実装状態 (ADR-0040)

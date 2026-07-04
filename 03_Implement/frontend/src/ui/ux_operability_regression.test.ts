@@ -94,6 +94,18 @@ describe("UX Operability regression contracts", () => {
     expect(workModeContent).toContain("{structuralDiffPanel}");
   });
 
+  it("Phase 5c: domain detail filters and guided flow stay behind advanced disclosure", () => {
+    const appSource = readSource("src/App.tsx");
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+
+    expect(sidePanelSource).toContain('data-panel="domain-detail-filters"');
+    expect(sidePanelSource).toContain('data-panel="guided-flow"');
+    expect(sidePanelSource).toContain('data-ui-complexity-tier="advanced-content"');
+    expect(sidePanelSource).toContain("{isAdvancedUiEnabled ? (");
+    expect(appSource).toContain("if (!isAdvancedUiEnabled) {");
+    expect(appSource).toContain("setGuidedFlowEnabled(false);");
+  });
+
   it("Phase 6: read-only-review-disables-edit-surfaces", () => {
     const appSource = readSource("src/App.tsx");
     expect(appSource).toContain("disabled={isReadOnly || isLoading || !document || isSuggesting}");
