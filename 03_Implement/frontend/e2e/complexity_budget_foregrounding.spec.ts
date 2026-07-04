@@ -95,3 +95,39 @@ test("selection context keeps advanced panel extracted behind explicit disclosur
   await advancedPanel.locator("summary").click();
   await expect(advancedPanel).toHaveAttribute("aria-expanded", "false");
 });
+
+test("work mode owns narrative and HIL surfaces outside selection context", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.addInitScript(() => {
+    window.localStorage.removeItem("kj-atlas.advanced-ui-enabled");
+  });
+  const fixture = await routeDomainExpressionFixture(page);
+
+  await page.goto("/?locale=en");
+  fixture.enableSample();
+  await page.getByRole("button", { name: "Open sample" }).click();
+  await page.getByRole("option", { name: "ambiguous target claim" }).click();
+
+  const selectionContext = page.locator('[data-panel="selection-context"]');
+  await expect(selectionContext).toBeVisible();
+  await expect(selectionContext).toContainText("Card selected");
+
+  await page.getByRole("button", { name: "Advanced" }).click();
+  await expect(selectionContext).not.toContainText("Narrative (draft)");
+  await expect(selectionContext).not.toContainText("Compare candidates");
+  await expect(selectionContext).not.toContainText("Review Diff (Selective Merge)");
+
+  const workModeTrigger = page.getByRole("button", { name: "Work mode" });
+  await workModeTrigger.click();
+
+  const workMode = page.locator('[data-ui-region="work-mode"]');
+  await expect(workMode).toBeVisible();
+  await expect(workMode).toContainText("Narrative (draft)");
+  await expect(workMode).toContainText("Compare candidates");
+  await expect(workMode).toContainText("Review changes");
+  await expect(workMode).toContainText("Review Diff (Selective Merge)");
+
+  await page.keyboard.press("Escape");
+  await expect(workMode).toHaveCount(0);
+  await expect(workModeTrigger).toBeFocused();
+});

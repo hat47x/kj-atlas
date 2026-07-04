@@ -11,9 +11,10 @@
 - ADR-0047（設計判断ADRの一巡完了とexecution-first転換）: Accepted
 
 ### Issue 状態（triage）
-- Active: 27 (Ready: 16, Blocked: 11)
+- Active: 26 (Ready: 15, Blocked: 11)
 - P0: PRODUCT-QA-01 (Open), CORE-VALUE-GUARD-01 (Done)
-- P1: PRODUCT-VALUE-01/02/03 (In Progress, H-PV委任承認済み・最終出荷ゲート継続), UX-NAV-01 (In Progress), VALUE-DOGFOOD-01 (In Progress)
+- P1: PRODUCT-VALUE-01/02/03 (In Progress, H-PV委任承認済み・最終出荷ゲート継続), VALUE-DOGFOOD-01 (In Progress)
+- Recently Done: UX-NAV-01 (2026-07-04, 作業モード面へ Narrative/HIL/差分を移設し、選択コンテキストから分離)
 - P2: DOMAIN-EXPR-03/04 (In Progress), PERF-BUDGET-01 (In Progress)
 
 ### DOMAIN-EXPR 実装状態 (ADR-0040)

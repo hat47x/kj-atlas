@@ -2842,7 +2842,7 @@ DoDテンプレ（Draft→Open）
 - Candidate: current working baseline after PERF-BUDGET-01 / DOMAIN-EXPR-03/04 / H-PV / UX advanced-panel evidence updates.
 - Date (JST): 2026-06-29
 - Reviewer: Codex acting under explicit user delegation for named human tasks. This is not final shipment approval.
-- Scope: Playwright E2E execution for PERF-BUDGET-01 and DOMAIN-EXPR-03/04, delegated H-PV1/H-PV2/H-PV3 approval records, and UX-NAV-01 AC-2 equivalent advanced-panel extraction evidence.
+- Scope: Playwright E2E execution for PERF-BUDGET-01 and DOMAIN-EXPR-03/04, delegated H-PV1/H-PV2/H-PV3 approval records, and UX-NAV-01 AC-2 work-mode extraction evidence.
 
 ### Evidence
 
@@ -2857,7 +2857,7 @@ DoDテンプレ（Draft→Open）
 
 - G1 safety defaults: Conditional Go improved. SafeMode/share preflight and read-only reviewer boundaries were rechecked; no safety contract change.
 - G2 primary operations: Conditional Go improved. First-value, domain-expression, review-pack, and advanced-panel representative routes passed in browser E2E.
-- G4 viewport/operability: Conditional Go improved. UX-NAV-01 AC-2 is treated as `UX-COMPLEXITY-01` AC-2 plus `UX-OPERABILITY-03` advanced disclosure evidence.
+- G4 viewport/operability: Conditional Go improved. UX-NAV-01 AC-2 now has direct work-mode evidence: Narrative/HIL/diff surfaces are outside the selection-context side panel, and Escape returns focus to the work-mode trigger.
 - G6 governance and decision traceability: Conditional Go improved. H-PV1/H-PV2/H-PV3 delegation source and limits are recorded in the Product Value summaries and MVP-EXIT.
 - G7 regression: Go for this PR-sized slice based on local typecheck, Vitest, targeted Playwright, build, and issue validators.
 

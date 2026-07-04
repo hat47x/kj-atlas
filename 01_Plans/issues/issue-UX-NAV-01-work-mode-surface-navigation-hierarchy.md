@@ -1,7 +1,7 @@
-# Issue Draft: UX-NAV-01 作業モード面（ADR-0031 領域4）の実体化とナビゲーション階層
+# Issue: UX-NAV-01 作業モード面（ADR-0031 領域4）の実体化とナビゲーション階層
 
 - Type: Feature request
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -18,12 +18,16 @@
 - Fragment wrapper for Shell+WorkModePanel ✅
 - i18n: en/ja labels for title, close, content_pending ✅
 
+## Implementation Closeout 2026-07-04
+
+### Done
+- AC-2: `NarrativesPanel`, `HilRsWorkflowPanel`, and the structural diff surface now render inside `WorkModePanel` (`data-ui-region="work-mode"`) instead of `SidePanel.topContent` ✅
+- AC-4: The mode label remains `Work mode` / `作業モード`; no `review` tab or additional review-mode name was introduced ✅
+- Regression guards: `ux_operability_regression.test.ts` now asserts that advanced narrative/HIL panels are owned by the work-mode surface, not the selection-context side panel ✅
+- E2E evidence: `complexity_budget_foregrounding.spec.ts` verifies that selection context excludes Narrative/HIL/diff copy, Work mode contains it, and Escape returns focus to the Work mode trigger ✅
+
 ### Deferred
-- AC-2: Moving NarrativesPanel + HilRsWorkflowPanel from SidePanel.topContent requires
-  extracting 115 lines of deeply nested JSX. Current approach: WorkModePanel shows
-  content_pending message; advanced features remain accessible via sidebar.
-  This prevents accidental breakage while establishing the infrastructure.
-- AC-4: Naming discipline (avoid 'review' for tab name) — deferred until actual tabs exist.
+- Phase 2 optional work (URL/history persistence for work-mode state and lighter adjacent-panel migration) remains outside this issue's Phase 1 acceptance scope.
 
 ### Commits
 - PR #2490: WorkModePanel component + i18n
@@ -43,8 +47,8 @@
 - GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: share-export（共有・再現・差分導線の再配置を含むため非回帰確認が必要）
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `ADR-0031`（領域4の実装方式＝ドロワー/オーバーレイ/タブの確定は本Issueで提案、Maintainer 承認待ち）
+- DecisionStatus（Fixed / Pending）: Fixed
+- DecisionQueueRef（未確定時の参照先）: N/A（Phase 1 は既定OFFの作業モードオーバーレイとして実装済み。URL/history persistence 等は必要時に別 issue 化する）
 
 ## 1) 課題 / Problem statement
 

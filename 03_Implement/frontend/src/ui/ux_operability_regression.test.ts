@@ -72,6 +72,28 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain('t("app.toolbar.save")');
   });
 
+  it("Phase 5b: work-mode surface owns advanced narrative and HIL panels", () => {
+    const appSource = readSource("src/App.tsx");
+
+    expect(appSource).toContain("const advancedWorkModeContent = (");
+    expect(appSource).toContain("<WorkModePanel");
+    expect(appSource).toContain('data-ui-core-action="work-mode"');
+
+    const sidePanelStart = appSource.indexOf("sidePanel={");
+    const sidePanelEnd = appSource.indexOf("selectedIsland={", sidePanelStart);
+    const sidePanelCall = appSource.slice(sidePanelStart, sidePanelEnd);
+    expect(sidePanelCall).not.toContain("topContent=");
+    expect(sidePanelCall).not.toContain("NarrativesPanel");
+    expect(sidePanelCall).not.toContain("HilRsWorkflowPanel");
+
+    const workModeStart = appSource.indexOf("const advancedWorkModeContent = (");
+    const workModeEnd = appSource.indexOf("return (", workModeStart);
+    const workModeContent = appSource.slice(workModeStart, workModeEnd);
+    expect(workModeContent).toContain("<NarrativesPanel");
+    expect(workModeContent).toContain("<HilRsWorkflowPanel");
+    expect(workModeContent).toContain("{structuralDiffPanel}");
+  });
+
   it("Phase 6: read-only-review-disables-edit-surfaces", () => {
     const appSource = readSource("src/App.tsx");
     expect(appSource).toContain("disabled={isReadOnly || isLoading || !document || isSuggesting}");

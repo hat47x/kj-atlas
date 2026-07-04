@@ -123,7 +123,7 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 | 価値: 成果物化と共有 | 確定/保留/根拠/未レビューを束ねた成果物 | `ADR-0032` V4 | `PRODUCT-UX-03`(Done), `PRODUCT-VALUE-03` | 被覆 |
 | 価値: 観測と社会的普及 | 価値の再現観測・説明可能な合意の普及 | `ADR-0036`/`0037`/`0038` | `VALUE-MEASURE-01/02`, `SOCIAL-DIFFUSION-01..04` | 被覆（VR4/VR5は延期保持） |
 | UI/UX: 初回導線 | 文書入口・SafeMode可視 | `ADR-0031` | `PRODUCT-UX-01`(Done) | 被覆 |
-| UI/UX: 画面情報設計 | 選択コンテキスト・作業モード分離 | `ADR-0031` | `PRODUCT-UX-02`(Done), `UX-OPERABILITY-03/05` | 被覆 |
+| UI/UX: 画面情報設計 | 選択コンテキスト・作業モード分離 | `ADR-0031` | `PRODUCT-UX-02`(Done), `UX-NAV-01`(Done), `UX-OPERABILITY-03/05` | 被覆 |
 | UI/UX: 視点制御 | 俯瞰↔詳細・折りたたみ・focus・preset | `ADR-0001` P-06 | `ViewControlsPanel.tsx` ほか実装済み, `CE3` presets | 被覆（実装済み） |
 | UI/UX: 操作性 | ポインタ/キーボード・パネル離脱・焦点 | `ADR-0030` | `UX-OPERABILITY-01..05`(Done系) | 被覆 |
 | UI/UX: 共有導線 | 共有前確認・公開範囲・SafeMode | `ADR-0031` | `PRODUCT-UX-03`(Done) | 被覆 |
