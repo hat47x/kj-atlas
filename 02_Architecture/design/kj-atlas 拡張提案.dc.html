@@ -2090,6 +2090,124 @@
     <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:11px 14px; margin-top:12px;"><div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">移行コスト</div><p style="font-size:12.5px; line-height:1.6; color:#854d0e; margin:6px 0 0;">ARIA属性・フォーカス管理は段階2で全面対応が効率的。読み上げ順の統一は P2 と共有。スキーマ不変。</p></div>
   </section>
 
+  <!-- ===== P26 依頼1 パッチWSの居場所 ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P26</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">依頼1</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">パッチワークスペース（CE3）の居場所 ― 比較と推奨</h3>
+    </div>
+    <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;">パッチWS（差分候補の粒度別採否・プリセット・ロールバック）は選択マージと役割が重なる。3案を認知負荷（CB）と境界の明瞭さで評価する。</p>
+    <figure style="margin:14px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+          <thead><tr style="background:#f8fafc; text-align:left;">
+            <th style="padding:8px 11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:26%;">案</th>
+            <th style="padding:8px 11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">評価（CB-1認知負荷 / 境界 / 移行）</th>
+          </tr></thead>
+          <tbody style="color:#3e4c59; line-height:1.55;">
+            <tr><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9; font-weight:700; color:#15803d;">(a) 選択マージへ統合 ★推奨</td><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9;">タブ数を増やさず CB-1 維持。マージ＝パッチの適用で概念が一致し境界の重複を解消。粒度別採否/プリセット/ロールバックはマージ内のセクションとして収まる。取消＝ロールバック統合で監査も一元化。</td></tr>
+            <tr><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9; font-weight:700; color:#b45309;">(b) 独立6タブ目</td><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9;">パッチ専用UIは明快だが、タブ純増でCB-1に反し、選択マージとの境界が曖昧なまま二重化（どちらで適用したか分散）。</td></tr>
+            <tr><td style="padding:8px 11px; font-weight:700; color:#64748b;">(c) 現状維持</td><td style="padding:8px 11px;">移行コスト0だが、作業モード面の独立化（領域4）の趣旨に反し、重い機能が旧位置に残る。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図DD ─ <strong style="font-weight:600; color:#15803d;">推奨=(a)</strong>。選択マージタブを「マージ／パッチ」の統合面とし、上段=差分適用の採否（粒度別）、中段=プリセット、下段=ロールバック履歴（監査ログ＝取消の一元化）。差分タブ（読込→一覧）から渡された候補をここで粒度別に採否する導線で、差分↔マージの流れが一本化する。</figcaption>
+    </figure>
+    <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;"><div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">CB自己申告</div><p style="font-size:12px; color:#475569; line-height:1.6; margin:6px 0 0;">CB-1: タブ純増なし（統合）。CB-3: 既存マージタブへ包含。CB-4: ロールバック＝取消を監査と一体化し可逆。5判断軸4（差分・監査）◎。</p></div>
+  </section>
+
+  <!-- ===== P27 依頼2 段階2・3レッドライン ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P27</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">依頼2</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">段階2・段階3のレッドライン仕様</h3>
+    </div>
+
+    <h4 style="font-size:15px; font-weight:700; margin:16px 0 0;">段階2</h4>
+    <figure style="margin:10px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+          <thead><tr style="background:#f8fafc; text-align:left;"><th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:19%;">面</th><th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">画面設計（状態別）＋レッドライン</th></tr></thead>
+          <tbody style="color:#3e4c59; line-height:1.55;">
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">⌘K パレット</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">中央モーダル 幅min(560,92vw)・角丸12・影0 16 40。検索入力44h・13px。候補行36h・アイコン16＋ラベル13＋右にOS別キー（Mac=⌘連結/他=Ctrl+）。<strong style="font-weight:700;">保持系（保留/違和感）コマンドを上位固定</strong>。状態: 空クエリ=最近/推奨、入力=絞込、0件=「該当なし」。↑↓移動・Enter実行・Esc閉じ復帰。<code style="font-family:monospace;">aria-activedescendant</code>。</td></tr>
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">チートシート</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">? で起動、Escで閉じる。右上にMac/Windows/Linux切替（自動検出）。kbd=11px monospace・角丸5・padding2/8。単一キー節は「編集中無効」を脚注。</td></tr>
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">メニューバー6分類＋スリムバー</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">分類=ファイル/編集/表示/挿入/レビュー/ヘルプ。項目右にショートカット併記、無効は淡色。<strong style="font-weight:700;">移行差分</strong>: 旧File→ファイル（新規/開く/保存/書出）、旧Edit→編集（取消/やり直し/複製/削除）＋新設=表示(俯瞰/整列/凡例/番号)・挿入(カード/島/関係線)・レビュー(差分/マージ/診断/文章化)。スリムバー最終形=＋新規・島・関係の3操作＋SafeMode/AIチップ固定。</td></tr>
+            <tr><td style="padding:7px 10px; font-weight:700;">幅別畳み</td><td style="padding:7px 10px;">1440/960=全表示。768=メニュー横スクロール・⌘Kアイコン+ラベル。390=メニュー≡集約・スリムバー＝＋新規のみ・<strong style="font-weight:700;">作業モードは下シート（52vh）</strong>・チートシート全画面。SafeMode/AIチップは全幅固定。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図EE ─ 段階2レッドライン。⌘K・チートシートはプロトタイプに実装済み（保持系上位固定・OS別表記・幅別畳みを含む）。</figcaption>
+    </figure>
+
+    <h4 style="font-size:15px; font-weight:700; margin:18px 0 0;">段階3</h4>
+    <figure style="margin:10px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+          <thead><tr style="background:#f8fafc; text-align:left;"><th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:19%;">面</th><th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">画面設計（状態別）＋レッドライン</th></tr></thead>
+          <tbody style="color:#3e4c59; line-height:1.55;">
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">ミニマップ</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">右下・約160×110・角丸8・影・半透明。カードは4px点（型色）、島は淡枠。<strong style="font-weight:700;">現ビュー枠=青2px</strong>、ドラッグで移動・クリックで中心移動。折りたたみ=隅の小アイコンへ（既定は展開、狭幅で自動折畳）。</td></tr>
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">一括操作バー</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">選択発生で下中央に出現（slateダーク・角丸7・影）。左端＝<strong style="font-weight:700;">保持系（保留/違和感）</strong>、続いて束ねる・型変更、右端に取消。「n件選択」を<code style="font-family:monospace;">aria-live</code>で読み上げ（評価語なし）。0件で消滅。</td></tr>
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">島の直交描線</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">矩形/L字/コの字（グリッド占有→境界トレース）、角丸14。表札に複雑さ（矩形=緑/L字・コの字=amber系文字・中立）を小さく。「整える」は差分プレビュー後に適用（可逆）。</td></tr>
+            <tr><td style="padding:7px 10px; font-weight:700;">関係線エスカレーション</td><td style="padding:7px 10px;">内部化（同島集約）=非表示。昇格（島↔他）=島重心へ接続、<strong style="font-weight:700;">昇格ラベル背景を淡紫</strong>で「集約された関係」と区別。縮退時は種類を出さず汎用「関連」または本数のみ。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図FF ─ 段階3レッドライン。島描線・エスカレーションはプロトタイプに実装済み。ミニマップ・一括操作バーの視覚仕様を確定。</figcaption>
+    </figure>
+    <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;"><div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">CB自己申告・5判断軸</div><p style="font-size:12px; color:#475569; line-height:1.6; margin:6px 0 0;">CB-1: ⌘K/チートシート/ミニマップ/一括バーはすべて起動時・選択時のみ（既定OFF）。CB-2: 保持系を⌘K候補・一括バー左端で優先配置。CB-3: 既存要素の畳み替え/精緻化。CB-4: 整える・エスカレーションは可逆。軸1○・軸3○・軸5○（人間/AI峻別は⌘Kのコマンドが確定を人間に残す）。</p></div>
+  </section>
+
+  <!-- ===== P28 依頼3 実装照合レビューチェックリスト ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P28</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">依頼3</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">実装照合レビュー チェックリスト案</h3>
+    </div>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:12px 0 0;">実機スクリーンショットを設計意図と照合する定型。第1回は段階1（カードメタ行＋凡例・空状態）。各項目は ✓/△/✗ ＋所見で回答する。</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;">
+      <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+        <div style="font-size:11px; font-weight:700; color:#334155;">A. 視覚言語</div>
+        <ul style="margin:6px 0 0; padding-left:16px; font-size:11.5px; line-height:1.65; color:#475569;">
+          <li>slate階層（濃=前景/淡=後景）に一致</li>
+          <li><strong style="font-weight:700;">amberは保持系のみ</strong>（保留/違和感）に使用、他意味に流用なし</li>
+          <li>4チャネル1意味（色=型/位置=保持系/形=確認/密度=違和感）衝突なし</li>
+          <li>タイポ13/12/11/10・ウェイト600/700・角丸6/8/999・間隔2/4/6/8</li>
+        </ul>
+      </div>
+      <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+        <div style="font-size:11px; font-weight:700; color:#334155;">B. 状態遷移</div>
+        <ul style="margin:6px 0 0; padding-left:16px; font-size:11.5px; line-height:1.65; color:#475569;">
+          <li>空状態ヒントが0枚時のみ出現・初回作成で消滅</li>
+          <li>凡例・番号バッジが<strong style="font-weight:700;">既定OFF</strong></li>
+          <li>非同期（差分読込等）に進捗＋キャンセル</li>
+          <li>適用/マージに取消（可逆）と監査記録</li>
+        </ul>
+      </div>
+      <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+        <div style="font-size:11px; font-weight:700; color:#334155;">C. 核の保護</div>
+        <ul style="margin:6px 0 0; padding-left:16px; font-size:11.5px; line-height:1.65; color:#475569;">
+          <li>点数・ランク・%・準備度スコアが<strong style="font-weight:700;">存在しない</strong>（反スコアリング）</li>
+          <li>provider=none で書く/並べる/束ねる/つなぐ/保留が完結・AIタブは肯定提示</li>
+          <li>保留・違和感が確定より遠くない（CB-2）</li>
+          <li>SafeMode既定ON・共有前確認・出典参照トグル既定OFF</li>
+        </ul>
+      </div>
+      <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;">
+        <div style="font-size:11px; font-weight:700; color:#334155;">D. a11y／契約</div>
+        <ul style="margin:6px 0 0; padding-left:16px; font-size:11.5px; line-height:1.65; color:#475569;">
+          <li>読み上げ順 型→保持系→確認→根拠→本文</li>
+          <li>フォーカス初期位置・Tab順・Escape段階が仕様表どおり</li>
+          <li>role/aria（tablist・dialog・live）付与</li>
+          <li>既存キーボード/フォーカス契約を破壊しない・OS別キー表記</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-note" style="border:1px solid #c7d2fe; background:#f5f7ff; border-radius:8px; padding:11px 14px; margin-top:12px;"><p style="font-size:12px; color:#3730a3; line-height:1.6; margin:0;">回答様式: 項目ごとに ✓（一致）/△（軽微乖離・許容範囲）/✗（要修正）＋スクショ該当箇所＋期待値。✗は「設計値→実測→修正案」の3点で起票に直結させる。段階ごとに A〜D を再適用。</p></div>
+  </section>
+
   <!-- CLOSING -->
   <section style="padding:34px 0 56px; margin-top:28px; border-top:3px solid #eef2ff;">
     <div style="display:flex; align-items:baseline; gap:12px; margin-top:18px;">
