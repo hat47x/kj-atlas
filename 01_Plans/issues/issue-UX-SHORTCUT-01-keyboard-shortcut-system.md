@@ -84,3 +84,7 @@
 - Related: `01_Plans/issues/issue-UX-CMDK-01-command-palette.md`（表記・バインド共通化）, `issue-PROJECT-GOV-01-mainline-convergence-and-branch-hygiene.md`（L699 棚卸し警告）
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（P8・図H）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
+
+## 実装設計の到着（2026-07-04 Round 5）
+
+- チートシートのレッドライン確定（同 §段階2）: ? 起動・Esc閉じ・右上にMac/Windows/Linux切替（自動検出）・kbd=11px monospace 角丸5 padding2/8・単一キー節に「編集中無効」脚注。プロトタイプ実装済み。

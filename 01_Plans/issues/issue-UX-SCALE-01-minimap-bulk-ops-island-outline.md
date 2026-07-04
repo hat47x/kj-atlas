@@ -83,3 +83,7 @@
 - Related: `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/issues/issue-PERF-BUDGET-01-large-document-performance-assertions.md`
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（観点2・図R/S/T）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
+
+## 実装設計の到着（2026-07-04 Round 5）
+
+- レッドライン確定（同 §段階3）: ミニマップ=右下 約160×110 角丸8 半透明・カード4px点（型色）・現ビュー枠青2px・ドラッグ/クリック移動・狭幅自動折畳。一括操作バー=選択時に下中央出現・保持系左端・「n件選択」aria-live（評価語なし）・0件で消滅。エスカレーション昇格ラベル=淡紫で「集約された関係」区別・縮退時は種類を出さず汎用表示。島直交描線・エスカレーションはプロトタイプ実装済み。
