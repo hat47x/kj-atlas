@@ -411,6 +411,18 @@ export function SidePanel({
   const traceAbortRef = useRef<AbortController | null>(null);
   const analyticsAbortRef = useRef<AbortController | null>(null);
 
+  const traceAnalyticsModeLabel = useMemo(() => {
+    if (traceAnalyticsMode === "evidence") return t("side_panel.trace.mode_evidence");
+    if (traceAnalyticsMode === "contradiction") return t("side_panel.trace.mode_contradiction");
+    return t("side_panel.trace.mode_both");
+  }, [traceAnalyticsMode]);
+
+  const formatEvidenceRelationType = (type: string): string => {
+    if (type === "supports") return t("side_panel.evidence.supports");
+    if (type === "contradicts") return t("side_panel.evidence.contradicts");
+    return type;
+  };
+
   const summaryHistoryEntries = useMemo(() => {
     const entries = selectedIsland?.summaryHistory ?? [];
     return [...entries].reverse();
@@ -553,7 +565,7 @@ export function SidePanel({
       },
     }, {
       signal: controller.signal,
-      onProgress: (progress) => setTraceProgressMessage(t("side_panel.trace.analytics_progress", { mode: traceAnalyticsMode, stage: progress.stage, percent: progress.percent })),
+      onProgress: (progress) => setTraceProgressMessage(t("side_panel.trace.analytics_progress", { mode: traceAnalyticsModeLabel, stage: progress.stage, percent: progress.percent })),
     }).then((outcome) => {
       if (outcome.status !== "completed") {
         return;
@@ -576,7 +588,7 @@ export function SidePanel({
         analyticsAbortRef.current = null;
       }
     };
-  }, [document, onEvidenceTraceError, safeMode, selectedCard, traceAnalyticsMode]);
+  }, [document, onEvidenceTraceError, safeMode, selectedCard, traceAnalyticsMode, traceAnalyticsModeLabel]);
 
   const hasCardSelection = selectedCardCount > 0;
   const canAlign = selectedCardCount >= 2;
@@ -3492,7 +3504,7 @@ export function SidePanel({
                       <div>{t("side_panel.trace.evidence_links_doc", { count: traceAnalytics.evidenceLinkCount })}</div>
                       <div>{t("side_panel.trace.isolated_nodes_doc", { count: traceAnalytics.isolatedNodeCount })}</div>
                       <div>{t("side_panel.trace.source_density_doc", { value: traceAnalytics.sourceDensity.toFixed(4) })}</div>
-                      <div>{t("side_panel.trace.relation_counts", { value: Object.entries(traceAnalytics.byRelationType).sort((a, b) => a[0].localeCompare(b[0])).map(([type, count]) => `${type}:${count}`).join(", ") || t("side_panel.none") })}</div>
+                      <div>{t("side_panel.trace.relation_counts", { value: Object.entries(traceAnalytics.byRelationType).sort((a, b) => a[0].localeCompare(b[0])).map(([type, count]) => `${formatEvidenceRelationType(type)}:${count}`).join(", ") || t("side_panel.none") })}</div>
                       <div>{t("side_panel.trace.depth_histogram", { value: Object.entries(traceAnalytics.depthHistogram).sort((a, b) => Number(a[0]) - Number(b[0])).map(([depth, count]) => `d${depth}:${count}`).join(", ") || t("side_panel.none") })}</div>
                       <div>{t("side_panel.trace.top_hubs", { value: traceAnalytics.topHubs.map((hub) => `${hub.cardId}(${hub.degree})`).join(", ") || t("side_panel.none") })}</div>
                       <div>{t("side_panel.trace.cycle_count", { value: traceAnalytics.cycles ? traceAnalytics.cycles.count : t("side_panel.trace.skipped") })}</div>
