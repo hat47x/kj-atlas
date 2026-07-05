@@ -32,6 +32,12 @@
 - The previous package-acceptance / read-only reviewer human blocker is fixed for this issue's current evidence packet.
 - This does not introduce formal organizational approval, signature semantics, automatic publication, package public contract changes, SafeMode/share policy changes, or final shipment authority.
 
+### Implementation Evidence 2026-07-05: review-pack granularity group semantics
+
+- The SharePanel review-pack granularity controls now use a semantic `fieldset` / `legend` group and associate the trace-availability hint with that group. This keeps the existing Detail/Overview behavior while making the choice clearer for keyboard and assistive-technology users.
+- Added regression coverage in `SharePanel.test.ts` for the semantic group markup and in `review_pack_trace_export.spec.ts` for locating the group by accessible name before switching Overview/Detail.
+- No ADR is required because this changes UI semantics and test coverage only; it does not alter package contents, SafeMode/share policy, public contract, signature/approval semantics, or release authority.
+
 ### Note
 Share preflight domain state summary is already implemented in SharePanel
 (domainExpressionSummary with review/hold/critique/evidence/contradiction counts).

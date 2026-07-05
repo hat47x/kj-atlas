@@ -4010,6 +4010,7 @@ export default function App() {
 
   const handleOpenCritiqueWorkflow = useCallback(() => {
     setIsAdvancedUiEnabled(true);
+    setIsWorkModeOpen(true);
     try {
       if (typeof window !== "undefined") {
         window.localStorage.setItem(ADVANCED_UI_STORAGE_KEY, "true");

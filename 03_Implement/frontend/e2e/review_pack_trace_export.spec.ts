@@ -86,6 +86,7 @@ test("review pack export keeps trace controls consistent with actual zip content
   await expect(traceCheckbox).toBeEnabled();
   await expect(traceCheckbox).toBeChecked();
   await expect(page.getByText("Evidence, contradiction, and analytics traces for the selected card will be included.")).toBeVisible();
+  await expect(page.getByRole("group", { name: "Export granularity" })).toBeVisible();
 
   await page.getByLabel("Overview (high-level summary)").check();
   await expect(traceCheckbox).toBeDisabled();

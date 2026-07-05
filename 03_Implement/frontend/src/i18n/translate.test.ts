@@ -211,6 +211,34 @@ describe("translate", () => {
     expect(t("app.perspective_hint.select_card_for_neighborhood", undefined, "en")).toContain("Select a card");
   });
 
+  it("uses Japanese labels for evidence overlay choices", () => {
+    expect(t("view_controls.evidence.title", undefined, "ja")).toBe("根拠オーバーレイ");
+    expect(t("view_controls.evidence.supports", undefined, "ja")).toBe("支持");
+    expect(t("view_controls.evidence.contradicts", undefined, "ja")).toBe("反証");
+    expect(t("view_controls.evidence.both", undefined, "ja")).toBe("支持と反証");
+    expect(t("view_controls.evidence.selection", undefined, "ja")).toBe("選択中のカード");
+    expect(t("view_controls.evidence.all", undefined, "ja")).toBe("すべて");
+    expect(t("view_controls.evidence.hops", { count: 2 }, "ja")).toBe("2段階");
+  });
+
+  it("uses Japanese labels for summary and LOD controls", () => {
+    expect(t("view_controls.summary.implied", undefined, "ja")).toBe("（抽象マップで自動有効）");
+    expect(t("view_controls.summary.help", undefined, "ja")).toContain("プレビュー");
+    expect(t("view_controls.summary.abstract_help", undefined, "ja")).toContain("抽象マップビュー");
+    expect(t("view_controls.peek_help", undefined, "ja")).toContain("プレビュー");
+    expect(t("view_controls.lod.off", undefined, "ja")).toBe("無効");
+    expect(t("view_controls.lod.legend", undefined, "ja")).toContain("近距離");
+    expect(t("view_controls.lod.legend", undefined, "ja")).toContain("中距離");
+    expect(t("view_controls.lod.legend", undefined, "ja")).toContain("遠距離");
+  });
+
+  it("uses Japanese labels for review history and share preflight domain copy", () => {
+    expect(t("side_panel.boolean.true", undefined, "ja")).toBe("レビュー済み");
+    expect(t("side_panel.boolean.false", undefined, "ja")).toBe("未レビュー");
+    expect(t("share.panel.preflight.domain_summary_hold", { count: 2 }, "ja")).toContain("未分類の主張");
+    expect(t("share.panel.preflight.domain_summary_hold", { count: 2 }, "ja")).not.toContain("unknown");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {

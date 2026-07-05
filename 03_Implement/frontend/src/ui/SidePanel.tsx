@@ -411,6 +411,18 @@ export function SidePanel({
   const traceAbortRef = useRef<AbortController | null>(null);
   const analyticsAbortRef = useRef<AbortController | null>(null);
 
+  const traceAnalyticsModeLabel = useMemo(() => {
+    if (traceAnalyticsMode === "evidence") return t("side_panel.trace.mode_evidence");
+    if (traceAnalyticsMode === "contradiction") return t("side_panel.trace.mode_contradiction");
+    return t("side_panel.trace.mode_both");
+  }, [traceAnalyticsMode]);
+
+  const formatEvidenceRelationType = (type: string): string => {
+    if (type === "supports") return t("side_panel.evidence.supports");
+    if (type === "contradicts") return t("side_panel.evidence.contradicts");
+    return type;
+  };
+
   const summaryHistoryEntries = useMemo(() => {
     const entries = selectedIsland?.summaryHistory ?? [];
     return [...entries].reverse();
@@ -553,7 +565,7 @@ export function SidePanel({
       },
     }, {
       signal: controller.signal,
-      onProgress: (progress) => setTraceProgressMessage(t("side_panel.trace.analytics_progress", { mode: traceAnalyticsMode, stage: progress.stage, percent: progress.percent })),
+      onProgress: (progress) => setTraceProgressMessage(t("side_panel.trace.analytics_progress", { mode: traceAnalyticsModeLabel, stage: progress.stage, percent: progress.percent })),
     }).then((outcome) => {
       if (outcome.status !== "completed") {
         return;
@@ -576,7 +588,7 @@ export function SidePanel({
         analyticsAbortRef.current = null;
       }
     };
-  }, [document, onEvidenceTraceError, safeMode, selectedCard, traceAnalyticsMode]);
+  }, [document, onEvidenceTraceError, safeMode, selectedCard, traceAnalyticsMode, traceAnalyticsModeLabel]);
 
   const hasCardSelection = selectedCardCount > 0;
   const canAlign = selectedCardCount >= 2;
@@ -3340,23 +3352,29 @@ export function SidePanel({
                   <div style={{ display: "grid", gap: 4, marginBottom: 8 }}>
                     {outgoingEvidenceLinks.map((link) => {
                       const target = document?.cards.find((card) => card.id === link.toCardId);
+                      const targetLabel = target ? target.text.slice(0, 60) : link.toCardId;
+                      const linkTypeLabel = link.type === "supports" ? t("side_panel.evidence.supports") : t("side_panel.evidence.contradicts");
                       return (
                         <div key={link.id} style={{ fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 6, padding: 6 }}>
-                          <div>{link.type} → {target ? target.text.slice(0, 60) : link.toCardId}</div>
+                          <div>{t("side_panel.evidence.outgoing_item", { type: linkTypeLabel, target: targetLabel })}</div>
                           {link.type === "contradicts" ? (
-                            <select
-                              value={link.contradictionState ?? "unconfirmed"}
-                              disabled={isReadOnly}
-                              style={{ fontSize: 10, marginTop: 4, width: "100%" }}
-                              onChange={(event) => {
-                                onUpdateEvidenceLink(link.id, { contradictionState: event.target.value as EvidenceLink["contradictionState"] });
-                              }}
-                            >
-                              <option value="unconfirmed">{t("side_panel.evidence.state_unconfirmed")}</option>
-                              <option value="confirmed">{t("side_panel.evidence.state_confirmed")}</option>
-                              <option value="held">{t("side_panel.evidence.state_held")}</option>
-                              <option value="resolved">{t("side_panel.evidence.state_resolved")}</option>
-                            </select>
+                            <label style={{ display: "grid", gap: 3, marginTop: 4 }}>
+                              <span style={{ color: "#475569" }}>{t("side_panel.evidence.contradiction_state_label", { target: targetLabel })}</span>
+                              <select
+                                value={link.contradictionState ?? "unconfirmed"}
+                                disabled={isReadOnly}
+                                aria-label={t("side_panel.evidence.contradiction_state_label", { target: targetLabel })}
+                                style={{ fontSize: 10, width: "100%" }}
+                                onChange={(event) => {
+                                  onUpdateEvidenceLink(link.id, { contradictionState: event.target.value as EvidenceLink["contradictionState"] });
+                                }}
+                              >
+                                <option value="unconfirmed">{t("side_panel.evidence.state_unconfirmed")}</option>
+                                <option value="confirmed">{t("side_panel.evidence.state_confirmed")}</option>
+                                <option value="held">{t("side_panel.evidence.state_held")}</option>
+                                <option value="resolved">{t("side_panel.evidence.state_resolved")}</option>
+                              </select>
+                            </label>
                           ) : null}
                           <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
                             <button type="button" style={{ fontSize: 10 }} onClick={() => { onFocusCardById(link.toCardId); }}>{t("side_panel.focus")}</button>
@@ -3372,7 +3390,8 @@ export function SidePanel({
                   <div style={{ display: "grid", gap: 4 }}>
                     {incomingEvidenceLinks.map((link) => {
                       const source = document?.cards.find((card) => card.id === link.fromCardId);
-                      return <div key={link.id} style={{ fontSize: 11 }}>{t("side_panel.evidence.incoming_item", { source: source ? source.text.slice(0, 60) : link.fromCardId, type: link.type })}</div>;
+                      const linkTypeLabel = link.type === "supports" ? t("side_panel.evidence.supports") : t("side_panel.evidence.contradicts");
+                      return <div key={link.id} style={{ fontSize: 11 }}>{t("side_panel.evidence.incoming_item", { source: source ? source.text.slice(0, 60) : link.fromCardId, type: linkTypeLabel })}</div>;
                     })}
                   </div>
                 )}
@@ -3386,17 +3405,30 @@ export function SidePanel({
                 </button>
                 {isEvidenceModalOpen ? (
                   <div style={{ marginTop: 8, border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 6, backgroundColor: "#f8fafc" }}>
-                    <select value={pendingEvidenceType} onChange={(event) => { setPendingEvidenceType(event.target.value as EvidenceLink["type"]); }}>
-                      <option value="supports">{t("side_panel.evidence.supports")}</option>
-                      <option value="contradicts">{t("side_panel.evidence.contradicts")}</option>
-                    </select>
-                    <input value={evidenceTargetQuery} onChange={(event) => { setEvidenceTargetQuery(event.target.value); }} placeholder={t("side_panel.evidence.search_target")} />
-                    <select value={pendingEvidenceTargetId} onChange={(event) => { setPendingEvidenceTargetId(event.target.value); }}>
-                      <option value="">{t("side_panel.evidence.select_target")}</option>
-                      {availableEvidenceTargets.map((card) => (
-                        <option key={card.id} value={card.id}>{card.text.slice(0, 80)}</option>
-                      ))}
-                    </select>
+                    <label style={{ display: "grid", gap: 3, fontSize: 11, color: "#334155" }}>
+                      <span>{t("side_panel.evidence.type_label")}</span>
+                      <select value={pendingEvidenceType} onChange={(event) => { setPendingEvidenceType(event.target.value as EvidenceLink["type"]); }}>
+                        <option value="supports">{t("side_panel.evidence.supports")}</option>
+                        <option value="contradicts">{t("side_panel.evidence.contradicts")}</option>
+                      </select>
+                    </label>
+                    <label style={{ display: "grid", gap: 3, fontSize: 11, color: "#334155" }}>
+                      <span>{t("side_panel.evidence.search_target_label")}</span>
+                      <input
+                        value={evidenceTargetQuery}
+                        onChange={(event) => { setEvidenceTargetQuery(event.target.value); }}
+                        placeholder={t("side_panel.evidence.search_target")}
+                      />
+                    </label>
+                    <label style={{ display: "grid", gap: 3, fontSize: 11, color: "#334155" }}>
+                      <span>{t("side_panel.evidence.target_label")}</span>
+                      <select value={pendingEvidenceTargetId} onChange={(event) => { setPendingEvidenceTargetId(event.target.value); }}>
+                        <option value="">{t("side_panel.evidence.select_target")}</option>
+                        {availableEvidenceTargets.map((card) => (
+                          <option key={card.id} value={card.id}>{card.text.slice(0, 80)}</option>
+                        ))}
+                      </select>
+                    </label>
                     <div style={{ display: "flex", gap: 6 }}>
                       <button type="button" disabled={!pendingEvidenceTargetId} onClick={() => {
                         if (!pendingEvidenceTargetId) return;
@@ -3472,7 +3504,7 @@ export function SidePanel({
                       <div>{t("side_panel.trace.evidence_links_doc", { count: traceAnalytics.evidenceLinkCount })}</div>
                       <div>{t("side_panel.trace.isolated_nodes_doc", { count: traceAnalytics.isolatedNodeCount })}</div>
                       <div>{t("side_panel.trace.source_density_doc", { value: traceAnalytics.sourceDensity.toFixed(4) })}</div>
-                      <div>{t("side_panel.trace.relation_counts", { value: Object.entries(traceAnalytics.byRelationType).sort((a, b) => a[0].localeCompare(b[0])).map(([type, count]) => `${type}:${count}`).join(", ") || t("side_panel.none") })}</div>
+                      <div>{t("side_panel.trace.relation_counts", { value: Object.entries(traceAnalytics.byRelationType).sort((a, b) => a[0].localeCompare(b[0])).map(([type, count]) => `${formatEvidenceRelationType(type)}:${count}`).join(", ") || t("side_panel.none") })}</div>
                       <div>{t("side_panel.trace.depth_histogram", { value: Object.entries(traceAnalytics.depthHistogram).sort((a, b) => Number(a[0]) - Number(b[0])).map(([depth, count]) => `d${depth}:${count}`).join(", ") || t("side_panel.none") })}</div>
                       <div>{t("side_panel.trace.top_hubs", { value: traceAnalytics.topHubs.map((hub) => `${hub.cardId}(${hub.degree})`).join(", ") || t("side_panel.none") })}</div>
                       <div>{t("side_panel.trace.cycle_count", { value: traceAnalytics.cycles ? traceAnalytics.cycles.count : t("side_panel.trace.skipped") })}</div>
@@ -3491,7 +3523,10 @@ export function SidePanel({
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.evidence_overlay.title")}</div>
                 <div style={{ fontSize: 11, color: "#64748b", marginBottom: 6 }}>
-                  {t("side_panel.evidence_overlay.status", { state: evidenceOverlayEnabled ? t("side_panel.on") : t("side_panel.off"), scope: evidenceOverlayScope })}
+                  {t("side_panel.evidence_overlay.status", {
+                    state: evidenceOverlayEnabled ? t("side_panel.on") : t("side_panel.off"),
+                    scope: evidenceOverlayScope === "selection" ? t("view_controls.evidence.selection") : t("view_controls.evidence.all"),
+                  })}
                 </div>
                 <button
                   type="button"

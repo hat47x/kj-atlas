@@ -156,6 +156,59 @@ test("domain expression state controls are reachable with keyboard after card se
   await expect(critiqueWorkflow).toBeFocused();
 });
 
+test("contradiction state control is labeled and persists through save", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = await routeDomainExpressionFixture(page);
+
+  await page.goto("/?locale=en");
+  fixture.enableSample();
+  await page.getByRole("button", { name: "Open sample" }).click();
+  await expect(page.locator(START_PANEL)).toBeHidden();
+
+  const counterCard = page.getByRole("option", { name: "contradicting stakeholder signal" });
+  await expect(counterCard).toBeVisible();
+  await counterCard.click();
+
+  const selectionPanel = page.locator('[data-ui-region="selection-context"]');
+  await expect(selectionPanel).toContainText("contradicts: ambiguous target claim");
+
+  const contradictionState = page.getByLabel("Contradiction state for ambiguous target claim");
+  await expect(contradictionState).toHaveValue("unconfirmed");
+  await contradictionState.selectOption("held");
+  await expect(contradictionState).toHaveValue("held");
+
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect.poll(() => fixture.getStoredDocument().evidenceLinks.find((link) => link.id === "domain-counter-link")?.contradictionState)
+    .toBe("held");
+});
+
+test("evidence link editor exposes labeled controls and adds a searched target", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = await routeDomainExpressionFixture(page);
+
+  await page.goto("/?locale=en");
+  fixture.enableSample();
+  await page.getByRole("button", { name: "Open sample" }).click();
+  await expect(page.locator(START_PANEL)).toBeHidden();
+
+  await page.getByRole("option", { name: "ambiguous target claim" }).click();
+  const selectionPanel = page.locator('[data-ui-region="selection-context"]');
+  await selectionPanel.getByRole("button", { name: "Add evidence link..." }).click();
+
+  await expect(selectionPanel.getByLabel("Link type")).toHaveValue("supports");
+  await selectionPanel.getByLabel("Search target card").fill("supporting");
+  await selectionPanel.getByLabel("Evidence target").selectOption("domain-support");
+  await selectionPanel.getByRole("button", { name: "Confirm" }).click();
+
+  await expect(selectionPanel).toContainText("supports: supporting field note");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect.poll(() => fixture.getStoredDocument().evidenceLinks.some((link) => (
+    link.fromCardId === "domain-target"
+    && link.toCardId === "domain-support"
+    && link.type === "supports"
+  ))).toBe(true);
+});
+
 test("share preflight keeps unresolved domain signals visible and unreviewed drafts excluded", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const fixture = await routeDomainExpressionFixture(page);

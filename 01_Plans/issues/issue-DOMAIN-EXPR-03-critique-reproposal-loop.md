@@ -27,6 +27,13 @@
 ### Remaining（2026-06-29 更新）
 - E2E: critique→reproposal→diff daily loop verification（Playwright環境依存）
 
+## Implementation Evidence 2026-07-04: Review reproposal opens the work-mode surface
+
+- Fixed a UI routing regression where the SidePanel `Review reproposal` action enabled Advanced UI but did not open the work-mode surface that owns `data-domain-workflow="critique-reproposal"`.
+- `handleOpenCritiqueWorkflow` now opens Work mode before requesting focus, so the visible user action matches the documented intent: critique note -> Review reproposal -> work-mode critique workflow.
+- Targeted Playwright evidence: `node.exe .\node_modules\playwright\cli.js test e2e/domain_expression_keyboard_access.spec.ts --reporter=line` passed 4 tests on 2026-07-04.
+- No ADR is required. The slice restores ADR-0031/ADR-0048 surface ownership without changing schema, AI authority, SafeMode, or review authority.
+
 ### Commits (new)
 - 2026-06-29: providerUnavailableMessage state + detection + explicit warning banner in SidePanel critique sections
 - 2f170b17 reproposal diff preview section in SidePanel

@@ -56,6 +56,14 @@ DOMAIN-EXPR-01..04のPhase 1から着手可能。DecisionStatus=Fixed。
   - `domain_expression_keyboard_access.spec.ts`: 3 passed.
 - No ADR is required because stored values, schema, SafeMode, proposal authority, and share/export behavior are unchanged.
 
+### Evidence overlay localization evidence 2026-07-05
+
+- The View controls evidence overlay no longer shows raw enum-like labels (`supports`, `contradicts`, `both`, `selection`, `all`, `hop(s)`) in Japanese. It now uses user-facing labels such as `支持`, `反証`, `支持と反証`, `選択中のカード`, `すべて`, and `{count}段階`.
+- The SidePanel evidence overlay status now reuses the same localized scope labels instead of rendering the internal scope value.
+- The SidePanel trace analytics progress and relation-count rows now render localized mode/relation labels instead of raw `both`, `supports`, or `contradicts` values.
+- Added translation regression coverage in `src/i18n/translate.test.ts` so these labels do not silently revert to stored values.
+- No ADR is required because this is a display-language and accessibility improvement only; stored view metadata, schema, SafeMode/share policy, and AI authority are unchanged.
+
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: PRODUCT-VALUE-02
