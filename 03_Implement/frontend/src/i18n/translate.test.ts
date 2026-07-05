@@ -230,6 +230,9 @@ describe("translate", () => {
     expect(t("view_controls.lod.legend", undefined, "ja")).toContain("近距離");
     expect(t("view_controls.lod.legend", undefined, "ja")).toContain("中距離");
     expect(t("view_controls.lod.legend", undefined, "ja")).toContain("遠距離");
+    expect(t("view_controls.lod.level_close", undefined, "ja")).toBe("近距離");
+    expect(t("view_controls.lod.level_mid", undefined, "ja")).toBe("中距離");
+    expect(t("view_controls.lod.level_far", undefined, "ja")).toBe("遠距離");
   });
 
   it("uses Japanese labels for review history and share preflight domain copy", () => {

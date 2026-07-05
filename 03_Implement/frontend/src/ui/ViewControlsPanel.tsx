@@ -81,6 +81,12 @@ const sectionStyle: CSSProperties = {
   borderBottom: "1px solid #e2e8f0",
 };
 
+function lodLevelLabel(level: LODLevel): string {
+  if (level === "close") return t("view_controls.lod.level_close");
+  if (level === "mid") return t("view_controls.lod.level_mid");
+  return t("view_controls.lod.level_far");
+}
+
 export function ViewControlsPanel({
   focusIslandId,
   onClearFocus,
@@ -536,7 +542,7 @@ export function ViewControlsPanel({
           {t("view_controls.lod.auto")}
         </label>
         <div style={{ fontSize: 12, color: "#475569" }}>
-          {t("view_controls.lod.current", { value: lodEnabled ? currentLodLevel ? currentLodLevel.toUpperCase() : t("view_controls.lod.calculating") : t("view_controls.lod.off") })}
+          {t("view_controls.lod.current", { value: lodEnabled ? currentLodLevel ? lodLevelLabel(currentLodLevel) : t("view_controls.lod.calculating") : t("view_controls.lod.off") })}
         </div>
         <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.4 }}>
           {t("view_controls.lod.legend")}
