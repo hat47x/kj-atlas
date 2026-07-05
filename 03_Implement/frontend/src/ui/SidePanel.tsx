@@ -51,6 +51,12 @@ function diagnosticSeverityLabel(severity: DiagnosticSeverity): string {
   return t("side_panel.outline.severity.info");
 }
 
+function recommendationImpactLabel(level: Recommendation["impactLevel"]): string {
+  if (level === "high") return t("side_panel.outline.impact.high");
+  if (level === "medium") return t("side_panel.outline.impact.medium");
+  return t("side_panel.outline.impact.low");
+}
+
 type SidePanelProps = {
   isReadOnly?: boolean;
   isAdvancedUiEnabled?: boolean;
@@ -1684,7 +1690,7 @@ export function SidePanel({
                                     }}
                                     style={{ fontSize: 10, cursor: "pointer", marginTop: 4 }}
                                   >
-                                    Focus
+                                    {t("side_panel.focus")}
                                   </button>
                                 </li>
                               ))}
@@ -1724,7 +1730,7 @@ export function SidePanel({
                           <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600 }}>
                             <span>{recommendation.title}</span>
                             <span style={{ fontSize: 10, border: "1px solid #cbd5e1", borderRadius: 999, padding: "0 6px", color: "#334155" }}>
-                              {recommendation.impactLevel}
+                              {recommendationImpactLabel(recommendation.impactLevel)}
                             </span>
                           </div>
                           <div>{recommendation.description}</div>
@@ -2006,7 +2012,7 @@ export function SidePanel({
                                     }}
                                     style={{ fontSize: 10, cursor: "pointer", marginTop: 4 }}
                                   >
-                                    Focus
+                                    {t("side_panel.focus")}
                                   </button>
                                 </li>
                               ))}
@@ -2046,7 +2052,7 @@ export function SidePanel({
                           <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600 }}>
                             <span>{recommendation.title}</span>
                             <span style={{ fontSize: 10, border: "1px solid #cbd5e1", borderRadius: 999, padding: "0 6px", color: "#334155" }}>
-                              {recommendation.impactLevel}
+                              {recommendationImpactLabel(recommendation.impactLevel)}
                             </span>
                           </div>
                           <div>{recommendation.description}</div>

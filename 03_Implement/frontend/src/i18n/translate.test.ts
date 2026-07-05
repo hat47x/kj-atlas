@@ -246,6 +246,9 @@ describe("translate", () => {
     expect(t("side_panel.outline.severity.error", undefined, "ja")).toBe("エラー");
     expect(t("side_panel.outline.severity.warn", undefined, "ja")).toBe("警告");
     expect(t("side_panel.outline.severity.info", undefined, "ja")).toBe("情報");
+    expect(t("side_panel.outline.impact.high", undefined, "ja")).toBe("高");
+    expect(t("side_panel.outline.impact.medium", undefined, "ja")).toBe("中");
+    expect(t("side_panel.outline.impact.low", undefined, "ja")).toBe("低");
     expect(t("side_panel.outline.focus_ref", { kind: "card", id: "c1" }, "ja")).toBe("フォーカス card:c1");
   });
 
