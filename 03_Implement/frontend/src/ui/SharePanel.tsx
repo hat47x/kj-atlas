@@ -379,6 +379,7 @@ export function SharePanel({
   const [bundleIncludeSelectedCardTraces, setBundleIncludeSelectedCardTraces] = useState(true);
   const [bundleExportGranularity, setBundleExportGranularity] = useState<ExportGranularity>("detail");
   const bundleGranularityFieldName = useId();
+  const bundleTraceHintId = useId();
 
 
   const handleViewMetadataFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -811,8 +812,13 @@ export function SharePanel({
                 />
                 {t("share.panel.export.bundle_include_traces")}
               </label>
-              <div style={{ display: "grid", gap: 6 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>{t("share.panel.export.bundle_granularity")}</div>
+              <fieldset
+                aria-describedby={bundleTraceHintId}
+                style={{ display: "grid", gap: 6, border: 0, padding: 0, margin: 0 }}
+              >
+                <legend style={{ fontSize: 12, fontWeight: 600, color: "#334155", padding: 0 }}>
+                  {t("share.panel.export.bundle_granularity")}
+                </legend>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", ...wrapRowStyle }}>
                   <input
                     type="radio"
@@ -833,8 +839,8 @@ export function SharePanel({
                   />
                   {t("share.panel.export.bundle_granularity_overview")}
                 </label>
-              </div>
-              <div style={{ fontSize: 11, color: "#64748b" }}>{selectedCardTraceHint}</div>
+              </fieldset>
+              <div id={bundleTraceHintId} style={{ fontSize: 11, color: "#64748b" }}>{selectedCardTraceHint}</div>
               <button
                 type="button"
                 onClick={() => {

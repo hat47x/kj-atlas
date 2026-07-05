@@ -196,9 +196,12 @@ describe("SharePanel bundle granularity", () => {
   it("renders English granularity options in export section", () => {
     setActiveLocale("en");
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
+    expect(html).toContain("<fieldset");
+    expect(html).toContain("<legend");
     expect(html).toContain("Export granularity");
     expect(html).toContain("Detail (full trace exports)");
     expect(html).toContain("Overview (high-level summary)");
+    expect(html).toContain("aria-describedby=");
   });
 
   it("explains selected-card trace availability in English", () => {
