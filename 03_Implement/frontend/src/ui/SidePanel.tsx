@@ -3511,7 +3511,10 @@ export function SidePanel({
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.evidence_overlay.title")}</div>
                 <div style={{ fontSize: 11, color: "#64748b", marginBottom: 6 }}>
-                  {t("side_panel.evidence_overlay.status", { state: evidenceOverlayEnabled ? t("side_panel.on") : t("side_panel.off"), scope: evidenceOverlayScope })}
+                  {t("side_panel.evidence_overlay.status", {
+                    state: evidenceOverlayEnabled ? t("side_panel.on") : t("side_panel.off"),
+                    scope: evidenceOverlayScope === "selection" ? t("view_controls.evidence.selection") : t("view_controls.evidence.all"),
+                  })}
                 </div>
                 <button
                   type="button"

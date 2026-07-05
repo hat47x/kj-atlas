@@ -211,6 +211,16 @@ describe("translate", () => {
     expect(t("app.perspective_hint.select_card_for_neighborhood", undefined, "en")).toContain("Select a card");
   });
 
+  it("uses Japanese labels for evidence overlay choices", () => {
+    expect(t("view_controls.evidence.title", undefined, "ja")).toBe("根拠オーバーレイ");
+    expect(t("view_controls.evidence.supports", undefined, "ja")).toBe("支持");
+    expect(t("view_controls.evidence.contradicts", undefined, "ja")).toBe("反証");
+    expect(t("view_controls.evidence.both", undefined, "ja")).toBe("支持と反証");
+    expect(t("view_controls.evidence.selection", undefined, "ja")).toBe("選択中のカード");
+    expect(t("view_controls.evidence.all", undefined, "ja")).toBe("すべて");
+    expect(t("view_controls.evidence.hops", { count: 2 }, "ja")).toBe("2段階");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
