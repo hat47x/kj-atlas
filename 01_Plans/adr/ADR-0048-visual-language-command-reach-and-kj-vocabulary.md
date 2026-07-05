@@ -1,7 +1,8 @@
 # ADR-0048: 視覚言語・コマンド到達構造・KJ法語彙の採択（Claude Design 壁打ち成果の統合）
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-07-02
+- Accepted: 2026-07-05（委譲された意思決定権限による裁可。R-1: dogfood 摩擦を根拠とし、CB/UQ/PB・反スコアリング・SafeMode を尊重、非目標も適切と確認）
 - Deciders: Maintainer（委譲された意思決定権限）
 - Scope: `03_Implement/frontend/src/`, `02_Architecture/schemas.md`, `02_Architecture/design/`, `01_Plans/issues/`
 
