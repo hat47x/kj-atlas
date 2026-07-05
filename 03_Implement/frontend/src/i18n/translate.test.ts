@@ -242,6 +242,13 @@ describe("translate", () => {
     expect(t("share.panel.preflight.domain_summary_hold", { count: 2 }, "ja")).not.toContain("unknown");
   });
 
+  it("uses Japanese labels for diagnostic severity and focus references", () => {
+    expect(t("side_panel.outline.severity.error", undefined, "ja")).toBe("エラー");
+    expect(t("side_panel.outline.severity.warn", undefined, "ja")).toBe("警告");
+    expect(t("side_panel.outline.severity.info", undefined, "ja")).toBe("情報");
+    expect(t("side_panel.outline.focus_ref", { kind: "card", id: "c1" }, "ja")).toBe("フォーカス card:c1");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {

@@ -43,6 +43,14 @@ type AggregatedEdgeInspectorItem = {
   label: string;
 };
 
+type DiagnosticSeverity = "error" | "warn" | "info";
+
+function diagnosticSeverityLabel(severity: DiagnosticSeverity): string {
+  if (severity === "error") return t("side_panel.outline.severity.error");
+  if (severity === "warn") return t("side_panel.outline.severity.warn");
+  return t("side_panel.outline.severity.info");
+}
+
 type SidePanelProps = {
   isReadOnly?: boolean;
   isAdvancedUiEnabled?: boolean;
@@ -854,7 +862,7 @@ export function SidePanel({
         <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
           {claimTypeMixReport.findings.map((finding, index) => (
             <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
-              <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
+              <div style={{ fontWeight: 600 }}>[{diagnosticSeverityLabel(finding.severity)}] {finding.code} {finding.title}</div>
               <div>{finding.detail}</div>
               {finding.suggestedAction ? <div style={{ color: "#334155" }}>{t("side_panel.outline.action", { suggestedAction: finding.suggestedAction })}</div> : null}
               {finding.islandIds.length > 0 ? (
@@ -936,7 +944,7 @@ export function SidePanel({
         <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
           {distributionReport.findings.map((finding, index) => (
             <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
-              <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
+              <div style={{ fontWeight: 600 }}>[{diagnosticSeverityLabel(finding.severity)}] {finding.code} {finding.title}</div>
               <div>{finding.detail}</div>
               {finding.suggestedAction ? <div style={{ color: "#334155" }}>{t("side_panel.outline.action", { suggestedAction: finding.suggestedAction })}</div> : null}
             </li>
@@ -1036,7 +1044,7 @@ export function SidePanel({
         <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
           {dialecticBalanceReport.findings.map((finding, index) => (
             <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
-              <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
+              <div style={{ fontWeight: 600 }}>[{diagnosticSeverityLabel(finding.severity)}] {finding.code} {finding.title}</div>
               <div>{finding.detail}</div>
               <div style={{ color: "#334155" }}>{t("side_panel.outline.action", { suggestedAction: finding.suggestedAction })}</div>
               {finding.cardIds && finding.cardIds.length > 0 ? (
@@ -1619,7 +1627,7 @@ export function SidePanel({
                   <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
                     {outlineQualityReport.findings.map((finding, index) => (
                       <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
-                        <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
+                        <div style={{ fontWeight: 600 }}>[{diagnosticSeverityLabel(finding.severity)}] {finding.code} {finding.title}</div>
                         <div>{finding.detail}</div>
                         {finding.suggestedAction ? <div style={{ color: "#334155" }}>{t("side_panel.outline.action", { suggestedAction: finding.suggestedAction })}</div> : null}
                         {finding.entityRefs && finding.entityRefs.length > 0 ? (
@@ -1633,7 +1641,7 @@ export function SidePanel({
                                 }}
                                 style={{ fontSize: 10, cursor: "pointer" }}
                               >
-                                Focus {ref.kind}:{ref.id}
+                                {t("side_panel.outline.focus_ref", { kind: ref.kind, id: ref.id })}
                               </button>
                             ))}
                           </div>
@@ -1661,7 +1669,7 @@ export function SidePanel({
                         return (
                           <div key={severity}>
                             <div style={{ fontSize: 11, fontWeight: 600, color: severity === "warn" ? "#b45309" : "#334155" }}>
-                              {severity.toUpperCase()} ({signals.length})
+                              {t("side_panel.outline.severity_with_count", { severity: diagnosticSeverityLabel(severity as DiagnosticSeverity), count: signals.length })}
                             </div>
                             <ul style={{ margin: "4px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
                               {signals.map((signal, index) => (
@@ -1941,7 +1949,7 @@ export function SidePanel({
                   <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
                     {outlineQualityReport.findings.map((finding, index) => (
                       <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
-                        <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
+                        <div style={{ fontWeight: 600 }}>[{diagnosticSeverityLabel(finding.severity)}] {finding.code} {finding.title}</div>
                         <div>{finding.detail}</div>
                         {finding.suggestedAction ? <div style={{ color: "#334155" }}>{t("side_panel.outline.action", { suggestedAction: finding.suggestedAction })}</div> : null}
                         {finding.entityRefs && finding.entityRefs.length > 0 ? (
@@ -1955,7 +1963,7 @@ export function SidePanel({
                                 }}
                                 style={{ fontSize: 10, cursor: "pointer" }}
                               >
-                                Focus {ref.kind}:{ref.id}
+                                {t("side_panel.outline.focus_ref", { kind: ref.kind, id: ref.id })}
                               </button>
                             ))}
                           </div>
@@ -1983,7 +1991,7 @@ export function SidePanel({
                         return (
                           <div key={severity}>
                             <div style={{ fontSize: 11, fontWeight: 600, color: severity === "warn" ? "#b45309" : "#334155" }}>
-                              {severity.toUpperCase()} ({signals.length})
+                              {t("side_panel.outline.severity_with_count", { severity: diagnosticSeverityLabel(severity as DiagnosticSeverity), count: signals.length })}
                             </div>
                             <ul style={{ margin: "4px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
                               {signals.map((signal, index) => (

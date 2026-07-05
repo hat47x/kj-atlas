@@ -27,6 +27,7 @@
 
 - The Japanese View controls no longer expose English interaction labels such as `Abstract view`, `Peek/Focus`, `Close`, `Mid`, `Far`, or `OFF` in the summary/LOD controls. They now use Japanese user-facing labels: `抽象マップビュー`, `プレビュー`, `近距離`, `中距離`, `遠距離`, and `無効`.
 - The current LOD state also uses localized labels instead of `CLOSE` / `MID` / `FAR`.
+- Side-panel diagnostics now use localized severity labels instead of exposing `ERROR` / `WARN` / `INFO`, and focus-reference actions reuse the localized focus label.
 - The Japanese review-history and share-preflight copy no longer expose `true` / `false` or `unknown` as user-facing values; they now use `レビュー済み`, `未レビュー`, and `未分類の主張`.
 - Added regression coverage in `src/i18n/translate.test.ts` so these labels do not silently revert.
 - No ADR is required because this is a display-language and usability-quality improvement only; it does not alter view metadata, SafeMode/share policy, schema, or release authority.
