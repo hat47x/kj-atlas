@@ -30,6 +30,18 @@ describe("UX Operability regression contracts", () => {
     expect(cardViewSource).toContain("onSelect(card.id, event.shiftKey)");
   });
 
+  it("UX-VISUAL-01: card state badges sit in a normal-flow meta-row above the body (no first-line overlap)", () => {
+    const cardViewSource = readSource("src/canvas/CardView.tsx");
+
+    // The meta-row is a normal-flow band ABOVE the body: badges no longer use
+    // position:absolute over the body first line (ADR-0048 D1).
+    expect(cardViewSource).toContain('data-card-meta-row=""');
+    // claimType tints a 3px left band (color channel).
+    expect(cardViewSource).toContain("borderLeft:");
+    // Unreviewed marker is a small top-right dot (form channel), preserved.
+    expect(cardViewSource).toContain('t("card_view.unreviewed")');
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 

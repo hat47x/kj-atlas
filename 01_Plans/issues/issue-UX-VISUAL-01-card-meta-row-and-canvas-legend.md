@@ -1,11 +1,11 @@
 # Issue Draft: UX-VISUAL-01 カードのメタ行分離とキャンバス内凡例
 
 - Type: Feature request
-- Status: Draft
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Claude Code
 - Scope: `03_Implement/frontend/src/canvas/CardView.tsx`, `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/src/ui/ux_operability_regression.test.ts`
 - Related Backlog: `UX-VISUAL-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D1）, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done・バッジ過多リスクの引き継ぎ）
@@ -87,3 +87,16 @@
 ## 実装設計の到着（2026-07-04）
 
 - Claude Design Round 4 成果（`02_Architecture/design/kj-atlas 拡張提案.dc.html` §段階1レッドライン・図BB）に本Issueの実装仕様（タイポ 本文13/メタ12/補助11/凡例10・左帯3px・メタ行 padding 7/11・バッジ角丸4・未レビュー点7px・凡例右下オーバーレイ ⌘/ 開閉）が確定。実装時はこれを参照実装（プロトタイプ同梱）とする。
+
+## 実装進捗 2026-07-05（Claude Code）
+
+### Done（本PR）
+- **AC-1（中核）**: `CardView.tsx` の状態バッジ（claimType・保持系・違和感・代表数）を `position:absolute` の重ね置きから、本文の**上**に置く通常フローの**メタ行**（`data-card-meta-row`）へ再配置。本文1行目の重なりを構造的に解消。claimType 色の**3px 左帯**を追加（色チャネル）。未レビューは**右上7px の点**（形チャネル、`bottom`→`top` へ移動）。違和感はメタ行内の amber チップ（点＋件数）。バッジ角丸 4・fontSize 10 に統一（レッドライン準拠）。既存の aria-label/title/i18n キーは不変。
+- **AC-4**: `ux_operability_regression.test.ts` に UX-VISUAL-01 アンカー（`data-card-meta-row` / 左帯 `borderLeft` / 未レビュー）を追加。初期表示アンカー（Phase 5, `data-ui-core-action`×7）は非回帰。
+- **AC-5（部分）**: 既存 i18n キーを再利用（Fact→事実 統一は DOMAIN-EXPR で既済）。key-consistency テスト通過。
+- 検証: typecheck 0 / vitest **862 passed** / 回帰スイート **10/10** / 新 e2e `e2e/card_meta_row.spec.ts`（メタ行が本文上の帯として出て本文が重ならないことを固定）1 passed / `domain_expression_keyboard_access` 5/5 非回帰。
+  - 注: `canvas_focus_order.spec.ts` は origin/main ベースラインでも同一箇所（`replaceCurrentDocument` の文書置換ステータス）で失敗する**既存の失敗**であり本変更とは無関係（別途要対応）。
+
+### Deferred（後続PR）
+- **AC-2 凡例（キャンバス内・既定OFF・開閉・Escape/focus 復帰）**: 別コンポーネント＋トリガ＋i18n を要するため分離。UX-VISUAL-02（保護マーク）の凡例追記もこの後続で扱う。
+- **AC-3 遠景 LOD での未レビュー・違和感の点の保持**: LOD 実装（CanvasShell）への追記として後続で対応。

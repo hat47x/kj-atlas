@@ -247,6 +247,11 @@ function CardViewComponent({
         minHeight: markerMode ? 10 : compactMode ? 52 : 80,
         padding: markerMode ? 0 : compactMode ? "8px 10px" : 12,
         border: markerMode ? "1px solid #64748b" : "1px solid #cbd5e1",
+        // UX-VISUAL-01 D1: 3px left band tinted by claimType (色チャネル=型)。
+        borderLeft:
+          !markerMode && claimType && claimType !== "unknown"
+            ? `3px solid ${CLAIM_TYPE_STYLE[claimType]?.fg ?? "#cbd5e1"}`
+            : undefined,
         outline: isActiveSearchMatch
           ? "3px solid #f59e0b"
           : isSelected
@@ -293,62 +298,100 @@ function CardViewComponent({
         onCardContextMenu(card.id, event.clientX, event.clientY);
       }}
     >
-      {!markerMode && representativeCount > 0 ? (
-        <span
+      {/* UX-VISUAL-01 (ADR-0048 D1): state badges live in a normal-flow meta-row
+          ABOVE the body so the card body first line is never overlapped. Channels:
+          色=claimType(型) / 位置=保持系(amberピル) / 密度=違和感(件数) / 形=未レビュー(右上の点)。 */}
+      {!markerMode &&
+      (representativeCount > 0 ||
+        (claimType && claimType !== "unknown") ||
+        holdState ||
+        hasCritique) ? (
+        <div
+          data-card-meta-row=""
           style={{
-            position: "absolute",
-            top: 6,
-            left: 6,
-            borderRadius: 999,
-            backgroundColor: "#dbeafe",
-            color: "#1d4ed8",
-            fontSize: 11,
-            fontWeight: 700,
-            padding: "2px 8px",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 4,
+            marginBottom: 6,
+            minHeight: 16,
           }}
         >
-          {t("card_view.representative_count", { count: representativeCount })}
-        </span>
-      ) : null}
-      {!markerMode && claimType && claimType !== "unknown" ? (
-        <span
-          aria-label={t("card_view.claim_type.aria", { value: CLAIM_TYPE_STYLE[claimType]?.label ?? claimType })}
-          title={t("card_view.claim_type.title", { value: CLAIM_TYPE_STYLE[claimType]?.label ?? claimType })}
-          style={{
-            position: "absolute",
-            top: representativeCount > 0 ? 28 : 6,
-            left: 6,
-            borderRadius: 999,
-            backgroundColor: CLAIM_TYPE_STYLE[claimType]?.bg ?? "#f1f5f9",
-            color: CLAIM_TYPE_STYLE[claimType]?.fg ?? "#475569",
-            fontSize: 10,
-            fontWeight: 600,
-            padding: "1px 6px",
-            lineHeight: "16px",
-          }}
-        >
-          {CLAIM_TYPE_STYLE[claimType]?.label ?? claimType}
-        </span>
-      ) : null}
-      {!markerMode && holdState ? (
-        <span
-          aria-label={t("card_view.hold_state.aria", { value: holdStateLabel })}
-          title={t("card_view.hold_state.title", { value: holdStateLabel })}
-          style={{
-            position: "absolute",
-            top: (representativeCount > 0 ? 28 : 6) + (claimType && claimType !== "unknown" ? 22 : 0),
-            left: 6,
-            borderRadius: 999,
-            backgroundColor: HOLD_STATE_STYLE[holdState]?.bg ?? "#f1f5f9",
-            color: HOLD_STATE_STYLE[holdState]?.fg ?? "#475569",
-            fontSize: 10,
-            fontWeight: 600,
-            padding: "1px 6px",
-            lineHeight: "16px",
-          }}
-        >
-          {holdStateLabel}
-        </span>
+          {claimType && claimType !== "unknown" ? (
+            <span
+              aria-label={t("card_view.claim_type.aria", { value: CLAIM_TYPE_STYLE[claimType]?.label ?? claimType })}
+              title={t("card_view.claim_type.title", { value: CLAIM_TYPE_STYLE[claimType]?.label ?? claimType })}
+              style={{
+                borderRadius: 4,
+                backgroundColor: CLAIM_TYPE_STYLE[claimType]?.bg ?? "#f1f5f9",
+                color: CLAIM_TYPE_STYLE[claimType]?.fg ?? "#475569",
+                fontSize: 10,
+                fontWeight: 600,
+                padding: "1px 6px",
+                lineHeight: "14px",
+              }}
+            >
+              {CLAIM_TYPE_STYLE[claimType]?.label ?? claimType}
+            </span>
+          ) : null}
+          {holdState ? (
+            <span
+              aria-label={t("card_view.hold_state.aria", { value: holdStateLabel })}
+              title={t("card_view.hold_state.title", { value: holdStateLabel })}
+              style={{
+                borderRadius: 4,
+                backgroundColor: HOLD_STATE_STYLE[holdState]?.bg ?? "#f1f5f9",
+                color: HOLD_STATE_STYLE[holdState]?.fg ?? "#475569",
+                fontSize: 10,
+                fontWeight: 600,
+                padding: "1px 6px",
+                lineHeight: "14px",
+              }}
+            >
+              {holdStateLabel}
+            </span>
+          ) : null}
+          {representativeCount > 0 ? (
+            <span
+              style={{
+                borderRadius: 4,
+                backgroundColor: "#dbeafe",
+                color: "#1d4ed8",
+                fontSize: 10,
+                fontWeight: 700,
+                padding: "1px 6px",
+                lineHeight: "14px",
+              }}
+            >
+              {t("card_view.representative_count", { count: representativeCount })}
+            </span>
+          ) : null}
+          {hasCritique ? (
+            <span
+              aria-label={critiqueTagCount > 0
+                ? t("card_view.critique_with_tags", { count: critiqueTagCount })
+                : t("card_view.critique_note")}
+              title={critiqueTagCount > 0
+                ? t("card_view.critique_with_tags_title", { count: critiqueTagCount })
+                : t("card_view.critique_note")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 3,
+                borderRadius: 4,
+                backgroundColor: "#fef3c7",
+                color: "#92400e",
+                fontSize: 10,
+                fontWeight: 600,
+                padding: "1px 6px",
+                lineHeight: "14px",
+              }}
+            >
+              <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#f59e0b" }} />
+              {critiqueTagCount > 0 ? t("card_view.critique_tag_count", { count: critiqueTagCount }) : null}
+            </span>
+          ) : null}
+        </div>
       ) : null}
       {!markerMode && !isTextReviewed ? (
         <span
@@ -356,41 +399,15 @@ function CardViewComponent({
           title={t("card_view.unreviewed")}
           style={{
             position: "absolute",
-            bottom: 6,
+            top: 6,
             right: 6,
-            width: 6,
-            height: 6,
+            width: 7,
+            height: 7,
             borderRadius: "50%",
             backgroundColor: "#f59e0b",
             opacity: 0.7,
           }}
         />
-      ) : null}
-      {!markerMode && hasCritique ? (
-        <span
-          aria-label={critiqueTagCount > 0
-            ? t("card_view.critique_with_tags", { count: critiqueTagCount })
-            : t("card_view.critique_note")}
-          title={critiqueTagCount > 0
-            ? t("card_view.critique_with_tags_title", { count: critiqueTagCount })
-            : t("card_view.critique_note")}
-          style={{
-            position: "absolute",
-            top: 6,
-            right: 6,
-            width: critiqueTagCount > 0 ? "auto" : 8,
-            height: critiqueTagCount > 0 ? "auto" : 8,
-            borderRadius: critiqueTagCount > 0 ? 999 : "50%",
-            backgroundColor: critiqueTagCount > 0 ? "#fef3c7" : "#f59e0b",
-            color: critiqueTagCount > 0 ? "#92400e" : "transparent",
-            fontSize: 9,
-            fontWeight: 600,
-            padding: critiqueTagCount > 0 ? "1px 5px" : 0,
-            lineHeight: critiqueTagCount > 0 ? "14px" : undefined,
-          }}
-        >
-          {critiqueTagCount > 0 ? t("card_view.critique_tag_count", { count: critiqueTagCount }) : null}
-        </span>
       ) : null}
       {!markerMode && isEditing ? (
         <textarea
