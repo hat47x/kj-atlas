@@ -221,6 +221,17 @@ describe("translate", () => {
     expect(t("view_controls.evidence.hops", { count: 2 }, "ja")).toBe("2段階");
   });
 
+  it("uses Japanese labels for summary and LOD controls", () => {
+    expect(t("view_controls.summary.implied", undefined, "ja")).toBe("（抽象マップで自動有効）");
+    expect(t("view_controls.summary.help", undefined, "ja")).toContain("プレビュー");
+    expect(t("view_controls.summary.abstract_help", undefined, "ja")).toContain("抽象マップビュー");
+    expect(t("view_controls.peek_help", undefined, "ja")).toContain("プレビュー");
+    expect(t("view_controls.lod.off", undefined, "ja")).toBe("無効");
+    expect(t("view_controls.lod.legend", undefined, "ja")).toContain("近距離");
+    expect(t("view_controls.lod.legend", undefined, "ja")).toContain("中距離");
+    expect(t("view_controls.lod.legend", undefined, "ja")).toContain("遠距離");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {

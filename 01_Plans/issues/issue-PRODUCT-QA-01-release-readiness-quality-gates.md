@@ -23,6 +23,12 @@
 - DecisionStatus（Fixed / Pending）: Fixed (Open化可)
 - DecisionQueueRef（未確定時の参照先）: `MVP-EXIT-01`
 
+## Implementation Evidence 2026-07-05: View controls Japanese UI wording
+
+- The Japanese View controls no longer expose English interaction labels such as `Abstract view`, `Peek/Focus`, `Close`, `Mid`, `Far`, or `OFF` in the summary/LOD controls. They now use Japanese user-facing labels: `抽象マップビュー`, `プレビュー`, `近距離`, `中距離`, `遠距離`, and `無効`.
+- Added regression coverage in `src/i18n/translate.test.ts` so these labels do not silently revert.
+- No ADR is required because this is a display-language and usability-quality improvement only; it does not alter view metadata, SafeMode/share policy, schema, or release authority.
+
 ## 1) 課題 / Problem statement
 
 - MVP脱却には、単一のテスト合格だけでなく、画面、文書、安全境界、公開範囲、運用、診断を横断したGo/No-Go基準が必要である。
