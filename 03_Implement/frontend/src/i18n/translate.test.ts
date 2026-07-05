@@ -232,6 +232,13 @@ describe("translate", () => {
     expect(t("view_controls.lod.legend", undefined, "ja")).toContain("遠距離");
   });
 
+  it("uses Japanese labels for review history and share preflight domain copy", () => {
+    expect(t("side_panel.boolean.true", undefined, "ja")).toBe("レビュー済み");
+    expect(t("side_panel.boolean.false", undefined, "ja")).toBe("未レビュー");
+    expect(t("share.panel.preflight.domain_summary_hold", { count: 2 }, "ja")).toContain("未分類の主張");
+    expect(t("share.panel.preflight.domain_summary_hold", { count: 2 }, "ja")).not.toContain("unknown");
+  });
+
   it("notifies listeners when active locale changes", () => {
     const calls: string[] = [];
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
