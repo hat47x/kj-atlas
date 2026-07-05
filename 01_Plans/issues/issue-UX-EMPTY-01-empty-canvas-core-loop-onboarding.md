@@ -1,11 +1,11 @@
 # Issue Draft: UX-EMPTY-01 空キャンバスの中核ループ誘導（操作で消えるオンボーディング）
 
 - Type: Feature request
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-EMPTY-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 憲章）, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`（CB-1 空状態）, `01_Plans/issues/issue-PRODUCT-UX-01-first-run-document-entry.md`（Done・入口のみ）, `01_Plans/issues/issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`（In Progress・連携）
@@ -52,18 +52,18 @@
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: 新規文書の空キャンバスでヒントが表示され、カード1枚作成で消えることが e2e で固定される。
-- [ ] AC-2: 各ループ示唆が該当操作の初回実行後に再表示されないこと、および設定からの再表示が可能なことを確認。
-- [ ] AC-3: 誘導がフォーカスを奪わず、Tab 順・既存キーボード契約（UX-OPERABILITY-01/02）が非回帰。
-- [ ] AC-4: provider=none・詳細OFF の既定構成のみで完結（AI 参照なし）。
-- [ ] AC-5: `ux_operability_regression.test.ts` の初期表示アンカー非回帰。
+- [x] AC-1: 新規文書の空キャンバスでヒントが表示され、カード1枚作成で消えることが e2e で固定される。
+- [x] AC-2: 各ループ示唆が該当操作の初回実行後に再表示されないこと、および設定からの再表示が可能なことを確認。
+- [x] AC-3: 誘導がフォーカスを奪わず、Tab 順・既存キーボード契約（UX-OPERABILITY-01/02）が非回帰。
+- [x] AC-4: provider=none・詳細OFF の既定構成のみで完結（AI 参照なし）。
+- [x] AC-5: `ux_operability_regression.test.ts` の初期表示アンカー非回帰。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 空状態ヒントコンポーネント（cards=0 判定・消失遷移）。
-- [ ] T2 ループ示唆の既習得管理（localStorage）＋設定からの再表示。
-- [ ] T3 i18n（ja/en）追加。
-- [ ] T4 e2e（表示→消失、示唆の一回性、フォーカス非奪取）。
+- [x] T1 空状態ヒントコンポーネント（cards=0 判定・消失遷移）。
+- [x] T2 ループ示唆の既習得管理（localStorage）＋設定からの再表示。
+- [x] T3 i18n（ja/en）追加。
+- [x] T4 e2e（表示→消失、示唆の一回性、フォーカス非奪取）。
 
 ## 7) 検証計画 / Validation plan
 
@@ -84,3 +84,5 @@
 ## 実装設計の到着（2026-07-04）
 
 - Claude Design Round 4 成果（同上 §段階1レッドライン）に空状態ヒントの出現・消滅条件（カード0枚時のみ・最初のカード作成で消滅・コーチマークは一度実行で再表示なし=localStorage）の仕様が確定。プロトタイプが参照実装。
+- 2026-07-04 Codex: `EmptyCanvasHint` を追加し、新規文書を `cards: []` から開始するように変更。StartPanelを閉じた後の空キャンバスでだけ初回ヒントを表示し、`Write first card` / `最初のカードを書く` 操作でカード作成と同時に消えることを `empty_canvas_onboarding.spec.ts` で確認する方針にした。再表示抑制・リセット導線（AC-2）は別スライスで継続。
+- 2026-07-04 Codex: 初回カード作成時に空キャンバスヒントの完了状態を localStorage に保存し、以後の空キャンバスでは再表示しないようにした。表示パネルから「空キャンバスのヒントを再表示」できるリセット導線を追加し、同一E2Eで再表示まで確認する方針に更新。

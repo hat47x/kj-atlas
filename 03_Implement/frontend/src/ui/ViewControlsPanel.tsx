@@ -41,6 +41,8 @@ type ViewControlsPanelProps = {
   onLoadViewMetadataFile: (file: File) => void;
   safeMode: boolean;
   onSafeModeChange: (value: boolean) => void;
+  emptyCanvasHintCompleted: boolean;
+  onResetEmptyCanvasHint: () => void;
   lodEnabled: boolean;
   onLodEnabledChange: (value: boolean) => void;
   lodThresholds?: LODThresholds;
@@ -122,6 +124,8 @@ export function ViewControlsPanel({
   onLoadViewMetadataFile,
   safeMode,
   onSafeModeChange,
+  emptyCanvasHintCompleted,
+  onResetEmptyCanvasHint,
   lodEnabled,
   onLodEnabledChange,
   lodThresholds,
@@ -621,6 +625,21 @@ export function ViewControlsPanel({
           />
           {t("view_controls.safety.safe_mode")}
         </label>
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.onboarding.title")}</div>
+        <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.4 }}>
+          {t(emptyCanvasHintCompleted ? "view_controls.onboarding.empty_canvas_completed" : "view_controls.onboarding.empty_canvas_available")}
+        </div>
+        <button
+          type="button"
+          onClick={onResetEmptyCanvasHint}
+          disabled={!emptyCanvasHintCompleted}
+          style={{ cursor: emptyCanvasHintCompleted ? "pointer" : "not-allowed" }}
+        >
+          {t("view_controls.onboarding.reset_empty_canvas")}
+        </button>
       </div>
 
       <div style={{ ...sectionStyle, marginTop: 10, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>

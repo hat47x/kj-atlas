@@ -58,6 +58,7 @@ import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
 import { PatchWorkspacePanel } from "./ui/workspace/PatchWorkspacePanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { WorkModePanel } from "./ui/WorkModePanel";
+import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import type { IslandRelationEdgeSelection } from "./domain/island_relation_explain";
 import {
   buildRelationSummarySourceSignature,
@@ -67,6 +68,7 @@ import {
 } from "./domain/relation_summary_ops";
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
+import { loadEmptyCanvasHintCompleted, saveEmptyCanvasHintCompleted } from "./storage/empty_canvas_hint";
 import { loadViewModeForDocument, saveViewModeForDocument } from "./storage/view_mode";
 import { loadViewLocaleForDocumentView, saveViewLocaleForDocumentView } from "./storage/view_locale";
 import { loadViewVisibilityForDocument, saveViewVisibilityForDocument } from "./storage/view_visibility";
@@ -769,14 +771,7 @@ function createNewDocument(docId: string): DocumentV2 {
       panY: 0,
       zoom: 1,
     },
-    cards: [
-      {
-        id: crypto.randomUUID(),
-        text: "新しいカード",
-        x: 120,
-        y: 120,
-      },
-    ],
+    cards: [],
     edges: [],
     islands: [],
     narratives: [],
@@ -1096,6 +1091,7 @@ export default function App() {
   const [lodLevelOverride, setLodLevelOverride] = useState<LODLevel | null>(null);
   const [lodShowLoneWolvesWhenFar, setLodShowLoneWolvesWhenFar] = useState(true);
   const [safeMode, setSafeMode] = useState(true);
+  const [emptyCanvasHintCompleted, setEmptyCanvasHintCompleted] = useState(loadEmptyCanvasHintCompleted);
   const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(
     () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
   );
@@ -3847,6 +3843,17 @@ export default function App() {
     [applyDocumentChange, connectEdgeType, document, isPickingEdgeTarget, selectedCardIds, selectedIslandId]
   );
 
+  const markEmptyCanvasHintCompleted = useCallback(() => {
+    saveEmptyCanvasHintCompleted(true);
+    setEmptyCanvasHintCompleted(true);
+  }, []);
+
+  const handleResetEmptyCanvasHint = useCallback(() => {
+    saveEmptyCanvasHintCompleted(false);
+    setEmptyCanvasHintCompleted(false);
+    setStatusMessage(t("app.status.empty_canvas_hint_reset"));
+  }, []);
+
   const createCardAtPosition = useCallback(
     (x: number, y: number) => {
       if (!document) {
@@ -3855,6 +3862,7 @@ export default function App() {
 
       const newCardId = crypto.randomUUID();
       const newCard = { id: newCardId, text: "新しいカード", x, y };
+      const isFirstCard = document.cards.length === 0;
 
       const applied = applyDocumentChange(
         {
@@ -3865,13 +3873,16 @@ export default function App() {
       );
 
       if (applied) {
+        if (isFirstCard) {
+          markEmptyCanvasHintCompleted();
+        }
         setSelectedIslandId(null);
         setSelectedEdgeId(null);
         setSelectedCardIds([newCardId]);
         setEditingCardId(newCardId);
       }
     },
-    [applyDocumentChange, document]
+    [applyDocumentChange, document, markEmptyCanvasHintCompleted]
   );
 
   const handleAddCard = useCallback(() => {
@@ -8708,6 +8719,8 @@ export default function App() {
             }}
             safeMode={safeMode}
             onSafeModeChange={handleSafeModeChange}
+            emptyCanvasHintCompleted={emptyCanvasHintCompleted}
+            onResetEmptyCanvasHint={handleResetEmptyCanvasHint}
             lodEnabled={lodEnabled}
             onLodEnabledChange={setLodEnabled}
             lodThresholds={lodThresholds}
@@ -9090,6 +9103,14 @@ export default function App() {
       />
     </>
   );
+
+  const shouldShowEmptyCanvasHint =
+    !isStartPanelVisible &&
+    !isReadOnly &&
+    !isLoading &&
+    !emptyCanvasHintCompleted &&
+    Boolean(document) &&
+    (document?.cards.length ?? 0) === 0;
 
   return (
     <>
@@ -9548,7 +9569,7 @@ export default function App() {
         </div>
       ) : (
         <>
-          <div data-ui-region="primary-flow" style={{ height: "100%", minHeight: 0 }}>
+          <div data-ui-region="primary-flow" style={{ position: "relative", height: "100%", minHeight: 0 }}>
           <CanvasShell
             document={focusedVisibleDocument}
             onCardMove={handleCardMove}
@@ -9620,6 +9641,14 @@ export default function App() {
           >
             {islandViews}
           </CanvasShell>
+          {shouldShowEmptyCanvasHint ? (
+            <EmptyCanvasHint
+              onCreateCard={handleAddCard}
+              onOpenSample={() => {
+                void handleOpenSampleDocument();
+              }}
+            />
+          ) : null}
           </div>
         </>
       )}
