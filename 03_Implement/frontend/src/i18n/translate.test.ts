@@ -230,6 +230,9 @@ describe("translate", () => {
     expect(t("view_controls.lod.legend", undefined, "ja")).toContain("近距離");
     expect(t("view_controls.lod.legend", undefined, "ja")).toContain("中距離");
     expect(t("view_controls.lod.legend", undefined, "ja")).toContain("遠距離");
+    expect(t("view_controls.lod.level_close", undefined, "ja")).toBe("近距離");
+    expect(t("view_controls.lod.level_mid", undefined, "ja")).toBe("中距離");
+    expect(t("view_controls.lod.level_far", undefined, "ja")).toBe("遠距離");
   });
 
   it("uses Japanese labels for review history and share preflight domain copy", () => {
@@ -237,6 +240,16 @@ describe("translate", () => {
     expect(t("side_panel.boolean.false", undefined, "ja")).toBe("未レビュー");
     expect(t("share.panel.preflight.domain_summary_hold", { count: 2 }, "ja")).toContain("未分類の主張");
     expect(t("share.panel.preflight.domain_summary_hold", { count: 2 }, "ja")).not.toContain("unknown");
+  });
+
+  it("uses Japanese labels for diagnostic severity and focus references", () => {
+    expect(t("side_panel.outline.severity.error", undefined, "ja")).toBe("エラー");
+    expect(t("side_panel.outline.severity.warn", undefined, "ja")).toBe("警告");
+    expect(t("side_panel.outline.severity.info", undefined, "ja")).toBe("情報");
+    expect(t("side_panel.outline.impact.high", undefined, "ja")).toBe("高");
+    expect(t("side_panel.outline.impact.medium", undefined, "ja")).toBe("中");
+    expect(t("side_panel.outline.impact.low", undefined, "ja")).toBe("低");
+    expect(t("side_panel.outline.focus_ref", { kind: "card", id: "c1" }, "ja")).toBe("フォーカス card:c1");
   });
 
   it("notifies listeners when active locale changes", () => {
