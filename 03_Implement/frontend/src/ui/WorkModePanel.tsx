@@ -4,7 +4,7 @@
  * independent DOM region, separate from the selection-context sidebar.
  */
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { t } from "../i18n/translate";
 
 type WorkModePanelProps = {
@@ -14,28 +14,67 @@ type WorkModePanelProps = {
   children: ReactNode;
 };
 
+const focusableSelector = [
+  "button:not([disabled])",
+  "a[href]",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(", ");
+
+function getFocusableElements(root: HTMLElement): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+    (element) => !element.hasAttribute("disabled") && element.getAttribute("aria-hidden") !== "true",
+  );
+}
+
 export function WorkModePanel({ isOpen, onClose, triggerRef, children }: WorkModePanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOpen || !panelRef.current) return;
-    const firstButton = panelRef.current.querySelector<HTMLElement>("button, [tabindex]");
-    firstButton?.focus();
+    const [firstFocusable] = getFocusableElements(panelRef.current);
+    (firstFocusable ?? panelRef.current).focus();
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
+  const closePanelAndRestoreFocus = () => {
+    onClose();
+    setTimeout(() => triggerRef.current?.focus(), 0);
+  };
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-        setTimeout(() => triggerRef.current?.focus(), 0);
-      }
-    };
+  const handlePanelKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closePanelAndRestoreFocus();
+      return;
+    }
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose, triggerRef]);
+    if (event.key !== "Tab" || !panelRef.current) {
+      return;
+    }
+
+    const focusableElements = getFocusableElements(panelRef.current);
+    if (focusableElements.length === 0) {
+      event.preventDefault();
+      panelRef.current.focus();
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement.focus();
+      return;
+    }
+
+    if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -47,6 +86,8 @@ export function WorkModePanel({ isOpen, onClose, triggerRef, children }: WorkMod
       role="dialog"
       aria-label={t("work_mode.title")}
       aria-modal="true"
+      tabIndex={-1}
+      onKeyDown={handlePanelKeyDown}
       style={{
         position: "absolute",
         inset: 0,
@@ -65,10 +106,7 @@ export function WorkModePanel({ isOpen, onClose, triggerRef, children }: WorkMod
         </div>
         <button
           type="button"
-          onClick={() => {
-            onClose();
-            setTimeout(() => triggerRef.current?.focus(), 0);
-          }}
+          onClick={closePanelAndRestoreFocus}
           aria-label={t("work_mode.close")}
           data-focus-return-id="work-mode-close"
           style={{
