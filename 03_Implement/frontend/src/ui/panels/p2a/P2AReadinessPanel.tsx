@@ -6,6 +6,7 @@ import {
   toP2AValidationLedger,
 } from "../../../domain/p2a/validation";
 import { P2A02_CONTRACT_ID, P2A02_CONTRACT_VERSION } from "../../../domain/p2a/contract";
+import { t } from "../../../i18n/translate";
 
 const panelStyle: React.CSSProperties = {
   border: "1px solid #d0d7de",
@@ -13,6 +14,19 @@ const panelStyle: React.CSSProperties = {
   padding: 12,
   background: "#f8fafc",
 };
+
+function proceedLabel(go: boolean): string {
+  return go ? t("p2a.readiness.proceed.go") : t("p2a.readiness.proceed.no_go");
+}
+
+function reasonLabel(reason: string): string {
+  if (reason === "go") return t("p2a.readiness.reason.go");
+  return reason;
+}
+
+function validationResultLabel(result: "pass" | "fail"): string {
+  return result === "pass" ? t("p2a.readiness.validation.pass") : t("p2a.readiness.validation.fail");
+}
 
 export function P2AReadinessPanel(): React.ReactElement {
   const logs = toP2AValidationLedger(P2A_A2_MOCK_FIXTURES);
@@ -22,26 +36,26 @@ export function P2AReadinessPanel(): React.ReactElement {
   return (
     <section
       style={panelStyle}
-      aria-label="p2a-readiness-panel"
+      aria-label={t("p2a.readiness.aria_label")}
       data-ui-region="stream-b-p2a-readiness"
       data-contract-id={P2A02_CONTRACT_ID}
       data-contract-version={P2A02_CONTRACT_VERSION}
     >
-      <h3 style={{ marginTop: 0 }}>FB-P2A A3 readiness</h3>
+      <h3 style={{ marginTop: 0 }}>{t("p2a.readiness.title")}</h3>
       <p role="status" aria-live="polite" data-testid="p2a-proceed-status">
-        Proceed: <strong>{result.go ? "go" : "no-go"}</strong>
+        {t("p2a.readiness.proceed")}: <strong>{proceedLabel(result.go)}</strong>
       </p>
-      <p>Reason: {result.reason}</p>
+      <p>{t("p2a.readiness.reason")}: {reasonLabel(result.reason)}</p>
       <p>
-        Contract: <code>{P2A02_CONTRACT_ID}</code> / <code>{P2A02_CONTRACT_VERSION}</code>
+        {t("p2a.readiness.contract")}: <code>{P2A02_CONTRACT_ID}</code> / <code>{P2A02_CONTRACT_VERSION}</code>
       </p>
       <p>
-        Accepted: {readiness.acceptedMockCases.join(", ") || "-"} / Blocked: {readiness.blockedMockCases.join(", ")}
+        {t("p2a.readiness.accepted")}: {readiness.acceptedMockCases.join(", ") || "-"} / {t("p2a.readiness.blocked")}: {readiness.blockedMockCases.join(", ")}
       </p>
-      <ul aria-label="p2a-mock-validation-log" data-testid="p2a-validation-log">
+      <ul aria-label={t("p2a.readiness.validation_log_aria")} data-testid="p2a-validation-log">
         {logs.map((log) => (
           <li key={log.mockCaseId}>
-            {log.mockCaseId}: {log.validationResult} ({log.ownerOfFix})
+            {log.mockCaseId}: {validationResultLabel(log.validationResult)} ({log.ownerOfFix})
           </li>
         ))}
       </ul>

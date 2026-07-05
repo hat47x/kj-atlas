@@ -29,6 +29,11 @@
 ### Deferred
 - Phase 2 optional work (URL/history persistence for work-mode state and lighter adjacent-panel migration) remains outside this issue's Phase 1 acceptance scope.
 
+## Follow-up Evidence 2026-07-05: Work-mode focus scope
+
+- `WorkModePanel` now traps `Tab` / `Shift+Tab` within the modal surface and keeps `Escape` / close-button focus return on the Work mode trigger.
+- `ux_operability_regression.test.ts` records the dialog, focus-scope, and keyboard-cycle contract so the advanced work surface does not regress into background-focus leakage.
+
 ### Commits
 - PR #2490: WorkModePanel component + i18n
 - PR #2491: WorkModePanel wiring (import, state, toggle, Fragment)

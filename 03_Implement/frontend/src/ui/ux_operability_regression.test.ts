@@ -74,10 +74,18 @@ describe("UX Operability regression contracts", () => {
 
   it("Phase 5b: work-mode surface owns advanced narrative and HIL panels", () => {
     const appSource = readSource("src/App.tsx");
+    const workModePanelSource = readSource("src/ui/WorkModePanel.tsx");
 
     expect(appSource).toContain("const advancedWorkModeContent = (");
     expect(appSource).toContain("<WorkModePanel");
     expect(appSource).toContain('data-ui-core-action="work-mode"');
+    expect(workModePanelSource).toContain('role="dialog"');
+    expect(workModePanelSource).toContain('aria-modal="true"');
+    expect(workModePanelSource).toContain("tabIndex={-1}");
+    expect(workModePanelSource).toContain("onKeyDown={handlePanelKeyDown}");
+    expect(workModePanelSource).toContain("function getFocusableElements");
+    expect(workModePanelSource).toContain('event.key !== "Tab"');
+    expect(workModePanelSource).toContain("closePanelAndRestoreFocus");
 
     const sidePanelStart = appSource.indexOf("sidePanel={");
     const sidePanelEnd = appSource.indexOf("selectedIsland={", sidePanelStart);
