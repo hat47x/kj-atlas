@@ -8,7 +8,7 @@
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/ui/Shell.tsx`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/src/ui/ux_operability_regression.test.ts`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-MENU-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D2 収納5層・第3層=メニューバー）, `01_Plans/issues/issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`（Done・トリガ/フォーカス契約）, `01_Plans/issues/issue-QA-MONKEY-06-header-toolbar-responsive-overlap.md`（Done・レスポンシブ回帰の先行）, `01_Plans/issues/issue-UX-COMPLEXITY-01-core-value-foregrounding.md`（初期表示アンカー上限）
+- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D2 収納5層・第3層=メニューバー）, `01_Plans/issues/issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`（Done・トリガ/フォーカス契約）, `01_Plans/issues/issue-QA-MONKEY-06-header-toolbar-responsive-overlap.md`（Done・レスポンシブ回帰の先行）, `01_Plans/issues/issue-UX-COMPLEXITY-01-core-value-foregrounding.md`（初期表示アンカー上限）, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（主体メタ表示・共有境界）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -45,9 +45,10 @@ Claude Design Round 6 回答で命名矛盾が解消され、確定版6分類は
 | カード | 新規カード / 型変更（事実・主張・仮説・不明） / 関係線でつなぐ / 島を作成・解除 / まとめを整える |
 | 表示 | 全体に合わせる（俯瞰） / ズームリセット / ミニマップ / 凡例（既定OFF） / 通し番号の表示（既定OFF） / ヘルプ小分類（はじめてガイド・ショートカット `?`） |
 | 作業 | 作業モードを開く →（差分 / マージ〔=パッチ統合〕 / AI提案 / 診断 / 文章化） |
-| 共有 | 共有前確認（サマリ） / 公開範囲 / レビューパック書き出し / 出典参照を含める（既定OFF） / SafeMode |
+| 共有 | 共有前確認（サマリ） / 公開範囲 / レビューパック書き出し / 出典参照を含める（既定OFF・主体メタは対象外） / SafeMode |
 
 - **保持系（保留・違和感）はメニューに出さない**。①キャンバス（カード上）／②スリムバー層に置き、確定系より遠ざけない（CB-2 堅持）。
+- 共有メニューの「出典参照」は DOMAIN-TRACE-01 の `seq/source` 系のみを指す。起票者・作成者・最終更新者などの主体メタは CARD-META-UI-01 の判断が固定されるまで、共有メニューの単独項目や出典参照トグルに含めない。
 - AC-0 は本節の確定により解消（実装ブロッカー解除）。
 
 ## 3) 判断基準による優先度評価

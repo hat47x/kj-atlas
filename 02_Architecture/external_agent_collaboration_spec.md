@@ -59,7 +59,7 @@
 
 ### 3.4 出力境界（必須）
 
-- 書き出しは SharePanel の共有前確認フローに乗せる: SafeMode 状態表示・**未レビュー本文は既定除外**（`includeUnreviewedDrafts` 明示時のみ含む）・出典参照（`Card.meta` 系）既定OFF・共有直前サマリ（UX-SHARE-01 到達後はそれに従う）。
+- 書き出しは SharePanel の共有前確認フローに乗せる: SafeMode 状態表示・**未レビュー本文は既定除外**（`includeUnreviewedDrafts` 明示時のみ含む）・出典参照（DOMAIN-TRACE-01 の `Card.meta.seq/source` 系）は既定OFF。起票者・作成者・最終更新者などの主体メタ（CARD-META-UI-01）は、別ゲートで同梱判断が固定されるまで依頼パッケージに含めない。共有直前サマリ（UX-SHARE-01 到達後はそれに従う）。
 - `/docs/{id}/export-audit` に `exportKind: "agent-task"` を記録。CE1 の query/bundle 監査連鎖（`ce4.audit.v1`）は既存どおり発火。
 
 ## 4. AgentResponse v1（応答契約）

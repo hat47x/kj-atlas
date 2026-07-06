@@ -8,7 +8,7 @@
 - Owner: TBD
 - Scope: `04_Documentation/`, `02_Architecture/external_agent_collaboration_spec.md`（参照）, `03_Implement/frontend/e2e/`（スモークのみ）
 - Related Backlog: `EXT-AGENT-03`
-- Related ADR/Spec: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（D4・Copilot プロファイル）, `02_Architecture/external_agent_collaboration_spec.md`（§7 正本）
+- Related ADR/Spec: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（D4・Copilot プロファイル）, `02_Architecture/external_agent_collaboration_spec.md`（§7 正本）, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（主体メタ表示・共有境界）
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -44,7 +44,7 @@
 
 ## 4) 提案する解決策 / Proposed solution
 
-- `04_Documentation/external_agent_workflow.md`（利用者/運用者向け・公開候補）: 最短運用（チャット貼付け）／Copilot Studio エージェント化（**Instructions 全文テンプレート**・応答を JSON のみに固定する指示・taskId エコーバック）／逸脱時リカバリ定型文／データ境界チェックリスト／トラブルシュート（壊れた JSON・長すぎる文脈の分割=bundle の scope/depth 調整）。
+- `04_Documentation/external_agent_workflow.md`（利用者/運用者向け・公開候補）: 最短運用（チャット貼付け）／Copilot Studio エージェント化（**Instructions 全文テンプレート**・応答を JSON のみに固定する指示・taskId エコーバック）／逸脱時リカバリ定型文／データ境界チェックリスト／トラブルシュート（壊れた JSON・長すぎる文脈の分割=bundle の scope/depth 調整）。テンプレートは起票者・作成者・最終更新者などの主体メタ入力を利用者へ求めず、組織判断で必要になった場合のみ CARD-META-UI-01 の境界に従って別扱いにする。
 - `04_Documentation/README.md` の境界マトリクス・Gist 表へ登録。`public_index.md` に導線1行。
 - e2e スモーク（任意・EXT-AGENT-02 のフィクスチャ流用）: 文書内のテンプレ応答例が実際に取り込めることを固定（文書と実装の乖離防止）。
 

@@ -8,15 +8,15 @@
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `EXT-AGENT-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（D2）, `02_Architecture/external_agent_collaboration_spec.md`（§3 正本）, `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（D2）, `02_Architecture/external_agent_collaboration_spec.md`（§3 正本）, `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: EXT-AGENT-01
-- RequirementStatement: 外部の定額課金 AI エージェントへ渡す依頼パッケージ（タスクシート Markdown＋随伴 task.json/context_bundle.json）を、Context Query Preview で人間が確認した文脈と応答契約・相関情報を束ねて生成し、共有・書き出し境界（SafeMode・共有前確認・監査）を通して書き出せるようにする。
+- RequirementStatement: 外部の定額課金 AI エージェントへ渡す依頼パッケージ（タスクシート Markdown＋随伴 task.json/context_bundle.json）を、Context Query Preview で人間が確認した文脈と応答契約・相関情報を束ねて生成し、共有・書き出し境界（SafeMode・共有前確認・監査）を通して書き出せるようにする。出典参照（`seq/source`）と起票者などの主体メタを分離し、主体メタは CARD-META-UI-01 で同梱判断が固定されるまで含めない。
 - PriorityClass（Must / Should / Could）: Should
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=文書を開き範囲（島/カード）を選択 / 操作=「エージェントへ依頼」→ taskKind を選択 → Context Query Preview で範囲確認 → 書き出し / 期待結果=ガードレール・文脈・応答契約・相関ブロック（taskId/baseDocSignature/bundleHash）を含むタスクシートが生成され、未レビュー本文は既定除外、export-audit に exportKind=agent-task が記録される / 除外=外部への自動送信、Tier 1/2 транспорト、応答の取り込み（EXT-AGENT-02）。
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=文書を開き範囲（島/カード）を選択 / 操作=「エージェントへ依頼」→ taskKind を選択 → Context Query Preview で範囲確認 → 書き出し / 期待結果=ガードレール・文脈・応答契約・相関ブロック（taskId/baseDocSignature/bundleHash）を含むタスクシートが生成され、未レビュー本文は既定除外、出典参照は既定OFF、起票者などの主体メタは含まれず、export-audit に exportKind=agent-task が記録される / 除外=外部への自動送信、Tier 1/2 транспорト、応答の取り込み（EXT-AGENT-02）。
 - GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: SafeMode / share-export（外部へ出る成果物の生成。既存境界を必ず通過し新しい抜け道を作らない）
 - VerificationLevel: integration
@@ -34,7 +34,7 @@
 ## 3) 判断基準による優先度評価
 
 - 価値: 定額エージェント活用の入口。P-07（自己ホスト）と両立する唯一の外部AI経路。
-- 安全: 出力は共有・書き出し境界を必ず通過（未レビュー既定除外・出典既定OFF・SafeMode 表示・監査）。
+- 安全: 出力は共有・書き出し境界を必ず通過（未レビュー既定除外・出典参照既定OFF・主体メタ対象外・SafeMode 表示・監査）。
 - 規模拡大: 企業・自治体の Copilot 前提環境への導入障壁を解消。
 - 後方互換: スキーマ変更なし（書き出しのみ）。
 
@@ -52,7 +52,7 @@
 
 - [ ] AC-1: 生成タスクシートが spec §3.3 の構成順序・ガードレール固定文・相関ブロックを含むことが golden fixture で固定される。
 - [ ] AC-2: previewConfirmed を経ない書き出しができない（Context Query Preview 必須）。
-- [ ] AC-3: 未レビュー本文が既定で除外され、includeUnreviewedDrafts 明示時のみ含まれる（SafeMode 文脈 share 適用）。
+- [ ] AC-3: 未レビュー本文が既定で除外され、includeUnreviewedDrafts 明示時のみ含まれる（SafeMode 文脈 share 適用）。出典参照は既定OFFとし、起票者・作成者・最終更新者などの主体メタは CARD-META-UI-01 の同梱判断が固定されるまで含めない。
 - [ ] AC-4: export-audit に exportKind=agent-task が記録される。
 - [ ] AC-5: 書き出しは「詳細」（advanced）配下または作業面からの明示操作で、初期表示アンカー非回帰（CB-1）。
 
