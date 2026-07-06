@@ -927,6 +927,7 @@
   "app.history.island.summary_updated": "Updated the island summary",
   "app.history.island.image_url_updated": "Updated the island image URL",
   "app.history.card.critique_updated": "Updated the card critique note",
+  "app.shortcut.default_card_critique": "Feels off",
   "app.history.card.claim_type_updated": "Updated the card claim type",
   "app.history.card.marked_reviewed": "Marked the card text as reviewed",
   "app.history.card.marked_unreviewed": "Marked the card text as unreviewed",

@@ -30,6 +30,21 @@ describe("UX Operability regression contracts", () => {
     expect(cardViewSource).toContain("onSelect(card.id, event.shiftKey)");
   });
 
+  it("UX-SHORTCUT-01: selected-card hold/critique/review shortcuts stay guarded", () => {
+    const hotkeysSource = readSource("src/hooks/useHotkeys.ts");
+    const appSource = readSource("src/App.tsx");
+
+    expect(hotkeysSource).toContain("isEditableTarget(event.target)");
+    expect(hotkeysSource).toContain('lowerKey === "h" && onToggleSelectedCardHold');
+    expect(hotkeysSource).toContain('lowerKey === "u" && onToggleSelectedCardCritique');
+    expect(hotkeysSource).toContain('lowerKey === "r" && onToggleSelectedCardReviewed && !onReadingPathToggleReviewedOnly');
+    expect(appSource).toContain("const handleToggleSelectedCardHold = useCallback");
+    expect(appSource).toContain("const handleToggleSelectedCardCritique = useCallback");
+    expect(appSource).toContain("const handleToggleSelectedCardReviewed = useCallback");
+    expect(appSource).toContain("const canUseSelectedCardShortcuts = Boolean(selectedCard && !isReadOnly && !isPreviewingSuggestion)");
+    expect(appSource).toContain('t("app.shortcut.default_card_critique")');
+  });
+
   it("UX-VISUAL-01: card state badges sit in a normal-flow meta-row above the body (no first-line overlap)", () => {
     const cardViewSource = readSource("src/canvas/CardView.tsx");
 

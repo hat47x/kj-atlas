@@ -69,6 +69,15 @@
 - [ ] T5 チートシート UI＋メニュー併記＋i18n。
 - [ ] T6 e2e 一式。
 
+## Implementation note (2026-07-07)
+
+- T2/T3 の一部として、`useHotkeys` に選択カード1枚向けの H/U/R を追加した。
+  - H: `holdState` を `held` / `active` で切り替える。
+  - U: `critique` が未設定なら短い違和感メモを入れ、設定済みなら外す。
+  - R: `textReviewed` を切り替える。ただし読書ナビが有効な場合は既存の reviewed-only 切替を優先し、キー衝突を避ける。
+- 入力中ガード（input/textarea/select/contentEditable）と修飾キーガードは `useHotkeys` に維持した。`ux_operability_regression.test.ts` に静的回帰アンカーを追加済み。
+- 未完了: AC-1/AC-2 の E2E 固定、AC-3 の Esc 段階処理、AC-4 のチートシート、AC-5 の全バインド棚卸し。
+
 ## 7) 検証計画 / Validation plan
 
 - `rg -n "metaKey|ctrlKey|event.key" 03_Implement/frontend/src | sort`（棚卸し）

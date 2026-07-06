@@ -7327,10 +7327,41 @@ export default function App() {
     [applyDocumentChange, document, isPreviewingSuggestion, selectedCardIds]
   );
 
+  const handleToggleSelectedCardHold = useCallback(() => {
+    if (isReadOnly || isPreviewingSuggestion || !selectedCard) {
+      return;
+    }
+
+    const nextHoldState: HoldStateSelection = selectedCard.holdState === "held" ? "active" : "held";
+    handleCardHoldStateChange(selectedCard.id, nextHoldState);
+  }, [handleCardHoldStateChange, isPreviewingSuggestion, isReadOnly, selectedCard]);
+
+  const handleToggleSelectedCardCritique = useCallback(() => {
+    if (isReadOnly || isPreviewingSuggestion || !selectedCard) {
+      return;
+    }
+
+    const hasCritiqueNote = (selectedCard.critique?.trim().length ?? 0) > 0;
+    handleCardCritiqueChange(selectedCard.id, hasCritiqueNote ? "" : t("app.shortcut.default_card_critique"));
+  }, [handleCardCritiqueChange, isPreviewingSuggestion, isReadOnly, selectedCard, t]);
+
+  const handleToggleSelectedCardReviewed = useCallback(() => {
+    if (isReadOnly || isPreviewingSuggestion || !selectedCard) {
+      return;
+    }
+
+    handleCardTextReviewedChange(selectedCard.id, selectedCard.textReviewed !== true);
+  }, [handleCardTextReviewedChange, isPreviewingSuggestion, isReadOnly, selectedCard]);
+
+  const canUseSelectedCardShortcuts = Boolean(selectedCard && !isReadOnly && !isPreviewingSuggestion);
+
   useHotkeys({
     onClearSelection: handleClearSelection,
     onDeleteSelection: handleDeleteSelection,
     onNudge: handleNudgeSelection,
+    onToggleSelectedCardCritique: canUseSelectedCardShortcuts ? handleToggleSelectedCardCritique : undefined,
+    onToggleSelectedCardHold: canUseSelectedCardShortcuts ? handleToggleSelectedCardHold : undefined,
+    onToggleSelectedCardReviewed: canUseSelectedCardShortcuts ? handleToggleSelectedCardReviewed : undefined,
     onReadingPathNext: readingNavEnabled ? handleReadingNext : undefined,
     onReadingPathPrev: readingNavEnabled ? handleReadingPrev : undefined,
     onReadingPathToggleReviewedOnly: readingNavEnabled ? handleToggleReviewedOnly : undefined,

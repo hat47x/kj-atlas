@@ -4,6 +4,9 @@ type UseHotkeysOptions = {
   onClearSelection: () => void;
   onDeleteSelection: () => void;
   onNudge: (dx: number, dy: number) => void;
+  onToggleSelectedCardCritique?: () => void;
+  onToggleSelectedCardHold?: () => void;
+  onToggleSelectedCardReviewed?: () => void;
   onReadingPathNext?: () => void;
   onReadingPathPrev?: () => void;
   onReadingPathToggleReviewedOnly?: () => void;
@@ -27,6 +30,9 @@ export function useHotkeys({
   onClearSelection,
   onDeleteSelection,
   onNudge,
+  onToggleSelectedCardCritique,
+  onToggleSelectedCardHold,
+  onToggleSelectedCardReviewed,
   onReadingPathNext,
   onReadingPathPrev,
   onReadingPathToggleReviewedOnly,
@@ -42,6 +48,8 @@ export function useHotkeys({
         return;
       }
 
+      const lowerKey = event.key.toLowerCase();
+
       if (event.key === "Escape" && onReadingPathDisable) {
         event.preventDefault();
         onReadingPathDisable();
@@ -54,19 +62,37 @@ export function useHotkeys({
         return;
       }
 
-      if (event.key === "n" && onReadingPathNext) {
+      if (!event.shiftKey && lowerKey === "h" && onToggleSelectedCardHold) {
+        event.preventDefault();
+        onToggleSelectedCardHold();
+        return;
+      }
+
+      if (!event.shiftKey && lowerKey === "u" && onToggleSelectedCardCritique) {
+        event.preventDefault();
+        onToggleSelectedCardCritique();
+        return;
+      }
+
+      if (!event.shiftKey && lowerKey === "r" && onToggleSelectedCardReviewed && !onReadingPathToggleReviewedOnly) {
+        event.preventDefault();
+        onToggleSelectedCardReviewed();
+        return;
+      }
+
+      if (!event.shiftKey && lowerKey === "n" && onReadingPathNext) {
         event.preventDefault();
         onReadingPathNext();
         return;
       }
 
-      if (event.key === "p" && onReadingPathPrev) {
+      if (!event.shiftKey && lowerKey === "p" && onReadingPathPrev) {
         event.preventDefault();
         onReadingPathPrev();
         return;
       }
 
-      if (event.key === "r" && onReadingPathToggleReviewedOnly) {
+      if (!event.shiftKey && lowerKey === "r" && onReadingPathToggleReviewedOnly) {
         event.preventDefault();
         onReadingPathToggleReviewedOnly();
         return;
@@ -111,6 +137,9 @@ export function useHotkeys({
     onClearSelection,
     onDeleteSelection,
     onNudge,
+    onToggleSelectedCardCritique,
+    onToggleSelectedCardHold,
+    onToggleSelectedCardReviewed,
     onReadingPathDisable,
     onReadingPathNext,
     onReadingPathPrev,

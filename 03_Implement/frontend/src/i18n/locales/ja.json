@@ -927,6 +927,7 @@
   "app.history.island.summary_updated": "島の要約を更新しました",
   "app.history.island.image_url_updated": "島の画像URLを更新しました",
   "app.history.card.critique_updated": "カードの検討メモを更新しました",
+  "app.shortcut.default_card_critique": "違和感あり",
   "app.history.card.claim_type_updated": "カードの主張種別を更新しました",
   "app.history.card.marked_reviewed": "カード本文をレビュー済みにしました",
   "app.history.card.marked_unreviewed": "カード本文を未レビューに戻しました",
