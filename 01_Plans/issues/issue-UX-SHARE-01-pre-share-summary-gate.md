@@ -8,7 +8,7 @@
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/ui/SharePanel.tsx`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-SHARE-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 憲章・反スコアリング）, `01_Plans/issues/issue-PRODUCT-UX-03-safe-share-export-flow.md`（Done・目的起点フローの強化であり再決定ではない）, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`（出典トグルの所有元）
+- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 憲章・反スコアリング）, `01_Plans/issues/issue-PRODUCT-UX-03-safe-share-export-flow.md`（Done・目的起点フローの強化であり再決定ではない）, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`（出典トグルの所有元）, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（起票者などの主体メタ境界）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -42,7 +42,7 @@
 
 ## 3.2 非目標 / Non-goals
 
-- 共有フロー全体・preflight 構成の再設計。公開範囲/粒度モデルの変更。準備度スコア等の導入（反スコアリング）。出典参照トグル（DOMAIN-TRACE-01）。
+- 共有フロー全体・preflight 構成の再設計。公開範囲/粒度モデルの変更。準備度スコア等の導入（反スコアリング）。出典参照トグル（DOMAIN-TRACE-01）。起票者・作成者・最終更新者などの主体メタ同梱判断（CARD-META-UI-01）。
 
 ## 4) 提案する解決策 / Proposed solution
 
@@ -50,6 +50,7 @@
 - 件数はリンクとして該当フィルタへ誘導可能（戻って確認する導線）。評価語（不足/未達/危険等）は使わない。
 - a11y: 開いたらサマリ見出しへフォーカス、フォーカストラップ、Esc で取消しトリガへ復帰（Round 4 §a11y 仕様に従う）。
 - i18n（ja/en）。
+- 出典参照トグル（`DOMAIN-TRACE-01`）と、起票者などの主体メタ同梱（`CARD-META-UI-01`）は別項目として扱う。起票者メタは個人/組織識別になり得るため、UX-SHARE-01の直前サマリだけで同梱可にしない。
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
@@ -79,5 +80,6 @@
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 - Related: `01_Plans/issues/issue-PRODUCT-UX-03-safe-share-export-flow.md`, `issue-DOMAIN-EXPR-04-evidence-claim-contradiction-review.md`, `issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`
+- Related: `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（§領域5・2026-07-04 版）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`

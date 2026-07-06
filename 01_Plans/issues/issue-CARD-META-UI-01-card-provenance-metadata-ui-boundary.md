@@ -98,8 +98,8 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 `schemas.md` と `data_model_operations_overview.md` で `Card.meta` の扱いを「未確定・本Issue管理」に接続する。
-- [ ] T2 `review_attribution.md` に、レビュー帰属とカード起票者/provenanceメタを混同しない注記を追加する。
+- [x] T1 `schemas.md` と `data_model_operations_overview.md` で `Card.meta` の扱いを「未確定・本Issue管理」に接続する。
+- [x] T2 `review_attribution.md` に、レビュー帰属とカード起票者/provenanceメタを混同しない注記を追加する。
 - [ ] T3 UI仕様案を作る（カード本体、SidePanel、共有前確認、import警告）。
 - [ ] T4 永続先候補（`Card.meta` / view-scoped / import artifact-scoped）を比較し、ADR要否を判断する。
 - [ ] T5 `DOMAIN-TRACE-01` の `seq` / `source` と衝突しないフィールド命名・表示責務を決める。

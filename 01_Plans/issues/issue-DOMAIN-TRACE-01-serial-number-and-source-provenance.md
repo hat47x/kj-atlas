@@ -8,7 +8,7 @@
 - Owner: TBD
 - Scope: `02_Architecture/schemas.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/frontend/src/domain/validate.ts`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/backend/`
 - Related Backlog: `DOMAIN-TRACE-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂 2026-07-03）, `02_Architecture/schemas.md`（§5 future item: `Card.meta`）, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂 2026-07-03）, `02_Architecture/schemas.md`（§5 future item: `Card.meta`）, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）
@@ -32,6 +32,7 @@
 
 - ADR-0048 D3 改訂で条件付き採択: `Card.meta` 系の新フィールド（schemas.md §5 予約枠）／表示は選択時のみ／番号バッジのカード面常時表示は既定 OFF を基本とし CB-1 自己申告で最終判断。
 - プロトタイプで選択コンテキストの「#番号・原データ」表示とカード面バッジの両案が検証済み（採否は本Issueで確定）。
+- `CARD-META-UI-01` は起票者・作成者・最終更新者などの個人/組織識別を含み得るprovenance/accountabilityメタのUI境界を扱う。本Issueはそのうち `seq` / `source`（通し番号と原データ遡及）に限った具体実装候補であり、起票者・所有者・レビュー者の表示/編集/共有可否を確定しない。
 
 ## 3) 判断基準による優先度評価
 
@@ -46,7 +47,7 @@
 
 ## 4) 提案する解決策 / Proposed solution
 
-- スキーマ: `Card.meta?: { seq?: number; source?: string }`（schemas.md 更新時に形を確定。§5 予約の `Card.meta（出自情報、タグ、引用元など）` に整合）。
+- スキーマ: `Card.meta?: { seq?: number; source?: string }`（schemas.md 更新時に形を確定。§5 予約の `Card.meta（出自情報、タグ、引用元など）` に整合）。`createdBy` / `reportedBy` / `updatedBy` / `ownerRef` などの主体メタは `CARD-META-UI-01` のDecision Queue対象とし、本Issueでは追加しない。
 - UI: 選択コンテキストに「#番号」「原データ」欄（未設定時は非表示/折りたたみ）。カード面の番号バッジは既定 OFF とし、View パネルのトグルで表示（research 的用途向け）。
 - 共有: 共有前チェックに「出典参照を含める」可否を明示（既定は既存の SafeMode 方針に整合させる）。
 - 取り込み/書き出し: 寛容/厳格両モードで保全。i18n（ja/en）。
@@ -61,7 +62,7 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 schemas.md 更新（Card.meta 形・sources 役割分担・L2.5）。
+- [ ] T1 schemas.md 更新（Card.meta 形・sources 役割分担・L2.5。主体メタは `CARD-META-UI-01` へ分離）。
 - [ ] T2 types.ts/validate.ts＋backend 対応。
 - [ ] T3 選択コンテキスト UI＋View トグル＋i18n。
 - [ ] T4 共有前チェックへの反映。
@@ -81,6 +82,7 @@
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂）
 - Related: `02_Architecture/schemas.md`（§5 `Card.meta` 予約・`Card.sources` 現行意味）
+- Related: `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（主体メタ/起票者UI境界）
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（仕様精査 C）, `02_Architecture/design/kj-atlas プロトタイプ.dc.html`
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 
