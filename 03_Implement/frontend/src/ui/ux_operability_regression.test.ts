@@ -84,6 +84,20 @@ describe("UX Operability regression contracts", () => {
     expect(legendSource).toContain('"legend.item.protected"');
   });
 
+  it("PROV-VIS-01: AI provider status is read-only (no runtime switch UI) and lives in the View panel", () => {
+    const viewControlsSource = readSource("src/ui/ViewControlsPanel.tsx");
+    expect(viewControlsSource).toContain('"view_controls.ai_provider.title"');
+    expect(viewControlsSource).toContain("providerKind");
+    expect(viewControlsSource).toContain("lastAiCallOutcome");
+    // Governance boundary (ADR-0050 D1): no <select>/onChange for provider,
+    // and no fetch/mutation call from this display-only panel.
+    expect(viewControlsSource).not.toMatch(/onProviderKindChange|onChangeProviderKind|setProviderKind/);
+
+    const appSource = readSource("src/App.tsx");
+    expect(appSource).toContain("const [providerKind, setProviderKind] = useState<ProviderKind | null>(null)");
+    expect(appSource).toContain("getProviderStatus()");
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 

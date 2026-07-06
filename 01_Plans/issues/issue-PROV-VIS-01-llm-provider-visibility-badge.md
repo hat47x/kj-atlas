@@ -1,11 +1,11 @@
 # Issue Draft: PROV-VIS-01 LLMプロバイダ可視性バッジ（読み取り専用・View パネル）
 
 - Type: Feature request
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Claude Code
 - Scope: `03_Implement/frontend/src/ui/ViewControlsPanel.tsx`, `03_Implement/frontend/src/App.tsx`, `03_Implement/backend/src/kj_atlas_api/routes/`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `PROV-VIS-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（D1）, `02_Architecture/llm_provider_spec.md`
@@ -51,11 +51,11 @@
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: View パネルに現在の provider 種別が読み取り専用で表示されることが e2e で固定される。
-- [ ] AC-2: provider を切り替える UI 要素が存在しないことを確認する。
-- [ ] AC-3: 表示に％・スコア・信頼度が含まれない。
-- [ ] AC-4: 初期表示アンカー（`data-ui-core-action`×7 等）が非回帰。
-- [ ] AC-5: i18n（ja/en）キー整合テストが通る。
+- [x] AC-1: View パネルに現在の provider 種別が読み取り専用で表示されることが e2e で固定される（`e2e/ai_provider_status.spec.ts`）。
+- [x] AC-2: provider を切り替える UI 要素が存在しないこと（combobox/radiogroup 皆無・`onProviderKindChange` 等の handler 不在）を e2e＋回帰アンカーで固定。
+- [x] AC-3: 表示に％・スコア・信頼度が含まれない（種別と直近呼び出し結果ラベルのみ）。
+- [x] AC-4: 初期表示アンカーが非回帰（新セクションは View パネル内の既存開示領域に追加。vitest 882 件全通過）。
+- [x] AC-5: i18n（ja/en）キー整合テストが通る。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -77,3 +77,10 @@
 - Related: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（D1）
 - Related: `01_Plans/issues/issue-PROV-ERROR-01-structured-provider-error-propagation.md`
 - Derived-from: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
+
+## 完了記録 2026-07-06（Claude Code）
+
+- **取得経路（T1確定）**: 新規エンドポイント `GET /ai/provider-status`（`ai.py`・既存の `x-api-key` 認証ミドルウェア配下＝`/healthz` のような無認証エンドポイントにはしない）。`get_provider().provider_kind` を返すだけの**静的な設定エコー**で、接続先への疎通確認は行わない（`local_http` 等のエイリアスは解決済みの `local` として返る）。バックエンド新規テスト3件（`test_ai_provider_status_route.py`）で疎通確認なし・エイリアス解決を固定。backend 全体 281 passed / 20 skipped・ruff clean。
+- **直近の呼び出し結果**: 新規バックエンドAPIは持たず、**フロントエンド側で実際のAI呼び出し4箇所**（レイアウト提案・島サマリ・ナラティブ整合性チェック・ナラティブ生成。PROV-ERROR-01 で整備した `classifyAiProviderError` を再利用）の成否をその場で `lastAiCallOutcome` state に反映する設計とした（ADR-0050 D1「直近の呼び出し結果」の実装解釈）。
+- **UI**: `ViewControlsPanel` に「AI プロバイダ」節を追加（種別表示＋直近結果ラベル）。**切替コントロールは一切設置していない**（select/radiogroup/onChange 皆無であることを回帰テストで固定）。
+- 検証: typecheck 0 / vitest **882 passed**（180 files）/ e2e 新規2件 passed（`ai_provider_status.spec.ts`: local表示・none表示）+ 既存 `canvas_legend`/`canvas_protection`/`card_meta_row`/`empty_canvas_onboarding` 等13件で非回帰確認 / 実機スクショで「AI プロバイダ / ローカル（local）」の読み取り専用表示を確認。
