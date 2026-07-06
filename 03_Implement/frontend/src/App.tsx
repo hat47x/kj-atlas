@@ -59,6 +59,7 @@ import { PatchWorkspacePanel } from "./ui/workspace/PatchWorkspacePanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { WorkModePanel } from "./ui/WorkModePanel";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
+import { CanvasLegend } from "./ui/CanvasLegend";
 import type { IslandRelationEdgeSelection } from "./domain/island_relation_explain";
 import {
   buildRelationSummarySourceSignature,
@@ -1092,6 +1093,8 @@ export default function App() {
   const [lodShowLoneWolvesWhenFar, setLodShowLoneWolvesWhenFar] = useState(true);
   const [safeMode, setSafeMode] = useState(true);
   const [emptyCanvasHintCompleted, setEmptyCanvasHintCompleted] = useState(loadEmptyCanvasHintCompleted);
+  // UX-VISUAL-01 AC-2: in-canvas state legend. Default OFF (CB-1); session-local.
+  const [isCanvasLegendOpen, setIsCanvasLegendOpen] = useState(false);
   const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(
     () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
   );
@@ -3852,6 +3855,17 @@ export default function App() {
     saveEmptyCanvasHintCompleted(false);
     setEmptyCanvasHintCompleted(false);
     setStatusMessage(t("app.status.empty_canvas_hint_reset"));
+  }, []);
+
+  const handleCloseCanvasLegend = useCallback(() => {
+    // ADR-0030 contract: closing returns focus to the originating trigger.
+    // Focus synchronously BEFORE unmounting the legend so the browser never
+    // drops focus to <body> when the legend's close button disappears.
+    // NOTE: `document` in this scope is the kj document state; use window.document.
+    window.document
+      .querySelector<HTMLElement>('[data-focus-return-id="legend-trigger"]')
+      ?.focus();
+    setIsCanvasLegendOpen(false);
   }, []);
 
   const createCardAtPosition = useCallback(
@@ -8721,6 +8735,8 @@ export default function App() {
             onSafeModeChange={handleSafeModeChange}
             emptyCanvasHintCompleted={emptyCanvasHintCompleted}
             onResetEmptyCanvasHint={handleResetEmptyCanvasHint}
+            isCanvasLegendOpen={isCanvasLegendOpen}
+            onToggleCanvasLegend={() => setIsCanvasLegendOpen((previous) => !previous)}
             lodEnabled={lodEnabled}
             onLodEnabledChange={setLodEnabled}
             lodThresholds={lodThresholds}
@@ -9649,6 +9665,7 @@ export default function App() {
               }}
             />
           ) : null}
+          {isCanvasLegendOpen ? <CanvasLegend onClose={handleCloseCanvasLegend} /> : null}
           </div>
         </>
       )}

@@ -112,6 +112,10 @@ function CardViewComponent({
   const holdState = card.holdState;
   const representativeCount = card.repOf?.length ?? 0;
   const compactText = card.text.trim().split(/\n+/).join(" ").slice(0, 72);
+  // UX-VISUAL-01 AC-3 (ADR-0048 D1): even at far LOD the "needs attention"
+  // signal (unreviewed / has critique) must stay discoverable, so far-view
+  // markers keep an amber tint instead of the neutral slate dot.
+  const markerNeedsAttention = !isTextReviewed || hasCritique;
 
   // Domain state badge styling (DOMAIN-EXPR-01/02)
   const CLAIM_TYPE_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
@@ -246,7 +250,11 @@ function CardViewComponent({
         width: markerMode ? 10 : 220,
         minHeight: markerMode ? 10 : compactMode ? 52 : 80,
         padding: markerMode ? 0 : compactMode ? "8px 10px" : 12,
-        border: markerMode ? "1px solid #64748b" : "1px solid #cbd5e1",
+        border: markerMode
+          ? markerNeedsAttention
+            ? "1px solid #f59e0b"
+            : "1px solid #64748b"
+          : "1px solid #cbd5e1",
         // UX-VISUAL-01 D1: 3px left band tinted by claimType (色チャネル=型)。
         borderLeft:
           !markerMode && claimType && claimType !== "unknown"
@@ -261,8 +269,12 @@ function CardViewComponent({
               : "none",
         outlineOffset: 1,
         borderRadius: markerMode ? 999 : 8,
-        backgroundColor: markerMode ? "rgba(100, 116, 139, 0.25)" : "#ffffff",
-        opacity: markerMode ? 0.4 : isDeemphasized ? 0.55 : 1,
+        backgroundColor: markerMode
+          ? markerNeedsAttention
+            ? "rgba(245, 158, 11, 0.45)"
+            : "rgba(100, 116, 139, 0.25)"
+          : "#ffffff",
+        opacity: markerMode ? (markerNeedsAttention ? 0.8 : 0.4) : isDeemphasized ? 0.55 : 1,
         boxShadow: isHighlighted
           ? "0 0 0 3px rgba(245, 158, 11, 0.35), 0 0 0 1px rgba(245, 158, 11, 0.9), 0 1px 2px rgba(15, 23, 42, 0.08)"
           : isSelected
@@ -274,7 +286,13 @@ function CardViewComponent({
         fontSize: compactMode ? 12 : 14,
         cursor: isPickingEdgeTarget ? "crosshair" : isDragging ? "grabbing" : "grab",
       }}
-      title={compactMode ? card.text : undefined}
+      title={
+        markerMode && markerNeedsAttention
+          ? t("card_view.marker_attention")
+          : compactMode
+            ? card.text
+            : undefined
+      }
       role="option"
       aria-selected={isSelected}
       data-focus={isFocused ? "card" : undefined}
