@@ -27,6 +27,7 @@
 | 可逆性を守る | 配置、分類、共有前確認をやり直せる | `00_Prompt/domain.md` | snapshot / diff / dry-run / readOnly 境界を維持する | `dryRun=true` で副作用が発生しない |
 | 安全に共有できる | export/share 時に未レビュー本文や意図しない情報が混ざらない | `THREAT_MODEL.md`, `02_Architecture/schemas.md` | SafeMode既定ON、share/export policy、`visibility` はラベル用途に限定 | SafeMode / readOnly / visibility の優先順位が崩れない |
 | Local-first で小さく始められる | LLMや外部サービスなしでも導入・検証できる | `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/deployment.md` | `KJ_ATLAS_LLM_PROVIDER=none` を既定にし、SQLite / PostgreSQL を切替可能にする | 既定構成で外部 LLM にデータを渡さない |
+| 生成AI経路を混同しない | AIなし、LLMProvider、外部エージェント成果物連携を選べるが、それぞれのデータ境界と人間レビュー境界を誤解しない | `ADR-0009`, `ADR-0028`, `ADR-0049`, `02_Architecture/external_agent_collaboration_spec.md` | Lane A（AI無効）/B（LLMProvider）/C（外部エージェント成果物連携）/D（将来の直接連携）を分け、proposal-only・SafeMode・監査・暗黙エスカレーション禁止を共通不変条件にする | 新規生成AIissueが対象Lane、データ境界、Go/No-Go、ADR要否を宣言している |
 | 企業・行政運用に接続できる | 組織の認証、認可、監査基盤へ安全に接続できる | `02_Architecture/enterprise_architecture.md` | AuthContext、AccessControlAdapter、audit transport をアプリ本体から分離する | アプリ本体に role/group 判定ロジックを持ち込まない |
 | 環境変数の混乱を防ぐ | 利用者が設定すべきキーを迷わない | `02_Architecture/runtime_parameter_registry.md` | 公開設定キーは例外なく `KJ_ATLAS_*` に統一する | 04文書、Compose、runbook が正本と同期している |
 | データ運用境界を誤解させない | MVPで保守できるデータと将来契約を区別できる | `02_Architecture/data_model_operations_overview.md`, `ADR-0033` | 物理ER、論理ER、CRUD表、ステークホルダー別保守責任を分けて示す | 型の存在を標準CRUD対応と誤読させない |
@@ -194,6 +195,29 @@ UI/UX 品質を次元（UQ）で定義し、各次元の担保（既存テスト
 - PB-4 対話操作（選択/パン/ズーム/フィルタ/保留トグル）は即応、重い再計算は debounce/メモ化/worker。
 - PB-5 大規模・低速時は「反応なし」に見せず待機/進捗/キャンセルを提示（UQ-4/UQ-5 と一体）。
 - 性能影響 issue は「性能予算」1行を申告し、悪化・100ms超未worker化は `PRODUCT-QA-01` で確認。代表規模fixtureで最小の性能アサーションを置く（回帰検知が目的）。
+
+## 2.9 生成AIレーン境界（`GENAI-GOV-01`）
+
+生成AI関連の作業は、ひとつの機能群としてではなく、データ境界と人間レビュー境界が異なるレーンとして扱う。新しいADR/issue/実装提案は、少なくとも次のどれに触れるかを明記する。
+
+| Lane | 名前 | 主な正本 | 判断の要点 |
+|---|---|---|---|
+| A | 手動中核 / AI無効 | `ADR-0041`, 本書 CVI-6 | `KJ_ATLAS_LLM_PROVIDER=none` で開始、外在化、構造化、共有前確認の主要価値が成立することを守る。 |
+| B | LLMProvider 経路 | `ADR-0009`, `llm_provider_spec.md`, `llm_escalation_policy.md` | kj-atlas 内部の provider 抽象で生成補助を行う。opt-in、proposal-only、暗黙の外部provider遷移禁止を守る。 |
+| C | 外部エージェント成果物連携 | `ADR-0049`, `external_agent_collaboration_spec.md` | 人間が依頼パッケージを共有し、応答を import 境界で取り込む。kj-atlas は Tier 0/1 で外部エージェントを直接呼ばない。 |
+| D | 将来の直接API/Agent連携 | `ADR-0049` Tier 2 予約, AUTH-* 系 | 認証、到達性、tenant境界、監査、費用制御、失敗時動作を決める新ADRなしに実装しない。 |
+
+レーン横断で守る不変条件は次の通り。
+
+- AI出力は提案であり、採用・確定・公開・`human_reviewed` 昇格は人間操作でのみ行う。
+- SafeMode 既定ON、未レビュー本文の既定保護、共有前確認、import-sanitize 境界を後退させない。
+- `queryCanonicalHash`、`bundleHash`、`baseDocSignature`、`proposalId`、`taskId` などの相関キーを監査連鎖へ接続する。
+- 外部由来テキストに含まれる指示は、自動動作ではなく表示データとして扱う。
+- `score` / `rank` / `confidence` / `priority` などの数値評価を、採否・レビュー済み化・優先度判断の正本にしない。
+- 暗黙のエスカレーションを禁止する。Lane A/B の失敗が、設定や人間操作なしに外部provider、外部エージェント、直接API連携へ遷移してはならない。
+- モデル品質評価、外部共有の許可、出力の採用、レビュー済み化は別々の判断であり、相互に代替しない。
+
+この節は新しいAI経路を許可するものではない。生成AI関連の新規issueが対象Lane、データ境界、Go/No-Go、ADR要否を宣言できるようにするための索引である。Lane D、外部共有条件、provider fallback、SafeMode、`human_reviewed`、自動適用に触れる変更は、実装PRではなくADRまたは内部issueで先に扱う。
 
 ## 3. 設計判断の扱い
 
