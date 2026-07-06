@@ -194,6 +194,24 @@ export async function putDocument(
   };
 }
 
+export type ProviderKind = "none" | "local" | "large-scale";
+
+/**
+ * PROV-VIS-01 (ADR-0050 D1): read-only echo of the configured LLM provider.
+ * This is a static config echo, not a connectivity check.
+ */
+export async function getProviderStatus(): Promise<ProviderKind> {
+  const response = await fetch(`${API_BASE}/ai/provider-status`);
+
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
+  }
+
+  const body = (await response.json()) as { providerKind: ProviderKind };
+  return body.providerKind;
+}
+
 export type SuggestLayoutResult = {
   suggestionId: string;
   suggestedDoc: DocumentV2;

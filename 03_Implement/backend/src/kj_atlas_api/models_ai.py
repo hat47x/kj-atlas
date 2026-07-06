@@ -8,6 +8,18 @@ from kj_atlas_api.models import DocumentV2
 SOURCE_BUNDLE_HASH_PATTERN = r"^(?:[0-9a-f]{64}|mock:[0-9a-f]{64})$"
 
 
+class ProviderStatusResponse(BaseModel):
+    """PROV-VIS-01 (ADR-0050 D1): read-only echo of the configured LLM
+    provider kind. This is NOT a live connectivity check — it reports the
+    resolved provider_kind only. "fixture" is a test-only provider selected
+    directly in Python tests, never via KJ_ATLAS_LLM_PROVIDER, so it is not a
+    reachable runtime value here."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    providerKind: Literal["none", "local", "large-scale"]
+
+
 class NarrativeIssueReference(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

@@ -6,6 +6,7 @@ import {
   checkNarrative,
   generateNarrative,
   getDocument,
+  getProviderStatus,
   putDocument,
   recordProposalDecision,
   proposeIslandSummary,
@@ -16,13 +17,14 @@ import {
   type MergeSuggestion,
   type NarrativeIssue,
   type NarrativeIssueReference,
+  type ProviderKind,
 } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
 import { ContextMenu, type ContextMenuItem } from "./ui/ContextMenu";
 import type { AggregatedEdgeMeta, CameraTransformRequest, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
-import { classifyAiProviderError } from "./domain/ai_provider_error";
+import { classifyAiProviderError, type AiProviderErrorKind } from "./domain/ai_provider_error";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
 import { appendReadingOrderEntry, moveReadingOrderEntry, removeReadingOrderEntry } from "./domain/reading_order_ops";
@@ -1124,6 +1126,11 @@ export default function App() {
   // UX-VISUAL-02: protection marks for lone-wolf cards / small islands.
   // Default ON but subtle (ADR-0048 D3 「淡く強調」); toggleable OFF in the View panel.
   const [showProtectionMarks, setShowProtectionMarks] = useState(true);
+  // PROV-VIS-01 (ADR-0050 D1): read-only provider visibility. providerKind is
+  // fetched once from the backend config echo; lastAiCallOutcome is tracked
+  // client-side from the actual result of the most recent AI call.
+  const [providerKind, setProviderKind] = useState<ProviderKind | null>(null);
+  const [lastAiCallOutcome, setLastAiCallOutcome] = useState<"ok" | AiProviderErrorKind | null>(null);
   const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(
     () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
   );
@@ -1268,6 +1275,25 @@ export default function App() {
       }
     };
   }, [importedPackSnapshotUrl]);
+
+  useEffect(() => {
+    // PROV-VIS-01: fetch the configured provider kind once. This is a static
+    // config echo (no connectivity check); failures are silently ignored so
+    // the badge simply stays unknown rather than surfacing a spurious error.
+    let cancelled = false;
+    void getProviderStatus()
+      .then((kind) => {
+        if (!cancelled) {
+          setProviderKind(kind);
+        }
+      })
+      .catch(() => {
+        // Leave providerKind as null (unknown); this is display-only.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const document = history?.present ?? null;
   const currentReviewerRefSource = inferReviewerRefSource(currentReviewerRef);
@@ -2444,10 +2470,12 @@ export default function App() {
       const proposal = await proposeIslandSummary(document, targetIsland.id, `${document.id}:${document.updatedAt}`);
       setIslandSummaryProposal(proposal);
       setStatusMessage(t("app.status.island_summary.ready_unreviewed"));
+      setLastAiCallOutcome("ok");
     } catch (error) {
       const fallback = error instanceof ApiError ? error.message : t("app.status.error_detail_unknown");
       const detail = resolveAiProviderErrorMessage(error, fallback);
       setStatusMessage(t("app.status.island_summary.failed", { detail }));
+      setLastAiCallOutcome(classifyAiProviderError(error));
     } finally {
       setIsSuggestingIslandSummary(false);
     }
@@ -2523,6 +2551,7 @@ export default function App() {
         setResuggestStopperEnabled(false);
       }
       setStatusMessage(t("suggestion.panel.status.draft_ready"));
+      setLastAiCallOutcome("ok");
     } catch (error) {
       const fallback = error instanceof Error ? error.message : t("suggestion.panel.status.failed_to_get_suggestion");
       const message = resolveAiProviderErrorMessage(error, fallback);
@@ -2531,7 +2560,9 @@ export default function App() {
       setSuggestedDocument(null);
       setSuggestionId(null);
       setSuggestionNotes(null);
-      if (classifyAiProviderError(error) === "disabled") {
+      const providerErrorKind = classifyAiProviderError(error);
+      setLastAiCallOutcome(providerErrorKind);
+      if (providerErrorKind === "disabled") {
         setProviderUnavailableMessage(message);
       }
       if (mode === "resuggest") {
@@ -6373,6 +6404,7 @@ export default function App() {
       try {
         const result = await checkNarrative(document, narrativeText, document.readingOrder);
         setNarrativeIssues(result.issues);
+        setLastAiCallOutcome("ok");
 
         if (!selectedNarrativeId) {
           return;
@@ -6412,6 +6444,7 @@ export default function App() {
         const message = resolveAiProviderErrorMessage(error, fallback);
         setNarrativeCheckError(message);
         setNarrativeIssues([]);
+        setLastAiCallOutcome(classifyAiProviderError(error));
       } finally {
         setIsCheckingNarrative(false);
       }
@@ -6449,10 +6482,12 @@ export default function App() {
       if (result.warnings && result.warnings.length > 0) {
         setNarrativeGenerationError(result.warnings.join(" "));
       }
+      setLastAiCallOutcome("ok");
     } catch (error) {
       const fallback = error instanceof ApiError ? error.message : "Failed to generate narrative";
       const message = resolveAiProviderErrorMessage(error, fallback);
       setNarrativeGenerationError(message);
+      setLastAiCallOutcome(classifyAiProviderError(error));
     } finally {
       setIsGeneratingNarrative(false);
     }
@@ -8784,6 +8819,8 @@ export default function App() {
             onToggleCanvasLegend={() => setIsCanvasLegendOpen((previous) => !previous)}
             showProtectionMarks={showProtectionMarks}
             onToggleProtectionMarks={() => setShowProtectionMarks((previous) => !previous)}
+            providerKind={providerKind}
+            lastAiCallOutcome={lastAiCallOutcome}
             lodEnabled={lodEnabled}
             onLodEnabledChange={setLodEnabled}
             lodThresholds={lodThresholds}

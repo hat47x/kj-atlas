@@ -4,6 +4,8 @@ import type { LODLevel, LODThresholds } from "../domain/view/lod";
 import type { HierarchyLevel } from "../domain/view/hierarchy_level";
 import type { PerspectiveMode } from "../domain/view/perspective";
 import type { ViewPreset } from "../domain/view/presets";
+import type { ProviderKind } from "../api/client";
+import type { AiProviderErrorKind } from "../domain/ai_provider_error";
 import { t } from "../i18n/translate";
 
 type ViewControlsPanelProps = {
@@ -47,6 +49,8 @@ type ViewControlsPanelProps = {
   onToggleCanvasLegend: () => void;
   showProtectionMarks: boolean;
   onToggleProtectionMarks: () => void;
+  providerKind: ProviderKind | null;
+  lastAiCallOutcome: "ok" | AiProviderErrorKind | null;
   lodEnabled: boolean;
   onLodEnabledChange: (value: boolean) => void;
   lodThresholds?: LODThresholds;
@@ -134,6 +138,8 @@ export function ViewControlsPanel({
   onToggleCanvasLegend,
   showProtectionMarks,
   onToggleProtectionMarks,
+  providerKind,
+  lastAiCallOutcome,
   lodEnabled,
   onLodEnabledChange,
   lodThresholds,
@@ -665,6 +671,18 @@ export function ViewControlsPanel({
         >
           {t(showProtectionMarks ? "view_controls.protection.toggle_hide" : "view_controls.protection.toggle_show")}
         </button>
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.ai_provider.title")}</div>
+        <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.4 }}>
+          {t(`view_controls.ai_provider.kind.${providerKind ?? "unknown"}`)}
+        </div>
+        {lastAiCallOutcome ? (
+          <div style={{ fontSize: 11, color: "#64748b" }}>
+            {t(`view_controls.ai_provider.outcome.${lastAiCallOutcome}`)}
+          </div>
+        ) : null}
       </div>
 
       <div style={{ ...sectionStyle, marginTop: 10, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>

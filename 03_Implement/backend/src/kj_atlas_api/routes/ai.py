@@ -11,6 +11,7 @@ from kj_atlas_api.llm.provider import (
     ProviderRequestError,
     build_audit_fields,
     generate_with_fallback,
+    get_provider,
 )
 from kj_atlas_api.models_ai import (
     CheckNarrativeRequest,
@@ -21,6 +22,7 @@ from kj_atlas_api.models_ai import (
     ProposalDecisionAuditResponse,
     ProposalEnvelope,
     ProposeIslandSummaryRequest,
+    ProviderStatusResponse,
     SuggestIslandSummaryRequest,
     SuggestIslandSummaryResponse,
 )
@@ -484,6 +486,14 @@ def _parse_merge_suggestions(raw_text: str, source_doc: SuggestMergesRequest) ->
         parsed_suggestions.append(suggestion)
 
     return parsed_suggestions
+
+
+@router.get("/provider-status", response_model=ProviderStatusResponse)
+def get_provider_status() -> ProviderStatusResponse:
+    """PROV-VIS-01 (ADR-0050 D1): read-only echo of the configured provider
+    kind for display in the View panel. No connectivity check is performed;
+    "last known outcome" is tracked client-side from real AI-call results."""
+    return ProviderStatusResponse(providerKind=get_provider().provider_kind)
 
 
 @router.post("/suggest-layout", response_model=SuggestLayoutResponse)
