@@ -454,7 +454,7 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 2. `EdgeType` の拡張（negate/hypothesis 等）
 3. `Island`（囲み、タイトル、所属）
 4. `Asset`（画像挿入・生成結果の参照）
-5. `Card.meta`（出自情報、タグ、引用元など）
+5. `Card.meta`（出自情報、タグ、引用元など。カード起票者・出典メタデータのUI/保存/redaction境界は `CARD-META-UI-01` で管理する）
 6. `Patch`（差分同期）
 
 ---
