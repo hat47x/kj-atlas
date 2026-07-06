@@ -7550,6 +7550,27 @@ export default function App() {
         {t("app.toolbar.advanced_ui")}
       </button>
       <button
+        type="button"
+        aria-label={t("app.toolbar.shortcut_help")}
+        title={t("app.toolbar.shortcut_help_hint")}
+        data-focus-return-id="shortcut-help-trigger"
+        onClick={handleOpenShortcutHelp}
+        style={{
+          width: 34,
+          height: 34,
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          fontSize: 16,
+          fontWeight: 800,
+          lineHeight: "30px",
+          cursor: "pointer",
+        }}
+      >
+        ?
+      </button>
+      <button
         ref={workModeTriggerRef}
         data-ui-complexity-tier="advanced-disclosure"
         data-ui-core-action="work-mode"

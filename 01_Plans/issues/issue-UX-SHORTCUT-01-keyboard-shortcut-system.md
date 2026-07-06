@@ -21,6 +21,10 @@
 - Added a guarded `?` shortcut help dialog with OS-aware primary modifier labels, disabled-while-editing guidance, Esc close behavior, focus trapping, and focus restoration to the element that opened it. This addresses the interactive cheat-sheet portion of AC-4.
 - Remaining follow-up: rediscovery from menus or the future command palette is still pending, so AC-4 should not be closed solely from this change.
 
+## Implementation note (2026-07-07, header rediscovery)
+
+- Added a compact `?` button in the primary toolbar so users can rediscover the shortcut help without already knowing the `?` key. This closes the basic menu/visible-surface rediscovery gap for AC-4; future command-palette integration can remain a separate UX-CMDK-01 follow-up.
+
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: UX-SHORTCUT-01

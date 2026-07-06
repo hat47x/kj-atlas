@@ -671,6 +671,8 @@
   "app.toolbar.save": "Save",
   "app.toolbar.advanced_ui": "Advanced",
   "app.toolbar.advanced_ui_hint": "Toggle AI and advanced features",
+  "app.toolbar.shortcut_help": "Keyboard shortcuts",
+  "app.toolbar.shortcut_help_hint": "Open keyboard shortcuts (?)",
   "context_menu.new_card_here": "New card here",
   "context_menu.edit_card": "Edit card",
   "context_menu.connect": "Connect",

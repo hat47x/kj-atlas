@@ -671,6 +671,8 @@
   "app.toolbar.save": "保存",
   "app.toolbar.advanced_ui": "詳細",
   "app.toolbar.advanced_ui_hint": "AI・高度な機能の表示を切り替えます",
+  "app.toolbar.shortcut_help": "キーボードショートカット",
+  "app.toolbar.shortcut_help_hint": "キーボードショートカットを開く（?）",
   "context_menu.new_card_here": "ここに新規カード",
   "context_menu.edit_card": "カードを編集",
   "context_menu.connect": "関係線でつなぐ",

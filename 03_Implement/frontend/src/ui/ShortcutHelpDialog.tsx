@@ -136,7 +136,7 @@ export function ShortcutHelpDialog({ onClose }: ShortcutHelpDialogProps) {
     { keys: keys("H"), label: t("shortcut_help.card.hold") },
     { keys: keys("U"), label: t("shortcut_help.card.critique") },
     { keys: keys("R"), label: t("shortcut_help.card.reviewed") },
-    { keys: keys("Delete", "Backspace"), label: t("shortcut_help.card.delete") },
+    { keys: keys("Delete / Backspace"), label: t("shortcut_help.card.delete") },
     { keys: keys("Arrow"), label: t("shortcut_help.card.nudge") },
     { keys: keys("Shift", "Arrow"), label: t("shortcut_help.card.nudge_large") },
   ];

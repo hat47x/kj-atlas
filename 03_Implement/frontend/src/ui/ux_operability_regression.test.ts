@@ -46,6 +46,8 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain("const handleOpenShortcutHelp = useCallback");
     expect(appSource).toContain("const handleCloseShortcutHelp = useCallback");
     expect(appSource).toContain("onOpenShortcutHelp: handleOpenShortcutHelp");
+    expect(appSource).toContain('data-focus-return-id="shortcut-help-trigger"');
+    expect(appSource).toContain('aria-label={t("app.toolbar.shortcut_help")}');
     expect(appSource).toContain("const handleToggleSelectedCardHold = useCallback");
     expect(appSource).toContain("const handleToggleSelectedCardCritique = useCallback");
     expect(appSource).toContain("const handleToggleSelectedCardReviewed = useCallback");
