@@ -574,6 +574,12 @@ function parseComparisonEvidenceLinks(value: unknown): DocumentV2["evidenceLinks
       toCardId: entry.toCardId,
       note: typeof entry.note === "string" ? entry.note : undefined,
       createdAt: typeof entry.createdAt === "string" ? entry.createdAt : undefined,
+      ...(entry.contradictionState === "unconfirmed"
+        || entry.contradictionState === "confirmed"
+        || entry.contradictionState === "held"
+        || entry.contradictionState === "resolved"
+        ? { contradictionState: entry.contradictionState }
+        : {}),
     });
   }
 
