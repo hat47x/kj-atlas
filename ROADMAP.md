@@ -73,6 +73,10 @@ kj-atlas は以下を中核とする：
 - SafeModeポリシー適用対象（利用形態に依存せず統一適用）
 - 外部接続の可否はデプロイポリシーで切り替え可能にする
 
+> 可視性・エラー忠実性の是正（2026-07-06）: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（`PROV-VIS-01`/`PROV-ERROR-01`/`PROV-CONTRACT-01`）。
+>
+> **Pending（未決事項として明示・2026-07-06）**: 現行のローカルLLM `/generate` 契約は kj-atlas 独自形状（意図的決定・`04_Documentation/local_llm_ops_guide.md` に明記）で、OpenAI/Ollama 互換 API とは非互換。real-use での接続失敗が実際に顕在化した場合、OpenAI互換（`/v1/chat/completions`）ワイヤ形式の追加/代替を別ADRとして起票する（ADR-0047 R-1 ゲート待ち。現時点では予測ベースのため決定しない）。
+
 ### D. API課金回避のための定額/オフライン AI 補完経路
 
 #### 背景
