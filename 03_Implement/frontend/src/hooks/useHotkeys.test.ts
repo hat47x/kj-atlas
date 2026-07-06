@@ -16,6 +16,13 @@ describe("resolveHotkeyAction", () => {
     expect(resolveHotkeyAction({ key: "h", shiftKey: true, canToggleSelectedCardHold: true })).toBeNull();
   });
 
+  it("opens shortcut help with the guarded question mark key", () => {
+    expect(resolveHotkeyAction({ key: "?", shiftKey: true })).toEqual({ kind: "open-shortcut-help" });
+    expect(resolveHotkeyAction({ key: "/", shiftKey: true })).toEqual({ kind: "open-shortcut-help" });
+    expect(resolveHotkeyAction({ key: "?", editableTarget: true })).toBeNull();
+    expect(resolveHotkeyAction({ key: "?", ctrlKey: true })).toBeNull();
+  });
+
   it("keeps reading navigation R ahead of selected-card review toggle", () => {
     expect(resolveHotkeyAction({
       key: "r",

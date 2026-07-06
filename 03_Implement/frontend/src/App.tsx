@@ -60,6 +60,7 @@ import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { WorkModePanel } from "./ui/WorkModePanel";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import { CanvasLegend } from "./ui/CanvasLegend";
+import { ShortcutHelpDialog } from "./ui/ShortcutHelpDialog";
 import type { IslandRelationEdgeSelection } from "./domain/island_relation_explain";
 import {
   buildRelationSummarySourceSignature,
@@ -1095,6 +1096,7 @@ export default function App() {
   const [emptyCanvasHintCompleted, setEmptyCanvasHintCompleted] = useState(loadEmptyCanvasHintCompleted);
   // UX-VISUAL-01 AC-2: in-canvas state legend. Default OFF (CB-1); session-local.
   const [isCanvasLegendOpen, setIsCanvasLegendOpen] = useState(false);
+  const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
   const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(
     () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
   );
@@ -3866,6 +3868,21 @@ export default function App() {
       .querySelector<HTMLElement>('[data-focus-return-id="legend-trigger"]')
       ?.focus();
     setIsCanvasLegendOpen(false);
+  }, []);
+
+  const shortcutHelpReturnFocusRef = useRef<HTMLElement | null>(null);
+
+  const handleOpenShortcutHelp = useCallback(() => {
+    shortcutHelpReturnFocusRef.current =
+      window.document.activeElement instanceof HTMLElement ? window.document.activeElement : null;
+    setIsShortcutHelpOpen(true);
+  }, []);
+
+  const handleCloseShortcutHelp = useCallback(() => {
+    setIsShortcutHelpOpen(false);
+    window.requestAnimationFrame(() => {
+      shortcutHelpReturnFocusRef.current?.focus();
+    });
   }, []);
 
   const createCardAtPosition = useCallback(
@@ -7359,6 +7376,7 @@ export default function App() {
     onClearSelection: handleClearSelection,
     onDeleteSelection: handleDeleteSelection,
     onNudge: handleNudgeSelection,
+    onOpenShortcutHelp: handleOpenShortcutHelp,
     onToggleSelectedCardCritique: canUseSelectedCardShortcuts ? handleToggleSelectedCardCritique : undefined,
     onToggleSelectedCardHold: canUseSelectedCardShortcuts ? handleToggleSelectedCardHold : undefined,
     onToggleSelectedCardReviewed: canUseSelectedCardShortcuts ? handleToggleSelectedCardReviewed : undefined,
@@ -9825,6 +9843,7 @@ export default function App() {
         </div>
       )}
     </WorkModePanel>
+    {isShortcutHelpOpen ? <ShortcutHelpDialog onClose={handleCloseShortcutHelp} /> : null}
     </>
   );
 }

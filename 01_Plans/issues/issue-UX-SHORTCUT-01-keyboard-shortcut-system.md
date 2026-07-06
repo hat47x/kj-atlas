@@ -14,7 +14,12 @@
 ## Implementation note (2026-07-07, shortcut discoverability)
 
 - H/U/R selected-card state shortcuts are now surfaced in the canvas legend as a provisional discovery path. The legend already explains card state language, so it is a natural place to show the key-to-state mapping without introducing a full shortcut help surface yet.
-- This does not complete AC-4. The full `?` cheat sheet still needs OS-specific labels, explicit disabled-while-editing guidance, and rediscovery from menus or the command palette.
+- At that point AC-4 remained open because the full `?` cheat sheet still needed OS-specific labels, explicit disabled-while-editing guidance, and rediscovery from menus or the command palette.
+
+## Implementation note (2026-07-07, shortcut help dialog)
+
+- Added a guarded `?` shortcut help dialog with OS-aware primary modifier labels, disabled-while-editing guidance, Esc close behavior, focus trapping, and focus restoration to the element that opened it. This addresses the interactive cheat-sheet portion of AC-4.
+- Remaining follow-up: rediscovery from menus or the future command palette is still pending, so AC-4 should not be closed solely from this change.
 
 ## Requirement meta I/F（共通キー）
 

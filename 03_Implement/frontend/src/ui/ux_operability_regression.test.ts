@@ -33,17 +33,27 @@ describe("UX Operability regression contracts", () => {
   it("UX-SHORTCUT-01: selected-card hold/critique/review shortcuts stay guarded", () => {
     const hotkeysSource = readSource("src/hooks/useHotkeys.ts");
     const appSource = readSource("src/App.tsx");
+    const shortcutHelpSource = readSource("src/ui/ShortcutHelpDialog.tsx");
 
     expect(hotkeysSource).toContain("export function resolveHotkeyAction");
     expect(hotkeysSource).toContain("isEditableTarget(event.target)");
+    expect(hotkeysSource).toContain('input.key === "?"');
+    expect(hotkeysSource).toContain('kind: "open-shortcut-help"');
     expect(hotkeysSource).toContain('lowerKey === "h" && input.canToggleSelectedCardHold');
     expect(hotkeysSource).toContain('lowerKey === "u" && input.canToggleSelectedCardCritique');
     expect(hotkeysSource).toContain("&& !input.canReadingPathToggleReviewedOnly");
+    expect(appSource).toContain("<ShortcutHelpDialog");
+    expect(appSource).toContain("const handleOpenShortcutHelp = useCallback");
+    expect(appSource).toContain("const handleCloseShortcutHelp = useCallback");
+    expect(appSource).toContain("onOpenShortcutHelp: handleOpenShortcutHelp");
     expect(appSource).toContain("const handleToggleSelectedCardHold = useCallback");
     expect(appSource).toContain("const handleToggleSelectedCardCritique = useCallback");
     expect(appSource).toContain("const handleToggleSelectedCardReviewed = useCallback");
     expect(appSource).toContain("const canUseSelectedCardShortcuts = Boolean(selectedCard && !isReadOnly && !isPreviewingSuggestion)");
     expect(appSource).toContain('t("app.shortcut.default_card_critique")');
+    expect(shortcutHelpSource).toContain('data-ui-region="shortcut-help"');
+    expect(shortcutHelpSource).toContain('aria-modal="true"');
+    expect(shortcutHelpSource).toContain('t("shortcut_help.note.editing")');
   });
 
   it("UX-VISUAL-01: card state badges sit in a normal-flow meta-row above the body (no first-line overlap)", () => {

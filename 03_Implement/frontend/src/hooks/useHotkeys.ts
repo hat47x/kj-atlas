@@ -4,6 +4,7 @@ export type HotkeyAction =
   | { kind: "clear-selection" }
   | { kind: "delete-selection" }
   | { kind: "nudge"; dx: number; dy: number }
+  | { kind: "open-shortcut-help" }
   | { kind: "reading-disable" }
   | { kind: "reading-next" }
   | { kind: "reading-prev" }
@@ -33,6 +34,7 @@ type UseHotkeysOptions = {
   onClearSelection: () => void;
   onDeleteSelection: () => void;
   onNudge: (dx: number, dy: number) => void;
+  onOpenShortcutHelp?: () => void;
   onToggleSelectedCardCritique?: () => void;
   onToggleSelectedCardHold?: () => void;
   onToggleSelectedCardReviewed?: () => void;
@@ -73,6 +75,10 @@ export function resolveHotkeyAction(input: HotkeyResolverInput): HotkeyAction | 
 
   if (input.key === "Escape") {
     return { kind: "clear-selection" };
+  }
+
+  if (input.key === "?" || (input.key === "/" && usesShift)) {
+    return { kind: "open-shortcut-help" };
   }
 
   if (!usesShift && lowerKey === "h" && input.canToggleSelectedCardHold) {
@@ -132,6 +138,7 @@ export function useHotkeys({
   onClearSelection,
   onDeleteSelection,
   onNudge,
+  onOpenShortcutHelp,
   onToggleSelectedCardCritique,
   onToggleSelectedCardHold,
   onToggleSelectedCardReviewed,
@@ -174,6 +181,9 @@ export function useHotkeys({
         case "nudge":
           onNudge(action.dx, action.dy);
           return;
+        case "open-shortcut-help":
+          onOpenShortcutHelp?.();
+          return;
         case "reading-disable":
           onReadingPathDisable?.();
           return;
@@ -206,6 +216,7 @@ export function useHotkeys({
     onClearSelection,
     onDeleteSelection,
     onNudge,
+    onOpenShortcutHelp,
     onToggleSelectedCardCritique,
     onToggleSelectedCardHold,
     onToggleSelectedCardReviewed,
