@@ -65,6 +65,10 @@ describe("UX Operability regression contracts", () => {
     expect(legendSource).toContain('data-ui-region="canvas-legend"');
     expect(legendSource).toContain('role="dialog"');
     expect(legendSource).toContain('if (event.key === "Escape")');
+    expect(legendSource).toContain('t("legend.group.shortcuts")');
+    expect(legendSource).toContain('kbd("H")');
+    expect(legendSource).toContain('kbd("U")');
+    expect(legendSource).toContain('kbd("R")');
 
     const appSource = readSource("src/App.tsx");
     // Default OFF (CB-1): the legend only renders behind explicit state.

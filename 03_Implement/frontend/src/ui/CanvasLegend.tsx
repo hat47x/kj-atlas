@@ -22,6 +22,20 @@ const rowStyle = {
   lineHeight: "16px",
 } as const;
 
+const shortcutKeyStyle = {
+  minWidth: 18,
+  border: "1px solid #cbd5e1",
+  borderRadius: 4,
+  backgroundColor: "#f8fafc",
+  color: "#0f172a",
+  fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+  fontSize: 10,
+  fontWeight: 700,
+  lineHeight: "14px",
+  textAlign: "center",
+  flexShrink: 0,
+} as const;
+
 function swatch(backgroundColor: string, extra?: Record<string, string | number>) {
   return (
     <span
@@ -37,6 +51,10 @@ function swatch(backgroundColor: string, extra?: Record<string, string | number>
       }}
     />
   );
+}
+
+function kbd(label: string) {
+  return <kbd style={shortcutKeyStyle}>{label}</kbd>;
 }
 
 function line(color: string, dashed: boolean) {
@@ -76,7 +94,7 @@ export function CanvasLegend({ onClose }: CanvasLegendProps) {
         position: "absolute",
         inset: "auto 16px 16px auto",
         zIndex: 12,
-        width: 240,
+        width: 260,
         border: "1px solid #cbd5e1",
         borderRadius: 8,
         backgroundColor: "rgba(255, 255, 255, 0.97)",
@@ -129,6 +147,14 @@ export function CanvasLegend({ onClose }: CanvasLegendProps) {
         <div style={{ display: "grid", gap: 2 }}>
           <span style={rowStyle}>{swatch("#f59e0b", { borderRadius: "50%", width: 7, height: 7 })}{t("legend.item.unreviewed")}</span>
           <span style={rowStyle}>{swatch("#fef3c7", { border: "1px solid #f59e0b" })}{t("legend.item.critique")}</span>
+        </div>
+      </div>
+      <div>
+        <div style={groupTitleStyle}>{t("legend.group.shortcuts")}</div>
+        <div style={{ display: "grid", gap: 2 }}>
+          <span style={rowStyle}>{kbd("H")}{t("legend.shortcut.hold")}</span>
+          <span style={rowStyle}>{kbd("U")}{t("legend.shortcut.critique")}</span>
+          <span style={rowStyle}>{kbd("R")}{t("legend.shortcut.reviewed")}</span>
         </div>
       </div>
       <div>

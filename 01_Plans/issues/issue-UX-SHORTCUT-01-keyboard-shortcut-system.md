@@ -11,6 +11,11 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D2 ショートカット原則）, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`（L139 の先送り解消）
 - Expected verification level: `e2e`
 
+## Implementation note (2026-07-07, shortcut discoverability)
+
+- H/U/R selected-card state shortcuts are now surfaced in the canvas legend as a provisional discovery path. The legend already explains card state language, so it is a natural place to show the key-to-state mapping without introducing a full shortcut help surface yet.
+- This does not complete AC-4. The full `?` cheat sheet still needs OS-specific labels, explicit disabled-while-editing guidance, and rediscovery from menus or the command palette.
+
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: UX-SHORTCUT-01
