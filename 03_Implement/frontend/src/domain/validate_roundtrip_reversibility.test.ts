@@ -183,3 +183,43 @@ describe("validateAndUpgradeImportedDocument: round-trip reversibility (ADR-0048
     expect(result.document.evidenceLinks?.[0]?.contradictionState).toBeUndefined();
   });
 });
+
+// validate.ts:118-119 の非対称性の回帰防止: cards が非配列/不正なら import 全体を
+// 中断するのに対し、edges/islands(DocumentV2 の必須フィールド)は非配列でも
+// parseEdges/parseIslands が silent に [] を返すだけで import は「成功」扱いに
+// なっていた(既存データが警告なく全消失)。cards と同じ fail-closed 挙動に統一。
+describe("validateAndUpgradeImportedDocument: malformed required arrays abort import (ADR-0048 D3)", () => {
+  it("rejects a document whose edges field is present but not an array, instead of silently dropping all edges", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: "corrupted",
+      islands: [],
+    });
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects a document whose islands field is present but not an array, instead of silently dropping all islands", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [],
+      islands: { not: "an array" },
+    });
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("still imports normally when edges/islands are simply absent (legitimate default, no regression)", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.edges).toEqual([]);
+    expect(result.document.islands).toEqual([]);
+  });
+});

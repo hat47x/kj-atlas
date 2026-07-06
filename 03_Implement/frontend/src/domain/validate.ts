@@ -777,6 +777,14 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
     return { ok: false, error: "Document cards must be an array of {id, text, x, y}." };
   }
 
+  if (value.edges !== undefined && !Array.isArray(value.edges)) {
+    return { ok: false, error: "Document edges must be an array when provided." };
+  }
+
+  if (value.islands !== undefined && !Array.isArray(value.islands)) {
+    return { ok: false, error: "Document islands must be an array when provided." };
+  }
+
   const now = new Date().toISOString();
   const createdAt = parseIsoDate(value.createdAt, now);
   const updatedAt = parseIsoDate(value.updatedAt, now);
