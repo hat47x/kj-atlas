@@ -34,10 +34,11 @@ describe("UX Operability regression contracts", () => {
     const hotkeysSource = readSource("src/hooks/useHotkeys.ts");
     const appSource = readSource("src/App.tsx");
 
+    expect(hotkeysSource).toContain("export function resolveHotkeyAction");
     expect(hotkeysSource).toContain("isEditableTarget(event.target)");
-    expect(hotkeysSource).toContain('lowerKey === "h" && onToggleSelectedCardHold');
-    expect(hotkeysSource).toContain('lowerKey === "u" && onToggleSelectedCardCritique');
-    expect(hotkeysSource).toContain('lowerKey === "r" && onToggleSelectedCardReviewed && !onReadingPathToggleReviewedOnly');
+    expect(hotkeysSource).toContain('lowerKey === "h" && input.canToggleSelectedCardHold');
+    expect(hotkeysSource).toContain('lowerKey === "u" && input.canToggleSelectedCardCritique');
+    expect(hotkeysSource).toContain("&& !input.canReadingPathToggleReviewedOnly");
     expect(appSource).toContain("const handleToggleSelectedCardHold = useCallback");
     expect(appSource).toContain("const handleToggleSelectedCardCritique = useCallback");
     expect(appSource).toContain("const handleToggleSelectedCardReviewed = useCallback");

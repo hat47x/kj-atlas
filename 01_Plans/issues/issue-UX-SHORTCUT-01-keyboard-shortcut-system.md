@@ -75,7 +75,7 @@
   - H: `holdState` を `held` / `active` で切り替える。
   - U: `critique` が未設定なら短い違和感メモを入れ、設定済みなら外す。
   - R: `textReviewed` を切り替える。ただし読書ナビが有効な場合は既存の reviewed-only 切替を優先し、キー衝突を避ける。
-- 入力中ガード（input/textarea/select/contentEditable）と修飾キーガードは `useHotkeys` に維持した。`ux_operability_regression.test.ts` に静的回帰アンカーを追加済み。
+- 入力中ガード（input/textarea/select/contentEditable）と修飾キーガードは `useHotkeys` に維持した。キー判定を `resolveHotkeyAction` へ切り出し、`useHotkeys.test.ts` で H/U/R、入力中無効、修飾キー無効、読書ナビ中の R 衝突回避を固定した。`ux_operability_regression.test.ts` に静的回帰アンカーも追加済み。
 - 未完了: AC-1/AC-2 の E2E 固定、AC-3 の Esc 段階処理、AC-4 のチートシート、AC-5 の全バインド棚卸し。
 
 ## 7) 検証計画 / Validation plan
