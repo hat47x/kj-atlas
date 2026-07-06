@@ -45,6 +45,8 @@ type ViewControlsPanelProps = {
   onResetEmptyCanvasHint: () => void;
   isCanvasLegendOpen: boolean;
   onToggleCanvasLegend: () => void;
+  showProtectionMarks: boolean;
+  onToggleProtectionMarks: () => void;
   lodEnabled: boolean;
   onLodEnabledChange: (value: boolean) => void;
   lodThresholds?: LODThresholds;
@@ -130,6 +132,8 @@ export function ViewControlsPanel({
   onResetEmptyCanvasHint,
   isCanvasLegendOpen,
   onToggleCanvasLegend,
+  showProtectionMarks,
+  onToggleProtectionMarks,
   lodEnabled,
   onLodEnabledChange,
   lodThresholds,
@@ -652,6 +656,14 @@ export function ViewControlsPanel({
           style={{ cursor: "pointer" }}
         >
           {t(isCanvasLegendOpen ? "view_controls.legend.toggle_hide" : "view_controls.legend.toggle_show")}
+        </button>
+        <button
+          type="button"
+          onClick={onToggleProtectionMarks}
+          aria-pressed={showProtectionMarks}
+          style={{ cursor: "pointer" }}
+        >
+          {t(showProtectionMarks ? "view_controls.protection.toggle_hide" : "view_controls.protection.toggle_show")}
         </button>
       </div>
 

@@ -149,6 +149,7 @@ type CanvasShellProps = {
   lodThresholds?: LODConfig["lodThresholds"];
   lodLevelOverride?: LODLevel | null;
   lodShowLoneWolvesWhenFar?: boolean;
+  showProtectionMarks?: boolean;
   effectiveCollapsedIslandIds?: Set<string>;
   showDerivedIslandEdges?: boolean;
   searchQuery?: string;
@@ -313,6 +314,7 @@ export function CanvasShell({
   lodThresholds,
   lodLevelOverride = null,
   lodShowLoneWolvesWhenFar = true,
+  showProtectionMarks = true,
   effectiveCollapsedIslandIds,
   showDerivedIslandEdges = false,
   searchQuery = "",
@@ -588,6 +590,16 @@ export function CanvasShell({
 
     return new Set(document.cards.map((card) => card.id).filter((cardId) => !islandMemberCardIds.has(cardId)));
   }, [document.cards, document.islands]);
+
+  // UX-VISUAL-02 (ADR-0048 D3): deterministic protection set = lone-wolf cards,
+  // but only once clustering has begun (>=1 island) so isolation is meaningful
+  // (in a fresh doc every card is unclustered, which is not a "minority").
+  const protectedCardIdSet = useMemo(() => {
+    if (!showProtectionMarks || document.islands.length === 0) {
+      return new Set<string>();
+    }
+    return loneWolfCardIdSet;
+  }, [showProtectionMarks, document.islands.length, loneWolfCardIdSet]);
 
   const isCardHidden = useCallback(
     (cardId: string) => {
@@ -1365,6 +1377,7 @@ export function CanvasShell({
               isHighlighted={highlightCardIds.has(card.id)}
               compactMode={Boolean(lod?.rules.compactCards)}
               markerMode={Boolean(lod && lod.level === "far" && lodShowLoneWolvesWhenFar && loneWolfCardIdSet.has(card.id))}
+              isProtected={protectedCardIdSet.has(card.id)}
               showLabelText={acceptedLabelIds.has(buildCardLabelId(card.id))}
               isEditing={editingCardId === card.id}
               onBeginEdit={onBeginEditCard}
