@@ -22,6 +22,7 @@ import { ContextMenu, type ContextMenuItem } from "./ui/ContextMenu";
 import type { AggregatedEdgeMeta, CameraTransformRequest, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
+import { classifyAiProviderError } from "./domain/ai_provider_error";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
 import { appendReadingOrderEntry, moveReadingOrderEntry, removeReadingOrderEntry } from "./domain/reading_order_ops";
@@ -241,6 +242,27 @@ function describeRecoverableError(error: unknown): string {
   }
 
   return t("app.status.error_detail_unknown");
+}
+
+/**
+ * PROV-ERROR-01 (ADR-0050 D2): resolve a localized, code-aware message for an
+ * AI-provider failure instead of surfacing the raw backend exception text
+ * (e.g. "local request failed: Connection refused") verbatim to the user.
+ * Falls back to `fallback` for non-provider errors.
+ */
+function resolveAiProviderErrorMessage(error: unknown, fallback: string): string {
+  switch (classifyAiProviderError(error)) {
+    case "disabled":
+      return t("ai.provider_error.disabled");
+    case "timeout":
+      return t("ai.provider_error.timeout");
+    case "validation":
+      return t("ai.provider_error.validation");
+    case "unavailable":
+      return t("ai.provider_error.unavailable");
+    default:
+      return fallback;
+  }
 }
 
 function formatLoadDocumentFailure(error: unknown): string {
@@ -2423,7 +2445,8 @@ export default function App() {
       setIslandSummaryProposal(proposal);
       setStatusMessage(t("app.status.island_summary.ready_unreviewed"));
     } catch (error) {
-      const detail = error instanceof ApiError ? error.message : t("app.status.error_detail_unknown");
+      const fallback = error instanceof ApiError ? error.message : t("app.status.error_detail_unknown");
+      const detail = resolveAiProviderErrorMessage(error, fallback);
       setStatusMessage(t("app.status.island_summary.failed", { detail }));
     } finally {
       setIsSuggestingIslandSummary(false);
@@ -2501,13 +2524,14 @@ export default function App() {
       }
       setStatusMessage(t("suggestion.panel.status.draft_ready"));
     } catch (error) {
-      const message = error instanceof Error ? error.message : t("suggestion.panel.status.failed_to_get_suggestion");
+      const fallback = error instanceof Error ? error.message : t("suggestion.panel.status.failed_to_get_suggestion");
+      const message = resolveAiProviderErrorMessage(error, fallback);
       setSuggestionError(message);
       setStatusMessage(message);
       setSuggestedDocument(null);
       setSuggestionId(null);
       setSuggestionNotes(null);
-      if (/AI is disabled|provider.*disabled/i.test(message)) {
+      if (classifyAiProviderError(error) === "disabled") {
         setProviderUnavailableMessage(message);
       }
       if (mode === "resuggest") {
@@ -6384,7 +6408,8 @@ export default function App() {
           "Recorded consistency check"
         );
       } catch (error) {
-        const message = error instanceof ApiError ? error.message : "Failed to check narrative consistency";
+        const fallback = error instanceof ApiError ? error.message : "Failed to check narrative consistency";
+        const message = resolveAiProviderErrorMessage(error, fallback);
         setNarrativeCheckError(message);
         setNarrativeIssues([]);
       } finally {
@@ -6425,7 +6450,8 @@ export default function App() {
         setNarrativeGenerationError(result.warnings.join(" "));
       }
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : "Failed to generate narrative";
+      const fallback = error instanceof ApiError ? error.message : "Failed to generate narrative";
+      const message = resolveAiProviderErrorMessage(error, fallback);
       setNarrativeGenerationError(message);
     } finally {
       setIsGeneratingNarrative(false);
