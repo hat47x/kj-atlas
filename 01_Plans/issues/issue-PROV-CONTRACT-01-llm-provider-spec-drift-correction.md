@@ -1,11 +1,11 @@
 # Issue Draft: PROV-CONTRACT-01 llm_provider_spec.md §4 の実装整合修正
 
 - Type: Documentation quality
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
-- Owner: TBD
+- Owner: Claude Code
 - Scope: `02_Architecture/llm_provider_spec.md`
 - Related Backlog: `PROV-CONTRACT-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（D3）, `02_Architecture/llm_input_ir_spec.md`
@@ -52,10 +52,10 @@
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: §4.1/4.2 の記載が `provider.py` の実装と一致する。
-- [ ] AC-2: 未配線項目が「Phase-2」として明示的に分離され、既存の「正規形に固定」という表現から除外される。
-- [ ] AC-3: `llm_input_ir_spec.md` との関係（未配線）が明記される。
-- [ ] AC-4: 他章（§1-3, §5-10）の既存記載との矛盾が生じない。
+- [x] AC-1: §4.1/4.2 の記載が `provider.py` の実装（`LLMRequest{task,prompt,temperature,max_tokens}`／`LLMResponse{raw_text,metadata}`）と一致する。
+- [x] AC-2: 未配線項目（`inputs`/`output_schema`/`options.timeout_ms`/`seed`/`context.trace_id`/`safe_mode`/`usage`/構造化`output`）を新設 §4.4「Phase-2（未配線・Pending）」へ分離し、「正規形に固定」という表現を除去。
+- [x] AC-3: `llm_input_ir_spec.md` との関係（IR仕様は存在するが `LLMRequest.inputs` への実配線はまだ無い）を §4.4 に明記。
+- [x] AC-4: 他章との矛盾を解消（§1系の `provider_meta.trace_id`×3箇所を `LLMResponse.metadata.trace_id` へ統一、§2 の `fixture` が実行時受理値でないことを注記、§6 の `LLMRequest.inputs` 参照を実装済みフィールドへ修正）。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -76,3 +76,9 @@
 - Related: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（D3）
 - Related: `02_Architecture/llm_input_ir_spec.md`
 - Derived-from: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
+
+## 完了記録 2026-07-06（Claude Code）
+
+- §4 を「実装済み最小契約」（`task`/`prompt`/`temperature`/`max_tokens` → `raw_text`/`metadata`）として書き直し、新設 §4.4「Phase-2（未配線・Pending）」に `inputs`/`output_schema`/`options.timeout_ms`・`seed`/`context.trace_id`・`safe_mode`/`usage`/構造化`output` を分離。
+- 修正過程で副次的に発見した2件の軽微な乖離も同ドキュメント内で解消（スコープ外への拡大は避け、同一ファイル内の直接関連箇所のみ）: (1) §2 Provider enum の `fixture` が `KJ_ATLAS_LLM_PROVIDER` の実行時受理値でない（テスト専用）ことを注記、(2) §6 Attachments 制約の `LLMRequest.inputs` 参照を実装済みの `LLMRequest.prompt` へ修正。
+- 検証: `grep` によるドキュメント内表記統一確認のみ（コード変更なし・typecheck/vitest対象外）。
