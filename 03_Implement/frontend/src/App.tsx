@@ -190,6 +190,10 @@ function loadAdvancedUiEnabled(): boolean {
     return false;
   }
 }
+// UX-VISUAL-02 (ADR-0048 D3): an island at or below this member count is a
+// "small island" eligible for the protection mark (non-scoring; a bare
+// threshold, not a rank).
+const SMALL_ISLAND_MAX_MEMBERS = 2;
 const HISTORY_LIMIT = 50;
 const GRID_SNAP_SIZE = 10;
 const SUGGESTION_MOVE_THRESHOLD = 1;
@@ -1095,6 +1099,9 @@ export default function App() {
   const [emptyCanvasHintCompleted, setEmptyCanvasHintCompleted] = useState(loadEmptyCanvasHintCompleted);
   // UX-VISUAL-01 AC-2: in-canvas state legend. Default OFF (CB-1); session-local.
   const [isCanvasLegendOpen, setIsCanvasLegendOpen] = useState(false);
+  // UX-VISUAL-02: protection marks for lone-wolf cards / small islands.
+  // Default ON but subtle (ADR-0048 D3 「淡く強調」); toggleable OFF in the View panel.
+  const [showProtectionMarks, setShowProtectionMarks] = useState(true);
   const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(
     () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
   );
@@ -6870,6 +6877,17 @@ export default function App() {
           setPeekIslandId(undefined);
         }}
         isPickingEdgeTarget={isPickingEdgeTarget}
+        // UX-VISUAL-02 (ADR-0048 D3): a small island (<= SMALL_ISLAND_MAX_MEMBERS,
+        // and non-empty) is a protected minority. Unlike the card-side lone-wolf
+        // set, this needs no "clustering has begun" gate: an island's mere
+        // existence already means clustering has begun, so it is inherently
+        // self-gated. The lower bound excludes degenerate 0-card islands
+        // (which IslandView does not render anyway).
+        isProtected={
+          showProtectionMarks &&
+          island.cardIds.length > 0 &&
+          island.cardIds.length <= SMALL_ISLAND_MAX_MEMBERS
+        }
       />
     ));
   }, [
@@ -6889,6 +6907,7 @@ export default function App() {
     focusIslandById,
     safeMode,
     currentLod,
+    showProtectionMarks,
   ]);
 
   const readingOrderItems = useMemo(() => {
@@ -8737,6 +8756,8 @@ export default function App() {
             onResetEmptyCanvasHint={handleResetEmptyCanvasHint}
             isCanvasLegendOpen={isCanvasLegendOpen}
             onToggleCanvasLegend={() => setIsCanvasLegendOpen((previous) => !previous)}
+            showProtectionMarks={showProtectionMarks}
+            onToggleProtectionMarks={() => setShowProtectionMarks((previous) => !previous)}
             lodEnabled={lodEnabled}
             onLodEnabledChange={setLodEnabled}
             lodThresholds={lodThresholds}
@@ -9622,6 +9643,7 @@ export default function App() {
             lodThresholds={lodThresholds}
             lodLevelOverride={lodLevelOverride}
             lodShowLoneWolvesWhenFar={lodShowLoneWolvesWhenFar}
+            showProtectionMarks={showProtectionMarks}
             effectiveCollapsedIslandIds={effectiveCollapsedIslandIdSet}
             showDerivedIslandEdges={summaryView || abstractMapView || effectiveCollapsedIslandIdSet.size > 0 || currentLod?.level === "far"}
             focusCardId={focusCardId}

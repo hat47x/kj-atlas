@@ -58,6 +58,32 @@ describe("UX Operability regression contracts", () => {
     expect(viewControlsSource).toContain('data-focus-return-id="legend-trigger"');
   });
 
+  it("UX-VISUAL-02: protection mark is deterministic, non-scoring, and toggleable", () => {
+    const cardViewSource = readSource("src/canvas/CardView.tsx");
+    expect(cardViewSource).toContain('t("card_view.protected")');
+
+    // Detection is deterministic (lone-wolf gated on islands existing), not AI.
+    const canvasShellSource = readSource("src/canvas/CanvasShell.tsx");
+    expect(canvasShellSource).toContain("protectedCardIdSet");
+    expect(canvasShellSource).toContain("document.islands.length === 0");
+
+    // App owns the toggle; default ON but toggleable OFF (ADR-0048 D3, CB-1 self-report).
+    const appSource = readSource("src/App.tsx");
+    expect(appSource).toContain("const [showProtectionMarks, setShowProtectionMarks] = useState(true)");
+    // Small-island threshold is a named, auditable constant (not a bare magic
+    // number) and excludes degenerate 0-card islands.
+    expect(appSource).toContain("const SMALL_ISLAND_MAX_MEMBERS = 2");
+    expect(appSource).toContain("island.cardIds.length > 0 &&");
+
+    // Card and island marks share one visual signature (dashed border + square
+    // dot) so "protection" reads as a single channel, and the legend describes it.
+    const islandViewSource = readSource("src/canvas/IslandView.tsx");
+    expect(cardViewSource).toContain("1px dashed #94a3b8");
+    expect(islandViewSource).toContain("1px dashed #94a3b8");
+    const legendSource = readSource("src/ui/CanvasLegend.tsx");
+    expect(legendSource).toContain('"legend.item.protected"');
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 

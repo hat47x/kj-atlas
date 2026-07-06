@@ -138,6 +138,12 @@ export function CanvasLegend({ onClose }: CanvasLegendProps) {
           <span style={rowStyle}>{line("#b91c1c", true)}{t("legend.item.contradicts")}</span>
         </div>
       </div>
+      <div>
+        <div style={groupTitleStyle}>{t("legend.group.protection")}</div>
+        <div style={{ display: "grid", gap: 2 }}>
+          <span style={rowStyle}>{swatch("#94a3b8", { borderRadius: 2 })}{t("legend.item.protected")}</span>
+        </div>
+      </div>
     </section>
   );
 }

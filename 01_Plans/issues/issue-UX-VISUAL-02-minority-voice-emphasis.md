@@ -1,11 +1,11 @@
 # Issue Draft: UX-VISUAL-02 少数意見の可視化（一匹狼・小さな島の保護強調）
 
 - Type: Feature request
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
-- Owner: TBD
+- Owner: Claude Code
 - Scope: `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-VISUAL-02`
 - Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂 2026-07-03・D1 4チャネル規則）, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/issues/issue-UX-VISUAL-01-card-meta-row-and-canvas-legend.md`（凡例への追記先）
@@ -53,11 +53,11 @@
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: 一匹狼カード・小さな島・単独違和感に決定論でマークが付くことが e2e で固定される。
-- [ ] AC-2: 件数・比率・順位・スコアがどこにも表示されない。
-- [ ] AC-3: 凡例に意味（保護対象・劣後ではない）が記載され、i18n（ja/en）が同期する。
-- [ ] AC-4: マークの追加で本文可読性（UX-VISUAL-01 のメタ行規則）が非回帰。
-- [ ] AC-5: 初期表示アンカー非回帰＋CB-1 自己申告の記録。
+- [x] AC-1: 一匹狼カード・小さな島に決定論でマークが付くことが e2e で固定される（`e2e/canvas_protection.spec.ts`・`CardView.protection.render.test.ts`）。「単独違和感」は一匹狼カードが critique を併せ持つケースとして自然に表現され、別チャネルを増やさない（下記完了記録）。
+- [x] AC-2: 件数・比率・順位・スコアがどこにも表示されない（render/e2e で非スコアを固定）。
+- [x] AC-3: 凡例に意味（保護対象・優劣ではない）が記載され、i18n（ja/en）が同期する（`legend.group.protection`/`legend.item.protected`）。
+- [x] AC-4: マークの追加で本文可読性（UX-VISUAL-01 のメタ行規則）が非回帰（isProtected はメタ行の表示条件に**加える**だけ・vitest 全件通過）。
+- [x] AC-5: 初期表示アンカー非回帰（トグルは View パネル内・core-action×7 不変）＋CB-1 自己申告（完了記録に記載）。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -84,3 +84,12 @@
 ## 実装設計の到着（2026-07-04）
 
 - Claude Design Round 4 でマークのラベルが「少数」から**「保護」**（保護対象・無理に分類しない）へ改訂された。実装時は「保護」系ラベルを採用し、本文の「少数」表記は読み替える（意味・条件は不変: 淡い強調・非スコア・CB-1）。
+
+## 完了記録 2026-07-06（Claude Code）
+
+- 判定（決定論・AI不使用）: `CanvasShell` の `protectedCardIdSet` = 一匹狼（どの島にも属さないカード）を **islands.length > 0 のときのみ**（＝クラスタリングが始まって初めて「孤立」が意味を持つ。新規文書で全カードが一匹狼になる誤検出を回避）。小さな島 = `island.cardIds.length <= 2`（App の islandViews で判定し IslandView へ）。
+- 表示: `CardView` メタ行に中立スレートの「保護」ピル（bg `#f8fafc`・border `#cbd5e1`・fg `#475569`＋小さな角丸ドット。**amber も型色も使わない**＝ADR-0048 D1 の1チャネル1意味を堅持）。`IslandView` は表札の件数バッジの隣に中立「保護」マーク。ホバー/aria に「保護対象（無理に分類しない・優劣ではない）」。
+- 凡例（UX-VISUAL-01 の `CanvasLegend`）に「保護」群を1行追加 → UX-VISUAL-01 側の残タスク（凡例1行追加）も本PRで解消。
+- トグル: View パネルに「保護マークを表示/隠す」（`showProtectionMarks`・aria-pressed）。**既定ON**。
+- **CB-1 自己申告**: 既定ON は本機能の価値（収束圧力に抗して少数を今この場で可視化する）に不可欠で、ADR-0048 D3 の「淡く強調」に一致。マークは小・淡色・データ駆動（コントロールではない）で初期表示コントロールアンカー（core-action×7）に不変。一匹狼は islands 存在時のみ・島は≤2 に限定し純増を有意な少数へ限定。OFF トグルで可逆。→ CB-1 遵守。
+- 検証: typecheck 0 / vitest **871 passed**（179 files。protection render 3・回帰アンカー1追加含む）/ e2e `canvas_protection` 1 passed（既定表示→島メンバーは非表示→凡例説明→OFFで消滅→ONで復帰）+ `canvas_legend`・`card_meta_row` 非回帰 / 実機スクショで設計照合（大島=無印・小島=保護・一匹狼=仮説＋保護、中立色・非スコア）。

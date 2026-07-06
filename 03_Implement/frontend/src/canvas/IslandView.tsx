@@ -40,6 +40,8 @@ type IslandViewProps = {
   onPeekEnd?: () => void;
   isPickingEdgeTarget?: boolean;
   zIndex?: number;
+  /** UX-VISUAL-02: deterministic "protection" mark for a small island. */
+  isProtected?: boolean;
 };
 
 type EdgeHitbox = {
@@ -169,6 +171,7 @@ function IslandViewComponent({
   onPeekEnd,
   isPickingEdgeTarget = false,
   zIndex = 0,
+  isProtected = false,
 }: IslandViewProps) {
   const bounds = getIslandBounds(island, cards);
   const { acceptedLabelIds } = useContext(LabelVisibilityContext);
@@ -409,6 +412,32 @@ function IslandViewComponent({
         >
           #{island.cardIds.length}
         </span>
+        {isProtected ? (
+          // UX-VISUAL-02 (ADR-0048 D3): protection mark for a small island.
+          // Mirrors CardView's protection chip exactly (dashed border, square dot,
+          // borderRadius 4 not the 999 pill shape used by the neighboring count/
+          // placard badges) so the "protection" form signature is one channel,
+          // consistent across cards, islands, and the legend swatch.
+          <span
+            aria-label={t("canvas.island.protected")}
+            title={t("canvas.island.protected_title")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 3,
+              fontSize: 10,
+              fontWeight: 600,
+              color: "#334155",
+              backgroundColor: "#f8fafc",
+              border: "1px dashed #94a3b8",
+              borderRadius: 4,
+              padding: "1px 6px",
+            }}
+          >
+            <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 2, backgroundColor: "#94a3b8" }} />
+            {t("canvas.island.protected")}
+          </span>
+        ) : null}
         {placardText && !isCollapsed ? (
           <span
             style={{

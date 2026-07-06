@@ -30,6 +30,8 @@ type CardViewProps = {
   onCommitEdit?: (cardId: string, text: string) => void;
   onCancelEdit?: () => void;
   onCardContextMenu?: (cardId: string, clientX: number, clientY: number) => void;
+  /** UX-VISUAL-02: deterministic "protection" mark for a lone-wolf card. */
+  isProtected?: boolean;
 };
 
 function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
@@ -101,6 +103,7 @@ function CardViewComponent({
   onCommitEdit,
   onCancelEdit,
   onCardContextMenu,
+  isProtected = false,
 }: CardViewProps) {
   const dragRef = useRef<CardDragState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -323,7 +326,8 @@ function CardViewComponent({
       (representativeCount > 0 ||
         (claimType && claimType !== "unknown") ||
         holdState ||
-        hasCritique) ? (
+        hasCritique ||
+        isProtected) ? (
         <div
           data-card-meta-row=""
           style={{
@@ -407,6 +411,35 @@ function CardViewComponent({
             >
               <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#f59e0b" }} />
               {critiqueTagCount > 0 ? t("card_view.critique_tag_count", { count: critiqueTagCount }) : null}
+            </span>
+          ) : null}
+          {isProtected ? (
+            // UX-VISUAL-02 (ADR-0048 D3): protection mark for an isolated card.
+            // Neutral slate (amber is reserved for hold/critique). No score/rank/ratio.
+            // Dashed border + fg #334155 deliberately avoid colliding with the
+            // unknown-claimType pill (fg #475569) and shelved-hold pill (fg #64748b),
+            // which share the same neutral slate bg (#f1f5f9) — see UX-VISUAL-02
+            // review finding on channel collision. The square dot is the shared
+            // "protection" form signature, mirrored on IslandView and the legend.
+            <span
+              aria-label={t("card_view.protected")}
+              title={t("card_view.protected_title")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 3,
+                borderRadius: 4,
+                backgroundColor: "#f8fafc",
+                color: "#334155",
+                border: "1px dashed #94a3b8",
+                fontSize: 10,
+                fontWeight: 600,
+                padding: "0px 5px",
+                lineHeight: "14px",
+              }}
+            >
+              <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 2, backgroundColor: "#94a3b8" }} />
+              {t("card_view.protected")}
             </span>
           ) : null}
         </div>
