@@ -31,6 +31,7 @@
 | 企業・行政運用に接続できる | 組織の認証、認可、監査基盤へ安全に接続できる | `02_Architecture/enterprise_architecture.md` | AuthContext、AccessControlAdapter、audit transport をアプリ本体から分離する | アプリ本体に role/group 判定ロジックを持ち込まない |
 | 環境変数の混乱を防ぐ | 利用者が設定すべきキーを迷わない | `02_Architecture/runtime_parameter_registry.md` | 公開設定キーは例外なく `KJ_ATLAS_*` に統一する | 04文書、Compose、runbook が正本と同期している |
 | データ運用境界を誤解させない | MVPで保守できるデータと将来契約を区別できる | `02_Architecture/data_model_operations_overview.md`, `ADR-0033` | 物理ER、論理ER、CRUD表、ステークホルダー別保守責任を分けて示す | 型の存在を標準CRUD対応と誤読させない |
+| カードメタデータを混同しない | 状態、出典、起票者、レビュー者を別々の意味として確認できる | `02_Architecture/schemas.md`, `02_Architecture/review_attribution.md`, `CARD-META-UI-01`, `DOMAIN-TRACE-01` | `Card.meta` 系は通し番号/出典と主体メタを分離し、起票者などの個人・組織識別はSidePanel/共有前確認/redaction境界を先に決める | 出典参照トグルと主体メタ同梱が別ゲートで、review attribution や所有者移管と混同されない |
 | 価値を裏切らない（不変条件の保護） | 機能が増えても保留/proposal-only/人手昇格/SafeModeが崩れない | `02_Architecture/value_traceability.md` §2.5, `ADR-0041` | 散在する非後退テストを CVI-1..7 として単一の砦へ索引化する | CVI 横断テストが赤になる変更を検知できる |
 | 思考を雑にしない（認知負荷の予算） | 機能が増えても初期の静けさと保留の容易さが保たれる | `00_Prompt/domain.md`, `ADR-0043`, `ADR-0030` | 複雑性予算（CB-1..4）で初期表示の純増と保留距離を抑える | UI追加issueで複雑性予算を申告し悪化時にゲート確認 |
 | 待たされて思考が途切れない（性能予算） | 大規模文書でも対話操作が即応し、重い処理は待機表示される | `02_Architecture/architecture.md`, `ADR-0046` | 性能予算（PB-1..5）で代表規模・worker化基準（100ms超）・劣化可視化を固定 | 代表規模fixtureの最小性能アサーション＋性能影響issueの予算申告 |
@@ -133,6 +134,7 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 | ドメイン: 保留・未統合 | HoldState / Pending-Shelf の第一級化 | `domain.md`, `ADR-0001` P-01 | `DOMAIN-EXPR-02`（Phase 2, 加算schema） | 被覆 |
 | ドメイン: 違和感→再提案 | Critique入力と再提案差分 | `domain.md`, `ADR-0001` P-04 | `DOMAIN-EXPR-03`（Phase 3） | 被覆 |
 | ドメイン: 根拠・主張・矛盾 | Evidence/ClaimType/Contradictionのレビュー | `ai_cognitive_externalization_requirements.md` | `DOMAIN-EXPR-04`（Phase 4） | 被覆 |
+| ドメイン: 出典・主体メタ | 通し番号/原データ遡及と、起票者/作成者などの主体メタを区別する | `schemas.md`, `review_attribution.md`, `ADR-0048` | `DOMAIN-TRACE-01`（通し番号・出典）, `CARD-META-UI-01`（起票者などのUI/保存/redaction境界） | 被覆（主体メタはDraft境界。実装時はADR要否を再確認） |
 | ドメイン: 可逆性 | 配置やり直し・履歴・差分 | `domain.md`（可逆性） | snapshot/diff（`ADR-0032`基盤）, `summary_history_ops`, HIL-RS, `CE3` | 被覆（MVPはsnapshot基盤。汎用undoは`architecture.md`§10非目標） |
 | ドメイン: 用語整合 | 00↔02語彙同期 | `domain.md` | `DOMAIN-ALIGN-01`(Done) | 被覆 |
 

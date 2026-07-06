@@ -120,6 +120,7 @@
 | V2 保留・違和感の作業化 | Hold / Critique / Evidence / Contradiction | 未確定、違和感、根拠不足を失敗ではなく作業状態として残せる | 未確定情報が削除、非表示、または確定情報のように扱われる | `PRODUCT-VALUE-02` |
 | V3 人間レビュー中心 | proposal-only / reviewState / patch + approval | AI提案を比較、部分採用、保留、破棄できる | auto-apply、AIによる `human_reviewed` 昇格、直接確定がある | `PRODUCT-VALUE-02`, `CE-*` |
 | V4 レビュー可能な成果物 | Narrative / Review Pack / SafeMode / source trace | 確定点、保留点、未レビュー情報、根拠への戻り方が共有物で分かる | 共有物が読みやすいだけで、根拠や未確定点へ戻れない | `PRODUCT-VALUE-03` |
+| V4a カードメタ境界 | `Card.meta` / source trace / actor metadata | 出典参照と起票者などの主体メタが別ゲートで扱われ、主体メタは既定共有されない | 起票者・作成者・最終更新者が出典参照トグルだけで共有物へ混入する | `DOMAIN-TRACE-01`, `CARD-META-UI-01`, `UX-SHARE-01` |
 | 横断 LLM任意性 | `KJ_ATLAS_LLM_PROVIDER=none` | 既定構成でも開始、外在化、構造化、共有前確認の主要価値が成立する | LLM接続がないと基本価値を体験できない | `PRODUCT-VALUE-01`, `PRODUCT-VALUE-02` |
 
 ### 5.3 Go/No-Go記録テンプレート
