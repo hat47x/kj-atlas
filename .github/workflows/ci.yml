@@ -481,6 +481,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -497,16 +499,41 @@ jobs:
 
       - name: Detect auth boundary changes (Level2判定)
         id: auth_changes
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            idp_boundary:
-              - "03_Implement/backend/src/kj_atlas_api/auth_context.py"
-              - "03_Implement/backend/src/kj_atlas_api/settings.py"
-              - "03_Implement/backend/tests/test_auth_provider_profile_fixture.py"
-              - "03_Implement/backend/tests/fixtures/provider_profile_*.json"
-              - "03_Implement/backend/tests/federation/**"
-              - "03_Implement/backend/tests/scripts/run_auth_level2.sh"
+        working-directory: .
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --no-tags origin "${{ github.base_ref }}"
+            base_commit="$(git merge-base FETCH_HEAD HEAD)"
+          else
+            before="${{ github.event.before }}"
+            if [ -n "$before" ] && ! printf '%s' "$before" | grep -Eq '^0+$' && git cat-file -e "${before}^{commit}" 2>/dev/null; then
+              base_commit="$before"
+            else
+              base_commit="$(git rev-list --max-parents=0 HEAD)"
+            fi
+          fi
+
+          changed_files="$(git diff --name-only "$base_commit" HEAD)"
+          idp_boundary=false
+
+          while IFS= read -r file; do
+            case "$file" in
+              03_Implement/backend/src/kj_atlas_api/auth_context.py|\
+              03_Implement/backend/src/kj_atlas_api/settings.py|\
+              03_Implement/backend/tests/test_auth_provider_profile_fixture.py|\
+              03_Implement/backend/tests/fixtures/provider_profile_*.json|\
+              03_Implement/backend/tests/federation/*|\
+              03_Implement/backend/tests/federation/**|\
+              03_Implement/backend/tests/scripts/run_auth_level2.sh)
+                idp_boundary=true
+                break
+                ;;
+            esac
+          done <<< "$changed_files"
+
+          echo "idp_boundary=${idp_boundary}" >> "$GITHUB_OUTPUT"
 
       - name: Resolve Auth Level2 requirement flag
         id: auth_level2
