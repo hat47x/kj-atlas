@@ -1,7 +1,7 @@
 # Issue Draft: UX-VISUAL-01 カードのメタ行分離とキャンバス内凡例
 
 - Type: Feature request
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -53,11 +53,11 @@
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: 全状態（claimType＋保留＋未レビュー＋違和感＋矛盾）を同時に付けたカードで、本文1行目が隠れないことが e2e で固定される。
-- [ ] AC-2: 凡例が既定で非表示、明示操作で開閉し、Escape で閉じてトリガへフォーカス復帰する（ADR-0030 契約）。
-- [ ] AC-3: 遠景 LOD で未レビュー・違和感の点が残ることが e2e で確認される。
-- [ ] AC-4: `ux_operability_regression.test.ts` の初期表示アンカーが非回帰（UX-COMPLEXITY-01 AC-3 の上限内）。
-- [ ] AC-5: i18n（ja/en）のキー整合テストが通る。
+- [x] AC-1: 全状態（claimType＋保留＋未レビュー＋違和感＋矛盾）を同時に付けたカードで、本文1行目が隠れないことが e2e で固定される。（`e2e/card_meta_row.spec.ts`）
+- [x] AC-2: 凡例が既定で非表示、明示操作で開閉し、Escape で閉じてトリガへフォーカス復帰する（ADR-0030 契約）。（`e2e/canvas_legend.spec.ts`）
+- [x] AC-3: 遠景 LOD で未レビュー・違和感の点が残ることが確認される。（`src/canvas/CardView.marker.render.test.ts`＝render 検証。マーカーは far LOD 専用描画のため e2e ではなく render テストで固定）
+- [x] AC-4: `ux_operability_regression.test.ts` の初期表示アンカーが非回帰（UX-VISUAL-01 アンカー2件追加済み）。
+- [x] AC-5: i18n（ja/en）のキー整合テストが通る（legend.*/card_view.marker_attention 追加）。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -100,3 +100,11 @@
 ### Deferred（後続PR）
 - **AC-2 凡例（キャンバス内・既定OFF・開閉・Escape/focus 復帰）**: 別コンポーネント＋トリガ＋i18n を要するため分離。UX-VISUAL-02（保護マーク）の凡例追記もこの後続で扱う。
 - **AC-3 遠景 LOD での未レビュー・違和感の点の保持**: LOD 実装（CanvasShell）への追記として後続で対応。
+
+## 完了記録 2026-07-06（Claude Code）
+
+- AC-2: `src/ui/CanvasLegend.tsx`（右下オーバーレイ・role=dialog・4群構成=型/保持系/確認/根拠・矛盾・既存 i18n キー再利用）。トグルは View パネル内（`data-focus-return-id="legend-trigger"`・aria-pressed）。閉鎖時は**同期的に**トリガへフォーカスしてから unmount（body へのフォーカス落ち防止）。
+- AC-3: `CardView` の far-LOD マーカー（markerMode）に `markerNeedsAttention`（未レビュー or 違和感）で amber 着色＋title を付与。render テストで3ケース固定。
+- 検証: typecheck 0 / vitest **867 passed**（178 files。marker render 3・回帰アンカー2追加含む）/ e2e `canvas_legend` 1 passed・`card_meta_row` 非回帰 / 実機スクショで設計照合（design-qa-checklist A〜D 自己申告 ✓）。
+- 複雑性予算（実績）: 初期表示への純増=なし（凡例は既定OFF・トグルは View パネル内） / 保留操作の距離=改善（AC-1 メタ行） / 取り消し導線=あり（Escape/✕/トグルで閉じ・フォーカス復帰）。
+- 残: UX-VISUAL-02（保護マーク）到達時に凡例へ1行追加（同Issue側で対応）。

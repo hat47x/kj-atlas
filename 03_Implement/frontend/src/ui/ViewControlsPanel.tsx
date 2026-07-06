@@ -43,6 +43,8 @@ type ViewControlsPanelProps = {
   onSafeModeChange: (value: boolean) => void;
   emptyCanvasHintCompleted: boolean;
   onResetEmptyCanvasHint: () => void;
+  isCanvasLegendOpen: boolean;
+  onToggleCanvasLegend: () => void;
   lodEnabled: boolean;
   onLodEnabledChange: (value: boolean) => void;
   lodThresholds?: LODThresholds;
@@ -126,6 +128,8 @@ export function ViewControlsPanel({
   onSafeModeChange,
   emptyCanvasHintCompleted,
   onResetEmptyCanvasHint,
+  isCanvasLegendOpen,
+  onToggleCanvasLegend,
   lodEnabled,
   onLodEnabledChange,
   lodThresholds,
@@ -639,6 +643,15 @@ export function ViewControlsPanel({
           style={{ cursor: emptyCanvasHintCompleted ? "pointer" : "not-allowed" }}
         >
           {t("view_controls.onboarding.reset_empty_canvas")}
+        </button>
+        <button
+          type="button"
+          data-focus-return-id="legend-trigger"
+          onClick={onToggleCanvasLegend}
+          aria-pressed={isCanvasLegendOpen}
+          style={{ cursor: "pointer" }}
+        >
+          {t(isCanvasLegendOpen ? "view_controls.legend.toggle_hide" : "view_controls.legend.toggle_show")}
         </button>
       </div>
 

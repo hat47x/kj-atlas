@@ -40,6 +40,22 @@ describe("UX Operability regression contracts", () => {
     expect(cardViewSource).toContain("borderLeft:");
     // Unreviewed marker is a small top-right dot (form channel), preserved.
     expect(cardViewSource).toContain('t("card_view.unreviewed")');
+    // AC-3: far-LOD markers keep the needs-attention (unreviewed/critique) tint.
+    expect(cardViewSource).toContain("markerNeedsAttention");
+  });
+
+  it("UX-VISUAL-01 AC-2: in-canvas legend is default-OFF with Escape/focus-return contract", () => {
+    const legendSource = readSource("src/ui/CanvasLegend.tsx");
+    expect(legendSource).toContain('data-ui-region="canvas-legend"');
+    expect(legendSource).toContain('role="dialog"');
+    expect(legendSource).toContain('if (event.key === "Escape")');
+
+    const appSource = readSource("src/App.tsx");
+    // Default OFF (CB-1): the legend only renders behind explicit state.
+    expect(appSource).toContain("const [isCanvasLegendOpen, setIsCanvasLegendOpen] = useState(false)");
+
+    const viewControlsSource = readSource("src/ui/ViewControlsPanel.tsx");
+    expect(viewControlsSource).toContain('data-focus-return-id="legend-trigger"');
   });
 
   it("Phase 3: contextual-selection-panel", () => {
