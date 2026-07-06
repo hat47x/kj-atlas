@@ -1,4 +1,22 @@
-import type { Card, DeterministicTieBreak, DocumentV2, EvidenceLink, Island, ShelfEntry, Transform } from "./types";
+import type {
+  Card,
+  DeterministicTieBreak,
+  DocumentV2,
+  EvidenceLink,
+  Island,
+  MergeSuggestionDecision,
+  MergeSuggestionDecisionEntry,
+  Narrative,
+  NarrativeCheck,
+  PatchApplyLogEntry,
+  PatchApplyStats,
+  PatchConflictMeta,
+  RelationSummary,
+  RelationSummaryHistoryEntry,
+  ShelfEntry,
+  SummaryHistoryEntry,
+  Transform,
+} from "./types";
 import { canUsePolygonPoints } from "./geometry/polygon_edit";
 import {
   validateHilRsCritiqueInput,
@@ -186,6 +204,44 @@ function parseIslandGeometry(value: unknown): Island["geometry"] | undefined {
   return undefined;
 }
 
+function parseSummaryHistory(value: unknown): SummaryHistoryEntry[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const entries: SummaryHistoryEntry[] = [];
+  for (const item of value) {
+    if (
+      !isRecord(item)
+      || typeof item.id !== "string"
+      || typeof item.createdAt !== "string"
+      || (item.fromText !== null && typeof item.fromText !== "string")
+      || (item.toText !== null && typeof item.toText !== "string")
+      || (item.fromReviewed !== null && typeof item.fromReviewed !== "boolean")
+      || (item.toReviewed !== null && typeof item.toReviewed !== "boolean")
+      || (item.changeKind !== "manual" && item.changeKind !== "ai" && item.changeKind !== "import" && item.changeKind !== "unknown")
+    ) {
+      continue;
+    }
+
+    entries.push({
+      id: item.id,
+      createdAt: item.createdAt,
+      fromText: item.fromText,
+      toText: item.toText,
+      fromReviewed: item.fromReviewed,
+      toReviewed: item.toReviewed,
+      changeKind: item.changeKind,
+      ...(typeof item.note === "string" ? { note: item.note } : {}),
+      ...(Array.isArray(item.groundingIds)
+        ? { groundingIds: item.groundingIds.filter((id): id is string => typeof id === "string") }
+        : {}),
+    });
+  }
+
+  return entries.length > 0 ? entries : undefined;
+}
+
 function parseIslands(value: unknown): Island[] {
   if (!Array.isArray(value)) {
     return [];
@@ -261,7 +317,15 @@ function parseIslands(value: unknown): Island[] {
       placardCardId: typeof item.placardCardId === "string" ? item.placardCardId : undefined,
       collapsed: typeof item.collapsed === "boolean" ? item.collapsed : false,
       title: typeof item.title === "string" ? item.title : undefined,
+      titleReviewed: typeof item.titleReviewed === "boolean" ? item.titleReviewed : undefined,
+      summaryText: typeof item.summaryText === "string" ? item.summaryText : undefined,
+      summaryReviewed: typeof item.summaryReviewed === "boolean" ? item.summaryReviewed : undefined,
+      summaryGrounding: Array.isArray(item.summaryGrounding)
+        ? item.summaryGrounding.filter((id): id is string => typeof id === "string")
+        : undefined,
+      summaryHistory: parseSummaryHistory(item.summaryHistory),
       imageUrl: typeof item.imageUrl === "string" ? item.imageUrl : undefined,
+      imageReviewed: typeof item.imageReviewed === "boolean" ? item.imageReviewed : undefined,
       critique: typeof item.critique === "string" ? item.critique : undefined,
       critiqueTags: parseCritiqueTags(item.critiqueTags),
       geometry: normalizedGeometry,
@@ -351,6 +415,12 @@ function parseEvidenceLinks(value: unknown): EvidenceLink[] | undefined {
       toCardId: item.toCardId,
       note: typeof item.note === "string" ? item.note : undefined,
       createdAt: typeof item.createdAt === "string" ? item.createdAt : undefined,
+      ...(item.contradictionState === "unconfirmed"
+        || item.contradictionState === "confirmed"
+        || item.contradictionState === "held"
+        || item.contradictionState === "resolved"
+        ? { contradictionState: item.contradictionState }
+        : {}),
     });
   }
 
@@ -434,6 +504,222 @@ function parseDeterministicTieBreak(value: unknown): DeterministicTieBreak | und
   };
 }
 
+function parseReadingOrder(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const ids = value.filter((id): id is string => typeof id === "string");
+  return ids.length > 0 ? ids : undefined;
+}
+
+function parseNarratives(value: unknown): Narrative[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const narratives: Narrative[] = [];
+  for (const item of value) {
+    if (
+      !isRecord(item)
+      || typeof item.id !== "string"
+      || typeof item.title !== "string"
+      || typeof item.text !== "string"
+      || typeof item.reviewed !== "boolean"
+    ) {
+      continue;
+    }
+
+    narratives.push({
+      id: item.id,
+      title: item.title,
+      text: item.text,
+      reviewed: item.reviewed,
+      ...(typeof item.createdAt === "string" ? { createdAt: item.createdAt } : {}),
+      ...(Array.isArray(item.basedOnReadingOrder)
+        ? { basedOnReadingOrder: item.basedOnReadingOrder.filter((id): id is string => typeof id === "string") }
+        : {}),
+      ...(Array.isArray(item.checks) ? { checks: item.checks.filter(isRecord) as NarrativeCheck[] } : {}),
+    });
+  }
+
+  return narratives.length > 0 ? narratives : undefined;
+}
+
+function parseRelationSummaries(value: unknown): RelationSummary[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const summaries: RelationSummary[] = [];
+  for (const item of value) {
+    if (
+      !isRecord(item)
+      || typeof item.id !== "string"
+      || typeof item.createdAt !== "string"
+      || typeof item.islandAId !== "string"
+      || typeof item.islandBId !== "string"
+      || (item.relationType !== "related" && item.relationType !== "negate" && item.relationType !== "unknown")
+      || typeof item.derived !== "boolean"
+      || typeof item.text !== "string"
+      || typeof item.reviewed !== "boolean"
+      || !Array.isArray(item.groundingCardIds)
+      || !Array.isArray(item.groundingEdgeIds)
+      || typeof item.sourceSignature !== "string"
+    ) {
+      continue;
+    }
+
+    summaries.push({
+      id: item.id,
+      createdAt: item.createdAt,
+      islandAId: item.islandAId,
+      islandBId: item.islandBId,
+      relationType: item.relationType,
+      derived: item.derived,
+      text: item.text,
+      reviewed: item.reviewed,
+      groundingCardIds: item.groundingCardIds.filter((id): id is string => typeof id === "string"),
+      groundingEdgeIds: item.groundingEdgeIds.filter((id): id is string => typeof id === "string"),
+      sourceSignature: item.sourceSignature,
+      ...(Array.isArray(item.warnings)
+        ? { warnings: item.warnings.filter((w): w is string => typeof w === "string") }
+        : {}),
+      ...(Array.isArray(item.history) ? { history: item.history.filter(isRecord) as RelationSummaryHistoryEntry[] } : {}),
+    });
+  }
+
+  return summaries.length > 0 ? summaries : undefined;
+}
+
+function parsePatchApplyStats(value: unknown): PatchApplyStats | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const keys = [
+    "upsertCards",
+    "deleteCards",
+    "upsertIslands",
+    "deleteIslands",
+    "upsertEdges",
+    "deleteEdges",
+    "upsertRelationSummaries",
+    "deleteRelationSummaries",
+    "upsertEvidenceLinks",
+    "deleteEvidenceLinks",
+  ] as const;
+
+  if (keys.some((key) => typeof value[key] !== "number" || !Number.isFinite(value[key]))) {
+    return undefined;
+  }
+
+  const stats = {} as PatchApplyStats;
+  for (const key of keys) {
+    stats[key] = value[key] as number;
+  }
+  return stats;
+}
+
+function parsePatchConflictMeta(value: unknown): PatchConflictMeta | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const keys = ["totalConflicts", "chosenYours", "chosenTheirs", "chosenSkip"] as const;
+  if (keys.some((key) => typeof value[key] !== "number" || !Number.isFinite(value[key]))) {
+    return undefined;
+  }
+
+  const meta = {} as PatchConflictMeta;
+  for (const key of keys) {
+    meta[key] = value[key] as number;
+  }
+  return meta;
+}
+
+function parsePatchApplyLog(value: unknown): PatchApplyLogEntry[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const entries: PatchApplyLogEntry[] = [];
+  for (const item of value) {
+    if (!isRecord(item) || typeof item.id !== "string" || typeof item.createdAt !== "string" || item.patchVersion !== "1" || !Array.isArray(item.appliedOpIds)) {
+      continue;
+    }
+
+    const stats = parsePatchApplyStats(item.stats);
+    if (!stats) {
+      continue;
+    }
+
+    const conflictMeta = item.conflictMeta !== undefined ? parsePatchConflictMeta(item.conflictMeta) : undefined;
+
+    entries.push({
+      id: item.id,
+      createdAt: item.createdAt,
+      patchVersion: "1",
+      appliedOpIds: item.appliedOpIds.filter((id): id is string => typeof id === "string"),
+      stats,
+      ...(typeof item.patchTitle === "string" ? { patchTitle: item.patchTitle } : {}),
+      ...(typeof item.baseDocSignature === "string" ? { baseDocSignature: item.baseDocSignature } : {}),
+      ...(typeof item.patchSourceSignature === "string" ? { patchSourceSignature: item.patchSourceSignature } : {}),
+      ...(conflictMeta ? { conflictMeta } : {}),
+      ...(typeof item.note === "string" ? { note: item.note } : {}),
+    });
+  }
+
+  return entries.length > 0 ? entries : undefined;
+}
+
+function isMergeSuggestionDecision(value: unknown): value is MergeSuggestionDecision {
+  return value === "accept" || value === "partial" || value === "reject" || value === "defer";
+}
+
+function parseMergeSuggestionDecisions(value: unknown): MergeSuggestionDecisionEntry[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const entries: MergeSuggestionDecisionEntry[] = [];
+  for (const item of value) {
+    if (
+      !isRecord(item)
+      || typeof item.id !== "string"
+      || typeof item.groupId !== "string"
+      || !isMergeSuggestionDecision(item.decision)
+      || typeof item.decidedAt !== "string"
+      || !Array.isArray(item.cardIds)
+      || typeof item.mergedTextDraft !== "string"
+      || typeof item.editedText !== "string"
+    ) {
+      continue;
+    }
+
+    entries.push({
+      id: item.id,
+      groupId: item.groupId,
+      decision: item.decision,
+      decidedAt: item.decidedAt,
+      cardIds: item.cardIds.filter((id): id is string => typeof id === "string"),
+      mergedTextDraft: item.mergedTextDraft,
+      editedText: item.editedText,
+      ...(typeof item.decisionId === "string" ? { decisionId: item.decisionId } : {}),
+      ...(item.action !== undefined && isMergeSuggestionDecision(item.action) ? { action: item.action } : {}),
+      ...(typeof item.decidedBy === "string" ? { decidedBy: item.decidedBy } : {}),
+      ...(Array.isArray(item.selectedCardIds)
+        ? { selectedCardIds: item.selectedCardIds.filter((id): id is string => typeof id === "string") }
+        : {}),
+      ...(typeof item.note === "string" ? { note: item.note } : {}),
+      ...(typeof item.snapshotVersion === "string" ? { snapshotVersion: item.snapshotVersion } : {}),
+      ...(typeof item.rationale === "string" ? { rationale: item.rationale } : {}),
+    });
+  }
+
+  return entries.length > 0 ? entries : undefined;
+}
+
 function normalizeVersion(value: unknown): 1 | 2 | null {
   if (value === 1 || value === "v1") {
     return 1;
@@ -498,6 +784,11 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
   const reproposalDiffs = parseReproposalDiffs(value.reproposalDiffs);
   const reviewAttribution = parseReviewAttribution(value.reviewAttribution);
   const deterministicTieBreak = parseDeterministicTieBreak(value.deterministicTieBreak);
+  const readingOrder = parseReadingOrder(value.readingOrder);
+  const narratives = parseNarratives(value.narratives);
+  const relationSummaries = parseRelationSummaries(value.relationSummaries);
+  const patchApplyLog = parsePatchApplyLog(value.patchApplyLog);
+  const mergeSuggestionDecisions = parseMergeSuggestionDecisions(value.mergeSuggestionDecisions);
   const shelf = parseShelf(value.shelf, new Set(cards.map((card) => card.id)));
   const shelvedCardIds = new Set((shelf ?? []).map((entry) => entry.cardId));
   const normalizedCards = shelvedCardIds.size === 0
@@ -521,6 +812,11 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
       ...(reproposalDiffs !== undefined ? { reproposalDiffs } : {}),
       ...(reviewAttribution !== undefined ? { reviewAttribution } : {}),
       ...(deterministicTieBreak !== undefined ? { deterministicTieBreak } : {}),
+      ...(readingOrder !== undefined ? { readingOrder } : {}),
+      ...(narratives !== undefined ? { narratives } : {}),
+      ...(relationSummaries !== undefined ? { relationSummaries } : {}),
+      ...(patchApplyLog !== undefined ? { patchApplyLog } : {}),
+      ...(mergeSuggestionDecisions !== undefined ? { mergeSuggestionDecisions } : {}),
       ...(shelf !== undefined ? { shelf } : {}),
     },
   };
