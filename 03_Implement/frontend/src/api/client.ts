@@ -16,10 +16,24 @@ const API_BASE = resolveApiBase();
 
 export class ApiError extends Error {
   readonly status: number;
+  /**
+   * PROV-ERROR-01: structured provider error code, mirrored from the backend's
+   * ProviderError.to_contract() ("provider_unavailable" | "provider_timeout" |
+   * "provider_validation"), when the failure originated from an LLM provider call.
+   * Undefined for non-provider errors.
+   */
+  readonly code?: string;
+  /**
+   * Present only for ProviderDisabledError (provider=none), distinguishing an
+   * intentionally-disabled provider from one that is configured but unreachable.
+   */
+  readonly disabledReason?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, options?: { code?: string; disabledReason?: string }) {
     super(message);
     this.status = status;
+    this.code = options?.code;
+    this.disabledReason = options?.disabledReason;
   }
 }
 
@@ -28,17 +42,42 @@ export type DocumentWithEtag<TDocument extends Document> = {
   etag?: string;
 };
 
-async function parseErrorMessage(response: Response): Promise<string> {
+type ParsedErrorDetail = {
+  message: string;
+  code?: string;
+  disabledReason?: string;
+};
+
+/**
+ * PROV-ERROR-01: the backend's /ai/* routes send `detail` as the full
+ * ProviderError.to_contract() object (code/message/disabled_reason/...) for
+ * provider failures, not a plain string. The previous `typeof detail ===
+ * "string"` check silently discarded that object and fell back to
+ * response.statusText, losing the distinction between "provider disabled"
+ * and "provider configured but unreachable/timing out/invalid". This reads
+ * both shapes: a plain string `detail` (most routes) or the structured
+ * provider-error object.
+ */
+async function parseErrorDetail(response: Response): Promise<ParsedErrorDetail> {
   try {
     const body = await response.json();
-    if (typeof body?.detail === "string") {
-      return body.detail;
+    const detail = body?.detail;
+
+    if (typeof detail === "string") {
+      return { message: detail };
+    }
+
+    if (detail && typeof detail === "object") {
+      const code = typeof detail.code === "string" ? detail.code : undefined;
+      const disabledReason = typeof detail.disabled_reason === "string" ? detail.disabled_reason : undefined;
+      const message = typeof detail.message === "string" ? detail.message : response.statusText || "Request failed";
+      return { message, code, disabledReason };
     }
   } catch {
     // ignore json parse failure and fallback to status text
   }
 
-  return response.statusText || "Request failed";
+  return { message: response.statusText || "Request failed" };
 }
 
 function normalizeCard(card: Card): Card {
@@ -109,7 +148,8 @@ export async function getDocument(docId: string): Promise<DocumentWithEtag<Docum
   const response = await fetch(`${API_BASE}/docs/${docId}`);
 
   if (!response.ok) {
-    throw new ApiError(response.status, await parseErrorMessage(response));
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 
   return {
@@ -137,7 +177,8 @@ export async function putDocument(
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, await parseErrorMessage(response));
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 
   const responseBody = await response.text();
@@ -169,7 +210,8 @@ export async function suggestLayout(doc: DocumentV2, instruction?: string): Prom
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, await parseErrorMessage(response));
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 
   const body = (await response.json()) as {
@@ -257,7 +299,8 @@ export async function suggestMerges(doc: DocumentV2, instruction?: string): Prom
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, await parseErrorMessage(response));
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 
   const body = (await response.json()) as { suggestions?: MergeSuggestion[] };
@@ -310,7 +353,8 @@ export async function proposeIslandSummary(
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, await parseErrorMessage(response));
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 
   return (await response.json()) as IslandSummaryProposal;
@@ -331,7 +375,8 @@ export async function recordProposalDecision(
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, await parseErrorMessage(response));
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 }
 
@@ -345,7 +390,8 @@ export async function suggestIslandSummary(doc: DocumentV2, islandId: string): P
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, await parseErrorMessage(response));
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 
   const body = (await response.json()) as SuggestIslandSummaryResult;
@@ -404,7 +450,8 @@ export async function summarizeIslandRelation(
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, await parseErrorMessage(response));
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 
   const body = (await response.json()) as SummarizeIslandRelationResult;
@@ -444,7 +491,8 @@ export async function checkNarrative(
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, await parseErrorMessage(response));
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 
   const body = (await response.json()) as { issues?: NarrativeIssue[] };
@@ -472,7 +520,8 @@ export async function generateNarrative(doc: DocumentV2, narrativeTitle?: string
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, await parseErrorMessage(response));
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 
   const body = (await response.json()) as GenerateNarrativeResult;

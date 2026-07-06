@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { suggestMerges } from "./client";
+import { ApiError, suggestMerges, suggestLayout } from "./client";
 import type { DocumentV2 } from "../domain/types";
 
 function createDocument(): DocumentV2 {
@@ -148,5 +148,71 @@ describe("suggestMerges contract validation", () => {
       message: "Invalid merge suggestions contract payload",
       status: 500,
     });
+  });
+});
+
+describe("PROV-ERROR-01: structured provider error propagation", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("carries code and disabledReason from a ProviderDisabledError contract (detail as object)", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          detail: {
+            code: "provider_unavailable",
+            message: "AI is disabled. Set KJ_ATLAS_LLM_PROVIDER to local or large-scale.",
+            provider: "none",
+            disabled_reason: "provider_disabled_or_none_default",
+          },
+        }),
+        { status: 503, headers: { "Content-Type": "application/json" } }
+      )
+    );
+
+    const error = await suggestLayout(createDocument()).catch((caught) => caught);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).status).toBe(503);
+    expect((error as ApiError).code).toBe("provider_unavailable");
+    expect((error as ApiError).disabledReason).toBe("provider_disabled_or_none_default");
+    expect((error as ApiError).message).toBe("AI is disabled. Set KJ_ATLAS_LLM_PROVIDER to local or large-scale.");
+  });
+
+  it("carries code without disabledReason for a configured-but-unreachable provider", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          detail: {
+            code: "provider_timeout",
+            message: "local request timed out with status 504",
+            provider: "local",
+          },
+        }),
+        { status: 504, headers: { "Content-Type": "application/json" } }
+      )
+    );
+
+    const error = await suggestLayout(createDocument()).catch((caught) => caught);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).code).toBe("provider_timeout");
+    expect((error as ApiError).disabledReason).toBeUndefined();
+  });
+
+  it("still supports a plain string detail (non-provider routes)", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ detail: "narrativeText must not be empty" }), {
+        status: 422,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    const error = await suggestLayout(createDocument()).catch((caught) => caught);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).message).toBe("narrativeText must not be empty");
+    expect((error as ApiError).code).toBeUndefined();
   });
 });

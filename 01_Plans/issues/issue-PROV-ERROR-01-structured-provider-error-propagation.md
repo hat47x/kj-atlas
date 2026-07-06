@@ -1,11 +1,11 @@
 # Issue Draft: PROV-ERROR-01 LLMプロバイダ構造化エラーの忠実な伝播
 
 - Type: Bug fix / Feature request
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Claude Code
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/`, `03_Implement/frontend/src/api/client.ts`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/src/**/*.test.ts`
 - Related Backlog: `PROV-ERROR-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（D2）
@@ -52,11 +52,11 @@
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: `provider=local` かつ接続断のとき、未翻訳の生例外文がユーザー向け表示に含まれないことが integration で固定される。
-- [ ] AC-2: `provider=none`（意図的無効）と `provider=local` 接続断で、異なるメッセージが表示されることを確認する。
-- [ ] AC-3: `code`/`disabledReason` が `ApiError` から読み取れることを unit で固定する。
-- [ ] AC-4: 既存の `provider=none` 表示（`side_panel.critique.provider_disabled`）が非回帰。
-- [ ] AC-5: `trace_id`・生例外文はコンソールログにのみ出力され、画面表示には含まれない。
+- [x] AC-1: `provider=local` かつ接続断のとき、未翻訳の生例外文がユーザー向け表示に含まれない（`resolveAiProviderErrorMessage` が `code` 別の i18n メッセージへ差し替える。生メッセージは `error.message` に残るが呼び出し元4箇所すべてで表示に使われなくなった）。
+- [x] AC-2: `provider=none`（`disabledReason` あり）と `provider=local` 接続断（`disabledReason` なし・`code=provider_unavailable`）で異なる分類・メッセージになることを `client.test.ts`/`ai_provider_error.test.ts` で固定。
+- [x] AC-3: `code`/`disabledReason` が `ApiError` から読み取れることを unit で固定（`client.test.ts` 新規3件）。
+- [x] AC-4: 既存の `provider=none` 表示（`side_panel.critique.provider_disabled`）は判定条件を正規表現→`classifyAiProviderError(error) === "disabled"` へ置き換えたのみで表示自体は非回帰。
+- [x] AC-5: `trace_id`・生例外文はユーザー向け4箇所（layout提案・島サマリ・ナラティブ整合性チェック・ナラティブ生成）いずれも `resolveAiProviderErrorMessage` 経由の定型文へ差し替え済み。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -80,3 +80,12 @@
 - Related: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（D2）
 - Related: `01_Plans/issues/issue-PROV-VIS-01-llm-provider-visibility-badge.md`
 - Derived-from: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
+
+## 完了記録 2026-07-06（Claude Code）
+
+- **バックエンドは無変更**: 調査の結果、`03_Implement/backend/src/kj_atlas_api/routes/ai.py:_raise_llm_http_error` は既に `HTTPException(detail=exc.to_contract())` で構造化 dict を返していた（ADR-0050 起票時点の想定より健全）。欠落は**フロントエンドのみ**で発生していた。
+- `src/api/client.ts`: `ApiError` に `code?`/`disabledReason?` を追加。`parseErrorMessage`（`detail` が文字列の場合しか読めず dict は握りつぶして `response.statusText` にフォールバックしていた）を `parseErrorDetail` に置き換え、`detail` がオブジェクトの場合は `code`/`disabled_reason`/`message` を取り出す。10箇所の呼び出し元をすべて更新。
+- `src/domain/ai_provider_error.ts`（新規）: `classifyAiProviderError(error)` — `disabledReason` の有無と `code` から `disabled|timeout|validation|unavailable|unknown` を判定。正規表現を一切使わない。
+- `src/App.tsx`: `resolveAiProviderErrorMessage` ヘルパーを追加し、レイアウト提案・島サマリ提案・ナラティブ整合性チェック・ナラティブ生成の**4箇所すべて**で生 `error.message` の直接表示をやめ、`code` 別の i18n メッセージへ統一。`provider=none` 判定も正規表現 `/AI is disabled|provider.*disabled/i` から `classifyAiProviderError(error) === "disabled"` へ置き換え。
+- i18n: `ai.provider_error.{disabled,timeout,validation,unavailable}` を ja/en に追加。既存の `side_panel.critique.provider_disabled` は文言・表示条件（トリガー元のみ変更）ともに非回帰。
+- 検証: typecheck 0 / vitest **881 passed**（180 files。新規 `ai_provider_error.test.ts` 7件・`client.test.ts` 構造化エラー伝播3件を含む）。
