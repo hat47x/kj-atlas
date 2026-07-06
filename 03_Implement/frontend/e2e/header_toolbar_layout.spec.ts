@@ -1,6 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 import { SHARE_REPRODUCE_BUTTON, VIEW_BUTTON } from "./helpers/i18n";
 
+const SHORTCUT_HELP_BUTTON = /Keyboard shortcuts|キーボードショートカット/;
+const SHORTCUT_HELP_DIALOG = '[data-ui-region="shortcut-help"]';
+
 type Box = {
   bottom: number;
   height: number;
@@ -140,5 +143,20 @@ for (const viewport of keyboardViewports) {
     await page.keyboard.press("Escape");
     await expect(shareDialog).toBeHidden();
     await expect(shareButton).toBeFocused();
+
+    const shortcutHelpButton = page.getByRole("button", { name: SHORTCUT_HELP_BUTTON });
+    await shortcutHelpButton.focus();
+    await expect(shortcutHelpButton).toBeFocused();
+    await page.keyboard.press("Enter");
+
+    const shortcutHelpDialog = page.locator(SHORTCUT_HELP_DIALOG);
+    await expect(shortcutHelpDialog).toBeVisible();
+    await expect(shortcutHelpDialog).toContainText(/Keyboard shortcuts|キーボードショートカット/);
+    panels = await collectFixedPanels(page);
+    expect(panels.some((panel) => panel.bottom > viewport.height || panel.right > viewport.width)).toBe(false);
+
+    await page.keyboard.press("Escape");
+    await expect(shortcutHelpDialog).toBeHidden();
+    await expect(shortcutHelpButton).toBeFocused();
   });
 }
