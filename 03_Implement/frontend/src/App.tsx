@@ -220,6 +220,13 @@ function getViewModeDisplayLabel(mode: ViewMode): string {
   return t("app.view_mode.explore");
 }
 
+function resolveDigitShortcut(event: KeyboardEvent): "1" | "2" | "3" | null {
+  if (event.key === "1" || event.code === "Digit1") return "1";
+  if (event.key === "2" || event.code === "Digit2") return "2";
+  if (event.key === "3" || event.code === "Digit3") return "3";
+  return null;
+}
+
 function getEntityKindDisplayLabel(kind: "card" | "island"): string {
   return t(kind === "card" ? "app.entity.card" : "app.entity.island");
 }
@@ -8575,19 +8582,21 @@ export default function App() {
         return;
       }
 
-      if (event.key === "1") {
+      const digitShortcut = resolveDigitShortcut(event);
+
+      if (digitShortcut === "1") {
         event.preventDefault();
         handleApplyViewMode("explore");
         return;
       }
 
-      if (event.key === "2") {
+      if (digitShortcut === "2") {
         event.preventDefault();
         handleApplyViewMode("review");
         return;
       }
 
-      if (event.key === "3") {
+      if (digitShortcut === "3") {
         event.preventDefault();
         handleApplyViewMode("summary");
       }
@@ -8609,19 +8618,21 @@ export default function App() {
         return;
       }
 
-      if (event.key === "1") {
+      const digitShortcut = resolveDigitShortcut(event);
+
+      if (digitShortcut === "1") {
         event.preventDefault();
         handleHierarchyLevelChange("overview");
         return;
       }
 
-      if (event.key === "2") {
+      if (digitShortcut === "2") {
         event.preventDefault();
         handleHierarchyLevelChange("mid");
         return;
       }
 
-      if (event.key === "3") {
+      if (digitShortcut === "3") {
         event.preventDefault();
         handleHierarchyLevelChange("detail");
       }
@@ -8686,6 +8697,7 @@ export default function App() {
                 handleApplyViewMode(mode);
               }}
               title={`${getViewModeDisplayLabel(mode)} (${shortcutLabel})`}
+              aria-pressed={isActive}
               style={{
                 border: "none",
                 borderRight: mode === "summary" ? "none" : "1px solid #cbd5e1",

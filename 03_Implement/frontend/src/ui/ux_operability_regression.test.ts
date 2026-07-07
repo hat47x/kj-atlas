@@ -46,6 +46,9 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain("const handleOpenShortcutHelp = useCallback");
     expect(appSource).toContain("const handleCloseShortcutHelp = useCallback");
     expect(appSource).toContain("onOpenShortcutHelp: handleOpenShortcutHelp");
+    expect(appSource).toContain("function resolveDigitShortcut");
+    expect(appSource).toContain('event.code === "Digit1"');
+    expect(appSource).toContain("aria-pressed={isActive}");
     expect(appSource).toContain('data-focus-return-id="shortcut-help-trigger"');
     expect(appSource).toContain('aria-label={t("app.toolbar.shortcut_help")}');
     expect(appSource).toContain("const handleToggleSelectedCardHold = useCallback");
@@ -59,6 +62,9 @@ describe("UX Operability regression contracts", () => {
     expect(shortcutHelpSource).toContain('overflowWrap: "anywhere"');
     expect(shortcutHelpSource).toContain('flexWrap: "wrap"');
     expect(shortcutHelpSource).toContain('t("shortcut_help.note.editing")');
+
+    const viewControlsSource = readSource("src/ui/ViewControlsPanel.tsx");
+    expect(viewControlsSource).toContain("aria-pressed={hierarchyLevel === item.id}");
   });
 
   it("UX-VISUAL-01: card state badges sit in a normal-flow meta-row above the body (no first-line overlap)", () => {

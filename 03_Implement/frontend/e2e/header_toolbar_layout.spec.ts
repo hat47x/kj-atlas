@@ -161,3 +161,44 @@ for (const viewport of keyboardViewports) {
     await expect(shortcutHelpButton).toBeFocused();
   });
 }
+
+test("modifier shortcuts update visible view and hierarchy state", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await page.waitForSelector("header");
+
+  const reviewModeButton = page.locator('header button[title*="Ctrl+2"]');
+  const summaryModeButton = page.locator('header button[title*="Ctrl+3"]');
+
+  await page.keyboard.press("Control+2");
+  await expect(reviewModeButton).toHaveAttribute("aria-pressed", "true");
+
+  await page.keyboard.press("Control+3");
+  await expect(summaryModeButton).toHaveAttribute("aria-pressed", "true");
+
+  await page.getByRole("button", { name: VIEW_BUTTON }).click();
+  const viewDialog = page.locator('[data-panel="view"]');
+  await expect(viewDialog).toBeVisible();
+  const hierarchySelect = viewDialog.locator("select").first();
+
+  await page.keyboard.down("Alt");
+  await page.keyboard.down("Shift");
+  await page.keyboard.press("1");
+  await page.keyboard.up("Shift");
+  await page.keyboard.up("Alt");
+  await expect(hierarchySelect).toHaveValue("overview");
+
+  await page.keyboard.down("Alt");
+  await page.keyboard.down("Shift");
+  await page.keyboard.press("2");
+  await page.keyboard.up("Shift");
+  await page.keyboard.up("Alt");
+  await expect(hierarchySelect).toHaveValue("mid");
+
+  await page.keyboard.down("Alt");
+  await page.keyboard.down("Shift");
+  await page.keyboard.press("3");
+  await page.keyboard.up("Shift");
+  await page.keyboard.up("Alt");
+  await expect(hierarchySelect).toHaveValue("detail");
+});

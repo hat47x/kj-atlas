@@ -207,6 +207,7 @@ export function ViewControlsPanel({
                 <button
                   key={item.id}
                   type="button"
+                  aria-pressed={hierarchyLevel === item.id}
                   onClick={() => {
                     onHierarchyLevelChange(item.id);
                   }}
@@ -250,6 +251,7 @@ export function ViewControlsPanel({
                 <button
                   key={item.id}
                   type="button"
+                  aria-pressed={hierarchyLevel === item.id}
                   onClick={() => {
                     onHierarchyLevelChange(item.id);
                   }}
