@@ -196,8 +196,11 @@ export function ViewControlsPanel({
         boxShadow: "0 12px 24px rgba(15, 23, 42, 0.18)",
       }}
     >
-      <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
+      <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>
         {t("command_palette.hint_discoverability", { shortcut: formatModShortcut("K") })}
+      </div>
+      <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
+        {t("shortcut_cheatsheet.hint_discoverability")}
       </div>
       <div style={sectionStyle}>
         <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.viewpoint_presets.title")}</div>

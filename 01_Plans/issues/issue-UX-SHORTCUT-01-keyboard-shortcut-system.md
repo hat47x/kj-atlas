@@ -1,7 +1,7 @@
 # Issue Draft: UX-SHORTCUT-01 ショートカット体系の実装（保持系最短・Esc段階・OS別表記）
 
 - Type: Feature request
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
@@ -57,17 +57,17 @@
 - [x] AC-1: H/U/R が選択時のみ機能し、⌘Z で可逆であることが e2e で固定される（`e2e/retention_keyboard_shortcuts.spec.ts`）。
 - [x] AC-2: テキスト編集中に単一キーが発火しない（本文に文字が入る）ことが e2e で固定される。
 - [x] AC-3: Esc 段階処理を検証（`e2e/esc_staged_closing.spec.ts`）。**設計判断の記録**: 既存の「各オーバーレイが自身の Escape で `preventDefault()` を呼び、`useHotkeys.ts` の window レベル listener が `event.defaultPrevented` で bail-out する」という規約が、フォーカスのあるサーフェスのみ閉じる段階処理を**既に実現**しているため、新規の中央集権的スタックは実装しない（非回帰・低リスクを優先）。UX-OPERABILITY-04 契約は不変。
-- [x] AC-4: **Deferred（follow-up PR）**。? チートシートは別PRで実装する（本PRはH/U/R・入力ガード・Esc検証・棚卸しに限定）。
+- [x] AC-4: ? でチートシートが開閉し、OS別表記（Mac/Windows・Linux手動切替）と単一キー節「編集中無効」脚注が表示されることを e2e で固定（`e2e/shortcut_cheatsheet.spec.ts`）。
 - [x] AC-5: 既存バインド（Cmd/Ctrl+1/2/3、Alt+Shift+1/2/3、Cmd/Ctrl+Z/Y/G、Enter/Space）が非回帰。T1 棚卸し結果は下記完了記録に記載。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 既存バインド棚卸し（衝突表を本メモに追記）。
-- [ ] T2 キーディスパッチャ（選択ガード・入力中ガード・OS 判定）。
-- [ ] T3 保持系/作成/型/整理キーの接続（既存ハンドラへ委譲）。
-- [ ] T4 Esc 段階スタックの一元化。
-- [ ] T5 チートシート UI＋メニュー併記＋i18n。
-- [ ] T6 e2e 一式。
+- [x] T1 既存バインド棚卸し（衝突表を本メモに追記）。
+- [x] T2 キーディスパッチャ（選択ガード・入力中ガード・OS 判定）。
+- [x] T3 保持系/作成/型/整理キーの接続（既存ハンドラへ委譲）。
+- [x] T4 Esc 段階処理の検証（既存の bail-out 規約が要件を満たすため、新規スタックは実装せず — AC-3 参照）。
+- [x] T5 チートシート UI＋メニュー併記＋i18n。
+- [x] T6 e2e 一式。
 
 ## 7) 検証計画 / Validation plan
 
@@ -119,6 +119,22 @@
 - 既存の広範な e2e（`command_palette`・`canvas_legend`・`canvas_protection`・`card_meta_row`・`domain_expression_keyboard_access`・`keyboard_release_candidate_flow`）**14件で非回帰確認**
 - 実機スクショで H→U→R 実行後のカード表示（メタ行「主張/保留/●」）・選択コンテキスト（保留:保留／違和感:違和感あり／レビュー状態:レビュー済み）を確認
 
-### 残作業（follow-up PR）
+## 完了記録（2/2）2026-07-07（Claude Code）— ? ショートカットチートシート
 
-- **AC-4: ? チートシート**（OS別表記・Esc閉じ・単一キー節「編集中無効」脚注）。Round 5 レッドライン確定済み・別PRで実装する。
+### 実装
+
+- `src/ui/os_shortcut_format.ts`: `formatModShortcut`/新規 `formatModShiftShortcut`/`formatAltShiftShortcut` に任意の第2引数 `useMacNotation?: boolean` を追加（手動切替対応。省略時は `isMacPlatform()` で自動判定、既存呼び出し元は非回帰）。
+- `src/ui/ShortcutCheatsheet.tsx`（新規）: `role="dialog"` の全画面オーバーレイ。右上に Mac / Windows・Linux の手動切替ボタン（初期値は自動検出）。カテゴリ別（保持系・選択・履歴・整理・ナビ・面・読み順ナビ）にグルーピングし、`kbd` 要素で表記。保持系節末尾に「テキスト編集中はこれらのキーは無効です」脚注。Escape・背景クリックで閉じる。
+- 掲載キーは**実装済みのもののみ**に厳格に限定（ADR-0048 の将来提案キー N/E/⌘D/1・2・3・0/L/W/⌘F/⌘. は本チートシートには含めない — 未実装キーの掲載によるユーザー誤認を回避。回帰テストで担保）。
+- `App.tsx`: `isShortcutCheatsheetOpen` state・`shortcutCheatsheetReturnFocusRef`・`closeShortcutCheatsheet`（フォーカス復帰は `ref.current?.focus()` を `setState` 前に同期呼び出し — ADR-0030 契約に整合）・グローバル `"?"` keydown effect（修飾キーあり／編集中／スタート画面表示中は無視。開いている間の再押下はチートシート自身を閉じる＝Esc段階処理に整合）。
+- `ViewControlsPanel.tsx`: `⌘K` ヒントに続けて `?` の発見可能性ヒント行を追加。
+- i18n: `shortcut_cheatsheet.*` 配下に日英23キー追加。
+
+### 検証
+
+- typecheck 0 / vitest **896 passed**（183 files。掲載キーが実装済みキーに限定されることを固定する回帰アンカー1件追加）
+- e2e 新規3件 passed: `shortcut_cheatsheet.spec.ts`（`?` で開く→Escで閉じてフォーカス復帰／編集中は文字入力されチートシートは開かない／Mac⇔Windows・Linux切替で表記が変わる）
+- 既存の広範な e2e（`command_palette`・`retention_keyboard_shortcuts`・`esc_staged_closing`・`canvas_legend`・`canvas_protection`・`domain_expression_keyboard_access`・`keyboard_release_candidate_flow`）**20件で非回帰確認**
+- 実機スクショで日本語ロケールでのチートシート表示を確認（グルーピング・kbd 表記・「テキスト編集中はこれらのキーは無効です」脚注・OS切替ボタンの見た目を確認）
+
+これにより UX-SHORTCUT-01 の AC-1〜5 全て充足。Status: Done。
