@@ -255,6 +255,32 @@ describe("UX Operability regression contracts", () => {
     expect(menuBarSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
   });
 
+  it("UX-SCALE-01 (a): minimap is a corner, collapsible, pointer-only navigation aid backed by persisted collapse state", () => {
+    const minimapSource = readSource("src/ui/Minimap.tsx");
+    const appSource = readSource("src/App.tsx");
+    const storageSource = readSource("src/storage/minimap_collapsed.ts");
+
+    // Corner placement + collapsible, per the Round 5 redline.
+    expect(minimapSource).toContain('data-ui-region="minimap"');
+    expect(minimapSource).toContain("AUTO_COLLAPSE_WIDTH_PX = 640");
+    expect(minimapSource).toContain("loadMinimapCollapsed");
+    expect(minimapSource).toContain("saveMinimapCollapsed");
+    expect(storageSource).toContain("kj-atlas/minimap-collapsed");
+
+    // Drag-to-pan delegates to the EXISTING camera-transform request API —
+    // no new pan/zoom mutation logic.
+    expect(minimapSource).toContain("onPan(nextPanX, nextPanY)");
+    expect(appSource).toContain("requestCameraTransform({ panX, panY, zoom: canvasCamera.zoom })");
+
+    // Cards render with the fixed ADR-0048 D1 claim-type colors (no new
+    // color tokens invented for this surface).
+    expect(minimapSource).toContain("CLAIM_TYPE_DOT_COLOR");
+    expect(minimapSource).toContain('fact: "#166534"');
+
+    // No scoring/ranking vocabulary anywhere in the minimap.
+    expect(minimapSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 
