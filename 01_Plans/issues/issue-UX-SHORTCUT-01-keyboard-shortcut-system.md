@@ -25,6 +25,11 @@
 
 - Added a compact `?` button in the primary toolbar so users can rediscover the shortcut help without already knowing the `?` key. This closes the basic menu/visible-surface rediscovery gap for AC-4; future command-palette integration can remain a separate UX-CMDK-01 follow-up.
 
+## Implementation note (2026-07-07, responsive shortcut help regression)
+
+- The shortcut help trigger and dialog now have regression coverage across desktop, tablet-width, and narrow mobile viewports. This keeps AC-4 from silently regressing into an off-screen or keyboard-only discovery path when the header wraps.
+- Verified locally with `tsc --noEmit`, `ux_operability_regression.test.ts`, and `git diff --check`. Full Playwright execution remains part of the broader E2E gate because the local browser/runtime setup can vary by machine.
+
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: UX-SHORTCUT-01
@@ -71,7 +76,7 @@
 - [ ] AC-1: H/U/R が選択時のみ機能し、⌘Z で可逆であることが e2e で固定される。
 - [ ] AC-2: テキスト編集中に単一キーが発火しない（本文に文字が入る）ことが e2e で固定される。
 - [ ] AC-3: Esc 段階処理が仕様順で1段ずつ閉じ、既存の Escape+フォーカス復帰契約（UX-OPERABILITY-04）が非回帰。
-- [ ] AC-4: ? チートシートが OS 別表記で表示され、Escape で閉じる。
+- [x] AC-4: ? チートシートが OS 別表記で表示され、Escape で閉じる。
 - [ ] AC-5: 既存バインド（Cmd/Ctrl+1/2/3、Alt+Shift+1/2/3、Enter/Space）が非回帰。重複割当なしの棚卸し結果を記録。
 
 ## 6) 実装タスク分解 / Task breakdown
@@ -80,7 +85,7 @@
 - [ ] T2 キーディスパッチャ（選択ガード・入力中ガード・OS 判定）。
 - [ ] T3 保持系/作成/型/整理キーの接続（既存ハンドラへ委譲）。
 - [ ] T4 Esc 段階スタックの一元化。
-- [ ] T5 チートシート UI＋メニュー併記＋i18n。
+- [x] T5 チートシート UI＋メニュー併記＋i18n。
 - [ ] T6 e2e 一式。
 
 ## Implementation note (2026-07-07)
@@ -90,7 +95,7 @@
   - U: `critique` が未設定なら短い違和感メモを入れ、設定済みなら外す。
   - R: `textReviewed` を切り替える。ただし読書ナビが有効な場合は既存の reviewed-only 切替を優先し、キー衝突を避ける。
 - 入力中ガード（input/textarea/select/contentEditable）と修飾キーガードは `useHotkeys` に維持した。キー判定を `resolveHotkeyAction` へ切り出し、`useHotkeys.test.ts` で H/U/R、入力中無効、修飾キー無効、読書ナビ中の R 衝突回避を固定した。`ux_operability_regression.test.ts` に静的回帰アンカーも追加済み。
-- 未完了: AC-1/AC-2 の E2E 固定、AC-3 の Esc 段階処理、AC-4 のチートシート、AC-5 の全バインド棚卸し。
+- 未完了: AC-1/AC-2 の E2E 固定、AC-3 の Esc 段階処理、AC-5 の全バインド棚卸し。
 
 ## 7) 検証計画 / Validation plan
 
