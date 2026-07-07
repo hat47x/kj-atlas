@@ -63,7 +63,9 @@ test("empty canvas hint appears after creating a new document and disappears aft
   await expect(hint).toHaveCount(0);
   await expect(page.locator(PRIMARY_FLOW).getByRole("option")).toHaveCount(1);
 
-  await page.getByRole("button", { name: "New", exact: true }).click();
+  // UX-MENU-01: "New" moved from a flat toolbar button into the File menu.
+  await page.getByRole("menuitem", { name: "File", exact: true }).click();
+  await page.getByRole("menuitem", { name: "New", exact: true }).click();
   await expect(page.locator(PRIMARY_FLOW).getByRole("option")).toHaveCount(0);
   await expect(hint).toHaveCount(0);
 

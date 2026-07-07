@@ -129,8 +129,14 @@ test("reviewer can inspect review-pack evidence without editing in read-only mod
   await expect(selectionPanel).toContainText("supporting field note supports this");
   await expect(selectionPanel).toContainText("contradicting stakeholder signal contradicts this");
 
-  await expect(page.getByRole("button", { name: "New", exact: true })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Duplicate" })).toBeDisabled();
+  // UX-MENU-01: "New"/"Duplicate" moved from flat toolbar buttons into the
+  // File/Edit menus.
+  await page.getByRole("menuitem", { name: "File", exact: true }).click();
+  await expect(page.getByRole("menuitem", { name: "New", exact: true })).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
+  await expect(page.getByRole("menuitem", { name: "Duplicate" })).toBeDisabled();
+  await page.keyboard.press("Escape");
   await expect(page.getByRole("button", { name: "New card" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Create Island" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Delete" })).toBeDisabled();

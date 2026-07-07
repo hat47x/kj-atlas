@@ -181,6 +181,80 @@ describe("UX Operability regression contracts", () => {
     expect(cheatsheetSource).not.toContain('shortcuts={["W"]}');
   });
 
+  it("UX-MENU-01: menu bar consolidates flat header operations into 6 categories without a net increase in always-visible core actions", () => {
+    const appSource = readSource("src/App.tsx");
+    const menuBarSource = readSource("src/ui/MenuBar.tsx");
+
+    // AC-1: the slim toolbar's 7 core actions are unchanged (the flat
+    // low-frequency buttons that used to sit beside them moved into the
+    // File/Edit menus instead of being added on top).
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(7);
+
+    // The 6 categories are fixed by ADR-0048 D2 Round 6 naming.
+    expect(appSource).toContain('t("menu_bar.category.file")');
+    expect(appSource).toContain('t("menu_bar.category.edit")');
+    expect(appSource).toContain('t("menu_bar.category.card")');
+    expect(appSource).toContain('t("menu_bar.category.view")');
+    expect(appSource).toContain('t("menu_bar.category.work")');
+    expect(appSource).toContain('t("menu_bar.category.share")');
+
+    // Every item delegates to an EXISTING handler — no new business logic.
+    expect(appSource).toContain("run: handleNewDocument");
+    expect(appSource).toContain("run: handleUndo");
+    expect(appSource).toContain("run: handleRedo");
+    expect(appSource).toContain("run: handleDuplicateDocument");
+    expect(appSource).toContain("run: handleDeleteSelection");
+    expect(appSource).toContain("run: handleAddCard");
+    expect(appSource).toContain("run: handleCreateIsland");
+    expect(appSource).toContain("run: handleApplyBirdsEyePreset");
+    expect(appSource).toContain("run: handleResetView");
+    expect(appSource).toContain("run: handleToggleViewControls");
+    expect(appSource).toContain("run: handleToggleWorkMode");
+    expect(appSource).toContain("run: handleToggleSharePanel");
+    expect(appSource).toContain("handleCardClaimTypeChange(selectedCard.id, claimType)");
+
+    // Non-goal compliance: commands with no existing handler are NOT
+    // invented (relation-line drawing, island dissolve, AI "tidy" layout,
+    // minimap, first-time guide, CSV export, select-all all stay absent).
+    expect(appSource).not.toContain("card-relation-line");
+    expect(appSource).not.toContain("card-dissolve-island");
+    expect(appSource).not.toContain("card-tidy-layout");
+    expect(appSource).not.toContain("view-minimap");
+    expect(appSource).not.toContain("view-first-time-guide");
+    expect(appSource).not.toContain("file-export-csv");
+    expect(appSource).not.toContain("edit-select-all");
+
+    // Phase 5's toolbar-label anchors keep passing because the labels moved
+    // into menu items rather than disappearing (re-asserted here for the
+    // menu bar's own contract, independent of Phase 5's toolbar contract).
+    expect(appSource).toContain('t("app.toolbar.new")');
+    expect(appSource).toContain('t("app.toolbar.open")');
+
+    // WAI-ARIA menubar keyboard contract (arrow cycling, Home/End,
+    // Escape-close-with-focus-return) — new code, since neither
+    // ContextMenu.tsx nor CommandPalette.tsx already provided it.
+    expect(menuBarSource).toContain('role="menubar"');
+    expect(menuBarSource).toContain('role="menu"');
+    expect(menuBarSource).toContain('aria-haspopup="menu"');
+    expect(menuBarSource).toContain('event.key === "ArrowRight"');
+    expect(menuBarSource).toContain('event.key === "ArrowLeft"');
+    expect(menuBarSource).toContain('event.key === "ArrowDown"');
+    expect(menuBarSource).toContain('event.key === "ArrowUp"');
+    expect(menuBarSource).toContain('event.key === "Home"');
+    expect(menuBarSource).toContain('event.key === "End"');
+    expect(menuBarSource).toContain('event.key === "Escape"');
+    expect(menuBarSource).toContain("closeAndReturnFocus");
+
+    // 390px collapse (Round 5 redline): below the fixed matrix's 768px
+    // breakpoint, the 6 categories consolidate into a single trigger.
+    expect(menuBarSource).toContain("COLLAPSE_WIDTH_PX = 768");
+    expect(menuBarSource).toContain('t("menu_bar.collapsed_trigger")');
+
+    // No scoring/ranking vocabulary anywhere in the menu bar (D1's
+    // anti-scoring stance applies to every new surface, including this one).
+    expect(menuBarSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 

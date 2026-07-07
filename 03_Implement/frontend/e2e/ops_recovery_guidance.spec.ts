@@ -297,7 +297,10 @@ test("save failure keeps content and points to export or retry", async ({ page }
   await page.goto("/");
   await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
 
-  await page.getByRole("button", { name: /^新規$|^New$/ }).click();
+  // UX-MENU-01: at 390px the menu bar collapses into a single "Menu" trigger;
+  // "New" moved from a flat toolbar button into the File menu inside it.
+  await page.getByRole("menuitem", { name: /^メニュー$|^Menu$/ }).click();
+  await page.getByRole("menuitem", { name: /^新規$|^New$/ }).click();
   await page.getByRole("button", { name: /^保存$|^Save$/ }).click();
 
   const status = page.getByTestId("status-message");

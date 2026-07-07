@@ -65,6 +65,7 @@ import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import { CanvasLegend } from "./ui/CanvasLegend";
 import { CommandPalette, type PaletteCommand } from "./ui/CommandPalette";
 import { ShortcutCheatsheet } from "./ui/ShortcutCheatsheet";
+import { MenuBar, type MenuCategoryDef, type MenuRowDef } from "./ui/MenuBar";
 import { formatModShortcut } from "./ui/os_shortcut_format";
 import type { IslandRelationEdgeSelection } from "./domain/island_relation_explain";
 import {
@@ -7567,75 +7568,26 @@ export default function App() {
     onReadingPathDisable: readingNavEnabled ? handleReadingDisable : undefined,
   });
 
+  // Shared by the flat trigger button and the "作業"/"共有" menu items
+  // (UX-MENU-01) so both call the exact same toggle.
+  const handleToggleWorkMode = useCallback(() => {
+    setIsWorkModeOpen((prev) => !prev);
+  }, []);
+  const handleToggleSharePanel = useCallback(() => {
+    setIsSharePanelOpen((previousOpen) => {
+      const nextOpen = !previousOpen;
+      if (nextOpen) {
+        setIsViewControlsOpen(false);
+      }
+      return nextOpen;
+    });
+  }, []);
+
   const headerRight = (
     <div
       data-ui-complexity-tier="core-toolbar"
       style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", rowGap: 6, whiteSpace: "nowrap", maxWidth: "100%" }}
     >
-      <button
-        type="button"
-        onClick={handleNewDocument}
-        disabled={isReadOnly || isLoading || isSaving}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isReadOnly || isLoading || isSaving ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.new")}
-      </button>
-      <button
-        type="button"
-        onClick={handleDuplicateDocument}
-        disabled={isReadOnly || isLoading || isSaving || !document}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isReadOnly || isLoading || isSaving || !document ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.duplicate")}
-      </button>
-      <button
-        type="button"
-        onClick={handleImportClick}
-        disabled={isReadOnly || isLoading}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 500,
-          cursor: isReadOnly || isLoading ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.import_doc_json_legacy_short")}
-      </button>
-      <button
-        type="button"
-        onClick={handleExport}
-        disabled={isReadOnly || isLoading || !document}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 500,
-          cursor: isReadOnly || isLoading || !document ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.export_doc_json_legacy_short")}
-      </button>
       <button
         type="button"
         onClick={handleUndo}
@@ -7670,48 +7622,6 @@ export default function App() {
       >
         {t("app.toolbar.redo")}
       </button>
-      <select
-        value={selectedRecentDocumentId}
-        onChange={(event) => {
-          setSelectedRecentDocumentId(event.target.value);
-        }}
-        disabled={isLoading || recentDocumentIds.length === 0}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 500,
-          minWidth: 180,
-        }}
-      >
-        <option value="">{t("app.toolbar.recent_documents")}</option>
-        {recentDocumentIds.map((docId) => (
-          <option key={docId} value={docId}>
-            {docId}
-          </option>
-        ))}
-      </select>
-      <button
-        type="button"
-        onClick={handleOpenRecent}
-        disabled={isLoading || !selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor:
-            isLoading || !selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId
-              ? "not-allowed"
-              : "pointer",
-        }}
-      >
-        {t("app.toolbar.open")}
-      </button>
       <button
         data-ui-complexity-tier="advanced-disclosure"
         type="button"
@@ -7735,7 +7645,7 @@ export default function App() {
         data-ui-complexity-tier="advanced-disclosure"
         data-ui-core-action="work-mode"
         type="button"
-        onClick={() => setIsWorkModeOpen((prev) => !prev)}
+        onClick={handleToggleWorkMode}
         aria-pressed={isWorkModeOpen}
         title={t("work_mode.title")}
         style={{
@@ -8797,6 +8707,13 @@ export default function App() {
   const viewControlsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const viewControlsPanelRef = useRef<HTMLDivElement | null>(null);
 
+  // Shared by the flat trigger button and the "表示" menu item (UX-MENU-01)
+  // so both call the exact same toggle — no duplicated open/close logic.
+  const handleToggleViewControls = useCallback(() => {
+    setIsSharePanelOpen(false);
+    setIsViewControlsOpen((prev) => !prev);
+  }, []);
+
   useEffect(() => {
     if (!isViewControlsOpen) {
       return;
@@ -8866,10 +8783,7 @@ export default function App() {
         ref={viewControlsTriggerRef}
         data-focus-return-id="view-controls-trigger"
         type="button"
-        onClick={() => {
-          setIsSharePanelOpen(false);
-          setIsViewControlsOpen((prev) => !prev);
-        }}
+        onClick={handleToggleViewControls}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -9098,15 +9012,7 @@ export default function App() {
     <SharePanel
       isOpen={isSharePanelOpen}
       isAdvancedUiEnabled={isAdvancedUiEnabled}
-      onToggleOpen={() => {
-        setIsSharePanelOpen((previousOpen) => {
-          const nextOpen = !previousOpen;
-          if (nextOpen) {
-            setIsViewControlsOpen(false);
-          }
-          return nextOpen;
-        });
-      }}
+      onToggleOpen={handleToggleSharePanel}
       hasDocument={Boolean(document)}
       isLoading={isLoading}
       isReadOnly={isReadOnly}
@@ -9236,6 +9142,291 @@ export default function App() {
       structuralDiffSection={structuralDiffPanel}
     />
   );
+
+  // UX-MENU-01 (ADR-0048 D2, collapse-layer 3): every item below delegates to
+  // an EXISTING handler already used elsewhere in this file (toolbar button,
+  // ViewControlsPanel/SharePanel prop, or hotkey). No new business logic is
+  // introduced here. Items with no real handler today (relation-line drawing,
+  // island dissolve, "tidy" layout, minimap, first-time guide, CSV export,
+  // select-all) are intentionally omitted per the issue's non-goal of adding
+  // no new commands; ViewControlsPanel/SharePanel's own deeper controls
+  // (legend toggle, visibility scope, review-pack export options) stay inside
+  // those panels — duplicating them here would need a second, independent
+  // focus-return anchor and risk regressing AC-5's existing contracts.
+  const openRecentExtraContent = (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <select
+        value={selectedRecentDocumentId}
+        onChange={(event) => {
+          setSelectedRecentDocumentId(event.target.value);
+        }}
+        disabled={isLoading || recentDocumentIds.length === 0}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 8px",
+          fontWeight: 500,
+        }}
+      >
+        <option value="">{t("app.toolbar.recent_documents")}</option>
+        {recentDocumentIds.map((docId) => (
+          <option key={docId} value={docId}>
+            {docId}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={handleOpenRecent}
+        disabled={isLoading || !selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 8px",
+          fontWeight: 600,
+          cursor:
+            isLoading || !selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId
+              ? "not-allowed"
+              : "pointer",
+        }}
+      >
+        {t("app.toolbar.open")}
+      </button>
+    </div>
+  );
+
+  const claimTypeMenuRows: MenuRowDef[] = (["fact", "claim", "hypothesis", "unknown"] as ClaimType[]).map((claimType) => ({
+    kind: "item",
+    item: {
+      id: `card-claim-type-${claimType}`,
+      label: t(`side_panel.claim_type.${claimType}`),
+      disabled: !selectedCard,
+      checked: selectedCard ? selectedCard.claimType === claimType || (!selectedCard.claimType && claimType === "unknown") : false,
+      run: () => {
+        if (selectedCard) {
+          handleCardClaimTypeChange(selectedCard.id, claimType);
+        }
+      },
+    },
+  }));
+
+  const menuCategories: MenuCategoryDef[] = [
+    {
+      id: "file",
+      label: t("menu_bar.category.file"),
+      extraContent: openRecentExtraContent,
+      rows: [
+        {
+          kind: "item",
+          item: { id: "file-new", label: t("app.toolbar.new"), disabled: isReadOnly || isLoading || isSaving, run: handleNewDocument },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "file-save",
+            label: t("app.toolbar.save"),
+            disabled: isReadOnly || isLoading || !document || isSaving || !isDirty,
+            run: () => {
+              void handleSave();
+            },
+          },
+        },
+        { kind: "header", label: t("menu_bar.group.export") },
+        {
+          kind: "item",
+          item: {
+            id: "file-export-legacy",
+            label: t("app.toolbar.export_doc_json_legacy_short"),
+            disabled: isReadOnly || isLoading || !document,
+            run: handleExport,
+          },
+        },
+        {
+          kind: "item",
+          item: { id: "file-export-svg-viewport", label: t("view_controls.export_legacy.svg_viewport"), run: handleExportSvgViewport },
+        },
+        {
+          kind: "item",
+          item: { id: "file-export-svg-visible", label: t("view_controls.export_legacy.svg_visible"), run: handleExportSvgVisibleBounds },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "file-export-abstract-md",
+            label: t("view_controls.export_legacy.abstract_map_md"),
+            run: () => {
+              void handleExportAbstractMapMarkdownWithPng();
+            },
+          },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "file-export-abstract-html",
+            label: t("view_controls.export_legacy.abstract_map_html"),
+            run: () => {
+              void handleExportAbstractMapHtmlWithPng();
+            },
+          },
+        },
+        { kind: "header", label: t("menu_bar.group.import") },
+        {
+          kind: "item",
+          item: {
+            id: "file-import-legacy",
+            label: t("app.toolbar.import_doc_json_legacy_short"),
+            disabled: isReadOnly || isLoading,
+            run: handleImportClick,
+          },
+        },
+      ],
+    },
+    {
+      id: "edit",
+      label: t("menu_bar.category.edit"),
+      rows: [
+        {
+          kind: "item",
+          item: {
+            id: "edit-undo",
+            label: t("app.toolbar.undo"),
+            shortcutHint: formatModShortcut("Z"),
+            disabled: isReadOnly || isLoading || !document || !canUndo,
+            run: handleUndo,
+          },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "edit-redo",
+            label: t("app.toolbar.redo"),
+            shortcutHint: formatModShortcut("Y"),
+            disabled: isReadOnly || isLoading || !document || !canRedo,
+            run: handleRedo,
+          },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "edit-duplicate",
+            label: t("app.toolbar.duplicate"),
+            disabled: isReadOnly || isLoading || isSaving || !document,
+            run: handleDuplicateDocument,
+          },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "edit-delete-selection",
+            label: t("app.toolbar.delete_selection"),
+            shortcutHint: "Delete",
+            disabled: isReadOnly || isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId),
+            run: handleDeleteSelection,
+          },
+        },
+      ],
+    },
+    {
+      id: "card",
+      label: t("menu_bar.category.card"),
+      rows: [
+        {
+          kind: "item",
+          item: {
+            id: "card-new",
+            label: t("app.toolbar.new_card"),
+            disabled: isReadOnly || isLoading || !document,
+            run: handleAddCard,
+          },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "card-create-island",
+            label: t("app.toolbar.create_island"),
+            disabled: isReadOnly || isLoading || !document || !canCreateIsland,
+            run: handleCreateIsland,
+          },
+        },
+        { kind: "header", label: t("menu_bar.group.claim_type") },
+        ...claimTypeMenuRows,
+      ],
+    },
+    {
+      id: "view",
+      label: t("menu_bar.category.view"),
+      rows: [
+        {
+          kind: "item",
+          item: { id: "view-open-panel", label: t("menu_bar.view.open_panel"), run: handleToggleViewControls },
+        },
+        {
+          kind: "item",
+          item: { id: "view-birds-eye", label: t("menu_bar.view.fit_to_view"), run: handleApplyBirdsEyePreset },
+        },
+        { kind: "item", item: { id: "view-reset-zoom", label: t("menu_bar.view.reset_zoom"), run: handleResetView } },
+        {
+          kind: "item",
+          item: {
+            id: "view-reading-order",
+            label: t("view_controls.reading_order.show"),
+            checked: showReadingOrder,
+            run: () => {
+              const next = !showReadingOrder;
+              setShowReadingOrder(next);
+              if (!next) {
+                setIsReadingOrderEditMode(false);
+              }
+            },
+          },
+        },
+        { kind: "header", label: t("menu_bar.group.help") },
+        {
+          kind: "item",
+          item: {
+            id: "view-shortcut-cheatsheet",
+            label: t("shortcut_cheatsheet.title"),
+            shortcutHint: "?",
+            run: () => {
+              shortcutCheatsheetReturnFocusRef.current =
+                window.document.activeElement instanceof HTMLElement ? window.document.activeElement : null;
+              setIsShortcutCheatsheetOpen(true);
+            },
+          },
+        },
+      ],
+    },
+    {
+      id: "work",
+      label: t("menu_bar.category.work"),
+      rows: [
+        { kind: "item", item: { id: "work-open-panel", label: t("work_mode.title"), run: handleToggleWorkMode } },
+      ],
+    },
+    {
+      id: "share",
+      label: t("menu_bar.category.share"),
+      rows: [
+        {
+          kind: "item",
+          item: { id: "share-open-panel", label: t("share.panel.trigger"), run: handleToggleSharePanel },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "share-safe-mode",
+            label: t("view_controls.safety.safe_mode"),
+            checked: safeMode,
+            run: () => handleSafeModeChange(!safeMode),
+          },
+        },
+      ],
+    },
+  ];
 
   const advancedWorkModeContent = (
     <>
@@ -9506,6 +9697,7 @@ export default function App() {
       headerShareControls={headerShareControls}
       headerCenter={headerCenter}
       headerRight={headerRight}
+      menuBar={<MenuBar categories={menuCategories} />}
       hasUnsavedChanges={isDirty}
       saveConflictMessage={
         hasSaveConflict
