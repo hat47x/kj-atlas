@@ -327,6 +327,36 @@ describe("UX Operability regression contracts", () => {
     expect(barSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
   });
 
+  it("UX-SCALE-01 (c): island outlines are orthogonal (grid-occupancy), complexity is a structural count (not a score), and tidy is human-triggered and one undo step", () => {
+    const outlineSource = readSource("src/domain/geometry/orthogonal_island_outline.ts");
+    const appSource = readSource("src/App.tsx");
+    const islandViewSource = readSource("src/canvas/IslandView.tsx");
+
+    // The generator is axis-aligned (grid cell tracing), not a convex hull.
+    expect(outlineSource).toContain("export function traceGridBoundary");
+    expect(outlineSource).toContain("export function generateOrthogonalIslandOutline");
+    expect(outlineSource).toContain("export function computeTidyIslandLayout");
+    expect(appSource).not.toContain("computeConvexHull");
+    expect(appSource).toContain("generateOrthogonalIslandOutline(memberCards)");
+
+    // Complexity = (vertexCount - 4) / 2, shown only when non-zero (CB-1),
+    // and framed explicitly as non-scoring in its own tooltip copy.
+    expect(outlineSource).toContain("(points.length - 4) / 2");
+    expect(islandViewSource).toContain("outlineComplexity > 0");
+    expect(islandViewSource).toContain('t("canvas.island.outline_complexity_badge"');
+
+    // Tidy is human-triggered (context menu + command palette), never
+    // automatic, and applies as exactly one document/history step.
+    expect(appSource).toContain("const handleTidyIsland = useCallback(");
+    expect(appSource).toContain('t("context_menu.tidy_island")');
+    expect(appSource).toContain('id: "tidy-island"');
+    expect(appSource).toContain("selectedIslandId !== null");
+
+    // No scoring/ranking vocabulary anywhere in the generator or its i18n
+    // framing (ADR-0048 D3 anti-scoring applies to this new signal too).
+    expect(outlineSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 
