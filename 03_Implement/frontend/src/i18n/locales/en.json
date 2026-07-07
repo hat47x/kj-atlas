@@ -1321,6 +1321,7 @@
   "card_view.claim_type.title": "Claim type: {value}",
   "card_view.unreviewed": "Card text is unreviewed",
   "card_view.critique_note": "Card has critique note",
+  "card_view.critique_quick_flag": "Feels off (edit details in the selection panel)",
   "card_view.critique_with_tags": "Card has critique and {count} tag(s)",
   "card_view.critique_with_tags_title": "Critique and {count} tag(s)",
   "card_view.critique_tag_count": "{count} tag",

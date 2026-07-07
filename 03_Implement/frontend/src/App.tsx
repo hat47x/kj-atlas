@@ -5664,6 +5664,59 @@ export default function App() {
     return document.cards.find((card) => card.id === selectedCardIds[0]) ?? null;
   }, [document?.cards, selectedCardIds]);
 
+  useEffect(() => {
+    // UX-SHORTCUT-01 (ADR-0048 D2): retention-system shortcuts (H=hold,
+    // U=critique, R=reviewed) are modifier-less single keys so the core
+    // "preserve ambiguity" operations sit closer than confirming ones (CB-2).
+    // Reuses the existing isEditableHotkeyTarget guard (shared with Cmd+1/2/3
+    // and Cmd/Ctrl+K) so typing is never interrupted. Gated on !readingNavEnabled
+    // to avoid colliding with useHotkeys.ts's own plain "r" (reading-order
+    // reviewedOnly filter) — the two features are never active at once.
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      if (readingNavEnabled || isEditableHotkeyTarget(event.target)) {
+        return;
+      }
+
+      if (!selectedCard) {
+        return;
+      }
+
+      const lowerKey = event.key.toLowerCase();
+
+      if (lowerKey === "h") {
+        event.preventDefault();
+        handleCardHoldStateChange(selectedCard.id, selectedCard.holdState === "held" ? "active" : "held");
+        return;
+      }
+
+      if (lowerKey === "u") {
+        event.preventDefault();
+        // Safe toggle: only ever creates/removes the quick-flag marker this
+        // key itself wrote. If the user has authored their own critique text,
+        // U is a no-op rather than risking destroying their words (one-枚一志).
+        const marker = t("card_view.critique_quick_flag");
+        const current = selectedCard.critique?.trim() ?? "";
+        const next = current.length === 0 ? marker : current === marker ? "" : current;
+        handleCardCritiqueChange(selectedCard.id, next);
+        return;
+      }
+
+      if (lowerKey === "r") {
+        event.preventDefault();
+        handleCardTextReviewedChange(selectedCard.id, selectedCard.textReviewed !== true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleCardCritiqueChange, handleCardHoldStateChange, handleCardTextReviewedChange, readingNavEnabled, selectedCard]);
+
   const evidenceAdjacency = useMemo(() => {
     if (!focusedVisibleDocument) {
       return buildEvidenceAdjacency({ evidenceLinks: [] });

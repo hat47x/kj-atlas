@@ -1321,6 +1321,7 @@
   "card_view.claim_type.title": "主張種別: {value}",
   "card_view.unreviewed": "カード本文は未レビューです",
   "card_view.critique_note": "カードに違和感メモがあります",
+  "card_view.critique_quick_flag": "違和感あり（詳細は選択コンテキストで編集できます）",
   "card_view.critique_with_tags": "カードに違和感メモと{count}件のタグがあります",
   "card_view.critique_with_tags_title": "違和感メモと{count}件のタグ",
   "card_view.critique_tag_count": "{count}件",

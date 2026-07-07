@@ -131,6 +131,35 @@ describe("UX Operability regression contracts", () => {
     expect(paletteSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
   });
 
+  it("UX-SHORTCUT-01: retention keys (H/U/R) are selection-scoped, non-destructive, and do not regress existing bindings", () => {
+    const appSource = readSource("src/App.tsx");
+
+    // T1 collision audit (recorded here per the issue's own validation plan):
+    // existing bindings are untouched. H/U/R are NEW plain-letter bindings;
+    // 'r' already exists in useHotkeys.ts but ONLY inside the reading-path
+    // feature (gated by onReadingPathToggleReviewedOnly, itself gated by
+    // readingNavEnabled) — this effect explicitly excludes readingNavEnabled
+    // so the two "r" bindings are mutually exclusive, never both live.
+    expect(appSource).toContain('lowerKey === "h"');
+    expect(appSource).toContain('lowerKey === "u"');
+    expect(appSource).toContain('lowerKey === "r"');
+    expect(appSource).toContain("if (readingNavEnabled || isEditableHotkeyTarget(event.target))");
+    // Existing bindings preserved verbatim (AC-5 non-regression).
+    expect(appSource).toContain('lowerKey === "z" && !event.shiftKey');
+    expect(appSource).toContain('event.key.toLowerCase() !== "k"');
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(7);
+
+    const hotkeysSource = readSource("src/hooks/useHotkeys.ts");
+    expect(hotkeysSource).toContain('event.key === "r" && onReadingPathToggleReviewedOnly');
+
+    // U is a SAFE toggle: it only ever adds/removes its own marker text and
+    // never overwrites a critique the user authored themselves (一枚一志).
+    expect(appSource).toContain("current === marker ? \"\" : current");
+
+    // H/U/R delegate to existing handlers — no new document-mutation logic.
+    expect(appSource).toContain("handleCardTextReviewedChange(selectedCard.id, selectedCard.textReviewed !== true)");
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 
