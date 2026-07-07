@@ -30,6 +30,12 @@
 - The shortcut help trigger and dialog now have regression coverage across desktop, tablet-width, and narrow mobile viewports. This keeps AC-4 from silently regressing into an off-screen or keyboard-only discovery path when the header wraps.
 - Verified locally with `tsc --noEmit`, `ux_operability_regression.test.ts`, and `git diff --check`. Full Playwright execution remains part of the broader E2E gate because the local browser/runtime setup can vary by machine.
 
+## Implementation note (2026-07-07, selected-card shortcut E2E)
+
+- Added `shortcut_card_state.spec.ts` to cover the H/U/R selected-card shortcuts as user-facing operations: H toggles hold, U toggles the default critique note, R toggles reviewed state, and each change is reversible with `Control+Z`.
+- The same spec fixes AC-2 by focusing the critique textarea and verifying H/U/R are inserted as text while hold/review state remain unchanged.
+- Local verification passed `tsc --noEmit`, `ux_operability_regression.test.ts`, `useHotkeys.test.ts`, and `git diff --check`. Playwright browser execution remains blocked in this agent environment until the missing Chromium runtime is installed.
+
 ## Shortcut binding inventory (2026-07-07)
 
 | Binding | Owner | Guard / collision note | Regression evidence |
@@ -87,8 +93,8 @@ Inventory conclusion: no duplicate active binding was found. Modifier-based view
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: H/U/R が選択時のみ機能し、⌘Z で可逆であることが e2e で固定される。
-- [ ] AC-2: テキスト編集中に単一キーが発火しない（本文に文字が入る）ことが e2e で固定される。
+- [x] AC-1: H/U/R が選択時のみ機能し、⌘Z で可逆であることが e2e で固定される。
+- [x] AC-2: テキスト編集中に単一キーが発火しない（本文に文字が入る）ことが e2e で固定される。
 - [ ] AC-3: Esc 段階処理が仕様順で1段ずつ閉じ、既存の Escape+フォーカス復帰契約（UX-OPERABILITY-04）が非回帰。
 - [x] AC-4: ? チートシートが OS 別表記で表示され、Escape で閉じる。
 - [x] AC-5: 既存バインド（Cmd/Ctrl+1/2/3、Alt+Shift+1/2/3、Enter/Space）が非回帰。重複割当なしの棚卸し結果を記録。
@@ -109,7 +115,7 @@ Inventory conclusion: no duplicate active binding was found. Modifier-based view
   - U: `critique` が未設定なら短い違和感メモを入れ、設定済みなら外す。
   - R: `textReviewed` を切り替える。ただし読書ナビが有効な場合は既存の reviewed-only 切替を優先し、キー衝突を避ける。
 - 入力中ガード（input/textarea/select/contentEditable）と修飾キーガードは `useHotkeys` に維持した。キー判定を `resolveHotkeyAction` へ切り出し、`useHotkeys.test.ts` で H/U/R、入力中無効、修飾キー無効、読書ナビ中の R 衝突回避を固定した。`ux_operability_regression.test.ts` に静的回帰アンカーも追加済み。
-- 未完了: AC-1/AC-2 の E2E 固定、AC-3 の Esc 段階処理。
+- 未完了: AC-3 の Esc 段階処理。
 
 ## 7) 検証計画 / Validation plan
 
