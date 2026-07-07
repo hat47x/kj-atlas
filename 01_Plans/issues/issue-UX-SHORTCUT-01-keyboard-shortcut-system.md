@@ -30,6 +30,20 @@
 - The shortcut help trigger and dialog now have regression coverage across desktop, tablet-width, and narrow mobile viewports. This keeps AC-4 from silently regressing into an off-screen or keyboard-only discovery path when the header wraps.
 - Verified locally with `tsc --noEmit`, `ux_operability_regression.test.ts`, and `git diff --check`. Full Playwright execution remains part of the broader E2E gate because the local browser/runtime setup can vary by machine.
 
+## Shortcut binding inventory (2026-07-07)
+
+| Binding | Owner | Guard / collision note | Regression evidence |
+| --- | --- | --- | --- |
+| H / U / R | `useHotkeys` | Single-key, selection-scoped, disabled in editable targets and with modifiers. R yields to reading navigation when reviewed-only mode is available. | `useHotkeys.test.ts`, `ux_operability_regression.test.ts` |
+| ? / Shift+/ | `useHotkeys` + `ShortcutHelpDialog` | Single-key help discovery, disabled in editable targets and with modifiers. | `useHotkeys.test.ts`, `header_toolbar_layout.spec.ts`, `ux_operability_regression.test.ts` |
+| Escape / Delete / Backspace / Arrow / Shift+Arrow | `useHotkeys`, card/polygon/panel-local handlers | Selection and nudge keys remain in the shared resolver; panel-local Escape/Tab contracts are scoped to dialogs and overlays. | `useHotkeys.test.ts`, `canvas_focus_order.spec.ts`, `polygon_vertex_edit.spec.ts`, `ux_operability_regression.test.ts` |
+| Cmd/Ctrl+G | `App.tsx` island creation handler | Modifier-only creation shortcut; no overlap with single-key H/U/R/? because the resolver ignores meta/ctrl/alt. | Source inventory; needs E2E if AC-5 is closed. |
+| Cmd/Ctrl+Z, Cmd/Ctrl+Y, Cmd/Ctrl+Shift+Z | `App.tsx` undo/redo handler | Browser-standard editing shortcuts are handled only at app level when undo/redo is available. | `first_meaningful_map_mouse_flow.spec.ts` |
+| Cmd/Ctrl+1/2/3 | `App.tsx` view-mode handler | Disabled in editable targets; excludes Alt/Shift to avoid collision with hierarchy shortcuts. | Source inventory; needs E2E if AC-5 is closed. |
+| Alt+Shift+1/2/3 | `App.tsx` hierarchy-level handler | Disabled in editable targets; excludes Cmd/Ctrl to avoid collision with view-mode shortcuts. | Source inventory; needs E2E if AC-5 is closed. |
+
+Inventory conclusion: no duplicate active binding was found. AC-5 remains open until the modifier-based view-mode and hierarchy-level shortcuts have direct non-regression coverage or an explicit decision accepts source-inventory evidence for this release gate.
+
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: UX-SHORTCUT-01
@@ -81,7 +95,7 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 既存バインド棚卸し（衝突表を本メモに追記）。
+- [x] T1 既存バインド棚卸し（衝突表を本メモに追記）。
 - [ ] T2 キーディスパッチャ（選択ガード・入力中ガード・OS 判定）。
 - [ ] T3 保持系/作成/型/整理キーの接続（既存ハンドラへ委譲）。
 - [ ] T4 Esc 段階スタックの一元化。
@@ -95,7 +109,7 @@
   - U: `critique` が未設定なら短い違和感メモを入れ、設定済みなら外す。
   - R: `textReviewed` を切り替える。ただし読書ナビが有効な場合は既存の reviewed-only 切替を優先し、キー衝突を避ける。
 - 入力中ガード（input/textarea/select/contentEditable）と修飾キーガードは `useHotkeys` に維持した。キー判定を `resolveHotkeyAction` へ切り出し、`useHotkeys.test.ts` で H/U/R、入力中無効、修飾キー無効、読書ナビ中の R 衝突回避を固定した。`ux_operability_regression.test.ts` に静的回帰アンカーも追加済み。
-- 未完了: AC-1/AC-2 の E2E 固定、AC-3 の Esc 段階処理、AC-5 の全バインド棚卸し。
+- 未完了: AC-1/AC-2 の E2E 固定、AC-3 の Esc 段階処理、AC-5 の修飾キー系ショートカット非回帰固定。
 
 ## 7) 検証計画 / Validation plan
 
