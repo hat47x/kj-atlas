@@ -1,11 +1,11 @@
 # Issue Draft: UX-CMDK-01 コマンドパレット（⌘K / Ctrl+K）
 
 - Type: Feature request
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Claude Code
 - Scope: `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-CMDK-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D2 収納5層・第5層）, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
@@ -54,11 +54,11 @@
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: ⌘K/Ctrl+K で開閉し、Esc でトリガ元へフォーカス復帰することが e2e で固定される。
-- [ ] AC-2: 検索→Enter で代表コマンド（新規カード・島を作成・保留切替・共有と再現を開く）が実行される。
-- [ ] AC-3: テキスト編集中に誤発火しない（入力欄では OS 既定を優先）。
-- [ ] AC-4: 保持系コマンドが候補上位に固定表示される。
-- [ ] AC-5: 初期表示アンカー非回帰（パレットは常時表示要素を追加しない。トリガはメニュー/ヘルプ内表記のみ）。
+- [x] AC-1: ⌘K/Ctrl+K で開閉し、Esc でトリガ元へフォーカス復帰することが e2e で固定される（`e2e/command_palette.spec.ts`）。
+- [x] AC-2: 検索→Enter で代表コマンド（新規カード・島を作成・保留切替・共有と再現を開く）が実行される。全11コマンドとも既存ハンドラへの委譲のみで新規ロジックを持たない。
+- [x] AC-3: テキスト編集中に誤発火しない（`isEditableHotkeyTarget` を既存ロジックから再利用。入力欄では OS 既定を優先することを e2e で固定）。
+- [x] AC-4: 保持系（`toggle-hold`）コマンドが候補上位に固定表示される（安定ソートで category="hold" を先頭に）。
+- [x] AC-5: 初期表示アンカー非回帰（`data-ui-core-action`×7 不変）。トリガは View パネル内の非インタラクティブなヒント文言のみ（ボタン等は追加しない）。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -87,3 +87,14 @@
 ## 実装設計の到着（2026-07-04 Round 5）
 
 - レッドライン確定（`02_Architecture/design/kj-atlas 拡張提案.dc.html` §段階2）: 中央モーダル 幅min(560,92vw)・角丸12、検索入力44h/13px、候補行36h（アイコン16＋ラベル13＋右にOS別キー表記）、保持系コマンド上位固定、空クエリ=最近/推奨・0件=該当なし、`aria-activedescendant`。プロトタイプ実装済み。
+
+## 完了記録 2026-07-06（Claude Code）
+
+- **コマンドレジストリ**（`App.tsx` の `paletteCommands` useMemo）: 11コマンド（新規カード・島を作成・保留を切り替え・作業モード・共有と再現・表示・状態の凡例を切り替え・元に戻す・やり直す・保存・空キャンバスのヒントを再表示）すべてが既存ハンドラ（`handleAddCard`/`handleCreateIsland`/`handleCardHoldStateChange`/`handleUndo`/`handleRedo`/`handleSave`/`handleResetEmptyCanvasHint`/既存 state setter）への参照委譲のみ。既存の enabled 条件（`canEditDocument`・`selectedCardIds.length>0`・`canUndo`/`canRedo`・`isDirty`・`emptyCanvasHintCompleted`）に基づき、無効なコマンドは一覧から**除外**（グレーアウトではない）。
+- **UI**（新規 `src/ui/CommandPalette.tsx`）: 中央モーダル（幅 `min(560px,92vw)`・角丸12）・検索入力（44h/13px）・候補行（36h・カテゴリ別グリフ・OS別ショートカット右寄せ）。`role="dialog"`/`role="listbox"`/`role="option"`/`aria-activedescendant` の combobox パターン。↑↓移動・Enter実行・Esc閉じ。
+- **保持系上位固定**: `Array.prototype.sort`（安定ソート）で `category==="hold"` を先頭に。
+- **フォーカス復帰**: `handleCloseCanvasLegend`（UX-VISUAL-01）と同型の「unmount前に同期 focus」パターンを再利用。開いた時点の `document.activeElement` を ref に保持し、Escape/背景クリック（キャンセル経路）でのみ復帰。**コマンド実行時は復帰を強制しない**（例: 新規カード実行時にカードの編集用テキストエリアが自身の `autoFocus` でフォーカスを持つため、これを奪わない）。
+- **誤発火防止**（AC-3）: App.tsx 既存の `isEditableHotkeyTarget`（Cmd+1/2/3 等と共用）をそのまま再利用し、テキスト入力欄にフォーカスがある間は ⌘K を無視して OS/ブラウザ既定に委ねる。StartPanel 表示中も無効化。
+- **OS別ショートカット表記**: 新規共有ユーティリティ `src/ui/os_shortcut_format.ts`（`formatModShortcut`）。UX-SHORTCUT-01 のチートシート実装時にも再利用予定。
+- **discoverability**（AC-5）: View パネル内に非インタラクティブなヒント文言（「Ctrl+K でコマンドパレットを開く」）のみ追加。ボタン等の常時表示要素は追加していない。
+- 検証: typecheck 0 / vitest **894 passed**（182 files。回帰アンカー1件追加）/ e2e 新規5件 passed（開閉・フォーカス復帰／実行／誤発火なし／0件表示／保持系上位固定）+ 既存19件で非回帰確認 / 実機スクショで意図どおりの表示（保留を切り替えが最上位・OS別ショートカット表記）を確認。

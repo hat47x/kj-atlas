@@ -63,6 +63,8 @@ import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { WorkModePanel } from "./ui/WorkModePanel";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import { CanvasLegend } from "./ui/CanvasLegend";
+import { CommandPalette, type PaletteCommand } from "./ui/CommandPalette";
+import { formatModShortcut } from "./ui/os_shortcut_format";
 import type { IslandRelationEdgeSelection } from "./domain/island_relation_explain";
 import {
   buildRelationSummarySourceSignature,
@@ -1137,6 +1139,10 @@ export default function App() {
   // client-side from the actual result of the most recent AI call.
   const [providerKind, setProviderKind] = useState<ProviderKind | null>(null);
   const [lastAiCallOutcome, setLastAiCallOutcome] = useState<"ok" | AiProviderErrorKind | null>(null);
+  // UX-CMDK-01 (ADR-0048 D2, layer 5): command palette. Default OFF, opened
+  // only via Cmd/Ctrl+K; no persistent trigger element (CB-1, AC-5).
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const commandPaletteReturnFocusRef = useRef<HTMLElement | null>(null);
   const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(
     () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
   );
@@ -3936,6 +3942,15 @@ export default function App() {
     setIsCanvasLegendOpen(false);
   }, []);
 
+  const closeCommandPalette = useCallback(() => {
+    // UX-CMDK-01 AC-1 (ADR-0030 contract): Escape/backdrop cancel restores
+    // focus to whatever had focus before the palette opened. Mirrors
+    // handleCloseCanvasLegend's synchronous-focus-before-unmount pattern.
+    commandPaletteReturnFocusRef.current?.focus();
+    commandPaletteReturnFocusRef.current = null;
+    setIsCommandPaletteOpen(false);
+  }, []);
+
   const createCardAtPosition = useCallback(
     (x: number, y: number) => {
       if (!document) {
@@ -5458,6 +5473,38 @@ export default function App() {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [canRedo, canUndo, handleRedo, handleUndo]);
+
+  useEffect(() => {
+    // UX-CMDK-01 (ADR-0048 D2): Cmd/Ctrl+K opens the command palette; pressing
+    // it again while open closes it (same as Escape). AC-3: while editing text
+    // elsewhere in the app, defer to the OS/browser default instead of opening.
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isModifierPressed = event.metaKey || event.ctrlKey;
+      if (!isModifierPressed || event.key.toLowerCase() !== "k") {
+        return;
+      }
+
+      if (isCommandPaletteOpen) {
+        event.preventDefault();
+        closeCommandPalette();
+        return;
+      }
+
+      if (isStartPanelVisible || isEditableHotkeyTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      commandPaletteReturnFocusRef.current =
+        window.document.activeElement instanceof HTMLElement ? window.document.activeElement : null;
+      setIsCommandPaletteOpen(true);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closeCommandPalette, isCommandPaletteOpen, isStartPanelVisible]);
 
   const uniqueIslands = useMemo(() => {
     const normalizedIslands = (focusedVisibleDocument?.islands ?? []).map((island) => ({
@@ -9210,6 +9257,138 @@ export default function App() {
     </>
   );
 
+  // UX-CMDK-01 (ADR-0048 D2): command registry. Every entry delegates to an
+  // existing handler — no new business logic. Disabled commands (per their
+  // existing enabled condition) are omitted rather than shown greyed out.
+  const paletteCommands = useMemo<PaletteCommand[]>(() => {
+    const canEditDocument = !isReadOnly && !isLoading && Boolean(document);
+    const commands: Array<PaletteCommand & { enabled: boolean }> = [
+      {
+        id: "new-card",
+        category: "create",
+        label: t("app.toolbar.new_card"),
+        enabled: canEditDocument,
+        run: handleAddCard,
+      },
+      {
+        id: "create-island",
+        category: "create",
+        label: t("app.toolbar.create_island"),
+        shortcutHint: formatModShortcut("G"),
+        enabled: canEditDocument && selectedCardIds.length > 0,
+        run: handleCreateIsland,
+      },
+      {
+        id: "toggle-hold",
+        category: "hold",
+        label: t("command_palette.command.toggle_hold"),
+        enabled: canEditDocument && selectedCard !== null,
+        run: () => {
+          if (!selectedCard) {
+            return;
+          }
+          handleCardHoldStateChange(selectedCard.id, selectedCard.holdState === "held" ? "active" : "held");
+        },
+      },
+      {
+        id: "open-work-mode",
+        category: "nav",
+        label: t("work_mode.title"),
+        enabled: true,
+        run: () => setIsWorkModeOpen((previous) => !previous),
+      },
+      {
+        id: "open-share",
+        category: "nav",
+        label: t("share.panel.trigger"),
+        enabled: true,
+        run: () => setIsSharePanelOpen((previous) => !previous),
+      },
+      {
+        id: "open-view",
+        category: "nav",
+        label: t("view_controls.trigger"),
+        enabled: true,
+        run: () => setIsViewControlsOpen((previous) => !previous),
+      },
+      {
+        id: "toggle-legend",
+        category: "nav",
+        label: t("command_palette.command.toggle_legend"),
+        enabled: true,
+        run: () => {
+          if (isCanvasLegendOpen) {
+            handleCloseCanvasLegend();
+          } else {
+            setIsCanvasLegendOpen(true);
+          }
+        },
+      },
+      {
+        id: "undo",
+        category: "history",
+        label: t("app.toolbar.undo"),
+        shortcutHint: formatModShortcut("Z"),
+        enabled: canUndo,
+        run: handleUndo,
+      },
+      {
+        id: "redo",
+        category: "history",
+        label: t("app.toolbar.redo"),
+        shortcutHint: formatModShortcut("Y"),
+        enabled: canRedo,
+        run: handleRedo,
+      },
+      {
+        id: "save",
+        category: "safety",
+        label: t("app.toolbar.save"),
+        enabled: canEditDocument && !isSaving && isDirty,
+        run: () => {
+          void handleSave();
+        },
+      },
+      {
+        id: "reset-empty-hint",
+        category: "safety",
+        label: t("view_controls.onboarding.reset_empty_canvas"),
+        enabled: emptyCanvasHintCompleted,
+        run: handleResetEmptyCanvasHint,
+      },
+    ];
+
+    return commands.filter((command) => command.enabled);
+  }, [
+    canRedo,
+    canUndo,
+    document,
+    emptyCanvasHintCompleted,
+    handleAddCard,
+    handleCardHoldStateChange,
+    handleCloseCanvasLegend,
+    handleCreateIsland,
+    handleRedo,
+    handleResetEmptyCanvasHint,
+    handleUndo,
+    isCanvasLegendOpen,
+    isDirty,
+    isLoading,
+    isReadOnly,
+    isSaving,
+    selectedCard,
+    selectedCardIds,
+  ]);
+
+  const handleRunPaletteCommand = useCallback((command: PaletteCommand) => {
+    // Execution path (AC-1): unlike Escape/backdrop cancel, do NOT force focus
+    // back to the pre-open trigger — some commands (e.g. New card) move focus
+    // to their own result (the new card's edit textarea) and that must win.
+    commandPaletteReturnFocusRef.current = null;
+    setIsCommandPaletteOpen(false);
+    command.run();
+  }, []);
+
   const shouldShowEmptyCanvasHint =
     !isStartPanelVisible &&
     !isReadOnly &&
@@ -9885,6 +10064,13 @@ export default function App() {
         </div>
       )}
     </WorkModePanel>
+    {isCommandPaletteOpen ? (
+      <CommandPalette
+        commands={paletteCommands}
+        onClose={closeCommandPalette}
+        onRunCommand={handleRunPaletteCommand}
+      />
+    ) : null}
     </>
   );
 }

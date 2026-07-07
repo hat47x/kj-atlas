@@ -98,6 +98,39 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain("getProviderStatus()");
   });
 
+  it("UX-CMDK-01: command palette delegates to existing handlers, pins retention commands, and adds no persistent trigger", () => {
+    const appSource = readSource("src/App.tsx");
+
+    // AC-5: no permanent UI element opens the palette (CB-1); it is
+    // opened only via the global Cmd/Ctrl+K listener.
+    expect(appSource).toContain("const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)");
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(7);
+
+    // AC-3: defers to the OS/browser default while editing text elsewhere.
+    expect(appSource).toContain("isStartPanelVisible || isEditableHotkeyTarget(event.target)");
+
+    // Every registered command calls an EXISTING handler by reference —
+    // no new business logic is introduced by the palette itself.
+    expect(appSource).toContain("run: handleAddCard");
+    expect(appSource).toContain("run: handleCreateIsland");
+    expect(appSource).toContain("run: handleUndo");
+    expect(appSource).toContain("run: handleRedo");
+    expect(appSource).toContain("run: handleResetEmptyCanvasHint");
+    expect(appSource).toContain("handleCardHoldStateChange(selectedCard.id,");
+
+    // AC-1: Escape/backdrop cancel restores focus (ADR-0030); execution does not.
+    expect(appSource).toContain("commandPaletteReturnFocusRef.current?.focus()");
+
+    const paletteSource = readSource("src/ui/CommandPalette.tsx");
+    expect(paletteSource).toContain('role="dialog"');
+    expect(paletteSource).toContain("aria-activedescendant");
+    // AC-4: retention ("hold") commands are pinned above all other categories.
+    expect(paletteSource).toContain('a.category === "hold" ? 0 : 1');
+    // No scoring/ranking vocabulary anywhere in the palette (reasserts D1's
+    // anti-scoring stance for this new surface).
+    expect(paletteSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 

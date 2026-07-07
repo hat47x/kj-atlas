@@ -6,6 +6,7 @@ import type { PerspectiveMode } from "../domain/view/perspective";
 import type { ViewPreset } from "../domain/view/presets";
 import type { ProviderKind } from "../api/client";
 import type { AiProviderErrorKind } from "../domain/ai_provider_error";
+import { formatModShortcut } from "./os_shortcut_format";
 import { t } from "../i18n/translate";
 
 type ViewControlsPanelProps = {
@@ -195,6 +196,9 @@ export function ViewControlsPanel({
         boxShadow: "0 12px 24px rgba(15, 23, 42, 0.18)",
       }}
     >
+      <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
+        {t("command_palette.hint_discoverability", { shortcut: formatModShortcut("K") })}
+      </div>
       <div style={sectionStyle}>
         <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.viewpoint_presets.title")}</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
