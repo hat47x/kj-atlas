@@ -55,7 +55,7 @@
 ## 5) 受け入れ条件 / Acceptance criteria
 
 - [x] AC-1: ミニマップで現在ビューの把握と移動ができ、折りたたみ状態が保持される（`e2e/minimap.spec.ts`）。
-- [ ] AC-2: 一括操作（束ねる・保留・型変更）が複数選択時のみ出現し、1回の取り消しで全体が戻る。
+- [x] AC-2: 一括操作（束ねる・保留・型変更）が複数選択時のみ出現し、1回の取り消しで全体が戻る（`e2e/bulk_operations_bar.spec.ts`）。
 - [ ] AC-3: 島の描線が空白の角を含まない直交ポリゴンで描かれ、複雑さ表示→「整える」→複雑さ低減が e2e で固定される（自動実行しない）。
 - [x] AC-4: 鳥瞰時の関係線が内部化/昇格規則どおりに増減し、ズーム復帰で元に戻る（`e2e/edge_escalation.spec.ts`）。
 - [ ] AC-5: PERF-BUDGET-01 のフィクスチャ上で PB-4 相当の対話性が維持される（同Issueの計測系を再利用し重複計測しない）。
@@ -63,7 +63,7 @@
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 ミニマップ（ビュー枠・折りたたみ・CB-1 宣言）。
-- [ ] T2 一括操作バー（選択数連動・履歴1ステップ）。
+- [x] T2 一括操作バー（選択数連動・履歴1ステップ）。
 - [ ] T3 直交描線ジェネレータ＋複雑さ算出＋「整える」。
 - [x] T4 エスカレーション規則（内部化/昇格/ラベル）。
 - [ ] T5 e2e＋PB 準拠確認。
@@ -127,6 +127,21 @@
 - e2e 新規2件 passed: `edge_escalation.spec.ts`（同一島内=内部化・異島間=昇格・孤立カードへの昇格が実際の `<line stroke="#0f766e">` として描画されズーム復帰で消えることをDOM直接検証）
 - 既存の広範な e2e で非回帰確認（`canvas_legend`・`canvas_protection`・`card_meta_row`・`domain_expression_keyboard_access`・`keyboard_release_candidate_flow`・`hierarchy_level_persistence` 等）
 
-## 残作業（AC-2・AC-3・AC-5、follow-up PR）
+## 完了記録（3/4）2026-07-07（Claude Code）— 一括操作バー（AC-2・T2）
 
-- AC-2/T2: 一括操作バー。AC-3/T3: 直交描線ジェネレータ＋複雑さ＋「整える」。AC-5/T5: PERF-BUDGET-01 フィクスチャでのスモーク確認。
+### 実装
+
+- `src/ui/BulkOperationsBar.tsx`（新規）: 選択カード数2件以上でのみ出現する下中央バー。保持系（保留・違和感）を左端に配置し、区切り線の後に型変更（`<select>`・即時適用）・「島に束ねる」・削除を続ける。`role="status" aria-live="polite"` で「{count} 件のカードを選択中」を通知（既存 `side_panel.selection.card_multiple` を再利用、評価語なし）。
+- `src/App.tsx`: `handleBulkToggleHold`・`handleBulkToggleCritique`・`handleBulkClaimTypeChange` を新規追加。いずれも選択カード全体をひとつのドキュメント変換として `applyDocumentChange` を**1回だけ**呼ぶ（カードごとのループでヒストリーをN件作らない）。「束ねる」と「削除」は新規ロジックなしで既存の `handleCreateIsland`／`handleDeleteSelection`（いずれも元から選択全体に対応・1ステップ）へ直接委譲。
+- 一括保留トグルの意味論（未確立だったため設計判断）: 「全カードが保留中」なら解除、それ以外（混在または全て非保留）なら全て保留、という「一括チェックボックス」方式を採用（単一カードのHキー＝held⇄activeの二値トグルと矛盾しない拡張）。一括違和感トグルは、U キーと**全く同じ**安全なマーカー方式（空→定型文言・定型文言→空・自著テキストは無変更）をカードごとに適用。
+
+### 検証
+
+- typecheck 0 / vitest **903 passed**（183 files。UX-SCALE-01 (b) 回帰アンカー1件追加）
+- e2e 新規4件 passed: `bulk_operations_bar.spec.ts`（2件未満では非表示／一括保留とCtrl+Zでの1ステップ取り消し／一括型変更／一括削除と1ステップ取り消し）
+- **既存 e2e の非回帰対応**: 新規バーが既存の常時表示ツールバー（`data-ui-core-action="create-island"`）と同じラベル「Create Island」/「島を作成」を持つボタンを追加したため、複数選択時にラベルが重複しアクセシブルネームが曖昧になる既存テスト2件（`first_meaningful_map_mouse_flow.spec.ts`・`first_value_share_preflight.spec.ts`）を `getByRole("banner").getByRole(...)` でヘッダー領域に限定するよう修正（UX-MENU-01 で確立した「移設/追加によりラベル重複が生じた既存テストをスコープ限定で修正する」パターンを踏襲）。
+- 既存の広範な e2e で非回帰確認（`complexity_budget_foregrounding`・`review_pack_trace_export`）
+
+## 残作業（AC-3・AC-5、follow-up PR）
+
+- AC-3/T3: 直交描線ジェネレータ＋複雑さ＋「整える」。AC-5/T5: PERF-BUDGET-01 フィクスチャでのスモーク確認。
