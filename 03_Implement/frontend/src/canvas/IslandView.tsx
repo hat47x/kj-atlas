@@ -31,8 +31,6 @@ type IslandViewProps = {
   showSummary?: boolean;
   safeMode?: boolean;
   isCollapsedForView?: boolean;
-  isProtectedVoice?: boolean;
-  showProtectedVoiceMarker?: boolean;
   onSelect: (islandId: string, isShiftPressed: boolean) => void;
   onToggleCollapsed?: (islandId: string, collapsed: boolean) => void;
   onTitleDoubleClick?: (islandId: string) => void;
@@ -42,6 +40,8 @@ type IslandViewProps = {
   onPeekEnd?: () => void;
   isPickingEdgeTarget?: boolean;
   zIndex?: number;
+  /** UX-VISUAL-02: deterministic "protection" mark for a small island. */
+  isProtected?: boolean;
 };
 
 type EdgeHitbox = {
@@ -162,8 +162,6 @@ function IslandViewComponent({
   showSummary = true,
   safeMode = false,
   isCollapsedForView,
-  isProtectedVoice = false,
-  showProtectedVoiceMarker = true,
   onSelect,
   onToggleCollapsed,
   onTitleDoubleClick,
@@ -173,6 +171,7 @@ function IslandViewComponent({
   onPeekEnd,
   isPickingEdgeTarget = false,
   zIndex = 0,
+  isProtected = false,
 }: IslandViewProps) {
   const bounds = getIslandBounds(island, cards);
   const { acceptedLabelIds } = useContext(LabelVisibilityContext);
@@ -183,12 +182,15 @@ function IslandViewComponent({
   const hasSummary = typeof island.summaryText === "string" && island.summaryText.trim().length > 0;
   const hideUnreviewedSummary = safeMode && island.summaryReviewed === false && hasSummary;
   const isCollapsed = isCollapsedForView ?? island.collapsed === true;
-  const isProtectedSmallIsland = island.cardIds.length > 0 && island.cardIds.length <= 2;
-  const isProtectedIsland = showProtectedVoiceMarker && (isProtectedSmallIsland || isProtectedVoice);
   const headerHeight = hasSummary || abstractMapView ? ISLAND_HEADER_HEIGHT_WITH_SUMMARY : ISLAND_HEADER_HEIGHT;
   const islandBackgroundImage = island.imageUrl ? `url("${encodeURI(island.imageUrl)}")` : null;
   const polygonPoints = getIslandPolygonPoints(island);
   const hasPolygon = polygonPoints.length >= 3 && !isSelfIntersectingPolygon(polygonPoints);
+  // UX-SCALE-01 (c): (vertexCount - 4) / 2 = count of reflex ("concave")
+  // corners — 0 for a plain rectangle. A structural count, not a score/rank
+  // (ADR-0048 D3 anti-scoring); shown only when non-zero (CB-1: no badge
+  // for the common default-shape case).
+  const outlineComplexity = hasPolygon ? Math.max(0, Math.round((polygonPoints.length - 4) / 2)) : 0;
   const showTitleLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandTitleLabelId(island.id)) : true;
   const showSummaryLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandSummaryLabelId(island.id)) : true;
   const showUnreviewedLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandUnreviewedLabelId(island.id)) : true;
@@ -415,21 +417,46 @@ function IslandViewComponent({
         >
           #{island.cardIds.length}
         </span>
-        {isProtectedIsland ? (
+        {outlineComplexity > 0 ? (
           <span
-            aria-label={t("canvas.island.protected_voice.aria")}
-            title={t("canvas.island.protected_voice.title")}
             style={{
               fontSize: 10,
               fontWeight: 700,
-              color: "#475569",
-              backgroundColor: "#f8fafc",
-              border: "1px dashed #cbd5e1",
+              color: "#7c2d12",
+              backgroundColor: "#fef3e2",
+              border: "1px solid #fed7aa",
               borderRadius: 999,
               padding: "1px 6px",
             }}
+            title={t("canvas.island.outline_complexity_title", { count: outlineComplexity })}
           >
-            {t("canvas.island.protected_voice.label")}
+            {t("canvas.island.outline_complexity_badge", { count: outlineComplexity })}
+          </span>
+        ) : null}
+        {isProtected ? (
+          // UX-VISUAL-02 (ADR-0048 D3): protection mark for a small island.
+          // Mirrors CardView's protection chip exactly (dashed border, square dot,
+          // borderRadius 4 not the 999 pill shape used by the neighboring count/
+          // placard badges) so the "protection" form signature is one channel,
+          // consistent across cards, islands, and the legend swatch.
+          <span
+            aria-label={t("canvas.island.protected")}
+            title={t("canvas.island.protected_title")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 3,
+              fontSize: 10,
+              fontWeight: 600,
+              color: "#334155",
+              backgroundColor: "#f8fafc",
+              border: "1px dashed #94a3b8",
+              borderRadius: 4,
+              padding: "1px 6px",
+            }}
+          >
+            <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 2, backgroundColor: "#94a3b8" }} />
+            {t("canvas.island.protected")}
           </span>
         ) : null}
         {placardText && !isCollapsed ? (

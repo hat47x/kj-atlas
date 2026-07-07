@@ -4,6 +4,9 @@ import type { LODLevel, LODThresholds } from "../domain/view/lod";
 import type { HierarchyLevel } from "../domain/view/hierarchy_level";
 import type { PerspectiveMode } from "../domain/view/perspective";
 import type { ViewPreset } from "../domain/view/presets";
+import type { ProviderKind } from "../api/client";
+import type { AiProviderErrorKind } from "../domain/ai_provider_error";
+import { formatModShortcut } from "./os_shortcut_format";
 import { t } from "../i18n/translate";
 
 type ViewControlsPanelProps = {
@@ -45,6 +48,10 @@ type ViewControlsPanelProps = {
   onResetEmptyCanvasHint: () => void;
   isCanvasLegendOpen: boolean;
   onToggleCanvasLegend: () => void;
+  showProtectionMarks: boolean;
+  onToggleProtectionMarks: () => void;
+  providerKind: ProviderKind | null;
+  lastAiCallOutcome: "ok" | AiProviderErrorKind | null;
   lodEnabled: boolean;
   onLodEnabledChange: (value: boolean) => void;
   lodThresholds?: LODThresholds;
@@ -52,8 +59,6 @@ type ViewControlsPanelProps = {
   currentLodLevel?: LODLevel | null;
   lodShowLoneWolvesWhenFar: boolean;
   onLodShowLoneWolvesWhenFarChange: (value: boolean) => void;
-  showProtectedVoiceMarkers: boolean;
-  onShowProtectedVoiceMarkersChange: (value: boolean) => void;
   showLabelBounds: boolean;
   onShowLabelBoundsChange: (value: boolean) => void;
   evidenceOverlayEnabled: boolean;
@@ -132,6 +137,10 @@ export function ViewControlsPanel({
   onResetEmptyCanvasHint,
   isCanvasLegendOpen,
   onToggleCanvasLegend,
+  showProtectionMarks,
+  onToggleProtectionMarks,
+  providerKind,
+  lastAiCallOutcome,
   lodEnabled,
   onLodEnabledChange,
   lodThresholds,
@@ -139,8 +148,6 @@ export function ViewControlsPanel({
   currentLodLevel,
   lodShowLoneWolvesWhenFar,
   onLodShowLoneWolvesWhenFarChange,
-  showProtectedVoiceMarkers,
-  onShowProtectedVoiceMarkersChange,
   showLabelBounds,
   onShowLabelBoundsChange,
   evidenceOverlayEnabled,
@@ -189,6 +196,12 @@ export function ViewControlsPanel({
         boxShadow: "0 12px 24px rgba(15, 23, 42, 0.18)",
       }}
     >
+      <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>
+        {t("command_palette.hint_discoverability", { shortcut: formatModShortcut("K") })}
+      </div>
+      <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
+        {t("shortcut_cheatsheet.hint_discoverability")}
+      </div>
       <div style={sectionStyle}>
         <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.viewpoint_presets.title")}</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -610,23 +623,6 @@ export function ViewControlsPanel({
 
 
       <div style={sectionStyle}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.protection.title")}</div>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
-          <input
-            type="checkbox"
-            checked={showProtectedVoiceMarkers}
-            onChange={(event) => {
-              onShowProtectedVoiceMarkersChange(event.target.checked);
-            }}
-          />
-          {t("view_controls.protection.show_markers")}
-        </label>
-        <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.4 }}>
-          {t("view_controls.protection.help")}
-        </div>
-      </div>
-
-      <div style={sectionStyle}>
         <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.label_culling.title")}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
           <input
@@ -676,6 +672,26 @@ export function ViewControlsPanel({
         >
           {t(isCanvasLegendOpen ? "view_controls.legend.toggle_hide" : "view_controls.legend.toggle_show")}
         </button>
+        <button
+          type="button"
+          onClick={onToggleProtectionMarks}
+          aria-pressed={showProtectionMarks}
+          style={{ cursor: "pointer" }}
+        >
+          {t(showProtectionMarks ? "view_controls.protection.toggle_hide" : "view_controls.protection.toggle_show")}
+        </button>
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.ai_provider.title")}</div>
+        <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.4 }}>
+          {t(`view_controls.ai_provider.kind.${providerKind ?? "unknown"}`)}
+        </div>
+        {lastAiCallOutcome ? (
+          <div style={{ fontSize: 11, color: "#64748b" }}>
+            {t(`view_controls.ai_provider.outcome.${lastAiCallOutcome}`)}
+          </div>
+        ) : null}
       </div>
 
       <div style={{ ...sectionStyle, marginTop: 10, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>

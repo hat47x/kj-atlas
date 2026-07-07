@@ -34,7 +34,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 9) **全体アーキテクチャ**: `02_Architecture/architecture.md`
 10) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
 11) **MVPデータ運用境界**: `02_Architecture/data_model_operations_overview.md`
-12) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0047`（価値→社会的目標の実現フェーズ索引は `ADR-0036`、ガバナンス適正化方針は `ADR-0039`、ドメイン表現第一級化は `ADR-0040`、根幹価値の保護は `ADR-0041`〜`ADR-0043`、UI/UX品質基準は `ADR-0044`、エージェント分担は `ADR-0045`、性能予算は `ADR-0046`、設計判断ADRの飽和とexecution-first転換は `ADR-0047`）
+12) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0048`（価値→社会的目標の実現フェーズ索引は `ADR-0036`、ガバナンス適正化方針は `ADR-0039`、ドメイン表現第一級化は `ADR-0040`、根幹価値の保護は `ADR-0041`〜`ADR-0043`、UI/UX品質基準は `ADR-0044`、エージェント分担は `ADR-0045`、性能予算は `ADR-0046`、設計判断ADRの飽和とexecution-first転換は `ADR-0047`、視覚言語/コマンド到達/KJ法語彙は `ADR-0048`）
 13) **実装（03_Implement）**: 対象領域のソースへ
 14) **運用・手順**: `04_Documentation/*`（必要に応じて）
 15) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -134,6 +134,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0045-agent-division-of-labor-cowork-code-codex.md`：Cowork/Claude Code/Codex の責務分担と協働プロトコル（CP-1..6：ブランチ消失・採番衝突の恒久対策）。運用正本は `00_Prompt/agent_collaboration.md`。
 - `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`：応答性の性能予算（PB-1..5：代表規模/worker化100ms基準/劣化可視化）。`ADR-0043` 認知負荷予算と対をなす計算負荷の予算。正本は `value_traceability.md` §2.8。
 - `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`：設計判断ADRが現段階で飽和したことの記録と、execution-first への転換・ADR再起票基準（R-1..4）。新規ADRは R-1..4 該当時のみ。
+- `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`：Claude Design 壁打ち成果の採択（R-1）。D1 視覚言語(4チャネル・amber=保留/違和感予約・hypothesis=violet)／D2 コマンド到達5層＋ショートカット原則／D3 KJ法設計憲章＋関係記号(契約先行)。派生: `UX-VISUAL-01/02` `UX-CMDK-01` `UX-SHORTCUT-01` `UX-SCALE-01` `DOMAIN-KJ-01` `DOMAIN-KA-01` `DOMAIN-TRACE-01`。
 - `01_Plans/documentation_quality.md`：AIエージェントが対外文書を作成する際の内部品質基準。
 - `01_Plans/minimal-context-triage.md`：未処理ADR/issueを最小読取で抽出する手順。
 - `01_Plans/triage_actionable_plans.py`：ADR/issueメタデータだけを走査して Ready/保留/関連ADR を抽出する軽量CLI。

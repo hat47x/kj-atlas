@@ -149,7 +149,12 @@ export function computeVisibleBounds(doc: DocumentV2, viewState: VisibleBoundsVi
   if (viewState.summaryView || viewState.abstractMapView) {
     edges = [
       ...edges,
-      ...getDerivedIslandEdges(doc).filter((edge) => viewState.visibleIslandIds.has(edge.fromId) && viewState.visibleIslandIds.has(edge.toId)),
+      ...getDerivedIslandEdges(doc).filter((edge) => {
+        if (!viewState.visibleIslandIds.has(edge.fromId)) {
+          return false;
+        }
+        return edge.toKind === "island" ? viewState.visibleIslandIds.has(edge.toId) : visibleCardIdSet.has(edge.toId);
+      }),
     ];
   }
 

@@ -11,7 +11,7 @@ describe("IslandView accessibility controls", () => {
     setActiveLocale("ja");
   });
 
-  const renderIsland = (island: Island, options: { isProtectedVoice?: boolean } = {}) =>
+  const renderIsland = (island: Island, options: { isProtected?: boolean } = {}) =>
     renderToStaticMarkup(createElement(IslandView, {
       island,
       cards: [
@@ -23,7 +23,7 @@ describe("IslandView accessibility controls", () => {
       onSelect: vi.fn(),
       onToggleCollapsed: vi.fn(),
       onFocusIsland: vi.fn(),
-      isProtectedVoice: options.isProtectedVoice,
+      isProtected: options.isProtected,
     }));
 
   it("renders one primary select control and keeps utility controls separately named", () => {
@@ -89,10 +89,11 @@ describe("IslandView accessibility controls", () => {
       cardIds: ["c1", "c2"],
     };
 
-    const html = renderIsland(island);
+    const html = renderIsland(island, { isProtected: true });
 
     expect(html).toContain("保護");
-    expect(html).toContain('aria-label="保護対象です。無理に分類しない島です"');
+    expect(html).toContain('aria-label="保護"');
+    expect(html).toContain("無理にまとめなくて構いません");
     expect(html).not.toContain("スコア");
     expect(html).not.toContain("順位");
     expect(html).not.toContain("比率");
@@ -118,9 +119,10 @@ describe("IslandView accessibility controls", () => {
       critique: "ここだけ気になる",
     };
 
-    const html = renderIsland(island, { isProtectedVoice: true });
+    const html = renderIsland(island, { isProtected: true });
 
     expect(html).toContain("保護");
-    expect(html).toContain('aria-label="保護対象です。無理に分類しない島です"');
+    expect(html).toContain('aria-label="保護"');
+    expect(html).toContain("無理にまとめなくて構いません");
   });
 });

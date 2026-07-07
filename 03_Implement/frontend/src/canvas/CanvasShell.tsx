@@ -149,7 +149,7 @@ type CanvasShellProps = {
   lodThresholds?: LODConfig["lodThresholds"];
   lodLevelOverride?: LODLevel | null;
   lodShowLoneWolvesWhenFar?: boolean;
-  showProtectedVoiceMarkers?: boolean;
+  showProtectionMarks?: boolean;
   effectiveCollapsedIslandIds?: Set<string>;
   showDerivedIslandEdges?: boolean;
   searchQuery?: string;
@@ -314,7 +314,7 @@ export function CanvasShell({
   lodThresholds,
   lodLevelOverride = null,
   lodShowLoneWolvesWhenFar = true,
-  showProtectedVoiceMarkers = true,
+  showProtectionMarks = true,
   effectiveCollapsedIslandIds,
   showDerivedIslandEdges = false,
   searchQuery = "",
@@ -591,14 +591,15 @@ export function CanvasShell({
     return new Set(document.cards.map((card) => card.id).filter((cardId) => !islandMemberCardIds.has(cardId)));
   }, [document.cards, document.islands]);
 
-  const singletonCritiqueCardIdSet = useMemo(() => {
-    const cardIds = document.cards
-      .filter((card) => Boolean(card.critique?.trim()) || (card.critiqueTags?.length ?? 0) > 0)
-      .map((card) => card.id);
-    const islandCount = document.islands.filter((island) => Boolean(island.critique?.trim()) || (island.critiqueTags?.length ?? 0) > 0).length;
-
-    return cardIds.length === 1 && islandCount === 0 ? new Set(cardIds) : new Set<string>();
-  }, [document.cards, document.islands]);
+  // UX-VISUAL-02 (ADR-0048 D3): deterministic protection set = lone-wolf cards,
+  // but only once clustering has begun (>=1 island) so isolation is meaningful
+  // (in a fresh doc every card is unclustered, which is not a "minority").
+  const protectedCardIdSet = useMemo(() => {
+    if (!showProtectionMarks || document.islands.length === 0) {
+      return new Set<string>();
+    }
+    return loneWolfCardIdSet;
+  }, [showProtectionMarks, document.islands.length, loneWolfCardIdSet]);
 
   const isCardHidden = useCallback(
     (cardId: string) => {
@@ -889,9 +890,12 @@ export function CanvasShell({
       fromId: edge.fromId,
       toId: edge.toId,
       fromKind: "island",
-      toKind: "island",
+      toKind: edge.toKind === "island" ? "island" : "canonical",
       fromLabel: document.islands.find((island) => island.id === edge.fromId)?.title?.trim() || edge.fromId,
-      toLabel: document.islands.find((island) => island.id === edge.toId)?.title?.trim() || edge.toId,
+      toLabel:
+        edge.toKind === "island"
+          ? document.islands.find((island) => island.id === edge.toId)?.title?.trim() || edge.toId
+          : document.cards.find((card) => card.id === edge.toId)?.text?.trim() || edge.toId,
       type: edge.type,
       sources: [],
       aggregateCount: edge.aggregateCount,
@@ -960,9 +964,12 @@ export function CanvasShell({
     if (showDerivedIslandEdges || (lod?.level === "far" && lod.rules.showIslandEdges)) {
       edges = [
         ...edges,
-        ...derivedIslandEdges.filter(
-          (edge) => visibleIslandIdSet.has(edge.fromId) && visibleIslandIdSet.has(edge.toId)
-        ),
+        ...derivedIslandEdges.filter((edge) => {
+          if (!visibleIslandIdSet.has(edge.fromId)) {
+            return false;
+          }
+          return edge.toKind === "island" ? visibleIslandIdSet.has(edge.toId) : visibleCardIdSet.has(edge.toId);
+        }),
       ];
     }
 
@@ -1294,7 +1301,13 @@ export function CanvasShell({
         }}
       >
         <EdgeLayer
-          cards={visibleCards}
+          // Full card list (not visibleCards): EdgeLayer only uses `cards`
+          // to compute anchor CENTERS, including the bbox-fallback for an
+          // island with no persisted polygon, which needs its member cards'
+          // positions even when those members are individually hidden by
+          // LOD compaction. hiddenCardIds below still independently blocks
+          // any edge whose card endpoint is genuinely hidden from rendering.
+          cards={document.cards}
           islands={document.islands.filter((island) => visibleIslandIdSet.has(island.id))}
           edges={visibleEdges}
           hiddenCardIds={hiddenEndpointIdSet}
@@ -1376,7 +1389,7 @@ export function CanvasShell({
               isHighlighted={highlightCardIds.has(card.id)}
               compactMode={Boolean(lod?.rules.compactCards)}
               markerMode={Boolean(lod && lod.level === "far" && lodShowLoneWolvesWhenFar && loneWolfCardIdSet.has(card.id))}
-              isProtectedVoice={showProtectedVoiceMarkers && (loneWolfCardIdSet.has(card.id) || singletonCritiqueCardIdSet.has(card.id))}
+              isProtected={protectedCardIdSet.has(card.id)}
               showLabelText={acceptedLabelIds.has(buildCardLabelId(card.id))}
               isEditing={editingCardId === card.id}
               onBeginEdit={onBeginEditCard}

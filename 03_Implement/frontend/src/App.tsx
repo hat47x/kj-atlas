@@ -6,6 +6,7 @@ import {
   checkNarrative,
   generateNarrative,
   getDocument,
+  getProviderStatus,
   putDocument,
   recordProposalDecision,
   proposeIslandSummary,
@@ -16,23 +17,24 @@ import {
   type MergeSuggestion,
   type NarrativeIssue,
   type NarrativeIssueReference,
+  type ProviderKind,
 } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
 import { ContextMenu, type ContextMenuItem } from "./ui/ContextMenu";
 import type { AggregatedEdgeMeta, CameraTransformRequest, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
+import { classifyAiProviderError, type AiProviderErrorKind } from "./domain/ai_provider_error";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
 import { appendReadingOrderEntry, moveReadingOrderEntry, removeReadingOrderEntry } from "./domain/reading_order_ops";
-import { computeConvexHull } from "./domain/geometry/convex_hull";
 import {
   addPolygonVertex,
   movePolygonVertex,
   removePolygonVertex,
 } from "./domain/geometry/polygon_edit";
-import { padPolygonFromCentroid } from "./domain/geometry/polygon_pad";
 import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geometry/polygon_stale";
+import { computeTidyIslandLayout, generateOrthogonalIslandOutline } from "./domain/geometry/orthogonal_island_outline";
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
@@ -60,7 +62,12 @@ import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { WorkModePanel } from "./ui/WorkModePanel";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import { CanvasLegend } from "./ui/CanvasLegend";
-import { ShortcutHelpDialog } from "./ui/ShortcutHelpDialog";
+import { Minimap } from "./ui/Minimap";
+import { BulkOperationsBar } from "./ui/BulkOperationsBar";
+import { CommandPalette, type PaletteCommand } from "./ui/CommandPalette";
+import { ShortcutCheatsheet } from "./ui/ShortcutCheatsheet";
+import { MenuBar, type MenuCategoryDef, type MenuRowDef } from "./ui/MenuBar";
+import { formatModShortcut } from "./ui/os_shortcut_format";
 import type { IslandRelationEdgeSelection } from "./domain/island_relation_explain";
 import {
   buildRelationSummarySourceSignature,
@@ -191,12 +198,15 @@ function loadAdvancedUiEnabled(): boolean {
     return false;
   }
 }
+// UX-VISUAL-02 (ADR-0048 D3): an island at or below this member count is a
+// "small island" eligible for the protection mark (non-scoring; a bare
+// threshold, not a rank).
+const SMALL_ISLAND_MAX_MEMBERS = 2;
 const HISTORY_LIMIT = 50;
 const GRID_SNAP_SIZE = 10;
 const SUGGESTION_MOVE_THRESHOLD = 1;
 const CARD_WIDTH = 220;
 const CARD_HEIGHT = 80;
-const POLYGON_PADDING = 16;
 
 const SVG_VISIBLE_BOUNDS_PADDING = 64;
 const FALLBACK_EXPORT_VIEWPORT = { width: 1280, height: 720 };
@@ -220,13 +230,6 @@ function getViewModeDisplayLabel(mode: ViewMode): string {
   return t("app.view_mode.explore");
 }
 
-function resolveDigitShortcut(event: KeyboardEvent): "1" | "2" | "3" | null {
-  if (event.key === "1" || event.code === "Digit1") return "1";
-  if (event.key === "2" || event.code === "Digit2") return "2";
-  if (event.key === "3" || event.code === "Digit3") return "3";
-  return null;
-}
-
 function getEntityKindDisplayLabel(kind: "card" | "island"): string {
   return t(kind === "card" ? "app.entity.card" : "app.entity.island");
 }
@@ -245,6 +248,27 @@ function describeRecoverableError(error: unknown): string {
   }
 
   return t("app.status.error_detail_unknown");
+}
+
+/**
+ * PROV-ERROR-01 (ADR-0050 D2): resolve a localized, code-aware message for an
+ * AI-provider failure instead of surfacing the raw backend exception text
+ * (e.g. "local request failed: Connection refused") verbatim to the user.
+ * Falls back to `fallback` for non-provider errors.
+ */
+function resolveAiProviderErrorMessage(error: unknown, fallback: string): string {
+  switch (classifyAiProviderError(error)) {
+    case "disabled":
+      return t("ai.provider_error.disabled");
+    case "timeout":
+      return t("ai.provider_error.timeout");
+    case "validation":
+      return t("ai.provider_error.validation");
+    case "unavailable":
+      return t("ai.provider_error.unavailable");
+    default:
+      return fallback;
+  }
 }
 
 function formatLoadDocumentFailure(error: unknown): string {
@@ -554,6 +578,12 @@ function parseComparisonEvidenceLinks(value: unknown): DocumentV2["evidenceLinks
       toCardId: entry.toCardId,
       note: typeof entry.note === "string" ? entry.note : undefined,
       createdAt: typeof entry.createdAt === "string" ? entry.createdAt : undefined,
+      ...(entry.contradictionState === "unconfirmed"
+        || entry.contradictionState === "confirmed"
+        || entry.contradictionState === "held"
+        || entry.contradictionState === "resolved"
+        ? { contradictionState: entry.contradictionState }
+        : {}),
     });
   }
 
@@ -886,30 +916,14 @@ function createIslandFromSelection(selectedCardIds: string[], existingIslands: I
 
 
 
+// UX-SCALE-01 (c) (ADR-0048 D2, Round 5 redline): auto-fit now generates an
+// orthogonal (grid-occupancy) outline rather than a padded convex hull, so
+// the shape has no diagonal edges and its vertex count is a meaningful
+// complexity signal. Manual polygon editing (PolygonEditLayer) is untouched
+// and can still produce a non-orthogonal shape if the user drags a vertex.
 function buildIslandPolygonFromCards(document: DocumentV2, island: Island): Point[] {
   const memberCards = document.cards.filter((card) => island.cardIds.includes(card.id));
-  if (memberCards.length === 0) {
-    return [];
-  }
-
-  const points: Point[] = [];
-  for (const card of memberCards) {
-    const right = card.x + CARD_WIDTH;
-    const bottom = card.y + CARD_HEIGHT;
-    points.push(
-      { x: card.x, y: card.y },
-      { x: right, y: card.y },
-      { x: right, y: bottom },
-      { x: card.x, y: bottom }
-    );
-  }
-
-  const hull = computeConvexHull(points);
-  if (hull.length < 3) {
-    return [];
-  }
-
-  return padPolygonFromCentroid(hull, POLYGON_PADDING);
+  return generateOrthogonalIslandOutline(memberCards)?.points ?? [];
 }
 
 function areIdSetsEqual(a: Set<string>, b: Set<string>): boolean {
@@ -1099,12 +1113,26 @@ export default function App() {
   const [lodThresholds, setLodThresholds] = useState<LODThresholds>(DEFAULT_LOD_THRESHOLDS);
   const [lodLevelOverride, setLodLevelOverride] = useState<LODLevel | null>(null);
   const [lodShowLoneWolvesWhenFar, setLodShowLoneWolvesWhenFar] = useState(true);
-  const [showProtectedVoiceMarkers, setShowProtectedVoiceMarkers] = useState(true);
   const [safeMode, setSafeMode] = useState(true);
   const [emptyCanvasHintCompleted, setEmptyCanvasHintCompleted] = useState(loadEmptyCanvasHintCompleted);
   // UX-VISUAL-01 AC-2: in-canvas state legend. Default OFF (CB-1); session-local.
   const [isCanvasLegendOpen, setIsCanvasLegendOpen] = useState(false);
-  const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
+  // UX-VISUAL-02: protection marks for lone-wolf cards / small islands.
+  // Default ON but subtle (ADR-0048 D3 「淡く強調」); toggleable OFF in the View panel.
+  const [showProtectionMarks, setShowProtectionMarks] = useState(true);
+  // PROV-VIS-01 (ADR-0050 D1): read-only provider visibility. providerKind is
+  // fetched once from the backend config echo; lastAiCallOutcome is tracked
+  // client-side from the actual result of the most recent AI call.
+  const [providerKind, setProviderKind] = useState<ProviderKind | null>(null);
+  const [lastAiCallOutcome, setLastAiCallOutcome] = useState<"ok" | AiProviderErrorKind | null>(null);
+  // UX-CMDK-01 (ADR-0048 D2, layer 5): command palette. Default OFF, opened
+  // only via Cmd/Ctrl+K; no persistent trigger element (CB-1, AC-5).
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const commandPaletteReturnFocusRef = useRef<HTMLElement | null>(null);
+  // UX-SHORTCUT-01 AC-4 (ADR-0048 D2): shortcut cheatsheet. Default OFF,
+  // opened only via "?"; no persistent trigger element (CB-1, AC-5).
+  const [isShortcutCheatsheetOpen, setIsShortcutCheatsheetOpen] = useState(false);
+  const shortcutCheatsheetReturnFocusRef = useRef<HTMLElement | null>(null);
   const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(
     () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
   );
@@ -1249,6 +1277,25 @@ export default function App() {
       }
     };
   }, [importedPackSnapshotUrl]);
+
+  useEffect(() => {
+    // PROV-VIS-01: fetch the configured provider kind once. This is a static
+    // config echo (no connectivity check); failures are silently ignored so
+    // the badge simply stays unknown rather than surfacing a spurious error.
+    let cancelled = false;
+    void getProviderStatus()
+      .then((kind) => {
+        if (!cancelled) {
+          setProviderKind(kind);
+        }
+      })
+      .catch(() => {
+        // Leave providerKind as null (unknown); this is display-only.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const document = history?.present ?? null;
   const currentReviewerRefSource = inferReviewerRefSource(currentReviewerRef);
@@ -2425,9 +2472,12 @@ export default function App() {
       const proposal = await proposeIslandSummary(document, targetIsland.id, `${document.id}:${document.updatedAt}`);
       setIslandSummaryProposal(proposal);
       setStatusMessage(t("app.status.island_summary.ready_unreviewed"));
+      setLastAiCallOutcome("ok");
     } catch (error) {
-      const detail = error instanceof ApiError ? error.message : t("app.status.error_detail_unknown");
+      const fallback = error instanceof ApiError ? error.message : t("app.status.error_detail_unknown");
+      const detail = resolveAiProviderErrorMessage(error, fallback);
       setStatusMessage(t("app.status.island_summary.failed", { detail }));
+      setLastAiCallOutcome(classifyAiProviderError(error));
     } finally {
       setIsSuggestingIslandSummary(false);
     }
@@ -2503,14 +2553,18 @@ export default function App() {
         setResuggestStopperEnabled(false);
       }
       setStatusMessage(t("suggestion.panel.status.draft_ready"));
+      setLastAiCallOutcome("ok");
     } catch (error) {
-      const message = error instanceof Error ? error.message : t("suggestion.panel.status.failed_to_get_suggestion");
+      const fallback = error instanceof Error ? error.message : t("suggestion.panel.status.failed_to_get_suggestion");
+      const message = resolveAiProviderErrorMessage(error, fallback);
       setSuggestionError(message);
       setStatusMessage(message);
       setSuggestedDocument(null);
       setSuggestionId(null);
       setSuggestionNotes(null);
-      if (/AI is disabled|provider.*disabled/i.test(message)) {
+      const providerErrorKind = classifyAiProviderError(error);
+      setLastAiCallOutcome(providerErrorKind);
+      if (providerErrorKind === "disabled") {
         setProviderUnavailableMessage(message);
       }
       if (mode === "resuggest") {
@@ -3878,70 +3932,22 @@ export default function App() {
     setIsCanvasLegendOpen(false);
   }, []);
 
-  const shortcutHelpReturnFocusRef = useRef<HTMLElement | null>(null);
-
-  const handleOpenShortcutHelp = useCallback(() => {
-    shortcutHelpReturnFocusRef.current =
-      window.document.activeElement instanceof HTMLElement ? window.document.activeElement : null;
-    setIsShortcutHelpOpen(true);
+  const closeCommandPalette = useCallback(() => {
+    // UX-CMDK-01 AC-1 (ADR-0030 contract): Escape/backdrop cancel restores
+    // focus to whatever had focus before the palette opened. Mirrors
+    // handleCloseCanvasLegend's synchronous-focus-before-unmount pattern.
+    commandPaletteReturnFocusRef.current?.focus();
+    commandPaletteReturnFocusRef.current = null;
+    setIsCommandPaletteOpen(false);
   }, []);
 
-  const handleCloseShortcutHelp = useCallback(() => {
-    setIsShortcutHelpOpen(false);
-    window.requestAnimationFrame(() => {
-      shortcutHelpReturnFocusRef.current?.focus();
-    });
+  const closeShortcutCheatsheet = useCallback(() => {
+    // UX-SHORTCUT-01 AC-4 (ADR-0030 contract): same synchronous-focus-before-
+    // unmount pattern as closeCommandPalette / handleCloseCanvasLegend.
+    shortcutCheatsheetReturnFocusRef.current?.focus();
+    shortcutCheatsheetReturnFocusRef.current = null;
+    setIsShortcutCheatsheetOpen(false);
   }, []);
-
-  const handleCloseWorkMode = useCallback(() => {
-    setIsWorkModeOpen(false);
-    window.requestAnimationFrame(() => {
-      workModeTriggerRef.current?.focus();
-    });
-  }, []);
-
-  const handleDismissTopLayer = useCallback(() => {
-    if (isShortcutHelpOpen) {
-      handleCloseShortcutHelp();
-      return;
-    }
-
-    if (isSharePanelOpen) {
-      setIsSharePanelOpen(false);
-      window.requestAnimationFrame(() => {
-        window.document
-          .querySelector<HTMLElement>('[data-focus-return-id="share-panel-trigger"]')
-          ?.focus();
-      });
-      return;
-    }
-
-    if (isViewControlsOpen) {
-      setIsViewControlsOpen(false);
-      window.requestAnimationFrame(() => {
-        viewControlsTriggerRef.current?.focus();
-      });
-      return;
-    }
-
-    if (isCanvasLegendOpen) {
-      handleCloseCanvasLegend();
-      return;
-    }
-
-    if (isWorkModeOpen) {
-      handleCloseWorkMode();
-    }
-  }, [
-    handleCloseCanvasLegend,
-    handleCloseShortcutHelp,
-    handleCloseWorkMode,
-    isCanvasLegendOpen,
-    isSharePanelOpen,
-    isShortcutHelpOpen,
-    isViewControlsOpen,
-    isWorkModeOpen,
-  ]);
 
   const createCardAtPosition = useCallback(
     (x: number, y: number) => {
@@ -4493,6 +4499,107 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+  // UX-SCALE-01 (b): bulk variants of the H/U/type-change single-card
+  // handlers above, each applying to the whole selection as exactly ONE
+  // document/history step (never a per-card loop of applyDocumentChange).
+  const handleBulkToggleHold = useCallback(() => {
+    if (!document || selectedCardIds.length < 2) {
+      return;
+    }
+
+    const selectedCardIdSet = new Set(selectedCardIds);
+    const selectedCardList = document.cards.filter((card) => selectedCardIdSet.has(card.id));
+    // Mirrors a "select-all checkbox": all-held -> release all; anything
+    // else (mixed or none held) -> hold all. Matches the single-card H-key
+    // rule (held -> active, else -> held) when there is exactly one state.
+    const allHeld = selectedCardList.length > 0 && selectedCardList.every((card) => card.holdState === "held");
+    const targetSelection: HoldStateSelection = allHeld ? "active" : "held";
+    const timestamp = new Date().toISOString();
+    const nextDocument = selectedCardIds.reduce(
+      (doc, cardId) => updateCardHoldStateAndShelf(doc, cardId, targetSelection, timestamp),
+      document
+    );
+    if (nextDocument === document) {
+      return;
+    }
+
+    applyDocumentChange(
+      nextDocument,
+      t("app.history.card.hold_state_updated", { value: targetSelection }),
+      { preserveSuggestionPreview: true }
+    );
+  }, [applyDocumentChange, document, selectedCardIds]);
+
+  const handleBulkToggleCritique = useCallback(() => {
+    if (!document || selectedCardIds.length < 2) {
+      return;
+    }
+
+    const selectedCardIdSet = new Set(selectedCardIds);
+    // Same safe, non-destructive per-card toggle as the U key (一枚一志):
+    // empty -> marker, marker -> empty, authored text -> untouched.
+    const marker = t("card_view.critique_quick_flag");
+    const nextCards = document.cards.map((card) => {
+      if (!selectedCardIdSet.has(card.id)) {
+        return card;
+      }
+
+      const current = card.critique?.trim() ?? "";
+      const next = current.length === 0 ? marker : current === marker ? "" : current;
+      const nextCritique = next.length > 0 ? next : undefined;
+      if ((card.critique ?? undefined) === nextCritique) {
+        return card;
+      }
+
+      return { ...card, critique: nextCritique };
+    });
+
+    const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+    if (!hasChanges) {
+      return;
+    }
+
+    applyDocumentChange(
+      { ...document, cards: nextCards },
+      t("app.history.card.critique_updated"),
+      { preserveSuggestionPreview: true }
+    );
+  }, [applyDocumentChange, document, selectedCardIds]);
+
+  const handleBulkClaimTypeChange = useCallback(
+    (nextClaimType: ClaimType) => {
+      if (!document || selectedCardIds.length < 2) {
+        return;
+      }
+
+      const selectedCardIdSet = new Set(selectedCardIds);
+      const nextCards = document.cards.map((card) => {
+        if (!selectedCardIdSet.has(card.id)) {
+          return card;
+        }
+
+        const currentClaimType = card.claimType ?? "unknown";
+        if (currentClaimType === nextClaimType) {
+          return card;
+        }
+
+        return { ...card, claimType: nextClaimType };
+      });
+
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        { ...document, cards: nextCards },
+        t("app.history.card.claim_type_updated"),
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document, selectedCardIds]
+  );
+
   const handleRestoreShelvedCard = useCallback(
     (cardId: string) => {
       if (!document) {
@@ -5003,6 +5110,66 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+  // UX-SCALE-01 (c) (ADR-0048 D2, Round 5 redline): human-triggered only
+  // (never run automatically), repositions every member card into a dense
+  // grid and regenerates the outline from the new positions — both as ONE
+  // document change, so a single Ctrl+Z reverses the whole tidy.
+  const handleTidyIsland = useCallback(
+    (islandId: string) => {
+      if (!document) {
+        return;
+      }
+
+      const targetIsland = document.islands.find((island) => island.id === islandId);
+      if (!targetIsland) {
+        return;
+      }
+
+      const memberCards = document.cards.filter((card) => targetIsland.cardIds.includes(card.id));
+      if (memberCards.length === 0) {
+        return;
+      }
+
+      const tidyPositionById = new Map(computeTidyIslandLayout(memberCards).map((position) => [position.id, position]));
+      const nextCards = document.cards.map((card) => {
+        const tidyPosition = tidyPositionById.get(card.id);
+        if (!tidyPosition || (card.x === tidyPosition.x && card.y === tidyPosition.y)) {
+          return card;
+        }
+        return { ...card, x: tidyPosition.x, y: tidyPosition.y };
+      });
+
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
+        setStatusMessage(t("app.status.island_tidy.already_dense"));
+        return;
+      }
+
+      const tidiedMemberCards = nextCards.filter((card) => targetIsland.cardIds.includes(card.id));
+      const polygonPoints = generateOrthogonalIslandOutline(tidiedMemberCards)?.points ?? [];
+      const nextShape =
+        polygonPoints.length < 3
+          ? { kind: "rect" as const }
+          : {
+              kind: "polygon" as const,
+              points: polygonPoints,
+              generatedFrom: {
+                cardIds: [...targetIsland.cardIds],
+                versionToken: buildVersionTokenForCardIds(nextCards, targetIsland.cardIds, CARD_WIDTH, CARD_HEIGHT),
+              },
+            };
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+          islands: document.islands.map((island) => (island.id === islandId ? { ...island, shape: nextShape } : island)),
+        },
+        t("app.status.island_tidy.applied")
+      );
+    },
+    [applyDocumentChange, document]
+  );
 
   const handleIslandShapeKindChange = useCallback(
     (islandId: string, kind: "rect" | "polygon") => {
@@ -5466,6 +5633,69 @@ export default function App() {
     };
   }, [canRedo, canUndo, handleRedo, handleUndo]);
 
+  useEffect(() => {
+    // UX-CMDK-01 (ADR-0048 D2): Cmd/Ctrl+K opens the command palette; pressing
+    // it again while open closes it (same as Escape). AC-3: while editing text
+    // elsewhere in the app, defer to the OS/browser default instead of opening.
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isModifierPressed = event.metaKey || event.ctrlKey;
+      if (!isModifierPressed || event.key.toLowerCase() !== "k") {
+        return;
+      }
+
+      if (isCommandPaletteOpen) {
+        event.preventDefault();
+        closeCommandPalette();
+        return;
+      }
+
+      if (isStartPanelVisible || isEditableHotkeyTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      commandPaletteReturnFocusRef.current =
+        window.document.activeElement instanceof HTMLElement ? window.document.activeElement : null;
+      setIsCommandPaletteOpen(true);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closeCommandPalette, isCommandPaletteOpen, isStartPanelVisible]);
+
+  useEffect(() => {
+    // UX-SHORTCUT-01 AC-4 (ADR-0048 D2): "?" opens the shortcut cheatsheet;
+    // pressing it again while open closes it (same as Escape). Deferred to
+    // OS/browser default while editing text (AC-2's guard, reused).
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey || event.key !== "?") {
+        return;
+      }
+
+      if (isShortcutCheatsheetOpen) {
+        event.preventDefault();
+        closeShortcutCheatsheet();
+        return;
+      }
+
+      if (isStartPanelVisible || isEditableHotkeyTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      shortcutCheatsheetReturnFocusRef.current =
+        window.document.activeElement instanceof HTMLElement ? window.document.activeElement : null;
+      setIsShortcutCheatsheetOpen(true);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closeShortcutCheatsheet, isShortcutCheatsheetOpen, isStartPanelVisible]);
+
   const uniqueIslands = useMemo(() => {
     const normalizedIslands = (focusedVisibleDocument?.islands ?? []).map((island) => ({
       ...island,
@@ -5623,6 +5853,59 @@ export default function App() {
 
     return document.cards.find((card) => card.id === selectedCardIds[0]) ?? null;
   }, [document?.cards, selectedCardIds]);
+
+  useEffect(() => {
+    // UX-SHORTCUT-01 (ADR-0048 D2): retention-system shortcuts (H=hold,
+    // U=critique, R=reviewed) are modifier-less single keys so the core
+    // "preserve ambiguity" operations sit closer than confirming ones (CB-2).
+    // Reuses the existing isEditableHotkeyTarget guard (shared with Cmd+1/2/3
+    // and Cmd/Ctrl+K) so typing is never interrupted. Gated on !readingNavEnabled
+    // to avoid colliding with useHotkeys.ts's own plain "r" (reading-order
+    // reviewedOnly filter) — the two features are never active at once.
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      if (readingNavEnabled || isEditableHotkeyTarget(event.target)) {
+        return;
+      }
+
+      if (!selectedCard) {
+        return;
+      }
+
+      const lowerKey = event.key.toLowerCase();
+
+      if (lowerKey === "h") {
+        event.preventDefault();
+        handleCardHoldStateChange(selectedCard.id, selectedCard.holdState === "held" ? "active" : "held");
+        return;
+      }
+
+      if (lowerKey === "u") {
+        event.preventDefault();
+        // Safe toggle: only ever creates/removes the quick-flag marker this
+        // key itself wrote. If the user has authored their own critique text,
+        // U is a no-op rather than risking destroying their words (one-枚一志).
+        const marker = t("card_view.critique_quick_flag");
+        const current = selectedCard.critique?.trim() ?? "";
+        const next = current.length === 0 ? marker : current === marker ? "" : current;
+        handleCardCritiqueChange(selectedCard.id, next);
+        return;
+      }
+
+      if (lowerKey === "r") {
+        event.preventDefault();
+        handleCardTextReviewedChange(selectedCard.id, selectedCard.textReviewed !== true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleCardCritiqueChange, handleCardHoldStateChange, handleCardTextReviewedChange, readingNavEnabled, selectedCard]);
 
   const evidenceAdjacency = useMemo(() => {
     if (!focusedVisibleDocument) {
@@ -6417,6 +6700,7 @@ export default function App() {
       try {
         const result = await checkNarrative(document, narrativeText, document.readingOrder);
         setNarrativeIssues(result.issues);
+        setLastAiCallOutcome("ok");
 
         if (!selectedNarrativeId) {
           return;
@@ -6452,9 +6736,11 @@ export default function App() {
           "Recorded consistency check"
         );
       } catch (error) {
-        const message = error instanceof ApiError ? error.message : "Failed to check narrative consistency";
+        const fallback = error instanceof ApiError ? error.message : "Failed to check narrative consistency";
+        const message = resolveAiProviderErrorMessage(error, fallback);
         setNarrativeCheckError(message);
         setNarrativeIssues([]);
+        setLastAiCallOutcome(classifyAiProviderError(error));
       } finally {
         setIsCheckingNarrative(false);
       }
@@ -6492,9 +6778,12 @@ export default function App() {
       if (result.warnings && result.warnings.length > 0) {
         setNarrativeGenerationError(result.warnings.join(" "));
       }
+      setLastAiCallOutcome("ok");
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : "Failed to generate narrative";
+      const fallback = error instanceof ApiError ? error.message : "Failed to generate narrative";
+      const message = resolveAiProviderErrorMessage(error, fallback);
       setNarrativeGenerationError(message);
+      setLastAiCallOutcome(classifyAiProviderError(error));
     } finally {
       setIsGeneratingNarrative(false);
     }
@@ -6911,19 +7200,6 @@ export default function App() {
     );
   }, [abstractMapView, focusedVisibleDocument, summaryView]);
 
-  const singletonCritiqueIslandIdSet = useMemo(() => {
-    if (!focusedVisibleDocument) {
-      return new Set<string>();
-    }
-
-    const cardCount = focusedVisibleDocument.cards.filter((card) => Boolean(card.critique?.trim()) || (card.critiqueTags?.length ?? 0) > 0).length;
-    const islandIds = focusedVisibleDocument.islands
-      .filter((island) => Boolean(island.critique?.trim()) || (island.critiqueTags?.length ?? 0) > 0)
-      .map((island) => island.id);
-
-    return cardCount === 0 && islandIds.length === 1 ? new Set(islandIds) : new Set<string>();
-  }, [focusedVisibleDocument]);
-
   const islandViews = useMemo(() => {
     if (!focusedVisibleDocument) {
       return null;
@@ -6946,8 +7222,6 @@ export default function App() {
         }
         isCollapsedForView={(summaryView || abstractMapView) ? effectiveCollapsedIslandIdSet.has(island.id) : collapsedIslandIdSet.has(island.id)}
         safeMode={safeMode}
-        isProtectedVoice={singletonCritiqueIslandIdSet.has(island.id)}
-        showProtectedVoiceMarker={showProtectedVoiceMarkers}
         zIndex={index}
         onSelect={handleIslandSelect}
         onToggleCollapsed={handleIslandCollapsedChange}
@@ -6960,6 +7234,17 @@ export default function App() {
           setPeekIslandId(undefined);
         }}
         isPickingEdgeTarget={isPickingEdgeTarget}
+        // UX-VISUAL-02 (ADR-0048 D3): a small island (<= SMALL_ISLAND_MAX_MEMBERS,
+        // and non-empty) is a protected minority. Unlike the card-side lone-wolf
+        // set, this needs no "clustering has begun" gate: an island's mere
+        // existence already means clustering has begun, so it is inherently
+        // self-gated. The lower bound excludes degenerate 0-card islands
+        // (which IslandView does not render anyway).
+        isProtected={
+          showProtectionMarks &&
+          island.cardIds.length > 0 &&
+          island.cardIds.length <= SMALL_ISLAND_MAX_MEMBERS
+        }
       />
     ));
   }, [
@@ -6978,9 +7263,8 @@ export default function App() {
     handleToggleIslandFocus,
     focusIslandById,
     safeMode,
-    singletonCritiqueIslandIdSet,
-    showProtectedVoiceMarkers,
     currentLod,
+    showProtectionMarks,
   ]);
 
   const readingOrderItems = useMemo(() => {
@@ -7419,124 +7703,36 @@ export default function App() {
     [applyDocumentChange, document, isPreviewingSuggestion, selectedCardIds]
   );
 
-  const handleToggleSelectedCardHold = useCallback(() => {
-    if (isReadOnly || isPreviewingSuggestion || !selectedCard) {
-      return;
-    }
-
-    const nextHoldState: HoldStateSelection = selectedCard.holdState === "held" ? "active" : "held";
-    handleCardHoldStateChange(selectedCard.id, nextHoldState);
-  }, [handleCardHoldStateChange, isPreviewingSuggestion, isReadOnly, selectedCard]);
-
-  const handleToggleSelectedCardCritique = useCallback(() => {
-    if (isReadOnly || isPreviewingSuggestion || !selectedCard) {
-      return;
-    }
-
-    const hasCritiqueNote = (selectedCard.critique?.trim().length ?? 0) > 0;
-    handleCardCritiqueChange(selectedCard.id, hasCritiqueNote ? "" : t("app.shortcut.default_card_critique"));
-  }, [handleCardCritiqueChange, isPreviewingSuggestion, isReadOnly, selectedCard, t]);
-
-  const handleToggleSelectedCardReviewed = useCallback(() => {
-    if (isReadOnly || isPreviewingSuggestion || !selectedCard) {
-      return;
-    }
-
-    handleCardTextReviewedChange(selectedCard.id, selectedCard.textReviewed !== true);
-  }, [handleCardTextReviewedChange, isPreviewingSuggestion, isReadOnly, selectedCard]);
-
-  const canUseSelectedCardShortcuts = Boolean(selectedCard && !isReadOnly && !isPreviewingSuggestion);
-
   useHotkeys({
     onClearSelection: handleClearSelection,
     onDeleteSelection: handleDeleteSelection,
-    onDismissTopLayer: (
-      isShortcutHelpOpen
-      || isSharePanelOpen
-      || isViewControlsOpen
-      || isCanvasLegendOpen
-      || isWorkModeOpen
-    ) ? handleDismissTopLayer : undefined,
     onNudge: handleNudgeSelection,
-    onOpenShortcutHelp: handleOpenShortcutHelp,
-    onToggleSelectedCardCritique: canUseSelectedCardShortcuts ? handleToggleSelectedCardCritique : undefined,
-    onToggleSelectedCardHold: canUseSelectedCardShortcuts ? handleToggleSelectedCardHold : undefined,
-    onToggleSelectedCardReviewed: canUseSelectedCardShortcuts ? handleToggleSelectedCardReviewed : undefined,
     onReadingPathNext: readingNavEnabled ? handleReadingNext : undefined,
     onReadingPathPrev: readingNavEnabled ? handleReadingPrev : undefined,
     onReadingPathToggleReviewedOnly: readingNavEnabled ? handleToggleReviewedOnly : undefined,
     onReadingPathDisable: readingNavEnabled ? handleReadingDisable : undefined,
   });
 
+  // Shared by the flat trigger button and the "作業"/"共有" menu items
+  // (UX-MENU-01) so both call the exact same toggle.
+  const handleToggleWorkMode = useCallback(() => {
+    setIsWorkModeOpen((prev) => !prev);
+  }, []);
+  const handleToggleSharePanel = useCallback(() => {
+    setIsSharePanelOpen((previousOpen) => {
+      const nextOpen = !previousOpen;
+      if (nextOpen) {
+        setIsViewControlsOpen(false);
+      }
+      return nextOpen;
+    });
+  }, []);
+
   const headerRight = (
     <div
       data-ui-complexity-tier="core-toolbar"
       style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", rowGap: 6, whiteSpace: "nowrap", maxWidth: "100%" }}
     >
-      <button
-        type="button"
-        onClick={handleNewDocument}
-        disabled={isReadOnly || isLoading || isSaving}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isReadOnly || isLoading || isSaving ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.new")}
-      </button>
-      <button
-        type="button"
-        onClick={handleDuplicateDocument}
-        disabled={isReadOnly || isLoading || isSaving || !document}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isReadOnly || isLoading || isSaving || !document ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.duplicate")}
-      </button>
-      <button
-        type="button"
-        onClick={handleImportClick}
-        disabled={isReadOnly || isLoading}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 500,
-          cursor: isReadOnly || isLoading ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.import_doc_json_legacy_short")}
-      </button>
-      <button
-        type="button"
-        onClick={handleExport}
-        disabled={isReadOnly || isLoading || !document}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 500,
-          cursor: isReadOnly || isLoading || !document ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.export_doc_json_legacy_short")}
-      </button>
       <button
         type="button"
         onClick={handleUndo}
@@ -7571,48 +7767,6 @@ export default function App() {
       >
         {t("app.toolbar.redo")}
       </button>
-      <select
-        value={selectedRecentDocumentId}
-        onChange={(event) => {
-          setSelectedRecentDocumentId(event.target.value);
-        }}
-        disabled={isLoading || recentDocumentIds.length === 0}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 500,
-          minWidth: 180,
-        }}
-      >
-        <option value="">{t("app.toolbar.recent_documents")}</option>
-        {recentDocumentIds.map((docId) => (
-          <option key={docId} value={docId}>
-            {docId}
-          </option>
-        ))}
-      </select>
-      <button
-        type="button"
-        onClick={handleOpenRecent}
-        disabled={isLoading || !selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor:
-            isLoading || !selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId
-              ? "not-allowed"
-              : "pointer",
-        }}
-      >
-        {t("app.toolbar.open")}
-      </button>
       <button
         data-ui-complexity-tier="advanced-disclosure"
         type="button"
@@ -7632,32 +7786,11 @@ export default function App() {
         {t("app.toolbar.advanced_ui")}
       </button>
       <button
-        type="button"
-        aria-label={t("app.toolbar.shortcut_help")}
-        title={t("app.toolbar.shortcut_help_hint")}
-        data-focus-return-id="shortcut-help-trigger"
-        onClick={handleOpenShortcutHelp}
-        style={{
-          width: 34,
-          height: 34,
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          fontSize: 16,
-          fontWeight: 800,
-          lineHeight: "30px",
-          cursor: "pointer",
-        }}
-      >
-        ?
-      </button>
-      <button
         ref={workModeTriggerRef}
         data-ui-complexity-tier="advanced-disclosure"
         data-ui-core-action="work-mode"
         type="button"
-        onClick={() => setIsWorkModeOpen((prev) => !prev)}
+        onClick={handleToggleWorkMode}
         aria-pressed={isWorkModeOpen}
         title={t("work_mode.title")}
         style={{
@@ -7793,6 +7926,41 @@ export default function App() {
       h: visibleBounds.h + SVG_VISIBLE_BOUNDS_PADDING * 2,
     };
   }, [abstractMapView, canvasCamera, focusedVisibleDocument, hiddenCardIdSet, hideSourceCards, summaryView, visibleIslandIdSet]);
+
+  // UX-SCALE-01: the same visibility filtering as getVisibleBoundsExportArea,
+  // reused so the minimap's dots/outlines match what's actually on screen.
+  const minimapCards = useMemo(() => {
+    if (!focusedVisibleDocument) {
+      return [];
+    }
+    const hideSource = hideSourceCards || summaryView || abstractMapView;
+    return focusedVisibleDocument.cards.filter((card) => {
+      if (hiddenCardIdSet.has(card.id)) {
+        return false;
+      }
+      if (hideSource && isSourceCard(card)) {
+        return false;
+      }
+      return true;
+    });
+  }, [focusedVisibleDocument, hiddenCardIdSet, hideSourceCards, summaryView, abstractMapView]);
+
+  const minimapIslands = useMemo(() => {
+    if (!focusedVisibleDocument) {
+      return [];
+    }
+    return focusedVisibleDocument.islands.filter((island) => visibleIslandIdSet.has(island.id));
+  }, [focusedVisibleDocument, visibleIslandIdSet]);
+
+  const handleMinimapPan = useCallback(
+    (panX: number, panY: number) => {
+      if (!canvasCamera) {
+        return;
+      }
+      requestCameraTransform({ panX, panY, zoom: canvasCamera.zoom });
+    },
+    [canvasCamera, requestCameraTransform]
+  );
 
   const getViewMetadataFilename = useCallback((mode: "viewport" | "bounds", generatedAt: string) => {
     const date = generatedAt.slice(0, 10);
@@ -8657,21 +8825,19 @@ export default function App() {
         return;
       }
 
-      const digitShortcut = resolveDigitShortcut(event);
-
-      if (digitShortcut === "1") {
+      if (event.key === "1") {
         event.preventDefault();
         handleApplyViewMode("explore");
         return;
       }
 
-      if (digitShortcut === "2") {
+      if (event.key === "2") {
         event.preventDefault();
         handleApplyViewMode("review");
         return;
       }
 
-      if (digitShortcut === "3") {
+      if (event.key === "3") {
         event.preventDefault();
         handleApplyViewMode("summary");
       }
@@ -8693,21 +8859,19 @@ export default function App() {
         return;
       }
 
-      const digitShortcut = resolveDigitShortcut(event);
-
-      if (digitShortcut === "1") {
+      if (event.key === "1") {
         event.preventDefault();
         handleHierarchyLevelChange("overview");
         return;
       }
 
-      if (digitShortcut === "2") {
+      if (event.key === "2") {
         event.preventDefault();
         handleHierarchyLevelChange("mid");
         return;
       }
 
-      if (digitShortcut === "3") {
+      if (event.key === "3") {
         event.preventDefault();
         handleHierarchyLevelChange("detail");
       }
@@ -8722,6 +8886,13 @@ export default function App() {
   const safeModeIndicator = getSafeModeIndicator(safeMode);
   const viewControlsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const viewControlsPanelRef = useRef<HTMLDivElement | null>(null);
+
+  // Shared by the flat trigger button and the "表示" menu item (UX-MENU-01)
+  // so both call the exact same toggle — no duplicated open/close logic.
+  const handleToggleViewControls = useCallback(() => {
+    setIsSharePanelOpen(false);
+    setIsViewControlsOpen((prev) => !prev);
+  }, []);
 
   useEffect(() => {
     if (!isViewControlsOpen) {
@@ -8772,7 +8943,6 @@ export default function App() {
                 handleApplyViewMode(mode);
               }}
               title={`${getViewModeDisplayLabel(mode)} (${shortcutLabel})`}
-              aria-pressed={isActive}
               style={{
                 border: "none",
                 borderRight: mode === "summary" ? "none" : "1px solid #cbd5e1",
@@ -8793,10 +8963,7 @@ export default function App() {
         ref={viewControlsTriggerRef}
         data-focus-return-id="view-controls-trigger"
         type="button"
-        onClick={() => {
-          setIsSharePanelOpen(false);
-          setIsViewControlsOpen((prev) => !prev);
-        }}
+        onClick={handleToggleViewControls}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -8894,6 +9061,10 @@ export default function App() {
             onResetEmptyCanvasHint={handleResetEmptyCanvasHint}
             isCanvasLegendOpen={isCanvasLegendOpen}
             onToggleCanvasLegend={() => setIsCanvasLegendOpen((previous) => !previous)}
+            showProtectionMarks={showProtectionMarks}
+            onToggleProtectionMarks={() => setShowProtectionMarks((previous) => !previous)}
+            providerKind={providerKind}
+            lastAiCallOutcome={lastAiCallOutcome}
             lodEnabled={lodEnabled}
             onLodEnabledChange={setLodEnabled}
             lodThresholds={lodThresholds}
@@ -8901,8 +9072,6 @@ export default function App() {
             currentLodLevel={currentLod?.level ?? null}
             lodShowLoneWolvesWhenFar={lodShowLoneWolvesWhenFar}
             onLodShowLoneWolvesWhenFarChange={setLodShowLoneWolvesWhenFar}
-            showProtectedVoiceMarkers={showProtectedVoiceMarkers}
-            onShowProtectedVoiceMarkersChange={setShowProtectedVoiceMarkers}
             showLabelBounds={showLabelBounds}
             onShowLabelBoundsChange={setShowLabelBounds}
             evidenceOverlayEnabled={evidenceOverlayEnabled}
@@ -9023,15 +9192,7 @@ export default function App() {
     <SharePanel
       isOpen={isSharePanelOpen}
       isAdvancedUiEnabled={isAdvancedUiEnabled}
-      onToggleOpen={() => {
-        setIsSharePanelOpen((previousOpen) => {
-          const nextOpen = !previousOpen;
-          if (nextOpen) {
-            setIsViewControlsOpen(false);
-          }
-          return nextOpen;
-        });
-      }}
+      onToggleOpen={handleToggleSharePanel}
       hasDocument={Boolean(document)}
       isLoading={isLoading}
       isReadOnly={isReadOnly}
@@ -9162,6 +9323,291 @@ export default function App() {
     />
   );
 
+  // UX-MENU-01 (ADR-0048 D2, collapse-layer 3): every item below delegates to
+  // an EXISTING handler already used elsewhere in this file (toolbar button,
+  // ViewControlsPanel/SharePanel prop, or hotkey). No new business logic is
+  // introduced here. Items with no real handler today (relation-line drawing,
+  // island dissolve, "tidy" layout, minimap, first-time guide, CSV export,
+  // select-all) are intentionally omitted per the issue's non-goal of adding
+  // no new commands; ViewControlsPanel/SharePanel's own deeper controls
+  // (legend toggle, visibility scope, review-pack export options) stay inside
+  // those panels — duplicating them here would need a second, independent
+  // focus-return anchor and risk regressing AC-5's existing contracts.
+  const openRecentExtraContent = (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <select
+        value={selectedRecentDocumentId}
+        onChange={(event) => {
+          setSelectedRecentDocumentId(event.target.value);
+        }}
+        disabled={isLoading || recentDocumentIds.length === 0}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 8px",
+          fontWeight: 500,
+        }}
+      >
+        <option value="">{t("app.toolbar.recent_documents")}</option>
+        {recentDocumentIds.map((docId) => (
+          <option key={docId} value={docId}>
+            {docId}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={handleOpenRecent}
+        disabled={isLoading || !selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 8px",
+          fontWeight: 600,
+          cursor:
+            isLoading || !selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId
+              ? "not-allowed"
+              : "pointer",
+        }}
+      >
+        {t("app.toolbar.open")}
+      </button>
+    </div>
+  );
+
+  const claimTypeMenuRows: MenuRowDef[] = (["fact", "claim", "hypothesis", "unknown"] as ClaimType[]).map((claimType) => ({
+    kind: "item",
+    item: {
+      id: `card-claim-type-${claimType}`,
+      label: t(`side_panel.claim_type.${claimType}`),
+      disabled: !selectedCard,
+      checked: selectedCard ? selectedCard.claimType === claimType || (!selectedCard.claimType && claimType === "unknown") : false,
+      run: () => {
+        if (selectedCard) {
+          handleCardClaimTypeChange(selectedCard.id, claimType);
+        }
+      },
+    },
+  }));
+
+  const menuCategories: MenuCategoryDef[] = [
+    {
+      id: "file",
+      label: t("menu_bar.category.file"),
+      extraContent: openRecentExtraContent,
+      rows: [
+        {
+          kind: "item",
+          item: { id: "file-new", label: t("app.toolbar.new"), disabled: isReadOnly || isLoading || isSaving, run: handleNewDocument },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "file-save",
+            label: t("app.toolbar.save"),
+            disabled: isReadOnly || isLoading || !document || isSaving || !isDirty,
+            run: () => {
+              void handleSave();
+            },
+          },
+        },
+        { kind: "header", label: t("menu_bar.group.export") },
+        {
+          kind: "item",
+          item: {
+            id: "file-export-legacy",
+            label: t("app.toolbar.export_doc_json_legacy_short"),
+            disabled: isReadOnly || isLoading || !document,
+            run: handleExport,
+          },
+        },
+        {
+          kind: "item",
+          item: { id: "file-export-svg-viewport", label: t("view_controls.export_legacy.svg_viewport"), run: handleExportSvgViewport },
+        },
+        {
+          kind: "item",
+          item: { id: "file-export-svg-visible", label: t("view_controls.export_legacy.svg_visible"), run: handleExportSvgVisibleBounds },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "file-export-abstract-md",
+            label: t("view_controls.export_legacy.abstract_map_md"),
+            run: () => {
+              void handleExportAbstractMapMarkdownWithPng();
+            },
+          },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "file-export-abstract-html",
+            label: t("view_controls.export_legacy.abstract_map_html"),
+            run: () => {
+              void handleExportAbstractMapHtmlWithPng();
+            },
+          },
+        },
+        { kind: "header", label: t("menu_bar.group.import") },
+        {
+          kind: "item",
+          item: {
+            id: "file-import-legacy",
+            label: t("app.toolbar.import_doc_json_legacy_short"),
+            disabled: isReadOnly || isLoading,
+            run: handleImportClick,
+          },
+        },
+      ],
+    },
+    {
+      id: "edit",
+      label: t("menu_bar.category.edit"),
+      rows: [
+        {
+          kind: "item",
+          item: {
+            id: "edit-undo",
+            label: t("app.toolbar.undo"),
+            shortcutHint: formatModShortcut("Z"),
+            disabled: isReadOnly || isLoading || !document || !canUndo,
+            run: handleUndo,
+          },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "edit-redo",
+            label: t("app.toolbar.redo"),
+            shortcutHint: formatModShortcut("Y"),
+            disabled: isReadOnly || isLoading || !document || !canRedo,
+            run: handleRedo,
+          },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "edit-duplicate",
+            label: t("app.toolbar.duplicate"),
+            disabled: isReadOnly || isLoading || isSaving || !document,
+            run: handleDuplicateDocument,
+          },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "edit-delete-selection",
+            label: t("app.toolbar.delete_selection"),
+            shortcutHint: "Delete",
+            disabled: isReadOnly || isLoading || !document || (selectedCardIds.length === 0 && !selectedIslandId),
+            run: handleDeleteSelection,
+          },
+        },
+      ],
+    },
+    {
+      id: "card",
+      label: t("menu_bar.category.card"),
+      rows: [
+        {
+          kind: "item",
+          item: {
+            id: "card-new",
+            label: t("app.toolbar.new_card"),
+            disabled: isReadOnly || isLoading || !document,
+            run: handleAddCard,
+          },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "card-create-island",
+            label: t("app.toolbar.create_island"),
+            disabled: isReadOnly || isLoading || !document || !canCreateIsland,
+            run: handleCreateIsland,
+          },
+        },
+        { kind: "header", label: t("menu_bar.group.claim_type") },
+        ...claimTypeMenuRows,
+      ],
+    },
+    {
+      id: "view",
+      label: t("menu_bar.category.view"),
+      rows: [
+        {
+          kind: "item",
+          item: { id: "view-open-panel", label: t("menu_bar.view.open_panel"), run: handleToggleViewControls },
+        },
+        {
+          kind: "item",
+          item: { id: "view-birds-eye", label: t("menu_bar.view.fit_to_view"), run: handleApplyBirdsEyePreset },
+        },
+        { kind: "item", item: { id: "view-reset-zoom", label: t("menu_bar.view.reset_zoom"), run: handleResetView } },
+        {
+          kind: "item",
+          item: {
+            id: "view-reading-order",
+            label: t("view_controls.reading_order.show"),
+            checked: showReadingOrder,
+            run: () => {
+              const next = !showReadingOrder;
+              setShowReadingOrder(next);
+              if (!next) {
+                setIsReadingOrderEditMode(false);
+              }
+            },
+          },
+        },
+        { kind: "header", label: t("menu_bar.group.help") },
+        {
+          kind: "item",
+          item: {
+            id: "view-shortcut-cheatsheet",
+            label: t("shortcut_cheatsheet.title"),
+            shortcutHint: "?",
+            run: () => {
+              shortcutCheatsheetReturnFocusRef.current =
+                window.document.activeElement instanceof HTMLElement ? window.document.activeElement : null;
+              setIsShortcutCheatsheetOpen(true);
+            },
+          },
+        },
+      ],
+    },
+    {
+      id: "work",
+      label: t("menu_bar.category.work"),
+      rows: [
+        { kind: "item", item: { id: "work-open-panel", label: t("work_mode.title"), run: handleToggleWorkMode } },
+      ],
+    },
+    {
+      id: "share",
+      label: t("menu_bar.category.share"),
+      rows: [
+        {
+          kind: "item",
+          item: { id: "share-open-panel", label: t("share.panel.trigger"), run: handleToggleSharePanel },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "share-safe-mode",
+            label: t("view_controls.safety.safe_mode"),
+            checked: safeMode,
+            run: () => handleSafeModeChange(!safeMode),
+          },
+        },
+      ],
+    },
+  ];
+
   const advancedWorkModeContent = (
     <>
       <NarrativesPanel
@@ -9279,6 +9725,151 @@ export default function App() {
     </>
   );
 
+  // UX-CMDK-01 (ADR-0048 D2): command registry. Every entry delegates to an
+  // existing handler — no new business logic. Disabled commands (per their
+  // existing enabled condition) are omitted rather than shown greyed out.
+  const paletteCommands = useMemo<PaletteCommand[]>(() => {
+    const canEditDocument = !isReadOnly && !isLoading && Boolean(document);
+    const commands: Array<PaletteCommand & { enabled: boolean }> = [
+      {
+        id: "new-card",
+        category: "create",
+        label: t("app.toolbar.new_card"),
+        enabled: canEditDocument,
+        run: handleAddCard,
+      },
+      {
+        id: "create-island",
+        category: "create",
+        label: t("app.toolbar.create_island"),
+        shortcutHint: formatModShortcut("G"),
+        enabled: canEditDocument && selectedCardIds.length > 0,
+        run: handleCreateIsland,
+      },
+      {
+        id: "tidy-island",
+        category: "create",
+        label: t("context_menu.tidy_island"),
+        enabled: canEditDocument && selectedIslandId !== null,
+        run: () => {
+          if (selectedIslandId) {
+            handleTidyIsland(selectedIslandId);
+          }
+        },
+      },
+      {
+        id: "toggle-hold",
+        category: "hold",
+        label: t("command_palette.command.toggle_hold"),
+        enabled: canEditDocument && selectedCard !== null,
+        run: () => {
+          if (!selectedCard) {
+            return;
+          }
+          handleCardHoldStateChange(selectedCard.id, selectedCard.holdState === "held" ? "active" : "held");
+        },
+      },
+      {
+        id: "open-work-mode",
+        category: "nav",
+        label: t("work_mode.title"),
+        enabled: true,
+        run: () => setIsWorkModeOpen((previous) => !previous),
+      },
+      {
+        id: "open-share",
+        category: "nav",
+        label: t("share.panel.trigger"),
+        enabled: true,
+        run: () => setIsSharePanelOpen((previous) => !previous),
+      },
+      {
+        id: "open-view",
+        category: "nav",
+        label: t("view_controls.trigger"),
+        enabled: true,
+        run: () => setIsViewControlsOpen((previous) => !previous),
+      },
+      {
+        id: "toggle-legend",
+        category: "nav",
+        label: t("command_palette.command.toggle_legend"),
+        enabled: true,
+        run: () => {
+          if (isCanvasLegendOpen) {
+            handleCloseCanvasLegend();
+          } else {
+            setIsCanvasLegendOpen(true);
+          }
+        },
+      },
+      {
+        id: "undo",
+        category: "history",
+        label: t("app.toolbar.undo"),
+        shortcutHint: formatModShortcut("Z"),
+        enabled: canUndo,
+        run: handleUndo,
+      },
+      {
+        id: "redo",
+        category: "history",
+        label: t("app.toolbar.redo"),
+        shortcutHint: formatModShortcut("Y"),
+        enabled: canRedo,
+        run: handleRedo,
+      },
+      {
+        id: "save",
+        category: "safety",
+        label: t("app.toolbar.save"),
+        enabled: canEditDocument && !isSaving && isDirty,
+        run: () => {
+          void handleSave();
+        },
+      },
+      {
+        id: "reset-empty-hint",
+        category: "safety",
+        label: t("view_controls.onboarding.reset_empty_canvas"),
+        enabled: emptyCanvasHintCompleted,
+        run: handleResetEmptyCanvasHint,
+      },
+    ];
+
+    return commands.filter((command) => command.enabled);
+  }, [
+    canRedo,
+    canUndo,
+    document,
+    emptyCanvasHintCompleted,
+    handleAddCard,
+    handleCardHoldStateChange,
+    handleCloseCanvasLegend,
+    handleCreateIsland,
+    handleRedo,
+    handleResetEmptyCanvasHint,
+    handleTidyIsland,
+    handleUndo,
+    isCanvasLegendOpen,
+    isDirty,
+    isLoading,
+    isReadOnly,
+    isSaving,
+    selectedCard,
+    selectedCardIds,
+    selectedIslandId,
+  ]);
+
+  const handleRunPaletteCommand = useCallback((command: PaletteCommand) => {
+    // Execution path (AC-1): unlike Escape/backdrop cancel, do NOT force focus
+    // back to the pre-open trigger — some commands (e.g. New card) move focus
+    // to their own result (the new card's edit textarea) and that must win.
+    commandPaletteReturnFocusRef.current = null;
+    setIsCommandPaletteOpen(false);
+    command.run();
+  }, []);
+
   const shouldShowEmptyCanvasHint =
     !isStartPanelVisible &&
     !isReadOnly &&
@@ -9299,6 +9890,7 @@ export default function App() {
       headerShareControls={headerShareControls}
       headerCenter={headerCenter}
       headerRight={headerRight}
+      menuBar={<MenuBar categories={menuCategories} />}
       hasUnsavedChanges={isDirty}
       saveConflictMessage={
         hasSaveConflict
@@ -9781,7 +10373,7 @@ export default function App() {
             lodThresholds={lodThresholds}
             lodLevelOverride={lodLevelOverride}
             lodShowLoneWolvesWhenFar={lodShowLoneWolvesWhenFar}
-            showProtectedVoiceMarkers={showProtectedVoiceMarkers}
+            showProtectionMarks={showProtectionMarks}
             effectiveCollapsedIslandIds={effectiveCollapsedIslandIdSet}
             showDerivedIslandEdges={summaryView || abstractMapView || effectiveCollapsedIslandIdSet.size > 0 || currentLod?.level === "far"}
             focusCardId={focusCardId}
@@ -9826,6 +10418,17 @@ export default function App() {
             />
           ) : null}
           {isCanvasLegendOpen ? <CanvasLegend onClose={handleCloseCanvasLegend} /> : null}
+          <Minimap cards={minimapCards} islands={minimapIslands} camera={canvasCamera} onPan={handleMinimapPan} />
+          {selectedCardIds.length >= 2 ? (
+            <BulkOperationsBar
+              count={selectedCardIds.length}
+              onToggleHold={handleBulkToggleHold}
+              onToggleCritique={handleBulkToggleCritique}
+              onChangeClaimType={handleBulkClaimTypeChange}
+              onBundleIntoIsland={handleCreateIsland}
+              onDelete={handleDeleteSelection}
+            />
+          ) : null}
           </div>
         </>
       )}
@@ -9898,6 +10501,12 @@ export default function App() {
                   onSelect: () => handleAddSelectedCardsToIslandById(target.islandId),
                   disabled: isReadOnly || selectedCardIds.length === 0,
                 },
+                {
+                  kind: "action",
+                  label: t("context_menu.tidy_island"),
+                  onSelect: () => handleTidyIsland(target.islandId),
+                  disabled: isReadOnly,
+                },
                 { kind: "separator" },
                 {
                   kind: "action",
@@ -9945,7 +10554,7 @@ export default function App() {
     </Shell>
     <WorkModePanel
       isOpen={isWorkModeOpen}
-      onClose={handleCloseWorkMode}
+      onClose={() => setIsWorkModeOpen(false)}
       triggerRef={workModeTriggerRef}
     >
       {isAdvancedUiEnabled ? advancedWorkModeContent : (
@@ -9954,7 +10563,14 @@ export default function App() {
         </div>
       )}
     </WorkModePanel>
-    {isShortcutHelpOpen ? <ShortcutHelpDialog onClose={handleCloseShortcutHelp} /> : null}
+    {isCommandPaletteOpen ? (
+      <CommandPalette
+        commands={paletteCommands}
+        onClose={closeCommandPalette}
+        onRunCommand={handleRunPaletteCommand}
+      />
+    ) : null}
+    {isShortcutCheatsheetOpen ? <ShortcutCheatsheet onClose={closeShortcutCheatsheet} /> : null}
     </>
   );
 }

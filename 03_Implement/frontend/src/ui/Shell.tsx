@@ -11,6 +11,7 @@ type ShellProps = {
   headerShareControls?: ReactNode;
   headerCenter?: ReactNode;
   headerRight?: ReactNode;
+  menuBar?: ReactNode;
   hasUnsavedChanges?: boolean;
   saveConflictMessage?: string;
   onReloadAfterConflict?: () => void;
@@ -27,6 +28,7 @@ export function Shell({
   headerShareControls,
   headerCenter,
   headerRight,
+  menuBar,
   hasUnsavedChanges = false,
   saveConflictMessage,
   onReloadAfterConflict,
@@ -206,6 +208,11 @@ export function Shell({
             }}
           >
             {headerRight}
+          </div>
+        ) : null}
+        {menuBar ? (
+          <div data-ui-region="menu-bar-row" style={{ flexBasis: "100%", display: "flex" }}>
+            {menuBar}
           </div>
         ) : null}
       </header>

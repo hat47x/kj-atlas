@@ -15,7 +15,7 @@ This document is the single source of truth for provider abstraction in kj-atlas
 
 - Provider層は CE1 v1 契約を入力境界として扱い、`ContextQueryV1` / `ContextBundleV1` のキー追加・再定義を行わない。
 - 固定エラー語彙は provider 実装差異に依存させず、`preview_required` / `unknown_contract_key` / `nondeterministic_bundle` を共通運用語彙として保持する。
-- `provider_meta.trace_id` と併せて `queryCanonicalHash` / `bundleHash` を監査相関キーとして扱えることを必須とする。
+- `LLMResponse.metadata.trace_id` と併せて `queryCanonicalHash` / `bundleHash` を監査相関キーとして扱えることを必須とする。
 - CE2/CE4 連携は mock-first を許容し、provider 実装完了を前提条件にしない（contract-only handoff）。
 
 ## 1. 目的と原則
@@ -44,6 +44,8 @@ This document is the single source of truth for provider abstraction in kj-atlas
 2. `transport` は同一provider内で差し替え可能（例: local + ipc/local + http）であり、provider enumと役割が異なる。
 3. `fixture` は決定論回帰のための特別実行形態で、`none/local/external` と同列に独立管理する必要がある。
 
+> **実装ノート（PROV-CONTRACT-01・2026-07-06）**: `fixture` は概念上の分類であり、`KJ_ATLAS_LLM_PROVIDER` 環境変数の受理値（`none|local|local_http|large-scale|large_scale|external`）には含まれない。Python テストコードから直接インスタンス化される test-only provider であり、実行時に `KJ_ATLAS_LLM_PROVIDER=fixture` を設定しても解決できない。
+
 ---
 
 ## 3. 設定キー（`KJ_ATLAS_*` に完全統一）
@@ -66,58 +68,62 @@ KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST=<host-list>
 
 ---
 
-## 4. Interface 契約（`LLMRequest` を正規形に固定）
+## 4. Interface 契約（`LLMRequest`/`LLMResponse`）
 
-### 4.1 `LLMRequest`
+> **PROV-CONTRACT-01（2026-07-06・ADR-0050 D3）で是正**: 本節はかつて `inputs`/`output_schema`/構造化`usage`/`provider_meta` 直接受け渡しを「正規形に固定」と記載していたが、これらは実装（`03_Implement/backend/src/kj_atlas_api/llm/provider.py`）に配線されていなかった。以下は**現在実装済みの最小契約**を正確に記述したものであり、未配線の拡張フィールドは §4.4「Phase-2（未配線）」に分離した。
+
+### 4.1 `LLMRequest`（実装済み・`provider.py` の `LLMRequest` dataclass 準拠）
 
 ```json
 {
-  "task": "draft_clusters|re_layout|merge_cards|narrative_probe",
+  "task": "string",
   "prompt": "string",
-  "inputs": {},
-  "output_schema": {},
-  "options": {
-    "temperature": 0.2,
-    "max_tokens": 2000,
-    "timeout_ms": 30000,
-    "seed": 42
-  },
-  "context": {
-    "trace_id": "llm-...",
-    "safe_mode": true
-  }
+  "temperature": 0.2,
+  "max_tokens": 2000
 }
 ```
 
-- `inputs` は `02_Architecture/llm_input_ir_spec.md` のIR schemaに準拠する。
-- `output_schema` は JSON Schema を受け取り、providerはこれを満たす構造化出力を返す。
+- `task` は自由文字列（例: `re_layout`・`merge_cards` 等、呼び出し元ルートが指定する）。
+- `temperature`・`max_tokens` は既定値を持つ optional フィールド。
 
-### 4.2 `LLMResponse`
+### 4.2 `LLMResponse`（実装済み・`provider.py` の `LLMResponse`/`LLMCallMetadata` dataclass 準拠）
 
 ```json
 {
-  "output": {},
-  "usage": {
-    "input_tokens": 0,
-    "output_tokens": 0
-  },
-  "provider_meta": {
-    "provider": "none|fixture|local|external",
-    "provider_kind": "none|fixture|local|external",
+  "raw_text": "string",
+  "metadata": {
+    "provider_kind": "none|local|large-scale",
+    "provider_name": "none|local|large-scale",
     "model_id": "string",
-    "transport": "in_process|ipc|http|none",
+    "transport": "none|http",
     "requested_at": "ISO-8601",
+    "trace_id": "llm-...",
     "fallback_to_none": false,
-    "trace_id": "llm-..."
+    "execution_path": "primary"
   }
 }
 ```
 
-### 4.3 失敗時契約
+- `raw_text` は provider が返した生テキスト（構造化 `output` ではない）。呼び出し元ルート（`03_Implement/backend/src/kj_atlas_api/routes/ai.py`）がタスクごとに JSON としてパース・検証する。
+- `usage`（トークン数）は未実装。
 
-- schema不一致は fail-fast（再整形で救済しない）。
-- `external` が無効設定時は `external` へフォールバックしない。
-- 失敗時も `provider_meta.trace_id` を監査ログへ残す。
+### 4.3 失敗時契約（実装済み）
+
+- schema不一致（provider 応答が JSON でない・`text` フィールドを欠く等）は fail-fast（再整形で救済しない）。`ProviderRequestError.validation` として `422` を返す。
+- `large-scale`（設定エイリアス `external`/`large_scale` も同じ provider を指す）が無効設定時はフォールバックしない。`ProviderRequestError.unavailable`（`503`）。
+- 失敗時も `metadata.trace_id` を監査ログへ残す（`ProviderError.to_contract()`）。
+- HTTP ステータス対応: `provider_timeout→504` / `provider_validation→422` / `provider_unavailable→503`（`ProviderDisabledError` も `503`、`disabled_reason` 付き）。
+
+### 4.4 Phase-2（未配線・Pending）
+
+以下は `llm_input_ir_spec.md` 等で仕様は存在するが、`LLMRequest`/`LLMResponse` への実配線はまだ無い。実装時期は未定であり、本節の記載は「仕様が先行して存在する」ことを示すに留める。
+
+- `LLMRequest.inputs`: `02_Architecture/llm_input_ir_spec.md` の IR schema を構造化データとして直接渡す経路。現状は呼び出し元ルートがプロンプト文字列へ事前に埋め込んでいる。
+- `LLMRequest.output_schema`: JSON Schema を渡し provider にスキーマ準拠出力を強制させる経路。現状はルート側で受信後にパース・検証している。
+- `LLMRequest.options.timeout_ms`/`seed`: 決定論的再現・タイムアウト制御の明示指定。
+- `LLMRequest.context.trace_id`/`safe_mode`: 呼び出し側からの trace_id 引き継ぎ・safe_mode フラグの明示伝播（現状 `trace_id` は provider 層が `_new_metadata()` で新規採番する）。
+- `LLMResponse.usage`: トークン数計測。
+- `LLMResponse` の構造化 `output`: `raw_text` に代えて JSON Schema 準拠のオブジェクトを直接返す経路。
 
 ---
 
@@ -139,7 +145,7 @@ KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST=<host-list>
 ## 6. Attachments 制約
 
 - 入力データは KJ構造データ由来の構造化テキストのみ。
-- バイナリ添付、画像、音声を `LLMRequest.inputs` に含めない。
+- バイナリ添付、画像、音声を `LLMRequest.prompt`（および §4.4 で Phase-2 とした将来の `inputs`）に含めない。
 
 ---
 
@@ -199,7 +205,7 @@ KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST=<host-list>
   - `previewConfirmed=false` -> `422 preview_required`
   - unknown key -> `400 unknown_contract_key`
   - hash非決定論 -> `409 nondeterministic_bundle`
-- 監査相関キーは `queryCanonicalHash` / `bundleHash` / `provider_meta.trace_id` を最小集合として保持する。
+- 監査相関キーは `queryCanonicalHash` / `bundleHash` / `LLMResponse.metadata.trace_id` を最小集合として保持する。
 - 本再確認は contract-only であり、接続実装・リトライ戦略・モデル選定は本凍結範囲外とする。
 
 
@@ -212,7 +218,7 @@ Provider 抽象の差異で CE1 契約語彙が揺れると、CE2/CE4 の監査�
 - Provider 層は CE1 契約語彙を変更しない。
 - 固定語彙は `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` のみ。
 - Provider 実装差異による fallback は **契約エラーを書き換えてはならない**。
-- `queryCanonicalHash` / `bundleHash` / `provider_meta.trace_id` を最小監査相関キーとして固定。
+- `queryCanonicalHash` / `bundleHash` / `LLMResponse.metadata.trace_id` を最小監査相関キーとして固定。
 - mock-first contract test は provider 種別に依存させない（fixture で同一判定）。
 
 ### Consequences

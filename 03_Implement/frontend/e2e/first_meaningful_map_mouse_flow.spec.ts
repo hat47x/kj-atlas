@@ -52,7 +52,10 @@ test("mouse first-value flow creates a visible first island from the sample", as
   await expect(firstCard).toHaveAttribute("aria-selected", "true");
   await expect(secondCard).toHaveAttribute("aria-selected", "true");
 
-  const createIslandButton = page.getByRole("button", { name: /島を作成|Create Island/ });
+  // UX-SCALE-01 (b): the bulk-operations bar also has a same-labeled
+  // "Create Island" button while 2+ cards are selected, so scope to the
+  // header's always-visible slim-toolbar button specifically.
+  const createIslandButton = page.getByRole("banner").getByRole("button", { name: /島を作成|Create Island/ });
   await expect(createIslandButton).toBeEnabled();
   await createIslandButton.click();
   await expect(page.getByTestId("status-message")).toContainText("選択したカード 2 件から島を作成しました");

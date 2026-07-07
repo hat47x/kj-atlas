@@ -792,10 +792,12 @@ export function SidePanel({
   const getCritiqueTagLabel = (tag: string): string =>
     critiqueTagLabels[tag as CritiqueTag] ?? legacyCritiqueTagLabels[tag] ?? tag;
 
+  // ADR-0048 D1: claimType=色チャネル。hypothesis=violet。amber は保留/違和感(保持系)に予約し
+  // claimType へは使わない（同一チャネルに2意味を載せない）。CardView.CLAIM_TYPE_STYLE と一致させる。
   const claimTypeBadgeColors: Record<ClaimType, { backgroundColor: string; color: string }> = {
     fact: { backgroundColor: "#dcfce7", color: "#166534" },
     claim: { backgroundColor: "#dbeafe", color: "#1d4ed8" },
-    hypothesis: { backgroundColor: "#fef3c7", color: "#92400e" },
+    hypothesis: { backgroundColor: "#f3e8ff", color: "#6b21a8" },
     unknown: { backgroundColor: "#e2e8f0", color: "#334155" },
   };
 

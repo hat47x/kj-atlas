@@ -33,7 +33,7 @@ describe("UX Operability regression contracts", () => {
   it("UX-SHORTCUT-01: selected-card hold/critique/review shortcuts stay guarded", () => {
     const hotkeysSource = readSource("src/hooks/useHotkeys.ts");
     const appSource = readSource("src/App.tsx");
-    const shortcutHelpSource = readSource("src/ui/ShortcutHelpDialog.tsx");
+    const shortcutCheatsheetSource = readSource("src/ui/ShortcutCheatsheet.tsx");
 
     expect(hotkeysSource).toContain("export function resolveHotkeyAction");
     expect(hotkeysSource).toContain("isEditableTarget(event.target)");
@@ -44,28 +44,24 @@ describe("UX Operability regression contracts", () => {
     expect(hotkeysSource).toContain('lowerKey === "h" && input.canToggleSelectedCardHold');
     expect(hotkeysSource).toContain('lowerKey === "u" && input.canToggleSelectedCardCritique');
     expect(hotkeysSource).toContain("&& !input.canReadingPathToggleReviewedOnly");
-    expect(appSource).toContain("<ShortcutHelpDialog");
-    expect(appSource).toContain("const handleOpenShortcutHelp = useCallback");
-    expect(appSource).toContain("const handleCloseShortcutHelp = useCallback");
-    expect(appSource).toContain("const handleDismissTopLayer = useCallback");
-    expect(appSource).toContain("onDismissTopLayer:");
-    expect(appSource).toContain("onOpenShortcutHelp: handleOpenShortcutHelp");
-    expect(appSource).toContain("function resolveDigitShortcut");
-    expect(appSource).toContain('event.code === "Digit1"');
+    expect(appSource).toContain("<ShortcutCheatsheet");
+    expect(appSource).toContain("const closeShortcutCheatsheet = useCallback");
+    expect(appSource).toContain("setIsShortcutCheatsheetOpen(true)");
     expect(appSource).toContain("aria-pressed={isActive}");
-    expect(appSource).toContain('data-focus-return-id="shortcut-help-trigger"');
-    expect(appSource).toContain('aria-label={t("app.toolbar.shortcut_help")}');
-    expect(appSource).toContain("const handleToggleSelectedCardHold = useCallback");
-    expect(appSource).toContain("const handleToggleSelectedCardCritique = useCallback");
-    expect(appSource).toContain("const handleToggleSelectedCardReviewed = useCallback");
-    expect(appSource).toContain("const canUseSelectedCardShortcuts = Boolean(selectedCard && !isReadOnly && !isPreviewingSuggestion)");
-    expect(appSource).toContain('t("app.shortcut.default_card_critique")');
-    expect(shortcutHelpSource).toContain('data-ui-region="shortcut-help"');
-    expect(shortcutHelpSource).toContain('aria-modal="true"');
-    expect(shortcutHelpSource).toContain('boxSizing: "border-box"');
-    expect(shortcutHelpSource).toContain('overflowWrap: "anywhere"');
-    expect(shortcutHelpSource).toContain('flexWrap: "wrap"');
-    expect(shortcutHelpSource).toContain('t("shortcut_help.note.editing")');
+    expect(appSource).toContain('lowerKey === "h"');
+    expect(appSource).toContain('lowerKey === "u"');
+    expect(appSource).toContain('lowerKey === "r"');
+    expect(appSource).toContain("if (readingNavEnabled || isEditableHotkeyTarget(event.target))");
+    expect(appSource).toContain("handleCardHoldStateChange(selectedCard.id");
+    expect(appSource).toContain("handleCardCritiqueChange(selectedCard.id");
+    expect(appSource).toContain("handleCardTextReviewedChange(selectedCard.id");
+    expect(appSource).toContain('t("card_view.critique_quick_flag")');
+    expect(shortcutCheatsheetSource).toContain('role="dialog"');
+    expect(shortcutCheatsheetSource).toContain('aria-modal="true"');
+    expect(shortcutCheatsheetSource).toContain('boxSizing: "border-box"');
+    expect(shortcutCheatsheetSource).toContain('overflowWrap: "anywhere"');
+    expect(shortcutCheatsheetSource).toContain('flexWrap: "wrap"');
+    expect(shortcutCheatsheetSource).toContain('t("shortcut_cheatsheet.disabled_while_editing")');
 
     const viewControlsSource = readSource("src/ui/ViewControlsPanel.tsx");
     expect(viewControlsSource).toContain("aria-pressed={hierarchyLevel === item.id}");
@@ -92,7 +88,7 @@ describe("UX Operability regression contracts", () => {
     expect(legendSource).toContain('if (event.key === "Escape")');
     expect(legendSource).toContain('t("legend.group.shortcuts")');
     expect(legendSource).toContain('t("legend.group.protection")');
-    expect(legendSource).toContain('t("legend.item.protected_voice")');
+    expect(legendSource).toContain('t("legend.item.protected")');
     expect(legendSource).toContain('kbd("H")');
     expect(legendSource).toContain('kbd("U")');
     expect(legendSource).toContain('kbd("R")');
@@ -103,8 +99,8 @@ describe("UX Operability regression contracts", () => {
 
     const viewControlsSource = readSource("src/ui/ViewControlsPanel.tsx");
     expect(viewControlsSource).toContain('data-focus-return-id="legend-trigger"');
-    expect(viewControlsSource).toContain('t("view_controls.protection.show_markers")');
-    expect(viewControlsSource).toContain("onShowProtectedVoiceMarkersChange(event.target.checked)");
+    expect(viewControlsSource).toContain('t(showProtectionMarks ? "view_controls.protection.toggle_hide"');
+    expect(viewControlsSource).toContain("onToggleProtectionMarks");
   });
 
   it("UX-VISUAL-02: protection markers can be hidden from View controls", () => {
@@ -112,10 +108,309 @@ describe("UX Operability regression contracts", () => {
     const canvasShellSource = readSource("src/canvas/CanvasShell.tsx");
     const islandViewSource = readSource("src/canvas/IslandView.tsx");
 
-    expect(appSource).toContain("const [showProtectedVoiceMarkers, setShowProtectedVoiceMarkers] = useState(true)");
-    expect(appSource).toContain("showProtectedVoiceMarkers={showProtectedVoiceMarkers}");
-    expect(canvasShellSource).toContain("showProtectedVoiceMarkers &&");
-    expect(islandViewSource).toContain("showProtectedVoiceMarker &&");
+    expect(appSource).toContain("const [showProtectionMarks, setShowProtectionMarks] = useState(true)");
+    expect(appSource).toContain("showProtectionMarks={showProtectionMarks}");
+    expect(appSource).toContain("showProtectionMarks &&");
+    expect(islandViewSource).toContain("isProtected ? (");
+  });
+
+  it("UX-VISUAL-02: protection mark is deterministic, non-scoring, and toggleable", () => {
+    const cardViewSource = readSource("src/canvas/CardView.tsx");
+    expect(cardViewSource).toContain('t("card_view.protected")');
+
+    // Detection is deterministic (lone-wolf gated on islands existing), not AI.
+    const canvasShellSource = readSource("src/canvas/CanvasShell.tsx");
+    expect(canvasShellSource).toContain("protectedCardIdSet");
+    expect(canvasShellSource).toContain("document.islands.length === 0");
+
+    // App owns the toggle; default ON but toggleable OFF (ADR-0048 D3, CB-1 self-report).
+    const appSource = readSource("src/App.tsx");
+    expect(appSource).toContain("const [showProtectionMarks, setShowProtectionMarks] = useState(true)");
+    // Small-island threshold is a named, auditable constant (not a bare magic
+    // number) and excludes degenerate 0-card islands.
+    expect(appSource).toContain("const SMALL_ISLAND_MAX_MEMBERS = 2");
+    expect(appSource).toContain("island.cardIds.length > 0 &&");
+
+    // Card and island marks share one visual signature (dashed border + square
+    // dot) so "protection" reads as a single channel, and the legend describes it.
+    const islandViewSource = readSource("src/canvas/IslandView.tsx");
+    expect(cardViewSource).toContain("1px dashed #94a3b8");
+    expect(islandViewSource).toContain("1px dashed #94a3b8");
+    const legendSource = readSource("src/ui/CanvasLegend.tsx");
+    expect(legendSource).toContain('"legend.item.protected"');
+  });
+
+  it("PROV-VIS-01: AI provider status is read-only (no runtime switch UI) and lives in the View panel", () => {
+    const viewControlsSource = readSource("src/ui/ViewControlsPanel.tsx");
+    expect(viewControlsSource).toContain('"view_controls.ai_provider.title"');
+    expect(viewControlsSource).toContain("providerKind");
+    expect(viewControlsSource).toContain("lastAiCallOutcome");
+    // Governance boundary (ADR-0050 D1): no <select>/onChange for provider,
+    // and no fetch/mutation call from this display-only panel.
+    expect(viewControlsSource).not.toMatch(/onProviderKindChange|onChangeProviderKind|setProviderKind/);
+
+    const appSource = readSource("src/App.tsx");
+    expect(appSource).toContain("const [providerKind, setProviderKind] = useState<ProviderKind | null>(null)");
+    expect(appSource).toContain("getProviderStatus()");
+  });
+
+  it("UX-CMDK-01: command palette delegates to existing handlers, pins retention commands, and adds no persistent trigger", () => {
+    const appSource = readSource("src/App.tsx");
+
+    // AC-5: no permanent UI element opens the palette (CB-1); it is
+    // opened only via the global Cmd/Ctrl+K listener.
+    expect(appSource).toContain("const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)");
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(7);
+
+    // AC-3: defers to the OS/browser default while editing text elsewhere.
+    expect(appSource).toContain("isStartPanelVisible || isEditableHotkeyTarget(event.target)");
+
+    // Every registered command calls an EXISTING handler by reference —
+    // no new business logic is introduced by the palette itself.
+    expect(appSource).toContain("run: handleAddCard");
+    expect(appSource).toContain("run: handleCreateIsland");
+    expect(appSource).toContain("run: handleUndo");
+    expect(appSource).toContain("run: handleRedo");
+    expect(appSource).toContain("run: handleResetEmptyCanvasHint");
+    expect(appSource).toContain("handleCardHoldStateChange(selectedCard.id,");
+
+    // AC-1: Escape/backdrop cancel restores focus (ADR-0030); execution does not.
+    expect(appSource).toContain("commandPaletteReturnFocusRef.current?.focus()");
+
+    const paletteSource = readSource("src/ui/CommandPalette.tsx");
+    expect(paletteSource).toContain('role="dialog"');
+    expect(paletteSource).toContain("aria-activedescendant");
+    // AC-4: retention ("hold") commands are pinned above all other categories.
+    expect(paletteSource).toContain('a.category === "hold" ? 0 : 1');
+    // No scoring/ranking vocabulary anywhere in the palette (reasserts D1's
+    // anti-scoring stance for this new surface).
+    expect(paletteSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+  });
+
+  it("UX-SHORTCUT-01: retention keys (H/U/R) are selection-scoped, non-destructive, and do not regress existing bindings", () => {
+    const appSource = readSource("src/App.tsx");
+
+    // T1 collision audit (recorded here per the issue's own validation plan):
+    // existing bindings are untouched. H/U/R are NEW plain-letter bindings;
+    // 'r' already exists in useHotkeys.ts but ONLY inside the reading-path
+    // feature (gated by onReadingPathToggleReviewedOnly, itself gated by
+    // readingNavEnabled) — this effect explicitly excludes readingNavEnabled
+    // so the two "r" bindings are mutually exclusive, never both live.
+    expect(appSource).toContain('lowerKey === "h"');
+    expect(appSource).toContain('lowerKey === "u"');
+    expect(appSource).toContain('lowerKey === "r"');
+    expect(appSource).toContain("if (readingNavEnabled || isEditableHotkeyTarget(event.target))");
+    // Existing bindings preserved verbatim (AC-5 non-regression).
+    expect(appSource).toContain('lowerKey === "z" && !event.shiftKey');
+    expect(appSource).toContain('event.key.toLowerCase() !== "k"');
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(7);
+
+    const hotkeysSource = readSource("src/hooks/useHotkeys.ts");
+    expect(hotkeysSource).toContain('lowerKey === "r" && input.canReadingPathToggleReviewedOnly');
+
+    // U is a SAFE toggle: it only ever adds/removes its own marker text and
+    // never overwrites a critique the user authored themselves (一枚一志).
+    expect(appSource).toContain("current === marker ? \"\" : current");
+
+    // H/U/R delegate to existing handlers — no new document-mutation logic.
+    expect(appSource).toContain("handleCardTextReviewedChange(selectedCard.id, selectedCard.textReviewed !== true)");
+  });
+
+  it("UX-SHORTCUT-01 AC-4: shortcut cheatsheet ('?') is default-OFF, OS-aware, and lists only shortcuts that actually exist", () => {
+    const appSource = readSource("src/App.tsx");
+    expect(appSource).toContain("const [isShortcutCheatsheetOpen, setIsShortcutCheatsheetOpen] = useState(false)");
+    expect(appSource).toContain('event.key !== "?"');
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(7);
+
+    const cheatsheetSource = readSource("src/ui/ShortcutCheatsheet.tsx");
+    expect(cheatsheetSource).toContain('role="dialog"');
+    expect(cheatsheetSource).toContain("useMacNotation");
+    expect(cheatsheetSource).toContain('t("shortcut_cheatsheet.disabled_while_editing")');
+    // Only real, wired shortcuts are listed — nothing from the broader ADR-0048
+    // wish-list (E=edit, ⌘D=duplicate, bare G=create island, L=relation line,
+    // W=work mode, ⌘F/⌘.) that this codebase has not implemented. (Bare "N" is
+    // legitimately listed under the reading-path group, which IS implemented.)
+    expect(cheatsheetSource).not.toContain('shortcuts={["E"]}');
+    expect(cheatsheetSource).not.toContain('shortcuts={["D"]}');
+    expect(cheatsheetSource).not.toContain('shortcuts={["G"]}');
+    expect(cheatsheetSource).not.toContain('shortcuts={["L"]}');
+    expect(cheatsheetSource).not.toContain('shortcuts={["W"]}');
+  });
+
+  it("UX-MENU-01: menu bar consolidates flat header operations into 6 categories without a net increase in always-visible core actions", () => {
+    const appSource = readSource("src/App.tsx");
+    const menuBarSource = readSource("src/ui/MenuBar.tsx");
+
+    // AC-1: the slim toolbar's 7 core actions are unchanged (the flat
+    // low-frequency buttons that used to sit beside them moved into the
+    // File/Edit menus instead of being added on top).
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(7);
+
+    // The 6 categories are fixed by ADR-0048 D2 Round 6 naming.
+    expect(appSource).toContain('t("menu_bar.category.file")');
+    expect(appSource).toContain('t("menu_bar.category.edit")');
+    expect(appSource).toContain('t("menu_bar.category.card")');
+    expect(appSource).toContain('t("menu_bar.category.view")');
+    expect(appSource).toContain('t("menu_bar.category.work")');
+    expect(appSource).toContain('t("menu_bar.category.share")');
+
+    // Every item delegates to an EXISTING handler — no new business logic.
+    expect(appSource).toContain("run: handleNewDocument");
+    expect(appSource).toContain("run: handleUndo");
+    expect(appSource).toContain("run: handleRedo");
+    expect(appSource).toContain("run: handleDuplicateDocument");
+    expect(appSource).toContain("run: handleDeleteSelection");
+    expect(appSource).toContain("run: handleAddCard");
+    expect(appSource).toContain("run: handleCreateIsland");
+    expect(appSource).toContain("run: handleApplyBirdsEyePreset");
+    expect(appSource).toContain("run: handleResetView");
+    expect(appSource).toContain("run: handleToggleViewControls");
+    expect(appSource).toContain("run: handleToggleWorkMode");
+    expect(appSource).toContain("run: handleToggleSharePanel");
+    expect(appSource).toContain("handleCardClaimTypeChange(selectedCard.id, claimType)");
+
+    // Non-goal compliance: commands with no existing handler are NOT
+    // invented (relation-line drawing, island dissolve, AI "tidy" layout,
+    // minimap, first-time guide, CSV export, select-all all stay absent).
+    expect(appSource).not.toContain("card-relation-line");
+    expect(appSource).not.toContain("card-dissolve-island");
+    expect(appSource).not.toContain("card-tidy-layout");
+    expect(appSource).not.toContain("view-minimap");
+    expect(appSource).not.toContain("view-first-time-guide");
+    expect(appSource).not.toContain("file-export-csv");
+    expect(appSource).not.toContain("edit-select-all");
+
+    // Phase 5's toolbar-label anchors keep passing because the labels moved
+    // into menu items rather than disappearing (re-asserted here for the
+    // menu bar's own contract, independent of Phase 5's toolbar contract).
+    expect(appSource).toContain('t("app.toolbar.new")');
+    expect(appSource).toContain('t("app.toolbar.open")');
+
+    // WAI-ARIA menubar keyboard contract (arrow cycling, Home/End,
+    // Escape-close-with-focus-return) — new code, since neither
+    // ContextMenu.tsx nor CommandPalette.tsx already provided it.
+    expect(menuBarSource).toContain('role="menubar"');
+    expect(menuBarSource).toContain('role="menu"');
+    expect(menuBarSource).toContain('aria-haspopup="menu"');
+    expect(menuBarSource).toContain('event.key === "ArrowRight"');
+    expect(menuBarSource).toContain('event.key === "ArrowLeft"');
+    expect(menuBarSource).toContain('event.key === "ArrowDown"');
+    expect(menuBarSource).toContain('event.key === "ArrowUp"');
+    expect(menuBarSource).toContain('event.key === "Home"');
+    expect(menuBarSource).toContain('event.key === "End"');
+    expect(menuBarSource).toContain('event.key === "Escape"');
+    expect(menuBarSource).toContain("closeAndReturnFocus");
+
+    // 390px collapse (Round 5 redline): below the fixed matrix's 768px
+    // breakpoint, the 6 categories consolidate into a single trigger.
+    expect(menuBarSource).toContain("COLLAPSE_WIDTH_PX = 768");
+    expect(menuBarSource).toContain('t("menu_bar.collapsed_trigger")');
+
+    // No scoring/ranking vocabulary anywhere in the menu bar (D1's
+    // anti-scoring stance applies to every new surface, including this one).
+    expect(menuBarSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+  });
+
+  it("UX-SCALE-01 (a): minimap is a corner, collapsible, pointer-only navigation aid backed by persisted collapse state", () => {
+    const minimapSource = readSource("src/ui/Minimap.tsx");
+    const appSource = readSource("src/App.tsx");
+    const storageSource = readSource("src/storage/minimap_collapsed.ts");
+
+    // Corner placement + collapsible, per the Round 5 redline.
+    expect(minimapSource).toContain('data-ui-region="minimap"');
+    expect(minimapSource).toContain("AUTO_COLLAPSE_WIDTH_PX = 640");
+    expect(minimapSource).toContain("loadMinimapCollapsed");
+    expect(minimapSource).toContain("saveMinimapCollapsed");
+    expect(storageSource).toContain("kj-atlas/minimap-collapsed");
+
+    // Drag-to-pan delegates to the EXISTING camera-transform request API —
+    // no new pan/zoom mutation logic.
+    expect(minimapSource).toContain("onPan(nextPanX, nextPanY)");
+    expect(appSource).toContain("requestCameraTransform({ panX, panY, zoom: canvasCamera.zoom })");
+
+    // Cards render with the fixed ADR-0048 D1 claim-type colors (no new
+    // color tokens invented for this surface).
+    expect(minimapSource).toContain("CLAIM_TYPE_DOT_COLOR");
+    expect(minimapSource).toContain('fact: "#166534"');
+
+    // No scoring/ranking vocabulary anywhere in the minimap.
+    expect(minimapSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+  });
+
+  it("UX-SCALE-01 (b): bulk operations bar appears only for 2+ selected cards, pins retention ops leftmost, and applies each op as one history step", () => {
+    const barSource = readSource("src/ui/BulkOperationsBar.tsx");
+    const appSource = readSource("src/App.tsx");
+
+    expect(barSource).toContain('data-ui-region="bulk-operations-bar"');
+    expect(appSource).toContain("selectedCardIds.length >= 2");
+
+    // Retention ops (hold/critique) appear before the type-change/bundle/
+    // delete controls in source order, pinning them leftmost (CB-2).
+    const holdIndex = barSource.indexOf("onToggleHold");
+    const critiqueIndex = barSource.indexOf("onToggleCritique");
+    const claimTypeIndex = barSource.indexOf("onChangeClaimType");
+    const bundleIndex = barSource.indexOf("onBundleIntoIsland");
+    const deleteIndex = barSource.indexOf("onDelete");
+    expect(holdIndex).toBeGreaterThan(-1);
+    expect(critiqueIndex).toBeGreaterThan(holdIndex);
+    expect(claimTypeIndex).toBeGreaterThan(critiqueIndex);
+    expect(bundleIndex).toBeGreaterThan(claimTypeIndex);
+    expect(deleteIndex).toBeGreaterThan(bundleIndex);
+
+    // aria-live count reuses the existing factual (non-evaluative) copy.
+    expect(barSource).toContain('t("side_panel.selection.card_multiple"');
+    expect(barSource).toContain('aria-live="polite"');
+
+    // Bundle-into-island and delete delegate to the EXISTING selection-
+    // generic handlers (already one history step each) — no duplicated
+    // mutation logic for those two.
+    expect(appSource).toContain("onBundleIntoIsland={handleCreateIsland}");
+    expect(appSource).toContain("onDelete={handleDeleteSelection}");
+
+    // Bulk hold/critique/type-change each call applyDocumentChange exactly
+    // once (a single reduce/map over the whole selection, not a per-card
+    // handler loop that would create N history entries).
+    expect(appSource).toContain("const handleBulkToggleHold = useCallback(");
+    expect(appSource).toContain("const handleBulkToggleCritique = useCallback(");
+    expect(appSource).toContain("const handleBulkClaimTypeChange = useCallback(");
+    expect(appSource).toContain("selectedCardIds.reduce(");
+
+    // The bulk critique toggle reuses the SAME safe-toggle marker logic as
+    // the U key (一枚一志) — never overwrites authored text.
+    expect(appSource).toContain('const marker = t("card_view.critique_quick_flag");');
+
+    // No scoring/ranking vocabulary anywhere in the bulk-ops bar.
+    expect(barSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+  });
+
+  it("UX-SCALE-01 (c): island outlines are orthogonal (grid-occupancy), complexity is a structural count (not a score), and tidy is human-triggered and one undo step", () => {
+    const outlineSource = readSource("src/domain/geometry/orthogonal_island_outline.ts");
+    const appSource = readSource("src/App.tsx");
+    const islandViewSource = readSource("src/canvas/IslandView.tsx");
+
+    // The generator is axis-aligned (grid cell tracing), not a convex hull.
+    expect(outlineSource).toContain("export function traceGridBoundary");
+    expect(outlineSource).toContain("export function generateOrthogonalIslandOutline");
+    expect(outlineSource).toContain("export function computeTidyIslandLayout");
+    expect(appSource).not.toContain("computeConvexHull");
+    expect(appSource).toContain("generateOrthogonalIslandOutline(memberCards)");
+
+    // Complexity = (vertexCount - 4) / 2, shown only when non-zero (CB-1),
+    // and framed explicitly as non-scoring in its own tooltip copy.
+    expect(outlineSource).toContain("(points.length - 4) / 2");
+    expect(islandViewSource).toContain("outlineComplexity > 0");
+    expect(islandViewSource).toContain('t("canvas.island.outline_complexity_badge"');
+
+    // Tidy is human-triggered (context menu + command palette), never
+    // automatic, and applies as exactly one document/history step.
+    expect(appSource).toContain("const handleTidyIsland = useCallback(");
+    expect(appSource).toContain('t("context_menu.tidy_island")');
+    expect(appSource).toContain('id: "tidy-island"');
+    expect(appSource).toContain("selectedIslandId !== null");
+
+    // No scoring/ranking vocabulary anywhere in the generator or its i18n
+    // framing (ADR-0048 D3 anti-scoring applies to this new signal too).
+    expect(outlineSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
   });
 
   it("Phase 3: contextual-selection-panel", () => {

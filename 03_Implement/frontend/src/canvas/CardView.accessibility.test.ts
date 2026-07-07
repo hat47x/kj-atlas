@@ -66,14 +66,15 @@ describe("CardView accessibility (UQ-2)", () => {
           y: 0,
         },
         isSelected: false,
-        isProtectedVoice: true,
+        isProtected: true,
         onMove: vi.fn(),
         onSelect: vi.fn(),
       })
     );
 
     expect(html).toContain("保護");
-    expect(html).toContain('aria-label="保護対象です。無理に分類しないカードです"');
+    expect(html).toContain('aria-label="保護"');
+    expect(html).toContain("無理に分類しなくて構いません");
     expect(html).not.toContain("スコア");
     expect(html).not.toContain("順位");
     expect(html).not.toContain("比率");

@@ -44,7 +44,10 @@ test("first-value journey keeps SafeMode visible from entry through share prefli
   const secondCard = page.getByRole("option", { name: "first value observation memo" });
   await firstCard.click();
   await secondCard.click({ modifiers: ["Shift"] });
-  await page.getByRole("button", { name: "Create Island" }).click();
+  // UX-SCALE-01 (b): the bulk-operations bar also has a same-labeled
+  // "Create Island" button while 2+ cards are selected, so scope to the
+  // header's always-visible slim-toolbar button specifically.
+  await page.getByRole("banner").getByRole("button", { name: "Create Island" }).click();
 
   await page.getByRole("button", { name: "Share & Reproduce" }).click();
   const summary = page.getByTestId("share-domain-expression-summary");

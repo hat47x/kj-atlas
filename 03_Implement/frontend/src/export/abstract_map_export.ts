@@ -203,6 +203,12 @@ export function buildAbstractMapExport(doc: DocumentV2, viewState: AbstractMapEx
 
   if (viewState.abstractMapView) {
     for (const derivedEdge of getDerivedIslandEdges(doc)) {
+      // This outline's relation rows are island-pair rows (islandAId/islandBId);
+      // island<->lone-wolf-card promotions (UX-SCALE-01 d) have no island on
+      // one side and are out of scope for this text export's row format.
+      if (derivedEdge.toKind !== "island") {
+        continue;
+      }
       if (!visibleIslandIds.has(derivedEdge.fromId) || !visibleIslandIds.has(derivedEdge.toId)) {
         continue;
       }

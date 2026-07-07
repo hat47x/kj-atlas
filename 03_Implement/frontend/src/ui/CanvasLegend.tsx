@@ -143,12 +143,6 @@ export function CanvasLegend({ onClose }: CanvasLegendProps) {
         </div>
       </div>
       <div>
-        <div style={groupTitleStyle}>{t("legend.group.protection")}</div>
-        <div style={{ display: "grid", gap: 2 }}>
-          <span style={rowStyle}>{swatch("#f8fafc", { border: "1px dashed #cbd5e1" })}{t("legend.item.protected_voice")}</span>
-        </div>
-      </div>
-      <div>
         <div style={groupTitleStyle}>{t("legend.group.check")}</div>
         <div style={{ display: "grid", gap: 2 }}>
           <span style={rowStyle}>{swatch("#f59e0b", { borderRadius: "50%", width: 7, height: 7 })}{t("legend.item.unreviewed")}</span>
@@ -168,6 +162,12 @@ export function CanvasLegend({ onClose }: CanvasLegendProps) {
         <div style={{ display: "grid", gap: 2 }}>
           <span style={rowStyle}>{line("#0369a1", false)}{t("legend.item.supports")}</span>
           <span style={rowStyle}>{line("#b91c1c", true)}{t("legend.item.contradicts")}</span>
+        </div>
+      </div>
+      <div>
+        <div style={groupTitleStyle}>{t("legend.group.protection")}</div>
+        <div style={{ display: "grid", gap: 2 }}>
+          <span style={rowStyle}>{swatch("#94a3b8", { borderRadius: 2 })}{t("legend.item.protected")}</span>
         </div>
       </div>
     </section>
