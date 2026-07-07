@@ -63,6 +63,7 @@ import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { WorkModePanel } from "./ui/WorkModePanel";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import { CanvasLegend } from "./ui/CanvasLegend";
+import { Minimap } from "./ui/Minimap";
 import { CommandPalette, type PaletteCommand } from "./ui/CommandPalette";
 import { ShortcutCheatsheet } from "./ui/ShortcutCheatsheet";
 import { MenuBar, type MenuCategoryDef, type MenuRowDef } from "./ui/MenuBar";
@@ -7782,6 +7783,41 @@ export default function App() {
     };
   }, [abstractMapView, canvasCamera, focusedVisibleDocument, hiddenCardIdSet, hideSourceCards, summaryView, visibleIslandIdSet]);
 
+  // UX-SCALE-01: the same visibility filtering as getVisibleBoundsExportArea,
+  // reused so the minimap's dots/outlines match what's actually on screen.
+  const minimapCards = useMemo(() => {
+    if (!focusedVisibleDocument) {
+      return [];
+    }
+    const hideSource = hideSourceCards || summaryView || abstractMapView;
+    return focusedVisibleDocument.cards.filter((card) => {
+      if (hiddenCardIdSet.has(card.id)) {
+        return false;
+      }
+      if (hideSource && isSourceCard(card)) {
+        return false;
+      }
+      return true;
+    });
+  }, [focusedVisibleDocument, hiddenCardIdSet, hideSourceCards, summaryView, abstractMapView]);
+
+  const minimapIslands = useMemo(() => {
+    if (!focusedVisibleDocument) {
+      return [];
+    }
+    return focusedVisibleDocument.islands.filter((island) => visibleIslandIdSet.has(island.id));
+  }, [focusedVisibleDocument, visibleIslandIdSet]);
+
+  const handleMinimapPan = useCallback(
+    (panX: number, panY: number) => {
+      if (!canvasCamera) {
+        return;
+      }
+      requestCameraTransform({ panX, panY, zoom: canvasCamera.zoom });
+    },
+    [canvasCamera, requestCameraTransform]
+  );
+
   const getViewMetadataFilename = useCallback((mode: "viewport" | "bounds", generatedAt: string) => {
     const date = generatedAt.slice(0, 10);
     return `kj-atlas-${date}-${mode}.view.json`;
@@ -10225,6 +10261,7 @@ export default function App() {
             />
           ) : null}
           {isCanvasLegendOpen ? <CanvasLegend onClose={handleCloseCanvasLegend} /> : null}
+          <Minimap cards={minimapCards} islands={minimapIslands} camera={canvasCamera} onPan={handleMinimapPan} />
           </div>
         </>
       )}

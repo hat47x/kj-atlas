@@ -1,11 +1,11 @@
 # Issue Draft: UX-SCALE-01 スケール操作の拡充（ミニマップ・一括操作・島の直交描線・関係線エスカレーション）
 
 - Type: Feature request
-- Status: Draft
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
-- Owner: TBD
+- Owner: Claude Code
 - Scope: `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-SCALE-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D1/D3）, `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`（PB-1..5）, `01_Plans/issues/issue-PERF-BUDGET-01-large-document-performance-assertions.md`（In Progress・性能検証の正本）
@@ -54,7 +54,7 @@
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: ミニマップで現在ビューの把握と移動ができ、折りたたみ状態が保持される。
+- [x] AC-1: ミニマップで現在ビューの把握と移動ができ、折りたたみ状態が保持される（`e2e/minimap.spec.ts`）。
 - [ ] AC-2: 一括操作（束ねる・保留・型変更）が複数選択時のみ出現し、1回の取り消しで全体が戻る。
 - [ ] AC-3: 島の描線が空白の角を含まない直交ポリゴンで描かれ、複雑さ表示→「整える」→複雑さ低減が e2e で固定される（自動実行しない）。
 - [ ] AC-4: 鳥瞰時の関係線が内部化/昇格規則どおりに増減し、ズーム復帰で元に戻る。
@@ -62,7 +62,7 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 ミニマップ（ビュー枠・折りたたみ・CB-1 宣言）。
+- [x] T1 ミニマップ（ビュー枠・折りたたみ・CB-1 宣言）。
 - [ ] T2 一括操作バー（選択数連動・履歴1ステップ）。
 - [ ] T3 直交描線ジェネレータ＋複雑さ算出＋「整える」。
 - [ ] T4 エスカレーション規則（内部化/昇格/ラベル）。
@@ -87,3 +87,32 @@
 ## 実装設計の到着（2026-07-04 Round 5）
 
 - レッドライン確定（同 §段階3）: ミニマップ=右下 約160×110 角丸8 半透明・カード4px点（型色）・現ビュー枠青2px・ドラッグ/クリック移動・狭幅自動折畳。一括操作バー=選択時に下中央出現・保持系左端・「n件選択」aria-live（評価語なし）・0件で消滅。エスカレーション昇格ラベル=淡紫で「集約された関係」区別・縮退時は種類を出さず汎用表示。島直交描線・エスカレーションはプロトタイプ実装済み。
+
+## 完了記録（1/4）2026-07-07（Claude Code）— ミニマップ（AC-1・T1）
+
+### 事前調査で判明した既存基盤
+
+実装着手前に `src/domain/geometry/` 以下（凸包・多角形パディング・自己交差検査・頂点編集等）と `src/canvas/` の関連実装を精査した。判明事項:
+- 島の境界には**既に**汎用の任意多角形システム（`Island.shape`/`geometry`、`PolygonEditLayer.tsx` によるドラッグ編集、`handleGenerateIslandPolygon` による凸包ベースの自動フィット）が存在するが、**直交（軸並行）ではなく凸多角形**であり、AC-3 の「直交描線」とは別物。複雑さメトリクスは未実装。
+- 島↔島の関係線集約（`island_edge_aggregate.ts`）が**既に**同一島内の内部化（黙示的）と異島間の集約・破線表示・ズームでの可逆化を実装済み。AC-4 の残作業は「孤立カード（島に属さないカード）への昇格」のみ。
+- ミニマップ・一括操作バーは実装ゼロ（デザイン文書のレッドラインのみ）。
+- 詳細は各サブ機能着手時にコードコメントで参照する。
+
+### 実装（ミニマップのみ）
+
+- `src/ui/Minimap.tsx`（新規）: 右下・160×110・角丸8・半透明。カードは型色ドット（`CardView.tsx` の `CLAIM_TYPE_STYLE.fg` と同じ固定色を複製、ADR-0048 D1 準拠で新色は追加せず）。島は淡いアウトライン矩形。現在ビュー枠は青2px、ドラッグで実際のカメラをパン（既存の `requestCameraTransform` に委譲、新規パン/ズームロジックは追加なし）。640px 未満で自動折畳（手動設定より優先）。折畳状態は `src/storage/minimap_collapsed.ts` で永続化。
+- App.tsx: `minimapCards`/`minimapIslands`（`getVisibleBoundsExportArea` と同一の可視性フィルタを再利用）と `handleMinimapPan` を追加し、`CanvasLegend` と並置してレンダリング。
+
+### スコープ判断
+
+- **キーボード操作は範囲外**（ポインタ専用）。ミニマップは補助的なナビゲーション導線であり、パン・フィット等の主要操作は既存の他経路（既存のキーボード到達可能な操作群）で引き続き到達可能なため、ADR-0030 D1（主要操作のキーボード到達性）の対象には当たらないと判断。
+
+### 検証
+
+- typecheck 0 / vitest **900 passed**（183 files。UX-SCALE-01 (a) 回帰アンカー1件・ストレージ永続化テスト2件を追加）
+- e2e 新規3件 passed: `minimap.spec.ts`（ドラッグでカメラがパンされる／折畳と再展開・リロード後の永続化／640px未満での自動折畳が手動設定より優先）
+- 既存の広範な e2e で非回帰確認（`header_toolbar_layout`・`canvas_legend`・`canvas_protection`・`complexity_budget_foregrounding`）
+
+### 残作業（AC-2〜5・T2〜T5、follow-up PR）
+
+- AC-2/T2: 一括操作バー。AC-3/T3: 直交描線ジェネレータ＋複雑さ＋「整える」。AC-4/T4: 孤立カードへの昇格を含むエスカレーション規則の完成。AC-5/T5: PERF-BUDGET-01 フィクスチャでのスモーク確認。
