@@ -14,7 +14,11 @@ describe("IslandView accessibility controls", () => {
   const renderIsland = (island: Island) =>
     renderToStaticMarkup(createElement(IslandView, {
       island,
-      cards: [{ id: "c1", text: "Card", x: 0, y: 0 }],
+      cards: [
+        { id: "c1", text: "Card 1", x: 0, y: 0 },
+        { id: "c2", text: "Card 2", x: 260, y: 0 },
+        { id: "c3", text: "Card 3", x: 520, y: 0 },
+      ],
       isSelected: false,
       onSelect: vi.fn(),
       onToggleCollapsed: vi.fn(),
@@ -75,5 +79,33 @@ describe("IslandView accessibility controls", () => {
     expect(html).not.toContain("島 island-collapsed を選択 島 island-collapsed を表示");
     expect(html).not.toContain("島 island-collapsed を選択 島 island-collapsed を展開");
     expect(html).not.toContain("島 island-collapsed を選択 島 island-collapsed のカードを一時表示");
+  });
+
+  it("labels small island protection without scoring language", () => {
+    const island: Island = {
+      id: "island-small",
+      title: "Small island",
+      cardIds: ["c1", "c2"],
+    };
+
+    const html = renderIsland(island);
+
+    expect(html).toContain("保護");
+    expect(html).toContain('aria-label="保護対象です。小さな島を無理にまとめないで扱います"');
+    expect(html).not.toContain("スコア");
+    expect(html).not.toContain("順位");
+    expect(html).not.toContain("比率");
+  });
+
+  it("does not mark larger islands as protected", () => {
+    const island: Island = {
+      id: "island-large",
+      title: "Large island",
+      cardIds: ["c1", "c2", "c3"],
+    };
+
+    const html = renderIsland(island);
+
+    expect(html).not.toContain('aria-label="保護対象です。小さな島を無理にまとめないで扱います"');
   });
 });

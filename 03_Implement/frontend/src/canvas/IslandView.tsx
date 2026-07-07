@@ -179,6 +179,7 @@ function IslandViewComponent({
   const hasSummary = typeof island.summaryText === "string" && island.summaryText.trim().length > 0;
   const hideUnreviewedSummary = safeMode && island.summaryReviewed === false && hasSummary;
   const isCollapsed = isCollapsedForView ?? island.collapsed === true;
+  const isProtectedSmallIsland = island.cardIds.length > 0 && island.cardIds.length <= 2;
   const headerHeight = hasSummary || abstractMapView ? ISLAND_HEADER_HEIGHT_WITH_SUMMARY : ISLAND_HEADER_HEIGHT;
   const islandBackgroundImage = island.imageUrl ? `url("${encodeURI(island.imageUrl)}")` : null;
   const polygonPoints = getIslandPolygonPoints(island);
@@ -409,6 +410,23 @@ function IslandViewComponent({
         >
           #{island.cardIds.length}
         </span>
+        {isProtectedSmallIsland ? (
+          <span
+            aria-label={t("canvas.island.protected_voice.aria")}
+            title={t("canvas.island.protected_voice.title")}
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: "#475569",
+              backgroundColor: "#f8fafc",
+              border: "1px dashed #cbd5e1",
+              borderRadius: 999,
+              padding: "1px 6px",
+            }}
+          >
+            {t("canvas.island.protected_voice.label")}
+          </span>
+        ) : null}
         {placardText && !isCollapsed ? (
           <span
             style={{
