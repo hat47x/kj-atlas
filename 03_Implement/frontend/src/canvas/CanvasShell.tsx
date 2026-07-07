@@ -589,6 +589,15 @@ export function CanvasShell({
     return new Set(document.cards.map((card) => card.id).filter((cardId) => !islandMemberCardIds.has(cardId)));
   }, [document.cards, document.islands]);
 
+  const singletonCritiqueCardIdSet = useMemo(() => {
+    const cardIds = document.cards
+      .filter((card) => Boolean(card.critique?.trim()) || (card.critiqueTags?.length ?? 0) > 0)
+      .map((card) => card.id);
+    const islandCount = document.islands.filter((island) => Boolean(island.critique?.trim()) || (island.critiqueTags?.length ?? 0) > 0).length;
+
+    return cardIds.length === 1 && islandCount === 0 ? new Set(cardIds) : new Set<string>();
+  }, [document.cards, document.islands]);
+
   const isCardHidden = useCallback(
     (cardId: string) => {
       if (hiddenCardIdSet.has(cardId)) {
@@ -1365,7 +1374,7 @@ export function CanvasShell({
               isHighlighted={highlightCardIds.has(card.id)}
               compactMode={Boolean(lod?.rules.compactCards)}
               markerMode={Boolean(lod && lod.level === "far" && lodShowLoneWolvesWhenFar && loneWolfCardIdSet.has(card.id))}
-              isProtectedVoice={loneWolfCardIdSet.has(card.id)}
+              isProtectedVoice={loneWolfCardIdSet.has(card.id) || singletonCritiqueCardIdSet.has(card.id)}
               showLabelText={acceptedLabelIds.has(buildCardLabelId(card.id))}
               isEditing={editingCardId === card.id}
               onBeginEdit={onBeginEditCard}

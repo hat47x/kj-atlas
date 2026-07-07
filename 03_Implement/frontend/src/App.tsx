@@ -6910,6 +6910,19 @@ export default function App() {
     );
   }, [abstractMapView, focusedVisibleDocument, summaryView]);
 
+  const singletonCritiqueIslandIdSet = useMemo(() => {
+    if (!focusedVisibleDocument) {
+      return new Set<string>();
+    }
+
+    const cardCount = focusedVisibleDocument.cards.filter((card) => Boolean(card.critique?.trim()) || (card.critiqueTags?.length ?? 0) > 0).length;
+    const islandIds = focusedVisibleDocument.islands
+      .filter((island) => Boolean(island.critique?.trim()) || (island.critiqueTags?.length ?? 0) > 0)
+      .map((island) => island.id);
+
+    return cardCount === 0 && islandIds.length === 1 ? new Set(islandIds) : new Set<string>();
+  }, [focusedVisibleDocument]);
+
   const islandViews = useMemo(() => {
     if (!focusedVisibleDocument) {
       return null;
@@ -6932,6 +6945,7 @@ export default function App() {
         }
         isCollapsedForView={(summaryView || abstractMapView) ? effectiveCollapsedIslandIdSet.has(island.id) : collapsedIslandIdSet.has(island.id)}
         safeMode={safeMode}
+        isProtectedVoice={singletonCritiqueIslandIdSet.has(island.id)}
         zIndex={index}
         onSelect={handleIslandSelect}
         onToggleCollapsed={handleIslandCollapsedChange}
@@ -6962,6 +6976,7 @@ export default function App() {
     handleToggleIslandFocus,
     focusIslandById,
     safeMode,
+    singletonCritiqueIslandIdSet,
     currentLod,
   ]);
 

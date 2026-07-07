@@ -11,7 +11,7 @@ describe("IslandView accessibility controls", () => {
     setActiveLocale("ja");
   });
 
-  const renderIsland = (island: Island) =>
+  const renderIsland = (island: Island, options: { isProtectedVoice?: boolean } = {}) =>
     renderToStaticMarkup(createElement(IslandView, {
       island,
       cards: [
@@ -23,6 +23,7 @@ describe("IslandView accessibility controls", () => {
       onSelect: vi.fn(),
       onToggleCollapsed: vi.fn(),
       onFocusIsland: vi.fn(),
+      isProtectedVoice: options.isProtectedVoice,
     }));
 
   it("renders one primary select control and keeps utility controls separately named", () => {
@@ -91,7 +92,7 @@ describe("IslandView accessibility controls", () => {
     const html = renderIsland(island);
 
     expect(html).toContain("保護");
-    expect(html).toContain('aria-label="保護対象です。小さな島を無理にまとめないで扱います"');
+    expect(html).toContain('aria-label="保護対象です。無理に分類しない島です"');
     expect(html).not.toContain("スコア");
     expect(html).not.toContain("順位");
     expect(html).not.toContain("比率");
@@ -106,6 +107,20 @@ describe("IslandView accessibility controls", () => {
 
     const html = renderIsland(island);
 
-    expect(html).not.toContain('aria-label="保護対象です。小さな島を無理にまとめないで扱います"');
+    expect(html).not.toContain('aria-label="保護対象です。無理に分類しない島です"');
+  });
+
+  it("can label a larger island when it is the only critique target", () => {
+    const island: Island = {
+      id: "island-critique",
+      title: "Critique island",
+      cardIds: ["c1", "c2", "c3"],
+      critique: "ここだけ気になる",
+    };
+
+    const html = renderIsland(island, { isProtectedVoice: true });
+
+    expect(html).toContain("保護");
+    expect(html).toContain('aria-label="保護対象です。無理に分類しない島です"');
   });
 });
