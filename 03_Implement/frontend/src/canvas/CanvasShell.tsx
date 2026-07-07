@@ -890,9 +890,12 @@ export function CanvasShell({
       fromId: edge.fromId,
       toId: edge.toId,
       fromKind: "island",
-      toKind: "island",
+      toKind: edge.toKind === "island" ? "island" : "canonical",
       fromLabel: document.islands.find((island) => island.id === edge.fromId)?.title?.trim() || edge.fromId,
-      toLabel: document.islands.find((island) => island.id === edge.toId)?.title?.trim() || edge.toId,
+      toLabel:
+        edge.toKind === "island"
+          ? document.islands.find((island) => island.id === edge.toId)?.title?.trim() || edge.toId
+          : document.cards.find((card) => card.id === edge.toId)?.text?.trim() || edge.toId,
       type: edge.type,
       sources: [],
       aggregateCount: edge.aggregateCount,
@@ -961,9 +964,12 @@ export function CanvasShell({
     if (showDerivedIslandEdges || (lod?.level === "far" && lod.rules.showIslandEdges)) {
       edges = [
         ...edges,
-        ...derivedIslandEdges.filter(
-          (edge) => visibleIslandIdSet.has(edge.fromId) && visibleIslandIdSet.has(edge.toId)
-        ),
+        ...derivedIslandEdges.filter((edge) => {
+          if (!visibleIslandIdSet.has(edge.fromId)) {
+            return false;
+          }
+          return edge.toKind === "island" ? visibleIslandIdSet.has(edge.toId) : visibleCardIdSet.has(edge.toId);
+        }),
       ];
     }
 
@@ -1295,7 +1301,13 @@ export function CanvasShell({
         }}
       >
         <EdgeLayer
-          cards={visibleCards}
+          // Full card list (not visibleCards): EdgeLayer only uses `cards`
+          // to compute anchor CENTERS, including the bbox-fallback for an
+          // island with no persisted polygon, which needs its member cards'
+          // positions even when those members are individually hidden by
+          // LOD compaction. hiddenCardIds below still independently blocks
+          // any edge whose card endpoint is genuinely hidden from rendering.
+          cards={document.cards}
           islands={document.islands.filter((island) => visibleIslandIdSet.has(island.id))}
           edges={visibleEdges}
           hiddenCardIds={hiddenEndpointIdSet}
