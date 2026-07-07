@@ -56,6 +56,29 @@ describe("CardView accessibility (UQ-2)", () => {
     expect(html).toContain("代表 (2)");
   });
 
+  it("labels protected voice badge without scoring language", () => {
+    const html = renderToStaticMarkup(
+      createElement(CardView, {
+        card: {
+          id: "c1",
+          text: "孤立したカード",
+          x: 0,
+          y: 0,
+        },
+        isSelected: false,
+        isProtectedVoice: true,
+        onMove: vi.fn(),
+        onSelect: vi.fn(),
+      })
+    );
+
+    expect(html).toContain("保護");
+    expect(html).toContain('aria-label="保護対象です。無理に分類しないカードです"');
+    expect(html).not.toContain("スコア");
+    expect(html).not.toContain("順位");
+    expect(html).not.toContain("比率");
+  });
+
   it("uses tabIndex 0 for keyboard focusability", () => {
     const html = renderCard();
     expect(html).toContain('tabindex="0"');

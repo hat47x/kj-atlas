@@ -1365,6 +1365,7 @@ export function CanvasShell({
               isHighlighted={highlightCardIds.has(card.id)}
               compactMode={Boolean(lod?.rules.compactCards)}
               markerMode={Boolean(lod && lod.level === "far" && lodShowLoneWolvesWhenFar && loneWolfCardIdSet.has(card.id))}
+              isProtectedVoice={loneWolfCardIdSet.has(card.id)}
               showLabelText={acceptedLabelIds.has(buildCardLabelId(card.id))}
               isEditing={editingCardId === card.id}
               onBeginEdit={onBeginEditCard}

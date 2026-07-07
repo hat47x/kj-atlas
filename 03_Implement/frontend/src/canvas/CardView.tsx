@@ -24,6 +24,7 @@ type CardViewProps = {
   isPickingEdgeTarget?: boolean;
   compactMode?: boolean;
   markerMode?: boolean;
+  isProtectedVoice?: boolean;
   showLabelText?: boolean;
   isEditing?: boolean;
   onBeginEdit?: (cardId: string) => void;
@@ -95,6 +96,7 @@ function CardViewComponent({
   isHighlighted = false,
   compactMode = false,
   markerMode = false,
+  isProtectedVoice = false,
   showLabelText = true,
   isEditing = false,
   onBeginEdit,
@@ -323,6 +325,7 @@ function CardViewComponent({
       (representativeCount > 0 ||
         (claimType && claimType !== "unknown") ||
         holdState ||
+        isProtectedVoice ||
         hasCritique) ? (
         <div
           data-card-meta-row=""
@@ -382,6 +385,24 @@ function CardViewComponent({
               }}
             >
               {t("card_view.representative_count", { count: representativeCount })}
+            </span>
+          ) : null}
+          {isProtectedVoice ? (
+            <span
+              aria-label={t("card_view.protected_voice.aria")}
+              title={t("card_view.protected_voice.title")}
+              style={{
+                borderRadius: 4,
+                border: "1px dashed #cbd5e1",
+                backgroundColor: "#f8fafc",
+                color: "#475569",
+                fontSize: 10,
+                fontWeight: 700,
+                padding: "1px 6px",
+                lineHeight: "14px",
+              }}
+            >
+              {t("card_view.protected_voice.label")}
             </span>
           ) : null}
           {hasCritique ? (
