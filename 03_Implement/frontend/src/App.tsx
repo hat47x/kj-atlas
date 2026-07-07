@@ -64,6 +64,7 @@ import { WorkModePanel } from "./ui/WorkModePanel";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import { CanvasLegend } from "./ui/CanvasLegend";
 import { Minimap } from "./ui/Minimap";
+import { BulkOperationsBar } from "./ui/BulkOperationsBar";
 import { CommandPalette, type PaletteCommand } from "./ui/CommandPalette";
 import { ShortcutCheatsheet } from "./ui/ShortcutCheatsheet";
 import { MenuBar, type MenuCategoryDef, type MenuRowDef } from "./ui/MenuBar";
@@ -4514,6 +4515,107 @@ export default function App() {
       );
     },
     [applyDocumentChange, document]
+  );
+
+  // UX-SCALE-01 (b): bulk variants of the H/U/type-change single-card
+  // handlers above, each applying to the whole selection as exactly ONE
+  // document/history step (never a per-card loop of applyDocumentChange).
+  const handleBulkToggleHold = useCallback(() => {
+    if (!document || selectedCardIds.length < 2) {
+      return;
+    }
+
+    const selectedCardIdSet = new Set(selectedCardIds);
+    const selectedCardList = document.cards.filter((card) => selectedCardIdSet.has(card.id));
+    // Mirrors a "select-all checkbox": all-held -> release all; anything
+    // else (mixed or none held) -> hold all. Matches the single-card H-key
+    // rule (held -> active, else -> held) when there is exactly one state.
+    const allHeld = selectedCardList.length > 0 && selectedCardList.every((card) => card.holdState === "held");
+    const targetSelection: HoldStateSelection = allHeld ? "active" : "held";
+    const timestamp = new Date().toISOString();
+    const nextDocument = selectedCardIds.reduce(
+      (doc, cardId) => updateCardHoldStateAndShelf(doc, cardId, targetSelection, timestamp),
+      document
+    );
+    if (nextDocument === document) {
+      return;
+    }
+
+    applyDocumentChange(
+      nextDocument,
+      t("app.history.card.hold_state_updated", { value: targetSelection }),
+      { preserveSuggestionPreview: true }
+    );
+  }, [applyDocumentChange, document, selectedCardIds]);
+
+  const handleBulkToggleCritique = useCallback(() => {
+    if (!document || selectedCardIds.length < 2) {
+      return;
+    }
+
+    const selectedCardIdSet = new Set(selectedCardIds);
+    // Same safe, non-destructive per-card toggle as the U key (一枚一志):
+    // empty -> marker, marker -> empty, authored text -> untouched.
+    const marker = t("card_view.critique_quick_flag");
+    const nextCards = document.cards.map((card) => {
+      if (!selectedCardIdSet.has(card.id)) {
+        return card;
+      }
+
+      const current = card.critique?.trim() ?? "";
+      const next = current.length === 0 ? marker : current === marker ? "" : current;
+      const nextCritique = next.length > 0 ? next : undefined;
+      if ((card.critique ?? undefined) === nextCritique) {
+        return card;
+      }
+
+      return { ...card, critique: nextCritique };
+    });
+
+    const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+    if (!hasChanges) {
+      return;
+    }
+
+    applyDocumentChange(
+      { ...document, cards: nextCards },
+      t("app.history.card.critique_updated"),
+      { preserveSuggestionPreview: true }
+    );
+  }, [applyDocumentChange, document, selectedCardIds]);
+
+  const handleBulkClaimTypeChange = useCallback(
+    (nextClaimType: ClaimType) => {
+      if (!document || selectedCardIds.length < 2) {
+        return;
+      }
+
+      const selectedCardIdSet = new Set(selectedCardIds);
+      const nextCards = document.cards.map((card) => {
+        if (!selectedCardIdSet.has(card.id)) {
+          return card;
+        }
+
+        const currentClaimType = card.claimType ?? "unknown";
+        if (currentClaimType === nextClaimType) {
+          return card;
+        }
+
+        return { ...card, claimType: nextClaimType };
+      });
+
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        { ...document, cards: nextCards },
+        t("app.history.card.claim_type_updated"),
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document, selectedCardIds]
   );
 
   const handleRestoreShelvedCard = useCallback(
@@ -10262,6 +10364,16 @@ export default function App() {
           ) : null}
           {isCanvasLegendOpen ? <CanvasLegend onClose={handleCloseCanvasLegend} /> : null}
           <Minimap cards={minimapCards} islands={minimapIslands} camera={canvasCamera} onPan={handleMinimapPan} />
+          {selectedCardIds.length >= 2 ? (
+            <BulkOperationsBar
+              count={selectedCardIds.length}
+              onToggleHold={handleBulkToggleHold}
+              onToggleCritique={handleBulkToggleCritique}
+              onChangeClaimType={handleBulkClaimTypeChange}
+              onBundleIntoIsland={handleCreateIsland}
+              onDelete={handleDeleteSelection}
+            />
+          ) : null}
           </div>
         </>
       )}

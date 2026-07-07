@@ -281,6 +281,52 @@ describe("UX Operability regression contracts", () => {
     expect(minimapSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
   });
 
+  it("UX-SCALE-01 (b): bulk operations bar appears only for 2+ selected cards, pins retention ops leftmost, and applies each op as one history step", () => {
+    const barSource = readSource("src/ui/BulkOperationsBar.tsx");
+    const appSource = readSource("src/App.tsx");
+
+    expect(barSource).toContain('data-ui-region="bulk-operations-bar"');
+    expect(appSource).toContain("selectedCardIds.length >= 2");
+
+    // Retention ops (hold/critique) appear before the type-change/bundle/
+    // delete controls in source order, pinning them leftmost (CB-2).
+    const holdIndex = barSource.indexOf("onToggleHold");
+    const critiqueIndex = barSource.indexOf("onToggleCritique");
+    const claimTypeIndex = barSource.indexOf("onChangeClaimType");
+    const bundleIndex = barSource.indexOf("onBundleIntoIsland");
+    const deleteIndex = barSource.indexOf("onDelete");
+    expect(holdIndex).toBeGreaterThan(-1);
+    expect(critiqueIndex).toBeGreaterThan(holdIndex);
+    expect(claimTypeIndex).toBeGreaterThan(critiqueIndex);
+    expect(bundleIndex).toBeGreaterThan(claimTypeIndex);
+    expect(deleteIndex).toBeGreaterThan(bundleIndex);
+
+    // aria-live count reuses the existing factual (non-evaluative) copy.
+    expect(barSource).toContain('t("side_panel.selection.card_multiple"');
+    expect(barSource).toContain('aria-live="polite"');
+
+    // Bundle-into-island and delete delegate to the EXISTING selection-
+    // generic handlers (already one history step each) — no duplicated
+    // mutation logic for those two.
+    expect(appSource).toContain("onBundleIntoIsland={handleCreateIsland}");
+    expect(appSource).toContain("onDelete={handleDeleteSelection}");
+
+    // Bulk hold/critique/type-change each call applyDocumentChange exactly
+    // once (a single reduce/map over the whole selection, not a per-card
+    // handler loop that would create N history entries).
+    expect(appSource).toContain("const handleBulkToggleHold = useCallback(");
+    expect(appSource).toContain("const handleBulkToggleCritique = useCallback(");
+    expect(appSource).toContain("const handleBulkClaimTypeChange = useCallback(");
+    expect(appSource).toContain("selectedCardIds.reduce(");
+
+    // The bulk critique toggle reuses the SAME safe-toggle marker logic as
+    // the U key (一枚一志) — never overwrites authored text.
+    expect(appSource).toContain('const marker = t("card_view.critique_quick_flag");');
+
+    // No scoring/ranking vocabulary anywhere in the bulk-ops bar.
+    expect(barSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 
