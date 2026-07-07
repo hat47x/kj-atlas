@@ -3892,6 +3892,56 @@ export default function App() {
     });
   }, []);
 
+  const handleCloseWorkMode = useCallback(() => {
+    setIsWorkModeOpen(false);
+    window.requestAnimationFrame(() => {
+      workModeTriggerRef.current?.focus();
+    });
+  }, []);
+
+  const handleDismissTopLayer = useCallback(() => {
+    if (isShortcutHelpOpen) {
+      handleCloseShortcutHelp();
+      return;
+    }
+
+    if (isSharePanelOpen) {
+      setIsSharePanelOpen(false);
+      window.requestAnimationFrame(() => {
+        window.document
+          .querySelector<HTMLElement>('[data-focus-return-id="share-panel-trigger"]')
+          ?.focus();
+      });
+      return;
+    }
+
+    if (isViewControlsOpen) {
+      setIsViewControlsOpen(false);
+      window.requestAnimationFrame(() => {
+        viewControlsTriggerRef.current?.focus();
+      });
+      return;
+    }
+
+    if (isCanvasLegendOpen) {
+      handleCloseCanvasLegend();
+      return;
+    }
+
+    if (isWorkModeOpen) {
+      handleCloseWorkMode();
+    }
+  }, [
+    handleCloseCanvasLegend,
+    handleCloseShortcutHelp,
+    handleCloseWorkMode,
+    isCanvasLegendOpen,
+    isSharePanelOpen,
+    isShortcutHelpOpen,
+    isViewControlsOpen,
+    isWorkModeOpen,
+  ]);
+
   const createCardAtPosition = useCallback(
     (x: number, y: number) => {
       if (!document) {
@@ -7382,6 +7432,13 @@ export default function App() {
   useHotkeys({
     onClearSelection: handleClearSelection,
     onDeleteSelection: handleDeleteSelection,
+    onDismissTopLayer: (
+      isShortcutHelpOpen
+      || isSharePanelOpen
+      || isViewControlsOpen
+      || isCanvasLegendOpen
+      || isWorkModeOpen
+    ) ? handleDismissTopLayer : undefined,
     onNudge: handleNudgeSelection,
     onOpenShortcutHelp: handleOpenShortcutHelp,
     onToggleSelectedCardCritique: canUseSelectedCardShortcuts ? handleToggleSelectedCardCritique : undefined,
@@ -9867,7 +9924,7 @@ export default function App() {
     </Shell>
     <WorkModePanel
       isOpen={isWorkModeOpen}
-      onClose={() => setIsWorkModeOpen(false)}
+      onClose={handleCloseWorkMode}
       triggerRef={workModeTriggerRef}
     >
       {isAdvancedUiEnabled ? advancedWorkModeContent : (

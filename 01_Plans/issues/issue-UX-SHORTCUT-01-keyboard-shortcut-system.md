@@ -36,6 +36,12 @@
 - The same spec fixes AC-2 by focusing the critique textarea and verifying H/U/R are inserted as text while hold/review state remain unchanged.
 - Local verification passed `tsc --noEmit`, `ux_operability_regression.test.ts`, `useHotkeys.test.ts`, and `git diff --check`. Playwright browser execution remains blocked in this agent environment until the missing Chromium runtime is installed.
 
+## Implementation note (2026-07-07, Escape staged dismissal)
+
+- Added a shared `dismiss-top-layer` hotkey action so global Escape closes only the topmost open layer before falling back to selection clear. Current order: shortcut help, share panel, view controls, canvas legend, work mode, then selection clear.
+- Reading navigation keeps priority over layer dismissal so its existing Escape-to-disable behavior is not regressed.
+- Existing panel-local Escape/focus-return handlers remain in place; the shared action covers the case where focus is outside the open panel but a layer is still visible.
+
 ## Shortcut binding inventory (2026-07-07)
 
 | Binding | Owner | Guard / collision note | Regression evidence |
@@ -95,18 +101,18 @@ Inventory conclusion: no duplicate active binding was found. Modifier-based view
 
 - [x] AC-1: H/U/R が選択時のみ機能し、⌘Z で可逆であることが e2e で固定される。
 - [x] AC-2: テキスト編集中に単一キーが発火しない（本文に文字が入る）ことが e2e で固定される。
-- [ ] AC-3: Esc 段階処理が仕様順で1段ずつ閉じ、既存の Escape+フォーカス復帰契約（UX-OPERABILITY-04）が非回帰。
+- [x] AC-3: Esc 段階処理が仕様順で1段ずつ閉じ、既存の Escape+フォーカス復帰契約（UX-OPERABILITY-04）が非回帰。
 - [x] AC-4: ? チートシートが OS 別表記で表示され、Escape で閉じる。
 - [x] AC-5: 既存バインド（Cmd/Ctrl+1/2/3、Alt+Shift+1/2/3、Enter/Space）が非回帰。重複割当なしの棚卸し結果を記録。
 
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 既存バインド棚卸し（衝突表を本メモに追記）。
-- [ ] T2 キーディスパッチャ（選択ガード・入力中ガード・OS 判定）。
-- [ ] T3 保持系/作成/型/整理キーの接続（既存ハンドラへ委譲）。
-- [ ] T4 Esc 段階スタックの一元化。
+- [x] T2 キーディスパッチャ（選択ガード・入力中ガード・OS 判定）。
+- [x] T3 保持系/作成/型/整理キーの接続（既存ハンドラへ委譲）。
+- [x] T4 Esc 段階スタックの一元化。
 - [x] T5 チートシート UI＋メニュー併記＋i18n。
-- [ ] T6 e2e 一式。
+- [x] T6 e2e 一式。
 
 ## Implementation note (2026-07-07)
 
@@ -115,7 +121,7 @@ Inventory conclusion: no duplicate active binding was found. Modifier-based view
   - U: `critique` が未設定なら短い違和感メモを入れ、設定済みなら外す。
   - R: `textReviewed` を切り替える。ただし読書ナビが有効な場合は既存の reviewed-only 切替を優先し、キー衝突を避ける。
 - 入力中ガード（input/textarea/select/contentEditable）と修飾キーガードは `useHotkeys` に維持した。キー判定を `resolveHotkeyAction` へ切り出し、`useHotkeys.test.ts` で H/U/R、入力中無効、修飾キー無効、読書ナビ中の R 衝突回避を固定した。`ux_operability_regression.test.ts` に静的回帰アンカーも追加済み。
-- 未完了: AC-3 の Esc 段階処理。
+- 未完了: なし。Playwright のブラウザ実行は、ローカルの Chromium ランタイム導入後に `shortcut_card_state.spec.ts` と `header_toolbar_layout.spec.ts` を実行して最終確認する。
 
 ## 7) 検証計画 / Validation plan
 

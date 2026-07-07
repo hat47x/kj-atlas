@@ -39,12 +39,16 @@ describe("UX Operability regression contracts", () => {
     expect(hotkeysSource).toContain("isEditableTarget(event.target)");
     expect(hotkeysSource).toContain('input.key === "?"');
     expect(hotkeysSource).toContain('kind: "open-shortcut-help"');
+    expect(hotkeysSource).toContain('kind: "dismiss-top-layer"');
+    expect(hotkeysSource).toContain("input.canDismissTopLayer");
     expect(hotkeysSource).toContain('lowerKey === "h" && input.canToggleSelectedCardHold');
     expect(hotkeysSource).toContain('lowerKey === "u" && input.canToggleSelectedCardCritique');
     expect(hotkeysSource).toContain("&& !input.canReadingPathToggleReviewedOnly");
     expect(appSource).toContain("<ShortcutHelpDialog");
     expect(appSource).toContain("const handleOpenShortcutHelp = useCallback");
     expect(appSource).toContain("const handleCloseShortcutHelp = useCallback");
+    expect(appSource).toContain("const handleDismissTopLayer = useCallback");
+    expect(appSource).toContain("onDismissTopLayer:");
     expect(appSource).toContain("onOpenShortcutHelp: handleOpenShortcutHelp");
     expect(appSource).toContain("function resolveDigitShortcut");
     expect(appSource).toContain('event.code === "Digit1"');

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 export type HotkeyAction =
   | { kind: "clear-selection" }
   | { kind: "delete-selection" }
+  | { kind: "dismiss-top-layer" }
   | { kind: "nudge"; dx: number; dy: number }
   | { kind: "open-shortcut-help" }
   | { kind: "reading-disable" }
@@ -19,6 +20,7 @@ export type HotkeyResolverInput = {
   canReadingPathNext?: boolean;
   canReadingPathPrev?: boolean;
   canReadingPathToggleReviewedOnly?: boolean;
+  canDismissTopLayer?: boolean;
   canToggleSelectedCardCritique?: boolean;
   canToggleSelectedCardHold?: boolean;
   canToggleSelectedCardReviewed?: boolean;
@@ -33,6 +35,7 @@ export type HotkeyResolverInput = {
 type UseHotkeysOptions = {
   onClearSelection: () => void;
   onDeleteSelection: () => void;
+  onDismissTopLayer?: () => void;
   onNudge: (dx: number, dy: number) => void;
   onOpenShortcutHelp?: () => void;
   onToggleSelectedCardCritique?: () => void;
@@ -71,6 +74,10 @@ export function resolveHotkeyAction(input: HotkeyResolverInput): HotkeyAction | 
 
   if (input.key === "Escape" && input.canReadingPathDisable) {
     return { kind: "reading-disable" };
+  }
+
+  if (input.key === "Escape" && input.canDismissTopLayer) {
+    return { kind: "dismiss-top-layer" };
   }
 
   if (input.key === "Escape") {
@@ -137,6 +144,7 @@ export function resolveHotkeyAction(input: HotkeyResolverInput): HotkeyAction | 
 export function useHotkeys({
   onClearSelection,
   onDeleteSelection,
+  onDismissTopLayer,
   onNudge,
   onOpenShortcutHelp,
   onToggleSelectedCardCritique,
@@ -155,6 +163,7 @@ export function useHotkeys({
         canReadingPathNext: Boolean(onReadingPathNext),
         canReadingPathPrev: Boolean(onReadingPathPrev),
         canReadingPathToggleReviewedOnly: Boolean(onReadingPathToggleReviewedOnly),
+        canDismissTopLayer: Boolean(onDismissTopLayer),
         canToggleSelectedCardCritique: Boolean(onToggleSelectedCardCritique),
         canToggleSelectedCardHold: Boolean(onToggleSelectedCardHold),
         canToggleSelectedCardReviewed: Boolean(onToggleSelectedCardReviewed),
@@ -177,6 +186,9 @@ export function useHotkeys({
           return;
         case "delete-selection":
           onDeleteSelection();
+          return;
+        case "dismiss-top-layer":
+          onDismissTopLayer?.();
           return;
         case "nudge":
           onNudge(action.dx, action.dy);
@@ -215,6 +227,7 @@ export function useHotkeys({
   }, [
     onClearSelection,
     onDeleteSelection,
+    onDismissTopLayer,
     onNudge,
     onOpenShortcutHelp,
     onToggleSelectedCardCritique,

@@ -33,6 +33,8 @@ describe("resolveHotkeyAction", () => {
 
   it("preserves existing selection and nudge keys", () => {
     expect(resolveHotkeyAction({ key: "Escape" })).toEqual({ kind: "clear-selection" });
+    expect(resolveHotkeyAction({ key: "Escape", canDismissTopLayer: true })).toEqual({ kind: "dismiss-top-layer" });
+    expect(resolveHotkeyAction({ key: "Escape", canDismissTopLayer: true, canReadingPathDisable: true })).toEqual({ kind: "reading-disable" });
     expect(resolveHotkeyAction({ key: "Delete" })).toEqual({ kind: "delete-selection" });
     expect(resolveHotkeyAction({ key: "ArrowRight" })).toEqual({ kind: "nudge", dx: 1, dy: 0 });
     expect(resolveHotkeyAction({ key: "ArrowRight", shiftKey: true })).toEqual({ kind: "nudge", dx: 10, dy: 0 });
