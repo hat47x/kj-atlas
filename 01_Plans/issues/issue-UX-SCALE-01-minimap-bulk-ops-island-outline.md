@@ -57,7 +57,7 @@
 - [x] AC-1: ミニマップで現在ビューの把握と移動ができ、折りたたみ状態が保持される（`e2e/minimap.spec.ts`）。
 - [ ] AC-2: 一括操作（束ねる・保留・型変更）が複数選択時のみ出現し、1回の取り消しで全体が戻る。
 - [ ] AC-3: 島の描線が空白の角を含まない直交ポリゴンで描かれ、複雑さ表示→「整える」→複雑さ低減が e2e で固定される（自動実行しない）。
-- [ ] AC-4: 鳥瞰時の関係線が内部化/昇格規則どおりに増減し、ズーム復帰で元に戻る。
+- [x] AC-4: 鳥瞰時の関係線が内部化/昇格規則どおりに増減し、ズーム復帰で元に戻る（`e2e/edge_escalation.spec.ts`）。
 - [ ] AC-5: PERF-BUDGET-01 のフィクスチャ上で PB-4 相当の対話性が維持される（同Issueの計測系を再利用し重複計測しない）。
 
 ## 6) 実装タスク分解 / Task breakdown
@@ -65,7 +65,7 @@
 - [x] T1 ミニマップ（ビュー枠・折りたたみ・CB-1 宣言）。
 - [ ] T2 一括操作バー（選択数連動・履歴1ステップ）。
 - [ ] T3 直交描線ジェネレータ＋複雑さ算出＋「整える」。
-- [ ] T4 エスカレーション規則（内部化/昇格/ラベル）。
+- [x] T4 エスカレーション規則（内部化/昇格/ラベル）。
 - [ ] T5 e2e＋PB 準拠確認。
 
 ## 7) 検証計画 / Validation plan
@@ -113,6 +113,20 @@
 - e2e 新規3件 passed: `minimap.spec.ts`（ドラッグでカメラがパンされる／折畳と再展開・リロード後の永続化／640px未満での自動折畳が手動設定より優先）
 - 既存の広範な e2e で非回帰確認（`header_toolbar_layout`・`canvas_legend`・`canvas_protection`・`complexity_budget_foregrounding`）
 
-### 残作業（AC-2〜5・T2〜T5、follow-up PR）
+## 完了記録（2/4）2026-07-07（Claude Code）— 関係線エスカレーション完成（AC-4・T4）
 
-- AC-2/T2: 一括操作バー。AC-3/T3: 直交描線ジェネレータ＋複雑さ＋「整える」。AC-4/T4: 孤立カードへの昇格を含むエスカレーション規則の完成。AC-5/T5: PERF-BUDGET-01 フィクスチャでのスモーク確認。
+### 実装
+
+- `src/domain/island_edge_aggregate.ts`: `getDerivedIslandEdges` を拡張し、既存の島↔島昇格（同一島内=内部化・異島間=集約昇格）に加え、**片方だけが島に属する場合（残存する孤立カードへの関係）を島↔カードとして昇格**するロジックを追加。`DerivedIslandEdge.toKind` を `"island" | "card"` に拡張。ダングリング参照（実在しないカードID）は昇格せず従来どおり無視するガードを追加。
+- `src/canvas/CanvasShell.tsx`・`src/domain/geometry/bounds.ts`・`src/export/canvas_svg.ts`: 派生エッジの可視性フィルタが `toId` を常に島IDとして扱っていたバグを修正（`toKind` に応じてカード可視集合も参照するよう分岐）。`src/export/abstract_map_export.ts`（テキスト版アウトライン書き出し）は行フォーマットが島ペア専用のため、カード昇格エッジは明示的にスコープ外として除外。
+- **副次的に発見・修正した既存バグ**: `EdgeLayer.tsx` へ渡す `cards` プロパティが `visibleCards`（LOD で圧縮され個別カードが除外された集合）に限定されていたため、多角形未生成の島の中心点フォールバック計算（メンバーカード位置が必要）が鳥瞰時に失敗し、**新規の昇格エッジだけでなく既存実装済みの島↔島エスカレーション自体も鳥瞰時に描画されない状態だった**（デバッグ属性を一時追加し `derived-count: 2` かつ `visible-edges-count: 2` は正しいのに実際のレンダリングが0件になることを直接確認して特定）。修正: `EdgeLayer` へは `document.cards`（全カード）を渡し、実際の表示可否は既存の `hiddenCardIds` フィルタに委譲（多角形を持つ島は元々影響を受けない）。
+
+### 検証
+
+- typecheck 0 / vitest **902 passed**（183 files。`island_edge_aggregate.test.ts` に昇格ケース・孤立カード同士の非昇格ケースを追加）
+- e2e 新規2件 passed: `edge_escalation.spec.ts`（同一島内=内部化・異島間=昇格・孤立カードへの昇格が実際の `<line stroke="#0f766e">` として描画されズーム復帰で消えることをDOM直接検証）
+- 既存の広範な e2e で非回帰確認（`canvas_legend`・`canvas_protection`・`card_meta_row`・`domain_expression_keyboard_access`・`keyboard_release_candidate_flow`・`hierarchy_level_persistence` 等）
+
+## 残作業（AC-2・AC-3・AC-5、follow-up PR）
+
+- AC-2/T2: 一括操作バー。AC-3/T3: 直交描線ジェネレータ＋複雑さ＋「整える」。AC-5/T5: PERF-BUDGET-01 フィクスチャでのスモーク確認。
