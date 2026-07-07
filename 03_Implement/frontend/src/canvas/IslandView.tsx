@@ -186,6 +186,11 @@ function IslandViewComponent({
   const islandBackgroundImage = island.imageUrl ? `url("${encodeURI(island.imageUrl)}")` : null;
   const polygonPoints = getIslandPolygonPoints(island);
   const hasPolygon = polygonPoints.length >= 3 && !isSelfIntersectingPolygon(polygonPoints);
+  // UX-SCALE-01 (c): (vertexCount - 4) / 2 = count of reflex ("concave")
+  // corners — 0 for a plain rectangle. A structural count, not a score/rank
+  // (ADR-0048 D3 anti-scoring); shown only when non-zero (CB-1: no badge
+  // for the common default-shape case).
+  const outlineComplexity = hasPolygon ? Math.max(0, Math.round((polygonPoints.length - 4) / 2)) : 0;
   const showTitleLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandTitleLabelId(island.id)) : true;
   const showSummaryLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandSummaryLabelId(island.id)) : true;
   const showUnreviewedLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandUnreviewedLabelId(island.id)) : true;
@@ -412,6 +417,22 @@ function IslandViewComponent({
         >
           #{island.cardIds.length}
         </span>
+        {outlineComplexity > 0 ? (
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: "#7c2d12",
+              backgroundColor: "#fef3e2",
+              border: "1px solid #fed7aa",
+              borderRadius: 999,
+              padding: "1px 6px",
+            }}
+            title={t("canvas.island.outline_complexity_title", { count: outlineComplexity })}
+          >
+            {t("canvas.island.outline_complexity_badge", { count: outlineComplexity })}
+          </span>
+        ) : null}
         {isProtected ? (
           // UX-VISUAL-02 (ADR-0048 D3): protection mark for a small island.
           // Mirrors CardView's protection chip exactly (dashed border, square dot,

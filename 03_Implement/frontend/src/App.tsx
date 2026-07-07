@@ -28,14 +28,13 @@ import { classifyAiProviderError, type AiProviderErrorKind } from "./domain/ai_p
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
 import { appendReadingOrderEntry, moveReadingOrderEntry, removeReadingOrderEntry } from "./domain/reading_order_ops";
-import { computeConvexHull } from "./domain/geometry/convex_hull";
 import {
   addPolygonVertex,
   movePolygonVertex,
   removePolygonVertex,
 } from "./domain/geometry/polygon_edit";
-import { padPolygonFromCentroid } from "./domain/geometry/polygon_pad";
 import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geometry/polygon_stale";
+import { computeTidyIslandLayout, generateOrthogonalIslandOutline } from "./domain/geometry/orthogonal_island_outline";
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
@@ -208,7 +207,6 @@ const GRID_SNAP_SIZE = 10;
 const SUGGESTION_MOVE_THRESHOLD = 1;
 const CARD_WIDTH = 220;
 const CARD_HEIGHT = 80;
-const POLYGON_PADDING = 16;
 
 const SVG_VISIBLE_BOUNDS_PADDING = 64;
 const FALLBACK_EXPORT_VIEWPORT = { width: 1280, height: 720 };
@@ -918,30 +916,14 @@ function createIslandFromSelection(selectedCardIds: string[], existingIslands: I
 
 
 
+// UX-SCALE-01 (c) (ADR-0048 D2, Round 5 redline): auto-fit now generates an
+// orthogonal (grid-occupancy) outline rather than a padded convex hull, so
+// the shape has no diagonal edges and its vertex count is a meaningful
+// complexity signal. Manual polygon editing (PolygonEditLayer) is untouched
+// and can still produce a non-orthogonal shape if the user drags a vertex.
 function buildIslandPolygonFromCards(document: DocumentV2, island: Island): Point[] {
   const memberCards = document.cards.filter((card) => island.cardIds.includes(card.id));
-  if (memberCards.length === 0) {
-    return [];
-  }
-
-  const points: Point[] = [];
-  for (const card of memberCards) {
-    const right = card.x + CARD_WIDTH;
-    const bottom = card.y + CARD_HEIGHT;
-    points.push(
-      { x: card.x, y: card.y },
-      { x: right, y: card.y },
-      { x: right, y: bottom },
-      { x: card.x, y: bottom }
-    );
-  }
-
-  const hull = computeConvexHull(points);
-  if (hull.length < 3) {
-    return [];
-  }
-
-  return padPolygonFromCentroid(hull, POLYGON_PADDING);
+  return generateOrthogonalIslandOutline(memberCards)?.points ?? [];
 }
 
 function areIdSetsEqual(a: Set<string>, b: Set<string>): boolean {
@@ -5128,6 +5110,66 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+  // UX-SCALE-01 (c) (ADR-0048 D2, Round 5 redline): human-triggered only
+  // (never run automatically), repositions every member card into a dense
+  // grid and regenerates the outline from the new positions — both as ONE
+  // document change, so a single Ctrl+Z reverses the whole tidy.
+  const handleTidyIsland = useCallback(
+    (islandId: string) => {
+      if (!document) {
+        return;
+      }
+
+      const targetIsland = document.islands.find((island) => island.id === islandId);
+      if (!targetIsland) {
+        return;
+      }
+
+      const memberCards = document.cards.filter((card) => targetIsland.cardIds.includes(card.id));
+      if (memberCards.length === 0) {
+        return;
+      }
+
+      const tidyPositionById = new Map(computeTidyIslandLayout(memberCards).map((position) => [position.id, position]));
+      const nextCards = document.cards.map((card) => {
+        const tidyPosition = tidyPositionById.get(card.id);
+        if (!tidyPosition || (card.x === tidyPosition.x && card.y === tidyPosition.y)) {
+          return card;
+        }
+        return { ...card, x: tidyPosition.x, y: tidyPosition.y };
+      });
+
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
+        setStatusMessage(t("app.status.island_tidy.already_dense"));
+        return;
+      }
+
+      const tidiedMemberCards = nextCards.filter((card) => targetIsland.cardIds.includes(card.id));
+      const polygonPoints = generateOrthogonalIslandOutline(tidiedMemberCards)?.points ?? [];
+      const nextShape =
+        polygonPoints.length < 3
+          ? { kind: "rect" as const }
+          : {
+              kind: "polygon" as const,
+              points: polygonPoints,
+              generatedFrom: {
+                cardIds: [...targetIsland.cardIds],
+                versionToken: buildVersionTokenForCardIds(nextCards, targetIsland.cardIds, CARD_WIDTH, CARD_HEIGHT),
+              },
+            };
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+          islands: document.islands.map((island) => (island.id === islandId ? { ...island, shape: nextShape } : island)),
+        },
+        t("app.status.island_tidy.applied")
+      );
+    },
+    [applyDocumentChange, document]
+  );
 
   const handleIslandShapeKindChange = useCallback(
     (islandId: string, kind: "rect" | "polygon") => {
@@ -9705,6 +9747,17 @@ export default function App() {
         run: handleCreateIsland,
       },
       {
+        id: "tidy-island",
+        category: "create",
+        label: t("context_menu.tidy_island"),
+        enabled: canEditDocument && selectedIslandId !== null,
+        run: () => {
+          if (selectedIslandId) {
+            handleTidyIsland(selectedIslandId);
+          }
+        },
+      },
+      {
         id: "toggle-hold",
         category: "hold",
         label: t("command_palette.command.toggle_hold"),
@@ -9796,6 +9849,7 @@ export default function App() {
     handleCreateIsland,
     handleRedo,
     handleResetEmptyCanvasHint,
+    handleTidyIsland,
     handleUndo,
     isCanvasLegendOpen,
     isDirty,
@@ -9804,6 +9858,7 @@ export default function App() {
     isSaving,
     selectedCard,
     selectedCardIds,
+    selectedIslandId,
   ]);
 
   const handleRunPaletteCommand = useCallback((command: PaletteCommand) => {
@@ -10445,6 +10500,12 @@ export default function App() {
                   label: t("context_menu.add_cards_to_island"),
                   onSelect: () => handleAddSelectedCardsToIslandById(target.islandId),
                   disabled: isReadOnly || selectedCardIds.length === 0,
+                },
+                {
+                  kind: "action",
+                  label: t("context_menu.tidy_island"),
+                  onSelect: () => handleTidyIsland(target.islandId),
+                  disabled: isReadOnly,
                 },
                 { kind: "separator" },
                 {
