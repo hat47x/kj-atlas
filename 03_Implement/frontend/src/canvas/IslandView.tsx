@@ -32,6 +32,7 @@ type IslandViewProps = {
   safeMode?: boolean;
   isCollapsedForView?: boolean;
   isProtectedVoice?: boolean;
+  showProtectedVoiceMarker?: boolean;
   onSelect: (islandId: string, isShiftPressed: boolean) => void;
   onToggleCollapsed?: (islandId: string, collapsed: boolean) => void;
   onTitleDoubleClick?: (islandId: string) => void;
@@ -162,6 +163,7 @@ function IslandViewComponent({
   safeMode = false,
   isCollapsedForView,
   isProtectedVoice = false,
+  showProtectedVoiceMarker = true,
   onSelect,
   onToggleCollapsed,
   onTitleDoubleClick,
@@ -182,7 +184,7 @@ function IslandViewComponent({
   const hideUnreviewedSummary = safeMode && island.summaryReviewed === false && hasSummary;
   const isCollapsed = isCollapsedForView ?? island.collapsed === true;
   const isProtectedSmallIsland = island.cardIds.length > 0 && island.cardIds.length <= 2;
-  const isProtectedIsland = isProtectedSmallIsland || isProtectedVoice;
+  const isProtectedIsland = showProtectedVoiceMarker && (isProtectedSmallIsland || isProtectedVoice);
   const headerHeight = hasSummary || abstractMapView ? ISLAND_HEADER_HEIGHT_WITH_SUMMARY : ISLAND_HEADER_HEIGHT;
   const islandBackgroundImage = island.imageUrl ? `url("${encodeURI(island.imageUrl)}")` : null;
   const polygonPoints = getIslandPolygonPoints(island);

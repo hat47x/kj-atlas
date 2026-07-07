@@ -1099,6 +1099,7 @@ export default function App() {
   const [lodThresholds, setLodThresholds] = useState<LODThresholds>(DEFAULT_LOD_THRESHOLDS);
   const [lodLevelOverride, setLodLevelOverride] = useState<LODLevel | null>(null);
   const [lodShowLoneWolvesWhenFar, setLodShowLoneWolvesWhenFar] = useState(true);
+  const [showProtectedVoiceMarkers, setShowProtectedVoiceMarkers] = useState(true);
   const [safeMode, setSafeMode] = useState(true);
   const [emptyCanvasHintCompleted, setEmptyCanvasHintCompleted] = useState(loadEmptyCanvasHintCompleted);
   // UX-VISUAL-01 AC-2: in-canvas state legend. Default OFF (CB-1); session-local.
@@ -6946,6 +6947,7 @@ export default function App() {
         isCollapsedForView={(summaryView || abstractMapView) ? effectiveCollapsedIslandIdSet.has(island.id) : collapsedIslandIdSet.has(island.id)}
         safeMode={safeMode}
         isProtectedVoice={singletonCritiqueIslandIdSet.has(island.id)}
+        showProtectedVoiceMarker={showProtectedVoiceMarkers}
         zIndex={index}
         onSelect={handleIslandSelect}
         onToggleCollapsed={handleIslandCollapsedChange}
@@ -6977,6 +6979,7 @@ export default function App() {
     focusIslandById,
     safeMode,
     singletonCritiqueIslandIdSet,
+    showProtectedVoiceMarkers,
     currentLod,
   ]);
 
@@ -8898,6 +8901,8 @@ export default function App() {
             currentLodLevel={currentLod?.level ?? null}
             lodShowLoneWolvesWhenFar={lodShowLoneWolvesWhenFar}
             onLodShowLoneWolvesWhenFarChange={setLodShowLoneWolvesWhenFar}
+            showProtectedVoiceMarkers={showProtectedVoiceMarkers}
+            onShowProtectedVoiceMarkersChange={setShowProtectedVoiceMarkers}
             showLabelBounds={showLabelBounds}
             onShowLabelBoundsChange={setShowLabelBounds}
             evidenceOverlayEnabled={evidenceOverlayEnabled}
@@ -9776,6 +9781,7 @@ export default function App() {
             lodThresholds={lodThresholds}
             lodLevelOverride={lodLevelOverride}
             lodShowLoneWolvesWhenFar={lodShowLoneWolvesWhenFar}
+            showProtectedVoiceMarkers={showProtectedVoiceMarkers}
             effectiveCollapsedIslandIds={effectiveCollapsedIslandIdSet}
             showDerivedIslandEdges={summaryView || abstractMapView || effectiveCollapsedIslandIdSet.size > 0 || currentLod?.level === "far"}
             focusCardId={focusCardId}

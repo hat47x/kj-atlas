@@ -103,6 +103,19 @@ describe("UX Operability regression contracts", () => {
 
     const viewControlsSource = readSource("src/ui/ViewControlsPanel.tsx");
     expect(viewControlsSource).toContain('data-focus-return-id="legend-trigger"');
+    expect(viewControlsSource).toContain('t("view_controls.protection.show_markers")');
+    expect(viewControlsSource).toContain("onShowProtectedVoiceMarkersChange(event.target.checked)");
+  });
+
+  it("UX-VISUAL-02: protection markers can be hidden from View controls", () => {
+    const appSource = readSource("src/App.tsx");
+    const canvasShellSource = readSource("src/canvas/CanvasShell.tsx");
+    const islandViewSource = readSource("src/canvas/IslandView.tsx");
+
+    expect(appSource).toContain("const [showProtectedVoiceMarkers, setShowProtectedVoiceMarkers] = useState(true)");
+    expect(appSource).toContain("showProtectedVoiceMarkers={showProtectedVoiceMarkers}");
+    expect(canvasShellSource).toContain("showProtectedVoiceMarkers &&");
+    expect(islandViewSource).toContain("showProtectedVoiceMarker &&");
   });
 
   it("Phase 3: contextual-selection-panel", () => {

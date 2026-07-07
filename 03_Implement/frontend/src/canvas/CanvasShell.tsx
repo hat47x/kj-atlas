@@ -149,6 +149,7 @@ type CanvasShellProps = {
   lodThresholds?: LODConfig["lodThresholds"];
   lodLevelOverride?: LODLevel | null;
   lodShowLoneWolvesWhenFar?: boolean;
+  showProtectedVoiceMarkers?: boolean;
   effectiveCollapsedIslandIds?: Set<string>;
   showDerivedIslandEdges?: boolean;
   searchQuery?: string;
@@ -313,6 +314,7 @@ export function CanvasShell({
   lodThresholds,
   lodLevelOverride = null,
   lodShowLoneWolvesWhenFar = true,
+  showProtectedVoiceMarkers = true,
   effectiveCollapsedIslandIds,
   showDerivedIslandEdges = false,
   searchQuery = "",
@@ -1374,7 +1376,7 @@ export function CanvasShell({
               isHighlighted={highlightCardIds.has(card.id)}
               compactMode={Boolean(lod?.rules.compactCards)}
               markerMode={Boolean(lod && lod.level === "far" && lodShowLoneWolvesWhenFar && loneWolfCardIdSet.has(card.id))}
-              isProtectedVoice={loneWolfCardIdSet.has(card.id) || singletonCritiqueCardIdSet.has(card.id)}
+              isProtectedVoice={showProtectedVoiceMarkers && (loneWolfCardIdSet.has(card.id) || singletonCritiqueCardIdSet.has(card.id))}
               showLabelText={acceptedLabelIds.has(buildCardLabelId(card.id))}
               isEditing={editingCardId === card.id}
               onBeginEdit={onBeginEditCard}

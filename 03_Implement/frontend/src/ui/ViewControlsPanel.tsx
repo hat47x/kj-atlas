@@ -52,6 +52,8 @@ type ViewControlsPanelProps = {
   currentLodLevel?: LODLevel | null;
   lodShowLoneWolvesWhenFar: boolean;
   onLodShowLoneWolvesWhenFarChange: (value: boolean) => void;
+  showProtectedVoiceMarkers: boolean;
+  onShowProtectedVoiceMarkersChange: (value: boolean) => void;
   showLabelBounds: boolean;
   onShowLabelBoundsChange: (value: boolean) => void;
   evidenceOverlayEnabled: boolean;
@@ -137,6 +139,8 @@ export function ViewControlsPanel({
   currentLodLevel,
   lodShowLoneWolvesWhenFar,
   onLodShowLoneWolvesWhenFarChange,
+  showProtectedVoiceMarkers,
+  onShowProtectedVoiceMarkersChange,
   showLabelBounds,
   onShowLabelBoundsChange,
   evidenceOverlayEnabled,
@@ -604,6 +608,23 @@ export function ViewControlsPanel({
         ) : null}
       </div>
 
+
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.protection.title")}</div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+          <input
+            type="checkbox"
+            checked={showProtectedVoiceMarkers}
+            onChange={(event) => {
+              onShowProtectedVoiceMarkersChange(event.target.checked);
+            }}
+          />
+          {t("view_controls.protection.show_markers")}
+        </label>
+        <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.4 }}>
+          {t("view_controls.protection.help")}
+        </div>
+      </div>
 
       <div style={sectionStyle}>
         <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.label_culling.title")}</div>
