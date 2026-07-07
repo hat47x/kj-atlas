@@ -676,6 +676,9 @@ export function SharePanel({
             <div style={preflightPanelStyle}>
               <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a" }}>{t("share.panel.preflight.title")}</div>
               <div style={{ fontSize: 11, color: "#475569" }}>{t("share.panel.preflight.hint")}</div>
+              <div style={{ fontSize: 11, color: viewVisibility === packVisibility ? "#475569" : "#9a3412", fontWeight: viewVisibility === packVisibility ? 400 : 700 }}>
+                {t("share.panel.preflight.visibility_scope_hint")}
+              </div>
               <dl style={preflightGridStyle}>
                 <div style={preflightRowStyle}>
                   <dt style={preflightTermStyle}>{t("share.panel.preflight.safe_mode")}</dt>

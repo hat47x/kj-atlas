@@ -1,7 +1,7 @@
 # Issue: UX-SHARE-02 Plain Language For View And Pack Visibility
 
 - Type: UX / Documentation alignment
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: VALUE-DOGFOOD-01
 - Priority: P2
@@ -50,3 +50,14 @@ The share/export flow is a safety boundary. Users should understand who can see 
 ## ADR Impact
 
 No ADR is required unless visibility semantics or SafeMode/export policy changes. This issue should stay at copy and preflight presentation level.
+
+## Implementation Evidence 2026-07-08
+
+- Added preflight copy that distinguishes view visibility from pack visibility before export.
+- The hint is visually emphasized when the view and pack visibility values differ.
+- Added Japanese and English i18n catalog entries.
+- Added a SharePanel unit test for the differing-visibility explanation.
+- Verification:
+  - `node .\node_modules\vitest\vitest.mjs run src/ui/SharePanel.test.ts src/i18n/catalog_integrity.test.ts src/i18n/untranslated_key_inventory.test.ts` -> 3 files / 18 tests passed.
+  - `node .\node_modules\typescript\bin\tsc --noEmit` -> passed.
+- Remaining: run a browser/Playwright check against the visible share/export panel before closing the issue.
