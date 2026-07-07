@@ -55,6 +55,9 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain('t("app.shortcut.default_card_critique")');
     expect(shortcutHelpSource).toContain('data-ui-region="shortcut-help"');
     expect(shortcutHelpSource).toContain('aria-modal="true"');
+    expect(shortcutHelpSource).toContain('boxSizing: "border-box"');
+    expect(shortcutHelpSource).toContain('overflowWrap: "anywhere"');
+    expect(shortcutHelpSource).toContain('flexWrap: "wrap"');
     expect(shortcutHelpSource).toContain('t("shortcut_help.note.editing")');
   });
 

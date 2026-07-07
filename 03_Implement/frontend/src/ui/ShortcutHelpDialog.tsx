@@ -31,8 +31,10 @@ const dialogStyle = {
 } as const;
 
 const panelStyle = {
+  boxSizing: "border-box",
   width: "min(720px, calc(100vw - 32px))",
   maxHeight: "min(680px, calc(100vh - 32px))",
+  maxWidth: "100%",
   overflowY: "auto",
   border: "1px solid #cbd5e1",
   borderRadius: 8,
@@ -50,12 +52,17 @@ const sectionStyle = {
 
 const rowStyle = {
   display: "grid",
-  gridTemplateColumns: "minmax(116px, max-content) 1fr",
+  gridTemplateColumns: "minmax(96px, max-content) minmax(0, 1fr)",
   gap: 10,
   alignItems: "center",
   fontSize: 12,
   color: "#334155",
   lineHeight: 1.45,
+} as const;
+
+const descriptionStyle = {
+  minWidth: 0,
+  overflowWrap: "anywhere",
 } as const;
 
 const keyGroupStyle = {
@@ -115,7 +122,7 @@ function ShortcutSection({ title, entries }: { title: string; entries: ShortcutH
         {entries.map((entry) => (
           <div key={`${entry.keys.join("+")}-${entry.label}`} style={rowStyle}>
             {renderKeys(entry.keys)}
-            <span>{entry.label}</span>
+            <span style={descriptionStyle}>{entry.label}</span>
           </div>
         ))}
       </div>
@@ -204,8 +211,8 @@ export function ShortcutHelpDialog({ onClose }: ShortcutHelpDialogProps) {
         onKeyDown={handleKeyDown}
         style={panelStyle}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}>
-          <div style={{ display: "grid", gap: 4 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start", flexWrap: "wrap" }}>
+          <div style={{ display: "grid", gap: 4, minWidth: 0, flex: "1 1 260px" }}>
             <h2 style={{ margin: 0, color: "#0f172a", fontSize: 16, fontWeight: 800 }}>
               {t("shortcut_help.title")}
             </h2>
