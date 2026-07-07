@@ -64,6 +64,7 @@ import { WorkModePanel } from "./ui/WorkModePanel";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import { CanvasLegend } from "./ui/CanvasLegend";
 import { CommandPalette, type PaletteCommand } from "./ui/CommandPalette";
+import { ShortcutCheatsheet } from "./ui/ShortcutCheatsheet";
 import { formatModShortcut } from "./ui/os_shortcut_format";
 import type { IslandRelationEdgeSelection } from "./domain/island_relation_explain";
 import {
@@ -1143,6 +1144,10 @@ export default function App() {
   // only via Cmd/Ctrl+K; no persistent trigger element (CB-1, AC-5).
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const commandPaletteReturnFocusRef = useRef<HTMLElement | null>(null);
+  // UX-SHORTCUT-01 AC-4 (ADR-0048 D2): shortcut cheatsheet. Default OFF,
+  // opened only via "?"; no persistent trigger element (CB-1, AC-5).
+  const [isShortcutCheatsheetOpen, setIsShortcutCheatsheetOpen] = useState(false);
+  const shortcutCheatsheetReturnFocusRef = useRef<HTMLElement | null>(null);
   const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(
     () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
   );
@@ -3951,6 +3956,14 @@ export default function App() {
     setIsCommandPaletteOpen(false);
   }, []);
 
+  const closeShortcutCheatsheet = useCallback(() => {
+    // UX-SHORTCUT-01 AC-4 (ADR-0030 contract): same synchronous-focus-before-
+    // unmount pattern as closeCommandPalette / handleCloseCanvasLegend.
+    shortcutCheatsheetReturnFocusRef.current?.focus();
+    shortcutCheatsheetReturnFocusRef.current = null;
+    setIsShortcutCheatsheetOpen(false);
+  }, []);
+
   const createCardAtPosition = useCallback(
     (x: number, y: number) => {
       if (!document) {
@@ -5505,6 +5518,37 @@ export default function App() {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [closeCommandPalette, isCommandPaletteOpen, isStartPanelVisible]);
+
+  useEffect(() => {
+    // UX-SHORTCUT-01 AC-4 (ADR-0048 D2): "?" opens the shortcut cheatsheet;
+    // pressing it again while open closes it (same as Escape). Deferred to
+    // OS/browser default while editing text (AC-2's guard, reused).
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey || event.key !== "?") {
+        return;
+      }
+
+      if (isShortcutCheatsheetOpen) {
+        event.preventDefault();
+        closeShortcutCheatsheet();
+        return;
+      }
+
+      if (isStartPanelVisible || isEditableHotkeyTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      shortcutCheatsheetReturnFocusRef.current =
+        window.document.activeElement instanceof HTMLElement ? window.document.activeElement : null;
+      setIsShortcutCheatsheetOpen(true);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closeShortcutCheatsheet, isShortcutCheatsheetOpen, isStartPanelVisible]);
 
   const uniqueIslands = useMemo(() => {
     const normalizedIslands = (focusedVisibleDocument?.islands ?? []).map((island) => ({
@@ -10124,6 +10168,7 @@ export default function App() {
         onRunCommand={handleRunPaletteCommand}
       />
     ) : null}
+    {isShortcutCheatsheetOpen ? <ShortcutCheatsheet onClose={closeShortcutCheatsheet} /> : null}
     </>
   );
 }

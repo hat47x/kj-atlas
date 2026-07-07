@@ -160,6 +160,27 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain("handleCardTextReviewedChange(selectedCard.id, selectedCard.textReviewed !== true)");
   });
 
+  it("UX-SHORTCUT-01 AC-4: shortcut cheatsheet ('?') is default-OFF, OS-aware, and lists only shortcuts that actually exist", () => {
+    const appSource = readSource("src/App.tsx");
+    expect(appSource).toContain("const [isShortcutCheatsheetOpen, setIsShortcutCheatsheetOpen] = useState(false)");
+    expect(appSource).toContain('event.key !== "?"');
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(7);
+
+    const cheatsheetSource = readSource("src/ui/ShortcutCheatsheet.tsx");
+    expect(cheatsheetSource).toContain('role="dialog"');
+    expect(cheatsheetSource).toContain("useMacNotation");
+    expect(cheatsheetSource).toContain('t("shortcut_cheatsheet.disabled_while_editing")');
+    // Only real, wired shortcuts are listed — nothing from the broader ADR-0048
+    // wish-list (E=edit, ⌘D=duplicate, bare G=create island, L=relation line,
+    // W=work mode, ⌘F/⌘.) that this codebase has not implemented. (Bare "N" is
+    // legitimately listed under the reading-path group, which IS implemented.)
+    expect(cheatsheetSource).not.toContain('shortcuts={["E"]}');
+    expect(cheatsheetSource).not.toContain('shortcuts={["D"]}');
+    expect(cheatsheetSource).not.toContain('shortcuts={["G"]}');
+    expect(cheatsheetSource).not.toContain('shortcuts={["L"]}');
+    expect(cheatsheetSource).not.toContain('shortcuts={["W"]}');
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 
