@@ -91,6 +91,8 @@ describe("UX Operability regression contracts", () => {
     expect(legendSource).toContain('role="dialog"');
     expect(legendSource).toContain('if (event.key === "Escape")');
     expect(legendSource).toContain('t("legend.group.shortcuts")');
+    expect(legendSource).toContain('t("legend.group.protection")');
+    expect(legendSource).toContain('t("legend.item.protected_voice")');
     expect(legendSource).toContain('kbd("H")');
     expect(legendSource).toContain('kbd("U")');
     expect(legendSource).toContain('kbd("R")');
