@@ -25,6 +25,7 @@ const checkedViewports = [
 const keyboardViewports = [
   { width: 1440, height: 900 },
   { width: 768, height: 720 },
+  { width: 390, height: 720 },
 ] as const;
 
 async function collectHeaderButtons(page: Page): Promise<Box[]> {
