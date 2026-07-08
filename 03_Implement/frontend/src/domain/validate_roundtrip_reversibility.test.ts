@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { validateAndUpgradeImportedDocument } from "./validate";
+import { validateDocumentV2Strict } from "./validate_doc";
 
 // ADR-0048 D3 可逆性監査(ultracode workflow, 58エージェント)が確認した
 // silent データ損失の回帰防止。いずれも import(validateAndUpgradeImportedDocument)
@@ -181,6 +182,160 @@ describe("validateAndUpgradeImportedDocument: round-trip reversibility (ADR-0048
     if (!result.ok) return;
 
     expect(result.document.evidenceLinks?.[0]?.contradictionState).toBeUndefined();
+  });
+});
+
+// DOMAIN-KJ-01 (schemas.md §3.3.2): 未知エッジ種別の保全。修正前の validate.ts は
+// 既知enum以外の type を持つエッジを取り込み時に silent 破棄しており、旧クライアント
+// 経由のラウンドトリップで新語彙（causal/mutual/equivalence や将来の種別）の関係線が
+// 消失する実データ損失だった。寛容(import)・厳格(契約検証)の両モードで保全を固定する。
+describe("edge type vocabulary and unknown-type preservation (DOMAIN-KJ-01)", () => {
+  const cardsPair = [
+    { id: "c1", text: "A", x: 0, y: 0 },
+    { id: "c2", text: "B", x: 10, y: 10 },
+  ];
+
+  it("imports all five known edge types without loss (lenient mode)", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: cardsPair,
+      edges: [
+        { id: "e1", fromId: "c1", toId: "c2", type: "related" },
+        { id: "e2", fromId: "c1", toId: "c2", type: "negate" },
+        { id: "e3", fromId: "c1", toId: "c2", type: "causal" },
+        { id: "e4", fromId: "c1", toId: "c2", type: "mutual" },
+        { id: "e5", fromId: "c1", toId: "c2", type: "equivalence" },
+      ],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.edges.map((edge) => edge.type)).toEqual([
+      "related",
+      "negate",
+      "causal",
+      "mutual",
+      "equivalence",
+    ]);
+  });
+
+  it("preserves an UNKNOWN edge type string verbatim instead of discarding the edge (lenient mode)", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: cardsPair,
+      edges: [{ id: "e1", fromId: "c1", toId: "c2", type: "future-vocab-2030" }],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.edges).toHaveLength(1);
+    expect(result.document.edges[0]?.type).toBe("future-vocab-2030");
+  });
+
+  it("still drops an edge whose type is missing, non-string, or empty (structurally invalid)", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: cardsPair,
+      edges: [
+        { id: "e1", fromId: "c1", toId: "c2" },
+        { id: "e2", fromId: "c1", toId: "c2", type: 42 },
+        { id: "e3", fromId: "c1", toId: "c2", type: "" },
+      ],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.edges).toEqual([]);
+  });
+
+  it("strict mode also accepts known-new and unknown edge types (AC-3: both modes preserve)", () => {
+    const strict = validateDocumentV2Strict({
+      ...baseDoc,
+      title: "strict",
+      cards: cardsPair,
+      edges: [
+        { id: "e1", fromId: "c1", toId: "c2", type: "causal" },
+        { id: "e2", fromId: "c1", toId: "c2", type: "future-vocab-2030" },
+      ],
+      islands: [],
+    });
+
+    expect(strict.ok).toBe(true);
+  });
+
+  it("strict mode still rejects an empty edge type string", () => {
+    const strict = validateDocumentV2Strict({
+      ...baseDoc,
+      title: "strict",
+      cards: cardsPair,
+      edges: [{ id: "e1", fromId: "c1", toId: "c2", type: "" }],
+      islands: [],
+    });
+
+    expect(strict.ok).toBe(false);
+    if (strict.ok) return;
+    expect(strict.errors.join("\n")).toContain("edges[0].type");
+  });
+
+  it("normalizes an unknown relationSummary relationType to 'unknown' instead of dropping the summary", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: cardsPair,
+      edges: [],
+      islands: [],
+      relationSummaries: [
+        {
+          id: "rs1",
+          createdAt: "2026-06-21T00:00:00.000Z",
+          islandAId: "isl_a",
+          islandBId: "isl_b",
+          relationType: "future-vocab-2030",
+          derived: true,
+          text: "summary text survives",
+          reviewed: false,
+          groundingCardIds: [],
+          groundingEdgeIds: [],
+          sourceSignature: "sig-x",
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.relationSummaries).toHaveLength(1);
+    expect(result.document.relationSummaries?.[0]?.relationType).toBe("unknown");
+    expect(result.document.relationSummaries?.[0]?.text).toBe("summary text survives");
+  });
+
+  it("accepts the new known relationTypes on relation summaries (lenient mode)", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: cardsPair,
+      edges: [],
+      islands: [],
+      relationSummaries: [
+        {
+          id: "rs1",
+          createdAt: "2026-06-21T00:00:00.000Z",
+          islandAId: "isl_a",
+          islandBId: "isl_b",
+          relationType: "causal",
+          derived: true,
+          text: "causal summary",
+          reviewed: false,
+          groundingCardIds: [],
+          groundingEdgeIds: [],
+          sourceSignature: "sig-c",
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.relationSummaries?.[0]?.relationType).toBe("causal");
   });
 });
 

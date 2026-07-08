@@ -17,6 +17,7 @@ import type {
   SummaryHistoryEntry,
   Transform,
 } from "./types";
+import { KNOWN_EDGE_TYPES } from "./types";
 import { canUsePolygonPoints } from "./geometry/polygon_edit";
 import {
   validateHilRsCritiqueInput,
@@ -144,11 +145,16 @@ function parseEdges(value: unknown): DocumentV2["edges"] {
       continue;
     }
 
+    // DOMAIN-KJ-01 (schemas.md §3.3.2): an UNKNOWN type string must not cause
+    // the edge to be discarded — it is preserved verbatim for round-trip
+    // safety and resolved to "related" at display time only. Only a missing/
+    // non-string/empty type still drops the edge (structurally invalid).
     if (
       typeof item.id !== "string" ||
       typeof item.fromId !== "string" ||
       typeof item.toId !== "string" ||
-      (item.type !== "related" && item.type !== "negate")
+      typeof item.type !== "string" ||
+      item.type.length === 0
     ) {
       continue;
     }
@@ -559,7 +565,7 @@ function parseRelationSummaries(value: unknown): RelationSummary[] | undefined {
       || typeof item.createdAt !== "string"
       || typeof item.islandAId !== "string"
       || typeof item.islandBId !== "string"
-      || (item.relationType !== "related" && item.relationType !== "negate" && item.relationType !== "unknown")
+      || typeof item.relationType !== "string"
       || typeof item.derived !== "boolean"
       || typeof item.text !== "string"
       || typeof item.reviewed !== "boolean"
@@ -570,12 +576,20 @@ function parseRelationSummaries(value: unknown): RelationSummary[] | undefined {
       continue;
     }
 
+    // DOMAIN-KJ-01: unknown relationType no longer drops the whole summary —
+    // it is normalized to "unknown" (the row is regenerable derived data, so
+    // unlike Edge.type the original string need not be preserved verbatim).
+    const relationType: RelationSummary["relationType"] =
+      (KNOWN_EDGE_TYPES as readonly string[]).includes(item.relationType) || item.relationType === "unknown"
+        ? (item.relationType as RelationSummary["relationType"])
+        : "unknown";
+
     summaries.push({
       id: item.id,
       createdAt: item.createdAt,
       islandAId: item.islandAId,
       islandBId: item.islandBId,
-      relationType: item.relationType,
+      relationType,
       derived: item.derived,
       text: item.text,
       reviewed: item.reviewed,

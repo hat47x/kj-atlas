@@ -46,7 +46,8 @@ import {
   getLatestMergeSuggestionDecisionByGroup,
   type MergeSuggestionDecision,
 } from "./domain/merge_suggestion_decisions";
-import { isSourceCard, Document, DocumentV2, Island, Narrative, type EvidenceLink, type Point, type RelationSummary } from "./domain/types";
+import { isSourceCard, Document, DocumentV2, Island, Narrative, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
+import { KNOWN_EDGE_TYPES } from "./domain/types";
 import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -534,8 +535,9 @@ function parseComparisonRelationSummaries(value: unknown): DocumentV2["relationS
       islandAId: typeof entry.islandAId === "string" ? entry.islandAId : "",
       islandBId: typeof entry.islandBId === "string" ? entry.islandBId : "",
       relationType:
-        entry.relationType === "related" || entry.relationType === "negate" || entry.relationType === "unknown"
-          ? entry.relationType
+        entry.relationType === "unknown" ||
+        (typeof entry.relationType === "string" && (KNOWN_EDGE_TYPES as readonly string[]).includes(entry.relationType))
+          ? (entry.relationType as RelationSummary["relationType"])
           : "unknown",
       derived: typeof entry.derived === "boolean" ? entry.derived : false,
       text: typeof entry.text === "string" ? entry.text : "",
@@ -1213,7 +1215,7 @@ export default function App() {
   const [islandSummaryProposal, setIslandSummaryProposal] = useState<IslandSummaryProposal | null>(null);
   const [proposalAuditTrail, setProposalAuditTrail] = useState<string[]>([]);
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
-  const [connectEdgeType, setConnectEdgeType] = useState<"related" | "negate">("related");
+  const [connectEdgeType, setConnectEdgeType] = useState<KnownEdgeType>("related");
   const [maxDepth, setMaxDepth] = useState<ViewMaxDepth>("all");
   const [hierarchyLevel, setHierarchyLevel] = useState<HierarchyLevel>("detail");
   const [isViewControlsOpen, setIsViewControlsOpen] = useState(false);
@@ -3694,6 +3696,35 @@ export default function App() {
     setSelectedCardIds([]);
     setSelectedIslandId(null);
   }, [abstractMapView, summaryView]);
+
+  // DOMAIN-KJ-01: change a persisted edge's relation type in place (one
+  // history step, Cmd/Ctrl+Z reversible). Only persisted edges are eligible —
+  // derived/aggregated edges have no document row to mutate.
+  const handleEdgeTypeChange = useCallback(
+    (edgeId: string, nextType: KnownEdgeType) => {
+      if (!document) {
+        return;
+      }
+
+      const nextEdges = document.edges.map((edge) => {
+        if (edge.id !== edgeId || edge.type === nextType) {
+          return edge;
+        }
+        return { ...edge, type: nextType };
+      });
+
+      const hasChanges = nextEdges.some((edge, index) => edge !== document.edges[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        { ...document, edges: nextEdges },
+        t("app.history.edge.type_updated", { value: t(`side_panel.connect.${nextType}`) })
+      );
+    },
+    [applyDocumentChange, document]
+  );
 
   const handleCardSelect = useCallback((cardId: string, isShiftPressed: boolean) => {
     if (isPickingEdgeTarget) {
@@ -10146,6 +10177,10 @@ export default function App() {
           document={document}
           selectedIslandRelationEdge={selectedIslandRelationEdge}
           selectedAggregatedEdge={selectedAggregatedEdge}
+          selectedPersistedEdgeType={
+            selectedAggregatedEdge ? document?.edges.find((edge) => edge.id === selectedAggregatedEdge.id)?.type ?? null : null
+          }
+          onEdgeTypeChange={handleEdgeTypeChange}
           onRevealSelectedEdgeSources={handleRevealSelectedEdgeSources}
           onInspectSelectedEdgeCard={handleInspectSelectedEdgeCard}
           selectedRelationSummary={selectedRelationSummary}

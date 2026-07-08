@@ -1,11 +1,11 @@
 # Issue Draft: DOMAIN-KJ-01 関係記号の語彙拡張（関連/因果/相互/対立/同値・契約先行）
 
 - Type: Feature request
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Claude Code
 - Scope: `02_Architecture/schemas.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/frontend/src/domain/validate.ts`, `03_Implement/frontend/src/canvas/EdgeLayer.tsx`, `03_Implement/backend/`
 - Related Backlog: `DOMAIN-KJ-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3・前提条件3点）, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`（追加的拡張の系譜）, `02_Architecture/schemas.md`（§5 契約先行）
@@ -58,19 +58,19 @@
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: schemas.md（Edge/Narrative 含む型ブロック）が実装前に更新され、types.ts との乖離が解消されている。
-- [ ] AC-2: 5種別（＋negate 方針）の作成・変更・保存・再読込のラウンドトリップが integration で固定される。
-- [ ] AC-3: 未知種別を含む文書の取り込みで、エッジが破棄されず保全されることが寛容/厳格両モードで固定される。
-- [ ] AC-4: EdgeLayer で種別が視覚的に区別され、既定の新規線は「関連（無方向）」である。
-- [ ] AC-5: 語彙境界（negate/contradicts/canonical との役割分担）が本メモまたは schemas.md に明文化されている。
+- [x] AC-1: schemas.md（Edge/Narrative 含む型ブロック）が実装前に更新され、types.ts との乖離が解消されている（§3.3 全面改訂＋Narrative/RelationSummary/EvidenceLink.contradictionState の型ブロック同期を実装コミットに先行して実施）。
+- [x] AC-2: 5種別（＋negate 方針）の作成・変更・保存・再読込のラウンドトリップが integration で固定される（`validate_roundtrip_reversibility.test.ts`・backend `test_docs_roundtrip.py`・`e2e/edge_type_vocabulary.spec.ts`）。
+- [x] AC-3: 未知種別を含む文書の取り込みで、エッジが破棄されず保全されることが寛容/厳格両モードで固定される（＋バックエンドの Pydantic `Literal` による保存時 422 拒否＝第2の損失経路も同時に解消）。
+- [x] AC-4: EdgeLayer で種別が視覚的に区別され（因果=境界への矢印・相互=両矢印・同値=中点「=」・対立=既存破線）、既定の新規線は「関連（無方向）」である。
+- [x] AC-5: 語彙境界（negate/contradicts/canonical との役割分担）が schemas.md §3.3.2 に明文化されている。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 語彙境界の定義（negate 移行方針の決定を含む）→ schemas.md 更新。
-- [ ] T2 types.ts/validate.ts（保全化）＋ backend スキーマ対応。
-- [ ] T3 EdgeLayer 種別描画＋種別変更メニュー。
-- [ ] T4 RelationSummary/集約/narrative_export/i18n の同期。
-- [ ] T5 integration（ラウンドトリップ・保全・寛容/厳格）＋回帰。
+- [x] T1 語彙境界の定義（negate 移行方針の決定を含む）→ schemas.md 更新。
+- [x] T2 types.ts/validate.ts（保全化）＋ backend スキーマ対応。
+- [x] T3 EdgeLayer 種別描画＋種別変更メニュー。
+- [x] T4 RelationSummary/集約/narrative_export/i18n の同期。
+- [x] T5 integration（ラウンドトリップ・保全・寛容/厳格）＋回帰。
 
 ## 7) 検証計画 / Validation plan
 
@@ -88,3 +88,33 @@
 - Related: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/issues/issue-DOMAIN-EXPR-04-evidence-claim-contradiction-review.md`（contradictionState との整合）
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（図V-2・リサーチ反映）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
+
+## 完了記録 2026-07-08（Claude Code）
+
+### T1 語彙境界の確定（schemas.md §3.3.2 に正本化）
+
+1. **negate ≡ 対立**: 新しい `opposition` enum 値は追加せず、既存 `negate` を KJ法「対立」の永続値として維持（データ移行ゼロ・重複語彙ゼロ・C001 矛盾チェックの意味も不変）。UI 表示名のみ「否定」→「対立」（en: negate → opposition）。
+2. **同値 vs canonical化**: 同値=記述（両カード第一級のまま・線の削除で可逆）、canonical化=統合の実行。同値線は統合を自動実行しない。
+3. **未知種別の保全方式**: `type` フィールドに未知文字列を**そのまま保持**（別フィールド案は不採用—単一の真実源・完全な往復忠実性・復元ロジック不要）。表示・挙動は `resolveKnownEdgeType()` で「関連」に解決。TypeScript は `KnownEdgeType | (string & {})` の LiteralUnion。
+4. **方向規約**: `causal` のみ有向（fromId=原因→toId=結果）。abstract map 書き出しでは causal のみペア正規化を行わず方向を保存。派生（集約）エッジは UX-SCALE-01 レッドラインどおり種別抑制のまま（端点正規化により矢印が誤方向を指しうるため記号は非表示）。
+
+### 実装
+
+- **契約先行**: schemas.md §3.3 全面改訂（§3.3.1 方向規約・§3.3.2 語彙境界）＋参照のみで未定義だった `Narrative`/`RelationSummary` 型ブロックと `EvidenceLink.contradictionState` の同期（既存ドキュメント遅延の解消）。
+- **保全化（3つの損失経路すべて）**: ①寛容 `validate.ts parseEdges`（未知種別破棄→保持、非空文字列のみ要求）②厳格 `validate_doc.ts validateEdgeType`（enum→非空文字列）③バックエンド `models.py EdgeV2.type`（`Literal`→`str min_length=1`、**保存時422拒否の解消**）。加えて ④CE3 パッチ経路 `patch_apply.ts parseEdge`（レビューで発見・同修正）。RelationSummary は再生成可能な派生データのため未知 relationType を「unknown」へ正規化して行を保持（4経路とも）。
+- **描画（EdgeLayer）**: 因果=to端矢印・相互=両端矢印・同値=中点「=」・対立=既存破線。矢先はカード矩形/島ポリゴンの境界に配置。**長年の重大バグを発見・修正**: 外側 `<svg>` の `x`/`y` 属性は HTML 埋め込みでは無効のため、全関係線が +100000px 画面外に描画されており**関係線は一度も画面に表示されていなかった**（クリーンな main で再現確認済み）。CSS `left/top: -100000px` への変更で修正。
+- **操作**: SidePanel の接続セクションが5種別を提示（既定は「関連」＝種別確定を強制しない）。エッジインスペクタに種別変更 select（1操作=1取り消しステップ）と未知種別の保全notice。`visibleEdgeInspectorMeta` をカード↔カード関係線にも拡張（従来は island↔island のみで、カード間関係線は選択しても即解除されインスペクタ不可だった）。
+- **波及同期**: `relationTypeLabel`（abstract map: CAUSAL/MUTUAL/EQUIVALENCE）・`island_relation_explain`・`relation_summary_ops`（`normalizeRelationType`）・`structural_metrics`（typed edge 判定を既知5種別へ）・`api/client.ts`・`models_ai.py`・i18n（両ロケール）。
+
+### 検証
+
+- typecheck 0 / vitest **925 passed**（184 files。保全ラウンドトリップ7件＋回帰アンカー1件を追加）
+- backend: ruff クリーン / pytest **283 passed**（語彙往復・未知種別保全・空文字列422の3テスト追加）
+- e2e 新規3件 passed: `edge_type_vocabulary.spec.ts`（種別記号の描画区別／インスペクタからの種別変更＋Ctrl+Z／未知種別の import→save 往復保全を PUT ペイロード実測で検証）
+- 既存の広範な e2e（33件バッチ）で非回帰確認
+- レビュー: アドバーサリアルworkflowはセッション上限で全エージェント失敗（16時リセット）のため、同5観点（往復整合・契約整合・描画幾何・UIフロー・テスト/i18n同期）を**メインループで手動実施**し、CE3パッチ経路の enum 残存（`patch_apply.ts` 2箇所）・`App.tsx` の relationType 正規化・`structural_metrics.ts` の typed 判定を発見・修正した。
+
+### 残課題（スコープ外・別issue候補）
+
+- 凡例（CanvasLegend）への関係記号エントリ追加（ADR-0048 D1 の凡例1行追加運用は「状態」向けの規約であり本Issueの契約違反ではないが、発見可能性のため追加が望ましい）。
+- 派生（島間集約）エッジの方向保存表示（現状は種別抑制の汎用表示＝UX-SCALE-01 レッドライン準拠）。

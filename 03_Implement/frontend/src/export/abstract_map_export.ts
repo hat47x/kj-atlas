@@ -1,7 +1,7 @@
 import { buildIslandRelationExplanation } from "../domain/island_relation_explain";
 import { getDerivedIslandEdges } from "../domain/island_edge_aggregate";
 import { buildRelationSummarySourceSignature } from "../domain/relation_summary_ops";
-import { isCanonicalCard, type DocumentV2, type EdgeType } from "../domain/types";
+import { isCanonicalCard, resolveKnownEdgeType, type DocumentV2, type EdgeType } from "../domain/types";
 
 const GROUNDING_SNIPPET_LIMIT = 160;
 
@@ -83,7 +83,21 @@ function escapeHtml(value: string): string {
 }
 
 function relationTypeLabel(type: EdgeType): string {
-  return type === "negate" ? "NEGATE" : "RELATED";
+  // DOMAIN-KJ-01: unknown preserved types resolve to "related" for display
+  // (schemas.md §3.3.2), so they label as RELATED here too. "negate" keeps
+  // its persisted-value label (the UI shows it as 対立/opposition).
+  switch (resolveKnownEdgeType(type)) {
+    case "negate":
+      return "NEGATE";
+    case "causal":
+      return "CAUSAL";
+    case "mutual":
+      return "MUTUAL";
+    case "equivalence":
+      return "EQUIVALENCE";
+    default:
+      return "RELATED";
+  }
 }
 
 function reviewLabel(reviewed?: boolean): string {
@@ -183,7 +197,11 @@ export function buildAbstractMapExport(doc: DocumentV2, viewState: AbstractMapEx
       continue;
     }
 
-    const [islandAId, islandBId] = normalizePair(edge.fromId, edge.toId);
+    // DOMAIN-KJ-01 (schemas.md §3.3.1): "causal" is directed (fromId=cause →
+    // toId=effect), so its pair order must NOT be normalized away in the
+    // export — swapping would reverse the stated causal direction.
+    const [islandAId, islandBId] =
+      resolveKnownEdgeType(edge.type) === "causal" ? [edge.fromId, edge.toId] : normalizePair(edge.fromId, edge.toId);
     const summary = relationSummariesBySignature.get(`edge:${edge.id}`);
 
     relationRows.push(

@@ -1,4 +1,5 @@
-import type { DocumentV2, EdgeType } from "./types";
+import type { DocumentV2, EdgeType, KnownEdgeType } from "./types";
+import { resolveKnownEdgeType } from "./types";
 
 export type IslandRelationEdgeSelection = {
   edgeId: string;
@@ -17,8 +18,17 @@ export type IslandRelationExplanation = {
   groundingEdgeIds: string[];
 };
 
-function edgeTypeLabel(type: EdgeType): "RELATED" | "NEGATE" {
-  return type === "negate" ? "NEGATE" : "RELATED";
+const EDGE_TYPE_LABELS: Record<KnownEdgeType, string> = {
+  related: "RELATED",
+  negate: "NEGATE",
+  causal: "CAUSAL",
+  mutual: "MUTUAL",
+  equivalence: "EQUIVALENCE",
+};
+
+function edgeTypeLabel(type: EdgeType): string {
+  // DOMAIN-KJ-01: unknown preserved types resolve to "related" for display.
+  return EDGE_TYPE_LABELS[resolveKnownEdgeType(type)];
 }
 
 function uniqueSortedIds(ids: Iterable<string>): string[] {
