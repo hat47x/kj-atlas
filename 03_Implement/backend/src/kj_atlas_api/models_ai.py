@@ -101,7 +101,7 @@ class SummarizeIslandRelationRequest(BaseModel):
     doc: DocumentV2
     islandAId: str = Field(min_length=1)
     islandBId: str = Field(min_length=1)
-    relationType: Literal["related", "negate", "unknown"]
+    relationType: Literal["related", "negate", "causal", "mutual", "equivalence", "unknown"]
     derived: bool
     groundingCardIds: list[str]
     groundingEdgeIds: list[str]

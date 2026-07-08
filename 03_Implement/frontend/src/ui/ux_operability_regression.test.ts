@@ -357,6 +357,47 @@ describe("UX Operability regression contracts", () => {
     expect(outlineSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
   });
 
+  it("DOMAIN-KJ-01: KJ relation vocabulary is additive, unknown types are preserved (never discarded), and derived edges stay type-suppressed", () => {
+    const typesSource = readSource("src/domain/types.ts");
+    const validateSource = readSource("src/domain/validate.ts");
+    const validateDocSource = readSource("src/domain/validate_doc.ts");
+    const edgeLayerSource = readSource("src/canvas/EdgeLayer.tsx");
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const appSource = readSource("src/App.tsx");
+
+    // The known vocabulary is exactly the 5 values fixed by schemas.md §3.3
+    // (negate IS the persisted value for 対立 — no separate "opposition").
+    expect(typesSource).toContain('["related", "negate", "causal", "mutual", "equivalence"] as const');
+    expect(typesSource).not.toContain('"opposition"');
+    expect(typesSource).toContain("export function resolveKnownEdgeType");
+
+    // Preservation (schemas.md §3.3.2): the old discard conditions must not
+    // reappear in either mode. Lenient keeps any non-empty string type;
+    // strict validates "non-empty string", not a closed enum.
+    expect(validateSource).not.toContain('item.type !== "related" && item.type !== "negate"');
+    expect(validateSource).toContain("item.type.length === 0");
+    expect(validateDocSource).not.toContain('value === "related" || value === "negate"');
+    expect(validateDocSource).toContain('typeof value === "string" && value.length > 0');
+
+    // Rendering: direction/symbols only for NON-derived edges (derived stay
+    // generic per UX-SCALE-01 redline, and their endpoint order is
+    // normalized so an arrow could point the wrong way).
+    expect(edgeLayerSource).toContain('edge.isDerived ? "related" : resolveKnownEdgeType(edge.type)');
+    expect(edgeLayerSource).toContain('data-edge-symbol="arrow-to"');
+    expect(edgeLayerSource).toContain('data-edge-symbol="arrow-from"');
+    expect(edgeLayerSource).toContain('data-edge-symbol="equivalence"');
+
+    // Type change is a single history step on a PERSISTED edge only, and the
+    // default for new edges stays "related" (no forced convergence).
+    expect(appSource).toContain("const handleEdgeTypeChange = useCallback(");
+    expect(appSource).toContain('useState<KnownEdgeType>("related")');
+    expect(sidePanelSource).toContain("selectedPersistedEdgeType");
+    expect(sidePanelSource).toContain('t("side_panel.edge_inspector.unknown_type_preserved"');
+
+    // No scoring/ranking vocabulary in the new relation-type surfaces.
+    expect(edgeLayerSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 

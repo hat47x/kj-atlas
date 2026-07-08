@@ -1,4 +1,4 @@
-import type { Card, Document, DocumentV2, Island } from "../domain/types";
+import type { Card, Document, DocumentV2, Island, KnownEdgeType } from "../domain/types";
 import { STREAM_B_CONTRACTS } from "../domain/stream_b_contract";
 
 function resolveApiBase(): string {
@@ -441,7 +441,7 @@ export type SummarizeIslandRelationPayload = {
   doc: DocumentV2;
   islandAId: string;
   islandBId: string;
-  relationType: "related" | "negate" | "unknown";
+  relationType: KnownEdgeType | "unknown";
   derived: boolean;
   groundingCardIds: string[];
   groundingEdgeIds: string[];

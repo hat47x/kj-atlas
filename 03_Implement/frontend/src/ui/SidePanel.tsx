@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { t } from "../i18n/translate";
 
-import { CRITIQUE_TAGS } from "../domain/types";
+import { CRITIQUE_TAGS, KNOWN_EDGE_TYPES, resolveKnownEdgeType } from "../domain/types";
+import type { EdgeType, KnownEdgeType } from "../domain/types";
 import { DomainStateSummary } from "./DomainStateSummary";
 import { DomainStateFilterBar } from "./DomainStateFilterBar";
 import type { DomainStateFilter } from "../domain/domain_state_filter";
@@ -154,10 +155,13 @@ type SidePanelProps = {
   onDistributeVertically: () => void;
   canStartConnect: boolean;
   isPickingEdgeTarget: boolean;
-  connectEdgeType: "related" | "negate";
-  onConnectEdgeTypeChange: (value: "related" | "negate") => void;
+  connectEdgeType: KnownEdgeType;
+  onConnectEdgeTypeChange: (value: KnownEdgeType) => void;
   onStartConnect: () => void;
   onCancelConnect: () => void;
+  /** DOMAIN-KJ-01: raw type of the selected edge IF it is a persisted document edge (null for derived/aggregate). */
+  selectedPersistedEdgeType: EdgeType | null;
+  onEdgeTypeChange: (edgeId: string, nextType: KnownEdgeType) => void;
   guidedFlowEnabled: boolean;
   onGuidedFlowEnabledChange: (value: boolean) => void;
   guidedFlowStepId: "review" | "classify" | "evidence" | "contradiction";
@@ -325,6 +329,8 @@ export function SidePanel({
   onConnectEdgeTypeChange,
   onStartConnect,
   onCancelConnect,
+  selectedPersistedEdgeType,
+  onEdgeTypeChange,
   guidedFlowEnabled,
   onGuidedFlowEnabledChange,
   guidedFlowStepId,
@@ -1811,13 +1817,17 @@ export function SidePanel({
         <select
           value={connectEdgeType}
           onChange={(event) => {
-            onConnectEdgeTypeChange(event.target.value === "negate" ? "negate" : "related");
+            // resolveKnownEdgeType maps anything unexpected back to "related".
+            onConnectEdgeTypeChange(resolveKnownEdgeType(event.target.value));
           }}
           disabled={isPickingEdgeTarget}
           style={{ width: "100%", marginBottom: 8 }}
         >
-          <option value="related">{t("side_panel.connect.related")}</option>
-          <option value="negate">{t("side_panel.connect.negate")}</option>
+          {KNOWN_EDGE_TYPES.map((edgeType) => (
+            <option key={edgeType} value={edgeType}>
+              {t(`side_panel.connect.${edgeType}`)}
+            </option>
+          ))}
         </select>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <button
@@ -2889,7 +2899,44 @@ export function SidePanel({
               toKind: selectedAggregatedEdge.toKind,
             })}
           </div>
-          <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>{t("side_panel.edge_inspector.type", { type: selectedAggregatedEdge.type })}</div>
+          {selectedPersistedEdgeType !== null && !isReadOnly ? (
+            // DOMAIN-KJ-01: persisted edges get an in-place relation-type
+            // control (one Cmd/Ctrl+Z-reversible history step per change).
+            // An UNKNOWN preserved type shows a preservation notice; picking
+            // a known type from the select intentionally overwrites it.
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>
+                {t("side_panel.connect.edge_type")}
+              </label>
+              <select
+                data-testid="edge-type-select"
+                value={resolveKnownEdgeType(selectedPersistedEdgeType)}
+                onChange={(event) => {
+                  onEdgeTypeChange(selectedAggregatedEdge.id, resolveKnownEdgeType(event.target.value));
+                }}
+                style={{ width: "100%" }}
+              >
+                {KNOWN_EDGE_TYPES.map((edgeType) => (
+                  <option key={edgeType} value={edgeType}>
+                    {t(`side_panel.connect.${edgeType}`)}
+                  </option>
+                ))}
+              </select>
+              {(KNOWN_EDGE_TYPES as readonly string[]).includes(selectedPersistedEdgeType) ? null : (
+                <div style={{ fontSize: 11, color: "#92400e", marginTop: 4 }}>
+                  {t("side_panel.edge_inspector.unknown_type_preserved", { raw: selectedPersistedEdgeType })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
+              {t("side_panel.edge_inspector.type", {
+                type: (KNOWN_EDGE_TYPES as readonly string[]).includes(selectedAggregatedEdge.type)
+                  ? t(`side_panel.connect.${selectedAggregatedEdge.type}`)
+                  : selectedAggregatedEdge.type,
+              })}
+            </div>
+          )}
           {selectedAggregatedEdge.isDerivedIslandEdge ? (
             <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
               {t("side_panel.edge_inspector.count", { count: selectedAggregatedEdge.aggregateCount ?? selectedAggregatedEdge.sources.length })}

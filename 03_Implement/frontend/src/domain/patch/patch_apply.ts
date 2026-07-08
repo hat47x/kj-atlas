@@ -1,4 +1,5 @@
 import type { Card, DocumentV2, Edge, Island, PatchApplyStats, PatchConflictMeta, RelationSummary } from "../types";
+import { KNOWN_EDGE_TYPES } from "../types";
 import type { PatchOp, PatchOpKind, PatchV1 } from "./patch_types";
 import { detectPatchConflicts } from "./conflict_detect";
 import type { PatchLintResult } from "./patch_lint";
@@ -48,7 +49,10 @@ function parseEdge(value: unknown): Edge | null {
     return null;
   }
 
-  if (value.type !== "related" && value.type !== "negate") return null;
+  // DOMAIN-KJ-01 (schemas.md §3.3.2): unknown type strings are PRESERVED,
+  // not rejected — same rule as validate.ts. Only a missing/non-string/empty
+  // type invalidates the edge.
+  if (typeof value.type !== "string" || value.type.length === 0) return null;
   if (value.fromKind !== undefined && value.fromKind !== "card" && value.fromKind !== "island") return null;
   if (value.toKind !== undefined && value.toKind !== "card" && value.toKind !== "island") return null;
 
@@ -84,7 +88,8 @@ function parseRelationSummary(value: unknown): RelationSummary | null {
     typeof value.createdAt !== "string" ||
     typeof value.islandAId !== "string" ||
     typeof value.islandBId !== "string" ||
-    (value.relationType !== "related" && value.relationType !== "negate" && value.relationType !== "unknown") ||
+    (value.relationType !== "unknown" &&
+      !(typeof value.relationType === "string" && (KNOWN_EDGE_TYPES as readonly string[]).includes(value.relationType))) ||
     typeof value.derived !== "boolean" ||
     typeof value.text !== "string" ||
     typeof value.reviewed !== "boolean" ||

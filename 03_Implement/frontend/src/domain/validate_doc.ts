@@ -13,6 +13,7 @@ import type {
   ReviewAttribution,
   RelationSummary,
 } from "./types";
+import { KNOWN_EDGE_TYPES } from "./types";
 import { canUsePolygonPoints } from "./geometry/polygon_edit";
 
 type ValidationSuccess = {
@@ -62,7 +63,11 @@ function validateStringArray(value: unknown, path: string, errors: string[]): va
 }
 
 function validateEdgeType(value: unknown): value is EdgeType {
-  return value === "related" || value === "negate";
+  // DOMAIN-KJ-01 (schemas.md §3.3.2): strict mode also PRESERVES unknown
+  // type strings — any non-empty string is structurally valid; unknown
+  // values resolve to "related" at display time. Rejecting them here would
+  // reintroduce the round-trip data loss the contract forbids.
+  return typeof value === "string" && value.length > 0;
 }
 
 function validateClaimType(value: unknown): value is "fact" | "claim" | "hypothesis" | "unknown" {
@@ -216,7 +221,7 @@ function validateEdge(item: unknown, index: number, errors: string[]): item is D
     valid = false;
   }
   if (!validateEdgeType(item.type)) {
-    errors.push(`${path}.type: must be 'related' or 'negate'`);
+    errors.push(`${path}.type: must be a non-empty string`);
     valid = false;
   }
 
@@ -506,8 +511,11 @@ function validateRelationSummary(item: unknown, index: number, errors: string[])
     errors.push(`${path}.islandBId: must be a string`);
     valid = false;
   }
-  if (item.relationType !== "related" && item.relationType !== "negate" && item.relationType !== "unknown") {
-    errors.push(`${path}.relationType: must be 'related', 'negate', or 'unknown'`);
+  if (
+    item.relationType !== "unknown" &&
+    !(typeof item.relationType === "string" && (KNOWN_EDGE_TYPES as readonly string[]).includes(item.relationType))
+  ) {
+    errors.push(`${path}.relationType: must be one of ${KNOWN_EDGE_TYPES.join(", ")}, or 'unknown'`);
     valid = false;
   }
   if (typeof item.derived !== "boolean") {

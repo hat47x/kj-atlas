@@ -110,7 +110,12 @@ class EdgeV2(BaseModel):
     toKind: Literal["card", "island"] | None = Field(
         default=None, exclude_if=lambda value: value is None
     )
-    type: Literal["related", "negate"]
+    # DOMAIN-KJ-01 (schemas.md §3.3.2): known values are
+    # related/negate/causal/mutual/equivalence, but the server accepts any
+    # non-empty string so that documents carrying an UNKNOWN (future/foreign)
+    # edge type round-trip through save without a 422 rejection. Rejecting
+    # here was the second data-loss vector alongside the frontend validator.
+    type: str = Field(min_length=1)
 
 
 class Point(BaseModel):
@@ -276,7 +281,7 @@ class RelationSummary(BaseModel):
     createdAt: datetime
     islandAId: str
     islandBId: str
-    relationType: Literal["related", "negate", "unknown"]
+    relationType: Literal["related", "negate", "causal", "mutual", "equivalence", "unknown"]
     derived: bool
     text: str = Field(max_length=RELATION_SUMMARY_TEXT_MAX_LENGTH)
     reviewed: bool = False

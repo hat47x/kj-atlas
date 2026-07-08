@@ -1,17 +1,27 @@
-import type { DocumentV2, EdgeType, RelationSummary, RelationSummaryHistoryEntry } from "./types";
+import type { DocumentV2, EdgeType, KnownEdgeType, RelationSummary, RelationSummaryHistoryEntry } from "./types";
+import { KNOWN_EDGE_TYPES } from "./types";
 import type { IslandRelationEdgeSelection } from "./island_relation_explain";
 
 export type SummarizeIslandRelationPayload = {
   doc: DocumentV2;
   islandAId: string;
   islandBId: string;
-  relationType: EdgeType | "unknown";
+  relationType: KnownEdgeType | "unknown";
   derived: boolean;
   groundingCardIds: string[];
   groundingEdgeIds: string[];
   edgeTexts?: { edgeId: string; type: string; from: string; to: string }[];
   cardTexts: { id: string; text: string }[];
 };
+
+// DOMAIN-KJ-01: relation summaries record an UNKNOWN preserved edge type as
+// "unknown" (honest, since the vocabulary is not understood) rather than the
+// display-time "related" fallback used for rendering.
+export function normalizeRelationType(type: EdgeType | "unknown"): KnownEdgeType | "unknown" {
+  return type === "unknown" || (KNOWN_EDGE_TYPES as readonly string[]).includes(type)
+    ? (type as KnownEdgeType | "unknown")
+    : "unknown";
+}
 
 function dedupe(ids: string[]): string[] {
   return Array.from(new Set(ids));
@@ -105,7 +115,7 @@ export function buildSummarizeIslandRelationPayload(
     doc: document,
     islandAId: edge.fromIslandId,
     islandBId: edge.toIslandId,
-    relationType: edge.type,
+    relationType: normalizeRelationType(edge.type),
     derived: edge.isDerived,
     groundingCardIds,
     groundingEdgeIds,
@@ -158,7 +168,7 @@ export function upsertRelationSummaryWithHistory(
     createdAt: previous?.createdAt ?? now,
     islandAId: patch.islandAId,
     islandBId: patch.islandBId,
-    relationType: patch.relationType,
+    relationType: normalizeRelationType(patch.relationType),
     derived: patch.derived,
     text: nextText,
     reviewed: nextReviewed,

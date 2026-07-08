@@ -7,12 +7,47 @@ import { isSelfIntersectingPolygon } from "../domain/geometry/polygon_self_inter
 import { rayPolygonBoundaryIntersection } from "../domain/geometry/ray_polygon_intersect";
 import type { RenderEdge } from "../domain/edge_aggregate";
 import type { Card, Island } from "../domain/types";
+import { resolveKnownEdgeType } from "../domain/types";
 
 const CARD_WIDTH = 220;
 const CARD_MIN_HEIGHT = 80;
 const ISLAND_PADDING = 24;
 const WORLD_HALF_SIZE = 100000;
 const WORLD_SIZE = WORLD_HALF_SIZE * 2;
+// DOMAIN-KJ-01: arrowhead size in WORLD units (scales with zoom, unlike the
+// non-scaling line stroke). At far LOD only derived edges remain visible and
+// those render type-suppressed (no arrowheads), so the shrink is acceptable.
+const ARROW_HEAD_SIZE = 14;
+const ARROW_HEAD_SPREAD = Math.PI / 7;
+
+function buildArrowHeadPoints(tip: CenterPoint, angle: number): string {
+  const left = {
+    x: tip.x - ARROW_HEAD_SIZE * Math.cos(angle - ARROW_HEAD_SPREAD),
+    y: tip.y - ARROW_HEAD_SIZE * Math.sin(angle - ARROW_HEAD_SPREAD),
+  };
+  const right = {
+    x: tip.x - ARROW_HEAD_SIZE * Math.cos(angle + ARROW_HEAD_SPREAD),
+    y: tip.y - ARROW_HEAD_SIZE * Math.sin(angle + ARROW_HEAD_SPREAD),
+  };
+  return `${tip.x},${tip.y} ${left.x},${left.y} ${right.x},${right.y}`;
+}
+
+// Card anchors are card CENTERS (the line end is covered by the card box, so
+// an arrowhead drawn there would be invisible). Walk from the center toward
+// the opposite endpoint until the card's rectangle boundary is reached and
+// put the arrow tip there. Island anchors are already boundary points.
+function rectBoundaryTowards(center: CenterPoint, halfWidth: number, halfHeight: number, toward: CenterPoint): CenterPoint {
+  const dx = toward.x - center.x;
+  const dy = toward.y - center.y;
+  if (dx === 0 && dy === 0) {
+    return center;
+  }
+
+  const tx = dx !== 0 ? halfWidth / Math.abs(dx) : Number.POSITIVE_INFINITY;
+  const ty = dy !== 0 ? halfHeight / Math.abs(dy) : Number.POSITIVE_INFINITY;
+  const t = Math.min(tx, ty, 1);
+  return { x: center.x + dx * t, y: center.y + dy * t };
+}
 
 type EdgeLayerProps = {
   cards: Card[];
@@ -173,9 +208,14 @@ function EdgeLayerComponent({
   }
 
   return (
+    // DOMAIN-KJ-01 fix of a long-standing rendering defect: the previous
+    // markup relied on x/y ATTRIBUTES on this outer <svg>, which are ignored
+    // for an HTML-embedded root svg — so the viewBox mapped world (0,0) to
+    // +100000px inside the element box and every edge painted far off
+    // screen (lines existed in the DOM but were never visible). The world
+    // window must instead be positioned via CSS left/top so that world
+    // (0,0) lands exactly on the transformed container's origin.
     <svg
-      x={-WORLD_HALF_SIZE}
-      y={-WORLD_HALF_SIZE}
       width={WORLD_SIZE}
       height={WORLD_SIZE}
       viewBox={`${-WORLD_HALF_SIZE} ${-WORLD_HALF_SIZE} ${WORLD_SIZE} ${WORLD_SIZE}`}
@@ -183,7 +223,10 @@ function EdgeLayerComponent({
       shapeRendering="geometricPrecision"
       style={{
         position: "absolute",
-        inset: 0,
+        left: -WORLD_HALF_SIZE,
+        top: -WORLD_HALF_SIZE,
+        width: WORLD_SIZE,
+        height: WORLD_SIZE,
         pointerEvents: "auto",
       }}
     >
@@ -216,6 +259,23 @@ function EdgeLayerComponent({
         const baseStroke = edge.isDerived ? "#0f766e" : "#64748b";
         const selectedStroke = "#2563eb";
         const highlightedStroke = "#f59e0b";
+        const strokeColor = isSelected ? selectedStroke : isHighlighted ? highlightedStroke : baseStroke;
+
+        // DOMAIN-KJ-01 (schemas.md §3.3.1): type symbols render only on
+        // NON-derived edges — derived/aggregated edges stay type-suppressed
+        // and generic (UX-SCALE-01 redline), and their endpoint order is
+        // normalized, so an arrowhead there could point the wrong way.
+        // Unknown preserved types resolve to "related" (no symbol).
+        const resolvedType = edge.isDerived ? "related" : resolveKnownEdgeType(edge.type);
+        const edgeAngle = Math.atan2(toAnchor.y - fromAnchor.y, toAnchor.x - fromAnchor.x);
+        const toArrowTip =
+          edge.toKind === "card"
+            ? rectBoundaryTowards(toAnchor, CARD_WIDTH / 2, CARD_MIN_HEIGHT / 2, fromAnchor)
+            : toAnchor;
+        const fromArrowTip =
+          edge.fromKind === "card"
+            ? rectBoundaryTowards(fromAnchor, CARD_WIDTH / 2, CARD_MIN_HEIGHT / 2, toAnchor)
+            : fromAnchor;
 
         return (
           <g key={edge.id}>
@@ -251,6 +311,39 @@ function EdgeLayerComponent({
               onClick={handleEdgeClick}
             />
 
+            {resolvedType === "causal" || resolvedType === "mutual" ? (
+              // 因果: fromId（原因）→ toId（結果）の意味方向を to 端の矢印で
+              // 示す。相互は両端に矢印（⇄）。矢先はカード/島の境界に置く。
+              <polygon
+                data-edge-symbol="arrow-to"
+                points={buildArrowHeadPoints(toArrowTip, edgeAngle)}
+                fill={strokeColor}
+                pointerEvents="none"
+              />
+            ) : null}
+            {resolvedType === "mutual" ? (
+              <polygon
+                data-edge-symbol="arrow-from"
+                points={buildArrowHeadPoints(fromArrowTip, edgeAngle + Math.PI)}
+                fill={strokeColor}
+                pointerEvents="none"
+              />
+            ) : null}
+            {resolvedType === "equivalence" ? (
+              // 同値: 中点に「=」記号（×N ラベルと同じ midpoint パターン）。
+              <text
+                data-edge-symbol="equivalence"
+                x={midX}
+                y={midY - 6}
+                fontSize={16}
+                fontWeight={700}
+                fill={strokeColor}
+                textAnchor="middle"
+                pointerEvents="none"
+              >
+                =
+              </text>
+            ) : null}
             {edge.isDerived && (edge.aggregateCount ?? 0) > 1 ? (
               <text
                 x={midX}

@@ -297,18 +297,61 @@ export type Card = {
 
 ### 3.3 Edge
 
-```ts
-export type EdgeType = "related"; // MVPでは1種類のみ
+DOMAIN-KJ-01（ADR-0048 D3 採択）で、KJ法原典の関係記号に対応する語彙へ**追加的に**拡張した。`version: 2` を維持し、既存データの意味は変えない。
 
-export type Edge = {
+```ts
+export type KnownEdgeType =
+  | "related"      // 関連（無方向・既定）
+  | "negate"       // 対立（無方向）。KJ法の「対立」の永続値（下記 語彙境界 参照）
+  | "causal"       // 因果（有向: fromId=原因 → toId=結果）
+  | "mutual"       // 相互（無方向・相互依存 ⇄）
+  | "equivalence"; // 同値（無方向・「同じことを言っている」という記述）
+
+// 未知種別の保全（ADR-0048 D3）: 取り込み時に未知の type 文字列を破棄せず、
+// そのまま保持する。表示・挙動の解決は resolveKnownEdgeType() ヘルパが行い、
+// 未知種別は「関連（無方向）」として扱う。型注釈上は既知5値の補完を保ちつつ
+// 任意文字列を受理する（LiteralUnion 形式）。
+export type EdgeType = KnownEdgeType | (string & {});
+
+export type EdgeV1 = {
   id: string;
   fromId: string; // Card.id
   toId: string;   // Card.id
+  type: "related"; // version: 1 の契約は不変
+};
+
+export type EdgeEndpointKind = "card" | "island";
+
+export type Edge = {
+  id: string;
+  fromId: string;              // Card.id または Island.id（fromKind に従う）
+  toId: string;
+  fromKind?: EdgeEndpointKind; // 省略時 "card"
+  toKind?: EdgeEndpointKind;   // 省略時 "card"
   type: EdgeType;
 };
 ```
 
-> 備考：否定線などは将来 `EdgeType` を拡張する。
+#### 3.3.1 方向規約
+
+- **`causal` のみ有向**とし、`fromId`（原因）→ `toId`（結果）を意味方向とする。
+- `related` / `negate` / `mutual` / `equivalence` および未知種別は**無方向**であり、描画・集約・エクスポートで端点順序に意味を持たせない。
+- 集約（島間派生エッジ・abstract map の関係行）では、無方向種別はペアを正規化してよいが、**`causal` はペア正規化を行わず方向を保存**する。
+
+#### 3.3.2 語彙境界（DOMAIN-KJ-01 T1 確定）
+
+1. **対立 vs `negate`（Edge）vs `contradicts`（EvidenceLink）**
+   - `negate` は KJ法の「対立」の**永続値**である。新たな `opposition` 値は追加しない（重複語彙の禁止）。UI 表示名は「否定」から「対立」へ改める。既存文書は無変更のまま新表示に乗る。
+   - `contradicts`（EvidenceLink）は**根拠レベルの反証**（ある根拠が主張を反証する）であり、カード/島どうしの**構造上の関係**（Edge）とは独立の機構として併存する。
+2. **同値（`equivalence`）vs canonical 化（`Card.canonicalId` / `sources`）**
+   - `equivalence` は「2枚が同じことを言っている」という**記述**（関係の注釈）。両カードは第一級のまま残り、線の削除でいつでも取り消せる。
+   - canonical 化は統合の**実行**（操作）。同値線は統合を**自動実行しない**（AI 自動グルーピングの確定禁止 = ADR-0048 D3 反パターン）。同値線は人間の統合判断への入力に留まる。
+3. **未知種別の保全（往復規約）**
+   - 寛容（import）・厳格（契約検証）の両モードで、未知の `type` を理由にエッジを**破棄しない**。`type` は非空文字列であれば受理する。
+   - 既知5種別以外は表示・挙動上「関連（無方向）」として解決する（`resolveKnownEdgeType()`）。
+   - バックエンド（Pydantic）も同じ規約（`type: 非空 str`）で受理する。export → import → save の往復で `type` 文字列は不変とする。
+
+> 既定値: 新規に作成される関係線の既定は `related`（無方向）とし、種別の確定を強制しない（早すぎる収束の防止 = ADR-0001 P-01/P-04）。
 
 ### 3.4 Document
 
@@ -349,6 +392,62 @@ export type EvidenceLink = {
   toCardId: string;
   note?: string;
   createdAt?: string; // ISO 8601
+  /** DOMAIN-EXPR-04: 可逆な矛盾レビュー状態 */
+  contradictionState?: "unconfirmed" | "confirmed" | "held" | "resolved";
+};
+
+export type NarrativeCheckReference = { id: string; kind: "card" | "island" };
+export type NarrativeCheckIssue = {
+  severity: "info" | "warn" | "error";
+  message: string;
+  references?: NarrativeCheckReference[];
+};
+export type NarrativeCheck = {
+  id: string;
+  createdAt: string; // ISO 8601
+  kind: "consistency";
+  issues: NarrativeCheckIssue[];
+};
+
+export type Narrative = {
+  id: string;
+  title: string;
+  text: string;
+  createdAt?: string; // ISO 8601
+  basedOnReadingOrder?: string[];
+  reviewed: boolean;
+  checks?: NarrativeCheck[];
+};
+
+export type RelationSummary = {
+  id: string;
+  createdAt: string; // ISO 8601
+  islandAId: string;
+  islandBId: string;
+  // KnownEdgeType（§3.3）に追随する。未知/解決不能な種別は "unknown" へ正規化して保持する。
+  relationType: "related" | "negate" | "causal" | "mutual" | "equivalence" | "unknown";
+  derived: boolean;
+  text: string;
+  reviewed: boolean;
+  groundingCardIds: string[];
+  groundingEdgeIds: string[];
+  warnings?: string[];
+  sourceSignature: string;
+  history?: RelationSummaryHistoryEntry[];
+};
+
+export type RelationSummaryHistoryEntry = {
+  id: string;
+  createdAt: string; // ISO 8601
+  changeKind: "ai" | "manual" | "rollback" | "import" | "unknown";
+  fromText: string | null;
+  toText: string | null;
+  fromReviewed: boolean | null;
+  toReviewed: boolean | null;
+  warningsSnapshot?: string[];
+  groundingCardIdsSnapshot?: string[];
+  groundingEdgeIdsSnapshot?: string[];
+  note?: string;
 };
 
 export type CritiqueInput = {
@@ -427,6 +526,7 @@ export type DocumentV2 = {
 支援レベル:
 
 - `claimType`、`fromKind`、`toKind`、`evidenceLinks` は `DocumentV2` スナップショット内で往復保持する。
+- `edges[].type` は未知種別を含めて往復保持する（§3.3.2 の保全規約）。未知種別を理由にエッジを破棄・改変してはならない。
 - `evidenceLinks` は根拠・反証のリンクであり、SafeMode/share/exportで未レビュー本文や根拠情報をどう扱うかは共有前確認のポリシーに従う。
 - `patchApplyLog.stats` は evidence link の追加/削除件数（`upsertEvidenceLinks` / `deleteEvidenceLinks`）を含める。旧データで欠損する場合は0として扱う。
 - `critiqueInputs`、`reproposalDiffs`、`reviewAttribution`、`deterministicTieBreak` は A1 契約の往復保持対象である。MVPでは画面上の個別編集や個別CRUDを提供せず、import/export/API保存時の型・検証・監査境界を固定する。
@@ -451,7 +551,7 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 以下は **追加しやすい順に** 将来導入します。
 
 1. `Card.w/h`（カードサイズ）
-2. `EdgeType` の拡張（negate/hypothesis 等）
+2. ~~`EdgeType` の拡張（negate/hypothesis 等）~~ → DOMAIN-KJ-01 で導入済み（§3.3）
 3. `Island`（囲み、タイトル、所属）
 4. `Asset`（画像挿入・生成結果の参照）
 5. `Card.meta`（出自情報、タグ、引用元など）

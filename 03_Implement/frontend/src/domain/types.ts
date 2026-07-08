@@ -48,7 +48,27 @@ export const CRITIQUE_TAGS = [
 
 export type CritiqueTag = (typeof CRITIQUE_TAGS)[number];
 
-export type EdgeType = "related" | "negate";
+// DOMAIN-KJ-01 (ADR-0048 D3, schemas.md §3.3): KJ-method relation vocabulary.
+// "negate" is the persisted value for KJ's 対立 — no separate opposition enum
+// value exists (duplicate-vocabulary ban); only the UI label changed.
+// "causal" is the only DIRECTED type (fromId=cause → toId=effect).
+export const KNOWN_EDGE_TYPES = ["related", "negate", "causal", "mutual", "equivalence"] as const;
+
+export type KnownEdgeType = (typeof KNOWN_EDGE_TYPES)[number];
+
+// Unknown-type PRESERVATION (schemas.md §3.3.2): an imported type string
+// outside the known set is kept verbatim (round-trip safety) and resolved to
+// "related" for display/behavior only. The (string & {}) union keeps known-
+// value autocomplete while accepting any string.
+export type EdgeType = KnownEdgeType | (string & {});
+
+export function resolveKnownEdgeType(type: EdgeType): KnownEdgeType {
+  return (KNOWN_EDGE_TYPES as readonly string[]).includes(type) ? (type as KnownEdgeType) : "related";
+}
+
+export function isDirectedEdgeType(type: EdgeType): boolean {
+  return resolveKnownEdgeType(type) === "causal";
+}
 
 export type EdgeEndpointKind = "card" | "island";
 
@@ -224,7 +244,7 @@ export type RelationSummary = {
   createdAt: string;
   islandAId: string;
   islandBId: string;
-  relationType: "related" | "negate" | "unknown";
+  relationType: KnownEdgeType | "unknown";
   derived: boolean;
   text: string;
   reviewed: boolean;
