@@ -57,14 +57,14 @@
 - [x] AC-2: カード選択時の読み上げ順が仕様どおり（型→保持系→確認→根拠→本文。カード選択の範囲に限る）。
 - [x] AC-3: Esc 段階処理は既存のグローバルホットキー機構（`resolveHotkeyAction`: dismiss-top-layer→clear-selection）で一括操作バーを含め既に仕様どおりであることを確認（コード変更不要）。
 - [x] AC-4: 一括操作バーの読み上げに評価語が含まれない（件数のみ）ことを確認（既存実装で充足）。
-- [ ] AC-5: `value_traceability.md` UQ-2 行の更新は本スライスでは未実施（残課題）。
+- [x] AC-5: `value_traceability.md` UQ-2 行を更新（2026-07-09）。
 
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 仕様表→チェックリスト化（本完了記録に記載）。UQ-2 接続は未実施（残課題）。
 - [x] T2 不足 aria/フォーカス管理の補完（選択コンテキスト・共有前確認の2面）。一括操作バーは既存実装で充足済みと確認。凡例・作業モードタブは対象外。
 - [x] T3 e2e（選択コンテキストの読み上げ順・aria-live／共有前確認のaria-describedby）＋回帰アンカー。axe スモークは未導入（残課題）。
-- [ ] T4 記録（value_traceability 更新）は未実施（残課題）。
+- [x] T4 記録（value_traceability 更新、2026-07-09）。
 
 ## 7) 検証計画 / Validation plan
 
@@ -107,5 +107,8 @@
 
 - 凡例面への適用（`task_2ab8e3e8` 完了後）。
 - 作業モードタブへの `role=tablist` 導入要否のADR判断（Owner: Productization Program Owner / UX Lead 相当）。
-- `value_traceability.md` UQ-2 行の更新（T4）。
 - axe 系スモークテストの導入（横断 e2e スイートの拡充）。
+
+### 追記 2026-07-09
+
+- `value_traceability.md` §2.7 UQ-2 行に本スライスの結果を反映（T4/AC-5 完了）。
