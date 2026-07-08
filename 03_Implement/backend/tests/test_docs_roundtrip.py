@@ -783,6 +783,53 @@ def _assert_v2_card_meta_roundtrip(client: TestClient) -> None:
     assert "meta" not in get_cards["card-plain"]
 
 
+def _sample_payload_v2_with_card_ka(doc_id: str) -> dict:
+    # DOMAIN-KA-01 (schemas.md §17): voice/value round-trip, and an UNKNOWN
+    # ka key that the server must DROP fail-closed instead of persisting.
+    return {
+        "version": 2,
+        "id": doc_id,
+        "title": "roundtrip-v2-card-ka",
+        "createdAt": "2026-07-09T00:00:00Z",
+        "updatedAt": "2026-07-09T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [
+            {
+                "id": "card-ka",
+                "text": "event: waited 40 minutes at the counter",
+                "x": 0,
+                "y": 0,
+                "ka": {"voice": "honestly it felt exhausting", "value": "the relief of not waiting", "authorRating": 5},
+            },
+            {"id": "card-plain", "text": "no ka", "x": 300, "y": 0},
+        ],
+        "edges": [],
+        "islands": [],
+    }
+
+
+def _assert_v2_card_ka_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-card-ka"
+    payload = _sample_payload_v2_with_card_ka(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_cards = {card["id"]: card for card in put_response.json()["cards"]}
+    assert put_cards["card-ka"]["ka"]["voice"] == "honestly it felt exhausting"
+    assert put_cards["card-ka"]["ka"]["value"] == "the relief of not waiting"
+    assert "authorRating" not in put_cards["card-ka"]["ka"]
+    assert put_cards["card-ka"]["text"] == "event: waited 40 minutes at the counter"
+    assert "ka" not in put_cards["card-plain"]
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_cards = {card["id"]: card for card in get_response.json()["cards"]}
+    assert get_cards["card-ka"]["ka"]["voice"] == "honestly it felt exhausting"
+    assert get_cards["card-ka"]["ka"]["value"] == "the relief of not waiting"
+    assert "authorRating" not in get_cards["card-ka"]["ka"]
+    assert "ka" not in get_cards["card-plain"]
+
+
 def _sample_payload_v2_with_contradiction_signal_decisions(doc_id: str) -> dict:
     # DOMAIN-EXPR-04 (schemas.md §16): human review decisions on
     # analyzeContradictions() signals round-trip verbatim; a malformed entry
@@ -1061,6 +1108,15 @@ def test_docs_v2_card_meta_roundtrip_sqlite(sqlite_client: TestClient) -> None:
 @pytest.mark.postgres
 def test_docs_v2_card_meta_roundtrip_postgres(postgres_client: TestClient) -> None:
     _assert_v2_card_meta_roundtrip(postgres_client)
+
+
+def test_docs_v2_card_ka_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_card_ka_roundtrip(sqlite_client)
+
+
+@pytest.mark.postgres
+def test_docs_v2_card_ka_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_card_ka_roundtrip(postgres_client)
 
 
 def test_docs_v2_contradiction_signal_decisions_roundtrip_sqlite(sqlite_client: TestClient) -> None:

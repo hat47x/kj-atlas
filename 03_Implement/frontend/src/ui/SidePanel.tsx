@@ -72,6 +72,8 @@ type SidePanelProps = {
   onCardCritiqueChange: (value: string) => void;
   /** DOMAIN-TRACE-01: raw seq/source input for the selected card (empty = remove). */
   onCardMetaChange: (rawSeq: string, rawSource: string) => void;
+  /** DOMAIN-KA-01: raw voice/value input for the selected card (empty = remove). */
+  onCardKaChange: (rawVoice: string, rawValue: string) => void;
   onCardCritiqueTagsChange: (value: string[]) => void;
   onOpenCritiqueWorkflow: () => void;
   onCardClaimTypeChange: (value: ClaimType) => void;
@@ -196,6 +198,9 @@ type SidePanelProps = {
   outlineAppendDiagnostics: boolean;
   onOutlineAppendDiagnosticsChange: (value: boolean) => void;
   outlineAppendRecommendations: boolean;
+  /** DOMAIN-KA-01 (schemas.md §17.4): optional, default-OFF outline section listing cards with KA fields set. */
+  outlineAppendKaFields: boolean;
+  onOutlineAppendKaFieldsChange: (value: boolean) => void;
   onOutlineAppendRecommendationsChange: (value: boolean) => void;
   outlineQualityReport: OutlineQualityReport | null;
   outlineRecommendations: Recommendation[];
@@ -249,6 +254,7 @@ export function SidePanel({
   onCreateRepresentativeCard,
   onCardCritiqueChange,
   onCardMetaChange,
+  onCardKaChange,
   onCardCritiqueTagsChange,
   onOpenCritiqueWorkflow,
   onCardClaimTypeChange,
@@ -368,6 +374,8 @@ export function SidePanel({
   outlineAppendDiagnostics,
   onOutlineAppendDiagnosticsChange,
   outlineAppendRecommendations,
+  outlineAppendKaFields,
+  onOutlineAppendKaFieldsChange,
   onOutlineAppendRecommendationsChange,
   outlineQualityReport,
   outlineRecommendations,
@@ -1699,6 +1707,16 @@ export function SidePanel({
             />
             {t("side_panel.outline.append_recommendations")}
           </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineAppendKaFields}
+              onChange={(event) => {
+                onOutlineAppendKaFieldsChange(event.target.checked);
+              }}
+            />
+            {t("side_panel.outline.append_ka_fields")}
+          </label>
           <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
           <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.unreviewed_draft_warning")}</div>
           {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.safe_mode_excluded")}</div> : null}
@@ -2025,6 +2043,16 @@ export function SidePanel({
               }}
             />
             {t("side_panel.outline.append_recommendations")}
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineAppendKaFields}
+              onChange={(event) => {
+                onOutlineAppendKaFieldsChange(event.target.checked);
+              }}
+            />
+            {t("side_panel.outline.append_ka_fields")}
           </label>
           <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
           <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.unreviewed_draft_warning")}</div>
@@ -3525,6 +3553,40 @@ export function SidePanel({
                   />
                 </label>
                 <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>{t("side_panel.trace.hint")}</div>
+              </div>
+
+              {/* DOMAIN-KA-01: optional KA-method fields (心の声/価値), kept
+                  separate from Card.text (出来事の正本). Never forced (empty
+                  = removed on commit). Not shown on the canvas (AC-4). */}
+              <div data-panel="card-ka-editor" style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.ka.title")}</div>
+                <label style={{ display: "grid", gap: 3, marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, color: "#475569" }}>{t("side_panel.ka.voice_label")}</span>
+                  <textarea
+                    value={selectedCard.ka?.voice ?? ""}
+                    disabled={isReadOnly}
+                    placeholder={t("side_panel.ka.voice_placeholder")}
+                    rows={2}
+                    style={{ width: "100%", fontSize: 12, border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", boxSizing: "border-box", resize: "vertical" }}
+                    onChange={(event) => {
+                      onCardKaChange(event.target.value, selectedCard.ka?.value ?? "");
+                    }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 3 }}>
+                  <span style={{ fontSize: 11, color: "#475569" }}>{t("side_panel.ka.value_label")}</span>
+                  <textarea
+                    value={selectedCard.ka?.value ?? ""}
+                    disabled={isReadOnly}
+                    placeholder={t("side_panel.ka.value_placeholder")}
+                    rows={2}
+                    style={{ width: "100%", fontSize: 12, border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", boxSizing: "border-box", resize: "vertical" }}
+                    onChange={(event) => {
+                      onCardKaChange(selectedCard.ka?.voice ?? "", event.target.value);
+                    }}
+                  />
+                </label>
+                <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>{t("side_panel.ka.hint")}</div>
               </div>
 
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>

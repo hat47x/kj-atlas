@@ -107,7 +107,7 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
     return false;
   }
 
-  hasOnlyKeys(item, ["id", "text", "x", "y", "claimType", "mergedIntoCardId", "repOf", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed", "holdState", "meta"], path, errors);
+  hasOnlyKeys(item, ["id", "text", "x", "y", "claimType", "mergedIntoCardId", "repOf", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed", "holdState", "meta", "ka"], path, errors);
 
   let valid = true;
   if (typeof item.id !== "string") {
@@ -179,6 +179,23 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
       }
       if (item.meta.source !== undefined && typeof item.meta.source !== "string") {
         errors.push(`${path}.meta.source: must be a string when provided`);
+        valid = false;
+      }
+    }
+  }
+  if (item.ka !== undefined) {
+    // DOMAIN-KA-01 (schemas.md §17.2): strict mode rejects unknown ka keys.
+    if (!isRecord(item.ka)) {
+      errors.push(`${path}.ka: must be an object when provided`);
+      valid = false;
+    } else {
+      hasOnlyKeys(item.ka, ["voice", "value"], `${path}.ka`, errors);
+      if (item.ka.voice !== undefined && typeof item.ka.voice !== "string") {
+        errors.push(`${path}.ka.voice: must be a string when provided`);
+        valid = false;
+      }
+      if (item.ka.value !== undefined && typeof item.ka.value !== "string") {
+        errors.push(`${path}.ka.value: must be a string when provided`);
         valid = false;
       }
     }

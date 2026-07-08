@@ -1,5 +1,6 @@
 import type {
   Card,
+  CardKa,
   CardMeta,
   ContradictionSignalDecision,
   ContradictionSignalReviewStatus,
@@ -109,6 +110,25 @@ function parseCardMeta(value: unknown): CardMeta | undefined {
   };
 }
 
+// DOMAIN-KA-01 (schemas.md §17.2): fail-closed to known keys (voice/value),
+// mirroring parseCardMeta above. Both empty/missing => omit the whole field.
+function parseCardKa(value: unknown): CardKa | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const voice = typeof value.voice === "string" && value.voice.length > 0 ? value.voice : undefined;
+  const cardValue = typeof value.value === "string" && value.value.length > 0 ? value.value : undefined;
+  if (voice === undefined && cardValue === undefined) {
+    return undefined;
+  }
+
+  return {
+    ...(voice !== undefined ? { voice } : {}),
+    ...(cardValue !== undefined ? { value: cardValue } : {}),
+  };
+}
+
 function parseCards(value: unknown): Card[] | null {
   if (!Array.isArray(value)) {
     return null;
@@ -152,6 +172,7 @@ function parseCards(value: unknown): Card[] | null {
           ? item.holdState
           : undefined,
       meta: parseCardMeta(item.meta),
+      ka: parseCardKa(item.ka),
     });
   }
 

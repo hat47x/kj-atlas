@@ -500,6 +500,88 @@ describe("contradictionSignalDecisions (DOMAIN-EXPR-04)", () => {
   });
 });
 
+describe("Card.ka fields (DOMAIN-KA-01)", () => {
+  it("preserves voice and value through lenient import", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: [{ id: "c1", text: "A", x: 0, y: 0, ka: { voice: "正直しんどい", value: "待たされない安心感" } }],
+      edges: [],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.cards[0]?.ka).toEqual({ voice: "正直しんどい", value: "待たされない安心感" });
+  });
+
+  it("drops UNKNOWN ka keys fail-closed while keeping the known ones", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: [{ id: "c1", text: "A", x: 0, y: 0, ka: { voice: "memo", authorRating: 5 } }],
+      edges: [],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.cards[0]?.ka).toEqual({ voice: "memo" });
+    expect((result.document.cards[0]?.ka as Record<string, unknown>).authorRating).toBeUndefined();
+  });
+
+  it("drops invalid/empty ka values and the whole ka field when nothing valid remains, keeping the card", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: [
+        { id: "c1", text: "A", x: 0, y: 0, ka: { voice: "", value: "" } },
+        { id: "c2", text: "B", x: 10, y: 10, ka: { voice: 42 } },
+        { id: "c3", text: "C", x: 20, y: 20, ka: "bogus" },
+      ],
+      edges: [],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.cards).toHaveLength(3);
+    expect(result.document.cards[0]?.ka).toBeUndefined();
+    expect(result.document.cards[1]?.ka).toBeUndefined();
+    expect(result.document.cards[2]?.ka).toBeUndefined();
+  });
+
+  it("keeps Card.text unchanged as the event-of-record (ka is a separate field, never merged into text)", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: [{ id: "c1", text: "出来事の本文", x: 0, y: 0, ka: { voice: "心の声", value: "価値" } }],
+      edges: [],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.cards[0]?.text).toBe("出来事の本文");
+  });
+
+  it("strict mode accepts valid ka and rejects unknown ka keys", () => {
+    const valid = validateDocumentV2Strict({
+      ...baseDoc,
+      cards: [{ id: "c1", text: "A", x: 0, y: 0, ka: { voice: "v", value: "val" } }],
+      edges: [],
+      islands: [],
+    });
+    expect(valid.ok).toBe(true);
+
+    const invalid = validateDocumentV2Strict({
+      ...baseDoc,
+      cards: [{ id: "c1", text: "A", x: 0, y: 0, ka: { voice: "v", authorRating: 5 } }],
+      edges: [],
+      islands: [],
+    });
+    expect(invalid.ok).toBe(false);
+    if (invalid.ok) return;
+    expect(invalid.errors.join("\n")).toContain("cards[0].ka");
+  });
+});
+
 // validate.ts:118-119 の非対称性の回帰防止: cards が非配列/不正なら import 全体を
 // 中断するのに対し、edges/islands(DocumentV2 の必須フィールド)は非配列でも
 // parseEdges/parseIslands が silent に [] を返すだけで import は「成功」扱いに
