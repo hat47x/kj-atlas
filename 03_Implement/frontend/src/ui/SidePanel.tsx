@@ -13,11 +13,12 @@ import {
   formatIslandRelationExplanationMarkdown,
   type IslandRelationEdgeSelection,
 } from "../domain/island_relation_explain";
-import type { Card, CritiqueTag, DocumentV2, EvidenceLink, HoldState, Island, RelationSummary } from "../domain/types";
+import type { Card, ContradictionSignalReviewStatus, CritiqueTag, DocumentV2, EvidenceLink, HoldState, Island, RelationSummary } from "../domain/types";
 import { RELATION_SUMMARY_TEXT_MAX_LENGTH } from "../domain/relation_summary_ops";
 import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
 import type { ContradictionReport, ContradictionSignal } from "../domain/view/contradiction_checks";
+import { signatureKeyForContradictionSignal } from "../domain/view/contradiction_checks";
 import { rankDistributionIslands, type DistributionReport } from "../domain/view/distribution_checks";
 import type { ClaimType, ClaimTypeMixReport } from "../domain/view/claim_type_checks";
 import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
@@ -209,6 +210,8 @@ type SidePanelProps = {
   computeProgressMessage: string | null;
   onFocusOutlineDiagnosticRef: (kind: "island" | "card", id: string) => void;
   onFocusContradictionSignal: (signal: ContradictionSignal) => void;
+  /** DOMAIN-EXPR-04 (schemas.md §16): human review decision on a contradiction signal. status=null reverts to undecided. */
+  onContradictionSignalDecision: (signatureKey: string, status: ContradictionSignalReviewStatus | null) => void;
   onFocusDistributionIsland: (islandId: string) => void;
   onFocusDialecticBalanceFinding: (finding: BalanceFinding) => void;
   onCopyReadingOutlineMd: () => void;
@@ -379,6 +382,7 @@ export function SidePanel({
   computeProgressMessage,
   onFocusOutlineDiagnosticRef,
   onFocusContradictionSignal,
+  onContradictionSignalDecision,
   onFocusDistributionIsland,
   onFocusDialecticBalanceFinding,
   onCopyReadingOutlineMd,
@@ -820,6 +824,71 @@ export function SidePanel({
       return acc;
     }, { warn: [] as ContradictionSignal[], info: [] as ContradictionSignal[] });
   }, [contradictionReport]);
+
+  // DOMAIN-EXPR-04 (schemas.md §16.2): current human decision per signal, keyed
+  // by the same deterministic signature used to persist it. Absence = undecided.
+  const contradictionSignalDecisionByKey = useMemo(() => {
+    const map = new Map<string, ContradictionSignalReviewStatus>();
+    for (const entry of document?.contradictionSignalDecisions ?? []) {
+      map.set(entry.signatureKey, entry.status);
+    }
+    return map;
+  }, [document?.contradictionSignalDecisions]);
+
+  const CONTRADICTION_DECISION_BADGE_STYLE: Record<ContradictionSignalReviewStatus, { backgroundColor: string; color: string }> = {
+    accepted: { backgroundColor: "#dcfce7", color: "#166534" },
+    held: { backgroundColor: "#fed7aa", color: "#92400e" },
+    rejected: { backgroundColor: "#e2e8f0", color: "#475569" },
+  };
+
+  // DOMAIN-EXPR-04 (schemas.md §16.4): renders always regardless of decision —
+  // a rejected signal stays visible as "reviewed and set aside", not hidden.
+  const renderContradictionDecisionControls = (signal: ContradictionSignal) => {
+    const signatureKey = signatureKeyForContradictionSignal(signal);
+    const status = contradictionSignalDecisionByKey.get(signatureKey) ?? null;
+    return (
+      <div data-contradiction-decision="" style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+        {status ? (
+          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 999, padding: "1px 6px", ...CONTRADICTION_DECISION_BADGE_STYLE[status] }}>
+            {t(`side_panel.outline.contradiction_decision.status_${status}`)}
+          </span>
+        ) : null}
+        <button
+          type="button"
+          disabled={status === "accepted"}
+          onClick={() => { onContradictionSignalDecision(signatureKey, "accepted"); }}
+          style={{ fontSize: 10, cursor: "pointer" }}
+        >
+          {t("side_panel.outline.contradiction_decision.accept")}
+        </button>
+        <button
+          type="button"
+          disabled={status === "held"}
+          onClick={() => { onContradictionSignalDecision(signatureKey, "held"); }}
+          style={{ fontSize: 10, cursor: "pointer" }}
+        >
+          {t("side_panel.outline.contradiction_decision.hold")}
+        </button>
+        <button
+          type="button"
+          disabled={status === "rejected"}
+          onClick={() => { onContradictionSignalDecision(signatureKey, "rejected"); }}
+          style={{ fontSize: 10, cursor: "pointer" }}
+        >
+          {t("side_panel.outline.contradiction_decision.reject")}
+        </button>
+        {status ? (
+          <button
+            type="button"
+            onClick={() => { onContradictionSignalDecision(signatureKey, null); }}
+            style={{ fontSize: 10, cursor: "pointer", color: "#64748b" }}
+          >
+            {t("side_panel.outline.contradiction_decision.undo")}
+          </button>
+        ) : null}
+      </div>
+    );
+  };
 
   const islandDistributionRows = useMemo(() => {
     if (!document) {
@@ -1715,6 +1784,7 @@ export function SidePanel({
                                   >
                                     {t("side_panel.focus")}
                                   </button>
+                                  {renderContradictionDecisionControls(signal)}
                                 </li>
                               ))}
                             </ul>
@@ -2041,6 +2111,7 @@ export function SidePanel({
                                   >
                                     {t("side_panel.focus")}
                                   </button>
+                                  {renderContradictionDecisionControls(signal)}
                                 </li>
                               ))}
                             </ul>

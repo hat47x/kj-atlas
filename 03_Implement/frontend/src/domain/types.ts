@@ -325,6 +325,19 @@ export type DocumentV2 = {
   deterministicTieBreak?: DeterministicTieBreak;
   /** DOMAIN-EXPR-02: optional shelf — cards set aside without deletion. */
   shelf?: ShelfEntry[];
+  /** DOMAIN-EXPR-04 (schemas.md §16): human review decisions on analyzeContradictions() signals. */
+  contradictionSignalDecisions?: ContradictionSignalDecision[];
+};
+
+// DOMAIN-EXPR-04 (schemas.md §16): reuses CE2-PROPOSAL-IF's ProposalStatus vocabulary —
+// not a new AI-authority grant. "proposed" (undecided) is never persisted; absence of an
+// entry for a signatureKey IS the "proposed" state.
+export type ContradictionSignalReviewStatus = "accepted" | "held" | "rejected";
+
+export type ContradictionSignalDecision = {
+  signatureKey: string;
+  status: ContradictionSignalReviewStatus;
+  decidedAt: string;
 };
 
 export type MergeSuggestionDecision = "accept" | "partial" | "reject" | "defer";

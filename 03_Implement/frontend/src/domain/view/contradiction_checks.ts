@@ -24,6 +24,14 @@ export type ContradictionReport = {
   signals: ContradictionSignal[];
 };
 
+// DOMAIN-EXPR-04 (schemas.md §16.2): deterministic identity for a signal across
+// re-runs of analyzeContradictions(), used as the key for a persisted human
+// review decision. Signals themselves are never persisted.
+export function signatureKeyForContradictionSignal(signal: Pick<ContradictionSignal, "code" | "pairKey" | "entityRefs">): string {
+  const suffix = signal.pairKey ?? signal.entityRefs[0]?.idOrSignature ?? "";
+  return `${signal.code}:${suffix}`;
+}
+
 type PairAccumulator = {
   islandAId: string;
   islandBId: string;

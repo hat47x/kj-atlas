@@ -624,6 +624,16 @@ class ShelfEntry(BaseModel):
     reason: str | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
+class ContradictionSignalDecision(BaseModel):
+    """DOMAIN-EXPR-04 (schemas.md §16.2): human review decision on an
+    analyzeContradictions() signal. Reuses CE2-PROPOSAL-IF's ProposalStatus
+    vocabulary — not a new AI-authority grant (ADR-0041 CVI-2/CVI-3)."""
+
+    signatureKey: str
+    status: Literal["accepted", "held", "rejected"]
+    decidedAt: datetime
+
+
 class DocumentV2(BaseModel):
     version: Literal[2]
     id: str
@@ -640,6 +650,7 @@ class DocumentV2(BaseModel):
     evidenceLinks: list[EvidenceLink] | None = Field(default=None, exclude_if=lambda value: value is None)
     patchApplyLog: list[PatchApplyLogEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
     mergeSuggestionDecisions: list[MergeSuggestionDecision] | None = Field(default=None, exclude_if=lambda value: value is None)
+    contradictionSignalDecisions: list[ContradictionSignalDecision] | None = Field(default=None, exclude_if=lambda value: value is None)
     critiqueInputs: list[CritiqueInput] | None = Field(default=None, exclude_if=lambda value: value is None)
     reproposalDiffs: list[ReproposalDiff] | None = Field(default=None, exclude_if=lambda value: value is None)
     reviewAttribution: ReviewAttribution | None = Field(default=None, exclude_if=lambda value: value is None)

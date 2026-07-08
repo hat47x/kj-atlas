@@ -1,4 +1,6 @@
 import type {
+  ContradictionSignalDecision,
+  ContradictionSignalReviewStatus,
   CritiqueInput,
   DeterministicTieBreak,
   DocumentV2,
@@ -1053,6 +1055,42 @@ function validateMergeSuggestionDecisionEntry(
   return valid;
 }
 
+// DOMAIN-EXPR-04 (schemas.md §16.2/16.6): fail-closed strict validation,
+// mirroring validateMergeSuggestionDecisionEntry above.
+function validateContradictionSignalReviewStatus(value: unknown): value is ContradictionSignalReviewStatus {
+  return value === "accepted" || value === "held" || value === "rejected";
+}
+
+function validateContradictionSignalDecisionEntry(
+  item: unknown,
+  index: number,
+  errors: string[]
+): item is ContradictionSignalDecision {
+  const path = `contradictionSignalDecisions[${index}]`;
+  if (!isRecord(item)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(item, ["signatureKey", "status", "decidedAt"], path, errors);
+
+  let valid = true;
+  if (typeof item.signatureKey !== "string" || item.signatureKey.length === 0) {
+    errors.push(`${path}.signatureKey: must be a non-empty string`);
+    valid = false;
+  }
+  if (!validateContradictionSignalReviewStatus(item.status)) {
+    errors.push(`${path}.status: must be 'accepted' | 'held' | 'rejected'`);
+    valid = false;
+  }
+  if (typeof item.decidedAt !== "string") {
+    errors.push(`${path}.decidedAt: must be a string`);
+    valid = false;
+  }
+
+  return valid;
+}
+
 function validateNarrative(item: unknown, index: number, errors: string[]): item is Narrative {
   const path = `narratives[${index}]`;
   if (!isRecord(item)) {
@@ -1115,6 +1153,7 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
       "evidenceLinks",
       "patchApplyLog",
       "mergeSuggestionDecisions",
+      "contradictionSignalDecisions",
       "critiqueInputs",
       "reproposalDiffs",
       "reviewAttribution",
@@ -1276,6 +1315,16 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
     } else {
       value.mergeSuggestionDecisions.forEach((item, index) => {
         validateMergeSuggestionDecisionEntry(item, index, errors);
+      });
+    }
+  }
+
+  if (value.contradictionSignalDecisions !== undefined) {
+    if (!Array.isArray(value.contradictionSignalDecisions)) {
+      errors.push("document.contradictionSignalDecisions: must be an array when provided");
+    } else {
+      value.contradictionSignalDecisions.forEach((item, index) => {
+        validateContradictionSignalDecisionEntry(item, index, errors);
       });
     }
   }
