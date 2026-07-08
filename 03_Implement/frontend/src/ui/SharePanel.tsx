@@ -385,6 +385,7 @@ export function SharePanel({
   const [bundleExportGranularity, setBundleExportGranularity] = useState<ExportGranularity>("detail");
   const bundleGranularityFieldName = useId();
   const bundleTraceHintId = useId();
+  const sourceReferencesWarningId = useId();
 
 
   const handleViewMetadataFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -839,6 +840,9 @@ export function SharePanel({
               <input
                 type="checkbox"
                 checked={includeSourceReferences}
+                // UI-QUALITY-A11Y-02: associate the toggle with its warning
+                // text via aria-describedby (only while the warning renders).
+                aria-describedby={includeSourceReferences ? sourceReferencesWarningId : undefined}
                 onChange={(event) => {
                   onIncludeSourceReferencesChange(event.target.checked);
                 }}
@@ -846,7 +850,7 @@ export function SharePanel({
               {t("share.panel.export.include_source_references")}
             </label>
             {includeSourceReferences ? (
-              <div data-share-source-references-warning="" style={{ fontSize: 11, color: "#9a3412" }}>
+              <div id={sourceReferencesWarningId} data-share-source-references-warning="" style={{ fontSize: 11, color: "#9a3412" }}>
                 {t("share.panel.export.include_source_references_warning")}
               </div>
             ) : null}

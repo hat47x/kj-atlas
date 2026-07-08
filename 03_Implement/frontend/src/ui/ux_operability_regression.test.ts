@@ -592,6 +592,37 @@ describe("UX Operability regression contracts", () => {
     expect(sharePanelSource).toContain("handlePreShareGateKeyDown");
   });
 
+  it("UI-QUALITY-A11Y-02: selection-context announces changes and reads type->hold->review->evidence; source-toggle warning is associated via aria-describedby", () => {
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const sharePanelSource = readSource("src/ui/SharePanel.tsx");
+
+    // Selection context: aria-live=polite on the region (spec: on selection,
+    // the "current selection" heading gets a polite announcement).
+    expect(sidePanelSource).toContain('data-panel="selection-context"');
+    const selectionContextBlock = sidePanelSource.slice(
+      sidePanelSource.indexOf('data-panel="selection-context"'),
+      sidePanelSource.indexOf('data-panel="selection-context"') + 400,
+    );
+    expect(selectionContextBlock).toContain('aria-live="polite"');
+
+    // Read order fixed to 型→保持系→確認→根拠 (claimType -> holdState ->
+    // reviewState -> evidence), replacing the prior review->type->evidence->hold order.
+    const claimTypeIndex = sidePanelSource.indexOf('t("side_panel.context.claim_type", { value: selectedCard.claimType })');
+    const holdBriefIndex = sidePanelSource.indexOf('t("side_panel.context.hold_brief"');
+    const reviewStateIndex = sidePanelSource.indexOf('t("side_panel.context.review_state", { value: selectedCardReviewState })');
+    const evidenceBriefIndex = sidePanelSource.indexOf('t("side_panel.context.evidence_brief"');
+    expect(claimTypeIndex).toBeGreaterThan(0);
+    expect(claimTypeIndex).toBeLessThan(holdBriefIndex);
+    expect(holdBriefIndex).toBeLessThan(reviewStateIndex);
+    expect(reviewStateIndex).toBeLessThan(evidenceBriefIndex);
+
+    // Share preflight: the source-reference toggle's warning is programmatically
+    // associated, not just visually adjacent.
+    expect(sharePanelSource).toContain("sourceReferencesWarningId");
+    expect(sharePanelSource).toContain("aria-describedby={includeSourceReferences ? sourceReferencesWarningId : undefined}");
+    expect(sharePanelSource).toContain("id={sourceReferencesWarningId}");
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 
