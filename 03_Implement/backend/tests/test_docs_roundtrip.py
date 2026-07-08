@@ -736,6 +736,53 @@ def _assert_v2_polygon_geometry_roundtrip(client: TestClient) -> None:
     assert get_island["geometry"] == payload["islands"][0]["geometry"]
 
 
+def _sample_payload_v2_with_card_meta(doc_id: str) -> dict:
+    # DOMAIN-TRACE-01 (schemas.md §15): seq/source round-trip, and an UNKNOWN
+    # meta key (subject metadata) that the server must DROP fail-closed
+    # (§15.3) instead of persisting before CARD-META-UI-01 settles.
+    return {
+        "version": 2,
+        "id": doc_id,
+        "title": "roundtrip-v2-card-meta",
+        "createdAt": "2026-07-08T00:00:00Z",
+        "updatedAt": "2026-07-08T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [
+            {
+                "id": "card-traced",
+                "text": "utterance about onboarding",
+                "x": 0,
+                "y": 0,
+                "meta": {"seq": 42, "source": "interview-A line 12", "createdBy": "alice@example.com"},
+            },
+            {"id": "card-plain", "text": "no meta", "x": 300, "y": 0},
+        ],
+        "edges": [],
+        "islands": [],
+    }
+
+
+def _assert_v2_card_meta_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-card-meta"
+    payload = _sample_payload_v2_with_card_meta(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_cards = {card["id"]: card for card in put_response.json()["cards"]}
+    assert put_cards["card-traced"]["meta"]["seq"] == 42
+    assert put_cards["card-traced"]["meta"]["source"] == "interview-A line 12"
+    assert "createdBy" not in put_cards["card-traced"]["meta"]
+    assert "meta" not in put_cards["card-plain"]
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_cards = {card["id"]: card for card in get_response.json()["cards"]}
+    assert get_cards["card-traced"]["meta"]["seq"] == 42
+    assert get_cards["card-traced"]["meta"]["source"] == "interview-A line 12"
+    assert "createdBy" not in get_cards["card-traced"]["meta"]
+    assert "meta" not in get_cards["card-plain"]
+
+
 def _sample_payload_v2_with_edge_vocabulary(doc_id: str) -> dict:
     # DOMAIN-KJ-01 (schemas.md §3.3): the five known relation types plus an
     # UNKNOWN type string that the server must accept and round-trip verbatim
@@ -956,6 +1003,15 @@ def test_docs_v2_polygon_geometry_roundtrip_sqlite(sqlite_client: TestClient) ->
 
 def test_docs_v2_edge_vocabulary_roundtrip_sqlite(sqlite_client: TestClient) -> None:
     _assert_v2_edge_vocabulary_roundtrip(sqlite_client)
+
+
+def test_docs_v2_card_meta_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_card_meta_roundtrip(sqlite_client)
+
+
+@pytest.mark.postgres
+def test_docs_v2_card_meta_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_card_meta_roundtrip(postgres_client)
 
 
 def test_docs_v2_edge_empty_type_rejected_sqlite(sqlite_client: TestClient) -> None:

@@ -6,6 +6,17 @@ export type Transform = {
 
 export type HoldState = "held" | "pending" | "shelved";
 
+// DOMAIN-TRACE-01 (schemas.md §15): non-subject trace metadata only.
+// seq = optional serial number (never auto-forced); source = free-text
+// reference back to the RAW DATA outside the document (utterance, line
+// number, URL...). Subject/provenance metadata (author, owner, updater)
+// is NOT allowed here until CARD-META-UI-01's decision queue settles —
+// validators drop unknown meta keys fail-closed (§15.3).
+export type CardMeta = {
+  seq?: number;
+  source?: string;
+};
+
 export type Card = {
   id: string;
   text: string;
@@ -15,12 +26,14 @@ export type Card = {
   mergedIntoCardId?: string;
   repOf?: string[];
   canonicalId?: string;
+  /** Merge provenance: ids of the cards consolidated INTO this one (canonicalization). Not an external source reference — that is Card.meta.source. */
   sources?: string[];
   critique?: string;
   critiqueTags?: string[];
   textReviewed?: boolean;
   /** DOMAIN-EXPR-02: optional hold state. Absent = not held (conventional card). */
   holdState?: HoldState;
+  meta?: CardMeta;
 };
 
 /** DOMAIN-EXPR-02: a shelved item — set aside from the main canvas without deletion. */

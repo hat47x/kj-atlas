@@ -1,5 +1,6 @@
 import type {
   Card,
+  CardMeta,
   DeterministicTieBreak,
   DocumentV2,
   EvidenceLink,
@@ -84,6 +85,28 @@ function parseCritiqueTags(value: unknown): string[] | undefined {
   return critiqueTags;
 }
 
+// DOMAIN-TRACE-01 (schemas.md §15.3): only the KNOWN keys seq/source are
+// accepted; unknown meta keys are dropped fail-closed (deliberately the
+// OPPOSITE of DOMAIN-KJ-01's unknown-edge-type preservation) so that
+// subject/provenance metadata cannot slip in via import before
+// CARD-META-UI-01's decision queue settles.
+function parseCardMeta(value: unknown): CardMeta | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const seq = typeof value.seq === "number" && Number.isFinite(value.seq) ? value.seq : undefined;
+  const source = typeof value.source === "string" && value.source.length > 0 ? value.source : undefined;
+  if (seq === undefined && source === undefined) {
+    return undefined;
+  }
+
+  return {
+    ...(seq !== undefined ? { seq } : {}),
+    ...(source !== undefined ? { source } : {}),
+  };
+}
+
 function parseCards(value: unknown): Card[] | null {
   if (!Array.isArray(value)) {
     return null;
@@ -126,6 +149,7 @@ function parseCards(value: unknown): Card[] | null {
         item.holdState === "held" || item.holdState === "pending" || item.holdState === "shelved"
           ? item.holdState
           : undefined,
+      meta: parseCardMeta(item.meta),
     });
   }
 

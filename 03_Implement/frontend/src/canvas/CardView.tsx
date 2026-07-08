@@ -32,6 +32,8 @@ type CardViewProps = {
   onCardContextMenu?: (cardId: string, clientX: number, clientY: number) => void;
   /** UX-VISUAL-02: deterministic "protection" mark for a lone-wolf card. */
   isProtected?: boolean;
+  /** DOMAIN-TRACE-01 AC-3: show the optional #seq badge (default OFF, View toggle). */
+  showSeqNumber?: boolean;
 };
 
 function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
@@ -104,6 +106,7 @@ function CardViewComponent({
   onCancelEdit,
   onCardContextMenu,
   isProtected = false,
+  showSeqNumber = false,
 }: CardViewProps) {
   const dragRef = useRef<CardDragState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -327,7 +330,8 @@ function CardViewComponent({
         (claimType && claimType !== "unknown") ||
         holdState ||
         hasCritique ||
-        isProtected) ? (
+        isProtected ||
+        (showSeqNumber && card.meta?.seq !== undefined)) ? (
         <div
           data-card-meta-row=""
           style={{
@@ -339,6 +343,18 @@ function CardViewComponent({
             minHeight: 16,
           }}
         >
+          {showSeqNumber && card.meta?.seq !== undefined ? (
+            // DOMAIN-TRACE-01: plain neutral text (no pill) — the seq badge
+            // claims no visual-language channel (色/位置/密度/形 stay with
+            // their existing owners per UX-VISUAL-01's channel budget).
+            <span
+              data-card-seq-badge=""
+              title={t("card_view.seq_title", { seq: card.meta.seq })}
+              style={{ fontSize: 10, fontWeight: 600, color: "#64748b", lineHeight: "14px" }}
+            >
+              #{card.meta.seq}
+            </span>
+          ) : null}
           {claimType && claimType !== "unknown" ? (
             <span
               aria-label={t("card_view.claim_type.aria", { value: CLAIM_TYPE_STYLE[claimType]?.label ?? claimType })}

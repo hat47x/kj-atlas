@@ -50,6 +50,9 @@ type ViewControlsPanelProps = {
   onToggleCanvasLegend: () => void;
   showProtectionMarks: boolean;
   onToggleProtectionMarks: () => void;
+  /** DOMAIN-TRACE-01 AC-3: canvas seq badge toggle (default OFF). */
+  showSeqNumbers: boolean;
+  onShowSeqNumbersChange: (value: boolean) => void;
   providerKind: ProviderKind | null;
   lastAiCallOutcome: "ok" | AiProviderErrorKind | null;
   lodEnabled: boolean;
@@ -139,6 +142,8 @@ export function ViewControlsPanel({
   onToggleCanvasLegend,
   showProtectionMarks,
   onToggleProtectionMarks,
+  showSeqNumbers,
+  onShowSeqNumbersChange,
   providerKind,
   lastAiCallOutcome,
   lodEnabled,
@@ -550,6 +555,17 @@ export function ViewControlsPanel({
             {t("view_controls.reading_order.edit")}
           </label>
         ) : null}
+        {/* DOMAIN-TRACE-01 AC-3: canvas seq badge, DEFAULT OFF (CB-1). */}
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+          <input
+            type="checkbox"
+            checked={showSeqNumbers}
+            onChange={(event) => {
+              onShowSeqNumbersChange(event.target.checked);
+            }}
+          />
+          {t("view_controls.trace.show_seq_numbers")}
+        </label>
       </div>
 
       <div style={{ fontSize: 12, color: "#64748b" }} title={t("view_controls.peek_help")}>

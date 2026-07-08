@@ -150,6 +150,8 @@ type CanvasShellProps = {
   lodLevelOverride?: LODLevel | null;
   lodShowLoneWolvesWhenFar?: boolean;
   showProtectionMarks?: boolean;
+  /** DOMAIN-TRACE-01 AC-3: canvas seq badge, default OFF (View panel toggle). */
+  showSeqNumbers?: boolean;
   effectiveCollapsedIslandIds?: Set<string>;
   showDerivedIslandEdges?: boolean;
   searchQuery?: string;
@@ -315,6 +317,7 @@ export function CanvasShell({
   lodLevelOverride = null,
   lodShowLoneWolvesWhenFar = true,
   showProtectionMarks = true,
+  showSeqNumbers = false,
   effectiveCollapsedIslandIds,
   showDerivedIslandEdges = false,
   searchQuery = "",
@@ -1401,6 +1404,7 @@ export function CanvasShell({
               compactMode={Boolean(lod?.rules.compactCards)}
               markerMode={Boolean(lod && lod.level === "far" && lodShowLoneWolvesWhenFar && loneWolfCardIdSet.has(card.id))}
               isProtected={protectedCardIdSet.has(card.id)}
+              showSeqNumber={showSeqNumbers}
               showLabelText={acceptedLabelIds.has(buildCardLabelId(card.id))}
               isEditing={editingCardId === card.id}
               onBeginEdit={onBeginEditCard}

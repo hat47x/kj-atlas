@@ -339,6 +339,87 @@ describe("edge type vocabulary and unknown-type preservation (DOMAIN-KJ-01)", ()
   });
 });
 
+// DOMAIN-TRACE-01 (schemas.md §15): Card.meta（通し番号・原データ遡及）の往復保全と、
+// meta 内の未知キーの fail-closed 破棄。未知キーの扱いが DOMAIN-KJ-01（未知エッジ種別の
+// 保全）と意図的に逆であることに注意 — 主体メタ（起票者等）が CARD-META-UI-01 の確定前に
+// import 経由で永続化される抜け道を塞ぐ（同Issue AC-5）。
+describe("Card.meta trace fields (DOMAIN-TRACE-01)", () => {
+  it("preserves seq and source through lenient import", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: [{ id: "c1", text: "A", x: 0, y: 0, meta: { seq: 42, source: "インタビューA 12行目" } }],
+      edges: [],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.cards[0]?.meta).toEqual({ seq: 42, source: "インタビューA 12行目" });
+  });
+
+  it("drops UNKNOWN meta keys fail-closed while keeping the known ones (§15.3, inverse of DOMAIN-KJ-01)", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: [
+        {
+          id: "c1",
+          text: "A",
+          x: 0,
+          y: 0,
+          meta: { seq: 1, source: "memo", createdBy: "alice@example.com", ownerRef: "user:1" },
+        },
+      ],
+      edges: [],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.cards[0]?.meta).toEqual({ seq: 1, source: "memo" });
+    expect((result.document.cards[0]?.meta as Record<string, unknown>).createdBy).toBeUndefined();
+  });
+
+  it("drops invalid seq/source values and the whole meta when nothing valid remains, keeping the card", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: [
+        { id: "c1", text: "A", x: 0, y: 0, meta: { seq: "not-a-number", source: "" } },
+        { id: "c2", text: "B", x: 10, y: 10, meta: { seq: Infinity } },
+        { id: "c3", text: "C", x: 20, y: 20, meta: "bogus" },
+      ],
+      edges: [],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.cards).toHaveLength(3);
+    expect(result.document.cards[0]?.meta).toBeUndefined();
+    expect(result.document.cards[1]?.meta).toBeUndefined();
+    expect(result.document.cards[2]?.meta).toBeUndefined();
+  });
+
+  it("strict mode accepts valid meta and rejects unknown meta keys", () => {
+    const valid = validateDocumentV2Strict({
+      ...baseDoc,
+      cards: [{ id: "c1", text: "A", x: 0, y: 0, meta: { seq: 3, source: "field note p.2" } }],
+      edges: [],
+      islands: [],
+    });
+    expect(valid.ok).toBe(true);
+
+    const invalid = validateDocumentV2Strict({
+      ...baseDoc,
+      cards: [{ id: "c1", text: "A", x: 0, y: 0, meta: { seq: 3, createdBy: "alice" } }],
+      edges: [],
+      islands: [],
+    });
+    expect(invalid.ok).toBe(false);
+    if (invalid.ok) return;
+    expect(invalid.errors.join("\n")).toContain("cards[0].meta");
+  });
+});
+
 // validate.ts:118-119 の非対称性の回帰防止: cards が非配列/不正なら import 全体を
 // 中断するのに対し、edges/islands(DocumentV2 の必須フィールド)は非配列でも
 // parseEdges/parseIslands が silent に [] を返すだけで import は「成功」扱いに

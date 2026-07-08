@@ -454,6 +454,50 @@ describe("UX Operability regression contracts", () => {
     expect(edgeLayerSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
   });
 
+  it("DOMAIN-TRACE-01: Card.meta stays fail-closed, selection-scoped, badge default OFF, and share-excluded by default", () => {
+    const validateSource = readSource("src/domain/validate.ts");
+    const validateDocSource = readSource("src/domain/validate_doc.ts");
+    const bundleExportSource = readSource("src/export/bundle_export.ts");
+    const sharePanelSource = readSource("src/ui/SharePanel.tsx");
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const cardViewSource = readSource("src/canvas/CardView.tsx");
+    const appSource = readSource("src/App.tsx");
+
+    // Fail-closed meta parsing (schemas.md §15.3): only seq/source survive,
+    // unknown keys are dropped in BOTH lenient and strict modes. This is the
+    // deliberate inverse of the edge-type preservation rule.
+    expect(validateSource).toContain("function parseCardMeta");
+    expect(validateDocSource).toContain('hasOnlyKeys(item.meta, ["seq", "source"]');
+
+    // Share boundary (schemas.md §15.4): meta is stripped from shared bundles
+    // by default; the opt-in toggle renders regardless of safeMode (it is an
+    // independent axis) and defaults to OFF with a one-line warning.
+    expect(bundleExportSource).toContain("function resolveShareDocument");
+    expect(bundleExportSource).toContain("includeSourceReferences?: boolean");
+    expect(sharePanelSource).toContain('data-share-include-source-references=""');
+    expect(sharePanelSource).toContain('data-share-source-references-warning=""');
+    expect(sharePanelSource).toContain('data-share-preflight-source-references=""');
+    expect(appSource).toContain("const [includeSourceReferencesInExport, setIncludeSourceReferencesInExport] = useState(false)");
+
+    // Selection-only display (ADR-0048 D3改訂): trace info lives in the side
+    // panel; the canvas badge is opt-in and default OFF.
+    expect(sidePanelSource).toContain('data-panel="card-trace-summary"');
+    expect(sidePanelSource).toContain('data-panel="card-trace-editor"');
+    expect(cardViewSource).toContain('data-card-seq-badge=""');
+    expect(appSource).toContain("const [showSeqNumbers, setShowSeqNumbers] = useState(false)");
+
+    // Meta edit is a single history step (undoable) via applyDocumentChange.
+    expect(appSource).toContain("const handleCardMetaChange = useCallback(");
+    expect(appSource).toContain('t("app.history.card.meta_updated")');
+
+    // No subject metadata (creator/author) sneaks into Card.meta ahead of
+    // CARD-META-UI-01 — the meta whitelist stays exactly seq/source.
+    // (ownerRef exists legitimately elsewhere: ReviewAttribution.)
+    expect(validateSource).not.toMatch(/createdBy|authorId/);
+    expect(validateDocSource).not.toMatch(/createdBy|authorId/);
+    expect(validateDocSource.match(/hasOnlyKeys\(item\.meta, \["seq", "source"\]/g)).toHaveLength(1);
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 
