@@ -9,6 +9,7 @@ import {
   SHARE_REPRODUCE_BUTTON,
   VIEW_BUTTON,
   closeSharePanelIfOpen,
+  continueThroughPreShareGateIfPresent,
 } from "./helpers/i18n";
 
 type Box = {
@@ -131,6 +132,7 @@ test("large document keeps search, panel fit, and export operable", async ({ pag
 
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: EXPORT_BUNDLE_BUTTON }).click();
+  await continueThroughPreShareGateIfPresent(page);
   const zipBuffer = await readDownloadToBuffer(await downloadPromise);
   const zip = await JSZip.loadAsync(zipBuffer);
   const diagnosticsEntryName = Object.keys(zip.files).find((name) => name.endsWith("diagnostics.md"));

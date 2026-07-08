@@ -6,6 +6,7 @@ import {
   REPLACE_DOCUMENT_BUTTON,
   SHARE_REPRODUCE_BUTTON,
   VIEW_BUTTON,
+  continueThroughPreShareGateIfPresent,
 } from "./helpers/i18n";
 
 async function readDownloadToBuffer(download: Download): Promise<Buffer> {
@@ -88,6 +89,7 @@ test("hierarchy level switch changes only visibility and preserves sub-island/pl
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: EXPORT_BUNDLE_BUTTON }).click();
+  await continueThroughPreShareGateIfPresent(page);
   const download = await downloadPromise;
   const zipBuffer = await readDownloadToBuffer(download);
 
