@@ -568,6 +568,30 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain('t("app.history.card.ka_updated")');
   });
 
+  it("UX-SHARE-01: pre-share summary gate discloses counts (never a score), skips when empty, and returns focus on close", () => {
+    const sharePanelSource = readSource("src/ui/SharePanel.tsx");
+
+    // Gate intercepts the bundle export action itself.
+    expect(sharePanelSource).toContain('data-panel="pre-share-summary-gate"');
+    expect(sharePanelSource).toContain('role="alertdialog"');
+    expect(sharePanelSource).toContain("setPendingBundleExportOptions(options)");
+    expect(sharePanelSource).toContain("onExportBundleZip(pendingBundleExportOptions)");
+
+    // AC-5: zero-count documents skip the gate rather than blocking export.
+    expect(sharePanelSource).toContain("unreviewedTotal === 0 && domainExpressionSummary.critiqueTargets === 0 && domainExpressionSummary.contradictionLinks === 0");
+
+    // AC-2 anti-scoring: the gate copy is a location-only count summary, not
+    // a readiness score/percentage/evaluative label.
+    expect(sharePanelSource).toContain("share.panel.pre_share_gate.summary");
+    expect(sharePanelSource).not.toMatch(/pre_share_gate[\s\S]{0,300}(score|readiness|percent|%)/i);
+
+    // AC-4: Escape and Back both return focus to the button that opened it
+    // (same focus-return contract as the outer share panel).
+    expect(sharePanelSource).toContain("closePreShareGate");
+    expect(sharePanelSource).toContain("exportBundleButtonRef.current?.focus()");
+    expect(sharePanelSource).toContain("handlePreShareGateKeyDown");
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 

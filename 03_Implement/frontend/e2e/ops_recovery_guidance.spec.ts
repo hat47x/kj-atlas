@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import JSZip from "jszip";
-import { ADVANCED_UI_BUTTON, EXPORT_BUNDLE_BUTTON, SHARE_REPRODUCE_BUTTON } from "./helpers/i18n";
+import { ADVANCED_UI_BUTTON, continueThroughPreShareGateIfPresent, EXPORT_BUNDLE_BUTTON, SHARE_REPRODUCE_BUTTON } from "./helpers/i18n";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
 
@@ -338,6 +338,7 @@ test("slow review pack export shows progress and can be cancelled", async ({ pag
 
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
   await page.getByRole("button", { name: EXPORT_BUNDLE_BUTTON }).click();
+  await continueThroughPreShareGateIfPresent(page);
 
   await expect(page.getByText("レビューパックを圧縮中（10%）").first()).toBeVisible();
   await expect(page.getByRole("button", { name: /^処理中|^Working/ }).first()).toBeDisabled();

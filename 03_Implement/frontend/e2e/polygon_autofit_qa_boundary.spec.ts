@@ -8,6 +8,7 @@ import {
   REPLACE_DOCUMENT_BUTTON,
   SHARE_REPRODUCE_BUTTON,
   closeSharePanelIfOpen,
+  continueThroughPreShareGateIfPresent,
   openLegacyJsonMenu,
 } from "./helpers/i18n";
 
@@ -134,6 +135,7 @@ test("QA-2: importing self-intersecting polygon degrades invalid polygon to a no
 
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: EXPORT_BUNDLE_BUTTON }).click();
+  await continueThroughPreShareGateIfPresent(page);
   const zipBuffer = await readDownloadToBuffer(await downloadPromise);
 
   const zip = await JSZip.loadAsync(zipBuffer);

@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import { expect, test, type Download, type Page } from "@playwright/test";
 import { buildReviewPackTraceDocument, withoutProductValueContent } from "./helpers/product_value_fixtures";
+import { continueThroughPreShareGateIfPresent } from "./helpers/i18n";
 
 async function readDownloadToBuffer(download: Download): Promise<Buffer> {
   const stream = await download.createReadStream();
@@ -23,6 +24,7 @@ async function readDownloadToBuffer(download: Download): Promise<Buffer> {
 async function exportBundleFileNames(page: Page): Promise<string[]> {
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export bundle (.zip)" }).click();
+  await continueThroughPreShareGateIfPresent(page);
   const download = await downloadPromise;
   const zipBuffer = await readDownloadToBuffer(download);
   const zip = await JSZip.loadAsync(zipBuffer);
