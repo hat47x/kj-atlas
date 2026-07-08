@@ -185,6 +185,8 @@ UI/UX 品質を次元（UQ）で定義し、各次元の担保（既存テスト
 
 **更新（2026-06-21）**: UQ-2 改善中。a11yテスト 1ファイル（IslandViewのみ）→ 5ファイル（+CardView, DomainStateSummary, ShelfPanel, StartPanel）、21→28 tests。`UI-QUALITY-A11Y-01` issueで追跡継続中。
 
+**更新（2026-07-09）**: `UI-QUALITY-A11Y-01` の既存面拡充に続き、`UI-QUALITY-A11Y-02`（新設面への画面別a11y仕様適用）で選択コンテキスト（`aria-live=polite`＋読み上げ順 型→保持系→確認→根拠）と共有前確認（出典参照トグルの`aria-describedby`関連付け）を対応。一括操作バーは既存のグローバルホットキー機構（Escapeで選択解除）で仕様を充足済みと確認（コード変更なし）。e2e `a11y_selection_and_share_gate.spec.ts`（2 tests）を追加。凡例・作業モードタブの2面は対象外（凡例=並行編集中のため、作業モードタブ=`role=tablist`導入は`UX-NAV-01`が明示的に対象外とした設計判断を覆すためADR待ち）。`UI-QUALITY-A11Y-02` issueで残課題（凡例対応・作業モードタブのADR判断）を追跡継続中。
+
 ---
 
 ## 2.8 応答性の性能予算（PB）（`ADR-0046`）
