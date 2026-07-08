@@ -420,6 +420,86 @@ describe("Card.meta trace fields (DOMAIN-TRACE-01)", () => {
   });
 });
 
+describe("contradictionSignalDecisions (DOMAIN-EXPR-04)", () => {
+  it("preserves valid decisions through lenient import", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: [],
+      edges: [],
+      islands: [],
+      contradictionSignalDecisions: [
+        { signatureKey: "C001:island:a|island:b", status: "accepted", decidedAt: "2026-07-08T00:00:00.000Z" },
+        { signatureKey: "C004:island:c", status: "rejected", decidedAt: "2026-07-08T00:00:01.000Z" },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.contradictionSignalDecisions).toEqual([
+      { signatureKey: "C001:island:a|island:b", status: "accepted", decidedAt: "2026-07-08T00:00:00.000Z" },
+      { signatureKey: "C004:island:c", status: "rejected", decidedAt: "2026-07-08T00:00:01.000Z" },
+    ]);
+  });
+
+  it("drops malformed entries fail-closed while keeping valid ones", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: [],
+      edges: [],
+      islands: [],
+      contradictionSignalDecisions: [
+        { signatureKey: "C001:x", status: "accepted", decidedAt: "2026-07-08T00:00:00.000Z" },
+        { signatureKey: "", status: "accepted", decidedAt: "2026-07-08T00:00:00.000Z" },
+        { signatureKey: "C002:y", status: "proposed", decidedAt: "2026-07-08T00:00:00.000Z" },
+        { signatureKey: "C003:z", status: "accepted" },
+        "bogus",
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.contradictionSignalDecisions).toEqual([
+      { signatureKey: "C001:x", status: "accepted", decidedAt: "2026-07-08T00:00:00.000Z" },
+    ]);
+  });
+
+  it("omits the field entirely when every entry is malformed (matches undefined default)", () => {
+    const result = validateAndUpgradeImportedDocument({
+      ...baseDoc,
+      cards: [],
+      edges: [],
+      islands: [],
+      contradictionSignalDecisions: [{ signatureKey: "", status: "unknown-status", decidedAt: 1 }],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.contradictionSignalDecisions).toBeUndefined();
+  });
+
+  it("strict mode accepts valid decisions and rejects an invalid status", () => {
+    const valid = validateDocumentV2Strict({
+      ...baseDoc,
+      cards: [],
+      edges: [],
+      islands: [],
+      contradictionSignalDecisions: [{ signatureKey: "C001:x", status: "held", decidedAt: "2026-07-08T00:00:00.000Z" }],
+    });
+    expect(valid.ok).toBe(true);
+
+    const invalid = validateDocumentV2Strict({
+      ...baseDoc,
+      cards: [],
+      edges: [],
+      islands: [],
+      contradictionSignalDecisions: [{ signatureKey: "C001:x", status: "proposed", decidedAt: "2026-07-08T00:00:00.000Z" }],
+    });
+    expect(invalid.ok).toBe(false);
+    if (invalid.ok) return;
+    expect(invalid.errors.join("\n")).toContain("contradictionSignalDecisions[0].status");
+  });
+});
+
 // validate.ts:118-119 の非対称性の回帰防止: cards が非配列/不正なら import 全体を
 // 中断するのに対し、edges/islands(DocumentV2 の必須フィールド)は非配列でも
 // parseEdges/parseIslands が silent に [] を返すだけで import は「成功」扱いに

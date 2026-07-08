@@ -46,7 +46,7 @@ import {
   getLatestMergeSuggestionDecisionByGroup,
   type MergeSuggestionDecision,
 } from "./domain/merge_suggestion_decisions";
-import { isSourceCard, Document, DocumentV2, Island, Narrative, type CardMeta, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
+import { isSourceCard, Document, DocumentV2, Island, Narrative, type CardMeta, type ContradictionSignalDecision, type ContradictionSignalReviewStatus, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
 import { KNOWN_EDGE_TYPES } from "./domain/types";
 import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
@@ -4829,6 +4829,34 @@ export default function App() {
           evidenceLinks: nextEvidenceLinks,
         },
         t("app.history.evidence_link.updated"),
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleContradictionSignalDecision = useCallback(
+    (signatureKey: string, status: ContradictionSignalReviewStatus | null) => {
+      if (!document) {
+        return;
+      }
+
+      const existingDecisions = document.contradictionSignalDecisions ?? [];
+      const withoutThisSignal = existingDecisions.filter((entry) => entry.signatureKey !== signatureKey);
+
+      // null = revert to undecided ("proposed" is never persisted — DOMAIN-EXPR-04, schemas.md §16.2).
+      const nextDecisions: ContradictionSignalDecision[] = status === null
+        ? withoutThisSignal
+        : [...withoutThisSignal, { signatureKey, status, decidedAt: new Date().toISOString() }];
+
+      const { contradictionSignalDecisions: _removed, ...documentWithoutDecisions } = document;
+      const nextDocument = nextDecisions.length > 0
+        ? { ...document, contradictionSignalDecisions: nextDecisions }
+        : documentWithoutDecisions;
+
+      applyDocumentChange(
+        nextDocument,
+        t("app.history.contradiction_signal.decided"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -10348,6 +10376,7 @@ export default function App() {
           computeProgressMessage={computeProgressMessage}
           onFocusOutlineDiagnosticRef={focusItem}
           onFocusContradictionSignal={handleFocusContradictionSignal}
+          onContradictionSignalDecision={handleContradictionSignalDecision}
           onFocusDistributionIsland={focusIslandById}
           onFocusDialecticBalanceFinding={handleFocusDialecticBalanceFinding}
           onCopyReadingOutlineMd={() => {

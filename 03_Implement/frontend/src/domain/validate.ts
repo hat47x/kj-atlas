@@ -1,6 +1,8 @@
 import type {
   Card,
   CardMeta,
+  ContradictionSignalDecision,
+  ContradictionSignalReviewStatus,
   DeterministicTieBreak,
   DocumentV2,
   EvidenceLink,
@@ -758,6 +760,39 @@ function parseMergeSuggestionDecisions(value: unknown): MergeSuggestionDecisionE
   return entries.length > 0 ? entries : undefined;
 }
 
+function isContradictionSignalReviewStatus(value: unknown): value is ContradictionSignalReviewStatus {
+  return value === "accepted" || value === "held" || value === "rejected";
+}
+
+// DOMAIN-EXPR-04 (schemas.md §16.2/16.6): fail-closed on malformed entries,
+// preserving the rest — mirrors parseMergeSuggestionDecisions above.
+function parseContradictionSignalDecisions(value: unknown): ContradictionSignalDecision[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const entries: ContradictionSignalDecision[] = [];
+  for (const item of value) {
+    if (
+      !isRecord(item)
+      || typeof item.signatureKey !== "string"
+      || item.signatureKey.length === 0
+      || !isContradictionSignalReviewStatus(item.status)
+      || typeof item.decidedAt !== "string"
+    ) {
+      continue;
+    }
+
+    entries.push({
+      signatureKey: item.signatureKey,
+      status: item.status,
+      decidedAt: item.decidedAt,
+    });
+  }
+
+  return entries.length > 0 ? entries : undefined;
+}
+
 function normalizeVersion(value: unknown): 1 | 2 | null {
   if (value === 1 || value === "v1") {
     return 1;
@@ -835,6 +870,7 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
   const relationSummaries = parseRelationSummaries(value.relationSummaries);
   const patchApplyLog = parsePatchApplyLog(value.patchApplyLog);
   const mergeSuggestionDecisions = parseMergeSuggestionDecisions(value.mergeSuggestionDecisions);
+  const contradictionSignalDecisions = parseContradictionSignalDecisions(value.contradictionSignalDecisions);
   const shelf = parseShelf(value.shelf, new Set(cards.map((card) => card.id)));
   const shelvedCardIds = new Set((shelf ?? []).map((entry) => entry.cardId));
   const normalizedCards = shelvedCardIds.size === 0
@@ -863,6 +899,7 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
       ...(relationSummaries !== undefined ? { relationSummaries } : {}),
       ...(patchApplyLog !== undefined ? { patchApplyLog } : {}),
       ...(mergeSuggestionDecisions !== undefined ? { mergeSuggestionDecisions } : {}),
+      ...(contradictionSignalDecisions !== undefined ? { contradictionSignalDecisions } : {}),
       ...(shelf !== undefined ? { shelf } : {}),
     },
   };

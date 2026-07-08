@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { analyzeContradictions } from "./contradiction_checks";
+import { analyzeContradictions, signatureKeyForContradictionSignal } from "./contradiction_checks";
 import type { DocumentV2 } from "../types";
 
 function createBaseDoc(): DocumentV2 {
@@ -122,5 +122,46 @@ describe("analyzeContradictions", () => {
     ];
     const singleSummaryReport = analyzeContradictions(doc, "2026-01-01T00:00:00.000Z");
     expect(singleSummaryReport.signals.some((signal) => signal.code === "C003")).toBe(false);
+  });
+});
+
+// DOMAIN-EXPR-04 (schemas.md §16.2): signatureKeyForContradictionSignal must be
+// stable across re-runs so a persisted human decision keeps matching its signal.
+describe("signatureKeyForContradictionSignal", () => {
+  it("is stable across independent analyzeContradictions() runs on the same document", () => {
+    const doc = createBaseDoc();
+    doc.edges = [
+      { id: "edge-1", fromId: "island-a", toId: "island-b", fromKind: "island", toKind: "island", type: "related" },
+      { id: "edge-2", fromId: "island-b", toId: "island-a", fromKind: "island", toKind: "island", type: "negate" },
+    ];
+
+    const first = analyzeContradictions(doc, "2026-01-01T00:00:00.000Z").signals.find((signal) => signal.code === "C001");
+    const second = analyzeContradictions(doc, "2026-01-01T00:00:00.000Z").signals.find((signal) => signal.code === "C001");
+
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+    if (!first || !second) return;
+    expect(signatureKeyForContradictionSignal(first)).toBe(signatureKeyForContradictionSignal(second));
+    expect(signatureKeyForContradictionSignal(first)).toBe("C001:island:island-a|island:island-b");
+  });
+
+  it("falls back to the first entity ref when a signal has no pairKey (e.g. C004)", () => {
+    const doc = createBaseDoc();
+    doc.islands = [{ id: "island-a", cardIds: [], summaryText: "べき かつ 不要" }];
+
+    const report = analyzeContradictions(doc, "2026-01-01T00:00:00.000Z");
+    const c004 = report.signals.find((signal) => signal.code === "C004");
+
+    expect(c004).toBeDefined();
+    if (!c004) return;
+    expect(c004.pairKey).toBeUndefined();
+    expect(signatureKeyForContradictionSignal(c004)).toBe("C004:island-a");
+  });
+
+  it("distinguishes different signal codes on the same pair", () => {
+    const shared = { pairKey: "island:a|island:b", entityRefs: [{ kind: "island" as const, idOrSignature: "a" }] };
+    expect(signatureKeyForContradictionSignal({ code: "C001", ...shared })).not.toBe(
+      signatureKeyForContradictionSignal({ code: "C002", ...shared })
+    );
   });
 });

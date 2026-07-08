@@ -1231,3 +1231,58 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 - ADR: `ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂）
 - Issue: `DOMAIN-TRACE-01-serial-number-and-source-provenance`, `CARD-META-UI-01-card-provenance-metadata-ui-boundary`（主体メタの上位境界）
 - Frontend: `03_Implement/frontend/src/domain/types.ts` (Card.meta)
+
+## 16. DOMAIN-EXPR-04 加算スキーマ拡張: 矛盾シグナルのレビュー決定（2026-07-08）
+
+ADR-0040 Phase 4（根拠・主張・矛盾の人間レビュー第一級化）の残存スコープ。加算原則に従い、全フィールドは optional。AI権限境界は ADR-0041 CVI-2/CVI-3 の既存契約（本書 §1.2 CE2-LOW-RISK-AI-ASSIST の `ProposalStatus` 語彙）を新規許可なく再利用するため、新規ADRは不要と判断する。
+
+### 16.1 背景・スコープ
+
+既存の `analyzeContradictions()`（決定論的キーワード/構造ヒューリスティック。AI/LLM 呼び出しなし）は島・relationSummary 粒度の矛盾シグナル（C001〜C004）を検出済みだが、これまで「Focus」（画面遷移のみ）以外の操作導線がなく、シグナルへの人間の判断が持続化されない。本拡張は、シグナル自体に人間のレビュー決定（採用/保留/却下）を可逆に付与する。
+
+**個別カード間の `EvidenceLink` を自動生成することはしない**: シグナルは島レベルの集約検出であり、特定のカードペアへ機械的に対応付けると検出精度を偽ることになるため。成果物（review pack）契約の拡張は本拡張のスコープ外（`PRODUCT-VALUE-03`/`PRODUCT-QA-01` が所有）。
+
+### 16.2 ContradictionSignalDecision
+
+```ts
+export type ContradictionSignalReviewStatus = "accepted" | "held" | "rejected"; // CE2-PROPOSAL-IF の ProposalStatus 語彙を再利用（新規AI権限ではない）
+export type ContradictionSignalDecision = {
+  signatureKey: string; // `${signal.code}:${signal.pairKey ?? signal.entityRefs[0]?.idOrSignature ?? ""}`
+  status: ContradictionSignalReviewStatus;
+  decidedAt: string; // ISO 8601
+};
+```
+
+- 位置: `DocumentV2.contradictionSignalDecisions?: ContradictionSignalDecision[]`
+- Support level: `L2.5`（未分類。実装検証後にL2以上へ昇格）
+- 欠落時、または該当 `signatureKey` が配列内に無い場合: 「未決定」（暗黙の "proposed"）として扱う。"proposed" 自体は永続化しない値であり、決定を取り消す操作は配列から該当エントリを削除する（DOMAIN-TRACE-01 の `Card.meta` 空値削除と同じ規約）。
+- `signatureKey` は `analyzeContradictions()` の実行毎に再計算されるシグナル列から決定論的に導出する識別子であり、シグナル自体は永続化しない（`mergeSuggestionDecisions` が候補生成物と決定を分離する既存パターンに倣う）。
+
+### 16.3 AI/検出ロジック権限境界（ADR-0041 CVI-2/CVI-3 の適用であり拡張ではない）
+
+- `analyzeContradictions()` はシグナルを提示するのみで、`ContradictionSignalDecision` を書き込む経路を一切持たない。書き込みは人間のUI操作（1操作=1履歴ステップ）のみが行う。
+- `status` は常に人間の最初のクリックで決まり、AIや検出ロジックが `"accepted"` を自動付与することはない（CVI-2 proposal-only）。
+- 本拡張は新しい AI 権限を追加しない。既存 `CE2-LOW-RISK-AI-ASSIST`（本書 §1.2）の `ProposalStatus` 語彙を、決定論的ヒューリスティック検出器（`analyzeContradictions`）が生成する別種の候補（矛盾シグナル）に再適用するのみであり、ADR-0041 の枠内に留まる。
+
+### 16.4 UI・可逆性
+
+- 選択コンテキスト（SidePanel）の矛盾シグナル一覧に、各シグナルの現在状態（未決定/採用/保留/却下）と決定操作（採用にする/保留にする/却下する/決定を取り消す）を表示する。
+- シグナル自体は決定状態に関わらず常に表示する（却下しても非表示にしない）。「却下」は「検討済みで対象外と判断した」ことの記録であり、シグナルの隠蔽ではない。
+- 決定変更は `applyDocumentChange` による1操作=1履歴ステップ（⌘Z で取り消し可能）。
+
+### 16.5 成果物・共有境界
+
+- 本拡張は review pack バンドル契約（`bundle_export.ts` の `contradiction_trace_*.md` 等）を変更しない。narrative export / diagnostics.md への反映も本拡張のスコープに含めない（既存の `EvidenceLink.contradictionState` の narrative 反映で当該 AC は充足済み）。
+- SafeMode / share-export の既定挙動は変更しない（決定状態は選択コンテキストのみに表示し、共有前チェック契約に新規項目を追加しない）。
+
+### 16.6 後方互換
+
+- 新フィールドはすべて optional。旧データ（配列欠落）は「すべて未決定」として解釈する。
+- `version: 2` のまま（破壊的変更なし）。
+- 寛容/厳格の両検証モードで、`signatureKey`/`status`/`decidedAt` のいずれかが不正な要素は破棄し、他の正しい要素は保全する（`mergeSuggestionDecisions` の既存パターンに倣う）。
+
+### 16.7 参照
+
+- ADR: `ADR-0040-domain-expression-first-class-strategy.md`（Phase 4）, `ADR-0041-core-value-invariants-single-guard.md`（CVI-2/CVI-3）
+- Issue: `DOMAIN-EXPR-04-evidence-claim-contradiction-review`
+- Frontend: `03_Implement/frontend/src/domain/view/contradiction_checks.ts`（シグナル生成、変更なし）, `03_Implement/frontend/src/domain/types.ts`（ContradictionSignalDecision）, `03_Implement/frontend/src/ui/SidePanel.tsx`（決定UI）

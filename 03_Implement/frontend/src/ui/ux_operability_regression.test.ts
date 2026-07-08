@@ -498,6 +498,42 @@ describe("UX Operability regression contracts", () => {
     expect(validateDocSource.match(/hasOnlyKeys\(item\.meta, \["seq", "source"\]/g)).toHaveLength(1);
   });
 
+  it("DOMAIN-EXPR-04: contradiction signal decisions are human-only, reversible, and reuse the CE2 proposal vocabulary (no new AI authority)", () => {
+    const contradictionChecksSource = readSource("src/domain/view/contradiction_checks.ts");
+    const validateSource = readSource("src/domain/validate.ts");
+    const validateDocSource = readSource("src/domain/validate_doc.ts");
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const appSource = readSource("src/App.tsx");
+
+    // analyzeContradictions() itself never gains a write path for decisions —
+    // it only computes signals. The signature helper lives alongside it.
+    expect(contradictionChecksSource).toContain("export function signatureKeyForContradictionSignal");
+    expect(contradictionChecksSource).not.toMatch(/ContradictionSignalDecision/);
+
+    // Round-trip (both modes) is fail-closed, mirroring mergeSuggestionDecisions.
+    expect(validateSource).toContain("function parseContradictionSignalDecisions");
+    expect(validateDocSource).toContain("function validateContradictionSignalDecisionEntry");
+    expect(validateDocSource).toContain('hasOnlyKeys(item, ["signatureKey", "status", "decidedAt"]');
+
+    // "proposed" (undecided) is the implicit default and is never itself a
+    // valid persisted status — CE2-PROPOSAL-IF vocabulary reused, not widened.
+    expect(validateDocSource).toContain('value === "accepted" || value === "held" || value === "rejected"');
+
+    // UI: signals always render regardless of decision (no auto-hide on reject),
+    // and every write goes through applyDocumentChange as one history step.
+    expect(sidePanelSource).toContain("const renderContradictionDecisionControls = (signal: ContradictionSignal)");
+    expect(sidePanelSource).toContain('onContradictionSignalDecision(signatureKey, "accepted")');
+    expect(sidePanelSource).toContain('onContradictionSignalDecision(signatureKey, "held")');
+    expect(sidePanelSource).toContain('onContradictionSignalDecision(signatureKey, "rejected")');
+    expect(sidePanelSource).toContain("onContradictionSignalDecision(signatureKey, null)");
+    expect(appSource).toContain("const handleContradictionSignalDecision = useCallback(");
+    expect(appSource).toContain('t("app.history.contradiction_signal.decided")');
+
+    // No new EvidenceLink is fabricated from an island-level aggregate signal
+    // (would misrepresent detector precision as a specific card-pair claim).
+    expect(appSource).not.toMatch(/handleContradictionSignalDecision[\s\S]{0,400}upsertEvidenceLink/);
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 

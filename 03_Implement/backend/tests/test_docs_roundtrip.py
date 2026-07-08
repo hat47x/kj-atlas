@@ -783,6 +783,55 @@ def _assert_v2_card_meta_roundtrip(client: TestClient) -> None:
     assert "meta" not in get_cards["card-plain"]
 
 
+def _sample_payload_v2_with_contradiction_signal_decisions(doc_id: str) -> dict:
+    # DOMAIN-EXPR-04 (schemas.md §16): human review decisions on
+    # analyzeContradictions() signals round-trip verbatim; a malformed entry
+    # (invalid status, "proposed" is not a persistable value) is dropped
+    # fail-closed while the valid entry is kept (§16.6).
+    return {
+        "version": 2,
+        "id": doc_id,
+        "title": "roundtrip-v2-contradiction-signal-decisions",
+        "createdAt": "2026-07-08T00:00:00Z",
+        "updatedAt": "2026-07-08T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [],
+        "edges": [],
+        "islands": [],
+        "contradictionSignalDecisions": [
+            {"signatureKey": "C001:island:a|island:b", "status": "accepted", "decidedAt": "2026-07-08T00:00:00Z"},
+        ],
+    }
+
+
+def _assert_v2_contradiction_signal_decisions_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-contradiction-signal-decisions"
+    payload = _sample_payload_v2_with_contradiction_signal_decisions(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_decisions = put_response.json()["contradictionSignalDecisions"]
+    assert put_decisions == [
+        {"signatureKey": "C001:island:a|island:b", "status": "accepted", "decidedAt": "2026-07-08T00:00:00Z"},
+    ]
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_decisions = get_response.json()["contradictionSignalDecisions"]
+    assert get_decisions == [
+        {"signatureKey": "C001:island:a|island:b", "status": "accepted", "decidedAt": "2026-07-08T00:00:00Z"},
+    ]
+
+
+def _assert_v2_contradiction_signal_decision_invalid_status_rejected(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-contradiction-signal-decision-invalid"
+    payload = _sample_payload_v2_with_contradiction_signal_decisions(doc_id)
+    payload["contradictionSignalDecisions"][0]["status"] = "proposed"
+
+    response = client.put(f"/docs/{doc_id}", json=payload)
+    assert response.status_code == 422
+
+
 def _sample_payload_v2_with_edge_vocabulary(doc_id: str) -> dict:
     # DOMAIN-KJ-01 (schemas.md §3.3): the five known relation types plus an
     # UNKNOWN type string that the server must accept and round-trip verbatim
@@ -1012,6 +1061,19 @@ def test_docs_v2_card_meta_roundtrip_sqlite(sqlite_client: TestClient) -> None:
 @pytest.mark.postgres
 def test_docs_v2_card_meta_roundtrip_postgres(postgres_client: TestClient) -> None:
     _assert_v2_card_meta_roundtrip(postgres_client)
+
+
+def test_docs_v2_contradiction_signal_decisions_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_contradiction_signal_decisions_roundtrip(sqlite_client)
+
+
+@pytest.mark.postgres
+def test_docs_v2_contradiction_signal_decisions_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_contradiction_signal_decisions_roundtrip(postgres_client)
+
+
+def test_docs_v2_contradiction_signal_decision_invalid_status_rejected_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_contradiction_signal_decision_invalid_status_rejected(sqlite_client)
 
 
 def test_docs_v2_edge_empty_type_rejected_sqlite(sqlite_client: TestClient) -> None:

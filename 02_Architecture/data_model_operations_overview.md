@@ -190,6 +190,7 @@ erDiagram
 | `reviewAttribution` | L2.5 | optional。A1契約型として掲載し、`reviewedAt` の状態別制約と生ID禁止を検証 | backend契約型として保存。認証主体一致を検証 | 契約のみ/限定保存 | review attribution正本との同期を継続し、監査閲覧・検索は製品化issueで扱う。 |
 | `deterministicTieBreak` | L2.5 | optional。固定順序をstrict/import検証で保持 | backend契約型として保存 | 契約のみ/限定保存 | polygon handoff契約との関係を維持する。 |
 | `cards[].meta`（`seq`/`source`） | L2.5 | optional。通し番号と原データ遡及参照（schemas.md §15）。meta内の未知キーはfail-closedで破棄 | `CardMeta` として保存。未知キーは受理しない | 契約のみ/限定保存 | 共有向け書き出しは既定除外＋明示トグル（§15.4）。起票者等の主体メタは `CARD-META-UI-01` の確定まで追加しない。 |
+| `contradictionSignalDecisions` | L2.5 | optional。矛盾シグナル（`analyzeContradictions()`）への人間レビュー決定（採用/保留/却下、schemas.md §16） | optional。往復保持し、不正要素は破棄する | 契約のみ/限定保存 | AI/検出ロジックは書き込み経路を持たない（ADR-0041 CVI-2）。review pack/narrative契約は変更しない。 |
 
 ### 4.2 DocumentV2サポートレベルとOpen化ゲート
 
