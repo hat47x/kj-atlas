@@ -69,6 +69,8 @@ type SidePanelProps = {
   selectedCardCount: number;
   onCreateRepresentativeCard: () => void;
   onCardCritiqueChange: (value: string) => void;
+  /** DOMAIN-TRACE-01: raw seq/source input for the selected card (empty = remove). */
+  onCardMetaChange: (rawSeq: string, rawSource: string) => void;
   onCardCritiqueTagsChange: (value: string[]) => void;
   onOpenCritiqueWorkflow: () => void;
   onCardClaimTypeChange: (value: ClaimType) => void;
@@ -243,6 +245,7 @@ export function SidePanel({
   selectedCardCount,
   onCreateRepresentativeCard,
   onCardCritiqueChange,
+  onCardMetaChange,
   onCardCritiqueTagsChange,
   onOpenCritiqueWorkflow,
   onCardClaimTypeChange,
@@ -1237,6 +1240,18 @@ export function SidePanel({
                 {selectedCard.critiqueTags.map((tag) => (
                   <span key={tag} style={{ backgroundColor: "#fed7aa", borderRadius: 999, padding: "1px 6px" }}>{getCritiqueTagLabel(tag)}</span>
                 ))}
+              </div>
+            ) : null}
+            {selectedCard?.meta?.seq !== undefined || selectedCard?.meta?.source ? (
+              // DOMAIN-TRACE-01: trace info shows only when set (AC-5).
+              <div data-panel="card-trace-summary" style={{ fontSize: 12, color: "#334155", backgroundColor: "#f1f5f9", borderRadius: 6, padding: "4px 8px", marginTop: 2 }}>
+                {selectedCard.meta.seq !== undefined ? <span style={{ fontWeight: 700, marginRight: 8 }}>#{selectedCard.meta.seq}</span> : null}
+                {selectedCard.meta.source ? (
+                  <span>
+                    {t("side_panel.context.trace_source")}: {selectedCard.meta.source.slice(0, 160)}
+                    {selectedCard.meta.source.length > 160 ? "..." : ""}
+                  </span>
+                ) : null}
               </div>
             ) : null}
             <button
@@ -3407,6 +3422,39 @@ export function SidePanel({
                 />
                 {t("side_panel.card_inspector.text_reviewed")}
               </label>
+
+              {/* DOMAIN-TRACE-01: optional serial number + raw-data source
+                  reference. Never forced (empty = removed on commit). */}
+              <div data-panel="card-trace-editor" style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.trace.title")}</div>
+                <label style={{ display: "grid", gap: 3, marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, color: "#475569" }}>{t("side_panel.trace.seq_label")}</span>
+                  <input
+                    type="number"
+                    value={selectedCard.meta?.seq ?? ""}
+                    disabled={isReadOnly}
+                    placeholder={t("side_panel.trace.seq_placeholder")}
+                    style={{ width: "100%", fontSize: 12, border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", boxSizing: "border-box" }}
+                    onChange={(event) => {
+                      onCardMetaChange(event.target.value, selectedCard.meta?.source ?? "");
+                    }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 3 }}>
+                  <span style={{ fontSize: 11, color: "#475569" }}>{t("side_panel.trace.source_label")}</span>
+                  <input
+                    type="text"
+                    value={selectedCard.meta?.source ?? ""}
+                    disabled={isReadOnly}
+                    placeholder={t("side_panel.trace.source_placeholder")}
+                    style={{ width: "100%", fontSize: 12, border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", boxSizing: "border-box" }}
+                    onChange={(event) => {
+                      onCardMetaChange(selectedCard.meta?.seq !== undefined ? String(selectedCard.meta.seq) : "", event.target.value);
+                    }}
+                  />
+                </label>
+                <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>{t("side_panel.trace.hint")}</div>
+              </div>
 
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.evidence.title")}</div>

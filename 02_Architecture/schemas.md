@@ -554,7 +554,7 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 2. ~~`EdgeType` の拡張（negate/hypothesis 等）~~ → DOMAIN-KJ-01 で導入済み（§3.3）
 3. `Island`（囲み、タイトル、所属）
 4. `Asset`（画像挿入・生成結果の参照）
-5. `Card.meta`（出自情報、タグ、引用元など。カード起票者・出典メタデータのUI/保存/redaction境界は `CARD-META-UI-01` で管理する）
+5. `Card.meta`（出自情報、タグ、引用元など。非主体メタの `seq`/`source` は DOMAIN-TRACE-01 で導入済み=§15。カード起票者など主体メタのUI/保存/redaction境界は引き続き `CARD-META-UI-01` で管理する）
 6. `Patch`（差分同期）
 
 ---
@@ -1189,3 +1189,45 @@ ADR-0040 Phase 2: 保留 Hold + 未統合 Shelf の第一級化。加算原則�
 - ADR: `ADR-0040-domain-expression-first-class-strategy.md`
 - Issue: `DOMAIN-EXPR-02-hold-and-pending-shelf`
 - Frontend: `03_Implement/frontend/src/domain/types.ts` (Card.holdState, ShelfEntry, DocumentV2.shelf)
+
+## 15. DOMAIN-TRACE-01 加算スキーマ拡張: Card.meta（通し番号・原データ遡及）（2026-07-08）
+
+ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィールドは optional。
+
+### 15.1 Card.meta
+
+- 型: `{ seq?: number; source?: string }` (optional)
+- Support level: `L2.5`（契約限定。往復保持を保証し、個別CRUDは保証しない）
+- 欠落時: 従来挙動（番号・出典を持たない通常カード）
+- 意味:
+  - `seq`: 任意の通し番号（有限数）。**自動連番を強制しない**（任意入力。一括採番機能があっても上書きは人間操作）。表示は「#N」。
+  - `source`: 原データへの遡及参照（原発話・観察記録の行番号・URL 等の**自由記述**）。リンク先の自動取得・プレビュー・埋め込みは行わない。
+
+### 15.2 語彙境界（`Card.sources` との役割分担・AC-1）
+
+- `Card.sources`（既存）: canonical 化における**統合元カード id** の配列。意味は不変（再定義禁止）。
+- `Card.meta.source`（本節）: **文書外部**の原データへの参照（自由記述）。カード id を指すためには使わない。
+- 起票者・作成者・最終更新者・所有者などの**主体（provenance/accountability）メタは `Card.meta` に含めない**。これらの UI・保存・redaction 境界は `CARD-META-UI-01`（Decision Queue: `CARD-META-UI-01-DQ-01`、Pending）の確定を待つ。本節が確定するのは非主体メタ（`seq`/`source`）のみである。
+
+### 15.3 取り込み境界（meta 内未知キーの fail-closed）
+
+- import/validate（寛容・厳格の両モード）は `Card.meta` の **既知キー（`seq`/`source`）のみを受理**し、未知キーは破棄する。
+- これは DOMAIN-KJ-01 の「未知エッジ種別の保全」（§3.3.2）と**対照的な意図的判断**である: 関係種別は語彙拡張の余地が採択済みだが、`Card.meta` の未知キーは主体メタ（起票者等）が `CARD-META-UI-01` の判断確定前に import 経由で永続化される抜け道になり得るため、fail-closed とする（同Issue AC-5「import 由来の provenance メタは非信頼データ」に整合）。
+- `CARD-META-UI-01` で新キーが採択された場合は、本節の既知キー集合を追加更新してから実装する（契約先行）。
+
+### 15.4 共有・書き出し境界（AC-4）
+
+- **共有向け書き出し（レビューパック等）では `Card.meta` を既定で含めない**。含める場合は共有前確認の明示トグル「出典参照を含める」（**既定 OFF**）＋警告1行（出典は内部情報を含み得る旨）で opt-in する。
+- 文書スナップショット自体の保存（`PUT /docs`）・バックアップ用途の文書 JSON 書き出しは redaction 対象外（既存の critique 等と同じ扱い。文書の完全な往復が目的のため）。
+- SafeMode の固定マスク（未レビュー本文）とは**独立の軸**として管理する。SafeMode の ON/OFF は本トグルの既定（OFF）を変えない。
+
+### 15.5 後方互換
+
+- optional のため `version: 2` を維持（破壊的変更なし）。未対応クライアント・旧データは欠落を従来挙動として解釈。
+- カード面（キャンバス）の通し番号バッジは**既定 OFF**（View パネルのトグルで表示）。CB-1 自己申告は issue 完了記録に記載する。
+
+### 15.6 参照
+
+- ADR: `ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂）
+- Issue: `DOMAIN-TRACE-01-serial-number-and-source-provenance`, `CARD-META-UI-01-card-provenance-metadata-ui-boundary`（主体メタの上位境界）
+- Frontend: `03_Implement/frontend/src/domain/types.ts` (Card.meta)

@@ -105,7 +105,7 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
     return false;
   }
 
-  hasOnlyKeys(item, ["id", "text", "x", "y", "claimType", "mergedIntoCardId", "repOf", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed", "holdState"], path, errors);
+  hasOnlyKeys(item, ["id", "text", "x", "y", "claimType", "mergedIntoCardId", "repOf", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed", "holdState", "meta"], path, errors);
 
   let valid = true;
   if (typeof item.id !== "string") {
@@ -161,6 +161,25 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
   ) {
     errors.push(`${path}.holdState: must be 'held' | 'pending' | 'shelved' when provided`);
     valid = false;
+  }
+  if (item.meta !== undefined) {
+    // DOMAIN-TRACE-01 (schemas.md §15.3): strict mode rejects unknown meta
+    // keys outright (fail-closed contract enforcement) — subject/provenance
+    // metadata must not enter Card.meta before CARD-META-UI-01 settles.
+    if (!isRecord(item.meta)) {
+      errors.push(`${path}.meta: must be an object when provided`);
+      valid = false;
+    } else {
+      hasOnlyKeys(item.meta, ["seq", "source"], `${path}.meta`, errors);
+      if (item.meta.seq !== undefined && !isFiniteNumber(item.meta.seq)) {
+        errors.push(`${path}.meta.seq: must be a finite number when provided`);
+        valid = false;
+      }
+      if (item.meta.source !== undefined && typeof item.meta.source !== "string") {
+        errors.push(`${path}.meta.source: must be a string when provided`);
+        valid = false;
+      }
+    }
   }
 
   return valid;

@@ -44,6 +44,9 @@ type SharePanelProps = {
   onSafeModeChange: (value: boolean) => void;
   includeUnreviewedDrafts: boolean;
   onIncludeUnreviewedDraftsChange: (value: boolean) => void;
+  /** DOMAIN-TRACE-01 (schemas.md §15.4): opt-in to keep Card.meta seq/source in share exports. Independent of safeMode. */
+  includeSourceReferences: boolean;
+  onIncludeSourceReferencesChange: (value: boolean) => void;
   currentReviewerRef: string;
   currentReviewerRefSource: "local" | "sso" | "unknown";
   onCurrentReviewerRefChange: (value: string) => void;
@@ -314,6 +317,8 @@ export function SharePanel({
   onSafeModeChange,
   includeUnreviewedDrafts,
   onIncludeUnreviewedDraftsChange,
+  includeSourceReferences,
+  onIncludeSourceReferencesChange,
   currentReviewerRef,
   currentReviewerRefSource,
   onCurrentReviewerRefChange,
@@ -472,6 +477,9 @@ export function SharePanel({
     : includeUnreviewedDrafts
       ? t("share.panel.preflight.unreviewed.included")
       : t("share.panel.preflight.unreviewed.excluded");
+  const sourceReferencePolicy = includeSourceReferences
+    ? t("share.panel.preflight.source_references.included")
+    : t("share.panel.preflight.source_references.excluded");
   const canUseSelectedCardTraces = canIncludeTraces && bundleExportGranularity === "detail";
   const selectedCardTracesChecked = bundleIncludeSelectedCardTraces && canUseSelectedCardTraces;
   const selectedCardTraceHint = !canIncludeTraces
@@ -693,6 +701,10 @@ export function SharePanel({
                   <dt style={preflightTermStyle}>{t("share.panel.preflight.unreviewed")}</dt>
                   <dd style={preflightValueStyle}>{unreviewedDraftPolicy}</dd>
                 </div>
+                <div style={preflightRowStyle} data-share-preflight-source-references="">
+                  <dt style={preflightTermStyle}>{t("share.panel.preflight.source_references")}</dt>
+                  <dd style={{ ...preflightValueStyle, ...(includeSourceReferences ? { color: "#9a3412", fontWeight: 700 } : {}) }}>{sourceReferencePolicy}</dd>
+                </div>
                 <div style={preflightRowStyle}>
                   <dt style={preflightTermStyle}>{t("share.panel.preflight.output_formats")}</dt>
                   <dd style={preflightValueStyle}>{t("share.panel.preflight.output_formats_value")}</dd>
@@ -772,6 +784,22 @@ export function SharePanel({
                 />
                 {t("share.panel.export.include_drafts")}
               </label>
+            ) : null}
+            {/* DOMAIN-TRACE-01 (schemas.md §15.4): renders regardless of safeMode — independent axis. */}
+            <label data-share-include-source-references="" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", ...wrapRowStyle }}>
+              <input
+                type="checkbox"
+                checked={includeSourceReferences}
+                onChange={(event) => {
+                  onIncludeSourceReferencesChange(event.target.checked);
+                }}
+              />
+              {t("share.panel.export.include_source_references")}
+            </label>
+            {includeSourceReferences ? (
+              <div data-share-source-references-warning="" style={{ fontSize: 11, color: "#9a3412" }}>
+                {t("share.panel.export.include_source_references_warning")}
+              </div>
             ) : null}
             <button type="button" onClick={onExportViewViewport} disabled={!hasDocument || isLoading} style={actionButtonStyle}>
               {t("share.panel.export.view_viewport")}

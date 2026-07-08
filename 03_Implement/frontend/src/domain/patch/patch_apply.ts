@@ -41,6 +41,21 @@ function parseCard(value: unknown): Card | null {
   if (value.critiqueTags !== undefined && !isStringArray(value.critiqueTags)) return null;
   if (value.textReviewed !== undefined && typeof value.textReviewed !== "boolean") return null;
 
+  // DOMAIN-TRACE-01 (schemas.md §15.3): `value as Card` would smuggle any
+  // meta object (including unknown/subject keys) straight through this
+  // patch path, so meta is explicitly rebuilt from the known keys only.
+  if (value.meta !== undefined) {
+    if (!isRecord(value.meta)) return null;
+    const seq = typeof value.meta.seq === "number" && isFiniteNumber(value.meta.seq) ? value.meta.seq : undefined;
+    const source = typeof value.meta.source === "string" && value.meta.source.length > 0 ? value.meta.source : undefined;
+    const sanitizedMeta =
+      seq === undefined && source === undefined
+        ? undefined
+        : { ...(seq !== undefined ? { seq } : {}), ...(source !== undefined ? { source } : {}) };
+    const { meta: _rawMeta, ...rest } = value;
+    return sanitizedMeta ? ({ ...rest, meta: sanitizedMeta } as Card) : (rest as Card);
+  }
+
   return value as Card;
 }
 

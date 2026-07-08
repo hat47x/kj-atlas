@@ -28,6 +28,8 @@ function buildProps(safeMode: boolean, overrides: Partial<React.ComponentProps<t
     onSafeModeChange: vi.fn(),
     includeUnreviewedDrafts: false,
     onIncludeUnreviewedDraftsChange: vi.fn(),
+    includeSourceReferences: false,
+    onIncludeSourceReferencesChange: vi.fn(),
     currentReviewerRef: "user:local:test",
     currentReviewerRefSource: "local" as const,
     onCurrentReviewerRefChange: vi.fn(),

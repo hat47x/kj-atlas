@@ -86,11 +86,21 @@ class Card(BaseModel):
     textReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
+class CardMeta(BaseModel):
+    # DOMAIN-TRACE-01 (schemas.md §15): non-subject trace metadata only.
+    # Pydantic's default extra="ignore" implements §15.3's fail-closed rule
+    # for unknown meta keys — subject/provenance keys (author, owner...)
+    # are dropped rather than persisted until CARD-META-UI-01 settles.
+    seq: float | None = Field(default=None, exclude_if=lambda value: value is None)
+    source: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
 class CardV2(Card):
     textReviewed: bool | None = None
     holdState: Literal["held", "pending", "shelved"] | None = Field(
         default=None, exclude_if=lambda value: value is None
     )
+    meta: CardMeta | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 class EdgeV1(BaseModel):

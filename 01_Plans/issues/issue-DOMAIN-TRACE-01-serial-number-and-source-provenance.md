@@ -1,11 +1,11 @@
 # Issue Draft: DOMAIN-TRACE-01 通し番号と原データ遡及（Card.meta 系の追加的導入）
 
 - Type: Feature request
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
-- Owner: TBD
+- Owner: Claude Code
 - Scope: `02_Architecture/schemas.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/frontend/src/domain/validate.ts`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/backend/`
 - Related Backlog: `DOMAIN-TRACE-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂 2026-07-03）, `02_Architecture/schemas.md`（§5 future item: `Card.meta`）, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`
@@ -54,19 +54,19 @@
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: schemas.md が実装前に更新され（`Card.meta` の形確定・L2.5 登録）、`sources` との役割分担が明文化される。
-- [ ] AC-2: 入力→保存→再読込→旧形式往復のラウンドトリップで欠落しないことが integration で固定される。
-- [ ] AC-3: 既定でカード面に番号バッジが表示されず、View トグルで表示できる（CB-1 自己申告を記録）。
-- [ ] AC-4: 共有前チェックで出典参照の扱いが明示され、SafeMode 既定の安全性が弱まらない。
-- [ ] AC-5: 未設定カードの表示・操作が従来どおり。
+- [x] AC-1: schemas.md が実装前に更新され（`Card.meta` の形確定・L2.5 登録）、`sources` との役割分担が明文化される。
+- [x] AC-2: 入力→保存→再読込→旧形式往復のラウンドトリップで欠落しないことが integration で固定される。
+- [x] AC-3: 既定でカード面に番号バッジが表示されず、View トグルで表示できる（CB-1 自己申告を記録）。
+- [x] AC-4: 共有前チェックで出典参照の扱いが明示され、SafeMode 既定の安全性が弱まらない。
+- [x] AC-5: 未設定カードの表示・操作が従来どおり。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 schemas.md 更新（Card.meta 形・sources 役割分担・L2.5。主体メタは `CARD-META-UI-01` へ分離）。
-- [ ] T2 types.ts/validate.ts＋backend 対応。
-- [ ] T3 選択コンテキスト UI＋View トグル＋i18n。
-- [ ] T4 共有前チェックへの反映。
-- [ ] T5 integration（往復・寛容/厳格・共有非回帰）。
+- [x] T1 schemas.md 更新（Card.meta 形・sources 役割分担・L2.5。主体メタは `CARD-META-UI-01` へ分離）。
+- [x] T2 types.ts/validate.ts＋backend 対応。
+- [x] T3 選択コンテキスト UI＋View トグル＋i18n。
+- [x] T4 共有前チェックへの反映。
+- [x] T5 integration（往復・寛容/厳格・共有非回帰）。
 
 ## 7) 検証計画 / Validation plan
 
@@ -89,3 +89,32 @@
 ## 実装設計の到着（2026-07-04）
 
 - Claude Design Round 4 プロトタイプに「通し番号をカードに表示」トグル（既定OFF）と選択時のみの原データ表示が実装され、本Issueの AC-3 の参照実装となった。共有前チェックの出典参照トグル（既定OFF＋警告1行）の設計も同成果 §領域5 に確定。
+
+## 完了記録 2026-07-08（Claude Code）
+
+### T1 要件の再定義（schemas.md §15 に正本化）
+
+1. **`Card.meta` の形**: `{ seq?: number; source?: string }`（両方 optional・L2.5）。seq は任意の通し番号で自動連番を強制しない。source は文書外部の原データ参照（発話・行番号・URL 等の自由記述）。
+2. **語彙境界（§15.2）**: `Card.sources`（統合元カード id・canonical 化の系譜）と `Card.meta.source`（外部原データ参照）は別語彙であり相互不変。起票者・作成者等の**主体メタは追加しない**（`CARD-META-UI-01` の Decision Queue 対象。Owner: Security Officer / UX Lead — 本Issueでは非主体の seq/source 境界のみ確定）。
+3. **未知 meta キーは fail-closed（§15.3）**: 寛容/厳格の両モードで seq/source 以外を**破棄**。DOMAIN-KJ-01 §3.3.2 の未知エッジ種別「保全」とは**意図的に逆**の規則 — CARD-META-UI-01 確定前に import 経由で主体/出自メタが密輸される経路を閉じる。
+4. **共有境界（§15.4）**: 共有向け書き出し（バンドル document.json）は Card.meta を**既定で除外**。「出典参照を含める」トグル（既定OFF＋警告1行）で明示オプトイン。SafeMode とは**独立軸**（トグルは safeMode に関係なく表示）。バックアップ用 document.json 読み書き・PUT は除外対象外（meta 保持）。
+
+### 実装
+
+- **契約先行**: schemas.md §15（新設）＋ §5 項目5更新、data_model_operations_overview.md §4.1 行追加。
+- **往復（4経路すべて）**: ①寛容 `validate.ts parseCardMeta`（有限数 seq・非空文字列 source のみ受理、無効値/未知キーは黙って破棄、全滅時は meta 自体を省略）②厳格 `validate_doc.ts`（meta ホワイトリスト＋`hasOnlyKeys(["seq","source"])`＋型検査）③CE3 パッチ経路 `patch_apply.ts parseCard`（`value as Card` による未知キー密輸を防ぐ明示再構築）④バックエンド `models.py CardMeta`（V2のみ。Pydantic 既定 `extra="ignore"` が §15.3 を実装。**CardMeta 追加前は PUT で meta が黙って全損していた**—T2で事前修正）。
+- **UI（選択時のみ・ADR-0048 D3改訂準拠）**: SidePanel 選択コンテキストに `#番号`・`原データ:` チップ（未設定時は非表示=AC-5）、カードインスペクタに遡及情報エディタ（空にすると欄削除・カード未設定時はバイト同一維持）。編集は `applyDocumentChange` 1ステップ（⌘Z 可逆）。
+- **カード面バッジ**: `CardView` メタ行に中立スレート色の `#n` テキスト（ピル無し=視覚言語チャネルを消費しない）。View パネル「通し番号をカードに表示」トグルで表示、**既定OFF**。
+- **共有除外**: `bundle_export.ts resolveShareDocument()` を両ビルド関数（同期/worker）の入口で適用 — document.json 2書き出し点と integrity.json ハッシュ計算の**すべてに先行**。SharePanel にトグル＋警告1行＋共有前チェック行（含める時は強調表示）。作業中ドキュメントは非破壊（共有コピーのみ剥離）。view.json は cards を含まないため対象外を確認。
+- i18n 両ロケール 17 キー追加。
+
+### 検証
+
+- typecheck 0 / vitest **944 passed**（185 files。バンドル剥離3件・meta往復4件・回帰アンカー1件を追加）
+- backend: ruff クリーン / pytest **284 passed**（PUT+GET で seq/source 保持・未知キー createdBy 破棄・未設定カード meta 無しの sqlite/postgres ペア追加）
+- e2e 新規 `card_trace_meta.spec.ts` **4/4 passed**（エディタ→サマリ表示→⌘Z 2段階復帰／バッジ既定OFF→トグルON／PUT ペイロード実測での往復保全／共有前チェック既定除外→オプトイン警告）
+- 関連 e2e 非回帰: card_meta_row / domain_expression_keyboard_access / first_value_share_preflight / review_pack_trace_export / edge_type_vocabulary / esc_staged_closing すべて passed。header_toolbar_layout の4件失敗は**クリーンな main で再現する既存問題**（ショートカットヘルプボタンのメニューバー移行と spec の不整合）であり本Issueとは無関係 — 別タスク起票済み。
+
+### CB-1 自己申告（ADR-0043 / ADR-0048 D3改訂）
+
+複雑性予算: 初期表示への純増=**なし**（選択時のみ表示。カード面バッジは既定OFF・View トグル。共有トグルも既定OFF） / 保留操作の距離=不変 / 取り消し導線=あり（meta 編集は ⌘Z 1ステップ・バッジはトグルで非表示化・共有トグルは再チェックで解除）。番号バッジのカード面常時表示は**不採択**（既定OFF を維持）— 表示は明示オプトインのみ、という D3改訂の基本線どおりで CB-1 逸脱なし。

@@ -44,6 +44,11 @@ export type BundleExportContext = {
   dialecticBalanceReport?: DialecticBalanceReport | null;
   viewVisibility?: PublishVisibility;
   packVisibility?: PublishVisibility;
+  /**
+   * DOMAIN-TRACE-01 (schemas.md §15.4): share exports exclude Card.meta
+   * (seq/source) unless the user explicitly opts in. Independent of safeMode.
+   */
+  includeSourceReferences?: boolean;
 };
 
 function sortObjectKeys<T>(value: T): T {
@@ -162,6 +167,30 @@ function resolveExportGranularity(context: BundleExportContext): ExportGranulari
   return context.exportGranularity ?? "detail";
 }
 
+/**
+ * schemas.md §15.4: Card.meta stays out of shared bundles by default so raw-data
+ * references never leave the workspace without an explicit opt-in. Backup
+ * JSON/PUT paths do not go through here and keep meta intact.
+ */
+function resolveShareDocument(doc: DocumentV2, context: BundleExportContext): DocumentV2 {
+  if (context.includeSourceReferences) {
+    return doc;
+  }
+  if (!doc.cards.some((card) => card.meta !== undefined)) {
+    return doc;
+  }
+  return {
+    ...doc,
+    cards: doc.cards.map((card) => {
+      if (card.meta === undefined) {
+        return card;
+      }
+      const { meta: _meta, ...rest } = card;
+      return rest;
+    }),
+  };
+}
+
 function shouldIncludeSelectedCardTraces(context: BundleExportContext): boolean {
   return resolveExportGranularity(context) === "detail" && context.includeSelectedCardTraces;
 }
@@ -217,6 +246,7 @@ function buildDiagnosticsMd(doc: DocumentV2, context: BundleExportContext): stri
 }
 
 export function buildExportBundle(doc: DocumentV2, viewState: unknown, context: BundleExportContext): BundleFile[] {
+  doc = resolveShareDocument(doc, context);
   const safeMode = context.safeMode ?? true;
   const root = context.rootFolderPath.endsWith("/") ? context.rootFolderPath.slice(0, -1) : context.rootFolderPath;
   const bundleFiles: BundleFile[] = [
@@ -275,6 +305,7 @@ export async function buildExportBundleWithWorkers(
   context: BundleExportContext,
   options: { signal?: AbortSignal; onProgress?: (stage: BundleExportProgressStage) => void } = {}
  ): Promise<BundleFile[]> {
+  doc = resolveShareDocument(doc, context);
   const safeMode = context.safeMode ?? true;
   const root = context.rootFolderPath.endsWith("/") ? context.rootFolderPath.slice(0, -1) : context.rootFolderPath;
   const bundleFiles: BundleFile[] = [

@@ -46,7 +46,7 @@ import {
   getLatestMergeSuggestionDecisionByGroup,
   type MergeSuggestionDecision,
 } from "./domain/merge_suggestion_decisions";
-import { isSourceCard, Document, DocumentV2, Island, Narrative, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
+import { isSourceCard, Document, DocumentV2, Island, Narrative, type CardMeta, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
 import { KNOWN_EDGE_TYPES } from "./domain/types";
 import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
@@ -1122,6 +1122,8 @@ export default function App() {
   // UX-VISUAL-02: protection marks for lone-wolf cards / small islands.
   // Default ON but subtle (ADR-0048 D3 「淡く強調」); toggleable OFF in the View panel.
   const [showProtectionMarks, setShowProtectionMarks] = useState(true);
+  // DOMAIN-TRACE-01 AC-3 (CB-1): the canvas seq badge is DEFAULT OFF.
+  const [showSeqNumbers, setShowSeqNumbers] = useState(false);
   // PROV-VIS-01 (ADR-0050 D1): read-only provider visibility. providerKind is
   // fetched once from the backend config echo; lastAiCallOutcome is tracked
   // client-side from the actual result of the most recent AI call.
@@ -1143,6 +1145,8 @@ export default function App() {
   );
   const [showLabelBounds, setShowLabelBounds] = useState(false);
   const [includeUnreviewedDraftsInExport, setIncludeUnreviewedDraftsInExport] = useState(false);
+  // DOMAIN-TRACE-01 (schemas.md §15.4): share exports drop Card.meta unless opted in.
+  const [includeSourceReferencesInExport, setIncludeSourceReferencesInExport] = useState(false);
   const [revealedSourceCardIds, setRevealedSourceCardIds] = useState<Set<string>>(new Set());
   const [showCanonicalOnlyEdges, setShowCanonicalOnlyEdges] = useState(false);
   const [showReadingOrder, setShowReadingOrder] = useState(false);
@@ -4465,6 +4469,59 @@ export default function App() {
           cards: nextCards,
         },
         t("app.history.card.critique_updated"),
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  // DOMAIN-TRACE-01 (schemas.md §15): one history step per change (⌘Z
+  // reversible). The meta object is dropped entirely when both fields are
+  // cleared so an unset card stays byte-identical to the pre-feature shape.
+  const handleCardMetaChange = useCallback(
+    (cardId: string, rawSeq: string, rawSource: string) => {
+      if (!document) {
+        return;
+      }
+
+      const parsedSeq = rawSeq.trim().length > 0 ? Number(rawSeq) : undefined;
+      const seq = parsedSeq !== undefined && Number.isFinite(parsedSeq) ? parsedSeq : undefined;
+      const source = rawSource.trim().length > 0 ? rawSource : undefined;
+      const nextMeta: CardMeta | undefined =
+        seq === undefined && source === undefined
+          ? undefined
+          : { ...(seq !== undefined ? { seq } : {}), ...(source !== undefined ? { source } : {}) };
+
+      const nextCards = document.cards.map((card) => {
+        if (card.id !== cardId) {
+          return card;
+        }
+
+        const currentSeq = card.meta?.seq;
+        const currentSource = card.meta?.source;
+        if (currentSeq === nextMeta?.seq && currentSource === nextMeta?.source) {
+          return card;
+        }
+
+        if (nextMeta === undefined) {
+          const { meta: _removed, ...rest } = card;
+          return rest;
+        }
+
+        return { ...card, meta: nextMeta };
+      });
+
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+        },
+        t("app.history.card.meta_updated"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -8178,6 +8235,7 @@ export default function App() {
           dialecticBalanceReport,
           viewVisibility,
           packVisibility,
+          includeSourceReferences: includeSourceReferencesInExport,
         }, {
           signal: controller.signal,
           onProgress: (stage) => ctx.reportProgress({
@@ -8267,6 +8325,7 @@ export default function App() {
     showReadingOrder,
     summaryView,
     viewVisibility,
+    includeSourceReferencesInExport,
   ]);
 
   const handleExportAbstractMapMarkdownWithPng = useCallback(async () => {
@@ -9094,6 +9153,8 @@ export default function App() {
             onToggleCanvasLegend={() => setIsCanvasLegendOpen((previous) => !previous)}
             showProtectionMarks={showProtectionMarks}
             onToggleProtectionMarks={() => setShowProtectionMarks((previous) => !previous)}
+            showSeqNumbers={showSeqNumbers}
+            onShowSeqNumbersChange={setShowSeqNumbers}
             providerKind={providerKind}
             lastAiCallOutcome={lastAiCallOutcome}
             lodEnabled={lodEnabled}
@@ -9251,6 +9312,8 @@ export default function App() {
       onSafeModeChange={handleSafeModeChange}
       includeUnreviewedDrafts={includeUnreviewedDraftsInExport}
       onIncludeUnreviewedDraftsChange={setIncludeUnreviewedDraftsInExport}
+      includeSourceReferences={includeSourceReferencesInExport}
+      onIncludeSourceReferencesChange={setIncludeSourceReferencesInExport}
       currentReviewerRef={currentReviewerRef}
       currentReviewerRefSource={currentReviewerRefSource}
       onCurrentReviewerRefChange={(value) => {
@@ -9953,6 +10016,13 @@ export default function App() {
 
             handleCardCritiqueChange(selectedCard.id, value);
           }}
+          onCardMetaChange={(rawSeq, rawSource) => {
+            if (!selectedCard) {
+              return;
+            }
+
+            handleCardMetaChange(selectedCard.id, rawSeq, rawSource);
+          }}
           onCardCritiqueTagsChange={(value) => {
             if (!selectedCard) {
               return;
@@ -10409,6 +10479,7 @@ export default function App() {
             lodLevelOverride={lodLevelOverride}
             lodShowLoneWolvesWhenFar={lodShowLoneWolvesWhenFar}
             showProtectionMarks={showProtectionMarks}
+            showSeqNumbers={showSeqNumbers}
             effectiveCollapsedIslandIds={effectiveCollapsedIslandIdSet}
             showDerivedIslandEdges={summaryView || abstractMapView || effectiveCollapsedIslandIdSet.size > 0 || currentLod?.level === "far"}
             focusCardId={focusCardId}
