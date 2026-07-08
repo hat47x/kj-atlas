@@ -534,6 +534,40 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).not.toMatch(/handleContradictionSignalDecision[\s\S]{0,400}upsertEvidenceLink/);
   });
 
+  it("DOMAIN-KA-01: Card.ka (心の声/価値) stays fail-closed, separate from Card.text, off the canvas, and default-OFF in exports", () => {
+    const validateSource = readSource("src/domain/validate.ts");
+    const validateDocSource = readSource("src/domain/validate_doc.ts");
+    const patchApplySource = readSource("src/domain/patch/patch_apply.ts");
+    const readingOutlineSource = readSource("src/domain/view/reading_outline.ts");
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const cardViewSource = readSource("src/canvas/CardView.tsx");
+    const appSource = readSource("src/App.tsx");
+
+    // Fail-closed parsing in all 3 round-trip paths (lenient/strict/CE3 patch),
+    // mirroring the Card.meta precedent exactly.
+    expect(validateSource).toContain("function parseCardKa");
+    expect(validateDocSource).toContain('hasOnlyKeys(item.ka, ["voice", "value"]');
+    expect(patchApplySource).toContain("value.ka !== undefined");
+
+    // Card.text stays the sole event-of-record; ka is a separate field, never
+    // merged into the body (AC: text=出来事の正本 unchanged).
+    expect(sidePanelSource).toContain('data-panel="card-ka-editor"');
+    expect(sidePanelSource).toContain("onCardKaChange(event.target.value, selectedCard.ka?.value ?? \"\")");
+
+    // No canvas surface for ka (AC-4: no initial-view anchor growth).
+    expect(cardViewSource).not.toMatch(/card\.ka\b/);
+
+    // Export section is separate from narrative body and default OFF.
+    expect(readingOutlineSource).toContain("function formatKaFields");
+    expect(readingOutlineSource).toContain("appendKaFields?: boolean");
+    expect(readingOutlineSource).toContain("options.appendKaFields ?? false");
+    expect(appSource).toContain("const [outlineAppendKaFields, setOutlineAppendKaFields] = useState(false)");
+
+    // Meta edit is a single history step (undoable) via applyDocumentChange.
+    expect(appSource).toContain("const handleCardKaChange = useCallback(");
+    expect(appSource).toContain('t("app.history.card.ka_updated")');
+  });
+
   it("Phase 3: contextual-selection-panel", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
 

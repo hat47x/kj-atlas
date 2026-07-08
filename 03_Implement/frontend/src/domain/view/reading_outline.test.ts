@@ -159,4 +159,63 @@ describe("reading outline", () => {
     expect(markdown).not.toContain("rec-1");
     expect(diagnostics.findings.length).toBeGreaterThan(0);
   });
+
+  it("omits the KA fields section by default (DOMAIN-KA-01, default OFF)", () => {
+    const doc = buildDoc();
+    doc.cards[0] = { ...doc.cards[0], ka: { voice: "しんどい", value: "安心感" } };
+
+    const markdown = buildReadingOutlineMd(doc, {
+      readingNavEnabled: true,
+      readingIndex: 0,
+      readingMode: "islands+cards",
+      reviewedOnly: false,
+      safeMode: false,
+    });
+
+    expect(markdown).not.toContain("## KA Fields");
+  });
+
+  it("appends a separate KA fields section when opted in, never merged into a card's body text", () => {
+    const doc = buildDoc();
+    doc.cards[0] = { ...doc.cards[0], ka: { voice: "しんどい", value: "安心感" } };
+
+    const markdown = buildReadingOutlineMd(
+      doc,
+      {
+        readingNavEnabled: true,
+        readingIndex: 0,
+        readingMode: "islands+cards",
+        reviewedOnly: false,
+        safeMode: false,
+      },
+      { appendKaFields: true },
+    );
+
+    expect(markdown).toContain("## KA Fields (inner voice / value)");
+    expect(markdown).toContain("Card card-top — Inner voice: しんどい / Value: 安心感");
+    // Not interleaved into the card's own outline entry.
+    const cardEntryLine = markdown.split("\n").find((line) => line.includes("[Card] Top card line"));
+    expect(cardEntryLine).toBeDefined();
+    expect(cardEntryLine).not.toContain("しんどい");
+  });
+
+  it("hides the KA fields section under SafeMode, same channel as card.text", () => {
+    const doc = buildDoc();
+    doc.cards[0] = { ...doc.cards[0], ka: { voice: "しんどい", value: "安心感" } };
+
+    const markdown = buildReadingOutlineMd(
+      doc,
+      {
+        readingNavEnabled: true,
+        readingIndex: 0,
+        readingMode: "islands+cards",
+        reviewedOnly: false,
+        safeMode: true,
+      },
+      { appendKaFields: true, context: "share" },
+    );
+
+    expect(markdown).toContain("[SAFE MODE: KA fields hidden]");
+    expect(markdown).not.toContain("しんどい");
+  });
 });

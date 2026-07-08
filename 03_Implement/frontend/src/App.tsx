@@ -46,7 +46,7 @@ import {
   getLatestMergeSuggestionDecisionByGroup,
   type MergeSuggestionDecision,
 } from "./domain/merge_suggestion_decisions";
-import { isSourceCard, Document, DocumentV2, Island, Narrative, type CardMeta, type ContradictionSignalDecision, type ContradictionSignalReviewStatus, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
+import { isSourceCard, Document, DocumentV2, Island, Narrative, type CardKa, type CardMeta, type ContradictionSignalDecision, type ContradictionSignalReviewStatus, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
 import { KNOWN_EDGE_TYPES } from "./domain/types";
 import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
@@ -1160,6 +1160,8 @@ export default function App() {
   const [outlineIncludeUnreviewed, setOutlineIncludeUnreviewed] = useState(false);
   const [outlineAppendDiagnostics, setOutlineAppendDiagnostics] = useState(false);
   const [outlineAppendRecommendations, setOutlineAppendRecommendations] = useState(false);
+  // DOMAIN-KA-01 (schemas.md §17.4): optional, default-OFF outline section.
+  const [outlineAppendKaFields, setOutlineAppendKaFields] = useState(false);
   const [outlineQualityReport, setOutlineQualityReport] = useState<OutlineQualityReport | null>(null);
   const [contradictionReport, setContradictionReport] = useState<ContradictionReport | null>(null);
   const [distributionReport, setDistributionReport] = useState<DistributionReport | null>(null);
@@ -4528,6 +4530,55 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+  const handleCardKaChange = useCallback(
+    (cardId: string, rawVoice: string, rawValue: string) => {
+      if (!document) {
+        return;
+      }
+
+      const voice = rawVoice.trim().length > 0 ? rawVoice : undefined;
+      const value = rawValue.trim().length > 0 ? rawValue : undefined;
+      const nextKa: CardKa | undefined =
+        voice === undefined && value === undefined
+          ? undefined
+          : { ...(voice !== undefined ? { voice } : {}), ...(value !== undefined ? { value } : {}) };
+
+      const nextCards = document.cards.map((card) => {
+        if (card.id !== cardId) {
+          return card;
+        }
+
+        const currentVoice = card.ka?.voice;
+        const currentValue = card.ka?.value;
+        if (currentVoice === nextKa?.voice && currentValue === nextKa?.value) {
+          return card;
+        }
+
+        if (nextKa === undefined) {
+          const { ka: _removed, ...rest } = card;
+          return rest;
+        }
+
+        return { ...card, ka: nextKa };
+      });
+
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+        },
+        t("app.history.card.ka_updated"),
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
   const handleCardClaimTypeChange = useCallback(
     (cardId: string, nextClaimType: ClaimType) => {
       if (!document) {
@@ -7248,11 +7299,13 @@ export default function App() {
         diagnosticsReport: outlineQualityReport,
         appendRecommendations: outlineAppendRecommendations,
         recommendations: outlineRecommendations,
+        appendKaFields: outlineAppendKaFields,
       },
     );
   }, [
     document,
     outlineAppendDiagnostics,
+    outlineAppendKaFields,
     outlineAppendRecommendations,
     outlineIncludeCardTexts,
     outlineIncludeRelationSummaries,
@@ -8256,6 +8309,7 @@ export default function App() {
             diagnosticsReport: outlineQualityReport,
             appendRecommendations: outlineAppendRecommendations,
             recommendations: outlineRecommendations,
+            appendKaFields: outlineAppendKaFields,
           },
           outlineQualityReport,
           contradictionReport,
@@ -8332,6 +8386,7 @@ export default function App() {
     lodThresholds,
     maxDepth,
     outlineAppendDiagnostics,
+    outlineAppendKaFields,
     outlineAppendRecommendations,
     outlineIncludeCardTexts,
     outlineIncludeRelationSummaries,
@@ -10051,6 +10106,13 @@ export default function App() {
 
             handleCardMetaChange(selectedCard.id, rawSeq, rawSource);
           }}
+          onCardKaChange={(rawVoice, rawValue) => {
+            if (!selectedCard) {
+              return;
+            }
+
+            handleCardKaChange(selectedCard.id, rawVoice, rawValue);
+          }}
           onCardCritiqueTagsChange={(value) => {
             if (!selectedCard) {
               return;
@@ -10363,6 +10425,8 @@ export default function App() {
           onOutlineAppendDiagnosticsChange={setOutlineAppendDiagnostics}
           outlineAppendRecommendations={outlineAppendRecommendations}
           onOutlineAppendRecommendationsChange={setOutlineAppendRecommendations}
+          outlineAppendKaFields={outlineAppendKaFields}
+          onOutlineAppendKaFieldsChange={setOutlineAppendKaFields}
           outlineQualityReport={outlineQualityReport}
           outlineRecommendations={outlineRecommendations}
           contradictionReport={contradictionReport}

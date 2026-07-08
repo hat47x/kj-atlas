@@ -17,6 +17,15 @@ export type CardMeta = {
   source?: string;
 };
 
+// DOMAIN-KA-01 (schemas.md §17): KA-method fields, separate from Card.text
+// (which stays the 出来事/event-of-record). voice = 心の声 (inner voice,
+// unfiltered — guardrails against embellishing/fabricating are UI hints
+// only, never enforced). value = 価値 (the KA-method's extracted value).
+export type CardKa = {
+  voice?: string;
+  value?: string;
+};
+
 export type Card = {
   id: string;
   text: string;
@@ -34,6 +43,7 @@ export type Card = {
   /** DOMAIN-EXPR-02: optional hold state. Absent = not held (conventional card). */
   holdState?: HoldState;
   meta?: CardMeta;
+  ka?: CardKa;
 };
 
 /** DOMAIN-EXPR-02: a shelved item — set aside from the main canvas without deletion. */

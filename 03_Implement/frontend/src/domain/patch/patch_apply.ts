@@ -41,9 +41,12 @@ function parseCard(value: unknown): Card | null {
   if (value.critiqueTags !== undefined && !isStringArray(value.critiqueTags)) return null;
   if (value.textReviewed !== undefined && typeof value.textReviewed !== "boolean") return null;
 
-  // DOMAIN-TRACE-01 (schemas.md §15.3): `value as Card` would smuggle any
-  // meta object (including unknown/subject keys) straight through this
-  // patch path, so meta is explicitly rebuilt from the known keys only.
+  // DOMAIN-TRACE-01 (schemas.md §15.3) / DOMAIN-KA-01 (schemas.md §17.2):
+  // `value as Card` would smuggle raw meta/ka objects (including unknown
+  // keys) straight through this patch path, so both are explicitly rebuilt
+  // from known keys only whenever present.
+  let sanitized: Record<string, unknown> = value;
+
   if (value.meta !== undefined) {
     if (!isRecord(value.meta)) return null;
     const seq = typeof value.meta.seq === "number" && isFiniteNumber(value.meta.seq) ? value.meta.seq : undefined;
@@ -52,11 +55,23 @@ function parseCard(value: unknown): Card | null {
       seq === undefined && source === undefined
         ? undefined
         : { ...(seq !== undefined ? { seq } : {}), ...(source !== undefined ? { source } : {}) };
-    const { meta: _rawMeta, ...rest } = value;
-    return sanitizedMeta ? ({ ...rest, meta: sanitizedMeta } as Card) : (rest as Card);
+    const { meta: _rawMeta, ...restAfterMeta } = sanitized;
+    sanitized = sanitizedMeta ? { ...restAfterMeta, meta: sanitizedMeta } : restAfterMeta;
   }
 
-  return value as Card;
+  if (value.ka !== undefined) {
+    if (!isRecord(value.ka)) return null;
+    const voice = typeof value.ka.voice === "string" && value.ka.voice.length > 0 ? value.ka.voice : undefined;
+    const kaValue = typeof value.ka.value === "string" && value.ka.value.length > 0 ? value.ka.value : undefined;
+    const sanitizedKa =
+      voice === undefined && kaValue === undefined
+        ? undefined
+        : { ...(voice !== undefined ? { voice } : {}), ...(kaValue !== undefined ? { value: kaValue } : {}) };
+    const { ka: _rawKa, ...restAfterKa } = sanitized;
+    sanitized = sanitizedKa ? { ...restAfterKa, ka: sanitizedKa } : restAfterKa;
+  }
+
+  return sanitized as Card;
 }
 
 function parseEdge(value: unknown): Edge | null {

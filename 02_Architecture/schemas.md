@@ -1286,3 +1286,48 @@ export type ContradictionSignalDecision = {
 - ADR: `ADR-0040-domain-expression-first-class-strategy.md`（Phase 4）, `ADR-0041-core-value-invariants-single-guard.md`（CVI-2/CVI-3）
 - Issue: `DOMAIN-EXPR-04-evidence-claim-contradiction-review`
 - Frontend: `03_Implement/frontend/src/domain/view/contradiction_checks.ts`（シグナル生成、変更なし）, `03_Implement/frontend/src/domain/types.ts`（ContradictionSignalDecision）, `03_Implement/frontend/src/ui/SidePanel.tsx`（決定UI）
+
+## 17. DOMAIN-KA-01 加算スキーマ拡張: KAカード種別（出来事/心の声/価値）（2026-07-08）
+
+ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィールドは optional。DOMAIN-TRACE-01（§15）と同じ D3改訂バッチでの条件付き採択。
+
+### 17.1 Card.ka
+
+```ts
+export type CardKa = {
+  voice?: string; // 心の声（言語化途中の一級データ。ガードレール: 嘘を書かない・話を盛らない・妄想しすぎない — UIヒント文言として反映し、機能では強制しない）
+  value?: string; // 価値（KA法における本質的価値の言語化）
+};
+```
+
+- 位置: `Card.ka?: CardKa`
+- Support level: `L2.5`（未分類。実装検証後にL2以上へ昇格）
+- 欠落時: 従来挙動（KA欄を持たない通常カード）
+- `Card.text` は従来どおり**出来事の正本**として維持する（意味変更なし）。`voice`/`value` は `text` に併記しない別フィールド。
+- 形状は `Card.meta`（§15.1）と同じ「関連する複数の optional フィールドを1つの入れ子オブジェクトへ束ねる」規約を踏襲する（フラットな `kaVoice`/`kaValue` ではなく `ka: { voice?, value? }`）。
+
+### 17.2 取り込み境界
+
+- import/validate（寛容・厳格の両モード）は `Card.ka` の既知キー（`voice`/`value`）のみを受理する。両方とも欠落・空文字列の場合は `ka` フィールド自体を省略する（`Card.meta` の空値削除規約と同じ）。
+- `claimType` とは直交（統合・再定義しない）。critique・holdState 等の既存カード状態にも影響しない。
+
+### 17.3 UI・非目標
+
+- 選択コンテキストの基本編集群に「心の声」「価値」欄（未入力時は折りたたみ/プレースホルダ）。**カード面（キャンバス）には表示しない**（AC-4: 初期表示アンカー非回帰。UX-VISUAL-01 のメタ行チャネル予算を追加消費しない）。
+- 非目標: 価値によるグルーピング画面の新設、AI による心の声/価値の自動抽出、カード面への3欄常時表示。
+
+### 17.4 成果物境界
+
+- レビューパック/narrative export への含め方は「本文に併記しない・任意セクション」とする。既定 OFF のオプトインで、設定時のみ KA 欄が設定されているカードを列挙する独立セクションとして追加する（`text` の本文とは混在させない）。
+- SafeMode でのテキスト露出可否は `card.text` と同じ判定チャネル（`SafeModePolicy.canExposeText("card.text", ...)`）を再利用する（KA 欄は `text` と同等以上に機微な言語化途中データのため、別基準を新設しない）。
+
+### 17.5 後方互換
+
+- 新フィールドはすべて optional。旧データ（`ka` 欄欠落）は従来挙動として解釈する。
+- `version: 2` のまま（破壊的変更なし）。
+
+### 17.6 参照
+
+- ADR: `ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂）
+- Issue: `DOMAIN-KA-01-ka-card-fields`
+- Frontend: `03_Implement/frontend/src/domain/types.ts`（Card.ka）

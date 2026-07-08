@@ -95,12 +95,21 @@ class CardMeta(BaseModel):
     source: str | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
+class CardKa(BaseModel):
+    # DOMAIN-KA-01 (schemas.md §17): KA-method fields, separate from
+    # Card.text (which stays the event-of-record). extra="ignore" (default)
+    # drops unknown keys, matching CardMeta's fail-closed handling.
+    voice: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    value: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
 class CardV2(Card):
     textReviewed: bool | None = None
     holdState: Literal["held", "pending", "shelved"] | None = Field(
         default=None, exclude_if=lambda value: value is None
     )
     meta: CardMeta | None = Field(default=None, exclude_if=lambda value: value is None)
+    ka: CardKa | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 class EdgeV1(BaseModel):
