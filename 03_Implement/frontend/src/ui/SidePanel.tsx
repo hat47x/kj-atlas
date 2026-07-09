@@ -3355,6 +3355,39 @@ export function SidePanel({
               >
                 {t("side_panel.card_inspector.focus")}
               </button>
+              <details data-panel="card-record-details" style={{ marginBottom: 12 }}>
+                <summary style={{ fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
+                  {t("side_panel.card_inspector.record_details")}
+                </summary>
+                <dl
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.5fr)",
+                    gap: "6px 10px",
+                    margin: "8px 0 0",
+                    padding: 8,
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 6,
+                    backgroundColor: "#f8fafc",
+                    fontSize: 11,
+                  }}
+                >
+                  <dt style={{ color: "#64748b" }}>{t("side_panel.card_inspector.card_id")}</dt>
+                  <dd style={{ margin: 0, color: "#0f172a", overflowWrap: "anywhere" }}>{selectedCard.id}</dd>
+                  <dt style={{ color: "#64748b" }}>{t("side_panel.card_inspector.record_role")}</dt>
+                  <dd style={{ margin: 0, color: "#0f172a" }}>
+                    {selectedCard.canonicalId
+                      ? t("side_panel.card_inspector.record_role_source")
+                      : t("side_panel.card_inspector.record_role_canonical")}
+                  </dd>
+                  <dt style={{ color: "#64748b" }}>{t("side_panel.card_inspector.document_created_at")}</dt>
+                  <dd style={{ margin: 0, color: "#0f172a", overflowWrap: "anywhere" }}>{document?.createdAt ?? t("side_panel.card_inspector.not_available")}</dd>
+                  <dt style={{ color: "#64748b" }}>{t("side_panel.card_inspector.document_updated_at")}</dt>
+                  <dd style={{ margin: 0, color: "#0f172a", overflowWrap: "anywhere" }}>{document?.updatedAt ?? t("side_panel.card_inspector.not_available")}</dd>
+                  <dt style={{ color: "#64748b" }}>{t("side_panel.card_inspector.responsibility_metadata")}</dt>
+                  <dd style={{ margin: 0, color: "#475569" }}>{t("side_panel.card_inspector.responsibility_metadata_unavailable")}</dd>
+                </dl>
+              </details>
               {selectedCard.canonicalId ? (
                 <>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>

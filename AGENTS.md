@@ -144,6 +144,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/issues/issue-DX-DOC-01-crlf-markdown-fence-parser.md`：MarkdownのJSONコードブロック抽出をLF/CRLF両対応にしたテスト portability 修正。
 - `01_Plans/issues/issue-UX-LABEL-01-retention-vocabulary-consistency.md`：保留・違和感・理由の画面横断ラベルを標準化するUX issue。
 - `01_Plans/issues/issue-DX-E2E-02-canvas-legend-heading-drift.md`：Canvas凡例の現行見出しとE2E期待値のずれを修正したテストissue。
+- `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`：カードの記録情報表示と起票者・責任主体メタデータの保存/共有境界を分離するUX・セキュリティissue。
 
 ### 3.3 `02_Architecture/`（Structure：設計・I/F・デプロイ）
 
