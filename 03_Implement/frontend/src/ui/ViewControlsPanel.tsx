@@ -313,6 +313,7 @@ export function ViewControlsPanel({
       <div style={sectionStyle}>
         <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.depth.title")}</div>
         <select
+          aria-label={t("view_controls.depth.title")}
           value={maxDepth === "all" ? "all" : String(maxDepth)}
           onChange={(event) => {
             if (event.target.value === "all") {
