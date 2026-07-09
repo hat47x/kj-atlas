@@ -371,6 +371,10 @@ describe("UX Operability regression contracts", () => {
     // aria-live count reuses the existing factual (non-evaluative) copy.
     expect(barSource).toContain('t("side_panel.selection.card_multiple"');
     expect(barSource).toContain('aria-live="polite"');
+    expect(barSource).toContain('data-ui-region="bulk-critique-reason"');
+    expect(barSource).toContain('t("bulk_ops_bar.add_critique_reason")');
+    expect(appSource).toContain("const handleBulkAddCritiqueReason = useCallback");
+    expect(appSource).toContain('t("app.history.card.critique_updated")');
 
     // Bundle-into-island and delete delegate to the EXISTING selection-
     // generic handlers (already one history step each) — no duplicated

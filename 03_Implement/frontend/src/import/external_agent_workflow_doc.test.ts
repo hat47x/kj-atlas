@@ -23,7 +23,7 @@ function findRepoRoot(startDir: string): string {
 const docPath = path.join(findRepoRoot(__dirname), "04_Documentation", "external_agent_workflow.md");
 
 function extractJsonFencedBlocks(markdown: string): string[] {
-  const pattern = /```json\n([\s\S]*?)```/g;
+  const pattern = /```json\r?\n([\s\S]*?)```/g;
   return Array.from(markdown.matchAll(pattern), (match) => match[1]);
 }
 
