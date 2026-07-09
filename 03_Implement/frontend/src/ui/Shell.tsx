@@ -105,7 +105,7 @@ export function Shell({
               rowGap: 6,
             }}
           >
-            <span style={{ whiteSpace: "nowrap" }}>{title}</span>
+            <h1 style={{ margin: 0, fontSize: 16, lineHeight: 1.25, fontWeight: 700, whiteSpace: "nowrap" }}>{title}</h1>
             {hasUnsavedChanges ? (
               <span
                 style={{

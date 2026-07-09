@@ -50,7 +50,7 @@ export function DomainStateFilterBar({ filter, onFilterChange }: DomainStateFilt
         marginBottom: 6,
       }}
     >
-      <span style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", marginRight: 4, lineHeight: "20px" }}>
+      <span style={{ fontSize: 10, fontWeight: 600, color: "#475569", marginRight: 4, lineHeight: "20px" }}>
         {t("domain_filter.label")}
       </span>
       {(["fact", "claim", "hypothesis"] as const).map((ct) => (
