@@ -86,11 +86,30 @@ class Card(BaseModel):
     textReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
+class CardMeta(BaseModel):
+    # DOMAIN-TRACE-01 (schemas.md §15): non-subject trace metadata only.
+    # Pydantic's default extra="ignore" implements §15.3's fail-closed rule
+    # for unknown meta keys — subject/provenance keys (author, owner...)
+    # are dropped rather than persisted until CARD-META-UI-01 settles.
+    seq: float | None = Field(default=None, exclude_if=lambda value: value is None)
+    source: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
+class CardKa(BaseModel):
+    # DOMAIN-KA-01 (schemas.md §17): KA-method fields, separate from
+    # Card.text (which stays the event-of-record). extra="ignore" (default)
+    # drops unknown keys, matching CardMeta's fail-closed handling.
+    voice: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    value: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
 class CardV2(Card):
     textReviewed: bool | None = None
     holdState: Literal["held", "pending", "shelved"] | None = Field(
         default=None, exclude_if=lambda value: value is None
     )
+    meta: CardMeta | None = Field(default=None, exclude_if=lambda value: value is None)
+    ka: CardKa | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 class EdgeV1(BaseModel):
@@ -110,7 +129,12 @@ class EdgeV2(BaseModel):
     toKind: Literal["card", "island"] | None = Field(
         default=None, exclude_if=lambda value: value is None
     )
-    type: Literal["related", "negate"]
+    # DOMAIN-KJ-01 (schemas.md §3.3.2): known values are
+    # related/negate/causal/mutual/equivalence, but the server accepts any
+    # non-empty string so that documents carrying an UNKNOWN (future/foreign)
+    # edge type round-trip through save without a 422 rejection. Rejecting
+    # here was the second data-loss vector alongside the frontend validator.
+    type: str = Field(min_length=1)
 
 
 class Point(BaseModel):
@@ -276,7 +300,7 @@ class RelationSummary(BaseModel):
     createdAt: datetime
     islandAId: str
     islandBId: str
-    relationType: Literal["related", "negate", "unknown"]
+    relationType: Literal["related", "negate", "causal", "mutual", "equivalence", "unknown"]
     derived: bool
     text: str = Field(max_length=RELATION_SUMMARY_TEXT_MAX_LENGTH)
     reviewed: bool = False
@@ -609,6 +633,16 @@ class ShelfEntry(BaseModel):
     reason: str | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
+class ContradictionSignalDecision(BaseModel):
+    """DOMAIN-EXPR-04 (schemas.md §16.2): human review decision on an
+    analyzeContradictions() signal. Reuses CE2-PROPOSAL-IF's ProposalStatus
+    vocabulary — not a new AI-authority grant (ADR-0041 CVI-2/CVI-3)."""
+
+    signatureKey: str
+    status: Literal["accepted", "held", "rejected"]
+    decidedAt: datetime
+
+
 class DocumentV2(BaseModel):
     version: Literal[2]
     id: str
@@ -625,6 +659,7 @@ class DocumentV2(BaseModel):
     evidenceLinks: list[EvidenceLink] | None = Field(default=None, exclude_if=lambda value: value is None)
     patchApplyLog: list[PatchApplyLogEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
     mergeSuggestionDecisions: list[MergeSuggestionDecision] | None = Field(default=None, exclude_if=lambda value: value is None)
+    contradictionSignalDecisions: list[ContradictionSignalDecision] | None = Field(default=None, exclude_if=lambda value: value is None)
     critiqueInputs: list[CritiqueInput] | None = Field(default=None, exclude_if=lambda value: value is None)
     reproposalDiffs: list[ReproposalDiff] | None = Field(default=None, exclude_if=lambda value: value is None)
     reviewAttribution: ReviewAttribution | None = Field(default=None, exclude_if=lambda value: value is None)

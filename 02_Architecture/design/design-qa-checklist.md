@@ -36,3 +36,91 @@
 
 - 第1回対象: 段階1（カードメタ行＋凡例=UX-VISUAL-01・空状態=UX-EMPTY-01）実装後。
 - 関連: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`、`04_Documentation/ui_catalog.md`（スクショ再生成手順）。
+
+## 第2回 2026-07-09: DOMAIN-KA-01 / DOMAIN-TRACE-01 / UX-SHARE-01 / UI-QUALITY-A11Y-02（選択コンテキスト・共有前確認）
+
+出典: 03_Implement/frontend/scripts/capture_design_conformance_20260709.mjs で実機（Docker Playwright, Chromium）スクリーンショット6枚を取得し、実装者（Claude Code）が自己申告で本チェックリストに照合。外部の Claude Design レビュー依頼は行っていない（このラウンドは自己適合確認）。
+
+| 節 | 結果 | 所見 |
+| --- | --- | --- |
+| A. 視覚言語 | △→✓ | slate階層・amber保持系限定・4チャネル・タイポ/角丸は準拠。**発見・修正**: 共有直前サマリのSafeMode表示が「SafeMode: セーフモード: ON」と二重表記（`safeModeIndicator.label` が既に接頭辞を含むのに、i18nテンプレートで再度ラップしていた）。`SharePanel.tsx` から二重ラップを除去し、未使用化した `share.panel.pre_share_gate.safe_mode` キーを両ロケールから削除。回帰アンカーを追加。 |
+| B. 状態遷移 | ✓ | 通し番号バッジは既定OFF・View トグルでのみON（スクショで確認）。KA欄はキャンバス非表示（選択コンテキスト限定、DOMAIN-KA-01 AC-4）。 |
+| C. 核の保護 | ✓ | 共有直前サマリは件数のみ（%・スコア・準備度語彙なし）。SafeMode既定ON・出典参照トグル既定OFF をスクショで確認。 |
+| D. a11y/契約 | ✓ | 選択コンテキストの読み上げ順が型→保持系→確認→根拠の順であることをスクショと既存e2eの双方で確認。 |
+
+- 残存所見（△・非ブロッキング）: 選択コンテキストに主張種別・根拠件数が要約チップと個別ブロックの二重表示として残っている（既存挙動、本ラウンドの変更対象外）。次回の見直し対象として記録するのみ。
+- 検証: typecheck 0 / vitest 963 passed / 関連 e2e 7 passed（`pre_share_summary_gate.spec.ts`, `a11y_selection_and_share_gate.spec.ts`）。
+- 生成物: `03_Implement/frontend/scripts/capture_design_conformance_20260709.mjs`（一時利用。`04_Documentation/assets/screenshots/` の正規セットには追加しない）。
+
+## 第3回 2026-07-09: UX-MENU-01（メニューバー・スリムバー）— 初回照合、乖離なし
+
+UX-MENU-01 は完了記録に「複雑性予算」の自己申告はあるが、本チェックリスト（design-qa-checklist）や実機スクショによる照合記録が無かった。`03_Implement/frontend/scripts/capture_design_conformance_menu_20260709.mjs` で1440/768/390px の7状態（メニュー閉/ファイル・作業・共有メニュー開/タブレット幅/モバイル閉・開）を実機取得し照合。
+
+| 節 | 結果 | 所見 |
+| --- | --- | --- |
+| A. 視覚言語 | ✓ | 6分類（ファイル/編集/カード/表示/作業/共有）のタイポ・角丸・余白が既存UIと一致。開いた状態の背景色（`#e0e7ff`）はamberではなく選択系の色で、保持系チャネルと衝突しない。 |
+| B. 状態遷移 | ✓ | 「保存」は変更なし時は淡色で無効表示、「複製」「元に戻す」等も対象なし時に正しく無効化される。 |
+| C. 核の保護 | ✓ | 点数・ランク語彙なし。 |
+| D. a11y/契約 | ✓ | `role="menubar"`/`role="menuitem"`/`role="menu"` 付与済み。390px未満でメニューが単一「メニュー」トリガへ集約（AC-3）。 |
+
+- 特記: 「作業」メニューは差分/マージ/AI提案/診断/文章化の個別項目を持たず「作業モード」単一入口（WorkModePanel が単一スクロール領域であるため、存在しないタブ構造を偽装しない設計判断。UI-QUALITY-A11Y-02 の作業モードタブ対象外判断と整合）。「共有」メニューも同様に「共有と再現」単一入口＋SafeModeトグルのみで、共有前確認・公開範囲・出典参照等はSharePanel側に委譲（重複UI回避）。いずれも意図的な設計判断であり乖離ではない。
+- 390px時のスリムバーが8個のボタン（元に戻す/やり直す/詳細/作業モード/新規カード/島を作成/削除/保存）を維持しているのは、Round 5 レッドライン草案の「スリムバー＝＋新規のみ」という初期案ではなく、AC-1で明文化された最終決定（`data-ui-core-action` 7件を幅に関わらず不変）に従った正しい実装。設計文書の初期草案と最終ACの差分であり、実装側の乖離ではない。
+- **本ラウンドでの発見: 0件**（クリーンパス）。
+- 検証: 実機スクショ7枚を目視確認のみ（機能自体は既存e2e `menu_bar.spec.ts` 等で継続的に検証済みのため、新規テスト追加は行わない）。
+
+## 第4回 2026-07-09: UX-SCALE-01（ミニマップ・一括操作バー・島の直交描線）— 実バグ発見・修正
+
+design-qa-checklist の記録が無かった。`03_Implement/frontend/scripts/capture_design_conformance_scale_20260709.mjs` でミニマップ展開・L字型島（5枚→複雑度 #5）・3枚選択時の一括操作バーを実機取得。
+
+| 節 | 結果 | 所見 |
+| --- | --- | --- |
+| A. 視覚言語 | ✗→✓ | **発見・修正**: 一括操作バーの「3件のカードを選択中」がスペースを含まない日本語テキストのため、`whiteSpace: "nowrap"` 欠落により1文字ずつ縦に折り返っていた（隣接ボタン群は同プロパティ設定済みで正常）。既存 e2e は DOM テキスト内容のみ検証するため未検出だった。`BulkOperationsBar.tsx` を修正し回帰アンカーを追加。 |
+| B. 状態遷移 | ✓ | 島の折りたたみ（「折りたたむ」ボタン）・ミニマップの展開/折りたたみは想定どおり。 |
+| C. 核の保護 | ✓ | 島の複雑度バッジ「#5」は構造上の頂点数由来カウントであり、ランク/評価語ではない（既存設計判断どおり）。 |
+| D. a11y/契約 | ✓ | 一括操作バーの件数は `aria-live="polite"`。既存 e2e（`bulk_operations_bar.spec.ts`）で操作契約は別途検証済み。 |
+
+- 検証: typecheck 0 / vitest 963 passed / `bulk_operations_bar.spec.ts` 4/4 passed。
+- 生成物: `03_Implement/frontend/scripts/capture_design_conformance_scale_20260709.mjs`（一時利用）。
+
+## 第5回 2026-07-09: DOMAIN-KJ-01（関係記号の描画）— クリーンパス（誤検知1件を解消して確認）
+
+design-qa-checklist の記録が無かった。本機能は初期実装時（2026-07-08）に「外側 `<svg>` の x/y 属性が HTML 埋め込みでは無効のため、全関係線が +100000px 画面外に描画され一度も表示されていなかった」という重大な描画バグを含んでいた経緯があり（同issueの完了記録に記載、その場で発見・修正済み）、視覚リスクが高い機能と判断し優先的に照合した。`03_Implement/frontend/scripts/capture_design_conformance_kj_20260709.mjs` で因果・相互・同値・対立・未知種別の5種別を1画面に並べて実機取得。
+
+| 節 | 結果 | 所見 |
+| --- | --- | --- |
+| A. 視覚言語 | ✓ | 因果=単方向矢印（青）・相互=両端矢印・同値=中点「=」・対立=破線・未知種別=無地。全て `#64748b`（中立slate）で色チャネルを消費しない。 |
+| B. 状態遷移 | ✓ | 選択時に線が青くハイライトされる既存挙動を確認。 |
+| C. 核の保護 | ✓ | 記号は種別区別のみで評価語彙なし。 |
+| D. a11y/契約 | ✓（既存e2eで別途検証済み） | インスペクタ操作は本ラウンドのスクショでは全体像に収まらなかったため未確認だが、`edge_type_vocabulary.spec.ts`（3/3 passed）で既に固定されている。 |
+
+- **誤検知の解消**: 全体像スクショで「相互（mutual）」の逆方向矢印（相互A側）が視認できず、当初は描画欠落を疑った。しかし境界ボックス直接検査（`data-edge-symbol="arrow-from"`）で幅12.6×高さ12.1pxの三角形ポリゴンが正しい座標（カード境界近傍）に存在することを確認。フルページスクショの縮小表示でカード境界に近接した小さな三角形が視認しづらかっただけで、描画自体は正しい。**今後の教訓**: 小さな図形要素の欠落を疑う場合は、スクショの目視だけでなく `boundingBox()`/`outerHTML` 直接検査で確定させる。
+- **本ラウンドでの発見: 0件**（誤検知1件を解消した上でのクリーンパス）。
+
+## 第6回 2026-07-09: UX-NAV-01（作業モード面・領域4の実体化）— 実バグ発見・修正
+
+design-qa-checklist の記録が無かった。`03_Implement/frontend/scripts/capture_design_conformance_navmode_20260709.mjs` で「詳細」OFF時の作業モード空状態・選択コンテキスト（advanced OFF）・「詳細」ON時の作業モード（NarrativesPanel/HilRsWorkflowPanel）・Escapeでのフォーカス復帰後を実機取得。
+
+| 節 | 結果 | 所見 |
+| --- | --- | --- |
+| A. 視覚言語 | ✓ | パネル見出し（fontSize:15/fontWeight:800）は `StartPanel.tsx` 等と共通の既存パネルタイトル規約であり、本Issue固有の乖離ではない。amber/スコア語彙なし。 |
+| B. 状態遷移 | ✗→✓ | **発見・修正**: 「詳細」OFF時に作業モードを開くと表示される空状態文言が「現在は詳細表示を有効にしてサイドバーから利用できます」という、AC-2でのサイドバーからの完全移設（`SidePanel.tsx` に該当パネルの参照ゼロを確認済み）より前の古い案内のまま残存していた。実際には「詳細」を有効にすると同じ作業モード内にそのまま表示される（サイドバーには表示されない）。両ロケールの `work_mode.content_pending` を実態に合わせて修正。 |
+| C. 核の保護 | ✓ | 作業モード内のコンテンツ（文章化ドラフト・統合候補・パッチ判断）にスコア/ランク語彙なし。 |
+| D. a11y/契約 | ✓ | `role="dialog"` `aria-modal="true"`・Escapeでトリガへのfocus復帰（スクショ・スクリプト内アサーション両方で確認）・Tabトラップ実装済み。AC-4（work-modeのタブ/見出しに「レビュー」を再利用しない）も見出し文字列で確認。 |
+
+- **確認（非乖離）**: 「詳細」ONで選択コンテキストaside側に追加表示される項目（絞込みチップ・履歴・ガイド付きフロー・集約された関係線）は、AC-2の移設対象（NarrativesPanel/HilRsWorkflowPanel/差分）とは別カテゴリの既存advancedゲート機能であり、本Issueのスコープ外（issue本文 3.2 非目標に明記のUX-COMPLEXITY-01可視性規律との重複禁止と整合）。
+- 検証: typecheck 0 / vitest 963 passed（nix devShell, Node 20 経由。当初WSLシステムnode 18で `crypto is not defined` 26件誤検出したが、devShell再実行で解消・環境要因と確定） / e2e `complexity_budget_foregrounding.spec.ts` 3/3 passed。
+- 生成物: `03_Implement/frontend/scripts/capture_design_conformance_navmode_20260709.mjs`（一時利用）。
+
+## 第7回 2026-07-09: UX-EMPTY-01（空キャンバスの中核ループ誘導）— クリーンパス
+
+design-qa-checklist の記録が無かった。`03_Implement/frontend/scripts/capture_design_conformance_empty_20260709.mjs` で空キャンバスヒント表示・最初のカード作成後の消滅・表示パネルからの再表示導線を実機取得。
+
+| 節 | 結果 | 所見 |
+| --- | --- | --- |
+| A. 視覚言語 | ✓ | タイトル14/800・本文13・保留注記12で規約どおり。角丸8（外枠）/6（ボタン）・間隔8/12も一致。CJK文言の折り返しも正常（Round 4で発見したnowrap欠落のような1文字ずつの折り返しは無し）。CTA配色（teal `#0f766e`）は主張種別チップ（緑系だが別の色相・別の視覚役割＝バッジでなくボタン）と混同しない。 |
+| B. 状態遷移 | ✓ | カード0枚時のみ出現・最初のカード作成で即消滅（スクショで確認）。既存e2e `empty_canvas_onboarding.spec.ts` で完了状態の永続化（新規文書作成でも再出現しない）・表示パネルからの再表示＋ステータス通知を確認済み。 |
+| C. 核の保護 | ✓ | 「曖昧なまま置いておいて大丈夫です」を明示し核思想（保留は健全）を伝達。スコア/準備度語彙なし・AI言及なし（provider=none整合）。 |
+| D. a11y/契約 | ✓ | `aria-live="polite"`。既存e2eで「フォーカスをヒント内へ奪わない」ことを `document.activeElement` 直接検査で確認済み（本ラウンドで再確認）。 |
+
+- **本ラウンドでの発見: 0件**（クリーンパス。既存e2eが核となる振る舞い＝出現/消滅/永続化/再表示を既にプログラム的に固定しており、本レビューはCSS/レイアウト面（e2eの盲点）を実機で追加確認する位置づけ）。
+- 生成物: `03_Implement/frontend/scripts/capture_design_conformance_empty_20260709.mjs`（一時利用）。

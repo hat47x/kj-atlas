@@ -1,11 +1,11 @@
 # Issue Draft: DOMAIN-EXPR-04 根拠・主張・矛盾の人間レビュー第一級化と成果物接続
 
 - Type: Feature request
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: Codex
+- Owner: Codex / Claude Code
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/e2e/`, `02_Architecture/schemas.md`, `04_Documentation/`
 - Related Backlog: `DOMAIN-EXPR-04`
 - Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/issues/issue-PRODUCT-VALUE-03-reviewable-outcome-package.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/schemas.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
@@ -84,12 +84,12 @@ PRODUCT-VALUE-03と連携。
 
 ## 4) 受入条件 / Acceptance criteria
 
-- [ ] カード/関係の根拠（supports/contradicts）を画面で確認できる。
-- [ ] 矛盾を可逆な状態（未確認/確認済み/保留/解決済み）として扱える。
-- [ ] 成果物（export/narrative/review pack）に根拠への戻り方・未解決矛盾・保留点が含まれる。
-- [ ] 共有時 SafeMode 既定ONで未レビュー本文・生根拠が漏れない（share/export 境界非後退）。
-- [ ] AIは矛盾・真偽を自動確定しない（proposal-only、考えるべき点の提示に留まる）。
-- [ ] schema拡張時は `schemas.md` 先行更新・往復互換。E2Eで根拠確認→成果物反映を検証。
+- [x] カード/関係の根拠（supports/contradicts）を画面で確認できる。
+- [x] 矛盾を可逆な状態（未確認/確認済み/保留/解決済み。加えて島レベル検出シグナルの採用/保留/却下 — 2026-07-08 追加）として扱える。
+- [x] 成果物（narrative）に根拠への戻り方・未解決矛盾・保留点が含まれる。review pack バンドル契約の拡張は `PRODUCT-VALUE-03`/`PRODUCT-QA-01` の所有スコープであり本Issueでは変更しない（2026-07-08 スコープ確認）。
+- [x] 共有時 SafeMode 既定ONで未レビュー本文・生根拠が漏れない（share/export 境界非後退）。矛盾シグナル決定は選択コンテキストのみに表示し、共有契約に新規項目を追加しない。
+- [x] AIは矛盾・真偽を自動確定しない（proposal-only、考えるべき点の提示に留まる）。`analyzeContradictions()`（決定論的ヒューリスティック、AI/LLM呼び出しなし）は書き込み経路を持たず、決定は常に人間のUI操作のみ。
+- [x] schema拡張時は `schemas.md` 先行更新・往復互換。E2Eで根拠確認→成果物反映を検証。
 
 ## 5) 検証計画 / Validation plan
 
@@ -132,3 +132,32 @@ PRODUCT-VALUE-03と連携。
 - 判定: 現在のスキーマ中立スライスは **Go**。根拠・矛盾の画面検査、Review Pack Detail export の trace file 確認、read-only reviewer の編集不可境界を代表操作として再現できる。
 - 残る範囲: 矛盾状態の永続的な状態遷移、AI補助による矛盾候補生成、成果物契約の拡張は本追認に含めない。
 - ADR影響: 既存 `evidenceLinks` / `claimType` / Review Pack trace の確認に留まるため、この追認単体ではADR不要。成果物契約、SafeMode/share-export境界、矛盾状態遷移を変える場合はADR更新が必要。
+
+## 完了記録 2026-07-08（Claude Code）: AI/検出ロジック補助による矛盾候補生成
+
+上記までで未決着だった「残る範囲」の最後の1点（AI補助による矛盾候補生成）を確定・実装した。成果物契約の拡張（review pack バンドル）は引き続き本Issueのスコープ外（`PRODUCT-VALUE-03`/`PRODUCT-QA-01` 所有）として着手していない。
+
+### 要件の再定義（新規ADR不要と判断した根拠）
+
+1. **既存の決定論的検出エンジンを「AI補助」の実体として採用**: `analyzeContradictions()`（`contradiction_checks.ts`）はキーワード/構造ヒューリスティックのみで動作し AI/LLM 呼び出しを一切持たない。Issue 本文の既存記述「AIや検出ロジックは『矛盾かもしれない箇所』を示すに留める」は AI と検出ロジックを同列に事前承認しており、新規の AI 権限付与を要しない。
+2. **個別カード間 `EvidenceLink` の自動生成を明確に不採用**: シグナルは島（island）レベルの集約検出であり、特定カードペアへ機械的に対応付けると検出精度の実態を超えた偽の特定関係を作ることになる（調査で確認: C001〜C004 のいずれも `entityRefs` はカードペアではなく島/エッジ/relationSummary 単位）。代わりに、シグナル自体に人間の可逆なレビュー決定（採用/保留/却下）を付与する設計に変更した。
+3. **AI権限境界の再利用（ADR-0041 CVI-2/CVI-3 の適用、拡張ではない）**: 新しい `ContradictionSignalReviewStatus = "accepted" | "held" | "rejected"` は、既存 `CE2-LOW-RISK-AI-ASSIST`（schemas.md §1.2）の `ProposalStatus` 語彙をそのまま転用したもの。検出器が決定を書き込む経路は一切存在せず（`analyzeContradictions()` は純粋関数のまま）、書き込みは常に人間のUI操作（1操作=1履歴ステップ）のみ。この構造により CVI-2 proposal-only を「構造的に」満たす（新規許可の追加ではなく既存契約の別データソースへの再適用）。
+
+### 実装（契約先行）
+
+- **schemas.md §16（新設）**: `DocumentV2.contradictionSignalDecisions?: ContradictionSignalDecision[]`。`signatureKey`（シグナルの決定論的識別子、`${code}:${pairKey ?? entityRefs[0].idOrSignature}`）＋`status`＋`decidedAt`。シグナル自体は永続化せず、`mergeSuggestionDecisions` の「候補生成物と決定を分離」パターンを踏襲。"proposed"（未決定）は永続化しない値— 配列に該当キーが無いことが「未決定」を意味する（取り消し操作はエントリ削除。DOMAIN-TRACE-01 の `Card.meta` 空値削除と同じ規約）。
+- **往復（3経路）**: ①寛容 `validate.ts parseContradictionSignalDecisions`（`mergeSuggestionDecisions` と同じ fail-closed パターン）②厳格 `validate_doc.ts validateContradictionSignalDecisionEntry`（`hasOnlyKeys` + enum検証）③バックエンド `models.py ContradictionSignalDecision`（`status: Literal["accepted","held","rejected"]` — 不正値は422で拒否、既存 `mergeSuggestionDecisions.decision` と同じ enforcement）。CE3パッチ経路（`patch_apply.ts`）はドキュメントレベル配列に触れないため対応不要（既存 `mergeSuggestionDecisions` も同様に対象外であることを確認済み）。
+- **UI（選択非依存・常時表示）**: SidePanel の「矛盾シグナル」パネル（Outline diagnostics 内、`<details>` で2箇所重複している既存構造の両方）に、各シグナルへ「採用にする/保留にする/却下する/決定を取り消す」ボタンと現在状態バッジを追加。**シグナルは決定状態に関わらず常に表示**（却下しても非表示にしない — 「却下」は検討済みの記録であり隠蔽ではない）。決定変更は `applyDocumentChange` による1操作=1履歴ステップ。
+- **成果物・共有境界は変更しない**: `bundle_export.ts`（review pack契約）・narrative export・SharePanel は本拡張で一切触れていない。決定状態は選択コンテキスト内のUIにのみ表示される。
+
+### 検証
+
+- typecheck 0 / vitest **952 passed**（185 files。往復4件・シグネチャ関数3件・回帰アンカー1件を追加）
+- backend: ruff クリーン / pytest **286 passed**（PUT+GET 往復1件・不正status 422拒否1件を追加）
+- e2e 新規 `contradiction_signal_decision.spec.ts` **2/2 passed**（採用→バッジ表示→取り消しで消滅／保留と却下は排他かつ却下後もシグナル可視／PUTペイロード実測でのsignatureKey往復）
+- 関連 e2e 非回帰: `ops_recovery_guidance.spec.ts`（診断進捗/キャンセル）・`complexity_budget_foregrounding.spec.ts`（Advanced パネル開閉）・`domain_expression_keyboard_access.spec.ts`（既存の根拠/矛盾キーボード導線）・`card_trace_meta.spec.ts`・`edge_type_vocabulary.spec.ts`・`review_pack_trace_export.spec.ts` すべて確認。
+
+### 残課題（本Issueのスコープ外・別issue）
+
+- review pack バンドル（`bundle_export.ts` の diagnostics.md / contradiction_trace_*.md）への決定状態の反映は、成果物契約変更を伴うため `PRODUCT-VALUE-03`/`PRODUCT-QA-01` 側での判断に委ねる。
+- 島レベルの集約シグナルから具体的なカードペアの `EvidenceLink`（`contradictionState`）へ手動でエスカレーションする導線は、本Issueでは意図的に作らなかった（検出精度を偽ることになるため）。将来的にカード単位の検出精度が上がった場合に別途検討する。

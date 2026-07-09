@@ -297,18 +297,61 @@ export type Card = {
 
 ### 3.3 Edge
 
-```ts
-export type EdgeType = "related"; // MVPでは1種類のみ
+DOMAIN-KJ-01（ADR-0048 D3 採択）で、KJ法原典の関係記号に対応する語彙へ**追加的に**拡張した。`version: 2` を維持し、既存データの意味は変えない。
 
-export type Edge = {
+```ts
+export type KnownEdgeType =
+  | "related"      // 関連（無方向・既定）
+  | "negate"       // 対立（無方向）。KJ法の「対立」の永続値（下記 語彙境界 参照）
+  | "causal"       // 因果（有向: fromId=原因 → toId=結果）
+  | "mutual"       // 相互（無方向・相互依存 ⇄）
+  | "equivalence"; // 同値（無方向・「同じことを言っている」という記述）
+
+// 未知種別の保全（ADR-0048 D3）: 取り込み時に未知の type 文字列を破棄せず、
+// そのまま保持する。表示・挙動の解決は resolveKnownEdgeType() ヘルパが行い、
+// 未知種別は「関連（無方向）」として扱う。型注釈上は既知5値の補完を保ちつつ
+// 任意文字列を受理する（LiteralUnion 形式）。
+export type EdgeType = KnownEdgeType | (string & {});
+
+export type EdgeV1 = {
   id: string;
   fromId: string; // Card.id
   toId: string;   // Card.id
+  type: "related"; // version: 1 の契約は不変
+};
+
+export type EdgeEndpointKind = "card" | "island";
+
+export type Edge = {
+  id: string;
+  fromId: string;              // Card.id または Island.id（fromKind に従う）
+  toId: string;
+  fromKind?: EdgeEndpointKind; // 省略時 "card"
+  toKind?: EdgeEndpointKind;   // 省略時 "card"
   type: EdgeType;
 };
 ```
 
-> 備考：否定線などは将来 `EdgeType` を拡張する。
+#### 3.3.1 方向規約
+
+- **`causal` のみ有向**とし、`fromId`（原因）→ `toId`（結果）を意味方向とする。
+- `related` / `negate` / `mutual` / `equivalence` および未知種別は**無方向**であり、描画・集約・エクスポートで端点順序に意味を持たせない。
+- 集約（島間派生エッジ・abstract map の関係行）では、無方向種別はペアを正規化してよいが、**`causal` はペア正規化を行わず方向を保存**する。
+
+#### 3.3.2 語彙境界（DOMAIN-KJ-01 T1 確定）
+
+1. **対立 vs `negate`（Edge）vs `contradicts`（EvidenceLink）**
+   - `negate` は KJ法の「対立」の**永続値**である。新たな `opposition` 値は追加しない（重複語彙の禁止）。UI 表示名は「否定」から「対立」へ改める。既存文書は無変更のまま新表示に乗る。
+   - `contradicts`（EvidenceLink）は**根拠レベルの反証**（ある根拠が主張を反証する）であり、カード/島どうしの**構造上の関係**（Edge）とは独立の機構として併存する。
+2. **同値（`equivalence`）vs canonical 化（`Card.canonicalId` / `sources`）**
+   - `equivalence` は「2枚が同じことを言っている」という**記述**（関係の注釈）。両カードは第一級のまま残り、線の削除でいつでも取り消せる。
+   - canonical 化は統合の**実行**（操作）。同値線は統合を**自動実行しない**（AI 自動グルーピングの確定禁止 = ADR-0048 D3 反パターン）。同値線は人間の統合判断への入力に留まる。
+3. **未知種別の保全（往復規約）**
+   - 寛容（import）・厳格（契約検証）の両モードで、未知の `type` を理由にエッジを**破棄しない**。`type` は非空文字列であれば受理する。
+   - 既知5種別以外は表示・挙動上「関連（無方向）」として解決する（`resolveKnownEdgeType()`）。
+   - バックエンド（Pydantic）も同じ規約（`type: 非空 str`）で受理する。export → import → save の往復で `type` 文字列は不変とする。
+
+> 既定値: 新規に作成される関係線の既定は `related`（無方向）とし、種別の確定を強制しない（早すぎる収束の防止 = ADR-0001 P-01/P-04）。
 
 ### 3.4 Document
 
@@ -349,6 +392,62 @@ export type EvidenceLink = {
   toCardId: string;
   note?: string;
   createdAt?: string; // ISO 8601
+  /** DOMAIN-EXPR-04: 可逆な矛盾レビュー状態 */
+  contradictionState?: "unconfirmed" | "confirmed" | "held" | "resolved";
+};
+
+export type NarrativeCheckReference = { id: string; kind: "card" | "island" };
+export type NarrativeCheckIssue = {
+  severity: "info" | "warn" | "error";
+  message: string;
+  references?: NarrativeCheckReference[];
+};
+export type NarrativeCheck = {
+  id: string;
+  createdAt: string; // ISO 8601
+  kind: "consistency";
+  issues: NarrativeCheckIssue[];
+};
+
+export type Narrative = {
+  id: string;
+  title: string;
+  text: string;
+  createdAt?: string; // ISO 8601
+  basedOnReadingOrder?: string[];
+  reviewed: boolean;
+  checks?: NarrativeCheck[];
+};
+
+export type RelationSummary = {
+  id: string;
+  createdAt: string; // ISO 8601
+  islandAId: string;
+  islandBId: string;
+  // KnownEdgeType（§3.3）に追随する。未知/解決不能な種別は "unknown" へ正規化して保持する。
+  relationType: "related" | "negate" | "causal" | "mutual" | "equivalence" | "unknown";
+  derived: boolean;
+  text: string;
+  reviewed: boolean;
+  groundingCardIds: string[];
+  groundingEdgeIds: string[];
+  warnings?: string[];
+  sourceSignature: string;
+  history?: RelationSummaryHistoryEntry[];
+};
+
+export type RelationSummaryHistoryEntry = {
+  id: string;
+  createdAt: string; // ISO 8601
+  changeKind: "ai" | "manual" | "rollback" | "import" | "unknown";
+  fromText: string | null;
+  toText: string | null;
+  fromReviewed: boolean | null;
+  toReviewed: boolean | null;
+  warningsSnapshot?: string[];
+  groundingCardIdsSnapshot?: string[];
+  groundingEdgeIdsSnapshot?: string[];
+  note?: string;
 };
 
 export type CritiqueInput = {
@@ -427,6 +526,7 @@ export type DocumentV2 = {
 支援レベル:
 
 - `claimType`、`fromKind`、`toKind`、`evidenceLinks` は `DocumentV2` スナップショット内で往復保持する。
+- `edges[].type` は未知種別を含めて往復保持する（§3.3.2 の保全規約）。未知種別を理由にエッジを破棄・改変してはならない。
 - `evidenceLinks` は根拠・反証のリンクであり、SafeMode/share/exportで未レビュー本文や根拠情報をどう扱うかは共有前確認のポリシーに従う。
 - `patchApplyLog.stats` は evidence link の追加/削除件数（`upsertEvidenceLinks` / `deleteEvidenceLinks`）を含める。旧データで欠損する場合は0として扱う。
 - `critiqueInputs`、`reproposalDiffs`、`reviewAttribution`、`deterministicTieBreak` は A1 契約の往復保持対象である。MVPでは画面上の個別編集や個別CRUDを提供せず、import/export/API保存時の型・検証・監査境界を固定する。
@@ -451,10 +551,10 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 以下は **追加しやすい順に** 将来導入します。
 
 1. `Card.w/h`（カードサイズ）
-2. `EdgeType` の拡張（negate/hypothesis 等）
+2. ~~`EdgeType` の拡張（negate/hypothesis 等）~~ → DOMAIN-KJ-01 で導入済み（§3.3）
 3. `Island`（囲み、タイトル、所属）
 4. `Asset`（画像挿入・生成結果の参照）
-5. `Card.meta`（出自情報、タグ、引用元など。カード起票者・出典メタデータのUI/保存/redaction境界は `CARD-META-UI-01` で管理する）
+5. `Card.meta`（出自情報、タグ、引用元など。非主体メタの `seq`/`source` は DOMAIN-TRACE-01 で導入済み=§15。カード起票者など主体メタのUI/保存/redaction境界は引き続き `CARD-META-UI-01` で管理する）
 6. `Patch`（差分同期）
 
 ---
@@ -1089,3 +1189,145 @@ ADR-0040 Phase 2: 保留 Hold + 未統合 Shelf の第一級化。加算原則�
 - ADR: `ADR-0040-domain-expression-first-class-strategy.md`
 - Issue: `DOMAIN-EXPR-02-hold-and-pending-shelf`
 - Frontend: `03_Implement/frontend/src/domain/types.ts` (Card.holdState, ShelfEntry, DocumentV2.shelf)
+
+## 15. DOMAIN-TRACE-01 加算スキーマ拡張: Card.meta（通し番号・原データ遡及）（2026-07-08）
+
+ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィールドは optional。
+
+### 15.1 Card.meta
+
+- 型: `{ seq?: number; source?: string }` (optional)
+- Support level: `L2.5`（契約限定。往復保持を保証し、個別CRUDは保証しない）
+- 欠落時: 従来挙動（番号・出典を持たない通常カード）
+- 意味:
+  - `seq`: 任意の通し番号（有限数）。**自動連番を強制しない**（任意入力。一括採番機能があっても上書きは人間操作）。表示は「#N」。
+  - `source`: 原データへの遡及参照（原発話・観察記録の行番号・URL 等の**自由記述**）。リンク先の自動取得・プレビュー・埋め込みは行わない。
+
+### 15.2 語彙境界（`Card.sources` との役割分担・AC-1）
+
+- `Card.sources`（既存）: canonical 化における**統合元カード id** の配列。意味は不変（再定義禁止）。
+- `Card.meta.source`（本節）: **文書外部**の原データへの参照（自由記述）。カード id を指すためには使わない。
+- 起票者・作成者・最終更新者・所有者などの**主体（provenance/accountability）メタは `Card.meta` に含めない**。これらの UI・保存・redaction 境界は `CARD-META-UI-01`（Decision Queue: `CARD-META-UI-01-DQ-01`、Pending）の確定を待つ。本節が確定するのは非主体メタ（`seq`/`source`）のみである。
+
+### 15.3 取り込み境界（meta 内未知キーの fail-closed）
+
+- import/validate（寛容・厳格の両モード）は `Card.meta` の **既知キー（`seq`/`source`）のみを受理**し、未知キーは破棄する。
+- これは DOMAIN-KJ-01 の「未知エッジ種別の保全」（§3.3.2）と**対照的な意図的判断**である: 関係種別は語彙拡張の余地が採択済みだが、`Card.meta` の未知キーは主体メタ（起票者等）が `CARD-META-UI-01` の判断確定前に import 経由で永続化される抜け道になり得るため、fail-closed とする（同Issue AC-5「import 由来の provenance メタは非信頼データ」に整合）。
+- `CARD-META-UI-01` で新キーが採択された場合は、本節の既知キー集合を追加更新してから実装する（契約先行）。
+
+### 15.4 共有・書き出し境界（AC-4）
+
+- **共有向け書き出し（レビューパック等）では `Card.meta` を既定で含めない**。含める場合は共有前確認の明示トグル「出典参照を含める」（**既定 OFF**）＋警告1行（出典は内部情報を含み得る旨）で opt-in する。
+- 文書スナップショット自体の保存（`PUT /docs`）・バックアップ用途の文書 JSON 書き出しは redaction 対象外（既存の critique 等と同じ扱い。文書の完全な往復が目的のため）。
+- SafeMode の固定マスク（未レビュー本文）とは**独立の軸**として管理する。SafeMode の ON/OFF は本トグルの既定（OFF）を変えない。
+
+### 15.5 後方互換
+
+- optional のため `version: 2` を維持（破壊的変更なし）。未対応クライアント・旧データは欠落を従来挙動として解釈。
+- カード面（キャンバス）の通し番号バッジは**既定 OFF**（View パネルのトグルで表示）。CB-1 自己申告は issue 完了記録に記載する。
+
+### 15.6 参照
+
+- ADR: `ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂）
+- Issue: `DOMAIN-TRACE-01-serial-number-and-source-provenance`, `CARD-META-UI-01-card-provenance-metadata-ui-boundary`（主体メタの上位境界）
+- Frontend: `03_Implement/frontend/src/domain/types.ts` (Card.meta)
+
+## 16. DOMAIN-EXPR-04 加算スキーマ拡張: 矛盾シグナルのレビュー決定（2026-07-08）
+
+ADR-0040 Phase 4（根拠・主張・矛盾の人間レビュー第一級化）の残存スコープ。加算原則に従い、全フィールドは optional。AI権限境界は ADR-0041 CVI-2/CVI-3 の既存契約（本書 §1.2 CE2-LOW-RISK-AI-ASSIST の `ProposalStatus` 語彙）を新規許可なく再利用するため、新規ADRは不要と判断する。
+
+### 16.1 背景・スコープ
+
+既存の `analyzeContradictions()`（決定論的キーワード/構造ヒューリスティック。AI/LLM 呼び出しなし）は島・relationSummary 粒度の矛盾シグナル（C001〜C004）を検出済みだが、これまで「Focus」（画面遷移のみ）以外の操作導線がなく、シグナルへの人間の判断が持続化されない。本拡張は、シグナル自体に人間のレビュー決定（採用/保留/却下）を可逆に付与する。
+
+**個別カード間の `EvidenceLink` を自動生成することはしない**: シグナルは島レベルの集約検出であり、特定のカードペアへ機械的に対応付けると検出精度を偽ることになるため。成果物（review pack）契約の拡張は本拡張のスコープ外（`PRODUCT-VALUE-03`/`PRODUCT-QA-01` が所有）。
+
+### 16.2 ContradictionSignalDecision
+
+```ts
+export type ContradictionSignalReviewStatus = "accepted" | "held" | "rejected"; // CE2-PROPOSAL-IF の ProposalStatus 語彙を再利用（新規AI権限ではない）
+export type ContradictionSignalDecision = {
+  signatureKey: string; // `${signal.code}:${signal.pairKey ?? signal.entityRefs[0]?.idOrSignature ?? ""}`
+  status: ContradictionSignalReviewStatus;
+  decidedAt: string; // ISO 8601
+};
+```
+
+- 位置: `DocumentV2.contradictionSignalDecisions?: ContradictionSignalDecision[]`
+- Support level: `L2.5`（未分類。実装検証後にL2以上へ昇格）
+- 欠落時、または該当 `signatureKey` が配列内に無い場合: 「未決定」（暗黙の "proposed"）として扱う。"proposed" 自体は永続化しない値であり、決定を取り消す操作は配列から該当エントリを削除する（DOMAIN-TRACE-01 の `Card.meta` 空値削除と同じ規約）。
+- `signatureKey` は `analyzeContradictions()` の実行毎に再計算されるシグナル列から決定論的に導出する識別子であり、シグナル自体は永続化しない（`mergeSuggestionDecisions` が候補生成物と決定を分離する既存パターンに倣う）。
+
+### 16.3 AI/検出ロジック権限境界（ADR-0041 CVI-2/CVI-3 の適用であり拡張ではない）
+
+- `analyzeContradictions()` はシグナルを提示するのみで、`ContradictionSignalDecision` を書き込む経路を一切持たない。書き込みは人間のUI操作（1操作=1履歴ステップ）のみが行う。
+- `status` は常に人間の最初のクリックで決まり、AIや検出ロジックが `"accepted"` を自動付与することはない（CVI-2 proposal-only）。
+- 本拡張は新しい AI 権限を追加しない。既存 `CE2-LOW-RISK-AI-ASSIST`（本書 §1.2）の `ProposalStatus` 語彙を、決定論的ヒューリスティック検出器（`analyzeContradictions`）が生成する別種の候補（矛盾シグナル）に再適用するのみであり、ADR-0041 の枠内に留まる。
+
+### 16.4 UI・可逆性
+
+- 選択コンテキスト（SidePanel）の矛盾シグナル一覧に、各シグナルの現在状態（未決定/採用/保留/却下）と決定操作（採用にする/保留にする/却下する/決定を取り消す）を表示する。
+- シグナル自体は決定状態に関わらず常に表示する（却下しても非表示にしない）。「却下」は「検討済みで対象外と判断した」ことの記録であり、シグナルの隠蔽ではない。
+- 決定変更は `applyDocumentChange` による1操作=1履歴ステップ（⌘Z で取り消し可能）。
+
+### 16.5 成果物・共有境界
+
+- 本拡張は review pack バンドル契約（`bundle_export.ts` の `contradiction_trace_*.md` 等）を変更しない。narrative export / diagnostics.md への反映も本拡張のスコープに含めない（既存の `EvidenceLink.contradictionState` の narrative 反映で当該 AC は充足済み）。
+- SafeMode / share-export の既定挙動は変更しない（決定状態は選択コンテキストのみに表示し、共有前チェック契約に新規項目を追加しない）。
+
+### 16.6 後方互換
+
+- 新フィールドはすべて optional。旧データ（配列欠落）は「すべて未決定」として解釈する。
+- `version: 2` のまま（破壊的変更なし）。
+- 寛容/厳格の両検証モードで、`signatureKey`/`status`/`decidedAt` のいずれかが不正な要素は破棄し、他の正しい要素は保全する（`mergeSuggestionDecisions` の既存パターンに倣う）。
+
+### 16.7 参照
+
+- ADR: `ADR-0040-domain-expression-first-class-strategy.md`（Phase 4）, `ADR-0041-core-value-invariants-single-guard.md`（CVI-2/CVI-3）
+- Issue: `DOMAIN-EXPR-04-evidence-claim-contradiction-review`
+- Frontend: `03_Implement/frontend/src/domain/view/contradiction_checks.ts`（シグナル生成、変更なし）, `03_Implement/frontend/src/domain/types.ts`（ContradictionSignalDecision）, `03_Implement/frontend/src/ui/SidePanel.tsx`（決定UI）
+
+## 17. DOMAIN-KA-01 加算スキーマ拡張: KAカード種別（出来事/心の声/価値）（2026-07-08）
+
+ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィールドは optional。DOMAIN-TRACE-01（§15）と同じ D3改訂バッチでの条件付き採択。
+
+### 17.1 Card.ka
+
+```ts
+export type CardKa = {
+  voice?: string; // 心の声（言語化途中の一級データ。ガードレール: 嘘を書かない・話を盛らない・妄想しすぎない — UIヒント文言として反映し、機能では強制しない）
+  value?: string; // 価値（KA法における本質的価値の言語化）
+};
+```
+
+- 位置: `Card.ka?: CardKa`
+- Support level: `L2.5`（未分類。実装検証後にL2以上へ昇格）
+- 欠落時: 従来挙動（KA欄を持たない通常カード）
+- `Card.text` は従来どおり**出来事の正本**として維持する（意味変更なし）。`voice`/`value` は `text` に併記しない別フィールド。
+- 形状は `Card.meta`（§15.1）と同じ「関連する複数の optional フィールドを1つの入れ子オブジェクトへ束ねる」規約を踏襲する（フラットな `kaVoice`/`kaValue` ではなく `ka: { voice?, value? }`）。
+
+### 17.2 取り込み境界
+
+- import/validate（寛容・厳格の両モード）は `Card.ka` の既知キー（`voice`/`value`）のみを受理する。両方とも欠落・空文字列の場合は `ka` フィールド自体を省略する（`Card.meta` の空値削除規約と同じ）。
+- `claimType` とは直交（統合・再定義しない）。critique・holdState 等の既存カード状態にも影響しない。
+
+### 17.3 UI・非目標
+
+- 選択コンテキストの基本編集群に「心の声」「価値」欄（未入力時は折りたたみ/プレースホルダ）。**カード面（キャンバス）には表示しない**（AC-4: 初期表示アンカー非回帰。UX-VISUAL-01 のメタ行チャネル予算を追加消費しない）。
+- 非目標: 価値によるグルーピング画面の新設、AI による心の声/価値の自動抽出、カード面への3欄常時表示。
+
+### 17.4 成果物境界
+
+- レビューパック/narrative export への含め方は「本文に併記しない・任意セクション」とする。既定 OFF のオプトインで、設定時のみ KA 欄が設定されているカードを列挙する独立セクションとして追加する（`text` の本文とは混在させない）。
+- SafeMode でのテキスト露出可否は `card.text` と同じ判定チャネル（`SafeModePolicy.canExposeText("card.text", ...)`）を再利用する（KA 欄は `text` と同等以上に機微な言語化途中データのため、別基準を新設しない）。
+
+### 17.5 後方互換
+
+- 新フィールドはすべて optional。旧データ（`ka` 欄欠落）は従来挙動として解釈する。
+- `version: 2` のまま（破壊的変更なし）。
+
+### 17.6 参照
+
+- ADR: `ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂）
+- Issue: `DOMAIN-KA-01-ka-card-fields`
+- Frontend: `03_Implement/frontend/src/domain/types.ts`（Card.ka）

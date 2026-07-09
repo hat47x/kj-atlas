@@ -417,6 +417,117 @@ describe("buildExportBundle", () => {
     expect(markdownJoined).not.toContain("SECRET_TEXT_DO_NOT_LEAK");
   });
 
+  test("strips Card.meta from shared document.json by default (schemas.md 15.4)", () => {
+    const docWithMeta: DocumentV2 = {
+      ...baseDoc,
+      cards: baseDoc.cards.map((card) =>
+        card.id === "c1" ? { ...card, meta: { seq: 7, source: "INTERVIEW_A_LINE_12" } } : card,
+      ),
+    };
+
+    const files = buildExportBundle(docWithMeta, { camera: { zoom: 1 } }, {
+      rootFolderPath: "kj-atlas-export-20260101-010203",
+      safeMode: false,
+      includeOutline: false,
+      includeDiagnostics: false,
+      includeSelectedCardTraces: false,
+      selectedCardId: null,
+      deterministicNowIso: "2026-01-02T00:00:00.000Z",
+      readingMode: "islands",
+      reviewedOnly: false,
+      readingState: {
+        readingNavEnabled: false,
+        readingIndex: 0,
+        readingMode: "islands",
+        reviewedOnly: false,
+        safeMode: false,
+        generatedAt: "2026-01-02T00:00:00.000Z",
+      },
+    });
+
+    const documentJson = String(files.find((file) => file.path.endsWith("/document.json"))?.content ?? "");
+    expect(documentJson).not.toContain("INTERVIEW_A_LINE_12");
+    expect(documentJson).not.toContain('"meta"');
+    // The working document must stay untouched — only the shared copy is stripped.
+    expect(docWithMeta.cards.find((card) => card.id === "c1")?.meta).toEqual({ seq: 7, source: "INTERVIEW_A_LINE_12" });
+  });
+
+  test("keeps Card.meta in shared document.json when includeSourceReferences is opted in", () => {
+    const docWithMeta: DocumentV2 = {
+      ...baseDoc,
+      cards: baseDoc.cards.map((card) =>
+        card.id === "c1" ? { ...card, meta: { seq: 7, source: "INTERVIEW_A_LINE_12" } } : card,
+      ),
+    };
+
+    const files = buildExportBundle(docWithMeta, { camera: { zoom: 1 } }, {
+      rootFolderPath: "kj-atlas-export-20260101-010203",
+      safeMode: true,
+      includeOutline: false,
+      includeDiagnostics: false,
+      includeSelectedCardTraces: false,
+      selectedCardId: null,
+      deterministicNowIso: "2026-01-02T00:00:00.000Z",
+      readingMode: "islands",
+      reviewedOnly: false,
+      includeSourceReferences: true,
+      readingState: {
+        readingNavEnabled: false,
+        readingIndex: 0,
+        readingMode: "islands",
+        reviewedOnly: false,
+        safeMode: true,
+        generatedAt: "2026-01-02T00:00:00.000Z",
+      },
+    });
+
+    const documentJson = String(files.find((file) => file.path.endsWith("/document.json"))?.content ?? "");
+    const parsed = JSON.parse(documentJson) as DocumentV2;
+    expect(parsed.cards.find((card) => card.id === "c1")?.meta).toEqual({ seq: 7, source: "INTERVIEW_A_LINE_12" });
+  });
+
+  test("worker bundle path also strips Card.meta by default", async () => {
+    globalThis.Worker = class {
+      constructor() {
+        throw new Error("worker unavailable");
+      }
+    } as unknown as typeof Worker;
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const docWithMeta: DocumentV2 = {
+      ...baseDoc,
+      cards: baseDoc.cards.map((card) =>
+        card.id === "c1" ? { ...card, meta: { seq: 7, source: "INTERVIEW_A_LINE_12" } } : card,
+      ),
+    };
+
+    const files = await buildExportBundleWithWorkers(docWithMeta, { camera: { zoom: 1 } }, {
+      rootFolderPath: "kj-atlas-export-20260101-010203",
+      safeMode: true,
+      includeOutline: false,
+      includeDiagnostics: false,
+      includeSelectedCardTraces: false,
+      selectedCardId: null,
+      deterministicNowIso: "2026-01-02T00:00:00.000Z",
+      readingMode: "islands",
+      reviewedOnly: false,
+      readingState: {
+        readingNavEnabled: false,
+        readingIndex: 0,
+        readingMode: "islands",
+        reviewedOnly: false,
+        safeMode: true,
+        generatedAt: "2026-01-02T00:00:00.000Z",
+      },
+    });
+
+    const documentJson = String(files.find((file) => file.path.endsWith("/document.json"))?.content ?? "");
+    expect(documentJson).not.toContain("INTERVIEW_A_LINE_12");
+    // integrity.json must hash the stripped document, so it must not embed the raw reference either.
+    const joined = files.map((file) => String(file.content)).join("\n");
+    expect(joined).not.toContain("INTERVIEW_A_LINE_12");
+  });
+
   test("falls back when worker init fails and still emits diagnostics/traces", async () => {
     globalThis.Worker = class {
       constructor() {

@@ -5,6 +5,7 @@ import {
   LOAD_DOCUMENT_BUTTON,
   REPLACE_DOCUMENT_BUTTON,
   SHARE_REPRODUCE_BUTTON,
+  continueThroughPreShareGateIfPresent,
 } from "./helpers/i18n";
 
 async function readDownloadToBuffer(download: Download): Promise<Buffer> {
@@ -28,6 +29,7 @@ async function readDownloadToBuffer(download: Download): Promise<Buffer> {
 async function exportDiagnosticsMd(page: Page): Promise<string> {
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: EXPORT_BUNDLE_BUTTON }).click();
+  await continueThroughPreShareGateIfPresent(page);
   const download = await downloadPromise;
   const zipBuffer = await readDownloadToBuffer(download);
   const zip = await JSZip.loadAsync(zipBuffer);

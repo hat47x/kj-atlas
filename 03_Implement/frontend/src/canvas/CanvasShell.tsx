@@ -150,6 +150,8 @@ type CanvasShellProps = {
   lodLevelOverride?: LODLevel | null;
   lodShowLoneWolvesWhenFar?: boolean;
   showProtectionMarks?: boolean;
+  /** DOMAIN-TRACE-01 AC-3: canvas seq badge, default OFF (View panel toggle). */
+  showSeqNumbers?: boolean;
   effectiveCollapsedIslandIds?: Set<string>;
   showDerivedIslandEdges?: boolean;
   searchQuery?: string;
@@ -315,6 +317,7 @@ export function CanvasShell({
   lodLevelOverride = null,
   lodShowLoneWolvesWhenFar = true,
   showProtectionMarks = true,
+  showSeqNumbers = false,
   effectiveCollapsedIslandIds,
   showDerivedIslandEdges = false,
   searchQuery = "",
@@ -998,8 +1001,19 @@ export function CanvasShell({
       }
     }
 
+    // DOMAIN-KJ-01: every non-derived visible edge (card↔card and mixed
+    // endpoints included, not just island↔island) gets inspector meta, so
+    // selecting any persisted relation line opens the inspector and its
+    // relation-type control. Previously card↔card selections had no meta and
+    // were silently deselected by App's stale-selection cleanup effect.
+    const cardsForLabels = new Map(document.cards.map((card) => [card.id, card]));
+    const labelFor = (kind: "card" | "island", id: string): string =>
+      kind === "island"
+        ? document.islands.find((island) => island.id === id)?.title?.trim() || id
+        : cardsForLabels.get(id)?.text || id;
+
     for (const edge of visibleEdges) {
-      if (edgeMetaById.has(edge.id) || edge.fromKind !== "island" || edge.toKind !== "island") {
+      if (edgeMetaById.has(edge.id) || edge.isDerived) {
         continue;
       }
 
@@ -1007,24 +1021,24 @@ export function CanvasShell({
         id: edge.id,
         fromId: edge.fromId,
         toId: edge.toId,
-        fromKind: "island",
-        toKind: "island",
-        fromLabel: document.islands.find((island) => island.id === edge.fromId)?.title?.trim() || edge.fromId,
-        toLabel: document.islands.find((island) => island.id === edge.toId)?.title?.trim() || edge.toId,
+        fromKind: edge.fromKind === "island" ? "island" : "canonical",
+        toKind: edge.toKind === "island" ? "island" : "canonical",
+        fromLabel: labelFor(edge.fromKind, edge.fromId),
+        toLabel: labelFor(edge.toKind, edge.toId),
         type: edge.type,
         sources: [
           {
             sourceEdgeId: edge.id,
             sourceFromCardId: edge.fromId,
             sourceToId: edge.toId,
-            sourceToKind: "island",
+            sourceToKind: edge.toKind,
           },
         ],
       });
     }
 
     return Array.from(edgeMetaById.values());
-  }, [aggregatedEdges, derivedIslandEdgeMeta, document.islands, visibleEdges]);
+  }, [aggregatedEdges, derivedIslandEdgeMeta, document.cards, document.islands, visibleEdges]);
 
   useEffect(() => {
     onAggregatedEdgesChange?.(visibleEdgeInspectorMeta);
@@ -1390,6 +1404,7 @@ export function CanvasShell({
               compactMode={Boolean(lod?.rules.compactCards)}
               markerMode={Boolean(lod && lod.level === "far" && lodShowLoneWolvesWhenFar && loneWolfCardIdSet.has(card.id))}
               isProtected={protectedCardIdSet.has(card.id)}
+              showSeqNumber={showSeqNumbers}
               showLabelText={acceptedLabelIds.has(buildCardLabelId(card.id))}
               isEditing={editingCardId === card.id}
               onBeginEdit={onBeginEditCard}

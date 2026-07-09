@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import { expect, test, type Download } from "@playwright/test";
-import { EXPORT_BUNDLE_BUTTON, LOAD_DOCUMENT_BUTTON, REPLACE_DOCUMENT_BUTTON, SHARE_REPRODUCE_BUTTON } from "./helpers/i18n";
+import { continueThroughPreShareGateIfPresent, EXPORT_BUNDLE_BUTTON, LOAD_DOCUMENT_BUTTON, REPLACE_DOCUMENT_BUTTON, SHARE_REPRODUCE_BUTTON } from "./helpers/i18n";
 
 async function readDownloadToBuffer(download: Download): Promise<Buffer> {
   const stream = await download.createReadStream();
@@ -70,6 +70,7 @@ test("importing a self-intersecting polygon document degrades invalid polygon to
 
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: EXPORT_BUNDLE_BUTTON }).click();
+  await continueThroughPreShareGateIfPresent(page);
   const download = await downloadPromise;
   const zipBuffer = await readDownloadToBuffer(download);
 

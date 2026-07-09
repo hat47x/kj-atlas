@@ -736,6 +736,197 @@ def _assert_v2_polygon_geometry_roundtrip(client: TestClient) -> None:
     assert get_island["geometry"] == payload["islands"][0]["geometry"]
 
 
+def _sample_payload_v2_with_card_meta(doc_id: str) -> dict:
+    # DOMAIN-TRACE-01 (schemas.md §15): seq/source round-trip, and an UNKNOWN
+    # meta key (subject metadata) that the server must DROP fail-closed
+    # (§15.3) instead of persisting before CARD-META-UI-01 settles.
+    return {
+        "version": 2,
+        "id": doc_id,
+        "title": "roundtrip-v2-card-meta",
+        "createdAt": "2026-07-08T00:00:00Z",
+        "updatedAt": "2026-07-08T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [
+            {
+                "id": "card-traced",
+                "text": "utterance about onboarding",
+                "x": 0,
+                "y": 0,
+                "meta": {"seq": 42, "source": "interview-A line 12", "createdBy": "alice@example.com"},
+            },
+            {"id": "card-plain", "text": "no meta", "x": 300, "y": 0},
+        ],
+        "edges": [],
+        "islands": [],
+    }
+
+
+def _assert_v2_card_meta_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-card-meta"
+    payload = _sample_payload_v2_with_card_meta(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_cards = {card["id"]: card for card in put_response.json()["cards"]}
+    assert put_cards["card-traced"]["meta"]["seq"] == 42
+    assert put_cards["card-traced"]["meta"]["source"] == "interview-A line 12"
+    assert "createdBy" not in put_cards["card-traced"]["meta"]
+    assert "meta" not in put_cards["card-plain"]
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_cards = {card["id"]: card for card in get_response.json()["cards"]}
+    assert get_cards["card-traced"]["meta"]["seq"] == 42
+    assert get_cards["card-traced"]["meta"]["source"] == "interview-A line 12"
+    assert "createdBy" not in get_cards["card-traced"]["meta"]
+    assert "meta" not in get_cards["card-plain"]
+
+
+def _sample_payload_v2_with_card_ka(doc_id: str) -> dict:
+    # DOMAIN-KA-01 (schemas.md §17): voice/value round-trip, and an UNKNOWN
+    # ka key that the server must DROP fail-closed instead of persisting.
+    return {
+        "version": 2,
+        "id": doc_id,
+        "title": "roundtrip-v2-card-ka",
+        "createdAt": "2026-07-09T00:00:00Z",
+        "updatedAt": "2026-07-09T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [
+            {
+                "id": "card-ka",
+                "text": "event: waited 40 minutes at the counter",
+                "x": 0,
+                "y": 0,
+                "ka": {"voice": "honestly it felt exhausting", "value": "the relief of not waiting", "authorRating": 5},
+            },
+            {"id": "card-plain", "text": "no ka", "x": 300, "y": 0},
+        ],
+        "edges": [],
+        "islands": [],
+    }
+
+
+def _assert_v2_card_ka_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-card-ka"
+    payload = _sample_payload_v2_with_card_ka(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_cards = {card["id"]: card for card in put_response.json()["cards"]}
+    assert put_cards["card-ka"]["ka"]["voice"] == "honestly it felt exhausting"
+    assert put_cards["card-ka"]["ka"]["value"] == "the relief of not waiting"
+    assert "authorRating" not in put_cards["card-ka"]["ka"]
+    assert put_cards["card-ka"]["text"] == "event: waited 40 minutes at the counter"
+    assert "ka" not in put_cards["card-plain"]
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_cards = {card["id"]: card for card in get_response.json()["cards"]}
+    assert get_cards["card-ka"]["ka"]["voice"] == "honestly it felt exhausting"
+    assert get_cards["card-ka"]["ka"]["value"] == "the relief of not waiting"
+    assert "authorRating" not in get_cards["card-ka"]["ka"]
+    assert "ka" not in get_cards["card-plain"]
+
+
+def _sample_payload_v2_with_contradiction_signal_decisions(doc_id: str) -> dict:
+    # DOMAIN-EXPR-04 (schemas.md §16): human review decisions on
+    # analyzeContradictions() signals round-trip verbatim; a malformed entry
+    # (invalid status, "proposed" is not a persistable value) is dropped
+    # fail-closed while the valid entry is kept (§16.6).
+    return {
+        "version": 2,
+        "id": doc_id,
+        "title": "roundtrip-v2-contradiction-signal-decisions",
+        "createdAt": "2026-07-08T00:00:00Z",
+        "updatedAt": "2026-07-08T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [],
+        "edges": [],
+        "islands": [],
+        "contradictionSignalDecisions": [
+            {"signatureKey": "C001:island:a|island:b", "status": "accepted", "decidedAt": "2026-07-08T00:00:00Z"},
+        ],
+    }
+
+
+def _assert_v2_contradiction_signal_decisions_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-contradiction-signal-decisions"
+    payload = _sample_payload_v2_with_contradiction_signal_decisions(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_decisions = put_response.json()["contradictionSignalDecisions"]
+    assert put_decisions == [
+        {"signatureKey": "C001:island:a|island:b", "status": "accepted", "decidedAt": "2026-07-08T00:00:00Z"},
+    ]
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_decisions = get_response.json()["contradictionSignalDecisions"]
+    assert get_decisions == [
+        {"signatureKey": "C001:island:a|island:b", "status": "accepted", "decidedAt": "2026-07-08T00:00:00Z"},
+    ]
+
+
+def _assert_v2_contradiction_signal_decision_invalid_status_rejected(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-contradiction-signal-decision-invalid"
+    payload = _sample_payload_v2_with_contradiction_signal_decisions(doc_id)
+    payload["contradictionSignalDecisions"][0]["status"] = "proposed"
+
+    response = client.put(f"/docs/{doc_id}", json=payload)
+    assert response.status_code == 422
+
+
+def _sample_payload_v2_with_edge_vocabulary(doc_id: str) -> dict:
+    # DOMAIN-KJ-01 (schemas.md §3.3): the five known relation types plus an
+    # UNKNOWN type string that the server must accept and round-trip verbatim
+    # instead of rejecting the whole document with 422.
+    edge_types = ["related", "negate", "causal", "mutual", "equivalence", "future-vocab-2030"]
+    return {
+        "version": 2,
+        "id": doc_id,
+        "title": "roundtrip-v2-edge-vocabulary",
+        "createdAt": "2026-02-11T00:00:00Z",
+        "updatedAt": "2026-02-11T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [
+            {"id": "card-1", "text": "alpha", "x": 0, "y": 0},
+            {"id": "card-2", "text": "beta", "x": 300, "y": 0},
+        ],
+        "edges": [
+            {"id": f"edge-{index}", "fromId": "card-1", "toId": "card-2", "type": edge_type}
+            for index, edge_type in enumerate(edge_types)
+        ],
+        "islands": [],
+    }
+
+
+def _assert_v2_edge_vocabulary_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-edge-vocabulary"
+    payload = _sample_payload_v2_with_edge_vocabulary(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_types = [edge["type"] for edge in put_response.json()["edges"]]
+    assert put_types == ["related", "negate", "causal", "mutual", "equivalence", "future-vocab-2030"]
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_types = [edge["type"] for edge in get_response.json()["edges"]]
+    assert get_types == ["related", "negate", "causal", "mutual", "equivalence", "future-vocab-2030"]
+
+
+def _assert_v2_edge_empty_type_rejected(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-edge-empty-type"
+    payload = _sample_payload_v2_with_edge_vocabulary(doc_id)
+    payload["edges"] = [{"id": "edge-1", "fromId": "card-1", "toId": "card-2", "type": ""}]
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 422
+
+
 def _assert_put_get_roundtrip(client: TestClient) -> None:
     doc_id = "doc-roundtrip"
     payload = _sample_payload(doc_id)
@@ -904,6 +1095,50 @@ def test_docs_v2_evidence_links_roundtrip_sqlite(sqlite_client: TestClient) -> N
 
 def test_docs_v2_polygon_geometry_roundtrip_sqlite(sqlite_client: TestClient) -> None:
     _assert_v2_polygon_geometry_roundtrip(sqlite_client)
+
+
+def test_docs_v2_edge_vocabulary_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_edge_vocabulary_roundtrip(sqlite_client)
+
+
+def test_docs_v2_card_meta_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_card_meta_roundtrip(sqlite_client)
+
+
+@pytest.mark.postgres
+def test_docs_v2_card_meta_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_card_meta_roundtrip(postgres_client)
+
+
+def test_docs_v2_card_ka_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_card_ka_roundtrip(sqlite_client)
+
+
+@pytest.mark.postgres
+def test_docs_v2_card_ka_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_card_ka_roundtrip(postgres_client)
+
+
+def test_docs_v2_contradiction_signal_decisions_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_contradiction_signal_decisions_roundtrip(sqlite_client)
+
+
+@pytest.mark.postgres
+def test_docs_v2_contradiction_signal_decisions_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_contradiction_signal_decisions_roundtrip(postgres_client)
+
+
+def test_docs_v2_contradiction_signal_decision_invalid_status_rejected_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_contradiction_signal_decision_invalid_status_rejected(sqlite_client)
+
+
+def test_docs_v2_edge_empty_type_rejected_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_edge_empty_type_rejected(sqlite_client)
+
+
+@pytest.mark.postgres
+def test_docs_v2_edge_vocabulary_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_edge_vocabulary_roundtrip(postgres_client)
 
 
 @pytest.mark.postgres

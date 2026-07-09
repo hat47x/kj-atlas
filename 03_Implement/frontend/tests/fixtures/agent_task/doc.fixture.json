@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "id": "doc_agent_task_fixture",
+  "title": "Agent task fixture",
+  "createdAt": "2026-07-09T00:00:00.000Z",
+  "updatedAt": "2026-07-09T00:00:00.000Z",
+  "transform": { "panX": 0, "panY": 0, "zoom": 1 },
+  "cards": [
+    { "id": "c1", "text": "雨が降ると来場者が減る", "x": 0, "y": 0, "claimType": "claim", "textReviewed": true },
+    { "id": "c2", "text": "駐車場が濡れて滑りやすくなる", "x": 100, "y": 0, "claimType": "fact", "textReviewed": true },
+    { "id": "c3", "text": "未レビューの下書き", "x": 200, "y": 0, "claimType": "unknown", "textReviewed": false }
+  ],
+  "edges": [
+    { "id": "e1", "fromId": "c1", "toId": "c2", "type": "causal" }
+  ],
+  "islands": [
+    { "id": "i1", "cardIds": ["c1", "c2"], "title": "雨天の影響" }
+  ],
+  "evidenceLinks": [
+    { "id": "ev1", "type": "supports", "fromCardId": "c2", "toCardId": "c1" }
+  ],
+  "readingOrder": [],
+  "narratives": [],
+  "mergeSuggestionDecisions": []
+}

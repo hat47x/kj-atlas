@@ -25,6 +25,17 @@ export async function closeSharePanelIfOpen(page: Page): Promise<void> {
   }
 }
 
+// UX-SHARE-01: any document carrying unreviewed/critique/contradiction
+// content shows a pre-share summary gate after "Export bundle" is clicked,
+// before the download actually starts (AC-1). Call this right after
+// clicking EXPORT_BUNDLE_BUTTON and before awaiting the download event.
+export async function continueThroughPreShareGateIfPresent(page: Page): Promise<void> {
+  const continueButton = page.getByRole("button", { name: /^Continue$|^続行する$/ });
+  if (await continueButton.isVisible().catch(() => false)) {
+    await continueButton.click();
+  }
+}
+
 export async function openLegacyJsonMenu(page: Page): Promise<void> {
   await page.locator("details").filter({ hasText: /Legacy JSON|旧式JSON/ }).evaluate((node) => {
     (node as HTMLDetailsElement).open = true;

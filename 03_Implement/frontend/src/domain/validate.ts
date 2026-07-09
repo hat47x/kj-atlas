@@ -1,5 +1,9 @@
 import type {
   Card,
+  CardKa,
+  CardMeta,
+  ContradictionSignalDecision,
+  ContradictionSignalReviewStatus,
   DeterministicTieBreak,
   DocumentV2,
   EvidenceLink,
@@ -17,6 +21,7 @@ import type {
   SummaryHistoryEntry,
   Transform,
 } from "./types";
+import { KNOWN_EDGE_TYPES } from "./types";
 import { canUsePolygonPoints } from "./geometry/polygon_edit";
 import {
   validateHilRsCritiqueInput,
@@ -83,6 +88,47 @@ function parseCritiqueTags(value: unknown): string[] | undefined {
   return critiqueTags;
 }
 
+// DOMAIN-TRACE-01 (schemas.md §15.3): only the KNOWN keys seq/source are
+// accepted; unknown meta keys are dropped fail-closed (deliberately the
+// OPPOSITE of DOMAIN-KJ-01's unknown-edge-type preservation) so that
+// subject/provenance metadata cannot slip in via import before
+// CARD-META-UI-01's decision queue settles.
+function parseCardMeta(value: unknown): CardMeta | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const seq = typeof value.seq === "number" && Number.isFinite(value.seq) ? value.seq : undefined;
+  const source = typeof value.source === "string" && value.source.length > 0 ? value.source : undefined;
+  if (seq === undefined && source === undefined) {
+    return undefined;
+  }
+
+  return {
+    ...(seq !== undefined ? { seq } : {}),
+    ...(source !== undefined ? { source } : {}),
+  };
+}
+
+// DOMAIN-KA-01 (schemas.md §17.2): fail-closed to known keys (voice/value),
+// mirroring parseCardMeta above. Both empty/missing => omit the whole field.
+function parseCardKa(value: unknown): CardKa | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const voice = typeof value.voice === "string" && value.voice.length > 0 ? value.voice : undefined;
+  const cardValue = typeof value.value === "string" && value.value.length > 0 ? value.value : undefined;
+  if (voice === undefined && cardValue === undefined) {
+    return undefined;
+  }
+
+  return {
+    ...(voice !== undefined ? { voice } : {}),
+    ...(cardValue !== undefined ? { value: cardValue } : {}),
+  };
+}
+
 function parseCards(value: unknown): Card[] | null {
   if (!Array.isArray(value)) {
     return null;
@@ -125,6 +171,8 @@ function parseCards(value: unknown): Card[] | null {
         item.holdState === "held" || item.holdState === "pending" || item.holdState === "shelved"
           ? item.holdState
           : undefined,
+      meta: parseCardMeta(item.meta),
+      ka: parseCardKa(item.ka),
     });
   }
 
@@ -144,11 +192,16 @@ function parseEdges(value: unknown): DocumentV2["edges"] {
       continue;
     }
 
+    // DOMAIN-KJ-01 (schemas.md §3.3.2): an UNKNOWN type string must not cause
+    // the edge to be discarded — it is preserved verbatim for round-trip
+    // safety and resolved to "related" at display time only. Only a missing/
+    // non-string/empty type still drops the edge (structurally invalid).
     if (
       typeof item.id !== "string" ||
       typeof item.fromId !== "string" ||
       typeof item.toId !== "string" ||
-      (item.type !== "related" && item.type !== "negate")
+      typeof item.type !== "string" ||
+      item.type.length === 0
     ) {
       continue;
     }
@@ -559,7 +612,7 @@ function parseRelationSummaries(value: unknown): RelationSummary[] | undefined {
       || typeof item.createdAt !== "string"
       || typeof item.islandAId !== "string"
       || typeof item.islandBId !== "string"
-      || (item.relationType !== "related" && item.relationType !== "negate" && item.relationType !== "unknown")
+      || typeof item.relationType !== "string"
       || typeof item.derived !== "boolean"
       || typeof item.text !== "string"
       || typeof item.reviewed !== "boolean"
@@ -570,12 +623,20 @@ function parseRelationSummaries(value: unknown): RelationSummary[] | undefined {
       continue;
     }
 
+    // DOMAIN-KJ-01: unknown relationType no longer drops the whole summary —
+    // it is normalized to "unknown" (the row is regenerable derived data, so
+    // unlike Edge.type the original string need not be preserved verbatim).
+    const relationType: RelationSummary["relationType"] =
+      (KNOWN_EDGE_TYPES as readonly string[]).includes(item.relationType) || item.relationType === "unknown"
+        ? (item.relationType as RelationSummary["relationType"])
+        : "unknown";
+
     summaries.push({
       id: item.id,
       createdAt: item.createdAt,
       islandAId: item.islandAId,
       islandBId: item.islandBId,
-      relationType: item.relationType,
+      relationType,
       derived: item.derived,
       text: item.text,
       reviewed: item.reviewed,
@@ -720,6 +781,39 @@ function parseMergeSuggestionDecisions(value: unknown): MergeSuggestionDecisionE
   return entries.length > 0 ? entries : undefined;
 }
 
+function isContradictionSignalReviewStatus(value: unknown): value is ContradictionSignalReviewStatus {
+  return value === "accepted" || value === "held" || value === "rejected";
+}
+
+// DOMAIN-EXPR-04 (schemas.md §16.2/16.6): fail-closed on malformed entries,
+// preserving the rest — mirrors parseMergeSuggestionDecisions above.
+function parseContradictionSignalDecisions(value: unknown): ContradictionSignalDecision[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const entries: ContradictionSignalDecision[] = [];
+  for (const item of value) {
+    if (
+      !isRecord(item)
+      || typeof item.signatureKey !== "string"
+      || item.signatureKey.length === 0
+      || !isContradictionSignalReviewStatus(item.status)
+      || typeof item.decidedAt !== "string"
+    ) {
+      continue;
+    }
+
+    entries.push({
+      signatureKey: item.signatureKey,
+      status: item.status,
+      decidedAt: item.decidedAt,
+    });
+  }
+
+  return entries.length > 0 ? entries : undefined;
+}
+
 function normalizeVersion(value: unknown): 1 | 2 | null {
   if (value === 1 || value === "v1") {
     return 1;
@@ -797,6 +891,7 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
   const relationSummaries = parseRelationSummaries(value.relationSummaries);
   const patchApplyLog = parsePatchApplyLog(value.patchApplyLog);
   const mergeSuggestionDecisions = parseMergeSuggestionDecisions(value.mergeSuggestionDecisions);
+  const contradictionSignalDecisions = parseContradictionSignalDecisions(value.contradictionSignalDecisions);
   const shelf = parseShelf(value.shelf, new Set(cards.map((card) => card.id)));
   const shelvedCardIds = new Set((shelf ?? []).map((entry) => entry.cardId));
   const normalizedCards = shelvedCardIds.size === 0
@@ -825,6 +920,7 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
       ...(relationSummaries !== undefined ? { relationSummaries } : {}),
       ...(patchApplyLog !== undefined ? { patchApplyLog } : {}),
       ...(mergeSuggestionDecisions !== undefined ? { mergeSuggestionDecisions } : {}),
+      ...(contradictionSignalDecisions !== undefined ? { contradictionSignalDecisions } : {}),
       ...(shelf !== undefined ? { shelf } : {}),
     },
   };

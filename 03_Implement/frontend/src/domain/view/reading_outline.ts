@@ -26,6 +26,8 @@ export type ReadingOutlineOptions = {
   diagnosticsReport?: OutlineQualityReport | null;
   appendRecommendations?: boolean;
   recommendations?: Recommendation[];
+  /** DOMAIN-KA-01 (schemas.md §17.4): optional, default-OFF section listing cards with KA fields set. */
+  appendKaFields?: boolean;
 };
 
 function formatRecommendations(recommendations: Recommendation[]): string[] {
@@ -79,6 +81,36 @@ function formatDiagnostics(report: OutlineQualityReport): string[] {
     if (finding.entityRefs && finding.entityRefs.length > 0) {
       lines.push(`  - Refs: ${finding.entityRefs.map((ref) => `${ref.kind}:${ref.id}`).join(", ")}`);
     }
+  }
+  lines.push("");
+
+  return lines;
+}
+
+// DOMAIN-KA-01 (schemas.md §17.4): optional, default-OFF section — KA fields
+// are never interleaved with a card's body text, and reuse card.text's
+// SafeMode exposure gate (voice/value are equally-or-more sensitive drafts).
+function formatKaFields(cards: Card[], context: SafeModeContext, safeMode: boolean): string[] {
+  const cardsWithKa = cards.filter((card) => (card.ka?.voice?.length ?? 0) > 0 || (card.ka?.value?.length ?? 0) > 0);
+  if (cardsWithKa.length === 0) {
+    return [];
+  }
+
+  const lines: string[] = ["## KA Fields (inner voice / value)", ""];
+  if (!SafeModePolicy.canExposeText("card.text", context, safeMode)) {
+    lines.push("> [SAFE MODE: KA fields hidden]", "");
+    return lines;
+  }
+
+  for (const card of cardsWithKa) {
+    const parts: string[] = [];
+    if (card.ka?.voice) {
+      parts.push(`Inner voice: ${card.ka.voice}`);
+    }
+    if (card.ka?.value) {
+      parts.push(`Value: ${card.ka.value}`);
+    }
+    lines.push(`- Card ${card.id} — ${parts.join(" / ")}`);
   }
   lines.push("");
 
@@ -172,6 +204,7 @@ export function buildReadingOutlineMd(doc: DocumentV2, readingState: ReadingOutl
   const includeRelationSummaries = options.includeRelationSummaries ?? true;
   const appendDiagnostics = options.appendDiagnostics ?? false;
   const appendRecommendations = options.appendRecommendations ?? false;
+  const appendKaFields = options.appendKaFields ?? false;
   const maxSnippetLen = options.maxSnippetLen ?? DEFAULT_MAX_SNIPPET_LEN;
   const includeUnreviewed = !readingState.safeMode && (options.includeUnreviewedSummaries ?? false);
 
@@ -250,6 +283,10 @@ export function buildReadingOutlineMd(doc: DocumentV2, readingState: ReadingOutl
 
   if (appendRecommendations) {
     lines.push(...formatRecommendations(options.recommendations ?? []));
+  }
+
+  if (appendKaFields) {
+    lines.push(...formatKaFields(doc.cards, context, readingState.safeMode));
   }
 
   return `${lines.join("\n").trimEnd()}\n`;

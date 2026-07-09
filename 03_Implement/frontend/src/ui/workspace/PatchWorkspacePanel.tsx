@@ -264,6 +264,7 @@ export function PatchWorkspacePanel({
       <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 8 }}>
         <select
           data-testid="ce3-candidate-select"
+          aria-label={t("patch_workspace.candidate_select_label")}
           value={activeCandidateId ?? ""}
           disabled={isReadOnly || candidates.length === 0}
           onChange={(event) => {
@@ -349,12 +350,12 @@ export function PatchWorkspacePanel({
       <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>{t("patch_workspace.query_preset")}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr)) auto", gap: 6, marginBottom: 8 }}>
         <input data-testid="ce3-preset-name" value={presetName} onChange={(event) => setPresetName(event.target.value)} placeholder={t("patch_workspace.preset_name")} disabled={isReadOnly} />
-        <select data-testid="ce3-preset-scope" value={scope} onChange={(event) => setScope(event.target.value as QueryScope)} disabled={isReadOnly}>
+        <select data-testid="ce3-preset-scope" aria-label={t("patch_workspace.preset_scope_label")} value={scope} onChange={(event) => setScope(event.target.value as QueryScope)} disabled={isReadOnly}>
           <option value="all">{formatQueryScope("all")}</option>
           <option value="selection">{formatQueryScope("selection")}</option>
           <option value="island">{formatQueryScope("island")}</option>
         </select>
-        <input data-testid="ce3-preset-depth" type="number" min={1} value={depth} onChange={(event) => setDepth(Number(event.target.value))} disabled={isReadOnly} />
+        <input data-testid="ce3-preset-depth" aria-label={t("patch_workspace.preset_depth_label")} type="number" min={1} value={depth} onChange={(event) => setDepth(Number(event.target.value))} disabled={isReadOnly} />
         <input
           data-testid="ce3-preset-filters"
           value={filtersInput}

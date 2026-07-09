@@ -1,4 +1,6 @@
 import type {
+  ContradictionSignalDecision,
+  ContradictionSignalReviewStatus,
   CritiqueInput,
   DeterministicTieBreak,
   DocumentV2,
@@ -13,6 +15,7 @@ import type {
   ReviewAttribution,
   RelationSummary,
 } from "./types";
+import { KNOWN_EDGE_TYPES } from "./types";
 import { canUsePolygonPoints } from "./geometry/polygon_edit";
 
 type ValidationSuccess = {
@@ -62,7 +65,11 @@ function validateStringArray(value: unknown, path: string, errors: string[]): va
 }
 
 function validateEdgeType(value: unknown): value is EdgeType {
-  return value === "related" || value === "negate";
+  // DOMAIN-KJ-01 (schemas.md §3.3.2): strict mode also PRESERVES unknown
+  // type strings — any non-empty string is structurally valid; unknown
+  // values resolve to "related" at display time. Rejecting them here would
+  // reintroduce the round-trip data loss the contract forbids.
+  return typeof value === "string" && value.length > 0;
 }
 
 function validateClaimType(value: unknown): value is "fact" | "claim" | "hypothesis" | "unknown" {
@@ -100,7 +107,7 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
     return false;
   }
 
-  hasOnlyKeys(item, ["id", "text", "x", "y", "claimType", "mergedIntoCardId", "repOf", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed", "holdState"], path, errors);
+  hasOnlyKeys(item, ["id", "text", "x", "y", "claimType", "mergedIntoCardId", "repOf", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed", "holdState", "meta", "ka"], path, errors);
 
   let valid = true;
   if (typeof item.id !== "string") {
@@ -156,6 +163,42 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
   ) {
     errors.push(`${path}.holdState: must be 'held' | 'pending' | 'shelved' when provided`);
     valid = false;
+  }
+  if (item.meta !== undefined) {
+    // DOMAIN-TRACE-01 (schemas.md §15.3): strict mode rejects unknown meta
+    // keys outright (fail-closed contract enforcement) — subject/provenance
+    // metadata must not enter Card.meta before CARD-META-UI-01 settles.
+    if (!isRecord(item.meta)) {
+      errors.push(`${path}.meta: must be an object when provided`);
+      valid = false;
+    } else {
+      hasOnlyKeys(item.meta, ["seq", "source"], `${path}.meta`, errors);
+      if (item.meta.seq !== undefined && !isFiniteNumber(item.meta.seq)) {
+        errors.push(`${path}.meta.seq: must be a finite number when provided`);
+        valid = false;
+      }
+      if (item.meta.source !== undefined && typeof item.meta.source !== "string") {
+        errors.push(`${path}.meta.source: must be a string when provided`);
+        valid = false;
+      }
+    }
+  }
+  if (item.ka !== undefined) {
+    // DOMAIN-KA-01 (schemas.md §17.2): strict mode rejects unknown ka keys.
+    if (!isRecord(item.ka)) {
+      errors.push(`${path}.ka: must be an object when provided`);
+      valid = false;
+    } else {
+      hasOnlyKeys(item.ka, ["voice", "value"], `${path}.ka`, errors);
+      if (item.ka.voice !== undefined && typeof item.ka.voice !== "string") {
+        errors.push(`${path}.ka.voice: must be a string when provided`);
+        valid = false;
+      }
+      if (item.ka.value !== undefined && typeof item.ka.value !== "string") {
+        errors.push(`${path}.ka.value: must be a string when provided`);
+        valid = false;
+      }
+    }
   }
 
   return valid;
@@ -216,7 +259,7 @@ function validateEdge(item: unknown, index: number, errors: string[]): item is D
     valid = false;
   }
   if (!validateEdgeType(item.type)) {
-    errors.push(`${path}.type: must be 'related' or 'negate'`);
+    errors.push(`${path}.type: must be a non-empty string`);
     valid = false;
   }
 
@@ -506,8 +549,11 @@ function validateRelationSummary(item: unknown, index: number, errors: string[])
     errors.push(`${path}.islandBId: must be a string`);
     valid = false;
   }
-  if (item.relationType !== "related" && item.relationType !== "negate" && item.relationType !== "unknown") {
-    errors.push(`${path}.relationType: must be 'related', 'negate', or 'unknown'`);
+  if (
+    item.relationType !== "unknown" &&
+    !(typeof item.relationType === "string" && (KNOWN_EDGE_TYPES as readonly string[]).includes(item.relationType))
+  ) {
+    errors.push(`${path}.relationType: must be one of ${KNOWN_EDGE_TYPES.join(", ")}, or 'unknown'`);
     valid = false;
   }
   if (typeof item.derived !== "boolean") {
@@ -1026,6 +1072,42 @@ function validateMergeSuggestionDecisionEntry(
   return valid;
 }
 
+// DOMAIN-EXPR-04 (schemas.md §16.2/16.6): fail-closed strict validation,
+// mirroring validateMergeSuggestionDecisionEntry above.
+function validateContradictionSignalReviewStatus(value: unknown): value is ContradictionSignalReviewStatus {
+  return value === "accepted" || value === "held" || value === "rejected";
+}
+
+function validateContradictionSignalDecisionEntry(
+  item: unknown,
+  index: number,
+  errors: string[]
+): item is ContradictionSignalDecision {
+  const path = `contradictionSignalDecisions[${index}]`;
+  if (!isRecord(item)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(item, ["signatureKey", "status", "decidedAt"], path, errors);
+
+  let valid = true;
+  if (typeof item.signatureKey !== "string" || item.signatureKey.length === 0) {
+    errors.push(`${path}.signatureKey: must be a non-empty string`);
+    valid = false;
+  }
+  if (!validateContradictionSignalReviewStatus(item.status)) {
+    errors.push(`${path}.status: must be 'accepted' | 'held' | 'rejected'`);
+    valid = false;
+  }
+  if (typeof item.decidedAt !== "string") {
+    errors.push(`${path}.decidedAt: must be a string`);
+    valid = false;
+  }
+
+  return valid;
+}
+
 function validateNarrative(item: unknown, index: number, errors: string[]): item is Narrative {
   const path = `narratives[${index}]`;
   if (!isRecord(item)) {
@@ -1088,6 +1170,7 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
       "evidenceLinks",
       "patchApplyLog",
       "mergeSuggestionDecisions",
+      "contradictionSignalDecisions",
       "critiqueInputs",
       "reproposalDiffs",
       "reviewAttribution",
@@ -1249,6 +1332,16 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
     } else {
       value.mergeSuggestionDecisions.forEach((item, index) => {
         validateMergeSuggestionDecisionEntry(item, index, errors);
+      });
+    }
+  }
+
+  if (value.contradictionSignalDecisions !== undefined) {
+    if (!Array.isArray(value.contradictionSignalDecisions)) {
+      errors.push("document.contradictionSignalDecisions: must be an array when provided");
+    } else {
+      value.contradictionSignalDecisions.forEach((item, index) => {
+        validateContradictionSignalDecisionEntry(item, index, errors);
       });
     }
   }

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { t } from "../i18n/translate";
 
-import { CRITIQUE_TAGS } from "../domain/types";
+import { CRITIQUE_TAGS, KNOWN_EDGE_TYPES, resolveKnownEdgeType } from "../domain/types";
+import type { EdgeType, KnownEdgeType } from "../domain/types";
 import { DomainStateSummary } from "./DomainStateSummary";
 import { DomainStateFilterBar } from "./DomainStateFilterBar";
 import type { DomainStateFilter } from "../domain/domain_state_filter";
@@ -12,11 +13,12 @@ import {
   formatIslandRelationExplanationMarkdown,
   type IslandRelationEdgeSelection,
 } from "../domain/island_relation_explain";
-import type { Card, CritiqueTag, DocumentV2, EvidenceLink, HoldState, Island, RelationSummary } from "../domain/types";
+import type { Card, ContradictionSignalReviewStatus, CritiqueTag, DocumentV2, EvidenceLink, HoldState, Island, RelationSummary } from "../domain/types";
 import { RELATION_SUMMARY_TEXT_MAX_LENGTH } from "../domain/relation_summary_ops";
 import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
 import type { ContradictionReport, ContradictionSignal } from "../domain/view/contradiction_checks";
+import { signatureKeyForContradictionSignal } from "../domain/view/contradiction_checks";
 import { rankDistributionIslands, type DistributionReport } from "../domain/view/distribution_checks";
 import type { ClaimType, ClaimTypeMixReport } from "../domain/view/claim_type_checks";
 import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
@@ -68,6 +70,10 @@ type SidePanelProps = {
   selectedCardCount: number;
   onCreateRepresentativeCard: () => void;
   onCardCritiqueChange: (value: string) => void;
+  /** DOMAIN-TRACE-01: raw seq/source input for the selected card (empty = remove). */
+  onCardMetaChange: (rawSeq: string, rawSource: string) => void;
+  /** DOMAIN-KA-01: raw voice/value input for the selected card (empty = remove). */
+  onCardKaChange: (rawVoice: string, rawValue: string) => void;
   onCardCritiqueTagsChange: (value: string[]) => void;
   onOpenCritiqueWorkflow: () => void;
   onCardClaimTypeChange: (value: ClaimType) => void;
@@ -154,10 +160,13 @@ type SidePanelProps = {
   onDistributeVertically: () => void;
   canStartConnect: boolean;
   isPickingEdgeTarget: boolean;
-  connectEdgeType: "related" | "negate";
-  onConnectEdgeTypeChange: (value: "related" | "negate") => void;
+  connectEdgeType: KnownEdgeType;
+  onConnectEdgeTypeChange: (value: KnownEdgeType) => void;
   onStartConnect: () => void;
   onCancelConnect: () => void;
+  /** DOMAIN-KJ-01: raw type of the selected edge IF it is a persisted document edge (null for derived/aggregate). */
+  selectedPersistedEdgeType: EdgeType | null;
+  onEdgeTypeChange: (edgeId: string, nextType: KnownEdgeType) => void;
   guidedFlowEnabled: boolean;
   onGuidedFlowEnabledChange: (value: boolean) => void;
   guidedFlowStepId: "review" | "classify" | "evidence" | "contradiction";
@@ -189,6 +198,9 @@ type SidePanelProps = {
   outlineAppendDiagnostics: boolean;
   onOutlineAppendDiagnosticsChange: (value: boolean) => void;
   outlineAppendRecommendations: boolean;
+  /** DOMAIN-KA-01 (schemas.md §17.4): optional, default-OFF outline section listing cards with KA fields set. */
+  outlineAppendKaFields: boolean;
+  onOutlineAppendKaFieldsChange: (value: boolean) => void;
   onOutlineAppendRecommendationsChange: (value: boolean) => void;
   outlineQualityReport: OutlineQualityReport | null;
   outlineRecommendations: Recommendation[];
@@ -203,6 +215,8 @@ type SidePanelProps = {
   computeProgressMessage: string | null;
   onFocusOutlineDiagnosticRef: (kind: "island" | "card", id: string) => void;
   onFocusContradictionSignal: (signal: ContradictionSignal) => void;
+  /** DOMAIN-EXPR-04 (schemas.md §16): human review decision on a contradiction signal. status=null reverts to undecided. */
+  onContradictionSignalDecision: (signatureKey: string, status: ContradictionSignalReviewStatus | null) => void;
   onFocusDistributionIsland: (islandId: string) => void;
   onFocusDialecticBalanceFinding: (finding: BalanceFinding) => void;
   onCopyReadingOutlineMd: () => void;
@@ -239,6 +253,8 @@ export function SidePanel({
   selectedCardCount,
   onCreateRepresentativeCard,
   onCardCritiqueChange,
+  onCardMetaChange,
+  onCardKaChange,
   onCardCritiqueTagsChange,
   onOpenCritiqueWorkflow,
   onCardClaimTypeChange,
@@ -325,6 +341,8 @@ export function SidePanel({
   onConnectEdgeTypeChange,
   onStartConnect,
   onCancelConnect,
+  selectedPersistedEdgeType,
+  onEdgeTypeChange,
   guidedFlowEnabled,
   onGuidedFlowEnabledChange,
   guidedFlowStepId,
@@ -356,6 +374,8 @@ export function SidePanel({
   outlineAppendDiagnostics,
   onOutlineAppendDiagnosticsChange,
   outlineAppendRecommendations,
+  outlineAppendKaFields,
+  onOutlineAppendKaFieldsChange,
   onOutlineAppendRecommendationsChange,
   outlineQualityReport,
   outlineRecommendations,
@@ -370,6 +390,7 @@ export function SidePanel({
   computeProgressMessage,
   onFocusOutlineDiagnosticRef,
   onFocusContradictionSignal,
+  onContradictionSignalDecision,
   onFocusDistributionIsland,
   onFocusDialecticBalanceFinding,
   onCopyReadingOutlineMd,
@@ -812,6 +833,71 @@ export function SidePanel({
     }, { warn: [] as ContradictionSignal[], info: [] as ContradictionSignal[] });
   }, [contradictionReport]);
 
+  // DOMAIN-EXPR-04 (schemas.md §16.2): current human decision per signal, keyed
+  // by the same deterministic signature used to persist it. Absence = undecided.
+  const contradictionSignalDecisionByKey = useMemo(() => {
+    const map = new Map<string, ContradictionSignalReviewStatus>();
+    for (const entry of document?.contradictionSignalDecisions ?? []) {
+      map.set(entry.signatureKey, entry.status);
+    }
+    return map;
+  }, [document?.contradictionSignalDecisions]);
+
+  const CONTRADICTION_DECISION_BADGE_STYLE: Record<ContradictionSignalReviewStatus, { backgroundColor: string; color: string }> = {
+    accepted: { backgroundColor: "#dcfce7", color: "#166534" },
+    held: { backgroundColor: "#fed7aa", color: "#92400e" },
+    rejected: { backgroundColor: "#e2e8f0", color: "#475569" },
+  };
+
+  // DOMAIN-EXPR-04 (schemas.md §16.4): renders always regardless of decision —
+  // a rejected signal stays visible as "reviewed and set aside", not hidden.
+  const renderContradictionDecisionControls = (signal: ContradictionSignal) => {
+    const signatureKey = signatureKeyForContradictionSignal(signal);
+    const status = contradictionSignalDecisionByKey.get(signatureKey) ?? null;
+    return (
+      <div data-contradiction-decision="" style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+        {status ? (
+          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 999, padding: "1px 6px", ...CONTRADICTION_DECISION_BADGE_STYLE[status] }}>
+            {t(`side_panel.outline.contradiction_decision.status_${status}`)}
+          </span>
+        ) : null}
+        <button
+          type="button"
+          disabled={status === "accepted"}
+          onClick={() => { onContradictionSignalDecision(signatureKey, "accepted"); }}
+          style={{ fontSize: 10, cursor: "pointer" }}
+        >
+          {t("side_panel.outline.contradiction_decision.accept")}
+        </button>
+        <button
+          type="button"
+          disabled={status === "held"}
+          onClick={() => { onContradictionSignalDecision(signatureKey, "held"); }}
+          style={{ fontSize: 10, cursor: "pointer" }}
+        >
+          {t("side_panel.outline.contradiction_decision.hold")}
+        </button>
+        <button
+          type="button"
+          disabled={status === "rejected"}
+          onClick={() => { onContradictionSignalDecision(signatureKey, "rejected"); }}
+          style={{ fontSize: 10, cursor: "pointer" }}
+        >
+          {t("side_panel.outline.contradiction_decision.reject")}
+        </button>
+        {status ? (
+          <button
+            type="button"
+            onClick={() => { onContradictionSignalDecision(signatureKey, null); }}
+            style={{ fontSize: 10, cursor: "pointer", color: "#64748b" }}
+          >
+            {t("side_panel.outline.contradiction_decision.undo")}
+          </button>
+        ) : null}
+      </div>
+    );
+  };
+
   const islandDistributionRows = useMemo(() => {
     if (!document) {
       return [] as Array<{ id: string; title: string; cardCount: number; degree: number }>;
@@ -1153,6 +1239,7 @@ export function SidePanel({
       <section
         data-panel="selection-context"
         aria-label={t("side_panel.context.title")}
+        aria-live="polite"
         style={{
           marginBottom: 12,
           padding: 10,
@@ -1163,6 +1250,8 @@ export function SidePanel({
           gap: 8,
         }}
       >
+        {/* UI-QUALITY-A11Y-02: aria-live=polite on the whole region announces
+            selection changes without requiring manual navigation to it. */}
         <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>{t("side_panel.context.title")}</div>
         {selectedIsland ? (
           <>
@@ -1187,18 +1276,21 @@ export function SidePanel({
             <div style={{ fontSize: 12, color: "#334155", overflowWrap: "anywhere" }}>
               {t("side_panel.context.target", { value: selectedCardText })}
             </div>
+            {/* UI-QUALITY-A11Y-02: read/DOM order fixed to 型→保持系→確認→根拠
+                (type → hold-state → review → evidence), per the a11y spec's
+                selection-context row. Was previously review→type→evidence→hold. */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 12, color: "#475569", marginBottom: 2 }}>
-              <span>{t("side_panel.context.review_state", { value: selectedCardReviewState })}</span>
               {selectedCard?.claimType && selectedCard.claimType !== "unknown" ? (
                 <span>{t("side_panel.context.claim_type", { value: selectedCard.claimType })}</span>
-              ) : null}
-              {(outgoingEvidenceLinks.length > 0 || incomingEvidenceLinks.length > 0) ? (
-                <span style={{ color: "#0369a1" }}>{t("side_panel.context.evidence_brief", { n: outgoingEvidenceLinks.length + incomingEvidenceLinks.length })}</span>
               ) : null}
               {selectedCard?.holdState ? (
                 <span style={{ color: "#92400e" }}>
                   {t("side_panel.context.hold_brief", { value: t(`side_panel.hold_state.${selectedCard.holdState}`) })}
                 </span>
+              ) : null}
+              <span>{t("side_panel.context.review_state", { value: selectedCardReviewState })}</span>
+              {(outgoingEvidenceLinks.length > 0 || incomingEvidenceLinks.length > 0) ? (
+                <span style={{ color: "#0369a1" }}>{t("side_panel.context.evidence_brief", { n: outgoingEvidenceLinks.length + incomingEvidenceLinks.length })}</span>
               ) : null}
             </div>
             {selectedCard?.claimType && selectedCard.claimType !== "unknown" ? (
@@ -1231,6 +1323,18 @@ export function SidePanel({
                 {selectedCard.critiqueTags.map((tag) => (
                   <span key={tag} style={{ backgroundColor: "#fed7aa", borderRadius: 999, padding: "1px 6px" }}>{getCritiqueTagLabel(tag)}</span>
                 ))}
+              </div>
+            ) : null}
+            {selectedCard?.meta?.seq !== undefined || selectedCard?.meta?.source ? (
+              // DOMAIN-TRACE-01: trace info shows only when set (AC-5).
+              <div data-panel="card-trace-summary" style={{ fontSize: 12, color: "#334155", backgroundColor: "#f1f5f9", borderRadius: 6, padding: "4px 8px", marginTop: 2 }}>
+                {selectedCard.meta.seq !== undefined ? <span style={{ fontWeight: 700, marginRight: 8 }}>#{selectedCard.meta.seq}</span> : null}
+                {selectedCard.meta.source ? (
+                  <span>
+                    {t("side_panel.context.trace_source")}: {selectedCard.meta.source.slice(0, 160)}
+                    {selectedCard.meta.source.length > 160 ? "..." : ""}
+                  </span>
+                ) : null}
               </div>
             ) : null}
             <button
@@ -1609,6 +1713,16 @@ export function SidePanel({
             />
             {t("side_panel.outline.append_recommendations")}
           </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineAppendKaFields}
+              onChange={(event) => {
+                onOutlineAppendKaFieldsChange(event.target.checked);
+              }}
+            />
+            {t("side_panel.outline.append_ka_fields")}
+          </label>
           <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
           <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.unreviewed_draft_warning")}</div>
           {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.safe_mode_excluded")}</div> : null}
@@ -1694,6 +1808,7 @@ export function SidePanel({
                                   >
                                     {t("side_panel.focus")}
                                   </button>
+                                  {renderContradictionDecisionControls(signal)}
                                 </li>
                               ))}
                             </ul>
@@ -1809,15 +1924,20 @@ export function SidePanel({
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.connect.title")}</div>
         <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>{t("side_panel.connect.edge_type")}</label>
         <select
+          aria-label={t("side_panel.connect.edge_type")}
           value={connectEdgeType}
           onChange={(event) => {
-            onConnectEdgeTypeChange(event.target.value === "negate" ? "negate" : "related");
+            // resolveKnownEdgeType maps anything unexpected back to "related".
+            onConnectEdgeTypeChange(resolveKnownEdgeType(event.target.value));
           }}
           disabled={isPickingEdgeTarget}
           style={{ width: "100%", marginBottom: 8 }}
         >
-          <option value="related">{t("side_panel.connect.related")}</option>
-          <option value="negate">{t("side_panel.connect.negate")}</option>
+          {KNOWN_EDGE_TYPES.map((edgeType) => (
+            <option key={edgeType} value={edgeType}>
+              {t(`side_panel.connect.${edgeType}`)}
+            </option>
+          ))}
         </select>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <button
@@ -1855,6 +1975,7 @@ export function SidePanel({
         </label>
         <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>{t("side_panel.reading_path.mode")}</label>
         <select
+          aria-label={t("side_panel.reading_path.mode")}
           value={readingMode}
           onChange={(event) => {
             onReadingModeChange(event.target.value === "islands+cards" ? "islands+cards" : "islands");
@@ -1930,6 +2051,16 @@ export function SidePanel({
               }}
             />
             {t("side_panel.outline.append_recommendations")}
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineAppendKaFields}
+              onChange={(event) => {
+                onOutlineAppendKaFieldsChange(event.target.checked);
+              }}
+            />
+            {t("side_panel.outline.append_ka_fields")}
           </label>
           <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
           <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.unreviewed_draft_warning")}</div>
@@ -2016,6 +2147,7 @@ export function SidePanel({
                                   >
                                     {t("side_panel.focus")}
                                   </button>
+                                  {renderContradictionDecisionControls(signal)}
                                 </li>
                               ))}
                             </ul>
@@ -2220,6 +2352,7 @@ export function SidePanel({
             {t("side_panel.island_editor.parent")}
           </label>
           <select
+            aria-label={t("side_panel.island_editor.parent")}
             value={selectedIsland.parentIslandId ?? ""}
             onChange={(event) => {
               const nextValue = event.target.value.trim();
@@ -2299,6 +2432,7 @@ export function SidePanel({
             {t("side_panel.island_editor.placard_card")}
           </label>
           <select
+            aria-label={t("side_panel.island_editor.placard_card")}
             value={selectedIsland.placardCardId ?? ""}
             onChange={(event) => {
               const nextValue = event.target.value.trim();
@@ -2778,6 +2912,7 @@ export function SidePanel({
             <div style={{ display: "grid", gap: 6 }}>
               <label style={{ fontSize: 12, color: "#475569" }}>{t("side_panel.island_editor.shape")}</label>
               <select
+                aria-label={t("side_panel.island_editor.shape")}
                 value={selectedIsland.shape?.kind === "polygon" ? "polygon" : "rect"}
                 disabled={isReadOnly}
                 onChange={(event) => {
@@ -2889,7 +3024,45 @@ export function SidePanel({
               toKind: selectedAggregatedEdge.toKind,
             })}
           </div>
-          <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>{t("side_panel.edge_inspector.type", { type: selectedAggregatedEdge.type })}</div>
+          {selectedPersistedEdgeType !== null && !isReadOnly ? (
+            // DOMAIN-KJ-01: persisted edges get an in-place relation-type
+            // control (one Cmd/Ctrl+Z-reversible history step per change).
+            // An UNKNOWN preserved type shows a preservation notice; picking
+            // a known type from the select intentionally overwrites it.
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>
+                {t("side_panel.connect.edge_type")}
+              </label>
+              <select
+                data-testid="edge-type-select"
+                aria-label={t("side_panel.connect.edge_type")}
+                value={resolveKnownEdgeType(selectedPersistedEdgeType)}
+                onChange={(event) => {
+                  onEdgeTypeChange(selectedAggregatedEdge.id, resolveKnownEdgeType(event.target.value));
+                }}
+                style={{ width: "100%" }}
+              >
+                {KNOWN_EDGE_TYPES.map((edgeType) => (
+                  <option key={edgeType} value={edgeType}>
+                    {t(`side_panel.connect.${edgeType}`)}
+                  </option>
+                ))}
+              </select>
+              {(KNOWN_EDGE_TYPES as readonly string[]).includes(selectedPersistedEdgeType) ? null : (
+                <div style={{ fontSize: 11, color: "#92400e", marginTop: 4 }}>
+                  {t("side_panel.edge_inspector.unknown_type_preserved", { raw: selectedPersistedEdgeType })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
+              {t("side_panel.edge_inspector.type", {
+                type: (KNOWN_EDGE_TYPES as readonly string[]).includes(selectedAggregatedEdge.type)
+                  ? t(`side_panel.connect.${selectedAggregatedEdge.type}`)
+                  : selectedAggregatedEdge.type,
+              })}
+            </div>
+          )}
           {selectedAggregatedEdge.isDerivedIslandEdge ? (
             <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
               {t("side_panel.edge_inspector.count", { count: selectedAggregatedEdge.aggregateCount ?? selectedAggregatedEdge.sources.length })}
@@ -3285,6 +3458,7 @@ export function SidePanel({
                 </span>
               </div>
               <select
+                aria-label={t("side_panel.claim_type.label")}
                 value={selectedCard.claimType ?? "unknown"}
                 disabled={isReadOnly}
                 onChange={(event) => {
@@ -3360,6 +3534,73 @@ export function SidePanel({
                 />
                 {t("side_panel.card_inspector.text_reviewed")}
               </label>
+
+              {/* DOMAIN-TRACE-01: optional serial number + raw-data source
+                  reference. Never forced (empty = removed on commit). */}
+              <div data-panel="card-trace-editor" style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.trace.title")}</div>
+                <label style={{ display: "grid", gap: 3, marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, color: "#475569" }}>{t("side_panel.trace.seq_label")}</span>
+                  <input
+                    type="number"
+                    value={selectedCard.meta?.seq ?? ""}
+                    disabled={isReadOnly}
+                    placeholder={t("side_panel.trace.seq_placeholder")}
+                    style={{ width: "100%", fontSize: 12, border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", boxSizing: "border-box" }}
+                    onChange={(event) => {
+                      onCardMetaChange(event.target.value, selectedCard.meta?.source ?? "");
+                    }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 3 }}>
+                  <span style={{ fontSize: 11, color: "#475569" }}>{t("side_panel.trace.source_label")}</span>
+                  <input
+                    type="text"
+                    value={selectedCard.meta?.source ?? ""}
+                    disabled={isReadOnly}
+                    placeholder={t("side_panel.trace.source_placeholder")}
+                    style={{ width: "100%", fontSize: 12, border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", boxSizing: "border-box" }}
+                    onChange={(event) => {
+                      onCardMetaChange(selectedCard.meta?.seq !== undefined ? String(selectedCard.meta.seq) : "", event.target.value);
+                    }}
+                  />
+                </label>
+                <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>{t("side_panel.trace.hint")}</div>
+              </div>
+
+              {/* DOMAIN-KA-01: optional KA-method fields (心の声/価値), kept
+                  separate from Card.text (出来事の正本). Never forced (empty
+                  = removed on commit). Not shown on the canvas (AC-4). */}
+              <div data-panel="card-ka-editor" style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.ka.title")}</div>
+                <label style={{ display: "grid", gap: 3, marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, color: "#475569" }}>{t("side_panel.ka.voice_label")}</span>
+                  <textarea
+                    value={selectedCard.ka?.voice ?? ""}
+                    disabled={isReadOnly}
+                    placeholder={t("side_panel.ka.voice_placeholder")}
+                    rows={2}
+                    style={{ width: "100%", fontSize: 12, border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", boxSizing: "border-box", resize: "vertical" }}
+                    onChange={(event) => {
+                      onCardKaChange(event.target.value, selectedCard.ka?.value ?? "");
+                    }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 3 }}>
+                  <span style={{ fontSize: 11, color: "#475569" }}>{t("side_panel.ka.value_label")}</span>
+                  <textarea
+                    value={selectedCard.ka?.value ?? ""}
+                    disabled={isReadOnly}
+                    placeholder={t("side_panel.ka.value_placeholder")}
+                    rows={2}
+                    style={{ width: "100%", fontSize: 12, border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", boxSizing: "border-box", resize: "vertical" }}
+                    onChange={(event) => {
+                      onCardKaChange(selectedCard.ka?.voice ?? "", event.target.value);
+                    }}
+                  />
+                </label>
+                <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>{t("side_panel.ka.hint")}</div>
+              </div>
 
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.evidence.title")}</div>

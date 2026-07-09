@@ -381,6 +381,13 @@ describe("UX Operability regression contracts", () => {
 
     // No scoring/ranking vocabulary anywhere in the bulk-ops bar.
     expect(barSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+
+    // Design-QA conformance fix (2026-07-09): the count status div must set
+    // whiteSpace: nowrap like the buttons beside it. Space-less Japanese
+    // count text ("3件のカードを選択中") wraps one character per line if
+    // this flex child is the one left without it when the bar is squeezed.
+    const statusDivBlock = barSource.slice(barSource.indexOf('role="status"'), barSource.indexOf('role="status"') + 200);
+    expect(statusDivBlock).toContain('whiteSpace: "nowrap"');
   });
 
   it("UX-SCALE-01 (c): island outlines are orthogonal (grid-occupancy), complexity is a structural count (not a score), and tidy is human-triggered and one undo step", () => {
@@ -411,6 +418,223 @@ describe("UX Operability regression contracts", () => {
     // No scoring/ranking vocabulary anywhere in the generator or its i18n
     // framing (ADR-0048 D3 anti-scoring applies to this new signal too).
     expect(outlineSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+  });
+
+  it("DOMAIN-KJ-01: KJ relation vocabulary is additive, unknown types are preserved (never discarded), and derived edges stay type-suppressed", () => {
+    const typesSource = readSource("src/domain/types.ts");
+    const validateSource = readSource("src/domain/validate.ts");
+    const validateDocSource = readSource("src/domain/validate_doc.ts");
+    const edgeLayerSource = readSource("src/canvas/EdgeLayer.tsx");
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const appSource = readSource("src/App.tsx");
+
+    // The known vocabulary is exactly the 5 values fixed by schemas.md §3.3
+    // (negate IS the persisted value for 対立 — no separate "opposition").
+    expect(typesSource).toContain('["related", "negate", "causal", "mutual", "equivalence"] as const');
+    expect(typesSource).not.toContain('"opposition"');
+    expect(typesSource).toContain("export function resolveKnownEdgeType");
+
+    // Preservation (schemas.md §3.3.2): the old discard conditions must not
+    // reappear in either mode. Lenient keeps any non-empty string type;
+    // strict validates "non-empty string", not a closed enum.
+    expect(validateSource).not.toContain('item.type !== "related" && item.type !== "negate"');
+    expect(validateSource).toContain("item.type.length === 0");
+    expect(validateDocSource).not.toContain('value === "related" || value === "negate"');
+    expect(validateDocSource).toContain('typeof value === "string" && value.length > 0');
+
+    // Rendering: direction/symbols only for NON-derived edges (derived stay
+    // generic per UX-SCALE-01 redline, and their endpoint order is
+    // normalized so an arrow could point the wrong way).
+    expect(edgeLayerSource).toContain('edge.isDerived ? "related" : resolveKnownEdgeType(edge.type)');
+    expect(edgeLayerSource).toContain('data-edge-symbol="arrow-to"');
+    expect(edgeLayerSource).toContain('data-edge-symbol="arrow-from"');
+    expect(edgeLayerSource).toContain('data-edge-symbol="equivalence"');
+
+    // Type change is a single history step on a PERSISTED edge only, and the
+    // default for new edges stays "related" (no forced convergence).
+    expect(appSource).toContain("const handleEdgeTypeChange = useCallback(");
+    expect(appSource).toContain('useState<KnownEdgeType>("related")');
+    expect(sidePanelSource).toContain("selectedPersistedEdgeType");
+    expect(sidePanelSource).toContain('t("side_panel.edge_inspector.unknown_type_preserved"');
+
+    // No scoring/ranking vocabulary in the new relation-type surfaces.
+    expect(edgeLayerSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+  });
+
+  it("DOMAIN-TRACE-01: Card.meta stays fail-closed, selection-scoped, badge default OFF, and share-excluded by default", () => {
+    const validateSource = readSource("src/domain/validate.ts");
+    const validateDocSource = readSource("src/domain/validate_doc.ts");
+    const bundleExportSource = readSource("src/export/bundle_export.ts");
+    const sharePanelSource = readSource("src/ui/SharePanel.tsx");
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const cardViewSource = readSource("src/canvas/CardView.tsx");
+    const appSource = readSource("src/App.tsx");
+
+    // Fail-closed meta parsing (schemas.md §15.3): only seq/source survive,
+    // unknown keys are dropped in BOTH lenient and strict modes. This is the
+    // deliberate inverse of the edge-type preservation rule.
+    expect(validateSource).toContain("function parseCardMeta");
+    expect(validateDocSource).toContain('hasOnlyKeys(item.meta, ["seq", "source"]');
+
+    // Share boundary (schemas.md §15.4): meta is stripped from shared bundles
+    // by default; the opt-in toggle renders regardless of safeMode (it is an
+    // independent axis) and defaults to OFF with a one-line warning.
+    expect(bundleExportSource).toContain("function resolveShareDocument");
+    expect(bundleExportSource).toContain("includeSourceReferences?: boolean");
+    expect(sharePanelSource).toContain('data-share-include-source-references=""');
+    expect(sharePanelSource).toContain('data-share-source-references-warning=""');
+    expect(sharePanelSource).toContain('data-share-preflight-source-references=""');
+    expect(appSource).toContain("const [includeSourceReferencesInExport, setIncludeSourceReferencesInExport] = useState(false)");
+
+    // Selection-only display (ADR-0048 D3改訂): trace info lives in the side
+    // panel; the canvas badge is opt-in and default OFF.
+    expect(sidePanelSource).toContain('data-panel="card-trace-summary"');
+    expect(sidePanelSource).toContain('data-panel="card-trace-editor"');
+    expect(cardViewSource).toContain('data-card-seq-badge=""');
+    expect(appSource).toContain("const [showSeqNumbers, setShowSeqNumbers] = useState(false)");
+
+    // Meta edit is a single history step (undoable) via applyDocumentChange.
+    expect(appSource).toContain("const handleCardMetaChange = useCallback(");
+    expect(appSource).toContain('t("app.history.card.meta_updated")');
+
+    // No subject metadata (creator/author) sneaks into Card.meta ahead of
+    // CARD-META-UI-01 — the meta whitelist stays exactly seq/source.
+    // (ownerRef exists legitimately elsewhere: ReviewAttribution.)
+    expect(validateSource).not.toMatch(/createdBy|authorId/);
+    expect(validateDocSource).not.toMatch(/createdBy|authorId/);
+    expect(validateDocSource.match(/hasOnlyKeys\(item\.meta, \["seq", "source"\]/g)).toHaveLength(1);
+  });
+
+  it("DOMAIN-EXPR-04: contradiction signal decisions are human-only, reversible, and reuse the CE2 proposal vocabulary (no new AI authority)", () => {
+    const contradictionChecksSource = readSource("src/domain/view/contradiction_checks.ts");
+    const validateSource = readSource("src/domain/validate.ts");
+    const validateDocSource = readSource("src/domain/validate_doc.ts");
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const appSource = readSource("src/App.tsx");
+
+    // analyzeContradictions() itself never gains a write path for decisions —
+    // it only computes signals. The signature helper lives alongside it.
+    expect(contradictionChecksSource).toContain("export function signatureKeyForContradictionSignal");
+    expect(contradictionChecksSource).not.toMatch(/ContradictionSignalDecision/);
+
+    // Round-trip (both modes) is fail-closed, mirroring mergeSuggestionDecisions.
+    expect(validateSource).toContain("function parseContradictionSignalDecisions");
+    expect(validateDocSource).toContain("function validateContradictionSignalDecisionEntry");
+    expect(validateDocSource).toContain('hasOnlyKeys(item, ["signatureKey", "status", "decidedAt"]');
+
+    // "proposed" (undecided) is the implicit default and is never itself a
+    // valid persisted status — CE2-PROPOSAL-IF vocabulary reused, not widened.
+    expect(validateDocSource).toContain('value === "accepted" || value === "held" || value === "rejected"');
+
+    // UI: signals always render regardless of decision (no auto-hide on reject),
+    // and every write goes through applyDocumentChange as one history step.
+    expect(sidePanelSource).toContain("const renderContradictionDecisionControls = (signal: ContradictionSignal)");
+    expect(sidePanelSource).toContain('onContradictionSignalDecision(signatureKey, "accepted")');
+    expect(sidePanelSource).toContain('onContradictionSignalDecision(signatureKey, "held")');
+    expect(sidePanelSource).toContain('onContradictionSignalDecision(signatureKey, "rejected")');
+    expect(sidePanelSource).toContain("onContradictionSignalDecision(signatureKey, null)");
+    expect(appSource).toContain("const handleContradictionSignalDecision = useCallback(");
+    expect(appSource).toContain('t("app.history.contradiction_signal.decided")');
+
+    // No new EvidenceLink is fabricated from an island-level aggregate signal
+    // (would misrepresent detector precision as a specific card-pair claim).
+    expect(appSource).not.toMatch(/handleContradictionSignalDecision[\s\S]{0,400}upsertEvidenceLink/);
+  });
+
+  it("DOMAIN-KA-01: Card.ka (心の声/価値) stays fail-closed, separate from Card.text, off the canvas, and default-OFF in exports", () => {
+    const validateSource = readSource("src/domain/validate.ts");
+    const validateDocSource = readSource("src/domain/validate_doc.ts");
+    const patchApplySource = readSource("src/domain/patch/patch_apply.ts");
+    const readingOutlineSource = readSource("src/domain/view/reading_outline.ts");
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const cardViewSource = readSource("src/canvas/CardView.tsx");
+    const appSource = readSource("src/App.tsx");
+
+    // Fail-closed parsing in all 3 round-trip paths (lenient/strict/CE3 patch),
+    // mirroring the Card.meta precedent exactly.
+    expect(validateSource).toContain("function parseCardKa");
+    expect(validateDocSource).toContain('hasOnlyKeys(item.ka, ["voice", "value"]');
+    expect(patchApplySource).toContain("value.ka !== undefined");
+
+    // Card.text stays the sole event-of-record; ka is a separate field, never
+    // merged into the body (AC: text=出来事の正本 unchanged).
+    expect(sidePanelSource).toContain('data-panel="card-ka-editor"');
+    expect(sidePanelSource).toContain("onCardKaChange(event.target.value, selectedCard.ka?.value ?? \"\")");
+
+    // No canvas surface for ka (AC-4: no initial-view anchor growth).
+    expect(cardViewSource).not.toMatch(/card\.ka\b/);
+
+    // Export section is separate from narrative body and default OFF.
+    expect(readingOutlineSource).toContain("function formatKaFields");
+    expect(readingOutlineSource).toContain("appendKaFields?: boolean");
+    expect(readingOutlineSource).toContain("options.appendKaFields ?? false");
+    expect(appSource).toContain("const [outlineAppendKaFields, setOutlineAppendKaFields] = useState(false)");
+
+    // Meta edit is a single history step (undoable) via applyDocumentChange.
+    expect(appSource).toContain("const handleCardKaChange = useCallback(");
+    expect(appSource).toContain('t("app.history.card.ka_updated")');
+  });
+
+  it("UX-SHARE-01: pre-share summary gate discloses counts (never a score), skips when empty, and returns focus on close", () => {
+    const sharePanelSource = readSource("src/ui/SharePanel.tsx");
+
+    // Gate intercepts the bundle export action itself.
+    expect(sharePanelSource).toContain('data-panel="pre-share-summary-gate"');
+    expect(sharePanelSource).toContain('role="alertdialog"');
+    expect(sharePanelSource).toContain("setPendingBundleExportOptions(options)");
+    expect(sharePanelSource).toContain("onExportBundleZip(pendingBundleExportOptions)");
+
+    // AC-5: zero-count documents skip the gate rather than blocking export.
+    expect(sharePanelSource).toContain("unreviewedTotal === 0 && domainExpressionSummary.critiqueTargets === 0 && domainExpressionSummary.contradictionLinks === 0");
+
+    // AC-2 anti-scoring: the gate copy is a location-only count summary, not
+    // a readiness score/percentage/evaluative label.
+    expect(sharePanelSource).toContain("share.panel.pre_share_gate.summary");
+    expect(sharePanelSource).not.toMatch(/pre_share_gate[\s\S]{0,300}(score|readiness|percent|%)/i);
+
+    // AC-4: Escape and Back both return focus to the button that opened it
+    // (same focus-return contract as the outer share panel).
+    expect(sharePanelSource).toContain("closePreShareGate");
+    expect(sharePanelSource).toContain("exportBundleButtonRef.current?.focus()");
+    expect(sharePanelSource).toContain("handlePreShareGateKeyDown");
+
+    // Design-QA conformance fix (2026-07-09): safeModeIndicator.label already
+    // carries its own "SafeMode:"/"セーフモード:" prefix -- the gate must not
+    // wrap it in a second translated label (regressed to "SafeMode: セーフ
+    // モード: ON" once, caught by screenshot review).
+    expect(sharePanelSource).toContain("{safeModeIndicator.label}</div>");
+    expect(sharePanelSource).not.toContain("share.panel.pre_share_gate.safe_mode");
+  });
+
+  it("UI-QUALITY-A11Y-02: selection-context announces changes and reads type->hold->review->evidence; source-toggle warning is associated via aria-describedby", () => {
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const sharePanelSource = readSource("src/ui/SharePanel.tsx");
+
+    // Selection context: aria-live=polite on the region (spec: on selection,
+    // the "current selection" heading gets a polite announcement).
+    expect(sidePanelSource).toContain('data-panel="selection-context"');
+    const selectionContextBlock = sidePanelSource.slice(
+      sidePanelSource.indexOf('data-panel="selection-context"'),
+      sidePanelSource.indexOf('data-panel="selection-context"') + 400,
+    );
+    expect(selectionContextBlock).toContain('aria-live="polite"');
+
+    // Read order fixed to 型→保持系→確認→根拠 (claimType -> holdState ->
+    // reviewState -> evidence), replacing the prior review->type->evidence->hold order.
+    const claimTypeIndex = sidePanelSource.indexOf('t("side_panel.context.claim_type", { value: selectedCard.claimType })');
+    const holdBriefIndex = sidePanelSource.indexOf('t("side_panel.context.hold_brief"');
+    const reviewStateIndex = sidePanelSource.indexOf('t("side_panel.context.review_state", { value: selectedCardReviewState })');
+    const evidenceBriefIndex = sidePanelSource.indexOf('t("side_panel.context.evidence_brief"');
+    expect(claimTypeIndex).toBeGreaterThan(0);
+    expect(claimTypeIndex).toBeLessThan(holdBriefIndex);
+    expect(holdBriefIndex).toBeLessThan(reviewStateIndex);
+    expect(reviewStateIndex).toBeLessThan(evidenceBriefIndex);
+
+    // Share preflight: the source-reference toggle's warning is programmatically
+    // associated, not just visually adjacent.
+    expect(sharePanelSource).toContain("sourceReferencesWarningId");
+    expect(sharePanelSource).toContain("aria-describedby={includeSourceReferences ? sourceReferencesWarningId : undefined}");
+    expect(sharePanelSource).toContain("id={sourceReferencesWarningId}");
   });
 
   it("Phase 3: contextual-selection-panel", () => {
@@ -483,6 +707,131 @@ describe("UX Operability regression contracts", () => {
     expect(workModeContent).toContain("<NarrativesPanel");
     expect(workModeContent).toContain("<HilRsWorkflowPanel");
     expect(workModeContent).toContain("{structuralDiffPanel}");
+
+    // design-qa conformance fix (2026-07-09): the empty-state copy shown when
+    // Advanced UI is off must not point users back to "the sidebar" -- AC-2
+    // moved these panels OUT of the sidebar into this same work-mode surface,
+    // so the copy must say they appear here once Advanced UI is enabled.
+    const jaLocaleSource = readSource("src/i18n/locales/ja.json");
+    const jaContentPendingLine = jaLocaleSource.split("\n").find((line) => line.includes('"work_mode.content_pending"'));
+    expect(jaContentPendingLine).not.toContain("サイドバー");
+    expect(jaContentPendingLine).toContain("詳細");
+  });
+
+  it("EXT-AGENT-01: agent task export lives behind advanced disclosure, gates on scope confirmation, and never emits scoring vocabulary", () => {
+    const appSource = readSource("src/App.tsx");
+    const panelSource = readSource("src/ui/AgentTaskExportPanel.tsx");
+    const exportSource = readSource("src/export/agent_task_export.ts");
+    const clientSource = readSource("src/api/client.ts");
+
+    // AC-5 (CB-1 no net increase to initial display): the trigger is CONTENT
+    // behind the existing "詳細" disclosure gate, not a new always-visible
+    // disclosure entry point -- so it must not carry data-ui-core-action
+    // (Phase 5's fixed count of 7 already pins the core-toolbar surface).
+    expect(appSource).toContain("<AgentTaskExportPanel");
+    const triggerButtonStart = appSource.indexOf("ref={agentTaskExportTriggerRef}");
+    const triggerButtonBlock = appSource.slice(Math.max(0, triggerButtonStart - 400), triggerButtonStart);
+    expect(triggerButtonBlock).toContain("{isAdvancedUiEnabled ? (");
+    expect(appSource.slice(triggerButtonStart, triggerButtonStart + 400)).toContain('data-ui-complexity-tier="advanced-content"');
+    expect(appSource.slice(triggerButtonStart, triggerButtonStart + 400)).not.toContain("data-ui-core-action");
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(7);
+
+    // AC-2 (previewConfirmed-equivalent gate): export actions are disabled
+    // until a scope-confirmed checkbox is checked, and the checkbox itself
+    // is disabled without a selection (can't confirm an empty scope).
+    expect(panelSource).toContain("const canExport = hasSelection && scopeConfirmed;");
+    expect(panelSource).toContain("disabled={!canExport}");
+    expect(panelSource).toContain("disabled={!hasSelection}");
+
+    // AC-3 (SafeMode/unreviewed/source-reference defaults): unreviewed and
+    // source-reference inclusion are both off by default and independently
+    // toggled; unreviewed drafts are forced off whenever SafeMode is on.
+    expect(exportSource).toContain("const includeUnreviewedDrafts = !safeMode && (input.options?.includeUnreviewedDrafts ?? false);");
+    expect(exportSource).toContain("const includeSourceReferences = input.options?.includeSourceReferences ?? false;");
+    expect(panelSource).toContain("{!safeMode ? (");
+
+    // AC-1 (spec §3.3 fixed structure) + §4.2 anti-scoring: the generator's
+    // own guardrail text is the only place score/rank/priority vocabulary is
+    // allowed to appear (as a prohibition instruction to the agent).
+    expect(exportSource).toContain('"## 依頼"');
+    expect(exportSource).toContain('"## ガードレール"');
+    expect(exportSource).toContain('"## 文脈"');
+    expect(exportSource).toContain('"## 応答契約"');
+    expect(exportSource).toContain('"## 相関ブロック"');
+    const exportSourceWithoutGuardrailConstant = exportSource.replace(
+      /export const AGENT_TASK_GUARDRAIL_TEXT =[\s\S]*?;\n/,
+      "",
+    );
+    expect(exportSourceWithoutGuardrailConstant).not.toMatch(/score|rank|confidence|priority|readiness/i);
+
+    // AC-4: export-audit is recorded with exportKind="agent-task" via the
+    // existing backend contract (no new endpoint, per spec §8).
+    expect(clientSource).toContain("export async function postExportAudit(");
+    expect(clientSource).toContain("/docs/${docId}/export-audit");
+    expect(appSource).toContain('exportKind: "agent-task"');
+
+    // CARD-META-UI-01 is still Pending (confirmed via research this round) --
+    // no submitter/author/last-editor identity field may appear anywhere.
+    expect(exportSource).not.toMatch(/submitter|createdBy|lastEditedBy|authorRef|reviewerRef/i);
+  });
+
+  it("EXT-AGENT-02: agent response import parses/sanitizes safely, never auto-mutates the document, and adopts are individually undo-able", () => {
+    const appSource = readSource("src/App.tsx");
+    const panelSource = readSource("src/ui/AgentResponseImportPanel.tsx");
+    const importSource = readSource("src/import/agent_response_import.ts");
+
+    // AC-5/CB-1: behind advanced disclosure, not a new core-toolbar action.
+    expect(appSource).toContain("<AgentResponseImportPanel");
+    const triggerButtonStart = appSource.indexOf("ref={agentResponseImportTriggerRef}");
+    const triggerButtonBlock = appSource.slice(Math.max(0, triggerButtonStart - 400), triggerButtonStart);
+    expect(triggerButtonBlock).toContain("{isAdvancedUiEnabled ? (");
+    expect(appSource.slice(triggerButtonStart, triggerButtonStart + 400)).toContain('data-ui-complexity-tier="advanced-content"');
+    expect(appSource.slice(triggerButtonStart, triggerButtonStart + 400)).not.toContain("data-ui-core-action");
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(7);
+
+    // AC-6: parsing/reviewing never touches the document -- only a
+    // per-proposal adopt does, and each adopt is exactly one
+    // applyDocumentChange call (except merge_candidate, which stages into
+    // the existing ephemeral mergeSuggestions review surface instead).
+    expect(appSource).toContain("const handleParseAgentResponse = useCallback(() => {");
+    const parseBlockEnd = appSource.indexOf("}, [document, agentResponsePastedText");
+    const parseBlock = appSource.slice(appSource.indexOf("const handleParseAgentResponse"), parseBlockEnd);
+    expect(parseBlock).not.toContain("applyDocumentChange(");
+    expect(appSource.match(/applyDocumentChange\(\{ \.\.\.document, islands: nextIslands \}, t\("app\.history\.agent_response\.island_title_imported"\)\)/g)).toHaveLength(1);
+    expect(appSource).toContain('t("app.history.agent_response.narrative_imported")');
+    expect(appSource).toContain('t("app.history.agent_response.patch_imported")');
+
+    // §4.2 anti-scoring: forbidden fields are discarded/rejected, never
+    // silently kept; strict mode is a hard reject, lenient discards+warns.
+    expect(importSource).toContain('const FORBIDDEN_SCORING_FIELDS = ["score", "rank", "confidence", "priority"] as const;');
+    expect(importSource).toContain('mode === "strict"');
+    expect(importSource).toContain("forbidden_scoring_fields_discarded");
+
+    // Import-sanitize boundary: every proposal string goes through
+    // sanitizeMarkdownForDisplay, and the payload is size-capped the same
+    // as one ZIP-imported text file (spec §5).
+    expect(importSource).toContain('import { sanitizeMarkdownForDisplay } from "./markdown_sanitize";');
+    expect(importSource).toContain("ZIP_MAX_TEXT_FILE_BYTES");
+
+    // AC-3: orphaned proposals are kept and flagged, not discarded; a
+    // baseDocSignature mismatch on a patch blocks the one-click adopt path
+    // (routed to file export for the existing conflict/rediff flow instead).
+    expect(appSource).toContain("function computeAgentProposalReviewFlags(");
+    expect(appSource).toContain("orphaned: !(cardsExist || islandExists)");
+    expect(panelSource).toContain("review.patchSignatureMismatch");
+    expect(appSource).toContain("if (!review.patch || review.patchSignatureMismatch) break;");
+
+    // patch.ops whitelist + delete_* warning badge (spec §4.2).
+    expect(importSource).toContain("PATCH_OP_KIND_WHITELIST");
+    expect(importSource).toContain("patchHasDeleteOps");
+
+    // AC-5 prompt-injection boundary: proposal text is plain string data
+    // rendered as-is, never interpolated into any dynamic-execution path.
+    expect(panelSource).not.toMatch(/dangerouslySetInnerHTML|eval\(|new Function\(/);
+
+    // CARD-META-UI-01 is still Pending -- no submitter/author identity
+    // field is surfaced from an imported response.
+    expect(importSource).not.toMatch(/submitter|createdBy|lastEditedBy|authorRef|reviewerRef/i);
   });
 
   it("Phase 5c: domain detail filters and guided flow stay behind advanced disclosure", () => {

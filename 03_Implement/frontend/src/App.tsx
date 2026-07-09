@@ -7,6 +7,7 @@ import {
   generateNarrative,
   getDocument,
   getProviderStatus,
+  postExportAudit,
   putDocument,
   recordProposalDecision,
   proposeIslandSummary,
@@ -46,7 +47,8 @@ import {
   getLatestMergeSuggestionDecisionByGroup,
   type MergeSuggestionDecision,
 } from "./domain/merge_suggestion_decisions";
-import { isSourceCard, Document, DocumentV2, Island, Narrative, type EvidenceLink, type Point, type RelationSummary } from "./domain/types";
+import { isSourceCard, Document, DocumentV2, Island, Narrative, type CardKa, type CardMeta, type ContradictionSignalDecision, type ContradictionSignalReviewStatus, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
+import { KNOWN_EDGE_TYPES } from "./domain/types";
 import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -60,6 +62,8 @@ import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
 import { PatchWorkspacePanel } from "./ui/workspace/PatchWorkspacePanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { WorkModePanel } from "./ui/WorkModePanel";
+import { AgentTaskExportPanel } from "./ui/AgentTaskExportPanel";
+import { AgentResponseImportPanel, type ImportedProposalReview } from "./ui/AgentResponseImportPanel";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import { CanvasLegend } from "./ui/CanvasLegend";
 import { Minimap } from "./ui/Minimap";
@@ -87,6 +91,8 @@ import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdow
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
+import { buildAgentTaskSheet, type AgentTaskKind } from "./export/agent_task_export";
+import { parseAgentResponse, type AgentResponseImportMode, type ParsedAgentProposal } from "./import/agent_response_import";
 import { buildExportViewMetadata, type ExportViewMetadata } from "./export/view_metadata";
 import { buildBundleZipBlob, buildExportBundleWithWorkers, downloadBlobAsFile, formatBundleTimestamp, type BundleExportProgressStage } from "./export/bundle_export";
 import { computeVisibleBounds, getCardWorldBounds, getIslandWorldBounds } from "./domain/geometry/bounds";
@@ -534,8 +540,9 @@ function parseComparisonRelationSummaries(value: unknown): DocumentV2["relationS
       islandAId: typeof entry.islandAId === "string" ? entry.islandAId : "",
       islandBId: typeof entry.islandBId === "string" ? entry.islandBId : "",
       relationType:
-        entry.relationType === "related" || entry.relationType === "negate" || entry.relationType === "unknown"
-          ? entry.relationType
+        entry.relationType === "unknown" ||
+        (typeof entry.relationType === "string" && (KNOWN_EDGE_TYPES as readonly string[]).includes(entry.relationType))
+          ? (entry.relationType as RelationSummary["relationType"])
           : "unknown",
       derived: typeof entry.derived === "boolean" ? entry.derived : false,
       text: typeof entry.text === "string" ? entry.text : "",
@@ -914,6 +921,37 @@ function createIslandFromSelection(selectedCardIds: string[], existingIslands: I
   };
 }
 
+// EXT-AGENT-02 (spec §4.4): a proposal whose targetRef no longer resolves in
+// the current document (it moved on since the response's baseDocSignature)
+// is kept and shown flagged rather than silently dropped ("孤立提案" -- no
+// existing code precedent for this concept, per this round's research; see
+// the issue's completion record). narrative_draft has no target to resolve,
+// so it is never orphaned; patch uses a signature-mismatch flag instead,
+// since staleness there is about the WHOLE patch, not a single targetRef.
+function computeAgentProposalReviewFlags(
+  proposal: ParsedAgentProposal,
+  doc: DocumentV2
+): { orphaned: boolean; patchSignatureMismatch?: boolean } {
+  if (proposal.kind === "narrative_draft") {
+    return { orphaned: false };
+  }
+  if (proposal.kind === "patch") {
+    const currentSignature = `${doc.id}:${doc.updatedAt}`;
+    const mismatch = Boolean(proposal.patch?.baseDocSignature && proposal.patch.baseDocSignature !== currentSignature);
+    return { orphaned: false, patchSignatureMismatch: mismatch };
+  }
+
+  const cardIds = proposal.targetRef.cardIds ?? [];
+  const islandId = proposal.targetRef.islandId;
+  const cardsExist = cardIds.length > 0 && cardIds.every((id) => doc.cards.some((card) => card.id === id));
+  const islandExists = islandId ? doc.islands.some((island) => island.id === islandId) : false;
+
+  if (proposal.kind === "island_title") {
+    return { orphaned: !islandExists };
+  }
+  return { orphaned: !(cardsExist || islandExists) };
+}
+
 
 
 // UX-SCALE-01 (c) (ADR-0048 D2, Round 5 redline): auto-fit now generates an
@@ -1062,6 +1100,20 @@ export default function App() {
   const [isAdvancedUiEnabled, setIsAdvancedUiEnabled] = useState<boolean>(loadAdvancedUiEnabled);
   const [isWorkModeOpen, setIsWorkModeOpen] = useState(false);
   const workModeTriggerRef = useRef<HTMLButtonElement>(null);
+  const [isAgentTaskExportOpen, setIsAgentTaskExportOpen] = useState(false);
+  const agentTaskExportTriggerRef = useRef<HTMLButtonElement>(null);
+  const [agentTaskKind, setAgentTaskKind] = useState<AgentTaskKind>("island_titles");
+  const [agentTaskDesiredCount, setAgentTaskDesiredCount] = useState(3);
+  const [agentTaskIncludeUnreviewedDrafts, setAgentTaskIncludeUnreviewedDrafts] = useState(false);
+  const [agentTaskIncludeSourceReferences, setAgentTaskIncludeSourceReferences] = useState(false);
+  const [agentTaskScopeConfirmed, setAgentTaskScopeConfirmed] = useState(false);
+  const [isAgentResponseImportOpen, setIsAgentResponseImportOpen] = useState(false);
+  const agentResponseImportTriggerRef = useRef<HTMLButtonElement>(null);
+  const [agentResponsePastedText, setAgentResponsePastedText] = useState("");
+  const [agentResponseImportMode, setAgentResponseImportMode] = useState<AgentResponseImportMode>("lenient");
+  const [agentResponseParseErrors, setAgentResponseParseErrors] = useState<string[]>([]);
+  const [agentResponseParseWarnings, setAgentResponseParseWarnings] = useState<string[]>([]);
+  const [agentImportedProposalReviews, setAgentImportedProposalReviews] = useState<ImportedProposalReview[]>([]);
   const [critiqueWorkflowFocusRequest, setCritiqueWorkflowFocusRequest] = useState(0);
   const [contextMenu, setContextMenu] = useState<
     | {
@@ -1120,6 +1172,8 @@ export default function App() {
   // UX-VISUAL-02: protection marks for lone-wolf cards / small islands.
   // Default ON but subtle (ADR-0048 D3 「淡く強調」); toggleable OFF in the View panel.
   const [showProtectionMarks, setShowProtectionMarks] = useState(true);
+  // DOMAIN-TRACE-01 AC-3 (CB-1): the canvas seq badge is DEFAULT OFF.
+  const [showSeqNumbers, setShowSeqNumbers] = useState(false);
   // PROV-VIS-01 (ADR-0050 D1): read-only provider visibility. providerKind is
   // fetched once from the backend config echo; lastAiCallOutcome is tracked
   // client-side from the actual result of the most recent AI call.
@@ -1141,6 +1195,8 @@ export default function App() {
   );
   const [showLabelBounds, setShowLabelBounds] = useState(false);
   const [includeUnreviewedDraftsInExport, setIncludeUnreviewedDraftsInExport] = useState(false);
+  // DOMAIN-TRACE-01 (schemas.md §15.4): share exports drop Card.meta unless opted in.
+  const [includeSourceReferencesInExport, setIncludeSourceReferencesInExport] = useState(false);
   const [revealedSourceCardIds, setRevealedSourceCardIds] = useState<Set<string>>(new Set());
   const [showCanonicalOnlyEdges, setShowCanonicalOnlyEdges] = useState(false);
   const [showReadingOrder, setShowReadingOrder] = useState(false);
@@ -1154,6 +1210,8 @@ export default function App() {
   const [outlineIncludeUnreviewed, setOutlineIncludeUnreviewed] = useState(false);
   const [outlineAppendDiagnostics, setOutlineAppendDiagnostics] = useState(false);
   const [outlineAppendRecommendations, setOutlineAppendRecommendations] = useState(false);
+  // DOMAIN-KA-01 (schemas.md §17.4): optional, default-OFF outline section.
+  const [outlineAppendKaFields, setOutlineAppendKaFields] = useState(false);
   const [outlineQualityReport, setOutlineQualityReport] = useState<OutlineQualityReport | null>(null);
   const [contradictionReport, setContradictionReport] = useState<ContradictionReport | null>(null);
   const [distributionReport, setDistributionReport] = useState<DistributionReport | null>(null);
@@ -1213,7 +1271,7 @@ export default function App() {
   const [islandSummaryProposal, setIslandSummaryProposal] = useState<IslandSummaryProposal | null>(null);
   const [proposalAuditTrail, setProposalAuditTrail] = useState<string[]>([]);
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
-  const [connectEdgeType, setConnectEdgeType] = useState<"related" | "negate">("related");
+  const [connectEdgeType, setConnectEdgeType] = useState<KnownEdgeType>("related");
   const [maxDepth, setMaxDepth] = useState<ViewMaxDepth>("all");
   const [hierarchyLevel, setHierarchyLevel] = useState<HierarchyLevel>("detail");
   const [isViewControlsOpen, setIsViewControlsOpen] = useState(false);
@@ -3695,6 +3753,35 @@ export default function App() {
     setSelectedIslandId(null);
   }, [abstractMapView, summaryView]);
 
+  // DOMAIN-KJ-01: change a persisted edge's relation type in place (one
+  // history step, Cmd/Ctrl+Z reversible). Only persisted edges are eligible —
+  // derived/aggregated edges have no document row to mutate.
+  const handleEdgeTypeChange = useCallback(
+    (edgeId: string, nextType: KnownEdgeType) => {
+      if (!document) {
+        return;
+      }
+
+      const nextEdges = document.edges.map((edge) => {
+        if (edge.id !== edgeId || edge.type === nextType) {
+          return edge;
+        }
+        return { ...edge, type: nextType };
+      });
+
+      const hasChanges = nextEdges.some((edge, index) => edge !== document.edges[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        { ...document, edges: nextEdges },
+        t("app.history.edge.type_updated", { value: t(`side_panel.connect.${nextType}`) })
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
   const handleCardSelect = useCallback((cardId: string, isShiftPressed: boolean) => {
     if (isPickingEdgeTarget) {
       if (!document) {
@@ -4440,6 +4527,108 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+  // DOMAIN-TRACE-01 (schemas.md §15): one history step per change (⌘Z
+  // reversible). The meta object is dropped entirely when both fields are
+  // cleared so an unset card stays byte-identical to the pre-feature shape.
+  const handleCardMetaChange = useCallback(
+    (cardId: string, rawSeq: string, rawSource: string) => {
+      if (!document) {
+        return;
+      }
+
+      const parsedSeq = rawSeq.trim().length > 0 ? Number(rawSeq) : undefined;
+      const seq = parsedSeq !== undefined && Number.isFinite(parsedSeq) ? parsedSeq : undefined;
+      const source = rawSource.trim().length > 0 ? rawSource : undefined;
+      const nextMeta: CardMeta | undefined =
+        seq === undefined && source === undefined
+          ? undefined
+          : { ...(seq !== undefined ? { seq } : {}), ...(source !== undefined ? { source } : {}) };
+
+      const nextCards = document.cards.map((card) => {
+        if (card.id !== cardId) {
+          return card;
+        }
+
+        const currentSeq = card.meta?.seq;
+        const currentSource = card.meta?.source;
+        if (currentSeq === nextMeta?.seq && currentSource === nextMeta?.source) {
+          return card;
+        }
+
+        if (nextMeta === undefined) {
+          const { meta: _removed, ...rest } = card;
+          return rest;
+        }
+
+        return { ...card, meta: nextMeta };
+      });
+
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+        },
+        t("app.history.card.meta_updated"),
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleCardKaChange = useCallback(
+    (cardId: string, rawVoice: string, rawValue: string) => {
+      if (!document) {
+        return;
+      }
+
+      const voice = rawVoice.trim().length > 0 ? rawVoice : undefined;
+      const value = rawValue.trim().length > 0 ? rawValue : undefined;
+      const nextKa: CardKa | undefined =
+        voice === undefined && value === undefined
+          ? undefined
+          : { ...(voice !== undefined ? { voice } : {}), ...(value !== undefined ? { value } : {}) };
+
+      const nextCards = document.cards.map((card) => {
+        if (card.id !== cardId) {
+          return card;
+        }
+
+        const currentVoice = card.ka?.voice;
+        const currentValue = card.ka?.value;
+        if (currentVoice === nextKa?.voice && currentValue === nextKa?.value) {
+          return card;
+        }
+
+        if (nextKa === undefined) {
+          const { ka: _removed, ...rest } = card;
+          return rest;
+        }
+
+        return { ...card, ka: nextKa };
+      });
+
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+        },
+        t("app.history.card.ka_updated"),
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
   const handleCardClaimTypeChange = useCallback(
     (cardId: string, nextClaimType: ClaimType) => {
       if (!document) {
@@ -4741,6 +4930,34 @@ export default function App() {
           evidenceLinks: nextEvidenceLinks,
         },
         t("app.history.evidence_link.updated"),
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleContradictionSignalDecision = useCallback(
+    (signatureKey: string, status: ContradictionSignalReviewStatus | null) => {
+      if (!document) {
+        return;
+      }
+
+      const existingDecisions = document.contradictionSignalDecisions ?? [];
+      const withoutThisSignal = existingDecisions.filter((entry) => entry.signatureKey !== signatureKey);
+
+      // null = revert to undecided ("proposed" is never persisted — DOMAIN-EXPR-04, schemas.md §16.2).
+      const nextDecisions: ContradictionSignalDecision[] = status === null
+        ? withoutThisSignal
+        : [...withoutThisSignal, { signatureKey, status, decidedAt: new Date().toISOString() }];
+
+      const { contradictionSignalDecisions: _removed, ...documentWithoutDecisions } = document;
+      const nextDocument = nextDecisions.length > 0
+        ? { ...document, contradictionSignalDecisions: nextDecisions }
+        : documentWithoutDecisions;
+
+      applyDocumentChange(
+        nextDocument,
+        t("app.history.contradiction_signal.decided"),
         { preserveSuggestionPreview: true }
       );
     },
@@ -7132,11 +7349,13 @@ export default function App() {
         diagnosticsReport: outlineQualityReport,
         appendRecommendations: outlineAppendRecommendations,
         recommendations: outlineRecommendations,
+        appendKaFields: outlineAppendKaFields,
       },
     );
   }, [
     document,
     outlineAppendDiagnostics,
+    outlineAppendKaFields,
     outlineAppendRecommendations,
     outlineIncludeCardTexts,
     outlineIncludeRelationSummaries,
@@ -7718,6 +7937,257 @@ export default function App() {
   const handleToggleWorkMode = useCallback(() => {
     setIsWorkModeOpen((prev) => !prev);
   }, []);
+
+  // EXT-AGENT-01: any change that could change what would be exported
+  // requires re-confirming scope, mirroring CE1's previewConfirmed contract
+  // (a change to the query invalidates a prior confirmation).
+  const handleToggleAgentTaskExport = useCallback(() => {
+    setIsAgentTaskExportOpen((prev) => !prev);
+  }, []);
+  const handleAgentTaskKindChange = useCallback((value: AgentTaskKind) => {
+    setAgentTaskKind(value);
+    setAgentTaskScopeConfirmed(false);
+  }, []);
+  const handleAgentTaskIncludeUnreviewedDraftsChange = useCallback((value: boolean) => {
+    setAgentTaskIncludeUnreviewedDrafts(value);
+    setAgentTaskScopeConfirmed(false);
+  }, []);
+  const handleAgentTaskIncludeSourceReferencesChange = useCallback((value: boolean) => {
+    setAgentTaskIncludeSourceReferences(value);
+    setAgentTaskScopeConfirmed(false);
+  }, []);
+
+  const buildCurrentAgentTaskSheet = useCallback(async () => {
+    if (!document) return null;
+    return buildAgentTaskSheet({
+      doc: document,
+      taskKind: agentTaskKind,
+      selectedCardIds,
+      selectedIslandIds: selectedIslandId ? [selectedIslandId] : [],
+      safeMode,
+      taskId: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      options: {
+        includeUnreviewedDrafts: agentTaskIncludeUnreviewedDrafts,
+        includeSourceReferences: agentTaskIncludeSourceReferences,
+        desiredCount: agentTaskDesiredCount,
+      },
+    });
+  }, [
+    document,
+    agentTaskKind,
+    selectedCardIds,
+    selectedIslandId,
+    safeMode,
+    agentTaskIncludeUnreviewedDrafts,
+    agentTaskIncludeSourceReferences,
+    agentTaskDesiredCount,
+  ]);
+
+  const reportAgentTaskExportAudit = useCallback(() => {
+    if (!document) return;
+    void postExportAudit(document.id, { safeMode, exportKind: "agent-task" }).catch(() => {
+      // Fail-open by design (spec §3.4 / ADR-0049 D2): the backend audit
+      // dispatcher itself never blocks on send failure, and this call is
+      // reporting after the local export already completed -- there is
+      // nothing to roll back, so a network error here is silently ignored
+      // rather than surfaced as an export failure the user didn't cause.
+    });
+  }, [document, safeMode]);
+
+  const handleCopyAgentTaskSheet = useCallback(async () => {
+    const output = await buildCurrentAgentTaskSheet();
+    if (!output) return;
+    try {
+      await navigator.clipboard.writeText(output.taskSheetMd);
+      setStatusMessage(t("agent_task_export.copied"));
+      reportAgentTaskExportAudit();
+    } catch {
+      setStatusMessage(t("agent_task_export.copy_failed"));
+    }
+  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit]);
+
+  const handleDownloadAgentTaskSheet = useCallback(async () => {
+    const output = await buildCurrentAgentTaskSheet();
+    if (!output) return;
+    downloadTextFile("task-sheet.md", "text/markdown", output.taskSheetMd);
+    setStatusMessage(t("agent_task_export.downloaded_md"));
+    reportAgentTaskExportAudit();
+  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit]);
+
+  const handleDownloadAgentTaskJson = useCallback(async () => {
+    const output = await buildCurrentAgentTaskSheet();
+    if (!output) return;
+    downloadTextFile("task.json", "application/json", output.taskJson);
+    setStatusMessage(t("agent_task_export.downloaded_json"));
+    reportAgentTaskExportAudit();
+  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit]);
+
+  // EXT-AGENT-02: parsing/reviewing a pasted response never touches the
+  // document (AC-6); only a per-proposal "Import" click does, one
+  // applyDocumentChange each, so Cmd+Z reverts a single imported item.
+  // context-audit (CE1/CE4's own query->bundle->proposal->apply chain) does
+  // not fit this event -- no real equivalenceKey/bundleHash chain exists
+  // for an externally-pasted response, and its command whitelist has no
+  // slot for it without a backend change. recordProposalDecision (the
+  // existing generic /ai/proposals/audit endpoint already used for
+  // island-summary adopt/hold/reject) is reused instead for every kind's
+  // adopt/reject here -- see the issue's completion record for the full
+  // reasoning.
+  const handleToggleAgentResponseImport = useCallback(() => {
+    setIsAgentResponseImportOpen((prev) => !prev);
+  }, []);
+
+  const handleParseAgentResponse = useCallback(() => {
+    if (!document) return;
+    const result = parseAgentResponse(agentResponsePastedText, agentResponseImportMode);
+    if (!result.ok) {
+      setAgentResponseParseErrors(result.errors);
+      setAgentResponseParseWarnings([]);
+      return;
+    }
+    setAgentResponseParseErrors([]);
+    setAgentResponseParseWarnings(result.warnings);
+
+    const existingIds = new Set(agentImportedProposalReviews.map((review) => review.proposalId));
+    if (result.response.proposals.length > 0 && result.response.proposals.every((proposal) => existingIds.has(proposal.proposalId))) {
+      setStatusMessage(t("agent_response_import.duplicate_status_message"));
+      return;
+    }
+
+    const newReviews: ImportedProposalReview[] = result.response.proposals
+      .filter((proposal) => !existingIds.has(proposal.proposalId))
+      .map((proposal) => ({
+        ...proposal,
+        status: "pending" as const,
+        ...computeAgentProposalReviewFlags(proposal, document),
+      }));
+    setAgentImportedProposalReviews((previous) => [...previous, ...newReviews]);
+  }, [document, agentResponsePastedText, agentResponseImportMode, agentImportedProposalReviews]);
+
+  const handleAdoptAgentImportedProposal = useCallback(
+    (proposalId: string) => {
+      if (!document) return;
+      const review = agentImportedProposalReviews.find((item) => item.proposalId === proposalId);
+      if (!review || review.status !== "pending" || review.orphaned) return;
+
+      let adopted = false;
+      switch (review.kind) {
+        case "island_title": {
+          const islandId = review.targetRef.islandId;
+          const title = review.content.title;
+          if (!islandId || !title) break;
+          const nextIslands = document.islands.map((island) =>
+            island.id === islandId ? { ...island, title, titleReviewed: false } : island
+          );
+          applyDocumentChange({ ...document, islands: nextIslands }, t("app.history.agent_response.island_title_imported"));
+          adopted = true;
+          break;
+        }
+        case "critique":
+        case "opposing_viewpoint": {
+          const text = review.content.text;
+          if (!text) break;
+          const cardId = review.targetRef.cardIds?.[0];
+          const islandId = review.targetRef.islandId;
+          if (cardId) {
+            const nextCards = document.cards.map((card) => (card.id === cardId ? { ...card, critique: text } : card));
+            applyDocumentChange({ ...document, cards: nextCards }, t("app.history.agent_response.critique_imported"));
+            adopted = true;
+          } else if (islandId) {
+            const nextIslands = document.islands.map((island) => (island.id === islandId ? { ...island, critique: text } : island));
+            applyDocumentChange({ ...document, islands: nextIslands }, t("app.history.agent_response.critique_imported"));
+            adopted = true;
+          }
+          break;
+        }
+        case "narrative_draft": {
+          const text = review.content.text ?? review.content.mergedText;
+          if (!text) break;
+          const nextNarrative: Narrative = {
+            id: crypto.randomUUID(),
+            title: review.content.title ?? "Imported Draft",
+            text,
+            createdAt: new Date().toISOString(),
+            reviewed: false,
+          };
+          applyDocumentChange(
+            { ...document, narratives: [...(document.narratives ?? []), nextNarrative] },
+            t("app.history.agent_response.narrative_imported")
+          );
+          adopted = true;
+          break;
+        }
+        case "merge_candidate": {
+          const cardIds = review.targetRef.cardIds ?? [];
+          const mergedText = review.content.mergedText ?? review.content.text;
+          if (cardIds.length < 2 || !mergedText) break;
+          const [targetCardId, ...candidateCardIds] = cardIds;
+          setMergeSuggestions((previous) => [
+            ...previous,
+            {
+              groupId: `agent-response-${review.proposalId}`,
+              targetCardId,
+              candidateCardIds,
+              scoreSummary: { min: 0, max: 0, avg: 0 },
+              reasonCodes: [`agent-response:${review.proposalId}`],
+              snapshotVersion: `agent-response.v1:${review.proposalId}`,
+              cardIds,
+              mergedTextDraft: mergedText,
+              rationale: review.rationale,
+              editedText: mergedText,
+              isEdited: false,
+            },
+          ]);
+          adopted = true;
+          break;
+        }
+        case "patch": {
+          if (!review.patch || review.patchSignatureMismatch) break;
+          const lintResult = lintPatchAgainstCurrentDoc(document, review.patch);
+          if (shouldBlockPatchApplyByLint(lintResult)) break;
+          const { document: nextDoc, meta } = applyPatchWithResolutionsDetailed(document, review.patch, {});
+          const loggedDoc = appendPatchApplyLog(nextDoc, review.patch, {
+            ...meta,
+            patchTitle: `agent-response:${review.proposalId}`,
+            baseDocSignature: `${document.id}:${document.updatedAt}`,
+          });
+          applyDocumentChange(loggedDoc, t("app.history.agent_response.patch_imported"));
+          adopted = true;
+          break;
+        }
+      }
+
+      if (!adopted) {
+        return;
+      }
+
+      void recordProposalDecision(proposalId, "adopt", "human");
+      setAgentImportedProposalReviews((previous) =>
+        previous.map((item) => (item.proposalId === proposalId ? { ...item, status: "adopted" as const } : item))
+      );
+      setStatusMessage(t("agent_response_import.adopted_status_message"));
+    },
+    [document, agentImportedProposalReviews, applyDocumentChange]
+  );
+
+  const handleRejectAgentImportedProposal = useCallback((proposalId: string) => {
+    void recordProposalDecision(proposalId, "reject", "human");
+    setAgentImportedProposalReviews((previous) =>
+      previous.map((item) => (item.proposalId === proposalId ? { ...item, status: "rejected" as const } : item))
+    );
+    setStatusMessage(t("agent_response_import.rejected_status_message"));
+  }, []);
+
+  const handleExportAgentImportedProposalPatchFile = useCallback(
+    (proposalId: string) => {
+      const review = agentImportedProposalReviews.find((item) => item.proposalId === proposalId);
+      if (!review?.patch) return;
+      downloadTextFile(`agent-patch-${proposalId}.json`, "application/json", JSON.stringify(review.patch, null, 2));
+      setStatusMessage(t("agent_response_import.exported_patch_file_status_message"));
+    },
+    [agentImportedProposalReviews]
+  );
   const handleToggleSharePanel = useCallback(() => {
     setIsSharePanelOpen((previousOpen) => {
       const nextOpen = !previousOpen;
@@ -7824,6 +8294,48 @@ export default function App() {
           }}
         >
           {isSuggesting ? t("suggestion.panel.suggesting") : t("suggestion.panel.suggest_layout")}
+        </button>
+      ) : null}
+      {isAdvancedUiEnabled ? (
+        <button
+          ref={agentTaskExportTriggerRef}
+          data-ui-complexity-tier="advanced-content"
+          type="button"
+          onClick={handleToggleAgentTaskExport}
+          aria-pressed={isAgentTaskExportOpen}
+          title={t("agent_task_export.title")}
+          style={{
+            border: "1px solid #cbd5e1",
+            backgroundColor: isAgentTaskExportOpen ? "#e0e7ff" : "#ffffff",
+            color: "#0f172a",
+            borderRadius: 6,
+            padding: "6px 12px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          {t("agent_task_export.title")}
+        </button>
+      ) : null}
+      {isAdvancedUiEnabled ? (
+        <button
+          ref={agentResponseImportTriggerRef}
+          data-ui-complexity-tier="advanced-content"
+          type="button"
+          onClick={handleToggleAgentResponseImport}
+          aria-pressed={isAgentResponseImportOpen}
+          title={t("agent_response_import.title")}
+          style={{
+            border: "1px solid #cbd5e1",
+            backgroundColor: isAgentResponseImportOpen ? "#e0e7ff" : "#ffffff",
+            color: "#0f172a",
+            borderRadius: 6,
+            padding: "6px 12px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          {t("agent_response_import.title")}
         </button>
       ) : null}
       <button
@@ -8140,6 +8652,7 @@ export default function App() {
             diagnosticsReport: outlineQualityReport,
             appendRecommendations: outlineAppendRecommendations,
             recommendations: outlineRecommendations,
+            appendKaFields: outlineAppendKaFields,
           },
           outlineQualityReport,
           contradictionReport,
@@ -8147,6 +8660,7 @@ export default function App() {
           dialecticBalanceReport,
           viewVisibility,
           packVisibility,
+          includeSourceReferences: includeSourceReferencesInExport,
         }, {
           signal: controller.signal,
           onProgress: (stage) => ctx.reportProgress({
@@ -8215,6 +8729,7 @@ export default function App() {
     lodThresholds,
     maxDepth,
     outlineAppendDiagnostics,
+    outlineAppendKaFields,
     outlineAppendRecommendations,
     outlineIncludeCardTexts,
     outlineIncludeRelationSummaries,
@@ -8236,6 +8751,7 @@ export default function App() {
     showReadingOrder,
     summaryView,
     viewVisibility,
+    includeSourceReferencesInExport,
   ]);
 
   const handleExportAbstractMapMarkdownWithPng = useCallback(async () => {
@@ -9063,6 +9579,8 @@ export default function App() {
             onToggleCanvasLegend={() => setIsCanvasLegendOpen((previous) => !previous)}
             showProtectionMarks={showProtectionMarks}
             onToggleProtectionMarks={() => setShowProtectionMarks((previous) => !previous)}
+            showSeqNumbers={showSeqNumbers}
+            onShowSeqNumbersChange={setShowSeqNumbers}
             providerKind={providerKind}
             lastAiCallOutcome={lastAiCallOutcome}
             lodEnabled={lodEnabled}
@@ -9220,6 +9738,8 @@ export default function App() {
       onSafeModeChange={handleSafeModeChange}
       includeUnreviewedDrafts={includeUnreviewedDraftsInExport}
       onIncludeUnreviewedDraftsChange={setIncludeUnreviewedDraftsInExport}
+      includeSourceReferences={includeSourceReferencesInExport}
+      onIncludeSourceReferencesChange={setIncludeSourceReferencesInExport}
       currentReviewerRef={currentReviewerRef}
       currentReviewerRefSource={currentReviewerRefSource}
       onCurrentReviewerRefChange={(value) => {
@@ -9336,6 +9856,7 @@ export default function App() {
   const openRecentExtraContent = (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <select
+        aria-label={t("app.toolbar.recent_documents")}
         value={selectedRecentDocumentId}
         onChange={(event) => {
           setSelectedRecentDocumentId(event.target.value);
@@ -9922,6 +10443,20 @@ export default function App() {
 
             handleCardCritiqueChange(selectedCard.id, value);
           }}
+          onCardMetaChange={(rawSeq, rawSource) => {
+            if (!selectedCard) {
+              return;
+            }
+
+            handleCardMetaChange(selectedCard.id, rawSeq, rawSource);
+          }}
+          onCardKaChange={(rawVoice, rawValue) => {
+            if (!selectedCard) {
+              return;
+            }
+
+            handleCardKaChange(selectedCard.id, rawVoice, rawValue);
+          }}
           onCardCritiqueTagsChange={(value) => {
             if (!selectedCard) {
               return;
@@ -10146,6 +10681,10 @@ export default function App() {
           document={document}
           selectedIslandRelationEdge={selectedIslandRelationEdge}
           selectedAggregatedEdge={selectedAggregatedEdge}
+          selectedPersistedEdgeType={
+            selectedAggregatedEdge ? document?.edges.find((edge) => edge.id === selectedAggregatedEdge.id)?.type ?? null : null
+          }
+          onEdgeTypeChange={handleEdgeTypeChange}
           onRevealSelectedEdgeSources={handleRevealSelectedEdgeSources}
           onInspectSelectedEdgeCard={handleInspectSelectedEdgeCard}
           selectedRelationSummary={selectedRelationSummary}
@@ -10230,6 +10769,8 @@ export default function App() {
           onOutlineAppendDiagnosticsChange={setOutlineAppendDiagnostics}
           outlineAppendRecommendations={outlineAppendRecommendations}
           onOutlineAppendRecommendationsChange={setOutlineAppendRecommendations}
+          outlineAppendKaFields={outlineAppendKaFields}
+          onOutlineAppendKaFieldsChange={setOutlineAppendKaFields}
           outlineQualityReport={outlineQualityReport}
           outlineRecommendations={outlineRecommendations}
           contradictionReport={contradictionReport}
@@ -10243,6 +10784,7 @@ export default function App() {
           computeProgressMessage={computeProgressMessage}
           onFocusOutlineDiagnosticRef={focusItem}
           onFocusContradictionSignal={handleFocusContradictionSignal}
+          onContradictionSignalDecision={handleContradictionSignalDecision}
           onFocusDistributionIsland={focusIslandById}
           onFocusDialecticBalanceFinding={handleFocusDialecticBalanceFinding}
           onCopyReadingOutlineMd={() => {
@@ -10374,6 +10916,7 @@ export default function App() {
             lodLevelOverride={lodLevelOverride}
             lodShowLoneWolvesWhenFar={lodShowLoneWolvesWhenFar}
             showProtectionMarks={showProtectionMarks}
+            showSeqNumbers={showSeqNumbers}
             effectiveCollapsedIslandIds={effectiveCollapsedIslandIdSet}
             showDerivedIslandEdges={summaryView || abstractMapView || effectiveCollapsedIslandIdSet.size > 0 || currentLod?.level === "far"}
             focusCardId={focusCardId}
@@ -10563,6 +11106,49 @@ export default function App() {
         </div>
       )}
     </WorkModePanel>
+    <AgentTaskExportPanel
+      isOpen={isAgentTaskExportOpen}
+      onClose={() => setIsAgentTaskExportOpen(false)}
+      triggerRef={agentTaskExportTriggerRef}
+      safeMode={safeMode}
+      selectedCardCount={selectedCardIds.length}
+      selectedIslandCount={selectedIslandId ? 1 : 0}
+      taskKind={agentTaskKind}
+      onTaskKindChange={handleAgentTaskKindChange}
+      desiredCount={agentTaskDesiredCount}
+      onDesiredCountChange={setAgentTaskDesiredCount}
+      includeUnreviewedDrafts={agentTaskIncludeUnreviewedDrafts}
+      onIncludeUnreviewedDraftsChange={handleAgentTaskIncludeUnreviewedDraftsChange}
+      includeSourceReferences={agentTaskIncludeSourceReferences}
+      onIncludeSourceReferencesChange={handleAgentTaskIncludeSourceReferencesChange}
+      scopeConfirmed={agentTaskScopeConfirmed}
+      onScopeConfirmedChange={setAgentTaskScopeConfirmed}
+      onCopyMarkdown={() => {
+        void handleCopyAgentTaskSheet();
+      }}
+      onDownloadMarkdown={() => {
+        void handleDownloadAgentTaskSheet();
+      }}
+      onDownloadTaskJson={() => {
+        void handleDownloadAgentTaskJson();
+      }}
+    />
+    <AgentResponseImportPanel
+      isOpen={isAgentResponseImportOpen}
+      onClose={() => setIsAgentResponseImportOpen(false)}
+      triggerRef={agentResponseImportTriggerRef}
+      pastedText={agentResponsePastedText}
+      onPastedTextChange={setAgentResponsePastedText}
+      mode={agentResponseImportMode}
+      onModeChange={setAgentResponseImportMode}
+      onParse={handleParseAgentResponse}
+      parseErrors={agentResponseParseErrors}
+      parseWarnings={agentResponseParseWarnings}
+      reviews={agentImportedProposalReviews}
+      onAdopt={handleAdoptAgentImportedProposal}
+      onReject={handleRejectAgentImportedProposal}
+      onExportPatchFile={handleExportAgentImportedProposalPatchFile}
+    />
     {isCommandPaletteOpen ? (
       <CommandPalette
         commands={paletteCommands}

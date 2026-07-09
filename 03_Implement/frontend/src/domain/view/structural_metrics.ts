@@ -1,4 +1,5 @@
 import type { DocumentV2, EdgeType, EvidenceLink } from "../types";
+import { KNOWN_EDGE_TYPES } from "../types";
 
 export type StructureMetrics = {
   cardCount: number;
@@ -29,7 +30,10 @@ function roundTo4(value: number): number {
 
 
 function isTypedEdgeType(value: unknown): value is EdgeType {
-  return value === "related" || value === "negate";
+  // DOMAIN-KJ-01: all five known relation types count as "typed"; a
+  // preserved UNKNOWN type string does not (its vocabulary is not
+  // understood, so it cannot contribute to type-based metrics).
+  return typeof value === "string" && (KNOWN_EDGE_TYPES as readonly string[]).includes(value);
 }
 
 type CardPair = { fromId: string; toId: string };

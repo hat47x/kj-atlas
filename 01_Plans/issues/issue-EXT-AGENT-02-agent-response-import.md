@@ -1,11 +1,11 @@
 # Issue Draft: EXT-AGENT-02 エージェント応答の取り込みと提案化（AgentResponse v1）
 
 - Type: Feature request
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Claude Code
 - Scope: `03_Implement/frontend/src/import/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `EXT-AGENT-02`
 - Related ADR/Spec: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（D3）, `02_Architecture/external_agent_collaboration_spec.md`（§4/§5 正本）, `01_Plans/issues/issue-CE3-patch-workspace-presets.md`
@@ -51,20 +51,20 @@
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: 正常応答の取り込みで、5種別が各既存面に未レビュー提案として出現することが e2e で固定される（採用→⌘Z 復帰含む）。
-- [ ] AC-2: score/rank/confidence を含む応答で、寛容=破棄＋警告・厳格=拒否となることが integration で固定される。
-- [ ] AC-3: baseDocSignature 不一致の patch が黙って適用されず conflict/rediff 経路に乗る。orphaned 提案が保持表示される。
-- [ ] AC-4: 同一 taskId＋同一応答の再取込が重複を作らない（冪等）。
-- [ ] AC-5: 応答中の指示的文言が表示のみで、自動動作に接続しない（コードレビュー＋テストで確認）。
-- [ ] AC-6: 「自動確定なし」（取り込み直後に文書が変化しない）がテストで固定される。
+- [x] AC-1: 正常応答の取り込みで、5種別が各既存面に未レビュー提案として出現することが e2e で固定される（採用→⌘Z 復帰含む）。※「各既存面」の解釈に関するスコープ判断は下記「完了記録」参照。
+- [x] AC-2: score/rank/confidence を含む応答で、寛容=破棄＋警告・厳格=拒否となることが integration で固定される。
+- [x] AC-3: baseDocSignature 不一致の patch が黙って適用されず conflict/rediff 経路に乗る。orphaned 提案が保持表示される。
+- [x] AC-4: 同一 taskId＋同一応答の再取込が重複を作らない（冪等）。
+- [x] AC-5: 応答中の指示的文言が表示のみで、自動動作に接続しない（コードレビュー＋テストで確認）。
+- [x] AC-6: 「自動確定なし」（取り込み直後に文書が変化しない）がテストで固定される。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 パーサ＋検証＋サニタイズ（unit/golden）。
-- [ ] T2 種別→既存面への変換（taskId グルーピング・孤立提案保持）。
-- [ ] T3 staleness（署名照合・conflict/rediff 接続・冪等）。
-- [ ] T4 取込 UI＋結果サマリ＋i18n。
-- [ ] T5 監査（context-audit）＋integration/e2e 一式。
+- [x] T1 パーサ＋検証＋サニタイズ（unit/golden）。
+- [x] T2 種別→既存面への変換（taskId グルーピング・孤立提案保持）。※「既存面」が実際には2種別（island_title・critique/opposing_viewpoint）に存在しないことが判明したため、新規の統一レビューパネルで代替。下記「完了記録」参照。
+- [x] T3 staleness（署名照合・conflict/rediff 接続・冪等）。
+- [x] T4 取込 UI＋結果サマリ＋i18n。
+- [x] T5 監査（recordProposalDecision で代替。context-audit は不適合。下記「完了記録」参照）＋integration/e2e 一式。
 
 ## 7) 検証計画 / Validation plan
 
@@ -79,3 +79,57 @@
 - Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`, `02_Architecture/external_agent_collaboration_spec.md`（§4/§5/§6）
 - Related: `01_Plans/issues/issue-EXT-AGENT-01-agent-task-package-export.md`, `issue-CE3-patch-workspace-presets.md`, `issue-QA-MONKEY-01-safemode-export-boundary.md`
 - Derived-from: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`
+
+## 完了記録 2026-07-09（Claude Code）
+
+### スコープ判断1: 「既存面」が実在しない2種別（island_title・critique/opposing_viewpoint）は新規の統一レビューパネルで受ける
+
+実装前の調査で、spec §4.3 が前提とする「既存の候補提示 UI」は5種別のうち3種別にしか実在しないことが判明した。
+
+- `merge_candidate` → `MergeSuggestionsPanel`（`mergeSuggestions` state）: 実在。ただし単一プロデューサ・置き換え専用で、他ソースからの追加（append）経路は無かった。
+- `narrative_draft` → `document.narratives`: 実在。追記専用（append-only）で、そのまま流用可能。
+- `island_title` → **実在しない**。既存の `IslandSummaryProposal` は `island.summaryText`（要約）を対象とし、`title`（タイトル）ではない。単数（1島につき1件のみ）で複数候補の提示機構もない。
+- `opposing_viewpoint`/`critique` → **実在しない**。`CritiqueInput` は `card.critique`/`critiqueTags` から都度導出される派生値で、それに先立つ「候補」というステージング概念自体が存在しない。
+
+「既存面に出現する」を文字どおり実装しようとすると、存在しない機構への配線が必要になる。そこで、5種別すべてを**1つの新規レビューサーフェス**（`AgentResponseImportPanel`、WorkModePanel と同じ専用ダイアログパターン）で受け、種別ごとに以下の実際の宛先へ「取り込む」（1操作=1 `applyDocumentChange`、⌘Zで取消可）:
+
+- `island_title`: `island.title` に設定＋`titleReviewed: false`（既存の `handleIslandTitleChange` と同じ形、ただし未レビューとして記録）。
+- `critique`/`opposing_viewpoint`: `card.critique` または `island.critique` に設定（既存の `handleCardCritiqueChange` と同じ経路）。
+- `narrative_draft`: `document.narratives` に追記（既存の `handleGenerateNarrativeFromReadingOrder` と同じ経路）。
+- `merge_candidate`: `mergeSuggestions` state に追加（既存の `MergeSuggestionsPanel` へ出現し、そのパネル自身の採否フローで最終決定）。
+- `patch`: 署名一致＋lintエラー無しの場合のみ、既存の `applyPatchWithResolutionsDetailed`/`appendPatchApplyLog` で直接適用。署名不一致の場合は下記スコープ判断3を参照。
+
+### スコープ判断2: 「孤立提案」は新規概念として設計（既存コードに前例なし）
+
+`targetRef` が現在の文書で解決できない提案は、破棄せず `orphaned: true` としてパネル内に保持表示する（AC-3）。全コードベースを検索したが「参照先が消えても保持表示する」という前例は皆無だった（"孤立"を含む既存コードは全て KJ図解上の「孤立カード」概念で、無関係）。パネル自身のエフェメラルな状態としてフラグを持たせる、シンプルな実装で対応した。
+
+### スコープ判断3: patch の baseDocSignature 不一致は既存ファイルベース競合解決フローへ誘導（新規競合UIは作らない）
+
+調査により、`PatchWorkspacePanel` の `CandidateItem` には `PatchV1` を運べる型が無く（プレビューテキストのみ）、実際に文書へ適用する機構（lint→conflict検出→適用）は**別の**、ファイル読み込みベースの既存パイプライン（`handleLoadPatchFile`/`handleLoadPatchBaselineFile`/`patchConflictReport`）にあることが判明した。この2つは互いに配線されていない。
+
+`patch_lint.ts` の署名不一致チェックは `warn`（ブロックしない）であり、既存コードの既定動作としては署名不一致でも適用をブロックしない。しかし AC-3 は「黙って適用されず conflict/rediff 経路に乗る」ことを求めているため、**本Issueの取込フロー独自に**、署名不一致の場合はワンクリック適用を提供せず、「パッチファイルとして書き出す」ボタンのみを提供し、既存のファイルベース競合解決フローへ委ねる設計とした（新しい競合UIを重複実装しない）。署名が一致し lint エラーが無い場合のみ、ワンクリック適用（`applyPatchWithResolutionsDetailed`＋`appendPatchApplyLog`）を許可する。
+
+### スコープ判断4: 監査は `context-audit` ではなく既存の `recordProposalDecision`（`/ai/proposals/audit`）を再利用
+
+Issue本文は「取り込みイベントを context-audit（operation=proposal）へ記録」と書いているが、調査の結果、`context-audit`（`/docs/{id}/context-audit`）は CE1/CE4 自身の `query→bundle→proposal→apply` 監査チェーン専用で、`equivalenceKey`/`bundleHash` 等 CE1 特有のフィールドを要求し、`operation=proposal` は `command="proposal-diff"` のみを許可する closed-world 契約になっている。外部から貼り付けられた応答にはこれらの実在する相関ハッシュが無く、無理に埋めれば捏造データになる。加えて、この経路をそのまま使うには **バックエンド側のコマンド許可リスト変更が必要**（本Issueのスコープ外）。
+
+代わりに、既存の汎用エンドポイント `recordProposalDecision`（`/ai/proposals/audit`、island-summary の adopt/hold/reject で既に使用中）を全5種別の採用・破棄判断の記録に再利用した。バックエンド変更ゼロ・新エンドポイント無し・既存の一般的な「AI由来提案への人間の決定」記録という用途に完全に一致する。EXT-AGENT-01 が CE1 スタブの代わりにローカルハッシュ計算を選んだのと同じ種類の判断。
+
+### 実装
+
+- `03_Implement/frontend/src/import/agent_response_import.ts`（新規）: フェンス付きJSON抽出、agent-response.v1 スキーマ検証（厳格/寛容）、禁止フィールド（score/rank/confidence/priority）の破棄＋警告（厳格=拒否）、根拠欠落の「(根拠未記載)」ラベル付与（厳格=拒否）、`markdown_sanitize` による全文字列サニタイズ、`ZIP_MAX_TEXT_FILE_BYTES` 相当の容量制限、patch.ops の `PatchOpKind` ホワイトリスト（非ホワイトリストは破棄＋警告、厳格=拒否）＋delete系操作の警告フラグ。
+- `03_Implement/frontend/src/ui/AgentResponseImportPanel.tsx`（新規）: 貼付け欄・厳格モード切替・解析ボタン・エラー/警告表示・提案カード一覧（種別・対象・内容・根拠・孤立/署名不一致の注記・取り込む/破棄するボタン）。WorkModePanel と同じフォーカストラップ・Escape・focus-return実装。
+- `03_Implement/frontend/src/App.tsx`: 「詳細」ON時のみ出現するトリガーボタン（`data-ui-core-action` 非付与で既存7件カウント非回帰）＋パネルマウント＋種別別の取り込みハンドラ（`computeAgentProposalReviewFlags` で孤立/署名不一致を事前計算）。
+- i18n: `agent_response_import.*`＋`app.history.agent_response.*` を ja/en 両ロケールに追加。
+
+### 検証
+
+- typecheck 0 / vitest **985 passed**（187 files。パーサ単体テスト14件＋regression anchor 1件を追加）。
+- e2e 新規4件 passed: `agent_response_import.spec.ts`（トリガーが「詳細」の背後にあること／解析だけでは文書が変化せず・クリーンな提案の取り込みは1操作=1 ⌘Z 復帰・孤立提案は保持表示され取り込みボタンが出ないこと・署名不一致patchはファイル書き出しのみ提供されること／5種別すべての取り込み経路が正常動作すること／同一応答の再貼り付けが重複を作らないこと）。
+- 既存e2e 11件（`agent_task_export`・`pre_share_summary_gate`・`complexity_budget_foregrounding`）で非回帰確認。
+- 全て `nix develop`（Node 20 devShell）+ Docker Playwright (`mcr.microsoft.com/playwright:v1.58.2-jammy`) 経由で実行。
+
+### 残課題（スコープ外・別issue候補）
+
+- `mergeSuggestions` state の「1件決定で全件消える」既存の副作用（`applyDocumentChange` が無条件に空配列化）は本Issue導入前からの既存挙動であり、取り込んだ merge_candidate 提案もこの制約を継承する。修正は別issueの対象（既存機能への広い変更のため本Issueのスコープ外とした）。
+- `context-audit` へ本イベントを載せる場合は、バックエンド側で `_CE4_OPERATION_TO_COMMANDS["proposal"]` にコマンドを追加するADRレベルの決定が必要（本Issueでは行わない）。

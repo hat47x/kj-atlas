@@ -6,6 +6,26 @@ export type Transform = {
 
 export type HoldState = "held" | "pending" | "shelved";
 
+// DOMAIN-TRACE-01 (schemas.md §15): non-subject trace metadata only.
+// seq = optional serial number (never auto-forced); source = free-text
+// reference back to the RAW DATA outside the document (utterance, line
+// number, URL...). Subject/provenance metadata (author, owner, updater)
+// is NOT allowed here until CARD-META-UI-01's decision queue settles —
+// validators drop unknown meta keys fail-closed (§15.3).
+export type CardMeta = {
+  seq?: number;
+  source?: string;
+};
+
+// DOMAIN-KA-01 (schemas.md §17): KA-method fields, separate from Card.text
+// (which stays the 出来事/event-of-record). voice = 心の声 (inner voice,
+// unfiltered — guardrails against embellishing/fabricating are UI hints
+// only, never enforced). value = 価値 (the KA-method's extracted value).
+export type CardKa = {
+  voice?: string;
+  value?: string;
+};
+
 export type Card = {
   id: string;
   text: string;
@@ -15,12 +35,15 @@ export type Card = {
   mergedIntoCardId?: string;
   repOf?: string[];
   canonicalId?: string;
+  /** Merge provenance: ids of the cards consolidated INTO this one (canonicalization). Not an external source reference — that is Card.meta.source. */
   sources?: string[];
   critique?: string;
   critiqueTags?: string[];
   textReviewed?: boolean;
   /** DOMAIN-EXPR-02: optional hold state. Absent = not held (conventional card). */
   holdState?: HoldState;
+  meta?: CardMeta;
+  ka?: CardKa;
 };
 
 /** DOMAIN-EXPR-02: a shelved item — set aside from the main canvas without deletion. */
@@ -48,7 +71,27 @@ export const CRITIQUE_TAGS = [
 
 export type CritiqueTag = (typeof CRITIQUE_TAGS)[number];
 
-export type EdgeType = "related" | "negate";
+// DOMAIN-KJ-01 (ADR-0048 D3, schemas.md §3.3): KJ-method relation vocabulary.
+// "negate" is the persisted value for KJ's 対立 — no separate opposition enum
+// value exists (duplicate-vocabulary ban); only the UI label changed.
+// "causal" is the only DIRECTED type (fromId=cause → toId=effect).
+export const KNOWN_EDGE_TYPES = ["related", "negate", "causal", "mutual", "equivalence"] as const;
+
+export type KnownEdgeType = (typeof KNOWN_EDGE_TYPES)[number];
+
+// Unknown-type PRESERVATION (schemas.md §3.3.2): an imported type string
+// outside the known set is kept verbatim (round-trip safety) and resolved to
+// "related" for display/behavior only. The (string & {}) union keeps known-
+// value autocomplete while accepting any string.
+export type EdgeType = KnownEdgeType | (string & {});
+
+export function resolveKnownEdgeType(type: EdgeType): KnownEdgeType {
+  return (KNOWN_EDGE_TYPES as readonly string[]).includes(type) ? (type as KnownEdgeType) : "related";
+}
+
+export function isDirectedEdgeType(type: EdgeType): boolean {
+  return resolveKnownEdgeType(type) === "causal";
+}
 
 export type EdgeEndpointKind = "card" | "island";
 
@@ -224,7 +267,7 @@ export type RelationSummary = {
   createdAt: string;
   islandAId: string;
   islandBId: string;
-  relationType: "related" | "negate" | "unknown";
+  relationType: KnownEdgeType | "unknown";
   derived: boolean;
   text: string;
   reviewed: boolean;
@@ -292,6 +335,19 @@ export type DocumentV2 = {
   deterministicTieBreak?: DeterministicTieBreak;
   /** DOMAIN-EXPR-02: optional shelf — cards set aside without deletion. */
   shelf?: ShelfEntry[];
+  /** DOMAIN-EXPR-04 (schemas.md §16): human review decisions on analyzeContradictions() signals. */
+  contradictionSignalDecisions?: ContradictionSignalDecision[];
+};
+
+// DOMAIN-EXPR-04 (schemas.md §16): reuses CE2-PROPOSAL-IF's ProposalStatus vocabulary —
+// not a new AI-authority grant. "proposed" (undecided) is never persisted; absence of an
+// entry for a signatureKey IS the "proposed" state.
+export type ContradictionSignalReviewStatus = "accepted" | "held" | "rejected";
+
+export type ContradictionSignalDecision = {
+  signatureKey: string;
+  status: ContradictionSignalReviewStatus;
+  decidedAt: string;
 };
 
 export type MergeSuggestionDecision = "accept" | "partial" | "reject" | "defer";
