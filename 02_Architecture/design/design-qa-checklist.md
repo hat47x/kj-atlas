@@ -110,3 +110,17 @@ design-qa-checklist の記録が無かった。`03_Implement/frontend/scripts/ca
 - **確認（非乖離）**: 「詳細」ONで選択コンテキストaside側に追加表示される項目（絞込みチップ・履歴・ガイド付きフロー・集約された関係線）は、AC-2の移設対象（NarrativesPanel/HilRsWorkflowPanel/差分）とは別カテゴリの既存advancedゲート機能であり、本Issueのスコープ外（issue本文 3.2 非目標に明記のUX-COMPLEXITY-01可視性規律との重複禁止と整合）。
 - 検証: typecheck 0 / vitest 963 passed（nix devShell, Node 20 経由。当初WSLシステムnode 18で `crypto is not defined` 26件誤検出したが、devShell再実行で解消・環境要因と確定） / e2e `complexity_budget_foregrounding.spec.ts` 3/3 passed。
 - 生成物: `03_Implement/frontend/scripts/capture_design_conformance_navmode_20260709.mjs`（一時利用）。
+
+## 第7回 2026-07-09: UX-EMPTY-01（空キャンバスの中核ループ誘導）— クリーンパス
+
+design-qa-checklist の記録が無かった。`03_Implement/frontend/scripts/capture_design_conformance_empty_20260709.mjs` で空キャンバスヒント表示・最初のカード作成後の消滅・表示パネルからの再表示導線を実機取得。
+
+| 節 | 結果 | 所見 |
+| --- | --- | --- |
+| A. 視覚言語 | ✓ | タイトル14/800・本文13・保留注記12で規約どおり。角丸8（外枠）/6（ボタン）・間隔8/12も一致。CJK文言の折り返しも正常（Round 4で発見したnowrap欠落のような1文字ずつの折り返しは無し）。CTA配色（teal `#0f766e`）は主張種別チップ（緑系だが別の色相・別の視覚役割＝バッジでなくボタン）と混同しない。 |
+| B. 状態遷移 | ✓ | カード0枚時のみ出現・最初のカード作成で即消滅（スクショで確認）。既存e2e `empty_canvas_onboarding.spec.ts` で完了状態の永続化（新規文書作成でも再出現しない）・表示パネルからの再表示＋ステータス通知を確認済み。 |
+| C. 核の保護 | ✓ | 「曖昧なまま置いておいて大丈夫です」を明示し核思想（保留は健全）を伝達。スコア/準備度語彙なし・AI言及なし（provider=none整合）。 |
+| D. a11y/契約 | ✓ | `aria-live="polite"`。既存e2eで「フォーカスをヒント内へ奪わない」ことを `document.activeElement` 直接検査で確認済み（本ラウンドで再確認）。 |
+
+- **本ラウンドでの発見: 0件**（クリーンパス。既存e2eが核となる振る舞い＝出現/消滅/永続化/再表示を既にプログラム的に固定しており、本レビューはCSS/レイアウト面（e2eの盲点）を実機で追加確認する位置づけ）。
+- 生成物: `03_Implement/frontend/scripts/capture_design_conformance_empty_20260709.mjs`（一時利用）。
