@@ -707,6 +707,15 @@ describe("UX Operability regression contracts", () => {
     expect(workModeContent).toContain("<NarrativesPanel");
     expect(workModeContent).toContain("<HilRsWorkflowPanel");
     expect(workModeContent).toContain("{structuralDiffPanel}");
+
+    // design-qa conformance fix (2026-07-09): the empty-state copy shown when
+    // Advanced UI is off must not point users back to "the sidebar" -- AC-2
+    // moved these panels OUT of the sidebar into this same work-mode surface,
+    // so the copy must say they appear here once Advanced UI is enabled.
+    const jaLocaleSource = readSource("src/i18n/locales/ja.json");
+    const jaContentPendingLine = jaLocaleSource.split("\n").find((line) => line.includes('"work_mode.content_pending"'));
+    expect(jaContentPendingLine).not.toContain("サイドバー");
+    expect(jaContentPendingLine).toContain("詳細");
   });
 
   it("Phase 5c: domain detail filters and guided flow stay behind advanced disclosure", () => {

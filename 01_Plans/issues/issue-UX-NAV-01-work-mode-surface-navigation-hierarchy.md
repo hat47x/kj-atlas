@@ -132,3 +132,11 @@
 ## 実装設計の到着（2026-07-04 Round 5）
 
 - パッチワークスペース（CE3）の居場所について Claude Design の比較評価が到着し、**(a) 選択マージタブへ統合** を採用する（タブ純増なし=CB-1・既存タブへ包含=CB-3・ロールバック＝取消を監査と一体化=CB-4）。AC-2 実装時は選択マージタブにパッチの粒度別採否・プリセット・ロールバックを包含し、独立タブ・現状維持は採らない。
+
+### 追記 2026-07-09: 実装照合レビュー（design-qa-checklist）で実バグを発見・修正
+
+`02_Architecture/design/design-qa-checklist.md` 第6回として実施。`03_Implement/frontend/scripts/capture_design_conformance_navmode_20260709.mjs` で「詳細」OFF/ON双方の作業モード・選択コンテキスト・Escapeフォーカス復帰を実機取得し照合。
+
+- **発見・修正**: 「詳細」OFF時に作業モードを開くと表示される空状態文言（`work_mode.content_pending`）が「現在は詳細表示を有効にしてサイドバーから利用できます」という、AC-2でのサイドバーからの完全移設より前の古い案内文のまま残っていた。`SidePanel.tsx` に `NarrativesPanel`/`HilRsWorkflowPanel` の参照が実際にゼロであることを確認済みのため、この文言は誤ったナビゲーション誘導になっていた（実際には「詳細」を有効にすると同じ作業モード内にそのまま表示される）。両ロケール（ja/en）の文言を実態に合わせて修正し、`ux_operability_regression.test.ts`（Phase 5b）に「サイドバー」という語を含まないことのアンカーを追加。
+- **確認（乖離なし）**: AC-2の移設対象3パネル（NarrativesPanel/HilRsWorkflowPanel/差分）は選択コンテキストasideに存在しないこと、作業モード内にのみ存在することをスクショと既存ソースの双方で再確認。role="dialog"・aria-modal・Escapeフォーカス復帰・命名規律（AC-4、「レビュー」不使用）も乖離なし。
+- 検証: typecheck 0 / vitest 963 passed（`nix develop` の Node 20 devShell経由。同一の `npx vitest run` をWSLシステムnode 18で先に実行した際は無関係な26件が `crypto is not defined` で誤って失敗したため、正しいdevShell入り口で再実行し解消を確認） / e2e `complexity_budget_foregrounding.spec.ts` 3/3 passed。

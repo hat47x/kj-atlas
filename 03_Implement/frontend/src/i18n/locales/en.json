@@ -1224,7 +1224,7 @@
   "side_panel.context.hold_brief": "Hold: {value}",
   "work_mode.title": "Work mode",
   "work_mode.close": "Close work mode",
-  "work_mode.content_pending": "Advanced work features will open here. For now, use the sidebar with Advanced UI enabled.",
+  "work_mode.content_pending": "Advanced work features (diff, narrative drafting, merge/patch decisions) appear here once you enable Advanced UI in the toolbar.",
   "side_panel.evidence_gap.title_e004": "Contradictions needing grounding",
   "side_panel.evidence_gap.focus_card": "Focus card: {cardId}",
   "side_panel.distribution.title": "Distribution signals ({count})",

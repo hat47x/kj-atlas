@@ -95,3 +95,18 @@ design-qa-checklist の記録が無かった。本機能は初期実装時（202
 
 - **誤検知の解消**: 全体像スクショで「相互（mutual）」の逆方向矢印（相互A側）が視認できず、当初は描画欠落を疑った。しかし境界ボックス直接検査（`data-edge-symbol="arrow-from"`）で幅12.6×高さ12.1pxの三角形ポリゴンが正しい座標（カード境界近傍）に存在することを確認。フルページスクショの縮小表示でカード境界に近接した小さな三角形が視認しづらかっただけで、描画自体は正しい。**今後の教訓**: 小さな図形要素の欠落を疑う場合は、スクショの目視だけでなく `boundingBox()`/`outerHTML` 直接検査で確定させる。
 - **本ラウンドでの発見: 0件**（誤検知1件を解消した上でのクリーンパス）。
+
+## 第6回 2026-07-09: UX-NAV-01（作業モード面・領域4の実体化）— 実バグ発見・修正
+
+design-qa-checklist の記録が無かった。`03_Implement/frontend/scripts/capture_design_conformance_navmode_20260709.mjs` で「詳細」OFF時の作業モード空状態・選択コンテキスト（advanced OFF）・「詳細」ON時の作業モード（NarrativesPanel/HilRsWorkflowPanel）・Escapeでのフォーカス復帰後を実機取得。
+
+| 節 | 結果 | 所見 |
+| --- | --- | --- |
+| A. 視覚言語 | ✓ | パネル見出し（fontSize:15/fontWeight:800）は `StartPanel.tsx` 等と共通の既存パネルタイトル規約であり、本Issue固有の乖離ではない。amber/スコア語彙なし。 |
+| B. 状態遷移 | ✗→✓ | **発見・修正**: 「詳細」OFF時に作業モードを開くと表示される空状態文言が「現在は詳細表示を有効にしてサイドバーから利用できます」という、AC-2でのサイドバーからの完全移設（`SidePanel.tsx` に該当パネルの参照ゼロを確認済み）より前の古い案内のまま残存していた。実際には「詳細」を有効にすると同じ作業モード内にそのまま表示される（サイドバーには表示されない）。両ロケールの `work_mode.content_pending` を実態に合わせて修正。 |
+| C. 核の保護 | ✓ | 作業モード内のコンテンツ（文章化ドラフト・統合候補・パッチ判断）にスコア/ランク語彙なし。 |
+| D. a11y/契約 | ✓ | `role="dialog"` `aria-modal="true"`・Escapeでトリガへのfocus復帰（スクショ・スクリプト内アサーション両方で確認）・Tabトラップ実装済み。AC-4（work-modeのタブ/見出しに「レビュー」を再利用しない）も見出し文字列で確認。 |
+
+- **確認（非乖離）**: 「詳細」ONで選択コンテキストaside側に追加表示される項目（絞込みチップ・履歴・ガイド付きフロー・集約された関係線）は、AC-2の移設対象（NarrativesPanel/HilRsWorkflowPanel/差分）とは別カテゴリの既存advancedゲート機能であり、本Issueのスコープ外（issue本文 3.2 非目標に明記のUX-COMPLEXITY-01可視性規律との重複禁止と整合）。
+- 検証: typecheck 0 / vitest 963 passed（nix devShell, Node 20 経由。当初WSLシステムnode 18で `crypto is not defined` 26件誤検出したが、devShell再実行で解消・環境要因と確定） / e2e `complexity_budget_foregrounding.spec.ts` 3/3 passed。
+- 生成物: `03_Implement/frontend/scripts/capture_design_conformance_navmode_20260709.mjs`（一時利用）。
