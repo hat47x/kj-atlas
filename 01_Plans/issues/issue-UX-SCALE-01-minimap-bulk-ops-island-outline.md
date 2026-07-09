@@ -162,3 +162,11 @@
 - **AC-5（PERF-BUDGET-01 準拠）**: 既存ハーネス `e2e/responsiveness_performance_budget.spec.ts`（300カード/30島フィクスチャ、重複計測はしていない）をそのまま実行。本セッション全体を通じて UX-MENU-01・UX-SCALE-01 (a)〜(d) の各変更後に複数回実行し、タイミング計測に到達する箇所では常に許容範囲内。ただし同フィクスチャの検索フィルタ手順に**既存の**曖昧ロケータ不具合（`getByText` が2要素にマッチ）があり、クリーンな `main` でも同一エラーで再現することを確認済み（本Issueの変更とは無関係）。PERF-BUDGET-01 のIssue自身も「タイミング予算のCI Playwright検証はローカル不可・CIのみ」と明記しており、本Issueもその制約を継承する。
 
 これにより UX-SCALE-01 の AC-1〜5 全て充足。Status: Done。
+
+### 追記 2026-07-09: 実装照合レビュー（design-qa-checklist）で実バグを発見・修正
+
+本機能は design-qa-checklist（実機スクショ照合）の記録が無かったため初適用した。ミニマップ・L字型の島の輪郭・一括操作バーを実機スクショ（Docker Playwright）で確認した結果、**一括操作バーの選択件数表示（「3件のカードを選択中」）が1文字ずつ縦に折り返るバグを発見**。
+
+原因: `BulkOperationsBar.tsx` の `role="status"` div に `whiteSpace: "nowrap"` が設定されておらず、隣接するボタン群（`buttonStyle` に `whiteSpace: "nowrap"` 設定済み）が折り返らないため、バー全体が幅で押された際にこの要素だけが折り返り先になっていた。日本語の件数文言はスペースを含まないため、通常の折返しが文字単位になり縦書き状に見えていた。既存 e2e（`bulk_operations_bar.spec.ts`）は `toContainText`/`toBeVisible` でDOM内容のみを検証するため、この視覚崩れを検出できていなかった。
+
+修正: 当該 div に `whiteSpace: "nowrap"` を追加。回帰アンカーを `ux_operability_regression.test.ts` に追加。typecheck 0 / vitest 963 passed / `bulk_operations_bar.spec.ts` 4/4 passed で再検証済み。ミニマップ・島輪郭は乖離なし。詳細は `design-qa-checklist.md` 第4回記録を参照。

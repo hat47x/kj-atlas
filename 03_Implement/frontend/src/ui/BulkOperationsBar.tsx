@@ -57,7 +57,12 @@ export function BulkOperationsBar({
         boxShadow: "0 4px 16px rgba(15, 23, 42, 0.15)",
       }}
     >
-      <div role="status" aria-live="polite" style={{ fontSize: 12, color: "#334155", fontWeight: 600, paddingRight: 4 }}>
+      {/* design-qa conformance fix (2026-07-09): missing whiteSpace: "nowrap"
+          let this be the one flex child that absorbed container squeeze by
+          wrapping -- since the Japanese count text has no spaces, it wrapped
+          one character per line instead of overflowing like the (nowrap)
+          buttons beside it. */}
+      <div role="status" aria-live="polite" style={{ fontSize: 12, color: "#334155", fontWeight: 600, paddingRight: 4, whiteSpace: "nowrap" }}>
         {t("side_panel.selection.card_multiple", { count })}
       </div>
       <button type="button" style={buttonStyle} onClick={onToggleHold}>

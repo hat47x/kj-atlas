@@ -381,6 +381,13 @@ describe("UX Operability regression contracts", () => {
 
     // No scoring/ranking vocabulary anywhere in the bulk-ops bar.
     expect(barSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+
+    // Design-QA conformance fix (2026-07-09): the count status div must set
+    // whiteSpace: nowrap like the buttons beside it. Space-less Japanese
+    // count text ("3件のカードを選択中") wraps one character per line if
+    // this flex child is the one left without it when the bar is squeezed.
+    const statusDivBlock = barSource.slice(barSource.indexOf('role="status"'), barSource.indexOf('role="status"') + 200);
+    expect(statusDivBlock).toContain('whiteSpace: "nowrap"');
   });
 
   it("UX-SCALE-01 (c): island outlines are orthogonal (grid-occupancy), complexity is a structural count (not a score), and tidy is human-triggered and one undo step", () => {
