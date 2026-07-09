@@ -146,6 +146,8 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/issues/issue-DX-E2E-02-canvas-legend-heading-drift.md`：Canvas凡例の現行見出しとE2E期待値のずれを修正したテストissue。
 - `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`：カードの記録情報表示と起票者・責任主体メタデータの保存/共有境界を分離するUX・セキュリティissue。
 - `01_Plans/issues/issue-UX-STATE-01-selection-target-consistency-after-bulk-island.md`：複数カードから島を作成した直後の主対象を、マウスとキーボードで一貫させるUX issue。
+- `01_Plans/issues/issue-UI-QUALITY-A11Y-03-structural-aria-findings.md`：axeで検出したARIA構造の設計課題と、対応済みの見出し・コントラスト修正を追跡するissue。
+- `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`：自由配置キャンバスとメニュー内フォームのARIA意味付けを決める提案ADR。
 
 ### 3.3 `02_Architecture/`（Structure：設計・I/F・デプロイ）
 

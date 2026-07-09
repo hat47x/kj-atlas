@@ -29,18 +29,15 @@ async function routeFixture(page: Page): Promise<void> {
   });
 }
 
-// Four categories are pre-existing, structural findings this round
+// Two categories remain deferred because they require a semantic design
 // surfaced but did NOT fix (each needs a real design decision, not a
 // mechanical label fix -- see issue-UI-QUALITY-A11Y-03-structural-aria-findings.md):
 //   - aria-required-parent: canvas cards render role="option" without a
 //     role="listbox" ancestor (CardView/CanvasShell-wide).
 //   - aria-required-children: the File menu's recent-documents <select>
 //     is a disallowed direct child of role="menu".
-//   - page-has-heading-one: the app has no <h1> anywhere (single-page
-//     canvas app with no natural page-title slot).
-//   - color-contrast: one span in the domain-detail-filters bar.
-// select-name/label ARE enforced (this round fixed every instance found).
-const DEFERRED_RULE_IDS = ["aria-required-parent", "aria-required-children", "page-has-heading-one", "color-contrast"];
+// select-name/label, page-has-heading-one, and color-contrast are enforced.
+const DEFERRED_RULE_IDS = ["aria-required-parent", "aria-required-children"];
 
 async function expectNoViolations(page: Page, label: string): Promise<void> {
   const results = await new AxeBuilder({ page }).disableRules(DEFERRED_RULE_IDS).analyze();

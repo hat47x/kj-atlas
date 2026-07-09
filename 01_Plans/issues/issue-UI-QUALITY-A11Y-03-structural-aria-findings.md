@@ -41,12 +41,18 @@
 
 - [ ] AC-1: `role=option`/`listbox` 構造について、キャンバスの操作性（ドラッグ配置・自由配置）を損なわない設計を決定し実装する。
 - [ ] AC-2: MenuBar の `extraContent` パターンについて、`role=menu` の直接子制約を満たす構造（ラップ or 配置変更）を決定し実装する。
-- [ ] AC-3: `h1` の配置場所を決定し実装する。
-- [ ] AC-4: `domain-detail-filters` の該当spanの配色をコントラスト比 4.5:1 以上に調整する。
-- [ ] AC-5: `e2e/a11y_axe_smoke.spec.ts` の `DEFERRED_RULE_IDS` から対応済みのルールIDを除去する。
+- [x] AC-3: `h1` の配置場所を決定し実装する。
+- [x] AC-4: `domain-detail-filters` の該当spanの配色をコントラスト比 4.5:1 以上に調整する。
+- [x] AC-5: `e2e/a11y_axe_smoke.spec.ts` の `DEFERRED_RULE_IDS` から対応済みのルールIDを除去する。
 
 ## Traceability
 
 - Related: `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`
 - Related: `03_Implement/frontend/e2e/a11y_axe_smoke.spec.ts`（`DEFERRED_RULE_IDS` 定数）
 - Derived-from: `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（axe スモーク導入時の発見）
+
+## 対応記録（2026-07-10）
+
+- `Shell`のプロダクト名を実ページ見出しの`h1`へ変更した。
+- `DomainStateFilterBar`の補助ラベル色を`#475569`へ変更し、axeの`color-contrast`除外を解除した。
+- `aria-required-parent` と `aria-required-children` は、キャンバス選択ロールとメニュー内フォームの意味付けを決めるADR-0052の対象として残した。
