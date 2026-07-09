@@ -86,14 +86,14 @@ test("bulk hold toggles all selected cards held in one step, and stays actionabl
 
   // The selection is unchanged by a non-destructive bulk action, so the bar
   // correctly stays visible/actionable (not cleared) for a follow-up op.
-  await page.getByRole("button", { name: "Toggle hold" }).click();
+  await page.getByRole("button", { name: "Change hold state" }).click();
   await expect(page.locator(BAR)).toBeVisible();
   await expect(page.getByTestId("status-message")).toContainText("held");
 
   // A single Ctrl+Z fully reverses the bulk op (one history step for all 3).
   await page.keyboard.press("Control+z");
   await selectAllCards(page);
-  await page.getByRole("button", { name: "Toggle hold" }).click();
+  await page.getByRole("button", { name: "Change hold state" }).click();
   await expect(page.getByTestId("status-message")).toContainText("held");
 });
 

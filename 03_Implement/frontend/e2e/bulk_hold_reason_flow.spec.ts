@@ -37,9 +37,9 @@ test("selected cards can be held and given a shared reason without AI", async ({
 
   const bulkBar = page.locator('[data-ui-region="bulk-operations-bar"]');
   await expect(bulkBar).toBeVisible();
-  await bulkBar.getByRole("button", { name: "Toggle hold" }).click();
+  await bulkBar.getByRole("button", { name: "Change hold state" }).click();
 
-  await bulkBar.getByRole("button", { name: "Add reason" }).click();
+  await bulkBar.getByRole("button", { name: "Add critique reason" }).click();
   const reasonEditor = page.locator('[data-ui-region="bulk-critique-reason"]');
   await expect(reasonEditor).toBeVisible();
   const reasonInput = reasonEditor.getByRole("textbox", { name: "Reason" });

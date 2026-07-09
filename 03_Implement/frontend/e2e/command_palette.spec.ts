@@ -119,5 +119,5 @@ test("pins the retention (hold) command above other commands when a card is sele
 
   await page.keyboard.press("Control+k");
   const firstOption = page.locator(PALETTE).locator('[role="option"]').first();
-  await expect(firstOption).toHaveText(/Toggle hold/);
+  await expect(firstOption).toHaveText(/Change hold state/);
 });
