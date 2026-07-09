@@ -1,7 +1,7 @@
 # Issue: UX-SHARE-02 Plain Language For View And Pack Visibility
 
 - Type: UX / Documentation alignment
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: VALUE-DOGFOOD-01
 - Priority: P2
@@ -32,16 +32,16 @@ The share/export flow is a safety boundary. Users should understand who can see 
 
 ## Acceptance Criteria
 
-- [ ] Preflight copy distinguishes the view from the review pack in one short user-facing explanation.
-- [ ] Differing visibility values are easy to notice before export.
-- [ ] Japanese and English catalogs contain matching entries.
-- [ ] A SharePanel unit test covers the differing-visibility explanation.
-- [ ] A Playwright or integration check confirms the explanation is visible in the share/export panel.
+- [x] Preflight copy distinguishes the view from the review pack in one short user-facing explanation.
+- [x] Differing visibility values are easy to notice before export.
+- [x] Japanese and English catalogs contain matching entries.
+- [x] A SharePanel unit test covers the differing-visibility explanation.
+- [x] A Playwright or integration check confirms the explanation is visible in the share/export panel.
 
 ## Validation Plan
 
 - `cd 03_Implement/frontend && node ./node_modules/vitest/vitest.mjs run src/ui/SharePanel.test.ts src/i18n/catalog_integrity.test.ts`
-- `cd 03_Implement/frontend && node ./node_modules/playwright/cli.js test e2e/header_toolbar_layout.spec.ts --reporter=line`
+- `cd 03_Implement/frontend && node ./node_modules/playwright/cli.js test e2e/pub_visibility_i18n_readonly_flow.spec.ts -g "share preflight explains" --reporter=line`
 
 ## Dogfood Evidence
 
@@ -60,4 +60,11 @@ No ADR is required unless visibility semantics or SafeMode/export policy changes
 - Verification:
   - `node .\node_modules\vitest\vitest.mjs run src/ui/SharePanel.test.ts src/i18n/catalog_integrity.test.ts src/i18n/untranslated_key_inventory.test.ts` -> 3 files / 18 tests passed.
   - `node .\node_modules\typescript\bin\tsc --noEmit` -> passed.
-- Remaining: run a browser/Playwright check against the visible share/export panel before closing the issue.
+- Browser verification is now covered by the completion record below.
+
+## Completion record 2026-07-10
+
+- `e2e/pub_visibility_i18n_readonly_flow.spec.ts` now sets view visibility to `Restricted` and pack visibility to `Public`, then verifies both values and the plain-language preflight explanation.
+- The differing-scope explanation is checked in the real Share panel, not only through a rendered unit snapshot.
+- No visibility semantics, SafeMode policy, or export behavior was changed; this closes the remaining verification gap.
+- The existing backend-dependent visibility persistence scenarios remain tracked separately in `DX-E2E-03`; they are not used as evidence for this copy-only completion.
