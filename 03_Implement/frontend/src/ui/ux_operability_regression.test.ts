@@ -718,6 +718,63 @@ describe("UX Operability regression contracts", () => {
     expect(jaContentPendingLine).toContain("詳細");
   });
 
+  it("EXT-AGENT-01: agent task export lives behind advanced disclosure, gates on scope confirmation, and never emits scoring vocabulary", () => {
+    const appSource = readSource("src/App.tsx");
+    const panelSource = readSource("src/ui/AgentTaskExportPanel.tsx");
+    const exportSource = readSource("src/export/agent_task_export.ts");
+    const clientSource = readSource("src/api/client.ts");
+
+    // AC-5 (CB-1 no net increase to initial display): the trigger is CONTENT
+    // behind the existing "詳細" disclosure gate, not a new always-visible
+    // disclosure entry point -- so it must not carry data-ui-core-action
+    // (Phase 5's fixed count of 7 already pins the core-toolbar surface).
+    expect(appSource).toContain("<AgentTaskExportPanel");
+    const triggerButtonStart = appSource.indexOf("ref={agentTaskExportTriggerRef}");
+    const triggerButtonBlock = appSource.slice(Math.max(0, triggerButtonStart - 400), triggerButtonStart);
+    expect(triggerButtonBlock).toContain("{isAdvancedUiEnabled ? (");
+    expect(appSource.slice(triggerButtonStart, triggerButtonStart + 400)).toContain('data-ui-complexity-tier="advanced-content"');
+    expect(appSource.slice(triggerButtonStart, triggerButtonStart + 400)).not.toContain("data-ui-core-action");
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(7);
+
+    // AC-2 (previewConfirmed-equivalent gate): export actions are disabled
+    // until a scope-confirmed checkbox is checked, and the checkbox itself
+    // is disabled without a selection (can't confirm an empty scope).
+    expect(panelSource).toContain("const canExport = hasSelection && scopeConfirmed;");
+    expect(panelSource).toContain("disabled={!canExport}");
+    expect(panelSource).toContain("disabled={!hasSelection}");
+
+    // AC-3 (SafeMode/unreviewed/source-reference defaults): unreviewed and
+    // source-reference inclusion are both off by default and independently
+    // toggled; unreviewed drafts are forced off whenever SafeMode is on.
+    expect(exportSource).toContain("const includeUnreviewedDrafts = !safeMode && (input.options?.includeUnreviewedDrafts ?? false);");
+    expect(exportSource).toContain("const includeSourceReferences = input.options?.includeSourceReferences ?? false;");
+    expect(panelSource).toContain("{!safeMode ? (");
+
+    // AC-1 (spec §3.3 fixed structure) + §4.2 anti-scoring: the generator's
+    // own guardrail text is the only place score/rank/priority vocabulary is
+    // allowed to appear (as a prohibition instruction to the agent).
+    expect(exportSource).toContain('"## 依頼"');
+    expect(exportSource).toContain('"## ガードレール"');
+    expect(exportSource).toContain('"## 文脈"');
+    expect(exportSource).toContain('"## 応答契約"');
+    expect(exportSource).toContain('"## 相関ブロック"');
+    const exportSourceWithoutGuardrailConstant = exportSource.replace(
+      /export const AGENT_TASK_GUARDRAIL_TEXT =[\s\S]*?;\n/,
+      "",
+    );
+    expect(exportSourceWithoutGuardrailConstant).not.toMatch(/score|rank|confidence|priority|readiness/i);
+
+    // AC-4: export-audit is recorded with exportKind="agent-task" via the
+    // existing backend contract (no new endpoint, per spec §8).
+    expect(clientSource).toContain("export async function postExportAudit(");
+    expect(clientSource).toContain("/docs/${docId}/export-audit");
+    expect(appSource).toContain('exportKind: "agent-task"');
+
+    // CARD-META-UI-01 is still Pending (confirmed via research this round) --
+    // no submitter/author/last-editor identity field may appear anywhere.
+    expect(exportSource).not.toMatch(/submitter|createdBy|lastEditedBy|authorRef|reviewerRef/i);
+  });
+
   it("Phase 5c: domain detail filters and guided flow stay behind advanced disclosure", () => {
     const appSource = readSource("src/App.tsx");
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");

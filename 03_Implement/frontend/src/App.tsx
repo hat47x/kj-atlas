@@ -7,6 +7,7 @@ import {
   generateNarrative,
   getDocument,
   getProviderStatus,
+  postExportAudit,
   putDocument,
   recordProposalDecision,
   proposeIslandSummary,
@@ -61,6 +62,7 @@ import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
 import { PatchWorkspacePanel } from "./ui/workspace/PatchWorkspacePanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { WorkModePanel } from "./ui/WorkModePanel";
+import { AgentTaskExportPanel } from "./ui/AgentTaskExportPanel";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import { CanvasLegend } from "./ui/CanvasLegend";
 import { Minimap } from "./ui/Minimap";
@@ -88,6 +90,7 @@ import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdow
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
+import { buildAgentTaskSheet, type AgentTaskKind } from "./export/agent_task_export";
 import { buildExportViewMetadata, type ExportViewMetadata } from "./export/view_metadata";
 import { buildBundleZipBlob, buildExportBundleWithWorkers, downloadBlobAsFile, formatBundleTimestamp, type BundleExportProgressStage } from "./export/bundle_export";
 import { computeVisibleBounds, getCardWorldBounds, getIslandWorldBounds } from "./domain/geometry/bounds";
@@ -1064,6 +1067,13 @@ export default function App() {
   const [isAdvancedUiEnabled, setIsAdvancedUiEnabled] = useState<boolean>(loadAdvancedUiEnabled);
   const [isWorkModeOpen, setIsWorkModeOpen] = useState(false);
   const workModeTriggerRef = useRef<HTMLButtonElement>(null);
+  const [isAgentTaskExportOpen, setIsAgentTaskExportOpen] = useState(false);
+  const agentTaskExportTriggerRef = useRef<HTMLButtonElement>(null);
+  const [agentTaskKind, setAgentTaskKind] = useState<AgentTaskKind>("island_titles");
+  const [agentTaskDesiredCount, setAgentTaskDesiredCount] = useState(3);
+  const [agentTaskIncludeUnreviewedDrafts, setAgentTaskIncludeUnreviewedDrafts] = useState(false);
+  const [agentTaskIncludeSourceReferences, setAgentTaskIncludeSourceReferences] = useState(false);
+  const [agentTaskScopeConfirmed, setAgentTaskScopeConfirmed] = useState(false);
   const [critiqueWorkflowFocusRequest, setCritiqueWorkflowFocusRequest] = useState(0);
   const [contextMenu, setContextMenu] = useState<
     | {
@@ -7887,6 +7897,91 @@ export default function App() {
   const handleToggleWorkMode = useCallback(() => {
     setIsWorkModeOpen((prev) => !prev);
   }, []);
+
+  // EXT-AGENT-01: any change that could change what would be exported
+  // requires re-confirming scope, mirroring CE1's previewConfirmed contract
+  // (a change to the query invalidates a prior confirmation).
+  const handleToggleAgentTaskExport = useCallback(() => {
+    setIsAgentTaskExportOpen((prev) => !prev);
+  }, []);
+  const handleAgentTaskKindChange = useCallback((value: AgentTaskKind) => {
+    setAgentTaskKind(value);
+    setAgentTaskScopeConfirmed(false);
+  }, []);
+  const handleAgentTaskIncludeUnreviewedDraftsChange = useCallback((value: boolean) => {
+    setAgentTaskIncludeUnreviewedDrafts(value);
+    setAgentTaskScopeConfirmed(false);
+  }, []);
+  const handleAgentTaskIncludeSourceReferencesChange = useCallback((value: boolean) => {
+    setAgentTaskIncludeSourceReferences(value);
+    setAgentTaskScopeConfirmed(false);
+  }, []);
+
+  const buildCurrentAgentTaskSheet = useCallback(async () => {
+    if (!document) return null;
+    return buildAgentTaskSheet({
+      doc: document,
+      taskKind: agentTaskKind,
+      selectedCardIds,
+      selectedIslandIds: selectedIslandId ? [selectedIslandId] : [],
+      safeMode,
+      taskId: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      options: {
+        includeUnreviewedDrafts: agentTaskIncludeUnreviewedDrafts,
+        includeSourceReferences: agentTaskIncludeSourceReferences,
+        desiredCount: agentTaskDesiredCount,
+      },
+    });
+  }, [
+    document,
+    agentTaskKind,
+    selectedCardIds,
+    selectedIslandId,
+    safeMode,
+    agentTaskIncludeUnreviewedDrafts,
+    agentTaskIncludeSourceReferences,
+    agentTaskDesiredCount,
+  ]);
+
+  const reportAgentTaskExportAudit = useCallback(() => {
+    if (!document) return;
+    void postExportAudit(document.id, { safeMode, exportKind: "agent-task" }).catch(() => {
+      // Fail-open by design (spec §3.4 / ADR-0049 D2): the backend audit
+      // dispatcher itself never blocks on send failure, and this call is
+      // reporting after the local export already completed -- there is
+      // nothing to roll back, so a network error here is silently ignored
+      // rather than surfaced as an export failure the user didn't cause.
+    });
+  }, [document, safeMode]);
+
+  const handleCopyAgentTaskSheet = useCallback(async () => {
+    const output = await buildCurrentAgentTaskSheet();
+    if (!output) return;
+    try {
+      await navigator.clipboard.writeText(output.taskSheetMd);
+      setStatusMessage(t("agent_task_export.copied"));
+      reportAgentTaskExportAudit();
+    } catch {
+      setStatusMessage(t("agent_task_export.copy_failed"));
+    }
+  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit]);
+
+  const handleDownloadAgentTaskSheet = useCallback(async () => {
+    const output = await buildCurrentAgentTaskSheet();
+    if (!output) return;
+    downloadTextFile("task-sheet.md", "text/markdown", output.taskSheetMd);
+    setStatusMessage(t("agent_task_export.downloaded_md"));
+    reportAgentTaskExportAudit();
+  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit]);
+
+  const handleDownloadAgentTaskJson = useCallback(async () => {
+    const output = await buildCurrentAgentTaskSheet();
+    if (!output) return;
+    downloadTextFile("task.json", "application/json", output.taskJson);
+    setStatusMessage(t("agent_task_export.downloaded_json"));
+    reportAgentTaskExportAudit();
+  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit]);
   const handleToggleSharePanel = useCallback(() => {
     setIsSharePanelOpen((previousOpen) => {
       const nextOpen = !previousOpen;
@@ -7993,6 +8088,27 @@ export default function App() {
           }}
         >
           {isSuggesting ? t("suggestion.panel.suggesting") : t("suggestion.panel.suggest_layout")}
+        </button>
+      ) : null}
+      {isAdvancedUiEnabled ? (
+        <button
+          ref={agentTaskExportTriggerRef}
+          data-ui-complexity-tier="advanced-content"
+          type="button"
+          onClick={handleToggleAgentTaskExport}
+          aria-pressed={isAgentTaskExportOpen}
+          title={t("agent_task_export.title")}
+          style={{
+            border: "1px solid #cbd5e1",
+            backgroundColor: isAgentTaskExportOpen ? "#e0e7ff" : "#ffffff",
+            color: "#0f172a",
+            borderRadius: 6,
+            padding: "6px 12px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          {t("agent_task_export.title")}
         </button>
       ) : null}
       <button
@@ -10762,6 +10878,33 @@ export default function App() {
         </div>
       )}
     </WorkModePanel>
+    <AgentTaskExportPanel
+      isOpen={isAgentTaskExportOpen}
+      onClose={() => setIsAgentTaskExportOpen(false)}
+      triggerRef={agentTaskExportTriggerRef}
+      safeMode={safeMode}
+      selectedCardCount={selectedCardIds.length}
+      selectedIslandCount={selectedIslandId ? 1 : 0}
+      taskKind={agentTaskKind}
+      onTaskKindChange={handleAgentTaskKindChange}
+      desiredCount={agentTaskDesiredCount}
+      onDesiredCountChange={setAgentTaskDesiredCount}
+      includeUnreviewedDrafts={agentTaskIncludeUnreviewedDrafts}
+      onIncludeUnreviewedDraftsChange={handleAgentTaskIncludeUnreviewedDraftsChange}
+      includeSourceReferences={agentTaskIncludeSourceReferences}
+      onIncludeSourceReferencesChange={handleAgentTaskIncludeSourceReferencesChange}
+      scopeConfirmed={agentTaskScopeConfirmed}
+      onScopeConfirmedChange={setAgentTaskScopeConfirmed}
+      onCopyMarkdown={() => {
+        void handleCopyAgentTaskSheet();
+      }}
+      onDownloadMarkdown={() => {
+        void handleDownloadAgentTaskSheet();
+      }}
+      onDownloadTaskJson={() => {
+        void handleDownloadAgentTaskJson();
+      }}
+    />
     {isCommandPaletteOpen ? (
       <CommandPalette
         commands={paletteCommands}
