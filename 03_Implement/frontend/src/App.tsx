@@ -9856,6 +9856,7 @@ export default function App() {
   const openRecentExtraContent = (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <select
+        aria-label={t("app.toolbar.recent_documents")}
         value={selectedRecentDocumentId}
         onChange={(event) => {
           setSelectedRecentDocumentId(event.target.value);
