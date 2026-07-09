@@ -44,4 +44,40 @@ test("grouping cards makes the new island the only active selection target", asy
   await expect(selectionPanel).not.toContainText("Selection: 2 cards selected");
   await expect(selectionPanel).not.toContainText("Selection: 0 cards selected");
   await expect(bulkBar).toBeHidden();
+
+  await page.getByRole("checkbox", { name: "Collapsed" }).check();
+  await expect(page.getByRole("checkbox", { name: "Collapsed" })).toBeChecked();
+});
+
+test("keyboard card selection and island creation keep one primary target", async ({ page }) => {
+  const enableSample = await routeSampleDocument(page);
+
+  await page.goto("/?locale=en");
+  await expect(page.locator(START_PANEL)).toBeVisible();
+  enableSample();
+  await page.getByRole("button", { name: "Open sample" }).click();
+
+  const firstCard = page.getByRole("option", { name: "first value user problem" });
+  const secondCard = page.getByRole("option", { name: "first value observation memo" });
+  await firstCard.focus();
+  await firstCard.press("Enter");
+  await secondCard.focus();
+  await secondCard.press("Shift+Space");
+  await expect(firstCard).toHaveAttribute("aria-selected", "true");
+  await expect(secondCard).toHaveAttribute("aria-selected", "true");
+
+  const bulkBar = page.locator('[data-ui-region="bulk-operations-bar"]');
+  const createIsland = bulkBar.getByRole("button", { name: "Create Island" });
+  await createIsland.focus();
+  await createIsland.press("Enter");
+
+  const selectionPanel = page.locator('[data-ui-region="selection-context"]');
+  await expect(selectionPanel).toContainText("Island selected");
+  await expect(selectionPanel).not.toContainText("Selection: 2 cards selected");
+  await expect(bulkBar).toBeHidden();
+
+  const collapseToggle = page.getByRole("checkbox", { name: "Collapsed" });
+  await collapseToggle.focus();
+  await collapseToggle.press("Space");
+  await expect(collapseToggle).toBeChecked();
 });
