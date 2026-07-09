@@ -104,3 +104,7 @@
 - backend: 変更なし（スキーマ非変更のため）。ruff クリーン / pytest 287 passed（既存回帰確認のみ）
 - e2e 新規 `pre_share_summary_gate.spec.ts` **5/5 passed**（件数・非スコア表示／戻るでフォーカス復帰・非エクスポート／Escapeで同様に復帰／続行で従来どおり書き出し／ゼロ件時のゲート省略）
 - 影響を受けた既存7 e2e ファイルすべて非回帰確認（`continueThroughPreShareGateIfPresent` 挿入後、全テスト意図どおりのアサーションを維持）。バッチ実行時に6件失敗が出たが、いずれもクリーンな main チェックアウトで同一条件・同一エラーで再現する既存の不安定性（`diagnostics_structural_metrics`／`hierarchy_level_persistence`／`large_document_operability`／`polygon_autofit_qa_boundary`×2／`polygon_import_validation`）であり、本Issueの変更による回帰ではないことを個別に確認した。
+
+### 追記 2026-07-09: 実装照合レビューでの発見・修正
+
+`02_Architecture/design/design-qa-checklist.md`（Claude Design Round 5 起源の実装照合チェックリスト）を本機能に初適用し、実機スクリーンショット（Docker Playwright）で確認した結果、共有直前サマリのSafeMode表示が「SafeMode: セーフモード: ON」と二重表記になっていることを発見した（`safeModeIndicator.label` が既に「セーフモード: ON」という接頭辞付き文字列を返すのに、`share.panel.pre_share_gate.safe_mode` の i18n テンプレートで再度「SafeMode: {value}」とラップしていたため）。`SharePanel.tsx` を修正して `safeModeIndicator.label` を直接表示するよう変更し、未使用化した該当i18nキーを両ロケールから削除、回帰アンカーを追加した。typecheck 0 / vitest 963 passed / 関連e2e 7 passed で再検証済み。詳細は `design-qa-checklist.md` 第2回記録を参照。

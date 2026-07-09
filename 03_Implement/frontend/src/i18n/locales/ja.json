@@ -91,7 +91,6 @@
   "share.panel.export.bundle_export": "レビューパックを書き出す (.zip)",
   "share.panel.pre_share_gate.title": "共有直前の確認",
   "share.panel.pre_share_gate.summary": "未レビュー {unreviewed}件・違和感 {critique}件・矛盾 {contradictions}件は既定で非表示になります。",
-  "share.panel.pre_share_gate.safe_mode": "SafeMode: {value}",
   "share.panel.pre_share_gate.back": "戻って確認する",
   "share.panel.pre_share_gate.continue": "続行する",
   "share.panel.export.bundle_granularity": "書き出し粒度",

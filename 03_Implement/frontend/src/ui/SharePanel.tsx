@@ -974,7 +974,12 @@ export function SharePanel({
                       contradictions: domainExpressionSummary.contradictionLinks,
                     })}
                   </div>
-                  <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.pre_share_gate.safe_mode", { value: safeModeIndicator.label })}</div>
+                  {/* design-qa conformance fix (2026-07-09): safeModeIndicator.label
+                      already contains its own "SafeMode:"/"セーフモード:" prefix
+                      (safe_mode.indicator.*.label) -- wrapping it in another
+                      translated "SafeMode: {value}" produced a doubled label
+                      ("SafeMode: セーフモード: ON"). Use the label alone. */}
+                  <div style={{ fontSize: 11, color: "#64748b" }}>{safeModeIndicator.label}</div>
                   <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                     <button type="button" onClick={closePreShareGate} style={actionButtonStyle}>
                       {t("share.panel.pre_share_gate.back")}

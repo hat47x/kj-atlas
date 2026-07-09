@@ -91,7 +91,6 @@
   "share.panel.export.bundle_export": "Export bundle (.zip)",
   "share.panel.pre_share_gate.title": "Before you share",
   "share.panel.pre_share_gate.summary": "{unreviewed} unreviewed, {critique} critique note(s), and {contradictions} contradiction(s) are excluded by default.",
-  "share.panel.pre_share_gate.safe_mode": "SafeMode: {value}",
   "share.panel.pre_share_gate.back": "Go back and review",
   "share.panel.pre_share_gate.continue": "Continue",
   "share.panel.export.bundle_granularity": "Export granularity",
