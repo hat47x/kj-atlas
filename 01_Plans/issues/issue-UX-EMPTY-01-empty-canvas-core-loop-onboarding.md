@@ -86,3 +86,7 @@
 - Claude Design Round 4 成果（同上 §段階1レッドライン）に空状態ヒントの出現・消滅条件（カード0枚時のみ・最初のカード作成で消滅・コーチマークは一度実行で再表示なし=localStorage）の仕様が確定。プロトタイプが参照実装。
 - 2026-07-04 Codex: `EmptyCanvasHint` を追加し、新規文書を `cards: []` から開始するように変更。StartPanelを閉じた後の空キャンバスでだけ初回ヒントを表示し、`Write first card` / `最初のカードを書く` 操作でカード作成と同時に消えることを `empty_canvas_onboarding.spec.ts` で確認する方針にした。再表示抑制・リセット導線（AC-2）は別スライスで継続。
 - 2026-07-04 Codex: 初回カード作成時に空キャンバスヒントの完了状態を localStorage に保存し、以後の空キャンバスでは再表示しないようにした。表示パネルから「空キャンバスのヒントを再表示」できるリセット導線を追加し、同一E2Eで再表示まで確認する方針に更新。
+
+### 追記 2026-07-09: 実装照合レビュー（design-qa-checklist）— クリーンパス
+
+`02_Architecture/design/design-qa-checklist.md` 第7回として実施。`03_Implement/frontend/scripts/capture_design_conformance_empty_20260709.mjs` で実機取得し照合、乖離なし。既存e2e `empty_canvas_onboarding.spec.ts` が出現/消滅/フォーカス非奪取/完了状態の永続化/再表示導線をプログラム的に固定済みであることを再確認した上で、本レビューはCSS/レイアウト面（タイポ・角丸・間隔・CJK折り返し）を実機スクショで追加確認した。
