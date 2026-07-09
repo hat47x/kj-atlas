@@ -64,6 +64,16 @@ test("canvas with a card selected has no automatable a11y violations", async ({ 
   await expectNoViolations(page, "canvas with selection context");
 });
 
+test("canvas legend has no automatable a11y violations", async ({ page }) => {
+  await page.goto("/?locale=en");
+  await page.getByRole("button", { name: /Open sample|サンプルを開く/ }).click();
+  await expect(page.locator('[data-panel="start-document-entry"]')).toBeHidden();
+  await page.getByRole("button", { name: "View", exact: true }).click();
+  await page.locator('[data-focus-return-id="legend-trigger"]').click();
+  await expect(page.locator('[data-ui-region="canvas-legend"]')).toBeVisible();
+  await expectNoViolations(page, "canvas legend");
+});
+
 test("share panel has no automatable a11y violations", async ({ page }) => {
   await page.goto("/?locale=en");
   await page.getByRole("button", { name: /Open sample|サンプルを開く/ }).click();

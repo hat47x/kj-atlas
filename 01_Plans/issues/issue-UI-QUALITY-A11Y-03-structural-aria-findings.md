@@ -6,7 +6,7 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: TBD
-- Scope: `03_Implement/frontend/src/canvas/`（role=option/listbox構造）, `03_Implement/frontend/src/ui/MenuBar.tsx`（role=menu構造）, `03_Implement/frontend/src/App.tsx`（h1・DomainStateFilterBarの配色）
+- Scope: `03_Implement/frontend/src/canvas/`（role=option/listbox構造）, `03_Implement/frontend/src/ui/MenuBar.tsx`（role=menu構造）, `03_Implement/frontend/src/App.tsx`（h1・DomainStateFilterBarの配色）, `03_Implement/frontend/src/ui/ViewControlsPanel.tsx`（表示制御のフォームラベル）
 - Related Backlog: `UI-QUALITY-A11Y-03`
 - Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-2）, `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（本Issueの発見元）
 - Expected verification level: `e2e`
@@ -55,4 +55,5 @@
 
 - `Shell`のプロダクト名を実ページ見出しの`h1`へ変更した。
 - `DomainStateFilterBar`の補助ラベル色を`#475569`へ変更し、axeの`color-contrast`除外を解除した。
+- 凡例を含む表示パネルを検査対象に追加した際、`ViewControlsPanel`の深さselectにアクセシブルネームがないことを追加検出した。既存の「深さ」翻訳を`aria-label`へ関連付け、`select-name`の欠落を解消した。
 - `aria-required-parent` と `aria-required-children` は、キャンバス選択ロールとメニュー内フォームの意味付けを決めるADR-0052の対象として残した。
