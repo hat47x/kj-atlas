@@ -2908,3 +2908,47 @@ The delegated H-PV1/H-PV2/H-PV3 decisions remove the specific human-acceptance b
 - Codex may prepare supporting evidence for screenshots, Compose/environment checks, support runbooks, automated keyboard routes, and accessibility scans in later work.
 - Codex must not mark final shipment Go, formal organization approval, package public contract, signature/approval workflow, physical assistive-technology acceptance, or release authority as complete without the corresponding release evidence or explicit authority change.
 - No ADR is required for this closeout because SafeMode, share/export policy, `human_reviewed`, proposal-only, provider defaults, package authority, and release authority are unchanged.
+
+## Productization Gate Record 2026-07-09: DOMAIN-KJ-01/TRACE-01/EXPR-04/KA-01, UX-SHARE-01, UI-QUALITY-A11Y-02
+
+- Candidate: `origin/main@94bebda3` (PRs #2522–#2529)
+- Date (JST): 2026-07-09
+- Reviewer: Claude Code acting under the standing 順に進めてください delegation for sequential backlog execution. This is not final shipment approval.
+- Scope: six additive contract-first features (KJ relation vocabulary, Card.meta seq/source provenance, contradiction-signal human review, KA-method card fields, pre-share summary gate, partial per-surface a11y completion) plus two documentation-accuracy syncs. All shipped one PR at a time with contract-first schema updates, full verification, and merge.
+
+### Evidence (fresh full-suite run against current main HEAD)
+
+- `tsc --noEmit`: pass (0 errors).
+- Full Vitest: **963 tests passed** (185 files).
+- Production build (`npm run build`): pass. Existing >500kB main-chunk warning is pre-existing and unrelated to this candidate.
+- Backend: `ruff check`: pass (0 issues). `pytest`: **287 passed**, 24 skipped (PostgreSQL-only tests, opt-in via env var).
+- Issue memo validator: `validate_active_issue_memos.py`: 0 active issue memos, no violations.
+- `triage_actionable_plans.py`: 9 active Draft items, **all** gated on a Draft→Open decision (VR-ROADMAP-01, EXT-AGENT-01/02/03, SOCIAL-DIFFUSION-01..04, BUDGET-OPS-01); 0 ADR-linked stoppers. Confirms no unblocked implementation work remains outside human/ADR gates at this snapshot.
+- Each of the 6 features additionally carries its own new/updated e2e coverage (verified via Docker Playwright per-feature at merge time): edge-vocabulary rendering, Card.meta round-trip + share-exclusion, contradiction-signal decision UI, KA-field export, pre-share gate (5 scenarios), selection-context/share-preflight a11y (2 scenarios).
+
+### Gate impact
+
+- G1 safety defaults: unchanged, reconfirmed. All 6 features are additive (no schema shape removed, no SafeMode/share-export boundary weakened). DOMAIN-TRACE-01 and UX-SHARE-01 both add new share-exclusion boundaries (default OFF, explicit opt-in). DOMAIN-EXPR-04 keeps AI/detector output proposal-only by construction (no write path into the reviewed field).
+- G2 primary operations: Conditional Go improved. New representative-flow e2e coverage for card meta editing, contradiction-signal review, KA fields, and the pre-share gate.
+- G3 Japanese UI: unchanged, reconfirmed Go. `ui_hardcode_guard` and `catalog_integrity` remain green; all new UI strings added to both ja/en locales.
+- G4 viewport/operability: Conditional Go improved. UI-QUALITY-A11Y-02 closed 2 of 5 per-surface a11y spec rows (selection-context read-order + aria-live, share-preflight aria-describedby) and confirmed a 3rd (bulk operations bar) was already compliant; 2 rows remain out of scope for stated reasons (see issue file).
+- G7 regression: Go for this candidate based on the fresh full-suite run above.
+
+### Blocker Inventory
+
+- No new blockers introduced. Two items are explicitly tracked as deferred with reasons, not silently dropped: the Legend a11y row (concurrent edit in a separate session) and the work-mode-tabs a11y row (would require reversing `UX-NAV-01`'s explicit "no full tab redesign" decision — needs a human ADR call, not a unilateral implementation).
+- One pre-existing e2e flakiness (`responsiveness_performance_budget.spec.ts` locator ambiguity, unrelated to this candidate) was found and delegated as a follow-up task; not yet merged.
+- Same non-delegated gates as the 2026-07-02 closeout remain outstanding (see below) — this record does not change that list.
+
+### Decision
+
+**Conditional Go for this candidate's additive feature slice and its own regression coverage / No-Go for full release shipment.** The non-delegated gates from the 2026-07-02 closeout are unchanged by this candidate:
+
+- Final program approval.
+- Compose/environment rehearsal.
+- Support diagnostics/recovery rehearsal.
+- Physical keyboard acceptance and screen-reader acceptance.
+- Release screenshot approval.
+- Formal organization approval or package public contract / signature / approval workflow, if introduced.
+
+No ADR is required for this candidate: no schema shape was removed, no SafeMode/share-export/review-promotion/AI-authority boundary changed in a way that widens exposure (all additions are opt-in, default-off, or additive-only per each feature's own contract-first schemas.md section).
