@@ -1,7 +1,7 @@
 # Issue: UX-WORKFLOW-01 Hold And Critique Action Continuity
 
 - Type: Feature request / UX
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: VALUE-DOGFOOD-01
 - Priority: P1
@@ -33,7 +33,7 @@ KJ Atlas should help users keep uncertainty visible without losing the reason fo
 ## Acceptance Criteria
 
 - [x] A selected-card workflow offers a visible path from hold to critique/reason recording.
-- [ ] The action names are consistent between the bulk bar, side panel, and keyboard flow.
+- [x] The action names are consistent between the bulk bar, side panel, and keyboard flow.
 - [x] The UI explains or implies that critique notes remain saved even when AI reproposal is unavailable.
 - [x] E2E covers selected cards -> hold -> add critique reason -> verify saved state.
 

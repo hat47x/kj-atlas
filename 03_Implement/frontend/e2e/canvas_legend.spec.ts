@@ -60,10 +60,10 @@ test("state legend is default hidden, opens from View panel, closes on Escape wi
   await expect(legend).toContainText("State legend");
   await expect(legend).toContainText("Fact");
   await expect(legend).toContainText("Unreviewed (top-right dot)");
-  await expect(legend).toContainText("Selected-card keys");
-  await expect(legend).toContainText("Toggle hold");
-  await expect(legend).toContainText("Toggle critique");
-  await expect(legend).toContainText("Toggle reviewed");
+  await expect(legend).toContainText("Shortcuts");
+  await expect(legend).toContainText("Change hold state");
+  await expect(legend).toContainText("Change critique mark");
+  await expect(legend).toContainText("Mark selected card reviewed");
   await expect(legend).toContainText("Contradicts (dashed)");
 
   // Escape closes the legend and returns focus to the trigger.

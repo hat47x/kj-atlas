@@ -1,7 +1,7 @@
 # Issue: UX-LABEL-01 Retention Vocabulary Consistency
 
 - Type: UX / Content design
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: UX-WORKFLOW-01
 - Priority: P2
@@ -28,18 +28,34 @@ The behavior is valid, but users must translate between action wording, state wo
 - General user-facing copy does not expose `quick flag` or equivalent implementation language.
 - English and Japanese labels preserve the same distinction between a marker, a saved reason, and a review state.
 
+## Canonical Vocabulary
+
+| Meaning | English | Japanese | Used for |
+| --- | --- | --- | --- |
+| Stored retention state | Hold state | 保留状態 | Card inspector, status copy, history copy |
+| Retention action | Change hold state | 保留状態を変更 | Bulk bar, command palette, shortcut help |
+| Stored human context | Critique note | 違和感メモ | Selection panel, legend, status copy |
+| Lightweight marker | Critique mark | 違和感マーク | Bulk bar, card marker, shortcut help |
+| Human explanation | Reason | 理由 | Bulk reason editor and saved note |
+
 ## Acceptance Criteria
 
-- [ ] A vocabulary table maps bulk bar, side panel, command palette, shortcut help, legend, status messages, and history messages.
-- [ ] The same canonical terms are used in English and Japanese across the mapped surfaces.
-- [ ] The keyboard help explains the result of `H`/`U` in user terms without exposing implementation vocabulary.
-- [ ] Unit catalog checks and one English/Japanese E2E assertion cover the changed labels.
+- [x] A vocabulary table maps bulk bar, side panel, command palette, shortcut help, legend, status messages, and history messages.
+- [x] The same canonical terms are used in English and Japanese across the mapped surfaces.
+- [x] The keyboard help explains the result of `H`/`U` in user terms without exposing implementation vocabulary.
+- [x] Unit catalog checks and one English/Japanese E2E assertion cover the changed labels.
 
 ## Validation Plan
 
 - Review the rendered bulk bar, card inspector, shortcut help, and command palette in both locales.
 - Run catalog integrity and untranslated-key inventory tests.
 - Extend the hold/reason E2E to assert the canonical labels in both locales.
+
+## Implementation Notes
+
+- 2026-07-10: standardized the user-facing vocabulary to `Hold state / 保留状態`, `Critique note / 違和感メモ`, `critique mark / 違和感マーク`, and `reason / 理由`. Removed `quick-flag` and `feels-off` from general action and shortcut copy.
+- Updated the affected English E2E expectations and corrected the existing Canvas legend heading assertion drift tracked in `issue-DX-E2E-02-canvas-legend-heading-drift.md`.
+- Verification: 32 UI regression tests, catalog/inventory tests, and 16 Playwright E2E tests passed.
 
 ## ADR Impact
 

@@ -96,8 +96,8 @@ test("selected-card H/U/R shortcuts toggle state and remain undoable", async ({ 
   await expect(holdState).toHaveValue("active");
 
   await page.keyboard.press("u");
-  await expect(critiqueNote).toHaveValue("Feels off");
-  await expect(selectionPanel).toContainText("Critique: Feels off");
+  await expect(critiqueNote).toHaveValue("Critique mark (edit the reason in the selection panel)");
+  await expect(selectionPanel).toContainText("Critique note: Critique mark (edit the reason in the selection panel)");
   await page.keyboard.press("Control+Z");
   await expect(critiqueNote).toHaveValue("");
 

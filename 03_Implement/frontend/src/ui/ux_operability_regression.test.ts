@@ -405,6 +405,21 @@ describe("UX Operability regression contracts", () => {
     expect(statusDivBlock).toContain('whiteSpace: "nowrap"');
   });
 
+  it("UX-LABEL-01: retention actions use canonical state, mark, note, and reason vocabulary", () => {
+    const en = readSource("src/i18n/locales/en.json");
+    const ja = readSource("src/i18n/locales/ja.json");
+
+    expect(en).toContain('"bulk_ops_bar.toggle_hold": "Change hold state"');
+    expect(en).toContain('"bulk_ops_bar.toggle_critique": "Change critique mark"');
+    expect(en).toContain('"side_panel.context.critique": "Critique note"');
+    expect(en).not.toContain("quick-flag");
+    expect(en).not.toContain("Toggle feels-off");
+    expect(ja).toContain('"bulk_ops_bar.toggle_hold": "保留状態を変更"');
+    expect(ja).toContain('"bulk_ops_bar.toggle_critique": "違和感マークを変更"');
+    expect(ja).toContain('"side_panel.context.critique": "違和感メモ"');
+    expect(ja).not.toContain("クイックフラグ");
+  });
+
   it("UX-SCALE-01 (c): island outlines are orthogonal (grid-occupancy), complexity is a structural count (not a score), and tidy is human-triggered and one undo step", () => {
     const outlineSource = readSource("src/domain/geometry/orthogonal_island_outline.ts");
     const appSource = readSource("src/App.tsx");

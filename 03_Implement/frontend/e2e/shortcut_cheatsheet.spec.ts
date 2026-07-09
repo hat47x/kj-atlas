@@ -59,7 +59,7 @@ test("opens with '?', closes with Escape, and returns focus to the pre-open elem
   await page.keyboard.press("?");
   const cheatsheet = page.locator(CHEATSHEET);
   await expect(cheatsheet).toBeVisible();
-  await expect(cheatsheet).toContainText("Toggle hold");
+  await expect(cheatsheet).toContainText("Change hold state");
   await expect(cheatsheet).toContainText("These keys are disabled while editing text.");
 
   await page.keyboard.press("Escape");
