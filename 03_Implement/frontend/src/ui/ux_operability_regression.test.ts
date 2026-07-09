@@ -590,6 +590,13 @@ describe("UX Operability regression contracts", () => {
     expect(sharePanelSource).toContain("closePreShareGate");
     expect(sharePanelSource).toContain("exportBundleButtonRef.current?.focus()");
     expect(sharePanelSource).toContain("handlePreShareGateKeyDown");
+
+    // Design-QA conformance fix (2026-07-09): safeModeIndicator.label already
+    // carries its own "SafeMode:"/"セーフモード:" prefix -- the gate must not
+    // wrap it in a second translated label (regressed to "SafeMode: セーフ
+    // モード: ON" once, caught by screenshot review).
+    expect(sharePanelSource).toContain("{safeModeIndicator.label}</div>");
+    expect(sharePanelSource).not.toContain("share.panel.pre_share_gate.safe_mode");
   });
 
   it("UI-QUALITY-A11Y-02: selection-context announces changes and reads type->hold->review->evidence; source-toggle warning is associated via aria-describedby", () => {
