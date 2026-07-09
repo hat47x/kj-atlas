@@ -63,7 +63,7 @@
 
 - [x] T1 仕様表→チェックリスト化（本完了記録に記載）。UQ-2 接続は未実施（残課題）。
 - [x] T2 不足 aria/フォーカス管理の補完（選択コンテキスト・共有前確認の2面）。一括操作バーは既存実装で充足済みと確認。凡例・作業モードタブは対象外。
-- [x] T3 e2e（選択コンテキストの読み上げ順・aria-live／共有前確認のaria-describedby）＋回帰アンカー。axe スモークは未導入（残課題）。
+- [x] T3 e2e（選択コンテキストの読み上げ順・aria-live／共有前確認のaria-describedby）＋回帰アンカー。axe スモークは2026-07-09の追記で導入済み。
 - [x] T4 記録（value_traceability 更新、2026-07-09）。
 
 ## 7) 検証計画 / Validation plan
@@ -107,8 +107,18 @@
 
 - 凡例面への適用（`task_2ab8e3e8` 完了後）。
 - 作業モードタブへの `role=tablist` 導入要否のADR判断（Owner: Productization Program Owner / UX Lead 相当）。
-- axe 系スモークテストの導入（横断 e2e スイートの拡充）。
+- ~~axe 系スモークテストの導入（横断 e2e スイートの拡充）。~~ → 2026-07-09に導入済み（下記追記参照）。派生の構造的発見4件は `issue-UI-QUALITY-A11Y-03-structural-aria-findings.md` へ。
 
 ### 追記 2026-07-09
 
 - `value_traceability.md` §2.7 UQ-2 行に本スライスの結果を反映（T4/AC-5 完了）。
+
+### 追記 2026-07-09（同日・別ラウンド）: axe系スモークテストの導入・実バグ発見・修正
+
+残課題の1つ「axe系スモークテストの導入」を実施した。
+
+- `@axe-core/playwright` を devDependency に追加。`e2e/a11y_axe_smoke.spec.ts`（新規）が7サーフェス（開始パネル・選択コンテキスト・共有パネル・作業モード・エージェント依頼パネル・エージェント応答取込パネル・メニューバー）へ axe の自動検査を実行。
+- **発見・修正（select-name / label）**: 実際に検査した結果、9箇所の `<select>`/`<input>` がアクセシブルネームを持たないことが判明（visualに隣接する `<label>` はあるが `htmlFor`/`id` 関連付けが無い、または `<span>` のみ）。`SidePanel.tsx`（接続のエッジ種別×2・読み順モード・主張種別・島の親・プラカードカード・島の形状）・`PatchWorkspacePanel.tsx`（候補選択・検索範囲・検索深さ）・`App.tsx`（最近使ったドキュメント選択）に `aria-label` を追加して全て解消。
+- **発見・未修正（設計判断を要する4種）**: `aria-required-parent`（キャンバスカードのrole=option/listbox構造・7箇所）・`aria-required-children`（MenuBarのrole=menu直接子制約・1箇所）・`page-has-heading-one`（h1皆無）・`color-contrast`（domain-detail-filtersの配色・2箇所）。いずれも機械的なラベル付与では直せない構造/デザイン判断のため、`issue-UI-QUALITY-A11Y-03-structural-aria-findings.md`（新規）を起票し、スモークテスト自身は `AxeBuilder.disableRules([...])` で明示的に除外（コード内コメント＋本追記で追跡、サイレント除外はしていない）。
+- 検証: typecheck 0 / vitest **988 passed**（188 files）/ e2e `a11y_axe_smoke.spec.ts` **7/7 passed**・`menu_bar.spec.ts` **6/6**・`edge_type_vocabulary.spec.ts` **3/3** 非回帰確認。
+- 副次確認: `ce3_patch_workspace.spec.ts` の既存1テストが本ラウンドの変更前（HEAD時点のファイル）でも同一エラーで失敗することを確認済み（本ラウンドの変更とは無関係の既存の不具合。修正は別途）。

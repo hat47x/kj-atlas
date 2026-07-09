@@ -1924,6 +1924,7 @@ export function SidePanel({
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.connect.title")}</div>
         <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>{t("side_panel.connect.edge_type")}</label>
         <select
+          aria-label={t("side_panel.connect.edge_type")}
           value={connectEdgeType}
           onChange={(event) => {
             // resolveKnownEdgeType maps anything unexpected back to "related".
@@ -1974,6 +1975,7 @@ export function SidePanel({
         </label>
         <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>{t("side_panel.reading_path.mode")}</label>
         <select
+          aria-label={t("side_panel.reading_path.mode")}
           value={readingMode}
           onChange={(event) => {
             onReadingModeChange(event.target.value === "islands+cards" ? "islands+cards" : "islands");
@@ -2350,6 +2352,7 @@ export function SidePanel({
             {t("side_panel.island_editor.parent")}
           </label>
           <select
+            aria-label={t("side_panel.island_editor.parent")}
             value={selectedIsland.parentIslandId ?? ""}
             onChange={(event) => {
               const nextValue = event.target.value.trim();
@@ -2429,6 +2432,7 @@ export function SidePanel({
             {t("side_panel.island_editor.placard_card")}
           </label>
           <select
+            aria-label={t("side_panel.island_editor.placard_card")}
             value={selectedIsland.placardCardId ?? ""}
             onChange={(event) => {
               const nextValue = event.target.value.trim();
@@ -2908,6 +2912,7 @@ export function SidePanel({
             <div style={{ display: "grid", gap: 6 }}>
               <label style={{ fontSize: 12, color: "#475569" }}>{t("side_panel.island_editor.shape")}</label>
               <select
+                aria-label={t("side_panel.island_editor.shape")}
                 value={selectedIsland.shape?.kind === "polygon" ? "polygon" : "rect"}
                 disabled={isReadOnly}
                 onChange={(event) => {
@@ -3030,6 +3035,7 @@ export function SidePanel({
               </label>
               <select
                 data-testid="edge-type-select"
+                aria-label={t("side_panel.connect.edge_type")}
                 value={resolveKnownEdgeType(selectedPersistedEdgeType)}
                 onChange={(event) => {
                   onEdgeTypeChange(selectedAggregatedEdge.id, resolveKnownEdgeType(event.target.value));
@@ -3452,6 +3458,7 @@ export function SidePanel({
                 </span>
               </div>
               <select
+                aria-label={t("side_panel.claim_type.label")}
                 value={selectedCard.claimType ?? "unknown"}
                 disabled={isReadOnly}
                 onChange={(event) => {
