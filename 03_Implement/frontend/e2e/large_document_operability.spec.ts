@@ -97,7 +97,7 @@ async function collectFixedPanels(page: Page): Promise<Box[]> {
 test("large document keeps search, panel fit, and export operable", async ({ page }) => {
   const viewport = { width: 768, height: 720 };
   await page.setViewportSize(viewport);
-  await page.goto("/");
+  await page.goto("/?locale=en");
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
@@ -110,7 +110,7 @@ test("large document keeps search, panel fit, and export operable", async ({ pag
   });
 
   await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
-  await expect(page.getByText("Replaced current document")).toBeVisible();
+  await expect(page.getByText("Replaced the current document")).toBeVisible();
   await closeSharePanelIfOpen(page);
 
   const searchInput = page.getByPlaceholder(SEARCH_CARDS_PLACEHOLDER);

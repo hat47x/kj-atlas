@@ -3,7 +3,16 @@
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0046` の実装入口。回帰検知が目的（厳密ベンチではない）。
 
 - Type: Process
-- Status: In Progress
+- Status: Done
+- Completion: 2026-07-10; `large_document_operability.spec.ts` passed in 7.3s with the 120-card / 12-island fixture.
+- Evidence: search and hide-non-matches, View and Share panel viewport fit at 768x720, and review-pack export diagnostics were verified.
+- Test contract fixes: the test now uses `?locale=en` for its English assertions and the current `Replaced the current document` status copy.
+
+## Acceptance evidence
+
+- [x] Representative large-document fixture remains executable.
+- [x] Search, panel fit, export, and diagnostics behavior pass at the documented viewport.
+- [x] Regression verification completed without a runtime or schema change.
 ## Implementation Progress 2026-06-27
 
 - Fixture scaled to 288 cards + 30 islands (ADR-0046 PB-1)
