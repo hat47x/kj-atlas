@@ -92,7 +92,7 @@ test("selection context keeps advanced panel extracted behind explicit disclosur
   const advancedPanel = page.locator('[data-panel-group="advanced"]');
   await expect(advancedPanel).toBeVisible();
   await expect(advancedPanel).toHaveAttribute("aria-expanded", "false");
-  await expect(selectionContext).toContainText("Critique:");
+  await expect(selectionContext).toContainText("Critique note:");
 
   await advancedPanel.locator("summary").click();
   await expect(advancedPanel).toHaveAttribute("aria-expanded", "true");

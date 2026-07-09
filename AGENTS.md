@@ -150,6 +150,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`：自由配置キャンバスとメニュー内フォームのARIA意味付けを決める提案ADR。
 - `01_Plans/issues/issue-UX-SHARE-02-visibility-scope-plain-language.md`：viewとレビューパックの公開範囲の違いを共有前に説明するUX issue。
 - `01_Plans/issues/issue-DX-E2E-03-visibility-flow-backend-fixture-portability.md`：公開範囲E2Eのfixture境界とバックエンド依存を明確にするDX issue。
+- `01_Plans/issues/issue-DX-E2E-04-critique-label-assertion-drift.md`：UX-LABEL-01の正本語彙と複雑度E2E期待値のずれを修正したDX issue。
 
 ### 3.3 `02_Architecture/`（Structure：設計・I/F・デプロイ）
 
