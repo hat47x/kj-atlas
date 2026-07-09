@@ -148,6 +148,22 @@ describe("SharePanel safe mode copy", () => {
     expect(html).toContain("Evidence links 5, contradictions 1, evidence gaps 2");
   });
 
+  it("explains differing view and pack visibility scopes before export", () => {
+    setActiveLocale("en");
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true, {
+      viewVisibility: "Restricted",
+      packVisibility: "Public",
+    })));
+
+    expect(html).toContain("View visibility controls the displayed view.");
+    expect(html).toContain("Pack visibility controls the files you share.");
+    expect(html).toContain("If they differ, confirm both scopes before exporting.");
+    expect(html).toContain("View visibility");
+    expect(html).toContain("Pack visibility");
+    expect(html).toContain("Restricted");
+    expect(html).toContain("Public");
+  });
+
   it("shows consistent English safe-mode-off warnings", () => {
     setActiveLocale("en");
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(false)));

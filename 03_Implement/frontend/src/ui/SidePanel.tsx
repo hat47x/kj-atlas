@@ -2878,7 +2878,9 @@ export function SidePanel({
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ fontSize: 12, color: "#64748b" }}>{t("side_panel.selection", { value: selectedCardLabel })}</div>
+            {hasCardSelection ? (
+              <div style={{ fontSize: 12, color: "#64748b" }}>{t("side_panel.selection", { value: selectedCardLabel })}</div>
+            ) : null}
             <button
               type="button"
               onClick={onFocusIsland}

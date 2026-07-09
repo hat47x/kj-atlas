@@ -67,6 +67,17 @@ describe("UX Operability regression contracts", () => {
     expect(viewControlsSource).toContain("aria-pressed={hierarchyLevel === item.id}");
   });
 
+  it("UX-STATE-01: creating an island makes the new island the only primary selection", () => {
+    const appSource = readSource("src/App.tsx");
+
+    expect(appSource).toContain("const handleCreateIsland = useCallback");
+    expect(appSource).toContain("setSelectedCardIds([]);");
+    expect(appSource).toContain("setSelectedIslandId(newIsland.id);");
+
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    expect(sidePanelSource).toContain("{hasCardSelection ? (");
+  });
+
   it("UX-VISUAL-01: card state badges sit in a normal-flow meta-row above the body (no first-line overlap)", () => {
     const cardViewSource = readSource("src/canvas/CardView.tsx");
 

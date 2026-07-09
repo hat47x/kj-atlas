@@ -147,6 +147,7 @@
   "share.panel.preflight.unreviewed.excluded": "Unreviewed drafts are excluded. Enable them only when the recipient expects draft content.",
   "share.panel.preflight.unreviewed.included": "Unreviewed drafts are included. Re-check the recipient and content before sharing.",
   "share.panel.preflight.unreviewed.safe_mode": "SafeMode is ON, so unreviewed drafts are excluded.",
+  "share.panel.preflight.visibility_scope_hint": "View visibility controls the displayed view. Pack visibility controls the files you share. If they differ, confirm both scopes before exporting.",
   "share.panel.preflight.source_references": "Source references (serial numbers / raw data)",
   "share.panel.preflight.source_references.excluded": "Excluded by default. Enable in export options only when needed.",
   "share.panel.preflight.source_references.included": "Source references are included. Raw-data locations will be shared with the recipient.",

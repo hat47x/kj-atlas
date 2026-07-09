@@ -4275,6 +4275,10 @@ export default function App() {
       ...document,
       islands: [...document.islands, newIsland],
     });
+    // Creating an island changes the primary target. Keeping the source-card
+    // selection would leave the header/bulk bar and inspector describing
+    // different targets at the same time.
+    setSelectedCardIds([]);
     setSelectedIslandId(newIsland.id);
     setStatusMessage(t("app.status.edit.created_island", { count: selectedCardIds.length }));
   }, [applyDocumentChange, document, selectedCardIds]);

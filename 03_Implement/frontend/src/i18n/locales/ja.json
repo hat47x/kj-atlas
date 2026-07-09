@@ -147,6 +147,7 @@
   "share.panel.preflight.unreviewed.excluded": "未レビューのドラフトを含めない設定です。必要な場合だけ切り替えます。",
   "share.panel.preflight.unreviewed.included": "未レビューのドラフトを含める設定です。共有先と内容を再確認してください。",
   "share.panel.preflight.unreviewed.safe_mode": "SafeMode ON のため未レビューのドラフトは含めません。",
+  "share.panel.preflight.visibility_scope_hint": "view \u306f\u753b\u9762\u8868\u793a\u7528\u306e\u7bc4\u56f2\u3001\u30d1\u30c3\u30af\u306f\u5171\u6709\u3059\u308b\u30d5\u30a1\u30a4\u30eb\u306e\u7bc4\u56f2\u3067\u3059\u3002\u5024\u304c\u7570\u306a\u308b\u5834\u5408\u306f\u3001\u4e21\u65b9\u306e\u516c\u958b\u7bc4\u56f2\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
   "share.panel.preflight.source_references": "出典参照（通し番号・原データ）",
   "share.panel.preflight.source_references.excluded": "既定で含めません。必要な場合のみ書き出しオプションで有効化します。",
   "share.panel.preflight.source_references.included": "出典参照を含める設定です。原データの所在が共有先に渡ります。",
