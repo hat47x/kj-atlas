@@ -101,6 +101,25 @@ test("side-panel trace editor sets seq/source, the selection summary shows them,
   await expect(summary).toHaveCount(0);
 });
 
+test("record details distinguish card identity from unavailable responsibility metadata", async ({ page }) => {
+  await routeDocument(page);
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto("/?locale=en");
+  await openSample(page);
+  await selectTraceCard(page);
+
+  const details = page.locator('[data-panel="card-record-details"]');
+  await expect(details).toBeVisible();
+  await details.locator("summary").click();
+  await expect(details).toContainText("Card ID");
+  await expect(details).toContainText("c1");
+  await expect(details).toContainText("Canonical card");
+  await expect(details).toContainText("Document created");
+  await expect(details).toContainText("2026-07-08T00:00:00.000Z");
+  await expect(details).toContainText("Not provided in this data model");
+  await expect(details).not.toContainText("reviewerRef");
+});
+
 test("canvas seq badge is OFF by default and appears only after the view toggle (AC-4)", async ({ page }) => {
   await routeDocument(page);
   await page.setViewportSize({ width: 1400, height: 900 });
