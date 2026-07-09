@@ -398,6 +398,26 @@ export async function recordProposalDecision(
   }
 }
 
+// EXT-AGENT-01 (ADR-0049 D2, spec §3.4): the only frontend caller of
+// /docs/{docId}/export-audit today. Fail-open on the backend (audit send
+// failure never blocks the export itself) -- but a network/HTTP error here
+// still surfaces to the caller so the UI can fall back to a status message
+// rather than silently pretending the audit call succeeded.
+export async function postExportAudit(docId: string, options: { safeMode: boolean; exportKind: string }): Promise<void> {
+  const response = await fetch(`${API_BASE}/docs/${docId}/export-audit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ safeMode: options.safeMode, exportKind: options.exportKind }),
+  });
+
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
+  }
+}
+
 export async function suggestIslandSummary(doc: DocumentV2, islandId: string): Promise<SuggestIslandSummaryResult> {
   const response = await fetch(`${API_BASE}/ai/suggest-island-summary`, {
     method: "POST",
