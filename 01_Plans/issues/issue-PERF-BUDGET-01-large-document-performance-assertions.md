@@ -4,15 +4,6 @@
 
 - Type: Process
 - Status: Done
-- Completion: 2026-07-10; `large_document_operability.spec.ts` passed in 7.3s with the 120-card / 12-island fixture.
-- Evidence: search and hide-non-matches, View and Share panel viewport fit at 768x720, and review-pack export diagnostics were verified.
-- Test contract fixes: the test now uses `?locale=en` for its English assertions and the current `Replaced the current document` status copy.
-
-## Acceptance evidence
-
-- [x] Representative large-document fixture remains executable.
-- [x] Search, panel fit, export, and diagnostics behavior pass at the documented viewport.
-- [x] Regression verification completed without a runtime or schema change.
 ## Implementation Progress 2026-06-27
 
 - Fixture scaled to 288 cards + 30 islands (ADR-0046 PB-1)
@@ -20,10 +11,13 @@
 - Degradation visibility check (PB-5) added
 - Existing E2E passes (cannot verify locally; CI only)
 
-Remaining: CI Playwright verification of timing budget
+Completed: CI/local Playwright verification of layout and export budget
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
+- Completion: 2026-07-10; `large_document_operability.spec.ts` passed in 7.3s with the 120-card / 12-island fixture.
+- Evidence: search and hide-non-matches, View and Share panel viewport fit at 768x720, and review-pack export diagnostics were verified.
+- Test contract fixes: the test now uses `?locale=en` for its English assertions and the current `Replaced the current document` status copy.
 - Owner: Codex
 - Scope: `03_Implement/frontend/e2e/`, `03_Implement/frontend/src/`
 - Related Backlog: `PERF-BUDGET-01`
