@@ -1226,7 +1226,7 @@
   "side_panel.context.hold_brief": "保留: {value}",
   "work_mode.title": "作業モード",
   "work_mode.close": "作業モードを閉じる",
-  "work_mode.content_pending": "高度な作業機能はここで開く予定です。現在は詳細表示を有効にしてサイドバーから利用できます。",
+  "work_mode.content_pending": "高度な作業機能（差分・文章化・提案の統合判断など）は、上部ツールバーの「詳細」を有効にするとここに表示されます。",
   "side_panel.distribution.title": "分布シグナル ({count})",
   "side_panel.distribution.stats": "島: {islands}・カード: {cards}・平均: {avg}・中央値: {median}・p90: {p90}",
   "side_panel.distribution.none": "分布上の注意点はありません。",
