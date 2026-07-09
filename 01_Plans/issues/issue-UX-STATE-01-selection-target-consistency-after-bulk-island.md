@@ -1,7 +1,7 @@
 # Issue: UX-STATE-01 Selection Target Consistency After Bulk Island Creation
 
 - Type: Bug / UX
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: VALUE-DOGFOOD-01
 - Priority: P1
@@ -30,10 +30,10 @@ Grouping cards is part of the core product value. If the action target is ambigu
 
 ## Acceptance Criteria
 
-- [ ] Creating an island from two selected cards yields one unambiguous selection summary.
-- [ ] The side panel title, header status, and bulk operation surface describe the same primary target.
-- [ ] Card-only actions and island actions are visually and semantically separated when both are available.
-- [ ] A Playwright E2E covers mouse selection -> create island -> inspect target summary -> apply one safe operation.
+- [x] Creating an island from two selected cards yields one unambiguous selection summary.
+- [x] The side panel title, header status, and bulk operation surface describe the same primary target.
+- [x] Card-only actions and island actions are visually and semantically separated when both are available.
+- [x] A Playwright E2E covers mouse selection -> create island -> inspect target summary -> apply one safe operation.
 
 ## Validation Plan
 
@@ -44,11 +44,24 @@ Grouping cards is part of the core product value. If the action target is ambigu
 ## Implementation Notes
 
 - 2026-07-10: Island creation now clears the source-card selection before selecting the new island. This removes the card-only bulk bar and leaves the island inspector as the single primary target.
-- A targeted operability regression contract verifies that the transition preserves this ordering. `e2e/selection_target_after_island_creation.spec.ts` verifies the rendered mouse flow; keyboard coverage remains in the validation plan.
+- A targeted operability regression contract verifies that the transition preserves this ordering. `e2e/selection_target_after_island_creation.spec.ts` verifies both the rendered mouse flow and keyboard flow (`Enter` / `Shift+Space` selection followed by keyboard island creation).
 
 ## Dogfood Evidence
 
 - `01_Plans/dogfood-log-2026-07-08.md`
+
+## Verification update (2026-07-10)
+
+- The existing mouse scenario selects two cards with a pointer, creates an island, and verifies that the island is the only primary target.
+- The added keyboard scenario focuses each card, uses `Enter` and `Shift+Space` to select them, then focuses and activates `Create Island` with `Enter`.
+- Both scenarios assert the same side-panel summary and that the card-only bulk bar is hidden after creation. No simultaneous card/island selection model is introduced.
+
+## Completion record (2026-07-10)
+
+- `e2e/selection_target_after_island_creation.spec.ts`: 2 passed.
+- Pointer scenario: two-card selection -> island creation -> island summary -> island collapse operation.
+- Keyboard scenario: `Enter` / `Shift+Space` selection -> keyboard island creation -> island summary -> keyboard island collapse operation.
+- No ADR was added because the existing single-primary-target model was clarified; the product model was not changed.
 
 ## ADR Impact
 
