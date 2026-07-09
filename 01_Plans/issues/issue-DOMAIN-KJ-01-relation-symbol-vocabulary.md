@@ -118,3 +118,9 @@
 
 - 凡例（CanvasLegend）への関係記号エントリ追加（ADR-0048 D1 の凡例1行追加運用は「状態」向けの規約であり本Issueの契約違反ではないが、発見可能性のため追加が望ましい）。
 - 派生（島間集約）エッジの方向保存表示（現状は種別抑制の汎用表示＝UX-SCALE-01 レッドライン準拠）。
+
+### 追記 2026-07-09: 実装照合レビュー（design-qa-checklist、初回）— クリーンパス
+
+`02_Architecture/design/design-qa-checklist.md` 第5回として実施。`03_Implement/frontend/scripts/capture_design_conformance_kj_20260709.mjs` で因果・相互・同値・対立・未知種別の5種別を1文書に並べ実機（Docker Playwright）取得し、A/B/C/D 全節を照合した結果、乖離なし（詳細はチェックリスト側に記録）。
+
+調査過程で「相互（mutual）の逆方向矢印が全体像スクショで視認できない」という視覚的懸念が生じたが、(1) 既存 `e2e/edge_type_vocabulary.spec.ts`（3/3 passed）で `arrow-from` の存在を再確認、(2) `data-edge-symbol="arrow-from"` 要素の `boundingBox()`/`outerHTML` を直接検査し、正しい座標（カード境界近傍、幅12.6×高さ12.1px）に存在することを確認——**誤検知**であり、フルページスクショの縮小表示で小さな三角形がカード境界に近接して視認しづらかっただけと判明。実装バグではないため修正は行っていない。
