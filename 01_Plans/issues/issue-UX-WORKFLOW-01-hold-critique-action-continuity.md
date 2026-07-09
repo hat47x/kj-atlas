@@ -1,14 +1,14 @@
 # Issue: UX-WORKFLOW-01 Hold And Critique Action Continuity
 
 - Type: Feature request / UX
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: VALUE-DOGFOOD-01
 - Priority: P1
 - Owner: Codex
 - Scope: `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-WORKFLOW-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/adr/ADR-0051-bulk-critique-reason-recording.md`
 - Expected verification level: `e2e`
 
 ## Problem
@@ -32,16 +32,22 @@ KJ Atlas should help users keep uncertainty visible without losing the reason fo
 
 ## Acceptance Criteria
 
-- [ ] A selected-card workflow offers a visible path from hold to critique/reason recording.
+- [x] A selected-card workflow offers a visible path from hold to critique/reason recording.
 - [ ] The action names are consistent between the bulk bar, side panel, and keyboard flow.
-- [ ] The UI explains or implies that critique notes remain saved even when AI reproposal is unavailable.
-- [ ] E2E covers selected cards -> hold -> add critique reason -> verify saved state.
+- [x] The UI explains or implies that critique notes remain saved even when AI reproposal is unavailable.
+- [x] E2E covers selected cards -> hold -> add critique reason -> verify saved state.
 
 ## Validation Plan
 
-- `cd 03_Implement/frontend && node ./node_modules/playwright/cli.js test e2e/domain_expression_keyboard_access.spec.ts --reporter=line`
+- `cd 03_Implement/frontend && node ./node_modules/.bin/playwright test e2e/domain_expression_keyboard_access.spec.ts --reporter=line`
 - Add or update an E2E for the mouse-first bulk operation path.
 - Verify Japanese and English labels through catalog integrity tests.
+
+## Implementation Notes
+
+- 2026-07-10: added an `Add reason` action to the bulk operation bar. The reason editor explains that the note is saved to every selected card and does not require AI. Existing card notes are preserved and the new reason is appended.
+- `e2e/bulk_hold_reason_flow.spec.ts` covers selecting cards, applying hold, saving a shared reason with `Ctrl+Enter`, and verifying the saved hold state and note.
+- Remaining label consistency work is tracked in `01_Plans/issues/issue-UX-LABEL-01-retention-vocabulary-consistency.md`.
 
 ## Dogfood Evidence
 
@@ -49,4 +55,4 @@ KJ Atlas should help users keep uncertainty visible without losing the reason fo
 
 ## ADR Impact
 
-No ADR is needed if this only changes action placement and copy. Revisit ADR-0040 only if the definition of hold, critique, or reproposal authority changes.
+ADR-0051 records the new bulk reason semantics because the action appends one shared human note to multiple card records. Revisit ADR-0040 only if the definition of hold, critique, or reproposal authority changes.

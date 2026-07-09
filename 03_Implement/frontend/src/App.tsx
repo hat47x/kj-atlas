@@ -4759,6 +4759,37 @@ export default function App() {
     );
   }, [applyDocumentChange, document, selectedCardIds]);
 
+  const handleBulkAddCritiqueReason = useCallback(
+    (rawReason: string) => {
+      if (!document || selectedCardIds.length < 2) {
+        return;
+      }
+
+      const reason = rawReason.trim();
+      if (!reason) {
+        return;
+      }
+
+      const selectedCardIdSet = new Set(selectedCardIds);
+      const nextCards = document.cards.map((card) => {
+        if (!selectedCardIdSet.has(card.id)) {
+          return card;
+        }
+
+        const current = card.critique?.trim() ?? "";
+        const nextCritique = current.length > 0 ? `${current}\n\n${reason}` : reason;
+        return { ...card, critique: nextCritique };
+      });
+
+      applyDocumentChange(
+        { ...document, cards: nextCards },
+        t("app.history.card.critique_updated"),
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document, selectedCardIds]
+  );
+
   const handleBulkClaimTypeChange = useCallback(
     (nextClaimType: ClaimType) => {
       if (!document || selectedCardIds.length < 2) {
@@ -10971,6 +11002,7 @@ export default function App() {
               count={selectedCardIds.length}
               onToggleHold={handleBulkToggleHold}
               onToggleCritique={handleBulkToggleCritique}
+              onAddCritiqueReason={handleBulkAddCritiqueReason}
               onChangeClaimType={handleBulkClaimTypeChange}
               onBundleIntoIsland={handleCreateIsland}
               onDelete={handleDeleteSelection}

@@ -140,6 +140,9 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/triage_actionable_plans.py`：ADR/issueメタデータだけを走査して Ready/保留/関連ADR を抽出する軽量CLI。
 - `01_Plans/issues/`：GitHub Issue運用を補助する短命メモ置き場。AIは triage 出力や対象Backlog IDで必要なメモだけ読む。
 - `01_Plans/issues/TEMPLATE.md`：Issue補助メモの標準記述テンプレ（人間/生成AI共通）。
+- `01_Plans/adr/ADR-0051-bulk-critique-reason-recording.md`：複数選択カードへの理由追記と履歴・AI非依存の扱いを定義する提案ADR。
+- `01_Plans/issues/issue-DX-DOC-01-crlf-markdown-fence-parser.md`：MarkdownのJSONコードブロック抽出をLF/CRLF両対応にしたテスト portability 修正。
+- `01_Plans/issues/issue-UX-LABEL-01-retention-vocabulary-consistency.md`：保留・違和感・理由の画面横断ラベルを標準化するUX issue。
 
 ### 3.3 `02_Architecture/`（Structure：設計・I/F・デプロイ）
 
