@@ -1,7 +1,7 @@
 # Issue: UX-STATE-01 Selection Target Consistency After Bulk Island Creation
 
 - Type: Bug / UX
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: VALUE-DOGFOOD-01
 - Priority: P1
@@ -40,6 +40,11 @@ Grouping cards is part of the core product value. If the action target is ambigu
 - `cd 03_Implement/frontend && node ./node_modules/playwright/cli.js test e2e/*selection*.spec.ts --reporter=line`
 - Add or update a targeted E2E if no existing spec covers this exact transition.
 - Manually verify the same flow with a mouse and with keyboard selection.
+
+## Implementation Notes
+
+- 2026-07-10: Island creation now clears the source-card selection before selecting the new island. This removes the card-only bulk bar and leaves the island inspector as the single primary target.
+- A targeted operability regression contract verifies that the transition preserves this ordering. `e2e/selection_target_after_island_creation.spec.ts` verifies the rendered mouse flow; keyboard coverage remains in the validation plan.
 
 ## Dogfood Evidence
 
