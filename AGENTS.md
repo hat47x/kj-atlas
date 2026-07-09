@@ -148,6 +148,8 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/issues/issue-UX-STATE-01-selection-target-consistency-after-bulk-island.md`：複数カードから島を作成した直後の主対象を、マウスとキーボードで一貫させるUX issue。
 - `01_Plans/issues/issue-UI-QUALITY-A11Y-03-structural-aria-findings.md`：axeで検出したARIA構造の設計課題と、対応済みの見出し・コントラスト修正を追跡するissue。
 - `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`：自由配置キャンバスとメニュー内フォームのARIA意味付けを決める提案ADR。
+- `01_Plans/issues/issue-UX-SHARE-02-visibility-scope-plain-language.md`：viewとレビューパックの公開範囲の違いを共有前に説明するUX issue。
+- `01_Plans/issues/issue-DX-E2E-03-visibility-flow-backend-fixture-portability.md`：公開範囲E2Eのfixture境界とバックエンド依存を明確にするDX issue。
 
 ### 3.3 `02_Architecture/`（Structure：設計・I/F・デプロイ）
 
