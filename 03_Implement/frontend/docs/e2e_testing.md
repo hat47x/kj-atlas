@@ -334,3 +334,23 @@ python3 01_Plans/issues/validate_active_issue_memos.py --files \
   01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md \
   01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md
 ```
+
+## Fixture-backed visibility flow
+
+`e2e/pub_visibility_i18n_readonly_flow.spec.ts` is a frontend fixture suite. Every scenario supplies deterministic responses for the document, public-pack index, and provider-status requests, so it can run without a backend process.
+
+The suite covers browser interaction and browser-side visibility state after reload. It does not claim backend persistence or provider integration coverage; those contracts belong to backend tests and an explicitly configured integration run.
+
+| Scenario | Boundary |
+| --- | --- |
+| Visibility after reload | Fixture-backed UI plus browser storage |
+| Differing view and pack visibility explanation | Fixture-backed UI |
+| English replacement flow | Fixture-backed UI |
+| Read-only and SafeMode restrictions | Fixture-backed UI |
+
+Use the following command when checking this boundary:
+
+```bash
+cd 03_Implement/frontend
+node ./node_modules/playwright/cli.js test e2e/pub_visibility_i18n_readonly_flow.spec.ts --reporter=line
+```
