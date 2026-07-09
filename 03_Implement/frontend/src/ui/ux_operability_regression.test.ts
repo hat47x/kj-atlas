@@ -775,6 +775,65 @@ describe("UX Operability regression contracts", () => {
     expect(exportSource).not.toMatch(/submitter|createdBy|lastEditedBy|authorRef|reviewerRef/i);
   });
 
+  it("EXT-AGENT-02: agent response import parses/sanitizes safely, never auto-mutates the document, and adopts are individually undo-able", () => {
+    const appSource = readSource("src/App.tsx");
+    const panelSource = readSource("src/ui/AgentResponseImportPanel.tsx");
+    const importSource = readSource("src/import/agent_response_import.ts");
+
+    // AC-5/CB-1: behind advanced disclosure, not a new core-toolbar action.
+    expect(appSource).toContain("<AgentResponseImportPanel");
+    const triggerButtonStart = appSource.indexOf("ref={agentResponseImportTriggerRef}");
+    const triggerButtonBlock = appSource.slice(Math.max(0, triggerButtonStart - 400), triggerButtonStart);
+    expect(triggerButtonBlock).toContain("{isAdvancedUiEnabled ? (");
+    expect(appSource.slice(triggerButtonStart, triggerButtonStart + 400)).toContain('data-ui-complexity-tier="advanced-content"');
+    expect(appSource.slice(triggerButtonStart, triggerButtonStart + 400)).not.toContain("data-ui-core-action");
+    expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(7);
+
+    // AC-6: parsing/reviewing never touches the document -- only a
+    // per-proposal adopt does, and each adopt is exactly one
+    // applyDocumentChange call (except merge_candidate, which stages into
+    // the existing ephemeral mergeSuggestions review surface instead).
+    expect(appSource).toContain("const handleParseAgentResponse = useCallback(() => {");
+    const parseBlockEnd = appSource.indexOf("}, [document, agentResponsePastedText");
+    const parseBlock = appSource.slice(appSource.indexOf("const handleParseAgentResponse"), parseBlockEnd);
+    expect(parseBlock).not.toContain("applyDocumentChange(");
+    expect(appSource.match(/applyDocumentChange\(\{ \.\.\.document, islands: nextIslands \}, t\("app\.history\.agent_response\.island_title_imported"\)\)/g)).toHaveLength(1);
+    expect(appSource).toContain('t("app.history.agent_response.narrative_imported")');
+    expect(appSource).toContain('t("app.history.agent_response.patch_imported")');
+
+    // §4.2 anti-scoring: forbidden fields are discarded/rejected, never
+    // silently kept; strict mode is a hard reject, lenient discards+warns.
+    expect(importSource).toContain('const FORBIDDEN_SCORING_FIELDS = ["score", "rank", "confidence", "priority"] as const;');
+    expect(importSource).toContain('mode === "strict"');
+    expect(importSource).toContain("forbidden_scoring_fields_discarded");
+
+    // Import-sanitize boundary: every proposal string goes through
+    // sanitizeMarkdownForDisplay, and the payload is size-capped the same
+    // as one ZIP-imported text file (spec §5).
+    expect(importSource).toContain('import { sanitizeMarkdownForDisplay } from "./markdown_sanitize";');
+    expect(importSource).toContain("ZIP_MAX_TEXT_FILE_BYTES");
+
+    // AC-3: orphaned proposals are kept and flagged, not discarded; a
+    // baseDocSignature mismatch on a patch blocks the one-click adopt path
+    // (routed to file export for the existing conflict/rediff flow instead).
+    expect(appSource).toContain("function computeAgentProposalReviewFlags(");
+    expect(appSource).toContain("orphaned: !(cardsExist || islandExists)");
+    expect(panelSource).toContain("review.patchSignatureMismatch");
+    expect(appSource).toContain("if (!review.patch || review.patchSignatureMismatch) break;");
+
+    // patch.ops whitelist + delete_* warning badge (spec §4.2).
+    expect(importSource).toContain("PATCH_OP_KIND_WHITELIST");
+    expect(importSource).toContain("patchHasDeleteOps");
+
+    // AC-5 prompt-injection boundary: proposal text is plain string data
+    // rendered as-is, never interpolated into any dynamic-execution path.
+    expect(panelSource).not.toMatch(/dangerouslySetInnerHTML|eval\(|new Function\(/);
+
+    // CARD-META-UI-01 is still Pending -- no submitter/author identity
+    // field is surfaced from an imported response.
+    expect(importSource).not.toMatch(/submitter|createdBy|lastEditedBy|authorRef|reviewerRef/i);
+  });
+
   it("Phase 5c: domain detail filters and guided flow stay behind advanced disclosure", () => {
     const appSource = readSource("src/App.tsx");
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");

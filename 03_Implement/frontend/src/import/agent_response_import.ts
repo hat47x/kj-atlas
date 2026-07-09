@@ -1,0 +1,251 @@
+import { sanitizeMarkdownForDisplay } from "./markdown_sanitize";
+import { ZIP_MAX_TEXT_FILE_BYTES } from "./zip_import";
+import type { PatchV1, PatchOpKind } from "../domain/patch/patch_types";
+
+// EXT-AGENT-02 (ADR-0049 D3, spec `02_Architecture/external_agent_collaboration_spec.md`
+// §4/§5): parses/validates/sanitizes an external AI agent's pasted "agent-response.v1"
+// JSON (the counterpart to EXT-AGENT-01's exported task sheet). Untrusted-data
+// boundary: forbidden scoring fields are discarded+warned (strict mode rejects),
+// missing rationale is flagged, patch.ops are checked against the CE3 whitelist,
+// every string is sanitized, and the whole payload is size-capped the same as one
+// ZIP-imported text file (spec §5: "応答全体に ZIP 取込と同等の容量制限を適用").
+
+export const AGENT_RESPONSE_PROPOSAL_KINDS = [
+  "island_title",
+  "merge_candidate",
+  "narrative_draft",
+  "opposing_viewpoint",
+  "critique",
+  "patch",
+] as const;
+
+export type AgentResponseProposalKind = (typeof AGENT_RESPONSE_PROPOSAL_KINDS)[number];
+
+const FORBIDDEN_SCORING_FIELDS = ["score", "rank", "confidence", "priority"] as const;
+
+const PATCH_OP_KIND_WHITELIST: readonly PatchOpKind[] = [
+  "upsert_card",
+  "delete_card",
+  "upsert_island",
+  "delete_island",
+  "upsert_edge",
+  "delete_edge",
+  "upsert_relation_summary",
+  "delete_relation_summary",
+  "upsert_evidence_link",
+  "delete_evidence_link",
+];
+
+export type AgentResponseTargetRef = {
+  islandId?: string;
+  cardIds?: string[];
+};
+
+export type AgentResponseProposalContent = {
+  title?: string;
+  text?: string;
+  mergedText?: string;
+};
+
+export type ParsedAgentProposal = {
+  proposalId: string;
+  kind: AgentResponseProposalKind;
+  targetRef: AgentResponseTargetRef;
+  content: AgentResponseProposalContent;
+  rationale: string;
+  rationaleStated: boolean;
+  patch?: PatchV1;
+  patchHasDeleteOps: boolean;
+  warnings: string[];
+};
+
+export type ParsedAgentResponse = {
+  schemaVersion: "agent-response.v1";
+  taskId: string;
+  respondedAt?: string;
+  agent?: string;
+  proposals: ParsedAgentProposal[];
+};
+
+export type AgentResponseImportMode = "strict" | "lenient";
+
+export type AgentResponseImportResult =
+  | { ok: true; response: ParsedAgentResponse; warnings: string[] }
+  | { ok: false; errors: string[] };
+
+const FENCE_PATTERN = /```(?:json)?\s*([\s\S]*?)```/i;
+
+export function extractJsonPayload(rawInput: string): string {
+  const fenceMatch = rawInput.match(FENCE_PATTERN);
+  return (fenceMatch ? fenceMatch[1] : rawInput).trim();
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function sanitizeString(value: unknown): string | undefined {
+  return typeof value === "string" ? sanitizeMarkdownForDisplay(value) : undefined;
+}
+
+function parseTargetRef(value: unknown): AgentResponseTargetRef {
+  if (!isRecord(value)) return {};
+  const islandId = typeof value.islandId === "string" ? value.islandId : undefined;
+  const cardIds = Array.isArray(value.cardIds) ? value.cardIds.filter((id): id is string => typeof id === "string") : undefined;
+  return { islandId, cardIds };
+}
+
+function parseContent(value: unknown): AgentResponseProposalContent {
+  if (!isRecord(value)) return {};
+  return {
+    title: sanitizeString(value.title),
+    text: sanitizeString(value.text),
+    mergedText: sanitizeString(value.mergedText),
+  };
+}
+
+function parsePatch(value: unknown, mode: AgentResponseImportMode, warnings: string[]): { patch?: PatchV1; hasDeleteOps: boolean } {
+  if (!isRecord(value) || value.kind !== "kj-atlas-patch" || value.version !== 1 || !Array.isArray(value.ops)) {
+    warnings.push("patch.invalid_shape");
+    return { hasDeleteOps: false };
+  }
+
+  const validOps = value.ops.filter((op) => isRecord(op) && PATCH_OP_KIND_WHITELIST.includes(op.kind as PatchOpKind));
+  if (validOps.length !== value.ops.length) {
+    warnings.push("patch.ops_outside_whitelist_discarded");
+  }
+  if (mode === "strict" && validOps.length !== value.ops.length) {
+    return { hasDeleteOps: false };
+  }
+
+  const hasDeleteOps = validOps.some((op) => isRecord(op) && typeof op.kind === "string" && op.kind.startsWith("delete_"));
+
+  const patch: PatchV1 = {
+    kind: "kj-atlas-patch",
+    version: 1,
+    baseDocSignature: typeof value.baseDocSignature === "string" ? value.baseDocSignature : undefined,
+    author: sanitizeString(value.author),
+    authorNote: sanitizeString(value.authorNote),
+    sourceApp: sanitizeString(value.sourceApp),
+    ops: validOps as PatchV1["ops"],
+  };
+  return { patch, hasDeleteOps };
+}
+
+function parseProposal(value: unknown, mode: AgentResponseImportMode): { proposal?: ParsedAgentProposal; errors: string[]; warnings: string[] } {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  if (!isRecord(value)) {
+    return { errors: ["proposal.not_an_object"], warnings };
+  }
+
+  const proposalId = typeof value.proposalId === "string" && value.proposalId.length > 0 ? value.proposalId : undefined;
+  const kind = typeof value.kind === "string" && (AGENT_RESPONSE_PROPOSAL_KINDS as readonly string[]).includes(value.kind)
+    ? (value.kind as AgentResponseProposalKind)
+    : undefined;
+  if (!proposalId || !kind) {
+    return { errors: ["proposal.missing_proposalId_or_kind"], warnings };
+  }
+
+  // §4.2 anti-scoring: forbidden numeric-evaluation fields are discarded and
+  // warned in lenient mode; strict mode rejects the whole proposal outright.
+  const forbiddenFieldsPresent = FORBIDDEN_SCORING_FIELDS.filter((field) => field in value);
+  if (forbiddenFieldsPresent.length > 0) {
+    if (mode === "strict") {
+      return { errors: [`proposal.forbidden_scoring_fields:${forbiddenFieldsPresent.join(",")}`], warnings };
+    }
+    warnings.push(`proposal.forbidden_scoring_fields_discarded:${forbiddenFieldsPresent.join(",")}`);
+  }
+
+  const rationaleRaw = sanitizeString(value.rationale);
+  const rationaleStated = Boolean(rationaleRaw && rationaleRaw.trim().length > 0);
+  if (!rationaleStated) {
+    if (mode === "strict") {
+      return { errors: ["proposal.missing_rationale"], warnings };
+    }
+    warnings.push("proposal.missing_rationale_labeled");
+  }
+
+  let patch: PatchV1 | undefined;
+  let patchHasDeleteOps = false;
+  if (kind === "patch") {
+    const parsedPatch = parsePatch(value.patch, mode, warnings);
+    if (!parsedPatch.patch) {
+      return { errors: ["proposal.patch_missing_or_invalid"], warnings };
+    }
+    patch = parsedPatch.patch;
+    patchHasDeleteOps = parsedPatch.hasDeleteOps;
+  }
+
+  const proposal: ParsedAgentProposal = {
+    proposalId: sanitizeMarkdownForDisplay(proposalId),
+    kind,
+    targetRef: parseTargetRef(value.targetRef),
+    content: parseContent(value.content),
+    rationale: rationaleStated ? (rationaleRaw as string) : "(根拠未記載)",
+    rationaleStated,
+    patch,
+    patchHasDeleteOps,
+    warnings,
+  };
+  return { proposal, errors, warnings };
+}
+
+export function parseAgentResponse(rawInput: string, mode: AgentResponseImportMode = "lenient"): AgentResponseImportResult {
+  const byteLength = new TextEncoder().encode(rawInput).byteLength;
+  if (byteLength > ZIP_MAX_TEXT_FILE_BYTES) {
+    return { ok: false, errors: [`payload.exceeds_size_limit:${ZIP_MAX_TEXT_FILE_BYTES}`] };
+  }
+
+  const jsonText = extractJsonPayload(rawInput);
+  let parsedJson: unknown;
+  try {
+    parsedJson = JSON.parse(jsonText);
+  } catch {
+    return { ok: false, errors: ["payload.invalid_json"] };
+  }
+
+  if (!isRecord(parsedJson)) {
+    return { ok: false, errors: ["payload.not_an_object"] };
+  }
+  if (parsedJson.schemaVersion !== "agent-response.v1") {
+    return { ok: false, errors: ["payload.unsupported_schema_version"] };
+  }
+  const taskId = typeof parsedJson.taskId === "string" && parsedJson.taskId.length > 0 ? parsedJson.taskId : undefined;
+  if (!taskId) {
+    return { ok: false, errors: ["payload.missing_taskId"] };
+  }
+  if (!Array.isArray(parsedJson.proposals)) {
+    return { ok: false, errors: ["payload.missing_proposals_array"] };
+  }
+
+  const allWarnings: string[] = [];
+  const proposals: ParsedAgentProposal[] = [];
+  for (const [index, rawProposal] of parsedJson.proposals.entries()) {
+    const { proposal, errors, warnings } = parseProposal(rawProposal, mode);
+    if (errors.length > 0) {
+      if (mode === "strict") {
+        return { ok: false, errors: errors.map((error) => `proposals[${index}].${error}`) };
+      }
+      allWarnings.push(...errors.map((error) => `proposals[${index}].${error}:discarded`));
+      continue;
+    }
+    if (proposal) {
+      proposals.push(proposal);
+      allWarnings.push(...warnings.map((warning) => `proposals[${index}].${warning}`));
+    }
+  }
+
+  return {
+    ok: true,
+    response: {
+      schemaVersion: "agent-response.v1",
+      taskId: sanitizeMarkdownForDisplay(taskId),
+      respondedAt: sanitizeString(parsedJson.respondedAt),
+      agent: sanitizeString(parsedJson.agent),
+      proposals,
+    },
+    warnings: allWarnings,
+  };
+}

@@ -63,6 +63,7 @@ import { PatchWorkspacePanel } from "./ui/workspace/PatchWorkspacePanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { WorkModePanel } from "./ui/WorkModePanel";
 import { AgentTaskExportPanel } from "./ui/AgentTaskExportPanel";
+import { AgentResponseImportPanel, type ImportedProposalReview } from "./ui/AgentResponseImportPanel";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import { CanvasLegend } from "./ui/CanvasLegend";
 import { Minimap } from "./ui/Minimap";
@@ -91,6 +92,7 @@ import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExp
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
 import { buildAgentTaskSheet, type AgentTaskKind } from "./export/agent_task_export";
+import { parseAgentResponse, type AgentResponseImportMode, type ParsedAgentProposal } from "./import/agent_response_import";
 import { buildExportViewMetadata, type ExportViewMetadata } from "./export/view_metadata";
 import { buildBundleZipBlob, buildExportBundleWithWorkers, downloadBlobAsFile, formatBundleTimestamp, type BundleExportProgressStage } from "./export/bundle_export";
 import { computeVisibleBounds, getCardWorldBounds, getIslandWorldBounds } from "./domain/geometry/bounds";
@@ -919,6 +921,37 @@ function createIslandFromSelection(selectedCardIds: string[], existingIslands: I
   };
 }
 
+// EXT-AGENT-02 (spec §4.4): a proposal whose targetRef no longer resolves in
+// the current document (it moved on since the response's baseDocSignature)
+// is kept and shown flagged rather than silently dropped ("孤立提案" -- no
+// existing code precedent for this concept, per this round's research; see
+// the issue's completion record). narrative_draft has no target to resolve,
+// so it is never orphaned; patch uses a signature-mismatch flag instead,
+// since staleness there is about the WHOLE patch, not a single targetRef.
+function computeAgentProposalReviewFlags(
+  proposal: ParsedAgentProposal,
+  doc: DocumentV2
+): { orphaned: boolean; patchSignatureMismatch?: boolean } {
+  if (proposal.kind === "narrative_draft") {
+    return { orphaned: false };
+  }
+  if (proposal.kind === "patch") {
+    const currentSignature = `${doc.id}:${doc.updatedAt}`;
+    const mismatch = Boolean(proposal.patch?.baseDocSignature && proposal.patch.baseDocSignature !== currentSignature);
+    return { orphaned: false, patchSignatureMismatch: mismatch };
+  }
+
+  const cardIds = proposal.targetRef.cardIds ?? [];
+  const islandId = proposal.targetRef.islandId;
+  const cardsExist = cardIds.length > 0 && cardIds.every((id) => doc.cards.some((card) => card.id === id));
+  const islandExists = islandId ? doc.islands.some((island) => island.id === islandId) : false;
+
+  if (proposal.kind === "island_title") {
+    return { orphaned: !islandExists };
+  }
+  return { orphaned: !(cardsExist || islandExists) };
+}
+
 
 
 // UX-SCALE-01 (c) (ADR-0048 D2, Round 5 redline): auto-fit now generates an
@@ -1074,6 +1107,13 @@ export default function App() {
   const [agentTaskIncludeUnreviewedDrafts, setAgentTaskIncludeUnreviewedDrafts] = useState(false);
   const [agentTaskIncludeSourceReferences, setAgentTaskIncludeSourceReferences] = useState(false);
   const [agentTaskScopeConfirmed, setAgentTaskScopeConfirmed] = useState(false);
+  const [isAgentResponseImportOpen, setIsAgentResponseImportOpen] = useState(false);
+  const agentResponseImportTriggerRef = useRef<HTMLButtonElement>(null);
+  const [agentResponsePastedText, setAgentResponsePastedText] = useState("");
+  const [agentResponseImportMode, setAgentResponseImportMode] = useState<AgentResponseImportMode>("lenient");
+  const [agentResponseParseErrors, setAgentResponseParseErrors] = useState<string[]>([]);
+  const [agentResponseParseWarnings, setAgentResponseParseWarnings] = useState<string[]>([]);
+  const [agentImportedProposalReviews, setAgentImportedProposalReviews] = useState<ImportedProposalReview[]>([]);
   const [critiqueWorkflowFocusRequest, setCritiqueWorkflowFocusRequest] = useState(0);
   const [contextMenu, setContextMenu] = useState<
     | {
@@ -7982,6 +8022,172 @@ export default function App() {
     setStatusMessage(t("agent_task_export.downloaded_json"));
     reportAgentTaskExportAudit();
   }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit]);
+
+  // EXT-AGENT-02: parsing/reviewing a pasted response never touches the
+  // document (AC-6); only a per-proposal "Import" click does, one
+  // applyDocumentChange each, so Cmd+Z reverts a single imported item.
+  // context-audit (CE1/CE4's own query->bundle->proposal->apply chain) does
+  // not fit this event -- no real equivalenceKey/bundleHash chain exists
+  // for an externally-pasted response, and its command whitelist has no
+  // slot for it without a backend change. recordProposalDecision (the
+  // existing generic /ai/proposals/audit endpoint already used for
+  // island-summary adopt/hold/reject) is reused instead for every kind's
+  // adopt/reject here -- see the issue's completion record for the full
+  // reasoning.
+  const handleToggleAgentResponseImport = useCallback(() => {
+    setIsAgentResponseImportOpen((prev) => !prev);
+  }, []);
+
+  const handleParseAgentResponse = useCallback(() => {
+    if (!document) return;
+    const result = parseAgentResponse(agentResponsePastedText, agentResponseImportMode);
+    if (!result.ok) {
+      setAgentResponseParseErrors(result.errors);
+      setAgentResponseParseWarnings([]);
+      return;
+    }
+    setAgentResponseParseErrors([]);
+    setAgentResponseParseWarnings(result.warnings);
+
+    const existingIds = new Set(agentImportedProposalReviews.map((review) => review.proposalId));
+    if (result.response.proposals.length > 0 && result.response.proposals.every((proposal) => existingIds.has(proposal.proposalId))) {
+      setStatusMessage(t("agent_response_import.duplicate_status_message"));
+      return;
+    }
+
+    const newReviews: ImportedProposalReview[] = result.response.proposals
+      .filter((proposal) => !existingIds.has(proposal.proposalId))
+      .map((proposal) => ({
+        ...proposal,
+        status: "pending" as const,
+        ...computeAgentProposalReviewFlags(proposal, document),
+      }));
+    setAgentImportedProposalReviews((previous) => [...previous, ...newReviews]);
+  }, [document, agentResponsePastedText, agentResponseImportMode, agentImportedProposalReviews]);
+
+  const handleAdoptAgentImportedProposal = useCallback(
+    (proposalId: string) => {
+      if (!document) return;
+      const review = agentImportedProposalReviews.find((item) => item.proposalId === proposalId);
+      if (!review || review.status !== "pending" || review.orphaned) return;
+
+      let adopted = false;
+      switch (review.kind) {
+        case "island_title": {
+          const islandId = review.targetRef.islandId;
+          const title = review.content.title;
+          if (!islandId || !title) break;
+          const nextIslands = document.islands.map((island) =>
+            island.id === islandId ? { ...island, title, titleReviewed: false } : island
+          );
+          applyDocumentChange({ ...document, islands: nextIslands }, t("app.history.agent_response.island_title_imported"));
+          adopted = true;
+          break;
+        }
+        case "critique":
+        case "opposing_viewpoint": {
+          const text = review.content.text;
+          if (!text) break;
+          const cardId = review.targetRef.cardIds?.[0];
+          const islandId = review.targetRef.islandId;
+          if (cardId) {
+            const nextCards = document.cards.map((card) => (card.id === cardId ? { ...card, critique: text } : card));
+            applyDocumentChange({ ...document, cards: nextCards }, t("app.history.agent_response.critique_imported"));
+            adopted = true;
+          } else if (islandId) {
+            const nextIslands = document.islands.map((island) => (island.id === islandId ? { ...island, critique: text } : island));
+            applyDocumentChange({ ...document, islands: nextIslands }, t("app.history.agent_response.critique_imported"));
+            adopted = true;
+          }
+          break;
+        }
+        case "narrative_draft": {
+          const text = review.content.text ?? review.content.mergedText;
+          if (!text) break;
+          const nextNarrative: Narrative = {
+            id: crypto.randomUUID(),
+            title: review.content.title ?? "Imported Draft",
+            text,
+            createdAt: new Date().toISOString(),
+            reviewed: false,
+          };
+          applyDocumentChange(
+            { ...document, narratives: [...(document.narratives ?? []), nextNarrative] },
+            t("app.history.agent_response.narrative_imported")
+          );
+          adopted = true;
+          break;
+        }
+        case "merge_candidate": {
+          const cardIds = review.targetRef.cardIds ?? [];
+          const mergedText = review.content.mergedText ?? review.content.text;
+          if (cardIds.length < 2 || !mergedText) break;
+          const [targetCardId, ...candidateCardIds] = cardIds;
+          setMergeSuggestions((previous) => [
+            ...previous,
+            {
+              groupId: `agent-response-${review.proposalId}`,
+              targetCardId,
+              candidateCardIds,
+              scoreSummary: { min: 0, max: 0, avg: 0 },
+              reasonCodes: [`agent-response:${review.proposalId}`],
+              snapshotVersion: `agent-response.v1:${review.proposalId}`,
+              cardIds,
+              mergedTextDraft: mergedText,
+              rationale: review.rationale,
+              editedText: mergedText,
+              isEdited: false,
+            },
+          ]);
+          adopted = true;
+          break;
+        }
+        case "patch": {
+          if (!review.patch || review.patchSignatureMismatch) break;
+          const lintResult = lintPatchAgainstCurrentDoc(document, review.patch);
+          if (shouldBlockPatchApplyByLint(lintResult)) break;
+          const { document: nextDoc, meta } = applyPatchWithResolutionsDetailed(document, review.patch, {});
+          const loggedDoc = appendPatchApplyLog(nextDoc, review.patch, {
+            ...meta,
+            patchTitle: `agent-response:${review.proposalId}`,
+            baseDocSignature: `${document.id}:${document.updatedAt}`,
+          });
+          applyDocumentChange(loggedDoc, t("app.history.agent_response.patch_imported"));
+          adopted = true;
+          break;
+        }
+      }
+
+      if (!adopted) {
+        return;
+      }
+
+      void recordProposalDecision(proposalId, "adopt", "human");
+      setAgentImportedProposalReviews((previous) =>
+        previous.map((item) => (item.proposalId === proposalId ? { ...item, status: "adopted" as const } : item))
+      );
+      setStatusMessage(t("agent_response_import.adopted_status_message"));
+    },
+    [document, agentImportedProposalReviews, applyDocumentChange]
+  );
+
+  const handleRejectAgentImportedProposal = useCallback((proposalId: string) => {
+    void recordProposalDecision(proposalId, "reject", "human");
+    setAgentImportedProposalReviews((previous) =>
+      previous.map((item) => (item.proposalId === proposalId ? { ...item, status: "rejected" as const } : item))
+    );
+    setStatusMessage(t("agent_response_import.rejected_status_message"));
+  }, []);
+
+  const handleExportAgentImportedProposalPatchFile = useCallback(
+    (proposalId: string) => {
+      const review = agentImportedProposalReviews.find((item) => item.proposalId === proposalId);
+      if (!review?.patch) return;
+      downloadTextFile(`agent-patch-${proposalId}.json`, "application/json", JSON.stringify(review.patch, null, 2));
+      setStatusMessage(t("agent_response_import.exported_patch_file_status_message"));
+    },
+    [agentImportedProposalReviews]
+  );
   const handleToggleSharePanel = useCallback(() => {
     setIsSharePanelOpen((previousOpen) => {
       const nextOpen = !previousOpen;
@@ -8109,6 +8315,27 @@ export default function App() {
           }}
         >
           {t("agent_task_export.title")}
+        </button>
+      ) : null}
+      {isAdvancedUiEnabled ? (
+        <button
+          ref={agentResponseImportTriggerRef}
+          data-ui-complexity-tier="advanced-content"
+          type="button"
+          onClick={handleToggleAgentResponseImport}
+          aria-pressed={isAgentResponseImportOpen}
+          title={t("agent_response_import.title")}
+          style={{
+            border: "1px solid #cbd5e1",
+            backgroundColor: isAgentResponseImportOpen ? "#e0e7ff" : "#ffffff",
+            color: "#0f172a",
+            borderRadius: 6,
+            padding: "6px 12px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          {t("agent_response_import.title")}
         </button>
       ) : null}
       <button
@@ -10904,6 +11131,22 @@ export default function App() {
       onDownloadTaskJson={() => {
         void handleDownloadAgentTaskJson();
       }}
+    />
+    <AgentResponseImportPanel
+      isOpen={isAgentResponseImportOpen}
+      onClose={() => setIsAgentResponseImportOpen(false)}
+      triggerRef={agentResponseImportTriggerRef}
+      pastedText={agentResponsePastedText}
+      onPastedTextChange={setAgentResponsePastedText}
+      mode={agentResponseImportMode}
+      onModeChange={setAgentResponseImportMode}
+      onParse={handleParseAgentResponse}
+      parseErrors={agentResponseParseErrors}
+      parseWarnings={agentResponseParseWarnings}
+      reviews={agentImportedProposalReviews}
+      onAdopt={handleAdoptAgentImportedProposal}
+      onReject={handleRejectAgentImportedProposal}
+      onExportPatchFile={handleExportAgentImportedProposalPatchFile}
     />
     {isCommandPaletteOpen ? (
       <CommandPalette
