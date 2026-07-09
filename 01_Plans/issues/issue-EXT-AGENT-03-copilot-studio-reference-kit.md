@@ -1,11 +1,11 @@
 # Issue Draft: EXT-AGENT-03 Copilot Studio 参照キットと利用者向け運用文書
 
 - Type: Documentation quality
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
-- Owner: TBD
+- Owner: Claude Code
 - Scope: `04_Documentation/`, `02_Architecture/external_agent_collaboration_spec.md`（参照）, `03_Implement/frontend/e2e/`（スモークのみ）
 - Related Backlog: `EXT-AGENT-03`
 - Related ADR/Spec: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（D4・Copilot プロファイル）, `02_Architecture/external_agent_collaboration_spec.md`（§7 正本）, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（主体メタ表示・共有境界）
@@ -50,16 +50,16 @@
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: Instructions テンプレート・リカバリ定型文・チェックリストが文書に含まれ、spec §7 と矛盾しない（docs-check）。
-- [ ] AC-2: 文書内の応答例 JSON が agent-response.v1 として妥当（フィクスチャ化して検証テストに接続）。
-- [ ] AC-3: 04_Documentation README の公開境界マトリクス・Gist 表に登録され、リンク整合が取れる。
-- [ ] AC-4: 秘密情報・組織固有情報を含まない（公開文書規約準拠）。
+- [x] AC-1: Instructions テンプレート・リカバリ定型文・チェックリストが文書に含まれ、spec §7 と矛盾しない（docs-check）。
+- [x] AC-2: 文書内の応答例 JSON が agent-response.v1 として妥当（フィクスチャ化して検証テストに接続）。
+- [x] AC-3: 04_Documentation README の公開境界マトリクス・Gist 表に登録され、リンク整合が取れる。
+- [x] AC-4: 秘密情報・組織固有情報を含まない（公開文書規約準拠）。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 文書本体（テンプレ全文・手順・チェックリスト）。
-- [ ] T2 応答例のフィクスチャ化＋検証接続。
-- [ ] T3 README/公開表・public_index 導線の登録。
+- [x] T1 文書本体（テンプレ全文・手順・チェックリスト）。
+- [x] T2 応答例のフィクスチャ化＋検証接続。※フィクスチャファイルを別途作らず、文書内のコードフェンスを直接抽出して検証する方式を採用（下記「完了記録」参照）。
+- [x] T3 README/公開表・public_index 導線の登録。
 
 ## 7) 検証計画 / Validation plan
 
@@ -75,3 +75,30 @@
 - Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`, `02_Architecture/external_agent_collaboration_spec.md`（§7）
 - Related: `01_Plans/issues/issue-EXT-AGENT-01-agent-task-package-export.md`, `issue-EXT-AGENT-02-agent-response-import.md`, `04_Documentation/README.md`（公開境界）
 - Derived-from: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`
+
+## 完了記録 2026-07-09（Claude Code）
+
+ADR-0049 の D2（EXT-AGENT-01）・D3（EXT-AGENT-02）に続き、D4（Copilot プロファイル・spec §7）の最後の1マイルとして本Issueを実装した。
+
+### 実装
+
+- `04_Documentation/external_agent_workflow.md`（新規）: spec §7 を正本として、最短運用（追加構築なし）・Copilot Studio エージェント化（Instructions テンプレート全文・逸脱時リカバリ定型文）・データ境界チェックリスト（テナント境界・ログ保持・学習利用設定）・トラブルシュート（壊れたJSON・文脈分割・部分取り込み・孤立提案）・agent-response.v1 応答例を含む。テンプレートは主体メタ（起票者・作成者等）の入力を利用者へ求めない（CARD-META-UI-01 の境界に従う）。
+- `04_Documentation/README.md`: 文書公開境界マトリクス（一般利用者/運用者向け公開文書）と Gist に含める文書表に登録。
+- `04_Documentation/public_index.md`: 「目的別に読む」表に導線を1行追加。
+
+### T2（応答例のフィクスチャ化）の実装方式
+
+Issue本文は「応答例のフィクスチャ化＋検証テストに接続」を提案していたが、別ファイルとしてフィクスチャを複製すると文書とフィクスチャが将来ズレる（どちらかだけ更新される）リスクがあるため、**文書内のコードフェンスを直接抽出して検証する**方式を採用した: `03_Implement/frontend/src/import/external_agent_workflow_doc.test.ts` が `04_Documentation/external_agent_workflow.md` を直接読み込み、` ```json ` フェンスを正規表現で抽出し、EXT-AGENT-02 の `parseAgentResponse()` に厳格/寛容両モードで通す。複製が存在しないため、乖離が原理的に起きない。
+
+このテストファイルは `03_Implement/frontend/src/import/` に配置されており、`04_Documentation` を4階層上に遡って見つける（`findRepoRoot` ヘルパー、固定階層数ではなく `04_Documentation` を含むディレクトリを探索）。これは、本セッションで使用している WSL ネイティブミラー（`03_Implement/frontend` のみをフラットにコピーしたもの）では固定階層数の相対パスが機能しないための設計判断であり、通常のリポジトリチェックアウトでも同様に正しく機能する。
+
+### 検証
+
+- typecheck 0 / vitest **988 passed**（188 files。文書検証テスト3件を追加）。
+- `grep -rn "agent-response.v1|agent-task.v1" 04_Documentation 02_Architecture`: 文書内の契約表記が spec §7.2/§7.4 の固定文と一致することを目視確認（AC-1）。
+- 秘密情報・内部管理情報の漏洩チェック（README.md の公開手順に記載の grep パターン）: 一致なし（AC-4）。
+
+### 残課題（スコープ外）
+
+- Tier 1/Tier 2（フォルダ授受・API直結）は spec §7.4 が「将来・概要のみ」と明記しており、本Issueの対象外（非目標に明記済み）。
+- Copilot Studio テナントの構築・管理手順そのものは Microsoft 公式に委ね、本文書には含めていない（非目標）。
