@@ -107,7 +107,7 @@ test("PERF-BUDGET-01 representative document keeps core operations responsive", 
     await page.getByPlaceholder("Search cards").fill("rare performance signal");
     await expect(page.getByText("1/1")).toBeVisible();
     await page.getByRole("checkbox", { name: "Hide non-matches" }).check();
-    await expect(page.getByText("rare performance signal 287")).toBeVisible();
+    await expect(page.getByText("rare performance signal 287", { exact: true })).toBeVisible();
   });
 
   await measure(durations, "card-selection", async () => {
