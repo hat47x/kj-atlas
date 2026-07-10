@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cullLabels, LABEL_PRIORITIES, type LabelItem } from "./label_culling";
+import { ACTIVE_CARD_LABEL_PRIORITY, cullLabels, LABEL_PRIORITIES, type LabelItem } from "./label_culling";
 
 function item(id: string, priority: number, x: number): LabelItem {
   return {
@@ -46,6 +46,33 @@ describe("cullLabels", () => {
   it("keeps non-overlapping labels", () => {
     const result = cullLabels([item("a", 10, 0), item("b", 10, 60)]);
     expect(result.accepted.map((label) => label.id)).toEqual(["a", "b"]);
+  });
+
+  // QA-MONKEY-10: an actively worked-on card must beat overlapping plain
+  // cards regardless of id ordering (ids embed random UUIDs, so without the
+  // boost the winner alternated nondeterministically between runs).
+  it("keeps the active card over overlapping plain cards regardless of id order", () => {
+    const result = cullLabels([
+      item("card:aaaa:label", LABEL_PRIORITIES.card, 0),
+      item("card:zzzz:label", ACTIVE_CARD_LABEL_PRIORITY, 0),
+    ]);
+
+    expect(result.accepted.map((label) => label.id)).toEqual(["card:zzzz:label"]);
+  });
+
+  it("keeps island title and unreviewed badge over the active card when overlapping", () => {
+    const result = cullLabels([
+      item("card:active:label", ACTIVE_CARD_LABEL_PRIORITY, 0),
+      {
+        id: "island-title",
+        kind: "islandTitle",
+        priority: LABEL_PRIORITIES.islandTitle,
+        rect: { x: 0, y: 0, w: 40, h: 20 },
+        payload: { islandId: "i1" },
+      },
+    ]);
+
+    expect(result.accepted.map((label) => label.id)).toEqual(["island-title"]);
   });
 
   it("keeps UNREVIEWED over island summary when overlapping", () => {

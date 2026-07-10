@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   ADVANCED_UI_BUTTON,
   closeSharePanelIfOpen,
+  DOCUMENT_REPLACED_STATUS,
   LOAD_DOCUMENT_BUTTON,
   READ_ONLY_INDICATOR,
   REPLACE_DOCUMENT_BUTTON,
@@ -60,7 +61,7 @@ test("S1-S3 realistic journey: authoring continuity + safe sharing gate with det
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   await replaceDocumentFromSharePanel(page, seed);
-  await expect(page.getByText("Replaced current document")).toBeVisible();
+  await expect(page.getByText(DOCUMENT_REPLACED_STATUS)).toBeVisible();
 
   for (const card of seed.cards) {
     await expect(page.getByText(card.text)).toBeVisible();

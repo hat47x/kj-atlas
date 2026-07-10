@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
+  DOCUMENT_REPLACED_STATUS,
   LOAD_DOCUMENT_BUTTON,
   REPLACE_DOCUMENT_BUTTON,
   SHARE_REPRODUCE_BUTTON,
@@ -45,7 +46,7 @@ async function replaceCurrentDocument(page: Page): Promise<void> {
   });
 
   await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
-  await expect(page.getByText(/Replaced current document|現在の document を置換しました/)).toBeVisible();
+  await expect(page.getByText(DOCUMENT_REPLACED_STATUS)).toBeVisible();
   await closeSharePanelIfOpen(page);
 }
 

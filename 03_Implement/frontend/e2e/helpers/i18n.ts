@@ -6,6 +6,10 @@ export const ADVANCED_UI_BUTTON = /^Advanced$|^詳細$/;
 export const SUGGEST_LAYOUT_BUTTON = /Suggest layout|配置を提案/;
 export const LOAD_DOCUMENT_BUTTON = /^Load document\.json$|^document\.json を読み込む$/;
 export const REPLACE_DOCUMENT_BUTTON = /Replace current document|現在のドキュメントを置換/;
+// Matches app.status.import.document_replaced in both locales. Specs must
+// use this constant instead of hardcoding the wording -- a vocabulary-sync
+// pass changed the strings once already and silently broke 7 specs.
+export const DOCUMENT_REPLACED_STATUS = /Replaced the current document|現在のドキュメントを置換しました/;
 export const EXPORT_BUNDLE_BUTTON = /Export bundle \(\.zip\)|レビューパックを書き出す \(.zip\)|bundle をエクスポート \(.zip\)/;
 export const EXPORT_DOCUMENT_JSON_BUTTON = /Export document JSON|Export doc JSON \(legacy\)|ドキュメントJSONを書き出す（旧式）/;
 export const READ_ONLY_INDICATOR = /Read-only mode is active|読み取り専用モードが有効|Read-only|読み取り専用/;

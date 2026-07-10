@@ -22,6 +22,13 @@ export const LABEL_PRIORITIES: Record<LabelKind, number> = {
   card: 30,
 };
 
+// QA-MONKEY-10: a card the user is actively working with (selected or being
+// edited) must never lose its text to overlap culling -- freshly typed text
+// disappearing reads as data loss. Above islandSummary so the active card's
+// own words win against a nearby summary, but below the unreviewed badge and
+// island title, which are safety/orientation signals.
+export const ACTIVE_CARD_LABEL_PRIORITY = 80;
+
 export function buildIslandTitleLabelId(islandId: string): string {
   return `island:${islandId}:title`;
 }
