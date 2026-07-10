@@ -2952,3 +2952,49 @@ The delegated H-PV1/H-PV2/H-PV3 decisions remove the specific human-acceptance b
 - Formal organization approval or package public contract / signature / approval workflow, if introduced.
 
 No ADR is required for this candidate: no schema shape was removed, no SafeMode/share-export/review-promotion/AI-authority boundary changed in a way that widens exposure (all additions are opt-in, default-off, or additive-only per each feature's own contract-first schemas.md section).
+
+## Productization Gate Record 2026-07-10: EXT-AGENT lane, a11y smoke, first real-backend dogfood, harness recovery
+
+- Candidate: `origin/main@81b6435d`（前回記録 `94bebda3` から31コミット、おおよそ PR #2530–#2556）
+- Date (JST): 2026-07-10
+- Reviewer: Claude Code acting under the standing 順に進めてください delegation for sequential backlog execution. This is not final shipment approval.
+- Scope（グループ別）:
+  1. **ADR-0049 外部エージェント連携レーン完結**: EXT-AGENT-01 タスクエクスポート(#2538)、EXT-AGENT-02 応答インポート(#2539)、EXT-AGENT-03 Copilot向けリファレンスキット(#2540)。往復全体が実装済み。
+  2. **a11y 自動検査**: axe スモークスイート導入＋アクセシブルネーム実修正(#2541)、凡例カバレッジ追加(#2553)、見出し・コントラスト検査の有効化(5ad5758a)、構造的ARIA残課題は ADR-0052 へ決定経路を確保（UI-QUALITY-A11Y-03 部分完了）。
+  3. **パフォーマンス予算証跡**: 大規模文書の操作性検証(#2551/#2552)、代表予算証跡クローズ(#2549)。
+  4. **UX修正群**: 作業モード空状態コピー、バルク操作バーの日本語縦折れ、共有前ゲートのSafeModeラベル二重表示、島作成時の選択フォーカス維持、バルク選択からの理由記録、保持系語彙の整合、カード記録メタデータ境界(+CARD-META-UI-01起票)、キーボードによる島間遷移カバレッジ、共有公開範囲プリフライトの明確化。
+  5. **design-qa-checklist 適合レビュー**: UX-EMPTY-01 / DOMAIN-KJ-01 / UX-MENU-01 いずれもクリーンパス記録。
+  6. **VALUE-DOGFOOD-01 完了**(#2554): 初の実バックエンド構成（compose: db+api+web）での ADR-0042 5手順走行。SafeMode 既定ONを実画面で確認、実保存→postgres直接確認→再読込での文書一覧再表示まで実証。NOTICE は段階A維持。
+  7. **QA-MONKEY-10 修正**(#2555): カスケード配置＋ラベルカリングによる「入力直後テキストの見かけ上の消失」を解消（アクティブカードの優先度ブースト＋省略マーク描画）。R-1（実使用摩擦からの再起票）の初事例をクローズ。
+  8. **QA-MONKEY-11 修正**(#2556): main 上で赤になっていた e2e 9本（文言ドリフト7本＋IAドリフト2本、うち ce3 は公式回帰ハーネス既定パターン）を現行UIに追随させ green 復帰。
+
+### Evidence (fresh full-suite run against current main HEAD)
+
+- `tsc --noEmit`: pass (0 errors).
+- Full Vitest: **993 tests passed** (188 files).（前回 963/185 から +30 tests / +3 files）
+- Production build (`npm run build`): pass. 既存の >500kB main-chunk warning は従来どおり（本候補と無関係）。
+- Backend: `ruff check`: pass (0 issues). `pytest`: **287 passed**, 24 skipped（PostgreSQL専用、env var opt-in）。
+- Issue memo validator: `validate_active_issue_memos.py`: 0 active issue memos, no violations.
+- `triage_actionable_plans.py`: active 3件（UI-QUALITY-A11Y-02 In Progress/P3、MVP-EXIT-01 Open/P0、DOMAIN-EXPR-03 In Progress/P2）、Draft ゲート待ち14件、ADR-linked stopper 0件、triage error 0件。
+- e2e: 本記録の直前に `e2e:mock` 相当（ce3 / auth smoke / i18n equivalence）＋ realistic_user_journey ほか計6テストを Docker Playwright で green 確認（QA-MONKEY-11 修正の検証として実施）。各機能マージ時の個別 e2e も従来どおり実施済み。
+
+### Gate impact
+
+- G1 safety defaults: 強化・再確認。EXT-AGENT レーンは ADR-0049 の不変条件（インポート時 sanitize、score/rank/confidence/priority の禁止フィールド除去、proposal-only＝人間の明示採用まで未レビュー扱い）を実装で担保。**SafeMode 既定ONを初めて実バックエンド構成の実画面で確認**（従来はフロント単体・テスト経由のみ）。共有前ゲートのSafeModeラベル二重表示も解消。
+- G2 primary operations: 改善。初の実永続化込み5手順ドッグフード完走（保存→DB直接確認→再読込）。根幹価値を脅かす QA-MONKEY-10（入力直後テキストの見かけ上の消失・再入力無反応）を修正し再現e2eを追加。島作成時の選択フォーカス維持も修正。
+- G3 Japanese UI: 改善。保持系語彙の整合、バルク操作バーの日本語縦折れ修正。i18n ガード群は unit スイート内で green 継続。
+- G4 viewport/operability/a11y: 改善。axe 自動検査が smoke として常設化（実バグ＝アクセシブルネーム欠落を複数検出・修正済み）。見出し・コントラスト検査有効化。構造的ARIA（listbox/menu）は ADR-0052 で決定経路確保。大規模文書の操作性証跡も追加。
+- G7 regression: Go（本候補について、上記フレッシュ全スイートに基づく）。**プロセス上の発見**: e2e スイートは main 上で静かに9本壊れていた（他レーンのUI/文言変更にspecが未追随、公式回帰ハーネス既定パターン含む）。本候補内で修理済みだが、CI 不在（PROJECT-CI-01 ブロック中）の間は再発リスクが残る。ゲート実行時に `e2e:mock` の green 確認を標準手順へ含めることを推奨（本記録から実施）。
+
+### Blocker Inventory
+
+- 新規ブロッカーなし。QA-MONKEY-10/11 は本候補内で解消済み。
+- NOTICE 段階A維持（VALUE-DOGFOOD-01 判断: 第三者利用未達。高優先摩擦 QA-MONKEY-10 はその後解消したため、残る段階B移行条件は第三者利用のみ）。
+- Compose/環境リハーサル（非委任ゲート）: ドッグフード走行が compose 3サービス起動＋実保存往復の**部分的証跡**を初めて提供したが、ADR-0019 のランブックとしての正式リハーサルは未実施のまま扱う。
+- その他の非委任ゲート（最終プログラム承認、サポート診断/復旧リハーサル、物理キーボード・スクリーンリーダー受入、リリーススクリーンショット承認、組織承認）は 2026-07-02 クローズアウトから変更なし。
+
+### Decision
+
+**Conditional Go for this candidate's slice (external-agent lane, a11y smoke, dogfood evidence, UX fixes, harness recovery) / No-Go for full release shipment.** 非委任ゲートは上記のとおり変更なし。
+
+No ADR is required for this candidate: EXT-AGENT レーンは既存の ADR-0049 の実装であり、その安全境界（sanitize/proposal-only/anti-scoring）を実装で満たす。その他はすべて追加的・修正的変更で、SafeMode/share-export/レビュー昇格/AI権限のいずれの境界も拡大していない。構造的ARIAの設計判断は既に ADR-0052 が起票済み。
