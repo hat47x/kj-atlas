@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
-  ADVANCED_UI_BUTTON,
   closeSharePanelIfOpen,
   DOCUMENT_REPLACED_STATUS,
+  enableAdvancedUiIfNeeded,
   LOAD_DOCUMENT_BUTTON,
   READ_ONLY_INDICATOR,
   REPLACE_DOCUMENT_BUTTON,
@@ -67,6 +67,12 @@ test("S1-S3 realistic journey: authoring continuity + safe sharing gate with det
     await expect(page.getByText(card.text)).toBeVisible();
   }
 
+  // Visibility scopes moved behind the Advanced UI gate inside the share
+  // panel (QA-MONKEY-11): enable Advanced first, then reopen the panel.
+  await closeSharePanelIfOpen(page);
+  await enableAdvancedUiIfNeeded(page);
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
+
   const viewVisibility = visibilitySelect(page, "view");
   const packVisibility = visibilitySelect(page, "pack");
   await viewVisibility.selectOption("Restricted");
@@ -81,6 +87,8 @@ test("S1-S3 realistic journey: authoring continuity + safe sharing gate with det
   await expect(page.getByText("Locked redaction contexts: Share / Review Pack (cannot be disabled)."))
     .toBeVisible();
   await closeSharePanelIfOpen(page);
-  await page.getByRole("button", { name: ADVANCED_UI_BUTTON }).click();
+  // Idempotent: Advanced UI persists in localStorage across the readOnly
+  // reload, so a plain toggle click here would turn it back OFF.
+  await enableAdvancedUiIfNeeded(page);
   await expect(page.getByRole("button", { name: SUGGEST_LAYOUT_BUTTON }).first()).toBeDisabled();
 });
