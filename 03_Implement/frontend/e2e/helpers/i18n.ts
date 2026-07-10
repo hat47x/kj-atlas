@@ -17,9 +17,30 @@ export const EDIT_ISLAND_BOUNDARY_CHECKBOX = /Edit island boundary|島の境界�
 export const SEARCH_CARDS_PLACEHOLDER = /Search cards|カードを検索/;
 export const HIDE_NON_MATCHES_CHECKBOX = /Hide non-matches|非一致を非表示/;
 
+export const WORK_MODE_BUTTON = /^Work mode$|^作業モード$/;
+
 export function visibilitySelect(page: Page, label: "view" | "pack") {
   const labelPattern = label === "view" ? /View visibility|view の公開範囲/ : /Pack visibility|パックの公開範囲/;
   return page.locator("label").filter({ hasText: labelPattern }).locator("select");
+}
+
+// Turns the Advanced UI toggle on if it is not already (it persists in
+// localStorage, so after a reload it may already be pressed).
+export async function enableAdvancedUiIfNeeded(page: Page): Promise<void> {
+  const advancedToggle = page.getByRole("button", { name: ADVANCED_UI_BUTTON });
+  if ((await advancedToggle.getAttribute("aria-pressed")) !== "true") {
+    await advancedToggle.click();
+  }
+}
+
+// Workspace IA: advanced work features (merge/patch candidate decisions,
+// narrative drafting, diff) live inside the Work mode panel and render only
+// while Advanced UI is on. Call after any full page (re)load that needs
+// them. Closes the share panel first -- its dialog overlays the toolbar.
+export async function openAdvancedWorkMode(page: Page): Promise<void> {
+  await closeSharePanelIfOpen(page);
+  await enableAdvancedUiIfNeeded(page);
+  await page.getByRole("button", { name: WORK_MODE_BUTTON }).click();
 }
 
 export async function closeSharePanelIfOpen(page: Page): Promise<void> {
