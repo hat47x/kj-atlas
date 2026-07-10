@@ -3,7 +3,7 @@
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0042` の実装入口。定性・非監視のみ。
 
 - Type: Process
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -41,11 +41,11 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `01_Plans/dogfood-log-<date>.md` が作成され、5手順の完走可否と所感が記録される。
-- [ ] 発見した摩擦点が、根幹価値を損なうもの（高優先）／損なわない使い勝手（低優先）に分類される。
-- [ ] 高優先の摩擦点は既存 backlog（PRODUCT-VALUE / DOMAIN-EXPR 等）へ紐付くか、R-1 該当時のみ新規 issue/ADR 候補として記録される。
-- [ ] `README.md` NOTICE の段階（A/B/C）更新要否が `ADR-0042` 基準で判断される（更新する場合は段階Bへ）。
-- [ ] 走行中に SafeMode 既定ON・共有前確認が機能することを目視確認する（安全条件）。
+- [x] `01_Plans/dogfood-log-<date>.md` が作成され、5手順の完走可否と所感が記録される。（`dogfood-log-2026-06-26.md`, `dogfood-log-2026-07-10.md`）
+- [x] 発見した摩擦点が、根幹価値を損なうもの（高優先）／損なわない使い勝手（低優先）に分類される。
+- [x] 高優先の摩擦点は既存 backlog（PRODUCT-VALUE / DOMAIN-EXPR 等）へ紐付くか、R-1 該当時のみ新規 issue/ADR 候補として記録される。（R-1 初事例: `QA-MONKEY-10` 起票）
+- [x] `README.md` NOTICE の段階（A/B/C）更新要否が `ADR-0042` 基準で判断される（更新する場合は段階Bへ）。（判断: 段階A維持、更新不要）
+- [x] 走行中に SafeMode 既定ON・共有前確認が機能することを目視確認する（安全条件）。（SafeMode ON は実画面確認、共有前確認は前回ログ＋e2eで担保）
 
 ## 6) 検証計画 / Validation plan
 
@@ -63,3 +63,18 @@
 ## 8) Additional context
 
 - 本issueは `ADR-0047` の execution-first 転換の最初の一手。ここで出た高優先の摩擦が、次の ADR/issue を「価値起点で」決める。
+
+## 9) 対応記録（2026-07-10）
+
+- 2回目の走行を**実バックエンド構成**（docker compose: db+api+web、provider=none）で実施し、
+  `01_Plans/dogfood-log-2026-07-10.md` に記録した。前回（2026-06-26、フロントエンド単体）と合わせて
+  「フロント単体」「実永続化込み」の両方で5手順の経路を通したことになる。
+- 実題材（EXT-AGENT-02 実装の未決事項3点＋メタな不確かさ1点）でカードを置き、
+  実保存（「保存しました」）→ postgres 直接確認（4カード全テキスト無傷）→ 再読込での文書一覧再表示、
+  まで実地で確認した。
+- R-1（実使用の摩擦による再起票）の初事例として、高優先摩擦
+  「カスケード配置＋ラベルカリングによる入力直後テキストの見かけ上の消失」を
+  `issue-QA-MONKEY-10-cascade-label-culling-hides-fresh-card-text.md` として起票した。
+  当初データ喪失と誤認したが、DB直接確認により表示のみの問題と切り分けた（切り分けの経緯も log 参照）。
+- NOTICE は段階A維持（QA-MONKEY-10 未解消＋第三者利用未達のため）。README 更新なし。
+- 再現スクリプト: `03_Implement/frontend/scripts/dogfood_run_20260709.mjs`（CI には接続しない一回性の探索スクリプト）。
