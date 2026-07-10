@@ -25,6 +25,7 @@ import type { ReadingOrderDropPosition } from "../domain/reading_order_ops";
 import { findNearestPolygonSegmentIndex } from "../domain/geometry/segment_pick";
 import { getLODLevel, type LODConfig, type LODLevel } from "../domain/view/lod";
 import {
+  ACTIVE_CARD_LABEL_PRIORITY,
   buildCardLabelId,
   buildIslandSummaryLabelId,
   buildIslandTitleLabelId,
@@ -760,10 +761,13 @@ export function CanvasShell({
 
     if (lod?.level !== "far") {
       for (const card of visibleCards) {
+        // QA-MONKEY-10: selected / in-edit cards win the overlap contest so
+        // freshly typed text never visually disappears under a neighbour.
+        const isActiveCard = selectedCardIdSet.has(card.id) || editingCardId === card.id;
         candidates.push({
           id: buildCardLabelId(card.id),
           kind: "card",
-          priority: LABEL_PRIORITIES.card,
+          priority: isActiveCard ? ACTIVE_CARD_LABEL_PRIORITY : LABEL_PRIORITIES.card,
           rect: buildCardLabelRect(card, Boolean(lod?.rules.compactCards), transform),
           text: card.text,
           payload: { cardId: card.id },
@@ -776,7 +780,9 @@ export function CanvasShell({
     abstractMapView,
     document.cards,
     document.islands,
+    editingCardId,
     lod,
+    selectedCardIdSet,
     summaryView,
     transform,
     visibleCards,

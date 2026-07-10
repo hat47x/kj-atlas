@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { DOCUMENT_REPLACED_STATUS } from "./helpers/i18n";
 
 const fixtureDir = dirname(fileURLToPath(import.meta.url));
 const ce3SuggestionsFixture = JSON.parse(
@@ -66,7 +67,7 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
   });
 
   await page.getByRole("button", { name: /Replace current document|現在のドキュメントを置換/ }).click();
-  await expect(page.getByText("Replaced current document")).toBeVisible();
+  await expect(page.getByText(DOCUMENT_REPLACED_STATUS)).toBeVisible();
 
   await page.getByRole("button", { name: /Collect candidates|候補を収集/i }).click();
 

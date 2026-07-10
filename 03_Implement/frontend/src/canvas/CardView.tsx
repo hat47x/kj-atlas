@@ -514,6 +514,14 @@ function CardViewComponent({
         compactMode
           ? renderHighlightedText(compactText, searchQuery)
           : renderHighlightedText(card.text, searchQuery)
+      ) : !markerMode && card.text.length > 0 ? (
+        // QA-MONKEY-10: when overlap culling hides this card's text, show an
+        // explicit omission mark instead of rendering nothing -- an entirely
+        // blank card is indistinguishable from lost text. The full text stays
+        // reachable via hover (title) and the accessibility tree (aria-label).
+        <span data-card-text-culled="true" aria-label={card.text} title={card.text} style={{ color: "#94a3b8" }}>
+          …
+        </span>
       ) : null}
     </div>
   );

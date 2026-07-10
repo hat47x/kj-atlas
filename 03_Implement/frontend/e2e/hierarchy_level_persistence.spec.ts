@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import { expect, test, type Download } from "@playwright/test";
 import {
+  DOCUMENT_REPLACED_STATUS,
   EXPORT_BUNDLE_BUTTON,
   LOAD_DOCUMENT_BUTTON,
   REPLACE_DOCUMENT_BUTTON,
@@ -70,7 +71,7 @@ test("hierarchy level switch changes only visibility and preserves sub-island/pl
   });
 
   await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
-  await expect(page.getByText("Replaced current document")).toBeVisible();
+  await expect(page.getByText(DOCUMENT_REPLACED_STATUS)).toBeVisible();
 
   await page.getByRole("button", { name: VIEW_BUTTON }).click();
   await page.getByLabel(/Structure level|構造レベル/).selectOption("overview");

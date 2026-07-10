@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { DOCUMENT_REPLACED_STATUS } from "./helpers/i18n";
 
 test("smoke: locale query switches shell labels to English", async ({ page }) => {
   await page.goto("/?locale=en");
@@ -42,6 +43,6 @@ test("locale=en keeps document replace flow behavior equivalent", async ({ page 
   });
 
   await page.getByRole("button", { name: "Replace current document" }).click();
-  await expect(page.getByText("Replaced current document")).toBeVisible();
+  await expect(page.getByText(DOCUMENT_REPLACED_STATUS)).toBeVisible();
   await expect(page.getByText("locale flow card")).toBeVisible();
 });

@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import { expect, test, type Download, type Page } from "@playwright/test";
 import {
+  DOCUMENT_REPLACED_STATUS,
   EXPORT_BUNDLE_BUTTON,
   LOAD_DOCUMENT_BUTTON,
   REPLACE_DOCUMENT_BUTTON,
@@ -80,7 +81,7 @@ test("bundle diagnostics includes structural metrics and remains deterministic a
   const replaceButton = page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON });
   await expect(replaceButton).toBeEnabled();
   await replaceButton.click();
-  await expect(page.getByText("Replaced current document")).toBeVisible();
+  await expect(page.getByText(DOCUMENT_REPLACED_STATUS)).toBeVisible();
 
   const diagnosticsMdRun1 = await exportDiagnosticsMd(page);
   expect(diagnosticsMdRun1).toContain("| connectedComponentCount | 2 |");
