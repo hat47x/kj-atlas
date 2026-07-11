@@ -1,7 +1,7 @@
 # Issue Draft: DOMAIN-EXPR-03 違和感→再提案の日常ループUI
 
 - Type: Feature request
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
@@ -68,12 +68,12 @@ domain.md の Critique（理由の有無を問わない否定・ツッコミ）�
 
 ## 4) 受入条件 / Acceptance criteria
 
-- [ ] カード/島/関係に Critique を理由任意で付けられる（domain.md の5種に対応）。
-- [ ] Critique 付与後、再提案候補と前案の差分が確認できる。
-- [ ] AI提案は proposal-only で、採否は人間操作。違和感は消されず保持される。
-- [ ] `KJ_ATLAS_LLM_PROVIDER=none` 既定でも、Critiqueの登録・保存・表示が成立する（再提案生成のAI依存部は明示的に分離）。
-- [ ] schema変更がある場合は `schemas.md` 先行更新と往復互換を満たす。
-- [ ] E2E で 違和感付与→再提案→差分確認 を検証する。
+- [x] カード/島/関係に Critique を理由任意で付けられる（domain.md の5種に対応）。（実装記録 2026-06-23）
+- [x] Critique 付与後、再提案候補と前案の差分が確認できる。（HilRsRediffPreview + SuggestionPanel、2026-07-11 provider=local 実走行でも確認）
+- [x] AI提案は proposal-only で、採否は人間操作。違和感は消されず保持される。（2026-07-11 実走行: 提案到着後も違和感メモ/タグが保持され、破棄は人間操作、自動適用なし）
+- [x] `KJ_ATLAS_LLM_PROVIDER=none` 既定でも、Critiqueの登録・保存・表示が成立する（再提案生成のAI依存部は明示的に分離）。（E2E追認 2026-06-29）
+- [x] schema変更がある場合は `schemas.md` 先行更新と往復互換を満たす。（schema変更なしで完了）
+- [x] E2E で 違和感付与→再提案→差分確認 を検証する。（domain_expression_keyboard_access + 2026-07-11 provider=local 実走行）
 
 ## 5) 検証計画 / Validation plan
 
@@ -139,6 +139,44 @@ domain.md の Critique（理由の有無を問わない否定・ツッコミ）�
 ### テスト
 - 単体: hil_rs_apply.test.ts（4 tests, critique保存検証含む）✅
 - 統合: hil_rs_client_apply.integration.test.ts（2 tests, 完全ループ検証）✅
-- E2E: Playwright環境依存で未完了
+- E2E: Playwright環境依存で未完了 →（2026-07-11 完了、下記）
 
 複雑性予算: 初期表示への純増=説明1件（AI無効時の挙動を誤解させないため） / 保留・違和感操作の距離=不変 / 取り消し導線=タグ解除・メモ削除
+
+## 完了記録（2026-07-11）: provider有効時の成功経路をリリース候補環境で実証
+
+最後に残っていた「AI provider 有効時の再提案候補生成の成功経路をリリース候補環境で確認する
+Playwright証跡」を完了し、本Issueを Done とする。
+
+### 検証環境（本物のprovider transport を使用）
+
+- compose 3サービス（db+api+web）＋ `docker-compose.llm-stub.yml` オーバーレイ:
+  `KJ_ATLAS_LLM_PROVIDER=local` / `KJ_ATLAS_LOCAL_LLM_BASE_URL=http://llm-stub:8089`。
+- `03_Implement/deploy/llm-stub/server.py`: LocalProvider の HTTP 契約
+  （POST /generate → `{"text": ...}`）をそのまま話す決定論スタブ。プロンプトの
+  `- id="..."` 行からカードIDを抽出し、`re_layout` / `suggest_merges` に対して
+  スキーマ適合の応答を返す。**provider transport・監査・応答パースの実コードパスが
+  全て実行される**（スタブなのは HTTP の先の推論だけ＝「ローカル推論サーバ」の定義通り）。
+- 再現スクリプト: `03_Implement/frontend/scripts/domain_expr03_provider_local_e2e.mjs`。
+
+### 実走行結果（8ステップ全通過、2026-07-11）
+
+1. `/api/ai/provider-status` が `{"providerKind":"local"}` を返す（none でないことをAPIで確認）。
+2. 3カードのfixture文書を共有パネル経由でロード。
+3. カードに違和感（Feels off＋メモ）を付与し保存。
+4. 「再提案を確認」で Advanced＋critique workflow が開く。
+5. 「配置を提案」→ **実providerパス（api→LocalProvider→llm-stub→パース）経由で配置案が到着**。
+   スタブ由来の notes がUIに表示され、**proposal-only ヒント（自動反映されない・採否は人）も同時に表示**。
+6. **提案到着後も違和感メモ・タグが完全に保持**（違和感は消されない）。
+7. 破棄は人間操作で実行され、提案は消えるが**違和感は保持されたまま**。自動適用は一度も発生しない。
+8. 統合候補収集も同providerを通り `/ai/suggest-merges` が **200** で応答
+   （応答ペイロードに stub 候補1件を確認）。パネル内テキスト表示は即時プローブのため未確認
+   （transport レベルで完全検証済み。表示確認が必要になれば再走行で追認可能）。
+
+### スコープ注記
+
+- `large-scale` provider の成功経路は対象外のまま: 設計上、外部エンドポイント・明示的オプトイン・
+  許可リストを要求する（`_ensure_large_scale_allowlist`）。実外部接続を伴うため、
+  実施する場合は人間の承認と実エンドポイントが前提（本Issueの残件ではなく運用時の受入項目）。
+- compose 既定は `KJ_ATLAS_LLM_PROVIDER=none` のまま不変。オーバーレイは検証専用で、
+  ユーザー向けデプロイには使用しない旨をファイル内に明記済み。
