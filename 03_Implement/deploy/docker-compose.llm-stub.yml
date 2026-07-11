@@ -1,0 +1,24 @@
+# Overlay for provider=local success-path verification (DOMAIN-EXPR-03).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.llm-stub.yml up -d
+#
+# Runs the deterministic llm-stub (see llm-stub/server.py) on the compose
+# network and points the api's LocalProvider at it, so the real provider
+# transport / audit / parsing paths are exercised end-to-end. Never use this
+# overlay for a user-facing deployment -- it exists to verify the
+# release-candidate environment's AI-enabled path without a real model.
+services:
+  llm-stub:
+    image: python:3.12-slim
+    volumes:
+      - ./llm-stub:/app:ro
+    command: python /app/server.py
+
+  api:
+    environment:
+      KJ_ATLAS_LLM_PROVIDER: local
+      KJ_ATLAS_LOCAL_LLM_BASE_URL: http://llm-stub:8089
+      KJ_ATLAS_LOCAL_LLM_MODEL: llm-stub
+    depends_on:
+      llm-stub:
+        condition: service_started
