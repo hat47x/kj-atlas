@@ -3039,3 +3039,36 @@ No ADR is required for this candidate: EXT-AGENT レーンは既存の ADR-0049 
 
 No ADR is required: `.dockerignore` の追加はビルド再現性の欠陥修正であり、スキーマ・SafeMode・共有境界・
 AI権限のいずれも変更しない。
+
+## Productization Gate Record 2026-07-11: サポート診断/復旧リハーサル実施（operations.md 準拠）
+
+- Candidate: `origin/main@2ffe371b`（compose スタックは同日の ADR-0019 リハーサルで再ビルド済みのイメージ）
+- Date (JST): 2026-07-11
+- Reviewer: Claude Code acting under the standing 順に進めてください delegation. 本記録は**リハーサル実施の証跡**であり、非委任ゲートとしての人間の最終確認・承認を代替しない。
+- 実行範囲: `04_Documentation/operations.md` の「バックアップ」「復旧演習」「障害診断と復旧（一次切り分け表）」。
+
+### 復旧演習（operations.md §復旧演習 の最小項目に対応）
+
+1. **バックアップ**: `docker compose exec db pg_dump -Fc -U kj_atlas kj_atlas`（11.8KB dump 取得）。
+2. **復元先の限定**: 本番DBを上書きせず、検証用DB `kj_atlas_restore` を作成して `pg_restore --clean --if-exists` で復元（ランブックの中断条件「復元先取り違え」を回避する手順どおり）。
+3. **Document 確認**: 復元先で3文書すべての `id` / `version` / `updated_at` を確認。`rehearsal-doc-20260711` の本文内容が復元元と一致。
+4. **判断ログ確認**: `merge_decision_logs` テーブルが復元され読み取り可能（当日クリーンスレート再構築直後のため0行。行順序の検証は判断ログが実在するバックアップでの次回演習項目として明示）。
+5. **共有前確認**: SafeMode 既定 ON は同日の compose リハーサル UI スモークで確認済み（本演習では出力共有を行っていない）。
+6. **後片付け**: 検証用DB drop 済み。
+
+### 障害診断ドリル（一次切り分け表の3分類を実地再現）
+
+- **API-UNAVAILABLE**: `docker compose stop api` → プロキシ経由 healthz 失敗・保存 PUT が **502**（表の代表症状と一致）→ 一次切り分け（api logs 確認）→ `start api` → healthz **200** 復帰。
+- **SAVE-FAILURE**: api 停止中の保存が 502 で明確に失敗 → 復旧後の再保存 **200**、`GET` で更新内容（`rehearsal card v2`）を確認（表の初期復旧アクション「API復旧後に再試行」どおりデータ無傷）。
+- **WEB-ENTRY**: `docker compose stop web` → :8080 接続不能（表の代表症状と一致）→ web logs 確認 → `start web` → **200** 復帰。全サービス healthy。
+
+### Decision
+
+**サポート診断/復旧リハーサル: 実施済み・全項目 Pass（本記録が証跡）**。非委任ゲート一覧では本項目を
+「未実施」から「実施済み（人間の最終確認待ち）」へ更新する。残る非委任ゲートは
+最終プログラム承認、物理キーボード・スクリーンリーダー受入、リリーススクリーンショット承認、組織承認。
+
+- 補足発見: なし（ランブックの手順・症状表・復旧アクションは実際の挙動と一致し、文書修正を要する乖離は検出されなかった）。
+- 次回演習への引き継ぎ: 判断ログ（`merge_decision_logs`）に実データがあるバックアップでの順序検証。
+
+No ADR is required: 文書化済みランブックの実施のみで、境界・スキーマ・権限の変更はない。
