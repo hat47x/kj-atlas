@@ -1,0 +1,18 @@
+# Build-context hygiene for the web image (deploy/docker-compose.yml builds
+# with context ".." = 03_Implement and dockerfile frontend/Dockerfile).
+#
+# Found by the ADR-0019 compose rehearsal (2026-07-11): without this file,
+# "COPY frontend/ ./" overlays the HOST's node_modules onto the image's
+# freshly `npm ci`-installed tree. With a pnpm-style host layout the scoped
+# packages are symlinks (files), which cannot replace the image's real
+# directories -> "cannot replace to directory ... with file" build failure.
+# The image build must never depend on host install state.
+frontend/node_modules
+frontend/dist
+frontend/test-results
+frontend/playwright-report
+frontend/.tmp*
+backend/.venv
+backend/.ruff_cache
+backend/.tmp
+**/__pycache__

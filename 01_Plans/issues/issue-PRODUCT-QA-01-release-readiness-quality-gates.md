@@ -2998,3 +2998,44 @@ No ADR is required for this candidate: no schema shape was removed, no SafeMode/
 **Conditional Go for this candidate's slice (external-agent lane, a11y smoke, dogfood evidence, UX fixes, harness recovery) / No-Go for full release shipment.** 非委任ゲートは上記のとおり変更なし。
 
 No ADR is required for this candidate: EXT-AGENT レーンは既存の ADR-0049 の実装であり、その安全境界（sanitize/proposal-only/anti-scoring）を実装で満たす。その他はすべて追加的・修正的変更で、SafeMode/share-export/レビュー昇格/AI権限のいずれの境界も拡大していない。構造的ARIAの設計判断は既に ADR-0052 が起票済み。
+
+## Productization Gate Record 2026-07-11: ADR-0019 Compose/環境リハーサル実施（クリーンスレート）
+
+- Candidate: `origin/main@1367740d` ＋ 本リハーサルで発見・修正した `03_Implement/.dockerignore`（同PRで出荷）
+- Date (JST): 2026-07-11
+- Reviewer: Claude Code acting under the standing 順に進めてください delegation. 本記録は**リハーサルの実施証跡**であり、非委任ゲートとしての人間の最終確認・承認を代替しない。
+- 実行経路: **Compose統合経路（第一選択）**。docker 29.5.3 / compose 5.1.4（WSL2）。
+
+### 実施手順と結果（ADR-0019 §3 最小受入基準に対応）
+
+1. **完全クリーンスレート**: `docker compose down -v`（`kj_atlas_pgdata` ボリューム破棄を確認）→ `docker compose up -d --build`（イメージ再ビルド）。
+2. **ビルド（1回目・2回目）: 失敗 → 製品欠陥として根本原因を特定・修正**（下記 Blocker Inventory）。
+3. **ビルド（修正後）: 成功**。コンテキストから host `node_modules` が除外され、全体 56 秒で完走（失敗時は 3〜4 分）。
+4. **ヘルス**: db healthy / api healthy（**新規ボリュームに対する `alembic upgrade head` のゼロからのマイグレーション成功を包含**）/ web up。`curl -fsS http://127.0.0.1:8080/api/healthz` → `{"status":"ok"}`。
+5. **provider 既定**: `/api/ai/provider-status` → `{"providerKind":"none"}`（既定で AI 無効）。
+6. **ドキュメント往復**: `PUT /api/docs/rehearsal-doc-20260711`（bare DocumentV2）→ 200、`GET` で同一内容を確認。
+   補足: envelope 形式の誤ったペイロードは `A1_REQUIRED_FIELD_MISSING` で明確に拒否される（厳格バリデーションの正常動作を確認）。
+7. **UI スモーク**（Playwright、`dogfood_run_20260709.mjs` 再走行）: SafeMode 既定 ON 表示、カード4枚作成
+   （QA-MONKEY-10 修正後の「…」省略マークが再ビルド済みイメージで動作していることを実地確認）、保存 → 新規 postgres に文書が着地。
+8. **再起動永続性**: `docker compose restart` 全サービス → healthz ok、`GET rehearsal-doc` 内容不変、文書3件残存。
+
+### Blocker Inventory（本リハーサルでの発見）
+
+- **product defect（発見→同PRで修正済み）**: web イメージのビルドコンテキスト（`03_Implement/`）に
+  `.dockerignore` が無く、`COPY frontend/ ./` が **ホストの `node_modules` をイメージの `npm ci` 結果へ上書き**していた。
+  pnpm 形式のホスト環境ではスコープ付きパッケージがシンボリックリンク（ファイル）のため
+  `cannot replace to directory ... with file` でビルド不能（クリーンクローンでは顕在化しないが、
+  イメージ内容がホスト状態に依存する再現性欠陥）。`03_Implement/.dockerignore` を追加して解消。
+  途中の `npm ci` exit 152 も同じ汚染コンテキスト転送の副作用と分類（修正後は再現せず）。
+  自己修復試行: 2回（cache prune → 失敗、根本原因特定 → 修正で解消）。上限3回以内。
+- 失敗分類語彙（ADR-0019 §8）: `product defect`（上記）。`test defect` / `environment limitation` 該当なし。
+
+### Decision
+
+**Compose/環境リハーサル: 実施済み・全項目 Pass（本記録が証跡）**。以後の非委任ゲート一覧では、本項目は
+「未実施」から「実施済み（人間の最終確認待ち）」へ更新する。他の非委任ゲート
+（最終プログラム承認、サポート診断/復旧リハーサル、物理キーボード・スクリーンリーダー受入、
+リリーススクリーンショット承認、組織承認）は変更なし。
+
+No ADR is required: `.dockerignore` の追加はビルド再現性の欠陥修正であり、スキーマ・SafeMode・共有境界・
+AI権限のいずれも変更しない。
