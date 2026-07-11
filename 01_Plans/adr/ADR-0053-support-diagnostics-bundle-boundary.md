@@ -1,0 +1,70 @@
+# ADR-0053: サポート診断バンドルの共有境界
+
+- Status: Proposed
+- Date: 2026-07-11
+- Deciders: Productization Program Owner / System Owner / Project Maintainers
+- Scope: `03_Implement/frontend/src/`, `04_Documentation/diagnostics.md`, `04_Documentation/operations.md`, `SUPPORT.md`
+
+## Context
+
+- `PRODUCT-OPS-01` は画面上の復帰導線と、手動でのサポート共有ガイダンス（共有してよい情報/してはいけない情報の区別）を整備済み。ただし利用者が再現情報を1つずつ転記する形であり、サポート切り分けに必要な情報が揃わない・逆に貼りすぎる、の両方向の事故が起きやすい。
+- 「診断バンドル」は share/export と同等の外部共有リスクを持つ。方針を決めずに実装すると、未加工本文・API key・token・内部URL・個人情報の混入経路になり、SafeMode と共有抑制の価値を裏から毀損する。
+- `PRODUCT-OPS-02` は「バンドル形式・自動収集範囲・送信有無を固定する場合は実装前にADR化」と定めている。本ADRはその決定器である。
+- 比較した選択肢:
+  - 案A: バンドルを導入しない（現状の手動テンプレート運用のみ）。安全だが、転記漏れ・過剰貼り付けのリスクが残り続ける。
+  - 案B: **ローカル生成・メタデータ限定・プレビュー必須のバンドル**（採用案）。含める項目を許可リストで固定し、送信機能を持たない。
+  - 案C: 自動収集＋サポート基盤への送信連携。組織ごとの承認・保持・監査要件を製品が先取りすることになり、`PRODUCT-OPS-02` の非目標と衝突するため不採用。
+
+## Decision
+
+案Bを採用する: **診断バンドルは「明示操作・ローカル生成・プレビュー必須・許可リスト方式」に限定し、製品は送信経路を持たない。**
+
+### バンドル契約（diag-bundle.v1）
+
+- 形式はバージョン付き（`diag-bundle.v1`）とし、項目の追加・削除は本ADRの更新を要する。
+- **許可リスト（これ以外は含めない）**:
+  - アプリ revision / ビルド識別子、生成時刻
+  - ブラウザ/OS の UserAgent 文字列
+  - 障害分類コード（`operations.md` の WEB-ENTRY / API-UNAVAILABLE / SAVE-FAILURE / IMPORT-VALIDATION / SHARE-SAFEMODE）と直近の HTTP status
+  - SafeMode 状態（ON/OFF）と provider 種別名（none / local / large-scale。エンドポイントURL・モデル名は含めない）
+  - 対象 Document の `id` / `version` / `updated_at`（タイトル・本文は含めない）と、カード/島/エッジの**件数のみ**
+  - アプリ自身のエラーエンベロープ（A1契約の `errorCode` / `contractId` / `occurredAt`。message はアプリ定義文言のみで、外部入力のエコーを含む場合は除外）
+- **禁止リスト（レビュー状態を問わず一切含めない）**:
+  - カード・島・narrative・critique・KAフィールド等の本文、Document タイトル、取り込みファイル内容
+  - API key / token / password / Authorization ヘッダー、環境変数値、内部URL・接続文字列
+  - メールアドレス等の個人識別子、生のサーバーログ、スクリーンショット（必要時は利用者が既存文書の判断基準に従い別途添付する）
+- **UI 契約**: 生成は明示ボタンからのみ開始。コピー/ダウンロードの**前に全文プレビューを必ず表示**し、除外済みカテゴリを明記する。任意の時点でキャンセル可能。自動送信・バックグラウンド収集・定期収集は行わない。
+- **文書同期**: `diagnostics.md` / `operations.md` / `SUPPORT.md` の手動共有テンプレートはバンドル導入後も代替経路として残し、同一PRで整合させる。
+
+### 非目標
+
+- 自動ログ送信、チケット/サポート基盤連携、組織横断の保持期間・送信先の規定。
+- サーバー側でのバンドル組み立て、管理者による他利用者分の収集。
+- 監査ログ本文の同梱（`DATA-MAINT-04` / `ADR-0035` の境界に従う）。
+
+## Consequences
+
+- サポートが受け取る情報が一定になり、切り分けが速くなる。利用者は「何が含まれ、何が含まれないか」をプレビューで確認してから共有できる。
+- 許可リスト方式のため、新しい診断項目の追加には本ADRの更新が必要（意図的な摩擦）。
+- 実装は本ADRのAccepted後に、UI（生成・プレビュー・コピー/ダウンロード・キャンセル）＋e2e検証＋文書同期を1つの実装issueとして切り出す。`PRODUCT-OPS-02` の受入条件がそのままe2e観点になる。
+
+## Traceability
+
+- Related: `01_Plans/issues/issue-PRODUCT-OPS-02-support-diagnostics-bundle-policy.md`
+- Related: `01_Plans/issues/issue-PRODUCT-OPS-01-support-diagnostics-error-recovery.md`
+- Related: `THREAT_MODEL.md`
+- Related: `04_Documentation/diagnostics.md`
+- Related: `04_Documentation/operations.md`
+- Related: `SUPPORT.md`
+- Related: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
+- Related: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
+
+---
+
+## Authoring Checklist（人間/生成AI 共通）
+
+- [x] 必須ヘッダ（Status/Date/Deciders/Scope）を記載した。
+- [x] 必須章（Context/Decision/Consequences/Traceability）を記載した。
+- [x] Decision に採用理由と非目標がある。
+- [x] Traceability に関連文書を1件以上記載した。
+- [x] 実装進捗は ADR ではなく Issue で管理する前提を維持した。

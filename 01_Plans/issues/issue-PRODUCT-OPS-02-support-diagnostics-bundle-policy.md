@@ -1,7 +1,7 @@
 # Issue Draft: PRODUCT-OPS-02 サポート診断バンドル方針の策定
 
 - Type: Feature request
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
@@ -13,6 +13,17 @@
 
 ## Draft→Open 2026-06-21
 診断バンドル方針策定を開始可能。優先度Could、GoNoGoGate=Optional。
+
+## 検討記録 2026-07-11: 方針スライス完了（ADR-0053 Proposed 起票）
+
+- 本Issueの最初のスライス「仕様とADR要否を決める」を実施した。
+- 判断: バンドル形式（許可リスト方式 `diag-bundle.v1`）を固定するため **ADRが必要** →
+  `01_Plans/adr/ADR-0053-support-diagnostics-bundle-boundary.md` を **Proposed** で起票。
+  - 採用提案: 明示操作・ローカル生成・プレビュー必須・許可リスト方式。製品は送信経路を持たない。
+  - 不採用: 自動収集・サポート基盤送信連携（案C）。現状維持のみ（案A）も転記事故リスク残存のため不採用提案。
+  - 許可/禁止リストは本Issue §5.1 の初期案を基に、A1エラーエンベロープ・provider種別名・件数のみ等へ具体化した。
+- 実装（UI導線・マスクテスト・e2e、T1/T3〜T5）は **ADR-0053 の Accepted 後**に着手する。
+  DecisionStatus は Pending のまま維持（決定権者の受理待ち）。
 
 ## Requirement meta I/F（共通キー）
 
@@ -67,7 +78,7 @@
 - [ ] 利用者がバンドル作成前に、マスク状態、含まれる情報、共有先に渡す前の確認事項を理解できる。
 - [ ] バンドル作成は明示操作でのみ開始し、自動送信は行わない。
 - [ ] SafeMode ON 時は、未レビュー本文、カード本文、取り込みファイル全文、API key、token、password、個人情報、内部URLの機微部分が出力されない。
-- [ ] 自動送信、サポート基盤連携、固定バンドル形式、組織横断の保持方針を採用する場合は、実装前にADRが起票されている。
+- [x] 自動送信、サポート基盤連携、固定バンドル形式、組織横断の保持方針を採用する場合は、実装前にADRが起票されている。（`ADR-0053-support-diagnostics-bundle-boundary.md` を Proposed で起票済み。2026-07-11）
 - [ ] unit/integration/e2e のいずれかで、許可項目と禁止項目のマスクが検証されている。UI導線を実装する場合は e2e でプレビュー、キャンセル、コピー/ダウンロードを確認する。
 
 ### 5.1 許可項目/禁止項目の初期案
@@ -81,7 +92,7 @@
 ## 6) 実装タスク分解 / Task breakdown
 
 - [ ] T1 診断バンドルの許可項目/禁止項目を確定し、`diagnostics.md` と `SUPPORT.md` に反映する。
-- [ ] T2 自動送信、固定バンドル形式、保持方針を採用するかを判断し、必要ならADRを起票する。
+- [x] T2 自動送信、固定バンドル形式、保持方針を採用するかを判断し、必要ならADRを起票する。（判断: 自動送信・基盤連携は不採用、形式は `diag-bundle.v1` 許可リスト方式を提案。`ADR-0053` Proposed 起票、2026-07-11。T1/T3以降はADR Accepted後）
 - [ ] T3 ローカル作成/手動共有に限定する場合のUI導線を設計する。
 - [ ] T4 マスク処理のunit/integrationテストを追加する。
 - [ ] T5 UIを実装する場合は、プレビュー、キャンセル、コピー/ダウンロード、禁止項目不在をe2eで確認する。
