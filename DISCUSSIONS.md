@@ -1,24 +1,27 @@
 # DISCUSSIONS
 
 **English summary (short):**
-Use Discussions for open-ended conversation and knowledge sharing.
-Use Issues for actionable bug/feature work with clear acceptance criteria.
+Use Discussions for open-ended conversation, questions, bug candidates, and feature ideas.
+GitHub Issues are not currently active; maintainers convert actionable work into internal issue memos with acceptance criteria.
 Suggested categories: Ideas, Questions, Show and tell, and Research/Methodology.
 When sharing packs, keep safeMode enabled by default.
 
 GitHub Discussions は、実装前の相談・運用知見の共有・KJ法の実践知を蓄積する場です。
 
-## Discussions と Issues の使い分け
+## 現在の受付と課題化
 
 - **Discussions**
   - 仕様が未確定の相談
   - 使い方の質問
+  - バグ候補の再現情報
+  - 機能提案
   - 方法論の検討（KJ法の運用、質的整理の進め方）
   - 活用事例の共有
-- **Issues**
-  - バグ報告（再現手順・期待結果・実際結果がある）
-  - 実装可能な機能提案（完了条件が書ける）
-  - 具体的タスクとして着手可能な改善
+- **内部issue memo**
+  - メンテナが重複を確認し、実行可能なActionへ整理したバグ・機能・文書・運用作業
+  - 受入条件、非目標、検証方法、再開条件を持つ作業
+
+GitHub Issuesは現在運用していません。開始する場合は、`CONTRIBUTING.md`、`SUPPORT.md`、`01_Plans/issues/README.md`を同時に更新して案内します。
 
 ## 推奨カテゴリ
 

@@ -252,7 +252,7 @@ async function captureFirstValue(browser) {
   await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
   await page.getByRole("option", { name: "利用者が最初に困ること" }).click();
   await page.getByRole("option", { name: "観察メモから見えた根拠" }).click({ modifiers: ["Shift"] });
-  await page.getByRole("button", { name: /島を作成|Create Island/ }).click();
+  await page.getByRole("banner").getByRole("button", { name: /島を作成|Create Island/ }).click();
   await page.locator('[data-ui-region="selection-context"]').waitFor({ state: "visible" });
   await captureScreenshot(page, files.firstValue);
   await page.close();
@@ -266,7 +266,7 @@ async function captureFirstValuePreflight(browser) {
   await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
   await page.getByRole("option", { name: "利用者が最初に困ること" }).click();
   await page.getByRole("option", { name: "観察メモから見えた根拠" }).click({ modifiers: ["Shift"] });
-  await page.getByRole("button", { name: /島を作成|Create Island/ }).click();
+  await page.getByRole("banner").getByRole("button", { name: /島を作成|Create Island/ }).click();
   await page.getByRole("button", { name: /共有と再現|Share & Reproduce/ }).click();
   const summary = page.getByTestId("share-domain-expression-summary");
   await summary.waitFor({ state: "visible" });
@@ -352,7 +352,9 @@ async function captureReadOnlyReview(browser) {
 async function capture() {
   await mkdir(outputDir, { recursive: true });
   const server = await ensureViteServer();
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    executablePath: process.env.KJ_ATLAS_SCREENSHOT_BROWSER_PATH || undefined,
+  });
 
   try {
     await captureFirstValue(browser);

@@ -198,9 +198,10 @@ IssueとADRは混在させず、次の基準で分離して運用します。
 
 ### GitHub Issue と `01_Plans` issue 記述の位置づけ
 
-- 対外的な課題管理（公開トラッキング）は **GitHub Issues** を正本として運用します。
-- `01_Plans` 配下の issue 記述は、AIエージェントが文脈を保持して再開しやすくするための補助メモであり、公開課題の正本ではありません。
-- 正本判断が難しい論点は GitHub Issue で管理し、合意後に ADR とドキュメントへ反映してください。
+- 現在のAction管理の正本は **`01_Plans/issues/` のissue memo** です。GitHub Issuesは運用開始していません。
+- 利用相談、バグ候補、機能案を外部から共有する場合は、秘密情報を除いてGitHub Discussionsへ投稿してください。メンテナが実行可能なActionへ整理するときにissue memoを作成します。
+- GitHub Issuesへ切り替える場合は、メンテナが開始を明示し、この文書、`01_Plans/issues/README.md`、`SUPPORT.md`、`DISCUSSIONS.md`を同時に更新します。それまではURLのない `Source Issue: N/A` が正常です。
+- 設計判断が必要な場合はissue memoからADRへ分離し、Accepted後の実装・検証をissue memoへ戻します。
 
 
 ## コミット規約（軽量） / Commit Convention
@@ -211,13 +212,14 @@ IssueとADRは混在させず、次の基準で分離して運用します。
 
 ## 変更提案フロー / How to Propose Changes
 
-1. まず **GitHub Issue** で背景・目的・影響範囲を共有
-2. 合意後にブランチを作成して実装
-3. Pull Request で変更理由・テスト結果・懸念点を提示
+1. 仕様が未確定ならGitHub Discussionsで背景・目的・影響範囲を共有する。実行可能なら既存issue memoを選ぶか、`01_Plans/issues/TEMPLATE.md`から新規memoを作る。
+2. 受入条件、非目標、検証方法をmemoへ記載し、必要ならADRを先に確定する。
+3. `codex/`接頭辞など衝突しないブランチを作成して実装する。
+4. Pull Requestで変更理由、対象memo、テスト結果、未実施理由と再開条件を提示する。
 
-小さな typo 修正などは、Issue なしで直接 PR して構いません。
+小さなtypoや明白なリンク修正は、issue memoなしで直接PRして構いません。脆弱性はDiscussionsや公開PRへ詳細を書かず、`SECURITY.md`を優先してください。
 
-## ラベル運用ガイド / Labeling guidance
+## ラベル運用ガイド / Labeling guidance（GitHub Issues運用開始後）
 
 ### 標準ラベル
 
@@ -235,12 +237,12 @@ IssueとADRは混在させず、次の基準で分離して運用します。
 - 前提知識が少なくても着手可能（参考リンクあり）
 - ローカルで再現・確認しやすい
 
-### メンテナのトリアージ方針（簡易）
+### メンテナのトリアージ方針（現在）
 
-1. 新規 Issue を `bug` / `enhancement` / `docs` のいずれかに一次分類
-2. 初学者向け条件を満たすものへ `good first issue` を追加
-3. 担当募集が必要なものへ `help wanted` を追加
-4. セキュリティ懸念は `security` を付与し、詳細取り扱いは `SECURITY.md` に誘導
+1. DiscussionsまたはPRで受けた内容を、質問、Action、Decision、Securityへ一次分類する。
+2. Actionは既存memoとの重複を確認し、`01_Plans/issues/`へ起票する。
+3. DecisionはADR化トリガーを確認し、Securityは公開転記せず`SECURITY.md`へ誘導する。
+4. GitHub Issues運用開始後に限り、上記標準ラベルを適用する。
 
 
 ### E2Eドキュメント整合ルール

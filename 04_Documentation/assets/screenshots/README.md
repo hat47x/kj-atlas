@@ -2,6 +2,66 @@
 
 このディレクトリには、利用者向け文書に掲載する画面例を置きます。
 
+## 撮影・検証provenance
+
+公開画像を更新するときは、画像だけでなく次の記録を同じ変更に含めます。
+
+- 対象revision（commit SHA。未commitのUI変更から撮らない）
+- 撮影日
+- fixtureまたはサンプル文書
+- locale、viewport、LLM provider、SafeMode
+- 生成スクリプトと実行コマンド
+- browser / Playwright version
+- 成功・失敗した撮影状態
+
+### 現行の検証済みセット
+
+共通条件: source revision `1367740d8d03cf53bc0ad1eb09ffc45684ff51e1`、撮影日2026-07-11、locale `ja`、`KJ_ATLAS_LLM_PROVIDER=none`、秘密情報なし、Playwright 1.58.2、Google Chrome 150.0.7871.101。
+
+| Capture ID | 対象 | fixture | viewport | 生成スクリプト | 検証結果 |
+| --- | --- | --- | --- | --- | --- |
+| `release-ui-20260711` | `start-document-entry.png`, `app-canvas-overview.png`, `selection-context-card.png`, `share-export-safe-mode.png`, `mobile-toolbar-smoke-390.png` | `doc_phase1_canvas`の決定論的release sample | 1440×900、390×720 | `capture_release_screenshots.mjs` | 5/5生成成功 |
+| `product-value-ui-20260711` | `product-value-*.png` 6件 | first meaningful map、ambiguity、review packの決定論的fixture | 1440×900 | `capture_product_value_screenshots.mjs` | 6/6生成成功。重複した`島を作成`をヘッダーへ限定するselector修正後に再実行 |
+| `ui-catalog-20260711` | `ui-*.png` 12件 | `buildCatalogDocument()` / `doc_phase1_canvas` | 1440×900、768×900、960×900 | `capture_ui_catalog.mjs` | 12/12生成成功 |
+
+標準コマンド:
+
+```powershell
+cd 03_Implement/frontend
+node .\scripts\capture_release_screenshots.mjs
+node .\scripts\capture_product_value_screenshots.mjs
+node .\scripts\capture_ui_catalog.mjs
+```
+
+2026-07-11の検証環境ではPlaywright同梱Chromiumを取得できなかったため、`KJ_ATLAS_SCREENSHOT_BROWSER_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe` を指定して撮影した。これはbrowser実体だけの代替であり、fixture、locale、viewport、出力先、撮影操作は各正本スクリプトと同一である。未指定時は従来どおりPlaywright管理browserを使う。
+
+### stale判定と公開Go条件
+
+次のいずれかが変わった画像セットはstaleとする。
+
+- 参照するUIラベル、レイアウト、表示状態、fixture、locale、viewport。
+- SafeMode、未レビュー、readOnly、共有前確認の表示。
+- 対応するcapture scriptまたは画像の生成条件。
+- 文書が説明する状態と画像で確認できる状態。
+
+staleな画像は「現行」として公開しない。対象セットを再生成し、全撮影状態が成功し、画像の秘密情報・表示ラベル・SafeMode境界を目視確認し、provenance行を更新した時点で公開Goへ戻す。再撮影できない場合は画像を外すか、対象revisionと未確認状態を利用者向け本文に明示する。
+
+### 記録テンプレート
+
+```text
+Capture ID:
+Source revision:
+Captured at:
+Files:
+Fixture:
+Locale / viewport / provider / SafeMode:
+Script / command:
+Browser / Playwright:
+Result:
+Manual review:
+Stale triggers checked:
+```
+
 撮影条件:
 
 - サンプル文書: `doc_phase1_canvas`
@@ -29,7 +89,7 @@ Use the frontend screenshot capture script when the visible UI changes:
 
 ```powershell
 cd 03_Implement/frontend
-C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\scripts\capture_release_screenshots.mjs
+node .\scripts\capture_release_screenshots.mjs
 ```
 
 The script starts a temporary Vite server when port 4173 is free, uses deterministic sample data, hides the transient status message for stable public images, captures the public-documentation screenshots, and stops the server when it started it.
@@ -40,6 +100,7 @@ Optional environment variables:
 - `KJ_ATLAS_SCREENSHOT_BASE_URL`: target URL. Defaults to `http://127.0.0.1:4173/?locale=ja`.
 - `KJ_ATLAS_SCREENSHOT_HOST`: Vite host. Defaults to `127.0.0.1`.
 - `KJ_ATLAS_SCREENSHOT_PORT`: Vite port. Defaults to `4173`.
+- `KJ_ATLAS_SCREENSHOT_BROWSER_PATH`: Playwright管理browserを使えない場合のChromium/Chrome実行ファイル。未指定時はPlaywrightの既定browserを使う。
 
 ## Product Value Evidence Screenshots
 
@@ -58,7 +119,7 @@ Regenerate these screenshots when Product Value fixtures, Japanese UI labels, ca
 
 ```powershell
 cd 03_Implement/frontend
-C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\scripts\capture_product_value_screenshots.mjs
+node .\scripts\capture_product_value_screenshots.mjs
 ```
 
 The script starts a temporary Vite server when `KJ_ATLAS_SCREENSHOT_PORT` is free, loads the app with `?locale=ja`, injects deterministic fixture data through Playwright routes, captures the six PNG files above, and stops the server when it started it.

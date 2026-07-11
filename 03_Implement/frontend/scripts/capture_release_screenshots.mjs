@@ -155,7 +155,9 @@ async function routeDeterministicData(page, shouldReturnSample) {
 async function capture() {
   await mkdir(outputDir, { recursive: true });
   const server = await ensureViteServer();
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    executablePath: process.env.KJ_ATLAS_SCREENSHOT_BROWSER_PATH || undefined,
+  });
 
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });

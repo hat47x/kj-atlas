@@ -198,6 +198,38 @@ DoD
 
 検証結果を残すときは内部の検証記録テンプレートを使います。個人情報、秘密情報、内部承認履歴は記録しません。
 
+### 実行経路とPR証跡
+
+標準経路はDocker Composeです。Dockerを実行できない場合だけSQLite + frontend dev serverまたはmock fixtureを使い、Composeとの差分リスクをPRへ残します。詳細な優先順位と例外条件は `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md` を参照してください。
+
+```md
+### E2E verification
+- Path: Compose | SQLite | mock
+- Command:
+- Result: pass | fail | blocked | not executed
+- Evidence:
+- Not executed reason:
+- Unverified risk delta:
+- Resume condition / owner:
+```
+
+代替経路で未確認になる代表境界:
+
+| Risk ID | Composeで確認する境界 | 代替経路での扱い |
+| --- | --- | --- |
+| R-01 | PostgreSQL方言、migration、接続pool | 未確認として記録し、Composeでroundtripを再実行する |
+| R-02 | web経由の`/api` rewrite、CORS、圧縮 | frontend直結だけで合格にしない |
+| R-03 | db healthy → api → webの起動連鎖 | `docker compose ps`とapi logを後日確認する |
+| R-04 | Compose network上のweb↔api↔db接続 | mock成功をintegration成功と表現しない |
+
+### 認証連携を変更した場合
+
+認証header/JWT mapping、provider preset、logout、step-up、JIT provisioning境界を変更した場合は、通常のfrontend E2Eだけで完了にしません。`01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md` とbackendの `scripts/run_auth_level2.sh` に従い、provider profile fixtureを使ったLevel 2を実行します。
+
+### fixture-backed visibility suiteの境界
+
+`e2e/pub_visibility_i18n_readonly_flow.spec.ts` はdocument、public-pack index、provider statusをPlaywright routeで固定するfrontend fixture suiteです。ブラウザ内のvisibility、ja/en表示、readOnly、SafeMode拒否は検証しますが、backend永続化やprovider integrationを検証したとはみなしません。
+
 ## 関連文書
 
 - [導入手順](../../../04_Documentation/installation.md)

@@ -1,7 +1,9 @@
 # Issue Plan: QA-E2E-USE-01 E2Eテストを実利用ケースへ拡充
 
 - Type: Process
-- Status: Draft (Open-Readiness Prepared / Execution Hold)
+- Status: Draft
+- Open Readiness: Prepared
+- Execution: Hold
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
 - Scope: 本ファイルのみ（docs-only）

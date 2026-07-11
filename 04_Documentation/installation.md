@@ -75,6 +75,8 @@ curl -fsS http://localhost:8080/api/healthz
 {"status":"ok"}
 ```
 
+起動とヘルスチェックが完了したら、[最初の意味ある配置を作る](getting_started.md)へ進んでください。標準サンプルだけを使い、AI無効・SafeMode ONのまま、カード、まとまり、未決、保存、共有前確認を約10分で体験できます。
+
 ## 停止する
 
 ```bash
@@ -262,6 +264,7 @@ docker compose logs db --tail=100
 
 ## 関連文書
 
+- [getting_started.md](getting_started.md)
 - [configuration.md](configuration.md)
 - [operations.md](operations.md)
 - [acceptance_check.md](acceptance_check.md)

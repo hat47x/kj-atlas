@@ -170,7 +170,9 @@ async function step(name, fn) {
 async function capture() {
   await mkdir(outputDir, { recursive: true });
   const server = await ensureViteServer();
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    executablePath: process.env.KJ_ATLAS_SCREENSHOT_BROWSER_PATH || undefined,
+  });
   try {
     // 1. Header / primary toolbar (clip to the top band)
     await step("ui-header-toolbar", async () => {

@@ -65,6 +65,7 @@ kj-atlas の目的は、
 ### 2) 利用者として最初に読む文書
 
 - 導入・セットアップ: [`04_Documentation/installation.md`](04_Documentation/installation.md)
+- 最初の価値体験: [`04_Documentation/getting_started.md`](04_Documentation/getting_started.md)
 - 設定値と環境変数: [`04_Documentation/configuration.md`](04_Documentation/configuration.md)
 - 日常運用: [`04_Documentation/operations.md`](04_Documentation/operations.md)
 - セキュリティ運用: [`04_Documentation/security.md`](04_Documentation/security.md)
@@ -81,7 +82,7 @@ docker compose up --build
 
 ### 4) このリポジトリでの相談・報告窓口
 
-- バグ・機能提案: [`CONTRIBUTING.md`](CONTRIBUTING.md) の手順に沿って Issue / PR を作成
+- バグ候補・機能案: [`CONTRIBUTING.md`](CONTRIBUTING.md) の現行手順に沿ってDiscussionsで共有し、実行可能な作業は内部issue memoへ整理
 - 相談・運用知見の共有: [`DISCUSSIONS.md`](DISCUSSIONS.md)
 - 脆弱性報告: [`SECURITY.md`](SECURITY.md)
 - 一般的なサポート導線: [`SUPPORT.md`](SUPPORT.md)

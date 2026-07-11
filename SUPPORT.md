@@ -2,14 +2,14 @@
 
 kj-atlas の使い方、障害調査、セキュリティ連絡の入口をまとめます。まず [README.md](README.md) で目的と基本操作を確認し、具体的な切り分けは [診断と障害調査](04_Documentation/diagnostics.md) を参照してください。
 
-**English summary:** Start with README for basic usage. Use Discussions for questions, Issues for bugs or feature requests, and SECURITY.md for vulnerability reports. Never share API keys, tokens, passwords, or raw customer data.
+**English summary:** Start with README for basic usage. GitHub Issues are not currently active; use Discussions for questions, bug candidates, and feature ideas, and use SECURITY.md for vulnerability reports. Never share API keys, tokens, passwords, or raw customer data.
 
 ## 相談先
 
 | 内容 | 連絡先 | 補足 |
 | --- | --- | --- |
 | 使い方、設定、運用上の相談 | GitHub Discussions | 再現手順や画面名があると回答しやすくなります。 |
-| バグ報告、機能提案 | GitHub Issues | 公開してよい情報だけで再現できる形に整理してください。 |
+| バグ候補、機能提案 | GitHub Discussions | 公開してよい情報だけで再現できる形に整理してください。実行可能なActionはメンテナが内部issue memoへ移します。 |
 | セキュリティ問題、秘密情報の漏えい疑い | [SECURITY.md](SECURITY.md) | 公開 Issue には詳細を書かず、案内された手順を優先してください。 |
 
 ## 共有すると調査しやすい情報
@@ -29,6 +29,8 @@ kj-atlas の使い方、障害調査、セキュリティ連絡の入口をま�
 - 秘密情報を含む可能性があるファイル全文。
 
 判断に迷う場合は、まず [データ取り扱い](04_Documentation/data_handling.md) を確認してください。
+
+GitHub Issuesは現在運用していません。開始時は`CONTRIBUTING.md`と`01_Plans/issues/README.md`を同時更新して案内します。セキュリティ問題を公開Discussionsへ投稿しないでください。
 
 ## 障害時の最初の確認
 

@@ -1,0 +1,45 @@
+{
+  "token": {
+    "iss": "https://mock-idp.local/oidc-google",
+    "email": "accounts.google.com:alice@example.com",
+    "name": "Alice Example",
+    "groups": [
+      "team-platform",
+      "ops"
+    ],
+    "amr": "webauthn",
+    "acr": "urn:mace:incommon:iap:silver"
+  },
+  "forwardedHeaders": {
+    "x-goog-authenticated-user-email": "accounts.google.com:alice@example.com",
+    "x-auth-provider": "oidc-google",
+    "x-goog-authenticated-user-name": "Alice Example",
+    "x-auth-groups": "team-platform,ops",
+    "x-auth-amr": "webauthn",
+    "x-auth-acr": "urn:mace:incommon:iap:silver"
+  },
+  "putStatus": 200,
+  "getStatus": 200,
+  "getBody": {
+    "version": 1,
+    "id": "doc-google_iap_like",
+    "title": "auth-level2-test",
+    "createdAt": "2026-02-11T00:00:00Z",
+    "updatedAt": "2026-02-11T00:00:00Z",
+    "transform": {
+      "panX": 0.0,
+      "panY": 0.0,
+      "zoom": 1.0
+    },
+    "cards": [
+      {
+        "id": "card-1",
+        "text": "alpha",
+        "x": 0.0,
+        "y": 0.0,
+        "critique": null
+      }
+    ],
+    "edges": []
+  }
+}

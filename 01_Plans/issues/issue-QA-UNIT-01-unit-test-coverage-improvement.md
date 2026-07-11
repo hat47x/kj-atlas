@@ -1,7 +1,9 @@
 # Issue Plan: QA-UNIT-01 ユニットテスト拡充（欠陥検知能力ベース）
 
 - Type: Process
-- Status: Draft (Open-Readiness Prepared / Execution Hold)
+- Status: Draft
+- Open Readiness: Prepared
+- Execution: Hold
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
 - Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`（計画文書更新のみ）

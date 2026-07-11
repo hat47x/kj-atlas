@@ -275,8 +275,14 @@ issue補助メモには、最低でも次の項目を含める。
 
 ## Active issue memos
 
+> 2026-07-11 文書監査で新規起票した5件のうち、1件は完了表へ移動し、4件をActive表へ掲載している。現行validatorは掲載行からmemoへの片方向検査のみで、filesystem上のActive集合との完全一致を保証しない。現在のtriage基準ではDraft/Open/In Progressが29件（Draft 15 / Open 7 / In Progress 7）あり、未掲載25件の整理は `DOC-OPS-06`、双方向検査は `DX-DOC-02` で追跡する。
+
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
+| DOC-USER-JOURNEY-01 | `issue-DOC-USER-JOURNEY-01-first-meaningful-map-guide.md` | In Progress | N/A |
+| DOC-ARCH-02 | `issue-DOC-ARCH-02-current-contract-history-physical-separation.md` | In Progress | N/A |
+| DOC-OPS-06 | `issue-DOC-OPS-06-current-view-history-and-contributor-route.md` | In Progress | N/A |
+| DX-DOC-02 | `issue-DX-DOC-02-docs-contract-ci-and-index-completeness.md` | Draft | N/A |
 
 - Stream D Phase 1-5 同期（2026-04-29 rerun-58）: Read & Reconcile（3共有ファイル再読、件数47/Active=5/Done=26、Decision Queue Ready=1/Open=2、依存順 `A1→A2→A3` を再確認）→ Plan Sync（同期項目と停止条件を固定、AC/DoD不足なし）→ Execute Single-Set（3ファイル同時更新）→ Verify（`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md`）→ Proceed（再開判定チェックリスト1行確定: 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件 / 停止条件違反なし）。
 
@@ -353,6 +359,7 @@ issue補助メモには、最低でも次の項目を含める。
 
 | Backlog ID | Memo | Status | Source Issue | Notes |
 |---|---|---|---|---|
+| DOC-UI-CATALOG-01 | `issue-DOC-UI-CATALOG-01-public-boundary-and-provenance.md` | Done | N/A | 公開UIカタログと内部設計ブリーフを分離し、23状態の画像provenance・stale/Go条件・再現可能な撮影経路を整備（2026-07-11）。 |
 | HIL-RS-01 | `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` | Done | N/A | ADR-0039に基づく次フェーズ計画と下位作業への引き継ぎを完了（2026-06-20）。 |
 | HIL-RS-01-A1 | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | Done | N/A | 最小インターフェース契約の固定と承認記録を完了（2026-06-20）。 |
 | HIL-RS-02 | `issue-HIL-RS-02-next-phase-delivery-plan.md` | Done | N/A | 次フェーズの実行計画とA2/A3着手条件の整理を完了（2026-06-20）。 |

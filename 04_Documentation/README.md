@@ -16,9 +16,9 @@
 | 区分 | 文書 | 公開配布での扱い |
 | --- | --- | --- |
 | 一般利用者向け公開入口 | `public_index.md` | Gist や外部共有の先頭に使う |
-| 一般利用者/運用者向け公開文書 | `installation.md`, `configuration.md`, `data_handling.md`, `operations.md`, `security.md`, `security_operational_guidelines.md`, `acceptance_check.md`, `ui_catalog.md`, `diagnostics.md`, `canonicalization.md`, `ce2_low_risk_ai_assist.md`, `local_llm_ops_guide.md`, `narratives.md`, `external_agent_workflow.md` | 公開候補。実装済み事実、安全境界、手動確認に限定する |
+| 一般利用者/運用者向け公開文書 | `getting_started.md`, `installation.md`, `configuration.md`, `data_handling.md`, `operations.md`, `security.md`, `security_operational_guidelines.md`, `acceptance_check.md`, `ui_catalog.md`, `diagnostics.md`, `canonicalization.md`, `ce2_low_risk_ai_assist.md`, `local_llm_ops_guide.md`, `narratives.md`, `external_agent_workflow.md` | 公開候補。実装済み事実、安全境界、手動確認に限定する |
 | 04文書保守者向け | `README.md`, `release.md` | 公開準備やリリース確認の管理用。Gist本文には原則含めない |
-| 開発者/AIエージェント向け | `codex_skill_operations.md`, `e2e_verification_log_2026-03-03.md` | 公開利用ガイドには含めず、開発・検証・AI運用の文脈で参照する |
+| 開発者/AIエージェント向け | `codex_skill_operations.md`, `e2e_testing.md`（移転案内のみ）, `e2e_verification_log_2026-03-03.md` | 公開利用ガイドには含めず、開発・検証・AI運用の文脈で参照する |
 | 内部計画/判断ログ | `../01_Plans/issues/*.md`, `../01_Plans/adr/*.md`, `../00_Prompt/*.md` | 公開本文へ混入しない。必要な場合も利用者向けに確定済み事実へ要約してから別途反映する |
 
 分類に迷う場合は、一般利用者が安全に操作するための確定済み手順か、開発・保守・内部判断のための記録かで判定します。未承認仕様、内部 issue、ADR の詳細、AIエージェント作業ログは公開入口へ入れません。
@@ -43,6 +43,7 @@
 | 用途 | 文書 |
 | --- | --- |
 | 公開入口 | [public_index.md](public_index.md) |
+| 最初の価値体験 | [getting_started.md](getting_started.md) |
 | 初回起動 | [installation.md](installation.md) |
 | 設定 | [configuration.md](configuration.md) |
 | データ取り扱い | [data_handling.md](data_handling.md) |
@@ -59,6 +60,7 @@
 - この README。
 - [assets/screenshots/README.md](assets/screenshots/README.md)。
 - [codex_skill_operations.md](codex_skill_operations.md)。
+- [e2e_testing.md](e2e_testing.md)。
 - [e2e_verification_log_2026-03-03.md](e2e_verification_log_2026-03-03.md)。
 - 公開作業の manifest、commit hash、PR、issue、ADR、内部作業ログ。
 
@@ -68,12 +70,13 @@
 
 | 掲載先 | 画面例 | 読み取りポイント |
 | --- | --- | --- |
+| [getting_started.md](getting_started.md) | `start-document-entry.png` | SafeMode ONの入口。以降は現行UIラベルだけで再現する一本道 |
 | [installation.md](installation.md) | `app-canvas-overview.png` | 起動後に表示される標準画面、SafeMode、ヘッダー、キャンバス、右側パネル |
 | [operations.md](operations.md) | `app-canvas-overview.png` | 運用確認で見る入口と、画面/API/保存確認の位置づけ |
 | [data_handling.md](data_handling.md) | `share-export-safe-mode.png` | share/export 前に確認する SafeMode、visibility、reviewerRef、出力範囲 |
 | [security.md](security.md) | `share-export-safe-mode.png` | SafeMode と外部サービスとの共有前に見る安全境界 |
 | [acceptance_check.md](acceptance_check.md) | `view-controls-safe-mode.png`, `mobile-toolbar-smoke-390.png` | 手動 smoke test、表示設定、狭い viewport でのヘッダー確認 |
-| [ui_catalog.md](ui_catalog.md) | `ui-*.png` ほか全 UI 要素 | 全UI要素の現行一覧、設計見直しの入力と制約（受け渡しブリーフ） |
+| [ui_catalog.md](ui_catalog.md) | `ui-*.png` ほか全 UI 要素 | 利用者向けの現行UI一覧。内部の設計受け渡し情報は含めない |
 | [diagnostics.md](diagnostics.md) | `diagnostics-quality-report.png` | 診断 worker の実行結果、品質レポート、再現記録の入口 |
 
 ## 文書品質のルール

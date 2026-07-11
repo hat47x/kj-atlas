@@ -71,10 +71,10 @@
 
 ## 6. 将来の分離方針
 
-`api.md` と `schemas.md` は、将来的には次のように分離する余地があります。
+`DOC-ARCH-02` で、次の物理分離を進行中です。現行のConflictと移動batchは [現行契約統合inventory](contract_consolidation_inventory.md) を参照してください。
 
 - 現行契約: API、schema、runtime parameter の正本文書に残す。
-- 履歴・freeze note: `01_Plans` または `02_Architecture/history/` 相当へ移す。
+- 履歴・freeze note: [`02_Architecture/history/`](history/README.md) へ移す。
 - Stream実行ログ: issue memo または dashboard 側へ集約する。
 
-この分離は、参照リンクと契約IDに影響するため、単独の内部 issue として扱います。
+この分離は、参照リンクと契約IDに影響するため、`DOC-ARCH-02` のbatch単位で扱います。Conflictが未解決の型は推測で統合せず、専用のcontract issueへ分離します。

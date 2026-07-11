@@ -1,0 +1,39 @@
+{
+  "token": {
+    "iss": "https://mock-idp.local/oidc-azure",
+    "upn": "bob@example.com",
+    "roles": [
+      "project-alpha",
+      "project-beta"
+    ]
+  },
+  "forwardedHeaders": {
+    "x-ms-client-principal-name": "bob@example.com",
+    "x-auth-provider": "oidc-azure",
+    "x-auth-groups": "project-alpha project-beta"
+  },
+  "putStatus": 200,
+  "getStatus": 200,
+  "getBody": {
+    "version": 1,
+    "id": "doc-azure_ad_like",
+    "title": "auth-level2-test",
+    "createdAt": "2026-02-11T00:00:00Z",
+    "updatedAt": "2026-02-11T00:00:00Z",
+    "transform": {
+      "panX": 0.0,
+      "panY": 0.0,
+      "zoom": 1.0
+    },
+    "cards": [
+      {
+        "id": "card-1",
+        "text": "alpha",
+        "x": 0.0,
+        "y": 0.0,
+        "critique": null
+      }
+    ],
+    "edges": []
+  }
+}

@@ -1,7 +1,9 @@
 # Issue Memo: QA boundary E2E for PUB-01 + I18N-03
 
 - Type: QA/E2E verification boundary plan
-- Status: Draft (Open-Readiness Prepared / Execution Hold)
+- Status: Draft
+- Open Readiness: Prepared
+- Execution: Hold
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
 - Scope: `01_Plans/issues/`（docs-only）
