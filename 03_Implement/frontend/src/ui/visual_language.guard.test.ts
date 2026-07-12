@@ -58,4 +58,19 @@ describe("ADR-0048 D1: visual language channel separation guard", () => {
       expect(cardView, `CardView に ${bg} が無い`).toContain(bg);
     }
   });
+
+  // Claude Design 実装照合レビュー 2026-07-11 (P31) ✗: 検索一致ハイライトが
+  // amber(#f59e0b/#fcd34d) を使っており、保持系(保留/違和感)の予約色と衝突していた
+  // （検索一致カードの枠が未レビュー/違和感リングと同色になり判別不能）。
+  // 検索一致は専用の teal チャネルへ分離し、amber を使わない。
+  it("検索一致ハイライト(isSearchMatch/isActiveSearchMatch)は amber を使わない（CardView）", () => {
+    const src = readSource("src/canvas/CardView.tsx");
+    const block = src.slice(
+      src.indexOf("outline: isActiveSearchMatch"),
+      src.indexOf("outlineOffset"),
+    );
+    expect(block).not.toContain("#f59e0b");
+    expect(block).not.toContain("#fcd34d");
+    expect(block).not.toContain(AMBER_BG);
+  });
 });

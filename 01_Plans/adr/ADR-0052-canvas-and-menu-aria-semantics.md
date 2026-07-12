@@ -43,3 +43,13 @@ axeの横断スモークテストで、現在のUIに2つのARIA構造上の課�
 - Related: `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`
 - Related: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`
 - Related: `03_Implement/frontend/e2e/a11y_axe_smoke.spec.ts`
+
+## 追記 2026-07-12: 作業モードタブの role=tablist 判断（C-5）
+
+Claude Design 実装照合レビュー（拡張提案 P21、2026-07-11）が作業モード面の中身について
+「タブは role=tablist、矢印キーで移動、5タブ（差分／選択マージ／AI提案／診断／文章化）」の
+完全設計を提示した。これにより本ADRのメニュー内フォームに関する論点（項目2）は変更なく
+Proposed のままだが、作業モードタブに関する論点（項目1と重なる部分、`UI-QUALITY-A11Y-02` の
+C-5残課題）は設計判断が到着したものとして扱い、実装Issue
+`01_Plans/issues/issue-UX-NAV-02-work-mode-tab-content-full-design.md` を起票した。
+本ADR自体のAcceptedはまだ人間の受理を要するが、実装検討の材料は揃った。

@@ -266,12 +266,16 @@ function CardViewComponent({
           !markerMode && claimType && claimType !== "unknown"
             ? `3px solid ${CLAIM_TYPE_STYLE[claimType]?.fg ?? "#cbd5e1"}`
             : undefined,
+        // Search-match highlight uses a dedicated teal channel, not amber --
+        // amber is reserved for hold/critique (retention) state and would
+        // otherwise collide with the unreviewed/critique ring on the same
+        // card (Claude Design conformance review 2026-07-11, finding A-3).
         outline: isActiveSearchMatch
-          ? "3px solid #f59e0b"
+          ? "3px solid #0d9488"
           : isSelected
             ? "2px solid #2563eb"
             : isSearchMatch
-              ? "2px solid #fcd34d"
+              ? "2px solid #5eead4"
               : "none",
         outlineOffset: 1,
         borderRadius: markerMode ? 999 : 8,
