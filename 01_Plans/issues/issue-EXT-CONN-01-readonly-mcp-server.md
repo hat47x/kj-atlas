@@ -1,7 +1,10 @@
 # Issue Draft: EXT-CONN-01 read-only MCP サーバー（ContextBundle 制約付き投影の公開）
 
 - Type: Feature request
-- Status: Draft
+- Status: Open
+
+## Draft→Open 2026-07-12
+`ADR-0054` が maintainer により Accepted（受理時条件: 用語「庭」→「縁側」置換、ADR側で対応済み）。本Issueの唯一のゲートが解消したため Open 化。
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A（`ADR-0054` 段階1）
 - Priority: P2
@@ -20,8 +23,8 @@
 - GoNoGoGate（Required / Optional / N/A）: Required（公開面のためセキュリティ照合必須）
 - SecurityGateImpact: SafeMode / share-export / public-exposure
 - VerificationLevel: integration
-- DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef: `ADR-0054`（Accepted 後に Open 化）
+- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0054` Accepted 2026-07-12）
+- DecisionQueueRef: N/A（解消済み）
 
 ## 背景
 

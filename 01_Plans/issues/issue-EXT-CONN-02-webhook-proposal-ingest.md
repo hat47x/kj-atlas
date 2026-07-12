@@ -21,7 +21,7 @@
 - SecurityGateImpact: import-sanitize / SafeMode / public-exposure
 - VerificationLevel: e2e
 - DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef: `ADR-0054`（Accepted 後、かつ EXT-CONN-01 の運用実績を経て Open 化）
+- DecisionQueueRef: `ADR-0054` は Accepted 済み（2026-07-12）。残るゲートは **EXT-CONN-01 の運用実績**のみ（充足後に Open 化）。
 
 ## 背景
 
@@ -46,7 +46,7 @@
 - [ ] AC-2: 禁止フィールド・不正 schema・stale patch が EXT-AGENT-02 と同一の規則で処理される（バイパス経路がない）。
 - [ ] AC-3: 認証なしの POST は拒否される。受信面の脅威が `THREAT_MODEL.md` に追記される。
 - [ ] AC-4: ingest ごとに監査ログ（由来・taskId相関・結果）が残る。
-- [ ] AC-5: 着地した提案が外部由来と識別できる。視覚言語は Claude Design P32 回答で方向確定済み: メタ行の出所チップ（「⌂ agent名」、型バッジの後）＋「非人間由来」共通マーク（ADR-0048 D1拡張・色チャネル新設なし）、受け皿はキャンバス周縁の「庭」レーン、多数時は集約チップ「外部から n件」（通知バッジなし）。レッドラインは ADR-0054 Accepted 後の実装ラウンドで受領する。
+- [ ] AC-5: 着地した提案が外部由来と識別できる。視覚言語は Claude Design P32 回答で方向確定済み: メタ行の出所チップ（「⌂ agent名」、型バッジの後）＋「非人間由来」共通マーク（ADR-0048 D1拡張・色チャネル新設なし）、受け皿はキャンバス周縁の**縁側レーン**（正式用語は ADR-0054 用語定義。P32回答時の呼称は「庭」）、多数時は集約チップ「外部から n件」（通知バッジなし）。レッドラインは実装ラウンドで受領する。
 
 ## Traceability
 

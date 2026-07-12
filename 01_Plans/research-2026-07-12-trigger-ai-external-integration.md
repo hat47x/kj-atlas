@@ -154,6 +154,10 @@ kj-atlas には既に critique（違和感）→ constraint（再配置条件）
 - ambient agents の human-in-the-loop は **notify / question / review** の3パターン＋「Agent Inbox」（メール型の未処理キューUI）として整理されている（[LangChain Docs](https://docs.langchain.com/oss/python/langchain/frontend/human-in-the-loop), [Blog](https://www.langchain.com/blog/introducing-ambient-agents)）。
 - 含意: kj-atlas の critique（違和感・理由不要・事後・非ブロッキング）は、この分類に**存在しない第4パターン**にあたる。notify/question/review はいずれも「人間が処理すべきキュー」を作るが、critique は処理義務を作らない（余白の設計原理と一致）。Agent Inbox が「受信箱」なら kj-atlas は「庭」であり、この対比は設計語彙としてそのまま外部発信に使える。
 
+### 補記（2026-07-12・ADR-0054 Accepted 時）
+
+本文・追補中の作業用語「庭」は、ADR-0054 受理時の maintainer 条件により正式用語**「縁側」（えんがわ / Engawa）**へ置換された。定義は `ADR-0054` の用語定義節を正とする（本文書は履歴保存のため書き換えない）。
+
 ### 追補後の確度サマリ
 
 初版の主要クレームのうち、[中確度]だった R4関連・knowledgeplane・TRACE・ambient agents HITL は本追補で **[検証済]** へ昇格。未検証のまま残る主要項目: CHIWORK 2026（プロアクティブ支援の心理コスト）と help-backfires（一次資料未読・方向性は複数ソース一致）、Miro Sidekicks の自発的書き込み範囲 **[未確認のまま]**。いずれも提言の骨格には影響しない。

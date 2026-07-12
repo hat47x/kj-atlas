@@ -21,7 +21,7 @@
 - SecurityGateImpact: share-export / SafeMode
 - VerificationLevel: unit + integration
 - DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef: `ADR-0054`（Accepted 後、かつ段階1/2の運用知見を踏まえ、constraint 契約を `schemas.md` へ先行固定してから Open 化）
+- DecisionQueueRef: `ADR-0054` は Accepted 済み（2026-07-12）。残るゲートは**段階1/2の運用知見＋constraint 契約の `schemas.md` 先行固定**（充足後に Open 化）。
 
 ## 背景
 

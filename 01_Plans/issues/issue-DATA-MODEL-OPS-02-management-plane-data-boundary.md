@@ -21,7 +21,7 @@
 - SecurityGateImpact: SafeMode / public-exposure / share-export
 - VerificationLevel: integration
 - DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef: D1の削除/アーカイブ/移管部分は `ADR-0035`、D3 は `ADR-0054` の Accepted 判断に同梱。それ以外（一覧API・タイトル編集・複製・D2）は本Issueの Open 化判断で確定できる。
+- DecisionQueueRef: D1の削除/アーカイブ/移管部分は `ADR-0035`。D3 は `ADR-0054` の Accepted 判断への同梱を推奨していたが、**2026-07-12 の受理は用語条件（庭→縁側）のみで D3（エージェント登録の正本・認可）への明示裁定を含まなかった**ため、D3 は本Issueの Open 化判断（または EXT-CONN-02 着手前の確認）に残る。それ以外（一覧API・タイトル編集・複製・D2）も本Issueの Open 化判断で確定できる。
 
 ## 背景（リサーチ結論の要約）
 
