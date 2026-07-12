@@ -123,6 +123,41 @@ kj-atlas には既に critique（違和感）→ constraint（再配置条件）
 2. **順序の根拠**: 読み取り公開が最小リスク（既存の safeMode/投影契約をそのまま使う）。書き込み（ingest）は proposal-only 原則があるため二番目。訂正エクスポートは効果最大だが仕様設計が要るため三番目。
 3. **本文書の扱い**: 上記が採択される場合、本文書を当該ADRの Context 節から参照する。
 
+## 追補（2026-07-12 同日・追加検証ラウンド）
+
+初版で未了だった検証を追加実施した（対象: ADR起票の土台となる[中確度]クレーム＋技術的空白）。結果、**初版の判断はすべて維持され、うち3点は判断を強化する方向の新事実が得られた**。
+
+### A1. R4（MCP変動リスク）は大幅に緩和されている **[検証済]**
+
+- MCP は 2025-12 に Anthropic から **Linux Foundation 傘下の Agentic AI Foundation (AAIF) へ移管**済み。OpenAI・Block が共同創設、AWS/Google/Microsoft/Cloudflare/Bloomberg がプラチナ会員。単一ベンダーの都合で改廃されるリスクは初版想定より低い（[MCP Blog](https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate/), [WorkOS解説](https://workos.com/blog/everything-your-team-needs-to-know-about-mcp-in-2026)）。
+- **2026-07-28 に大型仕様改訂が確定**（RC公開済み）: ステートレスコア（通常のHTTP LBで運用可）、`Mcp-Method` ヘッダによるルーティング、`ttlMs` キャッシュ制御、**OAuth 2.1 リソースサーバーとしての正式化**（RFC 8707 Resource Indicators 必須）、長時間処理の Tasks 拡張、サーバー描画UIの **MCP Apps** 拡張。
+- 含意: (i) 投影IRを輸送非依存に保つ方針（R4対抗）は維持しつつ、実装は 2026-07-28 仕様（streamable HTTP + OAuth 2.1）へ直接合わせるのが最短。(ii) MCP Apps は将来、役割Bの「なぜ？リンク」を**チャットクライアント内で根拠トレイルとして描画する**選択肢になり得る（コミットはしない）。
+
+### A2. クロスベンダー到達性の確認 — ただし接続形態に制約 **[検証済]**
+
+- ChatGPT は Developer Mode（ベータ）で **フルMCPクライアント対応**。ただし (i) **リモートHTTPSサーバーのみ**（stdio不可）、(ii) 個人プラン（Plus/Pro）は**読み取り専用**コネクタに制限、書き込みは Business/Enterprise のみ（[OpenAI Help](https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt), [解説](https://www.usecarly.com/blog/chatgpt-mcp/)）。
+- Copilot Studio はエージェントのツールとして MCP サーバーをネイティブ追加可能（[ShareGate手順例](https://sharegate.com/mcp/install)）。Claude/Claude Code は当然対応。
+- 含意: **1つのMCPサーバーで3大エコシステムに到達できる**（ADR-0049 の copy/paste レーンの自動化版として自然な次段）。段階1はローカル stdio（Claude Code向け）から始めてよいが、ChatGPT/Copilot 到達には streamable HTTP + OAuth 2.1 が必須なので、契約設計時点で両輸送を想定する。ChatGPT個人プランが読み取り専用強制である事実は、**段階1=read-only の順序設計と外部制約が一致**していることを意味する（好都合）。
+
+### A3. 「記憶だけでは訂正が効かない」の定量証拠 **[検証済]**
+
+- TRACE（[arXiv:2606.13174](https://arxiv.org/abs/2606.13174), Notre Dame/IBM Research/Tencent, 2026-06）の正式名称は "Getting Better at Working With You: Compiling User Corrections into Runtime Enforcement for Coding Agents"。実利用の摩擦事例から導出したタスクで、**Mem0 記憶を使っても適用可能な選好チェックの57.5%が違反されたまま残る**ことを示し、訂正を原子的ルールへコンパイルして実行時強制する方式を提案。
+- 含意: 役割C（違和感→制約の機械可読輸出）の価値仮説「記憶への保存では不十分で、次回実行の制約として渡す必要がある」に直接の定量的裏付けが付いた。
+
+### A4. knowledgeplane の実像確認 — 空白判定は維持 **[検証済]**
+
+- [knowledgeplane](https://github.com/camplight/knowledgeplane)（[公式](https://knowledgeplane.io/)）: 知識グラフ＋ベクトル検索＋自動統合（auto-consolidation）のMCPサーバー。全ファクトに出所・所有者・タイムスタンプの監査証跡。REST APIも併設。
+- ただし確認された設計は「エージェントが**直接CRUDで読み書き**する共有記憶」であり、(i) proposal-only の承認ゲートなし、(ii) 保留/違和感/矛盾/レビュー済みの認識論的状態なし、(iii) 空間配置による意味形成なし、(iv) **自動統合はむしろ人間の承認を経ない書き換え**を含意する。初版§3の空白判定（認識論的ガバナンス層の不在）はそのまま成立。競合ではなく対照例に近い。
+
+### A5. LangChain HITL 3パターンと kj-atlas の位置 **[検証済]**
+
+- ambient agents の human-in-the-loop は **notify / question / review** の3パターン＋「Agent Inbox」（メール型の未処理キューUI）として整理されている（[LangChain Docs](https://docs.langchain.com/oss/python/langchain/frontend/human-in-the-loop), [Blog](https://www.langchain.com/blog/introducing-ambient-agents)）。
+- 含意: kj-atlas の critique（違和感・理由不要・事後・非ブロッキング）は、この分類に**存在しない第4パターン**にあたる。notify/question/review はいずれも「人間が処理すべきキュー」を作るが、critique は処理義務を作らない（余白の設計原理と一致）。Agent Inbox が「受信箱」なら kj-atlas は「庭」であり、この対比は設計語彙としてそのまま外部発信に使える。
+
+### 追補後の確度サマリ
+
+初版の主要クレームのうち、[中確度]だった R4関連・knowledgeplane・TRACE・ambient agents HITL は本追補で **[検証済]** へ昇格。未検証のまま残る主要項目: CHIWORK 2026（プロアクティブ支援の心理コスト）と help-backfires（一次資料未読・方向性は複数ソース一致）、Miro Sidekicks の自発的書き込み範囲 **[未確認のまま]**。いずれも提言の骨格には影響しない。
+
 ## 出典一覧（主要）
 
 一次資料・検証済: [OpenAI Pulse発表](https://openai.com/index/introducing-chatgpt-pulse/) / [9to5Mac: Scheduled Tasks展開とPulse引退](https://9to5mac.com/2026/06/17/openai-launches-scheduled-tasks-in-chatgpt-details-here/) / [TechCrunch: Cove→Microsoft](https://techcrunch.com/2026/03/18/microsoft-hires-the-team-of-sequioa-backed-ai-collaboration-platform-cove/) / [Miro Canvas 25](https://miro.com/newsroom/miro-puts-ai-where-teams-work/) / [Microsoft Ignite 2025](https://www.microsoft.com/en-us/microsoft-365/blog/2025/11/18/microsoft-ignite-2025-copilot-and-agents-built-to-power-the-frontier-firm/) / [LangChain ambient agents](https://www.langchain.com/blog/introducing-ambient-agents)
