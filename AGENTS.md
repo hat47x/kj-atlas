@@ -136,6 +136,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`：設計判断ADRが現段階で飽和したことの記録と、execution-first への転換・ADR再起票基準（R-1..4）。新規ADRは R-1..4 該当時のみ。
 - `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`：Claude Design 壁打ち成果の採択（R-1）。D1 視覚言語(4チャネル・amber=保留/違和感予約・hypothesis=violet)／D2 コマンド到達5層＋ショートカット原則／D3 KJ法設計憲章＋関係記号(契約先行)。派生: `UX-VISUAL-01/02` `UX-CMDK-01` `UX-SHORTCUT-01` `UX-SCALE-01` `DOMAIN-KJ-01` `DOMAIN-KA-01` `DOMAIN-TRACE-01`。
 - `01_Plans/documentation_quality.md`：AIエージェントが対外文書を作成する際の内部品質基準。
+- `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`：トリガー型AI時代の外部接続戦略リサーチ（検証済ランドスケープ＋4役割: ガラス箱共有記憶/監査・根拠層/訂正蓄積/ブリーフ堆積→意味形成）。外部接続ADR起票時の Context 参照元。
 - `01_Plans/minimal-context-triage.md`：未処理ADR/issueを最小読取で抽出する手順。
 - `01_Plans/triage_actionable_plans.py`：ADR/issueメタデータだけを走査して Ready/保留/関連ADR を抽出する軽量CLI。
 - `01_Plans/issues/`：GitHub Issue運用を補助する短命メモ置き場。AIは triage 出力や対象Backlog IDで必要なメモだけ読む。
