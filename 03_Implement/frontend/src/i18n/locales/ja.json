@@ -747,6 +747,8 @@
   "legend.item.contradicts": "反証（破線）",
   "legend.group.protection": "保護（少数の保全）",
   "legend.item.protected": "保護対象（無理に分類しない・優劣ではない）",
+  "legend.group.transient": "一時的な表示",
+  "legend.item.search_match": "検索一致（検索中のみ）",
   "legend.shortcut.hold": "選択カードの保留状態を変更",
   "legend.shortcut.critique": "選択カードの違和感マークを変更",
   "legend.shortcut.reviewed": "選択カードをレビュー済みにする",

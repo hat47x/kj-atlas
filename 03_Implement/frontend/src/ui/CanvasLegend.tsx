@@ -170,6 +170,15 @@ export function CanvasLegend({ onClose }: CanvasLegendProps) {
           <span style={rowStyle}>{swatch("#94a3b8", { borderRadius: 2 })}{t("legend.item.protected")}</span>
         </div>
       </div>
+      {/* Transient UI states live in a visually separated frame so they are
+          not confused with the four permanent meaning channels above
+          (Claude Design P32: teal = search match is search-session-only). */}
+      <div style={{ borderTop: "1px dashed #cbd5e1", paddingTop: 6 }}>
+        <div style={groupTitleStyle}>{t("legend.group.transient")}</div>
+        <div style={{ display: "grid", gap: 2 }}>
+          <span style={rowStyle}>{swatch("transparent", { border: "2px solid #0d9488" })}{t("legend.item.search_match")}</span>
+        </div>
+      </div>
     </section>
   );
 }

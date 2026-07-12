@@ -747,6 +747,8 @@
   "legend.item.contradicts": "Contradicts (dashed)",
   "legend.group.protection": "Protection (preserving the few)",
   "legend.item.protected": "Protected (do not force-classify; not inferior)",
+  "legend.group.transient": "Transient indicators",
+  "legend.item.search_match": "Search match (while searching)",
   "legend.shortcut.hold": "Change hold state for selected card",
   "legend.shortcut.critique": "Change critique mark for selected card",
   "legend.shortcut.reviewed": "Mark selected card reviewed",

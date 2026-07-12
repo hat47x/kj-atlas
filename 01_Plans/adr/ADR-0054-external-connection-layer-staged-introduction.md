@@ -57,6 +57,14 @@
 - 副作用/制約: (i) HTTP輸送時は OAuth 2.1 リソースサーバー運用が入る（鍵管理・トークン検証）。公開面の追加は `THREAT_MODEL.md` の更新と、PRODUCT-QA-01 ゲートでのセキュリティ照合を実装前提とする。(ii) 段階2の受信エンドポイントは悪性入力の一次面になるため、EXT-AGENT-02 の sanitize を強制経路とし、バイパス経路を作らない。(iii) 監査導線（CE-4: query log / ingest log）の整合が各段階の Exit Criteria に入る。
 - 移行時の対応: 段階1は新規サービスまたは既存 backend への同居のどちらでも成立する（実装issueで決定）。ContextBundle IR が輸送非依存である限り、MCP 仕様改訂への追随はアダプタ層の改修に閉じる。
 
+## 追記 2026-07-12: UI面の設計方向を受領（Claude Design P32・先行相談への回答）
+
+本ADRの Accepted 判断の材料として、新設面のUI方向が Claude Design 第2回照合（P32）で回答された。実装レッドラインは Accepted 後の実装ラウンドで受領する。要点:
+
+- **B-1 外部エージェント由来カード**: 由来はメタ行の控えめな出所チップ（「⌂ agent名」、型バッジの後）。AI由来区別（ADR-0048 D1）を「非人間由来」共通マーク＋出所ラベルへ拡張し、**色チャネルは新設しない**。受け皿はキャンバス周縁の「庭」レーン（直置きでも未処理キューでもない）。束が増えたら集約チップ「外部から n件」に畳み、**通知バッジ・赤丸は付けない**。
+- **B-2 「なぜ？」リンク着地**: readOnly＋focus では不足、**専用の読み取り専用「根拠トレイル」ビュー**（ブリーフ→基づくレビュー済みカード群→関係線）。未レビュー・違和感・保留は既定非表示（共有前確認の露出規則を継承）。確からしさ%等は出さない。→ 実装Issue `EXT-CONN-04`。
+- **B-3 critique の位置づけ**: 既存の違和感導線のまま成立。段階3で輸出が有効な場合に限り、違和感入力の近傍に受動態の帰結説明（「この違和感は次回の依頼に制約として渡ります」）を1行添える。**輸出は既定で含めない・明示 opt-in**。
+
 ## Traceability
 
 - Related: `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`（Context の根拠。追補含む）
@@ -64,7 +72,7 @@
 - Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（契約・安全境界の正本。本ADRはその自動輸送版）
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（再起票基準 R-2）
 - Related: `THREAT_MODEL.md`, `01_Plans/adr/ADR-0042-value-realness-validation-and-notice-exit.md`（非監視制約）
-- Related: `01_Plans/issues/issue-EXT-CONN-01-readonly-mcp-server.md`, `issue-EXT-CONN-02-webhook-proposal-ingest.md`, `issue-EXT-CONN-03-critique-constraint-export.md`（実装Issue、Draft）
+- Related: `01_Plans/issues/issue-EXT-CONN-01-readonly-mcp-server.md`, `issue-EXT-CONN-02-webhook-proposal-ingest.md`, `issue-EXT-CONN-03-critique-constraint-export.md`, `issue-EXT-CONN-04-evidence-trail-landing-view.md`（実装Issue、Draft）
 
 ---
 
