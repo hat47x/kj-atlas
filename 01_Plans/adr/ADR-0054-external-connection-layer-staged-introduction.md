@@ -1,9 +1,20 @@
 # ADR-0054: 外部接続レイヤーの段階導入 ― ガラス箱の共有文脈を MCP で公開する
 
-- Status: Proposed
+- Status: Accepted（2026-07-12、maintainer 受理。受理時条件: 作業用語「庭」を正式用語「縁側」へ置換すること — 下記「用語定義」参照）
 - Date: 2026-07-12
 - Deciders: Project Maintainers
 - Scope: `03_Implement/backend/`, `03_Implement/frontend/src/export/`・`src/import/`（契約共有）, `01_Plans/`, `02_Architecture/`, `THREAT_MODEL.md`
+
+## 用語定義: 縁側（えんがわ / en: Engawa）
+
+外部エージェント由来の提案カードが静かに堆積する、キャンバス周縁の受け入れ領域。日本家屋の縁側——庭に面した家の縁で、来訪者は家に上がらずに腰掛けられ、住人は好きな時に応対する——から採る。
+
+- **見えるが割り込まない**: 通知バッジ・赤丸・件数の強調を付けない。
+- **処理義務を作らない**: Agent Inbox 型の未処理キューではない。放置は失敗状態ではない。
+- **上がるには明示の採用**: proposal-only。人間が採用するまで文書本体に入らず、未レビューのまま。
+- **シェルフとの対**: シェルフ＝内からの退避（保留の置き場）、縁側＝外からの来訪（受け入れ縁）。
+- 「外部との**縁**の**側**」——外部接続レイヤーの受け入れ面という機能名としても読める。
+- 経緯: リサーチ〜P32 相談時の作業用語は「庭」。Accepted 時に本用語へ置換した（過去文書内の「庭」は本定義を指す）。英語ラベルは `Engawa`（初出時に短い説明を添える）を基本とし、UI 上の最終表記は EXT-CONN-02 実装ラウンドのレッドラインで確定する。
 
 ## Context
 
@@ -40,12 +51,12 @@
 
 - 順序はリスク昇順: 読み取り公開（既存の SafeMode/投影契約の再利用のみ）→ proposal-only 原則で守られた書き込み → 新規仕様設計を要する訂正輸出。
 - ADR-0049 手動レーンで契約と安全境界が実地検証済みのため、本ADRで新設する安全判断は「公開エンドポイントの認証・認可」に集中できる。
-- kj-atlas は「Agent Inbox（処理すべき受信箱）」ではなく「庭（処理義務のない余白）」であり、critique は notify/question/review に続く第4のHITLパターンとして差別化される（追補A5）。
+- kj-atlas は「Agent Inbox（処理すべき受信箱）」ではなく「縁側（処理義務のない受け入れ縁）」であり、critique は notify/question/review に続く第4のHITLパターンとして差別化される（追補A5、用語定義参照）。
 
 ### 非目標
 
 - トリガー/スケジューラ面（カレンダー監視・定期実行等）の実装。前面はプラットフォーマーのものを使う。
-- 通知プッシュ。エージェントは庭に書き込み、人間は好きな時に見る。
+- 通知プッシュ。エージェントは縁側に置き、人間は好きな時に見る。
 - Consensus（レビュー済み層）への直接書き込み。human approval を経ない昇格は今後も存在しない。
 - 行動テレメトリ・利用計測（ADR-0042 非監視制約の維持）。
 - MCP Apps（チャット内サーバー描画UI）の実装。役割B「なぜ？リンク」の将来オプションとして記録のみ。
@@ -61,7 +72,7 @@
 
 本ADRの Accepted 判断の材料として、新設面のUI方向が Claude Design 第2回照合（P32）で回答された。実装レッドラインは Accepted 後の実装ラウンドで受領する。要点:
 
-- **B-1 外部エージェント由来カード**: 由来はメタ行の控えめな出所チップ（「⌂ agent名」、型バッジの後）。AI由来区別（ADR-0048 D1）を「非人間由来」共通マーク＋出所ラベルへ拡張し、**色チャネルは新設しない**。受け皿はキャンバス周縁の「庭」レーン（直置きでも未処理キューでもない）。束が増えたら集約チップ「外部から n件」に畳み、**通知バッジ・赤丸は付けない**。
+- **B-1 外部エージェント由来カード**: 由来はメタ行の控えめな出所チップ（「⌂ agent名」、型バッジの後）。AI由来区別（ADR-0048 D1）を「非人間由来」共通マーク＋出所ラベルへ拡張し、**色チャネルは新設しない**。受け皿はキャンバス周縁の**縁側レーン**（直置きでも未処理キューでもない。P32回答時の呼称は「庭」＝用語定義参照）。束が増えたら集約チップ「外部から n件」に畳み、**通知バッジ・赤丸は付けない**。
 - **B-2 「なぜ？」リンク着地**: readOnly＋focus では不足、**専用の読み取り専用「根拠トレイル」ビュー**（ブリーフ→基づくレビュー済みカード群→関係線）。未レビュー・違和感・保留は既定非表示（共有前確認の露出規則を継承）。確からしさ%等は出さない。→ 実装Issue `EXT-CONN-04`。
 - **B-3 critique の位置づけ**: 既存の違和感導線のまま成立。段階3で輸出が有効な場合に限り、違和感入力の近傍に受動態の帰結説明（「この違和感は次回の依頼に制約として渡ります」）を1行添える。**輸出は既定で含めない・明示 opt-in**。
 
@@ -72,7 +83,7 @@
 - Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（契約・安全境界の正本。本ADRはその自動輸送版）
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（再起票基準 R-2）
 - Related: `THREAT_MODEL.md`, `01_Plans/adr/ADR-0042-value-realness-validation-and-notice-exit.md`（非監視制約）
-- Related: `01_Plans/issues/issue-EXT-CONN-01-readonly-mcp-server.md`, `issue-EXT-CONN-02-webhook-proposal-ingest.md`, `issue-EXT-CONN-03-critique-constraint-export.md`, `issue-EXT-CONN-04-evidence-trail-landing-view.md`（実装Issue、Draft）
+- Related: `01_Plans/issues/issue-EXT-CONN-01-readonly-mcp-server.md`（Accepted に伴い Open）, `issue-EXT-CONN-02-webhook-proposal-ingest.md`, `issue-EXT-CONN-03-critique-constraint-export.md`, `issue-EXT-CONN-04-evidence-trail-landing-view.md`（段階ゲートにより Draft 維持）
 
 ---
 

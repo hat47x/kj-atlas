@@ -21,7 +21,7 @@
 - SecurityGateImpact: SafeMode / share-export / public-exposure
 - VerificationLevel: e2e
 - DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef: `ADR-0054`（Accepted 後に Open 化。実装レッドラインは Claude Design 実装ラウンドで受領）
+- DecisionQueueRef: `ADR-0054` は Accepted 済み（2026-07-12）。残るゲートは**段階1/2の進行（相関IDつきブリーフの実在）＋実装レッドライン受領**（充足後に Open 化）。
 
 ## 背景
 
