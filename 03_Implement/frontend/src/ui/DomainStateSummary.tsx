@@ -150,15 +150,23 @@ export function DomainStateSummary({ cards, islandCount = 0, relationCount = 0, 
         ) : null}
       </div>
       {safeMode && counts.unreviewed > 0 ? (
+        // Claude Design conformance review 2026-07-11 (P31) △: a full amber
+        // background fill here competed with amber's reserved hold/critique
+        // meaning. Neutral slate surface + a small amber accent dot keeps the
+        // "relates to unreviewed" cue without a channel collision.
         <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
           fontSize: 11,
-          color: "#92400e",
-          backgroundColor: "#fffbeb",
-          border: "1px solid #fde68a",
+          color: "#475569",
+          backgroundColor: "#f8fafc",
+          border: "1px solid #e2e8f0",
           borderRadius: 6,
           padding: "4px 8px",
           marginTop: 4,
         }}>
+          <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#f59e0b", flexShrink: 0 }} />
           {t("domain_state.share_readiness_unreviewed", { count: counts.unreviewed })}
         </div>
       ) : null}
