@@ -35,15 +35,27 @@ export function EvidenceOverlayLayer({ cards, edges }: EvidenceOverlayLayerProps
   }, [cardCenterById, edges]);
 
   return (
+    // Same world-window pattern as EdgeLayer: x/y ATTRIBUTES on an
+    // HTML-embedded root <svg> are ignored, so with `inset: 0` the viewBox
+    // mapped world coordinates into the container box and every evidence
+    // line painted compressed/off screen (lines existed in the DOM but were
+    // never visible -- found 2026-07-12 via the P32 teal/sky live check).
+    // The world window must be positioned via CSS left/top instead.
     <svg
-      x={-WORLD_HALF_SIZE}
-      y={-WORLD_HALF_SIZE}
       width={WORLD_SIZE}
       height={WORLD_SIZE}
       viewBox={`${-WORLD_HALF_SIZE} ${-WORLD_HALF_SIZE} ${WORLD_SIZE} ${WORLD_SIZE}`}
       preserveAspectRatio="none"
       shapeRendering="geometricPrecision"
-      style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 3 }}
+      style={{
+        position: "absolute",
+        left: -WORLD_HALF_SIZE,
+        top: -WORLD_HALF_SIZE,
+        width: WORLD_SIZE,
+        height: WORLD_SIZE,
+        pointerEvents: "none",
+        zIndex: 3,
+      }}
       aria-hidden="true"
     >
       {drawableEdges.map((edge) => {

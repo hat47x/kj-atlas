@@ -115,6 +115,24 @@ async function run() {
   await page.getByRole("option", { name: /検索でこの一致を確認する/ }).click({ position: { x: 12, y: 12 } });
   await page.waitForTimeout(400);
 
+  // DOM probe: did the overlay actually render its line(s)? And is the
+  // enable checkbox still checked after Escape closed the View panel?
+  const probe = await page.evaluate(() => {
+    const lines = Array.from(document.querySelectorAll("svg line")).map((el) => ({
+      stroke: el.getAttribute("stroke"),
+      x1: el.getAttribute("x1"),
+      y1: el.getAttribute("y1"),
+      x2: el.getAttribute("x2"),
+      y2: el.getAttribute("y2"),
+    }));
+    return { svgLineCount: lines.length, lines: lines.slice(0, 6) };
+  });
+  console.log("[probe]", JSON.stringify(probe, null, 2));
+  await page.locator("button", { hasText: /^表示$/ }).first().click();
+  const checkedAfter = await page.getByLabel(/根拠オーバーレイを有効化/).isChecked().catch(() => "not-found");
+  console.log("[probe] evidence overlay checkbox still checked:", checkedAfter);
+  await page.keyboard.press("Escape");
+
   await page.screenshot({ path: path.join(outputDir, "teal-vs-sky-full.png"), fullPage: false });
   await page.screenshot({
     path: path.join(outputDir, "teal-vs-sky-zoom.png"),
