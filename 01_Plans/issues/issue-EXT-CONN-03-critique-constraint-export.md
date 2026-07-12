@@ -45,6 +45,7 @@ TRACE（arXiv:2606.13174）は「Mem0 記憶を使っても適用可能な選好
 - [ ] AC-2: 違和感タグ・保留・却下が理由なしでも輸出でき、score/rank/confidence/priority を含まない。
 - [ ] AC-3: EXT-CONN-01 投影から constraints subset として取得できる。
 - [ ] AC-4: 輸出内容に未レビュー本文・SafeMode対象が混入しない。
+- [ ] AC-5: 輸出は既定で無効・明示 opt-in（Claude Design P32 方向）。有効時のみ、違和感入力の近傍に受動態の帰結説明（「この違和感は次回の依頼に制約として渡ります」）を表示し、常設UIの純増はしない。
 
 ## Traceability
 
