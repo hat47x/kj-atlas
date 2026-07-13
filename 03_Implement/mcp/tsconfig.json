@@ -1,0 +1,22 @@
+{
+  // "bundler" resolution (not NodeNext): this package imports
+  // ../frontend/src/export/context_bundle_projection.ts via a monorepo
+  // source import (Maintainer代理裁可 condition -- no copy, no shared
+  // package hoist). The frontend's own files use extension-less relative
+  // imports (Vite/bundler convention), which NodeNext's stricter ESM
+  // resolution rejects. Runtime execution is via tsx (esbuild-based, not
+  // `tsc` emit), which resolves the same way "bundler" type-checks it.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"]
+}
