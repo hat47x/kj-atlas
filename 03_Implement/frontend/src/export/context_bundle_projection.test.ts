@@ -31,7 +31,13 @@ function buildDoc(): DocumentV2 {
     narratives: [],
     evidenceLinks: [
       { id: "ev1", type: "supports", fromCardId: "c2", toCardId: "c1", createdAt: "2026-07-12T00:00:00.000Z" },
+      // c3 is unreviewed: this link must never surface in an external
+      // projection (2026-07-13 gate) -- neither its endpoints nor the link
+      // itself, for ANY constraint, even though c1 alone is reviewed.
       { id: "ev2", type: "contradicts", fromCardId: "c3", toCardId: "c1", createdAt: "2026-07-12T00:00:00.000Z" },
+      // Both endpoints reviewed: this link IS expected to surface, so the
+      // fix can be told apart from "contradiction constraint always empty".
+      { id: "ev3", type: "contradicts", fromCardId: "c4", toCardId: "c2", createdAt: "2026-07-12T00:00:00.000Z" },
     ],
     mergeSuggestionDecisions: [],
   };
@@ -72,35 +78,59 @@ describe("buildContextProjection: evidence vs contradiction scoping", () => {
     expect(projection.cards.map((card) => card.id).sort()).toEqual(["c1", "c2"]);
   });
 
-  it("contradiction constraint surfaces only contradicts links and their endpoint cards", async () => {
+  it("contradiction constraint surfaces only contradicts links between reviewed endpoints", async () => {
     const projection = await buildContextProjection({ doc: buildDoc(), constraint: "contradiction", safeMode: false });
 
-    expect(projection.contradictions).toEqual([{ from: "c3", to: "c1" }]);
+    expect(projection.contradictions).toEqual([{ from: "c4", to: "c2" }]);
     expect(projection.evidence).toEqual([]);
-    expect(projection.cards.map((card) => card.id).sort()).toEqual(["c1", "c3"]);
+    expect(projection.cards.map((card) => card.id).sort()).toEqual(["c2", "c4"]);
   });
 
-  it("redacts an unreviewed endpoint card even inside the contradiction subset", async () => {
+  it("excludes a contradicts link entirely when either endpoint is unreviewed (2026-07-13 gate) -- not merely text-redacted", async () => {
     const projection = await buildContextProjection({ doc: buildDoc(), constraint: "contradiction", safeMode: false });
 
-    const c3 = projection.cards.find((card) => card.id === "c3");
-    expect(c3?.reviewed).toBe(false);
-    expect(c3?.redacted).toBe(true);
-    expect(c3?.text).not.toContain("unreviewed draft three");
+    // ev2 (c3 unreviewed -> c1) must not surface at all: neither the link
+    // nor c3's id/ref -- an unreviewed card must not be identifiable even as
+    // a bare, text-redacted node.
+    expect(projection.contradictions).not.toContainEqual({ from: "c3", to: "c1" });
+    expect(projection.cards.find((card) => card.id === "c3")).toBeUndefined();
+  });
+
+  it("still redacts a reviewed endpoint's text under SafeMode without dropping the (both-reviewed) link itself", async () => {
+    const projection = await buildContextProjection({ doc: buildDoc(), constraint: "contradiction", safeMode: true });
+
+    expect(projection.contradictions).toEqual([{ from: "c4", to: "c2" }]);
+    const c4 = projection.cards.find((card) => card.id === "c4");
+    expect(c4?.reviewed).toBe(true);
+    expect(c4?.redacted).toBe(true);
+    expect(c4?.text).not.toContain("reviewed hypothesis four");
+    expect(c4?.text.startsWith("[REDACTED]")).toBe(true);
   });
 });
 
 describe("buildContextProjection: summary constraint", () => {
-  it("emits no card nodes but keeps counts, islands, and full-document relations", async () => {
+  it("emits no card nodes but keeps counts, islands, and reviewed-only relations/links", async () => {
     const projection = await buildContextProjection({ doc: buildDoc(), constraint: "summary", safeMode: false });
 
     expect(projection.cards).toEqual([]);
     expect(projection.counts).toEqual({ reviewed: 3, unreviewed: 1, redacted: 0 });
     expect(projection.islands).toEqual([{ id: "i1", title: "First island" }]);
     expect(projection.relations).toEqual([{ from: "c1", to: "c2", type: "related" }]);
-    // summary carries both link structures.
+    // summary carries both link structures, but never a link touching an
+    // unreviewed card (2026-07-13 gate) -- ev2 (c3 unreviewed) is excluded.
     expect(projection.evidence).toEqual([{ from: "c2", to: "c1" }]);
-    expect(projection.contradictions).toEqual([{ from: "c3", to: "c1" }]);
+    expect(projection.contradictions).toEqual([{ from: "c4", to: "c2" }]);
+  });
+
+  it("never references an unreviewed card's id, even bare, via relations/evidence/contradictions", async () => {
+    const projection = await buildContextProjection({ doc: buildDoc(), constraint: "summary", safeMode: false });
+
+    const allReferencedIds = [
+      ...projection.relations.flatMap((r) => [r.from, r.to]),
+      ...projection.evidence.flatMap((e) => [e.from, e.to]),
+      ...projection.contradictions.flatMap((c) => [c.from, c.to]),
+    ];
+    expect(allReferencedIds).not.toContain("c3");
   });
 });
 
@@ -128,17 +158,45 @@ describe("buildContextProjection: invariants across all constraints", () => {
   });
 
   it("never puts withheld original text into the hash payload (redacted text hashes as null)", async () => {
-    // Two docs whose ONLY difference is the body of an unreviewed card that is
-    // redacted in this projection: the hash must be identical because the real
+    // Two docs whose ONLY difference is the body of a reviewed card that gets
+    // redacted under SafeMode: the hash must be identical because the real
     // text was never exposed and must not leak through the correlation hash.
     const docA = buildDoc();
     const docB = buildDoc();
-    docB.cards = docB.cards.map((card) => (card.id === "c3" ? { ...card, text: "totally different secret" } : card));
+    docB.cards = docB.cards.map((card) => (card.id === "c4" ? { ...card, text: "totally different secret" } : card));
 
-    const a = await buildContextProjection({ doc: docA, constraint: "contradiction", safeMode: false });
-    const b = await buildContextProjection({ doc: docB, constraint: "contradiction", safeMode: false });
-    // c3 is unreviewed -> redacted in both; its differing body must not change the hash.
+    const a = await buildContextProjection({ doc: docA, constraint: "contradiction", safeMode: true });
+    const b = await buildContextProjection({ doc: docB, constraint: "contradiction", safeMode: true });
+    // c4 is redacted under SafeMode -> its differing body must not change the hash.
     expect(a.bundleHash).toBe(b.bundleHash);
+  });
+
+  it("redaction placeholder never includes a content-derived hash (2026-07-13 gate: no correlation fingerprint)", async () => {
+    // A standing external (MCP) surface can be queried repeatedly, so a short
+    // hash of withheld text (SafeModePolicy.summarizeForSafeMode's format,
+    // "[REDACTED]:h########") would let a client detect when two redacted
+    // cards share identical real text. This module must use the length-only
+    // placeholder (SafeModePolicy.redactText) instead.
+    const projection = await buildContextProjection({ doc: buildDoc(), constraint: "reviewed-only", safeMode: true });
+
+    expect(projection.cards.length).toBeGreaterThan(0);
+    for (const card of projection.cards) {
+      expect(card.redacted).toBe(true);
+      expect(card.text).not.toMatch(/:h[0-9a-f]{8}/);
+    }
+  });
+
+  it("never references an unreviewed card's id via any link, for any constraint (2026-07-13 gate)", async () => {
+    for (const constraint of CONTEXT_PROJECTION_CONSTRAINTS) {
+      const projection = await buildContextProjection({ doc: buildDoc(), constraint, safeMode: false });
+      const allReferencedIds = [
+        ...projection.cards.map((card) => card.id),
+        ...projection.relations.flatMap((r) => [r.from, r.to]),
+        ...projection.evidence.flatMap((e) => [e.from, e.to]),
+        ...projection.contradictions.flatMap((c) => [c.from, c.to]),
+      ];
+      expect(allReferencedIds, constraint).not.toContain("c3");
+    }
   });
 
   it("accepts every declared constraint literal", async () => {
