@@ -729,14 +729,20 @@ describe("UX Operability regression contracts", () => {
     const sidePanelCall = appSource.slice(sidePanelStart, sidePanelEnd);
     expect(sidePanelCall).not.toContain("topContent=");
     expect(sidePanelCall).not.toContain("NarrativesPanel");
-    expect(sidePanelCall).not.toContain("HilRsWorkflowPanel");
+    expect(sidePanelCall).not.toContain("WorkModeTabs");
 
+    // UX-NAV-02: the 4 original sections plus a new diagnostics tab now live
+    // inside a role=tablist WorkModeTabs container instead of being stacked
+    // directly. Assert the tab content is still present (moved, not lost).
     const workModeStart = appSource.indexOf("const advancedWorkModeContent = (");
     const workModeEnd = appSource.indexOf("return (", workModeStart);
     const workModeContent = appSource.slice(workModeStart, workModeEnd);
+    expect(workModeContent).toContain("<WorkModeTabs");
     expect(workModeContent).toContain("<NarrativesPanel");
-    expect(workModeContent).toContain("<HilRsWorkflowPanel");
+    expect(workModeContent).toContain("<MergeSuggestionsPanel");
+    expect(workModeContent).toContain("<SuggestionPanel");
     expect(workModeContent).toContain("{structuralDiffPanel}");
+    expect(workModeContent).toContain('id: "diagnostics"');
 
     // design-qa conformance fix (2026-07-09): the empty-state copy shown when
     // Advanced UI is off must not point users back to "the sidebar" -- AC-2

@@ -55,7 +55,7 @@ import { useHotkeys } from "./hooks/useHotkeys";
 import { Shell } from "./ui/Shell";
 import { SidePanel } from "./ui/SidePanel";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
-import { HilRsWorkflowPanel } from "./ui/HilRsWorkflowPanel";
+import { WorkModeTabs } from "./ui/WorkModeTabs";
 import { SearchBar } from "./ui/SearchBar";
 import { ViewControlsPanel } from "./ui/ViewControlsPanel";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
@@ -4216,20 +4216,6 @@ export default function App() {
     }
     setCritiqueWorkflowFocusRequest((current) => current + 1);
   }, []);
-
-  useEffect(() => {
-    if (!isAdvancedUiEnabled || critiqueWorkflowFocusRequest === 0) {
-      return;
-    }
-
-    const frame = window.requestAnimationFrame(() => {
-      const workflow = window.document.querySelector<HTMLElement>('[data-domain-workflow="critique-reproposal"]');
-      workflow?.focus();
-      workflow?.scrollIntoView({ block: "start" });
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [critiqueWorkflowFocusRequest, isAdvancedUiEnabled]);
 
   const handleCommitCardText = useCallback(
     (cardId: string, text: string) => {
@@ -10185,121 +10171,188 @@ export default function App() {
     },
   ];
 
+  const workModeTabDescriptionStyle = { fontSize: 11, color: "#475569", marginBottom: 8 } as const;
+
   const advancedWorkModeContent = (
-    <>
-      <NarrativesPanel
-        narrativeText={narrativeText}
-        onNarrativeTextChange={setNarrativeText}
-        onCheckConsistency={(selectedNarrativeId) => {
-          void handleCheckNarrativeConsistency(selectedNarrativeId);
-        }}
-        onGenerateFromReadingOrder={() => {
-          void handleGenerateNarrativeFromReadingOrder();
-        }}
-        isChecking={isCheckingNarrative}
-        isGenerating={isGeneratingNarrative}
-        errorMessage={narrativeCheckError}
-        generationErrorMessage={narrativeGenerationError}
-        issues={narrativeIssues}
-        generatedNarratives={generatedNarratives}
-        onReferenceClick={handleNarrativeReferenceFocus}
-        onFocusItem={focusItem}
-        readingOrderSnippets={readingOrderSnippets}
-        document={document}
-        hideSourceCards={hideSourceCards}
-      />
-      <HilRsWorkflowPanel
-        candidateComparison={
-          <>
-            <MergeSuggestionsPanel
-              isReadOnly={isReadOnly}
-              instruction={mergeSuggestionInstruction}
-              onInstructionChange={setMergeSuggestionInstruction}
-              onSuggest={() => {
-                void handleSuggestMerges();
-              }}
-              isSuggesting={isSuggestingMerges}
-              errorMessage={mergeSuggestionError}
-              suggestions={mergeSuggestions}
-              cardsById={cardsById}
-              onMergedTextChange={handleMergeSuggestionTextChange}
-              onDecide={handleRecordMergeSuggestionDecision}
-              latestAuditEventByGroup={latestMergeDecisionAuditByGroup}
-              auditEvents={mergeDecisionAuditEvents}
-              onExportAuditEvents={handleExportMergeDecisionAuditEvents}
-            />
-            <PatchWorkspacePanel
-              isReadOnly={isReadOnly}
-              candidates={mergeSuggestions.map((suggestion) => ({
-                id: suggestion.groupId,
-                label: t("patch_workspace.candidate_label", {
+    <WorkModeTabs
+      tabs={[
+        {
+          id: "diff",
+          label: t("work_mode.tab.diff"),
+          content: (
+            <>
+              <div style={workModeTabDescriptionStyle}>{t("hil_rs_workflow.diff.description")}</div>
+              <HilRsRediffPreview payload={hilRsRediffPreviewPayload} />
+              {structuralDiffPanel}
+            </>
+          ),
+        },
+        {
+          id: "merge",
+          label: t("work_mode.tab.merge"),
+          content: (
+            <>
+              <div style={workModeTabDescriptionStyle}>{t("hil_rs_workflow.candidate.description")}</div>
+              <MergeSuggestionsPanel
+                isReadOnly={isReadOnly}
+                instruction={mergeSuggestionInstruction}
+                onInstructionChange={setMergeSuggestionInstruction}
+                onSuggest={() => {
+                  void handleSuggestMerges();
+                }}
+                isSuggesting={isSuggestingMerges}
+                errorMessage={mergeSuggestionError}
+                suggestions={mergeSuggestions}
+                cardsById={cardsById}
+                onMergedTextChange={handleMergeSuggestionTextChange}
+                onDecide={handleRecordMergeSuggestionDecision}
+                latestAuditEventByGroup={latestMergeDecisionAuditByGroup}
+                auditEvents={mergeDecisionAuditEvents}
+                onExportAuditEvents={handleExportMergeDecisionAuditEvents}
+              />
+              <PatchWorkspacePanel
+                isReadOnly={isReadOnly}
+                candidates={mergeSuggestions.map((suggestion) => ({
                   id: suggestion.groupId,
-                  count: suggestion.cardIds.length,
-                }),
-                note: suggestion.rationale,
-                preview: {
-                  sourceSnippets: suggestion.cardIds.map((cardId) => cardsById.get(cardId)?.text ?? `[missing:${cardId}]`),
-                  draftText: suggestion.mergedTextDraft,
-                  editedText: suggestion.editedText,
-                },
-              }))}
-              onDecisionCommitted={({ candidateId, decision, previousDecision }) => {
-                setStatusMessage(t("patch_workspace.status.decision", {
-                  candidateId,
-                  previousDecision: getWorkspaceDecisionDisplayLabel(previousDecision),
-                  decision: getWorkspaceDecisionDisplayLabel(decision),
-                }));
+                  label: t("patch_workspace.candidate_label", {
+                    id: suggestion.groupId,
+                    count: suggestion.cardIds.length,
+                  }),
+                  note: suggestion.rationale,
+                  preview: {
+                    sourceSnippets: suggestion.cardIds.map((cardId) => cardsById.get(cardId)?.text ?? `[missing:${cardId}]`),
+                    draftText: suggestion.mergedTextDraft,
+                    editedText: suggestion.editedText,
+                  },
+                }))}
+                onDecisionCommitted={({ candidateId, decision, previousDecision }) => {
+                  setStatusMessage(t("patch_workspace.status.decision", {
+                    candidateId,
+                    previousDecision: getWorkspaceDecisionDisplayLabel(previousDecision),
+                    decision: getWorkspaceDecisionDisplayLabel(decision),
+                  }));
+                }}
+                onDecisionRolledBack={({ restoredCandidateIds }) => {
+                  setStatusMessage(t("patch_workspace.status.rollback_restored", { ids: restoredCandidateIds.join(", ") }));
+                }}
+                onPresetSaved={(preset) => {
+                  setStatusMessage(t("patch_workspace.status.preset_saved", { name: preset.name }));
+                }}
+                onPresetExecuted={({ scope, depth, filters }) => {
+                  setStatusMessage(t("patch_workspace.status.preset_executed", {
+                    scope: getWorkspaceScopeDisplayLabel(scope),
+                    depth,
+                    filters: filters.length > 0 ? filters.join(", ") : t("patch_workspace.no_filters"),
+                  }));
+                }}
+              />
+            </>
+          ),
+        },
+        {
+          id: "suggestion",
+          label: t("work_mode.tab.suggestion"),
+          content: (
+            // data-domain-workflow: cross-navigation focus target for
+            // SidePanel's "Review reproposal" link (handleOpenCritiqueWorkflow
+            // below) -- tabIndex=-1 only, no separate aria-labelledby: the
+            // enclosing tabpanel already provides this content's accessible
+            // name via its own aria-labelledby (work-mode-tab-suggestion).
+            <div data-domain-workflow="critique-reproposal" tabIndex={-1}>
+              <div style={workModeTabDescriptionStyle}>{t("hil_rs_workflow.critique.description")}</div>
+              <SuggestionPanel
+                isReadOnly={isReadOnly}
+                instruction={suggestionInstruction}
+                onInstructionChange={setSuggestionInstruction}
+                onSuggest={() => {
+                  void handleSuggestLayout("suggest");
+                }}
+                onResuggest={() => {
+                  void handleSuggestLayout("resuggest");
+                }}
+                onStopResuggest={() => {
+                  setResuggestStopperEnabled(true);
+                  setStatusMessage(t("suggestion.panel.status.stopper_enabled_manually"));
+                }}
+                onDiscard={handleDiscardSuggestion}
+                hasSuggestion={Boolean(suggestedDocument && suggestionId)}
+                isPreviewEnabled={isSuggestionPreviewEnabled}
+                onPreviewToggle={setIsSuggestionPreviewEnabled}
+                isAnnotateOverlayEnabled={isAnnotateOverlayEnabled}
+                onAnnotateOverlayToggle={setIsAnnotateOverlayEnabled}
+                isSuggesting={isSuggesting}
+                errorMessage={suggestionError}
+                notes={suggestionNotes}
+                resuggestAttemptCount={resuggestAttemptCount}
+                resuggestAttemptLimit={resuggestAttemptLimit}
+              />
+            </div>
+          ),
+        },
+        {
+          id: "diagnostics",
+          label: t("work_mode.tab.diagnostics"),
+          content: (
+            <div style={{ display: "grid", gap: 8 }}>
+              <div style={workModeTabDescriptionStyle}>{t("work_mode.tab.diagnostics_description")}</div>
+              <div style={{ display: "grid", gap: 6, fontSize: 12, color: "#334155" }}>
+                <div>
+                  {t("share.panel.preflight.domain_summary_review", {
+                    cards: domainExpressionShareSummary.unreviewedCards,
+                    islands: domainExpressionShareSummary.unreviewedIslands,
+                  })}
+                </div>
+                <div>
+                  {t("share.panel.preflight.domain_summary_hold", { count: domainExpressionShareSummary.holdCards })}
+                </div>
+                <div>
+                  {t("share.panel.preflight.domain_summary_critique", { count: domainExpressionShareSummary.critiqueTargets })}
+                </div>
+                <div>
+                  {t("share.panel.preflight.domain_summary_evidence", {
+                    links: domainExpressionShareSummary.evidenceLinks,
+                    contradictions: domainExpressionShareSummary.contradictionLinks,
+                    gaps: domainExpressionShareSummary.evidenceGapCards,
+                  })}
+                </div>
+              </div>
+            </div>
+          ),
+        },
+        {
+          id: "narrative",
+          label: t("work_mode.tab.narrative"),
+          content: (
+            <NarrativesPanel
+              narrativeText={narrativeText}
+              onNarrativeTextChange={setNarrativeText}
+              onCheckConsistency={(selectedNarrativeId) => {
+                void handleCheckNarrativeConsistency(selectedNarrativeId);
               }}
-              onDecisionRolledBack={({ restoredCandidateIds }) => {
-                setStatusMessage(t("patch_workspace.status.rollback_restored", { ids: restoredCandidateIds.join(", ") }));
+              onGenerateFromReadingOrder={() => {
+                void handleGenerateNarrativeFromReadingOrder();
               }}
-              onPresetSaved={(preset) => {
-                setStatusMessage(t("patch_workspace.status.preset_saved", { name: preset.name }));
-              }}
-              onPresetExecuted={({ scope, depth, filters }) => {
-                setStatusMessage(t("patch_workspace.status.preset_executed", {
-                  scope: getWorkspaceScopeDisplayLabel(scope),
-                  depth,
-                  filters: filters.length > 0 ? filters.join(", ") : t("patch_workspace.no_filters"),
-                }));
-              }}
+              isChecking={isCheckingNarrative}
+              isGenerating={isGeneratingNarrative}
+              errorMessage={narrativeCheckError}
+              generationErrorMessage={narrativeGenerationError}
+              issues={narrativeIssues}
+              generatedNarratives={generatedNarratives}
+              onReferenceClick={handleNarrativeReferenceFocus}
+              onFocusItem={focusItem}
+              readingOrderSnippets={readingOrderSnippets}
+              document={document}
+              hideSourceCards={hideSourceCards}
             />
-          </>
-        }
-        critiqueInput={
-          <SuggestionPanel
-            isReadOnly={isReadOnly}
-            instruction={suggestionInstruction}
-            onInstructionChange={setSuggestionInstruction}
-            onSuggest={() => {
-              void handleSuggestLayout("suggest");
-            }}
-            onResuggest={() => {
-              void handleSuggestLayout("resuggest");
-            }}
-            onStopResuggest={() => {
-              setResuggestStopperEnabled(true);
-              setStatusMessage(t("suggestion.panel.status.stopper_enabled_manually"));
-            }}
-            onDiscard={handleDiscardSuggestion}
-            hasSuggestion={Boolean(suggestedDocument && suggestionId)}
-            isPreviewEnabled={isSuggestionPreviewEnabled}
-            onPreviewToggle={setIsSuggestionPreviewEnabled}
-            isAnnotateOverlayEnabled={isAnnotateOverlayEnabled}
-            onAnnotateOverlayToggle={setIsAnnotateOverlayEnabled}
-            isSuggesting={isSuggesting}
-            errorMessage={suggestionError}
-            notes={suggestionNotes}
-            resuggestAttemptCount={resuggestAttemptCount}
-            resuggestAttemptLimit={resuggestAttemptLimit}
-          />
-        }
-        diffVisualization={<>
-          <HilRsRediffPreview payload={hilRsRediffPreviewPayload} />
-          {structuralDiffPanel}
-        </>}
-      />
-    </>
+          ),
+        },
+      ]}
+      activateRequest={{
+        tabId: "suggestion",
+        nonce: critiqueWorkflowFocusRequest,
+        focusSelector: '[data-domain-workflow="critique-reproposal"]',
+      }}
+    />
   );
 
   // UX-CMDK-01 (ADR-0048 D2): command registry. Every entry delegates to an

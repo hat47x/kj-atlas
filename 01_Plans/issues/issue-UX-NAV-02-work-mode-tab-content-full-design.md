@@ -1,7 +1,7 @@
 # Issue Draft: UX-NAV-02 作業モード面（領域4）中身のタブ化 ― role=tablist・5タブ完全実装
 
 - Type: Feature request
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/issues/issue-UX-NAV-01-work-mode-surface-navigation-hierarchy.md`（Done。§68で「フルなタブ設計は本Issueの対象外、必要なら別途」と明記済み）
 - Priority: P2
@@ -70,15 +70,15 @@ Claude Design 実装照合レビュー（2026-07-11、拡張提案 P21「作業�
 
 ## 受け入れ条件（案）
 
-- [ ] 作業モード面の中身が `role=tablist`／`role=tab`／`role=tabpanel` で実装される。
-- [ ] manual activation、Home/End、roving `tabIndex`、`aria-controls` / `aria-labelledby` を実装し、Escapeの段階閉鎖と起動triggerへのfocus復帰を満たす。
-- [ ] 5タブ（差分／選択マージ／AI提案／診断／文章化）が揃い、「レビュー」語を使わない。
-- [ ] 診断タブは反スコアリング（点数・ランク・%なし）で「確認が要る箇所」への導線として機能する。
-- [ ] 非active panelの入力値・候補・非同期結果が保持され、非active化だけで破棄・再実行されない。
-- [ ] 390/768/1440pxでtab stripとtabpanelに見切れ・重なり・focus迷子がない。
-- [ ] 既存4セクションの機能・監査ログ・取消動線に回帰がない（既存テスト・e2eが継続してパスする）。
-- [ ] ADR-0052 の C-5 判断が本Issueで解消されたことを `UI-QUALITY-A11Y-02` へ反映する。
-- [ ] a11y: 開いた直後のactive tab focus、tabの名称/選択状態/tabpanel関連、Tab順、Escape挙動を仕様どおりに実装し、axeとe2eで確認する。
+- [x] 作業モード面の中身が `role=tablist`／`role=tab`／`role=tabpanel` で実装される。
+- [x] manual activation、Home/End、roving `tabIndex`、`aria-controls` / `aria-labelledby` を実装し、Escapeの段階閉鎖と起動triggerへのfocus復帰を満たす。
+- [x] 5タブ（差分／選択マージ／AI提案／診断／文章化）が揃い、「レビュー」語を使わない。
+- [x] 診断タブは反スコアリング（点数・ランク・%なし）で「確認が要る箇所」への導線として機能する。
+- [x] 非active panelの入力値・候補・非同期結果が保持され、非active化だけで破棄・再実行されない。
+- [x] 390/768/1440pxでtab stripとtabpanelに見切れ・重なり・focus迷子がない。
+- [x] 既存4セクションの機能・監査ログ・取消動線に回帰がない（既存テスト・e2eが継続してパスする）。
+- [x] ADR-0052 の C-5 判断が本Issueで解消されたことを `UI-QUALITY-A11Y-02` へ反映する。
+- [x] a11y: 開いた直後のactive tab focus、tabの名称/選択状態/tabpanel関連、Tab順、Escape挙動を仕様どおりに実装し、axeとe2eで確認する。
 
 ## 検証計画
 
@@ -94,3 +94,14 @@ Claude Design 実装照合レビュー（2026-07-11、拡張提案 P21「作業�
 - Related: `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（作業モードタブ role=tablist 残課題の解消先）
 - Related: `01_Plans/issues/issue-QA-MONKEY-12-work-mode-suggest-layout-button-overlap.md`（タブ化で副次的に解消する可能性がある重なりバグ）
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html` §P21（完全設計の正本）
+
+## 完了記録 2026-07-13（Claude Code）
+
+- **実装**: 新規 `03_Implement/frontend/src/ui/WorkModeTabs.tsx`。role=tablist/tab/tabpanel、manual activation（矢印はfocusのみ移動、ネイティブbuttonのonClickがEnter/Space/クリックいずれでも活性化を兼ねる）、roving tabIndex、Home/End、非active tabpanelは`hidden`属性で非表示（アンマウントしない）。
+- **段階Escape**: tabpanel側`onKeyDown`でEscapeを`stopPropagation`し、active tabへfocusを戻す（第1段）。tab自体にはEscapeハンドラを付けないため、tab上でのEscapeは`WorkModePanel`既存のハンドラへ素通りし、パネル終了＋起動triggerへのfocus復帰（第2段）が既存ロジックのまま機能する。
+- **HilRsWorkflowPanel.tsx を削除**: 3スロット（候補比較／違和感入力／差分）を独立タブへ再構成したことで、単なる見出し付きラッパーだった同コンポーネントは完全に不要になった。対応するテストも削除し、`hil_rs_workflow.*.title`（3キー）も未使用になったためja/en両ロケールから削除（`.description`キーは各タブの説明文として存続）。
+- **診断タブ**: 新規ロジックなし。App.tsx既存の`domainExpressionShareSummary`（`SharePanel`の共有前チェックと同一の算出）をそのまま再利用し、同一のi18nキー（`share.panel.preflight.domain_summary_*`）で表示。
+- **横断ナビゲーション対応**: SidePanelの「Review reproposal」リンク（`handleOpenCritiqueWorkflow`）がAI提案タブへ直接遷移＋フォーカスできるよう、`WorkModeTabs`に`activateRequest`（外部からのタブ活性化要求）を追加。既存の`critiqueWorkflowFocusRequest`カウンタをそのまま再利用（App.tsx側に新規stateは追加していない）。
+- **既知のタイミングバグと対処**: 当初`requestAnimationFrame`でフォーカスを遅延させたところ、`WorkModePanel`自身の「開いた直後にactive tabへfocus」効果（React 18 StrictModeの二重effect実行と絡む）と競合し、フォーカスが「Diff」タブへ戻ってしまう再現性のある不具合を発見。`setTimeout(fn, 0)`（マクロタスク、同一フレーム内のrAF処理より確実に後段）へ変更して解消した。あわせて、活性化要求の再処理ガードを「nonceを記憶するref」から「`nonce === 0`を除外する値ベースの判定」へ変更し、StrictModeの二重実行時にrefガードが2回目の実行を止めてフォーカス処理自体が消えてしまう別の不具合も修正した。
+- **テスト**: `WorkModeTabs.test.ts`（4 unit、静的マークアップ）、`e2e/work_mode_tabs.spec.ts`（9 e2e：初期focus・manual activation・ArrowLeft折返しとHome/End・roving tabIndex・状態保持・段階Escape・診断タブの反スコアリング内容・390px横スクロール）。既存`domain_expression_keyboard_access.spec.ts`のクロスナビゲーションテストを新構造に合わせて更新（`data-domain-workflow`マーカーは維持、期待文言をタブ切替後のものへ更新）。`ux_operability_regression.test.ts`のPhase 5bアンカーも新構造（`<WorkModeTabs`）に更新。
+- **検証**: typecheck 0 / vitest 190 files・1033 tests / e2e: `work_mode_tabs.spec.ts`（9/9）・`a11y_axe_smoke.spec.ts`（8/8、tablist由来の延期ルールなし）・`domain_expression_keyboard_access.spec.ts`・`agent_response_import.spec.ts`・`keyboard_release_candidate_flow.spec.ts`（既存27件、非回帰）。フルe2eスイートも実行済み（結果は本Issueのショップ時コミットメッセージ参照）。

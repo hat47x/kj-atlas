@@ -147,11 +147,15 @@ test("domain expression state controls are reachable with keyboard after card se
   await expect.poll(() => fixture.getStoredDocument().cards.find((card) => card.id === "domain-target")?.critiqueTags)
     .toContain("too_close");
 
+  // UX-NAV-02: this cross-navigation link now also switches work-mode's tabs
+  // to the "AI suggestion" tab (the critique/reproposal workflow no longer
+  // has its own standalone stacked section) before focusing it.
   await page.getByRole("button", { name: "Review reproposal" }).click();
   await expect(page.getByRole("button", { name: "Advanced" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("tab", { name: "AI suggestion" })).toHaveAttribute("aria-selected", "true");
   const critiqueWorkflow = page.locator('[data-domain-workflow="critique-reproposal"]');
   await expect(critiqueWorkflow).toBeVisible();
-  await expect(critiqueWorkflow).toContainText("Record critique");
+  await expect(critiqueWorkflow).toContainText("Capture critique and re-suggest iteratively");
   await expect(critiqueWorkflow).toContainText("Layout suggestion");
   await expect(critiqueWorkflow).toBeFocused();
 });
