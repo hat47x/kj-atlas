@@ -46,7 +46,7 @@
 
 ## 受け入れ条件（案）
 
-- [~] AC-1: MCPクライアントから reviewed-only 投影を取得でき、未レビュー本文・SafeMode対象が含まれない。→ reviewed-only constraintの投影コアはテスト済み。ただし2026-07-13の再審査で、他constraintの未レビューentity/refとSafeMode redaction短縮hashを外部結線前に除去する追加ゲートを設定した。MCP経由の取得はこの修正後にサブスライスBで結線する。
+- [x] AC-1: MCPクライアントから reviewed-only 投影を取得でき、未レビュー本文・SafeMode対象が含まれない。→ reviewed-only constraintに加え、evidence/contradiction/summaryの全constraintで未レビューentity/refをlink単位（両端点reviewed必須）で除外し、SafeMode redactionから短縮hashを除去済み（2026-07-13、下記「実装記録」参照）。MCP経由の取得（実結線）はサブスライスBで行う。
 - [ ] AC-2: サーバーは書き込み系ツールを一切公開しない（tools/list で検証）。→ サブスライスB（MCP結線）。
 - [ ] AC-3: 読み取りごとに監査相関が記録され、CE-4 の監査導線から追跡できる。→ 投影は決定的 `bundleHash` を出力済み。監査ログ結線はサブスライスB。
 - [ ] AC-4: `THREAT_MODEL.md` に公開面（認証・認可・レート・失敗時挙動）が追記され、PRODUCT-QA-01 ゲートで照合される。→ HTTP輸送を実装するサブスライスCで対応（stdioのサブスライスBは公開面なし）。
@@ -73,6 +73,18 @@ MCP SDK依存の追加と `03_Implement/mcp/` 新設を承認する。ただし�
 - すべてのreadで `bundleHash` / `queryCanonicalHash` 相当を監査相関へ渡す。監査失敗は本文露出を広げず、読み取り結果と相関欠損を成功扱いにしない。
 
 この判断は依存と配置の可否を確定するもので、サブスライスBの実装完了を意味しない。未使用依存だけを先行追加せず、server skeleton・capability test・投影安全テストと同じ変更単位で導入する。
+
+## 実装記録（2026-07-13）: 投影コア安全ゲート修正完了 — サブスライスB着手可能に
+
+Maintainer代理裁可が課した「外部結線前の投影コア再検証」を実施し、2件の実欠陥を修正した（`context_bundle_projection.ts`）。
+
+1. **他constraintの未レビューentity/refリーク**: `evidence`/`contradiction` constraintはリンクの両端点カードを「そのリンクが存在する」という理由だけでscopeに含めており、reviewed状態でのフィルタを一切適用していなかった。`summary` constraintの`relations`（edge一覧）も同様に全カードを対象にしていた。結果、未レビューカードの本文は既定どおり redact されるものの、その **id・claimType・リンクの存在自体（＝未レビューカードが特定の主張と矛盾/根拠関係にあるという事実）** が全constraintで露出していた。修正: `supports`/`contradicts`/`relations` のいずれも「両端点が reviewed であるリンクのみ」をscope対象とするよう統一。未レビューカードはリンクの片方に現れた時点でそのリンクごと除外され、bare な id としても一切現れない。
+2. **SafeMode redaction の短縮hash露出**: `projectCardText` は非公開時に `SafeModePolicy.summarizeForSafeMode()` を使っており、これは `[REDACTED]:h########`（原文の32bit短縮hash）を返す。この関数は人間が1回選んでコピー&ペーストする `agent_task_export.ts` 向けに設計されたもので、**繰り返し問い合わせ可能な常設外部面（MCP）では、同一hashが返ることで「この2枚のredact済みカードは実は同一本文」という相関情報を与えてしまう**。`SafeModePolicy.redactText()`（文字数のみを含む、hashなしのプレースホルダ）へ置き換えた。
+3. **bundleHashへの影響なし**: `hashPayload` は元々 `redacted ? null : text` としており、redactプレースホルダ文字列自体をhash対象に含めていなかった（`bundleHash`の相関漏れは元から無し）。今回の修正は投影の**出力**（`cards[].text`）側のみに影響する。
+
+`context_bundle_projection.test.ts` を 11→15 tests へ拡張し、両修正を固定した（未レビュー端点を含むリンクの完全除外、reviewed端点のみのリンクは維持、短縮hash不在の正規表現アサーション、全constraint横断での未レビューid不在チェック）。既存1030テスト・typecheckともに回帰なし。
+
+この修正により、Maintainer代理裁可が定めた「外部クライアントへの結線前」条件が満たされたため、AC-1をFixedとし、サブスライスB（stdio MCPアダプタ）へ進める。
 
 ## Traceability
 

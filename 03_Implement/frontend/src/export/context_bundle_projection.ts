@@ -21,6 +21,18 @@ import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
 // exposed (only structure/counts). Anti-scoring (ADR-0001/ADR-0049 §4.2):
 // no score/rank/confidence/priority is ever emitted, in the output or the
 // hashed payload.
+//
+// 2026-07-13 re-review gate (EXT-CONN-01 AC-1, prerequisite for the MCP
+// adapter subslice): an unreviewed card's id/ref must never appear in ANY
+// constraint's output, not just reviewed-only's. A supports/contradicts/edge
+// link is therefore only in scope when BOTH endpoints are reviewed -- an
+// unreviewed card must not surface even as a bare id via a link endpoint,
+// since that alone reveals its existence and relationships. Redaction also
+// no longer reuses SafeModePolicy.summarizeForSafeMode's short hash: a hash
+// of withheld text is a correlation/fingerprint vector across repeated reads
+// that a standing external MCP surface can query at will (unlike the
+// one-shot human copy/paste agent_task_export.ts uses it for); redactText's
+// length-only placeholder does not have that property.
 
 export const CONTEXT_PROJECTION_CONSTRAINTS = [
   "reviewed-only",
@@ -93,7 +105,7 @@ function projectCardText(
   if (canExpose) {
     return { text: card.text, redacted: false };
   }
-  return { text: SafeModePolicy.summarizeForSafeMode(card.text), redacted: true };
+  return { text: SafeModePolicy.redactText(card.text, true), redacted: true };
 }
 
 const byFromThenTo = (a: ProjectedLink, b: ProjectedLink): number =>
@@ -109,14 +121,21 @@ export async function buildContextProjection(input: ContextProjectionInput): Pro
   const allCards = [...doc.cards].sort((a, b) => a.id.localeCompare(b.id));
   const reviewedCount = allCards.filter(isReviewed).length;
   const unreviewedCount = allCards.length - reviewedCount;
+  const reviewedCardIds = new Set(allCards.filter(isReviewed).map((card) => card.id));
+
+  // A link is only in scope when BOTH endpoints are reviewed -- otherwise the
+  // unreviewed endpoint's id/ref would leak through the link itself even
+  // though its card text stays redacted (see 2026-07-13 gate note above).
+  const bothEndpointsReviewed = (link: { fromCardId: string; toCardId: string }): boolean =>
+    reviewedCardIds.has(link.fromCardId) && reviewedCardIds.has(link.toCardId);
 
   const evidenceLinks = doc.evidenceLinks ?? [];
   const supports = evidenceLinks
-    .filter((link) => link.type === "supports")
+    .filter((link) => link.type === "supports" && bothEndpointsReviewed(link))
     .map((link) => ({ from: link.fromCardId, to: link.toCardId }))
     .sort(byFromThenTo);
   const contradicts = evidenceLinks
-    .filter((link) => link.type === "contradicts")
+    .filter((link) => link.type === "contradicts" && bothEndpointsReviewed(link))
     .map((link) => ({ from: link.fromCardId, to: link.toCardId }))
     .sort(byFromThenTo);
 
@@ -156,7 +175,7 @@ export async function buildContextProjection(input: ContextProjectionInput): Pro
   // Relations are only meaningful when both endpoints are in scope. For
   // summary they are always in scope of the full doc (structure only).
   const relationScope: (id: string) => boolean =
-    constraint === "summary" ? () => true : (id) => cardIdsInScope.has(id);
+    constraint === "summary" ? (id) => reviewedCardIds.has(id) : (id) => cardIdsInScope.has(id);
   const relations: ProjectedRelation[] = doc.edges
     .filter((edge) => relationScope(edge.fromId) && relationScope(edge.toId))
     .map((edge) => ({ from: edge.fromId, to: edge.toId, type: resolveKnownEdgeType(edge.type) }))
