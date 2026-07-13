@@ -27,6 +27,9 @@ test = [
 where = ["src"]
 
 [tool.pytest.ini_options]
+addopts = [
+  "--strict-markers",
+]
 pythonpath = [
   "src",
 ]

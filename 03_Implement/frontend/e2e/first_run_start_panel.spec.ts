@@ -41,14 +41,15 @@ for (const viewport of viewports) {
     await page.setViewportSize(viewport);
     await page.goto("/?locale=ja");
 
-    const panel = page.locator('[data-ui-region="start-panel"]');
+    const panel = page.locator('[data-panel="start-document-entry"]');
     await expect(panel).toBeVisible();
-    await expect(panel.getByRole("heading", { name: START_PANEL_TITLE })).toBeVisible();
+    await expect(panel).toHaveAccessibleName(START_PANEL_TITLE);
     await expect(panel.getByRole("button", { name: START_PANEL_NEW_DOCUMENT })).toBeVisible();
     await expect(panel.getByRole("button", { name: START_PANEL_SAMPLE })).toBeVisible();
     await expect(panel.getByRole("button", { name: START_PANEL_LOAD_DOCUMENT })).toBeVisible();
     await expect(panel.getByRole("button", { name: START_PANEL_IMPORT_PACK })).toBeVisible();
-    await expect(panel.getByText(/安全状態: セーフモード: ON|Safety state: SafeMode: ON/)).toBeVisible();
+    await expect(panel.getByText(/^安全状態$|^Safety status$/)).toBeVisible();
+    await expect(panel.getByText(/^セーフモード: ON$|^SafeMode: ON$/)).toBeVisible();
 
     const metrics = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,

@@ -44,7 +44,7 @@
 #### 3.1 共通（必須）
 
 - ヘルス確認:
-  - Compose: `curl -fsS http://localhost:8080/api/health`（または同等）
+  - Compose: `curl -fsS http://localhost:8080/api/healthz`
   - SQLite代替: `curl -fsS http://localhost:8000/healthz` と `curl -fsS http://localhost:4173/api/healthz`
 - ドキュメント往復保存確認:
   - `PUT /docs/{doc_id}` → `GET /docs/{doc_id}` が成功し、保存内容が保持される。

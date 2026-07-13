@@ -3,7 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 LOG_DIR="${ROOT_DIR}/.artifacts/auth-level2"
-mkdir -p "${LOG_DIR}"
+export KJ_ATLAS_LEVEL2_DIAG_DIR="${KJ_ATLAS_LEVEL2_DIAG_DIR:-${LOG_DIR}/legacy-federation}"
+mkdir -p "${LOG_DIR}" "${KJ_ATLAS_LEVEL2_DIAG_DIR}"
 
 export KJ_ATLAS_AUTH_LEVEL2_BACKEND_PORT="${KJ_ATLAS_AUTH_LEVEL2_BACKEND_PORT:-18000}"
 export KJ_ATLAS_AUTH_LEVEL2_SP_PORT="${KJ_ATLAS_AUTH_LEVEL2_SP_PORT:-18080}"
@@ -67,4 +68,7 @@ for url in urls:
         raise SystemExit(f"service not ready: {url}")
 PY
 
-pytest -m auth_level2 tests/test_auth_provider_profile_fixture.py | tee "${LOG_DIR}/pytest-auth-level2.log"
+pytest -m auth_level2 \
+  tests/test_auth_federation_level2.py \
+  tests/test_auth_provider_profile_fixture.py \
+  | tee "${LOG_DIR}/pytest-auth-level2.log"

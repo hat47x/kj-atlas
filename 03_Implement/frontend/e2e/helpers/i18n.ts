@@ -1,5 +1,10 @@
 import type { Page } from "@playwright/test";
 
+export const START_PANEL_TITLE = /^Start work$|^作業を開始$/;
+export const START_PANEL_NEW_DOCUMENT = /Create new document|新しい文書を作成/;
+export const START_PANEL_SAMPLE = /Open sample|サンプルを開く/;
+export const START_PANEL_LOAD_DOCUMENT = /Load document file|文書ファイルを読み込む/;
+export const START_PANEL_IMPORT_PACK = /Import review pack|レビューパックを取り込む/;
 export const SHARE_REPRODUCE_BUTTON = /Share & Reproduce|共有と再現/;
 export const VIEW_BUTTON = /^View$|^表示$/;
 export const ADVANCED_UI_BUTTON = /^Advanced$|^詳細$/;

@@ -19,7 +19,8 @@ from tests.level2.mock_idp import app as mock_idp_app
 from tests.level2.mock_sp import MockSpRuntime
 
 FIXTURE_DIR = Path(__file__).parent / "level2" / "fixtures"
-DIAG_DIR = Path(os.getenv("KJ_ATLAS_LEVEL2_DIAG_DIR", ".tmp/level2-diagnostics"))
+DIAG_DIR_ENV = "KJ_ATLAS_LEVEL2_DIAG_DIR"
+pytestmark = pytest.mark.auth_level2
 
 
 @contextmanager
@@ -64,14 +65,34 @@ def _load_profile(path: Path) -> dict[str, object]:
 
 
 def _write_diag(profile_name: str, result: dict[str, object]) -> None:
-    DIAG_DIR.mkdir(parents=True, exist_ok=True)
-    (DIAG_DIR / f"{profile_name}.json").write_text(
+    configured_dir = os.getenv(DIAG_DIR_ENV)
+    if not configured_dir:
+        return
+
+    diag_dir = Path(configured_dir)
+    diag_dir.mkdir(parents=True, exist_ok=True)
+    (diag_dir / f"{profile_name}.json").write_text(
         json.dumps(result, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 
 
-@pytest.mark.level2
+def test_level2_diagnostics_require_explicit_canonical_path(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv(DIAG_DIR_ENV, raising=False)
+
+    _write_diag("disabled", {"status": "ok"})
+    assert not (tmp_path / ".tmp").exists()
+
+    diag_dir = tmp_path / ".artifacts" / "auth-level2" / "legacy-federation"
+    monkeypatch.setenv(DIAG_DIR_ENV, str(diag_dir))
+    _write_diag("enabled", {"status": "ok"})
+
+    assert json.loads((diag_dir / "enabled.json").read_text(encoding="utf-8")) == {
+        "status": "ok"
+    }
+
+
 @pytest.mark.parametrize(
     "profile_path",
     sorted(FIXTURE_DIR.glob("provider_profile_*.json")),

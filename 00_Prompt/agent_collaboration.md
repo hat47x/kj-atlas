@@ -80,7 +80,7 @@ node ./node_modules/typescript/bin/tsc --noEmit          # 型
 node ./node_modules/vitest/vitest.mjs run <path>         # 単体
 node ./node_modules/vite/bin/vite.js build               # ビルド
 npm run preview                     # http://127.0.0.1:4173 で実機確認
-node ./node_modules/playwright/cli.js test <spec>        # e2e
+node ./node_modules/@playwright/test/cli.js test <spec>  # e2e
 ```
 
 ### 4.2 役割境界

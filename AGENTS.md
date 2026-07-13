@@ -152,6 +152,12 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/issues/issue-UX-SHARE-02-visibility-scope-plain-language.md`：viewとレビューパックの公開範囲の違いを共有前に説明するUX issue。
 - `01_Plans/issues/issue-DX-E2E-03-visibility-flow-backend-fixture-portability.md`：公開範囲E2Eのfixture境界とバックエンド依存を明確にするDX issue。
 - `01_Plans/issues/issue-DX-E2E-04-critique-label-assertion-drift.md`：UX-LABEL-01の正本語彙と複雑度E2E期待値のずれを修正したDX issue。
+- `01_Plans/issues/issue-DX-E2E-05-first-run-start-panel-contract-drift.md`：開始パネルE2Eのimport/selector/SafeMode構造ドリフトを修正したテストissue。
+- `01_Plans/issues/issue-DX-E2E-06-playwright-cli-path-portability.md`：現行依存配置に合わせてPlaywright直接実行例を可搬化したDX issue。
+- `01_Plans/issues/issue-DX-E2E-07-current-ui-contract-drift-batch.md`：現行UI住所と17件のPlaywright期待値ドリフトを収束させるP1 E2E issue。
+- `01_Plans/issues/issue-DX-DOC-03-healthz-runbook-endpoint-drift.md`：ADR-0019のComposeヘルス確認例を現行`/api/healthz`へ同期した文書issue。
+- `01_Plans/issues/issue-DX-CI-PG-01-postgresql-ci-canonical-env-contract.md`：PostgreSQL CIが旧環境変数で全skipする偽陽性を防止したCI issue。
+- `01_Plans/issues/issue-DX-AUTH-L2-01-level2-marker-and-diagnostics-contract.md`：Auth Level2 marker・診断出力・統合ハーネスを正準化したDX issue。
 
 ### 3.3 `02_Architecture/`（Structure：設計・I/F・デプロイ）
 
