@@ -53,7 +53,7 @@
 
 ## 5) 受け入れ条件 / Acceptance criteria
 
-- [~] AC-1: 5面のうち4面（選択コンテキスト・共有前確認・一括操作バー・凡例）を確認・固定。作業モードタブは、既存のナビゲーション設計との整合を判断するまで対象外。
+- [x] AC-1: 5面すべて（選択コンテキスト・共有前確認・一括操作バー・凡例・作業モードタブ）を確認・固定。作業モードタブは`UX-NAV-02`（2026-07-13完了）で`role=tablist`実装が完了し、axeスモークの延期ルールにtablist由来の除外は残っていない。
 - [x] AC-2: カード選択時の読み上げ順が仕様どおり（型→保持系→確認→根拠→本文。カード選択の範囲に限る）。
 - [x] AC-3: Esc 段階処理は既存のグローバルホットキー機構（`resolveHotkeyAction`: dismiss-top-layer→clear-selection）で一括操作バーを含め既に仕様どおりであることを確認（コード変更不要）。
 - [x] AC-4: 一括操作バーの読み上げに評価語が含まれない（件数のみ）ことを確認（既存実装で充足）。
@@ -105,7 +105,7 @@
 
 ### 残課題（次スライス）
 
-- ~~作業モードタブへの `role=tablist` 導入要否の判断~~ → 2026-07-13: maintainer代理裁可で role=tablist・5タブを採用し、`UX-NAV-02` をADR-0052とは独立にOpen化した。manual activation、段階Escape、状態保持、狭幅E2Eを着手ゲートとする。ADR-0052はキャンバス選択ロールとメニュー内フォームの意味付けだけを扱う。
+- ~~作業モードタブへの `role=tablist` 導入要否の判断~~ → 2026-07-13: maintainer代理裁可で role=tablist・5タブを採用し、`UX-NAV-02` をADR-0052とは独立にOpen化。同日中に実装完了（`WorkModeTabs.tsx`）。manual activation・roving tabIndex・Home/End・段階Escape・非active panelの状態保持（mounted+hidden）・390px横スクロールをe2e（`work_mode_tabs.spec.ts`、9 tests）で確認。`a11y_axe_smoke.spec.ts`の作業モード面検査もtablist由来の除外なしで通過。これで5面すべてがAC-1充足。
 - ~~axe 系スモークテストの導入（横断 e2e スイートの拡充）。~~ → 2026-07-09に導入済み（下記追記参照）。派生の構造的発見4件は `issue-UI-QUALITY-A11Y-03-structural-aria-findings.md` へ。
 
 ### 追記 2026-07-09

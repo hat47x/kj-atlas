@@ -34,6 +34,15 @@ export function WorkModePanel({ isOpen, onClose, triggerRef, children }: WorkMod
 
   useEffect(() => {
     if (!isOpen || !panelRef.current) return;
+    // UX-NAV-02: when the content is WorkModeTabs, focus the active tab
+    // button on open, never the Close button that happens to be first in
+    // DOM order. Falls back to "first focusable" for the non-tabbed
+    // Advanced-UI-off placeholder content.
+    const markedInitialFocus = panelRef.current.querySelector<HTMLElement>('[data-work-mode-initial-focus="true"]');
+    if (markedInitialFocus) {
+      markedInitialFocus.focus();
+      return;
+    }
     const [firstFocusable] = getFocusableElements(panelRef.current);
     (firstFocusable ?? panelRef.current).focus();
   }, [isOpen]);
