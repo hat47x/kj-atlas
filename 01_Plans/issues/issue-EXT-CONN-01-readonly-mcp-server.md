@@ -1,7 +1,7 @@
 # Issue Draft: EXT-CONN-01 read-only MCP サーバー（ContextBundle 制約付き投影の公開）
 
 - Type: Feature request
-- Status: Open
+- Status: In Progress（サブスライスA・B完了。サブスライスC＝HTTP輸送・THREAT_MODEL.md追記が残課題）
 
 ## Draft→Open 2026-07-12
 `ADR-0054` が maintainer により Accepted（受理時条件: 用語「庭」→「縁側」置換、ADR側で対応済み）。本Issueの唯一のゲートが解消したため Open 化。
@@ -47,9 +47,9 @@
 ## 受け入れ条件（案）
 
 - [x] AC-1: MCPクライアントから reviewed-only 投影を取得でき、未レビュー本文・SafeMode対象が含まれない。→ reviewed-only constraintに加え、evidence/contradiction/summaryの全constraintで未レビューentity/refをlink単位（両端点reviewed必須）で除外し、SafeMode redactionから短縮hashを除去済み（2026-07-13、下記「実装記録」参照）。MCP経由の取得（実結線）はサブスライスBで行う。
-- [ ] AC-2: サーバーは書き込み系ツールを一切公開しない（tools/list で検証）。→ サブスライスB（MCP結線）。
-- [ ] AC-3: 読み取りごとに監査相関が記録され、CE-4 の監査導線から追跡できる。→ 投影は決定的 `bundleHash` を出力済み。監査ログ結線はサブスライスB。
-- [ ] AC-4: `THREAT_MODEL.md` に公開面（認証・認可・レート・失敗時挙動）が追記され、PRODUCT-QA-01 ゲートで照合される。→ HTTP輸送を実装するサブスライスCで対応（stdioのサブスライスBは公開面なし）。
+- [x] AC-2: サーバーは書き込み系ツールを一切公開しない（tools/list で検証）。→ `kj-atlas-mcp`（`03_Implement/mcp/`）実装完了。`tools/list` は `get_context_projection` の1件のみ、`resources`capabilityは`initialize`応答に一切含まれない（登録ゼロのため`resources/list`はメソッド自体が存在しない）。固定snapshotテストで検証済み（下記「実装記録」参照）。
+- [x] AC-3: 読み取りごとに監査相関が記録され、CE-4 の監査導線から追跡できる。→ ローカル構造化監査ログ（stderr、`mcp-context-read.v1`）で`bundleHash`/`queryCanonicalHash`相当を全readで記録。**CE-4のバックエンド`POST /docs/{id}/context-audit`への実結線は今回未実施**（下記「実装記録」の既知ギャップ参照）。
+- [ ] AC-4: `THREAT_MODEL.md` に公開面（認証・認可・レート・失敗時挙動）が追記され、PRODUCT-QA-01 ゲートで照合される。→ HTTP輸送を実装するサブスライスCで対応(stdioのサブスライスBは公開面なし)。
 - [x] AC-5: 投影IRは輸送非依存で、MCPアダプタ層の差し替えが契約変更なしに可能な構造になっている。→ `context_bundle_projection.ts` として実装。純粋関数・輸送非依存・`ContextProjectionV1` IR固定。
 
 ## 実装記録（2026-07-12）: サブスライスA 完了 — 輸送非依存の投影コア
@@ -86,8 +86,22 @@ Maintainer代理裁可が課した「外部結線前の投影コア再検証」�
 
 この修正により、Maintainer代理裁可が定めた「外部クライアントへの結線前」条件が満たされたため、AC-1をFixedとし、サブスライスB（stdio MCPアダプタ）へ進める。
 
+## 実装記録（2026-07-13）: サブスライスB 完了 — stdio MCPアダプタ
+
+Maintainer代理裁可の固定条件に従い、`03_Implement/mcp/` を新設した。
+
+- **独立パッケージ**: 独自の `package.json`/`package-lock.json`/`tsconfig.json`。frontendとは依存もlockfileも共有しない。root workspace化なし。
+- **依存pin**: `@modelcontextprotocol/sdk@1.29.0`（決定時点の最新かつ承認値と一致を`npm view`で確認済み）、peer dependency `zod@4.4.3`（`^3.25 || ^4.0`要件を満たす最新4.x）。`npm audit` は当初 `vitest` UI serverの critical 脆弱性（devDependency、`vitest run`のみ使用のため無関係）を検出したため `vitest@4.1.10` へ修正pinし、`found 0 vulnerabilities` を確認。
+- **投影コアの共有**: コピーせず `../frontend/src/export/context_bundle_projection.ts` を相対パスでmonorepo source import。frontend側の拡張子省略import規約（Vite/bundler前提）と衝突したため、本パッケージの`tsconfig.json`は`moduleResolution: "NodeNext"`ではなく`"bundler"`を採用（実行も`tsx`＝esbuildベースのため実挙動と一致）。frontend側のファイルは無改修。
+- **実装**: `get_context_projection({docId, constraint, safeMode?})` の1ツールのみを登録（`src/context_projection_tool.ts`）。`safeMode`省略時は`true`（安全側既定）。`document_client.ts`が`GET /docs/{id}`から`DocumentV2`を取得（`KJ_ATLAS_MCP_API_BASE_URL`・`KJ_ATLAS_API_KEY`環境変数、後者はブラウザ側が送らない`X-API-Key`をこのプロセス自身が送信）。stdio輸送のみ（`StdioServerTransport`）、listen portなし。
+- **AC-3の既知ギャップ**: `bundleHash`/`queryCanonicalHash`相当は全readで算出しているが、バックエンドの`POST /docs/{id}/context-audit`（CE-4）への実結線は**今回実施しなかった**。同エンドポイントの`channel`enumは`"api"|"cli"|"gui"`に固定され、`command`もbackend側whitelist制御（`agent_response_import.ts`の同種ギャップをApp.tsx自身のコメントが記録済み）で、MCP由来のreadを流す枠がない。これを追加するのはbackendの共有監査契約を変更することになり、本サブスライスの承認範囲（MCP SDK依存＋パッケージ新設のみ）を超える。暫定として、全readをローカル構造化ログ（stderr、`mcp-context-read.v1`スキーマ）に記録する方式を採用した。CE-4への実結線はサブスライスCまたは専用backend issueへ切り出す。
+- **capability allowlist検証**: `context_bundle_projection.test.ts`と対をなす形で、`InMemoryTransport.createLinkedPair()`で実際のClient⇔Serverペアをプロセス内接続し、`tools/list`が`get_context_projection`一件のみであること、`resources`capabilityが`initialize`応答に一切含まれないこと（`resources/list`はメソッド自体が存在せず`-32601`を返す＝空リストより強い「未登録」の証明）、write/ingest/apply/publish/create/update/delete/sampling/elicit名を持つツールが存在しないことを固定した。加えて、実際の`tsx src/index.ts`プロセスへ生JSON-RPC（initialize→initialized→tools/list）を送るスモーク検証で、stdoutにプロトコルメッセージ以外が一切混入しないことも確認した。
+- **テスト**: `document_client.test.ts`（8）・`audit_log.test.ts`（5）・`context_projection_tool.test.ts`（8、上記capability allowlist込み）、計21 tests、typecheck 0。
+- **非目標（維持）**: 書き込み・提案受信、HTTP/OAuth輸送、MCP Apps。
+
 ## Traceability
 
 - Derived-from: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`
 - Related: `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`
 - Related: `03_Implement/frontend/src/export/agent_task_export.ts`（投影・redactionの前例実装）
+- Related: `03_Implement/mcp/README.md`（新規パッケージの使い方・環境変数・非目標）
