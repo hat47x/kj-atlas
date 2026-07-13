@@ -63,6 +63,13 @@ Grouping cards is part of the core product value. If the action target is ambigu
 - Keyboard scenario: `Enter` / `Shift+Space` selection -> keyboard island creation -> island summary -> keyboard island collapse operation.
 - No ADR was added because the existing single-primary-target model was clarified; the product model was not changed.
 
+## Regression sync (2026-07-13)
+
+- The full release-gate E2E run found `first_meaningful_map_mouse_flow.spec.ts` still asserting the pre-fix two-card summary after island creation.
+- The assertion now follows this issue's accepted single-primary-target contract: the new island remains selected and the stale `2 cards selected` summary must be absent.
+- This was test-contract drift only; runtime selection behavior was already correct.
+- Isolated system-Chrome rerun of `first_meaningful_map_mouse_flow.spec.ts` passed within the 2026-07-13 release-gate retry.
+
 ## ADR Impact
 
 No ADR is needed if the work only clarifies existing target semantics. Create an ADR only if the product model changes to allow simultaneous island and card primary selections.

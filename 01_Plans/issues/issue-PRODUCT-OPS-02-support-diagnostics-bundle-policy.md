@@ -1,14 +1,14 @@
 # Issue Draft: PRODUCT-OPS-02 サポート診断バンドル方針の策定
 
 - Type: Feature request
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Codex
-- Scope: `03_Implement/frontend/src/`, `03_Implement/backend/`, `04_Documentation/diagnostics.md`, `04_Documentation/operations.md`, `SUPPORT.md`, `01_Plans/adr/`
+- Scope: `03_Implement/frontend/src/`, `04_Documentation/diagnostics.md`, `04_Documentation/operations.md`, `04_Documentation/data_handling.md`, `SUPPORT.md`, `01_Plans/adr/`
 - Related Backlog: `PRODUCT-OPS-02`
-- Related ADR/Spec: `01_Plans/issues/issue-PRODUCT-OPS-01-support-diagnostics-error-recovery.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `THREAT_MODEL.md`, `04_Documentation/diagnostics.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
+- Related ADR/Spec: `01_Plans/issues/issue-PRODUCT-OPS-01-support-diagnostics-error-recovery.md`, `01_Plans/adr/ADR-0053-support-diagnostics-bundle-boundary.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `THREAT_MODEL.md`, `04_Documentation/diagnostics.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `e2e`
 
 ## Draft→Open 2026-06-21
@@ -23,7 +23,7 @@
   - 不採用: 自動収集・サポート基盤送信連携（案C）。現状維持のみ（案A）も転記事故リスク残存のため不採用提案。
   - 許可/禁止リストは本Issue §5.1 の初期案を基に、A1エラーエンベロープ・provider種別名・件数のみ等へ具体化した。
 - 実装（UI導線・マスクテスト・e2e、T1/T3〜T5）は **ADR-0053 の Accepted 後**に着手する。
-  DecisionStatus は Pending のまま維持（決定権者の受理待ち）。
+  2026-07-13に安全側の修正（生UserAgent・Document.id・error.messageの除外）を加えてAccepted。実装は未完のためIssueはIn Progressを維持する。
 
 ## Requirement meta I/F（共通キー）
 
@@ -34,8 +34,8 @@
 - GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: ADR required before implementation if bundle format, automatic collection, or support transmission is fixed.
+- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0053` Accepted 2026-07-13）
+- DecisionQueueRef（未確定時の参照先）: Resolved（実装は`ADR-0053`のallowlistと着手ゲートに従う）
 
 ## 1) 課題 / Problem statement
 
@@ -74,28 +74,28 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] 診断バンドルに含めてよい情報と含めてはいけない情報が、画面と文書の両方で一致している。
-- [ ] 利用者がバンドル作成前に、マスク状態、含まれる情報、共有先に渡す前の確認事項を理解できる。
-- [ ] バンドル作成は明示操作でのみ開始し、自動送信は行わない。
-- [ ] SafeMode ON 時は、未レビュー本文、カード本文、取り込みファイル全文、API key、token、password、個人情報、内部URLの機微部分が出力されない。
-- [x] 自動送信、サポート基盤連携、固定バンドル形式、組織横断の保持方針を採用する場合は、実装前にADRが起票されている。（`ADR-0053-support-diagnostics-bundle-boundary.md` を Proposed で起票済み。2026-07-11）
-- [ ] unit/integration/e2e のいずれかで、許可項目と禁止項目のマスクが検証されている。UI導線を実装する場合は e2e でプレビュー、キャンセル、コピー/ダウンロードを確認する。
+- [x] 診断バンドルに含めてよい情報と含めてはいけない情報が、画面と文書の両方で一致している。（`diagnostics_bundle.ts` の許可リストと `diagnostics.md`/`data_handling.md`/`SUPPORT.md` が同一の固定リストを記載）
+- [x] 利用者がバンドル作成前に、マスク状態、含まれる情報、共有先に渡す前の確認事項を理解できる。（`DiagnosticsBundlePanel` は生成後に全文プレビュー＋除外カテゴリ注記を必ず表示してからコピー/ダウンロードを有効化）
+- [x] バンドル作成は明示操作でのみ開始し、自動送信は行わない。（生成ボタンのクリックのみで開始。fetch/XHR/sendBeacon/WebSocket 呼び出しなしを unit で固定）
+- [x] SafeMode ON 時は、未レビュー本文、カード本文、取り込みファイル全文、API key、token、password、個人情報、内部URLの機微部分が出力されない。（入力型自体がこれらのフィールドを受け取らない構造。SafeMode ON/OFF不変条件を unit で固定）
+- [x] 自動送信、サポート基盤連携、固定バンドル形式、組織横断の保持方針を採用する場合は、実装前にADRが起票されている。（`ADR-0053-support-diagnostics-bundle-boundary.md` を Proposed で起票済み。2026-07-11。2026-07-13 Accepted）
+- [x] unit/integration/e2e のいずれかで、許可項目と禁止項目のマスクが検証されている。UI導線を実装する場合は e2e でプレビュー、キャンセル、コピー/ダウンロードを確認する。（unit 21件・e2e 6件。下記「完了記録」参照）
 
-### 5.1 許可項目/禁止項目の初期案
+### 5.1 許可項目/禁止項目（`ADR-0053` Accepted値）
 
-| 区分 | 初期案 | 備考 |
+| 区分 | 固定値 | 備考 |
 | --- | --- | --- |
-| 含めてよい | 発生日時、画面名、操作名、エラー種別、HTTP status、SafeMode状態、ブラウザ/OSの概要、アプリrevision、診断メトリクス、再現手順メモ | URLやIDは必要最小限にし、組織内識別子はマスクする。 |
-| 条件付き | document id、schemaVersion、ファイルサイズ、worker名、処理時間、設定キー名 | 値が個人情報や秘密情報を含む場合は除外またはマスクする。 |
-| 含めない | 未加工本文、カード本文、取り込みファイル全文、API key、token、password、cookie、個人名、メールアドレス、機密メモ、内部URLの機微部分 | SafeMode ON/OFF に関わらず既定除外とする。 |
+| 含めてよい | 生成時刻、検証済みapp revision/build ID、正規化済みbrowser family/major・OS family、固定障害分類、明示的な障害コンテキストのHTTP status、SafeMode状態、provider種別、Document version/updatedAt、card/island/edge件数、既知A1 errorCode/contractId/occurredAt | 許可値だけから新規オブジェクトへ射影する。SafeMode ON/OFFで境界を変えない。 |
+| 条件付き | なし | v1では組織識別子になり得る値を「マスクすれば可」としない。追加はADR更新を要する。 |
+| 含めない | Document id/title、entity id/ref、全本文、raw UserAgent、URL/referrer/cookie/header/request/response、error message/stack/cause、環境変数、endpoint/model名、API key/token/password、個人識別子、ログ、画像 | SafeMode ON/OFF に関わらず常時除外する。自由記述の再現メモは既存の手動共有経路に残し、JSONへ混ぜない。 |
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 診断バンドルの許可項目/禁止項目を確定し、`diagnostics.md` と `SUPPORT.md` に反映する。
-- [x] T2 自動送信、固定バンドル形式、保持方針を採用するかを判断し、必要ならADRを起票する。（判断: 自動送信・基盤連携は不採用、形式は `diag-bundle.v1` 許可リスト方式を提案。`ADR-0053` Proposed 起票、2026-07-11。T1/T3以降はADR Accepted後）
-- [ ] T3 ローカル作成/手動共有に限定する場合のUI導線を設計する。
-- [ ] T4 マスク処理のunit/integrationテストを追加する。
-- [ ] T5 UIを実装する場合は、プレビュー、キャンセル、コピー/ダウンロード、禁止項目不在をe2eで確認する。
+- [x] T1 診断バンドルの許可項目/禁止項目を確定し、`diagnostics.md` と `SUPPORT.md` に反映する。（`data_handling.md`/`operations.md` にも同期）
+- [x] T2 自動送信、固定バンドル形式、保持方針を採用するかを判断し、必要ならADRを起票する。（判断: 自動送信・基盤連携は不採用、形式は `diag-bundle.v1` 許可リスト方式を提案。`ADR-0053` Proposed 起票、2026-07-11。2026-07-13 Accepted）
+- [x] T3 ローカル作成/手動共有に限定する場合のUI導線を設計する。（`DiagnosticsBundlePanel.tsx`。Advanced UI に依存せず常時到達可能）
+- [x] T4 マスク処理のunit/integrationテストを追加する。（`diagnostics_bundle.test.ts` 21 tests: 許可リスト形状、未知キー拒否、SafeMode不変条件、no-network/no-storage、UA/OS正規化、決定性）
+- [x] T5 UIを実装する場合は、プレビュー、キャンセル、コピー/ダウンロード、禁止項目不在をe2eで確認する。（`e2e/diagnostics_bundle.spec.ts` 6 tests）
 
 ## 7) 検証計画 / Validation plan
 
@@ -175,6 +175,18 @@
 - `git diff --check -- 01_Plans/issues/issue-PRODUCT-OPS-02-support-diagnostics-bundle-policy.md`
 - `rg -n "Draft-to-Open readiness|Minimum safe bundle boundary|自動送信|外部保存|チケット|未加工本文|API key|token|password|Proceed|Hold|Stop" 01_Plans/issues/issue-PRODUCT-OPS-02-support-diagnostics-bundle-policy.md`
 - Proceed for this slice: docs-only の判断整理として継続可能。Issue status、ADR status、API/UI/runtime behavior は変更しない。
+
+## 完了記録 2026-07-13（Claude Code）
+
+`ADR-0053` Accepted（allowlist を安全側へ修正した版）を受けて実装した。
+
+- **生成コア**: `03_Implement/frontend/src/export/diagnostics_bundle.ts`。`buildDiagnosticsBundle(input)` は許可リストにある値だけから `diag-bundle.v1` オブジェクトを新規組み立てする純粋関数。既存の content diagnostics worker・review/export bundle は流用しない（ADR-0053 §生成契約どおり）。入力型自体がカード本文・Document id・error message/stack 等を受け取れない構造にすることで、SafeMode ON/OFF に関わらず禁止項目が出力されないことを構造的に保証し、かつネストオブジェクトを列挙で再構築（呼び出し側からのスプレッドを避ける）することで、呼び出し側が誤って余計なフィールドを足しても出力へ漏れないことを unit で固定した（`diagnostics_bundle.test.ts`、21 tests: 許可リスト形状、未知キー拒否、SafeMode不変条件＝`runtime.safeMode`以外は完全一致、UA/OS正規化、no-network/no-storage副作用ゼロ、決定性・JSON往復）。
+- **UI**: `03_Implement/frontend/src/ui/DiagnosticsBundlePanel.tsx`。障害分類（必須・5コード）→任意HTTP status→生成→**全文プレビュー必須**→コピー/ダウンロード、の順で、AgentTaskExportPanel と同じダイアログ・フォーカストラップ・Escape段階復帰の慣例に従う。プレビュー前にコピー/ダウンロードは使えない。閉じる（Escape/×/キャンセル）と生成済みプレビューはメモリから破棄される（分類コードの選択自体は非機微なため保持してよいと判断し、再生成の手間を減らした）。
+- **配置**: このパネルはサポート相談時に誰でも使う想定のため、`isAdvancedUiEnabled` に依存せず常時到達可能なヘッダーボタンとして配置した（Advanced 配下の AgentTaskExportPanel 等とは異なる判断）。
+- **appRevision**: ビルド時の revision 注入パイプラインが未整備のため、既存の `KJ_ATLAS_` env prefix 慣例を再利用し `KJ_ATLAS_APP_REVISION`（任意・安全な文字種/長さを検証、不正時は `unknown`）から読む。新しい revision 注入基盤は本Issueのスコープ外。
+- **providerType**: 既存の `providerKind`（PROV-VIS-01）をそのまま再利用し、未解決時は `unknown` にマップ。
+- **e2e**: `e2e/diagnostics_bundle.spec.ts`（6 tests）: Advanced UI 非依存での到達性、生成ブロック→許可形状プレビュー→禁止内容不在、ダウンロードとプレビューのバイト一致、コピー確認表示、Escape段階復帰と生成済みプレビューの破棄、ja ロケール描画。`header_toolbar_layout.spec.ts` の 390/768/920/1280/1440px 全幅で新規ボタン追加によるはみ出し回帰がないことを、変更前後のA/B比較で確認済み（同spec内の4件の別件失敗はbackend未接続に起因する変更前から存在した環境要因で、本変更とは無関係と確認した）。
+- **文書同期**: `diagnostics.md`（新規セクション）、`data_handling.md`、`operations.md`、`SUPPORT.md` を同一変更単位で更新。
 
 ---
 

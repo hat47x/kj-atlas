@@ -23,6 +23,13 @@
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef（未確定時の参照先）: N/A
 
+## Decision boundary sync 2026-07-13
+
+- `ADR-0035` は「高権限ライフサイクル操作を標準機能にしない境界」としてAccepted。削除・アーカイブ・所有者移管の未実装は隠れた欠落ではないが、導入組織が必須とする場合は別ADR/issueをリリース条件へ戻す。
+- `DATA-MAINT-03` はDone/Fixed、`DATA-MAINT-04` はmetadata-only境界のOpen検討へ進んだ。
+- `ADR-0052` / `ADR-0053` のAcceptedにより実装方式は決まったが、ARIA修正・作業モードtabs・診断バンドルの実装検証は未完であり、本Issueの総合DecisionStatusはPendingを維持する。
+- 本同期は過去checkpointログを書き換えず、現在の判断状態を上書きする。
+
 ## 1) 課題 / Problem statement
 
 - UI、文書、運用手順にはMVP期の前提や内部管理視点が残っている。
@@ -1593,3 +1600,22 @@
 - The remaining gates are not ADR/issue human-work items. They are release authority or execution-evidence gates: final program approval, Compose/environment rehearsal, support diagnostics/recovery rehearsal, physical keyboard acceptance, screen-reader acceptance, final release screenshot approval, and any formal organization approval.
 - Codex may prepare or run supporting evidence in later implementation/QA work, but must not convert these gates to shipment Go without the corresponding evidence and authority.
 - No ADR is required for this closeout because it does not change SafeMode/share policy, review authority, package public contract, persistence schema, or release authority.
+
+## MVP-EXIT Program Gate Decision 2026-07-13: current-main CI/E2E integrity audit
+
+- Candidate: `origin/main@e0a15686` plus the 2026-07-13 release-gate remediation slice.
+- Decision date: 2026-07-13.
+- Reviewer: Codex; final release authority is unchanged.
+- Input: `PRODUCT-QA-01` record `current-main CI and E2E integrity audit`, `DX-CI-PG-01`, `DX-AUTH-L2-01`, `DX-E2E-05`, and Open `DX-E2E-07`.
+
+### Decision
+
+- Final: **No-Go for full release shipment**.
+- Reason: frontend unit/build and backend regression are green, and two false-signal defects were corrected (PostgreSQL CI legacy keys; Playwright collection drift). However, 17 current-main E2E failures remain after the final isolation retry, so G2/G4/G7 are not satisfied. Real PostgreSQL execution is also pending on a Docker-capable host.
+- Prior evidence sync: the 2026-07-11 Compose/environment and support diagnostics/recovery rehearsals are completed evidence awaiting human final confirmation; they are no longer listed as unperformed.
+- Remaining independent gates: `DX-E2E-07`, implementation of accepted ADR-0052 / `UI-QUALITY-A11Y-03`, physical keyboard/screen-reader acceptance, release screenshot approval, final program approval, and any formal organization approval if introduced.
+- ADR-0054 and external-connection implementation are explicitly out of scope for this decision.
+
+### Re-decision condition
+
+Re-run after `DX-E2E-07` is Done with the full 145-test suite green and after PostgreSQL tests execute against a real service with the corrected canonical environment keys. This record does not relax SafeMode, review authority, package contracts, or release authority.

@@ -100,15 +100,15 @@ Auth federation Level2（Mock SP/IdP）を実行する場合:
 ```bash
 cd 03_Implement/backend
 export PYTHONPATH=src
-export LEVEL2_DIAG_DIR=.tmp/level2-diagnostics
+export KJ_ATLAS_LEVEL2_DIAG_DIR=.artifacts/auth-level2/legacy-federation
 ./scripts/run_auth_level2.sh
 ```
 
-- provider profile fixture: `tests/level2/fixtures/provider_profile_*.json`
+- provider profile fixtures: `tests/level2/fixtures/provider_profile_*.json`, `tests/federation/profiles/*.json`
 - 差異再現観点: ヘッダー名 / claim名 / groups形式 / amr-acr有無
-- 失敗時の診断ログは `LEVEL2_DIAG_DIR` にJSON出力されるため、QA再現時は同じfixtureを指定して再実行する。
+- 診断JSONは `KJ_ATLAS_LEVEL2_DIAG_DIR` を明示したときだけ出力する。通常の `pytest` は作業ツリーへ診断ファイルを書き込まない。
 
-Auth Level2（Mock SP/IdP、境界変更PR向け）:
+同じ統合ハーネスを直接実行する場合:
 
 ```bash
 cd 03_Implement/backend

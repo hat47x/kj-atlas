@@ -145,6 +145,16 @@ API status:
 秘密情報の除去確認: 済 / 未
 ```
 
+## サポート診断バンドル（PRODUCT-OPS-02 / ADR-0053）
+
+上のテンプレートを手入力する代わりに、画面ヘッダーの「サポート診断バンドル」から、共有してよい情報だけをその場で組み立てられます。
+
+- 障害分類（下表の5コードのいずれか。必須）を選び、任意で直近の HTTP status を入力し、「診断バンドルを生成」を押します。
+- 生成後は必ず全文プレビューが表示されます。コピーまたはダウンロード（`diag-bundle.v1` 形式の JSON）は、内容を確認したあとにのみ行えます。
+- 自動送信は一切行いません。生成・プレビュー・コピー・ダウンロードはすべてローカルの操作です。
+- 含まれるのは、アプリ revision（検証できない場合は `unknown`）、正規化済みブラウザ family/major・OS family、選択した障害分類・任意の HTTP status、SafeMode 状態、provider 種別、対象文書の version/updatedAt とカード/島/エッジの**件数のみ**です。
+- カード・島・narrative 等の本文、文書 ID、entity id/ref、API key/token/password、内部URL、個人情報、生の UserAgent、error message/stack は SafeMode の ON/OFF に関わらず一切含まれません。許可リストの詳細は [ADR-0053](https://github.com/hat47x/kj-atlas/blob/main/01_Plans/adr/ADR-0053-support-diagnostics-bundle-boundary.md) を参照してください。
+- パネルを閉じる（Escape・×・キャンセル）と、生成済みの内容はメモリから破棄されます。
 
 ## 障害分類と一次切り分け
 

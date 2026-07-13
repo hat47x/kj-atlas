@@ -1,15 +1,40 @@
 # Issue Draft: UX-NAV-02 作業モード面（領域4）中身のタブ化 ― role=tablist・5タブ完全実装
 
 - Type: Feature request
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/issues/issue-UX-NAV-01-work-mode-surface-navigation-hierarchy.md`（Done。§68で「フルなタブ設計は本Issueの対象外、必要なら別途」と明記済み）
 - Priority: P2
 - Owner: TBD
-- Scope: `03_Implement/frontend/src/App.tsx`（advancedWorkModeContent）, `03_Implement/frontend/src/ui/WorkModePanel.tsx`, `03_Implement/frontend/src/ui/HilRsWorkflowPanel.tsx`（新規タブコンテナへ置換またはラップ）
+- Scope: `03_Implement/frontend/src/App.tsx`（advancedWorkModeContent）, `03_Implement/frontend/src/ui/WorkModePanel.tsx`, 新規 `03_Implement/frontend/src/ui/WorkModeTabs.tsx`, `03_Implement/frontend/src/ui/HilRsWorkflowPanel.tsx`（機能slotへの縮約）
 - Related Backlog: `UX-NAV-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`（C-5「作業モードタブへの role=tablist 導入要否」を本Issueが解消）, `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（残課題としてrole=tablist判断を本Issueへ委譲）
+- Related ADR/Spec: `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`（Independent。本ADRはCanvas/Menu限定）, `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（role=tablist判断の解消先）, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - Expected verification level: `e2e`
+
+## Draft→Open 2026-07-13: 着手ゲート代理裁可
+
+`role=tablist` は、5つの同格な作業面を1つずつ表示する現設計に適合するため採用する。`ADR-0052` はキャンバスカードとメニュー内フォームに限定され、本Issueの形式的依存にはしない。着手時は次の契約を固定する。
+
+- activationはmanual方式: 左右矢印はfocusだけを移動し、Enter/Spaceでactive化する。Home/End、roving `tabIndex`、`aria-controls` / `aria-labelledby` を実装する。
+- 作業面を開いた直後はactive tab（未設定なら先頭tab）へfocusする。Closeボタンを初期focusにしない。
+- Escapeは `tabpanel内 -> active tab -> panel close -> 起動triggerへ復帰` の段階契約とし、現行の一発closeを置き換える。
+- 非active panelはmounted + hiddenを既定とし、入力値、候補、非同期結果をタブ切替で失わない。副作用処理は非active時に新規開始しない。
+- 診断タブは文書全体の既存決定論的診断/件数を再利用する。SidePanelの選択対象別診断は残し、重複する新ロジックやscore/rank/%を追加しない。
+- 実装境界はApp-levelの新規 `WorkModeTabs` とし、`advancedWorkModeContent` 内でsiblingになっている `NarrativesPanel` と `HilRsWorkflowPanel` の各機能を5つのslotへ再構成する。`HilRsWorkflowPanel` 単体のラップでは完了扱いにしない。
+- 390pxではtab stripを横スクロール可能にし、選択中tabを視野内に保つ。390/768/1440pxで見切れ、重なり、focus迷子をE2E確認する。
+- 実装完了時、axeの延期対象にはキャンバス/menuの2ルールだけを残し、tablist由来の除外を残さない。
+
+## Requirement meta I/F
+
+- RequirementID: UX-NAV-02
+- RequirementStatement: 作業モードの5つの同格面を、状態を失わないmanual-activation tabsとしてキーボード・支援技術・狭幅画面から一貫して操作できるようにする。
+- PriorityClass（Must / Should / Could）: Should
+- AcceptanceScenario: 前提=作業モードを開く / 操作=矢印・Home/End・Enter/Space・Tab・Escapeで移動する / 期待結果=focusとactive panelが区別され、既存4面の状態が保持され、診断面から対象へ戻れる / 除外=タブ永続化、タブ順カスタマイズ、診断ロジック高度化。
+- GoNoGoGate（Required / Optional / N/A）: Required
+- SecurityGateImpact: SafeMode / proposal-only / anti-scoring（既存境界の非回帰）
+- VerificationLevel: e2e
+- DecisionStatus（Fixed / Pending）: Fixed（2026-07-13 maintainer代理裁可）
+- DecisionQueueRef: Resolved（本Issueの着手ゲートで固定。ADR-0052とは独立）
 
 ## 背景
 
@@ -35,9 +60,9 @@ Claude Design 実装照合レビュー（2026-07-11、拡張提案 P21「作業�
 
 ## 提案する解決策
 
-- `HilRsWorkflowPanel.tsx` を `role=tablist` ベースのタブコンテナへ置換（または新規タブラッパーで包む）。
+- App-levelに `WorkModeTabs` を新設し、`advancedWorkModeContent` の `NarrativesPanel` と `HilRsWorkflowPanel` 内の機能を `role=tablist` ベースのタブコンテナへ再構成する。
   - 5タブ: 差分／選択マージ／AI提案／診断／文章化。
-  - 矢印キー（左右）でタブ移動、Enter/Spaceでアクティブ化。Escapeは既存の段階閉鎖契約と整合。
+  - 左右矢印でfocus移動、Enter/Spaceでアクティブ化するmanual activation。Home/End、roving `tabIndex`、`aria-controls` / `aria-labelledby` を含む。Escapeは上記の段階閉鎖契約へ更新する。
   - 各タブ内容は既存コンポーネント（`ReviewDiffPanel`/`HilRsRediffPreview`＝差分、`MergeSuggestionsPanel`+`PatchWorkspacePanel`＝選択マージ、`SuggestionPanel`＝AI提案、`NarrativesPanel`＝文章化）をそのまま移設。ロジック・propsは変更しない。
 - **新規: 診断タブ**を追加。反スコアリング原則（点数・ランク・%なし）で「未レビューn・根拠なしn・矛盾n」を確認導線として列挙する（拡張提案P21の設計どおり）。
 - QA-MONKEY-12（作業モード内の重なりバグ）の根本原因調査・修正は、タブ化によりセクションが同時に1つしか描画されなくなるため、副次的に解消する可能性が高い。ただし独立したQAとして別途確認する。
@@ -46,12 +71,14 @@ Claude Design 実装照合レビュー（2026-07-11、拡張提案 P21「作業�
 ## 受け入れ条件（案）
 
 - [ ] 作業モード面の中身が `role=tablist`／`role=tab`／`role=tabpanel` で実装される。
-- [ ] 矢印キーでタブ間を移動でき、Enter/Spaceでアクティブ化する。既存のEscape段階閉鎖・フォーカス復帰契約を破壊しない。
+- [ ] manual activation、Home/End、roving `tabIndex`、`aria-controls` / `aria-labelledby` を実装し、Escapeの段階閉鎖と起動triggerへのfocus復帰を満たす。
 - [ ] 5タブ（差分／選択マージ／AI提案／診断／文章化）が揃い、「レビュー」語を使わない。
 - [ ] 診断タブは反スコアリング（点数・ランク・%なし）で「確認が要る箇所」への導線として機能する。
+- [ ] 非active panelの入力値・候補・非同期結果が保持され、非active化だけで破棄・再実行されない。
+- [ ] 390/768/1440pxでtab stripとtabpanelに見切れ・重なり・focus迷子がない。
 - [ ] 既存4セクションの機能・監査ログ・取消動線に回帰がない（既存テスト・e2eが継続してパスする）。
 - [ ] ADR-0052 の C-5 判断が本Issueで解消されたことを `UI-QUALITY-A11Y-02` へ反映する。
-- [ ] a11y: フォーカス初期位置・Tab順・Escape挙動・読み上げ順（型→保持系→確認→根拠→本文）の仕様表どおりに実装し、e2eで確認する。
+- [ ] a11y: 開いた直後のactive tab focus、tabの名称/選択状態/tabpanel関連、Tab順、Escape挙動を仕様どおりに実装し、axeとe2eで確認する。
 
 ## 検証計画
 

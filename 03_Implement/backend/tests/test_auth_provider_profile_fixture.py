@@ -46,7 +46,7 @@ def _sqlite_client(tmp_path) -> Iterator[TestClient]:
 def _require_auth_level2_mock_sp(base_url: str) -> None:
     try:
         with httpx.Client(timeout=2.0) as client:
-            response = client.get(f"{base_url}/health")
+            response = client.get(f"{base_url}/healthz")
     except httpx.HTTPError:
         pytest.skip(
             "auth_level2 mock SP is not reachable; run tests/scripts/run_auth_level2.sh or set KJ_ATLAS_AUTH_LEVEL2_SP_BASE_URL"

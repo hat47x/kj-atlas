@@ -23,6 +23,12 @@
 - DecisionStatus（Fixed / Pending）: Fixed (Open化可)
 - DecisionQueueRef（未確定時の参照先）: `MVP-EXIT-01`
 
+## Decision boundary sync 2026-07-13
+
+- `ADR-0035` はAccepted。これは削除・アーカイブ・所有者移管の解禁ではなく、標準機能外とする境界の確定である。`DATA-MAINT-03` はDone/Fixed、`DATA-MAINT-04` はmetadata-only境界のOpen検討へ進んだ。
+- `ADR-0052` / `ADR-0053` は安全側の方式を確定してAccepted。対応実装・E2Eは未完であり、AcceptedだけをリリースGo根拠にしない。
+- 本同期は過去checkpointログを書き換えず、現在の判断状態を上書きする。
+
 ## Implementation Evidence 2026-07-05: View controls Japanese UI wording
 
 - The Japanese View controls no longer expose English interaction labels such as `Abstract view`, `Peek/Focus`, `Close`, `Mid`, `Far`, or `OFF` in the summary/LOD controls. They now use Japanese user-facing labels: `抽象マップビュー`, `プレビュー`, `近距離`, `中距離`, `遠距離`, and `無効`.
@@ -3072,3 +3078,34 @@ AI権限のいずれも変更しない。
 - 次回演習への引き継ぎ: 判断ログ（`merge_decision_logs`）に実データがあるバックアップでの順序検証。
 
 No ADR is required: 文書化済みランブックの実施のみで、境界・スキーマ・権限の変更はない。
+
+## Productization Gate Record 2026-07-13: current-main CI and E2E integrity audit
+
+- Candidate: `origin/main@e0a15686` plus the atomic release-gate remediation in this working slice.
+- Date (JST): 2026-07-13.
+- Reviewer: Codex. This record excludes ADR-0054/external-connection implementation and is not final shipment approval.
+- Scope: issue integrity, frontend type/unit/build, backend lint/unit/migration/Level2 harness, PostgreSQL CI wiring, and full Playwright collection/execution.
+
+### Evidence
+
+- Issue memo validator: pass; validator unit tests 10 passed.
+- Frontend: typecheck pass; build pass; 189 files / 1005 unit tests pass; regression guards 10 files / 135 tests pass.
+- Backend after remediation: ruff pass; 289 passed / 24 skipped; Level2 integration 7 passed / 0 skipped; Alembic single head `20260314_0005` and expected tables verified on SQLite.
+- PostgreSQL CI defect fixed: workflow now uses `KJ_ATLAS_DATABASE_URL` and `KJ_ATLAS_RUN_PG_TESTS`; a regression test rejects the legacy false-green wiring. A real PostgreSQL rerun remains unverified because Docker is unavailable on this host.
+- Playwright collection defect fixed as `DX-E2E-05`: the complete 145-test suite now collects; the start-panel 960px/390px cases pass in system Chrome.
+- Full E2E system-Chrome run: 26 failed initially. One-worker isolation recovered 9; 17 deterministic failures remain and are filed as `DX-E2E-07`.
+- Existing critical ARIA structure findings remain tracked by `UI-QUALITY-A11Y-03`; ADR-0052 was accepted concurrently on 2026-07-13, but its implementation and assistive-technology acceptance remain outside this atomic CI/E2E remediation slice.
+
+### Gate evaluation
+
+- G0 planning integrity: Go. New findings are separated into Done remediation memos and the Open `DX-E2E-07` blocker; ADR-0054 is excluded.
+- G1 safety defaults: Go / unchanged for this slice. SafeMode and redaction regression guards pass; no runtime policy change.
+- G2 primary operations: No-Go until `DX-E2E-07` reconciles the 17 current-UI failures.
+- G3 Japanese UI: Conditional Go; i18n unit guards pass, but one functional-equivalence E2E remains in `DX-E2E-07`.
+- G4 viewport/operability: No-Go; header keyboard/viewport and large-document scenarios remain red.
+- G6 diagnostics/support: Go for the prior 2026-07-11 rehearsal; no new runtime drift found here.
+- G7 build/regression: No-Go. Unit/build/backend are green, but full E2E is not.
+
+### Decision
+
+**No-Go for full release shipment.** The PostgreSQL CI and E2E collection false signals are fixed, but `DX-E2E-07` must reach full-suite green and accepted ADR-0052 still requires implementation plus accessibility acceptance. Real PostgreSQL execution must be rerun in a Docker-capable environment before treating the corrected CI path as integration evidence.

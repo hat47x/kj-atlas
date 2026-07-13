@@ -384,5 +384,5 @@ Use the following command when checking this boundary:
 
 ```bash
 cd 03_Implement/frontend
-node ./node_modules/playwright/cli.js test e2e/pub_visibility_i18n_readonly_flow.spec.ts --reporter=line
+node ./node_modules/@playwright/test/cli.js test e2e/pub_visibility_i18n_readonly_flow.spec.ts --reporter=line
 ```

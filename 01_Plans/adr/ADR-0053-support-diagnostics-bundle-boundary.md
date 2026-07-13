@@ -1,9 +1,9 @@
 # ADR-0053: サポート診断バンドルの共有境界
 
-- Status: Proposed
+- Status: Accepted（2026-07-13、allowlistを安全側へ修正して採択）
 - Date: 2026-07-11
-- Deciders: Productization Program Owner / System Owner / Project Maintainers
-- Scope: `03_Implement/frontend/src/`, `04_Documentation/diagnostics.md`, `04_Documentation/operations.md`, `SUPPORT.md`
+- Deciders: Maintainer
+- Scope: `03_Implement/frontend/src/`, `04_Documentation/diagnostics.md`, `04_Documentation/operations.md`, `04_Documentation/data_handling.md`, `SUPPORT.md`
 
 ## Context
 
@@ -22,19 +22,24 @@
 ### バンドル契約（diag-bundle.v1）
 
 - 形式はバージョン付き（`diag-bundle.v1`）とし、項目の追加・削除は本ADRの更新を要する。
+- 単一のUTF-8 JSONとして生成し、ZIP化しない。未知キーは全階層で拒否する。
 - **許可リスト（これ以外は含めない）**:
-  - アプリ revision / ビルド識別子、生成時刻
-  - ブラウザ/OS の UserAgent 文字列
-  - 障害分類コード（`operations.md` の WEB-ENTRY / API-UNAVAILABLE / SAVE-FAILURE / IMPORT-VALIDATION / SHARE-SAFEMODE）と直近の HTTP status
-  - SafeMode 状態（ON/OFF）と provider 種別名（none / local / large-scale。エンドポイントURL・モデル名は含めない）
-  - 対象 Document の `id` / `version` / `updated_at`（タイトル・本文は含めない）と、カード/島/エッジの**件数のみ**
-  - アプリ自身のエラーエンベロープ（A1契約の `errorCode` / `contractId` / `occurredAt`。message はアプリ定義文言のみで、外部入力のエコーを含む場合は除外）
+  - 安全な文字種・長さへ検証済みのアプリ revision / ビルド識別子、生成時刻。検証できないrevisionは `unknown` とする
+  - 正規化済みのブラウザfamily、任意のmajor version、OS family。生のUserAgentは含めない
+  - 障害分類コード（`operations.md` の WEB-ENTRY / API-UNAVAILABLE / SAVE-FAILURE / IMPORT-VALIDATION / SHARE-SAFEMODE）と、画面が明示的な障害コンテキストとして保持する直近の HTTP status
+  - SafeMode 状態（ON/OFF）と provider 種別名（none / local / large-scale / unknown。エンドポイントURL・モデル名は含めない）
+  - 対象 Document の `version` / `updatedAt` と、カード/島/エッジの**件数のみ**。`Document.id` は含めない
+  - アプリ自身のエラーエンベロープのうち、既知のA1契約値 `errorCode` / `contractId` / `occurredAt` のみ。`message` / stack / cause は含めない
 - **禁止リスト（レビュー状態を問わず一切含めない）**:
-  - カード・島・narrative・critique・KAフィールド等の本文、Document タイトル、取り込みファイル内容
+  - カード・島・narrative・critique・KAフィールド等の本文、Document id / タイトル、entity id / ref、取り込みファイル内容
   - API key / token / password / Authorization ヘッダー、環境変数値、内部URL・接続文字列
-  - メールアドレス等の個人識別子、生のサーバーログ、スクリーンショット（必要時は利用者が既存文書の判断基準に従い別途添付する）
-- **UI 契約**: 生成は明示ボタンからのみ開始。コピー/ダウンロードの**前に全文プレビューを必ず表示**し、除外済みカテゴリを明記する。任意の時点でキャンセル可能。自動送信・バックグラウンド収集・定期収集は行わない。
+  - メールアドレス等の個人識別子、生のUserAgent、referrer、cookie、request/response body、error message、サーバーログ、スクリーンショット（必要時は利用者が既存文書の判断基準に従い別途添付する）
+- **SafeMode不変条件**: SafeMode ON/OFFで出力項目・値の露出境界を変えない。変化してよいのは `safeMode` 状態値だけである。
+- **生成契約**: 既存のcontent diagnostics workerやreview/export bundleを流用せず、許可された値だけから新しいオブジェクトを組み立てる。生成時に新しいAPI要求を行わず、localStorage / IndexedDB / cacheへ保存しない。
+- **UI 契約**: 生成は明示ボタンからのみ開始。コピー/ダウンロードの**前に全文プレビューを必ず表示**し、除外済みカテゴリを明記する。プレビューとコピー/ダウンロードは同一の不変JSON文字列を使う。任意の時点でキャンセルでき、閉じた時点でメモリ上のスナップショットを破棄する。自動送信・バックグラウンド収集・定期収集は行わない。
 - **文書同期**: `diagnostics.md` / `operations.md` / `SUPPORT.md` の手動共有テンプレートはバンドル導入後も代替経路として残し、同一PRで整合させる。
+
+v1のtop-level keyは `schemaVersion/generatedAt/app/client/incident/runtime/document?/error?` に固定する。`client` は `browserFamily/browserMajor?/osFamily`、`incident` は `classificationCode/httpStatus?`、`runtime` は `safeMode/providerType`、`document` は `version/updatedAt?/counts`、`error` は `errorCode/contractId/occurredAt` だけを持つ。`counts` は `cards/islands/edges` だけを持つ。自由記述フィールドは設けない。
 
 ### 非目標
 
@@ -47,6 +52,13 @@
 - サポートが受け取る情報が一定になり、切り分けが速くなる。利用者は「何が含まれ、何が含まれないか」をプレビューで確認してから共有できる。
 - 許可リスト方式のため、新しい診断項目の追加には本ADRの更新が必要（意図的な摩擦）。
 - 実装は本ADRのAccepted後に、UI（生成・プレビュー・コピー/ダウンロード・キャンセル）＋e2e検証＋文書同期を1つの実装issueとして切り出す。`PRODUCT-OPS-02` の受入条件がそのままe2e観点になる。
+
+## 実装着手ゲート（2026-07-13）
+
+- unit: strict schema/unknown-key拒否、SafeMode ON/OFF双方の禁止センチネル、プレビューと出力bytesの一致を確認する。
+- integration: 生成中の `fetch` / XHR / `sendBeacon` / WebSocket と、localStorage / sessionStorage / IndexedDBへの書き込みが0件であることを確認する。
+- e2e: 明示生成、全文プレビュー、キャンセル、コピー、ダウンロード、キーボード/フォーカス、ja/en等価性、禁止項目不在を確認する。
+- `diagnostics.md` / `operations.md` / `data_handling.md` / `SUPPORT.md` を同一変更単位で同期する。
 
 ## Traceability
 

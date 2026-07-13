@@ -553,18 +553,18 @@ jobs:
 
       - name: Test (SQLite except auth level suites)
         env:
-          DATABASE_URL: sqlite:///./kj_atlas.db
+          KJ_ATLAS_DATABASE_URL: sqlite:///./kj_atlas.db
         run: pytest -m "not postgres and not auth_level1 and not auth_level2"
 
       - name: Test (Auth Level1 required)
         env:
-          DATABASE_URL: sqlite:///./kj_atlas.db
+          KJ_ATLAS_DATABASE_URL: sqlite:///./kj_atlas.db
         run: pytest -m auth_level1
 
       - name: Test (Auth Level2 conditional)
         if: steps.auth_level2.outputs.required == 'true'
         env:
-          DATABASE_URL: sqlite:///./kj_atlas.db
+          KJ_ATLAS_DATABASE_URL: sqlite:///./kj_atlas.db
         run: tests/scripts/run_auth_level2.sh
 
       - name: Upload Auth Level2 diagnostics
@@ -587,11 +587,11 @@ jobs:
 
       - name: Migrate PostgreSQL schema
         env:
-          DATABASE_URL: postgresql+psycopg://kj_atlas:kj_atlas@localhost:5432/kj_atlas
+          KJ_ATLAS_DATABASE_URL: postgresql+psycopg://kj_atlas:kj_atlas@localhost:5432/kj_atlas
         run: alembic upgrade head
 
       - name: Test (PostgreSQL)
         env:
-          RUN_PG_TESTS: "1"
-          DATABASE_URL: postgresql+psycopg://kj_atlas:kj_atlas@localhost:5432/kj_atlas
+          KJ_ATLAS_RUN_PG_TESTS: "1"
+          KJ_ATLAS_DATABASE_URL: postgresql+psycopg://kj_atlas:kj_atlas@localhost:5432/kj_atlas
         run: pytest -m postgres

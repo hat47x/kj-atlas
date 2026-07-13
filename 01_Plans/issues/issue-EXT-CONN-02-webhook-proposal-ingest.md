@@ -8,7 +8,7 @@
 - Owner: TBD
 - Scope: `03_Implement/backend/`（受信エンドポイント）, `03_Implement/frontend/src/import/agent_response_import.ts`（サニタイズの共有）, `THREAT_MODEL.md`
 - Related Backlog: `EXT-CONN-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`, `01_Plans/issues/issue-EXT-AGENT-02-agent-response-import.md`（サニタイズ・提案着地の正本）
+- Related ADR/Spec: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`, `01_Plans/issues/issue-EXT-AGENT-02-agent-response-import.md`（サニタイズ・提案着地の正本）, `01_Plans/issues/issue-DATA-MODEL-OPS-02-management-plane-data-boundary.md`（D3登録・認可境界）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -21,7 +21,7 @@
 - SecurityGateImpact: import-sanitize / SafeMode / public-exposure
 - VerificationLevel: e2e
 - DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef: `ADR-0054` は Accepted 済み（2026-07-12）。残るゲートは **EXT-CONN-01 の運用実績**のみ（充足後に Open 化）。
+- DecisionQueueRef: `ADR-0054` はAccepted済み（2026-07-12）、`DATA-MODEL-OPS-02` D3はFixed済み（2026-07-13）。残るゲートは **EXT-CONN-01の運用実績 + D3の契約先行同期・admin認可実装/検証**。通常ownerが登録・失効できず、wrong/revoked/wrong-document tokenが拒否されるまでDraftを維持する。
 
 ## 背景
 

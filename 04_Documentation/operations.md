@@ -211,7 +211,7 @@ API status:
 復旧作業は必ず次の順で進めます。各ステップで完了条件が不足している場合は、恒久変更を確定せず **暫定対応メモ** として記録します。
 
 1. **Plan（計画）**
-   - 失敗分類コード（WEB-ENTRY / API-UNAVAILABLE / SAVE-FAILURE / IMPORT-VALIDATION / SHARE-SAFEMODE）を決定する。
+   - 失敗分類コード（WEB-ENTRY / API-UNAVAILABLE / SAVE-FAILURE / IMPORT-VALIDATION / SHARE-SAFEMODE）を決定する。画面ヘッダーの「サポート診断バンドル」（`diag-bundle.v1`、[diagnostics.md](diagnostics.md) 参照）で同じ分類コードを選び、非機微な環境情報を添えて引き継ぐこともできる。
    - 受入条件（AC）を3点で定義する: 「利用者影響の停止」「安全境界の維持」「再現手順の記録」。
    - 承認者（System Owner）と実行者（Platform Operator / First Responder）を分離して記録する。
 2. **Execute（実行）**

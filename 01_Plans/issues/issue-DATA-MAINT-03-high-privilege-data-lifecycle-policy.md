@@ -22,8 +22,12 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `ADR-0035`
+- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0035` Accepted 2026-07-13）
+- DecisionQueueRef（未確定時の参照先）: Resolved
+
+## Decision resolution 2026-07-13
+
+`ADR-0035` を「高権限操作を標準機能にしない境界」としてAcceptedした。削除・アーカイブ・所有者移管の包括解禁は不採用であり、管理者本文閲覧・横断検索・保持期限自動化も標準導線へ追加しない。本文を含まない監査メタデータ閲覧の境界整理だけを `DATA-MAINT-04` で継続できる。本決定により、本IssueのDoneとDecisionStatusが一致した。
 
 ## 1) 課題 / Problem statement
 

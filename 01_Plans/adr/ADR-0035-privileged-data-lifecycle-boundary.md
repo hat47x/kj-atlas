@@ -1,8 +1,8 @@
 # ADR-0035: 高権限データライフサイクル操作の製品境界
 
-- Status: Proposed
+- Status: Accepted（2026-07-13、maintainer 代理裁可。高権限操作の包括解禁は不採用）
 - Date: 2026-06-01
-- Deciders: Project Maintainers
+- Deciders: Maintainer
 - Scope: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/api.md`
 
 ## Context
@@ -22,6 +22,8 @@
 ## Decision
 
 MVPおよび次の製品化準備段階では、高権限データライフサイクル操作を標準管理機能として提供しない。提供可否は次の境界で扱う。
+
+本決定は、削除・アーカイブ・所有者移管をまとめて解禁する判断ではない。現行データモデルには、文書所有権の物理正本、復旧可能なライフサイクル状態、共有済み成果物との失効関係、判断ログ保持契約が揃っていないため、3操作の包括解禁を明示的に却下する。
 
 | 操作 | 製品境界 | 実装前提 |
 | --- | --- | --- |
@@ -90,15 +92,16 @@ Maintainer の選択肢:
 - `data_model_operations_overview.md` は、MVPで支援するデータ、埋め込み構造、派生情報、未支援のライフサイクル操作を区別している。
 - `PRODUCT-QA-01` と `MVP-EXIT-01` は、未解決の高権限操作を隠れた実装漏れではなく、リリースゲート対象の製品境界判断として扱っている。
 
-## Current-main decision freshness（2026-06-13）
+## Current-main decision freshness（2026-06-13、2026-07-13解決）
 
-この更新は、本ADRをAcceptedにするものではない。2026-06-13時点の `main` では、判断材料はそろっているが、Project Maintainers の明示判断がまだ残っている。
+2026-06-13時点では判断材料だけがそろい、Project Maintainers の明示判断が残っていた。2026-07-13のmaintainer代理裁可で `Accept as written` を選び、この判断待ちは解決した。
 
-Project Maintainers が次に行う判断:
+採択結果:
 
-1. Accept as written: 高権限ライフサイクル操作を標準機能にしない境界を固定する。
-2. Request changes: 不足するリスク、ステークホルダー、導入条件を指定し、本ADRを更新してから再判断する。
-3. Reject: 標準機能に含めるべき高権限操作を明示し、その操作ごとの後続ADRを起票する。
+1. 削除: 解禁しない。
+2. アーカイブ: 可逆な状態遷移の将来候補として保持するが、現時点では解禁しない。
+3. 所有者移管: 所有権の正本と監査責任が未定義のため解禁しない。
+4. 本文を含まない監査メタデータ閲覧: `DATA-MAINT-04` で境界整理を継続してよいが、本採択だけでは実装を許可しない。
 
 Productization Program Owner / QA Lead が次に確認する事項:
 
@@ -130,14 +133,14 @@ Productization Program Owner / QA Lead が次に確認する事項:
 - `data_model_operations_overview.md` と `api.md` は、高権限データライフサイクル操作の標準提供なし、メタデータ限定の監査閲覧候補のみissueで検討可、という境界へ同期する。
 - `PRODUCT-QA-01` / `MVP-EXIT-01` は、削除や管理者本文閲覧の未実装を単独のリリース阻害ではなく、明示された製品境界として扱う。ただし本番運用で必須と判断される場合は、別ADR/issueをリリース条件へ戻す。
 
-## Post-2398 governance-context note (2026-06-14)
+## Post-2398 governance-context note (2026-06-14、2026-07-13更新)
 
 - Current mainline reviewed: `origin/main@e6a72667dbd3794b1903264887642932f11515d9`.
 - `ADR-0039` is Accepted and right-sizes governance for the personal-OSS / pre-release phase. That process decision does not change this ADR's decision state.
-- This ADR remains `Status: Proposed` until Project Maintainers explicitly choose Accept as written, Request changes, or Reject for this high-privilege lifecycle boundary.
-- `DATA-MAINT-03` remains `Status=Open` / `DecisionStatus=Pending`; `DATA-MAINT-04` remains Draft.
+- The maintainer proxy decision on 2026-07-13 chose `Accept as written`; this ADR is now `Status: Accepted`.
+- `DATA-MAINT-03` is `Status=Done` / `DecisionStatus=Fixed`; `DATA-MAINT-04` may remain Open for metadata-only boundary work.
 - This note grants no implementation permission for deletion, archive, ownership transfer, admin body browsing, cross-document body search, retention automation, broad audit viewing, or metadata-only audit viewing.
-- Stop condition: do not treat `ADR-0039`, recent CE checkpoint merges, or this freshness note as implicit acceptance of `ADR-0035`.
+- Stop condition: do not treat this acceptance as permission for deletion, archive, ownership transfer, admin body browsing, cross-document body search, or retention automation.
 
 ## Traceability
 

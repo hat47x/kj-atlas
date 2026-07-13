@@ -1,5 +1,10 @@
 import type { Page } from "@playwright/test";
 
+export const START_PANEL_TITLE = /^Start work$|^作業を開始$/;
+export const START_PANEL_NEW_DOCUMENT = /Create new document|新しい文書を作成/;
+export const START_PANEL_SAMPLE = /Open sample|サンプルを開く/;
+export const START_PANEL_LOAD_DOCUMENT = /Load document file|文書ファイルを読み込む/;
+export const START_PANEL_IMPORT_PACK = /Import review pack|レビューパックを取り込む/;
 export const SHARE_REPRODUCE_BUTTON = /Share & Reproduce|共有と再現/;
 export const VIEW_BUTTON = /^View$|^表示$/;
 export const ADVANCED_UI_BUTTON = /^Advanced$|^詳細$/;
@@ -18,6 +23,7 @@ export const SEARCH_CARDS_PLACEHOLDER = /Search cards|カードを検索/;
 export const HIDE_NON_MATCHES_CHECKBOX = /Hide non-matches|非一致を非表示/;
 
 export const WORK_MODE_BUTTON = /^Work mode$|^作業モード$/;
+export const DIAGNOSTICS_BUNDLE_BUTTON = /Support diagnostics bundle|サポート診断バンドル/;
 
 export function visibilitySelect(page: Page, label: "view" | "pack") {
   const labelPattern = label === "view" ? /View visibility|view の公開範囲/ : /Pack visibility|パックの公開範囲/;
