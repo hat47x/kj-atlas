@@ -2242,6 +2242,139 @@
     <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd; margin-top:12px;"><div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">CB自己申告・5判断軸</div><p style="font-size:12px; color:#475569; line-height:1.6; margin:6px 0 0;">CB-1: 6分類を維持（7へ増やさない）。挿入廃止で選択肢を減らす方向。CB-3: 既存コマンドの再分類（純増なし）。語彙分離を回復（軸5=人間/AI・意味の峻別を強化）。保持系はメニューに昇格させずキャンバス/スリムバーに残す（CB-2）。スキーマ不変。</p></div>
   </section>
 
+  <!-- ===== P30 カバレッジ棚卸しの設計側反映 ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P30</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">棚卸し反映（2026-07）</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">カバレッジ棚卸しの設計側トリアージと次の一手</h3>
+    </div>
+    <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;">受領した棚卸し（区分A=未要求／B=設計済み未照合／C=判断待ち）を<strong style="font-weight:700;">設計アクションに割り付け</strong>る。ここでは資料不要で確定できる規約を明文化し、実機・ソースが要る面は必要資料を明示する。既存の採択方針（slate/amber予約/4チャネル/凡例既定OFF/反スコアリング/SafeMode/語彙分離）を全項目に適用。</p>
+
+    <!-- 確定できる設計規約 -->
+    <h4 style="font-size:15px; font-weight:700; margin:16px 0 0;">いま確定する設計規約（資料不要）</h4>
+    <figure style="margin:10px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+          <thead><tr style="background:#f8fafc; text-align:left;"><th style="padding:8px 11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:22%;">項目</th><th style="padding:8px 11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">規約</th></tr></thead>
+          <tbody style="color:#3e4c59; line-height:1.55;">
+            <tr><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9; font-weight:700;">A-8 コンテキストメニュー項目規約</td><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9;">選択種別（カード単/複/島/関係線/空白）で<strong style="font-weight:700;">可能アクションのみ</strong>表示（P16実装済み）。区切りは「編集／状態／構造／破壊的」の順、破壊的（削除・解除）は最下段・赤。disabled項目はメニューに出さず<strong style="font-weight:700;">非表示</strong>（メニューバー側は淡色残置と役割分担）。1メニュー最大7項目を上限にCB-1を守る。</td></tr>
+            <tr><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9; font-weight:700;">A-10 シェルフ（保留系の置き場）</td><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9;">保留・違和感の一時退避先。<strong style="font-weight:700;">amberは「保持系」の意味でのみ</strong>使用し、シェルフ自体の枠・見出しは中立slate（amberを容器色に流用しない＝4チャネル1意味）。シェルフ内カードも保持状態バッジはamber、それ以外は通常。</td></tr>
+            <tr><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9; font-weight:700;">A-11 横断の状態様式</td><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9;">空/読込/処理/エラー/読取専用/保存競合の共通様式（P5準拠）。エラー文言は<strong style="font-weight:700;">中立・非難しないトーン＋「作業は保持」を明示</strong>＋リトライ導線。保存競合は破棄させないダイアログ（自分の版/相手の版/併記を選ぶ・既定は併記）。数値評価は出さない。</td></tr>
+            <tr><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9; font-weight:700;">A-12 取込検証エラー</td><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9;">zip/schema検証失敗は<strong style="font-weight:700;">拒否理由を説明可能に</strong>（何が・なぜ・どうすれば）。サニタイズ済み項目と拒否項目を分けて提示。SafeModeの安全境界は弱めない。</td></tr>
+            <tr><td style="padding:8px 11px; font-weight:700;">C-3「…」省略マーク</td><td style="padding:8px 11px;">ラベルカリングの省略記号は<strong style="font-weight:700;">新しい意味チャネルではなく純装飾</strong>として扱う（slate淡色・<code style="font-family:monospace;">aria-hidden</code>、完全ラベルはtitle/読み上げで担保）。凡例には載せない（意味を持たないため）。事後照合で色チャネル侵害がないこと（amber等でない）を確認。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図HH ─ A-5島形状編集・A-6根拠オーバーレイ・A-9状態フィルタバーは既存の視覚言語（直交描線・sky/赤破線・4チャネル）を適用するのみで新判断不要。A-4表示コントロールは P4/P13 のLOD・俯瞰仕様に整合させ、パネル情報設計のみ別途。</figcaption>
+    </figure>
+
+    <!-- 資料が要る面 -->
+    <h4 style="font-size:15px; font-weight:700; margin:18px 0 0;">実機照合・ソースが要る面（次の一手）</h4>
+    <div class="card-note" style="border:1px solid #c7d2fe; background:#f5f7ff; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <ul style="margin:0; padding-left:16px; font-size:12.5px; line-height:1.7; color:#3e4c59;">
+        <li><strong style="font-weight:700;">B-1 作業モードタブ内部（最優先）</strong>: 設計は拡張提案P21で受領済み。要求でなく<strong style="font-weight:700;">照合</strong>で前進。QA-MONKEY-11「候補を収集ボタンの重なり」は差分/AI提案タブの実欠陥例 → チェックリストB（状態遷移）＋視覚言語Aで照合。</li>
+        <li><strong style="font-weight:700;">A-1 エージェント連携2パネル（Round 7相当・事後設計照合）</strong>: 移行宣言後の新設・安全境界接触面。エクスポート文面は<strong style="font-weight:700;">共有前確認と同格の安全ゲート</strong>、取込サニタイズ表示はA-12規約を適用して照合する。</li>
+        <li><strong style="font-weight:700;">A-2 開始パネル / A-3 カード検索</strong>: 領域1・利用者到達頻度が高い。ドッグフード摩擦（再開導線・検索スコープ）と束ねて設計要求候補として保持。</li>
+      </ul>
+    </div>
+    <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:12px 14px; margin-top:12px;">
+      <div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">照合に必要な資料（依頼）</div>
+      <ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.65; color:#854d0e;">
+        <li><strong>B-1</strong>: 差分/選択マージ/AI提案/診断/文章化 各タブの<strong style="font-weight:700;">実機スクリーンショット</strong>（provider=none時とAI有効時の両方）＋チェックリスト自己申告。QA-MONKEY-11の重なりが再現する画面も。</li>
+        <li><strong>A-1</strong>: <code style="font-family:monospace;">AgentTaskExportPanel</code> / <code style="font-family:monospace;">AgentResponseImportPanel</code> のスクリーンショット（正常・検証失敗・空/読込各状態）。エクスポート文面の実例（内部情報が入りうる箇所）。</li>
+        <li><strong>A-2/A-3/A-4</strong>: StartPanel・SearchBar・ViewControlsPanel のスクリーンショット（要求主題化するか判断するため現況把握用）。</li>
+      </ul>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px;">
+      <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;"><div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">CB自己申告</div><ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.6; color:#475569;"><li><strong>CB-1</strong>: 確定規約は既存面の秩序化で、初期表示への純増なし。コンテキストメニュー上限7でメニュー肥大を抑制。</li><li><strong>CB-2</strong>: シェルフのamber整合で保持系の意味を保護。</li><li><strong>CB-3</strong>: いずれも既存面への規約適用（純増なし）。</li><li><strong>CB-4</strong>: 保存競合は破棄させず可逆選択。</li></ul></div>
+      <div class="axis" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;"><div style="background:#f8fafc; padding:7px 13px; font-size:11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">5判断軸 自己評価</div><table style="width:100%; border-collapse:collapse; font-size:11.5px;"><tbody style="color:#3e4c59;"><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">1 思考を雑にしない</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">2 早すぎる収束を防ぐ</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#64748b; font-weight:700;">−</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">3 保留・対立を保持</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">4 差分・監査に載る</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td></tr><tr><td style="padding:5px 13px;">5 人間/AI文脈の峻別</td><td style="padding:5px 10px; color:#15803d; font-weight:700;">◎</td></tr></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ===== P31 第1回 実装照合レビュー ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P31</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">実装照合・第1回</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">照合レビュー結果（B-1 作業モード・A-1 エージェント連携・段階1）</h3>
+    </div>
+    <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;">実機スクリーンショット12点を P28 チェックリスト（A視覚言語／B状態遷移／C核の保護／Da11y）で照合。<strong style="font-weight:700;">✓一致 / △軽微・要確認 / ✗要修正</strong>。所見は「設計値→実測→修正案」で記す。</p>
+
+    <!-- 良好 -->
+    <div class="card-note" style="border:1px solid #bbf7d0; background:#f0fdf4; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11px; font-weight:700; color:#15803d; letter-spacing:0.06em;">✓ 設計意図どおり（特筆）</div>
+      <ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.65; color:#3e4c59;">
+        <li><strong style="font-weight:700;">A-1 エクスポート安全ゲート</strong>: SafeModeで本文除外（タスクシートが <code style="font-family:monospace;">[REDACTED]</code>）、範囲確認チェック必須、出典参照トグル既定OFF ― 共有前確認と同格の安全境界として的確。</li>
+        <li><strong style="font-weight:700;">A-1 インポート</strong>: 「解析だけでは文書を変えない」明示、項目単位import＋Cmd+Zで取消、<strong style="font-weight:700;">孤児提案（Target not found→保持）・陳腐化パッチ（baseline古い→patch化）</strong>の扱いが可逆性・保持と完全整合。</li>
+        <li><strong style="font-weight:700;">A-2 開始パネル</strong>: 「最近のドキュメント＋前回の文書を開く」でドッグフード摩擦（再開導線欠如）を解消。空状態＝新規/サンプル/読込/レビューパックの4導線が明快。</li>
+        <li><strong style="font-weight:700;">B-1 違和感→再提案</strong>: 「配置案が自動で現在の文書へ反映されることはありません。採用は人が判断します」＋プレビュー＋3回で停止 ― human-in-the-loop が文言・状態とも堅牢。</li>
+        <li><strong style="font-weight:700;">B-1 診断/パッチ</strong>: 「決定論的ヒューリスティックのみ（AI判断は行いません）」、空状態は候補なし＋操作無効の淡色、取消（直前のワークスペース判断に戻す）完備。点数・％・順位なし＝反スコアリング堅持。</li>
+      </ul>
+    </div>
+
+    <!-- 要修正・要確認 -->
+    <figure style="margin:14px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+          <thead><tr style="background:#f8fafc; text-align:left;"><th style="padding:8px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:7%;">判定</th><th style="padding:8px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:26%;">箇所</th><th style="padding:8px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">所見（設計値→実測→修正案）</th></tr></thead>
+          <tbody style="color:#3e4c59; line-height:1.55;">
+            <tr><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700; color:#b91c1c;">✗</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">A-3 検索一致のハイライト（色チャネル）</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9;">設計値=amberは保持系（保留/違和感）専用・1チャネル1意味。実測=検索一致カード「検索でこの一致を確認する」の枠が<strong style="font-weight:700;">amber系オレンジ</strong>で、未レビュー/違和感リングと同色。修正案=検索一致は<strong style="font-weight:700;">選択系（青）または中立の専用色</strong>に。未レビュー枠と重なる場合は二重縁など別チャネルで判別可能に。</td></tr>
+            <tr><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700; color:#b45309;">△</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">SafeMode通知の面塗り（amber過多）</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9;">設計値=amberは保持系に予約。実測=「SafeMode ON: 未レビューn件は共有時に非表示」通知が<strong style="font-weight:700;">amber面塗りパネル</strong>。未レビュー自体は確認チャネルだが面塗りamberは保持系と競合しうる。修正案=中立slate地＋amberアクセント点に留め、amber面塗りは保留・違和感カードに限定。</td></tr>
+            <tr><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700; color:#b45309;">△</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">QA-MONKEY-11 候補収集の重なり</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9;">提供の b1-05b（overlap-defect）では<strong style="font-weight:700;">重なりが再現していない</strong>（パッチ候補・変更内容が正常表示）。html-to-image由来で絶対配置の重なりが写らない可能性。修正案=実ブラウザでの該当状態のフォーカス撮影で再確認、または修正済みなら close。</td></tr>
+            <tr><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700; color:#b45309;">△</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">A-4 表示コントロールの密度</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9;">設計値=CB-1既定の静けさ。実測=配置（吸着/整列6項）＋接続＋診断＋KA＋書出が1パネルに縦積みで情報量大。修正案=既定は主要（俯瞰/整列/凡例）のみ展開、詳細（プリセット・深さ・パースペクティブ）は折り畳みセクションに。</td></tr>
+            <tr><td style="padding:8px 10px; font-weight:700; color:#b45309;">△</td><td style="padding:8px 10px; font-weight:700;">Da11y 全般</td><td style="padding:8px 10px;">静止画では role/aria・フォーカス順・読み上げ順を検証不可。axeスモーク結果＋キーボード操作の記録で別途照合（P25仕様表に対して）。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図II ─ 第1回照合。<strong style="font-weight:600; color:#b91c1c;">要修正1件（検索一致の色チャネル侵害）</strong>、要確認4件。段階1の視覚言語・状態遷移・核の保護はおおむね設計どおりで、A-1/A-2/B-1 の安全境界・可逆性・human-in-the-loop は高品質。</figcaption>
+    </figure>
+    <div class="card-note" style="border:1px solid #c7d2fe; background:#f5f7ff; border-radius:8px; padding:11px 14px; margin-top:10px;"><p style="font-size:12px; color:#3730a3; line-height:1.6; margin:0;">起票推奨: ✗1件（検索一致ハイライトの色チャネル分離）を最優先。△のSafeMode面塗りは視覚言語の一貫性issueとして、QA-MONKEY-11は再撮影で開閉判断。A-4密度はCB-1観点の改善提案として低優先。</p></div>
+  </section>
+
+  <!-- ===== P32 第2回照合＋外部接続レイヤー先行相談 ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P32</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">照合・第2回＋先行相談</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">P31応答の照合と外部接続レイヤー（ADR-0054）の方向確認</h3>
+    </div>
+
+    <!-- A 照合 -->
+    <h4 style="font-size:15px; font-weight:700; margin:16px 0 0;">A. P31 指摘への実装応答</h4>
+    <figure style="margin:10px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+          <thead><tr style="background:#f8fafc; text-align:left;"><th style="padding:8px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:7%;">判定</th><th style="padding:8px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:24%;">項目</th><th style="padding:8px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">所見</th></tr></thead>
+          <tbody style="color:#3e4c59; line-height:1.55;">
+            <tr><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700; color:#15803d;">✓</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">A-3 検索一致=teal新設</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9;"><strong style="font-weight:700;">teal採用を承認</strong>。青=選択で使用済みのため、検索一致に未使用のtealを充てるのは妥当。要件は「amber(保持系)と衝突しない」ことで、tealはそれを満たす。留意: tealは<strong style="font-weight:700;">一過性のUI状態（検索中のみ）</strong>で、カードの永続的意味チャネル（型/保持/確認/根拠）とは層が異なる ― 凡例には「検索一致（一時）」として<strong style="font-weight:700;">別枠で載せ、恒久チャネルと混同させない</strong>。evidence=skyとtealは近いので、active一致3px/#0d9488 と sky実線の同居時に判別できるか実機で1点確認。回帰ガード（amber不使用固定）は良い。</td></tr>
+            <tr><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700; color:#15803d;">✓</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">SafeMode通知</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9;">中立slate地＋amberアクセント点へ修正、面塗りは保持系カード限定 ― 設計どおり。close。</td></tr>
+            <tr><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700; color:#15803d;">✓</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">QA-MONKEY-12 起票</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9;">elementFromPoint幾何証跡での再判定＝実在欠陥、独立起票が適切（私の静止画では重なり不可視だった件と整合）。<strong style="font-weight:700;">タブ化（UX-NAV-02）優先で副次解消の方針を支持</strong> ― 免責文言と操作ボタンの同時描画は作業モードのセクション積層が根因で、タブ排他化が正着。タブ化後に同座標再検証を推奨。</td></tr>
+            <tr><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700; color:#15803d;">✓</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">A-4 密度 / Da11y</td><td style="padding:8px 10px; border-bottom:1px solid #f1f5f9;">A-4=改善issue化で合意。Da11y=axeスモーク8/8＋キーボードe2eを一次資料とする運用に同意（P25は自動検査ログで照合）。aria-required-parent/children除外のADR-0052追跡も妥当。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図JJ ─ 第2回照合。P31指摘は全件解決/合意。teal新設は承認（凡例で「一時」枠に分離・sky近接の実機確認のみ残）。</figcaption>
+    </figure>
+
+    <!-- B 先行相談 -->
+    <h4 style="font-size:15px; font-weight:700; margin:18px 0 0;">B. 外部接続レイヤー（ADR-0054・Proposed）の方向</h4>
+    <div class="card-note" style="border:1px solid #c7d2fe; background:#f5f7ff; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11.5px; font-weight:700; color:#3730a3;">B-1. 外部エージェント由来カードの視覚言語</div>
+      <p style="font-size:12px; color:#3e4c59; line-height:1.65; margin:5px 0 0;"><strong style="font-weight:700;">推奨</strong> (i)由来=メタ行に控えめな出所チップ「⌂ agent名」（型バッジの後、保持系の前には置かない）。AI由来(ADR-0048 D1)の拡張として<strong style="font-weight:700;">「非人間由来」を一段の共通マーク＋出所ラベル</strong>で表し、色チャネルは新設しない（slate中立＋アイコン形状で区別）。(ii)受け皿は<strong style="font-weight:700;">キャンバス周縁の「庭」レーン</strong>（例: 右下の緩い区画）に堆積し、キャンバス直置きにも未処理キューにもしない ― 見えるが割り込まない。(iii)束が増えたら<strong style="font-weight:700;">個別カードでなく1枚の集約チップ「外部から n件」</strong>に畳み、開くと庭へ。通知バッジ・件数の赤丸は付けない（処理義務を作らない＝庭の原則）。<br><span style="color:#0e7490; font-weight:700;">CB影響</span>: CB-1=集約畳みと通知なしで初期の静けさ維持。CB-2=由来マークは確定情報より弱い表示、保留・違和感より遠くに。CB-3=既存メタ行への包含（純増最小）。CB-4=受理/却下は可逆。</p>
+    </div>
+    <div class="card-note" style="border:1px solid #c7d2fe; background:#f5f7ff; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11.5px; font-weight:700; color:#3730a3;">B-2.「なぜ？」リンクの着地ビュー</div>
+      <p style="font-size:12px; color:#3e4c59; line-height:1.65; margin:5px 0 0;"><strong style="font-weight:700;">推奨=専用「根拠トレイル」ビュー（readOnly＋focusでは不足）</strong>。外部来訪者は文脈を持たないため、単なるカードfocusでは「なぜこの結論か」が伝わらない。<strong style="font-weight:700;">このブリーフ→基づくレビュー済みカード群→（あれば）関係線</strong>を辿れる読み取り専用トレイルを用意。ただし<strong style="font-weight:700;">未レビュー・違和感・保留のカードは既定で出さない</strong>（SafeMode同格＝共有前確認の露出規則を継承）。反スコアリングのため「確からしさ%」等は出さず、経路（trail）と根拠の有無のみ提示。<br><span style="color:#0e7490; font-weight:700;">CB影響</span>: CB-2=未確定を既定非表示で保護。CB-4=読み取り専用で原本不変。軸4(監査)◎=配信ブリーフから原データへの遡及性を担保。</p>
+    </div>
+    <div class="card-note" style="border:1px solid #c7d2fe; background:#f5f7ff; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11.5px; font-weight:700; color:#3730a3;">B-3. critique を「第4のHITLパターン」として位置づける語彙</div>
+      <p style="font-size:12px; color:#3e4c59; line-height:1.65; margin:5px 0 0;"><strong style="font-weight:700;">推奨=既存の違和感導線のまま成立。ただし段階3(制約輸出)時のみ、行き先の明示を1行足す</strong>。notify/question/review は処理キューを作るが、kj-atlasの違和感は<strong style="font-weight:700;">処理義務を作らない事後訂正</strong>で、これが核。外部エージェント由来カードへの違和感付与も同じUI（5タグ＋自由記述）でよい ― キューにしないことが価値。段階3で違和感が次回エージェントの制約として輸出される場合に限り、違和感入力の近傍に<strong style="font-weight:700;">「この違和感は次回の依頼に制約として渡ります」</strong>と<strong style="font-weight:700;">送信ではなく帰結の説明</strong>を添える（人が書く義務を負わせない受動態）。輸出は共有前確認と同様、既定は含めない/明示opt-inを推奨。<br><span style="color:#0e7490; font-weight:700;">CB影響</span>: CB-1=常設UIの純増なし（説明文は段階3の該当時のみ）。CB-2=違和感を確定より近く保つ既存配置を維持。軸5(人間/AI峻別)◎=違和感=人間の事後訂正、輸出は明示。</p>
+    </div>
+    <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:11px 14px; margin-top:12px;"><p style="font-size:12px; color:#854d0e; line-height:1.6; margin:0;"><strong style="font-weight:700;">全体所見</strong>: 「庭」原則（見えるが割り込まない・処理義務なし）と critique の事後訂正性は、Agent Inbox型キューとの明確な差別化として強く支持。3面ともレッドラインはADR Accepted後の実装ラウンドで。スキーマ（agent-task.v1/agent-response.v1）不変の範囲で表現可能。</p></div>
+  </section>
+
   <!-- CLOSING -->
   <section style="padding:34px 0 56px; margin-top:28px; border-top:3px solid #eef2ff;">
     <div style="display:flex; align-items:baseline; gap:12px; margin-top:18px;">

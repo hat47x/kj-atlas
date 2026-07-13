@@ -105,7 +105,7 @@
 
 ### 残課題（次スライス）
 
-- ~~作業モードタブへの `role=tablist` 導入要否の判断~~ → 2026-07-12: Claude Design 実装照合レビュー（拡張提案P21）が role=tablist・5タブ（差分/選択マージ/AI提案/診断/文章化）の設計を提示。実装Issue `issue-UX-NAV-02-work-mode-tab-content-full-design.md` を起票し、そちらで解消する。ADR-0052はキャンバス選択ロールとメニュー内フォームの意味付けだけを引き続き扱う。
+- ~~作業モードタブへの `role=tablist` 導入要否の判断~~ → 2026-07-13: maintainer代理裁可で role=tablist・5タブを採用し、`UX-NAV-02` をADR-0052とは独立にOpen化した。manual activation、段階Escape、状態保持、狭幅E2Eを着手ゲートとする。ADR-0052はキャンバス選択ロールとメニュー内フォームの意味付けだけを扱う。
 - ~~axe 系スモークテストの導入（横断 e2e スイートの拡充）。~~ → 2026-07-09に導入済み（下記追記参照）。派生の構造的発見4件は `issue-UI-QUALITY-A11Y-03-structural-aria-findings.md` へ。
 
 ### 追記 2026-07-09

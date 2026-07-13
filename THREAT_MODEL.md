@@ -10,6 +10,8 @@
 2. Markdown rendering
 3. Supply chain（npm/pip依存）
 4. データプライバシー（エクスポート挙動を含む）
+5. サポート診断バンドル
+6. 外部エージェント向けMCP投影
 
 ## 資産 / Assets
 
@@ -65,6 +67,32 @@
 - `safeMode` をエクスポート既定値として **ON**
 - 既定でPIIを含めない運用（必要時のみ明示的に含める）
 - 共有前の人手確認（human-in-the-loop）
+
+### 5) サポート診断バンドル
+
+- raw UserAgent、Document識別子、error message、ログや本文が診断JSONへ混入する
+- SafeMode OFF時だけ露出項目が増え、共有境界を迂回する
+- プレビューと実際のコピー/ダウンロード内容が異なる
+
+**想定対策**
+
+- `ADR-0053` の `diag-bundle.v1` allowlistだけから新規オブジェクトを構成し、未知キーを拒否
+- SafeMode ON/OFFで露出境界を変えず、raw UserAgent、Document id/title、entity id/ref、message/stack、URL、秘密情報、本文を常時除外
+- 明示操作・全文プレビュー必須・ローカル生成に限定し、自動送信、永続保存、生成時の追加通信を禁止
+- プレビューとコピー/ダウンロードに同一の不変JSON文字列を使用
+
+### 6) 外部エージェント向けMCP投影
+
+- MCP SDKの依存追加によるsupply-chain面の拡大
+- read-onlyと称したsurfaceにwrite/sampling/elicitation capabilityが混入する
+- 未レビューentityや原文由来fingerprintがSafeMode投影から漏れる
+
+**想定対策**
+
+- MCPをfrontendから独立したprivate packageへ隔離し、SDK/peer dependencyを正確なversionでpinしてlockfileをレビュー
+- capability allowlistと `tools/list` / `resources/list` の固定テストでwrite/ingest/apply/publish/sampling/elicitationを禁止
+- stdio段階ではlisten portを開かず、HTTP/OAuth公開面は別スライスで脅威分析する
+- 外部結線前に、全constraintで未レビューentity/refの既定除外と、SafeMode出力に原文由来hashが無いことを検証
 
 ## 検証・運用 / Verification
 

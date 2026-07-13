@@ -11,8 +11,8 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/api.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `integration`
 
-## Draft→Open 2026-06-21
-DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデータ閲覧の製品境界定義を開始可能。
+## Draft→Open 2026-07-13
+DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデータ閲覧の製品境界定義を開始可能。ただし実装許可ではなく、本文なしallowlistとread-only権限の固定が先である。
 
 ## Requirement meta I/F（共通キー）
 
@@ -24,7 +24,7 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: integration
 - DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `ADR-0035`
+- DecisionQueueRef（未確定時の参照先）: Resolved（`ADR-0035` Accepted 2026-07-13）
 
 ## 1) 課題 / Problem statement
 
@@ -37,7 +37,7 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
 - `api.md` は、Document監査イベントとCE4監査契約を持つが、監査ログ閲覧UIや保持期限管理は含めていない。
 - `data_model_operations_overview.md` は、Export / Context audit event を派生/読み取り中心のデータとして扱い、アプリ本体に監査ログ閲覧UIを持たない前提を書いている。
 - `DATA-MAINT-03` は、高権限操作のうち監査ログ閲覧だけを、本文を含まない範囲で内部issue化可能と分類した。
-- `ADR-0035` はまだ Proposed であり、本Issueは実装許可ではなく、ADR-0035がAcceptedされた後に安全にOpen化するための検討器である。
+- `ADR-0035` は2026-07-13にAcceptedされ、本IssueのOpen化前提は満たされた。ただし本Issueは実装許可ではなく、本文なしメタデータのallowlistとread-only境界を固定する検討器である。
 
 ## 3) 判断基準による優先度評価
 
@@ -54,7 +54,7 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
   - 実装へ進む場合の専用API/CLI/UI issue分割条件。
 - 変更の最小単位:
   - まず本Issueで、本文を含まない読み取り専用メタデータの候補と、ADRが必要な高権限閲覧を分ける。
-  - `ADR-0035` がAcceptedされるまで、StatusはDraftのまま維持する。
+  - `ADR-0035` AcceptedによりOpen化済みだが、返却allowlist・権限・検索条件・監査証跡を固定するまで実装へ進めない。
 - 非目標:
   - 本Issueで監査閲覧API、管理UI、CLI、外部監査連携を実装しない。
   - 本文、未レビュー情報、添付ファイル、Document JSON全体、review pack本文、diff本文を閲覧対象にしない。
@@ -62,7 +62,7 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `ADR-0035` がAcceptedまたは後続ADRで同等の境界が固定されてからOpen化される。
+- [x] `ADR-0035` がAcceptedまたは後続ADRで同等の境界が固定されてからOpen化される。（2026-07-13充足）
 - [x] 監査メタデータとして扱ってよい項目と、扱ってはいけない本文/未レビュー情報/横断検索項目が分かれている。
 - [x] Security officer / Audit operator / Platform operator / Support の閲覧責務が分離されている。
 - [x] SafeMode、share/export、public exposure、review attribution、merge decision logへの影響が記載されている。
@@ -79,7 +79,7 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
 
 ## 6.1) 事前Open化ベースライン（2026-06-01）
 
-`ADR-0035` がAcceptedされるまで、本IssueはDraftのまま維持する。以下は実装許可ではなく、Accepted後にOpen化する場合の最小境界である。
+以下は実装許可ではなく、Accepted後にOpen化した本Issueで維持する最小境界である。
 
 ### 扱ってよい監査メタデータ候補
 
@@ -132,20 +132,20 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
 
 ### Open化チェックリスト
 
-- [ ] `ADR-0035` がAccepted、または同等の後続ADRで「本文を含まない監査メタデータ閲覧だけを検討可能」と固定されている。
+- [x] `ADR-0035` がAccepted、または同等の後続ADRで「本文を含まない監査メタデータ閲覧だけを検討可能」と固定されている。（2026-07-13充足）
 - [ ] A1-A4 のどれを最初の実装候補にするかを1つだけ選ぶ。複数同時に進める場合は別issueへ分割する。
 - [ ] 返却項目、検索条件、権限、監査証跡、エラー時の表示方針を、本文を含まない範囲で固定する。
 - [ ] UIを持つ場合は、マウス操作とキーボード操作の代表シナリオ、フォーカス順、viewport evidence、スクリーンショットを `PRODUCT-QA-01` へ渡す。
 - [ ] API/CLIだけで始める場合も、本文・未レビュー情報・secret・生IdP識別子が返らないことを integration test で確認する。
 
-### Open化しない条件
+### 実装へ進めない条件
 
-- `ADR-0035` がProposedのまま、または高権限データライフサイクル境界が未決のまま実装へ進もうとしている。
+- Accepted済み `ADR-0035` の本文禁止・標準機能外境界を緩和して実装へ進もうとしている。
 - 監査メタデータ閲覧と、管理者本文閲覧、横断検索、保持期限管理、自動削除、所有者移管、削除履歴管理が混ざっている。
 - Support または Platform operator が、利用者本文、未レビュー情報、Document JSON全体、review pack本文、diff本文を標準導線で閲覧できる。
 - 監査メタデータを外部へ共有する標準導線を製品が持つ。必要な場合は目的、共有先、除外項目、記録、無効化手順を別ADRで固定する。
 
-## 6.3) Open化前の人間判断パケット（2026-06-06）
+## 6.3) Open化前の人間判断パケット（2026-06-06、2026-07-13解決済み履歴）
 
 本IssueはまだDraftであり、以下は実装許可ではない。`ADR-0035` がAcceptedまたは同等ADRで置き換えられた後、Security officer / Productization Program Owner / Project Maintainers がOpen化可否を短時間で判断できるようにするための確認パケットである。
 
@@ -168,7 +168,7 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
   - `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
   - `rg -n "DATA-MAINT-04|監査メタデータ|本文を含まない|ADR-0035|audit metadata|audit viewing" 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
 - 期待結果:
-  - DATA-MAINT-04がDraftとして追跡され、ADR-0035がAcceptedされるまで実装に進まない。
+  - DATA-MAINT-04がOpenとして追跡され、本文なしallowlistとread-only境界が固定されるまで実装に進まない。
   - 監査閲覧候補が本文を含まない範囲に限定され、本文閲覧や横断検索はADR必須として残る。
 - 未実施時の理由・代替検証:
   - 本Issue作成時点では実装を行わないため、docs-checkとtriage整合を検証する。Open化または実装分割時にintegration以上を実施する。
@@ -176,7 +176,7 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
 ## 8) 代替案 / Alternatives considered
 
 - 代替案A: 監査ログ閲覧を `DATA-MAINT-03` に残し続ける。本文閲覧や削除と混ざり、内部issueで進められる低リスク候補が見えにくくなるため採用しない。
-- 代替案B: ADR-0035のAcceptedを待たずにOpen化する。ADRがまだProposedの状態で実装許可に見えるため採用しない。
+- 代替案B: ADR-0035のAcceptedを待たずにOpen化する。2026-06-06時点で不採用とし、2026-07-13のAccepted後に正規Open化した。
 - 代替案C: 監査閲覧UIを先に作る。権限と除外項目が未固定のままUIが先行するため採用しない。
 
 ## 9) リスクとロールバック / Risks & rollback

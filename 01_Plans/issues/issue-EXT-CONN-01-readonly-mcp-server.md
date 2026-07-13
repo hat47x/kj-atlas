@@ -46,7 +46,7 @@
 
 ## 受け入れ条件（案）
 
-- [~] AC-1: MCPクライアントから reviewed-only 投影を取得でき、未レビュー本文・SafeMode対象が含まれない。→ **投影コアで担保・テスト済み**（reviewed-only は未レビューカードをノードごと除外、SafeMode ON は reviewed カード本文も redact）。MCP経由の取得はサブスライスBで結線。
+- [~] AC-1: MCPクライアントから reviewed-only 投影を取得でき、未レビュー本文・SafeMode対象が含まれない。→ reviewed-only constraintの投影コアはテスト済み。ただし2026-07-13の再審査で、他constraintの未レビューentity/refとSafeMode redaction短縮hashを外部結線前に除去する追加ゲートを設定した。MCP経由の取得はこの修正後にサブスライスBで結線する。
 - [ ] AC-2: サーバーは書き込み系ツールを一切公開しない（tools/list で検証）。→ サブスライスB（MCP結線）。
 - [ ] AC-3: 読み取りごとに監査相関が記録され、CE-4 の監査導線から追跡できる。→ 投影は決定的 `bundleHash` を出力済み。監査ログ結線はサブスライスB。
 - [ ] AC-4: `THREAT_MODEL.md` に公開面（認証・認可・レート・失敗時挙動）が追記され、PRODUCT-QA-01 ゲートで照合される。→ HTTP輸送を実装するサブスライスCで対応（stdioのサブスライスBは公開面なし）。
@@ -59,6 +59,20 @@
 - **サブスライスA（本コミット・完了）**: `03_Implement/frontend/src/export/context_bundle_projection.ts`。`buildContextProjection(doc, constraint, safeMode)` が reviewed-only / evidence / contradiction / summary の4制約で read-only 投影を生成する純粋関数。安全境界は既存 `SafeModePolicy` を**そのまま**使用（`agent_task_export.ts` と同一の "share" 境界。2言語複製によるredactionドリフトを回避）。外部読み取り面は常に share 境界とみなし、SafeMode ON では reviewed カード本文も出さない。反スコアリング（score/rank/confidence/priority を出力・ハッシュとも一切含めない）と決定的 `bundleHash`（redact された本文は原文でなく null をハッシュ＝原文が相関ハッシュへ漏れない）を単体テストで固定（`context_bundle_projection.test.ts`、11 tests）。
 - **サブスライスB（次）**: stdio MCP アダプタ。`resources`/`tools` として投影を公開（read-only、書き込みツールなし＝AC-2）、`GET /docs/{id}` から DocumentV2 を取得、bundleHash を ingest/query ログへ記録（AC-3）。配置は `03_Implement/mcp/`（新規 Node パッケージ）を第一候補とし、本モジュールを monorepo import で共有する（ドリフト回避）。共有の物理配置（frontend/src 直下のままか shared パッケージへ hoist するか）はサブスライスB着手時の構造判断。
 - **サブスライスC（後）**: streamable HTTP + OAuth 2.1（MCP 2026-07-28 仕様）輸送を追加し ChatGPT / Copilot Studio へ到達。公開面の脅威追記（AC-4）と PRODUCT-QA-01 セキュリティ照合はここで実施。
+
+## Maintainer代理裁可（2026-07-13）: サブスライスB Conditional Go
+
+MCP SDK依存の追加と `03_Implement/mcp/` 新設を承認する。ただし、次をサブスライスBの固定条件とする。
+
+- `03_Implement/mcp/` はfrontendとは独立したprivate Node packageとし、独自の `package.json` / `package-lock.json` / `tsconfig.json` を持つ。root workspace化は行わず、frontendの依存・lockfileへMCP SDKを混ぜない。
+- 現在の公式推奨に従い、stdio実装は `@modelcontextprotocol/sdk` v1系の**正確なversion**をpinする（判断時点の採用値は `1.29.0`）。必須peer dependencyのZodも互換な4.xの正確なversionをpinし、lockfile差分と依存監査を同じ変更で確認する。開発中/pre-alphaのv2分割packageは採用せず、stable v2公開後に別スライスで移行可否を判断する。
+- runtimeはリポジトリの `.nvmrc` と同じNode 20を使う。stdio以外のlisten portを開かず、サブスライスBではHTTP server/OAuth依存を追加しない。
+- 投影コアはコピーせず、現行 `context_bundle_projection.ts` をmonorepo source importしてSafeModeロジックを一系統に保つ。第2の非frontend利用者が現れるまではshared packageへのhoistを行わない。
+- MCP capabilityはread-only resourcesとread-only toolsだけにallowlistし、write/ingest/apply/publish/sampling/elicitationを登録しない。`tools/list` / `resources/list` の固定snapshotで検証する。
+- 依存追加・package新設は承認するが、外部クライアントへの結線前に投影コアを再検証する。全constraintで未レビューentity/refを既定除外し、SafeMode出力に原文由来の短縮hashを含めないことをテストで固定する。現在のサブスライスAがこの条件を満たさない場合は、Bの公開結線を停止してAを先に修正する。
+- すべてのreadで `bundleHash` / `queryCanonicalHash` 相当を監査相関へ渡す。監査失敗は本文露出を広げず、読み取り結果と相関欠損を成功扱いにしない。
+
+この判断は依存と配置の可否を確定するもので、サブスライスBの実装完了を意味しない。未使用依存だけを先行追加せず、server skeleton・capability test・投影安全テストと同じ変更単位で導入する。
 
 ## Traceability
 

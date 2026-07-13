@@ -23,6 +23,12 @@
 - DecisionStatus（Fixed / Pending）: Fixed (Open化可)
 - DecisionQueueRef（未確定時の参照先）: `MVP-EXIT-01`
 
+## Decision boundary sync 2026-07-13
+
+- `ADR-0035` はAccepted。これは削除・アーカイブ・所有者移管の解禁ではなく、標準機能外とする境界の確定である。`DATA-MAINT-03` はDone/Fixed、`DATA-MAINT-04` はmetadata-only境界のOpen検討へ進んだ。
+- `ADR-0052` / `ADR-0053` は安全側の方式を確定してAccepted。対応実装・E2Eは未完であり、AcceptedだけをリリースGo根拠にしない。
+- 本同期は過去checkpointログを書き換えず、現在の判断状態を上書きする。
+
 ## Implementation Evidence 2026-07-05: View controls Japanese UI wording
 
 - The Japanese View controls no longer expose English interaction labels such as `Abstract view`, `Peek/Focus`, `Close`, `Mid`, `Far`, or `OFF` in the summary/LOD controls. They now use Japanese user-facing labels: `抽象マップビュー`, `プレビュー`, `近距離`, `中距離`, `遠距離`, and `無効`.
