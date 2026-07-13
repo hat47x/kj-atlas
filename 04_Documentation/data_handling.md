@@ -93,6 +93,10 @@
 
 詳しい調査手順は [diagnostics.md](diagnostics.md) を参照してください。
 
+### サポート診断バンドル
+
+画面から生成できる診断バンドル（`diag-bundle.v1`）は、上記「残してよい情報」よりさらに狭い固定の許可リストだけを含みます。対象ドキュメントの本文・ID、entity id/ref、API key/token/password、内部URL、個人情報、生の UserAgent、error message/stack は SafeMode の状態に関わらず常に除外されます。含まれる項目、除外項目、UI 契約の詳細は [diagnostics.md](diagnostics.md) と [ADR-0053](https://github.com/hat47x/kj-atlas/blob/main/01_Plans/adr/ADR-0053-support-diagnostics-bundle-boundary.md) を参照してください。生成は明示操作のみで、自動送信は行いません。
+
 ## 詳細仕様を確認したい場合
 
 この文書は利用者向けの判断ガイドです。データ契約や実装上の詳細を確認する場合は、GitHub 上の設計文書を参照してください。

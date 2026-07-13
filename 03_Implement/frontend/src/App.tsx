@@ -64,6 +64,7 @@ import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { WorkModePanel } from "./ui/WorkModePanel";
 import { AgentTaskExportPanel } from "./ui/AgentTaskExportPanel";
 import { AgentResponseImportPanel, type ImportedProposalReview } from "./ui/AgentResponseImportPanel";
+import { DiagnosticsBundlePanel } from "./ui/DiagnosticsBundlePanel";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import { CanvasLegend } from "./ui/CanvasLegend";
 import { Minimap } from "./ui/Minimap";
@@ -1102,6 +1103,8 @@ export default function App() {
   const workModeTriggerRef = useRef<HTMLButtonElement>(null);
   const [isAgentTaskExportOpen, setIsAgentTaskExportOpen] = useState(false);
   const agentTaskExportTriggerRef = useRef<HTMLButtonElement>(null);
+  const [isDiagnosticsBundleOpen, setIsDiagnosticsBundleOpen] = useState(false);
+  const diagnosticsBundleTriggerRef = useRef<HTMLButtonElement>(null);
   const [agentTaskKind, setAgentTaskKind] = useState<AgentTaskKind>("island_titles");
   const [agentTaskDesiredCount, setAgentTaskDesiredCount] = useState(3);
   const [agentTaskIncludeUnreviewedDrafts, setAgentTaskIncludeUnreviewedDrafts] = useState(false);
@@ -8374,6 +8377,24 @@ export default function App() {
         </button>
       ) : null}
       <button
+        ref={diagnosticsBundleTriggerRef}
+        type="button"
+        onClick={() => setIsDiagnosticsBundleOpen((current) => !current)}
+        aria-pressed={isDiagnosticsBundleOpen}
+        title={t("diagnostics_bundle.title")}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: isDiagnosticsBundleOpen ? "#e0e7ff" : "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
+      >
+        {t("diagnostics_bundle.title")}
+      </button>
+      <button
         data-ui-core-action="create-card"
         type="button"
         onClick={handleAddCard}
@@ -11184,6 +11205,24 @@ export default function App() {
       onAdopt={handleAdoptAgentImportedProposal}
       onReject={handleRejectAgentImportedProposal}
       onExportPatchFile={handleExportAgentImportedProposalPatchFile}
+    />
+    <DiagnosticsBundlePanel
+      isOpen={isDiagnosticsBundleOpen}
+      onClose={() => setIsDiagnosticsBundleOpen(false)}
+      triggerRef={diagnosticsBundleTriggerRef}
+      safeMode={safeMode}
+      providerType={providerKind ?? "unknown"}
+      documentSummary={
+        document
+          ? {
+              version: document.version,
+              updatedAt: document.updatedAt,
+              cardCount: document.cards.length,
+              islandCount: document.islands.length,
+              edgeCount: document.edges.length,
+            }
+          : null
+      }
     />
     {isCommandPaletteOpen ? (
       <CommandPalette
