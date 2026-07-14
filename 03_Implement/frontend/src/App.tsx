@@ -65,6 +65,7 @@ import { WorkModePanel } from "./ui/WorkModePanel";
 import { AgentTaskExportPanel } from "./ui/AgentTaskExportPanel";
 import { AgentResponseImportPanel, type ImportedProposalReview } from "./ui/AgentResponseImportPanel";
 import { DiagnosticsBundlePanel } from "./ui/DiagnosticsBundlePanel";
+import { RecentDocumentsDialog } from "./ui/RecentDocumentsDialog";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import { CanvasLegend } from "./ui/CanvasLegend";
 import { Minimap } from "./ui/Minimap";
@@ -1105,6 +1106,8 @@ export default function App() {
   const agentTaskExportTriggerRef = useRef<HTMLButtonElement>(null);
   const [isDiagnosticsBundleOpen, setIsDiagnosticsBundleOpen] = useState(false);
   const diagnosticsBundleTriggerRef = useRef<HTMLButtonElement>(null);
+  const [isRecentDocumentsDialogOpen, setIsRecentDocumentsDialogOpen] = useState(false);
+  const recentDocumentsDialogTriggerRef = useRef<HTMLElement | null>(null);
   const [agentTaskKind, setAgentTaskKind] = useState<AgentTaskKind>("island_titles");
   const [agentTaskDesiredCount, setAgentTaskDesiredCount] = useState(3);
   const [agentTaskIncludeUnreviewedDrafts, setAgentTaskIncludeUnreviewedDrafts] = useState(false);
@@ -9895,53 +9898,6 @@ export default function App() {
   // (legend toggle, visibility scope, review-pack export options) stay inside
   // those panels — duplicating them here would need a second, independent
   // focus-return anchor and risk regressing AC-5's existing contracts.
-  const openRecentExtraContent = (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <select
-        aria-label={t("app.toolbar.recent_documents")}
-        value={selectedRecentDocumentId}
-        onChange={(event) => {
-          setSelectedRecentDocumentId(event.target.value);
-        }}
-        disabled={isLoading || recentDocumentIds.length === 0}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 8px",
-          fontWeight: 500,
-        }}
-      >
-        <option value="">{t("app.toolbar.recent_documents")}</option>
-        {recentDocumentIds.map((docId) => (
-          <option key={docId} value={docId}>
-            {docId}
-          </option>
-        ))}
-      </select>
-      <button
-        type="button"
-        onClick={handleOpenRecent}
-        disabled={isLoading || !selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 8px",
-          fontWeight: 600,
-          cursor:
-            isLoading || !selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId
-              ? "not-allowed"
-              : "pointer",
-        }}
-      >
-        {t("app.toolbar.open")}
-      </button>
-    </div>
-  );
-
   const claimTypeMenuRows: MenuRowDef[] = (["fact", "claim", "hypothesis", "unknown"] as ClaimType[]).map((claimType) => ({
     kind: "item",
     item: {
@@ -9961,11 +9917,26 @@ export default function App() {
     {
       id: "file",
       label: t("menu_bar.category.file"),
-      extraContent: openRecentExtraContent,
       rows: [
         {
           kind: "item",
           item: { id: "file-new", label: t("app.toolbar.new"), disabled: isReadOnly || isLoading || isSaving, run: handleNewDocument },
+        },
+        {
+          kind: "item",
+          item: {
+            id: "file-open-recent",
+            label: t("menu_bar.file.open_recent"),
+            disabled: isLoading,
+            run: () => {
+              // MenuBar already focuses the "File" top-level button before
+              // calling run() (see MenuBar.tsx's runRow) -- capture it here
+              // as this dialog's return-focus target rather than plumbing a
+              // new ref out of MenuBar for a single caller.
+              recentDocumentsDialogTriggerRef.current = window.document.activeElement as HTMLElement | null;
+              setIsRecentDocumentsDialogOpen(true);
+            },
+          },
         },
         {
           kind: "item",
@@ -11276,6 +11247,17 @@ export default function App() {
             }
           : null
       }
+    />
+    <RecentDocumentsDialog
+      isOpen={isRecentDocumentsDialogOpen}
+      onClose={() => setIsRecentDocumentsDialogOpen(false)}
+      triggerRef={recentDocumentsDialogTriggerRef}
+      recentDocumentIds={recentDocumentIds}
+      selectedRecentDocumentId={selectedRecentDocumentId}
+      onSelectedRecentDocumentChange={setSelectedRecentDocumentId}
+      onOpenRecent={handleOpenRecent}
+      isLoading={isLoading}
+      activeDocumentId={activeDocumentId}
     />
     {isCommandPaletteOpen ? (
       <CommandPalette

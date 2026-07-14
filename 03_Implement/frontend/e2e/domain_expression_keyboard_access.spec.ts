@@ -81,12 +81,12 @@ test("domain expression state controls are reachable with keyboard after card se
   await page.getByRole("button", { name: "Open sample" }).click();
   await expect(page.locator(START_PANEL)).toBeHidden();
 
-  const targetCard = page.getByRole("option", { name: "ambiguous target claim" });
+  const targetCard = page.getByRole("button", { name: "ambiguous target claim" });
   await expect(targetCard).toBeVisible();
   await targetCard.focus();
   await expect(targetCard).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(targetCard).toHaveAttribute("aria-selected", "true");
+  await expect(targetCard).toHaveAttribute("aria-pressed", "true");
 
   const selectionSummary = page.locator('[data-panel="selection-context"]');
   const selectionPanel = page.locator('[data-ui-region="selection-context"]');
@@ -169,7 +169,7 @@ test("contradiction state control is labeled and persists through save", async (
   await page.getByRole("button", { name: "Open sample" }).click();
   await expect(page.locator(START_PANEL)).toBeHidden();
 
-  const counterCard = page.getByRole("option", { name: "contradicting stakeholder signal" });
+  const counterCard = page.getByRole("button", { name: "contradicting stakeholder signal" });
   await expect(counterCard).toBeVisible();
   await counterCard.click();
 
@@ -195,7 +195,7 @@ test("evidence link editor exposes labeled controls and adds a searched target",
   await page.getByRole("button", { name: "Open sample" }).click();
   await expect(page.locator(START_PANEL)).toBeHidden();
 
-  await page.getByRole("option", { name: "ambiguous target claim" }).click();
+  await page.getByRole("button", { name: "ambiguous target claim" }).click();
   const selectionPanel = page.locator('[data-ui-region="selection-context"]');
   await selectionPanel.getByRole("button", { name: "Add evidence link..." }).click();
 
@@ -220,7 +220,7 @@ test("share preflight keeps unresolved domain signals visible and unreviewed dra
   await page.goto("/?locale=en");
   fixture.enableSample();
   await page.getByRole("button", { name: "Open sample" }).click();
-  await page.getByRole("option", { name: "ambiguous target claim" }).click();
+  await page.getByRole("button", { name: "ambiguous target claim" }).click();
   await page.getByRole("button", { name: "Share & Reproduce" }).click();
 
   const summary = page.getByTestId("share-domain-expression-summary");
@@ -246,14 +246,14 @@ test("keyboard shelf and restore remain stable across saves and reloads", async 
   await page.getByRole("button", { name: "Open sample" }).click();
   await expect(page.locator(START_PANEL)).toBeHidden();
 
-  const targetCard = page.getByRole("option", { name: "ambiguous target claim" });
+  const targetCard = page.getByRole("button", { name: "ambiguous target claim" });
   await expect(targetCard).toBeVisible();
   const initialBox = await targetCard.boundingBox();
   expect(initialBox).not.toBeNull();
 
   await targetCard.focus();
   await page.keyboard.press("Enter");
-  await expect(targetCard).toHaveAttribute("aria-selected", "true");
+  await expect(targetCard).toHaveAttribute("aria-pressed", "true");
 
   await tabUntilFocused(
     page,
@@ -281,7 +281,7 @@ test("keyboard shelf and restore remain stable across saves and reloads", async 
 
   await page.reload();
   await page.getByRole("button", { name: "Close start panel" }).click();
-  await expect(page.getByRole("option", { name: "ambiguous target claim" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "ambiguous target claim" })).toHaveCount(0);
 
   const restoredShelf = page.getByRole("region", { name: "Shelf (set aside)" });
   await expect(restoredShelf).toContainText("ambiguous target claim");
@@ -291,7 +291,7 @@ test("keyboard shelf and restore remain stable across saves and reloads", async 
   await page.keyboard.press("Enter");
 
   await expect(restoredShelf).toHaveCount(0);
-  const restoredCard = page.getByRole("option", { name: "ambiguous target claim" });
+  const restoredCard = page.getByRole("button", { name: "ambiguous target claim" });
   await expect(restoredCard).toBeVisible();
   const restoredBox = await restoredCard.boundingBox();
   expect(restoredBox).not.toBeNull();
@@ -308,6 +308,6 @@ test("keyboard shelf and restore remain stable across saves and reloads", async 
 
   await page.reload();
   await page.getByRole("button", { name: "Close start panel" }).click();
-  await expect(page.getByRole("option", { name: "ambiguous target claim" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "ambiguous target claim" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Shelf (set aside)" })).toHaveCount(0);
 });

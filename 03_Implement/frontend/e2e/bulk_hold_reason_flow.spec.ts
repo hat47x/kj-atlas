@@ -30,8 +30,8 @@ test("selected cards can be held and given a shared reason without AI", async ({
   enableSample();
   await page.getByRole("button", { name: "Open sample" }).click();
 
-  const firstCard = page.getByRole("option", { name: "first value user problem" });
-  const secondCard = page.getByRole("option", { name: "first value observation memo" });
+  const firstCard = page.getByRole("button", { name: "first value user problem" });
+  const secondCard = page.getByRole("button", { name: "first value observation memo" });
   await firstCard.click();
   await secondCard.click({ modifiers: ["Shift"] });
 

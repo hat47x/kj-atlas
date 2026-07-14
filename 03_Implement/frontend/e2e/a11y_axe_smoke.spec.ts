@@ -29,18 +29,18 @@ async function routeFixture(page: Page): Promise<void> {
   });
 }
 
-// Two categories remain deferred because they require a semantic design
-// surfaced but did NOT fix (each needs a real design decision, not a
-// mechanical label fix -- see issue-UI-QUALITY-A11Y-03-structural-aria-findings.md):
-//   - aria-required-parent: canvas cards render role="option" without a
-//     role="listbox" ancestor (CardView/CanvasShell-wide).
-//   - aria-required-children: the File menu's recent-documents <select>
-//     is a disallowed direct child of role="menu".
-// select-name/label, page-has-heading-one, and color-contrast are enforced.
-const DEFERRED_RULE_IDS = ["aria-required-parent", "aria-required-children"];
-
+// Both categories tracked in issue-UI-QUALITY-A11Y-03-structural-aria-findings.md
+// are now fixed and no rules are deferred:
+//   - aria-required-parent: canvas cards were role="option" without a
+//     role="listbox" ancestor; ADR-0052 moved cards to role="button" +
+//     aria-pressed, an independently-reachable operation target with no
+//     required-parent constraint (CardView.tsx, 2026-07-13).
+//   - aria-required-children: the File menu's recent-documents <select> was
+//     a disallowed direct child of role="menu"; it now lives in its own
+//     dialog (RecentDocumentsDialog.tsx), reached via a menuitem instead of
+//     rendering inline inside the open menu (2026-07-14).
 async function expectNoViolations(page: Page, label: string): Promise<void> {
-  const results = await new AxeBuilder({ page }).disableRules(DEFERRED_RULE_IDS).analyze();
+  const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations, `axe violations on ${label}: ${JSON.stringify(results.violations, null, 2)}`).toEqual([]);
 }
 
@@ -59,7 +59,7 @@ test("canvas with a card selected has no automatable a11y violations", async ({ 
   await page.goto("/?locale=en");
   await page.getByRole("button", { name: /Open sample|サンプルを開く/ }).click();
   await expect(page.locator('[data-panel="start-document-entry"]')).toBeHidden();
-  await page.getByRole("option").first().click();
+  await page.locator('[data-ui-region="primary-flow"] [role="button"]').first().click();
   await expect(page.locator('[data-panel="selection-context"]')).toBeVisible();
   await expectNoViolations(page, "canvas with selection context");
 });

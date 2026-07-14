@@ -72,9 +72,9 @@ async function openSample(page: Page): Promise<void> {
 }
 
 async function selectTraceCard(page: Page): Promise<void> {
-  const card = page.locator(`${PRIMARY_FLOW} [role="option"]`, { hasText: "trace target card" });
+  const card = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "trace target card" });
   await card.click();
-  await expect(card).toHaveAttribute("aria-selected", "true");
+  await expect(card).toHaveAttribute("aria-pressed", "true");
 }
 
 test("side-panel trace editor sets seq/source, the selection summary shows them, and undo reverts one step", async ({ page }) => {

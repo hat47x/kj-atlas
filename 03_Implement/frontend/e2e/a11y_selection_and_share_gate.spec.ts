@@ -53,7 +53,7 @@ test("selection context announces changes politely and reads type before hold be
   // "ambiguous target claim" is claimType=unknown with a critique and hold
   // state absent by default in this fixture -- pick a card with evidence
   // links to exercise the fuller chip row.
-  await page.getByRole("option", { name: "supporting field note" }).click();
+  await page.getByRole("button", { name: "supporting field note" }).click();
   await expect(selectionContext).toContainText("Card selected");
 
   const panelText = (await selectionContext.textContent()) ?? "";

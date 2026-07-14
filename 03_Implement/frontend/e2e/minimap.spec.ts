@@ -75,7 +75,7 @@ test("shows a viewport frame and dragging it pans the canvas", async ({ page }) 
     throw new Error("minimap bounding box not found");
   }
 
-  const firstCard = page.getByRole("option").first();
+  const firstCard = page.locator('[data-ui-region="primary-flow"] [role="button"]').first();
   const beforeBox = await firstCard.boundingBox();
 
   await page.mouse.move(box.x + 20, box.y + 20);

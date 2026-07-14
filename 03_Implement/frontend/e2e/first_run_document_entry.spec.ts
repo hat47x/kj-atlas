@@ -138,16 +138,16 @@ test("first-run sample entry opens the sample and exposes selection context", as
 
   await page.goto("/");
   await expect(page.locator(START_PANEL)).toBeVisible();
-  await expect(page.getByRole("option", { name: "ユーザー課題を集める" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "ユーザー課題を集める" })).toHaveCount(0);
 
   shouldReturnSample = true;
   await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
 
   await expect(page.locator(START_PANEL)).toBeHidden();
-  const sampleCard = page.getByRole("option", { name: "ユーザー課題を集める" });
+  const sampleCard = page.getByRole("button", { name: "ユーザー課題を集める" });
   await expect(sampleCard).toBeVisible();
-  await expect(page.getByRole("option", { name: "観察メモをカード化する" })).toBeVisible();
-  await expect(page.getByRole("option", { name: "似ている内容を近くに置く" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "観察メモをカード化する" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "似ている内容を近くに置く" })).toBeVisible();
 
   await sampleCard.click();
 
@@ -177,7 +177,7 @@ test("read-only first-run entry falls back to the built-in sample when services 
   await sampleButton.click();
 
   await expect(page.locator(START_PANEL)).toBeHidden();
-  await expect(page.locator('[data-ui-region="primary-flow"]').getByRole("option")).toHaveCount(3);
+  await expect(page.locator('[data-ui-region="primary-flow"] [role="button"]')).toHaveCount(3);
   await expect(page.locator("header")).toContainText("Read-only");
   await expect(page.locator("body")).toContainText("Opened the built-in sample");
 });
@@ -198,7 +198,7 @@ test("read-only document file entry opens validated content for inspection witho
   await expect(page.getByText("Validate DocumentV2 JSON, then open it for inspection without saving.")).toBeVisible();
   await page.getByRole("button", { name: "Open for inspection" }).click();
 
-  await expect(page.getByRole("option", { name: "first run imported card" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "first run imported card" })).toBeVisible();
   await expect(page.locator("header")).toContainText("Read-only");
   await expect(page.locator("header")).not.toContainText("Unsaved changes");
   await expect(page.getByRole("button", { name: "Save" })).toBeDisabled();

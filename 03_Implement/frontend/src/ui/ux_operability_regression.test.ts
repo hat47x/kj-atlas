@@ -19,13 +19,13 @@ describe("UX Operability regression contracts", () => {
   it("Phase 2: keyboard-card-selection", () => {
     const cardViewSource = readSource("src/canvas/CardView.tsx");
 
-    expect(cardViewSource).toContain('role="option"');
-    expect(cardViewSource).toContain("aria-selected={isSelected}");
+    expect(cardViewSource).toContain('role={isEditing ? undefined : "button"}');
+    expect(cardViewSource).toContain("aria-pressed={isEditing ? undefined : isSelected}");
     expect(cardViewSource).toContain("const [isFocused, setIsFocused] = useState(false)");
     expect(cardViewSource).toContain("onFocus={handleFocus}");
     expect(cardViewSource).toContain("onBlur={handleBlur}");
     expect(cardViewSource).toContain('data-focus={isFocused ? "card" : undefined}');
-    expect(cardViewSource).toContain("tabIndex={0}");
+    expect(cardViewSource).toContain("tabIndex={isEditing ? -1 : 0}");
     expect(cardViewSource).toContain("onKeyDown={handleKeyDown}");
     expect(cardViewSource).toContain("onSelect(card.id, event.shiftKey)");
   });
@@ -251,6 +251,7 @@ describe("UX Operability regression contracts", () => {
   it("UX-MENU-01: menu bar consolidates flat header operations into 6 categories without a net increase in always-visible core actions", () => {
     const appSource = readSource("src/App.tsx");
     const menuBarSource = readSource("src/ui/MenuBar.tsx");
+    const recentDocumentsDialogSource = readSource("src/ui/RecentDocumentsDialog.tsx");
 
     // AC-1: the slim toolbar's 7 core actions are unchanged (the flat
     // low-frequency buttons that used to sit beside them moved into the
@@ -294,8 +295,11 @@ describe("UX Operability regression contracts", () => {
     // Phase 5's toolbar-label anchors keep passing because the labels moved
     // into menu items rather than disappearing (re-asserted here for the
     // menu bar's own contract, independent of Phase 5's toolbar contract).
+    // "open" (recent documents) went one step further under ADR-0052 AC-2:
+    // it moved out of the File menu's role="menu" entirely into its own
+    // dialog, since a <select> is a disallowed direct child of role="menu".
     expect(appSource).toContain('t("app.toolbar.new")');
-    expect(appSource).toContain('t("app.toolbar.open")');
+    expect(recentDocumentsDialogSource).toContain('t("app.toolbar.open")');
 
     // WAI-ARIA menubar keyboard contract (arrow cycling, Home/End,
     // Escape-close-with-focus-return) — new code, since neither
@@ -694,6 +698,7 @@ describe("UX Operability regression contracts", () => {
   it("Phase 5: primary-toolbar-task-prioritization", () => {
     const appSource = readSource("src/App.tsx");
     const shellSource = readSource("src/ui/Shell.tsx");
+    const recentDocumentsDialogSource = readSource("src/ui/RecentDocumentsDialog.tsx");
 
     expect(appSource).toContain('data-ui-region="primary-flow"');
     expect(appSource).toContain('data-ui-complexity-tier="core-context"');
@@ -704,7 +709,9 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain('data-ui-complexity-tier="advanced-content"');
     expect(appSource.match(/data-ui-core-action=/g)).toHaveLength(7);
     expect(appSource).toContain('t("app.toolbar.new")');
-    expect(appSource).toContain('t("app.toolbar.open")');
+    // "open" (recent documents) moved into its own dialog under ADR-0052
+    // AC-2 (a <select> is a disallowed direct child of role="menu").
+    expect(recentDocumentsDialogSource).toContain('t("app.toolbar.open")');
     expect(appSource).toContain('t("app.toolbar.undo")');
     expect(appSource).toContain('t("app.toolbar.save")');
   });

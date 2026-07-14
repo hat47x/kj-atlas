@@ -65,12 +65,12 @@ async function openShortcutFixture(page: Page): Promise<void> {
 }
 
 async function selectTargetCard(page: Page) {
-  const targetCard = page.getByRole("option", { name: "shortcut target card" });
+  const targetCard = page.getByRole("button", { name: "shortcut target card" });
   await expect(targetCard).toBeVisible();
   await targetCard.focus();
   await expect(targetCard).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(targetCard).toHaveAttribute("aria-selected", "true");
+  await expect(targetCard).toHaveAttribute("aria-pressed", "true");
   return targetCard;
 }
 

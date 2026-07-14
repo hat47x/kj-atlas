@@ -54,9 +54,9 @@ async function openSampleAndSelectCard(page: Page): Promise<import("@playwright/
   await startPanel.getByRole("button", { name: /Open sample|サンプルを開く/ }).click();
   await expect(startPanel).toBeHidden();
 
-  const card = page.locator(`${PRIMARY_FLOW} [role="option"]`, { hasText: "selected card" });
+  const card = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "selected card" });
   await card.click();
-  await expect(card).toHaveAttribute("aria-selected", "true");
+  await expect(card).toHaveAttribute("aria-pressed", "true");
   return card;
 }
 
@@ -71,7 +71,7 @@ test("Escape closes the command palette without clearing the underlying card sel
   await page.keyboard.press("Escape");
   await expect(page.locator(PALETTE)).toHaveCount(0);
   // Stage 1 only: the palette closed, the card is still selected underneath.
-  await expect(card).toHaveAttribute("aria-selected", "true");
+  await expect(card).toHaveAttribute("aria-pressed", "true");
 });
 
 test("Escape closes the canvas legend without clearing the underlying card selection", async ({ page }) => {
@@ -85,7 +85,7 @@ test("Escape closes the canvas legend without clearing the underlying card selec
 
   await page.keyboard.press("Escape");
   await expect(page.locator(LEGEND)).toHaveCount(0);
-  await expect(card).toHaveAttribute("aria-selected", "true");
+  await expect(card).toHaveAttribute("aria-pressed", "true");
 });
 
 test("Escape with no overlay open clears the selection (existing baseline behavior)", async ({ page }) => {
@@ -94,5 +94,5 @@ test("Escape with no overlay open clears the selection (existing baseline behavi
   const card = await openSampleAndSelectCard(page);
 
   await page.keyboard.press("Escape");
-  await expect(card).not.toHaveAttribute("aria-selected", "true");
+  await expect(card).not.toHaveAttribute("aria-pressed", "true");
 });

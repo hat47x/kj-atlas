@@ -62,7 +62,7 @@ test("lone-wolf card shows a non-scoring protection mark that the View panel can
   await startPanel.getByRole("button", { name: /Open sample|サンプルを開く/ }).click();
   await expect(startPanel).toBeHidden();
 
-  const loneCard = page.locator(`${PRIMARY_FLOW} [role="option"]`, { hasText: "the lone wolf idea" });
+  const loneCard = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "the lone wolf idea" });
   await expect(loneCard).toBeVisible();
   // Island titles are rendered as a text node alongside sibling badges (not
   // their own element), so match by substring rather than exact text.
@@ -76,7 +76,7 @@ test("lone-wolf card shows a non-scoring protection mark that the View panel can
   await expect(allProtectedMarks).toHaveCount(2);
   const mark = loneCard.getByText("Protected", { exact: true });
   await expect(mark).toBeVisible();
-  const memberCard = page.locator(`${PRIMARY_FLOW} [role="option"]`, { hasText: "island member one" });
+  const memberCard = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "island member one" });
   await expect(memberCard.getByText("Protected", { exact: true })).toHaveCount(0);
 
   // Non-scoring: no numeric rank/score/percentage next to the mark.

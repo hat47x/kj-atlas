@@ -89,7 +89,7 @@ test("keyboard-only release candidate flow reaches start, search, selection, cri
   await sampleButton.press(" ");
 
   await expect(page.locator(START_PANEL)).toBeHidden();
-  const observationCard = page.getByRole("option", { name: "keyboard trace observation memo" });
+  const observationCard = page.getByRole("button", { name: "keyboard trace observation memo" });
   await expect(observationCard).toBeVisible();
 
   const searchInput = page.getByPlaceholder(SEARCH_CARDS_PLACEHOLDER);
@@ -108,7 +108,7 @@ test("keyboard-only release candidate flow reaches start, search, selection, cri
   await pressTabUntilFocused(page, observationCard, 100);
   await expect(observationCard).toBeFocused();
   await observationCard.press(" ");
-  await expect(observationCard).toHaveAttribute("aria-selected", "true");
+  await expect(observationCard).toHaveAttribute("aria-pressed", "true");
 
   const selectionPanel = page.locator('[data-ui-region="selection-context"]');
   await expect(selectionPanel).toBeVisible();

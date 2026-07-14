@@ -78,7 +78,7 @@ test("review pack export keeps trace controls consistent with actual zip content
   await page.getByRole("button", { name: "Close panel" }).click();
   await expect(page.locator('[data-panel="share-replay"]')).toBeHidden();
 
-  await page.getByRole("option", { name: "trace target claim" }).click();
+  await page.getByRole("button", { name: "trace target claim" }).click();
   await page.getByRole("button", { name: "Share & Reproduce" }).click();
 
   await page.getByLabel("Include reading outline").uncheck();
@@ -120,7 +120,7 @@ test("reviewer can inspect review-pack evidence without editing in read-only mod
   await page.getByRole("button", { name: "Open sample" }).click();
 
   await expect(page.getByText("Read-only mode is active. Editing actions are disabled.")).toBeVisible();
-  const targetCard = page.getByRole("option", { name: "trace target claim" });
+  const targetCard = page.getByRole("button", { name: "trace target claim" });
   await targetCard.click();
 
   const selectionSummary = page.locator('[data-panel="selection-context"]');
