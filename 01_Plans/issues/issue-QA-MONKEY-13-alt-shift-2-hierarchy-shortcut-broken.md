@@ -1,7 +1,7 @@
 # Issue Draft: QA-MONKEY-13 Alt+Shift+2（構造レベル「中間」）ショートカットが「概要」を適用してしまう
 
 - Type: Bug
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `DX-E2E-07`（e2e契約再照合バッチの検証中に発見。テスト側のドリフトではなく実挙動のバグと判定しT4に基づき分離）
 - Priority: P2
@@ -41,10 +41,29 @@
 
 ## 受け入れ条件（案）
 
-- [ ] AC-1: 根本原因を特定する。
-- [ ] AC-2: `Alt+Shift+2`が構造レベルを`mid`へ正しく切り替えるよう修正する。
-- [ ] AC-3: `Alt+Shift+1`/`Alt+Shift+3`の既存の正しい挙動が回帰しないことを確認する。
-- [ ] AC-4: `e2e/header_toolbar_layout.spec.ts`の "modifier shortcuts update visible view and hierarchy state" が実ブラウザで完走する（テスト自体の変更は不要 -- 現状のアサーションは正しい仕様を反映している）。
+- [x] AC-1: 根本原因を特定する（下記「対応記録」参照）。
+- [x] AC-2: `Alt+Shift+2`が構造レベルを`mid`へ正しく切り替えるよう修正する。
+- [x] AC-3: `Alt+Shift+1`/`Alt+Shift+3`の既存の正しい挙動が回帰しないことを確認する（フルe2eスイート 165/165 で確認済み）。
+- [x] AC-4: `e2e/header_toolbar_layout.spec.ts`の "modifier shortcuts update visible view and hierarchy state" が実ブラウザで完走する（テスト自体は変更していない -- 元のアサーションがそのまま正しい仕様を反映していた）。
+
+## 対応記録（2026-07-15）
+
+**根本原因**: `App.tsx`に3箇所の`setHierarchyLevel`呼び出しがあり、うち2つが競合していた。
+
+1. `handleHierarchyLevelChange(level)`（ユーザー操作の唯一の入口 -- ショートカット・ドロップダウン・ボタン群すべてがこれを呼ぶ）は `setHierarchyLevel(level)` と `setMaxDepth(maxDepthForHierarchyLevel(level))` を同時に呼ぶ。`mid` の場合 `maxDepth = 1`。
+2. 別の `useEffect`（依存配列 `[maxAvailableDepth, maxDepth]`）が「`maxDepth` が `maxAvailableDepth`（文書内の島の最大ネスト深さ）を超えていたら切り詰める」処理を行う。検証に使ったテスト文書は島が0件（`islands: []`）のため `maxAvailableDepth = 0`。`maxDepth = 1 > 0` が真となり、`setMaxDepth(0)` が発火してしまう。
+3. さらに別の `useEffect`（依存配列 `[maxDepth]`）が「`maxDepth` が変化するたびに `hierarchyLevel` を `resolveHierarchyLevel(maxDepth)` で再導出する」処理を行う。上記2.の`setMaxDepth(0)`により再度この effect が発火し、`resolveHierarchyLevel(0)` = `"overview"` として `hierarchyLevel` を上書きしてしまう。
+
+結果として、ユーザーが明示的に選んだ `"mid"` が、文書に深い島が1つも無い場合に限り、2段階のeffect連鎖によって静かに `"overview"` へ書き換えられていた。`"overview"`（`maxDepth=0`）と `"detail"`（`maxDepth="all"`、切り詰めeffectが早期returnする）は、この切り詰め条件に該当しないため正しく動作していた。
+
+事象の再現手順（`console.log`によるライブ計装で確認）:
+- `handleHierarchyLevelChange("mid")` は正しく呼ばれ、`setHierarchyLevel("mid")` / `setMaxDepth(1)` を実行 -- ここまでは正常。
+- 直後に切り詰めeffectが `setMaxDepth(0)` を発火。
+- その`maxDepth`変化を受けて同期effectが `setHierarchyLevel("overview")` を発火 -- ここでユーザー選択が上書きされる。
+
+**修正**: `03_Implement/frontend/src/App.tsx` の切り詰めeffectの条件に `&& maxAvailableDepth > 0` を追加した。`maxAvailableDepth === 0` は「深さ1以上にネストした島が1つも無い（島が0件、または全島が最上位のみ）」ことを意味し、この場合 `maxDepth=1` と `maxDepth=0` は表示結果に違いを生まない（切り詰める対象の内容が実在しない）ため、切り詰め自体が不要かつ有害（ユーザーの明示的な選択を無言で覆す）と判断した。`hierarchyLevel`をmaxDepthから再導出する同期effect自体は温存した（数値の深さセレクタを直接操作した場合に3段階の簡易表示を追従させる、別の意図された挙動のため）。
+
+**検証**: `tsc --noEmit` クリーン。Vitest 190/190ファイル・1034/1034テスト green（`hierarchy_level.test.ts`含む既存の純粋関数テストは無変更で通過）。フルPlaywrightスイート再実行: **165/165 全件 green**（今セッション初のフルスイート完全green）。`e2e/header_toolbar_layout.spec.ts`の対象テストを含む9件すべて再確認済み。
 
 ## Traceability
 
