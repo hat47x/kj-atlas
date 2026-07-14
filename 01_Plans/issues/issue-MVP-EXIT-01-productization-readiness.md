@@ -27,7 +27,7 @@
 
 - `ADR-0035` は「高権限ライフサイクル操作を標準機能にしない境界」としてAccepted。削除・アーカイブ・所有者移管の未実装は隠れた欠落ではないが、導入組織が必須とする場合は別ADR/issueをリリース条件へ戻す。
 - `DATA-MAINT-03` はDone/Fixed、`DATA-MAINT-04` はmetadata-only境界のOpen検討へ進んだ。
-- `ADR-0052` / `ADR-0053` のAcceptedにより実装方式は決まったが、ARIA修正・作業モードtabs・診断バンドルの実装検証は未完であり、本Issueの総合DecisionStatusはPendingを維持する。
+- `ADR-0052` / `ADR-0053` / `ADR-0055` のAcceptedにより実装方式は決まった。作業モードtabsは `UX-NAV-02` で実装検証済みだが、ARIA修正・診断バンドルを含む製品化全体の実装検証は別の受入条件に残るため、本Issueの総合DecisionStatusはPendingを維持する。
 - 本同期は過去checkpointログを書き換えず、現在の判断状態を上書きする。
 
 ## 1) 課題 / Problem statement

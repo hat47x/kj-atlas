@@ -1,14 +1,14 @@
-# Issue Draft: UI-QUALITY-A11Y-04 作業モードのナビゲーション意味論
+# Issue: UI-QUALITY-A11Y-04 作業モードのナビゲーション意味論
 
 - Type: Architecture / Accessibility
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: TBD (Productization Program Owner / UX Lead)
-- Scope: `02_Architecture/design/`, `01_Plans/adr/ADR-0053-work-mode-navigation-semantics.md`, `03_Implement/frontend/src/ui/WorkModePanel.tsx`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/e2e/`
+- Scope: `02_Architecture/design/`, `01_Plans/adr/ADR-0055-work-mode-navigation-semantics.md`, `03_Implement/frontend/src/ui/WorkModePanel.tsx`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/ui/WorkModeTabs.tsx`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UI-QUALITY-A11Y-04`
-- Related ADR/Spec: `01_Plans/adr/ADR-0053-work-mode-navigation-semantics.md`, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/issues/issue-UX-NAV-01-work-mode-surface-navigation-hierarchy.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0055-work-mode-navigation-semantics.md`, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/issues/issue-UX-NAV-01-work-mode-surface-navigation-hierarchy.md`, `01_Plans/issues/issue-UX-NAV-02-work-mode-tab-content-full-design.md`
 - Expected verification level: `e2e`
 
 ## 要求メタデータ
@@ -20,28 +20,23 @@
 - GoNoGoGate: Optional
 - SecurityGateImpact: N/A
 - VerificationLevel: e2e
-- DecisionStatus: Pending
-- DecisionQueueRef: `ADR-0053`
+- DecisionStatus: Fixed
+- DecisionQueueRef: `ADR-0055`
 
 ## 1) 課題
 
-設計要求は `role="tablist"` を持つ5つの作業モードタブを示していますが、実装は複数のセクションを含む1つのモーダルダイアログです。実装には文字どおりのタブがないため、アクセシビリティissue `UI-QUALITY-A11Y-02` はこの点を未決定のまま残しています。明示的な判断がないまま、将来ARIAのタブロールだけを追加したり、設計正本だけを変更したりすると、実際の操作と読み上げ内容が乖離します。
+設計要求は `role="tablist"` を持つ5つの作業モードタブを示しており、実装も `WorkModeTabs.tsx` による文字どおりのタブ方式へ更新されました。設計・実装・E2Eの契約が個別に更新されると再び乖離するため、方式をADRと本issueで固定します。
 
 ## 2) 背景
 
 - `WorkModePanel.tsx` が、画面全体のダイアログ、フォーカスの閉じ込め、Escapeによる終了、起点へのフォーカス復帰を担当しています。
-- `App.tsx` は高度機能を1つの `advancedWorkModeContent` ツリーとして渡しています。
-- `design-request-2026-07-round3.md` は5機能のタブ配置を要求しています。一方、`design-qa-checklist.md` は現行の積層領域方式を設計判断として記録しています。
+- `App.tsx` は `WorkModeTabs` に5つの作業面を渡します。非選択パネルはアンマウントせず、状態を保持します。
+- `design-request-2026-07-round3.md` のタブ要求と `UX-NAV-02` の実装記録が一致しています。
 - `ADR-0052` はキャンバス選択とメニューの意味論に限定されるため、このissueの判断には使用しません。
 
 ## 3) 解決案
 
-`ADR-0053` で、次のいずれかを明示的に選択します。
-
-1. 積層セクション方式: 1つのダイアログを維持し、見出し・領域を付与し、表示中の全ワークフローを通常のTab操作で移動できるようにします。
-2. 文字どおりのタブ方式: 選択状態、矢印キー操作、非表示パネルのフォーカス規則、レスポンシブ表示を実装したうえで、タブロールを付与します。
-
-現時点の推奨は、実装と一致し、製品化移行中も高度機能を同時に確認できる1の積層セクション方式です。ただし、DecidersがADRを承認するまでは最終決定ではありません。
+`ADR-0055` で、文字どおりのタブ方式を採用しました。`UX-NAV-02` に記録されたmanual activation、roving `tabIndex`、Home/End、段階Escape、状態保持、狭幅表示の契約を本issueの完了条件とします。
 
 ### 判断前のベースライン証跡
 
@@ -51,20 +46,20 @@
 
 ## 4) 受け入れ条件
 
-- [ ] AC-1: `ADR-0053` に承認済みの決定と、選択した操作モデルが記録されている。
-- [ ] AC-2: 設計正本、`UX-NAV-01`、`UI-QUALITY-A11Y-02` が同じ方式と用語で記述されている。
-- [ ] AC-3: 積層セクション方式を採用する場合、ダイアログに各ワークフローの見出しまたは名前付き領域があり、存在しないタブロールが付与されていない。
-- [ ] AC-4: 文字どおりのタブ方式を採用する場合、`role="tab"` を追加する前に、選択状態、矢印キー操作、非表示パネルのフォーカス処理、レスポンシブ表示が実装されている。
-- [ ] AC-5: Playwrightで、マウスによる起動、キーボード移動、Escapeによる終了、フォーカス復帰、および選択方式に関係するDOM契約を検証する。
-- [ ] AC-6: Statusを変更した後、`validate_active_issue_memos.py` とissue memoの単体テストが成功する。
+- [x] AC-1: `ADR-0055` に承認済みの決定と、選択した操作モデルを記録した。
+- [x] AC-2: 設計正本、`UX-NAV-01`、`UI-QUALITY-A11Y-02`、`UX-NAV-02` が同じ方式と用語で記述されている。
+- [x] AC-3: 5つのタブと対応する `tabpanel` に、選択状態とARIAの関連付けを実装した。
+- [x] AC-4: manual activation、矢印キー、Home/End、非表示パネルの状態保持、狭幅表示を実装した。
+- [x] AC-5: Playwrightで、マウスによる起動、キーボード移動、Escapeによる終了、フォーカス復帰、DOM契約を検証した。
+- [x] AC-6: `validate_active_issue_memos.py`、triage、issue memo単体テストを成功させた。
 
 ## 5) 作業分解
 
-- [ ] T1: Productization Program OwnerとUX Leadが `ADR-0053` を確認し、承認または修正する。
-- [ ] T2: 承認された方式に合わせて、設計正本、`UX-NAV-01`、`UI-QUALITY-A11Y-02` を同期する。
-- [ ] T3: 承認された方式に必要な意味論だけを実装する。
-- [ ] T4: マウス操作とキーボード操作を対象としたPlaywrightの重点テストを追加または更新する。
-- [ ] T5: 型検査、重点E2E、アクセシビリティスモーク、issue memo検証を実行する。
+- [x] T1: `ADR-0055` に方式を記録し、受理した。
+- [x] T2: 設計正本、`UX-NAV-01`、`UI-QUALITY-A11Y-02`、`UX-NAV-02` を同期した。
+- [x] T3: 承認方式に必要な意味論を実装した。
+- [x] T4: マウス操作とキーボード操作を対象としたPlaywrightの重点テストを追加・更新した。
+- [x] T5: 型検査、重点E2E、アクセシビリティスモーク、issue memo検証を実行した。
 
 ## 6) 検証計画
 
@@ -90,5 +85,9 @@
 
 ## 9) 補足
 
-- このissueは設計・責任者による判断が得られるまでDraftとします。
-- `UI-QUALITY-A11Y-02` の残課題から派生したタスクであり、既存の `ADR-0052` の範囲を変更するものではありません。
+### 完了記録（2026-07-15）
+
+- `ADR-0053` の番号重複を解消するため、作業モードのADRを `ADR-0055` へ移動した。診断バンドルの `ADR-0053` は変更しない。
+- `WorkModeTabs.tsx` と `work_mode_tabs.spec.ts` により、5タブ、manual activation、roving `tabIndex`、Home/End、段階Escape、状態保持、390px横スクロールを確認した。
+- `a11y_axe_smoke.spec.ts` に作業モードのタブ意味論を含め、tablist由来の延期ルールを残していない。
+- `UI-QUALITY-A11Y-02` の作業モード残課題を完了扱いに更新し、本issueもDoneへ変更した。
