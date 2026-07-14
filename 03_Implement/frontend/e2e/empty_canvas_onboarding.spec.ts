@@ -51,7 +51,7 @@ test("empty canvas hint appears after creating a new document and disappears aft
   await expect(hint).toContainText("Start with one card");
   await expect(hint).toContainText("Correctness can wait");
   await expect(hint).toContainText("It is fine to keep it ambiguous");
-  await expect(page.locator(PRIMARY_FLOW).getByRole("option")).toHaveCount(0);
+  await expect(page.locator(`${PRIMARY_FLOW} [role="button"]`)).toHaveCount(0);
 
   const focusInsideHint = await page.evaluate(() => {
     return Boolean(document.activeElement?.closest('[data-ui-region="empty-canvas-hint"]'));
@@ -61,12 +61,17 @@ test("empty canvas hint appears after creating a new document and disappears aft
   await hint.getByRole("button", { name: "Write first card" }).click();
 
   await expect(hint).toHaveCount(0);
-  await expect(page.locator(PRIMARY_FLOW).getByRole("option")).toHaveCount(1);
+  // The new card enters edit mode immediately; role="button" moves entirely
+  // to the textarea while editing (ADR-0052). Tab away to commit the (empty)
+  // edit before counting.
+  await expect(page.locator(`${PRIMARY_FLOW} textarea`)).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator(`${PRIMARY_FLOW} [role="button"]`)).toHaveCount(1);
 
   // UX-MENU-01: "New" moved from a flat toolbar button into the File menu.
   await page.getByRole("menuitem", { name: "File", exact: true }).click();
   await page.getByRole("menuitem", { name: "New", exact: true }).click();
-  await expect(page.locator(PRIMARY_FLOW).getByRole("option")).toHaveCount(0);
+  await expect(page.locator(`${PRIMARY_FLOW} [role="button"]`)).toHaveCount(0);
   await expect(hint).toHaveCount(0);
 
   await page.getByRole("button", { name: "View", exact: true }).click();

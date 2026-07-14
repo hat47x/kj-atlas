@@ -55,7 +55,7 @@ async function openSample(page: Page): Promise<void> {
 }
 
 async function selectAllCards(page: Page): Promise<void> {
-  const options = page.locator(`${PRIMARY_FLOW} [role="option"]`);
+  const options = page.locator(`${PRIMARY_FLOW} [role="button"]`);
   await options.nth(0).click();
   await options.nth(1).click({ modifiers: ["Shift"] });
   await options.nth(2).click({ modifiers: ["Shift"] });
@@ -66,7 +66,7 @@ test("appears only for 2+ selected cards and disappears at 0/1", async ({ page }
   await page.goto("/?locale=en");
   await openSample(page);
 
-  const options = page.locator(`${PRIMARY_FLOW} [role="option"]`);
+  const options = page.locator(`${PRIMARY_FLOW} [role="button"]`);
   await options.nth(0).click();
   await expect(page.locator(BAR)).toHaveCount(0);
 
@@ -106,7 +106,7 @@ test("bulk claim type change applies the chosen type to every selected card", as
   await page.locator(`${BAR} select`).selectOption("hypothesis");
   await expect(page.locator(BAR)).toBeVisible();
 
-  const claimBadges = page.locator(`${PRIMARY_FLOW} [role="option"]`).filter({ hasText: "Hypothesis" });
+  const claimBadges = page.locator(`${PRIMARY_FLOW} [role="button"]`).filter({ hasText: "Hypothesis" });
   await expect(claimBadges).toHaveCount(3);
 });
 
@@ -117,8 +117,8 @@ test("bulk delete removes all selected cards as a single undoable step", async (
   await selectAllCards(page);
 
   await page.locator(BAR).getByRole("button", { name: "Delete", exact: true }).click();
-  await expect(page.locator(`${PRIMARY_FLOW} [role="option"]`)).toHaveCount(0);
+  await expect(page.locator(`${PRIMARY_FLOW} [role="button"]`)).toHaveCount(0);
 
   await page.keyboard.press("Control+z");
-  await expect(page.locator(`${PRIMARY_FLOW} [role="option"]`)).toHaveCount(3);
+  await expect(page.locator(`${PRIMARY_FLOW} [role="button"]`)).toHaveCount(3);
 });

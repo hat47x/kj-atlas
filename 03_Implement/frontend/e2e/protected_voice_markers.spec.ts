@@ -58,8 +58,8 @@ test("protected voice markers are visible by default and can be hidden from View
 
   await expect(page.getByText("Protected", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Show protection marks" })).toBeVisible();
-  await expect(page.getByRole("option", { name: "Lone wolf card" })).toBeVisible();
-  await expect(page.getByRole("option", { name: "Small island A" })).toBeVisible();
-  await expect(page.getByRole("option", { name: "Small island B" })).toBeVisible();
-  await expect(page.getByRole("option", { name: "Singleton critique card" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Lone wolf card" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Small island A" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Small island B" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Singleton critique card" })).toBeVisible();
 });

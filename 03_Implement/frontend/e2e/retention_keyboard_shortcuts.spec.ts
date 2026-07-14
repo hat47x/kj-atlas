@@ -57,7 +57,7 @@ test("H toggles hold, is reversible with Ctrl+Z, and does nothing without a sele
   await page.goto("/?locale=en");
   await openSample(page);
 
-  const card = page.locator(`${PRIMARY_FLOW} [role="option"]`, { hasText: "plain card" });
+  const card = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "plain card" });
 
   // No selection: H does nothing (no hold pill appears).
   await page.keyboard.press("h");
@@ -83,7 +83,7 @@ test("U flags a card with no critique, toggles it off, and never destroys an aut
   await page.goto("/?locale=en");
   await openSample(page);
 
-  const plainCard = page.locator(`${PRIMARY_FLOW} [role="option"]`, { hasText: "plain card" });
+  const plainCard = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "plain card" });
   await plainCard.click();
   await page.keyboard.press("u");
   await expect(plainCard.getByTitle("Card has critique note")).toBeVisible();
@@ -91,7 +91,7 @@ test("U flags a card with no critique, toggles it off, and never destroys an aut
   await page.keyboard.press("u");
   await expect(plainCard.getByTitle("Card has critique note")).toHaveCount(0);
 
-  const authoredCard = page.locator(`${PRIMARY_FLOW} [role="option"]`, { hasText: "card with authored critique" });
+  const authoredCard = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "card with authored critique" });
   await authoredCard.click();
   await expect(authoredCard.getByTitle("Card has critique note")).toBeVisible();
   // Safety: U must be a no-op on a card whose critique the user already wrote.
@@ -104,7 +104,7 @@ test("R toggles the reviewed state on the selected card", async ({ page }) => {
   await page.goto("/?locale=en");
   await openSample(page);
 
-  const authoredCard = page.locator(`${PRIMARY_FLOW} [role="option"]`, { hasText: "card with authored critique" });
+  const authoredCard = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "card with authored critique" });
   await authoredCard.click();
   await expect(authoredCard.getByTitle("Card text is unreviewed")).toBeVisible();
 
@@ -120,15 +120,18 @@ test("retention keys do not fire while editing card text", async ({ page }) => {
   await page.goto("/?locale=en");
   await openSample(page);
 
-  const card = page.locator(`${PRIMARY_FLOW} [role="option"]`, { hasText: "plain card" });
+  const card = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "plain card" });
   await card.click();
   await card.dblclick();
 
-  const editor = card.locator("textarea");
+  // Editing strips role="button" from the card root entirely (ADR-0052), so
+  // `card` no longer resolves once edit mode starts; locate the textarea
+  // directly instead (only one card can be mid-edit at a time).
+  const editor = page.locator(`${PRIMARY_FLOW} textarea`);
   await expect(editor).toBeFocused();
   await editor.press("Control+a");
   await page.keyboard.type("hur");
 
   await expect(editor).toHaveValue("hur");
-  await expect(card.getByText("Held", { exact: true })).toHaveCount(0);
+  await expect(page.locator(PRIMARY_FLOW).getByText("Held", { exact: true })).toHaveCount(0);
 });

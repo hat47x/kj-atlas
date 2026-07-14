@@ -40,8 +40,8 @@ test("first-value journey keeps SafeMode visible from entry through share prefli
 
   fixture.enableSample();
   await page.getByRole("button", { name: "Open sample" }).click();
-  const firstCard = page.getByRole("option", { name: "first value user problem" });
-  const secondCard = page.getByRole("option", { name: "first value observation memo" });
+  const firstCard = page.getByRole("button", { name: "first value user problem" });
+  const secondCard = page.getByRole("button", { name: "first value observation memo" });
   await firstCard.click();
   await secondCard.click({ modifiers: ["Shift"] });
   // UX-SCALE-01 (b): the bulk-operations bar also has a same-labeled

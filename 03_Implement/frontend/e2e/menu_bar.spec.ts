@@ -102,7 +102,7 @@ test("ArrowDown/ArrowUp cycle items with wraparound, Home/End jump, and Enter ru
   await page.goto("/?locale=en");
   await openSample(page);
 
-  await expect(page.locator(`${PRIMARY_FLOW} [role="option"]`)).toHaveCount(1);
+  await expect(page.locator(`${PRIMARY_FLOW} [role="button"]`)).toHaveCount(1);
 
   await page.getByRole("menuitem", { name: "Card", exact: true }).click();
   const newCardItem = page.getByRole("menuitem", { name: "New card" });
@@ -110,7 +110,13 @@ test("ArrowDown/ArrowUp cycle items with wraparound, Home/End jump, and Enter ru
 
   await page.keyboard.press("Enter");
   await expect(page.getByRole("menu")).toHaveCount(0);
-  await expect(page.locator(`${PRIMARY_FLOW} [role="option"]`)).toHaveCount(2);
+  // The new card enters edit mode immediately (focus moves to its textarea);
+  // role="button" moves entirely to the textarea while editing (ADR-0052), so
+  // the freshly-created card briefly has no role="button" of its own. Tab
+  // away to commit the (empty) edit and exit edit mode before counting.
+  await expect(page.locator(`${PRIMARY_FLOW} textarea`)).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator(`${PRIMARY_FLOW} [role="button"]`)).toHaveCount(2);
 });
 
 test("card type-change items are disabled with no selection and apply the chosen type once a card is selected", async ({ page }) => {
@@ -122,7 +128,7 @@ test("card type-change items are disabled with no selection and apply the chosen
   await expect(page.getByRole("menuitemcheckbox", { name: "Hypothesis" })).toBeDisabled();
   await page.keyboard.press("Escape");
 
-  await page.locator(`${PRIMARY_FLOW} [role="option"]`, { hasText: "existing card" }).click();
+  await page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "existing card" }).click();
 
   await page.getByRole("menuitem", { name: "Card", exact: true }).click();
   const hypothesisItem = page.getByRole("menuitemcheckbox", { name: "Hypothesis" });

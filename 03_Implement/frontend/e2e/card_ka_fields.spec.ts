@@ -71,9 +71,9 @@ async function openSample(page: Page): Promise<void> {
 }
 
 async function selectKaCard(page: Page): Promise<void> {
-  const card = page.locator(`${PRIMARY_FLOW} [role="option"]`, { hasText: "ka target card" });
+  const card = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "ka target card" });
   await card.click();
-  await expect(card).toHaveAttribute("aria-selected", "true");
+  await expect(card).toHaveAttribute("aria-pressed", "true");
 }
 
 test("side-panel KA editor sets voice/value, and undo reverts one field at a time", async ({ page }) => {
@@ -113,7 +113,7 @@ test("Card.text stays the event-of-record and is never overwritten by KA fields;
   await editor.getByPlaceholder(/relief of not having to wait/).fill("extracted value text");
 
   // The KA fields never render on the canvas card itself (AC-4).
-  const cardOption = page.locator(`${PRIMARY_FLOW} [role="option"]`, { hasText: "ka target card" });
+  const cardOption = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "ka target card" });
   await expect(cardOption).not.toContainText("inner voice text");
   await expect(cardOption).not.toContainText("extracted value text");
 

@@ -76,7 +76,7 @@ test("selection context keeps advanced panel extracted behind explicit disclosur
   await page.goto("/?locale=en");
   fixture.enableSample();
   await page.getByRole("button", { name: "Open sample" }).click();
-  await page.getByRole("option", { name: "ambiguous target claim" }).click();
+  await page.getByRole("button", { name: "ambiguous target claim" }).click();
 
   const selectionContext = page.locator('[data-panel="selection-context"]');
   await expect(selectionContext).toBeVisible();
@@ -112,7 +112,7 @@ test("work mode owns narrative and HIL surfaces outside selection context", asyn
   await page.goto("/?locale=en");
   fixture.enableSample();
   await page.getByRole("button", { name: "Open sample" }).click();
-  await page.getByRole("option", { name: "ambiguous target claim" }).click();
+  await page.getByRole("button", { name: "ambiguous target claim" }).click();
 
   const selectionContext = page.locator('[data-panel="selection-context"]');
   await expect(selectionContext).toBeVisible();

@@ -18,8 +18,6 @@ export type MenuCategoryDef = {
   id: string;
   label: string;
   rows: MenuRowDef[];
-  /** Extra content rendered above the generated rows (e.g. a native <select>). */
-  extraContent?: React.ReactNode;
 };
 
 type MenuBarProps = {
@@ -131,10 +129,6 @@ export function MenuBar({ categories }: MenuBarProps) {
   };
 
   const openRows: MenuRowDef[] = rowsForId(openId);
-
-  const openExtraContent = isCollapsed
-    ? null
-    : categories.find((category) => category.id === openId)?.extraContent ?? null;
 
   const closeAndReturnFocus = (idToFocus: string | null) => {
     setOpenId(null);
@@ -370,7 +364,6 @@ export function MenuBar({ categories }: MenuBarProps) {
             padding: 4,
           }}
         >
-          {openExtraContent ? <div style={{ padding: "4px 8px 8px" }}>{openExtraContent}</div> : null}
           {openRows.map((row, index) => {
             if (row.kind === "header") {
               return (

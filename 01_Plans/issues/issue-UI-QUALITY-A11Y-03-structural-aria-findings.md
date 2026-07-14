@@ -1,7 +1,7 @@
 # Issue Draft: UI-QUALITY-A11Y-03 axe スモークで発見した構造的ARIA課題（未修正・要設計判断）
 
 - Type: Bug / Design decision
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
@@ -39,8 +39,8 @@
 
 ## 受け入れ条件（案）
 
-- [ ] AC-1: `role=option`/`listbox` 構造について、キャンバスの操作性（ドラッグ配置・自由配置）を損なわない設計を決定し実装する。
-- [ ] AC-2: MenuBar の `extraContent` パターンについて、`role=menu` の直接子制約を満たす構造（ラップ or 配置変更）を決定し実装する。
+- [x] AC-1: `role=option`/`listbox` 構造について、キャンバスの操作性（ドラッグ配置・自由配置）を損なわない設計を決定し実装する。
+- [x] AC-2: MenuBar の `extraContent` パターンについて、`role=menu` の直接子制約を満たす構造（ラップ or 配置変更）を決定し実装する。
 - [x] AC-3: `h1` の配置場所を決定し実装する。
 - [x] AC-4: `domain-detail-filters` の該当spanの配色をコントラスト比 4.5:1 以上に調整する。
 - [x] AC-5: `e2e/a11y_axe_smoke.spec.ts` の `DEFERRED_RULE_IDS` から対応済みのルールIDを除去する。
@@ -57,3 +57,12 @@
 - `DomainStateFilterBar`の補助ラベル色を`#475569`へ変更し、axeの`color-contrast`除外を解除した。
 - 凡例を含む表示パネルを検査対象に追加した際、`ViewControlsPanel`の深さselectにアクセシブルネームがないことを追加検出した。既存の「深さ」翻訳を`aria-label`へ関連付け、`select-name`の欠落を解消した。
 - `aria-required-parent` と `aria-required-children` は、キャンバス選択ロールとメニュー内フォームの意味付けを決めるADR-0052の対象として残した。
+
+## 対応記録（2026-07-14）
+
+ADR-0052（Accepted）に基づき、残っていた2件の構造的ARIA課題を解消した。
+
+- **AC-1 (`aria-required-parent`)**: キャンバスカードを `role="option"` から `role="button"` + `aria-pressed` へ移行(`CardView.tsx`)。`role="listbox"` 等の必須親を持たない、独立して到達可能な操作対象という設計を採用し、矢印キーによる新規リストボックス的ナビゲーション契約は導入しなかった。編集中はカードroot要素からrole/`aria-pressed`/tabIndexを完全に外し、textarea側に委譲する。複数選択ロジック（通常アクティブ化で単独選択、Shift+アクティブ化でメンバーシップ切替）は`aria-pressed`のセマンティクスに合わせて既存実装のまま整合していた。`CanvasShell.tsx`の`shouldUseSpacePan`許可リストから冗長化した`[role="option"]`エントリも削除。source-string回帰アンカー（`CardView.accessibility.test.ts`、`ux_operability_regression.test.ts`）とe2e 28ファイル・87箇所を全て更新し、移行に伴う副作用（新規カード作成が編集モードへ自動遷移するため、コミット前は一時的に`role="button"`を持たない）を洗い出して該当テストを修正した。
+- **AC-2 (`aria-required-children`)**: `MenuBar.tsx`の`extraContent`パターン（Fileメニュー内に直接描画されていた最近使ったドキュメントの`<select>`）を廃止し、`AgentTaskExportPanel.tsx`/`DiagnosticsBundlePanel.tsx`と同じ「独立ダイアログ」パターンで`RecentDocumentsDialog.tsx`を新設した。Fileメニューには新規メニュー項目「最近のドキュメントを開く…」を追加し、クリックでダイアログを開く方式に変更(`role="menu"`の直接子制約に抵触しない)。フォーカストラップ・Escapeでのクローズ+フォーカス復帰を含む単体/e2eテストを追加。
+- **AC-5**: 上記2件の修正を受け、`a11y_axe_smoke.spec.ts`の`DEFERRED_RULE_IDS`定数を完全に削除した(除外ルールがゼロになったため機構自体を撤去)。除外なしの完全なaxeルールセットで全8スモークテストが green であることを確認済み。
+- 全5件のAC(AC-1~AC-5)が完了したため、本Issueのステータスを Done とする。

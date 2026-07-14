@@ -229,6 +229,11 @@ function CardViewComponent({
 
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    // Defense in depth: the editing textarea already stopPropagation()s its
+    // own keydowns, so this shouldn't fire while editing anyway -- but the
+    // root no longer carries button semantics/tabIndex while isEditing
+    // (ADR-0052), so it must not act as one either if it somehow does fire.
+    if (isEditing) return;
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       onSelect(card.id, event.shiftKey);
@@ -303,10 +308,19 @@ function CardViewComponent({
             ? card.text
             : undefined
       }
-      role="option"
-      aria-selected={isSelected}
+      // ADR-0052: cards are independently-reachable/selectable operation
+      // targets, not entries in a listbox (no arrow-key "move active option"
+      // contract exists or is introduced here -- Tab reaches each card, and
+      // Enter/Space activates it, exactly as a plain button already does).
+      // aria-pressed reflects membership in the selection set: a normal
+      // activation solo-selects (single primary target), a Shift-activation
+      // toggles this card's membership without touching the rest.
+      // While editing, button semantics/aria-pressed/tab-stop move entirely
+      // to the textarea below -- the root is not an operable element then.
+      role={isEditing ? undefined : "button"}
+      aria-pressed={isEditing ? undefined : isSelected}
       data-focus={isFocused ? "card" : undefined}
-      tabIndex={0}
+      tabIndex={isEditing ? -1 : 0}
       onKeyDown={handleKeyDown}
       onFocus={handleFocus}
       onBlur={handleBlur}

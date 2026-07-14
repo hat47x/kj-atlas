@@ -78,12 +78,12 @@ test("cards, islands, and selection panel controls are reachable from keyboard f
   await page.setViewportSize({ width: 960, height: 720 });
   await replaceCurrentDocument(page);
 
-  const primaryCard = page.getByRole("option", { name: /keyboard focus primary card/ });
+  const primaryCard = page.getByRole("button", { name: /keyboard focus primary card/ });
   await expect(primaryCard).toBeVisible();
   await primaryCard.focus();
   await expect(primaryCard).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(primaryCard).toHaveAttribute("aria-selected", "true");
+  await expect(primaryCard).toHaveAttribute("aria-pressed", "true");
 
   const selectionPanel = page.locator('[data-ui-region="selection-context"]');
   await expect(selectionPanel).toBeVisible();

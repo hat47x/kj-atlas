@@ -95,7 +95,7 @@ test("export is blocked until scope is confirmed, then downloads a task sheet wi
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   await page.getByRole("button", { name: "Advanced", exact: true }).click();
-  await page.getByRole("option", { name: /reviewed card one/ }).click();
+  await page.getByRole("button", { name: /reviewed card one/ }).click();
   await page.getByRole("button", { name: "Export to agent" }).click();
 
   const panel = page.locator('[data-ui-region="agent-task-export"]');

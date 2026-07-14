@@ -62,7 +62,7 @@ test("card state badges render in a meta-row above the body, not overlapping the
   await startPanel.getByRole("button", { name: /Open sample|サンプルを開く/ }).click();
   await expect(startPanel).toBeHidden();
 
-  const card = page.locator(PRIMARY_FLOW).getByRole("option").first();
+  const card = page.locator(`${PRIMARY_FLOW} [role="button"]`).first();
   await expect(card).toBeVisible();
   // Body text is fully present (not clipped/covered by badges).
   await expect(card).toContainText(BODY);

@@ -285,7 +285,6 @@ function shouldUseSpacePan(eventTarget: EventTarget | null, viewport: HTMLElemen
       '[role="checkbox"]',
       '[role="link"]',
       '[role="menuitem"]',
-      '[role="option"]',
       '[role="radio"]',
       '[role="switch"]',
       '[role="tab"]',

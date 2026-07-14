@@ -74,14 +74,19 @@ test("search -> Enter executes New card without leaving the palette's own trigge
   await page.goto("/?locale=en");
   await openSample(page);
 
-  await expect(page.locator(`${PRIMARY_FLOW} [role="option"]`)).toHaveCount(1);
+  await expect(page.locator(`${PRIMARY_FLOW} [role="button"]`)).toHaveCount(1);
 
   await page.keyboard.press("Control+k");
   await page.locator(PALETTE_INPUT).fill("New card");
   await page.keyboard.press("Enter");
 
   await expect(page.locator(PALETTE)).toHaveCount(0);
-  await expect(page.locator(`${PRIMARY_FLOW} [role="option"]`)).toHaveCount(2);
+  // The new card enters edit mode immediately; role="button" moves entirely
+  // to the textarea while editing (ADR-0052), so it briefly has no
+  // role="button" of its own. Tab away to commit the (empty) edit first.
+  await expect(page.locator(`${PRIMARY_FLOW} textarea`)).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator(`${PRIMARY_FLOW} [role="button"]`)).toHaveCount(2);
 });
 
 test("does not open while editing text elsewhere (defers to the OS/browser default)", async ({ page }) => {
@@ -115,7 +120,7 @@ test("pins the retention (hold) command above other commands when a card is sele
   await page.goto("/?locale=en");
   await openSample(page);
 
-  await page.locator(`${PRIMARY_FLOW} [role="option"]`, { hasText: "existing card" }).click();
+  await page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "existing card" }).click();
 
   await page.keyboard.press("Control+k");
   const firstOption = page.locator(PALETTE).locator('[role="option"]').first();

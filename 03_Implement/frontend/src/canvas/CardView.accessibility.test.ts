@@ -25,10 +25,26 @@ describe("CardView accessibility (UQ-2)", () => {
       })
     );
 
-  it("has role option and aria-selected for screen reader", () => {
+  it("has role button and aria-pressed for screen reader (ADR-0052)", () => {
     const html = renderCard();
-    expect(html).toContain('role="option"');
-    expect(html).toContain('aria-selected="false"');
+    expect(html).toContain('role="button"');
+    expect(html).toContain('aria-pressed="false"');
+  });
+
+  it("strips button semantics, aria-pressed, and the tab stop from the root while editing (ADR-0052)", () => {
+    const html = renderToStaticMarkup(
+      createElement(CardView, {
+        card: { id: "c1", text: "テストカード", x: 0, y: 0 },
+        isSelected: true,
+        isEditing: true,
+        onMove: vi.fn(),
+        onSelect: vi.fn(),
+      })
+    );
+
+    expect(html).not.toContain('role="button"');
+    expect(html).not.toContain("aria-pressed");
+    expect(html).toContain('tabindex="-1"');
   });
 
   it("labels claim type badge with aria-label", () => {

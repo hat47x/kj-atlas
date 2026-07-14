@@ -30,8 +30,8 @@ test("grouping cards makes the new island the only active selection target", asy
   enableSample();
   await page.getByRole("button", { name: "Open sample" }).click();
 
-  const firstCard = page.getByRole("option", { name: "first value user problem" });
-  const secondCard = page.getByRole("option", { name: "first value observation memo" });
+  const firstCard = page.getByRole("button", { name: "first value user problem" });
+  const secondCard = page.getByRole("button", { name: "first value observation memo" });
   await firstCard.click();
   await secondCard.click({ modifiers: ["Shift"] });
 
@@ -57,14 +57,14 @@ test("keyboard card selection and island creation keep one primary target", asyn
   enableSample();
   await page.getByRole("button", { name: "Open sample" }).click();
 
-  const firstCard = page.getByRole("option", { name: "first value user problem" });
-  const secondCard = page.getByRole("option", { name: "first value observation memo" });
+  const firstCard = page.getByRole("button", { name: "first value user problem" });
+  const secondCard = page.getByRole("button", { name: "first value observation memo" });
   await firstCard.focus();
   await firstCard.press("Enter");
   await secondCard.focus();
   await secondCard.press("Shift+Space");
-  await expect(firstCard).toHaveAttribute("aria-selected", "true");
-  await expect(secondCard).toHaveAttribute("aria-selected", "true");
+  await expect(firstCard).toHaveAttribute("aria-pressed", "true");
+  await expect(secondCard).toHaveAttribute("aria-pressed", "true");
 
   const bulkBar = page.locator('[data-ui-region="bulk-operations-bar"]');
   const createIsland = bulkBar.getByRole("button", { name: "Create Island" });

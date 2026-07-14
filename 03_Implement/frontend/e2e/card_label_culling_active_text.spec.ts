@@ -57,19 +57,24 @@ test("sequentially created cascade cards never show freshly typed text as blank"
 
   await page.locator(START_PANEL).getByRole("button", { name: "Create new document" }).click();
 
-  const cards = page.locator(PRIMARY_FLOW).getByRole("option");
+  const cards = page.locator(`${PRIMARY_FLOW} [role="button"]`);
 
   for (const [index, text] of CARD_TEXTS.entries()) {
     await page.getByRole("button", { name: "New card" }).click();
-    await expect(cards).toHaveCount(index + 1);
 
-    // A new card auto-enters edit mode; type and commit with Enter.
-    const newCard = cards.nth(index);
-    const editTextarea = newCard.locator("textarea");
+    // A new card auto-enters edit mode; role="button" moves entirely to the
+    // textarea while editing (ADR-0052), so the card does not match `cards`
+    // (role="button") until the edit commits. Locate it via the textarea
+    // itself first, type, and commit with Enter -- only one card is ever
+    // mid-edit at a time, so this locator is unambiguous.
+    const editTextarea = page.locator(`${PRIMARY_FLOW} textarea`);
     await expect(editTextarea).toBeVisible();
     await editTextarea.fill(text);
     await editTextarea.press("Enter");
     await expect(editTextarea).toHaveCount(0);
+
+    await expect(cards).toHaveCount(index + 1);
+    const newCard = cards.nth(index);
 
     // AC-1: the just-committed card is still selected (active), so its text
     // must be fully visible -- not culled -- despite overlapping neighbours.

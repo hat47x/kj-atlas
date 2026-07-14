@@ -111,7 +111,7 @@ test("PERF-BUDGET-01 representative document keeps core operations responsive", 
   });
 
   await measure(durations, "card-selection", async () => {
-    const rareSignalCard = page.getByRole("option", { name: "rare performance signal 287" });
+    const rareSignalCard = page.getByRole("button", { name: "rare performance signal 287" });
     await rareSignalCard.focus();
     await page.keyboard.press("Enter");
     await expect(page.locator('[data-panel="selection-context"]')).toContainText("Card selected");

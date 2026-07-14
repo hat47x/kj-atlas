@@ -41,16 +41,16 @@ test("mouse first-value flow creates a visible first island from the sample", as
   await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
   await expect(page.locator(START_PANEL)).toBeHidden();
 
-  const firstCard = page.getByRole("option", { name: "first value user problem" });
-  const secondCard = page.getByRole("option", { name: "first value observation memo" });
+  const firstCard = page.getByRole("button", { name: "first value user problem" });
+  const secondCard = page.getByRole("button", { name: "first value observation memo" });
   await expect(firstCard).toBeVisible();
   await expect(secondCard).toBeVisible();
 
   await firstCard.click();
-  await expect(firstCard).toHaveAttribute("aria-selected", "true");
+  await expect(firstCard).toHaveAttribute("aria-pressed", "true");
   await secondCard.click({ modifiers: ["Shift"] });
-  await expect(firstCard).toHaveAttribute("aria-selected", "true");
-  await expect(secondCard).toHaveAttribute("aria-selected", "true");
+  await expect(firstCard).toHaveAttribute("aria-pressed", "true");
+  await expect(secondCard).toHaveAttribute("aria-pressed", "true");
 
   // UX-SCALE-01 (b): the bulk-operations bar also has a same-labeled
   // "Create Island" button while 2+ cards are selected, so scope to the
