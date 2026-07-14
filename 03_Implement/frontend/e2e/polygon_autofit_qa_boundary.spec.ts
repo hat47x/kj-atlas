@@ -9,7 +9,7 @@ import {
   SHARE_REPRODUCE_BUTTON,
   closeSharePanelIfOpen,
   continueThroughPreShareGateIfPresent,
-  openLegacyJsonMenu,
+  openFileMenu,
 } from "./helpers/i18n";
 
 async function readDownloadToBuffer(download: Download): Promise<Buffer> {
@@ -73,15 +73,15 @@ test("QA-1: polygon export stays deterministic for identical input", async ({ pa
   await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
   await expect(page.getByTestId("status-message")).toContainText(/現在のドキュメントを置換しました|Replaced the current document/);
   await closeSharePanelIfOpen(page);
-  await openLegacyJsonMenu(page);
+  await openFileMenu(page);
 
   const firstDownloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
+  await page.getByRole("menuitem", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
   const firstBuffer = await readDownloadToBuffer(await firstDownloadPromise);
 
-  await openLegacyJsonMenu(page);
+  await openFileMenu(page);
   const secondDownloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
+  await page.getByRole("menuitem", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
   const secondBuffer = await readDownloadToBuffer(await secondDownloadPromise);
 
   expect(secondBuffer.toString("utf-8")).toBe(firstBuffer.toString("utf-8"));
@@ -209,9 +209,9 @@ test("QA-3: self-intersection edit is rejected and last valid polygon is kept", 
   await expect(page.getByText("多角形の辺が交差する配置にはできません")).toBeVisible();
 
   await closeSharePanelIfOpen(page);
-  await openLegacyJsonMenu(page);
+  await openFileMenu(page);
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
+  await page.getByRole("menuitem", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
   const jsonBuffer = await readDownloadToBuffer(await downloadPromise);
 
   const exportedDocument = JSON.parse(jsonBuffer.toString("utf-8")) as {

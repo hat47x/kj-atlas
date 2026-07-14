@@ -16,7 +16,7 @@ export const REPLACE_DOCUMENT_BUTTON = /Replace current document|現在のドキ
 // pass changed the strings once already and silently broke 7 specs.
 export const DOCUMENT_REPLACED_STATUS = /Replaced the current document|現在のドキュメントを置換しました/;
 export const EXPORT_BUNDLE_BUTTON = /Export bundle \(\.zip\)|レビューパックを書き出す \(.zip\)|bundle をエクスポート \(.zip\)/;
-export const EXPORT_DOCUMENT_JSON_BUTTON = /Export document JSON|Export doc JSON \(legacy\)|ドキュメントJSONを書き出す（旧式）/;
+export const EXPORT_DOCUMENT_JSON_BUTTON = /Export document JSON|Export doc JSON \(legacy\)|Export JSON|ドキュメントJSONを書き出す（旧式）|JSON書き出し/;
 export const READ_ONLY_INDICATOR = /Read-only mode is active|読み取り専用モードが有効|Read-only|読み取り専用/;
 export const EDIT_ISLAND_BOUNDARY_CHECKBOX = /Edit island boundary|島の境界を編集/;
 export const SEARCH_CARDS_PLACEHOLDER = /Search cards|カードを検索/;
@@ -49,6 +49,23 @@ export async function openAdvancedWorkMode(page: Page): Promise<void> {
   await page.getByRole("button", { name: WORK_MODE_BUTTON }).click();
 }
 
+const WORK_MODE_TAB_NAMES = {
+  diff: /^Diff$|^差分$/,
+  merge: /^Merge selection$|^選択マージ$/,
+  suggestion: /^AI suggestion$|^AI提案$/,
+  diagnostics: /^Diagnostics$|^診断$/,
+  narrative: /^Narrative$|^文章化$/,
+} as const;
+
+// UX-NAV-02: the work-mode surface's 5 sections (diff/merge/suggestion/
+// diagnostics/narrative) are exclusive tabs, not always-visible stacked
+// sections -- opening work mode lands on the first ("Diff") tab regardless
+// of what the caller actually needs. Call this after openAdvancedWorkMode
+// whenever a test needs content from a specific tab.
+export async function selectWorkModeTab(page: Page, tab: keyof typeof WORK_MODE_TAB_NAMES): Promise<void> {
+  await page.getByRole("tab", { name: WORK_MODE_TAB_NAMES[tab] }).click();
+}
+
 export async function closeSharePanelIfOpen(page: Page): Promise<void> {
   const closeButton = page.getByRole("button", { name: /Close panel|パネルを閉じる/ });
   if (await closeButton.isVisible().catch(() => false)) {
@@ -67,8 +84,10 @@ export async function continueThroughPreShareGateIfPresent(page: Page): Promise<
   }
 }
 
-export async function openLegacyJsonMenu(page: Page): Promise<void> {
-  await page.locator("details").filter({ hasText: /Legacy JSON|旧式JSON/ }).evaluate((node) => {
-    (node as HTMLDetailsElement).open = true;
-  });
+// The standalone "Legacy JSON" <details> group was consolidated into the
+// File menu's "Export" section as a single item (App.tsx "file-export-legacy",
+// UX-MENU-01) -- it now fires the export directly, so callers should look
+// for a role="menuitem" instead of a role="button" after this.
+export async function openFileMenu(page: Page): Promise<void> {
+  await page.getByRole("menuitem", { name: /^File$|^ファイル$/, exact: true }).click();
 }
