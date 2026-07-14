@@ -13,9 +13,7 @@
 
 ## 判断追跡（2026-07-15）
 
-作業モードのナビゲーションに関する残課題は、`ADR-0053-work-mode-navigation-semantics.md` と派生issue `issue-UI-QUALITY-A11Y-04-work-mode-navigation-semantics.md` で管理します。現在の実装は、複数の高度機能を積み重ねた1つのモーダルダイアログであり、文字どおりのタブリストではありません。ADRが承認されるまで、`role="tablist"` を追加したり、残課題を完了扱いにしたりしません。
-
-現時点の提案は、製品化移行中は積層セクション方式を維持し、見出し・領域、マウス操作、キーボード操作、Escape、フォーカス復帰、および存在しないタブ意味論を付与していないことをE2Eで検証することです。
+作業モードのナビゲーション意味論は、`ADR-0055-work-mode-navigation-semantics.md` と派生issue `issue-UI-QUALITY-A11Y-04-work-mode-navigation-semantics.md` で管理します。現在の実装は、5つの作業面を切り替える `role="tablist"` 方式です。`UX-NAV-02` と `work_mode_tabs.spec.ts` に実装・検証記録があります。
 
 ## Requirement meta I/F（共通キー）
 
@@ -67,7 +65,7 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [x] T1 仕様表→チェックリスト化（本完了記録に記載）。UQ-2 接続は未実施（残課題）。
+- [x] T1 仕様表→チェックリスト化（本完了記録に記載）。UQ-2 接続を実施済み。
 - [x] T2 不足 aria/フォーカス管理の補完（選択コンテキスト・共有前確認の2面）。一括操作バーと凡例は既存実装で充足済みと確認。作業モードタブは対象外。
 - [x] T3 e2e（選択コンテキストの読み上げ順・aria-live／共有前確認のaria-describedby）＋回帰アンカー。axe スモークは2026-07-09の追記で導入済み。
 - [x] T4 記録（value_traceability 更新、2026-07-09）。
@@ -111,7 +109,7 @@
 
 ### 残課題（次スライス）
 
-- ~~作業モードタブへの `role=tablist` 導入要否の判断~~ → 2026-07-13: maintainer代理裁可で role=tablist・5タブを採用し、`UX-NAV-02` をADR-0052とは独立にOpen化。同日中に実装完了（`WorkModeTabs.tsx`）。manual activation・roving tabIndex・Home/End・段階Escape・非active panelの状態保持（mounted+hidden）・390px横スクロールをe2e（`work_mode_tabs.spec.ts`、9 tests）で確認。`a11y_axe_smoke.spec.ts`の作業モード面検査もtablist由来の除外なしで通過。これで5面すべてがAC-1充足。
+- ~~作業モードタブへの `role=tablist` 導入要否の判断~~ → 2026-07-15: `ADR-0055` で role=tablist・5タブを受理済み。`UX-NAV-02` の実装により、manual activation・roving tabIndex・Home/End・段階Escape・非active panelの状態保持（mounted+hidden）・390px横スクロールを `work_mode_tabs.spec.ts`（9 tests）で確認。`a11y_axe_smoke.spec.ts` の作業モード面検査もtablist由来の除外なしで通過。これで5面すべてがAC-1充足。
 - ~~axe 系スモークテストの導入（横断 e2e スイートの拡充）。~~ → 2026-07-09に導入済み（下記追記参照）。派生の構造的発見4件は `issue-UI-QUALITY-A11Y-03-structural-aria-findings.md` へ。
 
 ### 追記 2026-07-09

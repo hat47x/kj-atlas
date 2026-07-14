@@ -8,7 +8,7 @@
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/App.tsx`（advancedWorkModeContent）, `03_Implement/frontend/src/ui/WorkModePanel.tsx`, 新規 `03_Implement/frontend/src/ui/WorkModeTabs.tsx`, `03_Implement/frontend/src/ui/HilRsWorkflowPanel.tsx`（機能slotへの縮約）
 - Related Backlog: `UX-NAV-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`（Independent。本ADRはCanvas/Menu限定）, `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（role=tablist判断の解消先）, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0055-work-mode-navigation-semantics.md`（作業モードの受理済み方式）, `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`（Independent。本ADRはCanvas/Menu限定）, `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（role=tablist判断の解消先）, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - Expected verification level: `e2e`
 
 ## Draft→Open 2026-07-13: 着手ゲート代理裁可
