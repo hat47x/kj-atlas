@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { SHARE_REPRODUCE_BUTTON, VIEW_BUTTON } from "./helpers/i18n";
 
-const SHORTCUT_HELP_BUTTON = /Keyboard shortcuts|キーボードショートカット/;
-const SHORTCUT_HELP_DIALOG = '[data-ui-region="shortcut-help"]';
+const SHORTCUT_HELP_BUTTON = /Keyboard shortcuts|ショートカット一覧/;
+const SHORTCUT_HELP_DIALOG = '[data-ui-region="shortcut-cheatsheet-backdrop"] [role="dialog"]';
 
 type Box = {
   bottom: number;
@@ -145,20 +145,31 @@ for (const viewport of keyboardViewports) {
     await expect(shareDialog).toBeHidden();
     await expect(shareButton).toBeFocused();
 
-    const shortcutHelpButton = page.getByRole("button", { name: SHORTCUT_HELP_BUTTON });
-    await shortcutHelpButton.focus();
-    await expect(shortcutHelpButton).toBeFocused();
+    // UX-MENU-01: "Keyboard shortcuts" moved from a standalone header button
+    // into the MenuBar's View category (menuitem "view-shortcut-cheatsheet",
+    // App.tsx). Below 768px the 6 categories collapse into a single "Menu"
+    // trigger whose dropdown flattens every category's items into one list
+    // (no separate "View" entry to open first); at 768px and up, "View" is
+    // its own top-level category with its own dropdown.
+    const isCollapsed = viewport.width < 768;
+    const menuTrigger = isCollapsed
+      ? page.getByRole("menuitem", { name: /^Menu$|^メニュー$/ })
+      : page.getByRole("menuitem", { name: VIEW_BUTTON });
+    await menuTrigger.focus();
+    await expect(menuTrigger).toBeFocused();
     await page.keyboard.press("Enter");
+    await expect(page.getByRole("menu")).toBeVisible();
+    await page.getByRole("menuitem", { name: SHORTCUT_HELP_BUTTON }).click();
 
     const shortcutHelpDialog = page.locator(SHORTCUT_HELP_DIALOG);
     await expect(shortcutHelpDialog).toBeVisible();
-    await expect(shortcutHelpDialog).toContainText(/Keyboard shortcuts|キーボードショートカット/);
+    await expect(shortcutHelpDialog).toContainText(SHORTCUT_HELP_BUTTON);
     panels = await collectFixedPanels(page);
     expect(panels.some((panel) => panel.bottom > viewport.height || panel.right > viewport.width)).toBe(false);
 
     await page.keyboard.press("Escape");
     await expect(shortcutHelpDialog).toBeHidden();
-    await expect(shortcutHelpButton).toBeFocused();
+    await expect(menuTrigger).toBeFocused();
   });
 }
 

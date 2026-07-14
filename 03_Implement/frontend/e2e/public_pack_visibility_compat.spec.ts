@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { SHARE_REPRODUCE_BUTTON, visibilitySelect } from "./helpers/i18n";
+import { SHARE_REPRODUCE_BUTTON, enableAdvancedUiIfNeeded, visibilitySelect } from "./helpers/i18n";
 
 test("loads legacy public pack without visibility and legacy view metadata without visibility", async ({ page }) => {
   const now = new Date().toISOString();
@@ -153,6 +153,9 @@ test("shows visibility controls with fallback view visibility and pack visibilit
   await page.goto("/?pack=org-pack");
   await expect(page.getByText("visible card")).toBeVisible();
 
+  // View/pack visibility controls are gated behind Advanced UI in
+  // SharePanel.tsx (QA-MONKEY-11 precedent).
+  await enableAdvancedUiIfNeeded(page);
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   await expect(page.getByText(/View visibility|view の公開範囲/).first()).toBeVisible();

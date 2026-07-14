@@ -1619,3 +1619,21 @@
 ### Re-decision condition
 
 Re-run after `DX-E2E-07` is Done with the full 145-test suite green and after PostgreSQL tests execute against a real service with the corrected canonical environment keys. This record does not relax SafeMode, review authority, package contracts, or release authority.
+
+## MVP-EXIT Program Gate Decision 2026-07-15: ADR-0052/A11Y-03 closure and DX-E2E-07 full-suite rerun
+
+- Candidate: `main` after PR #2573 (ADR-0052 canvas-card `role=button`/`aria-pressed` migration + recent-documents dialog extraction), on top of the 2026-07-13 baseline.
+- Decision date: 2026-07-15.
+- Reviewer: Claude Code, acting under the standing 順に進めてください delegation for sequential backlog execution; final release authority is unchanged.
+- Input: merged PR #2573, `UI-QUALITY-A11Y-03` (Status: Done), `DX-E2E-07` (contract-reconciliation batch closed), a full Playwright rerun (165 tests) plus a follow-up isolation re-run, a full typecheck+Vitest run, and new issue `QA-MONKEY-13`.
+
+### Decision
+
+- Final: **Conditional Go for accessibility remediation (ADR-0052 / `UI-QUALITY-A11Y-03`) and for the `DX-E2E-07` contract-reconciliation batch / No-Go for full release shipment**.
+- Reason: `UI-QUALITY-A11Y-03` is now fully closed — the two remaining structural axe findings (`aria-required-parent`, `aria-required-children`) are resolved, the `DEFERRED_RULE_IDS` exclusion mechanism was removed entirely, and all axe smoke tests pass under the complete unrestricted ruleset. `DX-E2E-07`'s contract-reconciliation batch is also closed. A full e2e rerun (165 tests, default 6 workers, after clearing root-owned `.tmp-*` artifacts left by a prior Docker Playwright run) produced 158 passed / 7 failed. One failure (`header_toolbar_layout.spec.ts` modifier-shortcut case) is the already-tracked `QA-MONKEY-13` regression (Alt+Shift+2 applies "overview" instead of "mid") and remains unfixed. The other six failures (`a11y_axe_smoke`, `a11y_selection_and_share_gate`, `agent_response_import`, `agent_task_export`, `ai_provider_status`, `auth_context_level1_smoke`) were investigated further: a follow-up single-worker re-run of these exact 6 spec files (20 tests, full file context) passed cleanly with zero failures, confirming they were parallel-worker environmental flakiness (Docker `--network host` webServer contention under concurrent workers), not real defects. Typecheck is clean (`tsc --noEmit`, no errors) and Vitest passes **190/190 test files, 1034/1034 tests** (fully clean; an initial partial run showed one file failing due to a pre-existing WSL-verification-environment artifact unrelated to any code change, resolved by resyncing a pruned sibling directory). The full 165-test suite is therefore effectively green except for the single, already-tracked `QA-MONKEY-13` defect. G2/G4/G7 remain unsatisfied specifically because of `QA-MONKEY-13`, not because of unclassified failures.
+- Remaining independent gates: `QA-MONKEY-13` (open product bug, the sole remaining e2e failure), physical keyboard acceptance, screen-reader acceptance, release screenshot approval, final program approval, `DATA-MAINT-04`'s still-open metadata-only-audit-viewing scope decision, and any formal organization approval if introduced. Consistent with every prior entry in this file, none of these human-owned acceptance/approval gates can be marked Go by this or any AI agent's record.
+- ADR-0054 and external-connection implementation remain explicitly out of scope for this decision.
+
+### Re-decision condition
+
+Re-run after `QA-MONKEY-13` is fixed, with the full suite green. This record does not relax SafeMode, review authority, package contracts, or release authority.

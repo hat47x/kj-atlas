@@ -6,7 +6,7 @@ import {
   REPLACE_DOCUMENT_BUTTON,
   SHARE_REPRODUCE_BUTTON,
   closeSharePanelIfOpen,
-  openLegacyJsonMenu,
+  openFileMenu,
 } from "./helpers/i18n";
 
 async function readDownloadToBuffer(download: Download): Promise<Buffer> {
@@ -81,9 +81,9 @@ async function replaceCurrentDocumentWithPolygon(page: import("@playwright/test"
 
 async function exportCurrentDocument(page: import("@playwright/test").Page) {
   await closeSharePanelIfOpen(page);
-  await openLegacyJsonMenu(page);
+  await openFileMenu(page);
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
+  await page.getByRole("menuitem", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
   const download = await downloadPromise;
   const jsonBuffer = await readDownloadToBuffer(download);
   return JSON.parse(jsonBuffer.toString("utf-8")) as {

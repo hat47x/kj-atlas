@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DOCUMENT_REPLACED_STATUS, openAdvancedWorkMode } from "./helpers/i18n";
+import { DOCUMENT_REPLACED_STATUS, openAdvancedWorkMode, selectWorkModeTab } from "./helpers/i18n";
 
 const fixtureDir = dirname(fileURLToPath(import.meta.url));
 const ce3SuggestionsFixture = JSON.parse(
@@ -70,8 +70,10 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
   await expect(page.getByText(DOCUMENT_REPLACED_STATUS)).toBeVisible();
 
   // Workspace IA: candidate collection moved into the Advanced-gated Work
-  // mode panel (QA-MONKEY-11).
+  // mode panel (QA-MONKEY-11), then into the "Merge selection" tab once
+  // UX-NAV-02 split the panel's stacked sections into exclusive tabs.
   await openAdvancedWorkMode(page);
+  await selectWorkModeTab(page, "merge");
   await page.getByRole("button", { name: /Collect candidates|候補を収集/i }).click();
 
   const workspace = page.getByTestId("ce3-workspace-panel");
@@ -128,8 +130,10 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
 
   await page.reload();
   // Advanced UI persists in localStorage, but the Work mode panel itself
-  // starts closed after a reload -- reopen it.
+  // starts closed after a reload -- reopen it (and reselect the tab, since
+  // it always resets to the first/"Diff" tab).
   await openAdvancedWorkMode(page);
+  await selectWorkModeTab(page, "merge");
   await page.getByRole("button", { name: /Collect candidates|候補を収集/i }).click();
   await page.getByRole("button", { name: /Run Local CE3 Preset|Local CE3 Preset を実行/ }).click();
   await expect(page.getByTestId("ce3-normalized-query")).toContainText(/filters merge, risk|絞り込み merge, risk/);

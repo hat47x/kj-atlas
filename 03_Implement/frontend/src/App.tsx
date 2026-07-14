@@ -9504,6 +9504,7 @@ export default function App() {
                 handleApplyViewMode(mode);
               }}
               title={`${getViewModeDisplayLabel(mode)} (${shortcutLabel})`}
+              aria-pressed={isActive}
               style={{
                 border: "none",
                 borderRight: mode === "summary" ? "none" : "1px solid #cbd5e1",

@@ -1,6 +1,13 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import JSZip from "jszip";
-import { ADVANCED_UI_BUTTON, continueThroughPreShareGateIfPresent, EXPORT_BUNDLE_BUTTON, SHARE_REPRODUCE_BUTTON } from "./helpers/i18n";
+import {
+  ADVANCED_UI_BUTTON,
+  continueThroughPreShareGateIfPresent,
+  enableAdvancedUiIfNeeded,
+  EXPORT_BUNDLE_BUTTON,
+  SHARE_REPRODUCE_BUTTON,
+  WORK_MODE_BUTTON,
+} from "./helpers/i18n";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
 
@@ -398,6 +405,10 @@ test("slow review diff shows localized progress and can be cancelled", async ({ 
   await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
   await page.getByRole("button", { name: /開始パネルを閉じる|Close start panel/ }).click();
   await page.getByRole("button", { name: ADVANCED_UI_BUTTON }).click();
+  // UX-NAV-02: comparison loading (ReviewDiffPanel) lives inside the
+  // Advanced-gated Work mode panel's "Diff" tab -- the first/default tab, so
+  // opening the panel is enough without an explicit tab selection.
+  await page.getByRole("button", { name: WORK_MODE_BUTTON }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: /比較対象ドキュメントを読み込む|Load comparison document/ }).first().click();
@@ -412,7 +423,15 @@ test("slow review diff shows localized progress and can be cancelled", async ({ 
   await expect(page.getByText("差分を計算中: カード（10%）").first()).toBeVisible();
   await expect(page.getByText(/項目数: 0.*処理中|Items: 0.*Working/).first()).toBeVisible();
 
-  await page.getByRole("button", { name: /^キャンセル$|^Cancel$/ }).first().click();
+  // Scoped to the work-mode region: "Cancel"/"キャンセル" is also used by
+  // SidePanel's (always-rendered, usually-disabled) connect/edit actions,
+  // which now sort ahead of ReviewDiffPanel's Cancel button in DOM order
+  // since UX-NAV-02 moved the diff panel inside WorkModeTabs.
+  await page
+    .locator('[data-ui-region="work-mode"]')
+    .getByRole("button", { name: /^キャンセル$|^Cancel$/ })
+    .first()
+    .click();
   await expect(page.getByTestId("status-message")).toContainText("差分計算を中止しました");
   await expectStatusFitsViewport(page);
 });
@@ -423,6 +442,10 @@ test("invalid comparison JSON shows localized recovery guidance", async ({ page 
   await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
   await page.getByRole("button", { name: /開始パネルを閉じる|Close start panel/ }).click();
   await page.getByRole("button", { name: ADVANCED_UI_BUTTON }).click();
+  // UX-NAV-02: comparison loading (ReviewDiffPanel) lives inside the
+  // Advanced-gated Work mode panel's "Diff" tab -- the first/default tab, so
+  // opening the panel is enough without an explicit tab selection.
+  await page.getByRole("button", { name: WORK_MODE_BUTTON }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: /比較対象ドキュメントを読み込む|Load comparison document/ }).first().click();
@@ -441,6 +464,8 @@ test("invalid patch JSON shows localized validation guidance", async ({ page }) 
   await routeDocumentApi(page, {});
   await page.goto("/?locale=ja");
   await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+  // "Load patch.json" is gated behind Advanced UI in SharePanel.tsx.
+  await enableAdvancedUiIfNeeded(page);
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
