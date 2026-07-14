@@ -11,6 +11,12 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-2 の拡充）, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`, `01_Plans/issues/issue-UI-QUALITY-A11Y-01-accessibility-test-expansion.md`（Done・既存面の拡充。本Issueは新設面への適用で非重複）
 - Expected verification level: `e2e`
 
+## Follow-up decision tracking (2026-07-15)
+
+The remaining work-mode navigation decision is tracked by `ADR-0053-work-mode-navigation-semantics.md` and the derived issue `issue-UI-QUALITY-A11Y-04-work-mode-navigation-semantics.md`. The current implementation exposes one modal dialog with stacked advanced sections, not a literal tablist. Until the ADR is accepted, this issue must not add `role="tablist"` or close the remaining item as complete.
+
+The proposed direction is to keep the stacked-section model for the productization transition, with visible headings/regions and E2E coverage for pointer traversal, keyboard traversal, Escape, focus return, and the absence of false tab semantics.
+
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: UI-QUALITY-A11Y-02
