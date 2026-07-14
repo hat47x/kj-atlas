@@ -1,7 +1,7 @@
-# Issue Draft: UI-QUALITY-A11Y-02 新設サーフェスの画面別 ARIA・フォーカス仕様適用
+# Issue: UI-QUALITY-A11Y-02 新設サーフェスの画面別 ARIA・フォーカス仕様適用
 
 - Type: Feature request
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
@@ -66,13 +66,19 @@
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 仕様表→チェックリスト化（本完了記録に記載）。UQ-2 接続を実施済み。
-- [x] T2 不足 aria/フォーカス管理の補完（選択コンテキスト・共有前確認の2面）。一括操作バーと凡例は既存実装で充足済みと確認。作業モードタブは対象外。
+- [x] T2 不足 aria/フォーカス管理の補完（選択コンテキスト・共有前確認の2面）。一括操作バーと凡例は既存実装で充足済みと確認。作業モードタブは `UX-NAV-02` と `ADR-0055` で別途実装・受理済み。
 - [x] T3 e2e（選択コンテキストの読み上げ順・aria-live／共有前確認のaria-describedby）＋回帰アンカー。axe スモークは2026-07-09の追記で導入済み。
 - [x] T4 記録（value_traceability 更新、2026-07-09）。
 
 ## 7) 検証計画 / Validation plan
 
 - `cd 03_Implement/frontend && npm run typecheck && npm test && npx playwright test`（a11y スイート含む）
+
+## 完了記録（2026-07-15）
+
+- 5つの対象面（選択コンテキスト、共有前確認、一括操作バー、凡例、作業モードタブ）のARIA・フォーカス契約を確認し、作業モードの残課題は `ADR-0055` と `UX-NAV-02` で解消した。
+- `a11y_selection_and_share_gate.spec.ts`、`work_mode_tabs.spec.ts`、`a11y_axe_smoke.spec.ts` と既存のアクセシビリティ単体テストで、読み上げ順、警告関連付け、タブ操作、Escape、フォーカス復帰、機械的なaxe違反なしを確認した。
+- 本issueの対象外であるスクリーンリーダー実機を用いた人間受入れは、製品化時の別ゲートとして引き続き扱う。これは本issueの自動検証完了を妨げない。
 
 ## 複雑性予算（ADR-0043 自己申告）
 
