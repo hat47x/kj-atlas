@@ -11,11 +11,11 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-2 の拡充）, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`, `01_Plans/issues/issue-UI-QUALITY-A11Y-01-accessibility-test-expansion.md`（Done・既存面の拡充。本Issueは新設面への適用で非重複）
 - Expected verification level: `e2e`
 
-## Follow-up decision tracking (2026-07-15)
+## 判断追跡（2026-07-15）
 
-The remaining work-mode navigation decision is tracked by `ADR-0053-work-mode-navigation-semantics.md` and the derived issue `issue-UI-QUALITY-A11Y-04-work-mode-navigation-semantics.md`. The current implementation exposes one modal dialog with stacked advanced sections, not a literal tablist. Until the ADR is accepted, this issue must not add `role="tablist"` or close the remaining item as complete.
+作業モードのナビゲーションに関する残課題は、`ADR-0053-work-mode-navigation-semantics.md` と派生issue `issue-UI-QUALITY-A11Y-04-work-mode-navigation-semantics.md` で管理します。現在の実装は、複数の高度機能を積み重ねた1つのモーダルダイアログであり、文字どおりのタブリストではありません。ADRが承認されるまで、`role="tablist"` を追加したり、残課題を完了扱いにしたりしません。
 
-The proposed direction is to keep the stacked-section model for the productization transition, with visible headings/regions and E2E coverage for pointer traversal, keyboard traversal, Escape, focus return, and the absence of false tab semantics.
+現時点の提案は、製品化移行中は積層セクション方式を維持し、見出し・領域、マウス操作、キーボード操作、Escape、フォーカス復帰、および存在しないタブ意味論を付与していないことをE2Eで検証することです。
 
 ## Requirement meta I/F（共通キー）
 

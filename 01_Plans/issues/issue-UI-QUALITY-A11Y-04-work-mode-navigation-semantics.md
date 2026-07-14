@@ -1,4 +1,4 @@
-# Issue Draft: UI-QUALITY-A11Y-04 Work-mode navigation semantics
+# Issue Draft: UI-QUALITY-A11Y-04 作業モードのナビゲーション意味論
 
 - Type: Architecture / Accessibility
 - Status: Draft
@@ -11,84 +11,84 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0053-work-mode-navigation-semantics.md`, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/issues/issue-UX-NAV-01-work-mode-surface-navigation-hierarchy.md`
 - Expected verification level: `e2e`
 
-## Requirement meta I/F
+## 要求メタデータ
 
 - RequirementID: UI-QUALITY-A11Y-04
-- RequirementStatement: The work-mode navigation semantics must match the actual interaction model and must not expose a false tablist to keyboard or screen-reader users.
+- RequirementStatement: 作業モードのナビゲーション意味論を実際の操作モデルと一致させ、キーボード利用者やスクリーンリーダー利用者に存在しないタブリストを提示しない。
 - PriorityClass: Should
-- AcceptanceScenario: Given the work-mode surface is opened, when a user uses mouse or keyboard input, then the visible advanced workflows are reachable in a predictable order, Escape closes the surface, focus returns to the trigger, and the DOM uses dialog/heading/region semantics appropriate to the chosen model.
+- AcceptanceScenario: 作業モードを開いた利用者がマウスまたはキーボードを操作したとき、表示中の高度機能へ予測可能な順序で到達でき、Escapeで閉じられ、起点へフォーカスが戻り、選択した方式に適したdialog/heading/regionのDOM意味論が使われている。
 - GoNoGoGate: Optional
 - SecurityGateImpact: N/A
 - VerificationLevel: e2e
 - DecisionStatus: Pending
 - DecisionQueueRef: `ADR-0053`
 
-## 1) Problem statement
+## 1) 課題
 
-The design request describes five work-mode tabs with `role="tablist"`, while the implementation currently renders one modal dialog containing stacked sections. The accessibility issue `UI-QUALITY-A11Y-02` correctly leaves this as an unresolved decision because the implemented UI has no literal tabs. Without an explicit decision, future changes may add ARIA tab roles without implementing tab behavior or may update the design source without recording the interaction consequences.
+設計要求は `role="tablist"` を持つ5つの作業モードタブを示していますが、実装は複数のセクションを含む1つのモーダルダイアログです。実装には文字どおりのタブがないため、アクセシビリティissue `UI-QUALITY-A11Y-02` はこの点を未決定のまま残しています。明示的な判断がないまま、将来ARIAのタブロールだけを追加したり、設計正本だけを変更したりすると、実際の操作と読み上げ内容が乖離します。
 
-## 2) Context
+## 2) 背景
 
-- `WorkModePanel.tsx` owns a full-surface dialog, focus containment, Escape close, and focus return.
-- `App.tsx` passes the advanced workflows as one `advancedWorkModeContent` tree.
-- `design-request-2026-07-round3.md` asks for a five-function tab layout, while `design-qa-checklist.md` records the current stacked-region design judgment.
-- `ADR-0052` is limited to canvas selection and menu semantics and must not be used to decide this issue.
+- `WorkModePanel.tsx` が、画面全体のダイアログ、フォーカスの閉じ込め、Escapeによる終了、起点へのフォーカス復帰を担当しています。
+- `App.tsx` は高度機能を1つの `advancedWorkModeContent` ツリーとして渡しています。
+- `design-request-2026-07-round3.md` は5機能のタブ配置を要求しています。一方、`design-qa-checklist.md` は現行の積層領域方式を設計判断として記録しています。
+- `ADR-0052` はキャンバス選択とメニューの意味論に限定されるため、このissueの判断には使用しません。
 
-## 3) Proposed resolution
+## 3) 解決案
 
-Use `ADR-0053` to select one of these explicit models:
+`ADR-0053` で、次のいずれかを明示的に選択します。
 
-1. Stacked sections: keep one dialog, expose visible headings/regions, and verify ordinary Tab traversal across all visible workflows.
-2. Literal tabs: implement a real tablist with selected state, arrow-key navigation, hidden-panel focus rules, and responsive behavior before adding tab roles.
+1. 積層セクション方式: 1つのダイアログを維持し、見出し・領域を付与し、表示中の全ワークフローを通常のTab操作で移動できるようにします。
+2. 文字どおりのタブ方式: 選択状態、矢印キー操作、非表示パネルのフォーカス規則、レスポンシブ表示を実装したうえで、タブロールを付与します。
 
-The current recommendation is option 1 because it matches the implementation and keeps all advanced workflows visible during the productization transition. This recommendation is not final until the ADR deciders accept it.
+現時点の推奨は、実装と一致し、製品化移行中も高度機能を同時に確認できる1の積層セクション方式です。ただし、DecidersがADRを承認するまでは最終決定ではありません。
 
-### Baseline evidence before the decision
+### 判断前のベースライン証跡
 
-- The current source-level UI contract test `src/ui/ux_operability_regression.test.ts` passed **32/32** on 2026-07-15.
-- The baseline confirms one `role="dialog"`, `aria-modal="true"`, a focusable panel root, Tab containment, Escape handling, and that Narratives/HIL/diff content is owned by `WorkModePanel` rather than `SidePanel`.
-- This is baseline evidence only. It does not satisfy AC-1, AC-2, or AC-5 because the interaction model has not yet been accepted and the pointer/keyboard contract still needs a focused Playwright scenario.
+- 現行のUI契約テスト `src/ui/ux_operability_regression.test.ts` は、2026-07-15に **32/32** で成功しました。
+- このベースラインでは、`role="dialog"`、`aria-modal="true"`、フォーカス可能なパネル起点、Tabの閉じ込め、Escape処理、Narratives/HIL/差分が `SidePanel` ではなく `WorkModePanel` に配置されていることを確認しています。
+- これは判断前の証跡であり、AC-1、AC-2、AC-5の完了を意味しません。操作モデルは未承認で、マウス・キーボード操作を対象にした専用Playwrightシナリオも未整備です。
 
-## 4) Acceptance criteria
+## 4) 受け入れ条件
 
-- [ ] AC-1: `ADR-0053` records an accepted decision and names the chosen interaction model.
-- [ ] AC-2: The design source, `UX-NAV-01`, and `UI-QUALITY-A11Y-02` use the same model and terminology.
-- [ ] AC-3: If stacked sections are accepted, the dialog has visible headings or named regions for each distinct workflow, and no false tab roles are present.
-- [ ] AC-4: If literal tabs are accepted, the implementation provides selected-tab state, arrow-key navigation, hidden-panel focus handling, and responsive behavior before `role="tab"` is added.
-- [ ] AC-5: Playwright covers mouse opening, keyboard traversal, Escape close, focus return, and the selected model's screen-reader-relevant DOM contract.
-- [ ] AC-6: `validate_active_issue_memos.py` and the issue memo unit tests pass after the status transition.
+- [ ] AC-1: `ADR-0053` に承認済みの決定と、選択した操作モデルが記録されている。
+- [ ] AC-2: 設計正本、`UX-NAV-01`、`UI-QUALITY-A11Y-02` が同じ方式と用語で記述されている。
+- [ ] AC-3: 積層セクション方式を採用する場合、ダイアログに各ワークフローの見出しまたは名前付き領域があり、存在しないタブロールが付与されていない。
+- [ ] AC-4: 文字どおりのタブ方式を採用する場合、`role="tab"` を追加する前に、選択状態、矢印キー操作、非表示パネルのフォーカス処理、レスポンシブ表示が実装されている。
+- [ ] AC-5: Playwrightで、マウスによる起動、キーボード移動、Escapeによる終了、フォーカス復帰、および選択方式に関係するDOM契約を検証する。
+- [ ] AC-6: Statusを変更した後、`validate_active_issue_memos.py` とissue memoの単体テストが成功する。
 
-## 5) Task breakdown
+## 5) 作業分解
 
-- [ ] T1: Review and accept or revise `ADR-0053` with the Productization Program Owner and UX Lead.
-- [ ] T2: Synchronize the design source, `UX-NAV-01`, and `UI-QUALITY-A11Y-02` with the accepted model.
-- [ ] T3: Implement only the semantics required by the accepted model.
-- [ ] T4: Add or update focused Playwright coverage for pointer and keyboard actions.
-- [ ] T5: Run typecheck, focused E2E, accessibility smoke, and issue memo validation.
+- [ ] T1: Productization Program OwnerとUX Leadが `ADR-0053` を確認し、承認または修正する。
+- [ ] T2: 承認された方式に合わせて、設計正本、`UX-NAV-01`、`UI-QUALITY-A11Y-02` を同期する。
+- [ ] T3: 承認された方式に必要な意味論だけを実装する。
+- [ ] T4: マウス操作とキーボード操作を対象としたPlaywrightの重点テストを追加または更新する。
+- [ ] T5: 型検査、重点E2E、アクセシビリティスモーク、issue memo検証を実行する。
 
-## 6) Validation plan
+## 6) 検証計画
 
-- Before implementation: inspect the DOM and design source; confirm that the proposed roles describe the actual interaction model.
-- After implementation:
+- 実装前: DOMと設計正本を照合し、提案するロールが実際の操作モデルを表していることを確認する。
+- 実装後:
   - `node node_modules/@playwright/test/cli.js test e2e/a11y_axe_smoke.spec.ts e2e/<work-mode-spec>.spec.ts --reporter=line`
   - `node node_modules/typescript/bin/tsc --noEmit`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
-- Expected result: no false tab semantics, predictable pointer/keyboard behavior, and no regression in Escape/focus-return behavior.
+- 期待結果: 存在しないタブ意味論がなく、マウス・キーボード操作が予測可能で、Escapeとフォーカス復帰に回帰がないこと。
 
-## 7) Alternatives considered
+## 7) 検討した代替案
 
-- Add `role="tablist"` to the current stacked content: rejected because ARIA roles would not match the interaction model.
-- Close `UI-QUALITY-A11Y-02` without a decision: rejected because the design source and implementation would remain ambiguous.
-- Redesign the entire work-mode surface immediately: deferred because it would mix a semantics decision with a larger product UX change.
+- 現在の積層コンテンツに `role="tablist"` を追加する: 実際の操作モデルとARIAロールが一致しないため採用しません。
+- 判断なしで `UI-QUALITY-A11Y-02` を完了する: 設計正本と実装の曖昧さが残るため採用しません。
+- 作業モード全体を直ちに再設計する: 意味論の判断と大規模なUX変更が混在するため、別作業へ延期します。
 
-## 8) Risks and rollback
+## 8) リスクと切り戻し
 
-- Risk: a tab decision can hide workflows and increase keyboard steps. Mitigation: require explicit arrow-key and focus behavior in AC-4.
-- Risk: a documentation-only change can become stale. Mitigation: keep the design source, ADR, issue, and E2E contract in one traceability chain.
-- Rollback: if the accepted model causes usability or accessibility regressions, restore the last verified interaction model and supersede `ADR-0053` with a new decision; do not leave partial ARIA roles in place.
+- リスク: タブ方式を採用すると機能が隠れ、キーボード操作の手数が増える可能性があります。対策として、AC-4に矢印キーとフォーカス挙動を必須化します。
+- リスク: 文書だけを変更すると再び実装と乖離する可能性があります。設計正本、ADR、issue、E2E契約を1つの追跡関係で維持します。
+- 切り戻し: 承認した方式で操作性またはアクセシビリティに問題が出た場合は、検証済みの方式へ戻し、新しい判断で `ADR-0053` を置き換えます。中途半端なARIAロールだけを残しません。
 
-## 9) Additional context
+## 9) 補足
 
-- This issue is intentionally Draft until the design/ownership decision is available.
-- It is a derived task from the remaining item in `UI-QUALITY-A11Y-02`, not a request to change the existing `ADR-0052` scope.
+- このissueは設計・責任者による判断が得られるまでDraftとします。
+- `UI-QUALITY-A11Y-02` の残課題から派生したタスクであり、既存の `ADR-0052` の範囲を変更するものではありません。
