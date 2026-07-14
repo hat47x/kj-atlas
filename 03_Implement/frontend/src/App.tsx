@@ -5977,7 +5977,13 @@ export default function App() {
       return;
     }
 
-    if (maxDepth > maxAvailableDepth) {
+    // Only clamp down when there is deeper island content to clamp against.
+    // maxAvailableDepth === 0 means no island is nested past the top level
+    // (including "no islands at all") -- in that case maxDepth=1 ("mid")
+    // is already indistinguishable from maxDepth=0 in rendered output, so
+    // clamping it to 0 here would only serve to demote the user's explicit
+    // hierarchy-level choice back to "overview" via the sync effect below.
+    if (maxDepth > maxAvailableDepth && maxAvailableDepth > 0) {
       setMaxDepth(maxAvailableDepth);
     }
   }, [maxAvailableDepth, maxDepth]);
