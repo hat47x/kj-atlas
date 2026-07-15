@@ -91,6 +91,12 @@ erDiagram
 | `users` | 認証主体の内部ユーザー表現 | lifecycle stateは持つが、MVPの管理画面で全ライフサイクルを扱う段階ではない。 |
 | `user_identities` | IdPなど外部認証subjectと内部ユーザーの対応 | `provider + external_uid` を内部 `user:<users.id>` に正規化する。 |
 
+`DATA-MODEL-OPS-02`（D1〜D4、2026-07-13代理裁可）により、管理面（マスタデータ）レイヤーの正本を次のとおり固定した。いずれも新しい物理テーブルを本ER図へ追加しない。
+
+- 文書一覧（D1）: 既存 `documents` を対象にした本文非含有の射影として提供する（新規テーブルなし）。
+- View/Perspective状態、QueryPreset（D2）: 既存 `view.json` ファイルとdevice-local（browser storage）を正本のまま維持する（新規テーブルなし）。
+- エージェント登録（D3）: `agent_registrations` 相当をサーバー正本として採用済みだが、実装は `EXT-CONN-02` で行う契約先行決定であり、実装されるまで本ER図には含めない。
+
 ---
 
 ## 3. 論理データモデル
@@ -155,6 +161,10 @@ erDiagram
 | ContextQuery / ContextBundle | L2.5 | request/responseとして生成 | API/CLI/contract testで参照 | 永続更新なし | 永続削除なし | Developer / AI integration owner | 契約先行。利用者データの永続保守とは分け、実装済み運用としては扱わない。 |
 | Export / Context audit event | L3 | 各audit endpointで送信 | アプリ内の標準一覧APIなし。本文を含まない監査メタデータ閲覧候補は `DATA-MAINT-04` でOpen管理する | 標準更新APIなし | 標準削除APIなし | Audit operator / Security officer | 監査基盤への委譲を前提とし、アプリ本体に監査ログ閲覧UIを持たない。本文・未レビュー情報・横断検索を含む場合はADR必須。 |
 | User / UserIdentity | L1 | `POST /admin/provision/users` | 標準一覧APIなし | 標準更新APIなし | 標準削除APIなし | Platform operator | strict provisioningの入口。退避、無効化、棚卸しは `DATA-MAINT-01` の対象。 |
+| 文書一覧（Document index projection） | L1 | 標準Createなし（既存 `documents` の射影） | `GET /docs`（`id`/`title`/`updatedAt` のallowlistのみ、本文非含有） | 標準更新APIなし | 標準削除APIなし | Platform operator / Document owner | 対象は現認可主体がread可能な文書に限定し、owner/ACL解決不能時はfail-closed。localStorageの「最近」は非正本キャッシュへ格下げする（`DATA-MODEL-OPS-02` D1確定）。 |
+| View/Perspective状態 | L2 | 既存 `view.json` 保存に含める | 既存 `view.json` 取得に含まれる | 既存 `view.json` 保存で反映 | ファイル管理に依存 | Standard user | `DocumentV1` へ埋め込まず、既存 `view.json.viewState` を正本とする（`DATA-MODEL-OPS-02` D2確定）。 |
+| QueryPreset（Patch workspace） | L3 | device-local（browser storage） | device-local | device-local | device-local | Standard user | 当面device-localを維持し、UIで「この端末のみ」と明示する。利用実績なしにユーザー従属テーブルを新設しない（`DATA-MODEL-OPS-02` D2確定）。 |
+| エージェント登録（`agent_registrations`） | L0 | 標準経路なし | 標準経路なし | 標準経路なし | 標準経路なし | 将来: Platform operator（admin strict provisioning限定） | サーバー正本として採用済み（`DATA-MODEL-OPS-02` D3確定）。登録・失効はadminのstrict provisioning型操作に限定し、平文tokenは保存しない設計とする。実装は `EXT-CONN-02` で行う。 |
 | Import/Review Pack artifact | L3 | import/export処理で生成・取込 | ファイルまたはUI上の結果で参照 | 再export/再importで更新 | ファイル管理に依存 | Standard user / Document owner | DBの正本ではなく、共有・移行用成果物として扱う。 |
 | InquiryJourney / RoundSnapshot | L0 | 標準経路なし | 標準経路なし | 標準経路なし | 標準経路なし | 将来: Standard user / Document owner | `ADR-0057` は独立探究 + 不変成果DAG + 自己完結bundleを採択済み。型・fixture・操作模型・roundtrip・削除境界を `DOMAIN-W-ITERATION-01` で検証するまで、現行CRUD対応を主張しない。 |
 
@@ -221,6 +231,15 @@ erDiagram
 
 読み取り中心の棚卸しとバックアップ/復旧演習は、現時点では運用設計と検証観点の対象とする。書き込み系の管理操作は、認可・監査・データライフサイクルの合意が揃うまで実装対象に含めない。
 
+### 5.2 Workspace / Admin・Audit の表示分離（DATA-MODEL-OPS-02 D4）
+
+`DATA-MODEL-OPS-02` D4（2026-07-13代理裁可）により、通常利用者のWorkspace文書一覧とAdmin/Audit管理面の表示範囲を分離する。
+
+- Workspace文書一覧（Standard user / Document owner）: 認可済み文書のタイトルを表示できる。対象は「文書一覧（Document index projection）」（§4）に従う。
+- Admin/Audit管理面（Platform operator / Security officer / Audit operator）: `id` / `version` / `updatedAt` 等の固定allowlistだけを扱う。タイトル、`payload_json`、カード、narrative、review pack、diff、未レビュー本文は表示・検索の対象にしない。
+
+この分離は表示範囲の原則であり、Admin/Audit向けの新しい一覧APIやUIの実装可否そのものを決めるものではない。実装する場合は、この allowlist 境界と `ADR-0035` の高権限操作境界を維持する。
+
 ---
 
 ## 6. 運用設計の不足と起票先
@@ -232,6 +251,7 @@ MVPの制約を明示したうえで、ステークホルダー運用に耐え�
 | `ADR-0033` | MVPデータサポート境界と保守方針を固定する | `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md` |
 | `ADR-0035` | 高権限データライフサイクル操作を標準管理機能にしない境界を固定する（Accepted 2026-07-13） | `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md` |
 | `DATA-MODEL-OPS-01` | ER/CRUD俯瞰とサポートレベル表の継続更新 | `01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md` |
+| `DATA-MODEL-OPS-02` | 管理面（マスタデータ）レイヤー（文書一覧/プリセット/エージェント登録）の境界固定とサーバー正本化（D1〜D4確定、実装は別途） | `01_Plans/issues/issue-DATA-MODEL-OPS-02-management-plane-data-boundary.md` |
 | `DATA-MAINT-01` | 管理・復旧・棚卸し・データ保管運用の設計 | `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md` |
 | `DATA-MAINT-03` | 高権限データライフサイクル操作を標準機能にしない分類判断（Done / Fixed） | `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md` |
 | `DATA-MAINT-04` | 本文を含まない監査メタデータ閲覧候補のOpen境界 | `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md` |

@@ -50,12 +50,25 @@
 
 ## 受け入れ条件（案）
 
-- [ ] AC-1: D1〜D4 の判断が記録され、`data_model_operations_overview.md` の ER図・CRUD表・サポートレベル表が同時更新される（§7 更新ルール遵守）。
+- [x] AC-1: D1〜D4 の判断が記録され、`data_model_operations_overview.md` の ER図・CRUD表・サポートレベル表が同時更新される（§7 更新ルール遵守）。
 - [ ] AC-2: 文書一覧APIは本文（payload_json の cards/narratives 等）を一切返さない契約として `api.md` / `schemas.md` に先行固定される。
 - [ ] AC-3: localStorage「最近」はサーバー一覧のキャッシュとして再定義され、両者の不一致時はサーバーを正とする。
 - [ ] AC-4: View/PerspectiveとQueryPresetの置き場判断が契約へ反映され、device-local QueryPresetには「この端末のみ」が利用者に見える形で明示される。
 - [ ] AC-5: エージェント登録の正本・認可モデルが EXT-CONN-02 の実装前提として固定される（トークンは平文保存しない）。
 - [ ] AC-6: 管理UI設計要求（Round 8）の入力パッケージ（確定した正本・権限・本文非表示原則・対象画面一覧）が `ui_design_handoff.md` の受け渡し形式で準備できる状態になる。
+
+### AC-1 実装証跡（2026-07-16）
+
+- `data_model_operations_overview.md` §2（物理ER図）: D1〜D3がいずれも新規物理テーブルを追加しない決定であることを説明する段落を追加した（文書一覧=既存`documents`の射影、View/Perspective・QueryPreset=既存`view.json`とdevice-local維持、エージェント登録=`EXT-CONN-02`実装まで契約先行でER図に含めない）。
+- §4（CRUDサポート表）: 「文書一覧（Document index projection）」（L1）、「View/Perspective状態」（L2）、「QueryPreset（Patch workspace）」（L3）、「エージェント登録（`agent_registrations`）」（L0）の4行を新規追加し、D1〜D3の確定値をそれぞれのSupport level・CRUD手段・MVP保守責任・備考として記録した。
+- §5（ステークホルダー別の運用境界）: 新規「5.2 Workspace / Admin・Audit の表示分離（DATA-MODEL-OPS-02 D4）」を追加し、Workspace文書一覧とAdmin/Audit管理面（`id`/`version`/`updatedAt`固定allowlistのみ、タイトル・本文・カード・narrative・review pack・diff非表示）の分離原則を記録した。
+- §6（運用設計の不足と起票先）: `DATA-MODEL-OPS-02`自体の継続追跡行を追加した。
+- 本PRはAC-1（ドキュメント記録）のみを対象とする。AC-2（api.md/schemas.md契約）、AC-3（localStorageキャッシュ再定義の実装）、AC-4（QueryPreset UI表示の実装）、AC-5（agent_registrations実装、`EXT-CONN-02`の対象）、AC-6（`ui_design_handoff.md`作成、Claude Design Round 8の入力）はいずれも実装または別文書の新規作成を伴う別スコープであり、本PRには含まない。
+
+検証結果:
+- `check_current_history_headings` / `check_relative_links` / `check_document_contract_baseline` を現行repositoryへ直接実行: いずれも0 findings。
+- `python 01_Plans/issues/validate_active_issue_memos.py`: pass（25 active issue memos）。
+- 本変更はMarkdownのみであり、frontend/backendのコード変更はない。
 
 ## Traceability
 
