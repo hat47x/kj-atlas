@@ -108,7 +108,7 @@ Open化条件:
 - [x] 必須メタデータ、非正規Status、参照先不在、依存関係不正、重複するActive `RequirementID`の異常系testがある。
 - [x] current repositoryでtriageとvalidatorが同じActive件数を返す（2026-07-15 Open化時点: 29件）。
 - [x] triageとvalidatorが同じStatus parser・正規値を使い、同じActive件数を返す。
-- [ ] 1コマンドでローカル/CI同値のdocs-checkを実行できる。
+- [x] 1コマンドでローカル/CI同値のdocs-checkを実行できる。
 - [ ] docs-check非0終了がPRをblockする。
 - [x] 01/02/04/root docsの適用check matrixと除外理由が文書化され、02層が無検査にならない。
 - [ ] current領域の同一Contract ID/型の異義定義、API/schema key差異、DocumentV2支援表欠落を検出する。
@@ -126,7 +126,7 @@ Open化条件:
 - [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。
 - [x] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
 - [ ] T5 CIへ`docs-contract` jobを追加し、既存PRとdocs-only PRで動作確認する。
-- [ ] T6 PR templateへ証跡欄を追加する。
+- [x] T6 PR templateへ証跡欄を追加する。
 - [ ] T7 負例fixtureでfail、現行repositoryでpass、変更対象外のアプリtest非干渉を検証する。
 
 ## 7) 検証計画 / Validation plan
@@ -245,4 +245,11 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - `.github/workflows/ci.yml`へ依存インストール不要の`docs-contract` jobを追加し、ローカルと同じ`python 01_Plans/docs_check.py`を実行するようにした。
 - checkoutは`fetch-depth: 0`とし、PRではmerge-base、pushでは`before` commitを基準に`git diff --check`を実行する。clean checkoutへ引数なしで実行して常に成功する偽検査にはしない。
 - jobは`continue-on-error`を使わず、entrypointまたはchanged-file whitespaceの非0終了をそのままCI失敗にする。
-- workflow構文のローカル検証とpush後のGitHub Actions結果を確認するまで、T5とPR blocking受入条件は未完了を維持する。
+- push後のGitHub Actions CI #10270（commit `d6f1a3a`）は全体Successとなり、新設`Docs contract (active issues + relative links)` jobも8秒でSuccessした。workflow構文、Linux runner、ローカルと同じentrypointの実行は実環境で確認済みである。
+- 対象branchに既存PRがないため、pull_request eventとdocs-only PRでの観測は未実施である。workflowは`push`と`pull_request`の双方をtriggerにし、jobに`continue-on-error`を設けないfail-closed構成だが、PR実行結果を確認するまでT5とPR blocking受入条件は未完了を維持する。
+
+## T6完了記録 2026-07-15
+
+- `.github/pull_request_template.md`のTesting欄を、`command / result / not_executed_reason / resume_condition`の4項目で記録する形式へ変更した。
+- 未実施を空欄や暗黙のN/Aで済ませず、理由と再開条件を残す。実施済みの場合は不要な2項目を`N/A`とし、複数コマンドでは4項目をコマンド単位で複製する。
+- docs-checkだけに限定せずfrontend/backend/E2Eにも使える証跡I/Fとし、docs-only PRへアプリE2Eを暗黙に強制しない。

@@ -12,13 +12,16 @@
 
 ## テスト / Testing
 
-実行したコマンドと結果を記載してください。
+ローカルとCIで再現できるよう、実行証跡を記載してください。未実施の場合も理由と再開条件を空欄にせず、該当しない項目は `N/A` とします。
 
-```bash
-# 例
-npm run test
-pytest
+```md
+- command: `python 01_Plans/docs_check.py`
+- result: pass | fail | not executed（要約またはCI run URL）
+- not_executed_reason: N/A | 未実施の理由
+- resume_condition: N/A | 実行を再開できる条件
 ```
+
+必要なコマンドが複数ある場合は、この4項目をコマンドごとに複製してください。
 
 ### 複雑性予算（UI変更時）
 
