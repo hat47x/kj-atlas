@@ -3,6 +3,7 @@ import { t } from "../i18n/translate";
 
 import { CRITIQUE_TAGS, KNOWN_EDGE_TYPES, resolveKnownEdgeType } from "../domain/types";
 import type { EdgeType, KnownEdgeType } from "../domain/types";
+import { currentCardQualityQuestion, type CardQualityAssistState, type CardQualityDecision } from "../domain/card_quality";
 import { DomainStateSummary } from "./DomainStateSummary";
 import { DomainStateFilterBar } from "./DomainStateFilterBar";
 import type { DomainStateFilter } from "../domain/domain_state_filter";
@@ -80,6 +81,12 @@ type SidePanelProps = {
   onCardHoldStateChange: (value: HoldState | "active") => void;
   onRestoreShelvedCard: (cardId: string) => void;
   onCardTextReviewedChange: (value: boolean) => void;
+  /** DOMAIN-CARD-QUALITY-01: undefined = assist not open for the selected card. */
+  cardQualityAssistState: CardQualityAssistState | undefined;
+  onOpenCardQualityAssist: () => void;
+  onAnswerCardQualityQuestion: (decision: CardQualityDecision) => void;
+  onCloseCardQualityAssist: () => void;
+  onOpenCardTextEditor: () => void;
   onAddEvidenceLink: (payload: { toCardId: string; type: EvidenceLink["type"] }) => void;
   onRemoveEvidenceLink: (evidenceLinkId: string) => void;
   onUpdateEvidenceLink: (evidenceLinkId: string, patch: Partial<Pick<EvidenceLink, "contradictionState">>) => void;
@@ -261,6 +268,11 @@ export function SidePanel({
   onCardHoldStateChange,
   onRestoreShelvedCard,
   onCardTextReviewedChange,
+  cardQualityAssistState,
+  onOpenCardQualityAssist,
+  onAnswerCardQualityQuestion,
+  onCloseCardQualityAssist,
+  onOpenCardTextEditor,
   onAddEvidenceLink,
   onRemoveEvidenceLink,
   onUpdateEvidenceLink,
@@ -420,6 +432,7 @@ export function SidePanel({
   isAdvancedUiEnabled = false,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
+  const cardQualityAssistTriggerRef = useRef<HTMLButtonElement>(null);
   const [summaryDraft, setSummaryDraft] = useState("");
   const [expandedSummaryHistoryEntryId, setExpandedSummaryHistoryEntryId] = useState<string | null>(null);
   const [relationSummaryDraft, setRelationSummaryDraft] = useState("");
@@ -3355,6 +3368,87 @@ export function SidePanel({
               >
                 {t("side_panel.card_inspector.focus")}
               </button>
+              <div style={{ marginBottom: 12 }}>
+                <button
+                  ref={cardQualityAssistTriggerRef}
+                  type="button"
+                  data-domain-action="open-card-quality-assist"
+                  onClick={onOpenCardQualityAssist}
+                  disabled={isReadOnly}
+                  style={{ width: "100%", marginBottom: cardQualityAssistState ? 8 : 0 }}
+                >
+                  {t("side_panel.card_quality.open")}
+                </button>
+                {cardQualityAssistState ? (
+                  <div
+                    role="group"
+                    aria-label={t("side_panel.card_quality.open")}
+                    style={{ border: "1px solid #cbd5e1", borderRadius: 6, backgroundColor: "#f8fafc", padding: 8, display: "grid", gap: 8 }}
+                  >
+                    {currentCardQualityQuestion(cardQualityAssistState) ? (
+                      <>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>
+                          {t(currentCardQualityQuestion(cardQualityAssistState)!.promptKey)}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#475569" }}>
+                          {t(currentCardQualityQuestion(cardQualityAssistState)!.rationaleKey)}
+                        </div>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            type="button"
+                            data-domain-action="card-quality-decision-apply"
+                            onClick={() => onAnswerCardQualityQuestion("apply")}
+                            style={{ flex: 1 }}
+                          >
+                            {t("side_panel.card_quality.decision.apply")}
+                          </button>
+                          <button
+                            type="button"
+                            data-domain-action="card-quality-decision-keep-as-is"
+                            onClick={() => onAnswerCardQualityQuestion("keep_as_is")}
+                            style={{ flex: 1 }}
+                          >
+                            {t("side_panel.card_quality.decision.keep_as_is")}
+                          </button>
+                          <button
+                            type="button"
+                            data-domain-action="card-quality-decision-hold-for-now"
+                            onClick={() => onAnswerCardQualityQuestion("hold_for_now")}
+                            style={{ flex: 1 }}
+                          >
+                            {t("side_panel.card_quality.decision.hold_for_now")}
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ fontSize: 12, color: "#0f172a" }}>{t("side_panel.card_quality.done")}</div>
+                    )}
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {!currentCardQualityQuestion(cardQualityAssistState) ? (
+                        <button
+                          type="button"
+                          data-domain-action="edit-card-text-from-quality-assist"
+                          onClick={onOpenCardTextEditor}
+                          style={{ flex: 1 }}
+                        >
+                          {t("side_panel.card_quality.edit_text")}
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        data-domain-action="close-card-quality-assist"
+                        onClick={() => {
+                          onCloseCardQualityAssist();
+                          setTimeout(() => cardQualityAssistTriggerRef.current?.focus(), 0);
+                        }}
+                        style={{ flex: 1 }}
+                      >
+                        {t("side_panel.card_quality.close")}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
               <details data-panel="card-record-details" style={{ marginBottom: 12 }}>
                 <summary style={{ fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
                   {t("side_panel.card_inspector.record_details")}
