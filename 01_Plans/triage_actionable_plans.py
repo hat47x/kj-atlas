@@ -5,13 +5,23 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-ISSUE_STATUS_ACTIVE = {"Draft", "Open", "In Progress"}
-VALID_ISSUE_STATUSES = ISSUE_STATUS_ACTIVE | {"Done", "Blocked", "Ready", "Active"}
+PLANS_DIR = Path(__file__).resolve().parent
+if str(PLANS_DIR) not in sys.path:
+    sys.path.insert(0, str(PLANS_DIR))
+
+from issue_memo_metadata import (
+    ISSUE_STATUS_ACTIVE,
+    VALID_ISSUE_STATUSES,
+    parse_backlog_id,
+    parse_issue_status,
+    parse_metadata,
+)
+
 ADR_ACTIONABLE_STATUSES = {"Accepted", "Proposed"}
-META_RE = re.compile(r"^- (?P<key>[^:]+):\s*(?P<value>.+)$")
 BACKTICK_RE = re.compile(r"`([^`]+)`")
 REL_PATH_RE = re.compile(r"`([^`]*issue-[^`]+\.md)`")
 ADR_REF_RE = re.compile(r"`(ADR-\d{4}[^`]*)`")
@@ -111,19 +121,15 @@ def extract_dependency_paths(lines: list[str]) -> tuple[str, ...]:
 def parse_issue(path: Path) -> IssueMemo:
     lines = read_header_lines(path)
     title = lines[0].lstrip("# ").strip() if lines else path.stem
-    meta: dict[str, str] = {}
-    for line in lines[1:20]:
-        m = META_RE.match(line)
-        if m:
-            meta[m.group("key")] = m.group("value")
-    backlog_id = path.name.removeprefix("issue-").removesuffix(".md")
+    meta = parse_metadata(lines[1:20])
+    backlog_id = parse_backlog_id("\n".join(lines), path)
     related_refs = tuple(dict.fromkeys(BACKTICK_RE.findall(meta.get("Related ADR/Spec", ""))))
     dependency_paths = extract_dependency_paths(lines)
     return IssueMemo(
         path=str(path.relative_to(path.parents[1]).as_posix()),
         title=title,
         backlog_id=backlog_id,
-        status=normalize_status(meta.get("Status", "Unknown")),
+        status=parse_issue_status(meta),
         priority=meta.get("Priority", "N/A"),
         owner=meta.get("Owner", "N/A"),
         related_backlog=meta.get("Related Backlog", "").strip("`"),
@@ -151,11 +157,7 @@ def detect_mock_applicability(path: Path) -> str:
 def parse_adr(path: Path) -> AdrRecord:
     lines = read_header_lines(path, limit=40)
     title = lines[0].lstrip("# ").strip() if lines else path.stem
-    meta: dict[str, str] = {}
-    for line in lines[1:10]:
-        m = META_RE.match(line)
-        if m:
-            meta[m.group("key")] = m.group("value")
+    meta = parse_metadata(lines[1:10])
     adr_id_match = re.search(r"(ADR-\d{4})", title)
     adr_id = adr_id_match.group(1) if adr_id_match else path.stem
     refs = []

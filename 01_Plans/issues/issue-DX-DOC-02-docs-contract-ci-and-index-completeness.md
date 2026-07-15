@@ -105,9 +105,9 @@ Open化条件:
 
 - [x] indexへの手動掲載がなくても、filesystem上のActive memoをvalidatorが自動発見する。
 - [x] READMEの固定Active表を廃止し、空index・stale row・手動件数同期という失敗原因を除去する。
-- [ ] 必須メタデータ、非正規Status、参照先不在、依存関係不正、重複Backlog IDの異常系testがある。
+- [x] 必須メタデータ、非正規Status、参照先不在、依存関係不正、重複Backlog IDの異常系testがある。
 - [x] current repositoryでtriageとvalidatorが同じActive件数を返す（2026-07-15 Open化時点: 29件）。
-- [ ] triageとvalidatorが同じStatus parser・正規値を使い、同じActive件数を返す。
+- [x] triageとvalidatorが同じStatus parser・正規値を使い、同じActive件数を返す。
 - [x] 1コマンドでローカル/CI同値のdocs-checkを実行できる。
 - [x] docs-check非0終了がPRをblockする。
 - [x] 01/02/04/root docsの適用check matrixと除外理由が文書化され、02層が無検査にならない。
@@ -122,7 +122,7 @@ Open化条件:
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 check matrixとrule IDを固定し、ADR-0024へ適用境界と段階有効化条件を追補する。
-- [ ] T2 Active issue validatorをfilesystem直接検査へ変更する（自動発見と既存異常系testsは完了。共有parser・重複Backlog ID検査は未完了）。
+- [x] T2 Active issue validatorをfilesystem直接検査へ変更し、共有parserとActive重複Backlog ID検査を追加する。
 - [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。
 - [x] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
 - [x] T5 既存Backend CI jobへblocking docs-check stepを追加し、既存PRで動作確認する。
@@ -232,3 +232,9 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - `docs_contract_checks.py` に追跡対象Markdownだけを列挙するCLIを追加した。生成物や依存物を対象外にし、検査関数だけを実行せず成功していた偽陽性を解消した。
 - CIは既存Backend jobのPython setup直後に `python 01_Plans/docs_check.py` を実行する。文書専用jobの追加は避け、同じblocking効果を小さいworkflow差分で実現した。
 - ローカル実行で01_Plans 9 tests、issue validator 11 tests、Active memo 23件、追跡Markdown 374件がすべて成功した。CIの最終確認は本変更のPRで行う。
+
+## T2完了記録 2026-07-15: issue metadata parser共有
+
+- `issue_memo_metadata.py` に正規Status、メタデータ、見出し上の論理Backlog IDの解釈を集約し、triageとvalidatorで共有した。
+- 非正規StatusはActive一覧から黙って消さず、Doneを含む全memoを対象に停止理由を示す。論理Backlog IDの重複は現在の実行判断を曖昧にするActive memoだけをfail-closedにし、完了済み履歴の過去衝突は改名しない。
+- 単一docs-checkで01_Plans 9 tests、issue validator 12 tests、Active memo 23件、追跡Markdown 374件の成功を確認した。
