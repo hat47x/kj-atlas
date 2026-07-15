@@ -11,6 +11,7 @@ from urllib.parse import unquote, urlsplit
 
 RELATIVE_LINK_RULE_ID = "DC-LNK-001"
 CURRENT_HISTORY_RULE_ID = "DC-CUR-001"
+HISTORY_METADATA_RULE_ID = "DC-HIS-001"
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
 MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]\r\n]*\]\((?P<target><[^>\r\n]+>|[^)\r\n]+)\)")
@@ -28,6 +29,23 @@ CURRENT_ONLY_PATHS = (
     Path("02_Architecture/api.md"),
     Path("02_Architecture/schemas.md"),
     Path("02_Architecture/data_model_operations_overview.md"),
+)
+HISTORY_REQUIRED_LABELS = (
+    "Status: Informative history",
+    "Source document:",
+    "Source anchors:",
+    "Covered period:",
+    "Snapshot / source revision:",
+    "Retention reason:",
+    "Current normative anchors:",
+)
+SOURCE_DOCUMENT_RE = re.compile(
+    r"^Source document:\s+\[[^\]]+\]\((?P<target>[^)#]+)(?:#[^)]+)?\)",
+    re.MULTILINE,
+)
+CURRENT_ANCHOR_RE = re.compile(
+    r"^Current normative anchors:\s*$[\s\S]*?^-\s+\[[^\]]+\]\((?:\.\./|/)[^)]+\)",
+    re.MULTILINE,
 )
 
 
@@ -172,6 +190,70 @@ def check_current_history_headings(
     return findings
 
 
+def check_history_metadata(
+    root: Path, history_paths: list[Path] | None = None
+) -> list[DocsCheckFinding]:
+    """Return DC-HIS-001 findings for incomplete history metadata or reverse links."""
+    if history_paths is None:
+        history_paths = sorted(
+            path.relative_to(root)
+            for path in (root / "02_Architecture" / "history").glob("*.md")
+            if path.name != "README.md"
+        )
+
+    findings: list[DocsCheckFinding] = []
+    for relative_path in history_paths:
+        source = root / relative_path
+        text = source.read_text(encoding="utf-8")
+        for label in HISTORY_REQUIRED_LABELS:
+            if label in text:
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=HISTORY_METADATA_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=1,
+                    target=label,
+                    message=f"history metadata is missing: {label}",
+                    fix_hint="Add the required Informative history metadata near the document heading.",
+                )
+            )
+
+        if "Current normative anchors:" in text and not CURRENT_ANCHOR_RE.search(text):
+            anchor_offset = text.find("Current normative anchors:")
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=HISTORY_METADATA_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=text.count("\n", 0, anchor_offset) + 1,
+                    target="Current normative anchors",
+                    message="history document has no current normative anchor link",
+                    fix_hint="Add at least one link from Current normative anchors to a current contract.",
+                )
+            )
+
+        source_match = SOURCE_DOCUMENT_RE.search(text)
+        if not source_match:
+            continue
+        current_path = (source.parent / source_match.group("target")).resolve()
+        if not current_path.exists():
+            continue
+        backlink = relative_path.relative_to(current_path.parent.relative_to(root)).as_posix()
+        current_text = current_path.read_text(encoding="utf-8")
+        if backlink not in current_text:
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=HISTORY_METADATA_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=1,
+                    target=current_path.relative_to(root).as_posix(),
+                    message="source document does not link back to its formation history",
+                    fix_hint=f"Add a link to {backlink} from the source document.",
+                )
+            )
+    return findings
+
+
 def tracked_markdown_paths(root: Path) -> list[Path]:
     """Return tracked Markdown paths so generated and dependency files stay out of scope."""
     result = subprocess.run(
@@ -195,6 +277,7 @@ def main() -> int:
     markdown_paths = tracked_markdown_paths(root)
     findings = check_relative_links(root, markdown_paths)
     findings.extend(check_current_history_headings(root))
+    findings.extend(check_history_metadata(root))
 
     if findings:
         print("documentation contract validation failed:")

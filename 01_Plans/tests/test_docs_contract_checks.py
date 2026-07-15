@@ -129,5 +129,57 @@ class CurrentHistoryBoundaryTest(unittest.TestCase):
         self.assertEqual(findings, [])
 
 
+class HistoryMetadataTest(unittest.TestCase):
+    def test_accepts_complete_metadata_and_reverse_link(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "architecture" / "history").mkdir(parents=True)
+            current = root / "architecture" / "current.md"
+            current.write_text("# Current\n\n[Formation history](history/sample.md)\n", encoding="utf-8")
+            history = root / "architecture" / "history" / "sample.md"
+            history.write_text(textwrap.dedent("""\
+                # Sample history
+                Status: Informative history
+                Source document: [current](../current.md)
+                Source anchors: former section
+                Covered period: 2026-01
+                Snapshot / source revision: `abc123`
+                Retention reason: preserve formation context
+                Current normative anchors:
+                - [Current](../current.md#contract)
+            """), encoding="utf-8")
+
+            findings = MODULE.check_history_metadata(
+                root, [Path("architecture/history/sample.md")]
+            )
+
+        self.assertEqual(findings, [])
+
+    def test_reports_missing_metadata_anchor_and_reverse_link(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "architecture" / "history").mkdir(parents=True)
+            (root / "architecture" / "current.md").write_text("# Current\n", encoding="utf-8")
+            history = root / "architecture" / "history" / "sample.md"
+            history.write_text(textwrap.dedent("""\
+                # Sample history
+                Status: Informative history
+                Source document: [current](../current.md)
+                Source anchors: former section
+                Covered period: 2026-01
+                Snapshot / source revision: `abc123`
+                Current normative anchors:
+            """), encoding="utf-8")
+
+            findings = MODULE.check_history_metadata(
+                root, [Path("architecture/history/sample.md")]
+            )
+
+        self.assertTrue(all(finding.rule_id == "DC-HIS-001" for finding in findings))
+        self.assertTrue(any(finding.target == "Retention reason:" for finding in findings))
+        self.assertTrue(any("no current normative anchor" in finding.message for finding in findings))
+        self.assertTrue(any("does not link back" in finding.message for finding in findings))
+
+
 if __name__ == "__main__":
     unittest.main()

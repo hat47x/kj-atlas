@@ -112,7 +112,7 @@ Open化条件:
 - [x] docs-check非0終了がPRをblockする。
 - [x] 01/02/04/root docsの適用check matrixと除外理由が文書化され、02層が無検査にならない。
 - [ ] current領域の同一Contract ID/型の異義定義、API/schema key差異、DocumentV2支援表欠落を検出する。
-- [ ] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
+- [x] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
 - [x] broken relative linkとSSOT参照先不在を検出する。
 - [ ] 公開版UI catalog等への内部管理語再混入とprovenance欠落を検出する。
 - [ ] SafeMode、share/export、proposal-only、human reviewの不変条件参照欠落を検出する。
@@ -244,3 +244,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - Document V1再基準化を含む別ブランチ統合後、`data_model_operations_overview.md` に履歴へ移管済みのStream D旧§1.2/1.3・§8〜13が再混入していた。ER、CRUD、支援レベル、運用境界を残し、形成履歴104行だけを除去した。
 - current-only 7文書のMarkdown見出しを検査し、Stream、rerun、checkpoint、reaffirmation、execution log/recordなどの実行履歴見出しを `DC-CUR-001` で拒否する純関数を追加した。本文、コード記法、`downstream` のような部分一致は対象外とする。
 - 単一docs-checkで01_Plans 11 tests、issue validator 12 tests、Active memo 23件、追跡Markdown 374件が成功した。T3全体はarchitecture、history、public checkerが残るため継続する。
+
+## T3進捗 2026-07-15: `DC-HIS-001`
+
+- `02_Architecture/history/` の形成履歴4件について、Informative status、元文書、元anchor、対象期間、source revision、保持理由、現行正本anchorの7項目を検査する。
+- Current normative anchorsに現行文書へのリンクがあり、Source documentに指定された元文書から履歴ファイルへ逆リンクできることをfail-closedで確認する。履歴本文の意味や当時の判断はcurrent契約比較の対象にしない。
+- 逆リンクが欠けていた `data_model_operations_overview.md` に形成履歴への導線を追加した。T3全体はarchitectureとpublic checkerが残るため継続する。
+- 単一docs-checkで01_Plans 13 tests、issue validator 12 tests、Active memo 23件、追跡Markdown 374件が成功した。
