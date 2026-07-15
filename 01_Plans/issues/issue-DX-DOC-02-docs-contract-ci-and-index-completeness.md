@@ -7,7 +7,7 @@
 - Priority: P1
 - Owner: Maintainer / Developer Experience contributor
 - Scope: `01_Plans/issues/validate_active_issue_memos.py`, `01_Plans/issues/tests/`, `01_Plans/triage_actionable_plans.py`, `01_Plans/tests/`, `01_Plans/docs_contract_checks.py`, `01_Plans/docs_check.py`（新規候補）, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `.github/workflows/ci.yml`, `.github/pull_request_template.md`, current-only文書と公開対象文書の検査規則
-- Related Backlog: `DOC-ARCH-02`, `DOC-OPS-06`, `DOC-UI-CATALOG-01`, `DATA-CONTRACT-DOC-01`, `DX-E2E-08`
+- Related Backlog: `DOC-ARCH-02`, `DOC-OPS-06`, `DOC-UI-CATALOG-01`, `DATA-CONTRACT-DOC-01`, `DX-E2E-08`, `DX-DOC-04`
 - Related ADR/Spec: `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `01_Plans/issues/issue-DOC-ARCH-02-current-contract-history-physical-separation.md`, `01_Plans/issues/issue-DOC-OPS-06-current-view-history-and-contributor-route.md`, `01_Plans/issues/issue-DOC-UI-CATALOG-01-public-boundary-and-provenance.md`
 - Expected verification level: `integration`
 
@@ -111,22 +111,22 @@ Open化条件:
 - [x] 1コマンドでローカル/CI同値のdocs-checkを実行できる。
 - [x] docs-check非0終了がPRをblockする。
 - [x] 01/02/04/root docsの適用check matrixと除外理由が文書化され、02層が無検査にならない。
-- [x] current領域の同一Contract ID/型の異義定義、API/schema key差異、DocumentV1支援表欠落を検出する（`DC-ARC-001`、`issue-DATA-CONTRACT-DOC-01`のclean baseline確立後に実装）。
+- [ ] current領域の同一Contract ID/型の異義定義、API/schema key差異、DocumentV2支援表欠落を検出する。
 - [x] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
 - [x] broken relative linkとSSOT参照先不在を検出する。
 - [ ] 公開版UI catalog等への内部管理語再混入とprovenance欠落を検出する。
 - [ ] SafeMode、share/export、proposal-only、human reviewの不変条件参照欠落を検出する。
 - [ ] docs-only PRへ不要なfrontend/backend E2Eを強制しない。
-- [x] CI jobとvalidatorの失敗理由が、対象ファイル・rule ID・修正先を示す（`DocsCheckFinding.render()`が全checkerで`{rule_id} {path}:{line}: {message} Fix: {fix_hint}`形式を共有する）。
+- [ ] CI jobとvalidatorの失敗理由が、対象ファイル・rule ID・修正先を示す。
 
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 check matrixとrule IDを固定し、ADR-0024へ適用境界と段階有効化条件を追補する。
 - [x] T2 Active issue validatorをfilesystem直接検査へ変更し、共有parserとActive重複Backlog ID検査を追加する。
-- [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。relative link（`DC-LNK-001`）、current/history（`DC-CUR-001`）、architecture contract（`DC-ARC-001`）は実装済み。public boundary checkerとSafeMode/share-export/proposal-only/human review不変条件参照checkerが未実装のため、T3自体は未完了を維持する。
+- [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。
 - [x] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
 - [x] T5 既存Backend CI jobへblocking docs-check stepを追加し、既存PRで動作確認する。
-- [x] T6 PR templateへ証跡欄を追加する（`.github/pull_request_template.md`の`command/result/not_executed_reason/resume_condition`欄で充足済み。commit `439867a9`）。
+- [ ] T6 PR templateへ証跡欄を追加する。
 - [ ] T7 負例fixtureでfail、現行repositoryでpass、変更対象外のアプリtest非干渉を検証する。
 
 ## 7) 検証計画 / Validation plan
@@ -263,9 +263,7 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - 単一正本`03_Implement/frontend/docs/e2e_testing.md`の後半に、過去のStream E/F/G、固定実装順、Draft昇格テンプレートと、現CLIに存在しない`validate_active_issue_memos.py --files`が残る。backendの文書契約テストも旧運用tokenを必須化している。
 - `DX-E2E-08`でrunbook縮約、無効コマンド是正、契約テストの現行不変条件化を一体実施する。clean baseline後、`DC-CUR-001`の対象へE2E正本を追加し、SSOT本文自体のcurrent/history混在を再発防止する。
 
-## T3進捗 2026-07-16: `DC-ARC-001` clean baseline確立、`DC-CUR-001` E2E正本追加、T6/AC棚卸し
+## Executable command follow-up 2026-07-16
 
-- `issue-DATA-CONTRACT-DOC-01`のclean baselineが確立された（`schemas.md`の単一`DocumentV1`/`version: 1`統合、`contract_reading_guide.md`/inventoryの旧V2案内是正、fixture修正）。これを受けて`DC-ARC-001`（`check_document_contract_baseline`）を実装し、単一Document型定義・`DocumentV1`/`version: 1`・`DocumentV2`/`Legacy`語の非再混入・`api.md`/`data_model_operations_overview.md`の`DocumentV1`参照を決定論的fixtureで固定した。正常系1件・負例4件を追加した。
-- `issue-DX-E2E-08`のrunbook縮約完了を受けて、`DC-CUR-001`の`CURRENT_ONLY_PATHS`へ`03_Implement/frontend/docs/e2e_testing.md`を追加し、既定パスだけで再混入を検出することを確認する負例fixtureを追加した。
-- T6（PR templateの証跡欄）は`.github/pull_request_template.md`に`command/result/not_executed_reason/resume_condition`が既に存在すること（commit `439867a9`）を確認し、チェック済みへ更新した。棚卸しの結果、対応する受入条件2件（architecture領域の異義定義検出、CI失敗理由の対象ファイル/rule ID/修正先表示）も充足済みへ更新した。
-- T3は architecture / current-history / relative-link の3 checkerが完了し、public boundary checkerとSafeMode/share-export/proposal-only/human review不変条件参照checkerが未実装のため、T3自体は継続する。この2件は本follow-upのスコープ外とし、別途スコープ設計を要する。
+- `CONTRIBUTING.md`に旧`/api/health`、E2E正本に存在しないvalidator `--files`が残る一方、相対リンク検査とdocs-checkはpassする。routeへの到達性と、コードブロック内の実行契約の正しさは別の検査境界である。
+- `DX-DOC-04`でendpoint、CLI option、npm script、Compose service、repository path、runtime parameter keyを静的照合する`DC-CMD-001`を追加する。破壊的・外部依存コマンドは実行せず、分類と警告だけを検証する。
