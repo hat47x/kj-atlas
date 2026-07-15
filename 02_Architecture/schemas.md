@@ -5,6 +5,7 @@
 > 現行契約と Stream / freeze 履歴の読み分けは `02_Architecture/contract_reading_guide.md` を参照する。
 > MVPで実際に運用サポートするデータ構造、埋め込み限定の構造、契約のみの構造は `02_Architecture/data_model_operations_overview.md` を参照する。
 > ADR-0033 で定義した Support/Maintenance/Contract Boundary（L1/L1.5/L2/L2.5/L3/L0）を正本とし、本書の型定義単体で運用保証を主張しない。
+> `ADR-0057` は、反復的探究を独立 `InquiryJourneyV1` + 不変 `RoundSnapshotV1` DAGとして扱う設計を採択した。詳細は `02_Architecture/inquiry_journey_model.md` を参照する。実装・移行・CRUDが揃うまでは `L0: Planned` であり、現行 `DocumentV2` の型、version gate、保存契約へ履歴キーを追加しない。
 本ドキュメントは、kj-atlas の **MVPで扱う永続データの最小スキーマ** を定義します。
 
 - YAGNI方針に従い、MVPで標準運用しない型は「運用サポート済み」と扱いません
@@ -1363,3 +1364,134 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 - ADR: `ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂）
 - Issue: `DOMAIN-KA-01-ka-card-fields`
 - Frontend: `03_Implement/frontend/src/domain/types.ts`（Card.ka）
+
+
+## 18. EXT-CONN-03 契約先行固定: agent-constraints.v1（訂正ループの輸出）＋加算スキーマ拡張（2026-07-15）
+
+ADR-0054 段階3の契約先行固定（issue-EXT-CONN-03 AC-1 / DecisionQueueRef が要求する「constraint 契約の `schemas.md` 先行固定」）。本節は**契約の固定のみ**を行い、実装の着手可否は EXT-CONN-03 issue の段階ゲート（段階1/2 の運用知見）に従う。加算原則に従い、DocumentV2 への追加フィールドはすべて optional。
+
+### 18.1 目的と設計判断（方式設計の要点）
+
+TRACE（arXiv:2606.13174）の知見「記憶への保存では選好違反の57.5%が残る。訂正は次回実行の**制約**として明示的に渡す必要がある」に基づき、人間がカード・島・エージェント提案へ付けた違和感タグ・保留・却下を機械可読な制約として輸出する。
+
+**契約形態の決定**: issue-EXT-CONN-03 が挙げた2候補 (a) `agent-task.v1` ガードレール節への追記 / (b) 独立の `agent-constraints.v1` 文書 のうち、**(b) 独立文書を正とし、(a) は (b) の埋め込みプロファイルとする**。理由:
+
+1. 配布経路が2つある（手動レーン=タスクシート同梱、自動レーン=EXT-CONN-01 MCP サーバーの読み取りツール）。独立文書なら1つの正本形状を両経路で共有でき、ガードレール節専用形式だと MCP 経路で二重定義になる。
+2. 制約の語彙はタスクパッケージと独立に進化しうる（版管理の分離）。
+3. `external_agent_collaboration_spec.md` §3.3 のタスクシートには「制約」節として同一 JSON を埋め込む（同 spec 参照）。定義の重複を作らない。
+
+**内部設計の外部化**: 本契約は HIL-RS の内部 critique 収集（`buildHilRsCritiqueInputs`: card/island の `critiqueTags`＋自由記述 → `CritiqueInput.constraintHints`）と同じ源泉・同じ5種タグ語彙（§18.3）を用いる。新しい語彙・新しいAI権限を導入しない（語彙重複禁止の既存規約に従う）。
+
+### 18.2 AgentConstraintsV1（輸出契約・正本）
+
+```json
+{
+  "schemaVersion": "agent-constraints.v1",
+  "docId": "string",
+  "baseDocSignature": "string (`${doc.id}:${doc.updatedAt}` — context-projection.v1 と同一形)",
+  "safeMode": "boolean",
+  "entries": [
+    {
+      "target": {
+        "kind": "proposal | card | island",
+        "taskId": "string (kind=proposal のみ)",
+        "proposalId": "string (kind=proposal のみ)",
+        "proposalKind": "string (kind=proposal のみ。agent-response.v1 の kind)",
+        "cardId": "string (kind=card のみ。レビュー済みカードに限る — §18.5)",
+        "islandId": "string (kind=island のみ)"
+      },
+      "critiqueTags": ["too_close | too_far | not_the_same | feels_off | no_articulable_reason"],
+      "facts": ["held | rejected | deferred"],
+      "note": "string | null (人間の自由記述。SafeMode ON では null — §18.5)",
+      "noteRedacted": "boolean (SafeMode により note を秘匿した場合 true)"
+    }
+  ],
+  "counts": {
+    "withheldCardConstraints": "number (未レビューカード対象のため ID を出さず件数のみ計上した制約数)"
+  },
+  "constraintsHash": "string (canonical JSON 全体の sha256 hex。決定論)"
+}
+```
+
+制約（契約不変条件）:
+
+- 各 entry は `critiqueTags` と `facts` の**少なくとも一方が非空**（空の制約は生成しない）。
+- **理由不要原則の保持**: `note` は任意。`no_articulable_reason` は一級のシグナルであり、理由の言語化を輸出の条件にしない（domain.md の違和感原則）。
+- **反スコアリング**: `score` / `rank` / `confidence` / `priority` / `weight` 等の数値評価語彙をトップレベル・entry・target のいずれにも**含めない**（契約禁止。テストは直列化文字列への正規表現で固定する）。制約間に順序的優先度は存在せず、`entries` の並びは決定論のためのソート順（§18.6）であって重要度ではない。
+- **エージェント側の遵守は受け手の責務**: kj-atlas は明示的に渡すところまで（issue 非目標）。遵守検証・自動学習・制約の自動生成は本契約のスコープ外。
+
+### 18.3 制約の源泉（すべて文書内・人間の判断のみ）
+
+| 源泉 | entry への写像 | 備考 |
+|---|---|---|
+| `Card.critiqueTags` / `Card.critique` | `target.kind="card"`＋`critiqueTags`＋`note` | §18.5 のレビュー済み条件を満たす場合のみ ID を出す |
+| `Island.critiqueTags` / `Island.critique` | `target.kind="island"`＋`critiqueTags`＋`note` | 島 ID は context-projection.v1 で既に公開済みの識別子 |
+| `Card.holdState === "held"` | `target.kind="card"`＋`facts:["held"]` | 同上（レビュー済み条件） |
+| `mergeSuggestionDecisions`（`decision: "reject" \| "defer"`） | `target.kind="proposal"` 相当が無いため、対象カードがすべてレビュー済みの場合のみ `target.kind="card"`（複数 entry）へ展開。`facts:["rejected"]` / `["deferred"]`、`note` は決定 entry の `note` | 却下・保留の**事実**の輸出。`accept`/`partial` は制約ではない |
+| `agentProposalDecisions`（§18.4。`decision: "rejected" \| "held"`） | `target.kind="proposal"`（taskId/proposalId/proposalKind）＋`facts` | エージェント既知の識別子のみで構成され、文書内部 ID を含まない |
+
+- 源泉はすべて人間の UI 操作で書かれた文書内データであり、決定論的に再導出できる（バックエンド状態・セッション状態に依存しない）。
+- **v1 で源泉に含めないもの**: `contradictionSignalDecisions`（決定論的検出器のシグナルへの判断であり、エージェント行動への訂正ではない）、`shelf`（内からの退避であり訂正シグナルではない — ADR-0054 用語定義「シェルフとの対」）。将来の版で再検討する場合も加算のみとする。
+
+### 18.4 加算スキーマ拡張: AgentProposalDecisionEntry / constraintExportOptIn
+
+現状、エージェント提案（agent-response.v1）への却下・保留はバックエンド監査（`/context-audit`）とセッション状態にのみ記録され、文書には持続化されない。制約輸出を文書から決定論的に導出可能にするため、`mergeSuggestionDecisions` / `contradictionSignalDecisions` と同じ「決定の文書内持続化」パターンを適用する。
+
+```ts
+export type AgentProposalDecision = "adopted" | "rejected" | "held";
+
+export type AgentProposalDecisionEntry = {
+  id: string;            // `${taskId}:${proposalId}`（文書内一意・重複時は decidedAt が新しい方を採用）
+  taskId: string;        // agent-task.v1 の taskId（エコーバック値）
+  proposalId: string;    // agent-response.v1 応答内の proposalId
+  proposalKind: string;  // agent-response.v1 の kind（自由文字列として保全）
+  decision: AgentProposalDecision;
+  decidedAt: string;     // ISO8601
+  agent?: string;        // agent-response.v1 の agent（markdown_sanitize 済み）
+};
+
+// DocumentV2 への加算（すべて optional）:
+//   agentProposalDecisions?: AgentProposalDecisionEntry[];
+//   constraintExportOptIn?: boolean;   // 欠落 = false = 輸出無効（既定OFF）
+```
+
+- `adopted` も記録する（EXT-CONN-04 根拠トレイルの将来素材）。ただし**制約として輸出されるのは `rejected` / `held` のみ**（§18.3）。
+- 決定の書き込みは人間の UI 操作のみ（proposal-only 維持。ADR-0041 CVI-2）。`applyDocumentChange` による 1操作=1履歴ステップで、却下も ⌘Z で取り消し可能になる（現状の「セッション限りの却下」からの改善。保全思想）。
+- 取り込み境界: 寛容/厳格の両検証モードで、`id`/`taskId`/`proposalId`/`decision`/`decidedAt` のいずれかが不正な要素は破棄し、他の正しい要素は保全する（`mergeSuggestionDecisions` の既存パターン）。
+- `constraintExportOptIn` の既定は **OFF**（欠落=false）。ON への切り替えは人間の明示操作（Claude Design P32 B-3「輸出は既定で含めない・明示 opt-in」）。
+
+### 18.5 安全境界（EXT-CONN-01 の原則を弱めない）
+
+ADR-0054「後段が前段の安全原則を弱めることはない」に従い、EXT-CONN-01 再レビューゲート（2026-07-13）の確定事項を本契約にそのまま継承する:
+
+1. **未レビューカードの ID はいかなる形でも出さない**: `target.kind="card"` の entry は対象カードが `textReviewed === true` の場合のみ生成する。未レビューカードへの critique/hold は `counts.withheldCardConstraints` に**件数のみ**計上する（ID・タグ内訳・note のいずれも出さない。タグ内訳の集計すら相関ベクトルになりうるため v1 では件数単独とする）。
+2. **proposal target は文書内部 ID を含まない**: `taskId`/`proposalId` はエージェント自身が生成・受領した識別子のエコーバックであり、新たな情報開示ではない。提案の本文・content の引用は行わない（採用後に編集・レビューされた本文の逆流を防ぐ）。
+3. **SafeMode**: 自由記述（`note`）は人間著述だがカード本文を引用しうるため、`SafeModePolicy.canExposeText("card.text", "share", safeMode)` と同一チャネルで判定し、秘匿時は `note: null`＋`noteRedacted: true` とする（KA §17.4 の「別基準を新設しない」規約に従う）。タグ・facts・counts は構造情報であり SafeMode の影響を受けない。短縮ハッシュによる placeholder は用いない（EXT-CONN-01 と同じ相関ベクトル回避）。
+4. **未レビュー本文の混入なし**: 本契約はカード本文フィールドを一切持たない（issue AC-4 を構造で保証）。
+
+### 18.6 決定論・監査
+
+- `entries` のソート順: `target.kind`（proposal → card → island）→ 各 ID の辞書順。同一 target への複数源泉（例: critique と hold）は1 entry に併合する。
+- `constraintsHash` は canonical JSON（`patch_fingerprint.ts` の `canonicalizeJson`）全体の sha256 hex。同一文書・同一 SafeMode 状態からの再輸出は同一ハッシュになる（context-projection.v1 の `bundleHash` と同じ規律）。
+- 監査相関: タスクシート同梱時は agent-task.v1 相関ブロックに `constraintsHash` を追加（optional・後方互換）。MCP 経由の読み取りは EXT-CONN-01 と同じ監査経路に `constraintsHash` を記録する。
+
+### 18.7 配布（輸送を新設しない）
+
+- **手動レーン**: `external_agent_collaboration_spec.md` §3.3 のタスクシートに任意節「制約」として同梱（同 spec §3.3a 参照）。`constraintExportOptIn` が ON の文書でのみ生成される。
+- **自動レーン**: EXT-CONN-01 の MCP サーバー（`03_Implement/mcp/`）に読み取り専用ツール `get_agent_constraints` を追加する。既存 `get_context_projection` と同じサーバー・同じ投影コア共有パターン（`03_Implement/frontend/src/export/agent_constraints_export.ts` を monorepo import）であり、**新しい輸送・新しいサービスは作らない**（issue の「EXT-CONN-01 の投影に合流」の充足形）。`constraintExportOptIn` が OFF の文書に対してはエラー応答（契約 payload を返さない）。
+- **用語の区別**: `ContextProjectionConstraint`（context-projection.v1 の**取得範囲**セレクタ: reviewed-only/evidence/contradiction/summary）と本契約の **constraint（訂正制約）** は別概念。取得範囲セレクタへ `"constraints"` 値を追加する案は、この語衝突を避けるため採らず、独立ツールとした。
+
+### 18.8 後方互換
+
+- 新フィールド（`agentProposalDecisions` / `constraintExportOptIn`）はすべて optional。旧データ（欠落）は「決定記録なし・輸出無効」として解釈する。
+- `version: 2` のまま（破壊的変更なし）。
+- agent-task.v1 相関ブロックへの `constraintsHash` 追加は optional であり、既存の応答エコーバック規約を変更しない。往復互換: agent-response.v1 側に constraints への応答フィールドは**設けない**（制約は一方向の入力であり、エージェントが制約に「回答」する契約を作ると遵守の自己申告に意味があるかのような誤認を生むため）。
+- Support level: `L2.5`（未分類。実装検証後に L2 以上へ昇格）。
+
+### 18.9 参照
+
+- ADR: `ADR-0054-external-connection-layer-staged-introduction.md`（段階3）, `ADR-0049-external-flat-rate-agent-collaboration.md`（安全境界の正本）, `ADR-0041-core-value-invariants-single-guard.md`（CVI-2 proposal-only）
+- Issue: `EXT-CONN-03-critique-constraint-export`
+- Research: `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`（追補A3: TRACE 定量根拠）
+- Spec: `02_Architecture/external_agent_collaboration_spec.md`（§3.3a 制約節の埋め込みプロファイル）
+- Frontend: `03_Implement/frontend/src/domain/types.ts`（CRITIQUE_TAGS / AgentProposalDecisionEntry）, `03_Implement/frontend/src/domain/hil_rs_payload.ts`（内部 critique 収集の前例）, `03_Implement/frontend/src/export/context_bundle_projection.ts`（外部読み取り面の安全境界前例）

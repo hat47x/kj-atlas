@@ -1,14 +1,14 @@
 # Issue: DOMAIN-W-ITERATION-01 W型累積KJ法の反復的探究支援
 
 - Type: Feature request / UX / Domain model
-- Status: Draft
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD (Maintainer / UX Lead / Domain Expert)
-- Scope: `00_Prompt/w_type_iterative_inquiry_requirements.md`, `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.md`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/e2e/`
+- Owner: Codex / Maintainer
+- Scope: `00_Prompt/w_type_iterative_inquiry_requirements.md`, `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `02_Architecture/inquiry_journey_model.md`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.md`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `DOMAIN-W-ITERATION-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `00_Prompt/w_type_iterative_inquiry_requirements.md`, `00_Prompt/qualitative_card_quality_requirements.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/inquiry_journey_model.md`, `00_Prompt/qualitative_card_quality_requirements.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -20,8 +20,8 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `ADR-0057` 受理条件 / 永続化候補A-B比較
+- DecisionStatus（Fixed / Pending）: Fixed
+- DecisionQueueRef（未確定時の参照先）: N/A（`ADR-0057` Accepted）
 
 ## 1) 課題 / Problem statement
 
@@ -48,7 +48,7 @@
 - 価値・判断軸（ADR-0001）: 可逆性、保留、人間判断を単一操作だけでなく長期探究へ拡張し、プロダクト価値「思考を雑にしない」を直接強化する。
 - 安全（THREAT_MODEL / SafeMode）: ラウンド履歴は生データと過去の仮説を蓄積するため、部分共有、削除、AI入力の範囲を明示する必要がある。
 - 企業・行政要件（enterprise_architecture）: 長期案件では説明可能性に有用だが、組織承認・担当者・期限は別境界とし、初期実装へ混ぜない。
-- 後方互換（schemas）: `DocumentV2` optional拡張か独立成果物かが未決。判断前に現行validatorや保存形式へキーを追加しない。
+- 後方互換（schemas）: `ADR-0057` は独立探究集約 + 不変成果DAGを採択した。`DocumentV2` へ履歴キーを追加せず、新契約は実装・移行・CRUDが揃うまで `L0: Planned` とする。
 
 ## 4) 提案する解決策 / Proposed solution
 
@@ -58,11 +58,11 @@
 - 固定fixtureを使い、永続化しない状態機械と低忠実度UIで代表シナリオを検証する。
 - 通常利用時の初期表示差分0を確認する。
 
-### Phase 1: 永続化境界の決定
+### Phase 1: 採択済み境界のfixture検証
 
-- `ADR-0057` で `DocumentV2` optional構造と独立 `InquiryJourneyV1` 成果物を比較する。
-- `RoundSnapshot` の最小内容、カード系譜、分岐、削除、容量、SafeMode、import/exportを決める。
-- 受理後に型、validation、migration、roundtrip testを追加する。
+- 独立 `InquiryJourneyV1`、不変 `RoundSnapshotV1`、親参照DAG、自己完結bundleを固定fixtureで表現する。
+- 親グラフの循環、参照切れ、digest不一致、未知versionをfail-closedで拒否する純粋関数とunit testを作る。
+- `RoundSnapshotV1` の意味状態、カード系譜、SafeMode派生bundle、容量を代表fixtureで検証する。
 
 ### Phase 2: 手動中核
 
@@ -81,12 +81,13 @@
 - プロジェクト管理、担当者管理、日程最適化。
 - ラウンド完了率や品質点数。
 - AIによる自動移行・仮説決定。
-- ADR受理前の永続スキーマ追加。
+- fixture・操作模型・通常利用非回帰の検証前にbackend永続化へ進むこと。
 
 ## 5) 受入条件 / Acceptance criteria
 
 - [x] AC-1: 6ラウンド、反復番号、引継ぎ、分岐、再開、現場への問いが要件として定義されている。
 - [x] AC-2: 固定ウィザード、進捗採点、通常画面への常設を禁止する境界が定義されている。
+- [x] AC-2a: 独立探究 + 不変成果DAG + 自己完結bundleが採択され、現行 `DocumentV2` と分離されている。
 - [ ] AC-3: 高度機能OFFでは、初期表示とカード作成手順に変更がない。
 - [ ] AC-4: 既存文書から再入力なしで探究を開始できる。
 - [ ] AC-5: R2の1回目と2回目を別成果として保存・比較できる。
@@ -101,14 +102,23 @@
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 W型問題解決モデル、6ラウンド累積KJ法、累積型発想法のICT支援課題を調査する。
-- [x] T2 Proposed要件とADRを起票し、価値トレーサビリティへ接続する。
-- [ ] T3 代表fixtureとメモリ内状態機械を作り、段階・反復・分岐の語彙をunit testで固定する。
+- [x] T2 要件とADRを起票し、価値トレーサビリティへ接続する。
+- [x] T3 代表fixtureとメモリ内状態機械を作り、段階・反復・分岐の語彙をunit testで固定する。
 - [ ] T4 高度機能内の低忠実度プロトタイプを作り、初期表示差分0と操作理解を確認する。
-- [ ] T5 `RoundSnapshot` の最小内容と永続化候補A/Bの比較資料を作る。
+- [x] T5 広域比較を行い、`RoundSnapshotV1` の境界と採択方式を `ADR-0057` / `inquiry_journey_model.md` へ固定する。
 - [ ] T6 ADR受理後、型・validation・保存・import/export・roundtripを実装する。
 - [ ] T7 手動中核UIとa11y/i18n/性能回帰を実装する。
 - [ ] T8 マウス・キーボード・390pxのE2Eとスクリーンショットを取得する。
 - [ ] T9 Phase 2の実使用後に、AI支援を別issueへ分割するか判断する。
+
+### Phase 0 実装証跡（2026-07-15）
+
+- `src/domain/inquiry_journey.ts`: `DocumentV2` へ履歴を追加せず、`InquiryJourneyV1`、`RoundSnapshotV1`、`RoundHandoffV1`、`CardLineageEdgeV1`、自己完結bundle型を独立定義した。
+- `src/domain/inquiry_journey.fixture.ts`: R2現状把握、R3本質追求、追加観察後のR2・2回目という代表loopbackを固定した。観察から仮説への系譜は `derived` とし、本文編集と分離した。
+- `src/domain/inquiry_journey.test.ts`: DAG循環、経路上の反復番号、複数head、出発成果、参照切れ、将来成果の逆参照、digest、系譜方向・多重度、非working成果を検証する。
+- `appendRoundRecord()`: 親成果を確認し、同段階の反復番号を選択経路から導出し、過去成果を変更せず分岐先端を追加するメモリ内状態遷移を実装した。
+- 検証結果: 対象16 tests passed、frontend typecheck passed、frontend全体191 files / 1050 tests passed、issue validator 6 memos / unittest 11 tests passed。
+- 永続化、import parser、UIは未実装であり、support levelは引き続き `L0: Planned` とする。
 
 ## 7) 検証計画 / Validation plan
 
@@ -120,10 +130,10 @@
   - `cd 03_Implement/frontend && npm run typecheck && npm test`
   - `cd 03_Implement/frontend && npx playwright test e2e/w_type_iterative_inquiry.spec.ts`
 - 期待結果:
-  - Proposed要件とDecision Queueが現行契約と混同されない。
+  - 採択済み設計目標と未実装の現行契約が混同されない。
   - 実装後は通常利用非回帰、停止・再開、反復、分岐、系譜、SafeModeを再現できる。
 - 未実施時の理由・代替検証:
-  - ADR受理前は永続化実装を行わず、固定fixtureとメモリ内プロトタイプで操作・複雑性を検証する。
+  - backend永続化前に固定fixtureとメモリ内プロトタイプで操作・複雑性を検証し、通常利用非回帰が確認できない場合はPhase 2へ進まない。
 
 ## 8) 代替案 / Alternatives considered
 
@@ -140,17 +150,17 @@
 
 - 失敗モード: 6段階が利用者を急かす、履歴が重くなる、同じカードの正本が分岐で曖昧になる、過去の生データが共有物へ漏れる。
 - 影響範囲: domain型、validation、保存、import/export、SafeMode、作業モード、Canvas、SidePanel、性能。
-- ロールバック手順: 永続化前はプロトタイプを削除し、Proposed文書だけを残す。永続化後は高度機能を無効化して現行文書表示へ戻し、optionalまたは独立成果物を無視してもカード・配置が読める契約を必須とする。
+- ロールバック手順: 永続化前はプロトタイプを削除し、採択済み要件・設計を `L0` のまま残す。永続化後は高度機能を無効化して現行文書表示へ戻し、独立探究成果物を読み込まなくても既存 `DocumentV2` のカード・配置が読める契約を必須とする。
 
 ## 10) Additional context
 
-### Decision Queue
+### 確定した設計判断
 
-1. `RoundSnapshot` はどこまでの文書内容と空間配置を保持するか。
-2. `DocumentV2` optional構造と独立 `InquiryJourneyV1` のどちらを採用するか。
-3. 分岐後のカード同一性と訂正を、参照・コピー・系譜のどれで表現するか。
-4. ラウンド単位共有時に必要な前段階の根拠をどこまで同梱するか。
-5. 長期履歴の容量、削除、圧縮、保持をどう扱うか。
+1. `RoundSnapshotV1` は、選択状態等を除き、意味のある空間配置を含む `DocumentV2` 成果を再現できる内容とする。
+2. `DocumentV2` optional構造ではなく、独立 `InquiryJourneyV1` + 不変成果DAGを採用する。
+3. 分岐後のカードは、スナップショット内の再現可能な内容、安定ID、明示的な `CardLineageEdgeV1` で表現する。
+4. ラウンド単位共有は、対象が参照する祖先成果をbundle内へ同梱し、参照が閉じた状態だけを受理する。
+5. 容量上限・圧縮閾値・削除UIは設計判断ではなく代表fixtureによる計測値としてPhase 1・2で決める。
 
 ### 複雑性予算（ADR-0043 自己申告）
 
@@ -163,7 +173,8 @@
 ## Traceability
 
 - Requirements: `00_Prompt/w_type_iterative_inquiry_requirements.md`
-- Proposed decision: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`
+- Accepted decision: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`
+- Architecture: `02_Architecture/inquiry_journey_model.md`
 - Card quality: `00_Prompt/qualitative_card_quality_requirements.md`
 - Value coverage: `02_Architecture/value_traceability.md`
 - Derived-from: 2026-07-15 ユーザー指摘「KJ法は6ラウンドのW型進行に見られるように、高度実務ではイテレーションで思考を深める」

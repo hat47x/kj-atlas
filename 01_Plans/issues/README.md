@@ -92,7 +92,7 @@ GitHub Issue URLへの一括移行は、Maintainerが開始日時と対象範囲
 
 ## Active issue memos
 
-2026-07-15 JST時点のfilesystem走査結果は **33件**（Draft 18 / Open 8 / In Progress 7）。表のStatusとSource Issueは各memoの先頭メタと一致させる。
+2026-07-15 JST時点のfilesystem走査結果は **33件**（Draft 17 / Open 8 / In Progress 8）。表のStatusとSource Issueは各memoの先頭メタと一致させる。
 
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
@@ -104,7 +104,7 @@ GitHub Issue URLへの一括移行は、Maintainerが開始日時と対象範囲
 | DOC-ARCH-02 | `issue-DOC-ARCH-02-current-contract-history-physical-separation.md` | In Progress | N/A |
 | DOC-USER-JOURNEY-01 | `issue-DOC-USER-JOURNEY-01-first-meaningful-map-guide.md` | In Progress | N/A |
 | DOMAIN-CARD-QUALITY-01 | `issue-DOMAIN-CARD-QUALITY-01-qualitative-card-quality-assistance.md` | In Progress | N/A |
-| DOMAIN-W-ITERATION-01 | `issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md` | Draft | N/A |
+| DOMAIN-W-ITERATION-01 | `issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md` | In Progress | N/A |
 | DX-DOC-02 | `issue-DX-DOC-02-docs-contract-ci-and-index-completeness.md` | Draft | N/A |
 | EXT-CONN-01 | `issue-EXT-CONN-01-readonly-mcp-server.md` | In Progress | N/A（`ADR-0054` 段階1） |
 | EXT-CONN-02 | `issue-EXT-CONN-02-webhook-proposal-ingest.md` | Draft | N/A（`ADR-0054` 段階2） |
