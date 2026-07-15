@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "triage_actionable_plans.py"
+sys.path.insert(0, str(MODULE_PATH.parent))
 SPEC = importlib.util.spec_from_file_location("triage_actionable_plans", MODULE_PATH)
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
@@ -70,6 +71,24 @@ class TriageActionablePlansTest(unittest.TestCase):
         self.assertFalse(blocked["ready"])
         self.assertIn("issues/issue-AAA-01-ready.md", blocked["depends_on"])
         self.assertEqual(report["actionable_adrs"][0]["adr_id"], "ADR-9999")
+
+    def test_collect_rejects_noncanonical_status_without_normalizing(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "adr").mkdir()
+            (root / "issues").mkdir()
+            (root / "issues" / "issue-invalid.md").write_text(
+                "# Issue: invalid\n- Status: Draft (waiting)\n- Priority: P1\n",
+                encoding="utf-8",
+            )
+
+            report = MODULE.collect(root)
+
+        self.assertEqual(report["summary"]["active_issue_count"], 0)
+        self.assertEqual(
+            report["errors"],
+            [{"path": "issues/issue-invalid.md", "reason": "invalid Status metadata: Draft (waiting)"}],
+        )
 
 
 if __name__ == "__main__":

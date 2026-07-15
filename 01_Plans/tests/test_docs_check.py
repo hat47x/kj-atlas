@@ -1,27 +1,112 @@
 import importlib.util
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
-
 MODULE_PATH = Path(__file__).resolve().parents[1] / "docs_check.py"
+sys.path.insert(0, str(MODULE_PATH.parent))
 SPEC = importlib.util.spec_from_file_location("docs_check", MODULE_PATH)
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
+CHECKS = sys.modules["docs_contract_checks"]
 
 
 class DocsCheckEntrypointTest(unittest.TestCase):
-    def test_runs_tests_validator_and_contract_checker(self):
-        commands = MODULE.check_commands(MODULE.ROOT)
-        rendered = [" ".join(command) for command in commands]
+    def _repository(self, root: Path, guide_text: str) -> None:
+        (root / "01_Plans" / "issues").mkdir(parents=True)
+        (root / "01_Plans" / "adr").mkdir()
+        (root / "docs").mkdir()
+        (root / "docs" / "guide.md").write_text(guide_text, encoding="utf-8")
+        for relative_path in MODULE.CURRENT_ONLY_PATHS:
+            target = root / relative_path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("# Current contract\n", encoding="utf-8")
+        history_dir = root / MODULE.HISTORY_INDEX_PATH.parent
+        history_dir.mkdir(parents=True, exist_ok=True)
+        history = history_dir / "formation.md"
+        source = root / MODULE.CURRENT_ONLY_PATHS[3]
+        source.write_text(
+            "# Current contract\n\n[Formation history](history/formation.md)\n",
+            encoding="utf-8",
+        )
+        history.write_text(
+            "# Formation history\n\n"
+            "Status: Informative history\n\n"
+            "Source document: [Current](../architecture.md)\n\n"
+            "Source anchors: former §1\n\n"
+            "Covered period: 2026-01-01\n\n"
+            "Snapshot / source revision: `abc123`\n\n"
+            "Retention reason: Preserve formation context.\n\n"
+            "Current normative anchors:\n\n"
+            "- [Current](../architecture.md#current-contract)\n\n"
+            "## Former record\n",
+            encoding="utf-8",
+        )
+        (root / MODULE.HISTORY_INDEX_PATH).write_text(
+            "# History\n\n[Formation](formation.md)\n", encoding="utf-8"
+        )
+        catalog = root / MODULE.PUBLIC_CATALOG_PATH
+        catalog.parent.mkdir(parents=True, exist_ok=True)
+        catalog.write_text(
+            "# UI catalog\n" + "\n".join(CHECKS.PUBLIC_CATALOG_REQUIRED) + "\n",
+            encoding="utf-8",
+        )
+        ledger = root / MODULE.SCREENSHOT_LEDGER_PATH
+        ledger.parent.mkdir(parents=True, exist_ok=True)
+        ledger.write_text(
+            "# Screenshot ledger\n"
+            + "\n".join(CHECKS.SCREENSHOT_LEDGER_REQUIRED)
+            + "\n",
+            encoding="utf-8",
+        )
+        (root / MODULE.SAFETY_ENTRY_PATH).write_text(
+            "# Agent entry\n\n"
+            "- SafeModeは既定ON。\n"
+            "- AI出力はproposal-onlyで、自動適用しない。\n"
+            "- `human_reviewed` は人間だけが設定する。\n"
+            "- `KJ_ATLAS_LLM_PROVIDER=none` でも主要価値が成立する。\n"
+            "- share/exportで未レビュー情報や秘密情報を意図せず共有しない。\n",
+            encoding="utf-8",
+        )
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        subprocess.run(["git", "add", "."], cwd=root, check=True)
 
-        self.assertEqual(len(commands), 4)
-        self.assertTrue(any("01_Plans\\tests" in command or "01_Plans/tests" in command for command in rendered))
-        self.assertTrue(any("issues" in command and "tests" in command for command in rendered))
-        self.assertTrue(any("validate_active_issue_memos.py" in command for command in rendered))
-        self.assertTrue(any("docs_contract_checks.py" in command for command in rendered))
+    def test_run_docs_check_passes_clean_minimal_repository(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._repository(root, "# Guide\n")
+
+            result = MODULE.run_docs_check(root, run_tests=False, required_routes=())
+
+        self.assertEqual(result.active_count, 0)
+        self.assertEqual(result.markdown_count, 13)
+        self.assertEqual(result.errors, ())
+
+    def test_run_docs_check_reports_broken_relative_link(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._repository(root, "[missing](missing.md)\n")
+
+            result = MODULE.run_docs_check(root, run_tests=False, required_routes=())
+
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn("DC-LNK-001 docs/guide.md:1", result.errors[0])
+
+    def test_run_docs_check_reports_current_history_heading(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._repository(root, "# Guide\n")
+            current_doc = root / MODULE.CURRENT_ONLY_PATHS[0]
+            current_doc.write_text("# Current contract\n\n## Rerun checkpoint\n", encoding="utf-8")
+
+            result = MODULE.run_docs_check(root, run_tests=False, required_routes=())
+
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn("DC-CUR-001 01_Plans/project-progress-dashboard.md:3", result.errors[0])
 
 
 if __name__ == "__main__":

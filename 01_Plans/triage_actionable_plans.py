@@ -5,23 +5,17 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-PLANS_DIR = Path(__file__).resolve().parent
-if str(PLANS_DIR) not in sys.path:
-    sys.path.insert(0, str(PLANS_DIR))
-
-from issue_memo_metadata import (
-    ISSUE_STATUS_ACTIVE,
-    VALID_ISSUE_STATUSES,
-    parse_backlog_id,
+from issues.issue_memo_status import (
+    ACTIVE_ISSUE_STATUSES,
+    CANONICAL_ISSUE_STATUSES,
     parse_issue_status,
-    parse_metadata,
 )
 
 ADR_ACTIONABLE_STATUSES = {"Accepted", "Proposed"}
+META_RE = re.compile(r"^- (?P<key>[^:]+):\s*(?P<value>.+)$")
 BACKTICK_RE = re.compile(r"`([^`]+)`")
 REL_PATH_RE = re.compile(r"`([^`]*issue-[^`]+\.md)`")
 ADR_REF_RE = re.compile(r"`(ADR-\d{4}[^`]*)`")
@@ -121,15 +115,20 @@ def extract_dependency_paths(lines: list[str]) -> tuple[str, ...]:
 def parse_issue(path: Path) -> IssueMemo:
     lines = read_header_lines(path)
     title = lines[0].lstrip("# ").strip() if lines else path.stem
-    meta = parse_metadata(lines[1:20])
-    backlog_id = parse_backlog_id("\n".join(lines), path)
+    meta: dict[str, str] = {}
+    for line in lines[1:20]:
+        m = META_RE.match(line)
+        if m:
+            meta[m.group("key")] = m.group("value")
+    backlog_id = path.name.removeprefix("issue-").removesuffix(".md")
     related_refs = tuple(dict.fromkeys(BACKTICK_RE.findall(meta.get("Related ADR/Spec", ""))))
     dependency_paths = extract_dependency_paths(lines)
+    raw_status = meta.get("Status", "Unknown").strip()
     return IssueMemo(
         path=str(path.relative_to(path.parents[1]).as_posix()),
         title=title,
         backlog_id=backlog_id,
-        status=parse_issue_status(meta),
+        status=parse_issue_status(raw_status) or raw_status,
         priority=meta.get("Priority", "N/A"),
         owner=meta.get("Owner", "N/A"),
         related_backlog=meta.get("Related Backlog", "").strip("`"),
@@ -157,7 +156,11 @@ def detect_mock_applicability(path: Path) -> str:
 def parse_adr(path: Path) -> AdrRecord:
     lines = read_header_lines(path, limit=40)
     title = lines[0].lstrip("# ").strip() if lines else path.stem
-    meta = parse_metadata(lines[1:10])
+    meta: dict[str, str] = {}
+    for line in lines[1:10]:
+        m = META_RE.match(line)
+        if m:
+            meta[m.group("key")] = m.group("value")
     adr_id_match = re.search(r"(ADR-\d{4})", title)
     adr_id = adr_id_match.group(1) if adr_id_match else path.stem
     refs = []
@@ -204,7 +207,7 @@ def build_actionable_issues(issues: list[IssueMemo], root: Path) -> list[Actiona
 
     actionable: list[ActionableIssue] = []
     for issue in issues:
-        if issue.status not in ISSUE_STATUS_ACTIVE:
+        if issue.status not in ACTIVE_ISSUE_STATUSES:
             continue
         blockers: list[str] = []
         for dep_path in issue.dependency_paths:
@@ -237,7 +240,7 @@ def build_actionable_issues(issues: list[IssueMemo], root: Path) -> list[Actiona
 
 
 def build_actionable_adrs(adrs: list[AdrRecord], issues: list[IssueMemo]) -> list[ActionableAdr]:
-    active_issue_paths = {issue.path for issue in issues if issue.status in ISSUE_STATUS_ACTIVE}
+    active_issue_paths = {issue.path for issue in issues if issue.status in ACTIVE_ISSUE_STATUSES}
     active_issue_names = {Path(path).name: path for path in active_issue_paths}
     actionable: list[ActionableAdr] = []
     for adr in adrs:
@@ -274,7 +277,7 @@ def collect(root: Path) -> dict[str, object]:
     for issue in issues:
         if issue.status == "Unknown":
             errors.append(TriageError(path=issue.path, reason="missing Status metadata"))
-        elif issue.status not in VALID_ISSUE_STATUSES:
+        elif issue.status not in CANONICAL_ISSUE_STATUSES:
             errors.append(TriageError(path=issue.path, reason=f"invalid Status metadata: {issue.status}"))
         if issue.priority == "N/A" or not issue.priority.strip():
             errors.append(TriageError(path=issue.path, reason="missing Priority metadata"))
