@@ -91,8 +91,8 @@
 - [x] AC-2: P-08、ドメイン定義、スキーマ境界、価値トレーサビリティが同じ要件を参照している。
 - [ ] AC-3: 本文以外の必須入力なしに、一回の保存操作でカードを作成できる。
 - [ ] AC-4: 品質支援は保存後または要求時に非モーダルで開き、一件ずつ採用・見送り・保留できる。
-- [ ] AC-5: 提案の採用前に本文、`claimType`、出典、レビュー状態が変更されない。
-- [ ] AC-6: 少数意見または矛盾するカードが、低品質として自動削除・統合・降格されない。
+- [x] AC-5: 提案の採用前に本文、`claimType`、出典、レビュー状態が変更されない。
+- [x] AC-6: 少数意見または矛盾するカードが、低品質として自動削除・統合・降格されない。
 - [ ] AC-7: 分割または言い換えの前後を比較し、元本文へ戻れる。
 - [ ] AC-8: マウスとキーボードで支援の開始、採用、見送り、保留、本文へのフォーカス復帰を完了できる。
 - [ ] AC-9: 日本語と英語で同じ意味と選択肢を提供し、390px幅で本文や主要操作を覆わない。
@@ -106,7 +106,7 @@
 - [x] T3 新規スキーマとADRが現時点では不要であること、およびADR昇格条件を明記する。
 - [x] T4 6種の代表fixtureと、本文保存を先行する品質支援の状態遷移をテストで固定する。
 - [x] T5 Phase Bの自己確認UI、i18n、キーボード操作、フォーカス復帰を実装する。
-- [ ] T6 提案採用前の不変条件、少数・矛盾保持、SafeMode、provider noneをunit/integrationで固定する。
+- [x] T6 提案採用前の不変条件、少数・矛盾保持、SafeMode、provider noneをunit/integrationで固定する。
 - [ ] T7 390px/desktop、マウス/キーボードのE2Eとスクリーンショットを取得する。
 - [ ] T8 Phase Cの必要性をPhase Bの使用証跡から判断し、必要な場合だけ別issueへ分割する。
 
@@ -123,6 +123,14 @@
 - `src/App.tsx`: `cardQualityAssistByCardId`（カードIDをキーとするセッション内のみの状態、文書へは永続化しない）と`openCardQualityAssistCardId`を追加し、4つのハンドラ（open/answer/close/open-text-editor）を`selectedCard`宣言後に配置した。「本文を編集する」ボタンは既存の`editingCardId`編集モード（Canvas側のカード本文textarea）を再利用する。
 - `src/i18n/locales/{en,ja}.json`: `side_panel.card_quality.*`（トリガー/完了/決定3種/閉じる/本文編集）と`cardQuality.question.{unit,context,trace,status}.{prompt,rationale}`をen/ja両方に追加した（キー総数1555件で一致を確認）。文言は要求文書§4.2の推奨例に基づく自己確認の問いとして書き直した（AIによる断定ではなく「〜していますか」形式）。
 - 検証結果: `npm run typecheck`、`npx vitest run`（1055/1055 pass、既存の無関係な1ファイル失敗は`~/kjnative-fe`がリポジトリルート非同梱の副作用でT5と無関係）。**ブラウザでの手動確認は本環境のBrowser Preview toolがWSL側dev server(localhost)に到達できず実施できなかった** — キーボード操作・フォーカス復帰・390px幅表示の実機確認はT7のE2E証跡に委ねる。AC-4/AC-5/AC-6は構造的に成立するが、チェックボックスの更新はT6のunit/integration固定を待つ。
+
+### T6 実装証跡（2026-07-15）
+
+- `src/domain/card_quality.test.ts` に5 testsを追加した。
+  - 全6代表fixture × 3種の決定シーケンス（全apply／全keep_as_is／混在）で、凍結したCardオブジェクトが状態遷移の前後で完全に一致することを検証し、AC-5（採用前不変）を6 fixture全てで固定した（T4は1 fixtureのみで検証していた）。
+  - `minority_or_contradiction` fixtureについて、4問すべてを最も積極的な"apply"で応答してもcritiqueTags・本文が変化しないことを個別に検証し、AC-6（少数・矛盾の非降格）を固定した。
+  - `core_value_guard.test.ts`のsource-string contract慣用句（`readFileSync`）を踏襲し、`card_quality.ts`のソース自体に対する境界テストを3件追加: (a) 型のみimport（`import type { Card }`）以外の実行時importが存在しないこと、(b) Provider/fetch/localStorage/worker等の外部I/Oキーワードが一切含まれないこと（`KJ_ATLAS_LLM_PROVIDER=none`は自明に成立）、(c) `.meta`/`.critique`/`.claimType`など、SafeModeが管理する自由記述フィールドへの参照が一切ないこと。
+- 検証結果: 追加5 testsを含め対象13 tests、frontend全体1060/1060 pass（既存の無関係な1ファイル失敗はT4/T5と同じ、リポジトリルート非同梱の副作用）。AC-5・AC-6をチェック済みへ更新した。AC-10（SafeMode/proposal-only/human_reviewed/provider-noneの回帰）はアプリ全体の既存回帰テストが通り続けていることで裏付けられるが、実ブラウザでの確認を伴わないためチェックは見送り、T7のE2E証跡に委ねる。
 
 ## 7) 検証計画 / Validation plan
 

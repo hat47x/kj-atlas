@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import {
   CARD_QUALITY_DECISIONS,
@@ -7,8 +9,14 @@ import {
   currentCardQualityQuestion,
   openCardQualityAssist,
   type CardQualityAssistState,
+  type CardQualityDecision,
 } from "./card_quality";
 import { CARD_QUALITY_FIXTURES, findCardQualityFixture } from "./card_quality.fixture";
+
+/** Read frontend source file text for source-string contract checks (T6, per core_value_guard.test.ts's idiom). */
+function readSource(relativePath: string): string {
+  return readFileSync(resolve(__dirname, "..", relativePath), "utf-8");
+}
 
 function resolveAll(state: CardQualityAssistState, decisionForKind: (kind: string) => "apply" | "keep_as_is" | "hold_for_now"): CardQualityAssistState {
   let next = state;
@@ -112,5 +120,63 @@ describe("openCardQualityAssist / answerCardQualityQuestion", () => {
     const resolved = resolveAll(openCardQualityAssist(card), () => "keep_as_is");
     expect(resolved.resolved).toBe(true);
     expect(Object.keys(resolved.decisions).sort()).toEqual([...CARD_QUALITY_QUESTION_KINDS].sort());
+  });
+
+  // T6: 提案採用前の不変条件、少数・矛盾保持、SafeMode、provider noneをunit/integrationで固定する。
+  it("never mutates any of the 6 representative fixtures, under every decision, including the most aggressive path (AC-5)", () => {
+    const decisionSequences: CardQualityDecision[][] = [
+      ["apply", "apply", "apply", "apply"],
+      ["keep_as_is", "keep_as_is", "keep_as_is", "keep_as_is"],
+      ["hold_for_now", "apply", "keep_as_is", "hold_for_now"],
+    ];
+
+    for (const fixture of CARD_QUALITY_FIXTURES) {
+      const originalCard = { ...fixture.card };
+      for (const sequence of decisionSequences) {
+        const frozenCard = Object.freeze({ ...fixture.card });
+        let state = openCardQualityAssist(frozenCard);
+        let index = 0;
+        while (!state.resolved) {
+          state = answerCardQualityQuestion(state, sequence[index] ?? "hold_for_now");
+          index += 1;
+        }
+        expect(frozenCard).toEqual(originalCard);
+      }
+    }
+  });
+
+  it("preserves the minority/contradiction fixture verbatim even when every question is answered 'apply' (CQ-DIVERSE-01)", () => {
+    const fixture = findCardQualityFixture("minority_or_contradiction");
+    const frozenCard = Object.freeze({ ...fixture.card });
+    resolveAll(openCardQualityAssist(frozenCard), () => "apply");
+    expect(frozenCard.critiqueTags).toEqual(fixture.card.critiqueTags);
+    expect(frozenCard.text).toBe(fixture.card.text);
+  });
+});
+
+describe("card_quality.ts source boundary (T6: SafeMode / provider-none)", () => {
+  const source = readSource("domain/card_quality.ts");
+
+  it("has no runtime import — only a type-only import of Card, so there is zero external I/O surface", () => {
+    const importLines = source.match(/^import .+$/gm) ?? [];
+    for (const line of importLines) {
+      expect(line).toMatch(/^import type /);
+    }
+  });
+
+  it("never references an LLM/AI provider, network call, or storage API (KJ_ATLAS_LLM_PROVIDER=none holds trivially)", () => {
+    const forbidden = ["Provider", "fetch(", "XMLHttpRequest", "localStorage", "sessionStorage", "axios", "worker"];
+    for (const word of forbidden) {
+      expect(source).not.toContain(word);
+    }
+  });
+
+  it("never reads Card.meta.source, Card.critique, or any other SafeMode-governed free-text field", () => {
+    // The assist only ever touches `id`/`text` (for identity/session-continuity
+    // comparisons) — it must never branch on or forward the actual card content,
+    // which is exactly the surface SafeMode redaction/export boundaries govern.
+    expect(source).not.toContain(".meta");
+    expect(source).not.toContain(".critique");
+    expect(source).not.toContain(".claimType");
   });
 });
