@@ -10,6 +10,7 @@ from urllib.parse import unquote, urlsplit
 RELATIVE_LINK_RULE_ID = "DC-LNK-001"
 CURRENT_ONLY_RULE_ID = "DC-CUR-001"
 HISTORY_RULE_ID = "DC-HIS-001"
+ROUTE_RULE_ID = "DC-RTE-001"
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
 MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]\r\n]*\]\((?P<target><[^>\r\n]+>|[^)\r\n]+)\)")
@@ -45,6 +46,14 @@ class DocsCheckFinding:
 
     def render(self) -> str:
         return f"{self.rule_id} {self.path}:{self.line}: {self.message} Fix: {self.fix_hint}"
+
+
+@dataclass(frozen=True)
+class RequiredRoute:
+    source: Path
+    target: Path
+    reference: str
+    markdown_link: bool
 
 
 def _without_fenced_code(text: str) -> str:
@@ -351,5 +360,68 @@ def check_history_documents(
                     fix_hint=f"Add {source.name} to the retained-history table.",
                 )
             )
+
+    return findings
+
+
+def check_required_routes(root: Path, requirements: list[RequiredRoute]) -> list[DocsCheckFinding]:
+    """Return DC-RTE-001 findings for missing contributor and public-document routes."""
+    repository_root = root.resolve()
+    findings: list[DocsCheckFinding] = []
+
+    for requirement in sorted(
+        requirements,
+        key=lambda item: (item.source.as_posix(), item.target.as_posix(), item.reference),
+    ):
+        source = (repository_root / requirement.source).resolve()
+        target = (repository_root / requirement.target).resolve()
+        source_label = requirement.source.as_posix()
+        target_label = requirement.target.as_posix()
+
+        if not source.exists():
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=ROUTE_RULE_ID,
+                    path=source_label,
+                    line=1,
+                    target=target_label,
+                    message="route source document does not exist",
+                    fix_hint=f"Restore {source_label} and route readers to {target_label}.",
+                )
+            )
+            continue
+
+        text = source.read_text(encoding="utf-8")
+        if requirement.markdown_link:
+            linked_targets = {
+                resolved
+                for destination in _markdown_destinations(text)
+                if (resolved := _resolved_repository_target(repository_root, source, destination))
+                is not None
+            }
+            route_exists = target in linked_targets
+        else:
+            route_exists = requirement.reference in text
+
+        if route_exists and target.exists():
+            continue
+
+        line = text.count("\n", 0, text.find(requirement.reference)) + 1 if requirement.reference in text else 1
+        detail = (
+            "route target does not exist"
+            if route_exists and not target.exists()
+            else "required repository route is missing"
+        )
+        route_kind = "Markdown link" if requirement.markdown_link else "command/path reference"
+        findings.append(
+            DocsCheckFinding(
+                rule_id=ROUTE_RULE_ID,
+                path=source_label,
+                line=line,
+                target=target_label,
+                message=f"{detail}: {target_label}",
+                fix_hint=f"Add a {route_kind} from {source_label} using '{requirement.reference}'.",
+            )
+        )
 
     return findings

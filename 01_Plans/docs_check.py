@@ -9,22 +9,102 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from docs_contract_checks import (
+    RequiredRoute,
     check_current_only_headings,
     check_history_documents,
     check_relative_links,
+    check_required_routes,
 )
 from issues.validate_active_issue_memos import discover_active_rows, validate
 from triage_actionable_plans import collect
 
-ENABLED_RULES = ("DC-ACT-001", "DC-LNK-001", "DC-CUR-001", "DC-HIS-001")
+ENABLED_RULES = (
+    "DC-ACT-001",
+    "DC-LNK-001",
+    "DC-CUR-001",
+    "DC-HIS-001",
+    "DC-RTE-001",
+)
 NOT_ENABLED_RULES = (
     "DC-ARC-001",
     "DC-PUB-001",
-    "DC-RTE-001",
     "DC-SAF-001",
     "DC-FMT-001",
 )
 HISTORY_INDEX_PATH = Path("02_Architecture/history/README.md")
+REQUIRED_ROUTES = (
+    RequiredRoute(Path("README.md"), Path("CONTRIBUTING.md"), "CONTRIBUTING.md", True),
+    RequiredRoute(
+        Path("README.md"),
+        Path("04_Documentation/public_index.md"),
+        "04_Documentation/public_index.md",
+        True,
+    ),
+    RequiredRoute(
+        Path("CONTRIBUTING.md"),
+        Path("01_Plans/triage_actionable_plans.py"),
+        "python 01_Plans/triage_actionable_plans.py",
+        False,
+    ),
+    RequiredRoute(
+        Path("CONTRIBUTING.md"),
+        Path("01_Plans/issues/README.md"),
+        "01_Plans/issues/README.md",
+        False,
+    ),
+    RequiredRoute(
+        Path("CONTRIBUTING.md"),
+        Path("01_Plans/issues/TEMPLATE.md"),
+        "01_Plans/issues/TEMPLATE.md",
+        False,
+    ),
+    RequiredRoute(
+        Path("CONTRIBUTING.md"),
+        Path("01_Plans/docs_check.py"),
+        "python 01_Plans/docs_check.py",
+        False,
+    ),
+    RequiredRoute(
+        Path("01_Plans/issues/README.md"),
+        Path("01_Plans/issues/TEMPLATE.md"),
+        "TEMPLATE.md",
+        False,
+    ),
+    RequiredRoute(
+        Path("01_Plans/issues/README.md"),
+        Path("01_Plans/issues/validate_active_issue_memos.py"),
+        "python 01_Plans/issues/validate_active_issue_memos.py",
+        False,
+    ),
+    RequiredRoute(
+        Path("01_Plans/issues/README.md"),
+        Path("01_Plans/triage_actionable_plans.py"),
+        "python 01_Plans/triage_actionable_plans.py",
+        False,
+    ),
+    RequiredRoute(
+        Path("01_Plans/issues/README.md"),
+        Path("01_Plans/docs_check.py"),
+        "python 01_Plans/docs_check.py",
+        False,
+    ),
+    *(
+        RequiredRoute(
+            Path("04_Documentation/public_index.md"),
+            Path(f"04_Documentation/{name}"),
+            name,
+            True,
+        )
+        for name in (
+            "installation.md",
+            "configuration.md",
+            "data_handling.md",
+            "operations.md",
+            "acceptance_check.md",
+            "diagnostics.md",
+        )
+    ),
+)
 
 CURRENT_ONLY_PATHS = (
     Path("01_Plans/project-progress-dashboard.md"),
@@ -83,7 +163,12 @@ def _run_contract_tests(root: Path) -> list[str]:
     return errors
 
 
-def run_docs_check(root: Path, *, run_tests: bool = True) -> DocsCheckResult:
+def run_docs_check(
+    root: Path,
+    *,
+    run_tests: bool = True,
+    required_routes: tuple[RequiredRoute, ...] = REQUIRED_ROUTES,
+) -> DocsCheckResult:
     repository_root = root.resolve()
     issue_root = repository_root / "01_Plans" / "issues"
     errors = [
@@ -121,6 +206,10 @@ def run_docs_check(root: Path, *, run_tests: bool = True) -> DocsCheckResult:
     errors.extend(
         finding.render()
         for finding in check_history_documents(repository_root, history_paths, HISTORY_INDEX_PATH)
+    )
+    errors.extend(
+        finding.render()
+        for finding in check_required_routes(repository_root, list(required_routes))
     )
     if run_tests:
         errors.extend(_run_contract_tests(repository_root))

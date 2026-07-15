@@ -56,7 +56,7 @@ class DocsCheckEntrypointTest(unittest.TestCase):
             root = Path(td)
             self._repository(root, "# Guide\n")
 
-            result = MODULE.run_docs_check(root, run_tests=False)
+            result = MODULE.run_docs_check(root, run_tests=False, required_routes=())
 
         self.assertEqual(result.active_count, 0)
         self.assertEqual(result.markdown_count, 10)
@@ -67,7 +67,7 @@ class DocsCheckEntrypointTest(unittest.TestCase):
             root = Path(td)
             self._repository(root, "[missing](missing.md)\n")
 
-            result = MODULE.run_docs_check(root, run_tests=False)
+            result = MODULE.run_docs_check(root, run_tests=False, required_routes=())
 
         self.assertEqual(len(result.errors), 1)
         self.assertIn("DC-LNK-001 docs/guide.md:1", result.errors[0])
@@ -79,7 +79,7 @@ class DocsCheckEntrypointTest(unittest.TestCase):
             current_doc = root / MODULE.CURRENT_ONLY_PATHS[0]
             current_doc.write_text("# Current contract\n\n## Rerun checkpoint\n", encoding="utf-8")
 
-            result = MODULE.run_docs_check(root, run_tests=False)
+            result = MODULE.run_docs_check(root, run_tests=False, required_routes=())
 
         self.assertEqual(len(result.errors), 1)
         self.assertIn("DC-CUR-001 01_Plans/project-progress-dashboard.md:3", result.errors[0])

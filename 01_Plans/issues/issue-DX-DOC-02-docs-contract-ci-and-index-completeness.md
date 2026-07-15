@@ -268,3 +268,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - 完全な双方向route、metadata欠落/非正規Status、current anchor/逆リンク/index掲載欠落の正常・負例fixtureを追加した。関連13 testsが成功し、現行4履歴文書はfinding 0である。
 - clean baseline初回検査で、`schemas.md`の履歴参照がコード表記だけでリンクになっていない逆導線欠落を検出した。検査を緩和せず、対象を`Schema contract formation history`への相対リンクへ修正してfinding 0へ収束した。
 - T3全体は`DC-ARC-001`、`DC-PUB-001`等が未実装のため未完了を維持する。
+
+## T3進捗 2026-07-15: `DC-RTE-001`
+
+- fresh-cloneの入口を、root `README.md`から`CONTRIBUTING.md`/公開入口、CONTRIBUTINGからtriage/issue運用/template/docs-check、issue運用からvalidator/triage/docs-check、公開入口から導入/設定/データ取扱/運用/受入/診断へ進む16本の必須routeとして固定した。
+- Markdown linkが必要な利用者導線と、実行可能なcommand/path参照を区別して検査する。参照文字列だけが残っていても対象ファイルが消えていればfailする。
+- link/commandの正常fixtureとroute欠落の負例fixtureを追加し、findingはrule ID、入口ファイル、欠落target、追加すべき参照形式を示す。
+- T3全体は`DC-ARC-001`、`DC-PUB-001`等が未実装のため未完了を維持する。

@@ -215,5 +215,50 @@ class HistoryDocumentCheckTest(unittest.TestCase):
         self.assertIn("missing from the history index", messages)
 
 
+class RequiredRouteCheckTest(unittest.TestCase):
+    def test_accepts_markdown_link_and_literal_command_routes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "docs").mkdir()
+            (root / "tools").mkdir()
+            (root / "docs" / "target.md").write_text("# Target\n", encoding="utf-8")
+            (root / "tools" / "check.py").write_text("# tool\n", encoding="utf-8")
+            (root / "README.md").write_text(
+                "[Target](docs/target.md)\n\n`python tools/check.py`\n",
+                encoding="utf-8",
+            )
+            requirements = [
+                MODULE.RequiredRoute(
+                    Path("README.md"), Path("docs/target.md"), "docs/target.md", True
+                ),
+                MODULE.RequiredRoute(
+                    Path("README.md"), Path("tools/check.py"), "python tools/check.py", False
+                ),
+            ]
+
+            findings = MODULE.check_required_routes(root, requirements)
+
+        self.assertEqual(findings, [])
+
+    def test_reports_missing_route_with_rule_source_target_and_fix(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "docs").mkdir()
+            (root / "docs" / "target.md").write_text("# Target\n", encoding="utf-8")
+            (root / "README.md").write_text("# Entry\n", encoding="utf-8")
+            requirement = MODULE.RequiredRoute(
+                Path("README.md"), Path("docs/target.md"), "docs/target.md", True
+            )
+
+            findings = MODULE.check_required_routes(root, [requirement])
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_id, "DC-RTE-001")
+        self.assertEqual(findings[0].path, "README.md")
+        self.assertEqual(findings[0].target, "docs/target.md")
+        self.assertIn("Markdown link", findings[0].fix_hint)
+        self.assertIn("DC-RTE-001 README.md:1", findings[0].render())
+
+
 if __name__ == "__main__":
     unittest.main()
