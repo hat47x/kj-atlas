@@ -9,22 +9,22 @@ from __future__ import annotations
 
 import argparse
 import re
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-PLANS_DIR = Path(__file__).resolve().parents[1]
-if str(PLANS_DIR) not in sys.path:
-    sys.path.insert(0, str(PLANS_DIR))
-
-from issue_memo_metadata import (  # noqa: E402
-    ISSUE_STATUS_ACTIVE,
-    VALID_ISSUE_STATUSES,
-    parse_backlog_id,
-    parse_issue_status,
-    parse_metadata,
-)
+try:
+    from .issue_memo_status import (
+        ACTIVE_ISSUE_STATUSES,
+        CANONICAL_ISSUE_STATUSES,
+        parse_issue_status,
+    )
+except ImportError:  # Direct script execution from 01_Plans/issues/.
+    from issue_memo_status import (
+        ACTIVE_ISSUE_STATUSES,
+        CANONICAL_ISSUE_STATUSES,
+        parse_issue_status,
+    )
 
 ALLOWED_VERIFICATION_LEVELS = {"docs-check", "unit", "integration", "e2e"}
 REQUIRED_FIELDS = [
@@ -83,16 +83,15 @@ def discover_active_rows(root: Path) -> list[ActiveMemoRow]:
     rows: list[ActiveMemoRow] = []
     for memo_path in sorted(root.glob("issue-*.md")):
         text = memo_path.read_text(encoding="utf-8")
-        metadata = parse_metadata(text.splitlines()[:20])
-        status = parse_issue_status(metadata)
-        if status not in ISSUE_STATUS_ACTIVE:
+        status = parse_issue_status(extract_field_value(text, "Status"))
+        if status not in ACTIVE_ISSUE_STATUSES:
             continue
         rows.append(
             ActiveMemoRow(
-                backlog=parse_backlog_id(text, memo_path),
+                backlog=memo_path.stem.removeprefix("issue-"),
                 memo=memo_path.name,
                 status=status,
-                source=metadata.get("Source Issue", ""),
+                source=extract_field_value(text, "Source Issue") or "",
             )
         )
     return rows
@@ -119,7 +118,11 @@ def extract_dependency_paths(memo_text: str) -> list[str]:
 
 
 def extract_field_value(memo_text: str, field_name: str) -> str | None:
-    return parse_metadata(memo_text.splitlines()).get(field_name)
+    pattern = rf"^- {re.escape(field_name)}:\s*(.+)$"
+    match = re.search(pattern, memo_text, re.M)
+    if not match:
+        return None
+    return match.group(1).strip()
 
 
 def extract_verification_level(memo_text: str) -> str | None:
@@ -153,14 +156,9 @@ def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
         memo_source = extract_field_value(text, "Source Issue")
         memo_priority = extract_field_value(text, "Priority")
 
-        if row.status not in ISSUE_STATUS_ACTIVE:
+        if row.status not in ACTIVE_ISSUE_STATUSES:
             errors.append(
-                f"{row.memo}: invalid active status `{row.status}` (allowed: {sorted(ISSUE_STATUS_ACTIVE)})"
-            )
-
-        if memo_status and memo_status not in ISSUE_STATUS_ACTIVE:
-            errors.append(
-                f"{row.memo}: invalid Status `{memo_status}` (allowed: {sorted(ISSUE_STATUS_ACTIVE)})"
+                f"{row.memo}: invalid active status `{row.status}` (allowed: {sorted(ACTIVE_ISSUE_STATUSES)})"
             )
 
         if memo_priority is None or not memo_priority.strip():
@@ -186,32 +184,42 @@ def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
     return errors
 
 
-def validate(root: Path) -> list[str]:
+def validate_status_contract(root: Path) -> list[str]:
     errors: list[str] = []
-    seen_backlogs: dict[str, str] = {}
+    requirement_paths: dict[str, list[str]] = {}
+
     for memo_path in sorted(root.glob("issue-*.md")):
         text = memo_path.read_text(encoding="utf-8")
-        metadata = parse_metadata(text.splitlines()[:20])
-        status = parse_issue_status(metadata)
-        if status not in VALID_ISSUE_STATUSES:
+        raw_status = extract_field_value(text, "Status")
+        status = parse_issue_status(raw_status)
+        if raw_status is None:
+            errors.append(f"{memo_path.name}: missing Status metadata")
+            continue
+        if status is None:
             errors.append(
-                f"{memo_path.name}: invalid Status `{status}` "
-                f"(allowed: {sorted(VALID_ISSUE_STATUSES)})"
+                f"{memo_path.name}: invalid Status `{raw_status}` "
+                f"(allowed: {sorted(CANONICAL_ISSUE_STATUSES)})"
+            )
+            continue
+        if status not in ACTIVE_ISSUE_STATUSES:
+            continue
+
+        requirement_id = extract_field_value(text, "RequirementID")
+        if requirement_id:
+            canonical_id = requirement_id.strip().strip("`")
+            requirement_paths.setdefault(canonical_id, []).append(memo_path.name)
+
+    for requirement_id, memo_names in sorted(requirement_paths.items()):
+        if len(memo_names) > 1:
+            errors.append(
+                f"duplicate active RequirementID `{requirement_id}`: {', '.join(memo_names)}"
             )
 
-        if status in ISSUE_STATUS_ACTIVE:
-            backlog = parse_backlog_id(text, memo_path)
-            normalized_backlog = backlog.casefold()
-            previous = seen_backlogs.get(normalized_backlog)
-            if previous:
-                errors.append(
-                    f"{memo_path.name}: duplicate Backlog ID `{backlog}` also used by {previous}"
-                )
-            else:
-                seen_backlogs[normalized_backlog] = memo_path.name
-
-    errors.extend(validate_rows(root, discover_active_rows(root)))
     return errors
+
+
+def validate(root: Path) -> list[str]:
+    return validate_status_contract(root) + validate_rows(root, discover_active_rows(root))
 
 
 def main() -> int:

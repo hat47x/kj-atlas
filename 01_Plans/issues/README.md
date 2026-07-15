@@ -42,6 +42,7 @@ python 01_Plans/triage_actionable_plans.py
 
 ## 軽量ツール
 
+- issue / docs変更の統一検証入口: `python 01_Plans/docs_check.py`（有効化済みruleだけをblocking実行し、未有効化ruleも表示）
 - Active memo検証: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（README表ではなくmemoを直接走査）
 - 検証ツールのテスト: `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - タスク候補の絞り込み: `python 01_Plans/triage_actionable_plans.py`
