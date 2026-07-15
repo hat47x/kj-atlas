@@ -1,4 +1,4 @@
-# Issue Draft: UX-NAV-02 作業モード面（領域4）中身のタブ化 ― role=tablist・5タブ完全実装
+# Issue: UX-NAV-02 作業モード面（領域4）中身のタブ化 ― role=tablist・5タブ完全実装
 
 - Type: Feature request
 - Status: Done
@@ -8,7 +8,7 @@
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/App.tsx`（advancedWorkModeContent）, `03_Implement/frontend/src/ui/WorkModePanel.tsx`, 新規 `03_Implement/frontend/src/ui/WorkModeTabs.tsx`, `03_Implement/frontend/src/ui/HilRsWorkflowPanel.tsx`（機能slotへの縮約）
 - Related Backlog: `UX-NAV-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`（Independent。本ADRはCanvas/Menu限定）, `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（role=tablist判断の解消先）, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0055-work-mode-navigation-semantics.md`（作業モードの受理済み方式）, `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`（Independent。本ADRはCanvas/Menu限定）, `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（role=tablist判断の解消先）, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - Expected verification level: `e2e`
 
 ## Draft→Open 2026-07-13: 着手ゲート代理裁可
@@ -50,7 +50,7 @@ Claude Design 実装照合レビュー（2026-07-11、拡張提案 P21「作業�
 - 独立した「診断」セクションが**存在しない**（反スコアリング表現を持つ診断タブが未実装）。
 - タブ間のキーボードナビゲーション（矢印キー）が無い（そもそもタブでないため）。
 
-この設計と実装の乖離は ADR-0052 の C-5（「作業モードタブへの role=tablist 導入要否の判断」、`UI-QUALITY-A11Y-02` 残課題）そのものであり、本Issueが実装レベルでその判断を解消する。
+この設計と実装の乖離は、起票時点では `ADR-0052` の追跡記録に残る C-5（「作業モードタブへの role=tablist 導入要否の判断」、`UI-QUALITY-A11Y-02` 残課題）として扱った。本Issueの実装と `ADR-0055` の受理により、その判断を解消した。
 
 ## 判断基準による優先度評価
 
@@ -77,7 +77,7 @@ Claude Design 実装照合レビュー（2026-07-11、拡張提案 P21「作業�
 - [x] 非active panelの入力値・候補・非同期結果が保持され、非active化だけで破棄・再実行されない。
 - [x] 390/768/1440pxでtab stripとtabpanelに見切れ・重なり・focus迷子がない。
 - [x] 既存4セクションの機能・監査ログ・取消動線に回帰がない（既存テスト・e2eが継続してパスする）。
-- [x] ADR-0052 の C-5 判断が本Issueで解消されたことを `UI-QUALITY-A11Y-02` へ反映する。
+- [x] 起票時の C-5 判断が本Issueで解消されたことを `ADR-0055` と `UI-QUALITY-A11Y-02` へ反映する。
 - [x] a11y: 開いた直後のactive tab focus、tabの名称/選択状態/tabpanel関連、Tab順、Escape挙動を仕様どおりに実装し、axeとe2eで確認する。
 
 ## 検証計画

@@ -1,0 +1,51 @@
+# ADR-0056: カード主体メタデータのMVP境界
+
+- Status: Proposed
+- Date: 2026-07-15
+- Deciders: Productization Program Owner / Security Officer / UX Lead / Project Maintainers
+- Scope: `02_Architecture/schemas.md`, `02_Architecture/review_attribution.md`, `03_Implement/frontend/src/canvas/CardView.tsx`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/import/`, `04_Documentation/`
+
+## 背景
+
+カードには、主張種別・保留・違和感・レビュー状態などの状態メタデータがあります。一方、起票者、作成者、最終更新者、レビュー者、所有者、取り込み元などは、責任主体や個人・組織を示す主体メタデータです。両者を同じ表示や同じ共有設定で扱うと、レビュー済み状態を起票者の証明と誤解したり、個人情報を共有物へ含めたりするおそれがあります。
+
+現行MVPは `Card.meta.seq` / `Card.meta.source` のような非主体の遡及情報を限定的に扱います。主体メタデータの保存先、認証主体との接続、編集権限、共有/export、保持期間は未確定です。
+
+## 決定案
+
+製品化プログラムの判断が確定するまで、次の境界をMVPの標準とします。
+
+1. カード本体には状態メタデータだけを常設表示し、起票者名・メールアドレス・組織ID・所有者などの主体メタデータを常設表示しません。
+2. 現行の詳細パネルで表示できるのは、既存スキーマから導出できるカードID、代表カード/出典カードの区別、文書の作成日時・更新日時、`seq` / `source` などの非主体情報に限ります。主体情報が存在しない場合は推測せず、「提供していない」と扱います。
+3. `Card.meta` には現行の既知キー以外を受け入れず、import由来の未知キーを主体情報として保存しません。起票者・作成者・所有者を追加する場合は、スキーマ、認証、権限、redactionをまとめた別の判断を先に行います。
+4. 共有、export、レビューパック、外部エージェント依頼パッケージには主体メタデータを既定で含めません。出典参照の既存トグルは、主体メタデータの同梱許可とは別の境界として扱います。
+5. 主体メタデータの入力・編集・所有者移管・検索・管理者閲覧はMVP標準に含めません。実装する場合は、本ADRを更新または置き換え、個人情報、監査、権限、保持、削除、共有範囲を別途確定します。
+
+## 影響
+
+- 現行UIの状態メタデータと責任主体メタデータを分離でき、利用者が「レビュー済み」と「誰が起票したか」を混同しにくくなります。
+- 個人・組織識別情報が、importや共有/exportの暗黙経路から保存・共有されるリスクを抑えられます。
+- 組織導入で主体メタデータが必要になった場合、認証主体や監査ログとの接続を含む追加設計が必要です。MVPの任意フィールド追加だけでは対応しません。
+- 起票者などを表示できないため、現時点では組織内の責任追跡を完全には提供できません。この制約は公開文書と製品化ゲートで明示します。
+
+## 対象外
+
+- 現行の `Card.meta.seq` / `Card.meta.source` の導入・表示方針を変更しません。
+- `reviewAttribution` のレビュー者・レビュー日時の契約を変更しません。
+- 認証、SSO、所有者移管、監査ログ、管理者向け検索を実装しません。
+- 本ADRだけで主体メタデータの将来採用を決定しません。Decidersの受理までは提案として扱います。
+
+## 受理に必要な確認
+
+- [ ] `CARD-META-UI-01` のAC-1〜AC-5について、状態・provenance・accountability・公開説明用メタの分類と共有境界を確認する。
+- [ ] `Card.meta` を主体メタデータへ拡張しないMVP境界を、Productization Program Owner、Security Officer、UX Leadが確認する。
+- [ ] `CARD-META-UI-01` に、表示・入力・未設定時・キーボード操作・共有前確認の仕様を記録する。
+
+## 追跡関係
+
+- Source: `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`
+- Related: `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`
+- Related: `02_Architecture/schemas.md`
+- Related: `02_Architecture/review_attribution.md`
+- Related: `02_Architecture/data_model_operations_overview.md`
+- Related: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`

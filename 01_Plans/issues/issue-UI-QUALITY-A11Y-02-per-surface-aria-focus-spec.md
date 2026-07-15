@@ -1,4 +1,4 @@
-# Issue Draft: UI-QUALITY-A11Y-02 新設サーフェスの画面別 ARIA・フォーカス仕様適用
+# Issue: UI-QUALITY-A11Y-02 新設サーフェスの画面別 ARIA・フォーカス仕様適用
 
 - Type: Feature request
 - Status: Done
@@ -10,6 +10,10 @@
 - Related Backlog: `UI-QUALITY-A11Y-02`
 - Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-2 の拡充）, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`, `01_Plans/issues/issue-UI-QUALITY-A11Y-01-accessibility-test-expansion.md`（Done・既存面の拡充。本Issueは新設面への適用で非重複）
 - Expected verification level: `e2e`
+
+## 判断追跡（2026-07-15）
+
+作業モードのナビゲーション意味論は、`ADR-0055-work-mode-navigation-semantics.md` と派生issue `issue-UI-QUALITY-A11Y-04-work-mode-navigation-semantics.md` で管理します。現在の実装は、5つの作業面を切り替える `role="tablist"` 方式です。`UX-NAV-02` と `work_mode_tabs.spec.ts` に実装・検証記録があります。
 
 ## Requirement meta I/F（共通キー）
 
@@ -61,14 +65,20 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [x] T1 仕様表→チェックリスト化（本完了記録に記載）。UQ-2 接続は未実施（残課題）。
-- [x] T2 不足 aria/フォーカス管理の補完（選択コンテキスト・共有前確認の2面）。一括操作バーと凡例は既存実装で充足済みと確認。作業モードタブは対象外。
+- [x] T1 仕様表→チェックリスト化（本完了記録に記載）。UQ-2 接続を実施済み。
+- [x] T2 不足 aria/フォーカス管理の補完（選択コンテキスト・共有前確認の2面）。一括操作バーと凡例は既存実装で充足済みと確認。作業モードタブは `UX-NAV-02` と `ADR-0055` で別途実装・受理済み。
 - [x] T3 e2e（選択コンテキストの読み上げ順・aria-live／共有前確認のaria-describedby）＋回帰アンカー。axe スモークは2026-07-09の追記で導入済み。
 - [x] T4 記録（value_traceability 更新、2026-07-09）。
 
 ## 7) 検証計画 / Validation plan
 
 - `cd 03_Implement/frontend && npm run typecheck && npm test && npx playwright test`（a11y スイート含む）
+
+## 完了記録（2026-07-15）
+
+- 5つの対象面（選択コンテキスト、共有前確認、一括操作バー、凡例、作業モードタブ）のARIA・フォーカス契約を確認し、作業モードの残課題は `ADR-0055` と `UX-NAV-02` で解消した。
+- `a11y_selection_and_share_gate.spec.ts`、`work_mode_tabs.spec.ts`、`a11y_axe_smoke.spec.ts` と既存のアクセシビリティ単体テストで、読み上げ順、警告関連付け、タブ操作、Escape、フォーカス復帰、機械的なaxe違反なしを確認した。
+- 本issueの対象外であるスクリーンリーダー実機を用いた人間受入れは、製品化時の別ゲートとして引き続き扱う。これは本issueの自動検証完了を妨げない。
 
 ## 複雑性予算（ADR-0043 自己申告）
 
@@ -105,7 +115,7 @@
 
 ### 残課題（次スライス）
 
-- ~~作業モードタブへの `role=tablist` 導入要否の判断~~ → 2026-07-13: maintainer代理裁可で role=tablist・5タブを採用し、`UX-NAV-02` をADR-0052とは独立にOpen化。同日中に実装完了（`WorkModeTabs.tsx`）。manual activation・roving tabIndex・Home/End・段階Escape・非active panelの状態保持（mounted+hidden）・390px横スクロールをe2e（`work_mode_tabs.spec.ts`、9 tests）で確認。`a11y_axe_smoke.spec.ts`の作業モード面検査もtablist由来の除外なしで通過。これで5面すべてがAC-1充足。
+- ~~作業モードタブへの `role=tablist` 導入要否の判断~~ → 2026-07-15: `ADR-0055` で role=tablist・5タブを受理済み。`UX-NAV-02` の実装により、manual activation・roving tabIndex・Home/End・段階Escape・非active panelの状態保持（mounted+hidden）・390px横スクロールを `work_mode_tabs.spec.ts`（9 tests）で確認。`a11y_axe_smoke.spec.ts` の作業モード面検査もtablist由来の除外なしで通過。これで5面すべてがAC-1充足。
 - ~~axe 系スモークテストの導入（横断 e2e スイートの拡充）。~~ → 2026-07-09に導入済み（下記追記参照）。派生の構造的発見4件は `issue-UI-QUALITY-A11Y-03-structural-aria-findings.md` へ。
 
 ### 追記 2026-07-09

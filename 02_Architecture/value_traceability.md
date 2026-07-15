@@ -31,6 +31,8 @@
 | 企業・行政運用に接続できる | 組織の認証、認可、監査基盤へ安全に接続できる | `02_Architecture/enterprise_architecture.md` | AuthContext、AccessControlAdapter、audit transport をアプリ本体から分離する | アプリ本体に role/group 判定ロジックを持ち込まない |
 | 環境変数の混乱を防ぐ | 利用者が設定すべきキーを迷わない | `02_Architecture/runtime_parameter_registry.md` | 公開設定キーは例外なく `KJ_ATLAS_*` に統一する | 04文書、Compose、runbook が正本と同期している |
 | データ運用境界を誤解させない | MVPで保守できるデータと将来契約を区別できる | `02_Architecture/data_model_operations_overview.md`, `ADR-0033` | 物理ER、論理ER、CRUD表、ステークホルダー別保守責任を分けて示す | 型の存在を標準CRUD対応と誤読させない |
+| 定性情報の意味を損なわない | 本文だけですぐ記録でき、後から一中心・文脈・出典・認識上の位置づけを任意に整えられる | `00_Prompt/qualitative_card_quality_requirements.md`, `ADR-0001` P-08 | `Card.text` を正本とし、品質支援を保存後のproposal-onlyにする。少数意見・矛盾は保持する | 必須追加入力、品質採点、自動書換え、自動削除がなく、元本文へ戻れる |
+| ラウンド間で思考を深める | 問題提起から手順化までを反復・分岐し、中間成果と問いの変化を失わず再開できる | `00_Prompt/w_type_iterative_inquiry_requirements.md`, `ADR-0057`（Proposed） | 段階と反復を分離し、非破壊スナップショット、明示的引継ぎ、現場への問い、カード系譜を任意の高度機能として扱う | 通常利用非回帰、同段階反復、前段階分岐、provider none、SafeModeを検証する |
 | カードメタデータを混同しない | 状態、出典、起票者、レビュー者を別々の意味として確認できる | `02_Architecture/schemas.md`, `02_Architecture/review_attribution.md`, `CARD-META-UI-01`, `DOMAIN-TRACE-01` | `Card.meta` 系は通し番号/出典と主体メタを分離し、起票者などの個人・組織識別はSidePanel/共有前確認/redaction境界を先に決める | 出典参照トグルと主体メタ同梱が別ゲートで、review attribution や所有者移管と混同されない |
 | 価値を裏切らない（不変条件の保護） | 機能が増えても保留/proposal-only/人手昇格/SafeModeが崩れない | `02_Architecture/value_traceability.md` §2.5, `ADR-0041` | 散在する非後退テストを CVI-1..7 として単一の砦へ索引化する | CVI 横断テストが赤になる変更を検知できる |
 | 思考を雑にしない（認知負荷の予算） | 機能が増えても初期の静けさと保留の容易さが保たれる | `00_Prompt/domain.md`, `ADR-0043`, `ADR-0030` | 複雑性予算（CB-1..4）で初期表示の純増と保留距離を抑える | UI追加issueで複雑性予算を申告し悪化時にゲート確認 |
@@ -120,6 +122,8 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 |---|---|---|---|---|
 | 価値: 開始 | 迷わず最初の意味ある配置へ | `ADR-0032` V0/V1 | `PRODUCT-UX-01`(Done), `PRODUCT-VALUE-01` | 被覆 |
 | 価値: 外在化 | メモ・違和感をカード化 | `ADR-0032` V1 | `PRODUCT-VALUE-01`, `DOMAIN-EXPR-01` | 被覆 |
+| 価値: 定性情報の品質 | 意味・意図を保ち、一枚一中心、再文脈化・遡及可能なカードを低負担で作る | `qualitative_card_quality_requirements.md`, `ADR-0001` P-08 | `DOMAIN-CARD-QUALITY-01` | 被覆（要件確定、実装未着手） |
+| 価値: 反復的探究 | 6ラウンドを経験と思考の往復として扱い、中間成果・引継ぎ・分岐を保持する | `w_type_iterative_inquiry_requirements.md`, `ADR-0057` | `DOMAIN-W-ITERATION-01` | 被覆（要件・ADRともProposed、永続実装は禁止） |
 | 価値: 構造化 | まとまり・関係・未整理の同時保持 | `ADR-0032` V2 | `PRODUCT-UX-02`(Done), `PRODUCT-VALUE-02` | 被覆 |
 | 価値: レビュー | AI候補の人間採否・proposal-only | `ADR-0032` V3 | `PRODUCT-VALUE-02`, `CE2`, `CE3` | 被覆 |
 | 価値: 成果物化と共有 | 確定/保留/根拠/未レビューを束ねた成果物 | `ADR-0032` V4 | `PRODUCT-UX-03`(Done), `PRODUCT-VALUE-03` | 被覆 |
@@ -139,6 +143,10 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 | ドメイン: 用語整合 | 00↔02語彙同期 | `domain.md` | `DOMAIN-ALIGN-01`(Done) | 被覆 |
 
 **判定（2026-06-02）**: 全観点が担当issue/ADRへ接続済み（未接続=0件）。プロダクト価値・UI/UX・ドメイン表現の要件は VR0–VR5 のフェーズへ落とし込み済みであり、新規起票すべき本物の穴は無い。実装順序は DOMAIN-EXPR は Phase 1→4、VR4/VR5 は実ユーザー/協力者参加まで延期（`ADR-0039`）。
+
+**更新（2026-07-15）**: カード作成後の構造化は被覆されていた一方、構造化の入力となる定性情報そのものの品質と、品質確保時の利用者負担が未定義だった。この穴を P-08 と `DOMAIN-CARD-QUALITY-01` へ接続し、未接続=0件へ戻した。
+
+**更新（2026-07-15・反復的探究）**: 一つの文書内での構造化は被覆されていた一方、6ラウンド累積KJ法で中間成果を累積し、現場と往復し、前段階へ分岐する長期探究は未定義だった。`ADR-0057` と `DOMAIN-W-ITERATION-01` へ接続したが、永続方式はPendingのため実装許可とは扱わない。
 
 ---
 
@@ -189,7 +197,7 @@ UI/UX 品質を次元（UQ）で定義し、各次元の担保（既存テスト
 
 **更新（2026-07-10）**: 凡例は並行編集の完了を待つ必要がなくなったため、既存の `role="dialog"`・名称・Escape時フォーカス復帰を検証し、`a11y_axe_smoke.spec.ts` の検査対象へ追加した（8/8 passed）。作業モードタブの `role=tablist` 導入要否は、`UX-NAV-01`の完了方針と設計正本の差分を整理したうえで判断する。ADR-0052はキャンバス選択ロールとメニュー内フォームの意味付けに限定される。
 
-**更新（2026-07-13）**: 作業モードタブは、5つの同格面を1つずつ表示するmanual-activation `role=tablist` として採用し、`UX-NAV-02` をOpen化した。実装は未着手で、manual activation、Home/End、段階Escape、inactive panel状態保持、390/768/1440px E2Eが完了条件である。ADR-0052はキャンバスカードをbutton系操作へ移す判断と、メニュー内フォームをmenu外へ分離する判断としてAcceptedした。
+**更新（2026-07-15）**: 作業モードタブは、5つの同格面を1つずつ表示するmanual-activation `role=tablist` として `ADR-0055` で受理した。`UX-NAV-02` の実装により、manual activation、Home/End、段階Escape、inactive panel状態保持、390px横スクロールをE2Eで確認済み。`ADR-0052` はキャンバスカードをbutton系操作へ移す判断と、メニュー内フォームをmenu外へ分離する判断としてAcceptedした。
 
 ---
 

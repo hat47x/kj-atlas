@@ -8,7 +8,7 @@
 - Owner: TBD (Productization Program Owner / Security Officer / UX Lead)
 - Scope: `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/review_attribution.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/frontend/src/canvas/CardView.tsx`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/export/`, `04_Documentation/`
 - Related Backlog: `CARD-META-UI-01`
-- Related ADR/Spec: `02_Architecture/schemas.md`（`Card.meta` 将来拡張）, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/review_attribution.md`, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0056-card-provenance-metadata-boundary.md`（本Issueの境界提案）, `02_Architecture/schemas.md`（`Card.meta` 将来拡張）, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/review_attribution.md`, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -21,7 +21,7 @@
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
 - DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `CARD-META-UI-01-DQ-01`
+- DecisionQueueRef（未確定時の参照先）: `ADR-0056` / `CARD-META-UI-01-DQ-01`
 
 ## 1) 課題 / Problem statement
 
@@ -132,6 +132,10 @@
   - 実装段階ではカード選択、詳細パネル確認、共有前確認がマウス/キーボードで検証される。
 - 未実施時の理由・代替検証:
   - 起票時点ではUI境界の未確定を記録するため、実装系テストは未実施でよい。実装Issueへ分割する際にe2eを必須化する。
+
+## ADR提案との関係（2026-07-15）
+
+`ADR-0056` を本Issueの境界提案として起票した。提案では、MVPの標準UI・保存・import・共有/exportに主体メタデータを追加せず、既存の非主体メタデータとレビュー帰属を分離する。Decidersの受理までは `DecisionStatus: Pending` と `Status: Draft` を維持し、主体メタデータの実装へは進まない。
 
 ## 8) 代替案 / Alternatives considered
 

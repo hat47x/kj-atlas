@@ -25,19 +25,20 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 
 1) **AI行動規範**: `00_Prompt/system_prompt.md`
 2) **用語・概念**: `00_Prompt/domain.md`
-3) **申し送り（重複排除済）**: `00_Prompt/handoff.md`
-4) **AI開発引き継ぎ運用**: `00_Prompt/agent_handover.md`
-5) **Codex+GSD運用ルール**: `00_Prompt/codex_gsd_skill_ops.md`
-6) **Codex+RTK token saving運用**: `00_Prompt/codex_rtk_token_saving_ops.md`
-7) **認知外在化AI要件（新規中核）**: `00_Prompt/ai_cognitive_externalization_requirements.md`
-8) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`
-9) **全体アーキテクチャ**: `02_Architecture/architecture.md`
-10) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
-11) **MVPデータ運用境界**: `02_Architecture/data_model_operations_overview.md`
-12) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0048`（価値→社会的目標の実現フェーズ索引は `ADR-0036`、ガバナンス適正化方針は `ADR-0039`、ドメイン表現第一級化は `ADR-0040`、根幹価値の保護は `ADR-0041`〜`ADR-0043`、UI/UX品質基準は `ADR-0044`、エージェント分担は `ADR-0045`、性能予算は `ADR-0046`、設計判断ADRの飽和とexecution-first転換は `ADR-0047`、視覚言語/コマンド到達/KJ法語彙は `ADR-0048`）
-13) **実装（03_Implement）**: 対象領域のソースへ
-14) **運用・手順**: `04_Documentation/*`（必要に応じて）
-15) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+3) **定性情報カード品質要件**: `00_Prompt/qualitative_card_quality_requirements.md`
+4) **申し送り（重複排除済）**: `00_Prompt/handoff.md`
+5) **AI開発引き継ぎ運用**: `00_Prompt/agent_handover.md`
+6) **Codex+GSD運用ルール**: `00_Prompt/codex_gsd_skill_ops.md`
+7) **Codex+RTK token saving運用**: `00_Prompt/codex_rtk_token_saving_ops.md`
+8) **認知外在化AI要件（新規中核）**: `00_Prompt/ai_cognitive_externalization_requirements.md`
+9) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`
+10) **全体アーキテクチャ**: `02_Architecture/architecture.md`
+11) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
+12) **MVPデータ運用境界**: `02_Architecture/data_model_operations_overview.md`
+13) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0057`（価値→社会的目標の実現フェーズ索引は `ADR-0036`、ガバナンス適正化方針は `ADR-0039`、ドメイン表現第一級化は `ADR-0040`、根幹価値の保護は `ADR-0041`〜`ADR-0043`、UI/UX品質基準は `ADR-0044`、エージェント分担は `ADR-0045`、性能予算は `ADR-0046`、設計判断ADRの飽和とexecution-first転換は `ADR-0047`、視覚言語/コマンド到達/KJ法語彙は `ADR-0048`、W型累積KJ法の反復的探究モデルは `ADR-0057`）
+14) **実装（03_Implement）**: 対象領域のソースへ
+15) **運用・手順**: `04_Documentation/*`（必要に応じて）
+16) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 
 ---
 
@@ -81,6 +82,8 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 
 - `00_Prompt/system_prompt.md`：**AIエージェントの行動規範（最優先）**。
 - `00_Prompt/domain.md`：ドメイン用語・概念定義（KJ法概念、safeMode、レビュー等）。
+- `00_Prompt/qualitative_card_quality_requirements.md`：KJ法カードに記述する定性情報の品質、低負担な確認UX、AI支援境界の正本。
+- `00_Prompt/w_type_iterative_inquiry_requirements.md`：6ラウンド累積KJ法の反復・引継ぎ・停止再開・分岐を扱うProposed要件。`ADR-0057` 受理前は現行契約として実装しない。
 - `00_Prompt/handoff.md`：申し送り（設計思想、注意点、B型文章化の扱い等）。
 - `00_Prompt/agent_handover.md`：AIエージェント開発引き継ぎ（共通DoD/戦略/継続進行）。
 - `00_Prompt/codex_gsd_skill_ops.md`：CodexにおけるGet Shit Done導入評価と運用ルール。
@@ -142,6 +145,8 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/issues/`：GitHub Issue運用を補助する短命メモ置き場。AIは triage 出力や対象Backlog IDで必要なメモだけ読む。
 - `01_Plans/issues/TEMPLATE.md`：Issue補助メモの標準記述テンプレ（人間/生成AI共通）。
 - `01_Plans/adr/ADR-0051-bulk-critique-reason-recording.md`：複数選択カードへの理由追記と履歴・AI非依存の扱いを定義する提案ADR。
+- `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`：W型累積KJ法を任意の高度機能として扱い、段階/反復、非破壊成果、引継ぎ、分岐、永続化候補を定義する提案ADR。
+- `01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md`：6ラウンドの反復的探究支援を、通常利用非回帰と永続契約判断を前提に追跡するissue。
 - `01_Plans/issues/issue-DX-DOC-01-crlf-markdown-fence-parser.md`：MarkdownのJSONコードブロック抽出をLF/CRLF両対応にしたテスト portability 修正。
 - `01_Plans/issues/issue-UX-LABEL-01-retention-vocabulary-consistency.md`：保留・違和感・理由の画面横断ラベルを標準化するUX issue。
 - `01_Plans/issues/issue-DX-E2E-02-canvas-legend-heading-drift.md`：Canvas凡例の現行見出しとE2E期待値のずれを修正したテストissue。
