@@ -239,7 +239,7 @@ ReviewerRef 推奨フォーマット（例）:
 
 ## Stream D alignment note (2026-05-19)
 
-- Contract drift抽出: review attribution は `DocumentV2` 埋め込み契約（L2.5）として維持し、個別CRUD保証を主張しない。
+- Contract drift抽出: review attribution は `DocumentV1` 埋め込み契約（L2.5）として維持し、個別CRUD保証を主張しない。
 - Support level定義: `reviewerRef` / `ownerRef` / `reviewState` / `reviewedAt` は契約固定だが運用は `DATA-MODEL-OPS-01` のCRUD境界に従う。
 - Admin maintenance/recovery境界: 削除・移管・監査閲覧などの高権限運用は `DATA-MAINT-01` のPending論点として分離し、先行実装しない。
 - Verify: `schemas.md` と同じ support level語彙（L1/L1.5/L2/L2.5/L3/L0）を参照する前提で整合。

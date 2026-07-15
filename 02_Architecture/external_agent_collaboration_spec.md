@@ -159,6 +159,6 @@
 ## Traceability
 
 - Decision: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`
-- Related: `02_Architecture/llm_provider_spec.md`（provider 独立）, `02_Architecture/enterprise_architecture.md`（§4）, `02_Architecture/api.md`（監査）, `02_Architecture/schemas.md`（PatchV1/DocumentV2）
+- Related: `02_Architecture/llm_provider_spec.md`（provider 独立）, `02_Architecture/enterprise_architecture.md`（§4）, `02_Architecture/api.md`（監査）, `02_Architecture/schemas.md`（PatchV1/DocumentV1）
 - Related issues: `EXT-AGENT-01` / `EXT-AGENT-02` / `EXT-AGENT-03`, `issue-CE1-context-query-bundle-foundation.md`, `issue-CE3-patch-workspace-presets.md`
 - Derived-from: `ROADMAP.md` 要件D / `ADR-0007` FB-RM-MID-07

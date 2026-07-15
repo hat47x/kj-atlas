@@ -46,7 +46,7 @@ MVPでは以下のいずれかで簡素に扱う。
 
 MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs/{doc_id}` を呼び、対象IDが存在しない場合に作成として扱う。
 
-- Request body：`DocumentV1` または `DocumentV2`
+- Request body：`DocumentV1`
 - Response：保存後の `Document`
 
 **POST** `/docs` は、サーバ採番の新規作成が必要になった場合の将来候補であり、MVPの必須APIではない。`POST /docs` を標準契約に昇格する場合は、`DATA-CONTRACT-01` で文書、実装、テストを同期する。
@@ -57,7 +57,7 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 
 **GET** `/docs/{doc_id}`
 
-- Response：`DocumentV1` または `DocumentV2`
+- Response：`DocumentV1`
 - Not found：404
 
 ---
@@ -66,8 +66,8 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 
 **PUT** `/docs/{doc_id}`
 
-- Request body：`DocumentV1` または `DocumentV2`
-- Response：保存後の `DocumentV1` または `DocumentV2`
+- Request body：`DocumentV1`
+- Response：保存後の `DocumentV1`
 - Validation error：400
 
 ---
@@ -462,7 +462,8 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   "updatedAt": "2026-02-10T00:00:00Z",
   "transform": {"panX": 0, "panY": 0, "zoom": 1},
   "cards": [{"id": "c1", "text": "...", "x": 120, "y": 80}],
-  "edges": [{"id": "e1", "fromId": "c1", "toId": "c2", "type": "related"}]
+  "edges": [{"id": "e1", "fromId": "c1", "toId": "c2", "type": "related"}],
+  "islands": []
 }
 ```
 
