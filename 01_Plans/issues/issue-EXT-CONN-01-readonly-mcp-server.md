@@ -2,8 +2,7 @@
 
 - Type: Feature request
 - Status: In Progress
-
-進捗メモ: サブスライスA・B完了。サブスライスC（HTTP輸送・`THREAT_MODEL.md` 追記）が残課題。
+- Progress: サブスライスA・B完了。サブスライスC（HTTP輸送・`THREAT_MODEL.md`追記）が残課題。
 
 ## Draft→Open 2026-07-12
 `ADR-0054` が maintainer により Accepted（受理時条件: 用語「庭」→「縁側」置換、ADR側で対応済み）。本Issueの唯一のゲートが解消したため Open 化。

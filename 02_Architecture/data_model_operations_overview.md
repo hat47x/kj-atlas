@@ -5,6 +5,13 @@
 
 この文書は、kj-atlas MVPで「どのデータ構造を実際に運用できるか」と「どの構造は将来契約・派生情報・限定的な保守対象に留まるか」を俯瞰するための設計文書です。
 
+- **Audience**: データ契約を実装・運用・レビューするMaintainer、Developer、Platform operator、Security officer。
+- **Goal**: 物理永続化、論理構造、CRUD、support level、運用責任の現行境界を一読で判断できるようにする。
+- **Non-goal**: 型の再定義、API payloadの再掲、Stream実行ログの保管、将来機能の実装許可。
+- **Outcome**: 読者は「型がある」と「MVPで保守できる」を区別し、変更時の正本とStop条件を特定できる。
+
+2026年5月のStream D形成記録は [Architecture history](history/data-model-operations-stream-d-2026-05.md) に分離した。履歴は本書の現行値を上書きしない。
+
 `schemas.md` にはMVPの最小永続データに加えて、Contract Freeze、AI連携、review attribution、audit連携などの将来契約も含まれます。そのため、本書では次を明確に分けます。
 
 - **物理永続化**: 実DBでテーブルとして持つもの。
@@ -37,18 +44,6 @@ MVPで最も重要なのは、カードやまとまりを扱えることでは�
 - `L2.5: Contract-limited` = 保存はするが個別編集UI・個別CRUDを持たない契約先行対象
 - `L3: Derived` = 生成・表示対象であり永続保守対象ではない
 - `L0: Planned` = MVP時点では運用手順を定義中で標準運用を保証しない
-
-### 1.2 Stream D運用注記（Read→Plan→Execute→Verify）
-
-- DATA系Issue更新時は、`Status / Priority / Dependencies / Related ADR` のRead同期を同一セッションで実施する。
-- CRUD境界・サポートレベル・運用責務の3観点が揃わない場合は、実装ではなく契約整理を優先する。
-- Verifyが3回超過しても収束しない場合、または前提契約が崩壊した場合は `Stop` とする。
-
-### 1.3 Stream D fixed execution scope（2026-05-20）
-
-- 本Streamで編集・監査する対象は `DATA-MODEL-OPS-01` / `DATA-CONTRACT-01` / `DATA-MAINT-01` に限定する。
-- アプリケーションコード（frontend/backend/deploy）への変更は行わず、schemaと運用境界文書の整合維持のみを実施する。
-- Verifyは docs-check（差分整合・語彙一致・責務境界一致）を正本とし、実装テストの成否を完了条件に含めない。
 
 ---
 
@@ -181,6 +176,7 @@ erDiagram
 |---|---|---|---|---|---|
 | `version` / `id` / `createdAt` / `updatedAt` / `transform` | L1 | 必須 | 必須 | 運用サポート | `PUT /docs/{doc_id}` のCreate/Update契約で維持する。 |
 | `cards[]` | L2 | `Card[]`。`claimType`、統合元、批評、レビュー状態を含む | `CardV2[]` として保存。`claimType` も往復保持する | 埋め込み限定 | 個別カードCRUDは作らず、スナップショット保存の互換を維持する。 |
+| `cards[].holdState` | L2.5 | optional。`held` / `pending` / `shelved` | optional。欠落時は通常カードとして往復保持する | 契約のみ/限定保存 | 保留・Shelf退避は可逆に扱い、カード本文の削除と分離する。 |
 | `edges[]` | L2 | `Edge[]`。`fromKind` / `toKind` を含む | `EdgeV2[]` として保存。endpoint kind も往復保持する | 埋め込み限定 | 島endpointを含む関係のUI/API検証を `DATA-CONTRACT-01` で継続する。 |
 | `islands[]` | L2 | `Island[]`。階層、collapse、shape、summaryを含む | 保存/検証あり。geometry/shapeの互換正規化あり | 埋め込み限定 | shape再計算、階層、collapseの個別保守は製品化issueで扱う。 |
 | `readingOrder` | L2 | optional | optional | 埋め込み限定 | 文章化・共有時の読み順として扱う。 |
@@ -192,6 +188,7 @@ erDiagram
 | `critiqueInputs` / `reproposalDiffs` | L2.5 | optional。A1契約型として掲載し、strict/import検証で往復保持 | backend契約型として保存。`island:` targetRef と片側 `null` の可逆差分を許可 | 契約のみ/限定保存 | 個別編集UIや個別CRUDはMVP範囲外。SafeMode/share/exportでの扱いはテスト観点に残す。 |
 | `reviewAttribution` | L2.5 | optional。A1契約型として掲載し、`reviewedAt` の状態別制約と生ID禁止を検証 | backend契約型として保存。認証主体一致を検証 | 契約のみ/限定保存 | review attribution正本との同期を継続し、監査閲覧・検索は製品化issueで扱う。 |
 | `deterministicTieBreak` | L2.5 | optional。固定順序をstrict/import検証で保持 | backend契約型として保存 | 契約のみ/限定保存 | polygon handoff契約との関係を維持する。 |
+| `shelf` | L2.5 | optional。`ShelfEntry[]` | optional。欠落時は空として往復保持する | 契約のみ/限定保存 | Shelf退避でCard本文を削除せず、復帰を独立操作として維持する。 |
 | `cards[].meta`（`seq`/`source`） | L2.5 | optional。通し番号と原データ遡及参照（schemas.md §15）。meta内の未知キーはfail-closedで破棄 | `CardMeta` として保存。未知キーは受理しない | 契約のみ/限定保存 | 共有向け書き出しは既定除外＋明示トグル（§15.4）。起票者等の主体メタは `CARD-META-UI-01` の確定まで追加しない。 |
 | `contradictionSignalDecisions` | L2.5 | optional。矛盾シグナル（`analyzeContradictions()`）への人間レビュー決定（採用/保留/却下、schemas.md §16） | optional。往復保持し、不正要素は破棄する | 契約のみ/限定保存 | AI/検出ロジックは書き込み経路を持たない（ADR-0041 CVI-2）。review pack/narrative契約は変更しない。 |
 | `cards[].ka`（`voice`/`value`） | L2.5 | optional。KA法の心の声・価値（schemas.md §17）。`text`（出来事の正本）とは別フィールドで併記しない | `CardKa` として保存。両方欠落/空文字なら `ka` 自体を省略 | 契約のみ/限定保存 | カード面（キャンバス）には表示しない。narrative export/review pack は既定OFFの任意セクション。SafeMode露出判定は `card.text` と同一チャネル。 |
@@ -266,94 +263,6 @@ MVPの制約を明示したうえで、ステークホルダー運用に耐え�
 - 利用者や運用者の責任が増える変更は、`01_Plans/issues/` に受入条件と検証レベルを起票する。
 - データライフサイクル、削除、監査、所有者移管など、組織運用上の方針を変える変更はADR化する。
 
+## 8. 形成履歴
 
-## 8. Stream D fail-safe stop criteria
-
-次のいずれかを満たす場合、実装へ進まず契約整備を優先する（Stop）。
-
-1. **後方互換ルール不明瞭**: `Document.version` の上げ条件、version gate、非互換定義のいずれかが曖昧。
-2. **support level未定義**: 新規データ領域に `L1/L1.5/L2/L2.5/L3/L0` が割り当てられていない。
-3. **運用責務衝突**: Platform operator / Security officer / Support / Developer の責務分離が矛盾。
-
-Proceed条件は、上記3点が `schemas.md` と本書で同時に満たされること。
-
-
-## 9. Stream D phase verification log (2026-05-19)
-
-- Phase 1 Contract drift抽出: `DATA-CONTRACT-01` のドリフト観点（schema/api/frontend/backend）を再照合し、`DocumentV2` は version gate 先行で維持。
-- Phase 2 Support level定義: CRUD表・フィールド支援表・issue ACで `L1/L1.5/L2/L2.5/L3/L0` を同一語彙に統一。
-- Phase 3 CRUD境界更新: 「型がある = 運用CRUDあり」誤読を防ぐ注記を維持し、個別CRUD非対応行を明示。
-- Phase 4 Admin maintenance/recovery境界更新: Platform operator / Security officer / Support / Developer の責務分離と `DATA-MAINT-01` 参照を固定。
-- Phase 5 Verify（相互矛盾ゼロ）: `schemas.md`・`schemas_review_attribution.md`・本書で support level と version gate の矛盾がないことを確認。
-
-## 10. Stream D execution checkpoint (2026-05-19)
-
-### Context
-- Model Ops の観点では、`DocumentV2` の契約固定と運用CRUD境界を同時に管理しないと、保守責務が曖昧化する。
-
-### Decision
-- 本書の CRUD 境界表を運用責務の正本とし、`schemas.md` は型契約正本として役割を分離したまま同期する。
-- Platform operator / Security officer / Support / Developer の責務分離に変更がある場合は、`DATA-MAINT-01` の受入条件更新を先行必須とする。
-
-### Consequences
-- Stream D の Verify は「後方互換・support level・責務分離」の3軸で再現可能となり、3回修復上限を超える前に停止判断できる。
-- Data Contract変更が運用手順へ波及する際の引き渡し先が明確化される。
-
-## 11. DATA-CONTRACT-01 execution record (2026-05-19)
-
-### Context
-- `DocumentV2` は型契約が拡張される一方、MVP CRUD 境界（L1/L1.5/L2/L2.5/L3/L0）の誤読により「個別CRUDあり」と解釈されるドリフトが残っていた。
-- contract test の fixture 識別子が文書間で固定されておらず、下流チームが実装進捗に依存した判定を行う余地があった。
-
-### Decision
-- `DocumentV2` の mock schema version を `mock-2026-05-19-dv2` で固定し、契約検証・handoffの識別子としてのみ使用する。
-- CRUD境界は本書4章と4.1章を正本とし、`L2/L2.5` 領域（evidence/review attribution/critique/reproposal等）は「保存往復は保証、個別CRUDは非保証」を明文化する。
-- review attribution の参照IDは生ID/IdP識別子を禁止し、`user:<users.id>` 正規化移行方針を継続する。
-
-### Consequences
-- 下流は mock schema version を使って fixture 更新有無を自律判定でき、runtime version (`1|2`) と混同しない。
-- Data契約変更時の影響範囲が `schemas.md`（型）と本書（運用CRUD）で分離され、MVP責務境界の監査が容易になる。
-- reviewer/owner参照のPII混入リスクを抑えたまま、移行期データの互換方針を維持できる。
-
-## 12. Schema/Migration consistency check (2026-05-20 / Stream D)
-
-### Phase 1 Read（現状一致確認）
-- `schemas.md` の AUTH-SCHEMA-01 / Decision Log 契約と、`alembic/versions` の最新 revision (`20260314_0005`) を照合した。
-- 物理テーブル境界（`documents` / `users` / `user_identities` / `merge_decision_logs`）と本書2章の説明は一致し、追加 migration が必要な差分は検出しなかった。
-
-### Phase 2 Plan（互換分類 + AC/DoD提案）
-- 互換あり:
-  - index追加のみの変更。
-  - 大文字小文字非依存の一意制約強化（既存重複データが無い場合）。
-- 互換なし:
-  - 既存列の削除・必須化・意味変更。
-  - `Document.version` を据え置いた破壊的変更。
-
-提案AC（受入条件）:
-1. schema文書に revision 対応表があり、現行 migration と相互参照できる。
-2. 互換あり/なしの判定軸が明文化され、非互換変更は version gate 前提と明記される。
-3. contract test で `documents/users/user_identities/merge_decision_logs` の存在と主要制約を再現できる。
-
-提案DoD:
-1. `alembic upgrade head` が成功する。
-2. migration chain が単一路線（head一意）である。
-3. schema文書・運用文書・migration実体の3者に矛盾がない。
-
-### Phase 3/4 Execute + Verify（実施結果）
-- schema先行更新: 本書と `schemas.md` に migration 対応表と互換分類を追記。
-- migration追随: 新規 migration は不要（契約差分なしのため未追加）。
-- 整合検証: Alembic 実行・ヘッド確認・テーブル存在確認で一致を再検証。
-
-## 13. Stream B ops-boundary sync (2026-05-20)
-
-### Context
-- Model Ops では `DocumentV2` の保存往復保証と個別CRUD保証が混同されると、運用責務（Platform operator / Security officer / Support / Developer）が衝突する。
-
-### Decision
-- CRUD境界は本書を正本として維持し、`L1/L1.5/L2/L2.5/L3/L0` を唯一語彙とする。
-- `DocumentV2` の backward compatibility 判定は `schemas.md` の version gate を上流正本として参照し、本書側で独自判定を持たない。
-- CE系・A1系の統合ポイントは read-only contract として公開し、実DB/API依存が確定していない項目は `Contract-limited (L2.5)` のまま凍結する。
-
-### Consequences
-- Stream間ハンドオフで「契約固定」と「運用実装」の責務が分離され、Phase 4 Verifyを docs-check で再現できる。
-- 未確定項目は fail-closed で停止でき、DecisionStatus=Pending のまま実装へ越境するリスクを抑制できる。
+2026年5月のStream D実行ログ、checkpoint、schema/migration照合記録は [data-model-operations-stream-d-2026-05.md](history/data-model-operations-stream-d-2026-05.md) に収録する。履歴側の`Decision`や`fixed`という語は当時の形成記録であり、現在の契約値は本書§1〜§7と`schemas.md`を正本とする。

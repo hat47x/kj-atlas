@@ -10,6 +10,7 @@
 
 価値判断と設計要素の対応は [value_traceability.md](value_traceability.md) を参照します。本書で新しい思想や要件を直接追加せず、上流文書で定義された価値を実装可能な責務境界へ落とします。
 `02_Architecture` 内の現行契約と履歴ログの読み分けは [contract_reading_guide.md](contract_reading_guide.md) を参照します。
+本書から分離したCE0/CE1 freeze形成記録は [Architecture contract-freeze formation history](history/architecture-contract-freeze-formation-2026-04-to-05.md) に保持します。
 MVPで運用サポートするデータ構造、埋め込み限定の構造、契約のみの構造は [data_model_operations_overview.md](data_model_operations_overview.md) を参照します。
 
 ---
@@ -198,7 +199,7 @@ MVPでは Provider 抽象の枠だけ用意し、実装は最小でよい。
 
 Provider列挙は信頼境界（none/fixture/local/external）で固定し、通信差異は環境変数ではなく内部の transport 抽象（in_process/ipc/http）で分離する。
 
-## 7A. CE-0 固定契約（Contract Freeze: Consensus/Working Repositioning）
+## 7A. CE-0 責務・信頼境界（Consensus/Working Repositioning）
 
 CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止事項を次で固定する（**責務境界のみを対象**。API/CLI/UI の実装詳細はCE-1以降）。
 
@@ -207,10 +208,7 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
 - CE0/CE1の Contract ID は参照専用固定値として扱い、再採番・異義定義を禁止する。
 - CE1/CE2/CE4 は mock I/F を前提に依存待機せず検証を継続する。
 - 本章の契約は責務境界のみを扱い、推測で実装要件（API詳細/CLI/UI具体）を追加しない。
-- **Input Contract Snapshot 固定（CE0）**:
-  - snapshot_id: `ce0-contract-freeze-2026-04-27`
-  - freeze_mode: `contract-only`
-  - downstream_policy: `read-only reference`（CE1/CE2/CE4 は参照のみ）
+- CE0入力snapshotの識別子と当時のfreeze運用は[形成履歴](history/architecture-contract-freeze-formation-2026-04-to-05.md#former-7a0-input-contract-snapshot-固定ce0)へ分離する。現行の責務境界は§7A.1〜§7A.4を正とする。
 
 
 ### 7A.1 責務境界（CE0-CTX-IF / CE0-SAFEMODE-IF / CE0-REVIEW-IF / CG-01..05）
@@ -239,29 +237,15 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
 
 
 
-### 7A.2.1 Interface Freeze（APIシグネチャ / データ型 / イベント契約）
+### 7A.2.1 Interface contract references
 
-CE0では実装詳細ではなく、下流がmockで自走できる最小契約のみを固定する。
+本書は型シグネチャ、required/optional key、endpoint、status/errorを再定義しない。現行値は責務別に次を正本とする。
 
-- **Type Signatures（v1固定）**
-  - `ContextQueryV1 = { goal: string; scope: string[]; depth: "shallow"|"standard"|"deep"; constraints: string[]; reviewFilter: "all"|"human_reviewed_only"; safeModePolicy: { safeMode: true; allowUnreviewedText: false }; outputMode: "preview"|"proposal" }`
-  - `ContextBundleV1 = { bundleHash: string; queryRef: string; cards: object[]; islands: object[]; relations: object[]; generatedAt: string }`
-  - `ProposalPatchV1 = { proposalId: string; diff: object; rationale: string; sourceBundleHash: string; requestedBy: string }`
-  - `AuditEventV1 = { eventId: string; eventType: "proposal.submitted"|"proposal.approval_requested"|"proposal.approved"|"consensus.patch_applied"; at: string; actor: string; proposalId?: string; bundleHash?: string }`
+- 型、キー、列挙、version互換: [schemas.md §1.2 CE1/CE2/CE4 Contract Freeze](schemas.md#12-ce1ce2ce4-contract-freeze型先行実装非依存)
+- endpoint、認証、status/error、副作用: [api.md §2.7〜§2.9](api.md#27-ce4-audit-integration-contractapicli-equivalence)
+- CE1 v1の未解決key/envelope差異: [CE1-CONTRACT-01](../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)
 
-- **Contract Methods（mock-first）**
-  - `previewQuery(input: ContextQueryV1): ContextBundleV1`
-  - `submitProposal(input: ProposalPatchV1): AuditEventV1`
-  - `requestApply(proposalId: string, approver: string): AuditEventV1`
-
-- **Compatibility / Validation Rules**
-  - 未知キーは `unknown_contract_key` として拒否する。
-  - `ContextBundleV1.bundleHash` は deterministic でなければならず、非決定的結果は `nondeterministic_bundle` とする。
-  - `previewQuery` を経ない apply 要求は `preview_required` として失敗扱い。
-
-- **Event-order invariant（適用前提）**
-  - 許可順序: `proposal.submitted -> proposal.approval_requested -> proposal.approved -> consensus.patch_applied`
-  - 欠落・逆順・直接 `consensus.patch_applied` は No-Go（`consensus_direct_write` 相当）。
+旧Interface Freezeの型・method・event-order再掲は[形成履歴](history/architecture-contract-freeze-formation-2026-04-to-05.md#former-7a21-interface-freezeapiシグネチャ--データ型--イベント契約)へ移した。責務境界、禁止事項、Go/No-Goは本書§7A.1〜§7A.4を正とする。
 
 ### 7A.3 禁止事項（Non-Regression）
 
@@ -408,25 +392,6 @@ MVPでは高度な権限管理は後回し。
 - attribution の正規キーは `users.id` で、外部subjectは `user_identities` でのみ解決する。
 
 
-### 7B.1 Contract Freeze Baseline（2026-05-04 / interface-only）
+## 13. 形成履歴（Informative）
 
-- Scope: `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` の **I/F境界のみ** を固定し、実装詳細は追加しない。
-- Fixed boundary: 上記4型は `02_Architecture/schemas.md` の定義をSSOTとし、`02_Architecture/api.md` はその入出力契約を参照する。
-- Mock-first policy: CE1/CE2/CE4 は backend/frontend の実装完了待機を禁止し、`A1-CONTRACT-MOCK-v1` 互換fixtureで契約検証を継続する。
-- Downstream rule: 下流は判定式と契約IDを read-only 参照し、派生I/Fの再定義を行わない。
-
-## 13. Stream B Contract Reflection Note（interface-only / conditional）
-
-### Context
-- Stream B は `02_Architecture` の契約反映のみを担当し、実装値ではなく schema/type/signature を固定する。
-- CE1/CE2/CE4 の並行進行により、A系契約IDの更新が遅延する可能性があるため、未確定項目は conditional 参照で保持する。
-
-### Decision
-- 本書では `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` を interface freeze 対象として維持する。
-- A系契約ID参照（例: `A1-ATTR-IF`）は read-only で引用し、未確定時は `conditional` 扱いとして再定義しない。
-- mock payload を契約検証の前提に許可し、backend/frontend 実装完了待機を行わない。
-
-### Consequences
-- 下流は mock-first で独立検証を継続でき、契約待ちで停止しない。
-- safeMode既定ON・未レビュー保護・proposal-only 境界を architecture 層で固定できる。
-- conditional 参照が確定した時点で、再採番ではなく参照先更新のみを許可する。
+2026-05-04のinterface-only baselineとStream B反映メモは、現行契約と誤認されないよう[Architecture contract-freeze formation history](history/architecture-contract-freeze-formation-2026-04-to-05.md)へ分離した。現行の責務境界は本書、型は`schemas.md`、endpoint/status/errorは`api.md`を正本とする。
