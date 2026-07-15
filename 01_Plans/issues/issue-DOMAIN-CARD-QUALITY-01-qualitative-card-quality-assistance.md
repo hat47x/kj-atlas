@@ -104,11 +104,18 @@
 - [x] T1 KJ法、定性研究の信頼性、回答負担、人間中心設計の一次・公的情報を調査する。
 - [x] T2 カード品質のNormative要件を作成し、上流・設計文書へ反映する。
 - [x] T3 新規スキーマとADRが現時点では不要であること、およびADR昇格条件を明記する。
-- [ ] T4 6種の代表fixtureと、本文保存を先行する品質支援の状態遷移をテストで固定する。
+- [x] T4 6種の代表fixtureと、本文保存を先行する品質支援の状態遷移をテストで固定する。
 - [ ] T5 Phase Bの自己確認UI、i18n、キーボード操作、フォーカス復帰を実装する。
 - [ ] T6 提案採用前の不変条件、少数・矛盾保持、SafeMode、provider noneをunit/integrationで固定する。
 - [ ] T7 390px/desktop、マウス/キーボードのE2Eとスクリーンショットを取得する。
 - [ ] T8 Phase Cの必要性をPhase Bの使用証跡から判断し、必要な場合だけ別issueへ分割する。
+
+### T4 実装証跡（2026-07-15）
+
+- `src/domain/card_quality.ts`: `DocumentV2`/`Card` へ新規フィールドを追加せず、質問4種（unit/context/trace/status、§4.2の固定順）、決定3種（apply/keep_as_is/hold_for_now）、状態遷移関数 `openCardQualityAssist`/`answerCardQualityQuestion` を独立定義した。決定・質問関数はいずれも assist state のみを入出力とし、`Card` を読み書きできないため、採用前不変（CQ-REV-01, AC-5）は型・実装レベルで保証される。
+- `src/domain/card_quality.fixture.ts`: §7の6種代表fixture（single_center / multi_center / context_poor / quote_interpretation_mixed / minority_or_contradiction / unknown_source）を固定した。
+- `src/domain/card_quality.test.ts`: 全fixtureで質問順が同一であること（少数・矛盾fixtureを特別扱いしないこと)、4問すべて回答するまでresolvedにならないこと、Card凍結下でも状態遷移が本文を変更しないこと、見送り済み質問が本文未変更のセッション内では再提示されないこと（QUX-HUMAN-01）、`CARD_QUALITY_DECISIONS` に評価・スコア語が含まれないこと（CQ-DIVERSE-01）を検証する。
+- 検証結果: 対象8 tests作成（frontend全体テストは検証計画のコマンドで実行）。UI・永続化・i18n・provider統合は未実装であり、T5以降の対象とする。
 
 ## 7) 検証計画 / Validation plan
 
