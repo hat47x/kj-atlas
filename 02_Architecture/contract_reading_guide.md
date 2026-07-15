@@ -12,6 +12,7 @@
 - `Stream`、`rerun`、日付付き `freeze note`、`handoff` は、原則として履歴・監査ログです。現在の契約を上書きするためには使いません。
 - 環境変数と実行時パラメータは、常に [runtime_parameter_registry.md](runtime_parameter_registry.md) を正本にします。
 - 価値判断との対応は [value_traceability.md](value_traceability.md) を参照します。
+- 採択済みでも未実装の設計目標は、文書に記載された support level を確認します。`L0: Planned` は実装済みAPI、保存、CRUDの保証ではありません。
 - 履歴ログを削除する場合や契約本文から分離する場合は、内部 issue または ADR で作業範囲を固定します。
 
 ---
@@ -24,6 +25,7 @@
 | 全体構成と責務境界 | `architecture.md` | `deployment.md`, `enterprise_architecture.md` |
 | API の入出力契約 | `api.md` | `schemas.md` |
 | 永続データと view/pack metadata | `schemas.md` | `api.md` |
+| W型反復的探究の採択済み設計目標 | `inquiry_journey_model.md` | `ADR-0057`, `w_type_iterative_inquiry_requirements.md` |
 | 環境変数と実行プロファイル | `runtime_parameter_registry.md` | `deployment.md`, `enterprise_architecture.md` |
 | 企業・行政運用 | `enterprise_architecture.md` | `strict_mode_exception_approval_flow.md`, `runtime_parameter_registry.md` |
 | LLM 実行制約 | `llm_runtime_constraints.md` | `llm_provider_spec.md`, `llm_escalation_policy.md` |

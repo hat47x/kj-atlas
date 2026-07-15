@@ -1,9 +1,9 @@
 # ADR-0057: W型累積KJ法の反復的探究モデル
 
-- Status: Proposed
+- Status: Accepted（2026-07-15、独立探究集約 + 不変スナップショットDAGを採択）
 - Date: 2026-07-15
-- Deciders: Project Maintainers / UX Lead / Domain Expert / Productization Program Owner
-- Scope: `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.md`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/src/ui/`
+- Deciders: Project Maintainers（ユーザー委任による方針確定）
+- Scope: `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/inquiry_journey_model.md`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.md`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/src/ui/`
 
 ## 背景
 
@@ -21,13 +21,13 @@
 
 ## ADR再起票基準
 
-本提案は `ADR-0047` の次の基準に該当する。
+本決定は `ADR-0047` の次の基準に該当する。
 
 - R-1: 利用者指摘により、一ラウンド中心の現行モデルでは高度な反復実務を表現できない摩擦が明示された。
 - R-3: ラウンド履歴の常設は複雑性予算、性能予算、SafeMode、UI/UX品質境界を横断する。
-- R-4候補: 永続方式によっては `DocumentV2` の意味またはversion gateへ影響する。optional加算で済むかを受理前に判断する必要がある。
+- R-4: 永続方式によっては `DocumentV2` の意味またはversion gateへ影響するため、optional加算で済むかを受理判断で比較する必要があった。
 
-## 決定案
+## 決定
 
 1. **探究を任意の高度機能として導入する。** 通常の一ラウンド利用と初期画面は変更しない。
 2. **R1問題提起、R2現状把握、R3本質追求、R4構想計画、R5具体策、R6手順化を段階の意味として固定する。** ただし固定順の完了を強制しない。
@@ -36,32 +36,73 @@
 5. **ラウンド間を `RoundHandoff` で接続する。** 持ち越し、保留、未解決点、現場への問い、理解の変化を人が確認する。
 6. **カード本文の正本とラウンド上の役割を分離する。** 段階や持ち越し状態をカードの固有属性として上書きしない。
 7. **AIは段階別の問い、引継ぎ、差分、反証候補を提案できるが、自動移行・過去成果の書換え・仮説の自動決定をしない。** `provider=none` で中核操作を成立させる。
-8. **永続化実装は本ADR受理後も、データ契約の比較を完了するまで開始しない。** UIプロトタイプは固定fixtureとメモリ内状態で検証できるが、現行文書へ未知キーを保存しない。
+8. **探究は `DocumentV2` に埋め込まず、独立した `InquiryJourneyV1` として扱う。** 現行 `DocumentV2` は日常編集する可変作業文書として維持する。
+9. **人が確認した節目を、不変の `RoundSnapshotV1` として残す。** ラウンド記録は親成果を参照するDAGを作り、同段階反復、前段階への戻り、複数案を分岐として表す。
+10. **操作単位の全面的イベントソーシングは採用しない。** 現段階で必要なのは全操作の再生ではなく、意味のある中間成果、引継ぎ、系譜の説明である。将来、共同編集または監査上の実需が生じた場合だけ、対象限定の別ADRで再評価する。
+11. **共有・移行時は、manifestと参照する全成果を自己完結bundleへ収める。** SafeModeのマスクは元成果を書き換えず、マスク後の派生bundleを新しい整合性確認値で作る。
+12. **受理は永続化コードの即時着手を意味しない。** 型・不変条件・固定fixture、メモリ内操作模型、低忠実度UIの順で検証し、通常利用非回帰を確認してからローカルroundtripへ進む。
 
-## 永続化候補
+詳細な型境界、保存、bundle、導入順序は `02_Architecture/inquiry_journey_model.md` を正本とする。実装・移行・運用CRUDが揃うまでは、新しい型を `L0: Planned` として扱う。
+
+## 比較結果
+
+| 方式 | KJ法忠実性 | 停止・再開 | 可搬性 | 現行契約への影響 | 安全共有 | 将来共同作業 | 複雑性 | 判断 |
+|---|---|---|---|---|---|---|---|---|
+| A. `DocumentV2` へ履歴を埋め込む | 高 | 高 | 高 | 大 | 変更面が広い | 中 | 中 | 不採用 |
+| B. ラウンドごとに文書を複製する | 低 | 低 | 中 | 小 | 範囲が曖昧 | 低 | 初期は低 | 不採用 |
+| C. 操作単位のイベントソーシング | 高 | 高 | 低 | 非常に大 | 削除・マスクが難しい | 高 | 非常に高 | 不採用 |
+| D. 独立manifestから可変文書を参照する | 中 | 中 | 低 | 中 | 参照切れがある | 中 | 中 | 単独では不採用 |
+| E. 独立探究 + 不変成果DAG + 自己完結bundle | 高 | 高 | 高 | 小から段階導入 | 高 | 中から高 | 中 | **採用** |
+
+評価の中心は、機能数ではなく次の均衡である。
+
+- KJ法の経験と思考の往復を、固定工程や完了率へ変質させない。
+- 過去成果を変えず、長期中断後に問いと変化を再構成できる。
+- `DocumentV2` のclosed-world validationと日常性能を直ちに巻き込まない。
+- サーバーがなくても、成果の保存・交換・検証が成立する。
+- SafeMode、部分共有、削除を、不変性やcontent hashと混同しない。
+- 将来の共同作業へ親参照を残しつつ、現段階でCQRSやイベントストアを必須化しない。
 
 ### A. `DocumentV2` のoptional入れ子構造
 
 `inquiryJourneys?: InquiryJourney[]` を加え、ラウンド記録と最小成果を文書と一緒に保存する。
 
 - 利点: import/exportが一体で、ローカル利用と可搬性が分かりやすい。
-- 欠点: 文書サイズが増え、closed-world validation、共有、部分削除、過去成果の重複を広く変更する。
+- 不採用理由: 文書サイズが増え、closed-world validation、共有、部分削除、過去成果の重複を広く変更する。履歴を開かない通常利用にも契約・性能上の負担が及ぶ。
 
-### B. 独立した `InquiryJourneyV1` 成果物
-
-文書スナップショットを参照する独立成果物として探究とラウンドを保存する。
-
-- 利点: 現行 `DocumentV2` の日常操作と履歴容量を分離し、ラウンド単位の共有・保持を扱いやすい。
-- 欠点: 参照切れ、複数ファイル管理、バックエンドAPI、export bundleの設計が必要になる。
-
-### C. ラウンドごとに独立文書を複製する
+### B. ラウンドごとの文書複製
 
 - 利点: 現行文書保存を流用しやすい。
-- 欠点: カード系譜、引継ぎ、分岐、全体再開が命名規則頼みになるため、標準方式としては採用しない。
+- 不採用理由: カード系譜、引継ぎ、分岐、全体再開が命名規則頼みになり、標準方式にできない。
 
-受理時はAまたはBを選び、スナップショット最小内容、参照整合、容量上限、削除、部分共有、SafeModeを同時に固定する。
+### C. 操作単位のイベントソーシング
 
-## UI方針案
+- 利点: 操作意図の監査、任意時点の再生、投影の作り直しに強い。
+- 不採用理由: イベントversion、順序、冪等性、投影、削除、個人情報、デバッグ、移行の負担が必要性を上回る。Microsoftの設計指針でも、履歴再構築の便益が複雑性を正当化するときに限定すべきパターンとされている。
+
+### D. 独立manifestから可変文書を参照
+
+- 利点: 現行 `DocumentV2` と探究を分離できる。
+- 不採用理由: 参照先の文書が編集・削除されると過去成果が変化または欠落する。独立manifestだけでは非破壊性と可搬性を満たせない。
+
+### E. 独立探究 + 不変成果DAG + 自己完結bundle
+
+`InquiryJourneyV1` がラウンドDAGを持ち、各ラウンドは人が確認した不変 `RoundSnapshotV1` を参照する。作業中は既存 `DocumentV2` を編集し、節目で成果を確定する。
+
+- 採用理由: 現行契約と履歴容量を分離し、非破壊成果、同段階反復、前段階分岐、停止・再開を自然に表現できる。共有時に必要参照をbundle内へ閉じれば、ローカル利用と可搬性も守れる。
+- 受容する負担: 新しい型、循環・参照・digest検証、容量管理、共有範囲UIが必要になる。段階導入と代表fixtureで抑制する。
+
+## 採択したデータ境界
+
+- `InquiryJourneyV1`: ラウンド集合、分岐先端、既定表示先を持つmanifest。
+- `RoundRecordV1`: `stage` と `iteration` を分け、`parentRoundIds`、状態、入力・出力成果、引継ぎを持つ。
+- `RoundSnapshotV1`: 意味状態を再現する不変 `DocumentV2` payloadと整合性確認値を持つ。
+- `RoundHandoffV1`: 持ち越し、保留、未解決点、現場への問い、理解の変化を持つ。
+- `CardLineageEdgeV1`: `carried | edited | split | merged | new | retired` の系譜を成果間で接続する。
+
+探究全体に唯一の `activeRoundId` は置かない。分岐先端を複数保持し、現在表示中のラウンドはview stateとして扱う。成果のdigestは破損確認用であり、認可・秘匿・真正性の根拠にはしない。
+
+## UI方針
 
 - 高度機能の作業モード内に「探究」を置き、コアツールバーへ6段階を常設しない。
 - 現在位置は「現状把握・2回目」のように一行で示す。
@@ -80,24 +121,25 @@
 
 ## 対象外
 
-- 本ADRのProposed段階で `DocumentV2` またはbackend APIを変更すること。
+- 本ADR受理だけを根拠に `DocumentV2` またはbackend APIを変更すること。
 - 6ラウンドをすべての文書へ必須化すること。
 - プロジェクト管理、承認ワークフロー、担当者管理を同時導入すること。
 - KJ法の実施品質や研究の妥当性を認定すること。
 - AIがラウンド移行、仮説採用、具体策決定を自動化すること。
 
-## 受理に必要な確認
+## 受理確認
 
-- [ ] 6ラウンドを固定ウィザードではなく、反復・分岐可能な探究として扱うことを確認する。
-- [ ] `RoundStage` と `RoundIteration` の分離を確認する。
-- [ ] `RoundSnapshot` の最小内容と、空間配置を保存する境界を決める。
-- [ ] 永続化候補A/Bを比較し、後方互換、容量、削除、共有、SafeModeを確認する。
+- [x] 6ラウンドを固定ウィザードではなく、反復・分岐可能な探究として扱う。
+- [x] `RoundStage` と `RoundIteration` を分離する。
+- [x] `RoundSnapshot` は意味のある空間配置を含む再現可能な `DocumentV2` 成果とする。
+- [x] 独立探究 + 不変成果DAG + 自己完結bundleを採択し、後方互換、削除、共有、SafeModeの原則を固定する。
 - [ ] 通常利用の初期表示を増やさず、高度機能へ置くことをUXプロトタイプで確認する。
 - [ ] `DOMAIN-W-ITERATION-01` の代表シナリオをマウス・キーボード・390pxで検証できる状態にする。
 
 ## 追跡関係
 
 - Requirements: `00_Prompt/w_type_iterative_inquiry_requirements.md`
+- Architecture: `02_Architecture/inquiry_journey_model.md`
 - Source issue: `01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md`
 - Related: `00_Prompt/qualitative_card_quality_requirements.md`
 - Related: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
@@ -106,4 +148,8 @@
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`
 - Related: `02_Architecture/schemas.md`
 - Related: `02_Architecture/data_model_operations_overview.md`
+- Research: [Microsoft Azure Architecture Center: Event Sourcing pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/event-sourcing)
+- Research: [W3C PROV-O](https://www.w3.org/TR/prov-o/)
+- Research: [RFC 8785: JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html)
+- Research: [Ink & Switch: Local-first software](https://www.inkandswitch.com/essay/local-first/)
 - Derived-from: 2026-07-15 ユーザー提案「6ラウンドのW型進行に見られる、イテレーションで思考を深める高度実務を支援する要件」
