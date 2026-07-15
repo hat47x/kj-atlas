@@ -110,7 +110,7 @@ Open化条件:
 - [ ] triageとvalidatorが同じStatus parser・正規値を使い、同じActive件数を返す。
 - [ ] 1コマンドでローカル/CI同値のdocs-checkを実行できる。
 - [ ] docs-check非0終了がPRをblockする。
-- [ ] 01/02/04/root docsの適用check matrixと除外理由が文書化され、02層が無検査にならない。
+- [x] 01/02/04/root docsの適用check matrixと除外理由が文書化され、02層が無検査にならない。
 - [ ] current領域の同一Contract ID/型の異義定義、API/schema key差異、DocumentV2支援表欠落を検出する。
 - [ ] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
 - [ ] broken relative linkとSSOT参照先不在を検出する。
@@ -121,7 +121,7 @@ Open化条件:
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 check matrixとrule IDを固定し、ADR-0024追補要否を記録する。
+- [x] T1 check matrixとrule IDを固定し、ADR-0024へ適用境界と段階有効化条件を追補する。
 - [ ] T2 Active issue validatorをfilesystem直接検査へ変更する（自動発見と既存異常系testsは完了。共有parser・重複Backlog ID検査は未完了）。
 - [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。
 - [ ] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
@@ -211,3 +211,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - `ADR-0024`は品質ゲート境界そのものを扱うAccepted ADRである。`02_Architecture`を適用matrixへ加える判断は新規ADRへ分岐せず、T1で同ADRへ根拠、段階導入、除外を追補する。
 - current/history、公開境界、貢献者route、全Markdown相対リンクのclean baselineが再現できた。Open化条件3点を満たしたため、T1から着手可能なOpenへ移す。
 - 最初の実装単位はT1のrule ID/check matrix固定とする。CI変更やblocking昇格を先行させず、ローカル負例fixtureで規則を確定してからT3〜T5へ進む。
+
+## T1完了記録 2026-07-15
+
+- `ADR-0024`へroot/01/02-current/02-history/04-publicの適用matrixと`DC-ACT-001`〜`DC-FMT-001`の9 ruleを追補した。
+- 内部相対参照先の存在確認だけをBoundary-1へ昇格し、外部URL到達性、文体lint、ヒューリスティックな意味判定はBoundary-2に維持した。
+- rule単位の決定論的実装、正常/負例fixture、clean pass、ローカル/CI同一entrypoint、診断表示が揃うまでblockingを有効化しない段階条件を固定した。
+- 次の実装単位はT2のStatus parser共有と重複Backlog検査、または独立に進められるT3の`DC-LNK-001`純関数/fixtureである。
