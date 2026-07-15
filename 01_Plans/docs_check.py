@@ -12,6 +12,7 @@ from docs_contract_checks import (
     RequiredRoute,
     check_current_only_headings,
     check_history_documents,
+    check_public_ui_catalog,
     check_relative_links,
     check_required_routes,
 )
@@ -24,14 +25,16 @@ ENABLED_RULES = (
     "DC-CUR-001",
     "DC-HIS-001",
     "DC-RTE-001",
+    "DC-PUB-001",
 )
 NOT_ENABLED_RULES = (
     "DC-ARC-001",
-    "DC-PUB-001",
     "DC-SAF-001",
     "DC-FMT-001",
 )
 HISTORY_INDEX_PATH = Path("02_Architecture/history/README.md")
+PUBLIC_CATALOG_PATH = Path("04_Documentation/ui_catalog.md")
+SCREENSHOT_LEDGER_PATH = Path("04_Documentation/assets/screenshots/README.md")
 REQUIRED_ROUTES = (
     RequiredRoute(Path("README.md"), Path("CONTRIBUTING.md"), "CONTRIBUTING.md", True),
     RequiredRoute(
@@ -210,6 +213,12 @@ def run_docs_check(
     errors.extend(
         finding.render()
         for finding in check_required_routes(repository_root, list(required_routes))
+    )
+    errors.extend(
+        finding.render()
+        for finding in check_public_ui_catalog(
+            repository_root, PUBLIC_CATALOG_PATH, SCREENSHOT_LEDGER_PATH
+        )
     )
     if run_tests:
         errors.extend(_run_contract_tests(repository_root))

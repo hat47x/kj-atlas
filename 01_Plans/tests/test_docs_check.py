@@ -12,6 +12,7 @@ MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
+CHECKS = sys.modules["docs_contract_checks"]
 
 
 class DocsCheckEntrypointTest(unittest.TestCase):
@@ -48,6 +49,20 @@ class DocsCheckEntrypointTest(unittest.TestCase):
         (root / MODULE.HISTORY_INDEX_PATH).write_text(
             "# History\n\n[Formation](formation.md)\n", encoding="utf-8"
         )
+        catalog = root / MODULE.PUBLIC_CATALOG_PATH
+        catalog.parent.mkdir(parents=True, exist_ok=True)
+        catalog.write_text(
+            "# UI catalog\n" + "\n".join(CHECKS.PUBLIC_CATALOG_REQUIRED) + "\n",
+            encoding="utf-8",
+        )
+        ledger = root / MODULE.SCREENSHOT_LEDGER_PATH
+        ledger.parent.mkdir(parents=True, exist_ok=True)
+        ledger.write_text(
+            "# Screenshot ledger\n"
+            + "\n".join(CHECKS.SCREENSHOT_LEDGER_REQUIRED)
+            + "\n",
+            encoding="utf-8",
+        )
         subprocess.run(["git", "init", "-q"], cwd=root, check=True)
         subprocess.run(["git", "add", "."], cwd=root, check=True)
 
@@ -59,7 +74,7 @@ class DocsCheckEntrypointTest(unittest.TestCase):
             result = MODULE.run_docs_check(root, run_tests=False, required_routes=())
 
         self.assertEqual(result.active_count, 0)
-        self.assertEqual(result.markdown_count, 10)
+        self.assertEqual(result.markdown_count, 12)
         self.assertEqual(result.errors, ())
 
     def test_run_docs_check_reports_broken_relative_link(self):

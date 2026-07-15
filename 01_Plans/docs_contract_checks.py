@@ -11,6 +11,7 @@ RELATIVE_LINK_RULE_ID = "DC-LNK-001"
 CURRENT_ONLY_RULE_ID = "DC-CUR-001"
 HISTORY_RULE_ID = "DC-HIS-001"
 ROUTE_RULE_ID = "DC-RTE-001"
+PUBLIC_RULE_ID = "DC-PUB-001"
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
 MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]\r\n]*\]\((?P<target><[^>\r\n]+>|[^)\r\n]+)\)")
@@ -33,6 +34,29 @@ HISTORY_METADATA_PATTERNS = {
         r"^Current normative anchors:[ \t]*(?P<value>.*?)\s*$", re.MULTILINE
     ),
 }
+PUBLIC_CATALOG_FORBIDDEN_RE = re.compile(
+    r"00_Prompt|01_Plans|ADR-[0-9]{4}|issue-[A-Za-z0-9]|UX-NAV|UX-COMPLEXITY|Claude Design"
+)
+PUBLIC_CATALOG_REQUIRED = (
+    "対象読者:",
+    "確認対象revision",
+    "最終確認日",
+    "表示条件",
+    "画像検証",
+    "公開状態",
+    "SafeMode",
+)
+SCREENSHOT_LEDGER_REQUIRED = (
+    "Capture ID:",
+    "Source revision:",
+    "Captured at:",
+    "Fixture:",
+    "Locale / viewport / provider / SafeMode:",
+    "Script / command:",
+    "Result:",
+    "Manual review:",
+    "Stale triggers checked:",
+)
 
 
 @dataclass(frozen=True)
@@ -423,5 +447,72 @@ def check_required_routes(root: Path, requirements: list[RequiredRoute]) -> list
                 fix_hint=f"Add a {route_kind} from {source_label} using '{requirement.reference}'.",
             )
         )
+
+    return findings
+
+
+def check_public_ui_catalog(
+    root: Path,
+    catalog_path: Path,
+    screenshot_ledger_path: Path,
+) -> list[DocsCheckFinding]:
+    """Return DC-PUB-001 findings for UI catalog boundaries and screenshot provenance."""
+    repository_root = root.resolve()
+    catalog = catalog_path if catalog_path.is_absolute() else repository_root / catalog_path
+    ledger = (
+        screenshot_ledger_path
+        if screenshot_ledger_path.is_absolute()
+        else repository_root / screenshot_ledger_path
+    )
+    catalog = catalog.resolve()
+    ledger = ledger.resolve()
+    findings: list[DocsCheckFinding] = []
+
+    for document, required_labels, purpose in (
+        (catalog, PUBLIC_CATALOG_REQUIRED, "public UI catalog"),
+        (ledger, SCREENSHOT_LEDGER_REQUIRED, "screenshot provenance ledger"),
+    ):
+        label = document.relative_to(repository_root).as_posix()
+        if not document.exists():
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=PUBLIC_RULE_ID,
+                    path=label,
+                    line=1,
+                    target=purpose,
+                    message=f"required {purpose} does not exist",
+                    fix_hint=f"Restore {label} before publishing UI documentation.",
+                )
+            )
+            continue
+        text = document.read_text(encoding="utf-8")
+        for required_label in required_labels:
+            if required_label in text:
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=PUBLIC_RULE_ID,
+                    path=label,
+                    line=1,
+                    target=required_label,
+                    message=f"required {purpose} evidence is missing: {required_label}",
+                    fix_hint=f"Add and populate the '{required_label}' field in {label}.",
+                )
+            )
+
+    if catalog.exists():
+        catalog_text = _without_fenced_code(catalog.read_text(encoding="utf-8"))
+        for match in PUBLIC_CATALOG_FORBIDDEN_RE.finditer(catalog_text):
+            line = catalog_text.count("\n", 0, match.start()) + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=PUBLIC_RULE_ID,
+                    path=catalog.relative_to(repository_root).as_posix(),
+                    line=line,
+                    target=match.group(0),
+                    message=f"internal planning reference appears in the public UI catalog: {match.group(0)}",
+                    fix_hint="Move internal issue/ADR/design handoff detail to 02_Architecture/design and keep only verified user-facing facts here.",
+                )
+            )
 
     return findings

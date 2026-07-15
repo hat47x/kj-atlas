@@ -114,7 +114,7 @@ Open化条件:
 - [ ] current領域の同一Contract ID/型の異義定義、API/schema key差異、DocumentV2支援表欠落を検出する。
 - [x] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
 - [ ] broken relative linkとSSOT参照先不在を検出する。
-- [ ] 公開版UI catalog等への内部管理語再混入とprovenance欠落を検出する。
+- [x] 公開版UI catalog等への内部管理語再混入とprovenance欠落を検出する。
 - [ ] SafeMode、share/export、proposal-only、human reviewの不変条件参照欠落を検出する。
 - [ ] docs-only PRへ不要なfrontend/backend E2Eを強制しない。
 - [ ] CI jobとvalidatorの失敗理由が、対象ファイル・rule ID・修正先を示す。
@@ -275,3 +275,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - Markdown linkが必要な利用者導線と、実行可能なcommand/path参照を区別して検査する。参照文字列だけが残っていても対象ファイルが消えていればfailする。
 - link/commandの正常fixtureとroute欠落の負例fixtureを追加し、findingはrule ID、入口ファイル、欠落target、追加すべき参照形式を示す。
 - T3全体は`DC-ARC-001`、`DC-PUB-001`等が未実装のため未完了を維持する。
+
+## T3進捗 2026-07-15: `DC-PUB-001`
+
+- 公開`ui_catalog.md`のAudience、確認revision、最終確認日、表示条件、画像検証、公開状態、SafeModeと、非公開画像台帳のCapture ID、source revision、撮影日、fixture、locale/viewport/provider/SafeMode、生成command、結果、目視確認、stale triggerを必須証跡として固定した。
+- 完了済み`DOC-UI-CATALOG-01`の負例語彙（`00_Prompt`、`01_Plans`、ADR番号、issue ID、内部UX ID、Claude Design）だけを公開UIカタログで禁止する。公開文書全体へ曖昧な単語lintは広げず、利用者に必要な確定済み仕様参照を誤検出しない。
+- 完全な公開境界/provenance、内部ADR再混入、catalog/ledger証跡欠落の正常・負例fixtureを追加した。現行catalogと画像台帳はfinding 0である。
+- T3全体は`DC-ARC-001`等が未実装のため未完了を維持する。

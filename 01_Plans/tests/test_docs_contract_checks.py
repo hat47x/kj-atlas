@@ -260,5 +260,65 @@ class RequiredRouteCheckTest(unittest.TestCase):
         self.assertIn("DC-RTE-001 README.md:1", findings[0].render())
 
 
+class PublicUiCatalogCheckTest(unittest.TestCase):
+    def _write_clean_documents(self, root: Path) -> tuple[Path, Path]:
+        catalog = root / "04_Documentation" / "ui_catalog.md"
+        ledger = root / "04_Documentation" / "assets" / "screenshots" / "README.md"
+        ledger.parent.mkdir(parents=True)
+        catalog.write_text(
+            "# UI catalog\n"
+            + "\n".join(MODULE.PUBLIC_CATALOG_REQUIRED)
+            + "\n",
+            encoding="utf-8",
+        )
+        ledger.write_text(
+            "# Screenshot ledger\n"
+            + "\n".join(MODULE.SCREENSHOT_LEDGER_REQUIRED)
+            + "\n",
+            encoding="utf-8",
+        )
+        return catalog, ledger
+
+    def test_accepts_public_boundary_and_complete_provenance(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            catalog, ledger = self._write_clean_documents(root)
+
+            findings = MODULE.check_public_ui_catalog(root, catalog, ledger)
+
+        self.assertEqual(findings, [])
+
+    def test_reports_internal_reference_with_rule_file_line_and_fix(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            catalog, ledger = self._write_clean_documents(root)
+            catalog.write_text(
+                catalog.read_text(encoding="utf-8") + "\nSee ADR-0044 for internal progress.\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_public_ui_catalog(root, catalog, ledger)
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_id, "DC-PUB-001")
+        self.assertEqual(findings[0].path, "04_Documentation/ui_catalog.md")
+        self.assertEqual(findings[0].target, "ADR-0044")
+        self.assertIn("02_Architecture/design", findings[0].fix_hint)
+
+    def test_reports_missing_catalog_and_ledger_evidence(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            catalog, ledger = self._write_clean_documents(root)
+            catalog.write_text("# UI catalog\n", encoding="utf-8")
+            ledger.write_text("# Ledger\n", encoding="utf-8")
+
+            findings = MODULE.check_public_ui_catalog(root, catalog, ledger)
+
+        targets = {finding.target for finding in findings}
+        self.assertIn("確認対象revision", targets)
+        self.assertIn("Source revision:", targets)
+        self.assertIn("Stale triggers checked:", targets)
+
+
 if __name__ == "__main__":
     unittest.main()
