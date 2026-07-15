@@ -60,6 +60,7 @@
 4. 失敗を `product defect / test defect / environment limitation` に分類する。
 5. BlockerはNo-Go、未解消Majorは原則No-Go、Minorはownerと期限を記録してConditional Goを選べる。
 6. 最終判断を `Go / Conditional Go / No-Go` から選ぶ。
+7. PRの予算自己申告（`ADR-0043` 複雑性予算 / `ADR-0046` 性能予算、`BUDGET-OPS-01`）が「悪化」を含む場合は、対応するゲート（主にG2主要操作、G4画面耐性）の確認対象に含める。
 
 重大度:
 
