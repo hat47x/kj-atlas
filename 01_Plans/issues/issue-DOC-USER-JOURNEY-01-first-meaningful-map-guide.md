@@ -1,7 +1,7 @@
 # Issue: DOC-USER-JOURNEY-01 初回利用者向け「最初の意味ある配置」ガイド
 
 - Type: Documentation quality
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -14,9 +14,9 @@
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: DOC-USER-JOURNEY-01
-- RequirementStatement: 初回利用者が、起動方法の理解だけで止まらず、AI無効・SafeMode ON の安全な既定構成で「カードを置く、まとまりを作る、未確定を残す、保存し、共有前確認まで進む」という最初の価値到達を公開文書だけで再現できるようにする。
+- RequirementStatement: 初回利用者が、起動方法の理解だけで止まらず、AI無効・SafeMode ON の安全な既定構成で「標準サンプルのカードを確認する、まとまりを作る、未確定を残す、保存し、共有前確認まで進む」という最初の価値到達を公開文書だけで再現できるようにする。
 - PriorityClass（Must / Should / Could）: Must
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=初回利用者がアプリを起動済み、`KJ_ATLAS_LLM_PROVIDER=none`、SafeMode ON / 操作=固定題材でカードを3件作成し、まとまりと保留点を作り、保存・再読込・共有前確認を行う / 期待結果=何を配置し、何をまだ決めておらず、外部共有はまだ行っていないかを説明できる / 除外=AI提案、自動分類、外部共有の実行、クラウド同期。
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=初回利用者がアプリを起動済み、`KJ_ATLAS_LLM_PROVIDER=none`、SafeMode ON / 操作=秘密情報を含まない標準サンプルの3カードを確認し、まとまりと保留点を作り、保存・再読込・共有前確認を行う / 期待結果=何を配置し、何をまだ決めておらず、外部共有はまだ行っていないかを説明できる / 除外=AI提案、自動分類、外部共有の実行、クラウド同期。
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
@@ -52,17 +52,17 @@
 
 `04_Documentation/getting_started.md` を新設し、次の固定題材を使う7〜10手順の一本道を作る。
 
-固定題材（秘密情報を含まない）:
+標準サンプルの固定題材（秘密情報を含まない）:
 
-1. 「会議では少数意見が出にくい」
-2. 「匿名メモでは違和感が集まりやすい」
-3. 「結論を急ぐと保留点が消える」
+1. 「ユーザー課題を集める」
+2. 「観察メモをカード化する」
+3. 「似ている内容を近くに置く」
 
 到達順:
 
 1. 安全な既定値を確認する。
-2. 新規文書を開く。
-3. 上記3カードを作る。
+2. 標準サンプルを開く。
+3. 上記3カードを確認する。
 4. 2カードを最初の島へまとめる。
 5. 残る1カードを保留または未決として残す。
 6. 必要なら配置変更を1回取り消し、可逆性を確認する。
@@ -98,7 +98,7 @@
 - [x] T2 `getting_started.md` を上記固定構造で作成する。
 - [x] T3 必要最小限の既存スクリーンショットを再利用し、代替テキストを付ける。新規撮影が必要なら秘密情報を含まない fixture を使う。
 - [x] T4 `README.md` / `public_index.md` / `installation.md` / `acceptance_check.md` / `04_Documentation/README.md` の導線と公開対象表を同期する。
-- [ ] T5 手順未読のレビュー担当者が文面だけで再現し、迷った箇所を修正する。
+- [x] T5 手順未読のレビュー担当者が文面だけで再現し、迷った箇所を修正する。
 - [x] T6 公開品質・リンク・用語・安全境界を検証する。
 
 ## 7) 検証計画 / Validation plan
@@ -139,4 +139,6 @@
 - `04_Documentation/getting_started.md` を追加し、現行UI/E2Eで固定された9手順、安全な停止、保存失敗時の退避、教程とsmoke testの境界を記載した。
 - README、公開入口、導入、受け入れ確認、04管理indexを同期した。
 - 相対リンク/画像、公開境界、Markdown体裁を機械確認し、入口・SafeMode画像を目視確認した。
-- 残作業はT5のみ。リポジトリ文脈を知らない人による初見dry-runと、迷った箇所の反映が完了するまでDoneへ移さない。
+- 2026-07-15、手順未読の利用者としてSQLite代替構成（`KJ_ATLAS_LLM_PROVIDER=none`、SafeMode ON）を起動し、標準サンプルから島作成、未決設定、保存、再読込、共有前チェックまで実機dry-runした。外部共有、書き出し、AI呼び出し、秘密情報入力は行っていない。
+- dry-runで、島作成後は島が主対象として残るためカードの`保留状態`へ直行できないことと、再読込後に`サンプルを開く`を選び直すと組み込みサンプルの初期状態へ戻ることを確認した。手順5へEscによる選択解除を追加し、手順8を「読込完了を待って開始パネルを閉じる」経路へ修正した。
+- 標準サンプルの固定題材とIssue内の提案文言を同期し、T5を完了したためDoneとする。

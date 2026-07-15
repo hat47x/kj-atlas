@@ -1,7 +1,7 @@
-# Issue Draft: DX-DOC-02 docs-contract CIとActive issue完全性のfail-closed化
+# Issue: DX-DOC-02 docs-contract CIとActive issue完全性のfail-closed化
 
 - Type: Process / Documentation quality
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -106,7 +106,7 @@ Open化条件:
 - [x] indexへの手動掲載がなくても、filesystem上のActive memoをvalidatorが自動発見する。
 - [x] READMEの固定Active表を廃止し、空index・stale row・手動件数同期という失敗原因を除去する。
 - [ ] 必須メタデータ、非正規Status、参照先不在、依存関係不正、重複Backlog IDの異常系testがある。
-- [x] current repositoryでtriageとvalidatorがActive 34件を返す。
+- [x] current repositoryでtriageとvalidatorが同じActive件数を返す（2026-07-15 Open化時点: 29件）。
 - [ ] triageとvalidatorが同じStatus parser・正規値を使い、同じActive件数を返す。
 - [ ] 1コマンドでローカル/CI同値のdocs-checkを実行できる。
 - [ ] docs-check非0終了がPRをblockする。
@@ -197,3 +197,17 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - validatorは `issue-*.md` を直接走査し、StatusがDraft/Open/In Progressの34件を検証する。
 - triageもActive 34件を返し、validator/triage unit test 12件が成功した。
 - parser共有、重複Backlog ID検査、統一docs-checkとCI blockingは未完了のため、本IssueはDraftを維持する。
+
+## baseline補正 2026-07-15: リポジトリ内コード参照
+
+- 追跡対象Markdown 374件の相対リンク存在確認で、ADR-0050の3件と完了済みUX-NAV-01 memoの12件が、文書ディレクトリから解決できないリポジトリルート基準または`:line`付きの参照先になっていることを確認した。
+- 参照対象コードや履歴説明は変更せず、文書位置から解決できる`../../03_Implement/...`形式へ補正した。行番号は当時の調査位置としてリンクラベルに残し、現在行への誤った固定anchorには変換していない。
+- `llm_input_ir_spec.md`の正規表現例`/[?&](token|key|secret|password)=/i`はMarkdownリンクではない。T3のcheckerはコードスパン・コードブロックを除外し、この記法を誤検出しないfixtureを持つ。
+- コード記法を除外した全374 Markdown・相対リンク352件の存在確認は欠落0件となり、T3のbroken-link checkerを導入できるclean baselineを回復した。
+
+## Open化記録 2026-07-15
+
+- 依存する`DOC-ARCH-02`、`DOC-OPS-06`、`DOC-UI-CATALOG-01`はすべてDoneで、検査対象、許可例外、正本導線のhandoffが揃った。
+- `ADR-0024`は品質ゲート境界そのものを扱うAccepted ADRである。`02_Architecture`を適用matrixへ加える判断は新規ADRへ分岐せず、T1で同ADRへ根拠、段階導入、除外を追補する。
+- current/history、公開境界、貢献者route、全Markdown相対リンクのclean baselineが再現できた。Open化条件3点を満たしたため、T1から着手可能なOpenへ移す。
+- 最初の実装単位はT1のrule ID/check matrix固定とする。CI変更やblocking昇格を先行させず、ローカル負例fixtureで規則を確定してからT3〜T5へ進む。
