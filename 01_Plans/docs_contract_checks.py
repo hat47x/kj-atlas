@@ -2,7 +2,9 @@
 """Deterministic documentation-contract checks used by the docs-check entrypoint."""
 from __future__ import annotations
 
+import argparse
 import re
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
@@ -127,3 +129,40 @@ def check_relative_links(root: Path, markdown_paths: list[Path]) -> list[DocsChe
                 )
 
     return findings
+
+
+def tracked_markdown_paths(root: Path) -> list[Path]:
+    """Return tracked Markdown paths so generated and dependency files stay out of scope."""
+    result = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "-z", "--", "*.md"],
+        check=True,
+        capture_output=True,
+    )
+    return [Path(raw.decode("utf-8")) for raw in result.stdout.split(b"\0") if raw]
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Validate tracked Markdown contracts.")
+    parser.add_argument(
+        "--root",
+        type=Path,
+        default=Path(__file__).resolve().parents[1],
+        help="Repository root (defaults to the parent of 01_Plans)",
+    )
+    args = parser.parse_args()
+    root = args.root.resolve()
+    markdown_paths = tracked_markdown_paths(root)
+    findings = check_relative_links(root, markdown_paths)
+
+    if findings:
+        print("documentation contract validation failed:")
+        for finding in findings:
+            print(f"- {finding.render()}")
+        return 1
+
+    print(f"ok: checked {len(markdown_paths)} tracked Markdown files")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
