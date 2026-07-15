@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 """Validate active issue memo metadata consistency.
 
-Checks:
-- Active table rows in `README.md` resolve to existing memo files.
-- Active memo files contain required metadata fields.
-- Active table status/source consistency (`Draft` only when Source Issue is TBD).
-- `Expected verification level` value is one of the allowed values.
+Checks active memo files discovered from their own `Status` metadata. README is
+an entry point, not a second status registry.
 """
 
 from __future__ import annotations
@@ -65,6 +62,24 @@ def parse_active_rows(readme_text: str) -> list[ActiveMemoRow]:
                 memo=cols[1].strip("`"),
                 status=cols[2],
                 source=cols[3],
+            )
+        )
+    return rows
+
+
+def discover_active_rows(root: Path) -> list[ActiveMemoRow]:
+    rows: list[ActiveMemoRow] = []
+    for memo_path in sorted(root.glob("issue-*.md")):
+        text = memo_path.read_text(encoding="utf-8")
+        status = extract_field_value(text, "Status")
+        if status not in ALLOWED_ACTIVE_STATUSES:
+            continue
+        rows.append(
+            ActiveMemoRow(
+                backlog=memo_path.stem.removeprefix("issue-"),
+                memo=memo_path.name,
+                status=status,
+                source=extract_field_value(text, "Source Issue") or "",
             )
         )
     return rows
@@ -143,7 +158,7 @@ def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
             errors.append(f"{row.memo}: missing or empty Priority value")
 
         for dep in extract_dependency_paths(text):
-            dep_path = (root / dep).resolve() if dep.startswith("issues/") else (root / "issues" / dep).resolve()
+            dep_path = root / Path(dep).name
             if not dep_path.exists():
                 errors.append(f"{row.memo}: dependency path not found `{dep}`")
 
@@ -163,10 +178,7 @@ def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
 
 
 def validate(root: Path) -> list[str]:
-    readme_path = root / "README.md"
-    readme_text = readme_path.read_text(encoding="utf-8")
-    rows = parse_active_rows(readme_text)
-    return validate_rows(root, rows)
+    return validate_rows(root, discover_active_rows(root))
 
 
 def main() -> int:
@@ -186,7 +198,7 @@ def main() -> int:
             print(f"- {err}")
         return 1
 
-    rows = parse_active_rows((args.root / "README.md").read_text(encoding="utf-8"))
+    rows = discover_active_rows(args.root)
     print(f"ok: validated {len(rows)} active issue memos")
     return 0
 

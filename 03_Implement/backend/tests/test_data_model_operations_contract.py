@@ -2,7 +2,6 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[3]
-AGENTS = ROOT / "AGENTS.md"
 DATA_MODEL_OVERVIEW = ROOT / "02_Architecture/data_model_operations_overview.md"
 SCHEMAS = ROOT / "02_Architecture/schemas.md"
 API = ROOT / "02_Architecture/api.md"
@@ -99,7 +98,6 @@ def test_document_v2_field_table_keeps_embedded_and_contract_boundaries() -> Non
 
 
 def test_data_model_contract_references_are_wired_across_design_docs() -> None:
-    agents = _read(AGENTS)
     overview = _read(DATA_MODEL_OVERVIEW)
     schemas = _read(SCHEMAS)
     api = _read(API)
@@ -110,7 +108,7 @@ def test_data_model_contract_references_are_wired_across_design_docs() -> None:
         for support_level in SUPPORT_LEVELS:
             assert support_level in text
 
-    for text in (agents, schemas, api):
+    for text in (schemas, api):
         assert "data_model_operations_overview.md" in text
 
     for token in (

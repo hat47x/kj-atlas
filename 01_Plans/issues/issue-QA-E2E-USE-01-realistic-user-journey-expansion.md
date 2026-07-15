@@ -2,12 +2,15 @@
 
 - Type: Process
 - Status: Draft
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: N/A
 - Open Readiness: Prepared
 - Execution: Hold
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
 - Scope: 本ファイルのみ（docs-only）
 - Expected verification level: `e2e`
+- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 - Related: `01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md`（境界判定を参照）
 - Policy reference: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 
