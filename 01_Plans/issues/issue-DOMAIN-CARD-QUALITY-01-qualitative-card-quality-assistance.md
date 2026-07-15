@@ -132,6 +132,12 @@
   - `core_value_guard.test.ts`のsource-string contract慣用句（`readFileSync`）を踏襲し、`card_quality.ts`のソース自体に対する境界テストを3件追加: (a) 型のみimport（`import type { Card }`）以外の実行時importが存在しないこと、(b) Provider/fetch/localStorage/worker等の外部I/Oキーワードが一切含まれないこと（`KJ_ATLAS_LLM_PROVIDER=none`は自明に成立）、(c) `.meta`/`.critique`/`.claimType`など、SafeModeが管理する自由記述フィールドへの参照が一切ないこと。
 - 検証結果: 追加5 testsを含め対象13 tests、frontend全体1060/1060 pass（既存の無関係な1ファイル失敗はT4/T5と同じ、リポジトリルート非同梱の副作用）。AC-5・AC-6をチェック済みへ更新した。AC-10（SafeMode/proposal-only/human_reviewed/provider-noneの回帰）はアプリ全体の既存回帰テストが通り続けていることで裏付けられるが、実ブラウザでの確認を伴わないためチェックは見送り、T7のE2E証跡に委ねる。
 
+### T7 状況（2026-07-15、未完了）
+
+- `e2e/card_quality_assistance.spec.ts` を新規作成した（既存specの慣用句 — `card_ka_fields.spec.ts` のfixture/route/openSampleパターン、`canvas_focus_order.spec.ts` の `pressTabUntilFocused` ヘルパー、`work_mode_tabs.spec.ts` の390px containment検証 — を踏襲）。4 tests: (1) mouse — 4問すべてを順に応答し、各応答後もCanvas上のカード本文が変化しないことを確認して閉じる、(2) keyboard — トリガーへのTab到達からEnterでの開閉・応答まで完全にキーボードのみで完了し、閉じた後にトリガーへフォーカスが戻ることを確認、(3) 390px — 3つの決定ボタンがすべてビューポート幅内に収まることを確認、(4) locale — `?locale=ja` で日本語の問い・決定ラベルが表示されることを確認。
+- **実行できていない**: 本WSL環境でPlaywrightの実行時に `chrome-headless-shell: error while loading shared libraries: libnspr4.so: cannot open shared object file` で失敗する。ブラウザバイナリ自体は存在するが、システム共有ライブラリ（`libnspr4`、通常 `npx playwright install-deps` または `apt-get install libnspr4` で導入）が欠落しており、`sudo` にパスワードが必要なため本セッションでは復旧できなかった（別タスクとして是正を依頼済み）。`find /` でも `libnspr4.so` は系内に存在しないことを確認済み。
+- したがってT7は未完了のまま据え置く。このPRはE2E実行による裏付けなしの状態でレビュー可能な形にとどめ、実行環境が復旧し次第、実際に緑になることを確認してからT7をチェックし、スクリーンショットを取得する。
+
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
