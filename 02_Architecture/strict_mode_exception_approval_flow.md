@@ -6,6 +6,8 @@
 - Related: `01_Plans/issues/issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md`
 - DOC-OPS-05 Sync Issues: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`, `01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`, `01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`, `01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
 
+> 適用範囲: 本書は、組織運用で `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を一時的に緩和する場合だけ適用する。個人OSSの日常開発・通常復旧の承認フローではない。2者承認を用意できない場合は例外を有効化せず、strict設定を維持する。
+
 ## 0. この文書の読み方（最初にここだけ読む）
 
 認証の専門知識が深くなくても、次の順序で読むと判断しやすい。
@@ -56,7 +58,7 @@ AUTH系契約硬化を単独完結させる場合、同期順序は次を厳守�
 
 1. `02_Architecture`（本書 + `enterprise_architecture.md`）
 2. `04_Documentation`（`operations.md` / `security.md`）
-3. `01_Plans`（AUTH issue memo と dashboard/decision-pack 参照更新）
+3. `01_Plans`（AUTH issue memoまたはADR。実際に判断・作業状態が変わる場合だけ更新）
 
 運用上の強制条件:
 - 下位層を先に更新しない（Architecture未確定でOperationsを確定しない）。
@@ -373,7 +375,7 @@ DraftRequest
 - 本フェーズの起点（正本）: 本書。
 - 用語固定: **Security Officer / System Owner / Platform Operator**。
 - 役割固定: **2者承認（Security Officer + System Owner）** と **実行責務分離（Platform Operator）**。
-- 導線固定: `enterprise_architecture.md` / `operations.md` / `security.md` / `project-progress-dashboard.md` / `decision-pack-2026-03-human-judgement.md` を相互参照する。
+- 導線固定: 現行契約は `enterprise_architecture.md` / `operations.md` / `security.md` を参照し、実行状況は対象issue memo、長期判断は対象ADRで確認する。
 - 固定値: **D1〜D4**（6.8節）を単一正本とし、差分運用は新規 requestId 再承認を必須とする。
 
 ## 12. Stream G AUTH-OPS-03 整合ログ（2026-05-20）
@@ -396,7 +398,7 @@ DraftRequest
 
 ### Phase 4: Plans/Issue 同期確認
 
-- `project-progress-dashboard.md` / `decision-pack-2026-03-human-judgement.md` / `issue-AUTH-OPS-03-...` の状態整合（Done維持）を確認。
+- `issue-AUTH-OPS-03-...` の完了記録と本書の現行契約が矛盾しないことを確認する。手書きdashboardやdecision-packとの状態同期は行わない。
 - 未解決論点は AUTH-OPS-03 固定値の改定要求が発生した場合のみ「人間判断が必要」とする。
 
 ### 4観点検証ログ（Verify）

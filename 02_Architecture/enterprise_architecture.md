@@ -6,6 +6,8 @@
 This document defines the minimum OSS-level capabilities required for kj-atlas to be deployable in enterprise and government environments.  
 The focus is integration readiness, not SaaS transformation.
 
+> 適用範囲: 本書の職務分離、2者承認、監査台帳は、組織が `enterprise-production` profile を採用した場合の設計である。個人OSSの日常開発やローカル利用の必須運用ではない。必要な役割を用意できない環境では、JIT provisioningの例外緩和を有効にせず、既定のstrict設定を維持する。
+
 ---
 
 # 基本方針
@@ -557,7 +559,7 @@ Browser → Internal IdP → Hardened API → RDBMS（オンプレ）
 - 同期元正本: `02_Architecture/strict_mode_exception_approval_flow.md`。
 - 用語: Security Officer / System Owner / Platform Operator を固定し、別名を導入しない。
 - 役割: 2者承認（Security Officer + System Owner）と実行責務（Platform Operator）を分離する。
-- 導線: 運用詳細は `04_Documentation/operations.md`、統制詳細は `04_Documentation/security.md`、進捗/判定は `01_Plans/project-progress-dashboard.md` と `01_Plans/issues/decision-pack-2026-03-human-judgement.md` を参照する。
+- 導線: 運用詳細は `04_Documentation/operations.md`、統制詳細は `04_Documentation/security.md`、現在の実行タスクは `01_Plans/issues/README.md` と対象issue memo、確定した長期判断は対象ADRを参照する。手書きdashboardやdecision-packを進捗の正本にしない。
 - 固定値（D1〜D4）: 本書の strict mode 例外運用節は `strict_mode_exception_approval_flow.md` 6.8 の値を参照し、ローカル再定義を行わない。
 
 

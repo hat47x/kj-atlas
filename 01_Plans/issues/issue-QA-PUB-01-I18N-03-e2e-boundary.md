@@ -9,6 +9,8 @@
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
 - Scope: `01_Plans/issues/`（docs-only）
+- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+- Expected verification level: `e2e`
 - Related backlog: `PUB-01`, `I18N-03`, `QA-E2E-USE-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 - Expected verification level: `e2e`

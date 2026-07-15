@@ -15,6 +15,7 @@ sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 
 extract_verification_level = MODULE.extract_verification_level
+discover_active_rows = MODULE.discover_active_rows
 parse_active_rows = MODULE.parse_active_rows
 validate = MODULE.validate
 
@@ -126,7 +127,7 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
             errors = validate(root)
             self.assertTrue(any("invalid Expected verification level" in err for err in errors))
 
-    def test_validate_detects_index_and_memo_status_mismatch(self) -> None:
+    def test_validate_uses_memo_status_instead_of_readme_status(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "README.md").write_text(
@@ -156,9 +157,9 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
                 encoding="utf-8",
             )
             errors = validate(root)
-            self.assertTrue(any("index status/source mismatch" in err for err in errors))
+            self.assertEqual([], errors)
 
-    def test_validate_detects_index_and_memo_source_mismatch(self) -> None:
+    def test_validate_uses_memo_source_instead_of_readme_source(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "README.md").write_text(
@@ -188,7 +189,7 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
                 encoding="utf-8",
             )
             errors = validate(root)
-            self.assertTrue(any("index status/source mismatch" in err for err in errors))
+            self.assertEqual([], errors)
 
     def test_validate_allows_empty_active_table(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -211,7 +212,7 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
             errors = validate(root)
             self.assertEqual([], errors)
 
-    def test_validate_detects_invalid_active_status_enum(self) -> None:
+    def test_discovery_ignores_non_active_status_enum(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "README.md").write_text(
@@ -241,8 +242,17 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
                 encoding="utf-8",
             )
             errors = validate(root)
-            self.assertTrue(any("invalid active status" in err for err in errors))
-            self.assertTrue(any("invalid Status" in err for err in errors))
+            self.assertEqual([], errors)
+
+    def test_discover_active_rows_does_not_require_readme(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "issue-doc.md").write_text(
+                "- Status: Draft\n- Source Issue: N/A\n",
+                encoding="utf-8",
+            )
+            rows = discover_active_rows(root)
+            self.assertEqual(["issue-doc.md"], [row.memo for row in rows])
 
     def test_validate_detects_missing_dependency_path(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

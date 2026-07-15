@@ -1,200 +1,116 @@
-# 対外文書作成品質基準
+# 対外文書の品質基準
 
-- Classification: Move internal
-- Status: Normative for public-document review
-- Last verified: 2026-07-15 JST
-- Upstream: `01_Plans/adr/ADR-0023-doc-ops-04-readability-baseline.md`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`
-- Downstream: `04_Documentation/README.md`, public Gist / release review
+> Classification: Internal / Normative
+> Public boundary: 本書は公開本文ではなく、`04_Documentation/` の公開前確認に使用する。
 
-## Audience
+## 目的
 
-`04_Documentation/` の公開候補を作成・更新・レビューするMaintainer、Contributor、生成AIを対象とする。
+一般利用者、外部開発者、初見の運用担当者が、安全に理解・再現できる公開文書を維持する。内部計画、承認履歴、実行ログを公開文書へ混在させない。
 
-## Goal
+## 適用範囲
 
-公開文書を、機密を含まず、初読で理解でき、操作を再現でき、上流正本へ辿れる状態に保つ。
+- 一般利用者向け: `04_Documentation/public_index.md` から案内する文書
+- 運用者向け: installation、configuration、operations、security、diagnosticsなど
+- 開発者向け: `CONTRIBUTING.md` と `03_Implement/*/docs/`
+- 対象外: ADR、issue memo、設計検討、AI作業ログ
 
-## Non-goal
-
-- `01_Plans/` や `02_Architecture/` の内部判断を公開本文へ複製すること。
-- 文書reviewだけでruntime、security、E2Eの品質保証を代替すること。
-- 主観的な文体や好みをmerge blockingにすること。
-- 未実装・未承認の仕様を将来像の説明だけで確定扱いすること。
-
-## Outcome
-
-読者は公開文書だけで、対象読者、目的、前提、手順、期待結果、安全な停止方法、詳細正本への導線を判断できる。ReviewerはQG-1〜QG-6を順に判定し、Go / No-Goと根拠を再現できる。
-
-## Normative priority
-
-1. Security / SafeMode / share-export / import-sanitizeの上流正本。
-2. ADR-0023のReadability Baseline。
-3. ADR-0024のdocs-check境界。
-4. 本書のQG-1〜QG-6と統一判定手順。
-5. 推奨基準。
-
-上位文書と衝突する場合は公開を止め、上流を先に直す。本書は内部品質基準であり、公開Gist本文へ含めない。
-
-## Mandatory quality gates
+## 必須品質基準
 
 ### QG-1 公開安全性
 
-- 鍵、token、個人情報、内部URL、顧客情報、private logを含めない。
-- 個人環境の絶対path、一時file名、社内channel名、未公開障害memoを残さない。
-- 内部issue、作業進捗、承認待ち、AIの推測を利用者向けの確定事実として書かない。
-- screenshot、diagnostics、sample exportも本文と同じ公開安全性で確認する。
-- SafeModeやredactionで除外される内容を、例示や画像の都合で復元しない。
+- 鍵、トークン、個人情報、内部URL、顧客情報を含めない。
+- 個人環境の絶対パス、内部承認履歴、生の監査ログを残さない。
+- 未確定の仮説や方針を実装済み事実として書かない。
+- SafeMode、share/export、未レビュー情報、外部providerの安全境界を後退させない。
 
-### QG-2 文書メタ
+### QG-2 読者と範囲
 
-大幅改訂または新規文書は、冒頭付近から次を判別できるようにする。
+文書の冒頭で、次を短く判断できるようにする。
 
-- Audience
-- Goal
-- Non-goal
-- Outcome
-- 必要なUpstream / Related導線
+- 対象読者
+- 文書の目的
+- 前提条件または適用範囲
+- 範囲外
+- 読後にできること
 
-見出し名は文書の読みやすさに合わせて言い換えてよいが、意味を欠落させない。
+見出し名や定型メタを強制せず、自然な導入文で明確ならよい。
 
 ### QG-3 単体読解性
 
-- 1〜3文の導入要約を置く。
-- 前提条件、適用範囲、対象versionまたは確認日を必要に応じて示す。
-- 手順、rule、判断基準のいずれかを明示する。
-- 略語やproject固有語は初出で説明するか、最小用語集へリンクする。
-- 内部directory構造を知らない利用者にも意味が通る表現にする。
+- Gistや直接リンクから単独で読まれても目的が分かる。
+- 略語やプロジェクト固有語は初出で説明する。
+- 内部ディレクトリ名、issue ID、ADR番号を理解の前提にしない。
+- 内部管理情報が必要な場合は、本文へ複製せず参照先を示す。
 
 ### QG-4 再現可能性
 
-操作やcommandを含む文書は次を満たす。
+操作やコマンドを示す場合は、次を含める。
 
-- commandはcopy可能なcode blockにする。
-- 実行directory、依存、必要な環境変数を明記する。
-- 期待結果または確認方法を最低1つ示す。
-- 失敗時の停止条件、dataを壊さない回復方法、再開地点を示す。
-- 実行できない検証は、理由・代替確認・再開条件を記録する。
+- 実行場所と前提条件
+- コピー可能なコマンドまたは具体的な画面操作
+- 成功時の期待結果または確認方法
+- 失敗時の安全な戻し方、または参照先
 
-### QG-5 正本導線と境界
+### QG-5 正本との整合
 
-- 設計値はADR / Architecture、runtime値はparameter registry、実装事実は対象source / testを参照する。
-- `04_Documentation/` は利用・運用の説明に留め、上流契約を再定義しない。
-- 現行手順と形成履歴、利用者向け説明と開発者向け検証を混在させない。
-- Superseded文書は短い案内だけを残し、反対の規範や古いcommandを保持しない。
-- Link先が存在し、公開bundleへ含まれない内部linkは読者に必須の手順にしない。
+- 環境変数は `runtime_parameter_registry.md`、APIは `api.md`、schemaは `schemas.md` を参照する。
+- 公開文書は利用方法を説明し、設計契約を独自に再定義しない。
+- 実装と異なる場合は、要件・方針を確認して文書または実装の適切な側を修正する。
+- 同じ規則を複数の公開文書へ長文で複製せず、読者向け入口から正しい1文書へ案内する。
 
-### QG-6 検証記録
+### QG-6 表示と導線
 
-公開またはrelease前に、最低限次をPR本文、release checklist、または同等の監査可能な場所へ記録する。
+- Markdownの見出し、表、コードブロックが崩れていない。
+- 相対リンクと画像参照が有効である。
+- スクリーンショットは操作理解に必要な場合だけ掲載し、現行UIと一致させる。
+- 画像には秘密情報、個人情報、内部URLを含めない。
 
-1. Markdown表示と見出し構造。
-2. 相対linkと画像参照。
-3. command / code blockの目視または実行結果。
-4. 公開不可情報がないこと。
-5. Go / No-Go、未実施項目、再開条件。
+## 推奨事項
 
-UI catalogやscreenshotを更新する場合は、source revision、確認日、locale、provider、SafeMode、fixture、viewport、capture方法、目視結果も記録する。
+- 1文を短くし、判断条件は箇条書きに分ける。
+- 手順は必要に応じて「準備、実行、確認、問題時」に分ける。
+- サンプル値は実値と区別できる表記にする。
+- 表や画像だけに情報を閉じず、本文でも要点を説明する。
+- 「外部に送る」のような直訳調を避け、「共有する」など自然な日本語を使う。
 
-## Public boundary
+## 配置境界
 
-分類の正本は `04_Documentation/README.md` とし、公開時点で同期する。
-
-| Classification | Examples | Rule |
+| 区分 | 配置 | 扱い |
 |---|---|---|
-| Public entry | `04_Documentation/public_index.md` | 外部共有の先頭。管理情報を含めない |
-| Public user / operator docs | `getting_started.md`, `installation.md`, `configuration.md`, `data_handling.md`, `operations.md`, `security.md`, `acceptance_check.md`, `ui_catalog.md`, `diagnostics.md`, `narratives.md`, `external_agent_workflow.md` | QG-1〜QG-6必須。実装済み事実と安全境界に限定 |
-| Documentation maintainer | `04_Documentation/README.md`, `release.md` | 公開準備用。Gist本文には原則含めない |
-| Developer / AI operations | `03_Implement/frontend/docs/e2e_testing.md`, `04_Documentation/codex_skill_operations.md`, E2E log | 一般利用者向けbundleへ含めない |
-| Internal decisions | `00_Prompt/`, `01_Plans/`, `02_Architecture/` | 利用者に必要な確定事実だけを04へ要約する |
+| 一般利用者・運用者向け | `04_Documentation/` | 実装済みの使い方と安全境界を書く |
+| 開発者向け | `CONTRIBUTING.md`, `03_Implement/*/docs/` | 開発、テスト、CI手順を書く |
+| 設計契約 | `02_Architecture/` | 公開文書から必要な場合だけ参照する |
+| 内部計画・判断 | `00_Prompt/`, `01_Plans/` | 公開本文に含めない |
 
-`04_Documentation/e2e_testing.md` はSuperseded案内であり、E2E実務手順の正本ではない。
+一般公開の入口は `04_Documentation/public_index.md` とし、`04_Documentation/README.md` は文書保守者向けに分離する。
 
-## Check applicability
+## 公開前の最小確認
 
-| Changed surface | Required review | Current automation boundary |
-|---|---|---|
-| Public `04_Documentation/*.md` | QG-1〜QG-6、link、公開境界 | ADR-0024 Boundary-1。release blocking |
-| `01_Plans/adr/*.md` / `issues/*.md` / dashboard | 必須meta、Status、traceability、current/history | ADR-0024 Boundary-1。issue validator / triageを使用 |
-| Root OSS docs | 公開安全性、入口整合、link | 変更scopeに応じたdocs-check |
-| Current `02_Architecture/*.md` | 契約SSOT、同名型、history分離 | 統合checkerは `DX-DOC-02` で未実装。手動照合を省略しない |
-| Developer docs under `03_Implement/` | 実行commandと実装の一致 | 対象subsystemのtestと併用 |
+変更した文書に該当する項目だけを確認する。
 
-自動checkが未実装の行を「適用外」とみなさない。現行は手動証拠を残し、`DX-DOC-02` の導入後に同じrule IDへ移行する。
+1. 秘密情報や内部管理情報がない。
+2. 対象読者、目的、前提が分かる。
+3. 操作やコマンドを実行・確認できる。
+4. 実装および正本と矛盾しない。
+5. Markdown、リンク、必要な画像が正しく表示される。
 
-## Unified review procedure
+結果はPR本文またはrelease checklistへ一度だけ記録する。QG番号の転記、固定Phase、Stream、self-correction回数、文書間の手動件数同期は不要である。
 
-### 1. Scope
+## 停止条件
 
-- 公開対象と除外対象を列挙する。
-- 変更がDocsだけか、runtime / schema / securityへ波及するかを確認する。
-- 公開bundleの入口を `public_index.md` に固定する。
+- 秘密情報や個人情報を安全に除去できない。
+- 実装済み事実と未確定仕様を区別できない。
+- 安全境界または正本と矛盾し、どちらを直すべきか判断できない。
+- 手順を再現できず、制約や代替方法も説明できない。
 
-### 2. Gate review
+停止時は公開せず、対象issueへ未確認事項と次の確認方法を短く記載する。
 
-QG-1からQG-6まで順番に `Pass / Fail / N/A` を判定する。N/Aには理由を書く。QG-1、QG-5、安全不変条件は、対象に関係する限りN/Aにしない。
+## 関連文書
 
-### 3. Mechanical checks
+- `01_Plans/adr/ADR-0023-doc-ops-04-readability-baseline.md`
+- `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`
+- `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
+- `04_Documentation/README.md`
+- `04_Documentation/release.md`
 
-最低限、変更scopeに応じて次を実行する。
-
-```bash
-python 01_Plans/issues/validate_active_issue_memos.py
-python 01_Plans/triage_actionable_plans.py
-git diff --check
-```
-
-相対link、画像、command、対象subsystemのtestは変更内容に応じて追加する。
-
-### 4. Decision
-
-- **Go**: Mandatory gateが全てPassし、必要検証が成功し、未実施項目がrelease blockerでない。
-- **No-Go**: Mandatory gateが1つでもFail、公開境界が不明、安全正本と矛盾、必要検証が未実施。
-
-### 5. Record
-
-次を1つの記録へ残す。
-
-```text
-Docs quality decision: Go | No-Go
-Scope:
-Source revision / verified date:
-QG-1..QG-6:
-Commands and results:
-Visual review:
-Not executed and reason:
-Resume condition:
-Reviewer:
-```
-
-## Definition of Done
-
-- QG-1〜QG-6の結果を記録した。
-- Audience / Goal / Non-goal / Outcomeと正本導線が読める。
-- link、画像、command、Markdown体裁を変更scopeに応じて確認した。
-- 公開対象外の管理情報、履歴log、未承認方針が混入していない。
-- SafeMode、share/export、provider=none、proposal-only、人手reviewの説明が後退していない。
-- 未実施検証には理由と再開条件があり、必要ならNo-Goを維持した。
-
-## Fail-safe and recovery
-
-次のいずれかで即No-Goとする。
-
-- 機密または個人情報の混入が疑われる。
-- 上位正本との未定義競合、用語衝突、契約値の異義定義がある。
-- 公開対象と内部対象を判別できない。
-- 必須link、fixture、source revision、検証環境を特定できない。
-- self-correctionが3回を超えても収束しない。
-
-停止時は公開物を更新せず、失敗したQG、影響範囲、暫定回避、再開条件をissue memoへ記録する。安全境界を緩めてGoにしない。
-
-## Recommended practices
-
-- 長い手順は「準備 / 実行 / 確認 / 回復」に分ける。
-- sample値は `<doc_id>`、`change-me` など本番値と区別する。
-- 図表には代替textまたは本文要約を付ける。
-- 同じ事実を複数文書へ複製せず、正本と利用者向け要約を分ける。
-- screenshotは決定的fixtureから再生成し、古くなる条件をledgerへ書く。
-
-## History policy
-
-過去のStream実行ログ、自己修復cycle、旧判定件数はgit履歴へ委譲し、本書のNormative手順へ再掲しない。gitだけでは失われる一次証拠をarchiveする場合は、`Informative`、対象期間、Retention reason、本書への逆linkを必須とする。
+2026-07-15以前のStream別実行ログと個別判定記録はGit履歴から参照できる。現行品質基準には再掲しない。
