@@ -63,6 +63,15 @@ class DocsCheckEntrypointTest(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
+        (root / MODULE.SAFETY_ENTRY_PATH).write_text(
+            "# Agent entry\n\n"
+            "- SafeModeは既定ON。\n"
+            "- AI出力はproposal-onlyで、自動適用しない。\n"
+            "- `human_reviewed` は人間だけが設定する。\n"
+            "- `KJ_ATLAS_LLM_PROVIDER=none` でも主要価値が成立する。\n"
+            "- share/exportで未レビュー情報や秘密情報を意図せず共有しない。\n",
+            encoding="utf-8",
+        )
         subprocess.run(["git", "init", "-q"], cwd=root, check=True)
         subprocess.run(["git", "add", "."], cwd=root, check=True)
 
@@ -74,7 +83,7 @@ class DocsCheckEntrypointTest(unittest.TestCase):
             result = MODULE.run_docs_check(root, run_tests=False, required_routes=())
 
         self.assertEqual(result.active_count, 0)
-        self.assertEqual(result.markdown_count, 12)
+        self.assertEqual(result.markdown_count, 13)
         self.assertEqual(result.errors, ())
 
     def test_run_docs_check_reports_broken_relative_link(self):

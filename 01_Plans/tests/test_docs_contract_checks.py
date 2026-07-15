@@ -358,5 +358,45 @@ class ConflictMarkerCheckTest(unittest.TestCase):
         self.assertEqual(findings, [])
 
 
+class SafetyInvariantRouteCheckTest(unittest.TestCase):
+    def _complete_entry(self) -> str:
+        return textwrap.dedent("""\
+            # Agent entry
+
+            - SafeModeは既定ON。
+            - AI出力はproposal-onlyで、自動適用しない。
+            - `human_reviewed` は人間だけが設定する。
+            - `KJ_ATLAS_LLM_PROVIDER=none` でも主要価値が成立する。
+            - share/exportで未レビュー情報や秘密情報を意図せず共有しない。
+        """)
+
+    def test_accepts_all_five_safety_invariants(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            entry = root / "AGENTS.md"
+            entry.write_text(self._complete_entry(), encoding="utf-8")
+
+            findings = MODULE.check_safety_invariant_route(root, entry)
+
+        self.assertEqual(findings, [])
+
+    def test_reports_missing_invariant_with_rule_entry_and_fix(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            entry = root / "AGENTS.md"
+            entry.write_text(
+                self._complete_entry().replace("- SafeModeは既定ON。\n", ""),
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_safety_invariant_route(root, entry)
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_id, "DC-SAF-001")
+        self.assertEqual(findings[0].path, "AGENTS.md")
+        self.assertEqual(findings[0].target, "SafeMode default ON")
+        self.assertIn("AGENTS.md safety section", findings[0].fix_hint)
+
+
 if __name__ == "__main__":
     unittest.main()

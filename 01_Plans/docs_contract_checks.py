@@ -13,6 +13,7 @@ HISTORY_RULE_ID = "DC-HIS-001"
 ROUTE_RULE_ID = "DC-RTE-001"
 PUBLIC_RULE_ID = "DC-PUB-001"
 FORMAT_RULE_ID = "DC-FMT-001"
+SAFETY_RULE_ID = "DC-SAF-001"
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
 MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]\r\n]*\]\((?P<target><[^>\r\n]+>|[^)\r\n]+)\)")
@@ -57,6 +58,25 @@ SCREENSHOT_LEDGER_REQUIRED = (
     "Result:",
     "Manual review:",
     "Stale triggers checked:",
+)
+SAFETY_INVARIANT_PATTERNS = (
+    ("SafeMode default ON", re.compile(r"SafeModeは既定ON", re.IGNORECASE)),
+    (
+        "AI output remains proposal-only",
+        re.compile(r"AI出力はproposal-onlyで、自動適用しない", re.IGNORECASE),
+    ),
+    (
+        "human_reviewed is human-only",
+        re.compile(r"`?human_reviewed`?[ \t]*は人間だけが設定する", re.IGNORECASE),
+    ),
+    (
+        "provider=none retains core value",
+        re.compile(r"`?KJ_ATLAS_LLM_PROVIDER=none`?[ \t]*でも主要価値が成立する", re.IGNORECASE),
+    ),
+    (
+        "share/export prevents unintended disclosure",
+        re.compile(r"share/exportで未レビュー情報や秘密情報を意図せず共有しない", re.IGNORECASE),
+    ),
 )
 
 
@@ -544,4 +564,41 @@ def check_conflict_markers(root: Path, markdown_paths: list[Path]) -> list[DocsC
                 )
             )
 
+    return findings
+
+
+def check_safety_invariant_route(root: Path, entry_path: Path) -> list[DocsCheckFinding]:
+    """Return DC-SAF-001 findings when the AI entry loses a safety invariant route."""
+    repository_root = root.resolve()
+    entry = entry_path if entry_path.is_absolute() else repository_root / entry_path
+    entry = entry.resolve()
+    entry_label = entry.relative_to(repository_root).as_posix()
+
+    if not entry.exists():
+        return [
+            DocsCheckFinding(
+                rule_id=SAFETY_RULE_ID,
+                path=entry_label,
+                line=1,
+                target="safety invariant entry",
+                message="AI safety entry document does not exist",
+                fix_hint="Restore AGENTS.md with the five non-regression safety invariants.",
+            )
+        ]
+
+    text = entry.read_text(encoding="utf-8")
+    findings: list[DocsCheckFinding] = []
+    for label, pattern in SAFETY_INVARIANT_PATTERNS:
+        if pattern.search(text):
+            continue
+        findings.append(
+            DocsCheckFinding(
+                rule_id=SAFETY_RULE_ID,
+                path=entry_label,
+                line=1,
+                target=label,
+                message=f"safety invariant is no longer reachable from the AI entry: {label}",
+                fix_hint="Restore the explicit non-regression invariant in the AGENTS.md safety section.",
+            )
+        )
     return findings

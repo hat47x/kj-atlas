@@ -115,7 +115,7 @@ Open化条件:
 - [x] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
 - [ ] broken relative linkとSSOT参照先不在を検出する。
 - [x] 公開版UI catalog等への内部管理語再混入とprovenance欠落を検出する。
-- [ ] SafeMode、share/export、proposal-only、human reviewの不変条件参照欠落を検出する。
+- [x] SafeMode、share/export、proposal-only、human reviewの不変条件参照欠落を検出する。
 - [ ] docs-only PRへ不要なfrontend/backend E2Eを強制しない。
 - [ ] CI jobとvalidatorの失敗理由が、対象ファイル・rule ID・修正先を示す。
 
@@ -289,3 +289,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - 統一docs-checkからworking treeとstaged changesの`git diff --check`も実行する。CIでは既存の隣接stepがPR merge-baseまたはpush before commitからHEADまでを検査するため、ローカル未commit差分とCI commit rangeを補完的に覆う。
 - findingはrule ID、対象Markdown、行、修正commandを示す。現行全374 Markdownは競合境界0、diff check成功である。
 - T3/T7全体は`DC-ARC-001`、`DC-SAF-001`とPR event観測が未完了のため継続する。
+
+## T3進捗 2026-07-15: `DC-SAF-001`
+
+- AIの最小入口`AGENTS.md`から、SafeMode既定ON、AI出力proposal-only/自動適用禁止、`human_reviewed`人手限定、provider=`none`でも主要価値成立、share/exportの未レビュー情報・秘密情報漏洩防止へ到達できることを検査する純関数を追加した。
+- 値を複数の設計文書間で推測比較せず、AIが作業開始時に必ず通る入口の非後退表明を5件の固定anchorとして検査する。欠落時はrule ID、入口、失われた不変条件、正本導線の復元指針を示す。
+- 5不変条件の正常fixtureと1条件欠落の負例fixtureを追加し、現行`AGENTS.md`はfinding 0である。
+- T3全体は`DC-ARC-001`が未実装のため未完了を維持する。

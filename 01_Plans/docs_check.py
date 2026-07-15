@@ -16,6 +16,7 @@ from docs_contract_checks import (
     check_public_ui_catalog,
     check_relative_links,
     check_required_routes,
+    check_safety_invariant_route,
 )
 from issues.validate_active_issue_memos import discover_active_rows, validate
 from triage_actionable_plans import collect
@@ -28,14 +29,15 @@ ENABLED_RULES = (
     "DC-RTE-001",
     "DC-PUB-001",
     "DC-FMT-001",
+    "DC-SAF-001",
 )
 NOT_ENABLED_RULES = (
     "DC-ARC-001",
-    "DC-SAF-001",
 )
 HISTORY_INDEX_PATH = Path("02_Architecture/history/README.md")
 PUBLIC_CATALOG_PATH = Path("04_Documentation/ui_catalog.md")
 SCREENSHOT_LEDGER_PATH = Path("04_Documentation/assets/screenshots/README.md")
+SAFETY_ENTRY_PATH = Path("AGENTS.md")
 REQUIRED_ROUTES = (
     RequiredRoute(Path("README.md"), Path("CONTRIBUTING.md"), "CONTRIBUTING.md", True),
     RequiredRoute(
@@ -247,6 +249,10 @@ def run_docs_check(
         )
     )
     errors.extend(_run_local_diff_checks(repository_root))
+    errors.extend(
+        finding.render()
+        for finding in check_safety_invariant_route(repository_root, SAFETY_ENTRY_PATH)
+    )
     if run_tests:
         errors.extend(_run_contract_tests(repository_root))
 
