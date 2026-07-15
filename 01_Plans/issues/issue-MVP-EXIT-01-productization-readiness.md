@@ -8,7 +8,7 @@
 - Owner: Maintainer / Productization owner
 - Scope: `00_Prompt/`, `01_Plans/`, `02_Architecture/`, `03_Implement/`, `04_Documentation/`
 - Related Backlog: `MVP-EXIT-01`
-- Related ADR/Spec: `README.md`, `ROADMAP.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `02_Architecture/architecture.md`, `04_Documentation/public_index.md`
+- Related ADR/Spec: `README.md`, `ROADMAP.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/issues/issue-RELEASE-DOC-01-release-artifact-contract-and-runbook.md`, `02_Architecture/architecture.md`, `04_Documentation/public_index.md`
 - Expected verification level: `integration`
 
 ## 目的
@@ -48,12 +48,13 @@ kj-atlasを、機能デモとして動くMVPから、一般利用者が継続利
 
 2026-07-15時点では、frontend typecheck、Vitest 1,034件、Playwright 165件、accessibility自動検査、Compose構築、保存往復、backup/restore、代表障害からの復旧が成功している。
 
-**製品機能と自動検証はConditional Go、正式な出荷はNo-Go** とする。残る項目は次の人間確認である。
+**製品機能と自動検証はConditional Go、正式な出荷はNo-Go** とする。残る項目は、4件の人間確認とリリース成果物契約の整合である。
 
 1. 物理キーボードで主要操作とフォーカス移動を確認する。
 2. スクリーンリーダーで開始、編集、保存、共有前確認を確認する。
 3. 公開文書へ掲載するリリース候補画面を確認する。
 4. 上記証跡と候補CIを確認し、最終出荷を承認する。
+5. `RELEASE-DOC-01`で、タグが生成する検証用artifactと生成しない配布物、対象SHA、保持・撤回境界を手順書とworkflowで一致させる。
 
 組織内の正式承認は、導入組織が存在し、その組織が要求する場合だけ追加する。`DATA-MAINT-04` のmetadata-only監査表示や外部接続の将来レーンは独立した製品候補であり、一般公開の必須出口にはしない。削除、アーカイブ、所有者移管を標準機能外とする境界は `ADR-0035` で確定している。
 
@@ -67,6 +68,7 @@ kj-atlasを、機能デモとして動くMVPから、一般利用者が継続利
 - [x] 製品化の残作業を所有issueへ分解し、必要な長期判断だけをADRへ分離する。
 - [ ] 公開文書のリリース候補画像を確認する。
 - [ ] 候補commitの必須CIと人間確認を根拠に最終出荷判断を記録する。
+- [ ] タグ・候補commit・品質証跡・実際の成果物が一意に対応し、検証用artifactを正式配布物と誤認しない。
 
 ## 実施済み
 
@@ -90,6 +92,6 @@ kj-atlasを、機能デモとして動くMVPから、一般利用者が継続利
 
 ## 完了条件
 
-残る4つの人間確認が候補commitに対して完了し、重大なBlockerまたは未解消Majorがなく、最終出荷判断が記録された時点でDoneとする。新しい製品欠陥が見つかった場合は、本Issueへ詳細ログを積まず、再現条件と受入条件を持つ個別issueへ戻す。
+残る4つの人間確認が候補commitに対して完了し、`RELEASE-DOC-01`のPhase Aが完了し、重大なBlockerまたは未解消Majorがなく、最終出荷判断が記録された時点でDoneとする。新しい製品欠陥が見つかった場合は、本Issueへ詳細ログを積まず、再現条件と受入条件を持つ個別issueへ戻す。
 
 詳細な過去Program Gate DecisionはGit履歴で参照する。新ADRは不要であり、本整理は `ADR-0039` の運用軽量化を実行するもので、安全・互換・出荷権限を変更しない。
