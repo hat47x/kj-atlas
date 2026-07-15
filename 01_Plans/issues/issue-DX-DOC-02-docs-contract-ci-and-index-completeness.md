@@ -239,3 +239,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - 有効化条件を満たしていない7 ruleは実行済みに見せず、`not enabled`として毎回表示する。`git diff --check`は`DC-FMT-001`の負例fixture実装まで隣接手動確認を維持する。
 - 失敗時はrule ID、対象ファイル/テスト群、修正先を表示し、非0終了する。`CONTRIBUTING.md`とissues READMEの実行導線を統一入口へ同期した。
 - entrypoint unit testsを含む21 tests成功、現行repositoryでActive memo 29件、追跡Markdown 374件、finding 0を確認した。CI同値化とPR blockingはT5に残す。
+
+## T5進捗 2026-07-15: `docs-contract` job
+
+- `.github/workflows/ci.yml`へ依存インストール不要の`docs-contract` jobを追加し、ローカルと同じ`python 01_Plans/docs_check.py`を実行するようにした。
+- checkoutは`fetch-depth: 0`とし、PRではmerge-base、pushでは`before` commitを基準に`git diff --check`を実行する。clean checkoutへ引数なしで実行して常に成功する偽検査にはしない。
+- jobは`continue-on-error`を使わず、entrypointまたはchanged-file whitespaceの非0終了をそのままCI失敗にする。
+- workflow構文のローカル検証とpush後のGitHub Actions結果を確認するまで、T5とPR blocking受入条件は未完了を維持する。
