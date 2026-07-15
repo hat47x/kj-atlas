@@ -1,7 +1,7 @@
 # Issue: OPS-LEAN-01 小規模OSS向けに過度な運用を削減する
 
 - Type: Process
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -31,7 +31,7 @@
 - [x] dashboardとdecision-packを現行正本から外し、Git履歴を参照する短い案内へ置き換える。
 - [x] AI引き継ぎと仮想会議をオンデマンドの最小補足へ縮小し、仮想役職をsolo開発の通常手順から外す。2者承認は組織がJIT provisioning例外を使う場合だけのプロファイルとする。
 - [x] Active一覧の手動表と件数同期を廃止し、memoメタデータからtriage表示・validator検証する。
-- [ ] docs-checkとリンク検査が成功する。
+- [x] docs-checkとリンク検査が成功する。
 
 ## 検証計画
 
@@ -50,3 +50,10 @@
 - backendのデータモデル契約テストが、AGENTSに `data_model_operations_overview.md` の個別列挙を要求し、タスク別最小読取への変更をCIで拒否していた。
 - データモデル設計文書間の参照検査は維持し、AI入口だけを対象外にした。AGENTSは `02_Architecture/` のタスク別入口を示し、個別ファイル目録を持たない。
 - `test_data_model_operations_contract.py` の対象testとbackend非PostgreSQL test全体で回帰を確認する。
+
+## 完了記録 2026-07-15
+
+- `validate_active_issue_memos.py --root 01_Plans/issues` でActive memo 31件を検証し、validator・triage・データモデル契約の対象15テストが成功した。
+- OPS-LEAN実装コミットで変更したMarkdown 21文書について相対リンク23件を検査し、欠落0件を確認した。
+- `AGENTS.md` に旧必須`Read Order`、全件`Project Map`、固定同期ルールの見出しが復活していないことと、`git diff --check`成功を確認した。
+- 全受入条件を満たしたためDoneとする。リポジトリ全体の既存リンク品質は`DX-DOC-02`の文書契約CIで別管理し、本Issueの軽量化範囲へ混在させない。
