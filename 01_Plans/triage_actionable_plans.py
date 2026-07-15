@@ -8,8 +8,12 @@ import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-ISSUE_STATUS_ACTIVE = {"Draft", "Open", "In Progress"}
-VALID_ISSUE_STATUSES = ISSUE_STATUS_ACTIVE | {"Done", "Blocked", "Ready", "Active"}
+from issues.issue_memo_status import (
+    ACTIVE_ISSUE_STATUSES,
+    CANONICAL_ISSUE_STATUSES,
+    parse_issue_status,
+)
+
 ADR_ACTIONABLE_STATUSES = {"Accepted", "Proposed"}
 META_RE = re.compile(r"^- (?P<key>[^:]+):\s*(?P<value>.+)$")
 BACKTICK_RE = re.compile(r"`([^`]+)`")
@@ -119,11 +123,12 @@ def parse_issue(path: Path) -> IssueMemo:
     backlog_id = path.name.removeprefix("issue-").removesuffix(".md")
     related_refs = tuple(dict.fromkeys(BACKTICK_RE.findall(meta.get("Related ADR/Spec", ""))))
     dependency_paths = extract_dependency_paths(lines)
+    raw_status = meta.get("Status", "Unknown").strip()
     return IssueMemo(
         path=str(path.relative_to(path.parents[1]).as_posix()),
         title=title,
         backlog_id=backlog_id,
-        status=normalize_status(meta.get("Status", "Unknown")),
+        status=parse_issue_status(raw_status) or raw_status,
         priority=meta.get("Priority", "N/A"),
         owner=meta.get("Owner", "N/A"),
         related_backlog=meta.get("Related Backlog", "").strip("`"),
@@ -202,7 +207,7 @@ def build_actionable_issues(issues: list[IssueMemo], root: Path) -> list[Actiona
 
     actionable: list[ActionableIssue] = []
     for issue in issues:
-        if issue.status not in ISSUE_STATUS_ACTIVE:
+        if issue.status not in ACTIVE_ISSUE_STATUSES:
             continue
         blockers: list[str] = []
         for dep_path in issue.dependency_paths:
@@ -235,7 +240,7 @@ def build_actionable_issues(issues: list[IssueMemo], root: Path) -> list[Actiona
 
 
 def build_actionable_adrs(adrs: list[AdrRecord], issues: list[IssueMemo]) -> list[ActionableAdr]:
-    active_issue_paths = {issue.path for issue in issues if issue.status in ISSUE_STATUS_ACTIVE}
+    active_issue_paths = {issue.path for issue in issues if issue.status in ACTIVE_ISSUE_STATUSES}
     active_issue_names = {Path(path).name: path for path in active_issue_paths}
     actionable: list[ActionableAdr] = []
     for adr in adrs:
@@ -272,7 +277,7 @@ def collect(root: Path) -> dict[str, object]:
     for issue in issues:
         if issue.status == "Unknown":
             errors.append(TriageError(path=issue.path, reason="missing Status metadata"))
-        elif issue.status not in VALID_ISSUE_STATUSES:
+        elif issue.status not in CANONICAL_ISSUE_STATUSES:
             errors.append(TriageError(path=issue.path, reason=f"invalid Status metadata: {issue.status}"))
         if issue.priority == "N/A" or not issue.priority.strip():
             errors.append(TriageError(path=issue.path, reason="missing Priority metadata"))

@@ -105,9 +105,9 @@ Open化条件:
 
 - [x] indexへの手動掲載がなくても、filesystem上のActive memoをvalidatorが自動発見する。
 - [x] READMEの固定Active表を廃止し、空index・stale row・手動件数同期という失敗原因を除去する。
-- [ ] 必須メタデータ、非正規Status、参照先不在、依存関係不正、重複Backlog IDの異常系testがある。
+- [x] 必須メタデータ、非正規Status、参照先不在、依存関係不正、重複するActive `RequirementID`の異常系testがある。
 - [x] current repositoryでtriageとvalidatorが同じActive件数を返す（2026-07-15 Open化時点: 29件）。
-- [ ] triageとvalidatorが同じStatus parser・正規値を使い、同じActive件数を返す。
+- [x] triageとvalidatorが同じStatus parser・正規値を使い、同じActive件数を返す。
 - [ ] 1コマンドでローカル/CI同値のdocs-checkを実行できる。
 - [ ] docs-check非0終了がPRをblockする。
 - [x] 01/02/04/root docsの適用check matrixと除外理由が文書化され、02層が無検査にならない。
@@ -122,7 +122,7 @@ Open化条件:
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 check matrixとrule IDを固定し、ADR-0024へ適用境界と段階有効化条件を追補する。
-- [ ] T2 Active issue validatorをfilesystem直接検査へ変更する（自動発見と既存異常系testsは完了。共有parser・重複Backlog ID検査は未完了）。
+- [x] T2 Active issue validatorをfilesystem直接検査へ変更し、Status parser共有と重複Active `RequirementID`検査を追加する。
 - [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。
 - [ ] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
 - [ ] T5 CIへ`docs-contract` jobを追加し、既存PRとdocs-only PRで動作確認する。
@@ -225,3 +225,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - findingはrule ID、対象ファイル、行、参照先、修正先を保持し、CI診断へそのまま渡せる形式とした。
 - 正常、欠落、コード記法除外、外部参照除外、percent-encoded path、repository逸脱の4 unit testsが成功した。
 - 同じ実装を追跡Markdown 374件へ適用し、`DC-LNK-001` finding 0件を確認した。T3全体はcurrent/history、architecture、public checkerが未実装のため未完了を維持する。
+
+## T2完了記録 2026-07-15
+
+- `issue_memo_status.py`をStatus正規値の単一実装とし、triageとvalidatorが`Draft / Open / In Progress / Done`を共有するよう変更した。
+- `Ready / Active / Draft (...)`等を黙って正規化せず、対象memoと生の値を示してfailする。本文中の履歴用Statusはヘッダーではないため検査対象にしない。
+- Active memoの一意性は`RequirementID`で検査する。役割の異なるmemoが意図的に共有する`Related Backlog`は重複エラーにしない。
+- 非正規Statusと重複Active `RequirementID`の負例を追加し、validator/triage 15 tests成功、現行repositoryで双方のActive 29件一致、triage stopper 0件を確認した。

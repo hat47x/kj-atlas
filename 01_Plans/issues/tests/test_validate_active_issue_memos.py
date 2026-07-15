@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "validate_active_issue_memos.py"
+sys.path.insert(0, str(MODULE_PATH.parent))
 SPEC = importlib.util.spec_from_file_location("validate_active_issue_memos", MODULE_PATH)
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC and SPEC.loader
@@ -212,7 +213,7 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
             errors = validate(root)
             self.assertEqual([], errors)
 
-    def test_discovery_ignores_non_active_status_enum(self) -> None:
+    def test_validate_rejects_noncanonical_status_enum(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "README.md").write_text(
@@ -242,7 +243,42 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
                 encoding="utf-8",
             )
             errors = validate(root)
-            self.assertEqual([], errors)
+            self.assertTrue(any("invalid Status `Active`" in err for err in errors))
+
+    def test_validate_rejects_decorated_status_instead_of_normalizing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "issue-doc.md").write_text(
+                "- Status: Draft (waiting)\n- Source Issue: TBD\n",
+                encoding="utf-8",
+            )
+
+            errors = validate(root)
+
+        self.assertTrue(any("invalid Status `Draft (waiting)`" in err for err in errors))
+
+    def test_validate_detects_duplicate_active_requirement_id(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            memo = textwrap.dedent(
+                """\
+                - Type: Process
+                - Status: Draft
+                - Lifecycle: Draft -> Open -> In Progress -> Done
+                - Source Issue: TBD
+                - Priority: P1
+                - Scope: `01_Plans/`
+                - Related ADR/Spec: `ADR-0001`
+                - Expected verification level: `docs-check`
+                - RequirementID: DUPLICATE-01
+                """
+            )
+            (root / "issue-first.md").write_text(memo, encoding="utf-8")
+            (root / "issue-second.md").write_text(memo, encoding="utf-8")
+
+            errors = validate(root)
+
+        self.assertTrue(any("duplicate active RequirementID `DUPLICATE-01`" in err for err in errors))
 
     def test_discover_active_rows_does_not_require_readme(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

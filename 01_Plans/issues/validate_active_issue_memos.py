@@ -13,8 +13,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+from issue_memo_status import (
+    ACTIVE_ISSUE_STATUSES,
+    CANONICAL_ISSUE_STATUSES,
+    parse_issue_status,
+)
+
 ALLOWED_VERIFICATION_LEVELS = {"docs-check", "unit", "integration", "e2e"}
-ALLOWED_ACTIVE_STATUSES = {"Draft", "Open", "In Progress"}
 REQUIRED_FIELDS = [
     "- Type:",
     "- Status:",
@@ -71,8 +76,8 @@ def discover_active_rows(root: Path) -> list[ActiveMemoRow]:
     rows: list[ActiveMemoRow] = []
     for memo_path in sorted(root.glob("issue-*.md")):
         text = memo_path.read_text(encoding="utf-8")
-        status = extract_field_value(text, "Status")
-        if status not in ALLOWED_ACTIVE_STATUSES:
+        status = parse_issue_status(extract_field_value(text, "Status"))
+        if status not in ACTIVE_ISSUE_STATUSES:
             continue
         rows.append(
             ActiveMemoRow(
@@ -144,14 +149,9 @@ def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
         memo_source = extract_field_value(text, "Source Issue")
         memo_priority = extract_field_value(text, "Priority")
 
-        if row.status not in ALLOWED_ACTIVE_STATUSES:
+        if row.status not in ACTIVE_ISSUE_STATUSES:
             errors.append(
-                f"{row.memo}: invalid active status `{row.status}` (allowed: {sorted(ALLOWED_ACTIVE_STATUSES)})"
-            )
-
-        if memo_status and memo_status not in ALLOWED_ACTIVE_STATUSES:
-            errors.append(
-                f"{row.memo}: invalid Status `{memo_status}` (allowed: {sorted(ALLOWED_ACTIVE_STATUSES)})"
+                f"{row.memo}: invalid active status `{row.status}` (allowed: {sorted(ACTIVE_ISSUE_STATUSES)})"
             )
 
         if memo_priority is None or not memo_priority.strip():
@@ -177,8 +177,42 @@ def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
     return errors
 
 
+def validate_status_contract(root: Path) -> list[str]:
+    errors: list[str] = []
+    requirement_paths: dict[str, list[str]] = {}
+
+    for memo_path in sorted(root.glob("issue-*.md")):
+        text = memo_path.read_text(encoding="utf-8")
+        raw_status = extract_field_value(text, "Status")
+        status = parse_issue_status(raw_status)
+        if raw_status is None:
+            errors.append(f"{memo_path.name}: missing Status metadata")
+            continue
+        if status is None:
+            errors.append(
+                f"{memo_path.name}: invalid Status `{raw_status}` "
+                f"(allowed: {sorted(CANONICAL_ISSUE_STATUSES)})"
+            )
+            continue
+        if status not in ACTIVE_ISSUE_STATUSES:
+            continue
+
+        requirement_id = extract_field_value(text, "RequirementID")
+        if requirement_id:
+            canonical_id = requirement_id.strip().strip("`")
+            requirement_paths.setdefault(canonical_id, []).append(memo_path.name)
+
+    for requirement_id, memo_names in sorted(requirement_paths.items()):
+        if len(memo_names) > 1:
+            errors.append(
+                f"duplicate active RequirementID `{requirement_id}`: {', '.join(memo_names)}"
+            )
+
+    return errors
+
+
 def validate(root: Path) -> list[str]:
-    return validate_rows(root, discover_active_rows(root))
+    return validate_status_contract(root) + validate_rows(root, discover_active_rows(root))
 
 
 def main() -> int:
