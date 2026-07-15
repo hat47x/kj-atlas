@@ -129,6 +129,34 @@ class CurrentHistoryBoundaryTest(unittest.TestCase):
         self.assertEqual(findings, [])
 
 
+class E2eRunbookCurrentHistoryBoundaryTest(unittest.TestCase):
+    def test_e2e_runbook_is_a_default_current_only_path(self):
+        self.assertIn(Path("03_Implement/frontend/docs/e2e_testing.md"), MODULE.CURRENT_ONLY_PATHS)
+
+    def test_reports_reintroduced_stream_heading_in_the_e2e_runbook_by_default(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for relative_path in MODULE.CURRENT_ONLY_PATHS:
+                (root / relative_path).parent.mkdir(parents=True, exist_ok=True)
+                (root / relative_path).write_text("# Current\n", encoding="utf-8")
+            (root / "03_Implement/frontend/docs/e2e_testing.md").write_text(
+                textwrap.dedent("""\
+                    # E2E Testing
+                    ## Stream H (2026-08-01): reintroduced formation history
+                """),
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_current_history_headings(root)
+
+        self.assertTrue(
+            any(
+                f.rule_id == "DC-CUR-001" and f.path == "03_Implement/frontend/docs/e2e_testing.md"
+                for f in findings
+            )
+        )
+
+
 class DocumentContractBaselineTest(unittest.TestCase):
     def _write_fixtures(self, root, schemas_text, api_text="DocumentV1 CRUD.\n", data_model_text="DocumentV1 support table.\n"):
         (root / "02_Architecture").mkdir(parents=True, exist_ok=True)

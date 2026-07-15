@@ -124,6 +124,11 @@ python -m pytest
 | LLM disabled | `KJ_ATLAS_LLM_PROVIDER=none` では AI 機能が disabled として扱われる |
 | export | 秘密情報や共有不要な調査メモが混ざらない |
 | 画面 | ヘッダー、ツールバー、主要ボタンが狭い幅でも重ならない |
+| 操作性・開始 | 初期表示で主要操作へ到達できる |
+| 操作性・選択 | キーボードで選択対象へ到達し、選択結果を確認できる |
+| 操作性・表示 | 文脈優先で必要情報が先に提示される |
+| 操作性・閉じる | `表示` / `共有と再現` を `Escape` で閉じられる |
+| 操作性・復帰 | 閉じた後に起点フォーカスへ戻る |
 
 ## viewport の目安
 
@@ -143,7 +148,7 @@ python -m pytest
 
 
 
-## QA Monkey / E2E 境界（Stream E テスト資産限定）
+## QA Monkey / E2E 境界（テスト資産限定）
 
 本節は **テスト資産のみ** を変更対象にする境界定義です。`src/ui` / `src/canvas` など本番実装コードの機能変更は含めません。
 
@@ -165,22 +170,12 @@ python -m pytest
 
 - mock/fixture を優先し、外部依存を固定する。
 - 同一 commit で `npm run test` → `npm run e2e:mock` を同順で実行し、差分再現を確認する。
-- flaky が発生した場合の自己修復は最大3回（再実行、待機調整、fixture補正）まで。4回目相当は Stop として `Pending` に保留理由と再開条件を残す。
+- flaky が発生した場合は、まず再実行または待機調整で切り分ける。同一原因で繰り返し失敗する場合は無条件の再実行で握り潰さず、fixture または実装側の問題として対象 issue へ記録する。
 
 
-## Draft QA issue の Open化条件（AC/DoD/証拠）
+## QA issue の Open化条件
 
-`issue-QA-*` を Draft から Open に進める前に、次を満たします。
-
-- AC-O1: E2Eで担保する価値境界と、unit/integrationで担保する契約境界を1行ずつ記載する。
-- AC-O2: `Execution: Hold` の解除条件を1行で判定可能にする。
-- AC-O3: 証跡セット（コマンド、結果、失敗分類、follow-up issue）を残す。
-- AC-O4: 実行経路（Compose / SQLite / 例外記録）を事前選択する。
-
-DoD
-- DoD-O1: AC-O1〜O4が issue 本文に存在する。
-- DoD-O2: `python3 01_Plans/issues/validate_active_issue_memos.py` を通過する。
-- DoD-O3: No-Go時の戻し先 issue と再開条件が 1:1 対応する。
+`issue-QA-*` を Draft から Open へ進める AC/DoD、証跡フォーマット、Gate テンプレートは、対象 issue memo と [issues/README.md](../../../01_Plans/issues/README.md)（Lifecycle運用）、`01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md` を正本とします。値や進行テンプレートを本書へ複製せず、対象 issue を直接参照してください。
 
 ## 失敗時に残す情報
 
@@ -228,7 +223,23 @@ DoD
 
 ### fixture-backed visibility suiteの境界
 
-`e2e/pub_visibility_i18n_readonly_flow.spec.ts` はdocument、public-pack index、provider statusをPlaywright routeで固定するfrontend fixture suiteです。ブラウザ内のvisibility、ja/en表示、readOnly、SafeMode拒否は検証しますが、backend永続化やprovider integrationを検証したとはみなしません。
+`e2e/pub_visibility_i18n_readonly_flow.spec.ts` は、document、public-pack index、provider statusをPlaywright routeで固定するfrontend fixture suiteです。各シナリオはbackendプロセスなしで動作するよう、決定論的な応答をrouteで供給します。
+
+このsuiteが検証するのはブラウザ内のvisibility挙動とreload後の表示状態であり、backend永続化やprovider integrationを検証したとはみなしません。それらの契約はbackend testと、明示的に構成したintegration実行に属します。
+
+| シナリオ | 境界 |
+| --- | --- |
+| reload後のvisibility | fixture固定UI + ブラウザstorage |
+| viewとpackで異なるvisibility説明 | fixture固定UI |
+| 英語切り替えフロー | fixture固定UI |
+| readOnly / SafeMode制限 | fixture固定UI |
+
+この境界を確認するコマンド:
+
+```bash
+cd 03_Implement/frontend
+node ./node_modules/@playwright/test/cli.js test e2e/pub_visibility_i18n_readonly_flow.spec.ts --reporter=line
+```
 
 ## 関連文書
 
@@ -239,150 +250,8 @@ DoD
 - [データ取り扱い](../../../04_Documentation/data_handling.md)
 - [セキュリティ](../../../04_Documentation/security.md)
 
-
-## UI Operability（ADR-0030）E2E観点（計画）
-
-実装着手前に、次の観点を E2E シナリオ化対象として固定します。
-
-1. 開始: 初期表示で主要操作へ到達できる。
-2. 選択: キーボードで選択対象へ到達し、選択結果を確認できる。
-3. 表示: 文脈優先で必要情報が先に提示される。
-4. 閉じる: `表示` / `共有と再現` を `Escape` で閉じられる。
-5. 復帰: 閉じた後に起点フォーカスへ戻る。
-
-### Mock-first I/F 契約（実装非依存）
-
-- DOM 状態
-  - `data-ui-region="primary-flow"` が初期表示で観測可能。
-  - `data-panel="selection-context"` は選択後に可視化される。
-  - `data-panel-group="advanced"` は初期 `aria-expanded="false"`。
-  - 一時パネルは `data-panel="view"` / `data-panel="share-replay"` で識別可能。
-- イベント契約
-  - `PointerSelect|KeyboardSelect -> SelectionChanged` の同等性。
-  - `SelectionChanged -> ContextPanelRequested -> ContextPanelRendered` の連鎖。
-  - `Escape -> PanelDismissed(reason="escape") -> FocusReturned` の連鎖。
-
-### 直列実装順（固定）
-
-1. `UX-OPERABILITY-01`: 動線レビュー
-2. `UX-OPERABILITY-02`: キーボード到達性
-3. `UX-OPERABILITY-03`: 文脈優先パネル
-4. `UX-OPERABILITY-04`: Escape 閉じる + フォーカス復帰
-
-### フェイルセーフ
-
-アクセシビリティ要件（フォーカス可視、読み上げ可能名、キーボード到達性）が曖昧な場合、該当 Issue は `Execution: Hold` とし、実装 PR へ進めない。
-
-本節は計画記述であり、具体的なテスト実装は `UX-OPERABILITY-02`〜`04` の実装PRで追加する。
-
-## Draft群 Open化向け QA Gate テンプレート（Stream E）
-
-Draft状態の issue-QA-* を Open 判定可能にする時は、次の最小テンプレートをそのまま流用します。
-
-### 1) Context / Decision / Consequences（QA gate）
-- Context: Draft/Hold の理由を「依存・承認・実行経路」の3分類で明示する。
-- Decision: `Prerequisite` / `Environment` / `Scope` の3ゲートを固定する。
-- Consequences: Open可否を第三者が再判定できる状態にする。
-
-### 2) Open化条件テンプレ
-- `O-<ID>-01`: 必須依存（承認ID、上流参照）が `Pending` 欄に記録済み。
-- `O-<ID>-02`: `ADR-0019` 準拠の実行経路（Compose / SQLite / 例外記録）が1つ事前選択済み。
-- `O-<ID>-03`: `Execution: Hold` の解除条件が1行で判定可能。
-- `O-<ID>-04`: blocker と再開条件が 1:1 対応。
-
-### 3) Verify（実行可能性）
-- docs-check: `rg -n "AC-O1|AC-O2|AC-O3|AC-O4|DoD-O1|DoD-O2|DoD-O3|Execution: Hold|Pending" <target issue>`
-- metadata-check: `python3 01_Plans/issues/validate_active_issue_memos.py --files <target issue>`
-- diff-check: `git diff --check -- <target issue>`
-
-### 4) Proceed（3区分）
-- Open化可能: O条件が全充足。
-- 追加判断必要: O条件の一部充足（承認IDなどが未記入）。
-- 保留継続: blocker未解消、または実行経路未固定。
-
-### 5) 修復上限（失敗時）
-- 自己修復は最大3回まで（再実行、記述補正、リンク補正）。
-- 4回目相当は Stop とし、保留理由/再開条件を追記して終了する。
-
-
 ## Release Gate 連携（QA専任運用）
 
 - E2E結果は `PRODUCT-QA-01` の Gate Record に `result/evidence/owner/due` 形式で転記します。
 - Blocker または Critical を検出した場合は、E2E段で即時停止し `MVP-EXIT-01` 判定を Fail にします。
 - Compose実行不可時は `ADR-0019` の代替経路（SQLiteまたはmock）を使用し、未実施理由を必ず記録します。
-
-## Stream E (2026-05-20): Draft→Open entry criteria quick reference
-
-QA P0ゲート用に、Draft issue を Open 判定する最小 entry criteria を固定します（docs-only運用）。
-
-- EC-01 依存承認: Pending欄に承認ID・日付・参照リンクが揃う。
-- EC-02 実行経路: Compose / SQLite / 例外記録のいずれか1経路を事前選択。
-- EC-03 証跡欄: Gateごとに command / result / evidence link を記録可能。
-- EC-04 Hold解除: `Execution: Hold` の解除条件が1行で判定可能。
-
-Stopper（Open不可）
-- 承認ID未記入。
-- 実行経路未固定。
-- docs-only範囲外要求の混入。
-- SafeMode / share-export 境界の判定欠落。
-
-## Stream F update (2026-05-20): Plan → Execute → Verify → Proceed（QA/E2E/Unit）
-
-### Plan
-- Scope を `tests/docs/issues` に限定し、実装本体（`src/**`）は変更しない。
-- 契約未確定箇所は mock / fixture で依存分離し、Open 判定の証跡を優先する。
-
-### Execute
-- unit/integration は契約トークン（AC/DoD/Gate/Execution）の存在を自動検証する。
-- E2E は `e2e:mock` を既定経路とし、外部依存を伴う実行は issue 側へ保留理由を記録する。
-
-### Verify
-- `python -m pytest 03_Implement/backend/tests/test_qa_e2e_doc_contract.py`
-- `python3 01_Plans/issues/validate_active_issue_memos.py`
-- 判定語彙は `pass / blocked / fail` を使用し、No-Go 時は戻し先 issue を必ず記録する。
-
-### Proceed
-- 3回以内で自己修復可能なら継続。
-- 4回目相当は Stop とし、`Pending` に「保留理由 / 再開条件 / owner」を追記する。
-
-## Stream G 補遺: Draft→Open昇格判定の実務テンプレ
-
-`issue-PRODUCT-QA-01` と `issue-QA-*` Draft を Open 判定する際は、次の matrix を使う。
-
-| Check | 必須証跡 | Pass条件 |
-| --- | --- | --- |
-| Gate定義 | Go/No-Go 条件表 | 各Gateが判定可能 |
-| Verify経路 | Compose/SQLite/例外の事前選択 | 未選択でない |
-| 失敗分類 | triage語彙 | `test defect / product defect / environment limitation` のみ |
-| Escalation | follow-up issue + 再開条件 | 1:1対応 |
-| Self-correction | retry上限定義 | `<=3` と4回目Stop |
-
-### Draft昇格時の最小コマンド
-
-```bash
-python3 01_Plans/issues/validate_active_issue_memos.py --files \
-  01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md \
-  01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md \
-  01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md \
-  01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md
-```
-
-## Fixture-backed visibility flow
-
-`e2e/pub_visibility_i18n_readonly_flow.spec.ts` is a frontend fixture suite. Every scenario supplies deterministic responses for the document, public-pack index, and provider-status requests, so it can run without a backend process.
-
-The suite covers browser interaction and browser-side visibility state after reload. It does not claim backend persistence or provider integration coverage; those contracts belong to backend tests and an explicitly configured integration run.
-
-| Scenario | Boundary |
-| --- | --- |
-| Visibility after reload | Fixture-backed UI plus browser storage |
-| Differing view and pack visibility explanation | Fixture-backed UI |
-| English replacement flow | Fixture-backed UI |
-| Read-only and SafeMode restrictions | Fixture-backed UI |
-
-Use the following command when checking this boundary:
-
-```bash
-cd 03_Implement/frontend
-node ./node_modules/@playwright/test/cli.js test e2e/pub_visibility_i18n_readonly_flow.spec.ts --reporter=line
-```
