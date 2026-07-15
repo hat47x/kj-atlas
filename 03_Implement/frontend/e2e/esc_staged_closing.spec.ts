@@ -15,7 +15,7 @@ const PALETTE = '[role="dialog"][aria-label="Search commands"]';
 
 function buildDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Escape staging fixture",
     createdAt: "2026-07-07T00:00:00.000Z",

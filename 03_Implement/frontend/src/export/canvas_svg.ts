@@ -3,7 +3,7 @@ import { getDerivedIslandEdges } from "../domain/island_edge_aggregate";
 import { getIslandCenter, getIslandWorldBounds, type BoundsRect, type VisibleBoundsViewState } from "../domain/geometry/bounds";
 import { getIslandPolygonPoints } from "../domain/geometry/island_geometry";
 import { isSelfIntersectingPolygon } from "../domain/geometry/polygon_self_intersection";
-import type { Card, DocumentV2, Island } from "../domain/types";
+import type { Card, DocumentV1, Island } from "../domain/types";
 
 const CARD_WIDTH = 220;
 const CARD_HEIGHT = 80;
@@ -11,7 +11,7 @@ const CARD_HEIGHT = 80;
 type ExportArea = BoundsRect;
 
 export type ExportCanvasToSvgInput = {
-  doc: DocumentV2;
+  doc: DocumentV1;
   viewState: VisibleBoundsViewState;
   camera: {
     panX: number;
@@ -48,7 +48,7 @@ function getCardCenter(card: Card): { x: number; y: number } {
   };
 }
 
-function collectVisibleEdges(doc: DocumentV2, viewState: VisibleBoundsViewState): RenderEdge[] {
+function collectVisibleEdges(doc: DocumentV1, viewState: VisibleBoundsViewState): RenderEdge[] {
   const visibleCardIds = new Set(
     doc.cards.filter((card) => !viewState.hiddenCardIds.has(card.id)).map((card) => card.id)
   );

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { getDerivedIslandEdges, getIslandsForCard } from "./island_edge_aggregate";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-const baseDocument: DocumentV2 = {
-  version: 2,
+const baseDocument: DocumentV1 = {
+  version: 1,
   id: "doc",
   createdAt: "2026-01-01T00:00:00Z",
   updatedAt: "2026-01-01T00:00:00Z",
@@ -36,7 +36,7 @@ describe("getIslandsForCard", () => {
 
 describe("getDerivedIslandEdges", () => {
   it("derives island edges from card and mixed endpoints with provenance", () => {
-    const document: DocumentV2 = {
+    const document: DocumentV1 = {
       ...baseDocument,
       edges: [
         { id: "e1", fromId: "card-a", toId: "card-b", type: "related" },
@@ -75,7 +75,7 @@ describe("getDerivedIslandEdges", () => {
   });
 
   it("does not derive from persisted island-to-island edges", () => {
-    const document: DocumentV2 = {
+    const document: DocumentV1 = {
       ...baseDocument,
       edges: [{ id: "e-islands", fromId: "island-a", fromKind: "island", toId: "island-b", toKind: "island", type: "related" }],
     };
@@ -84,7 +84,7 @@ describe("getDerivedIslandEdges", () => {
   });
 
   it("ignores dangling references to a card id that does not exist in the document", () => {
-    const document: DocumentV2 = {
+    const document: DocumentV1 = {
       ...baseDocument,
       edges: [{ id: "e-lone", fromId: "card-z", toId: "outside", type: "related" }],
     };
@@ -93,7 +93,7 @@ describe("getDerivedIslandEdges", () => {
   });
 
   it("ignores edges between two genuine lone-wolf cards (no island involvement at all)", () => {
-    const document: DocumentV2 = {
+    const document: DocumentV1 = {
       ...baseDocument,
       cards: [...baseDocument.cards, { id: "card-lone1", text: "L1", x: 400, y: 0 }, { id: "card-lone2", text: "L2", x: 500, y: 0 }],
       edges: [{ id: "e-lone-lone", fromId: "card-lone1", toId: "card-lone2", type: "related" }],
@@ -103,7 +103,7 @@ describe("getDerivedIslandEdges", () => {
   });
 
   it("promotes a relation to a real lone-wolf card into an island<->card derived edge (UX-SCALE-01 d)", () => {
-    const document: DocumentV2 = {
+    const document: DocumentV1 = {
       ...baseDocument,
       cards: [...baseDocument.cards, { id: "card-lone", text: "Lone", x: 400, y: 0 }],
       edges: [

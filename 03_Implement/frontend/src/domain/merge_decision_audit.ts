@@ -1,4 +1,4 @@
-import type { DocumentV2, MergeSuggestionDecisionEntry } from "./types";
+import type { DocumentV1, MergeSuggestionDecisionEntry } from "./types";
 import { resolveDecisionOriginTrace } from "./merge_traceability";
 
 export type MergeDecisionAuditEntry = {
@@ -19,7 +19,7 @@ function sortCardIds(cardIds: string[]): string[] {
   return [...new Set(cardIds)].sort((left, right) => left.localeCompare(right));
 }
 
-export function buildMergeDecisionAuditEntries(document: DocumentV2): MergeDecisionAuditEntry[] {
+export function buildMergeDecisionAuditEntries(document: DocumentV1): MergeDecisionAuditEntry[] {
   const decisions = [...(document.mergeSuggestionDecisions ?? [])].sort((left, right) => {
     const byTime = left.decidedAt.localeCompare(right.decidedAt);
     if (byTime !== 0) {

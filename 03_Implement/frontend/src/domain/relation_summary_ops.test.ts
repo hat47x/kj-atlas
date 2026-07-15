@@ -7,10 +7,10 @@ import {
   upsertRelationSummaryWithHistory,
   RELATION_SUMMARY_TEXT_MAX_LENGTH,
 } from "./relation_summary_ops";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-const baseDocument: DocumentV2 = {
-  version: 2,
+const baseDocument: DocumentV1 = {
+  version: 1,
   id: "doc",
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",

@@ -5,7 +5,7 @@ import { analyzeDistribution, type DistributionReport } from "./distribution_che
 import { analyzeEvidenceGaps, type EvidenceGapReport } from "./evidence_gap_checks";
 import { analyzeOutlineQuality, type OutlineQualityReport } from "./outline_quality";
 import type { ReadingMode } from "./reading_path";
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import type { ComputeTaskContext } from "../../utils/compute_scheduler";
 
 export type DiagnosticsGuardrails = {
@@ -25,7 +25,7 @@ export type DiagnosticsRunResult = {
 };
 
 export async function runDiagnosticsIncremental(
-  doc: DocumentV2,
+  doc: DocumentV1,
   opts: { readingMode: ReadingMode; reviewedOnly: boolean; collapsedIslandIds: ReadonlySet<string> },
   ctx: ComputeTaskContext,
   guardrails: DiagnosticsGuardrails = {}

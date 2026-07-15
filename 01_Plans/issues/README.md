@@ -275,7 +275,7 @@ issue補助メモには、最低でも次の項目を含める。
 
 ## Active issue memos
 
-> 2026-07-15 時点でActive表へ6件を掲載している。現行validatorは掲載行からmemoへの片方向検査のみで、filesystem上のActive集合との完全一致を保証しない。現在のtriage基準ではDraft/Open/In Progressが33件（Draft 17 / Open 7 / In Progress 9）あり、未掲載27件の整理は `DOC-OPS-06`、双方向検査は `DX-DOC-02` で追跡する。
+> 2026-07-15 時点でActive表へ6件を掲載している。現行validatorは掲載行からmemoへの片方向検査のみで、filesystem上のActive集合との完全一致を保証しない。未掲載Active memoの整理は `DOC-OPS-06`、双方向検査は `DX-DOC-02` で追跡する。
 
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|

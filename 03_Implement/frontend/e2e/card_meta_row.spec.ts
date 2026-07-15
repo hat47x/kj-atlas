@@ -11,7 +11,7 @@ const BODY = "検証中の主張。文頭が読めること。";
 
 function buildDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Card meta-row fixture",
     createdAt: "2026-07-05T00:00:00.000Z",

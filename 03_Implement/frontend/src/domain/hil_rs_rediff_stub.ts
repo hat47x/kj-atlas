@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 import type { HilRsCritiqueInput, HilRsRediffPayload } from "./hil_rs_contract";
 import {
   HIL_RS_REDIFF_SCHEMA_VERSION,
@@ -38,8 +38,8 @@ function sortDiffOpsDeterministically(diffOps: HilRsRediffPayload["diffOps"]): H
 }
 
 export function buildHilRsRediffStub(
-  currentDocument: DocumentV2,
-  suggestedDocument: DocumentV2,
+  currentDocument: DocumentV1,
+  suggestedDocument: DocumentV1,
   options: BuildHilRsRediffStubOptions,
 ): HilRsRediffPayload | null {
   if (!Number.isInteger(options.iteration) || options.iteration < 1 || options.suggestionId.trim().length === 0) {

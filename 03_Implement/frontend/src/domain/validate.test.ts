@@ -1,13 +1,29 @@
 import { describe, expect, it } from "vitest";
 import workerFixtureRaw from "../../tests/fixtures/worker/doc.small.json?raw";
 
-import { validateAndUpgradeImportedDocument } from "./validate";
+import { validateImportedDocument } from "./validate";
 
-describe("validateAndUpgradeImportedDocument", () => {
-  it("keeps card hold state from imported v2 JSON", () => {
+describe("validateImportedDocument", () => {
+  it("rejects retired document versions and string version aliases", () => {
+    const base = {
+      id: "doc_retired_version",
+      createdAt: "2026-07-15T00:00:00.000Z",
+      updatedAt: "2026-07-15T00:00:00.000Z",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [],
+      edges: [],
+      islands: [],
+    };
+
+    expect(validateImportedDocument({ ...base, version: 2 }).ok).toBe(false);
+    expect(validateImportedDocument({ ...base, version: "v1" }).ok).toBe(false);
+    expect(validateImportedDocument({ ...base, version: "v2" }).ok).toBe(false);
+  });
+
+  it("keeps card hold state from imported v1 JSON", () => {
     const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_hold_state",
       createdAt: now,
       updatedAt: now,
@@ -24,8 +40,8 @@ describe("validateAndUpgradeImportedDocument", () => {
   });
 
   it("keeps shelf entries and normalizes their cards as shelved", () => {
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_shelf",
       createdAt: "2026-06-21T00:00:00.000Z",
       updatedAt: "2026-06-21T00:00:00.000Z",
@@ -48,8 +64,8 @@ describe("validateAndUpgradeImportedDocument", () => {
   });
 
   it("drops invalid, duplicate, and orphaned shelf entries during tolerant import", () => {
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_shelf_invalid",
       createdAt: "2026-06-21T00:00:00.000Z",
       updatedAt: "2026-06-21T00:00:00.000Z",
@@ -70,10 +86,10 @@ describe("validateAndUpgradeImportedDocument", () => {
     expect(result.document.shelf).toHaveLength(1);
   });
 
-  it("keeps island parentIslandId from imported v2 JSON", () => {
+  it("keeps island parentIslandId from imported v1 JSON", () => {
     const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_nested",
       createdAt: now,
       updatedAt: now,
@@ -101,10 +117,10 @@ describe("validateAndUpgradeImportedDocument", () => {
   });
 
 
-  it("keeps island placardCardId from imported v2 JSON", () => {
+  it("keeps island placardCardId from imported v1 JSON", () => {
     const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_placard",
       createdAt: now,
       updatedAt: now,
@@ -125,8 +141,8 @@ describe("validateAndUpgradeImportedDocument", () => {
 
   it("falls back to root island when parentIslandId points to missing island", () => {
     const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_missing_parent",
       createdAt: now,
       updatedAt: now,
@@ -144,8 +160,8 @@ describe("validateAndUpgradeImportedDocument", () => {
 
   it("falls back to root islands when parentIslandId creates a cycle", () => {
     const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_parent_cycle",
       createdAt: now,
       updatedAt: now,
@@ -171,7 +187,7 @@ describe("validateAndUpgradeImportedDocument", () => {
 
   it("keeps backward compatibility for existing fixture without parentIslandId", () => {
     const parsed = JSON.parse(workerFixtureRaw) as unknown;
-    const result = validateAndUpgradeImportedDocument(parsed);
+    const result = validateImportedDocument(parsed);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -183,8 +199,8 @@ describe("validateAndUpgradeImportedDocument", () => {
 
   it("defaults imported island shape to rect when shape and geometry are missing", () => {
     const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_default_rect_shape",
       createdAt: now,
       updatedAt: now,
@@ -203,8 +219,8 @@ describe("validateAndUpgradeImportedDocument", () => {
 
   it("derives polygon shape from imported polygon geometry for compatibility", () => {
     const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_shape_from_geometry",
       createdAt: now,
       updatedAt: now,
@@ -239,10 +255,10 @@ describe("validateAndUpgradeImportedDocument", () => {
       ],
     });
   });
-  it("preserves island polygon geometry from imported v2 JSON", () => {
+  it("preserves island polygon geometry from imported v1 JSON", () => {
     const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_geometry",
       createdAt: now,
       updatedAt: now,
@@ -280,8 +296,8 @@ describe("validateAndUpgradeImportedDocument", () => {
 
   it("accepts legacy polygon geometry format and normalizes to points", () => {
     const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_geometry_legacy",
       createdAt: now,
       updatedAt: now,
@@ -321,8 +337,8 @@ describe("validateAndUpgradeImportedDocument", () => {
 
   it("preserves polygon generatedFrom metadata and optional shapeStale flag", () => {
     const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_shape_meta",
       createdAt: now,
       updatedAt: now,
@@ -362,8 +378,8 @@ describe("validateAndUpgradeImportedDocument", () => {
 
   it("falls back to card-bounds rendering when imported polygon has fewer than 3 points", () => {
     const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_invalid_polygon",
       createdAt: now,
       updatedAt: now,
@@ -393,8 +409,8 @@ describe("validateAndUpgradeImportedDocument", () => {
 
   it("falls back to card-bounds rendering when imported polygon self-intersects", () => {
     const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
+    const result = validateImportedDocument({
+      version: 1,
       id: "doc_invalid_self_intersection",
       createdAt: now,
       updatedAt: now,
@@ -428,7 +444,7 @@ describe("validateAndUpgradeImportedDocument", () => {
   it("keeps polygon geometry through export/import roundtrip", () => {
     const now = new Date().toISOString();
     const source = {
-      version: 2,
+      version: 1,
       id: "doc_roundtrip_geometry",
       createdAt: now,
       updatedAt: now,
@@ -452,7 +468,7 @@ describe("validateAndUpgradeImportedDocument", () => {
     };
 
     const exported = JSON.parse(JSON.stringify(source));
-    const result = validateAndUpgradeImportedDocument(exported);
+    const result = validateImportedDocument(exported);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 

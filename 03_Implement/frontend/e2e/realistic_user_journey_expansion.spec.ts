@@ -26,7 +26,7 @@ type SeedDocument = {
 function buildSeedDocument(): SeedDocument {
   const fixedTimestamp = "2026-05-10T00:00:00.000Z";
   return {
-    version: 2,
+    version: 1,
     id: "doc_e2e_realistic_journey",
     title: "realistic journey fixture",
     createdAt: fixedTimestamp,

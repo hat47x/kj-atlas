@@ -1,17 +1,17 @@
 import { buildHilRsCritiqueInputs } from "./hil_rs_payload";
 import { buildHilRsRediffStub } from "./hil_rs_rediff_stub";
 import type { HilRsCritiqueInput, HilRsRediffPayload } from "./hil_rs_contract";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
 export type HilRsCollectCritiqueRequest = {
-  document: DocumentV2;
+  document: DocumentV1;
   iteration: number;
   createdAt: string;
 };
 
 export type HilRsPreviewRediffRequest = {
-  currentDocument: DocumentV2;
-  suggestedDocument: DocumentV2;
+  currentDocument: DocumentV1;
+  suggestedDocument: DocumentV1;
   suggestionId: string;
   iteration: number;
   critiqueInputs: readonly HilRsCritiqueInput[];

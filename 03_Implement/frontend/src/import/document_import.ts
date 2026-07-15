@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { validateDocument, type ValidationError } from "./schema_validation";
 
 function formatValidationErrors(errors: ValidationError[]): string {
@@ -10,7 +10,7 @@ function formatValidationErrors(errors: ValidationError[]): string {
   return `Document validation failed:\n${details}${suffix}`;
 }
 
-export function parseDocumentJson(rawText: string): { ok: true; document: DocumentV2 } | { ok: false; error: string } {
+export function parseDocumentJson(rawText: string): { ok: true; document: DocumentV1 } | { ok: false; error: string } {
   try {
     const parsedJson: unknown = JSON.parse(rawText);
     const validation = validateDocument(parsedJson);

@@ -1,12 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
-import type { DocumentV2 } from "../src/domain/types";
+import type { DocumentV1 } from "../src/domain/types";
 
 const START_PANEL = '[data-panel="start-document-entry"]';
 
-function buildShortcutDocument(): DocumentV2 {
+function buildShortcutDocument(): DocumentV1 {
   const now = "2026-07-07T00:00:00.000Z";
   return {
-    version: 2,
+    version: 1,
     id: "doc_shortcut_card_state",
     title: "shortcut card state fixture",
     createdAt: now,

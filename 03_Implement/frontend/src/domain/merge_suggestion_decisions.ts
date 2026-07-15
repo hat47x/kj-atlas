@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 import { STREAM_B_CONTRACTS } from "./stream_b_contract";
 
 export const MERGE_SUGGESTION_DECISIONS = ["accept", "partial", "reject", "defer"] as const;
@@ -48,10 +48,10 @@ function isMergeSuggestionDecision(value: unknown): value is MergeSuggestionDeci
 }
 
 export function appendMergeSuggestionDecision(
-  document: DocumentV2,
+  document: DocumentV1,
   input: AppendMergeSuggestionDecisionInput,
   options?: { idFactory?: () => string; now?: string }
-): DocumentV2 {
+): DocumentV1 {
   assertNonEmptyString(input.groupId, "groupId");
   assertNonEmptyString(input.mergedTextDraft, "mergedTextDraft");
   assertNonEmptyString(input.editedText, "editedText");
@@ -92,7 +92,7 @@ export function appendMergeSuggestionDecision(
 }
 
 export function getLatestMergeSuggestionDecisionByGroup(
-  decisions: DocumentV2["mergeSuggestionDecisions"]
+  decisions: DocumentV1["mergeSuggestionDecisions"]
 ): Map<string, MergeSuggestionDecisionEntry> {
   const latest = new Map<string, MergeSuggestionDecisionEntry>();
   for (const decision of decisions ?? []) {
@@ -105,7 +105,7 @@ export function getLatestMergeSuggestionDecisionByGroup(
 }
 
 export function listMergeSuggestionDecisionsByGroup(
-  decisions: DocumentV2["mergeSuggestionDecisions"],
+  decisions: DocumentV1["mergeSuggestionDecisions"],
   groupId: string
 ): MergeSuggestionDecisionEntry[] {
   assertNonEmptyString(groupId, "groupId");
@@ -113,7 +113,7 @@ export function listMergeSuggestionDecisionsByGroup(
 }
 
 export function restoreMergeSuggestionDecisionsBySnapshot(
-  decisions: DocumentV2["mergeSuggestionDecisions"],
+  decisions: DocumentV1["mergeSuggestionDecisions"],
   snapshotVersion: string
 ): MergeSuggestionDecisionEntry[] {
   assertNonEmptyString(snapshotVersion, "snapshotVersion");

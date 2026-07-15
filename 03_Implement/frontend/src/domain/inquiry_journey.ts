@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
 export const INQUIRY_SCHEMA_VERSION = "1.0.0" as const;
 
@@ -79,7 +79,7 @@ export type RoundSnapshotV1 = {
   snapshotId: string;
   createdAt: string;
   canonicalDigest: `sha256:${string}`;
-  document: DocumentV2;
+  document: DocumentV1;
 };
 
 type OneToOneLineageKind = "carried" | "edited";

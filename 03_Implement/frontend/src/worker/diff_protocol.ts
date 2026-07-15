@@ -1,11 +1,11 @@
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import type { MergeItem } from "../diff/merge_items";
 import type { DiffViewSnapshot } from "../diff/view_diff";
 
 export type DiffRequestPayload = {
-  baseDoc: DocumentV2;
+  baseDoc: DocumentV1;
   baseView: DiffViewSnapshot;
-  incomingDoc: DocumentV2;
+  incomingDoc: DocumentV1;
   incomingView: DiffViewSnapshot;
   options?: { maxNodes?: number; maxMs?: number };
 };

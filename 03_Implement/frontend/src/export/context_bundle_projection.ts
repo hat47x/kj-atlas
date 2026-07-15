@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { resolveKnownEdgeType } from "../domain/types";
 import { SafeModePolicy } from "../domain/policy/safe_mode";
 import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
@@ -74,7 +74,7 @@ export type ContextProjectionV1 = {
 };
 
 export type ContextProjectionInput = {
-  doc: DocumentV2;
+  doc: DocumentV1;
   constraint: ContextProjectionConstraint;
   safeMode: boolean;
 };
@@ -88,7 +88,7 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
-function isReviewed(card: DocumentV2["cards"][number]): boolean {
+function isReviewed(card: DocumentV1["cards"][number]): boolean {
   return card.textReviewed === true;
 }
 
@@ -98,7 +98,7 @@ function isReviewed(card: DocumentV2["cards"][number]): boolean {
  * boundary exactly so the two external surfaces cannot drift.
  */
 function projectCardText(
-  card: DocumentV2["cards"][number],
+  card: DocumentV1["cards"][number],
   safeMode: boolean,
 ): { text: string; redacted: boolean } {
   const canExpose = SafeModePolicy.canExposeText("card.text", "share", safeMode) && isReviewed(card);

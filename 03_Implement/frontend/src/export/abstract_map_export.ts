@@ -1,7 +1,7 @@
 import { buildIslandRelationExplanation } from "../domain/island_relation_explain";
 import { getDerivedIslandEdges } from "../domain/island_edge_aggregate";
 import { buildRelationSummarySourceSignature } from "../domain/relation_summary_ops";
-import { isCanonicalCard, resolveKnownEdgeType, type DocumentV2, type EdgeType } from "../domain/types";
+import { isCanonicalCard, resolveKnownEdgeType, type DocumentV1, type EdgeType } from "../domain/types";
 
 const GROUNDING_SNIPPET_LIMIT = 160;
 
@@ -104,7 +104,7 @@ function reviewLabel(reviewed?: boolean): string {
   return reviewed ? "reviewed" : "UNREVIEWED";
 }
 
-function buildGroundingCards(document: DocumentV2, cardIds: string[]): AbstractMapExportGroundingCard[] {
+function buildGroundingCards(document: DocumentV1, cardIds: string[]): AbstractMapExportGroundingCard[] {
   const cardsById = new Map(document.cards.map((card) => [card.id, card]));
   return cardIds
     .map((cardId) => cardsById.get(cardId))
@@ -112,7 +112,7 @@ function buildGroundingCards(document: DocumentV2, cardIds: string[]): AbstractM
     .map((card) => ({ id: card.id, snippet: normalizeTextSnippet(card.text) }));
 }
 
-function buildDraftTemplate(document: DocumentV2, relation: Pick<AbstractMapExportRelation, "islandAId" | "islandBId" | "type" | "derived" | "groundingCardIds" | "groundingEdgeIds">): string {
+function buildDraftTemplate(document: DocumentV1, relation: Pick<AbstractMapExportRelation, "islandAId" | "islandBId" | "type" | "derived" | "groundingCardIds" | "groundingEdgeIds">): string {
   const explanation = buildIslandRelationExplanation(document, {
     edgeId: relation.derived
       ? `derived:${relation.islandAId}:${relation.islandBId}:${relation.type}`
@@ -129,7 +129,7 @@ function buildDraftTemplate(document: DocumentV2, relation: Pick<AbstractMapExpo
 }
 
 function buildRelationRowBase(
-  document: DocumentV2,
+  document: DocumentV1,
   relation: Omit<AbstractMapExportRelation, "draftTemplateText" | "groundingCards">
 ): AbstractMapExportRelation {
   const summaryText = relation.summaryText?.trim();
@@ -153,7 +153,7 @@ function buildRelationRowBase(
   };
 }
 
-export function buildAbstractMapExport(doc: DocumentV2, viewState: AbstractMapExportViewState): AbstractMapExportModel {
+export function buildAbstractMapExport(doc: DocumentV1, viewState: AbstractMapExportViewState): AbstractMapExportModel {
   const visibleIslandIds = viewState.visibleIslandIds;
   const includeUnreviewedDrafts = viewState.includeUnreviewedDrafts ?? false;
   const visibleIslands = doc.islands

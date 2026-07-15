@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { validateDocumentV2Strict } from "../validate_doc";
-import type { DocumentV2 } from "../types";
+import { validateDocumentV1Strict } from "../validate_doc";
+import type { DocumentV1 } from "../types";
 import type { PatchDocument } from "./patch_apply";
 import { appendPatchApplyLog } from "./patch_apply_log";
 
-function makeDoc(): DocumentV2 {
+function makeDoc(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-1",
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
@@ -74,7 +74,7 @@ describe("appendPatchApplyLog", () => {
     });
 
     const roundTrip = JSON.parse(JSON.stringify(logged));
-    const validation = validateDocumentV2Strict(roundTrip);
+    const validation = validateDocumentV1Strict(roundTrip);
 
     expect(validation.ok).toBe(true);
     if (!validation.ok) {

@@ -1,6 +1,6 @@
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-export function buildReadingOrderSnippets(document: DocumentV2): Record<string, string | undefined> {
+export function buildReadingOrderSnippets(document: DocumentV1): Record<string, string | undefined> {
   const snippets: Record<string, string | undefined> = {};
 
   for (const card of document.cards) {

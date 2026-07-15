@@ -3,7 +3,7 @@
  *
  * ADR-0046 性能予算: 代表規模での主要操作=不変（Map lookup O(1) per entry）/ メインスレッド100ms超の同期処理=なし
  */
-import { isCanonicalCard, type Card, type DocumentV2 } from "./types";
+import { isCanonicalCard, type Card, type DocumentV1 } from "./types";
 
 const DEFAULT_CARD_TEXT_LIMIT = 200;
 
@@ -46,7 +46,7 @@ export function toGroundingCardItem(card: Card, maxTextLength = DEFAULT_CARD_TEX
 }
 
 export function buildNarrativeGrounding(
-  document: DocumentV2,
+  document: DocumentV1,
   options: {
     basedOnReadingOrder?: string[];
     hideSourceCards: boolean;

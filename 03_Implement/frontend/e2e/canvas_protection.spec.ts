@@ -13,7 +13,7 @@ const LEGEND_TRIGGER = '[data-focus-return-id="legend-trigger"]';
 // lone-wolf card (protected). Total protected marks = 2 (small island + lone).
 function buildDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Protection fixture",
     createdAt: "2026-07-06T00:00:00.000Z",

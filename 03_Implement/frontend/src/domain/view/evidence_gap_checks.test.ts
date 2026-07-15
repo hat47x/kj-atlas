@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import { analyzeEvidenceGaps } from "./evidence_gap_checks";
 
-function makeDoc(): DocumentV2 {
+function makeDoc(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",

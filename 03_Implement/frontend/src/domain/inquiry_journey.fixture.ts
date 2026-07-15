@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 import {
   INQUIRY_SCHEMA_VERSION,
   type InquiryBundleV1,
@@ -7,9 +7,9 @@ import {
 
 const CREATED_AT = "2026-07-15T00:00:00.000Z";
 
-function makeDocument(id: string, cards: DocumentV2["cards"]): DocumentV2 {
+function makeDocument(id: string, cards: DocumentV1["cards"]): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id,
     title: "窓口対応の待ち時間を捉え直す",
     createdAt: CREATED_AT,
@@ -24,7 +24,7 @@ function makeDocument(id: string, cards: DocumentV2["cards"]): DocumentV2 {
 function makeSnapshot(
   snapshotId: string,
   digestCharacter: string,
-  document: DocumentV2
+  document: DocumentV1
 ): RoundSnapshotV1 {
   return {
     schemaVersion: INQUIRY_SCHEMA_VERSION,

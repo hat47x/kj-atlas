@@ -1,4 +1,4 @@
-import type { DocumentV2, Island } from "../types";
+import type { DocumentV1, Island } from "../types";
 import { validateIslandVisibilityContractV1, type ContractValidationResult, type IslandVisibilityContractV1 } from "../contracts/island_contracts";
 
 function buildIslandsByParentId(islands: Island[]): Map<string, Island[]> {
@@ -45,7 +45,7 @@ export function collectInitiallyCollapsedIslandIds(islands: Island[]): Set<strin
   );
 }
 
-export function getCollapsedHiddenCardIds(doc: Pick<DocumentV2, "islands">, collapsedIslandIds: ReadonlySet<string>): Set<string> {
+export function getCollapsedHiddenCardIds(doc: Pick<DocumentV1, "islands">, collapsedIslandIds: ReadonlySet<string>): Set<string> {
   const hiddenDescendantIslandIds = collectHiddenDescendantIslandIds(doc.islands, collapsedIslandIds);
   const hiddenCardIds = new Set<string>();
 
@@ -85,7 +85,7 @@ export function collectHiddenDescendantIslandIds(islands: Island[], collapsedIsl
 }
 
 export function buildIslandVisibilityContractPayload(
-  doc: Pick<DocumentV2, "islands">,
+  doc: Pick<DocumentV1, "islands">,
   collapsedIslandIds: ReadonlySet<string>,
   islandId: string,
 ): ContractValidationResult<IslandVisibilityContractV1> {

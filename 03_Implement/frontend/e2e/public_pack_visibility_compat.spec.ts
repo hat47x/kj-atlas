@@ -4,7 +4,7 @@ import { SHARE_REPRODUCE_BUTTON, enableAdvancedUiIfNeeded, visibilitySelect } fr
 test("loads legacy public pack without visibility and legacy view metadata without visibility", async ({ page }) => {
   const now = new Date().toISOString();
   const documentPayload = {
-    version: 2,
+    version: 1,
     id: "doc_public_pack_legacy",
     title: "Legacy Pack",
     createdAt: now,
@@ -104,7 +104,7 @@ test("localizes a malformed public-pack index response", async ({ page }) => {
 test("shows visibility controls with fallback view visibility and pack visibility", async ({ page }) => {
   const now = new Date().toISOString();
   const documentPayload = {
-    version: 2,
+    version: 1,
     id: "doc_public_pack_visibility_ui",
     title: "Visibility UI",
     createdAt: now,

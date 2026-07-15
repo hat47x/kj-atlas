@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { buildContradictionTraceMd } from "../domain/view/contradiction_trace";
 import { analyzeContradictions, type ContradictionReport } from "../domain/view/contradiction_checks";
 import { analyzeDialecticBalance, type DialecticBalanceReport } from "../domain/view/dialectic_balance";
@@ -95,7 +95,7 @@ function summarizeOutlineQuality(report: OutlineQualityReport, safeMode: boolean
   return lines;
 }
 
-function summarizeRecommendations(doc: DocumentV2, report: OutlineQualityReport, readingMode: ReadingMode, reviewedOnly: boolean): string[] {
+function summarizeRecommendations(doc: DocumentV1, report: OutlineQualityReport, readingMode: ReadingMode, reviewedOnly: boolean): string[] {
   const lines: string[] = ["## Recommendations (I11)", ""];
   const recommendations = generateRecommendations(report, doc, { readingMode, reviewedOnly });
   lines.push(`- count: ${recommendations.length}`);
@@ -172,7 +172,7 @@ function resolveExportGranularity(context: BundleExportContext): ExportGranulari
  * references never leave the workspace without an explicit opt-in. Backup
  * JSON/PUT paths do not go through here and keep meta intact.
  */
-function resolveShareDocument(doc: DocumentV2, context: BundleExportContext): DocumentV2 {
+function resolveShareDocument(doc: DocumentV1, context: BundleExportContext): DocumentV1 {
   if (context.includeSourceReferences) {
     return doc;
   }
@@ -229,7 +229,7 @@ function buildBundleManifest(context: BundleExportContext): { exportGranularity:
   };
 }
 
-function buildDiagnosticsMd(doc: DocumentV2, context: BundleExportContext): string {
+function buildDiagnosticsMd(doc: DocumentV1, context: BundleExportContext): string {
   const safeMode = context.safeMode ?? true;
   const outlineReport = context.outlineQualityReport ?? analyzeOutlineQuality(doc, { readingMode: context.readingMode, reviewedOnly: context.reviewedOnly }, { nowIso: context.deterministicNowIso });
   const contradictionReport = context.contradictionReport ?? analyzeContradictions(doc, context.deterministicNowIso);
@@ -245,7 +245,7 @@ function buildDiagnosticsMd(doc: DocumentV2, context: BundleExportContext): stri
   return `${lines.join("\n")}\n`;
 }
 
-export function buildExportBundle(doc: DocumentV2, viewState: unknown, context: BundleExportContext): BundleFile[] {
+export function buildExportBundle(doc: DocumentV1, viewState: unknown, context: BundleExportContext): BundleFile[] {
   doc = resolveShareDocument(doc, context);
   const safeMode = context.safeMode ?? true;
   const root = context.rootFolderPath.endsWith("/") ? context.rootFolderPath.slice(0, -1) : context.rootFolderPath;
@@ -300,7 +300,7 @@ export function buildExportBundle(doc: DocumentV2, viewState: unknown, context: 
 }
 
 export async function buildExportBundleWithWorkers(
-  doc: DocumentV2,
+  doc: DocumentV1,
   viewState: unknown,
   context: BundleExportContext,
   options: { signal?: AbortSignal; onProgress?: (stage: BundleExportProgressStage) => void } = {}

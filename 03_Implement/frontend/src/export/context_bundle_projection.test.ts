@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import {
   buildContextProjection,
   CONTEXT_PROJECTION_CONSTRAINTS,
@@ -11,9 +11,9 @@ import {
 // per-constraint scoping, anti-scoring, and bundleHash determinism BEFORE any
 // MCP transport is wired -- the transport is a thin adapter over this core.
 
-function buildDoc(): DocumentV2 {
+function buildDoc(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc_ext_conn_fixture",
     title: "ext-conn projection fixture",
     createdAt: "2026-07-12T00:00:00.000Z",

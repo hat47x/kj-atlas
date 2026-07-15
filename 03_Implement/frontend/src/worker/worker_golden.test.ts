@@ -1,13 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { computeDiagnostics } from "./diagnostics_compute";
 import { computeTrace } from "./trace_compute";
 import { buildTraceAnalyticsMd, computeTraceAnalytics } from "./trace_analytics";
 
 const fixturesDir = path.resolve(__dirname, "../../tests/fixtures/worker");
-const fixtureDoc = JSON.parse(fs.readFileSync(path.join(fixturesDir, "doc.small.json"), "utf8")) as DocumentV2;
+const fixtureDoc = JSON.parse(fs.readFileSync(path.join(fixturesDir, "doc.small.json"), "utf8")) as DocumentV1;
 const readGolden = (filename: string): string => fs.readFileSync(path.join(fixturesDir, filename), "utf8").replace(/\r\n/g, "\n");
 
 describe("worker compute goldens", () => {
@@ -41,8 +41,8 @@ describe("worker compute goldens", () => {
 
 
   it("diagnostics metrics flag disconnected and bottleneck structures", () => {
-    const doc: DocumentV2 = {
-      version: 2,
+    const doc: DocumentV1 = {
+      version: 1,
       id: "doc-bridge",
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
@@ -75,8 +75,8 @@ describe("worker compute goldens", () => {
   });
 
   it("diagnostics metrics remain safe and omit unavailable optional rows", () => {
-    const doc: DocumentV2 = {
-      version: 2,
+    const doc: DocumentV1 = {
+      version: 1,
       id: "doc-safe",
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",

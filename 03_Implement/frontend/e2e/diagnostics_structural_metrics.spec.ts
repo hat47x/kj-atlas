@@ -51,7 +51,7 @@ test("bundle diagnostics includes structural metrics and remains deterministic a
 
   const now = new Date().toISOString();
   const doc = {
-    version: 2,
+    version: 1,
     id: "doc_e2e_diagnostics_metrics",
     createdAt: now,
     updatedAt: now,

@@ -1,6 +1,6 @@
 import { collectMergeCandidates } from "./merge_candidates";
 import { appendMergeSuggestionDecision, type MergeSuggestionDecision } from "./merge_suggestion_decisions";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 import { STREAM_B_CONTRACTS, type StreamBContractId, type StreamBSchemaVersion } from "./stream_b_contract";
 
 export type StreamBValidationOwner = "A1" | "A2" | "A3";
@@ -17,7 +17,7 @@ export type StreamBValidationLog = {
 const REQUIRED_MOCK_CASE_IDS = ["M1", "M2", "M3", "M4"] as const;
 const REQUIRED_MOCK_CASE_ID_SET = new Set<string>(REQUIRED_MOCK_CASE_IDS);
 
-export function validateCandidateGroupContract(document: DocumentV2): StreamBValidationLog {
+export function validateCandidateGroupContract(document: DocumentV1): StreamBValidationLog {
   const first = collectMergeCandidates(document)[0];
   if (!first) {
     return {
@@ -50,7 +50,7 @@ type ValidateDecisionLogInput = {
 };
 
 export function validateDecisionLogContract(
-  document: DocumentV2,
+  document: DocumentV1,
   input: ValidateDecisionLogInput,
   options?: { idFactory?: () => string; now?: string },
 ): StreamBValidationLog {

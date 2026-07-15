@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { buildNarrativeGrounding } from "./grounding";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-const baseDocument: DocumentV2 = {
-  version: 2,
+const baseDocument: DocumentV1 = {
+  version: 1,
   id: "doc-1",
   title: "Doc",
   createdAt: "2026-01-01T00:00:00Z",

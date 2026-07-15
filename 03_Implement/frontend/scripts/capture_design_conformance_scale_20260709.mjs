@@ -39,7 +39,7 @@ function buildDocument() {
     { id: "c-far", text: "遠方の単独カード", x: 2400, y: 1800 },
   ];
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Scale conformance fixture",
     createdAt: ts,

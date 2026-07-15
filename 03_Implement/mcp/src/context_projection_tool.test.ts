@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "./server.js";
-import type { DocumentV2 } from "../../frontend/src/domain/types.js";
+import type { DocumentV1 } from "../../frontend/src/domain/types.js";
 
 // EXT-CONN-01 subslice B, Maintainer代理裁可 condition: "MCP capabilityはread-only
 // resourcesとread-only toolsだけにallowlistし...tools/list / resources/list の
@@ -10,9 +10,9 @@ import type { DocumentV2 } from "../../frontend/src/domain/types.js";
 // (no stdio/process needed) exercises the actual wire-level protocol, not just
 // this module's own function calls.
 
-function buildFixtureDoc(): DocumentV2 {
+function buildFixtureDoc(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc_mcp_fixture",
     title: "mcp fixture",
     createdAt: "2026-07-13T00:00:00.000Z",

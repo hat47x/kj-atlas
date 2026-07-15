@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { createHilRsClient, selectValidatedRediffPayload } from "./hil_rs_client";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-const BASE_DOCUMENT: DocumentV2 = {
-  version: 2,
+const BASE_DOCUMENT: DocumentV1 = {
+  version: 1,
   id: "doc-1",
   title: "test-doc",
   createdAt: "2026-03-14T00:00:00.000Z",

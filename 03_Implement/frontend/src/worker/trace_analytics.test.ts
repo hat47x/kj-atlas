@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { buildTraceAnalyticsMd, computeTraceAnalytics } from "./trace_analytics";
 
-const fixtureDoc: DocumentV2 = {
-  version: 2,
+const fixtureDoc: DocumentV1 = {
+  version: 1,
   id: "doc",
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
@@ -62,7 +62,7 @@ describe("computeTraceAnalytics", () => {
   });
 
   it("detects isolated nodes and keeps deterministic ordering", () => {
-    const docWithIsolated: DocumentV2 = {
+    const docWithIsolated: DocumentV1 = {
       ...fixtureDoc,
       cards: [...fixtureDoc.cards, { id: "c0", text: "isolated", x: 0, y: 0 }, { id: "c5", text: "isolated2", x: 0, y: 0 }],
     };

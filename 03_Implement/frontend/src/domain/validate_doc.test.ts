@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { validateDocumentV2Strict } from "./validate_doc";
+import { validateDocumentV1Strict } from "./validate_doc";
 
-describe("validateDocumentV2Strict", () => {
+describe("validateDocumentV1Strict", () => {
   const now = new Date().toISOString();
 
   const validDocument = {
-    version: 2,
+    version: 1,
     id: "doc_v2",
     createdAt: now,
     updatedAt: now,
@@ -20,18 +20,18 @@ describe("validateDocumentV2Strict", () => {
     islands: [],
   };
 
-  it("accepts valid DocumentV2", () => {
-    const result = validateDocumentV2Strict(validDocument);
+  it("accepts valid DocumentV1", () => {
+    const result = validateDocumentV1Strict(validDocument);
     expect(result.ok).toBe(true);
   });
 
   it("accepts supported card hold states and rejects unknown values", () => {
-    expect(validateDocumentV2Strict({
+    expect(validateDocumentV1Strict({
       ...validDocument,
       cards: [{ ...validDocument.cards[0], holdState: "shelved" }],
     }).ok).toBe(true);
 
-    const invalid = validateDocumentV2Strict({
+    const invalid = validateDocumentV1Strict({
       ...validDocument,
       cards: [{ ...validDocument.cards[0], holdState: "resolved" }],
     });
@@ -41,7 +41,7 @@ describe("validateDocumentV2Strict", () => {
   });
 
   it("accepts a shelf entry that points to a shelved card", () => {
-    const result = validateDocumentV2Strict({
+    const result = validateDocumentV1Strict({
       ...validDocument,
       cards: [{ ...validDocument.cards[0], holdState: "shelved" }],
       shelf: [{ cardId: "c1", shelvedAt: now, reason: "Revisit later" }],
@@ -51,7 +51,7 @@ describe("validateDocumentV2Strict", () => {
   });
 
   it("rejects invalid, duplicate, orphaned, and inconsistent shelf entries", () => {
-    const result = validateDocumentV2Strict({
+    const result = validateDocumentV1Strict({
       ...validDocument,
       shelf: [
         { cardId: "c1", shelvedAt: now },
@@ -70,7 +70,7 @@ describe("validateDocumentV2Strict", () => {
   });
 
   it("rejects unknown root fields", () => {
-    const result = validateDocumentV2Strict({
+    const result = validateDocumentV1Strict({
       ...validDocument,
       unknownField: true,
     });
@@ -82,7 +82,7 @@ describe("validateDocumentV2Strict", () => {
   });
 
   it("accepts polygon geometry", () => {
-    const result = validateDocumentV2Strict({
+    const result = validateDocumentV1Strict({
       ...validDocument,
       islands: [
         {
@@ -104,7 +104,7 @@ describe("validateDocumentV2Strict", () => {
   });
 
   it("keeps shape compatibility for rect and polygon islands", () => {
-    const result = validateDocumentV2Strict({
+    const result = validateDocumentV1Strict({
       ...validDocument,
       islands: [
         {
@@ -133,7 +133,7 @@ describe("validateDocumentV2Strict", () => {
   });
 
   it("accepts legacy polygon geometry payload", () => {
-    const result = validateDocumentV2Strict({
+    const result = validateDocumentV1Strict({
       ...validDocument,
       islands: [
         {
@@ -157,7 +157,7 @@ describe("validateDocumentV2Strict", () => {
   });
 
   it("rejects polygon shape with fewer than 3 points", () => {
-    const result = validateDocumentV2Strict({
+    const result = validateDocumentV1Strict({
       ...validDocument,
       islands: [
         {
@@ -181,7 +181,7 @@ describe("validateDocumentV2Strict", () => {
   });
 
   it("rejects self-intersecting polygon shape", () => {
-    const result = validateDocumentV2Strict({
+    const result = validateDocumentV1Strict({
       ...validDocument,
       islands: [
         {
@@ -208,7 +208,7 @@ describe("validateDocumentV2Strict", () => {
 
 
   it("accepts merge suggestion decisions", () => {
-    const result = validateDocumentV2Strict({
+    const result = validateDocumentV1Strict({
       ...validDocument,
       mergeSuggestionDecisions: [
         {
@@ -227,7 +227,7 @@ describe("validateDocumentV2Strict", () => {
   });
 
   it("rejects merge suggestion decisions with invalid status", () => {
-    const result = validateDocumentV2Strict({
+    const result = validateDocumentV1Strict({
       ...validDocument,
       mergeSuggestionDecisions: [
         {
@@ -250,8 +250,8 @@ describe("validateDocumentV2Strict", () => {
     );
   });
 
-  it("accepts A1 contract-only DocumentV2 fields", () => {
-    const result = validateDocumentV2Strict({
+  it("accepts A1 contract-only DocumentV1 fields", () => {
+    const result = validateDocumentV1Strict({
       ...validDocument,
       critiqueInputs: [
         {
@@ -305,7 +305,7 @@ describe("validateDocumentV2Strict", () => {
   });
 
   it("rejects irreversible reproposal diffs", () => {
-    const result = validateDocumentV2Strict({
+    const result = validateDocumentV1Strict({
       ...validDocument,
       reproposalDiffs: [
         {
@@ -333,7 +333,7 @@ describe("validateDocumentV2Strict", () => {
   });
 
   it("rejects review attribution with email-like reviewer refs", () => {
-    const result = validateDocumentV2Strict({
+    const result = validateDocumentV1Strict({
       ...validDocument,
       reviewAttribution: {
         schemaVersion: "1.0.0",
@@ -352,7 +352,7 @@ describe("validateDocumentV2Strict", () => {
   });
 
   it("rejects reordered deterministic tie-break fields", () => {
-    const result = validateDocumentV2Strict({
+    const result = validateDocumentV1Strict({
       ...validDocument,
       deterministicTieBreak: {
         schemaVersion: "1.0.0",

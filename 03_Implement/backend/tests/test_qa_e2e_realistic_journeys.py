@@ -48,7 +48,7 @@ def _sqlite_client(tmp_path) -> Iterator[TestClient]:
 
 def _doc_payload(doc_id: str, *, reviewed: bool) -> dict:
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
         "title": "qa-e2e-realistic-journey",
         "createdAt": "2026-05-04T00:00:00Z",

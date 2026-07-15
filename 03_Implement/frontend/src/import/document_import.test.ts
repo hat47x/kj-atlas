@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { parseDocumentJson } from "./document_import";
 
 const BASE = {
-  version: 2,
+  version: 1,
   id: "doc-p2a",
   createdAt: "2026-03-01T00:00:00.000Z",
   updatedAt: "2026-03-01T00:00:00.000Z",

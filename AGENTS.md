@@ -37,7 +37,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 12) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
 13) **反復的探究モデル**: `02_Architecture/inquiry_journey_model.md`
 14) **MVPデータ運用境界**: `02_Architecture/data_model_operations_overview.md`
-15) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0057`（価値→社会的目標の実現フェーズ索引は `ADR-0036`、ガバナンス適正化方針は `ADR-0039`、ドメイン表現第一級化は `ADR-0040`、根幹価値の保護は `ADR-0041`〜`ADR-0043`、UI/UX品質基準は `ADR-0044`、エージェント分担は `ADR-0045`、性能予算は `ADR-0046`、設計判断ADRの飽和とexecution-first転換は `ADR-0047`、視覚言語/コマンド到達/KJ法語彙は `ADR-0048`、W型累積KJ法の反復的探究モデルは `ADR-0057`）
+15) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0058`（価値→社会的目標の実現フェーズ索引は `ADR-0036`、ガバナンス適正化方針は `ADR-0039`、ドメイン表現第一級化は `ADR-0040`、根幹価値の保護は `ADR-0041`〜`ADR-0043`、UI/UX品質基準は `ADR-0044`、エージェント分担は `ADR-0045`、性能予算は `ADR-0046`、設計判断ADRの飽和とexecution-first転換は `ADR-0047`、視覚言語/コマンド到達/KJ法語彙は `ADR-0048`、W型累積KJ法の反復的探究モデルは `ADR-0057`、Document契約の単一V1再基線化は `ADR-0058`）
 16) **実装（03_Implement）**: 対象領域のソースへ
 17) **運用・手順**: `04_Documentation/*`（必要に応じて）
 18) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -149,6 +149,8 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0051-bulk-critique-reason-recording.md`：複数選択カードへの理由追記と履歴・AI非依存の扱いを定義する提案ADR。
 - `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`：W型累積KJ法を任意の高度機能として扱い、独立探究集約、不変成果DAG、自己完結bundleを採択したADR。
 - `01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md`：6ラウンドの反復的探究支援を、通常利用非回帰とfixture先行で段階実装するissue。
+- `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`：未使用の旧V1互換を廃止し、現行の完全なDocument契約を唯一のV1へ再基線化するADR。
+- `01_Plans/issues/issue-DATA-CONTRACT-RESET-01-document-v1-rebaseline.md`：frontend/backend/MCP/文書を単一V1へ移行する実行issue。
 - `01_Plans/issues/issue-DX-DOC-01-crlf-markdown-fence-parser.md`：MarkdownのJSONコードブロック抽出をLF/CRLF両対応にしたテスト portability 修正。
 - `01_Plans/issues/issue-UX-LABEL-01-retention-vocabulary-consistency.md`：保留・違和感・理由の画面横断ラベルを標準化するUX issue。
 - `01_Plans/issues/issue-DX-E2E-02-canvas-legend-heading-drift.md`：Canvas凡例の現行見出しとE2E期待値のずれを修正したテストissue。

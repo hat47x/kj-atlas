@@ -5,7 +5,7 @@
 > 現行契約と Stream / freeze 履歴の読み分けは `02_Architecture/contract_reading_guide.md` を参照する。
 > MVPで実際に運用サポートするデータ構造、埋め込み限定の構造、契約のみの構造は `02_Architecture/data_model_operations_overview.md` を参照する。
 > ADR-0033 で定義した Support/Maintenance/Contract Boundary（L1/L1.5/L2/L2.5/L3/L0）を正本とし、本書の型定義単体で運用保証を主張しない。
-> `ADR-0057` は、反復的探究を独立 `InquiryJourneyV1` + 不変 `RoundSnapshotV1` DAGとして扱う設計を採択した。詳細は `02_Architecture/inquiry_journey_model.md` を参照する。実装・移行・CRUDが揃うまでは `L0: Planned` であり、現行 `DocumentV2` の型、version gate、保存契約へ履歴キーを追加しない。
+> `ADR-0057` は、反復的探究を独立 `InquiryJourneyV1` + 不変 `RoundSnapshotV1` DAGとして扱う設計を採択した。詳細は `02_Architecture/inquiry_journey_model.md` を参照する。実装・移行・CRUDが揃うまでは `L0: Planned` であり、現行 `DocumentV1` の型、version gate、保存契約へ履歴キーを追加しない。
 本ドキュメントは、kj-atlas の **MVPで扱う永続データの最小スキーマ** を定義します。
 
 - YAGNI方針に従い、MVPで標準運用しない型は「運用サポート済み」と扱いません
@@ -297,18 +297,6 @@ export type Transform = {
 ### 3.2 Card
 
 ```ts
-export type CardHoldState = "held" | "pending" | "shelved";
-
-export type CardMeta = {
-  seq?: number;
-  source?: string;
-};
-
-export type CardKa = {
-  voice?: string;
-  value?: string;
-};
-
 export type Card = {
   id: string;
   text: string;
@@ -316,19 +304,14 @@ export type Card = {
   y: number;
   mergedIntoCardId?: string;
   repOf?: string[];
-  holdState?: CardHoldState;
-  meta?: CardMeta;
-  ka?: CardKa;
 };
 ```
-
-`holdState`、`meta`、`ka` はすべて optional であり、欠落時は従来の通常カードとして扱う。各fieldの意味、安全境界、取り込み規則は §14、§15、§17を参照する。
 
 > 備考：MVPでは `w/h` は固定でもよい。必要になったら追加する。
 
 ### 3.3 Edge
 
-DOMAIN-KJ-01（ADR-0048 D3 採択）で、KJ法原典の関係記号に対応する語彙へ**追加的に**拡張した。`version: 2` を維持し、既存データの意味は変えない。
+DOMAIN-KJ-01（ADR-0048 D3 採択）で、KJ法原典の関係記号に対応する語彙へ**追加的に**拡張した。`version: 1` を維持し、既存データの意味は変えない。
 
 ```ts
 export type KnownEdgeType =
@@ -343,13 +326,6 @@ export type KnownEdgeType =
 // 未知種別は「関連（無方向）」として扱う。型注釈上は既知5値の補完を保ちつつ
 // 任意文字列を受理する（LiteralUnion 形式）。
 export type EdgeType = KnownEdgeType | (string & {});
-
-export type EdgeV1 = {
-  id: string;
-  fromId: string; // Card.id
-  toId: string;   // Card.id
-  type: "related"; // version: 1 の契約は不変
-};
 
 export type EdgeEndpointKind = "card" | "island";
 
@@ -384,27 +360,11 @@ export type Edge = {
 
 > 既定値: 新規に作成される関係線の既定は `related`（無方向）とし、種別の確定を強制しない（早すぎる収束の防止 = ADR-0001 P-01/P-04）。
 
-### 3.4 Document
+### 3.4 DocumentV1
 
-```ts
-export type DocumentV1 = {
-  version: 1;
-  id: string;
-  title?: string;
-  createdAt: string; // ISO 8601
-  updatedAt: string; // ISO 8601
+`DocumentV1` は唯一の永続Document契約であり、島、文章化、根拠リンク、レビュー関連情報を含む。
 
-  transform: Transform;
-  cards: Card[];
-  edges: Edge[];
-};
-```
-
-### 3.5 DocumentV2 embedded support
-
-`DocumentV2` は、MVPのスナップショット保存を保ったまま、島、文章化、根拠リンク、レビュー関連情報を含める拡張形式である。
-
-`DocumentV2` に含まれる構造は、標準API/UIで個別CRUDできることを意味しない。標準の永続化単位は引き続き `Document` 全体であり、個別CRUDの有無は `02_Architecture/data_model_operations_overview.md` のCRUD表に従う。
+`DocumentV1` に含まれる構造は、標準API/UIで個別CRUDできることを意味しない。標準の永続化単位は引き続き `Document` 全体であり、個別CRUDの有無は `02_Architecture/data_model_operations_overview.md` のCRUD表に従う。
 
 ```ts
 export type CardClaimType = "fact" | "claim" | "hypothesis" | "unknown";
@@ -531,21 +491,8 @@ export type DeterministicTieBreak = {
   ];
 };
 
-export type ShelfEntry = {
-  cardId: string;
-  shelvedAt: string; // ISO 8601
-  reason?: string;
-};
-
-export type ContradictionSignalReviewStatus = "accepted" | "held" | "rejected";
-export type ContradictionSignalDecision = {
-  signatureKey: string;
-  status: ContradictionSignalReviewStatus;
-  decidedAt: string; // ISO 8601
-};
-
-export type DocumentV2 = {
-  version: 2;
+export type DocumentV1 = {
+  version: 1;
   id: string;
   title?: string;
   createdAt: string; // ISO 8601
@@ -564,14 +511,12 @@ export type DocumentV2 = {
   reproposalDiffs?: ReproposalDiff[];
   reviewAttribution?: ReviewAttribution;
   deterministicTieBreak?: DeterministicTieBreak;
-  shelf?: ShelfEntry[];
-  contradictionSignalDecisions?: ContradictionSignalDecision[];
 };
 ```
 
 支援レベル:
 
-- `claimType`、`fromKind`、`toKind`、`evidenceLinks` は `DocumentV2` スナップショット内で往復保持する。
+- `claimType`、`fromKind`、`toKind`、`evidenceLinks` は `DocumentV1` スナップショット内で往復保持する。
 - `edges[].type` は未知種別を含めて往復保持する（§3.3.2 の保全規約）。未知種別を理由にエッジを破棄・改変してはならない。
 - `evidenceLinks` は根拠・反証のリンクであり、SafeMode/share/exportで未レビュー本文や根拠情報をどう扱うかは共有前確認のポリシーに従う。
 - `patchApplyLog.stats` は evidence link の追加/削除件数（`upsertEvidenceLinks` / `deleteEvidenceLinks`）を含める。旧データで欠損する場合は0として扱う。
@@ -610,13 +555,13 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 - `Document.version` を用いてスキーマバージョンを管理する
 - 破壊的変更は version を上げ、API側で移行処理を提供する
 
-### 6.0.1 DocumentV2 mock schema version（downstream独立性）
+### 6.0.1 DocumentV1 mock schema version（downstream独立性）
 
-`DocumentV2` 契約ドリフト検証では、実装進捗と独立して次の mock schema version を固定する。
+`DocumentV1` 契約ドリフト検証では、実装進捗と独立して次の mock schema version を固定する。
 
-- `mockSchemaVersion = "mock-2026-05-19-dv2"`
+- `mockSchemaVersion = "mock-2026-05-19-dv1"`
 - 用途: contract test / fixture / handoff の識別子
-- 非用途: runtime の `Document.version` 代替（`Document.version` は引き続き `1|2` のみ）
+- 非用途: runtime の `Document.version` 代替（現行の `Document.version` は数値 `1` のみ）
 
 運用ルール:
 - 下流（import/export/validator/worker）は `mockSchemaVersion` を参照して fixture 互換性を判定してよい。
@@ -625,11 +570,12 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 
 ### 6.1 Document versioning / support level運用ルール（DATA-CONTRACT-01固定）
 
-- `DocumentV2` の互換性レベルは次で固定する。
-  - **Full**: `version: 2` かつ MVPで `L1/L1.5` に分類される運用対象（Document snapshot、merge decision append-read 連携）。
-  - **Partial**: `version: 2` だが `L2/L2.5` の埋め込み限定/契約限定フィールド（例: `evidenceLinks` / `reviewAttribution` / `critiqueInputs`）を含む。保存・往復は保証するが個別CRUDは保証しない。
-  - **Legacy**: `version: 1` または `version` 欠損の互換読込データ。読込時に `DocumentV2` へ正規化して扱う。
-- 非互換変更（必須キー追加、既存キー意味変更、削除）は **version gate** で隔離する。`version: 2` の意味を壊さず、破壊的拡張は `version: 3` 以降でのみ許可する。
+- `DocumentV1` の互換性レベルは次で固定する。
+  - **Full**: `version: 1` かつ MVPで `L1/L1.5` に分類される運用対象（Document snapshot、merge decision append-read 連携）。
+  - **Partial**: `version: 1` だが `L2/L2.5` の埋め込み限定/契約限定フィールド（例: `evidenceLinks` / `reviewAttribution` / `critiqueInputs`）を含む。保存・往復は保証するが個別CRUDは保証しない。
+  - **Rejected legacy input**: 旧最小V1、旧V2、文字列版（`"v1"` / `"v2"`）、`version` 欠損は受理しない。現行V1との誤認を防ぐため、`islands` を含む必須構造を要求する。
+- 非互換変更（必須キー追加、既存キー意味変更、削除）は **version gate** で隔離する。`version: 1` の意味を壊さず、次の破壊的拡張は `version: 2` 以降でのみ許可する。
+- 旧V1/V2互換を廃止した公開前の再基線化判断は `ADR-0058` を正本とする。
 - `version gate` 導入前に実装が先行することを禁止し、契約文書（`schemas.md` / `data_model_operations_overview.md` / 該当issue AC）を先に同期する。
 
 ---
@@ -651,7 +597,7 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 
 ## 7A. Island polygon edit constraints（FB-P2C-04）
 
-`DocumentV2.islands[*].shape.kind === "polygon"` の場合、保存対象の `shape.points` は次を満たす。
+`DocumentV1.islands[*].shape.kind === "polygon"` の場合、保存対象の `shape.points` は次を満たす。
 
 - `points` は `Point[]`（`x: number`, `y: number`）
 - 最小頂点数は 3（`points.length >= 3`）
@@ -808,7 +754,7 @@ export type PublicPackManifest = {
 
 ## 9. Island hierarchy compatibility contract（FB-P2A-01）
 
-`DocumentV2.islands[*]` では、階層表現を次で扱う。
+`DocumentV1.islands[*]` では、階層表現を次で扱う。
 
 ```ts
 export type Island = {
@@ -868,7 +814,7 @@ export type IdentityProvisioningContract = {
 
 ## 11. FB-P2B-02 Decision Log schema contract（CTR-2B-02-DECISION-LOG-V1）
 
-Manual assisted merge の意思決定ログは、`DocumentV2` 本体とは独立した append-only ストアとして扱う。
+Manual assisted merge の意思決定ログは、`DocumentV1` 本体とは独立した append-only ストアとして扱う。
 
 ```ts
 export type MergeDecisionRecord = {
@@ -1169,7 +1115,7 @@ hil_rs_a1_manifest_v1:
 
 Phase直列実行（Read必須）で Data Contract & Model Ops を確認した。
 
-1. Contract drift抽出: `DATA-CONTRACT-01` の観点（frontend/backend/api/schema）で `DocumentV2` 契約差分を再確認し、`version gate` 優先の fail-closed を維持。
+1. Contract drift抽出: `DATA-CONTRACT-01` の観点（frontend/backend/api/schema）で `DocumentV1` 契約差分を再確認し、`version gate` 優先の fail-closed を維持。
 2. Support level定義: `L1/L1.5/L2/L2.5/L3/L0` の語彙を本書の正本として再固定。新規フィールドは未分類なら `L2.5` 扱い。
 3. CRUD境界更新（参照）: 個別CRUDの可否は `data_model_operations_overview.md` の表を正本とし、本書は型契約に限定。
 4. Admin maintenance/recovery境界更新（参照）: 管理・復旧の実装可否は `DATA-MAINT-01` で管理し、契約変更を先行条件に据える。
@@ -1178,7 +1124,7 @@ Phase直列実行（Read必須）で Data Contract & Model Ops を確認した�
 ## 12. Stream D reaffirmation (2026-05-19)
 
 ### Context
-- `DocumentV2` には実装済み項目と契約先行項目が混在しており、型定義のみで運用CRUD保証と誤読されるリスクがある。
+- `DocumentV1` には実装済み項目と契約先行項目が混在しており、型定義のみで運用CRUD保証と誤読されるリスクがある。
 
 ### Decision
 - `L1/L1.5/L2/L2.5/L3/L0` を support level の唯一語彙として維持し、新規フィールドは未分類のまま導入しない。
@@ -1191,11 +1137,11 @@ Phase直列実行（Read必須）で Data Contract & Model Ops を確認した�
 ## 13. Stream B contract lock sync (2026-05-20)
 
 ### Context
-- `DocumentV2` の support level と backward compatibility 判定が、契約文書と運用境界文書で同時に固定されていない場合、実装側で「型=運用保証」と誤読される。
+- `DocumentV1` の support level と backward compatibility 判定が、契約文書と運用境界文書で同時に固定されていない場合、実装側で「型=運用保証」と誤読される。
 
 ### Decision
-- `DocumentV2` support level は `L1/L1.5/L2/L2.5/L3/L0` を唯一語彙として維持し、未分類フィールドは `L2.5` 扱いを継続する。
-- backward compatibility は `version gate` 優先で固定し、`version: 2` の破壊的変更（必須化/意味変更/削除）は `version: 3` 以降でのみ許可する。
+- `DocumentV1` support level は `L1/L1.5/L2/L2.5/L3/L0` を唯一語彙として維持し、未分類フィールドは `L2.5` 扱いを継続する。
+- backward compatibility は `version gate` 優先で固定し、`version: 1` の破壊的変更（必須化/意味変更/削除）は `version: 2` 以降でのみ許可する。
 - CE1/CE2/CE4 連携I/Fは read-only contract（`queryCanonicalHash` / `bundleHash` / `sourceBundleHash`）として扱い、DB/API依存実装を混在させない。
 
 ### Consequences
@@ -1208,7 +1154,7 @@ ADR-0040 Phase 2: 保留 Hold + 未統合 Shelf の第一級化。加算原則�
 
 ### 14.1 Card.holdState
 
-- 型正本: §3.2 `CardHoldState` / `Card.holdState?`
+- 型: `"held" | "pending" | "shelved"` (optional)
 - Support level: `L2.5`（未分類。実装検証後にL2以上へ昇格）
 - 欠落時: 従来挙動（holdしていない通常カード）
 - 意味:
@@ -1218,7 +1164,8 @@ ADR-0040 Phase 2: 保留 Hold + 未統合 Shelf の第一級化。加算原則�
 
 ### 14.2 ShelfEntry
 
-- 型正本: §3.5 `ShelfEntry` / `DocumentV2.shelf?`
+- 型: `{ cardId: string; shelvedAt: string; reason?: string; }`
+- 位置: `DocumentV1.shelf?: ShelfEntry[]`
 - Support level: `L2.5`
 - 欠落時: Shelfは空と解釈
 - 不変条件: Shelf退避は可逆（cardIdのカード本文は削除されない）。Shelfからの復帰はカード削除と分離された独立操作。
@@ -1226,14 +1173,14 @@ ADR-0040 Phase 2: 保留 Hold + 未統合 Shelf の第一級化。加算原則�
 ### 14.3 後方互換
 
 - 新フィールドはすべて optional。未対応クライアント・旧データは欠落を従来挙動として解釈
-- `version: 2` のまま（破壊的変更なし）
+- `version: 1` のまま（破壊的変更なし）
 - import/export/validate は未知フィールドを許容し、欠落時にデフォルト解釈する
 
 ### 14.4 参照
 
 - ADR: `ADR-0040-domain-expression-first-class-strategy.md`
 - Issue: `DOMAIN-EXPR-02-hold-and-pending-shelf`
-- Frontend: `03_Implement/frontend/src/domain/types.ts` (Card.holdState, ShelfEntry, DocumentV2.shelf)
+- Frontend: `03_Implement/frontend/src/domain/types.ts` (Card.holdState, ShelfEntry, DocumentV1.shelf)
 
 ## 15. DOMAIN-TRACE-01 加算スキーマ拡張: Card.meta（通し番号・原データ遡及）（2026-07-08）
 
@@ -1241,7 +1188,7 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 
 ### 15.1 Card.meta
 
-- 型正本: §3.2 `CardMeta` / `Card.meta?`
+- 型: `{ seq?: number; source?: string }` (optional)
 - Support level: `L2.5`（契約限定。往復保持を保証し、個別CRUDは保証しない）
 - 欠落時: 従来挙動（番号・出典を持たない通常カード）
 - 意味:
@@ -1268,7 +1215,7 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 
 ### 15.5 後方互換
 
-- optional のため `version: 2` を維持（破壊的変更なし）。未対応クライアント・旧データは欠落を従来挙動として解釈。
+- optional のため `version: 1` を維持（破壊的変更なし）。未対応クライアント・旧データは欠落を従来挙動として解釈。
 - カード面（キャンバス）の通し番号バッジは**既定 OFF**（View パネルのトグルで表示）。CB-1 自己申告は issue 完了記録に記載する。
 
 ### 15.6 参照
@@ -1289,9 +1236,16 @@ ADR-0040 Phase 4（根拠・主張・矛盾の人間レビュー第一級化）�
 
 ### 16.2 ContradictionSignalDecision
 
-- 型正本: §3.5 `ContradictionSignalReviewStatus` / `ContradictionSignalDecision` / `DocumentV2.contradictionSignalDecisions?`
-- `signatureKey` の生成規則: `${signal.code}:${signal.pairKey ?? signal.entityRefs[0]?.idOrSignature ?? ""}`
-- `ContradictionSignalReviewStatus` は CE2-PROPOSAL-IF の ProposalStatus 語彙を再利用する。新規AI権限ではない。
+```ts
+export type ContradictionSignalReviewStatus = "accepted" | "held" | "rejected"; // CE2-PROPOSAL-IF の ProposalStatus 語彙を再利用（新規AI権限ではない）
+export type ContradictionSignalDecision = {
+  signatureKey: string; // `${signal.code}:${signal.pairKey ?? signal.entityRefs[0]?.idOrSignature ?? ""}`
+  status: ContradictionSignalReviewStatus;
+  decidedAt: string; // ISO 8601
+};
+```
+
+- 位置: `DocumentV1.contradictionSignalDecisions?: ContradictionSignalDecision[]`
 - Support level: `L2.5`（未分類。実装検証後にL2以上へ昇格）
 - 欠落時、または該当 `signatureKey` が配列内に無い場合: 「未決定」（暗黙の "proposed"）として扱う。"proposed" 自体は永続化しない値であり、決定を取り消す操作は配列から該当エントリを削除する（DOMAIN-TRACE-01 の `Card.meta` 空値削除と同じ規約）。
 - `signatureKey` は `analyzeContradictions()` の実行毎に再計算されるシグナル列から決定論的に導出する識別子であり、シグナル自体は永続化しない（`mergeSuggestionDecisions` が候補生成物と決定を分離する既存パターンに倣う）。
@@ -1316,7 +1270,7 @@ ADR-0040 Phase 4（根拠・主張・矛盾の人間レビュー第一級化）�
 ### 16.6 後方互換
 
 - 新フィールドはすべて optional。旧データ（配列欠落）は「すべて未決定」として解釈する。
-- `version: 2` のまま（破壊的変更なし）。
+- `version: 1` のまま（破壊的変更なし）。
 - 寛容/厳格の両検証モードで、`signatureKey`/`status`/`decidedAt` のいずれかが不正な要素は破棄し、他の正しい要素は保全する（`mergeSuggestionDecisions` の既存パターンに倣う）。
 
 ### 16.7 参照
@@ -1331,9 +1285,14 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 
 ### 17.1 Card.ka
 
-- 型正本: §3.2 `CardKa` / `Card.ka?`
-- `voice`: 心の声（言語化途中の一級データ）。ガードレール「嘘を書かない・話を盛らない・妄想しすぎない」はUIヒントとして反映し、機能では強制しない。
-- `value`: KA法における本質的価値の言語化。
+```ts
+export type CardKa = {
+  voice?: string; // 心の声（言語化途中の一級データ。ガードレール: 嘘を書かない・話を盛らない・妄想しすぎない — UIヒント文言として反映し、機能では強制しない）
+  value?: string; // 価値（KA法における本質的価値の言語化）
+};
+```
+
+- 位置: `Card.ka?: CardKa`
 - Support level: `L2.5`（未分類。実装検証後にL2以上へ昇格）
 - 欠落時: 従来挙動（KA欄を持たない通常カード）
 - `Card.text` は従来どおり**出来事の正本**として維持する（意味変更なし）。`voice`/`value` は `text` に併記しない別フィールド。
@@ -1357,141 +1316,10 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 ### 17.5 後方互換
 
 - 新フィールドはすべて optional。旧データ（`ka` 欄欠落）は従来挙動として解釈する。
-- `version: 2` のまま（破壊的変更なし）。
+- `version: 1` のまま（破壊的変更なし）。
 
 ### 17.6 参照
 
 - ADR: `ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂）
 - Issue: `DOMAIN-KA-01-ka-card-fields`
 - Frontend: `03_Implement/frontend/src/domain/types.ts`（Card.ka）
-
-
-## 18. EXT-CONN-03 契約先行固定: agent-constraints.v1（訂正ループの輸出）＋加算スキーマ拡張（2026-07-15）
-
-ADR-0054 段階3の契約先行固定（issue-EXT-CONN-03 AC-1 / DecisionQueueRef が要求する「constraint 契約の `schemas.md` 先行固定」）。本節は**契約の固定のみ**を行い、実装の着手可否は EXT-CONN-03 issue の段階ゲート（段階1/2 の運用知見）に従う。加算原則に従い、DocumentV2 への追加フィールドはすべて optional。
-
-### 18.1 目的と設計判断（方式設計の要点）
-
-TRACE（arXiv:2606.13174）の知見「記憶への保存では選好違反の57.5%が残る。訂正は次回実行の**制約**として明示的に渡す必要がある」に基づき、人間がカード・島・エージェント提案へ付けた違和感タグ・保留・却下を機械可読な制約として輸出する。
-
-**契約形態の決定**: issue-EXT-CONN-03 が挙げた2候補 (a) `agent-task.v1` ガードレール節への追記 / (b) 独立の `agent-constraints.v1` 文書 のうち、**(b) 独立文書を正とし、(a) は (b) の埋め込みプロファイルとする**。理由:
-
-1. 配布経路が2つある（手動レーン=タスクシート同梱、自動レーン=EXT-CONN-01 MCP サーバーの読み取りツール）。独立文書なら1つの正本形状を両経路で共有でき、ガードレール節専用形式だと MCP 経路で二重定義になる。
-2. 制約の語彙はタスクパッケージと独立に進化しうる（版管理の分離）。
-3. `external_agent_collaboration_spec.md` §3.3 のタスクシートには「制約」節として同一 JSON を埋め込む（同 spec 参照）。定義の重複を作らない。
-
-**内部設計の外部化**: 本契約は HIL-RS の内部 critique 収集（`buildHilRsCritiqueInputs`: card/island の `critiqueTags`＋自由記述 → `CritiqueInput.constraintHints`）と同じ源泉・同じ5種タグ語彙（§18.3）を用いる。新しい語彙・新しいAI権限を導入しない（語彙重複禁止の既存規約に従う）。
-
-### 18.2 AgentConstraintsV1（輸出契約・正本）
-
-```json
-{
-  "schemaVersion": "agent-constraints.v1",
-  "docId": "string",
-  "baseDocSignature": "string (`${doc.id}:${doc.updatedAt}` — context-projection.v1 と同一形)",
-  "safeMode": "boolean",
-  "entries": [
-    {
-      "target": {
-        "kind": "proposal | card | island",
-        "taskId": "string (kind=proposal のみ)",
-        "proposalId": "string (kind=proposal のみ)",
-        "proposalKind": "string (kind=proposal のみ。agent-response.v1 の kind)",
-        "cardId": "string (kind=card のみ。レビュー済みカードに限る — §18.5)",
-        "islandId": "string (kind=island のみ)"
-      },
-      "critiqueTags": ["too_close | too_far | not_the_same | feels_off | no_articulable_reason"],
-      "facts": ["held | rejected | deferred"],
-      "note": "string | null (人間の自由記述。SafeMode ON では null — §18.5)",
-      "noteRedacted": "boolean (SafeMode により note を秘匿した場合 true)"
-    }
-  ],
-  "counts": {
-    "withheldCardConstraints": "number (未レビューカード対象のため ID を出さず件数のみ計上した制約数)"
-  },
-  "constraintsHash": "string (canonical JSON 全体の sha256 hex。決定論)"
-}
-```
-
-制約（契約不変条件）:
-
-- 各 entry は `critiqueTags` と `facts` の**少なくとも一方が非空**（空の制約は生成しない）。
-- **理由不要原則の保持**: `note` は任意。`no_articulable_reason` は一級のシグナルであり、理由の言語化を輸出の条件にしない（domain.md の違和感原則）。
-- **反スコアリング**: `score` / `rank` / `confidence` / `priority` / `weight` 等の数値評価語彙をトップレベル・entry・target のいずれにも**含めない**（契約禁止。テストは直列化文字列への正規表現で固定する）。制約間に順序的優先度は存在せず、`entries` の並びは決定論のためのソート順（§18.6）であって重要度ではない。
-- **エージェント側の遵守は受け手の責務**: kj-atlas は明示的に渡すところまで（issue 非目標）。遵守検証・自動学習・制約の自動生成は本契約のスコープ外。
-
-### 18.3 制約の源泉（すべて文書内・人間の判断のみ）
-
-| 源泉 | entry への写像 | 備考 |
-|---|---|---|
-| `Card.critiqueTags` / `Card.critique` | `target.kind="card"`＋`critiqueTags`＋`note` | §18.5 のレビュー済み条件を満たす場合のみ ID を出す |
-| `Island.critiqueTags` / `Island.critique` | `target.kind="island"`＋`critiqueTags`＋`note` | 島 ID は context-projection.v1 で既に公開済みの識別子 |
-| `Card.holdState === "held"` | `target.kind="card"`＋`facts:["held"]` | 同上（レビュー済み条件） |
-| `mergeSuggestionDecisions`（`decision: "reject" \| "defer"`） | `target.kind="proposal"` 相当が無いため、対象カードがすべてレビュー済みの場合のみ `target.kind="card"`（複数 entry）へ展開。`facts:["rejected"]` / `["deferred"]`、`note` は決定 entry の `note` | 却下・保留の**事実**の輸出。`accept`/`partial` は制約ではない |
-| `agentProposalDecisions`（§18.4。`decision: "rejected" \| "held"`） | `target.kind="proposal"`（taskId/proposalId/proposalKind）＋`facts` | エージェント既知の識別子のみで構成され、文書内部 ID を含まない |
-
-- 源泉はすべて人間の UI 操作で書かれた文書内データであり、決定論的に再導出できる（バックエンド状態・セッション状態に依存しない）。
-- **v1 で源泉に含めないもの**: `contradictionSignalDecisions`（決定論的検出器のシグナルへの判断であり、エージェント行動への訂正ではない）、`shelf`（内からの退避であり訂正シグナルではない — ADR-0054 用語定義「シェルフとの対」）。将来の版で再検討する場合も加算のみとする。
-
-### 18.4 加算スキーマ拡張: AgentProposalDecisionEntry / constraintExportOptIn
-
-現状、エージェント提案（agent-response.v1）への却下・保留はバックエンド監査（`/context-audit`）とセッション状態にのみ記録され、文書には持続化されない。制約輸出を文書から決定論的に導出可能にするため、`mergeSuggestionDecisions` / `contradictionSignalDecisions` と同じ「決定の文書内持続化」パターンを適用する。
-
-```ts
-export type AgentProposalDecision = "adopted" | "rejected" | "held";
-
-export type AgentProposalDecisionEntry = {
-  id: string;            // `${taskId}:${proposalId}`（文書内一意・重複時は decidedAt が新しい方を採用）
-  taskId: string;        // agent-task.v1 の taskId（エコーバック値）
-  proposalId: string;    // agent-response.v1 応答内の proposalId
-  proposalKind: string;  // agent-response.v1 の kind（自由文字列として保全）
-  decision: AgentProposalDecision;
-  decidedAt: string;     // ISO8601
-  agent?: string;        // agent-response.v1 の agent（markdown_sanitize 済み）
-};
-
-// DocumentV2 への加算（すべて optional）:
-//   agentProposalDecisions?: AgentProposalDecisionEntry[];
-//   constraintExportOptIn?: boolean;   // 欠落 = false = 輸出無効（既定OFF）
-```
-
-- `adopted` も記録する（EXT-CONN-04 根拠トレイルの将来素材）。ただし**制約として輸出されるのは `rejected` / `held` のみ**（§18.3）。
-- 決定の書き込みは人間の UI 操作のみ（proposal-only 維持。ADR-0041 CVI-2）。`applyDocumentChange` による 1操作=1履歴ステップで、却下も ⌘Z で取り消し可能になる（現状の「セッション限りの却下」からの改善。保全思想）。
-- 取り込み境界: 寛容/厳格の両検証モードで、`id`/`taskId`/`proposalId`/`decision`/`decidedAt` のいずれかが不正な要素は破棄し、他の正しい要素は保全する（`mergeSuggestionDecisions` の既存パターン）。
-- `constraintExportOptIn` の既定は **OFF**（欠落=false）。ON への切り替えは人間の明示操作（Claude Design P32 B-3「輸出は既定で含めない・明示 opt-in」）。
-
-### 18.5 安全境界（EXT-CONN-01 の原則を弱めない）
-
-ADR-0054「後段が前段の安全原則を弱めることはない」に従い、EXT-CONN-01 再レビューゲート（2026-07-13）の確定事項を本契約にそのまま継承する:
-
-1. **未レビューカードの ID はいかなる形でも出さない**: `target.kind="card"` の entry は対象カードが `textReviewed === true` の場合のみ生成する。未レビューカードへの critique/hold は `counts.withheldCardConstraints` に**件数のみ**計上する（ID・タグ内訳・note のいずれも出さない。タグ内訳の集計すら相関ベクトルになりうるため v1 では件数単独とする）。
-2. **proposal target は文書内部 ID を含まない**: `taskId`/`proposalId` はエージェント自身が生成・受領した識別子のエコーバックであり、新たな情報開示ではない。提案の本文・content の引用は行わない（採用後に編集・レビューされた本文の逆流を防ぐ）。
-3. **SafeMode**: 自由記述（`note`）は人間著述だがカード本文を引用しうるため、`SafeModePolicy.canExposeText("card.text", "share", safeMode)` と同一チャネルで判定し、秘匿時は `note: null`＋`noteRedacted: true` とする（KA §17.4 の「別基準を新設しない」規約に従う）。タグ・facts・counts は構造情報であり SafeMode の影響を受けない。短縮ハッシュによる placeholder は用いない（EXT-CONN-01 と同じ相関ベクトル回避）。
-4. **未レビュー本文の混入なし**: 本契約はカード本文フィールドを一切持たない（issue AC-4 を構造で保証）。
-
-### 18.6 決定論・監査
-
-- `entries` のソート順: `target.kind`（proposal → card → island）→ 各 ID の辞書順。同一 target への複数源泉（例: critique と hold）は1 entry に併合する。
-- `constraintsHash` は canonical JSON（`patch_fingerprint.ts` の `canonicalizeJson`）全体の sha256 hex。同一文書・同一 SafeMode 状態からの再輸出は同一ハッシュになる（context-projection.v1 の `bundleHash` と同じ規律）。
-- 監査相関: タスクシート同梱時は agent-task.v1 相関ブロックに `constraintsHash` を追加（optional・後方互換）。MCP 経由の読み取りは EXT-CONN-01 と同じ監査経路に `constraintsHash` を記録する。
-
-### 18.7 配布（輸送を新設しない）
-
-- **手動レーン**: `external_agent_collaboration_spec.md` §3.3 のタスクシートに任意節「制約」として同梱（同 spec §3.3a 参照）。`constraintExportOptIn` が ON の文書でのみ生成される。
-- **自動レーン**: EXT-CONN-01 の MCP サーバー（`03_Implement/mcp/`）に読み取り専用ツール `get_agent_constraints` を追加する。既存 `get_context_projection` と同じサーバー・同じ投影コア共有パターン（`03_Implement/frontend/src/export/agent_constraints_export.ts` を monorepo import）であり、**新しい輸送・新しいサービスは作らない**（issue の「EXT-CONN-01 の投影に合流」の充足形）。`constraintExportOptIn` が OFF の文書に対してはエラー応答（契約 payload を返さない）。
-- **用語の区別**: `ContextProjectionConstraint`（context-projection.v1 の**取得範囲**セレクタ: reviewed-only/evidence/contradiction/summary）と本契約の **constraint（訂正制約）** は別概念。取得範囲セレクタへ `"constraints"` 値を追加する案は、この語衝突を避けるため採らず、独立ツールとした。
-
-### 18.8 後方互換
-
-- 新フィールド（`agentProposalDecisions` / `constraintExportOptIn`）はすべて optional。旧データ（欠落）は「決定記録なし・輸出無効」として解釈する。
-- `version: 2` のまま（破壊的変更なし）。
-- agent-task.v1 相関ブロックへの `constraintsHash` 追加は optional であり、既存の応答エコーバック規約を変更しない。往復互換: agent-response.v1 側に constraints への応答フィールドは**設けない**（制約は一方向の入力であり、エージェントが制約に「回答」する契約を作ると遵守の自己申告に意味があるかのような誤認を生むため）。
-- Support level: `L2.5`（未分類。実装検証後に L2 以上へ昇格）。
-
-### 18.9 参照
-
-- ADR: `ADR-0054-external-connection-layer-staged-introduction.md`（段階3）, `ADR-0049-external-flat-rate-agent-collaboration.md`（安全境界の正本）, `ADR-0041-core-value-invariants-single-guard.md`（CVI-2 proposal-only）
-- Issue: `EXT-CONN-03-critique-constraint-export`
-- Research: `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`（追補A3: TRACE 定量根拠）
-- Spec: `02_Architecture/external_agent_collaboration_spec.md`（§3.3a 制約節の埋め込みプロファイル）
-- Frontend: `03_Implement/frontend/src/domain/types.ts`（CRITIQUE_TAGS / AgentProposalDecisionEntry）, `03_Implement/frontend/src/domain/hil_rs_payload.ts`（内部 critique 収集の前例）, `03_Implement/frontend/src/export/context_bundle_projection.ts`（外部読み取り面の安全境界前例）

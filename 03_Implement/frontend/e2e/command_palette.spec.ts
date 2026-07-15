@@ -10,7 +10,7 @@ const PALETTE_INPUT = '[data-command-palette-input="true"]';
 
 function buildDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Command palette fixture",
     createdAt: "2026-07-06T00:00:00.000Z",

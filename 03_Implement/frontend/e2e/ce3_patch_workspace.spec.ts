@@ -16,7 +16,7 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        version: 2,
+        version: 1,
         id: "doc_phase1_canvas",
         createdAt: now,
         updatedAt: now,
@@ -44,7 +44,7 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
 
   const now = new Date().toISOString();
   const doc = {
-    version: 2,
+    version: 1,
     id: "doc_e2e_ce3_workspace",
     createdAt: now,
     updatedAt: now,

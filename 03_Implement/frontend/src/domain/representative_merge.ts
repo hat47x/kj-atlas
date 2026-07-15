@@ -1,17 +1,17 @@
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
 type MergeOptions = {
   rewireMembershipAndEdges?: boolean;
 };
 
 type MergeResult = {
-  nextDocument: DocumentV2;
+  nextDocument: DocumentV1;
   representativeCardId: string;
   mergedCardCount: number;
 };
 
 export function createRepresentativeMerge(
-  document: DocumentV2,
+  document: DocumentV1,
   selectedCardIds: string[],
   representativeText: string,
   options: MergeOptions = {}

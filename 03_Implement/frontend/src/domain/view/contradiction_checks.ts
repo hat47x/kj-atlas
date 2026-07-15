@@ -1,4 +1,4 @@
-import type { DocumentV2, Edge, RelationSummary } from "../types";
+import type { DocumentV1, Edge, RelationSummary } from "../types";
 
 export type ContradictionEntityRef = {
   kind: "island" | "card" | "edge" | "relationSummary";
@@ -131,7 +131,7 @@ function pushPairSummary(pairMap: Map<string, PairAccumulator>, summary: Relatio
   pairMap.set(pairKey, existing);
 }
 
-export function analyzeContradictions(doc: DocumentV2, nowIso: string = new Date().toISOString()): ContradictionReport {
+export function analyzeContradictions(doc: DocumentV1, nowIso: string = new Date().toISOString()): ContradictionReport {
   const pairMap = new Map<string, PairAccumulator>();
 
   for (const edge of doc.edges) {

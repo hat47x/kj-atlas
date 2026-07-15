@@ -17,7 +17,7 @@ function buildDocument() {
   // An L-shaped cluster: row0 has 3 cards (col0..col2), row1 has 1 card
   // (col0) -> exactly one reflex corner (complexity 1).
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Island tidy fixture",
     createdAt: "2026-07-07T00:00:00.000Z",

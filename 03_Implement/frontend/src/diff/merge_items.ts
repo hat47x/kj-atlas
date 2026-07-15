@@ -1,4 +1,4 @@
-import type { DocumentV2, EvidenceLink } from "../domain/types";
+import type { DocumentV1, EvidenceLink } from "../domain/types";
 import type { ComputeTaskContext } from "../utils/compute_scheduler";
 import { computeDocumentDiff, flattenDocumentDiff } from "./document_diff";
 import { computeViewDiff } from "./view_diff";
@@ -42,7 +42,7 @@ function uniqueRefs(refs: MergeItemRef[]): MergeItemRef[] {
   return [...deduped.values()];
 }
 
-function computePrerequisites(baseDoc: DocumentV2, item: MergeItem): MergeItemRef[] {
+function computePrerequisites(baseDoc: DocumentV1, item: MergeItem): MergeItemRef[] {
   if (item.kind === "evidence.add") {
     const link = item.after as EvidenceLink | undefined;
     if (!link) {
@@ -73,23 +73,23 @@ function computePrerequisites(baseDoc: DocumentV2, item: MergeItem): MergeItemRe
   return [];
 }
 
-function attachPrerequisites(baseDoc: DocumentV2, items: MergeItem[]): MergeItem[] {
+function attachPrerequisites(baseDoc: DocumentV1, items: MergeItem[]): MergeItem[] {
   return items.map((item) => ({ ...item, prerequisites: computePrerequisites(baseDoc, item) }));
 }
 
-export function finalizeMergeItems(baseDoc: DocumentV2, documentDiff: MergeItem[], viewDiff: MergeItem[]): MergeItem[] {
+export function finalizeMergeItems(baseDoc: DocumentV1, documentDiff: MergeItem[], viewDiff: MergeItem[]): MergeItem[] {
   return attachPrerequisites(baseDoc, [...documentDiff, ...viewDiff]);
 }
 
-export function buildMergeItems(baseDoc: DocumentV2, incomingDoc: DocumentV2): MergeItem[] {
+export function buildMergeItems(baseDoc: DocumentV1, incomingDoc: DocumentV1): MergeItem[] {
   const documentDiff = flattenDocumentDiff(computeDocumentDiff(baseDoc, incomingDoc));
   const viewDiff = computeViewDiff(baseDoc, incomingDoc);
   return finalizeMergeItems(baseDoc, documentDiff, viewDiff);
 }
 
 export async function buildMergeItemsIncremental(
-  baseDoc: DocumentV2,
-  incomingDoc: DocumentV2,
+  baseDoc: DocumentV1,
+  incomingDoc: DocumentV1,
   ctx: ComputeTaskContext,
   guardrails: { maxNodes?: number; maxMs?: number } = {}
 ): Promise<{ items: MergeItem[]; truncated: boolean; notes: string[] }> {

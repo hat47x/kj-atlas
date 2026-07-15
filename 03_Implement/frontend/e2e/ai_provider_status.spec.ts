@@ -7,7 +7,7 @@ const START_PANEL = '[data-panel="start-document-entry"]';
 
 function buildDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Provider status fixture",
     createdAt: "2026-07-06T00:00:00.000Z",

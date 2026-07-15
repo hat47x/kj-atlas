@@ -1,28 +1,28 @@
 import { describe, expect, it } from "vitest";
 
-import { validateAndUpgradeImportedDocument } from "./validate";
-import { validateDocumentV2Strict } from "./validate_doc";
+import { validateImportedDocument } from "./validate";
+import { validateDocumentV1Strict } from "./validate_doc";
 
 // ADR-0048 D3 可逆性監査(ultracode workflow, 58エージェント)が確認した
-// silent データ損失の回帰防止。いずれも import(validateAndUpgradeImportedDocument)
+// silent データ損失の回帰防止。いずれも import(validateImportedDocument)
 // 経由で有効な文書フィールドが無条件に欠落していた欠陥で、修正前は本テストが失敗する。
 //
-// 対象: DocumentV2 の5フィールド(readingOrder/narratives/relationSummaries/
+// 対象: DocumentV1 の5フィールド(readingOrder/narratives/relationSummaries/
 // patchApplyLog/mergeSuggestionDecisions)、Island の6フィールド(titleReviewed/
 // summaryText/summaryReviewed/summaryGrounding/summaryHistory/imageReviewed)、
 // EvidenceLink.contradictionState。
 
 const baseDoc = {
-  version: 2 as const,
+  version: 1 as const,
   id: "doc_reversibility",
   createdAt: "2026-06-21T00:00:00.000Z",
   updatedAt: "2026-06-21T00:00:00.000Z",
   transform: { panX: 0, panY: 0, zoom: 1 },
 };
 
-describe("validateAndUpgradeImportedDocument: round-trip reversibility (ADR-0048 D3)", () => {
-  it("preserves the 5 DocumentV2-level fields that were silently dropped (validate.ts:507-526)", () => {
-    const result = validateAndUpgradeImportedDocument({
+describe("validateImportedDocument: round-trip reversibility (ADR-0048 D3)", () => {
+  it("preserves the 5 DocumentV1-level fields that were silently dropped (validate.ts:507-526)", () => {
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
       edges: [],
@@ -98,7 +98,7 @@ describe("validateAndUpgradeImportedDocument: round-trip reversibility (ADR-0048
   });
 
   it("preserves Island summary/review-state fields that were silently dropped (validate.ts parseIslands push)", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
       edges: [],
@@ -139,7 +139,7 @@ describe("validateAndUpgradeImportedDocument: round-trip reversibility (ADR-0048
   });
 
   it("preserves EvidenceLink.contradictionState (DOMAIN-EXPR-04) that was silently dropped (validate.ts parseEvidenceLinks)", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [
         { id: "c1", text: "A", x: 0, y: 0 },
@@ -165,7 +165,7 @@ describe("validateAndUpgradeImportedDocument: round-trip reversibility (ADR-0048
   });
 
   it("drops an out-of-enum contradictionState rather than crashing (defensive parsing)", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [
         { id: "c1", text: "A", x: 0, y: 0 },
@@ -196,7 +196,7 @@ describe("edge type vocabulary and unknown-type preservation (DOMAIN-KJ-01)", ()
   ];
 
   it("imports all five known edge types without loss (lenient mode)", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: cardsPair,
       edges: [
@@ -221,7 +221,7 @@ describe("edge type vocabulary and unknown-type preservation (DOMAIN-KJ-01)", ()
   });
 
   it("preserves an UNKNOWN edge type string verbatim instead of discarding the edge (lenient mode)", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: cardsPair,
       edges: [{ id: "e1", fromId: "c1", toId: "c2", type: "future-vocab-2030" }],
@@ -235,7 +235,7 @@ describe("edge type vocabulary and unknown-type preservation (DOMAIN-KJ-01)", ()
   });
 
   it("still drops an edge whose type is missing, non-string, or empty (structurally invalid)", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: cardsPair,
       edges: [
@@ -252,7 +252,7 @@ describe("edge type vocabulary and unknown-type preservation (DOMAIN-KJ-01)", ()
   });
 
   it("strict mode also accepts known-new and unknown edge types (AC-3: both modes preserve)", () => {
-    const strict = validateDocumentV2Strict({
+    const strict = validateDocumentV1Strict({
       ...baseDoc,
       title: "strict",
       cards: cardsPair,
@@ -267,7 +267,7 @@ describe("edge type vocabulary and unknown-type preservation (DOMAIN-KJ-01)", ()
   });
 
   it("strict mode still rejects an empty edge type string", () => {
-    const strict = validateDocumentV2Strict({
+    const strict = validateDocumentV1Strict({
       ...baseDoc,
       title: "strict",
       cards: cardsPair,
@@ -281,7 +281,7 @@ describe("edge type vocabulary and unknown-type preservation (DOMAIN-KJ-01)", ()
   });
 
   it("normalizes an unknown relationSummary relationType to 'unknown' instead of dropping the summary", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: cardsPair,
       edges: [],
@@ -311,7 +311,7 @@ describe("edge type vocabulary and unknown-type preservation (DOMAIN-KJ-01)", ()
   });
 
   it("accepts the new known relationTypes on relation summaries (lenient mode)", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: cardsPair,
       edges: [],
@@ -345,7 +345,7 @@ describe("edge type vocabulary and unknown-type preservation (DOMAIN-KJ-01)", ()
 // import 経由で永続化される抜け道を塞ぐ（同Issue AC-5）。
 describe("Card.meta trace fields (DOMAIN-TRACE-01)", () => {
   it("preserves seq and source through lenient import", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [{ id: "c1", text: "A", x: 0, y: 0, meta: { seq: 42, source: "インタビューA 12行目" } }],
       edges: [],
@@ -358,7 +358,7 @@ describe("Card.meta trace fields (DOMAIN-TRACE-01)", () => {
   });
 
   it("drops UNKNOWN meta keys fail-closed while keeping the known ones (§15.3, inverse of DOMAIN-KJ-01)", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [
         {
@@ -380,7 +380,7 @@ describe("Card.meta trace fields (DOMAIN-TRACE-01)", () => {
   });
 
   it("drops invalid seq/source values and the whole meta when nothing valid remains, keeping the card", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [
         { id: "c1", text: "A", x: 0, y: 0, meta: { seq: "not-a-number", source: "" } },
@@ -400,7 +400,7 @@ describe("Card.meta trace fields (DOMAIN-TRACE-01)", () => {
   });
 
   it("strict mode accepts valid meta and rejects unknown meta keys", () => {
-    const valid = validateDocumentV2Strict({
+    const valid = validateDocumentV1Strict({
       ...baseDoc,
       cards: [{ id: "c1", text: "A", x: 0, y: 0, meta: { seq: 3, source: "field note p.2" } }],
       edges: [],
@@ -408,7 +408,7 @@ describe("Card.meta trace fields (DOMAIN-TRACE-01)", () => {
     });
     expect(valid.ok).toBe(true);
 
-    const invalid = validateDocumentV2Strict({
+    const invalid = validateDocumentV1Strict({
       ...baseDoc,
       cards: [{ id: "c1", text: "A", x: 0, y: 0, meta: { seq: 3, createdBy: "alice" } }],
       edges: [],
@@ -422,7 +422,7 @@ describe("Card.meta trace fields (DOMAIN-TRACE-01)", () => {
 
 describe("contradictionSignalDecisions (DOMAIN-EXPR-04)", () => {
   it("preserves valid decisions through lenient import", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [],
       edges: [],
@@ -442,7 +442,7 @@ describe("contradictionSignalDecisions (DOMAIN-EXPR-04)", () => {
   });
 
   it("drops malformed entries fail-closed while keeping valid ones", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [],
       edges: [],
@@ -464,7 +464,7 @@ describe("contradictionSignalDecisions (DOMAIN-EXPR-04)", () => {
   });
 
   it("omits the field entirely when every entry is malformed (matches undefined default)", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [],
       edges: [],
@@ -478,7 +478,7 @@ describe("contradictionSignalDecisions (DOMAIN-EXPR-04)", () => {
   });
 
   it("strict mode accepts valid decisions and rejects an invalid status", () => {
-    const valid = validateDocumentV2Strict({
+    const valid = validateDocumentV1Strict({
       ...baseDoc,
       cards: [],
       edges: [],
@@ -487,7 +487,7 @@ describe("contradictionSignalDecisions (DOMAIN-EXPR-04)", () => {
     });
     expect(valid.ok).toBe(true);
 
-    const invalid = validateDocumentV2Strict({
+    const invalid = validateDocumentV1Strict({
       ...baseDoc,
       cards: [],
       edges: [],
@@ -502,7 +502,7 @@ describe("contradictionSignalDecisions (DOMAIN-EXPR-04)", () => {
 
 describe("Card.ka fields (DOMAIN-KA-01)", () => {
   it("preserves voice and value through lenient import", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [{ id: "c1", text: "A", x: 0, y: 0, ka: { voice: "正直しんどい", value: "待たされない安心感" } }],
       edges: [],
@@ -515,7 +515,7 @@ describe("Card.ka fields (DOMAIN-KA-01)", () => {
   });
 
   it("drops UNKNOWN ka keys fail-closed while keeping the known ones", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [{ id: "c1", text: "A", x: 0, y: 0, ka: { voice: "memo", authorRating: 5 } }],
       edges: [],
@@ -529,7 +529,7 @@ describe("Card.ka fields (DOMAIN-KA-01)", () => {
   });
 
   it("drops invalid/empty ka values and the whole ka field when nothing valid remains, keeping the card", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [
         { id: "c1", text: "A", x: 0, y: 0, ka: { voice: "", value: "" } },
@@ -549,7 +549,7 @@ describe("Card.ka fields (DOMAIN-KA-01)", () => {
   });
 
   it("keeps Card.text unchanged as the event-of-record (ka is a separate field, never merged into text)", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [{ id: "c1", text: "出来事の本文", x: 0, y: 0, ka: { voice: "心の声", value: "価値" } }],
       edges: [],
@@ -562,7 +562,7 @@ describe("Card.ka fields (DOMAIN-KA-01)", () => {
   });
 
   it("strict mode accepts valid ka and rejects unknown ka keys", () => {
-    const valid = validateDocumentV2Strict({
+    const valid = validateDocumentV1Strict({
       ...baseDoc,
       cards: [{ id: "c1", text: "A", x: 0, y: 0, ka: { voice: "v", value: "val" } }],
       edges: [],
@@ -570,7 +570,7 @@ describe("Card.ka fields (DOMAIN-KA-01)", () => {
     });
     expect(valid.ok).toBe(true);
 
-    const invalid = validateDocumentV2Strict({
+    const invalid = validateDocumentV1Strict({
       ...baseDoc,
       cards: [{ id: "c1", text: "A", x: 0, y: 0, ka: { voice: "v", authorRating: 5 } }],
       edges: [],
@@ -583,12 +583,12 @@ describe("Card.ka fields (DOMAIN-KA-01)", () => {
 });
 
 // validate.ts:118-119 の非対称性の回帰防止: cards が非配列/不正なら import 全体を
-// 中断するのに対し、edges/islands(DocumentV2 の必須フィールド)は非配列でも
+// 中断するのに対し、edges/islands(DocumentV1 の必須フィールド)は非配列でも
 // parseEdges/parseIslands が silent に [] を返すだけで import は「成功」扱いに
 // なっていた(既存データが警告なく全消失)。cards と同じ fail-closed 挙動に統一。
-describe("validateAndUpgradeImportedDocument: malformed required arrays abort import (ADR-0048 D3)", () => {
+describe("validateImportedDocument: malformed required arrays abort import (ADR-0048 D3)", () => {
   it("rejects a document whose edges field is present but not an array, instead of silently dropping all edges", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
       edges: "corrupted",
@@ -599,7 +599,7 @@ describe("validateAndUpgradeImportedDocument: malformed required arrays abort im
   });
 
   it("rejects a document whose islands field is present but not an array, instead of silently dropping all islands", () => {
-    const result = validateAndUpgradeImportedDocument({
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
       edges: [],
@@ -609,15 +609,12 @@ describe("validateAndUpgradeImportedDocument: malformed required arrays abort im
     expect(result.ok).toBe(false);
   });
 
-  it("still imports normally when edges/islands are simply absent (legitimate default, no regression)", () => {
-    const result = validateAndUpgradeImportedDocument({
+  it("rejects the retired minimal V1 shape when edges or islands are absent", () => {
+    const result = validateImportedDocument({
       ...baseDoc,
       cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
     });
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.document.edges).toEqual([]);
-    expect(result.document.islands).toEqual([]);
+    expect(result.ok).toBe(false);
   });
 });

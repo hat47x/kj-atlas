@@ -64,7 +64,7 @@ function buildLargeDocument() {
   }));
 
   return {
-    version: 2,
+    version: 1,
     id: "doc_e2e_large_operability",
     title: "large document operability fixture",
     createdAt: now,

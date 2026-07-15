@@ -5,7 +5,7 @@ import type {
   ContradictionSignalDecision,
   ContradictionSignalReviewStatus,
   DeterministicTieBreak,
-  DocumentV2,
+  DocumentV1,
   EvidenceLink,
   Island,
   MergeSuggestionDecision,
@@ -32,14 +32,12 @@ import {
 type ValidateResult =
   | {
       ok: true;
-      document: DocumentV2;
+      document: DocumentV1;
     }
   | {
       ok: false;
       error: string;
     };
-
-type ImportedVersion = 1 | 2 | "v1" | "v2";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -180,12 +178,12 @@ function parseCards(value: unknown): Card[] | null {
 }
 
 
-function parseEdges(value: unknown): DocumentV2["edges"] {
+function parseEdges(value: unknown): DocumentV1["edges"] {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  const edges: DocumentV2["edges"] = [];
+  const edges: DocumentV1["edges"] = [];
 
   for (const item of value) {
     if (!isRecord(item)) {
@@ -480,7 +478,7 @@ function parseEvidenceLinks(value: unknown): EvidenceLink[] | undefined {
   return evidenceLinks;
 }
 
-function parseCritiqueInputs(value: unknown): DocumentV2["critiqueInputs"] | undefined {
+function parseCritiqueInputs(value: unknown): DocumentV1["critiqueInputs"] | undefined {
   if (!Array.isArray(value)) {
     return undefined;
   }
@@ -519,7 +517,7 @@ function parseShelf(value: unknown, cardIds: Set<string>): ShelfEntry[] | undefi
   return shelf.length > 0 ? shelf : undefined;
 }
 
-function parseReproposalDiffs(value: unknown): DocumentV2["reproposalDiffs"] | undefined {
+function parseReproposalDiffs(value: unknown): DocumentV1["reproposalDiffs"] | undefined {
   if (!Array.isArray(value)) {
     return undefined;
   }
@@ -527,7 +525,7 @@ function parseReproposalDiffs(value: unknown): DocumentV2["reproposalDiffs"] | u
   return value.filter(validateHilRsRediffPayload);
 }
 
-function parseReviewAttribution(value: unknown): DocumentV2["reviewAttribution"] | undefined {
+function parseReviewAttribution(value: unknown): DocumentV1["reviewAttribution"] | undefined {
   return validateHilRsReviewAttribution(value) ? value : undefined;
 }
 
@@ -814,18 +812,6 @@ function parseContradictionSignalDecisions(value: unknown): ContradictionSignalD
   return entries.length > 0 ? entries : undefined;
 }
 
-function normalizeVersion(value: unknown): 1 | 2 | null {
-  if (value === 1 || value === "v1") {
-    return 1;
-  }
-
-  if (value === 2 || value === "v2") {
-    return 2;
-  }
-
-  return null;
-}
-
 function parseIsoDate(value: unknown, fallback: string): string {
   if (typeof value !== "string") {
     return fallback;
@@ -839,7 +825,7 @@ function parseIsoDate(value: unknown, fallback: string): string {
   return new Date(timestamp).toISOString();
 }
 
-export function validateAndUpgradeImportedDocument(value: unknown): ValidateResult {
+export function validateImportedDocument(value: unknown): ValidateResult {
   if (!isRecord(value)) {
     return { ok: false, error: "Imported data must be a JSON object." };
   }
@@ -848,13 +834,12 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
     return { ok: false, error: "Document version is required." };
   }
 
-  const version = normalizeVersion(value.version as ImportedVersion);
-  if (version === null) {
-    return { ok: false, error: "Unsupported document version. Only v1 and v2 are supported." };
+  if (value.version !== 1) {
+    return { ok: false, error: "Unsupported document version. Only numeric version 1 is supported." };
   }
 
-  if (!("id" in value) || !("transform" in value) || !("cards" in value)) {
-    return { ok: false, error: "Document must include id, transform, and cards." };
+  if (!("id" in value) || !("transform" in value) || !("cards" in value) || !("edges" in value) || !("islands" in value)) {
+    return { ok: false, error: "Document must include id, transform, cards, edges, and islands." };
   }
 
   if (typeof value.id !== "string") {
@@ -871,12 +856,12 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
     return { ok: false, error: "Document cards must be an array of {id, text, x, y}." };
   }
 
-  if (value.edges !== undefined && !Array.isArray(value.edges)) {
-    return { ok: false, error: "Document edges must be an array when provided." };
+  if (!Array.isArray(value.edges)) {
+    return { ok: false, error: "Document edges must be an array." };
   }
 
-  if (value.islands !== undefined && !Array.isArray(value.islands)) {
-    return { ok: false, error: "Document islands must be an array when provided." };
+  if (!Array.isArray(value.islands)) {
+    return { ok: false, error: "Document islands must be an array." };
   }
 
   const now = new Date().toISOString();
@@ -901,7 +886,7 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
   return {
     ok: true,
     document: {
-      version: 2,
+      version: 1,
       id: value.id,
       title: typeof value.title === "string" ? value.title : undefined,
       createdAt,
@@ -909,7 +894,7 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
       transform,
       cards: normalizedCards,
       edges: parseEdges(value.edges),
-      islands: version === 1 ? [] : parseIslands(value.islands),
+      islands: parseIslands(value.islands),
       evidenceLinks: parseEvidenceLinks(value.evidenceLinks) ?? [],
       ...(critiqueInputs !== undefined ? { critiqueInputs } : {}),
       ...(reproposalDiffs !== undefined ? { reproposalDiffs } : {}),
