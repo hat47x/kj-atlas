@@ -8,19 +8,28 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from docs_contract_checks import check_relative_links
+from docs_contract_checks import check_current_only_headings, check_relative_links
 from issues.validate_active_issue_memos import discover_active_rows, validate
 from triage_actionable_plans import collect
 
-ENABLED_RULES = ("DC-ACT-001", "DC-LNK-001")
+ENABLED_RULES = ("DC-ACT-001", "DC-LNK-001", "DC-CUR-001")
 NOT_ENABLED_RULES = (
-    "DC-CUR-001",
     "DC-ARC-001",
     "DC-HIS-001",
     "DC-PUB-001",
     "DC-RTE-001",
     "DC-SAF-001",
     "DC-FMT-001",
+)
+
+CURRENT_ONLY_PATHS = (
+    Path("01_Plans/project-progress-dashboard.md"),
+    Path("01_Plans/issues/README.md"),
+    Path("01_Plans/documentation_quality.md"),
+    Path("02_Architecture/architecture.md"),
+    Path("02_Architecture/api.md"),
+    Path("02_Architecture/schemas.md"),
+    Path("02_Architecture/data_model_operations_overview.md"),
 )
 
 
@@ -95,6 +104,10 @@ def run_docs_check(root: Path, *, run_tests: bool = True) -> DocsCheckResult:
 
     markdown_paths = tracked_markdown_paths(repository_root)
     errors.extend(finding.render() for finding in check_relative_links(repository_root, markdown_paths))
+    errors.extend(
+        finding.render()
+        for finding in check_current_only_headings(repository_root, list(CURRENT_ONLY_PATHS))
+    )
     if run_tests:
         errors.extend(_run_contract_tests(repository_root))
 

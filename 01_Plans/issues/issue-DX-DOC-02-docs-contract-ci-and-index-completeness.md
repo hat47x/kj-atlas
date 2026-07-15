@@ -253,3 +253,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - `.github/pull_request_template.md`のTesting欄を、`command / result / not_executed_reason / resume_condition`の4項目で記録する形式へ変更した。
 - 未実施を空欄や暗黙のN/Aで済ませず、理由と再開条件を残す。実施済みの場合は不要な2項目を`N/A`とし、複数コマンドでは4項目をコマンド単位で複製する。
 - docs-checkだけに限定せずfrontend/backend/E2Eにも使える証跡I/Fとし、docs-only PRへアプリE2Eを暗黙に強制しない。
+
+## T3進捗 2026-07-15: `DC-CUR-001`
+
+- architecture current 4文書と、handoffでcurrent-onlyに指定された`project-progress-dashboard.md`、issues `README.md`、`documentation_quality.md`のMarkdown見出しを検査する純関数を追加した。
+- `Stream / freeze / rerun / execution log / checkpoint / reaffirmation`と対応する日本語の実行履歴見出しを検出する。本文、コードフェンス、インラインコード、`downstream`のような部分一致は除外し、現行契約本文中の正当な説明を誤検出しない。
+- 英語見出し、日本語見出し、除外境界の負例/正常fixtureを追加した。現行repositoryの対象7文書はfinding 0である。
+- T3全体は`DC-ARC-001`、`DC-HIS-001`、`DC-PUB-001`等が未実装のため未完了を維持する。

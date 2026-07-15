@@ -8,9 +8,16 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 RELATIVE_LINK_RULE_ID = "DC-LNK-001"
+CURRENT_ONLY_RULE_ID = "DC-CUR-001"
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
 MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]\r\n]*\]\((?P<target><[^>\r\n]+>|[^)\r\n]+)\)")
+MARKDOWN_HEADING_RE = re.compile(r"^(?P<hashes>#{1,6})[ \t]+(?P<title>.+?)\s*$", re.MULTILINE)
+HISTORY_HEADING_RE = re.compile(
+    r"(?i)(?:\bstream\b|\bfreeze\b|\bfrozen\b|\brerun\b|\bre-run\b|"
+    r"\bexecution[ -]log\b|\bcheckpoint\b|\breaffirmation\b|"
+    r"実行ログ|再実行|凍結|チェックポイント|過去件数|解消済み(?:queue|キュー))"
+)
 
 
 @dataclass(frozen=True)
@@ -125,5 +132,35 @@ def check_relative_links(root: Path, markdown_paths: list[Path]) -> list[DocsChe
                         fix_hint=f"Update the target relative to {source.parent.relative_to(repository_root).as_posix()} or add the referenced file.",
                     )
                 )
+
+    return findings
+
+
+def check_current_only_headings(root: Path, markdown_paths: list[Path]) -> list[DocsCheckFinding]:
+    """Return DC-CUR-001 findings for execution-history headings in current-only docs."""
+    repository_root = root.resolve()
+    findings: list[DocsCheckFinding] = []
+
+    for supplied_path in sorted(markdown_paths, key=lambda path: path.as_posix()):
+        source = supplied_path if supplied_path.is_absolute() else repository_root / supplied_path
+        source = source.resolve()
+        source_label = source.relative_to(repository_root).as_posix()
+        text = _without_fenced_code(source.read_text(encoding="utf-8"))
+
+        for match in MARKDOWN_HEADING_RE.finditer(text):
+            title = INLINE_CODE_RE.sub("", match.group("title")).strip().rstrip("#").strip()
+            if not HISTORY_HEADING_RE.search(title):
+                continue
+            line = text.count("\n", 0, match.start()) + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=CURRENT_ONLY_RULE_ID,
+                    path=source_label,
+                    line=line,
+                    target=title,
+                    message=f"execution-history heading appears in a current-only document: {title}",
+                    fix_hint="Move the execution record to the appropriate history document and keep only the current contract or procedure here.",
+                )
+            )
 
     return findings
