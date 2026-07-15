@@ -212,7 +212,7 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
             errors = validate(root)
             self.assertEqual([], errors)
 
-    def test_discovery_ignores_non_active_status_enum(self) -> None:
+    def test_validate_rejects_noncanonical_status(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "README.md").write_text(
@@ -242,7 +242,30 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
                 encoding="utf-8",
             )
             errors = validate(root)
-            self.assertEqual([], errors)
+            self.assertTrue(any("invalid Status `Active`" in err for err in errors))
+
+    def test_validate_detects_duplicate_logical_backlog_id(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            memo = textwrap.dedent(
+                """
+                # Issue: DUP-01 sample
+                - Type: Process
+                - Status: Open
+                - Lifecycle: Draft -> Open -> In Progress -> Done
+                - Source Issue: N/A
+                - Priority: P1
+                - Scope: `01_Plans/`
+                - Related ADR/Spec: N/A
+                - Expected verification level: `docs-check`
+                """
+            )
+            (root / "issue-first.md").write_text(memo, encoding="utf-8")
+            (root / "issue-second.md").write_text(memo, encoding="utf-8")
+
+            errors = validate(root)
+
+            self.assertTrue(any("duplicate Backlog ID `DUP-01`" in err for err in errors))
 
     def test_discover_active_rows_does_not_require_readme(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

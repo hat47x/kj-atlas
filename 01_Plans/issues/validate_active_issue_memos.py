@@ -9,12 +9,24 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+PLANS_DIR = Path(__file__).resolve().parents[1]
+if str(PLANS_DIR) not in sys.path:
+    sys.path.insert(0, str(PLANS_DIR))
+
+from issue_memo_metadata import (  # noqa: E402
+    ISSUE_STATUS_ACTIVE,
+    VALID_ISSUE_STATUSES,
+    parse_backlog_id,
+    parse_issue_status,
+    parse_metadata,
+)
+
 ALLOWED_VERIFICATION_LEVELS = {"docs-check", "unit", "integration", "e2e"}
-ALLOWED_ACTIVE_STATUSES = {"Draft", "Open", "In Progress"}
 REQUIRED_FIELDS = [
     "- Type:",
     "- Status:",
@@ -71,15 +83,16 @@ def discover_active_rows(root: Path) -> list[ActiveMemoRow]:
     rows: list[ActiveMemoRow] = []
     for memo_path in sorted(root.glob("issue-*.md")):
         text = memo_path.read_text(encoding="utf-8")
-        status = extract_field_value(text, "Status")
-        if status not in ALLOWED_ACTIVE_STATUSES:
+        metadata = parse_metadata(text.splitlines()[:20])
+        status = parse_issue_status(metadata)
+        if status not in ISSUE_STATUS_ACTIVE:
             continue
         rows.append(
             ActiveMemoRow(
-                backlog=memo_path.stem.removeprefix("issue-"),
+                backlog=parse_backlog_id(text, memo_path),
                 memo=memo_path.name,
                 status=status,
-                source=extract_field_value(text, "Source Issue") or "",
+                source=metadata.get("Source Issue", ""),
             )
         )
     return rows
@@ -106,11 +119,7 @@ def extract_dependency_paths(memo_text: str) -> list[str]:
 
 
 def extract_field_value(memo_text: str, field_name: str) -> str | None:
-    pattern = rf"^- {re.escape(field_name)}:\s*(.+)$"
-    match = re.search(pattern, memo_text, re.M)
-    if not match:
-        return None
-    return match.group(1).strip()
+    return parse_metadata(memo_text.splitlines()).get(field_name)
 
 
 def extract_verification_level(memo_text: str) -> str | None:
@@ -144,14 +153,14 @@ def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
         memo_source = extract_field_value(text, "Source Issue")
         memo_priority = extract_field_value(text, "Priority")
 
-        if row.status not in ALLOWED_ACTIVE_STATUSES:
+        if row.status not in ISSUE_STATUS_ACTIVE:
             errors.append(
-                f"{row.memo}: invalid active status `{row.status}` (allowed: {sorted(ALLOWED_ACTIVE_STATUSES)})"
+                f"{row.memo}: invalid active status `{row.status}` (allowed: {sorted(ISSUE_STATUS_ACTIVE)})"
             )
 
-        if memo_status and memo_status not in ALLOWED_ACTIVE_STATUSES:
+        if memo_status and memo_status not in ISSUE_STATUS_ACTIVE:
             errors.append(
-                f"{row.memo}: invalid Status `{memo_status}` (allowed: {sorted(ALLOWED_ACTIVE_STATUSES)})"
+                f"{row.memo}: invalid Status `{memo_status}` (allowed: {sorted(ISSUE_STATUS_ACTIVE)})"
             )
 
         if memo_priority is None or not memo_priority.strip():
@@ -178,7 +187,31 @@ def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
 
 
 def validate(root: Path) -> list[str]:
-    return validate_rows(root, discover_active_rows(root))
+    errors: list[str] = []
+    seen_backlogs: dict[str, str] = {}
+    for memo_path in sorted(root.glob("issue-*.md")):
+        text = memo_path.read_text(encoding="utf-8")
+        metadata = parse_metadata(text.splitlines()[:20])
+        status = parse_issue_status(metadata)
+        if status not in VALID_ISSUE_STATUSES:
+            errors.append(
+                f"{memo_path.name}: invalid Status `{status}` "
+                f"(allowed: {sorted(VALID_ISSUE_STATUSES)})"
+            )
+
+        if status in ISSUE_STATUS_ACTIVE:
+            backlog = parse_backlog_id(text, memo_path)
+            normalized_backlog = backlog.casefold()
+            previous = seen_backlogs.get(normalized_backlog)
+            if previous:
+                errors.append(
+                    f"{memo_path.name}: duplicate Backlog ID `{backlog}` also used by {previous}"
+                )
+            else:
+                seen_backlogs[normalized_backlog] = memo_path.name
+
+    errors.extend(validate_rows(root, discover_active_rows(root)))
+    return errors
 
 
 def main() -> int:
