@@ -7,7 +7,7 @@
 - Priority: P1
 - Owner: Maintainer / Developer Experience contributor
 - Scope: `01_Plans/issues/validate_active_issue_memos.py`, `01_Plans/issues/tests/`, `01_Plans/triage_actionable_plans.py`, `01_Plans/tests/`, `01_Plans/docs_contract_checks.py`, `01_Plans/docs_check.py`（新規候補）, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `.github/workflows/ci.yml`, `.github/pull_request_template.md`, current-only文書と公開対象文書の検査規則
-- Related Backlog: `DOC-ARCH-02`, `DOC-OPS-06`, `DOC-UI-CATALOG-01`, `DATA-CONTRACT-DOC-01`, `DX-E2E-08`
+- Related Backlog: `DOC-ARCH-02`, `DOC-OPS-06`, `DOC-UI-CATALOG-01`, `DATA-CONTRACT-DOC-01`, `DX-E2E-08`, `DX-DOC-04`
 - Related ADR/Spec: `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `01_Plans/issues/issue-DOC-ARCH-02-current-contract-history-physical-separation.md`, `01_Plans/issues/issue-DOC-OPS-06-current-view-history-and-contributor-route.md`, `01_Plans/issues/issue-DOC-UI-CATALOG-01-public-boundary-and-provenance.md`
 - Expected verification level: `integration`
 
@@ -262,3 +262,8 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 
 - 単一正本`03_Implement/frontend/docs/e2e_testing.md`の後半に、過去のStream E/F/G、固定実装順、Draft昇格テンプレートと、現CLIに存在しない`validate_active_issue_memos.py --files`が残る。backendの文書契約テストも旧運用tokenを必須化している。
 - `DX-E2E-08`でrunbook縮約、無効コマンド是正、契約テストの現行不変条件化を一体実施する。clean baseline後、`DC-CUR-001`の対象へE2E正本を追加し、SSOT本文自体のcurrent/history混在を再発防止する。
+
+## Executable command follow-up 2026-07-16
+
+- `CONTRIBUTING.md`に旧`/api/health`、E2E正本に存在しないvalidator `--files`が残る一方、相対リンク検査とdocs-checkはpassする。routeへの到達性と、コードブロック内の実行契約の正しさは別の検査境界である。
+- `DX-DOC-04`でendpoint、CLI option、npm script、Compose service、repository path、runtime parameter keyを静的照合する`DC-CMD-001`を追加する。破壊的・外部依存コマンドは実行せず、分類と警告だけを検証する。
