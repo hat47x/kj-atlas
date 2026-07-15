@@ -166,6 +166,19 @@ Open化条件:
 - 本件はADR-0024の実装欠落を埋めるActionである。新規ADRは原則不要。
 - ADR化が必要になる条件: 02層をblocking対象へ加える判断が既存ADR追補で扱えない、または新しい非機能境界を導入する場合（ADR-0047 R-3）。
 
+## DOC-ARCH-02 handoff（2026-07-15）
+
+`DOC-ARCH-02`が作成したclean baselineを、T1/T3のarchitecture checkerへ次の境界で引き継ぐ。
+
+- current対象: `architecture.md`、`api.md`、`schemas.md`、`data_model_operations_overview.md`。`history/`はInformativeとして別ルールで検査し、currentの重複定義件数へ混ぜない。
+- current/history分離: current対象の見出しへ`Stream`、`freeze`、`rerun`、`execution log`、`checkpoint`、`reaffirmation`が再混入したらfailする。正当な現行用語を誤検出しないよう、見出し単位・allowlist最小で実装する。
+- 責務別SSOT: CE1/CE2/CE4の型定義は`schemas.md`、endpoint/status/error/副作用は`api.md`、責務・信頼境界は`architecture.md`だけが定義する。参照リンクとContract ID索引は重複定義として数えない。
+- history metadata: `Status: Informative history`、Source document/anchors、Covered period、Snapshot/source revision、Retention reason、Current normative anchorsの欠落または逆リンク切れをfailする。
+- 既知Conflict: `queryId` / `schemaVersion`差異は`CE1-CONTRACT-01`へ委譲済みであり、同IssueがOpenの間は「解消済み」と推測して一方の値をcheckerへ固定しない。
+- 受入fixture: currentへの履歴見出し再挿入、architectureへのrequired key再掲、history metadata欠落、現行anchor切れを各1件以上の負例にする。
+
+引き渡し時baselineは、current 4文書の履歴見出し0、CE4型を含むCE主要型の定義先が`schemas.md`のみ、H-A〜H-D履歴ファイルの必須メタ充足、変更文書の相対リンク切れ0である。checker/CI実装とrule ID確定は本Issueのスコープに残す。
+
 ## 進捗記録 2026-07-15: Active viewの単一化
 
 - READMEの手書きActive表を廃止し、`triage_actionable_plans.py` の生成結果をcurrent viewとした。
