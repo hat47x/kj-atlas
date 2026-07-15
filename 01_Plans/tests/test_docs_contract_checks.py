@@ -1,4 +1,5 @@
 import importlib.util
+import subprocess
 import sys
 import tempfile
 import textwrap
@@ -80,6 +81,18 @@ class RelativeLinkCheckTest(unittest.TestCase):
 
         self.assertEqual(len(findings), 1)
         self.assertIn("escapes the repository", findings[0].message)
+
+    def test_tracked_markdown_paths_excludes_untracked_files(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            (root / "tracked.md").write_text("# Tracked\n", encoding="utf-8")
+            (root / "untracked.md").write_text("# Untracked\n", encoding="utf-8")
+            subprocess.run(["git", "-C", str(root), "add", "tracked.md"], check=True)
+
+            paths = MODULE.tracked_markdown_paths(root)
+
+        self.assertEqual(paths, [Path("tracked.md")])
 
 
 if __name__ == "__main__":

@@ -108,12 +108,12 @@ Open化条件:
 - [ ] 必須メタデータ、非正規Status、参照先不在、依存関係不正、重複Backlog IDの異常系testがある。
 - [x] current repositoryでtriageとvalidatorが同じActive件数を返す（2026-07-15 Open化時点: 29件）。
 - [ ] triageとvalidatorが同じStatus parser・正規値を使い、同じActive件数を返す。
-- [ ] 1コマンドでローカル/CI同値のdocs-checkを実行できる。
-- [ ] docs-check非0終了がPRをblockする。
+- [x] 1コマンドでローカル/CI同値のdocs-checkを実行できる。
+- [x] docs-check非0終了がPRをblockする。
 - [x] 01/02/04/root docsの適用check matrixと除外理由が文書化され、02層が無検査にならない。
 - [ ] current領域の同一Contract ID/型の異義定義、API/schema key差異、DocumentV2支援表欠落を検出する。
 - [ ] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
-- [ ] broken relative linkとSSOT参照先不在を検出する。
+- [x] broken relative linkとSSOT参照先不在を検出する。
 - [ ] 公開版UI catalog等への内部管理語再混入とprovenance欠落を検出する。
 - [ ] SafeMode、share/export、proposal-only、human reviewの不変条件参照欠落を検出する。
 - [ ] docs-only PRへ不要なfrontend/backend E2Eを強制しない。
@@ -124,8 +124,8 @@ Open化条件:
 - [x] T1 check matrixとrule IDを固定し、ADR-0024へ適用境界と段階有効化条件を追補する。
 - [ ] T2 Active issue validatorをfilesystem直接検査へ変更する（自動発見と既存異常系testsは完了。共有parser・重複Backlog ID検査は未完了）。
 - [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。
-- [ ] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
-- [ ] T5 CIへ`docs-contract` jobを追加し、既存PRとdocs-only PRで動作確認する。
+- [x] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
+- [x] T5 既存Backend CI jobへblocking docs-check stepを追加し、既存PRで動作確認する。
 - [ ] T6 PR templateへ証跡欄を追加する。
 - [ ] T7 負例fixtureでfail、現行repositoryでpass、変更対象外のアプリtest非干渉を検証する。
 
@@ -225,3 +225,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - findingはrule ID、対象ファイル、行、参照先、修正先を保持し、CI診断へそのまま渡せる形式とした。
 - 正常、欠落、コード記法除外、外部参照除外、percent-encoded path、repository逸脱の4 unit testsが成功した。
 - 同じ実装を追跡Markdown 374件へ適用し、`DC-LNK-001` finding 0件を確認した。T3全体はcurrent/history、architecture、public checkerが未実装のため未完了を維持する。
+
+## T4/T5完了記録 2026-07-15: 単一entrypointとblocking CI
+
+- `docs_check.py` をローカル/CI共通の1コマンド入口とし、01_Plansのunit tests、Active issue validator、相対リンク検査をfail-fastで実行する。
+- `docs_contract_checks.py` に追跡対象Markdownだけを列挙するCLIを追加した。生成物や依存物を対象外にし、検査関数だけを実行せず成功していた偽陽性を解消した。
+- CIは既存Backend jobのPython setup直後に `python 01_Plans/docs_check.py` を実行する。文書専用jobの追加は避け、同じblocking効果を小さいworkflow差分で実現した。
+- ローカル実行で01_Plans 9 tests、issue validator 11 tests、Active memo 23件、追跡Markdown 374件がすべて成功した。CIの最終確認は本変更のPRで行う。

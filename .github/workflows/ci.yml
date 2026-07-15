@@ -491,11 +491,7 @@ jobs:
 
       - name: Validate documentation and AI entrypoint contracts
         working-directory: .
-        run: |
-          python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
-          python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
-          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
-          python 01_Plans/docs_contract_checks.py
+        run: python 01_Plans/docs_check.py
 
       - name: Install dependencies
         run: |
