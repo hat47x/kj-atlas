@@ -238,3 +238,9 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - `issue_memo_metadata.py` に正規Status、メタデータ、見出し上の論理Backlog IDの解釈を集約し、triageとvalidatorで共有した。
 - 非正規StatusはActive一覧から黙って消さず、Doneを含む全memoを対象に停止理由を示す。論理Backlog IDの重複は現在の実行判断を曖昧にするActive memoだけをfail-closedにし、完了済み履歴の過去衝突は改名しない。
 - 単一docs-checkで01_Plans 9 tests、issue validator 12 tests、Active memo 23件、追跡Markdown 374件の成功を確認した。
+
+## T3進捗 2026-07-15: `DC-CUR-001`
+
+- Document V1再基準化を含む別ブランチ統合後、`data_model_operations_overview.md` に履歴へ移管済みのStream D旧§1.2/1.3・§8〜13が再混入していた。ER、CRUD、支援レベル、運用境界を残し、形成履歴104行だけを除去した。
+- current-only 7文書のMarkdown見出しを検査し、Stream、rerun、checkpoint、reaffirmation、execution log/recordなどの実行履歴見出しを `DC-CUR-001` で拒否する純関数を追加した。本文、コード記法、`downstream` のような部分一致は対象外とする。
+- 単一docs-checkで01_Plans 11 tests、issue validator 12 tests、Active memo 23件、追跡Markdown 374件が成功した。T3全体はarchitecture、history、public checkerが残るため継続する。
