@@ -49,6 +49,7 @@ import {
 } from "./domain/merge_suggestion_decisions";
 import { isSourceCard, Document, DocumentV2, Island, Narrative, type CardKa, type CardMeta, type ContradictionSignalDecision, type ContradictionSignalReviewStatus, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
 import { KNOWN_EDGE_TYPES } from "./domain/types";
+import { answerCardQualityQuestion, openCardQualityAssist, type CardQualityAssistState, type CardQualityDecision } from "./domain/card_quality";
 import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -1099,6 +1100,10 @@ export default function App() {
   const [history, setHistory] = useState<DocumentHistory | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  // DOMAIN-CARD-QUALITY-01: session-only self-check state, keyed by card id.
+  // Never persisted to the document (§6: quality notes are derived, not truth).
+  const [cardQualityAssistByCardId, setCardQualityAssistByCardId] = useState<Record<string, CardQualityAssistState>>({});
+  const [openCardQualityAssistCardId, setOpenCardQualityAssistCardId] = useState<string | null>(null);
   const [isAdvancedUiEnabled, setIsAdvancedUiEnabled] = useState<boolean>(loadAdvancedUiEnabled);
   const [isWorkModeOpen, setIsWorkModeOpen] = useState(false);
   const workModeTriggerRef = useRef<HTMLButtonElement>(null);
@@ -6104,6 +6109,51 @@ export default function App() {
     return document.cards.find((card) => card.id === selectedCardIds[0]) ?? null;
   }, [document?.cards, selectedCardIds]);
 
+  const handleOpenCardQualityAssist = useCallback(() => {
+    if (!selectedCard) {
+      return;
+    }
+
+    setCardQualityAssistByCardId((previous) => ({
+      ...previous,
+      [selectedCard.id]: openCardQualityAssist(selectedCard, previous[selectedCard.id]),
+    }));
+    setOpenCardQualityAssistCardId(selectedCard.id);
+  }, [selectedCard]);
+
+  const handleAnswerCardQualityQuestion = useCallback(
+    (decision: CardQualityDecision) => {
+      if (!openCardQualityAssistCardId) {
+        return;
+      }
+
+      setCardQualityAssistByCardId((previous) => {
+        const current = previous[openCardQualityAssistCardId];
+        if (!current) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          [openCardQualityAssistCardId]: answerCardQualityQuestion(current, decision),
+        };
+      });
+    },
+    [openCardQualityAssistCardId]
+  );
+
+  const handleCloseCardQualityAssist = useCallback(() => {
+    setOpenCardQualityAssistCardId(null);
+  }, []);
+
+  const handleOpenCardTextEditor = useCallback(() => {
+    if (!selectedCard) {
+      return;
+    }
+
+    setEditingCardId(selectedCard.id);
+  }, [selectedCard]);
+
   useEffect(() => {
     // UX-SHORTCUT-01 (ADR-0048 D2): retention-system shortcuts (H=hold,
     // U=critique, R=reviewed) are modifier-less single keys so the core
@@ -10574,6 +10624,15 @@ export default function App() {
 
             handleCardTextReviewedChange(selectedCard.id, value);
           }}
+          cardQualityAssistState={
+            selectedCard && openCardQualityAssistCardId === selectedCard.id
+              ? cardQualityAssistByCardId[selectedCard.id]
+              : undefined
+          }
+          onOpenCardQualityAssist={handleOpenCardQualityAssist}
+          onAnswerCardQualityQuestion={handleAnswerCardQualityQuestion}
+          onCloseCardQualityAssist={handleCloseCardQualityAssist}
+          onOpenCardTextEditor={handleOpenCardTextEditor}
           onAddEvidenceLink={(payload) => {
             if (!selectedCard) {
               return;

@@ -91,8 +91,8 @@
 - [x] AC-2: P-08、ドメイン定義、スキーマ境界、価値トレーサビリティが同じ要件を参照している。
 - [ ] AC-3: 本文以外の必須入力なしに、一回の保存操作でカードを作成できる。
 - [ ] AC-4: 品質支援は保存後または要求時に非モーダルで開き、一件ずつ採用・見送り・保留できる。
-- [ ] AC-5: 提案の採用前に本文、`claimType`、出典、レビュー状態が変更されない。
-- [ ] AC-6: 少数意見または矛盾するカードが、低品質として自動削除・統合・降格されない。
+- [x] AC-5: 提案の採用前に本文、`claimType`、出典、レビュー状態が変更されない。
+- [x] AC-6: 少数意見または矛盾するカードが、低品質として自動削除・統合・降格されない。
 - [ ] AC-7: 分割または言い換えの前後を比較し、元本文へ戻れる。
 - [ ] AC-8: マウスとキーボードで支援の開始、採用、見送り、保留、本文へのフォーカス復帰を完了できる。
 - [ ] AC-9: 日本語と英語で同じ意味と選択肢を提供し、390px幅で本文や主要操作を覆わない。
@@ -104,11 +104,33 @@
 - [x] T1 KJ法、定性研究の信頼性、回答負担、人間中心設計の一次・公的情報を調査する。
 - [x] T2 カード品質のNormative要件を作成し、上流・設計文書へ反映する。
 - [x] T3 新規スキーマとADRが現時点では不要であること、およびADR昇格条件を明記する。
-- [ ] T4 6種の代表fixtureと、本文保存を先行する品質支援の状態遷移をテストで固定する。
-- [ ] T5 Phase Bの自己確認UI、i18n、キーボード操作、フォーカス復帰を実装する。
-- [ ] T6 提案採用前の不変条件、少数・矛盾保持、SafeMode、provider noneをunit/integrationで固定する。
+- [x] T4 6種の代表fixtureと、本文保存を先行する品質支援の状態遷移をテストで固定する。
+- [x] T5 Phase Bの自己確認UI、i18n、キーボード操作、フォーカス復帰を実装する。
+- [x] T6 提案採用前の不変条件、少数・矛盾保持、SafeMode、provider noneをunit/integrationで固定する。
 - [ ] T7 390px/desktop、マウス/キーボードのE2Eとスクリーンショットを取得する。
 - [ ] T8 Phase Cの必要性をPhase Bの使用証跡から判断し、必要な場合だけ別issueへ分割する。
+
+### T4 実装証跡（2026-07-15）
+
+- `src/domain/card_quality.ts`: `DocumentV2`/`Card` へ新規フィールドを追加せず、質問4種（unit/context/trace/status、§4.2の固定順）、決定3種（apply/keep_as_is/hold_for_now）、状態遷移関数 `openCardQualityAssist`/`answerCardQualityQuestion` を独立定義した。決定・質問関数はいずれも assist state のみを入出力とし、`Card` を読み書きできないため、採用前不変（CQ-REV-01, AC-5）は型・実装レベルで保証される。
+- `src/domain/card_quality.fixture.ts`: §7の6種代表fixture（single_center / multi_center / context_poor / quote_interpretation_mixed / minority_or_contradiction / unknown_source）を固定した。
+- `src/domain/card_quality.test.ts`: 全fixtureで質問順が同一であること（少数・矛盾fixtureを特別扱いしないこと)、4問すべて回答するまでresolvedにならないこと、Card凍結下でも状態遷移が本文を変更しないこと、見送り済み質問が本文未変更のセッション内では再提示されないこと（QUX-HUMAN-01）、`CARD_QUALITY_DECISIONS` に評価・スコア語が含まれないこと（CQ-DIVERSE-01）を検証する。
+- 検証結果: 対象8 tests作成（frontend全体テストは検証計画のコマンドで実行）。UI・永続化・i18n・provider統合は未実装であり、T5以降の対象とする。
+
+### T5 実装証跡（2026-07-15）
+
+- `src/ui/SidePanel.tsx`: 選択中カード詳細の「このカードを表示」ボタン直後に「カードを整える」トリガーと非モーダルの自己確認ブロックを追加した。既存の島サマリー提案ブロック（採用/保留/見送りの3ボタン構成）と同じ視覚パターンを踏襲し、`currentCardQualityQuestion`/`answerCardQualityQuestion`（T4）を呼び出すだけの薄いpresentation層とした。閉じるボタンはトリガーへ`setTimeout(...).focus()`でフォーカスを戻す（既存`WorkModePanel`等のフォーカス復帰慣用句を非モーダル向けに簡略化）。全ボタンは標準`<button>`要素のため、追加のキーボード配線なしにTab/Enterで操作できる。
+- `src/App.tsx`: `cardQualityAssistByCardId`（カードIDをキーとするセッション内のみの状態、文書へは永続化しない）と`openCardQualityAssistCardId`を追加し、4つのハンドラ（open/answer/close/open-text-editor）を`selectedCard`宣言後に配置した。「本文を編集する」ボタンは既存の`editingCardId`編集モード（Canvas側のカード本文textarea）を再利用する。
+- `src/i18n/locales/{en,ja}.json`: `side_panel.card_quality.*`（トリガー/完了/決定3種/閉じる/本文編集）と`cardQuality.question.{unit,context,trace,status}.{prompt,rationale}`をen/ja両方に追加した（キー総数1555件で一致を確認）。文言は要求文書§4.2の推奨例に基づく自己確認の問いとして書き直した（AIによる断定ではなく「〜していますか」形式）。
+- 検証結果: `npm run typecheck`、`npx vitest run`（1055/1055 pass、既存の無関係な1ファイル失敗は`~/kjnative-fe`がリポジトリルート非同梱の副作用でT5と無関係）。**ブラウザでの手動確認は本環境のBrowser Preview toolがWSL側dev server(localhost)に到達できず実施できなかった** — キーボード操作・フォーカス復帰・390px幅表示の実機確認はT7のE2E証跡に委ねる。AC-4/AC-5/AC-6は構造的に成立するが、チェックボックスの更新はT6のunit/integration固定を待つ。
+
+### T6 実装証跡（2026-07-15）
+
+- `src/domain/card_quality.test.ts` に5 testsを追加した。
+  - 全6代表fixture × 3種の決定シーケンス（全apply／全keep_as_is／混在）で、凍結したCardオブジェクトが状態遷移の前後で完全に一致することを検証し、AC-5（採用前不変）を6 fixture全てで固定した（T4は1 fixtureのみで検証していた）。
+  - `minority_or_contradiction` fixtureについて、4問すべてを最も積極的な"apply"で応答してもcritiqueTags・本文が変化しないことを個別に検証し、AC-6（少数・矛盾の非降格）を固定した。
+  - `core_value_guard.test.ts`のsource-string contract慣用句（`readFileSync`）を踏襲し、`card_quality.ts`のソース自体に対する境界テストを3件追加: (a) 型のみimport（`import type { Card }`）以外の実行時importが存在しないこと、(b) Provider/fetch/localStorage/worker等の外部I/Oキーワードが一切含まれないこと（`KJ_ATLAS_LLM_PROVIDER=none`は自明に成立）、(c) `.meta`/`.critique`/`.claimType`など、SafeModeが管理する自由記述フィールドへの参照が一切ないこと。
+- 検証結果: 追加5 testsを含め対象13 tests、frontend全体1060/1060 pass（既存の無関係な1ファイル失敗はT4/T5と同じ、リポジトリルート非同梱の副作用）。AC-5・AC-6をチェック済みへ更新した。AC-10（SafeMode/proposal-only/human_reviewed/provider-noneの回帰）はアプリ全体の既存回帰テストが通り続けていることで裏付けられるが、実ブラウザでの確認を伴わないためチェックは見送り、T7のE2E証跡に委ねる。
 
 ## 7) 検証計画 / Validation plan
 
