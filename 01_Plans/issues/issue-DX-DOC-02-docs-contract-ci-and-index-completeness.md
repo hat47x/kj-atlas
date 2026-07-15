@@ -282,3 +282,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - 完了済み`DOC-UI-CATALOG-01`の負例語彙（`00_Prompt`、`01_Plans`、ADR番号、issue ID、内部UX ID、Claude Design）だけを公開UIカタログで禁止する。公開文書全体へ曖昧な単語lintは広げず、利用者に必要な確定済み仕様参照を誤検出しない。
 - 完全な公開境界/provenance、内部ADR再混入、catalog/ledger証跡欠落の正常・負例fixtureを追加した。現行catalogと画像台帳はfinding 0である。
 - T3全体は`DC-ARC-001`等が未実装のため未完了を維持する。
+
+## T3/T7進捗 2026-07-15: `DC-FMT-001`
+
+- 全tracked Markdownのコードフェンス外に残る`<<<<<<<`/`>>>>>>>`競合境界を検出する純関数と負例fixtureを追加した。Setext見出しの`=====`とコードフェンス内の説明例は誤検出しない。
+- 統一docs-checkからworking treeとstaged changesの`git diff --check`も実行する。CIでは既存の隣接stepがPR merge-baseまたはpush before commitからHEADまでを検査するため、ローカル未commit差分とCI commit rangeを補完的に覆う。
+- findingはrule ID、対象Markdown、行、修正commandを示す。現行全374 Markdownは競合境界0、diff check成功である。
+- T3/T7全体は`DC-ARC-001`、`DC-SAF-001`とPR event観測が未完了のため継続する。

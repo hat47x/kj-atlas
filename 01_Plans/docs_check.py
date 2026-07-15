@@ -10,6 +10,7 @@ from pathlib import Path
 
 from docs_contract_checks import (
     RequiredRoute,
+    check_conflict_markers,
     check_current_only_headings,
     check_history_documents,
     check_public_ui_catalog,
@@ -26,11 +27,11 @@ ENABLED_RULES = (
     "DC-HIS-001",
     "DC-RTE-001",
     "DC-PUB-001",
+    "DC-FMT-001",
 )
 NOT_ENABLED_RULES = (
     "DC-ARC-001",
     "DC-SAF-001",
-    "DC-FMT-001",
 )
 HISTORY_INDEX_PATH = Path("02_Architecture/history/README.md")
 PUBLIC_CATALOG_PATH = Path("04_Documentation/ui_catalog.md")
@@ -166,6 +167,30 @@ def _run_contract_tests(root: Path) -> list[str]:
     return errors
 
 
+def _run_local_diff_checks(root: Path) -> list[str]:
+    errors: list[str] = []
+    for label, command in (
+        ("working tree", ["git", "diff", "--check"]),
+        ("staged changes", ["git", "diff", "--cached", "--check"]),
+    ):
+        completed = subprocess.run(
+            command,
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        if completed.returncode == 0:
+            continue
+        detail = (completed.stdout or completed.stderr).strip()
+        errors.append(
+            f"DC-FMT-001 repository: git diff --check failed for {label}. "
+            f"Fix: remove the reported whitespace/error markers.\n{detail}"
+        )
+    return errors
+
+
 def run_docs_check(
     root: Path,
     *,
@@ -196,6 +221,7 @@ def run_docs_check(
 
     markdown_paths = tracked_markdown_paths(repository_root)
     errors.extend(finding.render() for finding in check_relative_links(repository_root, markdown_paths))
+    errors.extend(finding.render() for finding in check_conflict_markers(repository_root, markdown_paths))
     errors.extend(
         finding.render()
         for finding in check_current_only_headings(repository_root, list(CURRENT_ONLY_PATHS))
@@ -220,6 +246,7 @@ def run_docs_check(
             repository_root, PUBLIC_CATALOG_PATH, SCREENSHOT_LEDGER_PATH
         )
     )
+    errors.extend(_run_local_diff_checks(repository_root))
     if run_tests:
         errors.extend(_run_contract_tests(repository_root))
 

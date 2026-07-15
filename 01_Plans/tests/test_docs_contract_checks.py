@@ -320,5 +320,43 @@ class PublicUiCatalogCheckTest(unittest.TestCase):
         self.assertIn("Stale triggers checked:", targets)
 
 
+class ConflictMarkerCheckTest(unittest.TestCase):
+    def test_reports_conflict_boundaries_with_rule_file_line_and_fix(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source = root / "guide.md"
+            source.write_text(
+                "# Guide\n\n<<<<<<< HEAD\ncurrent\n=======\nincoming\n>>>>>>> main\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_conflict_markers(root, [source])
+
+        self.assertEqual(len(findings), 2)
+        self.assertEqual(findings[0].rule_id, "DC-FMT-001")
+        self.assertEqual(findings[0].path, "guide.md")
+        self.assertEqual(findings[0].line, 3)
+        self.assertEqual(findings[1].line, 7)
+        self.assertIn("git diff --check", findings[0].fix_hint)
+
+    def test_ignores_setext_heading_and_fenced_example(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source = root / "guide.md"
+            source.write_text(textwrap.dedent("""\
+                Guide
+                =====
+
+                ```text
+                <<<<<<< HEAD
+                >>>>>>> main
+                ```
+            """), encoding="utf-8")
+
+            findings = MODULE.check_conflict_markers(root, [source])
+
+        self.assertEqual(findings, [])
+
+
 if __name__ == "__main__":
     unittest.main()

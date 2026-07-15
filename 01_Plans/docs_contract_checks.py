@@ -12,6 +12,7 @@ CURRENT_ONLY_RULE_ID = "DC-CUR-001"
 HISTORY_RULE_ID = "DC-HIS-001"
 ROUTE_RULE_ID = "DC-RTE-001"
 PUBLIC_RULE_ID = "DC-PUB-001"
+FORMAT_RULE_ID = "DC-FMT-001"
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
 MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]\r\n]*\]\((?P<target><[^>\r\n]+>|[^)\r\n]+)\)")
@@ -512,6 +513,34 @@ def check_public_ui_catalog(
                     target=match.group(0),
                     message=f"internal planning reference appears in the public UI catalog: {match.group(0)}",
                     fix_hint="Move internal issue/ADR/design handoff detail to 02_Architecture/design and keep only verified user-facing facts here.",
+                )
+            )
+
+    return findings
+
+
+def check_conflict_markers(root: Path, markdown_paths: list[Path]) -> list[DocsCheckFinding]:
+    """Return DC-FMT-001 findings for unresolved Git conflict boundaries."""
+    repository_root = root.resolve()
+    findings: list[DocsCheckFinding] = []
+    marker_re = re.compile(r"^(?P<marker><{7,}|>{7,})(?:[ \t].*)?$", re.MULTILINE)
+
+    for supplied_path in sorted(markdown_paths, key=lambda path: path.as_posix()):
+        source = supplied_path if supplied_path.is_absolute() else repository_root / supplied_path
+        source = source.resolve()
+        source_label = source.relative_to(repository_root).as_posix()
+        text = _without_fenced_code(source.read_text(encoding="utf-8"))
+        for match in marker_re.finditer(text):
+            marker = match.group("marker")
+            line = text.count("\n", 0, match.start()) + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=FORMAT_RULE_ID,
+                    path=source_label,
+                    line=line,
+                    target=marker,
+                    message="unresolved Git conflict marker appears in Markdown",
+                    fix_hint="Resolve the conflict, remove all conflict boundaries, and rerun git diff --check.",
                 )
             )
 
