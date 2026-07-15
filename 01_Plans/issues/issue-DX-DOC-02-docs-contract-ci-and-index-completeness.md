@@ -7,7 +7,7 @@
 - Priority: P1
 - Owner: Maintainer / Developer Experience contributor
 - Scope: `01_Plans/issues/validate_active_issue_memos.py`, `01_Plans/issues/tests/`, `01_Plans/triage_actionable_plans.py`, `01_Plans/tests/`, `01_Plans/docs_contract_checks.py`, `01_Plans/docs_check.py`（新規候補）, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `.github/workflows/ci.yml`, `.github/pull_request_template.md`, current-only文書と公開対象文書の検査規則
-- Related Backlog: `DOC-ARCH-02`, `DOC-OPS-06`, `DOC-UI-CATALOG-01`
+- Related Backlog: `DOC-ARCH-02`, `DOC-OPS-06`, `DOC-UI-CATALOG-01`, `DATA-CONTRACT-DOC-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `01_Plans/issues/issue-DOC-ARCH-02-current-contract-history-physical-separation.md`, `01_Plans/issues/issue-DOC-OPS-06-current-view-history-and-contributor-route.md`, `01_Plans/issues/issue-DOC-UI-CATALOG-01-public-boundary-and-provenance.md`
 - Expected verification level: `integration`
 
@@ -251,3 +251,9 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - Current normative anchorsに現行文書へのリンクがあり、Source documentに指定された元文書から履歴ファイルへ逆リンクできることをfail-closedで確認する。履歴本文の意味や当時の判断はcurrent契約比較の対象にしない。
 - 逆リンクが欠けていた `data_model_operations_overview.md` に形成履歴への導線を追加した。T3全体はarchitectureとpublic checkerが残るため継続する。
 - 単一docs-checkで01_Plans 13 tests、issue validator 12 tests、Active memo 23件、追跡Markdown 374件が成功した。
+
+## `DC-ARC-001` baseline blocker 2026-07-15
+
+- ADR-0058とDoneの`DATA-CONTRACT-RESET-01`は単一の完全な`DocumentV1`へ同期済みとするが、current `schemas.md`には旧最小V1定義と完全な`DocumentV2` / version 2定義、Legacy V1→V2正規化、mock dv2等が29行残る。`api.md`と`data_model_operations_overview.md`のV1契約、および実装のversion 1 gateと矛盾する。
+- `contract_reading_guide.md`/inventoryの旧V2案内と、成功系`card_quality_assistance.spec.ts`/`zip_import.test.ts`のversion 2 fixtureも同時に見つかった。型・optional field・安全注記を欠落なく再整合するP1 follow-up `DATA-CONTRACT-DOC-01`をOpenで起票した。
+- `DC-ARC-001`は同issueのclean baseline後に、単一型定義、version/key一致、旧Legacy規範なし、DocumentV1支援表を決定論的fixtureで固定する。既知のbaseline failureを先にblocking化して無関係な文書変更を止めない。
