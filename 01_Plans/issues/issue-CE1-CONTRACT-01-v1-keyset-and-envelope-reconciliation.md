@@ -1,7 +1,7 @@
 # Issue: CE1-CONTRACT-01 CE1 v1 keysetとHTTP envelopeの照合
 
 - Type: Architecture contract / Compatibility
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `DOC-ARCH-02`（`CI-CE1-01`〜`CI-CE1-03` の異義定義を分離）
 - Priority: P1
@@ -52,23 +52,23 @@ Non-goals:
 
 ## 3. 受入条件
 
-- [ ] logical type、HTTP request、HTTP response、handoff metadataの4層key matrixがあり、各keyの所属とrequired/optionalが一意である。
-- [ ] `ContextQueryV1`のkey・列挙・rangeが`schemas.md`、backend、frontendで一致する。
-- [ ] `ContextBundleV1.queryId`が、採択済みv1 required keyか過去文書の誤記かを上流記録とcontract testから根拠付きで判定する。
-- [ ] `schemaVersion`がbundle hash対象の論理fieldかHTTP envelope metadataかを明示し、canonical hash入力を変えない。
-- [ ] `sourceBundleHash`をCE1 core responseへ混入させず、CE2/CE4のread-only handoffとして位置づける。
-- [ ] `api.md`はpayload型を再定義せずschema anchorを参照し、endpoint/status/error/envelopeだけを規定する。
-- [ ] `previewConfirmed=false -> 422 preview_required`、unknown key拒否、同一queryのhash一致、SafeMode strictが回帰しない。
-- [ ] v1 required key削除・意味変更が必要なら作業を停止し、ADR-0047 R-4に従ってversioning判断を起票する。
+- [x] logical type、HTTP request、HTTP response、handoff metadataの4層key matrixがあり、各keyの所属とrequired/optionalが一意である。
+- [x] `ContextQueryV1`のkey・列挙・rangeが`schemas.md`、backend、frontendで一致する。
+- [x] `ContextBundleV1.queryId`が、採択済みv1 required keyか過去文書の誤記かを上流記録とcontract testから根拠付きで判定する。
+- [x] `schemaVersion`がbundle hash対象の論理fieldかHTTP envelope metadataかを明示し、canonical hash入力を変えない。
+- [x] `sourceBundleHash`をCE1 core responseへ混入させず、CE2/CE4のread-only handoffとして位置づける。
+- [x] `api.md`はpayload型を再定義せずschema anchorを参照し、endpoint/status/error/envelopeだけを規定する。
+- [x] `previewConfirmed=false -> 422 preview_required`、unknown key拒否、同一queryのhash一致、SafeMode strictが回帰しない。
+- [x] v1 required key削除・意味変更が必要なら作業を停止し、ADR-0047 R-4に従ってversioning判断を起票する。
 
 ## 4. 実装タスク
 
-- [ ] T1 現行文書、backend model/route/test、frontend type/testからkey matrixを抽出する。
-- [ ] T2 `queryId`、`schemaVersion`、`sourceBundleHash`の所属を契約形成記録まで遡って判定する。
-- [ ] T3 `schemas.md`へ唯一の論理型、`api.md`へ唯一のtransport契約を反映する。
-- [ ] T4 `architecture.md`の旧type signatureを責務参照へ縮約し、形成記録はhistoryへ移す。
-- [ ] T5 backend/frontend contract testを同じmatrixでgreenにする。
-- [ ] T6 `DOC-ARCH-02`のConflict inventoryをResolvedまたはADR-requiredへ更新する。
+- [x] T1 現行文書、backend model/route/test、frontend type/testからkey matrixを抽出する。
+- [x] T2 `queryId`、`schemaVersion`、`sourceBundleHash`の所属を契約形成記録まで遡って判定する。
+- [x] T3 `schemas.md`へ唯一の論理型、`api.md`へ唯一のtransport契約を反映する。
+- [x] T4 `architecture.md`の旧type signatureを責務参照へ縮約し、形成記録はhistoryへ移す。
+- [x] T5 backend/frontend contract testを同じmatrixでgreenにする。
+- [x] T6 `DOC-ARCH-02`のConflict inventoryをResolvedまたはADR-requiredへ更新する。
 
 ## 5. 検証計画
 
@@ -91,3 +91,17 @@ npm test -- --run src/domain/context/query_preview.test.ts
 - 文書と実装のどちらを正とするか、上位記録から一意に決められない。
 
 Stop時は推測で統合せず、ADR-0047 R-4の破壊的契約変更としてversioning判断へ送る。
+
+## 進捗記録 2026-07-15: layer matrix / cross-runtime hash
+
+- 形成順、現行SSOT、backend/frontend実装を照合し、`queryId`はlogical query専用、`schemaVersion="1.0.0"`はHTTP response metadata、`sourceBundleHash`は下流が`bundleHash`から派生するread-only handoff値と判定した。
+- 旧API形成記録のbundle response `queryId`は、後発のschema型にも稼働中responseにも存在しないtype再掲上の誤帰属であり、Informative historyとして保持する。現行v1 fieldの追加・削除は行わない。
+- `schemas.md`へlogical/transport/handoff matrix、`api.md`へendpointとresponse型参照、`architecture.md`へ解決済みmatrix導線を反映し、Conflict inventory `CI-CE1-01..03`をResolvedへ更新した。
+- frontend logical bundle validatorへunknown-key拒否を追加し、`queryId` / `schemaVersion` / `sourceBundleHash`の混入をfail-closed化した。frontendの`queryCanonicalHash`をbackendと同じ全object key辞書順canonical JSON + SHA-256 lowercase hexへ同期し、共通fixture hashを両runtimeのtestで固定した。
+
+## 完了記録 2026-07-15
+
+- backend `test_context_bundle_routes.py`: 20件pass。query/bundle HTTP responseのexact key、transport metadata、`queryId` / `sourceBundleHash`非混入、cross-runtime SHA-256 fixtureを含む。
+- frontend `query_preview.test.ts`: 11件pass。query/bundle closed-world、SafeMode/preview gate、logical bundleへのtransport/handoff key混入拒否、backend同値hashを含む。`tsc --noEmit`もpass。
+- Active issue validatorはclose直前34件、Done反映後33件をpass。validator unit 11件、変更文書の相対link 22件、stale unresolved参照0、`git diff --check`もpassした。
+- v1 payload、backend response、SafeMode、proposal-only、review昇格、share/export、provider=`none`を変更していない。全Acceptance criteriaとT1〜T6を満たしたためDoneとする。

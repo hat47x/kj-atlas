@@ -33,6 +33,60 @@ def _fixture_bundle_payload() -> dict:
     return json.loads(fixture_path.read_text(encoding="utf-8"))
 
 
+def test_context_http_response_key_matrix_separates_logical_and_transport_fields() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            query_response = client.post("/context/query", json=_query_payload())
+            bundle_response = client.post("/context/bundle", json=_bundle_payload())
+
+            assert query_response.status_code == 200
+            assert set(query_response.json()) == {"schemaVersion", "accepted", "queryCanonicalHash"}
+
+            assert bundle_response.status_code == 200
+            assert set(bundle_response.json()) == {
+                "schemaVersion",
+                "queryCanonicalHash",
+                "bundleHash",
+                "selected",
+                "relations",
+                "evidence",
+                "contradictions",
+                "reviewFlags",
+                "truncationMeta",
+                "excludedReason",
+            }
+            assert bundle_response.json()["schemaVersion"] == "1.0.0"
+            assert "queryId" not in bundle_response.json()
+            assert "sourceBundleHash" not in bundle_response.json()
+    finally:
+        settings.api_key = original_api_key
+
+
+def test_context_query_hash_matches_cross_runtime_fixture() -> None:
+    payload = {
+        "queryId": "q-ce1-frontend",
+        "goal": "Summarize contradictions around selected islands",
+        "scope": "view",
+        "depth": 1,
+        "constraints": {"tokenBudget": 1200},
+        "reviewFilter": "reviewedOnly",
+        "safeModePolicy": "strict",
+        "outputMode": "summary",
+        "previewConfirmed": True,
+    }
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            response = client.post("/context/query", json=payload)
+            assert response.status_code == 200
+            assert response.json()["queryCanonicalHash"] == "f8f19c1dd1fdfff86c2a4b394bd3d10493c06001d3ef1783d54bf6620939fd46"
+    finally:
+        settings.api_key = original_api_key
+
+
 def test_context_query_preview_required_when_not_confirmed() -> None:
     original_api_key = settings.api_key
     settings.api_key = None

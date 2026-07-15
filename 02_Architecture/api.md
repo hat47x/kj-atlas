@@ -195,14 +195,15 @@ CE4（API/CLI/監査統合）は CE1 契約を read-only 参照し、実装方�
 
 ### 2.8 Context Query / Bundle Contract（CE1-CONTEXT-FOUNDATION）
 
-CE-1のHTTP endpoint、status/error、副作用を本節の正本とする。型、required/optional key、列挙、canonicalization、version互換は [`schemas.md` §1.2](schemas.md#12-ce1ce2ce4-contract-freeze型先行実装非依存) を正本とし、本書では再定義しない。
+CE-1のHTTP endpoint、status/error、副作用を本節の正本とする。型、required/optional key、列挙、canonicalization、version互換は [`schemas.md` §1.2](schemas.md#12-ce1ce2ce4-型契約実装非依存) を正本とし、本書では再定義しない。
 
-`ContextQueryV1` / `ContextBundleV1` のlogical typeとHTTP envelopeに残る `queryId` / `schemaVersion` 差異は [CE1-CONTRACT-01](../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md) で解決する。本節の縮約ではどちらかへ推測統合しない。
+logical type、HTTP envelope、下流handoffのkey所属は [`schemas.md` CE1 v1 layer ownership matrix](schemas.md#ce1-v1-layer-ownership-matrixlogical--transport--handoff) を正本とする。`queryId`は`ContextQueryV1`だけに属し、`schemaVersion="1.0.0"`はHTTP response metadata、`sourceBundleHash`はCE2/CE4のread-only handoff値である。
 
 **POST** `/context/query`
 
 - Purpose: Query Preview通過済みの `ContextQuery` を検証・正規化する。
 - Request body: `ContextQueryV1`
+- Response body: `ContextQueryValidationResponse`
 - Error:
   - `422 preview_required`: `previewConfirmed != true`
   - `400 unknown_contract_key`: CE1 v1 最小I/F外のキー、または enum/range違反を fail-closed で拒否
@@ -211,8 +212,8 @@ CE-1のHTTP endpoint、status/error、副作用を本節の正本とする。型
 **POST** `/context/bundle`
 
 - Purpose: Deterministic projection を実行し `ContextBundle` を返す。
-- Request body: `{ "query": ContextQueryV1 }`
-- Response body: `ContextBundleV1`。HTTP envelopeの未解決keyは `CE1-CONTRACT-01` を参照
+- Request body: `ContextBundleRequest`
+- Response body: `ContextBundleResponse`。`schemaVersion`はtransport metadataでcanonical bundle hash対象外。`queryId` / `sourceBundleHash`はresponseへ含めない
 - Error:
   - `409 nondeterministic_bundle`: 同一canonical queryでdeterministic `bundleHash`が成立しない
   - `400 unknown_contract_key`: closed-world envelopeまたは型の未定義キー

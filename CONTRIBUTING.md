@@ -213,7 +213,7 @@ IssueとADRは混在させず、次の基準で分離して運用します。
 ## 変更提案フロー / How to Propose Changes
 
 1. READMEから本文書へ来たら、リポジトリrootで `python 01_Plans/triage_actionable_plans.py` を実行する。
-2. `Ready issues` から1件選び、`01_Plans/issues/README.md` のActive表と対象memoを確認する。仕様が未確定ならGitHub Discussionsで背景・目的・影響範囲を共有する。新規Actionは `01_Plans/issues/TEMPLATE.md` から作る。
+2. 生成された`Ready issues`から1件選び、`01_Plans/issues/README.md`の運用ルールと対象memoを確認する。固定Active表は持たない。仕様が未確定ならGitHub Discussionsで背景・目的・影響範囲を共有する。新規Actionは`01_Plans/issues/TEMPLATE.md`から作る。
 3. 受入条件、Non-goal、Validation plan、参照ADRをmemoで確認する。設計判断が未確定なら実装より先にADRを確定する。
 4. `codex/`接頭辞など衝突しないブランチを作成し、memoのScope内だけを変更する。
 5. memoのValidation planに加え、issue / docsを変更した場合は `python 01_Plans/issues/validate_active_issue_memos.py` と `python 01_Plans/triage_actionable_plans.py` を実行する。

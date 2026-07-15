@@ -45,17 +45,23 @@ function toStableValue(value: unknown): unknown {
 }
 
 export function toCanonicalQueryKey(draft: ContextQueryDraft): string {
-  return JSON.stringify({
-    queryId: draft.queryId.trim(),
-    goal: draft.goal.trim(),
+  return JSON.stringify(toStableValue({
+    queryId: draft.queryId,
+    goal: draft.goal,
     scope: draft.scope,
     depth: draft.depth,
-    constraints: toStableValue(draft.constraints),
+    constraints: draft.constraints,
     reviewFilter: draft.reviewFilter,
     safeModePolicy: draft.safeModePolicy,
     outputMode: draft.outputMode,
     previewConfirmed: draft.previewConfirmed,
-  });
+  }));
+}
+
+export async function toCanonicalQueryHash(draft: ContextQueryDraft): Promise<string> {
+  const bytes = new TextEncoder().encode(toCanonicalQueryKey(draft));
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 export function buildQueryPreviewState(draft: ContextQueryDraft): QueryPreviewState {
@@ -99,8 +105,24 @@ const CONTEXT_QUERY_V1_KEYS = new Set([
   "previewConfirmed",
 ]);
 
+const CONTEXT_BUNDLE_V1_KEYS = new Set([
+  "queryCanonicalHash",
+  "bundleHash",
+  "selected",
+  "relations",
+  "evidence",
+  "contradictions",
+  "reviewFlags",
+  "truncationMeta",
+  "excludedReason",
+]);
+
 function validateContextBundleV1(bundle: ContextBundleMock): string[] {
   const reasons: string[] = [];
+  const unknownKeys = Object.keys(bundle as Record<string, unknown>)
+    .filter((key) => !CONTEXT_BUNDLE_V1_KEYS.has(key))
+    .sort((left, right) => left.localeCompare(right));
+  if (unknownKeys.length > 0) reasons.push(`unknown ContextBundleV1 keys: ${unknownKeys.join(", ")}`);
   if (typeof bundle.queryCanonicalHash !== "string" || bundle.queryCanonicalHash.length === 0) reasons.push("queryCanonicalHash must be non-empty string");
   if (typeof bundle.bundleHash !== "string" || bundle.bundleHash.length === 0) reasons.push("bundleHash must be non-empty string");
   if (!Array.isArray(bundle.selected)) reasons.push("selected must be array");
@@ -160,7 +182,7 @@ export async function runMockContextIntegration(
       invalidReasons: bundleErrors,
     };
   }
-  const queryCanonicalHash = toCanonicalQueryKey(draft);
+  const queryCanonicalHash = await toCanonicalQueryHash(draft);
   if (response.queryCanonicalHash !== queryCanonicalHash) {
     return {
       canSubmit: false,

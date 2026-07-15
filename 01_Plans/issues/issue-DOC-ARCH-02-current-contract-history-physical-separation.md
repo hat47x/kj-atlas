@@ -1,7 +1,7 @@
 # Issue: DOC-ARCH-02 現行契約の物理SSOT化と形成履歴の分離
 
 - Type: Documentation quality / Process
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -81,27 +81,27 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] Contract ID・型・endpointごとに、現行の規範定義が物理的に1箇所だけ存在する。
-- [ ] `architecture.md` は責務、`schemas.md` は型、`api.md` はendpointという責務分離を守り、他文書はanchor参照だけを持つ。
-- [ ] `ContextQueryV1`, `ContextBundleV1`, `ProposalPatchV1`, `AuditEventV1` のキー・列挙・既定値・errorが一意で、現行model/fixture/contract testと整合するか、差異が専用子Issueへ明示される。
-- [ ] `api.md` の既知 `ContextBundle.queryId` 不一致と `schemaVersion` 掲載差異が、根拠付きで解消または子Issue化される。
-- [ ] `Card` / `DocumentV2` の合成型が、`holdState`, `shelf`, `meta`, `contradictionSignalDecisions`, `ka` を含む採択済みoptional fieldを一読で網羅する。
-- [ ] support level表と合成型に欠落・異義がない。
-- [ ] Stream/freeze/rerun/checkpoint等はInformative履歴へ物理移動し、現行契約として読めない。
-- [ ] 履歴から元文書・現行正本へ双方向に辿れる。
-- [ ] SafeMode、未レビュー保護、proposal-only、`human_reviewed`人手昇格、version互換の意味変更が0件である。
-- [ ] `AGENTS.md` と reading guide の導線が新構成に一致する。
+- [x] Contract ID・型・endpointごとに、現行の規範定義が物理的に1箇所だけ存在する。
+- [x] `architecture.md` は責務、`schemas.md` は型、`api.md` はendpointという責務分離を守り、他文書はanchor参照だけを持つ。
+- [x] `ContextQueryV1`, `ContextBundleV1`, `ProposalPatchV1`, `AuditEventV1` のキー・列挙・既定値・errorが一意で、現行model/fixture/contract testと整合するか、差異が専用子Issueへ明示される。
+- [x] `api.md` の既知 `ContextBundle.queryId` 不一致と `schemaVersion` 掲載差異が、根拠付きで解消または子Issue化される。
+- [x] `Card` / `DocumentV2` の合成型が、`holdState`, `shelf`, `meta`, `contradictionSignalDecisions`, `ka` を含む採択済みoptional fieldを一読で網羅する。
+- [x] support level表と合成型に欠落・異義がない。
+- [x] Stream/freeze/rerun/checkpoint等はInformative履歴へ物理移動し、現行契約として読めない。
+- [x] 履歴から元文書・現行正本へ双方向に辿れる。
+- [x] SafeMode、未レビュー保護、proposal-only、`human_reviewed`人手昇格、version互換の意味変更が0件である。
+- [x] `AGENTS.md` と reading guide の導線が新構成に一致する。
 
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 規範節・履歴節・重複定義・既知衝突のinventoryをファイル/anchor/Contract ID単位で作る。
 - [x] T2 競合解消規則に従い、各型・endpoint・運用境界の唯一の正本anchorを決める。CE1 v1の値Conflictは`CE1-CONTRACT-01`へ分離し、本Issueで推測統合しない。
 - [x] T3 `schemas.md` の現行合成型を先頭側へ統合し、重複定義を参照へ変える。
-- [ ] T4 `architecture.md` / `api.md` / data model overviewを責務別に縮約する。
-- [ ] T5 `02_Architecture/history/` へ形成履歴を移し、メタと逆リンクを付ける。
-- [ ] T6 reading guideと`AGENTS.md`を新しい参照順へ同期する。
-- [ ] T7 backend/frontendの対象contract/roundtrip testsとMarkdownチェックで、意味非変更とリンク整合を検証する。
-- [ ] T8 自動再発防止を `DX-DOC-02` へ引き渡す。
+- [x] T4 `architecture.md` / `api.md` / data model overviewを責務別に縮約する。
+- [x] T5 `02_Architecture/history/` へ形成履歴を移し、メタと逆リンクを付ける。
+- [x] T6 reading guideと`AGENTS.md`を新しい参照順へ同期する。
+- [x] T7 backend/frontendの対象contract/roundtrip testsとMarkdownチェックで、意味非変更とリンク整合を検証する。
+- [x] T8 自動再発防止を `DX-DOC-02` へ引き渡す。
 
 ## 7) 検証計画 / Validation plan
 
@@ -167,3 +167,18 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 - 検証: 削除対象の実質190行中188行を履歴または現行節へ原文保持し、残る2行は意味を維持した見出し名/節番号の正規化。相対link 23件、`api.md`の履歴風見出し0件、Active issue validator 33件、validator/triage unit 11件、CE1 backend contract 18件、CE1 frontend contract 9件がpassした。
 - 履歴索引、reading guide、inventory、元文書の双方向導線を同期した。H-C、§7A.6/§7Bの責務別縮約、AGENTS最終同期、contract/roundtrip tests全量確認は未完了。
 - 契約値、runtime、Document version、SafeMode、未レビュー保護、proposal-only、share/export既定は変更していない。
+
+## 進捗記録 2026-07-15: H-C schema history slice
+
+- T5 H-C: `schemas.md`の旧§1.0.1 drift gate、§11.1 migration snapshot、CE1 clarification、旧§1.3〜§13のfreeze/Stream形成記録を`history/schema-contract-formation-2026-05.md`へ物理移動した。これによりH-A〜H-Dの4batchが完了した。
+- 現行側は型、validation、Document version、support level、Contract IDを維持した。現行のCE0/CE1見出しと§6.2から履歴語を除き、architecture/API/履歴文書のschema anchorを同期した。
+- T6: history index、reading guide、inventory、`AGENTS.md`を最終配置へ同期した。
+- T7: 移動前の実質行を現行＋履歴へ突合し、未一致20行がすべて意図的な見出し/案内文改称であることを確認した。相対link 48件エラー0、current 4文書の履歴見出し0、CE型定義は`schemas.md`各1箇所、`git diff --check` pass。最新`main`統合後にActive issue validator 35件・validator unit 11件・backend contract/roundtrip 48件・frontend contract/schema/roundtrip 76件がpassした（backendは環境依存21件skip、既知warning 1件）。
+- 未完了: T4のarchitecture §7A.6/§7B責務別縮約、T8の`DX-DOC-02`引き渡し。契約値、runtime、Document version、SafeMode、未レビュー保護、proposal-only、share/export既定は変更していない。
+
+## 完了記録 2026-07-15: responsibility SSOT / recurrence handoff closeout
+
+- T4: `architecture.md`の重複§7A.6を除去し、§7BをCE1/CE2/CE4の責務・信頼境界と正本リンクへ縮約した。required key、列挙、error、HTTP副作用の再掲をやめ、型=`schemas.md`、HTTP=`api.md`、責務=`architecture.md`へ一意化した。
+- T8: current/history分離、責務別SSOT、history必須メタ、既知CE1 Conflict、負例fixtureの検査境界を`DX-DOC-02`へ引き渡した。checker/CI実装は同Issueのスコープに残す。
+- Closeout検証: current 4文書の履歴見出し0、CE主要型定義は`schemas.md`各1箇所、architecture内のrequired key/error/enum再掲0、history 4ファイルの必須メタ欠落0、変更文書の相対link 18件エラー0、validator unit 11件がpassした。issue validatorはclose直前35件、Done反映後34件をpass。直前の最新`main`統合後にはbackend contract/roundtrip 48件、frontend contract/schema/roundtrip 76件もpass済み。
+- SafeMode既定ON、未レビュー保護、proposal-only、`human_reviewed`人手昇格、provider=`none`、Document version、share/export既定を変更していない。全Acceptance criteriaとT1〜T8を満たしたためDoneとする。

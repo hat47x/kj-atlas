@@ -28,7 +28,7 @@
 現行情報を示すはずの文書に、過去のrerun/Streamログ、解消済みQueue、旧正本宣言が大量に残り、現在の指示と履歴を初見で分けられない。
 
 - `ADR-0039` はper-rerunログ追記を停止し、dashboardをcurrent snapshotだけにする方針をAccepted済みだが、`project-progress-dashboard.md` はcurrent宣言の後に大量の旧ログを保持する。
-- `01_Plans/issues/README.md` はissue memo正本と宣言する一方、監査開始時のActive表は空だった。2026-07-11時点でもActive 29件に対して4件しか掲載されず、古い同期ログとCompleted台帳がcurrent導線を埋めていた。2026-07-15のcurrent-only化で、現在のActive 32件（Draft 17 / Open 8 / In Progress 7）を全件掲載した。残るリスクはfilesystemからindexへの逆向き検査が未実装であること。
+- `01_Plans/issues/README.md` はissue memo正本と宣言する一方、監査開始時のActive表は空だった。新規5件の起票・1件完了後も、triage基準のDraft/Open/In Progress 29件（Draft 15 / Open 7 / In Progress 7）に対してActive表は4件で、25件が未掲載のまま、その後に古い同期ログとCompleted台帳が続く。
 - 一部memoは `Draft (Open-Readiness Prepared / Execution Hold)` のようにlifecycleとhold理由を同じStatus値へ詰めており、triageとvalidatorでActive判定が一致しない。
 - `documentation_quality.md` はNormative/Informativeを区別するが、QG本文と統一判定の間にStream実行ログが挟まり、基準自身を読み切りにくい。
 - `CONTRIBUTING.md` はGitHub Issuesを最初の起票先・正本として案内する箇所があり、現行の「GitHub Issues未運用、内部issue memo正本」と矛盾する。
@@ -91,8 +91,8 @@
 
 - [x] T1 current文書ごとに「残す現行情報 / git履歴へ委譲 / archiveする一次証拠」の移動表を作る。
 - [x] T2 dashboardをcurrent snapshotへ縮約する。
-- [x] T3 issue READMEを運用ルール+current Active view+triage入口へ縮約し、Status拡張表現を正規化したうえで実ファイル集合と同期する。
-- [x] T4 documentation qualityのNormative本文を連続化し、実行ログを分離する。
+- [x] T3 issue READMEを最小運用+triage入口へ縮約し、固定Active表を廃止してmemoメタデータからcurrent viewを生成する。
+- [x] T4 documentation qualityのNormative本文を連続化し、実行ログをGit履歴へ分離する。
 - [x] T5 CONTRIBUTINGを現行issue memo運用とfirst-task runbookへ同期する。
 - [x] T6 E2E手順を03のSSOTへ統合し、旧04pathと全参照を整理する。
 - [x] T7 fresh-clone想定の人間/AI dry-runとdocs-checkを行う。
@@ -133,35 +133,34 @@
 - 本件はADR-0039のoptional cleanupが、空Active表・起票先矛盾・E2E SSOT二重化という実害へ進んだためP1へ引き上げる。
 - ADR化が必要になる条件: GitHub Issuesを正本運用へ切り替える、issue lifecycleを変更する、E2E責務を別レイヤへ再定義する場合。
 
-### Current/history移動表（2026-07-15）
-
-| 対象 | currentに残す | git履歴へ委譲 | Informative archive対象 |
-|---|---|---|---|
-| `project-progress-dashboard.md` | 最終確認日時、Active/Blocked、次の1手、人間だけが確定できるgate | per-rerunログ、過去件数、解消済みQueue | gitで失われる署名済み一次証拠だけ |
-| `issues/README.md` | Action SSOT、lifecycle、必須メタ、triage、Active集合、検証導線 | 反復同期ログ、過去のActive/Done台帳、解消済みQueue | なし（現存memoとgitで復元可能） |
-| `documentation_quality.md` | Normative QG-1..6、適用境界、統一判定、停止条件 | Stream実行ログ、過去の自己修復サイクル | 保持義務が判明した一次証拠だけ |
-| E2E手順 | `03_Implement/frontend/docs/e2e_testing.md` の実行SSOTと利用者acceptance導線 | 旧04手順の重複本文 | なし（旧04pathはsuperseded stubを維持） |
-
-archiveする場合は `Informative`、対象期間、Retention reason、current SSOTへの逆リンクを必須とする。
-
 ## 進捗記録 2026-07-11: contributor route / E2E SSOT slice
 
 - `CONTRIBUTING.md`、`README.md`、`SUPPORT.md`、`DISCUSSIONS.md`を、GitHub Issues未運用・内部issue memo正本・外部受付はDiscussionsという現行方針へ同期した。
 - `04_Documentation/e2e_testing.md` の有効な実行経路、PR証跡、Compose差分リスク、認証Level 2、fixture境界を `03_Implement/frontend/docs/e2e_testing.md` へ統合し、旧pathをSuperseded stubへ縮約した。
 - 拡張Statusを持っていたQA Draft 3件を `Status: Draft` / `Open Readiness` / `Execution`へ分離し、active statusの非正規値を0件にした。
-- 未完了: dashboard/issue index/documentation qualityのcurrent/history分離、Active view 25件の未掲載解消、fresh-clone dry-run。これらを完了するまでIssueはIn Progressを維持する。
+- この時点の未完了: dashboard/issue index/documentation qualityのcurrent/history分離、Active view 25件の未掲載解消、fresh-clone dry-run。
 
-## 進捗記録 2026-07-15: issue index current-only / Active baseline slice
+## 進捗記録 2026-07-15: dashboard / decision-pack軽量化
 
-- `issues/README.md` をcurrent-onlyに再構成し、運用決定、fast path、lifecycle、必須メタ、Source Issue方針、Active view、検証、履歴方針を連続して読める形に縮約した。per-rerunログと過去件数はgit履歴へ委譲した。
-- 監査後に追加されたmemoを含め、filesystem上のActive 32件（Draft 17 / Open 8 / In Progress 7）を全件索引化。`Status`行に混入した進捗・完了理由を別メタへ分離し、旧Draft 3件と `CARD-META-UI-01` の必須メタ欠落を補った。全AC完了後もActiveだった `UI-QUALITY-A11Y-02` は派生issueの完了証拠を確認しDoneへ同期した。
-- validatorは32行を全件検証し、triageはactive=32 / ready=15 / blocked=17 / stopper=0。filesystem→indexの逆向きfail-closed化は `DX-DOC-02` の残タスクとして維持する。
-- 未完了: dashboard縮約、documentation qualityのNormative連続化、fresh-clone dry-run。
+- `project-progress-dashboard.md` を手書き集計から、現在の正本を案内する25行の固定ページへ縮小した。
+- 解消済み `decision-pack-2026-03-human-judgement.md` を、Git履歴と現在の判断先を示す18行の案内へ縮小した。
+- `issues/README.md` はActive索引と最小運用だけに縮小し、過去同期ログの新規追記を停止した。
+- 現行のenterprise/strict mode設計からdashboard/decision-packへの進捗正本参照を除去した。
+- Git履歴で復元できない一次証拠は確認されなかったため、巨大な複製archiveは作成していない。
+- `documentation_quality.md` は556行から116行へ縮小し、QG-1〜QG-6、配置境界、最小確認、停止条件を連続配置した。
 
-## 完了記録 2026-07-15: current-only closeout
+## 進捗記録 2026-07-15: Active view生成化
 
-- dashboardをcurrent snapshot 1本へ再構成。Active件数、In-progress lane、release No-Go、技術/人間gate、安全不変条件、次の1手だけを残した。Compose/復旧リハーサルとARIA構造修正を未完了へ戻さず、現行blockerを `DX-E2E-07`、実PostgreSQL証拠、実機a11y/release承認へ更新した。
-- `documentation_quality.md` からStream別logを除き、QG-1〜QG-6、公開境界、適用matrix、統一review、DoD、Fail-safeを連続配置した。一次証拠archiveは作成せず、反復logはgit履歴で復元可能と判定。archive将来時のInformative metadata要件を各3文書に固定した。
-- fresh-clone想定dry-run: `README.md:37` → `CONTRIBUTING.md` 変更提案フロー → triage command → `issues/README.md` Active view → `TEMPLATE.md` → `codex/` branch規律 → validator/triage検証の6地点を5分以内で追跡。参照先欠落0。
-- 検証: Active filesystem/index 32/32、非正規top-level Status 0、relative link 60件エラー0、current rerun/log drift 0、validator pass、triage active=32 / ready=15 / blocked=17 / stopper=0、unit 11 passed。
-- 本IssueのDone反映直後はActive 31件へ遷移した。その後の並行作業で `QA-MONKEY-13` がOpenとして追加されたため、最終currentはActive 32件（Draft 17 / Open 9 / In Progress 6）、ready=15 / blocked=17。双方向fail-closedは `DX-DOC-02` で継続する。
+- `issues/README.md` の固定Active表を廃止し、`triage_actionable_plans.py` の出力を唯一のcurrent viewとした。
+- validatorはREADME表ではなくmemoを直接走査し、Draft/Open/In Progressの34件を検証する。
+- triageとvalidatorはいずれもActive 34件を返し、関連unit test 12件が成功した。
+- 未完了はfresh-cloneの5分導線確認、リンク検査、docs-check統合であるため、IssueはIn Progressを維持する。
+
+## 完了記録 2026-07-15: fresh-clone route / recurrence handoff
+
+- dry-run: `README.md` → `CONTRIBUTING.md` → `triage_actionable_plans.py`の`Ready issues` → `issues/README.md` / 対象memo → `TEMPLATE.md` → `codex/` branch規律 → validator / 対象testをfresh-clone想定で追跡し、全地点へ到達した。
+- `CONTRIBUTING.md`に残っていた廃止済み「Active表」参照を生成viewへ修正した。GitHub Issuesを現行正本とする矛盾、current 3文書のStream/rerun drift、旧04 E2E文書の独立規範はいずれも0件。
+- currentから除いた反復ログはGit履歴で復元でき、別archiveが必要な一次証拠は0件と確認した。既存architecture historyのInformativeメタ・逆リンクは`DOC-ARCH-02`で検証済み。
+- SafeMode既定ON、share/export漏洩防止、proposal-only、`human_reviewed`人手限定、`KJ_ATLAS_LLM_PROVIDER=none`への現行導線を確認した。
+- route対象10文書の相対link 76件エラー0、Active issue validatorはclose直前33件・Done反映後32件、validator/triage unit 12件、`git diff --check`がpassした。再発防止境界は`DX-DOC-02`へ引き渡した。
+- 全Acceptance criteriaとT1〜T8を満たしたためDoneとする。

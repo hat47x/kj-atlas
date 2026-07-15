@@ -30,8 +30,8 @@
 - ADR-0024は `01_Plans` のDecision文書・issue meta・dashboardと公開04文書のdocs-checkをmerge/release blockingとする。
 - `.github/workflows/ci.yml` はfrontend/backend jobだけで、docs jobがない。
 - 統一docs-check entrypointと相対リンクcheckは存在しない。
-- `validate_active_issue_memos.py` はREADMEのActive表に掲載された行だけを検証する。Active表が空でも成功し、filesystem上のDraft/Open/In Progress memoを見落とす。
-- 監査開始時のActive表は空だった。2026-07-11時点でもActive 29件に対して4件しか掲載していなかった。2026-07-15の `DOC-OPS-06` 完了と並行追加された `QA-MONKEY-13` 反映後、現行Active 32件（Draft 17 / Open 9 / In Progress 6）の手動baselineは一致したが、次回追加時に欠落をfailさせる逆向き検査はまだない。
+- 2026-07-15より前の `validate_active_issue_memos.py` はREADMEのActive表に掲載された行だけを検証していたため、filesystem上のDraft/Open/In Progress memoを見落としていた。
+- この見落としは、READMEの固定表を廃止し、memoメタデータからActive集合を直接発見する方式へ変更して解消した。現在のActive viewは `triage_actionable_plans.py` の出力とし、手動同期する第二の台帳を持たない。
 - `02_Architecture` は最上位の契約正本なのにADR-0024のblocking対象外で、異義契約やcurrent/history混在を機械的に止められない。
 - 完了済み公開境界も `ui_catalog.md` で回帰しており、手動検索だけでは再発を防げていない。
 
@@ -69,9 +69,9 @@ Open化条件:
 
 - filesystem上の `issue-*.md` からStatusを読み、Draft/Open/In Progress集合を自動発見する。
 - Active判定はtriageと同じ共有parserを使う。`Draft (...)` 等の非正規Statusがcleanup後も残る場合は曖昧に正規化せず、対象ファイルを示してfailする。
-- README current viewの集合と双方向比較する。
-- active file未掲載、stale row、重複Backlog ID、status/source mismatch、active file存在時の空indexをfailにする。
-- current viewを生成物にするか、triage出力を唯一のviewとしてREADME固定表を廃止するかを実装前に1案へ固定し、二重手更新を残さない。
+- READMEには固定のActive表を置かず、`triage_actionable_plans.py` の出力を唯一のcurrent viewとする。
+- validatorはREADMEを介さずActive memoを発見し、必須メタデータ、Status正規値、参照先、依存関係を検証する。
+- triageとvalidatorのStatus parser共有、および重複Backlog ID等の追加検査は、既存責務を壊さない小さな変更として別スライスで実施する。
 
 ### 4.2 単一docs-check entrypoint
 
@@ -103,10 +103,10 @@ Open化条件:
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] active fileがindex/current view未掲載ならfailする。
-- [ ] active file存在時の空index、stale row、重複Backlog、status/source mismatchがfailする。
-- [ ] 上記異常系をfixture化したunit testがあり、各1件以上で赤になることを確認する。
-- [ ] current repositoryのactive集合とcurrent viewが一致する。
+- [x] indexへの手動掲載がなくても、filesystem上のActive memoをvalidatorが自動発見する。
+- [x] READMEの固定Active表を廃止し、空index・stale row・手動件数同期という失敗原因を除去する。
+- [ ] 必須メタデータ、非正規Status、参照先不在、依存関係不正、重複Backlog IDの異常系testがある。
+- [x] current repositoryでtriageとvalidatorがActive 34件を返す。
 - [ ] triageとvalidatorが同じStatus parser・正規値を使い、同じActive件数を返す。
 - [ ] 1コマンドでローカル/CI同値のdocs-checkを実行できる。
 - [ ] docs-check非0終了がPRをblockする。
@@ -122,7 +122,7 @@ Open化条件:
 ## 6) 実装タスク分解 / Task breakdown
 
 - [ ] T1 check matrixとrule IDを固定し、ADR-0024追補要否を記録する。
-- [ ] T2 Active issue validatorを双方向完全性検査へ拡張し、異常系testsを追加する。
+- [ ] T2 Active issue validatorをfilesystem直接検査へ変更する（自動発見と既存異常系testsは完了。共有parser・重複Backlog ID検査は未完了）。
 - [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。
 - [ ] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
 - [ ] T5 CIへ`docs-contract` jobを追加し、既存PRとdocs-only PRで動作確認する。
@@ -165,4 +165,35 @@ Open化条件:
 
 - 本件はADR-0024の実装欠落を埋めるActionである。新規ADRは原則不要。
 - ADR化が必要になる条件: 02層をblocking対象へ加える判断が既存ADR追補で扱えない、または新しい非機能境界を導入する場合（ADR-0047 R-3）。
-- 2026-07-15 baseline: Active表とfilesystemは32件で一致。`DOC-OPS-06` はDoneとなり、current-only文書の検査境界が確定した。これはOpen化条件のclean baselineを一部満たす証拠であり、双方向validator実装の完了を意味しない。`DOC-ARCH-02` の残る検査境界が確定するまでStatusはDraftを維持する。
+
+## DOC-ARCH-02 handoff（2026-07-15）
+
+`DOC-ARCH-02`が作成したclean baselineを、T1/T3のarchitecture checkerへ次の境界で引き継ぐ。
+
+- current対象: `architecture.md`、`api.md`、`schemas.md`、`data_model_operations_overview.md`。`history/`はInformativeとして別ルールで検査し、currentの重複定義件数へ混ぜない。
+- current/history分離: current対象の見出しへ`Stream`、`freeze`、`rerun`、`execution log`、`checkpoint`、`reaffirmation`が再混入したらfailする。正当な現行用語を誤検出しないよう、見出し単位・allowlist最小で実装する。
+- 責務別SSOT: CE1/CE2/CE4の型定義は`schemas.md`、endpoint/status/error/副作用は`api.md`、責務・信頼境界は`architecture.md`だけが定義する。参照リンクとContract ID索引は重複定義として数えない。
+- history metadata: `Status: Informative history`、Source document/anchors、Covered period、Snapshot/source revision、Retention reason、Current normative anchorsの欠落または逆リンク切れをfailする。
+- 既知Conflict: `queryId` / `schemaVersion`差異は`CE1-CONTRACT-01`へ委譲済みであり、同IssueがOpenの間は「解消済み」と推測して一方の値をcheckerへ固定しない。
+- 受入fixture: currentへの履歴見出し再挿入、architectureへのrequired key再掲、history metadata欠落、現行anchor切れを各1件以上の負例にする。
+
+引き渡し時baselineは、current 4文書の履歴見出し0、CE4型を含むCE主要型の定義先が`schemas.md`のみ、H-A〜H-D履歴ファイルの必須メタ充足、変更文書の相対リンク切れ0である。checker/CI実装とrule ID確定は本Issueのスコープに残す。
+
+## DOC-OPS-06 handoff（2026-07-15）
+
+fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7のroute/public checkerへ次の境界で引き継ぐ。
+
+- route: `README.md` → `CONTRIBUTING.md` → `triage_actionable_plans.py`の`Ready issues` → 対象memo / `issues/README.md` → `TEMPLATE.md` → branch規律 → validator / 対象test。このいずれかの相対linkまたはcommand参照が欠けたらfailする。
+- Active view: 固定Active表を再導入せず、memo metadataから生成する。`CONTRIBUTING.md`等に「Active表を確認」のような手動台帳依存が再混入したらfailする。
+- E2E SSOT: 実務手順は`03_Implement/frontend/docs/e2e_testing.md`だけが保持し、`04_Documentation/e2e_testing.md`は移転stubのままにする。旧04側へ独立command/profile/fixture規範が追加されたらfailする。
+- current-only: `project-progress-dashboard.md`、`issues/README.md`、`documentation_quality.md`へStream/rerun/過去件数/解消済みQueueが現行指示として再混入したらfailする。
+- safety route: `AGENTS.md`または参照先からSafeMode既定ON、share/export漏洩防止、proposal-only、`human_reviewed`人手限定、provider=`none`へ到達できることを検査する。値の複製一致ではなく、正本への有効な導線を確認する。
+
+引き渡し時baselineは、上記routeをfresh-clone想定で追跡可能、current log drift 0、内部issue memo/GitHub Issues方針の矛盾0、E2E旧pathの独立規範0、route対象の相対link切れ0である。checker/CI実装は本Issueのスコープに残す。
+
+## 進捗記録 2026-07-15: Active viewの単一化
+
+- READMEの手書きActive表を廃止し、`triage_actionable_plans.py` の生成結果をcurrent viewとした。
+- validatorは `issue-*.md` を直接走査し、StatusがDraft/Open/In Progressの34件を検証する。
+- triageもActive 34件を返し、validator/triage unit test 12件が成功した。
+- parser共有、重複Backlog ID検査、統一docs-checkとCI blockingは未完了のため、本IssueはDraftを維持する。

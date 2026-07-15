@@ -219,7 +219,7 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
 
 | Contract ID | Responsibility boundary |
 | --- | --- |
-| `CE0-CTX-IF` | ContextQuery と ContextBundle の最小必須キー、Query Preview 必須経路、deterministic `bundleHash` |
+| `CE0-CTX-IF` | ContextQuery / ContextBundleの安全境界、Query Preview必須経路、決定論的bundle生成。具体的なキーは`schemas.md`を参照 |
 | `CE0-SAFEMODE-IF` | safeMode 既定ON、`allowUnreviewedText=false` 既定、未レビュー本文保護 |
 | `CE0-REVIEW-IF` | `unreviewed/human_reviewed` の遷移境界（昇格は人手のみ） |
 | `CG-01..05` | Working/ContextProjection/Consensus 分離、`patch + approval` のみ、proposal-only、監査4点セット必須 |
@@ -241,9 +241,9 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
 
 本書は型シグネチャ、required/optional key、endpoint、status/errorを再定義しない。現行値は責務別に次を正本とする。
 
-- 型、キー、列挙、version互換: [schemas.md §1.2 CE1/CE2/CE4 Contract Freeze](schemas.md#12-ce1ce2ce4-contract-freeze型先行実装非依存)
+- 型、キー、列挙、version互換: [schemas.md §1.2 CE1/CE2/CE4 型契約](schemas.md#12-ce1ce2ce4-型契約実装非依存)
 - endpoint、認証、status/error、副作用: [api.md §2.7〜§2.9](api.md#27-ce4-audit-integration-contractapicli-equivalence)
-- CE1 v1の未解決key/envelope差異: [CE1-CONTRACT-01](../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)
+- CE1 v1のlogical / transport / handoff所属: [schemas.md layer ownership matrix](schemas.md#ce1-v1-layer-ownership-matrixlogical--transport--handoff)
 
 旧Interface Freezeの型・method・event-order再掲は[形成履歴](history/architecture-contract-freeze-formation-2026-04-to-05.md#former-7a21-interface-freezeapiシグネチャ--データ型--イベント契約)へ移した。責務境界、禁止事項、Go/No-Goは本書§7A.1〜§7A.4を正とする。
 
@@ -276,21 +276,6 @@ No-Go 判定は次の canonical ID を正本とし、表記揺れは同義語扱
 - `safemode_default_relaxation`
 
 
-### 7A.6 CE1 Context Foundation固定（最小I/F + mock-first）
-
-CE1 は CE0 の下流契約として **最小I/F固定** を維持し、backend実装の進捗に依存せず mock-first で検証を継続する。
-
-- Contract IDs（固定）: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
-- `ContextQueryV1` / `ContextBundleV1` は closed-world 契約とし、v1 への未定義キー追加を禁止する。
-- `previewConfirmed=false` は常に `422 preview_required` とする（preview gate bypass 禁止）。
-- `sameQuery && sameBundle`（`queryCanonicalHash` 一致かつ `bundleHash` 一致）を Verify 条件として固定する。
-- CE2/CE4 連携は `sourceBundleHash === bundleHash` を read-only handoff で照合し、契約更新は CE1 再起票でのみ許可する。
-
-禁止事項（CE1 非回帰）:
-- v1 必須キー集合・エラー意味論（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）の破壊的変更。
-- mock-first 検証の停止（backend完了待ちへの後退）。
-- deterministic hash 規約を満たさない `ContextBundle` の成功扱い。
-
 ### 7A.5 Drift-stop 固定（CE0）
 
 - Contract ID collision は 0 件固定（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` の重複再定義禁止）。
@@ -300,35 +285,29 @@ CE1 は CE0 の下流契約として **最小I/F固定** を維持し、backend�
 ---
 
 
-## 7B. CE-1/CE-2/CE-4 契約ID固定（mock-first）
+## 7B. CE-1/CE-2/CE-4 責務境界（mock-first）
 
-CE0に続く固定契約として、実装待機なしで I/F を先行凍結する。
+本節は各CEが守る責務と信頼境界だけを定義する。型、required/optional key、列挙、version互換は`schemas.md`、endpoint、status/error、副作用は`api.md`を正本とし、本書では再定義しない。
 
 ### 7B.1 CE1-CONTEXT-FOUNDATION
 
 - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
-- `ContextQuery` 必須キー: `queryId/goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode/previewConfirmed`
-- `ContextBundle` 必須キー: `bundleHash/selected/relations/evidence/contradictions/reviewFlags/truncationMeta/excludedReason`
-- `previewConfirmed=false` は `422 preview_required` として失敗扱い。
-- 同一 canonical query では deterministic `bundleHash` 一致を必須化する。
-- CE2/CE4 は CE1 実装完了待ちを禁止し、mock `ContextQuery/ContextBundle` 契約で先行検証を継続する。
-- CE2/CE4 への受け渡しは read-only handoff とし、契約更新は CE1 再起票でのみ扱う。
+- 責務: Query Previewを必須経路とし、同一queryから決定論的なContext Bundleを生成する。CE2/CE4はbackend完了を待たずmock-firstで検証し、受け渡しをread-onlyに保つ。
+- 禁止: Preview bypass、非決定論bundleの成功扱い、下流によるCE1契約の暗黙変更。
+- 正本: [schema type contracts and layer matrix](schemas.md#ce1-context-foundation)、[HTTP contract](api.md#28-context-query--bundle-contractce1-context-foundation)。
 
 ### 7B.2 CE2-LOW-RISK-AI-ASSIST
 
 - Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF`
-- AI出力は proposal-only（`proposalId/diff/sourceBundleHash/rationale/status/reviewState`）に固定。
-- `status` は `proposed|accepted|rejected|held` のみ許可。
-- `reviewState` は表示属性であり、AIによる `reviewed` 自動昇格を禁止。
-- auto-apply を API/UI/worker 全経路で禁止（No-Go 条件）。
-- CE1契約との差異検知時は `held` で停止し、自己修復は最大3回まで（4回目失敗相当で停止）。
+- 責務: AI出力をproposal-onlyとして管理し、CE1由来bundleとの整合を確認してから人間の判断へ渡す。
+- 禁止: API/UI/workerからのauto-apply、AIによるreview昇格、契約差異を推測で補った継続。
+- 正本: [proposal type and lifecycle contracts](schemas.md#ce2-low-risk-ai-assist)、[proposal-only HTTP boundary](api.md#290-proposal-only--apicli監査責務境界)。
 
 ### 7B.3 CE4-API-CLI-AUDIT
 
-- API/CLI/GUI の同値判定を `equivalenceKey AND bundleHash` で固定。
-- 監査4点セット（`query/bundle/proposal/apply`）は欠損時 fail-closed。
-- `dryRun=true` は `sideEffect=none` を必須化し、DB永続化・外部サービスとの共有・review昇格を禁止。
-- CE3未完了期間は `sourceBundleHash=mock:<hash>` を許容し、契約検証を停止しない。
+- 責務: API/CLI/GUIの同値性、監査4点セット、dry-runの無副作用を横断して検証する。
+- 禁止: 監査欠損の成功扱い、dry-runでの永続化・外部共有・review昇格、未実装依存を理由とする契約検証停止。
+- 正本: [audit type contracts](schemas.md#ce4-api-cli-audit)、[channel equivalence and side-effect contract](api.md#29-ce4-apicligui-同値性監査契約ce4-api-cli-audit)。
 
 ## 8. デプロイ形態
 
