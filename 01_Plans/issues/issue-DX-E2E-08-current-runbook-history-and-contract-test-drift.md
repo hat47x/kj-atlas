@@ -69,15 +69,33 @@
 
 ## 受入条件
 
-- [ ] E2E正本は対象読者・目的・範囲外から、準備、実行、判定、失敗記録、関連文書まで中断なく読める。
-- [ ] current見出しに`Stream E/F/G`、過去日付付きupdate、固定実装順、Draft昇格テンプレートが残らない。
-- [ ] 正本内の全コマンドが現行package scriptまたはCLIのhelpと一致し、`--files`参照が0件になる。
-- [ ] Compose、SQLite/mock差分、認証Level 2、fixture-backed suiteの非保証範囲が失われない。
-- [ ] SafeMode、share/export、provider=`none`、秘密情報を証跡へ含めない境界が維持される。
-- [ ] `test_qa_e2e_doc_contract.py`は現行runbook不変条件を検査し、過去運用tokenを要求しない。
-- [ ] `DC-CUR-001`がE2E正本への履歴見出し再混入を検出し、現行repositoryではfinding 0となる。
-- [ ] `DOC-OPS-06`から本follow-upへ到達できる。
-- [ ] fresh clone想定で、文書記載の正準コマンドをコピーして対象レーンを起動できる。
+- [x] E2E正本は対象読者・目的・範囲外から、準備、実行、判定、失敗記録、関連文書まで中断なく読める。
+- [x] current見出しに`Stream E/F/G`、過去日付付きupdate、固定実装順、Draft昇格テンプレートが残らない。
+- [x] 正本内の全コマンドが現行package scriptまたはCLIのhelpと一致し、`--files`参照が0件になる。
+- [x] Compose、SQLite/mock差分、認証Level 2、fixture-backed suiteの非保証範囲が失われない。
+- [x] SafeMode、share/export、provider=`none`、秘密情報を証跡へ含めない境界が維持される。
+- [x] `test_qa_e2e_doc_contract.py`は現行runbook不変条件を検査し、過去運用tokenを要求しない。
+- [x] `DC-CUR-001`がE2E正本への履歴見出し再混入を検出し、現行repositoryではfinding 0となる。
+- [x] `DOC-OPS-06`から本follow-upへ到達できる。
+- [x] fresh clone想定で、文書記載の正準コマンドをコピーして対象レーンを起動できる。
+
+### 実装証跡（2026-07-16）
+
+- `e2e_testing.md`: 「関連文書」以降に連結されていた `UI Operability（計画）`（Mock-first I/F契約、直列実装順、フェイルセーフ）、`Draft群 Open化向け QA Gate テンプレート（Stream E）`、`Stream E/F/G` の3節すべてを削除した。有効な操作観点5件（開始/選択/表示/閉じる/復帰）は「確認観点」表へ統合し、`Draft QA issue の Open化条件`（旧・重複していた2箇所）は`issues/README.md`/`ADR-0019`への導線1段落に置換した。`fixture-backed visibility suiteの境界`は末尾に孤立していた英語版の詳細（シナリオ表・コマンド）を統合し、`関連文書`の直前へ配置し直した。`関連文書`の後には`Release Gate 連携`のみが続く形にし、以降current見出しに履歴・実行計画混入がないことを確認した。`--files`参照は0件（現行validatorは`--root`のみ受理、`--help`で確認済み）。
+- `test_qa_e2e_doc_contract.py`: `test_e2e_doc_has_plan_execute_verify_proceed_flow_and_self_repair_limit`を`test_e2e_doc_has_current_runbook_invariants`へ置換した。正準npm script（`e2e`/`e2e:mock`/`test:regression-guards`）、Compose優先文言、Risk ID表、SafeMode、失敗時証跡見出し、`ADR-0019`リンクの存在を検査し、`Plan → Execute → Verify → Proceed`/`自己修復は最大3回`/`4回目相当は Stop`/`Stream E/F/G`/`--files`/`直列実装順`/`Draft群 Open化`が再混入しないことを検査する。他の2 test関数（`issue-QA-E2E-USE-01`・`issue-PRODUCT-QA-01`対象）は本issueの対象外であり変更していない。
+- `01_Plans/docs_contract_checks.py`: `CURRENT_ONLY_PATHS`へ`03_Implement/frontend/docs/e2e_testing.md`を追加した。`01_Plans/tests/test_docs_contract_checks.py`に、defaultパスにE2E正本が含まれることの確認1件と、E2E正本へ再混入した`Stream`見出しを`check_current_history_headings`が既定パスだけで検出することを確認する負例1件を追加した。
+- `01_Plans/issues/issue-DOC-OPS-06-current-view-history-and-contributor-route.md`: Follow-upセクションを追記し、2026-07-15の完了記録が対象にしていなかった`e2e_testing.md`本体の残存を本issueへ切り出したことを明記した（DoneのDOC-OPS-06自体は変更していない）。
+
+検証結果:
+- `python 01_Plans/tests/test_docs_contract_checks.py`相当（`01_Plans.tests.test_docs_contract_checks`、unittest経由。pytestは本環境で利用不可）: 16/16 pass（新規2件含む）。
+- `test_qa_e2e_doc_contract.py`の3 test関数を直接呼び出して検証（同じくpytest不可のため代替。`unittest`のdiscoveryはplain function testを検出しないため個別importで実行）: 3/3 pass。
+- `check_current_history_headings(Path('.'))` / `check_relative_links` を現行repositoryへ直接実行: 0 findings。
+- `rg -n "^#{2,3} .*Stream [EFG]|^#{2,3} .*update|直列実装順|Draft群 Open化|--files" e2e_testing.md`: 0件。
+- `python3 01_Plans/issues/validate_active_issue_memos.py --help`: `--root`のみ受理することを確認し、文書側から`--files`参照をすべて除去した。
+- `npm run e2e:mock -- --list`相当（`npx playwright test <spec> --list`）: ブラウザを起動せずにテスト一覧を解決できることを確認した（`libnspr4`欠落環境でも`--list`は動作する）。
+- frontend `npm run typecheck`・`npx vitest run`は本PRでは非対象ファイル（`e2e_testing.md`はドキュメント、テストコードは変更なし）のため未実行。
+
+**未完了・人手待ち**: 「実行順序と担当境界」段階5「Maintainerがfresh-clone dry-runとSafeMode/share-export非回帰を確認する」は人手のMaintainer確認であり、本セッションでは完了させていない。全AC達成の確認までは行ったが、Statusは`Open`のまま維持する。
 
 ## 検証計画
 

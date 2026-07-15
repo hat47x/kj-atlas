@@ -164,3 +164,7 @@
 - SafeMode既定ON、share/export漏洩防止、proposal-only、`human_reviewed`人手限定、`KJ_ATLAS_LLM_PROVIDER=none`への現行導線を確認した。
 - route対象10文書の相対link 76件エラー0、Active issue validatorはclose直前33件・Done反映後32件、validator/triage unit 12件、`git diff --check`がpassした。再発防止境界は`DX-DOC-02`へ引き渡した。
 - 全Acceptance criteriaとT1〜T8を満たしたためDoneとする。
+
+## Follow-up 2026-07-16: E2E runbook Stream/QA-gateテンプレート残存
+
+上記2026-07-15の完了記録は「旧04 E2E文書の独立規範」を対象にしたものであり、`03_Implement/frontend/docs/e2e_testing.md`本体の後半（Stream E/F/G形成記録、Draft昇格QA Gateテンプレート、`--files`という存在しないCLIオプション参照）はcurrent-only化の対象外のまま残存していた。この是正は`issue-DX-E2E-08-current-runbook-history-and-contract-test-drift.md`として別issueへ切り出し、そちらで追跡する。本issue自体の完了記録・Done判定は変更しない。「SSOTが1件であること」と「SSOT本文がcurrent-onlyであること」は今後別の完了条件として判定する。

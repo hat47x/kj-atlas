@@ -31,6 +31,7 @@ CURRENT_ONLY_PATHS = (
     Path("02_Architecture/api.md"),
     Path("02_Architecture/schemas.md"),
     Path("02_Architecture/data_model_operations_overview.md"),
+    Path("03_Implement/frontend/docs/e2e_testing.md"),
 )
 HISTORY_REQUIRED_LABELS = (
     "Status: Informative history",
