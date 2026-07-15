@@ -1,4 +1,4 @@
-import type { Card, DocumentV2 } from "../types";
+import type { Card, DocumentV1 } from "../types";
 
 export type ClaimType = "fact" | "claim" | "hypothesis" | "unknown";
 
@@ -35,7 +35,7 @@ function share(count: number, total: number): number {
   return count / total;
 }
 
-export function analyzeClaimTypeMix(doc: DocumentV2, nowIso: string = new Date().toISOString()): ClaimTypeMixReport {
+export function analyzeClaimTypeMix(doc: DocumentV1, nowIso: string = new Date().toISOString()): ClaimTypeMixReport {
   const cardsById = new Map(doc.cards.map((card) => [card.id, card] as const));
   const countsByType: Record<ClaimType, number> = {
     fact: 0,

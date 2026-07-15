@@ -6,7 +6,7 @@ import { getDerivedIslandEdges } from "../domain/island_edge_aggregate";
 import {
   isCanonicalCard,
   isSourceCard,
-  type DocumentV2,
+  type DocumentV1,
   type EdgeType,
   type EvidenceLink,
   type Point,
@@ -53,7 +53,7 @@ export type FocusReference = {
   kind: "card" | "island";
 };
 
-export function getFocusWorldPointForReference(document: DocumentV2, reference: FocusReference): { x: number; y: number } | null {
+export function getFocusWorldPointForReference(document: DocumentV1, reference: FocusReference): { x: number; y: number } | null {
   if (reference.kind === "card") {
     const card = document.cards.find((item) => item.id === reference.id);
     if (!card) {
@@ -127,7 +127,7 @@ export type CameraTransformRequest = {
 };
 
 type CanvasShellProps = {
-  document: DocumentV2;
+  document: DocumentV1;
   onCardMove: (cardId: string, deltaWorldX: number, deltaWorldY: number) => void;
   selectedCardIds: string[];
   onCardSelect: (cardId: string, isShiftPressed: boolean) => void;
@@ -1052,7 +1052,7 @@ export function CanvasShell({
     const diffs = suggestionMoveDiffs ?? [];
     return diffs.filter((diff) => !isCardHidden(diff.cardId));
   }, [isCardHidden, suggestionMoveDiffs]);
-  
+
   const clearDragState = useCallback((event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
     setDragMode("none");

@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 
 export type BalanceFindingCode = "B001" | "B002" | "B003" | "B004" | "B005" | "B006";
 
@@ -42,7 +42,7 @@ function ratio(numerator: number, denominator: number): number {
   return numerator / denominator;
 }
 
-export function analyzeDialecticBalance(doc: DocumentV2, nowIso: string = new Date().toISOString()): DialecticBalanceReport {
+export function analyzeDialecticBalance(doc: DocumentV1, nowIso: string = new Date().toISOString()): DialecticBalanceReport {
   const cardsById = new Map(doc.cards.map((card) => [card.id, card] as const));
   const evidenceLinks = doc.evidenceLinks ?? [];
   const cardSignals = new Map<string, CardSignal>();

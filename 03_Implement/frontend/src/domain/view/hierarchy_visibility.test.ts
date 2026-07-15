@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import { collectHierarchyHiddenIslandIds, collectHierarchyPlacardHiddenCardIds } from "./hierarchy_visibility";
 
-const documentFixture: DocumentV2 = {
-  version: 2,
+const documentFixture: DocumentV1 = {
+  version: 1,
   id: "doc-hierarchy",
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
@@ -54,7 +54,7 @@ describe("hierarchy_visibility", () => {
   });
 
   it("falls back safely when placardCardId is missing or outside island membership", () => {
-    const fallbackDocument: DocumentV2 = {
+    const fallbackDocument: DocumentV1 = {
       ...documentFixture,
       islands: [
         { id: "i-root", cardIds: ["c-root", "c-root-member"], placardCardId: "missing-card" },

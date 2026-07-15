@@ -1,4 +1,4 @@
-import type { DocumentV2, EdgeType, KnownEdgeType } from "./types";
+import type { DocumentV1, EdgeType, KnownEdgeType } from "./types";
 import { resolveKnownEdgeType } from "./types";
 
 export type IslandRelationEdgeSelection = {
@@ -35,7 +35,7 @@ function uniqueSortedIds(ids: Iterable<string>): string[] {
   return Array.from(new Set(ids)).sort((a, b) => a.localeCompare(b));
 }
 
-function sortCardIdsDeterministically(document: DocumentV2, cardIds: string[]): string[] {
+function sortCardIdsDeterministically(document: DocumentV1, cardIds: string[]): string[] {
   const uniqueIds = Array.from(new Set(cardIds));
   const readingOrder = document.readingOrder ?? [];
   if (readingOrder.length === 0) {
@@ -67,12 +67,12 @@ function sortCardIdsDeterministically(document: DocumentV2, cardIds: string[]): 
   });
 }
 
-function getIslandLabel(document: DocumentV2, islandId: string): string {
+function getIslandLabel(document: DocumentV1, islandId: string): string {
   const island = document.islands.find((entry) => entry.id === islandId);
   return island?.title?.trim() || islandId;
 }
 
-function getCardSnippet(document: DocumentV2, cardId: string): string {
+function getCardSnippet(document: DocumentV1, cardId: string): string {
   const card = document.cards.find((entry) => entry.id === cardId);
   if (!card) {
     return `${cardId} (missing card)`;
@@ -88,7 +88,7 @@ function getCardSnippet(document: DocumentV2, cardId: string): string {
 }
 
 export function buildIslandRelationExplanation(
-  document: DocumentV2,
+  document: DocumentV1,
   edgeSelection: IslandRelationEdgeSelection
 ): IslandRelationExplanation {
   const title = `Relation: ${getIslandLabel(document, edgeSelection.fromIslandId)} ↔ ${getIslandLabel(document, edgeSelection.toIslandId)}`;

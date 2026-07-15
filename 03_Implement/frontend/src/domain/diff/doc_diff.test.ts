@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { diffDocuments } from "./doc_diff";
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 
-function buildBaseDocument(): DocumentV2 {
+function buildBaseDocument(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-1",
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
@@ -42,7 +42,7 @@ function buildBaseDocument(): DocumentV2 {
 describe("diffDocuments", () => {
   it("detects structural changes across cards, islands, relation summaries, and reading order", () => {
     const a = buildBaseDocument();
-    const b: DocumentV2 = {
+    const b: DocumentV1 = {
       ...buildBaseDocument(),
       cards: [
         { id: "card-1", text: "a-changed", x: 0, y: 0 },
@@ -97,7 +97,7 @@ describe("diffDocuments", () => {
 
   it("returns stable, sorted id outputs", () => {
     const base = buildBaseDocument();
-    const a: DocumentV2 = {
+    const a: DocumentV1 = {
       ...base,
       cards: [...base.cards, { id: "z", text: "z", x: 0, y: 0 }, { id: "a", text: "a", x: 0, y: 0 }],
       islands: [...base.islands, { id: "z-island", cardIds: [] }, { id: "a-island", cardIds: [] }],
@@ -116,13 +116,13 @@ describe("diffDocuments", () => {
 
   it("tracks relation summary diffs by relation summary id", () => {
     const base = buildBaseDocument();
-    const a: DocumentV2 = {
+    const a: DocumentV1 = {
       ...base,
       relationSummaries: [
         { ...base.relationSummaries![0], id: "rs-a", sourceSignature: "same-sig", text: "t1" },
       ],
     };
-    const b: DocumentV2 = {
+    const b: DocumentV1 = {
       ...base,
       relationSummaries: [
         { ...base.relationSummaries![0], id: "rs-b", sourceSignature: "same-sig", text: "t2" },
@@ -140,7 +140,7 @@ describe("diffDocuments", () => {
     const b = {
       ...buildBaseDocument(),
       cards: [...buildBaseDocument().cards, { id: "card-3", text: "c", x: 0, y: 0 }],
-    } satisfies DocumentV2;
+    } satisfies DocumentV1;
 
     const aSnapshot = structuredClone(a);
     const bSnapshot = structuredClone(b);

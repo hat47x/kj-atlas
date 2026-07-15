@@ -16,7 +16,7 @@ class _StubProvider:
 def _payload() -> dict:
     return {
         "doc": {
-            "version": 2,
+            "version": 1,
             "id": "doc-1",
             "createdAt": "2026-02-11T00:00:00Z",
             "updatedAt": "2026-02-11T00:00:00Z",

@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import type { FindingEntityRef, OutlineQualityReport } from "./outline_quality";
 import type { ReadingPathViewState } from "./reading_path";
 
@@ -65,7 +65,7 @@ function byTitle(a: string, b: string): number {
 
 export function generateRecommendations(
   report: OutlineQualityReport,
-  doc: DocumentV2,
+  doc: DocumentV1,
   readingState: ReadingPathViewState,
 ): Recommendation[] {
   const recommendations: Recommendation[] = [];

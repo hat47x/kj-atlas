@@ -1,11 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { AGENT_TASK_GUARDRAIL_TEXT, buildAgentTaskSheet } from "./agent_task_export";
 
 const fixturesDir = path.resolve(__dirname, "../../tests/fixtures/agent_task");
-const fixtureDoc = JSON.parse(fs.readFileSync(path.join(fixturesDir, "doc.fixture.json"), "utf8")) as DocumentV2;
+const fixtureDoc = JSON.parse(fs.readFileSync(path.join(fixturesDir, "doc.fixture.json"), "utf8")) as DocumentV1;
 const readGolden = (filename: string): string => fs.readFileSync(path.join(fixturesDir, filename), "utf8").replace(/\r\n/g, "\n");
 
 const FIXED_TASK_ID = "11111111-1111-1111-1111-111111111111";
@@ -74,7 +74,7 @@ describe("agent_task_export golden fixtures", () => {
   });
 
   it("excludes Card.meta.source by default, includes it only when explicitly opted in", async () => {
-    const withSource: DocumentV2 = {
+    const withSource: DocumentV1 = {
       ...fixtureDoc,
       cards: fixtureDoc.cards.map((card) => (card.id === "c1" ? { ...card, meta: { source: "interview-2026-07-01.txt:42" } } : card)),
     };

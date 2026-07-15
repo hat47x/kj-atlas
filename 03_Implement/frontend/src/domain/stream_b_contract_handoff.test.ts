@@ -6,11 +6,11 @@ import {
   validateDecisionLogContract,
 } from "./stream_b_contract_handoff";
 import { STREAM_B_CONTRACTS } from "./stream_b_contract";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-function createDocument(): DocumentV2 {
+function createDocument(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-stream-b",
     createdAt: "2026-03-01T00:00:00.000Z",
     updatedAt: "2026-03-01T00:00:00.000Z",

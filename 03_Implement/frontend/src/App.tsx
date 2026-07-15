@@ -47,7 +47,7 @@ import {
   getLatestMergeSuggestionDecisionByGroup,
   type MergeSuggestionDecision,
 } from "./domain/merge_suggestion_decisions";
-import { isSourceCard, Document, DocumentV2, Island, Narrative, type CardKa, type CardMeta, type ContradictionSignalDecision, type ContradictionSignalReviewStatus, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
+import { isSourceCard, Document, DocumentV1, Island, Narrative, type CardKa, type CardMeta, type ContradictionSignalDecision, type ContradictionSignalReviewStatus, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
 import { KNOWN_EDGE_TYPES } from "./domain/types";
 import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
@@ -219,7 +219,7 @@ const CARD_HEIGHT = 80;
 const SVG_VISIBLE_BOUNDS_PADDING = 64;
 const FALLBACK_EXPORT_VIEWPORT = { width: 1280, height: 720 };
 
-function buildFallbackCanvasCamera(document: DocumentV2): CanvasCamera {
+function buildFallbackCanvasCamera(document: DocumentV1): CanvasCamera {
   const viewportWidth = typeof window === "undefined" ? FALLBACK_EXPORT_VIEWPORT.width : Math.max(1, Math.round(window.innerWidth || FALLBACK_EXPORT_VIEWPORT.width));
   const viewportHeight = typeof window === "undefined" ? FALLBACK_EXPORT_VIEWPORT.height : Math.max(1, Math.round(window.innerHeight || FALLBACK_EXPORT_VIEWPORT.height));
 
@@ -447,9 +447,9 @@ function sanitizeViewPresets(value: unknown): ViewPreset[] {
 }
 
 type DocumentHistory = {
-  past: DocumentV2[];
-  present: DocumentV2;
-  future: DocumentV2[];
+  past: DocumentV1[];
+  present: DocumentV1;
+  future: DocumentV1[];
 };
 
 type MergeSuggestionDraft = MergeSuggestion & {
@@ -464,7 +464,7 @@ type MergeSuggestionDraft = MergeSuggestion & {
 
 type PendingImportedDocument = {
   fileName: string;
-  document: DocumentV2;
+  document: DocumentV1;
 };
 
 type PendingPatchImport = {
@@ -524,12 +524,12 @@ function unwrapComparisonPayload(value: unknown): unknown {
   return value;
 }
 
-function parseComparisonRelationSummaries(value: unknown): DocumentV2["relationSummaries"] {
+function parseComparisonRelationSummaries(value: unknown): DocumentV1["relationSummaries"] {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  const relationSummaries: NonNullable<DocumentV2["relationSummaries"]> = [];
+  const relationSummaries: NonNullable<DocumentV1["relationSummaries"]> = [];
 
   for (const entry of value) {
     if (!isRecord(entry) || typeof entry.id !== "string") {
@@ -565,12 +565,12 @@ function parseComparisonRelationSummaries(value: unknown): DocumentV2["relationS
   return relationSummaries;
 }
 
-function parseComparisonEvidenceLinks(value: unknown): DocumentV2["evidenceLinks"] {
+function parseComparisonEvidenceLinks(value: unknown): DocumentV1["evidenceLinks"] {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  const links: NonNullable<DocumentV2["evidenceLinks"]> = [];
+  const links: NonNullable<DocumentV1["evidenceLinks"]> = [];
   for (const entry of value) {
     if (!isRecord(entry) || typeof entry.id !== "string" || typeof entry.fromCardId !== "string" || typeof entry.toCardId !== "string") {
       continue;
@@ -599,7 +599,7 @@ function parseComparisonEvidenceLinks(value: unknown): DocumentV2["evidenceLinks
   return links;
 }
 
-function extractComparisonDocument(value: unknown): { ok: true; document: DocumentV2 } | { ok: false; error: string } {
+function extractComparisonDocument(value: unknown): { ok: true; document: DocumentV1 } | { ok: false; error: string } {
   const payload = unwrapComparisonPayload(value);
   const validated = validateDocument(payload);
   if (!validated.ok) {
@@ -658,7 +658,7 @@ function clipSnippet(value: string | undefined, maxLength = 80): string {
   return `${text.slice(0, maxLength)}…`;
 }
 
-function buildDomainExpressionShareSummary(document: DocumentV2 | null): DomainExpressionShareSummary {
+function buildDomainExpressionShareSummary(document: DocumentV1 | null): DomainExpressionShareSummary {
   if (!document) {
     return {
       unreviewedCards: 0,
@@ -762,11 +762,11 @@ function buildPatchPreviewItems(
   });
 }
 
-function createDefaultDocument(docId: string): DocumentV2 {
+function createDefaultDocument(docId: string): DocumentV1 {
   const now = new Date().toISOString();
 
   return {
-    version: 2,
+    version: 1,
     id: docId,
     title: "Phase 1 Canvas Sample",
     createdAt: now,
@@ -805,11 +805,11 @@ function createDefaultDocument(docId: string): DocumentV2 {
   };
 }
 
-function createNewDocument(docId: string): DocumentV2 {
+function createNewDocument(docId: string): DocumentV1 {
   const now = new Date().toISOString();
 
   return {
-    version: 2,
+    version: 1,
     id: docId,
     title: "Untitled",
     createdAt: now,
@@ -828,7 +828,7 @@ function createNewDocument(docId: string): DocumentV2 {
   };
 }
 
-function duplicateDocumentWithNewId(sourceDocument: DocumentV2): DocumentV2 {
+function duplicateDocumentWithNewId(sourceDocument: DocumentV1): DocumentV1 {
   const now = new Date().toISOString();
 
   return {
@@ -839,40 +839,28 @@ function duplicateDocumentWithNewId(sourceDocument: DocumentV2): DocumentV2 {
   };
 }
 
-function toDocumentV2(document: Document): DocumentV2 {
-  if (document.version === 2) {
-    return {
-      ...document,
-      readingOrder: document.readingOrder ?? [],
-      narratives: document.narratives ?? [],
-      evidenceLinks: document.evidenceLinks ?? [],
-      mergeSuggestionDecisions: document.mergeSuggestionDecisions ?? [],
-    };
-  }
-
+function normalizeDocument(document: Document): DocumentV1 {
   return {
     ...document,
-    version: 2,
-    islands: [],
-    readingOrder: [],
-    narratives: [],
-    evidenceLinks: [],
-    mergeSuggestionDecisions: [],
+    readingOrder: document.readingOrder ?? [],
+    narratives: document.narratives ?? [],
+    evidenceLinks: document.evidenceLinks ?? [],
+    mergeSuggestionDecisions: document.mergeSuggestionDecisions ?? [],
   };
 }
 
-function withUpdatedTimestamp(document: DocumentV2): DocumentV2 {
+function withUpdatedTimestamp(document: DocumentV1): DocumentV1 {
   return {
     ...document,
     updatedAt: new Date().toISOString(),
   };
 }
 
-function cloneDocument(document: DocumentV2): DocumentV2 {
+function cloneDocument(document: DocumentV1): DocumentV1 {
   return structuredClone(document);
 }
 
-function markSuggestedFieldsUnreviewed(document: DocumentV2, baseDocument: DocumentV2): DocumentV2 {
+function markSuggestedFieldsUnreviewed(document: DocumentV1, baseDocument: DocumentV1): DocumentV1 {
   const baseCardsById = new Map(baseDocument.cards.map((card) => [card.id, card]));
   const baseIslandsById = new Map(baseDocument.islands.map((island) => [island.id, island]));
 
@@ -903,7 +891,7 @@ function markSuggestedFieldsUnreviewed(document: DocumentV2, baseDocument: Docum
   };
 }
 
-function pushHistorySnapshot(history: DocumentHistory, nextDocument: DocumentV2): DocumentHistory {
+function pushHistorySnapshot(history: DocumentHistory, nextDocument: DocumentV1): DocumentHistory {
   const nextPast = [...history.past, cloneDocument(history.present)];
   const trimmedPast = nextPast.length > HISTORY_LIMIT ? nextPast.slice(nextPast.length - HISTORY_LIMIT) : nextPast;
 
@@ -932,7 +920,7 @@ function createIslandFromSelection(selectedCardIds: string[], existingIslands: I
 // since staleness there is about the WHOLE patch, not a single targetRef.
 function computeAgentProposalReviewFlags(
   proposal: ParsedAgentProposal,
-  doc: DocumentV2
+  doc: DocumentV1
 ): { orphaned: boolean; patchSignatureMismatch?: boolean } {
   if (proposal.kind === "narrative_draft") {
     return { orphaned: false };
@@ -961,7 +949,7 @@ function computeAgentProposalReviewFlags(
 // the shape has no diagonal edges and its vertex count is a meaningful
 // complexity signal. Manual polygon editing (PolygonEditLayer) is untouched
 // and can still produce a non-orthogonal shape if the user drags a vertex.
-function buildIslandPolygonFromCards(document: DocumentV2, island: Island): Point[] {
+function buildIslandPolygonFromCards(document: DocumentV1, island: Island): Point[] {
   const memberCards = document.cards.filter((card) => island.cardIds.includes(card.id));
   return generateOrthogonalIslandOutline(memberCards)?.points ?? [];
 }
@@ -1004,7 +992,7 @@ function getIslandDepthMap(islands: Island[]): Map<string, number> {
   return new Map(islands.map((island) => [island.id, getIslandDepth(island, islandsById)]));
 }
 
-function getCardMinDepthMap(document: DocumentV2, islandDepthById: Map<string, number>): Map<string, number> {
+function getCardMinDepthMap(document: DocumentV1, islandDepthById: Map<string, number>): Map<string, number> {
   const cardDepthById = new Map<string, number>();
 
   for (const island of document.islands) {
@@ -1062,7 +1050,7 @@ function collectFocusedIslandIds(islands: Island[], focusIslandId: string): Set<
   return focusedIslandIds;
 }
 
-function applyFocusScope(document: DocumentV2, focusTarget: FocusTarget): DocumentV2 {
+function applyFocusScope(document: DocumentV1, focusTarget: FocusTarget): DocumentV1 {
   if (!focusTarget.focusIslandId) {
     return document;
   }
@@ -1146,7 +1134,7 @@ export default function App() {
   const [recentDocumentIds, setRecentDocumentIds] = useState<string[]>(() => loadRecentDocumentIds());
   const [selectedRecentDocumentId, setSelectedRecentDocumentId] = useState("");
   const [suggestionInstruction, setSuggestionInstruction] = useState("");
-  const [suggestedDocument, setSuggestedDocument] = useState<DocumentV2 | null>(null);
+  const [suggestedDocument, setSuggestedDocument] = useState<DocumentV1 | null>(null);
   const [suggestionId, setSuggestionId] = useState<string | null>(null);
   const [suggestionIteration, setSuggestionIteration] = useState(1);
   const [suggestionNotes, setSuggestionNotes] = useState<string | null>(null);
@@ -1286,12 +1274,12 @@ export default function App() {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [visibleAggregatedEdges, setVisibleAggregatedEdges] = useState<AggregatedEdgeMeta[]>([]);
   const [isGeneratingRelationSummary, setIsGeneratingRelationSummary] = useState(false);
-  const [comparisonDocument, setComparisonDocument] = useState<DocumentV2 | null>(null);
+  const [comparisonDocument, setComparisonDocument] = useState<DocumentV1 | null>(null);
   const [comparisonFileName, setComparisonFileName] = useState<string | null>(null);
-  const [reviewDiffBaseSnapshot, setReviewDiffBaseSnapshot] = useState<DocumentV2 | null>(null);
+  const [reviewDiffBaseSnapshot, setReviewDiffBaseSnapshot] = useState<DocumentV1 | null>(null);
   const [selectedMergeItemIdSet, setSelectedMergeItemIdSet] = useState<Set<string>>(new Set());
   const [autoIncludeMergePrerequisites, setAutoIncludeMergePrerequisites] = useState(true);
-  const [lastMergeSnapshot, setLastMergeSnapshot] = useState<DocumentV2 | null>(null);
+  const [lastMergeSnapshot, setLastMergeSnapshot] = useState<DocumentV1 | null>(null);
   const [mergeWarningConfirmationKey, setMergeWarningConfirmationKey] = useState<string | null>(null);
   const [mergeAuditLog, setMergeAuditLog] = useState<MergeAuditEntry[]>([]);
   const [reviewEvents, setReviewEvents] = useState<ReviewEvent[]>([]);
@@ -1305,7 +1293,7 @@ export default function App() {
   const [importedPackDiagnosticsMd, setImportedPackDiagnosticsMd] = useState<string | null>(null);
   const [pendingPatchImport, setPendingPatchImport] = useState<PendingPatchImport | null>(null);
   const [patchImportError, setPatchImportError] = useState<string | null>(null);
-  const [patchBaselineDoc, setPatchBaselineDoc] = useState<DocumentV2 | null>(null);
+  const [patchBaselineDoc, setPatchBaselineDoc] = useState<DocumentV1 | null>(null);
   const [patchBaselineFileName, setPatchBaselineFileName] = useState<string | null>(null);
   const [patchSelectedOpIdSet, setPatchSelectedOpIdSet] = useState<Set<string>>(new Set());
   const [patchResolutionsByOpId, setPatchResolutionsByOpId] = useState<Record<string, PatchResolution>>({});
@@ -1885,7 +1873,7 @@ export default function App() {
 
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
-  const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
+  const pendingCardDragSnapshotRef = useRef<DocumentV1 | null>(null);
   const lastDraggedCardIdRef = useRef<string | null>(null);
   const suppressNextTransformPersistRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -1996,7 +1984,7 @@ export default function App() {
 
       try {
         const loaded = await getDocument(docId);
-        const loadedDocument = toDocumentV2(loaded.document);
+        const loadedDocument = normalizeDocument(loaded.document);
 
         setHistory({
           past: [],
@@ -2037,7 +2025,7 @@ export default function App() {
 
           try {
             const saved = await putDocument(docId, defaultDocument);
-            const savedDocument = toDocumentV2(saved.document);
+            const savedDocument = normalizeDocument(saved.document);
 
             setHistory({
               past: [],
@@ -2096,7 +2084,7 @@ export default function App() {
 
   const applyDocumentChange = useCallback(
     (
-      nextDocument: DocumentV2,
+      nextDocument: DocumentV1,
       nextStatusMessage?: string,
       options?: {
         preserveSuggestionPreview?: boolean;
@@ -2208,7 +2196,7 @@ export default function App() {
   }, [activeMatchIndex, matchedCardIds, requestCanvasFocus]);
 
   const handleTransformChange = useCallback(
-    (nextTransform: DocumentV2["transform"]) => {
+    (nextTransform: DocumentV1["transform"]) => {
       if (!document || isPreviewingSuggestion) {
         return;
       }
@@ -2295,7 +2283,7 @@ export default function App() {
   );
 
   const applyLayoutOperation = useCallback(
-    (operationName: string, operation: (cards: DocumentV2["cards"]) => DocumentV2["cards"]) => {
+    (operationName: string, operation: (cards: DocumentV1["cards"]) => DocumentV1["cards"]) => {
       if (!document || isPreviewingSuggestion) {
         return;
       }
@@ -2433,7 +2421,7 @@ export default function App() {
 
     try {
       const saved = await putDocument(document.id, withUpdatedTimestamp(document), docEtag ?? undefined);
-      const savedDocument = toDocumentV2(saved.document);
+      const savedDocument = normalizeDocument(saved.document);
       pendingCardDragSnapshotRef.current = null;
       setHistory({
         past: [],
@@ -2953,7 +2941,7 @@ export default function App() {
     setMergeWarningConfirmationKey(null);
   }, [applyDocumentChange, lastMergeSnapshot]);
 
-  const applyImportedViewMetadata = useCallback((metadata: ExportViewMetadata, targetDocument: DocumentV2, viewMode: ViewMode, statusPrefix: string) => {
+  const applyImportedViewMetadata = useCallback((metadata: ExportViewMetadata, targetDocument: DocumentV1, viewMode: ViewMode, statusPrefix: string) => {
     const hasFocusIsland =
       metadata.viewState.focusIslandId === null
         ? false
@@ -3812,7 +3800,7 @@ export default function App() {
         fromKind: source.kind,
         toKind: "card",
         type: connectEdgeType,
-      } as DocumentV2["edges"][number];
+      } as DocumentV1["edges"][number];
 
       applyDocumentChange(
         {
@@ -3986,7 +3974,7 @@ export default function App() {
         fromKind: edgeConnectSource.kind,
         toKind: target.kind,
         type: connectEdgeType,
-      } as DocumentV2["edges"][number];
+      } as DocumentV1["edges"][number];
 
       applyDocumentChange(
         {
@@ -6310,13 +6298,13 @@ export default function App() {
 
   const sourceCardsForSelectedCanonical = useMemo(() => {
     if (!document || !selectedCard || selectedCard.canonicalId) {
-      return [] as DocumentV2["cards"];
+      return [] as DocumentV1["cards"];
     }
 
     const cardsById = new Map(document.cards.map((card) => [card.id, card]));
     return representativeOriginTraceForSelectedCard.sourceCardIds
       .map((sourceId) => cardsById.get(sourceId))
-      .filter((card): card is DocumentV2["cards"][number] => card !== undefined);
+      .filter((card): card is DocumentV1["cards"][number] => card !== undefined);
   }, [document, representativeOriginTraceForSelectedCard.sourceCardIds, selectedCard]);
 
   const missingSourceCardIdsForSelectedCanonical = representativeOriginTraceForSelectedCard.missingSourceCardIds;
@@ -6328,7 +6316,7 @@ export default function App() {
 
     return selectedIsland.summaryGrounding
       .map((groundingCardId) => cardsById.get(groundingCardId))
-      .filter((card): card is DocumentV2["cards"][number] => card !== undefined)
+      .filter((card): card is DocumentV1["cards"][number] => card !== undefined)
       .map((card) => ({
         id: card.id,
         text: card.text,

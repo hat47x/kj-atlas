@@ -1,4 +1,4 @@
-import type { Card, DocumentV2, Island } from "./types";
+import type { Card, DocumentV1, Island } from "./types";
 
 export type ApplyCanonicalizationInput = {
   sourceCardIds: string[];
@@ -8,7 +8,7 @@ export type ApplyCanonicalizationInput = {
 };
 
 export type ApplyCanonicalizationResult = {
-  document: DocumentV2;
+  document: DocumentV1;
   canonicalId: string;
 };
 
@@ -85,7 +85,7 @@ function updateReadingOrder(
 }
 
 export function applyCanonicalization(
-  document: DocumentV2,
+  document: DocumentV1,
   input: ApplyCanonicalizationInput
 ): ApplyCanonicalizationResult {
   const sourceCardIds = uniqueIds(input.sourceCardIds);

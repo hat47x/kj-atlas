@@ -15,7 +15,7 @@ SNAPSHOT_VERSION = "snapshot-recovery-pg-1"
 
 def _recovery_document() -> dict:
     return {
-        "version": 2,
+        "version": 1,
         "id": DOC_ID,
         "title": "PostgreSQL data maintenance recovery rehearsal",
         "createdAt": "2026-05-25T01:00:00Z",

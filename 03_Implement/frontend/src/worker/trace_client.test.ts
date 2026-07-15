@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { DocumentV2, EvidenceLink } from "../domain/types";
+import type { DocumentV1, EvidenceLink } from "../domain/types";
 import { TraceWorkerClient } from "./trace_client";
 
 const originalWorker = globalThis.Worker;
@@ -8,8 +8,8 @@ afterEach(() => {
   globalThis.Worker = originalWorker;
 });
 
-const doc: DocumentV2 = {
-  version: 2,
+const doc: DocumentV1 = {
+  version: 1,
   id: "doc",
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
@@ -46,7 +46,7 @@ describe("TraceWorkerClient", () => {
       toCardId: `c${index + 2}`,
       type: index % 2 === 0 ? "supports" : "contradicts",
     }));
-    const largeDoc: DocumentV2 = { ...doc, cards, evidenceLinks };
+    const largeDoc: DocumentV1 = { ...doc, cards, evidenceLinks };
 
     const client = new TraceWorkerClient();
     const result = await client.computeTraceAnalytics({ doc: largeDoc, options: { startCardId: "c1", kind: "both", maxHops: 4, maxNodes: 80, safeMode: true } });

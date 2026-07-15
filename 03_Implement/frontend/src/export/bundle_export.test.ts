@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import JSZip from "jszip";
 import { buildBundleZipBlob, buildExportBundle, buildExportBundleWithWorkers } from "./bundle_export";
 import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
@@ -14,8 +14,8 @@ afterEach(() => {
   globalThis.Worker = originalWorker;
 });
 
-const baseDoc: DocumentV2 = {
-  version: 2,
+const baseDoc: DocumentV1 = {
+  version: 1,
   id: "doc-1",
   title: "Doc",
   createdAt: "2026-01-01T00:00:00.000Z",
@@ -49,7 +49,7 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
-async function documentJsonHashFromBundle(doc: DocumentV2, viewState: unknown): Promise<string> {
+async function documentJsonHashFromBundle(doc: DocumentV1, viewState: unknown): Promise<string> {
   const files = buildExportBundle(doc, viewState, {
     rootFolderPath: "kj-atlas-export-20260101-010203",
     safeMode: true,
@@ -79,8 +79,8 @@ async function documentJsonHashFromBundle(doc: DocumentV2, viewState: unknown): 
   return sha256Hex(canonical);
 }
 
-function parseFixture(raw: string): DocumentV2 {
-  return JSON.parse(raw) as DocumentV2;
+function parseFixture(raw: string): DocumentV1 {
+  return JSON.parse(raw) as DocumentV1;
 }
 
 describe("buildExportBundle", () => {
@@ -206,7 +206,7 @@ describe("buildExportBundle", () => {
   });
 
   test("merge decision audit json contains representative-source traceability", () => {
-    const docWithRepresentative: DocumentV2 = {
+    const docWithRepresentative: DocumentV1 = {
       ...baseDoc,
       cards: [
         { id: "c1", text: "fact", x: 0, y: 0, claimType: "fact", textReviewed: true, mergedIntoCardId: "c-rep" },
@@ -335,7 +335,7 @@ describe("buildExportBundle", () => {
   });
 
   test("safe mode bundle hides unreviewed outline text and diagnostic detail", () => {
-    const docWithUnreviewed: DocumentV2 = {
+    const docWithUnreviewed: DocumentV1 = {
       ...baseDoc,
       islands: [{ ...baseDoc.islands[0], summaryReviewed: false, summaryText: "SECRET_UNREVIEWED_SUMMARY" }],
     };
@@ -385,7 +385,7 @@ describe("buildExportBundle", () => {
     expect(diagnostics).not.toContain("SECRET_DIAGNOSTIC_DETAIL");
   });
   test("defaults to safe mode for exports when context.safeMode is omitted", () => {
-    const docWithSecret: DocumentV2 = {
+    const docWithSecret: DocumentV1 = {
       ...baseDoc,
       cards: baseDoc.cards.map((card) => ({ ...card, text: card.id === "c2" ? "SECRET_TEXT_DO_NOT_LEAK" : card.text })),
       islands: [{ ...baseDoc.islands[0], summaryReviewed: false, summaryText: "SECRET_TEXT_DO_NOT_LEAK" }],
@@ -418,7 +418,7 @@ describe("buildExportBundle", () => {
   });
 
   test("strips Card.meta from shared document.json by default (schemas.md 15.4)", () => {
-    const docWithMeta: DocumentV2 = {
+    const docWithMeta: DocumentV1 = {
       ...baseDoc,
       cards: baseDoc.cards.map((card) =>
         card.id === "c1" ? { ...card, meta: { seq: 7, source: "INTERVIEW_A_LINE_12" } } : card,
@@ -453,7 +453,7 @@ describe("buildExportBundle", () => {
   });
 
   test("keeps Card.meta in shared document.json when includeSourceReferences is opted in", () => {
-    const docWithMeta: DocumentV2 = {
+    const docWithMeta: DocumentV1 = {
       ...baseDoc,
       cards: baseDoc.cards.map((card) =>
         card.id === "c1" ? { ...card, meta: { seq: 7, source: "INTERVIEW_A_LINE_12" } } : card,
@@ -482,7 +482,7 @@ describe("buildExportBundle", () => {
     });
 
     const documentJson = String(files.find((file) => file.path.endsWith("/document.json"))?.content ?? "");
-    const parsed = JSON.parse(documentJson) as DocumentV2;
+    const parsed = JSON.parse(documentJson) as DocumentV1;
     expect(parsed.cards.find((card) => card.id === "c1")?.meta).toEqual({ seq: 7, source: "INTERVIEW_A_LINE_12" });
   });
 
@@ -494,7 +494,7 @@ describe("buildExportBundle", () => {
     } as unknown as typeof Worker;
     vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    const docWithMeta: DocumentV2 = {
+    const docWithMeta: DocumentV1 = {
       ...baseDoc,
       cards: baseDoc.cards.map((card) =>
         card.id === "c1" ? { ...card, meta: { seq: 7, source: "INTERVIEW_A_LINE_12" } } : card,

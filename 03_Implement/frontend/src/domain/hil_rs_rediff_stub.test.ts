@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildHilRsRediffStub } from "./hil_rs_rediff_stub";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-const CURRENT_DOC: DocumentV2 = {
-  version: 2,
+const CURRENT_DOC: DocumentV1 = {
+  version: 1,
   id: "doc",
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
@@ -18,7 +18,7 @@ const CURRENT_DOC: DocumentV2 = {
 
 describe("buildHilRsRediffStub", () => {
   it("builds reversible diff ops for add/move/remove", () => {
-    const suggested: DocumentV2 = {
+    const suggested: DocumentV1 = {
       ...CURRENT_DOC,
       cards: [
         { id: "c1", text: "alpha", x: 2, y: 3 },
@@ -48,7 +48,7 @@ describe("buildHilRsRediffStub", () => {
 
 
   it("normalizes traceKey ordering and deduplicates critique IDs", () => {
-    const suggested: DocumentV2 = {
+    const suggested: DocumentV1 = {
       ...CURRENT_DOC,
       cards: [{ id: "c1", text: "alpha", x: 2, y: 3 }],
     };
@@ -90,7 +90,7 @@ describe("buildHilRsRediffStub", () => {
 
 
   it("keeps deterministic diff op ordering regardless of suggested card order", () => {
-    const suggested: DocumentV2 = {
+    const suggested: DocumentV1 = {
       ...CURRENT_DOC,
       cards: [
         { id: "c3", text: "gamma", x: 20, y: 20 },
@@ -119,7 +119,7 @@ describe("buildHilRsRediffStub", () => {
 
 
   it("returns null when critique inputs are missing", () => {
-    const suggested: DocumentV2 = {
+    const suggested: DocumentV1 = {
       ...CURRENT_DOC,
       cards: [
         { id: "c1", text: "alpha", x: 2, y: 3 },
@@ -137,7 +137,7 @@ describe("buildHilRsRediffStub", () => {
   });
 
   it("returns null when critique inputs violate A1-CRITIQUE-IF", () => {
-    const suggested: DocumentV2 = {
+    const suggested: DocumentV1 = {
       ...CURRENT_DOC,
       cards: [{ id: "c1", text: "alpha", x: 2, y: 3 }],
     };

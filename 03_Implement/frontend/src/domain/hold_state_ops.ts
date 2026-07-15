@@ -1,4 +1,4 @@
-import type { Card, DocumentV2, HoldState } from "./types";
+import type { Card, DocumentV1, HoldState } from "./types";
 
 export type HoldStateSelection = HoldState | "active";
 
@@ -22,11 +22,11 @@ export function updateCardHoldState(
 }
 
 export function updateCardHoldStateAndShelf(
-  document: DocumentV2,
+  document: DocumentV1,
   cardId: string,
   selection: HoldStateSelection,
   shelvedAt: string,
-): DocumentV2 {
+): DocumentV1 {
   const cards = updateCardHoldState(document.cards, cardId, selection);
   const cardsChanged = cards.some((card, index) => card !== document.cards[index]);
   const currentShelf = document.shelf ?? [];

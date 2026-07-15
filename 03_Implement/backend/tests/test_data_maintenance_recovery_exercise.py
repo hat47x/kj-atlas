@@ -47,7 +47,7 @@ def _backup_sqlite_database(source: Path, destination: Path) -> None:
 
 def _recovery_document(doc_id: str) -> dict:
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
         "title": "data maintenance recovery exercise",
         "createdAt": "2026-05-25T00:00:00Z",
@@ -146,7 +146,7 @@ def test_sqlite_backup_restore_exercise_preserves_document_logs_and_safe_export_
         loaded = client.get(f"/docs/{doc_id}")
         assert loaded.status_code == 200
         loaded_json = loaded.json()
-        assert loaded_json["version"] == 2
+        assert loaded_json["version"] == 1
         assert loaded_json["id"] == doc_id
         assert loaded_json["cards"][0]["textReviewed"] is True
         assert loaded_json["cards"][1]["textReviewed"] is False

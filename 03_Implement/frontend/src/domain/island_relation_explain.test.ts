@@ -5,10 +5,10 @@ import {
   formatIslandRelationExplanationMarkdown,
   type IslandRelationEdgeSelection,
 } from "./island_relation_explain";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-const document: DocumentV2 = {
-  version: 2,
+const document: DocumentV1 = {
+  version: 1,
   id: "doc-1",
   createdAt: "2026-01-01T00:00:00Z",
   updatedAt: "2026-01-01T00:00:00Z",

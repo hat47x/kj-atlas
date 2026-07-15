@@ -36,7 +36,7 @@ function buildPerformanceBudgetDocument() {
   }));
 
   return {
-    version: 2,
+    version: 1,
     id: "doc_perf_budget_01_representative",
     title: "PERF-BUDGET-01 representative document",
     createdAt: now,

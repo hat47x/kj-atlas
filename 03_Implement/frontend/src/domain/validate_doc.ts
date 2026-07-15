@@ -3,7 +3,7 @@ import type {
   ContradictionSignalReviewStatus,
   CritiqueInput,
   DeterministicTieBreak,
-  DocumentV2,
+  DocumentV1,
   EdgeType,
   EvidenceLink,
   Island,
@@ -20,7 +20,7 @@ import { canUsePolygonPoints } from "./geometry/polygon_edit";
 
 type ValidationSuccess = {
   ok: true;
-  document: DocumentV2;
+  document: DocumentV1;
 };
 
 type ValidationFailure = {
@@ -28,7 +28,7 @@ type ValidationFailure = {
   errors: string[];
 };
 
-export type ValidateDocumentV2StrictResult = ValidationSuccess | ValidationFailure;
+export type ValidateDocumentV1StrictResult = ValidationSuccess | ValidationFailure;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -100,7 +100,7 @@ function validateA1TargetRef(value: unknown): boolean {
   return typeof value === "string" && A1_TARGET_REF_PATTERN.test(value);
 }
 
-function validateCard(item: unknown, index: number, errors: string[]): item is DocumentV2["cards"][number] {
+function validateCard(item: unknown, index: number, errors: string[]): item is DocumentV1["cards"][number] {
   const path = `cards[${index}]`;
   if (!isRecord(item)) {
     errors.push(`${path}: must be an object`);
@@ -204,7 +204,7 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
   return valid;
 }
 
-function validateShelfEntry(item: unknown, index: number, errors: string[]): item is NonNullable<DocumentV2["shelf"]>[number] {
+function validateShelfEntry(item: unknown, index: number, errors: string[]): item is NonNullable<DocumentV1["shelf"]>[number] {
   const path = `shelf[${index}]`;
   if (!isRecord(item)) {
     errors.push(`${path}: must be an object`);
@@ -228,7 +228,7 @@ function validateShelfEntry(item: unknown, index: number, errors: string[]): ite
   return valid;
 }
 
-function validateEdge(item: unknown, index: number, errors: string[]): item is DocumentV2["edges"][number] {
+function validateEdge(item: unknown, index: number, errors: string[]): item is DocumentV1["edges"][number] {
   const path = `edges[${index}]`;
   if (!isRecord(item)) {
     errors.push(`${path}: must be an object`);
@@ -1145,7 +1145,7 @@ function validateNarrative(item: unknown, index: number, errors: string[]): item
   return valid;
 }
 
-export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2StrictResult {
+export function validateDocumentV1Strict(value: unknown): ValidateDocumentV1StrictResult {
   const errors: string[] = [];
 
   if (!isRecord(value)) {
@@ -1181,8 +1181,8 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
     errors
   );
 
-  if (value.version !== 2) {
-    errors.push("document.version: must be the number 2 (DocumentV2 only)");
+  if (value.version !== 1) {
+    errors.push("document.version: must be the number 2 (DocumentV1 only)");
   }
   if (typeof value.id !== "string") {
     errors.push("document.id: must be a string");
@@ -1378,5 +1378,5 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
     return { ok: false, errors };
   }
 
-  return { ok: true, document: value as DocumentV2 };
+  return { ok: true, document: value as DocumentV1 };
 }

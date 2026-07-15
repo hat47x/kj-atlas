@@ -88,6 +88,7 @@ def _sample_payload(doc_id: str) -> dict:
         "transform": {"panX": 0, "panY": 0, "zoom": 1},
         "cards": [{"id": "card-1", "text": "alpha", "x": 0, "y": 0}],
         "edges": [],
+        "islands": [],
     }
 
 

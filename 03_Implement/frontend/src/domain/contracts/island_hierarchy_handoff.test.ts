@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import { validateIslandHierarchyContractV1 } from "./island_contracts";
 import {
   evaluateIslandHierarchyA3GoNoGo,
@@ -9,9 +9,9 @@ import {
   validateIslandHierarchyRoundTrip,
 } from "./island_hierarchy_handoff";
 
-function createHierarchyDocument(): DocumentV2 {
+function createHierarchyDocument(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-hierarchy",
     createdAt: "2026-03-01T00:00:00.000Z",
     updatedAt: "2026-03-01T00:00:00.000Z",
@@ -31,11 +31,11 @@ function createHierarchyDocument(): DocumentV2 {
 }
 
 describe("projectIslandHierarchyContractV1", () => {
-  it("projects parent/child edges from DocumentV2 islands", () => {
+  it("projects parent/child edges from DocumentV1 islands", () => {
     const projected = projectIslandHierarchyContractV1(createHierarchyDocument());
 
     expect(projected).toEqual({
-      schemaVersion: "2",
+      schemaVersion: "1",
       islands: [
         { id: "root", parentIslandId: null, childIslandIds: ["child"] },
         { id: "child", parentIslandId: "root", childIslandIds: ["grand"] },

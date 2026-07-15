@@ -1,5 +1,5 @@
 import { getDerivedIslandEdges } from "../island_edge_aggregate";
-import type { DocumentV2, Island } from "../types";
+import type { DocumentV1, Island } from "../types";
 import { buildReadingList, type ReadingPathViewState } from "./reading_path";
 
 export type FindingEntityRef = {
@@ -42,7 +42,7 @@ function normalizeEmptyText(value: string | undefined): boolean {
   return (value ?? "").trim().length === 0;
 }
 
-function countIslandDegrees(doc: DocumentV2): Map<string, number> {
+function countIslandDegrees(doc: DocumentV1): Map<string, number> {
   const degreeByIslandId = new Map<string, number>(doc.islands.map((island) => [island.id, 0]));
 
   const addEdge = (a: string, b: string) => {
@@ -74,7 +74,7 @@ function pickIslandRefs(islands: Island[], predicate: (island: Island) => boolea
 }
 
 export function analyzeOutlineQuality(
-  doc: DocumentV2,
+  doc: DocumentV1,
   readingState: ReadingPathViewState,
   options: AnalyzeOutlineQualityOptions = {},
 ): OutlineQualityReport {

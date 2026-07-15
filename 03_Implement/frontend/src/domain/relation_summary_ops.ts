@@ -1,9 +1,9 @@
-import type { DocumentV2, EdgeType, KnownEdgeType, RelationSummary, RelationSummaryHistoryEntry } from "./types";
+import type { DocumentV1, EdgeType, KnownEdgeType, RelationSummary, RelationSummaryHistoryEntry } from "./types";
 import { KNOWN_EDGE_TYPES } from "./types";
 import type { IslandRelationEdgeSelection } from "./island_relation_explain";
 
 export type SummarizeIslandRelationPayload = {
-  doc: DocumentV2;
+  doc: DocumentV1;
   islandAId: string;
   islandBId: string;
   relationType: KnownEdgeType | "unknown";
@@ -80,7 +80,7 @@ export function buildRelationSummarySourceSignature(edge: IslandRelationEdgeSele
 }
 
 export function getGroundingCardIdsForRelationSummary(
-  document: DocumentV2,
+  document: DocumentV1,
   edge: IslandRelationEdgeSelection
 ): string[] {
   if (edge.isDerived) {
@@ -93,7 +93,7 @@ export function getGroundingCardIdsForRelationSummary(
 }
 
 export function buildSummarizeIslandRelationPayload(
-  document: DocumentV2,
+  document: DocumentV1,
   edge: IslandRelationEdgeSelection
 ): SummarizeIslandRelationPayload {
   const groundingCardIds = getGroundingCardIdsForRelationSummary(document, edge);
@@ -124,7 +124,7 @@ export function buildSummarizeIslandRelationPayload(
   };
 }
 
-export function upsertRelationSummary(document: DocumentV2, summary: RelationSummary): DocumentV2 {
+export function upsertRelationSummary(document: DocumentV1, summary: RelationSummary): DocumentV1 {
   const existing = document.relationSummaries ?? [];
   const next = [...existing];
   const index = next.findIndex((item) => item.sourceSignature === summary.sourceSignature);
@@ -141,9 +141,9 @@ export function upsertRelationSummary(document: DocumentV2, summary: RelationSum
 }
 
 export function upsertRelationSummaryWithHistory(
-  document: DocumentV2,
+  document: DocumentV1,
   patch: UpsertRelationSummaryWithHistoryPatch
-): DocumentV2 {
+): DocumentV1 {
   const existing = document.relationSummaries ?? [];
   const index = existing.findIndex((item) => item.sourceSignature === patch.sourceSignature);
   const previous = index >= 0 ? existing[index] : null;
@@ -237,7 +237,7 @@ export function upsertRelationSummaryWithHistory(
 }
 
 export function getRelationSummaryBySourceSignature(
-  document: DocumentV2,
+  document: DocumentV1,
   sourceSignature: string
 ): RelationSummary | null {
   return document.relationSummaries?.find((item) => item.sourceSignature === sourceSignature) ?? null;

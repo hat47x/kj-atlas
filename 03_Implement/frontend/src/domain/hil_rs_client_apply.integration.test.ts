@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest";
 import { applyHilRsRediffPayload } from "./hil_rs_apply";
 import { createHilRsClient } from "./hil_rs_client";
 import { HIL_RS_CRITIQUE_SCHEMA_VERSION, type HilRsCritiqueInput } from "./hil_rs_contract";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-const CURRENT: DocumentV2 = {
+const CURRENT: DocumentV1 = {
   id: "doc-current",
-  version: 2,
+  version: 1,
   title: "current",
   createdAt: "2026-05-10T00:00:00.000Z",
   updatedAt: "2026-05-10T00:00:00.000Z",
@@ -20,7 +20,7 @@ const CURRENT: DocumentV2 = {
   edges: [],
 };
 
-const SUGGESTED: DocumentV2 = {
+const SUGGESTED: DocumentV1 = {
   ...CURRENT,
   cards: [
     { id: "c1", text: "alpha (edited)", x: 10, y: 15 },
@@ -59,8 +59,8 @@ describe("hil_rs_client_apply integration", () => {
   });
 
   it("preserves critique data through full preview-rediff-apply loop (DOMAIN-EXPR-03)", () => {
-    const docWithCritique: DocumentV2 = {
-      id: "doc-critique", version: 2, title: "with critique",
+    const docWithCritique: DocumentV1 = {
+      id: "doc-critique", version: 1, title: "with critique",
       createdAt: "2026-05-10T00:00:00.000Z", updatedAt: "2026-05-10T00:00:00.000Z",
       transform: { panX: 0, panY: 0, zoom: 1 },
       cards: [
@@ -69,7 +69,7 @@ describe("hil_rs_client_apply integration", () => {
       ],
       islands: [], edges: [],
     };
-    const suggested: DocumentV2 = { ...docWithCritique, cards: [
+    const suggested: DocumentV1 = { ...docWithCritique, cards: [
       { id: "c1", text: "alpha (edited)", x: 10, y: 15, critique: "too close", critiqueTags: ["too_close"] },
       { id: "c2", text: "beta", x: 100, y: 50, critique: "feels off", critiqueTags: ["feels_off"] },
       { id: "c3", text: "gamma", x: 230, y: 70 },

@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { resolveKnownEdgeType } from "../domain/types";
 import { SafeModePolicy } from "../domain/policy/safe_mode";
 import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
@@ -7,7 +7,7 @@ import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
 // §3): AgentTaskPackage v1 -- a single Markdown "task sheet" a human hands to an
 // external flat-rate AI agent (copy/paste or file attach; Tier 0 only, no
 // automatic transport). Content is a REAL excerpt of the current document
-// (direct DocumentV2 traversal), not a round-trip through the backend's
+// (direct DocumentV1 traversal), not a round-trip through the backend's
 // /context/query and /context/bundle endpoints: `issue-CE1-context-query-bundle-foundation.md`
 // fixes CE1 as "mock-first, contract-only" (stubDatasetId is a closed-world
 // literal, "A2-minimal-v1", accepting no real document) until a separate,
@@ -50,7 +50,7 @@ export type AgentTaskExportOptions = {
 };
 
 export type AgentTaskSheetInput = {
-  doc: DocumentV2;
+  doc: DocumentV1;
   taskKind: AgentTaskKind;
   selectedCardIds: string[];
   selectedIslandIds: string[];

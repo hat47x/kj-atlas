@@ -10,7 +10,7 @@ const PRIMARY_FLOW = '[data-ui-region="primary-flow"]';
 
 function buildDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "KA fields fixture",
     createdAt: "2026-07-09T00:00:00.000Z",

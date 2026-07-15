@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { buildEvidenceTraceMd } from "./evidence_trace";
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 
-function makeDoc(): DocumentV2 {
+function makeDoc(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-1",
     createdAt: "2025-01-01T00:00:00.000Z",
     updatedAt: "2025-01-01T00:00:00.000Z",
@@ -49,8 +49,8 @@ describe("buildEvidenceTraceMd", () => {
     const mdDepth1 = buildEvidenceTraceMd(makeDoc(), "target", { depthLimit: 1 });
     expect(mdDepth1).not.toContain("Loop (id: loop)");
 
-    const stopAtFactDoc: DocumentV2 = {
-      version: 2,
+    const stopAtFactDoc: DocumentV1 = {
+      version: 1,
       id: "doc-stop",
       createdAt: "2025-01-01T00:00:00.000Z",
       updatedAt: "2025-01-01T00:00:00.000Z",

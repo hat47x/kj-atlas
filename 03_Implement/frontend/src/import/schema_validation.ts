@@ -1,5 +1,5 @@
-import { validateAndUpgradeImportedDocument } from "../domain/validate";
-import type { DocumentV2 } from "../domain/types";
+import { validateImportedDocument } from "../domain/validate";
+import type { DocumentV1 } from "../domain/types";
 import { validateImportViewMetadata, type ExportViewMetadata } from "../export/view_metadata";
 import { DEFAULT_VIEW_PRESETS } from "../domain/view/presets";
 import { isLocale } from "../i18n/translate";
@@ -131,7 +131,7 @@ function mapUpgradeErrorToValidationError(error: string): ValidationError {
 export function validateDocument(
   input: unknown,
   options: { evidenceEndpointSeverity?: "error" | "warn" } = {}
-): ValidateResult<DocumentV2> {
+): ValidateResult<DocumentV1> {
   if (!isRecord(input)) {
     return {
       ok: false,
@@ -149,7 +149,7 @@ export function validateDocument(
     cards: toCardArray(input.cards),
   };
 
-  const parsed = validateAndUpgradeImportedDocument(normalizedInput);
+  const parsed = validateImportedDocument(normalizedInput);
   if (!parsed.ok) {
     return { ok: false, errors: [mapUpgradeErrorToValidationError(parsed.error)] };
   }

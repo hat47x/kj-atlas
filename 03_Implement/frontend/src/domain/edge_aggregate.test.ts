@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { getEdgesToRender } from "./edge_aggregate";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-const baseDoc: DocumentV2 = {
-  version: 2,
+const baseDoc: DocumentV1 = {
+  version: 1,
   id: "doc-1",
   createdAt: "2026-01-01T00:00:00Z",
   updatedAt: "2026-01-01T00:00:00Z",
@@ -22,7 +22,7 @@ const baseDoc: DocumentV2 = {
 
 describe("getEdgesToRender", () => {
   it("returns original edges when hideSourceCards is false", () => {
-    const doc: DocumentV2 = {
+    const doc: DocumentV1 = {
       ...baseDoc,
       edges: [{ id: "e1", fromId: "source-a1", toId: "canon-b", type: "related" }],
     };
@@ -42,7 +42,7 @@ describe("getEdgesToRender", () => {
   });
 
   it("aggregates hidden source edges and counts duplicates", () => {
-    const doc: DocumentV2 = {
+    const doc: DocumentV1 = {
       ...baseDoc,
       edges: [
         { id: "e1", fromId: "source-a1", toId: "canon-b", type: "related" },
@@ -69,7 +69,7 @@ describe("getEdgesToRender", () => {
   });
 
   it("aggregates source-to-island edges", () => {
-    const doc: DocumentV2 = {
+    const doc: DocumentV1 = {
       ...baseDoc,
       edges: [
         {
@@ -79,7 +79,7 @@ describe("getEdgesToRender", () => {
           fromKind: "card",
           toKind: "island",
           type: "related",
-        } as DocumentV2["edges"][number],
+        } as DocumentV1["edges"][number],
       ],
     };
 

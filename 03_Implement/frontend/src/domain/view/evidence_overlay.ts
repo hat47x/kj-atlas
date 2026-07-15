@@ -1,4 +1,4 @@
-import type { DocumentV2, EvidenceLink } from "../types";
+import type { DocumentV1, EvidenceLink } from "../types";
 
 export type EvidenceOverlayMode = "supports" | "contradicts" | "both";
 
@@ -26,7 +26,7 @@ function buildMap(entries: Array<[string, EvidenceLink[]]>): Map<string, Evidenc
   return map;
 }
 
-export function buildEvidenceAdjacency(doc: Pick<DocumentV2, "evidenceLinks">): EvidenceAdjacency {
+export function buildEvidenceAdjacency(doc: Pick<DocumentV1, "evidenceLinks">): EvidenceAdjacency {
   const outSupportsEntries = new Map<string, EvidenceLink[]>();
   const outContradictsEntries = new Map<string, EvidenceLink[]>();
   const inSupportsEntries = new Map<string, EvidenceLink[]>();

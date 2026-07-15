@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { computeVisibleBounds } from "../domain/geometry/bounds";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { exportCanvasToPngBlob, exportSvgToPngBlob } from "./canvas_png";
 
 class MockImage {
@@ -15,9 +15,9 @@ class MockImage {
   }
 }
 
-function buildDoc(): DocumentV2 {
+function buildDoc(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc_png",
     title: "PNG",
     createdAt: "2026-02-15T00:00:00.000Z",

@@ -95,7 +95,7 @@ async function clickButtonByText(page, fragments) {
 // ---------------------------------------------------------------------------
 function buildWorkModeDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Work mode design review fixture",
     createdAt: ts,
@@ -254,7 +254,7 @@ async function captureWorkMode(browser) {
 // ---------------------------------------------------------------------------
 function buildAgentDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_agent_design_review_fixture",
     title: "Agent panel design review fixture",
     createdAt: ts,
@@ -399,7 +399,7 @@ async function captureAgentPanels(browser) {
 // ---------------------------------------------------------------------------
 function buildStartAreaDocument(cardTexts) {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Start/search/view-controls design review fixture",
     createdAt: ts,

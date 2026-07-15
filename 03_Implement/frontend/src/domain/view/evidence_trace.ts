@@ -1,4 +1,4 @@
-import type { Card, DocumentV2 } from "../types";
+import type { Card, DocumentV1 } from "../types";
 import { SafeModePolicy } from "../policy/safe_mode";
 
 type ClaimType = "fact" | "claim" | "hypothesis" | "unknown";
@@ -109,7 +109,7 @@ function shouldIncludeType(claimType: ClaimType, options: EvidenceTraceOptions):
   return options.includeUnknown ?? true;
 }
 
-export function buildEvidenceTraceMd(doc: DocumentV2, targetCardId: string, options: EvidenceTraceOptions = {}): string {
+export function buildEvidenceTraceMd(doc: DocumentV1, targetCardId: string, options: EvidenceTraceOptions = {}): string {
   const depthLimit = clampDepthLimit(options.depthLimit);
   const stopAtFacts = options.stopAtFacts ?? false;
   const maxNodes = clampMaxNodes(options.maxNodes);

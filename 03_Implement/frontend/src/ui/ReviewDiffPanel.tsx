@@ -1,11 +1,11 @@
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import type { MergeItem } from "../diff/merge_items";
 import type { MergeItemEvaluation } from "../diff/merge_dependencies";
 import { t } from "../i18n/translate";
 
 type ReviewDiffPanelProps = {
   comparisonFileName: string | null;
-  comparisonDocument: DocumentV2 | null;
+  comparisonDocument: DocumentV1 | null;
   mergeItems: MergeItem[];
   evaluations: MergeItemEvaluation[];
   selectedItemIds: Set<string>;

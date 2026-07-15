@@ -13,7 +13,7 @@ const RECENT_STORAGE_KEY = "kj-atlas/recent-doc-ids";
 
 function buildDocument(id: string, title: string) {
   return {
-    version: 2,
+    version: 1,
     id,
     title,
     createdAt: "2026-07-13T00:00:00.000Z",

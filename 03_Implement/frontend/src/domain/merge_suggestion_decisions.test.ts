@@ -6,11 +6,11 @@ import {
   listMergeSuggestionDecisionsByGroup,
   restoreMergeSuggestionDecisionsBySnapshot,
 } from "./merge_suggestion_decisions";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-function createBaseDocument(): DocumentV2 {
+function createBaseDocument(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-1",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
@@ -34,7 +34,7 @@ describe("merge_suggestion_decisions", () => {
       { id: "d4", decision: "defer", editedText: "alpha defer" },
     ];
 
-    const updated = appends.reduce<DocumentV2>((doc, append, index) => {
+    const updated = appends.reduce<DocumentV1>((doc, append, index) => {
       const next = appendMergeSuggestionDecision(
         doc,
         {
@@ -94,7 +94,7 @@ describe("merge_suggestion_decisions", () => {
   });
 
   it("returns latest decision per group", () => {
-    const decisions: DocumentV2["mergeSuggestionDecisions"] = [
+    const decisions: DocumentV1["mergeSuggestionDecisions"] = [
       {
         id: "d1",
         groupId: "g1",
@@ -195,7 +195,7 @@ describe("merge_suggestion_decisions", () => {
   });
 
   it("lists decision history by group without auto-confirming representative merge", () => {
-    const decisions: DocumentV2["mergeSuggestionDecisions"] = [
+    const decisions: DocumentV1["mergeSuggestionDecisions"] = [
       {
         id: "d1",
         groupId: "g1",
@@ -240,7 +240,7 @@ describe("merge_suggestion_decisions", () => {
   });
 
   it("restores only contract-valid actions for a given snapshot version", () => {
-    const decisions: DocumentV2["mergeSuggestionDecisions"] = [
+    const decisions: DocumentV1["mergeSuggestionDecisions"] = [
       {
         id: "d1",
         groupId: "g1",
@@ -301,7 +301,7 @@ describe("merge_suggestion_decisions", () => {
   });
 
   it("restores entries in append order without re-sorting by timestamps", () => {
-    const decisions: DocumentV2["mergeSuggestionDecisions"] = [
+    const decisions: DocumentV1["mergeSuggestionDecisions"] = [
       {
         id: "d2",
         groupId: "g1",

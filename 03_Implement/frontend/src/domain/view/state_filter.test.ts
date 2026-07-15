@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import {
   collectCardIdsWithEvidence,
   createEmptyDomainStateFilter,
@@ -8,8 +8,8 @@ import {
   toggleDomainStateFilter,
 } from "./state_filter";
 
-const document: DocumentV2 = {
-  version: 2,
+const document: DocumentV1 = {
+  version: 1,
   id: "doc",
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",

@@ -30,7 +30,7 @@ test("importing a self-intersecting polygon document degrades invalid polygon to
 
   const now = new Date().toISOString();
   const invalidPolygonDoc = {
-    version: 2,
+    version: 1,
     id: "doc_e2e_polygon_self_intersection",
     createdAt: now,
     updatedAt: now,

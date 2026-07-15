@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { Card, DocumentV2 } from "./types";
+import type { Card, DocumentV1 } from "./types";
 import { collectMergeCandidates } from "./merge_candidates";
 
-function createDocument(cards: Card[]): DocumentV2 {
+function createDocument(cards: Card[]): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-1",
     createdAt: "2026-02-28T00:00:00.000Z",
     updatedAt: "2026-02-28T00:00:00.000Z",

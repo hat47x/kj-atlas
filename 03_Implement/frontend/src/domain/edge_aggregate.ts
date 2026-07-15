@@ -1,4 +1,4 @@
-import { isSourceCard, type DocumentV2, type EdgeEndpointKind, type EdgeType } from "./types";
+import { isSourceCard, type DocumentV1, type EdgeEndpointKind, type EdgeType } from "./types";
 
 export type RenderEdge = {
   id: string;
@@ -31,7 +31,7 @@ function edgeKey(from: Endpoint, to: Endpoint, type: EdgeType): string {
   return `${endpointKey(from)}|${endpointKey(to)}|${type}`;
 }
 
-export function getEdgesToRender(document: DocumentV2, hideSourceCards: boolean): RenderEdge[] {
+export function getEdgesToRender(document: DocumentV1, hideSourceCards: boolean): RenderEdge[] {
   const cardById = new Map(document.cards.map((card) => [card.id, card]));
   const hiddenSourceCardIdSet = new Set<string>();
 

@@ -7,7 +7,7 @@ const ROOT = "kj-atlas-review-pack-20260221-000000";
 const diagnosticsText = "# Diagnostics\n\nPotential issue: <script>alert(1)</script>\n";
 
 const baseDocument = {
-  version: 2,
+  version: 1,
   id: "doc-review-pack-workflow",
   title: "Workflow Fixture",
   createdAt: "2026-02-21T00:00:00.000Z",

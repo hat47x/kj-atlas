@@ -1,8 +1,8 @@
-import type { DocumentV2, Island } from "../types";
+import type { DocumentV1, Island } from "../types";
 
 export type SetIslandCollapsedResult = {
   changed: boolean;
-  nextDocument: DocumentV2;
+  nextDocument: DocumentV1;
   rejectedReason?: "island-not-found";
 };
 
@@ -17,7 +17,7 @@ function updateIslandCollapsed(island: Island, islandId: string, collapsed: bool
   };
 }
 
-export function setIslandCollapsed(document: DocumentV2, islandId: string, collapsed: boolean): SetIslandCollapsedResult {
+export function setIslandCollapsed(document: DocumentV1, islandId: string, collapsed: boolean): SetIslandCollapsedResult {
   let found = false;
   let changed = false;
 
@@ -51,7 +51,7 @@ export function setIslandCollapsed(document: DocumentV2, islandId: string, colla
   };
 }
 
-export function setAllIslandsCollapsed(document: DocumentV2, collapsed: boolean): { changed: boolean; nextDocument: DocumentV2 } {
+export function setAllIslandsCollapsed(document: DocumentV1, collapsed: boolean): { changed: boolean; nextDocument: DocumentV1 } {
   let changed = false;
   const nextIslands = document.islands.map((island) => {
     if (island.collapsed === collapsed) {

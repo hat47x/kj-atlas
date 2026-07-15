@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import {
   type ContractValidationResult,
   type IslandHierarchyContractV1Document,
@@ -16,7 +16,7 @@ export type IslandHierarchyValidationLog = {
   evidence: string;
 };
 
-export function projectIslandHierarchyContractV1(document: DocumentV2): IslandHierarchyContractV1Document {
+export function projectIslandHierarchyContractV1(document: DocumentV1): IslandHierarchyContractV1Document {
   return {
     schemaVersion: String(document.version),
     islands: document.islands.map((island) => ({
@@ -97,7 +97,7 @@ export function evaluateIslandHierarchyA3GoNoGo(logs: IslandHierarchyValidationL
   return { go: true, reason: "go" };
 }
 
-export function validateIslandHierarchyRoundTrip(document: DocumentV2): ContractValidationResult<IslandHierarchyContractV1Document> {
+export function validateIslandHierarchyRoundTrip(document: DocumentV1): ContractValidationResult<IslandHierarchyContractV1Document> {
   const projected = projectIslandHierarchyContractV1(document);
   const reloaded = JSON.parse(JSON.stringify(projected)) as IslandHierarchyContractV1Document;
   return validateIslandHierarchyContractV1(reloaded);
