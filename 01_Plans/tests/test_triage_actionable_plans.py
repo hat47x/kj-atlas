@@ -65,7 +65,7 @@ class TriageActionablePlansTest(unittest.TestCase):
         self.assertEqual(report["summary"]["ready_issue_count"], 1)
         self.assertEqual(report["summary"]["blocked_issue_count"], 1)
         ready = report["actionable_issues"][0]
-        self.assertEqual(ready["backlog_id"], "AAA-01")
+        self.assertEqual(ready["backlog_id"], "AAA-01-ready")
         self.assertTrue(ready["ready"])
         blocked = report["actionable_issues"][1]
         self.assertFalse(blocked["ready"])

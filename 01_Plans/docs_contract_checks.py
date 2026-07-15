@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
@@ -102,6 +103,17 @@ SAFETY_INVARIANT_PATTERNS = (
         ),
     ),
 )
+
+
+def tracked_markdown_paths(root: Path) -> list[Path]:
+    """Return relative paths of git-tracked markdown files under *root*."""
+    result = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "-z", "--", "*.md"],
+        capture_output=True, text=True, check=True,
+    )
+    return [
+        Path(p) for p in result.stdout.split("\0") if p
+    ]
 
 
 @dataclass(frozen=True)
