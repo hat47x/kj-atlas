@@ -151,3 +151,11 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 - T5 partial (H-D): `data_model_operations_overview.md` former §1.2/§1.3/§8〜§13を`history/data-model-operations-stream-d-2026-05.md`へ移し、元文書・履歴索引・reading guideの双方向導線を追加した。
 - 検証: Active issue validator 31件pass、triage active=31 / ready=14 / blocked=17 / stopper=0、validator unit 10件pass、CE1 backend contract 18件pass、CE1 frontend contract 9件pass、変更文書の相対link 17件エラー0、合成型定義の重複0、data model overviewの履歴見出し0。
 - 未完了: H-A/H-B/H-C（architecture/api/schemas履歴移動）、API縮約、AGENTS最終同期、contract/roundtrip testsの全量確認。契約値、runtime、Document version、SafeMode、share/export既定は変更していない。
+
+## 進捗記録 2026-07-15: H-A architecture history slice
+
+- T4 partial / T5 H-A: `architecture.md`のCE0 snapshot、旧§7A.2.1型・method・event-order再掲、2026-05-04 baseline、Stream B反映メモを`history/architecture-contract-freeze-formation-2026-04-to-05.md`へ物理移動した。
+- 現行側は責務・信頼境界を維持し、型を`schemas.md`、endpoint/status/errorを`api.md`、未解決CE1差異を`CE1-CONTRACT-01`へ参照する。履歴索引・inventory・元文書の双方向導線を同期した。
+- 検証: 移動元39行の履歴保持、変更文書の相対link 21件、`architecture.md`の履歴風見出し0件、Active issue validator 33件、validator/triage unit 11件、CE1 backend contract 18件、CE1 frontend contract 9件がpassした。
+- `main`統合後のActive集合は33件（Draft 18 / Open 8 / In Progress 7）。H-B/H-C、§7A.6/§7Bの責務別縮約、API縮約、AGENTS最終同期、contract/roundtrip tests全量確認は未完了。
+- 契約値、runtime、Document version、SafeMode、未レビュー保護、proposal-only、share/export既定は変更していない。

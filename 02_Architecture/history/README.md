@@ -23,6 +23,7 @@ Status: Informative history index
 
 | 履歴 | 元文書 | 対象期間 | 現行正本 |
 |---|---|---|---|
+| [Architecture contract-freeze formation history](architecture-contract-freeze-formation-2026-04-to-05.md) | `architecture.md` former §7A.0 snapshot / §7A.2.1 / post-§12 baseline / §13 | 2026-04-27〜2026-05-04 | `architecture.md` responsibility boundary、`schemas.md` types、`api.md` endpoints/errors |
 | [Data Model Operations — Stream D formation history](data-model-operations-stream-d-2026-05.md) | `data_model_operations_overview.md` former §1.2/§1.3/§8〜§13 | 2026-05-19〜2026-05-20 | `data_model_operations_overview.md` §1〜§7、`schemas.md` versioning |
 
 ## 移動規律
