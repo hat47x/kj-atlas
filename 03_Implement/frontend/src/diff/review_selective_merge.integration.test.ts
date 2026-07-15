@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { buildMergeItems } from "./merge_items";
 import { applySelectedMergeItemsAtomic, preflightMerge } from "./merge_apply";
 import evidenceAddBaseRaw from "../../tests/fixtures/review-selective-merge/evidence-add.base.json?raw";
@@ -20,8 +20,8 @@ const fixtureByName = {
 
 type FixtureName = keyof typeof fixtureByName;
 
-function loadFixture(name: FixtureName): DocumentV2 {
-  return JSON.parse(fixtureByName[name]) as DocumentV2;
+function loadFixture(name: FixtureName): DocumentV1 {
+  return JSON.parse(fixtureByName[name]) as DocumentV1;
 }
 
 describe("review diff selective merge fixtures", () => {

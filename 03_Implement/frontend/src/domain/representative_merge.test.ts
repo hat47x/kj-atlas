@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 import { createRepresentativeMerge } from "./representative_merge";
 
-function createDocument(): DocumentV2 {
+function createDocument(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc_1",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",

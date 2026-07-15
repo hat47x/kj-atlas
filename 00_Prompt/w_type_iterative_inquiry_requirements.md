@@ -168,8 +168,8 @@ AIの出力はproposal-onlyとし、`KJ_ATLAS_LLM_PROVIDER=none` でも、ラウ
 
 ## 8. データと安全の境界
 
-- 探究は、独立した `InquiryJourneyV1` と、不変の `RoundSnapshotV1` を親参照で結ぶDAGとして扱う。現行 `DocumentV2` へ履歴を埋め込まない。
-- `DocumentV2` は現在の可変作業文書として維持し、人が意味のある節目を確認したときに、その時点を再現できる成果を `RoundSnapshotV1` として確定する。
+- 探究は、独立した `InquiryJourneyV1` と、不変の `RoundSnapshotV1` を親参照で結ぶDAGとして扱う。現行 `DocumentV1` へ履歴を埋め込まない。
+- `DocumentV1` は現在の可変作業文書として維持し、人が意味のある節目を確認したときに、その時点を再現できる成果を `RoundSnapshotV1` として確定する。
 - `InquiryJourneyV1`、`RoundRecordV1`、`RoundSnapshotV1`、`RoundHandoffV1`、`CardLineageEdgeV1` は採択済み設計目標だが、実装・移行・運用CRUDが揃うまでは `L0: Planned` とし、現行APIや保存形式の実装済み契約と見なさない。
 - ラウンド段階はカード固有の真実ではなく、その探究でカードが果たす文脈上の役割として扱う。
 - 過去成果は読取専用とし、訂正は新しい反復または訂正記録で表現する。
@@ -213,13 +213,13 @@ AIの出力はproposal-onlyとし、`KJ_ATLAS_LLM_PROVIDER=none` でも、ラウ
 - プロジェクト管理、担当者管理、工数管理、ガントチャートを主目的にすること。
 - KJ法研修、熟練者の指導、研究上の妥当性確認を製品が代替すること。
 - AIが現場経験、仮説選択、意思決定、組織承認を代行すること。
-- 現行 `DocumentV2` へラウンド履歴を埋め込むこと。
+- 現行 `DocumentV1` へラウンド履歴を埋め込むこと。
 
 ## 11. 確定事項と実装時に計測する事項
 
 ADR-0057により、次を確定した。
 
-- 探究は `DocumentV2` のoptional入れ子ではなく、独立 `InquiryJourneyV1` と不変 `RoundSnapshotV1` のDAGで保持する。
+- 探究は `DocumentV1` のoptional入れ子ではなく、独立 `InquiryJourneyV1` と不変 `RoundSnapshotV1` のDAGで保持する。
 - カードは各スナップショット内で再現可能に保持し、安定IDと明示的な `CardLineageEdgeV1` で `carried`、`edited`、`derived`、`split`、`merged`、`new`、`retired` を辿る。観察から生じた仮説・方針は `derived` とし、元観察の編集と混同しない。
 - 共有物は参照する成果をすべて同梱した自己完結bundleとし、SafeModeのマスクは派生成果へ行う。
 - 操作単位の全面的イベントソーシング、固定ウィザード、進捗採点、組織承認ワークフローの同時導入は行わない。

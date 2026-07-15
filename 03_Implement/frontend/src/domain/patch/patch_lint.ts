@@ -1,4 +1,4 @@
-import type { DocumentV2, Edge, EvidenceLink, Island, RelationSummary } from "../types";
+import type { DocumentV1, Edge, EvidenceLink, Island, RelationSummary } from "../types";
 import type { PatchDocument, PatchOp } from "./patch_apply";
 
 export type PatchLintSeverity = "error" | "warn" | "info";
@@ -24,11 +24,11 @@ type EntityMaps = {
   evidenceLinks: Map<string, EvidenceLink>;
 };
 
-function buildCurrentSignature(doc: DocumentV2): string {
+function buildCurrentSignature(doc: DocumentV1): string {
   return `${doc.id}:${doc.updatedAt}`;
 }
 
-function applyPatchToMaps(currentDoc: DocumentV2, patch: PatchDocument): {
+function applyPatchToMaps(currentDoc: DocumentV1, patch: PatchDocument): {
   maps: EntityMaps;
   lastOpByEntityKey: Map<string, string>;
   deleteCardOpById: Map<string, string>;
@@ -116,7 +116,7 @@ function findUpsertEntityKey(op: PatchOp): string | null {
   }
 }
 
-export function lintPatchAgainstCurrentDoc(currentDoc: DocumentV2, patch: PatchDocument): PatchLintResult {
+export function lintPatchAgainstCurrentDoc(currentDoc: DocumentV1, patch: PatchDocument): PatchLintResult {
   const issues: PatchLintIssue[] = [];
 
   const opIdCounts = new Map<string, number>();

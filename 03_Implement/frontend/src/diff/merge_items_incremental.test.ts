@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { buildMergeItemsIncremental } from "./merge_items";
 import { createCancelableTaskRunner } from "../utils/compute_scheduler";
 
-function makeDoc(prefix: string): DocumentV2 {
+function makeDoc(prefix: string): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: prefix,
     title: prefix,
     createdAt: "2026-01-01T00:00:00.000Z",

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import { runDiagnosticsIncremental } from "./diagnostics_runner";
 import { createCancelableTaskRunner } from "../../utils/compute_scheduler";
 
-const doc: DocumentV2 = {
-  version: 2,
+const doc: DocumentV1 = {
+  version: 1,
   id: "d",
   title: "t",
   createdAt: "2026-01-01T00:00:00.000Z",

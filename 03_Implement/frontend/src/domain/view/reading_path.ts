@@ -1,5 +1,5 @@
 import { getCardWorldBounds, getIslandWorldBounds, type BoundsRect } from "../geometry/bounds";
-import type { Card, DocumentV2, Island } from "../types";
+import type { Card, DocumentV1, Island } from "../types";
 
 const LABEL_SNIPPET_MAX = 64;
 
@@ -64,7 +64,7 @@ function isIslandSummaryReviewed(island: Island): boolean {
   return island.summaryReviewed === true;
 }
 
-export function buildReadingList(doc: DocumentV2, viewState: ReadingPathViewState): ReadingItem[] {
+export function buildReadingList(doc: DocumentV1, viewState: ReadingPathViewState): ReadingItem[] {
   const cardsById = new Map(doc.cards.map((card) => [card.id, card]));
   const orderedItems: ReadingItem[] = [];
 

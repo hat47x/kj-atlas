@@ -34,7 +34,7 @@ test("hierarchy level switch changes only visibility and preserves sub-island/pl
 
   const now = new Date().toISOString();
   const hierarchyDocument = {
-    version: 2,
+    version: 1,
     id: "doc_e2e_hierarchy_level",
     createdAt: now,
     updatedAt: now,

@@ -4,7 +4,7 @@ import { validateDocument, validateView } from "./schema_validation";
 describe("schema_validation", () => {
   it("accepts cards as a map and normalizes to array", () => {
     const result = validateDocument({
-      version: 2,
+      version: 1,
       id: "doc-1",
       transform: { panX: 0, panY: 0, zoom: 1 },
       cards: {
@@ -22,7 +22,7 @@ describe("schema_validation", () => {
   });
 
   it("returns structured errors for invalid document", () => {
-    const result = validateDocument({ version: 2, id: "doc-1" });
+    const result = validateDocument({ version: 1, id: "doc-1" });
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors[0]).toMatchObject({ code: "V001", path: "cards" });
@@ -31,7 +31,7 @@ describe("schema_validation", () => {
 
   it("returns card field errors with actionable paths", () => {
     const result = validateDocument({
-      version: 2,
+      version: 1,
       id: "doc-1",
       transform: { panX: 0, panY: 0, zoom: 1 },
       cards: [{ id: "c1", text: 10 }],

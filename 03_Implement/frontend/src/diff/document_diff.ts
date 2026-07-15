@@ -1,4 +1,4 @@
-import type { DocumentV2, RelationSummary } from "../domain/types";
+import type { DocumentV1, RelationSummary } from "../domain/types";
 import type { MergeEntityKind, MergeItem, MergeItemKind } from "./merge_items";
 
 function stableSerialize(value: unknown): string {
@@ -65,7 +65,7 @@ function buildEntityItems<T extends { id: string }>(
   return result;
 }
 
-export function computeDocumentDiff(baseDoc: DocumentV2, incomingDoc: DocumentV2): {
+export function computeDocumentDiff(baseDoc: DocumentV1, incomingDoc: DocumentV1): {
   cards: MergeItem[];
   islands: MergeItem[];
   edges: MergeItem[];

@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import type { PatchDocument, PatchOp } from "./patch_apply";
 import type { PatchLintResult } from "./patch_lint";
 
@@ -198,7 +198,7 @@ export function proposeFixesAgainstSimulatedPostApply(tempModel: SimulatedPostAp
   return proposals;
 }
 
-export function proposeFixes(currentDoc: DocumentV2, patch: PatchDocument, lintResult: PatchLintResult): FixProposal[] {
+export function proposeFixes(currentDoc: DocumentV1, patch: PatchDocument, lintResult: PatchLintResult): FixProposal[] {
   const cardIds = new Set(currentDoc.cards.map((card) => card.id));
   const edgeIds = new Set(currentDoc.edges.map((edge) => edge.id));
 

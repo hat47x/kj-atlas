@@ -137,7 +137,7 @@ test("skips the gate entirely when the document has zero unreviewed/critique/con
       contentType: "application/json",
       headers: { ETag: '"pre-share-gate-clean"' },
       body: JSON.stringify({
-        version: 2,
+        version: 1,
         id: "doc_phase1_canvas",
         title: "clean fixture",
         createdAt: "2026-07-09T00:00:00.000Z",

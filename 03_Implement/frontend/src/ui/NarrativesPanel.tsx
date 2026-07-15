@@ -2,7 +2,7 @@ import { useId, useMemo, useState } from "react";
 
 import type { NarrativeIssue, NarrativeIssueReference } from "../api/client";
 import { buildNarrativeGrounding } from "../domain/grounding";
-import type { DocumentV2, EvidenceLink, Narrative } from "../domain/types";
+import type { DocumentV1, EvidenceLink, Narrative } from "../domain/types";
 import {
   buildNarrativeHtml,
   buildNarrativeMarkdown,
@@ -31,7 +31,7 @@ type NarrativesPanelProps = {
   generatedNarratives: Narrative[];
   onReferenceClick: (reference: NarrativeIssueReference) => void;
   readingOrderSnippets?: ReadingOrderSnippetMap;
-  document: DocumentV2 | null;
+  document: DocumentV1 | null;
   hideSourceCards: boolean;
   onFocusItem: (kind: "card" | "island", id: string) => void;
 };

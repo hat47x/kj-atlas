@@ -1,4 +1,4 @@
-import type { DocumentV2, Edge, EdgeType } from "./types";
+import type { DocumentV1, Edge, EdgeType } from "./types";
 
 export type DerivedIslandEdge = {
   id: string;
@@ -25,7 +25,7 @@ function edgeEndpointKind(edge: Edge, endpoint: "from" | "to"): "card" | "island
   return rawKind === "island" ? "island" : "card";
 }
 
-function getIslandEndpointsForEdgeEndpoint(document: DocumentV2, edge: Edge, endpoint: "from" | "to"): string[] {
+function getIslandEndpointsForEdgeEndpoint(document: DocumentV1, edge: Edge, endpoint: "from" | "to"): string[] {
   const endpointId = endpoint === "from" ? edge.fromId : edge.toId;
   const kind = edgeEndpointKind(edge, endpoint);
   if (kind === "island") {
@@ -35,7 +35,7 @@ function getIslandEndpointsForEdgeEndpoint(document: DocumentV2, edge: Edge, end
   return getIslandsForCard(document, endpointId);
 }
 
-export function getIslandsForCard(document: DocumentV2, cardId: string): string[] {
+export function getIslandsForCard(document: DocumentV1, cardId: string): string[] {
   const islandIds: string[] = [];
 
   for (const island of document.islands) {
@@ -47,7 +47,7 @@ export function getIslandsForCard(document: DocumentV2, cardId: string): string[
   return islandIds;
 }
 
-export function getDerivedIslandEdges(document: DocumentV2): DerivedIslandEdge[] {
+export function getDerivedIslandEdges(document: DocumentV1): DerivedIslandEdge[] {
   const realCardIdSet = new Set(document.cards.map((card) => card.id));
   const aggregate = new Map<
     string,

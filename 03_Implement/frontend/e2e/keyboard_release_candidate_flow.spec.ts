@@ -6,7 +6,7 @@ const START_PANEL = '[data-panel="start-document-entry"]';
 function buildDocument(cardTexts: string[]) {
   const now = "2026-06-04T00:00:00.000Z";
   return {
-    version: 2,
+    version: 1,
     id: "doc_keyboard_release_candidate",
     title: "Keyboard release candidate fixture",
     createdAt: now,

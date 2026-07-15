@@ -26,7 +26,7 @@ const files = {
 
 function buildDocument(cardTexts) {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Release screenshot sample",
     createdAt: "2026-06-03T00:00:00.000Z",

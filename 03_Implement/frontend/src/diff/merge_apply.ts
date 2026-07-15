@@ -1,7 +1,7 @@
 import { applyPatchWithResolutionsDetailed } from "../domain/patch/patch_apply";
 import { lintPatchAgainstCurrentDoc } from "../domain/patch/patch_lint";
 import type { PatchDocument, PatchOp } from "../domain/patch/patch_apply";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { validateDocument } from "../import/schema_validation";
 import type { MergeItem, MergeItemRef } from "./merge_items";
 import { createMergeAuditEntry, type MergeAuditEntry, type MergeAuditSource } from "../domain/view/audit_log";
@@ -27,7 +27,7 @@ export type MergePreflightResult =
       errors: MergeDiagnostic[];
     };
 
-export type MergeTransactionResult = { ok: true; document: DocumentV2; warnings: MergeDiagnostic[] } | { ok: false; errors: MergeDiagnostic[] };
+export type MergeTransactionResult = { ok: true; document: DocumentV1; warnings: MergeDiagnostic[] } | { ok: false; errors: MergeDiagnostic[] };
 
 function sortById<T extends { id: string }>(values: T[]): T[] {
   return [...values].sort((left, right) => left.id.localeCompare(right.id));
@@ -46,7 +46,7 @@ function toRefKey(ref: MergeItemRef): string {
   return `${ref.kind}:${ref.id}`;
 }
 
-function selectWithAutoPrerequisites(baseDoc: DocumentV2, incomingDoc: DocumentV2, selectedItems: MergeItem[]): { selectedItems: MergeItem[]; warnings: MergeDiagnostic[]; errors: MergeDiagnostic[] } {
+function selectWithAutoPrerequisites(baseDoc: DocumentV1, incomingDoc: DocumentV1, selectedItems: MergeItem[]): { selectedItems: MergeItem[]; warnings: MergeDiagnostic[]; errors: MergeDiagnostic[] } {
   const warnings: MergeDiagnostic[] = [];
   const errors: MergeDiagnostic[] = [];
   const selectedMap = new Map(selectedItems.map((item) => [item.id, item]));
@@ -110,7 +110,7 @@ function selectWithAutoPrerequisites(baseDoc: DocumentV2, incomingDoc: DocumentV
   return { selectedItems: [...selectedMap.values()], warnings, errors };
 }
 
-function buildOpList(incomingDoc: DocumentV2, selectedItems: MergeItem[]): PatchOp[] {
+function buildOpList(incomingDoc: DocumentV1, selectedItems: MergeItem[]): PatchOp[] {
   const selectedCardUpserts = new Set<string>();
   const selectedCardDeletes = new Set<string>();
   const selectedIslandUpserts = new Set<string>();
@@ -224,7 +224,7 @@ function buildOpList(incomingDoc: DocumentV2, selectedItems: MergeItem[]): Patch
   return sortById(ops);
 }
 
-export function buildSelectedPatchFromItems(baseDoc: DocumentV2, incomingDoc: DocumentV2, selectedItems: MergeItem[]): PatchDocument {
+export function buildSelectedPatchFromItems(baseDoc: DocumentV1, incomingDoc: DocumentV1, selectedItems: MergeItem[]): PatchDocument {
   return {
     kind: "kj-atlas-patch",
     version: 1,
@@ -233,7 +233,7 @@ export function buildSelectedPatchFromItems(baseDoc: DocumentV2, incomingDoc: Do
   };
 }
 
-export function preflightMerge(baseDoc: DocumentV2, selectedItems: MergeItem[], incomingDoc: DocumentV2): MergePreflightResult {
+export function preflightMerge(baseDoc: DocumentV1, selectedItems: MergeItem[], incomingDoc: DocumentV1): MergePreflightResult {
   const preflightDocs = [
     { label: "base", value: baseDoc },
     { label: "incoming", value: incomingDoc },
@@ -285,10 +285,10 @@ export function buildMergeAuditEntry(selectedItems: MergeItem[], source?: MergeA
 }
 
 export function applyMergeTransaction(
-  currentDoc: DocumentV2,
-  snapshotDoc: DocumentV2,
-  baseDoc: DocumentV2,
-  incomingDoc: DocumentV2,
+  currentDoc: DocumentV1,
+  snapshotDoc: DocumentV1,
+  baseDoc: DocumentV1,
+  incomingDoc: DocumentV1,
   selectedItems: MergeItem[],
   options?: { allowWarnings?: boolean }
 ): MergeTransactionResult {
@@ -318,7 +318,7 @@ export function applyMergeTransaction(
   }
 
   const applied = applyPatchWithResolutionsDetailed(currentDoc, preflight.patchOrPlan, {}, undefined, new Set(preflight.patchOrPlan.ops.map((op) => op.id)));
-  const nextDoc: DocumentV2 = {
+  const nextDoc: DocumentV1 = {
     ...applied.document,
     readingOrder: preflight.selectedItems.some((item) => item.kind === "view.field" && item.field === "readingOrder") ? (incomingDoc.readingOrder ?? []) : applied.document.readingOrder,
   };
@@ -334,7 +334,7 @@ export function applyMergeTransaction(
   return { ok: true, document: nextDoc, warnings: preflight.warnings };
 }
 
-export function applySelectedMergeItemsAtomic(currentDoc: DocumentV2, baseDoc: DocumentV2, incomingDoc: DocumentV2, selectedItems: MergeItem[]): { ok: true; document: DocumentV2 } | { ok: false; reason: string } {
+export function applySelectedMergeItemsAtomic(currentDoc: DocumentV1, baseDoc: DocumentV1, incomingDoc: DocumentV1, selectedItems: MergeItem[]): { ok: true; document: DocumentV1 } | { ok: false; reason: string } {
   const result = applyMergeTransaction(currentDoc, baseDoc, baseDoc, incomingDoc, selectedItems, { allowWarnings: true });
   if (!result.ok) {
     return { ok: false, reason: result.errors.map((error) => `[${error.code}] ${error.message}`).join("\n") };

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { buildMergeItems } from "./merge_items";
 import { evaluateMergeSelection } from "./merge_dependencies";
 import { applyMergeTransaction, applySelectedMergeItemsAtomic, preflightMerge } from "./merge_apply";
 
-function doc(overrides: Partial<DocumentV2>): DocumentV2 {
+function doc(overrides: Partial<DocumentV1>): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-1",
     createdAt: "2025-01-01T00:00:00.000Z",
     updatedAt: overrides.updatedAt ?? "2025-01-01T00:00:00.000Z",
@@ -76,7 +76,7 @@ describe("selective merge", () => {
     const incoming = {
       ...doc({ cards: [{ id: "c1", text: "A", x: 0, y: 0 }] }),
       cards: [{ id: "c1", text: 42, x: 0, y: 0 }],
-    } as unknown as DocumentV2;
+    } as unknown as DocumentV1;
     const result = applySelectedMergeItemsAtomic(base, base, incoming, []);
     expect(result.ok).toBe(false);
     if (!result.ok) {

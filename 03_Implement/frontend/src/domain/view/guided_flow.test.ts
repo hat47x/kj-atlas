@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import { buildDefaultGuidedFlowSteps } from "./guided_flow";
 
-function createDocument(): DocumentV2 {
+function createDocument(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc",
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",

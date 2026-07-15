@@ -33,7 +33,7 @@
 - 安全境界は ADR-0049 のエクスポート側をそのまま適用: SafeMode 既定ON（本文 redaction）、未レビュー既定除外、score/rank/confidence/priority 語彙の不使用、`bundleHash`/`queryCanonicalHash` による監査相関。
 - 書き込みツールを一切持たない。
 - 輸送: stdio（ローカル Claude Code / Claude Desktop）を先行実装し、streamable HTTP + OAuth 2.1（2026-07-28 仕様）を追加して ChatGPT / Copilot Studio へ到達する。ChatGPT 個人プランの読み取り専用強制は本段階の設計と外部制約が一致していることを意味する。
-- 実装は CE-1 の実データ化を待たず、EXT-AGENT-01 が確立した DocumentV2 直接走査＋SafeMode境界の投影ロジックを再利用して開始できる（前例: EXT-AGENT-01 のスコープ判断）。ContextBundle IR の契約形は CE-0 を正とし、輸送（MCP）は薄いアダプタに留める（R4対抗）。
+- 実装は CE-1 の実データ化を待たず、EXT-AGENT-01 が確立した DocumentV1 直接走査＋SafeMode境界の投影ロジックを再利用して開始できる（前例: EXT-AGENT-01 のスコープ判断）。ContextBundle IR の契約形は CE-0 を正とし、輸送（MCP）は薄いアダプタに留める（R4対抗）。
 
 ### 段階2 — webhook → 提案カード ingest（proposal-only 書き込み）
 

@@ -1,4 +1,4 @@
-import type { A1TargetRef, DocumentV2 } from "./types";
+import type { A1TargetRef, DocumentV1 } from "./types";
 import {
   HIL_RS_CRITIQUE_SCHEMA_VERSION,
   type HilRsCritiqueInput,
@@ -70,7 +70,7 @@ function pushCritiqueInput(
   }
 }
 
-export function buildHilRsCritiqueInputs(doc: DocumentV2, options: BuildCritiqueOptions): HilRsCritiqueInput[] {
+export function buildHilRsCritiqueInputs(doc: DocumentV1, options: BuildCritiqueOptions): HilRsCritiqueInput[] {
   if (!Number.isInteger(options.iteration) || options.iteration < 1) {
     return [];
   }

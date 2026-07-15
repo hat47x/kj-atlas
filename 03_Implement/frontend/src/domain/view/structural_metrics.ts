@@ -1,4 +1,4 @@
-import type { DocumentV2, EdgeType, EvidenceLink } from "../types";
+import type { DocumentV1, EdgeType, EvidenceLink } from "../types";
 import { KNOWN_EDGE_TYPES } from "../types";
 
 export type StructureMetrics = {
@@ -176,7 +176,7 @@ function countBridgeEdges(cardIds: string[], adjacency: Map<string, Set<string>>
   return bridgeCount;
 }
 
-export function computeStructureMetrics(doc: DocumentV2, _view?: { collapsedIslandIds?: string[] }): StructureMetrics {
+export function computeStructureMetrics(doc: DocumentV1, _view?: { collapsedIslandIds?: string[] }): StructureMetrics {
   const cardCount = doc.cards.length;
   const islandCount = doc.islands.length;
   const allCardIds = doc.cards.map((card) => card.id);

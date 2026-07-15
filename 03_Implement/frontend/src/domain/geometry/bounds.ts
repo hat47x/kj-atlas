@@ -2,7 +2,7 @@ import { getIslandPolygonPoints } from "./island_geometry";
 import { getPolygonBoundingBox } from "./polygon_bbox";
 import { getEdgesToRender } from "../edge_aggregate";
 import { getDerivedIslandEdges } from "../island_edge_aggregate";
-import { isSourceCard, type Card, type DocumentV2, type Island } from "../types";
+import { isSourceCard, type Card, type DocumentV1, type Island } from "../types";
 
 const CARD_WIDTH = 220;
 const CARD_HEIGHT = 80;
@@ -92,7 +92,7 @@ export function getIslandCenter(island: Island, cardsById: Map<string, Card>): {
   };
 }
 
-export function computeVisibleBounds(doc: DocumentV2, viewState: VisibleBoundsViewState): BoundsRect | null {
+export function computeVisibleBounds(doc: DocumentV1, viewState: VisibleBoundsViewState): BoundsRect | null {
   const cardsById = new Map(doc.cards.map((card) => [card.id, card]));
   const islandById = new Map(doc.islands.map((island) => [island.id, island]));
   const visibleCards = doc.cards.filter((card) => {

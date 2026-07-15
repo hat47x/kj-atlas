@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 import { buildMergeDecisionAuditEntries } from "./merge_decision_audit";
 
-function createDocument(overrides: Partial<DocumentV2> = {}): DocumentV2 {
+function createDocument(overrides: Partial<DocumentV1> = {}): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-audit",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-03T00:00:00.000Z",

@@ -30,7 +30,7 @@ function log(step, message) {
 function buildFixtureDocument() {
   const now = "2026-07-10T00:00:00.000Z";
   return {
-    version: 2,
+    version: 1,
     id: "doc_domain_expr03_provider_local",
     title: "provider local evidence fixture",
     createdAt: now,

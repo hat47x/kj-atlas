@@ -1,15 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
-import type { DocumentV2 } from "../src/domain/types";
+import type { DocumentV1 } from "../src/domain/types";
 import { buildDomainExpressionDocument, withoutProductValueContent } from "./helpers/product_value_fixtures";
 
 const START_PANEL = '[data-panel="start-document-entry"]';
 
 async function routeDomainExpressionFixture(page: Page): Promise<{
   enableSample: () => void;
-  getStoredDocument: () => DocumentV2;
+  getStoredDocument: () => DocumentV1;
 }> {
   let shouldReturnSample = false;
-  let storedDocument = buildDomainExpressionDocument() as unknown as DocumentV2;
+  let storedDocument = buildDomainExpressionDocument() as unknown as DocumentV1;
   let revision = 0;
 
   await page.route("**/packs/index.json", async (route) => {
@@ -18,7 +18,7 @@ async function routeDomainExpressionFixture(page: Page): Promise<{
 
   await page.route("**/docs/*", async (route) => {
     if (route.request().method() === "PUT") {
-      storedDocument = route.request().postDataJSON() as DocumentV2;
+      storedDocument = route.request().postDataJSON() as DocumentV1;
       revision += 1;
       await route.fulfill({
         status: 200,

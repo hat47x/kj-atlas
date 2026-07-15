@@ -5,10 +5,10 @@ import {
   REQUIRED_DIAGNOSTICS_OBJECT_FIELDS,
 } from "./diagnostics_protocol";
 import { computeDiagnostics } from "./diagnostics_compute";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 
-const doc: DocumentV2 = {
-  version: 2,
+const doc: DocumentV1 = {
+  version: 1,
   id: "doc-1",
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",

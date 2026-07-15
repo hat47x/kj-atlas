@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { applyCanonicalization } from "./canonical_ops";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-const baseDoc: DocumentV2 = {
-  version: 2,
+const baseDoc: DocumentV1 = {
+  version: 1,
   id: "doc-1",
   createdAt: "2025-01-01T00:00:00.000Z",
   updatedAt: "2025-01-01T00:00:00.000Z",
@@ -65,7 +65,7 @@ describe("applyCanonicalization", () => {
   });
 
   it("deduplicates source ids and avoids duplicate canonical in island", () => {
-    const doc: DocumentV2 = {
+    const doc: DocumentV1 = {
       ...baseDoc,
       islands: [{ id: "island-1", cardIds: ["a", "canon-1"] }],
       readingOrder: ["a", "b", "c"],

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Card, DocumentV2 } from "./types";
+import type { Card, DocumentV1 } from "./types";
 import { updateCardHoldState, updateCardHoldStateAndShelf } from "./hold_state_ops";
 
 const cards: Card[] = [
@@ -24,8 +24,8 @@ describe("updateCardHoldState", () => {
 });
 
 describe("updateCardHoldStateAndShelf", () => {
-  const document: DocumentV2 = {
-    version: 2,
+  const document: DocumentV1 = {
+    version: 1,
     id: "doc-1",
     createdAt: "2026-06-21T00:00:00.000Z",
     updatedAt: "2026-06-21T00:00:00.000Z",
@@ -53,8 +53,8 @@ describe("updateCardHoldStateAndShelf", () => {
 });
 
 describe("updateCardHoldStateAndShelf", () => {
-  const document: DocumentV2 = {
-    version: 2,
+  const document: DocumentV1 = {
+    version: 1,
     id: "doc-1",
     createdAt: "2026-06-21T00:00:00.000Z",
     updatedAt: "2026-06-21T00:00:00.000Z",

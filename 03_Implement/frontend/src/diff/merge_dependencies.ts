@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { getPatchOpEntityKey } from "../domain/patch/patch_apply";
 import { detectPatchConflicts } from "../domain/patch/conflict_detect";
 import type { MergeItem, MergeItemRef } from "./merge_items";
@@ -26,10 +26,10 @@ function collectMissingPrerequisites(item: MergeItem, selectedRefKeySet: Set<str
 }
 
 export function evaluateMergeSelection(
-  baseDoc: DocumentV2,
-  currentDoc: DocumentV2,
-  incomingDoc: DocumentV2,
-  snapshotDoc: DocumentV2,
+  baseDoc: DocumentV1,
+  currentDoc: DocumentV1,
+  incomingDoc: DocumentV1,
+  snapshotDoc: DocumentV1,
   items: MergeItem[],
   selectedIds: Set<string>,
   autoIncludePrerequisites: boolean

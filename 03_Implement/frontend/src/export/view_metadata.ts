@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import type { HierarchyLevel } from "../domain/view/hierarchy_level";
 import type { LODLevel, LODThresholds } from "../domain/view/lod";
 import type { ViewPreset } from "../domain/view/presets";
@@ -107,7 +107,7 @@ export type ExportViewMetadata = {
 };
 
 type ExportViewMetadataArgs = {
-  doc: Pick<DocumentV2, "id" | "title"> | null;
+  doc: Pick<DocumentV1, "id" | "title"> | null;
   visibility?: PublishVisibility;
   camera: {
     panX: number;
@@ -169,7 +169,7 @@ function hashTitle(value: string): string {
   return hash.toString(16).padStart(8, "0");
 }
 
-function resolveDocSignature(doc: Pick<DocumentV2, "id" | "title"> | null): string {
+function resolveDocSignature(doc: Pick<DocumentV1, "id" | "title"> | null): string {
   if (!doc) {
     return "unknown";
   }

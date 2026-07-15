@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildHilRsCritiqueInputs, createHilRsReviewAttribution } from "./hil_rs_payload";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-const BASE_DOC: DocumentV2 = {
-  version: 2,
+const BASE_DOC: DocumentV1 = {
+  version: 1,
   id: "doc",
   transform: { panX: 0, panY: 0, zoom: 1 },
   cards: [

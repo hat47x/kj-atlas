@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import { detectPatchConflicts } from "./conflict_detect";
 import type { PatchDocument } from "./patch_apply";
 
-function makeDoc(text: string): DocumentV2 {
+function makeDoc(text: string): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-1",
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",

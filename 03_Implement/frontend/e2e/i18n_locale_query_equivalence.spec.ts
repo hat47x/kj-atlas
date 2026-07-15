@@ -23,7 +23,7 @@ test("locale=en keeps document replace flow behavior equivalent", async ({ page 
 
   const now = new Date().toISOString();
   const doc = {
-    version: 2,
+    version: 1,
     id: "doc_e2e_i18n_locale_equivalence",
     createdAt: now,
     updatedAt: now,

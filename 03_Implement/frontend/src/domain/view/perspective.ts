@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import { buildEvidenceAdjacency, getEvidenceNeighborhood, type EvidenceOverlayMode } from "./evidence_overlay";
 
 export type PerspectiveMode =
@@ -158,11 +158,11 @@ function sortIds(ids: Iterable<string>): string[] {
   return [...ids].sort((left, right) => left.localeCompare(right));
 }
 
-function isUnknownClaimType(claimType: DocumentV2["cards"][number]["claimType"]): boolean {
+function isUnknownClaimType(claimType: DocumentV1["cards"][number]["claimType"]): boolean {
   return claimType === undefined || claimType === "unknown";
 }
 
-function getTypeMatchedCardIds(doc: DocumentV2, mode: PerspectiveMode): Set<string> {
+function getTypeMatchedCardIds(doc: DocumentV1, mode: PerspectiveMode): Set<string> {
   if (mode === "facts") {
     return new Set(sortIds(doc.cards.filter((card) => card.claimType === "fact").map((card) => card.id)));
   }
@@ -179,7 +179,7 @@ function getTypeMatchedCardIds(doc: DocumentV2, mode: PerspectiveMode): Set<stri
 }
 
 function getEvidenceMatchedCardIds(
-  doc: DocumentV2,
+  doc: DocumentV1,
   selectedCardId: string | null,
   mode: EvidenceOverlayMode,
 ): { matchingCardIds: Set<string>; notes: string[]; scope: "selection" | "all" } {
@@ -205,7 +205,7 @@ function getEvidenceMatchedCardIds(
 }
 
 export function computePerspectiveRendering(
-  doc: DocumentV2,
+  doc: DocumentV1,
   viewState: PerspectiveViewState,
   selection: PerspectiveSelection,
 ): PerspectiveRendering {

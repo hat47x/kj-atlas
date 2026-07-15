@@ -15,7 +15,7 @@ function buildDocument() {
   const now = "2026-05-22T00:00:00.000Z";
 
   return {
-    version: 2,
+    version: 1,
     id: DOCUMENT_ID,
     title: "ops recovery fixture",
     createdAt: now,

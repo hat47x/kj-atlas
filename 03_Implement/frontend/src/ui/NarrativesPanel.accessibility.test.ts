@@ -2,12 +2,12 @@ import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import type { DocumentV2, Narrative } from "../domain/types";
+import type { DocumentV1, Narrative } from "../domain/types";
 import { setActiveLocale } from "../i18n/translate";
 import { NarrativesPanel } from "./NarrativesPanel";
 
-const documentFixture: DocumentV2 = {
-  version: 2,
+const documentFixture: DocumentV1 = {
+  version: 1,
   id: "doc-a11y-narrative",
   createdAt: "2026-06-22T00:00:00.000Z",
   updatedAt: "2026-06-22T00:00:00.000Z",

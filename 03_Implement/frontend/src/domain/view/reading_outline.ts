@@ -1,4 +1,4 @@
-import type { Card, DocumentV2, Island, RelationSummary } from "../types";
+import type { Card, DocumentV1, Island, RelationSummary } from "../types";
 import { SafeModePolicy, type SafeModeContext } from "../policy/safe_mode";
 import { buildReadingList, type ReadingMode } from "./reading_path";
 import type { OutlineQualityReport } from "./outline_quality";
@@ -198,7 +198,7 @@ function getRelationLabel(summary: RelationSummary, island: Island, islandsById:
   return `- [Relation] ${otherTitle} (${otherIslandId})`;
 }
 
-export function buildReadingOutlineMd(doc: DocumentV2, readingState: ReadingOutlineState, options: ReadingOutlineOptions = {}): string {
+export function buildReadingOutlineMd(doc: DocumentV1, readingState: ReadingOutlineState, options: ReadingOutlineOptions = {}): string {
   const context = options.context ?? "ui";
   const includeCardTexts = options.includeCardTexts ?? false;
   const includeRelationSummaries = options.includeRelationSummaries ?? true;

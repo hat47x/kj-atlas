@@ -50,9 +50,6 @@ logger = logging.getLogger(__name__)
 
 
 def _validate_review_attribution_identity(*, document: DocumentPayload, identity: AuthContext) -> None:
-    if document.version != 2:
-        return
-
     review_attribution = document.reviewAttribution
     if review_attribution is None or review_attribution.reviewState != "human_reviewed":
         return
@@ -121,9 +118,6 @@ def _validate_document_payload_with_a1_contract(document_payload: object) -> Doc
             contract_id=contract_id,
             message=message,
         )
-
-    if document.version != 2:
-        return document
 
     if document.critiqueInputs is not None:
         for critique in document.critiqueInputs:
@@ -259,9 +253,6 @@ def _is_candidate_eligible(card: Card) -> bool:
 
 
 def _build_similar_candidate_groups(document: DocumentPayload, *, payload_json: str) -> CandidateListViewModel:
-    if document.version != 2:
-        return CandidateListViewModel(generatedAt="1970-01-01T00:00:00Z", groups=[], totalGroupCount=0)
-
     cards = sorted((card for card in document.cards if _is_candidate_eligible(card)), key=lambda card: card.id)
     grouped_by_normalized_text: dict[str, list[Card]] = {}
     grouped_by_token_signature: dict[str, list[Card]] = {}

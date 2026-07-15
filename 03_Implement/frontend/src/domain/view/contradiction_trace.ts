@@ -1,4 +1,4 @@
-import type { Card, DocumentV2 } from "../types";
+import type { Card, DocumentV1 } from "../types";
 import { SafeModePolicy } from "../policy/safe_mode";
 
 type ClaimType = "fact" | "claim" | "hypothesis" | "unknown";
@@ -94,7 +94,7 @@ function buildContradictorMarkers(card: Card, hasFactSupport: boolean): string[]
   return markers;
 }
 
-export function buildContradictionTraceMd(doc: DocumentV2, targetCardId: string, options: ContradictionTraceOptions = {}): string {
+export function buildContradictionTraceMd(doc: DocumentV1, targetCardId: string, options: ContradictionTraceOptions = {}): string {
   const depthLimit = clampDepthLimit(options.depthLimit);
   const includeSupports = options.includeSupports ?? true;
   const maxNodes = clampMaxNodes(options.maxNodes);

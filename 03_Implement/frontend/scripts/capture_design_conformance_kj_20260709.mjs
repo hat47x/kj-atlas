@@ -28,7 +28,7 @@ const files = {
 
 function buildDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "KJ vocabulary conformance fixture",
     createdAt: ts,

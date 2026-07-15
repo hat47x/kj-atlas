@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
 import { buildExportBundle, type BundleFile, type BundleExportContext } from "../export/bundle_export";
 import { resolveViewLocale } from "./view_locale_resolution";
@@ -31,8 +31,8 @@ const deterministicContext: Omit<BundleExportContext, "rootFolderPath"> = {
   },
 };
 
-const baseDoc: DocumentV2 = {
-  version: 2,
+const baseDoc: DocumentV1 = {
+  version: 1,
   id: "doc-i18n-05",
   title: "Locale invariance",
   createdAt: "2026-01-01T00:00:00.000Z",
@@ -54,7 +54,7 @@ function readJsonFile(files: BundleFile[], suffix: "/document.json" | "/view.jso
   return JSON.parse(file.content) as Record<string, unknown>;
 }
 
-function buildBundleWithLocale(doc: DocumentV2, locale: "ja" | "en", extraViewState: Record<string, unknown> = {}): BundleFile[] {
+function buildBundleWithLocale(doc: DocumentV1, locale: "ja" | "en", extraViewState: Record<string, unknown> = {}): BundleFile[] {
   return buildExportBundle(doc, {
     viewState: {
       locale,
