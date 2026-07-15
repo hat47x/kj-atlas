@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-03-09
 - Deciders: Project Maintainers
-- Scope: `01_Plans/adr/`, `04_Documentation/`
+- Scope: root documentation, `01_Plans/`, `02_Architecture/`, `04_Documentation/`, docs-check CI
 
 ## Plan
 
@@ -86,6 +86,32 @@ DoD（本ADR完了条件）:
 - CI拡張の pass/fail は観測・記録対象に留める。
 - mandatory への昇格判断は、運用実績を踏まえて後続判断とする。
 
+### 2.1) 2026-07-15 amendment: docs-contract適用matrix
+
+`DX-DOC-02`のclean baseline確立に伴い、機械的に真偽を決められる内部契約検査をBoundary-1へ追加する。従来Boundary-2に置いた`link check strict`のうち、**コード記法と外部URLを除外した相対参照先の存在確認**だけを`DC-LNK-001`として昇格する。外部URL到達性、prose/style lint、用語や意味的重複のヒューリスティック判定はBoundary-2に残す。
+
+| Rule ID | 判定契約 |
+| --- | --- |
+| `DC-ACT-001` | Active issueをfilesystemから発見し、正規Status、必須meta、参照先、重複Backlog、triageとの集合一致を検査する。 |
+| `DC-LNK-001` | コードフェンス/コードスパンと外部URLを除外し、Markdown相対参照先が存在することを検査する。 |
+| `DC-CUR-001` | current-only文書へStream/rerun/checkpoint等の実行履歴見出しが再混入していないことを検査する。 |
+| `DC-ARC-001` | architecture current 4文書の責務SSOT、Contract ID/型、API/schema key、支援表の固定契約を検査する。 |
+| `DC-HIS-001` | `02_Architecture/history/`のInformative metadata、current anchor、currentからの逆リンクを検査し、current契約比較から除外する。 |
+| `DC-PUB-001` | 公開対象への内部管理情報再混入、公開境界、provenance必須項目を検査する。 |
+| `DC-RTE-001` | README→CONTRIBUTING→triage→memo/template/validatorと、公開入口→利用者手順の導線を検査する。 |
+| `DC-SAF-001` | SafeMode、share/export、proposal-only、human review、provider=`none`の正本へ有効な導線があることを検査する。 |
+| `DC-FMT-001` | 変更文書に空白エラーや競合markerがないことを検査する。 |
+
+| 対象 | Boundary-1 rule |
+| --- | --- |
+| root docs (`README.md`, `CONTRIBUTING.md`, `AGENTS.md`) | `DC-RTE-001`, `DC-SAF-001`, `DC-LNK-001`, `DC-FMT-001` |
+| `01_Plans/adr/`, `01_Plans/issues/`, current運用入口 | `DC-ACT-001`, `DC-CUR-001`, `DC-LNK-001`, `DC-FMT-001`（非該当ruleは対象外） |
+| `02_Architecture/` current (`architecture.md`, `api.md`, `schemas.md`, `data_model_operations_overview.md`) | `DC-ARC-001`, `DC-CUR-001`, `DC-LNK-001`, `DC-FMT-001` |
+| `02_Architecture/history/` | `DC-HIS-001`, `DC-LNK-001`, `DC-FMT-001` |
+| `04_Documentation/` current/public | `DC-PUB-001`, `DC-RTE-001`, `DC-SAF-001`, `DC-LNK-001`, `DC-FMT-001` |
+
+各ruleのmerge blocking有効化条件は、(1) 純関数または同等の決定論的実装、(2) ruleごとの正常/負例fixture、(3) 現行repositoryのclean pass、(4) ローカルとCIが同じ単一entrypointを実行、(5) 失敗時にrule ID・対象ファイル・修正先を表示、の5点とする。条件を満たさないruleはCIを偽陽性で止めず、観測または未実装として明示する。SafeMode等の不変条件を検査対象から外す例外は設けない。
+
 ### 3) 非目標（越境禁止）
 
 - Readability 基準本文（読者前提・文体・可読性スコア閾値）の規約化。
@@ -124,6 +150,9 @@ I/F準拠・境界明確性・非目標明記を確認するため、以下を�
    - readability本体 / 変更統治責務が本ADRの非目標に記載されていること。
 4. 公開文書境界:
    - `04_Documentation/*.md` を公開対象にした場合、`01_Plans/documentation_quality.md` の Mandatory 参照が存在すること。
+5. docs-contract amendment:
+   - root/01/02-current/02-history/04-publicの適用matrix、`DC-*` rule ID、blocking有効化条件が存在すること。
+   - `DC-LNK-001`は内部相対参照先の存在確認に限定され、外部URL到達性と文体lintがBoundary-2に残ること。
 
 Self-Correction（最大3回）:
 
@@ -155,3 +184,4 @@ Self-Correction（最大3回）:
 - Related: `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`
 - Related: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`（ADR候補C節）
 - Derived-from: DOC-OPS-04 ADR候補C（Documentation Quality Gates）
+- Amended-by: `DX-DOC-02` T1（2026-07-15 docs-contract適用matrix / rule ID / 段階有効化条件）
