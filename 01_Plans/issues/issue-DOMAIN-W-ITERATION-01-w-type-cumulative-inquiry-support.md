@@ -1,7 +1,7 @@
 # Issue: DOMAIN-W-ITERATION-01 W型累積KJ法の反復的探究支援
 
 - Type: Feature request / UX / Domain model
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -103,13 +103,22 @@
 
 - [x] T1 W型問題解決モデル、6ラウンド累積KJ法、累積型発想法のICT支援課題を調査する。
 - [x] T2 要件とADRを起票し、価値トレーサビリティへ接続する。
-- [ ] T3 代表fixtureとメモリ内状態機械を作り、段階・反復・分岐の語彙をunit testで固定する。
+- [x] T3 代表fixtureとメモリ内状態機械を作り、段階・反復・分岐の語彙をunit testで固定する。
 - [ ] T4 高度機能内の低忠実度プロトタイプを作り、初期表示差分0と操作理解を確認する。
 - [x] T5 広域比較を行い、`RoundSnapshotV1` の境界と採択方式を `ADR-0057` / `inquiry_journey_model.md` へ固定する。
 - [ ] T6 ADR受理後、型・validation・保存・import/export・roundtripを実装する。
 - [ ] T7 手動中核UIとa11y/i18n/性能回帰を実装する。
 - [ ] T8 マウス・キーボード・390pxのE2Eとスクリーンショットを取得する。
 - [ ] T9 Phase 2の実使用後に、AI支援を別issueへ分割するか判断する。
+
+### Phase 0 実装証跡（2026-07-15）
+
+- `src/domain/inquiry_journey.ts`: `DocumentV2` へ履歴を追加せず、`InquiryJourneyV1`、`RoundSnapshotV1`、`RoundHandoffV1`、`CardLineageEdgeV1`、自己完結bundle型を独立定義した。
+- `src/domain/inquiry_journey.fixture.ts`: R2現状把握、R3本質追求、追加観察後のR2・2回目という代表loopbackを固定した。観察から仮説への系譜は `derived` とし、本文編集と分離した。
+- `src/domain/inquiry_journey.test.ts`: DAG循環、経路上の反復番号、複数head、出発成果、参照切れ、将来成果の逆参照、digest、系譜方向・多重度、非working成果を検証する。
+- `appendRoundRecord()`: 親成果を確認し、同段階の反復番号を選択経路から導出し、過去成果を変更せず分岐先端を追加するメモリ内状態遷移を実装した。
+- 検証結果: 対象16 tests passed、frontend typecheck passed、frontend全体191 files / 1050 tests passed、issue validator 6 memos / unittest 11 tests passed。
+- 永続化、import parser、UIは未実装であり、support levelは引き続き `L0: Planned` とする。
 
 ## 7) 検証計画 / Validation plan
 

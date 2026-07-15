@@ -94,11 +94,11 @@
 
 ## 採択したデータ境界
 
-- `InquiryJourneyV1`: ラウンド集合、分岐先端、既定表示先を持つmanifest。
+- `InquiryJourneyV1`: 出発成果、ラウンド集合、分岐先端、既定表示先を持つmanifest。
 - `RoundRecordV1`: `stage` と `iteration` を分け、`parentRoundIds`、状態、入力・出力成果、引継ぎを持つ。
 - `RoundSnapshotV1`: 意味状態を再現する不変 `DocumentV2` payloadと整合性確認値を持つ。
 - `RoundHandoffV1`: 持ち越し、保留、未解決点、現場への問い、理解の変化を持つ。
-- `CardLineageEdgeV1`: `carried | edited | split | merged | new | retired` の系譜を成果間で接続する。
+- `CardLineageEdgeV1`: `carried | edited | derived | split | merged | new | retired` の系譜を成果間で接続し、観察と後段階の解釈を同一視しない。
 
 探究全体に唯一の `activeRoundId` は置かない。分岐先端を複数保持し、現在表示中のラウンドはview stateとして扱う。成果のdigestは破損確認用であり、認可・秘匿・真正性の根拠にはしない。
 

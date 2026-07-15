@@ -220,7 +220,7 @@ AIの出力はproposal-onlyとし、`KJ_ATLAS_LLM_PROVIDER=none` でも、ラウ
 ADR-0057により、次を確定した。
 
 - 探究は `DocumentV2` のoptional入れ子ではなく、独立 `InquiryJourneyV1` と不変 `RoundSnapshotV1` のDAGで保持する。
-- カードは各スナップショット内で再現可能に保持し、安定IDと明示的な `CardLineageEdgeV1` で `carried`、`edited`、`split`、`merged`、`new`、`retired` を辿る。
+- カードは各スナップショット内で再現可能に保持し、安定IDと明示的な `CardLineageEdgeV1` で `carried`、`edited`、`derived`、`split`、`merged`、`new`、`retired` を辿る。観察から生じた仮説・方針は `derived` とし、元観察の編集と混同しない。
 - 共有物は参照する成果をすべて同梱した自己完結bundleとし、SafeModeのマスクは派生成果へ行う。
 - 操作単位の全面的イベントソーシング、固定ウィザード、進捗採点、組織承認ワークフローの同時導入は行わない。
 

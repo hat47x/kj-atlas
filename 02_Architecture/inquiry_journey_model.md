@@ -63,6 +63,7 @@ flowchart LR
 
 - `journeyId`: 探究の安定ID。
 - `title`: 利用者が識別する題名。
+- `originSnapshotIds`: 既存文書から探究を始めた時点の不変な出発成果。最初のラウンドが参照する。
 - `roundRecords`: ラウンド記録の集合。
 - `headRoundIds`: 現在先端にある分岐の集合。
 - `defaultHeadRoundId?`: 開いたときに提示する既定分岐。唯一の正解を意味しない。
@@ -73,6 +74,7 @@ flowchart LR
 ### 3.2 `RoundRecordV1`
 
 - `roundId`: ラウンド記録の安定ID。
+- `createdAt` / `updatedAt`: ラウンド作成時刻と、引継ぎ・停止状態を最後に更新した時刻。
 - `stage`: `r1_problem_setting` から `r6_procedure_planning` までの段階。
 - `iteration`: 同じ段階を実施した回数。段階番号とは独立する。
 - `parentRoundIds`: 派生元ラウンド。通常は1件、将来の人手統合では複数を許容する。
@@ -92,7 +94,7 @@ flowchart LR
 - `schemaVersion`: スナップショット契約のversion gate。
 - `createdAt`: 確定時刻。
 - `document`: その時点を再現できる `DocumentV2` payload。
-- `canonicalDigest`: 正準化後の内容に対する整合性確認値。
+- `canonicalDigest`: `sha256:<64桁の小文字16進数>` 形式の、正準化後内容に対する整合性確認値。
 
 スナップショットは作成後に変更しない。訂正は新しいラウンド成果、または訂正理由を持つ派生成果として残す。`canonicalDigest` は同一内容の検出と破損確認に使うもので、秘匿、認可、真正性を保証しない。正準化方式は実装前にfixtureで固定し、候補としてRFC 8785 JCSを検証する。
 
@@ -116,12 +118,13 @@ flowchart LR
 
 - `carried`: 本文上の同一性を保って持ち越した。
 - `edited`: 元情報を参照しつつ表現または解釈を変更した。
+- `derived`: 一件以上の観察・根拠から、元情報と同一視しない仮説・方針などを導いた。
 - `split`: 一枚を複数の中心的内容へ分けた。
 - `merged`: 複数の情報を統合した。
 - `new`: 追加観察などから新しく生じた。
 - `retired`: 次へ持ち越さず元成果に残した。
 
-安定したカードIDが同じなら `carried` を導出できる。`split`、`merged`、意味を変える `edited` は、人が確認した明示的系譜として保存する。後段階の解釈を前段階の観察本文へ上書きしない。
+安定したカードIDが同じなら `carried` を導出できる。`split`、`merged`、`edited`、`derived` は、人が確認した明示的系譜として保存する。特に `derived` を設けることで、後段階の解釈・仮説を前段階の観察本文の編集や統合として扱わない。
 
 ## 4. 保存と交換
 
