@@ -98,4 +98,4 @@ node ./node_modules/@playwright/test/cli.js test <spec>  # e2e
 ## 5. 更新ルール
 
 - 本書は `ADR-0045` の運用正本。責務分担・プロトコルの変更は ADR を先に更新してから本書へ反映する。
-- 新しいエージェントや拡張を追加した場合は、`AGENTS.md` の Read Order / Project Map と本書を同期する。
+- 新しいエージェントや拡張を追加した場合は、本書をオンデマンドで参照できることだけを確認する。`AGENTS.md` へ個別ツールやファイルの一覧を追加しない。

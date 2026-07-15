@@ -68,7 +68,7 @@ cp -R 00_Prompt/skills/gsd-kj-atlas "$HOME/.codex/skills/gsd-kj-atlas"
 
 ### 4.2 実行順序（固定）
 
-1. `AGENTS.md` の Read Order を先に確認。
+1. `AGENTS.md` で現在のタスクに必要な正本だけを確認。
 2. `gsd-kj-atlas` で milestone / phase を起票。
 3. 各 phase の受入条件を `agent_handover.md` のテンプレで固定。
 4. 実装。

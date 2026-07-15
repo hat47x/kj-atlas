@@ -24,7 +24,7 @@ Get Shit Done（GSD）のタスク分割を使って、kj-atlas の変更を
 
 ## Workflow
 
-1. `AGENTS.md` の Read Order を確認する。
+1. `AGENTS.md` から現在のタスクに必要な正本だけを確認する。
 2. タスクを milestone / phase に分割する。
 3. 各 phase に以下を固定する。
    - Scope
