@@ -77,7 +77,7 @@
 
 - [ ] fresh cloneの読者がREADMEから5分以内に、現行課題正本、triage、issue template、branch規律、検証入口へ到達できる。
 - [x] `CONTRIBUTING.md` と `issues/README.md` でGitHub Issues/内部issue memoの現行正本が矛盾しない。
-- [ ] dashboardとissue indexのcurrent領域に、resolved Queue、過去件数、per-rerunログを現行指示として含めない。
+- [x] dashboardとissue indexのcurrent領域に、resolved Queue、過去件数、per-rerunログを現行指示として含めない。
 - [ ] Active viewがfilesystem上のDraft/Open/In Progress集合と一致する。
 - [x] Statusはtemplateの正規値へ統一し、Open-readinessやhold理由は別メタデータへ分離して、triageとvalidatorの判定集合が一致する。
 - [ ] `documentation_quality.md` のNormative QGと判定手順が連続して読め、Stream実行ログを読まずに適用できる。
@@ -89,8 +89,8 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 current文書ごとに「残す現行情報 / git履歴へ委譲 / archiveする一次証拠」の移動表を作る。
-- [ ] T2 dashboardをcurrent snapshotへ縮約する。
+- [x] T1 current文書ごとに「残す現行情報 / git履歴へ委譲 / archiveする一次証拠」の移動表を作る。
+- [x] T2 dashboardをcurrent snapshotへ縮約する。
 - [ ] T3 issue READMEを運用ルール+current Active view+triage入口へ縮約し、Status拡張表現を正規化したうえで実ファイル集合と同期する。
 - [ ] T4 documentation qualityのNormative本文を連続化し、実行ログを分離する。
 - [x] T5 CONTRIBUTINGを現行issue memo運用とfirst-task runbookへ同期する。
@@ -139,3 +139,11 @@
 - `04_Documentation/e2e_testing.md` の有効な実行経路、PR証跡、Compose差分リスク、認証Level 2、fixture境界を `03_Implement/frontend/docs/e2e_testing.md` へ統合し、旧pathをSuperseded stubへ縮約した。
 - 拡張Statusを持っていたQA Draft 3件を `Status: Draft` / `Open Readiness` / `Execution`へ分離し、active statusの非正規値を0件にした。
 - 未完了: dashboard/issue index/documentation qualityのcurrent/history分離、Active view 25件の未掲載解消、fresh-clone dry-run。これらを完了するまでIssueはIn Progressを維持する。
+
+## 進捗記録 2026-07-15: dashboard / decision-pack軽量化
+
+- `project-progress-dashboard.md` を手書き集計から、現在の正本を案内する25行の固定ページへ縮小した。
+- 解消済み `decision-pack-2026-03-human-judgement.md` を、Git履歴と現在の判断先を示す18行の案内へ縮小した。
+- `issues/README.md` はActive索引と最小運用だけに縮小し、過去同期ログの新規追記を停止した。
+- 現行のenterprise/strict mode設計からdashboard/decision-packへの進捗正本参照を除去した。
+- Git履歴で復元できない一次証拠は確認されなかったため、巨大な複製archiveは作成していない。
