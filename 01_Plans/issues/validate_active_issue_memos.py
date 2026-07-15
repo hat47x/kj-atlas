@@ -13,11 +13,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-from issue_memo_status import (
-    ACTIVE_ISSUE_STATUSES,
-    CANONICAL_ISSUE_STATUSES,
-    parse_issue_status,
-)
+try:
+    from .issue_memo_status import (
+        ACTIVE_ISSUE_STATUSES,
+        CANONICAL_ISSUE_STATUSES,
+        parse_issue_status,
+    )
+except ImportError:  # Direct script execution from 01_Plans/issues/.
+    from issue_memo_status import (
+        ACTIVE_ISSUE_STATUSES,
+        CANONICAL_ISSUE_STATUSES,
+        parse_issue_status,
+    )
 
 ALLOWED_VERIFICATION_LEVELS = {"docs-check", "unit", "integration", "e2e"}
 REQUIRED_FIELDS = [

@@ -124,7 +124,7 @@ Open化条件:
 - [x] T1 check matrixとrule IDを固定し、ADR-0024へ適用境界と段階有効化条件を追補する。
 - [x] T2 Active issue validatorをfilesystem直接検査へ変更し、Status parser共有と重複Active `RequirementID`検査を追加する。
 - [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。
-- [ ] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
+- [x] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
 - [ ] T5 CIへ`docs-contract` jobを追加し、既存PRとdocs-only PRで動作確認する。
 - [ ] T6 PR templateへ証跡欄を追加する。
 - [ ] T7 負例fixtureでfail、現行repositoryでpass、変更対象外のアプリtest非干渉を検証する。
@@ -232,3 +232,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - `Ready / Active / Draft (...)`等を黙って正規化せず、対象memoと生の値を示してfailする。本文中の履歴用Statusはヘッダーではないため検査対象にしない。
 - Active memoの一意性は`RequirementID`で検査する。役割の異なるmemoが意図的に共有する`Related Backlog`は重複エラーにしない。
 - 非正規Statusと重複Active `RequirementID`の負例を追加し、validator/triage 15 tests成功、現行repositoryで双方のActive 29件一致、triage stopper 0件を確認した。
+
+## T4完了記録 2026-07-15
+
+- `python 01_Plans/docs_check.py`を単一のローカル入口とし、`DC-ACT-001`、`DC-LNK-001`、両ruleのcontract testsを同じコマンドで実行するようにした。
+- 有効化条件を満たしていない7 ruleは実行済みに見せず、`not enabled`として毎回表示する。`git diff --check`は`DC-FMT-001`の負例fixture実装まで隣接手動確認を維持する。
+- 失敗時はrule ID、対象ファイル/テスト群、修正先を表示し、非0終了する。`CONTRIBUTING.md`とissues READMEの実行導線を統一入口へ同期した。
+- entrypoint unit testsを含む21 tests成功、現行repositoryでActive memo 29件、追跡Markdown 374件、finding 0を確認した。CI同値化とPR blockingはT5に残す。
