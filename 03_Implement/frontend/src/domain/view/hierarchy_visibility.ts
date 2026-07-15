@@ -1,4 +1,4 @@
-import type { DocumentV2, Island } from "../types";
+import type { DocumentV1, Island } from "../types";
 import type { HierarchyLevel } from "./hierarchy_level";
 
 export function collectHierarchyHiddenIslandIds(
@@ -17,7 +17,7 @@ export function collectHierarchyHiddenIslandIds(
   );
 }
 
-export function collectHierarchyPlacardHiddenCardIds(document: DocumentV2, level: HierarchyLevel): Set<string> {
+export function collectHierarchyPlacardHiddenCardIds(document: DocumentV1, level: HierarchyLevel): Set<string> {
   if (level !== "overview") {
     return new Set<string>();
   }

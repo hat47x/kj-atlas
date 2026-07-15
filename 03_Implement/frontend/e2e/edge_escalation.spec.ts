@@ -9,7 +9,7 @@ const START_PANEL = '[data-panel="start-document-entry"]';
 
 function buildDocument(zoom: number) {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Edge escalation fixture",
     createdAt: "2026-07-07T00:00:00.000Z",

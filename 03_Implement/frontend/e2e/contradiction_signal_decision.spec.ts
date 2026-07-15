@@ -10,7 +10,7 @@ const RUN_DIAGNOSTICS_BUTTON = /診断を実行|Run diagnostics/;
 
 function buildDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Contradiction signal decision fixture",
     createdAt: "2026-07-08T00:00:00.000Z",

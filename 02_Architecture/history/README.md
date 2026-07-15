@@ -19,6 +19,15 @@ Status: Informative history index
 
 上記が揃わない断片や、現行契約と区別できない複製は収録しません。移動計画とConflict一覧は [現行契約統合inventory](../contract_consolidation_inventory.md) を参照してください。
 
+## 収録済み履歴
+
+| 履歴 | 元文書 | 対象期間 | 現行正本 |
+|---|---|---|---|
+| [Schema contract formation history](schema-contract-formation-2026-05.md) | `schemas.md` former §1.0.1 / §11.1 / CE1 clarification / §1.3以降のfreeze・Stream記録 | 2026-05-03〜2026-05-20 | `schemas.md` types/validation/version、`data_model_operations_overview.md` CRUD/support level |
+| [API contract formation history](api-contract-formation-2026-04-to-05.md) | `api.md` former §2.8 Phase/mock plan / §2.10 / §2.8.x〜§2.11 / §9.5 / tail addendum and handoff | 2026-04-30〜2026-05-19 | `api.md` endpoints/status/errors/auth/side effects、`schemas.md` types |
+| [Architecture contract-freeze formation history](architecture-contract-freeze-formation-2026-04-to-05.md) | `architecture.md` former §7A.0 snapshot / §7A.2.1 / post-§12 baseline / §13 | 2026-04-27〜2026-05-04 | `architecture.md` responsibility boundary、`schemas.md` types、`api.md` endpoints/errors |
+| [Data Model Operations — Stream D formation history](data-model-operations-stream-d-2026-05.md) | `data_model_operations_overview.md` former §1.2/§1.3/§8〜§13 | 2026-05-19〜2026-05-20 | `data_model_operations_overview.md` §1〜§7、`schemas.md` versioning |
+
 ## 移動規律
 
 1. 元節と移動先の対応表を先に作る。
@@ -28,4 +37,3 @@ Status: Informative history index
 5. 情報欠落、契約値変更、リンク切れがあればそのbatchだけ戻す。
 
 履歴の破壊的削除や意味の書換えは行いません。
-

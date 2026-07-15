@@ -1,4 +1,4 @@
-import type { DocumentV2, SummaryHistoryEntry } from "./types";
+import type { DocumentV1, SummaryHistoryEntry } from "./types";
 
 const DEFAULT_HISTORY_LIMIT = 50;
 
@@ -27,11 +27,11 @@ function createEntryId(): string {
 }
 
 export function updateIslandSummaryWithHistory(
-  document: DocumentV2,
+  document: DocumentV1,
   islandId: string,
   patch: UpdateIslandSummaryPatch,
   options: UpdateIslandSummaryWithHistoryOptions = {}
-): DocumentV2 {
+): DocumentV1 {
   let didChange = false;
 
   const nextIslands = document.islands.map((island) => {

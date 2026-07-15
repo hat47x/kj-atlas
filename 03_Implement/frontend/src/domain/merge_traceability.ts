@@ -1,4 +1,4 @@
-import type { Card, DocumentV2 } from "./types";
+import type { Card, DocumentV1 } from "./types";
 
 export type RepresentativeOriginTrace = {
   representativeCardId: string;
@@ -12,7 +12,7 @@ function sortIds(ids: Iterable<string>): string[] {
 }
 
 function resolveRepresentativeCard(
-  document: DocumentV2,
+  document: DocumentV1,
   cardIds: string[]
 ): { card?: Card; resolvedBy: RepresentativeOriginTrace["representativeResolvedBy"] } {
   const decisionCardIdSet = new Set(cardIds);
@@ -70,7 +70,7 @@ function resolveRepresentativeCard(
   };
 }
 
-export function resolveRepresentativeOriginTrace(document: DocumentV2, representativeCardId: string): RepresentativeOriginTrace {
+export function resolveRepresentativeOriginTrace(document: DocumentV1, representativeCardId: string): RepresentativeOriginTrace {
   const representative = document.cards.find((card) => card.id === representativeCardId);
   const cardsById = new Map(document.cards.map((card) => [card.id, card]));
 
@@ -112,7 +112,7 @@ export function resolveRepresentativeOriginTrace(document: DocumentV2, represent
   };
 }
 
-export function resolveDecisionOriginTrace(document: DocumentV2, cardIds: string[]): RepresentativeOriginTrace {
+export function resolveDecisionOriginTrace(document: DocumentV1, cardIds: string[]): RepresentativeOriginTrace {
   const sortedCardIds = sortIds(cardIds);
   const representative = resolveRepresentativeCard(document, sortedCardIds);
   const representativeCardId = representative.card?.id ?? "";

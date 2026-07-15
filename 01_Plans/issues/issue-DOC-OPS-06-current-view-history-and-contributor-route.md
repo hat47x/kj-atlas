@@ -1,7 +1,7 @@
 # Issue: DOC-OPS-06 現行ビュー・履歴・貢献者導線の分離
 
 - Type: Documentation quality / Process
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -75,7 +75,7 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] fresh cloneの読者がREADMEから5分以内に、現行課題正本、triage、issue template、branch規律、検証入口へ到達できる。
+- [x] fresh cloneの読者がREADMEから5分以内に、現行課題正本、triage、issue template、branch規律、検証入口へ到達できる。
 - [x] `CONTRIBUTING.md` と `issues/README.md` でGitHub Issues/内部issue memoの現行正本が矛盾しない。
 - [x] dashboardとissue indexのcurrent領域に、resolved Queue、過去件数、per-rerunログを現行指示として含めない。
 - [x] Active viewがfilesystem上のDraft/Open/In Progress集合と一致する。
@@ -83,9 +83,9 @@
 - [x] `documentation_quality.md` のNormative QGと判定手順が連続して読め、Stream実行ログを読まずに適用できる。
 - [x] E2E実務手順のSSOT宣言が `03_Implement/frontend/docs/e2e_testing.md` の1箇所だけになる。
 - [x] 旧04 E2E文書の有効情報が失われず、旧pathは反対の規範を持たない。
-- [ ] currentから分離した一次履歴にはInformative、対象期間、Retention reason、現行正本への逆リンクがある。
-- [ ] SafeMode、share/export、provider=none、proposal-onlyの現行説明を落としていない。
-- [ ] README / AGENTS / CONTRIBUTING / 04管理index / issue indexのリンクが有効である。
+- [x] currentから分離した一次履歴にはInformative、対象期間、Retention reason、現行正本への逆リンクがある。
+- [x] SafeMode、share/export、provider=none、proposal-onlyの現行説明を落としていない。
+- [x] README / AGENTS / CONTRIBUTING / 04管理index / issue indexのリンクが有効である。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -95,8 +95,8 @@
 - [x] T4 documentation qualityのNormative本文を連続化し、実行ログをGit履歴へ分離する。
 - [x] T5 CONTRIBUTINGを現行issue memo運用とfirst-task runbookへ同期する。
 - [x] T6 E2E手順を03のSSOTへ統合し、旧04pathと全参照を整理する。
-- [ ] T7 fresh-clone想定の人間/AI dry-runとdocs-checkを行う。
-- [ ] T8 再発防止を `DX-DOC-02` へ引き渡す。
+- [x] T7 fresh-clone想定の人間/AI dry-runとdocs-checkを行う。
+- [x] T8 再発防止を `DX-DOC-02` へ引き渡す。
 
 ## 7) 検証計画 / Validation plan
 
@@ -155,3 +155,12 @@
 - validatorはREADME表ではなくmemoを直接走査し、Draft/Open/In Progressの34件を検証する。
 - triageとvalidatorはいずれもActive 34件を返し、関連unit test 12件が成功した。
 - 未完了はfresh-cloneの5分導線確認、リンク検査、docs-check統合であるため、IssueはIn Progressを維持する。
+
+## 完了記録 2026-07-15: fresh-clone route / recurrence handoff
+
+- dry-run: `README.md` → `CONTRIBUTING.md` → `triage_actionable_plans.py`の`Ready issues` → `issues/README.md` / 対象memo → `TEMPLATE.md` → `codex/` branch規律 → validator / 対象testをfresh-clone想定で追跡し、全地点へ到達した。
+- `CONTRIBUTING.md`に残っていた廃止済み「Active表」参照を生成viewへ修正した。GitHub Issuesを現行正本とする矛盾、current 3文書のStream/rerun drift、旧04 E2E文書の独立規範はいずれも0件。
+- currentから除いた反復ログはGit履歴で復元でき、別archiveが必要な一次証拠は0件と確認した。既存architecture historyのInformativeメタ・逆リンクは`DOC-ARCH-02`で検証済み。
+- SafeMode既定ON、share/export漏洩防止、proposal-only、`human_reviewed`人手限定、`KJ_ATLAS_LLM_PROVIDER=none`への現行導線を確認した。
+- route対象10文書の相対link 76件エラー0、Active issue validatorはclose直前33件・Done反映後32件、validator/triage unit 12件、`git diff --check`がpassした。再発防止境界は`DX-DOC-02`へ引き渡した。
+- 全Acceptance criteriaとT1〜T8を満たしたためDoneとする。

@@ -1,7 +1,7 @@
 # Issue: OPS-LEAN-01 小規模OSS向けに過度な運用を削減する
 
 - Type: Process
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -34,7 +34,7 @@
 - [x] 完了済み品質ゲート定義から候補ごとの反復ログを除き、実行証跡をCI・PR・releaseへ集約する。
 - [x] MVP脱却の親issueを出口条件と残る人間確認へ縮約し、候補ごとのProgram Gate記録を停止する。
 - [x] Product Value親issueとcurrent-open summaryの二重管理を解消し、完了済み価値レーンをDoneへ移す。
-- [ ] docs-checkとリンク検査が成功する。
+- [x] docs-checkとリンク検査が成功する。
 
 ## 検証計画
 
@@ -66,7 +66,14 @@
 - 現行の出口条件、完了済み範囲、残る4つの人間確認、検証入口だけを親issueへ残した。
 - `DATA-MAINT-04` と外部接続は独立候補であり、一般公開の一律ブロッカーにしないことを明示した。
 
-## 進捗記録 2026-07-15: Product Value台帳の統合
+## 完了記録 2026-07-15
+
+- `validate_active_issue_memos.py --root 01_Plans/issues` とvalidator・triage・データモデル契約の対象testで運用入口を検証した。
+- OPS-LEAN実装文書と後続のリリースゲート/MVP出口縮約を統合後、相対リンク欠落0件を確認した。
+- `AGENTS.md` に旧必須`Read Order`、全件`Project Map`、固定同期ルールの見出しが復活していないことと、`git diff --check`成功を確認した。
+- 全受入条件を満たしたためDoneとする。文書契約CIの自動化は`DX-DOC-02`で別管理し、本Issueへ混在させない。
+
+## 完了後の追加削減 2026-07-15: Product Value台帳の統合
 
 - PRODUCT-VALUE-01〜03の実装、E2E、H-PV代理受入、所有issueの完了を再確認し、3親issueをDoneへ移した。
 - 親issueと同じ証跡を繰り返していたcurrent-open summary 3件を削除し、履歴はGitへ委譲した。

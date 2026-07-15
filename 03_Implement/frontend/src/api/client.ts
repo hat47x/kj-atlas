@@ -1,4 +1,4 @@
-import type { Card, Document, DocumentV2, Island, KnownEdgeType } from "../domain/types";
+import type { Card, Document, DocumentV1, Island, KnownEdgeType } from "../domain/types";
 import { STREAM_B_CONTRACTS } from "../domain/stream_b_contract";
 
 function resolveApiBase(): string {
@@ -97,7 +97,7 @@ function normalizeIsland(island: Island): Island {
 }
 
 function normalizeDocument(document: Document): Document {
-  if (document.version !== 2) {
+  if (document.version !== 1) {
     return document;
   }
 
@@ -160,9 +160,9 @@ export async function getDocument(docId: string): Promise<DocumentWithEtag<Docum
 
 export async function putDocument(
   docId: string,
-  document: DocumentV2,
+  document: DocumentV1,
   ifMatch?: string
-): Promise<DocumentWithEtag<DocumentV2>> {
+): Promise<DocumentWithEtag<DocumentV1>> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -184,7 +184,7 @@ export async function putDocument(
   const responseBody = await response.text();
   const normalizedDocument = normalizeDocument(parseDocumentResponse(responseBody));
 
-  if (normalizedDocument.version !== 2) {
+  if (normalizedDocument.version !== 1) {
     throw new ApiError(500, "Unexpected document version in update response");
   }
 
@@ -214,11 +214,11 @@ export async function getProviderStatus(): Promise<ProviderKind> {
 
 export type SuggestLayoutResult = {
   suggestionId: string;
-  suggestedDoc: DocumentV2;
+  suggestedDoc: DocumentV1;
   notes?: string;
 };
 
-export async function suggestLayout(doc: DocumentV2, instruction?: string): Promise<SuggestLayoutResult> {
+export async function suggestLayout(doc: DocumentV1, instruction?: string): Promise<SuggestLayoutResult> {
   const response = await fetch(`${API_BASE}/ai/suggest-layout`, {
     method: "POST",
     headers: {
@@ -239,7 +239,7 @@ export async function suggestLayout(doc: DocumentV2, instruction?: string): Prom
   };
 
   const suggestedDoc = normalizeDocument(body.suggestedDoc);
-  if (suggestedDoc.version !== 2) {
+  if (suggestedDoc.version !== 1) {
     throw new ApiError(500, "Unexpected document version in suggestion response");
   }
 
@@ -307,7 +307,7 @@ function isMergeSuggestion(value: unknown): value is MergeSuggestion {
   );
 }
 
-export async function suggestMerges(doc: DocumentV2, instruction?: string): Promise<{ suggestions: MergeSuggestion[] }> {
+export async function suggestMerges(doc: DocumentV1, instruction?: string): Promise<{ suggestions: MergeSuggestion[] }> {
   const response = await fetch(`${API_BASE}/ai/suggest-merges`, {
     method: "POST",
     headers: {
@@ -358,7 +358,7 @@ export type IslandSummaryProposal = {
 };
 
 export async function proposeIslandSummary(
-  doc: DocumentV2,
+  doc: DocumentV1,
   islandId: string,
   sourceBundleHash: string
 ): Promise<IslandSummaryProposal> {
@@ -418,7 +418,7 @@ export async function postExportAudit(docId: string, options: { safeMode: boolea
   }
 }
 
-export async function suggestIslandSummary(doc: DocumentV2, islandId: string): Promise<SuggestIslandSummaryResult> {
+export async function suggestIslandSummary(doc: DocumentV1, islandId: string): Promise<SuggestIslandSummaryResult> {
   const response = await fetch(`${API_BASE}/ai/suggest-island-summary`, {
     method: "POST",
     headers: {
@@ -458,7 +458,7 @@ export async function suggestIslandSummary(doc: DocumentV2, islandId: string): P
 
 
 export type SummarizeIslandRelationPayload = {
-  doc: DocumentV2;
+  doc: DocumentV1;
   islandAId: string;
   islandBId: string;
   relationType: KnownEdgeType | "unknown";
@@ -516,7 +516,7 @@ export type NarrativeIssue = {
 };
 
 export async function checkNarrative(
-  doc: DocumentV2,
+  doc: DocumentV1,
   narrativeText: string,
   basedOnReadingOrder?: string[]
 ): Promise<{ issues: NarrativeIssue[] }> {
@@ -548,7 +548,7 @@ export type GenerateNarrativeResult = {
   warnings?: string[];
 };
 
-export async function generateNarrative(doc: DocumentV2, narrativeTitle?: string): Promise<GenerateNarrativeResult> {
+export async function generateNarrative(doc: DocumentV1, narrativeTitle?: string): Promise<GenerateNarrativeResult> {
   const response = await fetch(`${API_BASE}/ai/generate-narrative`, {
     method: "POST",
     headers: {

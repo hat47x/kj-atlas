@@ -1,8 +1,8 @@
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import type { TraceAnalyticsOptions, TraceAnalytics } from "./trace_analytics";
 
 export type TraceRequestPayload = {
-  doc: DocumentV2;
+  doc: DocumentV1;
   options: {
     kind: "evidence" | "contradiction";
     startCardId: string;
@@ -14,7 +14,7 @@ export type TraceRequestPayload = {
 };
 
 export type TraceAnalyticsRequestPayload = {
-  doc: DocumentV2;
+  doc: DocumentV1;
   options: TraceAnalyticsOptions & {
     startCardId: string;
   };

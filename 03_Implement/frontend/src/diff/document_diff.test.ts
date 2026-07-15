@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { buildMergeItems, finalizeMergeItems } from "./merge_items";
 import { computeDocumentDiff, flattenDocumentDiff } from "./document_diff";
 import { computeViewDiff } from "./view_diff";
 
-function doc(overrides: Partial<DocumentV2>): DocumentV2 {
+function doc(overrides: Partial<DocumentV1>): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-1",
     createdAt: "2025-01-01T00:00:00.000Z",
     updatedAt: "2025-01-01T00:00:00.000Z",

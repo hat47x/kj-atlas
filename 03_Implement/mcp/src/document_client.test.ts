@@ -35,7 +35,7 @@ describe("fetchDocument", () => {
   });
 
   it("requests GET /docs/{id} against the configured base URL", async () => {
-    const fetchSpy = vi.fn(async () => mockResponse(200, { id: "doc1", version: 2 }));
+    const fetchSpy = vi.fn(async () => mockResponse(200, { id: "doc1", version: 1 }));
     vi.stubGlobal("fetch", fetchSpy);
 
     await fetchDocument({ baseUrl: "http://127.0.0.1:8000" }, "doc1");
@@ -44,7 +44,7 @@ describe("fetchDocument", () => {
   });
 
   it("sends X-API-Key when configured (the browser client never does; this is a separate process)", async () => {
-    const fetchSpy = vi.fn(async () => mockResponse(200, { id: "doc1", version: 2 }));
+    const fetchSpy = vi.fn(async () => mockResponse(200, { id: "doc1", version: 1 }));
     vi.stubGlobal("fetch", fetchSpy);
 
     await fetchDocument({ baseUrl: "http://127.0.0.1:8000", apiKey: "secret-key" }, "doc1");
@@ -76,7 +76,7 @@ describe("fetchDocument", () => {
   });
 
   it("returns the parsed document body on success", async () => {
-    const body = { id: "doc1", version: 2, cards: [] };
+    const body = { id: "doc1", version: 1, cards: [] };
     vi.stubGlobal("fetch", vi.fn(async () => mockResponse(200, body)));
     const result = await fetchDocument({ baseUrl: "http://127.0.0.1:8000" }, "doc1");
     expect(result).toEqual(body);

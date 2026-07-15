@@ -5,7 +5,7 @@ const START_PANEL = '[data-panel="start-document-entry"]';
 function seedDocumentJson(): string {
   return JSON.stringify(
     {
-      version: 2,
+      version: 1,
       id: "first-run-import",
       title: "First run import",
       createdAt: "2026-05-31T00:00:00.000Z",
@@ -26,7 +26,7 @@ function seedDocumentJson(): string {
 
 function buildDocument(cardTexts: string[]): unknown {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "First run sample",
     createdAt: "2026-06-03T00:00:00.000Z",
@@ -195,7 +195,7 @@ test("read-only document file entry opens validated content for inspection witho
   });
 
   await expect(page.locator("body")).toContainText("Document validated. Review the summary, then click Open for inspection.");
-  await expect(page.getByText("Validate DocumentV2 JSON, then open it for inspection without saving.")).toBeVisible();
+  await expect(page.getByText("Validate DocumentV1 JSON, then open it for inspection without saving.")).toBeVisible();
   await page.getByRole("button", { name: "Open for inspection" }).click();
 
   await expect(page.getByRole("button", { name: "first run imported card" })).toBeVisible();

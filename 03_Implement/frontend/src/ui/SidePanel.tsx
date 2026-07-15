@@ -14,7 +14,7 @@ import {
   formatIslandRelationExplanationMarkdown,
   type IslandRelationEdgeSelection,
 } from "../domain/island_relation_explain";
-import type { Card, ContradictionSignalReviewStatus, CritiqueTag, DocumentV2, EvidenceLink, HoldState, Island, RelationSummary } from "../domain/types";
+import type { Card, ContradictionSignalReviewStatus, CritiqueTag, DocumentV1, EvidenceLink, HoldState, Island, RelationSummary } from "../domain/types";
 import { RELATION_SUMMARY_TEXT_MAX_LENGTH } from "../domain/relation_summary_ops";
 import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
@@ -146,7 +146,7 @@ type SidePanelProps = {
   onClearTemporaryReveal: () => void;
   groundingVisibilityMessage: string | null;
   onShowAllSourcesChange: (value: boolean) => void;
-  document: DocumentV2 | null;
+  document: DocumentV1 | null;
   selectedIslandRelationEdge: IslandRelationEdgeSelection | null;
   selectedAggregatedEdge: AggregatedEdgeMeta | null;
   onRevealSelectedEdgeSources: () => void;

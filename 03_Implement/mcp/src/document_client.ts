@@ -1,6 +1,6 @@
-import type { DocumentV2 } from "../../frontend/src/domain/types.js";
+import type { DocumentV1 } from "../../frontend/src/domain/types.js";
 
-// EXT-CONN-01 subslice B: fetches the DocumentV2 this server projects from,
+// EXT-CONN-01 subslice B: fetches the DocumentV1 this server projects from,
 // via the same GET /docs/{doc_id} contract the frontend uses (02_Architecture/api.md
 // §2.2). This process is not served behind the frontend's nginx proxy, so it
 // needs an absolute base URL and (when the deployment enables KJ_ATLAS_API_KEY)
@@ -33,7 +33,7 @@ export class DocumentFetchError extends Error {
   }
 }
 
-export async function fetchDocument(config: DocumentClientConfig, docId: string): Promise<DocumentV2> {
+export async function fetchDocument(config: DocumentClientConfig, docId: string): Promise<DocumentV1> {
   const url = `${config.baseUrl}/docs/${encodeURIComponent(docId)}`;
   const headers: Record<string, string> = {};
   if (config.apiKey) {
@@ -49,5 +49,5 @@ export async function fetchDocument(config: DocumentClientConfig, docId: string)
     throw new DocumentFetchError(docId, response.status);
   }
 
-  return (await response.json()) as DocumentV2;
+  return (await response.json()) as DocumentV1;
 }

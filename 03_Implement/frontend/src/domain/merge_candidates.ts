@@ -1,5 +1,5 @@
 import type { MergeSuggestion } from "../api/client";
-import type { Card, DocumentV2 } from "./types";
+import type { Card, DocumentV1 } from "./types";
 import { STREAM_B_CONTRACTS } from "./stream_b_contract";
 
 type CandidateReason = "normalized-text" | "token-signature";
@@ -78,7 +78,7 @@ function toSuggestions(groups: CandidateGroup[]): MergeSuggestion[] {
     });
 }
 
-export function collectMergeCandidates(document: DocumentV2): MergeSuggestion[] {
+export function collectMergeCandidates(document: DocumentV1): MergeSuggestion[] {
   const eligibleCards = document.cards.filter(isEligible);
   if (eligibleCards.length < 2) {
     return [];

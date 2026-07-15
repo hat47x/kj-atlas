@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import type { ReadingMode } from "../domain/view/reading_path";
 import type { ContradictionReport } from "../domain/view/contradiction_checks";
 import type { DialecticBalanceReport } from "../domain/view/dialectic_balance";
@@ -11,7 +11,7 @@ export const DIAGNOSTICS_DATA_SCHEMA_VERSION = 1 as const;
 export type DiagnosticsDataSchemaVersion = typeof DIAGNOSTICS_DATA_SCHEMA_VERSION;
 
 export type DiagnosticsRequestPayload = {
-  doc: DocumentV2;
+  doc: DocumentV1;
   view: {
     readingMode: ReadingMode;
     reviewedOnly: boolean;

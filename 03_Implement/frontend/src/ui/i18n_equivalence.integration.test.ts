@@ -12,12 +12,12 @@ import { SuggestionPanel } from "./SuggestionPanel";
 import { setActiveLocale } from "../i18n/translate";
 import { t } from "../i18n/translate";
 import { buildReadOnlyBlockedMessage } from "../domain/policy/read_only";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 
 
-function buildDocumentFixture(): DocumentV2 {
+function buildDocumentFixture(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-i18n-equivalence",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",

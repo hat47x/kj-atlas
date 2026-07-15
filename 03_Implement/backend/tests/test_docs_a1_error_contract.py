@@ -39,7 +39,7 @@ def sqlite_client(tmp_path) -> Iterator[TestClient]:
 
 def _sample_v2_payload(doc_id: str) -> dict:
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
         "title": "a1-error-contract",
         "createdAt": "2026-02-11T00:00:00Z",

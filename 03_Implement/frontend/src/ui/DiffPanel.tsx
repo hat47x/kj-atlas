@@ -1,11 +1,11 @@
 import { SafeModePolicy } from "../domain/policy/safe_mode";
 import type { DiffResult } from "../domain/diff/doc_diff";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { t } from "../i18n/translate";
 
 type DiffPanelProps = {
   comparisonFileName: string | null;
-  comparisonDocument: DocumentV2 | null;
+  comparisonDocument: DocumentV1 | null;
   diffResult: DiffResult | null;
   currentCardIdSet: Set<string>;
   currentIslandIdSet: Set<string>;

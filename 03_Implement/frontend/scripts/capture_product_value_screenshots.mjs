@@ -33,7 +33,7 @@ function buildFirstMeaningfulMapDocument(cardTexts = [
   "判断の軸として残す論点",
 ]) {
   return {
-    version: 2,
+    version: 1,
     id: "doc_first_meaningful_map_mouse",
     title: "First meaningful map mouse fixture",
     createdAt: fixedTimestamp,
@@ -57,7 +57,7 @@ function buildFirstMeaningfulMapDocument(cardTexts = [
 
 function buildDomainExpressionDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_domain_expression_keyboard_access",
     title: "domain expression keyboard access fixture",
     createdAt: fixedTimestamp,
@@ -123,7 +123,7 @@ function buildDomainExpressionDocument() {
 
 function buildReviewPackTraceDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_review_pack_trace_export",
     title: "review pack trace export fixture",
     createdAt: fixedTimestamp,

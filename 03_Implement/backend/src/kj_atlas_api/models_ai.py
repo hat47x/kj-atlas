@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from kj_atlas_api.models import DocumentV2
+from kj_atlas_api.models import DocumentV1
 
 
 SOURCE_BUNDLE_HASH_PATTERN = r"^(?:[0-9a-f]{64}|mock:[0-9a-f]{64})$"
@@ -38,7 +38,7 @@ class NarrativeIssue(BaseModel):
 class CheckNarrativeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    doc: DocumentV2
+    doc: DocumentV1
     narrativeText: str = Field(min_length=1)
     basedOnReadingOrder: list[str] | None = None
 
@@ -52,7 +52,7 @@ class CheckNarrativeResponse(BaseModel):
 class GenerateNarrativeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    doc: DocumentV2
+    doc: DocumentV1
     narrativeTitle: str | None = None
 
 
@@ -67,7 +67,7 @@ class GenerateNarrativeResponse(BaseModel):
 class SuggestIslandSummaryRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    doc: DocumentV2
+    doc: DocumentV1
     islandId: str = Field(min_length=1)
 
 
@@ -98,7 +98,7 @@ class RelationCardText(BaseModel):
 class SummarizeIslandRelationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    doc: DocumentV2
+    doc: DocumentV1
     islandAId: str = Field(min_length=1)
     islandBId: str = Field(min_length=1)
     relationType: Literal["related", "negate", "causal", "mutual", "equivalence", "unknown"]
@@ -145,7 +145,7 @@ class ProposalEnvelope(BaseModel):
 class ProposeIslandSummaryRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    doc: DocumentV2
+    doc: DocumentV1
     islandId: str = Field(min_length=1)
     sourceBundleHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
 

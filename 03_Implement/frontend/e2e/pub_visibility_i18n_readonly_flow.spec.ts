@@ -12,7 +12,7 @@ import {
 function buildDocument(id: string, cardText: string) {
   const now = new Date().toISOString();
   return {
-    version: 2,
+    version: 1,
     id,
     createdAt: now,
     updatedAt: now,

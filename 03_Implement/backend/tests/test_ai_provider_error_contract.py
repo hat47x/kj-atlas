@@ -9,7 +9,7 @@ from kj_atlas_api.settings import settings
 def _merge_payload() -> dict:
     return {
         "doc": {
-            "version": 2,
+            "version": 1,
             "id": "doc-1",
             "createdAt": "2026-02-11T00:00:00Z",
             "updatedAt": "2026-02-11T00:00:00Z",
@@ -27,7 +27,7 @@ def _merge_payload() -> dict:
 def _relation_payload() -> dict:
     return {
         "doc": {
-            "version": 2,
+            "version": 1,
             "id": "doc-1",
             "createdAt": "2026-02-11T00:00:00Z",
             "updatedAt": "2026-02-11T00:00:00Z",

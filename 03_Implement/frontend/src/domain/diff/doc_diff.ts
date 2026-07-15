@@ -1,4 +1,4 @@
-import type { DocumentV2, Island, RelationSummary } from "../types";
+import type { DocumentV1, Island, RelationSummary } from "../types";
 
 export type CardTextChange = {
   id: string;
@@ -88,7 +88,7 @@ function firstDifferingIndex(a: string[], b: string[]): number {
   return a.length === b.length ? -1 : minLength;
 }
 
-export function diffDocuments(a: DocumentV2, b: DocumentV2): DiffResult {
+export function diffDocuments(a: DocumentV1, b: DocumentV1): DiffResult {
   const aCards = new Map(a.cards.map((card) => [card.id, card]));
   const bCards = new Map(b.cards.map((card) => [card.id, card]));
 

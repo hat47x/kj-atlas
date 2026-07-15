@@ -4,7 +4,7 @@ Status: Informative working inventory
 
 対象revision: `1367740d8d03cf53bc0ad1eb09ffc45684ff51e1`
 
-更新日: 2026-07-11
+更新日: 2026-07-15
 
 目的: `DOC-ARCH-02` の物理SSOT化に先立ち、現行契約候補、異義定義、合成型欠落、履歴移動候補をanchor単位で固定する。本書は契約値を決める正本ではなく、移動・統合時の情報欠落と暗黙変更を防ぐチェックリストである。
 
@@ -29,12 +29,12 @@ Status: Informative working inventory
 
 | Inventory ID | 対象 | 定義A | 定義B | 実装証拠の用途 | Resolution |
 | --- | --- | --- | --- | --- | --- |
-| CI-CE1-01 | `ContextQueryV1` | `architecture.md` §7A.2.1: `scope:string[]`、depth文字列列挙、SafeMode object、`queryId`/`previewConfirmed`なし | `schemas.md` §1.2: `queryId`、scope列挙、depth数値、`safeModePolicy:"strict"`。後段freezeでは`previewConfirmed`もrequired | model/fixture/contract testは候補比較の証拠。上位契約を置換する根拠にはしない | **Conflict** |
-| CI-CE1-02 | `ContextBundleV1` | `architecture.md` §7A.2.1: `queryRef/cards/islands/...` | `schemas.md` §1.2: `queryCanonicalHash/selected/evidence/...`。`api.md` §2.8はさらにrequired `queryId`を含める | backend response modelとroute testで実装現況を確認する | **Conflict** |
-| CI-CE1-03 | `schemaVersion` | `api.md` §2.8/後段freezeでrequest/response掲載位置が揺れる | `schemas.md` の型本体・後段freezeでrequired集合の記述が分かれる | fixtureのclosed-world key集合を列挙する | **Conflict** |
-| CI-DOC-01 | `Card`合成型 | `schemas.md` §3.2の先頭型は基本fieldのみ | §14 `holdState`、§15 `meta`、§17 `ka`が加算定義 | frontend/backend roundtrip testでoptional field保持を確認する | **Merge without semantic change** |
-| CI-DOC-02 | `DocumentV2`合成型 | `schemas.md` §3.5の先頭型 | §14 `shelf`、§16 `contradictionSignalDecisions`が加算定義 | import/export/backend保存testでoptional field保持を確認する | **Merge without semantic change** |
-| CI-DOC-03 | support level | `data_model_operations_overview.md` §4.1は`cards[].meta`、`contradictionSignalDecisions`、`cards[].ka`を掲載 | `holdState`と`shelf`は`cards[]`説明へ包含され、独立行がない | support levelを変えず、検索可能な独立行が必要か確認する | **Clarify only** |
+| CI-CE1-01 | `ContextQueryV1` | `architecture.md`旧§7A.2.1: `scope:string[]`、depth文字列列挙、SafeMode object、`queryId`/`previewConfirmed`なし | `schemas.md` §1.2: `queryId`、scope列挙、depth数値、`safeModePolicy:"strict"`、`previewConfirmed` | model/fixture/contract testは候補比較の証拠。上位契約を置換する根拠にはしない | **Resolved 2026-07-15 by `CE1-CONTRACT-01`**。旧signatureはInformative history、現行logical queryは`schemas.md`の9-key closed-world型 |
+| CI-CE1-02 | `ContextBundleV1` | `api.md`形成記録はresponse `queryId`を再掲 | `schemas.md` §1.2、backend response、frontend logical fixtureはbundle本体に`queryId`なし | backend response modelとroute testで実装現況を確認する | **Resolved 2026-07-15 by `CE1-CONTRACT-01`**。`queryId`はQuery専用。旧APIのbundle帰属はInformativeな誤帰属として現行契約を上書きしない |
+| CI-CE1-03 | `schemaVersion` | 旧API/freeze記録でrequest/response掲載位置が揺れる | backend HTTP responseは`"1.0.0"`、logical bundleとfrontend fixtureには無し | fixtureのclosed-world key集合を列挙する | **Resolved 2026-07-15 by `CE1-CONTRACT-01`**。HTTP response metadataに限定し、logical bundleとcanonical hash入力へ含めない |
+| CI-DOC-01 | `Card`合成型 | `schemas.md` §3.2の先頭型は基本fieldのみ | §14 `holdState`、§15 `meta`、§17 `ka`が加算定義 | frontend/backend roundtrip testでoptional field保持を確認する | **Merged 2026-07-15 without semantic change** |
+| CI-DOC-02 | `DocumentV2`合成型 | `schemas.md` §3.5の先頭型 | §14 `shelf`、§16 `contradictionSignalDecisions`が加算定義 | import/export/backend保存testでoptional field保持を確認する | **Merged 2026-07-15 without semantic change** |
+| CI-DOC-03 | support level | `data_model_operations_overview.md` §4.1は`cards[].meta`、`contradictionSignalDecisions`、`cards[].ka`を掲載 | `holdState`と`shelf`は`cards[]`説明へ包含され、独立行がない | support levelを変えず、検索可能な独立行が必要か確認する | **Clarified 2026-07-15**。`cards[].holdState` / `shelf`をL2.5独立行として追加 |
 
 ## 3. 合成型へ統合する採択済みoptional field
 
@@ -54,10 +54,10 @@ Status: Informative working inventory
 
 | Batch | 元文書 | 移動候補anchor | 現行正本として残すもの |
 | --- | --- | --- | --- |
-| H-A | `architecture.md` | §7Aのfreeze形成メモ、§12後の`Contract Freeze Baseline`、§13 Stream Reflection Note | コンポーネント責務、信頼境界、採択済み契約IDへの索引 |
-| H-B | `api.md` | §2.10 Stream A log、§2.8.3 Stream sync、§2.11 freeze excerpt、§9.5 freeze note、末尾Freeze Addendum/handoff | endpoint、status/error、認証、副作用、唯一のrequest/response型参照 |
-| H-C | `schemas.md` | §1.0.1 Stream gate、§11.1 snapshot、§1.3以降のfreeze manifest/memo/Stream log/reaffirmation | 合成型、validation、version互換、Contract ID |
-| H-D | `data_model_operations_overview.md` | §1.2/1.3 Stream注記、§8〜§13 execution log/checkpoint/record/sync | 現行物理モデル、CRUD、support level、運用責任 |
+| H-A | `architecture.md` | **Moved 2026-07-15** to `history/architecture-contract-freeze-formation-2026-04-to-05.md`: §7A.0 snapshot、§7A.2.1 Interface Freeze、§12後の`Contract Freeze Baseline`、§13 Stream Reflection Note | コンポーネント責務、信頼境界、採択済み契約IDへの索引 |
+| H-B | `api.md` | **Moved 2026-07-15** to `history/api-contract-formation-2026-04-to-05.md`: §2.8 Phase/mock plan、§2.10 Stream A log、§2.8.x〜§2.11 sync/freeze、§9.5、末尾Freeze Addendum/handoff | endpoint、status/error、認証、副作用、唯一のrequest/response型参照 |
+| H-C | `schemas.md` | **Moved 2026-07-15** to `history/schema-contract-formation-2026-05.md`: §1.0.1 Stream gate、§11.1 snapshot、CE1 clarification、§1.3以降のfreeze manifest/memo/Stream log/reaffirmation | 合成型、validation、version互換、Contract ID |
+| H-D | `data_model_operations_overview.md` | §1.2/1.3 Stream注記、§8〜§13 execution log/checkpoint/record/sync | **Moved 2026-07-15** to `history/data-model-operations-stream-d-2026-05.md`。現行物理モデル、CRUD、support level、運用責任は元文書に維持 |
 
 ## 5. 移動時の必須メタ
 
@@ -100,4 +100,3 @@ rg -n "^#{1,4} .*?(Stream|freeze|Freeze|rerun|execution log|checkpoint|reaffirma
 ```
 
 最終的なDone判定には、backend/frontendの対象contract/roundtrip test、相対リンク検査、`git diff --check`が必要である。
-

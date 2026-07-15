@@ -1,4 +1,4 @@
-import type { DocumentV2, PatchApplyLogEntry } from "../types";
+import type { DocumentV1, PatchApplyLogEntry } from "../types";
 import type { ApplyResultMeta, PatchDocument } from "./patch_apply";
 
 function createEntryId(): string {
@@ -37,7 +37,7 @@ function buildPatchSourceSignature(patch: PatchDocument): string {
   return `fnv1a:${hashString(stable)}`;
 }
 
-export function appendPatchApplyLog(doc: DocumentV2, patch: PatchDocument, applyResultMeta: ApplyResultMeta): DocumentV2 {
+export function appendPatchApplyLog(doc: DocumentV1, patch: PatchDocument, applyResultMeta: ApplyResultMeta): DocumentV1 {
   const nextEntry: PatchApplyLogEntry = {
     id: createEntryId(),
     createdAt: new Date().toISOString(),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import {
   computePerspectiveRendering,
   isDefaultPerspectivePresetId,
@@ -12,8 +12,8 @@ import {
   resolveCurrentPerspectivePresetId,
 } from "./perspective";
 
-const baseDoc: DocumentV2 = {
-  version: 2,
+const baseDoc: DocumentV1 = {
+  version: 1,
   id: "doc",
   createdAt: "2025-01-01T00:00:00.000Z",
   updatedAt: "2025-01-01T00:00:00.000Z",

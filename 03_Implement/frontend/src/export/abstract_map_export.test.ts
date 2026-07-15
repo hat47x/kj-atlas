@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { buildRelationSummarySourceSignature } from "../domain/relation_summary_ops";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./abstract_map_export";
 
-function createDocument(): DocumentV2 {
+function createDocument(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc_1",
     title: "Doc",
     createdAt: "2026-01-01T00:00:00.000Z",

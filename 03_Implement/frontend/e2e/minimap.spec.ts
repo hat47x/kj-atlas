@@ -20,7 +20,7 @@ function buildDocument() {
   }
 
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Minimap fixture",
     createdAt: "2026-07-07T00:00:00.000Z",

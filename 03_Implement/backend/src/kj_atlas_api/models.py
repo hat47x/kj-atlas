@@ -8,7 +8,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 RELATION_SUMMARY_TEXT_MAX_LENGTH = 4000
-DOCUMENT_V2_MOCK_SCHEMA_VERSION = "mock-2026-05-19-dv2"
+DOCUMENT_V1_MOCK_SCHEMA_VERSION = "mock-2026-05-19-dv1"
 
 
 class Base(DeclarativeBase):
@@ -69,7 +69,7 @@ class Transform(BaseModel):
     zoom: float
 
 
-class Card(BaseModel):
+class CardBase(BaseModel):
     id: str
     text: str
     x: float
@@ -83,7 +83,6 @@ class Card(BaseModel):
     sources: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     critique: str | None = None
     critiqueTags: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
-    textReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 class CardMeta(BaseModel):
@@ -103,8 +102,8 @@ class CardKa(BaseModel):
     value: str | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
-class CardV2(Card):
-    textReviewed: bool | None = None
+class Card(CardBase):
+    textReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     holdState: Literal["held", "pending", "shelved"] | None = Field(
         default=None, exclude_if=lambda value: value is None
     )
@@ -112,14 +111,7 @@ class CardV2(Card):
     ka: CardKa | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
-class EdgeV1(BaseModel):
-    id: str
-    fromId: str
-    toId: str
-    type: Literal["related"]
-
-
-class EdgeV2(BaseModel):
+class Edge(BaseModel):
     id: str
     fromId: str
     toId: str
@@ -344,19 +336,6 @@ class PatchApplyLogEntry(BaseModel):
     stats: PatchApplyStats
     conflictMeta: PatchApplyConflictMeta | None = Field(default=None, exclude_if=lambda value: value is None)
     note: str | None = Field(default=None, exclude_if=lambda value: value is None)
-
-
-class DocumentV1(BaseModel):
-    version: Literal[1]
-    id: str
-    title: str | None = None
-    createdAt: datetime
-    updatedAt: datetime
-    transform: Transform
-    cards: list[Card]
-    edges: list[EdgeV1]
-
-
 
 
 class MergeSuggestionDecision(BaseModel):
@@ -643,15 +622,15 @@ class ContradictionSignalDecision(BaseModel):
     decidedAt: datetime
 
 
-class DocumentV2(BaseModel):
-    version: Literal[2]
+class DocumentV1(BaseModel):
+    version: Literal[1]
     id: str
     title: str | None = None
     createdAt: datetime
     updatedAt: datetime
     transform: Transform
-    cards: list[CardV2]
-    edges: list[EdgeV2]
+    cards: list[Card]
+    edges: list[Edge]
     islands: list[Island]
     readingOrder: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     narratives: list[Narrative] | None = Field(default=None, exclude_if=lambda value: value is None)
@@ -667,17 +646,17 @@ class DocumentV2(BaseModel):
     shelf: list[ShelfEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
-DocumentPayload = Annotated[DocumentV1 | DocumentV2, Field(discriminator="version")]
+DocumentPayload = DocumentV1
 
 
 class SuggestLayoutRequest(BaseModel):
-    doc: DocumentV2
+    doc: DocumentV1
     instruction: str | None = None
 
 
 class SuggestLayoutResponse(BaseModel):
     suggestionId: str
-    suggestedDoc: DocumentV2
+    suggestedDoc: DocumentV1
     notes: str | None = None
 
 
@@ -689,7 +668,7 @@ class MergeSuggestion(BaseModel):
 
 
 class SuggestMergesRequest(BaseModel):
-    doc: DocumentV2
+    doc: DocumentV1
     instruction: str | None = None
 
 

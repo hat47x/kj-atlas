@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import { analyzeEvidenceGaps, type EvidenceGapReport } from "./evidence_gap_checks";
 import type { PerspectiveMode } from "./perspective";
 import { t } from "../../i18n/translate";
@@ -16,16 +16,16 @@ export type GuidedFlowStep = {
   title: string;
   description: string;
   perspectiveMode: PerspectiveMode;
-  targetSelector: (doc: DocumentV2, viewState: GuidedFlowViewState) => string[];
+  targetSelector: (doc: DocumentV1, viewState: GuidedFlowViewState) => string[];
   suggestedActions: string[];
   optional?: boolean;
 };
 
-function isUnknownClaimType(claimType: DocumentV2["cards"][number]["claimType"]): boolean {
+function isUnknownClaimType(claimType: DocumentV1["cards"][number]["claimType"]): boolean {
   return claimType === undefined || claimType === "unknown";
 }
 
-function buildReviewTargets(doc: DocumentV2): string[] {
+function buildReviewTargets(doc: DocumentV1): string[] {
   const unknownCardIds = doc.cards
     .filter((card) => isUnknownClaimType(card.claimType))
     .map((card) => card.id)
@@ -39,14 +39,14 @@ function buildReviewTargets(doc: DocumentV2): string[] {
   return [...unreviewedIslandIds, ...unknownCardIds];
 }
 
-function buildClassifyTargets(doc: DocumentV2): string[] {
+function buildClassifyTargets(doc: DocumentV1): string[] {
   return doc.cards
     .filter((card) => isUnknownClaimType(card.claimType))
     .map((card) => card.id)
     .sort((left, right) => left.localeCompare(right));
 }
 
-function buildEvidenceTargets(doc: DocumentV2, evidenceGapReport?: EvidenceGapReport | null): string[] {
+function buildEvidenceTargets(doc: DocumentV1, evidenceGapReport?: EvidenceGapReport | null): string[] {
   const report = evidenceGapReport ?? analyzeEvidenceGaps(doc);
   const ids = new Set<string>();
 
@@ -63,7 +63,7 @@ function buildEvidenceTargets(doc: DocumentV2, evidenceGapReport?: EvidenceGapRe
   return [...ids].sort((left, right) => left.localeCompare(right));
 }
 
-function buildContradictionTargets(doc: DocumentV2): string[] {
+function buildContradictionTargets(doc: DocumentV1): string[] {
   const contradictingCardIdSet = new Set<string>();
   for (const link of doc.evidenceLinks ?? []) {
     if (link.type !== "contradicts") {

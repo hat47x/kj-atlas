@@ -28,7 +28,7 @@ function out(name) {
 
 function buildCatalogDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "UI catalog fixture",
     createdAt: ts,

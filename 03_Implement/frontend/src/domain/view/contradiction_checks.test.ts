@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { analyzeContradictions, signatureKeyForContradictionSignal } from "./contradiction_checks";
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 
-function createBaseDoc(): DocumentV2 {
+function createBaseDoc(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",

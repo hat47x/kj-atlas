@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { applyHilRsRediffPayload } from "./hil_rs_apply";
-import type { Document, DocumentV2 } from "./types";
+import type { Document, DocumentV1 } from "./types";
 import type { HilRsRediffPayload } from "./hil_rs_contract";
 
 const BASE: Document = {
-  version: 2,
+  version: 1,
   id: "d1",
   createdAt: "2026-03-10T00:00:00.000Z",
   updatedAt: "2026-03-10T00:00:00.000Z",
@@ -74,8 +74,8 @@ describe("applyHilRsRediffPayload", () => {
   });
 
   it("preserves critique data after reproposal apply (DOMAIN-EXPR-03: critique persists through reproposal loop)", () => {
-    const docWithCritique: DocumentV2 = {
-      version: 2,
+    const docWithCritique: DocumentV1 = {
+      version: 1,
       id: "d1",
       createdAt: "2026-03-10T00:00:00.000Z",
       updatedAt: "2026-03-10T00:00:00.000Z",
@@ -129,7 +129,7 @@ describe("applyHilRsRediffPayload", () => {
     expect(c2.y).toBe(50);
 
     // critiqueInputs preserved
-    expect((result.document as DocumentV2).critiqueInputs).toEqual(docWithCritique.critiqueInputs);
+    expect((result.document as DocumentV1).critiqueInputs).toEqual(docWithCritique.critiqueInputs);
 
     // Original document unmodified (immutable apply)
     expect(docWithCritique.cards[0].x).toBe(0);

@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 
 export type DistributionFinding = {
   severity: "warn" | "info";
@@ -70,7 +70,7 @@ function average(values: number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-function buildIslandDegreeMap(doc: DocumentV2): Map<string, number> {
+function buildIslandDegreeMap(doc: DocumentV1): Map<string, number> {
   const degreeByIslandId = new Map<string, number>();
   for (const island of doc.islands) {
     degreeByIslandId.set(island.id, 0);
@@ -94,7 +94,7 @@ function buildIslandDegreeMap(doc: DocumentV2): Map<string, number> {
   return degreeByIslandId;
 }
 
-export function analyzeDistribution(doc: DocumentV2, nowIso: string = new Date().toISOString()): DistributionReport {
+export function analyzeDistribution(doc: DocumentV1, nowIso: string = new Date().toISOString()): DistributionReport {
   const islandCount = doc.islands.length;
   const cardCount = doc.cards.length;
   const degreeByIslandId = buildIslandDegreeMap(doc);
@@ -193,7 +193,7 @@ export function analyzeDistribution(doc: DocumentV2, nowIso: string = new Date()
   };
 }
 
-export function rankDistributionIslands(doc: DocumentV2, limit = 5): DistributionRankings {
+export function rankDistributionIslands(doc: DocumentV1, limit = 5): DistributionRankings {
   const degreeByIslandId = buildIslandDegreeMap(doc);
   const rows: DistributionIslandRanking[] = doc.islands.map((island) => ({
     id: island.id,

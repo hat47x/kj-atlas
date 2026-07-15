@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { collectMergeCandidates } from "./merge_candidates";
 import { appendMergeSuggestionDecision, restoreMergeSuggestionDecisionsBySnapshot } from "./merge_suggestion_decisions";
 import { STREAM_B_CONTRACTS } from "./stream_b_contract";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
 type ValidationLog = {
   contractId: string;
@@ -13,9 +13,9 @@ type ValidationLog = {
   result: Record<string, unknown>;
 };
 
-function createDocument(): DocumentV2 {
+function createDocument(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-stream-b",
     createdAt: "2026-03-01T00:00:00.000Z",
     updatedAt: "2026-03-01T00:00:00.000Z",
@@ -136,7 +136,7 @@ describe("Stream B A2 mock validation", () => {
         note: "risk mitigation",
         snapshotVersion: STREAM_B_CONTRACTS.decisionLog.contractId,
       },
-    ] as DocumentV2["mergeSuggestionDecisions"];
+    ] as DocumentV1["mergeSuggestionDecisions"];
 
     const restored = restoreMergeSuggestionDecisionsBySnapshot(decisions, STREAM_B_CONTRACTS.decisionLog.contractId);
 

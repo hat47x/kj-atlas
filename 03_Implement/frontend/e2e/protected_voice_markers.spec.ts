@@ -4,7 +4,7 @@ const START_PANEL = '[data-panel="start-document-entry"]';
 
 function buildDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_protected_voice_markers",
     title: "Protected voice marker fixture",
     createdAt: "2026-07-08T00:00:00.000Z",

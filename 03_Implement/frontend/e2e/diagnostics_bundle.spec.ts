@@ -15,7 +15,7 @@ const SECRET_CARD_TEXT = "top secret unreviewed card body should never leak";
 
 function buildFixtureDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_diagnostics_bundle_e2e_fixture",
     title: "Diagnostics bundle e2e fixture",
     createdAt: FIXED_TIMESTAMP,

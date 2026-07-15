@@ -32,7 +32,7 @@ const ts = "2026-07-12T00:00:00.000Z";
 
 function buildDoc() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "Overlap re-verification fixture",
     createdAt: ts,

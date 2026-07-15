@@ -2,7 +2,7 @@
 
 この文書は、`02_Architecture` の設計文書を読むときに、どの記述を現在の正本として扱い、どの記述を履歴・監査ログとして扱うかを示す案内です。
 
-`api.md` と `schemas.md` には、現行契約、将来拡張、Contract Freeze、Stream 実行ログが同じファイル内に残っています。これは履歴を失わない利点がある一方、初見の利用者や開発者には「どこを読めばよいか」が分かりにくくなります。
+`architecture.md`、`api.md`、`schemas.md`、`data_model_operations_overview.md` の形成履歴は `history/` へ分離済みです。初見の利用者や開発者は、本ガイドから責務別の現行正本anchorへ進んでください。
 
 ---
 
@@ -41,7 +41,7 @@
 3. 公開・アクセス制御: `7. Publishing metadata` と `8. AccessControlAdapter API契約`
 4. 認証・事前プロビジョニング: `9. AUTH-SCHEMA-01 API契約`
 
-`Stream ... freeze ...` と日付付きの節は、契約形成時の履歴です。新しい実装要件として読むのではなく、現在の契約値を変更しないための監査証跡として扱います。
+旧Phase手順、mock validation plan、`Stream ... freeze ...`、handoffは [API contract formation history](history/api-contract-formation-2026-04-to-05.md) へ分離済みです。現行`api.md`はendpoint、status/error、認証、副作用を正本とし、型のキー集合は`schemas.md`を参照します。
 
 ---
 
@@ -50,12 +50,16 @@
 `schemas.md` は、次の順で読むと現在のデータ契約を追いやすくなります。
 
 1. MVPスキーマの対象範囲: `1. スコープ`
-2. CE0/CE1/CE2/CE4 の固定I/F: `1.1` と `1.2`
+2. CE0/CE1/CE2/CE4 の現行I/F: `1.1` と `1.2`
 3. Document / View / Pack / Publishing metadata: 本文中の型定義と `8. Publishing / Access metadata`
 4. Identity schema: `10. AUTH-SCHEMA-01`
 5. Decision Log / HIL-RS error envelope: 該当する契約節
 
-`Stream ...`、`Contract Freeze Addendum`、日付付き `freeze note` は、既存契約をどう凍結したかの履歴です。新しい正本を追加する場所ではありません。
+旧`Stream ...`、`Contract Freeze Addendum`、日付付き`freeze note`は [Schema contract formation history](history/schema-contract-formation-2026-05.md) へ分離済みです。現在の型・validation・version互換は`schemas.md`だけを正本とします。
+
+`Card` / `DocumentV2` の採択済みoptional field（`holdState`, `meta`, `ka`, `shelf`, `contradictionSignalDecisions`）は §3.2 / §3.5 の合成型を正本とし、後段§14〜§17は意味・安全・互換規則を補足します。
+
+`data_model_operations_overview.md` は現行の物理モデル、CRUD、support level、運用責任だけを正本とします。2026年5月の形成記録は [Architecture history](history/data-model-operations-stream-d-2026-05.md) で参照します。
 
 ---
 
@@ -73,7 +77,7 @@
 
 ## 6. 将来の分離方針
 
-`DOC-ARCH-02` で、次の物理分離を進行中です。現行のConflictと移動batchは [現行契約統合inventory](contract_consolidation_inventory.md) を参照してください。
+`DOC-ARCH-02` で、次の物理分離を実施しました。未解決Conflictと移動batchは [現行契約統合inventory](contract_consolidation_inventory.md) を参照してください。
 
 - 現行契約: API、schema、runtime parameter の正本文書に残す。
 - 履歴・freeze note: [`02_Architecture/history/`](history/README.md) へ移す。

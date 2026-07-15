@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { DocumentV2 } from "../types";
+import type { DocumentV1 } from "../types";
 import { computeStructureMetrics } from "./structural_metrics";
 
-function makeDoc(partial: Partial<DocumentV2>): DocumentV2 {
+function makeDoc(partial: Partial<DocumentV1>): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-1",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
@@ -205,7 +205,7 @@ describe("computeStructureMetrics", () => {
     });
 
     const before = computeStructureMetrics(doc);
-    const roundTrip = JSON.parse(JSON.stringify(doc)) as DocumentV2;
+    const roundTrip = JSON.parse(JSON.stringify(doc)) as DocumentV1;
     const after = computeStructureMetrics(roundTrip);
     expect(after).toEqual(before);
   });

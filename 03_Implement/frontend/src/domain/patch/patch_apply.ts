@@ -1,4 +1,4 @@
-import type { Card, DocumentV2, Edge, Island, PatchApplyStats, PatchConflictMeta, RelationSummary } from "../types";
+import type { Card, DocumentV1, Edge, Island, PatchApplyStats, PatchConflictMeta, RelationSummary } from "../types";
 import { KNOWN_EDGE_TYPES } from "../types";
 import type { PatchOp, PatchOpKind, PatchV1 } from "./patch_types";
 import { detectPatchConflicts } from "./conflict_detect";
@@ -229,7 +229,7 @@ export function parsePatchDocument(value: unknown): PatchDocument | null {
   };
 }
 
-function parseEvidenceLink(value: unknown): NonNullable<DocumentV2["evidenceLinks"]>[number] | null {
+function parseEvidenceLink(value: unknown): NonNullable<DocumentV1["evidenceLinks"]>[number] | null {
   if (!isRecord(value)) return null;
   if (typeof value.id !== "string" || typeof value.fromCardId !== "string" || typeof value.toCardId !== "string") return null;
   if (value.type !== "supports" && value.type !== "contradicts") return null;
@@ -289,7 +289,7 @@ function upsertById<T extends { id: string }>(items: T[], value: T): T[] {
   return next;
 }
 
-function applyPatchOp(currentDoc: DocumentV2, op: PatchOp): DocumentV2 {
+function applyPatchOp(currentDoc: DocumentV1, op: PatchOp): DocumentV1 {
   switch (op.kind) {
     case "upsert_card":
       return { ...currentDoc, cards: upsertById(currentDoc.cards, op.card) };
@@ -331,12 +331,12 @@ function applyPatchOp(currentDoc: DocumentV2, op: PatchOp): DocumentV2 {
 }
 
 export function applyPatchWithResolutions(
-  currentDoc: DocumentV2,
+  currentDoc: DocumentV1,
   patch: PatchDocument,
   resolutions: Record<string, PatchResolution>,
-  baselineDoc?: DocumentV2,
+  baselineDoc?: DocumentV1,
   selectedOpIds?: Set<string>
-): DocumentV2 {
+): DocumentV1 {
   return applyPatchWithResolutionsDetailed(currentDoc, patch, resolutions, baselineDoc, selectedOpIds).document;
 }
 
@@ -391,12 +391,12 @@ function incrementApplyStats(stats: PatchApplyStats, kind: PatchOpKind): void {
 }
 
 export function applyPatchWithResolutionsDetailed(
-  currentDoc: DocumentV2,
+  currentDoc: DocumentV1,
   patch: PatchDocument,
   resolutions: Record<string, PatchResolution>,
-  baselineDoc?: DocumentV2,
+  baselineDoc?: DocumentV1,
   selectedOpIds?: Set<string>
-): { document: DocumentV2; meta: ApplyResultMeta } {
+): { document: DocumentV1; meta: ApplyResultMeta } {
   const conflictReport = baselineDoc ? detectPatchConflicts(baselineDoc, currentDoc, patch) : null;
   const conflictOpIdSet = new Set(conflictReport ? conflictReport.conflicts.map((item) => item.opId) : []);
 

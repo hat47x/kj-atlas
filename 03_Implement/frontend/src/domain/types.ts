@@ -95,13 +95,6 @@ export function isDirectedEdgeType(type: EdgeType): boolean {
 
 export type EdgeEndpointKind = "card" | "island";
 
-export type EdgeV1 = {
-  id: string;
-  fromId: string;
-  toId: string;
-  type: "related";
-};
-
 export type Edge = {
   id: string;
   fromId: string;
@@ -310,17 +303,6 @@ export type DocumentV1 = {
   updatedAt: string;
   transform: Transform;
   cards: Card[];
-  edges: EdgeV1[];
-};
-
-export type DocumentV2 = {
-  version: 2;
-  id: string;
-  title?: string;
-  createdAt: string;
-  updatedAt: string;
-  transform: Transform;
-  cards: Card[];
   edges: Edge[];
   islands: Island[];
   readingOrder?: string[];
@@ -402,4 +384,4 @@ export type PatchApplyLogEntry = {
   note?: string;
 };
 
-export type Document = DocumentV1 | DocumentV2;
+export type Document = DocumentV1;

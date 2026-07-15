@@ -1,4 +1,4 @@
-import type { Card, DocumentV2, Edge, EvidenceLink, Island, RelationSummary } from "../types";
+import type { Card, DocumentV1, Edge, EvidenceLink, Island, RelationSummary } from "../types";
 import type { PatchDocument, PatchOp, PatchOpKind } from "./patch_apply";
 
 export type ConflictItem = {
@@ -58,7 +58,7 @@ function isEqual(left: unknown, right: unknown): boolean {
   return stableSerialize(left) === stableSerialize(right);
 }
 
-function getDocEntityByOp(doc: DocumentV2, op: PatchOp): Card | Island | Edge | RelationSummary | EvidenceLink | null {
+function getDocEntityByOp(doc: DocumentV1, op: PatchOp): Card | Island | Edge | RelationSummary | EvidenceLink | null {
   switch (op.kind) {
     case "upsert_card":
     case "delete_card":
@@ -123,7 +123,7 @@ function buildReason(baseChanged: boolean, yourValue: unknown, theirValue: unkno
   return "both modified";
 }
 
-export function detectPatchConflicts(baselineDoc: DocumentV2, currentDoc: DocumentV2, patch: PatchDocument): ConflictReport {
+export function detectPatchConflicts(baselineDoc: DocumentV1, currentDoc: DocumentV1, patch: PatchDocument): ConflictReport {
   const conflicts: ConflictItem[] = [];
   const nonConflictingOpIds: string[] = [];
 

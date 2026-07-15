@@ -1,4 +1,4 @@
-import type { Card, DocumentV2 } from "../types";
+import type { Card, DocumentV1 } from "../types";
 
 export type DomainStateFilterKind = "unreviewed" | "no_evidence" | "has_critique";
 
@@ -37,7 +37,7 @@ function cardHasCritique(card: Card): boolean {
   return (card.critique?.trim().length ?? 0) > 0 || (card.critiqueTags?.length ?? 0) > 0;
 }
 
-export function collectCardIdsWithEvidence(document: DocumentV2): Set<string> {
+export function collectCardIdsWithEvidence(document: DocumentV1): Set<string> {
   const ids = new Set<string>();
   for (const link of document.evidenceLinks ?? []) {
     ids.add(link.fromCardId);
@@ -47,7 +47,7 @@ export function collectCardIdsWithEvidence(document: DocumentV2): Set<string> {
 }
 
 export function selectCardIdsByDomainState(
-  document: DocumentV2,
+  document: DocumentV1,
   filter: DomainStateFilter,
 ): Set<string> {
   if (!isDomainStateFilterActive(filter)) {

@@ -12,7 +12,7 @@ const FIXED_TIMESTAMP = "2026-07-09T00:00:00.000Z";
 
 function buildFixtureDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_agent_response_e2e_fixture",
     title: "Agent response e2e fixture",
     createdAt: FIXED_TIMESTAMP,

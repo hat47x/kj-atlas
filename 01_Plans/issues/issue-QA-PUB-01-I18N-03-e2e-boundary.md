@@ -12,6 +12,8 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 - Expected verification level: `e2e`
 - Related backlog: `PUB-01`, `I18N-03`, `QA-E2E-USE-01`
+- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+- Expected verification level: `e2e`
 - Policy reference: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 
 ## Phase 1: Read Gate（Draft/Hold理由と依存抽出）

@@ -1,4 +1,4 @@
-import type { DocumentV2, EvidenceLink } from "../domain/types";
+import type { DocumentV1, EvidenceLink } from "../domain/types";
 
 export type TraceAnalyticsOptions = {
   kind?: "evidence" | "contradiction" | "both";
@@ -37,7 +37,7 @@ function roundTo4(value: number): number {
   return Math.round(value * 10_000) / 10_000;
 }
 
-export function computeTraceAnalytics(doc: DocumentV2, startCardId: string, options: TraceAnalyticsOptions = {}): TraceAnalytics {
+export function computeTraceAnalytics(doc: DocumentV1, startCardId: string, options: TraceAnalyticsOptions = {}): TraceAnalytics {
   const safeMode = options.safeMode ?? true;
   const kind = options.kind ?? "both";
   const maxHops = Math.max(1, Math.floor(options.maxHops ?? 4));

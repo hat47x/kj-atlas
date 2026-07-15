@@ -36,7 +36,7 @@ test("QA-1: polygon export stays deterministic for identical input", async ({ pa
 
   const now = new Date().toISOString();
   const polygonDoc = {
-    version: 2,
+    version: 1,
     id: "doc_e2e_polygon_deterministic",
     createdAt: now,
     updatedAt: now,
@@ -97,7 +97,7 @@ test("QA-2: importing self-intersecting polygon degrades invalid polygon to a no
 
   const now = new Date().toISOString();
   const invalidPolygonDoc = {
-    version: 2,
+    version: 1,
     id: "doc_e2e_polygon_self_intersection",
     createdAt: now,
     updatedAt: now,
@@ -154,7 +154,7 @@ test("QA-3: self-intersection edit is rejected and last valid polygon is kept", 
 
   const now = new Date().toISOString();
   const polygonDoc = {
-    version: 2,
+    version: 1,
     id: "doc_e2e_polygon_guard",
     createdAt: now,
     updatedAt: now,

@@ -1,12 +1,12 @@
-# Issue Draft: DX-DOC-02 docs-contract CIとActive issue完全性のfail-closed化
+# Issue: DX-DOC-02 docs-contract CIとActive issue完全性のfail-closed化
 
 - Type: Process / Documentation quality
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer / Developer Experience contributor
-- Scope: `01_Plans/issues/validate_active_issue_memos.py`, `01_Plans/issues/tests/`, `01_Plans/triage_actionable_plans.py`, `01_Plans/tests/`, `01_Plans/docs_check.py`（新規候補）, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `.github/workflows/ci.yml`, `.github/pull_request_template.md`, current-only文書と公開対象文書の検査規則
+- Scope: `01_Plans/issues/validate_active_issue_memos.py`, `01_Plans/issues/tests/`, `01_Plans/triage_actionable_plans.py`, `01_Plans/tests/`, `01_Plans/docs_contract_checks.py`, `01_Plans/docs_check.py`（新規候補）, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `.github/workflows/ci.yml`, `.github/pull_request_template.md`, current-only文書と公開対象文書の検査規則
 - Related Backlog: `DOC-ARCH-02`, `DOC-OPS-06`, `DOC-UI-CATALOG-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `01_Plans/issues/issue-DOC-ARCH-02-current-contract-history-physical-separation.md`, `01_Plans/issues/issue-DOC-OPS-06-current-view-history-and-contributor-route.md`, `01_Plans/issues/issue-DOC-UI-CATALOG-01-public-boundary-and-provenance.md`
 - Expected verification level: `integration`
@@ -106,11 +106,11 @@ Open化条件:
 - [x] indexへの手動掲載がなくても、filesystem上のActive memoをvalidatorが自動発見する。
 - [x] READMEの固定Active表を廃止し、空index・stale row・手動件数同期という失敗原因を除去する。
 - [ ] 必須メタデータ、非正規Status、参照先不在、依存関係不正、重複Backlog IDの異常系testがある。
-- [x] current repositoryでtriageとvalidatorがActive 34件を返す。
+- [x] current repositoryでtriageとvalidatorが同じActive件数を返す（2026-07-15 Open化時点: 29件）。
 - [ ] triageとvalidatorが同じStatus parser・正規値を使い、同じActive件数を返す。
 - [ ] 1コマンドでローカル/CI同値のdocs-checkを実行できる。
 - [ ] docs-check非0終了がPRをblockする。
-- [ ] 01/02/04/root docsの適用check matrixと除外理由が文書化され、02層が無検査にならない。
+- [x] 01/02/04/root docsの適用check matrixと除外理由が文書化され、02層が無検査にならない。
 - [ ] current領域の同一Contract ID/型の異義定義、API/schema key差異、DocumentV2支援表欠落を検出する。
 - [ ] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
 - [ ] broken relative linkとSSOT参照先不在を検出する。
@@ -121,7 +121,7 @@ Open化条件:
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 check matrixとrule IDを固定し、ADR-0024追補要否を記録する。
+- [x] T1 check matrixとrule IDを固定し、ADR-0024へ適用境界と段階有効化条件を追補する。
 - [ ] T2 Active issue validatorをfilesystem直接検査へ変更する（自動発見と既存異常系testsは完了。共有parser・重複Backlog ID検査は未完了）。
 - [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。
 - [ ] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
@@ -166,9 +166,62 @@ Open化条件:
 - 本件はADR-0024の実装欠落を埋めるActionである。新規ADRは原則不要。
 - ADR化が必要になる条件: 02層をblocking対象へ加える判断が既存ADR追補で扱えない、または新しい非機能境界を導入する場合（ADR-0047 R-3）。
 
+## DOC-ARCH-02 handoff（2026-07-15）
+
+`DOC-ARCH-02`が作成したclean baselineを、T1/T3のarchitecture checkerへ次の境界で引き継ぐ。
+
+- current対象: `architecture.md`、`api.md`、`schemas.md`、`data_model_operations_overview.md`。`history/`はInformativeとして別ルールで検査し、currentの重複定義件数へ混ぜない。
+- current/history分離: current対象の見出しへ`Stream`、`freeze`、`rerun`、`execution log`、`checkpoint`、`reaffirmation`が再混入したらfailする。正当な現行用語を誤検出しないよう、見出し単位・allowlist最小で実装する。
+- 責務別SSOT: CE1/CE2/CE4の型定義は`schemas.md`、endpoint/status/error/副作用は`api.md`、責務・信頼境界は`architecture.md`だけが定義する。参照リンクとContract ID索引は重複定義として数えない。
+- history metadata: `Status: Informative history`、Source document/anchors、Covered period、Snapshot/source revision、Retention reason、Current normative anchorsの欠落または逆リンク切れをfailする。
+- 既知Conflict: `queryId` / `schemaVersion`差異は`CE1-CONTRACT-01`へ委譲済みであり、同IssueがOpenの間は「解消済み」と推測して一方の値をcheckerへ固定しない。
+- 受入fixture: currentへの履歴見出し再挿入、architectureへのrequired key再掲、history metadata欠落、現行anchor切れを各1件以上の負例にする。
+
+引き渡し時baselineは、current 4文書の履歴見出し0、CE4型を含むCE主要型の定義先が`schemas.md`のみ、H-A〜H-D履歴ファイルの必須メタ充足、変更文書の相対リンク切れ0である。checker/CI実装とrule ID確定は本Issueのスコープに残す。
+
+## DOC-OPS-06 handoff（2026-07-15）
+
+fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7のroute/public checkerへ次の境界で引き継ぐ。
+
+- route: `README.md` → `CONTRIBUTING.md` → `triage_actionable_plans.py`の`Ready issues` → 対象memo / `issues/README.md` → `TEMPLATE.md` → branch規律 → validator / 対象test。このいずれかの相対linkまたはcommand参照が欠けたらfailする。
+- Active view: 固定Active表を再導入せず、memo metadataから生成する。`CONTRIBUTING.md`等に「Active表を確認」のような手動台帳依存が再混入したらfailする。
+- E2E SSOT: 実務手順は`03_Implement/frontend/docs/e2e_testing.md`だけが保持し、`04_Documentation/e2e_testing.md`は移転stubのままにする。旧04側へ独立command/profile/fixture規範が追加されたらfailする。
+- current-only: `project-progress-dashboard.md`、`issues/README.md`、`documentation_quality.md`へStream/rerun/過去件数/解消済みQueueが現行指示として再混入したらfailする。
+- safety route: `AGENTS.md`または参照先からSafeMode既定ON、share/export漏洩防止、proposal-only、`human_reviewed`人手限定、provider=`none`へ到達できることを検査する。値の複製一致ではなく、正本への有効な導線を確認する。
+
+引き渡し時baselineは、上記routeをfresh-clone想定で追跡可能、current log drift 0、内部issue memo/GitHub Issues方針の矛盾0、E2E旧pathの独立規範0、route対象の相対link切れ0である。checker/CI実装は本Issueのスコープに残す。
+
 ## 進捗記録 2026-07-15: Active viewの単一化
 
 - READMEの手書きActive表を廃止し、`triage_actionable_plans.py` の生成結果をcurrent viewとした。
 - validatorは `issue-*.md` を直接走査し、StatusがDraft/Open/In Progressの34件を検証する。
 - triageもActive 34件を返し、validator/triage unit test 12件が成功した。
 - parser共有、重複Backlog ID検査、統一docs-checkとCI blockingは未完了のため、本IssueはDraftを維持する。
+
+## baseline補正 2026-07-15: リポジトリ内コード参照
+
+- 追跡対象Markdown 374件の相対リンク存在確認で、ADR-0050の3件と完了済みUX-NAV-01 memoの12件が、文書ディレクトリから解決できないリポジトリルート基準または`:line`付きの参照先になっていることを確認した。
+- 参照対象コードや履歴説明は変更せず、文書位置から解決できる`../../03_Implement/...`形式へ補正した。行番号は当時の調査位置としてリンクラベルに残し、現在行への誤った固定anchorには変換していない。
+- `llm_input_ir_spec.md`の正規表現例`/[?&](token|key|secret|password)=/i`はMarkdownリンクではない。T3のcheckerはコードスパン・コードブロックを除外し、この記法を誤検出しないfixtureを持つ。
+- コード記法を除外した全374 Markdown・相対リンク352件の存在確認は欠落0件となり、T3のbroken-link checkerを導入できるclean baselineを回復した。
+
+## Open化記録 2026-07-15
+
+- 依存する`DOC-ARCH-02`、`DOC-OPS-06`、`DOC-UI-CATALOG-01`はすべてDoneで、検査対象、許可例外、正本導線のhandoffが揃った。
+- `ADR-0024`は品質ゲート境界そのものを扱うAccepted ADRである。`02_Architecture`を適用matrixへ加える判断は新規ADRへ分岐せず、T1で同ADRへ根拠、段階導入、除外を追補する。
+- current/history、公開境界、貢献者route、全Markdown相対リンクのclean baselineが再現できた。Open化条件3点を満たしたため、T1から着手可能なOpenへ移す。
+- 最初の実装単位はT1のrule ID/check matrix固定とする。CI変更やblocking昇格を先行させず、ローカル負例fixtureで規則を確定してからT3〜T5へ進む。
+
+## T1完了記録 2026-07-15
+
+- `ADR-0024`へroot/01/02-current/02-history/04-publicの適用matrixと`DC-ACT-001`〜`DC-FMT-001`の9 ruleを追補した。
+- 内部相対参照先の存在確認だけをBoundary-1へ昇格し、外部URL到達性、文体lint、ヒューリスティックな意味判定はBoundary-2に維持した。
+- rule単位の決定論的実装、正常/負例fixture、clean pass、ローカル/CI同一entrypoint、診断表示が揃うまでblockingを有効化しない段階条件を固定した。
+- 次の実装単位はT2のStatus parser共有と重複Backlog検査、または独立に進められるT3の`DC-LNK-001`純関数/fixtureである。
+
+## T3進捗 2026-07-15: `DC-LNK-001`
+
+- `docs_contract_checks.py`へ、コードフェンス/コードスパン、外部URL、ページ内anchorを除外し、相対参照先の欠落とrepository外への逸脱を検出する純関数を追加した。
+- findingはrule ID、対象ファイル、行、参照先、修正先を保持し、CI診断へそのまま渡せる形式とした。
+- 正常、欠落、コード記法除外、外部参照除外、percent-encoded path、repository逸脱の4 unit testsが成功した。
+- 同じ実装を追跡Markdown 374件へ適用し、`DC-LNK-001` finding 0件を確認した。T3全体はcurrent/history、architecture、public checkerが未実装のため未完了を維持する。

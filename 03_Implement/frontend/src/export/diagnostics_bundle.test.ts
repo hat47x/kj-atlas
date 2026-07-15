@@ -45,7 +45,7 @@ describe("buildDiagnosticsBundle: full shape", () => {
     appRevision: "rev-abc123",
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     platform: "Win32",
-    document: { version: 2, updatedAt: "2026-07-13T01:00:00.000Z", cardCount: 12, islandCount: 3, edgeCount: 5 },
+    document: { version: 1, updatedAt: "2026-07-13T01:00:00.000Z", cardCount: 12, islandCount: 3, edgeCount: 5 },
     error: { errorCode: "A1_TIMEOUT", contractId: "hil-rs-a1.v1", occurredAt: "2026-07-13T00:59:00.000Z" },
   };
 
@@ -55,7 +55,7 @@ describe("buildDiagnosticsBundle: full shape", () => {
     expect(bundle.client).toEqual({ browserFamily: "chrome", browserMajor: 120, osFamily: "windows" });
     expect(bundle.incident).toEqual({ classificationCode: "SAVE-FAILURE", httpStatus: 503 });
     expect(bundle.document).toEqual({
-      version: 2,
+      version: 1,
       updatedAt: "2026-07-13T01:00:00.000Z",
       counts: { cards: 12, islands: 3, edges: 5 },
     });
@@ -87,7 +87,7 @@ describe("buildDiagnosticsBundle: SafeMode invariant", () => {
       appRevision: "rev-xyz",
       userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15",
       platform: "MacIntel",
-      document: { version: 2, cardCount: 1, islandCount: 0, edgeCount: 0 },
+      document: { version: 1, cardCount: 1, islandCount: 0, edgeCount: 0 },
     };
 
     const off = buildDiagnosticsBundle({ ...input, safeMode: false });
@@ -114,7 +114,7 @@ describe("isDiagBundleShapeValid: unknown-key rejection", () => {
   it("rejects an extra key in app/client/incident/runtime/document/error", () => {
     const base = buildDiagnosticsBundle({
       ...BASE_INPUT,
-      document: { version: 2, cardCount: 0, islandCount: 0, edgeCount: 0 },
+      document: { version: 1, cardCount: 0, islandCount: 0, edgeCount: 0 },
       error: { errorCode: "X", contractId: "Y", occurredAt: "2026-07-13T00:00:00.000Z" },
     });
 
@@ -139,7 +139,7 @@ describe("isDiagBundleShapeValid: unknown-key rejection", () => {
     const bundle = buildDiagnosticsBundle({
       ...BASE_INPUT,
       httpStatus: 200,
-      document: { version: 2, updatedAt: "2026-07-13T00:00:00.000Z", cardCount: 1, islandCount: 1, edgeCount: 1 },
+      document: { version: 1, updatedAt: "2026-07-13T00:00:00.000Z", cardCount: 1, islandCount: 1, edgeCount: 1 },
       error: { errorCode: "X", contractId: "Y", occurredAt: "2026-07-13T00:00:00.000Z" },
     });
     expect(isDiagBundleShapeValid(bundle)).toBe(true);
@@ -214,7 +214,7 @@ describe("no side effects", () => {
     try {
       const bundle = buildDiagnosticsBundle({
         ...BASE_INPUT,
-        document: { version: 2, cardCount: 1, islandCount: 1, edgeCount: 1 },
+        document: { version: 1, cardCount: 1, islandCount: 1, edgeCount: 1 },
         error: { errorCode: "X", contractId: "Y", occurredAt: "2026-07-13T00:00:00.000Z" },
       });
       serializeDiagnosticsBundle(bundle);
@@ -230,7 +230,7 @@ describe("no side effects", () => {
 
 describe("serializeDiagnosticsBundle", () => {
   it("is deterministic for identical input", () => {
-    const input: DiagBundleInput = { ...BASE_INPUT, document: { version: 2, cardCount: 2, islandCount: 1, edgeCount: 1 } };
+    const input: DiagBundleInput = { ...BASE_INPUT, document: { version: 1, cardCount: 2, islandCount: 1, edgeCount: 1 } };
     const first = serializeDiagnosticsBundle(buildDiagnosticsBundle(input));
     const second = serializeDiagnosticsBundle(buildDiagnosticsBundle(input));
     expect(first).toBe(second);
@@ -240,7 +240,7 @@ describe("serializeDiagnosticsBundle", () => {
     const bundle = buildDiagnosticsBundle({
       ...BASE_INPUT,
       httpStatus: 500,
-      document: { version: 2, updatedAt: "2026-07-13T00:00:00.000Z", cardCount: 1, islandCount: 1, edgeCount: 1 },
+      document: { version: 1, updatedAt: "2026-07-13T00:00:00.000Z", cardCount: 1, islandCount: 1, edgeCount: 1 },
       error: { errorCode: "X", contractId: "Y", occurredAt: "2026-07-13T00:00:00.000Z" },
     });
     const roundTripped = JSON.parse(serializeDiagnosticsBundle(bundle));

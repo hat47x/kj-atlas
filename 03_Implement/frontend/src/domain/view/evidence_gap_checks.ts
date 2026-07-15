@@ -1,4 +1,4 @@
-import type { Card, DocumentV2 } from "../types";
+import type { Card, DocumentV1 } from "../types";
 
 export type EvidenceFinding = {
   severity: "warn" | "info";
@@ -33,7 +33,7 @@ function snippet(card: Card): string {
   return text.length > 80 ? `${text.slice(0, 80)}…` : text;
 }
 
-export function analyzeEvidenceGaps(document: DocumentV2): EvidenceGapReport {
+export function analyzeEvidenceGaps(document: DocumentV1): EvidenceGapReport {
   const cardsById = new Map(document.cards.map((card) => [card.id, card]));
   const evidenceLinks = document.evidenceLinks ?? [];
 

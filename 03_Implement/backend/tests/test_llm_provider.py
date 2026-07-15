@@ -261,7 +261,7 @@ def test_api_does_not_expose_decision_finalization_routes() -> None:
 def test_suggest_merges_contract_is_stable_across_provider_switch(monkeypatch: pytest.MonkeyPatch) -> None:
     payload = {
         "doc": {
-            "version": 2,
+            "version": 1,
             "id": "doc-1",
             "createdAt": "2026-02-11T00:00:00Z",
             "updatedAt": "2026-02-11T00:00:00Z",

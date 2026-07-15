@@ -10,7 +10,7 @@ import {
 function buildKeyboardDocument() {
   const now = "2026-05-22T00:00:00.000Z";
   return {
-    version: 2,
+    version: 1,
     id: "doc_e2e_canvas_focus_order",
     title: "canvas focus order fixture",
     createdAt: now,

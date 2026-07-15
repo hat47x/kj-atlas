@@ -12,9 +12,9 @@ import {
   validateHilRsRediffPayload,
 } from "./hil_rs_contract";
 import { createHilRsStubClient } from "./hil_rs_stub_client";
-import type { DocumentV2 } from "./types";
+import type { DocumentV1 } from "./types";
 
-const FIXTURE_DOC = JSON.parse(fixtureRaw) as DocumentV2;
+const FIXTURE_DOC = JSON.parse(fixtureRaw) as DocumentV1;
 
 describe("hil_rs_stub_client", () => {
   it("builds critique inputs from fixture without coupling to runtime API", () => {
@@ -78,7 +78,7 @@ describe("hil_rs_stub_client", () => {
       );
     }
 
-    const suggestedDocument: DocumentV2 = {
+    const suggestedDocument: DocumentV1 = {
       ...FIXTURE_DOC,
       cards: FIXTURE_DOC.cards.map((card) => (card.id === "c1" ? { ...card, x: 120, y: 140 } : card)),
       updatedAt: "2026-03-11T00:00:00.000Z",
@@ -104,7 +104,7 @@ describe("hil_rs_stub_client", () => {
       createdAt: "2026-03-11T00:00:00.000Z",
     });
 
-    const suggestedDocument: DocumentV2 = {
+    const suggestedDocument: DocumentV1 = {
       ...FIXTURE_DOC,
       cards: FIXTURE_DOC.cards.map((card) => (card.id === "c1" ? { ...card, x: 120, y: 140 } : card)),
       updatedAt: "2026-03-11T00:00:00.000Z",

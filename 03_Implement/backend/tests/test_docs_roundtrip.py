@@ -87,16 +87,17 @@ def _sample_payload(doc_id: str) -> dict:
             }
         ],
         "edges": [],
+        "islands": [],
     }
 
 
 
 
-def _sample_payload_v2_with_collapsed(doc_id: str) -> dict:
+def _sample_payload_v1_with_collapsed(doc_id: str) -> dict:
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
-        "title": "roundtrip-v2",
+        "title": "roundtrip-v1",
         "createdAt": "2026-02-11T00:00:00Z",
         "updatedAt": "2026-02-11T00:00:00Z",
         "transform": {"panX": 0, "panY": 0, "zoom": 1},
@@ -144,11 +145,11 @@ def _sample_payload_v2_with_collapsed(doc_id: str) -> dict:
 
 
 
-def _sample_payload_v2_with_canonical(doc_id: str) -> dict:
+def _sample_payload_v1_with_canonical(doc_id: str) -> dict:
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
-        "title": "roundtrip-v2-canonical",
+        "title": "roundtrip-v1-canonical",
         "createdAt": "2026-02-11T00:00:00Z",
         "updatedAt": "2026-02-11T00:00:00Z",
         "transform": {"panX": 0, "panY": 0, "zoom": 1},
@@ -173,11 +174,11 @@ def _sample_payload_v2_with_canonical(doc_id: str) -> dict:
     }
 
 
-def _sample_payload_v2_with_shelf(doc_id: str) -> dict:
+def _sample_payload_v1_with_shelf(doc_id: str) -> dict:
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
-        "title": "roundtrip-v2-shelf",
+        "title": "roundtrip-v1-shelf",
         "createdAt": "2026-06-21T00:00:00Z",
         "updatedAt": "2026-06-21T00:00:00Z",
         "transform": {"panX": 0, "panY": 0, "zoom": 1},
@@ -212,11 +213,11 @@ def _sample_payload_v2_with_shelf(doc_id: str) -> dict:
 
 
 
-def _sample_payload_v2_with_merge_suggestion_decisions(doc_id: str) -> dict:
+def _sample_payload_v1_with_merge_suggestion_decisions(doc_id: str) -> dict:
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
-        "title": "roundtrip-v2-merge-decisions",
+        "title": "roundtrip-v1-merge-decisions",
         "createdAt": "2026-02-11T00:00:00Z",
         "updatedAt": "2026-02-11T00:00:00Z",
         "transform": {"panX": 0, "panY": 0, "zoom": 1},
@@ -254,11 +255,11 @@ def _sample_merge_decision_record(*, decision_id: str, group_id: str, snapshot_v
     }
 
 
-def _sample_payload_v2_with_relation_summaries(doc_id: str) -> dict:
+def _sample_payload_v1_with_relation_summaries(doc_id: str) -> dict:
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
-        "title": "roundtrip-v2-relations",
+        "title": "roundtrip-v1-relations",
         "createdAt": "2026-02-11T00:00:00Z",
         "updatedAt": "2026-02-11T00:00:00Z",
         "transform": {"panX": 0, "panY": 0, "zoom": 1},
@@ -318,17 +319,17 @@ def _sample_payload_v2_with_relation_summaries(doc_id: str) -> dict:
     }
 
 
-def _sample_payload_v2_without_relation_summary_history(doc_id: str) -> dict:
-    payload = _sample_payload_v2_with_relation_summaries(doc_id)
+def _sample_payload_v1_without_relation_summary_history(doc_id: str) -> dict:
+    payload = _sample_payload_v1_with_relation_summaries(doc_id)
     payload["relationSummaries"][0].pop("history", None)
     return payload
 
 
-def _sample_payload_v2_with_evidence_links(doc_id: str) -> dict:
+def _sample_payload_v1_with_evidence_links(doc_id: str) -> dict:
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
-        "title": "roundtrip-v2-evidence",
+        "title": "roundtrip-v1-evidence",
         "createdAt": "2026-02-11T00:00:00Z",
         "updatedAt": "2026-02-11T00:00:00Z",
         "transform": {"panX": 0, "panY": 0, "zoom": 1},
@@ -380,9 +381,9 @@ def _sample_payload_v2_with_evidence_links(doc_id: str) -> dict:
     }
 
 
-def _assert_v2_canonical_roundtrip(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-canonical"
-    payload = _sample_payload_v2_with_canonical(doc_id)
+def _assert_v1_canonical_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-canonical"
+    payload = _sample_payload_v1_with_canonical(doc_id)
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
@@ -399,9 +400,9 @@ def _assert_v2_canonical_roundtrip(client: TestClient) -> None:
     assert get_cards_by_id["card-canonical"]["sources"] == ["card-source"]
 
 
-def _assert_v2_shelf_roundtrip(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-shelf"
-    payload = _sample_payload_v2_with_shelf(doc_id)
+def _assert_v1_shelf_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-shelf"
+    payload = _sample_payload_v1_with_shelf(doc_id)
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
@@ -424,14 +425,14 @@ def _assert_v2_shelf_roundtrip(client: TestClient) -> None:
     assert get_json["shelf"][0]["reason"] == "Needs another interview"
 
 
-def _assert_v2_collapsed_roundtrip(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-collapsed"
-    payload = _sample_payload_v2_with_collapsed(doc_id)
+def _assert_v1_collapsed_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-collapsed"
+    payload = _sample_payload_v1_with_collapsed(doc_id)
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
     put_json = put_response.json()
-    assert put_json["version"] == 2
+    assert put_json["version"] == 1
     assert put_json["id"] == doc_id
 
     put_islands_by_id = {island["id"]: island for island in put_json["islands"]}
@@ -458,9 +459,9 @@ def _assert_v2_collapsed_roundtrip(client: TestClient) -> None:
 
 
 
-def _assert_v2_merge_suggestion_decisions_roundtrip(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-merge-decisions"
-    payload = _sample_payload_v2_with_merge_suggestion_decisions(doc_id)
+def _assert_v1_merge_suggestion_decisions_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-merge-decisions"
+    payload = _sample_payload_v1_with_merge_suggestion_decisions(doc_id)
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
@@ -476,7 +477,7 @@ def _assert_v2_merge_suggestion_decisions_roundtrip(client: TestClient) -> None:
 
 def _assert_merge_decision_logs_contract_roundtrip(client: TestClient) -> None:
     doc_id = "doc-merge-decision-log"
-    payload = _sample_payload_v2_with_merge_suggestion_decisions(doc_id)
+    payload = _sample_payload_v1_with_merge_suggestion_decisions(doc_id)
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
@@ -515,7 +516,7 @@ def _assert_merge_decision_logs_contract_roundtrip(client: TestClient) -> None:
 
 def _assert_merge_decision_logs_contract_validation(client: TestClient) -> None:
     doc_id = "doc-merge-decision-log-validation"
-    payload = _sample_payload_v2_with_merge_suggestion_decisions(doc_id)
+    payload = _sample_payload_v1_with_merge_suggestion_decisions(doc_id)
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
 
@@ -548,7 +549,7 @@ def _assert_merge_decision_logs_contract_validation(client: TestClient) -> None:
 
 def _assert_similar_candidate_groups_contract_default(client: TestClient) -> None:
     doc_id = "doc-similar-candidate-groups"
-    payload = _sample_payload_v2_with_merge_suggestion_decisions(doc_id)
+    payload = _sample_payload_v1_with_merge_suggestion_decisions(doc_id)
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
@@ -572,7 +573,7 @@ def _assert_similar_candidate_groups_contract_default(client: TestClient) -> Non
 
 def _assert_similar_candidate_groups_excludes_non_eligible_cards(client: TestClient) -> None:
     doc_id = "doc-similar-candidate-groups-filter"
-    payload = _sample_payload_v2_with_merge_suggestion_decisions(doc_id)
+    payload = _sample_payload_v1_with_merge_suggestion_decisions(doc_id)
     payload["cards"] = [
         {"id": "card-1", "text": "gamma delta", "x": 0, "y": 0},
         {"id": "card-2", "text": "delta gamma", "x": 10, "y": 10},
@@ -601,7 +602,7 @@ def _assert_similar_candidate_groups_missing_doc(client: TestClient) -> None:
 
 def _assert_similar_candidate_groups_deterministic_order_contract(client: TestClient) -> None:
     doc_id = "doc-similar-candidate-groups-order"
-    payload = _sample_payload_v2_with_merge_suggestion_decisions(doc_id)
+    payload = _sample_payload_v1_with_merge_suggestion_decisions(doc_id)
     payload["cards"] = [
         {"id": "card-c", "text": "left right", "x": 0, "y": 0},
         {"id": "card-a", "text": "alpha beta", "x": 10, "y": 10},
@@ -633,9 +634,9 @@ def _assert_similar_candidate_groups_deterministic_order_contract(client: TestCl
         assert group["scoreSummary"] == {"min": 0.75, "max": 0.75, "avg": 0.75}
         assert len(group["snapshotVersion"]) == 12
 
-def _assert_v2_relation_summary_roundtrip(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-relations"
-    payload = _sample_payload_v2_with_relation_summaries(doc_id)
+def _assert_v1_relation_summary_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-relations"
+    payload = _sample_payload_v1_with_relation_summaries(doc_id)
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
@@ -655,9 +656,9 @@ def _assert_v2_relation_summary_roundtrip(client: TestClient) -> None:
     assert get_relation_summary["history"][1]["toText"] == "alpha supports beta"
 
 
-def _assert_v2_relation_summary_without_history_roundtrip(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-relations-no-history"
-    payload = _sample_payload_v2_without_relation_summary_history(doc_id)
+def _assert_v1_relation_summary_without_history_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-relations-no-history"
+    payload = _sample_payload_v1_without_relation_summary_history(doc_id)
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
@@ -673,9 +674,9 @@ def _assert_v2_relation_summary_without_history_roundtrip(client: TestClient) ->
     assert "history" not in get_relation_summary
 
 
-def _assert_v2_evidence_links_roundtrip(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-evidence"
-    payload = _sample_payload_v2_with_evidence_links(doc_id)
+def _assert_v1_evidence_links_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-evidence"
+    payload = _sample_payload_v1_with_evidence_links(doc_id)
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
@@ -698,10 +699,10 @@ def _assert_v2_evidence_links_roundtrip(client: TestClient) -> None:
 
 
 
-def _assert_v2_polygon_geometry_roundtrip(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-polygon"
+def _assert_v1_polygon_geometry_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-polygon"
     payload = {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
         "title": "polygon-roundtrip",
         "createdAt": "2026-02-11T00:00:00Z",
@@ -736,14 +737,14 @@ def _assert_v2_polygon_geometry_roundtrip(client: TestClient) -> None:
     assert get_island["geometry"] == payload["islands"][0]["geometry"]
 
 
-def _sample_payload_v2_with_card_meta(doc_id: str) -> dict:
+def _sample_payload_v1_with_card_meta(doc_id: str) -> dict:
     # DOMAIN-TRACE-01 (schemas.md §15): seq/source round-trip, and an UNKNOWN
     # meta key (subject metadata) that the server must DROP fail-closed
     # (§15.3) instead of persisting before CARD-META-UI-01 settles.
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
-        "title": "roundtrip-v2-card-meta",
+        "title": "roundtrip-v1-card-meta",
         "createdAt": "2026-07-08T00:00:00Z",
         "updatedAt": "2026-07-08T00:00:00Z",
         "transform": {"panX": 0, "panY": 0, "zoom": 1},
@@ -762,9 +763,9 @@ def _sample_payload_v2_with_card_meta(doc_id: str) -> dict:
     }
 
 
-def _assert_v2_card_meta_roundtrip(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-card-meta"
-    payload = _sample_payload_v2_with_card_meta(doc_id)
+def _assert_v1_card_meta_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-card-meta"
+    payload = _sample_payload_v1_with_card_meta(doc_id)
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
@@ -783,13 +784,13 @@ def _assert_v2_card_meta_roundtrip(client: TestClient) -> None:
     assert "meta" not in get_cards["card-plain"]
 
 
-def _sample_payload_v2_with_card_ka(doc_id: str) -> dict:
+def _sample_payload_v1_with_card_ka(doc_id: str) -> dict:
     # DOMAIN-KA-01 (schemas.md §17): voice/value round-trip, and an UNKNOWN
     # ka key that the server must DROP fail-closed instead of persisting.
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
-        "title": "roundtrip-v2-card-ka",
+        "title": "roundtrip-v1-card-ka",
         "createdAt": "2026-07-09T00:00:00Z",
         "updatedAt": "2026-07-09T00:00:00Z",
         "transform": {"panX": 0, "panY": 0, "zoom": 1},
@@ -808,9 +809,9 @@ def _sample_payload_v2_with_card_ka(doc_id: str) -> dict:
     }
 
 
-def _assert_v2_card_ka_roundtrip(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-card-ka"
-    payload = _sample_payload_v2_with_card_ka(doc_id)
+def _assert_v1_card_ka_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-card-ka"
+    payload = _sample_payload_v1_with_card_ka(doc_id)
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
@@ -830,15 +831,15 @@ def _assert_v2_card_ka_roundtrip(client: TestClient) -> None:
     assert "ka" not in get_cards["card-plain"]
 
 
-def _sample_payload_v2_with_contradiction_signal_decisions(doc_id: str) -> dict:
+def _sample_payload_v1_with_contradiction_signal_decisions(doc_id: str) -> dict:
     # DOMAIN-EXPR-04 (schemas.md §16): human review decisions on
     # analyzeContradictions() signals round-trip verbatim; a malformed entry
     # (invalid status, "proposed" is not a persistable value) is dropped
     # fail-closed while the valid entry is kept (§16.6).
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
-        "title": "roundtrip-v2-contradiction-signal-decisions",
+        "title": "roundtrip-v1-contradiction-signal-decisions",
         "createdAt": "2026-07-08T00:00:00Z",
         "updatedAt": "2026-07-08T00:00:00Z",
         "transform": {"panX": 0, "panY": 0, "zoom": 1},
@@ -851,9 +852,9 @@ def _sample_payload_v2_with_contradiction_signal_decisions(doc_id: str) -> dict:
     }
 
 
-def _assert_v2_contradiction_signal_decisions_roundtrip(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-contradiction-signal-decisions"
-    payload = _sample_payload_v2_with_contradiction_signal_decisions(doc_id)
+def _assert_v1_contradiction_signal_decisions_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-contradiction-signal-decisions"
+    payload = _sample_payload_v1_with_contradiction_signal_decisions(doc_id)
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
@@ -870,24 +871,24 @@ def _assert_v2_contradiction_signal_decisions_roundtrip(client: TestClient) -> N
     ]
 
 
-def _assert_v2_contradiction_signal_decision_invalid_status_rejected(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-contradiction-signal-decision-invalid"
-    payload = _sample_payload_v2_with_contradiction_signal_decisions(doc_id)
+def _assert_v1_contradiction_signal_decision_invalid_status_rejected(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-contradiction-signal-decision-invalid"
+    payload = _sample_payload_v1_with_contradiction_signal_decisions(doc_id)
     payload["contradictionSignalDecisions"][0]["status"] = "proposed"
 
     response = client.put(f"/docs/{doc_id}", json=payload)
     assert response.status_code == 422
 
 
-def _sample_payload_v2_with_edge_vocabulary(doc_id: str) -> dict:
+def _sample_payload_v1_with_edge_vocabulary(doc_id: str) -> dict:
     # DOMAIN-KJ-01 (schemas.md §3.3): the five known relation types plus an
     # UNKNOWN type string that the server must accept and round-trip verbatim
     # instead of rejecting the whole document with 422.
     edge_types = ["related", "negate", "causal", "mutual", "equivalence", "future-vocab-2030"]
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
-        "title": "roundtrip-v2-edge-vocabulary",
+        "title": "roundtrip-v1-edge-vocabulary",
         "createdAt": "2026-02-11T00:00:00Z",
         "updatedAt": "2026-02-11T00:00:00Z",
         "transform": {"panX": 0, "panY": 0, "zoom": 1},
@@ -903,9 +904,9 @@ def _sample_payload_v2_with_edge_vocabulary(doc_id: str) -> dict:
     }
 
 
-def _assert_v2_edge_vocabulary_roundtrip(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-edge-vocabulary"
-    payload = _sample_payload_v2_with_edge_vocabulary(doc_id)
+def _assert_v1_edge_vocabulary_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-edge-vocabulary"
+    payload = _sample_payload_v1_with_edge_vocabulary(doc_id)
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
@@ -918,9 +919,9 @@ def _assert_v2_edge_vocabulary_roundtrip(client: TestClient) -> None:
     assert get_types == ["related", "negate", "causal", "mutual", "equivalence", "future-vocab-2030"]
 
 
-def _assert_v2_edge_empty_type_rejected(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-edge-empty-type"
-    payload = _sample_payload_v2_with_edge_vocabulary(doc_id)
+def _assert_v1_edge_empty_type_rejected(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-edge-empty-type"
+    payload = _sample_payload_v1_with_edge_vocabulary(doc_id)
     payload["edges"] = [{"id": "edge-1", "fromId": "card-1", "toId": "card-2", "type": ""}]
 
     put_response = client.put(f"/docs/{doc_id}", json=payload)
@@ -972,6 +973,27 @@ def test_docs_put_get_roundtrip_sqlite(sqlite_client: TestClient) -> None:
     _assert_put_get_roundtrip(sqlite_client)
 
 
+@pytest.mark.parametrize("retired_version", [2, "v1", "v2"])
+def test_docs_rejects_retired_document_versions(
+    sqlite_client: TestClient,
+    retired_version: object,
+) -> None:
+    payload = {**_sample_payload("doc-retired-version"), "version": retired_version}
+
+    response = sqlite_client.put("/docs/doc-retired-version", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_docs_rejects_retired_minimal_v1_shape(sqlite_client: TestClient) -> None:
+    payload = _sample_payload("doc-retired-minimal-v1")
+    payload.pop("islands")
+
+    response = sqlite_client.put("/docs/doc-retired-minimal-v1", json=payload)
+
+    assert response.status_code == 422
+
+
 def test_docs_etag_sqlite(sqlite_client: TestClient) -> None:
     _assert_etag_optimistic_locking(sqlite_client)
 
@@ -986,37 +1008,37 @@ def test_docs_etag_postgres(postgres_client: TestClient) -> None:
     _assert_etag_optimistic_locking(postgres_client)
 
 
-def test_docs_v2_collapsed_roundtrip_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_collapsed_roundtrip(sqlite_client)
+def test_docs_v1_collapsed_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_collapsed_roundtrip(sqlite_client)
 
 
 @pytest.mark.postgres
-def test_docs_v2_collapsed_roundtrip_postgres(postgres_client: TestClient) -> None:
-    _assert_v2_collapsed_roundtrip(postgres_client)
+def test_docs_v1_collapsed_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v1_collapsed_roundtrip(postgres_client)
 
 
-def test_docs_v2_canonical_roundtrip_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_canonical_roundtrip(sqlite_client)
-
-
-@pytest.mark.postgres
-def test_docs_v2_canonical_roundtrip_postgres(postgres_client: TestClient) -> None:
-    _assert_v2_canonical_roundtrip(postgres_client)
-
-
-def test_docs_v2_shelf_roundtrip_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_shelf_roundtrip(sqlite_client)
+def test_docs_v1_canonical_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_canonical_roundtrip(sqlite_client)
 
 
 @pytest.mark.postgres
-def test_docs_v2_shelf_roundtrip_postgres(postgres_client: TestClient) -> None:
-    _assert_v2_shelf_roundtrip(postgres_client)
+def test_docs_v1_canonical_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v1_canonical_roundtrip(postgres_client)
+
+
+def test_docs_v1_shelf_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_shelf_roundtrip(sqlite_client)
+
+
+@pytest.mark.postgres
+def test_docs_v1_shelf_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v1_shelf_roundtrip(postgres_client)
 
 
 
 
-def test_docs_v2_merge_suggestion_decisions_roundtrip_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_merge_suggestion_decisions_roundtrip(sqlite_client)
+def test_docs_v1_merge_suggestion_decisions_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_merge_suggestion_decisions_roundtrip(sqlite_client)
 
 
 def test_docs_merge_decision_logs_contract_roundtrip_sqlite(sqlite_client: TestClient) -> None:
@@ -1028,8 +1050,8 @@ def test_docs_merge_decision_logs_contract_validation_sqlite(sqlite_client: Test
 
 
 @pytest.mark.postgres
-def test_docs_v2_merge_suggestion_decisions_roundtrip_postgres(postgres_client: TestClient) -> None:
-    _assert_v2_merge_suggestion_decisions_roundtrip(postgres_client)
+def test_docs_v1_merge_suggestion_decisions_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v1_merge_suggestion_decisions_roundtrip(postgres_client)
 
 
 def test_docs_merge_decision_logs_contract_roundtrip_postgres(postgres_client: TestClient) -> None:
@@ -1076,91 +1098,91 @@ def test_docs_similar_candidate_groups_excludes_non_eligible_cards_postgres(post
 def test_docs_similar_candidate_groups_deterministic_order_contract_postgres(postgres_client: TestClient) -> None:
     _assert_similar_candidate_groups_deterministic_order_contract(postgres_client)
 
-def test_docs_v2_relation_summary_roundtrip_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_relation_summary_roundtrip(sqlite_client)
+def test_docs_v1_relation_summary_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_relation_summary_roundtrip(sqlite_client)
 
 
 @pytest.mark.postgres
-def test_docs_v2_relation_summary_roundtrip_postgres(postgres_client: TestClient) -> None:
-    _assert_v2_relation_summary_roundtrip(postgres_client)
+def test_docs_v1_relation_summary_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v1_relation_summary_roundtrip(postgres_client)
 
 
-def test_docs_v2_relation_summary_without_history_roundtrip_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_relation_summary_without_history_roundtrip(sqlite_client)
+def test_docs_v1_relation_summary_without_history_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_relation_summary_without_history_roundtrip(sqlite_client)
 
 
-def test_docs_v2_evidence_links_roundtrip_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_evidence_links_roundtrip(sqlite_client)
+def test_docs_v1_evidence_links_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_evidence_links_roundtrip(sqlite_client)
 
 
-def test_docs_v2_polygon_geometry_roundtrip_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_polygon_geometry_roundtrip(sqlite_client)
+def test_docs_v1_polygon_geometry_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_polygon_geometry_roundtrip(sqlite_client)
 
 
-def test_docs_v2_edge_vocabulary_roundtrip_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_edge_vocabulary_roundtrip(sqlite_client)
+def test_docs_v1_edge_vocabulary_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_edge_vocabulary_roundtrip(sqlite_client)
 
 
-def test_docs_v2_card_meta_roundtrip_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_card_meta_roundtrip(sqlite_client)
-
-
-@pytest.mark.postgres
-def test_docs_v2_card_meta_roundtrip_postgres(postgres_client: TestClient) -> None:
-    _assert_v2_card_meta_roundtrip(postgres_client)
-
-
-def test_docs_v2_card_ka_roundtrip_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_card_ka_roundtrip(sqlite_client)
+def test_docs_v1_card_meta_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_card_meta_roundtrip(sqlite_client)
 
 
 @pytest.mark.postgres
-def test_docs_v2_card_ka_roundtrip_postgres(postgres_client: TestClient) -> None:
-    _assert_v2_card_ka_roundtrip(postgres_client)
+def test_docs_v1_card_meta_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v1_card_meta_roundtrip(postgres_client)
 
 
-def test_docs_v2_contradiction_signal_decisions_roundtrip_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_contradiction_signal_decisions_roundtrip(sqlite_client)
-
-
-@pytest.mark.postgres
-def test_docs_v2_contradiction_signal_decisions_roundtrip_postgres(postgres_client: TestClient) -> None:
-    _assert_v2_contradiction_signal_decisions_roundtrip(postgres_client)
-
-
-def test_docs_v2_contradiction_signal_decision_invalid_status_rejected_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_contradiction_signal_decision_invalid_status_rejected(sqlite_client)
-
-
-def test_docs_v2_edge_empty_type_rejected_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_edge_empty_type_rejected(sqlite_client)
+def test_docs_v1_card_ka_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_card_ka_roundtrip(sqlite_client)
 
 
 @pytest.mark.postgres
-def test_docs_v2_edge_vocabulary_roundtrip_postgres(postgres_client: TestClient) -> None:
-    _assert_v2_edge_vocabulary_roundtrip(postgres_client)
+def test_docs_v1_card_ka_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v1_card_ka_roundtrip(postgres_client)
+
+
+def test_docs_v1_contradiction_signal_decisions_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_contradiction_signal_decisions_roundtrip(sqlite_client)
 
 
 @pytest.mark.postgres
-def test_docs_v2_relation_summary_without_history_roundtrip_postgres(postgres_client: TestClient) -> None:
-    _assert_v2_relation_summary_without_history_roundtrip(postgres_client)
+def test_docs_v1_contradiction_signal_decisions_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v1_contradiction_signal_decisions_roundtrip(postgres_client)
+
+
+def test_docs_v1_contradiction_signal_decision_invalid_status_rejected_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_contradiction_signal_decision_invalid_status_rejected(sqlite_client)
+
+
+def test_docs_v1_edge_empty_type_rejected_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_edge_empty_type_rejected(sqlite_client)
 
 
 @pytest.mark.postgres
-def test_docs_v2_evidence_links_roundtrip_postgres(postgres_client: TestClient) -> None:
-    _assert_v2_evidence_links_roundtrip(postgres_client)
+def test_docs_v1_edge_vocabulary_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v1_edge_vocabulary_roundtrip(postgres_client)
 
 
 @pytest.mark.postgres
-def test_docs_v2_polygon_geometry_roundtrip_postgres(postgres_client: TestClient) -> None:
-    _assert_v2_polygon_geometry_roundtrip(postgres_client)
+def test_docs_v1_relation_summary_without_history_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v1_relation_summary_without_history_roundtrip(postgres_client)
 
 
-def _sample_payload_v2_with_hil_rs_contract_fields(doc_id: str, *, reviewer_ref: str = "user:u-1") -> dict:
+@pytest.mark.postgres
+def test_docs_v1_evidence_links_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v1_evidence_links_roundtrip(postgres_client)
+
+
+@pytest.mark.postgres
+def test_docs_v1_polygon_geometry_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v1_polygon_geometry_roundtrip(postgres_client)
+
+
+def _sample_payload_v1_with_hil_rs_contract_fields(doc_id: str, *, reviewer_ref: str = "user:u-1") -> dict:
     return {
-        "version": 2,
+        "version": 1,
         "id": doc_id,
-        "title": "roundtrip-v2-hil-rs",
+        "title": "roundtrip-v1-hil-rs",
         "createdAt": "2026-02-11T00:00:00Z",
         "updatedAt": "2026-02-11T00:00:00Z",
         "transform": {"panX": 0, "panY": 0, "zoom": 1},
@@ -1213,9 +1235,9 @@ def _sample_payload_v2_with_hil_rs_contract_fields(doc_id: str, *, reviewer_ref:
     }
 
 
-def _assert_v2_hil_rs_contract_fields_roundtrip(client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-hil-rs"
-    payload = _sample_payload_v2_with_hil_rs_contract_fields(doc_id, reviewer_ref="reviewer:opaque-1")
+def _assert_v1_hil_rs_contract_fields_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-hil-rs"
+    payload = _sample_payload_v1_with_hil_rs_contract_fields(doc_id, reviewer_ref="reviewer:opaque-1")
 
     put_response = client.put(
         f"/docs/{doc_id}",
@@ -1239,17 +1261,17 @@ def _assert_v2_hil_rs_contract_fields_roundtrip(client: TestClient) -> None:
     ]
 
 
-def test_docs_v2_hil_rs_contract_fields_roundtrip_sqlite(sqlite_client: TestClient) -> None:
-    _assert_v2_hil_rs_contract_fields_roundtrip(sqlite_client)
+def test_docs_v1_hil_rs_contract_fields_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v1_hil_rs_contract_fields_roundtrip(sqlite_client)
 
 
-def test_docs_v2_hil_rs_contract_fields_roundtrip_postgres(postgres_client: TestClient) -> None:
-    _assert_v2_hil_rs_contract_fields_roundtrip(postgres_client)
+def test_docs_v1_hil_rs_contract_fields_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v1_hil_rs_contract_fields_roundtrip(postgres_client)
 
 
-def test_docs_v2_hil_rs_contract_fields_reject_spoofed_reviewer_sqlite(sqlite_client: TestClient) -> None:
-    doc_id = "doc-roundtrip-v2-hil-rs-spoofed"
-    payload = _sample_payload_v2_with_hil_rs_contract_fields(doc_id, reviewer_ref="reviewer:other")
+def test_docs_v1_hil_rs_contract_fields_reject_spoofed_reviewer_sqlite(sqlite_client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v1-hil-rs-spoofed"
+    payload = _sample_payload_v1_with_hil_rs_contract_fields(doc_id, reviewer_ref="reviewer:other")
 
     put_response = sqlite_client.put(
         f"/docs/{doc_id}",

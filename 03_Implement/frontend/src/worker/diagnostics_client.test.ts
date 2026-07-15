@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV1 } from "../domain/types";
 import { DIAGNOSTICS_DATA_SCHEMA_VERSION } from "./diagnostics_protocol";
 import { computeDiagnostics } from "./diagnostics_compute";
 import { DiagnosticsWorkerClient } from "./diagnostics_client";
@@ -11,9 +11,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function fixtureDoc(): DocumentV2 {
+function fixtureDoc(): DocumentV1 {
   return {
-    version: 2,
+    version: 1,
     id: "doc-1",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",

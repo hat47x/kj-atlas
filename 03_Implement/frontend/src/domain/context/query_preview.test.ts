@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { buildQueryPreviewState, runMockContextIntegration, toCanonicalQueryKey, type ContextQueryDraft } from "./query_preview";
+import {
+  buildQueryPreviewState,
+  runMockContextIntegration,
+  toCanonicalQueryHash,
+  toCanonicalQueryKey,
+  type ContextBundleMock,
+  type ContextQueryDraft,
+} from "./query_preview";
 
 function baseDraft(): ContextQueryDraft {
   return {
@@ -63,7 +70,7 @@ describe("query preview state", () => {
 
   it("reproduces mock integration flow with bundleHash", async () => {
     const draft = baseDraft();
-    const queryCanonicalHash = toCanonicalQueryKey(draft);
+    const queryCanonicalHash = await toCanonicalQueryHash(draft);
     const result = await runMockContextIntegration(draft, async () => ({
       queryCanonicalHash,
       bundleHash: "hash-123",
@@ -109,7 +116,7 @@ describe("query preview state", () => {
   it("returns 422 invalid_bundle_contract when fixture breaks ContextBundleV1 signature", async () => {
     const draft = baseDraft();
     const result = await runMockContextIntegration(draft, async () => ({
-      queryCanonicalHash: toCanonicalQueryKey(draft),
+      queryCanonicalHash: await toCanonicalQueryHash(draft),
       bundleHash: "",
       selected: [],
       relations: [],
@@ -124,6 +131,31 @@ describe("query preview state", () => {
       statusCode: 422,
       errorCode: "invalid_bundle_contract",
       invalidReasons: ["bundleHash must be non-empty string", "excludedReason must be string[]"],
+    });
+  });
+
+  it("keeps transport and handoff metadata out of logical ContextBundleV1", async () => {
+    const draft = baseDraft();
+    const result = await runMockContextIntegration(draft, async () => ({
+      queryCanonicalHash: await toCanonicalQueryHash(draft),
+      bundleHash: "hash-123",
+      selected: [],
+      relations: [],
+      evidence: [],
+      contradictions: [],
+      reviewFlags: { reviewed: 2, unreviewed: 0 },
+      truncationMeta: { truncated: false },
+      excludedReason: [],
+      queryId: draft.queryId,
+      schemaVersion: "1.0.0",
+      sourceBundleHash: "hash-123",
+    } as unknown as ContextBundleMock));
+
+    expect(result).toEqual({
+      canSubmit: false,
+      statusCode: 422,
+      errorCode: "invalid_bundle_contract",
+      invalidReasons: ["unknown ContextBundleV1 keys: queryId, schemaVersion, sourceBundleHash"],
     });
   });
 
@@ -148,5 +180,11 @@ describe("query preview state", () => {
 
     expect(toCanonicalQueryKey(first)).toBe(toCanonicalQueryKey(baseDraft()));
     expect(toCanonicalQueryKey(second)).toBe(toCanonicalQueryKey(third));
+  });
+
+  it("hashes the canonical query as lowercase sha256 hex", async () => {
+    const hash = await toCanonicalQueryHash(baseDraft());
+    expect(hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(hash).toBe("f8f19c1dd1fdfff86c2a4b394bd3d10493c06001d3ef1783d54bf6620939fd46");
   });
 });

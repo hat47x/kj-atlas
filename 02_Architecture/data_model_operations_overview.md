@@ -98,7 +98,7 @@ erDiagram
 
 | 物理テーブル | 主な責務 | 運用上の注意 |
 |---|---|---|
-| `documents` | `DocumentV1` / `DocumentV2` のスナップショット保存 | Card/Edge/Islandなどは `payload_json` 内に埋め込まれる。個別行としては保守しない。 |
+| `documents` | `DocumentV1` のスナップショット保存 | Card/Edge/Islandなどは `payload_json` 内に埋め込まれる。個別行としては保守しない。 |
 | `merge_decision_logs` | Manual assisted merge の判断ログをappend-onlyに近い形で保存 | Document本体とは分離するが、`doc_id` に従属する。通常更新・削除APIは持たない。 |
 | `users` | 認証主体の内部ユーザー表現 | lifecycle stateは持つが、MVPの管理画面で全ライフサイクルを扱う段階ではない。 |
 | `user_identities` | IdPなど外部認証subjectと内部ユーザーの対応 | `provider + external_uid` を内部 `user:<users.id>` に正規化する。 |
@@ -137,19 +137,18 @@ erDiagram
 
 | 論理データ | MVPでの位置づけ | 保守方法 |
 |---|---|---|
-| `DocumentV1` | 最小スナップショット。カード、線、表示変換を持つ | `GET /docs/{doc_id}` と `PUT /docs/{doc_id}` でドキュメント全体を取得/置換する。 |
-| `DocumentV2` | 島、文章化、レビュー帰属、判断ログ連携などを含む拡張スナップショット | 全体スナップショットとして保存する。個別構造の完全CRUDはMVP範囲外。 |
+| `DocumentV1` | カード、線、島、文章化、レビュー帰属、判断ログ連携などを含む唯一のスナップショット | `GET /docs/{doc_id}` と `PUT /docs/{doc_id}` で全体を取得/置換する。個別構造の完全CRUDはMVP範囲外。 |
 | `Card` | 利用者が置く主要情報単位。`claimType` による事実/主張/仮説の分類を含む | 画面操作またはインポート後、ドキュメント全体保存で反映する。 |
 | `Edge` | カード/島間の関係。`fromKind` / `toKind` で endpoint 種別を保持できる | 個別APIは持たず、ドキュメント全体保存で反映する。 |
-| `EvidenceLink` | 根拠・反証のリンク | `DocumentV2.evidenceLinks` の埋め込み構造として保存する。個別CRUDは持たない。 |
-| `Island` | まとまり、囲み、構造化の単位 | `DocumentV2` 内の埋め込み構造。shapeやreview状態の完全保守は段階導入。 |
+| `EvidenceLink` | 根拠・反証のリンク | `DocumentV1.evidenceLinks` の埋め込み構造として保存する。個別CRUDは持たない。 |
+| `Island` | まとまり、囲み、構造化の単位 | `DocumentV1` 内の埋め込み構造。shapeやreview状態の完全保守は段階導入。 |
 | `Narrative` / `RelationSummary` | 文章化・要約成果物 | 共有前確認やレビューと連動するが、MVPでは個別CRUDを正本にしない。 |
 | `ReviewAttribution` | 人間レビュー済み状態と主体の追跡 | `user:<users.id>` 正規化を前提にする。自動昇格は禁止。 |
 | `MergeDecisionRecord` | 類似統合などの人間判断ログ | `merge_decision_logs` に追記し、group/snapshot単位で参照する。 |
 | `SimilarCandidateGroup` | 類似候補の表示用派生情報 | 保存済みDocumentから導出する。通常保守対象ではない。 |
 | `ContextQuery` / `ContextBundle` | AI入力・提案前の安全な文脈境界 | 契約先行。MVPではmock/検証用I/Fを含み、永続保守対象とは分ける。 |
-| `InquiryJourneyV1` | W型累積KJ法のラウンドDAGを束ねる独立manifest | `ADR-0057` の採択済み設計目標。現行 `DocumentV2` へ埋め込まず、実装までは `L0` とする。 |
-| `RoundSnapshotV1` | 人が確認した節目の不変な文書成果 | 意味のある配置を含む `DocumentV2` 成果を再現する。現行API・DB・標準UIでは未実装。 |
+| `InquiryJourneyV1` | W型累積KJ法のラウンドDAGを束ねる独立manifest | `ADR-0057` の採択済み設計目標。現行 `DocumentV1` へ埋め込まず、実装までは `L0` とする。 |
+| `RoundSnapshotV1` | 人が確認した節目の不変な文書成果 | 意味のある配置を含む `DocumentV1` 成果を再現する。現行API・DB・標準UIでは未実装。 |
 
 ---
 
@@ -160,9 +159,9 @@ erDiagram
 | Documentスナップショット | L1 | `PUT /docs/{doc_id}` で存在しなければ作成 | `GET /docs/{doc_id}` | `PUT /docs/{doc_id}` で全体置換 | 標準APIなし | Document owner / Platform operator | API文書上の `POST /docs` は任意/将来候補として扱い、実装契約化は `DATA-CONTRACT-01` で同期する。 |
 | Card / Edge | L2 | Document作成・更新に含める | Document取得に含まれる | Document全体保存で反映 | Document全体保存で除去 | Standard user / Document owner | 個別カードAPIや個別エッジAPIはMVP範囲外。`claimType` と endpoint kind はスナップショット内で往復保持する。 |
 | EvidenceLink | L2 | Document作成・更新に含める | Document取得に含まれる | Document全体保存で反映 | Document全体保存で除去 | Standard user / Reviewer | 個別APIは持たない。SafeMode/share/exportでは未レビュー本文や根拠の扱いを別途確認する。 |
-| Island / IslandShape | L2 | DocumentV2に含める | Document取得に含まれる | Document全体保存で反映 | Document全体保存で除去 | Standard user / Reviewer | shape再計算、階層、collapseなどはUI/実装の段階的対応が必要。 |
-| Narrative / RelationSummary | L2 | DocumentV2またはexport処理に含める | Document取得またはexport成果物で参照 | Document全体保存で反映 | Document全体保存で除去 | Reviewer / Document owner | 文章化品質、根拠、未レビュー状態の表示は製品化issueで継続管理する。 |
-| ReviewAttribution | L2.5 | DocumentV2更新時に含める | Document取得に含まれる | 認証主体と一致する場合のみ更新を許可 | 標準削除APIなし | Reviewer / Security officer | `human_reviewed` は人手操作のみ。AIや自動処理で昇格しない。 |
+| Island / IslandShape | L2 | DocumentV1に含める | Document取得に含まれる | Document全体保存で反映 | Document全体保存で除去 | Standard user / Reviewer | shape再計算、階層、collapseなどはUI/実装の段階的対応が必要。 |
+| Narrative / RelationSummary | L2 | DocumentV1またはexport処理に含める | Document取得またはexport成果物で参照 | Document全体保存で反映 | Document全体保存で除去 | Reviewer / Document owner | 文章化品質、根拠、未レビュー状態の表示は製品化issueで継続管理する。 |
+| ReviewAttribution | L2.5 | DocumentV1更新時に含める | Document取得に含まれる | 認証主体と一致する場合のみ更新を許可 | 標準削除APIなし | Reviewer / Security officer | `human_reviewed` は人手操作のみ。AIや自動処理で昇格しない。 |
 | MergeDecisionRecord | L1.5 | `POST /docs/{doc_id}/merge-decision-logs` | group/snapshot別GET | 標準更新APIなし | 標準削除APIなし | Reviewer / Audit operator | 追記ログとして扱い、訂正は新しい判断記録で表現する方針。 |
 | SimilarCandidateGroup | L3 | 保存済みDocumentから導出 | `GET /docs/{doc_id}/similar-candidate-groups` | 標準更新APIなし | 標準削除APIなし | Reviewer | 結果の正しさは候補生成ロジックの検証対象で、データ保守対象ではない。 |
 | ContextQuery / ContextBundle | L2.5 | request/responseとして生成 | API/CLI/contract testで参照 | 永続更新なし | 永続削除なし | Developer / AI integration owner | 契約先行。利用者データの永続保守とは分け、実装済み運用としては扱わない。 |
@@ -173,15 +172,15 @@ erDiagram
 
 ---
 
-### 4.1 DocumentV2フィールド支援レベル表
+### 4.1 DocumentV1フィールド支援レベル表
 
-`DocumentV2` は全フィールドを個別運用できるという意味ではありません。次の表は、frontend/backend/API/設計上の現在の扱いを、保守レベルとして固定します。
+`DocumentV1` は全フィールドを個別運用できるという意味ではありません。次の表は、frontend/backend/API/設計上の現在の扱いを、保守レベルとして固定します。
 
 | フィールド | Support level | frontend型 | backend保存/検証 | MVP保守レベル | 次アクション |
 |---|---|---|---|---|---|
 | `version` / `id` / `createdAt` / `updatedAt` / `transform` | L1 | 必須 | 必須 | 運用サポート | `PUT /docs/{doc_id}` のCreate/Update契約で維持する。 |
-| `cards[]` | L2 | `Card[]`。`claimType`、統合元、批評、レビュー状態を含む | `CardV2[]` として保存。`claimType` も往復保持する | 埋め込み限定 | 個別カードCRUDは作らず、スナップショット保存の互換を維持する。 |
-| `edges[]` | L2 | `Edge[]`。`fromKind` / `toKind` を含む | `EdgeV2[]` として保存。endpoint kind も往復保持する | 埋め込み限定 | 島endpointを含む関係のUI/API検証を `DATA-CONTRACT-01` で継続する。 |
+| `cards[]` | L2 | `Card[]`。`claimType`、統合元、批評、レビュー状態を含む | `Card[]` として保存。`claimType` も往復保持する | 埋め込み限定 | 個別カードCRUDは作らず、スナップショット保存の互換を維持する。 |
+| `edges[]` | L2 | `Edge[]`。`fromKind` / `toKind` を含む | `Edge[]` として保存。endpoint kind も往復保持する | 埋め込み限定 | 島endpointを含む関係のUI/API検証を `DATA-CONTRACT-01` で継続する。 |
 | `islands[]` | L2 | `Island[]`。階層、collapse、shape、summaryを含む | 保存/検証あり。geometry/shapeの互換正規化あり | 埋め込み限定 | shape再計算、階層、collapseの個別保守は製品化issueで扱う。 |
 | `readingOrder` | L2 | optional | optional | 埋め込み限定 | 文章化・共有時の読み順として扱う。 |
 | `narratives` | L2 | optional | optional | 埋め込み限定 | 個別CRUDではなく、成果物化と共有前確認で扱う。 |
@@ -196,9 +195,9 @@ erDiagram
 | `contradictionSignalDecisions` | L2.5 | optional。矛盾シグナル（`analyzeContradictions()`）への人間レビュー決定（採用/保留/却下、schemas.md §16） | optional。往復保持し、不正要素は破棄する | 契約のみ/限定保存 | AI/検出ロジックは書き込み経路を持たない（ADR-0041 CVI-2）。review pack/narrative契約は変更しない。 |
 | `cards[].ka`（`voice`/`value`） | L2.5 | optional。KA法の心の声・価値（schemas.md §17）。`text`（出来事の正本）とは別フィールドで併記しない | `CardKa` として保存。両方欠落/空文字なら `ka` 自体を省略 | 契約のみ/限定保存 | カード面（キャンバス）には表示しない。narrative export/review pack は既定OFFの任意セクション。SafeMode露出判定は `card.text` と同一チャネル。 |
 
-### 4.2 DocumentV2サポートレベルとOpen化ゲート
+### 4.2 DocumentV1サポートレベルとOpen化ゲート
 
-- `DocumentV2` の運用境界は `L1/L1.5/L2/L2.5/L3/L0` で固定し、`schemas.md` の versioning ルールと同時更新を必須とする。
+- `DocumentV1` の運用境界は `L1/L1.5/L2/L2.5/L3/L0` で固定し、`schemas.md` の versioning ルールと同時更新を必須とする。
 - Open化（実装チーム着手可）条件:
   1) `schemas.md` の versioning / support level定義が更新済みである。
   2) 本書のCRUD表とフィールド支援表が同じ語彙（L1〜L0）で同期されている。
@@ -217,7 +216,7 @@ erDiagram
 | Platform operator | DB接続、バックアップ、復旧、ユーザー事前登録を管理する | SQLite/PostgreSQL切替、admin provisioning | 管理UI、棚卸し、データ検証、復旧手順の標準化 |
 | Security officer | SafeMode、監査連携、未レビュー情報の共有抑制を確認する | SafeMode既定ON、audit endpoint、strict provisioning | 監査ログ閲覧、例外承認とデータライフサイクルの統合 |
 | Support | 利用者から再現情報を受け取り、問題を切り分ける | diagnosticsや共有前確認の情報を補助的に利用 | 個人情報を含まない支援パッケージ、データ破損時の安全な切り戻し |
-| Developer / Maintainer | スキーマ、API、移行、テストを維持する | 契約文書、型、単体/結合テスト | DocumentV2の正本同期、マイグレーション、互換性ゲート |
+| Developer / Maintainer | スキーマ、API、移行、テストを維持する | 契約文書、型、単体/結合テスト | DocumentV1の正本同期、マイグレーション、互換性ゲート |
 
 ### 5.1 管理・復旧・棚卸しの最小運用境界（DATA-MAINT-01）
 
@@ -248,7 +247,7 @@ MVPの制約を明示したうえで、ステークホルダー運用に耐え�
 | `DATA-MAINT-01` | 管理・復旧・棚卸し・データ保管運用の設計 | `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md` |
 | `DATA-MAINT-03` | 高権限データライフサイクル操作を標準機能にしない分類判断（Done / Fixed） | `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md` |
 | `DATA-MAINT-04` | 本文を含まない監査メタデータ閲覧候補のOpen境界 | `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md` |
-| `DATA-CONTRACT-01` | DocumentV2/API/frontend/backend間の契約ドリフト解消 | `01_Plans/issues/issue-DATA-CONTRACT-01-document-v2-contract-drift-and-support-levels.md` |
+| `DATA-CONTRACT-01` | DocumentV1/API/frontend/backend間の契約ドリフト解消 | `01_Plans/issues/issue-DATA-CONTRACT-01-document-v2-contract-drift-and-support-levels.md` |
 | `CARD-META-UI-01` | カード起票者・出典などのprovenanceメタデータUI境界 | `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md` |
 
 `DATA-MAINT-01` は、読み取り専用の棚卸し候補、SQLite/PostgreSQL別のバックアップ/復旧演習、削除・アーカイブ・所有者移管・管理者本文閲覧のStop条件を管理する。`DATA-MAINT-03` とAccepted済み `ADR-0035` により、これらの高権限操作は標準機能外と確定した。本文を含まない監査メタデータ閲覧だけは `DATA-MAINT-04` でOpenとして分離するが、Open化は実装許可ではない。標準管理画面や書き込み系管理APIを追加する場合は、一般利用者の操作導線から分離し、監査・認可・データライフサイクルの契約を先行させる。
@@ -280,7 +279,7 @@ Proceed条件は、上記3点が `schemas.md` と本書で同時に満たされ�
 
 ## 9. Stream D phase verification log (2026-05-19)
 
-- Phase 1 Contract drift抽出: `DATA-CONTRACT-01` のドリフト観点（schema/api/frontend/backend）を再照合し、`DocumentV2` は version gate 先行で維持。
+- Phase 1 Contract drift抽出: `DATA-CONTRACT-01` のドリフト観点（schema/api/frontend/backend）を再照合し、`DocumentV1` は version gate 先行で維持。
 - Phase 2 Support level定義: CRUD表・フィールド支援表・issue ACで `L1/L1.5/L2/L2.5/L3/L0` を同一語彙に統一。
 - Phase 3 CRUD境界更新: 「型がある = 運用CRUDあり」誤読を防ぐ注記を維持し、個別CRUD非対応行を明示。
 - Phase 4 Admin maintenance/recovery境界更新: Platform operator / Security officer / Support / Developer の責務分離と `DATA-MAINT-01` 参照を固定。
@@ -289,7 +288,7 @@ Proceed条件は、上記3点が `schemas.md` と本書で同時に満たされ�
 ## 10. Stream D execution checkpoint (2026-05-19)
 
 ### Context
-- Model Ops の観点では、`DocumentV2` の契約固定と運用CRUD境界を同時に管理しないと、保守責務が曖昧化する。
+- Model Ops の観点では、`DocumentV1` の契約固定と運用CRUD境界を同時に管理しないと、保守責務が曖昧化する。
 
 ### Decision
 - 本書の CRUD 境界表を運用責務の正本とし、`schemas.md` は型契約正本として役割を分離したまま同期する。
@@ -302,11 +301,11 @@ Proceed条件は、上記3点が `schemas.md` と本書で同時に満たされ�
 ## 11. DATA-CONTRACT-01 execution record (2026-05-19)
 
 ### Context
-- `DocumentV2` は型契約が拡張される一方、MVP CRUD 境界（L1/L1.5/L2/L2.5/L3/L0）の誤読により「個別CRUDあり」と解釈されるドリフトが残っていた。
+- `DocumentV1` は型契約が拡張される一方、MVP CRUD 境界（L1/L1.5/L2/L2.5/L3/L0）の誤読により「個別CRUDあり」と解釈されるドリフトが残っていた。
 - contract test の fixture 識別子が文書間で固定されておらず、下流チームが実装進捗に依存した判定を行う余地があった。
 
 ### Decision
-- `DocumentV2` の mock schema version を `mock-2026-05-19-dv2` で固定し、契約検証・handoffの識別子としてのみ使用する。
+- `DocumentV1` の mock schema version を `mock-2026-05-19-dv1` で固定し、契約検証・handoffの識別子としてのみ使用する。
 - CRUD境界は本書4章と4.1章を正本とし、`L2/L2.5` 領域（evidence/review attribution/critique/reproposal等）は「保存往復は保証、個別CRUDは非保証」を明文化する。
 - review attribution の参照IDは生ID/IdP識別子を禁止し、`user:<users.id>` 正規化移行方針を継続する。
 
@@ -347,11 +346,11 @@ Proceed条件は、上記3点が `schemas.md` と本書で同時に満たされ�
 ## 13. Stream B ops-boundary sync (2026-05-20)
 
 ### Context
-- Model Ops では `DocumentV2` の保存往復保証と個別CRUD保証が混同されると、運用責務（Platform operator / Security officer / Support / Developer）が衝突する。
+- Model Ops では `DocumentV1` の保存往復保証と個別CRUD保証が混同されると、運用責務（Platform operator / Security officer / Support / Developer）が衝突する。
 
 ### Decision
 - CRUD境界は本書を正本として維持し、`L1/L1.5/L2/L2.5/L3/L0` を唯一語彙とする。
-- `DocumentV2` の backward compatibility 判定は `schemas.md` の version gate を上流正本として参照し、本書側で独自判定を持たない。
+- `DocumentV1` の backward compatibility 判定は `schemas.md` の version gate を上流正本として参照し、本書側で独自判定を持たない。
 - CE系・A1系の統合ポイントは read-only contract として公開し、実DB/API依存が確定していない項目は `Contract-limited (L2.5)` のまま凍結する。
 
 ### Consequences
