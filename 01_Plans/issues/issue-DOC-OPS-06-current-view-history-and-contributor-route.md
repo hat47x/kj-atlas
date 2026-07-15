@@ -78,9 +78,9 @@
 - [ ] fresh cloneの読者がREADMEから5分以内に、現行課題正本、triage、issue template、branch規律、検証入口へ到達できる。
 - [x] `CONTRIBUTING.md` と `issues/README.md` でGitHub Issues/内部issue memoの現行正本が矛盾しない。
 - [x] dashboardとissue indexのcurrent領域に、resolved Queue、過去件数、per-rerunログを現行指示として含めない。
-- [ ] Active viewがfilesystem上のDraft/Open/In Progress集合と一致する。
+- [x] Active viewがfilesystem上のDraft/Open/In Progress集合と一致する。
 - [x] Statusはtemplateの正規値へ統一し、Open-readinessやhold理由は別メタデータへ分離して、triageとvalidatorの判定集合が一致する。
-- [ ] `documentation_quality.md` のNormative QGと判定手順が連続して読め、Stream実行ログを読まずに適用できる。
+- [x] `documentation_quality.md` のNormative QGと判定手順が連続して読め、Stream実行ログを読まずに適用できる。
 - [x] E2E実務手順のSSOT宣言が `03_Implement/frontend/docs/e2e_testing.md` の1箇所だけになる。
 - [x] 旧04 E2E文書の有効情報が失われず、旧pathは反対の規範を持たない。
 - [ ] currentから分離した一次履歴にはInformative、対象期間、Retention reason、現行正本への逆リンクがある。
@@ -91,8 +91,8 @@
 
 - [x] T1 current文書ごとに「残す現行情報 / git履歴へ委譲 / archiveする一次証拠」の移動表を作る。
 - [x] T2 dashboardをcurrent snapshotへ縮約する。
-- [ ] T3 issue READMEを運用ルール+current Active view+triage入口へ縮約し、Status拡張表現を正規化したうえで実ファイル集合と同期する。
-- [ ] T4 documentation qualityのNormative本文を連続化し、実行ログを分離する。
+- [x] T3 issue READMEを最小運用+triage入口へ縮約し、固定Active表を廃止してmemoメタデータからcurrent viewを生成する。
+- [x] T4 documentation qualityのNormative本文を連続化し、実行ログをGit履歴へ分離する。
 - [x] T5 CONTRIBUTINGを現行issue memo運用とfirst-task runbookへ同期する。
 - [x] T6 E2E手順を03のSSOTへ統合し、旧04pathと全参照を整理する。
 - [ ] T7 fresh-clone想定の人間/AI dry-runとdocs-checkを行う。
@@ -138,7 +138,7 @@
 - `CONTRIBUTING.md`、`README.md`、`SUPPORT.md`、`DISCUSSIONS.md`を、GitHub Issues未運用・内部issue memo正本・外部受付はDiscussionsという現行方針へ同期した。
 - `04_Documentation/e2e_testing.md` の有効な実行経路、PR証跡、Compose差分リスク、認証Level 2、fixture境界を `03_Implement/frontend/docs/e2e_testing.md` へ統合し、旧pathをSuperseded stubへ縮約した。
 - 拡張Statusを持っていたQA Draft 3件を `Status: Draft` / `Open Readiness` / `Execution`へ分離し、active statusの非正規値を0件にした。
-- 未完了: dashboard/issue index/documentation qualityのcurrent/history分離、Active view 25件の未掲載解消、fresh-clone dry-run。これらを完了するまでIssueはIn Progressを維持する。
+- この時点の未完了: dashboard/issue index/documentation qualityのcurrent/history分離、Active view 25件の未掲載解消、fresh-clone dry-run。
 
 ## 進捗記録 2026-07-15: dashboard / decision-pack軽量化
 
@@ -147,3 +147,11 @@
 - `issues/README.md` はActive索引と最小運用だけに縮小し、過去同期ログの新規追記を停止した。
 - 現行のenterprise/strict mode設計からdashboard/decision-packへの進捗正本参照を除去した。
 - Git履歴で復元できない一次証拠は確認されなかったため、巨大な複製archiveは作成していない。
+- `documentation_quality.md` は556行から116行へ縮小し、QG-1〜QG-6、配置境界、最小確認、停止条件を連続配置した。
+
+## 進捗記録 2026-07-15: Active view生成化
+
+- `issues/README.md` の固定Active表を廃止し、`triage_actionable_plans.py` の出力を唯一のcurrent viewとした。
+- validatorはREADME表ではなくmemoを直接走査し、Draft/Open/In Progressの34件を検証する。
+- triageとvalidatorはいずれもActive 34件を返し、関連unit test 12件が成功した。
+- 未完了はfresh-cloneの5分導線確認、リンク検査、docs-check統合であるため、IssueはIn Progressを維持する。

@@ -17,7 +17,7 @@
 2. `Status` は `Draft -> Open -> In Progress -> Done` の順で更新する。
 3. `Expected verification level` は変更リスクに応じて `docs-check / unit / integration / e2e` から選ぶ。
 4. ADRは長期的、横断的、破壊的、または安全境界を変える判断に限る。
-5. 完了時は検証結果をmemoへ一度記録し、Active表から除く。
+5. 完了時は検証結果と `Status: Done` をmemoへ一度記録する。索引の手動更新は不要。
 
 ## 必須メタデータ
 
@@ -32,21 +32,17 @@
 
 ## Active issue memos
 
-> この表は人間向けの短い索引である。状態の正本は各memoとGit履歴。表とfilesystemの完全一致検査は `DX-DOC-02`、既存Active memoの整理は `DOC-OPS-06` で扱う。
+Active一覧は各memoの `Status` から生成する。READMEへ表を転記しない。
 
-| Backlog ID | Memo | Status | Source Issue |
-|---|---|---|---|
-| DOC-USER-JOURNEY-01 | `issue-DOC-USER-JOURNEY-01-first-meaningful-map-guide.md` | In Progress | N/A |
-| DOC-ARCH-02 | `issue-DOC-ARCH-02-current-contract-history-physical-separation.md` | In Progress | N/A |
-| DOC-OPS-06 | `issue-DOC-OPS-06-current-view-history-and-contributor-route.md` | In Progress | N/A |
-| DX-DOC-02 | `issue-DX-DOC-02-docs-contract-ci-and-index-completeness.md` | Draft | N/A |
-| DOMAIN-CARD-QUALITY-01 | `issue-DOMAIN-CARD-QUALITY-01-qualitative-card-quality-assistance.md` | In Progress | N/A |
-| DOMAIN-W-ITERATION-01 | `issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md` | In Progress | N/A |
-| OPS-LEAN-01 | `issue-OPS-LEAN-01-small-oss-operations-reduction.md` | In Progress | N/A |
+```powershell
+python 01_Plans/triage_actionable_plans.py
+```
+
+`Draft / Open / In Progress` がActive、`Done` が完了である。特定領域だけを見る場合は、出力をBacklog ID、Priority、Scopeで絞り込む。
 
 ## 軽量ツール
 
-- Active memo検証: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Active memo検証: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（README表ではなくmemoを直接走査）
 - 検証ツールのテスト: `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - タスク候補の絞り込み: `python 01_Plans/triage_actionable_plans.py`
 

@@ -30,7 +30,7 @@
 - [x] issues READMEをActive索引中心へ縮小し、反復同期ログはGit履歴から参照する形へ変更する。
 - [x] dashboardとdecision-packを現行正本から外し、Git履歴を参照する短い案内へ置き換える。
 - [x] AI引き継ぎと仮想会議をオンデマンドの最小補足へ縮小し、仮想役職をsolo開発の通常手順から外す。2者承認は組織がJIT provisioning例外を使う場合だけのプロファイルとする。
-- [ ] Active一覧の手動件数同期を廃止する。
+- [x] Active一覧の手動表と件数同期を廃止し、memoメタデータからtriage表示・validator検証する。
 - [ ] docs-checkとリンク検査が成功する。
 
 ## 検証計画
