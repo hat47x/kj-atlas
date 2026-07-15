@@ -57,6 +57,13 @@
 4. **応答契約**: §4 スキーマのインライン提示＋最小記入例。
 5. **相関ブロック**: §3.2 の JSON をコードフェンスで埋め込み（応答へのエコーバック指示付き）。
 
+### 3.3a 制約節（任意・EXT-CONN-03 / agent-constraints.v1 の埋め込みプロファイル）
+
+- 文書の `constraintExportOptIn` が ON（既定 OFF・明示 opt-in）の場合に限り、タスクシートの**ガードレール（2）と文脈（3）の間**に任意節「制約（過去の訂正）」を挿入する。
+- 内容: `agent-constraints.v1`（正本: `schemas.md` §18.2）の JSON をコードフェンスで埋め込み、次の固定文を添える: 「以下は過去の人間の判断（違和感・保留・却下）です。同種の提案を繰り返さないでください。制約に重み・点数・順位はありません。制約への回答・遵守報告は不要です」。
+- 同梱時は §3.2 相関ブロックに `constraintsHash`（optional）を追加する。応答（agent-response.v1）側に制約への応答フィールドは設けない（`schemas.md` §18.8 往復互換）。
+- 安全境界は `schemas.md` §18.5 に従う（未レビューカード ID 不出・SafeMode による note 秘匿・本文フィールドなし）。本節の追加は §3.4 の出力境界を変更しない。
+
 ### 3.4 出力境界（必須）
 
 - 書き出しは SharePanel の共有前確認フローに乗せる: SafeMode 状態表示・**未レビュー本文は既定除外**（`includeUnreviewedDrafts` 明示時のみ含む）・出典参照（DOMAIN-TRACE-01 の `Card.meta.seq/source` 系）は既定OFF。起票者・作成者・最終更新者などの主体メタ（CARD-META-UI-01）は、別ゲートで同梱判断が固定されるまで依頼パッケージに含めない。共有直前サマリ（UX-SHARE-01 到達後はそれに従う）。
@@ -159,6 +166,6 @@
 ## Traceability
 
 - Decision: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`
-- Related: `02_Architecture/llm_provider_spec.md`（provider 独立）, `02_Architecture/enterprise_architecture.md`（§4）, `02_Architecture/api.md`（監査）, `02_Architecture/schemas.md`（PatchV1/DocumentV2）
-- Related issues: `EXT-AGENT-01` / `EXT-AGENT-02` / `EXT-AGENT-03`, `issue-CE1-context-query-bundle-foundation.md`, `issue-CE3-patch-workspace-presets.md`
+- Related: `02_Architecture/llm_provider_spec.md`（provider 独立）, `02_Architecture/enterprise_architecture.md`（§4）, `02_Architecture/api.md`（監査）, `02_Architecture/schemas.md`（PatchV1/DocumentV2。§18 = agent-constraints.v1 正本 — §3.3a はその埋め込みプロファイル）
+- Related issues: `EXT-AGENT-01` / `EXT-AGENT-02` / `EXT-AGENT-03`, `EXT-CONN-03`（§3.3a）, `issue-CE1-context-query-bundle-foundation.md`, `issue-CE3-patch-workspace-presets.md`
 - Derived-from: `ROADMAP.md` 要件D / `ADR-0007` FB-RM-MID-07
