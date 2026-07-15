@@ -58,15 +58,15 @@
 ## 1) 課題 / Problem statement
 
 - ADR-0031 は製品化UIを5領域で定義し、領域4「作業モード面」を高度機能（レビュー/差分/ナラティブ/AI提案/パッチ/診断）の置き場として「タブまたは明示的なモードとして段階的に開く」と定めた。
-- しかし現行実装で DOM 上の領域として実体を持つのは4つのみ（`data-ui-region` は `primary-flow`（[App.tsx:9425](03_Implement/frontend/src/App.tsx:9425)）/ `selection-context`（[SidePanel.tsx:1105](03_Implement/frontend/src/ui/SidePanel.tsx:1105)）/ `domain-state-filter` / `stream-b-p2a-readiness`、加えて `data-panel` の `view` / `share-replay` / `start-document-entry`）。**領域4に対応する `data-ui-region` は存在しない**。
-- 代わりに作業モード一式が `topContent` という塊（[App.tsx:8871-9002](03_Implement/frontend/src/App.tsx:8871)：旧式共有セクション＋`NarrativesPanel`＋`HilRsWorkflowPanel`（`MergeSuggestionsPanel`/`PatchWorkspacePanel`/`SuggestionPanel`/`HilRsRediffPreview`））として生成され、**選択コンテキスト aside の内部**（[SidePanel.tsx:1248](03_Implement/frontend/src/ui/SidePanel.tsx:1248)、aside は 1105）に注入されている。詳細（advanced）ON 時には、選択直後に最優先で視野へ出すべき選択対象（ADR-0031 領域3の責務）が、AI/HIL の作業ベンチの下へ押し下げられる。
-- さらに `structuralDiffPanel`（定義 [App.tsx:8618](03_Implement/frontend/src/App.tsx:8618)）が、`structuralDiffSection` prop（[App.tsx:8835](03_Implement/frontend/src/App.tsx:8835)）に加え、`topContent` 内で**2回**（[App.tsx:8886](03_Implement/frontend/src/App.tsx:8886) と [App.tsx:8997](03_Implement/frontend/src/App.tsx:8997)）描画されており、差分面が複数箇所に重複している。
+- しかし現行実装で DOM 上の領域として実体を持つのは4つのみ（`data-ui-region` は `primary-flow`（[App.tsx:9425](../../03_Implement/frontend/src/App.tsx)）/ `selection-context`（[SidePanel.tsx:1105](../../03_Implement/frontend/src/ui/SidePanel.tsx)）/ `domain-state-filter` / `stream-b-p2a-readiness`、加えて `data-panel` の `view` / `share-replay` / `start-document-entry`）。**領域4に対応する `data-ui-region` は存在しない**。
+- 代わりに作業モード一式が `topContent` という塊（[App.tsx:8871-9002](../../03_Implement/frontend/src/App.tsx)：旧式共有セクション＋`NarrativesPanel`＋`HilRsWorkflowPanel`（`MergeSuggestionsPanel`/`PatchWorkspacePanel`/`SuggestionPanel`/`HilRsRediffPreview`））として生成され、**選択コンテキスト aside の内部**（[SidePanel.tsx:1248](../../03_Implement/frontend/src/ui/SidePanel.tsx)、aside は 1105）に注入されている。詳細（advanced）ON 時には、選択直後に最優先で視野へ出すべき選択対象（ADR-0031 領域3の責務）が、AI/HIL の作業ベンチの下へ押し下げられる。
+- さらに `structuralDiffPanel`（定義 [App.tsx:8618](../../03_Implement/frontend/src/App.tsx)）が、`structuralDiffSection` prop（[App.tsx:8835](../../03_Implement/frontend/src/App.tsx)）に加え、`topContent` 内で**2回**（[App.tsx:8886](../../03_Implement/frontend/src/App.tsx) と [App.tsx:8997](../../03_Implement/frontend/src/App.tsx)）描画されており、差分面が複数箇所に重複している。
 - 機能が増えるたびに新しい作業モードが同じ `topContent` スクロール列へ積み上がる構造で、ADR-0031 の領域分割が実装上崩れ続ける。
 
 ## 2) 背景 / Context
 
 - これは PRODUCT-UX-02（Done）が「フルなタブ設計と URL レベルの作業モード永続化は本Issueの対象外。必要なら別途 ADR-0031 のナビゲーション階層 issue とする」と**明示的に先送りした未起票GAP**を起票するものである。
-- UX-COMPLEXITY-01（Done, 2026-06-23）は `data-ui-complexity-tier` と `isAdvancedUiEnabled`（[App.tsx:8872](03_Implement/frontend/src/App.tsx:8872)）による**可視性のゲート（CB-1 既定の静けさ）**を達成した。既定では作業モード blob は非表示で、CB-1 は満たされる。
+- UX-COMPLEXITY-01（Done, 2026-06-23）は `data-ui-complexity-tier` と `isAdvancedUiEnabled`（[App.tsx:8872](../../03_Implement/frontend/src/App.tsx)）による**可視性のゲート（CB-1 既定の静けさ）**を達成した。既定では作業モード blob は非表示で、CB-1 は満たされる。
 - 本Issueはそれと**別軸**である。UX-COMPLEXITY-01 は「初期表示の要素数・前景化（可視性）」を扱うのに対し、本Issueは「ADR-0031 の領域4を構造として実体化し、advanced ON 時にも領域3の責務を守る（IA の構造）」を扱う。両者は相補的で重複しない。
 - 関連契約: ADR-0030 段階開示＋キーボードスコープ、UX-OPERABILITY-03（選択コンテキストは選択対象を先に出し、advanced グループは初期非表示）、UX-OPERABILITY-04（View / Share-and-Reproduce パネルの Escape 閉鎖＋トリガへの focus 復帰、`data-focus-return-id`）。
 
@@ -94,8 +94,8 @@
 ## 4) 提案する解決策 / Proposed solution
 
 - 変更の最小単位（段階的）:
-  - **Phase 1（本Issueの主目的）**: 領域4に独立領域 `data-ui-region="work-mode"` を導入する。既定OFFの**ドロワー/オーバーレイ**として実装し、明示的なモード操作で開く（自動描画しない）。Escape 閉鎖＋トリガへの focus 復帰は ADR-0030 / UX-OPERABILITY-04 契約（`data-focus-return-id`）を再利用する。最重量の `HilRsWorkflowPanel`（Merge/Patch/Suggest/Rediff）＋`NarrativesPanel`＋差分を `SidePanel.topContent`（[App.tsx:8871-9002](03_Implement/frontend/src/App.tsx:8871)）から当該領域へ移設する。
-  - **structuralDiff 単一化**: `structuralDiffPanel` の重複描画（[App.tsx:8886](03_Implement/frontend/src/App.tsx:8886) / [App.tsx:8997](03_Implement/frontend/src/App.tsx:8997)）と `structuralDiffSection` prop（8835）を整理し、差分面を1箇所に集約する。
+  - **Phase 1（本Issueの主目的）**: 領域4に独立領域 `data-ui-region="work-mode"` を導入する。既定OFFの**ドロワー/オーバーレイ**として実装し、明示的なモード操作で開く（自動描画しない）。Escape 閉鎖＋トリガへの focus 復帰は ADR-0030 / UX-OPERABILITY-04 契約（`data-focus-return-id`）を再利用する。最重量の `HilRsWorkflowPanel`（Merge/Patch/Suggest/Rediff）＋`NarrativesPanel`＋差分を `SidePanel.topContent`（[App.tsx:8871-9002](../../03_Implement/frontend/src/App.tsx)）から当該領域へ移設する。
+  - **structuralDiff 単一化**: `structuralDiffPanel` の重複描画（[App.tsx:8886](../../03_Implement/frontend/src/App.tsx) / [App.tsx:8997](../../03_Implement/frontend/src/App.tsx)）と `structuralDiffSection` prop（8835）を整理し、差分面を1箇所に集約する。
   - **領域3の責務回復**: 移設後、選択コンテキスト aside（`data-ui-region="selection-context"`）は選択対象＋基本編集/レビューのみを保持する（UX-OPERABILITY-03 非回帰）。
   - **命名規律（finding 2.2）**: 領域4の作業モードをタブ/モードとして見せる際、`レビュー/review` を再利用しない（viewMode ピルの `レビュー` と衝突させない）。これはコード/i18n 変更を伴わない純粋な規律で CB-3 純増ゼロ。
   - **Phase 2（先送り可）**: より軽量な選択隣接パネルの移設、作業モード状態の URL/履歴永続化。

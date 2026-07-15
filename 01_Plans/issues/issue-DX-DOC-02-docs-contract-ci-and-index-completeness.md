@@ -197,3 +197,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - validatorは `issue-*.md` を直接走査し、StatusがDraft/Open/In Progressの34件を検証する。
 - triageもActive 34件を返し、validator/triage unit test 12件が成功した。
 - parser共有、重複Backlog ID検査、統一docs-checkとCI blockingは未完了のため、本IssueはDraftを維持する。
+
+## baseline補正 2026-07-15: リポジトリ内コード参照
+
+- 追跡対象Markdown 374件の相対リンク存在確認で、ADR-0050の3件と完了済みUX-NAV-01 memoの12件が、文書ディレクトリから解決できないリポジトリルート基準または`:line`付きの参照先になっていることを確認した。
+- 参照対象コードや履歴説明は変更せず、文書位置から解決できる`../../03_Implement/...`形式へ補正した。行番号は当時の調査位置としてリンクラベルに残し、現在行への誤った固定anchorには変換していない。
+- `llm_input_ir_spec.md`の正規表現例`/[?&](token|key|secret|password)=/i`はMarkdownリンクではない。T3のcheckerはコードスパン・コードブロックを除外し、この記法を誤検出しないfixtureを持つ。
+- コード記法を除外した全374 Markdown・相対リンク352件の存在確認は欠落0件となり、T3のbroken-link checkerを導入できるclean baselineを回復した。
