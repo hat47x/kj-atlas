@@ -3,7 +3,7 @@
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0043` / `ADR-0046` の運用定着。docs/テンプレのみ。
 
 - Type: Process
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
@@ -42,11 +42,18 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `TEMPLATE.md` に複雑性/性能/UQ の予算申告1行ブロック（任意）が追加される。
-- [ ] `pull_request_template.md` に対応する任意チェックが追加される。
-- [ ] `PRODUCT-QA-01` に「予算『悪化』時のゲート確認」が1項目入る。
-- [ ] 申告は UI/性能影響 issue で任意、それ以外では不要（軽量運用、`ADR-0039`）。
-- [ ] 既存の必須メタ・validator を壊さない（docs-check 緑）。
+- [x] `TEMPLATE.md` に複雑性/性能/UQ の予算申告1行ブロック（任意）が追加される。
+- [x] `pull_request_template.md` に対応する任意チェックが追加される。
+- [x] `PRODUCT-QA-01` に「予算『悪化』時のゲート確認」が1項目入る。
+- [x] 申告は UI/性能影響 issue で任意、それ以外では不要（軽量運用、`ADR-0039`）。
+- [x] 既存の必須メタ・validator を壊さない（docs-check 緑）。
+
+### 実装証跡（2026-07-16）
+
+- `TEMPLATE.md`: 「受入条件」の直前に「予算申告（UI・性能影響がある場合のみ、任意）」を新設し、複雑性予算（`ADR-0043` CB-1..4）・性能予算（`ADR-0046` PB-1..5）・触れるUQ次元（`ADR-0044`）の3行をプレースホルダ形式（`<... または N/A>`）で追加した。
+- `.github/pull_request_template.md`: 既存の「複雑性予算（UI変更時）」節を「複雑性・性能予算 / UQ次元（UI・性能影響時）」へ拡張し、既存の複雑性予算3項目をそのまま維持しつつ、性能予算2項目と触れるUQ次元1項目を追加した。既存項目の文言・順序は変更していない。
+- `issue-PRODUCT-QA-01-release-readiness-quality-gates.md`: 「判定方法」の箇条書きへ7番目の項目として「予算自己申告が『悪化』を含む場合は対応するゲート（主にG2主要操作、G4画面耐性）の確認対象に含める」を追加した。既存のゲート表・Value Gate表・重大度定義は変更していない。
+- 検証結果: `rg -n "複雑性予算|性能予算|触れるUQ" 01_Plans/issues/TEMPLATE.md .github/pull_request_template.md` で両ファイルに3語すべて存在することを確認した。`python 01_Plans/issues/validate_active_issue_memos.py`・`python -m unittest 01_Plans.issues.tests.test_validate_active_issue_memos`はいずれもpass（Markdownのみの変更でvalidatorロジックへの影響なし）。
 
 ## 6) 検証計画 / Validation plan
 
