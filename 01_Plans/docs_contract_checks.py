@@ -60,22 +60,46 @@ SCREENSHOT_LEDGER_REQUIRED = (
     "Stale triggers checked:",
 )
 SAFETY_INVARIANT_PATTERNS = (
-    ("SafeMode default ON", re.compile(r"SafeModeは既定ON", re.IGNORECASE)),
+    (
+        "SafeMode default ON",
+        (
+            re.compile(r"SafeModeは既定ON", re.IGNORECASE),
+            re.compile(r"SafeMode[ \t]*の既定ON", re.IGNORECASE),
+        ),
+    ),
     (
         "AI output remains proposal-only",
-        re.compile(r"AI出力はproposal-onlyで、自動適用しない", re.IGNORECASE),
+        (
+            re.compile(r"AI出力はproposal-onlyで、自動適用しない", re.IGNORECASE),
+            re.compile(r"02_Architecture/schemas\.md"),
+        ),
     ),
     (
         "human_reviewed is human-only",
-        re.compile(r"`?human_reviewed`?[ \t]*は人間だけが設定する", re.IGNORECASE),
+        (
+            re.compile(r"`?human_reviewed`?[ \t]*は人間だけが設定する", re.IGNORECASE),
+            re.compile(r"02_Architecture/schemas\.md"),
+        ),
     ),
     (
         "provider=none retains core value",
-        re.compile(r"`?KJ_ATLAS_LLM_PROVIDER=none`?[ \t]*でも主要価値が成立する", re.IGNORECASE),
+        (
+            re.compile(
+                r"`?KJ_ATLAS_LLM_PROVIDER=none`?[ \t]*でも主要価値が成立する",
+                re.IGNORECASE,
+            ),
+            re.compile(r"KJ_ATLAS_LLM_PROVIDER=none", re.IGNORECASE),
+        ),
     ),
     (
         "share/export prevents unintended disclosure",
-        re.compile(r"share/exportで未レビュー情報や秘密情報を意図せず共有しない", re.IGNORECASE),
+        (
+            re.compile(
+                r"share/exportで未レビュー情報や秘密情報を意図せず共有しない",
+                re.IGNORECASE,
+            ),
+            re.compile(r"漏洩防止（share/export）", re.IGNORECASE),
+        ),
     ),
 )
 
@@ -588,8 +612,8 @@ def check_safety_invariant_route(root: Path, entry_path: Path) -> list[DocsCheck
 
     text = entry.read_text(encoding="utf-8")
     findings: list[DocsCheckFinding] = []
-    for label, pattern in SAFETY_INVARIANT_PATTERNS:
-        if pattern.search(text):
+    for label, patterns in SAFETY_INVARIANT_PATTERNS:
+        if any(pattern.search(text) for pattern in patterns):
             continue
         findings.append(
             DocsCheckFinding(

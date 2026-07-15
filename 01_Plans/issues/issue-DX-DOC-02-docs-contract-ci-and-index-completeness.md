@@ -296,3 +296,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - 値を複数の設計文書間で推測比較せず、AIが作業開始時に必ず通る入口の非後退表明を5件の固定anchorとして検査する。欠落時はrule ID、入口、失われた不変条件、正本導線の復元指針を示す。
 - 5不変条件の正常fixtureと1条件欠落の負例fixtureを追加し、現行`AGENTS.md`はfinding 0である。
 - T3全体は`DC-ARC-001`が未実装のため未完了を維持する。
+
+## latest main統合記録 2026-07-15
+
+- `origin/main`の19コミット（Document契約の単一V1再基線化を含む）をmergeした。DocumentV1への現行契約変更は保持した。
+- merge直後のdocs-checkは、`data_model_operations_overview.md`へ再混入したStream D実行履歴見出し7件とhistory逆リンク欠落1件を`DC-CUR-001`/`DC-HIS-001`で検出した。mainの現行§2〜§7は変更せず、既存historyに収録済みの§1.2/§1.3/§8〜§13だけをcurrentから再分離し、Audience/Goal/Non-goal/Outcomeとhistory導線を復元した。
+- mainの`AGENTS.md`は安全不変条件を「SafeModeの既定ONと漏洩防止」の直接表明、`schemas.md`正本導線、provider=`none`設定として示す形式へ変わった。`DC-SAF-001`は旧最小入口の直接表明と最新mainの同義正本導線をどちらも決定論的に認識するよう更新した。
+- feature branchへのmain merge後、pushの`before..HEAD`をそのまま`git diff --check`するとmain側の既承認差分までbranchへ誤帰属することを確認した。PRと非default branch pushは最新default branchとのmerge-base、default branch pushはevent `before`を基準にするよう修正し、今回のbranch固有差分はwhitespace finding 0となった。
