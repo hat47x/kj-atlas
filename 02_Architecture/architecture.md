@@ -243,7 +243,7 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
 
 - 型、キー、列挙、version互換: [schemas.md §1.2 CE1/CE2/CE4 型契約](schemas.md#12-ce1ce2ce4-型契約実装非依存)
 - endpoint、認証、status/error、副作用: [api.md §2.7〜§2.9](api.md#27-ce4-audit-integration-contractapicli-equivalence)
-- CE1 v1の未解決key/envelope差異: [CE1-CONTRACT-01](../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)
+- CE1 v1のlogical / transport / handoff所属: [schemas.md layer ownership matrix](schemas.md#ce1-v1-layer-ownership-matrixlogical--transport--handoff)
 
 旧Interface Freezeの型・method・event-order再掲は[形成履歴](history/architecture-contract-freeze-formation-2026-04-to-05.md#former-7a21-interface-freezeapiシグネチャ--データ型--イベント契約)へ移した。責務境界、禁止事項、Go/No-Goは本書§7A.1〜§7A.4を正とする。
 
@@ -294,7 +294,7 @@ No-Go 判定は次の canonical ID を正本とし、表記揺れは同義語扱
 - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
 - 責務: Query Previewを必須経路とし、同一queryから決定論的なContext Bundleを生成する。CE2/CE4はbackend完了を待たずmock-firstで検証し、受け渡しをread-onlyに保つ。
 - 禁止: Preview bypass、非決定論bundleの成功扱い、下流によるCE1契約の暗黙変更。
-- 正本: [schema type contracts](schemas.md#ce1-context-foundation)、[HTTP contract](api.md#28-context-query--bundle-contractce1-context-foundation)。`queryId` / `schemaVersion`差異は[CE1-CONTRACT-01](../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)で扱う。
+- 正本: [schema type contracts and layer matrix](schemas.md#ce1-context-foundation)、[HTTP contract](api.md#28-context-query--bundle-contractce1-context-foundation)。
 
 ### 7B.2 CE2-LOW-RISK-AI-ASSIST
 

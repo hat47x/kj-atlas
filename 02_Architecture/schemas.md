@@ -117,6 +117,19 @@ export type ContextBundleV1 = {
 };
 ```
 
+##### CE1 v1 layer ownership matrix（logical / transport / handoff）
+
+| Layer | Required keys | Key ownership / closed-world rule |
+| --- | --- | --- |
+| Logical query: `ContextQueryV1` | `queryId`, `goal`, `scope`, `depth`, `constraints`, `reviewFilter`, `safeModePolicy`, `outputMode`, `previewConfirmed` | `queryId`はQueryの相関IDであり、canonical query hashの入力に含む。未定義キーは禁止。 |
+| HTTP query response: `ContextQueryValidationResponse` | `schemaVersion="1.0.0"`, `accepted`, `queryCanonicalHash` | transport metadata + validation result。Logical query/bundleのfieldではない。 |
+| HTTP bundle request: `ContextBundleRequest` | `query: ContextQueryV1`, `stubDatasetId="A2-minimal-v1"` | request envelope。top-levelとnested queryの未定義キーを禁止。 |
+| Logical bundle: `ContextBundleV1` | `queryCanonicalHash`, `bundleHash`, `selected`, `relations`, `evidence`, `contradictions`, `reviewFlags`, `truncationMeta`, `excludedReason` | `queryId` / `schemaVersion` / `sourceBundleHash`を含めない。未定義キーは禁止。 |
+| HTTP bundle response: `ContextBundleResponse` | `schemaVersion="1.0.0"` + `ContextBundleV1`の全key | `schemaVersion`はtransport metadataであり、canonical bundle hashの入力に含めない。`queryId` / `sourceBundleHash`は返さない。 |
+| CE2/CE4 read-only handoff | `sourceBundleHash` | CE1 response fieldではない。下流が受領した`bundleHash`から同値として派生し、`sourceBundleHash === bundleHash`を検証する。 |
+
+判定根拠: `ContextQueryV1` / `ContextBundleV1`の型正本、backend response model、frontend logical bundle fixtureを一致させる。旧API形成記録のbundle response `queryId`は、logical typeにも稼働中responseにも存在しないtype再掲上の誤帰属としてInformativeに留める。この判定はfieldの追加・削除やcanonical hash入力の変更ではなく、現行v1の層所属を明文化するものである。
+
 - `previewConfirmed=false` は契約違反（`422 preview_required`）。
 - 同一 canonical query で `bundleHash` 不一致は fail 判定。
 - CE1 v1 エラー語彙は `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の3種に固定する。
@@ -130,11 +143,11 @@ CE1 A2 stub contract（検証専用）:
 
 - `POST /context/query`
   - request: `ContextQueryV1`（closed-world; unknown key reject）
-  - success: `200 { accepted: true, queryCanonicalHash }`
+  - success: `200 ContextQueryValidationResponse`（layer matrix参照）
   - error: `422 preview_required`, `400 unknown_contract_key`
 - `POST /context/bundle`
-  - request: `{ query: ContextQueryV1, stubDatasetId: "A2-minimal-v1" }`
-  - success: `200 ContextBundleV1 + queryCanonicalHash`
+  - request: `ContextBundleRequest`（layer matrix参照）
+  - success: `200 ContextBundleResponse`（layer matrix参照）
   - error: `409 nondeterministic_bundle`, `400 unknown_contract_key`
 
 Contract test観点（CE1 v1）:
