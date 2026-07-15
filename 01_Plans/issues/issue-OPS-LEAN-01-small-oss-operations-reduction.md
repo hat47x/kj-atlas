@@ -33,6 +33,7 @@
 - [x] Active一覧の手動表と件数同期を廃止し、memoメタデータからtriage表示・validator検証する。
 - [x] 完了済み品質ゲート定義から候補ごとの反復ログを除き、実行証跡をCI・PR・releaseへ集約する。
 - [x] MVP脱却の親issueを出口条件と残る人間確認へ縮約し、候補ごとのProgram Gate記録を停止する。
+- [x] Product Value親issueとcurrent-open summaryの二重管理を解消し、完了済み価値レーンをDoneへ移す。
 - [x] docs-checkとリンク検査が成功する。
 
 ## 検証計画
@@ -71,3 +72,9 @@
 - OPS-LEAN実装文書と後続のリリースゲート/MVP出口縮約を統合後、相対リンク欠落0件を確認した。
 - `AGENTS.md` に旧必須`Read Order`、全件`Project Map`、固定同期ルールの見出しが復活していないことと、`git diff --check`成功を確認した。
 - 全受入条件を満たしたためDoneとする。文書契約CIの自動化は`DX-DOC-02`で別管理し、本Issueへ混在させない。
+
+## 完了後の追加削減 2026-07-15: Product Value台帳の統合
+
+- PRODUCT-VALUE-01〜03の実装、E2E、H-PV代理受入、所有issueの完了を再確認し、3親issueをDoneへ移した。
+- 親issueと同じ証跡を繰り返していたcurrent-open summary 3件を削除し、履歴はGitへ委譲した。
+- 最終出荷に必要な物理キーボード、スクリーンリーダー、公開画像、出荷承認は `MVP-EXIT-01` に一本化した。
