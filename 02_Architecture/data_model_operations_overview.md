@@ -5,13 +5,6 @@
 
 この文書は、kj-atlas MVPで「どのデータ構造を実際に運用できるか」と「どの構造は将来契約・派生情報・限定的な保守対象に留まるか」を俯瞰するための設計文書です。
 
-- **Audience**: データ契約を実装・運用・レビューするMaintainer、Developer、Platform operator、Security officer。
-- **Goal**: 物理永続化、論理構造、CRUD、support level、運用責任の現行境界を一読で判断できるようにする。
-- **Non-goal**: 型の再定義、API payloadの再掲、Stream実行ログの保管、将来機能の実装許可。
-- **Outcome**: 読者は「型がある」と「MVPで保守できる」を区別し、変更時の正本とStop条件を特定できる。
-
-2026年5月のStream D形成記録は [Architecture history](history/data-model-operations-stream-d-2026-05.md) に分離した。履歴は本書の現行値を上書きしない。
-
 `schemas.md` にはMVPの最小永続データに加えて、Contract Freeze、AI連携、review attribution、audit連携などの将来契約も含まれます。そのため、本書では次を明確に分けます。
 
 - **物理永続化**: 実DBでテーブルとして持つもの。
@@ -44,8 +37,6 @@ MVPで最も重要なのは、カードやまとまりを扱えることでは�
 - `L2.5: Contract-limited` = 保存はするが個別編集UI・個別CRUDを持たない契約先行対象
 - `L3: Derived` = 生成・表示対象であり永続保守対象ではない
 - `L0: Planned` = MVP時点では運用手順を定義中で標準運用を保証しない
-
----
 
 ## 2. 物理永続化モデル
 
@@ -259,8 +250,3 @@ MVPの制約を明示したうえで、ステークホルダー運用に耐え�
 - 「型がある」ことを「MVPで保守できる」こととして扱わない。CRUD表で保守手段が空欄になる場合は、契約のみ/派生/将来拡張として明示する。
 - 利用者や運用者の責任が増える変更は、`01_Plans/issues/` に受入条件と検証レベルを起票する。
 - データライフサイクル、削除、監査、所有者移管など、組織運用上の方針を変える変更はADR化する。
-
-
-## 8. 形成履歴
-
-2026年5月のStream D実行ログ、checkpoint、schema/migration照合記録は [data-model-operations-stream-d-2026-05.md](history/data-model-operations-stream-d-2026-05.md) に収録する。履歴側の`Decision`や`fixed`という語は当時の形成記録であり、現在の契約値は本書§1〜§7と`schemas.md`を正本とする。

@@ -7,7 +7,7 @@
 - Priority: P1
 - Owner: Maintainer / Developer Experience contributor
 - Scope: `01_Plans/issues/validate_active_issue_memos.py`, `01_Plans/issues/tests/`, `01_Plans/triage_actionable_plans.py`, `01_Plans/tests/`, `01_Plans/docs_contract_checks.py`, `01_Plans/docs_check.py`（新規候補）, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `.github/workflows/ci.yml`, `.github/pull_request_template.md`, current-only文書と公開対象文書の検査規則
-- Related Backlog: `DOC-ARCH-02`, `DOC-OPS-06`, `DOC-UI-CATALOG-01`, `DATA-CONTRACT-DOC-01`
+- Related Backlog: `DOC-ARCH-02`, `DOC-OPS-06`, `DOC-UI-CATALOG-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `01_Plans/issues/issue-DOC-ARCH-02-current-contract-history-physical-separation.md`, `01_Plans/issues/issue-DOC-OPS-06-current-view-history-and-contributor-route.md`, `01_Plans/issues/issue-DOC-UI-CATALOG-01-public-boundary-and-provenance.md`
 - Expected verification level: `integration`
 
@@ -105,28 +105,28 @@ Open化条件:
 
 - [x] indexへの手動掲載がなくても、filesystem上のActive memoをvalidatorが自動発見する。
 - [x] READMEの固定Active表を廃止し、空index・stale row・手動件数同期という失敗原因を除去する。
-- [x] 必須メタデータ、非正規Status、参照先不在、依存関係不正、重複するActive `RequirementID`の異常系testがある。
+- [x] 必須メタデータ、非正規Status、参照先不在、依存関係不正、重複Backlog IDの異常系testがある。
 - [x] current repositoryでtriageとvalidatorが同じActive件数を返す（2026-07-15 Open化時点: 29件）。
 - [x] triageとvalidatorが同じStatus parser・正規値を使い、同じActive件数を返す。
 - [x] 1コマンドでローカル/CI同値のdocs-checkを実行できる。
-- [ ] docs-check非0終了がPRをblockする。
+- [x] docs-check非0終了がPRをblockする。
 - [x] 01/02/04/root docsの適用check matrixと除外理由が文書化され、02層が無検査にならない。
 - [ ] current領域の同一Contract ID/型の異義定義、API/schema key差異、DocumentV2支援表欠落を検出する。
-- [x] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
-- [ ] broken relative linkとSSOT参照先不在を検出する。
-- [x] 公開版UI catalog等への内部管理語再混入とprovenance欠落を検出する。
-- [x] SafeMode、share/export、proposal-only、human reviewの不変条件参照欠落を検出する。
+- [ ] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
+- [x] broken relative linkとSSOT参照先不在を検出する。
+- [ ] 公開版UI catalog等への内部管理語再混入とprovenance欠落を検出する。
+- [ ] SafeMode、share/export、proposal-only、human reviewの不変条件参照欠落を検出する。
 - [ ] docs-only PRへ不要なfrontend/backend E2Eを強制しない。
 - [ ] CI jobとvalidatorの失敗理由が、対象ファイル・rule ID・修正先を示す。
 
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 check matrixとrule IDを固定し、ADR-0024へ適用境界と段階有効化条件を追補する。
-- [x] T2 Active issue validatorをfilesystem直接検査へ変更し、Status parser共有と重複Active `RequirementID`検査を追加する。
+- [x] T2 Active issue validatorをfilesystem直接検査へ変更し、共有parserとActive重複Backlog ID検査を追加する。
 - [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。
 - [x] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
-- [ ] T5 CIへ`docs-contract` jobを追加し、既存PRとdocs-only PRで動作確認する。
-- [x] T6 PR templateへ証跡欄を追加する。
+- [x] T5 既存Backend CI jobへblocking docs-check stepを追加し、既存PRで動作確認する。
+- [ ] T6 PR templateへ証跡欄を追加する。
 - [ ] T7 負例fixtureでfail、現行repositoryでpass、変更対象外のアプリtest非干渉を検証する。
 
 ## 7) 検証計画 / Validation plan
@@ -226,87 +226,21 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - 正常、欠落、コード記法除外、外部参照除外、percent-encoded path、repository逸脱の4 unit testsが成功した。
 - 同じ実装を追跡Markdown 374件へ適用し、`DC-LNK-001` finding 0件を確認した。T3全体はcurrent/history、architecture、public checkerが未実装のため未完了を維持する。
 
-## T2完了記録 2026-07-15
+## T4/T5完了記録 2026-07-15: 単一entrypointとblocking CI
 
-- `issue_memo_status.py`をStatus正規値の単一実装とし、triageとvalidatorが`Draft / Open / In Progress / Done`を共有するよう変更した。
-- `Ready / Active / Draft (...)`等を黙って正規化せず、対象memoと生の値を示してfailする。本文中の履歴用Statusはヘッダーではないため検査対象にしない。
-- Active memoの一意性は`RequirementID`で検査する。役割の異なるmemoが意図的に共有する`Related Backlog`は重複エラーにしない。
-- 非正規Statusと重複Active `RequirementID`の負例を追加し、validator/triage 15 tests成功、現行repositoryで双方のActive 29件一致、triage stopper 0件を確認した。
+- `docs_check.py` をローカル/CI共通の1コマンド入口とし、01_Plansのunit tests、Active issue validator、相対リンク検査をfail-fastで実行する。
+- `docs_contract_checks.py` に追跡対象Markdownだけを列挙するCLIを追加した。生成物や依存物を対象外にし、検査関数だけを実行せず成功していた偽陽性を解消した。
+- CIは既存Backend jobのPython setup直後に `python 01_Plans/docs_check.py` を実行する。文書専用jobの追加は避け、同じblocking効果を小さいworkflow差分で実現した。
+- ローカル実行で01_Plans 9 tests、issue validator 11 tests、Active memo 23件、追跡Markdown 374件がすべて成功した。CIの最終確認は本変更のPRで行う。
 
-## T4完了記録 2026-07-15
+## T2完了記録 2026-07-15: issue metadata parser共有
 
-- `python 01_Plans/docs_check.py`を単一のローカル入口とし、`DC-ACT-001`、`DC-LNK-001`、両ruleのcontract testsを同じコマンドで実行するようにした。
-- 有効化条件を満たしていない7 ruleは実行済みに見せず、`not enabled`として毎回表示する。`git diff --check`は`DC-FMT-001`の負例fixture実装まで隣接手動確認を維持する。
-- 失敗時はrule ID、対象ファイル/テスト群、修正先を表示し、非0終了する。`CONTRIBUTING.md`とissues READMEの実行導線を統一入口へ同期した。
-- entrypoint unit testsを含む21 tests成功、現行repositoryでActive memo 29件、追跡Markdown 374件、finding 0を確認した。CI同値化とPR blockingはT5に残す。
-
-## T5進捗 2026-07-15: `docs-contract` job
-
-- `.github/workflows/ci.yml`へ依存インストール不要の`docs-contract` jobを追加し、ローカルと同じ`python 01_Plans/docs_check.py`を実行するようにした。
-- checkoutは`fetch-depth: 0`とし、PRではmerge-base、pushでは`before` commitを基準に`git diff --check`を実行する。clean checkoutへ引数なしで実行して常に成功する偽検査にはしない。
-- jobは`continue-on-error`を使わず、entrypointまたはchanged-file whitespaceの非0終了をそのままCI失敗にする。
-- push後のGitHub Actions CI #10270（commit `d6f1a3a`）は全体Successとなり、新設`Docs contract (active issues + relative links)` jobも8秒でSuccessした。workflow構文、Linux runner、ローカルと同じentrypointの実行は実環境で確認済みである。
-- 対象branchに既存PRがないため、pull_request eventとdocs-only PRでの観測は未実施である。workflowは`push`と`pull_request`の双方をtriggerにし、jobに`continue-on-error`を設けないfail-closed構成だが、PR実行結果を確認するまでT5とPR blocking受入条件は未完了を維持する。
-
-## T6完了記録 2026-07-15
-
-- `.github/pull_request_template.md`のTesting欄を、`command / result / not_executed_reason / resume_condition`の4項目で記録する形式へ変更した。
-- 未実施を空欄や暗黙のN/Aで済ませず、理由と再開条件を残す。実施済みの場合は不要な2項目を`N/A`とし、複数コマンドでは4項目をコマンド単位で複製する。
-- docs-checkだけに限定せずfrontend/backend/E2Eにも使える証跡I/Fとし、docs-only PRへアプリE2Eを暗黙に強制しない。
+- `issue_memo_metadata.py` に正規Status、メタデータ、見出し上の論理Backlog IDの解釈を集約し、triageとvalidatorで共有した。
+- 非正規StatusはActive一覧から黙って消さず、Doneを含む全memoを対象に停止理由を示す。論理Backlog IDの重複は現在の実行判断を曖昧にするActive memoだけをfail-closedにし、完了済み履歴の過去衝突は改名しない。
+- 単一docs-checkで01_Plans 9 tests、issue validator 12 tests、Active memo 23件、追跡Markdown 374件の成功を確認した。
 
 ## T3進捗 2026-07-15: `DC-CUR-001`
 
-- architecture current 4文書と、handoffでcurrent-onlyに指定された`project-progress-dashboard.md`、issues `README.md`、`documentation_quality.md`のMarkdown見出しを検査する純関数を追加した。
-- `Stream / freeze / rerun / execution log / checkpoint / reaffirmation`と対応する日本語の実行履歴見出しを検出する。本文、コードフェンス、インラインコード、`downstream`のような部分一致は除外し、現行契約本文中の正当な説明を誤検出しない。
-- 英語見出し、日本語見出し、除外境界の負例/正常fixtureを追加した。現行repositoryの対象7文書はfinding 0である。
-- T3全体は`DC-ARC-001`、`DC-HIS-001`、`DC-PUB-001`等が未実装のため未完了を維持する。
-
-## T3進捗 2026-07-15: `DC-HIS-001`
-
-- `02_Architecture/history/`の収録文書をcurrent契約比較から独立して走査し、正準Status、元文書/元anchor、対象期間、snapshot/source revision、保持理由、現行anchorの必須メタデータを検査する純関数を追加した。
-- `Source document`はhistory外の既存current文書へのリンク、`Current normative anchors`は既存current文書への1件以上のリンクを要求する。さらに元current文書からhistoryへの逆リンクと、history `README.md`の収録一覧掲載を検査する。
-- 完全な双方向route、metadata欠落/非正規Status、current anchor/逆リンク/index掲載欠落の正常・負例fixtureを追加した。関連13 testsが成功し、現行4履歴文書はfinding 0である。
-- clean baseline初回検査で、`schemas.md`の履歴参照がコード表記だけでリンクになっていない逆導線欠落を検出した。検査を緩和せず、対象を`Schema contract formation history`への相対リンクへ修正してfinding 0へ収束した。
-- T3全体は`DC-ARC-001`、`DC-PUB-001`等が未実装のため未完了を維持する。
-
-## T3進捗 2026-07-15: `DC-RTE-001`
-
-- fresh-cloneの入口を、root `README.md`から`CONTRIBUTING.md`/公開入口、CONTRIBUTINGからtriage/issue運用/template/docs-check、issue運用からvalidator/triage/docs-check、公開入口から導入/設定/データ取扱/運用/受入/診断へ進む16本の必須routeとして固定した。
-- Markdown linkが必要な利用者導線と、実行可能なcommand/path参照を区別して検査する。参照文字列だけが残っていても対象ファイルが消えていればfailする。
-- link/commandの正常fixtureとroute欠落の負例fixtureを追加し、findingはrule ID、入口ファイル、欠落target、追加すべき参照形式を示す。
-- T3全体は`DC-ARC-001`、`DC-PUB-001`等が未実装のため未完了を維持する。
-
-## T3進捗 2026-07-15: `DC-PUB-001`
-
-- 公開`ui_catalog.md`のAudience、確認revision、最終確認日、表示条件、画像検証、公開状態、SafeModeと、非公開画像台帳のCapture ID、source revision、撮影日、fixture、locale/viewport/provider/SafeMode、生成command、結果、目視確認、stale triggerを必須証跡として固定した。
-- 完了済み`DOC-UI-CATALOG-01`の負例語彙（`00_Prompt`、`01_Plans`、ADR番号、issue ID、内部UX ID、Claude Design）だけを公開UIカタログで禁止する。公開文書全体へ曖昧な単語lintは広げず、利用者に必要な確定済み仕様参照を誤検出しない。
-- 完全な公開境界/provenance、内部ADR再混入、catalog/ledger証跡欠落の正常・負例fixtureを追加した。現行catalogと画像台帳はfinding 0である。
-- T3全体は`DC-ARC-001`等が未実装のため未完了を維持する。
-
-## T3/T7進捗 2026-07-15: `DC-FMT-001`
-
-- 全tracked Markdownのコードフェンス外に残る`<<<<<<<`/`>>>>>>>`競合境界を検出する純関数と負例fixtureを追加した。Setext見出しの`=====`とコードフェンス内の説明例は誤検出しない。
-- 統一docs-checkからworking treeとstaged changesの`git diff --check`も実行する。CIでは既存の隣接stepがPR merge-baseまたはpush before commitからHEADまでを検査するため、ローカル未commit差分とCI commit rangeを補完的に覆う。
-- findingはrule ID、対象Markdown、行、修正commandを示す。現行全374 Markdownは競合境界0、diff check成功である。
-- T3/T7全体は`DC-ARC-001`、`DC-SAF-001`とPR event観測が未完了のため継続する。
-
-## T3進捗 2026-07-15: `DC-SAF-001`
-
-- AIの最小入口`AGENTS.md`から、SafeMode既定ON、AI出力proposal-only/自動適用禁止、`human_reviewed`人手限定、provider=`none`でも主要価値成立、share/exportの未レビュー情報・秘密情報漏洩防止へ到達できることを検査する純関数を追加した。
-- 値を複数の設計文書間で推測比較せず、AIが作業開始時に必ず通る入口の非後退表明を5件の固定anchorとして検査する。欠落時はrule ID、入口、失われた不変条件、正本導線の復元指針を示す。
-- 5不変条件の正常fixtureと1条件欠落の負例fixtureを追加し、現行`AGENTS.md`はfinding 0である。
-- T3全体は`DC-ARC-001`が未実装のため未完了を維持する。
-
-## latest main統合記録 2026-07-15
-
-- `origin/main`の19コミット（Document契約の単一V1再基線化を含む）をmergeした。DocumentV1への現行契約変更は保持した。
-- merge直後のdocs-checkは、`data_model_operations_overview.md`へ再混入したStream D実行履歴見出し7件とhistory逆リンク欠落1件を`DC-CUR-001`/`DC-HIS-001`で検出した。mainの現行§2〜§7は変更せず、既存historyに収録済みの§1.2/§1.3/§8〜§13だけをcurrentから再分離し、Audience/Goal/Non-goal/Outcomeとhistory導線を復元した。
-- mainの`AGENTS.md`は安全不変条件を「SafeModeの既定ONと漏洩防止」の直接表明、`schemas.md`正本導線、provider=`none`設定として示す形式へ変わった。`DC-SAF-001`は旧最小入口の直接表明と最新mainの同義正本導線をどちらも決定論的に認識するよう更新した。
-- feature branchへのmain merge後、pushの`before..HEAD`をそのまま`git diff --check`するとmain側の既承認差分までbranchへ誤帰属することを確認した。PRと非default branch pushは最新default branchとのmerge-base、default branch pushはevent `before`を基準にするよう修正し、今回のbranch固有差分はwhitespace finding 0となった。
-
-## `DC-ARC-001` baseline blocker 2026-07-15
-
-- ADR-0058とDoneの`DATA-CONTRACT-RESET-01`は単一の完全な`DocumentV1`へ同期済みとするが、current `schemas.md`には旧最小V1定義と完全な`DocumentV2` / version 2定義、Legacy V1→V2正規化、mock dv2等が29箇所残る。`api.md`と`data_model_operations_overview.md`のV1契約、および実装のversion 1 gateと矛盾する。
-- `contract_reading_guide.md`/inventoryの旧V2案内と、成功系`card_quality_assistance.spec.ts`のversion 2 fixtureも同時に見つかった。既知の失敗を直ちにblockingへ昇格せず、型・optional field・安全注記を欠落なく再整合するP1 follow-up `DATA-CONTRACT-DOC-01`をOpenで起票した。
-- `DC-ARC-001`は同issueのclean baseline後に、単一型定義、version/key一致、旧Legacy規範なし、DocumentV1支援表を決定論的fixtureで固定する。それまでは唯一の`not enabled` ruleとして明示を維持する。
-- main統合後のGitHub Actions CI #10285では`Docs contract (fail-closed repository rules)`が8秒でSuccessし、非default branchのmerge-base基準が実環境でも機能した。workflow全体のFailureはmain由来の`Backend lint + test`であり、docs jobの失敗ではない。
+- Document V1再基準化を含む別ブランチ統合後、`data_model_operations_overview.md` に履歴へ移管済みのStream D旧§1.2/1.3・§8〜13が再混入していた。ER、CRUD、支援レベル、運用境界を残し、形成履歴104行だけを除去した。
+- current-only 7文書のMarkdown見出しを検査し、Stream、rerun、checkpoint、reaffirmation、execution log/recordなどの実行履歴見出しを `DC-CUR-001` で拒否する純関数を追加した。本文、コード記法、`downstream` のような部分一致は対象外とする。
+- 単一docs-checkで01_Plans 11 tests、issue validator 12 tests、Active memo 23件、追跡Markdown 374件が成功した。T3全体はarchitecture、history、public checkerが残るため継続する。
