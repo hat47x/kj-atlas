@@ -12,6 +12,8 @@ Status: Informative working inventory
 
 関連Action: `01_Plans/issues/issue-DOC-ARCH-02-current-contract-history-physical-separation.md`
 
+> `ADR-0058`（DocumentV1再基線化）により、本書が対象revisionの時点で使っていた`DocumentV2`という型名・`schemas.md`旧§3.5という節番号は、ADR-0058前の形成対象を指す名称である。現行の唯一の永続Document契約は`DocumentV1`（`schemas.md` §3.4、`version: 1`）であり、本書内の`DocumentV2`/§3.5表記は現在値ではなく、統合作業を計画した当時のanchor記録として読む（`01_Plans/issues/issue-DATA-CONTRACT-DOC-01-single-v1-current-contract-reconciliation.md`）。
+
 ## 1. 責務別の到達先
 
 | 対象 | 統合後の唯一の正本 | 他文書に残してよい内容 |

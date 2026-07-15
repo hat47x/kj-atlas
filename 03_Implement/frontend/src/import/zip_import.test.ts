@@ -35,7 +35,7 @@ function buildPngWithDimensions(width: number, height: number): Uint8Array {
 describe("zip review pack import", () => {
   test("reads and normalizes supported files", async () => {
     const zipFile = await buildZipFile({
-      "kj-atlas-review-pack-2026/document.json": '{"id":"doc","title":"t","cards":[],"edges":[],"islands":[],"narratives":[],"version":2,"updatedAt":"2025-01-01T00:00:00.000Z"}',
+      "kj-atlas-review-pack-2026/document.json": '{"id":"doc","title":"t","cards":[],"edges":[],"islands":[],"narratives":[],"version":1,"updatedAt":"2025-01-01T00:00:00.000Z"}',
       "kj-atlas-review-pack-2026/view.json": '{"version":"1","generatedAt":"2025-01-01T00:00:00.000Z","docSignature":"doc","camera":{"panX":0,"panY":0,"zoom":1},"viewState":{"summaryView":false,"abstractMapView":false,"hideSourceCards":false,"maxDepth":"all","focusIslandId":null,"showReadingOrder":false},"export":{"mode":"viewport"}}',
       "kj-atlas-review-pack-2026/diagnostics.md": "# diag",
       "kj-atlas-review-pack-2026/snapshot.png": buildPngWithDimensions(100, 100),

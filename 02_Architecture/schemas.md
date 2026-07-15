@@ -5,11 +5,11 @@
 > 現行契約の読み方は `02_Architecture/contract_reading_guide.md`、2026年5月のStream / freeze形成履歴は [Schema contract formation history](history/schema-contract-formation-2026-05.md) を参照する。
 > MVPで実際に運用サポートするデータ構造、埋め込み限定の構造、契約のみの構造は `02_Architecture/data_model_operations_overview.md` を参照する。
 > ADR-0033 で定義した Support/Maintenance/Contract Boundary（L1/L1.5/L2/L2.5/L3/L0）を正本とし、本書の型定義単体で運用保証を主張しない。
-> `ADR-0057` は、反復的探究を独立 `InquiryJourneyV1` + 不変 `RoundSnapshotV1` DAGとして扱う設計を採択した。詳細は `02_Architecture/inquiry_journey_model.md` を参照する。実装・移行・CRUDが揃うまでは `L0: Planned` であり、現行 `DocumentV2` の型、version gate、保存契約へ履歴キーを追加しない。
+> `ADR-0057` は、反復的探究を独立 `InquiryJourneyV1` + 不変 `RoundSnapshotV1` DAGとして扱う設計を採択した。詳細は `02_Architecture/inquiry_journey_model.md` を参照する。実装・移行・CRUDが揃うまでは `L0: Planned` であり、現行 `DocumentV1` の型、version gate、保存契約へ履歴キーを追加しない。
 本ドキュメントは、kj-atlas の **MVPで扱う永続データの最小スキーマ** を定義します。
 
 - YAGNI方針に従い、MVPで標準運用しない型は「運用サポート済み」と扱いません
-- 最小 `DocumentV1` では、出自情報（記録者・記録時間など）を保持しません
+- `DocumentV1` では、出自情報（記録者・記録時間など）を保持しません
 - 島（囲み）・画像・文章化・類似統合などは、型の有無と標準保守範囲を分けて管理します
 
 本ファイルには後続フェーズの型先行契約も含まれます。型が記載されていることは、そのまま標準API/UIで個別保守できることを意味しません。
@@ -390,25 +390,9 @@ export type Edge = {
 
 ### 3.4 Document
 
-```ts
-export type DocumentV1 = {
-  version: 1;
-  id: string;
-  title?: string;
-  createdAt: string; // ISO 8601
-  updatedAt: string; // ISO 8601
+`DocumentV1`（`version: 1`）は、kj-atlas が唯一サポートする永続Document契約である（`ADR-0058`）。カード・エッジのMVPスナップショット保存に加え、島、文章化、根拠リンク、レビュー関連情報を含む現在の完全構造を、単一の型・単一のversion番号で表す。過去に存在した最小構造専用の別型、および`version: 2`を名乗る別契約は存在しない。
 
-  transform: Transform;
-  cards: Card[];
-  edges: Edge[];
-};
-```
-
-### 3.5 DocumentV2 embedded support
-
-`DocumentV2` は、MVPのスナップショット保存を保ったまま、島、文章化、根拠リンク、レビュー関連情報を含める拡張形式である。
-
-`DocumentV2` に含まれる構造は、標準API/UIで個別CRUDできることを意味しない。標準の永続化単位は引き続き `Document` 全体であり、個別CRUDの有無は `02_Architecture/data_model_operations_overview.md` のCRUD表に従う。
+`DocumentV1` に含まれる構造は、標準API/UIで個別CRUDできることを意味しない。標準の永続化単位は引き続き `Document` 全体であり、個別CRUDの有無は `02_Architecture/data_model_operations_overview.md` のCRUD表に従う。
 
 ```ts
 export type CardClaimType = "fact" | "claim" | "hypothesis" | "unknown";
@@ -548,8 +532,8 @@ export type ContradictionSignalDecision = {
   decidedAt: string; // ISO 8601
 };
 
-export type DocumentV2 = {
-  version: 2;
+export type DocumentV1 = {
+  version: 1;
   id: string;
   title?: string;
   createdAt: string; // ISO 8601
@@ -575,7 +559,7 @@ export type DocumentV2 = {
 
 支援レベル:
 
-- `claimType`、`fromKind`、`toKind`、`evidenceLinks` は `DocumentV2` スナップショット内で往復保持する。
+- `claimType`、`fromKind`、`toKind`、`evidenceLinks` は `DocumentV1` スナップショット内で往復保持する。
 - `edges[].type` は未知種別を含めて往復保持する（§3.3.2 の保全規約）。未知種別を理由にエッジを破棄・改変してはならない。
 - `evidenceLinks` は根拠・反証のリンクであり、SafeMode/share/exportで未レビュー本文や根拠情報をどう扱うかは共有前確認のポリシーに従う。
 - `patchApplyLog.stats` は evidence link の追加/削除件数（`upsertEvidenceLinks` / `deleteEvidenceLinks`）を含める。旧データで欠損する場合は0として扱う。
@@ -614,27 +598,27 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 - `Document.version` を用いてスキーマバージョンを管理する
 - 破壊的変更は version を上げ、API側で移行処理を提供する
 
-### 6.0.1 DocumentV2 mock schema version（downstream独立性）
+### 6.0.1 DocumentV1 mock schema version（downstream独立性）
 
-`DocumentV2` 契約ドリフト検証では、実装進捗と独立して次の mock schema version を固定する。
+`DocumentV1` 契約ドリフト検証では、実装進捗と独立して次の mock schema version を固定する。
 
-- `mockSchemaVersion = "mock-2026-05-19-dv2"`
+- `mockSchemaVersion = "mock-2026-07-16-v1"`
 - 用途: contract test / fixture / handoff の識別子
-- 非用途: runtime の `Document.version` 代替（`Document.version` は引き続き `1|2` のみ）
+- 非用途: runtime の `Document.version` 代替（`Document.version` は引き続き数値 `1` のみを受理する）
 
 運用ルール:
 - 下流（import/export/validator/worker）は `mockSchemaVersion` を参照して fixture 互換性を判定してよい。
 - 本番永続データには `mockSchemaVersion` を書き込まない（read-only検証メタ）。
 - `mockSchemaVersion` を更新する場合は `schemas.md` と `data_model_operations_overview.md` を同時更新する。
 
-### 6.1 Document versioning / support level運用ルール（DATA-CONTRACT-01固定）
+### 6.1 Document versioning / support level運用ルール（ADR-0058固定）
 
-- `DocumentV2` の互換性レベルは次で固定する。
-  - **Full**: `version: 2` かつ MVPで `L1/L1.5` に分類される運用対象（Document snapshot、merge decision append-read 連携）。
-  - **Partial**: `version: 2` だが `L2/L2.5` の埋め込み限定/契約限定フィールド（例: `evidenceLinks` / `reviewAttribution` / `critiqueInputs`）を含む。保存・往復は保証するが個別CRUDは保証しない。
-  - **Legacy**: `version: 1` または `version` 欠損の互換読込データ。読込時に `DocumentV2` へ正規化して扱う。
-- 非互換変更（必須キー追加、既存キー意味変更、削除）は **version gate** で隔離する。`version: 2` の意味を壊さず、破壊的拡張は `version: 3` 以降でのみ許可する。
-- `version gate` 導入前に実装が先行することを禁止し、契約文書（`schemas.md` / `data_model_operations_overview.md` / 該当issue AC）を先に同期する。
+- `DocumentV1`（`version: 1`）は唯一サポートするDocument契約であり、互換性レベルは次で固定する。
+  - **Full**: MVPで `L1/L1.5` に分類される運用対象（Document snapshot、merge decision append-read 連携）。
+  - **Partial**: `L2/L2.5` の埋め込み限定/契約限定フィールド（例: `evidenceLinks` / `reviewAttribution` / `critiqueInputs`）を含む。保存・往復は保証するが個別CRUDは保証しない。
+- 数値 `version: 1` 以外（`version` 欠損、文字列版、`version: 2` 以降を含む旧版・未知版）はすべてfail-closedで拒否する。旧版を`DocumentV1`へ読込時正規化する経路は存在しない（`ADR-0058`、`DATA-CONTRACT-RESET-01`）。
+- 非互換変更（必須キー追加、既存キー意味変更、削除）は、新たな次version（`version: 2`以降）を明示的に導入し、その移行判断・移行手順を別ADR/issueで先に定めない限り行わない。`version: 1` の意味を現行構造から変更しない。
+- 次version導入前に実装が先行することを禁止し、契約文書（`schemas.md` / `data_model_operations_overview.md` / 該当issue AC）を先に同期する。
 
 ---
 
@@ -646,7 +630,7 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 - 運用責務が未確定（DecisionStatus=Pending）の項目は、スキーマに存在しても実装Go判断に使わない（fail-closed）。
 ## 7. 次に作るもの
 
-- `02_Architecture/api.md`：Document（V1/V2）のCRUD I/F
+- `02_Architecture/api.md`：Document（V1）のCRUD I/F
 - `02_Architecture/llm_provider_spec.md`：将来AI用のProvider抽象（正本）
 - `02_Architecture/llm_input_ir_spec.md`：LLM入力IR仕様（正規化/前処理/schema）
 - `02_Architecture/deployment.md`：Docker Compose案
@@ -655,7 +639,7 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 
 ## 7A. Island polygon edit constraints（FB-P2C-04）
 
-`DocumentV2.islands[*].shape.kind === "polygon"` の場合、保存対象の `shape.points` は次を満たす。
+`DocumentV1.islands[*].shape.kind === "polygon"` の場合、保存対象の `shape.points` は次を満たす。
 
 - `points` は `Point[]`（`x: number`, `y: number`）
 - 最小頂点数は 3（`points.length >= 3`）
@@ -812,7 +796,7 @@ export type PublicPackManifest = {
 
 ## 9. Island hierarchy compatibility contract（FB-P2A-01）
 
-`DocumentV2.islands[*]` では、階層表現を次で扱う。
+`DocumentV1.islands[*]` では、階層表現を次で扱う。
 
 ```ts
 export type Island = {
@@ -872,7 +856,7 @@ export type IdentityProvisioningContract = {
 
 ## 11. FB-P2B-02 Decision Log schema contract（CTR-2B-02-DECISION-LOG-V1）
 
-Manual assisted merge の意思決定ログは、`DocumentV2` 本体とは独立した append-only ストアとして扱う。
+Manual assisted merge の意思決定ログは、`DocumentV1` 本体とは独立した append-only ストアとして扱う。
 
 ```ts
 export type MergeDecisionRecord = {
@@ -1024,7 +1008,7 @@ ADR-0040 Phase 2: 保留 Hold + 未統合 Shelf の第一級化。加算原則�
 
 ### 14.2 ShelfEntry
 
-- 型正本: §3.5 `ShelfEntry` / `DocumentV2.shelf?`
+- 型正本: §3.4 `ShelfEntry` / `DocumentV1.shelf?`
 - Support level: `L2.5`
 - 欠落時: Shelfは空と解釈
 - 不変条件: Shelf退避は可逆（cardIdのカード本文は削除されない）。Shelfからの復帰はカード削除と分離された独立操作。
@@ -1032,14 +1016,14 @@ ADR-0040 Phase 2: 保留 Hold + 未統合 Shelf の第一級化。加算原則�
 ### 14.3 後方互換
 
 - 新フィールドはすべて optional。未対応クライアント・旧データは欠落を従来挙動として解釈
-- `version: 2` のまま（破壊的変更なし）
+- `version: 1` のまま（破壊的変更なし）
 - import/export/validate は未知フィールドを許容し、欠落時にデフォルト解釈する
 
 ### 14.4 参照
 
 - ADR: `ADR-0040-domain-expression-first-class-strategy.md`
 - Issue: `DOMAIN-EXPR-02-hold-and-pending-shelf`
-- Frontend: `03_Implement/frontend/src/domain/types.ts` (Card.holdState, ShelfEntry, DocumentV2.shelf)
+- Frontend: `03_Implement/frontend/src/domain/types.ts` (Card.holdState, ShelfEntry, DocumentV1.shelf)
 
 ## 15. DOMAIN-TRACE-01 加算スキーマ拡張: Card.meta（通し番号・原データ遡及）（2026-07-08）
 
@@ -1074,7 +1058,7 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 
 ### 15.5 後方互換
 
-- optional のため `version: 2` を維持（破壊的変更なし）。未対応クライアント・旧データは欠落を従来挙動として解釈。
+- optional のため `version: 1` を維持（破壊的変更なし）。未対応クライアント・旧データは欠落を従来挙動として解釈。
 - カード面（キャンバス）の通し番号バッジは**既定 OFF**（View パネルのトグルで表示）。CB-1 自己申告は issue 完了記録に記載する。
 
 ### 15.6 参照
@@ -1095,7 +1079,7 @@ ADR-0040 Phase 4（根拠・主張・矛盾の人間レビュー第一級化）�
 
 ### 16.2 ContradictionSignalDecision
 
-- 型正本: §3.5 `ContradictionSignalReviewStatus` / `ContradictionSignalDecision` / `DocumentV2.contradictionSignalDecisions?`
+- 型正本: §3.4 `ContradictionSignalReviewStatus` / `ContradictionSignalDecision` / `DocumentV1.contradictionSignalDecisions?`
 - `signatureKey` の生成規則: `${signal.code}:${signal.pairKey ?? signal.entityRefs[0]?.idOrSignature ?? ""}`
 - `ContradictionSignalReviewStatus` は CE2-PROPOSAL-IF の ProposalStatus 語彙を再利用する。新規AI権限ではない。
 - Support level: `L2.5`（未分類。実装検証後にL2以上へ昇格）
@@ -1122,7 +1106,7 @@ ADR-0040 Phase 4（根拠・主張・矛盾の人間レビュー第一級化）�
 ### 16.6 後方互換
 
 - 新フィールドはすべて optional。旧データ（配列欠落）は「すべて未決定」として解釈する。
-- `version: 2` のまま（破壊的変更なし）。
+- `version: 1` のまま（破壊的変更なし）。
 - 寛容/厳格の両検証モードで、`signatureKey`/`status`/`decidedAt` のいずれかが不正な要素は破棄し、他の正しい要素は保全する（`mergeSuggestionDecisions` の既存パターンに倣う）。
 
 ### 16.7 参照
@@ -1163,7 +1147,7 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 ### 17.5 後方互換
 
 - 新フィールドはすべて optional。旧データ（`ka` 欄欠落）は従来挙動として解釈する。
-- `version: 2` のまま（破壊的変更なし）。
+- `version: 1` のまま（破壊的変更なし）。
 
 ### 17.6 参照
 
@@ -1174,7 +1158,7 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 
 ## 18. EXT-CONN-03 契約先行固定: agent-constraints.v1（訂正ループの輸出）＋加算スキーマ拡張（2026-07-15）
 
-ADR-0054 段階3の契約先行固定（issue-EXT-CONN-03 AC-1 / DecisionQueueRef が要求する「constraint 契約の `schemas.md` 先行固定」）。本節は**契約の固定のみ**を行い、実装の着手可否は EXT-CONN-03 issue の段階ゲート（段階1/2 の運用知見）に従う。加算原則に従い、DocumentV2 への追加フィールドはすべて optional。
+ADR-0054 段階3の契約先行固定（issue-EXT-CONN-03 AC-1 / DecisionQueueRef が要求する「constraint 契約の `schemas.md` 先行固定」）。本節は**契約の固定のみ**を行い、実装の着手可否は EXT-CONN-03 issue の段階ゲート（段階1/2 の運用知見）に従う。加算原則に従い、DocumentV1 への追加フィールドはすべて optional。
 
 ### 18.1 目的と設計判断（方式設計の要点）
 
@@ -1256,7 +1240,7 @@ export type AgentProposalDecisionEntry = {
   agent?: string;        // agent-response.v1 の agent（markdown_sanitize 済み）
 };
 
-// DocumentV2 への加算（すべて optional）:
+// DocumentV1 への加算（すべて optional）:
 //   agentProposalDecisions?: AgentProposalDecisionEntry[];
 //   constraintExportOptIn?: boolean;   // 欠落 = false = 輸出無効（既定OFF）
 ```
@@ -1290,7 +1274,7 @@ ADR-0054「後段が前段の安全原則を弱めることはない」に従い
 ### 18.8 後方互換
 
 - 新フィールド（`agentProposalDecisions` / `constraintExportOptIn`）はすべて optional。旧データ（欠落）は「決定記録なし・輸出無効」として解釈する。
-- `version: 2` のまま（破壊的変更なし）。
+- `version: 1` のまま（破壊的変更なし）。
 - agent-task.v1 相関ブロックへの `constraintsHash` 追加は optional であり、既存の応答エコーバック規約を変更しない。往復互換: agent-response.v1 側に constraints への応答フィールドは**設けない**（制約は一方向の入力であり、エージェントが制約に「回答」する契約を作ると遵守の自己申告に意味があるかのような誤認を生むため）。
 - Support level: `L2.5`（未分類。実装検証後に L2 以上へ昇格）。
 

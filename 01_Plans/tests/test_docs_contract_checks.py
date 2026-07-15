@@ -129,6 +129,138 @@ class CurrentHistoryBoundaryTest(unittest.TestCase):
         self.assertEqual(findings, [])
 
 
+class DocumentContractBaselineTest(unittest.TestCase):
+    def _write_fixtures(self, root, schemas_text, api_text="DocumentV1 CRUD.\n", data_model_text="DocumentV1 support table.\n"):
+        (root / "02_Architecture").mkdir(parents=True, exist_ok=True)
+        (root / "02_Architecture" / "schemas.md").write_text(schemas_text, encoding="utf-8")
+        (root / "02_Architecture" / "api.md").write_text(api_text, encoding="utf-8")
+        (root / "02_Architecture" / "data_model_operations_overview.md").write_text(data_model_text, encoding="utf-8")
+
+    def test_accepts_the_single_documentv1_baseline(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_fixtures(
+                root,
+                textwrap.dedent("""\
+                    # schemas
+                    ```ts
+                    export type DocumentV1 = {
+                      version: 1;
+                      id: string;
+                    };
+                    ```
+                """),
+            )
+
+            findings = MODULE.check_document_contract_baseline(root)
+
+        self.assertEqual(findings, [])
+
+    def test_reports_duplicate_document_type_definitions(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_fixtures(
+                root,
+                textwrap.dedent("""\
+                    # schemas
+                    ```ts
+                    export type DocumentV1 = {
+                      version: 1;
+                      id: string;
+                    };
+                    ```
+                    ```ts
+                    export type DocumentV1 = {
+                      version: 1;
+                      id: string;
+                      islands: unknown[];
+                    };
+                    ```
+                """),
+            )
+
+            findings = MODULE.check_document_contract_baseline(root)
+
+        self.assertTrue(any(f.rule_id == "DC-ARC-001" and f.target == "Document" for f in findings))
+        self.assertTrue(any("found 2" in f.message for f in findings))
+
+    def test_reports_reintroduced_documentv2_and_legacy_normalization(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_fixtures(
+                root,
+                textwrap.dedent("""\
+                    # schemas
+                    ```ts
+                    export type DocumentV1 = {
+                      version: 1;
+                      id: string;
+                    };
+
+                    export type DocumentV2 = {
+                      version: 2;
+                      id: string;
+                    };
+                    ```
+
+                    Legacy version-1 data is normalized to DocumentV2 on read.
+                """),
+            )
+
+            findings = MODULE.check_document_contract_baseline(root)
+
+        rule_ids_and_targets = {(f.rule_id, f.target) for f in findings}
+        self.assertIn(("DC-ARC-001", "DocumentV2"), rule_ids_and_targets)
+        self.assertIn(("DC-ARC-001", "Legacy"), rule_ids_and_targets)
+        # Two Document type defs (V1 and V2) also trips the single-definition check.
+        self.assertTrue(any(f.target == "Document" for f in findings))
+
+    def test_reports_wrong_type_name_or_version_on_the_sole_document_type(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_fixtures(
+                root,
+                textwrap.dedent("""\
+                    # schemas
+                    ```ts
+                    export type DocumentV3 = {
+                      version: 3;
+                      id: string;
+                    };
+                    ```
+                """),
+            )
+
+            findings = MODULE.check_document_contract_baseline(root)
+
+        self.assertTrue(any(f.rule_id == "DC-ARC-001" and f.target == "DocumentV3" for f in findings))
+        self.assertTrue(any("must be `DocumentV1`" in f.message for f in findings))
+
+    def test_reports_missing_documentv1_reference_in_api_or_data_model_docs(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_fixtures(
+                root,
+                textwrap.dedent("""\
+                    # schemas
+                    ```ts
+                    export type DocumentV1 = {
+                      version: 1;
+                      id: string;
+                    };
+                    ```
+                """),
+                api_text="No document type mentioned here.\n",
+                data_model_text="No document type mentioned here.\n",
+            )
+
+            findings = MODULE.check_document_contract_baseline(root)
+
+        paths_with_findings = {f.path for f in findings}
+        self.assertIn("02_Architecture/api.md", paths_with_findings)
+        self.assertIn("02_Architecture/data_model_operations_overview.md", paths_with_findings)
+
+
 class HistoryMetadataTest(unittest.TestCase):
     def test_accepts_complete_metadata_and_reverse_link(self):
         with tempfile.TemporaryDirectory() as td:
