@@ -159,3 +159,11 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 - 検証: 移動元39行の履歴保持、変更文書の相対link 21件、`architecture.md`の履歴風見出し0件、Active issue validator 33件、validator/triage unit 11件、CE1 backend contract 18件、CE1 frontend contract 9件がpassした。
 - `main`統合後のActive集合は33件（Draft 18 / Open 8 / In Progress 7）。H-B/H-C、§7A.6/§7Bの責務別縮約、API縮約、AGENTS最終同期、contract/roundtrip tests全量確認は未完了。
 - 契約値、runtime、Document version、SafeMode、未レビュー保護、proposal-only、share/export既定は変更していない。
+
+## 進捗記録 2026-07-15: H-B API history / responsibility slice
+
+- T4 partial / T5 H-B: `api.md`の旧Phase 1〜6、mock validation plan、Stream A log、CE0/CE1 sync/freeze/handoff、Auth freeze note、末尾addendumを`history/api-contract-formation-2026-04-to-05.md`へ物理移動した。
+- 現行§2.8はendpoint/status/error/副作用に縮約し、型・キー・canonicalization・version互換を`schemas.md`、責務・信頼境界を`architecture.md`、未解決`queryId`/`schemaVersion` envelope差異を`CE1-CONTRACT-01`へ参照する。CE4 mock/stub境界は現行§2.9.5へ移設し、意味を変更していない。
+- 検証: 削除対象の実質190行中188行を履歴または現行節へ原文保持し、残る2行は意味を維持した見出し名/節番号の正規化。相対link 23件、`api.md`の履歴風見出し0件、Active issue validator 33件、validator/triage unit 11件、CE1 backend contract 18件、CE1 frontend contract 9件がpassした。
+- 履歴索引、reading guide、inventory、元文書の双方向導線を同期した。H-C、§7A.6/§7Bの責務別縮約、AGENTS最終同期、contract/roundtrip tests全量確認は未完了。
+- 契約値、runtime、Document version、SafeMode、未レビュー保護、proposal-only、share/export既定は変更していない。

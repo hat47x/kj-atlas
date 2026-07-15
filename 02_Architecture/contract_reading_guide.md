@@ -2,7 +2,7 @@
 
 この文書は、`02_Architecture` の設計文書を読むときに、どの記述を現在の正本として扱い、どの記述を履歴・監査ログとして扱うかを示す案内です。
 
-`api.md` と `schemas.md` には、現行契約、将来拡張、Contract Freeze、Stream 実行ログがまだ同じファイル内に残っています。`data_model_operations_overview.md` のStream D履歴は分離済みです。未分離文書は、初見の利用者や開発者が履歴を現行契約と誤認しないよう本ガイドから正本anchorへ進んでください。
+`api.md`、`architecture.md`、`data_model_operations_overview.md` の形成履歴は `history/` へ分離済みです。`schemas.md` には現行契約とContract Freeze/Stream形成記録がまだ同じファイル内に残っています。未分離文書は、初見の利用者や開発者が履歴を現行契約と誤認しないよう本ガイドから正本anchorへ進んでください。
 
 ---
 
@@ -39,7 +39,7 @@
 3. 公開・アクセス制御: `7. Publishing metadata` と `8. AccessControlAdapter API契約`
 4. 認証・事前プロビジョニング: `9. AUTH-SCHEMA-01 API契約`
 
-`Stream ... freeze ...` と日付付きの節は、契約形成時の履歴です。新しい実装要件として読むのではなく、現在の契約値を変更しないための監査証跡として扱います。
+旧Phase手順、mock validation plan、`Stream ... freeze ...`、handoffは [API contract formation history](history/api-contract-formation-2026-04-to-05.md) へ分離済みです。現行`api.md`はendpoint、status/error、認証、副作用を正本とし、型のキー集合は`schemas.md`を参照します。
 
 ---
 

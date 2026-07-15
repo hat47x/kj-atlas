@@ -55,7 +55,7 @@ Status: Informative working inventory
 | Batch | 元文書 | 移動候補anchor | 現行正本として残すもの |
 | --- | --- | --- | --- |
 | H-A | `architecture.md` | **Moved 2026-07-15** to `history/architecture-contract-freeze-formation-2026-04-to-05.md`: §7A.0 snapshot、§7A.2.1 Interface Freeze、§12後の`Contract Freeze Baseline`、§13 Stream Reflection Note | コンポーネント責務、信頼境界、採択済み契約IDへの索引 |
-| H-B | `api.md` | §2.10 Stream A log、§2.8.3 Stream sync、§2.11 freeze excerpt、§9.5 freeze note、末尾Freeze Addendum/handoff | endpoint、status/error、認証、副作用、唯一のrequest/response型参照 |
+| H-B | `api.md` | **Moved 2026-07-15** to `history/api-contract-formation-2026-04-to-05.md`: §2.8 Phase/mock plan、§2.10 Stream A log、§2.8.x〜§2.11 sync/freeze、§9.5、末尾Freeze Addendum/handoff | endpoint、status/error、認証、副作用、唯一のrequest/response型参照 |
 | H-C | `schemas.md` | §1.0.1 Stream gate、§11.1 snapshot、§1.3以降のfreeze manifest/memo/Stream log/reaffirmation | 合成型、validation、version互換、Contract ID |
 | H-D | `data_model_operations_overview.md` | §1.2/1.3 Stream注記、§8〜§13 execution log/checkpoint/record/sync | **Moved 2026-07-15** to `history/data-model-operations-stream-d-2026-05.md`。現行物理モデル、CRUD、support level、運用責任は元文書に維持 |
 
