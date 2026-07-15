@@ -31,6 +31,7 @@
 - [x] dashboardとdecision-packを現行正本から外し、Git履歴を参照する短い案内へ置き換える。
 - [x] AI引き継ぎと仮想会議をオンデマンドの最小補足へ縮小し、仮想役職をsolo開発の通常手順から外す。2者承認は組織がJIT provisioning例外を使う場合だけのプロファイルとする。
 - [x] Active一覧の手動表と件数同期を廃止し、memoメタデータからtriage表示・validator検証する。
+- [x] 完了済み品質ゲート定義から候補ごとの反復ログを除き、実行証跡をCI・PR・releaseへ集約する。
 - [ ] docs-checkとリンク検査が成功する。
 
 ## 検証計画
@@ -50,3 +51,9 @@
 - backendのデータモデル契約テストが、AGENTSに `data_model_operations_overview.md` の個別列挙を要求し、タスク別最小読取への変更をCIで拒否していた。
 - データモデル設計文書間の参照検査は維持し、AI入口だけを対象外にした。AGENTSは `02_Architecture/` のタスク別入口を示し、個別ファイル目録を持たない。
 - `test_data_model_operations_contract.py` の対象testとbackend非PostgreSQL test全体で回帰を確認する。
+
+## 進捗記録 2026-07-15: リリースゲート記録の軽量化
+
+- `PRODUCT-QA-01` はゲート定義タスクを完了していたためDoneとし、候補ごとのGate Record追記を停止した。
+- 3,150行のmemoを、現行ゲート、判定方法、最新ベースライン、出荷時の人間判断を残す短い正本へ縮約した。
+- 詳細な過去記録はGit履歴に保持し、以後の実行証跡はCI、PR、releaseへ一度だけ記録する。
