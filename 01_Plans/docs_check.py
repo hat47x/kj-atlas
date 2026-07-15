@@ -8,19 +8,23 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from docs_contract_checks import check_current_only_headings, check_relative_links
+from docs_contract_checks import (
+    check_current_only_headings,
+    check_history_documents,
+    check_relative_links,
+)
 from issues.validate_active_issue_memos import discover_active_rows, validate
 from triage_actionable_plans import collect
 
-ENABLED_RULES = ("DC-ACT-001", "DC-LNK-001", "DC-CUR-001")
+ENABLED_RULES = ("DC-ACT-001", "DC-LNK-001", "DC-CUR-001", "DC-HIS-001")
 NOT_ENABLED_RULES = (
     "DC-ARC-001",
-    "DC-HIS-001",
     "DC-PUB-001",
     "DC-RTE-001",
     "DC-SAF-001",
     "DC-FMT-001",
 )
+HISTORY_INDEX_PATH = Path("02_Architecture/history/README.md")
 
 CURRENT_ONLY_PATHS = (
     Path("01_Plans/project-progress-dashboard.md"),
@@ -107,6 +111,16 @@ def run_docs_check(root: Path, *, run_tests: bool = True) -> DocsCheckResult:
     errors.extend(
         finding.render()
         for finding in check_current_only_headings(repository_root, list(CURRENT_ONLY_PATHS))
+    )
+    history_root = repository_root / HISTORY_INDEX_PATH.parent
+    history_paths = [
+        path
+        for path in history_root.glob("*.md")
+        if path.name.casefold() != "readme.md"
+    ]
+    errors.extend(
+        finding.render()
+        for finding in check_history_documents(repository_root, history_paths, HISTORY_INDEX_PATH)
     )
     if run_tests:
         errors.extend(_run_contract_tests(repository_root))

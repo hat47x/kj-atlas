@@ -9,6 +9,7 @@ from urllib.parse import unquote, urlsplit
 
 RELATIVE_LINK_RULE_ID = "DC-LNK-001"
 CURRENT_ONLY_RULE_ID = "DC-CUR-001"
+HISTORY_RULE_ID = "DC-HIS-001"
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
 MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]\r\n]*\]\((?P<target><[^>\r\n]+>|[^)\r\n]+)\)")
@@ -18,6 +19,19 @@ HISTORY_HEADING_RE = re.compile(
     r"\bexecution[ -]log\b|\bcheckpoint\b|\breaffirmation\b|"
     r"実行ログ|再実行|凍結|チェックポイント|過去件数|解消済み(?:queue|キュー))"
 )
+HISTORY_METADATA_PATTERNS = {
+    "Status": re.compile(r"^Status:[ \t]*(?P<value>.+?)\s*$", re.MULTILINE),
+    "Source document": re.compile(r"^Source document:[ \t]*(?P<value>.+?)\s*$", re.MULTILINE),
+    "Source anchors": re.compile(r"^Source anchors:[ \t]*(?P<value>.+?)\s*$", re.MULTILINE),
+    "Covered period": re.compile(r"^Covered period:[ \t]*(?P<value>.+?)\s*$", re.MULTILINE),
+    "Snapshot / source revision": re.compile(
+        r"^Snapshot / source revision:[ \t]*(?P<value>.+?)\s*$", re.MULTILINE
+    ),
+    "Retention reason": re.compile(r"^Retention reason:[ \t]*(?P<value>.+?)\s*$", re.MULTILINE),
+    "Current normative anchors": re.compile(
+        r"^Current normative anchors:[ \t]*(?P<value>.*?)\s*$", re.MULTILINE
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -160,6 +174,181 @@ def check_current_only_headings(root: Path, markdown_paths: list[Path]) -> list[
                     target=title,
                     message=f"execution-history heading appears in a current-only document: {title}",
                     fix_hint="Move the execution record to the appropriate history document and keep only the current contract or procedure here.",
+                )
+            )
+
+    return findings
+
+
+def _markdown_destinations(text: str) -> list[str]:
+    return [
+        destination
+        for match in MARKDOWN_LINK_RE.finditer(_without_code(text))
+        if (destination := _link_destination(match.group("target")))
+        and not _is_external_or_anchor(destination)
+    ]
+
+
+def _resolved_repository_target(repository_root: Path, source: Path, destination: str) -> Path | None:
+    parsed = urlsplit(destination)
+    relative_target = unquote(parsed.path)
+    if not relative_target:
+        return None
+    target = (
+        repository_root / relative_target.lstrip("/")
+        if relative_target.startswith("/")
+        else source.parent / relative_target
+    ).resolve()
+    try:
+        target.relative_to(repository_root)
+    except ValueError:
+        return None
+    return target
+
+
+def check_history_documents(
+    root: Path,
+    history_paths: list[Path],
+    history_index_path: Path,
+) -> list[DocsCheckFinding]:
+    """Return DC-HIS-001 findings for history metadata and bidirectional routing."""
+    repository_root = root.resolve()
+    findings: list[DocsCheckFinding] = []
+    index = history_index_path if history_index_path.is_absolute() else repository_root / history_index_path
+    index = index.resolve()
+
+    if not index.exists():
+        return [
+            DocsCheckFinding(
+                rule_id=HISTORY_RULE_ID,
+                path=index.relative_to(repository_root).as_posix(),
+                line=1,
+                target="history index",
+                message="history index does not exist",
+                fix_hint="Restore the history README and list every retained history document.",
+            )
+        ]
+
+    index_targets = {
+        target
+        for destination in _markdown_destinations(index.read_text(encoding="utf-8"))
+        if (target := _resolved_repository_target(repository_root, index, destination)) is not None
+    }
+
+    for supplied_path in sorted(history_paths, key=lambda path: path.as_posix()):
+        source = supplied_path if supplied_path.is_absolute() else repository_root / supplied_path
+        source = source.resolve()
+        source_label = source.relative_to(repository_root).as_posix()
+        text = source.read_text(encoding="utf-8")
+        metadata: dict[str, re.Match[str]] = {}
+
+        for field, pattern in HISTORY_METADATA_PATTERNS.items():
+            match = pattern.search(text)
+            if match and (field == "Current normative anchors" or match.group("value").strip()):
+                metadata[field] = match
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=HISTORY_RULE_ID,
+                    path=source_label,
+                    line=1,
+                    target=field,
+                    message=f"required history metadata is missing or empty: {field}",
+                    fix_hint=f"Add a non-empty '{field}:' field using the history README contract.",
+                )
+            )
+
+        status = metadata.get("Status")
+        if status and status.group("value").strip() != "Informative history":
+            line = text.count("\n", 0, status.start()) + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=HISTORY_RULE_ID,
+                    path=source_label,
+                    line=line,
+                    target=status.group("value").strip(),
+                    message="history Status must be exactly 'Informative history'",
+                    fix_hint="Use the canonical non-normative history status.",
+                )
+            )
+
+        source_document: Path | None = None
+        source_meta = metadata.get("Source document")
+        if source_meta:
+            source_destinations = _markdown_destinations(source_meta.group("value"))
+            if source_destinations:
+                source_document = _resolved_repository_target(
+                    repository_root, source, source_destinations[0]
+                )
+            if source_document is None or not source_document.exists() or "history" in source_document.parts:
+                line = text.count("\n", 0, source_meta.start()) + 1
+                findings.append(
+                    DocsCheckFinding(
+                        rule_id=HISTORY_RULE_ID,
+                        path=source_label,
+                        line=line,
+                        target=source_meta.group("value").strip(),
+                        message="Source document must link to an existing current document",
+                        fix_hint="Link Source document to the current normative source outside history/.",
+                    )
+                )
+                source_document = None
+
+        anchors_meta = metadata.get("Current normative anchors")
+        if anchors_meta:
+            anchors_end = len(text)
+            next_heading = re.search(r"^#{1,6}[ \t]+", text[anchors_meta.end() :], re.MULTILINE)
+            if next_heading:
+                anchors_end = anchors_meta.end() + next_heading.start()
+            anchor_block = text[anchors_meta.end() : anchors_end]
+            anchor_targets = [
+                target
+                for destination in _markdown_destinations(anchor_block)
+                if (target := _resolved_repository_target(repository_root, source, destination)) is not None
+                and target.exists()
+                and "history" not in target.parts
+            ]
+            if not anchor_targets:
+                line = text.count("\n", 0, anchors_meta.start()) + 1
+                findings.append(
+                    DocsCheckFinding(
+                        rule_id=HISTORY_RULE_ID,
+                        path=source_label,
+                        line=line,
+                        target="Current normative anchors",
+                        message="Current normative anchors must contain a link to an existing current document",
+                        fix_hint="Add at least one current normative Markdown link before the first history heading.",
+                    )
+                )
+
+        if source_document is not None:
+            reverse_targets = {
+                target
+                for destination in _markdown_destinations(source_document.read_text(encoding="utf-8"))
+                if (target := _resolved_repository_target(repository_root, source_document, destination))
+                is not None
+            }
+            if source not in reverse_targets:
+                findings.append(
+                    DocsCheckFinding(
+                        rule_id=HISTORY_RULE_ID,
+                        path=source_document.relative_to(repository_root).as_posix(),
+                        line=1,
+                        target=source_label,
+                        message="current source document does not link back to its retained history",
+                        fix_hint=f"Add an informative link from the current source to {source_label}.",
+                    )
+                )
+
+        if source not in index_targets:
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=HISTORY_RULE_ID,
+                    path=index.relative_to(repository_root).as_posix(),
+                    line=1,
+                    target=source_label,
+                    message="history document is missing from the history index",
+                    fix_hint=f"Add {source.name} to the retained-history table.",
                 )
             )
 

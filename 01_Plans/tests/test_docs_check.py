@@ -24,6 +24,30 @@ class DocsCheckEntrypointTest(unittest.TestCase):
             target = root / relative_path
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text("# Current contract\n", encoding="utf-8")
+        history_dir = root / MODULE.HISTORY_INDEX_PATH.parent
+        history_dir.mkdir(parents=True, exist_ok=True)
+        history = history_dir / "formation.md"
+        source = root / MODULE.CURRENT_ONLY_PATHS[3]
+        source.write_text(
+            "# Current contract\n\n[Formation history](history/formation.md)\n",
+            encoding="utf-8",
+        )
+        history.write_text(
+            "# Formation history\n\n"
+            "Status: Informative history\n\n"
+            "Source document: [Current](../architecture.md)\n\n"
+            "Source anchors: former §1\n\n"
+            "Covered period: 2026-01-01\n\n"
+            "Snapshot / source revision: `abc123`\n\n"
+            "Retention reason: Preserve formation context.\n\n"
+            "Current normative anchors:\n\n"
+            "- [Current](../architecture.md#current-contract)\n\n"
+            "## Former record\n",
+            encoding="utf-8",
+        )
+        (root / MODULE.HISTORY_INDEX_PATH).write_text(
+            "# History\n\n[Formation](formation.md)\n", encoding="utf-8"
+        )
         subprocess.run(["git", "init", "-q"], cwd=root, check=True)
         subprocess.run(["git", "add", "."], cwd=root, check=True)
 
@@ -35,7 +59,7 @@ class DocsCheckEntrypointTest(unittest.TestCase):
             result = MODULE.run_docs_check(root, run_tests=False)
 
         self.assertEqual(result.active_count, 0)
-        self.assertEqual(result.markdown_count, 8)
+        self.assertEqual(result.markdown_count, 10)
         self.assertEqual(result.errors, ())
 
     def test_run_docs_check_reports_broken_relative_link(self):

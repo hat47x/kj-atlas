@@ -112,7 +112,7 @@ Open化条件:
 - [ ] docs-check非0終了がPRをblockする。
 - [x] 01/02/04/root docsの適用check matrixと除外理由が文書化され、02層が無検査にならない。
 - [ ] current領域の同一Contract ID/型の異義定義、API/schema key差異、DocumentV2支援表欠落を検出する。
-- [ ] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
+- [x] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
 - [ ] broken relative linkとSSOT参照先不在を検出する。
 - [ ] 公開版UI catalog等への内部管理語再混入とprovenance欠落を検出する。
 - [ ] SafeMode、share/export、proposal-only、human reviewの不変条件参照欠落を検出する。
@@ -260,3 +260,11 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - `Stream / freeze / rerun / execution log / checkpoint / reaffirmation`と対応する日本語の実行履歴見出しを検出する。本文、コードフェンス、インラインコード、`downstream`のような部分一致は除外し、現行契約本文中の正当な説明を誤検出しない。
 - 英語見出し、日本語見出し、除外境界の負例/正常fixtureを追加した。現行repositoryの対象7文書はfinding 0である。
 - T3全体は`DC-ARC-001`、`DC-HIS-001`、`DC-PUB-001`等が未実装のため未完了を維持する。
+
+## T3進捗 2026-07-15: `DC-HIS-001`
+
+- `02_Architecture/history/`の収録文書をcurrent契約比較から独立して走査し、正準Status、元文書/元anchor、対象期間、snapshot/source revision、保持理由、現行anchorの必須メタデータを検査する純関数を追加した。
+- `Source document`はhistory外の既存current文書へのリンク、`Current normative anchors`は既存current文書への1件以上のリンクを要求する。さらに元current文書からhistoryへの逆リンクと、history `README.md`の収録一覧掲載を検査する。
+- 完全な双方向route、metadata欠落/非正規Status、current anchor/逆リンク/index掲載欠落の正常・負例fixtureを追加した。関連13 testsが成功し、現行4履歴文書はfinding 0である。
+- clean baseline初回検査で、`schemas.md`の履歴参照がコード表記だけでリンクになっていない逆導線欠落を検出した。検査を緩和せず、対象を`Schema contract formation history`への相対リンクへ修正してfinding 0へ収束した。
+- T3全体は`DC-ARC-001`、`DC-PUB-001`等が未実装のため未完了を維持する。

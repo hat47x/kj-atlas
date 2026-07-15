@@ -135,5 +135,85 @@ class CurrentOnlyHeadingCheckTest(unittest.TestCase):
         self.assertEqual(findings, [])
 
 
+class HistoryDocumentCheckTest(unittest.TestCase):
+    def _write_clean_pair(self, root: Path) -> tuple[Path, Path]:
+        architecture = root / "02_Architecture"
+        history_dir = architecture / "history"
+        history_dir.mkdir(parents=True)
+        current = architecture / "current.md"
+        history = history_dir / "formation.md"
+        current.write_text(
+            "# Current contract\n\n[Formation history](history/formation.md)\n",
+            encoding="utf-8",
+        )
+        history.write_text(textwrap.dedent("""\
+            # Formation history
+
+            Status: Informative history
+
+            Source document: [Current contract](../current.md)
+
+            Source anchors: former §2
+
+            Covered period: 2026-01-01 to 2026-01-02
+
+            Snapshot / source revision: `abc123`
+
+            Retention reason: Preserve the decision sequence without overriding current values.
+
+            Current normative anchors:
+
+            - [Current contract](../current.md#current-contract)
+
+            ## Former execution record
+            """), encoding="utf-8")
+        index = history_dir / "README.md"
+        index.write_text("# History\n\n[Formation](formation.md)\n", encoding="utf-8")
+        return history, index
+
+    def test_accepts_complete_metadata_current_anchor_and_bidirectional_routes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            history, index = self._write_clean_pair(root)
+
+            findings = MODULE.check_history_documents(root, [history], index)
+
+        self.assertEqual(findings, [])
+
+    def test_reports_missing_metadata_and_noncanonical_status(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            history, index = self._write_clean_pair(root)
+            history.write_text("# History\n\nStatus: Current\n", encoding="utf-8")
+
+            findings = MODULE.check_history_documents(root, [history], index)
+
+        rendered = "\n".join(finding.render() for finding in findings)
+        self.assertIn("DC-HIS-001 02_Architecture/history/formation.md:1", rendered)
+        self.assertIn("Source document", rendered)
+        self.assertIn("Snapshot / source revision", rendered)
+        self.assertIn("must be exactly 'Informative history'", rendered)
+
+    def test_reports_missing_current_anchor_reverse_link_and_index_entry(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            history, index = self._write_clean_pair(root)
+            current = root / "02_Architecture" / "current.md"
+            current.write_text("# Current contract\n", encoding="utf-8")
+            index.write_text("# History\n", encoding="utf-8")
+            text = history.read_text(encoding="utf-8")
+            history.write_text(
+                text.replace("- [Current contract](../current.md#current-contract)", "No current link."),
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_history_documents(root, [history], index)
+
+        messages = "\n".join(finding.message for finding in findings)
+        self.assertIn("Current normative anchors", messages)
+        self.assertIn("does not link back", messages)
+        self.assertIn("missing from the history index", messages)
+
+
 if __name__ == "__main__":
     unittest.main()
