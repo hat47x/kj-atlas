@@ -31,7 +31,7 @@
 - `.github/workflows/ci.yml` はfrontend/backend jobだけで、docs jobがない。
 - 統一docs-check entrypointと相対リンクcheckは存在しない。
 - `validate_active_issue_memos.py` はREADMEのActive表に掲載された行だけを検証する。Active表が空でも成功し、filesystem上のDraft/Open/In Progress memoを見落とす。
-- 監査開始時のActive表は空だった。新規5件の起票・1件完了後も、triage基準のDraft/Open/In Progress 29件（Draft 15 / Open 7 / In Progress 7）に対し、表は4件しか掲載せず25件を見落としている。
+- 監査開始時のActive表は空だった。2026-07-11時点でもActive 29件に対して4件しか掲載していなかった。2026-07-15の `DOC-OPS-06` 完了と並行追加された `QA-MONKEY-13` 反映後、現行Active 32件（Draft 17 / Open 9 / In Progress 6）の手動baselineは一致したが、次回追加時に欠落をfailさせる逆向き検査はまだない。
 - `02_Architecture` は最上位の契約正本なのにADR-0024のblocking対象外で、異義契約やcurrent/history混在を機械的に止められない。
 - 完了済み公開境界も `ui_catalog.md` で回帰しており、手動検索だけでは再発を防げていない。
 
@@ -165,3 +165,4 @@ Open化条件:
 
 - 本件はADR-0024の実装欠落を埋めるActionである。新規ADRは原則不要。
 - ADR化が必要になる条件: 02層をblocking対象へ加える判断が既存ADR追補で扱えない、または新しい非機能境界を導入する場合（ADR-0047 R-3）。
+- 2026-07-15 baseline: Active表とfilesystemは32件で一致。`DOC-OPS-06` はDoneとなり、current-only文書の検査境界が確定した。これはOpen化条件のclean baselineを一部満たす証拠であり、双方向validator実装の完了を意味しない。`DOC-ARCH-02` の残る検査境界が確定するまでStatusはDraftを維持する。

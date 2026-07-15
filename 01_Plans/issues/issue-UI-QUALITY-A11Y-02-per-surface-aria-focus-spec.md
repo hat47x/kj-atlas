@@ -1,7 +1,7 @@
 # Issue Draft: UI-QUALITY-A11Y-02 新設サーフェスの画面別 ARIA・フォーカス仕様適用
 
 - Type: Feature request
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
@@ -126,3 +126,9 @@
 - **発見・未修正（設計判断を要する4種）**: `aria-required-parent`（キャンバスカードのrole=option/listbox構造・7箇所）・`aria-required-children`（MenuBarのrole=menu直接子制約・1箇所）・`page-has-heading-one`（h1皆無）・`color-contrast`（domain-detail-filtersの配色・2箇所）。いずれも機械的なラベル付与では直せない構造/デザイン判断のため、`issue-UI-QUALITY-A11Y-03-structural-aria-findings.md`（新規）を起票し、スモークテスト自身は `AxeBuilder.disableRules([...])` で明示的に除外（コード内コメント＋本追記で追跡、サイレント除外はしていない）。
 - 検証: typecheck 0 / vitest **988 passed**（188 files）/ e2e `a11y_axe_smoke.spec.ts` **7/7 passed**・`menu_bar.spec.ts` **6/6**・`edge_type_vocabulary.spec.ts` **3/3** 非回帰確認。
 - 副次確認: `ce3_patch_workspace.spec.ts` の既存1テストが本ラウンドの変更前（HEAD時点のファイル）でも同一エラーで失敗することを確認済み（本ラウンドの変更とは無関係の既存の不具合。修正は別途）。
+
+## 完了記録 2026-07-15
+
+- 5面のACとT1〜T4は全て完了。残っていた作業モード面は `UX-NAV-02` で `role=tablist` ・フォーカス・段階Escapeを実装し、axeとE2Eで固定済み。
+- 派生した構造的ARIA課題は `UI-QUALITY-A11Y-03` が2026-07-14にDoneとなり、axeの延期ルールは0件になった。
+- 実機スクリーンリーダ受入は本IssueのNon-goalであり、`PRODUCT-QA-01` / `MVP-EXIT-01` の独立release gateとして維持する。本IssueをDoneにしてもそのgateは解除されない。

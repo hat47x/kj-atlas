@@ -2,6 +2,8 @@
 
 - Type: Process
 - Status: Draft
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: N/A
 - Open Readiness: Prepared
 - Execution: Hold
 - Priority: P0
@@ -9,6 +11,7 @@
 - Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`（計画文書更新のみ）
 - Out of Scope: 実装コード変更 / テストコード追加 / CI設定変更
 - Expected verification level: `unit`
+- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 - Policy reference: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 
 ## Phase 1: Read Gate（Draft/Hold理由と依存抽出）

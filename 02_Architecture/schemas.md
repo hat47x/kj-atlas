@@ -283,6 +283,18 @@ export type Transform = {
 ### 3.2 Card
 
 ```ts
+export type CardHoldState = "held" | "pending" | "shelved";
+
+export type CardMeta = {
+  seq?: number;
+  source?: string;
+};
+
+export type CardKa = {
+  voice?: string;
+  value?: string;
+};
+
 export type Card = {
   id: string;
   text: string;
@@ -290,8 +302,13 @@ export type Card = {
   y: number;
   mergedIntoCardId?: string;
   repOf?: string[];
+  holdState?: CardHoldState;
+  meta?: CardMeta;
+  ka?: CardKa;
 };
 ```
+
+`holdState`、`meta`、`ka` はすべて optional であり、欠落時は従来の通常カードとして扱う。各fieldの意味、安全境界、取り込み規則は §14、§15、§17を参照する。
 
 > 備考：MVPでは `w/h` は固定でもよい。必要になったら追加する。
 
@@ -500,6 +517,19 @@ export type DeterministicTieBreak = {
   ];
 };
 
+export type ShelfEntry = {
+  cardId: string;
+  shelvedAt: string; // ISO 8601
+  reason?: string;
+};
+
+export type ContradictionSignalReviewStatus = "accepted" | "held" | "rejected";
+export type ContradictionSignalDecision = {
+  signatureKey: string;
+  status: ContradictionSignalReviewStatus;
+  decidedAt: string; // ISO 8601
+};
+
 export type DocumentV2 = {
   version: 2;
   id: string;
@@ -520,6 +550,8 @@ export type DocumentV2 = {
   reproposalDiffs?: ReproposalDiff[];
   reviewAttribution?: ReviewAttribution;
   deterministicTieBreak?: DeterministicTieBreak;
+  shelf?: ShelfEntry[];
+  contradictionSignalDecisions?: ContradictionSignalDecision[];
 };
 ```
 
@@ -1162,7 +1194,7 @@ ADR-0040 Phase 2: 保留 Hold + 未統合 Shelf の第一級化。加算原則�
 
 ### 14.1 Card.holdState
 
-- 型: `"held" | "pending" | "shelved"` (optional)
+- 型正本: §3.2 `CardHoldState` / `Card.holdState?`
 - Support level: `L2.5`（未分類。実装検証後にL2以上へ昇格）
 - 欠落時: 従来挙動（holdしていない通常カード）
 - 意味:
@@ -1172,8 +1204,7 @@ ADR-0040 Phase 2: 保留 Hold + 未統合 Shelf の第一級化。加算原則�
 
 ### 14.2 ShelfEntry
 
-- 型: `{ cardId: string; shelvedAt: string; reason?: string; }`
-- 位置: `DocumentV2.shelf?: ShelfEntry[]`
+- 型正本: §3.5 `ShelfEntry` / `DocumentV2.shelf?`
 - Support level: `L2.5`
 - 欠落時: Shelfは空と解釈
 - 不変条件: Shelf退避は可逆（cardIdのカード本文は削除されない）。Shelfからの復帰はカード削除と分離された独立操作。
@@ -1196,7 +1227,7 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 
 ### 15.1 Card.meta
 
-- 型: `{ seq?: number; source?: string }` (optional)
+- 型正本: §3.2 `CardMeta` / `Card.meta?`
 - Support level: `L2.5`（契約限定。往復保持を保証し、個別CRUDは保証しない）
 - 欠落時: 従来挙動（番号・出典を持たない通常カード）
 - 意味:
@@ -1244,16 +1275,9 @@ ADR-0040 Phase 4（根拠・主張・矛盾の人間レビュー第一級化）�
 
 ### 16.2 ContradictionSignalDecision
 
-```ts
-export type ContradictionSignalReviewStatus = "accepted" | "held" | "rejected"; // CE2-PROPOSAL-IF の ProposalStatus 語彙を再利用（新規AI権限ではない）
-export type ContradictionSignalDecision = {
-  signatureKey: string; // `${signal.code}:${signal.pairKey ?? signal.entityRefs[0]?.idOrSignature ?? ""}`
-  status: ContradictionSignalReviewStatus;
-  decidedAt: string; // ISO 8601
-};
-```
-
-- 位置: `DocumentV2.contradictionSignalDecisions?: ContradictionSignalDecision[]`
+- 型正本: §3.5 `ContradictionSignalReviewStatus` / `ContradictionSignalDecision` / `DocumentV2.contradictionSignalDecisions?`
+- `signatureKey` の生成規則: `${signal.code}:${signal.pairKey ?? signal.entityRefs[0]?.idOrSignature ?? ""}`
+- `ContradictionSignalReviewStatus` は CE2-PROPOSAL-IF の ProposalStatus 語彙を再利用する。新規AI権限ではない。
 - Support level: `L2.5`（未分類。実装検証後にL2以上へ昇格）
 - 欠落時、または該当 `signatureKey` が配列内に無い場合: 「未決定」（暗黙の "proposed"）として扱う。"proposed" 自体は永続化しない値であり、決定を取り消す操作は配列から該当エントリを削除する（DOMAIN-TRACE-01 の `Card.meta` 空値削除と同じ規約）。
 - `signatureKey` は `analyzeContradictions()` の実行毎に再計算されるシグナル列から決定論的に導出する識別子であり、シグナル自体は永続化しない（`mergeSuggestionDecisions` が候補生成物と決定を分離する既存パターンに倣う）。
@@ -1293,14 +1317,9 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 
 ### 17.1 Card.ka
 
-```ts
-export type CardKa = {
-  voice?: string; // 心の声（言語化途中の一級データ。ガードレール: 嘘を書かない・話を盛らない・妄想しすぎない — UIヒント文言として反映し、機能では強制しない）
-  value?: string; // 価値（KA法における本質的価値の言語化）
-};
-```
-
-- 位置: `Card.ka?: CardKa`
+- 型正本: §3.2 `CardKa` / `Card.ka?`
+- `voice`: 心の声（言語化途中の一級データ）。ガードレール「嘘を書かない・話を盛らない・妄想しすぎない」はUIヒントとして反映し、機能では強制しない。
+- `value`: KA法における本質的価値の言語化。
 - Support level: `L2.5`（未分類。実装検証後にL2以上へ昇格）
 - 欠落時: 従来挙動（KA欄を持たない通常カード）
 - `Card.text` は従来どおり**出来事の正本**として維持する（意味変更なし）。`voice`/`value` は `text` に併記しない別フィールド。

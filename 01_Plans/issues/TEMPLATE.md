@@ -4,7 +4,8 @@
 
 - Type: <Feature request / Bug / Process / Security / Documentation quality>
 - Status: Draft (起票用)
-- Source Issue: <N/A (未運用時) or GitHub Issue URL (運用時)>
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: <N/A or internal source reference (現行); GitHub Issue URL (運用開始後)>
 - Priority: <P0/P1/P2/P3>
 - Owner: <TBD or team/user>
 - Scope: `<directory_or_docs>`
@@ -122,7 +123,7 @@
 
 ## Authoring Checklist（人間/生成AI 共通）
 
-- [ ] `Source Issue` が運用状態と整合している（未運用時は `N/A`、運用時はURL）。
+- [ ] `Source Issue` が運用状態と整合している（現行は `N/A` または内部起点参照、GitHub Issues運用開始後はURL）。
 - [ ] `Related ADR/Spec` が最低1件ある。
 - [ ] 受入条件に「安全」「互換」「検証」が含まれる。
 - [ ] `Validation plan` に具体コマンドがある。

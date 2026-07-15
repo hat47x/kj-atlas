@@ -95,8 +95,8 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 規範節・履歴節・重複定義・既知衝突のinventoryをファイル/anchor/Contract ID単位で作る。
-- [ ] T2 競合解消規則に従い、各型・endpoint・運用境界の唯一の正本anchorを決める。
-- [ ] T3 `schemas.md` の現行合成型を先頭側へ統合し、重複定義を参照へ変える。
+- [x] T2 競合解消規則に従い、各型・endpoint・運用境界の唯一の正本anchorを決める。CE1 v1の値Conflictは`CE1-CONTRACT-01`へ分離し、本Issueで推測統合しない。
+- [x] T3 `schemas.md` の現行合成型を先頭側へ統合し、重複定義を参照へ変える。
 - [ ] T4 `architecture.md` / `api.md` / data model overviewを責務別に縮約する。
 - [ ] T5 `02_Architecture/history/` へ形成履歴を移し、メタと逆リンクを付ける。
 - [ ] T6 reading guideと`AGENTS.md`を新しい参照順へ同期する。
@@ -143,3 +143,11 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 - `02_Architecture/history/README.md` を追加し、Informativeメタ、逆リンク、batch移動、非破壊規律を明文化した。
 - `contract_reading_guide.md` と `AGENTS.md` を新しいinventory/history入口へ同期した。
 - 契約値、runtime、schema version、SafeModeは変更していない。`ContextQueryV1` / `ContextBundleV1` / `schemaVersion`はConflictのまま明示し、T2で上流根拠から一意に決まらなければ子Issueへ分離する。
+
+## 進捗記録 2026-07-15: composite type / H-D history slice
+
+- T2: 責務別SSOTを `schemas.md`（型）、`api.md`（endpoint/status/error/envelope）、data model overview（CRUD/support level）へ固定した。CE1 v1の `queryId` / `schemaVersion` / `sourceBundleHash` は値を推測せず、`CE1-CONTRACT-01`へ分離した。
+- T3: `Card`へ`holdState?` / `meta?` / `ka?`、`DocumentV2`へ`shelf?` / `contradictionSignalDecisions?`を統合した。後段§14〜§17は型の再定義をやめ、§3.2/§3.5参照へ変更した。
+- T5 partial (H-D): `data_model_operations_overview.md` former §1.2/§1.3/§8〜§13を`history/data-model-operations-stream-d-2026-05.md`へ移し、元文書・履歴索引・reading guideの双方向導線を追加した。
+- 検証: Active issue validator 31件pass、triage active=31 / ready=14 / blocked=17 / stopper=0、validator unit 10件pass、CE1 backend contract 18件pass、CE1 frontend contract 9件pass、変更文書の相対link 17件エラー0、合成型定義の重複0、data model overviewの履歴見出し0。
+- 未完了: H-A/H-B/H-C（architecture/api/schemas履歴移動）、API縮約、AGENTS最終同期、contract/roundtrip testsの全量確認。契約値、runtime、Document version、SafeMode、share/export既定は変更していない。

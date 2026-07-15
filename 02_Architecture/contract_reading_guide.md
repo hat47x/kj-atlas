@@ -2,7 +2,7 @@
 
 この文書は、`02_Architecture` の設計文書を読むときに、どの記述を現在の正本として扱い、どの記述を履歴・監査ログとして扱うかを示す案内です。
 
-`api.md` と `schemas.md` には、現行契約、将来拡張、Contract Freeze、Stream 実行ログが同じファイル内に残っています。これは履歴を失わない利点がある一方、初見の利用者や開発者には「どこを読めばよいか」が分かりにくくなります。
+`api.md` と `schemas.md` には、現行契約、将来拡張、Contract Freeze、Stream 実行ログがまだ同じファイル内に残っています。`data_model_operations_overview.md` のStream D履歴は分離済みです。未分離文書は、初見の利用者や開発者が履歴を現行契約と誤認しないよう本ガイドから正本anchorへ進んでください。
 
 ---
 
@@ -54,6 +54,10 @@
 5. Decision Log / HIL-RS error envelope: 該当する契約節
 
 `Stream ...`、`Contract Freeze Addendum`、日付付き `freeze note` は、既存契約をどう凍結したかの履歴です。新しい正本を追加する場所ではありません。
+
+`Card` / `DocumentV2` の採択済みoptional field（`holdState`, `meta`, `ka`, `shelf`, `contradictionSignalDecisions`）は §3.2 / §3.5 の合成型を正本とし、後段§14〜§17は意味・安全・互換規則を補足します。
+
+`data_model_operations_overview.md` は現行の物理モデル、CRUD、support level、運用責任だけを正本とします。2026年5月の形成記録は [Architecture history](history/data-model-operations-stream-d-2026-05.md) で参照します。
 
 ---
 
