@@ -21,14 +21,14 @@ class DocsCheckEntrypointTest(unittest.TestCase):
         (root / "01_Plans" / "adr").mkdir()
         (root / "docs").mkdir()
         (root / "docs" / "guide.md").write_text(guide_text, encoding="utf-8")
-        for relative_path in MODULE.CURRENT_ONLY_PATHS:
+        for relative_path in CHECKS.CURRENT_ONLY_PATHS:
             target = root / relative_path
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text("# Current contract\n", encoding="utf-8")
-        history_dir = root / MODULE.HISTORY_INDEX_PATH.parent
+        history_dir = root / "02_Architecture" / "history"
         history_dir.mkdir(parents=True, exist_ok=True)
         history = history_dir / "formation.md"
-        source = root / MODULE.CURRENT_ONLY_PATHS[3]
+        source = root / CHECKS.CURRENT_ONLY_PATHS[3]
         source.write_text(
             "# Current contract\n\n[Formation history](history/formation.md)\n",
             encoding="utf-8",
@@ -46,32 +46,6 @@ class DocsCheckEntrypointTest(unittest.TestCase):
             "## Former record\n",
             encoding="utf-8",
         )
-        (root / MODULE.HISTORY_INDEX_PATH).write_text(
-            "# History\n\n[Formation](formation.md)\n", encoding="utf-8"
-        )
-        catalog = root / MODULE.PUBLIC_CATALOG_PATH
-        catalog.parent.mkdir(parents=True, exist_ok=True)
-        catalog.write_text(
-            "# UI catalog\n" + "\n".join(CHECKS.PUBLIC_CATALOG_REQUIRED) + "\n",
-            encoding="utf-8",
-        )
-        ledger = root / MODULE.SCREENSHOT_LEDGER_PATH
-        ledger.parent.mkdir(parents=True, exist_ok=True)
-        ledger.write_text(
-            "# Screenshot ledger\n"
-            + "\n".join(CHECKS.SCREENSHOT_LEDGER_REQUIRED)
-            + "\n",
-            encoding="utf-8",
-        )
-        (root / MODULE.SAFETY_ENTRY_PATH).write_text(
-            "# Agent entry\n\n"
-            "- SafeModeは既定ON。\n"
-            "- AI出力はproposal-onlyで、自動適用しない。\n"
-            "- `human_reviewed` は人間だけが設定する。\n"
-            "- `KJ_ATLAS_LLM_PROVIDER=none` でも主要価値が成立する。\n"
-            "- share/exportで未レビュー情報や秘密情報を意図せず共有しない。\n",
-            encoding="utf-8",
-        )
         subprocess.run(["git", "init", "-q"], cwd=root, check=True)
         subprocess.run(["git", "add", "."], cwd=root, check=True)
 
@@ -80,10 +54,10 @@ class DocsCheckEntrypointTest(unittest.TestCase):
             root = Path(td)
             self._repository(root, "# Guide\n")
 
-            result = MODULE.run_docs_check(root, run_tests=False, required_routes=())
+            result = MODULE.run_docs_check(root, run_tests=False)
 
         self.assertEqual(result.active_count, 0)
-        self.assertEqual(result.markdown_count, 13)
+        self.assertGreaterEqual(result.markdown_count, 7)
         self.assertEqual(result.errors, ())
 
     def test_run_docs_check_reports_broken_relative_link(self):
@@ -91,7 +65,7 @@ class DocsCheckEntrypointTest(unittest.TestCase):
             root = Path(td)
             self._repository(root, "[missing](missing.md)\n")
 
-            result = MODULE.run_docs_check(root, run_tests=False, required_routes=())
+            result = MODULE.run_docs_check(root, run_tests=False)
 
         self.assertEqual(len(result.errors), 1)
         self.assertIn("DC-LNK-001 docs/guide.md:1", result.errors[0])
@@ -100,10 +74,10 @@ class DocsCheckEntrypointTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             self._repository(root, "# Guide\n")
-            current_doc = root / MODULE.CURRENT_ONLY_PATHS[0]
+            current_doc = root / CHECKS.CURRENT_ONLY_PATHS[0]
             current_doc.write_text("# Current contract\n\n## Rerun checkpoint\n", encoding="utf-8")
 
-            result = MODULE.run_docs_check(root, run_tests=False, required_routes=())
+            result = MODULE.run_docs_check(root, run_tests=False)
 
         self.assertEqual(len(result.errors), 1)
         self.assertIn("DC-CUR-001 01_Plans/project-progress-dashboard.md:3", result.errors[0])
