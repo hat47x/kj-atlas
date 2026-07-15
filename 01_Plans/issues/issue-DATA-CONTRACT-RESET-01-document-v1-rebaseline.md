@@ -68,6 +68,10 @@
 - [x] T4 MCPと一般向け文書を移行する。
 - [x] T5 横断検索と統合テストで旧契約の残存とデータ損失を検証する。
 
+### Follow-up（2026-07-16）
+
+T1完了後もcurrent architecture文書（`schemas.md` §3.4/§3.5の二重`Document`定義、`contract_reading_guide.md`、`contract_consolidation_inventory.md`）とe2e/unitのfixture（`card_quality_assistance.spec.ts`、`zip_import.test.ts`）に旧`DocumentV2`/`version: 2`表記が残存していたことが2026-07-15の横断監査で判明した。実装（frontend/backend型・validator）は本issueのT1-T5どおりV1へ移行済みであり、実装完了の事実は変えない。文書・fixtureの回帰是正は `issue-DATA-CONTRACT-DOC-01-single-v1-current-contract-reconciliation.md` として別issueへ切り出し、そちらで追跡する。
+
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:

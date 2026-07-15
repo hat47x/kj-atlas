@@ -17,7 +17,7 @@ const CARD_TEXT = "quality assist target card";
 
 function buildDocument() {
   return {
-    version: 2,
+    version: 1,
     id: "doc_phase1_canvas",
     title: "card quality assist fixture",
     createdAt: "2026-07-15T00:00:00.000Z",

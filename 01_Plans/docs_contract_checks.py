@@ -12,6 +12,8 @@ from urllib.parse import unquote, urlsplit
 RELATIVE_LINK_RULE_ID = "DC-LNK-001"
 CURRENT_HISTORY_RULE_ID = "DC-CUR-001"
 HISTORY_METADATA_RULE_ID = "DC-HIS-001"
+ARCHITECTURE_BASELINE_RULE_ID = "DC-ARC-001"
+DOCUMENT_TYPE_RE = re.compile(r"export type (Document\w*)\s*=\s*\{\s*\r?\n\s*version:\s*([^;]+);")
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
 MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]\r\n]*\]\((?P<target><[^>\r\n]+>|[^)\r\n]+)\)")
@@ -190,6 +192,103 @@ def check_current_history_headings(
     return findings
 
 
+def check_document_contract_baseline(
+    root: Path,
+    schemas_path: Path = Path("02_Architecture/schemas.md"),
+    api_path: Path = Path("02_Architecture/api.md"),
+    data_model_path: Path = Path("02_Architecture/data_model_operations_overview.md"),
+) -> list[DocsCheckFinding]:
+    """Return DC-ARC-001 findings when the single-DocumentV1 baseline (ADR-0058) regresses.
+
+    Checks the raw text (not `_without_code`) since the Document type definition
+    and its version live inside fenced ```ts blocks.
+    """
+    findings: list[DocsCheckFinding] = []
+
+    schemas_text = (root / schemas_path).read_text(encoding="utf-8")
+    document_types = list(DOCUMENT_TYPE_RE.finditer(schemas_text))
+    if len(document_types) != 1:
+        line = schemas_text.count("\n", 0, document_types[-1].start()) + 1 if document_types else 1
+        findings.append(
+            DocsCheckFinding(
+                rule_id=ARCHITECTURE_BASELINE_RULE_ID,
+                path=schemas_path.as_posix(),
+                line=line,
+                target="Document",
+                message=f"expected exactly one persistent Document type definition, found {len(document_types)}",
+                fix_hint="Consolidate all Document type definitions into a single DocumentV1 (version: 1) per ADR-0058.",
+            )
+        )
+    else:
+        type_name = document_types[0].group(1)
+        version_literal = document_types[0].group(2).strip()
+        if type_name != "DocumentV1" or version_literal != "1":
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=ARCHITECTURE_BASELINE_RULE_ID,
+                    path=schemas_path.as_posix(),
+                    line=schemas_text.count("\n", 0, document_types[0].start()) + 1,
+                    target=type_name,
+                    message=f"the sole Document type must be `DocumentV1` with `version: 1`, found `{type_name}` with version {version_literal}",
+                    fix_hint="Rename the type to DocumentV1 and set version to the literal 1, per ADR-0058.",
+                )
+            )
+
+    if "DocumentV2" in schemas_text:
+        offset = schemas_text.find("DocumentV2")
+        findings.append(
+            DocsCheckFinding(
+                rule_id=ARCHITECTURE_BASELINE_RULE_ID,
+                path=schemas_path.as_posix(),
+                line=schemas_text.count("\n", 0, offset) + 1,
+                target="DocumentV2",
+                message="obsolete DocumentV2 name reappeared in the current contract",
+                fix_hint="Rename to DocumentV1 (version: 1), or move the historical mention to 02_Architecture/history.",
+            )
+        )
+
+    if "Legacy" in schemas_text:
+        offset = schemas_text.find("Legacy")
+        findings.append(
+            DocsCheckFinding(
+                rule_id=ARCHITECTURE_BASELINE_RULE_ID,
+                path=schemas_path.as_posix(),
+                line=schemas_text.count("\n", 0, offset) + 1,
+                target="Legacy",
+                message="legacy version-normalization language reappeared; only version: 1 is accepted (fail-closed)",
+                fix_hint="Remove the Legacy normalization note — unknown or old versions must be rejected outright, not normalized.",
+            )
+        )
+
+    for label, path in (("api.md", api_path), ("data_model_operations_overview.md", data_model_path)):
+        text = (root / path).read_text(encoding="utf-8")
+        if "DocumentV2" in text:
+            offset = text.find("DocumentV2")
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=ARCHITECTURE_BASELINE_RULE_ID,
+                    path=path.as_posix(),
+                    line=text.count("\n", 0, offset) + 1,
+                    target="DocumentV2",
+                    message=f"{label} still references the obsolete DocumentV2 name",
+                    fix_hint="Update the reference to DocumentV1.",
+                )
+            )
+        if "DocumentV1" not in text:
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=ARCHITECTURE_BASELINE_RULE_ID,
+                    path=path.as_posix(),
+                    line=1,
+                    target="DocumentV1",
+                    message=f"{label} does not reference DocumentV1 anywhere",
+                    fix_hint="Add or restore a DocumentV1 reference (API I/F or support-level table).",
+                )
+            )
+
+    return findings
+
+
 def check_history_metadata(
     root: Path, history_paths: list[Path] | None = None
 ) -> list[DocsCheckFinding]:
@@ -277,6 +376,7 @@ def main() -> int:
     markdown_paths = tracked_markdown_paths(root)
     findings = check_relative_links(root, markdown_paths)
     findings.extend(check_current_history_headings(root))
+    findings.extend(check_document_contract_baseline(root))
     findings.extend(check_history_metadata(root))
 
     if findings:

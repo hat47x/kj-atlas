@@ -57,7 +57,7 @@
 
 旧`Stream ...`、`Contract Freeze Addendum`、日付付き`freeze note`は [Schema contract formation history](history/schema-contract-formation-2026-05.md) へ分離済みです。現在の型・validation・version互換は`schemas.md`だけを正本とします。
 
-`Card` / `DocumentV2` の採択済みoptional field（`holdState`, `meta`, `ka`, `shelf`, `contradictionSignalDecisions`）は §3.2 / §3.5 の合成型を正本とし、後段§14〜§17は意味・安全・互換規則を補足します。
+`Card` / `DocumentV1` の採択済みoptional field（`holdState`, `meta`, `ka`, `shelf`, `contradictionSignalDecisions`）は §3.2 / §3.4 の合成型を正本とし、後段§14〜§17は意味・安全・互換規則を補足します。
 
 `data_model_operations_overview.md` は現行の物理モデル、CRUD、support level、運用責任だけを正本とします。2026年5月の形成記録は [Architecture history](history/data-model-operations-stream-d-2026-05.md) で参照します。
 

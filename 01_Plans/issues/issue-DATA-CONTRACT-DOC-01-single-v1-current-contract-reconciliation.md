@@ -69,15 +69,36 @@ ADR-0058と`DATA-CONTRACT-RESET-01`は、旧最小V1と旧V2を廃止し、現�
 
 ## 受入条件
 
-- [ ] `schemas.md`で永続Documentのexport型定義が完全な`DocumentV1` 1件だけで、`version: 1`と必須`islands`を持つ。
-- [ ] current architecture 4文書が永続Documentを単一V1として説明し、API/schemaの版と必須keyが一致する。
-- [ ] current規範から旧V1→V2正規化、version 2 Full/Partial、version 3前提、mock dv2がなくなる。
-- [ ] optional field、polygon、階層、shelf、矛盾決定、外部接続、安全境界の意味とsupport levelが再基線化前後で欠落しない。
-- [ ] `contract_reading_guide.md`がV1合成型へ案内し、inventoryの旧V2記録はcurrent値と誤認できない。
-- [ ] `card_quality_assistance.spec.ts`と`zip_import.test.ts`の成功系がversion 1を使い、version 2拒否の負例testは残る。
-- [ ] `DC-ARC-001`の正常/負例fixtureがあり、現行repositoryでfinding 0となる。
-- [ ] SafeMode、share/export、proposal-only、`human_reviewed`人手限定を緩めない。
-- [ ] `DATA-CONTRACT-RESET-01`から本follow-upへ到達できる。
+- [x] `schemas.md`で永続Documentのexport型定義が完全な`DocumentV1` 1件だけで、`version: 1`と必須`islands`を持つ。
+- [x] current architecture 4文書が永続Documentを単一V1として説明し、API/schemaの版と必須keyが一致する。
+- [x] current規範から旧V1→V2正規化、version 2 Full/Partial、version 3前提、mock dv2がなくなる。
+- [x] optional field、polygon、階層、shelf、矛盾決定、外部接続、安全境界の意味とsupport levelが再基線化前後で欠落しない。
+- [x] `contract_reading_guide.md`がV1合成型へ案内し、inventoryの旧V2記録はcurrent値と誤認できない。
+- [x] `card_quality_assistance.spec.ts`と`zip_import.test.ts`の成功系がversion 1を使い、version 2拒否の負例testは残る。
+- [x] `DC-ARC-001`の正常/負例fixtureがあり、現行repositoryでfinding 0となる。
+- [x] SafeMode、share/export、proposal-only、`human_reviewed`人手限定を緩めない。
+- [x] `DATA-CONTRACT-RESET-01`から本follow-upへ到達できる。
+
+### 実装証跡（2026-07-16）
+
+- `schemas.md`: §3.4/§3.5の二重`Document`定義（旧最小`DocumentV1`と`DocumentV2`）を単一の`DocumentV1`（`version: 1`、`islands`必須、全optional fieldとsafety注記を保持）へ統合した。§6.0.1/§6.1のversion運用ルールを、Full/Partial/Legacy 3区分・`version: 3`以降の拡張余地という記述から、「`version: 1`以外はすべてfail-closedで拒否し、旧版正規化経路は存在しない」という現行実装どおりの記述へ書き換えた。`mockSchemaVersion`を`mock-2026-05-19-dv2`から`mock-2026-07-16-v1`へ更新した。残る19箇所の`DocumentV2`/`version: 2`本文参照（§7A、§14、§16-18等）をすべて`DocumentV1`/`version: 1`へ更新した。DOMAIN-KJ-01のEdge型語彙version（§3.3、無関係な別概念）は変更していない。
+- `contract_reading_guide.md`: §4のCard/Document合成型参照を`DocumentV2`/§3.5から`DocumentV1`/§3.4へ更新した。
+- `contract_consolidation_inventory.md`: 冒頭に注記を追加し、本書内の`DocumentV2`/§3.5表記がADR-0058前の形成対象を指すpre-rebaseline名称であることを明示した（本書自体はStatus: Informative working inventoryのため、Conflict inventory表の値自体は変更していない）。
+- `api.md`、`data_model_operations_overview.md`: 事前確認の結果、既にV1で記述済みであり変更不要だった（実装者は既に移行済みで、文書側の2ファイルのみが取り残されていた）。
+- `card_quality_assistance.spec.ts`（T7で新規作成した本issueとは別のe2e spec）・`zip_import.test.ts`: 成功系fixtureの`version: 2`を`version: 1`へ修正した。`validate.test.ts`の拒否負例（`version: 2`が拒否されることを確認するテスト）はそのまま維持した。
+- `01_Plans/docs_contract_checks.py`: `DC-ARC-001`（`check_document_contract_baseline`）を新規実装した。(a) `schemas.md`内の永続Document型定義が1件のみであること、(b) その型が`DocumentV1`/`version: 1`であること、(c) `DocumentV2`/`Legacy`という語がcurrent文書に再出現しないこと、(d) `api.md`/`data_model_operations_overview.md`が`DocumentV1`を参照し`DocumentV2`を参照しないこと、を検証する。`01_Plans/tests/test_docs_contract_checks.py`に正常系1件・負例4件（型重複、DocumentV2/Legacy再混入、誤った型名・version、api/data-model側の参照欠落）を追加した。
+- `01_Plans/issues/issue-DATA-CONTRACT-RESET-01-document-v1-rebaseline.md`: Follow-upセクションを追記し、T1-T5のDone記録を過去の実装完了記録として保ったまま、文書側の回帰是正を本issueへ切り出したことを明記した。
+
+検証結果:
+- `python 01_Plans/tests/test_docs_contract_checks.py`（unittest経由）: 14/14 pass（新規5件含む）。
+- `check_document_contract_baseline` / `check_current_history_headings` を現行repositoryへ直接実行: 0 findings。
+- `rg -n "DocumentV2|version: 2|version: 3|mock-2026-05-19-dv2|Legacy.*version" schemas.md contract_reading_guide.md`: 残存4件はすべて非規範（Edge型語彙version 1件、および本issueが追加した「V2/Legacyは存在しない」という説明文3件）で、current値としては0。
+- `rg -n "\bDocumentV2\b|version\s*:\s*2|\"version\"\s*:\s*2" 03_Implement`: 残存1件は`validate.test.ts`の明示的拒否負例のみ。成功系fixtureは0。
+- `04_Documentation`にも`DocumentV2`残存がないことを確認した（issueのScope外だが追加確認）。
+- frontend: `npm run typecheck`クリーン、`npx vitest run` 1063/1063 pass（既存の無関係な1ファイル失敗はリポジトリルート非同梱の副作用、T4-T7と同じ）。
+- backendのroundtrip/API contract testは本セッションでは未実行（環境上Python側のpytestランナーが利用できず、unittestで代替検証した範囲に留まる）。
+
+**未完了・人手待ち**: 「実行順序と分担境界」の段階5「MaintainerがDone issueへのfollow-up導線、全検証結果、SafeMode/share-export非回帰を確認する」は人手のMaintainer確認であり、本セッションでは完了させていない。全AC達成の確認までは行ったが、Statusは`Open`のまま維持し、Maintainerの最終確認を経てDoneへ遷移させることを推奨する。
 
 ## 検証計画
 
