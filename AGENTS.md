@@ -172,8 +172,8 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `02_Architecture/value_traceability.md`：価値→設計→受入条件→検証観点の対応表。§2.4 は プロダクト価値/UI-UX/ドメイン表現の要件被覆マトリクス（フェーズ・担当issueへの接続を1表で確認し、新規起票の要否を判定する正本）。
 - `02_Architecture/contract_reading_guide.md`：02層の現行契約と履歴ログの読み分けガイド。
 - `02_Architecture/contract_consolidation_inventory.md`：DOC-ARCH-02の現行契約候補・異義定義・履歴移動batchの作業inventory（契約値の正本ではない）。
-- `02_Architecture/history/README.md`：freeze/Stream/checkpoint等のInformative形成履歴を現行契約から分離する収録規律と索引。
-- `02_Architecture/schemas.md`：データスキーマ（document/view/pack等）。
+- `02_Architecture/history/README.md`：architecture/API/schema/data operationsのfreeze/Stream/checkpoint等を現行契約から分離したInformative形成履歴の収録規律と索引。
+- `02_Architecture/schemas.md`：現行データスキーマ（document/view/pack等）の正本。形成履歴は `02_Architecture/history/README.md` から参照する。
 - `02_Architecture/data_model_operations_overview.md`：MVPデータモデル、論理ER、CRUDサポート表、ステークホルダー別運用境界。
 - `02_Architecture/inquiry_journey_model.md`：反復的探究の独立集約、不変成果DAG、カード系譜、自己完結bundle、段階導入の採択済み設計目標（現状L0）。
 - `02_Architecture/api.md`：API設計。

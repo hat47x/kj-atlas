@@ -241,7 +241,7 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
 
 本書は型シグネチャ、required/optional key、endpoint、status/errorを再定義しない。現行値は責務別に次を正本とする。
 
-- 型、キー、列挙、version互換: [schemas.md §1.2 CE1/CE2/CE4 Contract Freeze](schemas.md#12-ce1ce2ce4-contract-freeze型先行実装非依存)
+- 型、キー、列挙、version互換: [schemas.md §1.2 CE1/CE2/CE4 型契約](schemas.md#12-ce1ce2ce4-型契約実装非依存)
 - endpoint、認証、status/error、副作用: [api.md §2.7〜§2.9](api.md#27-ce4-audit-integration-contractapicli-equivalence)
 - CE1 v1の未解決key/envelope差異: [CE1-CONTRACT-01](../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)
 

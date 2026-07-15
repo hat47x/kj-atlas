@@ -43,7 +43,7 @@ Active全件とSource Issueは `issues/README.md`、着手順は `triage_actiona
 
 | Lane | Issue | Current boundary |
 |---|---|---|
-| Documentation | `DOC-ARCH-02` | Card/DocumentV2合成型とH-D履歴分離済み。H-A〜H-CとAPI縮約を継続 |
+| Documentation | `DOC-ARCH-02` | Card/DocumentV2合成型とH-A〜H-D履歴分離済み。architecture責務縮約と全量検証を継続 |
 | Documentation | `DOC-USER-JOURNEY-01` | 初回利用ガイドの独立dry-run待ち |
 | Product value | `PRODUCT-VALUE-01` | 最初の意味ある配置の証拠維持 |
 | Product value | `PRODUCT-VALUE-02` | 保留・違和感・根拠不足workflowの証拠維持 |
@@ -101,7 +101,7 @@ Active全件とSource Issueは `issues/README.md`、着手順は `triage_actiona
 1. **CE1 contract reconciliation** — `CE1-CONTRACT-01` でlogical bundleとHTTP envelopeを分離し、v1 keysetを一意にする。
 2. **Integration evidence** — Docker-capable環境で正準PostgreSQL CI pathを実行し、skipのない結果を記録する。
 3. **Gate refresh** — 2の後、`PRODUCT-QA-01` と `MVP-EXIT-01` を最新mainで再判定する。`DX-E2E-07`、`QA-MONKEY-13`、ARIA-03を未完扱いへ戻さない。
-4. **Documentation integrity** — `DOC-ARCH-02` のH-A〜H-C、`DOC-USER-JOURNEY-01` の独立dry-run、`DX-DOC-02` のfail-closed化を続ける。
+4. **Documentation integrity** — `DOC-ARCH-02` の責務別縮約・全量検証、`DOC-USER-JOURNEY-01` の独立dry-run、`DX-DOC-02` のfail-closed化を続ける。
 5. **Human acceptance** — 技術gateがgreenになった後、物理キーボード、スクリーンリーダー、release screenshot、final program approvalを権限者が実施する。
 
 優先順位が競合する場合は、P0 release gate、安全不変条件、P1 current contract / docs integrityの順で判断し、個別issueのPriorityと依存をtriageで再確認する。

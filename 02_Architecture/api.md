@@ -195,7 +195,7 @@ CE4（API/CLI/監査統合）は CE1 契約を read-only 参照し、実装方�
 
 ### 2.8 Context Query / Bundle Contract（CE1-CONTEXT-FOUNDATION）
 
-CE-1のHTTP endpoint、status/error、副作用を本節の正本とする。型、required/optional key、列挙、canonicalization、version互換は [`schemas.md` §1.2](schemas.md#12-ce1ce2ce4-contract-freeze型先行実装非依存) を正本とし、本書では再定義しない。
+CE-1のHTTP endpoint、status/error、副作用を本節の正本とする。型、required/optional key、列挙、canonicalization、version互換は [`schemas.md` §1.2](schemas.md#12-ce1ce2ce4-型契約実装非依存) を正本とし、本書では再定義しない。
 
 `ContextQueryV1` / `ContextBundleV1` のlogical typeとHTTP envelopeに残る `queryId` / `schemaVersion` 差異は [CE1-CONTRACT-01](../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md) で解決する。本節の縮約ではどちらかへ推測統合しない。
 

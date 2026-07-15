@@ -98,9 +98,9 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 - [x] T2 競合解消規則に従い、各型・endpoint・運用境界の唯一の正本anchorを決める。CE1 v1の値Conflictは`CE1-CONTRACT-01`へ分離し、本Issueで推測統合しない。
 - [x] T3 `schemas.md` の現行合成型を先頭側へ統合し、重複定義を参照へ変える。
 - [ ] T4 `architecture.md` / `api.md` / data model overviewを責務別に縮約する。
-- [ ] T5 `02_Architecture/history/` へ形成履歴を移し、メタと逆リンクを付ける。
-- [ ] T6 reading guideと`AGENTS.md`を新しい参照順へ同期する。
-- [ ] T7 backend/frontendの対象contract/roundtrip testsとMarkdownチェックで、意味非変更とリンク整合を検証する。
+- [x] T5 `02_Architecture/history/` へ形成履歴を移し、メタと逆リンクを付ける。
+- [x] T6 reading guideと`AGENTS.md`を新しい参照順へ同期する。
+- [x] T7 backend/frontendの対象contract/roundtrip testsとMarkdownチェックで、意味非変更とリンク整合を検証する。
 - [ ] T8 自動再発防止を `DX-DOC-02` へ引き渡す。
 
 ## 7) 検証計画 / Validation plan
@@ -167,3 +167,11 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 - 検証: 削除対象の実質190行中188行を履歴または現行節へ原文保持し、残る2行は意味を維持した見出し名/節番号の正規化。相対link 23件、`api.md`の履歴風見出し0件、Active issue validator 33件、validator/triage unit 11件、CE1 backend contract 18件、CE1 frontend contract 9件がpassした。
 - 履歴索引、reading guide、inventory、元文書の双方向導線を同期した。H-C、§7A.6/§7Bの責務別縮約、AGENTS最終同期、contract/roundtrip tests全量確認は未完了。
 - 契約値、runtime、Document version、SafeMode、未レビュー保護、proposal-only、share/export既定は変更していない。
+
+## 進捗記録 2026-07-15: H-C schema history slice
+
+- T5 H-C: `schemas.md`の旧§1.0.1 drift gate、§11.1 migration snapshot、CE1 clarification、旧§1.3〜§13のfreeze/Stream形成記録を`history/schema-contract-formation-2026-05.md`へ物理移動した。これによりH-A〜H-Dの4batchが完了した。
+- 現行側は型、validation、Document version、support level、Contract IDを維持した。現行のCE0/CE1見出しと§6.2から履歴語を除き、architecture/API/履歴文書のschema anchorを同期した。
+- T6: history index、reading guide、inventory、`AGENTS.md`を最終配置へ同期した。
+- T7: 移動前の実質行を現行＋履歴へ突合し、未一致20行がすべて意図的な見出し/案内文改称であることを確認した。相対link 48件エラー0、current 4文書の履歴見出し0、CE型定義は`schemas.md`各1箇所、`git diff --check` pass、Active issue validator 33件・validator unit 10件・backend contract/roundtrip 48件・frontend contract/schema/roundtrip 76件がpassした（backendは環境依存21件skip、既知warning 1件）。
+- 未完了: T4のarchitecture §7A.6/§7B責務別縮約、T8の`DX-DOC-02`引き渡し。契約値、runtime、Document version、SafeMode、未レビュー保護、proposal-only、share/export既定は変更していない。

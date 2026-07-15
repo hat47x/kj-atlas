@@ -17,7 +17,7 @@ Current normative anchors:
 - [Context Query / Bundle endpoints and errors](../api.md#28-context-query--bundle-contractce1-context-foundation)
 - [CE4 API/CLI/GUI equivalence and audit](../api.md#29-ce4-apicligui-同値性監査契約ce4-api-cli-audit)
 - [Auth and strict provisioning API](../api.md#9-auth-schema-01-api契約jit--strict-provisioning)
-- [Schema contracts](../schemas.md#12-ce1ce2ce4-contract-freeze型先行実装非依存)
+- [Schema contracts](../schemas.md#12-ce1ce2ce4-型契約実装非依存)
 - [Architecture responsibility and trust boundaries](../architecture.md#7a-ce-0-責務信頼境界consensusworking-repositioning)
 - [CE1 v1 reconciliation issue](../../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)
 

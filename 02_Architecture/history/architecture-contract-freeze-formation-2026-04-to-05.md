@@ -16,7 +16,7 @@ Current normative anchors:
 
 - [Architecture responsibilities and trust boundaries](../architecture.md#7a1-責務境界ce0-ctx-if--ce0-safemode-if--ce0-review-if--cg-0105)
 - [Architecture input/output boundary](../architecture.md#7a2-入出力境界)
-- [Schema contracts](../schemas.md#12-ce1ce2ce4-contract-freeze型先行実装非依存)
+- [Schema contracts](../schemas.md#12-ce1ce2ce4-型契約実装非依存)
 - [API Context Query / Bundle endpoints](../api.md#28-context-query--bundle-contractce1-context-foundation)
 - [CE1 v1 reconciliation issue](../../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)
 
