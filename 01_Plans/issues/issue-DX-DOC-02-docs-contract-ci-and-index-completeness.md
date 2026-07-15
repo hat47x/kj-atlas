@@ -7,7 +7,7 @@
 - Priority: P1
 - Owner: Maintainer / Developer Experience contributor
 - Scope: `01_Plans/issues/validate_active_issue_memos.py`, `01_Plans/issues/tests/`, `01_Plans/triage_actionable_plans.py`, `01_Plans/tests/`, `01_Plans/docs_contract_checks.py`, `01_Plans/docs_check.py`（新規候補）, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `.github/workflows/ci.yml`, `.github/pull_request_template.md`, current-only文書と公開対象文書の検査規則
-- Related Backlog: `DOC-ARCH-02`, `DOC-OPS-06`, `DOC-UI-CATALOG-01`
+- Related Backlog: `DOC-ARCH-02`, `DOC-OPS-06`, `DOC-UI-CATALOG-01`, `DATA-CONTRACT-DOC-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `01_Plans/issues/issue-DOC-ARCH-02-current-contract-history-physical-separation.md`, `01_Plans/issues/issue-DOC-OPS-06-current-view-history-and-contributor-route.md`, `01_Plans/issues/issue-DOC-UI-CATALOG-01-public-boundary-and-provenance.md`
 - Expected verification level: `integration`
 
@@ -303,3 +303,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - merge直後のdocs-checkは、`data_model_operations_overview.md`へ再混入したStream D実行履歴見出し7件とhistory逆リンク欠落1件を`DC-CUR-001`/`DC-HIS-001`で検出した。mainの現行§2〜§7は変更せず、既存historyに収録済みの§1.2/§1.3/§8〜§13だけをcurrentから再分離し、Audience/Goal/Non-goal/Outcomeとhistory導線を復元した。
 - mainの`AGENTS.md`は安全不変条件を「SafeModeの既定ONと漏洩防止」の直接表明、`schemas.md`正本導線、provider=`none`設定として示す形式へ変わった。`DC-SAF-001`は旧最小入口の直接表明と最新mainの同義正本導線をどちらも決定論的に認識するよう更新した。
 - feature branchへのmain merge後、pushの`before..HEAD`をそのまま`git diff --check`するとmain側の既承認差分までbranchへ誤帰属することを確認した。PRと非default branch pushは最新default branchとのmerge-base、default branch pushはevent `before`を基準にするよう修正し、今回のbranch固有差分はwhitespace finding 0となった。
+
+## `DC-ARC-001` baseline blocker 2026-07-15
+
+- ADR-0058とDoneの`DATA-CONTRACT-RESET-01`は単一の完全な`DocumentV1`へ同期済みとするが、current `schemas.md`には旧最小V1定義と完全な`DocumentV2` / version 2定義、Legacy V1→V2正規化、mock dv2等が29箇所残る。`api.md`と`data_model_operations_overview.md`のV1契約、および実装のversion 1 gateと矛盾する。
+- `contract_reading_guide.md`/inventoryの旧V2案内と、成功系`card_quality_assistance.spec.ts`のversion 2 fixtureも同時に見つかった。既知の失敗を直ちにblockingへ昇格せず、型・optional field・安全注記を欠落なく再整合するP1 follow-up `DATA-CONTRACT-DOC-01`をOpenで起票した。
+- `DC-ARC-001`は同issueのclean baseline後に、単一型定義、version/key一致、旧Legacy規範なし、DocumentV1支援表を決定論的fixtureで固定する。それまでは唯一の`not enabled` ruleとして明示を維持する。
+- main統合後のGitHub Actions CI #10285では`Docs contract (fail-closed repository rules)`が8秒でSuccessし、非default branchのmerge-base基準が実環境でも機能した。workflow全体のFailureはmain由来の`Backend lint + test`であり、docs jobの失敗ではない。
