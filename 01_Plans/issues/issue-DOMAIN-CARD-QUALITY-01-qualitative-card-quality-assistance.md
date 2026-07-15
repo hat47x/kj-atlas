@@ -105,7 +105,7 @@
 - [x] T2 カード品質のNormative要件を作成し、上流・設計文書へ反映する。
 - [x] T3 新規スキーマとADRが現時点では不要であること、およびADR昇格条件を明記する。
 - [x] T4 6種の代表fixtureと、本文保存を先行する品質支援の状態遷移をテストで固定する。
-- [ ] T5 Phase Bの自己確認UI、i18n、キーボード操作、フォーカス復帰を実装する。
+- [x] T5 Phase Bの自己確認UI、i18n、キーボード操作、フォーカス復帰を実装する。
 - [ ] T6 提案採用前の不変条件、少数・矛盾保持、SafeMode、provider noneをunit/integrationで固定する。
 - [ ] T7 390px/desktop、マウス/キーボードのE2Eとスクリーンショットを取得する。
 - [ ] T8 Phase Cの必要性をPhase Bの使用証跡から判断し、必要な場合だけ別issueへ分割する。
@@ -116,6 +116,13 @@
 - `src/domain/card_quality.fixture.ts`: §7の6種代表fixture（single_center / multi_center / context_poor / quote_interpretation_mixed / minority_or_contradiction / unknown_source）を固定した。
 - `src/domain/card_quality.test.ts`: 全fixtureで質問順が同一であること（少数・矛盾fixtureを特別扱いしないこと)、4問すべて回答するまでresolvedにならないこと、Card凍結下でも状態遷移が本文を変更しないこと、見送り済み質問が本文未変更のセッション内では再提示されないこと（QUX-HUMAN-01）、`CARD_QUALITY_DECISIONS` に評価・スコア語が含まれないこと（CQ-DIVERSE-01）を検証する。
 - 検証結果: 対象8 tests作成（frontend全体テストは検証計画のコマンドで実行）。UI・永続化・i18n・provider統合は未実装であり、T5以降の対象とする。
+
+### T5 実装証跡（2026-07-15）
+
+- `src/ui/SidePanel.tsx`: 選択中カード詳細の「このカードを表示」ボタン直後に「カードを整える」トリガーと非モーダルの自己確認ブロックを追加した。既存の島サマリー提案ブロック（採用/保留/見送りの3ボタン構成）と同じ視覚パターンを踏襲し、`currentCardQualityQuestion`/`answerCardQualityQuestion`（T4）を呼び出すだけの薄いpresentation層とした。閉じるボタンはトリガーへ`setTimeout(...).focus()`でフォーカスを戻す（既存`WorkModePanel`等のフォーカス復帰慣用句を非モーダル向けに簡略化）。全ボタンは標準`<button>`要素のため、追加のキーボード配線なしにTab/Enterで操作できる。
+- `src/App.tsx`: `cardQualityAssistByCardId`（カードIDをキーとするセッション内のみの状態、文書へは永続化しない）と`openCardQualityAssistCardId`を追加し、4つのハンドラ（open/answer/close/open-text-editor）を`selectedCard`宣言後に配置した。「本文を編集する」ボタンは既存の`editingCardId`編集モード（Canvas側のカード本文textarea）を再利用する。
+- `src/i18n/locales/{en,ja}.json`: `side_panel.card_quality.*`（トリガー/完了/決定3種/閉じる/本文編集）と`cardQuality.question.{unit,context,trace,status}.{prompt,rationale}`をen/ja両方に追加した（キー総数1555件で一致を確認）。文言は要求文書§4.2の推奨例に基づく自己確認の問いとして書き直した（AIによる断定ではなく「〜していますか」形式）。
+- 検証結果: `npm run typecheck`、`npx vitest run`（1055/1055 pass、既存の無関係な1ファイル失敗は`~/kjnative-fe`がリポジトリルート非同梱の副作用でT5と無関係）。**ブラウザでの手動確認は本環境のBrowser Preview toolがWSL側dev server(localhost)に到達できず実施できなかった** — キーボード操作・フォーカス復帰・390px幅表示の実機確認はT7のE2E証跡に委ねる。AC-4/AC-5/AC-6は構造的に成立するが、チェックボックスの更新はT6のunit/integration固定を待つ。
 
 ## 7) 検証計画 / Validation plan
 
