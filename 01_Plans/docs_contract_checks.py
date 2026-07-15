@@ -10,9 +10,25 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 RELATIVE_LINK_RULE_ID = "DC-LNK-001"
+CURRENT_HISTORY_RULE_ID = "DC-CUR-001"
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
 MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]\r\n]*\]\((?P<target><[^>\r\n]+>|[^)\r\n]+)\)")
+HEADING_RE = re.compile(r"^#{1,6}\s+(?P<title>.+)$", re.MULTILINE)
+HISTORY_HEADING_RE = re.compile(
+    r"(?:(?<![A-Za-z])stream(?![A-Za-z])|rerun|checkpoint|reaffirmation|execution\s+(?:log|record)|"
+    r"phase\s+verification\s+log|fixed\s+execution\s+scope)",
+    re.IGNORECASE,
+)
+CURRENT_ONLY_PATHS = (
+    Path("01_Plans/project-progress-dashboard.md"),
+    Path("01_Plans/issues/README.md"),
+    Path("01_Plans/documentation_quality.md"),
+    Path("02_Architecture/architecture.md"),
+    Path("02_Architecture/api.md"),
+    Path("02_Architecture/schemas.md"),
+    Path("02_Architecture/data_model_operations_overview.md"),
+)
 
 
 @dataclass(frozen=True)
@@ -131,6 +147,31 @@ def check_relative_links(root: Path, markdown_paths: list[Path]) -> list[DocsChe
     return findings
 
 
+def check_current_history_headings(
+    root: Path, markdown_paths: tuple[Path, ...] = CURRENT_ONLY_PATHS
+) -> list[DocsCheckFinding]:
+    """Return DC-CUR-001 findings when execution-history headings enter current docs."""
+    findings: list[DocsCheckFinding] = []
+    for relative_path in markdown_paths:
+        source = root / relative_path
+        text = _without_code(source.read_text(encoding="utf-8"))
+        for match in HEADING_RE.finditer(text):
+            title = match.group("title").strip()
+            if not HISTORY_HEADING_RE.search(title):
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=CURRENT_HISTORY_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=text.count("\n", 0, match.start()) + 1,
+                    target=title,
+                    message=f"execution-history heading appears in a current-only document: {title}",
+                    fix_hint="Move formation or execution history to 02_Architecture/history or Git history.",
+                )
+            )
+    return findings
+
+
 def tracked_markdown_paths(root: Path) -> list[Path]:
     """Return tracked Markdown paths so generated and dependency files stay out of scope."""
     result = subprocess.run(
@@ -153,6 +194,7 @@ def main() -> int:
     root = args.root.resolve()
     markdown_paths = tracked_markdown_paths(root)
     findings = check_relative_links(root, markdown_paths)
+    findings.extend(check_current_history_headings(root))
 
     if findings:
         print("documentation contract validation failed:")

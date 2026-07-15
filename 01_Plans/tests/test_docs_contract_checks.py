@@ -95,5 +95,39 @@ class RelativeLinkCheckTest(unittest.TestCase):
         self.assertEqual(paths, [Path("tracked.md")])
 
 
+class CurrentHistoryBoundaryTest(unittest.TestCase):
+    def test_reports_execution_history_heading_with_fix(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source = root / "current.md"
+            source.write_text("# Contract\n\n## Stream D execution checkpoint\n", encoding="utf-8")
+
+            findings = MODULE.check_current_history_headings(root, (Path("current.md"),))
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_id, "DC-CUR-001")
+        self.assertEqual(findings[0].line, 3)
+        self.assertIn("02_Architecture/history", findings[0].fix_hint)
+
+    def test_accepts_normative_headings_and_ignores_code(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source = root / "current.md"
+            source.write_text(textwrap.dedent("""\
+                # Current contract
+                ## Execution constraints
+                ## downstream signature catalog
+                `## Stream A checkpoint`
+
+                ```md
+                ## rerun log
+                ```
+            """), encoding="utf-8")
+
+            findings = MODULE.check_current_history_headings(root, (Path("current.md"),))
+
+        self.assertEqual(findings, [])
+
+
 if __name__ == "__main__":
     unittest.main()
