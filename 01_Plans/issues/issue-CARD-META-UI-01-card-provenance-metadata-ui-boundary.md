@@ -1,14 +1,14 @@
 # Issue Draft: CARD-META-UI-01 カード起票者・出典メタデータUI境界
 
 - Type: Feature request / Security / UX
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: TBD (Productization Program Owner / Security Officer / UX Lead)
 - Scope: `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/review_attribution.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/frontend/src/canvas/CardView.tsx`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/export/`, `04_Documentation/`
 - Related Backlog: `CARD-META-UI-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0056-card-provenance-metadata-boundary.md`（本Issueの境界提案）, `02_Architecture/schemas.md`（`Card.meta` 将来拡張）, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/review_attribution.md`, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0056-card-provenance-metadata-boundary.md`（本Issueの境界提案、Accepted 2026-07-16）, `02_Architecture/schemas.md`（`Card.meta` 将来拡張）, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/review_attribution.md`, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -20,8 +20,12 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `ADR-0056` / `CARD-META-UI-01-DQ-01`
+- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0056` Accepted 2026-07-16）
+- DecisionQueueRef（未確定時の参照先）: Resolved（`ADR-0056` の決定案1〜5で固定）
+
+## Draft→Open 2026-07-16: ADR-0056 Accepted
+
+`ADR-0056` がMaintainer代理裁可によりAcceptedとなった（受理記録は同ADR参照）。本Issueの唯一のDecision Queueゲートが解消したため、Open化する。次の作業はT3（UI仕様案作成）〜T5（フィールド命名・表示責務の調整）であり、それらが完了するまでT6（実装）へは進まない。
 
 ## 1) 課題 / Problem statement
 
