@@ -292,3 +292,8 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - 既存のfrontend 6 jobとbackend jobは名称を維持し、`change-scope`出力によるjob-level条件を追加した。`docs-contract`は変更範囲によらず常時実行する。
 - docs-only、frontendのみ、backendのみ、CI/分類器変更、Windows区切りの正常/負例4件を追加した。workflow自体を変更する本PRでは全アプリjobを実行し、次のdocs-only検証PRでskip結果とrequired checkへの非干渉を確認してから受入条件とT7を完了する。
 - 既存のCI責務分離を変更せず実行範囲だけを狭めるため、新規ADRは不要と判断した。
+
+## docs-only CI実証 2026-07-16: 検証開始
+
+- 実装PR #2612では、workflow変更を`frontend=true / backend=true`と判定し、既存の全アプリjobとdocs-contractが成功した。
+- 本節だけを変更するdocs-only PRを実証対象とする。`Detect application change scope`と`Docs contract`が成功し、frontend 6 jobとbackend jobがskipされ、PRをblockしないことを確認後に完了記録へ更新する。
