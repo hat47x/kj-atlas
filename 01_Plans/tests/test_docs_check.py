@@ -36,7 +36,10 @@ class DocsCheckEntrypointTest(unittest.TestCase):
         screenshots = root / "04_Documentation" / "assets" / "screenshots"
         screenshots.mkdir(parents=True)
         (root / "04_Documentation" / "public_index.md").write_text(
-            "[現行UIカタログ](ui_catalog.md)\n", encoding="utf-8"
+            "[現行UIカタログ](ui_catalog.md)\n"
+            + "\n".join(f"[{name}]({name})" for name in CHECKS.PUBLIC_SAFETY_ROUTES)
+            + "\n",
+            encoding="utf-8",
         )
         (root / "04_Documentation" / "ui_catalog.md").write_text(
             "\n".join(CHECKS.PUBLIC_UI_CATALOG_REQUIRED_TERMS), encoding="utf-8"
@@ -44,6 +47,17 @@ class DocsCheckEntrypointTest(unittest.TestCase):
         (screenshots / "README.md").write_text(
             "\n".join(CHECKS.SCREENSHOT_LEDGER_REQUIRED_TERMS), encoding="utf-8"
         )
+        for destination, required_terms in CHECKS.PUBLIC_SAFETY_ROUTES.items():
+            (root / "04_Documentation" / destination).write_text(
+                "\n".join(required_terms), encoding="utf-8"
+            )
+        (root / "AGENTS.md").write_text(
+            "\n".join(
+                (*CHECKS.AGENT_SAFETY_REQUIRED_TERMS, *CHECKS.AGENT_SAFETY_REQUIRED_ROUTES)
+            ),
+            encoding="utf-8",
+        )
+        (root / "THREAT_MODEL.md").write_text("# Threat model\n", encoding="utf-8")
         history_dir = root / "02_Architecture" / "history"
         history_dir.mkdir(parents=True, exist_ok=True)
         history = history_dir / "formation.md"

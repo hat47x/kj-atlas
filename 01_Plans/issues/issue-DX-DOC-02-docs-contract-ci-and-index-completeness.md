@@ -115,7 +115,7 @@ Open化条件:
 - [x] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
 - [x] broken relative linkとSSOT参照先不在を検出する。
 - [x] 公開版UI catalog等への内部管理語再混入とprovenance欠落を検出する。
-- [ ] SafeMode、share/export、proposal-only、human reviewの不変条件参照欠落を検出する。
+- [x] SafeMode、共有/書き出し、proposal-only、human review、provider=`none`の不変条件参照欠落を検出する。
 - [ ] docs-only PRへ不要なfrontend/backend E2Eを強制しない。
 - [x] CI jobとvalidatorの失敗理由が、対象ファイル・rule ID・修正先を示す（`DocsCheckFinding.render()`が全checkerで`{rule_id} {path}:{line}: {message} Fix: {fix_hint}`形式を共有する）。
 
@@ -123,7 +123,7 @@ Open化条件:
 
 - [x] T1 check matrixとrule IDを固定し、ADR-0024へ適用境界と段階有効化条件を追補する。
 - [x] T2 Active issue validatorをfilesystem直接検査へ変更し、共有parserとActive重複Backlog ID検査を追加する。
-- [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。relative link（`DC-LNK-001`）、current/history（`DC-CUR-001`）、architecture contract（`DC-ARC-001`）、public boundary（`DC-PUB-001`）は実装済み。SafeMode・共有/書き出し・proposal-only・human review不変条件参照checkerが未実装のため、T3自体は未完了を維持する。
+- [x] T3 相対リンク・current/history・architecture contract・public boundary・安全導線の各checkerを小さな純関数/fixtureで実装する（`DC-LNK-001`, `DC-CUR-001`, `DC-HIS-001`, `DC-ARC-001`, `DC-PUB-001`, `DC-SAF-001`）。
 - [x] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
 - [x] T5 既存Backend CI jobへblocking docs-check stepを追加し、既存PRで動作確認する。
 - [x] T6 PR templateへ証跡欄を追加する（`.github/pull_request_template.md`の`command/result/not_executed_reason/resume_condition`欄で充足済み。commit `439867a9`）。
@@ -277,3 +277,11 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - 正常fixtureと、内部管理語・導線・provenanceを欠落させた負例fixtureを追加した。単一entrypointへ配線し、同時に呼び出しが欠けていた既存 `DC-ARC-001` も配線した。
 - `python -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 21件成功。`python 01_Plans/docs_check.py`: Active memo 24件、追跡Markdown 377件で成功した。
 - T3は `DC-SAF-001` が残るため継続する。公開境界の定義自体はADR-0024から変更していないため、新規ADRは不要と判断した。
+
+## T3完了記録 2026-07-16: `DC-SAF-001`
+
+- 生成AI向け入口 `AGENTS.md` で、SafeMode既定ON、proposal-only、`human_reviewed`の人手限定、provider=`none`での主要価値、共有/書き出し時の未レビュー情報・秘密情報保護、import無害化の6不変条件を検査する。
+- `AGENTS.md` から `THREAT_MODEL.md`、現行architecture、一般利用者向け入口へのrepository相対パスが存在することを検査する。全文一致や複数文書間の値複製は要求しない。
+- 一般利用者向け入口から、データ取り扱い、セキュリティ、AI提案、設定ガイドへのMarkdown導線と対象ファイルの存在を検査し、リンク先に担当する安全境界が残っていることを確認する。
+- 正常fixtureと、不変条件・正本パス・公開導線・リンク先境界を欠落させた負例fixtureを追加した。`python -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 23件成功。`python 01_Plans/docs_check.py`: Active memo 24件、追跡Markdown 377件で成功した。
+- ADR-0024の既定ruleを実装したもので、安全境界や正本責務を変更していないため新規ADRは不要と判断した。T3は完了し、残件はdocs-only PRのアプリE2E非強制化とT7統合確認である。
