@@ -90,14 +90,14 @@
 - [x] AC-1: 定性情報カードの品質次元と、品質が点数・合否ではないことがNormative文書に定義されている。
 - [x] AC-2: P-08、ドメイン定義、スキーマ境界、価値トレーサビリティが同じ要件を参照している。
 - [ ] AC-3: 本文以外の必須入力なしに、一回の保存操作でカードを作成できる。
-- [ ] AC-4: 品質支援は保存後または要求時に非モーダルで開き、一件ずつ採用・見送り・保留できる。
+- [x] AC-4: 品質支援は保存後または要求時に非モーダルで開き、一件ずつ採用・見送り・保留できる。
 - [x] AC-5: 提案の採用前に本文、`claimType`、出典、レビュー状態が変更されない。
 - [x] AC-6: 少数意見または矛盾するカードが、低品質として自動削除・統合・降格されない。
 - [ ] AC-7: 分割または言い換えの前後を比較し、元本文へ戻れる。
-- [ ] AC-8: マウスとキーボードで支援の開始、採用、見送り、保留、本文へのフォーカス復帰を完了できる。
-- [ ] AC-9: 日本語と英語で同じ意味と選択肢を提供し、390px幅で本文や主要操作を覆わない。
-- [ ] AC-10: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`KJ_ATLAS_LLM_PROVIDER=none` の回帰テストが通る。
-- [ ] AC-11: E2E証跡が6種の代表fixtureを含み、誤検知時にも保存と見送りが可能である。
+- [x] AC-8: マウスとキーボードで支援の開始、採用、見送り、保留、本文へのフォーカス復帰を完了できる。
+- [x] AC-9: 日本語と英語で同じ意味と選択肢を提供し、390px幅で本文や主要操作を覆わない。
+- [x] AC-10: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`KJ_ATLAS_LLM_PROVIDER=none` の回帰テストが通る。
+- [x] AC-11: E2E証跡が6種の代表fixtureを含み、誤検知時にも保存と見送りが可能である。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -107,7 +107,7 @@
 - [x] T4 6種の代表fixtureと、本文保存を先行する品質支援の状態遷移をテストで固定する。
 - [x] T5 Phase Bの自己確認UI、i18n、キーボード操作、フォーカス復帰を実装する。
 - [x] T6 提案採用前の不変条件、少数・矛盾保持、SafeMode、provider noneをunit/integrationで固定する。
-- [ ] T7 390px/desktop、マウス/キーボードのE2Eとスクリーンショットを取得する。
+- [x] T7 390px/desktop、マウス/キーボードのE2Eとスクリーンショットを取得する。
 - [ ] T8 Phase Cの必要性をPhase Bの使用証跡から判断し、必要な場合だけ別issueへ分割する。
 
 ### T4 実装証跡（2026-07-15）
@@ -137,6 +137,14 @@
 - `e2e/card_quality_assistance.spec.ts` を新規作成した（既存specの慣用句 — `card_ka_fields.spec.ts` のfixture/route/openSampleパターン、`canvas_focus_order.spec.ts` の `pressTabUntilFocused` ヘルパー、`work_mode_tabs.spec.ts` の390px containment検証 — を踏襲）。4 tests: (1) mouse — 4問すべてを順に応答し、各応答後もCanvas上のカード本文が変化しないことを確認して閉じる、(2) keyboard — トリガーへのTab到達からEnterでの開閉・応答まで完全にキーボードのみで完了し、閉じた後にトリガーへフォーカスが戻ることを確認、(3) 390px — 3つの決定ボタンがすべてビューポート幅内に収まることを確認、(4) locale — `?locale=ja` で日本語の問い・決定ラベルが表示されることを確認。
 - **実行できていない**: 本WSL環境でPlaywrightの実行時に `chrome-headless-shell: error while loading shared libraries: libnspr4.so: cannot open shared object file` で失敗する。ブラウザバイナリ自体は存在するが、システム共有ライブラリ（`libnspr4`、通常 `npx playwright install-deps` または `apt-get install libnspr4` で導入）が欠落しており、`sudo` にパスワードが必要なため本セッションでは復旧できなかった（別タスクとして是正を依頼済み）。`find /` でも `libnspr4.so` は系内に存在しないことを確認済み。
 - したがってT7は未完了のまま据え置く。このPRはE2E実行による裏付けなしの状態でレビュー可能な形にとどめ、実行環境が復旧し次第、実際に緑になることを確認してからT7をチェックし、スクリーンショットを取得する。
+
+### T7 完了記録（2026-07-16）
+
+- Windows上のPlaywright/Chromiumで `card_quality_assistance.spec.ts` を実行し、マウス、キーボード、390px、日本語表示に加え、要件正本の6種fixtureを含む10 testsが成功した。2026-07-15時点のLinux共有ライブラリ不足は、現在の実行環境では再現しない。
+- キーボード経路は4問への応答だけで終えず、完了後の「本文を編集する」からCanvas上の本文入力へフォーカスが移ることと、Escapeで編集を取り消せることまで確認した。
+- 6種fixtureでは「このまま保存」を選んだ後もカード本文と支援画面が維持され、少数意見・矛盾・出典不明を含めて自動変更や自動除外が起きないことを確認した。
+- アプリ内ブラウザの日本語画面でも、支援が右側パネル内に収まり、Canvasを覆わず、問い、理由、3つの判断、閉じる操作が同時に確認できるスクリーンショットを取得した。
+- `KJ_ATLAS_LLM_PROVIDER=none` 相当の応答を固定したE2Eと、既存のSafeMode・proposal-only・人手昇格回帰を含むfrontend全体テストの成功によりAC-10を完了とした。
 
 ## 7) 検証計画 / Validation plan
 
