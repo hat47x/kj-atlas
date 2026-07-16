@@ -13,6 +13,7 @@ def _current_utc_date() -> date:
 
 
 LEGACY_ENV_KEYS = {
+    "RUNTIME_PROFILE",
     "DATABASE_URL",
     "LLM_PROVIDER",
     "LOCAL_LLM_BASE_URL",
@@ -54,6 +55,10 @@ LEGACY_ENV_KEYS = {
 
 
 class Settings(BaseSettings):
+    runtime_profile: str = Field(
+        default="local-dev",
+        validation_alias="KJ_ATLAS_RUNTIME_PROFILE",
+    )
     database_url: str = Field(
         default="sqlite:///./kj_atlas.db",
         validation_alias="KJ_ATLAS_DATABASE_URL",
@@ -238,6 +243,25 @@ class Settings(BaseSettings):
                 "Legacy env keys are no longer supported. Use KJ_ATLAS_* only: "
                 f"{joined}"
             )
+
+        normalized_runtime_profile = self.runtime_profile.strip().lower()
+        supported_runtime_profiles = {
+            "local-dev",
+            "evaluation",
+            "enterprise-production",
+            "saas-multitenant",
+        }
+        if normalized_runtime_profile not in supported_runtime_profiles:
+            raise ValueError(
+                "KJ_ATLAS_RUNTIME_PROFILE must be one of "
+                "local-dev|evaluation|enterprise-production|saas-multitenant"
+            )
+        if normalized_runtime_profile == "saas-multitenant":
+            raise ValueError(
+                "KJ_ATLAS_RUNTIME_PROFILE=saas-multitenant is reserved and unavailable "
+                "until SAAS-TENANT-01 completes its fail-closed implementation gate"
+            )
+        self.runtime_profile = normalized_runtime_profile
 
         provider = self.llm_provider.strip().lower()
         if provider not in {"none", "local", "local_http", "large-scale", "large_scale", "external"}:

@@ -30,6 +30,7 @@ Compose と frontend build で利用者が設定する公開キーは次です�
 
 | Key | Default | Purpose |
 | --- | --- | --- |
+| `KJ_ATLAS_RUNTIME_PROFILE` | `evaluation` | backend実行profile。現行Composeは評価用途を既定とし、`saas-multitenant`は起動拒否。 |
 | `KJ_ATLAS_WEB_PORT` | `8080` | `web` の公開 port |
 | `KJ_ATLAS_POSTGRES_DB` | `kj_atlas` | Compose PostgreSQL の database 名 |
 | `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
@@ -47,6 +48,7 @@ Compose と frontend build で利用者が設定する公開キーは次です�
 
 | Public key | Compose mapping | 備考 |
 | --- | --- | --- |
+| `KJ_ATLAS_RUNTIME_PROFILE` | `api.environment.KJ_ATLAS_RUNTIME_PROFILE` | backend profile selector |
 | `KJ_ATLAS_WEB_PORT` | `web.ports` | web 公開ポート |
 | `KJ_ATLAS_POSTGRES_DB` | `db.environment.POSTGRES_DB` | third-party private adapter への内部写像 |
 | `KJ_ATLAS_POSTGRES_USER` | `db.environment.POSTGRES_USER` | third-party private adapter への内部写像 |

@@ -53,6 +53,9 @@
 - `local-dev`: SQLite + `KJ_ATLAS_LLM_PROVIDER=none` で最小起動。
 - `evaluation`: Compose + PostgreSQL で検証。監査HTTPと外部PDPは原則 `noop`。
 - `enterprise-production`: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を基本に、fail-safe を `read_only` または `deny` で固定。
+- `saas-multitenant`: 将来予約値。現行releaseでは安全条件が未完了のため起動時に拒否されます。
+
+`KJ_ATLAS_RUNTIME_PROFILE`でprofile名を指定します。Docker Composeの既定は`evaluation`、backendを直接起動したときの未指定既定は`local-dev`です。
 
 > 注意: `KJ_ATLAS_ALLOW_JIT_PROVISIONING` の実装既定値は `true` ですが、本番相当の推奨値は `false` です。これは契約不整合ではなく、導入容易性と本番安全性を分けているためです。
 > 補足: `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` は実装既定値 `read_only` ですが、`enterprise-production` では `read_only` と `deny` のどちらを採るかを事前に固定してください。
@@ -63,6 +66,7 @@ Docker Compose の既定値で起動する場合、通常は追加設定なし�
 
 ```bash
 export KJ_ATLAS_LLM_PROVIDER=none
+export KJ_ATLAS_RUNTIME_PROFILE=evaluation
 export KJ_ATLAS_DATABASE_URL='postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas'
 export KJ_ATLAS_FRONTEND_API_BASE=/api
 export KJ_ATLAS_WEB_PORT=8080
@@ -72,6 +76,7 @@ export KJ_ATLAS_WEB_PORT=8080
 
 ```bash
 export KJ_ATLAS_DATABASE_URL='sqlite:///./kj_atlas.db'
+export KJ_ATLAS_RUNTIME_PROFILE=local-dev
 export KJ_ATLAS_LLM_PROVIDER=none
 ```
 
@@ -83,6 +88,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 
 | 変数 | 既定値 | 用途 |
 | --- | --- | --- |
+| `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | `local-dev`, `evaluation`, `enterprise-production`。`saas-multitenant`は予約値で現行releaseでは起動拒否。 |
 | `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | backend が使う DB 接続先 |
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` |
 | `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLM の base URL |
@@ -143,6 +149,7 @@ PostgreSQL image や frontend build tool の内部名は、kj-atlas の公開設
 
 ```bash
 export KJ_ATLAS_DATABASE_URL='sqlite:///./kj_atlas.db'
+export KJ_ATLAS_RUNTIME_PROFILE=local-dev
 export KJ_ATLAS_LLM_PROVIDER=none
 ```
 
@@ -150,6 +157,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 
 ```bash
 export KJ_ATLAS_LLM_PROVIDER=none
+export KJ_ATLAS_RUNTIME_PROFILE=evaluation
 export KJ_ATLAS_WEB_PORT=8080
 export KJ_ATLAS_FRONTEND_API_BASE=/api
 ```

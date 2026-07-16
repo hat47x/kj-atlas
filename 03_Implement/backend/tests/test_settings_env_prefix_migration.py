@@ -123,6 +123,50 @@ def test_settings_uses_prefixed_key(monkeypatch) -> None:  # type: ignore[no-unt
     assert loaded.database_url == "sqlite:///./canonical.db"
 
 
+def test_settings_normalizes_available_runtime_profile(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_RUNTIME_PROFILE", "  ENTERPRISE-PRODUCTION ")
+
+    loaded = Settings()
+
+    assert loaded.runtime_profile == "enterprise-production"
+
+
+def test_settings_rejects_reserved_saas_runtime_profile(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_RUNTIME_PROFILE", "saas-multitenant")
+
+    try:
+        Settings()
+        assert False, "Expected unfinished SaaS profile to fail fast"
+    except ValueError as exc:
+        assert "saas-multitenant is reserved and unavailable" in str(exc)
+        assert "SAAS-TENANT-01" in str(exc)
+
+
+def test_settings_rejects_unknown_runtime_profile(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_RUNTIME_PROFILE", "shared-production")
+
+    try:
+        Settings()
+        assert False, "Expected unknown runtime profile to be rejected"
+    except ValueError as exc:
+        assert "KJ_ATLAS_RUNTIME_PROFILE must be one of" in str(exc)
+
+
+def test_settings_rejects_legacy_runtime_profile_key(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("RUNTIME_PROFILE", "evaluation")
+
+    try:
+        Settings()
+        assert False, "Expected legacy runtime profile key to be rejected"
+    except ValueError as exc:
+        assert "Legacy env keys are no longer supported" in str(exc)
+        assert "RUNTIME_PROFILE" in str(exc)
+
+
 def test_backend_ci_uses_canonical_database_test_keys() -> None:
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")
 

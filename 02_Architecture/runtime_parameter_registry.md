@@ -13,14 +13,14 @@
 
 ## Runtime profiles
 
-この表は、代表的な実行環境ごとの推奨値を示します。`Default` 列は実装が未指定時に使う値、`Runtime profiles` は利用者や運用者が目的に応じて選ぶ値です。実装既定値を変更する場合や、公開設定キーを追加・改名する場合は ADR で扱います。
+この表は、代表的な実行環境ごとの推奨値を示します。`KJ_ATLAS_RUNTIME_PROFILE`でprofile名を明示し、未指定時は`local-dev`を使います。各profileのRequired settingsは別キーで明示し、profile名だけで秘密値や接続先を補完しません。実装既定値を変更する場合や、公開設定キーを追加・改名する場合はADRで扱います。
 
 | Profile | Purpose | Required settings | Notes |
 |---|---|---|---|
 | `local-dev` | 開発者の手元で最小起動する | `KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db`, `KJ_ATLAS_LLM_PROVIDER=none`, `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` | 外部サービスを使わずに動作確認する。共有・export の安全境界は緩めない。 |
 | `evaluation` | Docker Compose で利用者評価や検証を行う | `KJ_ATLAS_DATABASE_URL=postgresql+asyncpg://...`, `KJ_ATLAS_LLM_PROVIDER=none`, `KJ_ATLAS_AUDIT_TRANSPORT=noop`, `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=noop` | 組織内評価では PostgreSQL を推奨する。LLM、監査HTTP連携、外部PDP連携は明示的に必要な場合だけ有効化する。 |
 | `enterprise-production` | 企業・行政の本番相当で運用する | `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`, `KJ_ATLAS_LLM_PROVIDER=none`, `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only` または `deny` | 認証、認可、監査の接続先は組織基盤で管理する。HTTP連携を使う場合は接続先、timeout、fail-safe、秘密情報管理を同時に確認する。 |
-| `saas-multitenant`（予約・利用不可） | 相互に信頼しない複数tenantを同じサービスへ収容する | PostgreSQL等のDB側tenant guard、検証済みTenantContext、`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`, `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http`, `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=deny` | `ADR-0059`のImplementation gateと`SAAS-TENANT-01`が未完了のため、現行releaseでは選択してはならない。SQLite、noop、mock、read_only、endpoint欠損時fallbackを許可しない。 |
+| `saas-multitenant`（予約・起動拒否） | 相互に信頼しない複数tenantを同じサービスへ収容する | PostgreSQL等のDB側tenant guard、検証済みTenantContext、`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`, `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http`, `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=deny` | `ADR-0059`のImplementation gateと`SAAS-TENANT-01`が未完了のため、現行releaseではsettings validationが起動を拒否する。SQLite、noop、mock、read_only、endpoint欠損時fallbackを許可しない。 |
 
 Profile に関係なく、利用者が設定する公開環境変数は例外なく `KJ_ATLAS_*` で始めます。サードパーティが別名を要求する場合は、実装または deployment adapter が内部で写像します。
 
@@ -54,8 +54,9 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 
 ### SaaS profile implementation gate（ADR-0059）
 
-- 現時点ではprofile選択用の新しい公開環境変数を追加しない。`saas-multitenant`を有効値として受理する実装も存在しない。
-- 実装issueでは、profileを明示選択でき、tenant解決またはPDP/DB guardの設定が欠ける場合に起動をfail-fastできる設定契約を本registryへ先行追加する。
+- `KJ_ATLAS_RUNTIME_PROFILE`でprofileを明示選択する。`local-dev`、`evaluation`、`enterprise-production`は正規化して受理する。
+- `saas-multitenant`は予約値として認識するが、現行releaseでは常に起動をfail-fastにする。無視して`local-dev`へfallbackしない。
+- 実装issueの後続段階で、tenant解決、PDP、DB guardのcross-key validationがすべて成立した場合だけ起動拒否を解除する。
 - `external_http` endpoint欠損時のnoop fallbackは既存profileの互換挙動としてのみ残し、SaaS profileでは禁止する。
 
 ### Drift check gates（設定ドリフト防止ゲート）
@@ -79,6 +80,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 
 | Key | Default | Purpose |
 | --- | --- | --- |
+| `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | 実行profile。`local-dev`, `evaluation`, `enterprise-production`を受理する。`saas-multitenant`は予約値で、現行releaseでは起動拒否。 |
 | `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | 永続化 DB 接続先 |
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | LLM provider 種別。`none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` |
 | `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLM の base URL |
@@ -158,6 +160,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 ## Validation rules
 
 - `KJ_ATLAS_LLM_PROVIDER=large-scale`, `large_scale`, `external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` と `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` を必須にします。
+- `KJ_ATLAS_RUNTIME_PROFILE` は `local-dev`, `evaluation`, `enterprise-production`, `saas-multitenant` だけを名前として認識し、`saas-multitenant`は`SAAS-TENANT-01`完了まで起動を拒否します。
 - `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` は `noop`, `mock`, `external_http` だけを許可します。
 - `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` は `read_only`, `deny` だけを許可します。
 - `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` は `none`, `oidc`, `saml` だけを許可します。

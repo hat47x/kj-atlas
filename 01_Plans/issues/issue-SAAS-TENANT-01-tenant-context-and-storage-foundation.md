@@ -94,3 +94,10 @@
 - review attribution backfillは`local-default`のDocumentだけを対象にし、将来tenant追加後の無条件全件走査を防止した。
 - tenant A/Bで異なるdocIdと同じgroup/snapshotを使うrepository negative testを追加した。同一docId fixtureは現行のglobal PKを複合PKへ移行するまで作成できない。
 - 検証: Ruff pass、Document roundtrip/access-control/backfill/repository近接45件pass、backend全体300件pass・条件付き24件skip、docs-check pass。verified TenantContext、PDP payload、同一docId、RLSは未実装のため共有SaaSは禁止を継続する。
+
+### Implementation checkpoint 2026-07-16: runtime profile fail-fast
+
+- 公開`KJ_ATLAS_RUNTIME_PROFILE`を追加し、`local-dev`、`evaluation`、`enterprise-production`を正規化して受理する。backend直接起動の既定は`local-dev`、Composeの既定は`evaluation`とした。
+- `saas-multitenant`は予約値として認識するが、`SAAS-TENANT-01`の安全ゲート未完了を理由にsettings validationで常に起動拒否する。未知値や旧`RUNTIME_PROFILE`もfail-fastにする。
+- runtime registry、deployment、Compose、利用者向けConfigurationを同じ公開キーへ同期した。
+- 検証: Ruff pass、settings/API-key近接26件pass、backend全体304件pass・条件付き24件skip、公開キー正本を含むdocs-check pass。Dockerがないため`docker compose config`は未実施。
