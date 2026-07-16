@@ -140,11 +140,12 @@ Open化ゲートを「3軸境界 + 承認証跡 + 実行経路固定」で定義
 - **保留継続**: B-PUB-01/B-I18N-01/B-ENV-01のいずれか未解消。
 
 ### Pending approvals（未承認は保持）
-- Pending-1: 公開境界（PUB-01）最終承認。
-- Pending-2: I18N-03 の外部公開判定承認。
+- Pending-1: 公開境界（PUB-01）最終承認。→ 承認済み（2026-07-16、Maintainer/hat47x、本セッションでの明示承認）。
+- Pending-2: I18N-03 の外部公開判定承認。→ 承認済み（2026-07-16、Maintainer/hat47x、本セッションでの明示承認）。
 
 ### Execution
-- `Execution: Hold`（Pending解消まで維持）
+- Pending-1/Pending-2は解消したが、B-ENV-01（`ADR-0019` 準拠の実行経路未固定）が未解消のため、`Execution: Hold` を維持する。
+- `Execution: Hold`（承認以外の残blocker解消まで維持）
 
 
 ### 修復上限（共通）
