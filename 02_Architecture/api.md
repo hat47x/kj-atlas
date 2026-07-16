@@ -635,6 +635,59 @@ export type AdminProvisionUserConflictError = {
 - contract: attribution APIは `reviewerRef` / `ownerRef` を `user:<users.id>` に統一し、外部subject直参照を受け付けない。
 - strict modeは contract 側の強制条件として扱い、未登録subjectを `403` で拒否する。
 
+### 9.5 エージェント登録 API（契約先行固定、`DATA-MODEL-OPS-02` D3/AC-5）
+
+`agent_registrations` をサーバー正本として採用する（実装は `EXT-CONN-02` で行う。本節は `EXT-CONN-02` 着手前提の契約先行固定であり、実装そのものの許可を意味しない）。§9.3の事前プロビジョニングAPIと同じ strict provisioning 型を採用し、通常の文書owner操作とは分離する。
+
+- 登録・失効はadminのstrict provisioning型操作に限定する。文書ownerによるtoken発行は不採用とする。
+- 平文tokenは保存しない。作成時のレスポンスで一度だけ表示し、以後は `tokenHash` のみで照合する。再取得APIは提供しない。
+- 登録は文書単位（`docId`）に束縛する。登録の存在自体を文書書込権限とみなさず、ingestごとに既存access-controlで別途許可判定する（`EXT-CONN-02` 受信面が強制）。
+
+**POST** `/admin/agent-registrations`
+
+- Request body：`AdminCreateAgentRegistrationRequest`
+- Response（201）：`AdminCreateAgentRegistrationResponse`（`token` はこの応答でのみ返る平文値）
+- Error：`403 identity_not_provisioned` 相当（§9.2と同一のstrict mode拒否契約）
+
+**DELETE** `/admin/agent-registrations/{registration_id}`
+
+- Response（200）：`AdminAgentRegistrationSummary`（`revokedAt` が設定された状態）
+- Not found：404
+- 冪等：失効済みへの再DELETEは既存の `revokedAt` を保った同一レスポンスを返す
+
+**GET** `/admin/agent-registrations`
+
+- Response：`AdminAgentRegistrationSummary[]`
+- `token` / `tokenHash` はこの一覧応答に含めない（§2.4 DocumentListItemV1と同種のallowlist方針）
+
+型契約（I/F固定）:
+
+```ts
+export type AdminCreateAgentRegistrationRequest = {
+  docId: string;
+  label?: string;
+};
+
+export type AdminCreateAgentRegistrationResponse = {
+  registrationId: string;
+  docId: string;
+  label?: string;
+  token: string; // 平文。この応答でのみ返り、以後は再取得不可
+  createdAt: string; // ISO 8601
+};
+
+export type AdminAgentRegistrationSummary = {
+  registrationId: string;
+  docId: string;
+  label?: string;
+  createdAt: string; // ISO 8601
+  createdBy: string; // opaque admin actorRef
+  revokedAt?: string | null; // ISO 8601、未失効はnull
+};
+```
+
+- 非目標：本契約ではページング・検索・token roll（再発行による旧token継続失効付き差し替え）・複数document一括登録は定義しない。
+
 ## 10. 形成履歴（Informative）
 
 2026-04-30〜2026-05-19のCE0/CE1/CE4 mock-first、Stream同期、freeze/handoff形成記録は [API contract formation history](history/api-contract-formation-2026-04-to-05.md) へ分離した。現在の型は`schemas.md`、責務・信頼境界は`architecture.md`、endpoint/status/error/認証/副作用は本書を正本とする。
