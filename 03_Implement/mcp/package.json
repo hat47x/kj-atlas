@@ -2,7 +2,7 @@
   "name": "kj-atlas-mcp",
   "version": "0.1.0",
   "private": true,
-  "description": "Read-only stdio MCP server exposing kj-atlas ContextBundle projections (EXT-CONN-01 subslice B, ADR-0054 stage 1). Independent package: not part of any npm/yarn workspace, shares no dependency or lockfile with 03_Implement/frontend.",
+  "description": "Read-only MCP server exposing kj-atlas ContextBundle projections over stdio or streamable-HTTP + OAuth 2.1 resource-server auth (EXT-CONN-01 subslices B/C, ADR-0054 stage 1). Independent package: not part of any npm/yarn workspace, shares no dependency or lockfile with 03_Implement/frontend.",
   "type": "module",
   "engines": {
     "node": "20.x"
@@ -14,9 +14,13 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",
+    "express": "5.2.1",
+    "express-rate-limit": "8.5.2",
+    "jose": "6.2.3",
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@types/express": "5.0.6",
     "@types/node": "20.19.43",
     "tsx": "4.23.1",
     "typescript": "5.9.3",

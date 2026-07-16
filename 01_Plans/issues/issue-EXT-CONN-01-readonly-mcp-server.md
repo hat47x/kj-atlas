@@ -2,7 +2,7 @@
 
 - Type: Feature request
 - Status: In Progress
-- Progress: サブスライスA・B完了。サブスライスC（HTTP輸送・`THREAT_MODEL.md`追記）が残課題。
+- Progress: サブスライスA・B・C（実装・テスト・`THREAT_MODEL.md`追記）完了。公開ネットワークリスナー・初のOAuthコードのため、セキュリティレビュー完了までPRをマージ待ちで保持中。
 
 ## Draft→Open 2026-07-12
 `ADR-0054` が maintainer により Accepted（受理時条件: 用語「庭」→「縁側」置換、ADR側で対応済み）。本Issueの唯一のゲートが解消したため Open 化。
@@ -50,7 +50,7 @@
 - [x] AC-1: MCPクライアントから reviewed-only 投影を取得でき、未レビュー本文・SafeMode対象が含まれない。→ reviewed-only constraintに加え、evidence/contradiction/summaryの全constraintで未レビューentity/refをlink単位（両端点reviewed必須）で除外し、SafeMode redactionから短縮hashを除去済み（2026-07-13、下記「実装記録」参照）。MCP経由の取得（実結線）はサブスライスBで行う。
 - [x] AC-2: サーバーは書き込み系ツールを一切公開しない（tools/list で検証）。→ `kj-atlas-mcp`（`03_Implement/mcp/`）実装完了。`tools/list` は `get_context_projection` の1件のみ、`resources`capabilityは`initialize`応答に一切含まれない（登録ゼロのため`resources/list`はメソッド自体が存在しない）。固定snapshotテストで検証済み（下記「実装記録」参照）。
 - [x] AC-3: 読み取りごとに監査相関が記録され、CE-4 の監査導線から追跡できる。→ ローカル構造化監査ログ（stderr、`mcp-context-read.v1`）で`bundleHash`/`queryCanonicalHash`相当を全readで記録。**CE-4のバックエンド`POST /docs/{id}/context-audit`への実結線は今回未実施**（下記「実装記録」の既知ギャップ参照）。
-- [ ] AC-4: `THREAT_MODEL.md` に公開面（認証・認可・レート・失敗時挙動）が追記され、PRODUCT-QA-01 ゲートで照合される。→ HTTP輸送を実装するサブスライスCで対応(stdioのサブスライスBは公開面なし)。
+- [x] AC-4: `THREAT_MODEL.md` に公開面（認証・認可・レート・失敗時挙動）が追記され、PRODUCT-QA-01 ゲートで照合される。→ `THREAT_MODEL.md` §6-1 として追記完了（2026-07-16、下記「実装記録」参照）。
 - [x] AC-5: 投影IRは輸送非依存で、MCPアダプタ層の差し替えが契約変更なしに可能な構造になっている。→ `context_bundle_projection.ts` として実装。純粋関数・輸送非依存・`ContextProjectionV1` IR固定。
 
 ## 実装記録（2026-07-12）: サブスライスA 完了 — 輸送非依存の投影コア
@@ -87,6 +87,22 @@ Maintainer代理裁可が課した「外部結線前の投影コア再検証」�
 
 この修正により、Maintainer代理裁可が定めた「外部クライアントへの結線前」条件が満たされたため、AC-1をFixedとし、サブスライスB（stdio MCPアダプタ）へ進める。
 
+## 実装記録（2026-07-16）: サブスライスC 完了 — streamable-HTTP輸送 + OAuth 2.1 resource server
+
+`ADR-0054`/`ADR-0020`が定める「本サーバーはresource serverのみ、authorization server機能は一切持たない」方針に厳密に従い、外部トークン発行者（既に信頼済みの外部IdP）が発行したbearer tokenを検証する層のみを追加した。token発行・client登録・consent画面などの実装は行っていない（そのコードパス自体が存在しない）。
+
+- **輸送選択**: `KJ_ATLAS_MCP_TRANSPORT`環境変数（既定`stdio`）で`stdio`/`http`を選択（`src/index.ts`）。stdio経路は無改修。
+- **HTTP設定 (`src/oauth_config.ts`)**: `loadHttpTransportConfigFromEnv()`が`KJ_ATLAS_MCP_RESOURCE_URL`/`KJ_ATLAS_MCP_TRUSTED_ISSUER`/`KJ_ATLAS_MCP_JWKS_URI`を必須環境変数としてfail-closedで読み込む（未設定は起動時エラー、安全側デフォルトへのフォールバックはしない）。`KJ_ATLAS_MCP_AUTHORIZATION_SERVERS`（省略時は`KJ_ATLAS_MCP_TRUSTED_ISSUER`）・`KJ_ATLAS_MCP_HTTP_HOST`/`_PORT`（既定`127.0.0.1:8787`）は省略可。
+- **Token検証 (`src/oauth_verifier.ts`)**: `jose`の`jwtVerify`で署名・`iss`（`trustedIssuer`と厳密一致）・`aud`（`resource`）・`exp`を検証。すべての失敗経路（署名不正・issuer不一致・audience不一致・期限切れ・claim欠落・不正形式token）を`InvalidTokenError`へ正規化し、SDKの`requireBearerAuth`が401として応答する（未知のErrorをthrowすると500になる既知の落とし穴を回避）。`client_id`→`azp`→`sub`の順でclient識別子を解決。CVI反スコアリング（`ADR-0041`）の防御的テストとして、token claimに`score`/`rank`/`confidence`/`priority`を含めても`AuthInfo`にその語彙が一切現れないことを固定。
+- **HTTP app (`src/http_server.ts`)**: `express`上に、`GET /.well-known/oauth-protected-resource`（RFC 9728、未認証で公開必須のdiscovery文書）と、認証必須の`POST/GET/DELETE /mcp`（`StreamableHTTPServerTransport`、`sessionIdGenerator: undefined`のstateless構成）を構築。全route共通で60 req/min/IPのrate limitとrequest body 1MB上限を適用。
+  - **実装中に発見・修正した実欠陥**: SDKの`metadataHandler()`は内部に独自の`/`routeを持つExpress Routerを返す設計だが、当初`app.get(path, metadataHandler(...))`でマウントしていたためExpressがmount pathを`req.url`から剥がさず、Routerの`/`routeが常に不一致となって404を返す状態だった（`app.use(path, ...)`が必要）。`http_server.test.ts`の実HTTPリクエストによる統合テストで検出し、`app.use`へ修正して解消。
+- **依存追加**: `express@5.2.1`・`express-rate-limit@8.5.2`・`jose@6.2.3`（SDK 1.29.0が既に解決するtransitive依存と正確に一致するversionをpin、Maintainer代理裁可の既存慣行を継続）。`npm audit`は`found 0 vulnerabilities`。
+- **テスト**: `oauth_config.test.ts`（8）・`oauth_verifier.test.ts`（10、CVI防御込み）・`http_server.test.ts`（5、実Express appへの実HTTPリクエストによる統合テスト。ローカルJWKSへ`vi.mock("jose")`で`createRemoteJWKSet`のみ差し替え、ネットワークアクセス・モックIdPプロセスとも不要）を新規追加。既存`document_client.test.ts`/`audit_log.test.ts`/`context_projection_tool.test.ts`（計21 tests）は無改修・無回帰。全44 tests green、typecheck 0 errors。
+- **`THREAT_MODEL.md`更新**: §6-1として、未認証/偽造/audience違いtoken・authorization server機能への意図しないscope creep・DoS・エラー応答からの情報漏えいの各脅威と、resource-server-only scope・fail-closed検証・rate limit・stateless transport・body size上限の対策を追記（AC-4）。
+- **README更新**: `03_Implement/mcp/README.md`に新規環境変数一覧・HTTP輸送時の挙動・resource-server-onlyの非目標を追記。
+- **AC-3の既知ギャップは継続**: CE-4バックエンド監査エンドポイントへの実結線は本サブスライスでも未実施（サブスライスB記録済みのギャップと同一理由、backend `channel` enumの拡張が必要）。HTTP輸送でも同じローカル構造化ログ方式を継続する。
+- **意図的にレビュー保留**: 本サブスライスは本リポジトリ初の公開ネットワークリスナー・初のOAuthコードであるため、Maintainer裁可済みの自動マージ運用（サブスライスA/B適用）を今回は適用せず、セキュリティレビュー完了までPRをマージ待ちで保持する。
+
 ## 実装記録（2026-07-13）: サブスライスB 完了 — stdio MCPアダプタ
 
 Maintainer代理裁可の固定条件に従い、`03_Implement/mcp/` を新設した。
@@ -105,4 +121,5 @@ Maintainer代理裁可の固定条件に従い、`03_Implement/mcp/` を新設�
 - Derived-from: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`
 - Related: `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`
 - Related: `03_Implement/frontend/src/export/agent_task_export.ts`（投影・redactionの前例実装）
-- Related: `03_Implement/mcp/README.md`（新規パッケージの使い方・環境変数・非目標）
+- Related: `03_Implement/mcp/README.md`（パッケージの使い方・環境変数・非目標。stdio/HTTP両輸送）
+- Related: `THREAT_MODEL.md` §6-1（HTTP transport / OAuth 2.1 resource serverの脅威分析、AC-4）
