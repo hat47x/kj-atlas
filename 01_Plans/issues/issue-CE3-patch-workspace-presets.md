@@ -781,3 +781,7 @@
   - Adopted one candidate, rejected another, rolled the rejected candidate back to hold, and confirmed rollback is visible in the candidate audit display.
   - Saved a local preset, confirmed normalized query output, ran the preset before and after reload, and confirmed normalized filters remain reproducible.
 - Decision impact: Done status remains valid. No ADR is required because this refresh does not change CE3 scope, local-state/localStorage boundary, Core/Consensus ownership, or audit semantics.
+
+## Traceability
+
+- Related: `01_Plans/issues/issue-GENAI-GOV-01-generative-ai-lane-boundary-and-readiness.md`（Lane B/C: proposal-onlyレビュー面）, `02_Architecture/value_traceability.md` §2.9

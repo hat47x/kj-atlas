@@ -89,16 +89,16 @@
 
 ## 6) 受け入れ条件 / Acceptance criteria
 
-- [ ] AC-1: `02_Architecture/value_traceability.md` に Lane A-D と横断不変条件が記載され、`GENAI-GOV-01` へ参照できる。
-- [ ] AC-2: 既存の `EXT-AGENT-01..03`、`CE2/CE3/CE4`、LLMProvider関連issueが、Lane分類とADR要否を追記または参照できる状態になる。
+- [x] AC-1: `02_Architecture/value_traceability.md` に Lane A-D と横断不変条件が記載され、`GENAI-GOV-01` へ参照できる。→ `value_traceability.md` §2.9 として記載済み（下記「実装記録」参照）。
+- [x] AC-2: 既存の `EXT-AGENT-01..03`、`CE2/CE3/CE4`、LLMProvider関連issueが、Lane分類とADR要否を追記または参照できる状態になる。→ 対象8issueへLane参照を追記済み（2026-07-16、下記「実装記録」参照）。
 - [ ] AC-3: 新規生成AI関連issueのテンプレまたは運用に、対象Lane、データ境界、SafeMode/監査/人間レビュー境界の宣言が含まれる。
 - [ ] AC-4: `provider=none` 既定価値成立、proposal-only、`human_reviewed` 人手昇格、SafeMode既定ON、暗黙エスカレーション禁止が、Go/No-Go観点として確認できる。
 - [ ] AC-5: Lane D（直接API/Agent連携）に入る提案は、実装PRではなく新ADRの起票条件へ分岐する。
 
 ## 7) 実装タスク分解 / Task breakdown
 
-- [ ] T1 `value_traceability.md` へ生成AIレーン境界を追記する。
-- [ ] T2 `EXT-AGENT-01..03` と CE/LLM関連issueへ、必要に応じて Lane分類参照を追加する。
+- [x] T1 `value_traceability.md` へ生成AIレーン境界を追記する。
+- [x] T2 `EXT-AGENT-01..03` と CE/LLM関連issueへ、必要に応じて Lane分類参照を追加する。
 - [ ] T3 issueテンプレまたはissue運用ガイドへ、生成AI関連作業の分類チェックを追加する。
 - [ ] T4 PRODUCT-QA / MVP-EXIT のゲートに、暗黙外部共有なし・AIなし価値成立・提案のみ境界の確認観点を接続する。
 - [ ] T5 Lane D の新ADR起票条件（認証、到達性、データ保持、監査、費用制御、失敗時動作）を整理する。
@@ -144,6 +144,19 @@ ADR化が必要になる条件:
 ## 複雑性予算（ADR-0043 自己申告）
 
 複雑性予算: UI純増なし（管理issueのみ） / 保留操作の距離=不変 / 取り消し導線=N/A（設計判断ゲート）。
+
+## 12) 実装記録 / Implementation record（2026-07-16）: AC-1/AC-2, T1/T2 完了
+
+- **AC-1/T1**: `02_Architecture/value_traceability.md` §2.9「生成AIレーン境界（`GENAI-GOV-01`）」として、Lane A-D表と横断不変条件（AI出力は提案のみ、SafeMode既定ON、相関キーの監査連鎖接続、外部由来指示の非自動実行、数値評価の非正本化、暗黙エスカレーション禁止、モデル品質評価と採否判断の分離）を記載済み。本Issueへの参照も含む。
+- **AC-2/T2**: 既存Done issue 8件へ、Lane分類と`GENAI-GOV-01`/`value_traceability.md` §2.9への参照を追記した。
+  - Lane C（外部エージェント成果物連携）: `issue-EXT-AGENT-01-agent-task-package-export.md`、`issue-EXT-AGENT-02-agent-response-import.md`、`issue-EXT-AGENT-03-copilot-studio-reference-kit.md`
+  - Lane B/C（proposal-onlyレビュー面）: `issue-CE2-low-risk-ai-assist.md`、`issue-CE3-patch-workspace-presets.md`、`issue-CE4-api-cli-audit-integration.md`
+  - Lane B（LLMProvider経路）: `issue-PROV-VIS-01-llm-provider-visibility-badge.md`、`issue-PROV-CONTRACT-01-llm-provider-spec-drift-correction.md`
+- AC-3〜AC-5、T3〜T5は継続タスクとして残す（issueテンプレ運用への接続、PRODUCT-QA/MVP-EXITゲートへの接続、Lane D新ADR起票条件整理はいずれも本スライスの対象外）。
+
+検証結果:
+- `python 01_Plans/docs_check.py`: pass。
+- `python 01_Plans/issues/validate_active_issue_memos.py`: pass。
 
 ## Traceability
 
