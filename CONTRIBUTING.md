@@ -145,6 +145,8 @@ CIの `FRONTEND_LINT_PHASE` が `A/B/C` 以外なら設定不正です。Reposit
 - `frontend-typecheck`: TypeScript型検査。
 - `frontend-test`: Frontendテストとbuild検証。
 
+CIは変更パスからアプリ検証範囲を判定します。文書と内部issueだけの変更では`docs-contract`を実行し、frontend/backendの重いjobは省略します。`03_Implement/frontend/`または`03_Implement/backend/`を変更した場合は該当側を実行し、CI workflowや変更範囲分類器を変更した場合は両方を実行します。判定規則の正本は`01_Plans/ci_change_scope.py`です。
+
 fail-on-error条件:
 
 - `frontend-lint`: `FRONTEND_LINT_PHASE=A` のみ警告継続。それ以外（B/C）は失敗でPRを停止。

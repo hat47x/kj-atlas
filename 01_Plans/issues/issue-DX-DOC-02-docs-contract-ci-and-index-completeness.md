@@ -285,3 +285,10 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - 一般利用者向け入口から、データ取り扱い、セキュリティ、AI提案、設定ガイドへのMarkdown導線と対象ファイルの存在を検査し、リンク先に担当する安全境界が残っていることを確認する。
 - 正常fixtureと、不変条件・正本パス・公開導線・リンク先境界を欠落させた負例fixtureを追加した。`python -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 23件成功。`python 01_Plans/docs_check.py`: Active memo 24件、追跡Markdown 377件で成功した。
 - ADR-0024の既定ruleを実装したもので、安全境界や正本責務を変更していないため新規ADRは不要と判断した。T3は完了し、残件はdocs-only PRのアプリE2E非強制化とT7統合確認である。
+
+## docs-only CI範囲制御 2026-07-16: 実装済み・CI実証待ち
+
+- `01_Plans/ci_change_scope.py` に変更パス分類を分離した。`03_Implement/frontend/` と `03_Implement/backend/` は独立判定し、CI workflow・分類器・分類器テストの変更時は両方を実行する。文書と内部issueだけの変更は両方をfalseとする。
+- 既存のfrontend 6 jobとbackend jobは名称を維持し、`change-scope`出力によるjob-level条件を追加した。`docs-contract`は変更範囲によらず常時実行する。
+- docs-only、frontendのみ、backendのみ、CI/分類器変更、Windows区切りの正常/負例4件を追加した。workflow自体を変更する本PRでは全アプリjobを実行し、次のdocs-only検証PRでskip結果とrequired checkへの非干渉を確認してから受入条件とT7を完了する。
+- 既存のCI責務分離を変更せず実行範囲だけを狭めるため、新規ADRは不要と判断した。
