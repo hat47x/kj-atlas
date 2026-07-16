@@ -72,13 +72,14 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 
 ---
 
-### 2.4 List（任意：MVPでは後回し可）
+### 2.4 List（契約先行固定、実装はMVPでは後回し可）
 
 **GET** `/docs`
 
-- Response：最小の一覧（id/title/updatedAt）
+- Response：`DocumentListItemV1[]`（`02_Architecture/schemas.md` §3.4.1）。返却項目は `id` / `title` / `updatedAt` のallowlistに限り、`cards` / `edges` / `islands` / `narratives` / `evidenceLinks` などの本文・構造フィールドは一覧項目に一切含めない（`DATA-MODEL-OPS-02` D1・AC-2）。
+- 対象集合：現認可主体がread可能な文書のみ。認証構成でowner/ACL解決ができない場合はfail-closed（エラー応答）とし、全文書一覧へのフォールバックは行わない。
 
-イントラ想定では一覧があると便利だが、MVPでは必須ではない。
+イントラ想定では一覧があると便利だが、実装自体はMVPでは必須ではない。本節は上記の契約（返却allowlist・対象集合・fail-closed方針）のみを先行固定するものであり、実装着手の可否は別途判断する。
 
 
 ### 2.5 Document監査イベント（FB-RM-PUB-05 / CE4）
