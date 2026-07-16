@@ -496,3 +496,7 @@ CE2 remains proposal-only / human-final / no-auto / fail-closed. SafeMode invari
 ### Stop Conditions
 - Stop immediately if CE2 uses CE0/CE1 checkpoints as permission to auto-apply, auto-confirm, auto-publish, or promote `unreviewed` output to `human_reviewed`.
 - Stop immediately if a future change treats missing Approval Record fields as acceptable for Open promotion.
+
+## Traceability
+
+- Related: `01_Plans/issues/issue-GENAI-GOV-01-generative-ai-lane-boundary-and-readiness.md`（Lane B/C: proposal-onlyレビュー面）, `02_Architecture/value_traceability.md` §2.9

@@ -1507,3 +1507,7 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 ### Stop Conditions
 - Stop immediately if CE4 accepts a mode other than `proposal-only`, treats `equivalenceKey` or `bundleHash` alone as sufficient, or lets a missing audit event pass.
 - Stop immediately if CE4 uses CE2 Draft material or CE1 mock data to auto-apply, auto-confirm, auto-publish, or promote unreviewed output.
+
+## Traceability
+
+- Related: `01_Plans/issues/issue-GENAI-GOV-01-generative-ai-lane-boundary-and-readiness.md`（Lane B/C: proposal-onlyレビュー面）, `02_Architecture/value_traceability.md` §2.9
