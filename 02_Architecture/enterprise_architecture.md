@@ -4,7 +4,7 @@
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 **English summary**  
 This document defines the minimum OSS-level capabilities required for kj-atlas to be deployable in enterprise and government environments.  
-The focus is integration readiness, not SaaS transformation.
+The current implementation focuses on integration readiness. `ADR-0059` defines an accepted but not-yet-implemented boundary for any future SaaS multi-tenant profile.
 
 > 適用範囲: 本書の職務分離、2者承認、監査台帳は、組織が `enterprise-production` profile を採用した場合の設計である。個人OSSの日常開発やローカル利用の必須運用ではない。必要な役割を用意できない環境では、JIT provisioningの例外緩和を有効にせず、既定のstrict設定を維持する。
 
@@ -439,6 +439,19 @@ interface AccessControlAdapter {
 - 復帰記録にも最小監査契約（PII非保存）を適用し、復旧条件充足を記録する。
 - 復旧判定は Security Officer + System Owner の2者共同判定を必須とする（代理承認なし）。
 
+## 4.6 将来SaaS profileの分離境界（ADR-0059）
+
+`ADR-0059`はSaaSマルチテナントの安全境界をAcceptedとしたが、現行実装と`enterprise-production` profileは引き続き単一組織向けである。次をすべて満たすまで、複数顧客を同じDB／サービスへ収容しない。
+
+- 検証済みTenantContextとactive TenantMembershipをrequestごとに解決する。
+- すべてのtenant従属行、cache、job、audit、agent credentialをtenantIdで分離する。
+- shared schemaでは複合制約とPostgreSQL RLS等のDB側tenant guardを、アプリのtenant一致判定と二重化する。
+- tenant不明・不一致、PDP不達、adapter欠損をreadも含めてdenyする。
+- Workspace Data Plane、Tenant Admin、Platform Control Planeのroute、audience、capabilityを分離し、Platform operatorへ文書readを暗黙付与しない。
+- 同一docIdを持つ2tenantの越境negative matrixをintegration/E2Eで固定する。
+
+現行AccessControlAdapterのroles/groups外部委譲は維持するが、tenant一致は外部PDPだけへ委譲しない。`noop`、`read_only` fail-safe、endpoint欠損時fallbackはSaaS profileでは利用できない。
+
 ---
 
 # 5. 監査・証跡
@@ -504,7 +517,7 @@ Browser → Internal IdP → Hardened API → RDBMS（オンプレ）
 
 - 内蔵ユーザ管理画面
 - 独自認証基盤
-- SaaSマルチテナント管理
+- 現行`enterprise-production`でのSaaSマルチテナント運用（将来境界は`ADR-0059`、実装は`SAAS-TENANT-01`で扱う）
 
 ---
 

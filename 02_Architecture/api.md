@@ -634,6 +634,81 @@ export type AdminProvisionUserConflictError = {
 - contract: attribution APIは `reviewerRef` / `ownerRef` を `user:<users.id>` に統一し、外部subject直参照を受け付けない。
 - strict modeは contract 側の強制条件として扱い、未登録subjectを `403` で拒否する。
 
-## 10. 形成履歴（Informative）
+## 10. SaaS TenantContext / capability契約（ADR-0059、L0 Planned）
+
+本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・越境テストが完了するまで、以下のendpointやtenant switcherを公開しない。
+
+### 10.1 session context（計画endpoint）
+
+- `GET /session/context`
+  - 現在の検証済みTenantContext、利用者がactive membershipを持つtenant候補、tenant-scoped capabilityを返す。
+  - tenant候補はサーバーでallowlistされたmembershipだけとし、tenant検索や自由入力を提供しない。
+- `POST /session/active-tenant`
+  - request: `{ tenantId }`
+  - backendがmembershipを再確認し、新TenantContextを確定した場合だけ更新後contextを返す。
+  - 不明tenant、他利用者のtenant、停止membershipは存在を推測させない`404`相当とする。
+
+```ts
+export type TenantSessionContextV1 = {
+  activeTenant: { id: string; displayName: string };
+  availableTenants: Array<{ id: string; displayName: string }>;
+  effectiveCapabilities: string[];
+  capabilityVersion: string;
+};
+
+export type ActiveTenantRequestV1 = {
+  tenantId: string;
+};
+```
+
+`effectiveCapabilities`は表示補助であり、APIの再認可を代替しない。cacheする場合は`deployment + tenantId + principalId + capabilityVersion`で分離し、auth tokenの有効期限を越えて保持しない。
+
+### 10.2 tenant-scoped access request
+
+SaaS profileでAccessControlAdapterへ渡すrequestは、§8.1に加えて次を必須とする。
+
+```ts
+export type TenantScopedAccessRequestV1 = {
+  action:
+    | "document.read"
+    | "document.write"
+    | "document.export"
+    | "document.share"
+    | "membership.provision"
+    | "agent.register"
+    | "agent.revoke"
+    | "audit.read";
+  auth: AuthContext;
+  tenant: TenantContextV1;
+  resource: {
+    tenantId: string;
+    kind: "document" | "membership" | "agent_registration" | "audit";
+    id: string;
+    policyRef?: string;
+  };
+  safeMode: boolean;
+  readOnly: boolean;
+};
+```
+
+評価順はAuthContext解決、TenantContext解決、active membership確認、`tenantId + resourceId`によるserver-side lookup、主体tenantと資源tenantの一致、SafeMode/readOnly guard、外部PDP、API enforceとする。tenant不一致はPDPへ委譲せず常にdenyする。resourceのtenant/visibility/policyRefをclient headerやpayloadから採用しない。
+
+### 10.3 SaaS fail-closed / response境界
+
+- tenant不明・不一致、membership停止、adapter欠損、PDP timeout/無効応答ではreadを含めてdenyする。
+- 他tenantのresource IDは`404`相当とし、list/search/count/paginationにも存在を混入させない。
+- current tenant内でresourceの存在が認可済みだが操作capabilityが不足する場合は`403`を返してよい。
+- `noop`、endpoint欠損時noop fallback、`read_only` fail-safeはSaaS profileで禁止する。§8.3〜8.6の互換挙動はsingle-tenant profileだけに適用する。
+- auditにはtenantId、opaque actor/resource ID、action、decision、policy/capability version、correlation IDだけを記録し、本文、タイトル、role/group生値、tokenを記録しない。
+
+### 10.4 管理面の予約capability
+
+Tenant Adminは`membership.provision`と`agent.register/revoke`、Platform Control Planeは`tenant.provision/suspend`を使用する。両者はroute surfaceと認可audienceを分離し、platform capabilityから`document.read`を暗黙導出しない。管理endpointのrequest/response詳細はstorage実装と同じissueで契約を追加し、汎用role editor、tenant横断文書検索、support impersonationは追加しない。
+
+### 10.5 single-tenant互換
+
+既存profileは内部`local-default` TenantContextを注入する互換経路を使用できる。公開Document APIへtenantIdを入力項目として追加せず、URLのdocIdはactive TenantContext内で解決する。exportされたtenantIdやmembershipをimport先の権限として採用しない。
+
+## 11. 形成履歴（Informative）
 
 2026-04-30〜2026-05-19のCE0/CE1/CE4 mock-first、Stream同期、freeze/handoff形成記録は [API contract formation history](history/api-contract-formation-2026-04-to-05.md) へ分離した。現在の型は`schemas.md`、責務・信頼境界は`architecture.md`、endpoint/status/error/認証/副作用は本書を正本とする。

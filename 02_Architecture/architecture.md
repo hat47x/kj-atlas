@@ -370,7 +370,16 @@ MVPでは高度な権限管理は後回し。
 - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` では未登録subjectをJITで `users` + `user_identities` 作成、`false` では `403` 拒否して事前プロビジョニング導線へ誘導する。
 - attribution の正規キーは `users.id` で、外部subjectは `user_identities` でのみ解決する。
 
+## 13. SAAS-TENANT-01 境界（ADR-0059、現行未実装）
 
-## 13. 形成履歴（Informative）
+- 現行`local-dev` / `evaluation` / `enterprise-production`はsingle-tenant相当とし、共有SaaSとして運用しない。
+- 将来の`saas-multitenant`では、AuthContextに加えて検証済みTenantContextとactive TenantMembershipをrequestごとに必須解決する。
+- tenant一致はアプリ本体の不変条件とし、外部PDPへ委譲しない。roles/groupsの意味評価だけをAccessControlAdapterへ委譲する。
+- tenant従属データはDB複合制約とDB側tenant guardで分離し、cache、job、MCP、audit、agent credentialにも同じcontextを伝播する。
+- Workspace Data Plane、Tenant Admin、Platform Control Planeはroute、auth audience、capabilityを分離する。Platform運用権限から文書readを暗黙導出しない。
+- tenant不明・不一致、membership停止、PDP/adapter障害、DB guard不成立はreadを含めてfail-closedとする。
+- 型と永続制約は`schemas.md`、endpoint/status/errorは`api.md`、profile gateは`runtime_parameter_registry.md`、実装進捗は`issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`を正本とする。
+
+## 14. 形成履歴（Informative）
 
 2026-05-04のinterface-only baselineとStream B反映メモは、現行契約と誤認されないよう[Architecture contract-freeze formation history](history/architecture-contract-freeze-formation-2026-04-to-05.md)へ分離した。現行の責務境界は本書、型は`schemas.md`、endpoint/status/errorは`api.md`を正本とする。

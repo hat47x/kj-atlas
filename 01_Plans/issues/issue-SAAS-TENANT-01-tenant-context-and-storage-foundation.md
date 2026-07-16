@@ -1,0 +1,80 @@
+# Issue: SAAS-TENANT-01 TenantContext・保存境界・越境防止の実装
+
+> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
+
+- Type: Security / Feature
+- Status: Open
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: User request 2026-07-16 / `01_Plans/research-2026-07-16-saas-tenant-authorization-boundary.md`
+- Priority: P1
+- Owner: Maintainer
+- Scope: `02_Architecture/`, `03_Implement/backend/`, `03_Implement/frontend/`, `03_Implement/mcp/`, deploy/runtime settings and tests
+- Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `THREAT_MODEL.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `02_Architecture/runtime_parameter_registry.md`
+- Expected verification level: integration / e2e
+
+## 課題
+
+- 現在の問題: 現行DB、AuthContext、AccessRequest、browser storageにはtenant境界がなく、`documents.id`は全体主キーである。access-controlのnoop/read-only fallbackも共有SaaSのread分離には使えない。
+- 利用者または開発への影響: 現行`enterprise-production`を共有SaaSとして運用すると、IDOR、list/cache/job/storage/auditからの越境漏えい、管理権限の過大化が起きうる。`ADR-0059`はAcceptedだが、実装ゲートは未充足である。
+
+## 対応方針
+
+- 実施すること:
+  1. tenant/identity-provider/membershipをexpand migrationで追加し、既存データを内部`local-default`へidempotentにbackfillする。
+  2. Documentと全従属行を`tenant_id + id`で識別し、複合unique/FKを適用する。docIdだけのrepository操作を廃止する。
+  3. verified claimまたはtrusted host mappingからTenantContextを解決し、active membershipを必須確認する。
+  4. resource metadataをserver-sideで読み、主体tenantと資源tenantの不一致をPDP前にdenyする。
+  5. `saas-multitenant` profileを明示選択できる設定契約を追加し、external adapter、deny fail-safe、PostgreSQL DB guard、tenant resolverが欠ければ起動をfail-fastにする。
+  6. shared schemaではPostgreSQL RLS等のDB側tenant guardを導入し、connection pool再利用時にもtenant contextを漏らさない。
+  7. session context / active tenant APIとtenant-scoped `effectiveCapabilities`を実装する。
+  8. browser cache、recent、QueryPreset、request cache、MCP、agent credential、job、audit、object-storage keyをtenant/user別に分離する。
+  9. 同じdocIdを持つtenant A/Bの越境negative matrixをintegration/E2Eへ固定する。
+- 実施しないこと:
+  - 実装ゲート完了前のtenant switcher、Tenant Admin、Platform Control Plane有効化。
+  - 汎用role editor、tenant横断文書検索、support impersonation、恒久的super-reader。
+  - 課金、SCIM、tenant削除、保持期限、地域配置。
+  - tenantIdやmembershipをDocumentV1 payloadまたはexport/import権限として扱うこと。
+
+## 実装順序と停止条件
+
+1. **Contract**: `schemas.md` / `api.md` / runtime registryとmigration設計が一致する。
+2. **Expand**: nullable tenant列と新規表を追加し、`local-default`をbackfillする。この段階ではSaaS profileを有効化しない。
+3. **Scoped repository**: TenantContext必須のread/writeへ切り替え、tenantなしqueryを検査で禁止する。
+4. **Constraint / DB guard**: NOT NULL、複合unique/FK、RLS等を有効化する。connectionごとのtenant設定はtransaction終了時に確実に破棄する。
+5. **Auth / PDP**: membership、local tenant一致、SafeMode、PDPの順にenforceし、SaaSはdeny-onlyにする。
+6. **Consumers**: MCP、worker、cache、audit、agent registrationへtenant contextを伝播する。
+7. **UI gate**: session contextとnegative matrixが通った後だけRound 8 R8-E/Fを実装候補へ昇格する。
+
+各段階でtenant context欠落、backfill不整合、複合FK不整合、RLS context残留、PDP fail-openのいずれかを検出した場合は次段階へ進まない。
+
+## 受入条件
+
+- [ ] AC-1: `tenants`、`identity_providers`、`tenant_identity_providers`、`tenant_memberships`が実装され、identityは`identity_provider_id + subject`で一意になる。
+- [ ] AC-2: 既存データが`local-default`へ損失なくbackfillされ、再実行しても結果が変わらない。
+- [ ] AC-3: `documents`と全Document従属表がtenant複合制約を持ち、docIdだけのDB query/joinが静的検査またはtestで検出される。
+- [ ] AC-4: SaaS profileでtenant不明・不一致、membership停止、adapter欠損、PDP不達をreadも含めてdenyする。
+- [ ] AC-5: shared schemaでDB側tenant guardが有効で、別tenant contextを使った直接SQLも行を取得・更新できない。
+- [ ] AC-6: `GET /session/context`とactive tenant変更がmembership allowlistだけを返し、自由入力tenantの発見・切替を許可しない。
+- [ ] AC-7: Workspace、Tenant Admin、Platform Control Planeのcapability/audienceが分離され、Platform operatorに文書readが暗黙付与されない。
+- [ ] AC-8: cache、job、MCP、agent credential、audit、storage keyにtenantIdが伝播し、欠落時は処理を停止する。
+- [ ] AC-9: exportはtenant権限を移送せず、importはactive tenantで再認可・検証・人手レビューされる。
+- [ ] AC-10: tenant A/Bへ同じdocIdを作成した越境negative matrixが、API/MCP/worker/browser cacheを含めて成功する。
+- [ ] AC-11: single-tenantのlocal-dev/evaluation/enterprise-production互換テストが維持され、SafeMode既定ON、proposal-only、provider=`none`を弱めない。
+- [ ] AC-12: Round 8 R8-E/FはAC-1〜11完了後だけ有効化され、390/768/1440px、ja/en、keyboard/focus、tenant切替時の旧DOM/cache破棄を検証する。
+
+## 検証計画
+
+- 実行する確認:
+  - migrationのfresh DB / existing DB / rerun / rollback rehearsal。
+  - repository・API・PDP adapterのunit/integration test。
+  - PostgreSQL RLSでtenant A/Bを切り替える直接SQL testとconnection pool再利用test。
+  - 同一docIdでGET/PUT/list/search/count/export/share/import/context/MCP/webhook/job/audit/agent credentialを試すnegative matrix。
+  - tenant切替後のDOM、memory、query cache、recent、QueryPreset、object URLの残留確認。
+  - 現行single-tenant回帰、SafeMode/share/export/import/AI proposal-only回帰。
+- 期待結果: tenant contextが欠落または不一致の経路はすべてfail-closedとなり、同一tenant内の許可済み操作と既存single-tenant利用だけが成功する。
+
+## 補足
+
+- 依存: `ADR-0059` Accepted、PostgreSQL test環境、外部PDP test double、Round 8 design input。
+- 主なリスク: backfill失敗、repository filter漏れ、RLS session変数のpool越し残留、capability cacheのtenant混在。
+- ロールバック: SaaS profileを有効化せず、expand列・新規表を残したままsingle-tenant adapterへ戻せる段階を維持する。tenant列をdropする破壊的rollbackは行わない。

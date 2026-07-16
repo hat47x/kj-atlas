@@ -930,6 +930,56 @@ export type MergeDecisionRecord = {
 
 この境界により、組織属性の最新性は外部IdP/PDPを正本とし、アプリ側の属性陳腐化リスクを回避する。
 
+### 10.4 SaaS tenant identity / persistence target（ADR-0059、L0 Planned）
+
+`ADR-0059`で次のtenant境界をAcceptedとする。ただし、現行物理DBには未実装であり、`SAAS-TENANT-01`のmigration・制約・越境テストが完了するまで共有SaaSへ適用しない。
+
+```ts
+export type TenantId = string;
+
+export type TenantContextV1 = {
+  tenantId: TenantId;
+  membershipId: string;
+  resolvedBy: "verified_claim" | "trusted_host_mapping";
+};
+
+export type TenantSummaryV1 = {
+  id: TenantId;
+  displayName: string;
+};
+
+export type TenantMembershipV1 = {
+  tenantId: TenantId;
+  userId: string;
+  lifecycleState: "active" | "suspended" | "deprovisioned";
+};
+
+export type EffectiveCapability =
+  | "document.read"
+  | "document.write"
+  | "document.export"
+  | "document.share"
+  | "membership.provision"
+  | "agent.register"
+  | "agent.revoke"
+  | "audit.read"
+  | "tenant.provision"
+  | "tenant.suspend";
+```
+
+target physical schema:
+
+- `tenants(id, display_name, lifecycle_state, created_at, updated_at)`
+- `identity_providers(id, issuer, audience, lifecycle_state, created_at, updated_at)`
+- `tenant_identity_providers(tenant_id, identity_provider_id, lifecycle_state, ...)`
+- `user_identities(user_id, identity_provider_id, subject, ...)` with `UNIQUE(identity_provider_id, subject)`
+- `tenant_memberships(tenant_id, user_id, lifecycle_state, ...)` with `UNIQUE(tenant_id, user_id)`
+- `documents(tenant_id, id, version, updated_at, payload_json)` with `UNIQUE(tenant_id, id)`
+- `merge_decision_logs(tenant_id, doc_id, ...)` with `FOREIGN KEY(tenant_id, doc_id) -> documents(tenant_id, id)`
+- 将来の`agent_registrations`、job、audit eventにもtenantIdを必須伝播する。
+
+tenantIdはserver-managed列であり、`DocumentV1` payload、view.json、import/export bundleの認可値として追加しない。現行`provider + external_uid`一意制約はsingle-tenant互換期間の実装であり、SaaS profileでは`identityProviderId + subject`とTenantMembershipへ移行する。共有schema型SaaSは、上記制約に加えPostgreSQL RLS等のDB側tenant guardを必須とする。
+
 ## 11. Polygon contract keys（FB-P0-2A2B2C）
 
 backend接続準備で利用する比較キーは次を最小契約とする。

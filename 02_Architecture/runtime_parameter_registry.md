@@ -20,6 +20,7 @@
 | `local-dev` | 開発者の手元で最小起動する | `KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db`, `KJ_ATLAS_LLM_PROVIDER=none`, `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` | 外部サービスを使わずに動作確認する。共有・export の安全境界は緩めない。 |
 | `evaluation` | Docker Compose で利用者評価や検証を行う | `KJ_ATLAS_DATABASE_URL=postgresql+asyncpg://...`, `KJ_ATLAS_LLM_PROVIDER=none`, `KJ_ATLAS_AUDIT_TRANSPORT=noop`, `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=noop` | 組織内評価では PostgreSQL を推奨する。LLM、監査HTTP連携、外部PDP連携は明示的に必要な場合だけ有効化する。 |
 | `enterprise-production` | 企業・行政の本番相当で運用する | `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`, `KJ_ATLAS_LLM_PROVIDER=none`, `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only` または `deny` | 認証、認可、監査の接続先は組織基盤で管理する。HTTP連携を使う場合は接続先、timeout、fail-safe、秘密情報管理を同時に確認する。 |
+| `saas-multitenant`（予約・利用不可） | 相互に信頼しない複数tenantを同じサービスへ収容する | PostgreSQL等のDB側tenant guard、検証済みTenantContext、`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`, `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http`, `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=deny` | `ADR-0059`のImplementation gateと`SAAS-TENANT-01`が未完了のため、現行releaseでは選択してはならない。SQLite、noop、mock、read_only、endpoint欠損時fallbackを許可しない。 |
 
 Profile に関係なく、利用者が設定する公開環境変数は例外なく `KJ_ATLAS_*` で始めます。サードパーティが別名を要求する場合は、実装または deployment adapter が内部で写像します。
 
@@ -47,6 +48,15 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 3. `enterprise-production` を選ぶ条件
    - 認証・認可・監査の責務分離が必要で、障害時の fail-safe を `read_only` か `deny` で固定する。
    - JIT provisioning を無効化し、運用承認済みの接続先・秘密管理がある。
+4. `saas-multitenant` は現行releaseで選択不可
+   - `enterprise-production`を共有SaaSとして読み替えない。
+   - TenantContext、tenant従属DB制約、DB側tenant guard、deny-only adapter、越境negative testが実装・検証されるまで予約名に留める。
+
+### SaaS profile implementation gate（ADR-0059）
+
+- 現時点ではprofile選択用の新しい公開環境変数を追加しない。`saas-multitenant`を有効値として受理する実装も存在しない。
+- 実装issueでは、profileを明示選択でき、tenant解決またはPDP/DB guardの設定が欠ける場合に起動をfail-fastできる設定契約を本registryへ先行追加する。
+- `external_http` endpoint欠損時のnoop fallbackは既存profileの互換挙動としてのみ残し、SaaS profileでは禁止する。
 
 ### Drift check gates（設定ドリフト防止ゲート）
 
@@ -183,7 +193,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 1. **Naming**: 追加・変更する公開キーが `KJ_ATLAS_*` で始まること。
 2. **Defaults**: `Default` 列と実装既定値（settings/frontend build）が一致していること。
 3. **Boundary**: vendor 名（例: `POSTGRES_*`）を public key として公開文書に露出していないこと。
-4. **Profiles**: `local-dev` / `evaluation` / `enterprise-production` の推奨差分が変更理由と整合していること。
+4. **Profiles**: `local-dev` / `evaluation` / `enterprise-production` の推奨差分が変更理由と整合し、予約中の`saas-multitenant`を利用可能と誤記していないこと。
 5. **Cross-doc sync**: `deployment.md` と `04_Documentation/configuration.md` に同じ公開キー集合が反映されていること。
 6. **Compatibility gate**: 非互換が必要な場合は即実装せず、ADR/Issue に Go/No-Go とロールバックを先に記録すること。
 

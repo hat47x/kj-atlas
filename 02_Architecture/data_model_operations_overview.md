@@ -97,6 +97,75 @@ erDiagram
 - View/Perspective状態、QueryPreset（D2）: 既存 `view.json` ファイルとdevice-local（browser storage）を正本のまま維持する（新規テーブルなし）。
 - エージェント登録（D3）: `agent_registrations` 相当をサーバー正本として採用済みだが、実装は `EXT-CONN-02` で行う契約先行決定であり、実装されるまで本ER図には含めない。
 
+### 2.1 SaaS tenant target model（ADR-0059、現行未実装）
+
+次は`ADR-0059`でAcceptedとなったtargetであり、上記の現行物理ER図を実装済みとして置換するものではない。`SAAS-TENANT-01`のexpand/backfill/constraintと越境テストが完了するまでSupport levelはL0とする。
+
+```mermaid
+erDiagram
+    TENANT_ROW ||--o{ TENANT_IDP_ROW : allows
+    IDENTITY_PROVIDER_ROW ||--o{ TENANT_IDP_ROW : bound_to
+    USER_ROW ||--o{ USER_IDENTITY_ROW : maps
+    IDENTITY_PROVIDER_ROW ||--o{ USER_IDENTITY_ROW : verifies
+    TENANT_ROW ||--o{ TENANT_MEMBERSHIP_ROW : has
+    USER_ROW ||--o{ TENANT_MEMBERSHIP_ROW : joins
+    TENANT_ROW ||--o{ DOCUMENT_ROW : owns
+    DOCUMENT_ROW ||--o{ MERGE_DECISION_LOG_ROW : has
+
+    TENANT_ROW {
+        text id PK
+        text display_name
+        text lifecycle_state
+    }
+
+    IDENTITY_PROVIDER_ROW {
+        text id PK
+        text issuer
+        text audience
+        text lifecycle_state
+    }
+
+    TENANT_IDP_ROW {
+        text tenant_id FK
+        text identity_provider_id FK
+        text lifecycle_state
+    }
+
+    USER_IDENTITY_ROW {
+        integer id PK
+        text user_id FK
+        text identity_provider_id FK
+        text subject
+    }
+
+    TENANT_MEMBERSHIP_ROW {
+        text tenant_id FK
+        text user_id FK
+        text lifecycle_state
+    }
+
+    DOCUMENT_ROW {
+        text tenant_id PK
+        text id PK
+        integer version
+        text updated_at
+        text payload_json
+    }
+
+    MERGE_DECISION_LOG_ROW {
+        text tenant_id FK
+        text doc_id FK
+        integer id
+        text payload_json
+    }
+```
+
+- identityは`identity_provider_id + subject`、membershipは`tenant_id + user_id`で一意にする。
+- Documentとすべての子行は`tenant_id + id`の複合識別・複合外部キーを使い、docIdだけのquery/joinを提供しない。
+- tenantIdはserver-managed列であり、DocumentV1 payloadやimport/export値から認可境界を復元しない。
+- shared schema型SaaSはアプリfilterだけでなくPostgreSQL RLS等のDB側tenant guardを必須とする。SQLiteはsingle-tenant用途に限定する。
+- agent registration、job、cache、search index、object-storage key、audit、backup manifestにも同じtenantIdを伝播する。
+
 ---
 
 ## 3. 論理データモデル
