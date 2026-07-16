@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、既に採択・実装された単一V1契約の文書回帰だけを是正する。
 
 - Type: Bug / Documentation
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -98,7 +98,12 @@ ADR-0058と`DATA-CONTRACT-RESET-01`は、旧最小V1と旧V2を廃止し、現�
 - frontend: `npm run typecheck`クリーン、`npx vitest run` 1063/1063 pass（既存の無関係な1ファイル失敗はリポジトリルート非同梱の副作用、T4-T7と同じ）。
 - backendのroundtrip/API contract testは本セッションでは未実行（環境上Python側のpytestランナーが利用できず、unittestで代替検証した範囲に留まる）。
 
-**未完了・人手待ち**: 「実行順序と分担境界」の段階5「MaintainerがDone issueへのfollow-up導線、全検証結果、SafeMode/share-export非回帰を確認する」は人手のMaintainer確認であり、本セッションでは完了させていない。全AC達成の確認までは行ったが、Statusは`Open`のまま維持し、Maintainerの最終確認を経てDoneへ遷移させることを推奨する。
+### Maintainer完了確認（2026-07-16）
+
+- `python 01_Plans/docs_check.py` が成功し、Active memo 25件・追跡Markdown 377件で文書契約違反がないことを確認した。
+- backendのデータ運用・Document往復契約は31 passed / 21 skipped、frontendのV1 validator・ZIP import契約は26/26 passedだった。
+- `DC-ARC-001`、Done issueへのfollow-up導線、単一V1成功系、旧version 2のfail-closed負例を再確認した。SafeMode、share/export、proposal-only、`human_reviewed`人手限定の変更はない。
+- 全受入条件と段階5のMaintainer確認を満たしたため、本issueをDoneとする。
 
 ## 検証計画
 
