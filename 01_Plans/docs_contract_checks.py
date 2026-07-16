@@ -14,6 +14,7 @@ CURRENT_HISTORY_RULE_ID = "DC-CUR-001"
 HISTORY_METADATA_RULE_ID = "DC-HIS-001"
 ARCHITECTURE_BASELINE_RULE_ID = "DC-ARC-001"
 PUBLIC_BOUNDARY_RULE_ID = "DC-PUB-001"
+SAFETY_ROUTE_RULE_ID = "DC-SAF-001"
 DOCUMENT_TYPE_RE = re.compile(r"export type (Document\w*)\s*=\s*\{\s*\r?\n\s*version:\s*([^;]+);")
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
@@ -90,6 +91,26 @@ SCREENSHOT_LEDGER_REQUIRED_TERMS = (
     "生成スクリプト",
     "検証結果",
 )
+AGENT_ENTRY_PATH = Path("AGENTS.md")
+AGENT_SAFETY_REQUIRED_TERMS = (
+    "SafeModeは既定ON",
+    "AI出力はproposal-only",
+    "`human_reviewed` は人間だけが設定する",
+    "`KJ_ATLAS_LLM_PROVIDER=none` でも主要価値が成立する",
+    "share/exportで未レビュー情報や秘密情報を意図せず共有しない",
+    "import/zip/markdownは不正入力を安全側で拒否または無害化する",
+)
+AGENT_SAFETY_REQUIRED_ROUTES = (
+    "THREAT_MODEL.md",
+    "02_Architecture/architecture.md",
+    "04_Documentation/public_index.md",
+)
+PUBLIC_SAFETY_ROUTES = {
+    "data_handling.md": ("SafeMode", "未レビュー", "共有"),
+    "security.md": ("SafeMode", "共有"),
+    "ce2_low_risk_ai_assist.md": ("proposal-only", "human_reviewed"),
+    "configuration.md": ("KJ_ATLAS_LLM_PROVIDER=none",),
+}
 
 
 @dataclass(frozen=True)
@@ -462,6 +483,81 @@ def check_public_boundary(
     return findings
 
 
+def check_safety_routes(
+    root: Path,
+    agent_entry_path: Path = AGENT_ENTRY_PATH,
+    public_entry_path: Path = PUBLIC_ENTRY_PATH,
+) -> list[DocsCheckFinding]:
+    """Return DC-SAF-001 findings when agent or public safety routes are incomplete."""
+    findings: list[DocsCheckFinding] = []
+    agent_text = (root / agent_entry_path).read_text(encoding="utf-8")
+    public_text = (root / public_entry_path).read_text(encoding="utf-8")
+
+    for term in AGENT_SAFETY_REQUIRED_TERMS:
+        if term in agent_text:
+            continue
+        findings.append(
+            DocsCheckFinding(
+                rule_id=SAFETY_ROUTE_RULE_ID,
+                path=agent_entry_path.as_posix(),
+                line=1,
+                target=term,
+                message=f"the AI entrypoint is missing a safety invariant: {term}",
+                fix_hint="Restore the invariant in AGENTS.md without weakening its fail-safe meaning.",
+            )
+        )
+
+    for route in AGENT_SAFETY_REQUIRED_ROUTES:
+        if route in agent_text and (root / route).exists():
+            continue
+        findings.append(
+            DocsCheckFinding(
+                rule_id=SAFETY_ROUTE_RULE_ID,
+                path=agent_entry_path.as_posix(),
+                line=1,
+                target=route,
+                message=f"the AI entrypoint has no valid route to a safety source: {route}",
+                fix_hint="Restore the repository-relative path in AGENTS.md and ensure the target exists.",
+            )
+        )
+
+    public_destinations = {
+        urlsplit(_link_destination(match.group("target"))).path
+        for match in MARKDOWN_LINK_RE.finditer(_without_code(public_text))
+    }
+    for destination, required_terms in PUBLIC_SAFETY_ROUTES.items():
+        target_path = public_entry_path.parent / destination
+        if destination not in public_destinations or not (root / target_path).exists():
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=SAFETY_ROUTE_RULE_ID,
+                    path=public_entry_path.as_posix(),
+                    line=1,
+                    target=destination,
+                    message=f"the public entry has no valid route to a safety guide: {destination}",
+                    fix_hint=f"Add or restore a Markdown link to {destination} from public_index.md.",
+                )
+            )
+            continue
+
+        target_text = (root / target_path).read_text(encoding="utf-8")
+        for term in required_terms:
+            if term in target_text:
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=SAFETY_ROUTE_RULE_ID,
+                    path=target_path.as_posix(),
+                    line=1,
+                    target=term,
+                    message=f"the routed safety guide is missing its required boundary: {term}",
+                    fix_hint=f"Restore the {term} explanation in {destination} or route to the current guide.",
+                )
+            )
+
+    return findings
+
+
 def tracked_markdown_paths(root: Path) -> list[Path]:
     """Return tracked Markdown paths so generated and dependency files stay out of scope."""
     result = subprocess.run(
@@ -488,6 +584,7 @@ def main() -> int:
     findings.extend(check_document_contract_baseline(root))
     findings.extend(check_history_metadata(root))
     findings.extend(check_public_boundary(root))
+    findings.extend(check_safety_routes(root))
 
     if findings:
         print("documentation contract validation failed:")

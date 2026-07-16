@@ -386,5 +386,53 @@ class PublicBoundaryTest(unittest.TestCase):
         self.assertIn("source revision", targets)
 
 
+class SafetyRouteTest(unittest.TestCase):
+    def _write_fixtures(self, root: Path, agent_text: str, public_text: str) -> None:
+        (root / "AGENTS.md").write_text(agent_text, encoding="utf-8")
+        (root / "THREAT_MODEL.md").write_text("# Threat model\n", encoding="utf-8")
+        (root / "02_Architecture").mkdir()
+        (root / "02_Architecture" / "architecture.md").write_text("# Architecture\n", encoding="utf-8")
+        docs = root / "04_Documentation"
+        docs.mkdir()
+        (docs / "public_index.md").write_text(public_text, encoding="utf-8")
+        for destination, required_terms in MODULE.PUBLIC_SAFETY_ROUTES.items():
+            (docs / destination).write_text("\n".join(required_terms), encoding="utf-8")
+
+    def test_accepts_complete_agent_invariants_and_public_routes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            routes = "\n".join(f"[{name}]({name})" for name in MODULE.PUBLIC_SAFETY_ROUTES)
+            agent_text = "\n".join(
+                (*MODULE.AGENT_SAFETY_REQUIRED_TERMS, *MODULE.AGENT_SAFETY_REQUIRED_ROUTES)
+            )
+            self._write_fixtures(root, agent_text, routes)
+
+            findings = MODULE.check_safety_routes(root)
+
+        self.assertEqual(findings, [])
+
+    def test_reports_missing_invariant_route_and_target_boundary(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            routes = "\n".join(
+                f"[{name}]({name})"
+                for name in MODULE.PUBLIC_SAFETY_ROUTES
+                if name != "security.md"
+            )
+            self._write_fixtures(root, "THREAT_MODEL.md\n", routes)
+            (root / "04_Documentation" / "ce2_low_risk_ai_assist.md").write_text(
+                "proposal-only\n", encoding="utf-8"
+            )
+
+            findings = MODULE.check_safety_routes(root)
+
+        self.assertTrue(all(f.rule_id == "DC-SAF-001" for f in findings))
+        targets = {f.target for f in findings}
+        self.assertIn("SafeModeは既定ON", targets)
+        self.assertIn("02_Architecture/architecture.md", targets)
+        self.assertIn("security.md", targets)
+        self.assertIn("human_reviewed", targets)
+
+
 if __name__ == "__main__":
     unittest.main()
