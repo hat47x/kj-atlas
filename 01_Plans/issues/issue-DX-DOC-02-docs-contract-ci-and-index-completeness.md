@@ -1,7 +1,7 @@
 # Issue: DX-DOC-02 docs-contract CIとActive issue完全性のfail-closed化
 
 - Type: Process / Documentation quality
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -116,7 +116,7 @@ Open化条件:
 - [x] broken relative linkとSSOT参照先不在を検出する。
 - [x] 公開版UI catalog等への内部管理語再混入とprovenance欠落を検出する。
 - [x] SafeMode、共有/書き出し、proposal-only、human review、provider=`none`の不変条件参照欠落を検出する。
-- [ ] docs-only PRへ不要なfrontend/backend E2Eを強制しない。
+- [x] docs-only PRへ不要なfrontend/backend E2Eを強制しない。
 - [x] CI jobとvalidatorの失敗理由が、対象ファイル・rule ID・修正先を示す（`DocsCheckFinding.render()`が全checkerで`{rule_id} {path}:{line}: {message} Fix: {fix_hint}`形式を共有する）。
 
 ## 6) 実装タスク分解 / Task breakdown
@@ -127,7 +127,7 @@ Open化条件:
 - [x] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
 - [x] T5 既存Backend CI jobへblocking docs-check stepを追加し、既存PRで動作確認する。
 - [x] T6 PR templateへ証跡欄を追加する（`.github/pull_request_template.md`の`command/result/not_executed_reason/resume_condition`欄で充足済み。commit `439867a9`）。
-- [ ] T7 負例fixtureでfail、現行repositoryでpass、変更対象外のアプリtest非干渉を検証する。
+- [x] T7 負例fixtureでfail、現行repositoryでpass、変更対象外のアプリtest非干渉を検証する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -293,7 +293,8 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - docs-only、frontendのみ、backendのみ、CI/分類器変更、Windows区切りの正常/負例4件を追加した。workflow自体を変更する本PRでは全アプリjobを実行し、次のdocs-only検証PRでskip結果とrequired checkへの非干渉を確認してから受入条件とT7を完了する。
 - 既存のCI責務分離を変更せず実行範囲だけを狭めるため、新規ADRは不要と判断した。
 
-## docs-only CI実証 2026-07-16: 検証開始
+## docs-only CI実証・完了記録 2026-07-16
 
 - 実装PR #2612では、workflow変更を`frontend=true / backend=true`と判定し、既存の全アプリjobとdocs-contractが成功した。
-- 本節だけを変更するdocs-only PRを実証対象とする。`Detect application change scope`と`Docs contract`が成功し、frontend 6 jobとbackend jobがskipされ、PRをblockしないことを確認後に完了記録へ更新する。
+- docs-only PR #2613の初回実行（GitHub Actions run `29497878661`）で、`Detect application change scope`と`Docs contract`が成功し、frontend 6 jobとbackend jobがすべて`skipped`となり、PR全体が成功した。
+- 正常/負例fixture、現行repositoryのdocs-check、workflow変更時の全job実行、docs-only変更時の重いjob省略を確認したため、T7と全受入条件を完了した。
