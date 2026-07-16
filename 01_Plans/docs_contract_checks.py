@@ -355,13 +355,14 @@ def check_history_metadata(
 
 
 def tracked_markdown_paths(root: Path) -> list[Path]:
-    """Return tracked Markdown paths so generated and dependency files stay out of scope."""
+    """Return tracked Markdown paths that are present in the working tree."""
     result = subprocess.run(
         ["git", "-C", str(root), "ls-files", "-z", "--", "*.md"],
         check=True,
         capture_output=True,
     )
-    return [Path(raw.decode("utf-8")) for raw in result.stdout.split(b"\0") if raw]
+    paths = [Path(raw.decode("utf-8")) for raw in result.stdout.split(b"\0") if raw]
+    return [path for path in paths if (root / path).is_file()]
 
 
 def main() -> int:

@@ -94,6 +94,24 @@ class RelativeLinkCheckTest(unittest.TestCase):
 
         self.assertEqual(paths, [Path("tracked.md")])
 
+    def test_tracked_markdown_paths_excludes_deleted_worktree_files(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            present = root / "present.md"
+            deleted = root / "deleted.md"
+            present.write_text("# Present\n", encoding="utf-8")
+            deleted.write_text("# Deleted\n", encoding="utf-8")
+            subprocess.run(
+                ["git", "-C", str(root), "add", "present.md", "deleted.md"],
+                check=True,
+            )
+            deleted.unlink()
+
+            paths = MODULE.tracked_markdown_paths(root)
+
+        self.assertEqual(paths, [Path("present.md")])
+
 
 class CurrentHistoryBoundaryTest(unittest.TestCase):
     def test_reports_execution_history_heading_with_fix(self):
