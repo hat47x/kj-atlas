@@ -74,7 +74,7 @@ def test_crud_support_table_keeps_support_levels_and_owners() -> None:
         assert _find_row(rows, label)[1] == support_level
 
 
-def test_document_v2_field_table_keeps_embedded_and_contract_boundaries() -> None:
+def test_document_v1_field_table_keeps_embedded_and_contract_boundaries() -> None:
     text = _read(DATA_MODEL_OVERVIEW)
     rows = _table_rows(text, "フィールド | Support level")
 
