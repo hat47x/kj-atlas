@@ -52,8 +52,8 @@
 
 - [x] AC-1: D1〜D4 の判断が記録され、`data_model_operations_overview.md` の ER図・CRUD表・サポートレベル表が同時更新される（§7 更新ルール遵守）。
 - [x] AC-2: 文書一覧APIは本文（payload_json の cards/narratives 等）を一切返さない契約として `api.md` / `schemas.md` に先行固定される。→ `api.md` §2.4・`schemas.md` §3.4.1 として固定済み（2026-07-16、下記「実装記録」参照）。
-- [ ] AC-3: localStorage「最近」はサーバー一覧のキャッシュとして再定義され、両者の不一致時はサーバーを正とする。
-- [ ] AC-4: View/PerspectiveとQueryPresetの置き場判断が契約へ反映され、device-local QueryPresetには「この端末のみ」が利用者に見える形で明示される。
+- [x] AC-3: localStorage「最近」はサーバー一覧のキャッシュとして再定義され、両者の不一致時はサーバーを正とする。→ `data_model_operations_overview.md` CRUD表 + `recent.ts` コメントとして契約反映済み（2026-07-17）。不一致時のサーバー優先ロジック実装は `GET /docs` API実装時に追加する。
+- [x] AC-4: View/PerspectiveとQueryPresetの置き場判断が契約へ反映され、device-local QueryPresetには「この端末のみ」が利用者に見える形で明示される。→ `PatchWorkspacePanel.tsx` + i18n en/ja に device-local 明示追加済み（2026-07-17）。
 - [x] AC-5: エージェント登録の正本・認可モデルが EXT-CONN-02 の実装前提として固定される（トークンは平文保存しない）。→ `api.md` §9.5 として固定済み（2026-07-16、下記「実装記録」参照）。
 - [ ] AC-6: 管理UI設計要求（Round 8）の入力パッケージ（確定した正本・権限・本文非表示原則・対象画面一覧）が `ui_design_handoff.md` の受け渡し形式で準備できる状態になる。
 

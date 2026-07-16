@@ -897,6 +897,7 @@
   "patch_workspace.preset_scope_label": "検索範囲",
   "patch_workspace.preset_depth_label": "検索の深さ",
   "patch_workspace.filters_placeholder": "フィルター（カンマ区切り）",
+  "patch_workspace.device_local_hint": "検索条件セットはこの端末のみに保存されます。",
   "patch_workspace.save_preset": "条件セットを保存",
   "patch_workspace.no_saved_presets": "保存済みの条件セットはありません。",
   "patch_workspace.run_preset": "{name} を実行",

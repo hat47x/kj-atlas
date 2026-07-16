@@ -1,7 +1,7 @@
 # Issue Draft: DATA-MAINT-04 本文を含まない監査メタデータ閲覧の製品境界
 
 - Type: Security
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2

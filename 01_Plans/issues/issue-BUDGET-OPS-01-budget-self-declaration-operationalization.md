@@ -3,7 +3,7 @@
 > 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0043` / `ADR-0046` の運用定着。docs/テンプレのみ。
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
