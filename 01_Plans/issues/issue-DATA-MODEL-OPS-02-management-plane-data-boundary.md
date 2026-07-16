@@ -54,7 +54,7 @@
 - [x] AC-2: 文書一覧APIは本文（payload_json の cards/narratives 等）を一切返さない契約として `api.md` / `schemas.md` に先行固定される。→ `api.md` §2.4・`schemas.md` §3.4.1 として固定済み（2026-07-16、下記「実装記録」参照）。
 - [ ] AC-3: localStorage「最近」はサーバー一覧のキャッシュとして再定義され、両者の不一致時はサーバーを正とする。
 - [ ] AC-4: View/PerspectiveとQueryPresetの置き場判断が契約へ反映され、device-local QueryPresetには「この端末のみ」が利用者に見える形で明示される。
-- [x] AC-5: エージェント登録の正本・認可モデルが EXT-CONN-02 の実装前提として固定される（トークンは平文保存しない）。→ `api.md` §9.5 として固定済み（2026-07-16、下記「実装記録」参照）。
+- [ ] AC-5: エージェント登録の正本・認可モデルが EXT-CONN-02 の実装前提として固定される（トークンは平文保存しない）。
 - [ ] AC-6: 管理UI設計要求（Round 8）の入力パッケージ（確定した正本・権限・本文非表示原則・対象画面一覧）が `ui_design_handoff.md` の受け渡し形式で準備できる状態になる。
 
 ### AC-1 実装証跡（2026-07-16）
@@ -76,17 +76,6 @@
 - `schemas.md` §3.4.1として`DocumentListItemV1`型を新規追加した。`DocumentV1`の部分集合ではなく独立した最小射影型とし、本文・構造フィールドは空配列であっても含めないことをコメントで明記した。この型は一覧表示専用の射影であり、`DocumentV1`への書き戻し・保存契約には関与しない。
 - `data_model_operations_overview.md`のCRUD表（§4、AC-1で記録済み）は既に同じ契約（`id`/`title`/`updatedAt`のallowlist、fail-closed方針）を記述していたため、今回の契約固定と整合していることを確認した（変更なし）。
 - 本スライスはMarkdownのみであり、frontend/backendのコード変更・API実装は行っていない（実装着手はAC-2の範囲外、既存の契約先行固定の方針どおり）。
-
-検証結果:
-- `python 01_Plans/docs_check.py`: pass。
-- `python 01_Plans/issues/validate_active_issue_memos.py`: pass（25 active issue memos）。
-
-### AC-5 実装記録（2026-07-16）: エージェント登録の正本・認可モデルを先行固定
-
-- `api.md` §9.5として新規節「エージェント登録 API（契約先行固定、`DATA-MODEL-OPS-02` D3/AC-5）」を追加した。§9.3の事前プロビジョニングAPI（strict provisioning）と同じ型を踏襲し、`POST /admin/agent-registrations`（作成、token平文はこの応答でのみ返る）・`GET /admin/agent-registrations`（一覧、`token`/`tokenHash`非含有）・`DELETE /admin/agent-registrations/{id}`（失効）の3エンドポイントと`AdminCreateAgentRegistrationRequest`/`AdminCreateAgentRegistrationResponse`/`AdminAgentRegistrationSummary`型を定義した。
-- D3確定事項を契約へ反映: 登録・失効はadmin限定（文書ownerによるtoken発行は不採用）、平文tokenは作成時に一度だけ表示し以後はhashのみで照合、登録は文書単位（`docId`）に束縛し登録自体を文書書込権限とみなさない（ingestごとに既存access-controlで別途許可判定）。
-- `data_model_operations_overview.md`のCRUD表（§4、行167）を更新し、Create/Read/Delete列に上記3エンドポイントを反映、備考に`api.md` §9.5への参照を追加した。ER図（§2、既存記述）はEXT-CONN-02実装まで本テーブルを含めない方針を維持しており変更不要だった。
-- 本スライスはMarkdownのみであり、frontend/backendのコード変更・エンドポイント実装は行っていない（実装はEXT-CONN-02のスコープ、本ACは契約先行固定のみ）。
 
 検証結果:
 - `python 01_Plans/docs_check.py`: pass。
