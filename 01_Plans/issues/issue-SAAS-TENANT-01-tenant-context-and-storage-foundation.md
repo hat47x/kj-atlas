@@ -86,3 +86,11 @@
 - 既存Userを`local-default` membershipへbackfillし、新規JIT/strict provisioningでも同membershipを冪等に作成する。
 - Documentの全体PK、判断ログのdocId FK、`provider + external_uid`identityはまだ切り替えていない。RLS、TenantContext、SaaS profile、session API、frontendは未着手であり、共有SaaSは引き続き禁止する。
 - 検証: Ruff pass、新規ファイルformat check pass、backend全体298件pass・PostgreSQL等の条件付き24件skip、docs-check pass。Docker/PostgreSQLを利用できない環境のため、PostgreSQL migration/RLS検証は次段階へ残す。
+
+### Implementation checkpoint 2026-07-16: tenant-scoped Document repository
+
+- 内部`TenantContext`と`single_tenant_adapter`用`LOCAL_DEFAULT_TENANT_CONTEXT`を追加した。anonymousを許容する現行互換のためmembershipIdは未設定であり、SaaSのverified contextとしては扱わない。
+- Document取得・一覧、判断ログのgroup/snapshot取得をtenant必須repositoryへ集約し、docs routeの作成・取得・判断ログ追加でも`tenant_id`を明示するようにした。
+- review attribution backfillは`local-default`のDocumentだけを対象にし、将来tenant追加後の無条件全件走査を防止した。
+- tenant A/Bで異なるdocIdと同じgroup/snapshotを使うrepository negative testを追加した。同一docId fixtureは現行のglobal PKを複合PKへ移行するまで作成できない。
+- 検証: Ruff pass、Document roundtrip/access-control/backfill/repository近接45件pass、backend全体300件pass・条件付き24件skip、docs-check pass。verified TenantContext、PDP payload、同一docId、RLSは未実装のため共有SaaSは禁止を継続する。

@@ -142,7 +142,7 @@ erDiagram
 
 ### 2.1 SaaS tenant target model（ADR-0059、expand foundation実装済み）
 
-次は`ADR-0059`でAcceptedとなった最終targetである。Alembic `20260716_0006`でtenant/IdP/membership表、Document/判断ログのtenant列、`local-default` backfillまでは実装した。一方、identity binding移行、Document複合PK/FK、RLS、TenantContext必須repository、越境テストは未実装であり、完了までSupport levelはL0とする。
+次は`ADR-0059`でAcceptedとなった最終targetである。Alembic `20260716_0006`でtenant/IdP/membership表、Document/判断ログのtenant列、`local-default` backfillを実装し、Document/判断ログ/backfillのDB queryは内部TenantContext必須repositoryへ集約した。一方、verified TenantContext解決、identity binding移行、Document複合PK/FK、RLS、全consumerへの伝播、越境テストは未実装であり、完了までSupport levelはL0とする。
 
 ```mermaid
 erDiagram
@@ -209,7 +209,7 @@ erDiagram
 - shared schema型SaaSはアプリfilterだけでなくPostgreSQL RLS等のDB側tenant guardを必須とする。SQLiteはsingle-tenant用途に限定する。
 - agent registration、job、cache、search index、object-storage key、audit、backup manifestにも同じtenantIdを伝播する。
 
-`20260716_0006`の`tenant_id`既定値は既存single-tenant APIを維持するためのexpand限定措置である。SaaS profileを有効化する前に、全repositoryをTenantContext必須へ切り替え、暗黙`local-default`へ依存しない制約段階へ進む。
+`20260716_0006`の`tenant_id`既定値は既存single-tenant APIを維持するためのexpand限定措置である。Document repositoryはTenantContext必須だが、現行routeは内部`single_tenant_adapter`から`local-default`を注入する。SaaS profileを有効化する前に、verified contextを解決し、全consumerをtenant必須へ切り替え、暗黙`local-default`へ依存しない制約段階へ進む。
 
 ---
 

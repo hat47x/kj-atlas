@@ -8,7 +8,9 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.models import DocumentRow, UserIdentityRow
+from kj_atlas_api.document_repository import list_document_rows
+from kj_atlas_api.models import UserIdentityRow
+from kj_atlas_api.tenant_context import LOCAL_DEFAULT_TENANT_CONTEXT
 
 
 @dataclass(frozen=True)
@@ -99,7 +101,7 @@ def run_backfill(*, database_url: str, mapping_path: Path, dry_run: bool) -> Bac
         with session_local() as db:
             mapping = _validated_mapping(db, _load_mapping(mapping_path))
             stats = BackfillStats()
-            rows = db.query(DocumentRow).all()
+            rows = list_document_rows(db, tenant=LOCAL_DEFAULT_TENANT_CONTEXT)
             for row in rows:
                 stats = BackfillStats(
                     scanned_documents=stats.scanned_documents + 1,

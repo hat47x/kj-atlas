@@ -8,7 +8,6 @@ from typing import Literal, cast
 
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
-from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -29,6 +28,11 @@ from kj_atlas_api.audit import build_event
 from kj_atlas_api.auth_assurance import build_auth_assurance_metadata
 from kj_atlas_api.auth_context import resolve_identity_context
 from kj_atlas_api.db import get_db
+from kj_atlas_api.document_repository import (
+    get_document_row,
+    list_merge_decision_logs_by_group as list_merge_log_rows_by_group,
+    list_merge_decision_logs_by_snapshot as list_merge_log_rows_by_snapshot,
+)
 from kj_atlas_api.models import (
     Card,
     CandidateListViewModel,
@@ -43,6 +47,7 @@ from kj_atlas_api.models import (
     SimilarCandidateScoreSummary,
 )
 from kj_atlas_api.settings import settings
+from kj_atlas_api.tenant_context import LOCAL_DEFAULT_TENANT_CONTEXT
 
 router = APIRouter(prefix="/docs", tags=["docs"])
 document_payload_adapter: TypeAdapter[DocumentPayload] = TypeAdapter(DocumentPayload)
@@ -329,7 +334,11 @@ def get_document(
 ) -> DocumentPayload:
     access_request, decision = _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
-    doc_row = db.get(DocumentRow, doc_id)
+    doc_row = get_document_row(
+        db,
+        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        doc_id=doc_id,
+    )
     if doc_row is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -382,7 +391,11 @@ def put_document(
     _validate_review_attribution_identity(document=document, identity=access_request.auth)
 
     payload_json = document.model_dump_json()
-    doc_row = db.get(DocumentRow, doc_id)
+    doc_row = get_document_row(
+        db,
+        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        doc_id=doc_id,
+    )
 
     if if_match is not None:
         if doc_row is None:
@@ -396,6 +409,7 @@ def put_document(
     if doc_row is None:
         doc_row = DocumentRow(
             id=doc_id,
+            tenant_id=LOCAL_DEFAULT_TENANT_CONTEXT.tenant_id,
             version=document.version,
             updated_at=document.updatedAt.isoformat(),
             payload_json=payload_json,
@@ -641,11 +655,16 @@ def append_merge_decision_log(
 ) -> MergeDecisionRecord:
     _authorize_request(request, db, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
-    if db.get(DocumentRow, doc_id) is None:
+    if get_document_row(
+        db,
+        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        doc_id=doc_id,
+    ) is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
     record = payload.record
     row = MergeDecisionLogRow(
+        tenant_id=LOCAL_DEFAULT_TENANT_CONTEXT.tenant_id,
         doc_id=doc_id,
         decision_id=record.decisionId,
         group_id=record.groupId,
@@ -673,15 +692,19 @@ def list_merge_decision_logs_by_group(
 ) -> list[MergeDecisionRecord]:
     _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
-    if db.get(DocumentRow, doc_id) is None:
+    if get_document_row(
+        db,
+        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        doc_id=doc_id,
+    ) is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    rows = db.scalars(
-        select(MergeDecisionLogRow)
-        .where(MergeDecisionLogRow.doc_id == doc_id)
-        .where(MergeDecisionLogRow.group_id == group_id)
-        .order_by(MergeDecisionLogRow.id.asc())
-    ).all()
+    rows = list_merge_log_rows_by_group(
+        db,
+        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        doc_id=doc_id,
+        group_id=group_id,
+    )
     return [MergeDecisionRecord.model_validate(json.loads(row.payload_json)) for row in rows]
 
 
@@ -695,15 +718,19 @@ def restore_merge_decision_logs(
 ) -> list[MergeDecisionRecord]:
     _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
-    if db.get(DocumentRow, doc_id) is None:
+    if get_document_row(
+        db,
+        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        doc_id=doc_id,
+    ) is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    rows = db.scalars(
-        select(MergeDecisionLogRow)
-        .where(MergeDecisionLogRow.doc_id == doc_id)
-        .where(MergeDecisionLogRow.snapshot_version == snapshot_version)
-        .order_by(MergeDecisionLogRow.id.asc())
-    ).all()
+    rows = list_merge_log_rows_by_snapshot(
+        db,
+        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        doc_id=doc_id,
+        snapshot_version=snapshot_version,
+    )
     return [MergeDecisionRecord.model_validate(json.loads(row.payload_json)) for row in rows]
 
 
@@ -716,7 +743,11 @@ def get_similar_candidate_groups(
 ) -> CandidateListViewModel:
     _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
-    doc_row = db.get(DocumentRow, doc_id)
+    doc_row = get_document_row(
+        db,
+        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        doc_id=doc_id,
+    )
     if doc_row is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -741,7 +772,11 @@ def verify_polygon_handoff_contract(
         read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
     )
 
-    if db.get(DocumentRow, doc_id) is None:
+    if get_document_row(
+        db,
+        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        doc_id=doc_id,
+    ) is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
     failure_reasons, status = _evaluate_polygon_handoff_rollback(payload)

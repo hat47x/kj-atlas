@@ -987,8 +987,9 @@ tenantIdはserver-managed列であり、`DocumentV1` payload、view.json、impor
 | tenant/IdP/binding/membership表 | Expand済み | `local-default`互換だけに使用 |
 | Document/判断ログtenant列・index | Expand済み | 暗黙既定値があるためSaaS境界には未使用 |
 | 新規JIT/strict Userのlocal membership | 実装済み | single-tenant互換用 |
+| Document/判断ログ/backfillのtenant-scoped repository | `local-default`で実装済み | verified TenantContextと複合キーが未実装のためSaaS blockerは継続 |
 | `user_identities`の`identityProviderId + subject`移行 | 未実装 | SaaS blocker |
-| Document複合PK/FK、tenant必須repository | 未実装 | SaaS blocker |
+| Document複合PK/FK、全consumerのtenant必須化 | 未実装 | SaaS blocker |
 | PostgreSQL RLS等のDB側guard | 未実装 | SaaS blocker |
 | verified TenantContext / capability API / negative matrix | 未実装 | SaaS blocker |
 
