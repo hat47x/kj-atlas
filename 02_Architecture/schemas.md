@@ -1059,7 +1059,7 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 
 - `Card.sources`（既存）: canonical 化における**統合元カード id** の配列。意味は不変（再定義禁止）。
 - `Card.meta.source`（本節）: **文書外部**の原データへの参照（自由記述）。カード id を指すためには使わない。
-- 起票者・作成者・最終更新者・所有者などの**主体（provenance/accountability）メタは `Card.meta` に含めない**。これらの UI・保存・redaction 境界は `CARD-META-UI-01`（Decision Queue: `CARD-META-UI-01-DQ-01`、Pending）の確定を待つ。本節が確定するのは非主体メタ（`seq`/`source`）のみである。
+- 起票者・作成者・最終更新者・所有者などの**主体（provenance/accountability）メタは `Card.meta` に含めない**。UI・保存・redaction境界はAcceptedの `ADR-0056` と `CARD-META-UI-01` に従い、主体メタデータを追加する場合はスキーマ、認証、権限、保持、共有範囲をまとめた新しい判断を先に行う。本節が確定するのは非主体メタ（`seq`/`source`）のみである。
 
 ### 15.3 取り込み境界（meta 内未知キーの fail-closed）
 

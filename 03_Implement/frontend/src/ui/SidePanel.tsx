@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { t } from "../i18n/translate";
+import { getActiveLocale, t } from "../i18n/translate";
 
 import { CRITIQUE_TAGS, KNOWN_EDGE_TYPES, resolveKnownEdgeType } from "../domain/types";
 import type { EdgeType, KnownEdgeType } from "../domain/types";
@@ -485,13 +485,13 @@ export function SidePanel({
     return [...mergeAuditLog].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   }, [mergeAuditLog]);
 
-  const formatSummaryHistoryTimestamp = (createdAt: string) => {
+  const formatTimestamp = (createdAt: string) => {
     const parsedDate = new Date(createdAt);
     if (Number.isNaN(parsedDate.getTime())) {
       return createdAt;
     }
 
-    return parsedDate.toLocaleString();
+    return parsedDate.toLocaleString(getActiveLocale() === "ja" ? "ja-JP" : "en-US");
   };
 
 
@@ -1493,7 +1493,7 @@ export function SidePanel({
                       }}
                       style={{ width: "100%", textAlign: "left", border: "none", background: "transparent", padding: 0, cursor: "pointer", display: "grid", gap: 4 }}
                     >
-                      <div style={{ fontSize: 11, color: "#64748b" }}>{formatSummaryHistoryTimestamp(entry.createdAt)}</div>
+                      <div style={{ fontSize: 11, color: "#64748b" }}>{formatTimestamp(entry.createdAt)}</div>
                       <div style={{ fontSize: 12, color: "#0f172a" }}>{entry.source.fileName ?? entry.source.packId ?? t("side_panel.merge_history.unknown_source")}</div>
                       <div style={{ fontSize: 11, color: "#334155" }}>
                         {t("side_panel.merge_history.items_summary", { count: entry.summary.totalItems, kinds: topKinds || t("side_panel.merge_history.no_kinds") })}
@@ -2670,7 +2670,7 @@ export function SidePanel({
                           gap: 4,
                         }}
                       >
-                        <div style={{ fontSize: 11, color: "#64748b" }}>{formatSummaryHistoryTimestamp(entry.createdAt)}</div>
+                        <div style={{ fontSize: 11, color: "#64748b" }}>{formatTimestamp(entry.createdAt)}</div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                           <span
                             style={{
@@ -3279,7 +3279,7 @@ export function SidePanel({
                                 gap: 4,
                               }}
                             >
-                              <div style={{ fontSize: 11, color: "#64748b" }}>{formatSummaryHistoryTimestamp(entry.createdAt)}</div>
+                              <div style={{ fontSize: 11, color: "#64748b" }}>{formatTimestamp(entry.createdAt)}</div>
                               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                                 <span
                                   style={{
@@ -3475,9 +3475,17 @@ export function SidePanel({
                       : t("side_panel.card_inspector.record_role_canonical")}
                   </dd>
                   <dt style={{ color: "#64748b" }}>{t("side_panel.card_inspector.document_created_at")}</dt>
-                  <dd style={{ margin: 0, color: "#0f172a", overflowWrap: "anywhere" }}>{document?.createdAt ?? t("side_panel.card_inspector.not_available")}</dd>
+                  <dd style={{ margin: 0, color: "#0f172a", overflowWrap: "anywhere" }}>
+                    {document?.createdAt
+                      ? <time dateTime={document.createdAt}>{formatTimestamp(document.createdAt)}</time>
+                      : t("side_panel.card_inspector.not_available")}
+                  </dd>
                   <dt style={{ color: "#64748b" }}>{t("side_panel.card_inspector.document_updated_at")}</dt>
-                  <dd style={{ margin: 0, color: "#0f172a", overflowWrap: "anywhere" }}>{document?.updatedAt ?? t("side_panel.card_inspector.not_available")}</dd>
+                  <dd style={{ margin: 0, color: "#0f172a", overflowWrap: "anywhere" }}>
+                    {document?.updatedAt
+                      ? <time dateTime={document.updatedAt}>{formatTimestamp(document.updatedAt)}</time>
+                      : t("side_panel.card_inspector.not_available")}
+                  </dd>
                   <dt style={{ color: "#64748b" }}>{t("side_panel.card_inspector.responsibility_metadata")}</dt>
                   <dd style={{ margin: 0, color: "#475569" }}>{t("side_panel.card_inspector.responsibility_metadata_unavailable")}</dd>
                 </dl>
