@@ -106,11 +106,12 @@ Open化ゲートを「依存解消ID」「段階ゲート順序」「失敗分�
 - **保留継続**: B-UNIT-01/B-UNIT-02/B-UNIT-03のいずれか未解消。
 
 ### Pending approvals（未承認は保持）
-- Pending-1: テスト拡張実行の着手承認（実装タスク起票）。
-- Pending-2: 上流契約凍結の最終承認反映。
+- Pending-1: テスト拡張実行の着手承認（実装タスク起票）。→ 承認済み（2026-07-16、Maintainer/hat47x、本セッションでの明示承認）。
+- Pending-2: 上流契約凍結の最終承認反映。→ 承認済み（2026-07-16、Maintainer/hat47x。参照する上流契約凍結は `DATA-CONTRACT-01`、Done）。
 
 ### Execution
-- `Execution: Hold`（Pending解消まで維持）
+- Pending-1/Pending-2は解消したが、B-UNIT-03（unit実行プロファイル未選択）が未解消のため、`Execution: Hold` を維持する。
+- `Execution: Hold`（承認以外の残blocker解消まで維持）
 
 
 ### 修復上限（共通）

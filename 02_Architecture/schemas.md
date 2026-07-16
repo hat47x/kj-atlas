@@ -569,6 +569,23 @@ export type DocumentV1 = {
 - `reviewAttribution.reviewedAt` は `human_reviewed` のとき ISO 8601、`unreviewed` のとき `null` とする。`reviewerRef` / `ownerRef` は不透明参照であり、生IDを含めない。
 - 個別EvidenceLink API、個別Card分類API、個別Edge endpoint APIはMVP範囲外とする。
 
+#### 3.4.1 DocumentListItemV1（一覧専用の最小射影、DATA-MODEL-OPS-02 D1/AC-2）
+
+`GET /docs`（`api.md` §2.4）が返す一覧項目は、`DocumentV1` の部分集合ではなく、次の allowlist 型のみを許可する契約とする。
+
+```ts
+export type DocumentListItemV1 = {
+  id: string;
+  title?: string;
+  updatedAt: string; // ISO 8601
+};
+```
+
+- `cards` / `edges` / `islands` / `narratives` / `evidenceLinks` / `relationSummaries` など `DocumentV1` の本文・構造フィールドは、空配列であっても一覧項目に含めない。
+- 対象集合は「現認可主体がread可能な文書」に限る。認証構成でowner/ACL解決ができない場合はfail-closed（エラー応答）とし、全文書露出へフォールバックしない。
+- `title` は `DocumentV1.title` と同じ optional 契約を継承する（無題文書は省略可）。
+- この型は一覧表示専用の射影であり、`DocumentV1` への書き戻し・保存契約には関与しない。
+
 ---
 
 ## 4. JSONスキーマ（サーバ検証用）

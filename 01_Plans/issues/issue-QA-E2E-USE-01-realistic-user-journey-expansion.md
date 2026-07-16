@@ -153,11 +153,12 @@ Open化ゲートを次の3カテゴリで固定する。
 - **保留継続**: B-USE-01/B-USE-02 のいずれか未解消。
 
 ### Pending approvals（未承認は保持）
-- Pending-1: 実運用E2E環境での実行承認。
-- Pending-2: QA-PUB-01 境界判定の最終レビュー承認。
+- Pending-1: 実運用E2E環境での実行承認。→ 承認済み（2026-07-16、Maintainer/hat47x、本セッションでの明示承認）。
+- Pending-2: QA-PUB-01 境界判定の最終レビュー承認。→ 承認済み（2026-07-16、Maintainer/hat47x。`QA-PUB-01-I18N-03` 側のPending-1/2も同日付で承認済み）。
 
 ### Execution
-- `Execution: Hold`（Pending解消まで維持）
+- Pending-1/Pending-2は解消したが、B-USE-03（ゲート解放証跡欄未固定）と `ADR-0019` 準拠の実行経路選択（O-USE-02）が未解消のため、`Execution: Hold` を維持する。
+- `Execution: Hold`（承認以外の残blocker解消まで維持）
 
 
 ### 修復上限（共通）

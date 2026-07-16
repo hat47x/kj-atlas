@@ -74,6 +74,7 @@
 
 - Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`, `02_Architecture/external_agent_collaboration_spec.md`（§7）
 - Related: `01_Plans/issues/issue-EXT-AGENT-01-agent-task-package-export.md`, `issue-EXT-AGENT-02-agent-response-import.md`, `04_Documentation/README.md`（公開境界）
+- Related: `01_Plans/issues/issue-GENAI-GOV-01-generative-ai-lane-boundary-and-readiness.md`（Lane C: 外部エージェント成果物連携）, `02_Architecture/value_traceability.md` §2.9
 - Derived-from: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`
 
 ## 完了記録 2026-07-09（Claude Code）
