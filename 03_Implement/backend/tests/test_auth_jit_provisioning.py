@@ -10,7 +10,14 @@ from sqlalchemy.orm import sessionmaker
 
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
-from kj_atlas_api.models import Base, UserIdentityRow, UserRow
+from kj_atlas_api.models import (
+    Base,
+    LOCAL_DEFAULT_TENANT_ID,
+    TenantMembershipRow,
+    TenantRow,
+    UserIdentityRow,
+    UserRow,
+)
 from kj_atlas_api.settings import settings
 
 
@@ -71,6 +78,10 @@ def test_jit_provisioning_creates_users_and_identities(tmp_path) -> None:
                 identity = db.query(UserIdentityRow).one()
                 assert identity.provider == "oidc"
                 assert identity.external_uid == "alice"
+                assert db.get(TenantRow, LOCAL_DEFAULT_TENANT_ID) is not None
+                membership = db.query(TenantMembershipRow).one()
+                assert membership.tenant_id == LOCAL_DEFAULT_TENANT_ID
+                assert membership.user_id == identity.user_id
     finally:
         settings.allow_jit_provisioning = original_allow_jit
 
@@ -81,7 +92,7 @@ def test_strict_mode_requires_pre_provisioned_identity(tmp_path) -> None:
     settings.allow_jit_provisioning = False
     try:
         with _sqlite_client(tmp_path) as fixture:
-            client, _ = fixture
+            client, session_local = fixture
             denied = client.put(
                 "/docs/doc-auth-strict",
                 json=_sample_payload("doc-auth-strict"),
@@ -131,6 +142,11 @@ def test_strict_mode_requires_pre_provisioned_identity(tmp_path) -> None:
                 headers={"x-forwarded-user": "bob", "x-auth-provider": "saml"},
             )
             assert allowed.status_code == 200
+
+            with session_local() as db:
+                membership = db.query(TenantMembershipRow).one()
+                assert membership.tenant_id == LOCAL_DEFAULT_TENANT_ID
+                assert membership.user_id == provision.json()["userId"]
     finally:
         settings.allow_jit_provisioning = original_allow_jit
 

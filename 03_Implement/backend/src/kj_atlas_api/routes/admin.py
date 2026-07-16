@@ -16,6 +16,7 @@ from kj_atlas_api.reviewer_ref import (
     build_reviewer_ref_resolver_adapter,
 )
 from kj_atlas_api.settings import settings
+from kj_atlas_api.tenant_foundation import ensure_local_default_membership
 
 router = APIRouter(prefix="/admin/provision", tags=["admin"])
 
@@ -138,6 +139,12 @@ def provision_user(
                 actor_ref=None,
             )
         )
+        if ensure_local_default_membership(
+            db=db,
+            user_id=user_id,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+        ):
+            db.commit()
         response.status_code = 200
         return ProvisionUserResponse(
             userId=user_id,
@@ -164,6 +171,11 @@ def provision_user(
             external_uid=external_uid,
             created_at=now_iso,
         )
+    )
+    ensure_local_default_membership(
+        db=db,
+        user_id=user_id,
+        timestamp=now_iso,
     )
     db.commit()
 

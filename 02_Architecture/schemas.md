@@ -932,7 +932,7 @@ export type MergeDecisionRecord = {
 
 ### 10.4 SaaS tenant identity / persistence target（ADR-0059、L0 Planned）
 
-`ADR-0059`で次のtenant境界をAcceptedとする。ただし、現行物理DBには未実装であり、`SAAS-TENANT-01`のmigration・制約・越境テストが完了するまで共有SaaSへ適用しない。
+`ADR-0059`で次のtenant境界をAcceptedとする。Alembic `20260716_0006`では、新規tenant/IdP/membership表、Document/判断ログのtenant列、既存User/Document/判断ログの`local-default` backfillまでをexpand実装した。ただし、identity binding移行、複合PK/FK、DB側tenant guard、TenantContext認可、越境テストが完了するまで共有SaaSへ適用しない。
 
 ```ts
 export type TenantId = string;
@@ -979,6 +979,18 @@ target physical schema:
 - 将来の`agent_registrations`、job、audit eventにもtenantIdを必須伝播する。
 
 tenantIdはserver-managed列であり、`DocumentV1` payload、view.json、import/export bundleの認可値として追加しない。現行`provider + external_uid`一意制約はsingle-tenant互換期間の実装であり、SaaS profileでは`identityProviderId + subject`とTenantMembershipへ移行する。共有schema型SaaSは、上記制約に加えPostgreSQL RLS等のDB側tenant guardを必須とする。
+
+実装段階:
+
+| 項目 | 状態 | 解禁上の扱い |
+| --- | --- | --- |
+| tenant/IdP/binding/membership表 | Expand済み | `local-default`互換だけに使用 |
+| Document/判断ログtenant列・index | Expand済み | 暗黙既定値があるためSaaS境界には未使用 |
+| 新規JIT/strict Userのlocal membership | 実装済み | single-tenant互換用 |
+| `user_identities`の`identityProviderId + subject`移行 | 未実装 | SaaS blocker |
+| Document複合PK/FK、tenant必須repository | 未実装 | SaaS blocker |
+| PostgreSQL RLS等のDB側guard | 未実装 | SaaS blocker |
+| verified TenantContext / capability API / negative matrix | 未実装 | SaaS blocker |
 
 ## 11. Polygon contract keys（FB-P0-2A2B2C）
 

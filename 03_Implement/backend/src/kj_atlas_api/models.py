@@ -9,16 +9,86 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 RELATION_SUMMARY_TEXT_MAX_LENGTH = 4000
 DOCUMENT_V1_MOCK_SCHEMA_VERSION = "mock-2026-05-19-dv1"
+LOCAL_DEFAULT_TENANT_ID = "local-default"
 
 
 class Base(DeclarativeBase):
     pass
 
 
-class DocumentRow(Base):
-    __tablename__ = "documents"
+class TenantRow(Base):
+    __tablename__ = "tenants"
 
     id: Mapped[str] = mapped_column(Text, primary_key=True)
+    display_name: Mapped[str] = mapped_column(Text, nullable=False)
+    lifecycle_state: Mapped[str] = mapped_column(Text, nullable=False, default="active")
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class IdentityProviderRow(Base):
+    __tablename__ = "identity_providers"
+    __table_args__ = (
+        UniqueConstraint("issuer", "audience", name="uq_identity_providers_issuer_audience"),
+    )
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    issuer: Mapped[str] = mapped_column(Text, nullable=False)
+    audience: Mapped[str] = mapped_column(Text, nullable=False)
+    lifecycle_state: Mapped[str] = mapped_column(Text, nullable=False, default="active")
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class TenantIdentityProviderRow(Base):
+    __tablename__ = "tenant_identity_providers"
+
+    tenant_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey("tenants.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    identity_provider_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey("identity_providers.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    lifecycle_state: Mapped[str] = mapped_column(Text, nullable=False, default="active")
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class TenantMembershipRow(Base):
+    __tablename__ = "tenant_memberships"
+
+    tenant_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey("tenants.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    user_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    lifecycle_state: Mapped[str] = mapped_column(Text, nullable=False, default="active")
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class DocumentRow(Base):
+    __tablename__ = "documents"
+    __table_args__ = (
+        Index("ix_documents_tenant_id_id", "tenant_id", "id", unique=True),
+    )
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        default=LOCAL_DEFAULT_TENANT_ID,
+        server_default=LOCAL_DEFAULT_TENANT_ID,
+    )
     version: Mapped[int] = mapped_column(Integer, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
     payload_json: Mapped[str] = mapped_column(Text, nullable=False)
@@ -52,9 +122,29 @@ class MergeDecisionLogRow(Base):
         UniqueConstraint("doc_id", "decision_id", name="uq_merge_decision_logs_doc_decision"),
         Index("ix_merge_decision_logs_doc_group_id", "doc_id", "group_id", "id"),
         Index("ix_merge_decision_logs_doc_snapshot_id", "doc_id", "snapshot_version", "id"),
+        Index(
+            "ix_merge_decision_logs_tenant_doc_group_id",
+            "tenant_id",
+            "doc_id",
+            "group_id",
+            "id",
+        ),
+        Index(
+            "ix_merge_decision_logs_tenant_doc_snapshot_id",
+            "tenant_id",
+            "doc_id",
+            "snapshot_version",
+            "id",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        default=LOCAL_DEFAULT_TENANT_ID,
+        server_default=LOCAL_DEFAULT_TENANT_ID,
+    )
     doc_id: Mapped[str] = mapped_column(Text, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
     decision_id: Mapped[str] = mapped_column(Text, nullable=False)
     group_id: Mapped[str] = mapped_column(Text, nullable=False)

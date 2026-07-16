@@ -46,8 +46,45 @@ MVPで最も重要なのは、カードやまとまりを扱えることでは�
 
 ```mermaid
 erDiagram
+    TENANT_ROW ||--o{ TENANT_IDP_ROW : allows
+    IDENTITY_PROVIDER_ROW ||--o{ TENANT_IDP_ROW : binds
+    TENANT_ROW ||--o{ TENANT_MEMBERSHIP_ROW : has
+    USER_ROW ||--o{ TENANT_MEMBERSHIP_ROW : joins
     USER_ROW ||--o{ USER_IDENTITY_ROW : maps
     DOCUMENT_ROW ||--o{ MERGE_DECISION_LOG_ROW : has
+
+    TENANT_ROW {
+        text id PK
+        text display_name
+        text lifecycle_state
+        text created_at
+        text updated_at
+    }
+
+    IDENTITY_PROVIDER_ROW {
+        text id PK
+        text issuer
+        text audience
+        text lifecycle_state
+        text created_at
+        text updated_at
+    }
+
+    TENANT_IDP_ROW {
+        text tenant_id PK,FK
+        text identity_provider_id PK,FK
+        text lifecycle_state
+        text created_at
+        text updated_at
+    }
+
+    TENANT_MEMBERSHIP_ROW {
+        text tenant_id PK,FK
+        text user_id PK,FK
+        text lifecycle_state
+        text created_at
+        text updated_at
+    }
 
     USER_ROW {
         text id PK
@@ -68,6 +105,7 @@ erDiagram
 
     DOCUMENT_ROW {
         text id PK
+        text tenant_id
         integer version
         text updated_at
         text payload_json
@@ -75,6 +113,7 @@ erDiagram
 
     MERGE_DECISION_LOG_ROW {
         integer id PK
+        text tenant_id
         text doc_id FK
         text decision_id
         text group_id
@@ -86,8 +125,12 @@ erDiagram
 
 | 物理テーブル | 主な責務 | 運用上の注意 |
 |---|---|---|
-| `documents` | `DocumentV1` のスナップショット保存 | Card/Edge/Islandなどは `payload_json` 内に埋め込まれる。個別行としては保守しない。 |
-| `merge_decision_logs` | Manual assisted merge の判断ログをappend-onlyに近い形で保存 | Document本体とは分離するが、`doc_id` に従属する。通常更新・削除APIは持たない。 |
+| `tenants` | server-managedなtenant lifecycle | `local-default`をsingle-tenant互換用に保持する。表示名を認可keyにしない。 |
+| `identity_providers` | issuer + audienceで識別する将来のtrust configuration | 表はexpand済みだが、現行`user_identities`とのbindingは未実装。秘密値は保存しない。 |
+| `tenant_identity_providers` | tenantが利用可能なIdPのbinding | 複合PK/FKは実装済み。SaaSのverified claim解決は未実装。 |
+| `tenant_memberships` | tenantと内部Userのactive membership | migrationで既存Userを`local-default`へbackfillし、新規JIT/strict provisioningでも同membershipを作る。 |
+| `documents` | `DocumentV1` のスナップショット保存 | `tenant_id`は`local-default`でexpand済み。ただし`id`が全体PKのままで複合PK/FK・RLSは未実装。Card/Edge/Island等は`payload_json`内に埋め込む。 |
+| `merge_decision_logs` | Manual assisted merge の判断ログをappend-onlyに近い形で保存 | `tenant_id`はexpand済みだが、親Documentとの複合FKは未実装。通常更新・削除APIは持たない。 |
 | `users` | 認証主体の内部ユーザー表現 | lifecycle stateは持つが、MVPの管理画面で全ライフサイクルを扱う段階ではない。 |
 | `user_identities` | IdPなど外部認証subjectと内部ユーザーの対応 | `provider + external_uid` を内部 `user:<users.id>` に正規化する。 |
 
@@ -97,9 +140,9 @@ erDiagram
 - View/Perspective状態、QueryPreset（D2）: 既存 `view.json` ファイルとdevice-local（browser storage）を正本のまま維持する（新規テーブルなし）。
 - エージェント登録（D3）: `agent_registrations` 相当をサーバー正本として採用済みだが、実装は `EXT-CONN-02` で行う契約先行決定であり、実装されるまで本ER図には含めない。
 
-### 2.1 SaaS tenant target model（ADR-0059、現行未実装）
+### 2.1 SaaS tenant target model（ADR-0059、expand foundation実装済み）
 
-次は`ADR-0059`でAcceptedとなったtargetであり、上記の現行物理ER図を実装済みとして置換するものではない。`SAAS-TENANT-01`のexpand/backfill/constraintと越境テストが完了するまでSupport levelはL0とする。
+次は`ADR-0059`でAcceptedとなった最終targetである。Alembic `20260716_0006`でtenant/IdP/membership表、Document/判断ログのtenant列、`local-default` backfillまでは実装した。一方、identity binding移行、Document複合PK/FK、RLS、TenantContext必須repository、越境テストは未実装であり、完了までSupport levelはL0とする。
 
 ```mermaid
 erDiagram
@@ -165,6 +208,8 @@ erDiagram
 - tenantIdはserver-managed列であり、DocumentV1 payloadやimport/export値から認可境界を復元しない。
 - shared schema型SaaSはアプリfilterだけでなくPostgreSQL RLS等のDB側tenant guardを必須とする。SQLiteはsingle-tenant用途に限定する。
 - agent registration、job、cache、search index、object-storage key、audit、backup manifestにも同じtenantIdを伝播する。
+
+`20260716_0006`の`tenant_id`既定値は既存single-tenant APIを維持するためのexpand限定措置である。SaaS profileを有効化する前に、全repositoryをTenantContext必須へ切り替え、暗黙`local-default`へ依存しない制約段階へ進む。
 
 ---
 

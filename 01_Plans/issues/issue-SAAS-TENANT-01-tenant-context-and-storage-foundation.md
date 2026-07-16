@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Security / Feature
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: User request 2026-07-16 / `01_Plans/research-2026-07-16-saas-tenant-authorization-boundary.md`
 - Priority: P1
@@ -78,3 +78,11 @@
 - 依存: `ADR-0059` Accepted、PostgreSQL test環境、外部PDP test double、Round 8 design input。
 - 主なリスク: backfill失敗、repository filter漏れ、RLS session変数のpool越し残留、capability cacheのtenant混在。
 - ロールバック: SaaS profileを有効化せず、expand列・新規表を残したままsingle-tenant adapterへ戻せる段階を維持する。tenant列をdropする破壊的rollbackは行わない。
+
+### Implementation checkpoint 2026-07-16: expand foundation
+
+- Alembic `20260716_0006`を追加し、`tenants`、`identity_providers`、`tenant_identity_providers`、`tenant_memberships`を作成した。
+- `documents`と`merge_decision_logs`へ`tenant_id`とtenant-aware indexを追加し、既存行を`local-default`へbackfillした。現段階では既存API互換のため`local-default` server defaultを維持する。
+- 既存Userを`local-default` membershipへbackfillし、新規JIT/strict provisioningでも同membershipを冪等に作成する。
+- Documentの全体PK、判断ログのdocId FK、`provider + external_uid`identityはまだ切り替えていない。RLS、TenantContext、SaaS profile、session API、frontendは未着手であり、共有SaaSは引き続き禁止する。
+- 検証: Ruff pass、新規ファイルformat check pass、backend全体298件pass・PostgreSQL等の条件付き24件skip、docs-check pass。Docker/PostgreSQLを利用できない環境のため、PostgreSQL migration/RLS検証は次段階へ残す。

@@ -15,6 +15,7 @@ from kj_atlas_api.reviewer_ref import (
     build_reviewer_ref_resolver_adapter,
 )
 from kj_atlas_api.settings import settings
+from kj_atlas_api.tenant_foundation import ensure_local_default_membership
 
 
 @dataclass(frozen=True)
@@ -140,9 +141,20 @@ def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdenti
         )
         db.add(user_row)
         db.add(identity)
+        ensure_local_default_membership(
+            db=db,
+            user_id=user_id,
+            timestamp=now_iso,
+        )
         db.commit()
     else:
         user_id = identity.user_id
+        if ensure_local_default_membership(
+            db=db,
+            user_id=user_id,
+            timestamp=_now_iso(),
+        ):
+            db.commit()
 
     resolution = reviewer_ref_adapter.resolve(
         ReviewerRefResolutionInput(

@@ -247,7 +247,7 @@ ReviewerRef 推奨フォーマット（例）:
 ## Stream D migration boundary memo (2026-05-20)
 
 - 本書は review attribution の契約提案を固定する文書であり、MVP時点では attribution 専用テーブル migration を要求しない。
-- Alembic head `20260314_0005` までの物理テーブルは `documents` / `users` / `user_identities` / `merge_decision_logs` で、review attribution は `Document` 埋め込み前提のまま維持する。
+- Alembic head `20260716_0006`ではtenant foundation表とDocument/判断ログの`tenant_id`がexpandされたが、review attributionは引き続き`Document`埋め込み前提とし、tenant列へ分解しない。
 - したがって review attribution は `L2/L2.5`（埋め込み/契約先行）として扱い、個別CRUDや独立 migration を前提にしない。
 
 
