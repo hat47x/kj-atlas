@@ -10,8 +10,11 @@ from pathlib import Path
 
 from docs_contract_checks import (
     check_current_history_headings,
+    check_document_contract_baseline,
     check_history_metadata,
+    check_public_boundary,
     check_relative_links,
+    check_safety_routes,
     tracked_markdown_paths as contract_tracked_markdown_paths,
 )
 from issues.validate_active_issue_memos import discover_active_rows, validate
@@ -80,7 +83,10 @@ def run_docs_check(
     markdown_paths = contract_tracked_markdown_paths(repository_root)
     errors.extend(finding.render() for finding in check_relative_links(repository_root, markdown_paths))
     errors.extend(finding.render() for finding in check_current_history_headings(repository_root))
+    errors.extend(finding.render() for finding in check_document_contract_baseline(repository_root))
     errors.extend(finding.render() for finding in check_history_metadata(repository_root))
+    errors.extend(finding.render() for finding in check_public_boundary(repository_root))
+    errors.extend(finding.render() for finding in check_safety_routes(repository_root))
     if run_tests:
         errors.extend(_run_contract_tests(repository_root))
 
