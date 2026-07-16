@@ -115,9 +115,30 @@ test("record details distinguish card identity from unavailable responsibility m
   await expect(details).toContainText("c1");
   await expect(details).toContainText("Canonical card");
   await expect(details).toContainText("Document created");
-  await expect(details).toContainText("2026-07-08T00:00:00.000Z");
+  await expect(details.locator('time[datetime="2026-07-08T00:00:00.000Z"]')).toHaveCount(2);
+  await expect(details).not.toContainText("2026-07-08T00:00:00.000Z");
   await expect(details).toContainText("Not provided in this data model");
   await expect(details).not.toContainText("reviewerRef");
+});
+
+test("keyboard users can select a card and expand its record details", async ({ page }) => {
+  await routeDocument(page);
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto("/?locale=en");
+  await openSample(page);
+
+  const card = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "trace target card" });
+  await card.focus();
+  await page.keyboard.press("Enter");
+  await expect(card).toHaveAttribute("aria-pressed", "true");
+
+  const details = page.locator('[data-panel="card-record-details"]');
+  const summary = details.locator("summary");
+  await summary.focus();
+  await expect(summary).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(details).toHaveAttribute("open", "");
+  await expect(details).toContainText("Not provided in this data model");
 });
 
 test("canvas seq badge is OFF by default and appears only after the view toggle (AC-4)", async ({ page }) => {
