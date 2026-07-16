@@ -341,5 +341,50 @@ class HistoryMetadataTest(unittest.TestCase):
         self.assertTrue(any("does not link back" in finding.message for finding in findings))
 
 
+class PublicBoundaryTest(unittest.TestCase):
+    def _write_fixtures(self, root: Path, entry: str, catalog: str, ledger: str) -> None:
+        docs = root / "04_Documentation"
+        screenshots = docs / "assets" / "screenshots"
+        screenshots.mkdir(parents=True)
+        (docs / "public_index.md").write_text(entry, encoding="utf-8")
+        (docs / "ui_catalog.md").write_text(catalog, encoding="utf-8")
+        (screenshots / "README.md").write_text(ledger, encoding="utf-8")
+
+    def test_accepts_public_entry_and_complete_ui_provenance(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_fixtures(
+                root,
+                "[現行UIカタログ](ui_catalog.md)\n",
+                "\n".join(MODULE.PUBLIC_UI_CATALOG_REQUIRED_TERMS),
+                "\n".join(MODULE.SCREENSHOT_LEDGER_REQUIRED_TERMS),
+            )
+
+            findings = MODULE.check_public_boundary(root)
+
+        self.assertEqual(findings, [])
+
+    def test_reports_internal_markers_missing_route_and_missing_provenance(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_fixtures(
+                root,
+                "内部管理は 01_Plans を参照します。\n",
+                "ADR-9999 の設計指示です。\n",
+                "撮影日だけあります。\n",
+            )
+
+            findings = MODULE.check_public_boundary(root)
+
+        self.assertTrue(all(f.rule_id == "DC-PUB-001" for f in findings))
+        targets = {f.target for f in findings}
+        self.assertIn("内部管理", targets)
+        self.assertIn("01_Plans", targets)
+        self.assertIn("ADR-", targets)
+        self.assertIn("ui_catalog.md", targets)
+        self.assertIn("確認対象revision", targets)
+        self.assertIn("source revision", targets)
+
+
 if __name__ == "__main__":
     unittest.main()

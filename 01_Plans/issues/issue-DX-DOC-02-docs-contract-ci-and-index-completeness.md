@@ -114,7 +114,7 @@ Open化条件:
 - [x] current領域の同一Contract ID/型の異義定義、API/schema key差異、DocumentV1支援表欠落を検出する（`DC-ARC-001`、`issue-DATA-CONTRACT-DOC-01`のclean baseline確立後に実装）。
 - [x] history領域はcurrent契約比較から除外され、Informativeメタと逆リンクだけを検証する。
 - [x] broken relative linkとSSOT参照先不在を検出する。
-- [ ] 公開版UI catalog等への内部管理語再混入とprovenance欠落を検出する。
+- [x] 公開版UI catalog等への内部管理語再混入とprovenance欠落を検出する。
 - [ ] SafeMode、share/export、proposal-only、human reviewの不変条件参照欠落を検出する。
 - [ ] docs-only PRへ不要なfrontend/backend E2Eを強制しない。
 - [x] CI jobとvalidatorの失敗理由が、対象ファイル・rule ID・修正先を示す（`DocsCheckFinding.render()`が全checkerで`{rule_id} {path}:{line}: {message} Fix: {fix_hint}`形式を共有する）。
@@ -123,7 +123,7 @@ Open化条件:
 
 - [x] T1 check matrixとrule IDを固定し、ADR-0024へ適用境界と段階有効化条件を追補する。
 - [x] T2 Active issue validatorをfilesystem直接検査へ変更し、共有parserとActive重複Backlog ID検査を追加する。
-- [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。relative link（`DC-LNK-001`）、current/history（`DC-CUR-001`）、architecture contract（`DC-ARC-001`）は実装済み。public boundary checkerとSafeMode/share-export/proposal-only/human review不変条件参照checkerが未実装のため、T3自体は未完了を維持する。
+- [ ] T3 相対リンク・current/history・architecture contract・public boundaryの各checkerを小さな純関数/fixtureで実装する。relative link（`DC-LNK-001`）、current/history（`DC-CUR-001`）、architecture contract（`DC-ARC-001`）、public boundary（`DC-PUB-001`）は実装済み。SafeMode・共有/書き出し・proposal-only・human review不変条件参照checkerが未実装のため、T3自体は未完了を維持する。
 - [x] T4 単一docs-check entrypointを追加し、ローカル実行手順を記載する。
 - [x] T5 既存Backend CI jobへblocking docs-check stepを追加し、既存PRで動作確認する。
 - [x] T6 PR templateへ証跡欄を追加する（`.github/pull_request_template.md`の`command/result/not_executed_reason/resume_condition`欄で充足済み。commit `439867a9`）。
@@ -269,3 +269,11 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 - `issue-DX-E2E-08`のrunbook縮約完了を受けて、`DC-CUR-001`の`CURRENT_ONLY_PATHS`へ`03_Implement/frontend/docs/e2e_testing.md`を追加し、既定パスだけで再混入を検出することを確認する負例fixtureを追加した。
 - T6（PR templateの証跡欄）は`.github/pull_request_template.md`に`command/result/not_executed_reason/resume_condition`が既に存在すること（commit `439867a9`）を確認し、チェック済みへ更新した。棚卸しの結果、対応する受入条件2件（architecture領域の異義定義検出、CI失敗理由の対象ファイル/rule ID/修正先表示）も充足済みへ更新した。
 - T3は architecture / current-history / relative-link の3 checkerが完了し、public boundary checkerとSafeMode/share-export/proposal-only/human review不変条件参照checkerが未実装のため、T3自体は継続する。この2件は本follow-upのスコープ外とし、別途スコープ設計を要する。
+
+## T3進捗 2026-07-16: `DC-PUB-001`
+
+- 公開入口 `public_index.md` に残っていた文書管理上の分類説明を除去し、利用者が現在の画面構成と操作を確認できる `ui_catalog.md` への目的別導線を追加した。
+- `DC-PUB-001` は、公開入口への内部管理語の再混入、公開UIカタログへの内部設計識別子の再混入、UIカタログの確認revision・確認日・表示条件・検証結果・公開状態、画像台帳の撮影provenance欠落を検出する。公開文書からGitHub上の設計正本を参照する用途は妨げない。
+- 正常fixtureと、内部管理語・導線・provenanceを欠落させた負例fixtureを追加した。単一entrypointへ配線し、同時に呼び出しが欠けていた既存 `DC-ARC-001` も配線した。
+- `python -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 21件成功。`python 01_Plans/docs_check.py`: Active memo 24件、追跡Markdown 377件で成功した。
+- T3は `DC-SAF-001` が残るため継続する。公開境界の定義自体はADR-0024から変更していないため、新規ADRは不要と判断した。

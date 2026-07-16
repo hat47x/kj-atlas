@@ -13,6 +13,7 @@ RELATIVE_LINK_RULE_ID = "DC-LNK-001"
 CURRENT_HISTORY_RULE_ID = "DC-CUR-001"
 HISTORY_METADATA_RULE_ID = "DC-HIS-001"
 ARCHITECTURE_BASELINE_RULE_ID = "DC-ARC-001"
+PUBLIC_BOUNDARY_RULE_ID = "DC-PUB-001"
 DOCUMENT_TYPE_RE = re.compile(r"export type (Document\w*)\s*=\s*\{\s*\r?\n\s*version:\s*([^;]+);")
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
@@ -49,6 +50,45 @@ SOURCE_DOCUMENT_RE = re.compile(
 CURRENT_ANCHOR_RE = re.compile(
     r"^Current normative anchors:\s*$[\s\S]*?^-\s+\[[^\]]+\]\((?:\.\./|/)[^)]+\)",
     re.MULTILINE,
+)
+PUBLIC_ENTRY_PATH = Path("04_Documentation/public_index.md")
+PUBLIC_UI_CATALOG_PATH = Path("04_Documentation/ui_catalog.md")
+SCREENSHOT_LEDGER_PATH = Path("04_Documentation/assets/screenshots/README.md")
+PUBLIC_ENTRY_FORBIDDEN_TERMS = (
+    "04_Documentation",
+    "00_Prompt",
+    "01_Plans",
+    "AGENTS.md",
+    "PUBLICATION_MANIFEST",
+    "内部管理",
+    "文書保守者",
+    "Issue/ADR",
+    "作業ログ",
+)
+PUBLIC_UI_CATALOG_FORBIDDEN_TERMS = (
+    "00_Prompt",
+    "01_Plans",
+    "ADR-",
+    "issue-",
+    "UX-NAV",
+    "UX-COMPLEXITY",
+    "Claude Design",
+)
+PUBLIC_UI_CATALOG_REQUIRED_TERMS = (
+    "確認対象revision",
+    "最終確認日",
+    "表示条件",
+    "画像検証",
+    "公開状態",
+)
+SCREENSHOT_LEDGER_REQUIRED_TERMS = (
+    "source revision",
+    "撮影日",
+    "fixture",
+    "locale",
+    "viewport",
+    "生成スクリプト",
+    "検証結果",
 )
 
 
@@ -354,6 +394,74 @@ def check_history_metadata(
     return findings
 
 
+def check_public_boundary(
+    root: Path,
+    entry_path: Path = PUBLIC_ENTRY_PATH,
+    catalog_path: Path = PUBLIC_UI_CATALOG_PATH,
+    ledger_path: Path = SCREENSHOT_LEDGER_PATH,
+) -> list[DocsCheckFinding]:
+    """Return DC-PUB-001 findings for public-entry leakage and missing UI provenance."""
+    findings: list[DocsCheckFinding] = []
+    entry_text = (root / entry_path).read_text(encoding="utf-8")
+    catalog_text = (root / catalog_path).read_text(encoding="utf-8")
+    ledger_text = (root / ledger_path).read_text(encoding="utf-8")
+
+    for path, text, forbidden_terms in (
+        (entry_path, entry_text, PUBLIC_ENTRY_FORBIDDEN_TERMS),
+        (catalog_path, catalog_text, PUBLIC_UI_CATALOG_FORBIDDEN_TERMS),
+    ):
+        for term in forbidden_terms:
+            offset = text.find(term)
+            if offset < 0:
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=PUBLIC_BOUNDARY_RULE_ID,
+                    path=path.as_posix(),
+                    line=text.count("\n", 0, offset) + 1,
+                    target=term,
+                    message=f"internal project-management marker appears in a public document: {term}",
+                    fix_hint="Remove the internal marker and describe only the user-facing behavior or procedure.",
+                )
+            )
+
+    linked_destinations = {
+        urlsplit(_link_destination(match.group("target"))).path
+        for match in MARKDOWN_LINK_RE.finditer(_without_code(entry_text))
+    }
+    if "ui_catalog.md" not in linked_destinations:
+        findings.append(
+            DocsCheckFinding(
+                rule_id=PUBLIC_BOUNDARY_RULE_ID,
+                path=entry_path.as_posix(),
+                line=1,
+                target="ui_catalog.md",
+                message="the public entry has no route to the current UI catalog",
+                fix_hint="Add a purpose-oriented link to ui_catalog.md from public_index.md.",
+            )
+        )
+
+    for path, text, required_terms in (
+        (catalog_path, catalog_text, PUBLIC_UI_CATALOG_REQUIRED_TERMS),
+        (ledger_path, ledger_text, SCREENSHOT_LEDGER_REQUIRED_TERMS),
+    ):
+        for term in required_terms:
+            if term in text:
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=PUBLIC_BOUNDARY_RULE_ID,
+                    path=path.as_posix(),
+                    line=1,
+                    target=term,
+                    message=f"public UI evidence is missing required provenance: {term}",
+                    fix_hint="Restore the provenance field and record the current verified value.",
+                )
+            )
+
+    return findings
+
+
 def tracked_markdown_paths(root: Path) -> list[Path]:
     """Return tracked Markdown paths so generated and dependency files stay out of scope."""
     result = subprocess.run(
@@ -379,6 +487,7 @@ def main() -> int:
     findings.extend(check_current_history_headings(root))
     findings.extend(check_document_contract_baseline(root))
     findings.extend(check_history_metadata(root))
+    findings.extend(check_public_boundary(root))
 
     if findings:
         print("documentation contract validation failed:")
