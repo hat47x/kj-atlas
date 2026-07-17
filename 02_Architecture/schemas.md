@@ -961,6 +961,7 @@ export type EffectiveCapability =
   | "document.write"
   | "document.export"
   | "document.share"
+  | "document.policy.manage"
   | "membership.provision"
   | "agent.register"
   | "agent.revoke"

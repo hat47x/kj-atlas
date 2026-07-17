@@ -193,6 +193,7 @@
 - SaaS用Document resource resolverはclientのvisibility/policyRef headerを無視し、tenant-scoped metadataを取得する。binding ID/versionはtrusted runtime resolverへ渡し、返されたpolicyRefだけをrequest内で使用する。metadata欠損、不正binding、resolver例外は`Restricted + policyRef欠損`へ倒し、deny fail-safeを維持する。Public/Unlistedはbindingなしを許可する。
 - 同一docIdを持つtenant A/Bでmetadataとruntime policyRefが混線しないこと、複合FK、visibility/binding制約、downgrade、client header無視、binding resolver障害を近接17件で検証した。Ruff pass、backend全体358件pass・PostgreSQL等の条件付き24件skip。
 - metadata管理API/UI、binding IDをsecret store/PDP参照へ解決する実adapter、PostgreSQL直接RLS検証、SaaS runtime配線は未実装であり、AC-4/5/7/10と起動拒否を継続する。
+- UI/UX構想とClaude Design指示へR8-G「文書アクセス設定」を追加した。Tenant Adminの`document.policy.manage`専用面とし、docId/visibility/binding状態/version/updatedAtだけを扱う。タイトル・本文・raw policyRef・URL・token・secret・bulk公開を禁止し、metadata未登録／binding不達はRestricted blocked stateとして設計する。管理API・実binding resolver・監査・negative matrix完了までimplementation gatedとする。
 
 ### Implementation checkpoint 2026-07-17: frontend tenant transition cleanup boundary
 

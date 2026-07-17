@@ -35,12 +35,13 @@ kj-atlasの「マスタ系設定」を1つの汎用マスタ管理画面へ集�
 | Patch workspaceのQueryPreset | このブラウザ・端末だけ | Standard user | 保存、実行、名前変更、削除。「この端末のみ」を常時明示 | 同期済み・共有済みと誤認させる表示、サーバー保存、暗黙のexport/import |
 | KJ語彙（claimType、関係種別、違和感タグ、holdState） | コードとAccepted ADR | 全利用者 | 意味の説明、凡例 | 任意追加・名称変更・無効化を行う「語彙マスタ」画面 |
 | ユーザー / アイデンティティ | サーバーの`users` / `user_identities` | Platform operator | 現契約ではstrict provisioningの登録フォームと登録結果 | 一覧、無効化、削除、SCIM、ロール編集。別契約・ADRなしにライフサイクル管理を描かない |
+| 文書アクセス設定（future SaaS） | active tenantの`document_access_metadata`。visibility、非秘密policy binding ID/versionのみ | `document.policy.manage`を持つTenant Admin | docId単位の参照、visibility変更、binding ID/version更新、競合安全な保存receipt | 文書タイトル・本文、raw policyRef/token/URL、bulk変更、role/group編集、他tenant参照 |
 | エージェント登録 | 将来のサーバー正本。文書IDに束縛 | Platform operator | 契約実装後に登録、メタデータ一覧、失効。tokenは作成直後の一度だけ表示 | 文書ownerによる発行、平文token再表示、token検索、登録だけでの文書書込権限付与 |
 | Auditメタデータ | 外部監査基盤または将来のメタデータ限定API | Security / Audit operator | `DATA-MAINT-04`で解禁された場合だけ固定allowlistを表示 | タイトル、本文、カード、narrative、review pack、diff、未レビュー情報、横断本文検索 |
 | LLM provider・endpoint等 | `KJ_ATLAS_*`環境変数 | Platform operator | 秘密を含まない稼働状態の読み取り表示だけを将来検討 | アプリ内編集、秘密値表示、DBマスタ化 |
 | constraint輸出セット | `EXT-CONN-03`で契約先行 | 文書利用者 / Platform operator | 将来、共有・外部接続の文脈で明示opt-in | 汎用マスタへの先行追加、既定ON |
 
-SaaSではこの表に`Tenant`、`IdentityProvider`、`TenantMembership`が加わる。ただし、roles/groupsの編集画面は作らず外部IdP/PDPを正本とする。Tenant lifecycleはPlatform Control Plane、membershipとagent registrationはTenant Adminへ分離する。
+SaaSではこの表に`Tenant`、`IdentityProvider`、`TenantMembership`が加わる。ただし、roles/groupsの編集画面は作らず外部IdP/PDPを正本とする。Tenant lifecycleはPlatform Control Plane、membership、document access metadata、agent registrationはTenant Adminへ分離する。`document.policy.manage`は`document.write`やPlatform operatorへ暗黙付与しない。
 
 ## 3. 情報設計
 
@@ -89,16 +90,17 @@ SaaSではこの表に`Tenant`、`IdentityProvider`、`TenantMembership`が加�
 
 ### 3.3 Admin管理面
 
-Adminは通常のWorkspaceとは別サーフェスとする。認可されたPlatform operatorだけに、恒久住所としてメニューまたはアカウント領域から入口を示す。キャンバス上のスリムツールバーには置かない。
+Adminは通常のWorkspaceとは別サーフェスとする。現行のアクセス登録は認可されたPlatform operator、future SaaSの文書アクセス設定はactive tenantの`document.policy.manage`を持つTenant Adminにだけ、恒久住所としてメニューまたはアカウント領域から入口を示す。両者を同じ権限・audienceとして扱わず、キャンバス上のスリムツールバーには置かない。
 
-入口の表示制御は認可の代わりにならない。Platform operator権限をbackendで検証できない構成ではAdmin面を提供せず、APIもfail-closedにする。現行strict provisioning APIの認可主体を固定するまでは、アクセス登録UIを実装しない。
+入口の表示制御は認可の代わりにならない。各面のcapabilityをbackendで検証できない構成では該当Admin面を提供せず、APIもfail-closedにする。現行strict provisioning APIの認可主体を固定するまではアクセス登録UIを、文書policy管理APIとruntime binding resolverが揃うまでは文書アクセス設定UIを実装しない。
 
 推奨する管理面の区分:
 
 1. **アクセス登録**: strict provisioningフォーム。現契約では登録だけを提供し、ユーザー一覧や無効化があるように見せない。
-2. **外部接続**: `EXT-CONN-02`契約実装後のエージェント登録・失効。
-3. **システム状態**: providerの有効/無効、SafeMode既定、構成プロファイル等、秘密を含まない診断値だけを読み取り専用で表示する将来候補。値の編集はデプロイ手順へ案内する。
-4. **監査**: `DATA-MAINT-04`が解禁されるまでナビゲーションにも空の一覧にも追加しない。
+2. **文書アクセス設定（future SaaS）**: active tenantのdocIdに対するvisibilityと非秘密policy binding metadata。管理API・実binding resolver・PDP配線後だけ有効化する。
+3. **外部接続**: `EXT-CONN-02`契約実装後のエージェント登録・失効。
+4. **システム状態**: providerの有効/無効、SafeMode既定、構成プロファイル等、秘密を含まない診断値だけを読み取り専用で表示する将来候補。値の編集はデプロイ手順へ案内する。
+5. **監査**: `DATA-MAINT-04`が解禁されるまでナビゲーションにも空の一覧にも追加しない。
 
 Adminヘッダーには、通常Workspaceと混同しない名称と「この画面は文書本文を表示しません」という境界説明を置く。文書を参照する必要がある行では`docId`だけを使い、タイトルへ解決しない。
 
@@ -108,6 +110,15 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 - 送信前に「新しいIDを事前登録する操作」であることを示す。削除・無効化・ロール付与を連想させない。
 - 成功後は結果receiptを表示し、同じ値の再送や競合の扱いを説明する。
 - 一覧・検索・棚卸しをUIへ追加するには別契約が必要であり、本構想からは除外する。
+
+#### 文書アクセス設定（future SaaS / implementation gated）
+
+- Tenant Adminのactive tenant固定面とし、scope見出しにtenant名とopaque tenant IDを示す。tenant自由入力、他tenant検索、Platform Control Planeからの横断表示は設けない。
+- 一覧／検索対象は`docId`、visibility、binding状態（設定済み／未設定／解決不能）、policy version、updatedAtだけとする。文書タイトル、本文、カード、review状態、件数集計は取得も表示もしない。
+- 編集フォームは`docId`を固定表示し、visibilityと非秘密の`policyBindingId`、`policyVersion`だけを扱う。`Org/Restricted`ではbinding IDを必須、`Public/Unlisted`では任意とし、生のpolicyRef、policy URL、token、secretを入力する欄を作らない。
+- metadata未登録は`Restricted / binding未設定`として表示し、Public既定やread-only fallbackにしない。binding resolver不達は「権限設定を確認できないため利用不可」とし、文書0件のEmptyと区別する。
+- 変更は即時反映に見せず、差分確認、保存中の二重実行防止、成功receipt（policy version）、409競合時の再読込を用意する。bulk edit、CSV import/export、全doc一括公開は提供しない。
+- UI表示は`document.policy.manage`を使うがAPIが同じcapabilityとactive tenantを再検証する。`document.write`、Platform operator、文書ownerから管理権限を推測しない。
 
 #### エージェント登録（将来）
 
@@ -123,7 +134,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 - Workspaceヘッダーにはactive tenantを静かに示す。membershipが1件ならswitcherにせずlabel、複数ならサーバーが返した選択肢だけをswitcherにする。tenantId自由入力は許可しない。
 - tenant切替時に未保存変更があれば保存・破棄・取消を選ばせる。確定後は文書、選択、検索、work mode、import preview、recent、QueryPreset、request cacheを破棄し、新tenantで再取得する。
 - 切替確認中やbackend未確認の間、旧tenantの本文と新tenantの管理UIを同時に表示しない。
-- **Tenant Admin**はactive tenantのmembership provisioningとagent registrationだけを扱う。本文と文書タイトルは表示しない。
+- **Tenant Admin**はactive tenantのmembership provisioning、document access metadata、agent registrationだけを扱う。本文と文書タイトルは表示しない。
 - **Platform Control Plane**はtenant lifecycle、IdP接続状態、非秘密のsystem statusだけを扱い、全tenant文書を横断する一覧を持たない。
 - role名やgroup名からfrontendが操作可否を推測しない。backendが返すcapabilityと理由コードで表示し、APIが再検証する。
 - tenant mismatch、membership失効、PDP不達は権限なしのEmptyに見せず、「範囲を確認できないため表示しない」状態と再認証/戻る導線を示す。
@@ -151,6 +162,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 4. **エージェント登録UI**: `EXT-CONN-02`でテーブル/API/失効/監査契約を固定してから実装する。
 5. **Audit UI**: `DATA-MAINT-04`の判断とallowlist契約なしに実装しない。
 6. **SaaS tenant UI**: `ADR-0059`のImplementation gateに従い、TenantContext、membership、tenant従属DB列、DB側tenant guard、capability API、deny-only SaaS profile、storage namespace、migration、越境テストが揃うまで有効化しない。
+7. **文書アクセス設定UI**: `document.policy.manage`のAPI再認可、metadata管理API、binding IDのsecret store/PDP resolver、監査、PostgreSQL RLS実地検証、tenant A/B negative matrixが揃うまで実画面へ追加しない。
 
 複雑性予算: 初期表示への純増=なし（開始パネル/既存ダイアログ/既存設定節の置換・包含、Adminは別面） / 保留操作の距離=不変 / 取り消し導線=プリセット削除は既定復帰、登録・失効は確認と新規再登録（契約後）
 
