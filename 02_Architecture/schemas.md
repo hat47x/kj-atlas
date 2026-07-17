@@ -932,7 +932,7 @@ export type MergeDecisionRecord = {
 
 ### 10.4 SaaS tenant identity / persistence target（ADR-0059、L0 Planned）
 
-`ADR-0059`で次のtenant境界をAcceptedとする。Alembic `20260716_0006`では、新規tenant/IdP/membership表、Document/判断ログのtenant列、既存User/Document/判断ログの`local-default` backfillまでをexpand実装した。ただし、identity binding移行、複合PK/FK、DB側tenant guard、TenantContext認可、越境テストが完了するまで共有SaaSへ適用しない。
+`ADR-0059`で次のtenant境界をAcceptedとする。Alembic `20260716_0006`では、新規tenant/IdP/membership表、Document/判断ログのtenant列、既存User/Document/判断ログの`local-default` backfillまでをexpand実装した。`20260717_0007`では既存providerラベルから互換IdPを決定的に生成し、`user_identities.identity_provider_id + subject`をbackfill、新規JIT/事前登録でも旧列と二重書きする。ただし、検証済みissuer/audienceへの切替、旧identity列のcontract、複合PK/FK、DB側tenant guard、TenantContext認可、越境テストが完了するまで共有SaaSへ適用しない。
 
 ```ts
 export type TenantId = string;
@@ -988,7 +988,7 @@ tenantIdはserver-managed列であり、`DocumentV1` payload、view.json、impor
 | Document/判断ログtenant列・index | Expand済み | 暗黙既定値があるためSaaS境界には未使用 |
 | 新規JIT/strict Userのlocal membership | 実装済み | single-tenant互換用 |
 | Document/判断ログ/backfillのtenant-scoped repository | `local-default`で実装済み | verified TenantContextと複合キーが未実装のためSaaS blockerは継続 |
-| `user_identities`の`identityProviderId + subject`移行 | 未実装 | SaaS blocker |
+| `user_identities`の`identityProviderId + subject`移行 | Expand・backfill・二重書き済み | 互換IdPは検証済みissuerではなく、旧列も正本として残るためSaaS blockerは継続 |
 | Document複合PK/FK、全consumerのtenant必須化 | 未実装 | SaaS blocker |
 | PostgreSQL RLS等のDB側guard | 未実装 | SaaS blocker |
 | verified TenantContext / capability API / negative matrix | 未実装 | SaaS blocker |

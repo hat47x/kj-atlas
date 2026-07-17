@@ -9,6 +9,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.access_control import AuthContext
+from kj_atlas_api.identity_binding import ensure_legacy_identity_provider
 from kj_atlas_api.models import UserIdentityRow, UserRow
 from kj_atlas_api.reviewer_ref import (
     ReviewerRefResolutionInput,
@@ -125,6 +126,11 @@ def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdenti
 
         user_id = str(uuid4())
         now_iso = _now_iso()
+        binding = ensure_legacy_identity_provider(
+            db=db,
+            provider=provider,
+            timestamp=now_iso,
+        )
         user_row = UserRow(
             id=user_id,
             display_name=display_name,
@@ -137,6 +143,8 @@ def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdenti
             user_id=user_id,
             provider=provider,
             external_uid=external_uid,
+            identity_provider_id=binding.identity_provider_id,
+            subject=external_uid,
             created_at=now_iso,
         )
         db.add(user_row)

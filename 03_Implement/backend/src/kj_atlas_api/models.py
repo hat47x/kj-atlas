@@ -107,12 +107,29 @@ class UserRow(Base):
 
 class UserIdentityRow(Base):
     __tablename__ = "user_identities"
-    __table_args__ = (UniqueConstraint("provider", "external_uid", name="uq_user_identities_provider_external_uid"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "provider",
+            "external_uid",
+            name="uq_user_identities_provider_external_uid",
+        ),
+        UniqueConstraint(
+            "identity_provider_id",
+            "subject",
+            name="uq_user_identities_identity_provider_subject",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(Text, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     provider: Mapped[str] = mapped_column(Text, nullable=False)
     external_uid: Mapped[str] = mapped_column(Text, nullable=False)
+    identity_provider_id: Mapped[str | None] = mapped_column(
+        Text,
+        ForeignKey("identity_providers.id", ondelete="RESTRICT"),
+        nullable=True,
+    )
+    subject: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 

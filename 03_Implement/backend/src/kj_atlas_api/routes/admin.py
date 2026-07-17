@@ -9,6 +9,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.db import get_db
+from kj_atlas_api.identity_binding import ensure_legacy_identity_provider
 from kj_atlas_api.models import UserIdentityRow, UserRow
 from kj_atlas_api.models import A2A3GateValidationRequest, A2A3GateValidationResponse
 from kj_atlas_api.reviewer_ref import (
@@ -155,6 +156,11 @@ def provision_user(
 
     user_id = str(uuid4())
     now_iso = datetime.now(timezone.utc).isoformat()
+    binding = ensure_legacy_identity_provider(
+        db=db,
+        provider=provider,
+        timestamp=now_iso,
+    )
     user_row = UserRow(
         id=user_id,
         display_name=display_name,
@@ -169,6 +175,8 @@ def provision_user(
             user_id=user_id,
             provider=provider,
             external_uid=external_uid,
+            identity_provider_id=binding.identity_provider_id,
+            subject=external_uid,
             created_at=now_iso,
         )
     )

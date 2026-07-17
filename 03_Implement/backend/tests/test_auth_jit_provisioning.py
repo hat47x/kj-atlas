@@ -12,7 +12,9 @@ from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
 from kj_atlas_api.models import (
     Base,
+    IdentityProviderRow,
     LOCAL_DEFAULT_TENANT_ID,
+    TenantIdentityProviderRow,
     TenantMembershipRow,
     TenantRow,
     UserIdentityRow,
@@ -78,6 +80,21 @@ def test_jit_provisioning_creates_users_and_identities(tmp_path) -> None:
                 identity = db.query(UserIdentityRow).one()
                 assert identity.provider == "oidc"
                 assert identity.external_uid == "alice"
+                assert identity.identity_provider_id is not None
+                assert identity.subject == "alice"
+                identity_provider = db.get(
+                    IdentityProviderRow,
+                    identity.identity_provider_id,
+                )
+                assert identity_provider is not None
+                assert identity_provider.lifecycle_state == "active"
+                assert (
+                    db.get(
+                        TenantIdentityProviderRow,
+                        (LOCAL_DEFAULT_TENANT_ID, identity.identity_provider_id),
+                    )
+                    is not None
+                )
                 assert db.get(TenantRow, LOCAL_DEFAULT_TENANT_ID) is not None
                 membership = db.query(TenantMembershipRow).one()
                 assert membership.tenant_id == LOCAL_DEFAULT_TENANT_ID

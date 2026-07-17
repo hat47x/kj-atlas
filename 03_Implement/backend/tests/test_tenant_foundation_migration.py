@@ -43,6 +43,10 @@ def test_sqlalchemy_metadata_contains_single_tenant_foundation(tmp_path: Path) -
         assert "tenant_id" in {
             column["name"] for column in inspector.get_columns("merge_decision_logs")
         }
+        identity_columns = {
+            column["name"] for column in inspector.get_columns("user_identities")
+        }
+        assert {"identity_provider_id", "subject"}.issubset(identity_columns)
     finally:
         engine.dispose()
 

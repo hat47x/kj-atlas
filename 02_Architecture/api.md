@@ -630,7 +630,7 @@ export type AdminProvisionUserConflictError = {
 
 ### 9.4 移行契約（expand/contract）
 
-- expand: `users` / `user_identities` 追加後、APIは `provider+external_uid` で `users.id` を解決する。
+- expand: `users` / `user_identities` 追加後、APIは互換期間中`provider+external_uid`で`users.id`を解決する。Alembic `20260717_0007`以降は、同じ作成処理で`identity_provider_id+subject`も二重書きする。互換IdPはsingle-tenant移行用であり、検証済みissuer/audienceに基づくSaaS認証とは扱わない。
 - contract: attribution APIは `reviewerRef` / `ownerRef` を `user:<users.id>` に統一し、外部subject直参照を受け付けない。
 - strict modeは contract 側の強制条件として扱い、未登録subjectを `403` で拒否する。
 

@@ -101,3 +101,10 @@
 - `saas-multitenant`は予約値として認識するが、`SAAS-TENANT-01`の安全ゲート未完了を理由にsettings validationで常に起動拒否する。未知値や旧`RUNTIME_PROFILE`もfail-fastにする。
 - runtime registry、deployment、Compose、利用者向けConfigurationを同じ公開キーへ同期した。
 - 検証: Ruff pass、settings/API-key近接26件pass、backend全体304件pass・条件付き24件skip、公開キー正本を含むdocs-check pass。Dockerがないため`docker compose config`は未実施。
+
+### Implementation checkpoint 2026-07-17: identity provider binding expand
+
+- Alembic `20260717_0007`で`user_identities.identity_provider_id`と`subject`をnullable expand列として追加し、既存providerラベルごとの決定的な互換IdP、`local-default`のIdP binding、既存identityのsubjectをbackfillした。`identity_provider_id + subject`の一意indexを追加し、rerunとdowngradeをSQLiteで確認した。
+- JIT provisioningと`/admin/provision/users`は、既存の`provider + external_uid`に加えて`identity_provider_id + subject`を二重書きする。旧列と既存APIはsingle-tenant互換のため維持し、検証済みissuer/audienceからIdPを解決するまで互換IdPをSaaS認証に使用しない。
+- PostgreSQLでは`identity_provider_id`外部キーを追加し、SQLiteはlocal/evaluation用途のためアプリmetadata上の外部キーと一意indexに留める。共有SaaSは引き続き禁止する。
+- 検証: Ruff pass、identity migration・tenant migration・JIT/strict provisioning近接19件pass。PostgreSQL migrationは利用可能な環境がないため未検証であり、次のcontract/NOT NULL化条件に残す。
