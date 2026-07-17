@@ -131,7 +131,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 
 | 変数 | 既定値 | 用途 |
 | --- | --- | --- |
-| `KJ_ATLAS_WEB_PORT` | `8080` | web の公開 port |
+| `KJ_ATLAS_WEB_PORT` | `8080` | web の loopback（`127.0.0.1`）port。port 番号だけを変え、LAN など他ホストからの到達可否は変えない |
 | `KJ_ATLAS_POSTGRES_DB` | `kj_atlas` | Compose PostgreSQL の database 名 |
 | `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
 | `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | Compose PostgreSQL の password |

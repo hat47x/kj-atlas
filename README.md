@@ -80,6 +80,8 @@ cd 03_Implement/deploy
 docker compose up --build
 ```
 
+標準構成は loopback（`127.0.0.1`）限定の同一ホスト評価用です。別端末や LAN からの利用は既定で届きません（詳細は [`04_Documentation/installation.md`](04_Documentation/installation.md)）。
+
 - 詳細な実行方法（Frontend / Backend 個別起動、環境変数）は [`03_Implement/README.md`](03_Implement/README.md) を参照してください。
 
 ### 4) このリポジトリでの相談・報告窓口

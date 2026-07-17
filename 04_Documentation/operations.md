@@ -18,7 +18,7 @@ Docker Compose の標準構成は次の3サービスです。
 | `api` | FastAPI backend |
 | `db` | PostgreSQL |
 
-標準 URL は `http://localhost:8080` です。nginx は `/api/` を backend に転送します。
+標準 URL は `http://localhost:8080` です。nginx は `/api/` を backend に転送します。`web` は loopback（`127.0.0.1`）へ bind されるため、この URL は起動したホスト自身からだけ開けます。別端末や LAN からの利用が必要な場合は、認証 proxy・TLS を伴う別構成が必要です。
 
 ## 運用で見るもの
 

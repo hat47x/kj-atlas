@@ -12,6 +12,7 @@
 4. データプライバシー（エクスポート挙動を含む）
 5. サポート診断バンドル
 6. 外部エージェント向けMCP投影
+7. 標準Composeのネットワーク公開境界
 
 ## 資産 / Assets
 
@@ -113,6 +114,22 @@ stdio段階では listen port を開かず外部到達不可だったが、strea
 - 全route（metadata含む）に60 req/min/IPのrate limitを適用し、単純な洪水要求を早期にthrottleする
 - transportはstateless（`sessionIdGenerator: undefined`）とし、session固定化やsession storageに起因する攻撃面を持たない
 - request bodyは1MBに制限し、過大payloadでのメモリ消費を防ぐ
+
+### 7) 標準Composeのネットワーク公開境界（DEPLOY-NET-01）
+
+`http://localhost:8080` という案内は、サービスがloopbackだけでlistenすることを意味しない。host IPを省略したDockerのport公開（`"${KJ_ATLAS_WEB_PORT:-8080}:80"`）はホストの全interfaceを対象にし、同一LANや誤設定されたport forwardingから到達できる未認証主体に、評価環境そのものを公開してしまう。
+
+- 保護資産: document本文、レビュー情報、設定・診断情報
+- 攻撃者: 同一LAN、共有ホスト、誤設定されたport forwardingから到達する未認証主体
+- 入口: nginx配信面（`web`サービス）と、そこから転送される`/api`
+- 誤解しやすい非対策: SafeMode（share/exportの漏洩抑制であり、ネットワーク経由の到達を認証しない）、`KJ_ATLAS_API_KEY`（同梱SPAが`X-API-Key`を送らないため、通常のブラウザ利用を保ったまま既定露出を補う認証にはならない）、URLに`localhost`と表示すること
+
+**想定対策**
+
+- 標準`docker-compose.yml`の`web.ports`をloopback（`127.0.0.1:${KJ_ATLAS_WEB_PORT:-8080}:80`）へ明示bindし、`KJ_ATLAS_WEB_PORT`はport番号だけを変え、bind範囲を拡張しない契約にする
+- 別端末・LAN・Internetからの利用が必要な場合は、TLS終端・SPAとAPIの双方を覆う認証proxy・接続元制限・secret管理を伴う明示的な別deployment profileとして分離し、base Composeの直接書き換えでは対応しない
+- READMEとinstallation/deployment文書で、標準Composeを「同一ホストからだけ使う評価構成」と明記する
+- contract testで、標準Composeのweb port mappingがhost IP省略・`0.0.0.0`・loopback以外へ戻らないことを検証する
 
 ## 検証・運用 / Verification
 
