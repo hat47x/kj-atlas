@@ -5,6 +5,8 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) を参考にし、
 バージョンは [Semantic Versioning](https://semver.org/lang/ja/)（SemVer）に従います。
 
+`[Unreleased]` から版を切る手順（タグ・日付との対応）は [`04_Documentation/release.md`](04_Documentation/release.md#changelog-との対応) を参照してください。
+
 ## [Unreleased]
 
 ### Added
