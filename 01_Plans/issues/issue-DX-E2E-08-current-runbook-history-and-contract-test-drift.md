@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、E2Eの再現に必要な現行手順だけを正本へ残す。
 
 - Type: Bug / Documentation / Test
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
