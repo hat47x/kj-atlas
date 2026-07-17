@@ -17,6 +17,10 @@
 - 外部サービスとの共有や large-scale LLM の利用は、明示的な opt-in と宛先 allowlist がある場合だけ有効にします。
 
 
+## 起動面ごとの配送範囲（重要）
+
+このページの `export KJ_ATLAS_*` 例は、backend を直接起動する場合の設定例です。標準 Docker Compose (`docker-compose.yml`) は `KJ_ATLAS_DATABASE_URL` と `KJ_ATLAS_LLM_PROVIDER` の2キーだけを `api` コンテナへ配送します。他のキー（`KJ_ATLAS_API_KEY` や `KJ_ATLAS_ALLOW_JIT_PROVISIONING` を含む）は、Compose の `api.environment` に明示的に追加しない限り、`export` しても標準 Compose 経由では `api` へ届きません。キーごとの配送範囲は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)（`Delivery surface` 列）で確認してください。
+
 ## 公開設定と内部adapter境界
 
 | 区分 | 利用者が設定するか | 例 | 取り扱いルール |
@@ -189,6 +193,8 @@ curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 
 ブラウザで動く同梱の画面（SPA）は `X-API-Key` を付与しません。そのため `KJ_ATLAS_API_KEY` を設定すると画面からの読み込み・保存は 401 になります。API キーは `curl` などプログラムからのアクセス保護を想定したものです。ブラウザでの動作検証では未設定（既定）のまま使い、ブラウザ配信自体を保護する場合は前段に認証 proxy を置いてください（[security.md](security.md) 参照）。
 
+> 注意: 標準 Docker Compose はこのキーを `api` コンテナへ配送しません（direct 起動限定）。Compose 上で有効化するには `docker-compose.yml` の `api.environment` に明示的な配送設定を追加する必要があります（現状未実装。[runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照）。
+
 ## local LLM を使う
 
 local provider は `<base_url>/generate` に JSON を POST します。応答は `{ "text": "..." }` を返す必要があります。
@@ -198,6 +204,8 @@ export KJ_ATLAS_LLM_PROVIDER=local
 export KJ_ATLAS_LOCAL_LLM_BASE_URL='http://localhost:8001'
 export KJ_ATLAS_LOCAL_LLM_MODEL='local-model-name'
 ```
+
+> 注意: 上記は direct 起動時の例です。標準 Docker Compose はこれらのキーを配送しません。Compose 上で `local` provider を検証する場合は、検証専用の `docker-compose.llm-stub.yml` overlay を使ってください（`docker compose -f docker-compose.yml -f docker-compose.llm-stub.yml up -d`）。また `api` コンテナ内から見た `http://localhost:8001` はホストではなく `api` コンテナ自身を指すため、Compose 環境ではこの例をそのまま転記しないでください。
 
 ## large-scale LLM を使う
 
