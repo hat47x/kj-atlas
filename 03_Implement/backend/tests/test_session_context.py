@@ -176,6 +176,7 @@ def test_stale_or_unavailable_active_tenant_is_rejected_before_policy_call() -> 
     [
         CapabilitySnapshot((" document.read",), "policy-v1"),
         CapabilitySnapshot(("document.read\n",), "policy-v1"),
+        CapabilitySnapshot(("tenant.root",), "policy-v1"),
         CapabilitySnapshot(("document.read",), ""),
     ],
 )

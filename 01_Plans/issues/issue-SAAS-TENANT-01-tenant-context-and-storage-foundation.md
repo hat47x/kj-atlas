@@ -222,3 +222,11 @@
 - server-resolved principalId、tenantId、membershipIdだけをtrusted endpointへPOSTし、既知`effectiveCapabilities`とopaque `capabilityVersion`だけを受理する`external_http` resolverを追加した。未知・重複capability、roles/groups等の余分なfield、非canonical version、64KiB超、4xx、timeout/transport障害はfail-closedにする。
 - resolverは既定unavailableとしてapplication lifecycleへ配線した。`none`や不完全設定では管理API/session builderが`503 capability_resolution_unavailable`となり、公開headerやDocument owner、`document.write`から管理capabilityを導出しない。endpoint/API key/timeoutとvalidation errorの秘密非反射にはbinding resolverと共通の設定guardを適用する。
 - request/response、既知capability集合、size/shape/version、membership欠損時のtransport前停止、4xx/transport正規化、builder、設定guardを25件、session・管理API・binding近接70件で確認した。trusted SaaS auth edge、実policy service/PDP、公開session route、frontend配線は未完了のためAC-4/6/7/10と起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-17: fail-closed session context route
+
+- SaaS identity、verified/trusted TenantContext、active membership、trusted capability snapshotをrequestごとに解決する共通境界を追加し、Document access管理APIと`GET /session/context`で共有した。identity resolver未注入、single-tenant互換context、停止membership、capability resolver欠損・例外では成功responseを返さない。
+- responseはopaque `principalId`、active tenant、active membership由来のtenant候補、既知`effectiveCapabilities`、`capabilityVersion`だけに限定した。email、外部IdP subject、reviewer/owner ref、membership ID、role/groupを返さず、公開tenant/role/group headerを候補や権限へ昇格させない。成功時は`Cache-Control: no-store`と`Pragma: no-cache`を付ける。
+- internal builderも未知capabilityを`503 capability_resolution_unavailable`へ正規化した。routeの正常系、秘密非反射、adapter欠損、匿名、single-tenant互換・未知resolution method、未知capability、停止membership、tenant resolver例外と、既存管理API回帰を近接31件で確認した。
+- 検証はRuff、backend全体431件pass・PostgreSQL等の条件付き25件skip、docs-check、diff-checkを通過した。移行テストの子プロセスが仮想環境のAlembicを解決できるよう、全体検証では仮想環境の実行パスを明示した。
+- `POST /session/active-tenant`は認証sessionへのactive tenant永続化契約が未確定のため追加していない。trusted auth edgeの実接続、frontend fetch／App cleanup hook、active tenant変更、token期限連動cache、完全negative matrixが残るためAC-4/6/7/10/12とSaaS起動拒否を継続する。

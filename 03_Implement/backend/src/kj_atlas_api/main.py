@@ -20,6 +20,7 @@ from kj_atlas_api.routes.context import router as context_router
 from kj_atlas_api.routes.document_access_admin import (
     router as document_access_admin_router,
 )
+from kj_atlas_api.routes.session import router as session_router
 from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_capability import build_tenant_capability_resolver
 from kj_atlas_api.tenant_context import SingleTenantContextResolver
@@ -82,3 +83,4 @@ app.include_router(ai_router)
 app.include_router(ai_relations_router)
 app.include_router(context_router)
 app.include_router(document_access_admin_router)
+app.include_router(session_router)

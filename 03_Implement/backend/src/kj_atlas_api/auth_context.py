@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Protocol
 from uuid import uuid4
 
 from fastapi import HTTPException, Request
@@ -29,6 +30,13 @@ class ResolvedIdentity:
     reviewer_ref: str | None
     owner_ref: str | None
     auth_context: AuthContext
+
+
+class SaasIdentityContextResolver(Protocol):
+    """Resolve identity only after the deployment auth edge verified it."""
+
+    def resolve(self, *, db: Session, request: Request) -> ResolvedIdentity:
+        ...
 
 
 def _header(request: Request, header_name: str) -> str | None:

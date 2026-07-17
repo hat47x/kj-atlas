@@ -122,18 +122,24 @@ def build_tenant_session_context(
             principal_id=principal_id,
             tenant=tenant,
         )
+        capability_version = _normalize_canonical_value(snapshot.capability_version)
+        effective_capabilities = tuple(
+            sorted(
+                {
+                    _normalize_canonical_value(capability)
+                    for capability in snapshot.effective_capabilities
+                }
+            )
+        )
+        if any(
+            capability not in KNOWN_EFFECTIVE_CAPABILITIES
+            for capability in effective_capabilities
+        ):
+            _capability_resolution_unavailable()
+    except HTTPException:
+        raise
     except Exception:
         _capability_resolution_unavailable()
-
-    capability_version = _normalize_canonical_value(snapshot.capability_version)
-    effective_capabilities = tuple(
-        sorted(
-            {
-                _normalize_canonical_value(capability)
-                for capability in snapshot.effective_capabilities
-            }
-        )
-    )
 
     return TenantSessionContext(
         principal_id=principal_id,

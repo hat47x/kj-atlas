@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from datetime import datetime, timezone
 from hashlib import sha256
-from typing import Literal, Protocol, cast
+from typing import Literal, cast
 from uuid import uuid4
 
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, Response
@@ -24,15 +24,8 @@ from kj_atlas_api.models import (
     DocumentAccessAdminAuditEventRow,
     DocumentAccessMetadataRow,
 )
-from kj_atlas_api.session_context import (
-    TenantCapabilityResolver,
-    build_tenant_session_context,
-)
-from kj_atlas_api.tenant_context import (
-    SingleTenantContextResolver,
-    TenantContext,
-    TenantContextResolver,
-)
+from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
+from kj_atlas_api.tenant_context import TenantContext
 
 
 router = APIRouter(prefix="/tenant-admin/document-access", tags=["tenant-admin"])
@@ -41,13 +34,6 @@ DOCUMENT_POLICY_MANAGE_CAPABILITY = "document.policy.manage"
 Visibility = Literal["Public", "Unlisted", "Org", "Restricted"]
 BindingStatus = Literal["unconfigured", "not_required", "configured"]
 _OPAQUE_POLICY_VALUE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
-
-
-class SaasIdentityContextResolver(Protocol):
-    """Resolve identity only after the deployment auth edge verified it."""
-
-    def resolve(self, *, db: Session, request: Request) -> ResolvedIdentity:
-        ...
 
 
 class DocumentAccessUpdateRequest(BaseModel):
@@ -122,83 +108,29 @@ def _error(*, status_code: int, code: str, message: str) -> HTTPException:
     )
 
 
-def _canonical_identifier(value: str | None) -> bool:
-    return bool(
-        value
-        and value.strip() == value
-        and not any(ord(character) < 32 or ord(character) == 127 for character in value)
-    )
-
-
 def _authorize_document_policy_management(
     *,
     request: Request,
     db: Session,
 ) -> tuple[ResolvedIdentity, TenantContext, str]:
-    identity_resolver = getattr(request.app.state, "saas_identity_context_resolver", None)
-    if identity_resolver is None:
-        raise _error(
-            status_code=503,
-            code="tenant_admin_auth_unavailable",
-            message="Trusted SaaS identity resolution is unavailable.",
-        )
-    try:
-        identity = cast(SaasIdentityContextResolver, identity_resolver).resolve(
-            db=db,
-            request=request,
-        )
-    except HTTPException:
-        raise
-    except Exception:
-        raise _error(
-            status_code=503,
-            code="tenant_admin_auth_unavailable",
-            message="Trusted SaaS identity resolution is unavailable.",
-        ) from None
-    if identity.user_id is None:
-        raise _error(
-            status_code=401,
-            code="session_auth_required",
-            message="Authenticated session context is required.",
-        )
-
-    tenant_resolver: TenantContextResolver = getattr(
-        request.app.state,
-        "tenant_context_resolver",
-        SingleTenantContextResolver(),
-    )
-    tenant = tenant_resolver.resolve(db=db, user_id=identity.user_id)
-    if (
-        tenant.resolved_by == "single_tenant_adapter"
-        or not _canonical_identifier(tenant.tenant_id)
-        or not _canonical_identifier(tenant.membership_id)
-    ):
-        raise _error(
-            status_code=403,
-            code="tenant_context_untrusted",
-            message="Verified tenant context is required.",
-        )
-
-    capability_resolver = getattr(request.app.state, "tenant_capability_resolver", None)
-    if capability_resolver is None:
-        raise _error(
-            status_code=503,
-            code="capability_resolution_unavailable",
-            message="Tenant capabilities are unavailable.",
-        )
-    session = build_tenant_session_context(
+    trusted_session = resolve_trusted_saas_request_session(
+        request=request,
         db=db,
-        principal_id=identity.user_id,
-        tenant=tenant,
-        capability_resolver=cast(TenantCapabilityResolver, capability_resolver),
     )
-    if DOCUMENT_POLICY_MANAGE_CAPABILITY not in session.effective_capabilities:
+    if (
+        DOCUMENT_POLICY_MANAGE_CAPABILITY
+        not in trusted_session.session.effective_capabilities
+    ):
         raise _error(
             status_code=403,
             code="document_policy_manage_required",
             message="Document policy management capability is required.",
         )
-    return identity, tenant, session.capability_version
+    return (
+        trusted_session.identity,
+        trusted_session.tenant,
+        trusted_session.session.capability_version,
+    )
 
 
 def _metadata_revision(
