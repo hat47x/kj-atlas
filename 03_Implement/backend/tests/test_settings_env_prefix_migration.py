@@ -179,6 +179,18 @@ def test_settings_rejects_legacy_document_policy_binding_key(monkeypatch) -> Non
         assert "DOCUMENT_POLICY_BINDING_RESOLVER" in str(exc)
 
 
+def test_settings_rejects_legacy_tenant_capability_key(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("TENANT_CAPABILITY_RESOLVER", "external_http")
+
+    try:
+        Settings()
+        assert False, "Expected legacy capability resolver key to be rejected"
+    except ValueError as exc:
+        assert "Legacy env keys are no longer supported" in str(exc)
+        assert "TENANT_CAPABILITY_RESOLVER" in str(exc)
+
+
 def test_backend_ci_uses_canonical_database_test_keys() -> None:
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")
 

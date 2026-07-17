@@ -21,6 +21,7 @@ from kj_atlas_api.routes.document_access_admin import (
     router as document_access_admin_router,
 )
 from kj_atlas_api.settings import settings
+from kj_atlas_api.tenant_capability import build_tenant_capability_resolver
 from kj_atlas_api.tenant_context import SingleTenantContextResolver
 
 
@@ -44,7 +45,7 @@ async def lifespan(app: FastAPI):
     app.state.tenant_context_resolver = SingleTenantContextResolver()
     app.state.document_access_resource_resolver = SingleTenantHeaderResourceResolver()
     app.state.saas_identity_context_resolver = None
-    app.state.tenant_capability_resolver = None
+    app.state.tenant_capability_resolver = build_tenant_capability_resolver()
     yield
 
 

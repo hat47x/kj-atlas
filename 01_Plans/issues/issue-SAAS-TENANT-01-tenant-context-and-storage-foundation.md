@@ -215,4 +215,10 @@
 
 - 非秘密`bindingId + policyVersion`をserver-resolved tenantIdとともに信頼済みendpointへPOSTし、raw policyRefをrequest内だけで返す`external_http` resolverを追加した。応答は`policyRef`単独field、64KiB以下、2,048文字以下、前後空白・制御文字なしに限定し、余分なtoken等のfield、非JSON、4xx、timeout/transport障害はすべてfail-closed解決失敗にする。
 - resolverは既定`none`で、endpoint/API keyだけが残る不完全設定を拒否する。endpoint内credential/query/fragmentと非loopback HTTP、空白・制御文字を含むAPI key、0以下または30秒超のtimeoutをSettingsで拒否し、API keyとraw応答値を例外、DB、監査へ反射しない。
-- adapter request/response、size/shape/canonical制約、4xx/transport正規化、builder既定unavailable、設定guard・秘密入力非反射を近接24件で確認し、resource/settings近接56件とRuffがpassした。SaaS lifecycleへのauth/capability/resource resolver配線、実binding service/PDP、secret manager注入は未完了のためAC-4/7/10と起動拒否を継続する。
+- adapter request/response、size/shape/canonical制約、4xx/transport正規化、builder既定unavailable、設定guard・秘密入力非反射を近接24件で確認し、resource/settings近接56件とRuffがpassした。SaaS lifecycleへのauth/resource resolver配線、実binding service/PDP、secret manager注入は未完了のためAC-4/7/10と起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-17: trusted tenant capability adapter
+
+- server-resolved principalId、tenantId、membershipIdだけをtrusted endpointへPOSTし、既知`effectiveCapabilities`とopaque `capabilityVersion`だけを受理する`external_http` resolverを追加した。未知・重複capability、roles/groups等の余分なfield、非canonical version、64KiB超、4xx、timeout/transport障害はfail-closedにする。
+- resolverは既定unavailableとしてapplication lifecycleへ配線した。`none`や不完全設定では管理API/session builderが`503 capability_resolution_unavailable`となり、公開headerやDocument owner、`document.write`から管理capabilityを導出しない。endpoint/API key/timeoutとvalidation errorの秘密非反射にはbinding resolverと共通の設定guardを適用する。
+- request/response、既知capability集合、size/shape/version、membership欠損時のtransport前停止、4xx/transport正規化、builder、設定guardを25件、session・管理API・binding近接70件で確認した。trusted SaaS auth edge、実policy service/PDP、公開session route、frontend配線は未完了のためAC-4/6/7/10と起動拒否を継続する。

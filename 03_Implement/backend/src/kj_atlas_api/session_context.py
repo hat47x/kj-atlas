@@ -14,6 +14,23 @@ from kj_atlas_api.tenant_context import (
 )
 
 
+KNOWN_EFFECTIVE_CAPABILITIES = frozenset(
+    {
+        "document.read",
+        "document.write",
+        "document.export",
+        "document.share",
+        "document.policy.manage",
+        "membership.provision",
+        "agent.register",
+        "agent.revoke",
+        "audit.read",
+        "tenant.provision",
+        "tenant.suspend",
+    }
+)
+
+
 @dataclass(frozen=True, slots=True)
 class CapabilitySnapshot:
     effective_capabilities: tuple[str, ...]

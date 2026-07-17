@@ -162,7 +162,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 4. **エージェント登録UI**: `EXT-CONN-02`でテーブル/API/失効/監査契約を固定してから実装する。
 5. **Audit UI**: `DATA-MAINT-04`の判断とallowlist契約なしに実装しない。
 6. **SaaS tenant UI**: `ADR-0059`のImplementation gateに従い、TenantContext、membership、tenant従属DB列、DB側tenant guard、capability API、deny-only SaaS profile、storage namespace、migration、越境テストが揃うまで有効化しない。
-7. **文書アクセス設定UI**: `document.policy.manage`のAPI再認可、metadata管理API、transactional audit、strict external HTTP binding resolverは実装済み。trusted SaaS auth/capability adapterとのruntime配線、binding service/PDP実接続、PostgreSQL RLS実地検証、実PDPを含むtenant A/B negative matrixが揃うまで実画面へ追加しない。
+7. **文書アクセス設定UI**: `document.policy.manage`のAPI再認可、metadata管理API、transactional audit、strict external HTTP capability/binding resolverとcapability lifecycle配線は実装済み。trusted SaaS auth edge、binding/capability service・PDP実接続、PostgreSQL RLS実地検証、実PDPを含むtenant A/B negative matrixが揃うまで実画面へ追加しない。
 
 複雑性予算: 初期表示への純増=なし（開始パネル/既存ダイアログ/既存設定節の置換・包含、Adminは別面） / 保留操作の距離=不変 / 取り消し導線=プリセット削除は既定復帰、登録・失効は確認と新規再登録（契約後）
 

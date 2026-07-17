@@ -13,6 +13,50 @@ def _current_utc_date() -> date:
     return date.today()
 
 
+def _validate_trusted_http_resolver(
+    *,
+    resolver: str,
+    resolver_key: str,
+    endpoint: str | None,
+    endpoint_key: str,
+    api_key: str | None,
+    api_key_key: str,
+) -> str:
+    normalized_resolver = resolver.strip().lower()
+    if normalized_resolver not in {"none", "external_http"}:
+        raise ValueError(f"{resolver_key} must be one of none|external_http")
+    if normalized_resolver == "none":
+        if endpoint is not None or api_key is not None:
+            raise ValueError(f"{endpoint_key} and {api_key_key} require {resolver_key}=external_http")
+        return normalized_resolver
+
+    if endpoint is None or endpoint.strip() != endpoint:
+        raise ValueError(f"{endpoint_key} is required and must be canonical")
+    parsed_endpoint = urlsplit(endpoint)
+    if (
+        parsed_endpoint.scheme not in {"http", "https"}
+        or not parsed_endpoint.hostname
+        or parsed_endpoint.username is not None
+        or parsed_endpoint.password is not None
+        or parsed_endpoint.query
+        or parsed_endpoint.fragment
+    ):
+        raise ValueError(
+            f"{endpoint_key} must be an http(s) URL without credentials, query, or fragment"
+        )
+    if parsed_endpoint.scheme == "http" and (
+        parsed_endpoint.hostname not in {"localhost", "127.0.0.1", "::1"}
+    ):
+        raise ValueError(f"{endpoint_key} allows HTTP only for loopback endpoints")
+    if api_key is not None and (
+        not api_key
+        or any(character.isspace() for character in api_key)
+        or any(ord(character) < 32 or ord(character) == 127 for character in api_key)
+    ):
+        raise ValueError(f"{api_key_key} must be a non-empty canonical bearer value")
+    return normalized_resolver
+
+
 LEGACY_ENV_KEYS = {
     "RUNTIME_PROFILE",
     "DATABASE_URL",
@@ -44,6 +88,10 @@ LEGACY_ENV_KEYS = {
     "DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT",
     "DOCUMENT_POLICY_BINDING_HTTP_API_KEY",
     "DOCUMENT_POLICY_BINDING_HTTP_TIMEOUT_SECONDS",
+    "TENANT_CAPABILITY_RESOLVER",
+    "TENANT_CAPABILITY_HTTP_ENDPOINT",
+    "TENANT_CAPABILITY_HTTP_API_KEY",
+    "TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS",
     "ALLOW_JIT_PROVISIONING",
     "AUTH_PROVIDER_FIELD",
     "AUTH_USER_FIELD",
@@ -181,6 +229,24 @@ class Settings(BaseSettings):
         gt=0,
         le=30,
         validation_alias="KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_TIMEOUT_SECONDS",
+    )
+    tenant_capability_resolver: str = Field(
+        default="none",
+        validation_alias="KJ_ATLAS_TENANT_CAPABILITY_RESOLVER",
+    )
+    tenant_capability_http_endpoint: str | None = Field(
+        default=None,
+        validation_alias="KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT",
+    )
+    tenant_capability_http_api_key: str | None = Field(
+        default=None,
+        validation_alias="KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY",
+    )
+    tenant_capability_http_timeout_seconds: float = Field(
+        default=1.5,
+        gt=0,
+        le=30,
+        validation_alias="KJ_ATLAS_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS",
     )
     allow_jit_provisioning: bool = Field(
         default=True,
@@ -322,59 +388,22 @@ class Settings(BaseSettings):
             )
         self.access_control_fail_safe_mode = normalized_fail_safe_mode
 
-        normalized_binding_resolver = self.document_policy_binding_resolver.strip().lower()
-        if normalized_binding_resolver not in {"none", "external_http"}:
-            raise ValueError(
-                "KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER must be one of "
-                "none|external_http"
-            )
-        self.document_policy_binding_resolver = normalized_binding_resolver
-
-        binding_endpoint = self.document_policy_binding_http_endpoint
-        binding_api_key = self.document_policy_binding_http_api_key
-        if normalized_binding_resolver == "none":
-            if binding_endpoint is not None or binding_api_key is not None:
-                raise ValueError(
-                    "Document policy binding HTTP settings require "
-                    "KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER=external_http"
-                )
-        else:
-            if binding_endpoint is None or binding_endpoint.strip() != binding_endpoint:
-                raise ValueError(
-                    "KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT is required "
-                    "and must be canonical"
-                )
-            parsed_binding_endpoint = urlsplit(binding_endpoint)
-            if (
-                parsed_binding_endpoint.scheme not in {"http", "https"}
-                or not parsed_binding_endpoint.hostname
-                or parsed_binding_endpoint.username is not None
-                or parsed_binding_endpoint.password is not None
-                or parsed_binding_endpoint.query
-                or parsed_binding_endpoint.fragment
-            ):
-                raise ValueError(
-                    "KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT must be an "
-                    "http(s) URL without credentials, query, or fragment"
-                )
-            if parsed_binding_endpoint.scheme == "http" and (
-                parsed_binding_endpoint.hostname not in {"localhost", "127.0.0.1", "::1"}
-            ):
-                raise ValueError(
-                    "Document policy binding HTTP is allowed only for loopback endpoints"
-                )
-            if binding_api_key is not None and (
-                not binding_api_key
-                or any(character.isspace() for character in binding_api_key)
-                or any(
-                    ord(character) < 32 or ord(character) == 127
-                    for character in binding_api_key
-                )
-            ):
-                raise ValueError(
-                    "KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY must be a "
-                    "non-empty canonical bearer value"
-                )
+        self.document_policy_binding_resolver = _validate_trusted_http_resolver(
+            resolver=self.document_policy_binding_resolver,
+            resolver_key="KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER",
+            endpoint=self.document_policy_binding_http_endpoint,
+            endpoint_key="KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT",
+            api_key=self.document_policy_binding_http_api_key,
+            api_key_key="KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY",
+        )
+        self.tenant_capability_resolver = _validate_trusted_http_resolver(
+            resolver=self.tenant_capability_resolver,
+            resolver_key="KJ_ATLAS_TENANT_CAPABILITY_RESOLVER",
+            endpoint=self.tenant_capability_http_endpoint,
+            endpoint_key="KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT",
+            api_key=self.tenant_capability_http_api_key,
+            api_key_key="KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY",
+        )
 
         normalized_reviewer_ref_adapter = self.reviewer_ref_resolver_adapter.strip().lower()
         if normalized_reviewer_ref_adapter not in {"user_id", "sso_subject"}:
