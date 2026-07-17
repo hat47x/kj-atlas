@@ -8,7 +8,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.models import Base, TenantMembershipRow, TenantRow, UserRow
-from kj_atlas_api.session_context import CapabilitySnapshot, build_tenant_session_context
+from kj_atlas_api.session_context import (
+    CapabilitySnapshot,
+    build_tenant_session_context,
+    switch_tenant_session_context,
+)
 from kj_atlas_api.tenant_context import TenantContext
 
 
@@ -19,6 +23,7 @@ TIMESTAMP = "2026-07-17T00:00:00Z"
 class StubCapabilityResolver:
     snapshot: CapabilitySnapshot
     calls: int = 0
+    last_tenant_id: str | None = None
 
     def resolve(
         self,
@@ -28,6 +33,7 @@ class StubCapabilityResolver:
         tenant: TenantContext,  # noqa: ARG002
     ) -> CapabilitySnapshot:
         self.calls += 1
+        self.last_tenant_id = tenant.tenant_id
         return self.snapshot
 
 
@@ -216,5 +222,85 @@ def test_policy_resolver_error_is_normalized_without_leaking_details() -> None:
             "code": "capability_resolution_unavailable",
             "message": "Tenant capabilities are unavailable.",
         }
+    finally:
+        engine.dispose()
+
+
+def test_switch_rechecks_allowlist_then_resolves_capabilities_for_new_tenant() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    resolver = StubCapabilityResolver(CapabilitySnapshot(("document.read",), "policy-v2"))
+    try:
+        with Session(engine) as db:
+            _seed(db)
+            context = switch_tenant_session_context(
+                db=db,
+                principal_id="user-1",
+                current_tenant=_tenant("tenant-a"),
+                requested_tenant_id="tenant-b",
+                capability_resolver=resolver,
+            )
+
+        assert context.active_tenant.tenant_id == "tenant-b"
+        assert context.capability_version == "policy-v2"
+        assert resolver.calls == 1
+        assert resolver.last_tenant_id == "tenant-b"
+    finally:
+        engine.dispose()
+
+
+@pytest.mark.parametrize("requested_tenant_id", ["tenant-suspended", "unknown-tenant"])
+def test_switch_hides_unavailable_requested_tenant(
+    requested_tenant_id: str,
+) -> None:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    resolver = StubCapabilityResolver(CapabilitySnapshot((), "policy-v1"))
+    try:
+        with Session(engine) as db:
+            _seed(db)
+            with pytest.raises(HTTPException) as exc_info:
+                switch_tenant_session_context(
+                    db=db,
+                    principal_id="user-1",
+                    current_tenant=_tenant("tenant-a"),
+                    requested_tenant_id=requested_tenant_id,
+                    capability_resolver=resolver,
+                )
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail["code"] == "tenant_not_available"
+        assert resolver.calls == 0
+    finally:
+        engine.dispose()
+
+
+def test_switch_rejects_single_tenant_or_stale_current_context_before_selection() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    resolver = StubCapabilityResolver(CapabilitySnapshot((), "policy-v1"))
+    try:
+        with Session(engine) as db:
+            _seed(db)
+            for current_tenant in (
+                TenantContext(
+                    tenant_id="tenant-a",
+                    membership_id="membership-opaque",
+                    resolved_by="single_tenant_adapter",
+                ),
+                _tenant("tenant-suspended"),
+            ):
+                with pytest.raises(HTTPException) as exc_info:
+                    switch_tenant_session_context(
+                        db=db,
+                        principal_id="user-1",
+                        current_tenant=current_tenant,
+                        requested_tenant_id="tenant-b",
+                        capability_resolver=resolver,
+                    )
+                assert exc_info.value.status_code == 403
+                assert exc_info.value.detail["code"] == "tenant_context_untrusted"
+
+        assert resolver.calls == 0
     finally:
         engine.dispose()

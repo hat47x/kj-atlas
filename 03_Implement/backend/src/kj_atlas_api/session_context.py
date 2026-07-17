@@ -10,6 +10,7 @@ from kj_atlas_api.tenant_context import (
     TenantContext,
     TenantSummary,
     list_active_tenant_summaries,
+    select_active_tenant_context,
 )
 
 
@@ -123,4 +124,40 @@ def build_tenant_session_context(
         available_tenants=available_tenants,
         effective_capabilities=effective_capabilities,
         capability_version=capability_version,
+    )
+
+
+def switch_tenant_session_context(
+    *,
+    db: Session,
+    principal_id: str | None,
+    current_tenant: TenantContext,
+    requested_tenant_id: str,
+    capability_resolver: TenantCapabilityResolver,
+) -> TenantSessionContext:
+    """Recheck current context and requested tenant before resolving new capabilities."""
+    if principal_id is None:
+        _session_auth_required()
+    if current_tenant.resolved_by == "verified_claim":
+        resolved_by = "verified_claim"
+    elif current_tenant.resolved_by == "trusted_host_mapping":
+        resolved_by = "trusted_host_mapping"
+    else:
+        _tenant_context_untrusted()
+
+    available_tenants = list_active_tenant_summaries(db=db, user_id=principal_id)
+    if not any(tenant.tenant_id == current_tenant.tenant_id for tenant in available_tenants):
+        _tenant_context_untrusted()
+
+    selected_tenant = select_active_tenant_context(
+        db=db,
+        user_id=principal_id,
+        tenant_id=requested_tenant_id,
+        resolved_by=resolved_by,
+    )
+    return build_tenant_session_context(
+        db=db,
+        principal_id=principal_id,
+        tenant=selected_tenant,
+        capability_resolver=capability_resolver,
     )
