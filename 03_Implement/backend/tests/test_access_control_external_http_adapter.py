@@ -13,6 +13,7 @@ from kj_atlas_api.access_control import (
     AuthContext,
     ExternalPolicyAccessControlAdapter,
     ExternalPolicyAdapterConfig,
+    MAX_ACCESS_CONTROL_RESPONSE_BYTES,
     build_access_control_adapter,
     resolve_access_decision,
 )
@@ -21,11 +22,15 @@ from kj_atlas_api.tenant_context import TenantContext
 
 
 class _Response:
-    def __init__(self, payload: dict):
-        self._body = json.dumps(payload).encode("utf-8")
+    def __init__(self, payload: dict | bytes):
+        self._body = (
+            json.dumps(payload).encode("utf-8")
+            if isinstance(payload, dict)
+            else payload
+        )
 
-    def read(self) -> bytes:
-        return self._body
+    def read(self, size: int = -1) -> bytes:
+        return self._body if size < 0 else self._body[:size]
 
     def __enter__(self):
         return self
@@ -180,6 +185,68 @@ def test_external_http_adapter_error_mapping(monkeypatch: pytest.MonkeyPatch) ->
 
     with pytest.raises(AccessControlInvalidPolicyError):
         adapter.authorize(_request())
+
+
+@pytest.mark.parametrize(
+    "response_body",
+    [
+        b"[]",
+        b'{"allow":true,"token":"response-secret"}',
+        b'{"allow":true,"reason":"line\\nbreak"}',
+        b'{"allow":true,"reason":"\\ud800"}',
+        b"\xff",
+        b"x" * (MAX_ACCESS_CONTROL_RESPONSE_BYTES + 1),
+    ],
+    ids=[
+        "array",
+        "extra-field",
+        "control-character",
+        "non-printable-unicode",
+        "invalid-utf8",
+        "oversized",
+    ],
+)
+def test_external_http_adapter_rejects_unbounded_or_noncanonical_response_without_reflection(
+    monkeypatch: pytest.MonkeyPatch,
+    response_body: bytes,
+) -> None:
+    monkeypatch.setattr(
+        "kj_atlas_api.access_control.open_trusted_http",
+        lambda request, timeout_seconds: _Response(response_body),  # noqa: ARG005
+    )
+    adapter = ExternalPolicyAccessControlAdapter(
+        config=ExternalPolicyAdapterConfig(
+            endpoint="https://policy.example.local/evaluate"
+        )
+    )
+
+    with pytest.raises(AccessControlInvalidPolicyError) as exc_info:
+        adapter.authorize(_request())
+
+    assert "response-secret" not in str(exc_info.value)
+
+
+def test_external_http_adapter_invalid_response_uses_deny_fail_safe(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "kj_atlas_api.access_control.open_trusted_http",
+        lambda request, timeout_seconds: _Response(b'{"allow":true,"extra":1}'),  # noqa: ARG005
+    )
+    adapter = ExternalPolicyAccessControlAdapter(
+        config=ExternalPolicyAdapterConfig(
+            endpoint="https://policy.example.local/evaluate"
+        )
+    )
+
+    decision = resolve_access_decision(
+        adapter=adapter,
+        request=_request(),
+        fail_safe_mode="deny",
+    )
+
+    assert decision.allow is False
+    assert decision.reason == "policy_ref_invalid"
 
 
 def test_build_access_control_adapter_external_http_fallbacks_to_noop_when_endpoint_missing(

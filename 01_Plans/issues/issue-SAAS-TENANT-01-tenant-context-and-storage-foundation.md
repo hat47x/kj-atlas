@@ -248,3 +248,9 @@
 - `urllib`の既定redirect追跡で、設定検証済みendpoint／LLM host allowlistから別接続先へ遷移できる経路を閉じた。外部PDP、監査HTTP、Document policy binding、tenant capability、LLM providerは共通のtrusted HTTP openerを使い、3xxで後続requestを生成しない。
 - 固定bearer、server-resolved tenant context、binding lookup、promptをredirect先へ転送しない。redirectは各adapterの既存HTTP／transport失敗として処理し、PDP・binding・capabilityのfail-safeや監査dispatcherのfail-open方針自体は変更しない。
 - redirect handler単体と全adapter近接84件、backend全体435件pass・条件付き25件skip、Ruff、docs-check、diff-checkを通過した。trusted auth edge、PostgreSQL実地matrix、SaaS runtime配線は未完了のため起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-17: strict external PDP response
+
+- 外部PDP応答を64KiB以下に制限し、`allow`必須、任意`readOnly/reason`だけのclosed-world objectとして検証する。非object、余分なfield、非UTF-8/非JSON、型不正、512文字超または制御文字を含むreasonを`AccessControlInvalidPolicyError`へ正規化し、raw値をclientやlogへ反射しない。
+- 不正応答は既存の`policy_ref_invalid`へ写像し、SaaS deny modeでreadを含めて拒否する。SafeMode/readOnly優先順、single-tenant互換のfail-safe選択、外部PDPの評価内容自体は変更しない。
+- 外部PDP／tenant境界／管理・session route近接44件、backend全体442件pass・条件付き25件skip、Ruff、docs-check、diff-checkを通過した。

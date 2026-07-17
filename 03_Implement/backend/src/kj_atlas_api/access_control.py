@@ -26,6 +26,9 @@ FailSafeReason = Literal[
     "policy_ref_invalid",
     "adapter_error",
 ]
+MAX_ACCESS_CONTROL_RESPONSE_BYTES = 64 * 1024
+MAX_ACCESS_CONTROL_REASON_LENGTH = 512
+_ACCESS_CONTROL_RESPONSE_FIELDS = {"allow", "readOnly", "reason"}
 
 
 @dataclass(frozen=True)
@@ -143,6 +146,51 @@ class ExternalPolicyAdapterConfig:
     idp_issuer: str | None = None
 
 
+def _parse_external_policy_response(response_body: bytes) -> AccessDecision:
+    if len(response_body) > MAX_ACCESS_CONTROL_RESPONSE_BYTES:
+        raise AccessControlInvalidPolicyError(
+            "policy adapter response exceeds the size limit"
+        )
+    try:
+        decoded = json.loads(response_body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise AccessControlInvalidPolicyError(
+            "policy adapter response is not valid JSON"
+        ) from None
+    if (
+        not isinstance(decoded, dict)
+        or "allow" not in decoded
+        or not set(decoded).issubset(_ACCESS_CONTROL_RESPONSE_FIELDS)
+    ):
+        raise AccessControlInvalidPolicyError(
+            "policy adapter response has an invalid shape"
+        )
+
+    allow = decoded["allow"]
+    if not isinstance(allow, bool):
+        raise AccessControlInvalidPolicyError(
+            "policy adapter response missing boolean allow"
+        )
+
+    read_only = decoded.get("readOnly", False)
+    if not isinstance(read_only, bool):
+        raise AccessControlInvalidPolicyError(
+            "policy adapter readOnly must be boolean"
+        )
+
+    reason = decoded.get("reason")
+    if reason is not None and (
+        not isinstance(reason, str)
+        or len(reason) > MAX_ACCESS_CONTROL_REASON_LENGTH
+        or any(not character.isprintable() for character in reason)
+    ):
+        raise AccessControlInvalidPolicyError(
+            "policy adapter reason must be a bounded plain string"
+        )
+
+    return AccessDecision(allow=allow, read_only=read_only, reason=reason)
+
+
 class ExternalPolicyAccessControlAdapter:
     """HTTP bridge to enterprise policy engines behind OIDC/SAML SSO.
 
@@ -241,7 +289,7 @@ class ExternalPolicyAccessControlAdapter:
                 outbound,
                 timeout_seconds=self._config.timeout_seconds,
             ) as response:
-                response_text = response.read().decode("utf-8")
+                response_body = response.read(MAX_ACCESS_CONTROL_RESPONSE_BYTES + 1)
         except urllib_error.HTTPError as exc:
             if exc.code in {400, 401, 403, 422}:
                 raise AccessControlInvalidPolicyError("policy adapter rejected request") from exc
@@ -250,25 +298,10 @@ class ExternalPolicyAccessControlAdapter:
             raise AccessControlUnreachableError("policy adapter unreachable") from exc
         except TimeoutError as exc:
             raise AccessControlUnreachableError("policy adapter timeout") from exc
+        except OSError as exc:
+            raise AccessControlUnreachableError("policy adapter unreachable") from exc
 
-        try:
-            decoded = json.loads(response_text)
-        except json.JSONDecodeError as exc:
-            raise AccessControlInvalidPolicyError("policy adapter response is not json") from exc
-
-        allow = decoded.get("allow")
-        if not isinstance(allow, bool):
-            raise AccessControlInvalidPolicyError("policy adapter response missing boolean allow")
-
-        read_only = decoded.get("readOnly", False)
-        if not isinstance(read_only, bool):
-            raise AccessControlInvalidPolicyError("policy adapter readOnly must be boolean")
-
-        reason = decoded.get("reason")
-        if reason is not None and not isinstance(reason, str):
-            raise AccessControlInvalidPolicyError("policy adapter reason must be string")
-
-        return AccessDecision(allow=allow, read_only=read_only, reason=reason)
+        return _parse_external_policy_response(response_body)
 
 
 def _read_only_fallback(reason: FailSafeReason, *, action: AccessAction) -> AccessDecision:
