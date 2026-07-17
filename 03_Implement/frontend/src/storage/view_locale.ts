@@ -1,5 +1,6 @@
 import { isLocale, type Locale } from "../i18n/translate";
 import { isViewMode, type ViewMode } from "../domain/view/view_mode";
+import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
 
 const VIEW_LOCALE_STORAGE_KEY = "kj-atlas/view-locale-by-doc-view";
 
@@ -7,6 +8,10 @@ type ViewLocaleByDoc = Record<string, Partial<Record<ViewMode, Locale>>>;
 
 function isStorageAvailable(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
+function viewLocaleStorageKey(scope?: TenantBrowserStorageScope): string {
+  return scope ? buildTenantStorageKey(VIEW_LOCALE_STORAGE_KEY, scope) : VIEW_LOCALE_STORAGE_KEY;
 }
 
 export function parseViewLocaleByDoc(rawValue: string | null | undefined): ViewLocaleByDoc {
@@ -49,26 +54,36 @@ export function parseViewLocaleByDoc(rawValue: string | null | undefined): ViewL
   }
 }
 
-export function loadViewLocaleForDocumentView(docId: string, viewMode: ViewMode): Locale | null {
+export function loadViewLocaleForDocumentView(
+  docId: string,
+  viewMode: ViewMode,
+  scope?: TenantBrowserStorageScope,
+): Locale | null {
   if (!docId || !isStorageAvailable()) {
     return null;
   }
 
-  const byDoc = parseViewLocaleByDoc(window.localStorage.getItem(VIEW_LOCALE_STORAGE_KEY));
+  const byDoc = parseViewLocaleByDoc(window.localStorage.getItem(viewLocaleStorageKey(scope)));
   return byDoc[docId]?.[viewMode] ?? null;
 }
 
-export function saveViewLocaleForDocumentView(docId: string, viewMode: ViewMode, locale: string): void {
+export function saveViewLocaleForDocumentView(
+  docId: string,
+  viewMode: ViewMode,
+  locale: string,
+  scope?: TenantBrowserStorageScope,
+): void {
   if (!docId || !isLocale(locale) || !isStorageAvailable()) {
     return;
   }
 
-  const byDoc = parseViewLocaleByDoc(window.localStorage.getItem(VIEW_LOCALE_STORAGE_KEY));
+  const storageKey = viewLocaleStorageKey(scope);
+  const byDoc = parseViewLocaleByDoc(window.localStorage.getItem(storageKey));
   const previousByView = byDoc[docId] ?? {};
   byDoc[docId] = {
     ...previousByView,
     [viewMode]: locale,
   };
 
-  window.localStorage.setItem(VIEW_LOCALE_STORAGE_KEY, JSON.stringify(byDoc));
+  window.localStorage.setItem(storageKey, JSON.stringify(byDoc));
 }
