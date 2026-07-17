@@ -36,6 +36,8 @@ export KJ_ATLAS_LOCAL_LLM_MODEL='local-model-name'
 
 `local_http` は `local` の alias として扱われます。
 
+> 注意: 上記は direct 起動時の例です。標準 Docker Compose はこれらのキーを配送しません。Compose 上で検証する場合は下記「GPU なしで動作イメージを確認する」の overlay 手順を使ってください。また `api` コンテナ内から見た `http://localhost:8001` はホストではなく `api` コンテナ自身を指すため、Compose 環境ではこの例をそのまま転記しないでください。
+
 設定を戻す場合は、provider を `none` に戻します。
 
 ```bash
@@ -85,6 +87,8 @@ export KJ_ATLAS_LLM_PROVIDER=local
 export KJ_ATLAS_LOCAL_LLM_BASE_URL=http://localhost:8001
 export KJ_ATLAS_LOCAL_LLM_MODEL=mock
 ```
+
+> 注意: `mock_local_llm.py` は direct 起動（backend をローカルで直接起動する構成）向けの確認手段です。標準 Docker Compose 環境では、代わりに検証専用の `docker-compose.llm-stub.yml` overlay（`docker compose -f docker-compose.yml -f docker-compose.llm-stub.yml up -d`）を使ってください。この overlay は Compose ネットワーク内で完結する別の決定論的スタブ（`llm-stub` サービス）であり、`mock_local_llm.py` とは別の仕組みです。どちらも本番相当の利用者向けデプロイでは使いません。
 
 モック有効時に画面で確認できる AI 機能:
 
@@ -139,6 +143,8 @@ export KJ_ATLAS_LLM_ESCALATION_ENABLED=true
 export KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true
 export KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST='llm.example.com'
 ```
+
+> 注意: 上記は direct 起動時の例です。標準 Docker Compose はこれらのキーを配送しません（[runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照）。
 
 large-scale provider を使う場合は、[configuration.md](configuration.md) と [security.md](security.md) を確認してください。
 

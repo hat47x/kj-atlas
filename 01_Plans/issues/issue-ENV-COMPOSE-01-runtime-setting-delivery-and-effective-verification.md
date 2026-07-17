@@ -3,7 +3,7 @@
 > 公開設定キーが存在することと、標準Composeの`api`コンテナへ届くことは別である。設定したつもりの安全機能が既定値のまま動く状態を防ぐ。
 
 - Type: Bug / Security / Documentation
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -105,7 +105,7 @@ endpoint例はnetwork namespaceを明記する。ホスト上のサービス、C
 
 ## 受入条件
 
-- [ ] 37個のbackend公開キーすべてに、direct / base Compose / overlay / fixedの対応とsecret区分がある。
+- [x] 37個のbackend公開キーすべてに、direct / base Compose / overlay / fixedの対応とsecret区分がある。
 - [ ] Compose向けと記載されたキーが`api`へ配送され、direct-onlyのキーをCompose例で案内しない。
 - [ ] `KJ_ATLAS_API_KEY`と`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`が標準または明示profileで機能的に確認できる。
 - [ ] local/large-scale LLM、audit、外部PDPは、必要な関連キーが一組として届くか、そのCompose profileではunsupportedと明記される。
@@ -114,7 +114,37 @@ endpoint例はnetwork namespaceを明記する。ホスト上のサービス、C
 - [ ] host、Compose service、別hostのendpoint例が区別され、Compose内`localhost`の誤用がない。
 - [ ] 静的契約テストがsettings公開キー、registry分類、Compose mapping、公開文書のsurface表記のdriftを検出する。
 - [ ] Docker integrationがAPI key、JIT禁止、LLM stub、および外部接続test doubleの代表経路を値非表示で確認する。
-- [ ] SafeMode既定ON、provider=`none`、audit HTTP既定OFF、external PDP既定`noop`、share/export/import境界を変更しない。
+- [x] SafeMode既定ON、provider=`none`、audit HTTP既定OFF、external PDP既定`noop`、share/export/import境界を変更しない。
+
+## 実装記録（2026-07-17）: Phase 1 — 分類表の正本化とドキュメントのsurface表記修正
+
+本Issueの「対応方針 1」（設定キーと実行面の対応表を正本化する）と「対応方針 3」（起動面ごとに例を分ける）のうち、ドキュメントのみで完結する部分を実施した。**「対応方針 2」（Composeの明示的allowlist実装）、「対応方針 4」（機能probeの自動テスト化）、静的契約テスト（AC 8）、Docker integration（AC 9）は未実施であり、後続作業として残る。**
+
+### 実施したこと
+
+- `02_Architecture/runtime_parameter_registry.md`の「Backend settings」表に `Delivery surface` / `Secret` / `Probe (non-secret)` の3列を追加し、37キー全てを分類した。分類は `settings.py`（`validation_alias`定義および`validate_llm_provider_guards`のfixed契約判定）と、現行の`docker-compose.yml` / `docker-compose.llm-stub.yml`の実際の配送内容を突き合わせて決定した（推測ではなく現状の実装を記述した）。
+  - `direct`: 31キー（標準Compose・overlayいずれからも配送されない）。
+  - `base Compose`: 2キー（`KJ_ATLAS_DATABASE_URL`, `KJ_ATLAS_LLM_PROVIDER`）。
+  - `llm-stub overlay`のみ: 2キー（`KJ_ATLAS_LOCAL_LLM_BASE_URL`, `KJ_ATLAS_LOCAL_LLM_MODEL`。検証専用、本番非対応）。
+  - `fixed`（validator強制）: 3キー（`KJ_ATLAS_CE4_EQUIVALENCE_MODE`, `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT`, `KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS`）。`KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK`と`KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS`はCE4系だがvalidator未強制のため`direct`に分類した。
+  - `KJ_ATLAS_API_KEY`と`KJ_ATLAS_ALLOW_JIT_PROVISIONING`には⚠️を付記し、「公開文書のexport例どおりに設定しても標準Composeでは`api`へ届かない」既知のギャップを明記した。
+- `04_Documentation/configuration.md`、`04_Documentation/security.md`、`04_Documentation/local_llm_ops_guide.md`（対応方針3が明示した3ファイル）に、direct起動限定であることの注意書きを追加した。あわせて`local_llm_ops_guide.md`の`mock_local_llm.py`（direct起動向けスタブ）と`docker-compose.llm-stub.yml`（Compose overlay向けスタブ）が別の仕組みであることを明記した。
+- `installation.md`、`operations.md`、`security_operational_guidelines.md`等、対応方針3が明示していない他の公開文書のlocalhost表記は本Issueでは監査していない（未着手）。
+
+### 未実施（後続作業として残す）
+
+- 対応方針2: 標準Composeの`api.environment`または新規overlayへの明示的キー追加（実際の配送実装）。
+- 対応方針4: API key 200/401、JIT禁止、LLM stub到達性、audit/PDP test doubleの機能probeの自動テスト化。
+- AC 8: `settings.py`公開キー集合 / registry分類 / Compose mapping / 公開文書surface表記のdriftを検出する静的契約テスト。
+- AC 9: Docker integrationによる代表経路の機能確認（Docker/Docker Composeはこの検証環境で利用可能なことを確認済み: `docker --version` → 29.5.3、`docker compose version` → v5.1.4）。
+- installation.md / operations.md 等、対応方針3の対象外だった公開文書のlocalhost表記監査。
+
+理由: 対応方針2・4はComposeファイルとbackend挙動そのものを変更し、`KJ_ATLAS_API_KEY`・`KJ_ATLAS_ALLOW_JIT_PROVISIONING`という保護機構の実効性に直接影響するセキュリティ上重要な変更であるため、本ドキュメントのみの変更とは別に、専用のレビュー・Docker統合検証を伴うPRとして切り出す。
+
+### 検証結果
+
+- `python 01_Plans/docs_check.py` — pass（後続で再実行し記録する）。
+- `git diff --check` — clean（CRLF混在ファイルへの追記はLF行のみで実施）。
 
 ## 検証計画
 
