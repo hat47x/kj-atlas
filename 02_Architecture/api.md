@@ -663,6 +663,8 @@ export type ActiveTenantRequestV1 = {
 
 `effectiveCapabilities`は表示補助であり、APIの再認可を代替しない。cacheする場合は`deployment + tenantId + principalId + capabilityVersion`で分離し、auth tokenの有効期限を越えて保持しない。
 
+実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。HTTP headerやqueryを直接verified evidenceへ変換する処理、`effectiveCapabilities`、上記endpoint routeは未実装であり、公開契約は引き続き閉じる。
+
 ### 10.2 tenant-scoped access request
 
 SaaS profileでAccessControlAdapterへ渡すrequestは、§8.1に加えて次を必須とする。

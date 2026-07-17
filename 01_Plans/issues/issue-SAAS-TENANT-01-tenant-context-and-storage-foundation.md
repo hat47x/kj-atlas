@@ -134,3 +134,10 @@
 - 独立起動できるMCP processでも`KJ_ATLAS_RUNTIME_PROFILE`を検証し、single-tenant 3 profileだけを受理する。`saas-multitenant`はtenant-bound MCP/agent credentialが未実装のため起動前に拒否し、未知profileも拒否する。
 - MCP tool inputや任意headerへtenantIdを追加しない。現行MCPはAPI keyによるsingle-tenant read-only互換に限定し、tenant credentialの代替として扱わない。
 - 検証: TypeScript typecheck pass、MCP全26件pass。検証環境はNode 24でpackage指定のNode 20とは異なるため、正式なNode 20 CI確認は継続する。
+
+### Implementation checkpoint 2026-07-17: verified claim resolver and tenant allowlist service
+
+- auth edgeで署名・issuer・audienceを検証済みという型付き`VerifiedTenantClaim`を受け取る内部resolverを追加した。resolverはDB上のIdP issuer/audience/lifecycle、tenant-IdP binding、`identity_provider_id + subject`、認証済みUserとの一致、tenant/User/membershipのactive状態を再確認する。HTTP headerやqueryをclaimへ直接変換する経路は追加しない。
+- active membershipだけを返すtenant候補列挙と、利用者入力tenantIdをmembership allowlistへ再照合する切替選択serviceを追加した。不明、他利用者、停止tenantは同じ404応答とし、tenant検索には使用できない。
+- `effectiveCapabilities`と公開`GET /session/context` / active-tenant routeは未実装のため、UIと公開APIは閉じたままにする。auth edge接続とtrusted host mappingも残課題。
+- 検証: Ruff pass、verified claimのissuer/audience/IdP/subject/user/tenant negative matrix、allowlist・切替、single-tenant/JIT近接32件pass。

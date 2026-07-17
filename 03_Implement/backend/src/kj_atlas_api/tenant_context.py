@@ -5,12 +5,16 @@ from hashlib import sha256
 from typing import Literal
 
 from fastapi import HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.models import (
     LOCAL_DEFAULT_TENANT_ID,
+    IdentityProviderRow,
+    TenantIdentityProviderRow,
     TenantMembershipRow,
     TenantRow,
+    UserIdentityRow,
     UserRow,
 )
 
@@ -27,6 +31,23 @@ class TenantContext:
     tenant_id: str
     membership_id: str | None
     resolved_by: TenantResolutionMethod
+
+
+@dataclass(frozen=True, slots=True)
+class VerifiedTenantClaim:
+    """Tenant evidence after signature, issuer and audience validation at the auth edge."""
+
+    tenant_id: str
+    identity_provider_id: str
+    issuer: str
+    audience: str
+    subject: str
+
+
+@dataclass(frozen=True, slots=True)
+class TenantSummary:
+    tenant_id: str
+    display_name: str
 
 
 LOCAL_DEFAULT_TENANT_CONTEXT = TenantContext(
@@ -51,6 +72,53 @@ def _deny_inactive_membership() -> None:
     )
 
 
+def _deny_untrusted_tenant_context() -> None:
+    raise HTTPException(
+        status_code=403,
+        detail={
+            "code": "tenant_context_untrusted",
+            "message": "Verified tenant context is required.",
+        },
+    )
+
+
+def _active_membership_context(
+    *,
+    db: Session,
+    user_id: str,
+    tenant_id: str,
+    resolved_by: TenantResolutionMethod,
+    unavailable_status: Literal["forbidden", "not_found"],
+) -> TenantContext:
+    user = db.get(UserRow, user_id)
+    tenant = db.get(TenantRow, tenant_id)
+    membership = db.get(TenantMembershipRow, (tenant_id, user_id))
+    active = (
+        user is not None
+        and user.lifecycle_state == "active"
+        and tenant is not None
+        and tenant.lifecycle_state == "active"
+        and membership is not None
+        and membership.lifecycle_state == "active"
+    )
+    if not active:
+        if unavailable_status == "not_found":
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "code": "tenant_not_available",
+                    "message": "Requested tenant is not available.",
+                },
+            )
+        _deny_inactive_membership()
+
+    return TenantContext(
+        tenant_id=tenant_id,
+        membership_id=_opaque_membership_id(tenant_id=tenant_id, user_id=user_id),
+        resolved_by=resolved_by,
+    )
+
+
 def resolve_single_tenant_context(
     *,
     db: Session,
@@ -60,27 +128,95 @@ def resolve_single_tenant_context(
     if user_id is None:
         return LOCAL_DEFAULT_TENANT_CONTEXT
 
-    user = db.get(UserRow, user_id)
-    tenant = db.get(TenantRow, LOCAL_DEFAULT_TENANT_ID)
-    membership = db.get(
-        TenantMembershipRow,
-        (LOCAL_DEFAULT_TENANT_ID, user_id),
-    )
-    if (
-        user is None
-        or user.lifecycle_state != "active"
-        or tenant is None
-        or tenant.lifecycle_state != "active"
-        or membership is None
-        or membership.lifecycle_state != "active"
-    ):
-        _deny_inactive_membership()
-
-    return TenantContext(
+    return _active_membership_context(
+        db=db,
+        user_id=user_id,
         tenant_id=LOCAL_DEFAULT_TENANT_ID,
-        membership_id=_opaque_membership_id(
-            tenant_id=LOCAL_DEFAULT_TENANT_ID,
-            user_id=user_id,
-        ),
         resolved_by="single_tenant_adapter",
+        unavailable_status="forbidden",
+    )
+
+
+def resolve_verified_claim_tenant_context(
+    *,
+    db: Session,
+    user_id: str | None,
+    claim: VerifiedTenantClaim,
+) -> TenantContext:
+    """Resolve a tenant only from pre-verified identity evidence and DB bindings."""
+    if user_id is None:
+        _deny_untrusted_tenant_context()
+
+    provider = db.get(IdentityProviderRow, claim.identity_provider_id)
+    tenant_provider = db.get(
+        TenantIdentityProviderRow,
+        (claim.tenant_id, claim.identity_provider_id),
+    )
+    identities = db.scalars(
+        select(UserIdentityRow)
+        .where(UserIdentityRow.identity_provider_id == claim.identity_provider_id)
+        .where(UserIdentityRow.subject == claim.subject)
+        .limit(2)
+    ).all()
+    if (
+        provider is None
+        or provider.lifecycle_state != "active"
+        or provider.issuer != claim.issuer
+        or provider.audience != claim.audience
+        or tenant_provider is None
+        or tenant_provider.lifecycle_state != "active"
+        or len(identities) != 1
+        or identities[0].user_id != user_id
+    ):
+        _deny_untrusted_tenant_context()
+
+    return _active_membership_context(
+        db=db,
+        user_id=user_id,
+        tenant_id=claim.tenant_id,
+        resolved_by="verified_claim",
+        unavailable_status="forbidden",
+    )
+
+
+def list_active_tenant_summaries(
+    *,
+    db: Session,
+    user_id: str,
+) -> tuple[TenantSummary, ...]:
+    """Return only active membership tenants; this is not a tenant search API."""
+    user = db.get(UserRow, user_id)
+    if user is None or user.lifecycle_state != "active":
+        return ()
+    rows = db.execute(
+        select(TenantRow.id, TenantRow.display_name)
+        .join(
+            TenantMembershipRow,
+            TenantMembershipRow.tenant_id == TenantRow.id,
+        )
+        .where(TenantMembershipRow.user_id == user_id)
+        .where(TenantMembershipRow.lifecycle_state == "active")
+        .where(TenantRow.lifecycle_state == "active")
+        .order_by(TenantRow.id.asc())
+    ).all()
+    return tuple(
+        TenantSummary(tenant_id=tenant_id, display_name=display_name)
+        for tenant_id, display_name in rows
+    )
+
+
+def select_active_tenant_context(
+    *,
+    db: Session,
+    user_id: str,
+    tenant_id: str,
+    resolved_by: Literal["verified_claim", "trusted_host_mapping"],
+) -> TenantContext:
+    """Validate a requested switch against the authenticated user's allowlist."""
+    return _active_membership_context(
+        db=db,
+        user_id=user_id,
+        tenant_id=tenant_id,
+        resolved_by=resolved_by,
+        unavailable_status="not_found",
     )
