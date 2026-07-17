@@ -703,6 +703,8 @@ export type TenantScopedAccessRequestV1 = {
 - `noop`、endpoint欠損時noop fallback、`read_only` fail-safeはSaaS profileで禁止する。§8.3〜8.6の互換挙動はsingle-tenant profileだけに適用する。
 - auditにはtenantId、opaque actor/resource ID、action、decision、policy/capability version、correlation IDだけを記録し、本文、タイトル、role/group生値、tokenを記録しない。
 
+Tenant-scoped access-control entry pointは、TenantContext欠損、resource tenant欠損、両tenant不一致をそれぞれ`tenant_context_missing`、`resource_tenant_missing`、`tenant_mismatch`として外部PDP呼出し前にdenyする。このguardは`read_only` fail-safeから独立し、tenant境界の不備をread許可へ変換しない。現行Document routeは解決済みTenantContextをsubject/resource双方へ設定してguardを必須化したが、resourceのvisibility/policyRefをserver-side metadataから取得するlookupは未実装であり、公開client headerを使うsingle-tenant互換をSaaS境界として扱わない。
+
 ### 10.4 管理面の予約capability
 
 Tenant Adminは`membership.provision`と`agent.register/revoke`、Platform Control Planeは`tenant.provision/suspend`を使用する。両者はroute surfaceと認可audienceを分離し、platform capabilityから`document.read`を暗黙導出しない。管理endpointのrequest/response詳細はstorage実装と同じissueで契約を追加し、汎用role editor、tenant横断文書検索、support impersonationは追加しない。

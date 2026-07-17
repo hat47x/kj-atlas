@@ -17,6 +17,9 @@ FailSafeMode = Literal["deny", "read_only"]
 FailSafeReason = Literal[
     "safe_mode",
     "read_only",
+    "tenant_context_missing",
+    "resource_tenant_missing",
+    "tenant_mismatch",
     "policy_ref_missing",
     "policy_ref_unreachable",
     "policy_ref_invalid",
@@ -294,6 +297,29 @@ def apply_local_failsafe(request: AccessRequest, mode: FailSafeMode) -> AccessDe
     return _read_only_fallback("policy_ref_missing", action=request.action)
 
 
+def apply_tenant_boundary_guard(
+    request: AccessRequest,
+    *,
+    required: bool,
+) -> AccessDecision | None:
+    """Deny an unresolved or cross-tenant request before consulting a PDP.
+
+    The guard is opt-in so existing single-tenant adapter contract callers remain
+    compatible. Tenant-scoped API surfaces enable it after resolving both the
+    trusted subject context and server-owned resource scope.
+    """
+
+    if not required:
+        return None
+    if request.tenant is None:
+        return AccessDecision(allow=False, reason="tenant_context_missing")
+    if request.resource is None or not request.resource.tenant_id:
+        return AccessDecision(allow=False, reason="resource_tenant_missing")
+    if request.tenant.tenant_id != request.resource.tenant_id:
+        return AccessDecision(allow=False, reason="tenant_mismatch")
+    return None
+
+
 def apply_adapter_failsafe(
     *,
     request: AccessRequest,
@@ -310,7 +336,15 @@ def resolve_access_decision(
     adapter: AccessControlAdapter,
     request: AccessRequest,
     fail_safe_mode: FailSafeMode,
+    require_tenant_scope: bool = False,
 ) -> AccessDecision:
+    tenant_boundary = apply_tenant_boundary_guard(
+        request,
+        required=require_tenant_scope,
+    )
+    if tenant_boundary is not None:
+        return tenant_boundary
+
     local = apply_local_failsafe(request, fail_safe_mode)
     if local is not None:
         return local

@@ -153,3 +153,10 @@
 - Alembic `20260717_0009`でPostgreSQLの`documents`と`merge_decision_logs`へENABLE/FORCE RLS policyを追加した。policyは`current_setting('kj_atlas.tenant_id', true)`と行tenantが一致する場合だけUSING/WITH CHECKを許可し、setting欠落・空値はread/writeとも不許可になる。SQLite migrationはno-opとする。
 - tenant-scoped repositoryは各操作前にparameter bindingされた`set_config('kj_atlas.tenant_id', tenantId, true)`を実行する。第3引数`true`によるtransaction-local設定のためcommit/rollback後のpool再利用へtenant値を持ち越さない設計とし、任意tenant文字列をSQLへ連結しない。
 - 検証: Ruff pass、DB guard parameter binding/SQLite no-op/blank拒否、migration lineage、SQLite upgrade/downgrade、同一docId repository/API近接14件pass。PostgreSQL直接SQL・connection pool実地テストは環境不在のため未実施であり、AC-5とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-17: pre-PDP tenant boundary guard
+
+- access-control層へtenant境界guardを追加し、必須modeではTenantContext欠損、resource tenant欠損、tenant不一致をfail-safe modeに関係なくdenyする。いずれも外部PDP adapterを呼ばないため、tenant一致を外部policyへ委譲しない。
+- Document routeはaccess-control adapterの有無にかかわらず必須modeを適用する。既存の単一テナントadapter契約は既定の互換modeで維持し、SaaS profileの起動許可には使用しない。
+- 検証: Ruff pass、欠損・不一致でadapter未呼出し、一致時だけ呼出し、単一テナント互換、Document access-control/tenant isolationを含む近接30件pass。
+- resourceのtenant/visibility/policyRefを`tenantId + resourceId`でserver-side lookupする実装は未完了であり、現行header由来visibility/policyRefはSaaS認可根拠にできない。AC-4とSaaS起動拒否を継続する。

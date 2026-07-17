@@ -18,6 +18,7 @@ from kj_atlas_api.access_control import (
     AccessResource,
     AuthContext,
     FailSafeMode,
+    apply_tenant_boundary_guard,
     enforce_access,
     normalize_policy_ref,
     parse_csv_header,
@@ -208,6 +209,12 @@ def _authorize_request(
                 tenant_id=tenant.tenant_id,
             ),
         )
+        tenant_boundary = apply_tenant_boundary_guard(
+            access_request,
+            required=True,
+        )
+        if tenant_boundary is not None:
+            enforce_access(tenant_boundary, action=action)
         decision = AccessDecision(allow=True)
         return access_request, decision, tenant
 
@@ -242,7 +249,12 @@ def _authorize_request(
         fail_safe_mode = "read_only"
     typed_fail_safe_mode = cast(FailSafeMode, fail_safe_mode)
 
-    decision = resolve_access_decision(adapter=adapter, request=access_request, fail_safe_mode=typed_fail_safe_mode)
+    decision = resolve_access_decision(
+        adapter=adapter,
+        request=access_request,
+        fail_safe_mode=typed_fail_safe_mode,
+        require_tenant_scope=True,
+    )
     enforce_access(decision, action=action)
     return access_request, decision, tenant
 
