@@ -49,9 +49,9 @@
 
 ## 受入条件
 
-- [ ] AC-1: `tenants`、`identity_providers`、`tenant_identity_providers`、`tenant_memberships`が実装され、identityは`identity_provider_id + subject`で一意になる。
-- [ ] AC-2: 既存データが`local-default`へ損失なくbackfillされ、再実行しても結果が変わらない。
-- [ ] AC-3: `documents`と全Document従属表がtenant複合制約を持ち、docIdだけのDB query/joinが静的検査またはtestで検出される。
+- [x] AC-1: `tenants`、`identity_providers`、`tenant_identity_providers`、`tenant_memberships`が実装され、identityは`identity_provider_id + subject`で一意になる。
+- [x] AC-2: 既存データが`local-default`へ損失なくbackfillされ、再実行しても結果が変わらない。
+- [x] AC-3: `documents`と全Document従属表がtenant複合制約を持ち、docIdだけのDB query/joinが静的検査またはtestで検出される。
 - [ ] AC-4: SaaS profileでtenant不明・不一致、membership停止、adapter欠損、PDP不達をreadも含めてdenyする。
 - [ ] AC-5: shared schemaでDB側tenant guardが有効で、別tenant contextを使った直接SQLも行を取得・更新できない。
 - [ ] AC-6: `GET /session/context`とactive tenant変更がmembership allowlistだけを返し、自由入力tenantの発見・切替を許可しない。
@@ -59,7 +59,7 @@
 - [ ] AC-8: cache、job、MCP、agent credential、audit、storage keyにtenantIdが伝播し、欠落時は処理を停止する。
 - [ ] AC-9: exportはtenant権限を移送せず、importはactive tenantで再認可・検証・人手レビューされる。
 - [ ] AC-10: tenant A/Bへ同じdocIdを作成した越境negative matrixが、API/MCP/worker/browser cacheを含めて成功する。
-- [ ] AC-11: single-tenantのlocal-dev/evaluation/enterprise-production互換テストが維持され、SafeMode既定ON、proposal-only、provider=`none`を弱めない。
+- [x] AC-11: single-tenantのlocal-dev/evaluation/enterprise-production互換テストが維持され、SafeMode既定ON、proposal-only、provider=`none`を弱めない。
 - [ ] AC-12: Round 8 R8-E/FはAC-1〜11完了後だけ有効化され、390/768/1440px、ja/en、keyboard/focus、tenant切替時の旧DOM/cache破棄を検証する。
 
 ## 検証計画
