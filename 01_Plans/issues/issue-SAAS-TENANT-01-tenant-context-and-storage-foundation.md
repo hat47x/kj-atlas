@@ -141,3 +141,9 @@
 - active membershipだけを返すtenant候補列挙と、利用者入力tenantIdをmembership allowlistへ再照合する切替選択serviceを追加した。不明、他利用者、停止tenantは同じ404応答とし、tenant検索には使用できない。
 - `effectiveCapabilities`と公開`GET /session/context` / active-tenant routeは未実装のため、UIと公開APIは閉じたままにする。auth edge接続とtrusted host mappingも残課題。
 - 検証: Ruff pass、verified claimのissuer/audience/IdP/subject/user/tenant negative matrix、allowlist・切替、single-tenant/JIT近接32件pass。
+
+### Implementation checkpoint 2026-07-17: Document API tenant resolver boundary
+
+- Document routeのTenantContext供給をapplication lifecycleで設定する`TenantContextResolver`境界へ移し、既定は既存`SingleTenantContextResolver`とした。request header/query/path/payloadからresolverやtenantIdを選択する分岐は設けない。
+- integration testでは信頼済みresolverをtenant A/Bへ切り替え、同一`/docs/shared-doc`が各tenant固有の本文だけを返し、PUTが選択tenantの複合key行だけを更新することを固定した。membership外tenant相当では同じ404となる。
+- 検証: Ruff pass、同一docId GET/PUT matrix、repository、Document roundtrip/access-control近接46件pass・PostgreSQL条件付き21件skip。production verified resolverのauth edge接続は未実装のためSaaS起動拒否を継続する。

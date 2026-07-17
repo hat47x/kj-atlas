@@ -991,7 +991,7 @@ tenantIdはserver-managed列であり、`DocumentV1` payload、view.json、impor
 | `user_identities`の`identityProviderId + subject`移行 | Expand・backfill・二重書き済み。lookupは新binding優先、旧行fallback成功時は自己補完、二重一致は拒否 | 互換IdPは検証済みissuerではなく、旧列contractも残るためSaaS blockerは継続 |
 | Document複合PK/FK、全consumerのtenant必須化 | Document/判断ログの複合PK・unique・FKとrepository経路は実装済み | PostgreSQL実地検証とMCP/worker/cache/storage等のconsumer伝播が未完了のためSaaS blocker継続 |
 | PostgreSQL RLS等のDB側guard | 未実装 | SaaS blocker |
-| verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaimとIdP/tenant/user/membershipの再照合、membership allowlist列挙・切替選択の内部serviceまで実装 | auth edgeからのverified evidence接続、trusted host mapping、公開session/capability API、SaaS negative matrixは未実装のためblocker継続 |
+| verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaim再照合、membership allowlist内部service、Document routeの信頼済みresolver境界、同一docIdのGET/PUT tenant A/B matrixまで実装 | auth edgeからのverified evidence接続、trusted host mapping、公開session/capability API、MCP/worker/browserを含む完全matrixは未実装のためblocker継続 |
 
 ## 11. Polygon contract keys（FB-P0-2A2B2C）
 

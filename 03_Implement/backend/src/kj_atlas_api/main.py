@@ -17,6 +17,7 @@ from kj_atlas_api.routes.admin import router as admin_router
 from kj_atlas_api.routes.docs import router as docs_router
 from kj_atlas_api.routes.context import router as context_router
 from kj_atlas_api.settings import settings
+from kj_atlas_api.tenant_context import SingleTenantContextResolver
 
 
 def _assert_linear_migration_history() -> None:
@@ -36,6 +37,7 @@ async def lifespan(app: FastAPI):
     app.state.audit_dispatcher = build_audit_dispatcher()
     app.state.access_control_adapter = build_access_control_adapter(adapter_name=settings.access_control_adapter)
     app.state.access_control_fail_safe_mode = settings.access_control_fail_safe_mode
+    app.state.tenant_context_resolver = SingleTenantContextResolver()
     yield
 
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from hashlib import sha256
-from typing import Literal
+from typing import Literal, Protocol
 
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -48,6 +48,16 @@ class VerifiedTenantClaim:
 class TenantSummary:
     tenant_id: str
     display_name: str
+
+
+class TenantContextResolver(Protocol):
+    def resolve(self, *, db: Session, user_id: str | None) -> TenantContext:
+        ...
+
+
+class SingleTenantContextResolver:
+    def resolve(self, *, db: Session, user_id: str | None) -> TenantContext:
+        return resolve_single_tenant_context(db=db, user_id=user_id)
 
 
 LOCAL_DEFAULT_TENANT_CONTEXT = TenantContext(

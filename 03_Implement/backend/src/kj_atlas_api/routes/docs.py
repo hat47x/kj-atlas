@@ -47,7 +47,11 @@ from kj_atlas_api.models import (
     SimilarCandidateScoreSummary,
 )
 from kj_atlas_api.settings import settings
-from kj_atlas_api.tenant_context import TenantContext, resolve_single_tenant_context
+from kj_atlas_api.tenant_context import (
+    SingleTenantContextResolver,
+    TenantContext,
+    TenantContextResolver,
+)
 
 router = APIRouter(prefix="/docs", tags=["docs"])
 document_payload_adapter: TypeAdapter[DocumentPayload] = TypeAdapter(DocumentPayload)
@@ -183,7 +187,12 @@ def _authorize_request(
     read_only: bool,
 ) -> tuple[AccessRequest, AccessDecision, TenantContext]:
     identity = resolve_identity_context(db=db, request=request)
-    tenant = resolve_single_tenant_context(db=db, user_id=identity.user_id)
+    resolver: TenantContextResolver = getattr(
+        request.app.state,
+        "tenant_context_resolver",
+        SingleTenantContextResolver(),
+    )
+    tenant = resolver.resolve(db=db, user_id=identity.user_id)
     adapter = getattr(request.app.state, "access_control_adapter", None)
     if adapter is None:
         access_request = AccessRequest(
