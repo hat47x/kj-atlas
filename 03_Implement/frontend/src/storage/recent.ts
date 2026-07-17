@@ -1,3 +1,5 @@
+import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
+
 const RECENT_DOC_IDS_STORAGE_KEY = "kj-atlas/recent-doc-ids";
 const MAX_RECENT_DOC_IDS = 10;
 
@@ -5,12 +7,16 @@ function isStorageAvailable(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }
 
-export function loadRecentDocumentIds(): string[] {
+function recentStorageKey(scope?: TenantBrowserStorageScope): string {
+  return scope ? buildTenantStorageKey(RECENT_DOC_IDS_STORAGE_KEY, scope) : RECENT_DOC_IDS_STORAGE_KEY;
+}
+
+export function loadRecentDocumentIds(scope?: TenantBrowserStorageScope): string[] {
   if (!isStorageAvailable()) {
     return [];
   }
 
-  const rawValue = window.localStorage.getItem(RECENT_DOC_IDS_STORAGE_KEY);
+  const rawValue = window.localStorage.getItem(recentStorageKey(scope));
   if (!rawValue) {
     return [];
   }
@@ -27,18 +33,17 @@ export function loadRecentDocumentIds(): string[] {
   }
 }
 
-export function pushRecentDocumentId(docId: string): string[] {
+export function pushRecentDocumentId(docId: string, scope?: TenantBrowserStorageScope): string[] {
   if (!docId) {
-    return loadRecentDocumentIds();
+    return loadRecentDocumentIds(scope);
   }
 
-  const current = loadRecentDocumentIds().filter((id) => id !== docId);
+  const current = loadRecentDocumentIds(scope).filter((id) => id !== docId);
   const next = [docId, ...current].slice(0, MAX_RECENT_DOC_IDS);
 
   if (isStorageAvailable()) {
-    window.localStorage.setItem(RECENT_DOC_IDS_STORAGE_KEY, JSON.stringify(next));
+    window.localStorage.setItem(recentStorageKey(scope), JSON.stringify(next));
   }
 
   return next;
 }
-

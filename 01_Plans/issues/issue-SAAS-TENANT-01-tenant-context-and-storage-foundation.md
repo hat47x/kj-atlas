@@ -168,3 +168,10 @@
 - server-owned policy metadata storeが未実装の間はvisibilityを`Restricted`、policyRefを欠損として返す。SaaS必須のdeny fail-safeでは外部PDPへ進まず安全側に停止するため、client headerでPublicやpolicyRefを偽装できない。
 - 検証: Ruff pass、legacy header互換、client header無視、既存resource lookup、PDP前404、新規write active tenant scope、Document access-control/tenant isolationを含む近接25件pass。
 - SaaS runtimeへのresolver配線、policy metadataの永続化・管理、実PDP capability評価は未完了であり、AC-4とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-17: browser storage tenant namespace foundation
+
+- `deployment + tenantId + principalId`をpercent-encodeしたbrowser storage prefix生成と、選択scopeだけを安全に列挙・削除するutilityを追加した。空値、前後空白、制御文字を含むscopeは拒否する。
+- recent document IDとview/pack visibilityはoptional scopeを受け取り、scope指定時は同じdocIdでもtenant/principal/deployment別keyへ保存する。scope省略時は現行single-tenant keyを維持する。
+- 検証: tenant/principal/deployment分離、delimiter衝突防止、不正scope拒否、scope限定削除、recent/view visibilityのtenant A/B同一docId、旧key互換の12件pass、frontend typecheck pass。
+- 公開session contextからのscope配線、QueryPreset/view mode/locale等の全storage、tenant切替時のDOM・memory・request cache・object URL破棄は未実装であり、AC-8/10/12とSaaS起動拒否を継続する。

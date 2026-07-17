@@ -4,6 +4,7 @@ import {
   parsePersistedVisibilityByDoc,
   saveViewVisibilityForDocument,
 } from "./view_visibility";
+import type { TenantBrowserStorageScope } from "./tenant_scope";
 
 type LocalStorageLike = {
   getItem: (key: string) => string | null;
@@ -66,5 +67,34 @@ describe("view_visibility storage", () => {
     saveViewVisibilityForDocument("doc-save", { viewVisibility: "Public", packVisibility: "Restricted" });
 
     expect(loadViewVisibilityForDocument("doc-save")).toEqual({ viewVisibility: "Public", packVisibility: "Restricted" });
+  });
+
+  it("isolates the same document id across tenant scopes", () => {
+    const tenantA: TenantBrowserStorageScope = {
+      deployment: "https://atlas.example.test",
+      tenantId: "tenant-a",
+      principalId: "user-1",
+    };
+    const tenantB: TenantBrowserStorageScope = { ...tenantA, tenantId: "tenant-b" };
+
+    saveViewVisibilityForDocument(
+      "shared-doc",
+      { viewVisibility: "Org", packVisibility: "Restricted" },
+      tenantA,
+    );
+    saveViewVisibilityForDocument(
+      "shared-doc",
+      { viewVisibility: "Unlisted", packVisibility: "Public" },
+      tenantB,
+    );
+
+    expect(loadViewVisibilityForDocument("shared-doc", tenantA)).toEqual({
+      viewVisibility: "Org",
+      packVisibility: "Restricted",
+    });
+    expect(loadViewVisibilityForDocument("shared-doc", tenantB)).toEqual({
+      viewVisibility: "Unlisted",
+      packVisibility: "Public",
+    });
   });
 });

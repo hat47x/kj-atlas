@@ -4,6 +4,7 @@ import {
   isPublishVisibility,
   type PublishVisibility,
 } from "../domain/policy/publish_visibility";
+import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
 
 const VIEW_VISIBILITY_STORAGE_KEY = "kj-atlas/view-visibility-by-doc";
 
@@ -14,6 +15,10 @@ type PersistedVisibilityByDoc = Record<string, {
 
 function isStorageAvailable(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
+function visibilityStorageKey(scope?: TenantBrowserStorageScope): string {
+  return scope ? buildTenantStorageKey(VIEW_VISIBILITY_STORAGE_KEY, scope) : VIEW_VISIBILITY_STORAGE_KEY;
 }
 
 export function parsePersistedVisibilityByDoc(rawValue: string | null | undefined): PersistedVisibilityByDoc {
@@ -51,12 +56,15 @@ export function parsePersistedVisibilityByDoc(rawValue: string | null | undefine
   }
 }
 
-export function loadViewVisibilityForDocument(docId: string): { viewVisibility: PublishVisibility; packVisibility: PublishVisibility } {
+export function loadViewVisibilityForDocument(
+  docId: string,
+  scope?: TenantBrowserStorageScope,
+): { viewVisibility: PublishVisibility; packVisibility: PublishVisibility } {
   if (!docId || !isStorageAvailable()) {
     return { viewVisibility: DEFAULT_VIEW_VISIBILITY, packVisibility: DEFAULT_PACK_VISIBILITY };
   }
 
-  const byDoc = parsePersistedVisibilityByDoc(window.localStorage.getItem(VIEW_VISIBILITY_STORAGE_KEY));
+  const byDoc = parsePersistedVisibilityByDoc(window.localStorage.getItem(visibilityStorageKey(scope)));
   const current = byDoc[docId];
   return {
     viewVisibility: current?.viewVisibility ?? DEFAULT_VIEW_VISIBILITY,
@@ -64,13 +72,17 @@ export function loadViewVisibilityForDocument(docId: string): { viewVisibility: 
   };
 }
 
-export function saveViewVisibilityForDocument(docId: string, visibility: { viewVisibility: PublishVisibility; packVisibility: PublishVisibility }): void {
+export function saveViewVisibilityForDocument(
+  docId: string,
+  visibility: { viewVisibility: PublishVisibility; packVisibility: PublishVisibility },
+  scope?: TenantBrowserStorageScope,
+): void {
   if (!docId || !isStorageAvailable()) {
     return;
   }
 
-  const byDoc = parsePersistedVisibilityByDoc(window.localStorage.getItem(VIEW_VISIBILITY_STORAGE_KEY));
+  const storageKey = visibilityStorageKey(scope);
+  const byDoc = parsePersistedVisibilityByDoc(window.localStorage.getItem(storageKey));
   byDoc[docId] = visibility;
-  window.localStorage.setItem(VIEW_VISIBILITY_STORAGE_KEY, JSON.stringify(byDoc));
+  window.localStorage.setItem(storageKey, JSON.stringify(byDoc));
 }
-
