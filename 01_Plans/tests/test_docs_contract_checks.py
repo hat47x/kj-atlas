@@ -493,5 +493,74 @@ def _scripts_json(scripts: dict[str, str]) -> str:
     return json.dumps(scripts)
 
 
+class ComposeServiceCommandCheckTest(unittest.TestCase):
+    def _write_compose_file(self, root: Path, services: list[str]) -> None:
+        deploy_dir = root / "03_Implement" / "deploy"
+        deploy_dir.mkdir(parents=True, exist_ok=True)
+        body = "services:\n" + "".join(f"  {name}:\n    image: placeholder\n" for name in services)
+        body += "\nvolumes:\n  kj_atlas_pgdata:\n"
+        (deploy_dir / "docker-compose.yml").write_text(body, encoding="utf-8")
+
+    def test_accepts_existing_service_names_in_public_docs(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_compose_file(root, ["api", "db", "web"])
+            readme = root / "README.md"
+            readme.write_text(
+                "```bash\ndocker compose logs api --tail=100\ndocker compose exec -T db pg_dump\n```\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_compose_service_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_reports_service_name_missing_from_compose_file(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_compose_file(root, ["api", "db"])
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "operations.md"
+            doc.write_text("```bash\ndocker compose logs worker --tail=100\n```\n", encoding="utf-8")
+
+            findings = MODULE.check_compose_service_commands(root, [Path("04_Documentation/operations.md")])
+
+        self.assertEqual(len(findings), 1)
+        finding = findings[0]
+        self.assertEqual(finding.rule_id, "DC-CMD-001")
+        self.assertEqual(finding.path, "04_Documentation/operations.md")
+        self.assertEqual(finding.line, 2)
+        self.assertEqual(finding.target, "docker compose logs worker")
+        self.assertIn("does not exist", finding.message)
+
+    def test_ignores_process_memos_outside_the_public_doc_scope(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_compose_file(root, ["api", "db"])
+            issues_dir = root / "01_Plans" / "issues"
+            issues_dir.mkdir(parents=True)
+            memo = issues_dir / "issue-example.md"
+            memo.write_text("検証コマンド宣言: `docker compose logs worker`\n", encoding="utf-8")
+
+            findings = MODULE.check_compose_service_commands(root, [Path("01_Plans/issues/issue-example.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_ignores_project_wide_subcommands_without_a_service_argument(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_compose_file(root, ["api", "db"])
+            readme = root / "README.md"
+            readme.write_text(
+                "```bash\ndocker compose up --build -d\ndocker compose ps\ndocker compose down -v\n```\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_compose_service_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+
 if __name__ == "__main__":
     unittest.main()
