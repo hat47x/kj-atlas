@@ -125,6 +125,13 @@ CURRENT_PUBLIC_DOC_ROOTS = (
     Path("04_Documentation"),
     Path("03_Implement/frontend/docs/e2e_testing.md"),
 )
+# Only these subcommands take a service-name argument in current/public docs
+# (up/down/ps/config operate on the whole project or take no service arg here).
+COMPOSE_SERVICE_SUBCOMMANDS = ("logs", "exec", "restart", "stop", "start", "run", "kill", "pause", "unpause", "top")
+COMPOSE_SERVICE_COMMAND_RE = re.compile(
+    r"docker compose\s+(" + "|".join(COMPOSE_SERVICE_SUBCOMMANDS) + r")\s+(?:-\S+\s+)*([\w-]+)"
+)
+COMPOSE_FILE_PATH = Path("03_Implement/deploy/docker-compose.yml")
 
 
 @dataclass(frozen=True)
@@ -629,6 +636,81 @@ def check_npm_script_commands(
     return findings
 
 
+def _extract_compose_services(compose_text: str) -> set[str]:
+    """Return the top-level `services:` child keys from a Compose file's text.
+
+    Deliberately not a full YAML parser -- kj-atlas's own compose files use a
+    flat, consistently 2-space-indented `services:` block, so a line-based
+    scan is enough and avoids adding a YAML dependency for one deterministic
+    check.
+    """
+    services: set[str] = set()
+    in_services_block = False
+    for line in compose_text.splitlines():
+        if re.match(r"^services:\s*$", line):
+            in_services_block = True
+            continue
+        if not in_services_block:
+            continue
+        if re.match(r"^\S", line):
+            break
+        match = re.match(r"^  ([\w-]+):\s*$", line)
+        if match:
+            services.add(match.group(1))
+    return services
+
+
+def check_compose_service_commands(
+    root: Path,
+    markdown_paths: list[Path],
+    compose_file_path: Path = COMPOSE_FILE_PATH,
+) -> list[DocsCheckFinding]:
+    """Return DC-CMD-001 findings for `docker compose <cmd> <service>` examples
+    referencing a service absent from the standard Compose file.
+
+    Only checks subcommands that take a service-name argument in current
+    usage (COMPOSE_SERVICE_SUBCOMMANDS); `up`/`down`/`ps`/`config` are not
+    scanned since current/public docs use them project-wide, not per-service.
+    Scoped to current/public documentation only -- see CURRENT_PUBLIC_DOC_ROOTS.
+
+    Returns no findings when compose_file_path doesn't exist under root, for
+    the same reason check_npm_script_commands tolerates a missing
+    package.json: isolated fixture directories in this module's own tests
+    aren't required to also provide a real Compose file.
+    """
+    repository_root = root.resolve()
+    resolved_compose_file = repository_root / compose_file_path
+    if not resolved_compose_file.exists():
+        return []
+    services = _extract_compose_services(resolved_compose_file.read_text(encoding="utf-8"))
+
+    findings: list[DocsCheckFinding] = []
+    for supplied_path in sorted(markdown_paths, key=lambda path: path.as_posix()):
+        relative_path = supplied_path if not supplied_path.is_absolute() else supplied_path.relative_to(repository_root)
+        if not _is_current_public_doc(relative_path):
+            continue
+
+        source = repository_root / relative_path
+        text = source.read_text(encoding="utf-8")
+        for match in COMPOSE_SERVICE_COMMAND_RE.finditer(text):
+            subcommand, service_name = match.group(1), match.group(2)
+            if service_name in services:
+                continue
+            line = text.count("\n", 0, match.start()) + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=NPM_SCRIPT_COMMAND_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=line,
+                    target=f"docker compose {subcommand} {service_name}",
+                    message=f"Compose service '{service_name}' does not exist in {compose_file_path.as_posix()}",
+                    fix_hint="Use an existing service name from docker-compose.yml's services, or add the service if it is genuinely new.",
+                )
+            )
+
+    return findings
+
+
 def tracked_markdown_paths(root: Path) -> list[Path]:
     """Return tracked Markdown paths so generated and dependency files stay out of scope."""
     result = subprocess.run(
@@ -657,6 +739,7 @@ def main() -> int:
     findings.extend(check_public_boundary(root))
     findings.extend(check_safety_routes(root))
     findings.extend(check_npm_script_commands(root, markdown_paths))
+    findings.extend(check_compose_service_commands(root, markdown_paths))
 
     if findings:
         print("documentation contract validation failed:")
