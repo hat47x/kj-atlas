@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, suggestMerges, suggestLayout } from "./client";
+import {
+  ApiError,
+  getTenantSessionContext,
+  suggestMerges,
+  suggestLayout,
+} from "./client";
 import type { DocumentV1 } from "../domain/types";
+import { InvalidTenantSessionContextError } from "./session_context";
 
 function createDocument(): DocumentV1 {
   return {
@@ -18,6 +24,73 @@ function createDocument(): DocumentV1 {
     edges: [],
   };
 }
+
+describe("tenant session context fetch boundary", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("fetches without client tenant hints and validates the response", async () => {
+    const abortController = new AbortController();
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({
+        principalId: "user-1",
+        activeTenant: { id: "tenant-a", displayName: "Tenant A" },
+        availableTenants: [{ id: "tenant-a", displayName: "Tenant A" }],
+        effectiveCapabilities: ["document.write", "document.read"],
+        capabilityVersion: "capability-v7",
+      }), { status: 200, headers: { "Content-Type": "application/json" } }),
+    );
+
+    const context = await getTenantSessionContext({ signal: abortController.signal });
+
+    expect(context.effectiveCapabilities).toEqual(["document.read", "document.write"]);
+    expect(fetchMock).toHaveBeenCalledWith("/api/session/context", {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      credentials: "same-origin",
+      signal: abortController.signal,
+    });
+  });
+
+  it("preserves the backend status and stable error code", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({
+        detail: {
+          code: "capability_resolution_unavailable",
+          message: "Tenant capabilities are unavailable.",
+        },
+      }), { status: 503, headers: { "Content-Type": "application/json" } }),
+    );
+
+    await expect(getTenantSessionContext()).rejects.toMatchObject({
+      status: 503,
+      code: "capability_resolution_unavailable",
+      message: "Tenant capabilities are unavailable.",
+    });
+  });
+
+  it("rejects invalid JSON and invalid session contracts", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response("not-json", { status: 200, headers: { "Content-Type": "text/plain" } }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ principalId: "user-1" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+
+    await expect(getTenantSessionContext()).rejects.toBeInstanceOf(
+      InvalidTenantSessionContextError,
+    );
+    await expect(getTenantSessionContext()).rejects.toBeInstanceOf(
+      InvalidTenantSessionContextError,
+    );
+  });
+});
 
 describe("suggestMerges contract validation", () => {
   afterEach(() => {

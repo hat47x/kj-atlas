@@ -230,3 +230,9 @@
 - internal builderも未知capabilityを`503 capability_resolution_unavailable`へ正規化した。routeの正常系、秘密非反射、adapter欠損、匿名、single-tenant互換・未知resolution method、未知capability、停止membership、tenant resolver例外と、既存管理API回帰を近接31件で確認した。
 - 検証はRuff、backend全体431件pass・PostgreSQL等の条件付き25件skip、docs-check、diff-checkを通過した。移行テストの子プロセスが仮想環境のAlembicを解決できるよう、全体検証では仮想環境の実行パスを明示した。
 - `POST /session/active-tenant`は認証sessionへのactive tenant永続化契約が未確定のため追加していない。trusted auth edgeの実接続、frontend fetch／App cleanup hook、active tenant変更、token期限連動cache、完全negative matrixが残るためAC-4/6/7/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-17: strict frontend session fetch boundary
+
+- frontend API clientへ`GET /session/context`のsame-origin・`no-store` fetchを追加し、AbortSignalを上位のlifecycleから渡せるようにした。requestへtenant ID、role、groupを付加せず、非2xxはbackendのstatusとstable error codeを`ApiError`へ保持する。
+- response validatorを既知11 capabilityへ限定し、top-level／tenant summaryの余分なfield、未知capability、非JSON、不完全shapeを`InvalidTenantSessionContextError`として拒否する。response検証前にbrowser storage scopeや画面状態へ反映しない。
+- 既存session validatorとclientの近接21件、frontend全体1,106件・198 file、typecheck、docs-check、diff-checkを通過した。App起動時のsession bootstrap、失敗時UI、実auth cookie連携、active tenant変更とcleanup hook配線は未実装のため、UIとSaaS runtimeは引き続き有効化しない。

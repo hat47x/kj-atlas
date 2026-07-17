@@ -8,11 +8,29 @@ export type TenantSessionSummaryV1 = Readonly<{
   displayName: string;
 }>;
 
+export const EFFECTIVE_CAPABILITIES = [
+  "document.read",
+  "document.write",
+  "document.export",
+  "document.share",
+  "document.policy.manage",
+  "membership.provision",
+  "agent.register",
+  "agent.revoke",
+  "audit.read",
+  "tenant.provision",
+  "tenant.suspend",
+] as const;
+
+export type EffectiveCapability = (typeof EFFECTIVE_CAPABILITIES)[number];
+
+const EFFECTIVE_CAPABILITY_SET = new Set<string>(EFFECTIVE_CAPABILITIES);
+
 export type TenantSessionContextV1 = Readonly<{
   principalId: string;
   activeTenant: TenantSessionSummaryV1;
   availableTenants: readonly TenantSessionSummaryV1[];
-  effectiveCapabilities: readonly string[];
+  effectiveCapabilities: readonly EffectiveCapability[];
   capabilityVersion: string;
 }>;
 
@@ -37,11 +55,29 @@ function canonicalString(value: unknown): string {
   return value;
 }
 
+function hasExactKeys(value: Record<string, unknown>, expectedKeys: readonly string[]): boolean {
+  const actualKeys = Object.keys(value);
+  const expectedKeySet = new Set(expectedKeys);
+  return actualKeys.length === expectedKeys.length
+    && actualKeys.every((key) => expectedKeySet.has(key));
+}
+
+function effectiveCapability(value: unknown): EffectiveCapability {
+  const capability = canonicalString(value);
+  if (!EFFECTIVE_CAPABILITY_SET.has(capability)) {
+    throw new InvalidTenantSessionContextError();
+  }
+  return capability as EffectiveCapability;
+}
+
 function parseTenantSummary(value: unknown): TenantSessionSummaryV1 {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new InvalidTenantSessionContextError();
   }
   const candidate = value as Record<string, unknown>;
+  if (!hasExactKeys(candidate, ["displayName", "id"])) {
+    throw new InvalidTenantSessionContextError();
+  }
   return {
     id: canonicalString(candidate.id),
     displayName: canonicalString(candidate.displayName),
@@ -53,6 +89,15 @@ export function parseTenantSessionContext(value: unknown): TenantSessionContextV
     throw new InvalidTenantSessionContextError();
   }
   const candidate = value as Record<string, unknown>;
+  if (!hasExactKeys(candidate, [
+    "activeTenant",
+    "availableTenants",
+    "capabilityVersion",
+    "effectiveCapabilities",
+    "principalId",
+  ])) {
+    throw new InvalidTenantSessionContextError();
+  }
   if (!Array.isArray(candidate.availableTenants) || !Array.isArray(candidate.effectiveCapabilities)) {
     throw new InvalidTenantSessionContextError();
   }
@@ -71,7 +116,9 @@ export function parseTenantSessionContext(value: unknown): TenantSessionContextV
     throw new InvalidTenantSessionContextError();
   }
 
-  const effectiveCapabilities = [...new Set(candidate.effectiveCapabilities.map(canonicalString))].sort();
+  const effectiveCapabilities = [...new Set(
+    candidate.effectiveCapabilities.map(effectiveCapability),
+  )].sort();
   return {
     principalId: canonicalString(candidate.principalId),
     activeTenant,

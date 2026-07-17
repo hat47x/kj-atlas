@@ -995,7 +995,7 @@ export type TenantBrowserStorageScopeV1 = {
 };
 ```
 
-tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し、反復中のindex変化でentryを取りこぼさない。検証済みsession responseだけを受け付けるtransition coordinatorが、request abort、worker dispose、object URL・memory state破棄hook、旧scope削除、hard document replacementを順に実行する。cleanup/storage削除の一部が失敗しても旧DOMを継続利用しない。現段階ではfail-closedな`GET /session/context`まで実装済みだが、frontend fetch、coordinatorのApp hook、active tenant変更APIへの実配線は行わない。
+tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し、反復中のindex変化でentryを取りこぼさない。検証済みsession responseだけを受け付けるtransition coordinatorが、request abort、worker dispose、object URL・memory state破棄hook、旧scope削除、hard document replacementを順に実行する。cleanup/storage削除の一部が失敗しても旧DOMを継続利用しない。現段階ではfail-closedな`GET /session/context`とstrict frontend fetch clientまで実装済みだが、session bootstrap、coordinatorのApp hook、active tenant変更APIへの実配線は行わない。
 
 実装段階:
 
@@ -1011,7 +1011,7 @@ tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し
 | verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaim再照合、membership allowlist内部service、信頼済みrequest context共通境界、既知capabilityだけを返す`GET /session/context`、Document routeの同一docId GET/PUT tenant A/B matrixまで実装 | auth edgeからのverified evidence接続、trusted host mapping、active tenant変更、MCP/worker/browserを含む完全matrixは未実装のためblocker継続 |
 | server-owned Document access metadata | tenant/doc複合FK、visibility/binding/version制約、PostgreSQL RLS、tenant-scoped repository、strict external HTTP binding resolverを実装。client policy headerはSaaS resolverで無視し、raw policyRefはrequest内だけで利用 | auth/capability/binding/PDPのSaaS runtime配線・PostgreSQL実地検証が未完了のためSaaS blocker継続 |
 | Document access metadata管理API・監査 | verified/trusted TenantContextと`document.policy.manage`専用のlist/detail/conditional PUT、秘密値を反射しないstrict入力、tenant-scoped transactional audit、strict external capability/binding resolver、PostgreSQL RLS migrationを実装 | trusted SaaS auth edge、実policy service/PDP接続、PostgreSQL実地検証、frontend配線が未完了のためruntimeではfail-closed無効 |
-| browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、各保存値のoptional tenant scope、同一docId tenant A/B test、検証済みresponseだけを受けるtransition cleanup/hard-reload coordinatorを実装 | session contextのfrontend fetchとApp cleanup hook、active tenant変更の実配線が未実装のためSaaS blocker継続 |
+| browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、各保存値のoptional tenant scope、同一docId tenant A/B test、strict session fetch/validator、検証済みresponseだけを受けるtransition cleanup/hard-reload coordinatorを実装 | session bootstrapとApp cleanup hook、active tenant変更の実配線が未実装のためSaaS blocker継続 |
 
 ## 11. Polygon contract keys（FB-P0-2A2B2C）
 

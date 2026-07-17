@@ -52,6 +52,9 @@ describe("tenant session context", () => {
     { principalId: "user-1\n" },
     { capabilityVersion: "" },
     { effectiveCapabilities: ["document.read\u007f"] },
+    { effectiveCapabilities: ["tenant.root"] },
+    { email: "hidden@example.invalid" },
+    { activeTenant: { id: "tenant-a", displayName: "Tenant A", membershipId: "secret" } },
   ])("rejects non-canonical session values", (overrides) => {
     expect(() => parseTenantSessionContext(validPayload(overrides))).toThrow(
       InvalidTenantSessionContextError,

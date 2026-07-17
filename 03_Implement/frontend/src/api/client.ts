@@ -1,5 +1,10 @@
 import type { Card, Document, DocumentV1, Island, KnownEdgeType } from "../domain/types";
 import { STREAM_B_CONTRACTS } from "../domain/stream_b_contract";
+import {
+  InvalidTenantSessionContextError,
+  parseTenantSessionContext,
+  type TenantSessionContextV1,
+} from "./session_context";
 
 function resolveApiBase(): string {
   const rawValue = (import.meta.env.KJ_ATLAS_FRONTEND_API_BASE ?? "/api").trim();
@@ -142,6 +147,34 @@ async function sha256Hex(value: string): Promise<string | undefined> {
 
 function parseDocumentResponse(responseBody: string): Document {
   return JSON.parse(responseBody) as Document;
+}
+
+export async function getTenantSessionContext(
+  options: Readonly<{ signal?: AbortSignal }> = {},
+): Promise<TenantSessionContextV1> {
+  const response = await fetch(`${API_BASE}/session/context`, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+    credentials: "same-origin",
+    signal: options.signal,
+  });
+
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, {
+      code: errorDetail.code,
+      disabledReason: errorDetail.disabledReason,
+    });
+  }
+
+  let responseBody: unknown;
+  try {
+    responseBody = await response.json();
+  } catch {
+    throw new InvalidTenantSessionContextError();
+  }
+  return parseTenantSessionContext(responseBody);
 }
 
 export async function getDocument(docId: string): Promise<DocumentWithEtag<Document>> {
