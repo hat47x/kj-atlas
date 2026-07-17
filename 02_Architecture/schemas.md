@@ -993,7 +993,7 @@ export type TenantBrowserStorageScopeV1 = {
 };
 ```
 
-tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し、反復中のindex変化でentryを取りこぼさない。これはDOM、memory、request cache、object URL破棄を代替しない。
+tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し、反復中のindex変化でentryを取りこぼさない。検証済みsession responseだけを受け付けるtransition coordinatorが、request abort、worker dispose、object URL・memory state破棄hook、旧scope削除、hard document replacementを順に実行する。cleanup/storage削除の一部が失敗しても旧DOMを継続利用しない。現段階ではcoordinator契約とテストまでで、公開session API／Appへの実配線は行わない。
 
 実装段階:
 
@@ -1008,7 +1008,7 @@ tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し
 | PostgreSQL RLS等のDB側guard | Document/判断ログのENABLE+FORCE RLS policy、repositoryごとのtransaction-local `kj_atlas.tenant_id`設定を実装。SQLiteはno-op | PostgreSQL直接SQL・pool再利用の実地matrixが未実施のためSaaS blocker継続 |
 | verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaim再照合、membership allowlist内部service、Document routeの信頼済みresolver境界、同一docIdのGET/PUT tenant A/B matrixまで実装 | auth edgeからのverified evidence接続、trusted host mapping、公開session/capability API、MCP/worker/browserを含む完全matrixは未実装のためblocker継続 |
 | server-owned Document access metadata | tenant/doc複合FK、visibility/binding/version制約、PostgreSQL RLS、tenant-scoped repository、runtime binding resolver境界を実装。client policy headerはSaaS resolverで無視 | 管理API・実binding secret store/PDP配線・PostgreSQL実地検証が未完了のためSaaS blocker継続 |
-| browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、scope key生成・scope単位削除、recent・view visibility・view mode・view locale・QueryPreset・reviewer ref・各UI preferenceのoptional tenant scope、同一docId tenant A/B testを実装 | session context配線、切替時DOM/memory/request cache/object URL破棄が未実装のためSaaS blocker継続 |
+| browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、各保存値のoptional tenant scope、同一docId tenant A/B test、検証済みresponseだけを受けるtransition cleanup/hard-reload coordinatorを実装 | 公開session contextとApp cleanup hookの実配線が未実装のためSaaS blocker継続 |
 
 ## 11. Polygon contract keys（FB-P0-2A2B2C）
 

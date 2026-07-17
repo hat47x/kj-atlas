@@ -193,3 +193,10 @@
 - SaaS用Document resource resolverはclientのvisibility/policyRef headerを無視し、tenant-scoped metadataを取得する。binding ID/versionはtrusted runtime resolverへ渡し、返されたpolicyRefだけをrequest内で使用する。metadata欠損、不正binding、resolver例外は`Restricted + policyRef欠損`へ倒し、deny fail-safeを維持する。Public/Unlistedはbindingなしを許可する。
 - 同一docIdを持つtenant A/Bでmetadataとruntime policyRefが混線しないこと、複合FK、visibility/binding制約、downgrade、client header無視、binding resolver障害を近接17件で検証した。Ruff pass、backend全体358件pass・PostgreSQL等の条件付き24件skip。
 - metadata管理API/UI、binding IDをsecret store/PDP参照へ解決する実adapter、PostgreSQL直接RLS検証、SaaS runtime配線は未実装であり、AC-4/5/7/10と起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-17: frontend tenant transition cleanup boundary
+
+- 検証済み`TenantSessionContextV1`だけを受け付けるtransition coordinatorを追加した。未検証responseやactive tenant/allowlist不一致では、cleanup、storage変更、navigationのいずれも開始しない。
+- 正常遷移ではrequest abort、worker dispose、object URL revoke、memory state reset等のcleanup hookを先に実行し、旧`deployment + tenantId + principalId` scopeだけを削除してhard document replacementを行う。他tenant scopeとsingle-tenant旧keyは削除しない。
+- cleanup hookやstorage列挙が一部失敗しても旧DOMを継続利用せず、hard replacementを必ず試行する。正常系、未検証response、cleanup/storage障害、principal変更の4件、session/storage近接18件、frontend全体1,100件・198 file、typecheck pass。
+- 公開session/active-tenant API、Appの具体的なabort/dispose/revoke/reset hook配線、90/768/1440pxでの実ブラウザ切替検証は未実装であり、AC-6/8/10/12とSaaS起動拒否を継続する。

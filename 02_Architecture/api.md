@@ -666,6 +666,8 @@ export type ActiveTenantRequestV1 = {
 
 `effectiveCapabilities`は表示補助であり、APIの再認可を代替しない。cacheする場合は`deployment + tenantId + principalId + capabilityVersion`で分離し、auth tokenの有効期限を越えて保持しない。
 
+active tenant変更の成功responseはfrontend validatorを通過した後だけ遷移へ使用する。遷移時は進行中requestをabortし、workerをdisposeし、object URLと文書・選択・検索等のmemory stateを破棄し、旧browser storage scopeだけを削除してhard document replacementを行う。cleanup/storage削除の一部が失敗しても旧DOMを継続利用せずreplacementを優先する。未検証responseではcleanup、storage変更、navigationを開始しない。
+
 `principalId`は認証済みUserに対応するserver-managed opaque IDであり、表示名やemail、外部IdP subjectを返さない。browser storage scopeのprincipal要素にはこの値だけを使う。
 
 実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。さらにsession responseの内部builderを追加し、active tenantの再照合、opaque principalId、allowlist済みtenant候補、trusted capability resolverの結果だけを受理する。不正・欠損したcapability snapshotは`503 capability_resolution_unavailable`としてfail-closedにする。active tenant切替の内部境界も、現在のverified/trusted contextがまだ有効であること、要求tenantが同じprincipalのallowlistに含まれることを再確認し、成功後だけ新tenantのcapability snapshotを解決する。frontend側もresponse validatorを通過し、active tenantがavailableTenantsと一致したcontextだけをbrowser storage scopeへ変換する。HTTP headerやqueryを直接verified evidenceへ変換する処理、実PDP capability resolver、上記endpoint routeとfrontend fetch配線は未実装であり、公開契約は引き続き閉じる。
