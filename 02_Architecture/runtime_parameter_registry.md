@@ -175,6 +175,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 - `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` は `read_only`, `deny` だけを許可します。
 - `KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER` は `none`, `external_http` だけを許可します。`external_http`ではendpointを必須とし、非loopback HTTP、URL内credential/query/fragment、空白・制御文字を含むAPI keyを拒否します。`none`でHTTP設定だけを残すことも拒否します。
 - `KJ_ATLAS_TENANT_CAPABILITY_RESOLVER`も同じtrusted HTTP接続制約を適用します。外部応答は既知capabilityの重複なし配列とopaque capability versionだけを受理し、不明値・不完全設定はfail-closedにします。
+- 外部PDP、監査HTTP、Document policy binding、tenant capability、LLMのoutbound HTTPは3xx redirectを追跡しません。検証済みendpointやhost allowlistをredirect先で迂回させず、固定bearer、tenant context、policyRef、promptを別の接続先へ転送しません。
 - `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` は `none`, `oidc`, `saml` だけを許可します。
 - `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER` は `user_id`, `sso_subject` だけを許可します。
 - CE4 の固定契約値は、実装で安全側に検証します。

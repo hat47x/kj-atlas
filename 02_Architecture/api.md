@@ -720,6 +720,8 @@ Tenant-scoped access-control entry pointは、TenantContext欠損、resource ten
 
 `external_http` binding resolverは、server-owned metadataから得た`tenantId`、非秘密`bindingId`、`policyVersion`だけを信頼済みendpointへPOSTし、`{"policyRef": string}`だけの応答を受理する。64KiB超、余分なfield、空白・制御文字を含む値、2,048文字超、非JSON、4xx拒否、timeout/transport障害は解決失敗とし、raw応答や内部例外詳細をclient・監査・logへ反射しない。返却されたpolicyRefはAccessRequest内だけでPDPへ渡し、永続化しない。resolver未設定は従来どおりunavailableとして`Restricted + policy_ref_missing`へ倒す。
 
+外部PDP、監査HTTP、binding/capability resolver、LLM providerのoutbound HTTPは3xx redirectを追跡しない。元のendpointに対するscheme/host検証やallowlistをredirectで迂回させず、Authorization header、tenant context、policyRef、promptを別接続先へ転送しない。redirect応答は各adapterの既存のHTTP/transport失敗契約へ正規化する。
+
 ### 10.4 文書アクセス設定管理API（実装済み・SaaS runtime gated）
 
 Tenant Admin向けに次のrouteを実装する。ただし、application lifecycleへ信頼済みSaaS identity resolverとtenant capability resolverが明示注入されない限り`503`で閉じる。single-tenant互換context、公開headerのrole/group、Document owner、`document.write`、Platform operator capabilityを管理権限へ昇格させない。

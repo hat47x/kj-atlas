@@ -69,16 +69,16 @@ def test_external_capability_resolver_sends_server_context_and_parses_snapshot(
         ).encode()
     )
 
-    def _urlopen(request, timeout):  # noqa: ANN001
+    def _urlopen(request, timeout_seconds):  # noqa: ANN001
         captured["url"] = request.full_url
         captured["method"] = request.method
         captured["authorization"] = request.headers.get("Authorization")
-        captured["timeout"] = timeout
+        captured["timeout"] = timeout_seconds
         captured["body"] = json.loads(request.data.decode())
         return response
 
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.urllib_request.urlopen",
+        "kj_atlas_api.tenant_capability.open_trusted_http",
         _urlopen,
     )
 
@@ -152,8 +152,8 @@ def test_external_capability_resolver_rejects_invalid_snapshot_without_reflectio
     body: bytes,
 ) -> None:
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.urllib_request.urlopen",
-        lambda request, timeout: _Response(body),  # noqa: ARG005
+        "kj_atlas_api.tenant_capability.open_trusted_http",
+        lambda request, timeout_seconds: _Response(body),  # noqa: ARG005
     )
 
     with pytest.raises(TenantCapabilityInvalidResponseError) as exc_info:
@@ -180,11 +180,11 @@ def test_external_capability_resolver_normalizes_transport_failure(
     monkeypatch: pytest.MonkeyPatch,
     failure: Exception,
 ) -> None:
-    def _raise(request, timeout):  # noqa: ANN001, ARG001
+    def _raise(request, timeout_seconds):  # noqa: ANN001, ARG001
         raise failure
 
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.urllib_request.urlopen",
+        "kj_atlas_api.tenant_capability.open_trusted_http",
         _raise,
     )
 
@@ -203,13 +203,13 @@ def test_external_capability_resolver_rejects_missing_membership_before_transpor
 ) -> None:
     transport_called = False
 
-    def _urlopen(request, timeout):  # noqa: ANN001, ARG001
+    def _urlopen(request, timeout_seconds):  # noqa: ANN001, ARG001
         nonlocal transport_called
         transport_called = True
         return _Response(b"{}")
 
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.urllib_request.urlopen",
+        "kj_atlas_api.tenant_capability.open_trusted_http",
         _urlopen,
     )
 
@@ -226,7 +226,7 @@ def test_external_capability_resolver_rejects_missing_membership_before_transpor
 def test_external_capability_resolver_maps_http_rejection_without_detail(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def _raise(request, timeout):  # noqa: ANN001, ARG001
+    def _raise(request, timeout_seconds):  # noqa: ANN001, ARG001
         raise urllib_error.HTTPError(
             url="https://capability.example.invalid/v1/resolve",
             code=403,
@@ -236,7 +236,7 @@ def test_external_capability_resolver_maps_http_rejection_without_detail(
         )
 
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.urllib_request.urlopen",
+        "kj_atlas_api.tenant_capability.open_trusted_http",
         _raise,
     )
 

@@ -242,3 +242,9 @@
 - session context builderとactive tenant切替内部境界で、resolver由来の`tenantId + membershipId + resolvedBy`をDBのactive User/Tenant/Membershipから再構成したTenantContextと照合するようにした。canonicalに見える差し替えmembership IDでも一致しなければ`tenant_context_untrusted`としてPDP/capability resolver呼出し前に拒否する。
 - 共通SaaS request contextはresolverの元値ではなく再照合後のTenantContextだけを管理API、DB guard、capability resolverへ渡す。停止membership、未知resolution method、別membership証跡を権限なしのEmptyや成功responseへ変換しない。
 - session builder／route／管理API／verified tenantの近接48件、backend全体433件pass・条件付き25件skip、Ruff、docs-check、diff-checkを通過した。auth edgeのcredential方式はcookie、bearer、forward-authの選択と検証責任が未確定なため推測実装せず、既定unavailableとSaaS起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-17: trusted outbound redirect refusal
+
+- `urllib`の既定redirect追跡で、設定検証済みendpoint／LLM host allowlistから別接続先へ遷移できる経路を閉じた。外部PDP、監査HTTP、Document policy binding、tenant capability、LLM providerは共通のtrusted HTTP openerを使い、3xxで後続requestを生成しない。
+- 固定bearer、server-resolved tenant context、binding lookup、promptをredirect先へ転送しない。redirectは各adapterの既存HTTP／transport失敗として処理し、PDP・binding・capabilityのfail-safeや監査dispatcherのfail-open方針自体は変更しない。
+- redirect handler単体と全adapter近接84件、backend全体435件pass・条件付き25件skip、Ruff、docs-check、diff-checkを通過した。trusted auth edge、PostgreSQL実地matrix、SaaS runtime配線は未完了のため起動拒否を維持する。

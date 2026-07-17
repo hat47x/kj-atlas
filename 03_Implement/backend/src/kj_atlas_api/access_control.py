@@ -10,6 +10,7 @@ from fastapi import HTTPException
 
 from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_context import TenantContext
+from kj_atlas_api.trusted_http import open_trusted_http
 
 AccessAction = Literal["read", "write", "export", "share"]
 Visibility = Literal["Public", "Unlisted", "Org", "Restricted"]
@@ -236,7 +237,10 @@ class ExternalPolicyAccessControlAdapter:
         )
 
         try:
-            with urllib_request.urlopen(outbound, timeout=self._config.timeout_seconds) as response:  # noqa: S310
+            with open_trusted_http(
+                outbound,
+                timeout_seconds=self._config.timeout_seconds,
+            ) as response:
                 response_text = response.read().decode("utf-8")
         except urllib_error.HTTPError as exc:
             if exc.code in {400, 401, 403, 422}:

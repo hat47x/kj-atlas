@@ -58,17 +58,17 @@ def test_external_resolver_sends_only_opaque_lookup_and_returns_transient_policy
     captured: dict[str, object] = {}
     response = _Response(json.dumps({"policyRef": "opa://runtime/policy-1"}).encode())
 
-    def _urlopen(request, timeout):  # noqa: ANN001
+    def _urlopen(request, timeout_seconds):  # noqa: ANN001
         captured["url"] = request.full_url
         captured["method"] = request.method
         captured["authorization"] = request.headers.get("Authorization")
         captured["content_type"] = request.headers.get("Content-type")
-        captured["timeout"] = timeout
+        captured["timeout"] = timeout_seconds
         captured["body"] = json.loads(request.data.decode())
         return response
 
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.urllib_request.urlopen",
+        "kj_atlas_api.document_policy_binding.open_trusted_http",
         _urlopen,
     )
 
@@ -122,8 +122,8 @@ def test_external_resolver_rejects_invalid_response_without_reflecting_value(
     body: bytes,
 ) -> None:
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.urllib_request.urlopen",
-        lambda request, timeout: _Response(body),  # noqa: ARG005
+        "kj_atlas_api.document_policy_binding.open_trusted_http",
+        lambda request, timeout_seconds: _Response(body),  # noqa: ARG005
     )
 
     with pytest.raises(DocumentPolicyBindingInvalidResponseError) as exc_info:
@@ -149,11 +149,11 @@ def test_external_resolver_normalizes_transport_failure_without_leaking_details(
     monkeypatch: pytest.MonkeyPatch,
     failure: Exception,
 ) -> None:
-    def _raise(request, timeout):  # noqa: ANN001, ARG001
+    def _raise(request, timeout_seconds):  # noqa: ANN001, ARG001
         raise failure
 
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.urllib_request.urlopen",
+        "kj_atlas_api.document_policy_binding.open_trusted_http",
         _raise,
     )
 
@@ -170,7 +170,7 @@ def test_external_resolver_normalizes_transport_failure_without_leaking_details(
 def test_external_resolver_maps_rejected_lookup_to_invalid_response(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def _raise(request, timeout):  # noqa: ANN001, ARG001
+    def _raise(request, timeout_seconds):  # noqa: ANN001, ARG001
         raise urllib_error.HTTPError(
             url="https://binding.example.invalid/v1/resolve",
             code=403,
@@ -180,7 +180,7 @@ def test_external_resolver_maps_rejected_lookup_to_invalid_response(
         )
 
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.urllib_request.urlopen",
+        "kj_atlas_api.document_policy_binding.open_trusted_http",
         _raise,
     )
 

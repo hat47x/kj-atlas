@@ -13,6 +13,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 from kj_atlas_api.settings import settings
+from kj_atlas_api.trusted_http import open_trusted_http
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ class HttpAuditTransport:
             method="POST",
         )
         try:
-            with request.urlopen(req_obj, timeout=self._timeout_seconds):
+            with open_trusted_http(req_obj, timeout_seconds=self._timeout_seconds):
                 return
         except error.HTTPError as exc:
             raise RuntimeError(f"audit transport failed with status {exc.code}") from exc

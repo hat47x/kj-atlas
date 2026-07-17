@@ -47,9 +47,9 @@ def _request() -> AccessRequest:
 def test_external_http_adapter_forwards_request_and_parses_decision(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, object] = {}
 
-    def _urlopen(request, timeout):  # noqa: ANN001
+    def _urlopen(request, timeout_seconds):  # noqa: ANN001
         captured["url"] = request.full_url
-        captured["timeout"] = timeout
+        captured["timeout"] = timeout_seconds
         captured["auth"] = request.headers.get("Authorization")
         captured["auth_mode"] = request.headers.get("X-acl-auth-mode")
         captured["issuer"] = request.headers.get("X-idp-issuer")
@@ -57,7 +57,7 @@ def test_external_http_adapter_forwards_request_and_parses_decision(monkeypatch:
         captured["body"] = json.loads(request.data.decode("utf-8"))
         return _Response({"allow": True, "readOnly": True, "reason": "external_read_only"})
 
-    monkeypatch.setattr("kj_atlas_api.access_control.urllib_request.urlopen", _urlopen)
+    monkeypatch.setattr("kj_atlas_api.access_control.open_trusted_http", _urlopen)
 
     adapter = ExternalPolicyAccessControlAdapter(
         config=ExternalPolicyAdapterConfig(
@@ -103,11 +103,11 @@ def test_external_http_adapter_forwards_server_resolved_tenant(
 ) -> None:
     captured: dict[str, object] = {}
 
-    def _urlopen(request, timeout):  # noqa: ANN001, ARG001
+    def _urlopen(request, timeout_seconds):  # noqa: ANN001, ARG001
         captured["body"] = json.loads(request.data.decode("utf-8"))
         return _Response({"allow": True})
 
-    monkeypatch.setattr("kj_atlas_api.access_control.urllib_request.urlopen", _urlopen)
+    monkeypatch.setattr("kj_atlas_api.access_control.open_trusted_http", _urlopen)
     adapter = ExternalPolicyAccessControlAdapter(
         config=ExternalPolicyAdapterConfig(
             endpoint="https://policy.example.local/evaluate"
@@ -159,15 +159,15 @@ def test_external_http_adapter_error_mapping(monkeypatch: pytest.MonkeyPatch) ->
         config=ExternalPolicyAdapterConfig(endpoint="https://policy.example.local/evaluate")
     )
 
-    def _raise_unreachable(request, timeout):  # noqa: ANN001
+    def _raise_unreachable(request, timeout_seconds):  # noqa: ANN001
         raise urllib_error.URLError("down")
 
-    monkeypatch.setattr("kj_atlas_api.access_control.urllib_request.urlopen", _raise_unreachable)
+    monkeypatch.setattr("kj_atlas_api.access_control.open_trusted_http", _raise_unreachable)
 
     with pytest.raises(AccessControlUnreachableError):
         adapter.authorize(_request())
 
-    def _raise_invalid(request, timeout):  # noqa: ANN001
+    def _raise_invalid(request, timeout_seconds):  # noqa: ANN001
         raise urllib_error.HTTPError(
             url=request.full_url,
             code=403,
@@ -176,7 +176,7 @@ def test_external_http_adapter_error_mapping(monkeypatch: pytest.MonkeyPatch) ->
             fp=None,
         )
 
-    monkeypatch.setattr("kj_atlas_api.access_control.urllib_request.urlopen", _raise_invalid)
+    monkeypatch.setattr("kj_atlas_api.access_control.open_trusted_http", _raise_invalid)
 
     with pytest.raises(AccessControlInvalidPolicyError):
         adapter.authorize(_request())
@@ -198,10 +198,10 @@ def test_external_http_auth_mode_setting_rejects_invalid_value() -> None:
 
 
 def test_external_http_adapter_unreachable_uses_existing_fail_safe_reason(monkeypatch: pytest.MonkeyPatch) -> None:
-    def _raise_unreachable(request, timeout):  # noqa: ANN001
+    def _raise_unreachable(request, timeout_seconds):  # noqa: ANN001
         raise urllib_error.URLError("down")
 
-    monkeypatch.setattr("kj_atlas_api.access_control.urllib_request.urlopen", _raise_unreachable)
+    monkeypatch.setattr("kj_atlas_api.access_control.open_trusted_http", _raise_unreachable)
 
     adapter = ExternalPolicyAccessControlAdapter(
         config=ExternalPolicyAdapterConfig(endpoint="https://policy.example.local/evaluate")

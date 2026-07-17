@@ -82,13 +82,13 @@ def test_local_provider_returns_trace_fields(monkeypatch: pytest.MonkeyPatch) ->
     settings.local_llm_base_url = "http://local-llm.test"
     settings.local_llm_model = "test-model"
 
-    def _fake_urlopen(req, timeout=60):
+    def _fake_urlopen(req, timeout_seconds=60):
         assert req.full_url == "http://local-llm.test/generate"
         payload = json.loads(req.data.decode("utf-8"))
         assert payload["model"] == "test-model"
         return _StubHTTPResponse('{"text":"ok"}')
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.request.urlopen", _fake_urlopen)
+    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
 
     try:
         response = LocalProvider().generate(LLMRequest(task="check_narrative", prompt="prompt"))
@@ -108,10 +108,10 @@ def test_local_provider_handles_http_errors(monkeypatch: pytest.MonkeyPatch) -> 
     original_url = settings.local_llm_base_url
     settings.local_llm_base_url = "http://local-llm.test"
 
-    def _fake_urlopen(req, timeout=60):
+    def _fake_urlopen(req, timeout_seconds=60):
         raise error.URLError("offline")
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.request.urlopen", _fake_urlopen)
+    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
 
     try:
         with pytest.raises(ProviderRequestError):
@@ -125,10 +125,10 @@ def test_local_provider_maps_timeout_error_code(monkeypatch: pytest.MonkeyPatch)
     original_url = settings.local_llm_base_url
     settings.local_llm_base_url = "http://local-llm.test"
 
-    def _fake_urlopen(req, timeout=60):
+    def _fake_urlopen(req, timeout_seconds=60):
         raise error.URLError(socket.timeout("timed out"))
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.request.urlopen", _fake_urlopen)
+    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
 
     try:
         with pytest.raises(ProviderRequestError) as exc_info:
@@ -142,10 +142,10 @@ def test_local_provider_maps_validation_error_code(monkeypatch: pytest.MonkeyPat
     original_url = settings.local_llm_base_url
     settings.local_llm_base_url = "http://local-llm.test"
 
-    def _fake_urlopen(req, timeout=60):
+    def _fake_urlopen(req, timeout_seconds=60):
         return _StubHTTPResponse('{"text":123}')
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.request.urlopen", _fake_urlopen)
+    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
 
     try:
         with pytest.raises(ProviderRequestError) as exc_info:
@@ -285,7 +285,7 @@ def test_suggest_merges_contract_is_stable_across_provider_switch(monkeypatch: p
     original_large_url = settings.large_scale_llm_base_url
     original_large_model = settings.large_scale_llm_model
 
-    def _fake_local_urlopen(req, timeout=60):
+    def _fake_local_urlopen(req, timeout_seconds=60):
         body = json.dumps(
             {
                 "text": '{"suggestions":[{"groupId":"g1","cardIds":["c1","c2"],"mergedTextDraft":"merged"}]}'
@@ -306,7 +306,7 @@ def test_suggest_merges_contract_is_stable_across_provider_switch(monkeypatch: p
             ),
         )
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.request.urlopen", _fake_local_urlopen)
+    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_local_urlopen)
     monkeypatch.setattr("kj_atlas_api.llm.provider.LargeScaleProvider.generate", _fake_large_scale_generate)
 
     try:

@@ -105,6 +105,7 @@
 - Admin API、agent token、API key、signed linkの他テナント再利用
 - worker/job、監査、object storage、backup/restoreでtenant contextが欠落する
 - 同一ブラウザのrecent/QueryPreset/選択状態がtenant切替後に残る
+- trusted endpointの3xx redirectで接続先検証を迂回し、固定bearer、tenant context、policyRef、promptを別hostへ転送する
 
 **SaaS提供前に必要な対策**
 
@@ -113,12 +114,13 @@
 - 主体tenantと資源tenantの不一致をPDP呼出前にアプリ内で常にdeny
 - tenant/visibility/policyRefをサーバー正本から解決し、クライアント値を認可根拠にしない
 - SaaS profileではaccess-control欠損、noop、PDP不達、tenant不明をreadも含めてdenyし、設定不備はfail-fast
+- 外部PDP、監査HTTP、binding/capability resolver、LLMのoutbound HTTPはredirectを追跡せず、検証済みの元endpointだけへ送信する
 - recent/QueryPreset等をdeployment origin + tenantId + userIdで名前空間分離し、切替時にmemory/DOM/cacheを破棄
 - 2つのtenantへ同じdocIdを用意したnegative matrixで、全API・export・MCP・webhook・auditの越境拒否を統合検証
 
 **現行の適用限界**
 
-tenant/identity/membership、Document複合key、TenantContext/PDP/audit伝播、PostgreSQL RLS migrationとtransaction-local DB context、fail-closed session context route、strict capability adapterまでは実装済みである。session/capability境界ではresolverのmembership IDをDBのactive membershipから再生成した値と照合し、停止・差し替え証跡をPDP呼出し前に拒否する。ただしPostgreSQL実地検証、auth edgeからverified resolverへの接続、active tenant変更、MCP/worker/cache/browser/storageを含む完全な越境matrixは未完了である。このため共有DB型のマルチテナントSaaSとして運用してはならず、`enterprise-production`は単一組織デプロイ向けと解釈する。`saas-multitenant`の起動拒否は残りの`SAAS-TENANT-01`条件を完了するまで維持する。
+tenant/identity/membership、Document複合key、TenantContext/PDP/audit伝播、PostgreSQL RLS migrationとtransaction-local DB context、fail-closed session context route、strict capability adapter、trusted outbound HTTPのredirect拒否までは実装済みである。session/capability境界ではresolverのmembership IDをDBのactive membershipから再生成した値と照合し、停止・差し替え証跡をPDP呼出し前に拒否する。ただしPostgreSQL実地検証、auth edgeからverified resolverへの接続、active tenant変更、MCP/worker/cache/browser/storageを含む完全な越境matrixは未完了である。このため共有DB型のマルチテナントSaaSとして運用してはならず、`enterprise-production`は単一組織デプロイ向けと解釈する。`saas-multitenant`の起動拒否は残りの`SAAS-TENANT-01`条件を完了するまで維持する。
 
 ## 検証・運用 / Verification
 

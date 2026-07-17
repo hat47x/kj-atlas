@@ -10,6 +10,7 @@ from urllib import error, request
 from uuid import uuid4
 
 from kj_atlas_api.settings import settings
+from kj_atlas_api.trusted_http import open_trusted_http
 
 
 @dataclass(frozen=True)
@@ -284,7 +285,7 @@ def _generate_via_http(
     )
 
     try:
-        with request.urlopen(req_obj, timeout=60) as resp:
+        with open_trusted_http(req_obj, timeout_seconds=60) as resp:
             raw_body = resp.read().decode("utf-8")
     except error.HTTPError as exc:
         if exc.code in (408, 504):

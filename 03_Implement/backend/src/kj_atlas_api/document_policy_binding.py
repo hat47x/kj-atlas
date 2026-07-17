@@ -11,6 +11,7 @@ from kj_atlas_api.document_access_resource import (
 )
 from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_context import TenantContext
+from kj_atlas_api.trusted_http import open_trusted_http
 
 
 MAX_BINDING_RESPONSE_BYTES = 64 * 1024
@@ -81,9 +82,9 @@ class ExternalHttpDocumentPolicyBindingResolver:
         )
 
         try:
-            with urllib_request.urlopen(  # noqa: S310
+            with open_trusted_http(
                 outbound,
-                timeout=self._config.timeout_seconds,
+                timeout_seconds=self._config.timeout_seconds,
             ) as response:
                 response_body = response.read(MAX_BINDING_RESPONSE_BYTES + 1)
         except urllib_error.HTTPError as exc:
