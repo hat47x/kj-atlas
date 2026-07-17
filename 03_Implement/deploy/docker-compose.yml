@@ -42,7 +42,10 @@ services:
       args:
         KJ_ATLAS_FRONTEND_API_BASE: ${KJ_ATLAS_FRONTEND_API_BASE:-/api}
     ports:
-      - "${KJ_ATLAS_WEB_PORT:-8080}:80"
+      # Loopback-only by design (DEPLOY-NET-01): omitting the host IP here would
+      # bind 0.0.0.0, exposing this unauthenticated evaluation stack to the whole
+      # LAN. KJ_ATLAS_WEB_PORT changes the port, never the bind address.
+      - "127.0.0.1:${KJ_ATLAS_WEB_PORT:-8080}:80"
     depends_on:
       api:
         condition: service_healthy

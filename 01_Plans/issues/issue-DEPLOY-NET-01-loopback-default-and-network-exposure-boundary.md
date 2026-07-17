@@ -96,17 +96,17 @@ Phase Bの配布profileは本Issueの必須実装にしない。新しいbind-ad
 
 ## 受入条件
 
-- [ ] base Composeのweb portがloopbackへ明示bindされ、host IP省略または`0.0.0.0`へ戻らない。
-- [ ] `KJ_ATLAS_WEB_PORT`を変更してもbind addressはloopbackのままである。
-- [ ] READMEとinstallationが標準Composeを同一ホスト評価用と明記し、`localhost`表示だけを到達範囲の根拠にしない。
-- [ ] deployment、configuration、operationsがbase profileと非loopback deploymentの責務を区別する。
-- [ ] security文書がSafeMode/API keyの非保証範囲と、SPAを含む前段認証の必要性を説明する。
-- [ ] `THREAT_MODEL.md`に未認証HTTP面の誤公開、資産、攻撃者、入口、対策が追加される。
-- [ ] contract testがhost IP省略、`0.0.0.0`、loopback以外のbase mappingを検出する。
-- [ ] Docker-capable hostでrendered Composeのweb bindingが`127.0.0.1:<port>`であることを確認する。
-- [ ] 可能なintegration環境では同一ホストからhealth/UIへ到達でき、非loopback interfaceを宛先とする接続が成功しないことを確認する。
-- [ ] 非loopback公開を提供する場合、明示profileとTLS・認証proxy・接続元制限・撤回手順が同時に定義される。
-- [ ] SafeMode、share/export、import sanitize、provider=`none`、AI proposal-onlyの既定を変更しない。
+- [x] base Composeのweb portがloopbackへ明示bindされ、host IP省略または`0.0.0.0`へ戻らない。→ `docker-compose.yml`の`web.ports`を`127.0.0.1:${KJ_ATLAS_WEB_PORT:-8080}:80`へ変更済み（下記「実装記録」参照）。
+- [x] `KJ_ATLAS_WEB_PORT`を変更してもbind addressはloopbackのままである。→ 環境変数はport番号のみに作用し、host IP部分は固定文字列。contract testで固定。
+- [x] READMEとinstallationが標準Composeを同一ホスト評価用と明記し、`localhost`表示だけを到達範囲の根拠にしない。→ 両文書に明記済み。
+- [x] deployment、configuration、operationsがbase profileと非loopback deploymentの責務を区別する。→ 3文書とも該当箇所を更新済み。
+- [x] security文書がSafeMode/API keyの非保証範囲と、SPAを含む前段認証の必要性を説明する。→ `security.md`のAPI key節へ追記済み。
+- [x] `THREAT_MODEL.md`に未認証HTTP面の誤公開、資産、攻撃者、入口、対策が追加される。→ §7として追加済み。
+- [x] contract testがhost IP省略、`0.0.0.0`、loopback以外のbase mappingを検出する。→ `01_Plans/tests/test_deploy_network_exposure_contract.py`を新規追加、修正前の設定に対する負例（fail確認）も実施済み（下記「実装記録」参照）。
+- [x] Docker-capable hostでrendered Composeのweb bindingが`127.0.0.1:<port>`であることを確認する。→ `docker compose config`と実際の`docker compose up`の両方で確認済み。
+- [x] 可能なintegration環境では同一ホストからhealth/UIへ到達でき、非loopback interfaceを宛先とする接続が成功しないことを確認する。→ 実機Dockerで確認済み（下記「実装記録」参照）。
+- [ ] 非loopback公開を提供する場合、明示profileとTLS・認証proxy・接続元制限・撤回手順が同時に定義される。→ Phase B（本Issueの必須実装外）として保留。非loopback公開は現時点で提供しない。
+- [x] SafeMode、share/export、import sanitize、provider=`none`、AI proposal-onlyの既定を変更しない。→ 本変更はport bindingのみで、これらのシステムへのコード変更は無し。
 
 ## 検証計画
 
@@ -127,6 +127,27 @@ Phase Bの配布profileは本Issueの必須実装にしない。新しいbind-ad
   - `git diff --check`
 
 Dockerを利用できない環境では静的検査だけを成功扱いにし、Docker-capable hostでのbinding確認を未実施として残す。
+
+## 実装記録（2026-07-17）: Phase A 完了
+
+- **`docker-compose.yml`**: `web.ports`を`"${KJ_ATLAS_WEB_PORT:-8080}:80"`から`"127.0.0.1:${KJ_ATLAS_WEB_PORT:-8080}:80"`へ変更した。
+- **`THREAT_MODEL.md`**: §7「標準Composeのネットワーク公開境界（DEPLOY-NET-01）」を新規追加し、対象範囲一覧にも追記した。保護資産・攻撃者・入口・誤解しやすい非対策（SafeMode、`KJ_ATLAS_API_KEY`、`localhost`表示）・想定対策を記載した。
+- **文書更新**: `README.md`（開発者向け起動手順の直後）、`04_Documentation/installation.md`（Compose起動手順の直後）、`04_Documentation/operations.md`（標準URL説明）、`04_Documentation/security.md`（API key節）、`02_Architecture/deployment.md`（基本方針・公開設定キー表・Registry/Deploy alignment matrix）に、標準構成がloopback限定の同一ホスト評価用であることを明記した。`04_Documentation/configuration.md`の`KJ_ATLAS_WEB_PORT`行も同様に更新した。
+- **contract test**: `01_Plans/tests/test_deploy_network_exposure_contract.py`を新規追加した。`docker-compose.yml`の`web.ports`マッピングを解析し、(1) `127.0.0.1:`で始まること、(2) `0.0.0.0`を含まないこと、(3) `KJ_ATLAS_WEB_PORT`変数を含み`host_ip:port:container_port`の3要素構造を保つこと、を検証する2 test。修正前の設定（host IP省略）に対しては両testがfailすることを負例として確認済み。
+- **Docker検証（実機、2026-07-17）**:
+  - `docker compose config`: レンダリング結果の`web.ports`が`host_ip: 127.0.0.1`であることを確認。
+  - `docker compose up --build -d`: 実際に起動し、`docker compose ps`のPORTS列が`127.0.0.1:8080->80/tcp`であることを確認。
+  - `curl http://localhost:8080/api/healthz`・`curl http://127.0.0.1:8080/api/healthz`: いずれも`{"status":"ok"}`で成功。
+  - ホストの非loopback IP（`hostname -I`で取得、例: `172.17.170.131`）宛の`curl http://<non-loopback-ip>:8080/api/healthz`: `Couldn't connect to server`で失敗（意図通り、到達不可を確認）。
+  - `docker compose down`で後片付け済み。
+- **非対象（Phase B）**: 非loopback公開のための別deployment profile（TLS終端、認証proxy、接続元制限等）は本変更に含めない。実行順序段階5「Maintainerが非loopback経路を正式サポートするかを別判断」は継続する人手判断であり、本セッションでは完了させていない。
+
+検証結果:
+- `python3 01_Plans/tests/test_deploy_network_exposure_contract.py`相当（`unittest`経由、pytest本環境未導入のため）: 2/2 pass。負例（修正前設定）: 2/2 fail（意図通り検出）。
+- `python 01_Plans/docs_check.py`: pass。
+- `python 01_Plans/issues/validate_active_issue_memos.py`: pass。
+
+**残る人手判断**: 本変更はLAN上の別端末からbase Composeへ接続していた既存利用者に対する破壊的変更（互換性影響）である。実装・検証は完了しているが、この既定動作変更をMaintainerが受け入れるかどうかの最終確認は本セッションでは行っていない。Statusは`Open`のまま維持する。
 
 ## リスクとロールバック
 

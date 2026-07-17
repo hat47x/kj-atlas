@@ -60,6 +60,8 @@ curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 
 ブラウザで動く同梱の画面（SPA）は `X-API-Key` を送らないため、`KJ_ATLAS_API_KEY` を設定すると画面からの操作は 401 になります。API key は `curl` などプログラムからのアクセスを保護するための簡易保護です。ブラウザ配信を保護する場合は、画面に鍵を持たせるのではなく前段の認証 proxy で行います。公開ネットワークでの本格運用では、TLS、認証 proxy、アクセス制御、監査を組み合わせてください。
 
+SafeModeと`KJ_ATLAS_API_KEY`は、いずれもネットワーク到達範囲を制御しません。同一ホストからだけ到達できる境界は、標準`docker-compose.yml`が`web`をloopback（`127.0.0.1`）へbindすることで確保しています（`DEPLOY-NET-01`）。別端末・LAN・Internetからの利用が必要な場合は、URLに`localhost`と表示されることや`KJ_ATLAS_API_KEY`の設定を根拠にせず、TLS・認証proxy・接続元制限を伴う別deployment profileを用意してください。
+
 ## SafeMode の画面確認
 
 share/export の前は、「共有と再現」パネルの `共有前チェック` で SafeMode、公開範囲、未レビュー情報、出力形式を確認します。SafeMode が有効な状態では、export/share コンテキストで機微テキストをマスクすること、固定マスク対象を無効化できないこと、未レビューのドラフトを含めないことが画面上に示されます。
