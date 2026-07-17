@@ -167,6 +167,18 @@ def test_settings_rejects_legacy_runtime_profile_key(monkeypatch) -> None:  # ty
         assert "RUNTIME_PROFILE" in str(exc)
 
 
+def test_settings_rejects_legacy_document_policy_binding_key(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("DOCUMENT_POLICY_BINDING_RESOLVER", "external_http")
+
+    try:
+        Settings()
+        assert False, "Expected legacy binding resolver key to be rejected"
+    except ValueError as exc:
+        assert "Legacy env keys are no longer supported" in str(exc)
+        assert "DOCUMENT_POLICY_BINDING_RESOLVER" in str(exc)
+
+
 def test_backend_ci_uses_canonical_database_test_keys() -> None:
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")
 

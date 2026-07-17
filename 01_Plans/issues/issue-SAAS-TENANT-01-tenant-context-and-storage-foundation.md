@@ -210,3 +210,9 @@
 - Alembic `20260717_0011`で`document_access_admin_audit_events`を追加し、PostgreSQL ENABLE+FORCE RLSを設定した。監査列はtenantId、opaque principal/doc ID、action/decision、policy/capability version、server-generated correlation ID、時刻だけで、binding ID、raw policyRef、title、本文、tokenを持たない。
 - 検証: exact capability分離、single-tenant拒否、adapter欠損、tenant A/B同一docId list/update分離、本文非取得、秘密入力非反射、428/409、監査原子性・最小列、migration upgrade/downgradeを近接33件で確認した。実PostgreSQL RLS、trusted auth/PDP/binding adapter、frontend配線は未完了のためAC-4/5/7/10とSaaS起動拒否を継続する。
 - Document、access metadata、管理監査のRLSを、pool再利用、context欠損read/write、tenant A contextからBへのread/writeで検証する条件付きPostgreSQL matrixを追加した。実行時はmigration ownerとは別の非superuser・非`BYPASSRLS` runtime roleを必須とし、同一資格情報では失敗させる。現行ComposeはDB所有者とAPI資格情報を分離しておらず、ローカルでは接続先未指定によりskipのため、runtime role/provisioningと実地合格まではAC-5を未完了のままとする。
+
+### Implementation checkpoint 2026-07-17: trusted Document policy binding adapter
+
+- 非秘密`bindingId + policyVersion`をserver-resolved tenantIdとともに信頼済みendpointへPOSTし、raw policyRefをrequest内だけで返す`external_http` resolverを追加した。応答は`policyRef`単独field、64KiB以下、2,048文字以下、前後空白・制御文字なしに限定し、余分なtoken等のfield、非JSON、4xx、timeout/transport障害はすべてfail-closed解決失敗にする。
+- resolverは既定`none`で、endpoint/API keyだけが残る不完全設定を拒否する。endpoint内credential/query/fragmentと非loopback HTTP、空白・制御文字を含むAPI key、0以下または30秒超のtimeoutをSettingsで拒否し、API keyとraw応答値を例外、DB、監査へ反射しない。
+- adapter request/response、size/shape/canonical制約、4xx/transport正規化、builder既定unavailable、設定guard・秘密入力非反射を近接24件で確認し、resource/settings近接56件とRuffがpassした。SaaS lifecycleへのauth/capability/resource resolver配線、実binding service/PDP、secret manager注入は未完了のためAC-4/7/10と起動拒否を継続する。

@@ -114,6 +114,10 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` | `none` | `none`, `oidc`, `saml` |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` | 未設定 | `external_http` adapter の固定 bearer token |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER` | 未設定 | `external_http` adapter で使う IdP issuer |
+| `KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER` | `none` | 文書の非秘密binding IDを外部policy参照へ解決するresolver。`none`, `external_http`。現行releaseではSaaS runtime未配線 |
+| `KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT` | 未設定 | binding resolverのHTTPS接続先。ローカル検証だけloopback HTTP可 |
+| `KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY` | 未設定 | binding resolver専用bearer token。Git、DB、監査へ保存しない |
+| `KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_TIMEOUT_SECONDS` | `1.5` | binding resolverのtimeout秒数（0より大きく30以下） |
 | `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `true` | 未登録 identity の JIT provisioning を許可 |
 | `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | auth provider を受け取る header 名 |
 | `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | user id を受け取る header 名 |
@@ -230,7 +234,20 @@ export KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only
 export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/decide'
 ```
 
-`external_http` を指定しても接続先（endpoint）が空の場合、現行実装は `noop` と同じ扱いになります。外部 PDP を必須にする環境では、接続先が設定済みであることを起動前チェックに含めてください。
+アクセス制御の`external_http`を指定しても接続先（endpoint）が空の場合、現行実装は`noop`と同じ扱いになります。外部PDPを必須にする環境では、接続先が設定済みであることを起動前チェックに含めてください。
+
+### 文書policy binding resolver（将来SaaS用）
+
+`document_access_metadata`に保存する値は非秘密のbinding IDとversionだけです。`external_http` resolverはこれらをactive tenant IDとともに信頼済みサービスへPOSTし、応答の`policyRef`をそのrequest内だけで利用します。raw policyRefやAPI keyをDB、監査、export、diagnosticsへ保存しません。
+
+```bash
+export KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER=external_http
+export KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT='https://binding.example.com/v1/resolve'
+export KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY='set-in-secret-store'
+export KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_TIMEOUT_SECONDS=1.5
+```
+
+接続先はcredential、query、fragmentを含まないHTTPS URLにします。HTTPは`localhost`、`127.0.0.1`、`::1`だけで利用できます。現行releaseではadapterと検証境界までの実装で、予約中の`saas-multitenant` profileにはまだ配線されていません。この設定だけでSaaSや文書アクセス設定UIが有効になることはありません。
 
 ## 設定後の確認
 
