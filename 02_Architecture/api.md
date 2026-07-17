@@ -683,6 +683,7 @@ export type TenantScopedAccessRequestV1 = {
     | "document.write"
     | "document.export"
     | "document.share"
+    | "document.policy.manage"
     | "membership.provision"
     | "agent.register"
     | "agent.revoke"
@@ -712,11 +713,30 @@ export type TenantScopedAccessRequestV1 = {
 
 Tenant-scoped access-control entry pointは、TenantContext欠損、resource tenant欠損、両tenant不一致をそれぞれ`tenant_context_missing`、`resource_tenant_missing`、`tenant_mismatch`として外部PDP呼出し前にdenyする。このguardは`read_only` fail-safeから独立し、tenant境界の不備をread許可へ変換しない。Document routeのresource解決もapplication lifecycleで設定するresolver境界とし、現行profileは公開headerを読む`SingleTenantHeaderResourceResolver`、将来SaaS profileはheaderを無視して`tenantId + docId`をDB lookupする`ServerOwnedDocumentResourceResolver`を使用する。後者は既存行のtenantを確認し、未整備のvisibility/policyRefを`Restricted`/欠損へ倒すためdeny modeで安全側に停止する。server-owned policy metadata storeとSaaS runtime配線は未実装であり、単一テナント互換resolverをSaaS境界として扱わない。
 
-### 10.4 管理面の予約capability
+### 10.4 文書アクセス設定管理API（実装済み・SaaS runtime gated）
 
-Tenant Adminは`membership.provision`と`agent.register/revoke`、Platform Control Planeは`tenant.provision/suspend`を使用する。両者はroute surfaceと認可audienceを分離し、platform capabilityから`document.read`を暗黙導出しない。管理endpointのrequest/response詳細はstorage実装と同じissueで契約を追加し、汎用role editor、tenant横断文書検索、support impersonationは追加しない。
+Tenant Admin向けに次のrouteを実装する。ただし、application lifecycleへ信頼済みSaaS identity resolverとtenant capability resolverが明示注入されない限り`503`で閉じる。single-tenant互換context、公開headerのrole/group、Document owner、`document.write`、Platform operator capabilityを管理権限へ昇格させない。
 
-### 10.5 single-tenant互換
+- `GET /tenant-admin/document-access`
+  - active tenant内の文書IDと`visibility`、設定有無、binding状態、policy version、更新時刻、opaque revisionだけを返す。
+  - title、本文、card、review集計、tenantId、binding IDを一覧responseへ含めない。metadata未登録は`Restricted / unconfigured`として返す。
+- `GET /tenant-admin/document-access/{doc_id}`
+  - 一覧項目に加えて、編集対象の非秘密`policyBindingId`だけを返す。responseの`ETag`はbodyの`revision`と一致させる。
+- `PUT /tenant-admin/document-access/{doc_id}`
+  - bodyは`visibility`、`policyBindingId?`、`policyVersion`だけを受け付ける。extra fieldは拒否し、validation responseへ入力値を反射しない。
+  - `policyBindingId`と`policyVersion`は128文字以下のopaque canonical IDに限定し、URL、token、raw policyRef、assertionを受け付けない。`Org/Restricted`はbinding必須、`Public/Unlisted`はbinding保存禁止とする。
+  - 一覧または詳細で得たrevisionを`If-Match`へ必須指定する。欠損は`428 document_access_precondition_required`、不一致または同時更新は`409 document_access_conflict`とする。wildcardで競合検査を迂回できない。
+  - metadata更新と`document_access_admin_audit_events`追加を同一transactionで確定する。auditはtenantId、opaque principal/doc ID、action/decision、policy/capability version、server-generated correlation ID、時刻だけを持ち、binding ID、raw policyRef、title、本文、tokenを保存しない。
+
+他tenantにしか存在しないdocIdは`404`とし、list/detail/updateはすべて解決済みTenantContextでDB guardを設定する。APIで`document.policy.manage`を毎回再評価し、capability resolver欠損・不正応答は`503 capability_resolution_unavailable`へfail-closedにする。
+
+本routeは管理APIとtransactional auditの境界を先行実装した状態である。検証済みauth edge、実PDP capability resolver、binding secret store resolver、SaaS profileのdeny-only配線、PostgreSQL RLS実地matrixが揃うまではfrontendから有効化せず、共有SaaS対応済みとは扱わない。
+
+### 10.5 管理面の予約capability
+
+Tenant Adminは`document.policy.manage`、`membership.provision`と`agent.register/revoke`、Platform Control Planeは`tenant.provision/suspend`を使用する。両者はroute surfaceと認可audienceを分離し、platform capabilityから`document.read`や`document.policy.manage`を暗黙導出しない。汎用role editor、tenant横断文書検索、support impersonationは追加しない。
+
+### 10.6 single-tenant互換
 
 既存profileは内部`local-default` TenantContextを注入する互換resolverを使用できる。認証済み利用者ではUser、Tenant、TenantMembershipがすべてactiveであることをrequestごとに確認し、停止・欠損時は`tenant_membership_inactive`で拒否する。匿名利用は既存single-tenant互換に限ってmembershipなしを維持する。Document routeはapplication lifecycleで設定された信頼済みresolverだけを呼び、公開Document APIへtenantIdを入力項目として追加せず、header・query・path・payloadのtenant値をresolverへ渡さない。URLのdocIdは解決済みTenantContext内で検索し、同じcontextを外部PDP payload、本文を含まないaudit metadata、PostgreSQL transaction-local DB settingへ伝播する。PostgreSQL RLSはsetting欠落時にread/writeとも行を許可せず、SQLiteではこのDB guardをSaaS境界として扱わない。exportされたtenantIdやmembershipをimport先の権限として採用しない。
 

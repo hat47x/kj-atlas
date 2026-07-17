@@ -92,12 +92,12 @@ SaaSではこの表に`Tenant`、`IdentityProvider`、`TenantMembership`が加�
 
 Adminは通常のWorkspaceとは別サーフェスとする。現行のアクセス登録は認可されたPlatform operator、future SaaSの文書アクセス設定はactive tenantの`document.policy.manage`を持つTenant Adminにだけ、恒久住所としてメニューまたはアカウント領域から入口を示す。両者を同じ権限・audienceとして扱わず、キャンバス上のスリムツールバーには置かない。
 
-入口の表示制御は認可の代わりにならない。各面のcapabilityをbackendで検証できない構成では該当Admin面を提供せず、APIもfail-closedにする。現行strict provisioning APIの認可主体を固定するまではアクセス登録UIを、文書policy管理APIとruntime binding resolverが揃うまでは文書アクセス設定UIを実装しない。
+入口の表示制御は認可の代わりにならない。各面のcapabilityをbackendで検証できない構成では該当Admin面を提供せず、APIもfail-closedにする。現行strict provisioning APIの認可主体を固定するまではアクセス登録UIを、trusted SaaS auth/capability adapterとruntime binding resolverが揃うまでは文書アクセス設定UIを実装しない。
 
 推奨する管理面の区分:
 
 1. **アクセス登録**: strict provisioningフォーム。現契約では登録だけを提供し、ユーザー一覧や無効化があるように見せない。
-2. **文書アクセス設定（future SaaS）**: active tenantのdocIdに対するvisibilityと非秘密policy binding metadata。管理API・実binding resolver・PDP配線後だけ有効化する。
+2. **文書アクセス設定（future SaaS）**: active tenantのdocIdに対するvisibilityと非秘密policy binding metadata。管理API scaffoldとtransactional auditは実装済みだが、trusted auth edge・実capability/binding resolver・PDP配線後だけ有効化する。
 3. **外部接続**: `EXT-CONN-02`契約実装後のエージェント登録・失効。
 4. **システム状態**: providerの有効/無効、SafeMode既定、構成プロファイル等、秘密を含まない診断値だけを読み取り専用で表示する将来候補。値の編集はデプロイ手順へ案内する。
 5. **監査**: `DATA-MAINT-04`が解禁されるまでナビゲーションにも空の一覧にも追加しない。
@@ -162,7 +162,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 4. **エージェント登録UI**: `EXT-CONN-02`でテーブル/API/失効/監査契約を固定してから実装する。
 5. **Audit UI**: `DATA-MAINT-04`の判断とallowlist契約なしに実装しない。
 6. **SaaS tenant UI**: `ADR-0059`のImplementation gateに従い、TenantContext、membership、tenant従属DB列、DB側tenant guard、capability API、deny-only SaaS profile、storage namespace、migration、越境テストが揃うまで有効化しない。
-7. **文書アクセス設定UI**: `document.policy.manage`のAPI再認可、metadata管理API、binding IDのsecret store/PDP resolver、監査、PostgreSQL RLS実地検証、tenant A/B negative matrixが揃うまで実画面へ追加しない。
+7. **文書アクセス設定UI**: `document.policy.manage`のAPI再認可、metadata管理API、transactional auditは実装済み。trusted SaaS auth/capability adapter、binding IDのsecret store/PDP resolver、PostgreSQL RLS実地検証、実PDPを含むtenant A/B negative matrixが揃うまで実画面へ追加しない。
 
 複雑性予算: 初期表示への純増=なし（開始パネル/既存ダイアログ/既存設定節の置換・包含、Adminは別面） / 保留操作の距離=不変 / 取り消し導線=プリセット削除は既定復帰、登録・失効は確認と新規再登録（契約後）
 

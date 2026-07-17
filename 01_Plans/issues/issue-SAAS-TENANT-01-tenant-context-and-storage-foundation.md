@@ -201,3 +201,11 @@
 - 正常遷移ではrequest abort、worker dispose、object URL revoke、memory state reset等のcleanup hookを先に実行し、旧`deployment + tenantId + principalId` scopeだけを削除してhard document replacementを行う。他tenant scopeとsingle-tenant旧keyは削除しない。
 - cleanup hookやstorage列挙が一部失敗しても旧DOMを継続利用せず、hard replacementを必ず試行する。正常系、未検証response、cleanup/storage障害、principal変更の4件、session/storage近接18件、frontend全体1,100件・198 file、typecheck pass。
 - 公開session/active-tenant API、Appの具体的なabort/dispose/revoke/reset hook配線、90/768/1440pxでの実ブラウザ切替検証は未実装であり、AC-6/8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-17: Document access metadata management boundary
+
+- Tenant Admin向け`GET list/detail`と条件付き`PUT /tenant-admin/document-access/{doc_id}`を追加した。信頼済みSaaS identity resolver、verified/trusted TenantContext、active membership、`document.policy.manage`の全条件をrequestごとに再確認し、既定single-tenant context、`document.write`、Platform operator capability、role/group headerでは利用できない。auth/capability adapter欠損時は503で閉じる。
+- 一覧はdocId、visibility、設定/binding状態、policy version、更新時刻、opaque revisionだけを返し、title、本文、card、review集計、tenantId、binding IDを含めない。詳細/更新も非秘密のopaque binding ID/versionだけを扱い、extra fieldやURL/token/raw policyRef形状は値をresponseへ反射せず422で拒否する。
+- PUTは一覧/詳細由来の`If-Match`を必須とし、欠損428、不一致・同時更新409とした。metadata更新は旧値を条件にしたatomic updateまたは一意insertとし、成功時の監査追加と同一transactionで確定する。
+- Alembic `20260717_0011`で`document_access_admin_audit_events`を追加し、PostgreSQL ENABLE+FORCE RLSを設定した。監査列はtenantId、opaque principal/doc ID、action/decision、policy/capability version、server-generated correlation ID、時刻だけで、binding ID、raw policyRef、title、本文、tokenを持たない。
+- 検証: exact capability分離、single-tenant拒否、adapter欠損、tenant A/B同一docId list/update分離、本文非取得、秘密入力非反射、428/409、監査原子性・最小列、migration upgrade/downgradeを近接33件で確認した。実PostgreSQL RLS、trusted auth/PDP/binding adapter、frontend配線は未完了のためAC-4/5/7/10とSaaS起動拒否を継続する。

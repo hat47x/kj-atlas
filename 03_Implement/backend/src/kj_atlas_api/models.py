@@ -125,6 +125,40 @@ class DocumentAccessMetadataRow(Base):
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class DocumentAccessAdminAuditEventRow(Base):
+    __tablename__ = "document_access_admin_audit_events"
+    __table_args__ = (
+        CheckConstraint(
+            "action = 'document.policy.update'",
+            name="ck_document_access_admin_audit_action",
+        ),
+        CheckConstraint(
+            "decision = 'allowed'",
+            name="ck_document_access_admin_audit_decision",
+        ),
+        Index(
+            "ix_document_access_admin_audit_tenant_occurred",
+            "tenant_id",
+            "occurred_at",
+        ),
+    )
+
+    event_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    principal_id: Mapped[str] = mapped_column(Text, nullable=False)
+    doc_id: Mapped[str] = mapped_column(Text, nullable=False)
+    action: Mapped[str] = mapped_column(Text, nullable=False)
+    decision: Mapped[str] = mapped_column(Text, nullable=False)
+    policy_version: Mapped[str] = mapped_column(Text, nullable=False)
+    capability_version: Mapped[str] = mapped_column(Text, nullable=False)
+    correlation_id: Mapped[str] = mapped_column(Text, nullable=False)
+    occurred_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class UserRow(Base):
     __tablename__ = "users"
 

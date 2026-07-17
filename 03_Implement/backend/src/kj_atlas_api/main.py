@@ -17,6 +17,9 @@ from kj_atlas_api.routes.ai_relations import router as ai_relations_router
 from kj_atlas_api.routes.admin import router as admin_router
 from kj_atlas_api.routes.docs import router as docs_router
 from kj_atlas_api.routes.context import router as context_router
+from kj_atlas_api.routes.document_access_admin import (
+    router as document_access_admin_router,
+)
 from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_context import SingleTenantContextResolver
 
@@ -40,6 +43,8 @@ async def lifespan(app: FastAPI):
     app.state.access_control_fail_safe_mode = settings.access_control_fail_safe_mode
     app.state.tenant_context_resolver = SingleTenantContextResolver()
     app.state.document_access_resource_resolver = SingleTenantHeaderResourceResolver()
+    app.state.saas_identity_context_resolver = None
+    app.state.tenant_capability_resolver = None
     yield
 
 
@@ -75,3 +80,4 @@ app.include_router(admin_router)
 app.include_router(ai_router)
 app.include_router(ai_relations_router)
 app.include_router(context_router)
+app.include_router(document_access_admin_router)
