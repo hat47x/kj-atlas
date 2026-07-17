@@ -97,6 +97,22 @@
 
 **未完了・人手待ち**: 「実行順序と担当境界」段階5「Maintainerがfresh-clone dry-runとSafeMode/share-export非回帰を確認する」は人手のMaintainer確認であり、本セッションでは完了させていない。全AC達成の確認までは行ったが、Statusは`Open`のまま維持する。
 
+### fresh-clone dry-run 実施記録（2026-07-17）
+
+段階5の機械的な部分（実際にfresh cloneしてrunbook記載コマンドを再現できるか）を代行した。Docker Desktopは本実行環境で未使用のため、CONTRIBUTING.mdが認めるSQLite代替経路相当（frontend/backendのローカルテスト実行）で検証した。
+
+- `git clone https://github.com/hat47x/kj-atlas`（`75d8fb76`時点）を新規ディレクトリへ実施。
+- `cd 03_Implement/frontend && npm ci`: 74 packages、クリーンインストール成功（`npm audit`は6件の非関連devVulnerability検出のみ、本issueのscope外）。
+- `npm run typecheck`: 0 errors。
+- `npm run test`: 192 test files / 1,066 tests、全pass。
+- `npm run test:regression-guards`: 10 test files / 135 tests、全pass（`review_pack_workflow.integration.test.ts`・`bundle_export.test.ts`等、share/export関連テストを含みSafeMode/share-export非回帰を確認）。
+- `npx playwright test --list`: ブラウザを起動せず176 tests / 57 filesを解決（`libnspr4`欠落環境でも一覧解決は可能）。
+- `cd 03_Implement/backend`: `pytest`は本環境で未導入のため、`test_qa_e2e_doc_contract.py`の3 test関数を直接importして実行（既存の代替検証手法と同一）: 3/3 pass。
+- `python 01_Plans/docs_check.py`: pass（`active_memos=23, tracked_markdown=381`）。
+- `rg`相当（`grep -c`）で`Stream [EFG]|直列実装順|Draft群 Open化|--files`の再混入を確認: 0件。
+
+**残る人手判断**: 上記はすべて機械的な再現性確認であり、Maintainer自身による最終確認（dry-run結果の妥当性判断とDone昇格の可否）は含まない。Statusは引き続き`Open`のまま維持し、Maintainerの確認後にDoneへ移行する。
+
 ## 検証計画
 
 - `rg -n "^#{2,3} .*Stream [EFG]|^#{2,3} .*update|直列実装順|Draft群 Open化|--files" 03_Implement/frontend/docs/e2e_testing.md`
