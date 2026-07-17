@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; }
+  * { box-sizing:border-box; }
+  body { font-family:"Noto Sans JP", system-ui, sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#1d4ed8; } a:hover { color:#1e40af; }
+  button { font-family:inherit; }
+  ::placeholder { color:#94a3b8; }
+  .prototype-content { flex:1; overflow:auto; padding:22px; }
+  .prototype-shell { max-width:920px; margin:0 auto; }
+  .state-tabs { display:flex; gap:4px; flex-wrap:wrap; }
+  .document-toolbar { padding:11px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; gap:10px; }
+  .document-row { padding:11px 16px; border-bottom:1px solid #f5f7fa; display:flex; align-items:center; gap:14px; }
+  .document-title { flex:1; min-width:0; }
+  .document-updated { width:150px; font-size:11.5px; color:#64748b; flex:0 0 auto; }
+  .document-id { width:90px; font-size:10px; color:#94a3b8; font-family:'Noto Sans Mono',monospace; flex:0 0 auto; }
+  .document-action { width:74px; flex:0 0 auto; }
+  .agent-header, .agent-row { display:flex; }
+  .ia-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-top:14px; }
+  .tenant-label { display:inline-block; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  @media (max-width: 600px) {
+    .prototype-content { padding:12px; }
+    .prototype-shell { max-width:none; }
+    .document-toolbar { align-items:stretch; flex-direction:column; }
+    .document-row { align-items:start; display:grid; gap:4px 10px; grid-template-columns:minmax(0,1fr) auto; }
+    .document-title { grid-column:1 / -1; }
+    .document-updated, .document-id, .document-action { width:auto; }
+    .document-action { grid-column:2; grid-row:2 / span 2; justify-self:end; }
+    .agent-header { display:none; }
+    .agent-row { display:grid !important; gap:4px; grid-template-columns:1fr 1fr; }
+    .agent-row > span { width:auto !important; }
+    .ia-grid { grid-template-columns:1fr; }
+    .tenant-label { max-width:180px; }
+  }
+</style>
+</helmet>
+<div style="height:100vh; min-height:600px; display:flex; flex-direction:column; background:#eceef1; color:#1f2933;">
+
+  <!-- future-SaaS notice bar -->
+  <sc-if value="{{ isFuture }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:0 0 auto; background:#f8fafc; border-bottom:1px dashed #94a3b8; color:#475569; font-size:11.5px; padding:6px 16px; text-align:center;">設計成果物注記: ADR-0059 は Accepted、SaaS UI は implementation gate 未完了のため現行アプリには実装されていません。</div>
+  </sc-if>
+
+  <!-- switcher header -->
+  <header style="flex:0 0 auto; background:#fff; border-bottom:1px solid #e2e8f0; padding:10px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <span style="font-size:12.5px; font-weight:700; color:#334155;">kj-atlas ・ Round 8 設計プロトタイプ</span>
+    <nav aria-label="Round 8 設計画面" style="display:flex; gap:4px; margin-left:8px; flex-wrap:wrap;">
+      <button onClick="{{ act.goA }}" style="{{ tabStyle.A }}">R8-A 文書入口</button>
+      <button onClick="{{ act.goB }}" style="{{ tabStyle.B }}">R8-B 2種プリセット</button>
+      <button onClick="{{ act.goC }}" style="{{ tabStyle.C }}">R8-C Admin登録</button>
+      <button onClick="{{ act.goD }}" style="{{ tabStyle.D }}">R8-D エージェント/token</button>
+      <button onClick="{{ act.goE }}" style="{{ tabStyle.E }}">R8-E tenant切替</button>
+      <button onClick="{{ act.goF }}" style="{{ tabStyle.F }}">R8-F 責務IA図</button>
+    </nav>
+  </header>
+
+  <div class="prototype-content">
+    <div class="prototype-shell">
+
+      <!-- ===================== R8-A ===================== -->
+      <sc-if value="{{ isA }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+            <h2 style="font-size:16px; font-weight:700; margin:0; color:#1f2933;">ドキュメントを開く</h2>
+            <div class="state-tabs" aria-label="文書一覧の表示状態">
+              <button onClick="{{ act.aLoading }}" style="{{ aStyleLoading }}">Loading</button>
+              <button onClick="{{ act.aEmpty }}" style="{{ aStyleEmpty }}">Empty</button>
+              <button onClick="{{ act.aReady }}" style="{{ aStyleReady }}">Ready</button>
+              <button onClick="{{ act.aPerm }}" style="{{ aStylePerm }}">ACL不能/403</button>
+              <button onClick="{{ act.aNetwork }}" style="{{ aStyleNetwork }}">Network error</button>
+              <button onClick="{{ act.aReadonly }}" style="{{ aStyleReadonly }}">Read-only</button>
+            </div>
+          </div>
+          <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,0.06);">
+            <div class="document-toolbar">
+              <input aria-label="タイトルまたはIDで絞り込み" placeholder="タイトル / ID で絞り込み" style="flex:1; font-size:12.5px; border:1px solid #e2e8f0; border-radius:6px; padding:7px 10px; font-family:inherit;" />
+              <span style="font-size:10.5px; color:#94a3b8;">更新日時 新しい順</span>
+            </div>
+
+            <sc-if value="{{ aIsLoading }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:6px 0;">
+                <div style="padding:12px 16px; border-bottom:1px solid #f5f7fa; display:flex; gap:12px;"><div style="height:12px; width:220px; background:#eef2f6; border-radius:4px;"></div><div style="height:12px; width:120px; background:#eef2f6; border-radius:4px;"></div></div>
+                <div style="padding:12px 16px; border-bottom:1px solid #f5f7fa; display:flex; gap:12px;"><div style="height:12px; width:180px; background:#eef2f6; border-radius:4px;"></div><div style="height:12px; width:120px; background:#eef2f6; border-radius:4px;"></div></div>
+                <div style="padding:12px 16px; display:flex; gap:12px;"><div style="height:12px; width:200px; background:#eef2f6; border-radius:4px;"></div><div style="height:12px; width:120px; background:#eef2f6; border-radius:4px;"></div></div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ aIsEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:44px 20px; text-align:center;">
+                <div style="font-size:13px; color:#334155; font-weight:600;">文書がありません</div>
+                <div style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
+                  <span style="font-size:12px; font-weight:600; color:#fff; background:#2563eb; border-radius:6px; padding:7px 14px; cursor:default;">新規作成</span>
+                  <span style="font-size:12px; color:#334155; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:7px 14px; cursor:default;">ファイルから読み込む</span>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ aIsReady }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <sc-for list="{{ aDocs }}" as="d" hint-placeholder-count="3">
+                  <div class="document-row">
+                    <div class="document-title">
+                      <div style="font-size:13.5px; font-weight:600; color:#1f2933; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ d.title }}</div>
+                    </div>
+                    <div class="document-updated">{{ d.updated }}</div>
+                    <div class="document-id">{{ d.id }}</div>
+                    <sc-if value="{{ d.active }}" hint-placeholder-val="{{ false }}"><span class="document-action" style="font-size:10.5px; color:#64748b;">開いています</span></sc-if>
+                    <sc-if value="{{ d.notActive }}" hint-placeholder-val="{{ true }}"><span class="document-action" style="font-size:11.5px; font-weight:600; color:#2563eb; cursor:default;">開く</span></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ aIsPerm }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:36px 20px; text-align:center;">
+                <div style="font-size:13px; color:#b91c1c; font-weight:600;">権限を確認できませんでした</div>
+                <div style="font-size:11.5px; color:#7b8794; line-height:1.6; margin-top:6px;">アクセス権が確認できないため一覧を表示していません（fail-closed）。キャッシュされた最近の項目は候補として表示しません。</div>
+                <span style="display:inline-block; margin-top:12px; font-size:12px; color:#fff; background:#dc2626; border-radius:6px; padding:7px 16px; cursor:default;">再試行</span>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ aIsNetwork }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:36px 20px; text-align:center;">
+                <div style="font-size:13px; color:#b91c1c; font-weight:600;">ネットワークエラー</div>
+                <div style="font-size:11.5px; color:#7b8794; line-height:1.6; margin-top:6px;">文書一覧を取得できませんでした。最近使った項目のキャッシュは表示しません。</div>
+                <span style="display:inline-block; margin-top:12px; font-size:12px; color:#fff; background:#dc2626; border-radius:6px; padding:7px 16px; cursor:default;">再試行</span>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ aIsReadonly }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <sc-for list="{{ aDocs }}" as="d" hint-placeholder-count="2">
+                  <div class="document-row">
+                    <div class="document-title" style="font-size:13.5px; font-weight:600; color:#1f2933; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ d.title }}</div>
+                    <div class="document-updated">{{ d.updated }}</div>
+                    <span style="font-size:10.5px; color:#64748b; flex:0 0 auto;">閲覧のみ</span>
+                    <span class="document-action" style="font-size:11.5px; font-weight:600; color:#2563eb; cursor:default;">開く</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+          <p style="font-size:11px; color:#94a3b8; margin-top:10px; line-height:1.6;">推奨: 開始パネル内に直近5〜6件を表示し「すべて表示」で本dialogへ（キャンバス主従・認知負荷・キーボード動線の3点で dialog直行より優位）。列は390pxで縦積みカードへ変形（同じ情報順）。</p>
+        </div>
+      </sc-if>
+
+      <!-- ===================== R8-B ===================== -->
+      <sc-if value="{{ isB }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <h2 style="font-size:16px; font-weight:700; margin:0 0 14px; color:#1f2933;">保存範囲の異なる2種のプリセット</h2>
+
+          <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:14px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+              <div style="font-size:13.5px; font-weight:700; color:#1f2933;">View / Perspective</div>
+              <div class="state-tabs" aria-label="表示プリセットの状態"><button onClick="{{ act.bvEmpty }}" style="{{ bvStyleEmpty }}">Empty</button><button onClick="{{ act.bvSaved }}" style="{{ bvStyleSaved }}">保存済み</button><button onClick="{{ act.bvRename }}" style="{{ bvStyleRename }}">名前変更</button><button onClick="{{ act.bvDelconfirm }}" style="{{ bvStyleDelconfirm }}">削除確認</button></div>
+            </div>
+            <div style="font-size:11px; color:#64748b; margin-top:3px;">保存範囲: 表示設定ファイルに含む（サーバー自動同期ではありません）</div>
+            <div style="font-size:10px; color:#94a3b8; margin-top:1px;">SafeModeを解除する値はプリセットに含められません。レビュー用既定プリセットもSafeMode ONを維持します。</div>
+            <sc-if value="{{ bViewEmpty }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px; font-size:11.5px; color:#94a3b8;">カスタムプリセットはまだありません。現在の表示を保存できます。</div></sc-if>
+            <sc-if value="{{ bViewList }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-top:10px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f1f5f9; font-size:12px; color:#334155;">既定（俯瞰）<span style="font-size:10px; color:#94a3b8;">固定</span></div>
+                <sc-if value="{{ bViewRename }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #f1f5f9;">
+                    <input value="レビュー用の並び" style="flex:1; font-size:12px; border:1px solid #93c5fd; border-radius:5px; padding:4px 8px; font-family:inherit;" />
+                    <span style="font-size:11px; color:#2563eb; cursor:default;">保存</span>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ bViewNotRename }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f1f5f9; font-size:12px; color:#334155;">レビュー用の並び<span style="display:flex; gap:8px; font-size:11px; color:#64748b;"><span style="cursor:default;">適用</span><span style="cursor:default;">名前変更</span><span style="color:#b91c1c; cursor:default;">削除</span></span></div>
+                </sc-if>
+                <sc-if value="{{ bViewDelConfirm }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:8px; border:1px solid #fecaca; background:#fef2f2; border-radius:7px; padding:10px 12px; font-size:11.5px; color:#b91c1c;">「レビュー用の並び」を削除しますか？この操作は元に戻せません。<span style="display:inline-block; margin-left:8px; font-weight:600; cursor:default;">削除する</span> <span style="margin-left:6px; color:#334155; cursor:default;">取消</span></div>
+                </sc-if>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+              <div style="font-size:13.5px; font-weight:700; color:#1f2933;">QueryPreset（Patch workspace）</div>
+              <div class="state-tabs" aria-label="QueryPresetの状態"><button onClick="{{ act.bqEmpty }}" style="{{ bqStyleEmpty }}">Empty</button><button onClick="{{ act.bqBefore }}" style="{{ bqStyleBefore }}">保存前</button><button onClick="{{ act.bqSaved }}" style="{{ bqStyleSaved }}">保存済み</button><button onClick="{{ act.bqFailed }}" style="{{ bqStyleFailed }}">保存失敗</button></div>
+            </div>
+            <div style="font-size:11px; color:#475569; font-weight:600; margin-top:3px;">保存範囲: この端末のみ</div>
+            <div style="font-size:10px; color:#94a3b8; margin-top:1px;">ブラウザのデータを消すと失われます。同期・共有・バックアップはされません。</div>
+
+            <sc-if value="{{ bQueryEmptyS }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px; font-size:11.5px; color:#94a3b8;">保存済みのクエリはまだありません。</div></sc-if>
+            <sc-if value="{{ bQueryBefore }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+                <input aria-label="QueryPresetの名称" placeholder="名称" style="font-size:12px; border:1px solid #e2e8f0; border-radius:5px; padding:6px 9px; font-family:inherit;" />
+                <div style="display:flex; gap:6px; font-size:11px; color:#64748b;"><span style="border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">scope: 選択島</span><span style="border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">depth: 2</span><span style="border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">filter: 未レビュー</span></div>
+                <span style="align-self:flex-start; font-size:11.5px; font-weight:600; color:#fff; background:#4338ca; border-radius:5px; padding:5px 12px; cursor:default;">保存</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ bQuerySaved }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-top:10px; display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-top:1px solid #f1f5f9;">
+                <div><div style="font-size:12px; font-weight:600; color:#334155;">未レビューのみ・深さ2</div><div style="font-size:10.5px; color:#94a3b8;">scope: 選択島 / depth: 2 / filter: 未レビュー</div></div>
+                <div style="display:flex; gap:8px; font-size:11px; color:#64748b;"><span style="cursor:default;">実行</span><span style="cursor:default;">…</span></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ bQueryFailed }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+                <div style="border:1px solid #fecaca; background:#fef2f2; border-radius:6px; padding:8px 10px; font-size:11.5px; color:#b91c1c;">保存に失敗しました。入力内容は保持されています。再試行してください。</div>
+                <input aria-label="保持されたQueryPresetの名称" value="未レビューのみ・深さ2" style="font-size:12px; border:1px solid #e2e8f0; border-radius:5px; padding:6px 9px; font-family:inherit;" />
+                <div style="display:flex; gap:6px; font-size:11px; color:#64748b;"><span style="border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">scope: 選択島</span><span style="border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">depth: 2</span><span style="border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">filter: 未レビュー</span></div>
+                <span style="align-self:flex-start; font-size:11.5px; font-weight:600; color:#fff; background:#4338ca; border-radius:5px; padding:5px 12px; cursor:default;">再試行</span>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== R8-C ===================== -->
+      <sc-if value="{{ isC }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="background:#1f2933; color:#fff; border-radius:10px 10px 0 0; padding:12px 16px;">
+            <div style="font-size:13.5px; font-weight:700;">管理</div>
+            <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">この画面は文書本文を表示しません ・ <a href="#" style="color:#93c5fd;">Workspaceへ戻る</a></div>
+          </div>
+          <div style="background:#fff; border:1px solid #e2e8f0; border-top:none; border-radius:0 0 10px 10px; padding:18px;">
+            <div class="state-tabs" aria-label="アクセス登録の状態" style="margin-bottom:12px;"><button onClick="{{ act.cForm }}" style="{{ cStyleForm }}">登録フォーム</button><button onClick="{{ act.cSubmitting }}" style="{{ cStyleSubmitting }}">送信中</button><button onClick="{{ act.cSuccess }}" style="{{ cStyleSuccess }}">成功receipt</button><button onClick="{{ act.cConflict }}" style="{{ cStyleConflict }}">同値/競合</button><button onClick="{{ act.cDenied }}" style="{{ cStyleDenied }}">権限不足</button></div>
+
+            <sc-if value="{{ cDenied }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:30px 10px; text-align:center;"><div style="font-size:13px; color:#b91c1c; font-weight:600;">この操作の権限がありません</div><div style="font-size:11.5px; color:#7b8794; margin-top:6px;">Platform operator 権限を検証できないため、登録フォームは表示していません（表示制御はbackend認可の代替ではありません）。</div></div>
+            </sc-if>
+            <sc-if value="{{ cNotDenied }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <div style="font-size:11.5px; color:#64748b; line-height:1.6; margin-bottom:12px;">登録は指定した外部識別子をアクセス許可の対象として追加します。文書の内容やロールを変更するものではありません。</div>
+                <div style="display:flex; flex-direction:column; gap:9px; max-width:380px;">
+                  <label style="font-size:11px; color:#64748b;">provider<select style="display:block; width:100%; margin-top:3px; font-size:12.5px; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px; font-family:inherit;"><option>OIDC</option><option>SAML</option></select></label>
+                  <label style="font-size:11px; color:#64748b;">external UID<input placeholder="ext-uid-8834" style="display:block; width:100%; margin-top:3px; font-size:12.5px; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px; font-family:inherit;" /></label>
+                  <label style="font-size:11px; color:#64748b;">display name<input placeholder="山田太郎" style="display:block; width:100%; margin-top:3px; font-size:12.5px; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px; font-family:inherit;" /></label>
+                  <label style="font-size:11px; color:#64748b;">email（任意）<input placeholder="taro@example.com" style="display:block; width:100%; margin-top:3px; font-size:12.5px; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px; font-family:inherit;" /></label>
+                  <sc-if value="{{ cIsForm }}" hint-placeholder-val="{{ true }}"><span style="align-self:flex-start; font-size:12px; font-weight:600; color:#fff; background:#1f2933; border-radius:6px; padding:8px 16px; cursor:default;">登録する</span></sc-if>
+                  <sc-if value="{{ cIsSubmitting }}" hint-placeholder-val="{{ false }}"><span style="align-self:flex-start; font-size:12px; font-weight:600; color:#94a3b8; background:#f1f5f9; border-radius:6px; padding:8px 16px;">登録中…</span></sc-if>
+                  <sc-if value="{{ cIsSuccess }}" hint-placeholder-val="{{ false }}"><div style="border:1px solid #bbf7d0; background:#f0fdf4; border-radius:7px; padding:10px 12px; font-size:12px; color:#15803d;">✓ 登録しました。（この操作はアクセス登録のみを表します。無効化・削除・ロール付与は行われていません。）</div></sc-if>
+                  <sc-if value="{{ cIsConflict }}" hint-placeholder-val="{{ false }}"><div style="border:1px solid #fecaca; background:#fef2f2; border-radius:7px; padding:10px 12px; font-size:12px; color:#b91c1c;">同じ external UID が既に登録されています。既存の登録と競合するため追加できません。</div></sc-if>
+                </div>
+              </div>
+            </sc-if>
+            <p style="font-size:10.5px; color:#94a3b8; margin-top:16px; line-height:1.6;">将来IA（参考・未実装項目はナビに出さない）: アクセス登録／外部接続／システム状態 の3区分のみ。Auditは対象外。</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== R8-D ===================== -->
+      <sc-if value="{{ isD }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <h2 style="font-size:16px; font-weight:700; margin:0 0 6px; color:#1f2933;">外部接続（エージェント登録） <span style="font-size:10.5px; font-weight:500; color:#64748b;">設計注記: EXT-CONN-02 契約後</span></h2>
+          <div class="state-tabs" aria-label="エージェント登録の状態" style="margin:10px 0 14px;"><button onClick="{{ act.dEmpty }}" style="{{ dStyleEmpty }}">Empty</button><button onClick="{{ act.dReady }}" style="{{ dStyleReady }}">Ready</button><button onClick="{{ act.dRegistering }}" style="{{ dStyleRegistering }}">registering</button><button onClick="{{ act.dToken }}" style="{{ dStyleToken }}">one-time token</button><button onClick="{{ act.dRevoking }}" style="{{ dStyleRevoking }}">revoking</button><button onClick="{{ act.dDenied }}" style="{{ dStyleDenied }}">permission denied</button></div>
+
+          <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
+            <sc-if value="{{ dIsDenied }}" hint-placeholder-val="{{ false }}"><div style="padding:30px; text-align:center; font-size:12.5px; color:#b91c1c; font-weight:600;">この操作の権限がありません</div></sc-if>
+            <sc-if value="{{ dNotDenied }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <div class="agent-header" style="padding:9px 14px; border-bottom:1px solid #f1f5f9; font-size:10.5px; font-weight:700; color:#94a3b8; letter-spacing:0.04em;"><span style="width:130px;">registrationId</span><span style="width:120px;">表示名</span><span style="width:90px;">docId</span><span style="width:70px;">状態</span><span style="flex:1;">作成日時 / 主体</span></div>
+                <sc-if value="{{ dIsEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:26px; text-align:center; font-size:12px; color:#94a3b8;">登録済みのエージェントはありません。</div></sc-if>
+                <sc-if value="{{ dHasRows }}" hint-placeholder-val="{{ true }}">
+                  <div class="agent-row" style="padding:9px 14px; border-bottom:1px solid #f5f7fa; font-size:11.5px; color:#334155; align-items:center;"><span style="width:130px; font-family:'Noto Sans Mono',monospace; font-size:10px;">reg-9f21</span><span style="width:120px;">要約エージェント</span><span style="width:90px; font-family:'Noto Sans Mono',monospace; font-size:10px;">doc-7f2a</span><span style="width:70px; color:#15803d;">Ready</span><span style="flex:1; color:#94a3b8; font-size:10.5px;">2026-07-10 ・ operator-01</span></div>
+                  <sc-if value="{{ dIsRevoking }}" hint-placeholder-val="{{ false }}"><div class="agent-row" style="padding:9px 14px; border-bottom:1px solid #f5f7fa; font-size:11.5px; color:#334155; align-items:center;"><span style="width:130px; font-family:'Noto Sans Mono',monospace; font-size:10px;">reg-4c02</span><span style="width:120px;">分類エージェント</span><span style="width:90px; font-family:'Noto Sans Mono',monospace; font-size:10px;">doc-a104</span><span style="width:70px; color:#64748b;">失効中…</span><span style="flex:1; color:#94a3b8; font-size:10.5px;">2026-07-08 ・ operator-01</span></div></sc-if>
+                </sc-if>
+
+                <sc-if value="{{ dIsRegistering }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:14px; border-top:1px solid #f1f5f9;">
+                    <div style="font-size:12px; font-weight:600; color:#334155; margin-bottom:6px;">新規登録</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px; max-width:420px;"><input aria-label="エージェント表示名" placeholder="表示名" style="flex:1; min-width:180px; font-size:12px; border:1px solid #e2e8f0; border-radius:5px; padding:6px 9px; font-family:inherit;" /><input aria-label="対象文書ID" placeholder="docId (例: doc-7f2a)" style="flex:1; min-width:180px; font-size:12px; border:1px solid #e2e8f0; border-radius:5px; padding:6px 9px; font-family:monospace;" /></div>
+                    <div style="font-size:10.5px; color:#94a3b8; margin-top:6px;">登録は文書への書込権限を付与しません。文書タイトルでの検索は行いません。</div>
+                    <span style="display:inline-block; margin-top:9px; font-size:11.5px; font-weight:600; color:#fff; background:#1f2933; border-radius:5px; padding:6px 14px; cursor:default;">登録する</span>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ dIsToken }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:16px; border-top:1px solid #e2e8f0; background:#1f2933;">
+                    <div style="font-size:12px; font-weight:700; color:#fff;">token（この画面を閉じると二度と表示されません）</div>
+                    <div style="margin-top:8px; font-family:'Noto Sans Mono',monospace; font-size:12px; color:#e0f2fe; background:rgba(255,255,255,0.08); border-radius:6px; padding:8px 10px; word-break:break-all;">kjat_demo_once_••••••••••••••••</div>
+                    <div style="display:flex; gap:8px; margin-top:9px;"><span style="font-size:11px; color:#fff; background:rgba(255,255,255,0.14); border-radius:5px; padding:5px 12px; cursor:default;">コピー</span><span style="font-size:10.5px; color:#94a3b8; align-self:center;">保存済みですか？閉じると再表示できません。</span></div>
+                    <span style="display:inline-block; margin-top:10px; font-size:11px; color:#cbd5e1; cursor:default;">保存済みを確認して閉じる</span>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== R8-E ===================== -->
+      <sc-if value="{{ isE }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <h2 style="font-size:16px; font-weight:700; margin:0 0 6px; color:#1f2933;">Tenant context と安全な切替</h2>
+          <div class="state-tabs" aria-label="Tenant切替の状態" style="margin:10px 0 14px;"><button onClick="{{ act.eSingle }}" style="{{ eStyleSingle }}">単一membership</button><button onClick="{{ act.eMulti }}" style="{{ eStyleMulti }}">複数・switcher</button><button onClick="{{ act.eUnsaved }}" style="{{ eStyleUnsaved }}">未保存で切替</button><button onClick="{{ act.eBlocked }}" style="{{ eStyleBlocked }}">mismatch/PDP不達</button></div>
+
+          <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:0; overflow:hidden;">
+            <div style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 14px; display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-size:12px; color:#334155;">kj-atlas</span>
+              <sc-if value="{{ eIsSingle }}" hint-placeholder-val="{{ true }}"><span class="tenant-label" style="font-size:11.5px; font-weight:600; color:#334155;" title="地域調査チーム" aria-label="現在のテナント: 地域調査チーム">地域調査チーム</span></sc-if>
+              <sc-if value="{{ eIsMultiish }}" hint-placeholder-val="{{ false }}"><button class="tenant-label" style="font-size:11.5px; font-weight:600; color:#1d4ed8; background:#fff; border:1px solid #bfdbfe; border-radius:6px; padding:3px 9px; cursor:default;" title="地域調査チーム" aria-label="現在のテナント: 地域調査チーム。切替候補を表示">地域調査チーム ▾</button></sc-if>
+            </div>
+            <div style="padding:16px;">
+              <sc-if value="{{ eIsMulti }}" hint-placeholder-val="{{ false }}">
+                <div style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; max-width:280px;">
+                  <div style="padding:8px 12px; font-size:12px; color:#1f2933; background:#eff6ff; border-bottom:1px solid #e2e8f0;">地域調査チーム <span style="font-size:9.5px; color:#94a3b8; font-family:monospace;">tenant-acme-research</span></div>
+                  <div style="padding:8px 12px; font-size:12px; color:#334155;">新規事業ラボ <span style="font-size:9.5px; color:#94a3b8; font-family:monospace;">tenant-beta-lab</span></div>
+                </div>
+                <p style="font-size:10.5px; color:#94a3b8; margin-top:8px;">サーバーが返したmembershipのみ選択可。tenantId自由入力・検索は不可。</p>
+              </sc-if>
+              <sc-if value="{{ eIsUnsaved }}" hint-placeholder-val="{{ false }}">
+                <div style="border:1px solid #cbd5e1; background:#f8fafc; border-radius:8px; padding:12px 14px; max-width:360px;">
+                  <div style="font-size:12px; font-weight:700; color:#334155;">未保存の変更があります</div>
+                  <div style="font-size:11.5px; color:#475569; margin-top:4px; line-height:1.55;">「新規事業ラボ」へ切り替える前に、この文書の変更を保存または破棄してください。</div>
+                  <div style="display:flex; gap:6px; margin-top:9px;"><span style="font-size:11px; font-weight:600; color:#fff; background:#1f2933; border-radius:5px; padding:5px 11px; cursor:default;">保存して切替</span><span style="font-size:11px; color:#b91c1c; border:1px solid #fecaca; border-radius:5px; padding:5px 11px; cursor:default;">破棄して切替</span><span style="font-size:11px; color:#334155; border:1px solid #e2e8f0; border-radius:5px; padding:5px 11px; cursor:default;">取消</span></div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ eIsBlocked }}" hint-placeholder-val="{{ false }}">
+                <div style="border:1px solid #cbd5e1; background:#f8fafc; border-radius:8px; padding:22px; text-align:center; max-width:360px; margin:0 auto;">
+                  <div style="font-size:13px; font-weight:700; color:#475569;">アクセスを確認できません</div>
+                  <div style="font-size:11.5px; color:#7b8794; margin-top:6px; line-height:1.6;">このtenantへのアクセス状態を確認できませんでした（membership失効またはポリシー判定不達）。確認できるまで、前のtenantの本文と新tenantの管理UIを同時に表示しません。</div>
+                  <span style="display:inline-block; margin-top:10px; font-size:11.5px; color:#fff; background:#475569; border-radius:5px; padding:6px 14px; cursor:default;">再試行</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ eIsSingle }}" hint-placeholder-val="{{ true }}"><p style="font-size:11px; color:#94a3b8; margin:0;">membershipが1件のため切替UIは表示しません。</p></sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== R8-F ===================== -->
+      <sc-if value="{{ isF }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <h2 style="font-size:16px; font-weight:700; margin:0 0 6px; color:#1f2933;">責務IA図</h2>
+          <div class="ia-grid">
+            <div style="background:#fff; border:1.5px solid #93c5fd; border-radius:10px; padding:14px;">
+              <div style="font-size:12.5px; font-weight:700; color:#1d4ed8;">Workspace</div>
+              <div style="font-size:10.5px; color:#64748b; margin-top:2px;">文書入口・キャンバス・作業モード</div>
+              <ul style="margin:8px 0 0; padding-left:14px; font-size:11px; color:#475569; line-height:1.6;"><li>文書一覧（R8-A）</li><li>View/QueryPreset（R8-B）</li><li>キャンバス操作全般</li></ul>
+            </div>
+            <div style="background:#fff; border:1.5px solid #c7d2fe; border-radius:10px; padding:14px;">
+              <div style="font-size:12.5px; font-weight:700; color:#4338ca;">Tenant Admin</div>
+              <div style="font-size:10.5px; color:#64748b; margin-top:2px;">tenant名＋opaque ID を見出しに</div>
+              <ul style="margin:8px 0 0; padding-left:14px; font-size:11px; color:#475569; line-height:1.6;"><li>membership provisioning（R8-C）</li><li>agent registration（R8-D）</li><li>本文・文書タイトルなし</li></ul>
+            </div>
+            <div style="background:#fff; border:1.5px dashed #cbd5e1; border-radius:10px; padding:14px;">
+              <div style="font-size:12.5px; font-weight:700; color:#475569;">Platform Control Plane</div>
+              <div style="font-size:10.5px; color:#64748b; margin-top:2px;">全tenant横断の運用面</div>
+              <ul style="margin:8px 0 0; padding-left:14px; font-size:11px; color:#475569; line-height:1.6;"><li>tenant lifecycle</li><li>IdP接続状態</li><li>非秘密system status</li><li>全tenant文書件数/タイトル/本文は非表示</li></ul>
+            </div>
+          </div>
+          <p style="font-size:11px; color:#94a3b8; margin-top:14px; line-height:1.7;">3面は名称・パンくず・見出し・accessible name で区別（色だけに依存しない）。role editorは作らず外部IdP/PDPが正本。backend capability不足時は画面自体を出さない（UI非表示を認可にしない）。support impersonation・tenant横断検索・Auditは対象外。</p>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+</helmet>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    tab: 'A',
+    aState: 'ready',
+    bViewState: 'saved', bQueryState: 'saved',
+    cState: 'form',
+    dState: 'ready',
+    eState: 'single',
+  };
+
+  renderVals() {
+    const s = this.state;
+    const go = (t) => () => this.setState({ tab: t });
+    const tabBtn = (id) => `font-size:11.5px; font-weight:600; padding:6px 11px; border-radius:6px; cursor:pointer; white-space:nowrap; border:1px solid ${s.tab===id?'#93c5fd':'#e2e8f0'}; background:${s.tab===id?'#eff6ff':'#fff'}; color:${s.tab===id?'#1d4ed8':'#64748b'};`;
+    const miniTab = (v, cur) => `font-size:10.5px; padding:4px 9px; border-radius:6px; cursor:pointer; white-space:nowrap; border:1px solid ${cur===v?'#93c5fd':'#e2e8f0'}; background:${cur===v?'#eff6ff':'#fff'}; color:${cur===v?'#1d4ed8':'#64748b'}; font-weight:${cur===v?600:400};`;
+    const noop = () => {};
+
+    const aDocs = [
+      { id:'doc-7f2a', title:'地域ヒアリングの整理', updated:'2026-07-16 09:30', active:s.tab==='A', notActive:false },
+      { id:'doc-a104', title:'新サービスの利用観察', updated:'2026-07-15 17:10', active:false, notActive:true },
+      { id:'doc-c821', title:'ふりかえりの未整理メモ', updated:'2026-07-12 11:45', active:false, notActive:true },
+    ];
+
+    return {
+      isFuture: s.tab === 'E' || s.tab === 'F',
+      isA: s.tab==='A', isB: s.tab==='B', isC: s.tab==='C', isD: s.tab==='D', isE: s.tab==='E', isF: s.tab==='F',
+      tabStyle: { A:tabBtn('A'), B:tabBtn('B'), C:tabBtn('C'), D:tabBtn('D'), E:tabBtn('E'), F:tabBtn('F') },
+      act: {
+        goA: go('A'), goB: go('B'), goC: go('C'), goD: go('D'), goE: go('E'), goF: go('F'),
+        aLoading:()=>this.setState({aState:'loading'}), aEmpty:()=>this.setState({aState:'empty'}), aReady:()=>this.setState({aState:'ready'}),
+        aPerm:()=>this.setState({aState:'perm'}), aNetwork:()=>this.setState({aState:'network'}), aReadonly:()=>this.setState({aState:'readonly'}),
+        bvEmpty:()=>this.setState({bViewState:'empty'}), bvSaved:()=>this.setState({bViewState:'saved'}), bvRename:()=>this.setState({bViewState:'rename'}), bvDelconfirm:()=>this.setState({bViewState:'delconfirm'}),
+        bqEmpty:()=>this.setState({bQueryState:'empty'}), bqBefore:()=>this.setState({bQueryState:'beforeSave'}), bqSaved:()=>this.setState({bQueryState:'saved'}), bqFailed:()=>this.setState({bQueryState:'failed'}),
+        cForm:()=>this.setState({cState:'form'}), cSubmitting:()=>this.setState({cState:'submitting'}), cSuccess:()=>this.setState({cState:'success'}), cConflict:()=>this.setState({cState:'conflict'}), cDenied:()=>this.setState({cState:'denied'}),
+        dEmpty:()=>this.setState({dState:'empty'}), dReady:()=>this.setState({dState:'ready'}), dRegistering:()=>this.setState({dState:'registering'}), dToken:()=>this.setState({dState:'token'}), dRevoking:()=>this.setState({dState:'revoking'}), dDenied:()=>this.setState({dState:'denied'}),
+        eSingle:()=>this.setState({eState:'single'}), eMulti:()=>this.setState({eState:'multi'}), eUnsaved:()=>this.setState({eState:'unsaved'}), eBlocked:()=>this.setState({eState:'blocked'}),
+      },
+      aStyleLoading:miniTab('loading',s.aState), aStyleEmpty:miniTab('empty',s.aState), aStyleReady:miniTab('ready',s.aState),
+      aStylePerm:miniTab('perm',s.aState), aStyleNetwork:miniTab('network',s.aState), aStyleReadonly:miniTab('readonly',s.aState),
+      bvStyleEmpty:miniTab('empty',s.bViewState), bvStyleSaved:miniTab('saved',s.bViewState), bvStyleRename:miniTab('rename',s.bViewState), bvStyleDelconfirm:miniTab('delconfirm',s.bViewState),
+      bqStyleEmpty:miniTab('empty',s.bQueryState), bqStyleBefore:miniTab('beforeSave',s.bQueryState), bqStyleSaved:miniTab('saved',s.bQueryState), bqStyleFailed:miniTab('failed',s.bQueryState),
+      cStyleForm:miniTab('form',s.cState), cStyleSubmitting:miniTab('submitting',s.cState), cStyleSuccess:miniTab('success',s.cState), cStyleConflict:miniTab('conflict',s.cState), cStyleDenied:miniTab('denied',s.cState),
+      dStyleEmpty:miniTab('empty',s.dState), dStyleReady:miniTab('ready',s.dState), dStyleRegistering:miniTab('registering',s.dState), dStyleToken:miniTab('token',s.dState), dStyleRevoking:miniTab('revoking',s.dState), dStyleDenied:miniTab('denied',s.dState),
+      eStyleSingle:miniTab('single',s.eState), eStyleMulti:miniTab('multi',s.eState), eStyleUnsaved:miniTab('unsaved',s.eState), eStyleBlocked:miniTab('blocked',s.eState),
+      aState: s.aState,
+      aIsLoading: s.aState==='loading', aIsEmpty: s.aState==='empty', aIsReady: s.aState==='ready',
+      aIsPerm: s.aState==='perm', aIsNetwork: s.aState==='network', aIsReadonly: s.aState==='readonly',
+      aDocs,
+
+      bViewState: s.bViewState, bQueryState: s.bQueryState,
+      bViewEmpty: s.bViewState==='empty', bViewList: s.bViewState!=='empty',
+      bViewRename: s.bViewState==='rename', bViewNotRename: s.bViewState!=='rename' && s.bViewState!=='empty' && s.bViewState!=='delconfirm',
+      bViewDelConfirm: s.bViewState==='delconfirm',
+      bQueryEmptyS: s.bQueryState==='empty', bQueryBefore: s.bQueryState==='beforeSave',
+      bQuerySaved: s.bQueryState==='saved', bQueryFailed: s.bQueryState==='failed',
+
+      cState: s.cState,
+      cDenied: s.cState==='denied', cNotDenied: s.cState!=='denied',
+      cIsForm: s.cState==='form', cIsSubmitting: s.cState==='submitting', cIsSuccess: s.cState==='success', cIsConflict: s.cState==='conflict',
+
+      dState: s.dState,
+      dIsDenied: s.dState==='denied', dNotDenied: s.dState!=='denied',
+      dIsEmpty: s.dState==='empty', dHasRows: s.dState!=='empty',
+      dIsRegistering: s.dState==='registering', dIsToken: s.dState==='token', dIsRevoking: s.dState==='revoking',
+
+      eState: s.eState,
+      eIsSingle: s.eState==='single', eIsMultiish: s.eState!=='single',
+      eIsMulti: s.eState==='multi', eIsUnsaved: s.eState==='unsaved', eIsBlocked: s.eState==='blocked',
+    };
+  }
+}
+
+</script>
+</body>
+</html>

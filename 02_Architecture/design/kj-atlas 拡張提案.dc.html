@@ -2375,6 +2375,195 @@
     <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:11px 14px; margin-top:12px;"><p style="font-size:12px; color:#854d0e; line-height:1.6; margin:0;"><strong style="font-weight:700;">全体所見</strong>: 「庭」原則（見えるが割り込まない・処理義務なし）と critique の事後訂正性は、Agent Inbox型キューとの明確な差別化として強く支持。3面ともレッドラインはADR Accepted後の実装ラウンドで。スキーマ（agent-task.v1/agent-response.v1）不変の範囲で表現可能。</p></div>
   </section>
 
+  <!-- ===== P33 Round 8: マスタ系設定データ・SaaS tenant scope 先行検討 ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P33</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">Round 8</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">マスタ系設定データの情報設計とSaaS tenant scope（Accepted・実装ゲート未完了）</h3>
+    </div>
+    <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;">目的は汎用「マスタ管理」1画面への集約ではなく、<strong style="font-weight:700;">データごとの正本・保存範囲・利用者・安全境界を誤解なく理解でき、少ない手数で到達できること</strong>。Workspace文書入口／文書内設定／Admin管理面／デプロイ設定（読取専用表示）の4面に分離する。R8-E/Fは <code style="font-family:'Noto Sans Mono',monospace;">ADR-0059</code> Implementation gate完了までは<strong style="font-weight:700;">現行画面に実装済みとして混ぜない（future SaaS注記）</strong>。</p>
+
+    <!-- 1. 推奨IA -->
+    <h4 style="font-size:15px; font-weight:700; margin:18px 0 0;">1. 推奨IA（責務図＋保存先）</h4>
+    <figure style="margin:10px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+          <thead><tr style="background:#f8fafc; text-align:left;"><th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:16%;">面</th><th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:34%;">責務</th><th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">保存先（正本）</th></tr></thead>
+          <tbody style="color:#3e4c59; line-height:1.5;">
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">Workspace文書入口</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">認可済み文書を探して開く（R8-A）</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;"><code style="font-family:monospace;">GET /docs</code>（id/title/updatedAt射影）。localは非正本キャッシュ</td></tr>
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">文書内設定</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">View/Perspective・QueryPreset維持（R8-B）</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">View=<code style="font-family:monospace;">view.json.viewState</code>（文書に属す）／QueryPreset=<strong style="font-weight:700;">端末local限定</strong>・非同期</td></tr>
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">Admin管理面</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">strict provisioning・エージェント登録（R8-C/D）</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">backend固定メタデータのみ（id/version/updatedAt）。本文非表示</td></tr>
+            <tr><td style="padding:7px 10px; font-weight:700;">デプロイ設定</td><td style="padding:7px 10px;">provider/endpointの読取専用表示</td><td style="padding:7px 10px;">環境変数が正本。アプリ内編集・秘密値表示なし</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図KK ─ 4面は名称・パンくず・見出しで明確分離。キャンバス主・設定従の原則を継承し、文書一覧は常設サイドバー化しない。R8-E/F（Tenant Admin/Platform Control Plane）は将来の5・6面としてWorkspace/Admin双方から明確に区別する（色だけに依存しない）。</figcaption>
+    </figure>
+
+    <!-- 2. 画面レッドライン -->
+    <h4 style="font-size:15px; font-weight:700; margin:20px 0 0;">2. 画面レッドライン（1440px基本）</h4>
+    <div class="card-note" style="border:1px solid #c7d2fe; background:#f5f7ff; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11.5px; font-weight:700; color:#3730a3;">R8-A. Workspace「ドキュメントを開く」</div>
+      <p style="font-size:12px; color:#3e4c59; line-height:1.65; margin:5px 0 0;"><strong style="font-weight:700;">推奨: 開始パネル内に直近5〜6件を一覧表示＋「すべて表示」で一覧dialogへ</strong>（キャンバス主従＝設定を常設サイドバー化しない、認知負荷＝開始時は少数から選ばせる、キーボード＝パネル内で↑↓→Enterが完結し、必要時のみdialogへ深掘り、という3点で dialog直行より優位）。行=タイトル14px/700・更新日時12px/#64748b・補助ID10px monospace/#94a3b8。既定ソート=更新日時降順。active文書行は右端に「開いています」11px/#64748b（バッジなし）。列幅: タイトル可変・更新日時120px・ID100px。390pxはtable→カード縦積み（タイトル→更新日時→ID→開く、同じ情報順）。</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:8px;">
+        <div style="border:1px solid #e2e8f0; border-radius:6px; padding:7px 9px; font-size:10.5px; color:#475569;"><strong style="color:#334155;">Loading</strong>: 行スケルトン3本、操作disabled</div>
+        <div style="border:1px solid #e2e8f0; border-radius:6px; padding:7px 9px; font-size:10.5px; color:#475569;"><strong style="color:#334155;">Empty</strong>: 「文書がありません」＋新規/読込導線</div>
+        <div style="border:1px solid #e2e8f0; border-radius:6px; padding:7px 9px; font-size:10.5px; color:#475569;"><strong style="color:#334155;">Ready</strong>: 一覧＋絞り込み入力</div>
+        <div style="border:1px solid #fecaca; border-radius:6px; padding:7px 9px; font-size:10.5px; color:#b91c1c;"><strong>ACL解決不能/403</strong>: fail-closed文言＋再試行のみ（recentを候補に出さない）</div>
+        <div style="border:1px solid #fecaca; border-radius:6px; padding:7px 9px; font-size:10.5px; color:#b91c1c;"><strong>Network error</strong>: 再試行主導、recent非表示</div>
+        <div style="border:1px solid #e2e8f0; border-radius:6px; padding:7px 9px; font-size:10.5px; color:#475569;"><strong style="color:#334155;">Read-only</strong>: 行に「閲覧のみ」11px/#64748b、開くのみ可</div>
+      </div>
+    </div>
+    <div class="card-note" style="border:1px solid #c7d2fe; background:#f5f7ff; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11.5px; font-weight:700; color:#3730a3;">R8-B. 保存範囲の異なる2種のプリセット</div>
+      <p style="font-size:12px; color:#3e4c59; line-height:1.65; margin:5px 0 0;">色だけに頼らず<strong style="font-weight:700;">文字で範囲を明示</strong>。View/Perspective見出し直下に11px/#64748bで「表示設定ファイルを書き出すときに含まれます」。QueryPreset見出し直下に11px/#475569で<strong style="font-weight:700;">「この端末のみ」</strong>＋補足10px/#94a3b8「ブラウザのデータを消すと失われます」（amberは保持系専用のため、この注記はslateの中立トーンにする）。QueryPreset行=名称13px・scope/depth/filter要約11px/#64748b・実行ボタン・その他メニュー（名前変更/削除）。各々でEmpty／保存前／保存済み／名前変更（インライン入力）／削除確認（モーダル、対象名を明記）／<strong style="font-weight:700;">保存失敗（入力中のscope/depth/filterを保持したままエラー表示・再送可能）</strong>を用意。</p>
+    </div>
+    <div class="card-note" style="border:1px solid #c7d2fe; background:#f5f7ff; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11.5px; font-weight:700; color:#3730a3;">R8-C. Admin入口とアクセス登録</div>
+      <p style="font-size:12px; color:#3e4c59; line-height:1.65; margin:5px 0 0;">入口はPlatform operatorにのみ表示（<strong style="font-weight:700;">表示制御はbackend認可の代替にしない</strong>ことを状態説明に明記）。ヘッダー: 「管理」14px/700＋「この画面は文書本文を表示しません」11px/#64748b＋Workspaceへ戻る。登録フォーム=provider（select）・external UID・display name・任意email。送信前に説明文、送信中は二重実行防止（ボタンdisabled＋スピナー）、成功=receipt表示（「登録」のみを表す・無効化/削除/ロール付与を暗示しない）、既存同値/競合=エラー明示、権限不足=フォーム非表示＋説明。将来IA（アクセス登録／外部接続／システム状態の3区分のみ）は情報設計図として提示するが、<strong style="font-weight:700;">現在存在しない項目をdisabled navigationとして実画面に出さない</strong>。Auditは含めない。</p>
+    </div>
+    <div class="card-note" style="border:1px dashed #94a3b8; background:#f8fafc; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11.5px; font-weight:700; color:#475569;">R8-D. エージェント登録・token一度表示（EXT-CONN-02契約後）</div>
+      <p style="font-size:12px; color:#475569; line-height:1.65; margin:5px 0 0;">一覧列=registrationId・表示名・docId・状態・作成日時・作成主体（<strong style="font-weight:700;">文書タイトル/token列なし</strong>）。登録フォーム=表示名＋docId（タイトル検索なし）＋「登録は文書書込権限を付与しません」の説明。完了=token一度表示＋copyボタン＋「再表示不可」の説明＋確認チェックを経て閉じる。<strong style="font-weight:700;">token はdialog close後・一覧・toast・DOM・再読み込み後の画面に一切残さない</strong>。失効=表示名/registrationId/docId/影響確認、再有効化は描かず新規登録を案内。状態=Empty/Ready/registering/one-time token/revoking/permission denied/generic error。</p>
+    </div>
+    <div class="card-note" style="border:1px dashed #94a3b8; background:#f8fafc; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11.5px; font-weight:700; color:#475569;">R8-E. Tenant contextと安全な切替（future SaaS / ADR-0059 Accepted / implementation gated）</div>
+      <p style="font-size:12px; color:#475569; line-height:1.65; margin:5px 0 0;">membership1件=switcherなし、active tenant名をヘッダーlabelのみで表示。複数membership時のみサーバー返却の候補からswitcher（自由入力不可）。未保存変更ありでの切替=保存/破棄/取消の3択モーダル。確定後、旧tenantの文書・選択・検索・work mode・import preview・recent・QueryPresetを<strong style="font-weight:700;">破棄してから</strong>新tenant読込。tenant mismatch/membership失効/PDP不達は<strong style="font-weight:700;">Emptyや read-only と区別したblocked state</strong>（例: 中立灰面＋「アクセスを確認できません」＋再試行、旧tenant本文は背景に残さない）。1440pxはヘッダー右にtenant名+switcher、390pxはヘッダー内truncate（末尾…）＋<code style="font-family:monospace;">aria-label</code>で全体名。</p>
+    </div>
+    <div class="card-note" style="border:1px dashed #94a3b8; background:#f8fafc; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11.5px; font-weight:700; color:#475569;">R8-F. Tenant AdminとPlatform Control Plane（future SaaS / ADR-0059 Accepted / implementation gated）</div>
+      <p style="font-size:12px; color:#475569; line-height:1.65; margin:5px 0 0;">Tenant Admin=scope見出しに「tenant名＋opaque tenant ID」、active tenantのmembership provisioning・agent registrationのみ（本文/文書タイトルなし）。Platform Control Plane=tenant lifecycle・IdP接続状態・非秘密system statusのみ（全tenant文書件数/タイトル/本文なし）。3面（Workspace/Tenant Admin/Platform）は名称・パンくず・見出し・accessible nameで区別（色だけに依存しない）。role editorは作らず「外部IdP/PDPが正本」を明記。capability不足時は<strong style="font-weight:700;">画面を出さない（UI非表示≠認可）</strong>。</p>
+    </div>
+
+    <!-- 3. 操作フロー -->
+    <h4 style="font-size:15px; font-weight:700; margin:20px 0 0;">3. 操作フロー</h4>
+    <figure style="margin:10px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+          <tbody style="color:#3e4c59; line-height:1.55;">
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700; width:20%;">文書を開く</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">StartPanel直近一覧 → （必要なら）すべて表示dialog → 行選択 → 開く。403/Network時は再試行のみ提示。</td></tr>
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">2種プリセット維持</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">View: 適用→（任意）名前を付けて保存→一覧に反映。QueryPreset: scope/depth/filter入力→保存（端末のみ表示）→実行/名前変更/削除。保存失敗時は入力保持のまま再送。</td></tr>
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">アクセス登録</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">Admin入口→登録フォーム→送信中disabled→成功receipt（登録のみ）。同値/競合はエラーで停止、再送可。</td></tr>
+            <tr><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">エージェント登録→token→失効</td><td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">表示名＋docId入力→登録→token一度表示（copy＋確認チェック）→closeで完全消去→一覧に状態=Ready→失効操作で確認モーダル→revoking→Revoked（再有効化なし）。</td></tr>
+            <tr><td style="padding:7px 10px; font-weight:700;">未保存変更ありのtenant切替</td><td style="padding:7px 10px;">switcherで別tenant選択→未保存検知→保存/破棄/取消モーダル→確定→旧tenant状態を全破棄→blocked state（読込中）→新tenant Ready。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </figure>
+
+    <!-- 4. 状態表 -->
+    <h4 style="font-size:15px; font-weight:700; margin:20px 0 0;">4. 状態表（主操作）</h4>
+    <figure style="margin:10px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+          <thead><tr style="background:#f8fafc; text-align:left;"><th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:14%;">状態</th><th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">表示する主操作</th></tr></thead>
+          <tbody style="color:#3e4c59; line-height:1.5;">
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">Loading</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">スケルトンのみ、操作は全disabled（キャンセル可な場合のみキャンセル）</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">Empty</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">新規/読込等、面ごとの正当な一次導線のみ（Admin/agentはEmpty＋登録導線）</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">Error（Network）</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">再試行が主操作。fallback表示・recent代替を出さない</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">Permission（403/ACL不能/PDP不達）</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">fail-closed文言＋再試行のみ。Emptyと視覚的に区別（枠色・文言）</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">Read-only</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">開く/閲覧のみ可。編集系操作は非表示（disabled淡色ではなく非表示を基本）</td></tr>
+            <tr><td style="padding:6px 10px; font-weight:700;">Success</td><td style="padding:6px 10px;">結果の確認表示＋次の一次導線（receipt/一覧反映/閉じる）。祝祭的装飾なし</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </figure>
+
+    <!-- 5. 置換表 -->
+    <h4 style="font-size:15px; font-weight:700; margin:20px 0 0;">5. 既存→提案の置換表</h4>
+    <figure style="margin:10px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+          <thead><tr style="background:#f8fafc; text-align:left;"><th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:24%;">既存要素</th><th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">変更点／初期表示への増減</th></tr></thead>
+          <tbody style="color:#3e4c59; line-height:1.5;">
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">StartPanel local recent select</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">サーバー正本一覧の直近5-6件表示に<strong style="color:#475569;">置換</strong>（非正本キャッシュは表示順の補助だけに後退し、認可失敗時のfallbackには使わない）。<strong>増減=0</strong>（既存導線の置換）。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">Recent documents dialog</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">「すべて表示」の着地先として存続、StartPanelと情報順を共有するコンポーネントへ統一。<strong>増減=0</strong>。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">Fileメニュー「Open recent document…」</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">同dialogを開く導線として維持（新規メニュー項目なし）。<strong>増減=0</strong>。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">View controls</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">既存の適用/保存/名前変更/削除を維持し、範囲注記1行を<strong style="color:#475569;">追加</strong>（既存パネル内・純増は文言のみ）。</td></tr>
+            <tr><td style="padding:6px 10px; font-weight:700;">Patch workspace QueryPreset</td><td style="padding:6px 10px;">「この端末のみ」注記＋保存失敗時の入力保持を<strong style="color:#475569;">追加</strong>。既存操作（保存/実行/その他）は維持。新規Admin/エージェント面は<strong style="font-weight:700;">スリムツールバーに純増しない</strong>（Admin入口はPlatform operatorのみ別導線）。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </figure>
+
+    <!-- 6. a11y -->
+    <h4 style="font-size:15px; font-weight:700; margin:20px 0 0;">6. a11y / focus 仕様</h4>
+    <figure style="margin:10px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+          <thead><tr style="background:#f8fafc; text-align:left;"><th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:17%;">面</th><th style="padding:7px 10px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">role／初期focus／Tab順／Escape／復帰／live／390px読み順</th></tr></thead>
+          <tbody style="color:#3e4c59; line-height:1.5;">
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">R8-A 一覧dialog</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;"><code style="font-family:monospace;">role=dialog aria-modal aria-labelledby</code>。開で絞り込み入力へfocus。Tab=絞込→行→閉じる。Escで閉じ、開いたtriggerへ復帰。読込完了は<code style="font-family:monospace;">aria-live=polite</code>で件数通知。390pxはタイトル→更新日時→ID→開くの順。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">R8-B プリセット</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">保存操作ボタンに<code style="font-family:monospace;">aria-describedby</code>で範囲注記を関連付け。削除確認は<code style="font-family:monospace;">role=alertdialog</code>、初期focus=キャンセル（破壊的操作の既定を安全側に）。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; font-weight:700;">R8-C/D Admin</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">開で見出しへfocus。送信結果は<code style="font-family:monospace;">aria-live=assertive</code>。token表示は<code style="font-family:monospace;">role=alertdialog</code>、初期focus=copyボタン、closeでDOMから即時除去（フォーカスは起動元へ）。</td></tr>
+            <tr><td style="padding:6px 10px; font-weight:700;">R8-E tenant切替</td><td style="padding:6px 10px;">switcherは<code style="font-family:monospace;">role=listbox</code>、選択でモーダル（未保存時）。blocked stateは見出しに<code style="font-family:monospace;">aria-live=assertive</code>。390pxはtenant名truncateに<code style="font-family:monospace;">aria-label</code>で全文。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </figure>
+
+    <!-- 7. redlines -->
+    <h4 style="font-size:15px; font-weight:700; margin:20px 0 0;">7. レッドライン（禁止事項含む）</h4>
+    <div class="card-note" style="border:1px dashed #94a3b8; background:#f8fafc; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <ul style="margin:0; padding-left:16px; font-size:12px; line-height:1.7; color:#475569;">
+        <li>色: slate基調。<strong style="font-weight:700;">amberは保持系（保留/違和感）専用</strong>、管理警告・token注意には使わない（中立slateまたは既存red=危険を使用）。新規色チャネルを作らない。</li>
+        <li>余白・タイポ・角丸: 既存スケール継承（12/11/10px、角丸6/8/999、間隔2/4/6/8）。新スケールの発明禁止。</li>
+        <li>truncate: tenant名・表示名は1行truncate＋<code style="font-family:monospace;">title</code>属性＋<code style="font-family:monospace;">aria-label</code>で全文。折返しは行数固定（2行まで）。</li>
+        <li>メニュー開閉: 既存5層（キャンバス→スリムバー→メニュー→コンテキスト→パレット）に新規面を追加しない。Admin入口はPlatform operatorのみの別URL/別導線。</li>
+        <li>token表示/閉鎖: <strong style="font-weight:700;">一度だけ表示・close後は一覧/toast/DOM/再読み込み後に一切残さない</strong>。再表示UIを設けない。</li>
+        <li>禁止: 削除/アーカイブ/所有者移管/一覧複製/ユーザー無効化/SCIM/ロール編集/support impersonation/tenant横断検索/Audit画面 ― いずれも実画面に描かない（disabledでも置かない）。</li>
+      </ul>
+    </div>
+
+    <!-- 8. self-check -->
+    <h4 style="font-size:15px; font-weight:700; margin:20px 0 0;">8. 自己照合（Round 8 §6 チェック）</h4>
+    <figure style="margin:10px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+          <tbody style="color:#3e4c59; line-height:1.5;">
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; width:5%; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">一般利用者の文書入口（R8-A）とAdmin（R8-C/D）は別URL・別ヘッダー・別到達経路で混在しない。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">Admin/agent面はid/version/updatedAt/docId等の固定メタのみ。タイトル・本文・カード・narrative・diff不使用。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">403/Network errorではlocal recentを候補提示しない（fail-closed維持）。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">QueryPresetは「この端末のみ」を文字で明示、同期/共有語を使わない。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">View/PerspectiveとQueryPresetの保存範囲を各見出し直下の文字で区別（色に依存しない）。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">削除/archive/移管/一覧複製/ユーザー無効化等、未許可操作は描いていない（disabledとしても不掲載）。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">tokenはclose後に一覧/toast/DOM/再読込後の画面に残らない設計（即時DOM除去を明記）。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">新規操作をスリムツールバーへ純増していない（Admin/agentは別導線・CB-1準拠）。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">amberを管理警告・token注意へ流用していない（保持系専用を維持）。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">SafeMode既定ON・provider=none成立・AI提案proposal-only・反スコアリングは本Roundで変更なし（無関係面のため維持のみ確認）。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">キーボード・Escape・focus復帰・390px変形を§6のa11y仕様で規定（ja/en同等性はラベル外部化前提・本Round範囲では文言追加のみで構造非依存）。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">active tenantは名称・見出し・accessible nameで判別、色だけに依存しない（R8-E）。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">tenant mismatch/PDP不達はEmpty/read-onlyと区別したblocked stateとして規定。</td></tr>
+            <tr><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px; border-bottom:1px solid #f1f5f9;">Tenant AdminとPlatform Control Planeを分離、tenant横断本文/impersonationを描いていない。</td></tr>
+            <tr><td style="padding:6px 10px; color:#15803d; font-weight:700;">✓</td><td style="padding:6px 10px;">frontendはrole名を解釈せず、backendのcapability/理由コード前提と明記（本設計はUI表現のみでロジックを提案していない）。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図LL ─ 全15項目 ✓。本設計は未定義API・ユーザーライフサイクル・Audit閲覧・デプロイ設定編集を提案していない。R8-A〜Dは実装対象（契約先行/EXT-CONN-02ゲート後）、R8-E/Fは ADR-0059 gate後の有効化。</figcaption>
+    </figure>
+    <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd; margin-top:12px;"><div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">CB自己申告</div><p style="font-size:12px; color:#475569; line-height:1.6; margin:6px 0 0;">CB-1: 新規面は既存導線の置換・別URL別導線（純増なし）。CB-2/CB-3/CB-4は本Round非該当（設定・管理面のため保留/違和感/確定と直接の重なりなし、既存操作は維持のみで再構成）。反スコアリング・provider=none・SafeMode既定ONは無影響のまま維持を確認済み。</p></div>
+  </section>
+
+  <!-- ===== P34 概念書照合・追加反映 ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P34</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">概念書照合</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">master-data-settings-ui-ux-concept.md との照合・追加反映</h3>
+    </div>
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:12px 0 0;">P33はこの概念書と整合済み。概念書にのみ明記され P33 に未反映だった4点を追加反映する（他は一致）。</p>
+    <div class="card-note" style="border:1px solid #c7d2fe; background:#f5f7ff; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <ul style="margin:0; padding-left:16px; font-size:12px; line-height:1.75; color:#3e4c59;">
+        <li><strong style="font-weight:700;">View/PerspectiveはSafeMode OFF値を含む設計にしない</strong>: レビュー用既定プリセットはSafeMode ONを維持。プリセット適用がSafeModeを解除できないことをR8-Bに追記。</li>
+        <li><strong style="font-weight:700;">保存範囲ラベルの正規表記</strong>: 「サーバー」「表示設定ファイルに含む」「この端末のみ」「デプロイ設定（読み取り専用）」の4語を各面の見出し直下で統一使用（既存のR8-B文言を正規表記に合わせて微調整）。</li>
+        <li><strong style="font-weight:700;">tenant切替時の破棄対象にrequest cacheを追加</strong>: 文書・選択・検索・work mode・import preview・recent・QueryPreset・<strong style="font-weight:700;">request cache</strong>を新tenant読込前に破棄（R8-E)。</li>
+        <li><strong style="font-weight:700;">切替確認中の同時表示禁止</strong>: 未確認/確認中の間、旧tenant本文と新tenant管理UIを同時に表示しない（blocked/confirming状態の表示規則としてR8-Eに追記）。</li>
+      </ul>
+    </div>
+    <p style="font-size:11.5px; color:#7b8794; line-height:1.6; margin:10px 0 0;">その他（Admin3区分・登録専用フォーム・token一度表示・スコアリング禁止・amber管理警告への流用禁止・fail-closed等）はP33と概念書で完全一致。プロトタイプ（kj-atlas Admin設計.dc.html）に上記4点を反映済み。</p>
+  </section>
+
   <!-- CLOSING -->
   <section style="padding:34px 0 56px; margin-top:28px; border-top:3px solid #eef2ff;">
     <div style="display:flex; align-items:baseline; gap:12px; margin-top:18px;">

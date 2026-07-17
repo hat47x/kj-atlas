@@ -40,7 +40,7 @@ kj-atlasの既存UIを前提に、**マスタ系設定データを安全に設�
 
 このRoundの成果は設計入力であり、未定義APIや将来機能の実装許可ではありません。
 
-### 2.1 SaaS tenant境界（先行検討・未採択）
+### 2.1 SaaS tenant境界（Accepted・実装ゲート未完了）
 
 現行kj-atlasは単一デプロイ／単一テナント相当で、SaaS multi-tenantは未対応です。次は`01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`（Accepted）の設計入力です。ただし、同ADRのImplementation gateを満たした後にのみ実装できます。Claude Designはセキュリティ方式を変更せず、確定済み境界のUI表現を検討してください。
 
