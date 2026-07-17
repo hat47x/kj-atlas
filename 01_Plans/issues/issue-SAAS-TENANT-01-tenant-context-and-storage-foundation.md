@@ -182,4 +182,5 @@
 - 公開routeより先に内部session context builderを追加した。builderは認証済みprincipal、active TenantContextとmembership allowlistの再一致、明示注入されたtrusted capability resolverのsnapshotを必須とし、tenant候補を検索入力やclient値から組み立てない。
 - capability IDとversionの空値、前後空白、制御文字、resolver例外は`503 capability_resolution_unavailable`へ正規化し、欠損・不正snapshotを成功応答として誤認させない。匿名と停止・不一致tenantではpolicy resolverを呼ばない。
 - 検証: session contextの正常系、匿名、停止tenant、snapshot不正、resolver例外の7件、verified tenant serviceとの近接16件、Ruff、backend全体348件pass・PostgreSQL等の条件付き24件skip。
+- frontendへsession response validatorとbrowser storage scope変換を追加した。active tenantがmembership allowlist候補に含まれ、表示metadataも一致する場合だけ`deployment + tenantId + principalId`へ変換する。重複tenant ID、不一致表示名、非canonical identifier/capabilityは拒否する。検証はsession validator 8件、tenant scopeとの近接14件、frontend typecheck pass。
 - 公開`GET /session/context` / active-tenant route、auth edge接続、実PDP capability resolver、token期限に連動したcache invalidationは未実装であり、AC-4/6/7とSaaS起動拒否を継続する。
