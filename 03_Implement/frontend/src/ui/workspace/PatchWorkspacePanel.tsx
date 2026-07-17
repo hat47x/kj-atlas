@@ -16,9 +16,12 @@ import {
   type WorkspaceState,
 } from "../../domain/patch/workspace/ce3_patch_workspace";
 import { t } from "../../i18n/translate";
+import { loadQueryPresets, saveQueryPresets } from "../../storage/query_presets";
+import type { TenantBrowserStorageScope } from "../../storage/tenant_scope";
 
 type PatchWorkspacePanelProps = {
   isReadOnly?: boolean;
+  storageScope?: TenantBrowserStorageScope;
   candidates: CandidateItem[];
   onDecisionCommitted?: (payload: {
     candidateId: string;
@@ -30,8 +33,6 @@ type PatchWorkspacePanelProps = {
   onPresetSaved?: (preset: QueryPreset) => void;
   onPresetExecuted?: (payload: { query: string; scope: QueryScope; depth: number; filters: string[] }) => void;
 };
-
-const PRESET_STORAGE_KEY = "kj-atlas:ce3:patch-workspace-presets:v1";
 
 function formatWorkspaceDecision(decision: WorkspaceDecision | "none"): string {
   if (decision === "adopt") return t("patch_workspace.decision.adopt");
@@ -81,66 +82,31 @@ function formatExecutedQuery(query: string): string {
   return query;
 }
 
-function loadPresets(): QueryPreset[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  const raw = window.localStorage.getItem(PRESET_STORAGE_KEY);
-  if (!raw) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .filter((item): item is QueryPreset => {
-        return item && typeof item === "object"
-          && typeof item.id === "string"
-          && typeof item.name === "string"
-          && (item.scope === "all" || item.scope === "selection" || item.scope === "island")
-          && typeof item.depth === "number"
-          && Array.isArray(item.filters)
-          && item.filters.every((value: unknown) => typeof value === "string");
-      })
-      .map((item) => ({
-        ...item,
-        depth: Math.max(1, Math.floor(item.depth)),
-        filters: normalizeFilters(item.filters.join(",")),
-      }));
-  } catch {
-    return [];
-  }
-}
-
-function savePresets(presets: QueryPreset[]): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets));
-}
-
 export function PatchWorkspacePanel({
   candidates,
   isReadOnly = false,
+  storageScope,
   onDecisionCommitted,
   onDecisionRolledBack,
   onPresetSaved,
   onPresetExecuted,
 }: PatchWorkspacePanelProps) {
   const [workspaceState, setWorkspaceState] = useState<WorkspaceState>(() => buildInitialWorkspaceState(candidates));
-  const [presets, setPresets] = useState<QueryPreset[]>(() => loadPresets());
+  const [presets, setPresets] = useState<QueryPreset[]>(() => loadQueryPresets(storageScope));
   const [presetName, setPresetName] = useState("");
   const [scope, setScope] = useState<QueryScope>("all");
   const [depth, setDepth] = useState(1);
   const [filtersInput, setFiltersInput] = useState("");
 
   const normalizedFilters = useMemo(() => normalizeFilters(filtersInput), [filtersInput]);
+
+  useEffect(() => {
+    setPresets(loadQueryPresets(storageScope));
+    setPresetName("");
+    setScope("all");
+    setDepth(1);
+    setFiltersInput("");
+  }, [storageScope?.deployment, storageScope?.principalId, storageScope?.tenantId]);
   const activeCandidateId = workspaceState.selectedCandidateId ?? candidates[0]?.id ?? null;
   const activeCandidate = useMemo(
     () => candidates.find((candidate) => candidate.id === activeCandidateId) ?? null,
@@ -228,7 +194,7 @@ export function PatchWorkspacePanel({
 
     const nextPresets = [...presets, nextPreset].sort((left, right) => left.name.localeCompare(right.name));
     setPresets(nextPresets);
-    savePresets(nextPresets);
+    saveQueryPresets(nextPresets, storageScope);
     onPresetSaved?.(nextPreset);
     setWorkspaceState((previous) => ({ ...previous, failureMessage: null }));
   };
