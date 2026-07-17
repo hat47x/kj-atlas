@@ -146,6 +146,13 @@
 - アプリ内ブラウザの日本語画面でも、支援が右側パネル内に収まり、Canvasを覆わず、問い、理由、3つの判断、閉じる操作が同時に確認できるスクリーンショットを取得した。
 - `KJ_ATLAS_LLM_PROVIDER=none` 相当の応答を固定したE2Eと、既存のSafeMode・proposal-only・人手昇格回帰を含むfrontend全体テストの成功によりAC-10を完了とした。
 
+### AC-3 実装記録（2026-07-17、未確認）
+
+- `e2e/card_single_save_creation.spec.ts` を新規作成した（`empty_canvas_onboarding.spec.ts`の空文書ルーティングパターンと`card_quality_assistance.spec.ts`のPUTペイロード捕捉パターンを踏襲）。「新規作成」→トグルなしで`create-card`を1回クリック→（ダイアログ・フォームなし、既定本文がプレースホルダとして即座に入る）→Tabで編集確定→`save`をクリック、という一連の操作のみでカードが作成・保存され、保存payloadに`claimType`/`meta`/`holdState`/`critique`等の他フィールドが一切含まれないことを検証する。
+- コード調査により、`createCardAtPosition`（`App.tsx:4038`）が`id`/`text`/`x`/`y`だけで新規カードを即時作成し、`Card`型（`src/domain/types.ts`）・`parseCards`（`src/domain/validate.ts`）双方で他フィールドがoptionalであることを確認済み。これによりAC-3はPhase A/Bの既存実装で既に成立しており、本追加はそれを固定する回帰テストである。
+- **実行未確認**: 本環境ではWSL側のPlaywright実行が`libnspr4.so`欠落（T7 2026-07-15と同じ既知の制約）で失敗し、Windows側にはNode.js自体が未導入のため、実ブラウザでの緑化確認ができなかった。`npx playwright test e2e/card_single_save_creation.spec.ts --list`ではテスト1件が正しく解決されることを確認し、frontend `npm run typecheck`（`npm run lint`と同義）は0 errorsで通過した。
+- Maintainerまたは実行可能な環境で本specを実行し、緑化を確認した上でAC-3をチェック済みへ更新すること。T7が2026-07-15の未確認記録から2026-07-16の確認済み記録へ移行した前例と同じ扱いとする。
+
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
