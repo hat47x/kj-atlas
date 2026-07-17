@@ -89,6 +89,7 @@ import { loadViewModeForDocument, saveViewModeForDocument } from "./storage/view
 import { loadViewLocaleForDocumentView, saveViewLocaleForDocumentView } from "./storage/view_locale";
 import { loadViewVisibilityForDocument, saveViewVisibilityForDocument } from "./storage/view_visibility";
 import { buildLocalReviewerRef, inferReviewerRefSource, initializeCurrentReviewerRef, saveCurrentReviewerRef } from "./storage/current_reviewer";
+import { loadAdvancedUiEnabled, saveAdvancedUiEnabled } from "./storage/advanced_ui";
 import { createViewLocalePersistenceScope } from "./storage/view_locale_scope";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
@@ -195,18 +196,6 @@ import type { DiagnosticsProgressStage } from "./worker/diagnostics_protocol";
 import type { DiffProgressStage } from "./worker/diff_protocol";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
-const ADVANCED_UI_STORAGE_KEY = "kj-atlas.advanced-ui-enabled";
-
-function loadAdvancedUiEnabled(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  try {
-    return window.localStorage.getItem(ADVANCED_UI_STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
 // UX-VISUAL-02 (ADR-0048 D3): an island at or below this member count is a
 // "small island" eligible for the protection mark (non-scoring; a bare
 // threshold, not a rank).
@@ -4189,13 +4178,7 @@ export default function App() {
   const handleToggleAdvancedUi = useCallback(() => {
     setIsAdvancedUiEnabled((previous) => {
       const next = !previous;
-      try {
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(ADVANCED_UI_STORAGE_KEY, String(next));
-        }
-      } catch {
-        // Ignore persistence failures (e.g. storage disabled).
-      }
+      saveAdvancedUiEnabled(next);
       return next;
     });
   }, []);
@@ -4203,13 +4186,7 @@ export default function App() {
   const handleOpenCritiqueWorkflow = useCallback(() => {
     setIsAdvancedUiEnabled(true);
     setIsWorkModeOpen(true);
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(ADVANCED_UI_STORAGE_KEY, "true");
-      }
-    } catch {
-      // Ignore persistence failures (e.g. storage disabled).
-    }
+    saveAdvancedUiEnabled(true);
     setCritiqueWorkflowFocusRequest((current) => current + 1);
   }, []);
 

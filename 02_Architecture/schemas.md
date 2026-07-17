@@ -1004,7 +1004,7 @@ tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し
 | Document複合PK/FK、全consumerのtenant必須化 | Document/判断ログの複合PK・unique・FKとrepository経路は実装済み | PostgreSQL実地検証とMCP/worker/cache/storage等のconsumer伝播が未完了のためSaaS blocker継続 |
 | PostgreSQL RLS等のDB側guard | Document/判断ログのENABLE+FORCE RLS policy、repositoryごとのtransaction-local `kj_atlas.tenant_id`設定を実装。SQLiteはno-op | PostgreSQL直接SQL・pool再利用の実地matrixが未実施のためSaaS blocker継続 |
 | verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaim再照合、membership allowlist内部service、Document routeの信頼済みresolver境界、同一docIdのGET/PUT tenant A/B matrixまで実装 | auth edgeからのverified evidence接続、trusted host mapping、公開session/capability API、MCP/worker/browserを含む完全matrixは未実装のためblocker継続 |
-| browser storage namespace | scope key生成・scope単位削除、recent・view visibility・view mode・view locale・QueryPreset・reviewer ref・onboarding/minimap preferenceのoptional tenant scope、同一docId tenant A/B testを実装 | session context配線、残る直接local/session storage、切替時DOM/memory/cache破棄が未実装のためSaaS blocker継続 |
+| browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、scope key生成・scope単位削除、recent・view visibility・view mode・view locale・QueryPreset・reviewer ref・各UI preferenceのoptional tenant scope、同一docId tenant A/B testを実装 | session context配線、切替時DOM/memory/request cache/object URL破棄が未実装のためSaaS blocker継続 |
 
 ## 11. Polygon contract keys（FB-P0-2A2B2C）
 
