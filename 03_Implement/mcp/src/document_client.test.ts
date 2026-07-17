@@ -4,6 +4,7 @@ import {
   DocumentNotFoundError,
   fetchDocument,
   loadDocumentClientConfigFromEnv,
+  validateMcpRuntimeProfile,
 } from "./document_client.js";
 
 function mockResponse(status: number, body: unknown): Response {
@@ -26,6 +27,27 @@ describe("loadDocumentClientConfigFromEnv", () => {
       KJ_ATLAS_API_KEY: "secret-key",
     });
     expect(config).toEqual({ baseUrl: "https://kj-atlas.example.internal", apiKey: "secret-key" });
+  });
+
+  it.each(["local-dev", "evaluation", "enterprise-production"])(
+    "accepts the single-tenant runtime profile %s",
+    (runtimeProfile) => {
+      expect(validateMcpRuntimeProfile({ KJ_ATLAS_RUNTIME_PROFILE: ` ${runtimeProfile.toUpperCase()} ` })).toBe(
+        runtimeProfile,
+      );
+    },
+  );
+
+  it("fails closed for the unfinished SaaS runtime profile", () => {
+    expect(() =>
+      loadDocumentClientConfigFromEnv({ KJ_ATLAS_RUNTIME_PROFILE: "saas-multitenant" }),
+    ).toThrow("tenant-bound MCP credentials");
+  });
+
+  it("rejects unknown runtime profiles", () => {
+    expect(() => loadDocumentClientConfigFromEnv({ KJ_ATLAS_RUNTIME_PROFILE: "production" })).toThrow(
+      "Unsupported KJ_ATLAS_RUNTIME_PROFILE",
+    );
   });
 });
 

@@ -45,6 +45,7 @@ Environment variables (both optional):
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
+| `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | `local-dev`, `evaluation`, `enterprise-production`を受理する。`saas-multitenant`はtenant-bound MCP credentialが未実装のため起動拒否する。 |
 | `KJ_ATLAS_MCP_API_BASE_URL` | `http://127.0.0.1:8000` | Backend base URL this process fetches `GET /docs/{id}` from. Not the frontend's browser-relative `KJ_ATLAS_FRONTEND_API_BASE` -- this process runs outside the frontend's nginx proxy and needs an absolute URL. |
 | `KJ_ATLAS_API_KEY` | unset | Sent as `X-API-Key` when the backend requires it. The browser client relies on same-origin proxying instead; this standalone process must send it itself. |
 

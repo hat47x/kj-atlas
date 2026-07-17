@@ -128,3 +128,9 @@
 - SQLite migrationは既存Documentのtenant欠損と判断ログのtenant不一致をupgrade前に拒否する。downgradeはtenant間でdocIdが重複している場合に停止し、データを暗黙に統合・破棄しない。ORMの直接取得2か所も複合identityへ更新した。
 - 検証: Ruff pass、upgrade/downgrade・複合FK・同一docId negative matrix・repository・backfill・lineage近接12件pass、Document roundtrip/access-control/audit/recovery/index/polygon/realistic journey 77件pass・PostgreSQL条件付き21件skip。
 - PostgreSQL用constraint移行は実装したが、利用可能なPostgreSQL環境がないため未実地検証。RLS/connection contextと全consumerのtenant伝播も未完了であり、SaaS profileの起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-17: MCP SaaS fail-fast
+
+- 独立起動できるMCP processでも`KJ_ATLAS_RUNTIME_PROFILE`を検証し、single-tenant 3 profileだけを受理する。`saas-multitenant`はtenant-bound MCP/agent credentialが未実装のため起動前に拒否し、未知profileも拒否する。
+- MCP tool inputや任意headerへtenantIdを追加しない。現行MCPはAPI keyによるsingle-tenant read-only互換に限定し、tenant credentialの代替として扱わない。
+- 検証: TypeScript typecheck pass、MCP全26件pass。検証環境はNode 24でpackage指定のNode 20とは異なるため、正式なNode 20 CI確認は継続する。
