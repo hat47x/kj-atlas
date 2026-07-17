@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from sqlalchemy import Index, Integer, Text
+from sqlalchemy import CheckConstraint, Index, Integer, Text
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -91,6 +91,38 @@ class DocumentRow(Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
     payload_json: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class DocumentAccessMetadataRow(Base):
+    __tablename__ = "document_access_metadata"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["tenant_id", "doc_id"],
+            ["documents.tenant_id", "documents.id"],
+            name="fk_document_access_metadata_tenant_document",
+            ondelete="CASCADE",
+        ),
+        CheckConstraint(
+            "visibility IN ('Public', 'Unlisted', 'Org', 'Restricted')",
+            name="ck_document_access_metadata_visibility",
+        ),
+        CheckConstraint(
+            "visibility IN ('Public', 'Unlisted') "
+            "OR (policy_binding_id IS NOT NULL AND length(trim(policy_binding_id)) > 0)",
+            name="ck_document_access_metadata_policy_binding",
+        ),
+        CheckConstraint(
+            "length(trim(policy_version)) > 0",
+            name="ck_document_access_metadata_policy_version",
+        ),
+    )
+
+    tenant_id: Mapped[str] = mapped_column(Text, primary_key=True, nullable=False)
+    doc_id: Mapped[str] = mapped_column(Text, primary_key=True, nullable=False)
+    visibility: Mapped[str] = mapped_column(Text, nullable=False)
+    policy_binding_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    policy_version: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
 class UserRow(Base):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Protocol, cast
 
 from fastapi import HTTPException, Request
 from sqlalchemy.orm import Session
@@ -8,11 +8,27 @@ from sqlalchemy.orm import Session
 from kj_atlas_api.access_control import (
     AccessAction,
     AccessResource,
+    Visibility,
     normalize_policy_ref,
     parse_visibility,
 )
+from kj_atlas_api.document_access_metadata_repository import (
+    get_document_access_metadata_row,
+)
 from kj_atlas_api.document_repository import get_document_row
 from kj_atlas_api.tenant_context import TenantContext
+
+
+INVALID_POLICY_BINDING_CHARACTER = {chr(value) for value in range(32)} | {chr(127)}
+
+
+def _canonical_policy_binding_value(value: str | None) -> str | None:
+    normalized = normalize_policy_ref(value)
+    if normalized is None or any(
+        character in INVALID_POLICY_BINDING_CHARACTER for character in normalized
+    ):
+        return None
+    return normalized
 
 
 class DocumentAccessResourceResolver(Protocol):
@@ -26,6 +42,30 @@ class DocumentAccessResourceResolver(Protocol):
         doc_id: str,
     ) -> AccessResource:
         ...
+
+
+class DocumentPolicyBindingResolver(Protocol):
+    """Resolve a non-secret binding id to a transient external policy reference."""
+
+    def resolve(
+        self,
+        *,
+        tenant: TenantContext,
+        binding_id: str,
+        policy_version: str,
+    ) -> str | None:
+        ...
+
+
+class UnavailableDocumentPolicyBindingResolver:
+    def resolve(
+        self,
+        *,
+        tenant: TenantContext,  # noqa: ARG002
+        binding_id: str,  # noqa: ARG002
+        policy_version: str,  # noqa: ARG002
+    ) -> str | None:
+        return None
 
 
 class SingleTenantHeaderResourceResolver:
@@ -51,10 +91,19 @@ class SingleTenantHeaderResourceResolver:
 class ServerOwnedDocumentResourceResolver:
     """Resolve document scope without trusting public policy headers.
 
-    This resolver is reserved for the future SaaS profile. Until a server-owned
-    policy metadata store exists, resources default to Restricted with no policy
-    reference so deny-mode access control fails closed.
+    Raw policy references are never loaded from client headers or persisted in
+    the application database. Stored binding ids are resolved transiently by a
+    trusted runtime adapter. Missing metadata/bindings fail closed.
     """
+
+    def __init__(
+        self,
+        *,
+        policy_binding_resolver: DocumentPolicyBindingResolver | None = None,
+    ) -> None:
+        self._policy_binding_resolver = (
+            policy_binding_resolver or UnavailableDocumentPolicyBindingResolver()
+        )
 
     def resolve(
         self,
@@ -70,9 +119,47 @@ class ServerOwnedDocumentResourceResolver:
             raise HTTPException(status_code=404, detail="Document not found")
 
         resource_tenant_id = tenant.tenant_id if row is None else row.tenant_id
+        metadata = None
+        if row is not None:
+            metadata = get_document_access_metadata_row(
+                db,
+                tenant=tenant,
+                doc_id=doc_id,
+            )
+        if metadata is None:
+            return AccessResource(
+                doc_id=doc_id,
+                visibility="Restricted",
+                policy_ref=None,
+                tenant_id=resource_tenant_id,
+            )
+
+        parsed_visibility = parse_visibility(metadata.visibility)
+        if parsed_visibility is None:
+            return AccessResource(
+                doc_id=doc_id,
+                visibility="Restricted",
+                policy_ref=None,
+                tenant_id=resource_tenant_id,
+            )
+
+        policy_ref = None
+        binding_id = _canonical_policy_binding_value(metadata.policy_binding_id)
+        policy_version = _canonical_policy_binding_value(metadata.policy_version)
+        if binding_id is not None and policy_version is not None:
+            try:
+                policy_ref = _canonical_policy_binding_value(
+                    self._policy_binding_resolver.resolve(
+                        tenant=tenant,
+                        binding_id=binding_id,
+                        policy_version=policy_version,
+                    )
+                )
+            except Exception:
+                policy_ref = None
         return AccessResource(
             doc_id=doc_id,
-            visibility="Restricted",
-            policy_ref=None,
+            visibility=cast(Visibility, parsed_visibility),
+            policy_ref=policy_ref,
             tenant_id=resource_tenant_id,
         )

@@ -468,6 +468,8 @@ roles/groups/policyRef に基づく認可判定は、API本体ではなく `Acce
 - `x-policy-ref` は trim 後に空文字なら `null` として扱う。
 - API本体は roles/groups/policyRef の意味解釈を行わない（外部委譲）。
 
+上記visibility/policyRef headerはsingle-tenant互換resolverだけの契約である。SaaS profileでは公開headerを無視し、`tenantId + docId`で取得したserver-owned `document_access_metadata`のvisibilityと非秘密`policyBindingId/version`を使う。生のpolicyRefはDBへ保存せず、trusted runtime binding resolverがbinding IDから一時的に解決した値だけをPDPへ渡す。metadata、binding、runtime resolverのいずれかが欠損・不正・到達不能なら、`Restricted + policyRef欠損`としてdeny fail-safeへ倒す。
+
 ### 8.2 出力（adapter/hook → API）
 
 ```ts

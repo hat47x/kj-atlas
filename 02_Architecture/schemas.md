@@ -925,6 +925,8 @@ export type MergeDecisionRecord = {
 
 - `roles` / `groups`: 認可問い合わせ入力としてのみ利用し、アプリDBに保存しない。
 - `policyRef`: リクエスト時の外部PDP参照子としてのみ扱い、生値は保存しない。
+- SaaSの文書認可設定では、`visibility`、アプリ生成の非秘密`policy_binding_id`、`policy_version`だけを`document_access_metadata`へ保存する。`policy_binding_id`は外部policyRef、token、URL、assertionそのものではなく、trusted runtime resolver用のlookup keyとする。
+- runtime resolverが返した生のpolicyRefはrequest内だけで使用し、DB、監査、export、diagnosticsへ保存・再出力しない。binding欠損・不正・resolver障害は`Restricted + policy_ref_missing`へfail-closedにする。
 - 永続許可されるのは `policyRefPresent` のような存在フラグのみ。
 - fail-safe 判定（`policy_ref_missing|policy_ref_unreachable|policy_ref_invalid`）は保存可。
 
@@ -932,7 +934,7 @@ export type MergeDecisionRecord = {
 
 ### 10.4 SaaS tenant identity / persistence target（ADR-0059、L0 Planned）
 
-`ADR-0059`で次のtenant境界をAcceptedとする。Alembic `20260716_0006`では、新規tenant/IdP/membership表、Document/判断ログのtenant列、既存User/Document/判断ログの`local-default` backfillまでをexpand実装した。`20260717_0007`では既存providerラベルから互換IdPを決定的に生成し、`user_identities.identity_provider_id + subject`をbackfill、新規JIT/事前登録でも旧列と二重書きする。`20260717_0008`ではDocumentを`PRIMARY KEY (tenant_id, id)`、判断ログを`FOREIGN KEY (tenant_id, doc_id)`へ移行し、tenantごとの同一docIdを可能にする。ただし、PostgreSQL実地検証、検証済みissuer/audienceへの切替、旧identity列のcontract、DB側tenant guard、verified TenantContext認可、越境テストが完了するまで共有SaaSへ適用しない。
+`ADR-0059`で次のtenant境界をAcceptedとする。Alembic `20260716_0006`では、新規tenant/IdP/membership表、Document/判断ログのtenant列、既存User/Document/判断ログの`local-default` backfillまでをexpand実装した。`20260717_0007`では既存providerラベルから互換IdPを決定的に生成し、`user_identities.identity_provider_id + subject`をbackfill、新規JIT/事前登録でも旧列と二重書きする。`20260717_0008`ではDocumentを`PRIMARY KEY (tenant_id, id)`、判断ログを`FOREIGN KEY (tenant_id, doc_id)`へ移行し、tenantごとの同一docIdを可能にした。`20260717_0009`ではPostgreSQL RLSを、`20260717_0010`ではtenant-scoped文書認可metadataとRLSを追加した。ただし、PostgreSQL実地検証、検証済みissuer/audienceへの切替、旧identity列のcontract、実PDP/binding resolver、全consumer越境テストが完了するまで共有SaaSへ適用しない。
 
 ```ts
 export type TenantId = string;
@@ -976,6 +978,7 @@ target physical schema:
 - `tenant_memberships(tenant_id, user_id, lifecycle_state, ...)` with `UNIQUE(tenant_id, user_id)`
 - `documents(tenant_id, id, version, updated_at, payload_json)` with `UNIQUE(tenant_id, id)`
 - `merge_decision_logs(tenant_id, doc_id, ...)` with `FOREIGN KEY(tenant_id, doc_id) -> documents(tenant_id, id)`
+- `document_access_metadata(tenant_id, doc_id, visibility, policy_binding_id, policy_version, updated_at)` with `PRIMARY KEY(tenant_id, doc_id)` and composite Document FK。`Org/Restricted`は非空binding ID必須。raw policyRefは保存しない。
 - 将来の`agent_registrations`、job、audit eventにもtenantIdを必須伝播する。
 
 tenantIdはserver-managed列であり、`DocumentV1` payload、view.json、import/export bundleの認可値として追加しない。現行`provider + external_uid`一意制約はsingle-tenant互換期間の実装であり、SaaS profileでは`identityProviderId + subject`とTenantMembershipへ移行する。共有schema型SaaSは、上記制約に加えPostgreSQL RLS等のDB側tenant guardを必須とする。
@@ -1004,6 +1007,7 @@ tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し
 | Document複合PK/FK、全consumerのtenant必須化 | Document/判断ログの複合PK・unique・FKとrepository経路は実装済み | PostgreSQL実地検証とMCP/worker/cache/storage等のconsumer伝播が未完了のためSaaS blocker継続 |
 | PostgreSQL RLS等のDB側guard | Document/判断ログのENABLE+FORCE RLS policy、repositoryごとのtransaction-local `kj_atlas.tenant_id`設定を実装。SQLiteはno-op | PostgreSQL直接SQL・pool再利用の実地matrixが未実施のためSaaS blocker継続 |
 | verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaim再照合、membership allowlist内部service、Document routeの信頼済みresolver境界、同一docIdのGET/PUT tenant A/B matrixまで実装 | auth edgeからのverified evidence接続、trusted host mapping、公開session/capability API、MCP/worker/browserを含む完全matrixは未実装のためblocker継続 |
+| server-owned Document access metadata | tenant/doc複合FK、visibility/binding/version制約、PostgreSQL RLS、tenant-scoped repository、runtime binding resolver境界を実装。client policy headerはSaaS resolverで無視 | 管理API・実binding secret store/PDP配線・PostgreSQL実地検証が未完了のためSaaS blocker継続 |
 | browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、scope key生成・scope単位削除、recent・view visibility・view mode・view locale・QueryPreset・reviewer ref・各UI preferenceのoptional tenant scope、同一docId tenant A/B testを実装 | session context配線、切替時DOM/memory/request cache/object URL破棄が未実装のためSaaS blocker継続 |
 
 ## 11. Polygon contract keys（FB-P0-2A2B2C）

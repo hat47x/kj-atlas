@@ -185,3 +185,11 @@
 - frontendへsession response validatorとbrowser storage scope変換を追加した。active tenantがmembership allowlist候補に含まれ、表示metadataも一致する場合だけ`deployment + tenantId + principalId`へ変換する。重複tenant ID、不一致表示名、非canonical identifier/capabilityは拒否する。検証はsession validator 8件、tenant scopeとの近接14件、frontend typecheck pass。
 - active tenant切替の内部builderを追加した。現在のcontextがverified claimまたはtrusted host mapping由来で、現在tenantのmembershipもactiveな場合だけ要求tenantをallowlistへ照合する。不明・停止tenantは同じ404とし、成功時だけ切替先tenantのcapability resolverを呼ぶ。single-tenant互換contextをSaaS切替根拠には使わない。
 - 公開`GET /session/context` / active-tenant route、auth edge接続、実PDP capability resolver、token期限に連動したcache invalidationは未実装であり、AC-4/6/7とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-17: server-owned Document access metadata
+
+- Alembic `20260717_0010`で`document_access_metadata`を追加した。`tenant_id + doc_id`を主キーかつDocument複合外部キーとし、visibility、非秘密`policy_binding_id`、`policy_version`、更新時刻だけを保持する。`Org/Restricted`は非空binding IDを必須とし、生のpolicyRef・token・URL・assertionは保存しない。
+- PostgreSQLではmetadata表にもENABLE+FORCE RLSを設定し、transaction-local `kj_atlas.tenant_id`と一致する行だけをread/write対象とする。SQLiteはmigration/単一テナント互換検証用でRLSを適用しない。
+- SaaS用Document resource resolverはclientのvisibility/policyRef headerを無視し、tenant-scoped metadataを取得する。binding ID/versionはtrusted runtime resolverへ渡し、返されたpolicyRefだけをrequest内で使用する。metadata欠損、不正binding、resolver例外は`Restricted + policyRef欠損`へ倒し、deny fail-safeを維持する。Public/Unlistedはbindingなしを許可する。
+- 同一docIdを持つtenant A/Bでmetadataとruntime policyRefが混線しないこと、複合FK、visibility/binding制約、downgrade、client header無視、binding resolver障害を近接17件で検証した。Ruff pass、backend全体358件pass・PostgreSQL等の条件付き24件skip。
+- metadata管理API/UI、binding IDをsecret store/PDP参照へ解決する実adapter、PostgreSQL直接RLS検証、SaaS runtime配線は未実装であり、AC-4/5/7/10と起動拒否を継続する。
