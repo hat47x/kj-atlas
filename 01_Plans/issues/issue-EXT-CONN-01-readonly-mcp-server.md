@@ -1,8 +1,8 @@
 # Issue Draft: EXT-CONN-01 read-only MCP サーバー（ContextBundle 制約付き投影の公開）
 
 - Type: Feature request
-- Status: In Progress
-- Progress: サブスライスA・B・C（実装・テスト・`THREAT_MODEL.md`追記）完了。公開ネットワークリスナー・初のOAuthコードのため、セキュリティレビュー完了までPRをマージ待ちで保持中。
+- Status: Done
+- Progress: サブスライスA・B・C（実装・テスト・`THREAT_MODEL.md`追記）完了。サブスライスC（[PR #2602](https://github.com/hat47x/kj-atlas/pull/2602)）はセキュリティレビュー後、Maintainer（hat47x）により2026-07-16にマージ済み。受け入れ条件AC-1〜AC-5はすべて充足済み（下記「実装記録」参照）。
 
 ## Draft→Open 2026-07-12
 `ADR-0054` が maintainer により Accepted（受理時条件: 用語「庭」→「縁側」置換、ADR側で対応済み）。本Issueの唯一のゲートが解消したため Open 化。
@@ -115,6 +115,13 @@ Maintainer代理裁可の固定条件に従い、`03_Implement/mcp/` を新設�
 - **capability allowlist検証**: `context_bundle_projection.test.ts`と対をなす形で、`InMemoryTransport.createLinkedPair()`で実際のClient⇔Serverペアをプロセス内接続し、`tools/list`が`get_context_projection`一件のみであること、`resources`capabilityが`initialize`応答に一切含まれないこと（`resources/list`はメソッド自体が存在せず`-32601`を返す＝空リストより強い「未登録」の証明）、write/ingest/apply/publish/create/update/delete/sampling/elicit名を持つツールが存在しないことを固定した。加えて、実際の`tsx src/index.ts`プロセスへ生JSON-RPC（initialize→initialized→tools/list）を送るスモーク検証で、stdoutにプロトコルメッセージ以外が一切混入しないことも確認した。
 - **テスト**: `document_client.test.ts`（8）・`audit_log.test.ts`（5）・`context_projection_tool.test.ts`（8、上記capability allowlist込み）、計21 tests、typecheck 0。
 - **非目標（維持）**: 書き込み・提案受信、HTTP/OAuth輸送、MCP Apps。
+
+## Close-out（2026-07-16）: サブスライスC マージ、Issue Done化
+
+`PR #2602` はMaintainer（hat47x）によるセキュリティレビュー後、2026-07-16にマージされた（マージコミット `8ebd28e97138facf3d140ddb4f37d883b11a4d2b`）。サブスライスA・B・Cの実装・テスト・脅威分析はすべて完了し、AC-1〜AC-5は充足済みのため、本Issueを `Done` とする。
+
+- AC-3のCE-4実結線ギャップ（backendの`channel`enum拡張が必要）は、本Issueの承認範囲外として明示的に切り出し済みの既知の未実装であり、`Done`化のブロッカーとしては扱わない。CE-4への実結線が必要になった時点で、専用のbackend issueとして別途起票する。
+- `EXT-CONN-02`（webhook提案ingest）は引き続き`Draft`であり、本Issueの`Done`化とは別に「EXT-CONN-01の運用実績」ゲートが残る。運用実績はマージ後の実利用を通じて蓄積されるものであり、本Issueの完了条件には含まれない。
 
 ## Traceability
 
