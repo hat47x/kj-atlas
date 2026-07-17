@@ -987,11 +987,11 @@ tenantIdはserver-managed列であり、`DocumentV1` payload、view.json、impor
 | tenant/IdP/binding/membership表 | Expand済み | `local-default`互換だけに使用 |
 | Document/判断ログtenant列・index | Expand済み | 暗黙既定値があるためSaaS境界には未使用 |
 | 新規JIT/strict Userのlocal membership | 実装済み | single-tenant互換用 |
-| Document/判断ログ/backfillのtenant-scoped repository | `local-default`で実装済み | verified TenantContextと複合キーが未実装のためSaaS blockerは継続 |
+| Document/判断ログ/backfillのtenant-scoped repository | `local-default`で実装済み。認証済み利用者はUser/Tenant/Membershipのactive状態を各requestで確認し、内部TenantContextをrepository・PDP payload・auditへ伝播 | verified claim/host mappingと複合キーが未実装のためSaaS blockerは継続 |
 | `user_identities`の`identityProviderId + subject`移行 | Expand・backfill・二重書き済み | 互換IdPは検証済みissuerではなく、旧列も正本として残るためSaaS blockerは継続 |
 | Document複合PK/FK、全consumerのtenant必須化 | 未実装 | SaaS blocker |
 | PostgreSQL RLS等のDB側guard | 未実装 | SaaS blocker |
-| verified TenantContext / capability API / negative matrix | 未実装 | SaaS blocker |
+| verified TenantContext / capability API / negative matrix | single-tenant内部resolverと停止membership拒否まで実装 | verified claim/host mapping、session/capability API、SaaS negative matrixは未実装のためblocker継続 |
 
 ## 11. Polygon contract keys（FB-P0-2A2B2C）
 

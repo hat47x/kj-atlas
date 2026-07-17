@@ -9,6 +9,7 @@ from urllib import request as urllib_request
 from fastapi import HTTPException
 
 from kj_atlas_api.settings import settings
+from kj_atlas_api.tenant_context import TenantContext
 
 AccessAction = Literal["read", "write", "export", "share"]
 Visibility = Literal["Public", "Unlisted", "Org", "Restricted"]
@@ -51,6 +52,8 @@ class AccessResource:
     doc_id: str
     visibility: Visibility | None = None
     policy_ref: str | None = None
+    tenant_id: str | None = None
+    kind: str = "document"
 
 
 @dataclass(frozen=True)
@@ -58,6 +61,7 @@ class AccessRequest:
     action: AccessAction
     auth: AuthContext | None = None
     resource: AccessResource | None = None
+    tenant: TenantContext | None = None
     safe_mode: bool = False
     read_only: bool = False
     subject: AccessSubject | None = None
@@ -185,17 +189,28 @@ class ExternalPolicyAccessControlAdapter:
         if resource_source is None:
             resource_source = AccessResource(doc_id="")
 
-        payload = {
+        resource_payload: dict[str, object] = {
+            "docId": resource_source.doc_id,
+            "visibility": resource_source.visibility,
+            "policyRef": resource_source.policy_ref,
+        }
+        if resource_source.tenant_id is not None:
+            resource_payload["tenantId"] = resource_source.tenant_id
+            resource_payload["kind"] = resource_source.kind
+
+        payload: dict[str, object] = {
             "action": request.action,
             subject_key: auth_payload,
-            "resource": {
-                "docId": resource_source.doc_id,
-                "visibility": resource_source.visibility,
-                "policyRef": resource_source.policy_ref,
-            },
+            "resource": resource_payload,
             "safeMode": request.safe_mode,
             "readOnly": request.read_only,
         }
+        if request.tenant is not None:
+            payload["tenant"] = {
+                "tenantId": request.tenant.tenant_id,
+                "membershipId": request.tenant.membership_id,
+                "resolvedBy": request.tenant.resolved_by,
+            }
         body = json.dumps(payload).encode("utf-8")
 
         headers = {

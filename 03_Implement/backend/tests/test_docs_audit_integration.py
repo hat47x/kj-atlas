@@ -120,6 +120,7 @@ def test_get_document_emits_view_audit_event(tmp_path) -> None:
     assert event.metadata["adapterName"] == "allow-all"
     assert event.metadata["visibility"] == "Org"
     assert event.metadata["traceId"] == "trace-view-1"
+    assert event.metadata["tenantId"] == "local-default"
     assert event.metadata["hasStepUp"] is True
     assert event.metadata["amrClass"] == "multi_factor"
     assert event.metadata["assuranceLevel"] == "substantial"
@@ -161,6 +162,7 @@ def test_post_export_audit_emits_export_event(tmp_path) -> None:
     assert event.metadata["decision_reason"] is None
     assert event.metadata["adapterName"] == "allow-all"
     assert event.metadata["traceId"] == "trace-export-1"
+    assert event.metadata["tenantId"] == "local-default"
     assert event.metadata["hasStepUp"] is False
     assert event.metadata["amrClass"] == "single_factor"
     assert event.metadata["assuranceLevel"] == "low"
@@ -214,6 +216,7 @@ def test_context_audit_endpoint_emits_four_operation_events(tmp_path) -> None:
             "command",
             "channel",
             "schemaVersion",
+            "tenantId",
         }
 
 

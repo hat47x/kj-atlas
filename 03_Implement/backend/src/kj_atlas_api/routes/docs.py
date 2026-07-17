@@ -47,7 +47,7 @@ from kj_atlas_api.models import (
     SimilarCandidateScoreSummary,
 )
 from kj_atlas_api.settings import settings
-from kj_atlas_api.tenant_context import LOCAL_DEFAULT_TENANT_CONTEXT
+from kj_atlas_api.tenant_context import TenantContext, resolve_single_tenant_context
 
 router = APIRouter(prefix="/docs", tags=["docs"])
 document_payload_adapter: TypeAdapter[DocumentPayload] = TypeAdapter(DocumentPayload)
@@ -181,8 +181,9 @@ def _authorize_request(
     doc_id: str,
     safe_mode: bool,
     read_only: bool,
-) -> tuple[AccessRequest, AccessDecision]:
+) -> tuple[AccessRequest, AccessDecision, TenantContext]:
     identity = resolve_identity_context(db=db, request=request)
+    tenant = resolve_single_tenant_context(db=db, user_id=identity.user_id)
     adapter = getattr(request.app.state, "access_control_adapter", None)
     if adapter is None:
         access_request = AccessRequest(
@@ -190,19 +191,22 @@ def _authorize_request(
             safe_mode=safe_mode,
             read_only=read_only,
             auth=identity.auth_context,
+            tenant=tenant,
             resource=AccessResource(
                 doc_id=doc_id,
                 visibility=parse_visibility(request.headers.get("x-doc-visibility")),
                 policy_ref=normalize_policy_ref(request.headers.get("x-policy-ref")),
+                tenant_id=tenant.tenant_id,
             ),
         )
         decision = AccessDecision(allow=True)
-        return access_request, decision
+        return access_request, decision, tenant
 
     access_request = AccessRequest(
         action=action,
         safe_mode=safe_mode,
         read_only=read_only,
+        tenant=tenant,
         auth=AuthContext(
             actor_ref=identity.auth_context.actor_ref,
             user_id=identity.auth_context.user_id,
@@ -220,6 +224,7 @@ def _authorize_request(
             doc_id=doc_id,
             visibility=parse_visibility(request.headers.get("x-doc-visibility")),
             policy_ref=normalize_policy_ref(request.headers.get("x-policy-ref")),
+            tenant_id=tenant.tenant_id,
         ),
     )
 
@@ -230,7 +235,7 @@ def _authorize_request(
 
     decision = resolve_access_decision(adapter=adapter, request=access_request, fail_safe_mode=typed_fail_safe_mode)
     enforce_access(decision, action=action)
-    return access_request, decision
+    return access_request, decision, tenant
 
 
 def _compute_etag(payload_json: str) -> str:
@@ -332,11 +337,11 @@ def get_document(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> DocumentPayload:
-    access_request, decision = _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    access_request, decision, tenant = _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
     doc_row = get_document_row(
         db,
-        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        tenant=tenant,
         doc_id=doc_id,
     )
     if doc_row is None:
@@ -364,6 +369,7 @@ def get_document(
                     "policyRefPresent": access_request.resource.policy_ref is not None,
                     "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
                     "traceId": access_request.auth.trace_id,
+                    "tenantId": tenant.tenant_id,
                     **build_auth_assurance_metadata(access_request.auth),
                 },
             )
@@ -383,7 +389,7 @@ def put_document(
     db: Session = Depends(get_db),
 ) -> DocumentPayload:
     document = _validate_document_payload_with_a1_contract(document_payload)
-    access_request, _ = _authorize_request(request, db, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    access_request, _, tenant = _authorize_request(request, db, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
     if document.id != doc_id:
         raise HTTPException(status_code=400, detail="Path doc_id and document.id must match")
@@ -393,7 +399,7 @@ def put_document(
     payload_json = document.model_dump_json()
     doc_row = get_document_row(
         db,
-        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        tenant=tenant,
         doc_id=doc_id,
     )
 
@@ -409,7 +415,7 @@ def put_document(
     if doc_row is None:
         doc_row = DocumentRow(
             id=doc_id,
-            tenant_id=LOCAL_DEFAULT_TENANT_CONTEXT.tenant_id,
+            tenant_id=tenant.tenant_id,
             version=document.version,
             updated_at=document.updatedAt.isoformat(),
             payload_json=payload_json,
@@ -558,7 +564,7 @@ def post_context_audit(
             source_bundle_hash=payload.sourceBundleHash,
         )
 
-    access_request, decision = _authorize_request(
+    access_request, decision, tenant = _authorize_request(
         request,
         db,
         action="read",
@@ -585,6 +591,7 @@ def post_context_audit(
                     "policyRefPresent": access_request.resource.policy_ref is not None,
                     "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
                     "traceId": access_request.auth.trace_id,
+                    "tenantId": tenant.tenant_id,
                     "operation": payload.operation,
                     "equivalenceKey": payload.equivalenceKey,
                     "bundleHash": payload.bundleHash,
@@ -612,7 +619,7 @@ def post_export_audit(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
-    access_request, decision = _authorize_request(request, db, action="export", doc_id=doc_id, safe_mode=payload.safeMode, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    access_request, decision, tenant = _authorize_request(request, db, action="export", doc_id=doc_id, safe_mode=payload.safeMode, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
     dispatcher = getattr(request.app.state, "audit_dispatcher", None)
     if dispatcher is not None:
         dispatcher.emit(
@@ -633,6 +640,7 @@ def post_export_audit(
                     "policyRefPresent": access_request.resource.policy_ref is not None,
                     "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
                     "traceId": access_request.auth.trace_id,
+                    "tenantId": tenant.tenant_id,
                     **build_auth_assurance_metadata(access_request.auth),
                 },
             )
@@ -653,18 +661,18 @@ def append_merge_decision_log(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> MergeDecisionRecord:
-    _authorize_request(request, db, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    _, _, tenant = _authorize_request(request, db, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
     if get_document_row(
         db,
-        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        tenant=tenant,
         doc_id=doc_id,
     ) is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
     record = payload.record
     row = MergeDecisionLogRow(
-        tenant_id=LOCAL_DEFAULT_TENANT_CONTEXT.tenant_id,
+        tenant_id=tenant.tenant_id,
         doc_id=doc_id,
         decision_id=record.decisionId,
         group_id=record.groupId,
@@ -690,18 +698,18 @@ def list_merge_decision_logs_by_group(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> list[MergeDecisionRecord]:
-    _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    _, _, tenant = _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
     if get_document_row(
         db,
-        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        tenant=tenant,
         doc_id=doc_id,
     ) is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
     rows = list_merge_log_rows_by_group(
         db,
-        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        tenant=tenant,
         doc_id=doc_id,
         group_id=group_id,
     )
@@ -716,18 +724,18 @@ def restore_merge_decision_logs(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> list[MergeDecisionRecord]:
-    _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    _, _, tenant = _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
     if get_document_row(
         db,
-        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        tenant=tenant,
         doc_id=doc_id,
     ) is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
     rows = list_merge_log_rows_by_snapshot(
         db,
-        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        tenant=tenant,
         doc_id=doc_id,
         snapshot_version=snapshot_version,
     )
@@ -741,11 +749,11 @@ def get_similar_candidate_groups(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> CandidateListViewModel:
-    _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    _, _, tenant = _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
     doc_row = get_document_row(
         db,
-        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        tenant=tenant,
         doc_id=doc_id,
     )
     if doc_row is None:
@@ -763,7 +771,7 @@ def verify_polygon_handoff_contract(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> PolygonHandoffContractVerificationResponse:
-    _authorize_request(
+    _, _, tenant = _authorize_request(
         request,
         db,
         action="read",
@@ -774,7 +782,7 @@ def verify_polygon_handoff_contract(
 
     if get_document_row(
         db,
-        tenant=LOCAL_DEFAULT_TENANT_CONTEXT,
+        tenant=tenant,
         doc_id=doc_id,
     ) is None:
         raise HTTPException(status_code=404, detail="Document not found")

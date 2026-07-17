@@ -108,3 +108,10 @@
 - JIT provisioningと`/admin/provision/users`は、既存の`provider + external_uid`に加えて`identity_provider_id + subject`を二重書きする。旧列と既存APIはsingle-tenant互換のため維持し、検証済みissuer/audienceからIdPを解決するまで互換IdPをSaaS認証に使用しない。
 - PostgreSQLでは`identity_provider_id`外部キーを追加し、SQLiteはlocal/evaluation用途のためアプリmetadata上の外部キーと一意indexに留める。共有SaaSは引き続き禁止する。
 - 検証: Ruff pass、identity migration・tenant migration・JIT/strict provisioning近接19件pass。PostgreSQL migrationは利用可能な環境がないため未検証であり、次のcontract/NOT NULL化条件に残す。
+
+### Implementation checkpoint 2026-07-17: active membership TenantContext
+
+- single-tenant互換resolverを追加し、認証済み利用者についてUser、`local-default` Tenant、TenantMembershipのactive状態をrequestごとに検証する。いずれかの停止・欠損は同一の`tenant_membership_inactive`で拒否し、tenantの存在や状態を応答で区別しない。匿名経路は現行互換のためmembershipなしを維持する。
+- Documentのread/write、判断ログ、類似候補、polygon handoffはresolverが返したTenantContextをrepositoryへ明示伝播する。`x-tenant-id`等のclient入力はresolverに渡さない。
+- AccessRequest/ResourceへTenantContextとresource tenantを追加し、外部PDP adapterへserver-resolved値だけを送る。view/export/context auditへ本文・title・membershipを含めず`tenantId`を追加した。
+- 検証: Ruff pass、TenantContext・PDP payload・JIT/strict・Document roundtrip/access-control/repository近接71件pass、PostgreSQL条件付き21件skip。verified claim/host mapping、session/capability API、複合Document key、RLSは未実装のためSaaS profileの起動拒否を継続する。

@@ -568,3 +568,48 @@ def test_admin_provision_contract_rejects_blank_provider_or_external_uid(tmp_pat
             assert blank_external_uid.status_code == 400
     finally:
         settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level1
+def test_suspended_membership_blocks_document_access(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    settings.allow_jit_provisioning = False
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, session_local = fixture
+            provision = client.post(
+                "/admin/provision/users",
+                json={
+                    "provider": "oidc",
+                    "externalUid": "suspended-member",
+                    "displayName": "Suspended",
+                },
+            )
+            assert provision.status_code == 201
+
+            headers = {
+                "x-auth-provider": "oidc",
+                "x-auth-subject": "suspended-member",
+                "x-tenant-id": "untrusted-tenant-input",
+            }
+            allowed = client.put(
+                "/docs/doc-membership-state",
+                json=_sample_payload("doc-membership-state"),
+                headers=headers,
+            )
+            assert allowed.status_code == 200
+
+            with session_local() as db:
+                membership = db.get(
+                    TenantMembershipRow,
+                    (LOCAL_DEFAULT_TENANT_ID, provision.json()["userId"]),
+                )
+                assert membership is not None
+                membership.lifecycle_state = "suspended"
+                db.commit()
+
+            denied = client.get("/docs/doc-membership-state", headers=headers)
+            assert denied.status_code == 403
+            assert denied.json()["detail"]["code"] == "tenant_membership_inactive"
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit

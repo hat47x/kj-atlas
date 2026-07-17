@@ -17,6 +17,7 @@ from kj_atlas_api.access_control import (
     resolve_access_decision,
 )
 from kj_atlas_api.settings import Settings
+from kj_atlas_api.tenant_context import TenantContext
 
 
 class _Response:
@@ -91,6 +92,62 @@ def test_external_http_adapter_forwards_request_and_parses_decision(monkeypatch:
             "docId": "doc-1",
             "visibility": "Org",
             "policyRef": "opa://policy/v1",
+        },
+        "safeMode": False,
+        "readOnly": False,
+    }
+
+
+def test_external_http_adapter_forwards_server_resolved_tenant(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def _urlopen(request, timeout):  # noqa: ANN001, ARG001
+        captured["body"] = json.loads(request.data.decode("utf-8"))
+        return _Response({"allow": True})
+
+    monkeypatch.setattr("kj_atlas_api.access_control.urllib_request.urlopen", _urlopen)
+    adapter = ExternalPolicyAccessControlAdapter(
+        config=ExternalPolicyAdapterConfig(
+            endpoint="https://policy.example.local/evaluate"
+        )
+    )
+    tenant = TenantContext(
+        tenant_id="tenant-a",
+        membership_id="membership-a",
+        resolved_by="verified_claim",
+    )
+
+    decision = adapter.authorize(
+        AccessRequest(
+            action="read",
+            auth=AuthContext(actor_ref="user-1", user_id="user-1"),
+            tenant=tenant,
+            resource=AccessResource(doc_id="doc-1", tenant_id="tenant-a"),
+        )
+    )
+
+    assert decision.allow is True
+    assert captured["body"] == {
+        "action": "read",
+        "auth": {
+            "actorRef": "user-1",
+            "roles": [],
+            "groups": [],
+            "userId": "user-1",
+        },
+        "resource": {
+            "docId": "doc-1",
+            "visibility": None,
+            "policyRef": None,
+            "tenantId": "tenant-a",
+            "kind": "document",
+        },
+        "tenant": {
+            "tenantId": "tenant-a",
+            "membershipId": "membership-a",
+            "resolvedBy": "verified_claim",
         },
         "safeMode": False,
         "readOnly": False,
