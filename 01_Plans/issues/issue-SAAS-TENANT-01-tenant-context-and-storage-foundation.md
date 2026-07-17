@@ -236,3 +236,9 @@
 - frontend API clientへ`GET /session/context`のsame-origin・`no-store` fetchを追加し、AbortSignalを上位のlifecycleから渡せるようにした。requestへtenant ID、role、groupを付加せず、非2xxはbackendのstatusとstable error codeを`ApiError`へ保持する。
 - response validatorを既知11 capabilityへ限定し、top-level／tenant summaryの余分なfield、未知capability、非JSON、不完全shapeを`InvalidTenantSessionContextError`として拒否する。response検証前にbrowser storage scopeや画面状態へ反映しない。
 - 既存session validatorとclientの近接21件、frontend全体1,106件・198 file、typecheck、docs-check、diff-checkを通過した。App起動時のsession bootstrap、失敗時UI、実auth cookie連携、active tenant変更とcleanup hook配線は未実装のため、UIとSaaS runtimeは引き続き有効化しない。
+
+### Implementation checkpoint 2026-07-17: membership evidence recheck
+
+- session context builderとactive tenant切替内部境界で、resolver由来の`tenantId + membershipId + resolvedBy`をDBのactive User/Tenant/Membershipから再構成したTenantContextと照合するようにした。canonicalに見える差し替えmembership IDでも一致しなければ`tenant_context_untrusted`としてPDP/capability resolver呼出し前に拒否する。
+- 共通SaaS request contextはresolverの元値ではなく再照合後のTenantContextだけを管理API、DB guard、capability resolverへ渡す。停止membership、未知resolution method、別membership証跡を権限なしのEmptyや成功responseへ変換しない。
+- session builder／route／管理API／verified tenantの近接48件、backend全体433件pass・条件付き25件skip、Ruff、docs-check、diff-checkを通過した。auth edgeのcredential方式はcookie、bearer、forward-authの選択と検証責任が未確定なため推測実装せず、既定unavailableとSaaS起動拒否を維持する。

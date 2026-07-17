@@ -230,3 +230,27 @@ def select_active_tenant_context(
         resolved_by=resolved_by,
         unavailable_status="not_found",
     )
+
+
+def recheck_trusted_tenant_context(
+    *,
+    db: Session,
+    user_id: str,
+    tenant: TenantContext,
+) -> TenantContext:
+    """Rebuild membership evidence and reject stale or substituted resolver output."""
+    if tenant.resolved_by not in {"verified_claim", "trusted_host_mapping"}:
+        _deny_untrusted_tenant_context()
+    try:
+        rechecked = _active_membership_context(
+            db=db,
+            user_id=user_id,
+            tenant_id=tenant.tenant_id,
+            resolved_by=tenant.resolved_by,
+            unavailable_status="forbidden",
+        )
+    except HTTPException:
+        _deny_untrusted_tenant_context()
+    if tenant.membership_id != rechecked.membership_id:
+        _deny_untrusted_tenant_context()
+    return rechecked

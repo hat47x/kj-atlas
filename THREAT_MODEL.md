@@ -118,7 +118,7 @@
 
 **現行の適用限界**
 
-tenant/identity/membership、Document複合key、TenantContext/PDP/audit伝播、PostgreSQL RLS migrationとtransaction-local DB contextまでは実装済みである。ただしPostgreSQL実地検証、auth edgeからverified resolverへの接続、session/capability API、MCP/worker/cache/browser/storageを含む完全な越境matrixは未完了である。このため共有DB型のマルチテナントSaaSとして運用してはならず、`enterprise-production`は単一組織デプロイ向けと解釈する。`saas-multitenant`の起動拒否は残りの`SAAS-TENANT-01`条件を完了するまで維持する。
+tenant/identity/membership、Document複合key、TenantContext/PDP/audit伝播、PostgreSQL RLS migrationとtransaction-local DB context、fail-closed session context route、strict capability adapterまでは実装済みである。session/capability境界ではresolverのmembership IDをDBのactive membershipから再生成した値と照合し、停止・差し替え証跡をPDP呼出し前に拒否する。ただしPostgreSQL実地検証、auth edgeからverified resolverへの接続、active tenant変更、MCP/worker/cache/browser/storageを含む完全な越境matrixは未完了である。このため共有DB型のマルチテナントSaaSとして運用してはならず、`enterprise-production`は単一組織デプロイ向けと解釈する。`saas-multitenant`の起動拒否は残りの`SAAS-TENANT-01`条件を完了するまで維持する。
 
 ## 検証・運用 / Verification
 

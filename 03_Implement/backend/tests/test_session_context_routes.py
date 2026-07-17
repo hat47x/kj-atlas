@@ -16,7 +16,11 @@ from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
 from kj_atlas_api.models import Base, TenantMembershipRow, TenantRow, UserRow
 from kj_atlas_api.session_context import CapabilitySnapshot
-from kj_atlas_api.tenant_context import SingleTenantContextResolver, TenantContext
+from kj_atlas_api.tenant_context import (
+    SingleTenantContextResolver,
+    TenantContext,
+    select_active_tenant_context,
+)
 
 
 TIMESTAMP = "2026-07-17T00:00:00Z"
@@ -52,11 +56,33 @@ class StaticIdentityResolver:
 class MutableTenantResolver:
     tenant_id: str = "tenant-a"
     resolved_by: str = "verified_claim"
+    membership_id_override: str | None = None
 
-    def resolve(self, *, db: Session, user_id: str | None) -> TenantContext:  # noqa: ARG002
+    def resolve(self, *, db: Session, user_id: str | None) -> TenantContext:
+        if self.membership_id_override is not None:
+            return TenantContext(
+                tenant_id=self.tenant_id,
+                membership_id=self.membership_id_override,
+                resolved_by=self.resolved_by,  # type: ignore[arg-type]
+            )
+        if user_id is not None and self.resolved_by in {
+            "verified_claim",
+            "trusted_host_mapping",
+        }:
+            selected = select_active_tenant_context(
+                db=db,
+                user_id=user_id,
+                tenant_id=self.tenant_id,
+                resolved_by=self.resolved_by,  # type: ignore[arg-type]
+            )
+            return TenantContext(
+                tenant_id=selected.tenant_id,
+                membership_id=self.membership_id_override or selected.membership_id,
+                resolved_by=selected.resolved_by,
+            )
         return TenantContext(
             tenant_id=self.tenant_id,
-            membership_id=f"membership-{self.tenant_id}",
+            membership_id=self.membership_id_override or f"membership-{self.tenant_id}",
             resolved_by=self.resolved_by,  # type: ignore[arg-type]
         )
 
@@ -65,6 +91,7 @@ class MutableTenantResolver:
 class MutableCapabilityResolver:
     capabilities: tuple[str, ...] = ("document.write", "document.read")
     capability_version: str = "capability-v7"
+    calls: int = 0
 
     def resolve(
         self,
@@ -73,6 +100,7 @@ class MutableCapabilityResolver:
         principal_id: str,  # noqa: ARG002
         tenant: TenantContext,  # noqa: ARG002
     ) -> CapabilitySnapshot:
+        self.calls += 1
         return CapabilitySnapshot(
             effective_capabilities=self.capabilities,
             capability_version=self.capability_version,
@@ -204,11 +232,11 @@ def test_context_returns_only_allowlisted_tenants_and_trusted_capabilities(tmp_p
         "secret-subject",
         "secret-role",
         "secret-group",
-        "membership-tenant-a",
         "attacker-tenant",
         "platform-admin",
     ):
         assert secret_value not in response_text
+    assert "membership-" not in response_text
 
 
 def test_context_is_closed_without_trusted_identity_resolver(tmp_path) -> None:
@@ -274,8 +302,15 @@ def test_context_rejects_unknown_capability(tmp_path) -> None:
 
 def test_context_rechecks_active_tenant_membership(tmp_path) -> None:
     with _session_client(tmp_path) as fixture:
-        client, session_local, _, _, _ = fixture
+        client, session_local, _, tenant_resolver, _ = fixture
         with session_local() as db:
+            selected = select_active_tenant_context(
+                db=db,
+                user_id="user-1",
+                tenant_id="tenant-a",
+                resolved_by="verified_claim",
+            )
+            tenant_resolver.membership_id_override = selected.membership_id
             membership = db.get(TenantMembershipRow, ("tenant-a", "user-1"))
             assert membership is not None
             membership.lifecycle_state = "suspended"
@@ -285,6 +320,20 @@ def test_context_rechecks_active_tenant_membership(tmp_path) -> None:
 
     assert response.status_code == 403
     assert response.json()["detail"]["code"] == "tenant_context_untrusted"
+
+
+def test_context_rejects_substituted_membership_before_capability_resolution(
+    tmp_path,
+) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, tenant_resolver, capability_resolver = fixture
+        tenant_resolver.membership_id_override = "membership-substituted"
+
+        response = client.get("/session/context")
+
+    assert response.status_code == 403
+    assert response.json()["detail"]["code"] == "tenant_context_untrusted"
+    assert capability_resolver.calls == 0
 
 
 def test_context_normalizes_unexpected_tenant_resolver_failure(tmp_path) -> None:

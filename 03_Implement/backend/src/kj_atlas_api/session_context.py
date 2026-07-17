@@ -10,6 +10,7 @@ from kj_atlas_api.tenant_context import (
     TenantContext,
     TenantSummary,
     list_active_tenant_summaries,
+    recheck_trusted_tenant_context,
     select_active_tenant_context,
 )
 
@@ -53,6 +54,7 @@ class TenantCapabilityResolver(Protocol):
 @dataclass(frozen=True, slots=True)
 class TenantSessionContext:
     principal_id: str
+    tenant_context: TenantContext
     active_tenant: TenantSummary
     available_tenants: tuple[TenantSummary, ...]
     effective_capabilities: tuple[str, ...]
@@ -108,6 +110,11 @@ def build_tenant_session_context(
     if principal_id is None:
         _session_auth_required()
 
+    tenant = recheck_trusted_tenant_context(
+        db=db,
+        user_id=principal_id,
+        tenant=tenant,
+    )
     available_tenants = list_active_tenant_summaries(db=db, user_id=principal_id)
     active_tenant = next(
         (candidate for candidate in available_tenants if candidate.tenant_id == tenant.tenant_id),
@@ -143,6 +150,7 @@ def build_tenant_session_context(
 
     return TenantSessionContext(
         principal_id=principal_id,
+        tenant_context=tenant,
         active_tenant=active_tenant,
         available_tenants=available_tenants,
         effective_capabilities=effective_capabilities,
@@ -168,9 +176,11 @@ def switch_tenant_session_context(
     else:
         _tenant_context_untrusted()
 
-    available_tenants = list_active_tenant_summaries(db=db, user_id=principal_id)
-    if not any(tenant.tenant_id == current_tenant.tenant_id for tenant in available_tenants):
-        _tenant_context_untrusted()
+    recheck_trusted_tenant_context(
+        db=db,
+        user_id=principal_id,
+        tenant=current_tenant,
+    )
 
     selected_tenant = select_active_tenant_context(
         db=db,

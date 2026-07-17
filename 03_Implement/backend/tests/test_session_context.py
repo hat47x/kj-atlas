@@ -13,7 +13,7 @@ from kj_atlas_api.session_context import (
     build_tenant_session_context,
     switch_tenant_session_context,
 )
-from kj_atlas_api.tenant_context import TenantContext
+from kj_atlas_api.tenant_context import TenantContext, select_active_tenant_context
 
 
 TIMESTAMP = "2026-07-17T00:00:00Z"
@@ -85,7 +85,16 @@ def _seed(db: Session) -> None:
     db.commit()
 
 
-def _tenant(tenant_id: str = "tenant-a") -> TenantContext:
+def _tenant(db: Session, tenant_id: str = "tenant-a") -> TenantContext:
+    return select_active_tenant_context(
+        db=db,
+        user_id="user-1",
+        tenant_id=tenant_id,
+        resolved_by="verified_claim",
+    )
+
+
+def _stale_tenant(tenant_id: str = "tenant-suspended") -> TenantContext:
     return TenantContext(
         tenant_id=tenant_id,
         membership_id="membership-opaque",
@@ -108,11 +117,14 @@ def test_builds_context_from_active_memberships_and_trusted_capabilities() -> No
             context = build_tenant_session_context(
                 db=db,
                 principal_id="user-1",
-                tenant=_tenant(),
+                tenant=_tenant(db),
                 capability_resolver=resolver,
             )
 
         assert context.principal_id == "user-1"
+        assert context.tenant_context.tenant_id == "tenant-a"
+        assert context.tenant_context.membership_id is not None
+        assert context.tenant_context.membership_id.startswith("membership-")
         assert (context.active_tenant.tenant_id, context.active_tenant.display_name) == (
             "tenant-a",
             "Tenant A",
@@ -138,7 +150,7 @@ def test_anonymous_session_is_rejected_before_capability_resolution() -> None:
                 build_tenant_session_context(
                     db=db,
                     principal_id=None,
-                    tenant=_tenant(),
+                    tenant=_stale_tenant("tenant-a"),
                     capability_resolver=resolver,
                 )
 
@@ -160,7 +172,33 @@ def test_stale_or_unavailable_active_tenant_is_rejected_before_policy_call() -> 
                 build_tenant_session_context(
                     db=db,
                     principal_id="user-1",
-                    tenant=_tenant("tenant-suspended"),
+                    tenant=_stale_tenant(),
+                    capability_resolver=resolver,
+                )
+
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail["code"] == "tenant_context_untrusted"
+        assert resolver.calls == 0
+    finally:
+        engine.dispose()
+
+
+def test_substituted_membership_evidence_is_rejected_before_policy_call() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    resolver = StubCapabilityResolver(CapabilitySnapshot((), "policy-v1"))
+    try:
+        with Session(engine) as db:
+            _seed(db)
+            with pytest.raises(HTTPException) as exc_info:
+                build_tenant_session_context(
+                    db=db,
+                    principal_id="user-1",
+                    tenant=TenantContext(
+                        tenant_id="tenant-a",
+                        membership_id="membership-substituted",
+                        resolved_by="verified_claim",
+                    ),
                     capability_resolver=resolver,
                 )
 
@@ -191,7 +229,7 @@ def test_invalid_policy_snapshot_fails_closed(snapshot: CapabilitySnapshot) -> N
                 build_tenant_session_context(
                     db=db,
                     principal_id="user-1",
-                    tenant=_tenant(),
+                    tenant=_tenant(db),
                     capability_resolver=resolver,
                 )
 
@@ -214,7 +252,7 @@ def test_policy_resolver_error_is_normalized_without_leaking_details() -> None:
                 build_tenant_session_context(
                     db=db,
                     principal_id="user-1",
-                    tenant=_tenant(),
+                    tenant=_tenant(db),
                     capability_resolver=RaisingCapabilityResolver(),
                 )
 
@@ -237,7 +275,7 @@ def test_switch_rechecks_allowlist_then_resolves_capabilities_for_new_tenant() -
             context = switch_tenant_session_context(
                 db=db,
                 principal_id="user-1",
-                current_tenant=_tenant("tenant-a"),
+                current_tenant=_tenant(db),
                 requested_tenant_id="tenant-b",
                 capability_resolver=resolver,
             )
@@ -264,7 +302,7 @@ def test_switch_hides_unavailable_requested_tenant(
                 switch_tenant_session_context(
                     db=db,
                     principal_id="user-1",
-                    current_tenant=_tenant("tenant-a"),
+                    current_tenant=_tenant(db),
                     requested_tenant_id=requested_tenant_id,
                     capability_resolver=resolver,
                 )
@@ -289,7 +327,7 @@ def test_switch_rejects_single_tenant_or_stale_current_context_before_selection(
                     membership_id="membership-opaque",
                     resolved_by="single_tenant_adapter",
                 ),
-                _tenant("tenant-suspended"),
+                _stale_tenant(),
             ):
                 with pytest.raises(HTTPException) as exc_info:
                     switch_tenant_session_context(

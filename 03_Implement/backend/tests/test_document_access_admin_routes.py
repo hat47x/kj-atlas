@@ -24,7 +24,11 @@ from kj_atlas_api.models import (
     UserRow,
 )
 from kj_atlas_api.session_context import CapabilitySnapshot
-from kj_atlas_api.tenant_context import SingleTenantContextResolver, TenantContext
+from kj_atlas_api.tenant_context import (
+    SingleTenantContextResolver,
+    TenantContext,
+    select_active_tenant_context,
+)
 
 
 TIMESTAMP = "2026-07-17T00:00:00Z"
@@ -53,7 +57,17 @@ class MutableTenantResolver:
     tenant_id: str = "tenant-a"
     resolved_by: str = "verified_claim"
 
-    def resolve(self, *, db: Session, user_id: str | None) -> TenantContext:  # noqa: ARG002
+    def resolve(self, *, db: Session, user_id: str | None) -> TenantContext:
+        if user_id is not None and self.resolved_by in {
+            "verified_claim",
+            "trusted_host_mapping",
+        }:
+            return select_active_tenant_context(
+                db=db,
+                user_id=user_id,
+                tenant_id=self.tenant_id,
+                resolved_by=self.resolved_by,  # type: ignore[arg-type]
+            )
         return TenantContext(
             tenant_id=self.tenant_id,
             membership_id=f"membership-{self.tenant_id}",

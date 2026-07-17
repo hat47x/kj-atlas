@@ -138,6 +138,6 @@ def resolve_trusted_saas_request_session(
     )
     return TrustedSaasRequestSession(
         identity=identity,
-        tenant=tenant,
+        tenant=session.tenant_context,
         session=session,
     )
