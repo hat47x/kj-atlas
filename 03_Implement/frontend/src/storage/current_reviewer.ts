@@ -1,9 +1,15 @@
+import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
+
 const CURRENT_REVIEWER_STORAGE_KEY = "kj-atlas/current-reviewer-ref";
 
 export type ReviewerRefSource = "local" | "sso" | "unknown";
 
 function isStorageAvailable(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
+function currentReviewerStorageKey(scope?: TenantBrowserStorageScope): string {
+  return scope ? buildTenantStorageKey(CURRENT_REVIEWER_STORAGE_KEY, scope) : CURRENT_REVIEWER_STORAGE_KEY;
 }
 
 export function buildLocalReviewerRef(): string {
@@ -22,29 +28,32 @@ export function sanitizeReviewerRef(input: unknown): string {
   return input.trim();
 }
 
-export function loadCurrentReviewerRef(): string {
+export function loadCurrentReviewerRef(scope?: TenantBrowserStorageScope): string {
   if (!isStorageAvailable()) {
     return "";
   }
 
-  return sanitizeReviewerRef(window.localStorage.getItem(CURRENT_REVIEWER_STORAGE_KEY));
+  return sanitizeReviewerRef(window.localStorage.getItem(currentReviewerStorageKey(scope)));
 }
 
-export function initializeCurrentReviewerRef(): string {
-  const existing = loadCurrentReviewerRef();
+export function initializeCurrentReviewerRef(scope?: TenantBrowserStorageScope): string {
+  const existing = loadCurrentReviewerRef(scope);
   if (existing.length > 0) {
     return existing;
   }
 
   const generated = buildLocalReviewerRef();
-  saveCurrentReviewerRef(generated);
+  saveCurrentReviewerRef(generated, scope);
   return generated;
 }
 
-export function saveCurrentReviewerRef(value: string): string {
+export function saveCurrentReviewerRef(
+  value: string,
+  scope?: TenantBrowserStorageScope,
+): string {
   const sanitized = sanitizeReviewerRef(value);
   if (isStorageAvailable()) {
-    window.localStorage.setItem(CURRENT_REVIEWER_STORAGE_KEY, sanitized);
+    window.localStorage.setItem(currentReviewerStorageKey(scope), sanitized);
   }
 
   return sanitized;

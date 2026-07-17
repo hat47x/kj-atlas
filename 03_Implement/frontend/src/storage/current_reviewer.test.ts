@@ -6,12 +6,20 @@ import {
   sanitizeReviewerRef,
   saveCurrentReviewerRef,
 } from "./current_reviewer";
+import type { TenantBrowserStorageScope } from "./tenant_scope";
 
 type LocalStorageLike = {
   getItem: (key: string) => string | null;
   setItem: (key: string, value: string) => void;
   clear: () => void;
 };
+
+const tenantA: TenantBrowserStorageScope = {
+  deployment: "https://atlas.example.test",
+  tenantId: "tenant-a",
+  principalId: "user-1",
+};
+const tenantB: TenantBrowserStorageScope = { ...tenantA, tenantId: "tenant-b" };
 
 function createMockStorage(): LocalStorageLike {
   const store = new Map<string, string>();
@@ -58,6 +66,15 @@ describe("current_reviewer storage", () => {
   it("saves explicit reviewerRef", () => {
     saveCurrentReviewerRef(" user:local:manual ");
     expect(loadCurrentReviewerRef()).toBe("user:local:manual");
+  });
+
+  it("separates reviewer identity by tenant and principal scope", () => {
+    saveCurrentReviewerRef("user:sso:tenant-a", tenantA);
+    saveCurrentReviewerRef("user:sso:tenant-b", tenantB);
+
+    expect(loadCurrentReviewerRef(tenantA)).toBe("user:sso:tenant-a");
+    expect(loadCurrentReviewerRef(tenantB)).toBe("user:sso:tenant-b");
+    expect(loadCurrentReviewerRef()).toBe("");
   });
 
   it("infers source from reviewerRef prefix", () => {

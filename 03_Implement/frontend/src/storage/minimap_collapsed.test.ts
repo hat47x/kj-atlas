@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { loadMinimapCollapsed, saveMinimapCollapsed } from "./minimap_collapsed";
+import type { TenantBrowserStorageScope } from "./tenant_scope";
 
 type LocalStorageLike = {
   getItem: (key: string) => string | null;
@@ -8,6 +9,13 @@ type LocalStorageLike = {
   removeItem: (key: string) => void;
   clear: () => void;
 };
+
+const tenantA: TenantBrowserStorageScope = {
+  deployment: "https://atlas.example.test",
+  tenantId: "tenant-a",
+  principalId: "user-1",
+};
+const tenantB: TenantBrowserStorageScope = { ...tenantA, tenantId: "tenant-b" };
 
 function createMockStorage(): LocalStorageLike {
   const store = new Map<string, string>();
@@ -46,6 +54,14 @@ describe("minimap collapsed storage", () => {
     expect(loadMinimapCollapsed()).toBe(true);
 
     saveMinimapCollapsed(false);
+    expect(loadMinimapCollapsed()).toBe(false);
+  });
+
+  it("separates minimap preference by tenant scope", () => {
+    saveMinimapCollapsed(true, tenantA);
+
+    expect(loadMinimapCollapsed(tenantA)).toBe(true);
+    expect(loadMinimapCollapsed(tenantB)).toBe(false);
     expect(loadMinimapCollapsed()).toBe(false);
   });
 });
