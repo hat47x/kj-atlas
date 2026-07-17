@@ -3,7 +3,7 @@
 > 文書のコードブロックは利用者がコピーするインターフェースである。リンク切れだけでなく、endpoint・CLI option・service・package scriptの実在をfail-closedで確認する。
 
 - Type: Bug / Documentation quality / Tooling
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -91,15 +91,15 @@ findingはrule ID、文書、行、検出token、照合先、正しい候補を�
 
 ## 受入条件
 
-- [ ] `CONTRIBUTING.md`のCompose health probeが`/api/healthz`となり、backend-localの`/healthz`と区別される。
-- [ ] current/public文書に存在しないrepository-local CLI optionが0件で、`--files`参照がなくなる。
-- [ ] 文書で参照するnpm scripts、Compose services、repository paths、runtime parameter keysが正本と一致する。
-- [ ] `DC-CMD-001`がendpoint、CLI option、npm script、Compose service、pathの各負例をrule ID付きで検出する。
-- [ ] コードフェンス外の説明、placeholder、外部URL、動的値を誤検出しない正常fixtureがある。
-- [ ] manual/mutatingコマンドはCIで実行されず、データ消失・秘密情報・本番利用に関する警告と停止条件を維持する。
-- [ ] localとCIが同じ`docs_check.py`から検査し、current repositoryでpassする。
-- [ ] SafeMode、share/export、provider=`none`、import sanitizeの安全既定を変更しない。
-- [ ] Doneの`DX-DOC-03`と`DOC-OPS-06`から本follow-upへ到達できる。
+- [x] `CONTRIBUTING.md`のCompose health probeが`/api/healthz`となり、backend-localの`/healthz`と区別される。→ 修正済み（下記「実装記録」参照）。
+- [x] current/public文書に存在しないrepository-local CLI optionが0件で、`--files`参照がなくなる。→ 監査の結果、current/public文書（README/CONTRIBUTING/04_Documentation/e2e_testing.md）に`--files`参照は0件（`e2e_testing.md`分は`DX-E2E-08`で既に解消済み、他文書には元々存在しなかった）。`01_Plans/issues/*.md`に多数残る`--files`参照はDX-DOC-04のScope外（内部issueメモの実施時点記録であり、現行の利用者向けコピー対象ではない）と判断し対象外にした。
+- [ ] 文書で参照するnpm scripts、Compose services、repository paths、runtime parameter keysが正本と一致する。→ npm scriptsのみ自動照合を実装（下記）。Compose services・repository paths・runtime parameter keysは未実装（follow-up）。
+- [ ] `DC-CMD-001`がendpoint、CLI option、npm script、Compose service、pathの各負例をrule ID付きで検出する。→ npm script区分のみ実装済み。endpoint・CLI option・Compose service・pathの4区分は未実装（follow-up、下記「実装記録」参照）。
+- [x] コードフェンス外の説明、placeholder、外部URL、動的値を誤検出しない正常fixtureがある。→ npm script区分について、正常例・スコープ外文書除外の2 test fixtureを追加（下記参照）。他区分は該当区分自体が未実装のため対象外。
+- [x] manual/mutatingコマンドはCIで実行されず、データ消失・秘密情報・本番利用に関する警告と停止条件を維持する。→ 本Issueでは静的照合のみを追加し、CI実行コマンドやworkflowの変更は一切行っていない。
+- [x] localとCIが同じ`docs_check.py`から検査し、current repositoryでpassする。→ `check_npm_script_commands`を`docs_check.py`へ統合し、現行repositoryでpass済み（下記「実装記録」参照）。
+- [x] SafeMode、share/export、provider=`none`、import sanitizeの安全既定を変更しない。→ アプリ実装・workflowは無改修。
+- [ ] Doneの`DX-DOC-03`と`DOC-OPS-06`から本follow-upへ到達できる。→ 本セッションでは未確認・未対応（follow-up）。
 
 ## 検証計画
 
@@ -118,6 +118,21 @@ findingはrule ID、文書、行、検出token、照合先、正しい候補を�
   - `python 01_Plans/docs_check.py`
   - `git diff --check`
   - CIのblocking結果。
+
+## 実装記録（2026-07-17）: baseline修正 + `DC-CMD-001`（npm script区分のみ）
+
+本セッションでは、6区分（endpoint probe / CLI option / npm script / Compose service / repository path / runtime parameter key）のうち、issue自身が「決定論的に照合可能」と明示するnpm scriptだけを実装した。残り5区分は未実装のfollow-upとして明示的に残す（サイレントに省略しない）。
+
+- **baseline修正（既知バグ2件のうち1件が現存）**: `CONTRIBUTING.md`のCompose health probeが`http://localhost:8080/api/health`（誤り、`z`欠落）だったのを`/api/healthz`へ修正した。もう1件（E2E正本の`--files`参照）は`DX-E2E-08`で既に解消済みであることを確認した。current/public文書（README/CONTRIBUTING/04_Documentation/e2e_testing.md）を`grep`で監査し、`--files`参照が他に残っていないことを確認した。`01_Plans/issues/*.md`に残る多数の`--files`参照は、本Issueの`Scope:`が明示的に対象外とする内部issueメモ（実施時点の検証コマンド記録）であり、対応していない。
+- **`DC-CMD-001`（npm script区分）**: `01_Plans/docs_contract_checks.py`に`check_npm_script_commands()`を追加した。`npm run <name>`パターンを抽出し、`03_Implement/frontend/package.json`の`scripts`キーと照合する。対象はcurrent/public文書（`README.md`/`CONTRIBUTING.md`/`04_Documentation/`配下/`03_Implement/frontend/docs/e2e_testing.md`）に限定し、`00_Prompt`/`01_Plans`の内部issueメモは対象外とした（issueメモは実施時点の検証コマンドを記録する履歴であり、常設の利用者向けコピー対象ではないため）。`package.json`が存在しない実行コンテキスト（本モジュール自身の最小テストfixture等）ではfindingsを返さず、他ruleのテストを壊さないようにした。
+- **`docs_check.py`統合**: `check_npm_script_commands`を`run_docs_check()`へ配線した。追加の実行ステップは不要（既存の`docs_check.py`実行だけでnpm script区分も検査される）。
+- **テスト**: `01_Plans/tests/test_docs_contract_checks.py`に`NpmScriptCommandCheckTest`（3 test: 正常例、未知script検出、スコープ外文書の除外確認）を追加した。
+- **未実装（follow-up）**: endpoint probe allowlist、CLI option照合、Compose service照合、repository path照合、runtime parameter key照合の4区分＋残り1区分。`DX-DOC-03`/`DOC-OPS-06`からの導線確認、CI blocking化のMaintainer確認も未実施。
+
+検証結果:
+- `python3 -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 26/26 pass（新規3件含む、既存回帰なし）。
+- `python 01_Plans/docs_check.py`: pass（`active_memos=22, tracked_markdown=381`）。
+- `grep -E "api/health([^zA-Za-z0-9]|$)" CONTRIBUTING.md README.md 04_Documentation/*.md 03_Implement/frontend/docs/e2e_testing.md`: `/api/healthz`の正しい参照のみ、誤り0件。
 
 ## 補足
 

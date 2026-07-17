@@ -12,6 +12,7 @@ from docs_contract_checks import (
     check_current_history_headings,
     check_document_contract_baseline,
     check_history_metadata,
+    check_npm_script_commands,
     check_public_boundary,
     check_relative_links,
     check_safety_routes,
@@ -87,6 +88,7 @@ def run_docs_check(
     errors.extend(finding.render() for finding in check_history_metadata(repository_root))
     errors.extend(finding.render() for finding in check_public_boundary(repository_root))
     errors.extend(finding.render() for finding in check_safety_routes(repository_root))
+    errors.extend(finding.render() for finding in check_npm_script_commands(repository_root, markdown_paths))
     if run_tests:
         errors.extend(_run_contract_tests(repository_root))
 
