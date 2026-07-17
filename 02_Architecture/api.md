@@ -703,7 +703,7 @@ export type TenantScopedAccessRequestV1 = {
 - `noop`、endpoint欠損時noop fallback、`read_only` fail-safeはSaaS profileで禁止する。§8.3〜8.6の互換挙動はsingle-tenant profileだけに適用する。
 - auditにはtenantId、opaque actor/resource ID、action、decision、policy/capability version、correlation IDだけを記録し、本文、タイトル、role/group生値、tokenを記録しない。
 
-Tenant-scoped access-control entry pointは、TenantContext欠損、resource tenant欠損、両tenant不一致をそれぞれ`tenant_context_missing`、`resource_tenant_missing`、`tenant_mismatch`として外部PDP呼出し前にdenyする。このguardは`read_only` fail-safeから独立し、tenant境界の不備をread許可へ変換しない。現行Document routeは解決済みTenantContextをsubject/resource双方へ設定してguardを必須化したが、resourceのvisibility/policyRefをserver-side metadataから取得するlookupは未実装であり、公開client headerを使うsingle-tenant互換をSaaS境界として扱わない。
+Tenant-scoped access-control entry pointは、TenantContext欠損、resource tenant欠損、両tenant不一致をそれぞれ`tenant_context_missing`、`resource_tenant_missing`、`tenant_mismatch`として外部PDP呼出し前にdenyする。このguardは`read_only` fail-safeから独立し、tenant境界の不備をread許可へ変換しない。Document routeのresource解決もapplication lifecycleで設定するresolver境界とし、現行profileは公開headerを読む`SingleTenantHeaderResourceResolver`、将来SaaS profileはheaderを無視して`tenantId + docId`をDB lookupする`ServerOwnedDocumentResourceResolver`を使用する。後者は既存行のtenantを確認し、未整備のvisibility/policyRefを`Restricted`/欠損へ倒すためdeny modeで安全側に停止する。server-owned policy metadata storeとSaaS runtime配線は未実装であり、単一テナント互換resolverをSaaS境界として扱わない。
 
 ### 10.4 管理面の予約capability
 

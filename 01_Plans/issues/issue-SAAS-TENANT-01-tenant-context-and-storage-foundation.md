@@ -160,3 +160,11 @@
 - Document routeはaccess-control adapterの有無にかかわらず必須modeを適用する。既存の単一テナントadapter契約は既定の互換modeで維持し、SaaS profileの起動許可には使用しない。
 - 検証: Ruff pass、欠損・不一致でadapter未呼出し、一致時だけ呼出し、単一テナント互換、Document access-control/tenant isolationを含む近接30件pass。
 - resourceのtenant/visibility/policyRefを`tenantId + resourceId`でserver-side lookupする実装は未完了であり、現行header由来visibility/policyRefはSaaS認可根拠にできない。AC-4とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-17: server-owned Document resource resolver boundary
+
+- Document access resourceの組立てをapplication lifecycleで設定するresolverへ分離した。既定の`SingleTenantHeaderResourceResolver`は現行single-tenantのvisibility/policyRef header契約だけを維持する。
+- 将来SaaS用`ServerOwnedDocumentResourceResolver`は公開headerを無視し、`tenantId + docId`のtenant-scoped repository lookupで既存資源のtenantを取得する。他tenant・不明resourceはread/export等でPDP前に404とし、新規writeはactive TenantContextへserver-sideでscopeする。
+- server-owned policy metadata storeが未実装の間はvisibilityを`Restricted`、policyRefを欠損として返す。SaaS必須のdeny fail-safeでは外部PDPへ進まず安全側に停止するため、client headerでPublicやpolicyRefを偽装できない。
+- 検証: Ruff pass、legacy header互換、client header無視、既存resource lookup、PDP前404、新規write active tenant scope、Document access-control/tenant isolationを含む近接25件pass。
+- SaaS runtimeへのresolver配線、policy metadataの永続化・管理、実PDP capability評価は未完了であり、AC-4とSaaS起動拒否を継続する。

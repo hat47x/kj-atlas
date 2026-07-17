@@ -15,20 +15,21 @@ from kj_atlas_api.access_control import (
     AccessAction,
     AccessDecision,
     AccessRequest,
-    AccessResource,
     AuthContext,
     FailSafeMode,
     apply_tenant_boundary_guard,
     enforce_access,
-    normalize_policy_ref,
     parse_csv_header,
-    parse_visibility,
     resolve_access_decision,
 )
 from kj_atlas_api.audit import build_event
 from kj_atlas_api.auth_assurance import build_auth_assurance_metadata
 from kj_atlas_api.auth_context import resolve_identity_context
 from kj_atlas_api.db import get_db
+from kj_atlas_api.document_access_resource import (
+    DocumentAccessResourceResolver,
+    SingleTenantHeaderResourceResolver,
+)
 from kj_atlas_api.document_repository import (
     get_document_row,
     list_merge_decision_logs_by_group as list_merge_log_rows_by_group,
@@ -194,6 +195,18 @@ def _authorize_request(
         SingleTenantContextResolver(),
     )
     tenant = resolver.resolve(db=db, user_id=identity.user_id)
+    resource_resolver: DocumentAccessResourceResolver = getattr(
+        request.app.state,
+        "document_access_resource_resolver",
+        SingleTenantHeaderResourceResolver(),
+    )
+    resource = resource_resolver.resolve(
+        db=db,
+        request=request,
+        tenant=tenant,
+        action=action,
+        doc_id=doc_id,
+    )
     adapter = getattr(request.app.state, "access_control_adapter", None)
     if adapter is None:
         access_request = AccessRequest(
@@ -202,12 +215,7 @@ def _authorize_request(
             read_only=read_only,
             auth=identity.auth_context,
             tenant=tenant,
-            resource=AccessResource(
-                doc_id=doc_id,
-                visibility=parse_visibility(request.headers.get("x-doc-visibility")),
-                policy_ref=normalize_policy_ref(request.headers.get("x-policy-ref")),
-                tenant_id=tenant.tenant_id,
-            ),
+            resource=resource,
         )
         tenant_boundary = apply_tenant_boundary_guard(
             access_request,
@@ -236,12 +244,7 @@ def _authorize_request(
             aal=identity.auth_context.aal,
             auth_time=identity.auth_context.auth_time,
         ),
-        resource=AccessResource(
-            doc_id=doc_id,
-            visibility=parse_visibility(request.headers.get("x-doc-visibility")),
-            policy_ref=normalize_policy_ref(request.headers.get("x-policy-ref")),
-            tenant_id=tenant.tenant_id,
-        ),
+        resource=resource,
     )
 
     fail_safe_mode = getattr(request.app.state, "access_control_fail_safe_mode", "read_only")
