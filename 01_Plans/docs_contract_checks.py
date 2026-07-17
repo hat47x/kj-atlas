@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import subprocess
 from dataclasses import dataclass
@@ -15,6 +16,7 @@ HISTORY_METADATA_RULE_ID = "DC-HIS-001"
 ARCHITECTURE_BASELINE_RULE_ID = "DC-ARC-001"
 PUBLIC_BOUNDARY_RULE_ID = "DC-PUB-001"
 SAFETY_ROUTE_RULE_ID = "DC-SAF-001"
+NPM_SCRIPT_COMMAND_RULE_ID = "DC-CMD-001"
 DOCUMENT_TYPE_RE = re.compile(r"export type (Document\w*)\s*=\s*\{\s*\r?\n\s*version:\s*([^;]+);")
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
@@ -111,6 +113,18 @@ PUBLIC_SAFETY_ROUTES = {
     "ce2_low_risk_ai_assist.md": ("proposal-only", "human_reviewed"),
     "configuration.md": ("KJ_ATLAS_LLM_PROVIDER=none",),
 }
+NPM_SCRIPT_RE = re.compile(r"npm run\s+([\w:-]+)")
+FRONTEND_PACKAGE_JSON_PATH = Path("03_Implement/frontend/package.json")
+# DC-CMD-001 only scans the current/public surface a user or fresh-clone
+# contributor would copy commands from -- not 00_Prompt/01_Plans process
+# memos, which record historical verification commands (run against
+# whatever the script set was at the time) rather than a live copy target.
+CURRENT_PUBLIC_DOC_ROOTS = (
+    Path("README.md"),
+    Path("CONTRIBUTING.md"),
+    Path("04_Documentation"),
+    Path("03_Implement/frontend/docs/e2e_testing.md"),
+)
 
 
 @dataclass(frozen=True)
@@ -558,6 +572,63 @@ def check_safety_routes(
     return findings
 
 
+def _is_current_public_doc(relative_path: Path) -> bool:
+    for scoped_root in CURRENT_PUBLIC_DOC_ROOTS:
+        if relative_path == scoped_root or scoped_root in relative_path.parents:
+            return True
+    return False
+
+
+def check_npm_script_commands(
+    root: Path,
+    markdown_paths: list[Path],
+    package_json_path: Path = FRONTEND_PACKAGE_JSON_PATH,
+) -> list[DocsCheckFinding]:
+    """Return DC-CMD-001 findings for `npm run <script>` examples with no matching script.
+
+    A copyable `npm run <script>` example is a user-facing interface, not
+    prose; if the script was renamed or removed, the documented command fails
+    the moment someone actually runs it. Scoped to current/public
+    documentation only -- see CURRENT_PUBLIC_DOC_ROOTS.
+
+    Returns no findings (rather than raising) when package_json_path doesn't
+    exist under root -- callers that only need the repository's other
+    contract checks (e.g. isolated fixture directories in this module's own
+    tests) aren't required to also provide a frontend package.json.
+    """
+    repository_root = root.resolve()
+    resolved_package_json = repository_root / package_json_path
+    if not resolved_package_json.exists():
+        return []
+    scripts = set(json.loads(resolved_package_json.read_text(encoding="utf-8")).get("scripts", {}).keys())
+
+    findings: list[DocsCheckFinding] = []
+    for supplied_path in sorted(markdown_paths, key=lambda path: path.as_posix()):
+        relative_path = supplied_path if not supplied_path.is_absolute() else supplied_path.relative_to(repository_root)
+        if not _is_current_public_doc(relative_path):
+            continue
+
+        source = repository_root / relative_path
+        text = source.read_text(encoding="utf-8")
+        for match in NPM_SCRIPT_RE.finditer(text):
+            script_name = match.group(1)
+            if script_name in scripts:
+                continue
+            line = text.count("\n", 0, match.start()) + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=NPM_SCRIPT_COMMAND_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=line,
+                    target=f"npm run {script_name}",
+                    message=f"npm script '{script_name}' does not exist in {package_json_path.as_posix()}",
+                    fix_hint="Use an existing script name from package.json's scripts, or add the script if it is genuinely new.",
+                )
+            )
+
+    return findings
+
+
 def tracked_markdown_paths(root: Path) -> list[Path]:
     """Return tracked Markdown paths so generated and dependency files stay out of scope."""
     result = subprocess.run(
@@ -585,6 +656,7 @@ def main() -> int:
     findings.extend(check_history_metadata(root))
     findings.extend(check_public_boundary(root))
     findings.extend(check_safety_routes(root))
+    findings.extend(check_npm_script_commands(root, markdown_paths))
 
     if findings:
         print("documentation contract validation failed:")

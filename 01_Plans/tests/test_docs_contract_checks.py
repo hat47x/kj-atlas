@@ -434,5 +434,64 @@ class SafetyRouteTest(unittest.TestCase):
         self.assertIn("human_reviewed", targets)
 
 
+class NpmScriptCommandCheckTest(unittest.TestCase):
+    def _write_package_json(self, root: Path, scripts: dict[str, str]) -> None:
+        package_dir = root / "03_Implement" / "frontend"
+        package_dir.mkdir(parents=True, exist_ok=True)
+        (package_dir / "package.json").write_text(
+            f'{{"name": "kj-atlas-frontend", "scripts": {_scripts_json(scripts)}}}',
+            encoding="utf-8",
+        )
+
+    def test_accepts_existing_script_names_in_public_docs(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_package_json(root, {"typecheck": "tsc --noEmit", "test": "vitest run"})
+            readme = root / "README.md"
+            readme.write_text("```bash\nnpm run typecheck\nnpm run test\n```\n", encoding="utf-8")
+
+            findings = MODULE.check_npm_script_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_reports_script_name_missing_from_package_json(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_package_json(root, {"typecheck": "tsc --noEmit"})
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "installation.md"
+            doc.write_text("```bash\nnpm run docs-check\n```\n", encoding="utf-8")
+
+            findings = MODULE.check_npm_script_commands(root, [Path("04_Documentation/installation.md")])
+
+        self.assertEqual(len(findings), 1)
+        finding = findings[0]
+        self.assertEqual(finding.rule_id, "DC-CMD-001")
+        self.assertEqual(finding.path, "04_Documentation/installation.md")
+        self.assertEqual(finding.line, 2)
+        self.assertEqual(finding.target, "npm run docs-check")
+        self.assertIn("does not exist", finding.message)
+
+    def test_ignores_process_memos_outside_the_public_doc_scope(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_package_json(root, {"typecheck": "tsc --noEmit"})
+            issues_dir = root / "01_Plans" / "issues"
+            issues_dir.mkdir(parents=True)
+            memo = issues_dir / "issue-example.md"
+            memo.write_text("検証コマンド宣言: `npm run docs-check`\n", encoding="utf-8")
+
+            findings = MODULE.check_npm_script_commands(root, [Path("01_Plans/issues/issue-example.md")])
+
+        self.assertEqual(findings, [])
+
+
+def _scripts_json(scripts: dict[str, str]) -> str:
+    import json
+
+    return json.dumps(scripts)
+
+
 if __name__ == "__main__":
     unittest.main()
