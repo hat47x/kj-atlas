@@ -147,3 +147,9 @@
 - Document routeのTenantContext供給をapplication lifecycleで設定する`TenantContextResolver`境界へ移し、既定は既存`SingleTenantContextResolver`とした。request header/query/path/payloadからresolverやtenantIdを選択する分岐は設けない。
 - integration testでは信頼済みresolverをtenant A/Bへ切り替え、同一`/docs/shared-doc`が各tenant固有の本文だけを返し、PUTが選択tenantの複合key行だけを更新することを固定した。membership外tenant相当では同じ404となる。
 - 検証: Ruff pass、同一docId GET/PUT matrix、repository、Document roundtrip/access-control近接46件pass・PostgreSQL条件付き21件skip。production verified resolverのauth edge接続は未実装のためSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-17: PostgreSQL transaction-local RLS guard
+
+- Alembic `20260717_0009`でPostgreSQLの`documents`と`merge_decision_logs`へENABLE/FORCE RLS policyを追加した。policyは`current_setting('kj_atlas.tenant_id', true)`と行tenantが一致する場合だけUSING/WITH CHECKを許可し、setting欠落・空値はread/writeとも不許可になる。SQLite migrationはno-opとする。
+- tenant-scoped repositoryは各操作前にparameter bindingされた`set_config('kj_atlas.tenant_id', tenantId, true)`を実行する。第3引数`true`によるtransaction-local設定のためcommit/rollback後のpool再利用へtenant値を持ち越さない設計とし、任意tenant文字列をSQLへ連結しない。
+- 検証: Ruff pass、DB guard parameter binding/SQLite no-op/blank拒否、migration lineage、SQLite upgrade/downgrade、同一docId repository/API近接14件pass。PostgreSQL直接SQL・connection pool実地テストは環境不在のため未実施であり、AC-5とSaaS起動拒否を継続する。

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from kj_atlas_api.models import DocumentRow, MergeDecisionLogRow
 from kj_atlas_api.tenant_context import TenantContext
+from kj_atlas_api.tenant_db_guard import apply_database_tenant_context
 
 
 def get_document_row(
@@ -15,6 +16,7 @@ def get_document_row(
     tenant: TenantContext,
     doc_id: str,
 ) -> DocumentRow | None:
+    apply_database_tenant_context(db=db, tenant=tenant)
     return db.scalar(
         select(DocumentRow).where(
             DocumentRow.tenant_id == tenant.tenant_id,
@@ -28,6 +30,7 @@ def list_document_rows(
     *,
     tenant: TenantContext,
 ) -> Sequence[DocumentRow]:
+    apply_database_tenant_context(db=db, tenant=tenant)
     return db.scalars(
         select(DocumentRow)
         .where(DocumentRow.tenant_id == tenant.tenant_id)
@@ -42,6 +45,7 @@ def list_merge_decision_logs_by_group(
     doc_id: str,
     group_id: str,
 ) -> Sequence[MergeDecisionLogRow]:
+    apply_database_tenant_context(db=db, tenant=tenant)
     return db.scalars(
         select(MergeDecisionLogRow)
         .where(MergeDecisionLogRow.tenant_id == tenant.tenant_id)
@@ -58,6 +62,7 @@ def list_merge_decision_logs_by_snapshot(
     doc_id: str,
     snapshot_version: str,
 ) -> Sequence[MergeDecisionLogRow]:
+    apply_database_tenant_context(db=db, tenant=tenant)
     return db.scalars(
         select(MergeDecisionLogRow)
         .where(MergeDecisionLogRow.tenant_id == tenant.tenant_id)

@@ -985,12 +985,12 @@ tenantIdはserver-managed列であり、`DocumentV1` payload、view.json、impor
 | 項目 | 状態 | 解禁上の扱い |
 | --- | --- | --- |
 | tenant/IdP/binding/membership表 | Expand済み | `local-default`互換だけに使用 |
-| Document/判断ログtenant列・index | Expand済み | 暗黙既定値があるためSaaS境界には未使用 |
+| Document/判断ログtenant列・複合key | 複合PK/unique/FKまで実装済み | PostgreSQL実地検証と全consumer伝播までSaaS blocker継続 |
 | 新規JIT/strict Userのlocal membership | 実装済み | single-tenant互換用 |
-| Document/判断ログ/backfillのtenant-scoped repository | `local-default`で実装済み。認証済み利用者はUser/Tenant/Membershipのactive状態を各requestで確認し、内部TenantContextをrepository・PDP payload・auditへ伝播 | verified claim/host mappingと複合キーが未実装のためSaaS blockerは継続 |
+| Document/判断ログ/backfillのtenant-scoped repository | 解決済みTenantContext必須で実装済み。認証済み利用者はUser/Tenant/Membershipのactive状態を各requestで確認し、repository・PDP payload・auditへ伝播 | production auth edge接続と全consumer伝播までSaaS blocker継続 |
 | `user_identities`の`identityProviderId + subject`移行 | Expand・backfill・二重書き済み。lookupは新binding優先、旧行fallback成功時は自己補完、二重一致は拒否 | 互換IdPは検証済みissuerではなく、旧列contractも残るためSaaS blockerは継続 |
 | Document複合PK/FK、全consumerのtenant必須化 | Document/判断ログの複合PK・unique・FKとrepository経路は実装済み | PostgreSQL実地検証とMCP/worker/cache/storage等のconsumer伝播が未完了のためSaaS blocker継続 |
-| PostgreSQL RLS等のDB側guard | 未実装 | SaaS blocker |
+| PostgreSQL RLS等のDB側guard | Document/判断ログのENABLE+FORCE RLS policy、repositoryごとのtransaction-local `kj_atlas.tenant_id`設定を実装。SQLiteはno-op | PostgreSQL直接SQL・pool再利用の実地matrixが未実施のためSaaS blocker継続 |
 | verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaim再照合、membership allowlist内部service、Document routeの信頼済みresolver境界、同一docIdのGET/PUT tenant A/B matrixまで実装 | auth edgeからのverified evidence接続、trusted host mapping、公開session/capability API、MCP/worker/browserを含む完全matrixは未実装のためblocker継続 |
 
 ## 11. Polygon contract keys（FB-P0-2A2B2C）
