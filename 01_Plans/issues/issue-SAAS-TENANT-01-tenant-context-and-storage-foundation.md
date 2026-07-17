@@ -175,3 +175,11 @@
 - recent document ID、view/pack visibility、view mode、view locale、QueryPreset、reviewer ref、empty-canvas onboarding、minimap、advanced UI preferenceはoptional scopeを受け取り、scope指定時はtenant/principal/deployment別keyへ保存する。QueryPreset panelはscope変更時に保存済み一覧を再読込し、入力中の名称・scope・depth・filterを初期化する。scope省略時は現行single-tenant keyを維持する。production codeのlocalStorage直接利用はstorage moduleへ集約し、sessionStorage直接利用はない。
 - 検証: tenant/principal/deployment分離、delimiter衝突防止、不正scope拒否、scope限定削除、recent/view visibility/QueryPresetのtenant A/B分離・旧key互換・正規化15件、view mode/localeのtenant A/B分離・旧key互換10件、reviewer/onboarding/minimapのscope分離11件、advanced UIのscope分離・storage unavailable 3件、UI regression 32件pass、frontend typecheck pass。
 - 公開session contextからのscope配線、tenant切替時のDOM・memory・request cache・object URL破棄は未実装であり、AC-8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-17: session context response boundary
+
+- 計画中の`TenantSessionContextV1`へserver-managed opaque `principalId`を追加した。表示名、email、外部IdP subjectをbrowser storage scopeへ使わず、認証済みUser IDだけを供給する契約とした。
+- 公開routeより先に内部session context builderを追加した。builderは認証済みprincipal、active TenantContextとmembership allowlistの再一致、明示注入されたtrusted capability resolverのsnapshotを必須とし、tenant候補を検索入力やclient値から組み立てない。
+- capability IDとversionの空値、前後空白、制御文字、resolver例外は`503 capability_resolution_unavailable`へ正規化し、欠損・不正snapshotを成功応答として誤認させない。匿名と停止・不一致tenantではpolicy resolverを呼ばない。
+- 検証: session contextの正常系、匿名、停止tenant、snapshot不正、resolver例外の7件、verified tenant serviceとの近接16件、Ruff、backend全体348件pass・PostgreSQL等の条件付き24件skip。
+- 公開`GET /session/context` / active-tenant route、auth edge接続、実PDP capability resolver、token期限に連動したcache invalidationは未実装であり、AC-4/6/7とSaaS起動拒否を継続する。
