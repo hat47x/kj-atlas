@@ -95,6 +95,15 @@ alembic upgrade head
 pytest -m postgres
 ```
 
+tenant RLSの実地matrixは、migration所有者とは別のruntime roleで実行します。runtime roleには対象schemaの通常DML権限を付与し、superuser属性と`BYPASSRLS`を付与しないでください。同じ資格情報やRLSを迂回できるroleではテストが失敗します。
+
+```bash
+export KJ_ATLAS_DATABASE_URL="postgresql+psycopg://migration_owner:...@localhost:5432/kj_atlas"
+export KJ_ATLAS_TEST_POSTGRES_RUNTIME_DATABASE_URL="postgresql+psycopg://kj_atlas_runtime:...@localhost:5432/kj_atlas"
+export KJ_ATLAS_RUN_PG_RLS_TESTS=1
+pytest -q tests/test_document_access_rls_postgres.py
+```
+
 Auth federation Level2（Mock SP/IdP）を実行する場合:
 
 ```bash

@@ -147,6 +147,8 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | Key | Owner | Default | Purpose |
 | --- | --- | --- | --- |
 | `KJ_ATLAS_RUN_PG_TESTS` | backend pytest | 未設定 | PostgreSQL roundtrip tests を明示的に実行する opt-in flag |
+| `KJ_ATLAS_RUN_PG_RLS_TESTS` | backend pytest | 未設定 | 非superuser・非BYPASSRLS runtime roleによるtenant RLS実地matrixを明示実行するopt-in flag |
+| `KJ_ATLAS_TEST_POSTGRES_RUNTIME_DATABASE_URL` | backend pytest | 未設定 | RLS実地matrix専用のruntime role接続URL。migration用`KJ_ATLAS_DATABASE_URL`と別資格情報を必須とする |
 | `KJ_ATLAS_AUTH_PROVIDER_PROFILE_DIR` | Auth Level2 test harness | `03_Implement/backend/tests/federation/profiles` | provider profile fixture の読み込み先 |
 | `KJ_ATLAS_AUTH_LEVEL2_BACKEND_PORT` | `tests/scripts/run_auth_level2.sh` | `18000` | Auth Level2 mock 検証で起動する backend port |
 | `KJ_ATLAS_AUTH_LEVEL2_SP_PORT` | `tests/scripts/run_auth_level2.sh` | `18080` | Auth Level2 mock SP port |

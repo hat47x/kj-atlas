@@ -1,0 +1,254 @@
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+from collections.abc import Iterator
+from pathlib import Path
+from uuid import uuid4
+
+import pytest
+from sqlalchemy import create_engine, delete, select, text, update
+from sqlalchemy.engine import Engine
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from kj_atlas_api.db import _normalize_database_url
+from kj_atlas_api.models import (
+    DocumentAccessAdminAuditEventRow,
+    DocumentAccessMetadataRow,
+    DocumentRow,
+    TenantRow,
+)
+from kj_atlas_api.tenant_context import TenantContext
+from kj_atlas_api.tenant_db_guard import apply_database_tenant_context
+
+
+RUN_RLS_TESTS_ENV = "KJ_ATLAS_RUN_PG_RLS_TESTS"
+ADMIN_DATABASE_URL_ENV = "KJ_ATLAS_DATABASE_URL"
+RUNTIME_DATABASE_URL_ENV = "KJ_ATLAS_TEST_POSTGRES_RUNTIME_DATABASE_URL"
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+
+
+def _tenant(tenant_id: str) -> TenantContext:
+    return TenantContext(
+        tenant_id=tenant_id,
+        membership_id=f"membership-{tenant_id}",
+        resolved_by="verified_claim",
+    )
+
+
+@pytest.fixture(scope="module")
+def postgres_rls_engines() -> Iterator[tuple[Engine, Engine]]:
+    if os.getenv(RUN_RLS_TESTS_ENV) != "1":
+        pytest.skip(
+            f"set {RUN_RLS_TESTS_ENV}=1 with separate admin/runtime PostgreSQL URLs",
+            allow_module_level=False,
+        )
+
+    admin_url = os.getenv(ADMIN_DATABASE_URL_ENV, "")
+    runtime_url = os.getenv(RUNTIME_DATABASE_URL_ENV, "")
+    if not admin_url.startswith("postgresql") or not runtime_url.startswith("postgresql"):
+        pytest.fail(
+            f"{ADMIN_DATABASE_URL_ENV} and {RUNTIME_DATABASE_URL_ENV} must be PostgreSQL URLs"
+        )
+    if admin_url == runtime_url:
+        pytest.fail("RLS verification requires distinct migration and runtime credentials")
+
+    migration_env = os.environ.copy()
+    migration_env[ADMIN_DATABASE_URL_ENV] = admin_url
+    subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=BACKEND_DIR,
+        env=migration_env,
+        check=True,
+    )
+
+    admin_engine = create_engine(_normalize_database_url(admin_url))
+    runtime_engine = create_engine(
+        _normalize_database_url(runtime_url),
+        pool_size=1,
+        max_overflow=0,
+    )
+    try:
+        with runtime_engine.connect() as connection:
+            posture = connection.execute(
+                text(
+                    "SELECT rolsuper, rolbypassrls "
+                    "FROM pg_roles WHERE rolname = current_user"
+                )
+            ).one()
+            assert posture.rolsuper is False, "runtime role must not be a superuser"
+            assert posture.rolbypassrls is False, "runtime role must not have BYPASSRLS"
+            assert connection.execute(text("SHOW row_security")).scalar_one() == "on"
+        yield admin_engine, runtime_engine
+    finally:
+        runtime_engine.dispose()
+        admin_engine.dispose()
+
+
+def _seed_tenant_documents(
+    *,
+    admin_engine: Engine,
+    runtime_engine: Engine,
+    tenant_ids: tuple[str, str],
+    doc_ids: tuple[str, str],
+) -> None:
+    with Session(admin_engine) as db:
+        for tenant_id in tenant_ids:
+            db.add(
+                TenantRow(
+                    id=tenant_id,
+                    display_name=tenant_id,
+                    lifecycle_state="active",
+                    created_at="2026-07-17T00:00:00Z",
+                    updated_at="2026-07-17T00:00:00Z",
+                )
+            )
+        db.commit()
+
+    for index, (tenant_id, doc_id) in enumerate(zip(tenant_ids, doc_ids, strict=True)):
+        with Session(runtime_engine) as db:
+            apply_database_tenant_context(db=db, tenant=_tenant(tenant_id))
+            db.add(
+                DocumentRow(
+                    tenant_id=tenant_id,
+                    id=doc_id,
+                    version=1,
+                    updated_at="2026-07-17T00:00:00Z",
+                    payload_json="{}",
+                )
+            )
+            db.add(
+                DocumentAccessMetadataRow(
+                    tenant_id=tenant_id,
+                    doc_id=doc_id,
+                    visibility="Public",
+                    policy_binding_id=None,
+                    policy_version=f"policy-v{index + 1}",
+                    updated_at="2026-07-17T00:00:00Z",
+                )
+            )
+            db.add(
+                DocumentAccessAdminAuditEventRow(
+                    event_id=f"audit-{uuid4()}",
+                    tenant_id=tenant_id,
+                    principal_id=f"principal-{index + 1}",
+                    doc_id=doc_id,
+                    action="document.policy.update",
+                    decision="allowed",
+                    policy_version=f"policy-v{index + 1}",
+                    capability_version="capability-v1",
+                    correlation_id=f"correlation-{uuid4()}",
+                    occurred_at="2026-07-17T00:00:00Z",
+                )
+            )
+            db.commit()
+
+
+def _cleanup(
+    *,
+    admin_engine: Engine,
+    tenant_ids: tuple[str, str],
+) -> None:
+    for tenant_id in tenant_ids:
+        with Session(admin_engine) as db:
+            apply_database_tenant_context(db=db, tenant=_tenant(tenant_id))
+            db.execute(
+                delete(DocumentAccessAdminAuditEventRow).where(
+                    DocumentAccessAdminAuditEventRow.tenant_id == tenant_id
+                )
+            )
+            db.execute(
+                delete(DocumentAccessMetadataRow).where(
+                    DocumentAccessMetadataRow.tenant_id == tenant_id
+                )
+            )
+            db.execute(delete(DocumentRow).where(DocumentRow.tenant_id == tenant_id))
+            db.commit()
+    with Session(admin_engine) as db:
+        db.execute(delete(TenantRow).where(TenantRow.id.in_(tenant_ids)))
+        db.commit()
+
+
+@pytest.mark.postgres
+def test_document_access_metadata_and_audit_rls_fail_closed_across_pool_reuse(
+    postgres_rls_engines: tuple[Engine, Engine],
+) -> None:
+    admin_engine, runtime_engine = postgres_rls_engines
+    suffix = uuid4().hex
+    tenant_ids = (f"rls-a-{suffix}", f"rls-b-{suffix}")
+    doc_ids = (f"doc-a-{suffix}", f"doc-b-{suffix}")
+
+    _seed_tenant_documents(
+        admin_engine=admin_engine,
+        runtime_engine=runtime_engine,
+        tenant_ids=tenant_ids,
+        doc_ids=doc_ids,
+    )
+    try:
+        with Session(runtime_engine) as db:
+            apply_database_tenant_context(db=db, tenant=_tenant(tenant_ids[0]))
+            metadata = db.scalars(select(DocumentAccessMetadataRow)).all()
+            audit_events = db.scalars(select(DocumentAccessAdminAuditEventRow)).all()
+            assert [(row.tenant_id, row.doc_id) for row in metadata] == [
+                (tenant_ids[0], doc_ids[0])
+            ]
+            assert [(row.tenant_id, row.doc_id) for row in audit_events] == [
+                (tenant_ids[0], doc_ids[0])
+            ]
+            assert (
+                db.scalars(
+                    select(DocumentAccessMetadataRow).where(
+                        DocumentAccessMetadataRow.tenant_id == tenant_ids[1]
+                    )
+                ).all()
+                == []
+            )
+            db.commit()
+
+        # The pool has one connection. Transaction-local tenant state must not leak
+        # into its next checkout when no context is applied.
+        with Session(runtime_engine) as db:
+            assert db.scalars(select(DocumentAccessMetadataRow)).all() == []
+            assert db.scalars(select(DocumentAccessAdminAuditEventRow)).all() == []
+
+        with Session(runtime_engine) as db:
+            apply_database_tenant_context(db=db, tenant=_tenant(tenant_ids[0]))
+            cross_tenant_update = db.execute(
+                update(DocumentAccessMetadataRow)
+                .where(DocumentAccessMetadataRow.tenant_id == tenant_ids[1])
+                .values(
+                    policy_version="cross-tenant-write",
+                    updated_at="2026-07-17T00:00:01Z",
+                )
+            )
+            assert cross_tenant_update.rowcount == 0
+            db.commit()
+
+        with Session(runtime_engine) as db:
+            apply_database_tenant_context(db=db, tenant=_tenant(tenant_ids[1]))
+            tenant_b_metadata = db.scalar(select(DocumentAccessMetadataRow))
+            assert tenant_b_metadata is not None
+            assert tenant_b_metadata.policy_version == "policy-v2"
+
+        with Session(runtime_engine) as db:
+            db.add(
+                DocumentAccessAdminAuditEventRow(
+                    event_id=f"audit-{uuid4()}",
+                    tenant_id=tenant_ids[0],
+                    principal_id="principal-missing-context",
+                    doc_id=doc_ids[0],
+                    action="document.policy.update",
+                    decision="allowed",
+                    policy_version="policy-v1",
+                    capability_version="capability-v1",
+                    correlation_id=f"correlation-{uuid4()}",
+                    occurred_at="2026-07-17T00:00:01Z",
+                )
+            )
+            with pytest.raises(SQLAlchemyError):
+                db.commit()
+            db.rollback()
+    finally:
+        _cleanup(admin_engine=admin_engine, tenant_ids=tenant_ids)
