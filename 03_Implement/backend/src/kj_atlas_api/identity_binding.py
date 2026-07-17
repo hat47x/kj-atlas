@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from hashlib import sha256
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.models import (
@@ -10,6 +11,7 @@ from kj_atlas_api.models import (
     IdentityProviderRow,
     TenantIdentityProviderRow,
     TenantRow,
+    UserIdentityRow,
 )
 from kj_atlas_api.tenant_foundation import LOCAL_DEFAULT_TENANT_DISPLAY_NAME
 
@@ -22,6 +24,10 @@ class LegacyIdentityProviderBinding:
     identity_provider_id: str
     issuer: str
     audience: str
+
+
+class IdentityMappingConflictError(RuntimeError):
+    pass
 
 
 def normalize_provider(raw_provider: str) -> str:
@@ -100,3 +106,64 @@ def ensure_legacy_identity_provider(
     # graph before it has been flushed.
     db.flush()
     return binding
+
+
+def resolve_user_identity(
+    *,
+    db: Session,
+    provider: str,
+    subject: str,
+) -> UserIdentityRow | None:
+    """Prefer the structured IdP binding while retaining a bounded legacy fallback."""
+    binding = legacy_identity_provider_binding(provider)
+    structured_matches = (
+        db.query(UserIdentityRow)
+        .filter(
+            UserIdentityRow.identity_provider_id == binding.identity_provider_id,
+            UserIdentityRow.subject == subject,
+        )
+        .limit(2)
+        .all()
+    )
+    legacy_matches = (
+        db.query(UserIdentityRow)
+        .filter(
+            func.lower(UserIdentityRow.provider) == normalize_provider(provider),
+            UserIdentityRow.external_uid == subject,
+        )
+        .limit(2)
+        .all()
+    )
+    matched_by_id = {
+        row.id: row
+        for row in [*structured_matches, *legacy_matches]
+    }
+    if len(matched_by_id) > 1:
+        raise IdentityMappingConflictError
+    return next(iter(matched_by_id.values()), None)
+
+
+def ensure_user_identity_binding(
+    *,
+    db: Session,
+    identity: UserIdentityRow,
+    provider: str,
+    subject: str,
+    timestamp: str,
+) -> bool:
+    """Fill expand columns on a legacy row without overwriting conflicting bindings."""
+    binding = ensure_legacy_identity_provider(
+        db=db,
+        provider=provider,
+        timestamp=timestamp,
+    )
+    if identity.identity_provider_id is None and identity.subject is None:
+        identity.identity_provider_id = binding.identity_provider_id
+        identity.subject = subject
+        return True
+    if (
+        identity.identity_provider_id != binding.identity_provider_id
+        or identity.subject != subject
+    ):
+        raise IdentityMappingConflictError
+    return False

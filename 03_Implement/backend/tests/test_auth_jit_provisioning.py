@@ -613,3 +613,95 @@ def test_suspended_membership_blocks_document_access(tmp_path) -> None:
             assert denied.json()["detail"]["code"] == "tenant_membership_inactive"
     finally:
         settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level1
+def test_identity_lookup_prefers_identity_provider_subject_binding(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    settings.allow_jit_provisioning = False
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, session_local = fixture
+            created = client.post(
+                "/admin/provision/users",
+                json={
+                    "provider": "oidc",
+                    "externalUid": "structured-subject",
+                    "displayName": "Structured",
+                },
+            )
+            assert created.status_code == 201
+
+            with session_local() as db:
+                identity = db.query(UserIdentityRow).one()
+                identity.provider = "retired-legacy-label"
+                identity.external_uid = "retired-legacy-subject"
+                db.commit()
+
+            resolved = client.post(
+                "/admin/provision/users",
+                json={
+                    "provider": "oidc",
+                    "externalUid": "structured-subject",
+                    "displayName": "Structured",
+                },
+            )
+            assert resolved.status_code == 200
+            assert resolved.json()["userId"] == created.json()["userId"]
+            assert resolved.json()["provisioned"] is False
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level1
+def test_legacy_identity_lookup_self_heals_expand_binding(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    settings.allow_jit_provisioning = False
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, session_local = fixture
+            with session_local() as db:
+                db.add(
+                    UserRow(
+                        id="legacy-user",
+                        display_name="Legacy",
+                        email=None,
+                        lifecycle_state="active",
+                        created_at="2026-07-17T00:00:00Z",
+                        updated_at="2026-07-17T00:00:00Z",
+                    )
+                )
+                db.add(
+                    UserIdentityRow(
+                        user_id="legacy-user",
+                        provider="oidc",
+                        external_uid="legacy-subject",
+                        identity_provider_id=None,
+                        subject=None,
+                        created_at="2026-07-17T00:00:00Z",
+                    )
+                )
+                db.commit()
+
+            resolved = client.post(
+                "/admin/provision/users",
+                json={
+                    "provider": "oidc",
+                    "externalUid": "legacy-subject",
+                    "displayName": "Legacy",
+                },
+            )
+            assert resolved.status_code == 200
+            assert resolved.json()["userId"] == "legacy-user"
+
+            with session_local() as db:
+                identity = db.query(UserIdentityRow).one()
+                assert identity.identity_provider_id is not None
+                assert identity.subject == "legacy-subject"
+                membership = db.get(
+                    TenantMembershipRow,
+                    (LOCAL_DEFAULT_TENANT_ID, "legacy-user"),
+                )
+                assert membership is not None
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit

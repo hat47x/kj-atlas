@@ -5,11 +5,15 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi import HTTPException, Request
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.access_control import AuthContext
-from kj_atlas_api.identity_binding import ensure_legacy_identity_provider
+from kj_atlas_api.identity_binding import (
+    IdentityMappingConflictError,
+    ensure_legacy_identity_provider,
+    ensure_user_identity_binding,
+    resolve_user_identity,
+)
 from kj_atlas_api.models import UserIdentityRow, UserRow
 from kj_atlas_api.reviewer_ref import (
     ReviewerRefResolutionInput,
@@ -46,24 +50,20 @@ def _normalize_provider(raw_provider: str | None) -> str:
 
 
 def _resolve_identity_row(*, db: Session, provider: str, external_uid: str) -> UserIdentityRow | None:
-    matched_rows = (
-        db.query(UserIdentityRow)
-        .filter(
-            func.lower(UserIdentityRow.provider) == provider,
-            UserIdentityRow.external_uid == external_uid,
+    try:
+        return resolve_user_identity(
+            db=db,
+            provider=provider,
+            subject=external_uid,
         )
-        .limit(2)
-        .all()
-    )
-    if len(matched_rows) > 1:
+    except IdentityMappingConflictError:
         raise HTTPException(
             status_code=409,
             detail={
                 "code": "identity_mapping_conflict",
                 "message": "Multiple identity mappings matched the same provider/externalUid pair.",
             },
-        )
-    return matched_rows[0] if matched_rows else None
+        ) from None
 
 
 def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdentity:
@@ -157,11 +157,29 @@ def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdenti
         db.commit()
     else:
         user_id = identity.user_id
-        if ensure_local_default_membership(
+        now_iso = _now_iso()
+        try:
+            identity_binding_changed = ensure_user_identity_binding(
+                db=db,
+                identity=identity,
+                provider=provider,
+                subject=external_uid,
+                timestamp=now_iso,
+            )
+        except IdentityMappingConflictError:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "identity_mapping_conflict",
+                    "message": "Identity binding conflicts with the verified provider/subject pair.",
+                },
+            ) from None
+        membership_changed = ensure_local_default_membership(
             db=db,
             user_id=user_id,
-            timestamp=_now_iso(),
-        ):
+            timestamp=now_iso,
+        )
+        if identity_binding_changed or membership_changed:
             db.commit()
 
     resolution = reviewer_ref_adapter.resolve(

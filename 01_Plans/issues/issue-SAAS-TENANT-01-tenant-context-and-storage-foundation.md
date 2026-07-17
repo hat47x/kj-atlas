@@ -115,3 +115,9 @@
 - Documentのread/write、判断ログ、類似候補、polygon handoffはresolverが返したTenantContextをrepositoryへ明示伝播する。`x-tenant-id`等のclient入力はresolverに渡さない。
 - AccessRequest/ResourceへTenantContextとresource tenantを追加し、外部PDP adapterへserver-resolved値だけを送る。view/export/context auditへ本文・title・membershipを含めず`tenantId`を追加した。
 - 検証: Ruff pass、TenantContext・PDP payload・JIT/strict・Document roundtrip/access-control/repository近接71件pass、PostgreSQL条件付き21件skip。verified claim/host mapping、session/capability API、複合Document key、RLSは未実装のためSaaS profileの起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-17: structured identity lookup
+
+- 認証と事前登録のidentity lookupを共通化し、決定的な互換`identity_provider_id + subject`を第一検索キー、旧`provider + external_uid`をbounded fallbackに変更した。同一requestで両keyが異なる行へ一致する場合は一律`identity_mapping_conflict`とする。
+- 旧行のexpand列が両方とも空の場合は、fallback成功後に互換IdP bindingとsubjectを補完する。既存の新bindingが入力provider/subjectと不一致の場合は上書きせず拒否する。
+- 検証: Ruff pass、JIT/strict・AuthContext・federation fixture・identity migration近接27件pass。検証済みissuer/audienceによるIdP選択は未実装であり、互換IdPをSaaS信頼根として扱わない。
