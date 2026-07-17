@@ -3,7 +3,7 @@
 > 現行のタグworkflowは検証用ビルドであり、インストール可能な製品一式を公開する処理ではない。この境界を先に明示し、未配布のものを「リリース済み」と誤認させない。
 
 - Type: Bug / Documentation / Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -80,17 +80,17 @@ Phase Bは複数の永続的な公開・供給網契約を選ぶため、本Issu
 
 ## 受入条件
 
-- [ ] `release.md`だけで、候補SHA固定から`vX.Y.Z`タグ、workflow確認、記録、No-Go時の停止までを順に実行できる。
-- [ ] タグ対象SHAについて、必須CIと`PRODUCT-QA-01`の人間確認をどのURL/記録で照合するか分かる。
-- [ ] frontend Actions artifactの名前、内容、取得場所、対象tag/SHA、保持・失効境界が明記される。
-- [ ] backend imageはbuild検証のみで配布されないこと、GitHub Release/registry/installer等を生成しないことが明記される。
-- [ ] `CHANGELOG.md`の版・日付・タグ・対象SHAが一意に対応し、`[Unreleased]`の切り出し手順がある。
-- [ ] release記録にtag、SHA、CI run、release run、gate decision、artifact、保持境界、既知制限、rollback/withdrawalを残せる。
-- [ ] `release.md`からdated E2Eログを現在候補の証跡として使う導線と、DOC-OPS工程・自己修復回数が除かれる。
-- [ ] contract testが少なくともtag pattern、frontend artifact名、backend no-push境界の文書driftを検出し、`docs_check.py`から実行される。
-- [ ] workflowが変わらないPhase Aでもテストが通り、将来workflowを変える場合は文書との同一PR更新を要求する。
-- [ ] SafeMode、share/export、import sanitize、provider=`none`、AI proposal-only、人間の最終判断を後退させない。
-- [ ] Phase Bを実施しない限り、公開文書が一時Actions artifactを正式な一般配布物として案内しない。
+- [x] `release.md`だけで、候補SHA固定から`vX.Y.Z`タグ、workflow確認、記録、No-Go時の停止までを順に実行できる。→ 「リリース判断の流れ」「タグ作成手順」「リリース記録に残す項目」「失敗時の扱い」を新設・整理済み（下記「実装記録」参照）。
+- [x] タグ対象SHAについて、必須CIと`PRODUCT-QA-01`の人間確認をどのURL/記録で照合するか分かる。→ 「リリース判断の流れ」に`PRODUCT-QA-01`のG0〜G7・価値ゲート確認を明記。
+- [x] frontend Actions artifactの名前、内容、取得場所、対象tag/SHA、保持・失効境界が明記される。→ 「workflowが生成する成果物（現行契約）」表に記載。
+- [x] backend imageはbuild検証のみで配布されないこと、GitHub Release/registry/installer等を生成しないことが明記される。→ 同表と冒頭「前提」節に明記。
+- [x] `CHANGELOG.md`の版・日付・タグ・対象SHAが一意に対応し、`[Unreleased]`の切り出し手順がある。→ release.mdに「CHANGELOG との対応」節を新設し、`CHANGELOG.md`冒頭からも相互参照。
+- [x] release記録にtag、SHA、CI run、release run、gate decision、artifact、保持境界、既知制限、rollback/withdrawalを残せる。→ 「リリース記録に残す項目」を全項目へ拡張。
+- [x] `release.md`からdated E2Eログを現在候補の証跡として使う導線と、DOC-OPS工程・自己修復回数が除かれる。→ `e2e_verification_log_2026-03-03.md`へのリンクと「運用手順（DOC-OPS-05）」「判断基準」「失敗時対応」の3節を削除済み（Git履歴で参照可能）。
+- [x] contract testが少なくともtag pattern、frontend artifact名、backend no-push境界の文書driftを検出し、`docs_check.py`から実行される。→ `01_Plans/tests/test_release_artifact_contract.py`を新規追加（`01_Plans/tests/`配下のため`docs_check.py`の`_run_contract_tests`から自動discoverされる）。
+- [x] workflowが変わらないPhase Aでもテストが通り、将来workflowを変える場合は文書との同一PR更新を要求する。→ 4 test全pass（下記「実装記録」参照）。将来のworkflow変更でtag pattern/artifact名/push設定が変わればcontract testが検出する。
+- [x] SafeMode、share/export、import sanitize、provider=`none`、AI proposal-only、人間の最終判断を後退させない。→ `.github/workflows/release.yml`・アプリ実装は無改修。
+- [x] Phase Bを実施しない限り、公開文書が一時Actions artifactを正式な一般配布物として案内しない。→ 「前提」節でPhase Bを明示的に未実施と記載。
 
 ## 検証計画
 
@@ -116,3 +116,16 @@ Phase Bは複数の永続的な公開・供給網契約を選ぶため、本Issu
 ## 完了条件
 
 Phase Aの現行契約が手順書・workflow・変更履歴・契約テストで一致し、maintainerが検証用タグビルドと正式配布の境界を説明できた時点でDoneとする。Phase Bの公開配布基盤は本IssueのDone条件に含めない。
+
+## Done 2026-07-17: Phase A 完了
+
+- **`04_Documentation/release.md`**: 「前提: 検証用タグビルドであり、正式配布ではない」「タグ作成手順」「workflowが生成する成果物（現行契約）」「CHANGELOG との対応」の4節を新設し、既存の「リリース判断の流れ」「リリース記録に残す項目」を拡張した。`.github/workflows/release.yml`の実際の動作（tag pattern `v*.*.*`、backend `push: false`＝配布なし、frontendは`frontend-dist-<tag>`というActions artifactのみ）と、checksum/provenance/SBOM/署名を生成しないことを明記した。`e2e_verification_log_2026-03-03.md`へのリンクと「運用手順（DOC-OPS-05）」「判断基準（DOC-OPS-05 品質ゲート）」「失敗時対応」の3節（文書保守者向けメタ工程）を削除した（Git履歴で参照可能、現行手順との混在を解消）。
+- **`CHANGELOG.md`**: 冒頭に、版の切り出し手順が`release.md`にあることの相互参照を1行追加した。
+- **`01_Plans/tests/test_release_artifact_contract.py`**: 新規contract test（4件）。tag pattern、frontend artifact名、backend no-push（`push: false`）、release.ymlがtest/pytest/playwrightを再実行しないことを、`.github/workflows/release.yml`本文と`release.md`本文の両方から検出する。`01_Plans/tests/`配下のため`docs_check.py`の`_run_contract_tests`から自動discoverされ、追加の配線は不要。
+- 実際のタグ・リリースは本Issueの範囲外（このリポジトリはまだ`v*.*.*`タグを一度も作成していない）。`.github/workflows/release.yml`・アプリ実装本体は無改修。
+
+検証結果:
+- `python3 -m unittest 01_Plans.tests.test_release_artifact_contract`: 4/4 pass。
+- `grep -E "(e2e_verification_log_2026-03-03|DOC-OPS-05|自己修復|4回目相当)" 04_Documentation/release.md`: 0件。
+- `python 01_Plans/docs_check.py`: pass。
+- `python 01_Plans/issues/validate_active_issue_memos.py`: pass。
