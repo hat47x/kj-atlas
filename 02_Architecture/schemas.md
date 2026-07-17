@@ -932,7 +932,7 @@ export type MergeDecisionRecord = {
 
 ### 10.4 SaaS tenant identity / persistence target（ADR-0059、L0 Planned）
 
-`ADR-0059`で次のtenant境界をAcceptedとする。Alembic `20260716_0006`では、新規tenant/IdP/membership表、Document/判断ログのtenant列、既存User/Document/判断ログの`local-default` backfillまでをexpand実装した。`20260717_0007`では既存providerラベルから互換IdPを決定的に生成し、`user_identities.identity_provider_id + subject`をbackfill、新規JIT/事前登録でも旧列と二重書きする。ただし、検証済みissuer/audienceへの切替、旧identity列のcontract、複合PK/FK、DB側tenant guard、TenantContext認可、越境テストが完了するまで共有SaaSへ適用しない。
+`ADR-0059`で次のtenant境界をAcceptedとする。Alembic `20260716_0006`では、新規tenant/IdP/membership表、Document/判断ログのtenant列、既存User/Document/判断ログの`local-default` backfillまでをexpand実装した。`20260717_0007`では既存providerラベルから互換IdPを決定的に生成し、`user_identities.identity_provider_id + subject`をbackfill、新規JIT/事前登録でも旧列と二重書きする。`20260717_0008`ではDocumentを`PRIMARY KEY (tenant_id, id)`、判断ログを`FOREIGN KEY (tenant_id, doc_id)`へ移行し、tenantごとの同一docIdを可能にする。ただし、PostgreSQL実地検証、検証済みissuer/audienceへの切替、旧identity列のcontract、DB側tenant guard、verified TenantContext認可、越境テストが完了するまで共有SaaSへ適用しない。
 
 ```ts
 export type TenantId = string;
@@ -989,7 +989,7 @@ tenantIdはserver-managed列であり、`DocumentV1` payload、view.json、impor
 | 新規JIT/strict Userのlocal membership | 実装済み | single-tenant互換用 |
 | Document/判断ログ/backfillのtenant-scoped repository | `local-default`で実装済み。認証済み利用者はUser/Tenant/Membershipのactive状態を各requestで確認し、内部TenantContextをrepository・PDP payload・auditへ伝播 | verified claim/host mappingと複合キーが未実装のためSaaS blockerは継続 |
 | `user_identities`の`identityProviderId + subject`移行 | Expand・backfill・二重書き済み。lookupは新binding優先、旧行fallback成功時は自己補完、二重一致は拒否 | 互換IdPは検証済みissuerではなく、旧列contractも残るためSaaS blockerは継続 |
-| Document複合PK/FK、全consumerのtenant必須化 | 未実装 | SaaS blocker |
+| Document複合PK/FK、全consumerのtenant必須化 | Document/判断ログの複合PK・unique・FKとrepository経路は実装済み | PostgreSQL実地検証とMCP/worker/cache/storage等のconsumer伝播が未完了のためSaaS blocker継続 |
 | PostgreSQL RLS等のDB側guard | 未実装 | SaaS blocker |
 | verified TenantContext / capability API / negative matrix | single-tenant内部resolverと停止membership拒否まで実装 | verified claim/host mapping、session/capability API、SaaS negative matrixは未実装のためblocker継続 |
 

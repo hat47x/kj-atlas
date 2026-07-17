@@ -6,7 +6,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from kj_atlas_api.backfill_identity_refs import run_backfill
-from kj_atlas_api.models import Base, DocumentRow, UserIdentityRow, UserRow
+from kj_atlas_api.models import (
+    Base,
+    DocumentRow,
+    LOCAL_DEFAULT_TENANT_ID,
+    UserIdentityRow,
+    UserRow,
+)
 
 
 def test_backfill_identity_refs_dry_run_then_apply(tmp_path) -> None:
@@ -65,7 +71,9 @@ def test_backfill_identity_refs_dry_run_then_apply(tmp_path) -> None:
     assert dry_stats.owner_refs_rewritten == 1
 
     with session_local() as db:
-        persisted = json.loads(db.get(DocumentRow, "doc-backfill").payload_json)
+        persisted = json.loads(
+            db.get(DocumentRow, (LOCAL_DEFAULT_TENANT_ID, "doc-backfill")).payload_json
+        )
         assert persisted["reviewers"][0]["reviewerRef"] == "user:sso:sub:alice"
 
     apply_stats = run_backfill(
@@ -76,7 +84,9 @@ def test_backfill_identity_refs_dry_run_then_apply(tmp_path) -> None:
     assert apply_stats.updated_documents == 1
 
     with session_local() as db:
-        persisted = json.loads(db.get(DocumentRow, "doc-backfill").payload_json)
+        persisted = json.loads(
+            db.get(DocumentRow, (LOCAL_DEFAULT_TENANT_ID, "doc-backfill")).payload_json
+        )
         assert persisted["reviewers"][0]["reviewerRef"] == "user:u-1"
         assert persisted["reviewEvents"][0]["reviewerRef"] == "user:u-1"
         assert persisted["cards"][0]["ownerRef"] == "user:u-1"

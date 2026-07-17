@@ -40,6 +40,10 @@ def test_sqlalchemy_metadata_contains_single_tenant_foundation(tmp_path: Path) -
             "tenant_memberships",
         }.issubset(inspector.get_table_names())
         assert "tenant_id" in {column["name"] for column in inspector.get_columns("documents")}
+        assert [
+            column.name
+            for column in Base.metadata.tables["documents"].primary_key.columns
+        ] == ["tenant_id", "id"]
         assert "tenant_id" in {
             column["name"] for column in inspector.get_columns("merge_decision_logs")
         }

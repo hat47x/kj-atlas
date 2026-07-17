@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy import Index, Integer, Text
-from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -78,17 +78,16 @@ class TenantMembershipRow(Base):
 
 class DocumentRow(Base):
     __tablename__ = "documents"
-    __table_args__ = (
-        Index("ix_documents_tenant_id_id", "tenant_id", "id", unique=True),
-    )
 
-    id: Mapped[str] = mapped_column(Text, primary_key=True)
     tenant_id: Mapped[str] = mapped_column(
         Text,
+        ForeignKey("tenants.id", name="fk_documents_tenant_id", ondelete="RESTRICT"),
+        primary_key=True,
         nullable=False,
         default=LOCAL_DEFAULT_TENANT_ID,
         server_default=LOCAL_DEFAULT_TENANT_ID,
     )
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
     version: Mapped[int] = mapped_column(Integer, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
     payload_json: Mapped[str] = mapped_column(Text, nullable=False)
@@ -136,7 +135,18 @@ class UserIdentityRow(Base):
 class MergeDecisionLogRow(Base):
     __tablename__ = "merge_decision_logs"
     __table_args__ = (
-        UniqueConstraint("doc_id", "decision_id", name="uq_merge_decision_logs_doc_decision"),
+        UniqueConstraint(
+            "tenant_id",
+            "doc_id",
+            "decision_id",
+            name="uq_merge_decision_logs_tenant_doc_decision",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "doc_id"],
+            ["documents.tenant_id", "documents.id"],
+            name="fk_merge_decision_logs_tenant_document",
+            ondelete="CASCADE",
+        ),
         Index("ix_merge_decision_logs_doc_group_id", "doc_id", "group_id", "id"),
         Index("ix_merge_decision_logs_doc_snapshot_id", "doc_id", "snapshot_version", "id"),
         Index(
@@ -162,7 +172,7 @@ class MergeDecisionLogRow(Base):
         default=LOCAL_DEFAULT_TENANT_ID,
         server_default=LOCAL_DEFAULT_TENANT_ID,
     )
-    doc_id: Mapped[str] = mapped_column(Text, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
+    doc_id: Mapped[str] = mapped_column(Text, nullable=False)
     decision_id: Mapped[str] = mapped_column(Text, nullable=False)
     group_id: Mapped[str] = mapped_column(Text, nullable=False)
     snapshot_version: Mapped[str] = mapped_column(Text, nullable=False)

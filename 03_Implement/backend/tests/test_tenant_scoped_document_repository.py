@@ -48,14 +48,14 @@ def test_repository_queries_are_tenant_scoped(tmp_path) -> None:
                         updated_at="2026-07-16T00:00:00Z",
                     ),
                     DocumentRow(
-                        id="doc-a",
+                        id="shared-doc",
                         tenant_id=tenant_a.tenant_id,
                         version=1,
                         updated_at="2026-07-16T00:00:00Z",
                         payload_json="{}",
                     ),
                     DocumentRow(
-                        id="doc-b",
+                        id="shared-doc",
                         tenant_id=tenant_b.tenant_id,
                         version=1,
                         updated_at="2026-07-16T00:00:00Z",
@@ -65,10 +65,18 @@ def test_repository_queries_are_tenant_scoped(tmp_path) -> None:
             )
             db.commit()
 
-            assert get_document_row(db, tenant=tenant_a, doc_id="doc-a") is not None
-            assert get_document_row(db, tenant=tenant_a, doc_id="doc-b") is None
-            assert [row.id for row in list_document_rows(db, tenant=tenant_a)] == ["doc-a"]
-            assert [row.id for row in list_document_rows(db, tenant=tenant_b)] == ["doc-b"]
+            row_a = get_document_row(db, tenant=tenant_a, doc_id="shared-doc")
+            row_b = get_document_row(db, tenant=tenant_b, doc_id="shared-doc")
+            assert row_a is not None
+            assert row_a.tenant_id == tenant_a.tenant_id
+            assert row_b is not None
+            assert row_b.tenant_id == tenant_b.tenant_id
+            assert [row.id for row in list_document_rows(db, tenant=tenant_a)] == [
+                "shared-doc"
+            ]
+            assert [row.id for row in list_document_rows(db, tenant=tenant_b)] == [
+                "shared-doc"
+            ]
     finally:
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
@@ -101,14 +109,14 @@ def test_merge_log_queries_are_tenant_scoped(tmp_path) -> None:
                         updated_at="2026-07-16T00:00:00Z",
                     ),
                     DocumentRow(
-                        id="doc-a",
+                        id="shared-doc",
                         tenant_id=tenant_a.tenant_id,
                         version=1,
                         updated_at="2026-07-16T00:00:00Z",
                         payload_json="{}",
                     ),
                     DocumentRow(
-                        id="doc-b",
+                        id="shared-doc",
                         tenant_id=tenant_b.tenant_id,
                         version=1,
                         updated_at="2026-07-16T00:00:00Z",
@@ -116,8 +124,8 @@ def test_merge_log_queries_are_tenant_scoped(tmp_path) -> None:
                     ),
                     MergeDecisionLogRow(
                         tenant_id=tenant_a.tenant_id,
-                        doc_id="doc-a",
-                        decision_id="decision-a",
+                        doc_id="shared-doc",
+                        decision_id="shared-decision",
                         group_id="shared-group",
                         snapshot_version="shared-snapshot",
                         decided_at="2026-07-16T00:00:00Z",
@@ -125,8 +133,8 @@ def test_merge_log_queries_are_tenant_scoped(tmp_path) -> None:
                     ),
                     MergeDecisionLogRow(
                         tenant_id=tenant_b.tenant_id,
-                        doc_id="doc-b",
-                        decision_id="decision-b",
+                        doc_id="shared-doc",
+                        decision_id="shared-decision",
                         group_id="shared-group",
                         snapshot_version="shared-snapshot",
                         decided_at="2026-07-16T00:00:00Z",
@@ -139,18 +147,20 @@ def test_merge_log_queries_are_tenant_scoped(tmp_path) -> None:
             group_rows = list_merge_decision_logs_by_group(
                 db,
                 tenant=tenant_a,
-                doc_id="doc-a",
+                doc_id="shared-doc",
                 group_id="shared-group",
             )
             snapshot_rows = list_merge_decision_logs_by_snapshot(
                 db,
                 tenant=tenant_a,
-                doc_id="doc-a",
+                doc_id="shared-doc",
                 snapshot_version="shared-snapshot",
             )
 
-            assert [row.decision_id for row in group_rows] == ["decision-a"]
-            assert [row.decision_id for row in snapshot_rows] == ["decision-a"]
+            assert [row.decision_id for row in group_rows] == ["shared-decision"]
+            assert [row.tenant_id for row in group_rows] == [tenant_a.tenant_id]
+            assert [row.decision_id for row in snapshot_rows] == ["shared-decision"]
+            assert [row.tenant_id for row in snapshot_rows] == [tenant_a.tenant_id]
     finally:
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
