@@ -642,10 +642,14 @@ export type AdminProvisionUserConflictError = {
 
 ## 10. SaaS TenantContext / capability契約（ADR-0059、L0 Planned）
 
-本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・越境テストが完了するまでSaaS profileを有効化しない。`GET /session/context`と`POST /session/active-tenant`のfail-closed route境界は実装済みだが、信頼済みauth edgeがidentity resolverとactive tenant session persisterを注入しない既定状態では503として閉じる。tenant switcherとSaaS runtime配線は未実装・非公開である。
+本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・越境テストが完了するまでSaaS profileを有効化しない。`GET /session/bootstrap-policy`、`GET /session/context`、`POST /session/active-tenant`のfail-closed route境界は実装済みだが、信頼済みauth edgeがidentity resolverとactive tenant session persisterを注入しない既定状態ではsession context系を503として閉じる。tenant switcherとSaaS runtime配線は未実装・非公開である。
 
 ### 10.1 session context（GET/POST実装済み・SaaS runtime gated）
 
+- `GET /session/bootstrap-policy`
+  - settings validation済みのserver runtime profileを起動時にsnapshotし、profile名やtenant情報を公開せず、`tenantSessionMode: "single-tenant" | "tenant-session-required"`だけを返す。header、query、Document payloadを判定根拠にしない。
+  - `local-dev`、`evaluation`、`enterprise-production`は`single-tenant`へ写像する。予約中の`saas-multitenant`は純粋なclosed-world resolver上では`tenant-session-required`へ写像するが、現行releaseのsettings validationはそれ以前に起動を拒否する。
+  - 未知・欠損profileは`503 runtime_policy_unavailable`として値を反射せず閉じる。成功・失敗とも`Cache-Control: no-store`と`Pragma: no-cache`を付ける。
 - `GET /session/context`
   - 現在の検証済みTenantContext、利用者がactive membershipを持つtenant候補、tenant-scoped capabilityを返す。
   - tenant候補はサーバーでallowlistされたmembershipだけとし、tenant検索や自由入力を提供しない。
@@ -660,6 +664,10 @@ export type AdminProvisionUserConflictError = {
   - 不明tenant、他利用者のtenant、停止membershipは存在を推測させない`404`相当とする。
 
 ```ts
+export type TenantSessionBootstrapPolicyV1 = {
+  tenantSessionMode: "single-tenant" | "tenant-session-required";
+};
+
 export type TenantSessionContextV1 = {
   principalId: string;
   activeTenant: { id: string; displayName: string };
@@ -681,9 +689,9 @@ Workspace用tenant controlは、検証済みmembershipが1件ならactive tenant
 
 `principalId`は認証済みUserに対応するserver-managed opaque IDであり、表示名やemail、外部IdP subjectを返さない。browser storage scopeのprincipal要素にはこの値だけを使う。
 
-実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。session responseの内部builderと`GET /session/context` routeは、active tenantの再照合、opaque principalId、allowlist済みtenant候補、trusted capability resolverの既知capabilityだけを受理し、識別子・一覧件数・response sizeを上限内へ閉じる。不正・欠損したcapability snapshotは`503 capability_resolution_unavailable`、不正・過大なsession値は`503 session_context_unavailable`としてfail-closedにする。`POST /session/active-tenant`も現在contextと要求tenantのmembershipを再確認し、検証済み選択結果だけをtrusted session persisterへ渡す。frontend側はsession GET/POSTを`no-store`・same-originで行い、成功・エラーresponseのstreamを64KiBまでで打ち切って超過時はcancelする。成功response validatorを通過し、active tenantがavailableTenantsと一致したcontextだけをbrowser storage scope／transitionへ渡す。未知・重複capability、余分なfield、非UTF-8、非表示・過大値は利用しない。strict external HTTP capability resolverとapplication lifecycleの既定unavailable配線は実装済みである。HTTP headerやqueryを直接verified evidenceへ変換する処理、trusted SaaS identity resolver／session persisterの実runtime接続、App起動時session bootstrap、tenant switcherからcleanup・hard replacementを起動する配線は未実装であり、SaaS profileは引き続き閉じる。
+実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。server runtime profileをprofile名非公開の2値へ写像する`GET /session/bootstrap-policy`とstrict frontend clientも実装済みで、frontendは成功・エラーresponseを4KiBまでに限定し、未知mode、余分なfield、非UTF-8、不正JSONを利用しない。session responseの内部builderと`GET /session/context` routeは、active tenantの再照合、opaque principalId、allowlist済みtenant候補、trusted capability resolverの既知capabilityだけを受理し、識別子・一覧件数・response sizeを上限内へ閉じる。不正・欠損したcapability snapshotは`503 capability_resolution_unavailable`、不正・過大なsession値は`503 session_context_unavailable`としてfail-closedにする。`POST /session/active-tenant`も現在contextと要求tenantのmembershipを再確認し、検証済み選択結果だけをtrusted session persisterへ渡す。frontend側はsession GET/POSTを`no-store`・same-originで行い、成功・エラーresponseのstreamを64KiBまでで打ち切って超過時はcancelする。成功response validatorを通過し、active tenantがavailableTenantsと一致したcontextだけをbrowser storage scope／transitionへ渡す。未知・重複capability、余分なfield、非UTF-8、非表示・過大値は利用しない。strict external HTTP capability resolverとapplication lifecycleの既定unavailable配線は実装済みである。HTTP headerやqueryを直接verified evidenceへ変換する処理、trusted SaaS identity resolver／session persisterの実runtime接続、bootstrap policyに基づくentry point分岐、tenant switcherからcleanup・hard replacementを起動する配線は未実装であり、SaaS profileは引き続き閉じる。
 
-tenant session bootstrap境界はAppをmountする前にsession GETとresponse再検証を完了し、成功時だけ`deployment + tenantId + principalId` scopeを構築する。401、403、session解決不能、不正response、不正deploymentは本文をmountしないretry可能なblocked stateへ分離し、upstream message、principal、tenant値を表示しない。lifecycle abortは失敗表示へ変換せず破棄する。安全なSaaS runtime mode signalが未確定のため現行entry pointには接続せず、single-tenant Appの起動を維持する。
+tenant session bootstrap境界はAppをmountする前にsession GETとresponse再検証を完了し、成功時だけ`deployment + tenantId + principalId` scopeを構築する。401、403、session解決不能、不正response、不正deploymentは本文をmountしないretry可能なblocked stateへ分離し、upstream message、principal、tenant値を表示しない。lifecycle abortは失敗表示へ変換せず破棄する。runtime mode signal契約は実装済みだが、local-first/offline起動を維持しつつSaaS側のpolicy取得失敗を安全にblockedへ倒すentry point activation契約は未確定であるため、現行`main.tsx`には接続せずsingle-tenant Appの起動を維持する。
 
 Appは注入されたbrowser storage scopeをmount時に検証・snapshotし、recent document、view mode/locale/visibility、reviewer、onboarding、advanced UI、Minimap、QueryPresetを同じscopeへbindingする。scopeを同一mount内で変更する場合は旧memory stateを再利用せず例外停止し、§10.1のhard document replacementを必須とする。App unmount時は進行中のdiff・diagnostics・bundle requestをabortし、bundle taskをcancelしてdiff・diagnostics workerをdisposeする。個別cleanup失敗で残りのcleanupやreplacementを止めない。scope省略時は既存single-tenant keyを維持する。session bootstrap gateが現行entry pointへ未配線のためscopeを注入せず、これをSaaS対応済みとは扱わない。
 

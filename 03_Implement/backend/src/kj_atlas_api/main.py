@@ -40,6 +40,7 @@ def _assert_linear_migration_history() -> None:
 async def lifespan(app: FastAPI):
     _assert_linear_migration_history()
     init_db()
+    app.state.runtime_profile = settings.runtime_profile
     app.state.audit_dispatcher = build_audit_dispatcher()
     app.state.access_control_adapter = build_access_control_adapter(adapter_name=settings.access_control_adapter)
     app.state.access_control_fail_safe_mode = settings.access_control_fail_safe_mode

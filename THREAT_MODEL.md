@@ -122,6 +122,7 @@
 - 外部PDP requestを64KiB以下、boundedな識別子・policyRef・roles/groups、canonicalなserver-composed値へ限定し、不正・過大requestはtransport前に値を反射せずSaaS deny fail-safeへ倒す
 - binding/capability resolver requestを64KiB以下、boundedかつcanonicalなserver-owned tenant/principal/membership/binding IDへ限定し、不正・過大lookupはtransport前に値を反射せずfail-closedへ倒す
 - session contextの成功・エラーresponseはfrontendでもstreamを64KiBまでしか読み取らず、超過時は後続chunkをcancelする。成功responseはboundedなprincipal/tenant/capability、重複なしのtenant・capability集合へ限定し、不正・過大responseからbrowser memoryやstorage keyを構成しない
+- runtime bootstrap policyはvalidation済みserver profileだけからprofile名非公開の2値を作り、header/query/client payloadを判定根拠にしない。frontendはresponseを4KiBまでのclosed-world objectとして再検証し、未知・欠損mode、余分なfield、不正JSON/UTF-8をentry point判定へ使わない
 - active tenant変更は現在と選択先のmembershipをDBで再照合し、検証済みprincipal/TenantContextだけをtrusted session persisterへ渡す。persisterはanti-forgery検証とauth sessionへのbindingを担い、欠損・障害時は更新せずfail-closedにする。frontendも検証済みallowlist外を送信せず、応答のprincipal不変・要求tenant一致を再確認する
 - tenant-scoped Appはsession responseの再検証とstorage scope構築が成功するまでmountせず、認証・認可・解決障害・不正responseを旧本文のないblocked stateへ分離する。error detailやprincipal/tenant値を表示せず、abort済みbootstrap結果を再利用しない
 - tenant switcherはserver検証済みmembershipが複数ある場合だけallowlist selectとして表示し、自由入力・tenant検索・role/group解釈を提供しない。active tenant自身、allowlist外ID、invalid sessionから変更要求を発火しない
@@ -135,7 +136,7 @@
 
 **現行の適用限界**
 
-tenant/identity/membership、Document複合key、TenantContext/PDP/audit伝播、PostgreSQL RLS migrationとtransaction-local DB context、fail-closed session GET/active tenant POST route、strict capability adapter、trusted outbound HTTPのredirect拒否、外部PDP request/responseとLLM応答のclosed-world・上限検証、外部PDP・監査HTTPの設定guardまでは実装済みである。session/capability境界ではresolverのmembership IDをDBのactive membershipから再生成した値と照合し、停止・差し替え証跡をPDP呼出し前に拒否する。ただしPostgreSQL実地検証、auth edgeからverified resolverとanti-forgery付きsession persisterへの接続、session bootstrap／tenant switcher、MCP/worker/cache/browser/storageを含む完全な越境matrixは未完了である。このため共有DB型のマルチテナントSaaSとして運用してはならず、`enterprise-production`は単一組織デプロイ向けと解釈する。`saas-multitenant`の起動拒否は残りの`SAAS-TENANT-01`条件を完了するまで維持する。
+tenant/identity/membership、Document複合key、TenantContext/PDP/audit伝播、PostgreSQL RLS migrationとtransaction-local DB context、fail-closed bootstrap policy/session GET/active tenant POST route、strict capability adapter、trusted outbound HTTPのredirect拒否、外部PDP request/responseとLLM応答のclosed-world・上限検証、外部PDP・監査HTTPの設定guardまでは実装済みである。session/capability境界ではresolverのmembership IDをDBのactive membershipから再生成した値と照合し、停止・差し替え証跡をPDP呼出し前に拒否する。ただしPostgreSQL実地検証、auth edgeからverified resolverとanti-forgery付きsession persisterへの接続、runtime policyに基づくentry point activation、tenant switcher実配線、MCP/worker/cache/browser/storageを含む完全な越境matrixは未完了である。このため共有DB型のマルチテナントSaaSとして運用してはならず、`enterprise-production`は単一組織デプロイ向けと解釈する。`saas-multitenant`の起動拒否は残りの`SAAS-TENANT-01`条件を完了するまで維持する。
 
 ## 検証・運用 / Verification
 

@@ -333,3 +333,9 @@
 - Workspace用tenant controlを追加し、検証済みactive membershipが1件ならactive tenant名のlabelだけ、複数ならserver返却`availableTenants`だけをoptionとするselectを表示する。active tenantは表示名とaccessible nameで示し、色だけに依存しない。切替中はselectをdisabledにしてstatusを通知し、日本語・英語を同じ構造で提供する。
 - 選択解決はsession contractを再検証し、active tenant自身、allowlist外の自由入力、invalid sessionでは変更callbackを発火しない。UIはrole/groupを解釈せず、tenant検索・text input・Platform横断候補を持たない。未保存変更の保存／破棄／取消確認、POST、transition coordinatorは親Appの責務として分離する。
 - tenant control／bootstrap／session／i18n近接66件、frontend全体1,151件・203 file、typecheck、production build、docs-check、active issue validator、diff-checkを通過した。runtime mode signal、現行entry point、未保存変更確認、POST／hard replacement実配線、実ブラウザE2Eは未完了のためcontrolを実画面へ出さず、AC-6/8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-18: closed-world runtime bootstrap policy
+
+- `GET /session/bootstrap-policy`を追加し、settings validation済みのserver runtime profileを起動時にsnapshotして、profile名やtenant情報を公開せず`single-tenant`／`tenant-session-required`の2値だけへ写像する。header、query、Document payloadを判定根拠にせず、未知・欠損profileは`503 runtime_policy_unavailable`として値を反射せず閉じる。現行settingsは予約中の`saas-multitenant`を引き続き起動前に拒否する。
+- frontend clientはsame-origin・`no-store`でpolicyを取得し、成功・エラーresponseを4KiBまでで打ち切る。成功responseは単一fieldのclosed-world objectとして再検証し、未知mode、余分なfield、非JSON、非UTF-8、過大bodyをentry point判定へ渡さない。
+- backend route近接32件、frontend policy/client近接29件、backend全体570件pass・条件付き25件skip、frontend全体1,162件・204 file、Ruff、frontend typecheck、production build、docs-check、active issue validator、diff-checkを通過した。local-first/offline起動を維持しつつSaaS側のpolicy取得失敗をblockedへ倒すentry point activation契約は未確定のため`main.tsx`へは接続しない。trusted auth edge／session persister、未保存変更確認、POST／hard replacement実配線、実ブラウザE2Eは未完了であり、AC-6/8/10/12とSaaS起動拒否を継続する。

@@ -5,6 +5,11 @@ import {
   parseTenantSessionContext,
   type TenantSessionContextV1,
 } from "./session_context";
+import {
+  InvalidTenantSessionBootstrapPolicyError,
+  parseTenantSessionBootstrapPolicy,
+  type TenantSessionBootstrapPolicyV1,
+} from "./session_bootstrap_policy";
 
 function resolveApiBase(): string {
   const rawValue = (import.meta.env.KJ_ATLAS_FRONTEND_API_BASE ?? "/api").trim();
@@ -54,6 +59,7 @@ type ParsedErrorDetail = {
 };
 
 const MAX_TENANT_SESSION_RESPONSE_BYTES = 64 * 1024;
+const MAX_TENANT_SESSION_BOOTSTRAP_POLICY_BYTES = 4 * 1024;
 
 async function readBoundedUtf8Response(response: Response, maxBytes: number): Promise<string> {
   const contentLength = response.headers.get("content-length");
@@ -226,6 +232,45 @@ async function parseTenantSessionResponse(response: Response): Promise<unknown> 
   } catch {
     throw new InvalidTenantSessionContextError();
   }
+}
+
+async function parseTenantSessionBootstrapPolicyResponse(
+  response: Response,
+): Promise<TenantSessionBootstrapPolicyV1> {
+  try {
+    const responseText = await readBoundedUtf8Response(
+      response,
+      MAX_TENANT_SESSION_BOOTSTRAP_POLICY_BYTES,
+    );
+    return parseTenantSessionBootstrapPolicy(JSON.parse(responseText) as unknown);
+  } catch {
+    throw new InvalidTenantSessionBootstrapPolicyError();
+  }
+}
+
+export async function getTenantSessionBootstrapPolicy(
+  options: Readonly<{ signal?: AbortSignal }> = {},
+): Promise<TenantSessionBootstrapPolicyV1> {
+  const response = await fetch(`${API_BASE}/session/bootstrap-policy`, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+    credentials: "same-origin",
+    signal: options.signal,
+  });
+
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(
+      response,
+      MAX_TENANT_SESSION_BOOTSTRAP_POLICY_BYTES,
+    );
+    throw new ApiError(response.status, errorDetail.message, {
+      code: errorDetail.code,
+      disabledReason: errorDetail.disabledReason,
+    });
+  }
+
+  return parseTenantSessionBootstrapPolicyResponse(response);
 }
 
 export async function getTenantSessionContext(

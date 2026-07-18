@@ -15,6 +15,7 @@ from kj_atlas_api.auth_context import ResolvedIdentity
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
 from kj_atlas_api.models import Base, TenantMembershipRow, TenantRow, UserRow
+from kj_atlas_api.runtime_bootstrap import resolve_tenant_session_bootstrap_mode
 from kj_atlas_api.session_context import CapabilitySnapshot
 from kj_atlas_api.tenant_context import (
     SingleTenantContextResolver,
@@ -238,6 +239,79 @@ def _session_client(
         app.state.tenant_context_resolver = SingleTenantContextResolver()
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
+
+
+@pytest.mark.parametrize(
+    ("runtime_profile", "expected_mode"),
+    [
+        ("local-dev", "single-tenant"),
+        ("evaluation", "single-tenant"),
+        ("enterprise-production", "single-tenant"),
+        ("saas-multitenant", "tenant-session-required"),
+    ],
+)
+def test_bootstrap_mode_is_closed_world(
+    runtime_profile: str,
+    expected_mode: str,
+) -> None:
+    assert resolve_tenant_session_bootstrap_mode(runtime_profile) == expected_mode
+
+
+@pytest.mark.parametrize("runtime_profile", ["shared-production", " SaaS-multitenant "])
+def test_bootstrap_mode_rejects_unvalidated_runtime_profiles(
+    runtime_profile: str,
+) -> None:
+    with pytest.raises(
+        RuntimeError,
+        match="Unsupported runtime profile for tenant session bootstrap",
+    ):
+        resolve_tenant_session_bootstrap_mode(runtime_profile)
+
+
+def test_bootstrap_policy_uses_only_the_server_runtime_profile(tmp_path) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+
+        response = client.get(
+            "/session/bootstrap-policy?runtimeProfile=saas-multitenant",
+            headers={
+                "x-runtime-profile": "saas-multitenant",
+                "x-tenant-id": "attacker-tenant",
+            },
+        )
+
+        expected_mode = resolve_tenant_session_bootstrap_mode(
+            client.app.state.runtime_profile
+        )
+
+    assert response.status_code == 200
+    assert response.json() == {"tenantSessionMode": expected_mode}
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["pragma"] == "no-cache"
+    assert "runtimeProfile" not in response.text
+    assert "attacker-tenant" not in response.text
+
+
+def test_bootstrap_policy_is_closed_when_the_server_profile_is_invalid(tmp_path) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+        original_runtime_profile = client.app.state.runtime_profile
+        try:
+            client.app.state.runtime_profile = "shared-production"
+            response = client.get("/session/bootstrap-policy")
+        finally:
+            client.app.state.runtime_profile = original_runtime_profile
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": {
+            "code": "runtime_policy_unavailable",
+            "message": "Runtime policy is unavailable.",
+        }
+    }
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["pragma"] == "no-cache"
+    assert "shared-production" not in response.text
 
 
 def test_context_returns_only_allowlisted_tenants_and_trusted_capabilities(tmp_path) -> None:

@@ -3,12 +3,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
   changeActiveTenant,
+  getTenantSessionBootstrapPolicy,
   getTenantSessionContext,
   suggestMerges,
   suggestLayout,
 } from "./client";
 import type { DocumentV1 } from "../domain/types";
 import { InvalidTenantSessionContextError } from "./session_context";
+import { InvalidTenantSessionBootstrapPolicyError } from "./session_bootstrap_policy";
 
 function createDocument(): DocumentV1 {
   return {
@@ -25,6 +27,95 @@ function createDocument(): DocumentV1 {
     edges: [],
   };
 }
+
+describe("tenant session bootstrap policy fetch boundary", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("fetches a strict server policy without client runtime hints", async () => {
+    const abortController = new AbortController();
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({
+        tenantSessionMode: "tenant-session-required",
+      }), { status: 200, headers: { "Content-Type": "application/json" } }),
+    );
+
+    await expect(getTenantSessionBootstrapPolicy({
+      signal: abortController.signal,
+    })).resolves.toEqual({ tenantSessionMode: "tenant-session-required" });
+    expect(fetchMock).toHaveBeenCalledWith("/api/session/bootstrap-policy", {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      credentials: "same-origin",
+      signal: abortController.signal,
+    });
+  });
+
+  it("rejects unknown modes and response expansion", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ tenantSessionMode: "required" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({
+          tenantSessionMode: "single-tenant",
+          runtimeProfile: "local-dev",
+        }), { status: 200, headers: { "Content-Type": "application/json" } }),
+      );
+
+    await expect(getTenantSessionBootstrapPolicy()).rejects.toBeInstanceOf(
+      InvalidTenantSessionBootstrapPolicyError,
+    );
+    await expect(getTenantSessionBootstrapPolicy()).rejects.toBeInstanceOf(
+      InvalidTenantSessionBootstrapPolicyError,
+    );
+  });
+
+  it("rejects oversized and non-UTF-8 success responses", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(new Uint8Array((4 * 1024) + 1), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(new Uint8Array([0xff]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+
+    await expect(getTenantSessionBootstrapPolicy()).rejects.toBeInstanceOf(
+      InvalidTenantSessionBootstrapPolicyError,
+    );
+    await expect(getTenantSessionBootstrapPolicy()).rejects.toBeInstanceOf(
+      InvalidTenantSessionBootstrapPolicyError,
+    );
+  });
+
+  it("preserves a bounded backend failure contract", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({
+        detail: {
+          code: "runtime_policy_unavailable",
+          message: "Runtime policy is unavailable.",
+        },
+      }), { status: 503, headers: { "Content-Type": "application/json" } }),
+    );
+
+    await expect(getTenantSessionBootstrapPolicy()).rejects.toMatchObject({
+      status: 503,
+      code: "runtime_policy_unavailable",
+      message: "Runtime policy is unavailable.",
+    });
+  });
+});
 
 describe("tenant session context fetch boundary", () => {
   afterEach(() => {

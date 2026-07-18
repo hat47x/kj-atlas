@@ -6,6 +6,10 @@ from sqlalchemy.orm import Session
 
 from kj_atlas_api.active_tenant_session import persist_active_tenant_selection
 from kj_atlas_api.db import get_db
+from kj_atlas_api.runtime_bootstrap import (
+    TenantSessionBootstrapMode,
+    resolve_tenant_session_bootstrap_mode,
+)
 from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
 from kj_atlas_api.session_context import (
     KNOWN_EFFECTIVE_CAPABILITIES,
@@ -21,6 +25,12 @@ from kj_atlas_api.tenant_context import TenantSummary
 
 
 router = APIRouter(prefix="/session", tags=["session"])
+
+
+class TenantSessionBootstrapPolicyResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tenantSessionMode: TenantSessionBootstrapMode
 
 
 class TenantSessionSummaryResponse(BaseModel):
@@ -81,6 +91,37 @@ def _session_response(request_session: TenantSessionContext) -> TenantSessionCon
             },
         )
     return session_response
+
+
+@router.get(
+    "/bootstrap-policy",
+    response_model=TenantSessionBootstrapPolicyResponse,
+)
+def get_session_bootstrap_policy(
+    request: Request,
+    response: Response,
+) -> TenantSessionBootstrapPolicyResponse:
+    no_cache_headers = {
+        "Cache-Control": "no-store",
+        "Pragma": "no-cache",
+    }
+    try:
+        policy = TenantSessionBootstrapPolicyResponse(
+            tenantSessionMode=resolve_tenant_session_bootstrap_mode(
+                request.app.state.runtime_profile
+            ),
+        )
+    except (AttributeError, RuntimeError):
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "runtime_policy_unavailable",
+                "message": "Runtime policy is unavailable.",
+            },
+            headers=no_cache_headers,
+        ) from None
+    response.headers.update(no_cache_headers)
+    return policy
 
 
 @router.get("/context", response_model=TenantSessionContextResponse)

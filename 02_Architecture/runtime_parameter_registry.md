@@ -56,6 +56,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 
 - `KJ_ATLAS_RUNTIME_PROFILE`でprofileを明示選択する。`local-dev`、`evaluation`、`enterprise-production`は正規化して受理する。
 - `saas-multitenant`は予約値として認識するが、現行releaseでは常に起動をfail-fastにする。無視して`local-dev`へfallbackしない。
+- backendはvalidation済みprofileを起動時にsnapshotし、`GET /session/bootstrap-policy`でprofile名を公開せず`single-tenant`または`tenant-session-required`へclosed-worldに写像する。未知・欠損profileはfallbackせず503として閉じる。現行frontend entry pointはこのsignalへ未接続であり、SaaS有効化条件には数えない。
 - 実装issueの後続段階で、tenant解決、PDP、DB guardのcross-key validationがすべて成立した場合だけ起動拒否を解除する。
 - `external_http` endpoint欠損時のnoop fallbackは既存profileの互換挙動としてのみ残し、SaaS profileでは禁止する。
 
