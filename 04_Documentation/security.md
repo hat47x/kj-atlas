@@ -60,7 +60,7 @@ curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 
 ブラウザで動く同梱の画面（SPA）は `X-API-Key` を送らないため、`KJ_ATLAS_API_KEY` を設定すると画面からの操作は 401 になります。API key は `curl` などプログラムからのアクセスを保護するための簡易保護です。ブラウザ配信を保護する場合は、画面に鍵を持たせるのではなく前段の認証 proxy で行います。公開ネットワークでの本格運用では、TLS、認証 proxy、アクセス制御、監査を組み合わせてください。
 
-> 注意: 標準 Docker Compose はこのキーを `api` コンテナへ配送しません（direct 起動限定）。Compose 上で有効化するには `docker-compose.yml` の `api.environment` に明示的な配送設定を追加する必要があります（現状未実装。[runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照）。
+> 注意: 標準 Docker Compose はこのキーをホスト環境から pass-through 配送します（ホスト側で未設定の場合はコンテナ内でも未設定のままで、既定の無効状態を維持します。[runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照）。
 
 ## SafeMode の画面確認
 
