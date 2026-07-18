@@ -143,6 +143,7 @@ erDiagram
 | `ContextQuery` / `ContextBundle` | AI入力・提案前の安全な文脈境界 | 契約先行。MVPではmock/検証用I/Fを含み、永続保守対象とは分ける。 |
 | `InquiryJourneyV1` | W型累積KJ法のラウンドDAGを束ねる独立manifest | `ADR-0057` の採択済み設計目標。現行 `DocumentV1` へ埋め込まず、実装までは `L0` とする。 |
 | `RoundSnapshotV1` | 人が確認した節目の不変な文書成果 | 意味のある配置を含む `DocumentV1` 成果を再現する。現行API・DB・標準UIでは未実装。 |
+| `RepresentativeVisualCue` | 島または選択集合の再認識を助ける任意の絵文字・アイコン・画像 | `DOMAIN-VISUAL-CUE-01` / `ADR-0059` の計画対象。現行 `DocumentV1`、API、DB、標準UIには未実装で、保存先と許容素材を未決定。 |
 
 ---
 
@@ -167,6 +168,7 @@ erDiagram
 | エージェント登録（`agent_registrations`） | L0 | `POST /admin/agent-registrations`（契約先行、実装は`EXT-CONN-02`） | `GET /admin/agent-registrations`（`token`/`tokenHash`非含有、契約先行） | 標準更新APIなし | `DELETE /admin/agent-registrations/{id}`（失効、契約先行） | 将来: Platform operator（admin strict provisioning限定） | サーバー正本として採用済み（`DATA-MODEL-OPS-02` D3確定）。登録・失効はadminのstrict provisioning型操作に限定し、平文tokenは作成時に一度だけ表示・以後はhashのみで照合する。登録自体は文書書込権限とみなさず、ingestごとに別途許可判定する。API型契約は `api.md` §9.5 に先行固定済み。実装は `EXT-CONN-02` で行う（`DATA-MODEL-OPS-02` AC-5）。 |
 | Import/Review Pack artifact | L3 | import/export処理で生成・取込 | ファイルまたはUI上の結果で参照 | 再export/再importで更新 | ファイル管理に依存 | Standard user / Document owner | DBの正本ではなく、共有・移行用成果物として扱う。 |
 | InquiryJourney / RoundSnapshot | L0 | 標準経路なし | 標準経路なし | 標準経路なし | 標準経路なし | 将来: Standard user / Document owner | `ADR-0057` は独立探究 + 不変成果DAG + 自己完結bundleを採択済み。型・fixture・操作模型・roundtrip・削除境界を `DOMAIN-W-ITERATION-01` で検証するまで、現行CRUD対応を主張しない。 |
+| RepresentativeVisualCue / image asset | L0 | 標準経路なし | 標準経路なし | 標準経路なし | 標準経路なし | 将来: Standard user / Document owner | `ADR-0059` はProposed。Unicode絵文字、同梱素材、外部素材、生成画像の供給経路と、採用参照・権利情報・画像本体・サムネイルの保存をfixtureで比較するまで、`DocumentV1`やDBへ追加しない。 |
 
 ---
 
