@@ -6,9 +6,9 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Codex / Maintainer
-- Scope: `00_Prompt/representative_visual_cue_requirements.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `01_Plans/adr/ADR-0059-representative-visual-cue-source-boundary.md`, `02_Architecture/architecture.md`, `02_Architecture/representative_visual_cue_evaluation.md`, `02_Architecture/data_model_operations_overview.md`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/import/`
+- Scope: `00_Prompt/representative_visual_cue_requirements.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `01_Plans/adr/ADR-0060-representative-visual-cue-source-boundary.md`, `02_Architecture/architecture.md`, `02_Architecture/representative_visual_cue_evaluation.md`, `02_Architecture/representative_visual_cue_offline_preset_comparison.md`, `02_Architecture/data_model_operations_overview.md`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/import/`
 - Related Backlog: `DOMAIN-VISUAL-CUE-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0059-representative-visual-cue-source-boundary.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `00_Prompt/representative_visual_cue_requirements.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0060-representative-visual-cue-source-boundary.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `00_Prompt/representative_visual_cue_requirements.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -21,7 +21,7 @@
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
 - DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `ADR-0059`
+- DecisionQueueRef（未確定時の参照先）: `ADR-0060`
 
 ## 1) 課題 / Problem statement
 
@@ -48,7 +48,7 @@
 - [x] AC-3: SafeMode、外部通信前確認、権利・出所、生成来歴、共有・削除の要件が定義されている。
 - [x] AC-4: 代替テキスト、文字との併記、非表示、固定寸法、キーボード操作の要件が定義されている。
 - [x] AC-4a: 手描きシンボル、基本図形、写真ラベル、フィールド写真、図解記号との連続性と意味の違いが定義されている。
-- [ ] AC-5: `ADR-0059` の供給経路、許容ライセンス、保存境界が受理されている。
+- [ ] AC-5: `ADR-0060` の供給経路、許容ライセンス、保存境界が受理されている。
 - [ ] AC-6: Phase 0 fixtureで、画像なし・手描き・基本図形・撮影写真・絵文字・プリセットの再発見時間、見誤り、主観的負担を比較している。
 - [ ] AC-7: Phase 1のオフライン選択をマウス、キーボード、390px、スクリーンリーダー相当で検証している。
 - [ ] AC-8: 外部素材を導入する場合、原典確認、クレジット、キャッシュ、削除、API停止をintegration/e2eで検証している。
@@ -60,11 +60,11 @@
 - [x] T1 認知負荷、関連画像と装飾画像、画像・文字の再認記憶に関する研究を確認する。
 - [x] T1a 標準KJ法のシンボルマーク・図解化、写真KJ法、フィールド写真、紙とペンを保つデジタル支援を調査する。
 - [x] T2 要件正本、ドメイン語彙、AI原則、価値トレーサビリティを同期する。
-- [x] T3 供給経路と未決定の保存・権利境界を `ADR-0059` として提案する。
+- [x] T3 供給経路と未決定の保存・権利境界を `ADR-0060` として提案する。
 - [x] T4a 具体・抽象・対立・機微情報・記号衝突を含み、手描き印・基本図形・写真ラベル・一次視覚資料を区別するPhase 0の機械可読fixtureと評価手順を固定する。
 - [x] T4a-1 VC-S3用に人物・識別情報・実在組織名を含まない合成写真fixtureと生成・権利確認メタデータを用意し、実際の観察証拠ではないことを明示する。
 - [x] T4b C0からC4の非製品プロトタイプ表示を作り、実装担当者による予備操作確認を実施する。高度な作業モード内のセッション限定UIとして実装し、マウス、キーボード、390px、ローカル画像通信をE2Eで確認した。代表利用者による効果比較はAC-6として未完了のまま残す。
-- [ ] T5 Unicode絵文字と固定画像セットについて、OS間表示、アクセシビリティ、ライセンス、配布容量を比較する。
+- [x] T5 Unicode絵文字と固定画像セットについて、OS間表示、アクセシビリティ、ライセンス、配布容量を比較する。結果と公式資産5点の容量標本を`02_Architecture/representative_visual_cue_offline_preset_comparison.md`および`02_Architecture/design/representative_visual_cue/offline_preset_candidates.json`へ記録した。
 - [ ] T6 採用参照、権利情報、画像本体、サムネイルの保存候補を比較し、ADRを受理または更新する。
 - [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。
 - [ ] T8 実利用で不足が確認された場合だけ、外部素材と生成画像をそれぞれ別issueへ分割する。
@@ -80,11 +80,12 @@
 
 ## 6) 依存関係 / Dependencies
 
-- `01_Plans/adr/ADR-0059-representative-visual-cue-source-boundary.md`
+- `01_Plans/adr/ADR-0060-representative-visual-cue-source-boundary.md`
 - `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 - `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - `01_Plans/issues/issue-SEC-VISUAL-ASSET-01-legacy-island-image-safe-mode.md`
+- `02_Architecture/representative_visual_cue_offline_preset_comparison.md`
 
 ## 7) ADR判定
 
-ADRが必要。画像の意味、供給経路、外部通信、権利、保存、共有の境界は複数モジュールと公開物へ影響し、UIだけの局所判断ではないため `ADR-0059` で提案する。ADR受理前は、要件とfixture検証を進められるが、永続スキーマや外部providerを固定しない。
+ADRが必要。画像の意味、供給経路、外部通信、権利、保存、共有の境界は複数モジュールと公開物へ影響し、UIだけの局所判断ではないため `ADR-0060` で提案する。ADR受理前は、要件とfixture検証を進められるが、永続スキーマや外部providerを固定しない。

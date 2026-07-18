@@ -15,7 +15,7 @@ function createDocument(cardText: string): DocumentV1 {
     createdAt: CREATED_AT,
     updatedAt: CREATED_AT,
     transform: { panX: 0, panY: 0, zoom: 1 },
-    cards: [{ id: "card-1", text: cardText, x: 100, y: 100 }],
+    cards: [{ id: "card-1", text: cardText, x: 100, y: 100, meta: { source: "Field note A-17" } }],
     edges: [],
     islands: [],
     readingOrder: ["card-1"],
@@ -45,6 +45,22 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   });
   expect(second.ok).toBe(true);
   if (!second.ok) return;
+  const currentRound = second.bundle.journey.roundRecords[1];
+  currentRound.theme = "What remains unclear after the sign was seen?";
+  currentRound.handoff = {
+    carryoverRefs: [{
+      snapshotId: currentRound.outputSnapshotId!,
+      kind: "card",
+      entityId: "card-1",
+    }],
+    heldRefs: [],
+    unresolvedQuestions: ["Which next action was unclear?"],
+    fieldworkRequests: [{
+      requestId: "fieldwork-next-observation",
+      question: "Observe where visitors pause next",
+    }],
+    understandingDelta: "The burden may be uncertainty about the next action.",
+  };
 
   const serialized = await serializeInquiryBundle(second.bundle);
   expect(serialized.ok).toBe(true);
@@ -54,6 +70,7 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?locale=en");
+  await page.getByRole("button", { name: "Close start panel" }).click();
   await page.getByRole("button", { name: "Share & Reproduce" }).click();
   const chooserPromise = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Load document.json" }).click();
@@ -73,6 +90,38 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   const panel = page.locator('[data-panel="inquiry-journey-prototype"]');
   await panel.locator('input[type="file"]').setInputFiles(inquiryPath);
   await expect(panel.getByText("Inquiry file imported. You can continue the inquiry.")).toBeVisible();
+
+  const resumeSummary = panel.getByText("Review resume brief", { exact: true });
+  await resumeSummary.focus();
+  await resumeSummary.press("Enter");
+  const resumeBrief = panel.getByRole("group", { name: "Review resume brief" });
+  await expect(resumeBrief).toContainText("What remains unclear after the sign was seen?");
+  await expect(resumeBrief).toContainText("The burden may be uncertainty about the next action.");
+  await expect(resumeBrief).toContainText("Which next action was unclear?");
+  await expect(resumeBrief).toContainText("Observe where visitors pause next");
+  const openPreviousResult = resumeBrief.getByRole("button", {
+    name: "Open previous result: Round comparison fixture",
+  });
+  await openPreviousResult.focus();
+  await openPreviousResult.press("Enter");
+  const previousResult = resumeBrief.getByRole("region", { name: "Previous result" });
+  await expect(previousResult).toBeFocused();
+  await expect(previousResult).toContainText("The sign was visible");
+  await expect(previousResult).toContainText("Source: Field note A-17");
+  await expect(previousResult).toContainText("The canvas and inquiry history are unchanged.");
+  expect(await resumeBrief.evaluate((element) => element.getBoundingClientRect().right)).toBeLessThanOrEqual(390);
+  await page.screenshot({ path: testInfo.outputPath("resume-brief-390px.png"), fullPage: true });
+
+  const lineageSummary = panel.getByText("Trace a card's sources", { exact: true });
+  await lineageSummary.focus();
+  await lineageSummary.press("Enter");
+  const lineage = panel.getByRole("group", { name: "Trace a card's sources" });
+  await expect(lineage.getByLabel("Card to trace")).toHaveValue("card-1");
+  await expect(lineage.getByRole("list", { name: "Source cards" }).getByRole("listitem")).toHaveCount(2);
+  await expect(lineage.getByText("Source: Field note A-17").first()).toBeVisible();
+  await expect(lineage).toContainText("Result from R2 Situation grasp, iteration 1");
+  await expect(lineage).toContainText("Inquiry origin");
+  await page.screenshot({ path: testInfo.outputPath("lineage-trace-390px.png"), fullPage: true });
 
   const comparison = panel.getByRole("group", { name: "Compare rounds" });
   const from = comparison.getByLabel("Compare from");
@@ -108,6 +157,7 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   await expect(panel.getByRole("list", { name: "Inquiry records" }).getByRole("listitem")).toHaveCount(3);
   await expect(panel.getByText("The original result and current branch will stay unchanged.")).toHaveCount(0);
   await expect(panel.getByText("The selected result was restored to the canvas")).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("branch-created-390px.png"), fullPage: true });
 
   const downloadPromise = page.waitForEvent("download");
   await panel.getByRole("button", { name: "Save inquiry file" }).click();
@@ -128,4 +178,24 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   expect(parsed.bundle.journey.headRoundIds).toContain(second.bundle.journey.roundRecords[1].roundId);
   expect(parsed.bundle.journey.headRoundIds).toContain(branchRound.roundId);
   expect(parsed.bundle.journey.defaultHeadRoundId).toBe(branchRound.roundId);
+
+  const undoBranchButton = panel.getByRole("button", { name: "Undo this branch" });
+  await undoBranchButton.click();
+  await expect(panel.getByRole("list", { name: "Inquiry records" }).getByRole("listitem")).toHaveCount(2);
+  await expect(page.getByRole("button", { name: "Work mode", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(panel.getByText("The branch was undone, including the restored canvas and inquiry record.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Redo" })).toBeDisabled();
+  await page.screenshot({ path: testInfo.outputPath("branch-undone-390px.png"), fullPage: true });
+
+  const undoneDownloadPromise = page.waitForEvent("download");
+  await panel.getByRole("button", { name: "Save inquiry file" }).click();
+  const undoneDownload = await undoneDownloadPromise;
+  const undonePath = testInfo.outputPath("branch-undone.kj-atlas-inquiry.json");
+  await undoneDownload.saveAs(undonePath);
+  const undone = await parseInquiryBundleJson(await readFile(undonePath, "utf8"));
+  expect(undone.ok).toBe(true);
+  if (!undone.ok) return;
+  expect(undone.bundle.journey.roundRecords).toHaveLength(2);
+  expect(undone.bundle.journey.headRoundIds).toEqual(second.bundle.journey.headRoundIds);
+  expect(undone.bundle.journey.defaultHeadRoundId).toBe(second.bundle.journey.defaultHeadRoundId);
 });

@@ -149,6 +149,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_POSTGRES_DB` | `kj_atlas` | Compose PostgreSQL の database 名 |
 | `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
 | `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | Compose PostgreSQL の password |
+| `KJ_ATLAS_RUNTIME_PROFILE` | `evaluation`（Compose） | backendとfrontendへ同じ実行profileを渡す。`saas-multitenant`は現行releaseでは起動不可 |
 | `KJ_ATLAS_FRONTEND_API_BASE` | `/api` | frontend が呼び出す API base path |
 
 PostgreSQL image や frontend build tool の内部名は、kj-atlas の公開設定キーではありません。利用者は上の `KJ_ATLAS_*` だけを設定します。
@@ -188,9 +189,10 @@ frontend の API 接続先は `KJ_ATLAS_FRONTEND_API_BASE` で指定します。
 
 ローカル開発サーバーと Docker Compose の標準構成では `/api` が backend へ proxy されるため、通常は変更不要です。
 
-直接 frontend build を実行する場合も、build 前に `KJ_ATLAS_FRONTEND_API_BASE` を設定します。
+直接frontend buildを実行する場合は、build前に`KJ_ATLAS_RUNTIME_PROFILE`と`KJ_ATLAS_FRONTEND_API_BASE`を設定します。profile未指定時はlocal-firstの`local-dev`相当です。空文字、未知値、前後空白を含む値はsingle-tenantへfallbackせずblocked画面になります。
 
 ```bash
+export KJ_ATLAS_RUNTIME_PROFILE=local-dev
 export KJ_ATLAS_FRONTEND_API_BASE=/api
 npm run build
 ```

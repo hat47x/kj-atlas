@@ -604,7 +604,7 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 1. `Card.w/h`（カードサイズ）
 2. ~~`EdgeType` の拡張（negate/hypothesis 等）~~ → DOMAIN-KJ-01 で導入済み（§3.3）
 3. `Island`（囲み、タイトル、所属）
-4. `Asset`（画像挿入・生成結果の参照。現行`Island.imageUrl`は由来・権利情報を持たない旧式フィールドであり、この将来モデルには含めない。SafeMode境界と移行は`SEC-VISUAL-ASSET-01` / `ADR-0059`で管理する）
+4. `Asset`（画像挿入・生成結果の参照。現行`Island.imageUrl`は由来・権利情報を持たない旧式フィールドであり、この将来モデルには含めない。SafeMode境界と移行は`SEC-VISUAL-ASSET-01` / `ADR-0060`で管理する）
 5. `Card.meta`（出自情報、タグ、引用元など。非主体メタの `seq`/`source` は DOMAIN-TRACE-01 で導入済み=§15。カード起票者など主体メタのUI/保存/redaction境界は引き続き `CARD-META-UI-01` で管理する）
 6. `Patch`（差分同期）
 
@@ -1012,7 +1012,7 @@ export type TenantBrowserStorageScopeV1 = {
 };
 ```
 
-tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し、反復中のindex変化でentryを取りこぼさない。検証済みsession responseだけを受け付けるtransition coordinatorが、request abort、worker dispose、object URL・memory state破棄hook、旧scope削除、hard document replacementを順に実行する。cleanup/storage削除の一部が失敗しても旧DOMを継続利用しない。現段階ではfail-closedなbootstrap policy/session GET/active tenant POST、trusted active tenant session persister境界、strict frontend client、App mount前のbootstrap／blocked-state gateまで実装済みだが、実auth edge adapter、bootstrap policyに基づく現行entry point分岐、tenant switcherからcoordinatorを起動する配線は行わない。policy responseはprofile名やtenant情報を含まない`tenantSessionMode: "single-tenant" | "tenant-session-required"`だけのclosed-world objectとし、frontendは4KiB超、余分なfield、未知mode、不正JSON/UTF-8を利用しない。
+tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し、反復中のindex変化でentryを取りこぼさない。検証済みsession responseだけを受け付けるtransition coordinatorが、request abort、worker dispose、object URL・memory state破棄hook、旧scope削除、hard document replacementを順に実行する。cleanup/storage削除の一部が失敗しても旧DOMを継続利用しない。現段階ではfail-closedなbootstrap policy/session GET/active tenant POST、trusted active tenant session persister境界、strict frontend client、profile別entry point、App mount前のbootstrap／blocked-state gateまで実装済みだが、実auth edge adapterとtenant switcherからcoordinatorを起動する配線は行わない。既存3 profileはlocal-first起動を維持し、`saas-multitenant` buildだけがpolicy一致とsession成功後にscope付きAppをmountする。未知build profileとpolicy不一致はsingle-tenantへfallbackしない。
 
 実装段階:
 
@@ -1028,7 +1028,7 @@ tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し
 | verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaim再照合、membership allowlist内部service、resolverのmembership IDとDB再生成値の再一致、信頼済みrequest context共通境界、既知capabilityだけを返す`GET /session/context`、allowlist再照合後だけtrusted persisterへ渡す`POST /session/active-tenant`、Document routeの同一docId GET/PUT tenant A/B matrixまで実装 | auth edgeからのverified evidenceとanti-forgery付きsession persister接続、trusted host mapping、MCP/worker/browserを含む完全matrixは未実装のためblocker継続 |
 | server-owned Document access metadata | tenant/doc複合FK、visibility/binding/version制約、PostgreSQL RLS、tenant-scoped repository、strict external HTTP binding resolverを実装。client policy headerはSaaS resolverで無視し、raw policyRefはrequest内だけで利用 | auth/capability/binding/PDPのSaaS runtime配線・PostgreSQL実地検証が未完了のためSaaS blocker継続 |
 | Document access metadata管理API・監査 | verified/trusted TenantContextと`document.policy.manage`専用のlist/detail/conditional PUT、秘密値を反射しないstrict入力、tenant-scoped transactional audit、strict external capability/binding resolver、PostgreSQL RLS migrationを実装 | trusted SaaS auth edge、実policy service/PDP接続、PostgreSQL実地検証、frontend配線が未完了のためruntimeではfail-closed無効 |
-| browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、各保存値のoptional tenant scope、App全永続consumerを単一scopeへbindingするfacade、途中scope変更拒否、App unmount時のrequest abort/task cancel/worker dispose、同一docId tenant A/B test、strict bootstrap policy/session GET/active tenant POST client、App mount前bootstrap／blocked-state gate、membership 1件はlabel・複数はallowlist selectだけのtenant control、検証済みresponseだけを受けるtransition cleanup/hard-reload coordinatorを実装 | policy取得失敗時もlocal-firstとSaaS fail-closedを混同しないentry point activation、未保存変更確認、logout/tenant switcherからcleanup・hard replacementを起動する実配線が未実装のためSaaS blocker継続 |
+| browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、各保存値のoptional tenant scope、App全永続consumerを単一scopeへbindingするfacade、途中scope変更拒否、App unmount時のrequest abort/task cancel/worker dispose、同一docId tenant A/B test、strict bootstrap policy/session GET/active tenant POST client、profile別entry point、App mount前bootstrap／blocked-state gate、membership 1件はlabel・複数はallowlist selectだけのtenant control、検証済みresponseだけを受けるtransition cleanup/hard-reload coordinatorを実装 | 未保存変更確認、logout/tenant switcherからcleanup・hard replacementを起動する実配線が未実装のためSaaS blocker継続 |
 
 ## 11. Polygon contract keys（FB-P0-2A2B2C）
 
