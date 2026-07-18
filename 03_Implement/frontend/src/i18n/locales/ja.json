@@ -1646,5 +1646,11 @@
   "tenant_session.bootstrap.retry": "再試行",
   "tenant_session.control.scope_label": "ワークスペース",
   "tenant_session.control.active_aria": "現在のワークスペース: {name}",
-  "tenant_session.control.changing": "切り替えています…"
+  "tenant_session.control.changing": "切り替えています…",
+  "tenant_session.change_confirm.title": "ワークスペースを切り替えますか？",
+  "tenant_session.change_confirm.description": "未保存の変更があります。「{name}」へ切り替える前に、変更を保存するか破棄してください。",
+  "tenant_session.change_confirm.cancel": "取消",
+  "tenant_session.change_confirm.discard": "破棄して切り替え",
+  "tenant_session.change_confirm.save": "保存して切り替え",
+  "tenant_session.change_confirm.processing": "変更を確認しています…"
 }

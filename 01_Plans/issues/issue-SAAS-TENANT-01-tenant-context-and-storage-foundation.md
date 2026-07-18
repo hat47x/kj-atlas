@@ -345,3 +345,9 @@
 - frontend buildへ既存`KJ_ATLAS_RUNTIME_PROFILE`を渡し、未指定・`local-dev`・`evaluation`・`enterprise-production`はpolicy通信なしのlocal-first App、`saas-multitenant`だけはserver policy一致→session再検証→tenant scope付きAppの順でmountするentry pointを結線した。未知・空・前後空白を含むbuild値、policy取得失敗・不一致はsingle-tenantへfallbackせず、旧App本文のないblocked stateへ閉じる。
 - 公式Composeはbackend environmentとfrontend buildへ同じ`${KJ_ATLAS_RUNTIME_PROFILE:-evaluation}`を渡し、契約testで両delivery surfaceの一致を固定した。現行backend settingsは`saas-multitenant`を引き続き起動前に拒否するため、frontend配線だけでSaaSを解禁しない。
 - runtime entry／policy／session／UI近接27件、frontend全体1,209件・211 file、frontend typecheck、`saas-multitenant` production build、profile delivery契約4件、docs-check、active issue validator、diff-checkを通過した。実ブラウザではSaaS build＋policy未接続時にalertだけを表示して旧Appをmountしないこと、`evaluation` dev buildでは従来AppとSafeMode ONを表示することを確認した。trusted auth edge／session persister、未保存変更確認、tenant switch POST／transition／hard replacement実配線、tenant A/B実ブラウザE2Eは未完了であり、AC-6/8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-19: gated tenant switch request preparation
+
+- future SaaS用に未保存変更の保存／破棄／取消を選ぶ`alertdialog`を追加した。取消へ初期focusを置き、Escapeを取消へ写像し、Tab focusをdialog内へ閉じ、処理中は3操作を無効化してstatusを読み上げる。ja/enの同一契約を持ち、表示にはserver返却のtenant表示名だけを使ってopaque tenant IDを出さない。
+- request coordinatorはcurrent sessionを再検証し、active tenant自身は通信せず、allowlist外の自由入力、current sessionと旧browser scopeの不一致、欠損・未知の未保存変更decisionをPOST前に拒否する。保存失敗と取消ではPOST／cleanup／navigationを開始しない。POST成功後もprincipal不変・要求tenant一致を独立に再検証し、不正responseでは旧scope削除やhard replacementを開始しない。検証済みsession変更後はcomponent abortより旧DOM破棄とhard replacementを優先する。
+- 切替／cleanup／control／dialog／i18n近接82件・13 file、frontend全体1,223件・213 file、frontend typecheck、`saas-multitenant` production build、docs-check、active issue validatorを通過した。安全ゲート未充足のためcontrol／dialog／coordinatorは現行Appへ接続せず、trusted auth edge／anti-forgery付きsession persister、App保存・runtime cleanup実配線、tenant A/B実ブラウザE2Eは未完了である。AC-6/8/10/12とSaaS起動拒否を継続する。

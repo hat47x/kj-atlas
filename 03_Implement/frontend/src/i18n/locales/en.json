@@ -1646,5 +1646,11 @@
   "tenant_session.bootstrap.retry": "Retry",
   "tenant_session.control.scope_label": "Workspace",
   "tenant_session.control.active_aria": "Current workspace: {name}",
-  "tenant_session.control.changing": "Switching…"
+  "tenant_session.control.changing": "Switching…",
+  "tenant_session.change_confirm.title": "Switch workspaces?",
+  "tenant_session.change_confirm.description": "You have unsaved changes. Save or discard them before switching to “{name}”.",
+  "tenant_session.change_confirm.cancel": "Cancel",
+  "tenant_session.change_confirm.discard": "Discard and switch",
+  "tenant_session.change_confirm.save": "Save and switch",
+  "tenant_session.change_confirm.processing": "Checking your changes…"
 }
