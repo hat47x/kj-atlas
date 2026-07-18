@@ -3,6 +3,7 @@ import {
   closeSharePanelIfOpen,
   DOCUMENT_REPLACED_STATUS,
   enableAdvancedUiIfNeeded,
+  EXPORT_BUNDLE_BUTTON,
   LOAD_DOCUMENT_BUTTON,
   READ_ONLY_INDICATOR,
   REPLACE_DOCUMENT_BUTTON,
@@ -18,7 +19,7 @@ type SeedDocument = {
   createdAt: string;
   updatedAt: string;
   transform: { panX: number; panY: number; zoom: number };
-  cards: Array<{ id: string; text: string; x: number; y: number }>;
+  cards: Array<{ id: string; text: string; x: number; y: number; textReviewed?: boolean }>;
   edges: Array<{ id: string; from: string; to: string }>;
   islands: Array<{ id: string; title: string; cardIds: string[] }>;
 };
@@ -39,6 +40,27 @@ function buildSeedDocument(): SeedDocument {
     ],
     edges: [{ id: "edge-1", from: "card-1", to: "card-3" }],
     islands: [{ id: "island-1", title: "draft cluster", cardIds: ["card-1", "card-2"] }],
+  };
+}
+
+function buildSeedDocumentWithUnreviewedCard(): SeedDocument {
+  const fixedTimestamp = "2026-07-18T00:00:00.000Z";
+  return {
+    version: 1,
+    id: "doc_e2e_s4_import_safe_export",
+    title: "S4 import-to-safe-export fixture",
+    createdAt: fixedTimestamp,
+    updatedAt: fixedTimestamp,
+    transform: { panX: 0, panY: 0, zoom: 1 },
+    cards: [
+      // Short, well-separated labels: two long overlapping labels here would
+      // hit label culling (QA-MONKEY-10) and hide one card's text, which
+      // would make this an assertion about culling, not about S4 import/export.
+      { id: "s4-card-1", text: "unreviewed import", x: 120, y: 120, textReviewed: false },
+      { id: "s4-card-2", text: "reviewed import", x: 500, y: 120, textReviewed: true },
+    ],
+    edges: [],
+    islands: [],
   };
 }
 
@@ -91,4 +113,43 @@ test("S1-S3 realistic journey: authoring continuity + safe sharing gate with det
   // reload, so a plain toggle click here would turn it back OFF.
   await enableAdvancedUiIfNeeded(page);
   await expect(page.getByRole("button", { name: SUGGEST_LAYOUT_BUTTON }).first()).toBeDisabled();
+});
+
+test("S4 import-to-safe-export: the pre-share gate reflects the just-imported document's unreviewed state, and closing it returns focus to the export trigger", async ({ page }) => {
+  const seed = buildSeedDocumentWithUnreviewedCard();
+
+  await page.goto("/?locale=en");
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
+  await replaceDocumentFromSharePanel(page, seed);
+  await expect(page.getByText(DOCUMENT_REPLACED_STATUS)).toBeVisible();
+
+  for (const card of seed.cards) {
+    // exact: true -- the unreviewed card's accessible name embeds a "Card
+    // text is unreviewed" status label containing "reviewed" as a substring,
+    // which would otherwise ambiguously match the other card's "reviewed
+    // import" text under Playwright's default substring matching.
+    await expect(page.getByText(card.text, { exact: true })).toBeVisible();
+  }
+
+  // The export trigger lives inside the same share/reproduce panel as the
+  // import controls (see the S1-S3 test above), so reopen it explicitly
+  // rather than assuming it stayed open after the file-chooser import flow.
+  await closeSharePanelIfOpen(page);
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
+  const exportButton = page.getByRole("button", { name: EXPORT_BUNDLE_BUTTON });
+  await exportButton.click();
+
+  // Sanitize/safety state is derived from the document that was JUST
+  // imported (not a stale pre-import count): one of the two imported cards
+  // is unreviewed, so the gate must appear and mention it.
+  const gate = page.locator('[data-panel="pre-share-summary-gate"]');
+  await expect(gate).toBeVisible();
+  await expect(gate).toContainText(/unreviewed/i);
+  await expect(gate).toContainText(/SafeMode/);
+
+  // Closing the gate returns the user to the primary flow (the export
+  // trigger they came from), not to an unfocused/lost state.
+  await page.keyboard.press("Escape");
+  await expect(gate).toBeHidden();
+  await expect(exportButton).toBeFocused();
 });
