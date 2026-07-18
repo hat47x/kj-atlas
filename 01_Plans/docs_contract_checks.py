@@ -7,7 +7,7 @@ import json
 import re
 import subprocess
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 
 RELATIVE_LINK_RULE_ID = "DC-LNK-001"
@@ -135,6 +135,39 @@ COMPOSE_FILE_PATH = Path("03_Implement/deploy/docker-compose.yml")
 RUNTIME_PARAMETER_KEY_RE = re.compile(r"KJ_ATLAS_[A-Z0-9_]+")
 RUNTIME_PARAMETER_REGISTRY_PATH = Path("02_Architecture/runtime_parameter_registry.md")
 RUNTIME_PARAMETER_REGISTRY_ROW_RE = re.compile(r"^\|\s*`(KJ_ATLAS_[A-Z0-9_]+)`[^|]*\|", re.MULTILINE)
+REPOSITORY_PATH_PREFIX_RE = re.compile(r"^(00_Prompt|01_Plans|02_Architecture|03_Implement|04_Documentation|\.github)/")
+REPOSITORY_PATH_FORBIDDEN_CHARS = frozenset(" <>*{|")
+BACKTICK_TOKEN_RE = re.compile(r"`([^`\r\n]+)`")
+TRAILING_LINE_REF_RE = re.compile(r":\d+$")
+# Build-output directory names that legitimately don't exist in a fresh
+# checkout (gitignored, created only by running the build) -- an explicit
+# allowlist rather than parsing .gitignore, since `git check-ignore` only
+# recognizes a directory-only pattern like `dist/` when the path already
+# exists on disk to prove it's a directory, which defeats checking a path
+# that's *expected* to be absent until built (e.g. release.md's reference
+# to the frontend-build CI artifact's contents).
+REPOSITORY_PATH_BUILD_OUTPUT_LEAF_NAMES = frozenset({"dist", "node_modules", "build", "__pycache__", ".venv"})
+CLI_OPTION_COMMAND_RE = re.compile(r"python3?\s+([\w./-]+\.py)((?:\s+--[\w-]+(?:[= ][^\s`]+)?)*)")
+CLI_OPTION_FLAG_RE = re.compile(r"--[\w-]+")
+CLI_OPTION_ADD_ARGUMENT_RE = re.compile(r"add_argument\(\s*[\"'](--[\w-]+)")
+LOCALHOST_PROBE_RE = re.compile(r"https?://localhost[:/][\w./:?=&-]*")
+# Every entry must carry a provenance comment tracing it to an actual route
+# (nginx.conf proxy_pass target, a backend route, or a documented dev-server
+# port) -- audited against current/public docs on 2026-07-18 per the issue's
+# Sonnet execution plan (issue-DX-DOC-04...) 区分6.
+LOCALHOST_PROBE_ALLOWLIST_EXACT = frozenset(
+    {
+        "http://localhost:8080/api/healthz",  # nginx `location /api/` -> `api:8000`'s `/healthz`
+        "http://localhost:8000/healthz",  # backend started directly (no nginx/Compose)
+        "http://localhost:8001/generate",  # local LLM provider HTTP contract endpoint
+        "http://localhost:8001",  # mock adapter / local LLM base URL example
+        "http://localhost:4173/api/healthz",  # vite preview server, e2e_testing.md
+        "http://localhost:8080",  # web entry point (nginx-fronted SPA)
+    }
+)
+LOCALHOST_PROBE_ALLOWLIST_PREFIX = (
+    "http://localhost:8080/api/docs/",  # document API GET examples; doc id varies per example
+)
 
 
 @dataclass(frozen=True)
@@ -781,6 +814,174 @@ def check_runtime_parameter_key_commands(
     return findings
 
 
+def check_repository_path_commands(
+    root: Path,
+    markdown_paths: list[Path],
+) -> list[DocsCheckFinding]:
+    """Return DC-CMD-001 findings for inline-code repository paths that don't exist.
+
+    Scans backtick-delimited tokens (not Markdown links -- those are
+    DC-LNK-001's job) that start with a known repository root
+    (00_Prompt/, 01_Plans/, 02_Architecture/, 03_Implement/,
+    04_Documentation/, .github/) and contain none of the characters that
+    mark a placeholder or shell-glob rather than a literal copyable path
+    (space, <, >, *, {, |). A trailing `:N` line reference is stripped
+    before existence is checked.
+
+    Checks filesystem existence directly under `root` rather than
+    replicating tracked_markdown_paths()'s `git ls-files` call: every
+    path this check can match lives inside the same working tree being
+    linted, so on-disk existence and tracked existence coincide here.
+    This also means Path.exists() alone covers "token matches a
+    directory that contains tracked files" -- exactly the directory-
+    prefix case the issue's plan calls out -- with no extra logic
+    needed, since Path.exists() is true for directories too.
+
+    A path whose final segment is a known build-output directory name
+    (REPOSITORY_PATH_BUILD_OUTPUT_LEAF_NAMES) is accepted without
+    existing, provided its parent directory exists, since such paths
+    are legitimately absent until a build actually runs (e.g. release.md
+    describing what `03_Implement/frontend/dist` contains as a CI
+    artifact).
+    Scoped to current/public documentation only -- see CURRENT_PUBLIC_DOC_ROOTS.
+    """
+    repository_root = root.resolve()
+
+    findings: list[DocsCheckFinding] = []
+    for supplied_path in sorted(markdown_paths, key=lambda path: path.as_posix()):
+        relative_path = supplied_path if not supplied_path.is_absolute() else supplied_path.relative_to(repository_root)
+        if not _is_current_public_doc(relative_path):
+            continue
+
+        source = repository_root / relative_path
+        text = source.read_text(encoding="utf-8")
+        for match in BACKTICK_TOKEN_RE.finditer(text):
+            token = match.group(1)
+            if not REPOSITORY_PATH_PREFIX_RE.match(token):
+                continue
+            if any(ch in REPOSITORY_PATH_FORBIDDEN_CHARS for ch in token):
+                continue
+            normalized = TRAILING_LINE_REF_RE.sub("", token)
+            target_path = repository_root / normalized
+            if target_path.exists():
+                continue
+            if PurePosixPath(normalized).name in REPOSITORY_PATH_BUILD_OUTPUT_LEAF_NAMES and target_path.parent.exists():
+                continue
+            line = text.count("\n", 0, match.start()) + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=NPM_SCRIPT_COMMAND_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=line,
+                    target=token,
+                    message=f"Repository path '{normalized}' does not exist",
+                    fix_hint="Fix the path, or if it is genuinely new, add the file/directory first.",
+                )
+            )
+
+    return findings
+
+
+def check_cli_option_commands(
+    root: Path,
+    markdown_paths: list[Path],
+) -> list[DocsCheckFinding]:
+    """Return DC-CMD-001 findings for `python <script>.py --option` examples
+    where `--option` isn't in the script's own argparse definition.
+
+    Only scripts that both exist under `root` (a missing script path is
+    check_repository_path_commands's finding, not duplicated here) and
+    contain the literal string "ArgumentParser" are checked; scripts
+    without argparse are treated as unverifiable and skipped rather than
+    guessed at, per the issue's fixed condition that this check never
+    executes the scripts it inspects -- only their source text is read.
+    Scoped to current/public documentation only -- see CURRENT_PUBLIC_DOC_ROOTS.
+    """
+    repository_root = root.resolve()
+
+    findings: list[DocsCheckFinding] = []
+    for supplied_path in sorted(markdown_paths, key=lambda path: path.as_posix()):
+        relative_path = supplied_path if not supplied_path.is_absolute() else supplied_path.relative_to(repository_root)
+        if not _is_current_public_doc(relative_path):
+            continue
+
+        source = repository_root / relative_path
+        text = source.read_text(encoding="utf-8")
+        for match in CLI_OPTION_COMMAND_RE.finditer(text):
+            script_rel, options_tail = match.group(1), match.group(2)
+            script_path = repository_root / script_rel
+            if not script_path.exists():
+                continue
+            script_text = script_path.read_text(encoding="utf-8")
+            if "ArgumentParser" not in script_text:
+                continue
+            known_options = set(CLI_OPTION_ADD_ARGUMENT_RE.findall(script_text))
+
+            options_tail_start = match.start(2)
+            for opt_match in CLI_OPTION_FLAG_RE.finditer(options_tail):
+                option = opt_match.group(0)
+                if option in known_options:
+                    continue
+                line = text.count("\n", 0, options_tail_start + opt_match.start()) + 1
+                findings.append(
+                    DocsCheckFinding(
+                        rule_id=NPM_SCRIPT_COMMAND_RULE_ID,
+                        path=relative_path.as_posix(),
+                        line=line,
+                        target=f"{script_rel} {option}",
+                        message=f"CLI option '{option}' does not exist in {script_rel}",
+                        fix_hint="Use an existing option from the script's argparse definition, or add the option if it is genuinely new.",
+                    )
+                )
+
+    return findings
+
+
+def check_localhost_probe_commands(
+    root: Path,
+    markdown_paths: list[Path],
+) -> list[DocsCheckFinding]:
+    """Return DC-CMD-001 findings for localhost URLs absent from the probe allowlist.
+
+    Catches the recurrence shape of a past real bug (`/api/health` missing
+    the trailing `z`) by requiring every `http(s)://localhost...` example in
+    current/public docs to be an explicitly allowlisted, provenance-commented
+    route rather than accepted by pattern alone. A newly-legitimate URL is
+    added to LOCALHOST_PROBE_ALLOWLIST_EXACT/_PREFIX only after confirming it
+    against nginx.conf or the backend route it names -- never guessed.
+    Scoped to current/public documentation only -- see CURRENT_PUBLIC_DOC_ROOTS.
+    """
+    repository_root = root.resolve()
+
+    findings: list[DocsCheckFinding] = []
+    for supplied_path in sorted(markdown_paths, key=lambda path: path.as_posix()):
+        relative_path = supplied_path if not supplied_path.is_absolute() else supplied_path.relative_to(repository_root)
+        if not _is_current_public_doc(relative_path):
+            continue
+
+        source = repository_root / relative_path
+        text = source.read_text(encoding="utf-8")
+        for match in LOCALHOST_PROBE_RE.finditer(text):
+            url = match.group(0)
+            if url in LOCALHOST_PROBE_ALLOWLIST_EXACT:
+                continue
+            if any(url.startswith(prefix) for prefix in LOCALHOST_PROBE_ALLOWLIST_PREFIX):
+                continue
+            line = text.count("\n", 0, match.start()) + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=NPM_SCRIPT_COMMAND_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=line,
+                    target=url,
+                    message=f"Localhost URL '{url}' is not in the probe allowlist",
+                    fix_hint="Confirm the route against nginx.conf/backend routes, then add it to LOCALHOST_PROBE_ALLOWLIST_EXACT/_PREFIX with a provenance comment.",
+                )
+            )
+
+    return findings
+
+
 def tracked_markdown_paths(root: Path) -> list[Path]:
     """Return tracked Markdown paths so generated and dependency files stay out of scope."""
     result = subprocess.run(
@@ -811,6 +1012,9 @@ def main() -> int:
     findings.extend(check_npm_script_commands(root, markdown_paths))
     findings.extend(check_compose_service_commands(root, markdown_paths))
     findings.extend(check_runtime_parameter_key_commands(root, markdown_paths))
+    findings.extend(check_repository_path_commands(root, markdown_paths))
+    findings.extend(check_cli_option_commands(root, markdown_paths))
+    findings.extend(check_localhost_probe_commands(root, markdown_paths))
 
     if findings:
         print("documentation contract validation failed:")

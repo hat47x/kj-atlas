@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Open Readiness: Prepared
-- Execution: Hold
+- Execution: Ready
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
 - Scope: 本ファイルのみ（docs-only）
@@ -29,7 +29,7 @@
 |---|---|---|---|
 | B-USE-01 | 実運用E2E環境承認未了 | 承認記録リンクが `Pending-1` に追記済み | QA Lead |
 | B-USE-02 | I18N境界最終承認未了 | `QA-PUB-01` の承認記録IDが記載済み | Reviewer |
-| B-USE-03 | ゲート解放証跡欄未固定 | G1/G2/G3 各欄に entry/exit 証跡欄が記入可能 | Stream H |
+| B-USE-03 | ゲート解放証跡欄未固定 → 解消済み（2026-07-18、下記Phase 6のGate証跡欄参照） | G1/G2/G3 各欄に entry/exit 証跡欄が記入可能 | Stream H |
 
 ## Phase 2: ADR C/D/C（簡易）
 
@@ -157,8 +157,17 @@ Open化ゲートを次の3カテゴリで固定する。
 - Pending-2: QA-PUB-01 境界判定の最終レビュー承認。→ 承認済み（2026-07-16、Maintainer/hat47x。`QA-PUB-01-I18N-03` 側のPending-1/2も同日付で承認済み）。
 
 ### Execution
-- Pending-1/Pending-2は解消したが、B-USE-03（ゲート解放証跡欄未固定）と `ADR-0019` 準拠の実行経路選択（O-USE-02）が未解消のため、`Execution: Hold` を維持する。
-- `Execution: Hold`（承認以外の残blocker解消まで維持）
+- Pending-1/Pending-2に続き、B-USE-03（ゲート解放証跡欄未固定）と`ADR-0019`準拠の実行経路選択（O-USE-02）を2026-07-18に解消した。
+- **O-USE-02確定値**: 実行経路は**Docker Compose標準経路**で固定する。根拠: `03_Implement/frontend/docs/e2e_testing.md`が既に「標準経路はDocker Composeです。Dockerを実行できない場合だけSQLite + frontend dev serverまたはmock fixtureを使い、Composeとの差分リスクをPRへ残します」と規範化しており、検証環境（WSL）でdocker 29.5.3 / compose v5.1.4の利用可を2026-07-18に確認済み。SQLite/mockは例外経路としてPath欄（`Path: Compose | SQLite | mock`）へ記録する。
+- **B-USE-03確定値**: 次の表を本issueの証跡正本として固定する。以後のrerun/拡充はこの表へ1行ずつ追記する。
+
+| Gate | Entry条件 | Entry証跡（日付・commit・経路） | Exit条件 | Exit証跡（結果・記録先） |
+| --- | --- | --- | --- | --- |
+| G1 Unit | 対象シナリオのunit/domainテストが特定済み | （記入） | 対象テストがgreen | （記入） |
+| G2 Integration | S1-S4該当のE2E specが特定済み | （記入） | 該当specがCompose経路でgreen | （記入） |
+| G3 E2E Traceability | S1-S4とspecの対応表が最新 | （記入） | 対応表と実行証跡が一致 | （記入） |
+
+- `Execution: Ready`（承認・技術的ブロッカーはすべて解消。初回実行バッチは別PRで進める）
 
 
 ### 修復上限（共通）
