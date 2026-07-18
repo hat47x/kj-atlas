@@ -122,7 +122,7 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 |---|---|---|---|---|
 | 価値: 開始 | 迷わず最初の意味ある配置へ | `ADR-0032` V0/V1 | `PRODUCT-UX-01`(Done), `PRODUCT-VALUE-01` | 被覆 |
 | 価値: 外在化 | メモ・違和感をカード化 | `ADR-0032` V1 | `PRODUCT-VALUE-01`, `DOMAIN-EXPR-01` | 被覆 |
-| 価値: 定性情報の品質 | 意味・意図を保ち、一枚一中心、再文脈化・遡及可能なカードを低負担で作る | `qualitative_card_quality_requirements.md`, `ADR-0001` P-08 | `DOMAIN-CARD-QUALITY-01` | 被覆（要件確定、実装未着手） |
+| 価値: 定性情報の品質 | 意味・意図を保ち、一枚一中心、再文脈化・遡及可能なカードを低負担で作る | `qualitative_card_quality_requirements.md`, `ADR-0001` P-08 | `DOMAIN-CARD-QUALITY-01` | 被覆（自己確認、前後比較、原文復元を実装・E2E確認済み） |
 | 価値: 反復的探究 | 6ラウンドを経験と思考の往復として扱い、中間成果・引継ぎ・分岐を保持する | `w_type_iterative_inquiry_requirements.md`, `ADR-0057`, `inquiry_journey_model.md` | `DOMAIN-W-ITERATION-01` | 被覆（要件・設計は確定、実装はL0/未着手） |
 | 価値: 構造化 | まとまり・関係・未整理の同時保持 | `ADR-0032` V2 | `PRODUCT-UX-02`(Done), `PRODUCT-VALUE-02` | 被覆 |
 | 価値: レビュー | AI候補の人間採否・proposal-only | `ADR-0032` V3 | `PRODUCT-VALUE-02`, `CE2`, `CE3` | 被覆 |
@@ -145,6 +145,8 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 **判定（2026-06-02）**: 全観点が担当issue/ADRへ接続済み（未接続=0件）。プロダクト価値・UI/UX・ドメイン表現の要件は VR0–VR5 のフェーズへ落とし込み済みであり、新規起票すべき本物の穴は無い。実装順序は DOMAIN-EXPR は Phase 1→4、VR4/VR5 は実ユーザー/協力者参加まで延期（`ADR-0039`）。
 
 **更新（2026-07-15）**: カード作成後の構造化は被覆されていた一方、構造化の入力となる定性情報そのものの品質と、品質確保時の利用者負担が未定義だった。この穴を P-08 と `DOMAIN-CARD-QUALITY-01` へ接続し、未接続=0件へ戻した。
+
+**更新（2026-07-18）**: `DOMAIN-CARD-QUALITY-01` は、本文だけの一回保存、非モーダルな自己確認、編集前後の比較、原文復元を実装し、マウス・キーボード・390pxを含むE2Eで確認してDoneとした。LLMによるPhase C提案は、手動編集の負担が継続利用を妨げる実利用証跡が得られるまで追加しない。
 
 **更新（2026-07-15・反復的探究）**: 一つの文書内での構造化は被覆されていた一方、6ラウンド累積KJ法で中間成果を累積し、現場と往復し、前段階へ分岐する長期探究は未定義だった。広域比較の結果、`ADR-0057` は独立 `InquiryJourneyV1` + 不変 `RoundSnapshotV1` DAG + 自己完結bundleを採択した。要件・設計判断は確定したが、実装・移行・運用CRUDは `L0: Planned` であり、`DOMAIN-W-ITERATION-01` のfixture・操作模型検証を経ずにbackend永続化へ進まない。
 

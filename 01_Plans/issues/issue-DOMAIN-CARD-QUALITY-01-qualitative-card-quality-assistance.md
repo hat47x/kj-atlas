@@ -1,7 +1,7 @@
 # Issue: DOMAIN-CARD-QUALITY-01 定性情報カードの品質支援
 
 - Type: Feature request / UX / Domain quality
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -89,11 +89,11 @@
 
 - [x] AC-1: 定性情報カードの品質次元と、品質が点数・合否ではないことがNormative文書に定義されている。
 - [x] AC-2: P-08、ドメイン定義、スキーマ境界、価値トレーサビリティが同じ要件を参照している。
-- [ ] AC-3: 本文以外の必須入力なしに、一回の保存操作でカードを作成できる。
+- [x] AC-3: 本文以外の必須入力なしに、一回の保存操作でカードを作成できる。
 - [x] AC-4: 品質支援は保存後または要求時に非モーダルで開き、一件ずつ採用・見送り・保留できる。
 - [x] AC-5: 提案の採用前に本文、`claimType`、出典、レビュー状態が変更されない。
 - [x] AC-6: 少数意見または矛盾するカードが、低品質として自動削除・統合・降格されない。
-- [ ] AC-7: 分割または言い換えの前後を比較し、元本文へ戻れる。
+- [x] AC-7: 分割または言い換えの前後を比較し、元本文へ戻れる。
 - [x] AC-8: マウスとキーボードで支援の開始、採用、見送り、保留、本文へのフォーカス復帰を完了できる。
 - [x] AC-9: 日本語と英語で同じ意味と選択肢を提供し、390px幅で本文や主要操作を覆わない。
 - [x] AC-10: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`KJ_ATLAS_LLM_PROVIDER=none` の回帰テストが通る。
@@ -108,7 +108,7 @@
 - [x] T5 Phase Bの自己確認UI、i18n、キーボード操作、フォーカス復帰を実装する。
 - [x] T6 提案採用前の不変条件、少数・矛盾保持、SafeMode、provider noneをunit/integrationで固定する。
 - [x] T7 390px/desktop、マウス/キーボードのE2Eとスクリーンショットを取得する。
-- [ ] T8 Phase Cの必要性をPhase Bの使用証跡から判断し、必要な場合だけ別issueへ分割する。
+- [x] T8 Phase Cの必要性をPhase Bの使用証跡から判断し、必要な場合だけ別issueへ分割する。
 
 ### T4 実装証跡（2026-07-15）
 
@@ -152,6 +152,19 @@
 - コード調査により、`createCardAtPosition`（`App.tsx:4038`）が`id`/`text`/`x`/`y`だけで新規カードを即時作成し、`Card`型（`src/domain/types.ts`）・`parseCards`（`src/domain/validate.ts`）双方で他フィールドがoptionalであることを確認済み。これによりAC-3はPhase A/Bの既存実装で既に成立しており、本追加はそれを固定する回帰テストである。
 - **実行未確認**: 本環境ではWSL側のPlaywright実行が`libnspr4.so`欠落（T7 2026-07-15と同じ既知の制約）で失敗し、Windows側にはNode.js自体が未導入のため、実ブラウザでの緑化確認ができなかった。`npx playwright test e2e/card_single_save_creation.spec.ts --list`ではテスト1件が正しく解決されることを確認し、frontend `npm run typecheck`（`npm run lint`と同義）は0 errorsで通過した。
 - Maintainerまたは実行可能な環境で本specを実行し、緑化を確認した上でAC-3をチェック済みへ更新すること。T7が2026-07-15の未確認記録から2026-07-16の確認済み記録へ移行した前例と同じ扱いとする。
+
+### AC-3 / AC-7 完了記録（2026-07-18）
+
+- Windows上のPlaywright/Chromiumで `card_single_save_creation.spec.ts` と `card_quality_assistance.spec.ts` を同時に実行し、12 testsが成功した。これにより、本文だけの一回保存、原文と編集案の比較、保存前の不変、保存後の原文復元、390px表示、マウス・キーボード操作を実ブラウザで確認した。
+- `CardQualityAssistState.originalText` はセッション内だけに保持し、`DocumentV1` / `Card` のスキーマを変更していない。本文の保存と復元は既存のカード本文更新経路を使うため、それぞれ通常のUndo対象になる。
+- アプリ内ブラウザの日本語画面でも、原文、編集案、保存、復元が右側パネル内に収まり、キャンバス上の対象カードを確認しながら操作できることを確認した。
+- frontend全体は `pnpm test` で192 files / 1070 tests、`pnpm typecheck`、i18nカタログ整合テストが成功した。
+
+### T8 Phase C判断（2026-07-18）
+
+- 現時点ではPhase C（LLMによる分割・言い換え案）を実装しない。Phase Bの自己確認、手動編集、前後比較、原文復元で主要な作業を完了でき、実利用者から「手動で整える負担が継続利用を妨げる」という証跡はまだ得られていないためである。
+- Phase C専用issueは起票しない。今後、複数回の利用記録で手動編集の中断・放棄が反復する、または利用者から具体的な提案支援の要望が得られた場合に限り、proposal-only、SafeMode、原文保持を前提とする別issueとして再評価する。
+- この判断は機能不足の黙認ではなく、利用者負担を減らす効果が未確認のAI機能を先に増やさないための段階判断である。
 
 ## 7) 検証計画 / Validation plan
 

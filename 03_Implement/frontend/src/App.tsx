@@ -49,7 +49,7 @@ import {
 } from "./domain/merge_suggestion_decisions";
 import { isSourceCard, Document, DocumentV1, Island, Narrative, type CardKa, type CardMeta, type ContradictionSignalDecision, type ContradictionSignalReviewStatus, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
 import { KNOWN_EDGE_TYPES } from "./domain/types";
-import { answerCardQualityQuestion, openCardQualityAssist, type CardQualityAssistState, type CardQualityDecision } from "./domain/card_quality";
+import { answerCardQualityQuestion, beginCardQualityRewrite, cardQualityRestoreTarget, openCardQualityAssist, type CardQualityAssistState, type CardQualityDecision } from "./domain/card_quality";
 import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -6121,13 +6121,17 @@ export default function App() {
           return previous;
         }
 
+        const nextState = decision === "apply" && selectedCard?.id === openCardQualityAssistCardId
+          ? beginCardQualityRewrite(current, selectedCard.text)
+          : current;
+
         return {
           ...previous,
-          [openCardQualityAssistCardId]: answerCardQualityQuestion(current, decision),
+          [openCardQualityAssistCardId]: answerCardQualityQuestion(nextState, decision),
         };
       });
     },
-    [openCardQualityAssistCardId]
+    [openCardQualityAssistCardId, selectedCard]
   );
 
   const handleCloseCardQualityAssist = useCallback(() => {
@@ -6141,6 +6145,20 @@ export default function App() {
 
     setEditingCardId(selectedCard.id);
   }, [selectedCard]);
+
+  const handleRestoreCardQualityText = useCallback(() => {
+    if (!selectedCard) {
+      return;
+    }
+
+    const assistState = cardQualityAssistByCardId[selectedCard.id];
+    const originalText = assistState ? cardQualityRestoreTarget(assistState) : undefined;
+    if (originalText === undefined) {
+      return;
+    }
+
+    handleCommitCardText(selectedCard.id, originalText);
+  }, [cardQualityAssistByCardId, handleCommitCardText, selectedCard]);
 
   useEffect(() => {
     // UX-SHORTCUT-01 (ADR-0048 D2): retention-system shortcuts (H=hold,
@@ -10621,6 +10639,12 @@ export default function App() {
           onAnswerCardQualityQuestion={handleAnswerCardQualityQuestion}
           onCloseCardQualityAssist={handleCloseCardQualityAssist}
           onOpenCardTextEditor={handleOpenCardTextEditor}
+          onCommitCardQualityText={(text) => {
+            if (selectedCard) {
+              handleCommitCardText(selectedCard.id, text);
+            }
+          }}
+          onRestoreCardQualityText={handleRestoreCardQualityText}
           onAddEvidenceLink={(payload) => {
             if (!selectedCard) {
               return;

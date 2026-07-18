@@ -3,7 +3,7 @@ import { getActiveLocale, t } from "../i18n/translate";
 
 import { CRITIQUE_TAGS, KNOWN_EDGE_TYPES, resolveKnownEdgeType } from "../domain/types";
 import type { EdgeType, KnownEdgeType } from "../domain/types";
-import { currentCardQualityQuestion, type CardQualityAssistState, type CardQualityDecision } from "../domain/card_quality";
+import { cardQualityRestoreTarget, currentCardQualityQuestion, type CardQualityAssistState, type CardQualityDecision } from "../domain/card_quality";
 import { DomainStateSummary } from "./DomainStateSummary";
 import { DomainStateFilterBar } from "./DomainStateFilterBar";
 import type { DomainStateFilter } from "../domain/domain_state_filter";
@@ -87,6 +87,8 @@ type SidePanelProps = {
   onAnswerCardQualityQuestion: (decision: CardQualityDecision) => void;
   onCloseCardQualityAssist: () => void;
   onOpenCardTextEditor: () => void;
+  onCommitCardQualityText: (text: string) => void;
+  onRestoreCardQualityText: () => void;
   onAddEvidenceLink: (payload: { toCardId: string; type: EvidenceLink["type"] }) => void;
   onRemoveEvidenceLink: (evidenceLinkId: string) => void;
   onUpdateEvidenceLink: (evidenceLinkId: string, patch: Partial<Pick<EvidenceLink, "contradictionState">>) => void;
@@ -273,6 +275,8 @@ export function SidePanel({
   onAnswerCardQualityQuestion,
   onCloseCardQualityAssist,
   onOpenCardTextEditor,
+  onCommitCardQualityText,
+  onRestoreCardQualityText,
   onAddEvidenceLink,
   onRemoveEvidenceLink,
   onUpdateEvidenceLink,
@@ -433,6 +437,7 @@ export function SidePanel({
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
   const cardQualityAssistTriggerRef = useRef<HTMLButtonElement>(null);
+  const [cardQualityTextDraft, setCardQualityTextDraft] = useState("");
   const [summaryDraft, setSummaryDraft] = useState("");
   const [expandedSummaryHistoryEntryId, setExpandedSummaryHistoryEntryId] = useState<string | null>(null);
   const [relationSummaryDraft, setRelationSummaryDraft] = useState("");
@@ -458,6 +463,10 @@ export function SidePanel({
   const traceClientRef = useRef<TraceWorkerClient | null>(null);
   const traceAbortRef = useRef<AbortController | null>(null);
   const analyticsAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    setCardQualityTextDraft(selectedCard?.text ?? "");
+  }, [cardQualityAssistState?.originalText, selectedCard?.id, selectedCard?.text]);
 
   const traceAnalyticsModeLabel = useMemo(() => {
     if (traceAnalyticsMode === "evidence") return t("side_panel.trace.mode_evidence");
@@ -647,6 +656,9 @@ export function SidePanel({
     : t("side_panel.selection.card_multiple", { count: selectedCardCount });
   const selectedIslandTitle = selectedIsland?.title?.trim() || selectedIsland?.id || "";
   const selectedCardText = selectedCard?.text.trim() || selectedCard?.id || "";
+  const cardQualityOriginalText = cardQualityAssistState
+    ? cardQualityRestoreTarget(cardQualityAssistState)
+    : undefined;
   const selectedCardReviewState = selectedCard?.textReviewed === true ? t("side_panel.reviewed") : t("side_panel.unreviewed");
   const selectedIslandReviewState = selectedIsland?.summaryReviewed === true ? t("side_panel.reviewed") : t("side_panel.unreviewed");
 
@@ -3423,6 +3435,57 @@ export function SidePanel({
                     ) : (
                       <div style={{ fontSize: 12, color: "#0f172a" }}>{t("side_panel.card_quality.done")}</div>
                     )}
+                    {cardQualityOriginalText !== undefined ? (
+                      <div
+                        data-panel="card-quality-text-comparison"
+                        style={{ display: "grid", gap: 6, borderTop: "1px solid #cbd5e1", paddingTop: 8 }}
+                      >
+                        <div style={{ fontSize: 11, fontWeight: 600, color: "#475569" }}>
+                          {t("side_panel.card_quality.original_text")}
+                        </div>
+                        <div
+                          data-card-quality-text="before"
+                          style={{ padding: 8, border: "1px solid #e2e8f0", borderRadius: 4, backgroundColor: "#fff", fontSize: 12, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+                        >
+                          {cardQualityOriginalText}
+                        </div>
+                        <label htmlFor="card-quality-revised-text" style={{ fontSize: 11, fontWeight: 600, color: "#475569" }}>
+                          {t("side_panel.card_quality.revised_text")}
+                        </label>
+                        <textarea
+                          id="card-quality-revised-text"
+                          data-card-quality-text="after"
+                          value={cardQualityTextDraft}
+                          onChange={(event) => setCardQualityTextDraft(event.currentTarget.value)}
+                          rows={4}
+                          style={{ width: "100%", boxSizing: "border-box", resize: "vertical", fontFamily: "inherit", fontSize: 12 }}
+                        />
+                        <div style={{ fontSize: 11, color: "#64748b" }}>
+                          {t("side_panel.card_quality.compare_help")}
+                        </div>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          <button
+                            type="button"
+                            data-domain-action="commit-card-quality-text"
+                            onClick={() => onCommitCardQualityText(cardQualityTextDraft)}
+                            disabled={cardQualityTextDraft.trim().length === 0 || cardQualityTextDraft === selectedCard?.text}
+                            style={{ flex: "1 1 120px" }}
+                          >
+                            {t("side_panel.card_quality.commit_text")}
+                          </button>
+                          {selectedCard?.text !== cardQualityOriginalText ? (
+                            <button
+                              type="button"
+                              data-domain-action="restore-card-quality-text"
+                              onClick={onRestoreCardQualityText}
+                              style={{ flex: "1 1 120px" }}
+                            >
+                              {t("side_panel.card_quality.restore_original")}
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : null}
                     <div style={{ display: "flex", gap: 6 }}>
                       {!currentCardQualityQuestion(cardQualityAssistState) ? (
                         <button

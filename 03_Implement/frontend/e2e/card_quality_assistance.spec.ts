@@ -5,7 +5,8 @@ import type { Card } from "../src/domain/types";
 // DOMAIN-CARD-QUALITY-01 T7: mouse/keyboard/390px e2e for the "Tidy this
 // card" self-check flow (src/domain/card_quality.ts + src/ui/SidePanel.tsx).
 // Covers AC-4 (non-modal, one-question-at-a-time), AC-5 (no text change
-// before adoption), AC-8 (keyboard reachability + focus return), AC-9
+// before adoption), AC-7 (before/after comparison + restoration),
+// AC-8 (keyboard reachability + focus return), AC-9
 // (bilingual copy, 390px containment).
 
 const PRIMARY_FLOW = '[data-ui-region="primary-flow"]';
@@ -16,6 +17,8 @@ const DECISION_APPLY = '[data-domain-action="card-quality-decision-apply"]';
 const DECISION_KEEP_AS_IS = '[data-domain-action="card-quality-decision-keep-as-is"]';
 const DECISION_HOLD_FOR_NOW = '[data-domain-action="card-quality-decision-hold-for-now"]';
 const EDIT_TEXT = '[data-domain-action="edit-card-text-from-quality-assist"]';
+const COMMIT_TEXT = '[data-domain-action="commit-card-quality-text"]';
+const RESTORE_TEXT = '[data-domain-action="restore-card-quality-text"]';
 const CARD_TEXT = "quality assist target card";
 
 function buildDocument(card: Card = { id: "c1", text: CARD_TEXT, x: 0, y: 0 }) {
@@ -200,6 +203,14 @@ test("390px: the open assist and its decision controls stay within the viewport 
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(391);
   }
+
+  await assistGroup.locator(DECISION_APPLY).click();
+  const comparison = assistGroup.locator('[data-panel="card-quality-text-comparison"]');
+  await expect(comparison).toBeVisible();
+  const comparisonBox = await comparison.boundingBox();
+  expect(comparisonBox).not.toBeNull();
+  expect(comparisonBox!.x).toBeGreaterThanOrEqual(0);
+  expect(comparisonBox!.x + comparisonBox!.width).toBeLessThanOrEqual(391);
 });
 
 test("locale: opening in Japanese shows the Japanese self-check copy (AC-9)", async ({ page }) => {
@@ -216,6 +227,41 @@ test("locale: opening in Japanese shows the Japanese self-check copy (AC-9)", as
   await expect(assistGroup.locator(DECISION_APPLY)).toHaveText("整える");
   await expect(assistGroup.locator(DECISION_KEEP_AS_IS)).toHaveText("このまま保存");
   await expect(assistGroup.locator(DECISION_HOLD_FOR_NOW)).toHaveText("今は保留");
+});
+
+test("rewrite: compares revised text with the original and restores it by keyboard (AC-7)", async ({ page }) => {
+  const fixture = CARD_QUALITY_FIXTURES.find((candidate) => candidate.kind === "multi_center")!;
+  const revisedText = "案内表示が分かりにくかった。";
+  await routeDocument(page, fixture.card);
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto("/?locale=ja");
+  await openSample(page);
+  await selectTargetCard(page, fixture.card.text);
+
+  await page.locator(OPEN_ASSIST).click();
+  const assistGroup = page.getByRole("group", { name: "カードを整える" });
+  await assistGroup.locator(DECISION_APPLY).click();
+
+  const comparison = assistGroup.locator('[data-panel="card-quality-text-comparison"]');
+  await expect(comparison.locator('[data-card-quality-text="before"]')).toHaveText(fixture.card.text);
+  const revisedTextInput = comparison.locator('[data-card-quality-text="after"]');
+  await expect(revisedTextInput).toHaveValue(fixture.card.text);
+  await revisedTextInput.fill(revisedText);
+
+  await expect(page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: fixture.card.text })).toBeVisible();
+  const commitButton = comparison.locator(COMMIT_TEXT);
+  await commitButton.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: revisedText })).toBeVisible();
+  await expect(comparison.locator('[data-card-quality-text="before"]')).toHaveText(fixture.card.text);
+  await expect(revisedTextInput).toHaveValue(revisedText);
+
+  const restoreButton = comparison.locator(RESTORE_TEXT);
+  await restoreButton.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: fixture.card.text })).toBeVisible();
+  await expect(revisedTextInput).toHaveValue(fixture.card.text);
+  await expect(restoreButton).toHaveCount(0);
 });
 
 for (const fixture of CARD_QUALITY_FIXTURES) {
