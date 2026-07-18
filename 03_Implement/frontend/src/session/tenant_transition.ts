@@ -29,7 +29,8 @@ export function executeTenantSessionTransition(input: {
   nextSessionContext: unknown;
   deployment: string;
   previousScope: TenantBrowserStorageScope;
-  storage: TenantScopedStorage;
+  storage?: TenantScopedStorage;
+  clearPreviousScope?: () => number;
   cleanupSteps: readonly TenantTransitionCleanup[];
   replaceDocument?: () => void;
 }): TenantSessionTransitionResult {
@@ -51,7 +52,13 @@ export function executeTenantSessionTransition(input: {
   let clearedStorageEntries = 0;
   let storageClearFailed = false;
   try {
-    clearedStorageEntries = clearTenantScopedStorage(input.storage, input.previousScope);
+    if (input.clearPreviousScope) {
+      clearedStorageEntries = input.clearPreviousScope();
+    } else if (input.storage) {
+      clearedStorageEntries = clearTenantScopedStorage(input.storage, input.previousScope);
+    } else {
+      throw new Error("tenant storage cleanup unavailable");
+    }
   } catch {
     storageClearFailed = true;
   }

@@ -351,3 +351,9 @@
 - future SaaS用に未保存変更の保存／破棄／取消を選ぶ`alertdialog`を追加した。取消へ初期focusを置き、Escapeを取消へ写像し、Tab focusをdialog内へ閉じ、処理中は3操作を無効化してstatusを読み上げる。ja/enの同一契約を持ち、表示にはserver返却のtenant表示名だけを使ってopaque tenant IDを出さない。
 - request coordinatorはcurrent sessionを再検証し、active tenant自身は通信せず、allowlist外の自由入力、current sessionと旧browser scopeの不一致、欠損・未知の未保存変更decisionをPOST前に拒否する。保存失敗と取消ではPOST／cleanup／navigationを開始しない。POST成功後もprincipal不変・要求tenant一致を独立に再検証し、不正responseでは旧scope削除やhard replacementを開始しない。検証済みsession変更後はcomponent abortより旧DOM破棄とhard replacementを優先する。
 - 切替／cleanup／control／dialog／i18n近接82件・13 file、frontend全体1,223件・213 file、frontend typecheck、`saas-multitenant` production build、docs-check、active issue validatorを通過した。安全ゲート未充足のためcontrol／dialog／coordinatorは現行Appへ接続せず、trusted auth edge／anti-forgery付きsession persister、App保存・runtime cleanup実配線、tenant A/B実ブラウザE2Eは未完了である。AC-6/8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-19: dormant App tenant switch host
+
+- Appへ検証済み`TenantSessionContextV1`を任意注入できるtenant switch hostを追加し、注入時はsession由来のdeployment／principal／tenantとbrowser storage scopeの完全一致をmount前に再検証する。session非注入時のsingle-tenant動作は維持し、現行`main.tsx`は意図的にsessionを渡さないため、production entryではtenant controlをまだ表示しない。
+- 切替確認の取消・保存失敗では旧Appを維持してtenant selectへfocusを戻し、切替開始後は旧tenant DOMをloading／blocked viewへ置換する。成功応答を再検証してから、進行中request・worker・task・object URL・timerの破棄、browser storage facade経由の旧scope削除、hard document replacementを順に実行する。Appからraw `window.localStorage`へは触れず、cleanup能力がない場合はPOST前にfail-closedとした。
+- session／switch／cleanup／storage／UI近接54件・9 file、frontend全体1,233件・214 file、frontend typecheck、`saas-multitenant` production buildを通過した。実ブラウザではSaaS buildがalertだけでfail-closedとなり旧Canvas／tenant controlを表示しないこと、`evaluation` dev buildが従来CanvasとSafeMode ONを表示しtenant controlを出さないことを確認した。trusted SaaS auth edge、anti-forgery付きsession persisterの実runtime接続、PostgreSQL RLS実地検証、MCP／worker／cache／browserを含むtenant A/B negative matrix、production entryへのsession注入は未完了であり、AC-6/8/10/12とSaaS起動拒否を継続する。

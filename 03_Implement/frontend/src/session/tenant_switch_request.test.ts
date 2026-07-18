@@ -116,6 +116,28 @@ describe("tenant switch request", () => {
     expect(changeTenant).not.toHaveBeenCalled();
   });
 
+  it("requires scoped cleanup capability before changing the server session", async () => {
+    const changeTenant = vi.fn();
+    await expect(request({
+      storage: undefined,
+      clearPreviousScope: undefined,
+      changeTenant,
+    })).rejects.toThrow("Invalid tenant session context");
+    expect(changeTenant).not.toHaveBeenCalled();
+  });
+
+  it("uses the App storage facade cleanup after a verified change", async () => {
+    const clearPreviousScope = vi.fn(() => 3);
+    await expect(request({
+      storage: undefined,
+      clearPreviousScope,
+    })).resolves.toMatchObject({
+      status: "transitioned",
+      transition: { clearedStorageEntries: 3 },
+    });
+    expect(clearPreviousScope).toHaveBeenCalledOnce();
+  });
+
   it("cancels without saving, POST, cleanup, or replacement", async () => {
     const saveUnsavedChanges = vi.fn();
     const changeTenant = vi.fn();

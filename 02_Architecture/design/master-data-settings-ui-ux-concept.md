@@ -119,7 +119,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 - metadata未登録は`Restricted / binding未設定`として表示し、Public既定やread-only fallbackにしない。binding resolver不達は「権限設定を確認できないため利用不可」とし、文書0件のEmptyと区別する。
 - 変更は即時反映に見せず、差分確認、保存中の二重実行防止、成功receipt（policy version）、409競合時の再読込を用意する。bulk edit、CSV import/export、全doc一括公開は提供しない。
 - UI表示は`document.policy.manage`を使うがAPIが同じcapabilityとactive tenantを再検証する。`document.write`、Platform operator、文書ownerから管理権限を推測しない。
-- session GET/active tenant POST route、strict frontend client、profile別entry point、App mount前bootstrap／blocked-state gate、App unmount cleanup境界は実装済みだが、trusted auth edgeとanti-forgery付きsession persister、tenant switcherからApp保存・runtime cleanup・hard replacementを起動する実配線が揃うまで本画面を有効化しない。identity／tenant／capability解決失敗は権限なしのEmptyへ偽装せず、再試行可能な利用不可状態として扱う。
+- session GET/active tenant POST route、strict frontend client、profile別entry point、App mount前bootstrap／blocked-state gate、任意注入App hostの保存・runtime cleanup・hard replacement境界は実装済みだが、trusted auth edgeとanti-forgery付きsession persister、production entryからApp hostへのsession注入が揃うまで本画面を有効化しない。identity／tenant／capability解決失敗は権限なしのEmptyへ偽装せず、再試行可能な利用不可状態として扱う。
 
 #### エージェント登録（将来）
 
@@ -133,7 +133,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 ### 3.4 SaaSのtenant contextと管理面分離（ADR採択後）
 
 - Workspaceヘッダーにはactive tenantを静かに示す。membershipが1件ならswitcherにせずlabel、複数ならサーバーが返した選択肢だけをswitcherにする。tenantId自由入力は許可しない。
-- 上記のWorkspace用tenant control、保存／破棄／取消alert dialog、切替request coordinatorは実装済みであり、単一membership label、複数membership allowlist select、切替中disabled／status、日本語・英語accessible name、自由入力・旧scope不一致・response差替えの通信前／cleanup前拒否を固定した。profile別bootstrap entry pointは接続済みだが、Appの保存処理・runtime cleanup・POST／hard replacementへは未配線であるため、tenant controlを実画面へ表示しない。
+- 上記のWorkspace用tenant control、保存／破棄／取消alert dialog、切替request coordinator、任意注入App hostは実装済みであり、単一membership label、複数membership allowlist select、切替中disabled／status、日本語・英語accessible name、自由入力・旧scope不一致・response差替えの通信前／cleanup前拒否を固定した。App hostは切替確定後に旧本文をloading／blocked stateへ置換し、保存、request/worker/object URL/timer cleanup、旧scope削除、hard replacementを実行する。production entryはsession contextをAppへ渡さないため、tenant controlを実画面へ表示しない。
 - tenant切替時に未保存変更があれば保存・破棄・取消を選ばせる。確定後は文書、選択、検索、work mode、import preview、recent、QueryPreset、request cacheを破棄し、新tenantで再取得する。
 - 切替確認中やbackend未確認の間、旧tenantの本文と新tenantの管理UIを同時に表示しない。
 - **Tenant Admin**はactive tenantのmembership provisioning、document access metadata、agent registrationだけを扱う。本文と文書タイトルは表示しない。

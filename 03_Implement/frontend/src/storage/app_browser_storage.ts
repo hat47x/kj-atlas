@@ -13,6 +13,7 @@ import {
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./recent";
 import {
   buildTenantStoragePrefix,
+  clearTenantScopedStorage,
   type TenantBrowserStorageScope,
 } from "./tenant_scope";
 import {
@@ -28,6 +29,7 @@ import {
 export type AppBrowserStorage = Readonly<{
   scope?: TenantBrowserStorageScope;
   scopeIdentity: string;
+  clearScope: () => number;
   loadAdvancedUiEnabled: () => boolean;
   saveAdvancedUiEnabled: (enabled: boolean) => void;
   initializeCurrentReviewerRef: () => string;
@@ -83,6 +85,9 @@ export function createAppBrowserStorage(
   return Object.freeze({
     scope: validatedScope,
     scopeIdentity,
+    clearScope: () => validatedScope
+      ? clearTenantScopedStorage(window.localStorage, validatedScope)
+      : 0,
     loadAdvancedUiEnabled: () => loadAdvancedUiEnabled(validatedScope),
     saveAdvancedUiEnabled: (enabled: boolean) => saveAdvancedUiEnabled(enabled, validatedScope),
     initializeCurrentReviewerRef: () => initializeCurrentReviewerRef(validatedScope),

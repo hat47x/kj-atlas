@@ -61,7 +61,8 @@ export async function requestTenantSessionTransition(input: Readonly<{
   requestedTenantId: string;
   deployment: string;
   previousScope: TenantBrowserStorageScope;
-  storage: TenantScopedStorage;
+  storage?: TenantScopedStorage;
+  clearPreviousScope?: () => number;
   cleanupSteps: readonly TenantTransitionCleanup[];
   hasUnsavedChanges: boolean;
   requestUnsavedDecision?: () => Promise<unknown>;
@@ -85,6 +86,9 @@ export async function requestTenantSessionTransition(input: Readonly<{
     input.deployment,
   );
   if (!scopesMatch(input.previousScope, expectedPreviousScope)) {
+    throw new InvalidTenantSessionContextError();
+  }
+  if (!input.storage && !input.clearPreviousScope) {
     throw new InvalidTenantSessionContextError();
   }
 
@@ -133,6 +137,7 @@ export async function requestTenantSessionTransition(input: Readonly<{
       deployment: input.deployment,
       previousScope: input.previousScope,
       storage: input.storage,
+      clearPreviousScope: input.clearPreviousScope,
       cleanupSteps: input.cleanupSteps,
       replaceDocument: input.replaceDocument,
     }),

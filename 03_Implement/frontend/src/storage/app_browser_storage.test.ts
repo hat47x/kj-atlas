@@ -107,10 +107,24 @@ describe("App browser storage boundary", () => {
     )).not.toThrow();
   });
 
+  it("clears only the bound tenant scope without exposing raw storage to App", () => {
+    const storageA = createAppBrowserStorage(tenantA);
+    const storageB = createAppBrowserStorage(tenantB);
+    storageA.saveAdvancedUiEnabled(true);
+    storageA.pushRecentDocumentId("shared-doc");
+    storageB.saveAdvancedUiEnabled(true);
+
+    expect(storageA.clearScope()).toBe(2);
+    expect(storageA.loadAdvancedUiEnabled()).toBe(false);
+    expect(storageA.loadRecentDocumentIds()).toEqual([]);
+    expect(storageB.loadAdvancedUiEnabled()).toBe(true);
+  });
+
   it("keeps the existing single-tenant storage keys when no scope is injected", () => {
     const storage = createAppBrowserStorage();
     storage.pushRecentDocumentId("legacy-doc");
 
+    expect(storage.clearScope()).toBe(0);
     expect(storage.scopeIdentity).toBe("legacy-single-tenant");
     expect(window.localStorage.getItem("kj-atlas/recent-doc-ids")).toBe(
       JSON.stringify(["legacy-doc"]),
@@ -133,6 +147,8 @@ describe("App browser storage boundary", () => {
       expect(appSource).not.toContain(`"./storage/${moduleName}"`);
     }
     expect(appSource).toContain("createAppBrowserStorage(storageScope)");
+    expect(appSource).toContain("clearPreviousScope: appStorage.clearScope");
+    expect(appSource).not.toContain("window.localStorage");
     expect(appSource).toContain("storageScope={appStorage.scope}");
     expect(minimapSource).toContain("loadMinimapCollapsed(storageScope)");
     expect(minimapSource).toContain("saveMinimapCollapsed(false, storageScope)");

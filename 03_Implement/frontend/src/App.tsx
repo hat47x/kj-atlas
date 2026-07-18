@@ -91,6 +91,7 @@ import {
   createAppBrowserStorage,
 } from "./storage/app_browser_storage";
 import type { TenantBrowserStorageScope } from "./storage/tenant_scope";
+import type { TenantSessionContextV1 } from "./api/session_context";
 import { createViewLocalePersistenceScope } from "./storage/view_locale_scope";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
@@ -196,6 +197,14 @@ import { DiagnosticsWorkerClient } from "./worker/diagnostics_client";
 import type { DiagnosticsProgressStage } from "./worker/diagnostics_protocol";
 import type { DiffProgressStage } from "./worker/diff_protocol";
 import { cleanupAppRuntimeResources } from "./session/app_runtime_cleanup";
+import { resolveAppTenantSession } from "./session/app_tenant_session";
+import { requestTenantSessionTransition, type TenantSwitchUnsavedDecision } from "./session/tenant_switch_request";
+import { TenantSessionControl } from "./ui/TenantSessionControl";
+import { TenantChangeConfirmationDialog } from "./ui/TenantChangeConfirmationDialog";
+import {
+  TenantSessionBlockedView,
+  TenantSessionLoadingView,
+} from "./ui/TenantSessionBootstrapGate";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 // UX-VISUAL-02 (ADR-0048 D3): an island at or below this member count is a
@@ -1075,14 +1084,32 @@ function applyFocusScope(document: DocumentV1, focusTarget: FocusTarget): Docume
   };
 }
 
+type TenantSwitchUiState =
+  | Readonly<{ status: "idle" }>
+  | Readonly<{
+    status: "confirming";
+    requestedTenantId: string;
+    requestedTenantDisplayName: string;
+  }>
+  | Readonly<{ status: "switching" }>
+  | Readonly<{ status: "blocked" }>;
+
 export type AppProps = Readonly<{
   storageScope?: TenantBrowserStorageScope;
+  tenantSessionContext?: TenantSessionContextV1;
 }>;
 
-export default function App({ storageScope }: AppProps = {}) {
+export default function App({ storageScope, tenantSessionContext }: AppProps = {}) {
   const appStorage = useMemo(
     () => createAppBrowserStorage(storageScope),
     [storageScope?.deployment, storageScope?.principalId, storageScope?.tenantId],
+  );
+  const verifiedTenantSession = useMemo(
+    () => resolveAppTenantSession({
+      sessionContext: tenantSessionContext,
+      storageScope: appStorage.scope,
+    }),
+    [appStorage.scope, tenantSessionContext],
   );
   const initialStorageScopeIdentityRef = useRef(appStorage.scopeIdentity);
   assertAppStorageScopeStable(
@@ -1137,6 +1164,9 @@ export default function App({ storageScope }: AppProps = {}) {
   const [isSaving, setIsSaving] = useState(false);
   const [isReloadingDocument, setIsReloadingDocument] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [tenantSwitchUiState, setTenantSwitchUiState] = useState<TenantSwitchUiState>({
+    status: "idle",
+  });
   const [docEtag, setDocEtag] = useState<string | null>(null);
   const [hasSaveConflict, setHasSaveConflict] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
@@ -1338,24 +1368,29 @@ export default function App({ storageScope }: AppProps = {}) {
   const diffWorkerClientRef = useRef<DiffWorkerClient | null>(null);
   const diagnosticsWorkerClientRef = useRef<DiagnosticsWorkerClient | null>(null);
   const diffAbortRef = useRef<AbortController | null>(null);
+  const tenantSwitchAbortRef = useRef<AbortController | null>(null);
+  const tenantControlRef = useRef<HTMLSelectElement | null>(null);
   const viewLocalePersistenceScopeRef = useRef(createViewLocalePersistenceScope({ docId: "", viewMode: "explore", allowPersistence: true }));
 
-  useEffect(() => {
-    return () => {
-      cleanupAppRuntimeResources({
-        abortControllers: [
-          diffAbortRef.current,
-          diagnosticsAbortRef.current,
-          bundleAbortRef.current,
-        ],
-        cancelableTasks: [bundleRunnerRef.current],
-        disposableWorkers: [
-          diffWorkerClientRef.current,
-          diagnosticsWorkerClientRef.current,
-        ],
-      });
-    };
+  const cleanupRuntimeResources = useCallback(() => {
+    cleanupAppRuntimeResources({
+      abortControllers: [
+        tenantSwitchAbortRef.current,
+        diffAbortRef.current,
+        diagnosticsAbortRef.current,
+        bundleAbortRef.current,
+      ],
+      cancelableTasks: [bundleRunnerRef.current],
+      disposableWorkers: [
+        diffWorkerClientRef.current,
+        diagnosticsWorkerClientRef.current,
+      ],
+    });
   }, []);
+
+  useEffect(() => {
+    return cleanupRuntimeResources;
+  }, [cleanupRuntimeResources]);
 
   useEffect(() => {
     return () => {
@@ -2446,9 +2481,9 @@ export default function App({ storageScope }: AppProps = {}) {
     };
   }, [abstractMapView, summaryView, isReadOnly]);
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<boolean> => {
     if (!document || isSaving || !isDirty) {
-      return;
+      return false;
     }
 
     setIsSaving(true);
@@ -2470,17 +2505,132 @@ export default function App({ storageScope }: AppProps = {}) {
       setIsDirty(false);
       setHasSaveConflict(false);
       setStatusMessage(t("app.status.saved"));
+      return true;
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
         setHasSaveConflict(true);
         setStatusMessage(t("app.status.save_conflict"));
-        return;
+        return false;
       }
 
       setStatusMessage(formatSaveDocumentFailure(error));
+      return false;
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const focusTenantControl = () => {
+    window.setTimeout(() => tenantControlRef.current?.focus(), 0);
+  };
+
+  const performTenantSwitch = async (
+    requestedTenantId: string,
+    unsavedDecision?: Exclude<TenantSwitchUnsavedDecision, "cancel">,
+  ) => {
+    if (!verifiedTenantSession || !appStorage.scope) {
+      setTenantSwitchUiState({ status: "blocked" });
+      return;
+    }
+
+    const controller = new AbortController();
+    tenantSwitchAbortRef.current?.abort();
+    tenantSwitchAbortRef.current = controller;
+    setTenantSwitchUiState({ status: "switching" });
+
+    try {
+      const result = await requestTenantSessionTransition({
+        currentSessionContext: verifiedTenantSession,
+        requestedTenantId,
+        deployment: appStorage.scope.deployment,
+        previousScope: appStorage.scope,
+        clearPreviousScope: appStorage.clearScope,
+        cleanupSteps: [
+          cleanupRuntimeResources,
+          () => {
+            if (importedPackSnapshotUrl) {
+              URL.revokeObjectURL(importedPackSnapshotUrl);
+            }
+          },
+          () => {
+            if (highlightTimeoutRef.current !== null) {
+              window.clearTimeout(highlightTimeoutRef.current);
+              highlightTimeoutRef.current = null;
+            }
+          },
+        ],
+        hasUnsavedChanges: isDirty,
+        requestUnsavedDecision: unsavedDecision
+          ? async () => unsavedDecision
+          : undefined,
+        saveUnsavedChanges: unsavedDecision === "save"
+          ? handleSave
+          : undefined,
+        signal: controller.signal,
+      });
+
+      if (
+        result.status === "cancelled"
+        || result.status === "save-failed"
+        || result.status === "unchanged"
+      ) {
+        setTenantSwitchUiState({ status: "idle" });
+        focusTenantControl();
+      }
+    } catch (error) {
+      if (
+        controller.signal.aborted
+        || (
+          error
+          && typeof error === "object"
+          && "name" in error
+          && error.name === "AbortError"
+        )
+      ) {
+        return;
+      }
+      setTenantSwitchUiState({ status: "blocked" });
+    } finally {
+      if (tenantSwitchAbortRef.current === controller) {
+        tenantSwitchAbortRef.current = null;
+      }
+    }
+  };
+
+  const handleTenantChangeRequest = (requestedTenantId: string) => {
+    if (!verifiedTenantSession || tenantSwitchUiState.status !== "idle") {
+      return;
+    }
+    const requestedTenant = verifiedTenantSession.availableTenants.find(
+      (tenant) => tenant.id === requestedTenantId,
+    );
+    if (
+      !requestedTenant
+      || requestedTenant.id === verifiedTenantSession.activeTenant.id
+    ) {
+      return;
+    }
+    if (isDirty) {
+      setTenantSwitchUiState({
+        status: "confirming",
+        requestedTenantId: requestedTenant.id,
+        requestedTenantDisplayName: requestedTenant.displayName,
+      });
+      return;
+    }
+    void performTenantSwitch(requestedTenant.id);
+  };
+
+  const handleTenantSwitchDecision = (decision: TenantSwitchUnsavedDecision) => {
+    if (tenantSwitchUiState.status !== "confirming") {
+      return;
+    }
+    if (decision === "cancel") {
+      setTenantSwitchUiState({ status: "idle" });
+      focusTenantControl();
+      return;
+    }
+    void performTenantSwitch(tenantSwitchUiState.requestedTenantId, decision);
   };
 
   const handleNewDocument = useCallback(() => {
@@ -8305,6 +8455,14 @@ export default function App({ storageScope }: AppProps = {}) {
       data-ui-complexity-tier="core-toolbar"
       style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", rowGap: 6, whiteSpace: "nowrap", maxWidth: "100%" }}
     >
+      {verifiedTenantSession ? (
+        <TenantSessionControl
+          sessionContext={verifiedTenantSession}
+          isChanging={tenantSwitchUiState.status === "switching"}
+          selectRef={tenantControlRef}
+          onRequestTenantChange={handleTenantChangeRequest}
+        />
+      ) : null}
       <button
         type="button"
         onClick={handleUndo}
@@ -10571,6 +10729,18 @@ export default function App({ storageScope }: AppProps = {}) {
     Boolean(document) &&
     (document?.cards.length ?? 0) === 0;
 
+  if (tenantSwitchUiState.status === "switching") {
+    return <TenantSessionLoadingView />;
+  }
+  if (tenantSwitchUiState.status === "blocked") {
+    return (
+      <TenantSessionBlockedView
+        reason="session_unavailable"
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
+
   return (
     <>
     <Shell
@@ -11380,6 +11550,12 @@ export default function App({ storageScope }: AppProps = {}) {
       />
     ) : null}
     {isShortcutCheatsheetOpen ? <ShortcutCheatsheet onClose={closeShortcutCheatsheet} /> : null}
+    {tenantSwitchUiState.status === "confirming" ? (
+      <TenantChangeConfirmationDialog
+        requestedTenantDisplayName={tenantSwitchUiState.requestedTenantDisplayName}
+        onDecision={handleTenantSwitchDecision}
+      />
+    ) : null}
     </>
   );
 }
