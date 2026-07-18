@@ -652,5 +652,108 @@ class RuntimeParameterKeyCheckTest(unittest.TestCase):
         self.assertEqual(findings, [])
 
 
+class RepositoryPathCheckTest(unittest.TestCase):
+    def test_accepts_existing_paths_in_public_docs(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            target_dir = root / "03_Implement" / "backend"
+            target_dir.mkdir(parents=True)
+            (target_dir / "settings.py").write_text("", encoding="utf-8")
+            readme = root / "README.md"
+            readme.write_text("設定は `03_Implement/backend/settings.py` を参照。\n", encoding="utf-8")
+
+            findings = MODULE.check_repository_path_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_reports_missing_path(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "installation.md"
+            doc.write_text("設定は `03_Implement/backend/does_not_exist.py` を参照。\n", encoding="utf-8")
+
+            findings = MODULE.check_repository_path_commands(root, [Path("04_Documentation/installation.md")])
+
+        self.assertEqual(len(findings), 1)
+        finding = findings[0]
+        self.assertEqual(finding.rule_id, "DC-CMD-001")
+        self.assertEqual(finding.path, "04_Documentation/installation.md")
+        self.assertEqual(finding.line, 1)
+        self.assertEqual(finding.target, "03_Implement/backend/does_not_exist.py")
+        self.assertIn("does not exist", finding.message)
+
+    def test_ignores_placeholder_tokens(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "configuration.md"
+            doc.write_text("`03_Implement/<component>/settings.py` のように置き換えます。\n", encoding="utf-8")
+
+            findings = MODULE.check_repository_path_commands(root, [Path("04_Documentation/configuration.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_accepts_existing_path_with_trailing_line_reference(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            target_dir = root / "03_Implement" / "backend"
+            target_dir.mkdir(parents=True)
+            (target_dir / "main.py").write_text("line1\nline2\n", encoding="utf-8")
+            readme = root / "README.md"
+            readme.write_text("詳細は `03_Implement/backend/main.py:42` を参照。\n", encoding="utf-8")
+
+            findings = MODULE.check_repository_path_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_ignores_process_memos_outside_the_public_doc_scope(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            issues_dir = root / "01_Plans" / "issues"
+            issues_dir.mkdir(parents=True)
+            memo = issues_dir / "issue-example.md"
+            memo.write_text("参照: `03_Implement/backend/does_not_exist.py`\n", encoding="utf-8")
+
+            findings = MODULE.check_repository_path_commands(root, [Path("01_Plans/issues/issue-example.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_accepts_build_output_path_absent_before_a_build_runs(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            frontend_dir = root / "03_Implement" / "frontend"
+            frontend_dir.mkdir(parents=True)
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "release.md"
+            doc.write_text(
+                "GitHub Actions artifact（`03_Implement/frontend/dist`の内容）を取得する。\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_repository_path_commands(root, [Path("04_Documentation/release.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_reports_missing_path_under_a_nonexistent_parent_even_with_a_build_output_leaf(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "release.md"
+            doc.write_text(
+                "誤った参照 `03_Implement/wrong-place/dist` は検出される。\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_repository_path_commands(root, [Path("04_Documentation/release.md")])
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].target, "03_Implement/wrong-place/dist")
+
+
 if __name__ == "__main__":
     unittest.main()
