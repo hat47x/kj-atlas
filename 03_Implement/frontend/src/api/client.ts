@@ -53,6 +53,68 @@ type ParsedErrorDetail = {
   disabledReason?: string;
 };
 
+const MAX_TENANT_SESSION_RESPONSE_BYTES = 64 * 1024;
+
+async function readBoundedUtf8Response(response: Response, maxBytes: number): Promise<string> {
+  const contentLength = response.headers.get("content-length");
+  if (
+    contentLength !== null
+    && (!/^\d+$/.test(contentLength) || Number(contentLength) > maxBytes)
+  ) {
+    try {
+      await response.body?.cancel();
+    } catch {
+      // The invalid length remains authoritative even if cancellation fails.
+    }
+    throw new InvalidTenantSessionContextError();
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    return "";
+  }
+
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      if (!value) {
+        continue;
+      }
+
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        try {
+          await reader.cancel();
+        } catch {
+          // The size violation remains authoritative even if cancellation fails.
+        }
+        throw new InvalidTenantSessionContextError();
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const responseBytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    responseBytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(responseBytes);
+  } catch {
+    throw new InvalidTenantSessionContextError();
+  }
+}
+
 /**
  * PROV-ERROR-01: the backend's /ai/* routes send `detail` as the full
  * ProviderError.to_contract() object (code/message/disabled_reason/...) for
@@ -63,9 +125,14 @@ type ParsedErrorDetail = {
  * both shapes: a plain string `detail` (most routes) or the structured
  * provider-error object.
  */
-async function parseErrorDetail(response: Response): Promise<ParsedErrorDetail> {
+async function parseErrorDetail(
+  response: Response,
+  maxBytes?: number,
+): Promise<ParsedErrorDetail> {
   try {
-    const body = await response.json();
+    const body = maxBytes === undefined
+      ? await response.json()
+      : JSON.parse(await readBoundedUtf8Response(response, maxBytes));
     const detail = body?.detail;
 
     if (typeof detail === "string") {
@@ -149,20 +216,11 @@ function parseDocumentResponse(responseBody: string): Document {
   return JSON.parse(responseBody) as Document;
 }
 
-const MAX_TENANT_SESSION_RESPONSE_BYTES = 64 * 1024;
-
 async function parseTenantSessionResponse(response: Response): Promise<unknown> {
-  const contentLength = response.headers.get("content-length");
-  if (
-    contentLength !== null
-    && (!/^\d+$/.test(contentLength) || Number(contentLength) > MAX_TENANT_SESSION_RESPONSE_BYTES)
-  ) {
-    throw new InvalidTenantSessionContextError();
-  }
-  const responseText = await response.text();
-  if (new TextEncoder().encode(responseText).byteLength > MAX_TENANT_SESSION_RESPONSE_BYTES) {
-    throw new InvalidTenantSessionContextError();
-  }
+  const responseText = await readBoundedUtf8Response(
+    response,
+    MAX_TENANT_SESSION_RESPONSE_BYTES,
+  );
   try {
     return JSON.parse(responseText) as unknown;
   } catch {
@@ -182,7 +240,7 @@ export async function getTenantSessionContext(
   });
 
   if (!response.ok) {
-    const errorDetail = await parseErrorDetail(response);
+    const errorDetail = await parseErrorDetail(response, MAX_TENANT_SESSION_RESPONSE_BYTES);
     throw new ApiError(response.status, errorDetail.message, {
       code: errorDetail.code,
       disabledReason: errorDetail.disabledReason,

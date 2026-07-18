@@ -116,6 +116,69 @@ describe("tenant session context fetch boundary", () => {
       InvalidTenantSessionContextError,
     );
   });
+
+  it("cancels a chunked session response as soon as it exceeds the byte limit", async () => {
+    let pullCount = 0;
+    let cancelled = false;
+    const chunks = [
+      new Uint8Array(64 * 1024),
+      new Uint8Array([0x20]),
+      new TextEncoder().encode("must-not-be-read"),
+    ];
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        const chunk = chunks[pullCount];
+        pullCount += 1;
+        if (chunk) {
+          controller.enqueue(chunk);
+        } else {
+          controller.close();
+        }
+      },
+      cancel() {
+        cancelled = true;
+      },
+    }, { highWaterMark: 0 });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(body, {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await expect(getTenantSessionContext()).rejects.toBeInstanceOf(
+      InvalidTenantSessionContextError,
+    );
+    expect(pullCount).toBe(2);
+    expect(cancelled).toBe(true);
+  });
+
+  it("bounds oversized error responses and falls back to the HTTP status text", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new Uint8Array((64 * 1024) + 1), {
+        status: 503,
+        statusText: "Service Unavailable",
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await expect(getTenantSessionContext()).rejects.toEqual(
+      new ApiError(503, "Service Unavailable"),
+    );
+  });
+
+  it("rejects a session response that is not valid UTF-8", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new Uint8Array([0xff]), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await expect(getTenantSessionContext()).rejects.toBeInstanceOf(
+      InvalidTenantSessionContextError,
+    );
+  });
 });
 
 describe("suggestMerges contract validation", () => {
