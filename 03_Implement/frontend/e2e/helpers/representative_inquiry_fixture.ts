@@ -59,12 +59,15 @@ function sequentialIds(): () => string {
   return () => String(++value);
 }
 
-export async function buildRepresentativeInquiryBundle(): Promise<InquiryBundleV1> {
+export async function buildRepresentativeInquiryBundle(
+  roundCount = REPRESENTATIVE_ROUND_COUNT
+): Promise<InquiryBundleV1> {
   const document = buildRepresentativePerformanceDocument();
   const idFactory = sequentialIds();
   let bundle = await startInquiryJourney(document, { idFactory, now: () => CREATED_AT });
 
-  for (const [index, stage] of ROUND_STAGES.entries()) {
+  for (let index = 0; index < roundCount; index += 1) {
+    const stage = ROUND_STAGES[index % ROUND_STAGES.length];
     const recordedAt = new Date(Date.parse(CREATED_AT) + (index + 1) * 60_000).toISOString();
     const result = await recordInquiryRound(bundle, document, stage, {
       idFactory,

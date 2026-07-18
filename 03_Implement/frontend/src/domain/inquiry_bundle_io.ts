@@ -7,8 +7,11 @@ import {
   type RoundSnapshotV1,
 } from "./inquiry_journey";
 
+export const INQUIRY_BUNDLE_WARNING_BYTES = 5 * 1024 * 1024;
+export const INQUIRY_BUNDLE_MAX_BYTES = 20 * 1024 * 1024;
+
 export type InquiryBundleIoError = {
-  code: "invalid_json" | "invalid_shape" | "invalid_bundle" | "digest_mismatch";
+  code: "payload_too_large" | "invalid_json" | "invalid_shape" | "invalid_bundle" | "digest_mismatch";
   path: string;
   message: string;
 };
@@ -18,6 +21,18 @@ export type InquiryBundleIoResult =
   | { ok: false; errors: InquiryBundleIoError[] };
 
 type ShapeErrors = InquiryBundleIoError[];
+
+function payloadTooLargeError(): InquiryBundleIoError {
+  return {
+    code: "payload_too_large",
+    path: "$",
+    message: `Inquiry bundle exceeds the ${INQUIRY_BUNDLE_MAX_BYTES} byte limit.`,
+  };
+}
+
+function utf8ByteLength(value: string): number {
+  return new TextEncoder().encode(value).byteLength;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -283,10 +298,18 @@ export async function serializeInquiryBundle(bundle: InquiryBundleV1): Promise<{
       errors: issues.map((issue) => ({ code: "invalid_bundle", path: issue.path, message: issue.code })),
     };
   }
-  return { ok: true, json: `${JSON.stringify(shape.bundle, null, 2)}\n`, bundle: shape.bundle };
+  const json = `${JSON.stringify(shape.bundle, null, 2)}\n`;
+  if (utf8ByteLength(json) > INQUIRY_BUNDLE_MAX_BYTES) {
+    return { ok: false, errors: [payloadTooLargeError()] };
+  }
+  return { ok: true, json, bundle: shape.bundle };
 }
 
 export async function parseInquiryBundleJson(rawText: string): Promise<InquiryBundleIoResult> {
+  if (utf8ByteLength(rawText) > INQUIRY_BUNDLE_MAX_BYTES) {
+    return { ok: false, errors: [payloadTooLargeError()] };
+  }
+
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawText);
