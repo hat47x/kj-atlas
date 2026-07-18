@@ -137,3 +137,42 @@ test("work mode owns narrative and HIL surfaces outside selection context", asyn
   await expect(workMode).toHaveCount(0);
   await expect(workModeTrigger).toBeFocused();
 });
+
+test("iterative inquiry prototype starts from the current document and keeps repeated stages separate", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.addInitScript(() => {
+    window.localStorage.removeItem("kj-atlas.advanced-ui-enabled");
+  });
+  const fixture = await routeDomainExpressionFixture(page);
+
+  await page.goto("/?locale=ja");
+  fixture.enableSample();
+  await page.getByRole("button", { name: "サンプルを開く" }).click();
+  await expect(page.locator('[data-panel="inquiry-journey-prototype"]')).toHaveCount(0);
+
+  await page.getByRole("button", { name: "詳細" }).click();
+  await page.getByRole("button", { name: "作業モード" }).click();
+  await page.getByRole("tab", { name: "探究" }).click();
+
+  const prototype = page.locator('[data-panel="inquiry-journey-prototype"]');
+  await expect(prototype).toContainText("起点: domain expression keyboard access fixture（カード 3 件）");
+  const startButton = prototype.getByRole("button", { name: "現在の文書から探究を始める" });
+  await startButton.focus();
+  await page.keyboard.press("Enter");
+  await expect(prototype.getByRole("status")).toContainText("保存されません");
+
+  const stageSelect = prototype.getByLabel("次に扱う段階");
+  await stageSelect.selectOption("r2_situation_grasp");
+  await prototype.getByRole("button", { name: "R2 現状把握・1回目を記録" }).click();
+  await stageSelect.selectOption("r3_essence_pursuit");
+  await prototype.getByRole("button", { name: "R3 本質追求・1回目を記録" }).click();
+  await stageSelect.selectOption("r2_situation_grasp");
+  await prototype.getByRole("button", { name: "R2 現状把握・2回目を記録" }).click();
+
+  const history = prototype.getByRole("list", { name: "探究の記録" });
+  await expect(history.getByRole("listitem")).toHaveText([
+    "R2 現状把握・1回目",
+    "R3 本質追求・1回目",
+    "R2 現状把握・2回目",
+  ]);
+});

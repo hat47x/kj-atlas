@@ -57,6 +57,7 @@ import { Shell } from "./ui/Shell";
 import { SidePanel } from "./ui/SidePanel";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
 import { WorkModeTabs } from "./ui/WorkModeTabs";
+import { InquiryJourneyPrototypePanel } from "./ui/InquiryJourneyPrototypePanel";
 import { SearchBar } from "./ui/SearchBar";
 import { ViewControlsPanel } from "./ui/ViewControlsPanel";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
@@ -10322,6 +10323,11 @@ export default function App() {
               />
             </div>
           ),
+        },
+        {
+          id: "inquiry",
+          label: t("work_mode.tab.inquiry"),
+          content: <InquiryJourneyPrototypePanel document={document} />,
         },
         {
           id: "diagnostics",
