@@ -562,5 +562,95 @@ class ComposeServiceCommandCheckTest(unittest.TestCase):
         self.assertEqual(findings, [])
 
 
+class RuntimeParameterKeyCheckTest(unittest.TestCase):
+    def _write_registry(self, root: Path, keys: list[str]) -> None:
+        arch_dir = root / "02_Architecture"
+        arch_dir.mkdir(parents=True, exist_ok=True)
+        body = "# Runtime Parameter Registry\n\n## Backend settings\n\n"
+        body += "| Key | Default | Purpose |\n| --- | --- | --- |\n"
+        body += "".join(f"| `{key}` | none | placeholder |\n" for key in keys)
+        (arch_dir / "runtime_parameter_registry.md").write_text(body, encoding="utf-8")
+
+    def test_accepts_existing_keys_in_public_docs(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_registry(root, ["KJ_ATLAS_LLM_PROVIDER", "KJ_ATLAS_API_KEY"])
+            readme = root / "README.md"
+            readme.write_text(
+                "```bash\nexport KJ_ATLAS_LLM_PROVIDER=none\nexport KJ_ATLAS_API_KEY=change-me\n```\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_runtime_parameter_key_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_accepts_registry_row_with_a_trailing_annotation_marker(self):
+        # Real registry rows mark known gaps with a trailing "⚠️" between the
+        # closing backtick and the next `|` (e.g. `` `KJ_ATLAS_API_KEY` ⚠️ ``);
+        # the row-extraction regex must not require the backtick to be
+        # immediately followed by whitespace-then-pipe.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            arch_dir = root / "02_Architecture"
+            arch_dir.mkdir(parents=True)
+            (arch_dir / "runtime_parameter_registry.md").write_text(
+                "| Key | Default | Purpose |\n| --- | --- | --- |\n"
+                "| `KJ_ATLAS_API_KEY` ⚠️ | 未設定 | protects the API |\n",
+                encoding="utf-8",
+            )
+            readme = root / "README.md"
+            readme.write_text("```bash\nexport KJ_ATLAS_API_KEY=change-me\n```\n", encoding="utf-8")
+
+            findings = MODULE.check_runtime_parameter_key_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_reports_key_missing_from_registry(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_registry(root, ["KJ_ATLAS_LLM_PROVIDER"])
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "configuration.md"
+            doc.write_text("```bash\nexport KJ_ATLAS_NONEXISTENT_KEY=1\n```\n", encoding="utf-8")
+
+            findings = MODULE.check_runtime_parameter_key_commands(root, [Path("04_Documentation/configuration.md")])
+
+        self.assertEqual(len(findings), 1)
+        finding = findings[0]
+        self.assertEqual(finding.rule_id, "DC-CMD-001")
+        self.assertEqual(finding.path, "04_Documentation/configuration.md")
+        self.assertEqual(finding.line, 2)
+        self.assertEqual(finding.target, "KJ_ATLAS_NONEXISTENT_KEY")
+        self.assertIn("does not exist", finding.message)
+
+    def test_ignores_prefix_family_mentions(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_registry(root, ["KJ_ATLAS_AUDIT_EXPORT_ENABLED"])
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "security.md"
+            doc.write_text("監査系設定は `KJ_ATLAS_AUDIT_*` を参照してください。\n", encoding="utf-8")
+
+            findings = MODULE.check_runtime_parameter_key_commands(root, [Path("04_Documentation/security.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_ignores_process_memos_outside_the_public_doc_scope(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_registry(root, ["KJ_ATLAS_LLM_PROVIDER"])
+            issues_dir = root / "01_Plans" / "issues"
+            issues_dir.mkdir(parents=True)
+            memo = issues_dir / "issue-example.md"
+            memo.write_text("検証コマンド宣言: `KJ_ATLAS_NONEXISTENT_KEY=1`\n", encoding="utf-8")
+
+            findings = MODULE.check_runtime_parameter_key_commands(root, [Path("01_Plans/issues/issue-example.md")])
+
+        self.assertEqual(findings, [])
+
+
 if __name__ == "__main__":
     unittest.main()

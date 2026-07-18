@@ -155,6 +155,11 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_AUTH_LEVEL2_SP_BASE_URL` | Auth Level2 tests | `http://127.0.0.1:18080` | pytest から mock SP を参照する base URL |
 | `KJ_ATLAS_LEVEL2_DIAG_DIR` | Auth Level2 test harness | 未設定（Level2 scripts は `.artifacts/auth-level2/legacy-federation` を設定） | legacy federation fixture の診断JSON出力先。未設定の通常pytestでは診断ファイルを書き出さない |
 | `KJ_ATLAS_RECOVERY_DOC_ID` | data maintenance rehearsal | `doc-data-maint-pg-recovery-20260525` | PostgreSQL recovery rehearsal の対象 document id |
+| `KJ_ATLAS_SCREENSHOT_HOST` | `capture_release_screenshots.mjs` 等のscreenshot capture script | `127.0.0.1` | screenshot撮影用に起動するvite preview serverのhost |
+| `KJ_ATLAS_SCREENSHOT_PORT` | screenshot capture script | `4173` | screenshot撮影用vite preview serverのport |
+| `KJ_ATLAS_SCREENSHOT_BASE_URL` | screenshot capture script | `http://<host>:<port>/?locale=ja`（host/portから導出） | 撮影対象ページのbase URL |
+| `KJ_ATLAS_SCREENSHOT_OUTPUT_DIR` | screenshot capture script | `04_Documentation/assets/screenshots` | 生成画像の出力先 |
+| `KJ_ATLAS_SCREENSHOT_BROWSER_PATH` | screenshot capture script | 未設定（Playwright管理browserを使用） | 同梱Chromiumが利用できない環境向けのbrowser実体パス代替 |
 
 ## Validation rules
 
