@@ -1,7 +1,8 @@
 # Issue: SEC-INQUIRY-01 探究ファイル取込に実測由来の容量上限を設ける
 
 - Type: Security / Performance / UX
-- Status: Open
+- Status: Done
+- Completion: 2026-07-18; 6・12・18ラウンドの実測から5MiB警告・20MiB拒否境界を固定し、UI preflight、domain parser、exportへ対称に適用した。
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -27,12 +28,12 @@
 
 ## 3) 受入条件
 
-- [ ] 代表規模と成長ケースの実測根拠から警告・拒否境界を決める。
-- [ ] 上限超過ファイルを`File.text()`より前に拒否し、画面が操作可能なままになる。
-- [ ] `parseInquiryBundleJson()`の直接利用でもUTF-8 byte上限を超える入力を拒否する。
-- [ ] 境界直下、境界一致、境界超過、マルチバイト文字をunit testで検証する。
-- [ ] 代表規模の保存・再開、worker中止、100ms設計目標を退行させない。
-- [ ] 利用者向けメッセージは、技術的なbyte値だけでなく、ファイルを分けるなどの次の行動を示す。
+- [x] 代表規模と成長ケースの実測根拠から警告・拒否境界を決める。
+- [x] 上限超過ファイルを`File.text()`より前に拒否し、画面が操作可能なままになる。
+- [x] `parseInquiryBundleJson()`の直接利用でもUTF-8 byte上限を超える入力を拒否する。
+- [x] 境界直下、境界一致、境界超過、マルチバイト文字をunit testで検証する。
+- [x] 代表規模の保存・再開、worker中止、100ms設計目標を退行させない。
+- [x] 利用者向けメッセージは、技術的なbyte値だけでなく、ファイルを分けるなどの次の行動を示す。
 
 ## 4) ADR判断
 
@@ -44,3 +45,14 @@
 - `node node_modules/vitest/vitest.mjs run src/domain/inquiry_bundle_io.test.ts src/worker/inquiry_bundle_client.test.ts`
 - `node node_modules/@playwright/test/cli.js test e2e/inquiry_bundle_capacity_budget.spec.ts`
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+
+## 6) 完了記録（2026-07-18）
+
+- 同じ300カード・30島のfixtureで、6ラウンドは1,460,390 bytes、12ラウンドは2,785,220 bytes、18ラウンドは4,110,050 bytesだった。
+- 18ラウンドまで通常扱いできる余地を保ち、5MiB超を警告境界とした。警告時も読込を禁止せず、通常より時間がかかる可能性を伝える。
+- 拒否上限は20MiBとした。現行6ラウンド代表値の約13.7倍であり、長期探究の成長余地を確保しつつ、異常入力による無制限のメモリ消費を防ぐ。
+- UIは`File.size`を`File.text()`より前に確認する。上限超過時は内容を読み込まず、より小さいファイルを選ぶか過去ラウンドを分けて保存する次の行動を示す。
+- `parseInquiryBundleJson()`はUTF-8 byte数で同じ20MiB上限を適用する。ASCIIの上限一致・超過と日本語マルチバイト超過をunit testで固定した。
+- exportにも20MiB上限を適用し、「保存できるが再取込できない」成果物を生成しない。保存時も専用の次行動メッセージを表示する。
+- 5MiB・20MiBは外部環境で調整する値ではなく、現行bundle契約の実測由来定数とした。新しい環境変数は追加していない。
+- 入力ファイル上限は保持期間・保持件数の上限を決めるものではない。保持・削除方針は`DOMAIN-W-ITERATION-01`の未完了範囲として引き続き扱う。
