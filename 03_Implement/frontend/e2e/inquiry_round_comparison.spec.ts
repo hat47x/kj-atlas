@@ -15,7 +15,7 @@ function createDocument(cardText: string): DocumentV1 {
     createdAt: CREATED_AT,
     updatedAt: CREATED_AT,
     transform: { panX: 0, panY: 0, zoom: 1 },
-    cards: [{ id: "card-1", text: cardText, x: 100, y: 100 }],
+    cards: [{ id: "card-1", text: cardText, x: 100, y: 100, meta: { source: "Field note A-17" } }],
     edges: [],
     islands: [],
     readingOrder: ["card-1"],
@@ -74,6 +74,17 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   await panel.locator('input[type="file"]').setInputFiles(inquiryPath);
   await expect(panel.getByText("Inquiry file imported. You can continue the inquiry.")).toBeVisible();
 
+  const lineageSummary = panel.getByText("Trace a card's sources", { exact: true });
+  await lineageSummary.focus();
+  await lineageSummary.press("Enter");
+  const lineage = panel.getByRole("group", { name: "Trace a card's sources" });
+  await expect(lineage.getByLabel("Card to trace")).toHaveValue("card-1");
+  await expect(lineage.getByRole("list", { name: "Source cards" }).getByRole("listitem")).toHaveCount(2);
+  await expect(lineage.getByText("Source: Field note A-17").first()).toBeVisible();
+  await expect(lineage).toContainText("Result from R2 Situation grasp, iteration 1");
+  await expect(lineage).toContainText("Inquiry origin");
+  await page.screenshot({ path: testInfo.outputPath("lineage-trace-390px.png"), fullPage: true });
+
   const comparison = panel.getByRole("group", { name: "Compare rounds" });
   const from = comparison.getByLabel("Compare from");
   const to = comparison.getByLabel("Compare to");
@@ -131,8 +142,8 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   expect(parsed.bundle.journey.defaultHeadRoundId).toBe(branchRound.roundId);
 
   const undoBranchButton = panel.getByRole("button", { name: "Undo this branch" });
-  await undoBranchButton.focus();
-  await undoBranchButton.press("Enter");
+  await undoBranchButton.evaluate((button) => button.focus());
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("button", { name: "Work mode", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(panel.getByText("The branch was undone, including the restored canvas and inquiry record.")).toBeVisible();
   await expect(panel.getByRole("list", { name: "Inquiry records" }).getByRole("listitem")).toHaveCount(2);
