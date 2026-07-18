@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 
 import { ROUND_STAGES, type InquiryBundleV1, type RoundStage } from "../domain/inquiry_journey";
-import { serializeInquiryBundle } from "../domain/inquiry_bundle_io";
+import {
+  INQUIRY_BUNDLE_MAX_BYTES,
+  INQUIRY_BUNDLE_WARNING_BYTES,
+  serializeInquiryBundle,
+} from "../domain/inquiry_bundle_io";
 import {
   inquiryBundleOriginatesFromDocument,
   recordInquiryRound,
@@ -95,7 +99,14 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
     try {
       const serialized = await serializeInquiryBundle(bundle);
       if (!serialized.ok) {
-        setMessage({ kind: "error", text: t("inquiry_journey.prototype.export_error") });
+        setMessage({
+          kind: "error",
+          text: t(
+            serialized.errors.some((error) => error.code === "payload_too_large")
+              ? "inquiry_journey.prototype.export_too_large"
+              : "inquiry_journey.prototype.export_error"
+          ),
+        });
         return;
       }
       downloadTextFile(
@@ -113,11 +124,22 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = "";
     if (!file || !document) return;
+    if (file.size > INQUIRY_BUNDLE_MAX_BYTES) {
+      setMessage({ kind: "error", text: t("inquiry_journey.prototype.import_too_large") });
+      return;
+    }
     const controller = new AbortController();
     importAbortRef.current = controller;
     setIsBusy(true);
     setIsImporting(true);
-    setMessage({ kind: "status", text: t("inquiry_journey.prototype.importing") });
+    setMessage({
+      kind: "status",
+      text: t(
+        file.size > INQUIRY_BUNDLE_WARNING_BYTES
+          ? "inquiry_journey.prototype.importing_large"
+          : "inquiry_journey.prototype.importing"
+      ),
+    });
     try {
       importClientRef.current ??= new InquiryBundleWorkerClient();
       const outcome = await importClientRef.current.parse(await file.text(), { signal: controller.signal });

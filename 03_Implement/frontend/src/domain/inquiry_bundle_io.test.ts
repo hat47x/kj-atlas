@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createRepresentativeInquiryBundle } from "./inquiry_journey.fixture";
 import {
   computeRoundSnapshotDigest,
+  INQUIRY_BUNDLE_MAX_BYTES,
   parseInquiryBundleJson,
   serializeInquiryBundle,
 } from "./inquiry_bundle_io";
@@ -134,6 +135,42 @@ describe("inquiry bundle local roundtrip", () => {
     expect(malformedResult).toEqual({
       ok: false,
       errors: [{ code: "invalid_json", path: "$", message: "Invalid JSON." }],
+    });
+  });
+
+  it("rejects payloads above the UTF-8 byte limit before JSON parsing", async () => {
+    const atLimit = " ".repeat(INQUIRY_BUNDLE_MAX_BYTES);
+    const overLimit = `${atLimit} `;
+    const multibyteOverLimit = "あ".repeat(Math.floor(INQUIRY_BUNDLE_MAX_BYTES / 3) + 1);
+
+    expect(await parseInquiryBundleJson(atLimit)).toEqual({
+      ok: false,
+      errors: [{ code: "invalid_json", path: "$", message: "Invalid JSON." }],
+    });
+    for (const input of [overLimit, multibyteOverLimit]) {
+      expect(await parseInquiryBundleJson(input)).toEqual({
+        ok: false,
+        errors: [{
+          code: "payload_too_large",
+          path: "$",
+          message: `Inquiry bundle exceeds the ${INQUIRY_BUNDLE_MAX_BYTES} byte limit.`,
+        }],
+      });
+    }
+  });
+
+  it("does not export a bundle that the size boundary would reject on import", async () => {
+    const source = createRepresentativeInquiryBundle();
+    source.snapshots[0].document.cards[0].text = "x".repeat(INQUIRY_BUNDLE_MAX_BYTES);
+
+    const serialized = await serializeInquiryBundle(source);
+    expect(serialized).toEqual({
+      ok: false,
+      errors: [{
+        code: "payload_too_large",
+        path: "$",
+        message: `Inquiry bundle exceeds the ${INQUIRY_BUNDLE_MAX_BYTES} byte limit.`,
+      }],
     });
   });
 });

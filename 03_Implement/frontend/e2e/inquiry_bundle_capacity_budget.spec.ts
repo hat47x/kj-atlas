@@ -1,6 +1,11 @@
 import { writeFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
-import { parseInquiryBundleJson, serializeInquiryBundle } from "../src/domain/inquiry_bundle_io";
+import {
+  INQUIRY_BUNDLE_MAX_BYTES,
+  INQUIRY_BUNDLE_WARNING_BYTES,
+  parseInquiryBundleJson,
+  serializeInquiryBundle,
+} from "../src/domain/inquiry_bundle_io";
 import {
   buildRepresentativeInquiryBundle,
   buildRepresentativePerformanceDocument,
@@ -11,7 +16,6 @@ import {
 
 const MAX_REPRESENTATIVE_ARTIFACT_BYTES = 512 * 1024;
 const MAX_REPRESENTATIVE_JOURNEY_MANIFEST_BYTES = 64 * 1024;
-const MAX_REPRESENTATIVE_BUNDLE_BYTES = 5 * 1024 * 1024;
 const MAX_IO_WALL_TIME_MS = 2_500;
 const TARGET_MAIN_THREAD_TASK_MS = 100;
 const MAX_PARALLEL_CI_LONG_TASK_MS = 150;
@@ -44,6 +48,18 @@ test("DOMAIN-W-ITERATION-01 measures a representative six-round bundle and guard
   const artifactBytes = Buffer.byteLength(JSON.stringify(bundle.snapshots[0]), "utf8");
   const journeyManifestBytes = Buffer.byteLength(JSON.stringify(bundle.journey), "utf8");
   const bundleBytes = Buffer.byteLength(serialized.json, "utf8");
+  const growthMeasurements = [];
+  for (const roundCount of [12, 18]) {
+    const growthBundle = await buildRepresentativeInquiryBundle(roundCount);
+    const growthSerialized = await serializeInquiryBundle(growthBundle);
+    expect(growthSerialized.ok).toBe(true);
+    if (!growthSerialized.ok) return;
+    growthMeasurements.push({
+      roundCount,
+      snapshotCount: growthBundle.snapshots.length,
+      bundleBytes: Buffer.byteLength(growthSerialized.json, "utf8"),
+    });
+  }
   const parseStartedAt = performance.now();
   const parsed = await parseInquiryBundleJson(serialized.json);
   const parseMs = performance.now() - parseStartedAt;
@@ -54,7 +70,8 @@ test("DOMAIN-W-ITERATION-01 measures a representative six-round bundle and guard
   expect(bundle.cardLineage).toHaveLength(REPRESENTATIVE_CARD_COUNT * REPRESENTATIVE_ROUND_COUNT);
   expect(artifactBytes).toBeLessThanOrEqual(MAX_REPRESENTATIVE_ARTIFACT_BYTES);
   expect(journeyManifestBytes).toBeLessThanOrEqual(MAX_REPRESENTATIVE_JOURNEY_MANIFEST_BYTES);
-  expect(bundleBytes).toBeLessThanOrEqual(MAX_REPRESENTATIVE_BUNDLE_BYTES);
+  expect(bundleBytes).toBeLessThanOrEqual(INQUIRY_BUNDLE_WARNING_BYTES);
+  expect(growthMeasurements.at(-1)?.bundleBytes).toBeLessThanOrEqual(INQUIRY_BUNDLE_WARNING_BYTES);
   expect(serializeMs).toBeLessThan(MAX_IO_WALL_TIME_MS);
   expect(parseMs).toBeLessThan(MAX_IO_WALL_TIME_MS);
 
@@ -69,6 +86,7 @@ test("DOMAIN-W-ITERATION-01 measures a representative six-round bundle and guard
       artifactBytes,
       journeyManifestBytes,
       bundleBytes,
+      growthMeasurements,
       serializeMs: Number(serializeMs.toFixed(2)),
       parseMs: Number(parseMs.toFixed(2)),
     }, null, 2)),
@@ -99,6 +117,12 @@ test("DOMAIN-W-ITERATION-01 measures a representative six-round bundle and guard
   const inquiryPath = testInfo.outputPath("representative-inquiry.kj-atlas-inquiry.json");
   await writeFile(inquiryPath, serialized.json, "utf8");
   const fileInput = inquiryPanel.locator('input[type="file"]');
+  const oversizedPath = testInfo.outputPath("oversized-inquiry.json");
+  await writeFile(oversizedPath, Buffer.alloc(INQUIRY_BUNDLE_MAX_BYTES + 1));
+  await fileInput.setInputFiles(oversizedPath);
+  await expect(inquiryPanel.getByRole("alert")).toContainText("too large to open safely");
+  await expect(inquiryPanel.getByRole("button", { name: "Cancel import" })).toHaveCount(0);
+
   await fileInput.setInputFiles(inquiryPath);
   await expect(inquiryPanel.getByRole("status").last()).toContainText("Checking the inquiry file", {
     timeout: 1_000,
@@ -133,6 +157,9 @@ test("DOMAIN-W-ITERATION-01 measures a representative six-round bundle and guard
     parseMs: Number(parseMs.toFixed(2)),
     uiImportMs: Number(uiImportMs.toFixed(2)),
     maxLongTaskMs: Number(maxLongTaskMs.toFixed(2)),
+    growthMeasurements,
+    warningBytes: INQUIRY_BUNDLE_WARNING_BYTES,
+    maximumBytes: INQUIRY_BUNDLE_MAX_BYTES,
   };
   console.info(`DOMAIN-W-ITERATION-01 capacity: ${JSON.stringify(metrics)}`);
   await testInfo.attach("inquiry-ui-import-measurement.json", {

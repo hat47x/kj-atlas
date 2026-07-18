@@ -156,6 +156,8 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 
 **更新（2026-07-18・代表容量）**: 300カード・30島・6ラウンドの1成果は73,955 bytes、探究manifestは2,161 bytes、自己完結bundleは1,460,390 bytesで、JSON集約の容量は5MiB回帰上限以内だった。画面読込の最大長時間タスクは当初243から294msで100ms目安を超えたが、`PERF-INQUIRY-01`でstrict validationとdigest照合をworkerへ移し、単独実行で93から95msへ改善した。並列CIは150msを退行上限とする。性能面のPhase 3停止条件は解消したが、比較・引継ぎ・SafeMode派生共有が未完了のためsupport levelは`L0: Planned`を維持する。
 
+**更新（2026-07-18・容量境界）**: 同じ代表規模の12ラウンドは2,785,220 bytes、18ラウンドは4,110,050 bytesだった。`SEC-INQUIRY-01`で5MiB警告・20MiB拒否境界をUI preflight、domain parser、exportへ対称適用し、無制限入力と再取込不能なexportを防いだ。保持期間・保持件数・削除単位は未決定のため、support levelは`L0: Planned`を維持する。
+
 ---
 
 ## 2.5 根幹価値の不変条件（CVI）正本対応表（`ADR-0041`）
