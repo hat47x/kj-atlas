@@ -56,7 +56,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 
 - `KJ_ATLAS_RUNTIME_PROFILE`でprofileを明示選択する。`local-dev`、`evaluation`、`enterprise-production`は正規化して受理する。
 - `saas-multitenant`は予約値として認識するが、現行releaseでは常に起動をfail-fastにする。無視して`local-dev`へfallbackしない。
-- backendはvalidation済みprofileを起動時にsnapshotし、`GET /session/bootstrap-policy`でprofile名を公開せず`single-tenant`または`tenant-session-required`へclosed-worldに写像する。未知・欠損profileはfallbackせず503として閉じる。現行frontend entry pointはこのsignalへ未接続であり、SaaS有効化条件には数えない。
+- backendはvalidation済みprofileを起動時にsnapshotし、`GET /session/bootstrap-policy`でprofile名を公開せず`single-tenant`または`tenant-session-required`へclosed-worldに写像する。frontend buildも同じprofileを受け取り、既存3 profileはpolicy通信なしでlocal-first起動、`saas-multitenant`だけはserver policy一致とsession bootstrap成功までAppをmountしない。未知・空・非canonical build値、policy不一致・取得失敗はsingle-tenantへfallbackせずblocked stateへ閉じる。
 - 実装issueの後続段階で、tenant解決、PDP、DB guardのcross-key validationがすべて成立した場合だけ起動拒否を解除する。
 - `external_http` endpoint欠損時のnoop fallbackは既存profileの互換挙動としてのみ残し、SaaS profileでは禁止する。
 
@@ -147,6 +147,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_POSTGRES_DB` | `kj_atlas` | Compose PostgreSQL の database 名 |
 | `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
 | `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | Compose PostgreSQL の password |
+| `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev`（Composeは`evaluation`を注入） | frontend entry mode。既存3 profileはsingle-tenant、予約中の`saas-multitenant`だけtenant session必須。未知値は起動UIをblockedにする |
 | `KJ_ATLAS_FRONTEND_API_BASE` | `/api` | frontend build 時に埋め込む API base path。`/` で始まる path のみ受理し、それ以外は frontend 側で `/api` にフォールバック |
 
 
@@ -242,7 +243,7 @@ Stopper条件:
    - 旧prefix/無接頭辞キーは fail-fast で拒否する。
 2. **Private adapter layer（実装内部写像）**
    - third-party container が要求する `POSTGRES_*` 等は内部写像に限定する。
-   - frontend build は `envPrefix: "KJ_ATLAS_"` とし、`KJ_ATLAS_FRONTEND_API_BASE` だけを読み取る。旧frontendキーの互換shimは設けない。
+   - frontend build は `envPrefix: "KJ_ATLAS_"` とし、`KJ_ATLAS_RUNTIME_PROFILE`と`KJ_ATLAS_FRONTEND_API_BASE`だけを読み取る。旧frontendキーの互換shimは設けない。
 
 ### Plan → Execute → Verify → Proceed gate
 

@@ -7,6 +7,7 @@ SETTINGS_PATH = REPO_ROOT / "03_Implement" / "backend" / "src" / "kj_atlas_api" 
 REGISTRY_PATH = REPO_ROOT / "02_Architecture" / "runtime_parameter_registry.md"
 COMPOSE_PATH = REPO_ROOT / "03_Implement" / "deploy" / "docker-compose.yml"
 COMPOSE_OVERLAY_PATH = REPO_ROOT / "03_Implement" / "deploy" / "docker-compose.llm-stub.yml"
+FRONTEND_DOCKERFILE_PATH = REPO_ROOT / "03_Implement" / "frontend" / "Dockerfile"
 
 VALIDATION_ALIAS_RE = re.compile(r'validation_alias="(KJ_ATLAS_[A-Z0-9_]+)"')
 # Key | Default | Purpose | Delivery surface | Secret | Probe -- captures the
@@ -119,6 +120,28 @@ class EnvDeliveryContractTest(unittest.TestCase):
             registry_overlay_keys.issubset(overlay_delivered_keys),
             f"registry llm-stub-overlay keys {registry_overlay_keys} must all appear in "
             f"docker-compose.llm-stub.yml's api.environment {overlay_delivered_keys}",
+        )
+
+    def test_runtime_profile_is_identical_for_api_and_frontend_build(self):
+        compose_text = COMPOSE_PATH.read_text(encoding="utf-8")
+        api_block = _service_environment_block(compose_text, "api")
+        web_block = _service_environment_block(compose_text, "web")
+        profile_expression = "${KJ_ATLAS_RUNTIME_PROFILE:-evaluation}"
+
+        self.assertIn(
+            f"KJ_ATLAS_RUNTIME_PROFILE={profile_expression}",
+            api_block,
+        )
+        self.assertIn(
+            f"KJ_ATLAS_RUNTIME_PROFILE: {profile_expression}",
+            web_block,
+        )
+
+        frontend_dockerfile = FRONTEND_DOCKERFILE_PATH.read_text(encoding="utf-8")
+        self.assertIn("ARG KJ_ATLAS_RUNTIME_PROFILE=local-dev", frontend_dockerfile)
+        self.assertIn(
+            "ENV KJ_ATLAS_RUNTIME_PROFILE=${KJ_ATLAS_RUNTIME_PROFILE}",
+            frontend_dockerfile,
         )
 
 

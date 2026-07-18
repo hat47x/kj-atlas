@@ -31,7 +31,7 @@ Compose と frontend build で利用者が設定する公開キーは次です�
 
 | Key | Default | Purpose |
 | --- | --- | --- |
-| `KJ_ATLAS_RUNTIME_PROFILE` | `evaluation` | backend実行profile。現行Composeは評価用途を既定とし、`saas-multitenant`は起動拒否。 |
+| `KJ_ATLAS_RUNTIME_PROFILE` | `evaluation` | backend実行profileとfrontend entry modeへ同じ値を渡す。現行Composeは評価用途を既定とし、`saas-multitenant`はbackend起動拒否。 |
 | `KJ_ATLAS_WEB_PORT` | `8080` | `web` の loopback（`127.0.0.1`）port。ホスト外からの到達は既定で不可（`DEPLOY-NET-01`） |
 | `KJ_ATLAS_POSTGRES_DB` | `kj_atlas` | Compose PostgreSQL の database 名 |
 | `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
@@ -49,7 +49,7 @@ Compose と frontend build で利用者が設定する公開キーは次です�
 
 | Public key | Compose mapping | 備考 |
 | --- | --- | --- |
-| `KJ_ATLAS_RUNTIME_PROFILE` | `api.environment.KJ_ATLAS_RUNTIME_PROFILE` | backend profile selector |
+| `KJ_ATLAS_RUNTIME_PROFILE` | `api.environment.KJ_ATLAS_RUNTIME_PROFILE` + `web.build.args.KJ_ATLAS_RUNTIME_PROFILE` | backendとfrontend buildへ同じ`${KJ_ATLAS_RUNTIME_PROFILE:-evaluation}`を渡す。値の不一致を許容しない |
 | `KJ_ATLAS_WEB_PORT` | `web.ports`（`127.0.0.1:<port>:80`） | loopback bind の port 番号のみを変更する |
 | `KJ_ATLAS_POSTGRES_DB` | `db.environment.POSTGRES_DB` | third-party private adapter への内部写像 |
 | `KJ_ATLAS_POSTGRES_USER` | `db.environment.POSTGRES_USER` | third-party private adapter への内部写像 |

@@ -339,3 +339,9 @@
 - `GET /session/bootstrap-policy`を追加し、settings validation済みのserver runtime profileを起動時にsnapshotして、profile名やtenant情報を公開せず`single-tenant`／`tenant-session-required`の2値だけへ写像する。header、query、Document payloadを判定根拠にせず、未知・欠損profileは`503 runtime_policy_unavailable`として値を反射せず閉じる。現行settingsは予約中の`saas-multitenant`を引き続き起動前に拒否する。
 - frontend clientはsame-origin・`no-store`でpolicyを取得し、成功・エラーresponseを4KiBまでで打ち切る。成功responseは単一fieldのclosed-world objectとして再検証し、未知mode、余分なfield、非JSON、非UTF-8、過大bodyをentry point判定へ渡さない。
 - backend route近接32件、frontend policy/client近接29件、backend全体570件pass・条件付き25件skip、frontend全体1,162件・204 file、Ruff、frontend typecheck、production build、docs-check、active issue validator、diff-checkを通過した。local-first/offline起動を維持しつつSaaS側のpolicy取得失敗をblockedへ倒すentry point activation契約は未確定のため`main.tsx`へは接続しない。trusted auth edge／session persister、未保存変更確認、POST／hard replacement実配線、実ブラウザE2Eは未完了であり、AC-6/8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-19: profile-bound frontend entry activation
+
+- frontend buildへ既存`KJ_ATLAS_RUNTIME_PROFILE`を渡し、未指定・`local-dev`・`evaluation`・`enterprise-production`はpolicy通信なしのlocal-first App、`saas-multitenant`だけはserver policy一致→session再検証→tenant scope付きAppの順でmountするentry pointを結線した。未知・空・前後空白を含むbuild値、policy取得失敗・不一致はsingle-tenantへfallbackせず、旧App本文のないblocked stateへ閉じる。
+- 公式Composeはbackend environmentとfrontend buildへ同じ`${KJ_ATLAS_RUNTIME_PROFILE:-evaluation}`を渡し、契約testで両delivery surfaceの一致を固定した。現行backend settingsは`saas-multitenant`を引き続き起動前に拒否するため、frontend配線だけでSaaSを解禁しない。
+- runtime entry／policy／session／UI近接27件、frontend全体1,209件・211 file、frontend typecheck、`saas-multitenant` production build、profile delivery契約4件、docs-check、active issue validator、diff-checkを通過した。実ブラウザではSaaS build＋policy未接続時にalertだけを表示して旧Appをmountしないこと、`evaluation` dev buildでは従来AppとSafeMode ONを表示することを確認した。trusted auth edge／session persister、未保存変更確認、tenant switch POST／transition／hard replacement実配線、tenant A/B実ブラウザE2Eは未完了であり、AC-6/8/10/12とSaaS起動拒否を継続する。
