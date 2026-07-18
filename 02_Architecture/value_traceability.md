@@ -123,7 +123,7 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 | 価値: 開始 | 迷わず最初の意味ある配置へ | `ADR-0032` V0/V1 | `PRODUCT-UX-01`(Done), `PRODUCT-VALUE-01` | 被覆 |
 | 価値: 外在化 | メモ・違和感をカード化 | `ADR-0032` V1 | `PRODUCT-VALUE-01`, `DOMAIN-EXPR-01` | 被覆 |
 | 価値: 定性情報の品質 | 意味・意図を保ち、一枚一中心、再文脈化・遡及可能なカードを低負担で作る | `qualitative_card_quality_requirements.md`, `ADR-0001` P-08 | `DOMAIN-CARD-QUALITY-01` | 被覆（自己確認、前後比較、原文復元を実装・E2E確認済み） |
-| 価値: 反復的探究 | 6ラウンドを経験と思考の往復として扱い、中間成果・引継ぎ・分岐を保持する | `w_type_iterative_inquiry_requirements.md`, `ADR-0057`, `inquiry_journey_model.md` | `DOMAIN-W-ITERATION-01`, `PERF-INQUIRY-01` | 被覆（現在文書からの開始、反復snapshot、ローカルファイル保存・再開、任意の2ラウンドの比較、代表容量、読込非ブロッキング化を検証済み。引継ぎはL0/未実装） |
+| 価値: 反復的探究 | 6ラウンドを経験と思考の往復として扱い、中間成果・引継ぎ・分岐を保持する | `w_type_iterative_inquiry_requirements.md`, `ADR-0057`, `inquiry_journey_model.md` | `DOMAIN-W-ITERATION-01`, `PERF-INQUIRY-01` | 被覆（現在文書からの開始、反復snapshot、ローカルファイル保存・再開、代表容量、読込非ブロッキング化を検証済み。比較・引継ぎはL0/未実装） |
 | 価値: 構造化 | まとまり・関係・未整理の同時保持 | `ADR-0032` V2 | `PRODUCT-UX-02`(Done), `PRODUCT-VALUE-02` | 被覆 |
 | 価値: レビュー | AI候補の人間採否・proposal-only | `ADR-0032` V3 | `PRODUCT-VALUE-02`, `CE2`, `CE3` | 被覆 |
 | 価値: 成果物化と共有 | 確定/保留/根拠/未レビューを束ねた成果物 | `ADR-0032` V4 | `PRODUCT-UX-03`(Done), `PRODUCT-VALUE-03` | 被覆 |
@@ -157,8 +157,6 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 **更新（2026-07-18・代表容量）**: 300カード・30島・6ラウンドの1成果は73,955 bytes、探究manifestは2,161 bytes、自己完結bundleは1,460,390 bytesで、JSON集約の容量は5MiB回帰上限以内だった。画面読込の最大長時間タスクは当初243から294msで100ms目安を超えたが、`PERF-INQUIRY-01`でstrict validationとdigest照合をworkerへ移し、単独実行で93から95msへ改善した。並列CIは150msを退行上限とする。性能面のPhase 3停止条件は解消したが、比較・引継ぎ・SafeMode派生共有が未完了のためsupport levelは`L0: Planned`を維持する。
 
 **更新（2026-07-18・容量境界）**: 同じ代表規模の12ラウンドは2,785,220 bytes、18ラウンドは4,110,050 bytesだった。`SEC-INQUIRY-01`で5MiB警告・20MiB拒否境界をUI preflight、domain parser、exportへ対称適用し、無制限入力と再取込不能なexportを防いだ。保持期間・保持件数・削除単位は未決定のため、support levelは`L0: Planned`を維持する。
-
-**更新（2026-07-18・ラウンド比較）**: 同じ段階の反復を含む任意の2ラウンドについて、不変な出力snapshotを読取専用で比較できるようにした。カード・島・関係要約・読み順の変化を所在情報として示し、品質点数や改善率には変換しない。unit testとキーボード操作を含むPlaywright E2Eで非破壊性と比較対象切替を確認し、`DOMAIN-W-ITERATION-01` AC-5を完了した。引継ぎ、再開ブリーフ、SafeMode派生共有が未完了のためsupport levelは`L0: Planned`を維持する。
 
 ---
 

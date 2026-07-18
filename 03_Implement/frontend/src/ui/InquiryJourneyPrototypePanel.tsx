@@ -7,7 +7,6 @@ import {
   serializeInquiryBundle,
 } from "../domain/inquiry_bundle_io";
 import {
-  compareInquiryRounds,
   inquiryBundleOriginatesFromDocument,
   recordInquiryRound,
   startInquiryJourney,
@@ -39,8 +38,6 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
   const [isBusy, setIsBusy] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isConfirmingEnd, setIsConfirmingEnd] = useState(false);
-  const [comparisonFromRoundId, setComparisonFromRoundId] = useState("");
-  const [comparisonToRoundId, setComparisonToRoundId] = useState("");
   const [message, setMessage] = useState<{ kind: "status" | "error"; text: string } | null>(null);
 
   useEffect(() => {
@@ -50,8 +47,6 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
     setBundle(null);
     setSelectedStage("r1_problem_setting");
     setIsConfirmingEnd(false);
-    setComparisonFromRoundId("");
-    setComparisonToRoundId("");
     setMessage(null);
   }, [document?.id]);
 
@@ -69,30 +64,6 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
     [records, selectedStage]
   );
   const isStarted = bundle !== null;
-  const defaultComparisonFromId = records.at(-2)?.roundId ?? "";
-  const defaultComparisonToId = records.at(-1)?.roundId ?? "";
-  const effectiveComparisonFromId = records.some((record) => record.roundId === comparisonFromRoundId)
-    ? comparisonFromRoundId
-    : defaultComparisonFromId;
-  const effectiveComparisonToId = records.some((record) => record.roundId === comparisonToRoundId)
-    ? comparisonToRoundId
-    : defaultComparisonToId;
-  const comparison = useMemo(
-    () => bundle && effectiveComparisonFromId && effectiveComparisonToId
-      ? compareInquiryRounds(bundle, effectiveComparisonFromId, effectiveComparisonToId)
-      : null,
-    [bundle, effectiveComparisonFromId, effectiveComparisonToId]
-  );
-
-  const recordLabel = (roundId: string): string => {
-    const record = records.find((candidate) => candidate.roundId === roundId);
-    return record
-      ? t("inquiry_journey.prototype.recorded", {
-          stage: stageLabel(record.stage),
-          iteration: record.iteration,
-        })
-      : roundId;
-  };
 
   const handleStart = async () => {
     if (!document) return;
@@ -189,8 +160,6 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
       }
       setBundle(parsed.bundle);
       setIsConfirmingEnd(false);
-      setComparisonFromRoundId("");
-      setComparisonToRoundId("");
       setSelectedStage(parsed.bundle.journey.roundRecords.at(-1)?.stage ?? "r1_problem_setting");
       setMessage({ kind: "status", text: t("inquiry_journey.prototype.imported") });
     } finally {
@@ -266,50 +235,6 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
             </ol>
           ) : null}
 
-          {records.length >= 2 ? (
-            <fieldset style={{ display: "grid", gap: 8, margin: 0, padding: 10, border: "1px solid #cbd5e1" }}>
-              <legend style={{ paddingInline: 4, fontSize: 12, fontWeight: 700 }}>
-                {t("inquiry_journey.prototype.comparison")}
-              </legend>
-              <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                {t("inquiry_journey.prototype.comparison_from")}
-                <select
-                  value={effectiveComparisonFromId}
-                  onChange={(event) => setComparisonFromRoundId(event.currentTarget.value)}
-                >
-                  {records.map((record) => (
-                    <option key={record.roundId} value={record.roundId}>{recordLabel(record.roundId)}</option>
-                  ))}
-                </select>
-              </label>
-              <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                {t("inquiry_journey.prototype.comparison_to")}
-                <select
-                  value={effectiveComparisonToId}
-                  onChange={(event) => setComparisonToRoundId(event.currentTarget.value)}
-                >
-                  {records.map((record) => (
-                    <option key={record.roundId} value={record.roundId}>{recordLabel(record.roundId)}</option>
-                  ))}
-                </select>
-              </label>
-              <div role="status" aria-live="polite" style={{ fontSize: 12, color: "#334155" }}>
-                {comparison?.ok
-                  ? t("inquiry_journey.prototype.comparison_summary", {
-                      cards: comparison.summary.cards,
-                      islands: comparison.summary.islands,
-                      relations: comparison.summary.relationSummaries,
-                      readingOrder: t(
-                        comparison.summary.readingOrderChanged
-                          ? "inquiry_journey.prototype.comparison_changed"
-                          : "inquiry_journey.prototype.comparison_unchanged"
-                      ),
-                    })
-                  : t("inquiry_journey.prototype.comparison_error")}
-              </div>
-            </fieldset>
-          ) : null}
-
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
             <button type="button" disabled={isBusy} onClick={() => void handleExport()} style={{ whiteSpace: "normal" }}>
               {t("inquiry_journey.prototype.export")}
@@ -332,8 +257,6 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
                     setBundle(null);
                     setMessage(null);
                     setIsConfirmingEnd(false);
-                    setComparisonFromRoundId("");
-                    setComparisonToRoundId("");
                   }}
                   style={{ whiteSpace: "normal" }}
                 >
