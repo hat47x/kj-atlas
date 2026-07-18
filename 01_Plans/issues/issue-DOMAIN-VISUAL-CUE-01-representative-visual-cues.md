@@ -6,7 +6,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Codex / Maintainer
-- Scope: `00_Prompt/representative_visual_cue_requirements.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `01_Plans/adr/ADR-0060-representative-visual-cue-source-boundary.md`, `02_Architecture/architecture.md`, `02_Architecture/representative_visual_cue_evaluation.md`, `02_Architecture/representative_visual_cue_offline_preset_comparison.md`, `02_Architecture/data_model_operations_overview.md`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/import/`
+- Scope: `00_Prompt/representative_visual_cue_requirements.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `01_Plans/adr/ADR-0060-representative-visual-cue-source-boundary.md`, `02_Architecture/architecture.md`, `02_Architecture/representative_visual_cue_evaluation.md`, `02_Architecture/data_model_operations_overview.md`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/import/`
 - Related Backlog: `DOMAIN-VISUAL-CUE-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0060-representative-visual-cue-source-boundary.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `00_Prompt/representative_visual_cue_requirements.md`
 - Expected verification level: `e2e`
@@ -64,7 +64,7 @@
 - [x] T4a 具体・抽象・対立・機微情報・記号衝突を含み、手描き印・基本図形・写真ラベル・一次視覚資料を区別するPhase 0の機械可読fixtureと評価手順を固定する。
 - [x] T4a-1 VC-S3用に人物・識別情報・実在組織名を含まない合成写真fixtureと生成・権利確認メタデータを用意し、実際の観察証拠ではないことを明示する。
 - [x] T4b C0からC4の非製品プロトタイプ表示を作り、実装担当者による予備操作確認を実施する。高度な作業モード内のセッション限定UIとして実装し、マウス、キーボード、390px、ローカル画像通信をE2Eで確認した。代表利用者による効果比較はAC-6として未完了のまま残す。
-- [x] T5 Unicode絵文字と固定画像セットについて、OS間表示、アクセシビリティ、ライセンス、配布容量を比較する。結果と公式資産5点の容量標本を`02_Architecture/representative_visual_cue_offline_preset_comparison.md`および`02_Architecture/design/representative_visual_cue/offline_preset_candidates.json`へ記録した。
+- [ ] T5 Unicode絵文字と固定画像セットについて、OS間表示、アクセシビリティ、ライセンス、配布容量を比較する。
 - [ ] T6 採用参照、権利情報、画像本体、サムネイルの保存候補を比較し、ADRを受理または更新する。
 - [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。
 - [ ] T8 実利用で不足が確認された場合だけ、外部素材と生成画像をそれぞれ別issueへ分割する。
@@ -84,7 +84,6 @@
 - `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 - `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - `01_Plans/issues/issue-SEC-VISUAL-ASSET-01-legacy-island-image-safe-mode.md`
-- `02_Architecture/representative_visual_cue_offline_preset_comparison.md`
 
 ## 7) ADR判定
 
