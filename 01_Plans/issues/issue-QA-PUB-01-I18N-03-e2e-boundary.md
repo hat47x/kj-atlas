@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Open Readiness: Prepared
-- Execution: Hold
+- Execution: Ready
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
 - Scope: `01_Plans/issues/`（docs-only）
@@ -31,7 +31,7 @@
 |---|---|---|---|
 | B-PUB-01 | 公開境界承認未了 | `Pending-1` に承認ID/日付追記 | Product/Reviewer |
 | B-I18N-01 | I18N-03承認未了 | `Pending-2` に承認ID/日付追記 | Localization reviewer |
-| B-ENV-01 | 実行経路未固定 | Compose/SQLite/例外のいずれか選択済み | QA lead |
+| B-ENV-01 | 実行経路未固定 → 解消済み（2026-07-18、下記Phase 6参照） | Compose/SQLite/例外のいずれか選択済み | QA lead |
 
 ## Phase 2: ADR C/D/C（簡易）
 ### Context
@@ -144,8 +144,9 @@ Open化ゲートを「3軸境界 + 承認証跡 + 実行経路固定」で定義
 - Pending-2: I18N-03 の外部公開判定承認。→ 承認済み（2026-07-16、Maintainer/hat47x、本セッションでの明示承認）。
 
 ### Execution
-- Pending-1/Pending-2は解消したが、B-ENV-01（`ADR-0019` 準拠の実行経路未固定）が未解消のため、`Execution: Hold` を維持する。
-- `Execution: Hold`（承認以外の残blocker解消まで維持）
+- Pending-1/Pending-2に続き、B-ENV-01（`ADR-0019` 準拠の実行経路未固定）を2026-07-18に解消した。
+- **B-ENV-01確定値**: 実行経路は**Docker Compose標準経路**で固定する。根拠: `03_Implement/frontend/docs/e2e_testing.md`が既に「標準経路はDocker Compose、Docker不可時のみSQLite/mock」を規範化しており、検証環境（WSL）でdocker 29.5.3 / compose v5.1.4の利用可を2026-07-18に確認済み。`QA-E2E-USE-01`のO-USE-02と同じ確定値であり、両issueで経路が分岐しない。
+- `Execution: Ready`（承認・技術的ブロッカーはすべて解消。初回実行バッチは別PRで進める）
 
 
 ### 修復上限（共通）
