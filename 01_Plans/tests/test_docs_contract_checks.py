@@ -841,5 +841,59 @@ class CliOptionCheckTest(unittest.TestCase):
         self.assertEqual(findings, [])
 
 
+class LocalhostProbeCheckTest(unittest.TestCase):
+    def test_accepts_allowlisted_exact_url(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            readme = root / "README.md"
+            readme.write_text("```bash\ncurl -fsS http://localhost:8080/api/healthz\n```\n", encoding="utf-8")
+
+            findings = MODULE.check_localhost_probe_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_accepts_allowlisted_prefix_url(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "acceptance_check.md"
+            doc.write_text("`curl http://localhost:8080/api/docs/doc_phase1_canvas`\n", encoding="utf-8")
+
+            findings = MODULE.check_localhost_probe_commands(root, [Path("04_Documentation/acceptance_check.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_reports_known_bug_shape_missing_trailing_z(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "installation.md"
+            doc.write_text("```bash\ncurl -fsS http://localhost:8080/api/health\n```\n", encoding="utf-8")
+
+            findings = MODULE.check_localhost_probe_commands(root, [Path("04_Documentation/installation.md")])
+
+        self.assertEqual(len(findings), 1)
+        finding = findings[0]
+        self.assertEqual(finding.rule_id, "DC-CMD-001")
+        self.assertEqual(finding.path, "04_Documentation/installation.md")
+        self.assertEqual(finding.line, 2)
+        self.assertEqual(finding.target, "http://localhost:8080/api/health")
+        self.assertIn("not in the probe allowlist", finding.message)
+
+    def test_ignores_process_memos_outside_the_public_doc_scope(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            issues_dir = root / "01_Plans" / "issues"
+            issues_dir.mkdir(parents=True)
+            memo = issues_dir / "issue-example.md"
+            memo.write_text("検証コマンド宣言: `curl http://localhost:8080/api/health`\n", encoding="utf-8")
+
+            findings = MODULE.check_localhost_probe_commands(root, [Path("01_Plans/issues/issue-example.md")])
+
+        self.assertEqual(findings, [])
+
+
 if __name__ == "__main__":
     unittest.main()
