@@ -6,6 +6,7 @@ from urllib import error as urllib_error
 import pytest
 
 from kj_atlas_api.access_control import (
+    AccessControlInvalidRequestError,
     AccessControlInvalidPolicyError,
     AccessControlUnreachableError,
     AccessRequest,
@@ -224,6 +225,134 @@ def test_external_http_adapter_rejects_unbounded_or_noncanonical_response_withou
         adapter.authorize(_request())
 
     assert "response-secret" not in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    "invalid_request",
+    [
+        AccessRequest(action="read"),
+        AccessRequest(
+            action="read",
+            auth=AuthContext(actor_ref="user-1", roles=tuple(f"role-{i}" for i in range(65))),
+            resource=AccessResource(doc_id="doc-1"),
+        ),
+        AccessRequest(
+            action="read",
+            auth=AuthContext(actor_ref="user-1", roles=("duplicate", "duplicate")),
+            resource=AccessResource(doc_id="doc-1"),
+        ),
+        AccessRequest(
+            action="read",
+            auth=AuthContext(actor_ref="user-1", trace_id="unsafe\ntrace"),
+            resource=AccessResource(doc_id="doc-1"),
+        ),
+        AccessRequest(
+            action="read",
+            auth=AuthContext(actor_ref="user-1"),
+            resource=AccessResource(doc_id="x" * 257),
+        ),
+        AccessRequest(
+            action="read",
+            auth=AuthContext(actor_ref="user-1"),
+            resource=AccessResource(doc_id="doc-1", policy_ref="x" * 2049),
+        ),
+    ],
+    ids=[
+        "missing-subject-and-resource",
+        "too-many-roles",
+        "duplicate-role",
+        "header-control-character",
+        "oversized-document-id",
+        "oversized-policy-ref",
+    ],
+)
+def test_external_http_adapter_rejects_invalid_request_before_transport(
+    monkeypatch: pytest.MonkeyPatch,
+    invalid_request: AccessRequest,
+) -> None:
+    transport_called = False
+
+    def _unexpected_transport(request, timeout_seconds):  # noqa: ANN001, ARG001
+        nonlocal transport_called
+        transport_called = True
+        raise AssertionError("transport must not be called")
+
+    monkeypatch.setattr(
+        "kj_atlas_api.access_control.open_trusted_http",
+        _unexpected_transport,
+    )
+    adapter = ExternalPolicyAccessControlAdapter(
+        config=ExternalPolicyAdapterConfig(
+            endpoint="https://policy.example.local/evaluate"
+        )
+    )
+
+    with pytest.raises(AccessControlInvalidRequestError):
+        adapter.authorize(invalid_request)
+
+    assert transport_called is False
+
+
+def test_external_http_adapter_rejects_oversized_utf8_request_before_transport(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transport_called = False
+
+    def _unexpected_transport(request, timeout_seconds):  # noqa: ANN001, ARG001
+        nonlocal transport_called
+        transport_called = True
+        raise AssertionError("transport must not be called")
+
+    monkeypatch.setattr(
+        "kj_atlas_api.access_control.open_trusted_http",
+        _unexpected_transport,
+    )
+    adapter = ExternalPolicyAccessControlAdapter(
+        config=ExternalPolicyAdapterConfig(
+            endpoint="https://policy.example.local/evaluate"
+        )
+    )
+    roles = tuple(chr(0x1F300 + index) + ("😀" * 255) for index in range(64))
+
+    with pytest.raises(AccessControlInvalidRequestError, match="size limit"):
+        adapter.authorize(
+            AccessRequest(
+                action="read",
+                auth=AuthContext(actor_ref="user-1", roles=roles),
+                resource=AccessResource(doc_id="doc-1"),
+            )
+        )
+
+    assert transport_called is False
+
+
+def test_external_http_adapter_invalid_request_uses_adapter_fail_safe(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "kj_atlas_api.access_control.open_trusted_http",
+        lambda request, timeout_seconds: (_ for _ in ()).throw(  # noqa: ARG005
+            AssertionError("transport must not be called")
+        ),
+    )
+    adapter = ExternalPolicyAccessControlAdapter(
+        config=ExternalPolicyAdapterConfig(
+            endpoint="https://policy.example.local/evaluate"
+        )
+    )
+
+    decision = resolve_access_decision(
+        adapter=adapter,
+        request=AccessRequest(
+            action="read",
+            auth=AuthContext(actor_ref="user-1", trace_id="unsafe\ntrace"),
+            resource=AccessResource(doc_id="doc-1"),
+        ),
+        fail_safe_mode="deny",
+    )
+
+    assert decision.allow is False
+    assert decision.reason == "adapter_error"
 
 
 def test_external_http_adapter_invalid_response_uses_deny_fail_safe(

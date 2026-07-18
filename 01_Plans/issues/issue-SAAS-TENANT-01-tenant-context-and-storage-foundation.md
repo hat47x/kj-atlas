@@ -284,3 +284,9 @@
 - local/large-scale共通のHTTP requestをUTF-8 JSONで1MiB以下に制限し、taskを128文字以下のlowercase canonical ID、promptを非空文字列、temperatureをfiniteな0〜2、max tokensを1〜32,768へ限定した。過大prompt、`NaN`/`Infinity`、不正task/parameterはJSON化・transport呼出し前に`provider_validation`で停止し、入力値をerrorへ反射しない。
 - request/responseの`provider_validation`は`KJ_ATLAS_LLM_FALLBACK_TO_NONE=true`でもfallback対象にせず、契約違反をprovider disabledの503へ変換しない。timeout/unavailableに対する既存fallback、既定none、明示opt-in、proposal-onlyは維持する。
 - LLM provider・AI route近接56件、backend全体519件pass・条件付き25件skip、Ruff、docs-check、active issue validator、diff-checkを通過した。SaaS起動拒否は変更しない。
+
+### Implementation checkpoint 2026-07-18: bounded external PDP request
+
+- 外部PDPへ送るserver-composed requestをcompact UTF-8 JSONで64KiB以下に制限し、識別子を256文字以下、policyRefを2,048文字以下、roles/groupsを各64件以下の重複なしcanonical文字列へ限定した。subject/resource欠損、未知action/visibility、型不正、前後空白・制御文字、上限超過はtransport前に停止し、入力値をerrorへ反射しない。
+- 不正requestを`adapter_error`へ正規化し、SaaS deny modeではreadを含めてfail-closedにする。PDPによるrole/group/policyRefの意味評価、既存SafeMode/readOnly優先順、single-tenant互換のfail-safe選択は変更しない。
+- 外部PDP／tenant境界／管理・session route近接46件、backend全体527件pass・条件付き25件skip、Ruff、docs-check、active issue validatorと同validatorの13件、diff-checkを通過した。PostgreSQL実地matrix、trusted auth edge、active tenant変更、MCP/worker/cache/storageを含む完全negative matrixは未完了であり、SaaS起動拒否を継続する。

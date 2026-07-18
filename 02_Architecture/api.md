@@ -526,7 +526,8 @@ fail-safe マトリクス:
 
 - `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` で、APIは外部 policy 接続先（endpoint）へ `POST` 委譲する。
 - endpointはcredential/query/fragmentを含まないHTTPS、またはloopback HTTPに限定し、固定bearerやIdP issuerだけが残る不完全設定、0以下または30秒超のtimeoutを起動時に拒否する。endpoint未設定時のsingle-tenant互換fallback自体は維持する。
-- request body は `AccessRequest` 契約そのまま（`auth.roles/groups` と `resource.policyRef` を透過転送）とし、意味解釈は行わない。
+- request body は `AccessRequest` 契約から構成し、`auth.roles/groups` と `resource.policyRef` の意味解釈は行わない。一方で送信前の安全境界として、UTF-8 JSON全体を64KiB以下、識別子を256文字以下、`policyRef`を2,048文字以下、roles/groupsを各64件以下の重複なしcanonical文字列に限定する。
+- subject/resource欠損、制御文字・前後空白、未知のaction/visibility、型不正、上限超過を含むserver-composed requestはtransport前に拒否し、raw値をclient・logへ反射せず`adapter_error`としてfail-safeを適用する。
 - request header には `x-acl-auth-mode: none|oidc|saml` を付与し、必要時のみ `Authorization: Bearer <static>` / `x-idp-issuer` / `x-trace-id` を付与する。
 - 応答は `allow:boolean`（必須）+ `readOnly:boolean?` + `reason:string?` の最小契約。object以外、余分なfield、64KiB超、非UTF-8/非JSON、512文字超または制御文字を含むreasonは受理せず、応答値をclient・logへ反射せずに`policy_ref_invalid`としてfail-safeを適用する。
 - `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` が未設定の場合、`external_http` 指定でも `noop` へフォールバックする（可用性優先）。

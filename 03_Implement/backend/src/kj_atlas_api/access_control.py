@@ -27,7 +27,11 @@ FailSafeReason = Literal[
     "adapter_error",
 ]
 MAX_ACCESS_CONTROL_RESPONSE_BYTES = 64 * 1024
+MAX_ACCESS_CONTROL_REQUEST_BYTES = 64 * 1024
 MAX_ACCESS_CONTROL_REASON_LENGTH = 512
+MAX_ACCESS_CONTROL_IDENTIFIER_LENGTH = 256
+MAX_ACCESS_CONTROL_POLICY_REF_LENGTH = 2048
+MAX_ACCESS_CONTROL_ATTRIBUTE_COUNT = 64
 _ACCESS_CONTROL_RESPONSE_FIELDS = {"allow", "readOnly", "reason"}
 
 
@@ -100,6 +104,10 @@ class AccessControlUnreachableError(RuntimeError):
 
 class AccessControlInvalidPolicyError(ValueError):
     """Policy ref is invalid/expired/failed verification."""
+
+
+class AccessControlInvalidRequestError(ValueError):
+    """Server-composed policy request is unsafe to transmit."""
 
 
 class NoopAccessControlAdapter:
@@ -191,6 +199,148 @@ def _parse_external_policy_response(response_body: bytes) -> AccessDecision:
     return AccessDecision(allow=allow, read_only=read_only, reason=reason)
 
 
+def _validate_policy_request_string(
+    value: object,
+    *,
+    max_length: int = MAX_ACCESS_CONTROL_IDENTIFIER_LENGTH,
+    optional: bool = True,
+) -> None:
+    if value is None and optional:
+        return
+    if (
+        not isinstance(value, str)
+        or not value
+        or len(value) > max_length
+        or value.strip() != value
+        or any(not character.isprintable() for character in value)
+    ):
+        raise AccessControlInvalidRequestError(
+            "policy adapter request contains an invalid server-composed value"
+        )
+
+
+def _validate_policy_attributes(values: object) -> None:
+    if not isinstance(values, tuple) or len(values) > MAX_ACCESS_CONTROL_ATTRIBUTE_COUNT:
+        raise AccessControlInvalidRequestError(
+            "policy adapter request contains an invalid attribute set"
+        )
+    for value in values:
+        _validate_policy_request_string(value, optional=False)
+    if len(set(values)) != len(values):
+        raise AccessControlInvalidRequestError(
+            "policy adapter request contains an invalid attribute set"
+        )
+
+
+def _serialize_external_policy_request(
+    request: AccessRequest,
+    *,
+    auth_source: AuthContext,
+    subject_key: str,
+) -> bytes:
+    if (
+        request.action not in {"read", "write", "export", "share"}
+        or not isinstance(request.safe_mode, bool)
+        or not isinstance(request.read_only, bool)
+    ):
+        raise AccessControlInvalidRequestError(
+            "policy adapter request has invalid control fields"
+        )
+    _validate_policy_request_string(auth_source.actor_ref)
+    _validate_policy_request_string(auth_source.user_id)
+    _validate_policy_request_string(auth_source.provider)
+    _validate_policy_request_string(auth_source.external_uid)
+    _validate_policy_request_string(auth_source.trace_id)
+    _validate_policy_request_string(auth_source.amr)
+    _validate_policy_request_string(auth_source.acr)
+    _validate_policy_request_string(auth_source.aal)
+    _validate_policy_request_string(auth_source.auth_time)
+    _validate_policy_attributes(auth_source.roles)
+    _validate_policy_attributes(auth_source.groups)
+
+    resource_source = request.resource
+    if resource_source is None:
+        raise AccessControlInvalidRequestError(
+            "policy adapter request requires a resource"
+        )
+    _validate_policy_request_string(resource_source.doc_id, optional=False)
+    if resource_source.visibility not in {
+        None,
+        "Public",
+        "Unlisted",
+        "Org",
+        "Restricted",
+    }:
+        raise AccessControlInvalidRequestError(
+            "policy adapter request has invalid resource visibility"
+        )
+    _validate_policy_request_string(
+        resource_source.policy_ref,
+        max_length=MAX_ACCESS_CONTROL_POLICY_REF_LENGTH,
+    )
+    _validate_policy_request_string(resource_source.tenant_id)
+    _validate_policy_request_string(resource_source.kind, optional=False)
+
+    auth_payload: dict[str, object] = {
+        "actorRef": auth_source.actor_ref,
+        "roles": list(auth_source.roles),
+        "groups": list(auth_source.groups),
+    }
+    for key, value in (
+        ("traceId", auth_source.trace_id),
+        ("userId", auth_source.user_id),
+        ("provider", auth_source.provider),
+        ("externalUid", auth_source.external_uid),
+        ("amr", auth_source.amr),
+        ("acr", auth_source.acr),
+        ("aal", auth_source.aal),
+        ("authTime", auth_source.auth_time),
+    ):
+        if value is not None:
+            auth_payload[key] = value
+
+    resource_payload: dict[str, object] = {
+        "docId": resource_source.doc_id,
+        "visibility": resource_source.visibility,
+        "policyRef": resource_source.policy_ref,
+    }
+    if resource_source.tenant_id is not None:
+        resource_payload["tenantId"] = resource_source.tenant_id
+        resource_payload["kind"] = resource_source.kind
+
+    payload: dict[str, object] = {
+        "action": request.action,
+        subject_key: auth_payload,
+        "resource": resource_payload,
+        "safeMode": request.safe_mode,
+        "readOnly": request.read_only,
+    }
+    if request.tenant is not None:
+        _validate_policy_request_string(request.tenant.tenant_id, optional=False)
+        _validate_policy_request_string(request.tenant.membership_id)
+        _validate_policy_request_string(request.tenant.resolved_by, optional=False)
+        payload["tenant"] = {
+            "tenantId": request.tenant.tenant_id,
+            "membershipId": request.tenant.membership_id,
+            "resolvedBy": request.tenant.resolved_by,
+        }
+    try:
+        body = json.dumps(
+            payload,
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    except (TypeError, ValueError, UnicodeError):
+        raise AccessControlInvalidRequestError(
+            "policy adapter request could not be serialized"
+        ) from None
+    if len(body) > MAX_ACCESS_CONTROL_REQUEST_BYTES:
+        raise AccessControlInvalidRequestError(
+            "policy adapter request exceeds the size limit"
+        )
+    return body
+
+
 class ExternalPolicyAccessControlAdapter:
     """HTTP bridge to enterprise policy engines behind OIDC/SAML SSO.
 
@@ -214,56 +364,15 @@ class ExternalPolicyAccessControlAdapter:
             )
             subject_key = "subject"
 
-        auth_payload: dict[str, object] = {
-            "actorRef": auth_source.actor_ref,
-            "roles": list(auth_source.roles),
-            "groups": list(auth_source.groups),
-        }
-        trace_id = getattr(auth_source, "trace_id", None)
-        if trace_id is not None:
-            auth_payload["traceId"] = trace_id
-        if auth_source.user_id is not None:
-            auth_payload["userId"] = auth_source.user_id
-        if auth_source.provider is not None:
-            auth_payload["provider"] = auth_source.provider
-        if auth_source.external_uid is not None:
-            auth_payload["externalUid"] = auth_source.external_uid
-        if auth_source.amr is not None:
-            auth_payload["amr"] = auth_source.amr
-        if auth_source.acr is not None:
-            auth_payload["acr"] = auth_source.acr
-        if auth_source.aal is not None:
-            auth_payload["aal"] = auth_source.aal
-        if auth_source.auth_time is not None:
-            auth_payload["authTime"] = auth_source.auth_time
-
-        resource_source = request.resource
-        if resource_source is None:
-            resource_source = AccessResource(doc_id="")
-
-        resource_payload: dict[str, object] = {
-            "docId": resource_source.doc_id,
-            "visibility": resource_source.visibility,
-            "policyRef": resource_source.policy_ref,
-        }
-        if resource_source.tenant_id is not None:
-            resource_payload["tenantId"] = resource_source.tenant_id
-            resource_payload["kind"] = resource_source.kind
-
-        payload: dict[str, object] = {
-            "action": request.action,
-            subject_key: auth_payload,
-            "resource": resource_payload,
-            "safeMode": request.safe_mode,
-            "readOnly": request.read_only,
-        }
-        if request.tenant is not None:
-            payload["tenant"] = {
-                "tenantId": request.tenant.tenant_id,
-                "membershipId": request.tenant.membership_id,
-                "resolvedBy": request.tenant.resolved_by,
-            }
-        body = json.dumps(payload).encode("utf-8")
+        if auth_source is None:
+            raise AccessControlInvalidRequestError(
+                "policy adapter request requires an authenticated subject"
+            )
+        body = _serialize_external_policy_request(
+            request,
+            auth_source=auth_source,
+            subject_key=subject_key,
+        )
 
         headers = {
             "content-type": "application/json",
@@ -392,6 +501,8 @@ def resolve_access_decision(
         return apply_adapter_failsafe(request=request, mode=fail_safe_mode, reason="policy_ref_unreachable")
     except AccessControlInvalidPolicyError:
         return apply_adapter_failsafe(request=request, mode=fail_safe_mode, reason="policy_ref_invalid")
+    except AccessControlInvalidRequestError:
+        return apply_adapter_failsafe(request=request, mode=fail_safe_mode, reason="adapter_error")
     except Exception:
         return apply_adapter_failsafe(request=request, mode=fail_safe_mode, reason="adapter_error")
 
