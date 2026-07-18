@@ -46,7 +46,7 @@
 
 ## 受理に必要な確認
 
-- [ ] 絵文字をOS依存のUnicode表示とするか、固定画像セットとして同梱するかを比較する。
+- [x] 絵文字をOS依存のUnicode表示とするか、固定画像セットとして同梱するかを比較する。`02_Architecture/representative_visual_cue_offline_preset_comparison.md`で、基本図形を先行し、Unicode絵文字を任意比較、固定SVGを必要性確認後の候補とした。
 - [ ] 手描きの最小機能と、写真・図を一次資料として保持する境界をfixtureで確認する。
 - [ ] 同梱候補のライセンス、帰属表示、派生物の継承条件を配布形態と照合する。
 - [ ] 外部素材providerのAPI利用条件、検索語の扱い、キャッシュ、削除、クレジットを確認する。
@@ -59,6 +59,7 @@
 - Source: `01_Plans/issues/issue-DOMAIN-VISUAL-CUE-01-representative-visual-cues.md`
 - Requirements: `00_Prompt/representative_visual_cue_requirements.md`
 - Evaluation: `02_Architecture/representative_visual_cue_evaluation.md`
+- Candidate comparison: `02_Architecture/representative_visual_cue_offline_preset_comparison.md`
 - Related: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 - Related: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`
