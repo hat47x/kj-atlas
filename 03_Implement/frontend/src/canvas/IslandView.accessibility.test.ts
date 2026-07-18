@@ -11,7 +11,7 @@ describe("IslandView accessibility controls", () => {
     setActiveLocale("ja");
   });
 
-  const renderIsland = (island: Island, options: { isProtected?: boolean } = {}) =>
+  const renderIsland = (island: Island, options: { isProtected?: boolean; safeMode?: boolean } = {}) =>
     renderToStaticMarkup(createElement(IslandView, {
       island,
       cards: [
@@ -24,6 +24,7 @@ describe("IslandView accessibility controls", () => {
       onToggleCollapsed: vi.fn(),
       onFocusIsland: vi.fn(),
       isProtected: options.isProtected,
+      safeMode: options.safeMode,
     }));
 
   it("renders one primary select control and keeps utility controls separately named", () => {
@@ -124,5 +125,18 @@ describe("IslandView accessibility controls", () => {
     expect(html).toContain("保護");
     expect(html).toContain('aria-label="保護"');
     expect(html).toContain("無理にまとめなくて構いません");
+  });
+
+  it("does not resolve a legacy island image while SafeMode is on", () => {
+    const island: Island = {
+      id: "island-image",
+      title: "Image island",
+      cardIds: ["c1"],
+      imageUrl: "https://images.example.test/sensitive.png",
+      imageReviewed: true,
+    };
+
+    expect(renderIsland(island, { safeMode: true })).not.toContain("images.example.test");
+    expect(renderIsland(island, { safeMode: false })).toContain("images.example.test");
   });
 });

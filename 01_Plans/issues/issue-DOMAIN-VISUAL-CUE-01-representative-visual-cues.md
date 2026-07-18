@@ -67,6 +67,7 @@
 - [ ] T6 採用参照、権利情報、画像本体、サムネイルの保存候補を比較し、ADRを受理または更新する。
 - [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。
 - [ ] T8 実利用で不足が確認された場合だけ、外部素材と生成画像をそれぞれ別issueへ分割する。
+- [x] T9 現行`Island.imageUrl`の自動外部取得とレビュー自動昇格を`SEC-VISUAL-ASSET-01`へ分離し、SafeModeで遮断する。
 
 ## 5) 検証計画 / Validation plan
 
@@ -80,6 +81,7 @@
 - `01_Plans/adr/ADR-0059-representative-visual-cue-source-boundary.md`
 - `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 - `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
+- `01_Plans/issues/issue-SEC-VISUAL-ASSET-01-legacy-island-image-safe-mode.md`
 
 ## 7) ADR判定
 

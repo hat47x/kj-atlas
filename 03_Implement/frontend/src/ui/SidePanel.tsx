@@ -20,6 +20,7 @@ import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
 import type { ContradictionReport, ContradictionSignal } from "../domain/view/contradiction_checks";
 import { signatureKeyForContradictionSignal } from "../domain/view/contradiction_checks";
+import { shouldLoadLegacyIslandImage } from "../domain/legacy_island_image";
 import { rankDistributionIslands, type DistributionReport } from "../domain/view/distribution_checks";
 import type { ClaimType, ClaimTypeMixReport } from "../domain/view/claim_type_checks";
 import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
@@ -2773,7 +2774,7 @@ export function SidePanel({
           <input
             type="url"
             value={selectedIsland.imageUrl ?? ""}
-            placeholder="https://example.com/image.jpg"
+            placeholder={t("side_panel.image.url_placeholder")}
             onChange={(event) => {
               onImageUrlChange(event.target.value);
             }}
@@ -2884,12 +2885,16 @@ export function SidePanel({
               marginBottom: 8,
             }}
           >
-            {selectedIsland.imageUrl ? (
+            {safeMode && selectedIsland.imageUrl ? (
+              <span role="status" style={{ color: "#475569", padding: 8, textAlign: "center" }}>
+                {t("side_panel.image.safe_mode_blocked")}
+              </span>
+            ) : shouldLoadLegacyIslandImage(safeMode, selectedIsland.imageUrl) ? (
               hasImagePreviewError ? (
                 <span style={{ color: "#b91c1c" }}>{t("side_panel.image.preview_error")}</span>
               ) : (
                 <img
-                  src={selectedIsland.imageUrl}
+                  src={selectedIsland.imageUrl!}
                   alt={t("side_panel.image.preview_alt")}
                   onError={() => {
                     setHasImagePreviewError(true);
