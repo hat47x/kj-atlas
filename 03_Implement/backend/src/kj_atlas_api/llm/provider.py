@@ -12,6 +12,8 @@ from uuid import uuid4
 from kj_atlas_api.settings import settings
 from kj_atlas_api.trusted_http import open_trusted_http
 
+MAX_LLM_PROVIDER_RESPONSE_BYTES = 1024 * 1024
+
 
 @dataclass(frozen=True)
 class LLMRequest:
@@ -246,6 +248,38 @@ def _ensure_large_scale_allowlist() -> None:
         raise ProviderRequestError.unavailable("Large-scale destination is not allowlisted", metadata)
 
 
+def _parse_http_provider_response(
+    response_body: bytes,
+    *,
+    provider_name: str,
+    metadata: LLMCallMetadata,
+) -> str:
+    if len(response_body) > MAX_LLM_PROVIDER_RESPONSE_BYTES:
+        raise ProviderRequestError.validation(
+            f"{provider_name} response exceeded the size limit",
+            metadata,
+        )
+    try:
+        body = json.loads(response_body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise ProviderRequestError.validation(
+            f"{provider_name} response was not valid JSON",
+            metadata,
+        ) from None
+    if not isinstance(body, dict) or set(body) != {"text"}:
+        raise ProviderRequestError.validation(
+            f"{provider_name} response had an invalid shape",
+            metadata,
+        )
+    text = body["text"]
+    if not isinstance(text, str):
+        raise ProviderRequestError.validation(
+            f"{provider_name} response missing text field",
+            metadata,
+        )
+    return text
+
+
 def _generate_via_http(
     req: LLMRequest,
     *,
@@ -286,7 +320,7 @@ def _generate_via_http(
 
     try:
         with open_trusted_http(req_obj, timeout_seconds=60) as resp:
-            raw_body = resp.read().decode("utf-8")
+            response_body = resp.read(MAX_LLM_PROVIDER_RESPONSE_BYTES + 1)
     except error.HTTPError as exc:
         if exc.code in (408, 504):
             raise ProviderRequestError.timeout(f"{provider_name} request timed out with status {exc.code}", metadata) from exc
@@ -296,15 +330,22 @@ def _generate_via_http(
         if isinstance(reason, socket.timeout):
             raise ProviderRequestError.timeout(f"{provider_name} request timed out", metadata) from exc
         raise ProviderRequestError.unavailable(f"{provider_name} request failed: {reason}", metadata) from exc
+    except TimeoutError as exc:
+        raise ProviderRequestError.timeout(
+            f"{provider_name} request timed out",
+            metadata,
+        ) from exc
+    except OSError as exc:
+        raise ProviderRequestError.unavailable(
+            f"{provider_name} request failed",
+            metadata,
+        ) from exc
 
-    try:
-        body = json.loads(raw_body)
-    except json.JSONDecodeError as exc:
-        raise ProviderRequestError.validation(f"{provider_name} response was not valid JSON", metadata) from exc
-
-    text = body.get("text")
-    if not isinstance(text, str):
-        raise ProviderRequestError.validation(f"{provider_name} response missing text field", metadata)
+    text = _parse_http_provider_response(
+        response_body,
+        provider_name=provider_name,
+        metadata=metadata,
+    )
     return LLMResponse(raw_text=text, metadata=metadata)
 
 

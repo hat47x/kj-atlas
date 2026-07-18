@@ -14,6 +14,7 @@ from kj_atlas_api.llm.provider import (
     LLMResponse,
     LargeScaleProvider,
     LocalProvider,
+    MAX_LLM_PROVIDER_RESPONSE_BYTES,
     NoOpProvider,
     NoneProvider,
     ProviderDisabledError,
@@ -26,11 +27,13 @@ from kj_atlas_api.settings import Settings, settings
 
 
 class _StubHTTPResponse:
-    def __init__(self, body: str):
-        self._buffer = io.BytesIO(body.encode("utf-8"))
+    def __init__(self, body: str | bytes):
+        self._buffer = io.BytesIO(
+            body.encode("utf-8") if isinstance(body, str) else body
+        )
 
-    def read(self) -> bytes:
-        return self._buffer.read()
+    def read(self, size: int = -1) -> bytes:
+        return self._buffer.read(size)
 
     def __enter__(self):
         return self
@@ -151,6 +154,37 @@ def test_local_provider_maps_validation_error_code(monkeypatch: pytest.MonkeyPat
         with pytest.raises(ProviderRequestError) as exc_info:
             LocalProvider().generate(LLMRequest(task="check_narrative", prompt="prompt"))
         assert exc_info.value.code == "provider_validation"
+    finally:
+        settings.local_llm_base_url = original_url
+
+
+@pytest.mark.parametrize(
+    "response_body",
+    [
+        b"[]",
+        b'{"text":"ok","token":"response-secret"}',
+        b"\xff",
+        b"x" * (MAX_LLM_PROVIDER_RESPONSE_BYTES + 1),
+    ],
+    ids=["array", "extra-field", "invalid-utf8", "oversized"],
+)
+def test_local_provider_rejects_unbounded_or_noncanonical_response_without_reflection(
+    monkeypatch: pytest.MonkeyPatch,
+    response_body: bytes,
+) -> None:
+    original_url = settings.local_llm_base_url
+    settings.local_llm_base_url = "http://local-llm.test"
+    monkeypatch.setattr(
+        "kj_atlas_api.llm.provider.open_trusted_http",
+        lambda request, timeout_seconds: _StubHTTPResponse(response_body),  # noqa: ARG005
+    )
+    try:
+        with pytest.raises(ProviderRequestError) as exc_info:
+            LocalProvider().generate(
+                LLMRequest(task="check_narrative", prompt="tenant prompt")
+            )
+        assert exc_info.value.code == "provider_validation"
+        assert "response-secret" not in str(exc_info.value)
     finally:
         settings.local_llm_base_url = original_url
 

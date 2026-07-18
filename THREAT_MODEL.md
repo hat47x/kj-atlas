@@ -108,6 +108,7 @@
 - trusted endpointの3xx redirectで接続先検証を迂回し、固定bearer、tenant context、policyRef、promptを別hostへ転送する
 - 外部PDPの巨大・非object・拡張field付き応答でmemoryを圧迫する、または未検証値を認可判断・client errorへ混入させる
 - 外部PDP・監査HTTPの非TLS／credential入りendpoint、孤立したbearer/issuer、負または過大timeoutにより秘密漏えい・誤接続・起動後障害を生じる
+- LLM HTTP providerの巨大・非object・拡張field付き応答でmemoryを圧迫する、または未検証値をproposal処理へ混入させる
 
 **SaaS提供前に必要な対策**
 
@@ -119,12 +120,13 @@
 - 外部PDP、監査HTTP、binding/capability resolver、LLMのoutbound HTTPはredirectを追跡せず、検証済みの元endpointだけへ送信する
 - 外部PDP応答を64KiB以下のclosed-world `allow/readOnly/reason` objectへ限定し、不正応答は値を反射せずSaaS deny fail-safeへ倒す
 - 外部PDP・監査HTTPの設定をtrusted HTTPS（loopbackだけHTTP可）、canonical secret/header、bounded timeoutへ限定し、孤立設定を起動時に拒否する
+- LLM HTTP provider応答を1MiB以下のclosed-world `text` objectへ限定し、不正応答は値を反射せずprovider validationで停止する
 - recent/QueryPreset等をdeployment origin + tenantId + userIdで名前空間分離し、切替時にmemory/DOM/cacheを破棄
 - 2つのtenantへ同じdocIdを用意したnegative matrixで、全API・export・MCP・webhook・auditの越境拒否を統合検証
 
 **現行の適用限界**
 
-tenant/identity/membership、Document複合key、TenantContext/PDP/audit伝播、PostgreSQL RLS migrationとtransaction-local DB context、fail-closed session context route、strict capability adapter、trusted outbound HTTPのredirect拒否、外部PDP応答のclosed-world検証、外部PDP・監査HTTPの設定guardまでは実装済みである。session/capability境界ではresolverのmembership IDをDBのactive membershipから再生成した値と照合し、停止・差し替え証跡をPDP呼出し前に拒否する。ただしPostgreSQL実地検証、auth edgeからverified resolverへの接続、active tenant変更、MCP/worker/cache/browser/storageを含む完全な越境matrixは未完了である。このため共有DB型のマルチテナントSaaSとして運用してはならず、`enterprise-production`は単一組織デプロイ向けと解釈する。`saas-multitenant`の起動拒否は残りの`SAAS-TENANT-01`条件を完了するまで維持する。
+tenant/identity/membership、Document複合key、TenantContext/PDP/audit伝播、PostgreSQL RLS migrationとtransaction-local DB context、fail-closed session context route、strict capability adapter、trusted outbound HTTPのredirect拒否、外部PDP/LLM応答のclosed-world検証、外部PDP・監査HTTPの設定guardまでは実装済みである。session/capability境界ではresolverのmembership IDをDBのactive membershipから再生成した値と照合し、停止・差し替え証跡をPDP呼出し前に拒否する。ただしPostgreSQL実地検証、auth edgeからverified resolverへの接続、active tenant変更、MCP/worker/cache/browser/storageを含む完全な越境matrixは未完了である。このため共有DB型のマルチテナントSaaSとして運用してはならず、`enterprise-production`は単一組織デプロイ向けと解釈する。`saas-multitenant`の起動拒否は残りの`SAAS-TENANT-01`条件を完了するまで維持する。
 
 ## 検証・運用 / Verification
 

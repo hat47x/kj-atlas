@@ -260,3 +260,9 @@
 - 外部PDPと監査HTTPへbinding/capability resolverと同じtrusted endpoint guardを適用した。credential/query/fragment、非loopback HTTP、空白・制御文字・backslash、不正portを拒否し、3xx拒否と組み合わせて検証済みの元endpoint以外へ送信しない。
 - adapter/transportが無効なままendpoint・API keyを残す構成、endpointなしのbearer/IdP issuer、非canonical secret/header、0以下または30秒超のtimeout、0件queueを起動時に拒否する。endpoint未設定時の既存single-tenant noop fallbackは維持する。
 - settings／外部PDP／監査／binding／capability近接114件、backend全体468件pass・条件付き25件skip、Ruff、docs-check、diff-checkを通過した。
+
+### Implementation checkpoint 2026-07-18: bounded LLM provider response
+
+- local/large-scale共通のHTTP provider応答を1MiB以下、`text`単独fieldのobjectへ限定した。非UTF-8/非JSON、非object、余分なtoken等のfield、size超過、text型不正は`provider_validation`へ正規化し、raw値をclient・logへ反射しない。
+- trusted HTTPのredirect拒否と組み合わせ、tenant由来promptを別接続先へ転送せず、巨大・拡張応答をproposal処理へ渡さない。`KJ_ATLAS_LLM_PROVIDER=none`既定、local-first、明示opt-in、proposal-onlyは変更しない。
+- LLM／AI契約近接48件、backend全体472件pass・条件付き25件skip、Ruff、docs-check、diff-checkを通過した。
