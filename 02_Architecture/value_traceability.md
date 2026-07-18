@@ -123,7 +123,7 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 | 価値: 開始 | 迷わず最初の意味ある配置へ | `ADR-0032` V0/V1 | `PRODUCT-UX-01`(Done), `PRODUCT-VALUE-01` | 被覆 |
 | 価値: 外在化 | メモ・違和感をカード化 | `ADR-0032` V1 | `PRODUCT-VALUE-01`, `DOMAIN-EXPR-01` | 被覆 |
 | 価値: 定性情報の品質 | 意味・意図を保ち、一枚一中心、再文脈化・遡及可能なカードを低負担で作る | `qualitative_card_quality_requirements.md`, `ADR-0001` P-08 | `DOMAIN-CARD-QUALITY-01` | 被覆（自己確認、前後比較、原文復元を実装・E2E確認済み） |
-| 価値: 反復的探究 | 6ラウンドを経験と思考の往復として扱い、中間成果・引継ぎ・分岐を保持する | `w_type_iterative_inquiry_requirements.md`, `ADR-0057`, `inquiry_journey_model.md` | `DOMAIN-W-ITERATION-01`, `PERF-INQUIRY-01` | 被覆（現在文書からの開始、反復snapshot、ローカルファイル保存・再開、代表容量、読込非ブロッキング化を検証済み。比較・引継ぎはL0/未実装） |
+| 価値: 反復的探究 | 6ラウンドを経験と思考の往復として扱い、中間成果・引継ぎ・分岐を保持する | `w_type_iterative_inquiry_requirements.md`, `ADR-0057`, `inquiry_journey_model.md` | `DOMAIN-W-ITERATION-01` | 被覆（現在文書からの開始、反復snapshot、ローカルファイル保存・再開を検証済み。比較・引継ぎ・容量計測はL0/未実装） |
 | 価値: 構造化 | まとまり・関係・未整理の同時保持 | `ADR-0032` V2 | `PRODUCT-UX-02`(Done), `PRODUCT-VALUE-02` | 被覆 |
 | 価値: レビュー | AI候補の人間採否・proposal-only | `ADR-0032` V3 | `PRODUCT-VALUE-02`, `CE2`, `CE3` | 被覆 |
 | 価値: 成果物化と共有 | 確定/保留/根拠/未レビューを束ねた成果物 | `ADR-0032` V4 | `PRODUCT-UX-03`(Done), `PRODUCT-VALUE-03` | 被覆 |
@@ -152,9 +152,7 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 
 **更新（2026-07-18・ローカルbundle）**: `DOMAIN-W-ITERATION-01` は自己完結bundleのstrict export/importと内容由来digest検証を実装した。これはローカル成果物のI/O境界を固定するもので、保存・再読込、画面操作、保持・削除、SafeMode派生共有は未実装のため、support levelは`L0: Planned`を維持する。
 
-**更新（2026-07-18・保存と再開）**: 高度機能内で現在文書から正式な探究bundleを開始し、反復ごとの不変snapshotと低負担なカード系譜を記録し、JSONファイルへ保存・再読込できるようにした。この時点では比較、再開ブリーフ、引継ぎ、容量計測、SafeMode派生共有が未実装であったため、support levelは`L0: Planned`を維持した。
-
-**更新（2026-07-18・代表容量）**: 300カード・30島・6ラウンドの1成果は73,955 bytes、探究manifestは2,161 bytes、自己完結bundleは1,460,390 bytesで、JSON集約の容量は5MiB回帰上限以内だった。画面読込の最大長時間タスクは当初243から294msで100ms目安を超えたが、`PERF-INQUIRY-01`でstrict validationとdigest照合をworkerへ移し、単独実行で93から95msへ改善した。並列CIは150msを退行上限とする。性能面のPhase 3停止条件は解消したが、比較・引継ぎ・SafeMode派生共有が未完了のためsupport levelは`L0: Planned`を維持する。
+**更新（2026-07-18・保存と再開）**: 高度機能内で現在文書から正式な探究bundleを開始し、反復ごとの不変snapshotと低負担なカード系譜を記録し、JSONファイルへ保存・再読込できるようにした。比較、再開ブリーフ、引継ぎ、容量計測、SafeMode派生共有は未実装のため、support levelは`L0: Planned`を維持する。
 
 ---
 

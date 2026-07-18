@@ -30,7 +30,7 @@
 | R4 | MVP-EXIT-01の受入確認4件 | [MVP-EXIT-01](issues/issue-MVP-EXIT-01-productization-readiness.md)・[代行ハンドオフ](mvp-exit-01-human-acceptance-handoff.md) | 検証実行 | キーボード確認 / スクリーンリーダー確認 / リリース画像確認 / 出荷判断記録（§4.1〜4.2の代行設計を参照） |
 | R5 | QAゲート3件（P0）の軽微ブロッカー解除 | [QA-E2E-USE-01](issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md) / [QA-PUB-01-I18N-03](issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md) / [QA-UNIT-01](issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md) | 意思決定 | 承認は2026-07-16に完了済み。残りは実行経路の1本固定等の軽微決定のみ（[PRODUCT-QA-01](issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md) ゲート証跡に直結） |
 | R6 | 定性カード品質支援の完了（原則P-08: 定性情報への忠実性） | [DOMAIN-CARD-QUALITY-01](issues/issue-DOMAIN-CARD-QUALITY-01-qualitative-card-quality-assistance.md) | 完了 | 本文のみの一回保存、前後比較、原文復元をE2Eで確認済み。Phase Cは実利用の要望が得られるまで追加しない |
-| R7 | W型累積探究の本体実装（原則P-09: 累積的探究） | [DOMAIN-W-ITERATION-01](issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md)・[ADR-0057](adr/ADR-0057-w-type-cumulative-inquiry-model.md) | 実装（Codex主担当） | 現在文書からの開始、反復snapshot、ローカルファイル保存・再開、代表容量計測、読込非ブロッキング化まで完了。残りは分岐・比較、再開ブリーフ、引継ぎUI、SafeMode派生共有 |
+| R7 | W型累積探究の本体実装（原則P-09: 累積的探究） | [DOMAIN-W-ITERATION-01](issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md)・[ADR-0057](adr/ADR-0057-w-type-cumulative-inquiry-model.md) | 実装（Codex主担当） | 現在文書からの開始、反復snapshot、ローカルファイル保存・再開まで完了。残りは容量計測、分岐・比較、再開ブリーフ、引継ぎUI、SafeMode派生共有 |
 
 ### 優先順位の根拠
 
