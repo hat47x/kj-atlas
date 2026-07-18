@@ -45,6 +45,22 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   });
   expect(second.ok).toBe(true);
   if (!second.ok) return;
+  const currentRound = second.bundle.journey.roundRecords[1];
+  currentRound.theme = "What remains unclear after the sign was seen?";
+  currentRound.handoff = {
+    carryoverRefs: [{
+      snapshotId: currentRound.outputSnapshotId!,
+      kind: "card",
+      entityId: "card-1",
+    }],
+    heldRefs: [],
+    unresolvedQuestions: ["Which next action was unclear?"],
+    fieldworkRequests: [{
+      requestId: "fieldwork-next-observation",
+      question: "Observe where visitors pause next",
+    }],
+    understandingDelta: "The burden may be uncertainty about the next action.",
+  };
 
   const serialized = await serializeInquiryBundle(second.bundle);
   expect(serialized.ok).toBe(true);
@@ -54,6 +70,7 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?locale=en");
+  await page.getByRole("button", { name: "Close start panel" }).click();
   await page.getByRole("button", { name: "Share & Reproduce" }).click();
   const chooserPromise = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Load document.json" }).click();
@@ -73,6 +90,27 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   const panel = page.locator('[data-panel="inquiry-journey-prototype"]');
   await panel.locator('input[type="file"]').setInputFiles(inquiryPath);
   await expect(panel.getByText("Inquiry file imported. You can continue the inquiry.")).toBeVisible();
+
+  const resumeSummary = panel.getByText("Review resume brief", { exact: true });
+  await resumeSummary.focus();
+  await resumeSummary.press("Enter");
+  const resumeBrief = panel.getByRole("group", { name: "Review resume brief" });
+  await expect(resumeBrief).toContainText("What remains unclear after the sign was seen?");
+  await expect(resumeBrief).toContainText("The burden may be uncertainty about the next action.");
+  await expect(resumeBrief).toContainText("Which next action was unclear?");
+  await expect(resumeBrief).toContainText("Observe where visitors pause next");
+  const openPreviousResult = resumeBrief.getByRole("button", {
+    name: "Open previous result: Round comparison fixture",
+  });
+  await openPreviousResult.focus();
+  await openPreviousResult.press("Enter");
+  const previousResult = resumeBrief.getByRole("region", { name: "Previous result" });
+  await expect(previousResult).toBeFocused();
+  await expect(previousResult).toContainText("The sign was visible");
+  await expect(previousResult).toContainText("Source: Field note A-17");
+  await expect(previousResult).toContainText("The canvas and inquiry history are unchanged.");
+  expect(await resumeBrief.evaluate((element) => element.getBoundingClientRect().right)).toBeLessThanOrEqual(390);
+  await page.screenshot({ path: testInfo.outputPath("resume-brief-390px.png"), fullPage: true });
 
   const lineageSummary = panel.getByText("Trace a card's sources", { exact: true });
   await lineageSummary.focus();
@@ -142,11 +180,10 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   expect(parsed.bundle.journey.defaultHeadRoundId).toBe(branchRound.roundId);
 
   const undoBranchButton = panel.getByRole("button", { name: "Undo this branch" });
-  await undoBranchButton.evaluate((button) => button.focus());
-  await page.keyboard.press("Enter");
+  await undoBranchButton.click();
+  await expect(panel.getByRole("list", { name: "Inquiry records" }).getByRole("listitem")).toHaveCount(2);
   await expect(page.getByRole("button", { name: "Work mode", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(panel.getByText("The branch was undone, including the restored canvas and inquiry record.")).toBeVisible();
-  await expect(panel.getByRole("list", { name: "Inquiry records" }).getByRole("listitem")).toHaveCount(2);
   await expect(page.getByRole("button", { name: "Redo" })).toBeDisabled();
   await page.screenshot({ path: testInfo.outputPath("branch-undone-390px.png"), fullPage: true });
 
