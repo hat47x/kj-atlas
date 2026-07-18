@@ -93,8 +93,8 @@ findingはrule ID、文書、行、検出token、照合先、正しい候補を�
 
 - [x] `CONTRIBUTING.md`のCompose health probeが`/api/healthz`となり、backend-localの`/healthz`と区別される。→ 修正済み（下記「実装記録」参照）。
 - [x] current/public文書に存在しないrepository-local CLI optionが0件で、`--files`参照がなくなる。→ 監査の結果、current/public文書（README/CONTRIBUTING/04_Documentation/e2e_testing.md）に`--files`参照は0件（`e2e_testing.md`分は`DX-E2E-08`で既に解消済み、他文書には元々存在しなかった）。`01_Plans/issues/*.md`に多数残る`--files`参照はDX-DOC-04のScope外（内部issueメモの実施時点記録であり、現行の利用者向けコピー対象ではない）と判断し対象外にした。
-- [ ] 文書で参照するnpm scripts、Compose services、repository paths、runtime parameter keysが正本と一致する。→ npm scriptsとCompose servicesの自動照合を実装（下記）。repository paths・runtime parameter keysは未実装（follow-up）。
-- [ ] `DC-CMD-001`がendpoint、CLI option、npm script、Compose service、pathの各負例をrule ID付きで検出する。→ npm scriptとCompose serviceの2区分が実装済み。endpoint・CLI option・pathの3区分は未実装（follow-up、下記「実装記録」参照）。
+- [x] 文書で参照するnpm scripts、Compose services、repository paths、runtime parameter keysが正本と一致する。→ npm scripts・Compose services・repository paths・runtime parameter keysの自動照合をすべて実装した（下記「実装記録」参照）。
+- [ ] `DC-CMD-001`がendpoint、CLI option、npm script、Compose service、pathの各負例をrule ID付きで検出する。→ npm script・Compose service・path・CLI optionの4区分が実装済み。endpointの1区分のみ未実装（follow-up、下記「実装記録」参照）。
 - [x] コードフェンス外の説明、placeholder、外部URL、動的値を誤検出しない正常fixtureがある。→ npm script区分について、正常例・スコープ外文書除外の2 test fixtureを追加（下記参照）。他区分は該当区分自体が未実装のため対象外。
 - [x] manual/mutatingコマンドはCIで実行されず、データ消失・秘密情報・本番利用に関する警告と停止条件を維持する。→ 本Issueでは静的照合のみを追加し、CI実行コマンドやworkflowの変更は一切行っていない。
 - [x] localとCIが同じ`docs_check.py`から検査し、current repositoryでpassする。→ `check_npm_script_commands`を`docs_check.py`へ統合し、現行repositoryでpass済み（下記「実装記録」参照）。
@@ -146,6 +146,107 @@ npm script区分に続き、Compose service区分を実装した。残り3区分
 検証結果:
 - `python3 -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 30/30 pass（新規4件含む、既存回帰なし）。
 - `python 01_Plans/docs_check.py`: pass（`active_memos=22, tracked_markdown=381`）。実際のCompose service参照（`api`/`db`/`web`）はすべて既存サービスと一致し、誤検知0件。
+
+## Sonnet級エージェント実行計画（2026-07-18）: 残り4区分の実装仕様
+
+この節は、残り4区分（runtime parameter key / repository path / CLI option / endpoint probe）を、**この節だけを読んだSonnet級エージェントが人間判断なしに実装完了できる**粒度で固定する。設計選択はすべてここで確定済みであり、実装側で再選択しない。
+
+### 共通実装パターン（参照実装: `check_npm_script_commands` / `check_compose_service_commands`）
+
+1. `01_Plans/docs_contract_checks.py`へ「定数（regex・正本パス）→抽出ヘルパ→`check_*`関数」を追加する。rule IDは全区分`DC-CMD-001`を共有する。
+2. スコープは既存の`CURRENT_PUBLIC_DOC_ROOTS`（README/CONTRIBUTING/04_Documentation/e2e_testing.md）を再利用し、`_is_current_public_doc()`で判定する。
+3. 正本ファイルが存在しない実行コンテキスト（最小テストfixture）では`[]`を返す（既存2区分と同じ理由・同じdocstring様式）。
+4. `docs_contract_checks.py`の`main()`と`docs_check.py`の`run_docs_check()`の両方へ配線する（import追加を忘れない）。
+5. `01_Plans/tests/test_docs_contract_checks.py`へテストクラスを追加する（最低: 正常例1・負例1・スコープ外文書の除外1。区分固有の除外があればもう1件）。
+6. 検証ゲート（各区分のPR前に全部pass必須）:
+   - `python3 -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`
+   - `python3 01_Plans/docs_check.py`（実repositoryで誤検知0件を確認）
+   - `git diff --check`
+7. **1区分=1PR**。docs+tooling-onlyのため、CI green後に自動マージしてよい（本セッション運用実績: PR #2620/#2623と同型）。
+8. 実機で誤検知が出た場合、ルールを黙って狭めない。まず該当文書の記述が本当に正しいか確認し、正しい記述への誤検知であればスコープ/正規化ルールをこの節へ追記してから修正する。
+
+### 区分3: runtime parameter key（優先度1・最小工数）
+
+- 抽出regex: `KJ_ATLAS_[A-Z0-9_]+`。ただし(a)マッチ直後の文字が`*`のもの、(b)マッチが`_`で終わるものは「接頭辞言及」（例: `KJ_ATLAS_AUDIT_*`系）であり検査対象外。2026-07-18の実機棚卸しでこのノイズは`KJ_ATLAS_AUDIT_`と`KJ_ATLAS_ACCESS_CONTROL_`の2件のみと確認済み。
+- 正本: `02_Architecture/runtime_parameter_registry.md`のMarkdown表行から第1セルがバッククォート付きキーの行（`| \`KJ_ATLAS_...\` |`で始まる行）を全表（Backend settings / Compose and frontend build keys / Verification harness keys）から収集した和集合。Private adapter表は`KJ_ATLAS_*`でないため自然に対象外。
+- 2026-07-18棚卸し: 公開文書中の全43キー（ノイズ2件除く）はすべてregistryに存在 → **baseline是正なしで導入可能**。
+- テストクラス名: `RuntimeParameterKeyCheckTest`（正常/未掲載キー負例/`KJ_ATLAS_FOO_*`接頭辞言及の除外/スコープ外除外の4 test）。
+
+### 区分4: repository path（優先度2）
+
+- 抽出: バッククォート内トークン（`` `([^`]+)` ``でinline code抽出）のうち、`^(00_Prompt|01_Plans|02_Architecture|03_Implement|04_Documentation|\.github)/`で始まり、空白・`<`・`>`・`*`・`{`・`|`のいずれも含まないもの。トークン末尾の`:数字`（行参照）は照合前に除去する。コードブロック内はfence単位の除外をせず同じ規則で走査してよい（パス実在性はブロック内でも成立すべき契約のため）。
+- 正本: `tracked_markdown_paths()`と同様に`git -C <root> ls-files -z`（全ファイル、`-- *.md`制限なし）で得たtracked集合＋「トークンがtrackedファイルのディレクトリprefixに一致する場合」も存在扱い。
+- DC-LNK-001（相対リンク）との分担: Markdownリンクは既存DC-LNK-001が担当。本区分は**インラインコード・コマンド引数中のパス**が対象。
+- テストクラス名: `RepositoryPathCheckTest`（実在パス正常/欠落パス負例/`<placeholder>`除外/`:42`行参照付き正常の4 test）。
+
+### 区分5: CLI option（優先度3）
+
+- 抽出regex: `python3?\s+([\w./-]+\.py)((?:\s+--[\w-]+(?:[= ][^\s`]+)?)*)`で(script, options列)。scriptパスがrepository配下に実在するもののみ対象（欠落パスは区分4が報告するため二重報告しない）。
+- 正本: 対象スクリプトのソーステキストから`add_argument\(\s*["'](--[\w-]+)`で収集したoption集合。**スクリプトを実行しない**（issueの固定条件）。`ArgumentParser`の出現がないスクリプトは「検証不能」としてスキップし、findingを出さない（推測しない）。
+- 2026-07-18棚卸し: 公開文書中の該当は`03_Implement/deploy/tools/mock_local_llm.py --host --port`の1件のみで両option実在確認済み → **baseline是正なし**。
+- テストクラス名: `CliOptionCheckTest`（正常/未知option負例/parser無しスクリプトのスキップ/スコープ外除外の4 test）。
+
+### 区分6: endpoint probe allowlist（優先度4）
+
+- 抽出regex: `https?://localhost[:/][\w./:?=&-]*`
+- 正本: モジュール内定数`LOCALHOST_PROBE_ALLOWLIST`（exact集合とprefix集合の2種）。**各entryに由来コメント必須**。2026-07-18棚卸し（公開文書の全9 URL）に基づく初期値:
+  - exact: `http://localhost:8080/api/healthz`（nginx `location /api/` → `api:8000`の`/healthz`）、`http://localhost:8000/healthz`（backend直接起動）、`http://localhost:8001/generate`・`http://localhost:8001`（mock adapter/local LLM例）、`http://localhost:4173/api/healthz`（vite preview、e2e_testing.md）、`http://localhost:8080`（web入口）
+  - prefix: `http://localhost:8080/api/docs/`（document API のGET例）
+- 効果: 既知バグ形`/api/health`（`z`欠落）の再発をCIで検出する。allowlist外の新URLは、`03_Implement/deploy/nginx.conf`とbackend routeで実在確認したうえでallowlistへ追加し、由来コメントを書く。
+- テストクラス名: `LocalhostProbeCheckTest`（exact正常/prefix正常/`/api/health`負例/スコープ外除外の4 test）。
+
+### 実行順序とstop条件
+
+- 順序: 区分3 → 区分4 → 区分5 → 区分6（工数昇順・依存なし。区分4を区分5より先にするのは、区分5が「実在するスクリプトのみ対象」の前提で区分4の存在チェックへ依存するため）。
+- Stop条件: (a)実機棚卸しで10件超の誤検知が出た区分は、パターン設計に欠陥があるため実装を停止し本issueへ観測結果を追記する（ルールを黙って狭めて通さない）。(b)同一区分でVerifyゲート3連続失敗時も停止し記録する（repo慣例）。
+
+### AC対応
+
+- 区分3+4の完了 → 受入条件「文書で参照するnpm scripts、Compose services、repository paths、runtime parameter keysが正本と一致する」の残り2項目が閉じる。
+- 区分5+6の完了 → 受入条件「`DC-CMD-001`がendpoint、CLI option、npm script、Compose service、pathの各負例をrule ID付きで検出する」の残り3項目が閉じる。
+- 本計画完了後に残るのは「CI blocking化のMaintainer確認」と「`DX-DOC-03`/`DOC-OPS-06`からの導線確認」のみ（いずれも人間確認・軽微）。
+
+## 実装記録（2026-07-18）: `DC-CMD-001`（runtime parameter key区分を追加）
+
+区分3（runtime parameter key）を実行計画どおり実装した。残り区分4〜6（repository path/CLI option/endpoint probe）は引き続き未実装のfollow-upとする。
+
+- `01_Plans/docs_contract_checks.py`に`_extract_registry_keys()`と`check_runtime_parameter_key_commands()`を追加した。抽出regex`KJ_ATLAS_[A-Z0-9_]+`のマッチが`_`で終わる場合（`KJ_ATLAS_AUDIT_*`等の接頭辞言及）は検査対象外とした。照合先は`02_Architecture/runtime_parameter_registry.md`の表行（第1セルがバッククォート付き`KJ_ATLAS_*`キーの行）全体。
+- **実装中に発見・修正した2件**:
+  1. 正本パースの自作バグ: 行抽出regexが`` `KEY` `` の直後に空白+`|`を要求しており、実際のregistryにある`` `KJ_ATLAS_API_KEY` ⚠️ ``（既知ギャップの注記マーカー付き行、`KJ_ATLAS_ALLOW_JIT_PROVISIONING`も同様）を拾えなかった。mainへ到達する前に、閉じバッククォートと`|`の間の任意非パイプ文字を許容するよう修正した（回帰テスト追加済み）。
+  2. registryの実在ギャップ: `04_Documentation/assets/screenshots/README.md`が使う`KJ_ATLAS_SCREENSHOT_HOST`/`_PORT`/`_BASE_URL`/`_OUTPUT_DIR`/`_BROWSER_PATH`の5キー（`capture_release_screenshots.mjs`等のscreenshot capture scriptが実際に読む環境変数）が、同種のAuth Level2 harness keyとは異なりregistryのどの表にも未登録だった。DX-DOC-04第1PRの`/api/health`typo修正と同じ「新規検査導入時に顕在化したbaselineの是正」として、Verification harness keys (non-public)表へ5行追加した。
+- `01_Plans/tests/test_docs_contract_checks.py`に`RuntimeParameterKeyCheckTest`（5 test: 正常例、⚠️マーカー付き行の許容、未掲載キー検出、接頭辞言及の除外、スコープ外文書の除外）を追加した。
+- `docs_check.py`へ`check_runtime_parameter_key_commands`を配線した。
+
+検証結果:
+- `python3 -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 35/35 pass（新規5件含む、既存回帰なし）。
+- `python 01_Plans/docs_check.py`: pass（`active_memos=22, tracked_markdown=382`）。registry是正後、実際のcurrent/public文書で誤検知0件。
+
+## 実装記録（2026-07-18続き）: `DC-CMD-001`（repository path区分を追加）
+
+区分4（repository path）を実行計画どおり実装した。残り区分5〜6（CLI option/endpoint probe）は引き続き未実装のfollow-upとする。
+
+- `01_Plans/docs_contract_checks.py`に`check_repository_path_commands()`を追加した。バッククォート内トークンのうち既知のrepositoryルート接頭辞（`00_Prompt/`等）で始まり、placeholder/glob文字（space・`<`・`>`・`*`・`{`・`|`）を含まないものを対象とし、末尾`:数字`（行参照）を除去してから存在確認する。
+- 正本は計画が示した`git ls-files`ではなく、**`root`直下のファイルシステム存在確認**（`Path.exists()`）を採用した。理由: この検査が走査するパスはすべて検査対象文書と同じworking tree内にあり、on-disk存在とtracked存在がここでは一致する。加えて`Path.exists()`はディレクトリにも真を返すため、計画が求めた「トークンがtrackedファイルのディレクトリprefixに一致する場合も存在扱い」を追加ロジックなしで満たす。
+- **実装中に発見した1件（設計拡張、baseline是正ではない）**: `04_Documentation/release.md`が説明する`03_Implement/frontend/dist`（GitHub Actions artifactの内容を指す）が誤検知した。原因は`git check-ignore`がディレクトリ専用pattern（`dist/`等）を、パスが実在してディレクトリだと確認できる場合しか認識しないため（`git check-ignore`自体は採用しておらず、これは設計段階で確認した制約）。build成果物は本質的にfresh cloneでは不在なため、`.gitignore`解析ではなく明示allowlist（`REPOSITORY_PATH_BUILD_OUTPUT_LEAF_NAMES = {dist, node_modules, build, __pycache__, .venv}`）で「親ディレクトリが実在し、末尾セグメントがbuild成果物名」の場合だけ許容する設計とした。誤って別の場所を指す`.../wrong-place/dist`のような壊れた参照は、親ディレクトリ自体が存在しないため引き続き検出される（回帰テストで固定済み）。
+- `01_Plans/tests/test_docs_contract_checks.py`に`RepositoryPathCheckTest`（7 test: 正常例、欠落パス検出、`<placeholder>`除外、`:42`行参照付き正常、スコープ外文書の除外、build成果物パスの許容、誤った親パスでのbuild成果物名は検出）を追加した。
+- `docs_check.py`へ`check_repository_path_commands`を配線した。
+
+検証結果:
+- `python3 -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 42/42 pass（新規7件含む、既存回帰なし）。
+- `python 01_Plans/docs_check.py`: pass（`active_memos=22, tracked_markdown=382`）。build成果物allowlist追加後、実際のcurrent/public文書で誤検知0件。
+
+## 実装記録（2026-07-18続き）: `DC-CMD-001`（CLI option区分を追加）
+
+区分5（CLI option）を実行計画どおり実装した。残り区分6（endpoint probe）は引き続き未実装のfollow-upとする。
+
+- `01_Plans/docs_contract_checks.py`に`check_cli_option_commands()`を追加した。`python3? <script>.py --option ...`形式のコマンド例を抽出し、scriptパスがrepository配下に実在する場合のみ対象とする（欠落パスは区分4がすでに報告するため二重報告しない）。正本はスクリプトのソーステキストから`add_argument\(\s*["'](--[\w-]+)`で収集したoption集合。**スクリプトを実行しない**（issue固定条件）。ソース中に`ArgumentParser`の出現がないスクリプトは「検証不能」としてスキップし、推測でfindingsを出さない。
+- 2026-07-18棚卸しどおり、公開文書中の該当は`mock_local_llm.py --host --port`の1件のみで、実装後の`docs_check.py`実行でも誤検知0件（baseline是正は不要だった）。
+- `01_Plans/tests/test_docs_contract_checks.py`に`CliOptionCheckTest`（4 test: 正常例、未知option検出、`ArgumentParser`無しスクリプトのスキップ、スコープ外文書の除外）を追加した。
+- `docs_check.py`へ`check_cli_option_commands`を配線した。
+
+検証結果:
+- `python3 -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 46/46 pass（新規4件含む、既存回帰なし）。
+- `python 01_Plans/docs_check.py`: pass（`active_memos=22, tracked_markdown=382`）。
 
 ## 補足
 

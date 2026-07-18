@@ -251,3 +251,23 @@ Open化ゲートを「3軸境界 + 承認証跡 + 実行経路固定」で定義
 | 安全境界 | `readOnly=1` shows read-only state, disables layout suggestion, and keeps locked redaction contexts visible in share preflight. | Improves current-main readOnly + SafeMode boundary evidence. | Release screenshot approval and full release-candidate environment rehearsal. |
 
 - Stopper classification: none introduced by this rerun. It is evidence-consumption only and does not change execution scope, product behavior, public documentation, SafeMode policy, or release authority.
+
+## Sonnet級エージェント実行計画（2026-07-18）: 残ブロッカー解除と初回実行バッチ
+
+Pending-1/2は2026-07-16にMaintainer承認済み。残るB-ENV-01は技術的固定のみであり、この節の確定値で解除する（実装側で再選択しない）。
+
+### ブロッカー解除の確定値
+
+- **B-ENV-01（実行経路）**: **Docker Compose標準経路**で固定する。根拠: `03_Implement/frontend/docs/e2e_testing.md`が既に「標準経路はDocker Compose、Docker不可時のみSQLite/mock」を規範化しており、検証環境（WSL）でdocker 29.5.3 / compose v5.1.4の利用可を2026-07-18に確認済み。`QA-E2E-USE-01`のO-USE-02と同じ確定値であり、両issueで経路が分岐しない。
+
+### 解除手順（docs-only、1 PR）
+
+1. Phase 1のblocker表（B-ENV-01行）とPhase 6のExecution欄を上記確定値と実施日で更新し、`Execution: Hold`を`Execution: Ready`へ変更する。
+2. 検証: `python3 01_Plans/issues/validate_active_issue_memos.py` / `python3 01_Plans/docs_check.py` / `git diff --check`。
+
+### 初回実行バッチ（解除後の最初の1 PR）
+
+1. WSL側クローン`~/kjnative-fe`を最新mainへ同期し、`e2e/`配下の既存specを棚卸しして、本issueの3軸（公開互換 / ja-en I18N等価 / readOnly安全境界）のカバー状況を本issueへ表で追記する。
+2. 最もカバーの薄い軸1件へ、既存spec慣例（日本語ロケール既定・バイリンガル正規表現）に従うspecを1本追加する。3軸のうちI18N等価は`locale=en`での等価動作を最低1操作分固定する。
+3. 実行: `npm run e2e -- <対象spec>`（flaky時は`--workers=1`で再実行し、その旨を証跡へ記す）。
+4. ガードレール: 製品挙動・SafeMode・公開文書を変更しない（テスト追加のみ）。同一論点でVerify 3連続失敗時は停止し、Pending欄へ理由と再開条件を記録する。

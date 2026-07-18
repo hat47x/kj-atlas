@@ -199,3 +199,30 @@ Open化ゲートを「依存解消ID」「段階ゲート順序」「失敗分�
 | Gate可観測性 | `rg -n "O-UNIT-0[1-4]|B-UNIT-0[1-3]|G1 Unit|G2 Integration|G3 E2E Traceability|Execution: Hold" 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md` | 必須語彙が全件ヒット |
 | メタ整合 | `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md` | exit 0 |
 | 差分健全性 | `git diff --check -- 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md` | 警告なし |
+
+（注: 上記のうち`validate_active_issue_memos.py --files`は現CLIが`--root`のみを受け付けるため、`python3 01_Plans/issues/validate_active_issue_memos.py`のデフォルト実行へ読み替える。`DX-E2E-08`で確認済み。）
+
+## Sonnet級エージェント実行計画（2026-07-18）: 残ブロッカー解除と初回実行バッチ
+
+Pending-1/2は2026-07-16にMaintainer承認済み。残るB-UNIT-03は技術的固定のみであり、この節の確定値で解除する（実装側で再選択しない）。
+
+### ブロッカー解除の確定値
+
+- **B-UNIT-03（unit実行プロファイル）**: 次の2本立てで固定する。
+  1. frontend: `npm run test`（vitest全件、WSLクローン`~/kjnative-fe`で実行。DrvFs経由の`/mnt/c/...`では実行しない）。
+  2. backend: `python3 -m pytest`（既定プロファイル。PostgreSQL roundtripテストは`KJ_ATLAS_RUN_PG_TESTS`未設定で自動スキップされ、CI既定と同一になる）。
+  - 根拠: どちらもCIが実行するのと同一のプロファイルであり、追加インフラ・環境変数・外部依存を要求しない。PG roundtripが必要な変更では`KJ_ATLAS_RUN_PG_TESTS=1`のopt-in実行を証跡に追記する（プロファイルの置換ではなく追加実行として扱う）。
+
+### 解除手順（docs-only、1 PR）
+
+1. Phase 1のblocker表（B-UNIT-03行）とPhase 6のExecution欄を上記確定値と実施日で更新し、`Execution: Hold`を`Execution: Ready`へ変更する。
+2. 検証: `python3 01_Plans/issues/validate_active_issue_memos.py` / `python3 01_Plans/docs_check.py` / `git diff --check`。
+
+### 初回実行バッチ（解除後の最初の1 PR）
+
+本issueの主旨は「欠陥検知能力ベース」の拡充であり、カバレッジ率を目標にしない。初回バッチは**直近の実バグの再発検知能力**を固定する:
+
+1. `QA-MONKEY-10`（ラベルカリングによる見かけ喪失、Done）と`QA-MONKEY-12`（作業モードのボタン重なり）について、再発を検知するunit/domainテストが現存するかを棚卸しする（`03_Implement/frontend/src/canvas/`のculling系テスト、`visual_language.guard.test.ts`等をGrepで確認）。
+2. 検知テストが欠けている実バグ1件へ、失敗3分類語彙（本issueのG1定義）に従うテストを追加する。
+3. 実行: 上記確定プロファイル（`npm run test` / `python3 -m pytest`）で全件greenを確認し、証跡をG1欄へ記録する。
+4. ガードレール: 製品挙動を変更しない（テスト追加のみ）。同一論点でVerify 3連続失敗時は停止し、Pending欄へ理由と再開条件を記録する。

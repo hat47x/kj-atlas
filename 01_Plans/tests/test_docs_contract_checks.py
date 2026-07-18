@@ -562,5 +562,284 @@ class ComposeServiceCommandCheckTest(unittest.TestCase):
         self.assertEqual(findings, [])
 
 
+class RuntimeParameterKeyCheckTest(unittest.TestCase):
+    def _write_registry(self, root: Path, keys: list[str]) -> None:
+        arch_dir = root / "02_Architecture"
+        arch_dir.mkdir(parents=True, exist_ok=True)
+        body = "# Runtime Parameter Registry\n\n## Backend settings\n\n"
+        body += "| Key | Default | Purpose |\n| --- | --- | --- |\n"
+        body += "".join(f"| `{key}` | none | placeholder |\n" for key in keys)
+        (arch_dir / "runtime_parameter_registry.md").write_text(body, encoding="utf-8")
+
+    def test_accepts_existing_keys_in_public_docs(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_registry(root, ["KJ_ATLAS_LLM_PROVIDER", "KJ_ATLAS_API_KEY"])
+            readme = root / "README.md"
+            readme.write_text(
+                "```bash\nexport KJ_ATLAS_LLM_PROVIDER=none\nexport KJ_ATLAS_API_KEY=change-me\n```\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_runtime_parameter_key_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_accepts_registry_row_with_a_trailing_annotation_marker(self):
+        # Real registry rows mark known gaps with a trailing "⚠️" between the
+        # closing backtick and the next `|` (e.g. `` `KJ_ATLAS_API_KEY` ⚠️ ``);
+        # the row-extraction regex must not require the backtick to be
+        # immediately followed by whitespace-then-pipe.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            arch_dir = root / "02_Architecture"
+            arch_dir.mkdir(parents=True)
+            (arch_dir / "runtime_parameter_registry.md").write_text(
+                "| Key | Default | Purpose |\n| --- | --- | --- |\n"
+                "| `KJ_ATLAS_API_KEY` ⚠️ | 未設定 | protects the API |\n",
+                encoding="utf-8",
+            )
+            readme = root / "README.md"
+            readme.write_text("```bash\nexport KJ_ATLAS_API_KEY=change-me\n```\n", encoding="utf-8")
+
+            findings = MODULE.check_runtime_parameter_key_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_reports_key_missing_from_registry(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_registry(root, ["KJ_ATLAS_LLM_PROVIDER"])
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "configuration.md"
+            doc.write_text("```bash\nexport KJ_ATLAS_NONEXISTENT_KEY=1\n```\n", encoding="utf-8")
+
+            findings = MODULE.check_runtime_parameter_key_commands(root, [Path("04_Documentation/configuration.md")])
+
+        self.assertEqual(len(findings), 1)
+        finding = findings[0]
+        self.assertEqual(finding.rule_id, "DC-CMD-001")
+        self.assertEqual(finding.path, "04_Documentation/configuration.md")
+        self.assertEqual(finding.line, 2)
+        self.assertEqual(finding.target, "KJ_ATLAS_NONEXISTENT_KEY")
+        self.assertIn("does not exist", finding.message)
+
+    def test_ignores_prefix_family_mentions(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_registry(root, ["KJ_ATLAS_AUDIT_EXPORT_ENABLED"])
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "security.md"
+            doc.write_text("監査系設定は `KJ_ATLAS_AUDIT_*` を参照してください。\n", encoding="utf-8")
+
+            findings = MODULE.check_runtime_parameter_key_commands(root, [Path("04_Documentation/security.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_ignores_process_memos_outside_the_public_doc_scope(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_registry(root, ["KJ_ATLAS_LLM_PROVIDER"])
+            issues_dir = root / "01_Plans" / "issues"
+            issues_dir.mkdir(parents=True)
+            memo = issues_dir / "issue-example.md"
+            memo.write_text("検証コマンド宣言: `KJ_ATLAS_NONEXISTENT_KEY=1`\n", encoding="utf-8")
+
+            findings = MODULE.check_runtime_parameter_key_commands(root, [Path("01_Plans/issues/issue-example.md")])
+
+        self.assertEqual(findings, [])
+
+
+class RepositoryPathCheckTest(unittest.TestCase):
+    def test_accepts_existing_paths_in_public_docs(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            target_dir = root / "03_Implement" / "backend"
+            target_dir.mkdir(parents=True)
+            (target_dir / "settings.py").write_text("", encoding="utf-8")
+            readme = root / "README.md"
+            readme.write_text("設定は `03_Implement/backend/settings.py` を参照。\n", encoding="utf-8")
+
+            findings = MODULE.check_repository_path_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_reports_missing_path(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "installation.md"
+            doc.write_text("設定は `03_Implement/backend/does_not_exist.py` を参照。\n", encoding="utf-8")
+
+            findings = MODULE.check_repository_path_commands(root, [Path("04_Documentation/installation.md")])
+
+        self.assertEqual(len(findings), 1)
+        finding = findings[0]
+        self.assertEqual(finding.rule_id, "DC-CMD-001")
+        self.assertEqual(finding.path, "04_Documentation/installation.md")
+        self.assertEqual(finding.line, 1)
+        self.assertEqual(finding.target, "03_Implement/backend/does_not_exist.py")
+        self.assertIn("does not exist", finding.message)
+
+    def test_ignores_placeholder_tokens(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "configuration.md"
+            doc.write_text("`03_Implement/<component>/settings.py` のように置き換えます。\n", encoding="utf-8")
+
+            findings = MODULE.check_repository_path_commands(root, [Path("04_Documentation/configuration.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_accepts_existing_path_with_trailing_line_reference(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            target_dir = root / "03_Implement" / "backend"
+            target_dir.mkdir(parents=True)
+            (target_dir / "main.py").write_text("line1\nline2\n", encoding="utf-8")
+            readme = root / "README.md"
+            readme.write_text("詳細は `03_Implement/backend/main.py:42` を参照。\n", encoding="utf-8")
+
+            findings = MODULE.check_repository_path_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_ignores_process_memos_outside_the_public_doc_scope(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            issues_dir = root / "01_Plans" / "issues"
+            issues_dir.mkdir(parents=True)
+            memo = issues_dir / "issue-example.md"
+            memo.write_text("参照: `03_Implement/backend/does_not_exist.py`\n", encoding="utf-8")
+
+            findings = MODULE.check_repository_path_commands(root, [Path("01_Plans/issues/issue-example.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_accepts_build_output_path_absent_before_a_build_runs(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            frontend_dir = root / "03_Implement" / "frontend"
+            frontend_dir.mkdir(parents=True)
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "release.md"
+            doc.write_text(
+                "GitHub Actions artifact（`03_Implement/frontend/dist`の内容）を取得する。\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_repository_path_commands(root, [Path("04_Documentation/release.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_reports_missing_path_under_a_nonexistent_parent_even_with_a_build_output_leaf(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "release.md"
+            doc.write_text(
+                "誤った参照 `03_Implement/wrong-place/dist` は検出される。\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_repository_path_commands(root, [Path("04_Documentation/release.md")])
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].target, "03_Implement/wrong-place/dist")
+
+
+class CliOptionCheckTest(unittest.TestCase):
+    def _write_script(self, root: Path, rel_path: str, body: str) -> None:
+        script_path = root / rel_path
+        script_path.parent.mkdir(parents=True, exist_ok=True)
+        script_path.write_text(body, encoding="utf-8")
+
+    def test_accepts_existing_options_in_public_docs(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_script(
+                root,
+                "03_Implement/deploy/tools/mock_local_llm.py",
+                "import argparse\n"
+                "parser = argparse.ArgumentParser()\n"
+                "parser.add_argument('--host', default='127.0.0.1')\n"
+                "parser.add_argument('--port', type=int, default=8001)\n",
+            )
+            readme = root / "README.md"
+            readme.write_text(
+                "```bash\npython3 03_Implement/deploy/tools/mock_local_llm.py --host 127.0.0.1 --port 8001\n```\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_cli_option_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_reports_unknown_option(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_script(
+                root,
+                "01_Plans/issues/validate_active_issue_memos.py",
+                "import argparse\nparser = argparse.ArgumentParser()\nparser.add_argument('--root')\n",
+            )
+            doc_dir = root / "04_Documentation"
+            doc_dir.mkdir()
+            doc = doc_dir / "installation.md"
+            doc.write_text(
+                "```bash\npython3 01_Plans/issues/validate_active_issue_memos.py --files x.md\n```\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_cli_option_commands(root, [Path("04_Documentation/installation.md")])
+
+        self.assertEqual(len(findings), 1)
+        finding = findings[0]
+        self.assertEqual(finding.rule_id, "DC-CMD-001")
+        self.assertEqual(finding.path, "04_Documentation/installation.md")
+        self.assertEqual(finding.target, "01_Plans/issues/validate_active_issue_memos.py --files")
+        self.assertIn("does not exist", finding.message)
+
+    def test_skips_script_without_argparse(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_script(root, "03_Implement/deploy/tools/no_parser.py", "print('hello')\n")
+            readme = root / "README.md"
+            readme.write_text(
+                "```bash\npython3 03_Implement/deploy/tools/no_parser.py --whatever\n```\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_cli_option_commands(root, [Path("README.md")])
+
+        self.assertEqual(findings, [])
+
+    def test_ignores_process_memos_outside_the_public_doc_scope(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_script(
+                root,
+                "01_Plans/issues/validate_active_issue_memos.py",
+                "import argparse\nparser = argparse.ArgumentParser()\nparser.add_argument('--root')\n",
+            )
+            issues_dir = root / "01_Plans" / "issues"
+            memo = issues_dir / "issue-example.md"
+            memo.write_text(
+                "検証コマンド宣言: `python3 01_Plans/issues/validate_active_issue_memos.py --files x.md`\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_cli_option_commands(root, [Path("01_Plans/issues/issue-example.md")])
+
+        self.assertEqual(findings, [])
+
+
 if __name__ == "__main__":
     unittest.main()

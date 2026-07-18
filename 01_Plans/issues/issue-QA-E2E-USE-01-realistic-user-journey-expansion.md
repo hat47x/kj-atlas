@@ -362,3 +362,30 @@ Open化ゲートを次の3カテゴリで固定する。
 | S3 Safe Sharing Gate | Share preflight still opens in read-only mode and shows locked redaction contexts for Share / Review Pack before the advanced-control assertion. | Refreshes current-main G1 / G2 / S3 evidence without changing SafeMode policy. | Full share/export screenshot approval and Compose-backed release rehearsal. |
 
 - Stopper classification: none introduced by this rerun. It is evidence-consumption only and does not change execution scope, product behavior, public documentation, SafeMode policy, or release authority.
+
+## Sonnet級エージェント実行計画（2026-07-18）: 残ブロッカー解除と初回実行バッチ
+
+Pending-1/2は2026-07-16にMaintainer承認済み。残るB-USE-03とO-USE-02は技術的固定のみであり、この節の確定値で解除する（実装側で再選択しない）。
+
+### ブロッカー解除の確定値
+
+- **O-USE-02（実行経路）**: **Docker Compose標準経路**で固定する。根拠: `03_Implement/frontend/docs/e2e_testing.md`が既に「標準経路はDocker Composeです。Dockerを実行できない場合だけSQLite + frontend dev serverまたはmock fixtureを使い、Composeとの差分リスクをPRへ残します」と規範化しており、検証環境（WSL）でdocker 29.5.3 / compose v5.1.4の利用可を2026-07-18に確認済み。SQLite/mockは例外経路としてPath欄（`Path: Compose | SQLite | mock`）へ記録する。
+- **B-USE-03（ゲート証跡欄）**: 次の表を本issueの証跡正本として固定する。以後のrerun/拡充はこの表へ1行ずつ追記する。
+
+  | Gate | Entry条件 | Entry証跡（日付・commit・経路） | Exit条件 | Exit証跡（結果・記録先） |
+  | --- | --- | --- | --- | --- |
+  | G1 Unit | 対象シナリオのunit/domainテストが特定済み | （記入） | 対象テストがgreen | （記入） |
+  | G2 Integration | S1-S4該当のE2E specが特定済み | （記入） | 該当specがCompose経路でgreen | （記入） |
+  | G3 E2E Traceability | S1-S4とspecの対応表が最新 | （記入） | 対応表と実行証跡が一致 | （記入） |
+
+### 解除手順（docs-only、1 PR）
+
+1. Phase 1のblocker表（B-USE-03行）とPhase 6のExecution欄を、上記確定値と実施日で更新し、`Execution: Hold`を`Execution: Ready`へ変更する。
+2. 検証: `python3 01_Plans/issues/validate_active_issue_memos.py` / `python3 01_Plans/docs_check.py` / `git diff --check`。
+
+### 初回実行バッチ（解除後の最初の1 PR）
+
+1. WSL側クローン`~/kjnative-fe`を最新mainへ同期し、`e2e/`配下の既存specを棚卸しして、S1（作成継続性）/S2（レビュー統治）/S3（安全共有）/S4（import→export）のカバー状況を本issueへ表で追記する。
+2. 最もカバーの薄いシナリオ1件へ、既存spec慣例（日本語ロケール既定・バイリンガル正規表現）に従うspecを1本追加する。
+3. 実行: `npm run e2e -- <対象spec>`（flaky時は`--workers=1`で再実行し、その旨を証跡へ記す）。証跡を上記G1/G2/G3表へ記入する。
+4. ガードレール: 製品挙動・SafeMode・公開文書を変更しない（テスト追加のみ）。同一論点でVerify 3連続失敗時は停止し、Pending欄へ理由と再開条件を記録する（本issueの修復上限と同じ）。
