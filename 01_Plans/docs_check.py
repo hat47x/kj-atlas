@@ -16,6 +16,7 @@ from docs_contract_checks import (
     check_npm_script_commands,
     check_public_boundary,
     check_relative_links,
+    check_runtime_parameter_key_commands,
     check_safety_routes,
     tracked_markdown_paths as contract_tracked_markdown_paths,
 )
@@ -91,6 +92,7 @@ def run_docs_check(
     errors.extend(finding.render() for finding in check_safety_routes(repository_root))
     errors.extend(finding.render() for finding in check_npm_script_commands(repository_root, markdown_paths))
     errors.extend(finding.render() for finding in check_compose_service_commands(repository_root, markdown_paths))
+    errors.extend(finding.render() for finding in check_runtime_parameter_key_commands(repository_root, markdown_paths))
     if run_tests:
         errors.extend(_run_contract_tests(repository_root))
 

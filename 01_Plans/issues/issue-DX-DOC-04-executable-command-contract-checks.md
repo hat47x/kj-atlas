@@ -93,8 +93,8 @@ findingはrule ID、文書、行、検出token、照合先、正しい候補を�
 
 - [x] `CONTRIBUTING.md`のCompose health probeが`/api/healthz`となり、backend-localの`/healthz`と区別される。→ 修正済み（下記「実装記録」参照）。
 - [x] current/public文書に存在しないrepository-local CLI optionが0件で、`--files`参照がなくなる。→ 監査の結果、current/public文書（README/CONTRIBUTING/04_Documentation/e2e_testing.md）に`--files`参照は0件（`e2e_testing.md`分は`DX-E2E-08`で既に解消済み、他文書には元々存在しなかった）。`01_Plans/issues/*.md`に多数残る`--files`参照はDX-DOC-04のScope外（内部issueメモの実施時点記録であり、現行の利用者向けコピー対象ではない）と判断し対象外にした。
-- [ ] 文書で参照するnpm scripts、Compose services、repository paths、runtime parameter keysが正本と一致する。→ npm scriptsとCompose servicesの自動照合を実装（下記）。repository paths・runtime parameter keysは未実装（follow-up）。
-- [ ] `DC-CMD-001`がendpoint、CLI option、npm script、Compose service、pathの各負例をrule ID付きで検出する。→ npm scriptとCompose serviceの2区分が実装済み。endpoint・CLI option・pathの3区分は未実装（follow-up、下記「実装記録」参照）。
+- [ ] 文書で参照するnpm scripts、Compose services、repository paths、runtime parameter keysが正本と一致する。→ npm scripts・Compose services・runtime parameter keysの自動照合を実装（下記）。repository pathsは未実装（follow-up）。
+- [ ] `DC-CMD-001`がendpoint、CLI option、npm script、Compose service、pathの各負例をrule ID付きで検出する。→ npm script・Compose service・runtime parameter keyの3区分が実装済み。endpoint・CLI option・pathの3区分は未実装（follow-up、下記「実装記録」参照）。
 - [x] コードフェンス外の説明、placeholder、外部URL、動的値を誤検出しない正常fixtureがある。→ npm script区分について、正常例・スコープ外文書除外の2 test fixtureを追加（下記参照）。他区分は該当区分自体が未実装のため対象外。
 - [x] manual/mutatingコマンドはCIで実行されず、データ消失・秘密情報・本番利用に関する警告と停止条件を維持する。→ 本Issueでは静的照合のみを追加し、CI実行コマンドやworkflowの変更は一切行っていない。
 - [x] localとCIが同じ`docs_check.py`から検査し、current repositoryでpassする。→ `check_npm_script_commands`を`docs_check.py`へ統合し、現行repositoryでpass済み（下記「実装記録」参照）。
@@ -205,6 +205,21 @@ npm script区分に続き、Compose service区分を実装した。残り3区分
 - 区分3+4の完了 → 受入条件「文書で参照するnpm scripts、Compose services、repository paths、runtime parameter keysが正本と一致する」の残り2項目が閉じる。
 - 区分5+6の完了 → 受入条件「`DC-CMD-001`がendpoint、CLI option、npm script、Compose service、pathの各負例をrule ID付きで検出する」の残り3項目が閉じる。
 - 本計画完了後に残るのは「CI blocking化のMaintainer確認」と「`DX-DOC-03`/`DOC-OPS-06`からの導線確認」のみ（いずれも人間確認・軽微）。
+
+## 実装記録（2026-07-18）: `DC-CMD-001`（runtime parameter key区分を追加）
+
+区分3（runtime parameter key）を実行計画どおり実装した。残り区分4〜6（repository path/CLI option/endpoint probe）は引き続き未実装のfollow-upとする。
+
+- `01_Plans/docs_contract_checks.py`に`_extract_registry_keys()`と`check_runtime_parameter_key_commands()`を追加した。抽出regex`KJ_ATLAS_[A-Z0-9_]+`のマッチが`_`で終わる場合（`KJ_ATLAS_AUDIT_*`等の接頭辞言及）は検査対象外とした。照合先は`02_Architecture/runtime_parameter_registry.md`の表行（第1セルがバッククォート付き`KJ_ATLAS_*`キーの行）全体。
+- **実装中に発見・修正した2件**:
+  1. 正本パースの自作バグ: 行抽出regexが`` `KEY` `` の直後に空白+`|`を要求しており、実際のregistryにある`` `KJ_ATLAS_API_KEY` ⚠️ ``（既知ギャップの注記マーカー付き行、`KJ_ATLAS_ALLOW_JIT_PROVISIONING`も同様）を拾えなかった。mainへ到達する前に、閉じバッククォートと`|`の間の任意非パイプ文字を許容するよう修正した（回帰テスト追加済み）。
+  2. registryの実在ギャップ: `04_Documentation/assets/screenshots/README.md`が使う`KJ_ATLAS_SCREENSHOT_HOST`/`_PORT`/`_BASE_URL`/`_OUTPUT_DIR`/`_BROWSER_PATH`の5キー（`capture_release_screenshots.mjs`等のscreenshot capture scriptが実際に読む環境変数）が、同種のAuth Level2 harness keyとは異なりregistryのどの表にも未登録だった。DX-DOC-04第1PRの`/api/health`typo修正と同じ「新規検査導入時に顕在化したbaselineの是正」として、Verification harness keys (non-public)表へ5行追加した。
+- `01_Plans/tests/test_docs_contract_checks.py`に`RuntimeParameterKeyCheckTest`（5 test: 正常例、⚠️マーカー付き行の許容、未掲載キー検出、接頭辞言及の除外、スコープ外文書の除外）を追加した。
+- `docs_check.py`へ`check_runtime_parameter_key_commands`を配線した。
+
+検証結果:
+- `python3 -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 35/35 pass（新規5件含む、既存回帰なし）。
+- `python 01_Plans/docs_check.py`: pass（`active_memos=22, tracked_markdown=382`）。registry是正後、実際のcurrent/public文書で誤検知0件。
 
 ## 補足
 

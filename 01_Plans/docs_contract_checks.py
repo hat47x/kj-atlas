@@ -132,6 +132,9 @@ COMPOSE_SERVICE_COMMAND_RE = re.compile(
     r"docker compose\s+(" + "|".join(COMPOSE_SERVICE_SUBCOMMANDS) + r")\s+(?:-\S+\s+)*([\w-]+)"
 )
 COMPOSE_FILE_PATH = Path("03_Implement/deploy/docker-compose.yml")
+RUNTIME_PARAMETER_KEY_RE = re.compile(r"KJ_ATLAS_[A-Z0-9_]+")
+RUNTIME_PARAMETER_REGISTRY_PATH = Path("02_Architecture/runtime_parameter_registry.md")
+RUNTIME_PARAMETER_REGISTRY_ROW_RE = re.compile(r"^\|\s*`(KJ_ATLAS_[A-Z0-9_]+)`[^|]*\|", re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -711,6 +714,73 @@ def check_compose_service_commands(
     return findings
 
 
+def _extract_registry_keys(registry_text: str) -> set[str]:
+    """Return every `KJ_ATLAS_*` key documented as a table row's first cell.
+
+    A single regex over the whole file (rather than per-table parsing) is
+    enough: the Private adapter boundary table's first-cell values (e.g.
+    `POSTGRES_DB`) don't start with `KJ_ATLAS_`, so they're excluded by the
+    pattern itself without needing to track which section a row is in.
+    """
+    return set(RUNTIME_PARAMETER_REGISTRY_ROW_RE.findall(registry_text))
+
+
+def check_runtime_parameter_key_commands(
+    root: Path,
+    markdown_paths: list[Path],
+    registry_path: Path = RUNTIME_PARAMETER_REGISTRY_PATH,
+) -> list[DocsCheckFinding]:
+    """Return DC-CMD-001 findings for `KJ_ATLAS_*` keys absent from the registry.
+
+    Excludes prefix mentions (e.g. `KJ_ATLAS_AUDIT_*`), which the greedy
+    `KJ_ATLAS_[A-Z0-9_]+` match reduces to a trailing-underscore token (e.g.
+    `KJ_ATLAS_AUDIT_`) since `*` isn't in the character class -- those are
+    documentation shorthand for "this key family", not a single copyable key,
+    so they're skipped rather than treated as an unknown key.
+    Scoped to current/public documentation only -- see CURRENT_PUBLIC_DOC_ROOTS.
+
+    Returns no findings when registry_path doesn't exist under root, for the
+    same reason the npm-script and Compose-service checks tolerate a missing
+    canonical source: isolated fixture directories in this module's own tests
+    aren't required to also provide a real registry document.
+    """
+    repository_root = root.resolve()
+    resolved_registry = repository_root / registry_path
+    if not resolved_registry.exists():
+        return []
+    registry_keys = _extract_registry_keys(resolved_registry.read_text(encoding="utf-8"))
+
+    findings: list[DocsCheckFinding] = []
+    for supplied_path in sorted(markdown_paths, key=lambda path: path.as_posix()):
+        relative_path = supplied_path if not supplied_path.is_absolute() else supplied_path.relative_to(repository_root)
+        if not _is_current_public_doc(relative_path):
+            continue
+
+        source = repository_root / relative_path
+        text = source.read_text(encoding="utf-8")
+        for match in RUNTIME_PARAMETER_KEY_RE.finditer(text):
+            key = match.group(0)
+            if key.endswith("_"):
+                continue
+            if match.end() < len(text) and text[match.end()] == "*":
+                continue
+            if key in registry_keys:
+                continue
+            line = text.count("\n", 0, match.start()) + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=NPM_SCRIPT_COMMAND_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=line,
+                    target=key,
+                    message=f"Runtime parameter key '{key}' does not exist in {registry_path.as_posix()}",
+                    fix_hint="Use an existing key from runtime_parameter_registry.md, or add the new key to the registry first.",
+                )
+            )
+
+    return findings
+
+
 def tracked_markdown_paths(root: Path) -> list[Path]:
     """Return tracked Markdown paths so generated and dependency files stay out of scope."""
     result = subprocess.run(
@@ -740,6 +810,7 @@ def main() -> int:
     findings.extend(check_safety_routes(root))
     findings.extend(check_npm_script_commands(root, markdown_paths))
     findings.extend(check_compose_service_commands(root, markdown_paths))
+    findings.extend(check_runtime_parameter_key_commands(root, markdown_paths))
 
     if findings:
         print("documentation contract validation failed:")
