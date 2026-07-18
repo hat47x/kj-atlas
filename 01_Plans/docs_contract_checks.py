@@ -147,6 +147,9 @@ TRAILING_LINE_REF_RE = re.compile(r":\d+$")
 # that's *expected* to be absent until built (e.g. release.md's reference
 # to the frontend-build CI artifact's contents).
 REPOSITORY_PATH_BUILD_OUTPUT_LEAF_NAMES = frozenset({"dist", "node_modules", "build", "__pycache__", ".venv"})
+CLI_OPTION_COMMAND_RE = re.compile(r"python3?\s+([\w./-]+\.py)((?:\s+--[\w-]+(?:[= ][^\s`]+)?)*)")
+CLI_OPTION_FLAG_RE = re.compile(r"--[\w-]+")
+CLI_OPTION_ADD_ARGUMENT_RE = re.compile(r"add_argument\(\s*[\"'](--[\w-]+)")
 
 
 @dataclass(frozen=True)
@@ -861,6 +864,61 @@ def check_repository_path_commands(
     return findings
 
 
+def check_cli_option_commands(
+    root: Path,
+    markdown_paths: list[Path],
+) -> list[DocsCheckFinding]:
+    """Return DC-CMD-001 findings for `python <script>.py --option` examples
+    where `--option` isn't in the script's own argparse definition.
+
+    Only scripts that both exist under `root` (a missing script path is
+    check_repository_path_commands's finding, not duplicated here) and
+    contain the literal string "ArgumentParser" are checked; scripts
+    without argparse are treated as unverifiable and skipped rather than
+    guessed at, per the issue's fixed condition that this check never
+    executes the scripts it inspects -- only their source text is read.
+    Scoped to current/public documentation only -- see CURRENT_PUBLIC_DOC_ROOTS.
+    """
+    repository_root = root.resolve()
+
+    findings: list[DocsCheckFinding] = []
+    for supplied_path in sorted(markdown_paths, key=lambda path: path.as_posix()):
+        relative_path = supplied_path if not supplied_path.is_absolute() else supplied_path.relative_to(repository_root)
+        if not _is_current_public_doc(relative_path):
+            continue
+
+        source = repository_root / relative_path
+        text = source.read_text(encoding="utf-8")
+        for match in CLI_OPTION_COMMAND_RE.finditer(text):
+            script_rel, options_tail = match.group(1), match.group(2)
+            script_path = repository_root / script_rel
+            if not script_path.exists():
+                continue
+            script_text = script_path.read_text(encoding="utf-8")
+            if "ArgumentParser" not in script_text:
+                continue
+            known_options = set(CLI_OPTION_ADD_ARGUMENT_RE.findall(script_text))
+
+            options_tail_start = match.start(2)
+            for opt_match in CLI_OPTION_FLAG_RE.finditer(options_tail):
+                option = opt_match.group(0)
+                if option in known_options:
+                    continue
+                line = text.count("\n", 0, options_tail_start + opt_match.start()) + 1
+                findings.append(
+                    DocsCheckFinding(
+                        rule_id=NPM_SCRIPT_COMMAND_RULE_ID,
+                        path=relative_path.as_posix(),
+                        line=line,
+                        target=f"{script_rel} {option}",
+                        message=f"CLI option '{option}' does not exist in {script_rel}",
+                        fix_hint="Use an existing option from the script's argparse definition, or add the option if it is genuinely new.",
+                    )
+                )
+
+    return findings
+
+
 def tracked_markdown_paths(root: Path) -> list[Path]:
     """Return tracked Markdown paths so generated and dependency files stay out of scope."""
     result = subprocess.run(
@@ -892,6 +950,7 @@ def main() -> int:
     findings.extend(check_compose_service_commands(root, markdown_paths))
     findings.extend(check_runtime_parameter_key_commands(root, markdown_paths))
     findings.extend(check_repository_path_commands(root, markdown_paths))
+    findings.extend(check_cli_option_commands(root, markdown_paths))
 
     if findings:
         print("documentation contract validation failed:")
