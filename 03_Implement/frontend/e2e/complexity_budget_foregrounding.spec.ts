@@ -1,4 +1,6 @@
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
+import { parseInquiryBundleJson } from "../src/domain/inquiry_bundle_io";
 import { buildDomainExpressionDocument, withoutProductValueContent } from "./helpers/product_value_fixtures";
 
 async function routeDomainExpressionFixture(page: Page): Promise<{ enableSample: () => void }> {
@@ -136,4 +138,68 @@ test("work mode owns narrative and HIL surfaces outside selection context", asyn
   await page.keyboard.press("Escape");
   await expect(workMode).toHaveCount(0);
   await expect(workModeTrigger).toBeFocused();
+});
+
+test("iterative inquiry prototype saves and resumes repeated stages without changing the normal entry path", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.addInitScript(() => {
+    window.localStorage.removeItem("kj-atlas.advanced-ui-enabled");
+  });
+  const fixture = await routeDomainExpressionFixture(page);
+
+  await page.goto("/?locale=ja");
+  fixture.enableSample();
+  await page.getByRole("button", { name: "サンプルを開く" }).click();
+  await expect(page.locator('[data-panel="inquiry-journey-prototype"]')).toHaveCount(0);
+
+  await page.getByRole("button", { name: "詳細" }).click();
+  await page.getByRole("button", { name: "作業モード" }).click();
+  await page.getByRole("tab", { name: "探究" }).click();
+
+  const prototype = page.locator('[data-panel="inquiry-journey-prototype"]');
+  await expect(prototype).toContainText("起点: domain expression keyboard access fixture（カード 3 件）");
+  const startButton = prototype.getByRole("button", { name: "現在の文書から探究を始める" });
+  await startButton.focus();
+  await page.keyboard.press("Enter");
+  await expect(prototype.getByRole("status")).toContainText("保存されません");
+
+  const stageSelect = prototype.getByLabel("次に扱う段階");
+  await stageSelect.selectOption("r2_situation_grasp");
+  await prototype.getByRole("button", { name: "R2 現状把握・1回目を記録" }).click();
+  await stageSelect.selectOption("r3_essence_pursuit");
+  await prototype.getByRole("button", { name: "R3 本質追求・1回目を記録" }).click();
+  await stageSelect.selectOption("r2_situation_grasp");
+  await prototype.getByRole("button", { name: "R2 現状把握・2回目を記録" }).click();
+
+  const history = prototype.getByRole("list", { name: "探究の記録" });
+  await expect(history.getByRole("listitem")).toHaveText([
+    "R2 現状把握・1回目",
+    "R3 本質追求・1回目",
+    "R2 現状把握・2回目",
+  ]);
+
+  const downloadPromise = page.waitForEvent("download");
+  await prototype.getByRole("button", { name: "探究ファイルを保存" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/\.kj-atlas-inquiry\.json$/);
+  const downloadedPath = testInfo.outputPath("saved-inquiry.json");
+  await download.saveAs(downloadedPath);
+  const downloadedBundle = await parseInquiryBundleJson(await readFile(downloadedPath, "utf8"));
+  if (!downloadedBundle.ok) throw new Error(JSON.stringify(downloadedBundle.errors, null, 2));
+
+  await prototype.getByRole("button", { name: "画面上の探究を閉じる" }).click();
+  await expect(prototype.getByRole("group", { name: "保存していない変更は失われます。探究ファイルを保存済みか確認してください。" })).toBeVisible();
+  await prototype.getByRole("button", { name: "保存せず閉じる" }).click();
+  await expect(prototype.getByRole("list", { name: "探究の記録" })).toHaveCount(0);
+  await prototype.locator('input[type="file"]').setInputFiles(downloadedPath);
+  await expect(prototype.getByRole("status").last()).toContainText("記録を再開しました");
+  await expect(prototype.getByRole("list", { name: "探究の記録" }).getByRole("listitem")).toHaveText([
+    "R2 現状把握・1回目",
+    "R3 本質追求・1回目",
+    "R2 現状把握・2回目",
+  ]);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(prototype.getByRole("button", { name: "探究ファイルを保存" })).toBeVisible();
+  await expect(prototype.getByRole("button", { name: "探究ファイルから再開" })).toBeVisible();
 });

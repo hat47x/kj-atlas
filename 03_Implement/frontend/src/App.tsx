@@ -49,7 +49,7 @@ import {
 } from "./domain/merge_suggestion_decisions";
 import { isSourceCard, Document, DocumentV1, Island, Narrative, type CardKa, type CardMeta, type ContradictionSignalDecision, type ContradictionSignalReviewStatus, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
 import { KNOWN_EDGE_TYPES } from "./domain/types";
-import { answerCardQualityQuestion, openCardQualityAssist, type CardQualityAssistState, type CardQualityDecision } from "./domain/card_quality";
+import { answerCardQualityQuestion, beginCardQualityRewrite, cardQualityRestoreTarget, openCardQualityAssist, type CardQualityAssistState, type CardQualityDecision } from "./domain/card_quality";
 import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -57,6 +57,7 @@ import { Shell } from "./ui/Shell";
 import { SidePanel } from "./ui/SidePanel";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
 import { WorkModeTabs } from "./ui/WorkModeTabs";
+import { InquiryJourneyPrototypePanel } from "./ui/InquiryJourneyPrototypePanel";
 import { SearchBar } from "./ui/SearchBar";
 import { ViewControlsPanel } from "./ui/ViewControlsPanel";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
@@ -118,7 +119,7 @@ import {
 } from "./domain/view/focus";
 import { buildReadingList, clampReadingIndex, type ReadingItem, type ReadingMode } from "./domain/view/reading_path";
 import { buildReadingOutlineMd } from "./domain/view/reading_outline";
-import { maxDepthForHierarchyLevel, resolveHierarchyLevel, type HierarchyLevel } from "./domain/view/hierarchy_level";
+import { clampMaxDepthToAvailable, maxDepthForHierarchyLevel, resolveHierarchyLevel, type HierarchyLevel } from "./domain/view/hierarchy_level";
 import { collectHierarchyHiddenIslandIds, collectHierarchyPlacardHiddenCardIds } from "./domain/view/hierarchy_visibility";
 import {
   ALL_DOMAIN_STATE_FILTER_KINDS,
@@ -4473,7 +4474,7 @@ export default function App({ storageScope }: AppProps = {}) {
         return {
           ...island,
           imageUrl: nextImageUrl,
-          imageReviewed: true,
+          imageReviewed: false,
         };
       });
 
@@ -5982,18 +5983,13 @@ export default function App({ storageScope }: AppProps = {}) {
   }, [islandDepthById]);
 
   useEffect(() => {
-    if (maxDepth === "all") {
-      return;
-    }
-
-    // Only clamp down when there is deeper island content to clamp against.
-    // maxAvailableDepth === 0 means no island is nested past the top level
-    // (including "no islands at all") -- in that case maxDepth=1 ("mid")
-    // is already indistinguishable from maxDepth=0 in rendered output, so
-    // clamping it to 0 here would only serve to demote the user's explicit
-    // hierarchy-level choice back to "overview" via the sync effect below.
-    if (maxDepth > maxAvailableDepth && maxAvailableDepth > 0) {
-      setMaxDepth(maxAvailableDepth);
+    // QA-MONKEY-13: clamping logic lives in clampMaxDepthToAvailable() so it
+    // has a direct unit-test regression guard -- see hierarchy_level.test.ts
+    // for why maxAvailableDepth === 0 must never clamp an explicit "mid"
+    // choice down to "overview" via the sync effect below.
+    const clamped = clampMaxDepthToAvailable(maxDepth, maxAvailableDepth);
+    if (clamped !== maxDepth) {
+      setMaxDepth(clamped);
     }
   }, [maxAvailableDepth, maxDepth]);
 
@@ -6137,13 +6133,17 @@ export default function App({ storageScope }: AppProps = {}) {
           return previous;
         }
 
+        const nextState = decision === "apply" && selectedCard?.id === openCardQualityAssistCardId
+          ? beginCardQualityRewrite(current, selectedCard.text)
+          : current;
+
         return {
           ...previous,
-          [openCardQualityAssistCardId]: answerCardQualityQuestion(current, decision),
+          [openCardQualityAssistCardId]: answerCardQualityQuestion(nextState, decision),
         };
       });
     },
-    [openCardQualityAssistCardId]
+    [openCardQualityAssistCardId, selectedCard]
   );
 
   const handleCloseCardQualityAssist = useCallback(() => {
@@ -6157,6 +6157,20 @@ export default function App({ storageScope }: AppProps = {}) {
 
     setEditingCardId(selectedCard.id);
   }, [selectedCard]);
+
+  const handleRestoreCardQualityText = useCallback(() => {
+    if (!selectedCard) {
+      return;
+    }
+
+    const assistState = cardQualityAssistByCardId[selectedCard.id];
+    const originalText = assistState ? cardQualityRestoreTarget(assistState) : undefined;
+    if (originalText === undefined) {
+      return;
+    }
+
+    handleCommitCardText(selectedCard.id, originalText);
+  }, [cardQualityAssistByCardId, handleCommitCardText, selectedCard]);
 
   useEffect(() => {
     // UX-SHORTCUT-01 (ADR-0048 D2): retention-system shortcuts (H=hold,
@@ -10323,6 +10337,16 @@ export default function App({ storageScope }: AppProps = {}) {
           ),
         },
         {
+          id: "inquiry",
+          label: t("work_mode.tab.inquiry"),
+          content: (
+            <InquiryJourneyPrototypePanel
+              document={document}
+              onRestoreDocument={(snapshotDocument) => applyDocumentChange(snapshotDocument)}
+            />
+          ),
+        },
+        {
           id: "diagnostics",
           label: t("work_mode.tab.diagnostics"),
           content: (
@@ -10638,6 +10662,12 @@ export default function App({ storageScope }: AppProps = {}) {
           onAnswerCardQualityQuestion={handleAnswerCardQualityQuestion}
           onCloseCardQualityAssist={handleCloseCardQualityAssist}
           onOpenCardTextEditor={handleOpenCardTextEditor}
+          onCommitCardQualityText={(text) => {
+            if (selectedCard) {
+              handleCommitCardText(selectedCard.id, text);
+            }
+          }}
+          onRestoreCardQualityText={handleRestoreCardQualityText}
           onAddEvidenceLink={(payload) => {
             if (!selectedCard) {
               return;

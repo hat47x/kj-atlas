@@ -314,6 +314,7 @@ export function PatchWorkspacePanel({
       <hr style={{ border: 0, borderTop: "1px solid #e2e8f0", margin: "12px 0" }} />
 
       <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>{t("patch_workspace.query_preset")}</div>
+      <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>{t("patch_workspace.device_local_hint")}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr)) auto", gap: 6, marginBottom: 8 }}>
         <input data-testid="ce3-preset-name" value={presetName} onChange={(event) => setPresetName(event.target.value)} placeholder={t("patch_workspace.preset_name")} disabled={isReadOnly} />
         <select data-testid="ce3-preset-scope" aria-label={t("patch_workspace.preset_scope_label")} value={scope} onChange={(event) => setScope(event.target.value as QueryScope)} disabled={isReadOnly}>

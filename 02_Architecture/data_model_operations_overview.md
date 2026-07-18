@@ -249,7 +249,7 @@ erDiagram
 | `Card` | 利用者が置く主要情報単位。`claimType` による事実/主張/仮説の分類を含む | 画面操作またはインポート後、ドキュメント全体保存で反映する。 |
 | `Edge` | カード/島間の関係。`fromKind` / `toKind` で endpoint 種別を保持できる | 個別APIは持たず、ドキュメント全体保存で反映する。 |
 | `EvidenceLink` | 根拠・反証のリンク | `DocumentV1.evidenceLinks` の埋め込み構造として保存する。個別CRUDは持たない。 |
-| `Island` | まとまり、囲み、構造化の単位 | `DocumentV1` 内の埋め込み構造。shapeやreview状態の完全保守は段階導入。 |
+| `Island` | まとまり、囲み、構造化の単位 | `DocumentV1` 内の埋め込み構造。旧式の`imageUrl` / `imageReviewed`も往復保持するが、SafeModeではURLを取得しない。shapeやreview状態の完全保守は段階導入。 |
 | `Narrative` / `RelationSummary` | 文章化・要約成果物 | 共有前確認やレビューと連動するが、MVPでは個別CRUDを正本にしない。 |
 | `ReviewAttribution` | 人間レビュー済み状態と主体の追跡 | `user:<users.id>` 正規化を前提にする。自動昇格は禁止。 |
 | `MergeDecisionRecord` | 類似統合などの人間判断ログ | `merge_decision_logs` に追記し、group/snapshot単位で参照する。 |
@@ -257,6 +257,8 @@ erDiagram
 | `ContextQuery` / `ContextBundle` | AI入力・提案前の安全な文脈境界 | 契約先行。MVPではmock/検証用I/Fを含み、永続保守対象とは分ける。 |
 | `InquiryJourneyV1` | W型累積KJ法のラウンドDAGを束ねる独立manifest | `ADR-0057` の採択済み設計目標。現行 `DocumentV1` へ埋め込まず、実装までは `L0` とする。 |
 | `RoundSnapshotV1` | 人が確認した節目の不変な文書成果 | 意味のある配置を含む `DocumentV1` 成果を再現する。現行API・DB・標準UIでは未実装。 |
+| `RepresentativeVisualCue` | 島または選択集合の再認識を助ける任意の絵文字・アイコン・画像 | `DOMAIN-VISUAL-CUE-01` / `ADR-0059` の計画対象。現行 `DocumentV1`、API、DB、標準UIには未実装で、保存先と許容素材を未決定。 |
+| `SourceVisualMaterial` | 観察・取材・利用者作成で得た写真・図・スケッチと元文脈 | `DOMAIN-VISUAL-CUE-01` / `ADR-0059` で代表手掛かりと分離した計画対象。現行の標準import、保存、出典表示、削除手段は未実装。 |
 
 ---
 
@@ -278,9 +280,11 @@ erDiagram
 | 文書一覧（Document index projection） | L1 | 標準Createなし（既存 `documents` の射影） | `GET /docs`（`id`/`title`/`updatedAt` のallowlistのみ、本文非含有） | 標準更新APIなし | 標準削除APIなし | Platform operator / Document owner | 対象は現認可主体がread可能な文書に限定し、owner/ACL解決不能時はfail-closed。localStorageの「最近」は非正本キャッシュへ格下げする（`DATA-MODEL-OPS-02` D1確定）。 |
 | View/Perspective状態 | L2 | 既存 `view.json` 保存に含める | 既存 `view.json` 取得に含まれる | 既存 `view.json` 保存で反映 | ファイル管理に依存 | Standard user | `DocumentV1` へ埋め込まず、既存 `view.json.viewState` を正本とする（`DATA-MODEL-OPS-02` D2確定）。 |
 | QueryPreset（Patch workspace） | L3 | device-local（browser storage） | device-local | device-local | device-local | Standard user | 当面device-localを維持し、UIで「この端末のみ」と明示する。利用実績なしにユーザー従属テーブルを新設しない（`DATA-MODEL-OPS-02` D2確定）。 |
-| エージェント登録（`agent_registrations`） | L0 | 標準経路なし | 標準経路なし | 標準経路なし | 標準経路なし | 将来: Platform operator（admin strict provisioning限定） | サーバー正本として採用済み（`DATA-MODEL-OPS-02` D3確定）。登録・失効はadminのstrict provisioning型操作に限定し、平文tokenは保存しない設計とする。実装は `EXT-CONN-02` で行う。 |
+| エージェント登録（`agent_registrations`） | L0 | `POST /admin/agent-registrations`（契約先行、実装は`EXT-CONN-02`） | `GET /admin/agent-registrations`（`token`/`tokenHash`非含有、契約先行） | 標準更新APIなし | `DELETE /admin/agent-registrations/{id}`（失効、契約先行） | 将来: Platform operator（admin strict provisioning限定） | サーバー正本として採用済み（`DATA-MODEL-OPS-02` D3確定）。登録・失効はadminのstrict provisioning型操作に限定し、平文tokenは作成時に一度だけ表示・以後はhashのみで照合する。登録自体は文書書込権限とみなさず、ingestごとに別途許可判定する。API型契約は `api.md` §9.5 に先行固定済み。実装は `EXT-CONN-02` で行う（`DATA-MODEL-OPS-02` AC-5）。 |
 | Import/Review Pack artifact | L3 | import/export処理で生成・取込 | ファイルまたはUI上の結果で参照 | 再export/再importで更新 | ファイル管理に依存 | Standard user / Document owner | DBの正本ではなく、共有・移行用成果物として扱う。 |
 | InquiryJourney / RoundSnapshot | L0 | 標準経路なし | 標準経路なし | 標準経路なし | 標準経路なし | 将来: Standard user / Document owner | `ADR-0057` は独立探究 + 不変成果DAG + 自己完結bundleを採択済み。型・fixture・操作模型・roundtrip・削除境界を `DOMAIN-W-ITERATION-01` で検証するまで、現行CRUD対応を主張しない。 |
+| RepresentativeVisualCue / image asset | L0 | 標準経路なし | 標準経路なし | 標準経路なし | 標準経路なし | 将来: Standard user / Document owner | `ADR-0059` はProposed。手描き・基本図形・利用者画像、Unicode絵文字・同梱素材、外部素材、生成画像の供給経路と、採用参照・権利情報・画像本体・サムネイルの保存をfixtureで比較するまで、`DocumentV1`やDBへ追加しない。 |
+| SourceVisualMaterial | L0 | 標準経路なし | 標準経路なし | 標準経路なし | 標準経路なし | 将来: Field worker / Standard user / Document owner | 写真・図が観察データや根拠である場合の計画対象。代表表示の切り抜きと元資料・撮影文脈・出典を分離し、容量・機微情報・削除を決めるまで現行CRUD対応を主張しない。 |
 
 ---
 
@@ -293,7 +297,7 @@ erDiagram
 | `version` / `id` / `createdAt` / `updatedAt` / `transform` | L1 | 必須 | 必須 | 運用サポート | `PUT /docs/{doc_id}` のCreate/Update契約で維持する。 |
 | `cards[]` | L2 | `Card[]`。`claimType`、統合元、批評、レビュー状態を含む | `Card[]` として保存。`claimType` も往復保持する | 埋め込み限定 | 個別カードCRUDは作らず、スナップショット保存の互換を維持する。 |
 | `edges[]` | L2 | `Edge[]`。`fromKind` / `toKind` を含む | `Edge[]` として保存。endpoint kind も往復保持する | 埋め込み限定 | 島endpointを含む関係のUI/API検証を `DATA-CONTRACT-01` で継続する。 |
-| `islands[]` | L2 | `Island[]`。階層、collapse、shape、summaryを含む | 保存/検証あり。geometry/shapeの互換正規化あり | 埋め込み限定 | shape再計算、階層、collapseの個別保守は製品化issueで扱う。 |
+| `islands[]` | L2 | `Island[]`。階層、collapse、shape、summary、旧式`imageUrl` / `imageReviewed`を含む | 保存/検証あり。geometry/shapeの互換正規化と旧式画像フィールドの往復保持あり | 埋め込み限定 | SafeModeでは旧式URLを取得しない。由来・権利・代替テキストを持つ新モデルへの移行は`SEC-VISUAL-ASSET-01` / `DOMAIN-VISUAL-CUE-01`で扱う。 |
 | `readingOrder` | L2 | optional | optional | 埋め込み限定 | 文章化・共有時の読み順として扱う。 |
 | `narratives` | L2 | optional | optional | 埋め込み限定 | 個別CRUDではなく、成果物化と共有前確認で扱う。 |
 | `relationSummaries` | L2 | optional | optional。本文長上限あり | 埋め込み限定 | 要約品質、根拠、レビュー状態の検証を継続する。 |
@@ -377,6 +381,20 @@ MVPの制約を明示したうえで、ステークホルダー運用に耐え�
 カード上の状態メタデータ（主張種別、保留、違和感、未レビュー）は既存UIで段階的に扱う。一方で、起票者、作成者、出典、取り込み元、最終更新者などの provenance/accountability メタデータは、個人情報・共有/export・review attribution・所有者移管と衝突しやすい。これらを標準UIまたは `Card.meta` として扱う場合は、`CARD-META-UI-01` でUI境界、保存境界、redaction方針、ADR要否を先に確認する。
 
 現行MVPのカード詳細パネルでは、既存スキーマから導出できるカードID、代表カード/出典カードの区別、ドキュメントの作成日時・更新日時だけを「記録情報」として表示する。起票者、作成者、最終更新者、レビュー者などの責任主体は現行データモデルにないため、UIで補完・推測せず「提供していない」と扱う。`Card.meta.seq` / `Card.meta.source` は既存の遡及情報エディタで扱う非主体メタであり、責任主体メタを追加したことを意味しない。この表示追加は保存契約、import受理キー、共有/exportの既定値、SafeModeの境界を変更しない。
+
+### 6.1 カードメタデータの表示・操作境界
+
+| 分類 | 現行の例 | 表示・操作 | 保存・共有境界 |
+| --- | --- | --- | --- |
+| 状態メタデータ | `claimType`, `holdState`, `critiqueTags`, `textReviewed` | カード上の短いバッジと選択時の詳細で確認・編集する | `DocumentV1.cards[]` の既存契約に従う |
+| 非主体の遡及情報 | `Card.meta.seq`, `Card.meta.source`, `Card.sources` | `seq` / `source` は遡及情報エディタ、`Card.sources` は代表カードと出典カードの関係として表示する。両者を混同しない | 共有向け書き出しでは既定除外。既存の「出典参照を含める」を明示選択した場合だけ含める |
+| レビュー帰属 | `reviewState`, `reviewAttribution` | レビュー状態と「誰がレビューしたか」の設計であり、起票者や作成者を表さない | `review_attribution.md` の人手昇格・redaction境界に従う |
+| 責任主体メタデータ | 起票者、作成者、最終更新者、所有者 | 現行MVPでは保存・編集・推測しない。カード本体へ常設せず、「記録情報」で提供していないことを説明する | importの未知キーは受理せず、共有/export/review pack/外部エージェント依頼にも含めない |
+| 公開説明用の出所分類 | 利用者入力、import由来、AI提案由来 | 現行スキーマから確実に導出できない分類は表示しない | 将来追加時も個人識別子とは別の列挙として判断する |
+
+「記録情報」は初期状態で折りたたみ、選択したカードの補助情報として右側パネルに置く。マウスでは見出しをクリックし、キーボードではカードへTabで移動してEnterまたはSpaceで選択した後、見出しへTabで移動してEnterまたはSpaceで展開できる。展開後の項目は読み取り専用であり、フォーカス可能な編集欄を増やさない。日時はUIの言語に合う形式で表示し、元のISO日時は`time`要素の`dateTime`として保持する。未設定の値は推測せず「利用できません」、データモデル自体にない責任主体は「提供していません」と区別する。
+
+共有前確認の「出典参照」は非主体の `seq` / `source` だけを対象とし、責任主体メタデータの同梱許可には使わない。SafeModeの状態にかかわらず既定OFFを維持する。importでは `Card.meta` の既知キーだけを受理し、未知の `author`、`creator`、`owner` 等を権限、所有、レビュー済みの根拠として扱わない。
 
 ---
 

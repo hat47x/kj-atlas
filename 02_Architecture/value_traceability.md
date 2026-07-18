@@ -33,6 +33,7 @@
 | データ運用境界を誤解させない | MVPで保守できるデータと将来契約を区別できる | `02_Architecture/data_model_operations_overview.md`, `ADR-0033` | 物理ER、論理ER、CRUD表、ステークホルダー別保守責任を分けて示す | 型の存在を標準CRUD対応と誤読させない |
 | 定性情報の意味を損なわない | 本文だけですぐ記録でき、後から一中心・文脈・出典・認識上の位置づけを任意に整えられる | `00_Prompt/qualitative_card_quality_requirements.md`, `ADR-0001` P-08 | `Card.text` を正本とし、品質支援を保存後のproposal-onlyにする。少数意見・矛盾は保持する | 必須追加入力、品質採点、自動書換え、自動削除がなく、元本文へ戻れる |
 | ラウンド間で思考を深める | 問題提起から手順化までを反復・分岐し、中間成果と問いの変化を失わず再開できる | `00_Prompt/w_type_iterative_inquiry_requirements.md`, `ADR-0057`（Accepted）, `02_Architecture/inquiry_journey_model.md` | 可変 `DocumentV1` と独立探究・不変成果DAGを分離し、明示的引継ぎ、現場への問い、カード系譜を任意の高度機能として扱う | 通常利用非回帰、同段階反復、前段階分岐、自己完結bundle、provider none、SafeModeを検証する |
+| 多数のまとまりを見つけ直しやすくする | 島や選択した情報集合に、表札と併記する任意の小さな視覚手掛かりを設定できる | `00_Prompt/representative_visual_cue_requirements.md`, `ADR-0059`（Proposed） | 標準KJ法の手描きシンボルを起点に、基本図形・利用者画像、絵文字・同梱素材、外部素材、生成画像を別経路で段階導入する。一次視覚資料と識別画像を分ける | 画像なしとの探索課題比較、原資料遡及、非自動採用、a11y、SafeMode、権利・来歴、非表示・取り消しを検証する |
 | カードメタデータを混同しない | 状態、出典、起票者、レビュー者を別々の意味として確認できる | `02_Architecture/schemas.md`, `02_Architecture/review_attribution.md`, `CARD-META-UI-01`, `DOMAIN-TRACE-01` | `Card.meta` 系は通し番号/出典と主体メタを分離し、起票者などの個人・組織識別はSidePanel/共有前確認/redaction境界を先に決める | 出典参照トグルと主体メタ同梱が別ゲートで、review attribution や所有者移管と混同されない |
 | 価値を裏切らない（不変条件の保護） | 機能が増えても保留/proposal-only/人手昇格/SafeModeが崩れない | `02_Architecture/value_traceability.md` §2.5, `ADR-0041` | 散在する非後退テストを CVI-1..7 として単一の砦へ索引化する | CVI 横断テストが赤になる変更を検知できる |
 | 思考を雑にしない（認知負荷の予算） | 機能が増えても初期の静けさと保留の容易さが保たれる | `00_Prompt/domain.md`, `ADR-0043`, `ADR-0030` | 複雑性予算（CB-1..4）で初期表示の純増と保留距離を抑える | UI追加issueで複雑性予算を申告し悪化時にゲート確認 |
@@ -122,8 +123,8 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 |---|---|---|---|---|
 | 価値: 開始 | 迷わず最初の意味ある配置へ | `ADR-0032` V0/V1 | `PRODUCT-UX-01`(Done), `PRODUCT-VALUE-01` | 被覆 |
 | 価値: 外在化 | メモ・違和感をカード化 | `ADR-0032` V1 | `PRODUCT-VALUE-01`, `DOMAIN-EXPR-01` | 被覆 |
-| 価値: 定性情報の品質 | 意味・意図を保ち、一枚一中心、再文脈化・遡及可能なカードを低負担で作る | `qualitative_card_quality_requirements.md`, `ADR-0001` P-08 | `DOMAIN-CARD-QUALITY-01` | 被覆（要件確定、実装未着手） |
-| 価値: 反復的探究 | 6ラウンドを経験と思考の往復として扱い、中間成果・引継ぎ・分岐を保持する | `w_type_iterative_inquiry_requirements.md`, `ADR-0057`, `inquiry_journey_model.md` | `DOMAIN-W-ITERATION-01` | 被覆（要件・設計は確定、実装はL0/未着手） |
+| 価値: 定性情報の品質 | 意味・意図を保ち、一枚一中心、再文脈化・遡及可能なカードを低負担で作る | `qualitative_card_quality_requirements.md`, `ADR-0001` P-08 | `DOMAIN-CARD-QUALITY-01` | 被覆（自己確認、前後比較、原文復元を実装・E2E確認済み） |
+| 価値: 反復的探究 | 6ラウンドを経験と思考の往復として扱い、中間成果・引継ぎ・分岐を保持する | `w_type_iterative_inquiry_requirements.md`, `ADR-0057`, `inquiry_journey_model.md` | `DOMAIN-W-ITERATION-01`, `PERF-INQUIRY-01` | 被覆（現在文書からの開始、反復snapshot、ローカルファイル保存・再開、任意の2ラウンドの比較、過去成果からの非破壊分岐、代表容量、読込非ブロッキング化を検証済み。引継ぎはL0/未実装） |
 | 価値: 構造化 | まとまり・関係・未整理の同時保持 | `ADR-0032` V2 | `PRODUCT-UX-02`(Done), `PRODUCT-VALUE-02` | 被覆 |
 | 価値: レビュー | AI候補の人間採否・proposal-only | `ADR-0032` V3 | `PRODUCT-VALUE-02`, `CE2`, `CE3` | 被覆 |
 | 価値: 成果物化と共有 | 確定/保留/根拠/未レビューを束ねた成果物 | `ADR-0032` V4 | `PRODUCT-UX-03`(Done), `PRODUCT-VALUE-03` | 被覆 |
@@ -146,7 +147,21 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 
 **更新（2026-07-15）**: カード作成後の構造化は被覆されていた一方、構造化の入力となる定性情報そのものの品質と、品質確保時の利用者負担が未定義だった。この穴を P-08 と `DOMAIN-CARD-QUALITY-01` へ接続し、未接続=0件へ戻した。
 
+**更新（2026-07-18）**: `DOMAIN-CARD-QUALITY-01` は、本文だけの一回保存、非モーダルな自己確認、編集前後の比較、原文復元を実装し、マウス・キーボード・390pxを含むE2Eで確認してDoneとした。LLMによるPhase C提案は、手動編集の負担が継続利用を妨げる実利用証跡が得られるまで追加しない。
+
 **更新（2026-07-15・反復的探究）**: 一つの文書内での構造化は被覆されていた一方、6ラウンド累積KJ法で中間成果を累積し、現場と往復し、前段階へ分岐する長期探究は未定義だった。広域比較の結果、`ADR-0057` は独立 `InquiryJourneyV1` + 不変 `RoundSnapshotV1` DAG + 自己完結bundleを採択した。要件・設計判断は確定したが、実装・移行・運用CRUDは `L0: Planned` であり、`DOMAIN-W-ITERATION-01` のfixture・操作模型検証を経ずにbackend永続化へ進まない。
+
+**更新（2026-07-18・ローカルbundle）**: `DOMAIN-W-ITERATION-01` は自己完結bundleのstrict export/importと内容由来digest検証を実装した。これはローカル成果物のI/O境界を固定するもので、保存・再読込、画面操作、保持・削除、SafeMode派生共有は未実装のため、support levelは`L0: Planned`を維持する。
+
+**更新（2026-07-18・保存と再開）**: 高度機能内で現在文書から正式な探究bundleを開始し、反復ごとの不変snapshotと低負担なカード系譜を記録し、JSONファイルへ保存・再読込できるようにした。この時点では比較、再開ブリーフ、引継ぎ、容量計測、SafeMode派生共有が未実装であったため、support levelは`L0: Planned`を維持した。
+
+**更新（2026-07-18・代表容量）**: 300カード・30島・6ラウンドの1成果は73,955 bytes、探究manifestは2,161 bytes、自己完結bundleは1,460,390 bytesで、JSON集約の容量は5MiB回帰上限以内だった。画面読込の最大長時間タスクは当初243から294msで100ms目安を超えたが、`PERF-INQUIRY-01`でstrict validationとdigest照合をworkerへ移し、単独実行で93から95msへ改善した。並列CIは150msを退行上限とする。性能面のPhase 3停止条件は解消したが、比較・引継ぎ・SafeMode派生共有が未完了のためsupport levelは`L0: Planned`を維持する。
+
+**更新（2026-07-18・容量境界）**: 同じ代表規模の12ラウンドは2,785,220 bytes、18ラウンドは4,110,050 bytesだった。`SEC-INQUIRY-01`で5MiB警告・20MiB拒否境界をUI preflight、domain parser、exportへ対称適用し、無制限入力と再取込不能なexportを防いだ。保持期間・保持件数・削除単位は未決定のため、support levelは`L0: Planned`を維持する。
+
+**更新（2026-07-18・ラウンド比較）**: 同じ段階の反復を含む任意の2ラウンドについて、不変な出力snapshotを読取専用で比較できるようにした。カード・島・関係要約・読み順の変化を所在情報として示し、品質点数や改善率には変換しない。unit testとキーボード操作を含むPlaywright E2Eで非破壊性と比較対象切替を確認し、`DOMAIN-W-ITERATION-01` AC-5を完了した。引継ぎ、再開ブリーフ、SafeMode派生共有が未完了のためsupport levelは`L0: Planned`を維持する。
+
+**更新（2026-07-18・非破壊分岐）**: 過去ラウンドを起点として選び、その不変な出力snapshotをキャンバスへ復元して新しい子snapshotを作れるようにした。R2→R3の後にR2から分岐してもR3先端を残し、R2・2回目を別先端として保持する。親IDと実際の復元内容を一致させ、unit testと390px・キーボード操作・保存後bundleのPlaywright E2Eで確認し、`DOMAIN-W-ITERATION-01` AC-6を完了した。引継ぎ、再開ブリーフ、SafeMode派生共有が未完了のためsupport levelは`L0: Planned`を維持する。
 
 ---
 

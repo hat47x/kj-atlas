@@ -12,7 +12,8 @@
 4. データプライバシー（エクスポート挙動を含む）
 5. サポート診断バンドル
 6. 外部エージェント向けMCP投影
-7. SaaSを想定したテナント分離（現行非対応の適用限界を含む）
+7. 標準Composeのネットワーク公開境界
+8. SaaSを想定したテナント分離（現行非対応の適用限界を含む）
 
 ## 資産 / Assets
 
@@ -93,10 +94,46 @@
 
 - MCPをfrontendから独立したprivate packageへ隔離し、SDK/peer dependencyを正確なversionでpinしてlockfileをレビュー
 - capability allowlistと `tools/list` / `resources/list` の固定テストでwrite/ingest/apply/publish/sampling/elicitationを禁止
-- stdio段階ではlisten portを開かず、HTTP/OAuth公開面は別スライスで脅威分析する
 - 外部結線前に、全constraintで未レビューentity/refの既定除外と、SafeMode出力に原文由来hashが無いことを検証
 
-### 7) SaaSテナント分離
+### 6-1) HTTP transport / OAuth 2.1 resource server（Subslice C, ADR-0054）
+
+stdio段階では listen port を開かず外部到達不可だったが、streamable-HTTP transport（`KJ_ATLAS_MCP_TRANSPORT=http`）は本リポジトリ初の公開ネットワークリスナーであり、リスクの質が変わる。
+
+- 未認証／偽造／期限切れbearer tokenによる `POST/GET/DELETE /mcp` への到達
+- 他リソース向けに発行されたtoken（audience違い）や、信頼していないissuerが発行したtokenの受理（confused deputy）
+- 本サーバーが誤って authorization server 相当の機能（token発行・client登録・consent）を持ってしまうscope creep
+- 単純なリクエスト洪水によるCPU/メモリ枯渇（DoS）
+- 認証エラー応答から到達可能性・内部実装がfingerprintされる情報漏えい
+- `/.well-known/oauth-protected-resource` のような未認証で公開する必要があるエンドポイントが、意図せず認証必須のエンドポイントにも認証バイパスの糸口を与える
+
+**想定対策**
+
+- ADR-0054/ADR-0020方針どおり、本サーバーは OAuth 2.1 **resource serverのみ**として実装し、token発行・client登録・authorization endpointは一切持たない（そのコードパス自体が存在しない）
+- `jose`の`jwtVerify`でtoken署名・`iss`（`KJ_ATLAS_MCP_TRUSTED_ISSUER`と厳密一致、prefix/wildcard一致は行わない）・`aud`（`KJ_ATLAS_MCP_RESOURCE_URL`）・`exp`を検証し、失敗経路はすべて`InvalidTokenError`にfail-closedで正規化（未知の失敗が既定で通過することはない）
+- SDKの`requireBearerAuth`により、認証失敗は常に401 + `WWW-Authenticate: Bearer ... resource_metadata=...`ヘッダーで応答し、tokenの有効性以外の情報（存在確認・詳細な失敗理由）を返さない
+- `/.well-known/oauth-protected-resource`（RFC 9728）は仕様上未認証公開が前提のdiscovery文書であり、`resource`/`authorization_servers`/`bearer_methods_supported`など非秘匿情報のみを返す。`/mcp`自体の認証要件は変えない
+- 全route（metadata含む）に60 req/min/IPのrate limitを適用し、単純な洪水要求を早期にthrottleする
+- transportはstateless（`sessionIdGenerator: undefined`）とし、session固定化やsession storageに起因する攻撃面を持たない
+- request bodyは1MBに制限し、過大payloadでのメモリ消費を防ぐ
+
+### 7) 標準Composeのネットワーク公開境界（DEPLOY-NET-01）
+
+`http://localhost:8080` という案内は、サービスがloopbackだけでlistenすることを意味しない。host IPを省略したDockerのport公開（`"${KJ_ATLAS_WEB_PORT:-8080}:80"`）はホストの全interfaceを対象にし、同一LANや誤設定されたport forwardingから到達できる未認証主体に、評価環境そのものを公開してしまう。
+
+- 保護資産: document本文、レビュー情報、設定・診断情報
+- 攻撃者: 同一LAN、共有ホスト、誤設定されたport forwardingから到達する未認証主体
+- 入口: nginx配信面（`web`サービス）と、そこから転送される`/api`
+- 誤解しやすい非対策: SafeMode（share/exportの漏洩抑制であり、ネットワーク経由の到達を認証しない）、`KJ_ATLAS_API_KEY`（同梱SPAが`X-API-Key`を送らないため、通常のブラウザ利用を保ったまま既定露出を補う認証にはならない）、URLに`localhost`と表示すること
+
+**想定対策**
+
+- 標準`docker-compose.yml`の`web.ports`をloopback（`127.0.0.1:${KJ_ATLAS_WEB_PORT:-8080}:80`）へ明示bindし、`KJ_ATLAS_WEB_PORT`はport番号だけを変え、bind範囲を拡張しない契約にする
+- 別端末・LAN・Internetからの利用が必要な場合は、TLS終端・SPAとAPIの双方を覆う認証proxy・接続元制限・secret管理を伴う明示的な別deployment profileとして分離し、base Composeの直接書き換えでは対応しない
+- READMEとinstallation/deployment文書で、標準Composeを「同一ホストからだけ使う評価構成」と明記する
+- contract testで、標準Composeのweb port mappingがhost IP省略・`0.0.0.0`・loopback以外へ戻らないことを検証する
+
+### 8) SaaSテナント分離
 
 - docIdの差し替えによる他テナント文書へのIDOR
 - list/search/count/cacheからのタイトル・更新日時・利用状態の越境漏えい

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 
 import { t } from "../i18n/translate";
 
 // UX-NAV-02 (resolves ADR-0052 C-5): role=tablist container for the work-mode
-// surface's 5 co-equal panes. Manual activation (WAI-ARIA APG "tabs, manual
+// surface's co-equal panes. Manual activation (WAI-ARIA APG "tabs, manual
 // activation"): arrow keys move a roving tabIndex focus target across tab
 // buttons WITHOUT switching the active panel; native <button> onClick (which
 // also fires for a keyboard Enter/Space on the focused button) is what

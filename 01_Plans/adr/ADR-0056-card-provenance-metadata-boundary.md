@@ -1,7 +1,8 @@
 # ADR-0056: カード主体メタデータのMVP境界
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-07-15
+- Accepted: 2026-07-16（Maintainer代理裁可）
 - Deciders: Productization Program Owner / Security Officer / UX Lead / Project Maintainers
 - Scope: `02_Architecture/schemas.md`, `02_Architecture/review_attribution.md`, `03_Implement/frontend/src/canvas/CardView.tsx`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/import/`, `04_Documentation/`
 
@@ -37,9 +38,13 @@
 
 ## 受理に必要な確認
 
-- [ ] `CARD-META-UI-01` のAC-1〜AC-5について、状態・provenance・accountability・公開説明用メタの分類と共有境界を確認する。
-- [ ] `Card.meta` を主体メタデータへ拡張しないMVP境界を、Productization Program Owner、Security Officer、UX Leadが確認する。
-- [ ] `CARD-META-UI-01` に、表示・入力・未設定時・キーボード操作・共有前確認の仕様を記録する。
+- [x] `CARD-META-UI-01` のAC-1〜AC-5について、状態・provenance・accountability・公開説明用メタの分類と共有境界を確認する。→ 上記「決定案」1〜5の境界をMaintainerが確認し、提案通り受理した（2026-07-16）。
+- [x] `Card.meta` を主体メタデータへ拡張しないMVP境界を、Productization Program Owner、Security Officer、UX Leadが確認する。→ Maintainer代理裁可により確認済み（2026-07-16）。組織導入等でこの境界を見直す場合は、本ADRの更新または置き換えを先に行う。
+- [ ] `CARD-META-UI-01` に、表示・入力・未設定時・キーボード操作・共有前確認の仕様を記録する。→ 本ADR受理後の後続タスク（`CARD-META-UI-01` T3〜T5）として継続する。ADR受理はこの詳細仕様の完成を意味しない。
+
+## 受理記録（2026-07-16）
+
+Maintainerが本ADRを提案通り受理した。`CARD-META-UI-01` の `DecisionStatus` を `Fixed` とし、`Status` を `Draft` から `Open` へ移行する（下記「追跡関係」参照）。実装（T3〜T6: UI仕様確定、永続先候補比較、`DOMAIN-TRACE-01` とのフィールド命名調整、実装分割）は本受理の対象外であり、別途進める。
 
 ## 追跡関係
 

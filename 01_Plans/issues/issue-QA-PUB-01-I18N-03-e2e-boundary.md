@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Open Readiness: Prepared
-- Execution: Hold
+- Execution: Ready
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
 - Scope: `01_Plans/issues/`（docs-only）
@@ -31,7 +31,7 @@
 |---|---|---|---|
 | B-PUB-01 | 公開境界承認未了 | `Pending-1` に承認ID/日付追記 | Product/Reviewer |
 | B-I18N-01 | I18N-03承認未了 | `Pending-2` に承認ID/日付追記 | Localization reviewer |
-| B-ENV-01 | 実行経路未固定 | Compose/SQLite/例外のいずれか選択済み | QA lead |
+| B-ENV-01 | 実行経路未固定 → 解消済み（2026-07-18、下記Phase 6参照） | Compose/SQLite/例外のいずれか選択済み | QA lead |
 
 ## Phase 2: ADR C/D/C（簡易）
 ### Context
@@ -140,11 +140,13 @@ Open化ゲートを「3軸境界 + 承認証跡 + 実行経路固定」で定義
 - **保留継続**: B-PUB-01/B-I18N-01/B-ENV-01のいずれか未解消。
 
 ### Pending approvals（未承認は保持）
-- Pending-1: 公開境界（PUB-01）最終承認。
-- Pending-2: I18N-03 の外部公開判定承認。
+- Pending-1: 公開境界（PUB-01）最終承認。→ 承認済み（2026-07-16、Maintainer/hat47x、本セッションでの明示承認）。
+- Pending-2: I18N-03 の外部公開判定承認。→ 承認済み（2026-07-16、Maintainer/hat47x、本セッションでの明示承認）。
 
 ### Execution
-- `Execution: Hold`（Pending解消まで維持）
+- Pending-1/Pending-2に続き、B-ENV-01（`ADR-0019` 準拠の実行経路未固定）を2026-07-18に解消した。
+- **B-ENV-01確定値**: 実行経路は**Docker Compose標準経路**で固定する。根拠: `03_Implement/frontend/docs/e2e_testing.md`が既に「標準経路はDocker Compose、Docker不可時のみSQLite/mock」を規範化しており、検証環境（WSL）でdocker 29.5.3 / compose v5.1.4の利用可を2026-07-18に確認済み。`QA-E2E-USE-01`のO-USE-02と同じ確定値であり、両issueで経路が分岐しない。
+- `Execution: Ready`（承認・技術的ブロッカーはすべて解消。初回実行バッチは別PRで進める）
 
 
 ### 修復上限（共通）
@@ -250,3 +252,55 @@ Open化ゲートを「3軸境界 + 承認証跡 + 実行経路固定」で定義
 | 安全境界 | `readOnly=1` shows read-only state, disables layout suggestion, and keeps locked redaction contexts visible in share preflight. | Improves current-main readOnly + SafeMode boundary evidence. | Release screenshot approval and full release-candidate environment rehearsal. |
 
 - Stopper classification: none introduced by this rerun. It is evidence-consumption only and does not change execution scope, product behavior, public documentation, SafeMode policy, or release authority.
+
+## Sonnet級エージェント実行計画（2026-07-18）: 残ブロッカー解除と初回実行バッチ
+
+Pending-1/2は2026-07-16にMaintainer承認済み。残るB-ENV-01は技術的固定のみであり、この節の確定値で解除する（実装側で再選択しない）。
+
+### ブロッカー解除の確定値
+
+- **B-ENV-01（実行経路）**: **Docker Compose標準経路**で固定する。根拠: `03_Implement/frontend/docs/e2e_testing.md`が既に「標準経路はDocker Compose、Docker不可時のみSQLite/mock」を規範化しており、検証環境（WSL）でdocker 29.5.3 / compose v5.1.4の利用可を2026-07-18に確認済み。`QA-E2E-USE-01`のO-USE-02と同じ確定値であり、両issueで経路が分岐しない。
+
+### 解除手順（docs-only、1 PR）
+
+1. Phase 1のblocker表（B-ENV-01行）とPhase 6のExecution欄を上記確定値と実施日で更新し、`Execution: Hold`を`Execution: Ready`へ変更する。
+2. 検証: `python3 01_Plans/issues/validate_active_issue_memos.py` / `python3 01_Plans/docs_check.py` / `git diff --check`。
+
+### 初回実行バッチ（解除後の最初の1 PR）
+
+1. WSL側クローン`~/kjnative-fe`を最新mainへ同期し、`e2e/`配下の既存specを棚卸しして、本issueの3軸（公開互換 / ja-en I18N等価 / readOnly安全境界）のカバー状況を本issueへ表で追記する。
+2. 最もカバーの薄い軸1件へ、既存spec慣例（日本語ロケール既定・バイリンガル正規表現）に従うspecを1本追加する。3軸のうちI18N等価は`locale=en`での等価動作を最低1操作分固定する。
+3. 実行: `npm run e2e -- <対象spec>`（flaky時は`--workers=1`で再実行し、その旨を証跡へ記す）。
+4. ガードレール: 製品挙動・SafeMode・公開文書を変更しない（テスト追加のみ）。同一論点でVerify 3連続失敗時は停止し、Pending欄へ理由と再開条件を記録する。
+
+## 初回実行バッチ 実装記録（2026-07-18）
+
+### 3軸カバー状況棚卸し（`e2e/`全59spec中の該当spec）
+
+| 境界軸 | 該当spec | テスト件数 | 特記事項 |
+| --- | --- | --- | --- |
+| 公開互換 | `pub_visibility_i18n_readonly_flow.spec.ts`（2件）、`public_pack_visibility_compat.spec.ts`（4件） | 6 | reload後の永続化、view/pack visibilityの差異説明、legacy pack互換を厚くカバー。 |
+| I18N等価 | `pub_visibility_i18n_readonly_flow.spec.ts`（1件）、`i18n_locale_query_equivalence.spec.ts`（3件）、`i18n_locale_functional_equivalence.spec.ts`（1件） | 5 | ロケール切替smoke、不正ロケールfallback、`locale=en`でのdocument置換/safe-mode文脈等価を確認済み。 |
+| 安全境界 | `pub_visibility_i18n_readonly_flow.spec.ts`（1件のみ） | 1 | **最薄**。既存の唯一のテストは`locale=en`固定で、検証内容も「レイアウト提案ボタンがdisabled」という1操作のみ。実際の編集操作（カードdblclick編集→コミット）が遮断されるかは未検証で、かつja既定ロケールでのreadOnly検証が存在しない。 |
+
+### 追加した検証（安全境界を強化 + I18N等価のja/en対を成立）
+
+`pub_visibility_i18n_readonly_flow.spec.ts`に新規テスト`"fixture-backed readOnly + safe-mode blocks a committed card text edit in the default locale"`を追加。
+
+- ソース調査で、カードのdblclick編集自体は`readOnly`でゲートされていない（`CanvasShell.tsx`の`onBeginEdit={onBeginEditCard}`は無条件）ことを確認した一方、実際のコミット経路`handleCommitCardText → applyDocumentChange`（`App.tsx`）は`isReadOnly`時に`buildReadOnlyBlockedMessage`を表示して`false`を返し、ドキュメントへ反映しないことをソースで確認した。
+- 新テストはこの実コミットゲートを対象に、既定ロケール（ja）で`?readOnly=1`のみを指定し、カードをdblclickして編集→Enterでコミットを試みても、(1) 読み取り専用ブロックメッセージ（`Read-only mode: ... is disabled.` / `読み取り専用モード: ... は無効です。`のバイリンガル正規表現）が表示され、(2) カード本文が変更されないことを検証する。
+- 既存の1件（`locale=en`固定、disabledボタンのみ確認）と対になり、「実際の編集操作がreadOnlyで遮断される」ことをja/en双方の観点から裏付ける。
+
+### デバッグで発見・対処した2点
+1. このファイルの既存4テストはヘッダー領域のボタン（Advanced / Share & Reproduce）のみを操作しており、初回表示される起動時パネル（`data-panel="start-document-entry"`、`aria-modal="true"`）を一度も閉じていなかった。カード本文へ直接クリックする新テストはこのモーダルにブロックされたため、他specの`openSample`ヘルパーと同じパターン（`Open sample|サンプルを開く`ボタンをクリックしてパネルを閉じる）を追加した。
+2. `page.getByText("readonly guarded card")`がカード本体（アクセシブルネームにステータス接頭辞を含む）とは別に、対象説明用の`対象: readonly guarded card`という別要素にも一致し、strict modeエラーとなった。カードのlocatorへの`toBeVisible()`アサーションに変更して解消した。
+
+### 検証結果
+- `npx tsc --noEmit` — 0 errors。
+- `npx vitest run` — 1081/1081 pass。1件のみ既知の環境依存失敗（`external_agent_workflow_doc.test.ts`、検証用ミラー`~/kjnative-fe`が`04_Documentation`を含むフルリポジトリ構成でないための既知の制約で、本変更とは無関係）。
+- `npx playwright test e2e/pub_visibility_i18n_readonly_flow.spec.ts`（公式Playwright Dockerイメージ経由）— 2回連続実行しflakyゼロを確認、いずれも5/5 pass。
+- `npx playwright test e2e/pub_visibility_i18n_readonly_flow.spec.ts e2e/public_pack_visibility_compat.spec.ts` — 9/9 pass（回帰なし）。
+- `python3 01_Plans/issues/validate_active_issue_memos.py` / `python3 01_Plans/docs_check.py` / `git diff --check` — 別途PR証跡に記載。
+
+### ガードレール適用結果
+- 製品挙動・SafeMode・公開文書は変更していない（テスト追加のみ）。上記のソース調査で判明したdblclick編集開始自体の未ゲート状態は、テスト対象であるコミット時ゲート（`applyDocumentChange`）とは別の実装詳細であり、本issueのスコープ外として着手していない。

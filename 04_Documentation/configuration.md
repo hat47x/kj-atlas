@@ -17,6 +17,10 @@
 - 外部サービスとの共有や large-scale LLM の利用は、明示的な opt-in と宛先 allowlist がある場合だけ有効にします。
 
 
+## 起動面ごとの配送範囲（重要）
+
+このページの `export KJ_ATLAS_*` 例は、backend を直接起動する場合の設定例です。標準 Docker Compose (`docker-compose.yml`) は `KJ_ATLAS_DATABASE_URL` と `KJ_ATLAS_LLM_PROVIDER` の2キーだけを `api` コンテナへ配送します。他のキー（`KJ_ATLAS_API_KEY` や `KJ_ATLAS_ALLOW_JIT_PROVISIONING` を含む）は、Compose の `api.environment` に明示的に追加しない限り、`export` しても標準 Compose 経由では `api` へ届きません。キーごとの配送範囲は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)（`Delivery surface` 列）で確認してください。
+
 ## 公開設定と内部adapter境界
 
 | 区分 | 利用者が設定するか | 例 | 取り扱いルール |
@@ -141,7 +145,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 
 | 変数 | 既定値 | 用途 |
 | --- | --- | --- |
-| `KJ_ATLAS_WEB_PORT` | `8080` | web の公開 port |
+| `KJ_ATLAS_WEB_PORT` | `8080` | web の loopback（`127.0.0.1`）port。port 番号だけを変え、LAN など他ホストからの到達可否は変えない |
 | `KJ_ATLAS_POSTGRES_DB` | `kj_atlas` | Compose PostgreSQL の database 名 |
 | `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
 | `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | Compose PostgreSQL の password |
@@ -205,6 +209,8 @@ curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 
 ブラウザで動く同梱の画面（SPA）は `X-API-Key` を付与しません。そのため `KJ_ATLAS_API_KEY` を設定すると画面からの読み込み・保存は 401 になります。API キーは `curl` などプログラムからのアクセス保護を想定したものです。ブラウザでの動作検証では未設定（既定）のまま使い、ブラウザ配信自体を保護する場合は前段に認証 proxy を置いてください（[security.md](security.md) 参照）。
 
+> 注意: 標準 Docker Compose はこのキーをホスト環境から pass-through 配送します（ホスト側で未設定の場合はコンテナ内でも未設定のままで、既定の無効状態を維持します。[runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照）。
+
 ## local LLM を使う
 
 local provider は `<base_url>/generate` に JSON を POST します。応答は `{ "text": "..." }` を返す必要があります。
@@ -218,6 +224,8 @@ export KJ_ATLAS_LOCAL_LLM_MODEL='local-model-name'
 base URLにはcredential、query、fragment、空白、制御文字、backslashを含められません。HTTPS、または`localhost`、`127.0.0.1`、`::1`へのHTTPだけを使用できます。model IDは256文字以下で、空白・制御文字・backslashを含められません。
 
 providerへ送るrequestはUTF-8 JSONで1MiB以下です。task、temperature、max token数も安全な範囲へ検証され、過大promptや不正な数値は接続前に`provider_validation`として拒否されます。この検証エラーはfallbackで`none`へ置き換えられません。
+
+> 注意: 上記は direct 起動時の例です。標準 Docker Compose はこれらのキーを配送しません。Compose 上で `local` provider を検証する場合は、検証専用の `docker-compose.llm-stub.yml` overlay を使ってください（`docker compose -f docker-compose.yml -f docker-compose.llm-stub.yml up -d`）。また `api` コンテナ内から見た `http://localhost:8001` はホストではなく `api` コンテナ自身を指すため、Compose 環境ではこの例をそのまま転記しないでください。
 
 ## large-scale LLM を使う
 

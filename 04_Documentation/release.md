@@ -2,11 +2,15 @@
 
 対象読者: kj-atlas のリリース、検証版配布、公開前確認を担当する人。
 
-目的: リリース前に確認する品質、安全性、文書、受け入れ確認の最小手順をまとめます。
+目的: リリース前に確認する品質、安全性、文書、受け入れ確認の最小手順と、タグ push 後に `.github/workflows/release.yml` が実際に生成する成果物の契約をまとめます。
 
-範囲外: 組織固有の承認システム、配布先ごとの秘密設定、マーケティング告知。
+範囲外: 組織固有の承認システム、配布先ごとの秘密設定、マーケティング告知、container/package registry・自動 deploy・署名基盤の新設。
 
 公開区分: リリース/04文書保守者向け管理文書。一般利用者向け Gist の本文には原則含めず、公開前確認と安全境界レビューのチェックリストとして使います。
+
+## 前提: 検証用タグビルドであり、正式配布ではない
+
+`.github/workflows/release.yml` が `vX.Y.Z` タグの push で作る成果物は、**検証用ビルド**です。container/package registry への公開、GitHub Release の作成、installer や source archive の生成は行いません。この境界を利用者・運用者へ案内するときに、一般公開済みの配布物と混同しないでください。継続的な公開配布を始める場合は、公開channel、artifact構成、保持期間、checksum/provenance/SBOM/署名、backend imageのregistry、撤回方法を別Issueまたは ADR で判断します（現時点では未実施）。
 
 ## リリース前チェック
 
@@ -30,12 +34,15 @@ git diff --check
 
 ## リリース判断の流れ
 
+`release.yml` は frontend test、backend test、docs check、E2E を再実行しません。次のコマンドは、タグを打つ**前**に、タグ対象にする予定のcommit SHAに対して自分で実行し、結果をリリース記録に残します。
+
 1. 差分の範囲を確認する。
-2. 影響するテストを実行する。
+2. 影響するテストを実行する（下記コマンド）。
 3. 手動 smoke test で利用者の主要操作を確認する。
 4. security / SafeMode / 外部サービスとの共有の安全境界が後退していないことを確認する。
 5. data handling の観点で export、share、ログ、外部サービスとの共有の扱いを確認する。
-6. rollback 方針を確認する。
+6. `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md` のG0〜G7と価値ゲートに未解消のBlockerがないことを確認する。
+7. rollback 方針を確認する。
 
 frontend:
 
@@ -61,6 +68,48 @@ cd 03_Implement/deploy
 docker compose up --build -d
 curl -fsS http://localhost:8080/api/healthz
 ```
+
+## タグ作成手順
+
+1. 上記「リリース判断の流れ」を対象commit SHAに対して実行し、全て成功することを確認する。失敗する場合はタグを作らない。
+2. `CHANGELOG.md` の `[Unreleased]` を、タグと同じバージョン番号・当日日付の見出しへ切り出す（下記「CHANGELOG との対応」参照）。
+3. タグ名は SemVer 形式 `vX.Y.Z` とし、対象は手順1で確認済みのcommit SHAに限る。
+4. 一度作成したタグは強制更新（force push / re-tag）しない。誤りがあった場合は新しいバージョン番号で再実行し、誤ったタグは withdrawn として記録する。
+5. タグを push し、`.github/workflows/release.yml` の実行結果（成功/失敗）を確認する。
+6. 下記「リリース記録に残す項目」を記録する。
+
+## workflow が生成する成果物（現行契約）
+
+`.github/workflows/release.yml` は `vX.Y.Z` タグの push で起動し、次の2つのjobだけを実行します。
+
+| Job | 生成物 | 配布するか |
+| --- | --- | --- |
+| `backend-docker-build` | `kj-atlas-api:<tag>` という名前のDocker image（ローカルbuildのみ） | しない。`push: false`。registry送信もimage archiveの保存もない。build自体が壊れていないことの検証だけが目的。 |
+| `frontend-build` | `frontend-dist-<tag>` という名前のGitHub Actions artifact（`03_Implement/frontend/dist`の内容） | GitHub Actionsの当該workflow run画面からのみ取得可能。保持期間はリポジトリ/組織のActions設定（Settings → Actions → General → Artifact and log retention）に従う。設定を変更していない限りGitHubの既定値が適用される。期限切れ後は同じcommitから再buildしない限り取得できない。 |
+
+上記いずれも、checksum、provenance、SBOM、署名は生成しません。取得したartifactの完全性を保証する追加の仕組みは現時点でありません。
+
+対象tag/SHAの取得場所は、GitHubリポジトリの Actions タブから `Release Build` workflowの該当run（tag pushで起動したrun）を開き、そのrunのartifact一覧から確認します。
+
+## CHANGELOG との対応
+
+`CHANGELOG.md` は [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) 形式・SemVer準拠です。`[Unreleased]` から版を切る条件は次のとおりです。
+
+- タグを作成する直前に、`[Unreleased]` の内容を `## [X.Y.Z] - YYYY-MM-DD`（タグと同じバージョン番号、当日日付）へ書き換える。
+- 新しい空の `[Unreleased]` セクションを見出しだけ残す。
+- `[Unreleased]` のまま tag を push しない。版とタグは1:1で対応させる。
+
+## リリース記録に残す項目
+
+- tag（`vX.Y.Z`）
+- 対象 commit SHA
+- CI run（「リリース判断の流れ」を実行したCIまたはローカル実行の記録）
+- release workflow run（`.github/workflows/release.yml` の実行URL）
+- gate decision（`PRODUCT-QA-01` のGo/No-Go判断）
+- artifact（`frontend-dist-<tag>` の取得場所）
+- 保持境界（Actions artifactの失効予定）
+- 既知の制限
+- rollback / withdrawal 方針
 
 ## 手動確認
 
@@ -91,35 +140,14 @@ curl -fsS http://localhost:8080/api/healthz
 - 秘密情報、内部 URL、生の顧客情報が文書や export に混ざっている。
 - 受け入れ確認の主要操作が再現できない。
 
-止めることは失敗ではありません。利用者に影響する不確実性を見つけた状態なので、原因、回避策、再開条件を記録してから次の確認に進みます。
-
-## リリース記録に残す項目
-
-- 対象 commit
-- 実行した確認コマンド
-- 受け入れ確認の結果
-- 既知の制限
-- rollback 方針
+止めることは失敗ではありません。利用者に影響する不確実性を見つけた状態なので、原因、回避策、再開条件を記録してから次の確認に進みます。誤って作成したタグは強制更新せず、withdrawn として記録し、新しいバージョン番号で再実行します。
 
 ## 関連文書
 
 - [acceptance_check.md](acceptance_check.md)
-- [e2e_verification_log_2026-03-03.md](e2e_verification_log_2026-03-03.md)
 - [data_handling.md](data_handling.md)
 - [operations.md](operations.md)
 - [security.md](security.md)
+- [installation.md](installation.md)
 
-## 運用手順（DOC-OPS-05）
-1. 対象読者（Audience）と目的（Goal）を先に確認する。
-2. 公開境界（Public boundary）を確認し、内部手順は公開文書へ直接書かない。
-3. 実行後は関連文書の導線（Related links）と矛盾がないか確認する。
-
-## 判断基準（DOC-OPS-05 品質ゲート）
-- 可読性: 用語が定義済み語彙と一致し、読者の次アクションが明確であること。
-- 検証可能性: 手順・確認コマンド・期待結果が対応していること。
-- 保守性: 上流（00〜02）と矛盾せず、関連文書へ責務を分離していること。
-
-## 失敗時対応
-- 参照不整合、用語不一致、公開境界の曖昧化を検出した場合は更新を停止する。
-- 自己修復は最大3回までとし、4回目相当は Hold として論点化する。
-- Architecture/ADR 本体の変更が必要な場合は、この文書では確定せず提案に留める。
+2026-03-03時点のE2E検証ログ（形成履歴）はGit履歴から参照します。現在のリリース判断の証跡としては、対象commit SHAに対して都度実行した確認結果を使います。

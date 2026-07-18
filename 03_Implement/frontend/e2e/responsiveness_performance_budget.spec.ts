@@ -1,56 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
+import { buildRepresentativePerformanceDocument } from "./helpers/representative_inquiry_fixture";
 
 type DurationRecord = {
   label: string;
   durationMs: number;
 };
-
-function buildPerformanceBudgetDocument() {
-  const now = "2026-06-29T00:00:00.000Z";
-  const cards = Array.from({ length: 300 }, (_, index) => {
-    const row = Math.floor(index / 20);
-    const col = index % 20;
-    return {
-      id: `perf-card-${index + 1}`,
-      text: index === 286 ? "rare performance signal 287" : `performance budget card ${index + 1}`,
-      x: 100 + col * 150,
-      y: 100 + row * 100,
-      textReviewed: index % 4 === 0,
-      claimType: index % 5 === 0 ? "hypothesis" : index % 3 === 0 ? "claim" : "fact",
-    };
-  });
-  const islands = Array.from({ length: 30 }, (_, index) => {
-    const firstCardIndex = index * 10;
-    return {
-      id: `perf-island-${index + 1}`,
-      title: `performance cluster ${index + 1}`,
-      cardIds: cards.slice(firstCardIndex, firstCardIndex + 10).map((card) => card.id),
-      shape: { kind: "rect" as const },
-    };
-  });
-  const edges = Array.from({ length: 299 }, (_, index) => ({
-    id: `perf-edge-${index + 1}`,
-    fromId: `perf-card-${index + 1}`,
-    toId: `perf-card-${index + 2}`,
-    type: "related",
-  }));
-
-  return {
-    version: 1,
-    id: "doc_perf_budget_01_representative",
-    title: "PERF-BUDGET-01 representative document",
-    createdAt: now,
-    updatedAt: now,
-    transform: { panX: 0, panY: 0, zoom: 1 },
-    cards,
-    edges,
-    islands,
-    readingOrder: cards.map((card) => card.id),
-    narratives: [],
-    evidenceLinks: [],
-    mergeSuggestionDecisions: [],
-  };
-}
 
 async function measure(records: DurationRecord[], label: string, action: () => Promise<void>) {
   const startedAt = Date.now();
@@ -90,7 +44,7 @@ test("PERF-BUDGET-01 representative document keeps core operations responsive", 
   await fileChooser.setFiles({
     name: "perf-budget-01-representative.json",
     mimeType: "application/json",
-    buffer: Buffer.from(JSON.stringify(buildPerformanceBudgetDocument()), "utf-8"),
+    buffer: Buffer.from(JSON.stringify(buildRepresentativePerformanceDocument()), "utf-8"),
   });
 
   await measure(durations, "replace-document", async () => {

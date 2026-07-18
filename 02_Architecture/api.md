@@ -72,13 +72,14 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 
 ---
 
-### 2.4 List（任意：MVPでは後回し可）
+### 2.4 List（契約先行固定、実装はMVPでは後回し可）
 
 **GET** `/docs`
 
-- Response：最小の一覧（id/title/updatedAt）
+- Response：`DocumentListItemV1[]`（`02_Architecture/schemas.md` §3.4.1）。返却項目は `id` / `title` / `updatedAt` のallowlistに限り、`cards` / `edges` / `islands` / `narratives` / `evidenceLinks` などの本文・構造フィールドは一覧項目に一切含めない（`DATA-MODEL-OPS-02` D1・AC-2）。
+- 対象集合：現認可主体がread可能な文書のみ。認証構成でowner/ACL解決ができない場合はfail-closed（エラー応答）とし、全文書一覧へのフォールバックは行わない。
 
-イントラ想定では一覧があると便利だが、MVPでは必須ではない。
+イントラ想定では一覧があると便利だが、実装自体はMVPでは必須ではない。本節は上記の契約（返却allowlist・対象集合・fail-closed方針）のみを先行固定するものであり、実装着手の可否は別途判断する。
 
 
 ### 2.5 Document監査イベント（FB-RM-PUB-05 / CE4）
@@ -639,6 +640,59 @@ export type AdminProvisionUserConflictError = {
 - expand: `users` / `user_identities` 追加後、Alembic `20260717_0007`以降は作成処理で旧`provider+external_uid`と`identity_provider_id+subject`を二重書きし、解決時は後者を優先する。expand列が空の旧行だけは旧keyへbounded fallbackし、成功時に新bindingを補完する。両keyが異なるUserへ一致する場合や既存bindingと入力が不一致の場合は`identity_mapping_conflict`で拒否する。互換IdPはsingle-tenant移行用であり、検証済みissuer/audienceに基づくSaaS認証とは扱わない。
 - contract: attribution APIは `reviewerRef` / `ownerRef` を `user:<users.id>` に統一し、外部subject直参照を受け付けない。
 - strict modeは contract 側の強制条件として扱い、未登録subjectを `403` で拒否する。
+
+### 9.5 エージェント登録 API（契約先行固定、`DATA-MODEL-OPS-02` D3/AC-5）
+
+`agent_registrations` をサーバー正本として採用する（実装は `EXT-CONN-02` で行う。本節は `EXT-CONN-02` 着手前提の契約先行固定であり、実装そのものの許可を意味しない）。§9.3の事前プロビジョニングAPIと同じ strict provisioning 型を採用し、通常の文書owner操作とは分離する。
+
+- 登録・失効はadminのstrict provisioning型操作に限定する。文書ownerによるtoken発行は不採用とする。
+- 平文tokenは保存しない。作成時のレスポンスで一度だけ表示し、以後は `tokenHash` のみで照合する。再取得APIは提供しない。
+- 登録は文書単位（`docId`）に束縛する。登録の存在自体を文書書込権限とみなさず、ingestごとに既存access-controlで別途許可判定する（`EXT-CONN-02` 受信面が強制）。
+
+**POST** `/admin/agent-registrations`
+
+- Request body：`AdminCreateAgentRegistrationRequest`
+- Response（201）：`AdminCreateAgentRegistrationResponse`（`token` はこの応答でのみ返る平文値）
+- Error：`403 identity_not_provisioned` 相当（§9.2と同一のstrict mode拒否契約）
+
+**DELETE** `/admin/agent-registrations/{registration_id}`
+
+- Response（200）：`AdminAgentRegistrationSummary`（`revokedAt` が設定された状態）
+- Not found：404
+- 冪等：失効済みへの再DELETEは既存の `revokedAt` を保った同一レスポンスを返す
+
+**GET** `/admin/agent-registrations`
+
+- Response：`AdminAgentRegistrationSummary[]`
+- `token` / `tokenHash` はこの一覧応答に含めない（§2.4 DocumentListItemV1と同種のallowlist方針）
+
+型契約（I/F固定）:
+
+```ts
+export type AdminCreateAgentRegistrationRequest = {
+  docId: string;
+  label?: string;
+};
+
+export type AdminCreateAgentRegistrationResponse = {
+  registrationId: string;
+  docId: string;
+  label?: string;
+  token: string; // 平文。この応答でのみ返り、以後は再取得不可
+  createdAt: string; // ISO 8601
+};
+
+export type AdminAgentRegistrationSummary = {
+  registrationId: string;
+  docId: string;
+  label?: string;
+  createdAt: string; // ISO 8601
+  createdBy: string; // opaque admin actorRef
+  revokedAt?: string | null; // ISO 8601、未失効はnull
+};
+```
+
+- 非目標：本契約ではページング・検索・token roll（再発行による旧token継続失効付き差し替え）・複数document一括登録は定義しない。
 
 ## 10. SaaS TenantContext / capability契約（ADR-0059、L0 Planned）
 

@@ -5,11 +5,11 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Open Readiness: Prepared
-- Execution: Hold
+- Execution: Ready
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
-- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`（計画文書更新のみ）
-- Out of Scope: 実装コード変更 / テストコード追加 / CI設定変更
+- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`（Phase 1〜6の計画文書更新）。2026-07-18の実行計画節以降は、初回実行バッチとして`03_Implement/frontend/src/domain/view/hierarchy_level.ts`・同`.test.ts`・`App.tsx`（QA-MONKEY-13再発検知テストの追加とその可読化リファクタ）も対象に含む。
+- Out of Scope: CI設定変更。実装コード変更・テストコード追加は、2026-07-18の実行計画節が承認した初回実行バッチの範囲でのみ許可する（それ以外の無制限な実装変更は引き続き対象外）。
 - Expected verification level: `unit`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 - Policy reference: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -29,7 +29,7 @@
 |---|---|---|---|
 | B-UNIT-01 | 実装タスク起票承認未了 | Pending-1 に起票ID追記 | QA lead |
 | B-UNIT-02 | 上流契約凍結未反映 | Pending-2 に凍結参照ID追記 | Architecture owner |
-| B-UNIT-03 | 環境制約 | unit実行プロファイルを選択済み | QA engineer |
+| B-UNIT-03 | 環境制約 → 解消済み（2026-07-18、下記Phase 6参照） | unit実行プロファイルを選択済み | QA engineer |
 
 ## Phase 2: ADR C/D/C（簡易）
 ### Context
@@ -106,11 +106,16 @@ Open化ゲートを「依存解消ID」「段階ゲート順序」「失敗分�
 - **保留継続**: B-UNIT-01/B-UNIT-02/B-UNIT-03のいずれか未解消。
 
 ### Pending approvals（未承認は保持）
-- Pending-1: テスト拡張実行の着手承認（実装タスク起票）。
-- Pending-2: 上流契約凍結の最終承認反映。
+- Pending-1: テスト拡張実行の着手承認（実装タスク起票）。→ 承認済み（2026-07-16、Maintainer/hat47x、本セッションでの明示承認）。
+- Pending-2: 上流契約凍結の最終承認反映。→ 承認済み（2026-07-16、Maintainer/hat47x。参照する上流契約凍結は `DATA-CONTRACT-01`、Done）。
 
 ### Execution
-- `Execution: Hold`（Pending解消まで維持）
+- Pending-1/Pending-2に続き、B-UNIT-03（unit実行プロファイル未選択）を2026-07-18に解消した。
+- **B-UNIT-03確定値**: 次の2本立てで固定する。
+  1. frontend: `npm run test`（vitest全件、WSLクローン`~/kjnative-fe`で実行。DrvFs経由の`/mnt/c/...`では実行しない）。
+  2. backend: `python3 -m pytest`（既定プロファイル。PostgreSQL roundtripテストは`KJ_ATLAS_RUN_PG_TESTS`未設定で自動スキップされ、CI既定と同一になる）。
+  - 根拠: どちらもCIが実行するのと同一のプロファイルであり、追加インフラ・環境変数・外部依存を要求しない。PG roundtripが必要な変更では`KJ_ATLAS_RUN_PG_TESTS=1`のopt-in実行を証跡に追記する（プロファイルの置換ではなく追加実行として扱う）。
+- `Execution: Ready`（承認・技術的ブロッカーはすべて解消。初回実行バッチは別PRで進める）
 
 
 ### 修復上限（共通）
@@ -198,3 +203,50 @@ Open化ゲートを「依存解消ID」「段階ゲート順序」「失敗分�
 | Gate可観測性 | `rg -n "O-UNIT-0[1-4]|B-UNIT-0[1-3]|G1 Unit|G2 Integration|G3 E2E Traceability|Execution: Hold" 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md` | 必須語彙が全件ヒット |
 | メタ整合 | `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md` | exit 0 |
 | 差分健全性 | `git diff --check -- 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md` | 警告なし |
+
+（注: 上記のうち`validate_active_issue_memos.py --files`は現CLIが`--root`のみを受け付けるため、`python3 01_Plans/issues/validate_active_issue_memos.py`のデフォルト実行へ読み替える。`DX-E2E-08`で確認済み。）
+
+## Sonnet級エージェント実行計画（2026-07-18）: 残ブロッカー解除と初回実行バッチ
+
+Pending-1/2は2026-07-16にMaintainer承認済み。残るB-UNIT-03は技術的固定のみであり、この節の確定値で解除する（実装側で再選択しない）。
+
+### ブロッカー解除の確定値
+
+- **B-UNIT-03（unit実行プロファイル）**: 次の2本立てで固定する。
+  1. frontend: `npm run test`（vitest全件、WSLクローン`~/kjnative-fe`で実行。DrvFs経由の`/mnt/c/...`では実行しない）。
+  2. backend: `python3 -m pytest`（既定プロファイル。PostgreSQL roundtripテストは`KJ_ATLAS_RUN_PG_TESTS`未設定で自動スキップされ、CI既定と同一になる）。
+  - 根拠: どちらもCIが実行するのと同一のプロファイルであり、追加インフラ・環境変数・外部依存を要求しない。PG roundtripが必要な変更では`KJ_ATLAS_RUN_PG_TESTS=1`のopt-in実行を証跡に追記する（プロファイルの置換ではなく追加実行として扱う）。
+
+### 解除手順（docs-only、1 PR）
+
+1. Phase 1のblocker表（B-UNIT-03行）とPhase 6のExecution欄を上記確定値と実施日で更新し、`Execution: Hold`を`Execution: Ready`へ変更する。
+2. 検証: `python3 01_Plans/issues/validate_active_issue_memos.py` / `python3 01_Plans/docs_check.py` / `git diff --check`。
+
+### 初回実行バッチ（解除後の最初の1 PR）
+
+本issueの主旨は「欠陥検知能力ベース」の拡充であり、カバレッジ率を目標にしない。初回バッチは**直近の実バグの再発検知能力**を固定する:
+
+1. `QA-MONKEY-10`（ラベルカリングによる見かけ喪失、Done）と`QA-MONKEY-12`（作業モードのボタン重なり）について、再発を検知するunit/domainテストが現存するかを棚卸しする（`03_Implement/frontend/src/canvas/`のculling系テスト、`visual_language.guard.test.ts`等をGrepで確認）。
+2. 検知テストが欠けている実バグ1件へ、失敗3分類語彙（本issueのG1定義）に従うテストを追加する。
+3. 実行: 上記確定プロファイル（`npm run test` / `python3 -m pytest`）で全件greenを確認し、証跡をG1欄へ記録する。
+4. ガードレール: 製品挙動を変更しない（テスト追加のみ）。同一論点でVerify 3連続失敗時は停止し、Pending欄へ理由と再開条件を記録する。
+
+### 初回実行バッチ 実装記録（2026-07-18）
+
+**棚卸し結果**: `QA-MONKEY-10`（`label_culling.test.ts`の「keeps the active card over overlapping plain cards regardless of id order」で明示的に再発検知済み）と`QA-MONKEY-12`（`WorkModeTabs.test.ts`の「hides every tabpanel except the active one」で、根本原因である排他的タブ構造そのものを構造的に固定済み）は、いずれも**既にunit/domainレベルで再発検知テストが存在**しており、ギャップがなかった。
+
+計画の想定（この2件のいずれかにギャップがある）と実際が異なったため、同issue群からより最近の実バグを追加調査し、`QA-MONKEY-13`（Alt+Shift+2構造レベルショートカット、2026-07-15解消）を検出した。この修正はフルE2Eスイート（165/165）でのみ検証されており、**unit/domainレベルの再発検知テストが存在しないこと**を確認した（`hierarchy_level.test.ts`の既存テストは純粋関数`maxDepthForHierarchyLevel`/`resolveHierarchyLevel`のみを対象とし、実際の欠陥箇所であった`App.tsx`内のeffect連鎖の相互作用は対象外だった）。
+
+**追加した検知テスト**:
+- `03_Implement/frontend/src/domain/view/hierarchy_level.ts`に`clampMaxDepthToAvailable(maxDepth, maxAvailableDepth)`を新規追加した。QA-MONKEY-13の根本原因だった`App.tsx`内のインライン条件（`if (maxDepth > maxAvailableDepth && maxAvailableDepth > 0)`）を同じロジックのまま純関数として抽出し、`App.tsx`側は抽出した関数を呼ぶだけに置き換えた（**製品挙動は変更していない**、既存条件のリファクタのみ）。
+- `hierarchy_level.test.ts`に4 testsを追加した。中心の1件は「`maxAvailableDepth=0`のとき`maxDepth=1`（mid）を`0`へ切り詰めない」というQA-MONKEY-13の実際の再現条件そのものを検証する。
+
+**なぜ抽出が必要だったか**: 欠陥の実体はReactのeffect連鎖の相互作用であり、`hierarchy_level.test.ts`の既存テストが対象としていた純粋関数のロジック自体は当時から正しかった（issueの「除外した仮説」で明示的に否定済み）。条件をインラインのままにすると、レンダリングやeffect実行を伴わないunitテストでは検知できない。純関数として抽出することで、E2Eを伴わない高速なunitテストが実際の製品コードパス（`App.tsx`が呼ぶのと同じ関数）を直接検証できるようになった。
+
+### 検証結果（2026-07-18）
+
+- `npm run typecheck`: 0 errors。
+- `npx vitest run`: **1071/1071 pass**（新規4 testsを含む）。唯一失敗する`src/import/external_agent_workflow_doc.test.ts`は`~/kjnative-fe`検証用ミラーの環境固有の制約で、本変更と無関係（既知の事象）。
+- QA-MONKEY-13を実際に発見した`e2e/header_toolbar_layout.spec.ts`（"modifier shortcuts update visible view and hierarchy state"を含む）を、Docker Desktop連携で`mcr.microsoft.com/playwright:v1.58.2-jammy`公式イメージを使い実行し、**9/9 pass**を確認した（リファクタによる回帰なし）。
+
+G1（unit段階ゲート）欄への証跡: QA-MONKEY-13の再発は`clampMaxDepthToAvailable`のunitテストで即座に（E2E実行なしで）検知可能になった。

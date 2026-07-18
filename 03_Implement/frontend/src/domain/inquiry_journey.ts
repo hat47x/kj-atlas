@@ -273,23 +273,10 @@ export function appendRoundRecord(
     }
   }
 
-  const ancestors = new Set<string>();
-  for (const parentId of record.parentRoundIds) {
-    ancestors.add(parentId);
-    for (const ancestorId of collectAncestorIds(parentId, roundsById)) {
-      ancestors.add(ancestorId);
-    }
-  }
-
-  let previousMaximum = 0;
-  for (const ancestorId of ancestors) {
-    const ancestor = roundsById.get(ancestorId);
-    if (ancestor?.stage === record.stage) {
-      previousMaximum = Math.max(previousMaximum, ancestor.iteration);
-    }
-  }
-
-  const nextRecord: RoundRecordV1 = { ...record, iteration: previousMaximum + 1 };
+  const nextRecord: RoundRecordV1 = {
+    ...record,
+    iteration: nextRoundIteration(journey, record.stage, record.parentRoundIds),
+  };
   const nextHeads = journey.headRoundIds.filter((headId) => !record.parentRoundIds.includes(headId));
   nextHeads.push(record.roundId);
 
@@ -303,6 +290,26 @@ export function appendRoundRecord(
       updatedAt: record.updatedAt,
     },
   };
+}
+
+export function nextRoundIteration(
+  journey: InquiryJourneyV1,
+  stage: RoundStage,
+  parentRoundIds: string[]
+): number {
+  const roundsById = new Map(journey.roundRecords.map((round) => [round.roundId, round]));
+  const ancestors = new Set<string>();
+  for (const parentId of parentRoundIds) {
+    ancestors.add(parentId);
+    for (const ancestorId of collectAncestorIds(parentId, roundsById)) ancestors.add(ancestorId);
+  }
+
+  let previousMaximum = 0;
+  for (const ancestorId of ancestors) {
+    const ancestor = roundsById.get(ancestorId);
+    if (ancestor?.stage === stage) previousMaximum = Math.max(previousMaximum, ancestor.iteration);
+  }
+  return previousMaximum + 1;
 }
 
 export function validateInquiryBundle(bundle: InquiryBundleV1): InquiryValidationIssue[] {

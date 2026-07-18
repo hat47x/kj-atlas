@@ -8,6 +8,7 @@
 - Compose は `web`、`api`、`db` の3サービスで構成します。
 - 利用者が設定する環境変数は、例外なく `KJ_ATLAS_` で始めます。
 - サードパーティコンテナや build tool が内部的に別名を要求する場合でも、公開設定キーは `KJ_ATLAS_*` だけにします。
+- 標準構成は **loopback（`127.0.0.1`）限定の同一ホスト評価用**です（`DEPLOY-NET-01`）。`KJ_ATLAS_WEB_PORT` は port 番号だけを変え、bind 範囲を拡張しません。別端末・LAN・Internet からの利用は、TLS 終端・認証 proxy・接続元制限を伴う別 deployment profile として扱い、base Compose の port mapping を直接書き換えません。
 - 本番相当の構成では、Compose を起点に組織の認証、監視、バックアップ、秘密管理を追加します。
 
 サードパーティイメージが要求する変数名は、`01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md` に基づく private adapter 名として扱います。運用者が設定する値は `KJ_ATLAS_*` だけです。
@@ -31,7 +32,7 @@ Compose と frontend build で利用者が設定する公開キーは次です�
 | Key | Default | Purpose |
 | --- | --- | --- |
 | `KJ_ATLAS_RUNTIME_PROFILE` | `evaluation` | backend実行profile。現行Composeは評価用途を既定とし、`saas-multitenant`は起動拒否。 |
-| `KJ_ATLAS_WEB_PORT` | `8080` | `web` の公開 port |
+| `KJ_ATLAS_WEB_PORT` | `8080` | `web` の loopback（`127.0.0.1`）port。ホスト外からの到達は既定で不可（`DEPLOY-NET-01`） |
 | `KJ_ATLAS_POSTGRES_DB` | `kj_atlas` | Compose PostgreSQL の database 名 |
 | `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
 | `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | Compose PostgreSQL の password |
@@ -49,7 +50,7 @@ Compose と frontend build で利用者が設定する公開キーは次です�
 | Public key | Compose mapping | 備考 |
 | --- | --- | --- |
 | `KJ_ATLAS_RUNTIME_PROFILE` | `api.environment.KJ_ATLAS_RUNTIME_PROFILE` | backend profile selector |
-| `KJ_ATLAS_WEB_PORT` | `web.ports` | web 公開ポート |
+| `KJ_ATLAS_WEB_PORT` | `web.ports`（`127.0.0.1:<port>:80`） | loopback bind の port 番号のみを変更する |
 | `KJ_ATLAS_POSTGRES_DB` | `db.environment.POSTGRES_DB` | third-party private adapter への内部写像 |
 | `KJ_ATLAS_POSTGRES_USER` | `db.environment.POSTGRES_USER` | third-party private adapter への内部写像 |
 | `KJ_ATLAS_POSTGRES_PASSWORD` | `db.environment.POSTGRES_PASSWORD` | third-party private adapter への内部写像 |

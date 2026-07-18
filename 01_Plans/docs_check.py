@@ -9,9 +9,18 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from docs_contract_checks import (
+    check_cli_option_commands,
+    check_compose_service_commands,
     check_current_history_headings,
+    check_document_contract_baseline,
     check_history_metadata,
+    check_localhost_probe_commands,
+    check_npm_script_commands,
+    check_public_boundary,
     check_relative_links,
+    check_repository_path_commands,
+    check_runtime_parameter_key_commands,
+    check_safety_routes,
     tracked_markdown_paths as contract_tracked_markdown_paths,
 )
 from issues.validate_active_issue_memos import discover_active_rows, validate
@@ -80,7 +89,16 @@ def run_docs_check(
     markdown_paths = contract_tracked_markdown_paths(repository_root)
     errors.extend(finding.render() for finding in check_relative_links(repository_root, markdown_paths))
     errors.extend(finding.render() for finding in check_current_history_headings(repository_root))
+    errors.extend(finding.render() for finding in check_document_contract_baseline(repository_root))
     errors.extend(finding.render() for finding in check_history_metadata(repository_root))
+    errors.extend(finding.render() for finding in check_public_boundary(repository_root))
+    errors.extend(finding.render() for finding in check_safety_routes(repository_root))
+    errors.extend(finding.render() for finding in check_npm_script_commands(repository_root, markdown_paths))
+    errors.extend(finding.render() for finding in check_compose_service_commands(repository_root, markdown_paths))
+    errors.extend(finding.render() for finding in check_runtime_parameter_key_commands(repository_root, markdown_paths))
+    errors.extend(finding.render() for finding in check_repository_path_commands(repository_root, markdown_paths))
+    errors.extend(finding.render() for finding in check_cli_option_commands(repository_root, markdown_paths))
+    errors.extend(finding.render() for finding in check_localhost_probe_commands(repository_root, markdown_paths))
     if run_tests:
         errors.extend(_run_contract_tests(repository_root))
 

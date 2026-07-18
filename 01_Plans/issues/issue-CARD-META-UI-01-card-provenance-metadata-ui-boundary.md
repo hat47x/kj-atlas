@@ -1,14 +1,14 @@
 # Issue Draft: CARD-META-UI-01 カード起票者・出典メタデータUI境界
 
 - Type: Feature request / Security / UX
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: TBD (Productization Program Owner / Security Officer / UX Lead)
 - Scope: `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/review_attribution.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/frontend/src/canvas/CardView.tsx`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/export/`, `04_Documentation/`
 - Related Backlog: `CARD-META-UI-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0056-card-provenance-metadata-boundary.md`（本Issueの境界提案）, `02_Architecture/schemas.md`（`Card.meta` 将来拡張）, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/review_attribution.md`, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0056-card-provenance-metadata-boundary.md`（本Issueの境界提案、Accepted 2026-07-16）, `02_Architecture/schemas.md`（`Card.meta` 将来拡張）, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/review_attribution.md`, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -20,8 +20,12 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `ADR-0056` / `CARD-META-UI-01-DQ-01`
+- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0056` Accepted 2026-07-16）
+- DecisionQueueRef（未確定時の参照先）: Resolved（`ADR-0056` の決定案1〜5で固定）
+
+## Draft→Open 2026-07-16: ADR-0056 Accepted
+
+`ADR-0056` がMaintainer代理裁可によりAcceptedとなった（受理記録は同ADR参照）。本Issueの唯一のDecision Queueゲートが解消したため、Open化する。次の作業はT3（UI仕様案作成）〜T5（フィールド命名・表示責務の調整）であり、それらが完了するまでT6（実装）へは進まない。
 
 ## 1) 課題 / Problem statement
 
@@ -64,7 +68,7 @@
 
 | 分類 | 例 | UIの基本方針 | 保存境界候補 |
 |---|---|---|---|
-| 状態メタ | `claimType`, `holdState`, `critiqueTags`, `textReviewed` | カード上の小さなバッジと詳細パネルに表示 | `DocumentV2.cards[]` 内に既存保存 |
+| 状態メタ | `claimType`, `holdState`, `critiqueTags`, `textReviewed` | カード上の小さなバッジと詳細パネルに表示 | `DocumentV1.cards[]` 内に既存保存 |
 | provenanceメタ | 起票者、作成日時、取り込み元、引用元、外部source id | カード上には常設しない。選択時の詳細パネルで確認し、共有前確認で同梱可否を明示 | `Card.meta` / view-scoped / import artifact のいずれかを要判断 |
 | accountabilityメタ | 最終更新者、レビュー者、承認者、所有者 | review attribution / audit / ownerRef と混同しない。編集UIは高権限操作へ見えるため別判断 | `reviewAttribution`, audit log, future owner policy |
 | 公開説明用メタ | 「利用者入力」「インポート由来」「AI提案由来」など | 個人を出さずに出所種別を表示する | optional enum / derived label |
@@ -100,22 +104,22 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] AC-1: 状態メタ、provenanceメタ、accountabilityメタ、公開説明用メタの分類が `02_Architecture` と本Issueで一致する。
-- [ ] AC-2: 起票者などの個人・組織識別情報をカード本体に常設表示しない方針、または常設表示する場合の理由とredaction方針が決まっている。
-- [ ] AC-3: 右側詳細パネルで表示するカードメタ項目、未設定時の表示、編集可否、キーボード操作、フォーカス順が定義されている。
-- [ ] AC-4: 共有/export/review pack/外部エージェント依頼パッケージに provenanceメタを含めるかどうかの既定値と確認文言が定義されている。
-- [ ] AC-5: import 由来の provenanceメタは非信頼データとして扱われ、権限・レビュー済み・所有権の根拠にならない。
-- [ ] AC-6: 実装へ進む場合、代表fixtureでマウス選択・キーボード選択・共有前確認の e2e が通る。
+- [x] AC-1: 状態メタ、provenanceメタ、accountabilityメタ、公開説明用メタの分類が `02_Architecture` と本Issueで一致する。
+- [x] AC-2: 起票者などの個人・組織識別情報をカード本体に常設表示しない方針、または常設表示する場合の理由とredaction方針が決まっている。
+- [x] AC-3: 右側詳細パネルで表示するカードメタ項目、未設定時の表示、編集可否、キーボード操作、フォーカス順が定義されている。
+- [x] AC-4: 共有/export/review pack/外部エージェント依頼パッケージに provenanceメタを含めるかどうかの既定値と確認文言が定義されている。
+- [x] AC-5: import 由来の provenanceメタは非信頼データとして扱われ、権限・レビュー済み・所有権の根拠にならない。
+- [x] AC-6: 実装へ進む場合、代表fixtureでマウス選択・キーボード選択・共有前確認の e2e が通る。
 - [x] AC-3a: 現行MVPの実装範囲として、記録情報の折りたたみ表示、未提供の責任主体メタデータの明示、既存の遡及情報エディタとの役割分担が定義され、E2Eで確認できる。
 
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 `schemas.md` と `data_model_operations_overview.md` で `Card.meta` の扱いを「未確定・本Issue管理」に接続する。
 - [x] T2 `review_attribution.md` に、レビュー帰属とカード起票者/provenanceメタを混同しない注記を追加する。
-- [ ] T3 UI仕様案を作る（カード本体、SidePanel、共有前確認、import警告）。
-- [ ] T4 永続先候補（`Card.meta` / view-scoped / import artifact-scoped）を比較し、ADR要否を判断する。
-- [ ] T5 `DOMAIN-TRACE-01` の `seq` / `source` と衝突しないフィールド命名・表示責務を決める。
-- [ ] T6 実装する場合は `Card` 型、fixtures、SidePanel、i18n、share/export、import validation、e2e を分割する。
+- [x] T3 UI仕様案を作る（カード本体、SidePanel、共有前確認、import警告）。
+- [x] T4 永続先候補を比較し、Acceptedの`ADR-0056`により主体メタデータをMVPでは永続化しない境界に固定する。
+- [x] T5 `DOMAIN-TRACE-01` の `seq` / `source` と衝突しないフィールド命名・表示責務を決める。
+- [x] T6 主体メタデータを追加しないMVP境界のもとで、既存の `Card` 型、fixtures、SidePanel、i18n、share/export、import validationを確認し、必要なE2Eだけを追加する。
 - [x] T3a 現行MVPの安全な表示範囲（カードID、記録の種類、ドキュメント作成/更新日時、責任主体メタデータ未提供）をSidePanelへ実装し、キーボードで展開できる折りたたみUIとした。
 - [x] T6a `card_trace_meta.spec.ts` に、マウスで記録情報を展開し、責任主体メタデータを推測しないことを確認するE2Eを追加した。
 
@@ -136,6 +140,14 @@
 ## ADR提案との関係（2026-07-15）
 
 `ADR-0056` を本Issueの境界提案として起票した。提案では、MVPの標準UI・保存・import・共有/exportに主体メタデータを追加せず、既存の非主体メタデータとレビュー帰属を分離する。Decidersの受理までは `DecisionStatus: Pending` と `Status: Draft` を維持し、主体メタデータの実装へは進まない。
+
+## 完了記録（2026-07-16）
+
+- Acceptedの `ADR-0056` に従い、起票者・作成者・所有者等の主体メタデータをMVPでは保存・編集・推測しない境界を維持した。境界変更がないため、新しいADRは起票していない。
+- `data_model_operations_overview.md` に、状態、非主体の遡及情報、レビュー帰属、責任主体、公開説明用出所の分類と、表示・操作・共有境界を追加した。
+- `schemas.md` に残っていたPending表記をAccepted判断へ更新し、旧 `DocumentV2` 表記を現行の `DocumentV1` へ修正した。
+- SidePanelの記録日時を画面言語に合う形式で表示し、元のISO日時は `time` 要素の `dateTime` として保持した。
+- `card_trace_meta.spec.ts` でマウス選択、キーボード選択と展開、共有前確認を含む6件が成功した。`pnpm typecheck` とブラウザでの日本語表示確認も成功した。
 
 ## 8) 代替案 / Alternatives considered
 

@@ -4,6 +4,7 @@ import type { CSSProperties, MouseEvent } from "react";
 import { getIslandPolygonPoints } from "../domain/geometry/island_geometry";
 import { isSelfIntersectingPolygon } from "../domain/geometry/polygon_self_intersection";
 import { isPointInPolygon } from "../domain/geometry/point_in_polygon";
+import { shouldLoadLegacyIslandImage } from "../domain/legacy_island_image";
 import {
   buildIslandSummaryLabelId,
   buildIslandTitleLabelId,
@@ -183,7 +184,9 @@ function IslandViewComponent({
   const hideUnreviewedSummary = safeMode && island.summaryReviewed === false && hasSummary;
   const isCollapsed = isCollapsedForView ?? island.collapsed === true;
   const headerHeight = hasSummary || abstractMapView ? ISLAND_HEADER_HEIGHT_WITH_SUMMARY : ISLAND_HEADER_HEIGHT;
-  const islandBackgroundImage = island.imageUrl ? `url("${encodeURI(island.imageUrl)}")` : null;
+  const islandBackgroundImage = shouldLoadLegacyIslandImage(safeMode, island.imageUrl)
+    ? `url("${encodeURI(island.imageUrl!)}")`
+    : null;
   const polygonPoints = getIslandPolygonPoints(island);
   const hasPolygon = polygonPoints.length >= 3 && !isSelfIntersectingPolygon(polygonPoints);
   // UX-SCALE-01 (c): (vertexCount - 4) / 2 = count of reflex ("concave")

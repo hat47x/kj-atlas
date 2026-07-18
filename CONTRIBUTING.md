@@ -63,7 +63,7 @@ pytest
 - `03_Implement/*` 変更時は、原則として `docker compose` によるE2E確認（`web + api + db`）を実施してください。
   - `docker compose up --build -d`
   - `docker compose ps`
-  - `curl -fsS http://localhost:8080/api/health`
+  - `curl -fsS http://localhost:8080/api/healthz`
   - `PUT /api/docs/{doc_id}` と `GET /api/docs/{doc_id}` 往復確認
   - `npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line`（smoke + document replace）
 - Docker未導入の場合は、SQLite代替E2E（`backend:8000` + `frontend:4173`）を実施してください。
@@ -144,6 +144,8 @@ CIの `FRONTEND_LINT_PHASE` が `A/B/C` 以外なら設定不正です。Reposit
 - `frontend-lint`: lintポリシー適用（Phase Aは警告、Phase B/Cは失敗）。
 - `frontend-typecheck`: TypeScript型検査。
 - `frontend-test`: Frontendテストとbuild検証。
+
+CIは変更パスからアプリ検証範囲を判定します。文書と内部issueだけの変更では`docs-contract`を実行し、frontend/backendの重いjobは省略します。`03_Implement/frontend/`または`03_Implement/backend/`を変更した場合は該当側を実行し、CI workflowや変更範囲分類器を変更した場合は両方を実行します。判定規則の正本は`01_Plans/ci_change_scope.py`です。
 
 fail-on-error条件:
 

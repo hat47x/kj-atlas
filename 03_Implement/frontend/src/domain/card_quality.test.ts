@@ -6,6 +6,8 @@ import {
   CARD_QUALITY_DECISIONS,
   CARD_QUALITY_QUESTION_KINDS,
   answerCardQualityQuestion,
+  beginCardQualityRewrite,
+  cardQualityRestoreTarget,
   currentCardQualityQuestion,
   openCardQualityAssist,
   type CardQualityAssistState,
@@ -151,6 +153,39 @@ describe("openCardQualityAssist / answerCardQualityQuestion", () => {
     resolveAll(openCardQualityAssist(frozenCard), () => "apply");
     expect(frozenCard.critiqueTags).toEqual(fixture.card.critiqueTags);
     expect(frozenCard.text).toBe(fixture.card.text);
+  });
+});
+
+describe("card quality rewrite restoration", () => {
+  it("keeps the original text as the restoration target", () => {
+    const state = beginCardQualityRewrite(
+      openCardQualityAssist(findCardQualityFixture("multi_center").card),
+      "original wording"
+    );
+
+    expect(cardQualityRestoreTarget(state)).toBe("original wording");
+  });
+
+  it("returns undefined before a rewrite begins", () => {
+    const state = openCardQualityAssist(findCardQualityFixture("single_center").card);
+    expect(cardQualityRestoreTarget(state)).toBeUndefined();
+  });
+
+  it("preserves the first original text when rewrite begins more than once", () => {
+    const initial = openCardQualityAssist(findCardQualityFixture("multi_center").card);
+    const first = beginCardQualityRewrite(initial, "first original");
+    const second = beginCardQualityRewrite(first, "later edited text");
+
+    expect(second).toBe(first);
+    expect(cardQualityRestoreTarget(second)).toBe("first original");
+  });
+
+  it("clears the restoration target when the restored card is opened again", () => {
+    const card = findCardQualityFixture("multi_center").card;
+    const rewriting = beginCardQualityRewrite(openCardQualityAssist(card), card.text);
+    const reopenedAfterRestore = openCardQualityAssist(card, rewriting);
+
+    expect(cardQualityRestoreTarget(reopenedAfterRestore)).toBeUndefined();
   });
 });
 

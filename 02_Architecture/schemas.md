@@ -569,6 +569,23 @@ export type DocumentV1 = {
 - `reviewAttribution.reviewedAt` は `human_reviewed` のとき ISO 8601、`unreviewed` のとき `null` とする。`reviewerRef` / `ownerRef` は不透明参照であり、生IDを含めない。
 - 個別EvidenceLink API、個別Card分類API、個別Edge endpoint APIはMVP範囲外とする。
 
+#### 3.4.1 DocumentListItemV1（一覧専用の最小射影、DATA-MODEL-OPS-02 D1/AC-2）
+
+`GET /docs`（`api.md` §2.4）が返す一覧項目は、`DocumentV1` の部分集合ではなく、次の allowlist 型のみを許可する契約とする。
+
+```ts
+export type DocumentListItemV1 = {
+  id: string;
+  title?: string;
+  updatedAt: string; // ISO 8601
+};
+```
+
+- `cards` / `edges` / `islands` / `narratives` / `evidenceLinks` / `relationSummaries` など `DocumentV1` の本文・構造フィールドは、空配列であっても一覧項目に含めない。
+- 対象集合は「現認可主体がread可能な文書」に限る。認証構成でowner/ACL解決ができない場合はfail-closed（エラー応答）とし、全文書露出へフォールバックしない。
+- `title` は `DocumentV1.title` と同じ optional 契約を継承する（無題文書は省略可）。
+- この型は一覧表示専用の射影であり、`DocumentV1` への書き戻し・保存契約には関与しない。
+
 ---
 
 ## 4. JSONスキーマ（サーバ検証用）
@@ -587,7 +604,7 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 1. `Card.w/h`（カードサイズ）
 2. ~~`EdgeType` の拡張（negate/hypothesis 等）~~ → DOMAIN-KJ-01 で導入済み（§3.3）
 3. `Island`（囲み、タイトル、所属）
-4. `Asset`（画像挿入・生成結果の参照）
+4. `Asset`（画像挿入・生成結果の参照。現行`Island.imageUrl`は由来・権利情報を持たない旧式フィールドであり、この将来モデルには含めない。SafeMode境界と移行は`SEC-VISUAL-ASSET-01` / `ADR-0059`で管理する）
 5. `Card.meta`（出自情報、タグ、引用元など。非主体メタの `seq`/`source` は DOMAIN-TRACE-01 で導入済み=§15。カード起票者など主体メタのUI/保存/redaction境界は引き続き `CARD-META-UI-01` で管理する）
 6. `Patch`（差分同期）
 
@@ -1125,7 +1142,7 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 
 - `Card.sources`（既存）: canonical 化における**統合元カード id** の配列。意味は不変（再定義禁止）。
 - `Card.meta.source`（本節）: **文書外部**の原データへの参照（自由記述）。カード id を指すためには使わない。
-- 起票者・作成者・最終更新者・所有者などの**主体（provenance/accountability）メタは `Card.meta` に含めない**。これらの UI・保存・redaction 境界は `CARD-META-UI-01`（Decision Queue: `CARD-META-UI-01-DQ-01`、Pending）の確定を待つ。本節が確定するのは非主体メタ（`seq`/`source`）のみである。
+- 起票者・作成者・最終更新者・所有者などの**主体（provenance/accountability）メタは `Card.meta` に含めない**。UI・保存・redaction境界はAcceptedの `ADR-0056` と `CARD-META-UI-01` に従い、主体メタデータを追加する場合はスキーマ、認証、権限、保持、共有範囲をまとめた新しい判断を先に行う。本節が確定するのは非主体メタ（`seq`/`source`）のみである。
 
 ### 15.3 取り込み境界（meta 内未知キーの fail-closed）
 

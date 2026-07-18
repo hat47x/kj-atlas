@@ -60,11 +60,15 @@ curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 
 ブラウザで動く同梱の画面（SPA）は `X-API-Key` を送らないため、`KJ_ATLAS_API_KEY` を設定すると画面からの操作は 401 になります。API key は `curl` などプログラムからのアクセスを保護するための簡易保護です。ブラウザ配信を保護する場合は、画面に鍵を持たせるのではなく前段の認証 proxy で行います。公開ネットワークでの本格運用では、TLS、認証 proxy、アクセス制御、監査を組み合わせてください。
 
+> 注意: 標準 Docker Compose はこのキーをホスト環境から pass-through 配送します（ホスト側で未設定の場合はコンテナ内でも未設定のままで、既定の無効状態を維持します。[runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照）。
+
 ## SafeMode の画面確認
 
 share/export の前は、「共有と再現」パネルの `共有前チェック` で SafeMode、公開範囲、未レビュー情報、出力形式を確認します。SafeMode が有効な状態では、export/share コンテキストで機微テキストをマスクすること、固定マスク対象を無効化できないこと、未レビューのドラフトを含めないことが画面上に示されます。
 
 ![SafeMode と共有前の確認画面](assets/screenshots/share-export-safe-mode.png)
+
+> 起動面の注意: 以下の `export KJ_ATLAS_*` 例は direct 起動時の設定例です。標準 Docker Compose は `KJ_ATLAS_LLM_PROVIDER` のみを `api` コンテナへ配送し、`KJ_ATLAS_LOCAL_LLM_BASE_URL` 等の接続情報キーは配送しません。配送範囲は [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)（`Delivery surface` 列）を参照してください。
 
 ## LLM provider の安全境界
 
@@ -86,6 +90,8 @@ export KJ_ATLAS_LOCAL_LLM_BASE_URL='http://localhost:8001'
 接続先は `<base_url>/generate` です。local と呼んでいても、実際の宛先が外部ネットワークでないことを運用側で確認してください。
 
 送信requestはUTF-8 JSONで1MiB以下に制限され、task、temperature、max token数を接続前に検証します。過大promptや`NaN`等の不正値は本文をerrorへ表示せず`provider_validation`で停止し、fallback設定があっても別の失敗分類へ置き換えません。
+
+> 注意: 標準 Docker Compose は `KJ_ATLAS_LOCAL_LLM_BASE_URL` を配送しません。Compose 上で `local` provider を検証する場合は、検証専用の `docker-compose.llm-stub.yml` overlay を使ってください。また `api` コンテナ内から見た `http://localhost:8001` はホストではなく `api` コンテナ自身を指すため、Compose 環境ではこの例をそのまま転記しないでください。
 
 ### `large-scale`
 

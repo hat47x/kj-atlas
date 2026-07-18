@@ -5,6 +5,38 @@ on:
   pull_request:
 
 jobs:
+  change-scope:
+    name: Detect application change scope
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.scope.outputs.frontend }}
+      backend: ${{ steps.scope.outputs.backend }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed paths
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --no-tags origin "${{ github.base_ref }}"
+            base_commit="$(git merge-base FETCH_HEAD HEAD)"
+          else
+            before="${{ github.event.before }}"
+            if [ -n "$before" ] && ! printf '%s' "$before" | grep -Eq '^0+$' && git cat-file -e "${before}^{commit}" 2>/dev/null; then
+              base_commit="$before"
+            else
+              base_commit="$(git rev-list --max-parents=0 HEAD)"
+            fi
+          fi
+
+          git diff --name-only "$base_commit" HEAD | python 01_Plans/ci_change_scope.py >> "$GITHUB_OUTPUT"
+
   docs-contract:
     name: Docs contract (fail-closed repository rules)
     runs-on: ubuntu-latest
@@ -46,6 +78,8 @@ jobs:
 
   frontend-regression-guards:
     name: Frontend regression guards (import/serialization/shape)
+    needs: change-scope
+    if: needs.change-scope.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -114,6 +148,8 @@ jobs:
 
   frontend-i18n-safe-mode-guards:
     name: Frontend i18n safe-mode leakage guards
+    needs: change-scope
+    if: needs.change-scope.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -181,6 +217,8 @@ jobs:
 
   frontend-i18n-document-regression:
     name: Frontend i18n document hash regression
+    needs: change-scope
+    if: needs.change-scope.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -248,6 +286,8 @@ jobs:
 
   frontend-lint:
     name: Frontend lint (staged rollout)
+    needs: change-scope
+    if: needs.change-scope.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     env:
       FRONTEND_LINT_PHASE: ${{ vars.FRONTEND_LINT_PHASE || 'B' }}
@@ -352,6 +392,8 @@ jobs:
 
   frontend-typecheck:
     name: Frontend typecheck
+    needs: change-scope
+    if: needs.change-scope.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -424,6 +466,8 @@ jobs:
 
   frontend-test:
     name: Frontend test + build
+    needs: change-scope
+    if: needs.change-scope.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -499,6 +543,8 @@ jobs:
 
   backend:
     name: Backend lint + test
+    needs: change-scope
+    if: needs.change-scope.outputs.backend == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:

@@ -44,6 +44,7 @@ const QUESTION_ORDER: readonly CardQualityQuestion[] = CARD_QUALITY_QUESTION_KIN
 export type CardQualityAssistState = {
   cardId: string;
   textAtOpen: string;
+  originalText?: string;
   queue: readonly CardQualityQuestionKind[];
   currentIndex: number;
   decisions: Partial<Record<CardQualityQuestionKind, CardQualityDecision>>;
@@ -70,11 +71,33 @@ export function openCardQualityAssist(
   return {
     cardId: card.id,
     textAtOpen: card.text,
+    originalText:
+      sameCard && priorState?.originalText !== card.text
+        ? priorState?.originalText
+        : undefined,
     queue,
     currentIndex: 0,
     decisions: { ...carriedDecisions },
     resolved: queue.length === 0,
   };
+}
+
+export function beginCardQualityRewrite(
+  state: CardQualityAssistState,
+  currentText: string
+): CardQualityAssistState {
+  if (state.originalText !== undefined) {
+    return state;
+  }
+
+  return {
+    ...state,
+    originalText: currentText,
+  };
+}
+
+export function cardQualityRestoreTarget(state: CardQualityAssistState): string | undefined {
+  return state.originalText;
 }
 
 export function currentCardQualityQuestion(state: CardQualityAssistState): CardQualityQuestion | undefined {

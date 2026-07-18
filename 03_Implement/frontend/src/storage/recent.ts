@@ -1,3 +1,10 @@
+/**
+ * Non-authoritative cache of recently opened document IDs.
+ *
+ * Per DATA-MODEL-OPS-02 D1, this localStorage entry is a convenience cache only —
+ * the server `GET /docs` response (id/title/updatedAt allowlist) is the source of truth.
+ * When cache and server disagree, the server wins.
+ */
 import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
 
 const RECENT_DOC_IDS_STORAGE_KEY = "kj-atlas/recent-doc-ids";

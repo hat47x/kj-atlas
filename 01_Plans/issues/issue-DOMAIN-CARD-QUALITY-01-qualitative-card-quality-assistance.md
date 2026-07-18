@@ -1,7 +1,7 @@
 # Issue: DOMAIN-CARD-QUALITY-01 定性情報カードの品質支援
 
 - Type: Feature request / UX / Domain quality
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -89,15 +89,15 @@
 
 - [x] AC-1: 定性情報カードの品質次元と、品質が点数・合否ではないことがNormative文書に定義されている。
 - [x] AC-2: P-08、ドメイン定義、スキーマ境界、価値トレーサビリティが同じ要件を参照している。
-- [ ] AC-3: 本文以外の必須入力なしに、一回の保存操作でカードを作成できる。
-- [ ] AC-4: 品質支援は保存後または要求時に非モーダルで開き、一件ずつ採用・見送り・保留できる。
+- [x] AC-3: 本文以外の必須入力なしに、一回の保存操作でカードを作成できる。
+- [x] AC-4: 品質支援は保存後または要求時に非モーダルで開き、一件ずつ採用・見送り・保留できる。
 - [x] AC-5: 提案の採用前に本文、`claimType`、出典、レビュー状態が変更されない。
 - [x] AC-6: 少数意見または矛盾するカードが、低品質として自動削除・統合・降格されない。
-- [ ] AC-7: 分割または言い換えの前後を比較し、元本文へ戻れる。
-- [ ] AC-8: マウスとキーボードで支援の開始、採用、見送り、保留、本文へのフォーカス復帰を完了できる。
-- [ ] AC-9: 日本語と英語で同じ意味と選択肢を提供し、390px幅で本文や主要操作を覆わない。
-- [ ] AC-10: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`KJ_ATLAS_LLM_PROVIDER=none` の回帰テストが通る。
-- [ ] AC-11: E2E証跡が6種の代表fixtureを含み、誤検知時にも保存と見送りが可能である。
+- [x] AC-7: 分割または言い換えの前後を比較し、元本文へ戻れる。
+- [x] AC-8: マウスとキーボードで支援の開始、採用、見送り、保留、本文へのフォーカス復帰を完了できる。
+- [x] AC-9: 日本語と英語で同じ意味と選択肢を提供し、390px幅で本文や主要操作を覆わない。
+- [x] AC-10: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`KJ_ATLAS_LLM_PROVIDER=none` の回帰テストが通る。
+- [x] AC-11: E2E証跡が6種の代表fixtureを含み、誤検知時にも保存と見送りが可能である。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -107,8 +107,8 @@
 - [x] T4 6種の代表fixtureと、本文保存を先行する品質支援の状態遷移をテストで固定する。
 - [x] T5 Phase Bの自己確認UI、i18n、キーボード操作、フォーカス復帰を実装する。
 - [x] T6 提案採用前の不変条件、少数・矛盾保持、SafeMode、provider noneをunit/integrationで固定する。
-- [ ] T7 390px/desktop、マウス/キーボードのE2Eとスクリーンショットを取得する。
-- [ ] T8 Phase Cの必要性をPhase Bの使用証跡から判断し、必要な場合だけ別issueへ分割する。
+- [x] T7 390px/desktop、マウス/キーボードのE2Eとスクリーンショットを取得する。
+- [x] T8 Phase Cの必要性をPhase Bの使用証跡から判断し、必要な場合だけ別issueへ分割する。
 
 ### T4 実装証跡（2026-07-15）
 
@@ -137,6 +137,34 @@
 - `e2e/card_quality_assistance.spec.ts` を新規作成した（既存specの慣用句 — `card_ka_fields.spec.ts` のfixture/route/openSampleパターン、`canvas_focus_order.spec.ts` の `pressTabUntilFocused` ヘルパー、`work_mode_tabs.spec.ts` の390px containment検証 — を踏襲）。4 tests: (1) mouse — 4問すべてを順に応答し、各応答後もCanvas上のカード本文が変化しないことを確認して閉じる、(2) keyboard — トリガーへのTab到達からEnterでの開閉・応答まで完全にキーボードのみで完了し、閉じた後にトリガーへフォーカスが戻ることを確認、(3) 390px — 3つの決定ボタンがすべてビューポート幅内に収まることを確認、(4) locale — `?locale=ja` で日本語の問い・決定ラベルが表示されることを確認。
 - **実行できていない**: 本WSL環境でPlaywrightの実行時に `chrome-headless-shell: error while loading shared libraries: libnspr4.so: cannot open shared object file` で失敗する。ブラウザバイナリ自体は存在するが、システム共有ライブラリ（`libnspr4`、通常 `npx playwright install-deps` または `apt-get install libnspr4` で導入）が欠落しており、`sudo` にパスワードが必要なため本セッションでは復旧できなかった（別タスクとして是正を依頼済み）。`find /` でも `libnspr4.so` は系内に存在しないことを確認済み。
 - したがってT7は未完了のまま据え置く。このPRはE2E実行による裏付けなしの状態でレビュー可能な形にとどめ、実行環境が復旧し次第、実際に緑になることを確認してからT7をチェックし、スクリーンショットを取得する。
+
+### T7 完了記録（2026-07-16）
+
+- Windows上のPlaywright/Chromiumで `card_quality_assistance.spec.ts` を実行し、マウス、キーボード、390px、日本語表示に加え、要件正本の6種fixtureを含む10 testsが成功した。2026-07-15時点のLinux共有ライブラリ不足は、現在の実行環境では再現しない。
+- キーボード経路は4問への応答だけで終えず、完了後の「本文を編集する」からCanvas上の本文入力へフォーカスが移ることと、Escapeで編集を取り消せることまで確認した。
+- 6種fixtureでは「このまま保存」を選んだ後もカード本文と支援画面が維持され、少数意見・矛盾・出典不明を含めて自動変更や自動除外が起きないことを確認した。
+- アプリ内ブラウザの日本語画面でも、支援が右側パネル内に収まり、Canvasを覆わず、問い、理由、3つの判断、閉じる操作が同時に確認できるスクリーンショットを取得した。
+- `KJ_ATLAS_LLM_PROVIDER=none` 相当の応答を固定したE2Eと、既存のSafeMode・proposal-only・人手昇格回帰を含むfrontend全体テストの成功によりAC-10を完了とした。
+
+### AC-3 実装記録（2026-07-17、未確認）
+
+- `e2e/card_single_save_creation.spec.ts` を新規作成した（`empty_canvas_onboarding.spec.ts`の空文書ルーティングパターンと`card_quality_assistance.spec.ts`のPUTペイロード捕捉パターンを踏襲）。「新規作成」→トグルなしで`create-card`を1回クリック→（ダイアログ・フォームなし、既定本文がプレースホルダとして即座に入る）→Tabで編集確定→`save`をクリック、という一連の操作のみでカードが作成・保存され、保存payloadに`claimType`/`meta`/`holdState`/`critique`等の他フィールドが一切含まれないことを検証する。
+- コード調査により、`createCardAtPosition`（`App.tsx:4038`）が`id`/`text`/`x`/`y`だけで新規カードを即時作成し、`Card`型（`src/domain/types.ts`）・`parseCards`（`src/domain/validate.ts`）双方で他フィールドがoptionalであることを確認済み。これによりAC-3はPhase A/Bの既存実装で既に成立しており、本追加はそれを固定する回帰テストである。
+- **実行未確認**: 本環境ではWSL側のPlaywright実行が`libnspr4.so`欠落（T7 2026-07-15と同じ既知の制約）で失敗し、Windows側にはNode.js自体が未導入のため、実ブラウザでの緑化確認ができなかった。`npx playwright test e2e/card_single_save_creation.spec.ts --list`ではテスト1件が正しく解決されることを確認し、frontend `npm run typecheck`（`npm run lint`と同義）は0 errorsで通過した。
+- Maintainerまたは実行可能な環境で本specを実行し、緑化を確認した上でAC-3をチェック済みへ更新すること。T7が2026-07-15の未確認記録から2026-07-16の確認済み記録へ移行した前例と同じ扱いとする。
+
+### AC-3 / AC-7 完了記録（2026-07-18）
+
+- Windows上のPlaywright/Chromiumで `card_single_save_creation.spec.ts` と `card_quality_assistance.spec.ts` を同時に実行し、12 testsが成功した。これにより、本文だけの一回保存、原文と編集案の比較、保存前の不変、保存後の原文復元、390px表示、マウス・キーボード操作を実ブラウザで確認した。
+- `CardQualityAssistState.originalText` はセッション内だけに保持し、`DocumentV1` / `Card` のスキーマを変更していない。本文の保存と復元は既存のカード本文更新経路を使うため、それぞれ通常のUndo対象になる。
+- アプリ内ブラウザの日本語画面でも、原文、編集案、保存、復元が右側パネル内に収まり、キャンバス上の対象カードを確認しながら操作できることを確認した。
+- frontend全体は `pnpm test` で192 files / 1070 tests、`pnpm typecheck`、i18nカタログ整合テストが成功した。
+
+### T8 Phase C判断（2026-07-18）
+
+- 現時点ではPhase C（LLMによる分割・言い換え案）を実装しない。Phase Bの自己確認、手動編集、前後比較、原文復元で主要な作業を完了でき、実利用者から「手動で整える負担が継続利用を妨げる」という証跡はまだ得られていないためである。
+- Phase C専用issueは起票しない。今後、複数回の利用記録で手動編集の中断・放棄が反復する、または利用者から具体的な提案支援の要望が得られた場合に限り、proposal-only、SafeMode、原文保持を前提とする別issueとして再評価する。
+- この判断は機能不足の黙認ではなく、利用者負担を減らす効果が未確認のAI機能を先に増やさないための段階判断である。
 
 ## 7) 検証計画 / Validation plan
 
@@ -195,3 +223,39 @@
 - Schema boundary: `02_Architecture/schemas.md` §1.0
 - Coverage: `02_Architecture/value_traceability.md` §2 / §2.4
 - Derived-from: 2026-07-15 ユーザー要求「KJ法のカードに記述すべき定性情報の品質についてリサーチ・熟考し、その品質確保を要件として取り込む。ユーザ負担を小さくし、人的対応も対応したいと思えるUXにする」
+
+## Sonnet級エージェント実行計画（2026-07-18）: AC-7（分割・言い換えの前後比較と原文復帰）
+
+この節は、残る受入条件のうちAC-7を、**この節だけを読んだSonnet級エージェントが人間判断なしに実装完了できる**粒度で固定する。AC-3はPR #2622（E2E追加）の審査完了で閉じる。T8（Phase C要否判断）はPhase Bの使用証跡に基づく人間判断であり、本計画のスコープ外。
+
+### 実装アンカー（2026-07-18確認済み）
+
+- ドメイン状態機械: `03_Implement/frontend/src/domain/card_quality.ts` — `CardQualityAssistState`型（L44）、`openCardQualityAssist`（L61）、`currentCardQualityQuestion`（L80）、`answerCardQualityQuestion`（L94）。決定・質問関数はassist stateのみを入出力とし`Card`を読み書きできない（AC-5の型レベル保証、この性質を壊さない）。
+- UI: `03_Implement/frontend/src/ui/SidePanel.tsx` — props（L85-88: `cardQualityAssistState`/`onOpenCardQualityAssist`/`onAnswerCardQualityQuestion`/`onCloseCardQualityAssist`）、UI本体（L3376-3416: 質問表示と「整える」「このまま保存」「今は保留」の3ボタン）。
+- 配線: `03_Implement/frontend/src/App.tsx` — `cardQualityAssistByCardId` state（L1093）、SidePanelへの受け渡し（L10613-10617）。
+
+### 設計確定（実装側で再選択しない）
+
+- **D-1 スキーマ不変**: 原文スナップショットは`CardQualityAssistState`（in-memory）へ`originalText: string`として保持し、`DocumentV1`/`Card`へ新フィールドを追加しない（本issue「後方互換」制約）。リロード後の原文復帰は保証対象外とする——AC-7の文言は「前後を比較し、元本文へ戻れる」であり、セッション内の比較・復帰＋既存undo/redoで満たす。
+- **D-2 言い換え（rewrite）**: 「整える」（apply）決定時に本文編集欄を開く場合、`openCardQualityAssist`時点の本文を`originalText`として保存する。編集の確定前にbefore（原文）/after（編集後）の2欄比較を表示し、確定後も自己確認パネル内に「元の本文へ戻す」ボタンを表示する。「戻す」は`originalText`を**通常のカード本文更新操作として**書き戻す（専用の復元パスを作らない＝undo履歴に乗り、AC-5の「採用前不変」も既存機構のまま保たれる）。
+- **D-3 分割（split）**: 1枚→2枚の分割は「新カード作成＋元カード本文更新」の2操作で実装する。App.tsxの既存document更新パターンに単一undo単位でまとめるバッチ機構があれば使い、なければ2操作連続で可（その場合「undo 2回で分割前へ戻る」ことをE2Eで固定し、比較UIの「元に戻す」ボタンは2操作の逆適用を1クリックで行う）。
+- **D-4 非目標の維持**: 品質点数・自動変更・自動分割を導入しない。比較UIは利用者が「整える」を選んだときだけ現れ、既定表示へ純増させない（複雑性予算）。
+
+### ステップ
+
+1. **ドメイン純関数**: `card_quality.ts`へ`beginCardQualityRewrite(state, currentText)`（`originalText`を確定保存）と`cardQualityRestoreTarget(state): string | undefined`（復帰先原文の参照）を追加する。`Card`への参照は引き続き渡さない。`card_quality.test.ts`へ正常系・`originalText`未設定時の未定義返却・多重begin時の初回原文維持の3 unitを追加する。
+2. **SidePanel比較UI**: apply決定後の編集確定フローへbefore/after 2欄（読み取り専用のbefore＋編集可能なafter）と「元の本文へ戻す」ボタンを追加する。i18nはja/en両方へ追加し（既存の`t(...)`キー慣例に従う）、キーボード（Tab到達・Enter/Space実行・Escで閉じて本文へフォーカス復帰）を既存AC-8実装と同じパターンで通す。
+3. **App.tsx配線**: 本文書き戻しは既存のカード本文更新ハンドラ経由で行う（新規の文書直接変更パスを作らない）。
+4. **E2E**: 既存のcard-quality系specへ、代表fixture「複数中心」で〔自己確認を開く→「整える」→本文を分割/言い換え→before/after比較を確認→「元の本文へ戻す」→原文一致を確認〕の1シナリオを追加する（日本語ロケール既定・バイリンガル正規表現の慣例）。
+5. **回帰確認**: AC-5（採用前不変）、AC-8（キーボード）、AC-10（SafeMode/proposal-only/provider=none）の既存テストがgreenのままであること。
+
+### 検証ゲート（PR前に全部pass必須）
+
+- WSLクローン`~/kjnative-fe`で: `npm run typecheck` / `npm run test`（card_quality系を含む全件） / `npm run e2e -- <対象spec>`（flaky時`--workers=1`）。
+- `git diff --check`。
+- frontend-onlyの変更でありCI green後の自動マージ可（安全既定・スキーマ・共有境界に触れないため）。ただし実装中にD-1が守れない（スキーマ変更が必要）と判明した場合は**実装を停止**し、T3のADR昇格条件へ戻して本節へ記録する。
+
+### Stop条件
+
+- 原文スナップショットなしで本文を上書きする実装形しか成立しない場合（原文が失われる）は即停止。
+- 同一論点でVerify 3連続失敗時は停止し、本issueへ理由と再開条件を記録する。
