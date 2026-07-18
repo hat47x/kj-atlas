@@ -1209,6 +1209,8 @@
   "side_panel.image.preview_error": "画像プレビューを読み込めません。",
   "side_panel.image.preview_alt": "島の画像プレビュー",
   "side_panel.image.no_image": "画像はありません",
+  "side_panel.image.safe_mode_blocked": "SafeModeが有効なため、外部画像を読み込みません。URLは文書内に保持されます。",
+  "side_panel.image.url_placeholder": "例: https://example.com/image.jpg",
   "side_panel.selection": "選択: {value}",
   "side_panel.selection.card_single": "1 件のカードを選択中",
   "side_panel.selection.card_multiple": "{count} 件のカードを選択中",

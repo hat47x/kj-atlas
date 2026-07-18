@@ -1209,6 +1209,8 @@
   "side_panel.image.preview_error": "Unable to load image preview.",
   "side_panel.image.preview_alt": "Island preview",
   "side_panel.image.no_image": "No image",
+  "side_panel.image.safe_mode_blocked": "SafeMode is on, so the external image is not loaded. The URL remains in the document.",
+  "side_panel.image.url_placeholder": "Example: https://example.com/image.jpg",
   "side_panel.selection": "Selection: {value}",
   "side_panel.selection.card_single": "1 card selected",
   "side_panel.selection.card_multiple": "{count} cards selected",

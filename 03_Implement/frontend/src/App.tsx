@@ -4458,7 +4458,7 @@ export default function App() {
         return {
           ...island,
           imageUrl: nextImageUrl,
-          imageReviewed: true,
+          imageReviewed: false,
         };
       });
 

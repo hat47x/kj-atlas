@@ -135,7 +135,7 @@ erDiagram
 | `Card` | 利用者が置く主要情報単位。`claimType` による事実/主張/仮説の分類を含む | 画面操作またはインポート後、ドキュメント全体保存で反映する。 |
 | `Edge` | カード/島間の関係。`fromKind` / `toKind` で endpoint 種別を保持できる | 個別APIは持たず、ドキュメント全体保存で反映する。 |
 | `EvidenceLink` | 根拠・反証のリンク | `DocumentV1.evidenceLinks` の埋め込み構造として保存する。個別CRUDは持たない。 |
-| `Island` | まとまり、囲み、構造化の単位 | `DocumentV1` 内の埋め込み構造。shapeやreview状態の完全保守は段階導入。 |
+| `Island` | まとまり、囲み、構造化の単位 | `DocumentV1` 内の埋め込み構造。旧式の`imageUrl` / `imageReviewed`も往復保持するが、SafeModeではURLを取得しない。shapeやreview状態の完全保守は段階導入。 |
 | `Narrative` / `RelationSummary` | 文章化・要約成果物 | 共有前確認やレビューと連動するが、MVPでは個別CRUDを正本にしない。 |
 | `ReviewAttribution` | 人間レビュー済み状態と主体の追跡 | `user:<users.id>` 正規化を前提にする。自動昇格は禁止。 |
 | `MergeDecisionRecord` | 類似統合などの人間判断ログ | `merge_decision_logs` に追記し、group/snapshot単位で参照する。 |
@@ -183,7 +183,7 @@ erDiagram
 | `version` / `id` / `createdAt` / `updatedAt` / `transform` | L1 | 必須 | 必須 | 運用サポート | `PUT /docs/{doc_id}` のCreate/Update契約で維持する。 |
 | `cards[]` | L2 | `Card[]`。`claimType`、統合元、批評、レビュー状態を含む | `Card[]` として保存。`claimType` も往復保持する | 埋め込み限定 | 個別カードCRUDは作らず、スナップショット保存の互換を維持する。 |
 | `edges[]` | L2 | `Edge[]`。`fromKind` / `toKind` を含む | `Edge[]` として保存。endpoint kind も往復保持する | 埋め込み限定 | 島endpointを含む関係のUI/API検証を `DATA-CONTRACT-01` で継続する。 |
-| `islands[]` | L2 | `Island[]`。階層、collapse、shape、summaryを含む | 保存/検証あり。geometry/shapeの互換正規化あり | 埋め込み限定 | shape再計算、階層、collapseの個別保守は製品化issueで扱う。 |
+| `islands[]` | L2 | `Island[]`。階層、collapse、shape、summary、旧式`imageUrl` / `imageReviewed`を含む | 保存/検証あり。geometry/shapeの互換正規化と旧式画像フィールドの往復保持あり | 埋め込み限定 | SafeModeでは旧式URLを取得しない。由来・権利・代替テキストを持つ新モデルへの移行は`SEC-VISUAL-ASSET-01` / `DOMAIN-VISUAL-CUE-01`で扱う。 |
 | `readingOrder` | L2 | optional | optional | 埋め込み限定 | 文章化・共有時の読み順として扱う。 |
 | `narratives` | L2 | optional | optional | 埋め込み限定 | 個別CRUDではなく、成果物化と共有前確認で扱う。 |
 | `relationSummaries` | L2 | optional | optional。本文長上限あり | 埋め込み限定 | 要約品質、根拠、レビュー状態の検証を継続する。 |
