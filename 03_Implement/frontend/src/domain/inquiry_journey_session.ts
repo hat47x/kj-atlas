@@ -47,6 +47,75 @@ export type TraceInquiryCardLineageResult =
   | { ok: true; target: InquiryCardLineageNode; ancestors: InquiryCardLineageNode[] }
   | { ok: false; reason: "card_not_found" };
 
+export type InquiryResumeResult = {
+  roundId?: string;
+  stage?: RoundStage;
+  iteration?: number;
+  snapshotId: string;
+  title: string;
+  cards: Array<{ id: string; text: string; source?: string }>;
+};
+
+export type InquiryResumeBrief = {
+  round: { roundId: string; stage: RoundStage; iteration: number };
+  question: string;
+  understandingDelta?: string;
+  unresolvedQuestions: string[];
+  nextActions: string[];
+  previousResults: InquiryResumeResult[];
+};
+
+export type BuildInquiryResumeBriefResult =
+  | { ok: true; brief: InquiryResumeBrief }
+  | { ok: false; reason: "round_not_found" | "snapshot_not_found" };
+
+export function buildInquiryResumeBrief(
+  bundle: InquiryBundleV1,
+  roundId = bundle.journey.defaultHeadRoundId
+): BuildInquiryResumeBriefResult {
+  const round = bundle.journey.roundRecords.find((candidate) => candidate.roundId === roundId);
+  if (!round) return { ok: false, reason: "round_not_found" };
+  const previousRoundIds = round.parentRoundIds;
+  const previousAddresses = previousRoundIds.length > 0
+    ? previousRoundIds.map((parentRoundId) => {
+        const parent = bundle.journey.roundRecords.find((candidate) => candidate.roundId === parentRoundId);
+        return parent?.outputSnapshotId ? { round: parent, snapshotId: parent.outputSnapshotId } : null;
+      })
+    : bundle.journey.originSnapshotIds.map((snapshotId) => ({ round: undefined, snapshotId }));
+  if (previousAddresses.some((address) => !address)) return { ok: false, reason: "snapshot_not_found" };
+  const previousResults: InquiryResumeResult[] = [];
+  for (const address of previousAddresses) {
+    if (!address) continue;
+    const snapshot = bundle.snapshots.find((candidate) => candidate.snapshotId === address.snapshotId);
+    if (!snapshot) return { ok: false, reason: "snapshot_not_found" };
+    previousResults.push({
+      ...(address.round ? {
+        roundId: address.round.roundId,
+        stage: address.round.stage,
+        iteration: address.round.iteration,
+      } : {}),
+      snapshotId: snapshot.snapshotId,
+      title: snapshot.document.title?.trim() || snapshot.document.id,
+      cards: snapshot.document.cards.map((card) => ({
+        id: card.id,
+        text: card.text,
+        ...(card.meta?.source ? { source: card.meta.source } : {}),
+      })),
+    });
+  }
+  return {
+    ok: true,
+    brief: {
+      round: { roundId: round.roundId, stage: round.stage, iteration: round.iteration },
+      question: round.theme,
+      ...(round.handoff?.understandingDelta ? { understandingDelta: round.handoff.understandingDelta } : {}),
+      unresolvedQuestions: [...(round.handoff?.unresolvedQuestions ?? [])],
+      nextActions: (round.handoff?.fieldworkRequests ?? []).map((request) => request.question),
+      previousResults,
+    },
+  };
+}
+
 function addressKey(address: CardAddressV1): string {
   return `${address.snapshotId}\u0000${address.cardId}`;
 }

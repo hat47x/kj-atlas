@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { DocumentV1 } from "./types";
 import { parseInquiryBundleJson, serializeInquiryBundle } from "./inquiry_bundle_io";
 import {
+  buildInquiryResumeBrief,
   compareInquiryRounds,
   inquiryBundleOriginatesFromDocument,
   recordInquiryRound,
@@ -33,6 +34,28 @@ function sequentialIds(): () => string {
 }
 
 describe("inquiry journey session", () => {
+  it("builds a resume brief from recorded handoff data without changing snapshots", () => {
+    const bundle = createRepresentativeInquiryBundle();
+    const before = structuredClone(bundle);
+    const result = buildInquiryResumeBrief(bundle);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.brief.question).toBe("案内を読んだ後にも残る不明点は何か");
+    expect(result.brief.unresolvedQuestions).toEqual(["表示内容と職員説明のどちらが行動判断に影響したか"]);
+    expect(result.brief.nextActions).toEqual(["質問した来庁者は案内表示をどこまで読んだか"]);
+    expect(result.brief.previousResults).toHaveLength(1);
+    expect(result.brief.previousResults[0]).toMatchObject({
+      roundId: "round-r3-1",
+      stage: "r3_essence_pursuit",
+      iteration: 1,
+      snapshotId: "snapshot-r3-1",
+    });
+    expect(result.brief.previousResults[0].cards.some((card) => card.id === "hypothesis-1")).toBe(true);
+    expect(bundle).toEqual(before);
+    expect(buildInquiryResumeBrief(bundle, "missing")).toEqual({ ok: false, reason: "round_not_found" });
+  });
+
   it("traces a derived card through its source cards and owning rounds", () => {
     const bundle = createRepresentativeInquiryBundle();
     const traced = traceInquiryCardLineage(bundle, {
