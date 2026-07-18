@@ -15,76 +15,49 @@
   * { box-sizing:border-box; }
   body { font-family:"Noto Sans JP", system-ui, sans-serif; -webkit-font-smoothing:antialiased; }
   a { color:#1d4ed8; } a:hover { color:#1e40af; }
-  button { font-family:inherit; }
   ::placeholder { color:#94a3b8; }
-  .prototype-content { flex:1; overflow:auto; padding:22px; }
-  .prototype-shell { max-width:920px; margin:0 auto; }
-  .state-tabs { display:flex; gap:4px; flex-wrap:wrap; }
-  .document-toolbar { padding:11px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; gap:10px; }
-  .document-row { padding:11px 16px; border-bottom:1px solid #f5f7fa; display:flex; align-items:center; gap:14px; }
-  .document-title { flex:1; min-width:0; }
-  .document-updated { width:150px; font-size:11.5px; color:#64748b; flex:0 0 auto; }
-  .document-id { width:90px; font-size:10px; color:#94a3b8; font-family:'Noto Sans Mono',monospace; flex:0 0 auto; }
-  .document-action { width:74px; flex:0 0 auto; }
-  .agent-header, .agent-row { display:flex; }
-  .ia-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-top:14px; }
-  .tenant-label { display:inline-block; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  @media (max-width: 600px) {
-    .prototype-content { padding:12px; }
-    .prototype-shell { max-width:none; }
-    .document-toolbar { align-items:stretch; flex-direction:column; }
-    .document-row { align-items:start; display:grid; gap:4px 10px; grid-template-columns:minmax(0,1fr) auto; }
-    .document-title { grid-column:1 / -1; }
-    .document-updated, .document-id, .document-action { width:auto; }
-    .document-action { grid-column:2; grid-row:2 / span 2; justify-self:end; }
-    .agent-header { display:none; }
-    .agent-row { display:grid !important; gap:4px; grid-template-columns:1fr 1fr; }
-    .agent-row > span { width:auto !important; }
-    .ia-grid { grid-template-columns:1fr; }
-    .tenant-label { max-width:180px; }
-  }
 </style>
 </helmet>
 <div style="height:100vh; min-height:600px; display:flex; flex-direction:column; background:#eceef1; color:#1f2933;">
 
   <!-- future-SaaS notice bar -->
   <sc-if value="{{ isFuture }}" hint-placeholder-val="{{ false }}">
-    <div style="flex:0 0 auto; background:#f8fafc; border-bottom:1px dashed #94a3b8; color:#475569; font-size:11.5px; padding:6px 16px; text-align:center;">設計成果物注記: ADR-0059 は Accepted、SaaS UI は implementation gate 未完了のため現行アプリには実装されていません。</div>
+    <div style="flex:0 0 auto; background:#fef3c7; border-bottom:1px solid #fde68a; color:#92610a; font-size:11.5px; padding:6px 16px; text-align:center;">この画面は future SaaS / ADR-0059 pending の設計入力です。現行アプリには実装されていません（製品UIバッジではなく本注記のみで区別）。</div>
   </sc-if>
 
   <!-- switcher header -->
   <header style="flex:0 0 auto; background:#fff; border-bottom:1px solid #e2e8f0; padding:10px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
     <span style="font-size:12.5px; font-weight:700; color:#334155;">kj-atlas ・ Round 8 設計プロトタイプ</span>
-    <nav aria-label="Round 8 設計画面" style="display:flex; gap:4px; margin-left:8px; flex-wrap:wrap;">
+    <div style="display:flex; gap:4px; margin-left:8px; flex-wrap:wrap;">
       <button onClick="{{ act.goA }}" style="{{ tabStyle.A }}">R8-A 文書入口</button>
       <button onClick="{{ act.goB }}" style="{{ tabStyle.B }}">R8-B 2種プリセット</button>
       <button onClick="{{ act.goC }}" style="{{ tabStyle.C }}">R8-C Admin登録</button>
       <button onClick="{{ act.goD }}" style="{{ tabStyle.D }}">R8-D エージェント/token</button>
       <button onClick="{{ act.goE }}" style="{{ tabStyle.E }}">R8-E tenant切替</button>
       <button onClick="{{ act.goF }}" style="{{ tabStyle.F }}">R8-F 責務IA図</button>
-    </nav>
+    </div>
   </header>
 
-  <div class="prototype-content">
-    <div class="prototype-shell">
+  <div style="flex:1; overflow:auto; padding:22px;">
+    <div style="max-width:920px; margin:0 auto;">
 
       <!-- ===================== R8-A ===================== -->
       <sc-if value="{{ isA }}" hint-placeholder-val="{{ true }}">
         <div>
-          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
             <h2 style="font-size:16px; font-weight:700; margin:0; color:#1f2933;">ドキュメントを開く</h2>
-            <div class="state-tabs" aria-label="文書一覧の表示状態">
-              <button onClick="{{ act.aLoading }}" style="{{ aStyleLoading }}">Loading</button>
-              <button onClick="{{ act.aEmpty }}" style="{{ aStyleEmpty }}">Empty</button>
-              <button onClick="{{ act.aReady }}" style="{{ aStyleReady }}">Ready</button>
-              <button onClick="{{ act.aPerm }}" style="{{ aStylePerm }}">ACL不能/403</button>
-              <button onClick="{{ act.aNetwork }}" style="{{ aStyleNetwork }}">Network error</button>
-              <button onClick="{{ act.aReadonly }}" style="{{ aStyleReadonly }}">Read-only</button>
+            <div style="display:flex; gap:4px;">
+              <span onClick="{{ act.aLoading }}" style="{{ aStyleLoading }}">Loading</span>
+              <span onClick="{{ act.aEmpty }}" style="{{ aStyleEmpty }}">Empty</span>
+              <span onClick="{{ act.aReady }}" style="{{ aStyleReady }}">Ready</span>
+              <span onClick="{{ act.aPerm }}" style="{{ aStylePerm }}">ACL不能/403</span>
+              <span onClick="{{ act.aNetwork }}" style="{{ aStyleNetwork }}">Network error</span>
+              <span onClick="{{ act.aReadonly }}" style="{{ aStyleReadonly }}">Read-only</span>
             </div>
           </div>
           <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,0.06);">
-            <div class="document-toolbar">
-              <input aria-label="タイトルまたはIDで絞り込み" placeholder="タイトル / ID で絞り込み" style="flex:1; font-size:12.5px; border:1px solid #e2e8f0; border-radius:6px; padding:7px 10px; font-family:inherit;" />
+            <div style="padding:11px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; gap:10px;">
+              <input placeholder="タイトル / ID で絞り込み" style="flex:1; font-size:12.5px; border:1px solid #e2e8f0; border-radius:6px; padding:7px 10px; font-family:inherit;" />
               <span style="font-size:10.5px; color:#94a3b8;">更新日時 新しい順</span>
             </div>
 
@@ -109,14 +82,14 @@
             <sc-if value="{{ aIsReady }}" hint-placeholder-val="{{ false }}">
               <div>
                 <sc-for list="{{ aDocs }}" as="d" hint-placeholder-count="3">
-                  <div class="document-row">
-                    <div class="document-title">
+                  <div style="padding:11px 16px; border-bottom:1px solid #f5f7fa; display:flex; align-items:center; gap:14px;">
+                    <div style="flex:1; min-width:0;">
                       <div style="font-size:13.5px; font-weight:600; color:#1f2933; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ d.title }}</div>
                     </div>
-                    <div class="document-updated">{{ d.updated }}</div>
-                    <div class="document-id">{{ d.id }}</div>
-                    <sc-if value="{{ d.active }}" hint-placeholder-val="{{ false }}"><span class="document-action" style="font-size:10.5px; color:#64748b;">開いています</span></sc-if>
-                    <sc-if value="{{ d.notActive }}" hint-placeholder-val="{{ true }}"><span class="document-action" style="font-size:11.5px; font-weight:600; color:#2563eb; cursor:default;">開く</span></sc-if>
+                    <div style="width:150px; font-size:11.5px; color:#64748b; flex:0 0 auto;">{{ d.updated }}</div>
+                    <div style="width:90px; font-size:10px; color:#94a3b8; font-family:'Noto Sans Mono',monospace; flex:0 0 auto;">{{ d.id }}</div>
+                    <sc-if value="{{ d.active }}" hint-placeholder-val="{{ false }}"><span style="width:74px; font-size:10.5px; color:#64748b; flex:0 0 auto;">開いています</span></sc-if>
+                    <sc-if value="{{ d.notActive }}" hint-placeholder-val="{{ true }}"><span style="width:74px; font-size:11.5px; font-weight:600; color:#2563eb; flex:0 0 auto; cursor:default;">開く</span></sc-if>
                   </div>
                 </sc-for>
               </div>
@@ -141,11 +114,11 @@
             <sc-if value="{{ aIsReadonly }}" hint-placeholder-val="{{ false }}">
               <div>
                 <sc-for list="{{ aDocs }}" as="d" hint-placeholder-count="2">
-                  <div class="document-row">
-                    <div class="document-title" style="font-size:13.5px; font-weight:600; color:#1f2933; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ d.title }}</div>
-                    <div class="document-updated">{{ d.updated }}</div>
+                  <div style="padding:11px 16px; border-bottom:1px solid #f5f7fa; display:flex; align-items:center; gap:14px;">
+                    <div style="flex:1; min-width:0; font-size:13.5px; font-weight:600; color:#1f2933; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ d.title }}</div>
+                    <div style="width:150px; font-size:11.5px; color:#64748b; flex:0 0 auto;">{{ d.updated }}</div>
                     <span style="font-size:10.5px; color:#64748b; flex:0 0 auto;">閲覧のみ</span>
-                    <span class="document-action" style="font-size:11.5px; font-weight:600; color:#2563eb; cursor:default;">開く</span>
+                    <span style="width:46px; font-size:11.5px; font-weight:600; color:#2563eb; flex:0 0 auto; cursor:default;">開く</span>
                   </div>
                 </sc-for>
               </div>
@@ -161,9 +134,9 @@
           <h2 style="font-size:16px; font-weight:700; margin:0 0 14px; color:#1f2933;">保存範囲の異なる2種のプリセット</h2>
 
           <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:14px;">
-            <div style="display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;">
               <div style="font-size:13.5px; font-weight:700; color:#1f2933;">View / Perspective</div>
-              <div class="state-tabs" aria-label="表示プリセットの状態"><button onClick="{{ act.bvEmpty }}" style="{{ bvStyleEmpty }}">Empty</button><button onClick="{{ act.bvSaved }}" style="{{ bvStyleSaved }}">保存済み</button><button onClick="{{ act.bvRename }}" style="{{ bvStyleRename }}">名前変更</button><button onClick="{{ act.bvDelconfirm }}" style="{{ bvStyleDelconfirm }}">削除確認</button></div>
+              <div style="display:flex; gap:4px;"><span onClick="{{ act.bvEmpty }}" style="{{ bvStyleEmpty }}">Empty</span><span onClick="{{ act.bvSaved }}" style="{{ bvStyleSaved }}">保存済み</span><span onClick="{{ act.bvRename }}" style="{{ bvStyleRename }}">名前変更</span><span onClick="{{ act.bvDelconfirm }}" style="{{ bvStyleDelconfirm }}">削除確認</span></div>
             </div>
             <div style="font-size:11px; color:#64748b; margin-top:3px;">保存範囲: 表示設定ファイルに含む（サーバー自動同期ではありません）</div>
             <div style="font-size:10px; color:#94a3b8; margin-top:1px;">SafeModeを解除する値はプリセットに含められません。レビュー用既定プリセットもSafeMode ONを維持します。</div>
@@ -188,17 +161,17 @@
           </div>
 
           <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px;">
-            <div style="display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;">
               <div style="font-size:13.5px; font-weight:700; color:#1f2933;">QueryPreset（Patch workspace）</div>
-              <div class="state-tabs" aria-label="QueryPresetの状態"><button onClick="{{ act.bqEmpty }}" style="{{ bqStyleEmpty }}">Empty</button><button onClick="{{ act.bqBefore }}" style="{{ bqStyleBefore }}">保存前</button><button onClick="{{ act.bqSaved }}" style="{{ bqStyleSaved }}">保存済み</button><button onClick="{{ act.bqFailed }}" style="{{ bqStyleFailed }}">保存失敗</button></div>
+              <div style="display:flex; gap:4px;"><span onClick="{{ act.bqEmpty }}" style="{{ bqStyleEmpty }}">Empty</span><span onClick="{{ act.bqBefore }}" style="{{ bqStyleBefore }}">保存前</span><span onClick="{{ act.bqSaved }}" style="{{ bqStyleSaved }}">保存済み</span><span onClick="{{ act.bqFailed }}" style="{{ bqStyleFailed }}">保存失敗</span></div>
             </div>
-            <div style="font-size:11px; color:#475569; font-weight:600; margin-top:3px;">保存範囲: この端末のみ</div>
+            <div style="font-size:11px; color:#b45309; font-weight:600; margin-top:3px;">保存範囲: この端末のみ</div>
             <div style="font-size:10px; color:#94a3b8; margin-top:1px;">ブラウザのデータを消すと失われます。同期・共有・バックアップはされません。</div>
 
             <sc-if value="{{ bQueryEmptyS }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px; font-size:11.5px; color:#94a3b8;">保存済みのクエリはまだありません。</div></sc-if>
             <sc-if value="{{ bQueryBefore }}" hint-placeholder-val="{{ false }}">
               <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
-                <input aria-label="QueryPresetの名称" placeholder="名称" style="font-size:12px; border:1px solid #e2e8f0; border-radius:5px; padding:6px 9px; font-family:inherit;" />
+                <input placeholder="名称" style="font-size:12px; border:1px solid #e2e8f0; border-radius:5px; padding:6px 9px; font-family:inherit;" />
                 <div style="display:flex; gap:6px; font-size:11px; color:#64748b;"><span style="border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">scope: 選択島</span><span style="border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">depth: 2</span><span style="border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">filter: 未レビュー</span></div>
                 <span style="align-self:flex-start; font-size:11.5px; font-weight:600; color:#fff; background:#4338ca; border-radius:5px; padding:5px 12px; cursor:default;">保存</span>
               </div>
@@ -212,7 +185,7 @@
             <sc-if value="{{ bQueryFailed }}" hint-placeholder-val="{{ false }}">
               <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
                 <div style="border:1px solid #fecaca; background:#fef2f2; border-radius:6px; padding:8px 10px; font-size:11.5px; color:#b91c1c;">保存に失敗しました。入力内容は保持されています。再試行してください。</div>
-                <input aria-label="保持されたQueryPresetの名称" value="未レビューのみ・深さ2" style="font-size:12px; border:1px solid #e2e8f0; border-radius:5px; padding:6px 9px; font-family:inherit;" />
+                <input value="未レビューのみ・深さ2" style="font-size:12px; border:1px solid #e2e8f0; border-radius:5px; padding:6px 9px; font-family:inherit;" />
                 <div style="display:flex; gap:6px; font-size:11px; color:#64748b;"><span style="border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">scope: 選択島</span><span style="border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">depth: 2</span><span style="border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px;">filter: 未レビュー</span></div>
                 <span style="align-self:flex-start; font-size:11.5px; font-weight:600; color:#fff; background:#4338ca; border-radius:5px; padding:5px 12px; cursor:default;">再試行</span>
               </div>
@@ -229,7 +202,7 @@
             <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">この画面は文書本文を表示しません ・ <a href="#" style="color:#93c5fd;">Workspaceへ戻る</a></div>
           </div>
           <div style="background:#fff; border:1px solid #e2e8f0; border-top:none; border-radius:0 0 10px 10px; padding:18px;">
-            <div class="state-tabs" aria-label="アクセス登録の状態" style="margin-bottom:12px;"><button onClick="{{ act.cForm }}" style="{{ cStyleForm }}">登録フォーム</button><button onClick="{{ act.cSubmitting }}" style="{{ cStyleSubmitting }}">送信中</button><button onClick="{{ act.cSuccess }}" style="{{ cStyleSuccess }}">成功receipt</button><button onClick="{{ act.cConflict }}" style="{{ cStyleConflict }}">同値/競合</button><button onClick="{{ act.cDenied }}" style="{{ cStyleDenied }}">権限不足</button></div>
+            <div style="display:flex; gap:4px; margin-bottom:12px;"><span onClick="{{ act.cForm }}" style="{{ cStyleForm }}">登録フォーム</span><span onClick="{{ act.cSubmitting }}" style="{{ cStyleSubmitting }}">送信中</span><span onClick="{{ act.cSuccess }}" style="{{ cStyleSuccess }}">成功receipt</span><span onClick="{{ act.cConflict }}" style="{{ cStyleConflict }}">同値/競合</span><span onClick="{{ act.cDenied }}" style="{{ cStyleDenied }}">権限不足</span></div>
 
             <sc-if value="{{ cDenied }}" hint-placeholder-val="{{ false }}">
               <div style="padding:30px 10px; text-align:center;"><div style="font-size:13px; color:#b91c1c; font-weight:600;">この操作の権限がありません</div><div style="font-size:11.5px; color:#7b8794; margin-top:6px;">Platform operator 権限を検証できないため、登録フォームは表示していません（表示制御はbackend認可の代替ではありません）。</div></div>
@@ -257,24 +230,24 @@
       <!-- ===================== R8-D ===================== -->
       <sc-if value="{{ isD }}" hint-placeholder-val="{{ false }}">
         <div>
-          <h2 style="font-size:16px; font-weight:700; margin:0 0 6px; color:#1f2933;">外部接続（エージェント登録） <span style="font-size:10.5px; font-weight:500; color:#64748b;">設計注記: EXT-CONN-02 契約後</span></h2>
-          <div class="state-tabs" aria-label="エージェント登録の状態" style="margin:10px 0 14px;"><button onClick="{{ act.dEmpty }}" style="{{ dStyleEmpty }}">Empty</button><button onClick="{{ act.dReady }}" style="{{ dStyleReady }}">Ready</button><button onClick="{{ act.dRegistering }}" style="{{ dStyleRegistering }}">registering</button><button onClick="{{ act.dToken }}" style="{{ dStyleToken }}">one-time token</button><button onClick="{{ act.dRevoking }}" style="{{ dStyleRevoking }}">revoking</button><button onClick="{{ act.dDenied }}" style="{{ dStyleDenied }}">permission denied</button></div>
+          <h2 style="font-size:16px; font-weight:700; margin:0 0 6px; color:#1f2933;">外部接続（エージェント登録）<span style="font-size:10.5px; font-weight:600; color:#92610a; background:#fef3c7; border-radius:4px; padding:1px 6px; margin-left:8px; vertical-align:middle;">EXT-CONN-02 契約後</span></h2>
+          <div style="display:flex; gap:4px; margin:10px 0 14px;"><span onClick="{{ act.dEmpty }}" style="{{ dStyleEmpty }}">Empty</span><span onClick="{{ act.dReady }}" style="{{ dStyleReady }}">Ready</span><span onClick="{{ act.dRegistering }}" style="{{ dStyleRegistering }}">registering</span><span onClick="{{ act.dToken }}" style="{{ dStyleToken }}">one-time token</span><span onClick="{{ act.dRevoking }}" style="{{ dStyleRevoking }}">revoking</span><span onClick="{{ act.dDenied }}" style="{{ dStyleDenied }}">permission denied</span></div>
 
           <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
             <sc-if value="{{ dIsDenied }}" hint-placeholder-val="{{ false }}"><div style="padding:30px; text-align:center; font-size:12.5px; color:#b91c1c; font-weight:600;">この操作の権限がありません</div></sc-if>
             <sc-if value="{{ dNotDenied }}" hint-placeholder-val="{{ true }}">
               <div>
-                <div class="agent-header" style="padding:9px 14px; border-bottom:1px solid #f1f5f9; font-size:10.5px; font-weight:700; color:#94a3b8; letter-spacing:0.04em;"><span style="width:130px;">registrationId</span><span style="width:120px;">表示名</span><span style="width:90px;">docId</span><span style="width:70px;">状態</span><span style="flex:1;">作成日時 / 主体</span></div>
+                <div style="padding:9px 14px; border-bottom:1px solid #f1f5f9; display:flex; font-size:10.5px; font-weight:700; color:#94a3b8; letter-spacing:0.04em;"><span style="width:130px;">registrationId</span><span style="width:120px;">表示名</span><span style="width:90px;">docId</span><span style="width:70px;">状態</span><span style="flex:1;">作成日時 / 主体</span></div>
                 <sc-if value="{{ dIsEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:26px; text-align:center; font-size:12px; color:#94a3b8;">登録済みのエージェントはありません。</div></sc-if>
                 <sc-if value="{{ dHasRows }}" hint-placeholder-val="{{ true }}">
-                  <div class="agent-row" style="padding:9px 14px; border-bottom:1px solid #f5f7fa; font-size:11.5px; color:#334155; align-items:center;"><span style="width:130px; font-family:'Noto Sans Mono',monospace; font-size:10px;">reg-9f21</span><span style="width:120px;">要約エージェント</span><span style="width:90px; font-family:'Noto Sans Mono',monospace; font-size:10px;">doc-7f2a</span><span style="width:70px; color:#15803d;">Ready</span><span style="flex:1; color:#94a3b8; font-size:10.5px;">2026-07-10 ・ operator-01</span></div>
-                  <sc-if value="{{ dIsRevoking }}" hint-placeholder-val="{{ false }}"><div class="agent-row" style="padding:9px 14px; border-bottom:1px solid #f5f7fa; font-size:11.5px; color:#334155; align-items:center;"><span style="width:130px; font-family:'Noto Sans Mono',monospace; font-size:10px;">reg-4c02</span><span style="width:120px;">分類エージェント</span><span style="width:90px; font-family:'Noto Sans Mono',monospace; font-size:10px;">doc-a104</span><span style="width:70px; color:#64748b;">失効中…</span><span style="flex:1; color:#94a3b8; font-size:10.5px;">2026-07-08 ・ operator-01</span></div></sc-if>
+                  <div style="padding:9px 14px; border-bottom:1px solid #f5f7fa; display:flex; font-size:11.5px; color:#334155; align-items:center;"><span style="width:130px; font-family:'Noto Sans Mono',monospace; font-size:10px;">reg-9f21</span><span style="width:120px;">要約エージェント</span><span style="width:90px; font-family:'Noto Sans Mono',monospace; font-size:10px;">doc-7f2a</span><span style="width:70px; color:#15803d;">Ready</span><span style="flex:1; color:#94a3b8; font-size:10.5px;">2026-07-10 ・ operator-01</span></div>
+                  <sc-if value="{{ dIsRevoking }}" hint-placeholder-val="{{ false }}"><div style="padding:9px 14px; border-bottom:1px solid #f5f7fa; display:flex; font-size:11.5px; color:#334155; align-items:center;"><span style="width:130px; font-family:'Noto Sans Mono',monospace; font-size:10px;">reg-4c02</span><span style="width:120px;">分類エージェント</span><span style="width:90px; font-family:'Noto Sans Mono',monospace; font-size:10px;">doc-a104</span><span style="width:70px; color:#b45309;">失効中…</span><span style="flex:1; color:#94a3b8; font-size:10.5px;">2026-07-08 ・ operator-01</span></div></sc-if>
                 </sc-if>
 
                 <sc-if value="{{ dIsRegistering }}" hint-placeholder-val="{{ false }}">
                   <div style="padding:14px; border-top:1px solid #f1f5f9;">
                     <div style="font-size:12px; font-weight:600; color:#334155; margin-bottom:6px;">新規登録</div>
-                    <div style="display:flex; flex-wrap:wrap; gap:8px; max-width:420px;"><input aria-label="エージェント表示名" placeholder="表示名" style="flex:1; min-width:180px; font-size:12px; border:1px solid #e2e8f0; border-radius:5px; padding:6px 9px; font-family:inherit;" /><input aria-label="対象文書ID" placeholder="docId (例: doc-7f2a)" style="flex:1; min-width:180px; font-size:12px; border:1px solid #e2e8f0; border-radius:5px; padding:6px 9px; font-family:monospace;" /></div>
+                    <div style="display:flex; gap:8px; max-width:420px;"><input placeholder="表示名" style="flex:1; font-size:12px; border:1px solid #e2e8f0; border-radius:5px; padding:6px 9px; font-family:inherit;" /><input placeholder="docId (例: doc-7f2a)" style="flex:1; font-size:12px; border:1px solid #e2e8f0; border-radius:5px; padding:6px 9px; font-family:inherit; font-family:monospace;" /></div>
                     <div style="font-size:10.5px; color:#94a3b8; margin-top:6px;">登録は文書への書込権限を付与しません。文書タイトルでの検索は行いません。</div>
                     <span style="display:inline-block; margin-top:9px; font-size:11.5px; font-weight:600; color:#fff; background:#1f2933; border-radius:5px; padding:6px 14px; cursor:default;">登録する</span>
                   </div>
@@ -283,7 +256,7 @@
                 <sc-if value="{{ dIsToken }}" hint-placeholder-val="{{ false }}">
                   <div style="padding:16px; border-top:1px solid #e2e8f0; background:#1f2933;">
                     <div style="font-size:12px; font-weight:700; color:#fff;">token（この画面を閉じると二度と表示されません）</div>
-                    <div style="margin-top:8px; font-family:'Noto Sans Mono',monospace; font-size:12px; color:#e0f2fe; background:rgba(255,255,255,0.08); border-radius:6px; padding:8px 10px; word-break:break-all;">kjat_demo_once_••••••••••••••••</div>
+                    <div style="margin-top:8px; font-family:'Noto Sans Mono',monospace; font-size:12px; color:#fef08a; background:rgba(255,255,255,0.08); border-radius:6px; padding:8px 10px; word-break:break-all;">kjat_demo_once_••••••••••••••••</div>
                     <div style="display:flex; gap:8px; margin-top:9px;"><span style="font-size:11px; color:#fff; background:rgba(255,255,255,0.14); border-radius:5px; padding:5px 12px; cursor:default;">コピー</span><span style="font-size:10.5px; color:#94a3b8; align-self:center;">保存済みですか？閉じると再表示できません。</span></div>
                     <span style="display:inline-block; margin-top:10px; font-size:11px; color:#cbd5e1; cursor:default;">保存済みを確認して閉じる</span>
                   </div>
@@ -297,14 +270,14 @@
       <!-- ===================== R8-E ===================== -->
       <sc-if value="{{ isE }}" hint-placeholder-val="{{ false }}">
         <div>
-          <h2 style="font-size:16px; font-weight:700; margin:0 0 6px; color:#1f2933;">Tenant context と安全な切替</h2>
-          <div class="state-tabs" aria-label="Tenant切替の状態" style="margin:10px 0 14px;"><button onClick="{{ act.eSingle }}" style="{{ eStyleSingle }}">単一membership</button><button onClick="{{ act.eMulti }}" style="{{ eStyleMulti }}">複数・switcher</button><button onClick="{{ act.eUnsaved }}" style="{{ eStyleUnsaved }}">未保存で切替</button><button onClick="{{ act.eBlocked }}" style="{{ eStyleBlocked }}">mismatch/PDP不達</button></div>
+          <h2 style="font-size:16px; font-weight:700; margin:0 0 6px; color:#1f2933;">Tenant context と安全な切替<span style="font-size:10.5px; font-weight:600; color:#92610a; background:#fef3c7; border-radius:4px; padding:1px 6px; margin-left:8px; vertical-align:middle;">ADR-0059 pending</span></h2>
+          <div style="display:flex; gap:4px; margin:10px 0 14px;"><span onClick="{{ act.eSingle }}" style="{{ eStyleSingle }}">単一membership</span><span onClick="{{ act.eMulti }}" style="{{ eStyleMulti }}">複数・switcher</span><span onClick="{{ act.eUnsaved }}" style="{{ eStyleUnsaved }}">未保存で切替</span><span onClick="{{ act.eBlocked }}" style="{{ eStyleBlocked }}">mismatch/PDP不達</span></div>
 
           <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:0; overflow:hidden;">
             <div style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 14px; display:flex; align-items:center; justify-content:space-between;">
               <span style="font-size:12px; color:#334155;">kj-atlas</span>
-              <sc-if value="{{ eIsSingle }}" hint-placeholder-val="{{ true }}"><span class="tenant-label" style="font-size:11.5px; font-weight:600; color:#334155;" title="地域調査チーム" aria-label="現在のテナント: 地域調査チーム">地域調査チーム</span></sc-if>
-              <sc-if value="{{ eIsMultiish }}" hint-placeholder-val="{{ false }}"><button class="tenant-label" style="font-size:11.5px; font-weight:600; color:#1d4ed8; background:#fff; border:1px solid #bfdbfe; border-radius:6px; padding:3px 9px; cursor:default;" title="地域調査チーム" aria-label="現在のテナント: 地域調査チーム。切替候補を表示">地域調査チーム ▾</button></sc-if>
+              <sc-if value="{{ eIsSingle }}" hint-placeholder-val="{{ true }}"><span style="font-size:11.5px; font-weight:600; color:#334155;" title="地域調査チーム">地域調査チーム</span></sc-if>
+              <sc-if value="{{ eIsMultiish }}" hint-placeholder-val="{{ false }}"><span style="font-size:11.5px; font-weight:600; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; padding:3px 9px; cursor:default;" title="地域調査チーム">地域調査チーム ▾</span></sc-if>
             </div>
             <div style="padding:16px;">
               <sc-if value="{{ eIsMulti }}" hint-placeholder-val="{{ false }}">
@@ -315,9 +288,9 @@
                 <p style="font-size:10.5px; color:#94a3b8; margin-top:8px;">サーバーが返したmembershipのみ選択可。tenantId自由入力・検索は不可。</p>
               </sc-if>
               <sc-if value="{{ eIsUnsaved }}" hint-placeholder-val="{{ false }}">
-                <div style="border:1px solid #cbd5e1; background:#f8fafc; border-radius:8px; padding:12px 14px; max-width:360px;">
-                  <div style="font-size:12px; font-weight:700; color:#334155;">未保存の変更があります</div>
-                  <div style="font-size:11.5px; color:#475569; margin-top:4px; line-height:1.55;">「新規事業ラボ」へ切り替える前に、この文書の変更を保存または破棄してください。</div>
+                <div style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:12px 14px; max-width:360px;">
+                  <div style="font-size:12px; font-weight:700; color:#92610a;">未保存の変更があります</div>
+                  <div style="font-size:11.5px; color:#78350f; margin-top:4px; line-height:1.55;">「新規事業ラボ」へ切り替える前に、この文書の変更を保存または破棄してください。</div>
                   <div style="display:flex; gap:6px; margin-top:9px;"><span style="font-size:11px; font-weight:600; color:#fff; background:#1f2933; border-radius:5px; padding:5px 11px; cursor:default;">保存して切替</span><span style="font-size:11px; color:#b91c1c; border:1px solid #fecaca; border-radius:5px; padding:5px 11px; cursor:default;">破棄して切替</span><span style="font-size:11px; color:#334155; border:1px solid #e2e8f0; border-radius:5px; padding:5px 11px; cursor:default;">取消</span></div>
                 </div>
               </sc-if>
@@ -337,8 +310,8 @@
       <!-- ===================== R8-F ===================== -->
       <sc-if value="{{ isF }}" hint-placeholder-val="{{ false }}">
         <div>
-          <h2 style="font-size:16px; font-weight:700; margin:0 0 6px; color:#1f2933;">責務IA図</h2>
-          <div class="ia-grid">
+          <h2 style="font-size:16px; font-weight:700; margin:0 0 6px; color:#1f2933;">責務IA図<span style="font-size:10.5px; font-weight:600; color:#92610a; background:#fef3c7; border-radius:4px; padding:1px 6px; margin-left:8px; vertical-align:middle;">future SaaS 先行IA</span></h2>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-top:14px;">
             <div style="background:#fff; border:1.5px solid #93c5fd; border-radius:10px; padding:14px;">
               <div style="font-size:12.5px; font-weight:700; color:#1d4ed8;">Workspace</div>
               <div style="font-size:10.5px; color:#64748b; margin-top:2px;">文書入口・キャンバス・作業モード</div>

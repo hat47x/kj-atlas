@@ -30,7 +30,7 @@
 
 ### D1. 文書体系統合（即時適用）
 
-- `ai_cognitive_externalization_requirements.md` を Read Order に追加し、`domain.md`/`handoff.md`/`codex_gsd_skill_ops.md` の直後に読む。
+- `ai_cognitive_externalization_requirements.md` を Read Order に追加し、`domain.md`/`handoff.md` の直後に読む。
 - 計画の正本は本ADR（0028）とし、機能詳細の正本は `00_Prompt/ai_cognitive_externalization_requirements.md` とする。
 - `01_Plans` の関連Issue/メモは本ADRのフェーズID（CE-X）を参照キーとして分割する。
 
@@ -282,9 +282,7 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 - Guard-04: Query Preview を通過しない送信を拒否。
 - Guard-05: `query/bundle/proposal/apply` の監査ログ4点セットが欠損した場合は失敗扱い。
 
-### D10. 仮想ステークホルダー会議（VSC-CE-01）結果
-
-`00_Prompt/virtual_stakeholder_consensus.md` のプロトコルに従い、AI活用方式を判定した。
+### D10. AI活用方式の判断
 
 #### D10-1. 論点
 
@@ -300,10 +298,10 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 
 #### D10-3. 未確定在庫（人間承認キュー）
 
-- `UNC-VSC-CE-01-01`: Query Preview UI配置（サイド/モーダル/固定）
-- `UNC-VSC-CE-01-02`: bundle token budget 初期値（8k相当を初期提案）
+- `UNC-CE-01-01`: Query Preview UI配置（サイド/モーダル/固定）
+- `UNC-CE-01-02`: bundle token budget 初期値（8k相当を初期提案）
 
-### D11. Core Graph再考（VSC-CE-02）
+### D11. Core Graph再考
 
 追加指示を受け、Core Graphの役割を再検討し以下を決定する。
 
@@ -313,7 +311,7 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 2. Core Graphは常に単一正本か、主体別グラフ統合を許可するか。
 3. 高額モデルをhuman role、廉価モデルをagent roleに割り当てる代理構成を許可するか。
 
-#### D11-2. 決定（仮想会議）
+#### D11-2. 決定
 
 - 決定A（Gate-1）:
   - Core Graphを **Consensus Graph（合意済み統合グラフ）** と再定義する。

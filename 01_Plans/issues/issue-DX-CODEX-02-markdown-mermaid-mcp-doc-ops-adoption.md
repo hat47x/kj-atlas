@@ -19,7 +19,6 @@
 
 ## 2) 背景 / Context
 
-- Codex skill 導入方針は `DX-CODEX-01` で整備中。
 - Mermaid図を含む文書では、テキスト差分のみだと図破損を見逃す可能性がある。
 
 ## 3) 判断基準による優先度評価
@@ -117,7 +116,6 @@
 
 ### Phase 1: Read同期（現行運用ルールとの差分抽出）
 - 再読対象:
-  - `00_Prompt/codex_gsd_skill_ops.md`
   - `04_Documentation/codex_skill_operations.md`（参照のみ）
   - 本Issue（DX-CODEX-02）
 - 差分抽出結果:

@@ -15,7 +15,7 @@
 ### Claude Cowork
 
 - 対話的な企画・意思決定支援、上流文書（`00_Prompt` / `01_Plans`）の整理。
-- 価値判断・トレードオフの言語化、仮想ステークホルダー合議（`00_Prompt/virtual_stakeholder_consensus.md`）。
+- 価値判断・トレードオフの言語化。
 - 「何を作るべきか」「なぜそう決めるか」を人間と詰める局面。
 
 ### Claude Code

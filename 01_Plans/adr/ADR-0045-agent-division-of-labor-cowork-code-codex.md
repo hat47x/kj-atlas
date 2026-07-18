@@ -7,9 +7,9 @@
 
 ## Context
 
-本プロジェクトは複数の生成AIエージェントで開発されている。だが現状の運用文書（`00_Prompt/agent_handover.md` / `handoff.md` / `codex_gsd_skill_ops.md` / `codex_rtk_token_saving_ops.md`）は **Codex 単独前提**で書かれており、次の3者の得意分野の違いと担当分担が定義されていない。
+本プロジェクトは複数の生成AIエージェントで開発されている。だが現状の運用文書（`00_Prompt/agent_handover.md` / `handoff.md`）は **Codex 単独前提**で書かれており、次の3者の得意分野の違いと担当分担が定義されていない。
 
-- **Claude Cowork**: 対話的な企画・意思決定支援・上流文書（00/01層）の整理・仮想ステークホルダー合議に強い。
+- **Claude Cowork**: 対話的な企画・意思決定支援・上流文書（00/01層）の整理に強い。
 - **Claude Code**: リポジトリ内の多ファイル横断の読解・計画（ADR/issue）・実装・テスト駆動の検証・git 操作に強い。拡張（MCP）でブラウザ操作等も受け持てる。
 - **Codex（デスクトップアプリ版）**: 実装の高速な反復と、**Chrome 操作によるアドホックな実機検証**（画面を実際に開いて確認）に強い。
 
@@ -65,7 +65,6 @@ Claude Code が実機検証等を補助できるよう、再現性のある形�
 
 ## Traceability
 
-- Related: `00_Prompt/agent_handover.md`, `00_Prompt/handoff.md`, `00_Prompt/codex_gsd_skill_ops.md`, `00_Prompt/codex_rtk_token_saving_ops.md`
-- Related: `00_Prompt/virtual_stakeholder_consensus.md`（Cowork の合議プロトコル）
+- Related: `00_Prompt/agent_handover.md`, `00_Prompt/handoff.md`
 - Related: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`（solo段階・軽量運用）
 - Derived-from: 2026-06 並行作業で発生したブランチ消失・ADR採番衝突（`ADR-0035` 重複）の実事故

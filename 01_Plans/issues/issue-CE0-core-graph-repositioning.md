@@ -825,7 +825,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 
 ## Phase Execution Record（2026-04-27 / Stream C）
 ### Phase Read（最新Read同期）
-- `00_Prompt/system_prompt.md` / `00_Prompt/domain.md` / `00_Prompt/handoff.md` / `00_Prompt/agent_handover.md` / `00_Prompt/codex_gsd_skill_ops.md` / `00_Prompt/ai_cognitive_externalization_requirements.md` / `01_Plans/adr/ADR-0001-value-to-requirements.md` / `02_Architecture/architecture.md` / `02_Architecture/schemas.md` / `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md` / 本Issueを再読した。
+- `00_Prompt/system_prompt.md` / `00_Prompt/domain.md` / `00_Prompt/handoff.md` / `00_Prompt/agent_handover.md` / `00_Prompt/ai_cognitive_externalization_requirements.md` / `01_Plans/adr/ADR-0001-value-to-requirements.md` / `02_Architecture/architecture.md` / `02_Architecture/schemas.md` / `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md` / 本Issueを再読した。
 - `role / transition / no-go` と SafeMode境界の差分は検出されず、`held` 停止条件は未発火。
 
 ### Phase Plan（最新Read同期）

@@ -41,8 +41,7 @@
 - `01_Plans/project-progress-dashboard.md`
 - `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
 - `00_Prompt/agent_handover.md`
-- `00_Prompt/virtual_stakeholder_consensus.md`
-- GSD、RTK、Claude Codeなど特定ツールの運用文書
+- Claude Codeなど特定ツールの運用文書
 
 全ADR、全issue、00〜04の全ファイルを作業開始時に読む必要はありません。検索や `01_Plans/triage_actionable_plans.py` で対象を絞ってください。
 
@@ -85,7 +84,7 @@
 - 意思決定者と実行者は `Maintainer` に集約する。
 - issue memoは `Type / Status / Lifecycle / Source Issue / Priority / Scope / Related ADR / Expected verification level / Acceptance / Validation` を最小項目とする。
 - ADRは、長期的・横断的・破壊的な契約変更、安全境界変更、複数の合理的選択肢が残る場合に限る。
-- 仮想ステークホルダー会議、2者承認、Decision Queue、RACI、KPIは、実ユーザーまたは継続的な協力者が現れるまで既定では使わない。
+- 2者承認、Decision Queue、RACI、KPIは、実ユーザーまたは継続的な協力者が現れるまで既定では使わない。
 - 進捗の正本はActive issue memoとGit履歴であり、手書きダッシュボードは正本にしない。
 
 削減対象と再導入条件は `01_Plans/lean_operations_inventory.md` を参照してください。
@@ -99,10 +98,6 @@
 - share/exportで未レビュー情報や秘密情報を意図せず共有しない。
 - import/zip/markdownは不正入力を安全側で拒否または無害化する。
 
-## 8. ツール出力
-
-長い `git`、test、build、log出力は、正確な全文が不要なら `00_Prompt/codex_rtk_token_saving_ops.md` に従ってRTKで圧縮します。診断に情報が不足した場合だけ、必要最小範囲を通常コマンドで再実行します。
-
-## 9. 本書の更新
+## 8. 本書の更新
 
 本書はパス単位の入口に留めます。個別ファイルを追加するたびに一覧へ追記せず、タスク別の正本が変わった場合だけ更新してください。新しい契約やADRは、全件読取へ追加せず、該当タスクの行だけを更新します。

@@ -2131,7 +2131,7 @@ handoffKeys:
 ## Stream C update（2026-05-07 / CE1インターフェース先行 mock-first）
 
 ### Phase 1) Read
-- Read Order上位（`system_prompt.md` / `domain.md` / `handoff.md` / `agent_handover.md` / `codex_gsd_skill_ops.md` / `ai_cognitive_externalization_requirements.md` / `ADR-0001` / `architecture.md` / `schemas.md` / `ADR-0028`）を再確認。
+- Read Order上位（`system_prompt.md` / `domain.md` / `handoff.md` / `agent_handover.md` / `ai_cognitive_externalization_requirements.md` / `ADR-0001` / `architecture.md` / `schemas.md` / `ADR-0028`）を再確認。
 - 本ストリームの編集許可を **本issueのみ** と再確認（backend/frontend/schema本体は非編集）。
 - CE0未完了時でも依存切断して進めるため、`ContextQueryV1` / `ContextBundleV1` / error semantics固定を優先対象として確定。
 

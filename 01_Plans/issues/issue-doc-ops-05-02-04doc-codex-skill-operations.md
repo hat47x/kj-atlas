@@ -8,7 +8,7 @@
 - Owner: Stream E
 - Scope: `04_Documentation/codex_skill_operations.md`（※本Issueではメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
-- Related ADR/Spec: `00_Prompt/codex_gsd_skill_ops.md`, `01_Plans/documentation_quality.md`, `04_Documentation/codex_skill_operations.md`
+- Related ADR/Spec: `01_Plans/documentation_quality.md`, `04_Documentation/codex_skill_operations.md`
 - Dependencies: `DOC-OPS-05`
 - Expected verification level: `docs-check`
 

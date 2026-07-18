@@ -16,8 +16,6 @@
 
 AI エージェント作業では、最初にリポジトリルートの [AGENTS.md](https://github.com/hat47x/kj-atlas/blob/main/AGENTS.md) を読みます。AGENTS.md が、読み順、対象階層、設計正本、docs-only 作業の境界を示します。
 
-Codex のローカル実行環境でRTKを使う場合は、`00_Prompt/codex_rtk_token_saving_ops.md` を内部運用手順として参照します。RTKはシェル出力を短くする補助であり、利用者向け機能、CI必須要件、テスト証跡の正本ではありません。
-
 ## 公開文書で決めること
 
 この文書では次だけを決めます。

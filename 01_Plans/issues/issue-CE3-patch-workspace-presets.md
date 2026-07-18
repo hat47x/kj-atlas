@@ -20,7 +20,7 @@
 - SecurityGateImpact: SafeMode
 - VerificationLevel: e2e
 - DecisionStatus: Fixed
-- DecisionQueueRef: `UNC-VSC-CE-01-01`
+- DecisionQueueRef: `UNC-CE-01-01`
 
 ## 1) 機能要件（具体）
 

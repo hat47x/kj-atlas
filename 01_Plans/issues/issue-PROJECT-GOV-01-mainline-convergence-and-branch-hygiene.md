@@ -288,21 +288,17 @@
 | #2265 | merged | `1814d853147ed1e8cca4fd14e15707e3ab88e754` | Prior governance checkpoint is now on `main`. |
 | #2266 | merged | `5a242b5e16945b15b167f6c34c61ce5a3a668320` | 2026-05-25 latest-main baseline record is now on `main`. |
 | #2267 | merged | `e9c354f4cb8f76e7a35f8d51fd1ab6eca3c88f69` | DATA-MAINT-02 recovery exercise evidence is now on `main`. |
-| #2270 | open draft | N/A | Independent DX lane for Codex RTK token-saving runbook. It must not be treated as product/runtime release evidence. |
 
 ### Decision
 
 - The DATA/MVP/QA/OPS evidence lane from #2261 through #2267 is considered converged into `main`.
-- #2270 is an independent developer-experience documentation lane. It is mergeable from a repository-governance perspective, but it does not change product runtime, SafeMode behavior, public user documentation, data maintenance evidence, or release readiness.
 - No new ADR is required. ADR-0034 already covers the mainline convergence policy, and the current change only records the updated inventory.
 - Branch deletion remains a permissioned cleanup action and is not executed from this issue update.
 
 ### Updated recommendation
 
 1. Treat `origin/main@1a8ecd575e830f5fa51e537b75875840c69c7096` as the current planning input.
-2. Review or merge #2270 independently of product release gates because it is Codex local-operations guidance.
-3. After #2270 is merged or closed, add `origin/codex/rtk-agent-runbook` to the cleanup candidate table.
-4. Do not create another PROJECT-GOV checkpoint unless `origin/main`, the open PR set, or the active issue triage materially changes.
+2. Do not create another PROJECT-GOV checkpoint unless `origin/main`, the open PR set, or the active issue triage materially changes.
 
 ## 14) Convergence checkpoint 2026-05-31: productization evidence PR lane
 

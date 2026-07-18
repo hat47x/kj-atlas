@@ -2725,7 +2725,7 @@ type PatchProposal = {
 - stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
 
 ### Phase 1 Read
-- Read Order（`00_Prompt/system_prompt.md` → `00_Prompt/domain.md` → `00_Prompt/handoff.md` → `00_Prompt/agent_handover.md` → `00_Prompt/codex_gsd_skill_ops.md` → `00_Prompt/ai_cognitive_externalization_requirements.md` → `01_Plans/adr/ADR-0001-value-to-requirements.md` → `02_Architecture/architecture.md` → `02_Architecture/schemas.md` → `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`）を再実行し、本Issueも再読。
+- Read Order（`00_Prompt/system_prompt.md` → `00_Prompt/domain.md` → `00_Prompt/handoff.md` → `00_Prompt/agent_handover.md` → `00_Prompt/ai_cognitive_externalization_requirements.md` → `01_Plans/adr/ADR-0001-value-to-requirements.md` → `02_Architecture/architecture.md` → `02_Architecture/schemas.md` → `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`）を再実行し、本Issueも再読。
 - 固定順序 **Plan → Execute → Verify → Proceed**、および contract-only / docs-only / single-file 制約を再確認。
 
 ### Phase 2 Plan
