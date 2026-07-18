@@ -47,6 +47,7 @@ async def lifespan(app: FastAPI):
     app.state.document_access_resource_resolver = SingleTenantHeaderResourceResolver()
     app.state.saas_identity_context_resolver = None
     app.state.tenant_capability_resolver = build_tenant_capability_resolver()
+    app.state.active_tenant_session_persister = None
     yield
 
 

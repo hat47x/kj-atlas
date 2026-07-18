@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
+from kj_atlas_api.active_tenant_session import persist_active_tenant_selection
 from kj_atlas_api.db import get_db
 from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
 from kj_atlas_api.session_context import (
@@ -14,6 +15,7 @@ from kj_atlas_api.session_context import (
     MAX_SESSION_RESPONSE_BYTES,
     MAX_SESSION_TENANT_COUNT,
     TenantSessionContext,
+    switch_tenant_session_context,
 )
 from kj_atlas_api.tenant_context import TenantSummary
 
@@ -44,6 +46,12 @@ class TenantSessionContextResponse(BaseModel):
         min_length=1,
         max_length=MAX_SESSION_CAPABILITY_VERSION_LENGTH,
     )
+
+
+class ActiveTenantRequestV1(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    tenantId: str
 
 
 def _tenant_summary(tenant: TenantSummary) -> TenantSessionSummaryResponse:
@@ -87,6 +95,49 @@ def get_session_context(
             db=db,
         )
         session_response = _session_response(trusted_session.session)
+    except HTTPException as error:
+        error.headers = {
+            **(error.headers or {}),
+            "Cache-Control": "no-store",
+            "Pragma": "no-cache",
+        }
+        raise
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    return session_response
+
+
+@router.post("/active-tenant", response_model=TenantSessionContextResponse)
+def change_active_tenant(
+    payload: ActiveTenantRequestV1,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+) -> TenantSessionContextResponse:
+    try:
+        trusted_session = resolve_trusted_saas_request_session(
+            request=request,
+            db=db,
+        )
+        selected_session = switch_tenant_session_context(
+            db=db,
+            principal_id=trusted_session.session.principal_id,
+            current_tenant=trusted_session.tenant,
+            requested_tenant_id=payload.tenantId,
+            capability_resolver=getattr(
+                request.app.state,
+                "tenant_capability_resolver",
+                None,
+            ),
+        )
+        session_response = _session_response(selected_session)
+        persist_active_tenant_selection(
+            request=request,
+            response=response,
+            principal_id=trusted_session.session.principal_id,
+            previous_tenant=trusted_session.tenant,
+            selected_tenant=selected_session.tenant_context,
+        )
     except HTTPException as error:
         error.headers = {
             **(error.headers or {}),

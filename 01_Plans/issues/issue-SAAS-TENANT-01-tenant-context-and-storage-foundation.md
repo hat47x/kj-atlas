@@ -315,3 +315,9 @@
 - App unmount時に進行中のdiff・diagnostics・bundle AbortControllerを先にabortし、bundle task runnerをcancelしてからdiff・diagnostics workerをdisposeする共通cleanupを結線した。既存のsnapshot object URL revoke、diff effect abort、highlight timer clearと組み合わせ、hard document replacement後に旧tenant由来の非同期処理を継続させない。
 - cleanupはnull resourceを無視し、個別のabort/cancel/disposeが例外でも後続resourceの破棄を続ける。cleanupの順序、失敗分離、空resource、App unmount配線を近接4件で固定し、worker・bundle・transition・storageを含む近接51件、frontend全体1,131件・200 file、typecheck、production build、docs-check、active issue validator、diff-checkを通過した。
 - App起動時session bootstrap、logout/active tenant切替からtransition coordinatorとhard replacementを起動する実配線、実ブラウザでの旧DOM・memory・object URL非残留E2Eは未完了のためAC-6/8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-18: fail-closed active tenant change boundary
+
+- `POST /session/active-tenant`を追加し、trusted identityと現在TenantContextをrequestごとに再解決してから、要求tenantを同じprincipalのactive membership allowlistで再照合する。成功responseをclosed-world・64KiB以下へ構築できた場合だけ、server検証済みprincipal、旧TenantContext、選択済みTenantContextをtrusted session persisterへ渡す。header、query、role/group、raw request tenant値を保存値に使わない。
+- 認証基盤固有のsession形式とanti-forgery検証は注入adapterの責務とし、adapter欠損・予期しない保存障害は`503 active_tenant_update_unavailable`へ正規化する。未知・非canonical・他principal・停止membershipは保存前に404相当で拒否し、trusted adapterのanti-forgery拒否は維持する。frontend clientも現在の検証済みallowlist外を通信前に拒否し、成功応答のprincipal不変・要求tenant一致を再検証する。
+- backend route近接24件、frontend session/storage/transition近接46件、backend全体561件pass・条件付き25件skip（追加のclosed-world request testは近接再実行）、frontend全体1,135件・200 file、Ruff、frontend typecheck、production build、docs-check、active issue validator、diff-checkを通過した。trusted auth edge／anti-forgery付きpersisterの実runtime接続、App session bootstrap、tenant switcherからtransition coordinatorとhard replacementを起動する配線、実ブラウザE2Eは未完了のためAC-6/8/10/12とSaaS起動拒否を継続する。

@@ -251,6 +251,51 @@ export async function getTenantSessionContext(
   return parseTenantSessionContext(responseBody);
 }
 
+export async function changeActiveTenant(
+  currentSessionContext: TenantSessionContextV1,
+  requestedTenantId: string,
+  options: Readonly<{ signal?: AbortSignal }> = {},
+): Promise<TenantSessionContextV1> {
+  const currentSession = parseTenantSessionContext(currentSessionContext);
+  const requestedTenant = currentSession.availableTenants.find(
+    (tenant) => tenant.id === requestedTenantId,
+  );
+  if (!requestedTenant) {
+    throw new InvalidTenantSessionContextError();
+  }
+
+  const response = await fetch(`${API_BASE}/session/active-tenant`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ tenantId: requestedTenant.id }),
+    cache: "no-store",
+    credentials: "same-origin",
+    signal: options.signal,
+  });
+
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response, MAX_TENANT_SESSION_RESPONSE_BYTES);
+    throw new ApiError(response.status, errorDetail.message, {
+      code: errorDetail.code,
+      disabledReason: errorDetail.disabledReason,
+    });
+  }
+
+  const nextSession = parseTenantSessionContext(
+    await parseTenantSessionResponse(response),
+  );
+  if (
+    nextSession.principalId !== currentSession.principalId
+    || nextSession.activeTenant.id !== requestedTenant.id
+  ) {
+    throw new InvalidTenantSessionContextError();
+  }
+  return nextSession;
+}
+
 export async function getDocument(docId: string): Promise<DocumentWithEtag<Document>> {
   const response = await fetch(`${API_BASE}/docs/${docId}`);
 

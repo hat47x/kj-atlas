@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import pytest
-from fastapi import Request
+from fastapi import HTTPException, Request, Response
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -112,6 +112,46 @@ class RaisingTenantResolver:
         raise RuntimeError("secret tenant resolver failure")
 
 
+@dataclass
+class RecordingActiveTenantPersister:
+    calls: list[tuple[str, str, str, str]] = field(default_factory=list)
+
+    def persist(
+        self,
+        *,
+        request: Request,
+        response: Response,  # noqa: ARG002
+        principal_id: str,
+        previous_tenant: TenantContext,
+        selected_tenant: TenantContext,
+    ) -> None:
+        self.calls.append(
+            (
+                principal_id,
+                previous_tenant.tenant_id,
+                selected_tenant.tenant_id,
+                selected_tenant.membership_id,
+            )
+        )
+        assert request.method == "POST"
+
+
+class RaisingActiveTenantPersister:
+    def persist(self, **_) -> None:
+        raise RuntimeError("secret session store failure")
+
+
+class RejectingActiveTenantPersister:
+    def persist(self, **_) -> None:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "active_tenant_change_rejected",
+                "message": "Active tenant change was rejected.",
+            },
+        )
+
+
 def _seed(db: Session) -> None:
     db.add(
         UserRow(
@@ -182,6 +222,7 @@ def _session_client(
             client.app.state.saas_identity_context_resolver = identity_resolver
             client.app.state.tenant_context_resolver = tenant_resolver
             client.app.state.tenant_capability_resolver = capability_resolver
+            client.app.state.active_tenant_session_persister = None
             yield (
                 client,
                 session_local,
@@ -193,6 +234,7 @@ def _session_client(
         app.dependency_overrides.clear()
         app.state.saas_identity_context_resolver = None
         app.state.tenant_capability_resolver = None
+        app.state.active_tenant_session_persister = None
         app.state.tenant_context_resolver = SingleTenantContextResolver()
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
@@ -403,3 +445,161 @@ def test_context_normalizes_unexpected_tenant_resolver_failure(tmp_path) -> None
         "message": "Tenant context resolution is unavailable.",
     }
     assert "secret tenant resolver failure" not in response.text
+
+
+def test_active_tenant_change_persists_only_the_allowlisted_selected_context(
+    tmp_path,
+) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+        persister = RecordingActiveTenantPersister()
+        client.app.state.active_tenant_session_persister = persister
+
+        response = client.post(
+            "/session/active-tenant?tenantId=attacker-query",
+            headers={
+                "x-tenant-id": "attacker-header",
+                "x-auth-roles": "platform-admin",
+            },
+            json={"tenantId": "tenant-b"},
+        )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "principalId": "user-1",
+        "activeTenant": {"id": "tenant-b", "displayName": "Tenant B"},
+        "availableTenants": [
+            {"id": "tenant-a", "displayName": "Tenant A"},
+            {"id": "tenant-b", "displayName": "Tenant B"},
+        ],
+        "effectiveCapabilities": ["document.read", "document.write"],
+        "capabilityVersion": "capability-v7",
+    }
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["pragma"] == "no-cache"
+    assert len(persister.calls) == 1
+    principal_id, previous_tenant_id, selected_tenant_id, membership_id = (
+        persister.calls[0]
+    )
+    assert principal_id == "user-1"
+    assert previous_tenant_id == "tenant-a"
+    assert selected_tenant_id == "tenant-b"
+    assert membership_id
+    for untrusted_value in ("attacker-query", "attacker-header", "platform-admin"):
+        assert untrusted_value not in response.text
+
+
+def test_active_tenant_change_is_closed_without_session_persister(tmp_path) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+
+        response = client.post(
+            "/session/active-tenant",
+            json={"tenantId": "tenant-b"},
+        )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == {
+        "code": "active_tenant_update_unavailable",
+        "message": "Active tenant update is unavailable.",
+    }
+    assert response.headers["cache-control"] == "no-store"
+
+
+@pytest.mark.parametrize(
+    "tenant_id",
+    ["tenant-unknown", " tenant-b", "tenant-b\u200b", "x" * 257],
+)
+def test_active_tenant_change_rejects_free_or_noncanonical_tenant_ids(
+    tmp_path,
+    tenant_id: str,
+) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+        persister = RecordingActiveTenantPersister()
+        client.app.state.active_tenant_session_persister = persister
+
+        response = client.post(
+            "/session/active-tenant",
+            json={"tenantId": tenant_id},
+        )
+
+    assert response.status_code == 404
+    assert persister.calls == []
+    assert tenant_id not in response.text
+
+
+def test_active_tenant_change_rejects_extra_fields_before_persist(tmp_path) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+        persister = RecordingActiveTenantPersister()
+        client.app.state.active_tenant_session_persister = persister
+
+        response = client.post(
+            "/session/active-tenant",
+            json={"tenantId": "tenant-b", "role": "platform-admin"},
+        )
+
+    assert response.status_code == 422
+    assert persister.calls == []
+
+
+def test_active_tenant_change_rechecks_requested_membership_before_persist(
+    tmp_path,
+) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, session_local, _, _, _ = fixture
+        persister = RecordingActiveTenantPersister()
+        client.app.state.active_tenant_session_persister = persister
+        with session_local() as db:
+            membership = db.get(TenantMembershipRow, ("tenant-b", "user-1"))
+            assert membership is not None
+            membership.lifecycle_state = "suspended"
+            db.commit()
+
+        response = client.post(
+            "/session/active-tenant",
+            json={"tenantId": "tenant-b"},
+        )
+
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "tenant_not_available"
+    assert persister.calls == []
+
+
+def test_active_tenant_change_normalizes_unexpected_persistence_failure(
+    tmp_path,
+) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+        client.app.state.active_tenant_session_persister = (
+            RaisingActiveTenantPersister()
+        )
+
+        response = client.post(
+            "/session/active-tenant",
+            json={"tenantId": "tenant-b"},
+        )
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "active_tenant_update_unavailable"
+    assert "secret session store failure" not in response.text
+
+
+def test_active_tenant_change_preserves_trusted_antiforgery_rejection(
+    tmp_path,
+) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+        client.app.state.active_tenant_session_persister = (
+            RejectingActiveTenantPersister()
+        )
+
+        response = client.post(
+            "/session/active-tenant",
+            json={"tenantId": "tenant-b"},
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"]["code"] == "active_tenant_change_rejected"
+    assert response.headers["cache-control"] == "no-store"

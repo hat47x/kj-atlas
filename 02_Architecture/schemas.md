@@ -995,7 +995,7 @@ export type TenantBrowserStorageScopeV1 = {
 };
 ```
 
-tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し、反復中のindex変化でentryを取りこぼさない。検証済みsession responseだけを受け付けるtransition coordinatorが、request abort、worker dispose、object URL・memory state破棄hook、旧scope削除、hard document replacementを順に実行する。cleanup/storage削除の一部が失敗しても旧DOMを継続利用しない。現段階ではfail-closedな`GET /session/context`とstrict frontend fetch clientまで実装済みだが、session bootstrap、coordinatorのApp hook、active tenant変更APIへの実配線は行わない。
+tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し、反復中のindex変化でentryを取りこぼさない。検証済みsession responseだけを受け付けるtransition coordinatorが、request abort、worker dispose、object URL・memory state破棄hook、旧scope削除、hard document replacementを順に実行する。cleanup/storage削除の一部が失敗しても旧DOMを継続利用しない。現段階ではfail-closedなsession GET/POST、trusted active tenant session persister境界、strict frontend clientまで実装済みだが、実auth edge adapter、session bootstrap、tenant switcherからcoordinatorを起動する配線は行わない。
 
 実装段階:
 
@@ -1008,10 +1008,10 @@ tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し
 | `user_identities`の`identityProviderId + subject`移行 | Expand・backfill・二重書き済み。lookupは新binding優先、旧行fallback成功時は自己補完、二重一致は拒否 | 互換IdPは検証済みissuerではなく、旧列contractも残るためSaaS blockerは継続 |
 | Document複合PK/FK、全consumerのtenant必須化 | Document/判断ログの複合PK・unique・FKとrepository経路は実装済み | PostgreSQL実地検証とMCP/worker/cache/storage等のconsumer伝播が未完了のためSaaS blocker継続 |
 | PostgreSQL RLS等のDB側guard | Document/判断ログのENABLE+FORCE RLS policy、repositoryごとのtransaction-local `kj_atlas.tenant_id`設定を実装。SQLiteはno-op | PostgreSQL直接SQL・pool再利用の実地matrixが未実施のためSaaS blocker継続 |
-| verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaim再照合、membership allowlist内部service、resolverのmembership IDとDB再生成値の再一致、信頼済みrequest context共通境界、既知capabilityだけを返す`GET /session/context`、Document routeの同一docId GET/PUT tenant A/B matrixまで実装 | auth edgeからのverified evidence接続、trusted host mapping、active tenant変更、MCP/worker/browserを含む完全matrixは未実装のためblocker継続 |
+| verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaim再照合、membership allowlist内部service、resolverのmembership IDとDB再生成値の再一致、信頼済みrequest context共通境界、既知capabilityだけを返す`GET /session/context`、allowlist再照合後だけtrusted persisterへ渡す`POST /session/active-tenant`、Document routeの同一docId GET/PUT tenant A/B matrixまで実装 | auth edgeからのverified evidenceとanti-forgery付きsession persister接続、trusted host mapping、MCP/worker/browserを含む完全matrixは未実装のためblocker継続 |
 | server-owned Document access metadata | tenant/doc複合FK、visibility/binding/version制約、PostgreSQL RLS、tenant-scoped repository、strict external HTTP binding resolverを実装。client policy headerはSaaS resolverで無視し、raw policyRefはrequest内だけで利用 | auth/capability/binding/PDPのSaaS runtime配線・PostgreSQL実地検証が未完了のためSaaS blocker継続 |
 | Document access metadata管理API・監査 | verified/trusted TenantContextと`document.policy.manage`専用のlist/detail/conditional PUT、秘密値を反射しないstrict入力、tenant-scoped transactional audit、strict external capability/binding resolver、PostgreSQL RLS migrationを実装 | trusted SaaS auth edge、実policy service/PDP接続、PostgreSQL実地検証、frontend配線が未完了のためruntimeではfail-closed無効 |
-| browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、各保存値のoptional tenant scope、App全永続consumerを単一scopeへbindingするfacade、途中scope変更拒否、App unmount時のrequest abort/task cancel/worker dispose、同一docId tenant A/B test、strict session fetch/validator、検証済みresponseだけを受けるtransition cleanup/hard-reload coordinatorを実装 | session bootstrap、logout/active tenant切替からcleanup・hard replacementを起動する実配線が未実装のためSaaS blocker継続 |
+| browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、各保存値のoptional tenant scope、App全永続consumerを単一scopeへbindingするfacade、途中scope変更拒否、App unmount時のrequest abort/task cancel/worker dispose、同一docId tenant A/B test、strict session GET/active tenant POST client、検証済みresponseだけを受けるtransition cleanup/hard-reload coordinatorを実装 | session bootstrap、logout/tenant switcherからcleanup・hard replacementを起動する実配線が未実装のためSaaS blocker継続 |
 
 ## 11. Polygon contract keys（FB-P0-2A2B2C）
 

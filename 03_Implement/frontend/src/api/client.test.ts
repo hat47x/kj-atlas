@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   ApiError,
+  changeActiveTenant,
   getTenantSessionContext,
   suggestMerges,
   suggestLayout,
@@ -178,6 +179,123 @@ describe("tenant session context fetch boundary", () => {
     await expect(getTenantSessionContext()).rejects.toBeInstanceOf(
       InvalidTenantSessionContextError,
     );
+  });
+
+  it("changes only to a tenant from the verified current allowlist", async () => {
+    const abortController = new AbortController();
+    const currentSession = {
+      principalId: "user-1",
+      activeTenant: { id: "tenant-a", displayName: "Tenant A" },
+      availableTenants: [
+        { id: "tenant-a", displayName: "Tenant A" },
+        { id: "tenant-b", displayName: "Tenant B" },
+      ],
+      effectiveCapabilities: ["document.read" as const],
+      capabilityVersion: "capability-v7",
+    };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({
+        ...currentSession,
+        activeTenant: { id: "tenant-b", displayName: "Tenant B" },
+        capabilityVersion: "capability-v8",
+      }), { status: 200, headers: { "Content-Type": "application/json" } }),
+    );
+
+    const nextSession = await changeActiveTenant(
+      currentSession,
+      "tenant-b",
+      { signal: abortController.signal },
+    );
+
+    expect(nextSession.activeTenant.id).toBe("tenant-b");
+    expect(fetchMock).toHaveBeenCalledWith("/api/session/active-tenant", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ tenantId: "tenant-b" }),
+      cache: "no-store",
+      credentials: "same-origin",
+      signal: abortController.signal,
+    });
+  });
+
+  it("rejects a free-input tenant before sending a request", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const currentSession = {
+      principalId: "user-1",
+      activeTenant: { id: "tenant-a", displayName: "Tenant A" },
+      availableTenants: [{ id: "tenant-a", displayName: "Tenant A" }],
+      effectiveCapabilities: ["document.read" as const],
+      capabilityVersion: "capability-v7",
+    };
+
+    await expect(
+      changeActiveTenant(currentSession, "attacker-tenant"),
+    ).rejects.toBeInstanceOf(InvalidTenantSessionContextError);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a tenant-change response for another principal or tenant", async () => {
+    const currentSession = {
+      principalId: "user-1",
+      activeTenant: { id: "tenant-a", displayName: "Tenant A" },
+      availableTenants: [
+        { id: "tenant-a", displayName: "Tenant A" },
+        { id: "tenant-b", displayName: "Tenant B" },
+      ],
+      effectiveCapabilities: ["document.read" as const],
+      capabilityVersion: "capability-v7",
+    };
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({
+          ...currentSession,
+          principalId: "user-2",
+          activeTenant: { id: "tenant-b", displayName: "Tenant B" },
+        }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({
+          ...currentSession,
+          activeTenant: { id: "tenant-a", displayName: "Tenant A" },
+        }), { status: 200 }),
+      );
+
+    await expect(
+      changeActiveTenant(currentSession, "tenant-b"),
+    ).rejects.toBeInstanceOf(InvalidTenantSessionContextError);
+    await expect(
+      changeActiveTenant(currentSession, "tenant-b"),
+    ).rejects.toBeInstanceOf(InvalidTenantSessionContextError);
+  });
+
+  it("preserves a stable active-tenant update failure", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({
+        detail: {
+          code: "active_tenant_update_unavailable",
+          message: "Active tenant update is unavailable.",
+        },
+      }), { status: 503, statusText: "Service Unavailable" }),
+    );
+    const currentSession = {
+      principalId: "user-1",
+      activeTenant: { id: "tenant-a", displayName: "Tenant A" },
+      availableTenants: [
+        { id: "tenant-a", displayName: "Tenant A" },
+        { id: "tenant-b", displayName: "Tenant B" },
+      ],
+      effectiveCapabilities: ["document.read" as const],
+      capabilityVersion: "capability-v7",
+    };
+
+    await expect(changeActiveTenant(currentSession, "tenant-b")).rejects.toMatchObject({
+      status: 503,
+      code: "active_tenant_update_unavailable",
+      message: "Active tenant update is unavailable.",
+    });
   });
 });
 

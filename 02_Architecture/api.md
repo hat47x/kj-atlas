@@ -642,9 +642,9 @@ export type AdminProvisionUserConflictError = {
 
 ## 10. SaaS TenantContext / capability契約（ADR-0059、L0 Planned）
 
-本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・越境テストが完了するまでSaaS profileを有効化しない。`GET /session/context`のfail-closed route境界は実装済みだが、信頼済みauth edgeがidentity resolverを注入しない既定状態では503として閉じる。active tenant変更endpointとtenant switcherは未実装・非公開である。
+本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・越境テストが完了するまでSaaS profileを有効化しない。`GET /session/context`と`POST /session/active-tenant`のfail-closed route境界は実装済みだが、信頼済みauth edgeがidentity resolverとactive tenant session persisterを注入しない既定状態では503として閉じる。tenant switcherとSaaS runtime配線は未実装・非公開である。
 
-### 10.1 session context（GET実装済み・SaaS runtime gated）
+### 10.1 session context（GET/POST実装済み・SaaS runtime gated）
 
 - `GET /session/context`
   - 現在の検証済みTenantContext、利用者がactive membershipを持つtenant候補、tenant-scoped capabilityを返す。
@@ -653,9 +653,10 @@ export type AdminProvisionUserConflictError = {
   - responseは64KiB以下、principal/tenant IDを256文字以下、tenant display nameを256文字以下、capability versionを128文字以下、available tenantを1〜256件の重複なし、effective capabilityを既知11件以下の重複なしへ限定する。server-side session値が不正・非表示・過大な場合は`503 session_context_unavailable`、capability snapshot違反は`503 capability_resolution_unavailable`として値を反射せず閉じる。
   - `Cache-Control: no-store`と`Pragma: no-cache`を付け、利用者表示名・email・外部IdP subject・membership ID・role/groupを返さない。
 - `POST /session/active-tenant`
-  - 計画中であり、認証sessionへactive tenantを保存・更新する契約が確定するまでrouteを追加しない。
   - request: `{ tenantId }`
-  - backendがmembershipを再確認し、新TenantContextを確定した場合だけ更新後contextを返す。
+  - backendが現在のidentity・TenantContext・membershipを再確認し、同じprincipalのactive membership allowlistから新TenantContextを確定した場合だけ更新後contextを返す。header、query、role/group、自由入力tenantを選択根拠にしない。
+  - 認証session固有の保存形式とanti-forgery検証はtrusted auth edgeが注入する`active_tenant_session_persister`の責務とする。persisterへはraw request値ではなく、server検証済みprincipal、旧TenantContext、選択済みTenantContextだけを保存値として渡す。
+  - persister欠損・予期しない保存障害は`503 active_tenant_update_unavailable`として値を反射せず閉じ、保存前にresponse sizeとclosed-world契約を検証する。trusted persisterによるanti-forgery拒否はその拒否status/codeを維持する。
   - 不明tenant、他利用者のtenant、停止membershipは存在を推測させない`404`相当とする。
 
 ```ts
@@ -674,11 +675,11 @@ export type ActiveTenantRequestV1 = {
 
 `effectiveCapabilities`は表示補助であり、APIの再認可を代替しない。cacheする場合は`deployment + tenantId + principalId + capabilityVersion`で分離し、auth tokenの有効期限を越えて保持しない。
 
-active tenant変更の成功responseはfrontend validatorを通過した後だけ遷移へ使用する。遷移時は進行中requestをabortし、workerをdisposeし、object URLと文書・選択・検索等のmemory stateを破棄し、旧browser storage scopeだけを削除してhard document replacementを行う。cleanup/storage削除の一部が失敗しても旧DOMを継続利用せずreplacementを優先する。未検証responseではcleanup、storage変更、navigationを開始しない。
+frontend clientは現在の検証済み`availableTenants`にないtenantを通信前に拒否し、`no-store`・same-origin JSONでactive tenant変更を要求する。成功responseは既存validatorに加えてprincipal不変と要求tenant一致を確認した後だけ遷移へ使用する。遷移時は進行中requestをabortし、workerをdisposeし、object URLと文書・選択・検索等のmemory stateを破棄し、旧browser storage scopeだけを削除してhard document replacementを行う。cleanup/storage削除の一部が失敗しても旧DOMを継続利用せずreplacementを優先する。未検証responseではcleanup、storage変更、navigationを開始しない。
 
 `principalId`は認証済みUserに対応するserver-managed opaque IDであり、表示名やemail、外部IdP subjectを返さない。browser storage scopeのprincipal要素にはこの値だけを使う。
 
-実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。session responseの内部builderと`GET /session/context` routeは、active tenantの再照合、opaque principalId、allowlist済みtenant候補、trusted capability resolverの既知capabilityだけを受理し、識別子・一覧件数・response sizeを上限内へ閉じる。不正・欠損したcapability snapshotは`503 capability_resolution_unavailable`、不正・過大なsession値は`503 session_context_unavailable`としてfail-closedにする。active tenant切替の内部境界も、現在のverified/trusted contextがまだ有効であること、要求tenantがcanonicalかつ同じprincipalのallowlistに含まれることを再確認し、成功後だけ新tenantのcapability snapshotを解決する。frontend側は`no-store`・same-originでGETし、成功・エラーresponseのstreamを64KiBまでで打ち切って超過時はcancelする。成功response validatorを通過し、active tenantがavailableTenantsと一致したcontextだけをbrowser storage scopeへ変換する。未知・重複capability、余分なfield、非UTF-8、非表示・過大値は利用しない。strict external HTTP capability resolverとapplication lifecycleの既定unavailable配線は実装済みである。HTTP headerやqueryを直接verified evidenceへ変換する処理、trusted SaaS identity resolverの実runtime接続、`POST /session/active-tenant`、App起動時のsession bootstrap配線は未実装であり、SaaS profileは引き続き閉じる。
+実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。session responseの内部builderと`GET /session/context` routeは、active tenantの再照合、opaque principalId、allowlist済みtenant候補、trusted capability resolverの既知capabilityだけを受理し、識別子・一覧件数・response sizeを上限内へ閉じる。不正・欠損したcapability snapshotは`503 capability_resolution_unavailable`、不正・過大なsession値は`503 session_context_unavailable`としてfail-closedにする。`POST /session/active-tenant`も現在contextと要求tenantのmembershipを再確認し、検証済み選択結果だけをtrusted session persisterへ渡す。frontend側はsession GET/POSTを`no-store`・same-originで行い、成功・エラーresponseのstreamを64KiBまでで打ち切って超過時はcancelする。成功response validatorを通過し、active tenantがavailableTenantsと一致したcontextだけをbrowser storage scope／transitionへ渡す。未知・重複capability、余分なfield、非UTF-8、非表示・過大値は利用しない。strict external HTTP capability resolverとapplication lifecycleの既定unavailable配線は実装済みである。HTTP headerやqueryを直接verified evidenceへ変換する処理、trusted SaaS identity resolver／session persisterの実runtime接続、App起動時session bootstrap、tenant switcherからcleanup・hard replacementを起動する配線は未実装であり、SaaS profileは引き続き閉じる。
 
 Appは注入されたbrowser storage scopeをmount時に検証・snapshotし、recent document、view mode/locale/visibility、reviewer、onboarding、advanced UI、Minimap、QueryPresetを同じscopeへbindingする。scopeを同一mount内で変更する場合は旧memory stateを再利用せず例外停止し、§10.1のhard document replacementを必須とする。App unmount時は進行中のdiff・diagnostics・bundle requestをabortし、bundle taskをcancelしてdiff・diagnostics workerをdisposeする。個別cleanup失敗で残りのcleanupやreplacementを止めない。scope省略時は既存single-tenant keyを維持する。session bootstrapが未配線のため現行entry pointはscopeを注入せず、これをSaaS対応済みとは扱わない。
 
