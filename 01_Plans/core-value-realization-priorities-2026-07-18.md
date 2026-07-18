@@ -111,24 +111,6 @@ kj-atlasリポジトリのコアバリュー実現クリティカルパス（正
 | EXT-CONN-02/03/04（外部エージェント連携の段階2以降） | ADR-0054の段階ゲート（段階1の運用実績待ち） |
 | ADR-0051（Bulk Critique理由記録、Proposed未実装） | 依存元issueはDone、実害報告なし |
 
-## 7. Sonnet級エージェント実行計画の所在（2026-07-18追記）
-
-人間判断なしに続行可能な要件は、各issueファイル内の「Sonnet級エージェント実行計画（2026-07-18）」節として詳細化した。いずれも設計選択を計画内で確定済みであり、実行エージェントは選択肢の再検討なしに着手できる。
-
-| 要件 | 計画の所在 | 実行後のマージ規律 |
-| --- | --- | --- |
-| R1 配送実装・probe・契約テスト | [ENV-COMPOSE-01](issues/issue-ENV-COMPOSE-01-runtime-setting-delivery-and-effective-verification.md) | デプロイ挙動変更のため**人間レビュー保留** |
-| R5 QAゲート解除＋初回バッチ | [QA-E2E-USE-01](issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md) / [QA-PUB-01-I18N-03](issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md) / [QA-UNIT-01](issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md) | テスト追加のみ、CI green後マージ可 |
-| R6 AC-7（前後比較と原文復帰） | [DOMAIN-CARD-QUALITY-01](issues/issue-DOMAIN-CARD-QUALITY-01-qualitative-card-quality-assistance.md) | frontend-only、CI green後マージ可 |
-| （付随）文書コマンド照合の残り4区分 | [DX-DOC-04](issues/issue-DX-DOC-04-executable-command-contract-checks.md) | docs+tooling-only、CI green後マージ可 |
-
-計画追記を**見送った**もの（理由つき）:
-
-- **R7 [DOMAIN-W-ITERATION-01](issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md)**: Owner: Codexが本体実装を進行中のため、並行セッションの作業と衝突する計画追記を行わない（ADR-0045 CP-6）。
-- **R2 [DEPLOY-NET-01](issues/issue-DEPLOY-NET-01-loopback-default-and-network-exposure-boundary.md)**: 実装済み（PR #2618）。残作業は人間のセキュリティレビューのみで、追加計画の対象がない。
-- **[DATA-MODEL-OPS-02](issues/issue-DATA-MODEL-OPS-02-management-plane-data-boundary.md) AC-6**: Round 8デザイン往復が外部ツールで進行中（作業ツリーに未コミットの依頼文・回答素材を確認済み）。受領処理はその往復の完了後であり、いま計画を固定すると進行中の実態と乖離する。
-- **R3/R4（検証実行系）**: §4〜§5の代行設計・委譲プロンプトが既に実行計画に相当する。
-
 ## Traceability
 
 - Source: Maintainerの整理依頼および代行前提の文書化指示（2026-07-18 チャット）
