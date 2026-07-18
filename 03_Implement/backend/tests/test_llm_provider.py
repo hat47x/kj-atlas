@@ -440,6 +440,12 @@ def test_settings_accept_large_scale_with_opt_in_and_escalation(monkeypatch: pyt
     monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "large-scale")
     monkeypatch.setenv("KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN", "true")
     monkeypatch.setenv("KJ_ATLAS_LLM_ESCALATION_ENABLED", "true")
+    monkeypatch.setenv(
+        "KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL",
+        "https://llm.example.invalid/v1",
+    )
+    monkeypatch.setenv("KJ_ATLAS_LARGE_SCALE_LLM_MODEL", "model-v1")
+    monkeypatch.setenv("KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST", "llm.example.invalid")
 
     loaded = Settings()
     assert loaded.llm_provider == "large-scale"

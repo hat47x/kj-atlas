@@ -1,12 +1,15 @@
+import ipaddress
+import os
+import re
 from datetime import date
+from urllib.parse import urlsplit
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import os
-from urllib.parse import urlsplit
 
 
 LEGACY_ENV_COMPAT_DEADLINE = date(2026, 12, 31)
+_LLM_HOST_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 
 
 def _current_utc_date() -> date:
@@ -108,6 +111,49 @@ def _validate_optional_header_value(*, value: str | None, value_key: str) -> Non
         or any(not character.isprintable() for character in value)
     ):
         raise ValueError(f"{value_key} must be a bounded canonical header value")
+
+
+def _validate_optional_llm_model_id(*, value: str | None, value_key: str) -> None:
+    if value is not None and (
+        not value
+        or len(value) > 256
+        or value.strip() != value
+        or "\\" in value
+        or any(character.isspace() for character in value)
+        or any(not character.isprintable() for character in value)
+    ):
+        raise ValueError(f"{value_key} must be a bounded canonical model identifier")
+
+
+def _normalize_llm_allowlist(raw_allowlist: str | None) -> str | None:
+    if raw_allowlist is None:
+        return None
+    raw_hosts = raw_allowlist.split(",")
+    if not raw_hosts or any(not host.strip() for host in raw_hosts):
+        raise ValueError("KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST must contain canonical hosts")
+
+    normalized_hosts: list[str] = []
+    for raw_host in raw_hosts:
+        host = raw_host.strip().lower()
+        try:
+            normalized_host = str(ipaddress.ip_address(host))
+        except ValueError:
+            labels = host.split(".")
+            if (
+                len(host) > 253
+                or not labels
+                or any(not _LLM_HOST_LABEL.fullmatch(label) for label in labels)
+            ):
+                raise ValueError(
+                    "KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST must contain canonical hosts"
+                ) from None
+            normalized_host = host
+        if normalized_host in normalized_hosts:
+            raise ValueError(
+                "KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST must not contain duplicate hosts"
+            )
+        normalized_hosts.append(normalized_host)
+    return ",".join(normalized_hosts)
 
 
 LEGACY_ENV_KEYS = {
@@ -424,6 +470,47 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "KJ_ATLAS_LLM_PROVIDER=large-scale requires KJ_ATLAS_LLM_ESCALATION_ENABLED=true"
                 )
+
+        if self.local_llm_base_url is not None:
+            _validate_trusted_http_endpoint(
+                endpoint=self.local_llm_base_url,
+                endpoint_key="KJ_ATLAS_LOCAL_LLM_BASE_URL",
+            )
+        if self.large_scale_llm_base_url is not None:
+            _validate_trusted_http_endpoint(
+                endpoint=self.large_scale_llm_base_url,
+                endpoint_key="KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL",
+            )
+        _validate_optional_llm_model_id(
+            value=self.local_llm_model,
+            value_key="KJ_ATLAS_LOCAL_LLM_MODEL",
+        )
+        _validate_optional_llm_model_id(
+            value=self.large_scale_llm_model,
+            value_key="KJ_ATLAS_LARGE_SCALE_LLM_MODEL",
+        )
+        self.large_scale_llm_allowlist = _normalize_llm_allowlist(
+            self.large_scale_llm_allowlist
+        )
+        if provider in {"large-scale", "large_scale", "external"}:
+            if (
+                self.large_scale_llm_base_url is None
+                or self.large_scale_llm_model is None
+                or self.large_scale_llm_allowlist is None
+            ):
+                raise ValueError(
+                    "KJ_ATLAS_LLM_PROVIDER=large-scale requires its base URL, model, and allowlist"
+                )
+            large_scale_hostname = (
+                urlsplit(self.large_scale_llm_base_url).hostname or ""
+            ).lower()
+            if large_scale_hostname not in self.large_scale_llm_allowlist.split(","):
+                raise ValueError(
+                    "KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL host must be in "
+                    "KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST"
+                )
+
+        self.llm_provider = provider
 
         normalized_auth_mode = self.access_control_external_http_auth_mode.strip().lower()
         if normalized_auth_mode not in {"none", "oidc", "saml"}:

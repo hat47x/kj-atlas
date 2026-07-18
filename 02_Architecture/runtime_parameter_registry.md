@@ -83,13 +83,13 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | Backend/MCPの実行profile。`local-dev`, `evaluation`, `enterprise-production`を受理する。`saas-multitenant`は予約値で、現行releaseでは両processが起動拒否。 |
 | `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | 永続化 DB 接続先 |
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | LLM provider 種別。`none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` |
-| `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLM の base URL |
-| `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLM に渡す model 名 |
-| `KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL` | 未設定 | large-scale LLM の base URL |
-| `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | 未設定 | large-scale LLM に渡す model 名 |
+| `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLM のbase URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 |
+| `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLM に渡す256文字以下のcanonical model ID |
+| `KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL` | 未設定 | large-scale LLM のbase URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 |
+| `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | 未設定 | large-scale LLM に渡す256文字以下のcanonical model ID |
 | `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale LLM への昇格許可 |
 | `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale LLM 利用の明示 opt-in |
-| `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale LLM 接続を許可する host のカンマ区切り |
+| `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale接続を許可するcanonical hostのカンマ区切り。URL、wildcard、port、path、重複は不可 |
 | `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM 失敗時に `none` へ退避する |
 | `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護する |
 | `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit event のHTTP連携を有効化する |
@@ -169,7 +169,8 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 
 ## Validation rules
 
-- `KJ_ATLAS_LLM_PROVIDER=large-scale`, `large_scale`, `external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` と `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` を必須にします。
+- LLMのbase URLはcredential/query/fragment、空白・制御文字・backslashを含まないHTTPS、またはloopback HTTPだけを受理します。model IDは256文字以下で空白・制御文字・backslashなしとします。
+- `KJ_ATLAS_LLM_PROVIDER=large-scale`, `large_scale`, `external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true`、`KJ_ATLAS_LLM_ESCALATION_ENABLED=true`、base URL、model、allowlistの完全セットを必須にします。allowlistはcanonical hostだけを受理し、URL、wildcard、port、path、空要素、重複を拒否します。base URLのhostnameがallowlistにない構成も起動時に拒否します。
 - `KJ_ATLAS_RUNTIME_PROFILE` は `local-dev`, `evaluation`, `enterprise-production`, `saas-multitenant` だけを名前として認識し、`saas-multitenant`は`SAAS-TENANT-01`完了まで起動を拒否します。
 - `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` は `noop`, `mock`, `external_http` だけを許可します。
 - `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` は `read_only`, `deny` だけを許可します。

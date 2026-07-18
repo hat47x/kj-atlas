@@ -272,3 +272,9 @@
 - view/export/CE4 auditのtenantIdを自由形式metadataからevent envelopeの必須fieldへ移し、認可・repositoryと同じserver-resolved TenantContextだけを渡すようにした。欠損・空値・前後空白・制御文字・256文字超のtenantIdではeventを構築せず、client入力から補完しない。
 - HTTP eventは64KiB以下、metadataは32 field、key 128文字、文字列値1,024文字、有限かつboundedな数値へ制限した。本文・prompt・email・token・secret・credential・assertion等のkeyを固定値へredactし、過大文字列・非finite numberをqueueや送信先へ保持しない。監査transport障害時の既存fail-open方針は維持する。
 - 監査単体とDocument audit integrationの近接30件、backend全体477件pass・条件付き25件skip、Ruff、docs-check、active issue validator、diff-checkを通過した。MCP/worker/cache/storageを含む完全negative matrixが未完了のためAC-8とSaaS起動拒否は継続する。
+
+### Implementation checkpoint 2026-07-18: fail-fast LLM destination settings
+
+- local/large-scale LLM base URLへ他のtrusted HTTP連携と同じcanonical URL guardを適用し、credential/query/fragment、空白・制御文字・backslash、不正port、非loopback HTTPを起動時に拒否する。model IDも256文字以下、空白・制御文字・backslashなしへ限定した。
+- large-scale providerは既存の明示opt-inとescalation許可に加え、base URL、model、canonical host allowlistの完全セットを必須にした。allowlistのURL、wildcard、port、path、空要素、重複と、base URL hostnameのallowlist不一致をfail-fastにし、tenant由来promptを未検証宛先へ送らない。
+- LLM設定・provider・公開設定契約の近接81件、backend全体509件pass・条件付き25件skip、Ruff、docs-check、active issue validator、diff-checkを通過した。LLMは引き続き既定none、明示opt-in、proposal-onlyであり、SaaS起動拒否は変更しない。

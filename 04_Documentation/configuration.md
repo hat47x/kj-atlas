@@ -91,13 +91,13 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | `local-dev`, `evaluation`, `enterprise-production`。`saas-multitenant`は予約値で現行releaseでは起動拒否。 |
 | `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | backend が使う DB 接続先 |
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` |
-| `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLM の base URL |
-| `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLM で使う model 名 |
-| `KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL` | 未設定 | large-scale LLM の base URL |
-| `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | 未設定 | large-scale LLM で使う model 名 |
+| `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLMのHTTPSまたはloopback HTTP base URL |
+| `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLMで使う256文字以下のmodel ID |
+| `KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL` | 未設定 | large-scale LLMのHTTPSまたはloopback HTTP base URL |
+| `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | 未設定 | large-scale LLMで使う256文字以下のmodel ID |
 | `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale への昇格許可 |
 | `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale 利用の明示 opt-in |
-| `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale 接続を許可する host のカンマ区切り |
+| `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale接続を許可するhostのカンマ区切り。URLやwildcardは不可 |
 | `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM 失敗時に `none` へ退避する |
 | `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護 |
 | `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | 監査イベントを HTTP の接続先に連携する |
@@ -215,6 +215,8 @@ export KJ_ATLAS_LOCAL_LLM_BASE_URL='http://localhost:8001'
 export KJ_ATLAS_LOCAL_LLM_MODEL='local-model-name'
 ```
 
+base URLにはcredential、query、fragment、空白、制御文字、backslashを含められません。HTTPS、または`localhost`、`127.0.0.1`、`::1`へのHTTPだけを使用できます。model IDは256文字以下で、空白・制御文字・backslashを含められません。
+
 ## large-scale LLM を使う
 
 large-scale provider は既定で無効です。利用する場合は、昇格許可、明示 opt-in、allowlist をすべて設定します。
@@ -227,6 +229,8 @@ export KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL='https://llm.example.com'
 export KJ_ATLAS_LARGE_SCALE_LLM_MODEL='model-name'
 export KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST='llm.example.com'
 ```
+
+large-scaleではbase URL、model、allowlistをすべて設定し、base URLのhostをallowlistへ含める必要があります。allowlistはhost名またはIPアドレスだけをカンマ区切りで指定し、scheme付きURL、wildcard、port、path、空要素、重複は起動時に拒否されます。base URLとmodelにはlocal providerと同じcanonical値制約を適用します。
 
 ## アクセス制御を使う
 

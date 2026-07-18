@@ -110,6 +110,7 @@ KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST=<host-list>
 ### 4.3 失敗時契約（実装済み）
 
 - HTTP provider応答は1MiB以下の`{"text": string}`単独objectだけを受理する。非UTF-8/非JSON、object以外、余分なfield、size超過、`text`型不正は値をclient・logへ反射せずfail-fastとし、再整形で救済しない。`ProviderRequestError.validation` として `422` を返す。
+- HTTP base URLはcredential/query/fragment、空白・制御文字・backslashを含まないHTTPS、またはloopback HTTPだけを受理する。model IDは256文字以下のcanonical値とする。large-scaleはbase URL・model・canonical host allowlistを完全セットで必須とし、URL/wildcard/port/path/重複hostやbase URLとの不一致を起動時に拒否する。
 - `large-scale`（設定エイリアス `external`/`large_scale` も同じ provider を指す）が無効設定時はフォールバックしない。`ProviderRequestError.unavailable`（`503`）。
 - 失敗時も `metadata.trace_id` を監査ログへ残す（`ProviderError.to_contract()`）。
 - HTTP ステータス対応: `provider_timeout→504` / `provider_validation→422` / `provider_unavailable→503`（`ProviderDisabledError` も `503`、`disabled_reason` 付き）。
