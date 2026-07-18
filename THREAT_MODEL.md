@@ -123,6 +123,7 @@
 - binding/capability resolver requestを64KiB以下、boundedかつcanonicalなserver-owned tenant/principal/membership/binding IDへ限定し、不正・過大lookupはtransport前に値を反射せずfail-closedへ倒す
 - session contextの成功・エラーresponseはfrontendでもstreamを64KiBまでしか読み取らず、超過時は後続chunkをcancelする。成功responseはboundedなprincipal/tenant/capability、重複なしのtenant・capability集合へ限定し、不正・過大responseからbrowser memoryやstorage keyを構成しない
 - active tenant変更は現在と選択先のmembershipをDBで再照合し、検証済みprincipal/TenantContextだけをtrusted session persisterへ渡す。persisterはanti-forgery検証とauth sessionへのbindingを担い、欠損・障害時は更新せずfail-closedにする。frontendも検証済みallowlist外を送信せず、応答のprincipal不変・要求tenant一致を再確認する
+- tenant-scoped Appはsession responseの再検証とstorage scope構築が成功するまでmountせず、認証・認可・解決障害・不正responseを旧本文のないblocked stateへ分離する。error detailやprincipal/tenant値を表示せず、abort済みbootstrap結果を再利用しない
 - 外部PDP・監査HTTPの設定をtrusted HTTPS（loopbackだけHTTP可）、canonical secret/header、bounded timeoutへ限定し、孤立設定を起動時に拒否する
 - 監査eventのtenantIdをserver-resolved必須fieldとし、64KiBの送信上限、bounded metadata、credential系redactionで欠落・過大・秘密混入eventを外部連携へ流さない
 - LLM HTTP provider応答を1MiB以下のclosed-world `text` objectへ限定し、不正応答は値を反射せずprovider validationで停止する

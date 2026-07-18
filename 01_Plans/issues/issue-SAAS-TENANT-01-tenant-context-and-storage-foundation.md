@@ -321,3 +321,9 @@
 - `POST /session/active-tenant`を追加し、trusted identityと現在TenantContextをrequestごとに再解決してから、要求tenantを同じprincipalのactive membership allowlistで再照合する。成功responseをclosed-world・64KiB以下へ構築できた場合だけ、server検証済みprincipal、旧TenantContext、選択済みTenantContextをtrusted session persisterへ渡す。header、query、role/group、raw request tenant値を保存値に使わない。
 - 認証基盤固有のsession形式とanti-forgery検証は注入adapterの責務とし、adapter欠損・予期しない保存障害は`503 active_tenant_update_unavailable`へ正規化する。未知・非canonical・他principal・停止membershipは保存前に404相当で拒否し、trusted adapterのanti-forgery拒否は維持する。frontend clientも現在の検証済みallowlist外を通信前に拒否し、成功応答のprincipal不変・要求tenant一致を再検証する。
 - backend route近接24件、frontend session/storage/transition近接46件、backend全体561件pass・条件付き25件skip（追加のclosed-world request testは近接再実行）、frontend全体1,135件・200 file、Ruff、frontend typecheck、production build、docs-check、active issue validator、diff-checkを通過した。trusted auth edge／anti-forgery付きpersisterの実runtime接続、App session bootstrap、tenant switcherからtransition coordinatorとhard replacementを起動する配線、実ブラウザE2Eは未完了のためAC-6/8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-18: pre-App tenant session bootstrap gate
+
+- tenant-scoped Appをmountする前にsession contextを取得・再検証し、成功時だけ`deployment + tenantId + principalId` browser storage scopeを構築するbootstrap境界を追加した。注入loaderが型を偽装してもclosed-world validatorを再実行し、lifecycle abort後の結果は利用しない。
+- 401、403、session解決不能、不正session response、不正deploymentをstable reasonへ正規化し、旧App本文をmountしないretry可能なblocked stateへ分離した。blocked UIは日本語・英語、`role=status/alert`、見出しfocus、retryを備え、upstream error detail、principal、tenant値を表示しない。
+- bootstrap／blocked UI／session／i18n近接64件、frontend全体1,146件・202 file、typecheck、production build、docs-check、active issue validator、diff-checkを通過した。安全なSaaS runtime mode signalが未確定のため現行`main.tsx`には接続せず、single-tenant起動を維持する。trusted auth edge／session persister、entry point、tenant switcher／logout実配線、実ブラウザE2Eが未完了のためAC-6/8/10/12とSaaS起動拒否を継続する。

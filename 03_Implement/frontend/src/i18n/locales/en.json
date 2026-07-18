@@ -1553,5 +1553,13 @@
   "suggestion.panel.condition.preview_required": "Enable preview to inspect the suggestion",
   "suggestion.panel.condition.safe_mode_required": "Enable safe mode",
   "suggestion.panel.condition.suggestion_required": "Create a layout suggestion first",
-  "suggestion.panel.safety_conditions": "Safety conditions: {conditions}"
+  "suggestion.panel.safety_conditions": "Safety conditions: {conditions}",
+  "tenant_session.bootstrap.loading": "Checking your access…",
+  "tenant_session.bootstrap.blocked.title": "We couldn’t verify access",
+  "tenant_session.bootstrap.blocked.authentication_required": "Sign in, then retry to open this workspace.",
+  "tenant_session.bootstrap.blocked.access_denied": "Access to this workspace could not be confirmed. Contact your administrator if this continues.",
+  "tenant_session.bootstrap.blocked.session_unavailable": "Access information is temporarily unavailable. Wait a moment, then retry.",
+  "tenant_session.bootstrap.blocked.invalid_session_response": "The workspace was not opened because the access response could not be verified safely.",
+  "tenant_session.bootstrap.blocked.invalid_deployment": "This deployment’s storage scope could not be identified safely. Contact your administrator.",
+  "tenant_session.bootstrap.retry": "Retry"
 }

@@ -1553,5 +1553,13 @@
   "suggestion.panel.condition.preview_required": "内容を確認するにはプレビューを有効にする",
   "suggestion.panel.condition.safe_mode_required": "セーフモードを有効にする",
   "suggestion.panel.condition.suggestion_required": "最初に配置案を作成する",
-  "suggestion.panel.safety_conditions": "安全上の条件: {conditions}"
+  "suggestion.panel.safety_conditions": "安全上の条件: {conditions}",
+  "tenant_session.bootstrap.loading": "利用環境を確認しています…",
+  "tenant_session.bootstrap.blocked.title": "アクセスを確認できません",
+  "tenant_session.bootstrap.blocked.authentication_required": "サインインしてから、ワークスペースを開く操作を再試行してください。",
+  "tenant_session.bootstrap.blocked.access_denied": "このワークスペースへのアクセスを確認できません。解消しない場合は管理者にお問い合わせください。",
+  "tenant_session.bootstrap.blocked.session_unavailable": "現在、アクセス情報を確認できません。時間をおいて再試行してください。",
+  "tenant_session.bootstrap.blocked.invalid_session_response": "アクセス応答を安全に確認できなかったため、ワークスペースを開きませんでした。",
+  "tenant_session.bootstrap.blocked.invalid_deployment": "このデプロイの保存領域を安全に識別できません。管理者にお問い合わせください。",
+  "tenant_session.bootstrap.retry": "再試行"
 }
