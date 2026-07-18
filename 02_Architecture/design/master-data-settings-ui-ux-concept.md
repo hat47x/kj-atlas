@@ -133,6 +133,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 ### 3.4 SaaSのtenant contextと管理面分離（ADR採択後）
 
 - Workspaceヘッダーにはactive tenantを静かに示す。membershipが1件ならswitcherにせずlabel、複数ならサーバーが返した選択肢だけをswitcherにする。tenantId自由入力は許可しない。
+- 上記のWorkspace用tenant control部品は実装済みであり、単一membership label、複数membership allowlist select、切替中disabled／status、日本語・英語accessible nameを固定した。安全なbootstrap entry point、未保存変更確認、POST／hard replacement配線が完了するまで実画面へは表示しない。
 - tenant切替時に未保存変更があれば保存・破棄・取消を選ばせる。確定後は文書、選択、検索、work mode、import preview、recent、QueryPreset、request cacheを破棄し、新tenantで再取得する。
 - 切替確認中やbackend未確認の間、旧tenantの本文と新tenantの管理UIを同時に表示しない。
 - **Tenant Admin**はactive tenantのmembership provisioning、document access metadata、agent registrationだけを扱う。本文と文書タイトルは表示しない。

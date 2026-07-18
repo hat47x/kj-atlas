@@ -327,3 +327,9 @@
 - tenant-scoped Appをmountする前にsession contextを取得・再検証し、成功時だけ`deployment + tenantId + principalId` browser storage scopeを構築するbootstrap境界を追加した。注入loaderが型を偽装してもclosed-world validatorを再実行し、lifecycle abort後の結果は利用しない。
 - 401、403、session解決不能、不正session response、不正deploymentをstable reasonへ正規化し、旧App本文をmountしないretry可能なblocked stateへ分離した。blocked UIは日本語・英語、`role=status/alert`、見出しfocus、retryを備え、upstream error detail、principal、tenant値を表示しない。
 - bootstrap／blocked UI／session／i18n近接64件、frontend全体1,146件・202 file、typecheck、production build、docs-check、active issue validator、diff-checkを通過した。安全なSaaS runtime mode signalが未確定のため現行`main.tsx`には接続せず、single-tenant起動を維持する。trusted auth edge／session persister、entry point、tenant switcher／logout実配線、実ブラウザE2Eが未完了のためAC-6/8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-18: allowlist-only tenant control
+
+- Workspace用tenant controlを追加し、検証済みactive membershipが1件ならactive tenant名のlabelだけ、複数ならserver返却`availableTenants`だけをoptionとするselectを表示する。active tenantは表示名とaccessible nameで示し、色だけに依存しない。切替中はselectをdisabledにしてstatusを通知し、日本語・英語を同じ構造で提供する。
+- 選択解決はsession contractを再検証し、active tenant自身、allowlist外の自由入力、invalid sessionでは変更callbackを発火しない。UIはrole/groupを解釈せず、tenant検索・text input・Platform横断候補を持たない。未保存変更の保存／破棄／取消確認、POST、transition coordinatorは親Appの責務として分離する。
+- tenant control／bootstrap／session／i18n近接66件、frontend全体1,151件・203 file、typecheck、production build、docs-check、active issue validator、diff-checkを通過した。runtime mode signal、現行entry point、未保存変更確認、POST／hard replacement実配線、実ブラウザE2Eは未完了のためcontrolを実画面へ出さず、AC-6/8/10/12とSaaS起動拒否を継続する。
