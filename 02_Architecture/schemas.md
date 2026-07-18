@@ -985,7 +985,7 @@ target physical schema:
 
 tenantIdはserver-managed列であり、`DocumentV1` payload、view.json、import/export bundleの認可値として追加しない。現行`provider + external_uid`一意制約はsingle-tenant互換期間の実装であり、SaaS profileでは`identityProviderId + subject`とTenantMembershipへ移行する。共有schema型SaaSは、上記制約に加えPostgreSQL RLS等のDB側tenant guardを必須とする。
 
-browser storageはSaaS profileで次のserver-resolved scopeを必須とし、`deployment + tenantId + principalId`をpercent-encodeしたkey prefixで分離する。deploymentは2,048文字以下、tenantId/principalIdとbase keyは256文字以下とし、空値、前後空白、制御・非表示文字、上限超過を保存前に拒否する。frontendがtenantId/principalIdを自由入力やDocument payloadから作らず、64KiB以下かつboundedな`GET /session/context`等の検証済みsession contextだけから供給する。scopeなしの旧keyはsingle-tenant互換専用とし、SaaSでは読み書きしない。
+browser storageはSaaS profileで次のserver-resolved scopeを必須とし、`deployment + tenantId + principalId`をpercent-encodeしたkey prefixで分離する。deploymentは2,048文字以下、tenantId/principalIdとbase keyは256文字以下とし、空値、前後空白、制御・非表示文字、上限超過を保存前に拒否する。frontendがtenantId/principalIdを自由入力やDocument payloadから作らず、64KiB以下かつboundedな`GET /session/context`等の検証済みsession contextだけから供給する。Appはmount時に検証・snapshotした単一scopeへrecent、表示設定、reviewer、onboarding、Minimap、QueryPresetをbindingし、hard document replacementなしのscope変更を拒否する。scopeなしの旧keyはsingle-tenant互換専用とし、SaaSでは読み書きしない。
 
 ```ts
 export type TenantBrowserStorageScopeV1 = {
@@ -1011,7 +1011,7 @@ tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し
 | verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaim再照合、membership allowlist内部service、resolverのmembership IDとDB再生成値の再一致、信頼済みrequest context共通境界、既知capabilityだけを返す`GET /session/context`、Document routeの同一docId GET/PUT tenant A/B matrixまで実装 | auth edgeからのverified evidence接続、trusted host mapping、active tenant変更、MCP/worker/browserを含む完全matrixは未実装のためblocker継続 |
 | server-owned Document access metadata | tenant/doc複合FK、visibility/binding/version制約、PostgreSQL RLS、tenant-scoped repository、strict external HTTP binding resolverを実装。client policy headerはSaaS resolverで無視し、raw policyRefはrequest内だけで利用 | auth/capability/binding/PDPのSaaS runtime配線・PostgreSQL実地検証が未完了のためSaaS blocker継続 |
 | Document access metadata管理API・監査 | verified/trusted TenantContextと`document.policy.manage`専用のlist/detail/conditional PUT、秘密値を反射しないstrict入力、tenant-scoped transactional audit、strict external capability/binding resolver、PostgreSQL RLS migrationを実装 | trusted SaaS auth edge、実policy service/PDP接続、PostgreSQL実地検証、frontend配線が未完了のためruntimeではfail-closed無効 |
-| browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、各保存値のoptional tenant scope、同一docId tenant A/B test、strict session fetch/validator、検証済みresponseだけを受けるtransition cleanup/hard-reload coordinatorを実装 | session bootstrapとApp cleanup hook、active tenant変更の実配線が未実装のためSaaS blocker継続 |
+| browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、各保存値のoptional tenant scope、App全永続consumerを単一scopeへbindingするfacade、途中scope変更拒否、同一docId tenant A/B test、strict session fetch/validator、検証済みresponseだけを受けるtransition cleanup/hard-reload coordinatorを実装 | session bootstrap、logout/切替cleanup hook、active tenant変更の実配線が未実装のためSaaS blocker継続 |
 
 ## 11. Polygon contract keys（FB-P0-2A2B2C）
 

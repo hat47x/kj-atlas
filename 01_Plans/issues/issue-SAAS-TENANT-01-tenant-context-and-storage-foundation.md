@@ -303,3 +303,9 @@
 - frontend fetchは成功・エラーresponseのstreamを64KiBまでで打ち切り、超過時は後続chunkをcancelして全bodyを読み込まない。成功responseは厳密なUTF-8として同じfield・件数・長さ・重複禁止を再検証した値だけからbrowser storage scopeを構成する。scope keyもdeployment 2,048文字、tenant/principal/base key 256文字以下とし、制御・非表示文字や過大値をlocalStorageへ使用しない。公開UIとlegacy single-tenant key互換は変更しない。
 - session用途のactive tenant候補queryは上限+1の257件で打ち切り、DB結果を無制限にmaterializeせず過大allowlistを判定する。
 - session/capability/管理APIのbackend近接77件と最終response統合38件、backend全体552件pass・条件付き25件skip、DB query上限follow-up近接47件、frontend session/storage/transition/client近接47件、frontend全体1,122件・198 file pass、Ruff、frontend typecheck、docs-check、active issue validator、diff-checkを通過した。うちclient近接33件ではchunked responseの即時cancel、後続chunk非読取、過大エラーbodyのstatus fallback、非UTF-8拒否を確認した。App session bootstrap、active tenant永続化、logout/切替hook実配線が未完了のためAC-6/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-18: App browser storage scope binding
+
+- AppのlocalStorage consumerをscope付きfacadeへ集約し、recent document、view mode/locale/visibility、reviewer、empty-canvas onboarding、advanced UIをmount時に検証・snapshotした単一`deployment + tenantId + principalId`へbindingした。MinimapとPatch WorkspaceのQueryPresetにも同じscopeを伝播する。facade外の直接利用をsource guardで検出し、入力scope objectの事後変更でも保存先を差し替えない。
+- 同じApp mountの途中でscope identityが変化した場合は例外停止し、旧tenantの文書・選択・worker等のmemory stateを次tenantへ継続させない。正規の切替は既存transition coordinatorによるcleanupとhard document replacementを必須とする。scope省略時は既存single-tenant keyとUI挙動を維持し、SaaS UIは有効化しない。
+- storage/session/UI regression近接57件、frontend全体1,127件・199 file、typecheck、production build、docs-check、active issue validator、diff-checkを通過した。App起動時のsession bootstrap、auth失敗UI、active tenant永続化、logout/切替cleanup hookの実配線、実ブラウザtenant A/B E2Eは未完了のためAC-6/8/10/12とSaaS起動拒否を継続する。

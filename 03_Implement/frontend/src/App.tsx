@@ -83,13 +83,12 @@ import {
   upsertRelationSummaryWithHistory,
 } from "./domain/relation_summary_ops";
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
-import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
-import { loadEmptyCanvasHintCompleted, saveEmptyCanvasHintCompleted } from "./storage/empty_canvas_hint";
-import { loadViewModeForDocument, saveViewModeForDocument } from "./storage/view_mode";
-import { loadViewLocaleForDocumentView, saveViewLocaleForDocumentView } from "./storage/view_locale";
-import { loadViewVisibilityForDocument, saveViewVisibilityForDocument } from "./storage/view_visibility";
-import { buildLocalReviewerRef, inferReviewerRefSource, initializeCurrentReviewerRef, saveCurrentReviewerRef } from "./storage/current_reviewer";
-import { loadAdvancedUiEnabled, saveAdvancedUiEnabled } from "./storage/advanced_ui";
+import { buildLocalReviewerRef, inferReviewerRefSource } from "./storage/current_reviewer";
+import {
+  assertAppStorageScopeStable,
+  createAppBrowserStorage,
+} from "./storage/app_browser_storage";
+import type { TenantBrowserStorageScope } from "./storage/tenant_scope";
 import { createViewLocalePersistenceScope } from "./storage/view_locale_scope";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
@@ -1073,7 +1072,21 @@ function applyFocusScope(document: DocumentV1, focusTarget: FocusTarget): Docume
   };
 }
 
-export default function App() {
+export type AppProps = Readonly<{
+  storageScope?: TenantBrowserStorageScope;
+}>;
+
+export default function App({ storageScope }: AppProps = {}) {
+  const appStorage = useMemo(
+    () => createAppBrowserStorage(storageScope),
+    [storageScope?.deployment, storageScope?.principalId, storageScope?.tenantId],
+  );
+  const initialStorageScopeIdentityRef = useRef(appStorage.scopeIdentity);
+  assertAppStorageScopeStable(
+    initialStorageScopeIdentityRef.current,
+    appStorage.scopeIdentity,
+  );
+
   const [history, setHistory] = useState<DocumentHistory | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
@@ -1081,7 +1094,9 @@ export default function App() {
   // Never persisted to the document (§6: quality notes are derived, not truth).
   const [cardQualityAssistByCardId, setCardQualityAssistByCardId] = useState<Record<string, CardQualityAssistState>>({});
   const [openCardQualityAssistCardId, setOpenCardQualityAssistCardId] = useState<string | null>(null);
-  const [isAdvancedUiEnabled, setIsAdvancedUiEnabled] = useState<boolean>(loadAdvancedUiEnabled);
+  const [isAdvancedUiEnabled, setIsAdvancedUiEnabled] = useState<boolean>(
+    appStorage.loadAdvancedUiEnabled,
+  );
   const [isWorkModeOpen, setIsWorkModeOpen] = useState(false);
   const workModeTriggerRef = useRef<HTMLButtonElement>(null);
   const [isAgentTaskExportOpen, setIsAgentTaskExportOpen] = useState(false);
@@ -1125,7 +1140,9 @@ export default function App() {
   const locationSearch = window.location.search;
   const isReadOnly = useMemo(() => resolveReadOnlyFromSearch(locationSearch), [locationSearch]);
   const [activeDocumentId, setActiveDocumentId] = useState(DEFAULT_DOCUMENT_ID);
-  const [recentDocumentIds, setRecentDocumentIds] = useState<string[]>(() => loadRecentDocumentIds());
+  const [recentDocumentIds, setRecentDocumentIds] = useState<string[]>(
+    appStorage.loadRecentDocumentIds,
+  );
   const [selectedRecentDocumentId, setSelectedRecentDocumentId] = useState("");
   const [suggestionInstruction, setSuggestionInstruction] = useState("");
   const [suggestedDocument, setSuggestedDocument] = useState<DocumentV1 | null>(null);
@@ -1154,7 +1171,9 @@ export default function App() {
   const [lodLevelOverride, setLodLevelOverride] = useState<LODLevel | null>(null);
   const [lodShowLoneWolvesWhenFar, setLodShowLoneWolvesWhenFar] = useState(true);
   const [safeMode, setSafeMode] = useState(true);
-  const [emptyCanvasHintCompleted, setEmptyCanvasHintCompleted] = useState(loadEmptyCanvasHintCompleted);
+  const [emptyCanvasHintCompleted, setEmptyCanvasHintCompleted] = useState(
+    appStorage.loadEmptyCanvasHintCompleted,
+  );
   // UX-VISUAL-01 AC-2: in-canvas state legend. Default OFF (CB-1); session-local.
   const [isCanvasLegendOpen, setIsCanvasLegendOpen] = useState(false);
   // UX-VISUAL-02: protection marks for lone-wolf cards / small islands.
@@ -1176,10 +1195,10 @@ export default function App() {
   const [isShortcutCheatsheetOpen, setIsShortcutCheatsheetOpen] = useState(false);
   const shortcutCheatsheetReturnFocusRef = useRef<HTMLElement | null>(null);
   const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(
-    () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
+    () => appStorage.loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
   );
   const [packVisibility, setPackVisibility] = useState<PublishVisibility>(
-    () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).packVisibility
+    () => appStorage.loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).packVisibility
   );
   const [showLabelBounds, setShowLabelBounds] = useState(false);
   const [includeUnreviewedDraftsInExport, setIncludeUnreviewedDraftsInExport] = useState(false);
@@ -1277,7 +1296,9 @@ export default function App() {
   const [mergeWarningConfirmationKey, setMergeWarningConfirmationKey] = useState<string | null>(null);
   const [mergeAuditLog, setMergeAuditLog] = useState<MergeAuditEntry[]>([]);
   const [reviewEvents, setReviewEvents] = useState<ReviewEvent[]>([]);
-  const [currentReviewerRef, setCurrentReviewerRef] = useState<string>(() => initializeCurrentReviewerRef());
+  const [currentReviewerRef, setCurrentReviewerRef] = useState<string>(
+    appStorage.initializeCurrentReviewerRef,
+  );
   const [mergeSourceInfo, setMergeSourceInfo] = useState<MergeAuditSource>({ kind: "unknown" });
   const [pendingImportedDocument, setPendingImportedDocument] = useState<PendingImportedDocument | null>(null);
   const [importDocumentError, setImportDocumentError] = useState<string | null>(null);
@@ -1942,8 +1963,8 @@ export default function App() {
   }, [document, selectedIslandRelationEdge]);
 
   const rememberRecentDocumentId = useCallback((docId: string) => {
-    setRecentDocumentIds(pushRecentDocumentId(docId));
-  }, [abstractMapView, summaryView]);
+    setRecentDocumentIds(appStorage.pushRecentDocumentId(docId));
+  }, [appStorage]);
 
   const applyResolvedLocaleForView = useCallback((args: {
     docId: string;
@@ -1986,12 +2007,12 @@ export default function App() {
           future: [],
         });
         setActiveDocumentId(loadedDocument.id);
-        const loadedViewMode = loadViewModeForDocument(loadedDocument.id) ?? "explore";
+        const loadedViewMode = appStorage.loadViewModeForDocument(loadedDocument.id) ?? "explore";
         setViewMode(loadedViewMode);
         applyResolvedLocaleForView({
           docId: loadedDocument.id,
           viewMode: loadedViewMode,
-          persistedLocale: loadViewLocaleForDocumentView(loadedDocument.id, loadedViewMode),
+          persistedLocale: appStorage.loadViewLocaleForDocumentView(loadedDocument.id, loadedViewMode),
         });
         rememberRecentDocumentId(loadedDocument.id);
         setSelectedRecentDocumentId(loadedDocument.id);
@@ -2007,7 +2028,7 @@ export default function App() {
         setMergeAuditLog([]);
       setReviewEvents([]);
         setMergeSourceInfo({ kind: "unknown" });
-        const persistedVisibility = loadViewVisibilityForDocument(loadedDocument.id);
+        const persistedVisibility = appStorage.loadViewVisibilityForDocument(loadedDocument.id);
         setViewVisibility(persistedVisibility.viewVisibility);
         setPackVisibility(persistedVisibility.packVisibility);
         pendingCardDragSnapshotRef.current = null;
@@ -2027,12 +2048,12 @@ export default function App() {
               future: [],
             });
             setActiveDocumentId(savedDocument.id);
-            const loadedViewMode = loadViewModeForDocument(savedDocument.id) ?? "explore";
+            const loadedViewMode = appStorage.loadViewModeForDocument(savedDocument.id) ?? "explore";
             setViewMode(loadedViewMode);
             applyResolvedLocaleForView({
               docId: savedDocument.id,
               viewMode: loadedViewMode,
-              persistedLocale: loadViewLocaleForDocumentView(savedDocument.id, loadedViewMode),
+              persistedLocale: appStorage.loadViewLocaleForDocumentView(savedDocument.id, loadedViewMode),
             });
             rememberRecentDocumentId(savedDocument.id);
             setSelectedRecentDocumentId(savedDocument.id);
@@ -2048,7 +2069,7 @@ export default function App() {
             setMergeAuditLog([]);
       setReviewEvents([]);
             setMergeSourceInfo({ kind: "unknown" });
-            const persistedVisibility = loadViewVisibilityForDocument(savedDocument.id);
+            const persistedVisibility = appStorage.loadViewVisibilityForDocument(savedDocument.id);
             setViewVisibility(persistedVisibility.viewVisibility);
             setPackVisibility(persistedVisibility.packVisibility);
             pendingCardDragSnapshotRef.current = null;
@@ -2073,7 +2094,7 @@ export default function App() {
         }
       }
     },
-    [applyResolvedLocaleForView]
+    [appStorage, applyResolvedLocaleForView, rememberRecentDocumentId]
   );
 
   const applyDocumentChange = useCallback(
@@ -3009,7 +3030,7 @@ export default function App() {
       docId: targetDocument.id,
       viewMode,
       metadataLocale: metadata.viewState.locale,
-      persistedLocale: loadViewLocaleForDocumentView(targetDocument.id, viewMode),
+      persistedLocale: appStorage.loadViewLocaleForDocumentView(targetDocument.id, viewMode),
     });
 
     if (metadata.viewState.focusIslandId && !hasFocusIsland) {
@@ -3020,7 +3041,7 @@ export default function App() {
 
     setFocusTarget(metadata.viewState.focusIslandId ? { focusIslandId: metadata.viewState.focusIslandId } : {});
     setStatusMessage(t("app.status.import.view_loaded", { statusPrefix, visibility: metadata.visibility }));
-  }, [applyResolvedLocaleForView]);
+  }, [appStorage, applyResolvedLocaleForView]);
 
   const loadPublicPack = useCallback(async (requestedPackId: string | null): Promise<boolean> => {
     const manifestResponse = await fetch("./packs/index.json", { cache: "no-store" });
@@ -3064,12 +3085,12 @@ export default function App() {
       future: [],
     });
     setActiveDocumentId(documentParseResult.document.id);
-    const importedViewMode = loadViewModeForDocument(documentParseResult.document.id) ?? "explore";
+    const importedViewMode = appStorage.loadViewModeForDocument(documentParseResult.document.id) ?? "explore";
     setViewMode(importedViewMode);
     applyResolvedLocaleForView({
       docId: documentParseResult.document.id,
       viewMode: importedViewMode,
-      persistedLocale: loadViewLocaleForDocumentView(documentParseResult.document.id, importedViewMode),
+      persistedLocale: appStorage.loadViewLocaleForDocumentView(documentParseResult.document.id, importedViewMode),
     });
     setSelectedRecentDocumentId("");
     setDocEtag(null);
@@ -3118,16 +3139,16 @@ export default function App() {
 
     setSafeMode(true);
     if (!targetPack.viewPath) {
-      const persistedVisibility = loadViewVisibilityForDocument(documentParseResult.document.id);
+      const persistedVisibility = appStorage.loadViewVisibilityForDocument(documentParseResult.document.id);
       setViewVisibility(persistedVisibility.viewVisibility);
     }
     setStatusMessage(t("app.status.public_pack.loaded", { packId: targetPack.id, visibility: targetPack.visibility }));
     return true;
-  }, [applyImportedViewMetadata]);
+  }, [appStorage, applyImportedViewMetadata]);
 
   const openBuiltInSample = useCallback(() => {
     const builtInSample = createDefaultDocument(DEFAULT_DOCUMENT_ID);
-    const sampleViewMode = loadViewModeForDocument(builtInSample.id) ?? "explore";
+    const sampleViewMode = appStorage.loadViewModeForDocument(builtInSample.id) ?? "explore";
 
     pendingCardDragSnapshotRef.current = null;
     setHistory({
@@ -3140,7 +3161,7 @@ export default function App() {
     applyResolvedLocaleForView({
       docId: builtInSample.id,
       viewMode: sampleViewMode,
-      persistedLocale: loadViewLocaleForDocumentView(builtInSample.id, sampleViewMode),
+      persistedLocale: appStorage.loadViewLocaleForDocumentView(builtInSample.id, sampleViewMode),
     });
     setSelectedRecentDocumentId("");
     setDocEtag(null);
@@ -3175,11 +3196,11 @@ export default function App() {
     setMergeAuditLog([]);
     setReviewEvents([]);
     setSafeMode(true);
-    const persistedVisibility = loadViewVisibilityForDocument(builtInSample.id);
+    const persistedVisibility = appStorage.loadViewVisibilityForDocument(builtInSample.id);
     setViewVisibility(persistedVisibility.viewVisibility);
     setPackVisibility(persistedVisibility.packVisibility);
     setStatusMessage(t("app.status.start.built_in_sample_opened"));
-  }, [applyResolvedLocaleForView]);
+  }, [appStorage, applyResolvedLocaleForView]);
 
   const handleOpenSampleDocument = useCallback(async () => {
     setIsStartPanelVisible(false);
@@ -3405,7 +3426,7 @@ export default function App() {
         future: [],
       });
       setActiveDocumentId(parsedDocument.document.id);
-      const importedViewMode = loadViewModeForDocument(parsedDocument.document.id) ?? "explore";
+      const importedViewMode = appStorage.loadViewModeForDocument(parsedDocument.document.id) ?? "explore";
       setViewMode(importedViewMode);
       setSelectedRecentDocumentId("");
       setDocEtag(null);
@@ -3467,7 +3488,7 @@ export default function App() {
         setStatusMessage(message);
       }
     }
-  }, [applyImportedViewMetadata, importedPackSnapshotUrl]);
+  }, [appStorage, applyImportedViewMetadata, importedPackSnapshotUrl]);
 
   const handleReviewPackFileChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -3986,15 +4007,15 @@ export default function App() {
   );
 
   const markEmptyCanvasHintCompleted = useCallback(() => {
-    saveEmptyCanvasHintCompleted(true);
+    appStorage.saveEmptyCanvasHintCompleted(true);
     setEmptyCanvasHintCompleted(true);
-  }, []);
+  }, [appStorage]);
 
   const handleResetEmptyCanvasHint = useCallback(() => {
-    saveEmptyCanvasHintCompleted(false);
+    appStorage.saveEmptyCanvasHintCompleted(false);
     setEmptyCanvasHintCompleted(false);
     setStatusMessage(t("app.status.empty_canvas_hint_reset"));
-  }, []);
+  }, [appStorage]);
 
   const handleCloseCanvasLegend = useCallback(() => {
     // ADR-0030 contract: closing returns focus to the originating trigger.
@@ -4178,17 +4199,17 @@ export default function App() {
   const handleToggleAdvancedUi = useCallback(() => {
     setIsAdvancedUiEnabled((previous) => {
       const next = !previous;
-      saveAdvancedUiEnabled(next);
+      appStorage.saveAdvancedUiEnabled(next);
       return next;
     });
-  }, []);
+  }, [appStorage]);
 
   const handleOpenCritiqueWorkflow = useCallback(() => {
     setIsAdvancedUiEnabled(true);
     setIsWorkModeOpen(true);
-    saveAdvancedUiEnabled(true);
+    appStorage.saveAdvancedUiEnabled(true);
     setCritiqueWorkflowFocusRequest((current) => current + 1);
-  }, []);
+  }, [appStorage]);
 
   const handleCommitCardText = useCallback(
     (cardId: string, text: string) => {
@@ -9289,13 +9310,13 @@ export default function App() {
     applyViewPatch(preset.viewPatch);
     const currentLocale = getActiveLocale();
     if (!isReadOnly) {
-      saveViewLocaleForDocumentView(activeDocumentId, viewMode, currentLocale);
+      appStorage.saveViewLocaleForDocumentView(activeDocumentId, viewMode, currentLocale);
     }
     setViewMode(mode);
     applyResolvedLocaleForView({
       docId: activeDocumentId,
       viewMode: mode,
-      persistedLocale: loadViewLocaleForDocumentView(activeDocumentId, mode),
+      persistedLocale: appStorage.loadViewLocaleForDocumentView(activeDocumentId, mode),
     });
     setActivePresetId(preset.id);
     if (preset.id === "default-review") {
@@ -9305,7 +9326,7 @@ export default function App() {
     if (options?.announce ?? true) {
       setStatusMessage(t("app.status.applied_mode", { mode: getViewModeDisplayLabel(mode) }));
     }
-  }, [activeDocumentId, applyResolvedLocaleForView, applyViewPatch, isReadOnly, viewMode, viewPresets]);
+  }, [activeDocumentId, appStorage, applyResolvedLocaleForView, applyViewPatch, isReadOnly, viewMode, viewPresets]);
 
   const handleSaveViewPreset = useCallback(() => {
     const name = window.prompt(t("view_controls.perspective.prompt_name"), t("view_controls.perspective.prompt_default_name"))?.trim();
@@ -9366,8 +9387,8 @@ export default function App() {
   }, [handleApplyViewMode, viewMode]);
 
   useEffect(() => {
-    saveViewModeForDocument(activeDocumentId, viewMode);
-  }, [activeDocumentId, viewMode]);
+    appStorage.saveViewModeForDocument(activeDocumentId, viewMode);
+  }, [activeDocumentId, appStorage, viewMode]);
 
   useEffect(() => {
     viewLocalePersistenceScopeRef.current.updateScope({ docId: activeDocumentId, viewMode, allowPersistence: !isReadOnly });
@@ -9378,11 +9399,11 @@ export default function App() {
       return;
     }
 
-    saveViewVisibilityForDocument(activeDocumentId, {
+    appStorage.saveViewVisibilityForDocument(activeDocumentId, {
       viewVisibility,
       packVisibility,
     });
-  }, [activeDocumentId, packVisibility, viewVisibility]);
+  }, [activeDocumentId, appStorage, packVisibility, viewVisibility]);
 
   useEffect(() => {
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
@@ -9391,11 +9412,11 @@ export default function App() {
         return;
       }
 
-      saveViewLocaleForDocumentView(scope.docId, scope.viewMode, locale);
+      appStorage.saveViewLocaleForDocumentView(scope.docId, scope.viewMode, locale);
     });
 
     return unsubscribe;
-  }, []);
+  }, [appStorage]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -9810,11 +9831,11 @@ export default function App() {
       currentReviewerRef={currentReviewerRef}
       currentReviewerRefSource={currentReviewerRefSource}
       onCurrentReviewerRefChange={(value) => {
-        const next = saveCurrentReviewerRef(value);
+        const next = appStorage.saveCurrentReviewerRef(value);
         setCurrentReviewerRef(next);
       }}
       onResetCurrentReviewerRef={() => {
-        const next = saveCurrentReviewerRef(buildLocalReviewerRef());
+        const next = appStorage.saveCurrentReviewerRef(buildLocalReviewerRef());
         setCurrentReviewerRef(next);
       }}
       onExportViewViewport={handleExportViewMetadataViewport}
@@ -10205,6 +10226,7 @@ export default function App() {
               />
               <PatchWorkspacePanel
                 isReadOnly={isReadOnly}
+                storageScope={appStorage.scope}
                 candidates={mergeSuggestions.map((suggestion) => ({
                   id: suggestion.groupId,
                   label: t("patch_workspace.candidate_label", {
@@ -11072,7 +11094,13 @@ export default function App() {
             />
           ) : null}
           {isCanvasLegendOpen ? <CanvasLegend onClose={handleCloseCanvasLegend} /> : null}
-          <Minimap cards={minimapCards} islands={minimapIslands} camera={canvasCamera} onPan={handleMinimapPan} />
+          <Minimap
+            cards={minimapCards}
+            islands={minimapIslands}
+            camera={canvasCamera}
+            storageScope={appStorage.scope}
+            onPan={handleMinimapPan}
+          />
           {selectedCardIds.length >= 2 ? (
             <BulkOperationsBar
               count={selectedCardIds.length}

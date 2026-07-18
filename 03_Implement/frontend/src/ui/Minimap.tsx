@@ -6,6 +6,7 @@ import type { CanvasCamera } from "../canvas/CanvasShell";
 import { getCardWorldBounds, getIslandWorldBounds } from "../domain/geometry/bounds";
 import { screenToWorld } from "../canvas/transform";
 import { loadMinimapCollapsed, saveMinimapCollapsed } from "../storage/minimap_collapsed";
+import type { TenantBrowserStorageScope } from "../storage/tenant_scope";
 
 const CARD_WIDTH = 220;
 const CARD_HEIGHT = 80;
@@ -28,6 +29,7 @@ export type MinimapProps = {
   cards: Card[];
   islands: Island[];
   camera: CanvasCamera | null;
+  storageScope?: TenantBrowserStorageScope;
   onPan: (panX: number, panY: number) => void;
 };
 
@@ -37,9 +39,13 @@ export type MinimapProps = {
 // not the sole path to any operation — panning/fit-to-view remain reachable
 // via existing keyboard-accessible controls), consistent with ADR-0030's
 // keyboard-reachability requirement applying to primary operations only.
-export function Minimap({ cards, islands, camera, onPan }: MinimapProps) {
-  const [isCollapsed, setIsCollapsed] = useState(() => loadMinimapCollapsed());
+export function Minimap({ cards, islands, camera, storageScope, onPan }: MinimapProps) {
+  const [isCollapsed, setIsCollapsed] = useState(() => loadMinimapCollapsed(storageScope));
   const [isAutoHidden, setIsAutoHidden] = useState(false);
+
+  useEffect(() => {
+    setIsCollapsed(loadMinimapCollapsed(storageScope));
+  }, [storageScope?.deployment, storageScope?.principalId, storageScope?.tenantId]);
 
   useEffect(() => {
     const updateAutoHidden = () => {
@@ -161,7 +167,7 @@ export function Minimap({ cards, islands, camera, onPan }: MinimapProps) {
         data-ui-region="minimap-collapsed-trigger"
         onClick={() => {
           setIsCollapsed(false);
-          saveMinimapCollapsed(false);
+          saveMinimapCollapsed(false, storageScope);
         }}
         aria-label={t("minimap.expand")}
         title={t("minimap.expand")}
@@ -205,7 +211,7 @@ export function Minimap({ cards, islands, camera, onPan }: MinimapProps) {
         type="button"
         onClick={() => {
           setIsCollapsed(true);
-          saveMinimapCollapsed(true);
+          saveMinimapCollapsed(true, storageScope);
         }}
         aria-label={t("minimap.collapse")}
         title={t("minimap.collapse")}
