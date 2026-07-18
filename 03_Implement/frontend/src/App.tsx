@@ -119,7 +119,7 @@ import {
 } from "./domain/view/focus";
 import { buildReadingList, clampReadingIndex, type ReadingItem, type ReadingMode } from "./domain/view/reading_path";
 import { buildReadingOutlineMd } from "./domain/view/reading_outline";
-import { maxDepthForHierarchyLevel, resolveHierarchyLevel, type HierarchyLevel } from "./domain/view/hierarchy_level";
+import { clampMaxDepthToAvailable, maxDepthForHierarchyLevel, resolveHierarchyLevel, type HierarchyLevel } from "./domain/view/hierarchy_level";
 import { collectHierarchyHiddenIslandIds, collectHierarchyPlacardHiddenCardIds } from "./domain/view/hierarchy_visibility";
 import {
   ALL_DOMAIN_STATE_FILTER_KINDS,
@@ -5967,18 +5967,13 @@ export default function App() {
   }, [islandDepthById]);
 
   useEffect(() => {
-    if (maxDepth === "all") {
-      return;
-    }
-
-    // Only clamp down when there is deeper island content to clamp against.
-    // maxAvailableDepth === 0 means no island is nested past the top level
-    // (including "no islands at all") -- in that case maxDepth=1 ("mid")
-    // is already indistinguishable from maxDepth=0 in rendered output, so
-    // clamping it to 0 here would only serve to demote the user's explicit
-    // hierarchy-level choice back to "overview" via the sync effect below.
-    if (maxDepth > maxAvailableDepth && maxAvailableDepth > 0) {
-      setMaxDepth(maxAvailableDepth);
+    // QA-MONKEY-13: clamping logic lives in clampMaxDepthToAvailable() so it
+    // has a direct unit-test regression guard -- see hierarchy_level.test.ts
+    // for why maxAvailableDepth === 0 must never clamp an explicit "mid"
+    // choice down to "overview" via the sync effect below.
+    const clamped = clampMaxDepthToAvailable(maxDepth, maxAvailableDepth);
+    if (clamped !== maxDepth) {
+      setMaxDepth(clamped);
     }
   }, [maxAvailableDepth, maxDepth]);
 
