@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { DocumentV1 } from "./types";
 import { parseInquiryBundleJson, serializeInquiryBundle } from "./inquiry_bundle_io";
 import {
+  compareInquiryRounds,
   inquiryBundleOriginatesFromDocument,
   recordInquiryRound,
   startInquiryJourney,
@@ -85,5 +86,48 @@ describe("inquiry journey session", () => {
     expect(serialized.ok).toBe(true);
     if (!serialized.ok) return;
     expect((await parseInquiryBundleJson(serialized.json)).ok).toBe(true);
+  });
+
+  it("compares two recorded outputs without changing either snapshot", async () => {
+    const ids = sequentialIds();
+    const original = createDocument([{ id: "card-1", text: "案内を見た", x: 0, y: 0 }]);
+    const started = await startInquiryJourney(original, { idFactory: ids, now: () => CREATED_AT });
+    const first = await recordInquiryRound(started, original, "r2_situation_grasp", {
+      idFactory: ids,
+      now: () => "2026-07-18T00:01:00.000Z",
+    });
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+
+    const revised = createDocument([
+      { id: "card-1", text: "案内を見たが迷った", x: 0, y: 0 },
+      { id: "card-2", text: "次の行動が分からない", x: 100, y: 0 },
+    ]);
+    revised.readingOrder = ["card-2", "card-1"];
+    const second = await recordInquiryRound(first.bundle, revised, "r2_situation_grasp", {
+      idFactory: ids,
+      now: () => "2026-07-18T00:02:00.000Z",
+    });
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+
+    const before = structuredClone(second.bundle.snapshots);
+    const [fromRound, toRound] = second.bundle.journey.roundRecords;
+    const comparison = compareInquiryRounds(second.bundle, fromRound.roundId, toRound.roundId);
+
+    expect(comparison).toEqual({
+      ok: true,
+      summary: {
+        cards: 2,
+        islands: 0,
+        relationSummaries: 0,
+        readingOrderChanged: true,
+      },
+    });
+    expect(second.bundle.snapshots).toEqual(before);
+    expect(compareInquiryRounds(second.bundle, "missing", toRound.roundId)).toEqual({
+      ok: false,
+      reason: "round_not_found",
+    });
   });
 });

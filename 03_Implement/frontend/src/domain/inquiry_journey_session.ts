@@ -1,4 +1,5 @@
 import type { DocumentV1 } from "./types";
+import { diffDocuments } from "./diff/doc_diff";
 import {
   INQUIRY_SCHEMA_VERSION,
   appendRoundRecord,
@@ -18,9 +19,54 @@ export type RecordInquiryRoundResult =
   | { ok: true; bundle: InquiryBundleV1 }
   | { ok: false; reason: "missing_input_snapshot" | "invalid_round" };
 
+export type InquiryRoundComparisonSummary = {
+  cards: number;
+  islands: number;
+  relationSummaries: number;
+  readingOrderChanged: boolean;
+};
+
+export type CompareInquiryRoundsResult =
+  | { ok: true; summary: InquiryRoundComparisonSummary }
+  | { ok: false; reason: "round_not_found" | "snapshot_not_found" };
+
 export function inquiryBundleOriginatesFromDocument(bundle: InquiryBundleV1, documentId: string): boolean {
   const originIds = new Set(bundle.journey.originSnapshotIds);
   return bundle.snapshots.some((snapshot) => originIds.has(snapshot.snapshotId) && snapshot.document.id === documentId);
+}
+
+export function compareInquiryRounds(
+  bundle: InquiryBundleV1,
+  fromRoundId: string,
+  toRoundId: string
+): CompareInquiryRoundsResult {
+  const fromRound = bundle.journey.roundRecords.find((round) => round.roundId === fromRoundId);
+  const toRound = bundle.journey.roundRecords.find((round) => round.roundId === toRoundId);
+  if (!fromRound || !toRound) return { ok: false, reason: "round_not_found" };
+
+  const fromSnapshot = bundle.snapshots.find((snapshot) => snapshot.snapshotId === fromRound.outputSnapshotId);
+  const toSnapshot = bundle.snapshots.find((snapshot) => snapshot.snapshotId === toRound.outputSnapshotId);
+  if (!fromSnapshot || !toSnapshot) return { ok: false, reason: "snapshot_not_found" };
+
+  const diff = diffDocuments(fromSnapshot.document, toSnapshot.document);
+  return {
+    ok: true,
+    summary: {
+      cards: diff.cards.added.length + diff.cards.removed.length + diff.cards.changedText.length,
+      islands:
+        diff.islands.added.length
+        + diff.islands.removed.length
+        + diff.islands.membershipChanged.length
+        + diff.islands.summaryChanged.length,
+      relationSummaries:
+        diff.relationSummaries.added.length
+        + diff.relationSummaries.removed.length
+        + diff.relationSummaries.changedText.length
+        + diff.relationSummaries.changedReviewed.length
+        + diff.relationSummaries.warningsChanged.length,
+      readingOrderChanged: diff.readingOrder.changed,
+    },
+  };
 }
 
 function defaultIdFactory(): string {
