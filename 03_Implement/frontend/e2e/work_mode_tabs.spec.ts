@@ -3,7 +3,7 @@ import { buildDomainExpressionDocument } from "./helpers/product_value_fixtures"
 import { WORK_MODE_BUTTON, enableAdvancedUiIfNeeded } from "./helpers/i18n";
 
 // UX-NAV-02 (resolves ADR-0052 C-5): role=tablist, manual-activation contract
-// for the work-mode surface's 5 tabs. Covers: arrow keys move focus only
+// for the work-mode surface's 7 tabs. Covers: arrow keys move focus only
 // (not the active panel), Home/End jump to the ends, native button
 // activation (Enter/Space/click) switches the active panel, initial focus on
 // open lands on the active tab (never the Close button), non-active panels
@@ -51,15 +51,17 @@ test("opening work mode focuses the active (first) tab, not the Close button", a
   await expect(page.getByRole("tab", { name: "Diff" })).toBeFocused();
 });
 
-test("5 tabs exist in order diff/merge/suggestion/diagnostics/narrative, and 'review' vocabulary is avoided", async ({ page }) => {
+test("7 tabs exist in their product order, and 'review' vocabulary is avoided", async ({ page }) => {
   await openWorkMode(page);
   const tabs = page.getByRole("tab");
-  await expect(tabs).toHaveCount(5);
+  await expect(tabs).toHaveCount(7);
   await expect(tabs.nth(0)).toHaveText("Diff");
   await expect(tabs.nth(1)).toHaveText("Merge selection");
   await expect(tabs.nth(2)).toHaveText("AI suggestion");
-  await expect(tabs.nth(3)).toHaveText("Diagnostics");
-  await expect(tabs.nth(4)).toHaveText("Narrative");
+  await expect(tabs.nth(3)).toHaveText("Inquiry");
+  await expect(tabs.nth(4)).toHaveText("Visual cue evaluation");
+  await expect(tabs.nth(5)).toHaveText("Diagnostics");
+  await expect(tabs.nth(6)).toHaveText("Narrative");
   for (const tab of await tabs.all()) {
     expect((await tab.textContent())?.toLowerCase()).not.toContain("review");
   }

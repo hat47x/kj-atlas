@@ -58,6 +58,7 @@ import { SidePanel } from "./ui/SidePanel";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
 import { WorkModeTabs } from "./ui/WorkModeTabs";
 import { InquiryJourneyPrototypePanel } from "./ui/InquiryJourneyPrototypePanel";
+import { RepresentativeVisualCuePrototypePanel } from "./ui/RepresentativeVisualCuePrototypePanel";
 import { SearchBar } from "./ui/SearchBar";
 import { ViewControlsPanel } from "./ui/ViewControlsPanel";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
@@ -10328,6 +10329,11 @@ export default function App() {
               onRestoreDocument={(snapshotDocument) => applyDocumentChange(snapshotDocument)}
             />
           ),
+        },
+        {
+          id: "visual-cue",
+          label: t("work_mode.tab.visual_cue"),
+          content: <RepresentativeVisualCuePrototypePanel />,
         },
         {
           id: "diagnostics",

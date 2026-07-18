@@ -53,12 +53,14 @@ const WORK_MODE_TAB_NAMES = {
   diff: /^Diff$|^差分$/,
   merge: /^Merge selection$|^選択マージ$/,
   suggestion: /^AI suggestion$|^AI提案$/,
+  inquiry: /^Inquiry$|^探究$/,
+  visualCue: /^Visual cue evaluation$|^視覚手掛かり評価$/,
   diagnostics: /^Diagnostics$|^診断$/,
   narrative: /^Narrative$|^文章化$/,
 } as const;
 
-// UX-NAV-02: the work-mode surface's 5 sections (diff/merge/suggestion/
-// diagnostics/narrative) are exclusive tabs, not always-visible stacked
+// UX-NAV-02: the work-mode surface's sections are exclusive tabs, not
+// always-visible stacked
 // sections -- opening work mode lands on the first ("Diff") tab regardless
 // of what the caller actually needs. Call this after openAdvancedWorkMode
 // whenever a test needs content from a specific tab.

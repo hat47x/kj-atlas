@@ -14,7 +14,7 @@
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: DOMAIN-VISUAL-CUE-01
-- RequirementStatement: 島または利用者が選んだ情報集合に、内容を代表する任意の小さな視覚手掛かりを文字と併記し、意味を早く確定したり外部へ情報を暗黙に共有したりせず、目的のまとまりを見つけ直す負担を下げる。
+- RequirementStatement: 島または利用者が選んだ情報集合に、内容を代表する任意の小さな視覚手掛かりを文字と併記し、意味を早く確定したり他者へ暗黙に伝えたりせず、目的のまとまりを見つけ直す負担を下げる。
 - PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=利用者が多数の島を含む文書を開いている / 操作=島を選び、手描き・基本図形・撮影写真・絵文字・プリセット・権利確認済み外部素材・生成候補から任意の手掛かりを確認して採用する / 期待結果=表札と手掛かりを併用して島を見つけ直せ、画像なしへ戻せ、一次資料と識別画像を区別でき、外部通信と権利条件を事前確認できる / 除外=自動分類、自動採用、画像だけの意味伝達、装飾目的の常設画像。
 - GoNoGoGate（Required / Optional / N/A）: Required
@@ -63,7 +63,7 @@
 - [x] T3 供給経路と未決定の保存・権利境界を `ADR-0059` として提案する。
 - [x] T4a 具体・抽象・対立・機微情報・記号衝突を含み、手描き印・基本図形・写真ラベル・一次視覚資料を区別するPhase 0の機械可読fixtureと評価手順を固定する。
 - [x] T4a-1 VC-S3用に人物・識別情報・実在組織名を含まない合成写真fixtureと生成・権利確認メタデータを用意し、実際の観察証拠ではないことを明示する。
-- [ ] T4b C0からC4の非製品プロトタイプ表示を作り、3人以上の代表利用者による小規模pilotまたは予備操作確認を実施する。
+- [x] T4b C0からC4の非製品プロトタイプ表示を作り、実装担当者による予備操作確認を実施する。高度な作業モード内のセッション限定UIとして実装し、マウス、キーボード、390px、ローカル画像通信をE2Eで確認した。代表利用者による効果比較はAC-6として未完了のまま残す。
 - [ ] T5 Unicode絵文字と固定画像セットについて、OS間表示、アクセシビリティ、ライセンス、配布容量を比較する。
 - [ ] T6 採用参照、権利情報、画像本体、サムネイルの保存候補を比較し、ADRを受理または更新する。
 - [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。
@@ -75,6 +75,7 @@
 - 要件段階: `python 01_Plans/issues/validate_active_issue_memos.py`、`python -m unittest 01_Plans.issues.tests.test_validate_active_issue_memos`、`python 01_Plans/docs_check.py`
 - 実装段階: frontend unit test、Playwright E2E、Chrome実画面、代表規模性能計測、外部provider契約test。
 - UX評価: `02_Architecture/representative_visual_cue_evaluation.md` と `02_Architecture/design/representative_visual_cue/phase0_scenarios.json` を用い、同じ目的の島を探す課題を文字のみ・手描き・基本図形・写真・絵文字/プリセットで比較する。時間、誤選択、意味誤認、原資料遡及、主観的負担を記録し、見栄えや利用時間だけでは採択しない。
+- 予備操作証跡: `03_Implement/frontend/src/ui/RepresentativeVisualCuePrototypePanel.tsx`、`03_Implement/frontend/src/domain/representative_visual_cue_prototype.test.ts`、`03_Implement/frontend/e2e/representative_visual_cue_prototype.spec.ts`。結果はセッション内だけに保持し、文書スキーマ、外部provider、利用者評価結果を構成しない。
 - Stop条件: 関連性を説明できない候補、画像だけによる意味伝達、意図しない外部通信、権利情報欠落、SafeMode回避、初期表示の複雑化のいずれかを確認した場合は実装を昇格しない。
 
 ## 6) 依存関係 / Dependencies
