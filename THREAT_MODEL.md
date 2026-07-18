@@ -120,6 +120,7 @@
 - 外部PDP、監査HTTP、binding/capability resolver、LLMのoutbound HTTPはredirectを追跡せず、検証済みの元endpointだけへ送信する
 - 外部PDP応答を64KiB以下のclosed-world `allow/readOnly/reason` objectへ限定し、不正応答は値を反射せずSaaS deny fail-safeへ倒す
 - 外部PDP・監査HTTPの設定をtrusted HTTPS（loopbackだけHTTP可）、canonical secret/header、bounded timeoutへ限定し、孤立設定を起動時に拒否する
+- 監査eventのtenantIdをserver-resolved必須fieldとし、64KiBの送信上限、bounded metadata、credential系redactionで欠落・過大・秘密混入eventを外部連携へ流さない
 - LLM HTTP provider応答を1MiB以下のclosed-world `text` objectへ限定し、不正応答は値を反射せずprovider validationで停止する
 - recent/QueryPreset等をdeployment origin + tenantId + userIdで名前空間分離し、切替時にmemory/DOM/cacheを破棄
 - 2つのtenantへ同じdocIdを用意したnegative matrixで、全API・export・MCP・webhook・auditの越境拒否を統合検証

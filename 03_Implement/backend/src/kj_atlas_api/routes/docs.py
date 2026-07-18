@@ -379,6 +379,7 @@ def get_document(
         dispatcher.emit(
             build_event(
                 event_type="view",
+                tenant_id=tenant.tenant_id,
                 doc_id=doc_id,
                 safe_mode=True,
                 actor_ref=request.headers.get("x-actor-ref"),
@@ -393,7 +394,6 @@ def get_document(
                     "policyRefPresent": access_request.resource.policy_ref is not None,
                     "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
                     "traceId": access_request.auth.trace_id,
-                    "tenantId": tenant.tenant_id,
                     **build_auth_assurance_metadata(access_request.auth),
                 },
             )
@@ -601,6 +601,7 @@ def post_context_audit(
         dispatcher.emit(
             build_event(
                 event_type=payload.operation,
+                tenant_id=tenant.tenant_id,
                 doc_id=doc_id,
                 safe_mode=payload.safeMode,
                 actor_ref=request.headers.get("x-actor-ref"),
@@ -615,7 +616,6 @@ def post_context_audit(
                     "policyRefPresent": access_request.resource.policy_ref is not None,
                     "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
                     "traceId": access_request.auth.trace_id,
-                    "tenantId": tenant.tenant_id,
                     "operation": payload.operation,
                     "equivalenceKey": payload.equivalenceKey,
                     "bundleHash": payload.bundleHash,
@@ -649,6 +649,7 @@ def post_export_audit(
         dispatcher.emit(
             build_event(
                 event_type="export",
+                tenant_id=tenant.tenant_id,
                 doc_id=doc_id,
                 safe_mode=payload.safeMode,
                 actor_ref=request.headers.get("x-actor-ref"),
@@ -664,7 +665,6 @@ def post_export_audit(
                     "policyRefPresent": access_request.resource.policy_ref is not None,
                     "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
                     "traceId": access_request.auth.trace_id,
-                    "tenantId": tenant.tenant_id,
                     **build_auth_assurance_metadata(access_request.auth),
                 },
             )

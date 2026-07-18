@@ -266,3 +266,9 @@
 - local/large-scale共通のHTTP provider応答を1MiB以下、`text`単独fieldのobjectへ限定した。非UTF-8/非JSON、非object、余分なtoken等のfield、size超過、text型不正は`provider_validation`へ正規化し、raw値をclient・logへ反射しない。
 - trusted HTTPのredirect拒否と組み合わせ、tenant由来promptを別接続先へ転送せず、巨大・拡張応答をproposal処理へ渡さない。`KJ_ATLAS_LLM_PROVIDER=none`既定、local-first、明示opt-in、proposal-onlyは変更しない。
 - LLM／AI契約近接48件、backend全体472件pass・条件付き25件skip、Ruff、docs-check、diff-checkを通過した。
+
+### Implementation checkpoint 2026-07-18: tenant-required bounded audit event
+
+- view/export/CE4 auditのtenantIdを自由形式metadataからevent envelopeの必須fieldへ移し、認可・repositoryと同じserver-resolved TenantContextだけを渡すようにした。欠損・空値・前後空白・制御文字・256文字超のtenantIdではeventを構築せず、client入力から補完しない。
+- HTTP eventは64KiB以下、metadataは32 field、key 128文字、文字列値1,024文字、有限かつboundedな数値へ制限した。本文・prompt・email・token・secret・credential・assertion等のkeyを固定値へredactし、過大文字列・非finite numberをqueueや送信先へ保持しない。監査transport障害時の既存fail-open方針は維持する。
+- 監査単体とDocument audit integrationの近接30件、backend全体477件pass・条件付き25件skip、Ruff、docs-check、active issue validator、diff-checkを通過した。MCP/worker/cache/storageを含む完全negative matrixが未完了のためAC-8とSaaS起動拒否は継続する。

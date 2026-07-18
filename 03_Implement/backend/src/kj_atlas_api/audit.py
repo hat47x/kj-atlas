@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -10,7 +11,7 @@ from typing import Literal, Protocol
 from urllib import error, request
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from kj_atlas_api.settings import settings
 from kj_atlas_api.trusted_http import open_trusted_http
@@ -18,17 +19,70 @@ from kj_atlas_api.trusted_http import open_trusted_http
 logger = logging.getLogger(__name__)
 
 AuditEventType = Literal["view", "export", "query", "bundle", "proposal", "apply"]
+MAX_AUDIT_EVENT_BYTES = 64 * 1024
+MAX_AUDIT_METADATA_FIELDS = 32
+MAX_AUDIT_METADATA_KEY_LENGTH = 128
+MAX_AUDIT_METADATA_STRING_LENGTH = 1024
+MAX_AUDIT_IDENTIFIER_LENGTH = 256
+MAX_AUDIT_METADATA_NUMBER_ABS = 10**15
+_REDACTED_VALUE = "[REDACTED]"
+_TRUNCATED_VALUE = "[TRUNCATED]"
+_RESERVED_METADATA_KEYS = frozenset({"tenantid"})
 
 
 class AuditEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     schemaVersion: Literal[1] = 1
-    eventId: str
-    occurredAt: str
+    eventId: str = Field(min_length=1, max_length=128)
+    occurredAt: str = Field(min_length=1, max_length=64)
     eventType: AuditEventType
-    docId: str
+    tenantId: str = Field(min_length=1, max_length=MAX_AUDIT_IDENTIFIER_LENGTH)
+    docId: str = Field(min_length=1, max_length=MAX_AUDIT_IDENTIFIER_LENGTH)
     safeMode: bool
-    actorRefHash: str | None = None
-    metadata: dict[str, str | int | float | bool | None] = Field(default_factory=dict)
+    actorRefHash: str | None = Field(default=None, pattern=r"^[0-9a-f]{24}$")
+    metadata: dict[str, str | int | float | bool | None] = Field(
+        default_factory=dict,
+        max_length=MAX_AUDIT_METADATA_FIELDS,
+    )
+
+    @field_validator("tenantId", "docId")
+    @classmethod
+    def _validate_identifier(cls, value: str) -> str:
+        if value.strip() != value or any(
+            ord(character) < 32 or ord(character) == 127 for character in value
+        ):
+            raise ValueError("audit identifiers must be canonical")
+        return value
+
+    @field_validator("metadata")
+    @classmethod
+    def _validate_metadata(
+        cls,
+        value: dict[str, str | int | float | bool | None],
+    ) -> dict[str, str | int | float | bool | None]:
+        for key, item in value.items():
+            if _normalized_metadata_key(key) in _RESERVED_METADATA_KEYS:
+                raise ValueError("audit tenantId must use the event envelope")
+            if (
+                not key
+                or len(key) > MAX_AUDIT_METADATA_KEY_LENGTH
+                or key.strip() != key
+                or any(ord(character) < 32 or ord(character) == 127 for character in key)
+            ):
+                raise ValueError("audit metadata keys must be canonical")
+            if isinstance(item, str) and len(item) > MAX_AUDIT_METADATA_STRING_LENGTH:
+                raise ValueError("audit metadata strings exceed the size limit")
+            if (
+                isinstance(item, (int, float))
+                and not isinstance(item, bool)
+                and (
+                    (isinstance(item, float) and not math.isfinite(item))
+                    or abs(item) > MAX_AUDIT_METADATA_NUMBER_ABS
+                )
+            ):
+                raise ValueError("audit metadata numbers exceed the supported range")
+        return value
 
 
 class AuditTransport(Protocol):
@@ -55,6 +109,8 @@ class HttpAuditTransport:
 
     def send(self, event: AuditEvent) -> None:
         payload = event.model_dump_json().encode("utf-8")
+        if len(payload) > MAX_AUDIT_EVENT_BYTES:
+            raise RuntimeError("audit event exceeds the outbound size limit")
         headers = {"Content-Type": "application/json"}
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"
@@ -100,16 +156,23 @@ def normalize_ce4_audit_metadata(raw: dict[str, object]) -> dict[str, object]:
         normalized[key] = raw.get(key)
     normalized["schemaVersion"] = CE4_AUDIT_SCHEMA_VERSION
     return normalized
-SENSITIVE_KEYS = {
+SENSITIVE_EXACT_KEYS = {
     "text",
     "content",
+    "name",
+}
+SENSITIVE_KEY_PARTS = {
     "prompt",
     "email",
-    "name",
     "token",
     "secret",
     "authorization",
     "cookie",
+    "password",
+    "credential",
+    "assertion",
+    "apikey",
+    "clientsecret",
 }
 
 
@@ -129,16 +192,45 @@ def _now_utc_iso() -> str:
 
 
 def _mask_value(value: object) -> str | int | float | bool | None:
-    if value is None or isinstance(value, (str, int, float, bool)):
+    if isinstance(value, str):
+        if len(value) > MAX_AUDIT_METADATA_STRING_LENGTH:
+            return _TRUNCATED_VALUE
         return value
-    return "[REDACTED]"
+    if isinstance(value, bool) or value is None:
+        return value
+    if isinstance(value, (int, float)):
+        if (
+            (isinstance(value, float) and not math.isfinite(value))
+            or abs(value) > MAX_AUDIT_METADATA_NUMBER_ABS
+        ):
+            return _REDACTED_VALUE
+        return value
+    return _REDACTED_VALUE
+
+
+def _normalized_metadata_key(key: str) -> str:
+    return "".join(character for character in key.lower() if character.isalnum())
 
 
 def sanitize_metadata(raw: dict[str, object]) -> dict[str, str | int | float | bool | None]:
     sanitized: dict[str, str | int | float | bool | None] = {}
     for key, value in raw.items():
-        if key.lower() in SENSITIVE_KEYS:
-            sanitized[key] = "[REDACTED]"
+        if len(sanitized) >= MAX_AUDIT_METADATA_FIELDS:
+            break
+        if (
+            not key
+            or len(key) > MAX_AUDIT_METADATA_KEY_LENGTH
+            or key.strip() != key
+            or any(ord(character) < 32 or ord(character) == 127 for character in key)
+        ):
+            continue
+        normalized_key = _normalized_metadata_key(key)
+        if normalized_key in _RESERVED_METADATA_KEYS:
+            continue
+        if normalized_key in SENSITIVE_EXACT_KEYS or any(
+            part in normalized_key for part in SENSITIVE_KEY_PARTS
+        ):
+            sanitized[key] = _REDACTED_VALUE
             continue
         sanitized[key] = _mask_value(value)
     return sanitized
@@ -147,6 +239,7 @@ def sanitize_metadata(raw: dict[str, object]) -> dict[str, str | int | float | b
 def build_event(
     *,
     event_type: AuditEventType,
+    tenant_id: str,
     doc_id: str,
     safe_mode: bool,
     actor_ref: str | None = None,
@@ -160,6 +253,7 @@ def build_event(
         eventId=f"audit-{uuid4()}",
         occurredAt=_now_utc_iso(),
         eventType=event_type,
+        tenantId=tenant_id,
         docId=doc_id,
         safeMode=safe_mode,
         actorRefHash=actor_ref_hash,
@@ -218,6 +312,7 @@ class AuditDispatcher:
                 "audit event send failed; keep fail-open",
                 extra={
                     "eventType": event.eventType,
+                    "tenantId": event.tenantId,
                     "docId": event.docId,
                     "transport": self._transport.name,
                     "queueLength": len(self._queue),
@@ -246,7 +341,12 @@ class AuditDispatcher:
         if dropped:
             logger.warning(
                 "audit queue is full; dropped oldest event",
-                extra={"queueSize": after, "eventType": event.eventType, "docId": event.docId},
+                extra={
+                    "queueSize": after,
+                    "eventType": event.eventType,
+                    "tenantId": event.tenantId,
+                    "docId": event.docId,
+                },
             )
 
 

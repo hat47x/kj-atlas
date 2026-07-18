@@ -513,10 +513,12 @@ fail-safe マトリクス:
 - `POST /docs/{doc_id}/export-audit` でアクセス許可後に `eventType=export` を送信。
 - `POST /docs/{doc_id}/context-audit` でアクセス許可後に `eventType=query|bundle|proposal|apply` を送信。
 - 監査送信は既存の fail-open dispatcher 方針を維持する（監査送信失敗で本体機能は停止しない）。
+- event envelopeの`tenantId`は、認可・repositoryと同じserver-resolved TenantContextから設定する必須fieldであり、自由形式metadataやclient入力から補完しない。欠損、空値、前後空白、制御文字、256文字超のtenantIdではeventを構築しない。
+- HTTP送信payloadは64KiB以下、metadataは32 field以下、keyは128文字以下、文字列値は1,024文字以下に制限する。本文・credential系keyは固定値へredactし、過大値や非finite numberをそのままqueue／送信先へ渡さない。transport失敗時のfail-open方針はこの構造検証を迂回しない。
 
 最小記録項目（PII非保存）:
 
-- 必須: `eventType`, `eventVersion`, `occurredAt`, `docId`, `action`, `decision.allow`, `policyRefPresent`
+- 必須: `eventType`, `schemaVersion`, `occurredAt`, `tenantId`, `docId`, `action`, `decision.allow`, `policyRefPresent`
 - 任意: `decision.readOnly`, `decision.reason`, `visibility`, `adapterName`, `traceId`, `amr`, `acr`, `aal`, `authTime`
 - 非保存: `policyRef` 生値、`roles/groups` 生値、token/assertion 生値、WebAuthn credential id、ドキュメント本文
 
