@@ -290,3 +290,9 @@
 - 外部PDPへ送るserver-composed requestをcompact UTF-8 JSONで64KiB以下に制限し、識別子を256文字以下、policyRefを2,048文字以下、roles/groupsを各64件以下の重複なしcanonical文字列へ限定した。subject/resource欠損、未知action/visibility、型不正、前後空白・制御文字、上限超過はtransport前に停止し、入力値をerrorへ反射しない。
 - 不正requestを`adapter_error`へ正規化し、SaaS deny modeではreadを含めてfail-closedにする。PDPによるrole/group/policyRefの意味評価、既存SafeMode/readOnly優先順、single-tenant互換のfail-safe選択は変更しない。
 - 外部PDP／tenant境界／管理・session route近接46件、backend全体527件pass・条件付き25件skip、Ruff、docs-check、active issue validatorと同validatorの13件、diff-checkを通過した。PostgreSQL実地matrix、trusted auth edge、active tenant変更、MCP/worker/cache/storageを含む完全negative matrixは未完了であり、SaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-18: bounded binding and capability requests
+
+- Document policy binding lookupはtenantIdを256文字以下、bindingId/policyVersionを128文字以下、tenant capability lookupはprincipalId/tenantId/membershipIdを各256文字以下のcanonicalなserver-owned IDへ限定し、両requestをcompact UTF-8 JSONで64KiB以下に制限した。前後空白、制御・非表示文字、欠損、長さ・size超過はtransport前に停止し、入力値をerrorへ反射しない。
+- binding lookupの不正contextはpolicyRef解決失敗として`Restricted + policy_ref_missing`へ、capability lookupの不正contextは`capability_resolution_unavailable`へ既存境界でfail-closedにする。API key、raw policyRef、role/groupはrequestへ追加せず、SafeMode、PDP、single-tenant互換方針は変更しない。
+- binding/capability／resource／session／管理API近接100件、backend全体537件pass・条件付き25件skip、Ruff、docs-check、active issue validator、diff-checkを通過した。trusted auth edge、PostgreSQL実地matrix、active tenant変更とconsumer完全negative matrixが未完了のためSaaS起動拒否を継続する。

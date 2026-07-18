@@ -34,9 +34,9 @@ class _Response:
         return False
 
 
-def _tenant() -> TenantContext:
+def _tenant(*, tenant_id: str = "tenant-a") -> TenantContext:
     return TenantContext(
-        tenant_id="tenant-a",
+        tenant_id=tenant_id,
         membership_id="membership-a",
         resolved_by="verified_claim",
     )
@@ -92,6 +92,72 @@ def test_external_resolver_sends_only_opaque_lookup_and_returns_transient_policy
         },
     }
     assert response.read_limit == MAX_BINDING_RESPONSE_BYTES + 1
+
+
+@pytest.mark.parametrize(
+    ("tenant_id", "binding_id", "policy_version"),
+    [
+        (" tenant-a", "binding-1", "policy-v1"),
+        ("tenant-a", "binding\n1", "policy-v1"),
+        ("tenant-a", "binding-1", "x" * 129),
+        ("tenant\u200ba", "binding-1", "policy-v1"),
+    ],
+    ids=[
+        "tenant-whitespace",
+        "binding-control-character",
+        "policy-version-too-long",
+        "tenant-non-printable",
+    ],
+)
+def test_external_resolver_rejects_invalid_lookup_before_transport(
+    monkeypatch: pytest.MonkeyPatch,
+    tenant_id: str,
+    binding_id: str,
+    policy_version: str,
+) -> None:
+    transport_called = False
+
+    def _unexpected_transport(request, timeout_seconds):  # noqa: ANN001, ARG001
+        nonlocal transport_called
+        transport_called = True
+        raise AssertionError("transport must not be called")
+
+    monkeypatch.setattr(
+        "kj_atlas_api.document_policy_binding.open_trusted_http",
+        _unexpected_transport,
+    )
+
+    with pytest.raises(DocumentPolicyBindingUnavailableError) as exc_info:
+        _resolver().resolve(
+            tenant=_tenant(tenant_id=tenant_id),
+            binding_id=binding_id,
+            policy_version=policy_version,
+        )
+
+    assert str(exc_info.value) == "binding service lookup context is unavailable"
+    assert transport_called is False
+
+
+def test_external_resolver_rejects_oversized_lookup_before_transport(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "kj_atlas_api.document_policy_binding.MAX_BINDING_REQUEST_BYTES",
+        32,
+    )
+    monkeypatch.setattr(
+        "kj_atlas_api.document_policy_binding.open_trusted_http",
+        lambda request, timeout_seconds: (_ for _ in ()).throw(  # noqa: ARG005
+            AssertionError("transport must not be called")
+        ),
+    )
+
+    with pytest.raises(DocumentPolicyBindingUnavailableError):
+        _resolver().resolve(
+            tenant=_tenant(),
+            binding_id="binding-1",
+            policy_version="policy-v1",
+        )
 
 
 @pytest.mark.parametrize(

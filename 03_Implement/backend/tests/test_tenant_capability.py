@@ -35,9 +35,13 @@ class _Response:
         return False
 
 
-def _tenant(*, membership_id: str | None = "membership-a") -> TenantContext:
+def _tenant(
+    *,
+    tenant_id: str = "tenant-a",
+    membership_id: str | None = "membership-a",
+) -> TenantContext:
     return TenantContext(
-        tenant_id="tenant-a",
+        tenant_id=tenant_id,
         membership_id=membership_id,
         resolved_by="verified_claim",
     )
@@ -221,6 +225,71 @@ def test_external_capability_resolver_rejects_missing_membership_before_transpor
         )
 
     assert transport_called is False
+
+
+@pytest.mark.parametrize(
+    ("principal_id", "tenant"),
+    [
+        (" principal-1", _tenant()),
+        ("principal\u200b1", _tenant()),
+        ("principal-1", _tenant(tenant_id="x" * 257)),
+        ("principal-1", _tenant(membership_id="membership\n1")),
+    ],
+    ids=[
+        "principal-whitespace",
+        "principal-non-printable",
+        "tenant-too-long",
+        "membership-control-character",
+    ],
+)
+def test_external_capability_resolver_rejects_invalid_context_before_transport(
+    monkeypatch: pytest.MonkeyPatch,
+    principal_id: str,
+    tenant: TenantContext,
+) -> None:
+    transport_called = False
+
+    def _unexpected_transport(request, timeout_seconds):  # noqa: ANN001, ARG001
+        nonlocal transport_called
+        transport_called = True
+        raise AssertionError("transport must not be called")
+
+    monkeypatch.setattr(
+        "kj_atlas_api.tenant_capability.open_trusted_http",
+        _unexpected_transport,
+    )
+
+    with pytest.raises(TenantCapabilityUnavailableError) as exc_info:
+        _resolver().resolve(
+            db=None,  # type: ignore[arg-type]
+            principal_id=principal_id,
+            tenant=tenant,
+        )
+
+    assert str(exc_info.value) == "tenant capability context is unavailable"
+    assert transport_called is False
+
+
+def test_external_capability_resolver_rejects_oversized_request_before_transport(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "kj_atlas_api.tenant_capability.MAX_CAPABILITY_REQUEST_BYTES",
+        32,
+    )
+    monkeypatch.setattr(
+        "kj_atlas_api.tenant_capability.open_trusted_http",
+        lambda request, timeout_seconds: (_ for _ in ()).throw(  # noqa: ARG005
+            AssertionError("transport must not be called")
+        ),
+    )
+
+    with pytest.raises(TenantCapabilityUnavailableError):
+        _resolver().resolve(
+            db=None,  # type: ignore[arg-type]
+            principal_id="principal-1",
+            tenant=_tenant(),
+        )
 
 
 def test_external_capability_resolver_maps_http_rejection_without_detail(

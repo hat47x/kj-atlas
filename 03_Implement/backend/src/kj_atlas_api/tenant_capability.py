@@ -18,6 +18,7 @@ from kj_atlas_api.tenant_context import TenantContext
 from kj_atlas_api.trusted_http import open_trusted_http
 
 
+MAX_CAPABILITY_REQUEST_BYTES = 64 * 1024
 MAX_CAPABILITY_RESPONSE_BYTES = 64 * 1024
 MAX_CAPABILITY_COUNT = len(KNOWN_EFFECTIVE_CAPABILITIES)
 _OPAQUE_VERSION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -44,10 +45,36 @@ def _canonical_request_identifier(value: str | None) -> str:
         or not value
         or len(value) > 256
         or value.strip() != value
-        or any(ord(character) < 32 or ord(character) == 127 for character in value)
+        or any(not character.isprintable() for character in value)
     ):
         raise TenantCapabilityUnavailableError("tenant capability context is unavailable")
     return value
+
+
+def _serialize_capability_request(
+    *,
+    principal_id: str,
+    tenant: TenantContext,
+) -> bytes:
+    try:
+        body = json.dumps(
+            {
+                "principalId": _canonical_request_identifier(principal_id),
+                "tenantId": _canonical_request_identifier(tenant.tenant_id),
+                "membershipId": _canonical_request_identifier(tenant.membership_id),
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    except (TypeError, ValueError, UnicodeError):
+        raise TenantCapabilityUnavailableError(
+            "tenant capability context is unavailable"
+        ) from None
+    if len(body) > MAX_CAPABILITY_REQUEST_BYTES:
+        raise TenantCapabilityUnavailableError(
+            "tenant capability context is unavailable"
+        )
+    return body
 
 
 def _parse_snapshot(response_body: bytes) -> CapabilitySnapshot:
@@ -106,14 +133,10 @@ class ExternalHttpTenantCapabilityResolver:
         principal_id: str,
         tenant: TenantContext,
     ) -> CapabilitySnapshot:
-        body = json.dumps(
-            {
-                "principalId": _canonical_request_identifier(principal_id),
-                "tenantId": _canonical_request_identifier(tenant.tenant_id),
-                "membershipId": _canonical_request_identifier(tenant.membership_id),
-            },
-            separators=(",", ":"),
-        ).encode("utf-8")
+        body = _serialize_capability_request(
+            principal_id=principal_id,
+            tenant=tenant,
+        )
         headers = {
             "accept": "application/json",
             "content-type": "application/json",
