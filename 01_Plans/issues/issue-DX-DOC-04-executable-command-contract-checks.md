@@ -93,8 +93,8 @@ findingはrule ID、文書、行、検出token、照合先、正しい候補を�
 
 - [x] `CONTRIBUTING.md`のCompose health probeが`/api/healthz`となり、backend-localの`/healthz`と区別される。→ 修正済み（下記「実装記録」参照）。
 - [x] current/public文書に存在しないrepository-local CLI optionが0件で、`--files`参照がなくなる。→ 監査の結果、current/public文書（README/CONTRIBUTING/04_Documentation/e2e_testing.md）に`--files`参照は0件（`e2e_testing.md`分は`DX-E2E-08`で既に解消済み、他文書には元々存在しなかった）。`01_Plans/issues/*.md`に多数残る`--files`参照はDX-DOC-04のScope外（内部issueメモの実施時点記録であり、現行の利用者向けコピー対象ではない）と判断し対象外にした。
-- [x] 文書で参照するnpm scripts、Compose services、repository paths、runtime parameter keysが正本と一致する。→ npm scripts・Compose services・repository paths・runtime parameter keysの自動照合をすべて実装した（下記「実装記録」参照）。
-- [ ] `DC-CMD-001`がendpoint、CLI option、npm script、Compose service、pathの各負例をrule ID付きで検出する。→ npm script・Compose service・pathの3区分が実装済み。endpoint・CLI optionの2区分は未実装（follow-up、下記「実装記録」参照）。
+- [ ] 文書で参照するnpm scripts、Compose services、repository paths、runtime parameter keysが正本と一致する。→ npm scripts・Compose services・runtime parameter keysの自動照合を実装（下記）。repository pathsは未実装（follow-up）。
+- [ ] `DC-CMD-001`がendpoint、CLI option、npm script、Compose service、pathの各負例をrule ID付きで検出する。→ npm script・Compose service・runtime parameter keyの3区分が実装済み。endpoint・CLI option・pathの3区分は未実装（follow-up、下記「実装記録」参照）。
 - [x] コードフェンス外の説明、placeholder、外部URL、動的値を誤検出しない正常fixtureがある。→ npm script区分について、正常例・スコープ外文書除外の2 test fixtureを追加（下記参照）。他区分は該当区分自体が未実装のため対象外。
 - [x] manual/mutatingコマンドはCIで実行されず、データ消失・秘密情報・本番利用に関する警告と停止条件を維持する。→ 本Issueでは静的照合のみを追加し、CI実行コマンドやworkflowの変更は一切行っていない。
 - [x] localとCIが同じ`docs_check.py`から検査し、current repositoryでpassする。→ `check_npm_script_commands`を`docs_check.py`へ統合し、現行repositoryでpass済み（下記「実装記録」参照）。
@@ -220,20 +220,6 @@ npm script区分に続き、Compose service区分を実装した。残り3区分
 検証結果:
 - `python3 -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 35/35 pass（新規5件含む、既存回帰なし）。
 - `python 01_Plans/docs_check.py`: pass（`active_memos=22, tracked_markdown=382`）。registry是正後、実際のcurrent/public文書で誤検知0件。
-
-## 実装記録（2026-07-18続き）: `DC-CMD-001`（repository path区分を追加）
-
-区分4（repository path）を実行計画どおり実装した。残り区分5〜6（CLI option/endpoint probe）は引き続き未実装のfollow-upとする。
-
-- `01_Plans/docs_contract_checks.py`に`check_repository_path_commands()`を追加した。バッククォート内トークンのうち既知のrepositoryルート接頭辞（`00_Prompt/`等）で始まり、placeholder/glob文字（space・`<`・`>`・`*`・`{`・`|`）を含まないものを対象とし、末尾`:数字`（行参照）を除去してから存在確認する。
-- 正本は計画が示した`git ls-files`ではなく、**`root`直下のファイルシステム存在確認**（`Path.exists()`）を採用した。理由: この検査が走査するパスはすべて検査対象文書と同じworking tree内にあり、on-disk存在とtracked存在がここでは一致する。加えて`Path.exists()`はディレクトリにも真を返すため、計画が求めた「トークンがtrackedファイルのディレクトリprefixに一致する場合も存在扱い」を追加ロジックなしで満たす。
-- **実装中に発見した1件（設計拡張、baseline是正ではない）**: `04_Documentation/release.md`が説明する`03_Implement/frontend/dist`（GitHub Actions artifactの内容を指す）が誤検知した。原因は`git check-ignore`がディレクトリ専用pattern（`dist/`等）を、パスが実在してディレクトリだと確認できる場合しか認識しないため（`git check-ignore`自体は採用しておらず、これは設計段階で確認した制約）。build成果物は本質的にfresh cloneでは不在なため、`.gitignore`解析ではなく明示allowlist（`REPOSITORY_PATH_BUILD_OUTPUT_LEAF_NAMES = {dist, node_modules, build, __pycache__, .venv}`）で「親ディレクトリが実在し、末尾セグメントがbuild成果物名」の場合だけ許容する設計とした。誤って別の場所を指す`.../wrong-place/dist`のような壊れた参照は、親ディレクトリ自体が存在しないため引き続き検出される（回帰テストで固定済み）。
-- `01_Plans/tests/test_docs_contract_checks.py`に`RepositoryPathCheckTest`（7 test: 正常例、欠落パス検出、`<placeholder>`除外、`:42`行参照付き正常、スコープ外文書の除外、build成果物パスの許容、誤った親パスでのbuild成果物名は検出）を追加した。
-- `docs_check.py`へ`check_repository_path_commands`を配線した。
-
-検証結果:
-- `python3 -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 42/42 pass（新規7件含む、既存回帰なし）。
-- `python 01_Plans/docs_check.py`: pass（`active_memos=22, tracked_markdown=382`）。build成果物allowlist追加後、実際のcurrent/public文書で誤検知0件。
 
 ## 補足
 
