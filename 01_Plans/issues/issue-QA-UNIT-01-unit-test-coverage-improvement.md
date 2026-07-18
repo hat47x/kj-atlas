@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Open Readiness: Prepared
-- Execution: Hold
+- Execution: Ready
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
 - Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`（計画文書更新のみ）
@@ -29,7 +29,7 @@
 |---|---|---|---|
 | B-UNIT-01 | 実装タスク起票承認未了 | Pending-1 に起票ID追記 | QA lead |
 | B-UNIT-02 | 上流契約凍結未反映 | Pending-2 に凍結参照ID追記 | Architecture owner |
-| B-UNIT-03 | 環境制約 | unit実行プロファイルを選択済み | QA engineer |
+| B-UNIT-03 | 環境制約 → 解消済み（2026-07-18、下記Phase 6参照） | unit実行プロファイルを選択済み | QA engineer |
 
 ## Phase 2: ADR C/D/C（簡易）
 ### Context
@@ -110,8 +110,12 @@ Open化ゲートを「依存解消ID」「段階ゲート順序」「失敗分�
 - Pending-2: 上流契約凍結の最終承認反映。→ 承認済み（2026-07-16、Maintainer/hat47x。参照する上流契約凍結は `DATA-CONTRACT-01`、Done）。
 
 ### Execution
-- Pending-1/Pending-2は解消したが、B-UNIT-03（unit実行プロファイル未選択）が未解消のため、`Execution: Hold` を維持する。
-- `Execution: Hold`（承認以外の残blocker解消まで維持）
+- Pending-1/Pending-2に続き、B-UNIT-03（unit実行プロファイル未選択）を2026-07-18に解消した。
+- **B-UNIT-03確定値**: 次の2本立てで固定する。
+  1. frontend: `npm run test`（vitest全件、WSLクローン`~/kjnative-fe`で実行。DrvFs経由の`/mnt/c/...`では実行しない）。
+  2. backend: `python3 -m pytest`（既定プロファイル。PostgreSQL roundtripテストは`KJ_ATLAS_RUN_PG_TESTS`未設定で自動スキップされ、CI既定と同一になる）。
+  - 根拠: どちらもCIが実行するのと同一のプロファイルであり、追加インフラ・環境変数・外部依存を要求しない。PG roundtripが必要な変更では`KJ_ATLAS_RUN_PG_TESTS=1`のopt-in実行を証跡に追記する（プロファイルの置換ではなく追加実行として扱う）。
+- `Execution: Ready`（承認・技術的ブロッカーはすべて解消。初回実行バッチは別PRで進める）
 
 
 ### 修復上限（共通）
