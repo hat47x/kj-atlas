@@ -357,3 +357,9 @@
 - Appへ検証済み`TenantSessionContextV1`を任意注入できるtenant switch hostを追加し、注入時はsession由来のdeployment／principal／tenantとbrowser storage scopeの完全一致をmount前に再検証する。session非注入時のsingle-tenant動作は維持し、現行`main.tsx`は意図的にsessionを渡さないため、production entryではtenant controlをまだ表示しない。
 - 切替確認の取消・保存失敗では旧Appを維持してtenant selectへfocusを戻し、切替開始後は旧tenant DOMをloading／blocked viewへ置換する。成功応答を再検証してから、進行中request・worker・task・object URL・timerの破棄、browser storage facade経由の旧scope削除、hard document replacementを順に実行する。Appからraw `window.localStorage`へは触れず、cleanup能力がない場合はPOST前にfail-closedとした。
 - session／switch／cleanup／storage／UI近接54件・9 file、frontend全体1,233件・214 file、frontend typecheck、`saas-multitenant` production buildを通過した。実ブラウザではSaaS buildがalertだけでfail-closedとなり旧Canvas／tenant controlを表示しないこと、`evaluation` dev buildが従来CanvasとSafeMode ONを表示しtenant controlを出さないことを確認した。trusted SaaS auth edge、anti-forgery付きsession persisterの実runtime接続、PostgreSQL RLS実地検証、MCP／worker／cache／browserを含むtenant A/B negative matrix、production entryへのsession注入は未完了であり、AC-6/8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-19: atomic trusted SaaS runtime adapter bundle
+
+- application起動前に限り、trusted SaaS identity resolver、tenant resolver、active tenant session persisterを単一の型付きbundleとして注入できる境界を追加した。3要素の欠損、未検証bundle state、起動後の注入、同一App上の別bundle差し替えを拒否し、main lifespanが3要素を同時にだけ適用する。
+- bundle非注入時はidentity resolverとsession persisterをunavailable、tenant resolverを既存single-tenant互換へ毎起動時に戻すため、既存利用を維持しながらsession APIをfail-closedに保つ。環境変数やrequest headerからadapterを選ぶ経路は追加せず、実IdP／trusted proxyの検証方式、anti-forgery付きsession形式、SaaS profileの起動許可は行っていない。
+- bundle境界、session route、Tenant Admin routeの近接49件、初回backend全体runの成功564件、環境PATH補正後のmigration 15件、条件付き25件skip、backend全体Ruffを通過した。全体一括実行では子processの`alembic`未検出を補正後に5分上限へ到達したため、初回成功分と該当migration再実行へ分割して確認した。実auth edge adapter／session persister、PostgreSQL RLS実地検証、完全なtenant A/B negative matrixは外部runtimeと検証環境が必要なため、AC-4/5/6/7/8/10/12とSaaS起動拒否を継続する。
