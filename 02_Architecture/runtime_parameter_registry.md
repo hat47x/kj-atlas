@@ -74,9 +74,9 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 - `llm-stub overlay` — `docker-compose.llm-stub.yml`（検証専用 overlay。本番相当の利用者向けデプロイでは使わない）からのみ配送される。
 - `fixed` — `Settings.validate_llm_provider_guards` が既定値以外を拒否する固定契約値。運用者が変更する対象ではない。
 
-`direct` と記載されたキーは、`04_Documentation/configuration.md` 等で Compose 起動時の設定例として案内しても実際には `api` コンテナへ届かない。特に `KJ_ATLAS_API_KEY`（API key 保護）と `KJ_ATLAS_ALLOW_JIT_PROVISIONING`（JIT provisioning 禁止）は、利用者が「保護を有効にした／無効化した」と誤認しやすい既知のギャップである（下表で ⚠️ と付記）。標準 Compose での配送実装と機能的な確認手順は本 Issue の後続作業とする。
+`direct` と記載されたキーは、`04_Documentation/configuration.md` 等で Compose 起動時の設定例として案内しても実際には `api` コンテナへ届かない。標準 `docker-compose.yml` は `KJ_ATLAS_API_KEY` と `KJ_ATLAS_ALLOW_JIT_PROVISIONING` をホスト環境からの pass-through（値なし `environment` entry）として配送する（ENV-COMPOSE-01 Phase 2）。ホスト側で未設定の場合はコンテナ内でも未設定のまま（空文字は注入しない）で、実装既定値を維持する。監査HTTP・外部PDP・large-scale LLM・local LLM の接続系キーは標準 Compose では unsupported であり、必要な場合は組織側 overlay で関連キーを一組として配送する。
 
-`Probe` 列は、設定後に秘密値を出力せず効果を確認する方法の説明であり、本 PR の時点では手順の記載のみで、自動テストとしては未実装（後続作業）。
+`Probe` 列は、設定後に秘密値を出力せず効果を確認する方法の説明である。`KJ_ATLAS_API_KEY` と `KJ_ATLAS_ALLOW_JIT_PROVISIONING` の代表probeは `03_Implement/deploy/tools/verify_env_delivery.sh`（Docker利用可能なローカル環境向け、CIでは実行しない）として実装済み。他キーの手順は記載のみで、自動テストとしては未実装（後続作業）。
 
 | Key | Default | Purpose | Delivery surface | Secret | Probe (non-secret) |
 | --- | --- | --- | --- | --- | --- |
@@ -90,7 +90,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale LLM 利用の明示 opt-in | direct | 通常値 | `false` のとき `large-scale`/`external` provider 指定が起動時に拒否されることを確認する（validator で既に強制） |
 | `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale LLM 接続を許可する host のカンマ区切り | direct | 通常値（ホスト名リスト。認証情報を含まない） | allowlist 外ホストへの接続が拒否されることを確認する |
 | `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM 失敗時に `none` へ退避する | direct | 通常値 | LLM 呼び出し失敗時に `none` provider へフォールバックすることを確認する |
-| `KJ_ATLAS_API_KEY` ⚠️ | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護する | direct（base Compose 未配送） | 秘密値 | 未設定時は `/healthz` 以外も無防備。設定時: キーなしは 401、正しい `X-API-Key` は成功、誤ったキーも 401（値自体は出力しない） |
+| `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護する | direct / base Compose | 秘密値 | 未設定時は `/healthz` 以外も無防備。設定時: キーなしは 401、正しい `X-API-Key` は成功、誤ったキーも 401（値自体は出力しない） |
 | `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit event のHTTP連携を有効化する | direct | 通常値 | `true` 時に監査イベントが transport 経由で送出されること（内容は出力せず送信有無のみ確認） |
 | `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | audit transport。`noop` または `http` | direct | 通常値 | `http` 指定時に HTTP transport が選択されることをログで確認する |
 | `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログHTTP連携の接続先 | direct | 通常値（接続先URL。認証情報は別キー） | test double への到達確認（実サービスへは送らない） |
@@ -105,7 +105,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` | `none` | `external_http` adapter の認証モード。`none`, `oidc`, `saml` | direct | 通常値 | 選択した認証 mode で PDP リクエストの認証ヘッダ形式が変わることを確認する（値は出力しない） |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` | 未設定 | `external_http` adapter の固定 bearer token | direct | 秘密値 | PDP リクエストに Bearer ヘッダが付与されることを確認する（値はマスク） |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER` | 未設定 | `external_http` adapter に渡す IdP issuer | direct | 通常値 | OIDC/SAML 認証時に issuer 検証が設定値と一致することを確認する |
-| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` ⚠️ | `true` | 未登録 identity の JIT provisioning を許可する | direct（base Compose 未配送） | 通常値 | `false` 時、未登録 identity でのアクセスが拒否され新規作成されないことを確認する |
+| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `true` | 未登録 identity の JIT provisioning を許可する | direct / base Compose | 通常値 | `false` 時、未登録 identity でのアクセスが拒否され新規作成されないことを確認する |
 | `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | auth provider を受け取る header 名 | direct | 通常値 | 指定 header から provider 値が読み取られることを確認する |
 | `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | user id を受け取る header 名 | direct | 通常値 | 指定 header から user id が読み取られ、identity へ反映されることを確認する |
 | `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | email を受け取る header 名 | direct | 通常値 | 指定 header から email が読み取られ、identity へ反映されることを確認する |

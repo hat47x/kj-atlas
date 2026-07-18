@@ -8,8 +8,8 @@
 - Execution: Ready
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
-- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`（計画文書更新のみ）
-- Out of Scope: 実装コード変更 / テストコード追加 / CI設定変更
+- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`（Phase 1〜6の計画文書更新）。2026-07-18の実行計画節以降は、初回実行バッチとして`03_Implement/frontend/src/domain/view/hierarchy_level.ts`・同`.test.ts`・`App.tsx`（QA-MONKEY-13再発検知テストの追加とその可読化リファクタ）も対象に含む。
+- Out of Scope: CI設定変更。実装コード変更・テストコード追加は、2026-07-18の実行計画節が承認した初回実行バッチの範囲でのみ許可する（それ以外の無制限な実装変更は引き続き対象外）。
 - Expected verification level: `unit`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 - Policy reference: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -230,3 +230,23 @@ Pending-1/2は2026-07-16にMaintainer承認済み。残るB-UNIT-03は技術的�
 2. 検知テストが欠けている実バグ1件へ、失敗3分類語彙（本issueのG1定義）に従うテストを追加する。
 3. 実行: 上記確定プロファイル（`npm run test` / `python3 -m pytest`）で全件greenを確認し、証跡をG1欄へ記録する。
 4. ガードレール: 製品挙動を変更しない（テスト追加のみ）。同一論点でVerify 3連続失敗時は停止し、Pending欄へ理由と再開条件を記録する。
+
+### 初回実行バッチ 実装記録（2026-07-18）
+
+**棚卸し結果**: `QA-MONKEY-10`（`label_culling.test.ts`の「keeps the active card over overlapping plain cards regardless of id order」で明示的に再発検知済み）と`QA-MONKEY-12`（`WorkModeTabs.test.ts`の「hides every tabpanel except the active one」で、根本原因である排他的タブ構造そのものを構造的に固定済み）は、いずれも**既にunit/domainレベルで再発検知テストが存在**しており、ギャップがなかった。
+
+計画の想定（この2件のいずれかにギャップがある）と実際が異なったため、同issue群からより最近の実バグを追加調査し、`QA-MONKEY-13`（Alt+Shift+2構造レベルショートカット、2026-07-15解消）を検出した。この修正はフルE2Eスイート（165/165）でのみ検証されており、**unit/domainレベルの再発検知テストが存在しないこと**を確認した（`hierarchy_level.test.ts`の既存テストは純粋関数`maxDepthForHierarchyLevel`/`resolveHierarchyLevel`のみを対象とし、実際の欠陥箇所であった`App.tsx`内のeffect連鎖の相互作用は対象外だった）。
+
+**追加した検知テスト**:
+- `03_Implement/frontend/src/domain/view/hierarchy_level.ts`に`clampMaxDepthToAvailable(maxDepth, maxAvailableDepth)`を新規追加した。QA-MONKEY-13の根本原因だった`App.tsx`内のインライン条件（`if (maxDepth > maxAvailableDepth && maxAvailableDepth > 0)`）を同じロジックのまま純関数として抽出し、`App.tsx`側は抽出した関数を呼ぶだけに置き換えた（**製品挙動は変更していない**、既存条件のリファクタのみ）。
+- `hierarchy_level.test.ts`に4 testsを追加した。中心の1件は「`maxAvailableDepth=0`のとき`maxDepth=1`（mid）を`0`へ切り詰めない」というQA-MONKEY-13の実際の再現条件そのものを検証する。
+
+**なぜ抽出が必要だったか**: 欠陥の実体はReactのeffect連鎖の相互作用であり、`hierarchy_level.test.ts`の既存テストが対象としていた純粋関数のロジック自体は当時から正しかった（issueの「除外した仮説」で明示的に否定済み）。条件をインラインのままにすると、レンダリングやeffect実行を伴わないunitテストでは検知できない。純関数として抽出することで、E2Eを伴わない高速なunitテストが実際の製品コードパス（`App.tsx`が呼ぶのと同じ関数）を直接検証できるようになった。
+
+### 検証結果（2026-07-18）
+
+- `npm run typecheck`: 0 errors。
+- `npx vitest run`: **1071/1071 pass**（新規4 testsを含む）。唯一失敗する`src/import/external_agent_workflow_doc.test.ts`は`~/kjnative-fe`検証用ミラーの環境固有の制約で、本変更と無関係（既知の事象）。
+- QA-MONKEY-13を実際に発見した`e2e/header_toolbar_layout.spec.ts`（"modifier shortcuts update visible view and hierarchy state"を含む）を、Docker Desktop連携で`mcr.microsoft.com/playwright:v1.58.2-jammy`公式イメージを使い実行し、**9/9 pass**を確認した（リファクタによる回帰なし）。
+
+G1（unit段階ゲート）欄への証跡: QA-MONKEY-13の再発は`clampMaxDepthToAvailable`のunitテストで即座に（E2E実行なしで）検知可能になった。
