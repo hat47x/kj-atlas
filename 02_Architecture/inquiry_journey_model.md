@@ -193,6 +193,8 @@ SafeModeによるマスクは元スナップショットを変更しない。共
 
 Phase 0・1で操作模型が理解されない場合は永続契約へ進まない。Phase 2で代表規模の容量・読込時間が性能予算を満たさない場合は、スナップショット圧縮または差分格納を内部最適化として比較する。ただし、外部契約は完全な成果を再構成できることを維持する。
 
+**実装状況（2026-07-18）**: Phase 2のうち、`inquiry_bundle_io.ts` にローカルexport/import境界を実装した。既存の`DocumentV1` strict validator、自己完結参照検証、canonical JSON由来のSHA-256 digest検証を組み合わせ、未知キー・未知version・未知enum・参照切れ・改変を拒否する。画面からの保存・読込、容量計測、SafeMode派生bundleは未実装であり、Phase 2全体とL1昇格は未完了である。backend保存は引き続きPhase 3の判断対象とする。
+
 ## 8. 根拠と関連文書
 
 - [川喜田研究所「KJ法とは」](https://kj-kawakita.co.jp/about_kj-method/)
