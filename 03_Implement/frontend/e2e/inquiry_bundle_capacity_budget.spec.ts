@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 import { parseInquiryBundleJson, serializeInquiryBundle } from "../src/domain/inquiry_bundle_io";
 import {
@@ -12,8 +13,8 @@ const MAX_REPRESENTATIVE_ARTIFACT_BYTES = 512 * 1024;
 const MAX_REPRESENTATIVE_JOURNEY_MANIFEST_BYTES = 64 * 1024;
 const MAX_REPRESENTATIVE_BUNDLE_BYTES = 5 * 1024 * 1024;
 const MAX_IO_WALL_TIME_MS = 2_500;
-const MAX_MAIN_THREAD_TASK_MS = 100;
-const MAX_KNOWN_IMPORT_LONG_TASK_MS = 500;
+const TARGET_MAIN_THREAD_TASK_MS = 100;
+const MAX_PARALLEL_CI_LONG_TASK_MS = 150;
 
 async function installLongTaskProbe(page: Page) {
   await page.evaluate(() => {
@@ -95,11 +96,25 @@ test("DOMAIN-W-ITERATION-01 measures a representative six-round bundle and guard
   await expect(inquiryPanel).toBeVisible();
   await installLongTaskProbe(page);
 
+  const inquiryPath = testInfo.outputPath("representative-inquiry.kj-atlas-inquiry.json");
+  await writeFile(inquiryPath, serialized.json, "utf8");
+  const fileInput = inquiryPanel.locator('input[type="file"]');
+  await fileInput.setInputFiles(inquiryPath);
+  await expect(inquiryPanel.getByRole("status").last()).toContainText("Checking the inquiry file", {
+    timeout: 1_000,
+  });
+  const cancelButton = inquiryPanel.getByRole("button", { name: "Cancel import" });
+  await cancelButton.dispatchEvent("click");
+  await expect(inquiryPanel.getByRole("status").last()).toContainText("Inquiry file import cancelled");
+  await expect(inquiryPanel.getByRole("list", { name: "Inquiry records" })).toHaveCount(0);
+
   const uiImportStartedAt = performance.now();
-  await inquiryPanel.locator('input[type="file"]').setInputFiles({
-    name: "representative-inquiry.kj-atlas-inquiry.json",
-    mimeType: "application/json",
-    buffer: Buffer.from(serialized.json, "utf8"),
+  await fileInput.setInputFiles(inquiryPath);
+  await expect(inquiryPanel.getByRole("status").last()).toContainText("Checking the inquiry file", {
+    timeout: 1_000,
+  });
+  await page.evaluate(() => {
+    (window as unknown as { __kjAtlasInquiryLongTasks: number[] }).__kjAtlasInquiryLongTasks.length = 0;
   });
   await expect(inquiryPanel.getByRole("status").last()).toContainText("Inquiry file imported", {
     timeout: MAX_IO_WALL_TIME_MS,
@@ -124,12 +139,15 @@ test("DOMAIN-W-ITERATION-01 measures a representative six-round bundle and guard
     contentType: "application/json",
     body: Buffer.from(JSON.stringify(metrics, null, 2)),
   });
-  if (maxLongTaskMs > MAX_MAIN_THREAD_TASK_MS) {
+  if (maxLongTaskMs > TARGET_MAIN_THREAD_TASK_MS) {
     testInfo.annotations.push({
-      type: "issue",
-      description: "PERF-INQUIRY-01: move representative inquiry import off the main thread",
+      type: "performance",
+      description: `Parallel run exceeded the isolated 100ms target: ${maxLongTaskMs.toFixed(2)}ms`,
     });
   }
   expect(uiImportMs).toBeLessThan(MAX_IO_WALL_TIME_MS);
-  expect(maxLongTaskMs).toBeLessThanOrEqual(MAX_KNOWN_IMPORT_LONG_TASK_MS);
+  expect(maxLongTaskMs).toBeLessThanOrEqual(MAX_PARALLEL_CI_LONG_TASK_MS);
+
+  const history = inquiryPanel.getByRole("list", { name: "Inquiry records" });
+  await expect(history.getByRole("listitem")).toHaveCount(REPRESENTATIVE_ROUND_COUNT);
 });

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 
 import { ROUND_STAGES, type InquiryBundleV1, type RoundStage } from "../domain/inquiry_journey";
-import { parseInquiryBundleJson, serializeInquiryBundle } from "../domain/inquiry_bundle_io";
+import { serializeInquiryBundle } from "../domain/inquiry_bundle_io";
 import {
   inquiryBundleOriginatesFromDocument,
   recordInquiryRound,
@@ -10,6 +10,7 @@ import {
 import type { DocumentV1 } from "../domain/types";
 import { downloadTextFile } from "../export/narrative_export";
 import { t } from "../i18n/translate";
+import { InquiryBundleWorkerClient } from "../worker/inquiry_bundle_client";
 
 type InquiryJourneyPrototypePanelProps = {
   document: DocumentV1 | null;
@@ -26,18 +27,31 @@ function fileStem(value: string): string {
 
 export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototypePanelProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const importClientRef = useRef<InquiryBundleWorkerClient | null>(null);
+  const importAbortRef = useRef<AbortController | null>(null);
   const [bundle, setBundle] = useState<InquiryBundleV1 | null>(null);
   const [selectedStage, setSelectedStage] = useState<RoundStage>("r1_problem_setting");
   const [isBusy, setIsBusy] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [isConfirmingEnd, setIsConfirmingEnd] = useState(false);
   const [message, setMessage] = useState<{ kind: "status" | "error"; text: string } | null>(null);
 
   useEffect(() => {
+    const activeImport = importAbortRef.current;
+    importAbortRef.current = null;
+    activeImport?.abort();
     setBundle(null);
     setSelectedStage("r1_problem_setting");
     setIsConfirmingEnd(false);
     setMessage(null);
   }, [document?.id]);
+
+  useEffect(() => () => {
+    const activeImport = importAbortRef.current;
+    importAbortRef.current = null;
+    activeImport?.abort();
+    importClientRef.current?.dispose();
+  }, []);
 
   const records = bundle?.journey.roundRecords ?? [];
   const documentLabel = document?.title?.trim() || document?.id || t("inquiry_journey.prototype.no_document");
@@ -99,10 +113,21 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = "";
     if (!file || !document) return;
+    const controller = new AbortController();
+    importAbortRef.current = controller;
     setIsBusy(true);
-    setMessage(null);
+    setIsImporting(true);
+    setMessage({ kind: "status", text: t("inquiry_journey.prototype.importing") });
     try {
-      const parsed = await parseInquiryBundleJson(await file.text());
+      importClientRef.current ??= new InquiryBundleWorkerClient();
+      const outcome = await importClientRef.current.parse(await file.text(), { signal: controller.signal });
+      if (outcome.status === "cancelled") {
+        if (importAbortRef.current === controller) {
+          setMessage({ kind: "status", text: t("inquiry_journey.prototype.import_cancelled") });
+        }
+        return;
+      }
+      const parsed = outcome.result;
       if (!parsed.ok) {
         setMessage({ kind: "error", text: t("inquiry_journey.prototype.import_error") });
         return;
@@ -116,7 +141,9 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
       setSelectedStage(parsed.bundle.journey.roundRecords.at(-1)?.stage ?? "r1_problem_setting");
       setMessage({ kind: "status", text: t("inquiry_journey.prototype.imported") });
     } finally {
+      if (importAbortRef.current === controller) importAbortRef.current = null;
       setIsBusy(false);
+      setIsImporting(false);
     }
   };
 
@@ -232,6 +259,11 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
         <div role={message.kind === "error" ? "alert" : "status"} style={{ fontSize: 12, color: message.kind === "error" ? "#b91c1c" : "#166534" }}>
           {message.text}
         </div>
+      ) : null}
+      {isImporting ? (
+        <button type="button" onClick={() => importAbortRef.current?.abort()}>
+          {t("inquiry_journey.prototype.cancel_import")}
+        </button>
       ) : null}
     </section>
   );
