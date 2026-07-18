@@ -643,7 +643,7 @@ Non-goals:
 
 ### Execute
 
-- Updated `ADR-0001`, `ADR-0003`, `ADR-0007`, `ADR-0009-local-llm-integration`, and `ADR-0009-phase-a-review` to use current `KJ_ATLAS_*` key names.
+- Updated `ADR-0001`, `ADR-0003`, `ADR-0007`, `ADR-0009-local-llm-integration`, and `review-ADR-0009-phase-a` to use current `KJ_ATLAS_*` key names.
 - Kept the changes limited to environment-variable names. No design conclusion, implementation scope, LLM policy, SafeMode behavior, or public documentation contract was changed.
 
 ### Proceed/Stop

@@ -17,6 +17,8 @@ ARCHITECTURE_BASELINE_RULE_ID = "DC-ARC-001"
 PUBLIC_BOUNDARY_RULE_ID = "DC-PUB-001"
 SAFETY_ROUTE_RULE_ID = "DC-SAF-001"
 NPM_SCRIPT_COMMAND_RULE_ID = "DC-CMD-001"
+ADR_ID_UNIQUENESS_RULE_ID = "DC-ADR-001"
+ADR_FILENAME_RE = re.compile(r"^ADR-(?P<id>\d{4})-[^.]+\.md$")
 DOCUMENT_TYPE_RE = re.compile(r"export type (Document\w*)\s*=\s*\{\s*\r?\n\s*version:\s*([^;]+);")
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
@@ -283,6 +285,38 @@ def check_relative_links(root: Path, markdown_paths: list[Path]) -> list[DocsChe
                     )
                 )
 
+    return findings
+
+
+def check_adr_id_uniqueness(root: Path, markdown_paths: list[Path]) -> list[DocsCheckFinding]:
+    """Reject duplicate ADR numbers even when their descriptive slugs differ."""
+    repository_root = root.resolve()
+    paths_by_id: dict[str, list[Path]] = {}
+
+    for supplied_path in markdown_paths:
+        relative_path = supplied_path if not supplied_path.is_absolute() else supplied_path.relative_to(repository_root)
+        if relative_path.parent != Path("01_Plans/adr"):
+            continue
+        match = ADR_FILENAME_RE.match(relative_path.name)
+        if match:
+            paths_by_id.setdefault(match.group("id"), []).append(relative_path)
+
+    findings: list[DocsCheckFinding] = []
+    for adr_id, paths in sorted(paths_by_id.items()):
+        ordered_paths = sorted(paths, key=lambda path: path.as_posix())
+        if len(ordered_paths) < 2:
+            continue
+        path_list = ", ".join(path.as_posix() for path in ordered_paths)
+        findings.append(
+            DocsCheckFinding(
+                rule_id=ADR_ID_UNIQUENESS_RULE_ID,
+                path=ordered_paths[1].as_posix(),
+                line=1,
+                target=f"ADR-{adr_id}",
+                message=f"ADR-{adr_id} is assigned to multiple files: {path_list}",
+                fix_hint="Keep the established ADR number and rename the newer decision to the next unused ADR number, then update its references.",
+            )
+        )
     return findings
 
 
@@ -1005,6 +1039,7 @@ def main() -> int:
     root = args.root.resolve()
     markdown_paths = tracked_markdown_paths(root)
     findings = check_relative_links(root, markdown_paths)
+    findings.extend(check_adr_id_uniqueness(root, markdown_paths))
     findings.extend(check_current_history_headings(root))
     findings.extend(check_document_contract_baseline(root))
     findings.extend(check_history_metadata(root))

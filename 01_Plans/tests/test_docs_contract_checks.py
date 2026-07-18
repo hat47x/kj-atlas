@@ -113,6 +113,40 @@ class RelativeLinkCheckTest(unittest.TestCase):
         self.assertEqual(paths, [Path("present.md")])
 
 
+class AdrIdUniquenessCheckTest(unittest.TestCase):
+    def test_reports_duplicate_adr_numbers_with_different_slugs(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            adr_dir = root / "01_Plans" / "adr"
+            adr_dir.mkdir(parents=True)
+            first = Path("01_Plans/adr/ADR-0059-first.md")
+            second = Path("01_Plans/adr/ADR-0059-second.md")
+            (root / first).write_text("# ADR-0059: first\n", encoding="utf-8")
+            (root / second).write_text("# ADR-0059: second\n", encoding="utf-8")
+
+            findings = MODULE.check_adr_id_uniqueness(root, [first, second])
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_id, "DC-ADR-001")
+        self.assertEqual(findings[0].target, "ADR-0059")
+        self.assertIn("ADR-0059-first.md", findings[0].message)
+        self.assertIn("ADR-0059-second.md", findings[0].message)
+
+    def test_accepts_unique_adr_numbers(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            adr_dir = root / "01_Plans" / "adr"
+            adr_dir.mkdir(parents=True)
+            first = Path("01_Plans/adr/ADR-0059-first.md")
+            second = Path("01_Plans/adr/ADR-0060-second.md")
+            (root / first).write_text("# ADR-0059: first\n", encoding="utf-8")
+            (root / second).write_text("# ADR-0060: second\n", encoding="utf-8")
+
+            findings = MODULE.check_adr_id_uniqueness(root, [first, second])
+
+        self.assertEqual(findings, [])
+
+
 class CurrentHistoryBoundaryTest(unittest.TestCase):
     def test_reports_execution_history_heading_with_fix(self):
         with tempfile.TemporaryDirectory() as td:
