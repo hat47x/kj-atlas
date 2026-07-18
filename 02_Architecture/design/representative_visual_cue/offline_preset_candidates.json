@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "measuredAt": "2026-07-18",
+  "purpose": "evaluation-only-not-document-v1",
+  "unicode": {
+    "emojiVersion": "17.0",
+    "sample": "💡🔍📍⌛⚠️",
+    "utf8Bytes": 21,
+    "bundledAssetBytes": 0,
+    "displayGuarantee": "platform-dependent"
+  },
+  "fixedSvgSample": {
+    "source": "https://github.com/microsoft/fluentui-emoji",
+    "sourceCommit": "62ecdc0d7ca5c6df32148c169556bc8d3782fca4",
+    "license": "MIT",
+    "variant": "Flat",
+    "assets": [
+      { "name": "light_bulb_flat.svg", "bytes": 2538 },
+      { "name": "magnifying_glass_tilted_left_flat.svg", "bytes": 993 },
+      { "name": "round_pushpin_flat.svg", "bytes": 612 },
+      { "name": "hourglass_done_flat.svg", "bytes": 1551 },
+      { "name": "warning_flat.svg", "bytes": 782 }
+    ],
+    "sampleBytes": 6476,
+    "meanBytes": 1295.2,
+    "proposedSubsetBudgetBytes": 65536,
+    "filesVendored": false
+  }
+}
