@@ -3,7 +3,7 @@
 > 公開設定キーが存在することと、標準Composeの`api`コンテナへ届くことは別である。設定したつもりの安全機能が既定値のまま動く状態を防ぐ。
 
 - Type: Bug / Security / Documentation
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1

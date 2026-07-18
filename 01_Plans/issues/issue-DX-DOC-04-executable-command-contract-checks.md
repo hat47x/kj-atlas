@@ -3,7 +3,7 @@
 > 文書のコードブロックは利用者がコピーするインターフェースである。リンク切れだけでなく、endpoint・CLI option・service・package scriptの実在をfail-closedで確認する。
 
 - Type: Bug / Documentation quality / Tooling
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1

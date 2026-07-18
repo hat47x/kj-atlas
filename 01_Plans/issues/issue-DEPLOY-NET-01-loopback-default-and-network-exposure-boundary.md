@@ -3,7 +3,7 @@
 > `http://localhost:8080`と案内することは、サービスがlocalhostだけでlistenすることを意味しない。認証なしの評価環境をLANへ暗黙公開しない。
 
 - Type: Security / Bug / Documentation
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
