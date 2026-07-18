@@ -142,7 +142,11 @@ def build_tenant_session_context(
         user_id=principal_id,
         tenant=tenant,
     )
-    available_tenants = list_active_tenant_summaries(db=db, user_id=principal_id)
+    available_tenants = list_active_tenant_summaries(
+        db=db,
+        user_id=principal_id,
+        limit=MAX_SESSION_TENANT_COUNT + 1,
+    )
     try:
         if not available_tenants or len(available_tenants) > MAX_SESSION_TENANT_COUNT:
             raise ValueError("session tenant count is invalid")

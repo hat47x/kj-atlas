@@ -209,10 +209,18 @@ def test_available_tenants_are_membership_allowlist_only() -> None:
         with Session(engine) as db:
             _seed_verified_identity(db)
             summaries = list_active_tenant_summaries(db=db, user_id="user-1")
+            limited_summaries = list_active_tenant_summaries(
+                db=db,
+                user_id="user-1",
+                limit=1,
+            )
 
         assert [(item.tenant_id, item.display_name) for item in summaries] == [
             ("tenant-a", "Tenant A"),
             ("tenant-b", "Tenant B"),
+        ]
+        assert [(item.tenant_id, item.display_name) for item in limited_summaries] == [
+            ("tenant-a", "Tenant A"),
         ]
     finally:
         engine.dispose()

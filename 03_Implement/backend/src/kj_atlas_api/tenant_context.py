@@ -193,12 +193,15 @@ def list_active_tenant_summaries(
     *,
     db: Session,
     user_id: str,
+    limit: int | None = None,
 ) -> tuple[TenantSummary, ...]:
     """Return only active membership tenants; this is not a tenant search API."""
+    if limit is not None and limit < 1:
+        raise ValueError("tenant summary limit must be positive")
     user = db.get(UserRow, user_id)
     if user is None or user.lifecycle_state != "active":
         return ()
-    rows = db.execute(
+    statement = (
         select(TenantRow.id, TenantRow.display_name)
         .join(
             TenantMembershipRow,
@@ -208,7 +211,10 @@ def list_active_tenant_summaries(
         .where(TenantMembershipRow.lifecycle_state == "active")
         .where(TenantRow.lifecycle_state == "active")
         .order_by(TenantRow.id.asc())
-    ).all()
+    )
+    if limit is not None:
+        statement = statement.limit(limit)
+    rows = db.execute(statement).all()
     return tuple(
         TenantSummary(tenant_id=tenant_id, display_name=display_name)
         for tenant_id, display_name in rows

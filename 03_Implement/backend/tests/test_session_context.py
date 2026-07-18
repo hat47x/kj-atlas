@@ -200,13 +200,13 @@ def test_oversized_tenant_allowlist_fails_before_capability_resolution(
             _seed(db)
             monkeypatch.setattr(
                 "kj_atlas_api.session_context.list_active_tenant_summaries",
-                lambda db, user_id: tuple(  # noqa: ARG005
+                lambda db, user_id, limit: tuple(  # noqa: ARG005
                     TenantSummary(
                         tenant_id=f"tenant-{index}",
                         display_name=f"Tenant {index}",
                     )
                     for index in range(257)
-                ),
+                )[:limit],
             )
             with pytest.raises(HTTPException) as exc_info:
                 build_tenant_session_context(
