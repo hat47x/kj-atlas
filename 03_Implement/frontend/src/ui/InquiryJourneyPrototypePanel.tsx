@@ -12,12 +12,10 @@ import {
   serializeInquiryBundle,
 } from "../domain/inquiry_bundle_io";
 import {
-  buildInquiryResumeBrief,
   compareInquiryRounds,
   inquiryBundleOriginatesFromDocument,
   recordInquiryRound,
   startInquiryJourney,
-  traceInquiryCardLineage,
 } from "../domain/inquiry_journey_session";
 import type { DocumentV1 } from "../domain/types";
 import { downloadTextFile } from "../export/narrative_export";
@@ -52,7 +50,6 @@ export function InquiryJourneyPrototypePanel({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const importClientRef = useRef<InquiryBundleWorkerClient | null>(null);
   const importAbortRef = useRef<AbortController | null>(null);
-  const resumePreviewRef = useRef<HTMLElement | null>(null);
   const [bundle, setBundle] = useState<InquiryBundleV1 | null>(null);
   const [selectedStage, setSelectedStage] = useState<RoundStage>("r1_problem_setting");
   const [isBusy, setIsBusy] = useState(false);
@@ -61,8 +58,6 @@ export function InquiryJourneyPrototypePanel({
   const [recordParentRoundId, setRecordParentRoundId] = useState("");
   const [comparisonFromRoundId, setComparisonFromRoundId] = useState("");
   const [comparisonToRoundId, setComparisonToRoundId] = useState("");
-  const [lineageCardId, setLineageCardId] = useState("");
-  const [resumePreviewSnapshotId, setResumePreviewSnapshotId] = useState("");
   const [branchUndoCheckpoint, setBranchUndoCheckpoint] = useState<BranchUndoCheckpoint | null>(null);
   const [message, setMessage] = useState<{ kind: "status" | "error"; text: string } | null>(null);
 
@@ -76,8 +71,6 @@ export function InquiryJourneyPrototypePanel({
     setRecordParentRoundId("");
     setComparisonFromRoundId("");
     setComparisonToRoundId("");
-    setLineageCardId("");
-    setResumePreviewSnapshotId("");
     setBranchUndoCheckpoint(null);
     setMessage(null);
   }, [document?.id]);
@@ -88,11 +81,6 @@ export function InquiryJourneyPrototypePanel({
     activeImport?.abort();
     importClientRef.current?.dispose();
   }, []);
-
-  useEffect(() => {
-    if (!resumePreviewSnapshotId) return;
-    resumePreviewRef.current?.focus();
-  }, [resumePreviewSnapshotId]);
 
   const records = bundle?.journey.roundRecords ?? [];
   const documentLabel = document?.title?.trim() || document?.id || t("inquiry_journey.prototype.no_document");
@@ -127,28 +115,6 @@ export function InquiryJourneyPrototypePanel({
       : null,
     [bundle, effectiveComparisonFromId, effectiveComparisonToId]
   );
-  const resumeBrief = useMemo(
-    () => bundle ? buildInquiryResumeBrief(bundle) : null,
-    [bundle]
-  );
-  const selectedResumeResult = resumeBrief?.ok
-    ? resumeBrief.brief.previousResults.find((result) => result.snapshotId === resumePreviewSnapshotId)
-    : undefined;
-  const lineageRound = records.find((record) => record.roundId === bundle?.journey.defaultHeadRoundId);
-  const lineageSnapshot = bundle?.snapshots.find((snapshot) => snapshot.snapshotId === lineageRound?.outputSnapshotId);
-  const lineageCards = lineageSnapshot?.document.cards ?? [];
-  const effectiveLineageCardId = lineageCards.some((card) => card.id === lineageCardId)
-    ? lineageCardId
-    : lineageCards.find((card) => card.claimType === "hypothesis")?.id ?? lineageCards[0]?.id ?? "";
-  const lineageTrace = useMemo(
-    () => bundle && lineageSnapshot && effectiveLineageCardId
-      ? traceInquiryCardLineage(bundle, {
-          snapshotId: lineageSnapshot.snapshotId,
-          cardId: effectiveLineageCardId,
-        })
-      : null,
-    [bundle, effectiveLineageCardId, lineageSnapshot]
-  );
   const canUndoBranch = useMemo(
     () => Boolean(
       document
@@ -174,7 +140,6 @@ export function InquiryJourneyPrototypePanel({
     setMessage(null);
     try {
       setBundle(await startInquiryJourney(document));
-      setResumePreviewSnapshotId("");
       setBranchUndoCheckpoint(null);
     } finally {
       setIsBusy(false);
@@ -237,7 +202,6 @@ export function InquiryJourneyPrototypePanel({
     setRecordParentRoundId("");
     setComparisonFromRoundId("");
     setComparisonToRoundId("");
-    setResumePreviewSnapshotId("");
     setMessage({ kind: "status", text: t("inquiry_journey.prototype.branch_undone") });
   };
 
@@ -312,8 +276,6 @@ export function InquiryJourneyPrototypePanel({
       setRecordParentRoundId("");
       setComparisonFromRoundId("");
       setComparisonToRoundId("");
-      setLineageCardId("");
-      setResumePreviewSnapshotId("");
       setBranchUndoCheckpoint(null);
       setSelectedStage(parsed.bundle.journey.roundRecords.at(-1)?.stage ?? "r1_problem_setting");
       setMessage({ kind: "status", text: t("inquiry_journey.prototype.imported") });
@@ -380,7 +342,6 @@ export function InquiryJourneyPrototypePanel({
               ) : null}
             </>
           ) : null}
-
           <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
             {t("inquiry_journey.prototype.stage")}
             <select
@@ -428,141 +389,6 @@ export function InquiryJourneyPrototypePanel({
                 </li>
               ))}
             </ol>
-          ) : null}
-
-          {resumeBrief?.ok ? (
-            <details>
-              <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
-                {t("inquiry_journey.prototype.resume_brief")}
-              </summary>
-              <fieldset
-                aria-label={t("inquiry_journey.prototype.resume_brief")}
-                style={{ display: "grid", gap: 8, margin: "8px 0 0", padding: 10, border: "1px solid #cbd5e1", minWidth: 0 }}
-              >
-                <div style={{ fontSize: 12, overflowWrap: "anywhere" }}>
-                  <strong>{t("inquiry_journey.prototype.resume_stage")}</strong>{" "}
-                  {t("inquiry_journey.prototype.recorded", {
-                    stage: stageLabel(resumeBrief.brief.round.stage),
-                    iteration: resumeBrief.brief.round.iteration,
-                  })}
-                </div>
-                <div style={{ fontSize: 12, overflowWrap: "anywhere" }}>
-                  <strong>{t("inquiry_journey.prototype.resume_question")}</strong>{" "}
-                  {resumeBrief.brief.question}
-                </div>
-                {resumeBrief.brief.understandingDelta ? (
-                  <div style={{ fontSize: 12, overflowWrap: "anywhere" }}>
-                    <strong>{t("inquiry_journey.prototype.resume_understanding")}</strong>{" "}
-                    {resumeBrief.brief.understandingDelta}
-                  </div>
-                ) : null}
-                {resumeBrief.brief.unresolvedQuestions.length > 0 ? (
-                  <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
-                    <strong style={{ fontSize: 12 }}>{t("inquiry_journey.prototype.resume_unresolved")}</strong>
-                    <ul style={{ margin: 0, paddingInlineStart: 24, fontSize: 12 }}>
-                      {resumeBrief.brief.unresolvedQuestions.map((question, index) => (
-                        <li key={`${index}:${question}`} style={{ overflowWrap: "anywhere" }}>{question}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-                {resumeBrief.brief.nextActions.length > 0 ? (
-                  <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
-                    <strong style={{ fontSize: 12 }}>{t("inquiry_journey.prototype.resume_next_actions")}</strong>
-                    <ul style={{ margin: 0, paddingInlineStart: 24, fontSize: 12 }}>
-                      {resumeBrief.brief.nextActions.map((action, index) => (
-                        <li key={`${index}:${action}`} style={{ overflowWrap: "anywhere" }}>{action}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-                {resumeBrief.brief.previousResults.map((result) => (
-                  <button
-                    key={result.snapshotId}
-                    type="button"
-                    onClick={() => setResumePreviewSnapshotId(result.snapshotId)}
-                    style={{ minWidth: 0, whiteSpace: "normal", overflowWrap: "anywhere" }}
-                  >
-                    {t("inquiry_journey.prototype.resume_open_result", { title: result.title })}
-                  </button>
-                ))}
-                {selectedResumeResult ? (
-                  <section
-                    ref={resumePreviewRef}
-                    tabIndex={-1}
-                    aria-label={t("inquiry_journey.prototype.resume_result_preview")}
-                    style={{ display: "grid", gap: 6, minWidth: 0, padding: 8, borderInlineStart: "3px solid #64748b" }}
-                  >
-                    <strong style={{ fontSize: 12, overflowWrap: "anywhere" }}>
-                      {t("inquiry_journey.prototype.resume_result_title", { title: selectedResumeResult.title })}
-                    </strong>
-                    <div style={{ fontSize: 11, color: "#475569" }}>
-                      {t("inquiry_journey.prototype.resume_read_only")}
-                    </div>
-                    <ul style={{ display: "grid", gap: 4, margin: 0, paddingInlineStart: 24, fontSize: 12 }}>
-                      {selectedResumeResult.cards.map((card) => (
-                        <li key={card.id} style={{ overflowWrap: "anywhere" }}>
-                          <div>{card.text}</div>
-                          {card.source ? <div>{t("inquiry_journey.prototype.lineage_source", { source: card.source })}</div> : null}
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ) : null}
-              </fieldset>
-            </details>
-          ) : null}
-
-          {lineageCards.length > 0 ? (
-            <details>
-              <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
-                {t("inquiry_journey.prototype.lineage")}
-              </summary>
-              <fieldset
-                aria-label={t("inquiry_journey.prototype.lineage")}
-                style={{ display: "grid", gap: 8, margin: "8px 0 0", padding: 10, border: "1px solid #cbd5e1", minWidth: 0 }}
-              >
-                <label style={{ display: "grid", gap: 4, minWidth: 0, fontSize: 12 }}>
-                  {t("inquiry_journey.prototype.lineage_card")}
-                  <select value={effectiveLineageCardId} onChange={(event) => setLineageCardId(event.currentTarget.value)}>
-                    {lineageCards.map((card) => <option key={card.id} value={card.id}>{card.text}</option>)}
-                  </select>
-                </label>
-                {lineageTrace?.ok ? (
-                  <>
-                    <div style={{ fontSize: 12, overflowWrap: "anywhere" }}>
-                      <strong>{t("inquiry_journey.prototype.lineage_selected")}</strong> {lineageTrace.target.text}
-                      {lineageTrace.target.source ? (
-                        <div>{t("inquiry_journey.prototype.lineage_source", { source: lineageTrace.target.source })}</div>
-                      ) : null}
-                    </div>
-                    {lineageTrace.ancestors.length > 0 ? (
-                      <ol aria-label={t("inquiry_journey.prototype.lineage_ancestors")} style={{ display: "grid", gap: 6, margin: 0, paddingInlineStart: 24, fontSize: 12 }}>
-                        {lineageTrace.ancestors.map((node) => (
-                          <li key={`${node.address.snapshotId}:${node.address.cardId}`} style={{ overflowWrap: "anywhere" }}>
-                            <div>
-                              {node.round
-                                ? t("inquiry_journey.prototype.lineage_round", {
-                                    record: t("inquiry_journey.prototype.recorded", {
-                                      stage: stageLabel(node.round.stage),
-                                      iteration: node.round.iteration,
-                                    }),
-                                  })
-                                : t("inquiry_journey.prototype.lineage_origin")}
-                              {node.viaKind ? ` / ${t(`inquiry_journey.prototype.lineage_kind.${node.viaKind}`)}` : ""}
-                            </div>
-                            <div>{node.text}</div>
-                            {node.source ? <div>{t("inquiry_journey.prototype.lineage_source", { source: node.source })}</div> : null}
-                          </li>
-                        ))}
-                      </ol>
-                    ) : (
-                      <div role="status" style={{ fontSize: 12 }}>{t("inquiry_journey.prototype.lineage_no_ancestors")}</div>
-                    )}
-                  </>
-                ) : null}
-              </fieldset>
-            </details>
           ) : null}
 
           {records.length >= 2 ? (
@@ -635,8 +461,6 @@ export function InquiryJourneyPrototypePanel({
                     setRecordParentRoundId("");
                     setComparisonFromRoundId("");
                     setComparisonToRoundId("");
-                    setLineageCardId("");
-                    setResumePreviewSnapshotId("");
                   }}
                   style={{ whiteSpace: "normal" }}
                 >
