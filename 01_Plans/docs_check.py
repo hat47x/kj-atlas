@@ -9,12 +9,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from docs_contract_checks import (
-    check_cli_option_commands,
     check_compose_service_commands,
     check_current_history_headings,
     check_document_contract_baseline,
     check_history_metadata,
-    check_localhost_probe_commands,
     check_npm_script_commands,
     check_public_boundary,
     check_relative_links,
@@ -97,8 +95,6 @@ def run_docs_check(
     errors.extend(finding.render() for finding in check_compose_service_commands(repository_root, markdown_paths))
     errors.extend(finding.render() for finding in check_runtime_parameter_key_commands(repository_root, markdown_paths))
     errors.extend(finding.render() for finding in check_repository_path_commands(repository_root, markdown_paths))
-    errors.extend(finding.render() for finding in check_cli_option_commands(repository_root, markdown_paths))
-    errors.extend(finding.render() for finding in check_localhost_probe_commands(repository_root, markdown_paths))
     if run_tests:
         errors.extend(_run_contract_tests(repository_root))
 

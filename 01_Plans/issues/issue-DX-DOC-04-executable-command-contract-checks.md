@@ -94,7 +94,7 @@ findingはrule ID、文書、行、検出token、照合先、正しい候補を�
 - [x] `CONTRIBUTING.md`のCompose health probeが`/api/healthz`となり、backend-localの`/healthz`と区別される。→ 修正済み（下記「実装記録」参照）。
 - [x] current/public文書に存在しないrepository-local CLI optionが0件で、`--files`参照がなくなる。→ 監査の結果、current/public文書（README/CONTRIBUTING/04_Documentation/e2e_testing.md）に`--files`参照は0件（`e2e_testing.md`分は`DX-E2E-08`で既に解消済み、他文書には元々存在しなかった）。`01_Plans/issues/*.md`に多数残る`--files`参照はDX-DOC-04のScope外（内部issueメモの実施時点記録であり、現行の利用者向けコピー対象ではない）と判断し対象外にした。
 - [x] 文書で参照するnpm scripts、Compose services、repository paths、runtime parameter keysが正本と一致する。→ npm scripts・Compose services・repository paths・runtime parameter keysの自動照合をすべて実装した（下記「実装記録」参照）。
-- [x] `DC-CMD-001`がendpoint、CLI option、npm script、Compose service、pathの各負例をrule ID付きで検出する。→ 6区分すべて（npm script・Compose service・runtime parameter key・repository path・CLI option・endpoint probe）を実装した（下記「実装記録」参照）。
+- [ ] `DC-CMD-001`がendpoint、CLI option、npm script、Compose service、pathの各負例をrule ID付きで検出する。→ npm script・Compose service・pathの3区分が実装済み。endpoint・CLI optionの2区分は未実装（follow-up、下記「実装記録」参照）。
 - [x] コードフェンス外の説明、placeholder、外部URL、動的値を誤検出しない正常fixtureがある。→ npm script区分について、正常例・スコープ外文書除外の2 test fixtureを追加（下記参照）。他区分は該当区分自体が未実装のため対象外。
 - [x] manual/mutatingコマンドはCIで実行されず、データ消失・秘密情報・本番利用に関する警告と停止条件を維持する。→ 本Issueでは静的照合のみを追加し、CI実行コマンドやworkflowの変更は一切行っていない。
 - [x] localとCIが同じ`docs_check.py`から検査し、current repositoryでpassする。→ `check_npm_script_commands`を`docs_check.py`へ統合し、現行repositoryでpass済み（下記「実装記録」参照）。
@@ -234,34 +234,6 @@ npm script区分に続き、Compose service区分を実装した。残り3区分
 検証結果:
 - `python3 -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 42/42 pass（新規7件含む、既存回帰なし）。
 - `python 01_Plans/docs_check.py`: pass（`active_memos=22, tracked_markdown=382`）。build成果物allowlist追加後、実際のcurrent/public文書で誤検知0件。
-
-## 実装記録（2026-07-18続き）: `DC-CMD-001`（CLI option区分を追加）
-
-区分5（CLI option）を実行計画どおり実装した。残り区分6（endpoint probe）は引き続き未実装のfollow-upとする。
-
-- `01_Plans/docs_contract_checks.py`に`check_cli_option_commands()`を追加した。`python3? <script>.py --option ...`形式のコマンド例を抽出し、scriptパスがrepository配下に実在する場合のみ対象とする（欠落パスは区分4がすでに報告するため二重報告しない）。正本はスクリプトのソーステキストから`add_argument\(\s*["'](--[\w-]+)`で収集したoption集合。**スクリプトを実行しない**（issue固定条件）。ソース中に`ArgumentParser`の出現がないスクリプトは「検証不能」としてスキップし、推測でfindingsを出さない。
-- 2026-07-18棚卸しどおり、公開文書中の該当は`mock_local_llm.py --host --port`の1件のみで、実装後の`docs_check.py`実行でも誤検知0件（baseline是正は不要だった）。
-- `01_Plans/tests/test_docs_contract_checks.py`に`CliOptionCheckTest`（4 test: 正常例、未知option検出、`ArgumentParser`無しスクリプトのスキップ、スコープ外文書の除外）を追加した。
-- `docs_check.py`へ`check_cli_option_commands`を配線した。
-
-検証結果:
-- `python3 -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 46/46 pass（新規4件含む、既存回帰なし）。
-- `python 01_Plans/docs_check.py`: pass（`active_memos=22, tracked_markdown=382`）。
-
-## 実装記録（2026-07-18続き）: `DC-CMD-001`（endpoint probe allowlist区分を追加、6区分すべて完了）
-
-区分6（endpoint probe allowlist）を実行計画どおり実装した。これで`DC-CMD-001`の6区分（npm script/Compose service/runtime parameter key/repository path/CLI option/endpoint probe）すべてが実装済みとなった。
-
-- `01_Plans/docs_contract_checks.py`に`check_localhost_probe_commands()`を追加した。`https?://localhost[:/][\w./:?=&-]*`で抽出したURLを、モジュール内定数`LOCALHOST_PROBE_ALLOWLIST_EXACT`（6件）・`LOCALHOST_PROBE_ALLOWLIST_PREFIX`（1件）の許可リストへ照合する。各entryにはnginx.confのproxy_pass先やbackend routeへ遡れる由来コメントを付けた（推測での許可リスト拡張を防ぐため）。
-- 2026-07-18棚卸し（公開文書の全9 URL）どおりの初期値で導入し、実装後の`docs_check.py`実行でも誤検知0件（baseline是正は不要だった）。既知バグ形`/api/health`（`z`欠落）の再発は許可リスト外として検出される（回帰テストで固定済み）。
-- `01_Plans/tests/test_docs_contract_checks.py`に`LocalhostProbeCheckTest`（4 test: exact許可URL、prefix許可URL、`/api/health`負例、スコープ外文書の除外）を追加した。
-- `docs_check.py`へ`check_localhost_probe_commands`を配線した。
-
-検証結果:
-- `python3 -m unittest 01_Plans.tests.test_docs_contract_checks 01_Plans.tests.test_docs_check`: 50/50 pass（新規4件含む、既存回帰なし）。
-- `python 01_Plans/docs_check.py`: pass（`active_memos=22, tracked_markdown=382`）。
-
-**残る作業（人間確認、下記2件のみ）**: CI blocking化のMaintainer確認、および`DX-DOC-03`/`DOC-OPS-06`からの導線確認。いずれも実行計画のスコープ外（Sonnet級エージェントによる自動実装の対象外）として明示的に残す。Statusは"In Progress"のまま維持する。
 
 ## 補足
 

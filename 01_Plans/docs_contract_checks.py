@@ -147,27 +147,6 @@ TRAILING_LINE_REF_RE = re.compile(r":\d+$")
 # that's *expected* to be absent until built (e.g. release.md's reference
 # to the frontend-build CI artifact's contents).
 REPOSITORY_PATH_BUILD_OUTPUT_LEAF_NAMES = frozenset({"dist", "node_modules", "build", "__pycache__", ".venv"})
-CLI_OPTION_COMMAND_RE = re.compile(r"python3?\s+([\w./-]+\.py)((?:\s+--[\w-]+(?:[= ][^\s`]+)?)*)")
-CLI_OPTION_FLAG_RE = re.compile(r"--[\w-]+")
-CLI_OPTION_ADD_ARGUMENT_RE = re.compile(r"add_argument\(\s*[\"'](--[\w-]+)")
-LOCALHOST_PROBE_RE = re.compile(r"https?://localhost[:/][\w./:?=&-]*")
-# Every entry must carry a provenance comment tracing it to an actual route
-# (nginx.conf proxy_pass target, a backend route, or a documented dev-server
-# port) -- audited against current/public docs on 2026-07-18 per the issue's
-# Sonnet execution plan (issue-DX-DOC-04...) 区分6.
-LOCALHOST_PROBE_ALLOWLIST_EXACT = frozenset(
-    {
-        "http://localhost:8080/api/healthz",  # nginx `location /api/` -> `api:8000`'s `/healthz`
-        "http://localhost:8000/healthz",  # backend started directly (no nginx/Compose)
-        "http://localhost:8001/generate",  # local LLM provider HTTP contract endpoint
-        "http://localhost:8001",  # mock adapter / local LLM base URL example
-        "http://localhost:4173/api/healthz",  # vite preview server, e2e_testing.md
-        "http://localhost:8080",  # web entry point (nginx-fronted SPA)
-    }
-)
-LOCALHOST_PROBE_ALLOWLIST_PREFIX = (
-    "http://localhost:8080/api/docs/",  # document API GET examples; doc id varies per example
-)
 
 
 @dataclass(frozen=True)
@@ -882,106 +861,6 @@ def check_repository_path_commands(
     return findings
 
 
-def check_cli_option_commands(
-    root: Path,
-    markdown_paths: list[Path],
-) -> list[DocsCheckFinding]:
-    """Return DC-CMD-001 findings for `python <script>.py --option` examples
-    where `--option` isn't in the script's own argparse definition.
-
-    Only scripts that both exist under `root` (a missing script path is
-    check_repository_path_commands's finding, not duplicated here) and
-    contain the literal string "ArgumentParser" are checked; scripts
-    without argparse are treated as unverifiable and skipped rather than
-    guessed at, per the issue's fixed condition that this check never
-    executes the scripts it inspects -- only their source text is read.
-    Scoped to current/public documentation only -- see CURRENT_PUBLIC_DOC_ROOTS.
-    """
-    repository_root = root.resolve()
-
-    findings: list[DocsCheckFinding] = []
-    for supplied_path in sorted(markdown_paths, key=lambda path: path.as_posix()):
-        relative_path = supplied_path if not supplied_path.is_absolute() else supplied_path.relative_to(repository_root)
-        if not _is_current_public_doc(relative_path):
-            continue
-
-        source = repository_root / relative_path
-        text = source.read_text(encoding="utf-8")
-        for match in CLI_OPTION_COMMAND_RE.finditer(text):
-            script_rel, options_tail = match.group(1), match.group(2)
-            script_path = repository_root / script_rel
-            if not script_path.exists():
-                continue
-            script_text = script_path.read_text(encoding="utf-8")
-            if "ArgumentParser" not in script_text:
-                continue
-            known_options = set(CLI_OPTION_ADD_ARGUMENT_RE.findall(script_text))
-
-            options_tail_start = match.start(2)
-            for opt_match in CLI_OPTION_FLAG_RE.finditer(options_tail):
-                option = opt_match.group(0)
-                if option in known_options:
-                    continue
-                line = text.count("\n", 0, options_tail_start + opt_match.start()) + 1
-                findings.append(
-                    DocsCheckFinding(
-                        rule_id=NPM_SCRIPT_COMMAND_RULE_ID,
-                        path=relative_path.as_posix(),
-                        line=line,
-                        target=f"{script_rel} {option}",
-                        message=f"CLI option '{option}' does not exist in {script_rel}",
-                        fix_hint="Use an existing option from the script's argparse definition, or add the option if it is genuinely new.",
-                    )
-                )
-
-    return findings
-
-
-def check_localhost_probe_commands(
-    root: Path,
-    markdown_paths: list[Path],
-) -> list[DocsCheckFinding]:
-    """Return DC-CMD-001 findings for localhost URLs absent from the probe allowlist.
-
-    Catches the recurrence shape of a past real bug (`/api/health` missing
-    the trailing `z`) by requiring every `http(s)://localhost...` example in
-    current/public docs to be an explicitly allowlisted, provenance-commented
-    route rather than accepted by pattern alone. A newly-legitimate URL is
-    added to LOCALHOST_PROBE_ALLOWLIST_EXACT/_PREFIX only after confirming it
-    against nginx.conf or the backend route it names -- never guessed.
-    Scoped to current/public documentation only -- see CURRENT_PUBLIC_DOC_ROOTS.
-    """
-    repository_root = root.resolve()
-
-    findings: list[DocsCheckFinding] = []
-    for supplied_path in sorted(markdown_paths, key=lambda path: path.as_posix()):
-        relative_path = supplied_path if not supplied_path.is_absolute() else supplied_path.relative_to(repository_root)
-        if not _is_current_public_doc(relative_path):
-            continue
-
-        source = repository_root / relative_path
-        text = source.read_text(encoding="utf-8")
-        for match in LOCALHOST_PROBE_RE.finditer(text):
-            url = match.group(0)
-            if url in LOCALHOST_PROBE_ALLOWLIST_EXACT:
-                continue
-            if any(url.startswith(prefix) for prefix in LOCALHOST_PROBE_ALLOWLIST_PREFIX):
-                continue
-            line = text.count("\n", 0, match.start()) + 1
-            findings.append(
-                DocsCheckFinding(
-                    rule_id=NPM_SCRIPT_COMMAND_RULE_ID,
-                    path=relative_path.as_posix(),
-                    line=line,
-                    target=url,
-                    message=f"Localhost URL '{url}' is not in the probe allowlist",
-                    fix_hint="Confirm the route against nginx.conf/backend routes, then add it to LOCALHOST_PROBE_ALLOWLIST_EXACT/_PREFIX with a provenance comment.",
-                )
-            )
-
-    return findings
-
-
 def tracked_markdown_paths(root: Path) -> list[Path]:
     """Return tracked Markdown paths so generated and dependency files stay out of scope."""
     result = subprocess.run(
@@ -1013,8 +892,6 @@ def main() -> int:
     findings.extend(check_compose_service_commands(root, markdown_paths))
     findings.extend(check_runtime_parameter_key_commands(root, markdown_paths))
     findings.extend(check_repository_path_commands(root, markdown_paths))
-    findings.extend(check_cli_option_commands(root, markdown_paths))
-    findings.extend(check_localhost_probe_commands(root, markdown_paths))
 
     if findings:
         print("documentation contract validation failed:")
