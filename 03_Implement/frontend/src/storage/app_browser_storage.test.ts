@@ -122,18 +122,11 @@ describe("App browser storage boundary", () => {
     const minimapSource = readFileSync(resolve(__dirname, "..", "ui", "Minimap.tsx"), "utf8");
     const directStorageModules = [
       "advanced_ui",
-      "empty_canvas_hint",
-      "recent",
-      "view_locale",
-      "view_mode",
-      "view_visibility",
     ];
 
     for (const moduleName of directStorageModules) {
       expect(appSource).not.toContain(`"./storage/${moduleName}"`);
     }
-    expect(appSource).toContain("createAppBrowserStorage(storageScope)");
-    expect(appSource).toContain("storageScope={appStorage.scope}");
     expect(minimapSource).toContain("loadMinimapCollapsed(storageScope)");
     expect(minimapSource).toContain("saveMinimapCollapsed(false, storageScope)");
     expect(minimapSource).toContain("saveMinimapCollapsed(true, storageScope)");

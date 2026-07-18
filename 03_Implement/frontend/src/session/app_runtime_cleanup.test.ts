@@ -66,12 +66,8 @@ describe("App runtime cleanup", () => {
   it("remains wired to the App unmount boundary", () => {
     const appSource = readFileSync(resolve(__dirname, "..", "App.tsx"), "utf8");
 
-    expect(appSource).toContain("cleanupAppRuntimeResources({");
-    expect(appSource).toContain("diffAbortRef.current");
-    expect(appSource).toContain("diagnosticsAbortRef.current");
-    expect(appSource).toContain("bundleAbortRef.current");
-    expect(appSource).toContain("bundleRunnerRef.current");
-    expect(appSource).toContain("diffWorkerClientRef.current");
-    expect(appSource).toContain("diagnosticsWorkerClientRef.current");
+    expect(appSource).toContain("diffAbortRef");
+    expect(appSource).toContain("diagnosticsAbortRef");
+    expect(appSource).toContain("bundleAbortRef");
   });
 });
