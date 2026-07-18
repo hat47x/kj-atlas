@@ -108,6 +108,7 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   await expect(panel.getByRole("list", { name: "Inquiry records" }).getByRole("listitem")).toHaveCount(3);
   await expect(panel.getByText("The original result and current branch will stay unchanged.")).toHaveCount(0);
   await expect(panel.getByText("The selected result was restored to the canvas")).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("branch-created-390px.png"), fullPage: true });
 
   const downloadPromise = page.waitForEvent("download");
   await panel.getByRole("button", { name: "Save inquiry file" }).click();
@@ -128,4 +129,25 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   expect(parsed.bundle.journey.headRoundIds).toContain(second.bundle.journey.roundRecords[1].roundId);
   expect(parsed.bundle.journey.headRoundIds).toContain(branchRound.roundId);
   expect(parsed.bundle.journey.defaultHeadRoundId).toBe(branchRound.roundId);
+
+  const undoBranchButton = panel.getByRole("button", { name: "Undo this branch" });
+  await undoBranchButton.focus();
+  await undoBranchButton.press("Enter");
+  await expect(page.getByRole("button", { name: "Work mode", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(panel.getByText("The branch was undone, including the restored canvas and inquiry record.")).toBeVisible();
+  await expect(panel.getByRole("list", { name: "Inquiry records" }).getByRole("listitem")).toHaveCount(2);
+  await expect(page.getByRole("button", { name: "Redo" })).toBeDisabled();
+  await page.screenshot({ path: testInfo.outputPath("branch-undone-390px.png"), fullPage: true });
+
+  const undoneDownloadPromise = page.waitForEvent("download");
+  await panel.getByRole("button", { name: "Save inquiry file" }).click();
+  const undoneDownload = await undoneDownloadPromise;
+  const undonePath = testInfo.outputPath("branch-undone.kj-atlas-inquiry.json");
+  await undoneDownload.saveAs(undonePath);
+  const undone = await parseInquiryBundleJson(await readFile(undonePath, "utf8"));
+  expect(undone.ok).toBe(true);
+  if (!undone.ok) return;
+  expect(undone.bundle.journey.roundRecords).toHaveLength(2);
+  expect(undone.bundle.journey.headRoundIds).toEqual(second.bundle.journey.headRoundIds);
+  expect(undone.bundle.journey.defaultHeadRoundId).toBe(second.bundle.journey.defaultHeadRoundId);
 });

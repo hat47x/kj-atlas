@@ -25,6 +25,12 @@ import { InquiryBundleWorkerClient } from "../worker/inquiry_bundle_client";
 type InquiryJourneyPrototypePanelProps = {
   document: DocumentV1 | null;
   onRestoreDocument: (document: DocumentV1) => boolean;
+  onDiscardRestoredDocument: () => boolean;
+};
+
+type BranchUndoCheckpoint = {
+  bundle: InquiryBundleV1;
+  restoredDocument: DocumentV1;
 };
 
 function stageLabel(stage: RoundStage): string {
@@ -36,7 +42,11 @@ function fileStem(value: string): string {
   return sanitized || "inquiry";
 }
 
-export function InquiryJourneyPrototypePanel({ document, onRestoreDocument }: InquiryJourneyPrototypePanelProps) {
+export function InquiryJourneyPrototypePanel({
+  document,
+  onRestoreDocument,
+  onDiscardRestoredDocument,
+}: InquiryJourneyPrototypePanelProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const importClientRef = useRef<InquiryBundleWorkerClient | null>(null);
   const importAbortRef = useRef<AbortController | null>(null);
@@ -48,6 +58,7 @@ export function InquiryJourneyPrototypePanel({ document, onRestoreDocument }: In
   const [recordParentRoundId, setRecordParentRoundId] = useState("");
   const [comparisonFromRoundId, setComparisonFromRoundId] = useState("");
   const [comparisonToRoundId, setComparisonToRoundId] = useState("");
+  const [branchUndoCheckpoint, setBranchUndoCheckpoint] = useState<BranchUndoCheckpoint | null>(null);
   const [message, setMessage] = useState<{ kind: "status" | "error"; text: string } | null>(null);
 
   useEffect(() => {
@@ -60,6 +71,7 @@ export function InquiryJourneyPrototypePanel({ document, onRestoreDocument }: In
     setRecordParentRoundId("");
     setComparisonFromRoundId("");
     setComparisonToRoundId("");
+    setBranchUndoCheckpoint(null);
     setMessage(null);
   }, [document?.id]);
 
@@ -103,6 +115,14 @@ export function InquiryJourneyPrototypePanel({ document, onRestoreDocument }: In
       : null,
     [bundle, effectiveComparisonFromId, effectiveComparisonToId]
   );
+  const canUndoBranch = useMemo(
+    () => Boolean(
+      document
+      && branchUndoCheckpoint
+      && JSON.stringify(document) === JSON.stringify(branchUndoCheckpoint.restoredDocument)
+    ),
+    [branchUndoCheckpoint, document]
+  );
 
   const recordLabel = (roundId: string): string => {
     const record = records.find((candidate) => candidate.roundId === roundId);
@@ -120,6 +140,7 @@ export function InquiryJourneyPrototypePanel({ document, onRestoreDocument }: In
     setMessage(null);
     try {
       setBundle(await startInquiryJourney(document));
+      setBranchUndoCheckpoint(null);
     } finally {
       setIsBusy(false);
     }
@@ -154,6 +175,12 @@ export function InquiryJourneyPrototypePanel({ document, onRestoreDocument }: In
         setMessage({ kind: "error", text: t("inquiry_journey.prototype.branch_error") });
         return;
       }
+      if (branchSnapshot) {
+        setBranchUndoCheckpoint({
+          bundle,
+          restoredDocument: structuredClone(branchSnapshot.document),
+        });
+      }
       setBundle(result.bundle);
       setRecordParentRoundId("");
       if (branchSnapshot) {
@@ -162,6 +189,20 @@ export function InquiryJourneyPrototypePanel({ document, onRestoreDocument }: In
     } finally {
       setIsBusy(false);
     }
+  };
+
+  const handleUndoBranch = () => {
+    if (!branchUndoCheckpoint || !canUndoBranch) return;
+    if (!onDiscardRestoredDocument()) {
+      setMessage({ kind: "error", text: t("inquiry_journey.prototype.branch_undo_error") });
+      return;
+    }
+    setBundle(branchUndoCheckpoint.bundle);
+    setBranchUndoCheckpoint(null);
+    setRecordParentRoundId("");
+    setComparisonFromRoundId("");
+    setComparisonToRoundId("");
+    setMessage({ kind: "status", text: t("inquiry_journey.prototype.branch_undone") });
   };
 
   const handleExport = async () => {
@@ -235,6 +276,7 @@ export function InquiryJourneyPrototypePanel({ document, onRestoreDocument }: In
       setRecordParentRoundId("");
       setComparisonFromRoundId("");
       setComparisonToRoundId("");
+      setBranchUndoCheckpoint(null);
       setSelectedStage(parsed.bundle.journey.roundRecords.at(-1)?.stage ?? "r1_problem_setting");
       setMessage({ kind: "status", text: t("inquiry_journey.prototype.imported") });
     } finally {
@@ -325,6 +367,16 @@ export function InquiryJourneyPrototypePanel({ document, onRestoreDocument }: In
               iteration: nextIteration,
             })}
           </button>
+          {canUndoBranch ? (
+            <button
+              type="button"
+              data-domain-action="undo-inquiry-branch"
+              disabled={isBusy}
+              onClick={handleUndoBranch}
+            >
+              {t("inquiry_journey.prototype.branch_undo")}
+            </button>
+          ) : null}
 
           {records.length > 0 ? (
             <ol aria-label={t("inquiry_journey.prototype.history")} style={{ margin: 0, paddingInlineStart: 24, fontSize: 12 }}>
@@ -403,6 +455,7 @@ export function InquiryJourneyPrototypePanel({ document, onRestoreDocument }: In
                   type="button"
                   onClick={() => {
                     setBundle(null);
+                    setBranchUndoCheckpoint(null);
                     setMessage(null);
                     setIsConfirmingEnd(false);
                     setRecordParentRoundId("");

@@ -5859,6 +5859,22 @@ export default function App({ storageScope }: AppProps = {}) {
     setStatusMessage(t("app.status.edit.redo"));
   }, [abstractMapView, summaryView]);
 
+  const discardLatestDocumentChange = useCallback((): boolean => {
+    if (!canUndo) return false;
+    pendingCardDragSnapshotRef.current = null;
+    setHistory((previousHistory) => {
+      if (!previousHistory || previousHistory.past.length === 0) return previousHistory;
+      const previousDocument = previousHistory.past[previousHistory.past.length - 1];
+      return {
+        past: previousHistory.past.slice(0, -1),
+        present: cloneDocument(previousDocument),
+        future: [],
+      };
+    });
+    setIsDirty(true);
+    return true;
+  }, [canUndo]);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const isModifierPressed = event.metaKey || event.ctrlKey;
@@ -10344,6 +10360,7 @@ export default function App({ storageScope }: AppProps = {}) {
             <InquiryJourneyPrototypePanel
               document={document}
               onRestoreDocument={(snapshotDocument) => applyDocumentChange(snapshotDocument)}
+              onDiscardRestoredDocument={discardLatestDocumentChange}
             />
           ),
         },
