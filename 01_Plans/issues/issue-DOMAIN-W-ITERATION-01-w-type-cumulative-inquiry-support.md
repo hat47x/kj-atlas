@@ -40,7 +40,7 @@
 - 川喜田研究所は、狭義のKJ法一ラウンドと、その累積利用を区別している。
 - 6ラウンドは、問題提起、現状把握、本質追求、構想計画、具体策、手順化という異なる姿勢を累積する。
 - 累積型発想法のICT研究では、長時間を要することと、中断時の中間成果保持・円滑な再開が課題として挙げられている。
-- 現行 `DocumentV2` は一つの現行スナップショットを保存し、ラウンド単位の不変成果、分岐、系譜を持たない。
+- 現行 `DocumentV1` は一つの現行スナップショットを保存し、ラウンド単位の不変成果、分岐、系譜を持たない。
 - 現行UIには高度機能の段階的開示と作業モードがあるため、通常利用を変えずにプロトタイプを置く候補面は存在する。
 
 ## 3) 判断基準による優先度評価
@@ -48,7 +48,7 @@
 - 価値・判断軸（ADR-0001）: 可逆性、保留、人間判断を単一操作だけでなく長期探究へ拡張し、プロダクト価値「思考を雑にしない」を直接強化する。
 - 安全（THREAT_MODEL / SafeMode）: ラウンド履歴は生データと過去の仮説を蓄積するため、部分共有、削除、AI入力の範囲を明示する必要がある。
 - 企業・行政要件（enterprise_architecture）: 長期案件では説明可能性に有用だが、組織承認・担当者・期限は別境界とし、初期実装へ混ぜない。
-- 後方互換（schemas）: `ADR-0057` は独立探究集約 + 不変成果DAGを採択した。`DocumentV2` へ履歴キーを追加せず、新契約は実装・移行・CRUDが揃うまで `L0: Planned` とする。
+- 後方互換（schemas）: `ADR-0057` は独立探究集約 + 不変成果DAGを採択した。`DocumentV1` へ履歴キーを追加せず、新契約は実装・移行・CRUDが揃うまで `L0: Planned` とする。
 
 ## 4) 提案する解決策 / Proposed solution
 
@@ -87,7 +87,7 @@
 
 - [x] AC-1: 6ラウンド、反復番号、引継ぎ、分岐、再開、現場への問いが要件として定義されている。
 - [x] AC-2: 固定ウィザード、進捗採点、通常画面への常設を禁止する境界が定義されている。
-- [x] AC-2a: 独立探究 + 不変成果DAG + 自己完結bundleが採択され、現行 `DocumentV2` と分離されている。
+- [x] AC-2a: 独立探究 + 不変成果DAG + 自己完結bundleが採択され、現行 `DocumentV1` と分離されている。
 - [x] AC-3: 高度機能OFFでは、初期表示とカード作成手順に変更がない。
 - [ ] AC-4: 既存文書から再入力なしで探究を開始できる。
 - [ ] AC-5: R2の1回目と2回目を別成果として保存・比較できる。
@@ -107,13 +107,15 @@
 - [x] T4 高度機能内の低忠実度プロトタイプを作り、初期表示差分0と操作理解を確認する。
 - [x] T5 広域比較を行い、`RoundSnapshotV1` の境界と採択方式を `ADR-0057` / `inquiry_journey_model.md` へ固定する。
 - [ ] T6 ADR受理後、型・validation・保存・import/export・roundtripを実装する。
+- [x] T6a 自己完結bundleのローカルexport/import、strict validation、digest検証、roundtripを実装する。
+- [ ] T6b 探究集約の保存・再読込と、Phase 3のbackend永続化判断に必要な容量計測を実装する。
 - [ ] T7 手動中核UIとa11y/i18n/性能回帰を実装する。
 - [ ] T8 マウス・キーボード・390pxのE2Eとスクリーンショットを取得する。
 - [ ] T9 Phase 2の実使用後に、AI支援を別issueへ分割するか判断する。
 
 ### Phase 0 実装証跡（2026-07-15）
 
-- `src/domain/inquiry_journey.ts`: `DocumentV2` へ履歴を追加せず、`InquiryJourneyV1`、`RoundSnapshotV1`、`RoundHandoffV1`、`CardLineageEdgeV1`、自己完結bundle型を独立定義した。
+- `src/domain/inquiry_journey.ts`: `DocumentV1` へ履歴を追加せず、`InquiryJourneyV1`、`RoundSnapshotV1`、`RoundHandoffV1`、`CardLineageEdgeV1`、自己完結bundle型を独立定義した。
 - `src/domain/inquiry_journey.fixture.ts`: R2現状把握、R3本質追求、追加観察後のR2・2回目という代表loopbackを固定した。観察から仮説への系譜は `derived` とし、本文編集と分離した。
 - `src/domain/inquiry_journey.test.ts`: DAG循環、経路上の反復番号、複数head、出発成果、参照切れ、将来成果の逆参照、digest、系譜方向・多重度、非working成果を検証する。
 - `appendRoundRecord()`: 親成果を確認し、同段階の反復番号を選択経路から導出し、過去成果を変更せず分岐先端を追加するメモリ内状態遷移を実装した。
@@ -127,6 +129,14 @@
 - 記録はセッション内だけに保持し、「保存されません」と明示する。`DocumentV1`、`InquiryJourneyV1`、API、保存形式は変更していない。
 - Playwrightで、高度機能OFF時の非表示、本文だけのカード作成・保存が従来どおり完了すること、キーボードによる試作開始、R2・1回目 → R3・1回目 → R2・2回目の表示が上書きされず別項目になることを確認した。これによりT4とAC-3を完了とした。
 - 試作開始と表示上の反復分離によりAC-4/5の操作模型は確認できたが、探究manifestと成果snapshotを保存・再読込・比較できないためAC-4/5は未完了のままにする。親参照を伴う分岐、永続化、比較表示、再開ブリーフはT6〜T8に残す。support levelは引き続き `L0: Planned` とする。
+
+### T6a ローカルbundle往復（2026-07-18）
+
+- `src/domain/inquiry_bundle_io.ts` に、元bundleを変更せずschema versionと内容由来digestを付与するexport、JSONのstrict import、自己完結参照検証を実装した。
+- importは未知キー・未知version・未知enum・不正型・参照切れ・循環・digest不一致をfail-closedで拒否する。snapshot内の`DocumentV1`は既存の`validateDocumentV1Strict()`を再利用し、検証規則を二重化しない。
+- digestはキー順に依存しないcanonical JSONからSHA-256を計算する。bundleを識別情報や秘匿性の代用には使わず、snapshot内容の破損検知だけに用いる。
+- unit testで自己完結往復、元データ非変更、未知キー、未知enum、未知version、参照切れ、改変後digest、JSON破損、キー順の決定性を確認した。
+- この段階はローカルI/O境界だけであり、画面からの保存・読込、backend API、保持・削除、SafeMode派生bundle、容量計測は未実装である。したがってT6全体、AC-4/5/11、support level `L0: Planned` は完了扱いにしない。
 
 ## 7) 検証計画 / Validation plan
 
@@ -158,14 +168,14 @@
 
 - 失敗モード: 6段階が利用者を急かす、履歴が重くなる、同じカードの正本が分岐で曖昧になる、過去の生データが共有物へ漏れる。
 - 影響範囲: domain型、validation、保存、import/export、SafeMode、作業モード、Canvas、SidePanel、性能。
-- ロールバック手順: 永続化前はプロトタイプを削除し、採択済み要件・設計を `L0` のまま残す。永続化後は高度機能を無効化して現行文書表示へ戻し、独立探究成果物を読み込まなくても既存 `DocumentV2` のカード・配置が読める契約を必須とする。
+- ロールバック手順: 永続化前はプロトタイプを削除し、採択済み要件・設計を `L0` のまま残す。永続化後は高度機能を無効化して現行文書表示へ戻し、独立探究成果物を読み込まなくても既存 `DocumentV1` のカード・配置が読める契約を必須とする。
 
 ## 10) Additional context
 
 ### 確定した設計判断
 
-1. `RoundSnapshotV1` は、選択状態等を除き、意味のある空間配置を含む `DocumentV2` 成果を再現できる内容とする。
-2. `DocumentV2` optional構造ではなく、独立 `InquiryJourneyV1` + 不変成果DAGを採用する。
+1. `RoundSnapshotV1` は、選択状態等を除き、意味のある空間配置を含む `DocumentV1` 成果を再現できる内容とする。
+2. `DocumentV1` optional構造ではなく、独立 `InquiryJourneyV1` + 不変成果DAGを採用する。
 3. 分岐後のカードは、スナップショット内の再現可能な内容、安定ID、明示的な `CardLineageEdgeV1` で表現する。
 4. ラウンド単位共有は、対象が参照する祖先成果をbundle内へ同梱し、参照が閉じた状態だけを受理する。
 5. 容量上限・圧縮閾値・削除UIは設計判断ではなく代表fixtureによる計測値としてPhase 1・2で決める。
