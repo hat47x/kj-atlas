@@ -329,8 +329,19 @@ class AuditDispatcher:
         for queued in pending:
             try:
                 self._transport.send(queued)
-            except Exception:
+            except Exception as exc:  # fail-open
                 self._enqueue(queued)
+                logger.warning(
+                    "audit event flush failed; keep fail-open",
+                    extra={
+                        "eventType": queued.eventType,
+                        "tenantId": queued.tenantId,
+                        "docId": queued.docId,
+                        "transport": self._transport.name,
+                        "queueLength": len(self._queue),
+                        "error": str(exc),
+                    },
+                )
                 break
 
     def _enqueue(self, event: AuditEvent) -> None:

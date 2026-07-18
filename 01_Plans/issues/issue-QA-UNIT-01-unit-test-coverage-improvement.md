@@ -250,3 +250,17 @@ Pending-1/2は2026-07-16にMaintainer承認済み。残るB-UNIT-03は技術的�
 - QA-MONKEY-13を実際に発見した`e2e/header_toolbar_layout.spec.ts`（"modifier shortcuts update visible view and hierarchy state"を含む）を、Docker Desktop連携で`mcr.microsoft.com/playwright:v1.58.2-jammy`公式イメージを使い実行し、**9/9 pass**を確認した（リファクタによる回帰なし）。
 
 G1（unit段階ゲート）欄への証跡: QA-MONKEY-13の再発は`clampMaxDepthToAvailable`のunitテストで即座に（E2E実行なしで）検知可能になった。
+
+### 第2バッチ 調査記録（2026-07-19）: SaaS tenant runtime gateの分岐カバレッジ不足とテスト環境上の制約
+
+**発見**: `03_Implement/frontend/src/ui/TenantSessionRuntimeGate.test.ts`は、初期loading状態の描画と、`main.tsx`が本componentを実際に配線していることの2点しか検証しておらず、component自身の中心的な分岐ロジック — `policyVerified`が`false`になった場合に`TenantSessionBlockedView`を表示すること、`true`になった場合に`TenantSessionBootstrapGate`へ正しくhand-offすること、`onRetry`が`attempt`を増分して`verifyTenantSessionRuntimePolicy`を再実行させること — を一切検証していない。
+
+**着手し、着手不能と判断した理由**: この分岐は`useEffect`内の非同期処理（`verifyTenantSessionRuntimePolicy`の解決を待って`setPolicyVerified`する）に依存しており、React committment/再レンダリングを要する。本プロジェクトのfrontend単体テストは全ファイルが`react-dom/server`の`renderToStaticMarkup`（同期・DOM不要・effect未実行の1回限りの静的HTML化）のみで書かれている（`TenantSessionBootstrapGate.test.ts`を含む既存の類似gate componentテストも同じ制約下にあり、初期状態を1回描画するか、`TenantSessionBlockedView`等の提示専用subcomponentを個別に描画するかたちで検証しており、gate自身の状態遷移そのものを検証していない）。これは`03_Implement/frontend/vite.config.ts`が`test.environment: "node"`を明示しているためで、`jsdom`/`happy-dom`/`@testing-library/react`/`react-test-renderer`のいずれも`package.json`に存在しない。
+
+このため、この分岐を実際にテストするには次のいずれかが必要であり、いずれも「テスト追加のみ」という本issueのガードレールを超える判断を要する:
+1. `jsdom`または`happy-dom`を新規devDependencyとして追加し、当該テストファイルにvitestの`// @vitest-environment jsdom`指定を加える（プロジェクトの意図的なNode-only・最小依存方針との整合を要判断）。
+2. componentの分岐ロジックを、React再レンダリングなしに検証可能な形へ再構成する（現状の3分岐自体は`policyVerified: boolean | null`を受ける純粋な条件分岐であり、抽出してもテスト価値は限定的で、本質的な検証対象である`useEffect`のasync解決・abort・再実行はcomponent構造を変えない限り分離できない）。
+
+**Stopper分類**: `test defect`寄りだが、修復手段の選択自体が「テスト実行基盤（依存追加）の方針決定」という製品外の判断を要するため、本issueの自己修復ルール（最大3回）の対象にはせず、ここで停止する。
+
+**再開条件**: プロジェクトのfrontend単体テストに、DOM/effectを伴うcomponent状態遷移を検証する手段（jsdom等の追加、または別のtest harness）を導入する方針が決定された場合に再開する。決定は`01_Plans/issues/`への新規Issueまたは本issueへの追記で記録する。

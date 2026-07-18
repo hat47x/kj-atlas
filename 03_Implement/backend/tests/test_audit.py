@@ -141,6 +141,41 @@ def test_dispatcher_fail_open_on_transport_failure() -> None:
     assert result.reason == "send_failed"
 
 
+def test_dispatcher_logs_a_warning_when_queue_flush_itself_fails(caplog) -> None:  # type: ignore[no-untyped-def]
+    dispatcher = AuditDispatcher(
+        enabled=True,
+        allow_in_safe_mode=True,
+        transport=FailingTransport(),
+        queue_size=2,
+    )
+    first_event = build_event(
+        event_type="export",
+        tenant_id="tenant-a",
+        doc_id="doc-2",
+        safe_mode=False,
+    )
+    second_event = build_event(
+        event_type="view",
+        tenant_id="tenant-a",
+        doc_id="doc-3",
+        safe_mode=False,
+    )
+    dispatcher.emit(first_event)
+    caplog.clear()
+
+    with caplog.at_level("WARNING", logger="kj_atlas_api.audit"):
+        dispatcher.emit(second_event)
+
+    flush_records = [
+        record for record in caplog.records
+        if record.getMessage() == "audit event flush failed; keep fail-open"
+    ]
+    assert len(flush_records) == 1
+    assert flush_records[0].docId == "doc-2"
+    assert flush_records[0].tenantId == "tenant-a"
+    assert flush_records[0].transport == "failing"
+
+
 def test_http_transport_rejects_oversized_serialized_event(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     event = build_event(
         event_type="view",
