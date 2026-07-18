@@ -150,6 +150,24 @@ REPOSITORY_PATH_BUILD_OUTPUT_LEAF_NAMES = frozenset({"dist", "node_modules", "bu
 CLI_OPTION_COMMAND_RE = re.compile(r"python3?\s+([\w./-]+\.py)((?:\s+--[\w-]+(?:[= ][^\s`]+)?)*)")
 CLI_OPTION_FLAG_RE = re.compile(r"--[\w-]+")
 CLI_OPTION_ADD_ARGUMENT_RE = re.compile(r"add_argument\(\s*[\"'](--[\w-]+)")
+LOCALHOST_PROBE_RE = re.compile(r"https?://localhost[:/][\w./:?=&-]*")
+# Every entry must carry a provenance comment tracing it to an actual route
+# (nginx.conf proxy_pass target, a backend route, or a documented dev-server
+# port) -- audited against current/public docs on 2026-07-18 per the issue's
+# Sonnet execution plan (issue-DX-DOC-04...) 区分6.
+LOCALHOST_PROBE_ALLOWLIST_EXACT = frozenset(
+    {
+        "http://localhost:8080/api/healthz",  # nginx `location /api/` -> `api:8000`'s `/healthz`
+        "http://localhost:8000/healthz",  # backend started directly (no nginx/Compose)
+        "http://localhost:8001/generate",  # local LLM provider HTTP contract endpoint
+        "http://localhost:8001",  # mock adapter / local LLM base URL example
+        "http://localhost:4173/api/healthz",  # vite preview server, e2e_testing.md
+        "http://localhost:8080",  # web entry point (nginx-fronted SPA)
+    }
+)
+LOCALHOST_PROBE_ALLOWLIST_PREFIX = (
+    "http://localhost:8080/api/docs/",  # document API GET examples; doc id varies per example
+)
 
 
 @dataclass(frozen=True)
@@ -919,6 +937,51 @@ def check_cli_option_commands(
     return findings
 
 
+def check_localhost_probe_commands(
+    root: Path,
+    markdown_paths: list[Path],
+) -> list[DocsCheckFinding]:
+    """Return DC-CMD-001 findings for localhost URLs absent from the probe allowlist.
+
+    Catches the recurrence shape of a past real bug (`/api/health` missing
+    the trailing `z`) by requiring every `http(s)://localhost...` example in
+    current/public docs to be an explicitly allowlisted, provenance-commented
+    route rather than accepted by pattern alone. A newly-legitimate URL is
+    added to LOCALHOST_PROBE_ALLOWLIST_EXACT/_PREFIX only after confirming it
+    against nginx.conf or the backend route it names -- never guessed.
+    Scoped to current/public documentation only -- see CURRENT_PUBLIC_DOC_ROOTS.
+    """
+    repository_root = root.resolve()
+
+    findings: list[DocsCheckFinding] = []
+    for supplied_path in sorted(markdown_paths, key=lambda path: path.as_posix()):
+        relative_path = supplied_path if not supplied_path.is_absolute() else supplied_path.relative_to(repository_root)
+        if not _is_current_public_doc(relative_path):
+            continue
+
+        source = repository_root / relative_path
+        text = source.read_text(encoding="utf-8")
+        for match in LOCALHOST_PROBE_RE.finditer(text):
+            url = match.group(0)
+            if url in LOCALHOST_PROBE_ALLOWLIST_EXACT:
+                continue
+            if any(url.startswith(prefix) for prefix in LOCALHOST_PROBE_ALLOWLIST_PREFIX):
+                continue
+            line = text.count("\n", 0, match.start()) + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=NPM_SCRIPT_COMMAND_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=line,
+                    target=url,
+                    message=f"Localhost URL '{url}' is not in the probe allowlist",
+                    fix_hint="Confirm the route against nginx.conf/backend routes, then add it to LOCALHOST_PROBE_ALLOWLIST_EXACT/_PREFIX with a provenance comment.",
+                )
+            )
+
+    return findings
+
+
 def tracked_markdown_paths(root: Path) -> list[Path]:
     """Return tracked Markdown paths so generated and dependency files stay out of scope."""
     result = subprocess.run(
@@ -951,6 +1014,7 @@ def main() -> int:
     findings.extend(check_runtime_parameter_key_commands(root, markdown_paths))
     findings.extend(check_repository_path_commands(root, markdown_paths))
     findings.extend(check_cli_option_commands(root, markdown_paths))
+    findings.extend(check_localhost_probe_commands(root, markdown_paths))
 
     if findings:
         print("documentation contract validation failed:")
