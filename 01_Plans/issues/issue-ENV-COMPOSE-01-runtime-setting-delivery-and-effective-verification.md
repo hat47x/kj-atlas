@@ -174,3 +174,68 @@ Dockerを利用できない環境では静的検査だけを成功扱いにし�
 ## 完了条件
 
 文書で選んだ設定が選択した起動面へ実際に届き、代表的な保護・外部接続設定を秘密値なしで機能確認でき、未対応面を利用者が事前に識別できた時点でDoneとする。
+
+## Sonnet級エージェント実行計画（2026-07-18）: Phase 2（配送実装・機能probe・静的契約テスト）
+
+この節は、Phase 1（37キーの配送面分類の正本化＋公開文書の起動面注記、2026-07-17完了）に続く残作業を、**この節だけを読んだSonnet級エージェントが人間判断なしに実装からPR作成まで進められる**粒度で固定する。設計選択はここで確定済みであり、実装側で再選択しない。
+
+### 前提事実（2026-07-18確認済み）
+
+- API key保護は`03_Implement/backend/src/kj_atlas_api/main.py`のHTTP middleware（`require_api_key`、L45-56）。`/healthz`のみ免除、`x-api-key`ヘッダを`compare_digest`で照合、不一致は401。
+- JIT provisioning拒否時のステータスは**403**（`03_Implement/backend/tests/test_auth_jit_provisioning.py`が既に固定）。
+- 標準`docker-compose.yml`の`api.environment`はmap形式で`KJ_ATLAS_DATABASE_URL`と`KJ_ATLAS_LLM_PROVIDER`の2キーのみ。
+- `02_Architecture/runtime_parameter_registry.md`のBackend settings表には`Delivery surface`列が存在し、`KJ_ATLAS_API_KEY`と`KJ_ATLAS_ALLOW_JIT_PROVISIONING`は「direct（base Compose 未配送）⚠️」と記載されている。
+- 検証環境（WSL）でdocker 29.5.3 / compose v5.1.4が利用可能。
+
+### 設計確定（実装側で再選択しない）
+
+- **D-1 配送方式**: `api.environment`をmap形式からlist形式へ変換し、追加キーは**値なしpass-through**（`- KJ_ATLAS_API_KEY`）で書く。Compose仕様では、値なしentryはホスト環境に該当変数が存在する場合のみコンテナへ渡り、未設定時はコンテナ内でも未設定のままになる（空文字注入なし＝実装既定を壊さない）。**実装の最初の検証**として、変数未設定状態で`docker compose -f 03_Implement/deploy/docker-compose.yml config`を実行し、該当キーが出力に現れない（または`null`）ことを確認する。空文字（`KJ_ATLAS_API_KEY: ""`）として現れる場合はこの方式が環境のcomposeバージョンで成立しないため、**実装を停止して本節へ観測結果を追記する**。
+- **D-2 base追加キー**: `KJ_ATLAS_API_KEY`と`KJ_ATLAS_ALLOW_JIT_PROVISIONING`の**2キーのみ**（AC-3が名指しする保護キー）。監査HTTP・外部PDP・large-scale LLM・local LLM接続情報はbase Composeへ追加しない（既定でunsupported、必要時は組織側overlay。AC-4は「unsupportedと明記」側で満たす）。
+- **D-3 secret非固定**: Composeファイルへ値を一切書かない（pass-throughのみ）。probe scriptの出力は設定値をマスクし、pass/failと HTTP status のみを表示する。
+
+### ステップ
+
+1. **Compose編集** — `03_Implement/deploy/docker-compose.yml`の`api.environment`を次へ変更する:
+
+   ```yaml
+   environment:
+     - KJ_ATLAS_DATABASE_URL=${KJ_ATLAS_DATABASE_URL:-postgresql+asyncpg://${KJ_ATLAS_POSTGRES_USER:-kj_atlas}:${KJ_ATLAS_POSTGRES_PASSWORD:-kj_atlas}@db:5432/${KJ_ATLAS_POSTGRES_DB:-kj_atlas}}
+     - KJ_ATLAS_LLM_PROVIDER=${KJ_ATLAS_LLM_PROVIDER:-none}
+     # Pass-through only when set on the host (unset stays unset in the container).
+     - KJ_ATLAS_API_KEY
+     - KJ_ATLAS_ALLOW_JIT_PROVISIONING
+   ```
+
+   既存のコメント（derived DB URLの説明）はlist形式へ移しても保持する。`docker-compose.llm-stub.yml`は変更しない。
+2. **D-1検証** — 未設定時: `docker compose -f 03_Implement/deploy/docker-compose.yml config`の出力に`KJ_ATLAS_API_KEY`が空文字で現れないこと。設定時: `KJ_ATLAS_API_KEY=probe docker compose -f ... config`で値が渡ること。
+3. **registry同期** — `02_Architecture/runtime_parameter_registry.md`のBackend settings表で、`KJ_ATLAS_API_KEY`と`KJ_ATLAS_ALLOW_JIT_PROVISIONING`の`Delivery surface`セルを`direct / base Compose`へ変更し、キー名の`⚠️`と前文の該当注記（「既知のギャップ」段落）を「base Composeがpass-through配送する（未設定時は未設定のまま）」へ更新する。あわせて前文へ「監査HTTP・外部PDP・large-scale LLMの接続系キーは標準Composeではunsupportedであり、必要な場合は組織側overlayで一組として配送する」の1文を追加する（AC-4）。
+4. **公開文書同期** — `04_Documentation/configuration.md`と`04_Documentation/security.md`の「注意: 標準 Docker Compose はこのキーを `api` コンテナへ配送しません（direct 起動限定）…現状未実装」の注記（各1箇所、API keyセクション直後）を「標準 Docker Compose はこのキーをホスト環境から pass-through 配送します（ホスト側で未設定の場合はコンテナ内でも未設定のままで、既定の無効状態を維持します）」へ更新する。
+5. **機能probe script新設** — `03_Implement/deploy/tools/verify_env_delivery.sh`（bash、`set -euo pipefail`）:
+   - P-1 API key有効化: `KJ_ATLAS_API_KEY=probe-local-key docker compose up -d --build`後、(a) `curl -fsS http://localhost:8080/api/healthz`が200、(b) キーなし`curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/docs/example`が401、(c) `-H "X-API-Key: probe-local-key"`付きが非401（200/404いずれも可＝middleware通過の証明）。
+   - P-2 JIT禁止: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`で再up後、未登録identityのauthヘッダ（`test_auth_jit_provisioning.py`と同じヘッダ組: `x-auth-provider`/`x-forwarded-user`等）付きリクエストが**403**になること。
+   - P-3 既定維持: 両変数をunsetして再upし、保護対象APIが401にならない（未設定=保護無効の実装既定が維持される）こと。
+   - 終了時`docker compose down`。出力はpass/failとstatus codeのみ（値・キーを表示しない）。いずれかfailで非0 exit。
+6. **静的契約テスト新設** — `01_Plans/tests/test_env_delivery_contract.py`（unittest、`docs_check.py`の`_run_contract_tests`が自動発見）。repo rootは`Path(__file__).resolve().parents[2]`で取得し、実repositoryに対して次を表明する:
+   - `settings.py`の`validation_alias="(KJ_ATLAS_[A-Z0-9_]+)"` regex収集集合 == registry Backend settings表の第1セルキー集合（37キー同士）。
+   - registry表で`Delivery surface`セルに「base Compose」を含むキー集合 == `docker-compose.yml`の`api.environment`が配送するキー集合（list/map両形式をパース: `- KEY`、`- KEY=...`、`KEY: ...`のいずれも先頭の`KJ_ATLAS_[A-Z0-9_]+`を抽出）。
+   - registry表で「llm-stub overlay」を含むキー集合 ⊆ `docker-compose.llm-stub.yml`の`api.environment`キー集合。
+7. **検証ゲート**（PR前に全部pass必須）: `python3 -m unittest discover -s 01_Plans/tests -p "test_*.py"` / `python3 01_Plans/docs_check.py` / `bash 03_Implement/deploy/tools/verify_env_delivery.sh`（Docker利用可能時） / `git diff --check`。
+
+### PR・レビュー規律
+
+- 上記1〜6は**1 PR**にまとめる（契約テストがComposeの変更後状態を表明するため分割不可）。
+- **デプロイ挙動の変更を含むため、CI green後も自動マージしない。人間レビュー保留とする**（PR #2618と同型の扱い）。PR本文に`docker compose config`のbefore/after差分（該当キーのみ）を記載する（本issueリスク節の要求）。
+- Dockerを利用できない環境で実装する場合は、ステップ5の実行を省略して静的検査のみを成功扱いにし、AC-9の未実施理由とDocker-capable hostでの再開条件を本節の下へ追記する。
+
+### AC対応
+
+| ステップ | 閉じる受入条件 |
+| --- | --- |
+| 1+2 | AC-2（Compose向け記載キーの実配送）・AC-5（未設定時の既定値維持） |
+| 5 | AC-3（API key/JIT禁止の機能確認）・AC-9（Docker integration、ローカル実行記録で） |
+| 3 | AC-4（unsupported明記）・AC-1は Phase 1で対応済みの分類に配送実態を追随 |
+| 1+3+5 | AC-6（secret値の非出現: pass-through方式とマスク出力で担保） |
+| 6 | AC-8（静的契約テストによるdrift検出） |
+| 全体 | AC-10（安全既定の不変: 挙動変更はキー配送のみで、既定値・SafeMode・provider境界に触れない） |
+
+AC-7（endpoint例のnetwork namespace区別）はPhase 1（PR #2621）で対応済み。
