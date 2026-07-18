@@ -119,7 +119,7 @@
 ## 8. 関連文書
 
 - `00_Prompt/representative_visual_cue_requirements.md`
-- `01_Plans/adr/ADR-0059-representative-visual-cue-source-boundary.md`
+- `01_Plans/adr/ADR-0060-representative-visual-cue-source-boundary.md`
 - `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 - `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - `01_Plans/issues/issue-DOMAIN-VISUAL-CUE-01-representative-visual-cues.md`

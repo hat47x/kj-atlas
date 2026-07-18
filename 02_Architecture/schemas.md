@@ -604,7 +604,7 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 1. `Card.w/h`（カードサイズ）
 2. ~~`EdgeType` の拡張（negate/hypothesis 等）~~ → DOMAIN-KJ-01 で導入済み（§3.3）
 3. `Island`（囲み、タイトル、所属）
-4. `Asset`（画像挿入・生成結果の参照。現行`Island.imageUrl`は由来・権利情報を持たない旧式フィールドであり、この将来モデルには含めない。SafeMode境界と移行は`SEC-VISUAL-ASSET-01` / `ADR-0059`で管理する）
+4. `Asset`（画像挿入・生成結果の参照。現行`Island.imageUrl`は由来・権利情報を持たない旧式フィールドであり、この将来モデルには含めない。SafeMode境界と移行は`SEC-VISUAL-ASSET-01` / `ADR-0060`で管理する）
 5. `Card.meta`（出自情報、タグ、引用元など。非主体メタの `seq`/`source` は DOMAIN-TRACE-01 で導入済み=§15。カード起票者など主体メタのUI/保存/redaction境界は引き続き `CARD-META-UI-01` で管理する）
 6. `Patch`（差分同期）
 

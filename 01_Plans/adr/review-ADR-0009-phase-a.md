@@ -1,4 +1,4 @@
-# ADR-0009 Phase A Review Report — 4文書レビュー確定
+# ADR-0009 Phase Aレビュー報告 — 4文書レビュー確定
 
 - Status: Accepted (Phase A complete)
 - Date: 2026-03-02

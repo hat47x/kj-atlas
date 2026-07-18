@@ -1,4 +1,4 @@
-# ADR-0059: 代表視覚手掛かりの供給経路と意味境界
+# ADR-0060: 代表視覚手掛かりの供給経路と意味境界
 
 - Status: Proposed
 - Date: 2026-07-18
@@ -61,4 +61,4 @@
 - Evaluation: `02_Architecture/representative_visual_cue_evaluation.md`
 - Related: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 - Related: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
-- Related: `01_Plans/adr/ADR-0049-external-agent-collaboration-boundary.md`
+- Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`
