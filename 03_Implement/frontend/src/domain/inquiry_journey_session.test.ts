@@ -7,7 +7,9 @@ import {
   inquiryBundleOriginatesFromDocument,
   recordInquiryRound,
   startInquiryJourney,
+  traceInquiryCardLineage,
 } from "./inquiry_journey_session";
+import { createRepresentativeInquiryBundle } from "./inquiry_journey.fixture";
 
 const CREATED_AT = "2026-07-18T00:00:00.000Z";
 
@@ -31,6 +33,27 @@ function sequentialIds(): () => string {
 }
 
 describe("inquiry journey session", () => {
+  it("traces a derived card through its source cards and owning rounds", () => {
+    const bundle = createRepresentativeInquiryBundle();
+    const traced = traceInquiryCardLineage(bundle, {
+      snapshotId: "snapshot-r3-1",
+      cardId: "hypothesis-1",
+    });
+
+    expect(traced.ok).toBe(true);
+    if (!traced.ok) return;
+    expect(traced.target.round).toMatchObject({ stage: "r3_essence_pursuit", iteration: 1 });
+    expect(traced.ancestors.map((node) => [node.address.snapshotId, node.address.cardId, node.viaKind])).toEqual([
+      ["snapshot-r2-1", "observation-1", "derived"],
+      ["snapshot-r2-1", "information-gap-1", "derived"],
+      ["snapshot-origin", "observation-1", "carried"],
+    ]);
+    expect(traceInquiryCardLineage(bundle, { snapshotId: "missing", cardId: "missing" })).toEqual({
+      ok: false,
+      reason: "card_not_found",
+    });
+  });
+
   it("starts from the current document without changing it and roundtrips strictly", async () => {
     const document = createDocument([{ id: "card-1", text: "同じ質問が繰り返された", x: 0, y: 0 }]);
     const source = structuredClone(document);

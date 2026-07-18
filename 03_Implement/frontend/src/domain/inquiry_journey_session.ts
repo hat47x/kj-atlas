@@ -3,6 +3,7 @@ import { diffDocuments } from "./diff/doc_diff";
 import {
   INQUIRY_SCHEMA_VERSION,
   appendRoundRecord,
+  type CardAddressV1,
   type CardLineageEdgeV1,
   type InquiryBundleV1,
   type RoundSnapshotV1,
@@ -33,6 +34,78 @@ export type InquiryRoundComparisonSummary = {
 export type CompareInquiryRoundsResult =
   | { ok: true; summary: InquiryRoundComparisonSummary }
   | { ok: false; reason: "round_not_found" | "snapshot_not_found" };
+
+export type InquiryCardLineageNode = {
+  address: CardAddressV1;
+  text: string;
+  source?: string;
+  round?: { roundId: string; stage: RoundStage; iteration: number };
+  viaKind?: CardLineageEdgeV1["kind"];
+};
+
+export type TraceInquiryCardLineageResult =
+  | { ok: true; target: InquiryCardLineageNode; ancestors: InquiryCardLineageNode[] }
+  | { ok: false; reason: "card_not_found" };
+
+function addressKey(address: CardAddressV1): string {
+  return `${address.snapshotId}\u0000${address.cardId}`;
+}
+
+function lineageSources(edge: CardLineageEdgeV1): CardAddressV1[] {
+  if (edge.kind === "new") return [];
+  return Array.isArray(edge.from) ? edge.from : [edge.from];
+}
+
+function lineageTargets(edge: CardLineageEdgeV1): CardAddressV1[] {
+  if (edge.kind === "retired") return [];
+  return Array.isArray(edge.to) ? edge.to : [edge.to];
+}
+
+export function traceInquiryCardLineage(
+  bundle: InquiryBundleV1,
+  targetAddress: CardAddressV1
+): TraceInquiryCardLineageResult {
+  const snapshots = new Map(bundle.snapshots.map((snapshot) => [snapshot.snapshotId, snapshot]));
+  const roundsBySnapshot = new Map(
+    bundle.journey.roundRecords
+      .filter((round) => round.outputSnapshotId)
+      .map((round) => [round.outputSnapshotId as string, round])
+  );
+  const buildNode = (address: CardAddressV1, viaKind?: CardLineageEdgeV1["kind"]): InquiryCardLineageNode | null => {
+    const card = snapshots.get(address.snapshotId)?.document.cards.find((candidate) => candidate.id === address.cardId);
+    if (!card) return null;
+    const round = roundsBySnapshot.get(address.snapshotId);
+    return {
+      address,
+      text: card.text,
+      ...(card.meta?.source ? { source: card.meta.source } : {}),
+      ...(round ? { round: { roundId: round.roundId, stage: round.stage, iteration: round.iteration } } : {}),
+      ...(viaKind ? { viaKind } : {}),
+    };
+  };
+  const target = buildNode(targetAddress);
+  if (!target) return { ok: false, reason: "card_not_found" };
+
+  const ancestors: InquiryCardLineageNode[] = [];
+  const visited = new Set<string>([addressKey(targetAddress)]);
+  const queue: CardAddressV1[] = [targetAddress];
+  while (queue.length > 0) {
+    const current = queue.shift() as CardAddressV1;
+    for (const edge of bundle.cardLineage) {
+      if (!lineageTargets(edge).some((address) => addressKey(address) === addressKey(current))) continue;
+      for (const source of lineageSources(edge)) {
+        const key = addressKey(source);
+        if (visited.has(key)) continue;
+        visited.add(key);
+        const node = buildNode(source, edge.kind);
+        if (!node) continue;
+        ancestors.push(node);
+        queue.push(source);
+      }
+    }
+  }
+  return { ok: true, target, ancestors };
+}
 
 export function inquiryBundleOriginatesFromDocument(bundle: InquiryBundleV1, documentId: string): boolean {
   const originIds = new Set(bundle.journey.originSnapshotIds);
