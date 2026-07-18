@@ -193,7 +193,7 @@ SafeModeによるマスクは元スナップショットを変更しない。共
 
 Phase 0・1で操作模型が理解されない場合は永続契約へ進まない。Phase 2で代表規模の容量・読込時間が性能予算を満たさない場合は、スナップショット圧縮または差分格納を内部最適化として比較する。ただし、外部契約は完全な成果を再構成できることを維持する。
 
-**実装状況（2026-07-18）**: Phase 2のうち、`inquiry_bundle_io.ts` にローカルexport/import境界を実装した。既存の`DocumentV1` strict validator、自己完結参照検証、保存後JSON表現由来のSHA-256 digest検証を組み合わせ、未知キー・未知version・未知enum・参照切れ・改変を拒否する。高度機能内の試作パネルから、現在文書を起点とする正式bundleの作成、ラウンドsnapshotと低負担なカード系譜の記録、JSONファイルの保存・再読込まで操作できる。300カード・30島・6ラウンドの代表規模は1成果73,955 bytes、探究manifest 2,161 bytes、自己完結bundle 1,460,390 bytesであり、JSON集約の容量は許容範囲だった。当初、画面読込の最大長時間タスクは243から294msでPB-3の100ms目安を超えたが、`PERF-INQUIRY-01`でstrict validationとdigest照合をworkerへ移し、単独実行で93から95msへ改善した。並列CIでは125msを観測するため150msを退行上限とし、100msを設計目標として維持する。性能面のPhase 3停止条件は解消したが、比較、SafeMode派生bundle、保持・削除は未実装であり、Phase 2全体とL1昇格は未完了である。
+**実装状況（2026-07-18）**: Phase 2のうち、`inquiry_bundle_io.ts` にローカルexport/import境界を実装した。既存の`DocumentV1` strict validator、自己完結参照検証、保存後JSON表現由来のSHA-256 digest検証を組み合わせ、未知キー・未知version・未知enum・参照切れ・改変を拒否する。高度機能内の試作パネルから、現在文書を起点とする正式bundleの作成、ラウンドsnapshotと低負担なカード系譜の記録、JSONファイルの保存・再読込まで操作できる。300カード・30島・6ラウンドの代表規模は1成果73,955 bytes、探究manifest 2,161 bytes、自己完結bundle 1,460,390 bytesであり、JSON集約の容量は許容範囲だった。一方、画面読込の最大長時間タスクは243から273ms（それ以前の実行294ms）でPB-3の100ms目安を超えたため、`PERF-INQUIRY-01`で非ブロッキング化するまでbackend保存へ進まない。比較、SafeMode派生bundleも未実装であり、Phase 2全体とL1昇格は未完了である。
 
 ## 8. 根拠と関連文書
 
