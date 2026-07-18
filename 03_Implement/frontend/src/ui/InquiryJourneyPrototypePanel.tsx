@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 
-import { ROUND_STAGES, type InquiryBundleV1, type RoundStage } from "../domain/inquiry_journey";
+import {
+  ROUND_STAGES,
+  nextRoundIteration,
+  type InquiryBundleV1,
+  type RoundStage,
+} from "../domain/inquiry_journey";
 import {
   INQUIRY_BUNDLE_MAX_BYTES,
   INQUIRY_BUNDLE_WARNING_BYTES,
@@ -19,6 +24,7 @@ import { InquiryBundleWorkerClient } from "../worker/inquiry_bundle_client";
 
 type InquiryJourneyPrototypePanelProps = {
   document: DocumentV1 | null;
+  onRestoreDocument: (document: DocumentV1) => boolean;
 };
 
 function stageLabel(stage: RoundStage): string {
@@ -30,7 +36,7 @@ function fileStem(value: string): string {
   return sanitized || "inquiry";
 }
 
-export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototypePanelProps) {
+export function InquiryJourneyPrototypePanel({ document, onRestoreDocument }: InquiryJourneyPrototypePanelProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const importClientRef = useRef<InquiryBundleWorkerClient | null>(null);
   const importAbortRef = useRef<AbortController | null>(null);
@@ -39,6 +45,7 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
   const [isBusy, setIsBusy] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isConfirmingEnd, setIsConfirmingEnd] = useState(false);
+  const [recordParentRoundId, setRecordParentRoundId] = useState("");
   const [comparisonFromRoundId, setComparisonFromRoundId] = useState("");
   const [comparisonToRoundId, setComparisonToRoundId] = useState("");
   const [message, setMessage] = useState<{ kind: "status" | "error"; text: string } | null>(null);
@@ -50,6 +57,7 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
     setBundle(null);
     setSelectedStage("r1_problem_setting");
     setIsConfirmingEnd(false);
+    setRecordParentRoundId("");
     setComparisonFromRoundId("");
     setComparisonToRoundId("");
     setMessage(null);
@@ -64,11 +72,23 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
 
   const records = bundle?.journey.roundRecords ?? [];
   const documentLabel = document?.title?.trim() || document?.id || t("inquiry_journey.prototype.no_document");
+  const effectiveRecordParentId = records.some((record) => record.roundId === recordParentRoundId)
+    ? recordParentRoundId
+    : bundle?.journey.defaultHeadRoundId ?? "";
   const nextIteration = useMemo(
-    () => records.filter((record) => record.stage === selectedStage).length + 1,
-    [records, selectedStage]
+    () => bundle
+      ? nextRoundIteration(
+          bundle.journey,
+          selectedStage,
+          effectiveRecordParentId ? [effectiveRecordParentId] : []
+        )
+      : 1,
+    [bundle, effectiveRecordParentId, selectedStage]
   );
   const isStarted = bundle !== null;
+  const isBranching = Boolean(
+    effectiveRecordParentId && effectiveRecordParentId !== bundle?.journey.defaultHeadRoundId
+  );
   const defaultComparisonFromId = records.at(-2)?.roundId ?? "";
   const defaultComparisonToId = records.at(-1)?.roundId ?? "";
   const effectiveComparisonFromId = records.some((record) => record.roundId === comparisonFromRoundId)
@@ -110,12 +130,35 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
     setIsBusy(true);
     setMessage(null);
     try {
-      const result = await recordInquiryRound(bundle, document, selectedStage);
+      const branchParent = isBranching
+        ? bundle.journey.roundRecords.find((record) => record.roundId === effectiveRecordParentId)
+        : undefined;
+      const branchSnapshot = branchParent
+        ? bundle.snapshots.find((snapshot) => snapshot.snapshotId === branchParent.outputSnapshotId)
+        : undefined;
+      if (isBranching && !branchSnapshot) {
+        setMessage({ kind: "error", text: t("inquiry_journey.prototype.branch_error") });
+        return;
+      }
+      const result = await recordInquiryRound(
+        bundle,
+        branchSnapshot?.document ?? document,
+        selectedStage,
+        effectiveRecordParentId ? { parentRoundId: effectiveRecordParentId } : {}
+      );
       if (!result.ok) {
         setMessage({ kind: "error", text: t("inquiry_journey.prototype.record_error") });
         return;
       }
+      if (branchSnapshot && !onRestoreDocument(structuredClone(branchSnapshot.document))) {
+        setMessage({ kind: "error", text: t("inquiry_journey.prototype.branch_error") });
+        return;
+      }
       setBundle(result.bundle);
+      setRecordParentRoundId("");
+      if (branchSnapshot) {
+        setMessage({ kind: "status", text: t("inquiry_journey.prototype.branch_created") });
+      }
     } finally {
       setIsBusy(false);
     }
@@ -189,6 +232,7 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
       }
       setBundle(parsed.bundle);
       setIsConfirmingEnd(false);
+      setRecordParentRoundId("");
       setComparisonFromRoundId("");
       setComparisonToRoundId("");
       setSelectedStage(parsed.bundle.journey.roundRecords.at(-1)?.stage ?? "r1_problem_setting");
@@ -229,6 +273,33 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
           <div role="status" style={{ fontSize: 11, color: "#92400e" }}>
             {t("inquiry_journey.prototype.session_only")}
           </div>
+          {records.length > 0 ? (
+            <>
+              <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                {t("inquiry_journey.prototype.record_parent")}
+                <select
+                  data-domain-input="inquiry-journey-parent-round"
+                  value={effectiveRecordParentId}
+                  onChange={(event) => setRecordParentRoundId(event.currentTarget.value)}
+                >
+                  {records.map((record) => (
+                    <option key={record.roundId} value={record.roundId}>
+                      {record.roundId === bundle.journey.defaultHeadRoundId
+                        ? t("inquiry_journey.prototype.record_parent_current", {
+                            record: recordLabel(record.roundId),
+                          })
+                        : recordLabel(record.roundId)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {isBranching ? (
+                <div role="status" aria-live="polite" style={{ fontSize: 11, color: "#92400e" }}>
+                  {t("inquiry_journey.prototype.branch_notice")}
+                </div>
+              ) : null}
+            </>
+          ) : null}
           <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
             {t("inquiry_journey.prototype.stage")}
             <select
@@ -247,7 +318,9 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
             disabled={isBusy}
             onClick={() => void handleRecord()}
           >
-            {t("inquiry_journey.prototype.record", {
+            {t(isBranching
+              ? "inquiry_journey.prototype.record_branch"
+              : "inquiry_journey.prototype.record", {
               stage: stageLabel(selectedStage),
               iteration: nextIteration,
             })}
@@ -332,6 +405,7 @@ export function InquiryJourneyPrototypePanel({ document }: InquiryJourneyPrototy
                     setBundle(null);
                     setMessage(null);
                     setIsConfirmingEnd(false);
+                    setRecordParentRoundId("");
                     setComparisonFromRoundId("");
                     setComparisonToRoundId("");
                   }}

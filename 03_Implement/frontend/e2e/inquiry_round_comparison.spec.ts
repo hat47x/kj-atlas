@@ -1,8 +1,8 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
 import type { DocumentV1 } from "../src/domain/types";
-import { serializeInquiryBundle } from "../src/domain/inquiry_bundle_io";
+import { parseInquiryBundleJson, serializeInquiryBundle } from "../src/domain/inquiry_bundle_io";
 import { recordInquiryRound, startInquiryJourney } from "../src/domain/inquiry_journey_session";
 
 const CREATED_AT = "2026-07-18T00:00:00.000Z";
@@ -27,18 +27,19 @@ function sequentialIds(): () => string {
   return () => String(++value);
 }
 
-test("DOMAIN-W-ITERATION-01 compares repeated rounds with keyboard-operable selectors", async ({ page }, testInfo) => {
-  const origin = createDocument("The sign was visible");
+test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with the keyboard", async ({ page }, testInfo) => {
+  const origin = createDocument("Initial observation");
+  const situationDocument = createDocument("The sign was visible");
   const ids = sequentialIds();
   let bundle = await startInquiryJourney(origin, { idFactory: ids, now: () => CREATED_AT });
-  const first = await recordInquiryRound(bundle, origin, "r2_situation_grasp", {
+  const first = await recordInquiryRound(bundle, situationDocument, "r2_situation_grasp", {
     idFactory: ids,
     now: () => "2026-07-18T00:01:00.000Z",
   });
   expect(first.ok).toBe(true);
   if (!first.ok) return;
   bundle = first.bundle;
-  const second = await recordInquiryRound(bundle, createDocument("The sign was visible but the next action was unclear"), "r2_situation_grasp", {
+  const second = await recordInquiryRound(bundle, createDocument("The sign was visible but the next action was unclear"), "r3_essence_pursuit", {
     idFactory: ids,
     now: () => "2026-07-18T00:02:00.000Z",
   });
@@ -86,4 +87,45 @@ test("DOMAIN-W-ITERATION-01 compares repeated rounds with keyboard-operable sele
   await expect(comparison.getByRole("status")).toContainText("Card changes: 0");
   await from.press("Home");
   await expect(comparison.getByRole("status")).toContainText("Card changes: 1");
+
+  const parent = panel.getByLabel("Start the next record from");
+  await expect(parent).toHaveValue(second.bundle.journey.roundRecords[1].roundId);
+  await parent.focus();
+  await parent.press("Home");
+  await expect(parent).toHaveValue(second.bundle.journey.roundRecords[0].roundId);
+  await expect(panel.getByText("The original result and current branch will stay unchanged.")).toBeVisible();
+
+  const stage = panel.getByLabel("Stage to explore next");
+  await stage.focus();
+  await stage.press("Home");
+  await stage.press("ArrowDown");
+  await expect(stage).toHaveValue("r2_situation_grasp");
+  const branchButton = panel.getByRole("button", {
+    name: "Restore the selected result and branch as R2 Situation grasp, iteration 2",
+  });
+  await branchButton.focus();
+  await branchButton.press("Enter");
+  await expect(panel.getByRole("list", { name: "Inquiry records" }).getByRole("listitem")).toHaveCount(3);
+  await expect(panel.getByText("The original result and current branch will stay unchanged.")).toHaveCount(0);
+  await expect(panel.getByText("The selected result was restored to the canvas")).toBeVisible();
+
+  const downloadPromise = page.waitForEvent("download");
+  await panel.getByRole("button", { name: "Save inquiry file" }).click();
+  const download = await downloadPromise;
+  const savedPath = testInfo.outputPath("branched-inquiry.kj-atlas-inquiry.json");
+  await download.saveAs(savedPath);
+  const parsed = await parseInquiryBundleJson(await readFile(savedPath, "utf8"));
+  expect(parsed.ok).toBe(true);
+  if (!parsed.ok) return;
+
+  const branchRound = parsed.bundle.journey.roundRecords[2];
+  expect(branchRound.parentRoundIds).toEqual([second.bundle.journey.roundRecords[0].roundId]);
+  expect(branchRound.iteration).toBe(2);
+  const branchSnapshot = parsed.bundle.snapshots.find(
+    (snapshot) => snapshot.snapshotId === branchRound.outputSnapshotId
+  );
+  expect(branchSnapshot?.document.cards[0].text).toBe("The sign was visible");
+  expect(parsed.bundle.journey.headRoundIds).toContain(second.bundle.journey.roundRecords[1].roundId);
+  expect(parsed.bundle.journey.headRoundIds).toContain(branchRound.roundId);
+  expect(parsed.bundle.journey.defaultHeadRoundId).toBe(branchRound.roundId);
 });

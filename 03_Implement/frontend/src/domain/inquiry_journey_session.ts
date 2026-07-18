@@ -15,6 +15,10 @@ type SessionOptions = {
   now?: () => string;
 };
 
+type RecordSessionOptions = SessionOptions & {
+  parentRoundId?: string;
+};
+
 export type RecordInquiryRoundResult =
   | { ok: true; bundle: InquiryBundleV1 }
   | { ok: false; reason: "missing_input_snapshot" | "invalid_round" };
@@ -162,14 +166,15 @@ export async function recordInquiryRound(
   bundle: InquiryBundleV1,
   document: DocumentV1,
   stage: RoundStage,
-  options: SessionOptions = {}
+  options: RecordSessionOptions = {}
 ): Promise<RecordInquiryRoundResult> {
   const idFactory = options.idFactory ?? defaultIdFactory;
   const recordedAt = (options.now ?? (() => new Date().toISOString()))();
-  const parentRoundId = bundle.journey.defaultHeadRoundId;
+  const parentRoundId = options.parentRoundId ?? bundle.journey.defaultHeadRoundId;
   const parentRound = parentRoundId
     ? bundle.journey.roundRecords.find((round) => round.roundId === parentRoundId)
     : undefined;
+  if (parentRoundId && !parentRound) return { ok: false, reason: "invalid_round" };
   const inputSnapshotId = parentRound?.outputSnapshotId ?? bundle.journey.originSnapshotIds[0];
   const inputSnapshot = bundle.snapshots.find((snapshot) => snapshot.snapshotId === inputSnapshotId);
   if (!inputSnapshot) return { ok: false, reason: "missing_input_snapshot" };

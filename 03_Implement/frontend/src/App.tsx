@@ -10322,7 +10322,12 @@ export default function App() {
         {
           id: "inquiry",
           label: t("work_mode.tab.inquiry"),
-          content: <InquiryJourneyPrototypePanel document={document} />,
+          content: (
+            <InquiryJourneyPrototypePanel
+              document={document}
+              onRestoreDocument={(snapshotDocument) => applyDocumentChange(snapshotDocument)}
+            />
+          ),
         },
         {
           id: "diagnostics",

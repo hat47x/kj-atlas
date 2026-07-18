@@ -130,4 +130,48 @@ describe("inquiry journey session", () => {
       reason: "round_not_found",
     });
   });
+
+  it("branches from a historical round without replacing the existing descendant", async () => {
+    const ids = sequentialIds();
+    const original = createDocument([{ id: "card-1", text: "受付で迷った", x: 0, y: 0 }]);
+    const started = await startInquiryJourney(original, { idFactory: ids, now: () => CREATED_AT });
+    const situation = await recordInquiryRound(started, original, "r2_situation_grasp", {
+      idFactory: ids,
+      now: () => "2026-07-18T00:01:00.000Z",
+    });
+    expect(situation.ok).toBe(true);
+    if (!situation.ok) return;
+    const situationRoundId = situation.bundle.journey.roundRecords[0].roundId;
+
+    const essence = await recordInquiryRound(situation.bundle, original, "r3_essence_pursuit", {
+      idFactory: ids,
+      now: () => "2026-07-18T00:02:00.000Z",
+    });
+    expect(essence.ok).toBe(true);
+    if (!essence.ok) return;
+    const essenceRoundId = essence.bundle.journey.roundRecords[1].roundId;
+    const snapshotsBeforeBranch = structuredClone(essence.bundle.snapshots);
+
+    const branchedDocument = createDocument([
+      { id: "card-1", text: "受付で迷った", x: 0, y: 0 },
+      { id: "card-fieldwork", text: "案内表示の見え方を再確認する", x: 100, y: 0 },
+    ]);
+    const branch = await recordInquiryRound(essence.bundle, branchedDocument, "r2_situation_grasp", {
+      idFactory: ids,
+      now: () => "2026-07-18T00:03:00.000Z",
+      parentRoundId: situationRoundId,
+    });
+    expect(branch.ok).toBe(true);
+    if (!branch.ok) return;
+
+    const branchRound = branch.bundle.journey.roundRecords[2];
+    expect(branchRound.parentRoundIds).toEqual([situationRoundId]);
+    expect(branchRound.iteration).toBe(2);
+    expect(branch.bundle.journey.headRoundIds).toEqual([essenceRoundId, branchRound.roundId]);
+    expect(branch.bundle.journey.defaultHeadRoundId).toBe(branchRound.roundId);
+    expect(branch.bundle.snapshots.slice(0, snapshotsBeforeBranch.length)).toEqual(snapshotsBeforeBranch);
+    expect(await recordInquiryRound(branch.bundle, branchedDocument, "r2_situation_grasp", {
+      parentRoundId: "missing-round",
+    })).toEqual({ ok: false, reason: "invalid_round" });
+  });
 });
