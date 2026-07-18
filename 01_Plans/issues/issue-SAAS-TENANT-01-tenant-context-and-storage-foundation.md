@@ -296,3 +296,9 @@
 - Document policy binding lookupはtenantIdを256文字以下、bindingId/policyVersionを128文字以下、tenant capability lookupはprincipalId/tenantId/membershipIdを各256文字以下のcanonicalなserver-owned IDへ限定し、両requestをcompact UTF-8 JSONで64KiB以下に制限した。前後空白、制御・非表示文字、欠損、長さ・size超過はtransport前に停止し、入力値をerrorへ反射しない。
 - binding lookupの不正contextはpolicyRef解決失敗として`Restricted + policy_ref_missing`へ、capability lookupの不正contextは`capability_resolution_unavailable`へ既存境界でfail-closedにする。API key、raw policyRef、role/groupはrequestへ追加せず、SafeMode、PDP、single-tenant互換方針は変更しない。
 - binding/capability／resource／session／管理API近接100件、backend全体537件pass・条件付き25件skip、Ruff、docs-check、active issue validator、diff-checkを通過した。trusted auth edge、PostgreSQL実地matrix、active tenant変更とconsumer完全negative matrixが未完了のためSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-18: bounded session context response
+
+- server-side session builderとresponse modelを、principal/tenant ID 256文字、tenant表示名256文字、capability version 128文字、available tenant 1〜256件、既知capability最大11件のclosed-world契約へ限定した。重複tenant/capability、前後空白、制御・非表示文字、上限超過は値を反射せず`session_context_unavailable`または`capability_resolution_unavailable`へfail-closedにする。active tenant内部切替もrequested tenant IDをDB照会前に同じcanonical上限で検証し、不正値は存在を推測させない404へ正規化する。
+- frontend fetchは成功responseをUTF-8換算64KiB以下に制限し、同じfield・件数・長さ・重複禁止を再検証した値だけからbrowser storage scopeを構成する。scope keyもdeployment 2,048文字、tenant/principal/base key 256文字以下とし、制御・非表示文字や過大値をlocalStorageへ使用しない。公開UIとlegacy single-tenant key互換は変更しない。
+- session/capability/管理APIのbackend近接77件と最終response統合38件、backend全体552件pass・条件付き25件skip、frontend session/storage/transition/client近接44件、frontend全体1,119件・198 file pass、Ruff、frontend typecheck、docs-check、active issue validator、diff-checkを通過した。App session bootstrap、active tenant永続化、logout/切替hook実配線が未完了のためAC-6/10/12とSaaS起動拒否を継続する。

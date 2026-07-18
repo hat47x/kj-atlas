@@ -90,6 +90,32 @@ describe("tenant session context fetch boundary", () => {
       InvalidTenantSessionContextError,
     );
   });
+
+  it("rejects an oversized session response before JSON contract use", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ padding: "x".repeat(64 * 1024) }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response("{}", {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": String((64 * 1024) + 1),
+          },
+        }),
+      );
+
+    await expect(getTenantSessionContext()).rejects.toBeInstanceOf(
+      InvalidTenantSessionContextError,
+    );
+    await expect(getTenantSessionContext()).rejects.toBeInstanceOf(
+      InvalidTenantSessionContextError,
+    );
+  });
 });
 
 describe("suggestMerges contract validation", () => {

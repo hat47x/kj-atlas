@@ -149,6 +149,27 @@ function parseDocumentResponse(responseBody: string): Document {
   return JSON.parse(responseBody) as Document;
 }
 
+const MAX_TENANT_SESSION_RESPONSE_BYTES = 64 * 1024;
+
+async function parseTenantSessionResponse(response: Response): Promise<unknown> {
+  const contentLength = response.headers.get("content-length");
+  if (
+    contentLength !== null
+    && (!/^\d+$/.test(contentLength) || Number(contentLength) > MAX_TENANT_SESSION_RESPONSE_BYTES)
+  ) {
+    throw new InvalidTenantSessionContextError();
+  }
+  const responseText = await response.text();
+  if (new TextEncoder().encode(responseText).byteLength > MAX_TENANT_SESSION_RESPONSE_BYTES) {
+    throw new InvalidTenantSessionContextError();
+  }
+  try {
+    return JSON.parse(responseText) as unknown;
+  } catch {
+    throw new InvalidTenantSessionContextError();
+  }
+}
+
 export async function getTenantSessionContext(
   options: Readonly<{ signal?: AbortSignal }> = {},
 ): Promise<TenantSessionContextV1> {
@@ -168,12 +189,7 @@ export async function getTenantSessionContext(
     });
   }
 
-  let responseBody: unknown;
-  try {
-    responseBody = await response.json();
-  } catch {
-    throw new InvalidTenantSessionContextError();
-  }
+  const responseBody = await parseTenantSessionResponse(response);
   return parseTenantSessionContext(responseBody);
 }
 

@@ -37,8 +37,9 @@ def _canonical_identifier(value: object) -> bool:
     return bool(
         isinstance(value, str)
         and value
+        and len(value) <= 256
         and value.strip() == value
-        and not any(ord(character) < 32 or ord(character) == 127 for character in value)
+        and not any(not character.isprintable() for character in value)
     )
 
 

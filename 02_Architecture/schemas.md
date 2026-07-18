@@ -985,7 +985,7 @@ target physical schema:
 
 tenantIdはserver-managed列であり、`DocumentV1` payload、view.json、import/export bundleの認可値として追加しない。現行`provider + external_uid`一意制約はsingle-tenant互換期間の実装であり、SaaS profileでは`identityProviderId + subject`とTenantMembershipへ移行する。共有schema型SaaSは、上記制約に加えPostgreSQL RLS等のDB側tenant guardを必須とする。
 
-browser storageはSaaS profileで次のserver-resolved scopeを必須とし、`deployment + tenantId + principalId`をpercent-encodeしたkey prefixで分離する。空値、前後空白、制御文字を含むscopeは保存前に拒否する。frontendがtenantId/principalIdを自由入力やDocument payloadから作らず、`GET /session/context`等の検証済みsession contextだけから供給する。scopeなしの旧keyはsingle-tenant互換専用とし、SaaSでは読み書きしない。
+browser storageはSaaS profileで次のserver-resolved scopeを必須とし、`deployment + tenantId + principalId`をpercent-encodeしたkey prefixで分離する。deploymentは2,048文字以下、tenantId/principalIdとbase keyは256文字以下とし、空値、前後空白、制御・非表示文字、上限超過を保存前に拒否する。frontendがtenantId/principalIdを自由入力やDocument payloadから作らず、64KiB以下かつboundedな`GET /session/context`等の検証済みsession contextだけから供給する。scopeなしの旧keyはsingle-tenant互換専用とし、SaaSでは読み書きしない。
 
 ```ts
 export type TenantBrowserStorageScopeV1 = {

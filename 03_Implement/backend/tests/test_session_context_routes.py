@@ -263,6 +263,23 @@ def test_context_requires_authenticated_principal(tmp_path) -> None:
     assert response.json()["detail"]["code"] == "session_auth_required"
 
 
+@pytest.mark.parametrize("principal_id", [" user-1", "x" * 257, "user\u200b1"])
+def test_context_rejects_noncanonical_principal(
+    tmp_path,
+    principal_id: str,
+) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, identity_resolver, _, _ = fixture
+        identity_resolver.principal_id = principal_id
+
+        response = client.get("/session/context")
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "tenant_admin_auth_unavailable"
+    assert principal_id not in response.text
+    assert response.headers["cache-control"] == "no-store"
+
+
 @pytest.mark.parametrize("resolved_by", ["single_tenant_adapter", "client_header"])
 def test_context_rejects_untrusted_tenant_resolution_method(
     tmp_path,
@@ -298,6 +315,43 @@ def test_context_rejects_unknown_capability(tmp_path) -> None:
 
     assert response.status_code == 503
     assert response.json()["detail"]["code"] == "capability_resolution_unavailable"
+
+
+def test_context_rejects_oversized_serialized_response(tmp_path) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, session_local, _, _, _ = fixture
+        with session_local() as db:
+            for index in range(100):
+                tenant_id = f"tenant-extra-{index}"
+                db.add(
+                    TenantRow(
+                        id=tenant_id,
+                        display_name="😀" * 256,
+                        lifecycle_state="active",
+                        created_at=TIMESTAMP,
+                        updated_at=TIMESTAMP,
+                    )
+                )
+                db.add(
+                    TenantMembershipRow(
+                        tenant_id=tenant_id,
+                        user_id="user-1",
+                        lifecycle_state="active",
+                        created_at=TIMESTAMP,
+                        updated_at=TIMESTAMP,
+                    )
+                )
+            db.commit()
+
+        response = client.get("/session/context")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == {
+        "code": "session_context_unavailable",
+        "message": "Tenant session context is unavailable.",
+    }
+    assert "😀" not in response.text
+    assert response.headers["cache-control"] == "no-store"
 
 
 def test_context_rechecks_active_tenant_membership(tmp_path) -> None:

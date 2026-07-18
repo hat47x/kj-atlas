@@ -57,8 +57,12 @@ describe("tenant browser storage scope", () => {
 
   it.each([
     ["deployment", { deployment: "" }],
+    ["deployment", { deployment: "x".repeat(2049) }],
     ["tenantId", { tenantId: " tenant-a" }],
+    ["tenantId", { tenantId: "x".repeat(257) }],
+    ["tenantId", { tenantId: "tenant\u200ba" }],
     ["principalId", { principalId: "user-1\n" }],
+    ["principalId", { principalId: "x".repeat(257) }],
   ])("rejects a non-canonical %s", (_name, overrides) => {
     expect(() => buildTenantStorageKey("kj-atlas/example", scope(overrides))).toThrow();
   });

@@ -25,6 +25,10 @@ export const EFFECTIVE_CAPABILITIES = [
 export type EffectiveCapability = (typeof EFFECTIVE_CAPABILITIES)[number];
 
 const EFFECTIVE_CAPABILITY_SET = new Set<string>(EFFECTIVE_CAPABILITIES);
+const MAX_SESSION_IDENTIFIER_LENGTH = 256;
+const MAX_SESSION_DISPLAY_NAME_LENGTH = 256;
+const MAX_SESSION_CAPABILITY_VERSION_LENGTH = 128;
+const MAX_SESSION_TENANT_COUNT = 256;
 
 export type TenantSessionContextV1 = Readonly<{
   principalId: string;
@@ -41,12 +45,13 @@ export class InvalidTenantSessionContextError extends Error {
   }
 }
 
-const INVALID_CANONICAL_CHARACTER = /[\u0000-\u001f\u007f]/;
+const INVALID_CANONICAL_CHARACTER = /\p{C}/u;
 
-function canonicalString(value: unknown): string {
+function canonicalString(value: unknown, maxLength: number): string {
   if (
     typeof value !== "string"
     || value.length === 0
+    || [...value].length > maxLength
     || value.trim() !== value
     || INVALID_CANONICAL_CHARACTER.test(value)
   ) {
@@ -63,7 +68,7 @@ function hasExactKeys(value: Record<string, unknown>, expectedKeys: readonly str
 }
 
 function effectiveCapability(value: unknown): EffectiveCapability {
-  const capability = canonicalString(value);
+  const capability = canonicalString(value, 64);
   if (!EFFECTIVE_CAPABILITY_SET.has(capability)) {
     throw new InvalidTenantSessionContextError();
   }
@@ -79,8 +84,8 @@ function parseTenantSummary(value: unknown): TenantSessionSummaryV1 {
     throw new InvalidTenantSessionContextError();
   }
   return {
-    id: canonicalString(candidate.id),
-    displayName: canonicalString(candidate.displayName),
+    id: canonicalString(candidate.id, MAX_SESSION_IDENTIFIER_LENGTH),
+    displayName: canonicalString(candidate.displayName, MAX_SESSION_DISPLAY_NAME_LENGTH),
   };
 }
 
@@ -98,7 +103,13 @@ export function parseTenantSessionContext(value: unknown): TenantSessionContextV
   ])) {
     throw new InvalidTenantSessionContextError();
   }
-  if (!Array.isArray(candidate.availableTenants) || !Array.isArray(candidate.effectiveCapabilities)) {
+  if (
+    !Array.isArray(candidate.availableTenants)
+    || candidate.availableTenants.length === 0
+    || candidate.availableTenants.length > MAX_SESSION_TENANT_COUNT
+    || !Array.isArray(candidate.effectiveCapabilities)
+    || candidate.effectiveCapabilities.length > EFFECTIVE_CAPABILITIES.length
+  ) {
     throw new InvalidTenantSessionContextError();
   }
 
@@ -116,15 +127,20 @@ export function parseTenantSessionContext(value: unknown): TenantSessionContextV
     throw new InvalidTenantSessionContextError();
   }
 
-  const effectiveCapabilities = [...new Set(
-    candidate.effectiveCapabilities.map(effectiveCapability),
-  )].sort();
+  const effectiveCapabilities = candidate.effectiveCapabilities.map(effectiveCapability);
+  if (new Set(effectiveCapabilities).size !== effectiveCapabilities.length) {
+    throw new InvalidTenantSessionContextError();
+  }
+  effectiveCapabilities.sort();
   return {
-    principalId: canonicalString(candidate.principalId),
+    principalId: canonicalString(candidate.principalId, MAX_SESSION_IDENTIFIER_LENGTH),
     activeTenant,
     availableTenants,
     effectiveCapabilities,
-    capabilityVersion: canonicalString(candidate.capabilityVersion),
+    capabilityVersion: canonicalString(
+      candidate.capabilityVersion,
+      MAX_SESSION_CAPABILITY_VERSION_LENGTH,
+    ),
   };
 }
 

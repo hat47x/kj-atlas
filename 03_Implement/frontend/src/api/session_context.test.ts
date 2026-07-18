@@ -14,7 +14,7 @@ function validPayload(overrides: Record<string, unknown> = {}) {
       { id: "tenant-a", displayName: "Tenant A" },
       { id: "tenant-b", displayName: "Tenant B" },
     ],
-    effectiveCapabilities: ["document.write", "document.read", "document.read"],
+    effectiveCapabilities: ["document.write", "document.read"],
     capabilityVersion: "policy-v7",
     ...overrides,
   };
@@ -51,8 +51,19 @@ describe("tenant session context", () => {
     { principalId: " user-1" },
     { principalId: "user-1\n" },
     { capabilityVersion: "" },
+    { capabilityVersion: "x".repeat(129) },
+    { principalId: "x".repeat(257) },
+    { principalId: "user\u200b1" },
     { effectiveCapabilities: ["document.read\u007f"] },
     { effectiveCapabilities: ["tenant.root"] },
+    { effectiveCapabilities: ["document.read", "document.read"] },
+    { effectiveCapabilities: Array(12).fill("document.read") },
+    { availableTenants: [] },
+    { availableTenants: Array.from({ length: 257 }, (_, index) => ({
+      id: `tenant-${index}`,
+      displayName: `Tenant ${index}`,
+    })) },
+    { activeTenant: { id: "tenant-a", displayName: "x".repeat(257) } },
     { email: "hidden@example.invalid" },
     { activeTenant: { id: "tenant-a", displayName: "Tenant A", membershipId: "secret" } },
   ])("rejects non-canonical session values", (overrides) => {

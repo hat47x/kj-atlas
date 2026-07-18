@@ -7,10 +7,21 @@ export type TenantBrowserStorageScope = Readonly<{
 type StorageKeyIndex = Pick<Storage, "key" | "length" | "removeItem">;
 
 const TENANT_SCOPE_PREFIX = "kj-atlas/tenant-scope/v1";
-const INVALID_SCOPE_CHARACTER = /[\u0000-\u001f\u007f]/;
+const INVALID_SCOPE_CHARACTER = /\p{C}/u;
+const MAX_SCOPE_LENGTH: Readonly<Record<string, number>> = {
+  deployment: 2048,
+  tenantId: 256,
+  principalId: 256,
+  baseKey: 256,
+};
 
 function encodeRequiredPart(name: string, value: string): string {
-  if (!value || value.trim() !== value || INVALID_SCOPE_CHARACTER.test(value)) {
+  if (
+    !value
+    || [...value].length > (MAX_SCOPE_LENGTH[name] ?? 256)
+    || value.trim() !== value
+    || INVALID_SCOPE_CHARACTER.test(value)
+  ) {
     throw new Error(`${name} must be a non-empty canonical storage scope value`);
   }
   return encodeURIComponent(value);

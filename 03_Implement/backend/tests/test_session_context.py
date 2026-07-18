@@ -13,7 +13,11 @@ from kj_atlas_api.session_context import (
     build_tenant_session_context,
     switch_tenant_session_context,
 )
-from kj_atlas_api.tenant_context import TenantContext, select_active_tenant_context
+from kj_atlas_api.tenant_context import (
+    TenantContext,
+    TenantSummary,
+    select_active_tenant_context,
+)
 
 
 TIMESTAMP = "2026-07-17T00:00:00Z"
@@ -107,7 +111,7 @@ def test_builds_context_from_active_memberships_and_trusted_capabilities() -> No
     Base.metadata.create_all(bind=engine)
     resolver = StubCapabilityResolver(
         CapabilitySnapshot(
-            effective_capabilities=("document.write", "document.read", "document.read"),
+            effective_capabilities=("document.write", "document.read"),
             capability_version="policy-v7",
         )
     )
@@ -156,6 +160,64 @@ def test_anonymous_session_is_rejected_before_capability_resolution() -> None:
 
         assert exc_info.value.status_code == 401
         assert exc_info.value.detail["code"] == "session_auth_required"
+        assert resolver.calls == 0
+    finally:
+        engine.dispose()
+
+
+@pytest.mark.parametrize("principal_id", [" user-1", "x" * 257, "user\u200b1"])
+def test_noncanonical_principal_fails_before_tenant_or_capability_resolution(
+    principal_id: str,
+) -> None:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    resolver = StubCapabilityResolver(CapabilitySnapshot((), "policy-v1"))
+    try:
+        with Session(engine) as db:
+            with pytest.raises(HTTPException) as exc_info:
+                build_tenant_session_context(
+                    db=db,
+                    principal_id=principal_id,
+                    tenant=_stale_tenant("tenant-a"),
+                    capability_resolver=resolver,
+                )
+
+        assert exc_info.value.status_code == 503
+        assert exc_info.value.detail["code"] == "session_context_unavailable"
+        assert resolver.calls == 0
+    finally:
+        engine.dispose()
+
+
+def test_oversized_tenant_allowlist_fails_before_capability_resolution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    resolver = StubCapabilityResolver(CapabilitySnapshot((), "policy-v1"))
+    try:
+        with Session(engine) as db:
+            _seed(db)
+            monkeypatch.setattr(
+                "kj_atlas_api.session_context.list_active_tenant_summaries",
+                lambda db, user_id: tuple(  # noqa: ARG005
+                    TenantSummary(
+                        tenant_id=f"tenant-{index}",
+                        display_name=f"Tenant {index}",
+                    )
+                    for index in range(257)
+                ),
+            )
+            with pytest.raises(HTTPException) as exc_info:
+                build_tenant_session_context(
+                    db=db,
+                    principal_id="user-1",
+                    tenant=_tenant(db),
+                    capability_resolver=resolver,
+                )
+
+        assert exc_info.value.status_code == 503
+        assert exc_info.value.detail["code"] == "session_context_unavailable"
         assert resolver.calls == 0
     finally:
         engine.dispose()
@@ -215,6 +277,9 @@ def test_substituted_membership_evidence_is_rejected_before_policy_call() -> Non
         CapabilitySnapshot((" document.read",), "policy-v1"),
         CapabilitySnapshot(("document.read\n",), "policy-v1"),
         CapabilitySnapshot(("tenant.root",), "policy-v1"),
+        CapabilitySnapshot(("document.read", "document.read"), "policy-v1"),
+        CapabilitySnapshot(("document.read",), "x" * 129),
+        CapabilitySnapshot(("document.read\u200b",), "policy-v1"),
         CapabilitySnapshot(("document.read",), ""),
     ],
 )
@@ -288,7 +353,17 @@ def test_switch_rechecks_allowlist_then_resolves_capabilities_for_new_tenant() -
         engine.dispose()
 
 
-@pytest.mark.parametrize("requested_tenant_id", ["tenant-suspended", "unknown-tenant"])
+@pytest.mark.parametrize(
+    "requested_tenant_id",
+    [
+        "tenant-suspended",
+        "unknown-tenant",
+        " tenant-b",
+        "tenant-b\n",
+        "x" * 257,
+        "tenant\u200bb",
+    ],
+)
 def test_switch_hides_unavailable_requested_tenant(
     requested_tenant_id: str,
 ) -> None:
