@@ -85,6 +85,8 @@ export KJ_ATLAS_LOCAL_LLM_BASE_URL='http://localhost:8001'
 
 接続先は `<base_url>/generate` です。local と呼んでいても、実際の宛先が外部ネットワークでないことを運用側で確認してください。
 
+送信requestはUTF-8 JSONで1MiB以下に制限され、task、temperature、max token数を接続前に検証します。過大promptや`NaN`等の不正値は本文をerrorへ表示せず`provider_validation`で停止し、fallback設定があっても別の失敗分類へ置き換えません。
+
 ### `large-scale`
 
 large-scale は、明示 opt-in、昇格許可、allowlist がすべて必要です。

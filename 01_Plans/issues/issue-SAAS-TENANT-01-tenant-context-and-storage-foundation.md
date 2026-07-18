@@ -278,3 +278,9 @@
 - local/large-scale LLM base URLへ他のtrusted HTTP連携と同じcanonical URL guardを適用し、credential/query/fragment、空白・制御文字・backslash、不正port、非loopback HTTPを起動時に拒否する。model IDも256文字以下、空白・制御文字・backslashなしへ限定した。
 - large-scale providerは既存の明示opt-inとescalation許可に加え、base URL、model、canonical host allowlistの完全セットを必須にした。allowlistのURL、wildcard、port、path、空要素、重複と、base URL hostnameのallowlist不一致をfail-fastにし、tenant由来promptを未検証宛先へ送らない。
 - LLM設定・provider・公開設定契約の近接81件、backend全体509件pass・条件付き25件skip、Ruff、docs-check、active issue validator、diff-checkを通過した。LLMは引き続き既定none、明示opt-in、proposal-onlyであり、SaaS起動拒否は変更しない。
+
+### Implementation checkpoint 2026-07-18: bounded LLM provider request
+
+- local/large-scale共通のHTTP requestをUTF-8 JSONで1MiB以下に制限し、taskを128文字以下のlowercase canonical ID、promptを非空文字列、temperatureをfiniteな0〜2、max tokensを1〜32,768へ限定した。過大prompt、`NaN`/`Infinity`、不正task/parameterはJSON化・transport呼出し前に`provider_validation`で停止し、入力値をerrorへ反射しない。
+- request/responseの`provider_validation`は`KJ_ATLAS_LLM_FALLBACK_TO_NONE=true`でもfallback対象にせず、契約違反をprovider disabledの503へ変換しない。timeout/unavailableに対する既存fallback、既定none、明示opt-in、proposal-onlyは維持する。
+- LLM provider・AI route近接56件、backend全体519件pass・条件付き25件skip、Ruff、docs-check、active issue validator、diff-checkを通過した。SaaS起動拒否は変更しない。

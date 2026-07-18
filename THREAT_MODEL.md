@@ -122,6 +122,7 @@
 - 外部PDP・監査HTTPの設定をtrusted HTTPS（loopbackだけHTTP可）、canonical secret/header、bounded timeoutへ限定し、孤立設定を起動時に拒否する
 - 監査eventのtenantIdをserver-resolved必須fieldとし、64KiBの送信上限、bounded metadata、credential系redactionで欠落・過大・秘密混入eventを外部連携へ流さない
 - LLM HTTP provider応答を1MiB以下のclosed-world `text` objectへ限定し、不正応答は値を反射せずprovider validationで停止する
+- LLM HTTP requestを1MiB以下、canonical task、finite temperature、bounded max tokensへ限定し、過大prompt・不正数値はtransport前に値を反射せず停止する。validation失敗をfallbackで隠さない
 - LLM base URLをtrusted HTTPSまたはloopback HTTPへ限定し、large-scaleは完全なmodel/host allowlist設定と宛先一致を起動時に検証してlocal-first・opt-in境界の設定迂回を防ぐ
 - recent/QueryPreset等をdeployment origin + tenantId + userIdで名前空間分離し、切替時にmemory/DOM/cacheを破棄
 - 2つのtenantへ同じdocIdを用意したnegative matrixで、全API・export・MCP・webhook・auditの越境拒否を統合検証

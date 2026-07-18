@@ -84,7 +84,8 @@ KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST=<host-list>
 ```
 
 - `task` は自由文字列（例: `re_layout`・`merge_cards` 等、呼び出し元ルートが指定する）。
-- `temperature`・`max_tokens` は既定値を持つ optional フィールド。
+- HTTP送信時の`task`は128文字以下のlowercase canonical ID、`prompt`は非空文字列とする。JSON envelope全体はUTF-8で1MiB以下とし、超過時はprovider transportを呼ばず`provider_validation`で停止する。prompt本文をerrorへ反射しない。
+- `temperature`・`max_tokens` は既定値を持つ optional フィールド。HTTP送信時はfiniteな`0 <= temperature <= 2`と`1 <= max_tokens <= 32768`だけを受理し、JSONの`NaN`/`Infinity`拡張表現を送信しない。
 
 ### 4.2 `LLMResponse`（実装済み・`provider.py` の `LLMResponse`/`LLMCallMetadata` dataclass 準拠）
 
@@ -111,6 +112,7 @@ KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST=<host-list>
 
 - HTTP provider応答は1MiB以下の`{"text": string}`単独objectだけを受理する。非UTF-8/非JSON、object以外、余分なfield、size超過、`text`型不正は値をclient・logへ反射せずfail-fastとし、再整形で救済しない。`ProviderRequestError.validation` として `422` を返す。
 - HTTP base URLはcredential/query/fragment、空白・制御文字・backslashを含まないHTTPS、またはloopback HTTPだけを受理する。model IDは256文字以下のcanonical値とする。large-scaleはbase URL・model・canonical host allowlistを完全セットで必須とし、URL/wildcard/port/path/重複hostやbase URLとの不一致を起動時に拒否する。
+- `provider_validation`は設定済みfallbackの有無に関係なく`none`へ変換せず、そのまま`422`として返す。request/response契約違反をprovider不達の`503`へ隠さない。timeout/unavailableだけが既存fallback対象になり得る。
 - `large-scale`（設定エイリアス `external`/`large_scale` も同じ provider を指す）が無効設定時はフォールバックしない。`ProviderRequestError.unavailable`（`503`）。
 - 失敗時も `metadata.trace_id` を監査ログへ残す（`ProviderError.to_contract()`）。
 - HTTP ステータス対応: `provider_timeout→504` / `provider_validation→422` / `provider_unavailable→503`（`ProviderDisabledError` も `503`、`disabled_reason` 付き）。

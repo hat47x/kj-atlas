@@ -14,6 +14,7 @@ from kj_atlas_api.llm.provider import (
     LLMResponse,
     LargeScaleProvider,
     LocalProvider,
+    MAX_LLM_PROVIDER_REQUEST_BYTES,
     MAX_LLM_PROVIDER_RESPONSE_BYTES,
     NoOpProvider,
     NoneProvider,
@@ -188,6 +189,86 @@ def test_local_provider_rejects_unbounded_or_noncanonical_response_without_refle
     finally:
         settings.local_llm_base_url = original_url
 
+
+@pytest.mark.parametrize(
+    "invalid_request",
+    [
+        LLMRequest(task="", prompt="prompt"),
+        LLMRequest(task="Bad Task", prompt="prompt"),
+        LLMRequest(task="x", prompt=""),
+        LLMRequest(task="x", prompt="prompt", temperature=float("nan")),
+        LLMRequest(task="x", prompt="prompt", temperature=-0.1),
+        LLMRequest(task="x", prompt="prompt", temperature=2.1),
+        LLMRequest(task="x", prompt="prompt", max_tokens=0),
+        LLMRequest(task="x", prompt="prompt", max_tokens=32_769),
+    ],
+    ids=[
+        "empty-task",
+        "noncanonical-task",
+        "empty-prompt",
+        "nonfinite-temperature",
+        "negative-temperature",
+        "excessive-temperature",
+        "zero-max-tokens",
+        "excessive-max-tokens",
+    ],
+)
+def test_local_provider_rejects_invalid_request_before_transport(
+    monkeypatch: pytest.MonkeyPatch,
+    invalid_request: LLMRequest,
+) -> None:
+    original_url = settings.local_llm_base_url
+    settings.local_llm_base_url = "http://local-llm.test"
+    transport_called = False
+
+    def _unexpected_transport(request, timeout_seconds):  # noqa: ANN001, ARG001
+        nonlocal transport_called
+        transport_called = True
+        raise AssertionError("transport must not be called")
+
+    monkeypatch.setattr(
+        "kj_atlas_api.llm.provider.open_trusted_http",
+        _unexpected_transport,
+    )
+    try:
+        with pytest.raises(ProviderRequestError) as exc_info:
+            LocalProvider().generate(invalid_request)
+        assert exc_info.value.code == "provider_validation"
+        assert transport_called is False
+    finally:
+        settings.local_llm_base_url = original_url
+
+
+def test_local_provider_rejects_oversized_request_before_transport(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_url = settings.local_llm_base_url
+    settings.local_llm_base_url = "http://local-llm.test"
+    transport_called = False
+
+    def _unexpected_transport(request, timeout_seconds):  # noqa: ANN001, ARG001
+        nonlocal transport_called
+        transport_called = True
+        raise AssertionError("transport must not be called")
+
+    monkeypatch.setattr(
+        "kj_atlas_api.llm.provider.open_trusted_http",
+        _unexpected_transport,
+    )
+    try:
+        with pytest.raises(ProviderRequestError) as exc_info:
+            LocalProvider().generate(
+                LLMRequest(
+                    task="check_narrative",
+                    prompt="x" * MAX_LLM_PROVIDER_REQUEST_BYTES,
+                )
+            )
+        assert exc_info.value.code == "provider_validation"
+        assert "x" * 64 not in str(exc_info.value)
+        assert transport_called is False
+    finally:
+        settings.local_llm_base_url = original_url
+
 def test_generate_with_fallback_to_none_when_enabled() -> None:
     original_provider = settings.llm_provider
     original_fallback = settings.llm_fallback_to_none
@@ -219,6 +300,33 @@ def test_generate_with_fallback_keeps_original_error_when_disabled() -> None:
     try:
         with pytest.raises(ProviderRequestError):
             generate_with_fallback(LLMRequest(task="check_narrative", prompt="prompt"))
+    finally:
+        settings.llm_provider = original_provider
+        settings.llm_fallback_to_none = original_fallback
+        settings.local_llm_base_url = original_url
+
+
+def test_generate_with_fallback_never_masks_validation_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_provider = settings.llm_provider
+    original_fallback = settings.llm_fallback_to_none
+    original_url = settings.local_llm_base_url
+    settings.llm_provider = "local"
+    settings.llm_fallback_to_none = True
+    settings.local_llm_base_url = "http://local-llm.test"
+    monkeypatch.setattr(
+        "kj_atlas_api.llm.provider.open_trusted_http",
+        lambda request, timeout_seconds: _StubHTTPResponse(b"[]"),  # noqa: ARG005
+    )
+
+    try:
+        with pytest.raises(ProviderRequestError) as exc_info:
+            generate_with_fallback(
+                LLMRequest(task="check_narrative", prompt="prompt")
+            )
+        assert exc_info.value.code == "provider_validation"
+        assert exc_info.value.metadata.fallback_to_none is False
     finally:
         settings.llm_provider = original_provider
         settings.llm_fallback_to_none = original_fallback

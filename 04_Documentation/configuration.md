@@ -217,6 +217,8 @@ export KJ_ATLAS_LOCAL_LLM_MODEL='local-model-name'
 
 base URLにはcredential、query、fragment、空白、制御文字、backslashを含められません。HTTPS、または`localhost`、`127.0.0.1`、`::1`へのHTTPだけを使用できます。model IDは256文字以下で、空白・制御文字・backslashを含められません。
 
+providerへ送るrequestはUTF-8 JSONで1MiB以下です。task、temperature、max token数も安全な範囲へ検証され、過大promptや不正な数値は接続前に`provider_validation`として拒否されます。この検証エラーはfallbackで`none`へ置き換えられません。
+
 ## large-scale LLM を使う
 
 large-scale provider は既定で無効です。利用する場合は、昇格許可、明示 opt-in、allowlist をすべて設定します。

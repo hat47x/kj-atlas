@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import math
+import re
 import socket
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -12,7 +14,11 @@ from uuid import uuid4
 from kj_atlas_api.settings import settings
 from kj_atlas_api.trusted_http import open_trusted_http
 
+MAX_LLM_PROVIDER_REQUEST_BYTES = 1024 * 1024
 MAX_LLM_PROVIDER_RESPONSE_BYTES = 1024 * 1024
+MAX_LLM_TASK_LENGTH = 128
+MAX_LLM_OUTPUT_TOKENS = 32_768
+_LLM_TASK = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
 
 
 @dataclass(frozen=True)
@@ -280,6 +286,66 @@ def _parse_http_provider_response(
     return text
 
 
+def _serialize_http_provider_request(
+    req: LLMRequest,
+    *,
+    model_id: str | None,
+    provider_name: str,
+    metadata: LLMCallMetadata,
+) -> bytes:
+    if (
+        not isinstance(req.task, str)
+        or len(req.task) > MAX_LLM_TASK_LENGTH
+        or not _LLM_TASK.fullmatch(req.task)
+    ):
+        raise ProviderRequestError.validation(
+            f"{provider_name} request had an invalid task",
+            metadata,
+        )
+    if not isinstance(req.prompt, str) or not req.prompt:
+        raise ProviderRequestError.validation(
+            f"{provider_name} request had an invalid prompt",
+            metadata,
+        )
+    if (
+        not isinstance(req.temperature, (int, float))
+        or isinstance(req.temperature, bool)
+        or not math.isfinite(req.temperature)
+        or not 0 <= req.temperature <= 2
+        or not isinstance(req.max_tokens, int)
+        or isinstance(req.max_tokens, bool)
+        or not 1 <= req.max_tokens <= MAX_LLM_OUTPUT_TOKENS
+    ):
+        raise ProviderRequestError.validation(
+            f"{provider_name} request had invalid generation parameters",
+            metadata,
+        )
+    try:
+        serialized = json.dumps(
+            {
+                "task": req.task,
+                "prompt": req.prompt,
+                "temperature": req.temperature,
+                "max_tokens": req.max_tokens,
+                "model": model_id,
+            },
+            allow_nan=False,
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    except (TypeError, ValueError):
+        raise ProviderRequestError.validation(
+            f"{provider_name} request could not be serialized",
+            metadata,
+        ) from None
+    if len(serialized) > MAX_LLM_PROVIDER_REQUEST_BYTES:
+        raise ProviderRequestError.validation(
+            f"{provider_name} request exceeded the size limit",
+            metadata,
+        )
+    return serialized
+
+
 def _generate_via_http(
     req: LLMRequest,
     *,
@@ -304,16 +370,15 @@ def _generate_via_http(
         raise ProviderRequestError.unavailable(missing_model_message, metadata)
 
     endpoint = f"{base_url.rstrip('/')}/generate"
-    payload = {
-        "task": req.task,
-        "prompt": req.prompt,
-        "temperature": req.temperature,
-        "max_tokens": req.max_tokens,
-        "model": model_id,
-    }
+    payload = _serialize_http_provider_request(
+        req,
+        model_id=model_id,
+        provider_name=provider_name,
+        metadata=metadata,
+    )
     req_obj = request.Request(
         endpoint,
-        data=json.dumps(payload).encode("utf-8"),
+        data=payload,
         headers={"Content-Type": "application/json"},
         method="POST",
     )
@@ -421,7 +486,7 @@ def generate_with_fallback(req: LLMRequest) -> LLMResponse:
     try:
         return provider.generate(req)
     except ProviderRequestError as exc:
-        if not settings.llm_fallback_to_none:
+        if exc.code == "provider_validation" or not settings.llm_fallback_to_none:
             raise
         fallback_metadata = LLMCallMetadata(
             provider_kind="none",
