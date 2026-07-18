@@ -30,9 +30,29 @@ def _validate_trusted_http_resolver(
             raise ValueError(f"{endpoint_key} and {api_key_key} require {resolver_key}=external_http")
         return normalized_resolver
 
-    if endpoint is None or endpoint.strip() != endpoint:
+    if endpoint is None:
+        raise ValueError(f"{endpoint_key} is required and must be canonical")
+    _validate_trusted_http_endpoint(endpoint=endpoint, endpoint_key=endpoint_key)
+    _validate_canonical_bearer(api_key=api_key, api_key_key=api_key_key)
+    return normalized_resolver
+
+
+def _validate_trusted_http_endpoint(*, endpoint: str, endpoint_key: str) -> None:
+    if (
+        not endpoint
+        or endpoint.strip() != endpoint
+        or "\\" in endpoint
+        or "?" in endpoint
+        or "#" in endpoint
+        or any(character.isspace() for character in endpoint)
+        or any(not character.isprintable() for character in endpoint)
+    ):
         raise ValueError(f"{endpoint_key} is required and must be canonical")
     parsed_endpoint = urlsplit(endpoint)
+    try:
+        parsed_endpoint.port
+    except ValueError:
+        raise ValueError(f"{endpoint_key} has an invalid port") from None
     if (
         parsed_endpoint.scheme not in {"http", "https"}
         or not parsed_endpoint.hostname
@@ -48,13 +68,46 @@ def _validate_trusted_http_resolver(
         parsed_endpoint.hostname not in {"localhost", "127.0.0.1", "::1"}
     ):
         raise ValueError(f"{endpoint_key} allows HTTP only for loopback endpoints")
+
+
+def _validate_canonical_bearer(*, api_key: str | None, api_key_key: str) -> None:
     if api_key is not None and (
         not api_key
         or any(character.isspace() for character in api_key)
-        or any(ord(character) < 32 or ord(character) == 127 for character in api_key)
+        or any(not character.isprintable() for character in api_key)
     ):
         raise ValueError(f"{api_key_key} must be a non-empty canonical bearer value")
-    return normalized_resolver
+
+
+def _validate_optional_http_integration(
+    *,
+    enabled: bool,
+    endpoint: str | None,
+    endpoint_key: str,
+    api_key: str | None,
+    api_key_key: str,
+) -> None:
+    if not enabled:
+        if endpoint is not None or api_key is not None:
+            raise ValueError(f"{endpoint_key} and {api_key_key} require the HTTP integration")
+        return
+    if endpoint is None:
+        if api_key is not None:
+            raise ValueError(f"{api_key_key} requires {endpoint_key}")
+        return
+    _validate_trusted_http_endpoint(endpoint=endpoint, endpoint_key=endpoint_key)
+    _validate_canonical_bearer(api_key=api_key, api_key_key=api_key_key)
+
+
+def _validate_optional_header_value(*, value: str | None, value_key: str) -> None:
+    if value is not None and (
+        not value
+        or len(value) > 2048
+        or value.strip() != value
+        or any(character.isspace() for character in value)
+        or any(not character.isprintable() for character in value)
+    ):
+        raise ValueError(f"{value_key} must be a bounded canonical header value")
 
 
 LEGACY_ENV_KEYS = {
@@ -174,10 +227,13 @@ class Settings(BaseSettings):
     )
     audit_http_timeout_seconds: float = Field(
         default=2.0,
+        gt=0,
+        le=30,
         validation_alias="KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS",
     )
     audit_queue_size: int = Field(
         default=100,
+        gt=0,
         validation_alias="KJ_ATLAS_AUDIT_QUEUE_SIZE",
     )
     audit_allow_in_safe_mode: bool = Field(
@@ -198,6 +254,8 @@ class Settings(BaseSettings):
     )
     access_control_external_http_timeout_seconds: float = Field(
         default=1.5,
+        gt=0,
+        le=30,
         validation_alias="KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_TIMEOUT_SECONDS",
     )
     access_control_external_http_auth_mode: str = Field(
@@ -380,6 +438,38 @@ class Settings(BaseSettings):
                 "KJ_ATLAS_ACCESS_CONTROL_ADAPTER must be one of noop|mock|external_http"
             )
         self.access_control_adapter = normalized_access_control_adapter
+
+        normalized_audit_transport = self.audit_transport.strip().lower()
+        if normalized_audit_transport not in {"noop", "http"}:
+            raise ValueError("KJ_ATLAS_AUDIT_TRANSPORT must be one of noop|http")
+        self.audit_transport = normalized_audit_transport
+
+        _validate_optional_http_integration(
+            enabled=normalized_audit_transport == "http",
+            endpoint=self.audit_http_endpoint,
+            endpoint_key="KJ_ATLAS_AUDIT_HTTP_ENDPOINT",
+            api_key=self.audit_http_api_key,
+            api_key_key="KJ_ATLAS_AUDIT_HTTP_API_KEY",
+        )
+        _validate_optional_http_integration(
+            enabled=normalized_access_control_adapter == "external_http",
+            endpoint=self.access_control_external_http_endpoint,
+            endpoint_key="KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT",
+            api_key=self.access_control_external_http_static_bearer_token,
+            api_key_key="KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN",
+        )
+        if self.access_control_external_http_idp_issuer is not None and (
+            normalized_access_control_adapter != "external_http"
+            or self.access_control_external_http_endpoint is None
+        ):
+            raise ValueError(
+                "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER requires "
+                "KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http and its endpoint"
+            )
+        _validate_optional_header_value(
+            value=self.access_control_external_http_idp_issuer,
+            value_key="KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER",
+        )
 
         normalized_fail_safe_mode = self.access_control_fail_safe_mode.strip().lower()
         if normalized_fail_safe_mode not in {"read_only", "deny"}:

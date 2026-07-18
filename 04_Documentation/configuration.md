@@ -238,7 +238,9 @@ export KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only
 export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/decide'
 ```
 
-アクセス制御の`external_http`を指定しても接続先（endpoint）が空の場合、現行実装は`noop`と同じ扱いになります。外部PDPを必須にする環境では、接続先が設定済みであることを起動前チェックに含めてください。
+アクセス制御の`external_http`を指定しても接続先（endpoint）が空の場合、現行実装は`noop`と同じ扱いになります。外部PDPを必須にする環境では、接続先が設定済みであることを起動前チェックに含めてください。endpointはcredential、query、fragment、空白、制御文字、backslashを含まないHTTPS URLにし、HTTPはloopbackだけで利用できます。固定bearerやIdP issuerだけが残る不完全設定、0以下または30秒超のtimeoutは起動時に拒否されます。
+
+監査HTTPも同じendpoint・bearer・timeout制約を適用します。`KJ_ATLAS_AUDIT_TRANSPORT=noop`のまま監査endpoint/API keyを残す設定や、`http`でendpointなしのままAPI keyだけを設定する構成は起動時に拒否されます。endpointを設定せず`http`だけを選んだ既存のnoop fallbackは維持されます。
 
 ### 文書policy binding resolver（将来SaaS用）
 
@@ -264,7 +266,7 @@ export KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY='set-in-secret-store'
 export KJ_ATLAS_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS=1.5
 ```
 
-接続先とAPI keyにはbinding resolverと同じ制約を適用します。未知capability、重複、余分なroles/groups field、不正version、timeoutは成功扱いにせず、APIでは`503 capability_resolution_unavailable`へ倒します。adapterはapplication lifecycleへ配線済みですが、trusted SaaS identity resolverと公開session routeは未実装です。この設定だけでSaaS profileは有効になりません。
+接続先とAPI keyにはbinding resolverと同じ制約を適用します。未知capability、重複、余分なroles/groups field、不正version、timeoutは成功扱いにせず、APIでは`503 capability_resolution_unavailable`へ倒します。adapterと`GET /session/context`はapplication lifecycleへ配線済みですが、trusted SaaS identity resolverが未接続の既定状態ではsession routeも503で閉じます。この設定だけでSaaS profileは有効になりません。
 
 ## 設定後の確認
 

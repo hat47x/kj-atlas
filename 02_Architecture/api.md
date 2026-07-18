@@ -523,6 +523,7 @@ fail-safe マトリクス:
 ### 8.5 実運用アダプタ設定（OIDC/SAML接続）
 
 - `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` で、APIは外部 policy 接続先（endpoint）へ `POST` 委譲する。
+- endpointはcredential/query/fragmentを含まないHTTPS、またはloopback HTTPに限定し、固定bearerやIdP issuerだけが残る不完全設定、0以下または30秒超のtimeoutを起動時に拒否する。endpoint未設定時のsingle-tenant互換fallback自体は維持する。
 - request body は `AccessRequest` 契約そのまま（`auth.roles/groups` と `resource.policyRef` を透過転送）とし、意味解釈は行わない。
 - request header には `x-acl-auth-mode: none|oidc|saml` を付与し、必要時のみ `Authorization: Bearer <static>` / `x-idp-issuer` / `x-trace-id` を付与する。
 - 応答は `allow:boolean`（必須）+ `readOnly:boolean?` + `reason:string?` の最小契約。object以外、余分なfield、64KiB超、非UTF-8/非JSON、512文字超または制御文字を含むreasonは受理せず、応答値をclient・logへ反射せずに`policy_ref_invalid`としてfail-safeを適用する。

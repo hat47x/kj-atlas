@@ -254,3 +254,9 @@
 - 外部PDP応答を64KiB以下に制限し、`allow`必須、任意`readOnly/reason`だけのclosed-world objectとして検証する。非object、余分なfield、非UTF-8/非JSON、型不正、512文字超または制御文字を含むreasonを`AccessControlInvalidPolicyError`へ正規化し、raw値をclientやlogへ反射しない。
 - 不正応答は既存の`policy_ref_invalid`へ写像し、SaaS deny modeでreadを含めて拒否する。SafeMode/readOnly優先順、single-tenant互換のfail-safe選択、外部PDPの評価内容自体は変更しない。
 - 外部PDP／tenant境界／管理・session route近接44件、backend全体442件pass・条件付き25件skip、Ruff、docs-check、diff-checkを通過した。
+
+### Implementation checkpoint 2026-07-18: trusted PDP and audit settings
+
+- 外部PDPと監査HTTPへbinding/capability resolverと同じtrusted endpoint guardを適用した。credential/query/fragment、非loopback HTTP、空白・制御文字・backslash、不正portを拒否し、3xx拒否と組み合わせて検証済みの元endpoint以外へ送信しない。
+- adapter/transportが無効なままendpoint・API keyを残す構成、endpointなしのbearer/IdP issuer、非canonical secret/header、0以下または30秒超のtimeout、0件queueを起動時に拒否する。endpoint未設定時の既存single-tenant noop fallbackは維持する。
+- settings／外部PDP／監査／binding／capability近接114件、backend全体468件pass・条件付き25件skip、Ruff、docs-check、diff-checkを通過した。
