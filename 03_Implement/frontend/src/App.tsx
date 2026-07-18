@@ -193,6 +193,7 @@ import { DiffWorkerClient } from "./worker/diff_client";
 import { DiagnosticsWorkerClient } from "./worker/diagnostics_client";
 import type { DiagnosticsProgressStage } from "./worker/diagnostics_protocol";
 import type { DiffProgressStage } from "./worker/diff_protocol";
+import { cleanupAppRuntimeResources } from "./session/app_runtime_cleanup";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 // UX-VISUAL-02 (ADR-0048 D3): an island at or below this member count is a
@@ -1336,6 +1337,23 @@ export default function App({ storageScope }: AppProps = {}) {
   const diagnosticsWorkerClientRef = useRef<DiagnosticsWorkerClient | null>(null);
   const diffAbortRef = useRef<AbortController | null>(null);
   const viewLocalePersistenceScopeRef = useRef(createViewLocalePersistenceScope({ docId: "", viewMode: "explore", allowPersistence: true }));
+
+  useEffect(() => {
+    return () => {
+      cleanupAppRuntimeResources({
+        abortControllers: [
+          diffAbortRef.current,
+          diagnosticsAbortRef.current,
+          bundleAbortRef.current,
+        ],
+        cancelableTasks: [bundleRunnerRef.current],
+        disposableWorkers: [
+          diffWorkerClientRef.current,
+          diagnosticsWorkerClientRef.current,
+        ],
+      });
+    };
+  }, []);
 
   useEffect(() => {
     return () => {

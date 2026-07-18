@@ -127,7 +127,7 @@
 - LLM HTTP provider応答を1MiB以下のclosed-world `text` objectへ限定し、不正応答は値を反射せずprovider validationで停止する
 - LLM HTTP requestを1MiB以下、canonical task、finite temperature、bounded max tokensへ限定し、過大prompt・不正数値はtransport前に値を反射せず停止する。validation失敗をfallbackで隠さない
 - LLM base URLをtrusted HTTPSまたはloopback HTTPへ限定し、large-scaleは完全なmodel/host allowlist設定と宛先一致を起動時に検証してlocal-first・opt-in境界の設定迂回を防ぐ
-- recent/QueryPreset等のApp永続状態をmount時に検証・snapshotしたdeployment origin + tenantId + userId scopeへbindingし、同一mount内のscope変更を拒否する。切替時はmemory/DOM/cacheを破棄してhard replacementする
+- recent/QueryPreset等のApp永続状態をmount時に検証・snapshotしたdeployment origin + tenantId + userId scopeへbindingし、同一mount内のscope変更を拒否する。App unmountはrequest abort、task cancel、worker disposeを失敗分離して実行し、切替時はmemory/DOM/cacheを破棄してhard replacementする
 - 2つのtenantへ同じdocIdを用意したnegative matrixで、全API・export・MCP・webhook・auditの越境拒否を統合検証
 
 **現行の適用限界**

@@ -309,3 +309,9 @@
 - AppのlocalStorage consumerをscope付きfacadeへ集約し、recent document、view mode/locale/visibility、reviewer、empty-canvas onboarding、advanced UIをmount時に検証・snapshotした単一`deployment + tenantId + principalId`へbindingした。MinimapとPatch WorkspaceのQueryPresetにも同じscopeを伝播する。facade外の直接利用をsource guardで検出し、入力scope objectの事後変更でも保存先を差し替えない。
 - 同じApp mountの途中でscope identityが変化した場合は例外停止し、旧tenantの文書・選択・worker等のmemory stateを次tenantへ継続させない。正規の切替は既存transition coordinatorによるcleanupとhard document replacementを必須とする。scope省略時は既存single-tenant keyとUI挙動を維持し、SaaS UIは有効化しない。
 - storage/session/UI regression近接57件、frontend全体1,127件・199 file、typecheck、production build、docs-check、active issue validator、diff-checkを通過した。App起動時のsession bootstrap、auth失敗UI、active tenant永続化、logout/切替cleanup hookの実配線、実ブラウザtenant A/B E2Eは未完了のためAC-6/8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-18: App runtime hard-replacement cleanup
+
+- App unmount時に進行中のdiff・diagnostics・bundle AbortControllerを先にabortし、bundle task runnerをcancelしてからdiff・diagnostics workerをdisposeする共通cleanupを結線した。既存のsnapshot object URL revoke、diff effect abort、highlight timer clearと組み合わせ、hard document replacement後に旧tenant由来の非同期処理を継続させない。
+- cleanupはnull resourceを無視し、個別のabort/cancel/disposeが例外でも後続resourceの破棄を続ける。cleanupの順序、失敗分離、空resource、App unmount配線を近接4件で固定し、worker・bundle・transition・storageを含む近接51件、frontend全体1,131件・200 file、typecheck、production build、docs-check、active issue validator、diff-checkを通過した。
+- App起動時session bootstrap、logout/active tenant切替からtransition coordinatorとhard replacementを起動する実配線、実ブラウザでの旧DOM・memory・object URL非残留E2Eは未完了のためAC-6/8/10/12とSaaS起動拒否を継続する。
