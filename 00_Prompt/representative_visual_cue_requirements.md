@@ -127,6 +127,8 @@ kj-atlasはこの連続性を保ち、次を優先する。
 - 写真が単なる識別手掛かりの場合と、観察データ・根拠である場合を分ける。
 - 既定画面への常設UI追加は行わない。
 
+代表場面、比較条件、測定項目、停止条件は `02_Architecture/representative_visual_cue_evaluation.md`、機械可読fixtureは `02_Architecture/design/representative_visual_cue/phase0_scenarios.json` を正本とする。
+
 ### Phase 1: 従来実践と連続するオフライン選択
 
 - 自由線、基本図形、単色、短い文字、利用者画像の切り抜き、Unicode絵文字またはライセンスを固定した小規模プリセットを、明示操作で選択・解除できるようにする。
@@ -189,3 +191,4 @@ kj-atlasはこの連続性を保ち、次を優先する。
 - `01_Plans/adr/ADR-0059-representative-visual-cue-source-boundary.md`
 - `01_Plans/issues/issue-DOMAIN-VISUAL-CUE-01-representative-visual-cues.md`
 - `02_Architecture/data_model_operations_overview.md`
+- `02_Architecture/representative_visual_cue_evaluation.md`

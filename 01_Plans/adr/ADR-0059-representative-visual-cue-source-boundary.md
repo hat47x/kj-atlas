@@ -56,6 +56,7 @@
 
 - Source: `01_Plans/issues/issue-DOMAIN-VISUAL-CUE-01-representative-visual-cues.md`
 - Requirements: `00_Prompt/representative_visual_cue_requirements.md`
+- Evaluation: `02_Architecture/representative_visual_cue_evaluation.md`
 - Related: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 - Related: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - Related: `01_Plans/adr/ADR-0049-external-agent-collaboration-boundary.md`

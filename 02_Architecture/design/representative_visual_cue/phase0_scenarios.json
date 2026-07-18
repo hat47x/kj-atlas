@@ -1,0 +1,130 @@
+{
+  "fixtureVersion": "1.0.0",
+  "contract": "evaluation-only-not-document-v1",
+  "locale": "ja-JP",
+  "scenarios": [
+    {
+      "id": "VC-S1",
+      "kind": "concrete-retrieval",
+      "title": "具体的な窓口業務",
+      "islandTitles": [
+        "受付前の準備",
+        "入口の案内表示",
+        "窓口での待ち",
+        "申請書の記入",
+        "本人確認",
+        "職員の引継ぎ",
+        "オンライン申請",
+        "例外対応"
+      ],
+      "targetSequence": [
+        "入口の案内表示",
+        "本人確認",
+        "例外対応"
+      ],
+      "allowedCueKinds": [
+        "none",
+        "hand-drawn-symbol",
+        "basic-shape",
+        "user-photo-crop",
+        "emoji-or-preset"
+      ],
+      "criticalCheck": "表札を確認して選択する"
+    },
+    {
+      "id": "VC-S2",
+      "kind": "ambiguity-and-conflict",
+      "title": "抽象的な対立",
+      "islandTitles": [
+        "速さを優先したい",
+        "丁寧さを守りたい",
+        "判断が割れている",
+        "まだ確かめていない"
+      ],
+      "targetSequence": [
+        "判断が割れている"
+      ],
+      "allowedCueKinds": [
+        "none",
+        "neutral-hand-drawn-symbol",
+        "neutral-basic-shape"
+      ],
+      "forbiddenImplications": [
+        "対立が解決した",
+        "多数意見が正しい",
+        "一方が優れている"
+      ],
+      "criticalCheck": "中立的な手掛かりまたは画像なしを選べる"
+    },
+    {
+      "id": "VC-S3",
+      "kind": "source-visual-material",
+      "title": "写真が一次資料",
+      "islandTitles": [
+        "入口の案内板が反射して読めない",
+        "案内板までの動線",
+        "受付で尋ねた内容"
+      ],
+      "targetSequence": [
+        "入口の案内板が反射して読めない"
+      ],
+      "sourceVisual": {
+        "fixtureId": "source-photo-sign-glare-01",
+        "description": "個人や固有名詞を含まないテスト用の案内板写真",
+        "captureContext": "入口正面から照明の反射を観察",
+        "linkedCard": "照明の反射で文字の一部が読めなかった"
+      },
+      "allowedCueKinds": [
+        "none",
+        "user-photo-crop"
+      ],
+      "criticalCheck": "切り抜きから元写真・撮影状況・観察カードへ戻れる"
+    },
+    {
+      "id": "VC-S4",
+      "kind": "sensitive-unreviewed",
+      "title": "機微情報を含む未レビュー取材",
+      "islandTitles": [
+        "相談時に話された生活上の困りごと",
+        "本人へ確認できていない点",
+        "支援者の仮説"
+      ],
+      "targetSequence": [
+        "本人へ確認できていない点"
+      ],
+      "allowedCueKinds": [
+        "none",
+        "local-neutral-symbol"
+      ],
+      "forbiddenOperations": [
+        "external-search",
+        "image-generation",
+        "person-attribute-inference"
+      ],
+      "criticalCheck": "画像なしで完了でき、外部通信しない"
+    },
+    {
+      "id": "VC-S5",
+      "kind": "cue-collision",
+      "title": "似た記号の衝突",
+      "islandTitles": [
+        "窓口で順番を待つ",
+        "職員の確認結果を待つ",
+        "利用者からの返信を待つ",
+        "期限まで保留する"
+      ],
+      "targetSequence": [
+        "職員の確認結果を待つ",
+        "期限まで保留する"
+      ],
+      "collisionCandidate": "時計または砂時計",
+      "allowedCueKinds": [
+        "none",
+        "hand-drawn-symbol",
+        "basic-shape",
+        "emoji-or-preset"
+      ],
+      "criticalCheck": "似た記号でも表札を読み飛ばさず誤選択が増えない"
+    }
+  ]
+}

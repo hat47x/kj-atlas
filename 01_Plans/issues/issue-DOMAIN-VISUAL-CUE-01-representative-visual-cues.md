@@ -6,7 +6,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Codex / Maintainer
-- Scope: `00_Prompt/representative_visual_cue_requirements.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `01_Plans/adr/ADR-0059-representative-visual-cue-source-boundary.md`, `02_Architecture/architecture.md`, `02_Architecture/data_model_operations_overview.md`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/import/`
+- Scope: `00_Prompt/representative_visual_cue_requirements.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `01_Plans/adr/ADR-0059-representative-visual-cue-source-boundary.md`, `02_Architecture/architecture.md`, `02_Architecture/representative_visual_cue_evaluation.md`, `02_Architecture/data_model_operations_overview.md`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/import/`
 - Related Backlog: `DOMAIN-VISUAL-CUE-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0059-representative-visual-cue-source-boundary.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `00_Prompt/representative_visual_cue_requirements.md`
 - Expected verification level: `e2e`
@@ -61,7 +61,8 @@
 - [x] T1a 標準KJ法のシンボルマーク・図解化、写真KJ法、フィールド写真、紙とペンを保つデジタル支援を調査する。
 - [x] T2 要件正本、ドメイン語彙、AI原則、価値トレーサビリティを同期する。
 - [x] T3 供給経路と未決定の保存・権利境界を `ADR-0059` として提案する。
-- [ ] T4 具体・抽象・対立・機微情報を含み、手描き印・基本図形・写真ラベル・一次視覚資料を区別するPhase 0 fixtureと評価手順を作る。
+- [x] T4a 具体・抽象・対立・機微情報・記号衝突を含み、手描き印・基本図形・写真ラベル・一次視覚資料を区別するPhase 0の機械可読fixtureと評価手順を固定する。
+- [ ] T4b C0からC4の非製品プロトタイプ表示を作り、3人以上の代表利用者による小規模pilotまたは予備操作確認を実施する。
 - [ ] T5 Unicode絵文字と固定画像セットについて、OS間表示、アクセシビリティ、ライセンス、配布容量を比較する。
 - [ ] T6 採用参照、権利情報、画像本体、サムネイルの保存候補を比較し、ADRを受理または更新する。
 - [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。
@@ -71,7 +72,7 @@
 
 - 要件段階: `python 01_Plans/issues/validate_active_issue_memos.py`、`python -m unittest 01_Plans.issues.tests.test_validate_active_issue_memos`、`python 01_Plans/docs_check.py`
 - 実装段階: frontend unit test、Playwright E2E、Chrome実画面、代表規模性能計測、外部provider契約test。
-- UX評価: 同じ目的の島を探す課題を画像なし・絵文字・画像併用で比較し、時間、誤選択、再認識、主観的負担を記録する。見栄えや利用時間だけでは採択しない。
+- UX評価: `02_Architecture/representative_visual_cue_evaluation.md` と `02_Architecture/design/representative_visual_cue/phase0_scenarios.json` を用い、同じ目的の島を探す課題を文字のみ・手描き・基本図形・写真・絵文字/プリセットで比較する。時間、誤選択、意味誤認、原資料遡及、主観的負担を記録し、見栄えや利用時間だけでは採択しない。
 - Stop条件: 関連性を説明できない候補、画像だけによる意味伝達、意図しない外部通信、権利情報欠落、SafeMode回避、初期表示の複雑化のいずれかを確認した場合は実装を昇格しない。
 
 ## 6) 依存関係 / Dependencies
