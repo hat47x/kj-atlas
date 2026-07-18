@@ -123,7 +123,7 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 | 価値: 開始 | 迷わず最初の意味ある配置へ | `ADR-0032` V0/V1 | `PRODUCT-UX-01`(Done), `PRODUCT-VALUE-01` | 被覆 |
 | 価値: 外在化 | メモ・違和感をカード化 | `ADR-0032` V1 | `PRODUCT-VALUE-01`, `DOMAIN-EXPR-01` | 被覆 |
 | 価値: 定性情報の品質 | 意味・意図を保ち、一枚一中心、再文脈化・遡及可能なカードを低負担で作る | `qualitative_card_quality_requirements.md`, `ADR-0001` P-08 | `DOMAIN-CARD-QUALITY-01` | 被覆（自己確認、前後比較、原文復元を実装・E2E確認済み） |
-| 価値: 反復的探究 | 6ラウンドを経験と思考の往復として扱い、中間成果・引継ぎ・分岐を保持する | `w_type_iterative_inquiry_requirements.md`, `ADR-0057`, `inquiry_journey_model.md` | `DOMAIN-W-ITERATION-01` | 被覆（要件・設計・低忠実度UI・ローカルbundle往復を検証済み、保存・再読込はL0/未実装） |
+| 価値: 反復的探究 | 6ラウンドを経験と思考の往復として扱い、中間成果・引継ぎ・分岐を保持する | `w_type_iterative_inquiry_requirements.md`, `ADR-0057`, `inquiry_journey_model.md` | `DOMAIN-W-ITERATION-01` | 被覆（現在文書からの開始、反復snapshot、ローカルファイル保存・再開を検証済み。比較・引継ぎ・容量計測はL0/未実装） |
 | 価値: 構造化 | まとまり・関係・未整理の同時保持 | `ADR-0032` V2 | `PRODUCT-UX-02`(Done), `PRODUCT-VALUE-02` | 被覆 |
 | 価値: レビュー | AI候補の人間採否・proposal-only | `ADR-0032` V3 | `PRODUCT-VALUE-02`, `CE2`, `CE3` | 被覆 |
 | 価値: 成果物化と共有 | 確定/保留/根拠/未レビューを束ねた成果物 | `ADR-0032` V4 | `PRODUCT-UX-03`(Done), `PRODUCT-VALUE-03` | 被覆 |
@@ -151,6 +151,8 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 **更新（2026-07-15・反復的探究）**: 一つの文書内での構造化は被覆されていた一方、6ラウンド累積KJ法で中間成果を累積し、現場と往復し、前段階へ分岐する長期探究は未定義だった。広域比較の結果、`ADR-0057` は独立 `InquiryJourneyV1` + 不変 `RoundSnapshotV1` DAG + 自己完結bundleを採択した。要件・設計判断は確定したが、実装・移行・運用CRUDは `L0: Planned` であり、`DOMAIN-W-ITERATION-01` のfixture・操作模型検証を経ずにbackend永続化へ進まない。
 
 **更新（2026-07-18・ローカルbundle）**: `DOMAIN-W-ITERATION-01` は自己完結bundleのstrict export/importと内容由来digest検証を実装した。これはローカル成果物のI/O境界を固定するもので、保存・再読込、画面操作、保持・削除、SafeMode派生共有は未実装のため、support levelは`L0: Planned`を維持する。
+
+**更新（2026-07-18・保存と再開）**: 高度機能内で現在文書から正式な探究bundleを開始し、反復ごとの不変snapshotと低負担なカード系譜を記録し、JSONファイルへ保存・再読込できるようにした。比較、再開ブリーフ、引継ぎ、容量計測、SafeMode派生共有は未実装のため、support levelは`L0: Planned`を維持する。
 
 ---
 

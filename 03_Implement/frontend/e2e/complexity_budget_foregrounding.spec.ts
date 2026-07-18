@@ -1,4 +1,6 @@
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
+import { parseInquiryBundleJson } from "../src/domain/inquiry_bundle_io";
 import { buildDomainExpressionDocument, withoutProductValueContent } from "./helpers/product_value_fixtures";
 
 async function routeDomainExpressionFixture(page: Page): Promise<{ enableSample: () => void }> {
@@ -138,7 +140,7 @@ test("work mode owns narrative and HIL surfaces outside selection context", asyn
   await expect(workModeTrigger).toBeFocused();
 });
 
-test("iterative inquiry prototype starts from the current document and keeps repeated stages separate", async ({ page }) => {
+test("iterative inquiry prototype saves and resumes repeated stages without changing the normal entry path", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.addInitScript(() => {
     window.localStorage.removeItem("kj-atlas.advanced-ui-enabled");
@@ -175,4 +177,29 @@ test("iterative inquiry prototype starts from the current document and keeps rep
     "R3 本質追求・1回目",
     "R2 現状把握・2回目",
   ]);
+
+  const downloadPromise = page.waitForEvent("download");
+  await prototype.getByRole("button", { name: "探究ファイルを保存" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/\.kj-atlas-inquiry\.json$/);
+  const downloadedPath = testInfo.outputPath("saved-inquiry.json");
+  await download.saveAs(downloadedPath);
+  const downloadedBundle = await parseInquiryBundleJson(await readFile(downloadedPath, "utf8"));
+  if (!downloadedBundle.ok) throw new Error(JSON.stringify(downloadedBundle.errors, null, 2));
+
+  await prototype.getByRole("button", { name: "画面上の探究を閉じる" }).click();
+  await expect(prototype.getByRole("group", { name: "保存していない変更は失われます。探究ファイルを保存済みか確認してください。" })).toBeVisible();
+  await prototype.getByRole("button", { name: "保存せず閉じる" }).click();
+  await expect(prototype.getByRole("list", { name: "探究の記録" })).toHaveCount(0);
+  await prototype.locator('input[type="file"]').setInputFiles(downloadedPath);
+  await expect(prototype.getByRole("status").last()).toContainText("記録を再開しました");
+  await expect(prototype.getByRole("list", { name: "探究の記録" }).getByRole("listitem")).toHaveText([
+    "R2 現状把握・1回目",
+    "R3 本質追求・1回目",
+    "R2 現状把握・2回目",
+  ]);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(prototype.getByRole("button", { name: "探究ファイルを保存" })).toBeVisible();
+  await expect(prototype.getByRole("button", { name: "探究ファイルから再開" })).toBeVisible();
 });

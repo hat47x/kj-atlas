@@ -89,7 +89,7 @@
 - [x] AC-2: 固定ウィザード、進捗採点、通常画面への常設を禁止する境界が定義されている。
 - [x] AC-2a: 独立探究 + 不変成果DAG + 自己完結bundleが採択され、現行 `DocumentV1` と分離されている。
 - [x] AC-3: 高度機能OFFでは、初期表示とカード作成手順に変更がない。
-- [ ] AC-4: 既存文書から再入力なしで探究を開始できる。
+- [x] AC-4: 既存文書から再入力なしで探究を開始できる。
 - [ ] AC-5: R2の1回目と2回目を別成果として保存・比較できる。
 - [ ] AC-6: R3からR2へ戻るとき、元成果を上書きせず分岐できる。
 - [ ] AC-7: 後続の仮説・方針・具体策から、元カード、ラウンド、出典を辿れる。
@@ -106,9 +106,10 @@
 - [x] T3 代表fixtureとメモリ内状態機械を作り、段階・反復・分岐の語彙をunit testで固定する。
 - [x] T4 高度機能内の低忠実度プロトタイプを作り、初期表示差分0と操作理解を確認する。
 - [x] T5 広域比較を行い、`RoundSnapshotV1` の境界と採択方式を `ADR-0057` / `inquiry_journey_model.md` へ固定する。
-- [ ] T6 ADR受理後、型・validation・保存・import/export・roundtripを実装する。
+- [x] T6 ADR受理後、型・validation・ローカル保存・import/export・roundtripを実装する。
 - [x] T6a 自己完結bundleのローカルexport/import、strict validation、digest検証、roundtripを実装する。
-- [ ] T6b 探究集約の保存・再読込と、Phase 3のbackend永続化判断に必要な容量計測を実装する。
+- [x] T6b 現在文書から正式bundleを作り、画面からJSONファイルへ保存・再読込できるようにする。
+- [ ] T6c Phase 3のbackend永続化判断に必要な代表規模の容量・読込時間を計測する。
 - [ ] T7 手動中核UIとa11y/i18n/性能回帰を実装する。
 - [ ] T8 マウス・キーボード・390pxのE2Eとスクリーンショットを取得する。
 - [ ] T9 Phase 2の実使用後に、AI支援を別issueへ分割するか判断する。
@@ -136,7 +137,16 @@
 - importは未知キー・未知version・未知enum・不正型・参照切れ・循環・digest不一致をfail-closedで拒否する。snapshot内の`DocumentV1`は既存の`validateDocumentV1Strict()`を再利用し、検証規則を二重化しない。
 - digestはキー順に依存しないcanonical JSONからSHA-256を計算する。bundleを識別情報や秘匿性の代用には使わず、snapshot内容の破損検知だけに用いる。
 - unit testで自己完結往復、元データ非変更、未知キー、未知enum、未知version、参照切れ、改変後digest、JSON破損、キー順の決定性を確認した。
-- この段階はローカルI/O境界だけであり、画面からの保存・読込、backend API、保持・削除、SafeMode派生bundle、容量計測は未実装である。したがってT6全体、AC-4/5/11、support level `L0: Planned` は完了扱いにしない。
+- T6a完了時点ではローカルI/O境界だけであり、画面からの保存・読込、backend API、保持・削除、SafeMode派生bundle、容量計測は未実装だった。画面からの保存・読込は後続のT6bで実装し、その他は引き続き未完了とする。
+
+### T6b 画面からの保存・再開（2026-07-18）
+
+- 試作パネルの簡易配列を正式な`InquiryBundleV1`へ置き換え、現在の`DocumentV1`から追加入力なしで探究と起点snapshotを作成するようにした。
+- ラウンド記録時に現在文書を新しい不変snapshotとして残し、選択経路上の同段階反復番号を導出する。同じカードIDの本文差分から`carried`/`edited`、追加・消失から`new`/`retired`系譜を自動作成し、利用者へ追加入力を求めない。
+- 画面からJSONファイルを保存し、同じ起点文書を開いた状態でstrict importして再開できる。別文書を起点とするファイルは取り込まず、起点文書を開くよう案内する。自動保存ではないことを常時表示する。
+- exportにもstrict shape検証を追加し、「保存できるが再取込できない」成果物を生成しない。JSONで省略される`undefined`任意項目は保存後表現からdigestを計算し、ブラウザと再取込後で一致させる。
+- Playwrightで通常利用時の非表示、キーボード開始、R2→R3→R2反復、ファイル保存、終了、再取込、履歴復元、390px幅での操作表示を確認した。Chrome相当の実画面でも390px時の横スクロールがないことを確認した。
+- これによりAC-4とT6/T6bを完了とする。比較表示がないためAC-5、容量計測がないためT6c、SafeMode派生共有と保持・削除がないためAC-11、代表規模を未計測のためAC-12は未完了のままとする。support levelは`L0: Planned`を維持する。
 
 ## 7) 検証計画 / Validation plan
 

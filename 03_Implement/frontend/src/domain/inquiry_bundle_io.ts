@@ -238,7 +238,10 @@ async function sha256Hex(value: unknown): Promise<`sha256:${string}`> {
 }
 
 export async function computeRoundSnapshotDigest(document: RoundSnapshotV1["document"]): Promise<`sha256:${string}`> {
-  return sha256Hex(document);
+  // Digest the JSON artifact representation. Runtime documents can have own
+  // optional properties set to undefined, which JSON serialization omits.
+  const jsonDocument = JSON.parse(JSON.stringify(document)) as unknown;
+  return sha256Hex(jsonDocument);
 }
 
 async function validateDigests(bundle: InquiryBundleV1): Promise<InquiryBundleIoError[]> {
@@ -270,14 +273,17 @@ export async function prepareInquiryBundleForExport(bundle: InquiryBundleV1): Pr
 
 export async function serializeInquiryBundle(bundle: InquiryBundleV1): Promise<{ ok: true; json: string; bundle: InquiryBundleV1 } | { ok: false; errors: InquiryBundleIoError[] }> {
   const prepared = await prepareInquiryBundleForExport(bundle);
-  const issues = validateInquiryBundle(prepared);
+  const shape = validateBundleShape(prepared);
+  if (!shape.ok) return shape;
+
+  const issues = validateInquiryBundle(shape.bundle);
   if (issues.length > 0) {
     return {
       ok: false,
       errors: issues.map((issue) => ({ code: "invalid_bundle", path: issue.path, message: issue.code })),
     };
   }
-  return { ok: true, json: `${JSON.stringify(prepared, null, 2)}\n`, bundle: prepared };
+  return { ok: true, json: `${JSON.stringify(shape.bundle, null, 2)}\n`, bundle: shape.bundle };
 }
 
 export async function parseInquiryBundleJson(rawText: string): Promise<InquiryBundleIoResult> {
