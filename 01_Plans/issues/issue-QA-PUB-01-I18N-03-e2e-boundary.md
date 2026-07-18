@@ -272,3 +272,35 @@ Pending-1/2は2026-07-16にMaintainer承認済み。残るB-ENV-01は技術的�
 2. 最もカバーの薄い軸1件へ、既存spec慣例（日本語ロケール既定・バイリンガル正規表現）に従うspecを1本追加する。3軸のうちI18N等価は`locale=en`での等価動作を最低1操作分固定する。
 3. 実行: `npm run e2e -- <対象spec>`（flaky時は`--workers=1`で再実行し、その旨を証跡へ記す）。
 4. ガードレール: 製品挙動・SafeMode・公開文書を変更しない（テスト追加のみ）。同一論点でVerify 3連続失敗時は停止し、Pending欄へ理由と再開条件を記録する。
+
+## 初回実行バッチ 実装記録（2026-07-18）
+
+### 3軸カバー状況棚卸し（`e2e/`全59spec中の該当spec）
+
+| 境界軸 | 該当spec | テスト件数 | 特記事項 |
+| --- | --- | --- | --- |
+| 公開互換 | `pub_visibility_i18n_readonly_flow.spec.ts`（2件）、`public_pack_visibility_compat.spec.ts`（4件） | 6 | reload後の永続化、view/pack visibilityの差異説明、legacy pack互換を厚くカバー。 |
+| I18N等価 | `pub_visibility_i18n_readonly_flow.spec.ts`（1件）、`i18n_locale_query_equivalence.spec.ts`（3件）、`i18n_locale_functional_equivalence.spec.ts`（1件） | 5 | ロケール切替smoke、不正ロケールfallback、`locale=en`でのdocument置換/safe-mode文脈等価を確認済み。 |
+| 安全境界 | `pub_visibility_i18n_readonly_flow.spec.ts`（1件のみ） | 1 | **最薄**。既存の唯一のテストは`locale=en`固定で、検証内容も「レイアウト提案ボタンがdisabled」という1操作のみ。実際の編集操作（カードdblclick編集→コミット）が遮断されるかは未検証で、かつja既定ロケールでのreadOnly検証が存在しない。 |
+
+### 追加した検証（安全境界を強化 + I18N等価のja/en対を成立）
+
+`pub_visibility_i18n_readonly_flow.spec.ts`に新規テスト`"fixture-backed readOnly + safe-mode blocks a committed card text edit in the default locale"`を追加。
+
+- ソース調査で、カードのdblclick編集自体は`readOnly`でゲートされていない（`CanvasShell.tsx`の`onBeginEdit={onBeginEditCard}`は無条件）ことを確認した一方、実際のコミット経路`handleCommitCardText → applyDocumentChange`（`App.tsx`）は`isReadOnly`時に`buildReadOnlyBlockedMessage`を表示して`false`を返し、ドキュメントへ反映しないことをソースで確認した。
+- 新テストはこの実コミットゲートを対象に、既定ロケール（ja）で`?readOnly=1`のみを指定し、カードをdblclickして編集→Enterでコミットを試みても、(1) 読み取り専用ブロックメッセージ（`Read-only mode: ... is disabled.` / `読み取り専用モード: ... は無効です。`のバイリンガル正規表現）が表示され、(2) カード本文が変更されないことを検証する。
+- 既存の1件（`locale=en`固定、disabledボタンのみ確認）と対になり、「実際の編集操作がreadOnlyで遮断される」ことをja/en双方の観点から裏付ける。
+
+### デバッグで発見・対処した2点
+1. このファイルの既存4テストはヘッダー領域のボタン（Advanced / Share & Reproduce）のみを操作しており、初回表示される起動時パネル（`data-panel="start-document-entry"`、`aria-modal="true"`）を一度も閉じていなかった。カード本文へ直接クリックする新テストはこのモーダルにブロックされたため、他specの`openSample`ヘルパーと同じパターン（`Open sample|サンプルを開く`ボタンをクリックしてパネルを閉じる）を追加した。
+2. `page.getByText("readonly guarded card")`がカード本体（アクセシブルネームにステータス接頭辞を含む）とは別に、対象説明用の`対象: readonly guarded card`という別要素にも一致し、strict modeエラーとなった。カードのlocatorへの`toBeVisible()`アサーションに変更して解消した。
+
+### 検証結果
+- `npx tsc --noEmit` — 0 errors。
+- `npx vitest run` — 1081/1081 pass。1件のみ既知の環境依存失敗（`external_agent_workflow_doc.test.ts`、検証用ミラー`~/kjnative-fe`が`04_Documentation`を含むフルリポジトリ構成でないための既知の制約で、本変更とは無関係）。
+- `npx playwright test e2e/pub_visibility_i18n_readonly_flow.spec.ts`（公式Playwright Dockerイメージ経由）— 2回連続実行しflakyゼロを確認、いずれも5/5 pass。
+- `npx playwright test e2e/pub_visibility_i18n_readonly_flow.spec.ts e2e/public_pack_visibility_compat.spec.ts` — 9/9 pass（回帰なし）。
+- `python3 01_Plans/issues/validate_active_issue_memos.py` / `python3 01_Plans/docs_check.py` / `git diff --check` — 別途PR証跡に記載。
+
+### ガードレール適用結果
+- 製品挙動・SafeMode・公開文書は変更していない（テスト追加のみ）。上記のソース調査で判明したdblclick編集開始自体の未ゲート状態は、テスト対象であるコミット時ゲート（`applyDocumentChange`）とは別の実装詳細であり、本issueのスコープ外として着手していない。

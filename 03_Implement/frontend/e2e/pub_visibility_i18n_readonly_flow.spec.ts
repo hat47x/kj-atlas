@@ -9,6 +9,10 @@ import {
   visibilitySelect,
 } from "./helpers/i18n";
 
+const PRIMARY_FLOW = '[data-ui-region="primary-flow"]';
+const START_PANEL = '[data-panel="start-document-entry"]';
+const READ_ONLY_EDIT_BLOCKED_MESSAGE = /Read-only mode:.*is disabled\.|読み取り専用モード:.*は無効です。/;
+
 function buildDocument(id: string, cardText: string) {
   const now = new Date().toISOString();
   return {
@@ -119,4 +123,33 @@ test("fixture-backed readOnly + safe-mode context blocks edit actions", async ({
 
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
   await expect(page.getByText("Locked redaction contexts: Share / Review Pack (cannot be disabled).")).toBeVisible();
+});
+
+test("fixture-backed readOnly + safe-mode blocks a committed card text edit in the default locale", async ({ page }) => {
+  await routeFrontendDependencies(page, buildDocument("doc_phase1_canvas", "readonly guarded card"));
+  await page.goto("/?readOnly=1");
+
+  await expect(page.getByText(READ_ONLY_INDICATOR).first()).toBeVisible();
+
+  const startPanel = page.locator(START_PANEL);
+  await expect(startPanel).toBeVisible();
+  await startPanel.getByRole("button", { name: /Open sample|サンプルを開く/ }).click();
+  await expect(startPanel).toBeHidden();
+
+  const card = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "readonly guarded card" });
+  await card.click();
+  await card.dblclick();
+
+  const editor = page.locator(`${PRIMARY_FLOW} textarea`);
+  await editor.press("Control+a");
+  await page.keyboard.type("attempted edit while read-only");
+  await editor.press("Enter");
+
+  // The commit path (handleCommitCardText -> applyDocumentChange) is the same
+  // central gate used for every document mutation, so blocking it here proves
+  // the readOnly boundary holds for real edit attempts, not only for a single
+  // disabled toolbar button as the sibling test above checks.
+  await expect(page.getByText(READ_ONLY_EDIT_BLOCKED_MESSAGE)).toBeVisible();
+  await expect(card).toBeVisible();
+  await expect(page.getByText("attempted edit while read-only")).toHaveCount(0);
 });

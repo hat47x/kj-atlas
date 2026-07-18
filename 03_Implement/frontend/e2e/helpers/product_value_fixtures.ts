@@ -43,7 +43,7 @@ export function buildDomainExpressionDocument() {
         claimType: "unknown",
         textReviewed: false,
         critique: "needs review before acceptance",
-        critiqueTags: ["unclear_boundary"],
+        critiqueTags: ["feels_off"],
       },
       {
         id: "domain-support",

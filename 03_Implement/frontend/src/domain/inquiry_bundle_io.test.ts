@@ -45,6 +45,16 @@ describe("inquiry bundle local roundtrip", () => {
     expect(parsed.errors.some((error) => error.message.includes("unknown field 'unknownDocumentField'"))).toBe(true);
   });
 
+  it("does not export a document shape that strict import would reject", async () => {
+    const source = createRepresentativeInquiryBundle();
+    (source.snapshots[0].document.cards[0] as unknown as Record<string, unknown>).unknownCardField = true;
+
+    const serialized = await serializeInquiryBundle(source);
+    expect(serialized.ok).toBe(false);
+    if (serialized.ok) return;
+    expect(serialized.errors.some((error) => error.message.includes("unknown field 'unknownCardField'"))).toBe(true);
+  });
+
   it("rejects unknown artifact, fieldwork outcome, and lineage kinds", async () => {
     const serialized = await serializeInquiryBundle(createRepresentativeInquiryBundle());
     expect(serialized.ok).toBe(true);
@@ -75,6 +85,16 @@ describe("inquiry bundle local roundtrip", () => {
     expect(await computeRoundSnapshotDigest(reordered as typeof document)).toBe(
       await computeRoundSnapshotDigest(document)
     );
+  });
+
+  it("computes the digest from the persisted JSON representation", async () => {
+    const source = createRepresentativeInquiryBundle();
+    source.snapshots[0].document.cards[0].critique = undefined;
+
+    const serialized = await serializeInquiryBundle(source);
+    expect(serialized.ok).toBe(true);
+    if (!serialized.ok) return;
+    expect((await parseInquiryBundleJson(serialized.json)).ok).toBe(true);
   });
 
   it("rejects a supported-looking digest after snapshot content is changed", async () => {

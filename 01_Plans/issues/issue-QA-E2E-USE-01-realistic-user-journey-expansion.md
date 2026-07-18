@@ -163,11 +163,37 @@ Open化ゲートを次の3カテゴリで固定する。
 
 | Gate | Entry条件 | Entry証跡（日付・commit・経路） | Exit条件 | Exit証跡（結果・記録先） |
 | --- | --- | --- | --- | --- |
-| G1 Unit | 対象シナリオのunit/domainテストが特定済み | （記入） | 対象テストがgreen | （記入） |
-| G2 Integration | S1-S4該当のE2E specが特定済み | （記入） | 該当specがCompose経路でgreen | （記入） |
-| G3 E2E Traceability | S1-S4とspecの対応表が最新 | （記入） | 対応表と実行証跡が一致 | （記入） |
+| G1 Unit | 対象シナリオのunit/domainテストが特定済み | 2026-07-18、`feat/qa-e2e-use-01-batch`。S1: `document_import.test.ts`。S3: `safe_mode.test.ts`/`public_pack.test.ts`。S4: `markdown_sanitize.test.ts`（import sanitize）+ pre-share-gateの未レビュー件数表示（unit分解は未実施、follow-up） | 対象テストがgreen | frontend全体`npx vitest run`: 1071/1071 pass |
+| G2 Integration | S1-S4該当のE2E specが特定済み | 2026-07-18、`feat/qa-e2e-use-01-batch`。棚卸し結果は下記「初回実行バッチ 実装記録」参照。S1-S3は`realistic_user_journey_expansion.spec.ts`の既存test、S4は同ファイルへ新規追加 | 該当specがDocker Compose標準経路でgreen | Docker（`mcr.microsoft.com/playwright:v1.58.2-jammy`公式イメージ）で`realistic_user_journey_expansion.spec.ts`を実行し**2/2 pass** |
+| G3 E2E Traceability | S1-S4とspecの対応表が最新 | 下記「初回実行バッチ 実装記録」の棚卸し表 | 対応表と実行証跡が一致 | 一致（S1-S3=既存test、S4=新規test、両方green） |
 
 - `Execution: Ready`（承認・技術的ブロッカーはすべて解消。初回実行バッチは別PRで進める）
+
+### 初回実行バッチ 実装記録（2026-07-18）
+
+**S1-S4棚卸し結果**:
+
+| シナリオ | 対応spec | 状態 |
+| --- | --- | --- |
+| S1 作成継続性 | `realistic_user_journey_expansion.spec.ts`（既存、fixture importでカード継続表示を確認） | カバー済み |
+| S2 レビュー統治 | `realistic_user_journey_expansion.spec.ts`（既存、readOnlyモードでの`Suggest layout`無効化を確認） | カバー済み |
+| S3 安全共有 | `realistic_user_journey_expansion.spec.ts`（既存、visibility設定・readOnly時のlocked redaction contexts表示を確認） | カバー済み |
+| S4 import→export | 該当なし | **ギャップ**（新規specを追加） |
+
+S4（import後にsanitize結果を確認し、共有前確認へ進む）は、既存59 specの中に対応する明示的なシナリオが存在しなかった。`agent_response_import.spec.ts`はエージェント応答の取り込み（別の関心事、EXT-AGENT-02）であり、通常の文書importとは異なる。
+
+**追加したE2E**: `realistic_user_journey_expansion.spec.ts`へ新規test「S4 import-to-safe-export」を追加した。未レビューカードを含む文書をファイル選択経由でimportし、共有前チェック（pre-share-summary-gate）が**インポート直後の内容**（キャッシュされた古い状態ではない）を正しく反映して未レビュー件数・SafeMode状態を表示すること、Escapeでゲートを閉じた後にフォーカスがexportトリガーへ戻ること（主要導線への復帰）を検証する。
+
+**遭遇した問題と修正**（デバッグ過程の記録）:
+1. 初回のカードテキストが長すぎたため、隣接カードのラベルと幾何学的に重なり、label culling（QA-MONKEY-10の機構）により一方が非表示になった → 短い文言・広い間隔へ変更。
+2. `getByText`のデフォルト部分一致により、「unreviewed」を含むカードのaria-labelが「reviewed import」という別カードのテキストと誤って一致した → `{ exact: true }`を指定。
+3. importフローの直後は共有パネルが閉じるため、exportボタンを探す前に共有パネルを明示的に再度開く必要があった（S1-S3 testと同じパターン）。
+
+### 検証結果（2026-07-18）
+
+- `npm run typecheck`: 0 errors。
+- `npx vitest run`: 1071/1071 pass（無関係な既知の1件のみ環境要因で失敗、変更なし）。
+- Docker（`mcr.microsoft.com/playwright:v1.58.2-jammy`）で`e2e/realistic_user_journey_expansion.spec.ts`を実行: **2/2 pass**（既存のS1-S3 testに回帰なし、新規S4 testが green）。
 
 
 ### 修復上限（共通）
