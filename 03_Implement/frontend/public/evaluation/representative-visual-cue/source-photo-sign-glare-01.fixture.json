@@ -1,0 +1,23 @@
+{
+  "fixtureId": "source-photo-sign-glare-01",
+  "assetPath": "/evaluation/representative-visual-cue/source-photo-sign-glare-01.png",
+  "mediaType": "image/png",
+  "pixelDimensions": {
+    "width": 1448,
+    "height": 1086
+  },
+  "purpose": "RepresentativeVisualCue Phase 0 VC-S3 evaluation only",
+  "synthetic": true,
+  "generatedAt": "2026-07-18",
+  "generatedBy": "OpenAI image generation tool",
+  "promptSummary": "A fictional indoor wayfinding sign partly obscured by light glare, without people, identifiers, logos, or readable text.",
+  "contentChecks": {
+    "containsPeople": false,
+    "containsReadablePersonalInformation": false,
+    "containsOrganizationOrPlaceName": false,
+    "containsBrandMark": false
+  },
+  "evidenceStatus": "not-source-evidence",
+  "distributionScope": "repository-local-non-production-evaluation",
+  "licenseReviewStatus": "required-before-public-redistribution"
+}

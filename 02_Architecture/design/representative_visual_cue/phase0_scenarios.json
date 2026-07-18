@@ -70,9 +70,12 @@
       ],
       "sourceVisual": {
         "fixtureId": "source-photo-sign-glare-01",
+        "assetPath": "/evaluation/representative-visual-cue/source-photo-sign-glare-01.png",
         "description": "個人や固有名詞を含まないテスト用の案内板写真",
         "captureContext": "入口正面から照明の反射を観察",
-        "linkedCard": "照明の反射で文字の一部が読めなかった"
+        "linkedCard": "照明の反射で文字の一部が読めなかった",
+        "syntheticFixture": true,
+        "evidenceStatus": "not-source-evidence"
       },
       "allowedCueKinds": [
         "none",
