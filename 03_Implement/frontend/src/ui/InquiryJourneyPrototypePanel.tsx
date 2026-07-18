@@ -16,6 +16,7 @@ import {
   inquiryBundleOriginatesFromDocument,
   recordInquiryRound,
   startInquiryJourney,
+  traceInquiryCardLineage,
 } from "../domain/inquiry_journey_session";
 import type { DocumentV1 } from "../domain/types";
 import { downloadTextFile } from "../export/narrative_export";
@@ -58,6 +59,7 @@ export function InquiryJourneyPrototypePanel({
   const [recordParentRoundId, setRecordParentRoundId] = useState("");
   const [comparisonFromRoundId, setComparisonFromRoundId] = useState("");
   const [comparisonToRoundId, setComparisonToRoundId] = useState("");
+  const [lineageCardId, setLineageCardId] = useState("");
   const [branchUndoCheckpoint, setBranchUndoCheckpoint] = useState<BranchUndoCheckpoint | null>(null);
   const [message, setMessage] = useState<{ kind: "status" | "error"; text: string } | null>(null);
 
@@ -71,6 +73,7 @@ export function InquiryJourneyPrototypePanel({
     setRecordParentRoundId("");
     setComparisonFromRoundId("");
     setComparisonToRoundId("");
+    setLineageCardId("");
     setBranchUndoCheckpoint(null);
     setMessage(null);
   }, [document?.id]);
@@ -114,6 +117,21 @@ export function InquiryJourneyPrototypePanel({
       ? compareInquiryRounds(bundle, effectiveComparisonFromId, effectiveComparisonToId)
       : null,
     [bundle, effectiveComparisonFromId, effectiveComparisonToId]
+  );
+  const lineageRound = records.find((record) => record.roundId === bundle?.journey.defaultHeadRoundId);
+  const lineageSnapshot = bundle?.snapshots.find((snapshot) => snapshot.snapshotId === lineageRound?.outputSnapshotId);
+  const lineageCards = lineageSnapshot?.document.cards ?? [];
+  const effectiveLineageCardId = lineageCards.some((card) => card.id === lineageCardId)
+    ? lineageCardId
+    : lineageCards.find((card) => card.claimType === "hypothesis")?.id ?? lineageCards[0]?.id ?? "";
+  const lineageTrace = useMemo(
+    () => bundle && lineageSnapshot && effectiveLineageCardId
+      ? traceInquiryCardLineage(bundle, {
+          snapshotId: lineageSnapshot.snapshotId,
+          cardId: effectiveLineageCardId,
+        })
+      : null,
+    [bundle, effectiveLineageCardId, lineageSnapshot]
   );
   const canUndoBranch = useMemo(
     () => Boolean(
@@ -276,6 +294,7 @@ export function InquiryJourneyPrototypePanel({
       setRecordParentRoundId("");
       setComparisonFromRoundId("");
       setComparisonToRoundId("");
+      setLineageCardId("");
       setBranchUndoCheckpoint(null);
       setSelectedStage(parsed.bundle.journey.roundRecords.at(-1)?.stage ?? "r1_problem_setting");
       setMessage({ kind: "status", text: t("inquiry_journey.prototype.imported") });
@@ -342,6 +361,7 @@ export function InquiryJourneyPrototypePanel({
               ) : null}
             </>
           ) : null}
+
           <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
             {t("inquiry_journey.prototype.stage")}
             <select
@@ -389,6 +409,58 @@ export function InquiryJourneyPrototypePanel({
                 </li>
               ))}
             </ol>
+          ) : null}
+
+          {lineageCards.length > 0 ? (
+            <details>
+              <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+                {t("inquiry_journey.prototype.lineage")}
+              </summary>
+              <fieldset
+                aria-label={t("inquiry_journey.prototype.lineage")}
+                style={{ display: "grid", gap: 8, margin: "8px 0 0", padding: 10, border: "1px solid #cbd5e1", minWidth: 0 }}
+              >
+                <label style={{ display: "grid", gap: 4, minWidth: 0, fontSize: 12 }}>
+                  {t("inquiry_journey.prototype.lineage_card")}
+                  <select value={effectiveLineageCardId} onChange={(event) => setLineageCardId(event.currentTarget.value)}>
+                    {lineageCards.map((card) => <option key={card.id} value={card.id}>{card.text}</option>)}
+                  </select>
+                </label>
+                {lineageTrace?.ok ? (
+                  <>
+                    <div style={{ fontSize: 12, overflowWrap: "anywhere" }}>
+                      <strong>{t("inquiry_journey.prototype.lineage_selected")}</strong> {lineageTrace.target.text}
+                      {lineageTrace.target.source ? (
+                        <div>{t("inquiry_journey.prototype.lineage_source", { source: lineageTrace.target.source })}</div>
+                      ) : null}
+                    </div>
+                    {lineageTrace.ancestors.length > 0 ? (
+                      <ol aria-label={t("inquiry_journey.prototype.lineage_ancestors")} style={{ display: "grid", gap: 6, margin: 0, paddingInlineStart: 24, fontSize: 12 }}>
+                        {lineageTrace.ancestors.map((node) => (
+                          <li key={`${node.address.snapshotId}:${node.address.cardId}`} style={{ overflowWrap: "anywhere" }}>
+                            <div>
+                              {node.round
+                                ? t("inquiry_journey.prototype.lineage_round", {
+                                    record: t("inquiry_journey.prototype.recorded", {
+                                      stage: stageLabel(node.round.stage),
+                                      iteration: node.round.iteration,
+                                    }),
+                                  })
+                                : t("inquiry_journey.prototype.lineage_origin")}
+                              {node.viaKind ? ` / ${t(`inquiry_journey.prototype.lineage_kind.${node.viaKind}`)}` : ""}
+                            </div>
+                            <div>{node.text}</div>
+                            {node.source ? <div>{t("inquiry_journey.prototype.lineage_source", { source: node.source })}</div> : null}
+                          </li>
+                        ))}
+                      </ol>
+                    ) : (
+                      <div role="status" style={{ fontSize: 12 }}>{t("inquiry_journey.prototype.lineage_no_ancestors")}</div>
+                    )}
+                  </>
+                ) : null}
+              </fieldset>
+            </details>
           ) : null}
 
           {records.length >= 2 ? (
@@ -461,6 +533,7 @@ export function InquiryJourneyPrototypePanel({
                     setRecordParentRoundId("");
                     setComparisonFromRoundId("");
                     setComparisonToRoundId("");
+                    setLineageCardId("");
                   }}
                   style={{ whiteSpace: "normal" }}
                 >
