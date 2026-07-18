@@ -1,7 +1,7 @@
 # Issue Draft: DATA-MODEL-OPS-02 管理面（マスタデータ）レイヤーの境界固定とサーバー正本化の判断
 
 - Type: Feature request / Design decision
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/research-2026-07-12-master-data-design-review.md`（maintainer 提示「マスタデータ管理UIの前にデータ設計の見直し」）
 - Priority: P2
