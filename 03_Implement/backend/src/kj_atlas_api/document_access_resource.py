@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Protocol, cast
 
 from fastapi import HTTPException, Request
@@ -18,6 +19,7 @@ from kj_atlas_api.document_access_metadata_repository import (
 from kj_atlas_api.document_repository import get_document_row
 from kj_atlas_api.tenant_context import TenantContext
 
+logger = logging.getLogger(__name__)
 
 INVALID_POLICY_BINDING_CHARACTER = {chr(value) for value in range(32)} | {chr(127)}
 
@@ -156,6 +158,13 @@ class ServerOwnedDocumentResourceResolver:
                     )
                 )
             except Exception:
+                logger.warning(
+                    "policy binding resolution failed for doc_id=%s tenant_id=%s; "
+                    "falling back to no policy_ref",
+                    doc_id,
+                    resource_tenant_id,
+                    exc_info=True,
+                )
                 policy_ref = None
         return AccessResource(
             doc_id=doc_id,

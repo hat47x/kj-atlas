@@ -47,5 +47,3 @@ export function isPointInPolygon(point: Point, polygon: Point[]): boolean {
 
   return inside;
 }
-
-export const pointInPolygon = isPointInPolygon;

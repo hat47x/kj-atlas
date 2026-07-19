@@ -66,8 +66,6 @@ function compareCandidates(a: PolygonCandidate, b: PolygonCandidate): number {
   return serializedA.localeCompare(serializedB);
 }
 
-export type PolygonTieBreakMetrics = PolygonCandidate["score"];
-
 export function selectPolygonCandidateByTieBreak(candidates: PolygonCandidate[]): PolygonCandidate {
   if (candidates.length === 0) {
     throw new Error("candidates must contain at least one polygon");

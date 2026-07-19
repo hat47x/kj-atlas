@@ -89,10 +89,6 @@ export function resolveKnownEdgeType(type: EdgeType): KnownEdgeType {
   return (KNOWN_EDGE_TYPES as readonly string[]).includes(type) ? (type as KnownEdgeType) : "related";
 }
 
-export function isDirectedEdgeType(type: EdgeType): boolean {
-  return resolveKnownEdgeType(type) === "causal";
-}
-
 export type EdgeEndpointKind = "card" | "island";
 
 export type Edge = {
