@@ -498,3 +498,8 @@
 
 - `POST /docs/{docId}/context-audit`の認可と`tenantSessionVersion`確認を、CE4監査event completeness trackerの検証・更新より前へ移した。これにより古いタブ、header欠損、世代不一致のrequestはresource lookupだけでなくprocess内監査進行stateも変更せず`tenant_session_changed`で停止する。
 - stale requestでtracker更新関数が呼ばれない回帰testを追加し、Document audit／session precondition／tenant isolation／access-control近接44件、backend全体631件pass・条件付き25件skip、Ruff、docs-check、active issue validatorを通過した。実auth edge、import／share／MCP／webhook／非同期jobの同一世代guard、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: registered route authorization coverage guard
+
+- FastAPIへ登録された全Document routeが`_authorize_request`、全Document access admin routeが`_authorize_document_policy_management`を呼ぶことをcontract testへ固定した。新規routeが共通のtenant解決・session世代確認・認可境界を省略すると、実装者が個別のnegative testを追加し忘れても検出する。
+- AI／context routeのdependency全件検査を含むsession precondition test 7件、Ruff、変更対象format checkを通過した。非公開のimport／share／webhook／job endpointとMCPはこの登録route集合に含まれず、実装時に別の境界が必要であるため、AC-8/10/13とSaaS profile起動拒否を維持する。

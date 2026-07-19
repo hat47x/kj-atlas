@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import ast
+import inspect
+import textwrap
 from types import SimpleNamespace
 
 from fastapi import Depends, FastAPI, Request
@@ -133,3 +136,26 @@ def test_all_tenant_content_ai_and_context_routes_install_precondition() -> None
     for route in tenant_content_routes:
         dependency_calls = {dependency.call for dependency in route.dependant.dependencies}
         assert require_tenant_scoped_api_precondition in dependency_calls, route.path
+
+
+def test_all_document_and_document_admin_routes_use_shared_authorization_boundaries() -> None:
+    route_boundaries = {
+        "/docs/": "_authorize_request",
+        "/tenant-admin/document-access": "_authorize_document_policy_management",
+    }
+
+    for path_prefix, boundary_call in route_boundaries.items():
+        routes = [
+            route
+            for route in main_app.routes
+            if isinstance(route, APIRoute) and route.path.startswith(path_prefix)
+        ]
+        assert routes, path_prefix
+        for route in routes:
+            endpoint_tree = ast.parse(textwrap.dedent(inspect.getsource(route.endpoint)))
+            called_functions = {
+                node.func.id
+                for node in ast.walk(endpoint_tree)
+                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+            }
+            assert boundary_call in called_functions, route.path
