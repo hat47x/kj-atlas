@@ -205,6 +205,14 @@
 - 390pxのPlaywright E2Eで、キーボード採用、マウス保留、文章修正、見送り、未回答を残した保存、ダウンロード後のstrict再読込、snapshot非変更、横切れがないことを確認した。実ブラウザでもviewport 390px、文書scroll幅390px、引継ぎ欄scroll幅=client幅357pxを確認した。
 - `KJ_ATLAS_LLM_PROVIDER=none`を明示し、backend/AI providerが利用できない状態で、300カード・30島・6ラウンドの代表bundle E2Eを完了した。1成果73,955 bytes、bundle 1,460,390 bytes、UI import 549.54msで既定上限内だった。既存の比較・再開・系譜・分岐取消E2Eと今回の引継ぎE2Eも同時に通過したため、AC-9、AC-10、AC-12、T7、T8を完了とする。
 
+### AC-11 部分範囲の派生保存チェックポイント（2026-07-19）
+
+- 選択ラウンドとその全祖先、起点snapshot、各ラウンドの入出力snapshot、対象範囲を説明する系譜だけを複製し、元bundleを変更しない自己完結projectionを実装した。派生bundleは選択ラウンドを唯一の先端として既存の`InquiryBundleV1`検証とstrict export/importを通し、内容に対応するdigestを再計算する。
+- 対象ラウンドの引継ぎ・現場回答が範囲外snapshotを参照する場合や、`split`系譜の一部だけが範囲内になる場合は、参照を黙って落としたり別分岐を暗黙に追加したりせずfail-closedとする。画面では別ラウンドまたは探究全体を選ぶよう案内する。
+- 高度機能の探究タブに「保存する範囲」を追加し、探究全体または任意ラウンドまでを明示して選べるようにした。部分範囲は共有物ではなくローカル保存用の派生ファイルとして扱い、SafeMode本文マスクが未適用であることと、他者へ渡す前に内容確認が必要であることを常時表示する。
+- unit testで祖先・snapshot・系譜の閉包、元bundle非変更、strict往復、不正bundle、範囲外引継ぎ、境界をまたぐ分割系譜の拒否を確認した。390pxのPlaywright E2Eで部分ファイルと全体ファイルの連続保存・再読込・元探究非変更を確認し、実ブラウザでは保存範囲欄の`clientWidth=scrollWidth=357px`、文書幅390pxで横スクロールがないことを確認した。
+- このチェックポイントでは永続schemaを拡張せず、共有範囲やSafeMode結果をmanifestへ記録していない。SafeMode派生bundle、保持・履歴削除の永続境界も未実装のため、AC-11は未完了のままとし、support levelは`L0: Planned`を維持する。
+
 ## 7) 検証計画 / Validation plan
 
 - 要件段階:

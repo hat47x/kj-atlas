@@ -11,6 +11,7 @@ import {
   INQUIRY_BUNDLE_WARNING_BYTES,
   serializeInquiryBundle,
 } from "../domain/inquiry_bundle_io";
+import { deriveInquiryRoundBundle } from "../domain/inquiry_bundle_projection";
 import {
   buildInquiryHandoffReview,
   saveInquiryRoundHandoff,
@@ -216,6 +217,7 @@ export function InquiryJourneyPrototypePanel({
   const [recordParentRoundId, setRecordParentRoundId] = useState("");
   const [comparisonFromRoundId, setComparisonFromRoundId] = useState("");
   const [comparisonToRoundId, setComparisonToRoundId] = useState("");
+  const [exportRoundId, setExportRoundId] = useState("");
   const [lineageCardId, setLineageCardId] = useState("");
   const [resumePreviewSnapshotId, setResumePreviewSnapshotId] = useState("");
   const [branchUndoCheckpoint, setBranchUndoCheckpoint] = useState<BranchUndoCheckpoint | null>(null);
@@ -231,6 +233,7 @@ export function InquiryJourneyPrototypePanel({
     setRecordParentRoundId("");
     setComparisonFromRoundId("");
     setComparisonToRoundId("");
+    setExportRoundId("");
     setLineageCardId("");
     setResumePreviewSnapshotId("");
     setBranchUndoCheckpoint(null);
@@ -276,6 +279,9 @@ export function InquiryJourneyPrototypePanel({
   const effectiveComparisonToId = records.some((record) => record.roundId === comparisonToRoundId)
     ? comparisonToRoundId
     : defaultComparisonToId;
+  const effectiveExportRoundId = records.some((record) => record.roundId === exportRoundId)
+    ? exportRoundId
+    : "";
   const comparison = useMemo(
     () => bundle && effectiveComparisonFromId && effectiveComparisonToId
       ? compareInquiryRounds(bundle, effectiveComparisonFromId, effectiveComparisonToId)
@@ -421,7 +427,21 @@ export function InquiryJourneyPrototypePanel({
     setIsBusy(true);
     setMessage(null);
     try {
-      const serialized = await serializeInquiryBundle(bundle);
+      const projection = effectiveExportRoundId
+        ? deriveInquiryRoundBundle(bundle, effectiveExportRoundId)
+        : { ok: true as const, bundle };
+      if (!projection.ok) {
+        setMessage({
+          kind: "error",
+          text: t(
+            projection.reason === "dependency_outside_scope"
+              ? "inquiry_journey.prototype.export_scope_dependency"
+              : "inquiry_journey.prototype.export_error"
+          ),
+        });
+        return;
+      }
+      const serialized = await serializeInquiryBundle(projection.bundle);
       if (!serialized.ok) {
         setMessage({
           kind: "error",
@@ -433,12 +453,18 @@ export function InquiryJourneyPrototypePanel({
         });
         return;
       }
+      const scopeSuffix = effectiveExportRoundId ? `-${fileStem(effectiveExportRoundId)}` : "";
       downloadTextFile(
-        `${fileStem(bundle.journey.title)}.kj-atlas-inquiry.json`,
+        `${fileStem(bundle.journey.title)}${scopeSuffix}.kj-atlas-inquiry.json`,
         "application/json",
         serialized.json
       );
-      setMessage({ kind: "status", text: t("inquiry_journey.prototype.exported") });
+      setMessage({
+        kind: "status",
+        text: t(effectiveExportRoundId
+          ? "inquiry_journey.prototype.exported_round"
+          : "inquiry_journey.prototype.exported"),
+      });
     } finally {
       setIsBusy(false);
     }
@@ -487,6 +513,7 @@ export function InquiryJourneyPrototypePanel({
       setRecordParentRoundId("");
       setComparisonFromRoundId("");
       setComparisonToRoundId("");
+      setExportRoundId("");
       setLineageCardId("");
       setResumePreviewSnapshotId("");
       setBranchUndoCheckpoint(null);
@@ -792,6 +819,37 @@ export function InquiryJourneyPrototypePanel({
             </fieldset>
           ) : null}
 
+          <fieldset
+            data-testid="inquiry-export-scope"
+            style={{ display: "grid", gap: 8, margin: 0, padding: 10, border: "1px solid #cbd5e1" }}
+          >
+            <legend style={{ paddingInline: 4, fontSize: 12, fontWeight: 700 }}>
+              {t("inquiry_journey.prototype.export_scope")}
+            </legend>
+            <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+              {t("inquiry_journey.prototype.export_scope_label")}
+              <select
+                value={effectiveExportRoundId}
+                onChange={(event) => setExportRoundId(event.currentTarget.value)}
+              >
+                <option value="">{t("inquiry_journey.prototype.export_scope_all")}</option>
+                {records.map((record) => (
+                  <option key={record.roundId} value={record.roundId}>
+                    {t("inquiry_journey.prototype.export_scope_through", { record: recordLabel(record.roundId) })}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div style={{ fontSize: 12, color: "#475569" }}>
+              {t(effectiveExportRoundId
+                ? "inquiry_journey.prototype.export_scope_round_hint"
+                : "inquiry_journey.prototype.export_scope_all_hint")}
+            </div>
+            <div style={{ fontSize: 12, color: "#92400e" }}>
+              {t("inquiry_journey.prototype.export_scope_safety_hint")}
+            </div>
+          </fieldset>
+
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
             <button type="button" disabled={isBusy} onClick={() => void handleExport()} style={{ whiteSpace: "normal" }}>
               {t("inquiry_journey.prototype.export")}
@@ -818,6 +876,7 @@ export function InquiryJourneyPrototypePanel({
                     setRecordParentRoundId("");
                     setComparisonFromRoundId("");
                     setComparisonToRoundId("");
+                    setExportRoundId("");
                     setLineageCardId("");
                     setResumePreviewSnapshotId("");
                   }}
