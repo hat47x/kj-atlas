@@ -464,3 +464,9 @@
 - `local-default` User／Identity／Membershipへ書き込む`POST /admin/provision/users`を既存3つのsingle-tenant profileだけに限定した。`saas-multitenant`では`404 strict_provisioning_unavailable`、未知・解決不能profileでは`503 runtime_policy_unavailable`としてDB処理前に閉じ、future SaaSのmembership provisioningへfallbackしない。
 - 本文やtenant資源を扱わない既存A2/A3契約検証routeはこのsurface guardの対象外とした。SaaS membership provisioningはverified IdP、active tenant、`membership.provision`を再検証する別契約が必要であり、今回実装していない。
 - strict provisioning／JIT近接19件、backend全体613件pass・条件付き25件skip、Ruff、docs-check、active issue validatorを通過した。実capability付きmembership provisioning、Platform operator認可主体、実auth edge adapterは未完了であり、AC-4/6/7/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: SaaS server-owned Document resource runtime wiring
+
+- trusted SaaS adapter bundleを`tenant-session-required` profileで有効化する際、Document resource resolverも`ServerOwnedDocumentResourceResolver`へ切り替え、DB正本のaccess metadataとtrusted policy binding resolverだけを使うようにした。公開`x-doc-visibility`／`x-policy-ref`はSaaS認可根拠へ入らない。
+- bundle非注入のsingle-tenant profileとlifespan終了時は`SingleTenantHeaderResourceResolver`へ戻す。profile／bundle不一致ではresolver切替前に起動拒否する既存境界を維持し、binding metadata／resolver不達は`Restricted`＋policyRef欠損としてdeny側へ倒す。
+- runtime／Document resource／binding resolver近接51件、backend全体613件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実binding service／PDP接続、trusted auth edge、PostgreSQL実地matrixは未完了であり、AC-4/5/7/10/12/13とSaaS profile起動拒否を維持する。

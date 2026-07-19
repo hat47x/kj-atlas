@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 import pytest
 
+from kj_atlas_api.document_access_resource import (
+    ServerOwnedDocumentResourceResolver,
+    SingleTenantHeaderResourceResolver,
+)
 from kj_atlas_api.tenant_context import SingleTenantContextResolver
 from kj_atlas_api.trusted_saas_runtime import (
     TrustedSaasRuntimeAdapters,
@@ -55,6 +59,10 @@ def test_single_tenant_runtime_keeps_session_routes_closed(
     assert app.state.saas_identity_context_resolver is None
     assert isinstance(app.state.tenant_context_resolver, SingleTenantContextResolver)
     assert app.state.active_tenant_session_persister is None
+    assert isinstance(
+        app.state.document_access_resource_resolver,
+        SingleTenantHeaderResourceResolver,
+    )
 
     release_trusted_saas_runtime(app)
 
@@ -74,6 +82,10 @@ def test_complete_bundle_is_applied_atomically() -> None:
     assert app.state.saas_identity_context_resolver is adapters.identity_context_resolver
     assert app.state.tenant_context_resolver is adapters.tenant_context_resolver
     assert app.state.active_tenant_session_persister is adapters.active_tenant_session_persister
+    assert isinstance(
+        app.state.document_access_resource_resolver,
+        ServerOwnedDocumentResourceResolver,
+    )
 
     with pytest.raises(RuntimeError, match="before startup"):
         install_trusted_saas_runtime(app, adapters)
@@ -82,6 +94,10 @@ def test_complete_bundle_is_applied_atomically() -> None:
     assert app.state.saas_identity_context_resolver is None
     assert isinstance(app.state.tenant_context_resolver, SingleTenantContextResolver)
     assert app.state.active_tenant_session_persister is None
+    assert isinstance(
+        app.state.document_access_resource_resolver,
+        SingleTenantHeaderResourceResolver,
+    )
     assert not app.state._kj_atlas_runtime_started
 
     assert initialize_trusted_saas_runtime(
@@ -91,6 +107,10 @@ def test_complete_bundle_is_applied_atomically() -> None:
     assert app.state.saas_identity_context_resolver is adapters.identity_context_resolver
     assert app.state.tenant_context_resolver is adapters.tenant_context_resolver
     assert app.state.active_tenant_session_persister is adapters.active_tenant_session_persister
+    assert isinstance(
+        app.state.document_access_resource_resolver,
+        ServerOwnedDocumentResourceResolver,
+    )
 
 
 def test_released_bundle_can_only_be_reactivated_by_a_matching_profile() -> None:
@@ -109,6 +129,10 @@ def test_released_bundle_can_only_be_reactivated_by_a_matching_profile() -> None
     assert app.state.saas_identity_context_resolver is None
     assert isinstance(app.state.tenant_context_resolver, SingleTenantContextResolver)
     assert app.state.active_tenant_session_persister is None
+    assert isinstance(
+        app.state.document_access_resource_resolver,
+        SingleTenantHeaderResourceResolver,
+    )
     assert not app.state._kj_atlas_runtime_started
 
 

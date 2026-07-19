@@ -11,7 +11,6 @@ from fastapi.responses import JSONResponse
 from kj_atlas_api.access_control import build_access_control_adapter
 from kj_atlas_api.audit import build_audit_dispatcher
 from kj_atlas_api.db import init_db
-from kj_atlas_api.document_access_resource import SingleTenantHeaderResourceResolver
 from kj_atlas_api.routes.ai import router as ai_router
 from kj_atlas_api.routes.ai_relations import router as ai_relations_router
 from kj_atlas_api.routes.admin import router as admin_router
@@ -49,7 +48,6 @@ async def lifespan(app: FastAPI):
         adapter_name=settings.access_control_adapter
     )
     app.state.access_control_fail_safe_mode = settings.access_control_fail_safe_mode
-    app.state.document_access_resource_resolver = SingleTenantHeaderResourceResolver()
     app.state.tenant_capability_resolver = build_tenant_capability_resolver()
     initialize_trusted_saas_runtime(
         app,

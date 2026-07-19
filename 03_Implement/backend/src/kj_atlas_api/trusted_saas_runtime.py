@@ -6,6 +6,11 @@ from fastapi import FastAPI
 
 from kj_atlas_api.active_tenant_session import ActiveTenantSessionPersister
 from kj_atlas_api.auth_context import SaasIdentityContextResolver
+from kj_atlas_api.document_access_resource import (
+    ServerOwnedDocumentResourceResolver,
+    SingleTenantHeaderResourceResolver,
+)
+from kj_atlas_api.document_policy_binding import build_document_policy_binding_resolver
 from kj_atlas_api.runtime_bootstrap import resolve_tenant_session_bootstrap_mode
 from kj_atlas_api.tenant_context import (
     SingleTenantContextResolver,
@@ -81,10 +86,15 @@ def initialize_trusted_saas_runtime(
     app.state.saas_identity_context_resolver = None
     app.state.tenant_context_resolver = SingleTenantContextResolver()
     app.state.active_tenant_session_persister = None
+    app.state.document_access_resource_resolver = SingleTenantHeaderResourceResolver()
     if adapters is not None:
+        document_access_resource_resolver = ServerOwnedDocumentResourceResolver(
+            policy_binding_resolver=build_document_policy_binding_resolver(),
+        )
         app.state.saas_identity_context_resolver = adapters.identity_context_resolver
         app.state.tenant_context_resolver = adapters.tenant_context_resolver
         app.state.active_tenant_session_persister = adapters.active_tenant_session_persister
+        app.state.document_access_resource_resolver = document_access_resource_resolver
 
     setattr(app.state, _STARTED_STATE_KEY, True)
     return adapters is not None
@@ -95,4 +105,5 @@ def release_trusted_saas_runtime(app: FastAPI) -> None:
     app.state.saas_identity_context_resolver = None
     app.state.tenant_context_resolver = SingleTenantContextResolver()
     app.state.active_tenant_session_persister = None
+    app.state.document_access_resource_resolver = SingleTenantHeaderResourceResolver()
     setattr(app.state, _STARTED_STATE_KEY, False)
