@@ -560,12 +560,6 @@ export async function suggestMerges(doc: DocumentV1, instruction?: string): Prom
 }
 
 
-export type SuggestIslandSummaryResult = {
-  summaryText: string;
-  groundingIds: string[];
-  warnings?: string[];
-};
-
 export type IslandSummaryProposal = {
   proposalId: string;
   type: "island_summary";
@@ -648,45 +642,6 @@ export async function postExportAudit(
     throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 }
-
-export async function suggestIslandSummary(doc: DocumentV1, islandId: string): Promise<SuggestIslandSummaryResult> {
-  const response = await fetch(`${API_BASE}/ai/suggest-island-summary`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ doc, islandId }),
-  });
-
-  if (!response.ok) {
-    const errorDetail = await parseErrorDetail(response);
-    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
-  }
-
-  const body = (await response.json()) as SuggestIslandSummaryResult;
-  if (typeof body.summaryText !== "string" || body.summaryText.trim().length === 0) {
-    throw new ApiError(500, "Invalid island summary suggestion response");
-  }
-
-  if (!Array.isArray(body.groundingIds) || body.groundingIds.length === 0 || body.groundingIds.length > 10) {
-    throw new ApiError(500, "Invalid island summary grounding ids");
-  }
-
-  if (!body.groundingIds.every((id) => typeof id === "string" && id.length > 0)) {
-    throw new ApiError(500, "Invalid island summary grounding ids");
-  }
-
-  if (new Set(body.groundingIds).size !== body.groundingIds.length) {
-    throw new ApiError(500, "Duplicate island summary grounding ids");
-  }
-
-  if (body.warnings !== undefined && !Array.isArray(body.warnings)) {
-    throw new ApiError(500, "Invalid island summary warnings");
-  }
-
-  return body;
-}
-
 
 export type SummarizeIslandRelationPayload = {
   doc: DocumentV1;
