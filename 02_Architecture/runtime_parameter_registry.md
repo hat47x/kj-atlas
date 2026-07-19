@@ -56,7 +56,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 
 - `KJ_ATLAS_RUNTIME_PROFILE`でprofileを明示選択する。`local-dev`、`evaluation`、`enterprise-production`は正規化して受理する。
 - `saas-multitenant`は予約値として認識するが、現行releaseでは常に起動をfail-fastにする。無視して`local-dev`へfallbackしない。
-- backendのtrusted SaaS adapter bundleは`saas-multitenant`と相互必須である。single-tenant profileへのbundle注入、SaaS profileでのbundle欠損、未知profileはadapter有効化前に起動拒否し、bundleだけを有効にしてversion preconditionを無効にする混成構成を許可しない。
+- backendのtrusted SaaS adapter bundleは`saas-multitenant`と相互必須である。single-tenant profileへのbundle注入、SaaS profileでのbundle欠損、未知profileはadapter有効化前に起動拒否し、bundleだけを有効にしてversion preconditionを無効にする混成構成を許可しない。さらに、PostgreSQL、JIT無効、external access-control、`deny` fail-safe、external document binding、external tenant capabilityの非秘密runtime safety policyをDB初期化前とadapter有効化前に再検証する。現行の予約profile拒否を将来解除しても、この完全セットが欠ける構成は起動しない。
 - backendはvalidation済みprofileを起動時にsnapshotし、`GET /session/bootstrap-policy`でprofile名を公開せず`single-tenant`または`tenant-session-required`へclosed-worldに写像する。frontend buildも同じprofileを受け取り、既存3 profileはpolicy通信なしでlocal-first起動、`saas-multitenant`だけはserver policy一致とsession bootstrap成功までAppをmountしない。未知・空・非canonical build値、policy不一致・取得失敗はsingle-tenantへfallbackせずblocked stateへ閉じる。
 - 実装issueの後続段階で、tenant解決、PDP、DB guardのcross-key validationがすべて成立した場合だけ起動拒否を解除する。
 - `external_http` endpoint欠損時のnoop fallbackは既存profileの互換挙動としてのみ残し、SaaS profileでは禁止する。

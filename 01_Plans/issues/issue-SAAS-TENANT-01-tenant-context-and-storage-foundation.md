@@ -470,3 +470,9 @@
 - trusted SaaS adapter bundleを`tenant-session-required` profileで有効化する際、Document resource resolverも`ServerOwnedDocumentResourceResolver`へ切り替え、DB正本のaccess metadataとtrusted policy binding resolverだけを使うようにした。公開`x-doc-visibility`／`x-policy-ref`はSaaS認可根拠へ入らない。
 - bundle非注入のsingle-tenant profileとlifespan終了時は`SingleTenantHeaderResourceResolver`へ戻す。profile／bundle不一致ではresolver切替前に起動拒否する既存境界を維持し、binding metadata／resolver不達は`Restricted`＋policyRef欠損としてdeny側へ倒す。
 - runtime／Document resource／binding resolver近接51件、backend全体613件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実binding service／PDP接続、trusted auth edge、PostgreSQL実地matrixは未完了であり、AC-4/5/7/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: SaaS runtime dependency safety policy
+
+- 現行の`saas-multitenant`予約値一律拒否とは独立した`TrustedSaasRuntimePolicy`を追加した。PostgreSQL、JIT provisioning無効、external access-control、`deny` fail-safe、external Document policy binding、external tenant capabilityの完全セットを必須にする。
+- production lifespanはこの非秘密policyをsettingsから構築し、DB初期化前にpreflightする。trusted adapter初期化も同じpolicyと型を再検証し、予約profile拒否を将来解除してもunsafe policy object、SQLite、noop/mock、read-only、resolver欠損がadapter有効化へ進まない。
+- runtime policy／settings近接45件、backend全体622件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実PostgreSQL RLS matrix、実PDP／binding／capability service、trusted auth edgeは未完了であり、AC-4/5/7/10/12/13と現行SaaS profile起動拒否を維持する。

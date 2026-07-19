@@ -43,6 +43,57 @@ class TrustedSaasRuntimeAdapters:
             raise ValueError("trusted SaaS runtime adapter bundle is incomplete")
 
 
+@dataclass(frozen=True, slots=True)
+class TrustedSaasRuntimePolicy:
+    """Validated non-secret settings required before a shared SaaS startup."""
+
+    database_backend: str
+    allow_jit_provisioning: bool
+    access_control_adapter: str
+    access_control_fail_safe_mode: str
+    document_policy_binding_resolver: str
+    tenant_capability_resolver: str
+
+    def validate(self) -> None:
+        requirements = (
+            (self.database_backend == "postgresql", "PostgreSQL tenant DB guard"),
+            (not self.allow_jit_provisioning, "disabled JIT provisioning"),
+            (self.access_control_adapter == "external_http", "external access control"),
+            (self.access_control_fail_safe_mode == "deny", "deny fail-safe mode"),
+            (
+                self.document_policy_binding_resolver == "external_http",
+                "external document policy binding",
+            ),
+            (
+                self.tenant_capability_resolver == "external_http",
+                "external tenant capability resolution",
+            ),
+        )
+        missing = [label for available, label in requirements if not available]
+        if missing:
+            raise RuntimeError("trusted SaaS runtime policy is incomplete: " + ", ".join(missing))
+
+
+def _validate_saas_runtime_policy(runtime_policy: object) -> None:
+    if not isinstance(runtime_policy, TrustedSaasRuntimePolicy):
+        raise RuntimeError("trusted SaaS runtime policy is invalid")
+    runtime_policy.validate()
+
+
+def validate_trusted_saas_runtime_policy(
+    *,
+    runtime_profile: str,
+    runtime_policy: TrustedSaasRuntimePolicy,
+) -> None:
+    """Reject an unsafe SaaS configuration before DB or adapter activation."""
+    try:
+        tenant_session_mode = resolve_tenant_session_bootstrap_mode(runtime_profile)
+    except RuntimeError:
+        raise RuntimeError("trusted SaaS runtime profile is invalid") from None
+    if tenant_session_mode == "tenant-session-required":
+        _validate_saas_runtime_policy(runtime_policy)
+
+
 def install_trusted_saas_runtime(
     app: FastAPI,
     adapters: TrustedSaasRuntimeAdapters,
@@ -63,6 +114,7 @@ def initialize_trusted_saas_runtime(
     app: FastAPI,
     *,
     runtime_profile: str,
+    runtime_policy: TrustedSaasRuntimePolicy,
 ) -> bool:
     """Apply only a bundle whose tenant-session mode matches the runtime profile."""
     if getattr(app.state, _STARTED_STATE_KEY, False):
@@ -72,6 +124,8 @@ def initialize_trusted_saas_runtime(
         tenant_session_mode = resolve_tenant_session_bootstrap_mode(runtime_profile)
     except RuntimeError:
         raise RuntimeError("trusted SaaS runtime profile is invalid") from None
+    if tenant_session_mode == "tenant-session-required":
+        _validate_saas_runtime_policy(runtime_policy)
 
     adapters = getattr(app.state, _BUNDLE_STATE_KEY, None)
     if adapters is not None and not isinstance(adapters, TrustedSaasRuntimeAdapters):

@@ -155,7 +155,7 @@ stdio段階では listen port を開かず外部到達不可だったが、strea
 - すべてのtenant従属行、子テーブル、agent registration、job、cache、auditへtenantIdを持たせ、複合unique/FKで補強
 - 主体tenantと資源tenantの不一致をPDP呼出前にアプリ内で常にdeny
 - tenant/visibility/policyRefをサーバー正本から解決し、クライアント値を認可根拠にしない
-- SaaS profileではaccess-control欠損、noop、PDP不達、tenant不明をreadも含めてdenyし、設定不備はfail-fast
+- SaaS profileではPostgreSQL、JIT無効、external access-control、`deny` fail-safe、external document binding、external tenant capabilityの型付き非秘密policyをDB初期化前とadapter有効化前に再検証する。欠損、noop/mock、read-only、PDP不達、tenant不明をread許可へfallbackしない
 - 外部PDP、監査HTTP、binding/capability resolver、LLMのoutbound HTTPはredirectを追跡せず、検証済みの元endpointだけへ送信する
 - 外部PDP応答を64KiB以下のclosed-world `allow/readOnly/reason` objectへ限定し、不正応答は値を反射せずSaaS deny fail-safeへ倒す
 - 外部PDP requestを64KiB以下、boundedな識別子・policyRef・roles/groups、canonicalなserver-composed値へ限定し、不正・過大requestはtransport前に値を反射せずSaaS deny fail-safeへ倒す
