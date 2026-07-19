@@ -227,6 +227,7 @@ def test_context_audit_rejects_stale_session_before_tracker_mutation(
 
 def test_context_audit_tracker_does_not_share_progress_between_tenants() -> None:
     common = {
+        "doc_id": "shared-doc",
         "equivalence_key": "a" * 64,
         "bundle_hash": "b" * 64,
         "source_bundle_hash": None,
@@ -240,6 +241,31 @@ def test_context_audit_tracker_does_not_share_progress_between_tenants() -> None
     with pytest.raises(HTTPException) as captured:
         _record_ce4_event_and_validate_completeness(
             tenant_id="tenant-b",
+            operation="apply",
+            **common,
+        )
+
+    assert captured.value.status_code == 409
+    assert captured.value.detail["code"] == "missing_event"
+    assert captured.value.detail["missingEvents"] == ["bundle", "proposal", "query"]
+
+
+def test_context_audit_tracker_does_not_share_progress_between_documents() -> None:
+    common = {
+        "tenant_id": "tenant-a",
+        "equivalence_key": "a" * 64,
+        "bundle_hash": "b" * 64,
+        "source_bundle_hash": None,
+    }
+    _record_ce4_event_and_validate_completeness(
+        doc_id="doc-a",
+        operation="query",
+        **common,
+    )
+
+    with pytest.raises(HTTPException) as captured:
+        _record_ce4_event_and_validate_completeness(
+            doc_id="doc-b",
             operation="apply",
             **common,
         )

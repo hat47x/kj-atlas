@@ -508,3 +508,8 @@
 
 - CE4 context auditのevent completeness tracker keyを`tenantId + equivalenceKey + bundleHash`へ変更した。tenant Aのquery／bundle／proposal進行は、同じhashを送るtenant Bのapply検証を充足せず、検証済みtenant contextが異なる監査進行stateを合流させない。
 - tenant Aのquery後もtenant Bのapplyでqueryを含む全不足eventを返すnegative testを追加し、Document audit integration 23件とRuffを通過した。trackerはprocess-localな既存CE4検証機構であり、共有SaaSの永続監査正本にはしない。実auth edgeと全consumer越境matrixは未完了のため、AC-8/10/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: document-scoped context-audit progress state
+
+- CE4 context auditのevent completeness tracker keyへ`docId`も追加し、`tenantId + docId + equivalenceKey + bundleHash`へ限定した。同一tenant内で内容・queryが同じ別Documentでも、doc Aのquery／bundle／proposal進行をdoc Bのapplyへ流用できない。
+- doc Aのquery後もdoc Bのapplyでqueryを含む全不足eventを返すnegative testを追加し、Document audit integration 24件とRuffを通過した。actor/session単位の永続監査正本化は実auth edge・監査service側の未完了契約であり、AC-8/10/13とSaaS profile起動拒否を維持する。

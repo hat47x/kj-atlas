@@ -515,7 +515,7 @@ class _Ce4AuditTrackerState(BaseModel):
     proposal_source_bundle_hash: str | None = None
 
 
-_ce4_audit_event_tracker: dict[tuple[str, str, str], _Ce4AuditTrackerState] = {}
+_ce4_audit_event_tracker: dict[tuple[str, str, str, str], _Ce4AuditTrackerState] = {}
 _ce4_audit_tracker_lock = Lock()
 
 
@@ -527,13 +527,14 @@ def reset_ce4_audit_event_tracker() -> None:
 def _record_ce4_event_and_validate_completeness(
     *,
     tenant_id: str,
+    doc_id: str,
     equivalence_key: str,
     bundle_hash: str,
     operation: str,
     source_bundle_hash: str | None,
 ) -> None:
     with _ce4_audit_tracker_lock:
-        tracker_key = (tenant_id, equivalence_key, bundle_hash)
+        tracker_key = (tenant_id, doc_id, equivalence_key, bundle_hash)
         state = _ce4_audit_event_tracker.setdefault(tracker_key, _Ce4AuditTrackerState())
         state.seen_operations.add(operation)
         if operation == "proposal":
@@ -614,6 +615,7 @@ def post_context_audit(
     if settings.ce4_audit_require_all_events:
         _record_ce4_event_and_validate_completeness(
             tenant_id=tenant.tenant_id,
+            doc_id=doc_id,
             equivalence_key=payload.equivalenceKey,
             bundle_hash=payload.bundleHash,
             operation=payload.operation,
