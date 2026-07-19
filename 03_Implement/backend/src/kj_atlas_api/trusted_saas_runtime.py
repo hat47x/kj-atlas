@@ -94,6 +94,47 @@ def validate_trusted_saas_runtime_policy(
         _validate_saas_runtime_policy(runtime_policy)
 
 
+def _trusted_saas_runtime_preflight(
+    app: FastAPI,
+    *,
+    runtime_profile: str,
+    runtime_policy: TrustedSaasRuntimePolicy,
+) -> tuple[str, TrustedSaasRuntimeAdapters | None]:
+    if getattr(app.state, _STARTED_STATE_KEY, False):
+        raise RuntimeError("trusted SaaS runtime adapters are already initialized")
+    try:
+        tenant_session_mode = resolve_tenant_session_bootstrap_mode(runtime_profile)
+    except RuntimeError:
+        raise RuntimeError("trusted SaaS runtime profile is invalid") from None
+    if tenant_session_mode == "tenant-session-required":
+        _validate_saas_runtime_policy(runtime_policy)
+
+    adapters = getattr(app.state, _BUNDLE_STATE_KEY, None)
+    if adapters is not None and not isinstance(adapters, TrustedSaasRuntimeAdapters):
+        raise RuntimeError("trusted SaaS runtime adapter bundle is invalid")
+    if tenant_session_mode == "tenant-session-required" and adapters is None:
+        raise RuntimeError("trusted SaaS runtime adapters are required by the runtime profile")
+    if tenant_session_mode == "single-tenant" and adapters is not None:
+        raise RuntimeError(
+            "trusted SaaS runtime adapters cannot be enabled by a single-tenant profile"
+        )
+    return tenant_session_mode, adapters
+
+
+def validate_trusted_saas_runtime_preflight(
+    app: FastAPI,
+    *,
+    runtime_profile: str,
+    runtime_policy: TrustedSaasRuntimePolicy,
+) -> None:
+    """Validate profile, policy and bundle without changing application state."""
+    _trusted_saas_runtime_preflight(
+        app,
+        runtime_profile=runtime_profile,
+        runtime_policy=runtime_policy,
+    )
+
+
 def install_trusted_saas_runtime(
     app: FastAPI,
     adapters: TrustedSaasRuntimeAdapters,
@@ -117,25 +158,11 @@ def initialize_trusted_saas_runtime(
     runtime_policy: TrustedSaasRuntimePolicy,
 ) -> bool:
     """Apply only a bundle whose tenant-session mode matches the runtime profile."""
-    if getattr(app.state, _STARTED_STATE_KEY, False):
-        raise RuntimeError("trusted SaaS runtime adapters are already initialized")
-
-    try:
-        tenant_session_mode = resolve_tenant_session_bootstrap_mode(runtime_profile)
-    except RuntimeError:
-        raise RuntimeError("trusted SaaS runtime profile is invalid") from None
-    if tenant_session_mode == "tenant-session-required":
-        _validate_saas_runtime_policy(runtime_policy)
-
-    adapters = getattr(app.state, _BUNDLE_STATE_KEY, None)
-    if adapters is not None and not isinstance(adapters, TrustedSaasRuntimeAdapters):
-        raise RuntimeError("trusted SaaS runtime adapter bundle is invalid")
-    if tenant_session_mode == "tenant-session-required" and adapters is None:
-        raise RuntimeError("trusted SaaS runtime adapters are required by the runtime profile")
-    if tenant_session_mode == "single-tenant" and adapters is not None:
-        raise RuntimeError(
-            "trusted SaaS runtime adapters cannot be enabled by a single-tenant profile"
-        )
+    _, adapters = _trusted_saas_runtime_preflight(
+        app,
+        runtime_profile=runtime_profile,
+        runtime_policy=runtime_policy,
+    )
 
     app.state.saas_identity_context_resolver = None
     app.state.tenant_context_resolver = SingleTenantContextResolver()

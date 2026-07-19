@@ -476,3 +476,9 @@
 - 現行の`saas-multitenant`予約値一律拒否とは独立した`TrustedSaasRuntimePolicy`を追加した。PostgreSQL、JIT provisioning無効、external access-control、`deny` fail-safe、external Document policy binding、external tenant capabilityの完全セットを必須にする。
 - production lifespanはこの非秘密policyをsettingsから構築し、DB初期化前にpreflightする。trusted adapter初期化も同じpolicyと型を再検証し、予約profile拒否を将来解除してもunsafe policy object、SQLite、noop/mock、read-only、resolver欠損がadapter有効化へ進まない。
 - runtime policy／settings近接45件、backend全体622件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実PostgreSQL RLS matrix、実PDP／binding／capability service、trusted auth edgeは未完了であり、AC-4/5/7/10/12/13と現行SaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: trusted SaaS bundle preflight before DB initialization
+
+- runtime profile、`TrustedSaasRuntimePolicy`、trusted adapter bundleの型・欠損・profile相互必須、started-state判定を、App stateを変更しない共通preflightへ集約した。production lifespanはDB初期化前にpreflightし、実adapter適用直前にも同じ判定を再実行する。
+- unsafe policyだけでなく、SaaS profileでbundleが未注入、不正、部分的、single-tenant profileへ注入済みの構成もDB接続前に停止する。preflight成功だけではidentity／tenant／session／Document resolverを有効化しないことを固定した。
+- trusted runtime近接25件、backend全体624件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実auth edge bundleの注入、PostgreSQL RLS実地matrix、実PDP／binding／capability serviceは未完了であり、AC-4/5/7/10/12/13と現行SaaS profile起動拒否を維持する。

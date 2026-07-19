@@ -27,7 +27,7 @@ from kj_atlas_api.trusted_saas_runtime import (
     TrustedSaasRuntimePolicy,
     initialize_trusted_saas_runtime,
     release_trusted_saas_runtime,
-    validate_trusted_saas_runtime_policy,
+    validate_trusted_saas_runtime_preflight,
 )
 
 
@@ -56,7 +56,8 @@ def _trusted_saas_runtime_policy() -> TrustedSaasRuntimePolicy:
 async def lifespan(app: FastAPI):
     _assert_linear_migration_history()
     runtime_policy = _trusted_saas_runtime_policy()
-    validate_trusted_saas_runtime_policy(
+    validate_trusted_saas_runtime_preflight(
+        app,
         runtime_profile=settings.runtime_profile,
         runtime_policy=runtime_policy,
     )

@@ -15,6 +15,7 @@ from kj_atlas_api.trusted_saas_runtime import (
     initialize_trusted_saas_runtime,
     install_trusted_saas_runtime,
     release_trusted_saas_runtime,
+    validate_trusted_saas_runtime_preflight,
     validate_trusted_saas_runtime_policy,
 )
 
@@ -56,6 +57,24 @@ def _runtime_policy(**overrides: object) -> TrustedSaasRuntimePolicy:
     }
     values.update(overrides)
     return TrustedSaasRuntimePolicy(**values)  # type: ignore[arg-type]
+
+
+def _configure_main_saas_policy(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    database_url: str,
+) -> None:
+    monkeypatch.setattr(main_module.settings, "runtime_profile", "saas-multitenant")
+    monkeypatch.setattr(main_module.settings, "database_url", database_url)
+    monkeypatch.setattr(main_module.settings, "allow_jit_provisioning", False)
+    monkeypatch.setattr(main_module.settings, "access_control_adapter", "external_http")
+    monkeypatch.setattr(main_module.settings, "access_control_fail_safe_mode", "deny")
+    monkeypatch.setattr(
+        main_module.settings,
+        "document_policy_binding_resolver",
+        "external_http",
+    )
+    monkeypatch.setattr(main_module.settings, "tenant_capability_resolver", "external_http")
 
 
 @pytest.mark.parametrize(
@@ -310,6 +329,20 @@ def test_saas_profile_rejects_unvalidated_runtime_policy_object() -> None:
         )
 
 
+def test_preflight_does_not_activate_validated_saas_adapters() -> None:
+    app = FastAPI()
+    install_trusted_saas_runtime(app, _bundle())
+
+    validate_trusted_saas_runtime_preflight(
+        app,
+        runtime_profile="saas-multitenant",
+        runtime_policy=_runtime_policy(),
+    )
+
+    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+    assert not hasattr(app.state, "saas_identity_context_resolver")
+
+
 def test_lifespan_rejects_unsafe_saas_policy_before_database_initialization(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -321,23 +354,39 @@ def test_lifespan_rejects_unsafe_saas_policy_before_database_initialization(
 
     monkeypatch.setattr(main_module, "_assert_linear_migration_history", lambda: None)
     monkeypatch.setattr(main_module, "init_db", record_init_db)
-    monkeypatch.setattr(main_module.settings, "runtime_profile", "saas-multitenant")
-    monkeypatch.setattr(main_module.settings, "database_url", "sqlite:///unsafe.db")
-    monkeypatch.setattr(main_module.settings, "allow_jit_provisioning", False)
-    monkeypatch.setattr(main_module.settings, "access_control_adapter", "external_http")
-    monkeypatch.setattr(main_module.settings, "access_control_fail_safe_mode", "deny")
-    monkeypatch.setattr(
-        main_module.settings,
-        "document_policy_binding_resolver",
-        "external_http",
-    )
-    monkeypatch.setattr(main_module.settings, "tenant_capability_resolver", "external_http")
+    _configure_main_saas_policy(monkeypatch, database_url="sqlite:///unsafe.db")
 
     async def start_lifespan() -> None:
         async with main_module.lifespan(FastAPI()):
             raise AssertionError("unsafe SaaS lifespan must not start")
 
     with pytest.raises(RuntimeError, match="PostgreSQL tenant DB guard"):
+        asyncio.run(start_lifespan())
+
+    assert init_db_called is False
+
+
+def test_lifespan_rejects_missing_saas_bundle_before_database_initialization(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    init_db_called = False
+
+    def record_init_db() -> None:
+        nonlocal init_db_called
+        init_db_called = True
+
+    monkeypatch.setattr(main_module, "_assert_linear_migration_history", lambda: None)
+    monkeypatch.setattr(main_module, "init_db", record_init_db)
+    _configure_main_saas_policy(
+        monkeypatch,
+        database_url="postgresql+psycopg://db.invalid/kj_atlas",
+    )
+
+    async def start_lifespan() -> None:
+        async with main_module.lifespan(FastAPI()):
+            raise AssertionError("SaaS lifespan without trusted adapters must not start")
+
+    with pytest.raises(RuntimeError, match="required by the runtime profile"):
         asyncio.run(start_lifespan())
 
     assert init_db_called is False
