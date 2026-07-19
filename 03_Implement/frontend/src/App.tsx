@@ -1393,6 +1393,15 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     });
   }, []);
 
+  const blockStaleTenantSession = useCallback(() => {
+    if (!verifiedTenantSession) {
+      return false;
+    }
+    cleanupRuntimeResources();
+    setTenantSwitchUiState({ status: "blocked" });
+    return true;
+  }, [cleanupRuntimeResources, verifiedTenantSession]);
+
   useEffect(() => {
     return cleanupRuntimeResources;
   }, [cleanupRuntimeResources]);
@@ -1402,10 +1411,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return undefined;
     }
     const boundary = installTenantSessionCoherenceBoundary({
-      onInvalidate: () => {
-        cleanupRuntimeResources();
-        setTenantSwitchUiState({ status: "blocked" });
-      },
+      onInvalidate: blockStaleTenantSession,
     });
     tenantSessionCoherenceRef.current = boundary;
     return () => {
@@ -1414,7 +1420,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         tenantSessionCoherenceRef.current = null;
       }
     };
-  }, [cleanupRuntimeResources, verifiedTenantSession]);
+  }, [blockStaleTenantSession, verifiedTenantSession]);
 
   useEffect(() => {
     return () => {
@@ -2077,7 +2083,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setStatusMessage(t(isReload ? "app.status.document_reloading" : "app.status.document_loading"));
 
       try {
-        const loaded = await getDocument(docId);
+        const loaded = await getDocument(docId, {
+          tenantSessionContext: verifiedTenantSession,
+        });
         const loadedDocument = normalizeDocument(loaded.document);
 
         setHistory({
@@ -2118,7 +2126,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           const defaultDocument = createDefaultDocument(docId);
 
           try {
-            const saved = await putDocument(docId, defaultDocument);
+            const saved = await putDocument(docId, defaultDocument, undefined, {
+              tenantSessionContext: verifiedTenantSession,
+            });
             const savedDocument = normalizeDocument(saved.document);
 
             setHistory({
@@ -2155,10 +2165,24 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
             setStatusMessage(t("app.status.document_created"));
             return true;
           } catch (saveError) {
+            if (
+              saveError instanceof ApiError
+              && saveError.code === "tenant_session_changed"
+              && blockStaleTenantSession()
+            ) {
+              return false;
+            }
             setStatusMessage(formatCreateDocumentFailure(saveError));
             return false;
           }
         } else {
+          if (
+            error instanceof ApiError
+            && error.code === "tenant_session_changed"
+            && blockStaleTenantSession()
+          ) {
+            return false;
+          }
           if (error instanceof ApiError && error.status === 404) {
             setStatusMessage(t("app.status.document_not_found_recovery", { docId }));
           } else {
@@ -2173,7 +2197,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         }
       }
     },
-    [appStorage, applyResolvedLocaleForView, rememberRecentDocumentId]
+    [
+      appStorage,
+      applyResolvedLocaleForView,
+      blockStaleTenantSession,
+      rememberRecentDocumentId,
+      verifiedTenantSession,
+    ]
   );
 
   const applyDocumentChange = useCallback(
@@ -2514,7 +2544,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setStatusMessage(t("app.status.saving"));
 
     try {
-      const saved = await putDocument(document.id, withUpdatedTimestamp(document), docEtag ?? undefined);
+      const saved = await putDocument(
+        document.id,
+        withUpdatedTimestamp(document),
+        docEtag ?? undefined,
+        { tenantSessionContext: verifiedTenantSession },
+      );
       const savedDocument = normalizeDocument(saved.document);
       pendingCardDragSnapshotRef.current = null;
       setHistory({
@@ -2531,6 +2566,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setStatusMessage(t("app.status.saved"));
       return true;
     } catch (error) {
+      if (
+        error instanceof ApiError
+        && error.code === "tenant_session_changed"
+        && blockStaleTenantSession()
+      ) {
+        return false;
+      }
       if (error instanceof ApiError && error.status === 409) {
         setHasSaveConflict(true);
         setStatusMessage(t("app.status.save_conflict"));
@@ -8281,14 +8323,21 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const reportAgentTaskExportAudit = useCallback(() => {
     if (!document) return;
-    void postExportAudit(document.id, { safeMode, exportKind: "agent-task" }).catch(() => {
+    void postExportAudit(
+      document.id,
+      { safeMode, exportKind: "agent-task" },
+      { tenantSessionContext: verifiedTenantSession },
+    ).catch((error: unknown) => {
+      if (error instanceof ApiError && error.code === "tenant_session_changed") {
+        blockStaleTenantSession();
+      }
       // Fail-open by design (spec §3.4 / ADR-0049 D2): the backend audit
       // dispatcher itself never blocks on send failure, and this call is
       // reporting after the local export already completed -- there is
       // nothing to roll back, so a network error here is silently ignored
       // rather than surfaced as an export failure the user didn't cause.
     });
-  }, [document, safeMode]);
+  }, [blockStaleTenantSession, document, safeMode, verifiedTenantSession]);
 
   const handleCopyAgentTaskSheet = useCallback(async () => {
     const output = await buildCurrentAgentTaskSheet();

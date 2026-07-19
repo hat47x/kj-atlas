@@ -392,3 +392,9 @@
 - SaaS profileでだけ有効になる共通request guardを追加し、`KJ-Atlas-Tenant-Session-Version`を単一headerとして固定した。trusted sessionの現versionを解決した後に照合し、欠損・重複・不正・不一致を値非反射の`409 tenant_session_changed`へ統一する。client headerはidentity、tenant、membership、capabilityの解決には使用しない。
 - `/docs`の共通認可境界と`/tenant-admin/document-access`の管理認可境界へ組み込み、SaaS時は文書・metadataのlookupより先に停止する。既存のlocal／evaluation／enterprise profileはheaderを要求せず互換動作を維持し、不明runtime policyは`503 runtime_policy_unavailable`へfail-closedにする。
 - 共通guard、文書のtenant分離／access control、Tenant Adminの近接31件、backend全体596件・条件付き25件skip、backend全体Ruff、docs-checkを通過した。export、share、import、MCP、webhook、その他Tenant Admin、非同期job開始点への横断適用、frontend API clientからのheader付与、CORS／proxy実配備検証、SaaS runtime起動許可は未完了であり、AC-4/5/6/7/8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-19: document client session precondition wiring
+
+- SaaS runtime entryでbootstrap済みsession contextと一致するbrowser storage scopeをAppへ同時注入するようにし、App側のclosed-world再検証を通過したcontextだけを文書clientへ渡す。単一テナントentryはsession未注入のままとし、既存requestへheaderを追加しない。
+- `GET/PUT /docs/{doc_id}`と`POST /docs/{doc_id}/export-audit`へ単一の`KJ-Atlas-Tenant-Session-Version`を付与した。clientは呼出時にもsession contractを再検証し、不正contextは通信前に拒否する。serverの`409 tenant_session_changed`はDocument metadata競合として保存再試行へ流さず、runtime resourceをcleanupして旧Appをblocked化する。
+- client／bootstrap／tenant switch／coherenceの近接62件、frontend全体1,263件・218 file、frontend typecheck、docs-checkを通過した。文書以外のtenant-scoped client、document request自体の共通abort／世代commit guard、実ブラウザ複数タブE2E、SaaS runtime起動許可は未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。

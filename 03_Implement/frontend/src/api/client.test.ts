@@ -3,8 +3,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
   changeActiveTenant,
+  getDocument,
   getTenantSessionBootstrapPolicy,
   getTenantSessionContext,
+  postExportAudit,
+  putDocument,
   suggestMerges,
   suggestLayout,
 } from "./client";
@@ -27,6 +30,89 @@ function createDocument(): DocumentV1 {
     edges: [],
   };
 }
+
+const tenantSessionContext = {
+  principalId: "user-1",
+  activeTenant: { id: "tenant-a", displayName: "Tenant A" },
+  availableTenants: [{ id: "tenant-a", displayName: "Tenant A" }],
+  effectiveCapabilities: ["document.read" as const, "document.write" as const],
+  capabilityVersion: "capability-v7",
+  tenantSessionVersion: "session-v1",
+};
+
+describe("tenant-scoped document request precondition", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("attaches only the verified opaque version to document reads", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(createDocument()), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await getDocument("doc-1", { tenantSessionContext });
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/docs/doc-1", {
+      headers: { "KJ-Atlas-Tenant-Session-Version": "session-v1" },
+    });
+  });
+
+  it("attaches the version alongside write and audit content headers", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(createDocument()), { status: 200 }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await putDocument("doc-1", createDocument(), "etag-v1", {
+      tenantSessionContext,
+    });
+    await postExportAudit(
+      "doc-1",
+      { safeMode: true, exportKind: "agent-task" },
+      { tenantSessionContext },
+    );
+
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      headers: {
+        "Content-Type": "application/json",
+        "If-Match": '"etag-v1"',
+        "KJ-Atlas-Tenant-Session-Version": "session-v1",
+      },
+    });
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
+      headers: {
+        "Content-Type": "application/json",
+        "KJ-Atlas-Tenant-Session-Version": "session-v1",
+      },
+    });
+  });
+
+  it("preserves single-tenant calls without a session header", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(createDocument()), { status: 200 }),
+    );
+
+    await getDocument("doc-1");
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/docs/doc-1");
+  });
+
+  it("rejects malformed session input before network access", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+
+    await expect(getDocument("doc-1", {
+      tenantSessionContext: {
+        ...tenantSessionContext,
+        tenantSessionVersion: "stale version",
+      },
+    })).rejects.toBeInstanceOf(InvalidTenantSessionContextError);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
 
 describe("tenant session bootstrap policy fetch boundary", () => {
   afterEach(() => {

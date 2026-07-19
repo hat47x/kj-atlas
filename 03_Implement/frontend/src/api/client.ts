@@ -60,6 +60,23 @@ type ParsedErrorDetail = {
 
 const MAX_TENANT_SESSION_RESPONSE_BYTES = 64 * 1024;
 const MAX_TENANT_SESSION_BOOTSTRAP_POLICY_BYTES = 4 * 1024;
+export const TENANT_SESSION_VERSION_HEADER = "KJ-Atlas-Tenant-Session-Version";
+
+export type TenantScopedRequestOptions = Readonly<{
+  tenantSessionContext?: TenantSessionContextV1;
+}>;
+
+function tenantSessionPreconditionHeaders(
+  options: TenantScopedRequestOptions,
+): Record<string, string> | undefined {
+  if (options.tenantSessionContext === undefined) {
+    return undefined;
+  }
+  const sessionContext = parseTenantSessionContext(options.tenantSessionContext);
+  return {
+    [TENANT_SESSION_VERSION_HEADER]: sessionContext.tenantSessionVersion,
+  };
+}
 
 async function readBoundedUtf8Response(response: Response, maxBytes: number): Promise<string> {
   const contentLength = response.headers.get("content-length");
@@ -345,8 +362,14 @@ export async function changeActiveTenant(
   return nextSession;
 }
 
-export async function getDocument(docId: string): Promise<DocumentWithEtag<Document>> {
-  const response = await fetch(`${API_BASE}/docs/${docId}`);
+export async function getDocument(
+  docId: string,
+  options: TenantScopedRequestOptions = {},
+): Promise<DocumentWithEtag<Document>> {
+  const headers = tenantSessionPreconditionHeaders(options);
+  const response = headers
+    ? await fetch(`${API_BASE}/docs/${docId}`, { headers })
+    : await fetch(`${API_BASE}/docs/${docId}`);
 
   if (!response.ok) {
     const errorDetail = await parseErrorDetail(response);
@@ -362,10 +385,12 @@ export async function getDocument(docId: string): Promise<DocumentWithEtag<Docum
 export async function putDocument(
   docId: string,
   document: DocumentV1,
-  ifMatch?: string
+  ifMatch?: string,
+  options: TenantScopedRequestOptions = {},
 ): Promise<DocumentWithEtag<DocumentV1>> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    ...tenantSessionPreconditionHeaders(options),
   };
   if (ifMatch) {
     headers["If-Match"] = formatIfMatchHeader(ifMatch);
@@ -604,11 +629,16 @@ export async function recordProposalDecision(
 // failure never blocks the export itself) -- but a network/HTTP error here
 // still surfaces to the caller so the UI can fall back to a status message
 // rather than silently pretending the audit call succeeded.
-export async function postExportAudit(docId: string, options: { safeMode: boolean; exportKind: string }): Promise<void> {
+export async function postExportAudit(
+  docId: string,
+  options: { safeMode: boolean; exportKind: string },
+  requestOptions: TenantScopedRequestOptions = {},
+): Promise<void> {
   const response = await fetch(`${API_BASE}/docs/${docId}/export-audit`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...tenantSessionPreconditionHeaders(requestOptions),
     },
     body: JSON.stringify({ safeMode: options.safeMode, exportKind: options.exportKind }),
   });

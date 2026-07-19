@@ -62,7 +62,7 @@ describe("App tenant session boundary", () => {
     })).toThrow("Invalid tenant session context");
   });
 
-  it("keeps the prepared App host wired but disabled at the production entry", () => {
+  it("injects the verified SaaS session and matching scope at the production entry", () => {
     const appSource = readFileSync(resolve(__dirname, "..", "App.tsx"), "utf8");
     const mainSource = readFileSync(resolve(__dirname, "..", "main.tsx"), "utf8");
 
@@ -74,7 +74,9 @@ describe("App tenant session boundary", () => {
     expect(appSource).toContain("<TenantChangeConfirmationDialog");
     expect(appSource).toContain('tenantSwitchUiState.status === "switching"');
     expect(appSource).toContain('tenantSwitchUiState.status === "blocked"');
-    expect(mainSource).toContain("<App storageScope={result.storageScope} />");
-    expect(mainSource).not.toContain("tenantSessionContext={result.sessionContext}");
+    expect(appSource).toContain("tenantSessionContext: verifiedTenantSession");
+    expect(appSource).toContain('error.code === "tenant_session_changed"');
+    expect(mainSource).toContain("storageScope={result.storageScope}");
+    expect(mainSource).toContain("tenantSessionContext={result.sessionContext}");
   });
 });
