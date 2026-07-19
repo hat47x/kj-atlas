@@ -18,6 +18,7 @@ from kj_atlas_api.models import (
     DocumentAccessAdminAuditEventRow,
     DocumentAccessMetadataRow,
     DocumentRow,
+    MergeDecisionLogRow,
     TenantRow,
 )
 from kj_atlas_api.tenant_context import TenantContext
@@ -73,10 +74,7 @@ def postgres_rls_engines() -> Iterator[tuple[Engine, Engine]]:
     try:
         with runtime_engine.connect() as connection:
             posture = connection.execute(
-                text(
-                    "SELECT rolsuper, rolbypassrls "
-                    "FROM pg_roles WHERE rolname = current_user"
-                )
+                text("SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user")
             ).one()
             assert posture.rolsuper is False, "runtime role must not be a superuser"
             assert posture.rolbypassrls is False, "runtime role must not have BYPASSRLS"
@@ -130,6 +128,17 @@ def _seed_tenant_documents(
                 )
             )
             db.add(
+                MergeDecisionLogRow(
+                    tenant_id=tenant_id,
+                    doc_id=doc_id,
+                    decision_id=f"decision-{index + 1}",
+                    group_id=f"group-{index + 1}",
+                    snapshot_version=f"snapshot-v{index + 1}",
+                    decided_at="2026-07-17T00:00:00Z",
+                    payload_json="{}",
+                )
+            )
+            db.add(
                 DocumentAccessAdminAuditEventRow(
                     event_id=f"audit-{uuid4()}",
                     tenant_id=tenant_id,
@@ -164,6 +173,9 @@ def _cleanup(
                     DocumentAccessMetadataRow.tenant_id == tenant_id
                 )
             )
+            db.execute(
+                delete(MergeDecisionLogRow).where(MergeDecisionLogRow.tenant_id == tenant_id)
+            )
             db.execute(delete(DocumentRow).where(DocumentRow.tenant_id == tenant_id))
             db.commit()
     with Session(admin_engine) as db:
@@ -172,7 +184,7 @@ def _cleanup(
 
 
 @pytest.mark.postgres
-def test_document_access_metadata_and_audit_rls_fail_closed_across_pool_reuse(
+def test_all_tenant_tables_rls_fail_closed_across_pool_reuse(
     postgres_rls_engines: tuple[Engine, Engine],
 ) -> None:
     admin_engine, runtime_engine = postgres_rls_engines
@@ -189,8 +201,14 @@ def test_document_access_metadata_and_audit_rls_fail_closed_across_pool_reuse(
     try:
         with Session(runtime_engine) as db:
             apply_database_tenant_context(db=db, tenant=_tenant(tenant_ids[0]))
+            documents = db.scalars(select(DocumentRow)).all()
+            merge_decisions = db.scalars(select(MergeDecisionLogRow)).all()
             metadata = db.scalars(select(DocumentAccessMetadataRow)).all()
             audit_events = db.scalars(select(DocumentAccessAdminAuditEventRow)).all()
+            assert [(row.tenant_id, row.id) for row in documents] == [(tenant_ids[0], doc_ids[0])]
+            assert [(row.tenant_id, row.doc_id) for row in merge_decisions] == [
+                (tenant_ids[0], doc_ids[0])
+            ]
             assert [(row.tenant_id, row.doc_id) for row in metadata] == [
                 (tenant_ids[0], doc_ids[0])
             ]
@@ -198,11 +216,7 @@ def test_document_access_metadata_and_audit_rls_fail_closed_across_pool_reuse(
                 (tenant_ids[0], doc_ids[0])
             ]
             assert (
-                db.scalars(
-                    select(DocumentAccessMetadataRow).where(
-                        DocumentAccessMetadataRow.tenant_id == tenant_ids[1]
-                    )
-                ).all()
+                db.scalars(select(DocumentRow).where(DocumentRow.tenant_id == tenant_ids[1])).all()
                 == []
             )
             db.commit()
@@ -210,12 +224,24 @@ def test_document_access_metadata_and_audit_rls_fail_closed_across_pool_reuse(
         # The pool has one connection. Transaction-local tenant state must not leak
         # into its next checkout when no context is applied.
         with Session(runtime_engine) as db:
+            assert db.scalars(select(DocumentRow)).all() == []
+            assert db.scalars(select(MergeDecisionLogRow)).all() == []
             assert db.scalars(select(DocumentAccessMetadataRow)).all() == []
             assert db.scalars(select(DocumentAccessAdminAuditEventRow)).all() == []
 
         with Session(runtime_engine) as db:
             apply_database_tenant_context(db=db, tenant=_tenant(tenant_ids[0]))
-            cross_tenant_update = db.execute(
+            document_update = db.execute(
+                update(DocumentRow)
+                .where(DocumentRow.tenant_id == tenant_ids[1])
+                .values(payload_json='{"crossTenantWrite":true}')
+            )
+            merge_decision_update = db.execute(
+                update(MergeDecisionLogRow)
+                .where(MergeDecisionLogRow.tenant_id == tenant_ids[1])
+                .values(group_id="cross-tenant-write")
+            )
+            metadata_update = db.execute(
                 update(DocumentAccessMetadataRow)
                 .where(DocumentAccessMetadataRow.tenant_id == tenant_ids[1])
                 .values(
@@ -223,14 +249,31 @@ def test_document_access_metadata_and_audit_rls_fail_closed_across_pool_reuse(
                     updated_at="2026-07-17T00:00:01Z",
                 )
             )
-            assert cross_tenant_update.rowcount == 0
+            audit_update = db.execute(
+                update(DocumentAccessAdminAuditEventRow)
+                .where(DocumentAccessAdminAuditEventRow.tenant_id == tenant_ids[1])
+                .values(decision="cross-tenant-write")
+            )
+            assert document_update.rowcount == 0
+            assert merge_decision_update.rowcount == 0
+            assert metadata_update.rowcount == 0
+            assert audit_update.rowcount == 0
             db.commit()
 
         with Session(runtime_engine) as db:
             apply_database_tenant_context(db=db, tenant=_tenant(tenant_ids[1]))
+            tenant_b_document = db.scalar(select(DocumentRow))
+            tenant_b_merge_decision = db.scalar(select(MergeDecisionLogRow))
             tenant_b_metadata = db.scalar(select(DocumentAccessMetadataRow))
+            tenant_b_audit_event = db.scalar(select(DocumentAccessAdminAuditEventRow))
+            assert tenant_b_document is not None
+            assert tenant_b_document.payload_json == "{}"
+            assert tenant_b_merge_decision is not None
+            assert tenant_b_merge_decision.group_id == "group-2"
             assert tenant_b_metadata is not None
             assert tenant_b_metadata.policy_version == "policy-v2"
+            assert tenant_b_audit_event is not None
+            assert tenant_b_audit_event.decision == "allowed"
 
         with Session(runtime_engine) as db:
             db.add(
