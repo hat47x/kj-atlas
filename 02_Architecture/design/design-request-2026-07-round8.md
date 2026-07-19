@@ -1,6 +1,6 @@
 # kj-atlas デザイン設計要求（Round 8・マスタ系設定データとSaaS tenant scope）
 
-対象: Claude Designセッションへの貼り付け用プロンプト。今回は、一般利用者の文書入口、文書内の保存範囲が異なる2種のプリセット、通常Workspaceから分離したAdmin管理面に加え、将来SaaS化した場合のtenant scope表示と文書アクセス設定を先行検討してください。
+対象: Claude Designセッションへの貼り付け用プロンプト。今回は、一般利用者の文書入口、文書内の保存範囲が異なる2種のプリセット、通常Workspaceから分離したAdmin管理面に加え、将来SaaS化した場合のtenant scope表示、文書アクセス設定、複数タブでscopeが失効する状態を先行検討してください。
 
 ---
 
@@ -35,7 +35,7 @@ kj-atlasの既存UIを前提に、**マスタ系設定データを安全に設�
 - KJ語彙（claimType、関係種別、違和感タグ、holdState）はコードとADRで固定し、ユーザー編集可能な語彙マスタにしない。
 - LLM provider・endpointは環境変数が正本。アプリ内編集、秘密値表示、DBマスタ化を行わない。
 - ユーザー/アイデンティティは現時点ではstrict provisioningによる登録だけ。ユーザー一覧、無効化、削除、SCIM、ロール編集を描かない。
-- 将来のエージェント登録はPlatform operatorだけが行う。文書IDに束縛するが、登録だけで文書書込権限を与えない。tokenは平文保存せず、作成直後に一度だけ表示する。文書ownerによる発行は不可。
+- 将来のエージェント登録は、single-tenant互換では認可済みPlatform operator、future SaaSではactive tenantの`agent.register/revoke`を持つTenant Adminだけが行う。Platform operator、文書owner、`document.write`からSaaS発行権限を推測しない。文書IDとtenantに束縛するが、登録だけで文書書込権限を与えない。tokenは平文保存せず、作成直後に一度だけ表示する。
 - Audit画面は今回作らない。空の画面やdisabledナビゲーションも置かない。
 
 このRoundの成果は設計入力であり、未定義APIや将来機能の実装許可ではありません。
@@ -52,6 +52,9 @@ kj-atlasの既存UIを前提に、**マスタ系設定データを安全に設�
 - DBへ保存するのはvisibilityと非秘密`policyBindingId/version`だけ。raw policyRef、policy URL、token、secretは入力・表示・DOM保持・保存しない。
 - recent/QueryPreset等の端末保存はtenant/user別に分離され、tenant切替時に旧tenantのDOM/memory/cacheを破棄する。
 - support impersonation、「全tenantの文書を表示」、tenant横断検索は設計しない。
+- `ADR-0061`によりactive tenantは認証セッション単位で1つとする。別タブでの切替は全タブへ影響し、異なるtenantを同じsessionの複数タブで同時編集する設計にしない。
+- server-issued `tenantSessionVersion`を全tenant-scoped requestのexpected-context guardに使う。client値は認可根拠ではなく、古いタブ・dialog・requestをresource lookup前に止めるpreconditionである。
+- stale contextは`tenant_session_changed`として本文を返さず、自動再送しない。BroadcastChannel等は早期通知の補助であり、欠落してもserver guardで停止する。
 
 ### 3. 既存UIと視覚言語
 
@@ -106,6 +109,8 @@ StartPanelとRecent documents dialogを、サーバー正本の文書一覧へ�
 
 通常のWorkspaceから明確に分離したAdmin面の最小IAを設計してください。入口はPlatform operatorだけに見え、キャンバスのスリムツールバーには置きません。
 
+このR8-Cは現行single-tenant互換のstrict provisioning面です。future SaaSのTenantMembership登録やTenant Admin shellとして再利用せず、R8-Fとはroute・audience・見出しを分けてください。
+
 今回詳細設計するのは**アクセス登録フォームだけ**です。
 
 - Adminヘッダーに「管理」と「この画面は文書本文を表示しません」。Workspaceへ戻る導線。
@@ -122,6 +127,7 @@ Admin全体の将来IAは「アクセス登録」「外部接続」「システ�
 これは`EXT-CONN-02`の契約実装後に使う先行レッドラインです。現在利用可能な画面には見せません。
 
 - 一覧: registrationId、表示名、docId、状態、作成日時、作成主体。文書タイトルを表示しない。token列は存在させない。
+- authority: single-tenant互換のPlatform operator面とfuture SaaSのTenant Admin面を同一権限に見せない。SaaSではactive tenantと`agent.register/revoke`を見出し・accessible name・操作ごとに固定する。
 - 登録: 表示名とdocId。文書タイトル検索は使わない。登録は文書書込権限を付与しないという説明。
 - 完了: tokenを一度だけ表示、copy、再表示不可の説明、保存済み確認を経て閉じる。
 - 失効: 表示名、registrationId、docId、影響を確認。再有効化は描かず、新規登録を案内。
@@ -135,8 +141,10 @@ Admin全体の将来IAは「アクセス登録」「外部接続」「システ�
 - membershipが1件の場合はactive tenantをlabelで示し、switcherを置かない。
 - 複数membershipの場合だけ、サーバーが返したtenant候補を選べるswitcherを置く。tenantId自由入力や検索による他tenant発見は不可。
 - 未保存変更がある状態での切替は、保存・破棄・取消を示す。確定後、旧tenantの文書・選択・検索・work mode・import preview・recent・QueryPresetを消してから新tenantを読み込む。
+- 切替確認に「このブラウザの他のタブも切り替わります」を常時表示する。別タブ数を検出できた時だけ出す文言にしない。
 - tenant mismatch、membership失効、PDP不達は、文書0件のEmptyと区別したblocked stateにする。旧tenant本文を背景へ残さない。
 - 1440pxと390pxで、tenant名が長い場合のtruncateとaccessible nameを示す。
+- 同じ表示名のtenant候補を識別できるよう、server返却のopaque IDを補助表示する。tenant IDは自由入力や検索keyにしない。
 
 #### R8-F. Tenant AdminとPlatform Control Plane（先行IA）
 
@@ -155,12 +163,32 @@ Admin全体の将来IAは「アクセス登録」「外部接続」「システ�
 - 状態fixtureはReady / Editing / Confirm / Saving / Success receipt / 409 Conflict / Permission denied / Binding unavailable。保存前差分、二重送信防止、409再読込、focus復帰を示す。
 - bulk edit、CSV import/export、「全てPublic」、role editor、policyテスト結果の生値表示を描かない。`document.policy.manage`不足時は画面を出さず、API再認可を注記する。
 
+#### R8-H. scope失効・複数タブ・bfcache復帰（future SaaS / implementation gated）
+
+これは通常のEmpty/Error画面ではなく、旧tenantの内容を残さない安全停止状態です。次のfixtureを1つの状態遷移として示してください。
+
+1. タブAでtenant Aの`doc-shared-id`を編集中。
+2. タブBでtenant Bへ切替。確認には他タブへの影響を表示。
+3. タブAは通知を受けるか、次requestで`tenant_session_changed`を受け、旧本文・Admin metadata・dialog・previewを背景へ残さず「利用範囲を再確認しています」へ置換。
+4. session再取得後、利用者がtenant Bのscopeを確認してからWorkspaceへ戻る。旧payloadの保存・import・share・exportを自動再送しない。
+
+必須状態:
+
+- `context-checking`: 見出しへfocus、旧本文なし、進行中操作を停止中。spinnerだけにしない。
+- `context-changed`: 他タブで切替があった説明、再読込を主操作、再認証／安全な入口へ戻るを条件付きで表示。
+- `membership-revoked` / `capability-unavailable`: Emptyやread-onlyと区別し、raw reason、role/group、tenant IDを反射しない。
+- `stale-save-rejected`: 保存内容を新tenantへ再送せず、旧scopeの入力を破棄することを説明。新tenantで「再試行」ボタンを出さない。
+- `bfcache-return`: 戻る操作直後に旧画面を操作可能にせず、session再確認を先行。
+- `late-response-discarded`: 遅延response、worker結果、object URL、optimistic updateが新DOMへ現れない。
+
+BroadcastChannelを使える場合と使えない場合の見た目は同じ最終blocked stateへ収束させ、client通知が認可の根拠であるように説明しないでください。1440pxと390px、ja/en、初期focus、live region、再読込後のfocus位置を示してください。
+
 ### 5. 出力形式
 
 次を1つの回答パッケージとして返してください。
 
 1. **推奨IA**: Workspace / 文書内設定 / Admin / デプロイ設定の責務図。各設定の「どこに保存されるか」を併記。
-2. **画面レッドライン**: R8-A〜G。1440pxを基本に、A/B/E/Gは390pxでの変形も示す。E/F/Gはfuture SaaSとして現行面と区別する。
+2. **画面レッドライン**: R8-A〜H。1440pxを基本に、A/B/E/G/Hは390pxでの変形も示す。E/F/G/Hはfuture SaaSとして現行面と区別する。
 3. **操作フロー**: 文書を開く、2種プリセットの維持、アクセス登録、エージェント登録→一度表示token→失効、未保存変更を伴うtenant切替。
 4. **状態表**: Loading / Empty / Error / Permission / Read-only / Successと、表示する主操作。
 5. **既存→提案の置換表**: StartPanel local recent、Recent dialog、View controls、Patch workspaceの各要素がどう変わるか。初期表示に何が増減するか。
@@ -168,7 +196,7 @@ Admin全体の将来IAは「アクセス登録」「外部接続」「システ�
 7. **レッドライン**: 色・余白・タイポ・行高・truncate/折返し・メニュー開閉・token表示/閉鎖の禁止事項。
 8. **自己照合**: 下記の採否を✓/△/✗と理由つきで回答。
 
-可能なら既存の`.dc.html`成果物と同じ方式で、R8-A〜Gを切り替えられる操作可能なプロトタイプを1点作ってください。実装コードやAPIを発明するのではなく、状態fixtureで画面遷移を再現してください。R8-E/F/Gには「future SaaS / implementation gated」を成果物注記として付け、製品UIのバッジにはしないでください。
+可能なら既存の`.dc.html`成果物と同じ方式で、R8-A〜Hを切り替えられる操作可能なプロトタイプを1点作ってください。実装コードやAPIを発明するのではなく、状態fixtureで画面遷移を再現してください。R8-E/F/G/Hには「future SaaS / implementation gated」を成果物注記として付け、製品UIのバッジにはしないでください。
 
 ### 6. 自己照合項目
 
@@ -189,6 +217,10 @@ Admin全体の将来IAは「アクセス登録」「外部接続」「システ�
 - frontendがrole名を解釈して権限を決める案になっていない。
 - 文書アクセス設定にタイトル・本文・raw policyRef・URL・token・secret・bulk公開がない。
 - `document.policy.manage`がdocument.write/owner/Platform operatorから独立し、metadata未登録・binding不達がRestricted blocked stateになっている。
+- single-tenantのPlatform operator登録面とfuture SaaSのTenant Admin membership/agent面を同じ権限・audienceとして扱っていない。
+- tenant切替が同じ認証セッションの全タブへ影響することを確認前に文字で説明している。
+- 古いタブ、同時切替、bfcache、遅延responseをBroadcastChannelだけで安全にしておらず、`tenantSessionVersion`不一致をblocked stateとして描いている。
+- stale save/import/share/exportを新tenantへ自動再送せず、旧tenant本文をblocked画面の背景へ残していない。
 
 ### 7. fixture例
 
@@ -209,6 +241,6 @@ SaaS先行画面では`tenant-acme-research` / `地域調査チーム`と`tenant
 - 回答は`02_Architecture/design/master-data-settings-ui-ux-concept.md`とAccepted ADRへ照合する。
 - 未定義のAPI、ユーザーライフサイクル、Audit閲覧、デプロイ設定編集が提案に含まれた場合、その部分は採用しない。
 - 採用後も、Workspace文書一覧は`api.md` / `schemas.md`の契約先行、エージェント登録は`EXT-CONN-02`の段階ゲートを満たすまで実装しない。
-- R8-E/F/Gは`ADR-0059`のImplementation gate、TenantContext、tenant従属DB制約、DB側tenant guard、capability API、deny-only profile、越境negative testが揃うまで有効化しない。R8-Gはさらにmetadata管理API、runtime binding resolver/PDP、監査契約を解禁条件とする。
+- R8-E/F/G/Hは`ADR-0059`と`ADR-0061`のImplementation gate、TenantContext、tenant従属DB制約、DB側tenant guard、capability API、`tenantSessionVersion` precondition、deny-only profile、複数タブ・bfcacheを含む越境negative testが揃うまで有効化しない。R8-Gはさらにmetadata管理API、runtime binding resolver/PDP、監査契約を解禁条件とする。
 - 実装進捗は`01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`だけで追跡し、Claude Design成果物を実装完了の証拠にしない。
 - 実装ラウンドでは同一fixture・ja/en・1440/768/390pxでスクリーンショットを再生成し、`design-qa-checklist.md`で照合する。

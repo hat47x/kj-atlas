@@ -9,7 +9,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `02_Architecture/`, `03_Implement/backend/`, `03_Implement/frontend/`, `03_Implement/mcp/`, deploy/runtime settings and tests
-- Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `THREAT_MODEL.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `02_Architecture/runtime_parameter_registry.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`, `THREAT_MODEL.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `02_Architecture/runtime_parameter_registry.md`
 - Expected verification level: integration / e2e
 
 ## 課題
@@ -29,6 +29,7 @@
   7. session context / active tenant APIとtenant-scoped `effectiveCapabilities`を実装する。
   8. browser cache、recent、QueryPreset、request cache、MCP、agent credential、job、audit、object-storage keyをtenant/user別に分離する。
   9. 同じdocIdを持つtenant A/Bの越境negative matrixをintegration/E2Eへ固定する。
+  10. active tenantを認証セッション単位で直列化し、server-issued `tenantSessionVersion`で複数タブ、同時切替、bfcache、遅延responseのstale requestをresource lookup前に拒否する。
 - 実施しないこと:
   - 実装ゲート完了前のtenant switcher、Tenant Admin、Platform Control Plane有効化。
   - 汎用role editor、tenant横断文書検索、support impersonation、恒久的super-reader。
@@ -43,7 +44,7 @@
 4. **Constraint / DB guard**: NOT NULL、複合unique/FK、RLS等を有効化する。connectionごとのtenant設定はtransaction終了時に確実に破棄する。
 5. **Auth / PDP**: membership、local tenant一致、SafeMode、PDPの順にenforceし、SaaSはdeny-onlyにする。
 6. **Consumers**: MCP、worker、cache、audit、agent registrationへtenant contextを伝播する。
-7. **UI gate**: session contextとnegative matrixが通った後だけRound 8 R8-E/Fを実装候補へ昇格する。
+7. **UI gate**: session context、`tenantSessionVersion`、複数タブ・bfcacheを含むnegative matrixが通った後だけRound 8 R8-E/F/G/Hを実装候補へ昇格する。
 
 各段階でtenant context欠落、backfill不整合、複合FK不整合、RLS context残留、PDP fail-openのいずれかを検出した場合は次段階へ進まない。
 
@@ -61,6 +62,7 @@
 - [ ] AC-10: tenant A/Bへ同じdocIdを作成した越境negative matrixが、API/MCP/worker/browser cacheを含めて成功する。
 - [x] AC-11: single-tenantのlocal-dev/evaluation/enterprise-production互換テストが維持され、SafeMode既定ON、proposal-only、provider=`none`を弱めない。
 - [ ] AC-12: Round 8 R8-E/FはAC-1〜11完了後だけ有効化され、390/768/1440px、ja/en、keyboard/focus、tenant切替時の旧DOM/cache破棄を検証する。
+- [ ] AC-13: 同じ認証セッションの複数タブ、同時tenant切替、bfcache復帰、遅延responseで古い`tenantSessionVersion`を持つGET/PUT/export/import/Admin更新がresource lookup前に拒否され、client通知が欠落しても新tenantへ自動再送・commitされない。
 
 ## 検証計画
 
@@ -70,6 +72,7 @@
   - PostgreSQL RLSでtenant A/Bを切り替える直接SQL testとconnection pool再利用test。
   - 同一docIdでGET/PUT/list/search/count/export/share/import/context/MCP/webhook/job/audit/agent credentialを試すnegative matrix。
   - tenant切替後のDOM、memory、query cache、recent、QueryPreset、object URLの残留確認。
+  - 同じ認証セッションの2タブでtenant A/B切替を競合させ、stale GET/PUT/export/import/Admin更新、BroadcastChannel無効、bfcache復帰、遅延worker/responseを再現する。
   - 現行single-tenant回帰、SafeMode/share/export/import/AI proposal-only回帰。
 - 期待結果: tenant contextが欠落または不一致の経路はすべてfail-closedとなり、同一tenant内の許可済み操作と既存single-tenant利用だけが成功する。
 
@@ -345,3 +348,53 @@
 - frontend buildへ既存`KJ_ATLAS_RUNTIME_PROFILE`を渡し、未指定・`local-dev`・`evaluation`・`enterprise-production`はpolicy通信なしのlocal-first App、`saas-multitenant`だけはserver policy一致→session再検証→tenant scope付きAppの順でmountするentry pointを結線した。未知・空・前後空白を含むbuild値、policy取得失敗・不一致はsingle-tenantへfallbackせず、旧App本文のないblocked stateへ閉じる。
 - 公式Composeはbackend environmentとfrontend buildへ同じ`${KJ_ATLAS_RUNTIME_PROFILE:-evaluation}`を渡し、契約testで両delivery surfaceの一致を固定した。現行backend settingsは`saas-multitenant`を引き続き起動前に拒否するため、frontend配線だけでSaaSを解禁しない。
 - runtime entry／policy／session／UI近接27件、frontend全体1,209件・211 file、frontend typecheck、`saas-multitenant` production build、profile delivery契約4件、docs-check、active issue validator、diff-checkを通過した。実ブラウザではSaaS build＋policy未接続時にalertだけを表示して旧Appをmountしないこと、`evaluation` dev buildでは従来AppとSafeMode ONを表示することを確認した。trusted auth edge／session persister、未保存変更確認、tenant switch POST／transition／hard replacement実配線、tenant A/B実ブラウザE2Eは未完了であり、AC-6/8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-19: gated tenant switch request preparation
+
+- future SaaS用に未保存変更の保存／破棄／取消を選ぶ`alertdialog`を追加した。取消へ初期focusを置き、Escapeを取消へ写像し、Tab focusをdialog内へ閉じ、処理中は3操作を無効化してstatusを読み上げる。ja/enの同一契約を持ち、表示にはserver返却のtenant表示名だけを使ってopaque tenant IDを出さない。
+- request coordinatorはcurrent sessionを再検証し、active tenant自身は通信せず、allowlist外の自由入力、current sessionと旧browser scopeの不一致、欠損・未知の未保存変更decisionをPOST前に拒否する。保存失敗と取消ではPOST／cleanup／navigationを開始しない。POST成功後もprincipal不変・要求tenant一致を独立に再検証し、不正responseでは旧scope削除やhard replacementを開始しない。検証済みsession変更後はcomponent abortより旧DOM破棄とhard replacementを優先する。
+- 切替／cleanup／control／dialog／i18n近接82件・13 file、frontend全体1,223件・213 file、frontend typecheck、`saas-multitenant` production build、docs-check、active issue validatorを通過した。安全ゲート未充足のためcontrol／dialog／coordinatorは現行Appへ接続せず、trusted auth edge／anti-forgery付きsession persister、App保存・runtime cleanup実配線、tenant A/B実ブラウザE2Eは未完了である。AC-6/8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-19: dormant App tenant switch host
+
+- Appへ検証済み`TenantSessionContextV1`を任意注入できるtenant switch hostを追加し、注入時はsession由来のdeployment／principal／tenantとbrowser storage scopeの完全一致をmount前に再検証する。session非注入時のsingle-tenant動作は維持し、現行`main.tsx`は意図的にsessionを渡さないため、production entryではtenant controlをまだ表示しない。
+- 切替確認の取消・保存失敗では旧Appを維持してtenant selectへfocusを戻し、切替開始後は旧tenant DOMをloading／blocked viewへ置換する。成功応答を再検証してから、進行中request・worker・task・object URL・timerの破棄、browser storage facade経由の旧scope削除、hard document replacementを順に実行する。Appからraw `window.localStorage`へは触れず、cleanup能力がない場合はPOST前にfail-closedとした。
+- session／switch／cleanup／storage／UI近接54件・9 file、frontend全体1,233件・214 file、frontend typecheck、`saas-multitenant` production buildを通過した。実ブラウザではSaaS buildがalertだけでfail-closedとなり旧Canvas／tenant controlを表示しないこと、`evaluation` dev buildが従来CanvasとSafeMode ONを表示しtenant controlを出さないことを確認した。trusted SaaS auth edge、anti-forgery付きsession persisterの実runtime接続、PostgreSQL RLS実地検証、MCP／worker／cache／browserを含むtenant A/B negative matrix、production entryへのsession注入は未完了であり、AC-6/8/10/12とSaaS起動拒否を継続する。
+
+### Implementation checkpoint 2026-07-19: atomic trusted SaaS runtime adapter bundle
+
+- application起動前に限り、trusted SaaS identity resolver、tenant resolver、active tenant session persisterを単一の型付きbundleとして注入できる境界を追加した。3要素の欠損、未検証bundle state、起動後の注入、同一App上の別bundle差し替えを拒否し、main lifespanが3要素を同時にだけ適用する。
+- bundle非注入時はidentity resolverとsession persisterをunavailable、tenant resolverを既存single-tenant互換へ毎起動時に戻すため、既存利用を維持しながらsession APIをfail-closedに保つ。環境変数やrequest headerからadapterを選ぶ経路は追加せず、実IdP／trusted proxyの検証方式、anti-forgery付きsession形式、SaaS profileの起動許可は行っていない。
+- bundle境界、session route、Tenant Admin routeの近接49件、初回backend全体runの成功564件、環境PATH補正後のmigration 15件、条件付き25件skip、backend全体Ruffを通過した。全体一括実行では子processの`alembic`未検出を補正後に5分上限へ到達したため、初回成功分と該当migration再実行へ分割して確認した。実auth edge adapter／session persister、PostgreSQL RLS実地検証、完全なtenant A/B negative matrixは外部runtimeと検証環境が必要なため、AC-4/5/6/7/8/10/12とSaaS起動拒否を継続する。
+
+### Design security checkpoint 2026-07-19: active tenant session concurrency
+
+- active tenantを認証セッションへ保存する現行targetでは、別タブでの切替後に古いタブの表示・payload・`docId`とserver sessionのtenantが食い違うscope confusionが未定義だった。両tenantに同じ`docId`があり、同一利用者が両方へ書込可能な場合、旧tenant内容を新tenantへ誤適用できるため、UI cleanupだけでは不十分と判断した。
+- `ADR-0061`でactive tenantを認証セッション単位の単一値とし、server-issued `tenantSessionVersion`をsession context、conditional tenant switch、全tenant-scoped APIのexpected-context preconditionへ追加する方針をAcceptedとした。client versionは認可根拠にせず、trusted session再解決後かつresource lookup前のstale guardに限る。欠損・不一致は本文を返さず、自動再送しない。
+- master data UI構想へsingle-tenant Platform operatorとfuture SaaS Tenant Adminの権限分離、capability/route surface行列、別タブ・bfcache・遅延responseのblocked stateを追加した。Claude Design Round 8へR8-Hを追加し、他タブへの影響、旧本文を背景へ残さないscope再確認、stale save拒否、390px/ja-en/focus状態のレッドラインを要求する。
+- これは設計・契約固定だけであり、`tenantSessionVersion` API、auth/session adapter、全route guard、cross-tab通知は未実装である。AC-13を追加し、既存AC-4/5/6/7/8/10/12とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-19: conditional tenant session version
+
+- trusted auth/session adapter境界を、active tenant stateに束縛した1〜128文字のASCII opaque `tenantSessionVersion`解決と、expected versionの原子的比較・tenant更新・新version発行を担う契約へ拡張した。session contextはmembership再確認後のadapter値だけを返し、欠損・不正値・adapter例外を値非反射の`503 session_context_unavailable`へ閉じる。
+- `POST /session/active-tenant`へ`expectedTenantSessionVersion`を必須化し、現versionとのconstant-time相当の事前比較とadapter内の原子的比較を二段で要求した。事前または同時更新競合は資源・現tenant・生versionを返さない`409 tenant_session_changed`とし、保存前に最大長versionでresponse上限を検証する。adapterが同じversion、不正version、予期しない例外を返す場合も成功扱いにしない。
+- frontendのclosed-world session validator、active tenant client、request coordinatorを同期し、現在versionをPOSTし、principal不変・要求tenant一致・version変更をすべて確認するまでcleanup、旧scope削除、hard replacementを開始しない。backend近接86件（session 76件＋Tenant Admin 10件）と全体591件・条件付き25件skip、frontend近接84件と全体1,252件・217 file、frontend typecheck、backend全体Ruff、docs-checkを通過した。
+- これはsession context／active tenant切替の基盤sliceである。実auth edge adapterとanti-forgery付きsession形式、全tenant-scoped APIのresource lookup前guard、BroadcastChannel、bfcache／resume再確認、stale response／worker commit拒否、SaaS runtime起動許可は未実装であり、AC-4/5/6/7/8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-19: browser tenant session coherence boundary
+
+- future SaaS App hostへ、固定same-origin BroadcastChannelで`null`だけを通知するcoherence境界を追加した。channel名・payloadへtenant ID、principal ID、capability、本文、`tenantSessionVersion`を含めず、通知生成失敗・送信失敗でも検証済みlocal切替のcleanup／hard replacementを止めない。server preconditionを引き続き権威とする。
+- 別タブ通知受信、`pageshow.persisted=true`、online復帰、5分以上の非表示からの復帰を一度だけのscope invalidationへ集約した。invalidation時はlistener／channelを先に破棄し、進行中request、task、workerを停止して旧Appをblocked viewへ置換する。local切替はserver応答のprincipal／tenant／新version検証後、cleanupとreplacementより前に通知する。
+- coherence／App host／switch coordinator近接27件、frontend全体1,259件・218 file、frontend typecheck、docs-checkを通過した。現行production entryはsession contextを注入しないため境界はdormantで、実ブラウザの複数タブE2E、全APIのserver guard、stale response／worker resultの世代commit拒否は未完了である。AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-19: tenant API session precondition guard
+
+- SaaS profileでだけ有効になる共通request guardを追加し、`KJ-Atlas-Tenant-Session-Version`を単一headerとして固定した。trusted sessionの現versionを解決した後に照合し、欠損・重複・不正・不一致を値非反射の`409 tenant_session_changed`へ統一する。client headerはidentity、tenant、membership、capabilityの解決には使用しない。
+- `/docs`の共通認可境界と`/tenant-admin/document-access`の管理認可境界へ組み込み、SaaS時は文書・metadataのlookupより先に停止する。既存のlocal／evaluation／enterprise profileはheaderを要求せず互換動作を維持し、不明runtime policyは`503 runtime_policy_unavailable`へfail-closedにする。
+- 共通guard、文書のtenant分離／access control、Tenant Adminの近接31件、backend全体596件・条件付き25件skip、backend全体Ruff、docs-checkを通過した。export、share、import、MCP、webhook、その他Tenant Admin、非同期job開始点への横断適用、frontend API clientからのheader付与、CORS／proxy実配備検証、SaaS runtime起動許可は未完了であり、AC-4/5/6/7/8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-19: document client session precondition wiring
+
+- SaaS runtime entryでbootstrap済みsession contextと一致するbrowser storage scopeをAppへ同時注入するようにし、App側のclosed-world再検証を通過したcontextだけを文書clientへ渡す。単一テナントentryはsession未注入のままとし、既存requestへheaderを追加しない。
+- `GET/PUT /docs/{doc_id}`と`POST /docs/{doc_id}/export-audit`へ単一の`KJ-Atlas-Tenant-Session-Version`を付与した。clientは呼出時にもsession contractを再検証し、不正contextは通信前に拒否する。serverの`409 tenant_session_changed`はDocument metadata競合として保存再試行へ流さず、runtime resourceをcleanupして旧Appをblocked化する。
+- client／bootstrap／tenant switch／coherenceの近接62件、frontend全体1,263件・218 file、frontend typecheck、docs-checkを通過した。文書以外のtenant-scoped client、document request自体の共通abort／世代commit guard、実ブラウザ複数タブE2E、SaaS runtime起動許可は未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。

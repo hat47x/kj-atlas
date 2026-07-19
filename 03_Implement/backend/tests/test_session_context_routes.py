@@ -11,6 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from kj_atlas_api.access_control import AuthContext
+from kj_atlas_api.active_tenant_session import TenantSessionChangedError
 from kj_atlas_api.auth_context import ResolvedIdentity
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
@@ -115,7 +116,20 @@ class RaisingTenantResolver:
 
 @dataclass
 class RecordingActiveTenantPersister:
-    calls: list[tuple[str, str, str, str]] = field(default_factory=list)
+    tenant_session_version: str = "session-v1"
+    calls: list[tuple[str, str, str, str, str]] = field(default_factory=list)
+
+    def current_version(
+        self,
+        *,
+        request: Request,
+        principal_id: str,
+        active_tenant: TenantContext,
+    ) -> str:
+        assert request.method in {"GET", "POST"}
+        assert principal_id == "user-1"
+        assert active_tenant.tenant_id == "tenant-a"
+        return self.tenant_session_version
 
     def persist(
         self,
@@ -125,25 +139,37 @@ class RecordingActiveTenantPersister:
         principal_id: str,
         previous_tenant: TenantContext,
         selected_tenant: TenantContext,
-    ) -> None:
+        expected_tenant_session_version: str,
+    ) -> str:
+        if expected_tenant_session_version != self.tenant_session_version:
+            raise TenantSessionChangedError
         self.calls.append(
             (
                 principal_id,
                 previous_tenant.tenant_id,
                 selected_tenant.tenant_id,
                 selected_tenant.membership_id,
+                expected_tenant_session_version,
             )
         )
         assert request.method == "POST"
+        self.tenant_session_version = "session-v2"
+        return self.tenant_session_version
 
 
 class RaisingActiveTenantPersister:
-    def persist(self, **_) -> None:
+    def current_version(self, **_) -> str:
+        return "session-v1"
+
+    def persist(self, **_) -> str:
         raise RuntimeError("secret session store failure")
 
 
 class RejectingActiveTenantPersister:
-    def persist(self, **_) -> None:
+    def current_version(self, **_) -> str:
+        return "session-v1"
+
+    def persist(self, **_) -> str:
         raise HTTPException(
             status_code=403,
             detail={
@@ -151,6 +177,19 @@ class RejectingActiveTenantPersister:
                 "message": "Active tenant change was rejected.",
             },
         )
+
+
+class ConcurrentActiveTenantPersister(RecordingActiveTenantPersister):
+    def persist(self, **_) -> str:
+        raise TenantSessionChangedError
+
+
+@dataclass
+class InvalidVersionActiveTenantPersister(RecordingActiveTenantPersister):
+    returned_version: str = "invalid version"
+
+    def persist(self, **_) -> str:
+        return self.returned_version
 
 
 def _seed(db: Session) -> None:
@@ -217,13 +256,16 @@ def _session_client(
     identity_resolver = StaticIdentityResolver()
     tenant_resolver = MutableTenantResolver()
     capability_resolver = MutableCapabilityResolver()
+    active_tenant_session_persister = RecordingActiveTenantPersister()
     app.dependency_overrides[get_db] = _get_test_db
     try:
         with TestClient(app) as client:
             client.app.state.saas_identity_context_resolver = identity_resolver
             client.app.state.tenant_context_resolver = tenant_resolver
             client.app.state.tenant_capability_resolver = capability_resolver
-            client.app.state.active_tenant_session_persister = None
+            client.app.state.active_tenant_session_persister = (
+                active_tenant_session_persister
+            )
             yield (
                 client,
                 session_local,
@@ -337,6 +379,7 @@ def test_context_returns_only_allowlisted_tenants_and_trusted_capabilities(tmp_p
         ],
         "effectiveCapabilities": ["document.read", "document.write"],
         "capabilityVersion": "capability-v7",
+        "tenantSessionVersion": "session-v1",
     }
     assert response.headers["cache-control"] == "no-store"
     assert response.headers["pragma"] == "no-cache"
@@ -420,6 +463,22 @@ def test_context_is_closed_without_capability_resolver(tmp_path) -> None:
 
     assert response.status_code == 503
     assert response.json()["detail"]["code"] == "capability_resolution_unavailable"
+
+
+def test_context_rejects_invalid_session_version_without_reflecting_it(tmp_path) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+        persister = RecordingActiveTenantPersister(
+            tenant_session_version="secret invalid version"
+        )
+        client.app.state.active_tenant_session_persister = persister
+
+        response = client.get("/session/context")
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "session_context_unavailable"
+    assert "secret invalid version" not in response.text
+    assert response.headers["cache-control"] == "no-store"
 
 
 def test_context_rejects_unknown_capability(tmp_path) -> None:
@@ -535,7 +594,10 @@ def test_active_tenant_change_persists_only_the_allowlisted_selected_context(
                 "x-tenant-id": "attacker-header",
                 "x-auth-roles": "platform-admin",
             },
-            json={"tenantId": "tenant-b"},
+            json={
+                "tenantId": "tenant-b",
+                "expectedTenantSessionVersion": "session-v1",
+            },
         )
 
     assert response.status_code == 200
@@ -548,22 +610,51 @@ def test_active_tenant_change_persists_only_the_allowlisted_selected_context(
         ],
         "effectiveCapabilities": ["document.read", "document.write"],
         "capabilityVersion": "capability-v7",
+        "tenantSessionVersion": "session-v2",
     }
     assert response.headers["cache-control"] == "no-store"
     assert response.headers["pragma"] == "no-cache"
     assert len(persister.calls) == 1
-    principal_id, previous_tenant_id, selected_tenant_id, membership_id = (
+    (
+        principal_id,
+        previous_tenant_id,
+        selected_tenant_id,
+        membership_id,
+        expected_version,
+    ) = (
         persister.calls[0]
     )
     assert principal_id == "user-1"
     assert previous_tenant_id == "tenant-a"
     assert selected_tenant_id == "tenant-b"
     assert membership_id
+    assert expected_version == "session-v1"
     for untrusted_value in ("attacker-query", "attacker-header", "platform-admin"):
         assert untrusted_value not in response.text
 
 
 def test_active_tenant_change_is_closed_without_session_persister(tmp_path) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+        client.app.state.active_tenant_session_persister = None
+
+        response = client.post(
+            "/session/active-tenant",
+            json={
+                "tenantId": "tenant-b",
+                "expectedTenantSessionVersion": "session-v1",
+            },
+        )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == {
+        "code": "session_context_unavailable",
+        "message": "Tenant session context is unavailable.",
+    }
+    assert response.headers["cache-control"] == "no-store"
+
+
+def test_active_tenant_change_requires_expected_session_version(tmp_path) -> None:
     with _session_client(tmp_path) as fixture:
         client, _, _, _, _ = fixture
 
@@ -572,12 +663,78 @@ def test_active_tenant_change_is_closed_without_session_persister(tmp_path) -> N
             json={"tenantId": "tenant-b"},
         )
 
-    assert response.status_code == 503
+    assert response.status_code == 422
+
+
+def test_active_tenant_change_rejects_stale_expected_version_before_selection(
+    tmp_path,
+) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+        persister = RecordingActiveTenantPersister()
+        client.app.state.active_tenant_session_persister = persister
+
+        response = client.post(
+            "/session/active-tenant",
+            json={
+                "tenantId": "tenant-b",
+                "expectedTenantSessionVersion": "session-stale",
+            },
+        )
+
+    assert response.status_code == 409
     assert response.json()["detail"] == {
-        "code": "active_tenant_update_unavailable",
-        "message": "Active tenant update is unavailable.",
+        "code": "tenant_session_changed",
+        "message": "Tenant session context changed.",
     }
+    assert persister.calls == []
+    assert "session-stale" not in response.text
     assert response.headers["cache-control"] == "no-store"
+
+
+def test_active_tenant_change_maps_atomic_compare_failure_to_stable_conflict(
+    tmp_path,
+) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+        client.app.state.active_tenant_session_persister = (
+            ConcurrentActiveTenantPersister()
+        )
+
+        response = client.post(
+            "/session/active-tenant",
+            json={
+                "tenantId": "tenant-b",
+                "expectedTenantSessionVersion": "session-v1",
+            },
+        )
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "tenant_session_changed"
+
+
+@pytest.mark.parametrize("returned_version", ["session-v1", "invalid version"])
+def test_active_tenant_change_rejects_invalid_new_session_version(
+    tmp_path,
+    returned_version: str,
+) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+        client.app.state.active_tenant_session_persister = (
+            InvalidVersionActiveTenantPersister(returned_version=returned_version)
+        )
+
+        response = client.post(
+            "/session/active-tenant",
+            json={
+                "tenantId": "tenant-b",
+                "expectedTenantSessionVersion": "session-v1",
+            },
+        )
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "active_tenant_update_unavailable"
+    assert returned_version not in response.text
 
 
 @pytest.mark.parametrize(
@@ -595,7 +752,10 @@ def test_active_tenant_change_rejects_free_or_noncanonical_tenant_ids(
 
         response = client.post(
             "/session/active-tenant",
-            json={"tenantId": tenant_id},
+            json={
+                "tenantId": tenant_id,
+                "expectedTenantSessionVersion": "session-v1",
+            },
         )
 
     assert response.status_code == 404
@@ -611,7 +771,11 @@ def test_active_tenant_change_rejects_extra_fields_before_persist(tmp_path) -> N
 
         response = client.post(
             "/session/active-tenant",
-            json={"tenantId": "tenant-b", "role": "platform-admin"},
+            json={
+                "tenantId": "tenant-b",
+                "expectedTenantSessionVersion": "session-v1",
+                "role": "platform-admin",
+            },
         )
 
     assert response.status_code == 422
@@ -633,7 +797,10 @@ def test_active_tenant_change_rechecks_requested_membership_before_persist(
 
         response = client.post(
             "/session/active-tenant",
-            json={"tenantId": "tenant-b"},
+            json={
+                "tenantId": "tenant-b",
+                "expectedTenantSessionVersion": "session-v1",
+            },
         )
 
     assert response.status_code == 404
@@ -652,7 +819,10 @@ def test_active_tenant_change_normalizes_unexpected_persistence_failure(
 
         response = client.post(
             "/session/active-tenant",
-            json={"tenantId": "tenant-b"},
+            json={
+                "tenantId": "tenant-b",
+                "expectedTenantSessionVersion": "session-v1",
+            },
         )
 
     assert response.status_code == 503
@@ -671,7 +841,10 @@ def test_active_tenant_change_preserves_trusted_antiforgery_rejection(
 
         response = client.post(
             "/session/active-tenant",
-            json={"tenantId": "tenant-b"},
+            json={
+                "tenantId": "tenant-b",
+                "expectedTenantSessionVersion": "session-v1",
+            },
         )
 
     assert response.status_code == 403

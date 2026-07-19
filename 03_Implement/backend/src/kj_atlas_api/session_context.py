@@ -6,6 +6,7 @@ from typing import Protocol
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from kj_atlas_api.active_tenant_session import canonical_tenant_session_version
 from kj_atlas_api.tenant_context import (
     TenantContext,
     TenantSummary,
@@ -65,6 +66,7 @@ class TenantSessionContext:
     available_tenants: tuple[TenantSummary, ...]
     effective_capabilities: tuple[str, ...]
     capability_version: str
+    tenant_session_version: str
 
 
 def _session_auth_required() -> None:
@@ -125,6 +127,7 @@ def build_tenant_session_context(
     principal_id: str | None,
     tenant: TenantContext,
     capability_resolver: TenantCapabilityResolver,
+    tenant_session_version: str,
 ) -> TenantSessionContext:
     """Build a session payload only from rechecked membership and trusted policy data."""
     if principal_id is None:
@@ -133,6 +136,13 @@ def build_tenant_session_context(
         principal_id = _canonical_value(
             principal_id,
             max_length=MAX_SESSION_IDENTIFIER_LENGTH,
+        )
+    except ValueError:
+        _session_context_unavailable()
+
+    try:
+        tenant_session_version = canonical_tenant_session_version(
+            tenant_session_version
         )
     except ValueError:
         _session_context_unavailable()
@@ -215,6 +225,7 @@ def build_tenant_session_context(
         available_tenants=available_tenants,
         effective_capabilities=effective_capabilities,
         capability_version=capability_version,
+        tenant_session_version=tenant_session_version,
     )
 
 
@@ -225,6 +236,7 @@ def switch_tenant_session_context(
     current_tenant: TenantContext,
     requested_tenant_id: str,
     capability_resolver: TenantCapabilityResolver,
+    tenant_session_version: str,
 ) -> TenantSessionContext:
     """Recheck current context and requested tenant before resolving new capabilities."""
     if principal_id is None:
@@ -266,4 +278,5 @@ def switch_tenant_session_context(
         principal_id=principal_id,
         tenant=selected_tenant,
         capability_resolver=capability_resolver,
+        tenant_session_version=tenant_session_version,
     )

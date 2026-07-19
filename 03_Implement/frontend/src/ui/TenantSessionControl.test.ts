@@ -18,6 +18,7 @@ function sessionContext(
     availableTenants,
     effectiveCapabilities: ["document.read"],
     capabilityVersion: "capability-v7",
+    tenantSessionVersion: "session-v1",
   };
 }
 

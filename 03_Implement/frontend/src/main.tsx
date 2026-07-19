@@ -23,7 +23,12 @@ function renderRuntimeEntry() {
     return (
       <TenantSessionRuntimeGate
         deployment={window.location.origin}
-        renderApp={(_result) => <App />}
+        renderApp={(result) => (
+          <App
+            storageScope={result.storageScope}
+            tenantSessionContext={result.sessionContext}
+          />
+        )}
       />
     );
   }

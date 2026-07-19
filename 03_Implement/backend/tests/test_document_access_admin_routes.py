@@ -93,6 +93,14 @@ class MutableCapabilityResolver:
         )
 
 
+class StaticTenantSessionPersister:
+    def current_version(self, **_: object) -> str:
+        return "session-v1"
+
+    def persist(self, **_: object) -> str:
+        return "session-v2"
+
+
 def _document(*, tenant_id: str, doc_id: str, title: str) -> DocumentRow:
     return DocumentRow(
         tenant_id=tenant_id,
@@ -214,11 +222,15 @@ def _tenant_admin_client(
             client.app.state.saas_identity_context_resolver = StaticIdentityResolver()
             client.app.state.tenant_context_resolver = tenant_resolver
             client.app.state.tenant_capability_resolver = capability_resolver
+            client.app.state.active_tenant_session_persister = (
+                StaticTenantSessionPersister()
+            )
             yield client, session_local, tenant_resolver, capability_resolver
     finally:
         app.dependency_overrides.clear()
         app.state.saas_identity_context_resolver = None
         app.state.tenant_capability_resolver = None
+        app.state.active_tenant_session_persister = None
         app.state.tenant_context_resolver = SingleTenantContextResolver()
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
@@ -239,6 +251,35 @@ def test_management_api_is_closed_without_trusted_saas_identity_adapter(tmp_path
 
     assert response.status_code == 503
     assert response.json()["detail"]["code"] == "tenant_admin_auth_unavailable"
+
+
+def test_saas_session_version_is_checked_before_document_lookup(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lookup_called = False
+
+    def _unexpected_lookup(*args: object, **kwargs: object) -> bool:  # noqa: ARG001
+        nonlocal lookup_called
+        lookup_called = True
+        return True
+
+    monkeypatch.setattr(
+        "kj_atlas_api.routes.document_access_admin.document_access_target_exists",
+        _unexpected_lookup,
+    )
+    with _tenant_admin_client(tmp_path) as fixture:
+        client, _, _, _ = fixture
+        original_runtime_profile = client.app.state.runtime_profile
+        try:
+            client.app.state.runtime_profile = "saas-multitenant"
+            response = client.get("/tenant-admin/document-access/shared-doc")
+        finally:
+            client.app.state.runtime_profile = original_runtime_profile
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "tenant_session_changed"
+    assert lookup_called is False
 
 
 @pytest.mark.parametrize("capabilities", [("document.write",), ("tenant.provision",)])

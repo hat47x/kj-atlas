@@ -85,12 +85,13 @@ import {
   upsertRelationSummaryWithHistory,
 } from "./domain/relation_summary_ops";
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
-import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
-import { loadEmptyCanvasHintCompleted, saveEmptyCanvasHintCompleted } from "./storage/empty_canvas_hint";
-import { loadViewModeForDocument, saveViewModeForDocument } from "./storage/view_mode";
-import { loadViewLocaleForDocumentView, saveViewLocaleForDocumentView } from "./storage/view_locale";
-import { loadViewVisibilityForDocument, saveViewVisibilityForDocument } from "./storage/view_visibility";
-import { buildLocalReviewerRef, inferReviewerRefSource, initializeCurrentReviewerRef, saveCurrentReviewerRef } from "./storage/current_reviewer";
+import { buildLocalReviewerRef, inferReviewerRefSource } from "./storage/current_reviewer";
+import {
+  assertAppStorageScopeStable,
+  createAppBrowserStorage,
+} from "./storage/app_browser_storage";
+import type { TenantBrowserStorageScope } from "./storage/tenant_scope";
+import type { TenantSessionContextV1 } from "./api/session_context";
 import { createViewLocalePersistenceScope } from "./storage/view_locale_scope";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
@@ -195,20 +196,21 @@ import { DiffWorkerClient } from "./worker/diff_client";
 import { DiagnosticsWorkerClient } from "./worker/diagnostics_client";
 import type { DiagnosticsProgressStage } from "./worker/diagnostics_protocol";
 import type { DiffProgressStage } from "./worker/diff_protocol";
+import { cleanupAppRuntimeResources } from "./session/app_runtime_cleanup";
+import { resolveAppTenantSession } from "./session/app_tenant_session";
+import { requestTenantSessionTransition, type TenantSwitchUnsavedDecision } from "./session/tenant_switch_request";
+import {
+  installTenantSessionCoherenceBoundary,
+  type TenantSessionCoherenceBoundary,
+} from "./session/tenant_session_coherence";
+import { TenantSessionControl } from "./ui/TenantSessionControl";
+import { TenantChangeConfirmationDialog } from "./ui/TenantChangeConfirmationDialog";
+import {
+  TenantSessionBlockedView,
+  TenantSessionLoadingView,
+} from "./ui/TenantSessionBootstrapGate";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
-const ADVANCED_UI_STORAGE_KEY = "kj-atlas.advanced-ui-enabled";
-
-function loadAdvancedUiEnabled(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  try {
-    return window.localStorage.getItem(ADVANCED_UI_STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
 // UX-VISUAL-02 (ADR-0048 D3): an island at or below this member count is a
 // "small island" eligible for the protection mark (non-scoring; a bare
 // threshold, not a rank).
@@ -1086,7 +1088,39 @@ function applyFocusScope(document: DocumentV1, focusTarget: FocusTarget): Docume
   };
 }
 
-export default function App() {
+type TenantSwitchUiState =
+  | Readonly<{ status: "idle" }>
+  | Readonly<{
+    status: "confirming";
+    requestedTenantId: string;
+    requestedTenantDisplayName: string;
+  }>
+  | Readonly<{ status: "switching" }>
+  | Readonly<{ status: "blocked" }>;
+
+export type AppProps = Readonly<{
+  storageScope?: TenantBrowserStorageScope;
+  tenantSessionContext?: TenantSessionContextV1;
+}>;
+
+export default function App({ storageScope, tenantSessionContext }: AppProps = {}) {
+  const appStorage = useMemo(
+    () => createAppBrowserStorage(storageScope),
+    [storageScope?.deployment, storageScope?.principalId, storageScope?.tenantId],
+  );
+  const verifiedTenantSession = useMemo(
+    () => resolveAppTenantSession({
+      sessionContext: tenantSessionContext,
+      storageScope: appStorage.scope,
+    }),
+    [appStorage.scope, tenantSessionContext],
+  );
+  const initialStorageScopeIdentityRef = useRef(appStorage.scopeIdentity);
+  assertAppStorageScopeStable(
+    initialStorageScopeIdentityRef.current,
+    appStorage.scopeIdentity,
+  );
+
   const [history, setHistory] = useState<DocumentHistory | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
@@ -1094,7 +1128,9 @@ export default function App() {
   // Never persisted to the document (§6: quality notes are derived, not truth).
   const [cardQualityAssistByCardId, setCardQualityAssistByCardId] = useState<Record<string, CardQualityAssistState>>({});
   const [openCardQualityAssistCardId, setOpenCardQualityAssistCardId] = useState<string | null>(null);
-  const [isAdvancedUiEnabled, setIsAdvancedUiEnabled] = useState<boolean>(loadAdvancedUiEnabled);
+  const [isAdvancedUiEnabled, setIsAdvancedUiEnabled] = useState<boolean>(
+    appStorage.loadAdvancedUiEnabled,
+  );
   const [isWorkModeOpen, setIsWorkModeOpen] = useState(false);
   const workModeTriggerRef = useRef<HTMLButtonElement>(null);
   const [isAgentTaskExportOpen, setIsAgentTaskExportOpen] = useState(false);
@@ -1132,13 +1168,18 @@ export default function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [isReloadingDocument, setIsReloadingDocument] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [tenantSwitchUiState, setTenantSwitchUiState] = useState<TenantSwitchUiState>({
+    status: "idle",
+  });
   const [docEtag, setDocEtag] = useState<string | null>(null);
   const [hasSaveConflict, setHasSaveConflict] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const locationSearch = window.location.search;
   const isReadOnly = useMemo(() => resolveReadOnlyFromSearch(locationSearch), [locationSearch]);
   const [activeDocumentId, setActiveDocumentId] = useState(DEFAULT_DOCUMENT_ID);
-  const [recentDocumentIds, setRecentDocumentIds] = useState<string[]>(() => loadRecentDocumentIds());
+  const [recentDocumentIds, setRecentDocumentIds] = useState<string[]>(
+    appStorage.loadRecentDocumentIds,
+  );
   const [selectedRecentDocumentId, setSelectedRecentDocumentId] = useState("");
   const [suggestionInstruction, setSuggestionInstruction] = useState("");
   const [suggestedDocument, setSuggestedDocument] = useState<DocumentV1 | null>(null);
@@ -1167,7 +1208,9 @@ export default function App() {
   const [lodLevelOverride, setLodLevelOverride] = useState<LODLevel | null>(null);
   const [lodShowLoneWolvesWhenFar, setLodShowLoneWolvesWhenFar] = useState(true);
   const [safeMode, setSafeMode] = useState(true);
-  const [emptyCanvasHintCompleted, setEmptyCanvasHintCompleted] = useState(loadEmptyCanvasHintCompleted);
+  const [emptyCanvasHintCompleted, setEmptyCanvasHintCompleted] = useState(
+    appStorage.loadEmptyCanvasHintCompleted,
+  );
   // UX-VISUAL-01 AC-2: in-canvas state legend. Default OFF (CB-1); session-local.
   const [isCanvasLegendOpen, setIsCanvasLegendOpen] = useState(false);
   // UX-VISUAL-02: protection marks for lone-wolf cards / small islands.
@@ -1189,10 +1232,10 @@ export default function App() {
   const [isShortcutCheatsheetOpen, setIsShortcutCheatsheetOpen] = useState(false);
   const shortcutCheatsheetReturnFocusRef = useRef<HTMLElement | null>(null);
   const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(
-    () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
+    () => appStorage.loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
   );
   const [packVisibility, setPackVisibility] = useState<PublishVisibility>(
-    () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).packVisibility
+    () => appStorage.loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).packVisibility
   );
   const [showLabelBounds, setShowLabelBounds] = useState(false);
   const [includeUnreviewedDraftsInExport, setIncludeUnreviewedDraftsInExport] = useState(false);
@@ -1290,7 +1333,9 @@ export default function App() {
   const [mergeWarningConfirmationKey, setMergeWarningConfirmationKey] = useState<string | null>(null);
   const [mergeAuditLog, setMergeAuditLog] = useState<MergeAuditEntry[]>([]);
   const [reviewEvents, setReviewEvents] = useState<ReviewEvent[]>([]);
-  const [currentReviewerRef, setCurrentReviewerRef] = useState<string>(() => initializeCurrentReviewerRef());
+  const [currentReviewerRef, setCurrentReviewerRef] = useState<string>(
+    appStorage.initializeCurrentReviewerRef,
+  );
   const [mergeSourceInfo, setMergeSourceInfo] = useState<MergeAuditSource>({ kind: "unknown" });
   const [pendingImportedDocument, setPendingImportedDocument] = useState<PendingImportedDocument | null>(null);
   const [importDocumentError, setImportDocumentError] = useState<string | null>(null);
@@ -1327,7 +1372,55 @@ export default function App() {
   const diffWorkerClientRef = useRef<DiffWorkerClient | null>(null);
   const diagnosticsWorkerClientRef = useRef<DiagnosticsWorkerClient | null>(null);
   const diffAbortRef = useRef<AbortController | null>(null);
+  const tenantSwitchAbortRef = useRef<AbortController | null>(null);
+  const tenantSessionCoherenceRef = useRef<TenantSessionCoherenceBoundary | null>(null);
+  const tenantControlRef = useRef<HTMLSelectElement | null>(null);
   const viewLocalePersistenceScopeRef = useRef(createViewLocalePersistenceScope({ docId: "", viewMode: "explore", allowPersistence: true }));
+
+  const cleanupRuntimeResources = useCallback(() => {
+    cleanupAppRuntimeResources({
+      abortControllers: [
+        tenantSwitchAbortRef.current,
+        diffAbortRef.current,
+        diagnosticsAbortRef.current,
+        bundleAbortRef.current,
+      ],
+      cancelableTasks: [bundleRunnerRef.current],
+      disposableWorkers: [
+        diffWorkerClientRef.current,
+        diagnosticsWorkerClientRef.current,
+      ],
+    });
+  }, []);
+
+  const blockStaleTenantSession = useCallback(() => {
+    if (!verifiedTenantSession) {
+      return false;
+    }
+    cleanupRuntimeResources();
+    setTenantSwitchUiState({ status: "blocked" });
+    return true;
+  }, [cleanupRuntimeResources, verifiedTenantSession]);
+
+  useEffect(() => {
+    return cleanupRuntimeResources;
+  }, [cleanupRuntimeResources]);
+
+  useEffect(() => {
+    if (!verifiedTenantSession) {
+      return undefined;
+    }
+    const boundary = installTenantSessionCoherenceBoundary({
+      onInvalidate: blockStaleTenantSession,
+    });
+    tenantSessionCoherenceRef.current = boundary;
+    return () => {
+      boundary.dispose();
+      if (tenantSessionCoherenceRef.current === boundary) {
+        tenantSessionCoherenceRef.current = null;
+      }
+    };
+  }, [blockStaleTenantSession, verifiedTenantSession]);
 
   useEffect(() => {
     return () => {
@@ -1956,8 +2049,8 @@ export default function App() {
   }, [document, selectedIslandRelationEdge]);
 
   const rememberRecentDocumentId = useCallback((docId: string) => {
-    setRecentDocumentIds(pushRecentDocumentId(docId));
-  }, [abstractMapView, summaryView]);
+    setRecentDocumentIds(appStorage.pushRecentDocumentId(docId));
+  }, [appStorage]);
 
   const applyResolvedLocaleForView = useCallback((args: {
     docId: string;
@@ -1994,7 +2087,9 @@ export default function App() {
       setStatusMessage(t(isReload ? "app.status.document_reloading" : "app.status.document_loading"));
 
       try {
-        const loaded = await getDocument(docId);
+        const loaded = await getDocument(docId, {
+          tenantSessionContext: verifiedTenantSession,
+        });
         if (isStale()) {
           return false;
         }
@@ -2006,12 +2101,12 @@ export default function App() {
           future: [],
         });
         setActiveDocumentId(loadedDocument.id);
-        const loadedViewMode = loadViewModeForDocument(loadedDocument.id) ?? "explore";
+        const loadedViewMode = appStorage.loadViewModeForDocument(loadedDocument.id) ?? "explore";
         setViewMode(loadedViewMode);
         applyResolvedLocaleForView({
           docId: loadedDocument.id,
           viewMode: loadedViewMode,
-          persistedLocale: loadViewLocaleForDocumentView(loadedDocument.id, loadedViewMode),
+          persistedLocale: appStorage.loadViewLocaleForDocumentView(loadedDocument.id, loadedViewMode),
         });
         rememberRecentDocumentId(loadedDocument.id);
         setSelectedRecentDocumentId(loadedDocument.id);
@@ -2027,7 +2122,7 @@ export default function App() {
         setMergeAuditLog([]);
       setReviewEvents([]);
         setMergeSourceInfo({ kind: "unknown" });
-        const persistedVisibility = loadViewVisibilityForDocument(loadedDocument.id);
+        const persistedVisibility = appStorage.loadViewVisibilityForDocument(loadedDocument.id);
         setViewVisibility(persistedVisibility.viewVisibility);
         setPackVisibility(persistedVisibility.packVisibility);
         pendingCardDragSnapshotRef.current = null;
@@ -2038,7 +2133,9 @@ export default function App() {
           const defaultDocument = createDefaultDocument(docId);
 
           try {
-            const saved = await putDocument(docId, defaultDocument);
+            const saved = await putDocument(docId, defaultDocument, undefined, {
+              tenantSessionContext: verifiedTenantSession,
+            });
             if (isStale()) {
               return false;
             }
@@ -2050,12 +2147,12 @@ export default function App() {
               future: [],
             });
             setActiveDocumentId(savedDocument.id);
-            const loadedViewMode = loadViewModeForDocument(savedDocument.id) ?? "explore";
+            const loadedViewMode = appStorage.loadViewModeForDocument(savedDocument.id) ?? "explore";
             setViewMode(loadedViewMode);
             applyResolvedLocaleForView({
               docId: savedDocument.id,
               viewMode: loadedViewMode,
-              persistedLocale: loadViewLocaleForDocumentView(savedDocument.id, loadedViewMode),
+              persistedLocale: appStorage.loadViewLocaleForDocumentView(savedDocument.id, loadedViewMode),
             });
             rememberRecentDocumentId(savedDocument.id);
             setSelectedRecentDocumentId(savedDocument.id);
@@ -2071,17 +2168,31 @@ export default function App() {
             setMergeAuditLog([]);
       setReviewEvents([]);
             setMergeSourceInfo({ kind: "unknown" });
-            const persistedVisibility = loadViewVisibilityForDocument(savedDocument.id);
+            const persistedVisibility = appStorage.loadViewVisibilityForDocument(savedDocument.id);
             setViewVisibility(persistedVisibility.viewVisibility);
             setPackVisibility(persistedVisibility.packVisibility);
             pendingCardDragSnapshotRef.current = null;
             setStatusMessage(t("app.status.document_created"));
             return true;
           } catch (saveError) {
+            if (
+              saveError instanceof ApiError
+              && saveError.code === "tenant_session_changed"
+              && blockStaleTenantSession()
+            ) {
+              return false;
+            }
             setStatusMessage(formatCreateDocumentFailure(saveError));
             return false;
           }
         } else {
+          if (
+            error instanceof ApiError
+            && error.code === "tenant_session_changed"
+            && blockStaleTenantSession()
+          ) {
+            return false;
+          }
           if (error instanceof ApiError && error.status === 404) {
             setStatusMessage(t("app.status.document_not_found_recovery", { docId }));
           } else {
@@ -2098,7 +2209,13 @@ export default function App() {
         }
       }
     },
-    [applyResolvedLocaleForView]
+    [
+      appStorage,
+      applyResolvedLocaleForView,
+      blockStaleTenantSession,
+      rememberRecentDocumentId,
+      verifiedTenantSession,
+    ]
   );
 
   const applyDocumentChange = useCallback(
@@ -2430,16 +2547,21 @@ export default function App() {
     };
   }, [abstractMapView, summaryView, isReadOnly]);
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<boolean> => {
     if (!document || isSaving || !isDirty) {
-      return;
+      return false;
     }
 
     setIsSaving(true);
     setStatusMessage(t("app.status.saving"));
 
     try {
-      const saved = await putDocument(document.id, withUpdatedTimestamp(document), docEtag ?? undefined);
+      const saved = await putDocument(
+        document.id,
+        withUpdatedTimestamp(document),
+        docEtag ?? undefined,
+        { tenantSessionContext: verifiedTenantSession },
+      );
       const savedDocument = normalizeDocument(saved.document);
       pendingCardDragSnapshotRef.current = null;
       setHistory({
@@ -2454,17 +2576,142 @@ export default function App() {
       setIsDirty(false);
       setHasSaveConflict(false);
       setStatusMessage(t("app.status.saved"));
+      return true;
     } catch (error) {
+      if (
+        error instanceof ApiError
+        && error.code === "tenant_session_changed"
+        && blockStaleTenantSession()
+      ) {
+        return false;
+      }
       if (error instanceof ApiError && error.status === 409) {
         setHasSaveConflict(true);
         setStatusMessage(t("app.status.save_conflict"));
-        return;
+        return false;
       }
 
       setStatusMessage(formatSaveDocumentFailure(error));
+      return false;
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const focusTenantControl = () => {
+    window.setTimeout(() => tenantControlRef.current?.focus(), 0);
+  };
+
+  const performTenantSwitch = async (
+    requestedTenantId: string,
+    unsavedDecision?: Exclude<TenantSwitchUnsavedDecision, "cancel">,
+  ) => {
+    if (!verifiedTenantSession || !appStorage.scope) {
+      setTenantSwitchUiState({ status: "blocked" });
+      return;
+    }
+
+    const controller = new AbortController();
+    tenantSwitchAbortRef.current?.abort();
+    tenantSwitchAbortRef.current = controller;
+    setTenantSwitchUiState({ status: "switching" });
+
+    try {
+      const result = await requestTenantSessionTransition({
+        currentSessionContext: verifiedTenantSession,
+        requestedTenantId,
+        deployment: appStorage.scope.deployment,
+        previousScope: appStorage.scope,
+        clearPreviousScope: appStorage.clearScope,
+        cleanupSteps: [
+          cleanupRuntimeResources,
+          () => {
+            if (importedPackSnapshotUrl) {
+              URL.revokeObjectURL(importedPackSnapshotUrl);
+            }
+          },
+          () => {
+            if (highlightTimeoutRef.current !== null) {
+              window.clearTimeout(highlightTimeoutRef.current);
+              highlightTimeoutRef.current = null;
+            }
+          },
+        ],
+        hasUnsavedChanges: isDirty,
+        requestUnsavedDecision: unsavedDecision
+          ? async () => unsavedDecision
+          : undefined,
+        saveUnsavedChanges: unsavedDecision === "save"
+          ? handleSave
+          : undefined,
+        notifySessionChanged: () => {
+          tenantSessionCoherenceRef.current?.publishSessionChanged();
+        },
+        signal: controller.signal,
+      });
+
+      if (
+        result.status === "cancelled"
+        || result.status === "save-failed"
+        || result.status === "unchanged"
+      ) {
+        setTenantSwitchUiState({ status: "idle" });
+        focusTenantControl();
+      }
+    } catch (error) {
+      if (
+        controller.signal.aborted
+        || (
+          error
+          && typeof error === "object"
+          && "name" in error
+          && error.name === "AbortError"
+        )
+      ) {
+        return;
+      }
+      setTenantSwitchUiState({ status: "blocked" });
+    } finally {
+      if (tenantSwitchAbortRef.current === controller) {
+        tenantSwitchAbortRef.current = null;
+      }
+    }
+  };
+
+  const handleTenantChangeRequest = (requestedTenantId: string) => {
+    if (!verifiedTenantSession || tenantSwitchUiState.status !== "idle") {
+      return;
+    }
+    const requestedTenant = verifiedTenantSession.availableTenants.find(
+      (tenant) => tenant.id === requestedTenantId,
+    );
+    if (
+      !requestedTenant
+      || requestedTenant.id === verifiedTenantSession.activeTenant.id
+    ) {
+      return;
+    }
+    if (isDirty) {
+      setTenantSwitchUiState({
+        status: "confirming",
+        requestedTenantId: requestedTenant.id,
+        requestedTenantDisplayName: requestedTenant.displayName,
+      });
+      return;
+    }
+    void performTenantSwitch(requestedTenant.id);
+  };
+
+  const handleTenantSwitchDecision = (decision: TenantSwitchUnsavedDecision) => {
+    if (tenantSwitchUiState.status !== "confirming") {
+      return;
+    }
+    if (decision === "cancel") {
+      setTenantSwitchUiState({ status: "idle" });
+      focusTenantControl();
+      return;
+    }
+    void performTenantSwitch(tenantSwitchUiState.requestedTenantId, decision);
   };
 
   const handleNewDocument = useCallback(() => {
@@ -3034,7 +3281,7 @@ export default function App() {
       docId: targetDocument.id,
       viewMode,
       metadataLocale: metadata.viewState.locale,
-      persistedLocale: loadViewLocaleForDocumentView(targetDocument.id, viewMode),
+      persistedLocale: appStorage.loadViewLocaleForDocumentView(targetDocument.id, viewMode),
     });
 
     if (metadata.viewState.focusIslandId && !hasFocusIsland) {
@@ -3045,7 +3292,7 @@ export default function App() {
 
     setFocusTarget(metadata.viewState.focusIslandId ? { focusIslandId: metadata.viewState.focusIslandId } : {});
     setStatusMessage(t("app.status.import.view_loaded", { statusPrefix, visibility: metadata.visibility }));
-  }, [applyResolvedLocaleForView]);
+  }, [appStorage, applyResolvedLocaleForView]);
 
   const loadPublicPack = useCallback(async (requestedPackId: string | null): Promise<boolean> => {
     const manifestResponse = await fetch("./packs/index.json", { cache: "no-store" });
@@ -3089,12 +3336,12 @@ export default function App() {
       future: [],
     });
     setActiveDocumentId(documentParseResult.document.id);
-    const importedViewMode = loadViewModeForDocument(documentParseResult.document.id) ?? "explore";
+    const importedViewMode = appStorage.loadViewModeForDocument(documentParseResult.document.id) ?? "explore";
     setViewMode(importedViewMode);
     applyResolvedLocaleForView({
       docId: documentParseResult.document.id,
       viewMode: importedViewMode,
-      persistedLocale: loadViewLocaleForDocumentView(documentParseResult.document.id, importedViewMode),
+      persistedLocale: appStorage.loadViewLocaleForDocumentView(documentParseResult.document.id, importedViewMode),
     });
     setSelectedRecentDocumentId("");
     setDocEtag(null);
@@ -3143,16 +3390,16 @@ export default function App() {
 
     setSafeMode(true);
     if (!targetPack.viewPath) {
-      const persistedVisibility = loadViewVisibilityForDocument(documentParseResult.document.id);
+      const persistedVisibility = appStorage.loadViewVisibilityForDocument(documentParseResult.document.id);
       setViewVisibility(persistedVisibility.viewVisibility);
     }
     setStatusMessage(t("app.status.public_pack.loaded", { packId: targetPack.id, visibility: targetPack.visibility }));
     return true;
-  }, [applyImportedViewMetadata]);
+  }, [appStorage, applyImportedViewMetadata]);
 
   const openBuiltInSample = useCallback(() => {
     const builtInSample = createDefaultDocument(DEFAULT_DOCUMENT_ID);
-    const sampleViewMode = loadViewModeForDocument(builtInSample.id) ?? "explore";
+    const sampleViewMode = appStorage.loadViewModeForDocument(builtInSample.id) ?? "explore";
 
     pendingCardDragSnapshotRef.current = null;
     setHistory({
@@ -3165,7 +3412,7 @@ export default function App() {
     applyResolvedLocaleForView({
       docId: builtInSample.id,
       viewMode: sampleViewMode,
-      persistedLocale: loadViewLocaleForDocumentView(builtInSample.id, sampleViewMode),
+      persistedLocale: appStorage.loadViewLocaleForDocumentView(builtInSample.id, sampleViewMode),
     });
     setSelectedRecentDocumentId("");
     setDocEtag(null);
@@ -3200,11 +3447,11 @@ export default function App() {
     setMergeAuditLog([]);
     setReviewEvents([]);
     setSafeMode(true);
-    const persistedVisibility = loadViewVisibilityForDocument(builtInSample.id);
+    const persistedVisibility = appStorage.loadViewVisibilityForDocument(builtInSample.id);
     setViewVisibility(persistedVisibility.viewVisibility);
     setPackVisibility(persistedVisibility.packVisibility);
     setStatusMessage(t("app.status.start.built_in_sample_opened"));
-  }, [applyResolvedLocaleForView]);
+  }, [appStorage, applyResolvedLocaleForView]);
 
   const handleOpenSampleDocument = useCallback(async () => {
     setIsStartPanelVisible(false);
@@ -3430,7 +3677,7 @@ export default function App() {
         future: [],
       });
       setActiveDocumentId(parsedDocument.document.id);
-      const importedViewMode = loadViewModeForDocument(parsedDocument.document.id) ?? "explore";
+      const importedViewMode = appStorage.loadViewModeForDocument(parsedDocument.document.id) ?? "explore";
       setViewMode(importedViewMode);
       setSelectedRecentDocumentId("");
       setDocEtag(null);
@@ -3492,7 +3739,7 @@ export default function App() {
         setStatusMessage(message);
       }
     }
-  }, [applyImportedViewMetadata, importedPackSnapshotUrl]);
+  }, [appStorage, applyImportedViewMetadata, importedPackSnapshotUrl]);
 
   const handleReviewPackFileChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -4011,15 +4258,15 @@ export default function App() {
   );
 
   const markEmptyCanvasHintCompleted = useCallback(() => {
-    saveEmptyCanvasHintCompleted(true);
+    appStorage.saveEmptyCanvasHintCompleted(true);
     setEmptyCanvasHintCompleted(true);
-  }, []);
+  }, [appStorage]);
 
   const handleResetEmptyCanvasHint = useCallback(() => {
-    saveEmptyCanvasHintCompleted(false);
+    appStorage.saveEmptyCanvasHintCompleted(false);
     setEmptyCanvasHintCompleted(false);
     setStatusMessage(t("app.status.empty_canvas_hint_reset"));
-  }, []);
+  }, [appStorage]);
 
   const handleCloseCanvasLegend = useCallback(() => {
     // ADR-0030 contract: closing returns focus to the originating trigger.
@@ -4203,29 +4450,17 @@ export default function App() {
   const handleToggleAdvancedUi = useCallback(() => {
     setIsAdvancedUiEnabled((previous) => {
       const next = !previous;
-      try {
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(ADVANCED_UI_STORAGE_KEY, String(next));
-        }
-      } catch {
-        // Ignore persistence failures (e.g. storage disabled).
-      }
+      appStorage.saveAdvancedUiEnabled(next);
       return next;
     });
-  }, []);
+  }, [appStorage]);
 
   const handleOpenCritiqueWorkflow = useCallback(() => {
     setIsAdvancedUiEnabled(true);
     setIsWorkModeOpen(true);
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(ADVANCED_UI_STORAGE_KEY, "true");
-      }
-    } catch {
-      // Ignore persistence failures (e.g. storage disabled).
-    }
+    appStorage.saveAdvancedUiEnabled(true);
     setCritiqueWorkflowFocusRequest((current) => current + 1);
-  }, []);
+  }, [appStorage]);
 
   const handleCommitCardText = useCallback(
     (cardId: string, text: string) => {
@@ -8100,14 +8335,21 @@ export default function App() {
 
   const reportAgentTaskExportAudit = useCallback(() => {
     if (!document) return;
-    void postExportAudit(document.id, { safeMode, exportKind: "agent-task" }).catch(() => {
+    void postExportAudit(
+      document.id,
+      { safeMode, exportKind: "agent-task" },
+      { tenantSessionContext: verifiedTenantSession },
+    ).catch((error: unknown) => {
+      if (error instanceof ApiError && error.code === "tenant_session_changed") {
+        blockStaleTenantSession();
+      }
       // Fail-open by design (spec §3.4 / ADR-0049 D2): the backend audit
       // dispatcher itself never blocks on send failure, and this call is
       // reporting after the local export already completed -- there is
       // nothing to roll back, so a network error here is silently ignored
       // rather than surfaced as an export failure the user didn't cause.
     });
-  }, [document, safeMode]);
+  }, [blockStaleTenantSession, document, safeMode, verifiedTenantSession]);
 
   const handleCopyAgentTaskSheet = useCallback(async () => {
     const output = await buildCurrentAgentTaskSheet();
@@ -8317,6 +8559,14 @@ export default function App() {
       data-ui-complexity-tier="core-toolbar"
       style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", rowGap: 6, whiteSpace: "nowrap", maxWidth: "100%" }}
     >
+      {verifiedTenantSession ? (
+        <TenantSessionControl
+          sessionContext={verifiedTenantSession}
+          isChanging={tenantSwitchUiState.status === "switching"}
+          selectRef={tenantControlRef}
+          onRequestTenantChange={handleTenantChangeRequest}
+        />
+      ) : null}
       <button
         type="button"
         onClick={handleUndo}
@@ -9355,13 +9605,13 @@ export default function App() {
     applyViewPatch(preset.viewPatch);
     const currentLocale = getActiveLocale();
     if (!isReadOnly) {
-      saveViewLocaleForDocumentView(activeDocumentId, viewMode, currentLocale);
+      appStorage.saveViewLocaleForDocumentView(activeDocumentId, viewMode, currentLocale);
     }
     setViewMode(mode);
     applyResolvedLocaleForView({
       docId: activeDocumentId,
       viewMode: mode,
-      persistedLocale: loadViewLocaleForDocumentView(activeDocumentId, mode),
+      persistedLocale: appStorage.loadViewLocaleForDocumentView(activeDocumentId, mode),
     });
     setActivePresetId(preset.id);
     if (preset.id === "default-review") {
@@ -9371,7 +9621,7 @@ export default function App() {
     if (options?.announce ?? true) {
       setStatusMessage(t("app.status.applied_mode", { mode: getViewModeDisplayLabel(mode) }));
     }
-  }, [activeDocumentId, applyResolvedLocaleForView, applyViewPatch, isReadOnly, viewMode, viewPresets]);
+  }, [activeDocumentId, appStorage, applyResolvedLocaleForView, applyViewPatch, isReadOnly, viewMode, viewPresets]);
 
   const handleSaveViewPreset = useCallback(() => {
     const name = window.prompt(t("view_controls.perspective.prompt_name"), t("view_controls.perspective.prompt_default_name"))?.trim();
@@ -9432,8 +9682,8 @@ export default function App() {
   }, [handleApplyViewMode, viewMode]);
 
   useEffect(() => {
-    saveViewModeForDocument(activeDocumentId, viewMode);
-  }, [activeDocumentId, viewMode]);
+    appStorage.saveViewModeForDocument(activeDocumentId, viewMode);
+  }, [activeDocumentId, appStorage, viewMode]);
 
   useEffect(() => {
     viewLocalePersistenceScopeRef.current.updateScope({ docId: activeDocumentId, viewMode, allowPersistence: !isReadOnly });
@@ -9444,11 +9694,11 @@ export default function App() {
       return;
     }
 
-    saveViewVisibilityForDocument(activeDocumentId, {
+    appStorage.saveViewVisibilityForDocument(activeDocumentId, {
       viewVisibility,
       packVisibility,
     });
-  }, [activeDocumentId, packVisibility, viewVisibility]);
+  }, [activeDocumentId, appStorage, packVisibility, viewVisibility]);
 
   useEffect(() => {
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
@@ -9457,11 +9707,11 @@ export default function App() {
         return;
       }
 
-      saveViewLocaleForDocumentView(scope.docId, scope.viewMode, locale);
+      appStorage.saveViewLocaleForDocumentView(scope.docId, scope.viewMode, locale);
     });
 
     return unsubscribe;
-  }, []);
+  }, [appStorage]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -9876,11 +10126,11 @@ export default function App() {
       currentReviewerRef={currentReviewerRef}
       currentReviewerRefSource={currentReviewerRefSource}
       onCurrentReviewerRefChange={(value) => {
-        const next = saveCurrentReviewerRef(value);
+        const next = appStorage.saveCurrentReviewerRef(value);
         setCurrentReviewerRef(next);
       }}
       onResetCurrentReviewerRef={() => {
-        const next = saveCurrentReviewerRef(buildLocalReviewerRef());
+        const next = appStorage.saveCurrentReviewerRef(buildLocalReviewerRef());
         setCurrentReviewerRef(next);
       }}
       onExportViewViewport={handleExportViewMetadataViewport}
@@ -10271,6 +10521,7 @@ export default function App() {
               />
               <PatchWorkspacePanel
                 isReadOnly={isReadOnly}
+                storageScope={appStorage.scope}
                 candidates={mergeSuggestions.map((suggestion) => ({
                   id: suggestion.groupId,
                   label: t("patch_workspace.candidate_label", {
@@ -10582,6 +10833,18 @@ export default function App() {
     !emptyCanvasHintCompleted &&
     Boolean(document) &&
     (document?.cards.length ?? 0) === 0;
+
+  if (tenantSwitchUiState.status === "switching") {
+    return <TenantSessionLoadingView />;
+  }
+  if (tenantSwitchUiState.status === "blocked") {
+    return (
+      <TenantSessionBlockedView
+        reason="session_unavailable"
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
 
   return (
     <>
@@ -11160,7 +11423,13 @@ export default function App() {
             />
           ) : null}
           {isCanvasLegendOpen ? <CanvasLegend onClose={handleCloseCanvasLegend} /> : null}
-          <Minimap cards={minimapCards} islands={minimapIslands} camera={canvasCamera} onPan={handleMinimapPan} />
+          <Minimap
+            cards={minimapCards}
+            islands={minimapIslands}
+            camera={canvasCamera}
+            storageScope={appStorage.scope}
+            onPan={handleMinimapPan}
+          />
           {selectedCardIds.length >= 2 ? (
             <BulkOperationsBar
               count={selectedCardIds.length}
@@ -11386,6 +11655,12 @@ export default function App() {
       />
     ) : null}
     {isShortcutCheatsheetOpen ? <ShortcutCheatsheet onClose={closeShortcutCheatsheet} /> : null}
+    {tenantSwitchUiState.status === "confirming" ? (
+      <TenantChangeConfirmationDialog
+        requestedTenantDisplayName={tenantSwitchUiState.requestedTenantDisplayName}
+        onDecision={handleTenantSwitchDecision}
+      />
+    ) : null}
     </>
   );
 }

@@ -23,7 +23,10 @@ from kj_atlas_api.routes.document_access_admin import (
 from kj_atlas_api.routes.session import router as session_router
 from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_capability import build_tenant_capability_resolver
-from kj_atlas_api.tenant_context import SingleTenantContextResolver
+from kj_atlas_api.trusted_saas_runtime import (
+    initialize_trusted_saas_runtime,
+    release_trusted_saas_runtime,
+)
 
 
 def _assert_linear_migration_history() -> None:
@@ -44,12 +47,13 @@ async def lifespan(app: FastAPI):
     app.state.audit_dispatcher = build_audit_dispatcher()
     app.state.access_control_adapter = build_access_control_adapter(adapter_name=settings.access_control_adapter)
     app.state.access_control_fail_safe_mode = settings.access_control_fail_safe_mode
-    app.state.tenant_context_resolver = SingleTenantContextResolver()
     app.state.document_access_resource_resolver = SingleTenantHeaderResourceResolver()
-    app.state.saas_identity_context_resolver = None
     app.state.tenant_capability_resolver = build_tenant_capability_resolver()
-    app.state.active_tenant_session_persister = None
-    yield
+    initialize_trusted_saas_runtime(app)
+    try:
+        yield
+    finally:
+        release_trusted_saas_runtime(app)
 
 
 app = FastAPI(title="kj-atlas API", lifespan=lifespan)

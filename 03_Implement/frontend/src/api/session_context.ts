@@ -28,7 +28,9 @@ const EFFECTIVE_CAPABILITY_SET = new Set<string>(EFFECTIVE_CAPABILITIES);
 const MAX_SESSION_IDENTIFIER_LENGTH = 256;
 const MAX_SESSION_DISPLAY_NAME_LENGTH = 256;
 const MAX_SESSION_CAPABILITY_VERSION_LENGTH = 128;
+const MAX_TENANT_SESSION_VERSION_LENGTH = 128;
 const MAX_SESSION_TENANT_COUNT = 256;
+const TENANT_SESSION_VERSION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$/;
 
 export type TenantSessionContextV1 = Readonly<{
   principalId: string;
@@ -36,6 +38,7 @@ export type TenantSessionContextV1 = Readonly<{
   availableTenants: readonly TenantSessionSummaryV1[];
   effectiveCapabilities: readonly EffectiveCapability[];
   capabilityVersion: string;
+  tenantSessionVersion: string;
 }>;
 
 export class InvalidTenantSessionContextError extends Error {
@@ -75,6 +78,14 @@ function effectiveCapability(value: unknown): EffectiveCapability {
   return capability as EffectiveCapability;
 }
 
+function tenantSessionVersion(value: unknown): string {
+  const version = canonicalString(value, MAX_TENANT_SESSION_VERSION_LENGTH);
+  if (!TENANT_SESSION_VERSION_PATTERN.test(version)) {
+    throw new InvalidTenantSessionContextError();
+  }
+  return version;
+}
+
 function parseTenantSummary(value: unknown): TenantSessionSummaryV1 {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new InvalidTenantSessionContextError();
@@ -100,6 +111,7 @@ export function parseTenantSessionContext(value: unknown): TenantSessionContextV
     "capabilityVersion",
     "effectiveCapabilities",
     "principalId",
+    "tenantSessionVersion",
   ])) {
     throw new InvalidTenantSessionContextError();
   }
@@ -141,6 +153,7 @@ export function parseTenantSessionContext(value: unknown): TenantSessionContextV
       candidate.capabilityVersion,
       MAX_SESSION_CAPABILITY_VERSION_LENGTH,
     ),
+    tenantSessionVersion: tenantSessionVersion(candidate.tenantSessionVersion),
   };
 }
 

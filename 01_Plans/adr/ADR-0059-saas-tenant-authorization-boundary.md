@@ -99,6 +99,7 @@ SaaS runtime profileは、実判定可能なaccess-control adapterと`deny` fail
 - `enterprise-production`は当面、単一組織デプロイ向けのままとする。共有SaaSは別runtime profileとし、tenant解決、外部PDP、deny fail-safe、DB tenant guardが欠ける構成を起動時に拒否する。
 - exportへ内部tenantId、membership、capabilityを既定で含めない。importは移送されたtenant権限を採用せず、import先のactive tenantで新規入力として認可・検証・人手レビューする。
 - browser保存は`deployment origin + tenantId + principalId`で名前空間分離する。tenant切替・logout時に文書、選択、検索、work mode、import preview、recent、QueryPreset、request cache、object URLを破棄する。
+- active tenantは認証セッション単位で1つとし、複数タブ、同時切替、bfcache、遅延responseのstale contextは`ADR-0061`のserver-issued `tenantSessionVersion`でresource lookup前に拒否する。client間通知だけを安全境界にしない。
 - agent credentialはtenantIdと許可対象docIdへ束縛し、他tenant、他文書、別用途へ再利用できない。token平文は作成時に一度だけ表示し、保存しない。
 
 ## Implementation gate
@@ -150,3 +151,4 @@ SaaS runtime profileは、実判定可能なaccess-control adapterと`deny` fail
 - Related design request: `02_Architecture/design/design-request-2026-07-round8.md`
 - Implementation: `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - Related governance: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
+- Follow-up boundary: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`

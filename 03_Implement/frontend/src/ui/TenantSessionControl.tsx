@@ -1,4 +1,4 @@
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, Ref } from "react";
 
 import {
   parseTenantSessionContext,
@@ -9,6 +9,7 @@ import { t } from "../i18n/translate";
 type TenantSessionControlProps = Readonly<{
   sessionContext: TenantSessionContextV1;
   isChanging?: boolean;
+  selectRef?: Ref<HTMLSelectElement>;
   onRequestTenantChange: (tenantId: string) => void;
 }>;
 
@@ -51,6 +52,7 @@ const nameStyle = {
 export function TenantSessionControl({
   sessionContext,
   isChanging = false,
+  selectRef,
   onRequestTenantChange,
 }: TenantSessionControlProps) {
   const verifiedSession = parseTenantSessionContext(sessionContext);
@@ -84,6 +86,7 @@ export function TenantSessionControl({
     <label style={controlStyle} data-tenant-control="switcher">
       <span>{t("tenant_session.control.scope_label")}</span>
       <select
+        ref={selectRef}
         value={activeTenant.id}
         onChange={handleChange}
         disabled={isChanging}

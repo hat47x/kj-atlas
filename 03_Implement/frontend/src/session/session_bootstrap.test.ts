@@ -16,6 +16,7 @@ function validSessionContext(overrides: Record<string, unknown> = {}) {
     ],
     effectiveCapabilities: ["document.write", "document.read"],
     capabilityVersion: "capability-v7",
+    tenantSessionVersion: "session-v1",
     ...overrides,
   };
 }

@@ -694,11 +694,11 @@ export type AdminAgentRegistrationSummary = {
 
 - 非目標：本契約ではページング・検索・token roll（再発行による旧token継続失効付き差し替え）・複数document一括登録は定義しない。
 
-## 10. SaaS TenantContext / capability契約（ADR-0059、L0 Planned）
+## 10. SaaS TenantContext / capability契約（ADR-0059 / ADR-0061、L0 Planned）
 
-本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・越境テストが完了するまでSaaS profileを有効化しない。bootstrap policy、session context、active tenant変更のfail-closed routeとfrontend entry gateは実装済みだが、信頼済みauth edgeがidentity resolverとactive tenant session persisterを注入しない既定状態ではsession context系を503として閉じる。tenant switcher実配線とSaaS backend runtimeは未実装・非公開である。
+本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・全tenant-scoped APIへの`tenantSessionVersion` guard・越境テストが完了するまでSaaS profileを有効化しない。bootstrap policy、session context、conditional active tenant変更のfail-closed routeとfrontend entry gateに加え、信頼済みauth edgeのidentity resolver・tenant resolver・active tenant session adapterを3点同時にだけ受け付ける起動前bundle境界を実装済みである。bundle非注入時はidentity/session adapterをunavailable、tenant resolverをsingle-tenant互換へ戻してsession context系を503として閉じる。実auth edge adapter、anti-forgery付きsession形式、SaaS backend runtime、Document／Admin／import／export等の共通version preconditionは未実装・非公開である。
 
-### 10.1 session context（GET/POST実装済み・SaaS runtime gated）
+### 10.1 session context（GET/POST version guard実装済み・SaaS runtime gated）
 
 - `GET /session/bootstrap-policy`
   - settings validation済みのserver runtime profileを起動時にsnapshotし、profile名やtenant情報を公開せず、`tenantSessionMode: "single-tenant" | "tenant-session-required"`だけを返す。header、query、Document payloadを判定根拠にしない。
@@ -708,13 +708,15 @@ export type AdminAgentRegistrationSummary = {
   - 現在の検証済みTenantContext、利用者がactive membershipを持つtenant候補、tenant-scoped capabilityを返す。
   - tenant候補はサーバーでallowlistされたmembershipだけとし、tenant検索や自由入力を提供しない。
   - identity、TenantContext、active membership、membership ID、capability snapshotをrequestごとに再確認する。membership IDはresolver値をそのままPDPへ渡さず、`principalId + tenantId`のactive membershipからserver-sideで再生成した値との一致を必須にする。信頼済みresolver欠損、single-tenant互換context、停止・差し替えmembership、不正・未知capabilityではfail-closedとする。
-  - responseは64KiB以下、principal/tenant IDを256文字以下、tenant display nameを256文字以下、capability versionを128文字以下、available tenantを1〜256件の重複なし、effective capabilityを既知11件以下の重複なしへ限定する。server-side session値が不正・非表示・過大な場合は`503 session_context_unavailable`、capability snapshot違反は`503 capability_resolution_unavailable`として値を反射せず閉じる。
+  - responseは64KiB以下、principal/tenant IDを256文字以下、tenant display nameを256文字以下、capability versionと`tenantSessionVersion`を各128文字以下、available tenantを1〜256件の重複なし、effective capabilityを既知11件以下の重複なしへ限定する。server-side session値が不正・非表示・過大な場合は`503 session_context_unavailable`、capability snapshot違反は`503 capability_resolution_unavailable`として値を反射せず閉じる。
+  - `tenantSessionVersion`はtrusted auth/session adapterがactive tenant stateへ束縛して発行する予測不能なopaque IDである。Documentやcapabilityのversionではなく、同じ認証sessionの複数タブ・古いrequestを止めるexpected-context guardにだけ使う。
   - `Cache-Control: no-store`と`Pragma: no-cache`を付け、利用者表示名・email・外部IdP subject・membership ID・role/groupを返さない。
 - `POST /session/active-tenant`
-  - request: `{ tenantId }`
+  - request: `{ tenantId, expectedTenantSessionVersion }`
   - backendが現在のidentity・TenantContext・membershipを再確認し、同じprincipalのactive membership allowlistから新TenantContextを確定した場合だけ更新後contextを返す。header、query、role/group、自由入力tenantを選択根拠にしない。
-  - 認証session固有の保存形式とanti-forgery検証はtrusted auth edgeが注入する`active_tenant_session_persister`の責務とする。persisterへはraw request値ではなく、server検証済みprincipal、旧TenantContext、選択済みTenantContextだけを保存値として渡す。
-  - persister欠損・予期しない保存障害は`503 active_tenant_update_unavailable`として値を反射せず閉じ、保存前にresponse sizeとclosed-world契約を検証する。trusted persisterによるanti-forgery拒否はその拒否status/codeを維持する。
+  - `expectedTenantSessionVersion`をtrusted sessionの現versionとconstant-time相当の比較で照合し、欠損・不一致なら保存前に`409 tenant_session_changed`として値を反射せず閉じる。同時切替や古いdialogからの確定を新contextへ自動適用しない。
+  - 認証session固有の保存形式、versionの原子的更新、anti-forgery検証はtrusted auth edgeが注入する`active_tenant_session_persister`の責務とする。persisterへはraw tenant値ではなく、server検証済みprincipal、旧TenantContext、旧version、選択済みTenantContextだけを渡し、成功時に新versionを返させる。
+  - session adapter欠損・現versionの欠損／不正は`503 session_context_unavailable`、原子的な更新時の予期しない保存障害や同値／不正な新versionは`503 active_tenant_update_unavailable`として値を反射せず閉じ、保存前にresponse sizeとclosed-world契約を検証する。trusted adapterによるanti-forgery拒否はその拒否status/codeを維持する。
   - 不明tenant、他利用者のtenant、停止membershipは存在を推測させない`404`相当とする。
 
 ```ts
@@ -728,22 +730,26 @@ export type TenantSessionContextV1 = {
   availableTenants: Array<{ id: string; displayName: string }>;
   effectiveCapabilities: string[];
   capabilityVersion: string;
+  tenantSessionVersion: string;
 };
 
 export type ActiveTenantRequestV1 = {
   tenantId: string;
+  expectedTenantSessionVersion: string;
 };
 ```
 
 `effectiveCapabilities`は表示補助であり、APIの再認可を代替しない。cacheする場合は`deployment + tenantId + principalId + capabilityVersion`で分離し、auth tokenの有効期限を越えて保持しない。
 
-frontend clientは現在の検証済み`availableTenants`にないtenantを通信前に拒否し、`no-store`・same-origin JSONでactive tenant変更を要求する。成功responseは既存validatorに加えてprincipal不変と要求tenant一致を確認した後だけ遷移へ使用する。遷移時は進行中requestをabortし、workerをdisposeし、object URLと文書・選択・検索等のmemory stateを破棄し、旧browser storage scopeだけを削除してhard document replacementを行う。cleanup/storage削除の一部が失敗しても旧DOMを継続利用せずreplacementを優先する。未検証responseではcleanup、storage変更、navigationを開始しない。
+`tenantSessionVersion`はtenant/capabilityの認可根拠ではない。SaaS profileのtenant-scoped public APIと非同期開始点は、最後に検証したversionを単一の`KJ-Atlas-Tenant-Session-Version` request headerとして必須受領し、trusted sessionを解決した後、resource lookup、body parse後の副作用、PDP、job enqueueより前に一致を確認する。同名headerの欠損・重複・不正・不一致では本文・metadataを返さず`409 tenant_session_changed`へ閉じ、生versionや現在tenantを応答・log・監査へ反射しない。read、list、export、share、import、MCP、webhook、Tenant Adminも例外にせず、stale requestを新contextへ自動再送しない。このclient値からTenantContextを解決してはならない。browserから利用するSaaS配備ではCORS allow-headersへこの名前だけを明示し、proxy/CDNで同名headerを連結・複製しない。
 
-Workspace用tenant controlは、検証済みmembershipが1件ならactive tenant表示だけ、複数なら`availableTenants`だけをoptionとするselectを構築する。tenant IDの自由入力、tenant検索、role/group解釈を持たず、active tenant自身・allowlist外・不正sessionから変更要求を発火しない。未保存変更の保存／破棄／取消確認とPOST・transition実行はApp側の別境界とし、現行entry pointには未配線である。
+frontend clientは現在の検証済み`availableTenants`にないtenantを通信前に拒否し、`no-store`・same-origin JSONでactive tenant変更を要求する。要求には現在の`tenantSessionVersion`を含め、成功responseは既存validatorに加えてprincipal不変、要求tenant一致、新versionへの変更を確認した後だけ遷移へ使用する。遷移時は進行中requestをabortし、workerをdisposeし、object URLと文書・選択・検索等のmemory stateを破棄し、旧browser storage scopeだけを削除してhard document replacementを行う。cleanup/storage削除の一部が失敗しても旧DOMを継続利用せずreplacementを優先する。未検証responseではcleanup、storage変更、navigationを開始しない。別タブ通知は旧DOMを早くblockする補助に限り、通知欠落時も次requestのserver preconditionで停止する。
+
+Workspace用tenant controlは、検証済みmembershipが1件ならactive tenant表示だけ、複数なら`availableTenants`だけをoptionとするselectを構築する。tenant IDの自由入力、tenant検索、role/group解釈を持たず、active tenant自身・allowlist外・不正sessionから変更要求を発火しない。未保存変更の保存／破棄／取消を選ぶalert dialog、選択・旧scope・server応答を再検証するrequest coordinator、App保存・request/worker/object URL/timer cleanup・旧scope削除・hard replacementを起動する任意注入hostは実装済みである。App hostは注入sessionとbrowser scopeが完全一致する場合だけcontrolを構築し、切替確定後または応答不明時は旧tenant本文をloading／blocked stateへ置換する。切替確認は同じ認証sessionの他タブにも影響することを常時説明する。固定channel名へ`null`だけを送る別タブ通知と、受信、`pageshow.persisted`、online復帰、5分以上の非表示復帰で旧Appをblocked化しrequest／workerを停止するcoherence境界も実装済みである。通知はbest-effortであり、失敗してもlocal hard replacementを止めない。SaaS entry pointはbootstrapで検証したsession contextと一致するbrowser scopeをAppへ同時注入し、文書read/write/export監査clientはそのopaque versionだけを正式headerへ付与する。serverの`tenant_session_changed`は通常の文書競合として扱わず、runtime cleanup後に旧Appをblocked化する。stale response／worker結果を世代単位でcommit拒否する共通guardは未実装である。
 
 `principalId`は認証済みUserに対応するserver-managed opaque IDであり、表示名やemail、外部IdP subjectを返さない。browser storage scopeのprincipal要素にはこの値だけを使う。
 
-実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。server runtime profileをprofile名非公開の2値へ写像する`GET /session/bootstrap-policy`、strict frontend client、profile別entry pointも実装済みで、frontendは成功・エラーresponseを4KiBまでに限定し、未知mode、余分なfield、非UTF-8、不正JSONを利用しない。session responseの内部builderと`GET /session/context` routeは、active tenantの再照合、opaque principalId、allowlist済みtenant候補、trusted capability resolverの既知capabilityだけを受理し、識別子・一覧件数・response sizeを上限内へ閉じる。不正・欠損したcapability snapshotは`503 capability_resolution_unavailable`、不正・過大なsession値は`503 session_context_unavailable`としてfail-closedにする。`POST /session/active-tenant`も現在contextと要求tenantのmembershipを再確認し、検証済み選択結果だけをtrusted session persisterへ渡す。frontend側はsession GET/POSTを`no-store`・same-originで行い、成功・エラーresponseのstreamを64KiBまでで打ち切って超過時はcancelする。成功response validatorを通過し、active tenantがavailableTenantsと一致したcontextだけをbrowser storage scope／transitionへ渡す。未知・重複capability、余分なfield、非UTF-8、非表示・過大値は利用しない。strict external HTTP capability resolverとapplication lifecycleの既定unavailable配線は実装済みである。HTTP headerやqueryを直接verified evidenceへ変換する処理、trusted SaaS identity resolver／session persisterの実runtime接続、tenant switcherからcleanup・hard replacementを起動する配線は未実装であり、SaaS profileは引き続き閉じる。
+実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。server runtime profileをprofile名非公開の2値へ写像する`GET /session/bootstrap-policy`、strict frontend client、profile別entry pointも実装済みで、frontendは成功・エラーresponseを4KiBまでに限定し、未知mode、余分なfield、非UTF-8、不正JSONを利用しない。session responseの内部builderと`GET /session/context` routeは、active tenantの再照合、opaque principalId、allowlist済みtenant候補、trusted capability resolverの既知capabilityだけを受理し、識別子・一覧件数・response sizeを上限内へ閉じる。不正・欠損したcapability snapshotは`503 capability_resolution_unavailable`、不正・過大なsession値は`503 session_context_unavailable`としてfail-closedにする。`POST /session/active-tenant`も現在contextと要求tenantのmembershipを再確認し、検証済み選択結果だけをtrusted session persisterへ渡す。frontend側はsession GET/POSTを`no-store`・same-originで行い、成功・エラーresponseのstreamを64KiBまでで打ち切って超過時はcancelする。成功response validatorを通過し、active tenantがavailableTenantsと一致したcontextだけをbrowser storage scope／transitionへ渡す。request coordinatorと任意注入App hostもcurrent session、要求tenant、旧scope、POST成功responseのprincipal／active tenantを独立に再検証し、未保存変更の取消・保存失敗では通信やcleanupを開始しない。未知・重複capability、余分なfield、非UTF-8、非表示・過大値は利用しない。strict external HTTP capability resolver、application lifecycleの既定unavailable配線、identity/tenant/persisterを部分注入させない起動前bundle境界は実装済みである。HTTP headerやqueryを直接verified evidenceへ変換する処理、実auth edge adapterとanti-forgery付きsession persisterの接続、production entryからApp hostへのsession注入は未実装であり、SaaS profileは引き続き閉じる。
 
 frontend entryはbuild時の`KJ_ATLAS_RUNTIME_PROFILE`をclosed-worldに解決する。未指定・`local-dev`・`evaluation`・`enterprise-production`はpolicy通信を行わず従来のlocal-first Appをmountする。`saas-multitenant`だけはserver bootstrap policyが`tenant-session-required`と一致した後、session GETとresponse再検証を完了し、成功時だけ`deployment + tenantId + principalId` scope付きAppをmountする。未知・空・非canonical build値、policy取得失敗・不一致、401、403、session解決不能、不正response、不正deploymentは旧本文をmountしないretry可能なblocked stateへ分離し、upstream message、profile、principal、tenant値を表示しない。lifecycle abortは失敗表示へ変換せず破棄する。現行backendは`saas-multitenant`を起動前に拒否するため、このentry配線だけでSaaS対応済みとは扱わない。
 
@@ -780,11 +786,12 @@ export type TenantScopedAccessRequestV1 = {
 };
 ```
 
-評価順はAuthContext解決、TenantContext解決、active membership確認、`tenantId + resourceId`によるserver-side lookup、主体tenantと資源tenantの一致、SafeMode/readOnly guard、外部PDP、API enforceとする。tenant不一致はPDPへ委譲せず常にdenyする。resourceのtenant/visibility/policyRefをclient headerやpayloadから採用しない。
+評価順はAuthContext解決、TenantContextとserver-side session version解決、client expected `tenantSessionVersion`照合、active membership確認、`tenantId + resourceId`によるserver-side lookup、主体tenantと資源tenantの一致、SafeMode/readOnly guard、外部PDP、API enforceとする。version不一致とtenant不一致はPDPへ委譲せず常にdenyする。resourceのtenant/visibility/policyRefをclient headerやpayloadから採用しない。
 
 ### 10.3 SaaS fail-closed / response境界
 
 - tenant不明・不一致、membership停止、adapter欠損、PDP timeout/無効応答ではreadを含めてdenyする。
+- `tenantSessionVersion`欠損・不一致ではresource lookup前に`409 tenant_session_changed`へ閉じ、現在tenantやresourceの存在を応答へ混入させない。
 - 他tenantのresource IDは`404`相当とし、list/search/count/paginationにも存在を混入させない。
 - current tenant内でresourceの存在が認可済みだが操作capabilityが不足する場合は`403`を返してよい。
 - `noop`、endpoint欠損時noop fallback、`read_only` fail-safeはSaaS profileで禁止する。§8.3〜8.6の互換挙動はsingle-tenant profileだけに適用する。
@@ -809,6 +816,7 @@ Tenant Admin向けに次のrouteを実装する。ただし、application lifecy
   - bodyは`visibility`、`policyBindingId?`、`policyVersion`だけを受け付ける。extra fieldは拒否し、validation responseへ入力値を反射しない。
   - `policyBindingId`と`policyVersion`は128文字以下のopaque canonical IDに限定し、URL、token、raw policyRef、assertionを受け付けない。`Org/Restricted`はbinding必須、`Public/Unlisted`はbinding保存禁止とする。
   - 一覧または詳細で得たrevisionを`If-Match`へ必須指定する。欠損は`428 document_access_precondition_required`、不一致または同時更新は`409 document_access_conflict`とする。wildcardで競合検査を迂回できない。
+  - `If-Match`のDocument metadata revisionとは別に、SaaS共通の`tenantSessionVersion` preconditionを必須とする。session version不一致をmetadata conflictとして再読込・再送せず、先に`tenant_session_changed`へ停止する。
   - metadata更新と`document_access_admin_audit_events`追加を同一transactionで確定する。auditはtenantId、opaque principal/doc ID、action/decision、policy/capability version、server-generated correlation ID、時刻だけを持ち、binding ID、raw policyRef、title、本文、tokenを保存しない。
 
 他tenantにしか存在しないdocIdは`404`とし、list/detail/updateはすべて解決済みTenantContextでDB guardを設定する。APIで`document.policy.manage`を毎回再評価し、capability resolver欠損・不正応答は`503 capability_resolution_unavailable`へfail-closedにする。

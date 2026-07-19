@@ -123,6 +123,7 @@ def test_builds_context_from_active_memberships_and_trusted_capabilities() -> No
                 principal_id="user-1",
                 tenant=_tenant(db),
                 capability_resolver=resolver,
+                tenant_session_version="session-v1",
             )
 
         assert context.principal_id == "user-1"
@@ -139,6 +140,7 @@ def test_builds_context_from_active_memberships_and_trusted_capabilities() -> No
         ]
         assert context.effective_capabilities == ("document.read", "document.write")
         assert context.capability_version == "policy-v7"
+        assert context.tenant_session_version == "session-v1"
         assert resolver.calls == 1
     finally:
         engine.dispose()
@@ -156,10 +158,65 @@ def test_anonymous_session_is_rejected_before_capability_resolution() -> None:
                     principal_id=None,
                     tenant=_stale_tenant("tenant-a"),
                     capability_resolver=resolver,
+                    tenant_session_version="session-v1",
                 )
 
         assert exc_info.value.status_code == 401
         assert exc_info.value.detail["code"] == "session_auth_required"
+        assert resolver.calls == 0
+    finally:
+        engine.dispose()
+
+
+def test_single_tenant_compatibility_context_is_not_a_capability_context() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    resolver = StubCapabilityResolver(CapabilitySnapshot((), "policy-v1"))
+    try:
+        with Session(engine) as db:
+            with pytest.raises(HTTPException) as exc_info:
+                build_tenant_session_context(
+                    db=db,
+                    principal_id="user-1",
+                    tenant=TenantContext(
+                        tenant_id="local-default",
+                        membership_id=None,
+                        resolved_by="single_tenant_adapter",
+                    ),
+                    capability_resolver=resolver,
+                    tenant_session_version="session-v1",
+                )
+
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail["code"] == "tenant_context_untrusted"
+        assert resolver.calls == 0
+    finally:
+        engine.dispose()
+
+
+@pytest.mark.parametrize(
+    "tenant_session_version",
+    ["", " session-v1", "session v1", "session-v1\n", "x" * 129, "世代-1"],
+)
+def test_invalid_tenant_session_version_fails_before_tenant_or_policy_resolution(
+    tenant_session_version: str,
+) -> None:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    resolver = StubCapabilityResolver(CapabilitySnapshot((), "policy-v1"))
+    try:
+        with Session(engine) as db:
+            with pytest.raises(HTTPException) as exc_info:
+                build_tenant_session_context(
+                    db=db,
+                    principal_id="user-1",
+                    tenant=_stale_tenant("tenant-a"),
+                    capability_resolver=resolver,
+                    tenant_session_version=tenant_session_version,
+                )
+
+        assert exc_info.value.status_code == 503
+        assert exc_info.value.detail["code"] == "session_context_unavailable"
         assert resolver.calls == 0
     finally:
         engine.dispose()
@@ -180,6 +237,7 @@ def test_noncanonical_principal_fails_before_tenant_or_capability_resolution(
                     principal_id=principal_id,
                     tenant=_stale_tenant("tenant-a"),
                     capability_resolver=resolver,
+                    tenant_session_version="session-v1",
                 )
 
         assert exc_info.value.status_code == 503
@@ -214,6 +272,7 @@ def test_oversized_tenant_allowlist_fails_before_capability_resolution(
                     principal_id="user-1",
                     tenant=_tenant(db),
                     capability_resolver=resolver,
+                    tenant_session_version="session-v1",
                 )
 
         assert exc_info.value.status_code == 503
@@ -236,6 +295,7 @@ def test_stale_or_unavailable_active_tenant_is_rejected_before_policy_call() -> 
                     principal_id="user-1",
                     tenant=_stale_tenant(),
                     capability_resolver=resolver,
+                    tenant_session_version="session-v1",
                 )
 
         assert exc_info.value.status_code == 403
@@ -262,6 +322,7 @@ def test_substituted_membership_evidence_is_rejected_before_policy_call() -> Non
                         resolved_by="verified_claim",
                     ),
                     capability_resolver=resolver,
+                    tenant_session_version="session-v1",
                 )
 
         assert exc_info.value.status_code == 403
@@ -296,6 +357,7 @@ def test_invalid_policy_snapshot_fails_closed(snapshot: CapabilitySnapshot) -> N
                     principal_id="user-1",
                     tenant=_tenant(db),
                     capability_resolver=resolver,
+                    tenant_session_version="session-v1",
                 )
 
         assert exc_info.value.status_code == 503
@@ -319,6 +381,7 @@ def test_policy_resolver_error_is_normalized_without_leaking_details() -> None:
                     principal_id="user-1",
                     tenant=_tenant(db),
                     capability_resolver=RaisingCapabilityResolver(),
+                    tenant_session_version="session-v1",
                 )
 
         assert exc_info.value.status_code == 503
@@ -343,6 +406,7 @@ def test_switch_rechecks_allowlist_then_resolves_capabilities_for_new_tenant() -
                 current_tenant=_tenant(db),
                 requested_tenant_id="tenant-b",
                 capability_resolver=resolver,
+                tenant_session_version="session-v1",
             )
 
         assert context.active_tenant.tenant_id == "tenant-b"
@@ -380,6 +444,7 @@ def test_switch_hides_unavailable_requested_tenant(
                     current_tenant=_tenant(db),
                     requested_tenant_id=requested_tenant_id,
                     capability_resolver=resolver,
+                    tenant_session_version="session-v1",
                 )
 
         assert exc_info.value.status_code == 404
@@ -411,6 +476,7 @@ def test_switch_rejects_single_tenant_or_stale_current_context_before_selection(
                         current_tenant=current_tenant,
                         requested_tenant_id="tenant-b",
                         capability_resolver=resolver,
+                        tenant_session_version="session-v1",
                     )
                 assert exc_info.value.status_code == 403
                 assert exc_info.value.detail["code"] == "tenant_context_untrusted"
