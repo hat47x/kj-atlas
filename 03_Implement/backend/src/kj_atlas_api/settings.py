@@ -400,26 +400,6 @@ class Settings(BaseSettings):
         default=True,
         validation_alias="KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS",
     )
-    access_control_http_endpoint: str | None = Field(
-        default=None,
-        alias="ACCESS_CONTROL_HTTP_ENDPOINT",
-    )
-    access_control_http_api_key: str | None = Field(
-        default=None,
-        alias="ACCESS_CONTROL_HTTP_API_KEY",
-    )
-    access_control_http_timeout_seconds: float = Field(
-        default=2.0,
-        alias="ACCESS_CONTROL_HTTP_TIMEOUT_SECONDS",
-    )
-    access_control_mock_allow: bool = Field(
-        default=True,
-        alias="ACCESS_CONTROL_MOCK_ALLOW",
-    )
-    access_control_mock_reason: str | None = Field(
-        default=None,
-        alias="ACCESS_CONTROL_MOCK_REASON",
-    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -1182,7 +1182,7 @@ export function validateDocumentV1Strict(value: unknown): ValidateDocumentV1Stri
   );
 
   if (value.version !== 1) {
-    errors.push("document.version: must be the number 2 (DocumentV1 only)");
+    errors.push("document.version: must be the number 1 (DocumentV1 only)");
   }
   if (typeof value.id !== "string") {
     errors.push("document.id: must be a string");

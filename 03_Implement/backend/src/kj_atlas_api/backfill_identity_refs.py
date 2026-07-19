@@ -139,7 +139,10 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = _parse_args()
-    stats = run_backfill(database_url=args.database_url, mapping_path=args.mapping_json, dry_run=args.dry_run)
+    try:
+        stats = run_backfill(database_url=args.database_url, mapping_path=args.mapping_json, dry_run=args.dry_run)
+    except (ValueError, OSError) as exc:
+        raise SystemExit(str(exc)) from exc
     mode = "dry-run" if args.dry_run else "apply"
     print(
         json.dumps(
