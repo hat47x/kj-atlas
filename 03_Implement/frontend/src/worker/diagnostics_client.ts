@@ -109,6 +109,11 @@ export class DiagnosticsWorkerClient {
         reject(new Error(`Invalid diagnostics payload: unknown message type ${String(messageType)}`));
       };
 
+      const onError = (event: ErrorEvent) => {
+        cleanup();
+        reject(new Error(event.message || "Diagnostics worker failed"));
+      };
+
       const onAbort = () => {
         this.cancel(requestId);
         cleanup();
@@ -117,10 +122,12 @@ export class DiagnosticsWorkerClient {
 
       const cleanup = () => {
         worker.removeEventListener("message", onMessage);
+        worker.removeEventListener("error", onError);
         options.signal?.removeEventListener("abort", onAbort);
       };
 
       worker.addEventListener("message", onMessage);
+      worker.addEventListener("error", onError);
       options.signal?.addEventListener("abort", onAbort, { once: true });
       worker.postMessage({ type: "diagnostics.request", requestId, payload } as DiagnosticsWorkerRequestMessage);
     });

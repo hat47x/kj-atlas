@@ -75,6 +75,11 @@ export class DiffWorkerClient {
         }
       };
 
+      const onError = (event: ErrorEvent) => {
+        cleanup();
+        reject(new Error(event.message || "Diff worker failed"));
+      };
+
       const onAbort = () => {
         this.cancel(requestId);
         cleanup();
@@ -83,10 +88,12 @@ export class DiffWorkerClient {
 
       const cleanup = () => {
         worker.removeEventListener("message", onMessage);
+        worker.removeEventListener("error", onError);
         options.signal?.removeEventListener("abort", onAbort);
       };
 
       worker.addEventListener("message", onMessage);
+      worker.addEventListener("error", onError);
       options.signal?.addEventListener("abort", onAbort, { once: true });
       worker.postMessage({ type: "diff.request", requestId, payload } as DiffWorkerRequestMessage);
     });

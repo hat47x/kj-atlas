@@ -43,12 +43,12 @@ function installFakeWorkerWithRawMessageFactory(factory: (requestId: string) => 
   class FakeWorker {
     private listeners = new Set<(event: MessageEvent) => void>();
 
-    addEventListener(_type: string, listener: (event: MessageEvent) => void) {
-      this.listeners.add(listener);
+    addEventListener(type: string, listener: (event: MessageEvent) => void) {
+      if (type === "message") this.listeners.add(listener);
     }
 
-    removeEventListener(_type: string, listener: (event: MessageEvent) => void) {
-      this.listeners.delete(listener);
+    removeEventListener(type: string, listener: (event: MessageEvent) => void) {
+      if (type === "message") this.listeners.delete(listener);
     }
 
     postMessage(message: { type: string; requestId: string }) {
