@@ -4,14 +4,21 @@ from dataclasses import dataclass
 
 from fastapi import FastAPI
 
+from kj_atlas_api.access_control import (
+    AccessControlAdapter,
+    ExternalPolicyAccessControlAdapter,
+)
 from kj_atlas_api.active_tenant_session import ActiveTenantSessionPersister
 from kj_atlas_api.auth_context import SaasIdentityContextResolver
 from kj_atlas_api.document_access_resource import (
+    DocumentPolicyBindingResolver,
     ServerOwnedDocumentResourceResolver,
     SingleTenantHeaderResourceResolver,
 )
-from kj_atlas_api.document_policy_binding import build_document_policy_binding_resolver
+from kj_atlas_api.document_policy_binding import ExternalHttpDocumentPolicyBindingResolver
 from kj_atlas_api.runtime_bootstrap import resolve_tenant_session_bootstrap_mode
+from kj_atlas_api.session_context import TenantCapabilityResolver
+from kj_atlas_api.tenant_capability import ExternalHttpTenantCapabilityResolver
 from kj_atlas_api.tenant_context import (
     SingleTenantContextResolver,
     TenantContextResolver,
@@ -74,10 +81,61 @@ class TrustedSaasRuntimePolicy:
             raise RuntimeError("trusted SaaS runtime policy is incomplete: " + ", ".join(missing))
 
 
+@dataclass(frozen=True, slots=True)
+class TrustedSaasRuntimeComponents:
+    """Concrete policy components built before database initialization."""
+
+    access_control_adapter: AccessControlAdapter
+    tenant_capability_resolver: TenantCapabilityResolver
+    document_policy_binding_resolver: DocumentPolicyBindingResolver
+
+    def validate_for_saas(self) -> None:
+        requirements = (
+            (
+                isinstance(
+                    self.access_control_adapter,
+                    ExternalPolicyAccessControlAdapter,
+                ),
+                "external access-control component",
+            ),
+            (
+                isinstance(
+                    self.tenant_capability_resolver,
+                    ExternalHttpTenantCapabilityResolver,
+                ),
+                "external tenant capability component",
+            ),
+            (
+                isinstance(
+                    self.document_policy_binding_resolver,
+                    ExternalHttpDocumentPolicyBindingResolver,
+                ),
+                "external document binding component",
+            ),
+        )
+        missing = [label for available, label in requirements if not available]
+        if missing:
+            raise RuntimeError(
+                "trusted SaaS runtime components are incomplete: " + ", ".join(missing)
+            )
+
+
 def _validate_saas_runtime_policy(runtime_policy: object) -> None:
     if not isinstance(runtime_policy, TrustedSaasRuntimePolicy):
         raise RuntimeError("trusted SaaS runtime policy is invalid")
     runtime_policy.validate()
+
+
+def _validate_runtime_components(
+    runtime_components: object,
+    *,
+    tenant_session_mode: str,
+) -> TrustedSaasRuntimeComponents:
+    if not isinstance(runtime_components, TrustedSaasRuntimeComponents):
+        raise RuntimeError("trusted SaaS runtime components are invalid")
+    if tenant_session_mode == "tenant-session-required":
+        runtime_components.validate_for_saas()
+    return runtime_components
 
 
 def validate_trusted_saas_runtime_policy(
@@ -99,6 +157,7 @@ def _trusted_saas_runtime_preflight(
     *,
     runtime_profile: str,
     runtime_policy: TrustedSaasRuntimePolicy,
+    runtime_components: TrustedSaasRuntimeComponents,
 ) -> tuple[str, TrustedSaasRuntimeAdapters | None]:
     if getattr(app.state, _STARTED_STATE_KEY, False):
         raise RuntimeError("trusted SaaS runtime adapters are already initialized")
@@ -108,6 +167,10 @@ def _trusted_saas_runtime_preflight(
         raise RuntimeError("trusted SaaS runtime profile is invalid") from None
     if tenant_session_mode == "tenant-session-required":
         _validate_saas_runtime_policy(runtime_policy)
+    _validate_runtime_components(
+        runtime_components,
+        tenant_session_mode=tenant_session_mode,
+    )
 
     adapters = getattr(app.state, _BUNDLE_STATE_KEY, None)
     if adapters is not None and not isinstance(adapters, TrustedSaasRuntimeAdapters):
@@ -126,12 +189,14 @@ def validate_trusted_saas_runtime_preflight(
     *,
     runtime_profile: str,
     runtime_policy: TrustedSaasRuntimePolicy,
+    runtime_components: TrustedSaasRuntimeComponents,
 ) -> None:
     """Validate profile, policy and bundle without changing application state."""
     _trusted_saas_runtime_preflight(
         app,
         runtime_profile=runtime_profile,
         runtime_policy=runtime_policy,
+        runtime_components=runtime_components,
     )
 
 
@@ -156,12 +221,14 @@ def initialize_trusted_saas_runtime(
     *,
     runtime_profile: str,
     runtime_policy: TrustedSaasRuntimePolicy,
+    runtime_components: TrustedSaasRuntimeComponents,
 ) -> bool:
     """Apply only a bundle whose tenant-session mode matches the runtime profile."""
     _, adapters = _trusted_saas_runtime_preflight(
         app,
         runtime_profile=runtime_profile,
         runtime_policy=runtime_policy,
+        runtime_components=runtime_components,
     )
 
     app.state.saas_identity_context_resolver = None
@@ -170,7 +237,7 @@ def initialize_trusted_saas_runtime(
     app.state.document_access_resource_resolver = SingleTenantHeaderResourceResolver()
     if adapters is not None:
         document_access_resource_resolver = ServerOwnedDocumentResourceResolver(
-            policy_binding_resolver=build_document_policy_binding_resolver(),
+            policy_binding_resolver=runtime_components.document_policy_binding_resolver,
         )
         app.state.saas_identity_context_resolver = adapters.identity_context_resolver
         app.state.tenant_context_resolver = adapters.tenant_context_resolver

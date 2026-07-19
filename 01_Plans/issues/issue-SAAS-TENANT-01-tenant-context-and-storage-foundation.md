@@ -482,3 +482,9 @@
 - runtime profile、`TrustedSaasRuntimePolicy`、trusted adapter bundleの型・欠損・profile相互必須、started-state判定を、App stateを変更しない共通preflightへ集約した。production lifespanはDB初期化前にpreflightし、実adapter適用直前にも同じ判定を再実行する。
 - unsafe policyだけでなく、SaaS profileでbundleが未注入、不正、部分的、single-tenant profileへ注入済みの構成もDB接続前に停止する。preflight成功だけではidentity／tenant／session／Document resolverを有効化しないことを固定した。
 - trusted runtime近接25件、backend全体624件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実auth edge bundleの注入、PostgreSQL RLS実地matrix、実PDP／binding／capability serviceは未完了であり、AC-4/5/7/10/12/13と現行SaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: concrete SaaS policy component preflight
+
+- access-control、tenant capability、Document policy bindingのcomponentをDB初期化前に構築し、`TrustedSaasRuntimeComponents`としてprofile／policy／auth bundleと同じpreflightへ渡すようにした。SaaSでは`ExternalPolicyAccessControlAdapter`、`ExternalHttpTenantCapabilityResolver`、`ExternalHttpDocumentPolicyBindingResolver`の実体を必須にする。
+- 設定値がexternalでもbuilder結果がnoop／unavailable／不正objectへ退避または差し替えられた場合はDB接続前に停止する。preflight後に別instanceを再構築せず、検証済みの同一PDP／capability／binding instanceだけをApp stateとserver-owned Document resource resolverへ配線する。
+- trusted runtime近接30件、backend全体629件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実PDP／binding／capability serviceへの到達性、trusted auth edge、PostgreSQL RLS実地matrixは未完了であり、AC-4/5/7/10/12/13と現行SaaS profile起動拒否を維持する。

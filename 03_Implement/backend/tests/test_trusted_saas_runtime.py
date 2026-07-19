@@ -4,13 +4,29 @@ from fastapi import FastAPI
 import pytest
 
 import kj_atlas_api.main as main_module
+from kj_atlas_api.access_control import (
+    ExternalPolicyAccessControlAdapter,
+    ExternalPolicyAdapterConfig,
+    NoopAccessControlAdapter,
+)
 from kj_atlas_api.document_access_resource import (
     ServerOwnedDocumentResourceResolver,
     SingleTenantHeaderResourceResolver,
+    UnavailableDocumentPolicyBindingResolver,
+)
+from kj_atlas_api.document_policy_binding import (
+    ExternalDocumentPolicyBindingConfig,
+    ExternalHttpDocumentPolicyBindingResolver,
+)
+from kj_atlas_api.tenant_capability import (
+    ExternalHttpTenantCapabilityResolver,
+    ExternalTenantCapabilityConfig,
+    UnavailableTenantCapabilityResolver,
 )
 from kj_atlas_api.tenant_context import SingleTenantContextResolver
 from kj_atlas_api.trusted_saas_runtime import (
     TrustedSaasRuntimeAdapters,
+    TrustedSaasRuntimeComponents,
     TrustedSaasRuntimePolicy,
     initialize_trusted_saas_runtime,
     install_trusted_saas_runtime,
@@ -59,6 +75,22 @@ def _runtime_policy(**overrides: object) -> TrustedSaasRuntimePolicy:
     return TrustedSaasRuntimePolicy(**values)  # type: ignore[arg-type]
 
 
+def _runtime_components(**overrides: object) -> TrustedSaasRuntimeComponents:
+    values: dict[str, object] = {
+        "access_control_adapter": ExternalPolicyAccessControlAdapter(
+            config=ExternalPolicyAdapterConfig(endpoint="https://pdp.invalid/authorize")
+        ),
+        "tenant_capability_resolver": ExternalHttpTenantCapabilityResolver(
+            config=ExternalTenantCapabilityConfig(endpoint="https://capability.invalid/resolve")
+        ),
+        "document_policy_binding_resolver": ExternalHttpDocumentPolicyBindingResolver(
+            config=ExternalDocumentPolicyBindingConfig(endpoint="https://binding.invalid/resolve")
+        ),
+    }
+    values.update(overrides)
+    return TrustedSaasRuntimeComponents(**values)  # type: ignore[arg-type]
+
+
 def _configure_main_saas_policy(
     monkeypatch: pytest.MonkeyPatch,
     *,
@@ -71,10 +103,25 @@ def _configure_main_saas_policy(
     monkeypatch.setattr(main_module.settings, "access_control_fail_safe_mode", "deny")
     monkeypatch.setattr(
         main_module.settings,
+        "access_control_external_http_endpoint",
+        "https://pdp.invalid/authorize",
+    )
+    monkeypatch.setattr(
+        main_module.settings,
         "document_policy_binding_resolver",
         "external_http",
     )
+    monkeypatch.setattr(
+        main_module.settings,
+        "document_policy_binding_http_endpoint",
+        "https://binding.invalid/resolve",
+    )
     monkeypatch.setattr(main_module.settings, "tenant_capability_resolver", "external_http")
+    monkeypatch.setattr(
+        main_module.settings,
+        "tenant_capability_http_endpoint",
+        "https://capability.invalid/resolve",
+    )
 
 
 @pytest.mark.parametrize(
@@ -91,6 +138,7 @@ def test_single_tenant_runtime_keeps_session_routes_closed(
             app,
             runtime_profile=runtime_profile,
             runtime_policy=_runtime_policy(),
+            runtime_components=_runtime_components(),
         )
         is False
     )
@@ -115,6 +163,7 @@ def test_complete_bundle_is_applied_atomically() -> None:
             app,
             runtime_profile="saas-multitenant",
             runtime_policy=_runtime_policy(),
+            runtime_components=_runtime_components(),
         )
         is True
     )
@@ -143,6 +192,7 @@ def test_complete_bundle_is_applied_atomically() -> None:
         app,
         runtime_profile="saas-multitenant",
         runtime_policy=_runtime_policy(),
+        runtime_components=_runtime_components(),
     )
     assert app.state.saas_identity_context_resolver is adapters.identity_context_resolver
     assert app.state.tenant_context_resolver is adapters.tenant_context_resolver
@@ -161,6 +211,7 @@ def test_released_bundle_can_only_be_reactivated_by_a_matching_profile() -> None
         app,
         runtime_profile="saas-multitenant",
         runtime_policy=_runtime_policy(),
+        runtime_components=_runtime_components(),
     )
     release_trusted_saas_runtime(app)
 
@@ -169,6 +220,7 @@ def test_released_bundle_can_only_be_reactivated_by_a_matching_profile() -> None
             app,
             runtime_profile="enterprise-production",
             runtime_policy=_runtime_policy(),
+            runtime_components=_runtime_components(),
         )
 
     assert app.state.saas_identity_context_resolver is None
@@ -234,6 +286,7 @@ def test_single_tenant_profile_rejects_trusted_saas_bundle() -> None:
             app,
             runtime_profile="enterprise-production",
             runtime_policy=_runtime_policy(),
+            runtime_components=_runtime_components(),
         )
 
     assert not getattr(app.state, "_kj_atlas_runtime_started", False)
@@ -248,6 +301,7 @@ def test_saas_profile_rejects_missing_trusted_bundle() -> None:
             app,
             runtime_profile="saas-multitenant",
             runtime_policy=_runtime_policy(),
+            runtime_components=_runtime_components(),
         )
 
     assert not getattr(app.state, "_kj_atlas_runtime_started", False)
@@ -262,6 +316,7 @@ def test_unknown_profile_fails_before_adapter_activation() -> None:
             app,
             runtime_profile="unknown",
             runtime_policy=_runtime_policy(),
+            runtime_components=_runtime_components(),
         )
 
     assert not getattr(app.state, "_kj_atlas_runtime_started", False)
@@ -277,6 +332,7 @@ def test_corrupt_pre_start_state_fails_closed() -> None:
             app,
             runtime_profile="saas-multitenant",
             runtime_policy=_runtime_policy(),
+            runtime_components=_runtime_components(),
         )
     assert not getattr(app.state, "_kj_atlas_runtime_started", False)
 
@@ -315,6 +371,7 @@ def test_initialize_rechecks_saas_policy_before_adapter_activation() -> None:
             app,
             runtime_profile="saas-multitenant",
             runtime_policy=_runtime_policy(access_control_adapter="mock"),
+            runtime_components=_runtime_components(),
         )
 
     assert not getattr(app.state, "_kj_atlas_runtime_started", False)
@@ -329,6 +386,55 @@ def test_saas_profile_rejects_unvalidated_runtime_policy_object() -> None:
         )
 
 
+@pytest.mark.parametrize(
+    ("override", "expected_requirement"),
+    [
+        (
+            {"access_control_adapter": NoopAccessControlAdapter()},
+            "external access-control component",
+        ),
+        (
+            {"tenant_capability_resolver": UnavailableTenantCapabilityResolver()},
+            "external tenant capability component",
+        ),
+        (
+            {"document_policy_binding_resolver": UnavailableDocumentPolicyBindingResolver()},
+            "external document binding component",
+        ),
+    ],
+)
+def test_saas_preflight_rejects_mismatched_runtime_components(
+    override: dict[str, object],
+    expected_requirement: str,
+) -> None:
+    app = FastAPI()
+    install_trusted_saas_runtime(app, _bundle())
+
+    with pytest.raises(RuntimeError, match=expected_requirement):
+        validate_trusted_saas_runtime_preflight(
+            app,
+            runtime_profile="saas-multitenant",
+            runtime_policy=_runtime_policy(),
+            runtime_components=_runtime_components(**override),
+        )
+
+    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+    assert not hasattr(app.state, "saas_identity_context_resolver")
+
+
+def test_saas_preflight_rejects_unvalidated_runtime_components_object() -> None:
+    app = FastAPI()
+    install_trusted_saas_runtime(app, _bundle())
+
+    with pytest.raises(RuntimeError, match="runtime components are invalid"):
+        validate_trusted_saas_runtime_preflight(
+            app,
+            runtime_profile="saas-multitenant",
+            runtime_policy=_runtime_policy(),
+            runtime_components=object(),  # type: ignore[arg-type]
+        )
+
+
 def test_preflight_does_not_activate_validated_saas_adapters() -> None:
     app = FastAPI()
     install_trusted_saas_runtime(app, _bundle())
@@ -337,6 +443,7 @@ def test_preflight_does_not_activate_validated_saas_adapters() -> None:
         app,
         runtime_profile="saas-multitenant",
         runtime_policy=_runtime_policy(),
+        runtime_components=_runtime_components(),
     )
 
     assert not getattr(app.state, "_kj_atlas_runtime_started", False)
@@ -390,3 +497,37 @@ def test_lifespan_rejects_missing_saas_bundle_before_database_initialization(
         asyncio.run(start_lifespan())
 
     assert init_db_called is False
+
+
+def test_lifespan_rejects_mismatched_component_before_database_initialization(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app = FastAPI()
+    install_trusted_saas_runtime(app, _bundle())
+    init_db_called = False
+
+    def record_init_db() -> None:
+        nonlocal init_db_called
+        init_db_called = True
+
+    monkeypatch.setattr(main_module, "_assert_linear_migration_history", lambda: None)
+    monkeypatch.setattr(main_module, "init_db", record_init_db)
+    monkeypatch.setattr(
+        main_module,
+        "build_access_control_adapter",
+        lambda **_: NoopAccessControlAdapter(),
+    )
+    _configure_main_saas_policy(
+        monkeypatch,
+        database_url="postgresql+psycopg://db.invalid/kj_atlas",
+    )
+
+    async def start_lifespan() -> None:
+        async with main_module.lifespan(app):
+            raise AssertionError("SaaS lifespan with mismatched components must not start")
+
+    with pytest.raises(RuntimeError, match="external access-control component"):
+        asyncio.run(start_lifespan())
+
+    assert init_db_called is False
+    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
