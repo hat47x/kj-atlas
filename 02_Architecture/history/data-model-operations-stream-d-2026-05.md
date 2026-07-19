@@ -16,7 +16,7 @@ Current normative anchors:
 
 - [Support level](../data_model_operations_overview.md#11-adr-0033-境界クラス固定)
 - [CRUDサポート表](../data_model_operations_overview.md#4-crudサポート表)
-- [DocumentV2フィールド支援レベル](../data_model_operations_overview.md#41-documentv2フィールド支援レベル表)
+- [DocumentV1フィールド支援レベル](../data_model_operations_overview.md#41-documentv1フィールド支援レベル表)
 - [更新ルール](../data_model_operations_overview.md#7-更新ルール)
 - [Schema versioning](../schemas.md#61-document-versioning--support-level運用ルールdata-contract-01固定)
 
