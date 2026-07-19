@@ -476,6 +476,24 @@ describe("UX Operability regression contracts", () => {
     expect(appSource.match(/perspectivePresets,/g)).toHaveLength(5);
   });
 
+  it("UI-QUALITY-A11Y-05: reading order has native keyboard-operable step controls while pointer drag remains available", () => {
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const readingOrderLayerSource = readSource("src/canvas/ReadingOrderLayer.tsx");
+    const appSource = readSource("src/App.tsx");
+
+    expect(sidePanelSource).toMatch(
+      /<button[\s\S]{0,300}onMoveReadingOrderItem\(index, -1\);[\s\S]{0,200}disabled=\{index === 0\}/,
+    );
+    expect(sidePanelSource).toMatch(
+      /<button[\s\S]{0,300}onMoveReadingOrderItem\(index, 1\);[\s\S]{0,250}disabled=\{index === readingOrderItems\.length - 1\}/,
+    );
+    expect(appSource).toContain("const handleMoveReadingOrderItem = useCallback(");
+    expect(appSource).toContain('t("app.history.reading_order.reordered")');
+    expect(readingOrderLayerSource).toContain("onPointerDown");
+    expect(readingOrderLayerSource).toContain("onPointerMove");
+    expect(readingOrderLayerSource).toContain("onPointerUp");
+  });
+
   it("DOMAIN-KJ-01: KJ relation vocabulary is additive, unknown types are preserved (never discarded), and derived edges stay type-suppressed", () => {
     const typesSource = readSource("src/domain/types.ts");
     const validateSource = readSource("src/domain/validate.ts");

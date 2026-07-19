@@ -1,38 +1,38 @@
-# Issue: UI-QUALITY-A11Y-05 読み順バッジの並び替えにキーボード操作が無い
+# Issue: UI-QUALITY-A11Y-05 読み順並び替えのキーボード到達性を確認する
 
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
-- Type: Feature
-- Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
+- Type: Quality
+- Status: Done
+- Lifecycle: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
-- Scope: `03_Implement/frontend/src/canvas/ReadingOrderLayer.tsx`
-- Related ADR/Spec: `01_Plans/adr/ADR-0055-work-mode-navigation-semantics.md`, `issue-UI-QUALITY-A11Y-03-structural-aria-findings.md`
+- Scope: `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/canvas/ReadingOrderLayer.tsx`
+- Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - Expected verification level: `unit`
 
 ## 課題
 
-- 現在の問題: `ReadingOrderLayer.tsx`の読み順バッジ（`<button>`要素、L235-281）は、削除（Alt+Click）は`Delete`/`Backspace`キーで操作可能にした（本ラウンドで対応済み）が、並び替え自体は`onPointerDown`/`onPointerMove`/`onPointerUp`によるドラッグ操作のみ（L~150-227）で行われており、キーボードだけでは順序を変更できない。`ReadingOrderLayer`の唯一の利用元は`CanvasShell.tsx`で、代替の一覧編集パネルは存在しない（grep確認済み）。
-- 利用者または開発への影響: キーボードのみで操作するユーザーは読み順を編集できない。バッジ自体はネイティブ`<button>`でフォーカス可能だが、実行できるアクションが「フォーカス」と「（対応済みの）削除」のみで、並び替えという主要な編集操作が欠落している。
+発見時はcanvas上の読み順バッジがpointer dragでしか並び替えられず、代替操作がないと判断していた。しかし現行コードを再監査すると、SidePanelの読み順一覧にnative `button`による「上へ」「下へ」が既にあり、`handleMoveReadingOrderItem(index, -1 | 1)`へ配線されていた。
 
-## 対応方針
+## 対応
 
-- 実施すること: 「上へ移動/下へ移動」のような離散的なキーボード操作（例: 矢印キー+モディファイア、または明示的なボタン）を設計し、`onRemoveEntry`と同様に既存の並び替えロジック（`onReorderEntry`相当のコールバック）へ配線する。
-- 実施しないこと: ドラッグ操作自体の変更・削除。ドラッグ操作はマウス操作として現状のまま維持する。
-- 判断が必要な理由: 離散的な移動インタラクション（何を1ステップの移動単位とするか、複数要素の並び替えをどう1ステップずつのキー操作に落とし込むか、操作結果をどうaria-liveなどでアナウンスするか）はUXデザイン判断であり、機械的に追加できるものではない。
+- SidePanelの上/下ボタンがキーボードで到達できるnative buttonであることを確認した。
+- 先頭の上ボタンと末尾の下ボタンが無効になり、範囲外移動を提示しないことを確認した。
+- 並び替えが既存の単一history stepへ接続されることを確認した。
+- canvas上のpointer drag操作は変更せず維持した。
+- 上記の実装境界が失われた場合に検出する回帰テストを追加した。
 
-## 受入条件
+## Acceptance
 
-- [ ] キーボードのみで読み順を並び替えられる操作方式が決定される。
-- [ ] 実装後、既存のドラッグ操作に回帰がないことを確認する。
+- [x] キーボードのみで1項目ずつ上/下へ並び替えられる操作方式が存在する。
+- [x] 既存のpointer drag操作を維持している。
+- [x] 両操作が同じDocumentの読み順更新契約へ接続される。
 
-## 検証計画
+## Validation
 
-- 実行する確認: 実装後、`ReadingOrderLayer`関連のunit testおよび手動のキーボード操作確認。
-- 期待結果: ドラッグ操作とキーボード操作の両方で同じ並び替え結果になる。
-
-## 補足
-
-- 発見経緯: 第8ラウンドの棚卸し（アクセシビリティ観点）で発見。同時に見つかった「Alt+Click削除にキーボード操作が無い」問題は`Delete`/`Backspace`キー対応として本ラウンドで直接修正済み（既存の`onRemoveEntry`コールバックを再利用するだけの機械的な変更のため）。
+- `vitest run src/ui/ux_operability_regression.test.ts src/canvas/ReadingOrderLayer.test.ts src/domain/reading_order_ops.test.ts`: 40 passed
+- `tsc --noEmit`: passed
+- `python 01_Plans/docs_check.py --root .`: passed（34 active memos）
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`: passed（34 active memos）
