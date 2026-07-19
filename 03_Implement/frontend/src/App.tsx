@@ -206,6 +206,7 @@ import {
   installTenantSessionCoherenceBoundary,
   type TenantSessionCoherenceBoundary,
 } from "./session/tenant_session_coherence";
+import { TenantSessionGenerationGuard } from "./session/tenant_session_generation";
 import { TenantSessionControl } from "./ui/TenantSessionControl";
 import { TenantChangeConfirmationDialog } from "./ui/TenantChangeConfirmationDialog";
 import {
@@ -1378,10 +1379,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const diffAbortRef = useRef<AbortController | null>(null);
   const tenantSwitchAbortRef = useRef<AbortController | null>(null);
   const tenantSessionCoherenceRef = useRef<TenantSessionCoherenceBoundary | null>(null);
+  const tenantSessionGenerationGuardRef = useRef(new TenantSessionGenerationGuard());
   const tenantControlRef = useRef<HTMLSelectElement | null>(null);
   const viewLocalePersistenceScopeRef = useRef(createViewLocalePersistenceScope({ docId: "", viewMode: "explore", allowPersistence: true }));
 
   const cleanupRuntimeResources = useCallback(() => {
+    tenantSessionGenerationGuardRef.current.invalidate();
     cleanupAppRuntimeResources({
       abortControllers: [
         tenantSwitchAbortRef.current,
@@ -1410,7 +1413,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     request: () => Promise<T>,
   ): Promise<T> => {
     try {
-      return await request();
+      return await tenantSessionGenerationGuardRef.current.run(request);
     } catch (error) {
       if (
         error instanceof ApiError
@@ -2107,9 +2110,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setStatusMessage(t(isReload ? "app.status.document_reloading" : "app.status.document_loading"));
 
       try {
-        const loaded = await getDocument(docId, {
+        const loaded = await runTenantScopedApiRequest(() => getDocument(docId, {
           tenantSessionContext: verifiedTenantSession,
-        });
+        }));
         if (isStale()) {
           return false;
         }
@@ -2153,9 +2156,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           const defaultDocument = createDefaultDocument(docId);
 
           try {
-            const saved = await putDocument(docId, defaultDocument, undefined, {
-              tenantSessionContext: verifiedTenantSession,
-            });
+            const saved = await runTenantScopedApiRequest(() => putDocument(
+              docId,
+              defaultDocument,
+              undefined,
+              { tenantSessionContext: verifiedTenantSession },
+            ));
             if (isStale()) {
               return false;
             }
@@ -2198,7 +2204,6 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
             if (
               saveError instanceof ApiError
               && saveError.code === "tenant_session_changed"
-              && blockStaleTenantSession()
             ) {
               return false;
             }
@@ -2209,7 +2214,6 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           if (
             error instanceof ApiError
             && error.code === "tenant_session_changed"
-            && blockStaleTenantSession()
           ) {
             return false;
           }
@@ -2232,8 +2236,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     [
       appStorage,
       applyResolvedLocaleForView,
-      blockStaleTenantSession,
       rememberRecentDocumentId,
+      runTenantScopedApiRequest,
       verifiedTenantSession,
     ]
   );
@@ -2576,12 +2580,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setStatusMessage(t("app.status.saving"));
 
     try {
-      const saved = await putDocument(
+      const saved = await runTenantScopedApiRequest(() => putDocument(
         document.id,
         withUpdatedTimestamp(document),
         docEtag ?? undefined,
         { tenantSessionContext: verifiedTenantSession },
-      );
+      ));
       const savedDocument = normalizeDocument(saved.document);
       pendingCardDragSnapshotRef.current = null;
       setHistory({
@@ -2601,7 +2605,6 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       if (
         error instanceof ApiError
         && error.code === "tenant_session_changed"
-        && blockStaleTenantSession()
       ) {
         return false;
       }
@@ -8462,21 +8465,18 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const reportAgentTaskExportAudit = useCallback(() => {
     if (!document) return;
-    void postExportAudit(
+    void runTenantScopedApiRequest(() => postExportAudit(
       document.id,
       { safeMode, exportKind: "agent-task" },
       { tenantSessionContext: verifiedTenantSession },
-    ).catch((error: unknown) => {
-      if (error instanceof ApiError && error.code === "tenant_session_changed") {
-        blockStaleTenantSession();
-      }
+    )).catch(() => {
       // Fail-open by design (spec §3.4 / ADR-0049 D2): the backend audit
       // dispatcher itself never blocks on send failure, and this call is
       // reporting after the local export already completed -- there is
       // nothing to roll back, so a network error here is silently ignored
       // rather than surfaced as an export failure the user didn't cause.
     });
-  }, [blockStaleTenantSession, document, safeMode, verifiedTenantSession]);
+  }, [document, runTenantScopedApiRequest, safeMode, verifiedTenantSession]);
 
   const handleCopyAgentTaskSheet = useCallback(async () => {
     const output = await buildCurrentAgentTaskSheet();

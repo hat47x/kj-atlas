@@ -489,6 +489,8 @@ describe("UX Operability regression contracts", () => {
     ];
 
     expect(appSource).toContain("const runTenantScopedApiRequest = useCallback(");
+    expect(appSource).toContain("tenantSessionGenerationGuardRef.current.invalidate();");
+    expect(appSource).toContain("tenantSessionGenerationGuardRef.current.run(request)");
     expect(appSource).toContain('error.code === "tenant_session_changed"');
     expect(appSource).toContain("blockStaleTenantSession();");
     for (const callName of tenantScopedCalls) {
@@ -496,6 +498,15 @@ describe("UX Operability regression contracts", () => {
         `runTenantScopedApiRequest(() => ${callName}(`,
       );
     }
+    expect(appSource).toContain(
+      "runTenantScopedApiRequest(() => getDocument(",
+    );
+    expect(appSource).toContain(
+      "runTenantScopedApiRequest(() => putDocument(",
+    );
+    expect(appSource).toContain(
+      "runTenantScopedApiRequest(() => postExportAudit(",
+    );
     expect(appSource).toContain(
       '(error.status === 503 && error.code === "provider_unavailable")',
     );
