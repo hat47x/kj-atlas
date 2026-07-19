@@ -10888,6 +10888,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
               document={document}
               onRestoreDocument={(snapshotDocument) => applyDocumentChange(snapshotDocument)}
               onDiscardRestoredDocument={discardLatestDocumentChange}
+              runTenantScopedOptionalTask={runTenantScopedOptionalTask}
             />
           ),
         },
@@ -11155,6 +11156,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         <SidePanel
           isReadOnly={isReadOnly}
           isAdvancedUiEnabled={isAdvancedUiEnabled}
+          runTenantScopedOptionalTask={runTenantScopedOptionalTask}
           selectedCard={selectedCard}
           sourceCardsForSelectedCanonical={sourceCardsForSelectedCanonical}
           missingSourceCardIdsForSelectedCanonical={missingSourceCardIdsForSelectedCanonical}

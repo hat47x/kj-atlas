@@ -35,7 +35,10 @@ type InquiryJourneyPrototypePanelProps = {
   document: DocumentV1 | null;
   onRestoreDocument: (document: DocumentV1) => boolean;
   onDiscardRestoredDocument: () => boolean;
+  runTenantScopedOptionalTask?: <T>(task: () => Promise<T>) => Promise<T | undefined>;
 };
+
+const runWithoutTenantScope = <T,>(task: () => Promise<T>): Promise<T> => task();
 
 type BranchUndoCheckpoint = {
   bundle: InquiryBundleV1;
@@ -204,6 +207,7 @@ export function InquiryJourneyPrototypePanel({
   document,
   onRestoreDocument,
   onDiscardRestoredDocument,
+  runTenantScopedOptionalTask = runWithoutTenantScope,
 }: InquiryJourneyPrototypePanelProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const importClientRef = useRef<InquiryBundleWorkerClient | null>(null);
@@ -492,7 +496,13 @@ export function InquiryJourneyPrototypePanel({
     });
     try {
       importClientRef.current ??= new InquiryBundleWorkerClient();
-      const outcome = await importClientRef.current.parse(await file.text(), { signal: controller.signal });
+      const importClient = importClientRef.current;
+      const outcome = await runTenantScopedOptionalTask(async () => (
+        importClient.parse(await file.text(), { signal: controller.signal })
+      ));
+      if (outcome === undefined) {
+        return;
+      }
       if (outcome.status === "cancelled") {
         if (importAbortRef.current === controller) {
           setMessage({ kind: "status", text: t("inquiry_journey.prototype.import_cancelled") });

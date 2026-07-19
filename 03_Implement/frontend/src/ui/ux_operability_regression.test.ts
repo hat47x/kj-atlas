@@ -478,6 +478,8 @@ describe("UX Operability regression contracts", () => {
 
   it("routes tenant-scoped AI calls through the stale-session cleanup boundary", () => {
     const appSource = readSource("src/App.tsx");
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const inquiryPanelSource = readSource("src/ui/InquiryJourneyPrototypePanel.tsx");
     const tenantScopedCalls = [
       "suggestLayout",
       "suggestMerges",
@@ -558,6 +560,19 @@ describe("UX Operability regression contracts", () => {
     expect(publicPackCommitIndex).toBeGreaterThan(publicPackViewFetchIndex);
     expect(appSource).toContain('if (loadedFromPack === "stale")');
     expect(appSource).not.toContain('await fetch("./packs/');
+    expect(appSource.match(/runTenantScopedOptionalTask=\{runTenantScopedOptionalTask\}/g)).toHaveLength(2);
+    expect(sidePanelSource).toContain(
+      "runTenantScopedOptionalTask(() => traceClient.computeTraceAnalytics(",
+    );
+    expect(sidePanelSource).toContain(
+      "runTenantScopedOptionalTask(() => runTraceRequest(",
+    );
+    expect(inquiryPanelSource).toContain(
+      "const outcome = await runTenantScopedOptionalTask(async () => (",
+    );
+    expect(inquiryPanelSource).not.toContain(
+      "importClientRef.current.parse(await file.text()",
+    );
     expect(appSource).toContain(
       '(error.status === 503 && error.code === "provider_unavailable")',
     );

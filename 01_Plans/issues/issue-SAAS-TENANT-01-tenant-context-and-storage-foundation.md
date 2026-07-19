@@ -440,3 +440,9 @@
 - public pack loaderをmanifest、Document、任意viewの全fetch／text decode／strict parseをtenant session generation guard内で完了してからApp stateへ一括commitする構造へ変更した。view取得前にDocumentだけをcommitする中間状態を廃止した。
 - loader結果をloaded／not-found／staleのclosed unionへ分離し、stale時はDocument APIや組込みsampleへ自動fallbackしない。これにより旧scopeで開始したpack内容を新scopeの代替sourceとして再読込・commitしない。
 - public pack／Document／view／App source guard近接64件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。server import、App外worker、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: child worker generation guard
+
+- Appから問い合わせjourney panelとSidePanelへtenant session generation guardを注入し、子コンポーネント所有の問い合わせbundle import worker、trace／trace analytics workerの完了結果を同じscopeで照合する構造へ変更した。
+- 問い合わせbundleはFile読込とworker parseを一つのguarded taskとして扱い、traceは結果照合後だけstate更新またはclipboard処理へ進む。既存のAbortController／worker disposeも併用し、stale時は利用者向けエラーへ変換せず破棄する。
+- worker／tenant generation／App source guard近接46件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。将来のserver import／share endpoint、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。

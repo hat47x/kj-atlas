@@ -65,6 +65,7 @@ function recommendationImpactLabel(level: Recommendation["impactLevel"]): string
 type SidePanelProps = {
   isReadOnly?: boolean;
   isAdvancedUiEnabled?: boolean;
+  runTenantScopedOptionalTask?: <T>(task: () => Promise<T>) => Promise<T | undefined>;
   selectedCard: Card | null;
   sourceCardsForSelectedCanonical: Card[];
   missingSourceCardIdsForSelectedCanonical: string[];
@@ -255,6 +256,8 @@ type SidePanelProps = {
   providerUnavailableMessage?: string | null;
 };
 
+const runWithoutTenantScope = <T,>(task: () => Promise<T>): Promise<T> => task();
+
 export function SidePanel({
   selectedCard,
   sourceCardsForSelectedCanonical,
@@ -436,6 +439,7 @@ export function SidePanel({
   providerUnavailableMessage,
   isReadOnly = false,
   isAdvancedUiEnabled = false,
+  runTenantScopedOptionalTask = runWithoutTenantScope,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
   const cardQualityAssistTriggerRef = useRef<HTMLButtonElement>(null);
@@ -612,7 +616,8 @@ export function SidePanel({
     const controller = new AbortController();
     analyticsAbortRef.current = controller;
     setIsAnalyticsRunning(true);
-    void traceClientRef.current.computeTraceAnalytics({
+    const traceClient = traceClientRef.current;
+    void runTenantScopedOptionalTask(() => traceClient.computeTraceAnalytics({
       doc: document,
       options: {
         startCardId: selectedCard.id,
@@ -625,8 +630,8 @@ export function SidePanel({
     }, {
       signal: controller.signal,
       onProgress: (progress) => setTraceProgressMessage(t("side_panel.trace.analytics_progress", { mode: traceAnalyticsModeLabel, stage: progress.stage, percent: progress.percent })),
-    }).then((outcome) => {
-      if (outcome.status !== "completed") {
+    })).then((outcome) => {
+      if (outcome === undefined || outcome.status !== "completed") {
         return;
       }
       setTraceAnalytics(outcome.result.analytics);
@@ -647,7 +652,7 @@ export function SidePanel({
         analyticsAbortRef.current = null;
       }
     };
-  }, [document, onEvidenceTraceError, safeMode, selectedCard, traceAnalyticsMode, traceAnalyticsModeLabel]);
+  }, [document, onEvidenceTraceError, runTenantScopedOptionalTask, safeMode, selectedCard, traceAnalyticsMode, traceAnalyticsModeLabel]);
 
   const hasCardSelection = selectedCardCount > 0;
   const canAlign = selectedCardCount >= 2;
@@ -722,7 +727,7 @@ export function SidePanel({
     traceAbortRef.current = controller;
     setIsTraceRunning(true);
 
-    const outcome = await runTraceRequest({
+    const outcome = await runTenantScopedOptionalTask(() => runTraceRequest({
       execute: () => traceClient.computeTrace({
         doc: document,
         options: {
@@ -753,8 +758,8 @@ export function SidePanel({
           setTraceProgressMessage(null);
         }
       },
-    });
-    if (outcome === null) {
+    }));
+    if (outcome === undefined || outcome === null) {
       return null;
     }
 
