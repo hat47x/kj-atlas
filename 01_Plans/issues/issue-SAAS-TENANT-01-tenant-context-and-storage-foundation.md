@@ -503,3 +503,8 @@
 
 - FastAPIへ登録された全Document routeが`_authorize_request`、全Document access admin routeが`_authorize_document_policy_management`を呼ぶことをcontract testへ固定した。新規routeが共通のtenant解決・session世代確認・認可境界を省略すると、実装者が個別のnegative testを追加し忘れても検出する。
 - AI／context routeのdependency全件検査を含むsession precondition test 7件、Ruff、変更対象format checkを通過した。非公開のimport／share／webhook／job endpointとMCPはこの登録route集合に含まれず、実装時に別の境界が必要であるため、AC-8/10/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: tenant-scoped context-audit progress state
+
+- CE4 context auditのevent completeness tracker keyを`tenantId + equivalenceKey + bundleHash`へ変更した。tenant Aのquery／bundle／proposal進行は、同じhashを送るtenant Bのapply検証を充足せず、検証済みtenant contextが異なる監査進行stateを合流させない。
+- tenant Aのquery後もtenant Bのapplyでqueryを含む全不足eventを返すnegative testを追加し、Document audit integration 23件とRuffを通過した。trackerはprocess-localな既存CE4検証機構であり、共有SaaSの永続監査正本にはしない。実auth edgeと全consumer越境matrixは未完了のため、AC-8/10/13とSaaS profile起動拒否を維持する。

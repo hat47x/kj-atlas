@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import httpx
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -16,7 +17,10 @@ from kj_atlas_api.access_control import AccessDecision
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
 from kj_atlas_api.models import Base
-from kj_atlas_api.routes.docs import reset_ce4_audit_event_tracker
+from kj_atlas_api.routes.docs import (
+    _record_ce4_event_and_validate_completeness,
+    reset_ce4_audit_event_tracker,
+)
 from kj_atlas_api.settings import settings
 
 
@@ -219,6 +223,30 @@ def test_context_audit_rejects_stale_session_before_tracker_mutation(
     assert response.status_code == 409
     assert response.json()["detail"]["code"] == "tenant_session_changed"
     assert tracker_called is False
+
+
+def test_context_audit_tracker_does_not_share_progress_between_tenants() -> None:
+    common = {
+        "equivalence_key": "a" * 64,
+        "bundle_hash": "b" * 64,
+        "source_bundle_hash": None,
+    }
+    _record_ce4_event_and_validate_completeness(
+        tenant_id="tenant-a",
+        operation="query",
+        **common,
+    )
+
+    with pytest.raises(HTTPException) as captured:
+        _record_ce4_event_and_validate_completeness(
+            tenant_id="tenant-b",
+            operation="apply",
+            **common,
+        )
+
+    assert captured.value.status_code == 409
+    assert captured.value.detail["code"] == "missing_event"
+    assert captured.value.detail["missingEvents"] == ["bundle", "proposal", "query"]
 
 
 def test_context_audit_endpoint_emits_four_operation_events(tmp_path) -> None:
