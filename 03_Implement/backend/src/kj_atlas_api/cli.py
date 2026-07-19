@@ -134,8 +134,13 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(response_payload, ensure_ascii=False))
         return 0
 
-    with open(args.input, encoding="utf-8") as fh:
-        input_payload = json.load(fh)
+    try:
+        with open(args.input, encoding="utf-8") as fh:
+            input_payload = json.load(fh)
+    except OSError as exc:
+        raise SystemExit(f"could not read --input file: {exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"--input file is not valid JSON: {exc}") from exc
     if "docId" not in input_payload:
         raise SystemExit("input JSON must include docId")
 

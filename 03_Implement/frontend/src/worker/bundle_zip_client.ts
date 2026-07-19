@@ -81,6 +81,11 @@ export class BundleZipWorkerClient {
         }
       };
 
+      const onError = (event: ErrorEvent) => {
+        cleanup();
+        reject(new Error(event.message || "Bundle zip worker failed"));
+      };
+
       const onAbort = () => {
         this.cancel(requestId);
         cleanup();
@@ -89,10 +94,12 @@ export class BundleZipWorkerClient {
 
       const cleanup = () => {
         worker.removeEventListener("message", onMessage);
+        worker.removeEventListener("error", onError);
         options.signal?.removeEventListener("abort", onAbort);
       };
 
       worker.addEventListener("message", onMessage);
+      worker.addEventListener("error", onError);
       options.signal?.addEventListener("abort", onAbort, { once: true });
       worker.postMessage({ type: "bundle.zip.request", requestId, payload } as BundleZipWorkerRequestMessage);
     });
