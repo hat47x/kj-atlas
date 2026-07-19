@@ -199,6 +199,10 @@ import type { DiffProgressStage } from "./worker/diff_protocol";
 import { cleanupAppRuntimeResources } from "./session/app_runtime_cleanup";
 import { resolveAppTenantSession } from "./session/app_tenant_session";
 import { requestTenantSessionTransition, type TenantSwitchUnsavedDecision } from "./session/tenant_switch_request";
+import {
+  installTenantSessionCoherenceBoundary,
+  type TenantSessionCoherenceBoundary,
+} from "./session/tenant_session_coherence";
 import { TenantSessionControl } from "./ui/TenantSessionControl";
 import { TenantChangeConfirmationDialog } from "./ui/TenantChangeConfirmationDialog";
 import {
@@ -1369,6 +1373,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const diagnosticsWorkerClientRef = useRef<DiagnosticsWorkerClient | null>(null);
   const diffAbortRef = useRef<AbortController | null>(null);
   const tenantSwitchAbortRef = useRef<AbortController | null>(null);
+  const tenantSessionCoherenceRef = useRef<TenantSessionCoherenceBoundary | null>(null);
   const tenantControlRef = useRef<HTMLSelectElement | null>(null);
   const viewLocalePersistenceScopeRef = useRef(createViewLocalePersistenceScope({ docId: "", viewMode: "explore", allowPersistence: true }));
 
@@ -1391,6 +1396,25 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   useEffect(() => {
     return cleanupRuntimeResources;
   }, [cleanupRuntimeResources]);
+
+  useEffect(() => {
+    if (!verifiedTenantSession) {
+      return undefined;
+    }
+    const boundary = installTenantSessionCoherenceBoundary({
+      onInvalidate: () => {
+        cleanupRuntimeResources();
+        setTenantSwitchUiState({ status: "blocked" });
+      },
+    });
+    tenantSessionCoherenceRef.current = boundary;
+    return () => {
+      boundary.dispose();
+      if (tenantSessionCoherenceRef.current === boundary) {
+        tenantSessionCoherenceRef.current = null;
+      }
+    };
+  }, [cleanupRuntimeResources, verifiedTenantSession]);
 
   useEffect(() => {
     return () => {
@@ -2566,6 +2590,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         saveUnsavedChanges: unsavedDecision === "save"
           ? handleSave
           : undefined,
+        notifySessionChanged: () => {
+          tenantSessionCoherenceRef.current?.publishSessionChanged();
+        },
         signal: controller.signal,
       });
 

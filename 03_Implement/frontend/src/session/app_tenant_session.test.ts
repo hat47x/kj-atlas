@@ -68,6 +68,8 @@ describe("App tenant session boundary", () => {
 
     expect(appSource).toContain("resolveAppTenantSession");
     expect(appSource).toContain("requestTenantSessionTransition");
+    expect(appSource).toContain("installTenantSessionCoherenceBoundary");
+    expect(appSource).toContain("publishSessionChanged");
     expect(appSource).toContain("<TenantSessionControl");
     expect(appSource).toContain("<TenantChangeConfirmationDialog");
     expect(appSource).toContain('tenantSwitchUiState.status === "switching"');

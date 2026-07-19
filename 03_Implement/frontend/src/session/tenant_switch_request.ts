@@ -68,6 +68,7 @@ export async function requestTenantSessionTransition(input: Readonly<{
   requestUnsavedDecision?: () => Promise<unknown>;
   saveUnsavedChanges?: () => Promise<boolean>;
   changeTenant?: ActiveTenantChanger;
+  notifySessionChanged?: () => void;
   signal: AbortSignal;
   replaceDocument?: () => void;
 }>): Promise<TenantSwitchRequestResult> {
@@ -131,6 +132,11 @@ export async function requestTenantSessionTransition(input: Readonly<{
   // Once the server-confirmed session has changed, replacement must proceed
   // even if the initiating component was aborted. Keeping the old tenant DOM
   // after a verified session change would be the less safe outcome.
+  try {
+    input.notifySessionChanged?.();
+  } catch {
+    // Cross-tab delivery is advisory; the server precondition remains authoritative.
+  }
   return {
     status: "transitioned",
     transition: executeTenantSessionTransition({

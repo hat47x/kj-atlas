@@ -380,3 +380,9 @@
 - `POST /session/active-tenant`へ`expectedTenantSessionVersion`を必須化し、現versionとのconstant-time相当の事前比較とadapter内の原子的比較を二段で要求した。事前または同時更新競合は資源・現tenant・生versionを返さない`409 tenant_session_changed`とし、保存前に最大長versionでresponse上限を検証する。adapterが同じversion、不正version、予期しない例外を返す場合も成功扱いにしない。
 - frontendのclosed-world session validator、active tenant client、request coordinatorを同期し、現在versionをPOSTし、principal不変・要求tenant一致・version変更をすべて確認するまでcleanup、旧scope削除、hard replacementを開始しない。backend近接86件（session 76件＋Tenant Admin 10件）と全体591件・条件付き25件skip、frontend近接84件と全体1,252件・217 file、frontend typecheck、backend全体Ruff、docs-checkを通過した。
 - これはsession context／active tenant切替の基盤sliceである。実auth edge adapterとanti-forgery付きsession形式、全tenant-scoped APIのresource lookup前guard、BroadcastChannel、bfcache／resume再確認、stale response／worker commit拒否、SaaS runtime起動許可は未実装であり、AC-4/5/6/7/8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-19: browser tenant session coherence boundary
+
+- future SaaS App hostへ、固定same-origin BroadcastChannelで`null`だけを通知するcoherence境界を追加した。channel名・payloadへtenant ID、principal ID、capability、本文、`tenantSessionVersion`を含めず、通知生成失敗・送信失敗でも検証済みlocal切替のcleanup／hard replacementを止めない。server preconditionを引き続き権威とする。
+- 別タブ通知受信、`pageshow.persisted=true`、online復帰、5分以上の非表示からの復帰を一度だけのscope invalidationへ集約した。invalidation時はlistener／channelを先に破棄し、進行中request、task、workerを停止して旧Appをblocked viewへ置換する。local切替はserver応答のprincipal／tenant／新version検証後、cleanupとreplacementより前に通知する。
+- coherence／App host／switch coordinator近接27件、frontend全体1,259件・218 file、frontend typecheck、docs-checkを通過した。現行production entryはsession contextを注入しないため境界はdormantで、実ブラウザの複数タブE2E、全APIのserver guard、stale response／worker resultの世代commit拒否は未完了である。AC-8/10/12/13とSaaS profile起動拒否を維持する。

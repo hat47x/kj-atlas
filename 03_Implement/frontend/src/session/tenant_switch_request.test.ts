@@ -74,6 +74,7 @@ describe("tenant switch request", () => {
 
     await expect(request({
       changeTenant,
+      notifySessionChanged: () => order.push("notify"),
       cleanupSteps: [() => order.push("cleanup")],
       replaceDocument: () => order.push("replace"),
     })).resolves.toMatchObject({
@@ -82,7 +83,7 @@ describe("tenant switch request", () => {
         nextScope: { ...previousScope, tenantId: "tenant-b" },
       },
     });
-    expect(order).toEqual(["post", "cleanup", "replace"]);
+    expect(order).toEqual(["post", "notify", "cleanup", "replace"]);
     expect(changeTenant).toHaveBeenCalledWith(
       currentSession,
       "tenant-b",
@@ -267,6 +268,17 @@ describe("tenant switch request", () => {
       changeTenant: async () => {
         controller.abort();
         return nextSession();
+      },
+      replaceDocument,
+    })).resolves.toMatchObject({ status: "transitioned" });
+    expect(replaceDocument).toHaveBeenCalledOnce();
+  });
+
+  it("continues replacement when advisory cross-tab notification fails", async () => {
+    const replaceDocument = vi.fn();
+    await expect(request({
+      notifySessionChanged: () => {
+        throw new Error("channel unavailable");
       },
       replaceDocument,
     })).resolves.toMatchObject({ status: "transitioned" });
