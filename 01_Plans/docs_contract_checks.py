@@ -20,11 +20,18 @@ SAFETY_ROUTE_RULE_ID = "DC-SAF-001"
 NPM_SCRIPT_COMMAND_RULE_ID = "DC-CMD-001"
 ADR_ID_UNIQUENESS_RULE_ID = "DC-ADR-001"
 ADR_TRACEABILITY_PATH_RULE_ID = "DC-ADR-002"
+CI_JOB_TIMEOUT_RULE_ID = "DC-CI-001"
 ADR_FILENAME_RE = re.compile(r"^ADR-(?P<id>\d{4})-[^.]+\.md$")
 ADR_TRACEABILITY_PATH_RE = re.compile(
     r"^- (?:Supersedes|Superseded by|Derived-from):\s+`(?P<target>01_Plans/adr/[^`]+)`",
     re.MULTILINE,
 )
+CI_WORKFLOW_PATHS = (
+    Path(".github/workflows/ci.yml"),
+    Path(".github/workflows/release.yml"),
+)
+CI_JOB_HEADER_RE = re.compile(r"^  (?P<job>[A-Za-z0-9_-]+):\s*$")
+CI_JOB_TIMEOUT_RE = re.compile(r"^    timeout-minutes:\s*(?P<minutes>\d+)\s*$")
 DOCUMENT_TYPE_RE = re.compile(r"export type (Document\w*)\s*=\s*\{\s*\r?\n\s*version:\s*([^;]+);")
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
@@ -493,6 +500,42 @@ def check_adr_traceability_paths(root: Path, markdown_paths: list[Path]) -> list
                 )
             )
 
+    return findings
+
+
+def check_ci_job_timeouts(
+    root: Path,
+    workflow_paths: tuple[Path, ...] = CI_WORKFLOW_PATHS,
+) -> list[DocsCheckFinding]:
+    """Require every job in the maintained GitHub Actions workflows to have a bounded timeout."""
+    findings: list[DocsCheckFinding] = []
+    for relative_path in workflow_paths:
+        source = root / relative_path
+        lines = source.read_text(encoding="utf-8").splitlines()
+        jobs_index = lines.index("jobs:")
+        job_headers = [
+            (index, match.group("job"))
+            for index, line in enumerate(lines[jobs_index + 1 :], start=jobs_index + 1)
+            if (match := CI_JOB_HEADER_RE.match(line))
+        ]
+        for position, (start_index, job_name) in enumerate(job_headers):
+            end_index = job_headers[position + 1][0] if position + 1 < len(job_headers) else len(lines)
+            timeout_match = next(
+                (CI_JOB_TIMEOUT_RE.match(line) for line in lines[start_index + 1 : end_index] if CI_JOB_TIMEOUT_RE.match(line)),
+                None,
+            )
+            if timeout_match and 1 <= int(timeout_match.group("minutes")) <= 360:
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=CI_JOB_TIMEOUT_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=start_index + 1,
+                    target=job_name,
+                    message=f"workflow job `{job_name}` is missing a valid timeout-minutes value",
+                    fix_hint="Set timeout-minutes to an integer from 1 through 360 at the job level.",
+                )
+            )
     return findings
 
 
@@ -1116,6 +1159,7 @@ def main() -> int:
     findings = check_relative_links(root, markdown_paths)
     findings.extend(check_adr_id_uniqueness(root, markdown_paths))
     findings.extend(check_adr_traceability_paths(root, markdown_paths))
+    findings.extend(check_ci_job_timeouts(root))
     findings.extend(check_current_history_headings(root))
     findings.extend(check_document_contract_baseline(root))
     findings.extend(check_documented_response_models(root))

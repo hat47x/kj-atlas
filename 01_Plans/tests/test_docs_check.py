@@ -19,6 +19,11 @@ class DocsCheckEntrypointTest(unittest.TestCase):
     def _repository(self, root: Path, guide_text: str) -> None:
         (root / "01_Plans" / "issues").mkdir(parents=True)
         (root / "01_Plans" / "adr").mkdir()
+        workflows = root / ".github" / "workflows"
+        workflows.mkdir(parents=True)
+        workflow_text = "jobs:\n  verify:\n    timeout-minutes: 30\n"
+        (workflows / "ci.yml").write_text(workflow_text, encoding="utf-8")
+        (workflows / "release.yml").write_text(workflow_text, encoding="utf-8")
         (root / "docs").mkdir()
         (root / "docs" / "guide.md").write_text(guide_text, encoding="utf-8")
         for relative_path in CHECKS.CURRENT_ONLY_PATHS:
@@ -136,6 +141,19 @@ class DocsCheckEntrypointTest(unittest.TestCase):
 
         self.assertEqual(len(result.errors), 1)
         self.assertIn("DC-ADR-002 01_Plans/adr/ADR-0001-source.md:3", result.errors[0])
+
+    def test_run_docs_check_reports_missing_ci_job_timeout(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._repository(root, "# Guide\n")
+            workflow = root / ".github" / "workflows" / "ci.yml"
+            workflow.write_text("jobs:\n  unbounded:\n    runs-on: ubuntu-latest\n", encoding="utf-8")
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+
+            result = MODULE.run_docs_check(root, run_tests=False)
+
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn("DC-CI-001 .github/workflows/ci.yml:2", result.errors[0])
 
 
 if __name__ == "__main__":

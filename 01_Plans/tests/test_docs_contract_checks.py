@@ -36,6 +36,7 @@ class MainWiringTest(unittest.TestCase):
         "check_history_metadata",
         "check_public_boundary",
         "check_safety_routes",
+        "check_ci_job_timeouts",
     )
 
     def _run_main(self, root: Path, *, finding=None):
@@ -491,6 +492,47 @@ class AdrTraceabilityPathCheckTest(unittest.TestCase):
             (root / target).write_text("# ADR-0002\n", encoding="utf-8")
 
             findings = MODULE.check_adr_traceability_paths(root, [source, target])
+
+        self.assertEqual(findings, [])
+
+
+class CiJobTimeoutCheckTest(unittest.TestCase):
+    def test_reports_each_job_without_a_valid_timeout(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            workflow = root / "workflow.yml"
+            workflow.write_text(
+                "jobs:\n"
+                "  missing:\n"
+                "    runs-on: ubuntu-latest\n"
+                "  zero:\n"
+                "    runs-on: ubuntu-latest\n"
+                "    timeout-minutes: 0\n"
+                "  valid:\n"
+                "    runs-on: ubuntu-latest\n"
+                "    timeout-minutes: 30\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_ci_job_timeouts(root, (Path("workflow.yml"),))
+
+        self.assertEqual([finding.target for finding in findings], ["missing", "zero"])
+        self.assertTrue(all(finding.rule_id == "DC-CI-001" for finding in findings))
+
+    def test_accepts_bounded_timeout_for_every_job(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            workflow = root / "workflow.yml"
+            workflow.write_text(
+                "jobs:\n"
+                "  first-job:\n"
+                "    timeout-minutes: 5\n"
+                "  second_job:\n"
+                "    timeout-minutes: 360\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_ci_job_timeouts(root, (Path("workflow.yml"),))
 
         self.assertEqual(findings, [])
 
