@@ -12,6 +12,12 @@ import {
   serializeInquiryBundle,
 } from "../domain/inquiry_bundle_io";
 import {
+  buildInquiryHandoffReview,
+  saveInquiryRoundHandoff,
+  type InquiryHandoffReviewCandidate,
+  type InquiryHandoffReviewDecision,
+} from "../domain/inquiry_handoff_review";
+import {
   buildInquiryResumeBrief,
   compareInquiryRounds,
   inquiryBundleOriginatesFromDocument,
@@ -35,6 +41,11 @@ type BranchUndoCheckpoint = {
   restoredDocument: DocumentV1;
 };
 
+type InquiryHandoffReviewPanelProps = {
+  candidates: InquiryHandoffReviewCandidate[];
+  onSave: (candidates: InquiryHandoffReviewCandidate[]) => void;
+};
+
 function stageLabel(stage: RoundStage): string {
   return t(`inquiry_journey.stage.${stage}`);
 }
@@ -42,6 +53,150 @@ function stageLabel(stage: RoundStage): string {
 function fileStem(value: string): string {
   const sanitized = value.trim().replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, "-");
   return sanitized || "inquiry";
+}
+
+function handoffCandidateQuestion(candidate: InquiryHandoffReviewCandidate): string {
+  if (candidate.kind === "artifact") {
+    return t("inquiry_journey.prototype.handoff_artifact_question", {
+      kind: t(`inquiry_journey.prototype.handoff_artifact_kind.${candidate.artifactKind}`),
+    });
+  }
+  return t(`inquiry_journey.prototype.handoff_question.${candidate.kind}`);
+}
+
+function InquiryHandoffReviewPanel({ candidates: initialCandidates, onSave }: InquiryHandoffReviewPanelProps) {
+  const candidateRef = useRef<HTMLElement | null>(null);
+  const addedCandidateCountRef = useRef(0);
+  const [candidates, setCandidates] = useState(() => structuredClone(initialCandidates));
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const current = candidates[currentIndex];
+
+  useEffect(() => {
+    candidateRef.current?.focus();
+  }, [currentIndex]);
+
+  if (!current) return null;
+
+  const updateCurrent = (update: (candidate: InquiryHandoffReviewCandidate) => InquiryHandoffReviewCandidate) => {
+    setCandidates((previous) => previous.map((candidate, index) => (
+      index === currentIndex ? update(candidate) : candidate
+    )));
+  };
+  const decide = (decision: InquiryHandoffReviewDecision) => {
+    updateCurrent((candidate) => candidate.kind === "artifact"
+      ? { ...candidate, decision }
+      : { ...candidate, decision: decision === "held" ? "pending" : decision });
+    if (currentIndex < candidates.length - 1) setCurrentIndex((index) => index + 1);
+  };
+  const addTextCandidate = (kind: "unresolved_question" | "fieldwork_request") => {
+    addedCandidateCountRef.current += 1;
+    const nextCandidate: InquiryHandoffReviewCandidate = {
+      candidateId: `${kind}:added:${addedCandidateCountRef.current}`,
+      kind,
+      value: "",
+      originalValue: "",
+      decision: "pending",
+    };
+    setCandidates((previous) => [...previous, nextCandidate]);
+    setCurrentIndex(candidates.length);
+  };
+  const isEdited = current.kind !== "artifact" && current.value !== current.originalValue;
+  const canAdopt = current.kind === "artifact" || Boolean(current.value.trim());
+
+  return (
+    <details>
+      <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+        {t("inquiry_journey.prototype.handoff_review")}
+      </summary>
+      <fieldset
+        aria-label={t("inquiry_journey.prototype.handoff_review")}
+        style={{ display: "grid", gap: 8, margin: "8px 0 0", padding: 10, border: "1px solid #cbd5e1", minWidth: 0 }}
+      >
+        <div style={{ fontSize: 11, color: "#475569" }}>
+          {t("inquiry_journey.prototype.handoff_optional")}
+        </div>
+        <div style={{ fontSize: 11, color: "#475569" }}>
+          {t("inquiry_journey.prototype.handoff_position", {
+            current: currentIndex + 1,
+            total: candidates.length,
+          })}
+        </div>
+        <section
+          ref={candidateRef}
+          tabIndex={-1}
+          aria-label={handoffCandidateQuestion(current)}
+          style={{ display: "grid", gap: 8, minWidth: 0, padding: 8, borderInlineStart: "3px solid #64748b" }}
+        >
+          <strong style={{ fontSize: 12 }}>{handoffCandidateQuestion(current)}</strong>
+          {current.kind === "artifact" ? (
+            <div style={{ fontSize: 12, overflowWrap: "anywhere" }}>{current.label}</div>
+          ) : (
+            <label style={{ display: "grid", gap: 4, minWidth: 0, fontSize: 12 }}>
+              {t(`inquiry_journey.prototype.handoff_input.${current.kind}`)}
+              <textarea
+                value={current.value}
+                rows={3}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  updateCurrent((candidate) => candidate.kind === "artifact"
+                    ? candidate
+                    : { ...candidate, value, decision: "pending" });
+                }}
+                style={{ boxSizing: "border-box", width: "100%", minWidth: 0, resize: "vertical" }}
+              />
+            </label>
+          )}
+          <div role="status" aria-live="polite" style={{ fontSize: 11, color: "#475569" }}>
+            {t(`inquiry_journey.prototype.handoff_decision.${current.decision}`)}
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            <button type="button" disabled={!canAdopt} onClick={() => decide("adopted")}>
+              {t(isEdited
+                ? "inquiry_journey.prototype.handoff_adopt_edited"
+                : "inquiry_journey.prototype.handoff_adopt")}
+            </button>
+            {current.kind === "artifact" ? (
+              <button type="button" onClick={() => decide("held")}>
+                {t("inquiry_journey.prototype.handoff_hold")}
+              </button>
+            ) : null}
+            <button type="button" onClick={() => decide("skipped")}>
+              {t("inquiry_journey.prototype.handoff_skip")}
+            </button>
+          </div>
+        </section>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
+          <button
+            type="button"
+            disabled={currentIndex === 0}
+            onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))}
+            style={{ whiteSpace: "normal" }}
+          >
+            {t("inquiry_journey.prototype.handoff_previous")}
+          </button>
+          <button
+            type="button"
+            disabled={currentIndex === candidates.length - 1}
+            onClick={() => setCurrentIndex((index) => Math.min(candidates.length - 1, index + 1))}
+            style={{ whiteSpace: "normal" }}
+          >
+            {t("inquiry_journey.prototype.handoff_next")}
+          </button>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          <button type="button" onClick={() => addTextCandidate("unresolved_question")}>
+            {t("inquiry_journey.prototype.handoff_add_unresolved")}
+          </button>
+          <button type="button" onClick={() => addTextCandidate("fieldwork_request")}>
+            {t("inquiry_journey.prototype.handoff_add_fieldwork")}
+          </button>
+        </div>
+        <button type="button" onClick={() => onSave(candidates)}>
+          {t("inquiry_journey.prototype.handoff_save")}
+        </button>
+      </fieldset>
+    </details>
+  );
 }
 
 export function InquiryJourneyPrototypePanel({
@@ -129,6 +284,10 @@ export function InquiryJourneyPrototypePanel({
   );
   const resumeBrief = useMemo(
     () => bundle ? buildInquiryResumeBrief(bundle) : null,
+    [bundle]
+  );
+  const handoffReview = useMemo(
+    () => bundle ? buildInquiryHandoffReview(bundle) : null,
     [bundle]
   );
   const selectedResumeResult = resumeBrief?.ok
@@ -239,6 +398,22 @@ export function InquiryJourneyPrototypePanel({
     setComparisonToRoundId("");
     setResumePreviewSnapshotId("");
     setMessage({ kind: "status", text: t("inquiry_journey.prototype.branch_undone") });
+  };
+
+  const handleSaveHandoff = (candidates: InquiryHandoffReviewCandidate[]) => {
+    if (!bundle || !handoffReview?.ok) return;
+    const result = saveInquiryRoundHandoff(bundle, handoffReview.roundId, candidates);
+    if (!result.ok) {
+      setMessage({ kind: "error", text: t("inquiry_journey.prototype.handoff_save_error") });
+      return;
+    }
+    setBundle(result.bundle);
+    setMessage({
+      kind: "status",
+      text: t(result.unansweredCount > 0
+        ? "inquiry_journey.prototype.handoff_saved_partial"
+        : "inquiry_journey.prototype.handoff_saved"),
+    });
   };
 
   const handleExport = async () => {
@@ -428,6 +603,14 @@ export function InquiryJourneyPrototypePanel({
                 </li>
               ))}
             </ol>
+          ) : null}
+
+          {handoffReview?.ok ? (
+            <InquiryHandoffReviewPanel
+              key={`${handoffReview.roundId}:${records.find((record) => record.roundId === handoffReview.roundId)?.updatedAt ?? ""}`}
+              candidates={handoffReview.candidates}
+              onSave={handleSaveHandoff}
+            />
           ) : null}
 
           {resumeBrief?.ok ? (
