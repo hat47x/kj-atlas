@@ -151,7 +151,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 ### 3.4 SaaSのtenant contextと管理面分離（ADR採択後）
 
 - Workspaceヘッダーにはactive tenantを静かに示す。membershipが1件ならswitcherにせずlabel、複数ならサーバーが返した選択肢だけをswitcherにする。tenantId自由入力は許可しない。
-- 上記のWorkspace用tenant control、保存／破棄／取消alert dialog、切替request coordinator、任意注入App hostは実装済みであり、単一membership label、複数membership allowlist select、切替中disabled／status、日本語・英語accessible name、自由入力・旧scope不一致・response差替えの通信前／cleanup前拒否を固定した。App hostは切替確定後に旧本文をloading／blocked stateへ置換し、保存、request/worker/object URL/timer cleanup、旧scope削除、hard replacementを実行する。production entryはsession contextをAppへ渡さないため、tenant controlを実画面へ表示しない。
+- 上記のWorkspace用tenant control、保存／破棄／取消alert dialog、切替request coordinator、任意注入App hostは実装済みであり、単一membership label、複数membership allowlist select、切替中disabled／status、日本語・英語accessible name、自由入力・旧scope不一致・response差替えの通信前／cleanup前拒否を固定した。App hostは切替確定後に旧本文をloading／blocked stateへ置換し、保存、request/worker/object URL/timer cleanup、旧scope削除、hard replacementを実行する。SaaS用production entryもbootstrapで検証したsession contextとbrowser scopeをAppへ同時注入する。ただし、trusted auth edgeとanti-forgery付きsession persisterがbackend runtimeへ未接続でSaaS profileを起動拒否しているため、tenant controlを運用画面としてはまだ解禁しない。
 - tenant切替時に未保存変更があれば保存・破棄・取消を選ばせる。確定後は文書、選択、検索、work mode、import preview、recent、QueryPreset、request cacheを破棄し、新tenantで再取得する。
 - 切替確認中やbackend未確認の間、旧tenantの本文と新tenantの管理UIを同時に表示しない。
 - **Tenant Admin**はactive tenantのmembership provisioning、document access metadata、agent registrationだけを扱う。本文と文書タイトルは表示しない。
