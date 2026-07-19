@@ -15,7 +15,7 @@ import type {
   ReviewAttribution,
   RelationSummary,
 } from "./types";
-import { KNOWN_EDGE_TYPES } from "./types";
+import { DOCUMENT_DETERMINISTIC_TIE_BREAK_ORDER, KNOWN_EDGE_TYPES } from "./types";
 import { canUsePolygonPoints } from "./geometry/polygon_edit";
 
 type ValidationSuccess = {
@@ -77,12 +77,6 @@ function validateClaimType(value: unknown): value is "fact" | "claim" | "hypothe
 }
 
 const A1_TARGET_REF_PATTERN = /^(card|island|cluster|edge|proposal):[^:\s][^\s]*$/;
-const DETERMINISTIC_TIE_BREAK_ORDER = [
-  "padding_compliance",
-  "self_intersection_avoidance",
-  "minimum_area_delta",
-  "minimum_vertex_count",
-] as const;
 // Mirrors ReviewAttribution.validate_reviewer_ref_opaque/validate_owner_ref_opaque
 // in backend models.py -- keep this prefix list in sync with that validator.
 const NON_OPAQUE_REF_PREFIXES = ["sso:", "oidc:", "saml:", "provider:"] as const;
@@ -986,11 +980,11 @@ function validateDeterministicTieBreak(item: unknown, errors: string[]): item is
     valid = false;
   }
   const order = item.order;
-  if (!Array.isArray(order) || order.length !== DETERMINISTIC_TIE_BREAK_ORDER.length) {
+  if (!Array.isArray(order) || order.length !== DOCUMENT_DETERMINISTIC_TIE_BREAK_ORDER.length) {
     errors.push(`${path}.order: must contain the fixed deterministic order`);
     valid = false;
   } else {
-    DETERMINISTIC_TIE_BREAK_ORDER.forEach((expected, index) => {
+    DOCUMENT_DETERMINISTIC_TIE_BREAK_ORDER.forEach((expected, index) => {
       if (order[index] !== expected) {
         errors.push(`${path}.order[${index}]: must be '${expected}'`);
         valid = false;
