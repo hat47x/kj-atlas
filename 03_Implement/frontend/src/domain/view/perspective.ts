@@ -108,6 +108,21 @@ export function mergeWithDefaultPerspectivePresets(presets: PerspectivePreset[])
   return sortPresets([...byId.values()]);
 }
 
+export function restorePerspectivePresets(
+  presets: readonly PerspectivePreset[] | undefined,
+): PerspectivePreset[] {
+  const source = presets ?? DEFAULT_PERSPECTIVE_PRESETS;
+  return source.map((preset) => ({
+    ...preset,
+    perspective: {
+      ...preset.perspective,
+      ...(preset.perspective.evidenceOverlayPrefs
+        ? { evidenceOverlayPrefs: { ...preset.perspective.evidenceOverlayPrefs } }
+        : {}),
+    },
+  }));
+}
+
 export function replacePerspectivePreset(presets: PerspectivePreset[], nextPreset: PerspectivePreset): PerspectivePreset[] {
   const remaining = presets.filter((preset) => preset.id !== nextPreset.id);
   return sortPresets([...remaining, nextPreset]);

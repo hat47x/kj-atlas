@@ -464,6 +464,18 @@ describe("UX Operability regression contracts", () => {
     expect(outlineSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
   });
 
+  it("preserves imported perspective presets across both view metadata export paths", () => {
+    const appSource = readSource("src/App.tsx");
+
+    expect(appSource).toContain(
+      "const [perspectivePresets, setPerspectivePresets] = useState<PerspectivePreset[]>(DEFAULT_PERSPECTIVE_PRESETS)",
+    );
+    expect(appSource).toContain(
+      "setPerspectivePresets(restorePerspectivePresets(metadata.viewState.perspectivePresets))",
+    );
+    expect(appSource.match(/perspectivePresets,/g)).toHaveLength(5);
+  });
+
   it("DOMAIN-KJ-01: KJ relation vocabulary is additive, unknown types are preserved (never discarded), and derived edges stay type-suppressed", () => {
     const typesSource = readSource("src/domain/types.ts");
     const validateSource = readSource("src/domain/validate.ts");

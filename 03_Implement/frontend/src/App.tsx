@@ -145,8 +145,11 @@ import {
 } from "./domain/view/evidence_overlay";
 import {
   computePerspectiveRendering,
+  DEFAULT_PERSPECTIVE_PRESETS,
   PERSPECTIVE_MODE_VALUES,
+  restorePerspectivePresets,
   type PerspectiveMode,
+  type PerspectivePreset,
   type PerspectiveState,
 } from "./domain/view/perspective";
 import { DEFAULT_VIEW_PRESETS, migrateViewPresets, removeViewPreset, renameViewPreset, replaceViewPreset, resolveSummaryAbstractFromPatch, type ViewPatch, type ViewPreset } from "./domain/view/presets";
@@ -1270,6 +1273,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const [evidenceOverlayDimOthers, setEvidenceOverlayDimOthers] = useState(true);
   const [perspectiveMode, setPerspectiveMode] = useState<PerspectiveMode>("default");
   const [perspectiveStrictFilter, setPerspectiveStrictFilter] = useState(false);
+  const [perspectivePresets, setPerspectivePresets] = useState<PerspectivePreset[]>(DEFAULT_PERSPECTIVE_PRESETS);
   const [viewPresets, setViewPresets] = useState<ViewPreset[]>(DEFAULT_VIEW_PRESETS);
   const [activePresetId, setActivePresetId] = useState<string | null>("default-explore");
   const [viewMode, setViewMode] = useState<ViewMode>("explore");
@@ -3260,6 +3264,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setEvidenceOverlayScope(importedPerspective.evidenceOverlayPrefs.scope);
       setEvidenceOverlayDimOthers(importedPerspective.evidenceOverlayPrefs.dimOthers);
     }
+    setPerspectivePresets(restorePerspectivePresets(metadata.viewState.perspectivePresets));
     setViewPresets(sanitizeViewPresets(metadata.viewState.presets));
     setActivePresetId(typeof metadata.viewState.activePresetId === "string" ? metadata.viewState.activePresetId : null);
     setMergeAuditLog(sanitizeMergeAuditLog(metadata.mergeAuditLog));
@@ -8903,6 +8908,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           evidenceOverlayDimOthers,
           perspectiveMode,
           perspectiveStrictFilter,
+          perspectivePresets,
           locale: getActiveLocale(),
           presets: viewPresets,
           activePresetId: activePresetId ?? undefined,
@@ -8944,6 +8950,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       lodShowLoneWolvesWhenFar,
       perspectiveMode,
       perspectiveStrictFilter,
+      perspectivePresets,
       viewPresets,
       activePresetId,
       reviewEvents,
@@ -8993,6 +9000,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           evidenceOverlayDimOthers,
           perspectiveMode,
           perspectiveStrictFilter,
+          perspectivePresets,
           locale: getActiveLocale(),
           presets: viewPresets,
           activePresetId: activePresetId ?? undefined,
@@ -9123,6 +9131,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     outlineQualityReport,
     outlineRecommendations,
     perspectiveMode,
+    perspectivePresets,
     packVisibility,
     viewPresets,
           activePresetId,
