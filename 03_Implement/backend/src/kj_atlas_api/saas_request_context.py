@@ -6,6 +6,7 @@ from typing import cast
 from fastapi import HTTPException, Request
 from sqlalchemy.orm import Session
 
+from kj_atlas_api.active_tenant_session import resolve_active_tenant_session_version
 from kj_atlas_api.auth_context import ResolvedIdentity, SaasIdentityContextResolver
 from kj_atlas_api.session_context import (
     TenantCapabilityResolver,
@@ -16,6 +17,7 @@ from kj_atlas_api.tenant_context import (
     SingleTenantContextResolver,
     TenantContext,
     TenantContextResolver,
+    recheck_trusted_tenant_context,
 )
 
 
@@ -123,6 +125,11 @@ def resolve_trusted_saas_request_session(
             code="tenant_context_untrusted",
             message="Verified tenant context is required.",
         )
+    tenant = recheck_trusted_tenant_context(
+        db=db,
+        user_id=principal_id,
+        tenant=tenant,
+    )
 
     capability_resolver = getattr(request.app.state, "tenant_capability_resolver", None)
     if capability_resolver is None:
@@ -131,11 +138,17 @@ def resolve_trusted_saas_request_session(
             code="capability_resolution_unavailable",
             message="Tenant capabilities are unavailable.",
         )
+    tenant_session_version = resolve_active_tenant_session_version(
+        request=request,
+        principal_id=principal_id,
+        active_tenant=tenant,
+    )
     session = build_tenant_session_context(
         db=db,
         principal_id=principal_id,
         tenant=tenant,
         capability_resolver=cast(TenantCapabilityResolver, capability_resolver),
+        tenant_session_version=tenant_session_version,
     )
     return TrustedSaasRequestSession(
         identity=identity,

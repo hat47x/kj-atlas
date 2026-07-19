@@ -123,6 +123,7 @@ export async function requestTenantSessionTransition(input: Readonly<{
   if (
     nextSession.principalId !== currentSession.principalId
     || nextSession.activeTenant.id !== requestedTenantId
+    || nextSession.tenantSessionVersion === currentSession.tenantSessionVersion
   ) {
     throw new InvalidTenantSessionContextError();
   }

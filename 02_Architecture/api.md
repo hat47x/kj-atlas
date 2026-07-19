@@ -696,9 +696,9 @@ export type AdminAgentRegistrationSummary = {
 
 ## 10. SaaS TenantContext / capability契約（ADR-0059 / ADR-0061、L0 Planned）
 
-本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・`tenantSessionVersion`・越境テストが完了するまでSaaS profileを有効化しない。bootstrap policy、session context、active tenant変更のfail-closed routeとfrontend entry gateに加え、信頼済みauth edgeのidentity resolver・tenant resolver・active tenant session persisterを3点同時にだけ受け付ける起動前bundle境界を実装済みである。bundle非注入時はidentity/persisterをunavailable、tenant resolverをsingle-tenant互換へ戻してsession context系を503として閉じる。実auth edge adapter、anti-forgery付きsession形式、SaaS backend runtime、`tenantSessionVersion` preconditionは未実装・非公開である。
+本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・全tenant-scoped APIへの`tenantSessionVersion` guard・越境テストが完了するまでSaaS profileを有効化しない。bootstrap policy、session context、conditional active tenant変更のfail-closed routeとfrontend entry gateに加え、信頼済みauth edgeのidentity resolver・tenant resolver・active tenant session adapterを3点同時にだけ受け付ける起動前bundle境界を実装済みである。bundle非注入時はidentity/session adapterをunavailable、tenant resolverをsingle-tenant互換へ戻してsession context系を503として閉じる。実auth edge adapter、anti-forgery付きsession形式、SaaS backend runtime、Document／Admin／import／export等の共通version preconditionは未実装・非公開である。
 
-### 10.1 session context（GET/POST基盤実装済み・version target未実装・SaaS runtime gated）
+### 10.1 session context（GET/POST version guard実装済み・SaaS runtime gated）
 
 - `GET /session/bootstrap-policy`
   - settings validation済みのserver runtime profileを起動時にsnapshotし、profile名やtenant情報を公開せず、`tenantSessionMode: "single-tenant" | "tenant-session-required"`だけを返す。header、query、Document payloadを判定根拠にしない。
@@ -716,7 +716,7 @@ export type AdminAgentRegistrationSummary = {
   - backendが現在のidentity・TenantContext・membershipを再確認し、同じprincipalのactive membership allowlistから新TenantContextを確定した場合だけ更新後contextを返す。header、query、role/group、自由入力tenantを選択根拠にしない。
   - `expectedTenantSessionVersion`をtrusted sessionの現versionとconstant-time相当の比較で照合し、欠損・不一致なら保存前に`409 tenant_session_changed`として値を反射せず閉じる。同時切替や古いdialogからの確定を新contextへ自動適用しない。
   - 認証session固有の保存形式、versionの原子的更新、anti-forgery検証はtrusted auth edgeが注入する`active_tenant_session_persister`の責務とする。persisterへはraw tenant値ではなく、server検証済みprincipal、旧TenantContext、旧version、選択済みTenantContextだけを渡し、成功時に新versionを返させる。
-  - persister欠損・予期しない保存障害は`503 active_tenant_update_unavailable`として値を反射せず閉じ、保存前にresponse sizeとclosed-world契約を検証する。trusted persisterによるanti-forgery拒否はその拒否status/codeを維持する。
+  - session adapter欠損・現versionの欠損／不正は`503 session_context_unavailable`、原子的な更新時の予期しない保存障害や同値／不正な新versionは`503 active_tenant_update_unavailable`として値を反射せず閉じ、保存前にresponse sizeとclosed-world契約を検証する。trusted adapterによるanti-forgery拒否はその拒否status/codeを維持する。
   - 不明tenant、他利用者のtenant、停止membershipは存在を推測させない`404`相当とする。
 
 ```ts

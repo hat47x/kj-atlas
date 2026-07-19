@@ -28,6 +28,7 @@ class TrustedSaasRuntimeAdapters:
         required_methods = (
             (self.identity_context_resolver, "resolve"),
             (self.tenant_context_resolver, "resolve"),
+            (self.active_tenant_session_persister, "current_version"),
             (self.active_tenant_session_persister, "persist"),
         )
         if any(not callable(getattr(adapter, method, None)) for adapter, method in required_methods):

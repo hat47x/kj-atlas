@@ -16,6 +16,7 @@ function validPayload(overrides: Record<string, unknown> = {}) {
     ],
     effectiveCapabilities: ["document.write", "document.read"],
     capabilityVersion: "policy-v7",
+    tenantSessionVersion: "session-v1",
     ...overrides,
   };
 }
@@ -27,6 +28,7 @@ describe("tenant session context", () => {
     expect(context.principalId).toBe("user-1");
     expect(context.activeTenant).toEqual({ id: "tenant-a", displayName: "Tenant A" });
     expect(context.effectiveCapabilities).toEqual(["document.read", "document.write"]);
+    expect(context.tenantSessionVersion).toBe("session-v1");
   });
 
   it("rejects an active tenant outside the membership allowlist", () => {
@@ -52,6 +54,11 @@ describe("tenant session context", () => {
     { principalId: "user-1\n" },
     { capabilityVersion: "" },
     { capabilityVersion: "x".repeat(129) },
+    { tenantSessionVersion: "" },
+    { tenantSessionVersion: " session-v1" },
+    { tenantSessionVersion: "session v1" },
+    { tenantSessionVersion: "x".repeat(129) },
+    { tenantSessionVersion: "世代-1" },
     { principalId: "x".repeat(257) },
     { principalId: "user\u200b1" },
     { effectiveCapabilities: ["document.read\u007f"] },

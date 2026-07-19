@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.active_tenant_session import persist_active_tenant_selection
+from kj_atlas_api.active_tenant_session import (
+    MAX_TENANT_SESSION_VERSION_LENGTH,
+    persist_active_tenant_selection,
+    require_current_tenant_session_version,
+)
 from kj_atlas_api.db import get_db
 from kj_atlas_api.runtime_bootstrap import (
     TenantSessionBootstrapMode,
@@ -56,12 +62,22 @@ class TenantSessionContextResponse(BaseModel):
         min_length=1,
         max_length=MAX_SESSION_CAPABILITY_VERSION_LENGTH,
     )
+    tenantSessionVersion: str = Field(
+        min_length=1,
+        max_length=MAX_TENANT_SESSION_VERSION_LENGTH,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+    )
 
 
 class ActiveTenantRequestV1(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     tenantId: str
+    expectedTenantSessionVersion: str = Field(
+        min_length=1,
+        max_length=MAX_TENANT_SESSION_VERSION_LENGTH,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+    )
 
 
 def _tenant_summary(tenant: TenantSummary) -> TenantSessionSummaryResponse:
@@ -81,6 +97,7 @@ def _session_response(request_session: TenantSessionContext) -> TenantSessionCon
         ],
         effectiveCapabilities=list(request_session.effective_capabilities),
         capabilityVersion=request_session.capability_version,
+        tenantSessionVersion=request_session.tenant_session_version,
     )
     if len(session_response.model_dump_json().encode("utf-8")) > MAX_SESSION_RESPONSE_BYTES:
         raise HTTPException(
@@ -160,6 +177,10 @@ def change_active_tenant(
             request=request,
             db=db,
         )
+        require_current_tenant_session_version(
+            current_version=trusted_session.session.tenant_session_version,
+            expected_version=payload.expectedTenantSessionVersion,
+        )
         selected_session = switch_tenant_session_context(
             db=db,
             principal_id=trusted_session.session.principal_id,
@@ -170,14 +191,26 @@ def change_active_tenant(
                 "tenant_capability_resolver",
                 None,
             ),
+            tenant_session_version=trusted_session.session.tenant_session_version,
         )
-        session_response = _session_response(selected_session)
-        persist_active_tenant_selection(
+        # Check the worst-case response size before the auth adapter mutates
+        # session state. The opaque version uses an ASCII-only 128-byte bound.
+        _session_response(
+            replace(
+                selected_session,
+                tenant_session_version="x" * MAX_TENANT_SESSION_VERSION_LENGTH,
+            )
+        )
+        next_version = persist_active_tenant_selection(
             request=request,
             response=response,
             principal_id=trusted_session.session.principal_id,
             previous_tenant=trusted_session.tenant,
             selected_tenant=selected_session.tenant_context,
+            expected_tenant_session_version=payload.expectedTenantSessionVersion,
+        )
+        session_response = _session_response(
+            replace(selected_session, tenant_session_version=next_version)
         )
     except HTTPException as error:
         error.headers = {

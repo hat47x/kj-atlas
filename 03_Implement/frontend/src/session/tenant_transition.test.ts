@@ -20,6 +20,7 @@ function nextSessionContext(overrides: Record<string, unknown> = {}) {
     ],
     effectiveCapabilities: ["document.read"],
     capabilityVersion: "policy-v2",
+    tenantSessionVersion: "session-v2",
     ...overrides,
   };
 }

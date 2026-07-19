@@ -13,6 +13,7 @@ const sessionContext = {
   ],
   effectiveCapabilities: ["document.read"],
   capabilityVersion: "policy-v1",
+  tenantSessionVersion: "session-v1",
 };
 
 describe("App tenant session boundary", () => {

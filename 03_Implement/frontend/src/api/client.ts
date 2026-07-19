@@ -315,7 +315,10 @@ export async function changeActiveTenant(
       Accept: "application/json",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ tenantId: requestedTenant.id }),
+    body: JSON.stringify({
+      tenantId: requestedTenant.id,
+      expectedTenantSessionVersion: currentSession.tenantSessionVersion,
+    }),
     cache: "no-store",
     credentials: "same-origin",
     signal: options.signal,
@@ -335,6 +338,7 @@ export async function changeActiveTenant(
   if (
     nextSession.principalId !== currentSession.principalId
     || nextSession.activeTenant.id !== requestedTenant.id
+    || nextSession.tenantSessionVersion === currentSession.tenantSessionVersion
   ) {
     throw new InvalidTenantSessionContextError();
   }

@@ -373,3 +373,10 @@
 - `ADR-0061`でactive tenantを認証セッション単位の単一値とし、server-issued `tenantSessionVersion`をsession context、conditional tenant switch、全tenant-scoped APIのexpected-context preconditionへ追加する方針をAcceptedとした。client versionは認可根拠にせず、trusted session再解決後かつresource lookup前のstale guardに限る。欠損・不一致は本文を返さず、自動再送しない。
 - master data UI構想へsingle-tenant Platform operatorとfuture SaaS Tenant Adminの権限分離、capability/route surface行列、別タブ・bfcache・遅延responseのblocked stateを追加した。Claude Design Round 8へR8-Hを追加し、他タブへの影響、旧本文を背景へ残さないscope再確認、stale save拒否、390px/ja-en/focus状態のレッドラインを要求する。
 - これは設計・契約固定だけであり、`tenantSessionVersion` API、auth/session adapter、全route guard、cross-tab通知は未実装である。AC-13を追加し、既存AC-4/5/6/7/8/10/12とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-19: conditional tenant session version
+
+- trusted auth/session adapter境界を、active tenant stateに束縛した1〜128文字のASCII opaque `tenantSessionVersion`解決と、expected versionの原子的比較・tenant更新・新version発行を担う契約へ拡張した。session contextはmembership再確認後のadapter値だけを返し、欠損・不正値・adapter例外を値非反射の`503 session_context_unavailable`へ閉じる。
+- `POST /session/active-tenant`へ`expectedTenantSessionVersion`を必須化し、現versionとのconstant-time相当の事前比較とadapter内の原子的比較を二段で要求した。事前または同時更新競合は資源・現tenant・生versionを返さない`409 tenant_session_changed`とし、保存前に最大長versionでresponse上限を検証する。adapterが同じversion、不正version、予期しない例外を返す場合も成功扱いにしない。
+- frontendのclosed-world session validator、active tenant client、request coordinatorを同期し、現在versionをPOSTし、principal不変・要求tenant一致・version変更をすべて確認するまでcleanup、旧scope削除、hard replacementを開始しない。backend近接86件（session 76件＋Tenant Admin 10件）と全体591件・条件付き25件skip、frontend近接84件と全体1,252件・217 file、frontend typecheck、backend全体Ruff、docs-checkを通過した。
+- これはsession context／active tenant切替の基盤sliceである。実auth edge adapterとanti-forgery付きsession形式、全tenant-scoped APIのresource lookup前guard、BroadcastChannel、bfcache／resume再確認、stale response／worker commit拒否、SaaS runtime起動許可は未実装であり、AC-4/5/6/7/8/10/12/13とSaaS profile起動拒否を維持する。

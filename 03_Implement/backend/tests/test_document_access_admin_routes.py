@@ -93,6 +93,14 @@ class MutableCapabilityResolver:
         )
 
 
+class StaticTenantSessionPersister:
+    def current_version(self, **_: object) -> str:
+        return "session-v1"
+
+    def persist(self, **_: object) -> str:
+        return "session-v2"
+
+
 def _document(*, tenant_id: str, doc_id: str, title: str) -> DocumentRow:
     return DocumentRow(
         tenant_id=tenant_id,
@@ -214,11 +222,15 @@ def _tenant_admin_client(
             client.app.state.saas_identity_context_resolver = StaticIdentityResolver()
             client.app.state.tenant_context_resolver = tenant_resolver
             client.app.state.tenant_capability_resolver = capability_resolver
+            client.app.state.active_tenant_session_persister = (
+                StaticTenantSessionPersister()
+            )
             yield client, session_local, tenant_resolver, capability_resolver
     finally:
         app.dependency_overrides.clear()
         app.state.saas_identity_context_resolver = None
         app.state.tenant_capability_resolver = None
+        app.state.active_tenant_session_persister = None
         app.state.tenant_context_resolver = SingleTenantContextResolver()
         Base.metadata.drop_all(bind=engine)
         engine.dispose()

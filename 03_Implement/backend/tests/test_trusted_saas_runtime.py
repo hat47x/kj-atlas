@@ -21,8 +21,11 @@ class TenantResolver:
 
 
 class SessionPersister:
-    def persist(self, **_: object) -> None:
-        return
+    def current_version(self, **_: object) -> str:
+        return "session-v1"
+
+    def persist(self, **_: object) -> str:
+        return "session-v2"
 
 
 def _bundle() -> TrustedSaasRuntimeAdapters:
@@ -80,6 +83,20 @@ def test_incomplete_bundle_is_rejected(field: str, value: object) -> None:
 
     with pytest.raises(ValueError, match="bundle is incomplete"):
         TrustedSaasRuntimeAdapters(**values)  # type: ignore[arg-type]
+
+
+class PersistOnlySessionAdapter:
+    def persist(self, **_: object) -> str:
+        return "session-v2"
+
+
+def test_bundle_rejects_session_adapter_without_version_resolution() -> None:
+    with pytest.raises(ValueError, match="bundle is incomplete"):
+        TrustedSaasRuntimeAdapters(
+            identity_context_resolver=IdentityResolver(),
+            tenant_context_resolver=TenantResolver(),
+            active_tenant_session_persister=PersistOnlySessionAdapter(),  # type: ignore[arg-type]
+        )
 
 
 def test_bundle_cannot_be_replaced_on_the_same_app() -> None:

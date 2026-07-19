@@ -20,6 +20,7 @@ const currentSession: TenantSessionContextV1 = {
   ],
   effectiveCapabilities: ["document.read"],
   capabilityVersion: "policy-v1",
+  tenantSessionVersion: "session-v1",
 };
 
 function nextSession(overrides: Partial<TenantSessionContextV1> = {}) {
@@ -27,6 +28,7 @@ function nextSession(overrides: Partial<TenantSessionContextV1> = {}) {
     ...currentSession,
     activeTenant: { id: "tenant-b", displayName: "Tenant B" },
     capabilityVersion: "policy-v2",
+    tenantSessionVersion: "session-v2",
     ...overrides,
   };
 }
@@ -217,6 +219,18 @@ describe("tenant switch request", () => {
     })).rejects.toThrow("Invalid tenant session context");
     await expect(request({
       changeTenant: async () => currentSession,
+      cleanupSteps: [cleanup],
+      replaceDocument,
+    })).rejects.toThrow("Invalid tenant session context");
+    expect(cleanup).not.toHaveBeenCalled();
+    expect(replaceDocument).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unchanged tenant session version before cleanup", async () => {
+    const cleanup = vi.fn();
+    const replaceDocument = vi.fn();
+    await expect(request({
+      changeTenant: async () => nextSession({ tenantSessionVersion: "session-v1" }),
       cleanupSteps: [cleanup],
       replaceDocument,
     })).rejects.toThrow("Invalid tenant session context");
