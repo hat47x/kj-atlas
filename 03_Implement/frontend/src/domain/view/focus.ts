@@ -34,14 +34,6 @@ export function pickPrimaryFocusRef(refs: FocusEntityRef[]): FocusEntityRef | nu
   return cardRef ?? null;
 }
 
-export function panTo(camera: Transform, panX: number, panY: number): Transform {
-  return {
-    ...camera,
-    panX,
-    panY,
-  };
-}
-
 export function zoomTo(camera: Transform, zoom: number): Transform {
   return {
     ...camera,

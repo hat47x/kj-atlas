@@ -248,6 +248,13 @@ export function ReadingOrderLayer({
 
             onItemFocus(marker.entryId, marker.kind, { x: marker.focusX, y: marker.focusY });
           }}
+          onKeyDown={(event) => {
+            if (isEditMode && (event.key === "Delete" || event.key === "Backspace")) {
+              event.preventDefault();
+              event.stopPropagation();
+              onRemoveEntry?.(marker.entryId);
+            }
+          }}
           style={{
             position: "absolute",
             left: marker.badgeX,
@@ -268,12 +275,12 @@ export function ReadingOrderLayer({
           }}
           title={
             isEditMode
-              ? `Drag to reorder. Alt+Click to remove item ${marker.index + 1}`
+              ? `Drag to reorder. Alt+Click or Delete to remove item ${marker.index + 1}`
               : `Focus reading order item ${marker.index + 1}`
           }
           aria-label={
             isEditMode
-              ? `Reading order item ${marker.index + 1}. Drag to reorder or Alt click to remove`
+              ? `Reading order item ${marker.index + 1}. Drag to reorder, or press Delete to remove`
               : `Focus reading order item ${marker.index + 1}`
           }
         >
