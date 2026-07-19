@@ -9,7 +9,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `02_Architecture/`, `03_Implement/backend/`, `03_Implement/frontend/`, `03_Implement/mcp/`, deploy/runtime settings and tests
-- Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `THREAT_MODEL.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `02_Architecture/runtime_parameter_registry.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`, `THREAT_MODEL.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `02_Architecture/runtime_parameter_registry.md`
 - Expected verification level: integration / e2e
 
 ## 課題
@@ -29,6 +29,7 @@
   7. session context / active tenant APIとtenant-scoped `effectiveCapabilities`を実装する。
   8. browser cache、recent、QueryPreset、request cache、MCP、agent credential、job、audit、object-storage keyをtenant/user別に分離する。
   9. 同じdocIdを持つtenant A/Bの越境negative matrixをintegration/E2Eへ固定する。
+  10. active tenantを認証セッション単位で直列化し、server-issued `tenantSessionVersion`で複数タブ、同時切替、bfcache、遅延responseのstale requestをresource lookup前に拒否する。
 - 実施しないこと:
   - 実装ゲート完了前のtenant switcher、Tenant Admin、Platform Control Plane有効化。
   - 汎用role editor、tenant横断文書検索、support impersonation、恒久的super-reader。
@@ -43,7 +44,7 @@
 4. **Constraint / DB guard**: NOT NULL、複合unique/FK、RLS等を有効化する。connectionごとのtenant設定はtransaction終了時に確実に破棄する。
 5. **Auth / PDP**: membership、local tenant一致、SafeMode、PDPの順にenforceし、SaaSはdeny-onlyにする。
 6. **Consumers**: MCP、worker、cache、audit、agent registrationへtenant contextを伝播する。
-7. **UI gate**: session contextとnegative matrixが通った後だけRound 8 R8-E/Fを実装候補へ昇格する。
+7. **UI gate**: session context、`tenantSessionVersion`、複数タブ・bfcacheを含むnegative matrixが通った後だけRound 8 R8-E/F/G/Hを実装候補へ昇格する。
 
 各段階でtenant context欠落、backfill不整合、複合FK不整合、RLS context残留、PDP fail-openのいずれかを検出した場合は次段階へ進まない。
 
@@ -61,6 +62,7 @@
 - [ ] AC-10: tenant A/Bへ同じdocIdを作成した越境negative matrixが、API/MCP/worker/browser cacheを含めて成功する。
 - [x] AC-11: single-tenantのlocal-dev/evaluation/enterprise-production互換テストが維持され、SafeMode既定ON、proposal-only、provider=`none`を弱めない。
 - [ ] AC-12: Round 8 R8-E/FはAC-1〜11完了後だけ有効化され、390/768/1440px、ja/en、keyboard/focus、tenant切替時の旧DOM/cache破棄を検証する。
+- [ ] AC-13: 同じ認証セッションの複数タブ、同時tenant切替、bfcache復帰、遅延responseで古い`tenantSessionVersion`を持つGET/PUT/export/import/Admin更新がresource lookup前に拒否され、client通知が欠落しても新tenantへ自動再送・commitされない。
 
 ## 検証計画
 
@@ -70,6 +72,7 @@
   - PostgreSQL RLSでtenant A/Bを切り替える直接SQL testとconnection pool再利用test。
   - 同一docIdでGET/PUT/list/search/count/export/share/import/context/MCP/webhook/job/audit/agent credentialを試すnegative matrix。
   - tenant切替後のDOM、memory、query cache、recent、QueryPreset、object URLの残留確認。
+  - 同じ認証セッションの2タブでtenant A/B切替を競合させ、stale GET/PUT/export/import/Admin更新、BroadcastChannel無効、bfcache復帰、遅延worker/responseを再現する。
   - 現行single-tenant回帰、SafeMode/share/export/import/AI proposal-only回帰。
 - 期待結果: tenant contextが欠落または不一致の経路はすべてfail-closedとなり、同一tenant内の許可済み操作と既存single-tenant利用だけが成功する。
 
@@ -363,3 +366,10 @@
 - application起動前に限り、trusted SaaS identity resolver、tenant resolver、active tenant session persisterを単一の型付きbundleとして注入できる境界を追加した。3要素の欠損、未検証bundle state、起動後の注入、同一App上の別bundle差し替えを拒否し、main lifespanが3要素を同時にだけ適用する。
 - bundle非注入時はidentity resolverとsession persisterをunavailable、tenant resolverを既存single-tenant互換へ毎起動時に戻すため、既存利用を維持しながらsession APIをfail-closedに保つ。環境変数やrequest headerからadapterを選ぶ経路は追加せず、実IdP／trusted proxyの検証方式、anti-forgery付きsession形式、SaaS profileの起動許可は行っていない。
 - bundle境界、session route、Tenant Admin routeの近接49件、初回backend全体runの成功564件、環境PATH補正後のmigration 15件、条件付き25件skip、backend全体Ruffを通過した。全体一括実行では子processの`alembic`未検出を補正後に5分上限へ到達したため、初回成功分と該当migration再実行へ分割して確認した。実auth edge adapter／session persister、PostgreSQL RLS実地検証、完全なtenant A/B negative matrixは外部runtimeと検証環境が必要なため、AC-4/5/6/7/8/10/12とSaaS起動拒否を継続する。
+
+### Design security checkpoint 2026-07-19: active tenant session concurrency
+
+- active tenantを認証セッションへ保存する現行targetでは、別タブでの切替後に古いタブの表示・payload・`docId`とserver sessionのtenantが食い違うscope confusionが未定義だった。両tenantに同じ`docId`があり、同一利用者が両方へ書込可能な場合、旧tenant内容を新tenantへ誤適用できるため、UI cleanupだけでは不十分と判断した。
+- `ADR-0061`でactive tenantを認証セッション単位の単一値とし、server-issued `tenantSessionVersion`をsession context、conditional tenant switch、全tenant-scoped APIのexpected-context preconditionへ追加する方針をAcceptedとした。client versionは認可根拠にせず、trusted session再解決後かつresource lookup前のstale guardに限る。欠損・不一致は本文を返さず、自動再送しない。
+- master data UI構想へsingle-tenant Platform operatorとfuture SaaS Tenant Adminの権限分離、capability/route surface行列、別タブ・bfcache・遅延responseのblocked stateを追加した。Claude Design Round 8へR8-Hを追加し、他タブへの影響、旧本文を背景へ残さないscope再確認、stale save拒否、390px/ja-en/focus状態のレッドラインを要求する。
+- これは設計・契約固定だけであり、`tenantSessionVersion` API、auth/session adapter、全route guard、cross-tab通知は未実装である。AC-13を追加し、既存AC-4/5/6/7/8/10/12とSaaS profile起動拒否を維持する。

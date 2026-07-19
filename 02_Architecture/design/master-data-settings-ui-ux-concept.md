@@ -34,14 +34,30 @@ kj-atlasの「マスタ系設定」を1つの汎用マスタ管理画面へ集�
 | View/Perspectiveと表示プリセット | `view.json.viewState`。文書本体へ埋め込まない | Standard user | 適用、カスタム保存、名前変更、カスタム削除、viewの入出力に含める | グローバル既定値への昇格、全利用者への自動配布 |
 | Patch workspaceのQueryPreset | このブラウザ・端末だけ | Standard user | 保存、実行、名前変更、削除。「この端末のみ」を常時明示 | 同期済み・共有済みと誤認させる表示、サーバー保存、暗黙のexport/import |
 | KJ語彙（claimType、関係種別、違和感タグ、holdState） | コードとAccepted ADR | 全利用者 | 意味の説明、凡例 | 任意追加・名称変更・無効化を行う「語彙マスタ」画面 |
-| ユーザー / アイデンティティ | サーバーの`users` / `user_identities` | Platform operator | 現契約ではstrict provisioningの登録フォームと登録結果 | 一覧、無効化、削除、SCIM、ロール編集。別契約・ADRなしにライフサイクル管理を描かない |
+| ユーザー / アイデンティティ | サーバーの`users` / `user_identities` | 現行single-tenantのPlatform operator | 現契約ではstrict provisioningの登録フォームと登録結果。future SaaSのmembership provisioningへ流用しない | 一覧、無効化、削除、SCIM、ロール編集。別契約・ADRなしにライフサイクル管理を描かない |
 | 文書アクセス設定（future SaaS） | active tenantの`document_access_metadata`。visibility、非秘密policy binding ID/versionのみ | `document.policy.manage`を持つTenant Admin | docId単位の参照、visibility変更、binding ID/version更新、競合安全な保存receipt | 文書タイトル・本文、raw policyRef/token/URL、bulk変更、role/group編集、他tenant参照 |
-| エージェント登録 | 将来のサーバー正本。文書IDに束縛 | Platform operator | 契約実装後に登録、メタデータ一覧、失効。tokenは作成直後の一度だけ表示 | 文書ownerによる発行、平文token再表示、token検索、登録だけでの文書書込権限付与 |
+| エージェント登録 | 将来のサーバー正本。文書IDとtenantに束縛 | single-tenantではPlatform operator、future SaaSでは`agent.register/revoke`を持つactive Tenant Admin | 契約実装後に登録、メタデータ一覧、失効。tokenは作成直後の一度だけ表示 | 文書ownerやPlatform operator capabilityからの暗黙発行、平文token再表示、token検索、登録だけでの文書書込権限付与 |
 | Auditメタデータ | 外部監査基盤または将来のメタデータ限定API | Security / Audit operator | `DATA-MAINT-04`で解禁された場合だけ固定allowlistを表示 | タイトル、本文、カード、narrative、review pack、diff、未レビュー情報、横断本文検索 |
 | LLM provider・endpoint等 | `KJ_ATLAS_*`環境変数 | Platform operator | 秘密を含まない稼働状態の読み取り表示だけを将来検討 | アプリ内編集、秘密値表示、DBマスタ化 |
 | constraint輸出セット | `EXT-CONN-03`で契約先行 | 文書利用者 / Platform operator | 将来、共有・外部接続の文脈で明示opt-in | 汎用マスタへの先行追加、既定ON |
 
-SaaSではこの表に`Tenant`、`IdentityProvider`、`TenantMembership`が加わる。ただし、roles/groupsの編集画面は作らず外部IdP/PDPを正本とする。Tenant lifecycleはPlatform Control Plane、membership、document access metadata、agent registrationはTenant Adminへ分離する。`document.policy.manage`は`document.write`やPlatform operatorへ暗黙付与しない。
+SaaSではこの表に`Tenant`、`IdentityProvider`、`TenantMembership`が加わる。ただし、roles/groupsの編集画面は作らず外部IdP/PDPを正本とする。Tenant lifecycleはPlatform Control Plane、membership、document access metadata、agent registrationはTenant Adminへ分離する。現行single-tenantのstrict provisioning画面をSaaS membership画面として再利用しない。`document.policy.manage`、`membership.provision`、`agent.register/revoke`は相互にも、`document.write`やPlatform operator capabilityにも暗黙付与しない。
+
+### 2.1 権限とroute surfaceの表示行列
+
+frontendは次のcapability名を利用者へ直接表示せず、ローカライズした目的名と安全な状態説明へ写像する。capabilityは入口と操作の表示補助にだけ使い、各APIがactive tenant、membership、capability、`tenantSessionVersion`を再検証する。
+
+| Surface | 表示に必要なserver情報 | 許されるscope | capability不足・解決不能時 |
+| --- | --- | --- | --- |
+| Workspace | 検証済みsession、`document.read`等 | active tenantの認可済み文書 | 本文を消してblocked。0件Emptyへ偽装しない |
+| 現行アクセス登録 | single-tenant向けPlatform operator認可 | 現行deployment | SaaS Tenant Adminへfallbackせず面自体を提供しない |
+| Tenant Admin / membership | `membership.provision` | active tenantだけ | 他のTenant Admin機能へ権限を横展開せず、面または該当入口を提供しない |
+| Tenant Admin / 文書アクセス | `document.policy.manage` | active tenantのmetadataだけ | 文書write/owner/platform権限へfallbackせずblocked |
+| Tenant Admin / agent | `agent.register` / `agent.revoke` | active tenant、明示docIdだけ | 登録と失効を別々に抑止し、tokenや既存一覧を残さない |
+| Platform Control Plane | `tenant.provision` / `tenant.suspend` | tenant lifecycleと非秘密状態 | Workspace/Tenant Adminへ昇格せず面自体を提供しない |
+| Audit | `audit.read`と別途解禁済みallowlist | 明示許可tenantの固定メタデータ | `DATA-MAINT-04`解禁前は入口も空画面も置かない |
+
+同じ人物が複数capabilityを持っていてもsurfaceは統合しない。Workspace、Tenant Admin、Platform Control Planeはroute、audience、見出し、パンくずを分離し、ある面の認可失敗から別面のデータをfallback表示しない。
 
 ## 3. 情報設計
 
@@ -106,6 +122,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 
 #### アクセス登録
 
+- これは現行single-tenant互換のstrict provisioning面であり、future SaaSのTenantMembership登録画面ではない。SaaSではverified IdP、UserIdentity、active tenant membershipを再照合する別契約が整うまで表示しない。
 - フォーム項目は現行API契約のprovider、external UID、display name、email（任意）の範囲に限定する。
 - 送信前に「新しいIDを事前登録する操作」であることを示す。削除・無効化・ロール付与を連想させない。
 - 成功後は結果receiptを表示し、同じ値の再送や競合の扱いを説明する。
@@ -123,6 +140,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 
 #### エージェント登録（将来）
 
+- single-tenant互換では認可済みPlatform operator、future SaaSではactive tenantの`agent.register/revoke`だけを使う。Platform operator、文書owner、`document.write`から発行・失効権限を推測しない。
 - 一覧の表示候補は`registrationId`、表示名、`docId`、状態、作成日時、作成主体の固定メタデータ。文書タイトルと本文は表示しない。
 - 登録フォームでは対象文書をタイトル検索させず、認可済みの`docId`を明示入力または別の安全な選択契約で指定する。
 - tokenは作成直後の完了面で一度だけ表示する。「後から再表示できない」ことを表示前と表示中に伝え、copy操作と閉じる確認を用意する。
@@ -140,6 +158,18 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 - **Platform Control Plane**はtenant lifecycle、IdP接続状態、非秘密のsystem statusだけを扱い、全tenant文書を横断する一覧を持たない。
 - role名やgroup名からfrontendが操作可否を推測しない。backendが返すcapabilityと理由コードで表示し、APIが再検証する。
 - tenant mismatch、membership失効、PDP不達は権限なしのEmptyに見せず、「範囲を確認できないため表示しない」状態と再認証/戻る導線を示す。
+
+### 3.5 tenant scopeの連続性と複数タブ（ADR-0061、implementation gated）
+
+active tenantは認証セッション単位で1つとする。同じセッションの別タブでtenantを切り替えると全タブへ影響し、異なるtenantを複数タブで同時編集するUIは提供しない。
+
+- 切替確認には、未保存変更の有無にかかわらず「このブラウザの他のタブも切り替わります」を文字で示す。タブ検出の成否で注意を出し分けない。
+- `GET /session/context`のserver-issued `tenantSessionVersion`を各tenant-scoped requestのexpected-context guardに使う。値は認可根拠やtenant selectorではなく、古いタブ・dialog・requestをresource lookup前に止めるpreconditionとする。
+- 別タブの切替、membership/capability失効、`409 tenant_session_changed`、`pageshow.persisted`、長時間非表示からの復帰を検知したら、旧本文とAdmin metadataを背景へ残さず全面の「利用範囲を再確認しています」へ置換する。
+- BroadcastChannel等はscope変更を早く知らせるUX補助に限る。通知payloadへtenant ID、principal、version、title、本文を含めず、通知が欠落してもserver guardで停止する。
+- stale GET/PUT/export/share/import/Admin保存を新contextへ自動再送しない。新しいscopeを再取得して利用者が確認した後だけ再操作を許可する。旧contextのworker結果、遅延response、object URL、optimistic updateもcommitしない。
+- tenantの表示名が重複する場合に備え、switcher optionと確認dialogはserver返却の表示名にopaque IDを補助表示して識別できるようにする。IDは選択入力や検索keyにはせず、長い場合もaccessible nameでは省略しない。
+- blocked stateはEmpty、read-only、Network errorと区別する。raw error、capability名、role/group、policyRef、tenant/principal IDを反射せず、再確認、再認証、Workspaceへ戻るのうち安全な操作だけを出す。
 
 ## 4. 共通UI規則
 
@@ -163,7 +193,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 3. **アクセス登録UI**: 現行strict provisioning APIの認可主体とエラー契約を固定・照合してから起票する。UIの非表示だけを認可にしない。ユーザー一覧は含めない。
 4. **エージェント登録UI**: `EXT-CONN-02`でテーブル/API/失効/監査契約を固定してから実装する。
 5. **Audit UI**: `DATA-MAINT-04`の判断とallowlist契約なしに実装しない。
-6. **SaaS tenant UI**: `ADR-0059`のImplementation gateに従い、TenantContext、membership、tenant従属DB列、DB側tenant guard、capability API、deny-only SaaS profile、storage namespace、migration、越境テストが揃うまで有効化しない。
+6. **SaaS tenant UI**: `ADR-0059`と`ADR-0061`のImplementation gateに従い、TenantContext、membership、tenant従属DB列、DB側tenant guard、capability API、deny-only SaaS profile、storage namespace、migration、`tenantSessionVersion`、複数タブ・bfcacheを含む越境テストが揃うまで有効化しない。
 7. **文書アクセス設定UI**: `document.policy.manage`のAPI再認可、metadata管理API、transactional audit、strict external HTTP capability/binding resolverとcapability lifecycle配線は実装済み。trusted SaaS auth edge、binding/capability service・PDP実接続、PostgreSQL RLS実地検証、実PDPを含むtenant A/B negative matrixが揃うまで実画面へ追加しない。
 
 複雑性予算: 初期表示への純増=なし（開始パネル/既存ダイアログ/既存設定節の置換・包含、Adminは別面） / 保留操作の距離=不変 / 取り消し導線=プリセット削除は既定復帰、登録・失効は確認と新規再登録（契約後）
@@ -179,6 +209,8 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 - provider=`none`、SafeMode既定ON、read-onlyの各状態で、管理機能がコア作業の前提にならない。
 - 同じdocIdを持つtenant A/Bで、list、open、write、export、MCP、webhook、agent registration、recent、QueryPresetが越境しない。
 - tenant切替後のDOM、memory、object URL、query cacheに旧tenantのタイトル・本文・選択状態が残らない。
+- 別タブでtenantを切り替えた後、古いタブのGET/PUT/export/import/Admin保存がresource lookup前に拒否され、BroadcastChannelを無効にしても新tenantへ自動再送されない。
+- bfcache復帰、遅延response、worker完了時に旧tenantの本文・metadata・downloadが再表示またはcommitされない。
 - Platform Control PlaneとTenant Adminのどちらからも、capabilityなしにWorkspace本文を読めない。
 
 ## Traceability
@@ -194,6 +226,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 - `02_Architecture/design/ui_design_handoff.md`
 - `01_Plans/research-2026-07-16-saas-tenant-authorization-boundary.md`
 - `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`（Accepted）
+- `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`（Accepted）
 - `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - `02_Architecture/enterprise_architecture.md`（SaaS multi-tenantは現行非目標）
 - `THREAT_MODEL.md`

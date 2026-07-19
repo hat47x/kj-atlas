@@ -439,7 +439,7 @@ interface AccessControlAdapter {
 - 復帰記録にも最小監査契約（PII非保存）を適用し、復旧条件充足を記録する。
 - 復旧判定は Security Officer + System Owner の2者共同判定を必須とする（代理承認なし）。
 
-## 4.6 将来SaaS profileの分離境界（ADR-0059）
+## 4.6 将来SaaS profileの分離境界（ADR-0059 / ADR-0061）
 
 `ADR-0059`はSaaSマルチテナントの安全境界をAcceptedとしたが、現行実装と`enterprise-production` profileは引き続き単一組織向けである。次をすべて満たすまで、複数顧客を同じDB／サービスへ収容しない。
 
@@ -448,6 +448,7 @@ interface AccessControlAdapter {
 - shared schemaでは複合制約とPostgreSQL RLS等のDB側tenant guardを、アプリのtenant一致判定と二重化する。
 - tenant不明・不一致、PDP不達、adapter欠損をreadも含めてdenyする。
 - Workspace Data Plane、Tenant Admin、Platform Control Planeのroute、audience、capabilityを分離し、Platform operatorへ文書readを暗黙付与しない。
+- active tenantを認証セッション単位で直列化し、server-issued `tenantSessionVersion`により複数タブ、同時切替、bfcache、遅延responseのstale requestをresource lookup前に拒否する。cross-tab通知はUX補助に留める。
 - 同一docIdを持つ2tenantの越境negative matrixをintegration/E2Eで固定する。
 
 現行AccessControlAdapterのroles/groups外部委譲は維持するが、tenant一致は外部PDPだけへ委譲しない。`noop`、`read_only` fail-safe、endpoint欠損時fallbackはSaaS profileでは利用できない。
