@@ -206,7 +206,10 @@ import {
   installTenantSessionCoherenceBoundary,
   type TenantSessionCoherenceBoundary,
 } from "./session/tenant_session_coherence";
-import { TenantSessionGenerationGuard } from "./session/tenant_session_generation";
+import {
+  StaleTenantSessionResultError,
+  TenantSessionGenerationGuard,
+} from "./session/tenant_session_generation";
 import { TenantSessionControl } from "./ui/TenantSessionControl";
 import { TenantChangeConfirmationDialog } from "./ui/TenantChangeConfirmationDialog";
 import {
@@ -1409,11 +1412,15 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     return true;
   }, [cleanupRuntimeResources, verifiedTenantSession]);
 
+  const runTenantScopedTask = useCallback(<T,>(
+    task: () => Promise<T>,
+  ): Promise<T> => tenantSessionGenerationGuardRef.current.run(task), []);
+
   const runTenantScopedApiRequest = useCallback(async <T,>(
     request: () => Promise<T>,
   ): Promise<T> => {
     try {
-      return await tenantSessionGenerationGuardRef.current.run(request);
+      return await runTenantScopedTask(request);
     } catch (error) {
       if (
         error instanceof ApiError
@@ -1423,7 +1430,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }
       throw error;
     }
-  }, [blockStaleTenantSession]);
+  }, [blockStaleTenantSession, runTenantScopedTask]);
 
   useEffect(() => {
     return cleanupRuntimeResources;
@@ -1518,7 +1525,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       diffWorkerClientRef.current = new DiffWorkerClient();
     }
 
-    void diffWorkerClientRef.current.computeDiff(
+    void runTenantScopedTask(() => diffWorkerClientRef.current!.computeDiff(
       {
         baseDoc: reviewDiffBaseSnapshot,
         baseView: { readingOrder: reviewDiffBaseSnapshot.readingOrder },
@@ -1536,7 +1543,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           }));
         },
       },
-    ).then((outcome) => {
+    )).then((outcome) => {
       if (controller.signal.aborted || outcome?.status === "cancelled") {
         setStatusMessage(t("app.status.diff.cancelled"));
         return;
@@ -1549,6 +1556,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setIsDiffFallbackMode(outcome.usedFallback);
       const next = [...outcome.result.documentDiff, ...outcome.result.viewDiff];
       setMergeItems(next);
+    }).catch((error: unknown) => {
+      if (!(error instanceof StaleTenantSessionResultError)) {
+        throw error;
+      }
     }).finally(() => {
       setIsDiffComputing(false);
       setComputeProgressMessage(null);
@@ -1561,7 +1572,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         diffAbortRef.current = null;
       }
     };
-  }, [comparisonDocument, reviewDiffBaseSnapshot]);
+  }, [comparisonDocument, reviewDiffBaseSnapshot, runTenantScopedTask]);
   const mergeEvaluation = useMemo(() => {
     if (!document || !comparisonDocument || !reviewDiffBaseSnapshot) {
       return { evaluations: [], selectedIdsWithPrerequisites: new Set<string>() };
@@ -7705,7 +7716,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     const controller = new AbortController();
     diagnosticsAbortRef.current = controller;
     setIsDiagnosticsRunning(true);
-    void diagnosticsWorkerClientRef.current.computeDiagnostics({
+    void runTenantScopedTask(() => diagnosticsWorkerClientRef.current!.computeDiagnostics({
       doc: document,
       view: { readingMode, reviewedOnly, collapsedIslandIds: [...collapsedIslandIds].sort() },
       options: { safeMode: true, deterministicNowIso: document.updatedAt || document.createdAt },
@@ -7717,7 +7728,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           percent: progress.percent,
         }));
       },
-    }).then((outcome) => {
+    })).then((outcome) => {
       if (outcome.status === "cancelled") {
         setStatusMessage(t("app.status.diagnostics.cancelled"));
         return;
@@ -7739,12 +7750,16 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         distributions: distributionReport.findings.length,
         balances: dialecticBalanceReport.findings.length,
       }));
+    }).catch((error: unknown) => {
+      if (!(error instanceof StaleTenantSessionResultError)) {
+        throw error;
+      }
     }).finally(() => {
       setIsDiagnosticsRunning(false);
       setComputeProgressMessage(null);
       diagnosticsAbortRef.current = null;
     });
-  }, [collapsedIslandIds, document, readingMode, reviewedOnly]);
+  }, [collapsedIslandIds, document, readingMode, reviewedOnly, runTenantScopedTask]);
 
   useEffect(() => {
     setOutlineQualityReport(null);
@@ -9099,6 +9114,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return;
     }
 
+    let unsubscribeBundleProgress: (() => void) | null = null;
     try {
       setIsBundleExportRunning(true);
       const exportTimestamp = formatBundleTimestamp(new Date());
@@ -9150,8 +9166,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
       const controller = new AbortController();
       bundleAbortRef.current = controller;
-      const unsubscribe = bundleRunnerRef.current.onProgress((progress) => setComputeProgressMessage(progress.message));
-      const outcome = await bundleRunnerRef.current.run(async (ctx) => {
+      unsubscribeBundleProgress = bundleRunnerRef.current.onProgress((progress) => setComputeProgressMessage(progress.message));
+      const outcome = await runTenantScopedTask(() => bundleRunnerRef.current.run(async (ctx) => {
         ctx.reportProgress({ message: t("app.status.bundle.progress.building"), completed: 1, total: 3 });
         await ctx.yieldToMainThread();
         const files = await buildExportBundleWithWorkers(document, viewMetadata, {
@@ -9213,8 +9229,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           }),
         });
         return { files, zipBlob };
-      });
-      unsubscribe();
+      }));
+      unsubscribeBundleProgress();
+      unsubscribeBundleProgress = null;
       if (outcome.status === "cancelled" || outcome.result === null) {
         setStatusMessage(t("app.status.bundle.cancelled"));
         return;
@@ -9224,6 +9241,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setStatusMessage(t("app.status.bundle.exported", { count: files.length }));
 
     } catch (error) {
+      if (error instanceof StaleTenantSessionResultError) {
+        return;
+      }
       const message = error instanceof Error ? error.message : t("app.status.bundle.failed_unknown");
       if (message.toLowerCase().includes("cancelled")) {
         setStatusMessage(t("app.status.bundle.cancelled"));
@@ -9231,6 +9251,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         setStatusMessage(t("app.status.bundle.failed", { detail: message }));
       }
     } finally {
+      unsubscribeBundleProgress?.();
       setIsBundleExportRunning(false);
       setComputeProgressMessage(null);
       bundleAbortRef.current = null;
@@ -9276,6 +9297,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     readingMode,
     readingNavEnabled,
     reviewedOnly,
+    runTenantScopedTask,
     safeMode,
     mergeAuditLog,
     selectedCard?.id,

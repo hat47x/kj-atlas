@@ -416,3 +416,9 @@
 - App instanceごとのtenant session generation guardを追加し、runtime cleanupの開始時にgenerationを単調に無効化する。Document read／create／write、export監査、文書内容を扱うAI mutationは開始時generation内で成功した結果だけを呼出元へ返し、別タブ通知、bfcache／online／長時間非表示復帰、serverの`tenant_session_changed`後に到着した旧成功responseをDocument state、AI proposal、監査後続処理へcommitしない。
 - guardはtenant、principal、capability、生`tenantSessionVersion`を保持・比較せず、client expected-contextの認可根拠化を避ける。single-tenantでも同じApp lifecycle整合性を得るが、request headerやserver認可契約は変更しない。server不一致時のcleanupは共通request wrapperだけが一度行い、Document conflictやprovider fallbackへ変換しない。
 - 遅延Promiseの現generation成功／無効化後拒否／次generation分離をunit testで固定した。frontend近接39件と全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。workerのabort／dispose後の全結果、import処理、object URL、全tenant-scoped非ブラウザclientを同じgenerationで横断的にcommit拒否する境界、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: stale App worker result generation guard
+
+- Document比較diff worker、outline診断worker、bundle生成task／workerのPromiseをnetwork responseと同じtenant session generation guardへ通した。既存abort／disposeに遅延成功結果のcommit拒否を重ね、旧generationのdiff／診断結果をstateへ適用せず、旧generationのbundle zipをdownloadへ渡さない。
+- stale専用例外はblocked Appの状態表示へ上書きせず破棄し、それ以外のworker失敗契約は維持する。近接worker／bundle／App source guard 77件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。
+- `InquiryJourneyPrototypePanel`等のApp外worker、File／zip／public pack import、PNG等の非worker非同期export、object URLの生成前後、全tenant-scoped非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
