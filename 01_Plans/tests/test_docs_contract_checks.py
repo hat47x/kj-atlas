@@ -31,6 +31,7 @@ class MainWiringTest(unittest.TestCase):
     CHECKS_WITH_ROOT = (
         "check_current_history_headings",
         "check_document_contract_baseline",
+        "check_documented_response_models",
         "check_history_metadata",
         "check_public_boundary",
         "check_safety_routes",
@@ -409,6 +410,49 @@ class DocumentContractBaselineTest(unittest.TestCase):
         paths_with_findings = {f.path for f in findings}
         self.assertIn("02_Architecture/api.md", paths_with_findings)
         self.assertIn("02_Architecture/data_model_operations_overview.md", paths_with_findings)
+
+
+class DocumentedResponseModelsTest(unittest.TestCase):
+    def _write_required_docs(self, root: Path) -> None:
+        for path, terms in MODULE.DOCUMENTED_RESPONSE_MODEL_REQUIRED_TERMS.items():
+            target = root / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("\n".join(terms), encoding="utf-8")
+
+    def test_accepts_all_required_endpoint_and_model_markers(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_required_docs(root)
+
+            findings = MODULE.check_documented_response_models(root)
+
+        self.assertEqual(findings, [])
+
+    def test_reports_missing_marker_in_each_canonical_doc(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_required_docs(root)
+            api_path = root / "02_Architecture" / "api.md"
+            api_path.write_text(
+                api_path.read_text(encoding="utf-8").replace("/ai/provider-status", ""),
+                encoding="utf-8",
+            )
+            schemas_path = root / "02_Architecture" / "schemas.md"
+            schemas_path.write_text(
+                schemas_path.read_text(encoding="utf-8").replace("totalGroupCount", ""),
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_documented_response_models(root)
+
+        self.assertEqual(
+            {(finding.path, finding.target) for finding in findings},
+            {
+                ("02_Architecture/api.md", "/ai/provider-status"),
+                ("02_Architecture/schemas.md", "totalGroupCount"),
+            },
+        )
+        self.assertTrue(all(finding.rule_id == "DC-API-001" for finding in findings))
 
 
 class HistoryMetadataTest(unittest.TestCase):

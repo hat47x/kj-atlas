@@ -14,6 +14,7 @@ RELATIVE_LINK_RULE_ID = "DC-LNK-001"
 CURRENT_HISTORY_RULE_ID = "DC-CUR-001"
 HISTORY_METADATA_RULE_ID = "DC-HIS-001"
 ARCHITECTURE_BASELINE_RULE_ID = "DC-ARC-001"
+API_RESPONSE_MODEL_RULE_ID = "DC-API-001"
 PUBLIC_BOUNDARY_RULE_ID = "DC-PUB-001"
 SAFETY_ROUTE_RULE_ID = "DC-SAF-001"
 NPM_SCRIPT_COMMAND_RULE_ID = "DC-CMD-001"
@@ -39,6 +40,25 @@ CURRENT_ONLY_PATHS = (
     Path("02_Architecture/data_model_operations_overview.md"),
     Path("03_Implement/frontend/docs/e2e_testing.md"),
 )
+DOCUMENTED_RESPONSE_MODEL_REQUIRED_TERMS = {
+    Path("02_Architecture/api.md"): (
+        "/admin/provision/hil-rs/a2a3-gate:validate",
+        "A2A3GateValidationResponse",
+        "/docs/{doc_id}/similar-candidate-groups",
+        "CandidateListViewModel",
+        "/ai/provider-status",
+        "ProviderStatusResponse",
+    ),
+    Path("02_Architecture/schemas.md"): (
+        "A2A3GateValidationResponse",
+        "CandidateListViewModel",
+        "SimilarCandidateGroup",
+        "generatedAt",
+        "totalGroupCount",
+        "ProviderStatusResponse",
+        "providerKind",
+    ),
+}
 HISTORY_REQUIRED_LABELS = (
     "Status: Informative history",
     "Source document:",
@@ -439,6 +459,27 @@ def check_document_contract_baseline(
                 )
             )
 
+    return findings
+
+
+def check_documented_response_models(root: Path) -> list[DocsCheckFinding]:
+    """Keep implemented auxiliary response contracts visible in both API docs."""
+    findings: list[DocsCheckFinding] = []
+    for path, required_terms in DOCUMENTED_RESPONSE_MODEL_REQUIRED_TERMS.items():
+        text = (root / path).read_text(encoding="utf-8")
+        for term in required_terms:
+            if term in text:
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=API_RESPONSE_MODEL_RULE_ID,
+                    path=path.as_posix(),
+                    line=1,
+                    target=term,
+                    message=f"implemented response contract marker is missing: {term}",
+                    fix_hint="Restore the endpoint/model contract and its response fields from the backend response_model definition.",
+                )
+            )
     return findings
 
 
@@ -1042,6 +1083,7 @@ def main() -> int:
     findings.extend(check_adr_id_uniqueness(root, markdown_paths))
     findings.extend(check_current_history_headings(root))
     findings.extend(check_document_contract_baseline(root))
+    findings.extend(check_documented_response_models(root))
     findings.extend(check_history_metadata(root))
     findings.extend(check_public_boundary(root))
     findings.extend(check_safety_routes(root))

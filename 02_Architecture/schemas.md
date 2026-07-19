@@ -1092,6 +1092,48 @@ export type A1ErrorEnvelope = {
 - `contractId` は違反した契約IDを必ず指す。
 - A2/A3 で errorCode 列挙を拡張しない。
 
+## 13. 実装済み response view model
+
+Document本体へ永続化しない補助APIのresponse modelを次で固定する。全modelは未知fieldを拒否する。
+
+```ts
+export type A2A3GateValidationResponse = {
+  go: true;
+  schemaVersion: "1.0.0";
+  freezeContractId: "HIL-RS-02-A1-CONTRACT-FREEZE-v1";
+};
+
+export type SimilarCandidateScoreSummary = {
+  min: number;
+  max: number;
+  avg: number;
+};
+
+export type SimilarCandidateGroup = {
+  groupId: string;
+  targetCardId: string;
+  candidateCardIds: string[];
+  scoreSummary: SimilarCandidateScoreSummary;
+  reasonCodes: string[];
+  snapshotVersion: string;
+};
+
+export type CandidateListViewModel = {
+  generatedAt: string; // ISO 8601。現行実装ではDocument.updatedAt
+  groups: SimilarCandidateGroup[];
+  totalGroupCount: number; // >= 0、かつgroups.lengthと一致
+};
+
+export type ProviderStatusResponse = {
+  providerKind: "none" | "local" | "large-scale";
+};
+```
+
+- `CandidateListViewModel` は保存済みDocumentから都度導出するread-only viewであり、Document schemaへの加算ではない。
+- `SimilarCandidateGroup` の並びは `targetCardId` / `candidateCardIds` / `groupId`、候補card IDの並びはcard IDによって決定論的に固定する。
+- `ProviderStatusResponse` は設定解決結果のechoであり、疎通状態や最後のAI実行結果を表さない。
+- 対応endpointとerror境界は `02_Architecture/api.md` §2.11を参照する。
+
 ## 14. DOMAIN-EXPR-02 加算スキーマ拡張（2026-06-21）
 
 ADR-0040 Phase 2: 保留 Hold + 未統合 Shelf の第一級化。加算原則に従い、全フィールドは optional。

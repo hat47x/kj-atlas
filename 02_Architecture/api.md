@@ -376,6 +376,38 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - 404: `doc_id` が存在しない
   - 422: hash format などの契約違反
 
+### 2.11 実装済み response model の補助API
+
+次のAPIはDocument CRUDとは別の、実装済みの限定契約である。response fieldの型定義は `02_Architecture/schemas.md` §13を正本とする。
+
+**POST** `/admin/provision/hil-rs/a2a3-gate:validate`
+
+- Request body: `A2A3GateValidationRequest`。HIL-RS-02の固定値（`freezeContractId` / `schemaVersion` / `overridePolicy` / lock・freeze・status・未解決要求フラグ）だけを受理し、未知fieldは拒否する。
+- Response: `A2A3GateValidationResponse`
+  - `go: true`
+  - `schemaVersion: "1.0.0"`
+  - `freezeContractId: "HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
+- Error:
+  - 409: 固定されたgate invariantとの不一致
+  - 422: literal違反、必須field欠落、未知fieldなどのrequest schema違反
+
+**GET** `/docs/{doc_id}/similar-candidate-groups`
+
+- Request header: 通常のDocument read認可に従い、`X-Read-Only: 1 | true` をread-only contextとして扱う。
+- Response: `CandidateListViewModel`。Documentから決定論的に導出するread-only viewであり、merge判断を自動適用しない。
+  - `generatedAt: string (ISO 8601)`
+  - `groups: SimilarCandidateGroup[]`
+  - `totalGroupCount: number`（0以上、常に `groups.length` と一致）
+- Error:
+  - 403: 認可または安全境界違反
+  - 404: `doc_id` が存在しない
+
+**GET** `/ai/provider-status`
+
+- Response: `ProviderStatusResponse`
+  - `providerKind: "none" | "local" | "large-scale"`
+- 設定解決後のprovider種別を表示用に返すread-only echoであり、providerへの疎通確認は行わない。`local_http` 設定は `local` に正規化される。
+
 ---
 
 ## 3. レスポンス例（概要）

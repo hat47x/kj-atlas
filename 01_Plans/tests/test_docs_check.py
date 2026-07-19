@@ -33,6 +33,12 @@ class DocsCheckEntrypointTest(unittest.TestCase):
         (root / "02_Architecture" / "data_model_operations_overview.md").write_text(
             "DocumentV1 support.\n", encoding="utf-8"
         )
+        for relative_path, required_terms in CHECKS.DOCUMENTED_RESPONSE_MODEL_REQUIRED_TERMS.items():
+            target = root / relative_path
+            target.write_text(
+                target.read_text(encoding="utf-8") + "\n".join(required_terms) + "\n",
+                encoding="utf-8",
+            )
         screenshots = root / "04_Documentation" / "assets" / "screenshots"
         screenshots.mkdir(parents=True)
         (root / "04_Documentation" / "public_index.md").write_text(

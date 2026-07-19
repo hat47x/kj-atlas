@@ -13,6 +13,7 @@ from docs_contract_checks import (
     check_compose_service_commands,
     check_current_history_headings,
     check_document_contract_baseline,
+    check_documented_response_models,
     check_history_metadata,
     check_localhost_probe_commands,
     check_npm_script_commands,
@@ -90,6 +91,7 @@ def run_docs_check(
     errors.extend(finding.render() for finding in check_relative_links(repository_root, markdown_paths))
     errors.extend(finding.render() for finding in check_current_history_headings(repository_root))
     errors.extend(finding.render() for finding in check_document_contract_baseline(repository_root))
+    errors.extend(finding.render() for finding in check_documented_response_models(repository_root))
     errors.extend(finding.render() for finding in check_history_metadata(repository_root))
     errors.extend(finding.render() for finding in check_public_boundary(repository_root))
     errors.extend(finding.render() for finding in check_safety_routes(repository_root))
