@@ -1881,6 +1881,7 @@ export default function App() {
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV1 | null>(null);
+  const loadDocumentGenerationRef = useRef(0);
   const lastDraggedCardIdRef = useRef<string | null>(null);
   const suppressNextTransformPersistRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -1983,6 +1984,9 @@ export default function App() {
     async (docId: string, options?: { allowCreateOnNotFound?: boolean; isReload?: boolean }): Promise<boolean> => {
       const allowCreateOnNotFound = options?.allowCreateOnNotFound ?? false;
       const isReload = options?.isReload ?? false;
+      loadDocumentGenerationRef.current += 1;
+      const generation = loadDocumentGenerationRef.current;
+      const isStale = () => loadDocumentGenerationRef.current !== generation;
       if (isReload) {
         setIsReloadingDocument(true);
       }
@@ -1991,6 +1995,9 @@ export default function App() {
 
       try {
         const loaded = await getDocument(docId);
+        if (isStale()) {
+          return false;
+        }
         const loadedDocument = normalizeDocument(loaded.document);
 
         setHistory({
@@ -2032,6 +2039,9 @@ export default function App() {
 
           try {
             const saved = await putDocument(docId, defaultDocument);
+            if (isStale()) {
+              return false;
+            }
             const savedDocument = normalizeDocument(saved.document);
 
             setHistory({
@@ -2080,9 +2090,11 @@ export default function App() {
           return false;
         }
       } finally {
-        setIsLoading(false);
-        if (isReload) {
-          setIsReloadingDocument(false);
+        if (!isStale()) {
+          setIsLoading(false);
+          if (isReload) {
+            setIsReloadingDocument(false);
+          }
         }
       }
     },
