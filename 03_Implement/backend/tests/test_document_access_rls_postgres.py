@@ -40,15 +40,26 @@ RLS_PROTECTED_MODELS = (
 
 def test_postgres_rls_matrix_covers_every_migration_protected_table() -> None:
     enabled_tables: set[str] = set()
+    write_checked_tables: set[str] = set()
     for migration_path in (BACKEND_DIR / "alembic" / "versions").glob("*.py"):
+        migration_source = migration_path.read_text(encoding="utf-8")
         enabled_tables.update(
             re.findall(
                 r"ALTER TABLE ([a-z0-9_]+) ENABLE ROW LEVEL SECURITY",
-                migration_path.read_text(encoding="utf-8"),
+                migration_source,
+            )
+        )
+        write_checked_tables.update(
+            re.findall(
+                r"CREATE POLICY [^\r\n]+ ON ([a-z0-9_]+)\s+"
+                r"USING \([^\r\n]+\)\s+WITH CHECK \([^\r\n]+\)",
+                migration_source,
             )
         )
 
-    assert {model.__tablename__ for model in RLS_PROTECTED_MODELS} == enabled_tables
+    protected_model_tables = {model.__tablename__ for model in RLS_PROTECTED_MODELS}
+    assert protected_model_tables == enabled_tables
+    assert write_checked_tables == enabled_tables
 
 
 def _tenant(tenant_id: str) -> TenantContext:
@@ -204,7 +215,7 @@ def _cleanup(
 
 
 @pytest.mark.postgres
-def test_all_tenant_tables_rls_fail_closed_across_pool_reuse(
+def test_all_rls_protected_document_tables_fail_closed_across_pool_reuse(
     postgres_rls_engines: tuple[Engine, Engine],
 ) -> None:
     admin_engine, runtime_engine = postgres_rls_engines
@@ -279,6 +290,53 @@ def test_all_tenant_tables_rls_fail_closed_across_pool_reuse(
             assert metadata_update.rowcount == 0
             assert audit_update.rowcount == 0
             db.commit()
+
+        reassignment_doc_id = f"reassign-{suffix}"
+        with Session(runtime_engine) as db:
+            apply_database_tenant_context(db=db, tenant=_tenant(tenant_ids[0]))
+            db.add(
+                DocumentRow(
+                    tenant_id=tenant_ids[0],
+                    id=reassignment_doc_id,
+                    version=1,
+                    updated_at="2026-07-17T00:00:00Z",
+                    payload_json="{}",
+                )
+            )
+            db.commit()
+
+        with Session(runtime_engine) as db:
+            apply_database_tenant_context(db=db, tenant=_tenant(tenant_ids[0]))
+            with pytest.raises(SQLAlchemyError):
+                db.execute(
+                    update(DocumentRow)
+                    .where(DocumentRow.id == reassignment_doc_id)
+                    .values(tenant_id=tenant_ids[1])
+                )
+                db.commit()
+            db.rollback()
+
+        with Session(runtime_engine) as db:
+            apply_database_tenant_context(db=db, tenant=_tenant(tenant_ids[0]))
+            with pytest.raises(SQLAlchemyError):
+                db.execute(
+                    update(DocumentAccessAdminAuditEventRow)
+                    .where(DocumentAccessAdminAuditEventRow.tenant_id == tenant_ids[0])
+                    .values(tenant_id=tenant_ids[1])
+                )
+                db.commit()
+            db.rollback()
+
+        with Session(runtime_engine) as db:
+            apply_database_tenant_context(db=db, tenant=_tenant(tenant_ids[0]))
+            reassignment_document = db.scalar(
+                select(DocumentRow).where(DocumentRow.id == reassignment_doc_id)
+            )
+            tenant_a_audit_events = db.scalars(select(DocumentAccessAdminAuditEventRow)).all()
+            assert reassignment_document is not None
+            assert reassignment_document.tenant_id == tenant_ids[0]
+            assert tenant_a_audit_events
+            assert all(row.tenant_id == tenant_ids[0] for row in tenant_a_audit_events)
 
         with Session(runtime_engine) as db:
             apply_database_tenant_context(db=db, tenant=_tenant(tenant_ids[1]))
