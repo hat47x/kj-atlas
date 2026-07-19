@@ -273,5 +273,3 @@ export function computeStructureMetrics(doc: DocumentV1, _view?: { collapsedIsla
 }
 
 export type DiagramStructuralMetrics = StructureMetrics;
-
-export const computeDiagramStructuralMetrics = computeStructureMetrics;

@@ -321,7 +321,3 @@ export function lintPatchAgainstCurrentDoc(currentDoc: DocumentV1, patch: PatchD
 
   return { issues };
 }
-
-export function hasPatchLintErrors(lintResult: PatchLintResult): boolean {
-  return lintResult.issues.some((issue) => issue.severity === "error");
-}

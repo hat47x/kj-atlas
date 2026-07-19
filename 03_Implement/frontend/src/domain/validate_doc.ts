@@ -83,9 +83,16 @@ const DETERMINISTIC_TIE_BREAK_ORDER = [
   "minimum_area_delta",
   "minimum_vertex_count",
 ] as const;
+// Mirrors ReviewAttribution.validate_reviewer_ref_opaque/validate_owner_ref_opaque
+// in backend models.py -- keep this prefix list in sync with that validator.
+const NON_OPAQUE_REF_PREFIXES = ["sso:", "oidc:", "saml:", "provider:"] as const;
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function isOpaqueRef(value: string): boolean {
+  return !value.includes("@") && !NON_OPAQUE_REF_PREFIXES.some((prefix) => value.startsWith(prefix));
 }
 
 function isIsoTimestamp(value: unknown): value is string {
@@ -927,8 +934,8 @@ function validateReviewAttribution(item: unknown, errors: string[]): item is Rev
   if (!isNonEmptyString(item.reviewerRef)) {
     errors.push(`${path}.reviewerRef: must be a non-empty opaque string`);
     valid = false;
-  } else if (item.reviewerRef.includes("@")) {
-    errors.push(`${path}.reviewerRef: must not contain email-like identifiers`);
+  } else if (!isOpaqueRef(item.reviewerRef)) {
+    errors.push(`${path}.reviewerRef: must not contain email-like/provider identifiers`);
     valid = false;
   }
   if (!isIsoTimestamp(item.auditRecordedAt)) {
@@ -947,8 +954,8 @@ function validateReviewAttribution(item: unknown, errors: string[]): item is Rev
     if (typeof item.ownerRef !== "string") {
       errors.push(`${path}.ownerRef: must be a string when provided`);
       valid = false;
-    } else if (item.ownerRef.includes("@")) {
-      errors.push(`${path}.ownerRef: must not contain email-like identifiers`);
+    } else if (!isOpaqueRef(item.ownerRef)) {
+      errors.push(`${path}.ownerRef: must not contain email-like/provider identifiers`);
       valid = false;
     }
   }

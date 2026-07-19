@@ -305,10 +305,19 @@ function EdgeLayerComponent({
               strokeLinecap="round"
               pointerEvents="stroke"
               style={{ cursor: "pointer" }}
+              role="button"
+              tabIndex={0}
               onPointerDown={(event) => {
                 event.stopPropagation();
               }}
               onClick={handleEdgeClick}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onEdgeSelect?.(edge.id, edge);
+                }
+              }}
             />
 
             {resolvedType === "causal" || resolvedType === "mutual" ? (

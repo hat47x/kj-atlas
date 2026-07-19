@@ -122,19 +122,3 @@ export function getGuidedFlowStepIndex(steps: GuidedFlowStep[], stepId: GuidedFl
   const index = steps.findIndex((step) => step.id === stepId);
   return index >= 0 ? index : 0;
 }
-
-export function clampGuidedFlowTargetIndex(targetIndex: number, total: number): number {
-  if (total <= 0) {
-    return 0;
-  }
-
-  if (targetIndex < 0) {
-    return 0;
-  }
-
-  if (targetIndex >= total) {
-    return total - 1;
-  }
-
-  return targetIndex;
-}
