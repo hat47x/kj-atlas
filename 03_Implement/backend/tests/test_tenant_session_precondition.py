@@ -120,18 +120,16 @@ def test_tenant_scoped_dependency_rejects_stale_version_before_endpoint(
     assert endpoint_called is False
 
 
-def test_all_ai_and_context_mutations_install_tenant_scoped_dependency() -> None:
-    mutation_routes = [
+def test_all_tenant_content_ai_and_context_routes_install_precondition() -> None:
+    tenant_content_routes = [
         route
         for route in main_app.routes
         if isinstance(route, APIRoute)
         and route.path.startswith(("/ai/", "/context/"))
-        and bool(route.methods & {"POST", "PUT", "PATCH", "DELETE"})
+        and route.path != "/ai/provider-status"
     ]
 
-    assert mutation_routes
-    for route in mutation_routes:
-        dependency_calls = {
-            dependency.call for dependency in route.dependant.dependencies
-        }
+    assert tenant_content_routes
+    for route in tenant_content_routes:
+        dependency_calls = {dependency.call for dependency in route.dependant.dependencies}
         assert require_tenant_scoped_api_precondition in dependency_calls, route.path
