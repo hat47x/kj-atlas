@@ -3,8 +3,8 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Testing
-- Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
+- Status: Done
+- Lifecycle: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -20,22 +20,20 @@
 
 ## 対応方針
 
-- 実施すること: 以下のいずれかをMaintainerが選択する。
-  1. 実リポジトリのルート自体をfixtureとして使う（実際の`02_Architecture/schemas.md`等を読む）end-to-endテストを`01_Plans/tests/`に追加する。
-  2. 13個のcheckすべてが要求するパスを満たす最小限のsynthetic multi-fileフィクスチャを新規構築する。
-  3. 費用対効果が低いと判断し、対応不要（Won't Fix）とする。
-- 実施しないこと: フィクスチャ設計方針を決めずに場当たり的なテストを追加すること。
+- 実施したこと: 13個の`check_*`とtracked Markdown列挙をテストダブルへ置換し、`main()`自身の全check呼出し、引数、findings集約、成功／失敗出力、exit code 0／1を直接検証する単体テストを追加した。
+- 実施しないこと: 実リポジトリ状態へ依存するend-to-end fixtureや、13 check分の重複synthetic文書群は追加しない。各checkの文書内容検証は既存単体テスト、実状態の統合検証は`docs_check.py`へ委ねる。
 
 ## 受入条件
 
-- [ ] 上記3方針のいずれかが選択される。
-- [ ] テストを追加する場合、`python3 -m pytest 01_Plans/tests/`が通過する。
+- [x] check境界をmockする独立したCLI wiring単体テスト方式を採用した。
+- [x] `python -m pytest -q 01_Plans/tests/test_docs_contract_checks.py`と`python 01_Plans/docs_check.py`が通過する。
 
 ## 検証計画
 
-- 実行する確認: 対応後、`python3 01_Plans/docs_check.py`および該当テストスイート。
-- 期待結果: 既存の13個の`check_*`単体テストに影響なく、新規テスト（追加する場合）が通過する。
+- 実行結果: `python -m pytest -q 01_Plans/tests/test_docs_contract_checks.py`と`python 01_Plans/docs_check.py`を実行して成功した。
+- 期待結果: 既存check単体テストを維持し、`main()`が13個すべてを一度ずつ正しい引数で呼び、finding有無をexit codeと出力へ反映することを固定した。
 
 ## 補足
 
 - 発見経緯: 第7ラウンドの棚卸しで、`docs_contract_checks.py`全体のテストカバレッジ構造を確認した際に発見。`main()`を直接テスト対象にできるかを検討したが、上記の固定パス依存により「機械的な追加」ではないと判断し、実装せず起票した。
+- 完了判断: 文書内容fixtureを再構築せずCLI orchestrationだけを分離検証でき、当初の未カバー範囲（check追加／削除時の呼出し漏れ、集約、exit code、出力）が直接テストされたためDoneとする。

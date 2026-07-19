@@ -1,10 +1,13 @@
 import importlib.util
+import io
 import subprocess
 import sys
 import tempfile
 import textwrap
 import unittest
+from contextlib import ExitStack, redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "docs_contract_checks.py"
 SPEC = importlib.util.spec_from_file_location("docs_contract_checks", MODULE_PATH)
@@ -12,6 +15,73 @@ MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
+
+
+class MainWiringTest(unittest.TestCase):
+    CHECKS_WITH_PATHS = (
+        "check_relative_links",
+        "check_adr_id_uniqueness",
+        "check_npm_script_commands",
+        "check_compose_service_commands",
+        "check_runtime_parameter_key_commands",
+        "check_repository_path_commands",
+        "check_cli_option_commands",
+        "check_localhost_probe_commands",
+    )
+    CHECKS_WITH_ROOT = (
+        "check_current_history_headings",
+        "check_document_contract_baseline",
+        "check_history_metadata",
+        "check_public_boundary",
+        "check_safety_routes",
+    )
+
+    def _run_main(self, root: Path, *, finding=None):
+        markdown_paths = [Path("README.md"), Path("04_Documentation/guide.md")]
+        mocks = {}
+        with ExitStack() as stack:
+            tracked = stack.enter_context(
+                patch.object(MODULE, "tracked_markdown_paths", return_value=markdown_paths)
+            )
+            for name in self.CHECKS_WITH_PATHS + self.CHECKS_WITH_ROOT:
+                return_value = [finding] if name == "check_safety_routes" and finding else []
+                mocks[name] = stack.enter_context(
+                    patch.object(MODULE, name, return_value=return_value)
+                )
+            stack.enter_context(patch.object(sys, "argv", ["docs_contract_checks.py", "--root", str(root)]))
+            output = io.StringIO()
+            with redirect_stdout(output):
+                exit_code = MODULE.main()
+
+        tracked.assert_called_once_with(root.resolve())
+        for name in self.CHECKS_WITH_PATHS:
+            mocks[name].assert_called_once_with(root.resolve(), markdown_paths)
+        for name in self.CHECKS_WITH_ROOT:
+            mocks[name].assert_called_once_with(root.resolve())
+        return exit_code, output.getvalue()
+
+    def test_main_runs_every_check_and_reports_success(self):
+        with tempfile.TemporaryDirectory() as td:
+            exit_code, output = self._run_main(Path(td))
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(output, "ok: checked 2 tracked Markdown files\n")
+
+    def test_main_aggregates_findings_and_returns_failure(self):
+        finding = MODULE.DocsCheckFinding(
+            rule_id="DC-TEST-001",
+            path="README.md",
+            line=3,
+            target="unsafe-target",
+            message="test finding",
+            fix_hint="fix it",
+        )
+        with tempfile.TemporaryDirectory() as td:
+            exit_code, output = self._run_main(Path(td), finding=finding)
+
+        self.assertEqual(exit_code, 1)
+        self.assertIn("documentation contract validation failed:", output)
+        self.assertIn(finding.render(), output)
 
 
 class RelativeLinkCheckTest(unittest.TestCase):
