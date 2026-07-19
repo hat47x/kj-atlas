@@ -452,3 +452,9 @@
 - trusted SaaS identity／tenant／session adapter bundleをruntime profileのtenant-session modeと起動時に原子的に照合するよう変更した。single-tenant profileへのbundle注入、SaaS profileでのbundle欠損、未知profileをadapter有効化前に拒否する。
 - これによりtrusted tenant resolverだけが有効で`tenantSessionVersion` preconditionは無効という混成構成を防止する。現行releaseの`saas-multitenant` settings起動拒否は変更せず、既存3 profileはbundle非注入時だけ従来のsingle-tenant resolverで起動する。
 - profile／bundle・session近接57件とbackend全体610件pass・条件付き25件skip、backend全体Ruff、変更対象format check、docs-check、active issue validatorを通過した。repository全体のformat checkは既存71ファイルが未整形のため非変更範囲として除外した。実auth edge adapter、PostgreSQL実地matrix、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-4/5/6/7/8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: trusted adapter shutdown deactivation
+
+- application lifespan終了時にtrusted SaaS identity／tenant／session adapterをApp stateから同時に無効化し、tenant resolverをsingle-tenant既定へ戻すようにした。bundle定義自体を再起動用に保持しても、次回の初期化でruntime profileとの相互必須照合を通過するまでadapterを再有効化しない。
+- これによりshutdown後やlifespan再利用時に、開始済みフラグだけが解除されてtrusted resolver／persisterが残る非対称な状態を防止する。SaaS profileの起動拒否と既存single-tenant profileのsession API fail-closedは変更しない。
+- profile／bundle・session近接20件、backend全体611件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実auth edge adapter、PostgreSQL実地matrix、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-4/5/6/7/8/10/12/13とSaaS profile起動拒否を維持する。

@@ -91,5 +91,8 @@ def initialize_trusted_saas_runtime(
 
 
 def release_trusted_saas_runtime(app: FastAPI) -> None:
-    """Release the startup guard after lifespan shutdown."""
+    """Deactivate trusted adapters and release the guard after shutdown."""
+    app.state.saas_identity_context_resolver = None
+    app.state.tenant_context_resolver = SingleTenantContextResolver()
+    app.state.active_tenant_session_persister = None
     setattr(app.state, _STARTED_STATE_KEY, False)

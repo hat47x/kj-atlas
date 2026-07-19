@@ -186,7 +186,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 - LLMのbase URLはcredential/query/fragment、空白・制御文字・backslashを含まないHTTPS、またはloopback HTTPだけを受理します。model IDは256文字以下で空白・制御文字・backslashなしとします。
 - `KJ_ATLAS_LLM_PROVIDER=large-scale`, `large_scale`, `external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true`、`KJ_ATLAS_LLM_ESCALATION_ENABLED=true`、base URL、model、allowlistの完全セットを必須にします。allowlistはcanonical hostだけを受理し、URL、wildcard、port、path、空要素、重複を拒否します。base URLのhostnameがallowlistにない構成も起動時に拒否します。
 - `KJ_ATLAS_RUNTIME_PROFILE` は `local-dev`, `evaluation`, `enterprise-production`, `saas-multitenant` だけを名前として認識し、`saas-multitenant`は`SAAS-TENANT-01`完了まで起動を拒否します。
-- trusted SaaS identity resolver、tenant resolver、active tenant session persisterは環境変数やrequest headerから選択せず、application起動前の同一adapter bundleとしてのみ注入します。3要素の部分設定、起動後の差し替え、未検証のstate objectは拒否し、bundle非注入時はsession APIをfail-closedに保ちます。
+- trusted SaaS identity resolver、tenant resolver、active tenant session persisterは環境変数やrequest headerから選択せず、application起動前の同一adapter bundleとしてのみ注入します。3要素の部分設定、起動後の差し替え、未検証のstate objectは拒否し、bundle非注入時はsession APIをfail-closedに保ちます。application lifespan終了時は3 adapterをApp stateから同時に無効化し、再起動時もruntime profileとの照合を通過するまで再有効化しません。
 - `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` は `noop`, `mock`, `external_http` だけを許可します。
 - `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` は `read_only`, `deny` だけを許可します。
 - `KJ_ATLAS_AUDIT_TRANSPORT`は`noop`, `http`だけを許可します。監査HTTPと外部PDPのendpointはcredential/query/fragment、空白・制御文字・backslashを含まないHTTPS、またはloopback HTTPだけを受理し、port不正も拒否します。HTTP連携を無効にしたままendpoint/API keyを残すことや、endpointなしでbearer/IdP issuerだけを設定することも拒否します。

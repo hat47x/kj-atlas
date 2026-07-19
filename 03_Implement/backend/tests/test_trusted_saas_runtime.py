@@ -79,6 +79,38 @@ def test_complete_bundle_is_applied_atomically() -> None:
         install_trusted_saas_runtime(app, adapters)
     release_trusted_saas_runtime(app)
 
+    assert app.state.saas_identity_context_resolver is None
+    assert isinstance(app.state.tenant_context_resolver, SingleTenantContextResolver)
+    assert app.state.active_tenant_session_persister is None
+    assert not app.state._kj_atlas_runtime_started
+
+    assert initialize_trusted_saas_runtime(
+        app,
+        runtime_profile="saas-multitenant",
+    )
+    assert app.state.saas_identity_context_resolver is adapters.identity_context_resolver
+    assert app.state.tenant_context_resolver is adapters.tenant_context_resolver
+    assert app.state.active_tenant_session_persister is adapters.active_tenant_session_persister
+
+
+def test_released_bundle_can_only_be_reactivated_by_a_matching_profile() -> None:
+    app = FastAPI()
+    adapters = _bundle()
+    install_trusted_saas_runtime(app, adapters)
+    initialize_trusted_saas_runtime(app, runtime_profile="saas-multitenant")
+    release_trusted_saas_runtime(app)
+
+    with pytest.raises(RuntimeError, match="single-tenant profile"):
+        initialize_trusted_saas_runtime(
+            app,
+            runtime_profile="enterprise-production",
+        )
+
+    assert app.state.saas_identity_context_resolver is None
+    assert isinstance(app.state.tenant_context_resolver, SingleTenantContextResolver)
+    assert app.state.active_tenant_session_persister is None
+    assert not app.state._kj_atlas_runtime_started
+
 
 @pytest.mark.parametrize(
     ("field", "value"),
