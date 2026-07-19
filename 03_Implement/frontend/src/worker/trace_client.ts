@@ -68,6 +68,11 @@ export class TraceWorkerClient {
         }
       };
 
+      const onError = (event: ErrorEvent) => {
+        cleanup();
+        reject(new Error(event.message || "Trace worker failed"));
+      };
+
       const onAbort = () => {
         this.cancel(requestId);
         cleanup();
@@ -76,10 +81,12 @@ export class TraceWorkerClient {
 
       const cleanup = () => {
         worker.removeEventListener("message", onMessage);
+        worker.removeEventListener("error", onError);
         options.signal?.removeEventListener("abort", onAbort);
       };
 
       worker.addEventListener("message", onMessage);
+      worker.addEventListener("error", onError);
       options.signal?.addEventListener("abort", onAbort, { once: true });
       worker.postMessage({ type: "trace.request", requestId, payload } as TraceWorkerRequestMessage);
     });
@@ -139,6 +146,11 @@ export class TraceWorkerClient {
         }
       };
 
+      const onError = (event: ErrorEvent) => {
+        cleanup();
+        reject(new Error(event.message || "Trace worker failed"));
+      };
+
       const onAbort = () => {
         this.cancel(requestId);
         cleanup();
@@ -147,10 +159,12 @@ export class TraceWorkerClient {
 
       const cleanup = () => {
         worker.removeEventListener("message", onMessage);
+        worker.removeEventListener("error", onError);
         options.signal?.removeEventListener("abort", onAbort);
       };
 
       worker.addEventListener("message", onMessage);
+      worker.addEventListener("error", onError);
       options.signal?.addEventListener("abort", onAbort, { once: true });
       worker.postMessage({ type: "trace.analytics.request", requestId, payload } as TraceWorkerRequestMessage);
     });

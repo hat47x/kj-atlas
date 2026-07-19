@@ -28,8 +28,8 @@ describe("DiffWorkerClient", () => {
   it("returns progress in expected order and resolves result", async () => {
     class FakeWorker {
       private readonly listeners = new Set<(event: MessageEvent) => void>();
-      addEventListener(_: string, listener: (event: MessageEvent) => void) { this.listeners.add(listener); }
-      removeEventListener(_: string, listener: (event: MessageEvent) => void) { this.listeners.delete(listener); }
+      addEventListener(type: string, listener: (event: MessageEvent) => void) { if (type === "message") this.listeners.add(listener); }
+      removeEventListener(type: string, listener: (event: MessageEvent) => void) { if (type === "message") this.listeners.delete(listener); }
       postMessage(message: { type: string; requestId: string }) {
         if (message.type !== "diff.request") return;
         const stages = ["cards", "islands", "edges", "evidence", "view"];
@@ -59,8 +59,8 @@ describe("DiffWorkerClient", () => {
   it("falls back when worker protocol version is unsupported", async () => {
     class FakeWorker {
       private readonly listeners = new Set<(event: MessageEvent) => void>();
-      addEventListener(_: string, listener: (event: MessageEvent) => void) { this.listeners.add(listener); }
-      removeEventListener(_: string, listener: (event: MessageEvent) => void) { this.listeners.delete(listener); }
+      addEventListener(type: string, listener: (event: MessageEvent) => void) { if (type === "message") this.listeners.add(listener); }
+      removeEventListener(type: string, listener: (event: MessageEvent) => void) { if (type === "message") this.listeners.delete(listener); }
       postMessage(message: { type: string; requestId: string }) {
         if (message.type !== "diff.request") return;
         for (const listener of this.listeners) {
