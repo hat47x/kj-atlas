@@ -27,6 +27,7 @@ import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
 import type { BalanceFinding, DialecticBalanceReport } from "../domain/view/dialectic_balance";
 import { computeStructureMetrics } from "../domain/view/structural_metrics";
 import { downloadTextFile } from "../export/narrative_export";
+import { runTraceRequest } from "../utils/trace_request_lifecycle";
 import { TraceWorkerClient } from "../worker/trace_client";
 import type { TraceAnalytics } from "../worker/trace_analytics";
 import type { MergeAuditEntry } from "../domain/view/audit_log";
@@ -714,33 +715,48 @@ export function SidePanel({
     if (!traceClientRef.current) {
       traceClientRef.current = new TraceWorkerClient();
     }
+    const traceClient = traceClientRef.current;
 
+    traceAbortRef.current?.abort();
     const controller = new AbortController();
     traceAbortRef.current = controller;
     setIsTraceRunning(true);
 
-    const outcome = await traceClientRef.current.computeTrace({
-      doc: document,
-      options: {
-        kind,
-        startCardId: selectedCard.id,
-        maxHops: contradictionTraceDepthLimit,
-        maxNodes: 80,
-        safeMode,
-        includeRationale: contradictionTraceIncludeSupports,
+    const outcome = await runTraceRequest({
+      execute: () => traceClient.computeTrace({
+        doc: document,
+        options: {
+          kind,
+          startCardId: selectedCard.id,
+          maxHops: contradictionTraceDepthLimit,
+          maxNodes: 80,
+          safeMode,
+          includeRationale: contradictionTraceIncludeSupports,
+        },
+      }, {
+        signal: controller.signal,
+        onProgress: (progress) => setTraceProgressMessage(t("side_panel.trace.progress", {
+          kind: kind === "evidence" ? t("side_panel.trace.evidence_trace") : t("side_panel.trace.contradiction_trace"),
+          stage: progress.stage,
+          percent: progress.percent,
+        })),
+      }),
+      onRejected: () => onEvidenceTraceError(t(
+        controller.signal.aborted
+          ? "side_panel.trace.cancelled"
+          : "side_panel.trace.failed",
+      )),
+      onSettled: () => {
+        if (traceAbortRef.current === controller) {
+          traceAbortRef.current = null;
+          setIsTraceRunning(false);
+          setTraceProgressMessage(null);
+        }
       },
-    }, {
-      signal: controller.signal,
-      onProgress: (progress) => setTraceProgressMessage(t("side_panel.trace.progress", {
-        kind: kind === "evidence" ? t("side_panel.trace.evidence_trace") : t("side_panel.trace.contradiction_trace"),
-        stage: progress.stage,
-        percent: progress.percent,
-      })),
     });
-
-    setIsTraceRunning(false);
-    setTraceProgressMessage(null);
-    traceAbortRef.current = null;
+    if (outcome === null) {
+      return null;
+    }
 
     if (outcome.status === "cancelled") {
       onEvidenceTraceError(t("side_panel.trace.cancelled"));

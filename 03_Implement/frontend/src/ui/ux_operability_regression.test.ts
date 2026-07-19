@@ -6,6 +6,16 @@ const readSource = (relativePath: string): string =>
   readFileSync(resolve(__dirname, "..", "..", relativePath), "utf8");
 
 describe("UX Operability regression contracts", () => {
+  it("recovers trace controls after worker rejection without exposing the error", () => {
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+
+    expect(sidePanelSource).toContain("runTraceRequest({");
+    expect(sidePanelSource).toContain('"side_panel.trace.failed"');
+    expect(sidePanelSource).toContain("onSettled: () => {");
+    expect(sidePanelSource).toContain("if (traceAbortRef.current === controller)");
+    expect(sidePanelSource).toContain("setIsTraceRunning(false)");
+  });
+
   it("Phase 1: pointer-keyboard-flow-review", () => {
     const cardViewSource = readSource("src/canvas/CardView.tsx");
 
