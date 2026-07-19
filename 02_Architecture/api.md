@@ -741,7 +741,7 @@ export type ActiveTenantRequestV1 = {
 
 `effectiveCapabilities`は表示補助であり、APIの再認可を代替しない。cacheする場合は`deployment + tenantId + principalId + capabilityVersion`で分離し、auth tokenの有効期限を越えて保持しない。
 
-`tenantSessionVersion`はtenant/capabilityの認可根拠ではない。SaaS profileのtenant-scoped public APIと非同期開始点は、最後に検証したversionを`KJ-Atlas-Tenant-Session-Version`等の単一preconditionとして必須受領し、trusted sessionを解決した後、resource lookup、body parse後の副作用、PDP、job enqueueより前に一致を確認する。欠損・不一致では本文・metadataを返さず`409 tenant_session_changed`へ閉じ、生versionや現在tenantを応答・log・監査へ反射しない。read、list、export、share、import、MCP、webhook、Tenant Adminも例外にせず、stale requestを新contextへ自動再送しない。header名は実装時にCORS/proxy契約と同時固定するが、このclient値からTenantContextを解決してはならない。
+`tenantSessionVersion`はtenant/capabilityの認可根拠ではない。SaaS profileのtenant-scoped public APIと非同期開始点は、最後に検証したversionを単一の`KJ-Atlas-Tenant-Session-Version` request headerとして必須受領し、trusted sessionを解決した後、resource lookup、body parse後の副作用、PDP、job enqueueより前に一致を確認する。同名headerの欠損・重複・不正・不一致では本文・metadataを返さず`409 tenant_session_changed`へ閉じ、生versionや現在tenantを応答・log・監査へ反射しない。read、list、export、share、import、MCP、webhook、Tenant Adminも例外にせず、stale requestを新contextへ自動再送しない。このclient値からTenantContextを解決してはならない。browserから利用するSaaS配備ではCORS allow-headersへこの名前だけを明示し、proxy/CDNで同名headerを連結・複製しない。
 
 frontend clientは現在の検証済み`availableTenants`にないtenantを通信前に拒否し、`no-store`・same-origin JSONでactive tenant変更を要求する。要求には現在の`tenantSessionVersion`を含め、成功responseは既存validatorに加えてprincipal不変、要求tenant一致、新versionへの変更を確認した後だけ遷移へ使用する。遷移時は進行中requestをabortし、workerをdisposeし、object URLと文書・選択・検索等のmemory stateを破棄し、旧browser storage scopeだけを削除してhard document replacementを行う。cleanup/storage削除の一部が失敗しても旧DOMを継続利用せずreplacementを優先する。未検証responseではcleanup、storage変更、navigationを開始しない。別タブ通知は旧DOMを早くblockする補助に限り、通知欠落時も次requestのserver preconditionで停止する。
 

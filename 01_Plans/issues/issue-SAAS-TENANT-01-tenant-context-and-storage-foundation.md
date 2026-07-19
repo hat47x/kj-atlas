@@ -386,3 +386,9 @@
 - future SaaS App hostへ、固定same-origin BroadcastChannelで`null`だけを通知するcoherence境界を追加した。channel名・payloadへtenant ID、principal ID、capability、本文、`tenantSessionVersion`を含めず、通知生成失敗・送信失敗でも検証済みlocal切替のcleanup／hard replacementを止めない。server preconditionを引き続き権威とする。
 - 別タブ通知受信、`pageshow.persisted=true`、online復帰、5分以上の非表示からの復帰を一度だけのscope invalidationへ集約した。invalidation時はlistener／channelを先に破棄し、進行中request、task、workerを停止して旧Appをblocked viewへ置換する。local切替はserver応答のprincipal／tenant／新version検証後、cleanupとreplacementより前に通知する。
 - coherence／App host／switch coordinator近接27件、frontend全体1,259件・218 file、frontend typecheck、docs-checkを通過した。現行production entryはsession contextを注入しないため境界はdormantで、実ブラウザの複数タブE2E、全APIのserver guard、stale response／worker resultの世代commit拒否は未完了である。AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-19: tenant API session precondition guard
+
+- SaaS profileでだけ有効になる共通request guardを追加し、`KJ-Atlas-Tenant-Session-Version`を単一headerとして固定した。trusted sessionの現versionを解決した後に照合し、欠損・重複・不正・不一致を値非反射の`409 tenant_session_changed`へ統一する。client headerはidentity、tenant、membership、capabilityの解決には使用しない。
+- `/docs`の共通認可境界と`/tenant-admin/document-access`の管理認可境界へ組み込み、SaaS時は文書・metadataのlookupより先に停止する。既存のlocal／evaluation／enterprise profileはheaderを要求せず互換動作を維持し、不明runtime policyは`503 runtime_policy_unavailable`へfail-closedにする。
+- 共通guard、文書のtenant分離／access control、Tenant Adminの近接31件、backend全体596件・条件付き25件skip、backend全体Ruff、docs-checkを通過した。export、share、import、MCP、webhook、その他Tenant Admin、非同期job開始点への横断適用、frontend API clientからのheader付与、CORS／proxy実配備検証、SaaS runtime起動許可は未完了であり、AC-4/5/6/7/8/10/12/13とSaaS profile起動拒否を維持する。

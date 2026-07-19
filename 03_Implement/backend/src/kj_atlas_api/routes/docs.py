@@ -49,10 +49,15 @@ from kj_atlas_api.models import (
     SimilarCandidateScoreSummary,
 )
 from kj_atlas_api.settings import settings
+from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
 from kj_atlas_api.tenant_context import (
     SingleTenantContextResolver,
     TenantContext,
     TenantContextResolver,
+)
+from kj_atlas_api.tenant_session_precondition import (
+    require_tenant_session_request_precondition,
+    tenant_session_precondition_required,
 )
 
 router = APIRouter(prefix="/docs", tags=["docs"])
@@ -188,13 +193,25 @@ def _authorize_request(
     safe_mode: bool,
     read_only: bool,
 ) -> tuple[AccessRequest, AccessDecision, TenantContext]:
-    identity = resolve_identity_context(db=db, request=request)
-    resolver: TenantContextResolver = getattr(
-        request.app.state,
-        "tenant_context_resolver",
-        SingleTenantContextResolver(),
-    )
-    tenant = resolver.resolve(db=db, user_id=identity.user_id)
+    if tenant_session_precondition_required(request):
+        trusted_session = resolve_trusted_saas_request_session(
+            request=request,
+            db=db,
+        )
+        require_tenant_session_request_precondition(
+            request=request,
+            current_version=trusted_session.session.tenant_session_version,
+        )
+        identity = trusted_session.identity
+        tenant = trusted_session.tenant
+    else:
+        identity = resolve_identity_context(db=db, request=request)
+        resolver: TenantContextResolver = getattr(
+            request.app.state,
+            "tenant_context_resolver",
+            SingleTenantContextResolver(),
+        )
+        tenant = resolver.resolve(db=db, user_id=identity.user_id)
     resource_resolver: DocumentAccessResourceResolver = getattr(
         request.app.state,
         "document_access_resource_resolver",
