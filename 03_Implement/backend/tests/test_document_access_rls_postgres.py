@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 from collections.abc import Iterator
@@ -29,6 +30,25 @@ RUN_RLS_TESTS_ENV = "KJ_ATLAS_RUN_PG_RLS_TESTS"
 ADMIN_DATABASE_URL_ENV = "KJ_ATLAS_DATABASE_URL"
 RUNTIME_DATABASE_URL_ENV = "KJ_ATLAS_TEST_POSTGRES_RUNTIME_DATABASE_URL"
 BACKEND_DIR = Path(__file__).resolve().parents[1]
+RLS_PROTECTED_MODELS = (
+    DocumentRow,
+    MergeDecisionLogRow,
+    DocumentAccessMetadataRow,
+    DocumentAccessAdminAuditEventRow,
+)
+
+
+def test_postgres_rls_matrix_covers_every_migration_protected_table() -> None:
+    enabled_tables: set[str] = set()
+    for migration_path in (BACKEND_DIR / "alembic" / "versions").glob("*.py"):
+        enabled_tables.update(
+            re.findall(
+                r"ALTER TABLE ([a-z0-9_]+) ENABLE ROW LEVEL SECURITY",
+                migration_path.read_text(encoding="utf-8"),
+            )
+        )
+
+    assert {model.__tablename__ for model in RLS_PROTECTED_MODELS} == enabled_tables
 
 
 def _tenant(tenant_id: str) -> TenantContext:

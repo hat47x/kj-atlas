@@ -492,4 +492,4 @@
 ### Implementation checkpoint 2026-07-20: complete protected-table RLS matrix definition
 
 - 条件付きPostgreSQL RLS testをmigrationで保護する4表すべてへ拡張した。Document／判断ログ／Document access metadata／管理監査について、tenant Aからtenant Bが不可視であること、同一pool接続の再利用時にtransaction-local tenant contextが漏れずcontextなしでは0件になること、tenant Aからtenant Bへの直接UPDATEが0件でありtenant Bの値が不変であることを同じmatrixで検証する。
-- migration用と非superuser・非`BYPASSRLS` runtime用の分離credential、`row_security=on`、pool size 1という既存の実行条件は維持した。ローカル環境にはDockerと`psql`がないため実PostgreSQL実行は未実施であり、条件付きRLS testを除く関連migration／tenant DB guard test 14件pass・1件skip、Ruff、変更対象format checkを通過した。AC-5とSaaS profile起動拒否は維持する。
+- migrationでRLSを有効化する表集合とmatrix対象model集合が完全一致することを、PostgreSQLなしで常時実行する契約testにも固定した。migration用と非superuser・非`BYPASSRLS` runtime用の分離credential、`row_security=on`、pool size 1という既存の実行条件は維持した。ローカル環境にはDockerと`psql`がないため実PostgreSQL実行は未実施であり、関連migration／tenant DB guard／matrix coverage test 15件pass・条件付き1件skip、Ruff、変更対象format checkを通過した。AC-5とSaaS profile起動拒否は維持する。
