@@ -136,7 +136,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 - metadata未登録は`Restricted / binding未設定`として表示し、Public既定やread-only fallbackにしない。binding resolver不達は「権限設定を確認できないため利用不可」とし、文書0件のEmptyと区別する。
 - 変更は即時反映に見せず、差分確認、保存中の二重実行防止、成功receipt（policy version）、409競合時の再読込を用意する。bulk edit、CSV import/export、全doc一括公開は提供しない。
 - UI表示は`document.policy.manage`を使うがAPIが同じcapabilityとactive tenantを再検証する。`document.write`、Platform operator、文書ownerから管理権限を推測しない。
-- session GET/active tenant POST route、strict frontend client、profile別entry point、App mount前bootstrap／blocked-state gate、任意注入App hostの保存・runtime cleanup・hard replacement境界は実装済みだが、trusted auth edgeとanti-forgery付きsession persister、production entryからApp hostへのsession注入が揃うまで本画面を有効化しない。identity／tenant／capability解決失敗は権限なしのEmptyへ偽装せず、再試行可能な利用不可状態として扱う。
+- session GET/active tenant POST route、strict frontend client、profile別entry point、App mount前bootstrap／blocked-state gate、検証済みsession contextとscopeのApp同時注入、App hostの保存・runtime cleanup・hard replacement境界は実装済みだが、trusted auth edgeとanti-forgery付きsession persisterのbackend runtime接続が揃うまで本画面を有効化しない。identity／tenant／capability解決失敗は権限なしのEmptyへ偽装せず、再試行可能な利用不可状態として扱う。
 
 #### エージェント登録（将来）
 
