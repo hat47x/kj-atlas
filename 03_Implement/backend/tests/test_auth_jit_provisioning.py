@@ -5,7 +5,7 @@ from collections.abc import Iterator
 
 from fastapi.testclient import TestClient
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from kj_atlas_api.db import get_db
@@ -24,11 +24,18 @@ from kj_atlas_api.settings import settings
 
 
 @contextmanager
-def _sqlite_client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker]]:
+def _sqlite_client(
+    tmp_path,
+    *,
+    allow_legacy_ambiguous_identities: bool = False,
+) -> Iterator[tuple[TestClient, sessionmaker]]:
     db_path = tmp_path / "auth_jit.sqlite3"
     engine = create_engine(f"sqlite:///{db_path}")
     session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     Base.metadata.create_all(bind=engine)
+    if allow_legacy_ambiguous_identities:
+        with engine.begin() as connection:
+            connection.execute(text("DROP INDEX uq_user_identities_provider_lower_external_uid"))
 
     def _get_test_db():
         db = session_local()
@@ -413,7 +420,7 @@ def test_admin_provision_rejects_ambiguous_identity_mapping(tmp_path) -> None:
     original_allow_jit = settings.allow_jit_provisioning
     settings.allow_jit_provisioning = False
     try:
-        with _sqlite_client(tmp_path) as fixture:
+        with _sqlite_client(tmp_path, allow_legacy_ambiguous_identities=True) as fixture:
             client, session_local = fixture
             with session_local() as db:
                 user_1 = UserRow(
@@ -471,7 +478,7 @@ def test_docs_strict_mode_rejects_ambiguous_identity_mapping(tmp_path) -> None:
     original_allow_jit = settings.allow_jit_provisioning
     settings.allow_jit_provisioning = False
     try:
-        with _sqlite_client(tmp_path) as fixture:
+        with _sqlite_client(tmp_path, allow_legacy_ambiguous_identities=True) as fixture:
             client, session_local = fixture
             with session_local() as db:
                 user_1 = UserRow(

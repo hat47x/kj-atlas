@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from sqlalchemy import CheckConstraint, Index, Integer, Text
+from sqlalchemy import CheckConstraint, Index, Integer, Text, text
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -188,6 +188,12 @@ class UserIdentityRow(Base):
             "identity_provider_id",
             "subject",
             name="uq_user_identities_identity_provider_subject",
+        ),
+        Index(
+            "uq_user_identities_provider_lower_external_uid",
+            text("lower(provider)"),
+            text("lower(external_uid)"),
+            unique=True,
         ),
     )
 

@@ -5,7 +5,23 @@ import sqlite3
 import subprocess
 from pathlib import Path
 
+from kj_atlas_api.models import UserIdentityRow
+
 BACKEND_DIR = Path(__file__).resolve().parents[1]
+
+
+def test_user_identity_model_declares_case_insensitive_lookup_index() -> None:
+    index = next(
+        candidate
+        for candidate in UserIdentityRow.__table__.indexes
+        if candidate.name == "uq_user_identities_provider_lower_external_uid"
+    )
+
+    assert index.unique is True
+    assert [str(expression) for expression in index.expressions] == [
+        "lower(provider)",
+        "lower(external_uid)",
+    ]
 
 
 def _run_alembic(db_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
