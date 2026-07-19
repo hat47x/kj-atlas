@@ -45,11 +45,16 @@ async def lifespan(app: FastAPI):
     init_db()
     app.state.runtime_profile = settings.runtime_profile
     app.state.audit_dispatcher = build_audit_dispatcher()
-    app.state.access_control_adapter = build_access_control_adapter(adapter_name=settings.access_control_adapter)
+    app.state.access_control_adapter = build_access_control_adapter(
+        adapter_name=settings.access_control_adapter
+    )
     app.state.access_control_fail_safe_mode = settings.access_control_fail_safe_mode
     app.state.document_access_resource_resolver = SingleTenantHeaderResourceResolver()
     app.state.tenant_capability_resolver = build_tenant_capability_resolver()
-    initialize_trusted_saas_runtime(app)
+    initialize_trusted_saas_runtime(
+        app,
+        runtime_profile=app.state.runtime_profile,
+    )
     try:
         yield
     finally:

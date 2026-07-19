@@ -728,7 +728,7 @@ export type AdminAgentRegistrationSummary = {
 
 ## 10. SaaS TenantContext / capability契約（ADR-0059 / ADR-0061、L0 Planned）
 
-本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・全tenant-scoped APIへの`tenantSessionVersion` guard・越境テストが完了するまでSaaS profileを有効化しない。bootstrap policy、session context、conditional active tenant変更のfail-closed routeとfrontend entry gateに加え、信頼済みauth edgeのidentity resolver・tenant resolver・active tenant session adapterを3点同時にだけ受け付ける起動前bundle境界を実装済みである。bundle非注入時はidentity/session adapterをunavailable、tenant resolverをsingle-tenant互換へ戻してsession context系を503として閉じる。Document、Tenant Admin、文書内容を扱うAI mutation、context mutationには共通version preconditionを実装済みである。実auth edge adapter、anti-forgery付きsession形式、SaaS backend runtime、import／share／MCP／webhook／非同期job開始点への横断適用は未実装・非公開である。
+本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・全tenant-scoped APIへの`tenantSessionVersion` guard・越境テストが完了するまでSaaS profileを有効化しない。bootstrap policy、session context、conditional active tenant変更のfail-closed routeとfrontend entry gateに加え、信頼済みauth edgeのidentity resolver・tenant resolver・active tenant session adapterを3点同時にだけ受け付ける起動前bundle境界を実装済みである。bundleは`tenant-session-required`へ写像されるSaaS profileと相互必須であり、single-tenant profileへのbundle注入、SaaS profileでのbundle欠損、未知profileをadapter有効化前に起動拒否する。bundle非注入のsingle-tenant profileではidentity/session adapterをunavailable、tenant resolverをsingle-tenant互換へ戻してsession context系を503として閉じる。Document、Tenant Admin、文書内容を扱うAI mutation、context mutationには共通version preconditionを実装済みである。実auth edge adapter、anti-forgery付きsession形式、SaaS backend runtime、import／share／MCP／webhook／非同期job開始点への横断適用は未実装・非公開である。
 
 ### 10.1 session context（GET/POST version guard実装済み・SaaS runtime gated）
 

@@ -36,10 +36,22 @@ def _bundle() -> TrustedSaasRuntimeAdapters:
     )
 
 
-def test_default_runtime_keeps_session_routes_closed() -> None:
+@pytest.mark.parametrize(
+    "runtime_profile",
+    ["local-dev", "evaluation", "enterprise-production"],
+)
+def test_single_tenant_runtime_keeps_session_routes_closed(
+    runtime_profile: str,
+) -> None:
     app = FastAPI()
 
-    assert initialize_trusted_saas_runtime(app) is False
+    assert (
+        initialize_trusted_saas_runtime(
+            app,
+            runtime_profile=runtime_profile,
+        )
+        is False
+    )
     assert app.state.saas_identity_context_resolver is None
     assert isinstance(app.state.tenant_context_resolver, SingleTenantContextResolver)
     assert app.state.active_tenant_session_persister is None
@@ -52,13 +64,16 @@ def test_complete_bundle_is_applied_atomically() -> None:
     adapters = _bundle()
     install_trusted_saas_runtime(app, adapters)
 
-    assert initialize_trusted_saas_runtime(app) is True
+    assert (
+        initialize_trusted_saas_runtime(
+            app,
+            runtime_profile="saas-multitenant",
+        )
+        is True
+    )
     assert app.state.saas_identity_context_resolver is adapters.identity_context_resolver
     assert app.state.tenant_context_resolver is adapters.tenant_context_resolver
-    assert (
-        app.state.active_tenant_session_persister
-        is adapters.active_tenant_session_persister
-    )
+    assert app.state.active_tenant_session_persister is adapters.active_tenant_session_persister
 
     with pytest.raises(RuntimeError, match="before startup"):
         install_trusted_saas_runtime(app, adapters)
@@ -109,10 +124,50 @@ def test_bundle_cannot_be_replaced_on_the_same_app() -> None:
         install_trusted_saas_runtime(app, _bundle())
 
 
+def test_single_tenant_profile_rejects_trusted_saas_bundle() -> None:
+    app = FastAPI()
+    install_trusted_saas_runtime(app, _bundle())
+
+    with pytest.raises(RuntimeError, match="single-tenant profile"):
+        initialize_trusted_saas_runtime(
+            app,
+            runtime_profile="enterprise-production",
+        )
+
+    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+    assert not hasattr(app.state, "saas_identity_context_resolver")
+
+
+def test_saas_profile_rejects_missing_trusted_bundle() -> None:
+    app = FastAPI()
+
+    with pytest.raises(RuntimeError, match="required by the runtime profile"):
+        initialize_trusted_saas_runtime(
+            app,
+            runtime_profile="saas-multitenant",
+        )
+
+    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+
+
+def test_unknown_profile_fails_before_adapter_activation() -> None:
+    app = FastAPI()
+    install_trusted_saas_runtime(app, _bundle())
+
+    with pytest.raises(RuntimeError, match="runtime profile is invalid"):
+        initialize_trusted_saas_runtime(app, runtime_profile="unknown")
+
+    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+    assert not hasattr(app.state, "saas_identity_context_resolver")
+
+
 def test_corrupt_pre_start_state_fails_closed() -> None:
     app = FastAPI()
     app.state.trusted_saas_runtime_adapters = object()
 
     with pytest.raises(RuntimeError, match="bundle is invalid"):
-        initialize_trusted_saas_runtime(app)
+        initialize_trusted_saas_runtime(
+            app,
+            runtime_profile="saas-multitenant",
+        )
     assert not getattr(app.state, "_kj_atlas_runtime_started", False)

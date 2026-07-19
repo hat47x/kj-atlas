@@ -6,6 +6,7 @@ from fastapi import FastAPI
 
 from kj_atlas_api.active_tenant_session import ActiveTenantSessionPersister
 from kj_atlas_api.auth_context import SaasIdentityContextResolver
+from kj_atlas_api.runtime_bootstrap import resolve_tenant_session_bootstrap_mode
 from kj_atlas_api.tenant_context import (
     SingleTenantContextResolver,
     TenantContextResolver,
@@ -31,7 +32,9 @@ class TrustedSaasRuntimeAdapters:
             (self.active_tenant_session_persister, "current_version"),
             (self.active_tenant_session_persister, "persist"),
         )
-        if any(not callable(getattr(adapter, method, None)) for adapter, method in required_methods):
+        if any(
+            not callable(getattr(adapter, method, None)) for adapter, method in required_methods
+        ):
             raise ValueError("trusted SaaS runtime adapter bundle is incomplete")
 
 
@@ -51,14 +54,29 @@ def install_trusted_saas_runtime(
     setattr(app.state, _BUNDLE_STATE_KEY, adapters)
 
 
-def initialize_trusted_saas_runtime(app: FastAPI) -> bool:
-    """Apply the pre-installed bundle or the fail-closed single-tenant defaults."""
+def initialize_trusted_saas_runtime(
+    app: FastAPI,
+    *,
+    runtime_profile: str,
+) -> bool:
+    """Apply only a bundle whose tenant-session mode matches the runtime profile."""
     if getattr(app.state, _STARTED_STATE_KEY, False):
         raise RuntimeError("trusted SaaS runtime adapters are already initialized")
+
+    try:
+        tenant_session_mode = resolve_tenant_session_bootstrap_mode(runtime_profile)
+    except RuntimeError:
+        raise RuntimeError("trusted SaaS runtime profile is invalid") from None
 
     adapters = getattr(app.state, _BUNDLE_STATE_KEY, None)
     if adapters is not None and not isinstance(adapters, TrustedSaasRuntimeAdapters):
         raise RuntimeError("trusted SaaS runtime adapter bundle is invalid")
+    if tenant_session_mode == "tenant-session-required" and adapters is None:
+        raise RuntimeError("trusted SaaS runtime adapters are required by the runtime profile")
+    if tenant_session_mode == "single-tenant" and adapters is not None:
+        raise RuntimeError(
+            "trusted SaaS runtime adapters cannot be enabled by a single-tenant profile"
+        )
 
     app.state.saas_identity_context_resolver = None
     app.state.tenant_context_resolver = SingleTenantContextResolver()
@@ -66,9 +84,7 @@ def initialize_trusted_saas_runtime(app: FastAPI) -> bool:
     if adapters is not None:
         app.state.saas_identity_context_resolver = adapters.identity_context_resolver
         app.state.tenant_context_resolver = adapters.tenant_context_resolver
-        app.state.active_tenant_session_persister = (
-            adapters.active_tenant_session_persister
-        )
+        app.state.active_tenant_session_persister = adapters.active_tenant_session_persister
 
     setattr(app.state, _STARTED_STATE_KEY, True)
     return adapters is not None

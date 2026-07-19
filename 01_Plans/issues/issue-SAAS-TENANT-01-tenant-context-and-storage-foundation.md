@@ -446,3 +446,9 @@
 - Appから問い合わせjourney panelとSidePanelへtenant session generation guardを注入し、子コンポーネント所有の問い合わせbundle import worker、trace／trace analytics workerの完了結果を同じscopeで照合する構造へ変更した。
 - 問い合わせbundleはFile読込とworker parseを一つのguarded taskとして扱い、traceは結果照合後だけstate更新またはclipboard処理へ進む。既存のAbortController／worker disposeも併用し、stale時は利用者向けエラーへ変換せず破棄する。
 - worker／tenant generation／App source guard近接46件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。将来のserver import／share endpoint、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: runtime profile and adapter bundle binding
+
+- trusted SaaS identity／tenant／session adapter bundleをruntime profileのtenant-session modeと起動時に原子的に照合するよう変更した。single-tenant profileへのbundle注入、SaaS profileでのbundle欠損、未知profileをadapter有効化前に拒否する。
+- これによりtrusted tenant resolverだけが有効で`tenantSessionVersion` preconditionは無効という混成構成を防止する。現行releaseの`saas-multitenant` settings起動拒否は変更せず、既存3 profileはbundle非注入時だけ従来のsingle-tenant resolverで起動する。
+- profile／bundle・session近接57件とbackend全体610件pass・条件付き25件skip、backend全体Ruff、変更対象format check、docs-check、active issue validatorを通過した。repository全体のformat checkは既存71ファイルが未整形のため非変更範囲として除外した。実auth edge adapter、PostgreSQL実地matrix、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-4/5/6/7/8/10/12/13とSaaS profile起動拒否を維持する。
