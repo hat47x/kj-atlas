@@ -428,3 +428,9 @@
 - App内のDocument JSON、view metadata、comparison Document、review-pack zip、patch、patch baselineの全File読取をtenant session generation guardへ通した。scope失効後に完了した読取は解析・preview・comparison・patch stateへcommitせず、エラー表示でblocked viewを上書きしない。
 - review-packはzip展開とintegrity検証、patchはfingerprint検証の各非同期境界もguardし、snapshot object URL生成を最後の非同期検証より後へ移した。これによりstale検証結果からURLを生成・保持しない。SafeMode、import validation、人手適用前previewの既存境界は変更しない。
 - import／integrity／patch／App source guard近接69件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。server import、public pack、PNG等の非worker非同期export、App外worker、全tenant-scoped非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: stale asynchronous export generation guard
+
+- abstract map Markdown／HTML snapshot、viewport／visible-bounds PNG、patch export、agent task Markdown／JSONの非同期生成結果をtenant session generation guardへ通した。scope失効後に完了したBlob、data URL、fingerprint付きpatch、task sheetはdownload／clipboard APIを呼ばず破棄する。
+- 同期SVG／JSON exportは同一event turn内で生成・downloadするため今回の非同期結果境界の対象外とした。clipboard書込APIを呼び出した後のOS側commitは取消不能であり、生成結果の照合を呼出直前に置く境界までとする。
+- export／patch／agent task／App source guard近接57件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。server import、public pack、App外worker、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。

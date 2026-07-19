@@ -526,6 +526,24 @@ describe("UX Operability regression contracts", () => {
     );
     expect(appSource).not.toContain("await selectedFile.text()");
     expect(appSource).not.toContain("await readZipFiles(selectedFile)");
+    expect(
+      appSource.match(
+        /runTenantScopedOptionalTask\(\(\) => exportCanvasToPngBlob\(/g,
+      ),
+    ).toHaveLength(4);
+    expect(appSource).toContain(
+      "runTenantScopedOptionalTask(() => readBlobAsDataUrl(pngBlob))",
+    );
+    expect(appSource).toContain(
+      "runTenantScopedOptionalTask(() => buildPatchForExport(",
+    );
+    expect(
+      appSource.match(
+        /runTenantScopedOptionalTask\(buildCurrentAgentTaskSheet\)/g,
+      ),
+    ).toHaveLength(3);
+    expect(appSource).not.toContain("await exportCanvasToPngBlob(");
+    expect(appSource).not.toContain("await buildPatchForExport(");
     expect(appSource).toContain(
       '(error.status === 503 && error.code === "provider_unavailable")',
     );

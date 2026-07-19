@@ -4032,15 +4032,18 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return;
     }
 
-    const exportedPatch = await buildPatchForExport(pendingPatchImport.patch, {
+    const exportedPatch = await runTenantScopedOptionalTask(() => buildPatchForExport(pendingPatchImport.patch, {
       author: patchExportAuthor,
       authorNote: patchExportAuthorNote,
       sourceApp: "kj-atlas",
-    });
+    }));
+    if (exportedPatch === undefined) {
+      return;
+    }
 
     downloadTextFile(`${pendingPatchImport.fileName.replace(/\.json$/i, "")}.export.json`, "application/json", `${JSON.stringify(exportedPatch, null, 2)}\n`);
     setStatusMessage(t("app.status.patch.exported_fingerprint"));
-  }, [patchExportAuthor, patchExportAuthorNote, pendingPatchImport]);
+  }, [patchExportAuthor, patchExportAuthorNote, pendingPatchImport, runTenantScopedOptionalTask]);
 
   const handleResetPatchToOriginal = useCallback(() => {
     if (!pendingPatchImport) {
@@ -8542,7 +8545,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, [document, runTenantScopedApiRequest, safeMode, verifiedTenantSession]);
 
   const handleCopyAgentTaskSheet = useCallback(async () => {
-    const output = await buildCurrentAgentTaskSheet();
+    const output = await runTenantScopedOptionalTask(buildCurrentAgentTaskSheet);
     if (!output) return;
     try {
       await navigator.clipboard.writeText(output.taskSheetMd);
@@ -8551,23 +8554,23 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     } catch {
       setStatusMessage(t("agent_task_export.copy_failed"));
     }
-  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit]);
+  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
 
   const handleDownloadAgentTaskSheet = useCallback(async () => {
-    const output = await buildCurrentAgentTaskSheet();
+    const output = await runTenantScopedOptionalTask(buildCurrentAgentTaskSheet);
     if (!output) return;
     downloadTextFile("task-sheet.md", "text/markdown", output.taskSheetMd);
     setStatusMessage(t("agent_task_export.downloaded_md"));
     reportAgentTaskExportAudit();
-  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit]);
+  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
 
   const handleDownloadAgentTaskJson = useCallback(async () => {
-    const output = await buildCurrentAgentTaskSheet();
+    const output = await runTenantScopedOptionalTask(buildCurrentAgentTaskSheet);
     if (!output) return;
     downloadTextFile("task.json", "application/json", output.taskJson);
     setStatusMessage(t("agent_task_export.downloaded_json"));
     reportAgentTaskExportAudit();
-  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit]);
+  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
 
   // EXT-AGENT-02: parsing/reviewing a pasted response never touches the
   // document (AC-6); only a per-proposal "Import" click does, one
@@ -9368,7 +9371,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
 
     try {
-      const pngBlob = await exportCanvasToPngBlob({
+      const pngBlob = await runTenantScopedOptionalTask(() => exportCanvasToPngBlob({
         doc: focusedVisibleDocument,
         viewState: {
           visibleIslandIds: visibleIslandIdSet,
@@ -9380,7 +9383,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         camera: canvasCamera,
         area,
         scale: 2,
-      });
+      }));
+      if (pngBlob === undefined) {
+        return;
+      }
 
       const model = buildAbstractMapExport(document, {
         visibleIslandIds: visibleIslandIdSet,
@@ -9410,6 +9416,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     visibleIslandIdSet,
     safeMode,
     includeUnreviewedDraftsInExport,
+    runTenantScopedOptionalTask,
   ]);
 
   const handleExportAbstractMapHtmlWithPng = useCallback(async () => {
@@ -9425,7 +9432,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
 
     try {
-      const pngBlob = await exportCanvasToPngBlob({
+      const pngBlob = await runTenantScopedOptionalTask(() => exportCanvasToPngBlob({
         doc: focusedVisibleDocument,
         viewState: {
           visibleIslandIds: visibleIslandIdSet,
@@ -9437,7 +9444,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         camera: canvasCamera,
         area,
         scale: 2,
-      });
+      }));
+      if (pngBlob === undefined) {
+        return;
+      }
 
       const model = buildAbstractMapExport(document, {
         visibleIslandIds: visibleIslandIdSet,
@@ -9445,7 +9455,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         includeUnreviewedDrafts: !safeMode && includeUnreviewedDraftsInExport,
       });
 
-      const snapshotDataUrl = await readBlobAsDataUrl(pngBlob);
+      const snapshotDataUrl = await runTenantScopedOptionalTask(() => readBlobAsDataUrl(pngBlob));
+      if (snapshotDataUrl === undefined) {
+        return;
+      }
       downloadTextFile("report.html", "text/html", exportAbstractMapHTML(model, { snapshotDataUrl }));
       downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
       setStatusMessage(t("app.status.export.abstract_html"));
@@ -9466,6 +9479,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     visibleIslandIdSet,
     safeMode,
     includeUnreviewedDraftsInExport,
+    runTenantScopedOptionalTask,
   ]);
 
   const getSvgExportFilename = useCallback((mode: "viewport" | "visible-bounds") => {
@@ -9608,7 +9622,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
 
     try {
-      const pngBlob = await exportCanvasToPngBlob({
+      const pngBlob = await runTenantScopedOptionalTask(() => exportCanvasToPngBlob({
         doc: focusedVisibleDocument,
         viewState: {
           visibleIslandIds: visibleIslandIdSet,
@@ -9620,7 +9634,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         camera: canvasCamera,
         area,
         scale: pngExportScale,
-      });
+      }));
+      if (pngBlob === undefined) {
+        return;
+      }
       downloadBlobFile(getPngExportFilename("viewport", pngExportScale), pngBlob);
       downloadViewMetadata("viewport", area);
       setStatusMessage(t("app.status.export.png_viewport", { scale: pngExportScale }));
@@ -9642,6 +9659,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     visibleIslandIdSet,
     safeMode,
     includeUnreviewedDraftsInExport,
+    runTenantScopedOptionalTask,
   ]);
 
   const handleExportPngVisibleBounds = useCallback(async () => {
@@ -9672,7 +9690,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
 
     try {
-      const pngBlob = await exportCanvasToPngBlob({
+      const pngBlob = await runTenantScopedOptionalTask(() => exportCanvasToPngBlob({
         doc: focusedVisibleDocument,
         viewState: {
           visibleIslandIds: visibleIslandIdSet,
@@ -9684,7 +9702,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         camera: canvasCamera,
         area,
         scale: pngExportScale,
-      });
+      }));
+      if (pngBlob === undefined) {
+        return;
+      }
       downloadBlobFile(getPngExportFilename("visible-bounds", pngExportScale), pngBlob);
       downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
       setStatusMessage(t("app.status.export.png_visible_bounds", { scale: pngExportScale }));
@@ -9706,6 +9727,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     visibleIslandIdSet,
     safeMode,
     includeUnreviewedDraftsInExport,
+    runTenantScopedOptionalTask,
   ]);
 
   const handleExportViewMetadataViewport = useCallback(() => {
