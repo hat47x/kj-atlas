@@ -168,6 +168,32 @@ def test_anonymous_session_is_rejected_before_capability_resolution() -> None:
         engine.dispose()
 
 
+def test_single_tenant_compatibility_context_is_not_a_capability_context() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    resolver = StubCapabilityResolver(CapabilitySnapshot((), "policy-v1"))
+    try:
+        with Session(engine) as db:
+            with pytest.raises(HTTPException) as exc_info:
+                build_tenant_session_context(
+                    db=db,
+                    principal_id="user-1",
+                    tenant=TenantContext(
+                        tenant_id="local-default",
+                        membership_id=None,
+                        resolved_by="single_tenant_adapter",
+                    ),
+                    capability_resolver=resolver,
+                    tenant_session_version="session-v1",
+                )
+
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail["code"] == "tenant_context_untrusted"
+        assert resolver.calls == 0
+    finally:
+        engine.dispose()
+
+
 @pytest.mark.parametrize(
     "tenant_session_version",
     ["", " session-v1", "session v1", "session-v1\n", "x" * 129, "世代-1"],

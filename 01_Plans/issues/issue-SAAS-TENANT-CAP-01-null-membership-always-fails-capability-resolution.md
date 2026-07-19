@@ -3,8 +3,8 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Bug
-- Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
+- Status: Done
+- Lifecycle: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -19,19 +19,20 @@
 
 ## 対応方針
 
-- 実施すること: single-tenant既定context（`membership_id=None`）からtenant capability解決が呼ばれる経路が実際に存在するかを確認し、存在する場合は`_canonical_request_identifier`に`access_control.py`と同様の`optional`許容パスを追加するかどうかを判断する。
-- 実施しないこと: `_canonical_request_identifier`の変更そのもの。single-tenant既定contextでこのresolverが呼ばれることを想定しているかどうかは製品設計判断であり、本issueでは先取りしない。
+- 実施したこと: 公開session／Tenant Adminのcapability解決経路と`SAAS-TENANT-01`のtrusted membership再確認契約を照合し、single-tenant互換contextはcapability resolverへ渡す前に`tenant_context_untrusted`で停止する境界を確認した。この境界を直接固定する単体テストを追加した。
+- 実施しないこと: `_canonical_request_identifier`へ`None`許容を追加しない。外部capability serviceへ送る`membershipId`は、DBで再確認済みのactive membershipを表すserver-owned IDとして必須であり、欠損を許容するとSaaSのfail-closed契約を弱める。
 
 ## 受入条件
 
-- [ ] single-tenant既定contextからのtenant capability解決呼び出しについて、意図した挙動（fail-closedのまま/Noneを許容する）が明文化される。
-- [ ] 実装変更を行う場合、既存のfail-closed境界（不正・不完全設定時は必ず拒否）を弱めない。
+- [x] single-tenant既定contextはSaaS capability解決の入力ではなく、`single_tenant_adapter`をtrusted membership evidenceとして扱わずresolver呼出し前に`403 tenant_context_untrusted`へ停止する、と明文化した。
+- [x] `membership_id=None`を直接渡した外部resolverもtransport前に`TenantCapabilityUnavailableError`へ停止する既存境界を維持し、fail-closed条件を弱めていない。
 
 ## 検証計画
 
-- 実行する確認: 方針決定後、`python3 -m pytest tests/`で関連テストがgreenであることを確認する。
-- 期待結果: 意図した挙動が単体テストで固定される。
+- 実行結果: `python -m pytest -q tests/test_tenant_capability.py tests/test_session_context.py`、backend Ruff、docs-checkを実行して成功した。
+- 期待結果: single-tenant互換contextとmembership欠損contextの両方が外部transport前に停止し、capability resolverへ到達しないことを単体テストで固定した。
 
 ## 補足
 
 - 発見経緯: SaaSテナント対応マージ後の広範な棚卸し（第4ラウンド）で発見。新設resolverの入力値検証の厳格さそのものは既存の監査・アクセス制御adapterと同等かそれ以上であることを確認済みで、本issueはセキュリティ上の脆弱性ではなく可用性境界の設計確認。
+- 完了判断: `build_tenant_session_context`はcapability解決前に`recheck_trusted_tenant_context`を必須実行し、`verified_claim`／`trusted_host_mapping`以外を拒否する。したがって`LOCAL_DEFAULT_TENANT_CONTEXT`が正規の呼出経路から外部resolverへ到達することはなく、直接誤用時も既存testがtransport非実行を保証する。コード修正が必要な可用性バグではなく、意図済みのSaaS信頼境界として完了する。
