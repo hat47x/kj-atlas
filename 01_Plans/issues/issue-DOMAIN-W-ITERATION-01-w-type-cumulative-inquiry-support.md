@@ -213,6 +213,14 @@
 - unit testで祖先・snapshot・系譜の閉包、元bundle非変更、strict往復、不正bundle、範囲外引継ぎ、境界をまたぐ分割系譜の拒否を確認した。390pxのPlaywright E2Eで部分ファイルと全体ファイルの連続保存・再読込・元探究非変更を確認し、実ブラウザでは保存範囲欄の`clientWidth=scrollWidth=357px`、文書幅390pxで横スクロールがないことを確認した。
 - このチェックポイントでは永続schemaを拡張せず、共有範囲やSafeMode結果をmanifestへ記録していない。SafeMode派生bundle、保持・履歴削除の永続境界も未実装のため、AC-11は未完了のままとし、support levelは`L0: Planned`を維持する。
 
+### AC-11 SafeMode派生bundleのドメイン境界チェックポイント（2026-07-19）
+
+- `InquiryBundleV1`を外部利用向けに派生するSafeMode projectionをドメイン層へ追加した。元bundleをstrict export検証してから、探究タイトル・ラウンドテーマ・引継ぎ・現場確認、各snapshotのカード・島・文章・関係要約・批評・履歴・監査補助の自由記述を既存`SafeModePolicy`で伏字化し、画像URL、出典、主体参照、元署名を除外する。任意JSONを含む再提案差分と相関用signatureを含む矛盾判断は、内容を安全に列挙できないため集合単位で除外する。
+- ID、参照、ラウンドDAG、カード系譜、時刻、採用・保留・人手レビュー状態は保持し、`human_reviewed`を派生処理が新たに設定しない。未知edge typeは表示時と同じ`related`へ安全側に正規化する。派生後に全snapshot digestを再計算し、自己完結参照とstrict import/exportを再検証する。元bundleは変更しない。
+- 永続型の主要オブジェクトごとに全フィールドの扱いを型で列挙した。将来フィールドが追加された場合はSafeMode方針を明示するまでtypecheckを失敗させ、未知フィールドを含む入力も派生前のstrict validationでfail-closedにする。
+- unit testで自由記述、URL、署名、主体参照、任意JSON payloadが派生物へ残らないこと、構造と人手レビュー状態の維持、元bundle非変更、digest再計算、strict roundtrip、未知フィールド拒否を確認した。
+- `safeModeApplied: true`は現時点では関数結果だけに返し、永続bundleへ記録しない。共有範囲とSafeMode適用結果を受信側でも確認できる契約version、保持・履歴削除、テナント境界が未決定のため、画面に「安全な共有」として公開せず、AC-11とsupport levelは引き続き未完了の`L0: Planned`とする。
+
 ## 7) 検証計画 / Validation plan
 
 - 要件段階:
