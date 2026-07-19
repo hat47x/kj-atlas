@@ -348,7 +348,28 @@ describe("validateDocumentV1Strict", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
 
-    expect(result.errors).toContain("reviewAttribution.reviewerRef: must not contain email-like identifiers");
+    expect(result.errors).toContain("reviewAttribution.reviewerRef: must not contain email-like/provider identifiers");
+  });
+
+  it("rejects review attribution with provider-prefixed reviewer/owner refs", () => {
+    const result = validateDocumentV1Strict({
+      ...validDocument,
+      reviewAttribution: {
+        schemaVersion: "1.0.0",
+        reviewState: "human_reviewed",
+        reviewedAt: now,
+        reviewerRef: "sso:abc",
+        auditRecordedAt: now,
+        overridePolicy: "human_dual_control_only",
+        ownerRef: "oidc:abc",
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.errors).toContain("reviewAttribution.reviewerRef: must not contain email-like/provider identifiers");
+    expect(result.errors).toContain("reviewAttribution.ownerRef: must not contain email-like/provider identifiers");
   });
 
   it("rejects reordered deterministic tie-break fields", () => {
