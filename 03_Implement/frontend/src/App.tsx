@@ -7037,6 +7037,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     [canvasCamera, document, lodEnabled, lodThresholds, pushCurrentFocusSnapshot, requestCameraTransform]
   );
 
+  const handleIslandPeekStart = useCallback((islandId: string) => {
+    setPeekIslandId(islandId);
+  }, []);
+
+  const handleIslandPeekEnd = useCallback(() => {
+    setPeekIslandId(undefined);
+  }, []);
+
   const focusCardById = useCallback(
     (cardId: string) => {
       if (!document || !canvasCamera) {
@@ -7795,12 +7803,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         onToggleCollapsed={handleIslandCollapsedChange}
         onTitleDoubleClick={handleToggleIslandFocus}
         onFocusIsland={focusIslandById}
-        onPeekStart={(islandId) => {
-          setPeekIslandId(islandId);
-        }}
-        onPeekEnd={() => {
-          setPeekIslandId(undefined);
-        }}
+        onPeekStart={handleIslandPeekStart}
+        onPeekEnd={handleIslandPeekEnd}
         isPickingEdgeTarget={isPickingEdgeTarget}
         // UX-VISUAL-02 (ADR-0048 D3): a small island (<= SMALL_ISLAND_MAX_MEMBERS,
         // and non-empty) is a protected minority. Unlike the card-side lone-wolf

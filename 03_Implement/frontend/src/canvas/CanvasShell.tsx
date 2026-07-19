@@ -662,6 +662,10 @@ export function CanvasShell({
     return document.cards.filter((card) => !isCardHidden(card.id));
   }, [document.cards, isCardHidden]);
   const visibleCardIdSet = useMemo(() => new Set(visibleCards.map((card) => card.id)), [visibleCards]);
+  const visibleIslands = useMemo(
+    () => document.islands.filter((island) => visibleIslandIdSet.has(island.id)),
+    [document.islands, visibleIslandIdSet]
+  );
   const labelCullingResult = useMemo(() => {
     const candidates: LabelItem[] = [];
 
@@ -1327,7 +1331,7 @@ export function CanvasShell({
           // LOD compaction. hiddenCardIds below still independently blocks
           // any edge whose card endpoint is genuinely hidden from rendering.
           cards={document.cards}
-          islands={document.islands.filter((island) => visibleIslandIdSet.has(island.id))}
+          islands={visibleIslands}
           edges={visibleEdges}
           hiddenCardIds={hiddenEndpointIdSet}
           selectedEdgeId={selectedEdgeId}
@@ -1338,7 +1342,7 @@ export function CanvasShell({
         {effectiveShowReadingOrder ? (
           <ReadingOrderLayer
             cards={document.cards}
-            islands={document.islands.filter((island) => visibleIslandIdSet.has(island.id))}
+            islands={visibleIslands}
             readingOrder={document.readingOrder ?? []}
             visibleCardIdSet={visibleCardIdSet}
             visibleIslandIdSet={visibleIslandIdSet}
