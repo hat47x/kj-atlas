@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
@@ -19,21 +19,28 @@
   - `03_Implement/frontend/src/domain/p2a_stream_d/mock_validation_stream_d.ts`（export: `runMockValidationStreamD`, `HIERARCHY_FIXTURES_STREAM_D`, `VISIBILITY_FIXTURES_STREAM_D`, `projectContractStubStreamD`, `evaluateInvariantStubStreamD`）— 参照元は自身のtestファイルと、実装ログ`03_Implement/frontend/tests/stream_b_a2_a3_validation_log_2026-05-08.md`のみ。
   - 関連する`issue-FB-P2A-02-a2-mock-validation.md`/`issue-FB-P2B-02-a2-mock-validation.md`はいずれも`Status: Done`だが、`Scope: 01_Plans/issues/ only`（計画文書のみが対象）と記載されており、これらのソースファイル自体を追跡対象にしていない。
 - 利用者または開発への影響: 実害はない（未使用コードが残っているだけ）。ただし、これがA3（実実装）フェーズ移行前の一時的なmock検証スキャフォールディングとして意図的に残されているのか、それとも本当に不要になった残骸なのかが、この棚卸しだけでは判断できない。
+- 判断結果: 両モジュールはA2のmock-first handoff成果であり、現在はP2Bの実監査モジュール群とP2A Stream Dの実階層・可視性検証および近接テストが存在する。現行`api.md`も旧mock validation planを形成履歴へ分離しており、実装から自己テスト以外の参照がないため、A3移行後の残骸と判断した。
 
 ## 対応方針
 
-- 実施すること: これらのモジュールが今後のA3実装フェーズで使われる予定のスキャフォールディングか、削除してよい残骸かをMaintainerが判断する。
-- 実施しないこと: 本issueでは削除を実行しない。P2A/P2B系の実装計画の全体像を把握していないコーディングエージェントが独断で削除すると、意図した将来利用を破壊するリスクがある。
+- 実施したこと: 2つのmockモジュールと、それらだけを検証していた2つのtestファイルを削除した。
+- 実施しないこと: 現行P2A/P2B実装、実契約テスト、形成履歴に記録された過去の検証コマンドの改変。
 
 ## 受入条件
 
-- [ ] 両モジュールについて「維持する（将来利用予定）」または「削除する」の方針が決定される。
-- [ ] 削除する場合、対応するtestファイルも合わせて削除し、`npx vitest run`がgreenであることを確認する。
+- [x] 両モジュールをA3移行後のmock残骸として削除する方針を確定する。
+- [x] 対応するtestファイルも削除し、frontend testと型検査がgreenであることを確認する。
 
 ## 検証計画
 
 - 実行する確認: 方針決定後、`git grep -l "P2BDecisionLogMockStore\|mock_validation_stream_d"`で参照先が意図通りになっていることを確認する。
 - 期待結果: 削除する場合は参照が完全に消え、`npx vitest run`・`npx tsc --noEmit`がgreenのまま。
+
+## Validation
+
+- `node node_modules/vitest/vitest.mjs run src/domain/merge src/domain/p2a_stream_d`
+- `node node_modules/typescript/bin/tsc --noEmit`
+- `python 01_Plans/docs_check.py --root .`
 
 ## 補足
 
