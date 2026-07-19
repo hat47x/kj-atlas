@@ -493,3 +493,8 @@
 
 - 条件付きPostgreSQL RLS testをmigrationで保護する4表すべてへ拡張した。Document／判断ログ／Document access metadata／管理監査について、tenant Aからtenant Bが不可視であること、同一pool接続の再利用時にtransaction-local tenant contextが漏れずcontextなしでは0件になること、tenant Aからtenant Bへの直接UPDATEが0件でありtenant Bの値が不変であることを同じmatrixで検証する。
 - migrationでRLSを有効化する表集合とmatrix対象model集合が完全一致することを、PostgreSQLなしで常時実行する契約testにも固定した。migration用と非superuser・非`BYPASSRLS` runtime用の分離credential、`row_security=on`、pool size 1という既存の実行条件は維持した。ローカル環境にはDockerと`psql`がないため実PostgreSQL実行は未実施であり、関連migration／tenant DB guard／matrix coverage test 15件pass・条件付き1件skip、Ruff、変更対象format checkを通過した。AC-5とSaaS profile起動拒否は維持する。
+
+### Implementation checkpoint 2026-07-20: stale context-audit state mutation guard
+
+- `POST /docs/{docId}/context-audit`の認可と`tenantSessionVersion`確認を、CE4監査event completeness trackerの検証・更新より前へ移した。これにより古いタブ、header欠損、世代不一致のrequestはresource lookupだけでなくprocess内監査進行stateも変更せず`tenant_session_changed`で停止する。
+- stale requestでtracker更新関数が呼ばれない回帰testを追加し、Document audit／session precondition／tenant isolation／access-control近接44件、backend全体631件pass・条件付き25件skip、Ruff、docs-check、active issue validatorを通過した。実auth edge、import／share／MCP／webhook／非同期jobの同一世代guard、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。

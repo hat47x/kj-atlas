@@ -581,6 +581,15 @@ def post_context_audit(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
+    access_request, decision, tenant = _authorize_request(
+        request,
+        db,
+        action="read",
+        doc_id=doc_id,
+        safe_mode=payload.safeMode,
+        read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
+    )
+
     if payload.queryHash is not None and payload.queryHash != payload.equivalenceKey:
         raise _ce4_validation_error("query_hash_mismatch", "queryHash must equal equivalenceKey for CE4 equivalence checks")
     if payload.operation in {"proposal", "apply"} and payload.sourceBundleHash is None:
@@ -605,14 +614,6 @@ def post_context_audit(
             source_bundle_hash=payload.sourceBundleHash,
         )
 
-    access_request, decision, tenant = _authorize_request(
-        request,
-        db,
-        action="read",
-        doc_id=doc_id,
-        safe_mode=payload.safeMode,
-        read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
-    )
     dispatcher = getattr(request.app.state, "audit_dispatcher", None)
     if dispatcher is not None:
         dispatcher.emit(

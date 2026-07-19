@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -169,6 +170,55 @@ def test_post_export_audit_emits_export_event(tmp_path) -> None:
     assert event.metadata["amrClass"] == "single_factor"
     assert event.metadata["assuranceLevel"] == "low"
     assert event.metadata["authAgeBucket"] == "unknown"
+
+
+def test_context_audit_rejects_stale_session_before_tracker_mutation(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tracker_called = False
+
+    def _unexpected_tracker_mutation(**_: object) -> None:
+        nonlocal tracker_called
+        tracker_called = True
+
+    monkeypatch.setattr(
+        "kj_atlas_api.routes.docs.resolve_trusted_saas_request_session",
+        lambda **_: SimpleNamespace(
+            session=SimpleNamespace(tenant_session_version="session-v2")
+        ),
+    )
+    monkeypatch.setattr(
+        "kj_atlas_api.routes.docs._record_ce4_event_and_validate_completeness",
+        _unexpected_tracker_mutation,
+    )
+
+    with _sqlite_client(tmp_path) as client:
+        original_runtime_profile = client.app.state.runtime_profile
+        try:
+            client.app.state.runtime_profile = "saas-multitenant"
+            response = client.post(
+                "/docs/doc-context/context-audit",
+                headers={"KJ-Atlas-Tenant-Session-Version": "session-v1"},
+                json={
+                    "operation": "query",
+                    "safeMode": True,
+                    "equivalenceKey": "a" * 64,
+                    "bundleHash": "b" * 64,
+                    "queryHash": "a" * 64,
+                    "dryRun": True,
+                    "sideEffect": "none",
+                    "command": "context-query",
+                    "channel": "api",
+                    "schemaVersion": "ce4.audit.v1",
+                },
+            )
+        finally:
+            client.app.state.runtime_profile = original_runtime_profile
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "tenant_session_changed"
+    assert tracker_called is False
 
 
 def test_context_audit_endpoint_emits_four_operation_events(tmp_path) -> None:
