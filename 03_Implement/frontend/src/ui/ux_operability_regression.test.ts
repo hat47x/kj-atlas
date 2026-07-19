@@ -544,6 +544,20 @@ describe("UX Operability regression contracts", () => {
     ).toHaveLength(3);
     expect(appSource).not.toContain("await exportCanvasToPngBlob(");
     expect(appSource).not.toContain("await buildPatchForExport(");
+    const publicPackLoaderIndex = appSource.indexOf("const loadPublicPack = useCallback(");
+    const publicPackViewFetchIndex = appSource.indexOf(
+      "() => fetch(`./packs/${targetPack.viewPath}`",
+      publicPackLoaderIndex,
+    );
+    const publicPackCommitIndex = appSource.indexOf(
+      "pendingCardDragSnapshotRef.current = null;",
+      publicPackLoaderIndex,
+    );
+    expect(publicPackLoaderIndex).toBeGreaterThanOrEqual(0);
+    expect(publicPackViewFetchIndex).toBeGreaterThan(publicPackLoaderIndex);
+    expect(publicPackCommitIndex).toBeGreaterThan(publicPackViewFetchIndex);
+    expect(appSource).toContain('if (loadedFromPack === "stale")');
+    expect(appSource).not.toContain('await fetch("./packs/');
     expect(appSource).toContain(
       '(error.status === 503 && error.code === "provider_unavailable")',
     );

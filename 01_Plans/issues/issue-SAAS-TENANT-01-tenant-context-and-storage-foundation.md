@@ -434,3 +434,9 @@
 - abstract map Markdown／HTML snapshot、viewport／visible-bounds PNG、patch export、agent task Markdown／JSONの非同期生成結果をtenant session generation guardへ通した。scope失効後に完了したBlob、data URL、fingerprint付きpatch、task sheetはdownload／clipboard APIを呼ばず破棄する。
 - 同期SVG／JSON exportは同一event turn内で生成・downloadするため今回の非同期結果境界の対象外とした。clipboard書込APIを呼び出した後のOS側commitは取消不能であり、生成結果の照合を呼出直前に置く境界までとする。
 - export／patch／agent task／App source guard近接57件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。server import、public pack、App外worker、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: stale public pack generation guard
+
+- public pack loaderをmanifest、Document、任意viewの全fetch／text decode／strict parseをtenant session generation guard内で完了してからApp stateへ一括commitする構造へ変更した。view取得前にDocumentだけをcommitする中間状態を廃止した。
+- loader結果をloaded／not-found／staleのclosed unionへ分離し、stale時はDocument APIや組込みsampleへ自動fallbackしない。これにより旧scopeで開始したpack内容を新scopeの代替sourceとして再読込・commitしない。
+- public pack／Document／view／App source guard近接64件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。server import、App外worker、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。

@@ -3420,15 +3420,26 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setStatusMessage(t("app.status.import.view_loaded", { statusPrefix, visibility: metadata.visibility }));
   }, [appStorage, applyResolvedLocaleForView]);
 
-  const loadPublicPack = useCallback(async (requestedPackId: string | null): Promise<boolean> => {
-    const manifestResponse = await fetch("./packs/index.json", { cache: "no-store" });
+  const loadPublicPack = useCallback(async (
+    requestedPackId: string | null,
+  ): Promise<"loaded" | "not-found" | "stale"> => {
+    const manifestResponse = await runTenantScopedOptionalTask(
+      () => fetch("./packs/index.json", { cache: "no-store" }),
+    );
+    if (manifestResponse === undefined) {
+      return "stale";
+    }
     if (!manifestResponse.ok) {
-      return false;
+      return "not-found";
     }
 
     let manifestPayload: unknown;
     try {
-      manifestPayload = JSON.parse(await manifestResponse.text()) as unknown;
+      const manifestText = await runTenantScopedOptionalTask(() => manifestResponse.text());
+      if (manifestText === undefined) {
+        return "stale";
+      }
+      manifestPayload = JSON.parse(manifestText) as unknown;
     } catch {
       throw new Error(t("app.status.public_pack.invalid_index_json"));
     }
@@ -3446,13 +3457,44 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }));
     }
 
-    const documentResponse = await fetch(`./packs/${targetPack.documentPath}`, { cache: "no-store" });
+    const documentResponse = await runTenantScopedOptionalTask(
+      () => fetch(`./packs/${targetPack.documentPath}`, { cache: "no-store" }),
+    );
+    if (documentResponse === undefined) {
+      return "stale";
+    }
     if (!documentResponse.ok) {
       throw new Error(t("app.status.public_pack.document_fetch_failed", { path: targetPack.documentPath }));
     }
-    const documentParseResult = parseDocumentJson(await documentResponse.text());
+    const documentText = await runTenantScopedOptionalTask(() => documentResponse.text());
+    if (documentText === undefined) {
+      return "stale";
+    }
+    const documentParseResult = parseDocumentJson(documentText);
     if (!documentParseResult.ok) {
       throw new Error(t("app.status.public_pack.document_invalid", { detail: documentParseResult.error }));
+    }
+
+    let importedViewMetadata: ExportViewMetadata | null = null;
+    if (targetPack.viewPath) {
+      const viewResponse = await runTenantScopedOptionalTask(
+        () => fetch(`./packs/${targetPack.viewPath}`, { cache: "no-store" }),
+      );
+      if (viewResponse === undefined) {
+        return "stale";
+      }
+      if (!viewResponse.ok) {
+        throw new Error(t("app.status.public_pack.view_fetch_failed", { path: targetPack.viewPath }));
+      }
+      const viewText = await runTenantScopedOptionalTask(() => viewResponse.text());
+      if (viewText === undefined) {
+        return "stale";
+      }
+      const viewParseResult = parseViewJson(viewText);
+      if (!viewParseResult.ok) {
+        throw new Error(t("app.status.public_pack.view_invalid", { detail: viewParseResult.error }));
+      }
+      importedViewMetadata = viewParseResult.metadata;
     }
 
     pendingCardDragSnapshotRef.current = null;
@@ -3502,16 +3544,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
     setPackVisibility(targetPack.visibility);
 
-    if (targetPack.viewPath) {
-      const viewResponse = await fetch(`./packs/${targetPack.viewPath}`, { cache: "no-store" });
-      if (!viewResponse.ok) {
-        throw new Error(t("app.status.public_pack.view_fetch_failed", { path: targetPack.viewPath }));
-      }
-      const viewParseResult = parseViewJson(await viewResponse.text());
-      if (!viewParseResult.ok) {
-        throw new Error(t("app.status.public_pack.view_invalid", { detail: viewParseResult.error }));
-      }
-      applyImportedViewMetadata(viewParseResult.metadata, documentParseResult.document, importedViewMode, t("app.status.public_pack.loaded_prefix"));
+    if (importedViewMetadata) {
+      applyImportedViewMetadata(importedViewMetadata, documentParseResult.document, importedViewMode, t("app.status.public_pack.loaded_prefix"));
     }
 
     setSafeMode(true);
@@ -3520,8 +3554,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setViewVisibility(persistedVisibility.viewVisibility);
     }
     setStatusMessage(t("app.status.public_pack.loaded", { packId: targetPack.id, visibility: targetPack.visibility }));
-    return true;
-  }, [appStorage, applyImportedViewMetadata]);
+    return "loaded";
+  }, [appStorage, applyImportedViewMetadata, runTenantScopedOptionalTask]);
 
   const openBuiltInSample = useCallback(() => {
     const builtInSample = createDefaultDocument(DEFAULT_DOCUMENT_ID);
@@ -3586,7 +3620,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
     try {
       const loadedFromPack = await loadPublicPack(null);
-      if (!loadedFromPack) {
+      if (loadedFromPack === "stale") {
+        return;
+      }
+      if (loadedFromPack === "not-found") {
         const loadedFromApi = await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
         if (!loadedFromApi) {
           openBuiltInSample();
@@ -3633,7 +3670,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
       try {
         const loadedFromPack = await loadPublicPack(requestedPackId);
-        if (loadedFromPack) {
+        if (loadedFromPack === "stale") {
+          return;
+        }
+        if (loadedFromPack === "loaded") {
           setIsLoading(false);
           return;
         }
