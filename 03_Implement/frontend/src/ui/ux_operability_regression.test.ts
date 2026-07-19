@@ -516,6 +516,16 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain(
       "runTenantScopedTask(() => bundleRunnerRef.current.run(",
     );
+    expect(
+      appSource.match(
+        /runTenantScopedOptionalTask\(\(\) => selectedFile\.text\(\)\)/g,
+      ),
+    ).toHaveLength(6);
+    expect(appSource).toContain(
+      "runTenantScopedOptionalTask(() => readZipFiles(selectedFile))",
+    );
+    expect(appSource).not.toContain("await selectedFile.text()");
+    expect(appSource).not.toContain("await readZipFiles(selectedFile)");
     expect(appSource).toContain(
       '(error.status === 503 && error.code === "provider_unavailable")',
     );

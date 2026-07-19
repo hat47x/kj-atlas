@@ -1416,6 +1416,19 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     task: () => Promise<T>,
   ): Promise<T> => tenantSessionGenerationGuardRef.current.run(task), []);
 
+  const runTenantScopedOptionalTask = useCallback(async <T,>(
+    task: () => Promise<T>,
+  ): Promise<T | undefined> => {
+    try {
+      return await runTenantScopedTask(task);
+    } catch (error) {
+      if (error instanceof StaleTenantSessionResultError) {
+        return undefined;
+      }
+      throw error;
+    }
+  }, [runTenantScopedTask]);
+
   const runTenantScopedApiRequest = useCallback(async <T,>(
     request: () => Promise<T>,
   ): Promise<T> => {
@@ -3194,7 +3207,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
       setIsSharePanelOpen(true);
 
-      const parseResult = parseDocumentJson(await selectedFile.text());
+      const rawText = await runTenantScopedOptionalTask(() => selectedFile.text());
+      if (rawText === undefined) {
+        return;
+      }
+      const parseResult = parseDocumentJson(rawText);
       if (!parseResult.ok) {
         setPendingImportedDocument(null);
         setImportDocumentError(parseResult.error);
@@ -3209,7 +3226,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setImportDocumentError(null);
       setStatusMessage(t(isReadOnly ? "app.status.import.document_validated_read_only" : "app.status.import.document_validated"));
     },
-    [isReadOnly]
+    [isReadOnly, runTenantScopedOptionalTask]
   );
 
   const handleImportClick = useCallback(() => {
@@ -3229,7 +3246,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
 
     try {
-      const rawText = await selectedFile.text();
+      const rawText = await runTenantScopedOptionalTask(() => selectedFile.text());
+      if (rawText === undefined) {
+        return;
+      }
       const parsedJson: unknown = JSON.parse(rawText);
       const parsedDocument = extractComparisonDocument(parsedJson);
 
@@ -3260,7 +3280,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         detail: error instanceof Error ? error.message : t("app.status.error_detail_unknown"),
       }));
     }
-  }, [document]);
+  }, [document, runTenantScopedOptionalTask]);
 
 
   const handleApplySelectedMergeItems = useCallback(() => {
@@ -3642,7 +3662,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      const parseResult = parseViewJson(await selectedFile.text());
+      const rawText = await runTenantScopedOptionalTask(() => selectedFile.text());
+      if (rawText === undefined) {
+        return;
+      }
+      const parseResult = parseViewJson(rawText);
       if (!parseResult.ok) {
         setStatusMessage(t("app.status.import.view_metadata_load_failed", { detail: parseResult.error }));
         return;
@@ -3650,11 +3674,15 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
       applyImportedViewMetadata(parseResult.metadata, document, viewMode, t("app.status.import.view_metadata_loaded_prefix"));
     },
-    [applyImportedViewMetadata, document]
+    [applyImportedViewMetadata, document, runTenantScopedOptionalTask]
   );
 
   const handleLoadDocumentFile = useCallback(async (selectedFile: File) => {
-    const parseResult = parseDocumentJson(await selectedFile.text());
+    const rawText = await runTenantScopedOptionalTask(() => selectedFile.text());
+    if (rawText === undefined) {
+      return;
+    }
+    const parseResult = parseDocumentJson(rawText);
     if (!parseResult.ok) {
       setPendingImportedDocument(null);
       setImportDocumentError(parseResult.error);
@@ -3668,7 +3696,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     });
     setImportDocumentError(null);
     setStatusMessage(t(isReadOnly ? "app.status.import.document_validated_read_only" : "app.status.import.document_validated"));
-  }, [isReadOnly]);
+  }, [isReadOnly, runTenantScopedOptionalTask]);
 
   const handleInvalidReviewPackFileType = useCallback(() => {
     setPackImportError(t("app.status.import.review_pack_zip_required"));
@@ -3684,7 +3712,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
 
     try {
-      const zipImportResult = await readZipFiles(selectedFile);
+      const zipImportResult = await runTenantScopedOptionalTask(() => readZipFiles(selectedFile));
+      if (zipImportResult === undefined) {
+        return;
+      }
       const entries = zipImportResult.entries;
       const paths = detectReviewPackFiles(entries);
       if (!paths.documentPath) {
@@ -3731,15 +3762,6 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      const previousSnapshotUrl = importedPackSnapshotUrl;
-      let nextSnapshotUrl: string | null = null;
-      if (paths.snapshotPath) {
-        const snapshotRaw = entries.get(paths.snapshotPath);
-        if (snapshotRaw instanceof Uint8Array) {
-          nextSnapshotUrl = URL.createObjectURL(new Blob([new Uint8Array(snapshotRaw)], { type: "image/png" }));
-        }
-      }
-
       if (paths.integrityPath) {
         const integrityRaw = entries.get(paths.integrityPath);
         if (typeof integrityRaw !== "string") {
@@ -3764,12 +3786,26 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           setStatusMessage(message);
           return;
         }
-        const verification = await verifyIntegrityManifest(parsedIntegrity.manifest, entries);
+        const verification = await runTenantScopedOptionalTask(
+          () => verifyIntegrityManifest(parsedIntegrity.manifest, entries),
+        );
+        if (verification === undefined) {
+          return;
+        }
         if (!verification.ok) {
           const message = t("app.status.import.review_pack_integrity_verification_failed");
           setPackImportError(message);
           setStatusMessage(message);
           return;
+        }
+      }
+
+      const previousSnapshotUrl = importedPackSnapshotUrl;
+      let nextSnapshotUrl: string | null = null;
+      if (paths.snapshotPath) {
+        const snapshotRaw = entries.get(paths.snapshotPath);
+        if (snapshotRaw instanceof Uint8Array) {
+          nextSnapshotUrl = URL.createObjectURL(new Blob([new Uint8Array(snapshotRaw)], { type: "image/png" }));
         }
       }
 
@@ -3845,7 +3881,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         setStatusMessage(message);
       }
     }
-  }, [appStorage, applyImportedViewMetadata, importedPackSnapshotUrl]);
+  }, [appStorage, applyImportedViewMetadata, importedPackSnapshotUrl, runTenantScopedOptionalTask]);
 
   const handleReviewPackFileChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -3863,7 +3899,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const handleLoadPatchFile = useCallback(async (selectedFile: File) => {
     try {
-      const rawText = await selectedFile.text();
+      const rawText = await runTenantScopedOptionalTask(() => selectedFile.text());
+      if (rawText === undefined) {
+        return;
+      }
       const parsedJson: unknown = JSON.parse(rawText);
       const parsedPatch = parsePatchDocument(parsedJson);
 
@@ -3876,7 +3915,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      const fingerprintVerification = await verifyPatchFingerprint(parsedPatch);
+      const fingerprintVerification = await runTenantScopedOptionalTask(
+        () => verifyPatchFingerprint(parsedPatch),
+      );
+      if (fingerprintVerification === undefined) {
+        return;
+      }
       if (!parsedPatch.patchFingerprint) {
         setPatchFingerprintStatus({ status: t("app.status.patch.fingerprint_missing") });
         setPatchTrustLabel("unknown");
@@ -3922,10 +3966,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }
       setStatusMessage(t("app.status.patch.load_failed"));
     }
-  }, [abstractMapView, summaryView]);
+  }, [abstractMapView, runTenantScopedOptionalTask, summaryView]);
 
   const handleLoadPatchBaselineFile = useCallback(async (selectedFile: File) => {
-    const parseResult = parseDocumentJson(await selectedFile.text());
+    const rawText = await runTenantScopedOptionalTask(() => selectedFile.text());
+    if (rawText === undefined) {
+      return;
+    }
+    const parseResult = parseDocumentJson(rawText);
     if (!parseResult.ok) {
       setPatchBaselineDoc(null);
       setPatchBaselineFileName(null);
@@ -3936,7 +3984,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setPatchBaselineDoc(parseResult.document);
     setPatchBaselineFileName(selectedFile.name);
     setStatusMessage(t("app.status.patch.baseline_loaded"));
-  }, [abstractMapView, summaryView]);
+  }, [abstractMapView, runTenantScopedOptionalTask, summaryView]);
 
   const handleFixProposalCheckedChange = useCallback((fixId: string, checked: boolean) => {
     setSelectedFixProposalIdSet((previousSet) => {

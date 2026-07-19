@@ -422,3 +422,9 @@
 - Document比較diff worker、outline診断worker、bundle生成task／workerのPromiseをnetwork responseと同じtenant session generation guardへ通した。既存abort／disposeに遅延成功結果のcommit拒否を重ね、旧generationのdiff／診断結果をstateへ適用せず、旧generationのbundle zipをdownloadへ渡さない。
 - stale専用例外はblocked Appの状態表示へ上書きせず破棄し、それ以外のworker失敗契約は維持する。近接worker／bundle／App source guard 77件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。
 - `InquiryJourneyPrototypePanel`等のApp外worker、File／zip／public pack import、PNG等の非worker非同期export、object URLの生成前後、全tenant-scoped非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: stale local import generation guard
+
+- App内のDocument JSON、view metadata、comparison Document、review-pack zip、patch、patch baselineの全File読取をtenant session generation guardへ通した。scope失効後に完了した読取は解析・preview・comparison・patch stateへcommitせず、エラー表示でblocked viewを上書きしない。
+- review-packはzip展開とintegrity検証、patchはfingerprint検証の各非同期境界もguardし、snapshot object URL生成を最後の非同期検証より後へ移した。これによりstale検証結果からURLを生成・保持しない。SafeMode、import validation、人手適用前previewの既存境界は変更しない。
+- import／integrity／patch／App source guard近接69件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。server import、public pack、PNG等の非worker非同期export、App外worker、全tenant-scoped非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
