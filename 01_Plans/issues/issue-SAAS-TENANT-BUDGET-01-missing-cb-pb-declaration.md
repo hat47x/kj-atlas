@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
@@ -19,18 +19,23 @@
 
 ## 対応方針
 
-- 実施すること: `issue-SAAS-TENANT-01`（またはその後継issue）に`## 予算申告`節を追記し、CB-1（初期表示への純増）・CB-3（保留操作の距離）・PB-2（初期表示予算）等、該当する観点についての判断を記録する。
-- 実施しないこと: 予算超過の有無そのものの判定・実装変更。テナント切替UIと逐次bootstrapゲートが許容範囲内かどうかは製品判断であり、本issueでは判定を先取りしない。`issue-SAAS-TENANT-01`は他セッションが継続的に編集中のため、そちらのファイルを直接編集せず、本issueとして別途記録する。
+- 実施したこと: `issue-SAAS-TENANT-01`へ`## 予算申告`を追加した。CB-1/CB-3は検証済みSaaS sessionだけに表示する安全上必要な常設要素`+1`、保留距離不変として許容した。PB-2は逐次2 requestの所要時間が未計測のため要改善とし、AC-12の実ブラウザ検証へ計測と超過時対応を明記した。
+- 実施しないこと: 製品挙動・実装の変更、および未計測の初期表示を適合済みとみなすこと。
 
 ## 受入条件
 
-- [ ] `issue-SAAS-TENANT-01`（または後継issue）に予算申告節が追記され、CB-1/CB-3/PB-2について許容/要改善のいずれかが明記される。
-- [ ] 製品挙動・実装は変更しない。
+- [x] `issue-SAAS-TENANT-01`に予算申告節を追記し、CB-1/CB-3を許容、PB-2を要改善と明記する。
+- [x] 製品挙動・実装は変更しない。
 
 ## 検証計画
 
 - 実行する確認: `python3 01_Plans/docs_check.py`。
 - 期待結果: 予算申告が記録された後も既存の文書契約チェックが通過する。
+
+## Validation
+
+- `python 01_Plans/docs_check.py --root .`
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 
 ## 補足
 

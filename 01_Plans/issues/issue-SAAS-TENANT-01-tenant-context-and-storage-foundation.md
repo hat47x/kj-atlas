@@ -48,6 +48,12 @@
 
 各段階でtenant context欠落、backfill不整合、複合FK不整合、RLS context残留、PDP fail-openのいずれかを検出した場合は次段階へ進まない。
 
+## 予算申告
+
+- 複雑性予算（`ADR-0043` CB-1..4）: 初期表示への純増=`+1`（検証済みSaaS session時だけ、active tenantを誤認しないための`TenantSessionControl`をcore toolbarへ表示） / 保留操作の距離=不変（カード・島の保留導線は変更しない） / 取り消し導線=あり（切替前confirmationの取消、切替後はallowlist内のtenantを同じselectorから再選択）。CB-1/CB-3は安全境界を利用者へ常時示すための限定的な純増として許容する。
+- 性能予算（`ADR-0046` PB-1..5）: 代表規模でのKJ主要操作=bootstrap完了後は不変 / 100ms超同期処理=追加なし。PB-2初期表示はruntime policy確認とsession context取得を逐次実行するため**要改善（所要時間未計測）**。現在は両待機中に`aria-busy`付きloading viewを表示してPB-5の無反応状態を避ける。AC-12の実ブラウザ検証で、代表環境の操作可能化時間を計測し、数秒超なら段階表示または待機理由の具体化を行う。
+- 触れるUQ次元（`ADR-0044`）: UQ-1（active tenantの理解）、UQ-2（切替・取消の操作）、UQ-3（keyboard/focus）、UQ-4（390/768/1440px）、UQ-5（loading/blocked/switching状態）、UQ-6（ja/en）。
+
 ## 受入条件
 
 - [x] AC-1: `tenants`、`identity_providers`、`tenant_identity_providers`、`tenant_memberships`が実装され、identityは`identity_provider_id + subject`で一意になる。
