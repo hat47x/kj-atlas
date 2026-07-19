@@ -21,6 +21,7 @@ class MainWiringTest(unittest.TestCase):
     CHECKS_WITH_PATHS = (
         "check_relative_links",
         "check_adr_id_uniqueness",
+        "check_adr_traceability_paths",
         "check_npm_script_commands",
         "check_compose_service_commands",
         "check_runtime_parameter_key_commands",
@@ -453,6 +454,45 @@ class DocumentedResponseModelsTest(unittest.TestCase):
             },
         )
         self.assertTrue(all(finding.rule_id == "DC-API-001" for finding in findings))
+
+
+class AdrTraceabilityPathCheckTest(unittest.TestCase):
+    def test_reports_missing_adr_traceability_target(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            adr_dir = root / "01_Plans" / "adr"
+            adr_dir.mkdir(parents=True)
+            source = Path("01_Plans/adr/ADR-0001-source.md")
+            (root / source).write_text(
+                "# ADR-0001\n\n- Supersedes: `01_Plans/adr/ADR-0002-missing.md`\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_adr_traceability_paths(root, [source])
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_id, "DC-ADR-002")
+        self.assertEqual(findings[0].line, 3)
+        self.assertEqual(findings[0].target, "01_Plans/adr/ADR-0002-missing.md")
+
+    def test_accepts_existing_adr_and_ignores_superseded_non_adr_documents(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            adr_dir = root / "01_Plans" / "adr"
+            adr_dir.mkdir(parents=True)
+            source = Path("01_Plans/adr/ADR-0001-source.md")
+            target = Path("01_Plans/adr/ADR-0002-target.md")
+            (root / source).write_text(
+                "# ADR-0001\n\n"
+                "- Derived-from: `01_Plans/adr/ADR-0002-target.md`\n"
+                "- Supersedes: `01_Plans/legacy-plan.md`\n",
+                encoding="utf-8",
+            )
+            (root / target).write_text("# ADR-0002\n", encoding="utf-8")
+
+            findings = MODULE.check_adr_traceability_paths(root, [source, target])
+
+        self.assertEqual(findings, [])
 
 
 class HistoryMetadataTest(unittest.TestCase):

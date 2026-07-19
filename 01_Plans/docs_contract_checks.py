@@ -19,7 +19,12 @@ PUBLIC_BOUNDARY_RULE_ID = "DC-PUB-001"
 SAFETY_ROUTE_RULE_ID = "DC-SAF-001"
 NPM_SCRIPT_COMMAND_RULE_ID = "DC-CMD-001"
 ADR_ID_UNIQUENESS_RULE_ID = "DC-ADR-001"
+ADR_TRACEABILITY_PATH_RULE_ID = "DC-ADR-002"
 ADR_FILENAME_RE = re.compile(r"^ADR-(?P<id>\d{4})-[^.]+\.md$")
+ADR_TRACEABILITY_PATH_RE = re.compile(
+    r"^- (?:Supersedes|Superseded by|Derived-from):\s+`(?P<target>01_Plans/adr/[^`]+)`",
+    re.MULTILINE,
+)
 DOCUMENT_TYPE_RE = re.compile(r"export type (Document\w*)\s*=\s*\{\s*\r?\n\s*version:\s*([^;]+);")
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
@@ -456,6 +461,35 @@ def check_document_contract_baseline(
                     target="DocumentV1",
                     message=f"{label} does not reference DocumentV1 anywhere",
                     fix_hint="Add or restore a DocumentV1 reference (API I/F or support-level table).",
+                )
+            )
+
+    return findings
+
+
+def check_adr_traceability_paths(root: Path, markdown_paths: list[Path]) -> list[DocsCheckFinding]:
+    """Reject traceability fields that point to a nonexistent ADR file."""
+    repository_root = root.resolve()
+    findings: list[DocsCheckFinding] = []
+
+    for supplied_path in markdown_paths:
+        relative_path = supplied_path if not supplied_path.is_absolute() else supplied_path.relative_to(repository_root)
+        if relative_path.parent != Path("01_Plans/adr") or not ADR_FILENAME_RE.match(relative_path.name):
+            continue
+        source = repository_root / relative_path
+        text = source.read_text(encoding="utf-8")
+        for match in ADR_TRACEABILITY_PATH_RE.finditer(text):
+            target = match.group("target")
+            if (repository_root / target).is_file():
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=ADR_TRACEABILITY_PATH_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=text.count("\n", 0, match.start()) + 1,
+                    target=target,
+                    message=f"ADR traceability target does not exist: {target}",
+                    fix_hint="Remove the false traceability claim or point it to the tracked ADR that records the decision.",
                 )
             )
 
@@ -1081,6 +1115,7 @@ def main() -> int:
     markdown_paths = tracked_markdown_paths(root)
     findings = check_relative_links(root, markdown_paths)
     findings.extend(check_adr_id_uniqueness(root, markdown_paths))
+    findings.extend(check_adr_traceability_paths(root, markdown_paths))
     findings.extend(check_current_history_headings(root))
     findings.extend(check_document_contract_baseline(root))
     findings.extend(check_documented_response_models(root))

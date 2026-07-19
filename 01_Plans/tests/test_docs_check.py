@@ -121,6 +121,22 @@ class DocsCheckEntrypointTest(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)
         self.assertIn("DC-CUR-001 01_Plans/project-progress-dashboard.md:3", result.errors[0])
 
+    def test_run_docs_check_reports_missing_adr_traceability_target(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._repository(root, "# Guide\n")
+            adr = root / "01_Plans" / "adr" / "ADR-0001-source.md"
+            adr.write_text(
+                "# ADR-0001\n\n- Derived-from: `01_Plans/adr/ADR-0002-missing.md`\n",
+                encoding="utf-8",
+            )
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+
+            result = MODULE.run_docs_check(root, run_tests=False)
+
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn("DC-ADR-002 01_Plans/adr/ADR-0001-source.md:3", result.errors[0])
+
 
 if __name__ == "__main__":
     unittest.main()

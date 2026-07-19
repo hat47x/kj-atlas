@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from docs_contract_checks import (
+    check_adr_id_uniqueness,
+    check_adr_traceability_paths,
     check_cli_option_commands,
     check_compose_service_commands,
     check_current_history_headings,
@@ -89,6 +91,8 @@ def run_docs_check(
 
     markdown_paths = contract_tracked_markdown_paths(repository_root)
     errors.extend(finding.render() for finding in check_relative_links(repository_root, markdown_paths))
+    errors.extend(finding.render() for finding in check_adr_id_uniqueness(repository_root, markdown_paths))
+    errors.extend(finding.render() for finding in check_adr_traceability_paths(repository_root, markdown_paths))
     errors.extend(finding.render() for finding in check_current_history_headings(repository_root))
     errors.extend(finding.render() for finding in check_document_contract_baseline(repository_root))
     errors.extend(finding.render() for finding in check_documented_response_models(repository_root))
