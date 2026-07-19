@@ -638,6 +638,7 @@ export type StrictProvisioningError = {
   - `200` response (idempotent retry): `{ userId, reviewerRef, ownerRef, provisioned=false }`
   - 冪等: 同一 `provider+externalUid` の再試行は `provisioned=false` を返す
   - `409` response: 既存subjectへ矛盾する `displayName` / `email` を再投入した場合は `identity_already_provisioned_conflict` と可読 `message` を返す
+  - runtime境界: `local-dev`、`evaluation`、`enterprise-production`のsingle-tenant profileだけで提供する。`saas-multitenant`ではDB参照・書込前に`404 strict_provisioning_unavailable`、未知・解決不能profileでは`503 runtime_policy_unavailable`として閉じ、SaaS membership provisioningへfallbackしない
 
 型契約（I/F固定）:
 
@@ -662,10 +663,10 @@ export type AdminProvisionUserConflictError = {
 };
 ```
 
-- 判定規約: クライアントは `2xx + provisioned`、`403 + code=identity_not_provisioned`、`409 + code=identity_already_provisioned_conflict` の3分岐のみを必須サポートとする。
+- 判定規約: single-tenantクライアントがidentity処理として必須サポートするのは `2xx + provisioned`、`403 + code=identity_not_provisioned`、`409 + code=identity_already_provisioned_conflict` の3分岐とする。runtime境界の`404`／`503`はidentity結果へfallbackせず、管理surface自体を停止する。
 - 非目標: 本契約ではページング・検索・一括削除・SCIM互換項目は定義しない。
 
-本APIは将来の管理者CLI/SCIM連携の最小置換点として扱う。
+本APIはsingle-tenant互換の管理者CLI連携の最小置換点として扱う。SaaSのTenantMembership／SCIM連携はverified IdP、active tenant、`membership.provision`を再検証する別契約とし、本APIを再利用しない。
 
 ### 9.4 移行契約（expand/contract）
 

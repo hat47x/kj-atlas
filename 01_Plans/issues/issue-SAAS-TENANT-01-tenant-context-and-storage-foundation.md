@@ -458,3 +458,9 @@
 - application lifespan終了時にtrusted SaaS identity／tenant／session adapterをApp stateから同時に無効化し、tenant resolverをsingle-tenant既定へ戻すようにした。bundle定義自体を再起動用に保持しても、次回の初期化でruntime profileとの相互必須照合を通過するまでadapterを再有効化しない。
 - これによりshutdown後やlifespan再利用時に、開始済みフラグだけが解除されてtrusted resolver／persisterが残る非対称な状態を防止する。SaaS profileの起動拒否と既存single-tenant profileのsession API fail-closedは変更しない。
 - profile／bundle・session近接20件、backend全体611件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実auth edge adapter、PostgreSQL実地matrix、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-4/5/6/7/8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: single-tenant strict provisioning surface guard
+
+- `local-default` User／Identity／Membershipへ書き込む`POST /admin/provision/users`を既存3つのsingle-tenant profileだけに限定した。`saas-multitenant`では`404 strict_provisioning_unavailable`、未知・解決不能profileでは`503 runtime_policy_unavailable`としてDB処理前に閉じ、future SaaSのmembership provisioningへfallbackしない。
+- 本文やtenant資源を扱わない既存A2/A3契約検証routeはこのsurface guardの対象外とした。SaaS membership provisioningはverified IdP、active tenant、`membership.provision`を再検証する別契約が必要であり、今回実装していない。
+- strict provisioning／JIT近接19件、backend全体613件pass・条件付き25件skip、Ruff、docs-check、active issue validatorを通過した。実capability付きmembership provisioning、Platform operator認可主体、実auth edge adapterは未完了であり、AC-4/6/7/10/12/13とSaaS profile起動拒否を維持する。

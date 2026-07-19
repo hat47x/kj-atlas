@@ -578,6 +578,37 @@ def test_admin_provision_contract_rejects_blank_provider_or_external_uid(tmp_pat
 
 
 @pytest.mark.auth_level1
+@pytest.mark.parametrize(
+    ("runtime_profile", "expected_status", "expected_code"),
+    [
+        ("saas-multitenant", 404, "strict_provisioning_unavailable"),
+        ("unknown", 503, "runtime_policy_unavailable"),
+    ],
+)
+def test_strict_provisioning_is_unavailable_outside_known_single_tenant_profiles(
+    tmp_path,
+    runtime_profile: str,
+    expected_status: int,
+    expected_code: str,
+) -> None:
+    with _sqlite_client(tmp_path) as fixture:
+        client, session_local = fixture
+        client.app.state.runtime_profile = runtime_profile
+
+        response = client.post(
+            "/admin/provision/users",
+            json={"provider": "oidc", "externalUid": "blocked-user"},
+        )
+
+        assert response.status_code == expected_status
+        assert response.json()["detail"]["code"] == expected_code
+        with session_local() as db:
+            assert db.query(UserRow).count() == 0
+            assert db.query(UserIdentityRow).count() == 0
+            assert db.query(TenantMembershipRow).count() == 0
+
+
+@pytest.mark.auth_level1
 def test_suspended_membership_blocks_document_access(tmp_path) -> None:
     original_allow_jit = settings.allow_jit_provisioning
     settings.allow_jit_provisioning = False

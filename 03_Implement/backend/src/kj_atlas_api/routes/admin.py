@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
@@ -20,6 +20,7 @@ from kj_atlas_api.reviewer_ref import (
     ReviewerRefResolutionInput,
     build_reviewer_ref_resolver_adapter,
 )
+from kj_atlas_api.runtime_bootstrap import resolve_tenant_session_bootstrap_mode
 from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_foundation import ensure_local_default_membership
 
@@ -63,6 +64,29 @@ def _normalize_optional_field(raw: str | None) -> str | None:
     normalized = raw.strip()
     return normalized or None
 
+
+def require_single_tenant_provisioning_surface(request: Request) -> None:
+    """Keep the legacy local-default provisioning API out of SaaS runtimes."""
+    try:
+        mode = resolve_tenant_session_bootstrap_mode(request.app.state.runtime_profile)
+    except (AttributeError, RuntimeError):
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "runtime_policy_unavailable",
+                "message": "Runtime policy is unavailable.",
+            },
+        ) from None
+    if mode != "single-tenant":
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "strict_provisioning_unavailable",
+                "message": "Strict provisioning is unavailable in this runtime.",
+            },
+        )
+
+
 def _resolve_identity_row(*, db: Session, provider: str, external_uid: str) -> UserIdentityRow | None:
     try:
         return resolve_user_identity(
@@ -80,7 +104,12 @@ def _resolve_identity_row(*, db: Session, provider: str, external_uid: str) -> U
         ) from None
 
 
-@router.post("/users", response_model=ProvisionUserResponse, status_code=201)
+@router.post(
+    "/users",
+    response_model=ProvisionUserResponse,
+    status_code=201,
+    dependencies=[Depends(require_single_tenant_provisioning_surface)],
+)
 def provision_user(
     payload: ProvisionUserRequest,
     response: Response,
