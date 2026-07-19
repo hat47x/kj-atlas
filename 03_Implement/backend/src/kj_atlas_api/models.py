@@ -128,6 +128,12 @@ class DocumentAccessMetadataRow(Base):
 class DocumentAccessAdminAuditEventRow(Base):
     __tablename__ = "document_access_admin_audit_events"
     __table_args__ = (
+        ForeignKeyConstraint(
+            ["tenant_id", "doc_id"],
+            ["documents.tenant_id", "documents.id"],
+            name="fk_document_access_admin_audit_tenant_document",
+            ondelete="RESTRICT",
+        ),
         CheckConstraint(
             "action = 'document.policy.update'",
             name="ck_document_access_admin_audit_action",

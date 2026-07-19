@@ -997,7 +997,7 @@ target physical schema:
 - `documents(tenant_id, id, version, updated_at, payload_json)` with `UNIQUE(tenant_id, id)`
 - `merge_decision_logs(tenant_id, doc_id, ...)` with `FOREIGN KEY(tenant_id, doc_id) -> documents(tenant_id, id)`
 - `document_access_metadata(tenant_id, doc_id, visibility, policy_binding_id, policy_version, updated_at)` with `PRIMARY KEY(tenant_id, doc_id)` and composite Document FK。`Org/Restricted`は非空binding ID必須。raw policyRefは保存しない。
-- `document_access_admin_audit_events(event_id, tenant_id, principal_id, doc_id, action, decision, policy_version, capability_version, correlation_id, occurred_at)`。metadata更新と同一transactionで追加し、binding ID、raw policyRef、title、本文、tokenは列として持たない。
+- `document_access_admin_audit_events(event_id, tenant_id, principal_id, doc_id, action, decision, policy_version, capability_version, correlation_id, occurred_at)` with `FOREIGN KEY(tenant_id, doc_id) -> documents(tenant_id, id) ON DELETE RESTRICT`。metadata更新と同一transactionで追加し、binding ID、raw policyRef、title、本文、tokenは列として持たない。監査を暗黙に連鎖削除せず、Document lifecycle方針が確定するまでは監査が存在するDocumentの削除をDBで拒否する。
 - 将来の`agent_registrations`、job、その他audit eventにもtenantIdを必須伝播する。
 
 tenantIdはserver-managed列であり、`DocumentV1` payload、view.json、import/export bundleの認可値として追加しない。現行`provider + external_uid`一意制約はsingle-tenant互換期間の実装であり、SaaS profileでは`identityProviderId + subject`とTenantMembershipへ移行する。共有schema型SaaSは、上記制約に加えPostgreSQL RLS等のDB側tenant guardを必須とする。
