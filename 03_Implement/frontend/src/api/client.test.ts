@@ -3,11 +3,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
   changeActiveTenant,
+  checkNarrative,
+  generateNarrative,
   getDocument,
   getTenantSessionBootstrapPolicy,
   getTenantSessionContext,
   postExportAudit,
+  proposeIslandSummary,
   putDocument,
+  recordProposalDecision,
+  summarizeIslandRelation,
   suggestMerges,
   suggestLayout,
 } from "./client";
@@ -89,6 +94,56 @@ describe("tenant-scoped document request precondition", () => {
         "KJ-Atlas-Tenant-Session-Version": "session-v1",
       },
     });
+  });
+
+  it("attaches the version to every document-content AI mutation", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        suggestionId: "suggestion-1",
+        suggestedDoc: createDocument(),
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ suggestions: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ proposalId: "proposal-1" }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        text: "relation",
+        groundingCardIds: [],
+        groundingEdgeIds: [],
+        warnings: [],
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ issues: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        text: "narrative",
+        basedOnReadingOrder: [],
+      }), { status: 200 }));
+    const requestOptions = { tenantSessionContext };
+
+    await suggestLayout(createDocument(), undefined, requestOptions);
+    await suggestMerges(createDocument(), undefined, requestOptions);
+    await proposeIslandSummary(createDocument(), "island-1", "bundle-1", requestOptions);
+    await recordProposalDecision("proposal-1", "adopt", "human", undefined, requestOptions);
+    await summarizeIslandRelation({
+      doc: createDocument(),
+      islandAId: "island-1",
+      islandBId: "island-2",
+      relationType: "unknown",
+      derived: false,
+      groundingCardIds: [],
+      groundingEdgeIds: [],
+      cardTexts: [],
+    }, requestOptions);
+    await checkNarrative(createDocument(), "narrative", undefined, requestOptions);
+    await generateNarrative(createDocument(), undefined, requestOptions);
+
+    expect(fetchMock).toHaveBeenCalledTimes(7);
+    for (const [, init] of fetchMock.mock.calls) {
+      expect(init).toMatchObject({
+        headers: {
+          "Content-Type": "application/json",
+          "KJ-Atlas-Tenant-Session-Version": "session-v1",
+        },
+      });
+    }
   });
 
   it("preserves single-tenant calls without a session header", async () => {

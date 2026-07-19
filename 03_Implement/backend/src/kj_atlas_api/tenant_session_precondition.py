@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request
+from sqlalchemy.orm import Session
 
 from kj_atlas_api.active_tenant_session import (
     require_current_tenant_session_version,
 )
+from kj_atlas_api.db import get_db
 from kj_atlas_api.runtime_bootstrap import resolve_tenant_session_bootstrap_mode
+from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
 
 
 TENANT_SESSION_VERSION_HEADER = "KJ-Atlas-Tenant-Session-Version"
@@ -45,4 +48,25 @@ def require_tenant_session_request_precondition(
     require_current_tenant_session_version(
         current_version=current_version,
         expected_version=expected_version,
+    )
+
+
+def require_tenant_scoped_api_precondition(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> None:
+    """Guard tenant-scoped routes that do not otherwise resolve a resource.
+
+    Local profiles remain compatible. SaaS requests resolve the trusted session
+    first and reject a missing or stale version before endpoint processing.
+    """
+    if not tenant_session_precondition_required(request):
+        return
+    trusted_session = resolve_trusted_saas_request_session(
+        request=request,
+        db=db,
+    )
+    require_tenant_session_request_precondition(
+        request=request,
+        current_version=trusted_session.session.tenant_session_version,
     )

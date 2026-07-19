@@ -476,6 +476,31 @@ describe("UX Operability regression contracts", () => {
     expect(appSource.match(/perspectivePresets,/g)).toHaveLength(5);
   });
 
+  it("routes tenant-scoped AI calls through the stale-session cleanup boundary", () => {
+    const appSource = readSource("src/App.tsx");
+    const tenantScopedCalls = [
+      "suggestLayout",
+      "suggestMerges",
+      "proposeIslandSummary",
+      "recordProposalDecision",
+      "summarizeIslandRelation",
+      "checkNarrative",
+      "generateNarrative",
+    ];
+
+    expect(appSource).toContain("const runTenantScopedApiRequest = useCallback(");
+    expect(appSource).toContain('error.code === "tenant_session_changed"');
+    expect(appSource).toContain("blockStaleTenantSession();");
+    for (const callName of tenantScopedCalls) {
+      expect(appSource).toContain(
+        `runTenantScopedApiRequest(() => ${callName}(`,
+      );
+    }
+    expect(appSource).toContain(
+      '(error.status === 503 && error.code === "provider_unavailable")',
+    );
+  });
+
   it("UI-QUALITY-A11Y-05: reading order has native keyboard-operable step controls while pointer drag remains available", () => {
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");
     const readingOrderLayerSource = readSource("src/canvas/ReadingOrderLayer.tsx");

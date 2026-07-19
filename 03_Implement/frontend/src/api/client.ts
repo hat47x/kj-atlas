@@ -444,11 +444,16 @@ export type SuggestLayoutResult = {
   notes?: string;
 };
 
-export async function suggestLayout(doc: DocumentV1, instruction?: string): Promise<SuggestLayoutResult> {
+export async function suggestLayout(
+  doc: DocumentV1,
+  instruction?: string,
+  requestOptions: TenantScopedRequestOptions = {},
+): Promise<SuggestLayoutResult> {
   const response = await fetch(`${API_BASE}/ai/suggest-layout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...tenantSessionPreconditionHeaders(requestOptions),
     },
     body: JSON.stringify({ doc, instruction }),
   });
@@ -533,11 +538,16 @@ function isMergeSuggestion(value: unknown): value is MergeSuggestion {
   );
 }
 
-export async function suggestMerges(doc: DocumentV1, instruction?: string): Promise<{ suggestions: MergeSuggestion[] }> {
+export async function suggestMerges(
+  doc: DocumentV1,
+  instruction?: string,
+  requestOptions: TenantScopedRequestOptions = {},
+): Promise<{ suggestions: MergeSuggestion[] }> {
   const response = await fetch(`${API_BASE}/ai/suggest-merges`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...tenantSessionPreconditionHeaders(requestOptions),
     },
     body: JSON.stringify({ doc, instruction }),
   });
@@ -580,12 +590,14 @@ export type IslandSummaryProposal = {
 export async function proposeIslandSummary(
   doc: DocumentV1,
   islandId: string,
-  sourceBundleHash: string
+  sourceBundleHash: string,
+  requestOptions: TenantScopedRequestOptions = {},
 ): Promise<IslandSummaryProposal> {
   const response = await fetch(`${API_BASE}/ai/proposals/island-summary`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...tenantSessionPreconditionHeaders(requestOptions),
     },
     body: JSON.stringify({ doc, islandId, sourceBundleHash }),
   });
@@ -602,12 +614,14 @@ export async function recordProposalDecision(
   proposalId: string,
   decision: "adopt" | "reject" | "hold",
   actor: string,
-  reason?: string
+  reason?: string,
+  requestOptions: TenantScopedRequestOptions = {},
 ): Promise<void> {
   const response = await fetch(`${API_BASE}/ai/proposals/audit`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...tenantSessionPreconditionHeaders(requestOptions),
     },
     body: JSON.stringify({ proposalId, decision, actor, reason }),
   });
@@ -663,12 +677,14 @@ export type SummarizeIslandRelationResult = {
 };
 
 export async function summarizeIslandRelation(
-  payload: SummarizeIslandRelationPayload
+  payload: SummarizeIslandRelationPayload,
+  requestOptions: TenantScopedRequestOptions = {},
 ): Promise<SummarizeIslandRelationResult> {
   const response = await fetch(`${API_BASE}/ai/summarize-island-relation`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...tenantSessionPreconditionHeaders(requestOptions),
     },
     body: JSON.stringify(payload),
   });
@@ -704,12 +720,14 @@ export type NarrativeIssue = {
 export async function checkNarrative(
   doc: DocumentV1,
   narrativeText: string,
-  basedOnReadingOrder?: string[]
+  basedOnReadingOrder?: string[],
+  requestOptions: TenantScopedRequestOptions = {},
 ): Promise<{ issues: NarrativeIssue[] }> {
   const response = await fetch(`${API_BASE}/ai/check-narrative`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...tenantSessionPreconditionHeaders(requestOptions),
     },
     body: JSON.stringify({ doc, narrativeText, basedOnReadingOrder }),
   });
@@ -734,11 +752,16 @@ export type GenerateNarrativeResult = {
   warnings?: string[];
 };
 
-export async function generateNarrative(doc: DocumentV1, narrativeTitle?: string): Promise<GenerateNarrativeResult> {
+export async function generateNarrative(
+  doc: DocumentV1,
+  narrativeTitle?: string,
+  requestOptions: TenantScopedRequestOptions = {},
+): Promise<GenerateNarrativeResult> {
   const response = await fetch(`${API_BASE}/ai/generate-narrative`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...tenantSessionPreconditionHeaders(requestOptions),
     },
     body: JSON.stringify({ doc, narrativeTitle }),
   });

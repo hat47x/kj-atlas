@@ -1406,6 +1406,22 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     return true;
   }, [cleanupRuntimeResources, verifiedTenantSession]);
 
+  const runTenantScopedApiRequest = useCallback(async <T,>(
+    request: () => Promise<T>,
+  ): Promise<T> => {
+    try {
+      return await request();
+    } catch (error) {
+      if (
+        error instanceof ApiError
+        && error.code === "tenant_session_changed"
+      ) {
+        blockStaleTenantSession();
+      }
+      throw error;
+    }
+  }, [blockStaleTenantSession]);
+
   useEffect(() => {
     return cleanupRuntimeResources;
   }, [cleanupRuntimeResources]);
@@ -2791,7 +2807,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setStatusMessage(t("app.status.island_summary.requesting"));
 
     try {
-      const proposal = await proposeIslandSummary(document, targetIsland.id, `${document.id}:${document.updatedAt}`);
+      const proposal = await runTenantScopedApiRequest(() => proposeIslandSummary(
+        document,
+        targetIsland.id,
+        `${document.id}:${document.updatedAt}`,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
       setIslandSummaryProposal(proposal);
       setStatusMessage(t("app.status.island_summary.ready_unreviewed"));
       setLastAiCallOutcome("ok");
@@ -2803,7 +2824,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     } finally {
       setIsSuggestingIslandSummary(false);
     }
-  }, [document, isSuggestingIslandSummary, selectedIslandId]);
+  }, [
+    document,
+    isSuggestingIslandSummary,
+    runTenantScopedApiRequest,
+    selectedIslandId,
+    verifiedTenantSession,
+  ]);
 
   const handleAdoptIslandSummaryProposal = useCallback(async () => {
     if (!document || !selectedIslandId || !islandSummaryProposal) {
@@ -2824,29 +2851,62 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       ...previousWarnings,
       [selectedIslandId]: islandSummaryProposal.diff.warnings ?? [],
     }));
-    await recordProposalDecision(islandSummaryProposal.proposalId, "adopt", "human");
+    await runTenantScopedApiRequest(() => recordProposalDecision(
+      islandSummaryProposal.proposalId,
+      "adopt",
+      "human",
+      undefined,
+      { tenantSessionContext: verifiedTenantSession },
+    ));
     setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} adopted ${islandSummaryProposal.proposalId}`]);
     setIslandSummaryProposal(null);
-  }, [applyDocumentChange, document, islandSummaryProposal, selectedIslandId]);
+  }, [
+    applyDocumentChange,
+    document,
+    islandSummaryProposal,
+    runTenantScopedApiRequest,
+    selectedIslandId,
+    verifiedTenantSession,
+  ]);
 
   const handleRejectIslandSummaryProposal = useCallback(async () => {
     if (!islandSummaryProposal) {
       return;
     }
-    await recordProposalDecision(islandSummaryProposal.proposalId, "reject", "human");
+    await runTenantScopedApiRequest(() => recordProposalDecision(
+      islandSummaryProposal.proposalId,
+      "reject",
+      "human",
+      undefined,
+      { tenantSessionContext: verifiedTenantSession },
+    ));
     setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} rejected ${islandSummaryProposal.proposalId}`]);
     setIslandSummaryProposal(null);
     setStatusMessage(t("app.status.island_summary.rejected"));
-  }, [islandSummaryProposal]);
+  }, [
+    islandSummaryProposal,
+    runTenantScopedApiRequest,
+    verifiedTenantSession,
+  ]);
 
   const handleHoldIslandSummaryProposal = useCallback(async () => {
     if (!islandSummaryProposal) {
       return;
     }
-    await recordProposalDecision(islandSummaryProposal.proposalId, "hold", "human");
+    await runTenantScopedApiRequest(() => recordProposalDecision(
+      islandSummaryProposal.proposalId,
+      "hold",
+      "human",
+      undefined,
+      { tenantSessionContext: verifiedTenantSession },
+    ));
     setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} held ${islandSummaryProposal.proposalId}`]);
     setStatusMessage(t("app.status.island_summary.held"));
-  }, [islandSummaryProposal]);
+  }, [
+    islandSummaryProposal,
+    runTenantScopedApiRequest,
+    verifiedTenantSession,
+  ]);
 
   const handleSuggestLayout = useCallback(async (mode: "suggest" | "resuggest" = "suggest") => {
     if (!document || isSuggesting) {
@@ -2862,7 +2922,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setStatusMessage(t("suggestion.panel.status.requesting_draft"));
 
     try {
-      const result = await suggestLayout(document, suggestionInstruction.trim() || undefined);
+      const result = await runTenantScopedApiRequest(() => suggestLayout(
+        document,
+        suggestionInstruction.trim() || undefined,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
       setSuggestionIteration((previous) => previous + 1);
       setSuggestionId(result.suggestionId);
       setSuggestedDocument(markSuggestedFieldsUnreviewed(cloneDocument(result.suggestedDoc), document));
@@ -2901,7 +2965,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     } finally {
       setIsSuggesting(false);
     }
-  }, [document, isSuggesting, resuggestStopperEnabled, suggestionInstruction]);
+  }, [
+    document,
+    isSuggesting,
+    resuggestStopperEnabled,
+    runTenantScopedApiRequest,
+    suggestionInstruction,
+    verifiedTenantSession,
+  ]);
 
   const handleDiscardSuggestion = useCallback(() => {
     setSuggestedDocument(null);
@@ -2931,10 +3002,20 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
       let result: { suggestions: MergeSuggestion[] };
       try {
-        result = await suggestMerges(document, remoteInstruction);
+        result = await runTenantScopedApiRequest(() => suggestMerges(
+          document,
+          remoteInstruction,
+          { tenantSessionContext: verifiedTenantSession },
+        ));
       } catch (error) {
         const isApiUnavailable =
-          error instanceof ApiError && (error.status === 404 || error.status === 405 || error.status === 501 || error.status === 503);
+          error instanceof ApiError
+          && (
+            error.status === 404
+            || error.status === 405
+            || error.status === 501
+            || (error.status === 503 && error.code === "provider_unavailable")
+          );
         const isNetworkUnavailable = error instanceof TypeError;
 
         if (!isApiUnavailable && !isNetworkUnavailable) {
@@ -2976,7 +3057,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     } finally {
       setIsSuggestingMerges(false);
     }
-  }, [document, isSuggestingMerges, mergeSuggestionInstruction]);
+  }, [
+    document,
+    isSuggestingMerges,
+    mergeSuggestionInstruction,
+    runTenantScopedApiRequest,
+    verifiedTenantSession,
+  ]);
 
   const handleMergeSuggestionTextChange = useCallback((groupId: string, value: string) => {
     setMergeSuggestions((previousSuggestions) =>
@@ -6786,7 +6873,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
     try {
       const payload = buildSummarizeIslandRelationPayload(document, selectedIslandRelationEdge);
-      const result = await summarizeIslandRelation(payload);
+      const result = await runTenantScopedApiRequest(() => summarizeIslandRelation(
+        payload,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
       const sourceSignature = buildRelationSummarySourceSignature(selectedIslandRelationEdge);
       const nextDocument = upsertRelationSummaryWithHistory(document, {
         sourceSignature,
@@ -6808,7 +6898,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     } finally {
       setIsGeneratingRelationSummary(false);
     }
-  }, [applyDocumentChange, document, isGeneratingRelationSummary, selectedIslandRelationEdge]);
+  }, [
+    applyDocumentChange,
+    document,
+    isGeneratingRelationSummary,
+    runTenantScopedApiRequest,
+    selectedIslandRelationEdge,
+    verifiedTenantSession,
+  ]);
 
   const handleRelationSummaryCommit = useCallback(
     (value: string) => {
@@ -7277,7 +7374,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setIsCheckingNarrative(true);
       setNarrativeCheckError(null);
       try {
-        const result = await checkNarrative(document, narrativeText, document.readingOrder);
+        const result = await runTenantScopedApiRequest(() => checkNarrative(
+          document,
+          narrativeText,
+          document.readingOrder,
+          { tenantSessionContext: verifiedTenantSession },
+        ));
         setNarrativeIssues(result.issues);
         setLastAiCallOutcome("ok");
 
@@ -7324,7 +7426,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         setIsCheckingNarrative(false);
       }
     },
-    [applyDocumentChange, document, narrativeText]
+    [
+      applyDocumentChange,
+      document,
+      narrativeText,
+      runTenantScopedApiRequest,
+      verifiedTenantSession,
+    ]
   );
 
   const handleGenerateNarrativeFromReadingOrder = useCallback(async () => {
@@ -7336,7 +7444,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setNarrativeGenerationError(null);
     try {
       const draftIndex = generatedNarratives.length + 1;
-      const result = await generateNarrative(document, `Draft ${draftIndex}`);
+      const result = await runTenantScopedApiRequest(() => generateNarrative(
+        document,
+        `Draft ${draftIndex}`,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
       const nextNarrative: Narrative = {
         id: crypto.randomUUID(),
         title: `Generated Draft ${draftIndex}`,
@@ -7366,7 +7478,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     } finally {
       setIsGeneratingNarrative(false);
     }
-  }, [applyDocumentChange, document, generatedNarratives.length]);
+  }, [
+    applyDocumentChange,
+    document,
+    generatedNarratives.length,
+    runTenantScopedApiRequest,
+    verifiedTenantSession,
+  ]);
 
 
   const readingOrderSnippets = useMemo(() => {
@@ -8527,22 +8645,40 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      void recordProposalDecision(proposalId, "adopt", "human");
+      void runTenantScopedApiRequest(() => recordProposalDecision(
+        proposalId,
+        "adopt",
+        "human",
+        undefined,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
       setAgentImportedProposalReviews((previous) =>
         previous.map((item) => (item.proposalId === proposalId ? { ...item, status: "adopted" as const } : item))
       );
       setStatusMessage(t("agent_response_import.adopted_status_message"));
     },
-    [document, agentImportedProposalReviews, applyDocumentChange]
+    [
+      document,
+      agentImportedProposalReviews,
+      applyDocumentChange,
+      runTenantScopedApiRequest,
+      verifiedTenantSession,
+    ]
   );
 
   const handleRejectAgentImportedProposal = useCallback((proposalId: string) => {
-    void recordProposalDecision(proposalId, "reject", "human");
+    void runTenantScopedApiRequest(() => recordProposalDecision(
+      proposalId,
+      "reject",
+      "human",
+      undefined,
+      { tenantSessionContext: verifiedTenantSession },
+    ));
     setAgentImportedProposalReviews((previous) =>
       previous.map((item) => (item.proposalId === proposalId ? { ...item, status: "rejected" as const } : item))
     );
     setStatusMessage(t("agent_response_import.rejected_status_message"));
-  }, []);
+  }, [runTenantScopedApiRequest, verifiedTenantSession]);
 
   const handleExportAgentImportedProposalPatchFile = useCallback(
     (proposalId: string) => {

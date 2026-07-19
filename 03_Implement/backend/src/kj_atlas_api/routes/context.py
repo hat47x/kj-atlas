@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from pydantic import ValidationError
 
 from kj_atlas_api.context_adapter import CONTEXT_FOUNDATION_ADAPTER
@@ -15,8 +15,15 @@ from kj_atlas_api.models_context import (
     ContextQueryValidationResponse,
     build_ce4_resolved_bundle,
 )
+from kj_atlas_api.tenant_session_precondition import (
+    require_tenant_scoped_api_precondition,
+)
 
-router = APIRouter(prefix="/context", tags=["context"])
+router = APIRouter(
+    prefix="/context",
+    tags=["context"],
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
 logger = logging.getLogger(__name__)
 
 

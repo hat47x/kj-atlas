@@ -404,3 +404,9 @@
 - SaaS runtime entryでbootstrap済みsession contextと一致するbrowser storage scopeをAppへ同時注入するようにし、App側のclosed-world再検証を通過したcontextだけを文書clientへ渡す。単一テナントentryはsession未注入のままとし、既存requestへheaderを追加しない。
 - `GET/PUT /docs/{doc_id}`と`POST /docs/{doc_id}/export-audit`へ単一の`KJ-Atlas-Tenant-Session-Version`を付与した。clientは呼出時にもsession contractを再検証し、不正contextは通信前に拒否する。serverの`409 tenant_session_changed`はDocument metadata競合として保存再試行へ流さず、runtime resourceをcleanupして旧Appをblocked化する。
 - client／bootstrap／tenant switch／coherenceの近接62件、frontend全体1,263件・218 file、frontend typecheck、docs-checkを通過した。文書以外のtenant-scoped client、document request自体の共通abort／世代commit guard、実ブラウザ複数タブE2E、SaaS runtime起動許可は未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: AI and context session precondition wiring
+
+- 文書内容・source ID・proposal判断を扱う全`POST /ai/*`と`POST /context/*`へ共通dependencyを追加した。SaaS profileではtrusted identity／tenant sessionを再解決し、単一`KJ-Atlas-Tenant-Session-Version`をendpoint本体、LLM transport、audit記録、bundle生成より先に照合する。read-onlyな`GET /ai/provider-status`はtenant資源を扱わないため対象外とした。single-tenant profileは既存requestを維持する。
+- frontendのlayout、merge、island summary、proposal audit、relation summary、narrative check／generationの7 mutationへ、bootstrap済みsessionのopaque versionだけを付与した。`tenant_session_changed`はprovider fallbackへ流さず、既存runtime cleanup後に旧Appをblocked化する共通ラッパーを通す。merge候補のlocal fallbackは404/405/501、network failure、または`provider_unavailable`の503だけに限定し、session/capability系503を処理継続へ変換しない。
+- backend route dependency／AI／context近接48件と全体605件・条件付き25件skip、frontend client／App source guard近接64件と全体1,267件・218 file、backend Ruff、frontend typecheck、docs-check、active issue validatorを通過した。import、share、MCP、webhook、非同期job開始点、request／worker結果の世代commit guard、実ブラウザ複数タブE2E、SaaS runtime起動許可は未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
