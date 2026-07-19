@@ -29,7 +29,7 @@ describe("tenant session runtime gate", () => {
     expect(mainSource).toContain("resolveRuntimeEntryMode");
     expect(mainSource).toContain('runtimeEntryMode === "tenant-session-required"');
     expect(mainSource).toContain("<TenantSessionRuntimeGate");
-    expect(mainSource).toContain("<App storageScope={result.storageScope}");
+    expect(mainSource).toContain("renderApp={(_result) => <App />}");
     expect(mainSource).toContain('runtimeEntryMode === "invalid"');
   });
 });
