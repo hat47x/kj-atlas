@@ -121,12 +121,19 @@ export function Minimap({ cards, islands, camera, storageScope, onPan }: Minimap
     if (!camera || !worldBounds) {
       return null;
     }
+    // Defined inside useMemo so its closure over scale/offsetX/offsetY/worldBounds
+    // is captured by the deps array rather than via an external function reference.
+    const toPoint = (worldX: number, worldY: number) => {
+      return {
+        x: (worldX - worldBounds.x) * scale + offsetX,
+        y: (worldY - worldBounds.y) * scale + offsetY,
+      };
+    };
     const topLeft = screenToWorld({ x: 0, y: 0 }, camera);
     const bottomRight = screenToWorld({ x: camera.viewportWidth, y: camera.viewportHeight }, camera);
-    const p1 = toMinimapPoint(topLeft.x, topLeft.y);
-    const p2 = toMinimapPoint(bottomRight.x, bottomRight.y);
+    const p1 = toPoint(topLeft.x, topLeft.y);
+    const p2 = toPoint(bottomRight.x, bottomRight.y);
     return { x: p1.x, y: p1.y, w: p2.x - p1.x, h: p2.y - p1.y };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camera, worldBounds, scale, offsetX, offsetY]);
 
   const panToMinimapPoint = (minimapX: number, minimapY: number) => {
