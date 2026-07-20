@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { t } from "../i18n/translate";
 import { parseDocumentJson } from "./document_import";
 
 const BASE = {
@@ -24,7 +25,7 @@ describe("parseDocumentJson", () => {
     const result = parseDocumentJson("{");
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toContain("Invalid JSON in document.json");
+      expect(result.error).toContain(t("app.status.import.document_json_invalid"));
     }
   });
 

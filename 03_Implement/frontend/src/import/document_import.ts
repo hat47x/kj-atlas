@@ -1,4 +1,5 @@
 import type { DocumentV1 } from "../domain/types";
+import { t } from "../i18n/translate";
 import { validateDocument, type ValidationError } from "./schema_validation";
 
 function formatValidationErrors(errors: ValidationError[]): string {
@@ -21,8 +22,8 @@ export function parseDocumentJson(rawText: string): { ok: true; document: Docume
     return { ok: true, document: validation.value };
   } catch (error) {
     if (error instanceof SyntaxError) {
-      return { ok: false, error: "Invalid JSON in document.json" };
+      return { ok: false, error: t("app.status.import.document_json_invalid") };
     }
-    return { ok: false, error: error instanceof Error ? error.message : "Unknown document parse error" };
+    return { ok: false, error: error instanceof Error ? error.message : t("app.status.import.document_parse_error_unknown") };
   }
 }

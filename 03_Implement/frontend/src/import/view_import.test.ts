@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { buildExportViewMetadata } from "../export/view_metadata";
+import { t } from "../i18n/translate";
 import { parseViewJson } from "./view_import";
 
 describe("parseViewJson", () => {
@@ -7,7 +8,7 @@ describe("parseViewJson", () => {
     const result = parseViewJson("{");
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toContain("Invalid JSON in view.json");
+      expect(result.error).toContain(t("app.status.import.view_json_invalid"));
     }
   });
 
