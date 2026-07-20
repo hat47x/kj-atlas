@@ -257,8 +257,8 @@ erDiagram
 | `ContextQuery` / `ContextBundle` | AI入力・提案前の安全な文脈境界 | 契約先行。MVPではmock/検証用I/Fを含み、永続保守対象とは分ける。 |
 | `InquiryJourneyV1` | W型累積KJ法のラウンドDAGを束ねる独立manifest | `ADR-0057` の採択済み設計目標。現行 `DocumentV1` へ埋め込まず、実装までは `L0` とする。 |
 | `RoundSnapshotV1` | 人が確認した節目の不変な文書成果 | 意味のある配置を含む `DocumentV1` 成果を再現する。現行API・DB・標準UIでは未実装。 |
-| `RepresentativeVisualCue` | 島または選択集合の再認識を助ける任意の絵文字・アイコン・画像 | `DOMAIN-VISUAL-CUE-01` / `ADR-0060` の計画対象。現行 `DocumentV1`、API、DB、標準UIには未実装で、保存先と許容素材を未決定。 |
-| `SourceVisualMaterial` | 観察・取材・利用者作成で得た写真・図・スケッチと元文脈 | `DOMAIN-VISUAL-CUE-01` / `ADR-0060` で代表手掛かりと分離した計画対象。現行の標準import、保存、出典表示、削除手段は未実装。 |
+| `RepresentativeVisualCue` | 島または選択集合の再認識を助ける任意の絵文字・アイコン・画像 | ADR-0060 Accepted（2026-07-20）。採用参照・権利情報は `DocumentV1.islands[].representativeCue` へ埋め込み（L2契約確定）。画像本体は経路別（IndexedDB/JS bundle/OSフォント）。コード実装はT7で着手。 |
+| `SourceVisualMaterial` | 観察・取材・利用者作成で得た写真・図・スケッチと元文脈 | `DOMAIN-VISUAL-CUE-01` / `ADR-0060` で代表手掛かりと分離した計画対象。代表手掛かりの保存契約確定後、一次視覚資料の保存契約を別途決定する。 |
 
 ---
 
