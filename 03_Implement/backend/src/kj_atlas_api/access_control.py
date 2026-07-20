@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from typing import Literal, Protocol, cast
 from urllib import error as urllib_error
@@ -11,6 +12,8 @@ from fastapi import HTTPException
 from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_context import TenantContext
 from kj_atlas_api.trusted_http import open_trusted_http
+
+logger = logging.getLogger(__name__)
 
 AccessAction = Literal["read", "write", "export", "share"]
 Visibility = Literal["Public", "Unlisted", "Org", "Restricted"]
@@ -504,6 +507,7 @@ def resolve_access_decision(
     except AccessControlInvalidRequestError:
         return apply_adapter_failsafe(request=request, mode=fail_safe_mode, reason="adapter_error")
     except Exception:
+        logger.warning("Access control adapter raised unexpected error", exc_info=True)
         return apply_adapter_failsafe(request=request, mode=fail_safe_mode, reason="adapter_error")
 
     if not isinstance(decision, AccessDecision):

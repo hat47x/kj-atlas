@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -14,6 +15,8 @@ from kj_atlas_api.tenant_context import (
     recheck_trusted_tenant_context,
     select_active_tenant_context,
 )
+
+logger = logging.getLogger(__name__)
 
 
 KNOWN_EFFECTIVE_CAPABILITIES = frozenset(
@@ -216,6 +219,7 @@ def build_tenant_session_context(
     except HTTPException:
         raise
     except Exception:
+        logger.warning("Failed to resolve tenant capabilities", exc_info=True)
         _capability_resolution_unavailable()
 
     return TenantSessionContext(
