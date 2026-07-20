@@ -240,7 +240,7 @@ export function MergeSuggestionsPanel({
             : t("merge_suggestions.no_audit_events")}
         </span>
       </div>
-      {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{errorMessage}</div> : null}
+      {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }} aria-live="polite">{errorMessage}</div> : null}
       {trustBoundaryErrorMessage ? (
         <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }} aria-live="polite">
           {trustBoundaryErrorMessage}

@@ -60,6 +60,9 @@ class TenantIdentityProviderRow(Base):
 
 class TenantMembershipRow(Base):
     __tablename__ = "tenant_memberships"
+    __table_args__ = (
+        Index("ix_tenant_memberships_user_id", "user_id"),
+    )
 
     tenant_id: Mapped[str] = mapped_column(
         Text,
