@@ -3714,7 +3714,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
       applyImportedViewMetadata(parseResult.metadata, document, viewMode, t("app.status.import.view_metadata_loaded_prefix"));
     },
-    [applyImportedViewMetadata, document, runTenantScopedOptionalTask]
+    [applyImportedViewMetadata, document, runTenantScopedOptionalTask, viewMode]
   );
 
   const handleLoadDocumentFile = useCallback(async (selectedFile: File) => {
@@ -9196,6 +9196,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       viewPresets,
       activePresetId,
       reviewEvents,
+      currentLod,
+      evidenceOverlayEnabled,
+      evidenceOverlayMode,
+      evidenceOverlayDepth,
+      evidenceOverlayScope,
+      evidenceOverlayDimOthers,
       ]
   );
 
@@ -9358,7 +9364,6 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     evidenceOverlayDepth,
     evidenceOverlayEnabled,
     evidenceOverlayDimOthers,
-    evidenceOverlayEnabled,
     evidenceOverlayMode,
     evidenceOverlayScope,
     focusTarget.focusIslandId,
@@ -9387,6 +9392,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     readingIndex,
     readingMode,
     readingNavEnabled,
+    reviewEvents,
     reviewedOnly,
     runTenantScopedTask,
     safeMode,
