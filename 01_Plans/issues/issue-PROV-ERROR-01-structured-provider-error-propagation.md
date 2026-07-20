@@ -60,11 +60,11 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 バックエンドルートの現状確認（detail が文字列か dict か）＋構造化 detail への変更。
-- [ ] T2 `ApiError` 拡張＋`parseErrorMessage` 拡張。
-- [ ] T3 `App.tsx` の判定置き換え（正規表現削除）。
-- [ ] T4 i18n（code別メッセージ）追加。
-- [ ] T5 integration/unit テスト一式。
+- [x] T1 バックエンドルートの現状確認（detail が文字列か dict か）＋構造化 detail への変更。
+- [x] T2 `ApiError` 拡張＋`parseErrorMessage` 拡張。
+- [x] T3 `App.tsx` の判定置き換え（正規表現削除）。
+- [x] T4 i18n（code別メッセージ）追加。
+- [x] T5 integration/unit テスト一式。
 
 ## 7) 検証計画 / Validation plan
 

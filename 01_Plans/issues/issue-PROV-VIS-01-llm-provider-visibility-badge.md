@@ -59,10 +59,10 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 provider 種別の取得経路（起動時設定エコーバック or 軽量エンドポイント）確定。
-- [ ] T2 View パネル UI＋i18n。
-- [ ] T3 PROV-ERROR-01 の状態コードとの接続（先行実装分は provider種別のみで暫定表示）。
-- [ ] T4 e2e。
+- [x] T1 provider 種別の取得経路（起動時設定エコーバック or 軽量エンドポイント）確定。
+- [x] T2 View パネル UI＋i18n。
+- [x] T3 PROV-ERROR-01 の状態コードとの接続（先行実装分は provider種別のみで暫定表示）。
+- [x] T4 e2e。
 
 ## 7) 検証計画 / Validation plan
 

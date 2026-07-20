@@ -113,12 +113,12 @@ domain.md は `HoldState`（判断を確定させない状態）と `PendingItem
 
 ## 4) 受入条件 / Acceptance criteria
 
-- [ ] カード/島を「保留」にでき、表示上も保留と分かる。
-- [ ] 要素を Shelf へ退避し、可逆に復帰できる（内容・座標が失われない）。
-- [ ] `holdState` / Shelf membership が import/export で往復保存される。
-- [ ] 旧データ（フィールド欠落）が破壊されず従来挙動で読める（後方互換）。
-- [ ] AIは保留を自動解除しない（proposal-only、保留は保持対象）。
-- [ ] `schemas.md` を先に更新し、validate/tests が新旧両形式で通る。
+- [x] カード/島を「保留」にでき、表示上も保留と分かる。
+- [x] 要素を Shelf へ退避し、可逆に復帰できる（内容・座標が失われない）。
+- [x] `holdState` / Shelf membership が import/export で往復保存される。
+- [x] 旧データ（フィールド欠落）が破壊されず従来挙動で読める（後方互換）。
+- [x] AIは保留を自動解除しない（proposal-only、保留は保持対象）。
+- [x] `schemas.md` を先に更新し、validate/tests が新旧両形式で通る。
 
 ## 5) 検証計画 / Validation plan
 

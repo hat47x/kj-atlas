@@ -20,9 +20,9 @@ The package lock resolves Playwright 1.58.2, but the caret range for `@playwrigh
 
 ## Acceptance Criteria
 
-- [ ] `@playwright/test` is pinned to the lockfile's Playwright version.
-- [ ] A clean dependency install resolves matching `playwright` and `@playwright/test` versions.
-- [ ] A targeted E2E can run from the project command line.
+- [x] `@playwright/test` is pinned to the lockfile's Playwright version.
+- [x] A clean dependency install resolves matching `playwright` and `@playwright/test` versions.
+- [x] A targeted E2E can run from the project command line.
 
 ## Implementation Notes
 
