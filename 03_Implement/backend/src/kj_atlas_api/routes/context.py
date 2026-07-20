@@ -54,7 +54,8 @@ def build_context_bundle(payload: object = Body(...)) -> ContextBundleResponse:
     except ValueError as exc:
         if str(exc) == "preview_required":
             raise HTTPException(status_code=422, detail={"code": "preview_required"}) from exc
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        logger.warning("context_bundle_build_failed", extra={"error": str(exc)}, exc_info=True)
+        raise HTTPException(status_code=400, detail={"code": "invalid_context_bundle_request"}) from exc
 
     if not CONTEXT_FOUNDATION_ADAPTER.verify_bundle_determinism(response):
         raise HTTPException(status_code=409, detail={"code": "nondeterministic_bundle"})
@@ -81,7 +82,8 @@ def _resolve_ce4_bundle_contract(payload: object = Body(...)) -> Ce4ResolveBundl
             raise HTTPException(status_code=422, detail={"code": "safe_mode_required"}) from exc
         if code == "dry_run_requires_no_side_effect":
             raise HTTPException(status_code=422, detail={"code": "dry_run_requires_no_side_effect"}) from exc
-        raise HTTPException(status_code=400, detail=code) from exc
+        logger.warning("ce4_bundle_resolve_failed", extra={"error": code}, exc_info=True)
+        raise HTTPException(status_code=400, detail={"code": "invalid_ce4_bundle_request"}) from exc
 
     if not (response.equivalenceKey and response.bundleHash):
         raise HTTPException(status_code=422, detail={"code": "equivalence_and_bundle_hash_required"})

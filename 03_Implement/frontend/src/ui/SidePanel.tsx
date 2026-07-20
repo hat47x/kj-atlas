@@ -116,6 +116,7 @@ type SidePanelProps = {
   onRejectIslandSummaryProposal: () => void;
   onHoldIslandSummaryProposal: () => void;
   isSuggestingIslandSummary: boolean;
+  isRecordingIslandSummaryDecision: boolean;
   islandSummarySuggestionWarnings: string[];
   summaryGroundingItems: SummaryGroundingItem[];
   onImageUrlChange: (value: string) => void;
@@ -302,6 +303,7 @@ export function SidePanel({
   onRejectIslandSummaryProposal,
   onHoldIslandSummaryProposal,
   isSuggestingIslandSummary,
+  isRecordingIslandSummaryDecision,
   islandSummarySuggestionWarnings,
   summaryGroundingItems,
   onImageUrlChange,
@@ -2566,9 +2568,9 @@ export function SidePanel({
               </div>
               <div style={{ fontSize: 12, color: "#1e293b" }}>{t("side_panel.summary.patch_preview")}: {islandSummaryProposal.diff.after}</div>
               <div style={{ display: "flex", gap: 6 }}>
-                <button type="button" onClick={onAdoptIslandSummaryProposal} style={{ flex: 1 }}>{t("side_panel.summary.adopt")}</button>
-                <button type="button" onClick={onHoldIslandSummaryProposal} style={{ flex: 1 }}>{t("side_panel.summary.hold")}</button>
-                <button type="button" onClick={onRejectIslandSummaryProposal} style={{ flex: 1 }}>{t("side_panel.summary.reject")}</button>
+                <button type="button" onClick={onAdoptIslandSummaryProposal} disabled={isRecordingIslandSummaryDecision} style={{ flex: 1 }}>{t("side_panel.summary.adopt")}</button>
+                <button type="button" onClick={onHoldIslandSummaryProposal} disabled={isRecordingIslandSummaryDecision} style={{ flex: 1 }}>{t("side_panel.summary.hold")}</button>
+                <button type="button" onClick={onRejectIslandSummaryProposal} disabled={isRecordingIslandSummaryDecision} style={{ flex: 1 }}>{t("side_panel.summary.reject")}</button>
               </div>
               {proposalAuditTrail.length > 0 ? (
                 <div style={{ fontSize: 11, color: "#334155" }}>{t("side_panel.summary.audit")}: {proposalAuditTrail[proposalAuditTrail.length - 1]}</div>
