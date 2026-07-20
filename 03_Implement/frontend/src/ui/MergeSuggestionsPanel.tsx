@@ -113,8 +113,8 @@ function buildTextDiff(beforeText: string, afterText: string): TextDiffSegment[]
   let beforeIndex = 0;
   let afterIndex = 0;
   while (beforeIndex < beforeTokens.length && afterIndex < afterTokens.length) {
-    const beforeToken = beforeTokens[beforeIndex]!;
-    const afterToken = afterTokens[afterIndex]!;
+    const beforeToken = beforeTokens[beforeIndex] ?? "";
+    const afterToken = afterTokens[afterIndex] ?? "";
 
     if (beforeToken === afterToken) {
       append("same", beforeToken);
@@ -133,11 +133,11 @@ function buildTextDiff(beforeText: string, afterText: string): TextDiffSegment[]
   }
 
   while (beforeIndex < beforeTokens.length) {
-    append("removed", beforeTokens[beforeIndex]!);
+    append("removed", beforeTokens[beforeIndex] ?? "");
     beforeIndex += 1;
   }
   while (afterIndex < afterTokens.length) {
-    append("added", afterTokens[afterIndex]!);
+    append("added", afterTokens[afterIndex] ?? "");
     afterIndex += 1;
   }
 

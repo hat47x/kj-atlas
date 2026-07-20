@@ -41,6 +41,11 @@ function formatWorkspaceDecision(decision: WorkspaceDecision | "none"): string {
   return t("patch_workspace.decision.hold");
 }
 
+const QUERY_SCOPES = ["all", "selection", "island"] as const;
+function parseQueryScope(raw: string): QueryScope {
+  return QUERY_SCOPES.includes(raw as QueryScope) ? (raw as QueryScope) : "all";
+}
+
 function formatQueryScope(scope: QueryScope): string {
   if (scope === "selection") return t("patch_workspace.scope.selection");
   if (scope === "island") return t("patch_workspace.scope.island");
@@ -317,7 +322,7 @@ export function PatchWorkspacePanel({
       <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>{t("patch_workspace.device_local_hint")}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr)) auto", gap: 6, marginBottom: 8 }}>
         <input data-testid="ce3-preset-name" value={presetName} onChange={(event) => setPresetName(event.target.value)} placeholder={t("patch_workspace.preset_name")} disabled={isReadOnly} />
-        <select data-testid="ce3-preset-scope" aria-label={t("patch_workspace.preset_scope_label")} value={scope} onChange={(event) => setScope(event.target.value as QueryScope)} disabled={isReadOnly}>
+        <select data-testid="ce3-preset-scope" aria-label={t("patch_workspace.preset_scope_label")} value={scope} onChange={(event) => setScope(parseQueryScope(event.target.value))} disabled={isReadOnly}>
           <option value="all">{formatQueryScope("all")}</option>
           <option value="selection">{formatQueryScope("selection")}</option>
           <option value="island">{formatQueryScope("island")}</option>

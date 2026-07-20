@@ -31,7 +31,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
+      if (ref.current && event.target instanceof Node && !ref.current.contains(event.target)) {
         onClose();
       }
     };

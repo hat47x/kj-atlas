@@ -164,7 +164,8 @@ export function BulkOperationsBar({
         defaultValue=""
         aria-label={t("bulk_ops_bar.claim_type_label")}
         onChange={(event) => {
-          const value = event.target.value as ClaimType | "";
+          const rawValue = event.target.value;
+          const value: ClaimType | "" = (["fact", "hypothesis", "question", "action", "risk", "decision"].includes(rawValue) ? rawValue : "") as ClaimType | "";
           if (value) {
             onChangeClaimType(value);
           }

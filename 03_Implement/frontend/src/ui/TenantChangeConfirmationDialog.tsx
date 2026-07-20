@@ -43,8 +43,9 @@ export function TenantChangeConfirmationDialog({
       event.preventDefault();
       return;
     }
-    const firstElement = focusableElements[0]!;
-    const lastElement = focusableElements.at(-1)!;
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements.at(-1);
+    if (!firstElement || !lastElement) return;
     if (event.shiftKey && document.activeElement === firstElement) {
       event.preventDefault();
       lastElement.focus();
