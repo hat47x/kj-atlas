@@ -53,34 +53,6 @@ export type FocusReference = {
   kind: "card" | "island";
 };
 
-export function getFocusWorldPointForReference(document: DocumentV1, reference: FocusReference): { x: number; y: number } | null {
-  if (reference.kind === "card") {
-    const card = document.cards.find((item) => item.id === reference.id);
-    if (!card) {
-      return null;
-    }
-    return {
-      x: card.x + CARD_WIDTH / 2,
-      y: card.y + CARD_HEIGHT / 2,
-    };
-  }
-
-  const island = document.islands.find((item) => item.id === reference.id);
-  if (!island) {
-    return null;
-  }
-
-  const focusedCards = document.cards.filter((card) => island.cardIds.includes(card.id));
-  if (focusedCards.length === 0) {
-    return null;
-  }
-
-  return {
-    x: (Math.min(...focusedCards.map((card) => card.x)) + Math.max(...focusedCards.map((card) => card.x + CARD_WIDTH))) / 2,
-    y: (Math.min(...focusedCards.map((card) => card.y)) + Math.max(...focusedCards.map((card) => card.y + CARD_HEIGHT))) / 2,
-  };
-}
-
 type DragState = {
   pointerId: number;
   lastClientX: number;

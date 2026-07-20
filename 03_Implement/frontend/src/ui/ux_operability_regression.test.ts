@@ -6,6 +6,16 @@ const readSource = (relativePath: string): string =>
   readFileSync(resolve(__dirname, "..", "..", relativePath), "utf8");
 
 describe("UX Operability regression contracts", () => {
+  it("recovers trace controls after worker rejection without exposing the error", () => {
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+
+    expect(sidePanelSource).toContain("runTraceRequest({");
+    expect(sidePanelSource).toContain('"side_panel.trace.failed"');
+    expect(sidePanelSource).toContain("onSettled: () => {");
+    expect(sidePanelSource).toContain("if (traceAbortRef.current === controller)");
+    expect(sidePanelSource).toContain("setIsTraceRunning(false)");
+  });
+
   it("Phase 1: pointer-keyboard-flow-review", () => {
     const cardViewSource = readSource("src/canvas/CardView.tsx");
 
@@ -452,6 +462,138 @@ describe("UX Operability regression contracts", () => {
     // No scoring/ranking vocabulary anywhere in the generator or its i18n
     // framing (ADR-0048 D3 anti-scoring applies to this new signal too).
     expect(outlineSource).not.toMatch(/\bscore\b|\brank\b|\bpercent\b/i);
+  });
+
+  it("preserves imported perspective presets across both view metadata export paths", () => {
+    const appSource = readSource("src/App.tsx");
+
+    expect(appSource).toContain(
+      "const [perspectivePresets, setPerspectivePresets] = useState<PerspectivePreset[]>(DEFAULT_PERSPECTIVE_PRESETS)",
+    );
+    expect(appSource).toContain(
+      "setPerspectivePresets(restorePerspectivePresets(metadata.viewState.perspectivePresets))",
+    );
+    expect(appSource.match(/perspectivePresets,/g)).toHaveLength(5);
+  });
+
+  it("routes tenant-scoped AI calls through the stale-session cleanup boundary", () => {
+    const appSource = readSource("src/App.tsx");
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const inquiryPanelSource = readSource("src/ui/InquiryJourneyPrototypePanel.tsx");
+    const tenantScopedCalls = [
+      "suggestLayout",
+      "suggestMerges",
+      "proposeIslandSummary",
+      "recordProposalDecision",
+      "summarizeIslandRelation",
+      "checkNarrative",
+      "generateNarrative",
+    ];
+
+    expect(appSource).toContain("const runTenantScopedApiRequest = useCallback(");
+    expect(appSource).toContain("tenantSessionGenerationGuardRef.current.invalidate();");
+    expect(appSource).toContain("tenantSessionGenerationGuardRef.current.run(task)");
+    expect(appSource).toContain('error.code === "tenant_session_changed"');
+    expect(appSource).toContain("blockStaleTenantSession();");
+    for (const callName of tenantScopedCalls) {
+      expect(appSource).toContain(
+        `runTenantScopedApiRequest(() => ${callName}(`,
+      );
+    }
+    expect(appSource).toContain(
+      "runTenantScopedApiRequest(() => getDocument(",
+    );
+    expect(appSource).toContain(
+      "runTenantScopedApiRequest(() => putDocument(",
+    );
+    expect(appSource).toContain(
+      "runTenantScopedApiRequest(() => postExportAudit(",
+    );
+    expect(appSource).toContain(
+      "runTenantScopedTask(() => diffWorkerClientRef.current!.computeDiff(",
+    );
+    expect(appSource).toContain(
+      "runTenantScopedTask(() => diagnosticsWorkerClientRef.current!.computeDiagnostics(",
+    );
+    expect(appSource).toContain(
+      "runTenantScopedTask(() => bundleRunnerRef.current.run(",
+    );
+    expect(
+      appSource.match(
+        /runTenantScopedOptionalTask\(\(\) => selectedFile\.text\(\)\)/g,
+      ),
+    ).toHaveLength(6);
+    expect(appSource).toContain(
+      "runTenantScopedOptionalTask(() => readZipFiles(selectedFile))",
+    );
+    expect(appSource).not.toContain("await selectedFile.text()");
+    expect(appSource).not.toContain("await readZipFiles(selectedFile)");
+    expect(
+      appSource.match(
+        /runTenantScopedOptionalTask\(\(\) => exportCanvasToPngBlob\(/g,
+      ),
+    ).toHaveLength(4);
+    expect(appSource).toContain(
+      "runTenantScopedOptionalTask(() => readBlobAsDataUrl(pngBlob))",
+    );
+    expect(appSource).toContain(
+      "runTenantScopedOptionalTask(() => buildPatchForExport(",
+    );
+    expect(
+      appSource.match(
+        /runTenantScopedOptionalTask\(buildCurrentAgentTaskSheet\)/g,
+      ),
+    ).toHaveLength(3);
+    expect(appSource).not.toContain("await exportCanvasToPngBlob(");
+    expect(appSource).not.toContain("await buildPatchForExport(");
+    const publicPackLoaderIndex = appSource.indexOf("const loadPublicPack = useCallback(");
+    const publicPackViewFetchIndex = appSource.indexOf(
+      "() => fetch(`./packs/${targetPack.viewPath}`",
+      publicPackLoaderIndex,
+    );
+    const publicPackCommitIndex = appSource.indexOf(
+      "pendingCardDragSnapshotRef.current = null;",
+      publicPackLoaderIndex,
+    );
+    expect(publicPackLoaderIndex).toBeGreaterThanOrEqual(0);
+    expect(publicPackViewFetchIndex).toBeGreaterThan(publicPackLoaderIndex);
+    expect(publicPackCommitIndex).toBeGreaterThan(publicPackViewFetchIndex);
+    expect(appSource).toContain('if (loadedFromPack === "stale")');
+    expect(appSource).not.toContain('await fetch("./packs/');
+    expect(appSource.match(/runTenantScopedOptionalTask=\{runTenantScopedOptionalTask\}/g)).toHaveLength(2);
+    expect(sidePanelSource).toContain(
+      "runTenantScopedOptionalTask(() => traceClient.computeTraceAnalytics(",
+    );
+    expect(sidePanelSource).toContain(
+      "runTenantScopedOptionalTask(() => runTraceRequest(",
+    );
+    expect(inquiryPanelSource).toContain(
+      "const outcome = await runTenantScopedOptionalTask(async () => (",
+    );
+    expect(inquiryPanelSource).not.toContain(
+      "importClientRef.current.parse(await file.text()",
+    );
+    expect(appSource).toContain(
+      '(error.status === 503 && error.code === "provider_unavailable")',
+    );
+  });
+
+  it("UI-QUALITY-A11Y-05: reading order has native keyboard-operable step controls while pointer drag remains available", () => {
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+    const readingOrderLayerSource = readSource("src/canvas/ReadingOrderLayer.tsx");
+    const appSource = readSource("src/App.tsx");
+
+    expect(sidePanelSource).toMatch(
+      /<button[\s\S]{0,300}onMoveReadingOrderItem\(index, -1\);[\s\S]{0,200}disabled=\{index === 0\}/,
+    );
+    expect(sidePanelSource).toMatch(
+      /<button[\s\S]{0,300}onMoveReadingOrderItem\(index, 1\);[\s\S]{0,250}disabled=\{index === readingOrderItems\.length - 1\}/,
+    );
+    expect(appSource).toContain("const handleMoveReadingOrderItem = useCallback(");
+    expect(appSource).toContain('t("app.history.reading_order.reordered")');
+    expect(readingOrderLayerSource).toContain("onPointerDown");
+    expect(readingOrderLayerSource).toContain("onPointerMove");
+    expect(readingOrderLayerSource).toContain("onPointerUp");
   });
 
   it("DOMAIN-KJ-01: KJ relation vocabulary is additive, unknown types are preserved (never discarded), and derived edges stay type-suppressed", () => {

@@ -9,6 +9,7 @@ import {
   removePerspectivePreset,
   renamePerspectivePreset,
   replacePerspectivePreset,
+  restorePerspectivePresets,
   resolveCurrentPerspectivePresetId,
 } from "./perspective";
 
@@ -85,6 +86,22 @@ describe("computePerspectiveRendering", () => {
 });
 
 describe("perspective preset CRUD", () => {
+  it("restores imported presets exactly and uses defaults only when the field is absent", () => {
+    const imported = [{
+      id: "legacy-custom",
+      name: "Legacy custom",
+      perspective: { mode: "legacy-mode", strictFilter: true },
+    }] as unknown as typeof DEFAULT_PERSPECTIVE_PRESETS;
+
+    const restored = restorePerspectivePresets(imported);
+
+    expect(restored).toEqual(imported);
+    expect(restored).not.toBe(imported);
+    expect(restored[0]?.perspective).not.toBe(imported[0]?.perspective);
+    expect(restorePerspectivePresets([])).toEqual([]);
+    expect(restorePerspectivePresets(undefined)).toEqual(DEFAULT_PERSPECTIVE_PRESETS);
+  });
+
   it("keeps default presets and supports create/rename/delete", () => {
     const created = replacePerspectivePreset(DEFAULT_PERSPECTIVE_PRESETS, {
       id: "preset-custom",

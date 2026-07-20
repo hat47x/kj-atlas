@@ -222,14 +222,16 @@ export type ReviewAttribution = {
   ownerRef?: string;
 };
 
+export const DOCUMENT_DETERMINISTIC_TIE_BREAK_ORDER = [
+  "padding_compliance",
+  "self_intersection_avoidance",
+  "minimum_area_delta",
+  "minimum_vertex_count",
+] as const;
+
 export type DeterministicTieBreak = {
   schemaVersion: "1.0.0";
-  order: [
-    "padding_compliance",
-    "self_intersection_avoidance",
-    "minimum_area_delta",
-    "minimum_vertex_count",
-  ];
+  order: [...typeof DOCUMENT_DETERMINISTIC_TIE_BREAK_ORDER];
 };
 
 export type NarrativeCheckReference = {

@@ -3,7 +3,7 @@ import logging
 import math
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from kj_atlas_api.llm.provider import (
     LLMRequest,
@@ -34,6 +34,9 @@ from kj_atlas_api.models import (
     SuggestMergesRequest,
     SuggestMergesResponse,
     Transform,
+)
+from kj_atlas_api.tenant_session_precondition import (
+    require_tenant_scoped_api_precondition,
 )
 
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -496,7 +499,11 @@ def get_provider_status() -> ProviderStatusResponse:
     return ProviderStatusResponse(providerKind=get_provider().provider_kind)
 
 
-@router.post("/suggest-layout", response_model=SuggestLayoutResponse)
+@router.post(
+    "/suggest-layout",
+    response_model=SuggestLayoutResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
 def suggest_layout(payload: SuggestLayoutRequest) -> SuggestLayoutResponse:
     try:
         llm_response = generate_with_fallback(
@@ -528,7 +535,11 @@ def suggest_layout(payload: SuggestLayoutRequest) -> SuggestLayoutResponse:
     )
 
 
-@router.post("/suggest-merges", response_model=SuggestMergesResponse)
+@router.post(
+    "/suggest-merges",
+    response_model=SuggestMergesResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
 def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
     try:
         llm_response = generate_with_fallback(
@@ -550,7 +561,11 @@ def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
 
 
 
-@router.post("/suggest-island-summary", response_model=SuggestIslandSummaryResponse)
+@router.post(
+    "/suggest-island-summary",
+    response_model=SuggestIslandSummaryResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
 def suggest_island_summary(payload: SuggestIslandSummaryRequest) -> SuggestIslandSummaryResponse:
     try:
         llm_response = generate_with_fallback(
@@ -569,7 +584,11 @@ def suggest_island_summary(payload: SuggestIslandSummaryRequest) -> SuggestIslan
     return _parse_island_summary_response(llm_response.raw_text, payload)
 
 
-@router.post("/proposals/island-summary", response_model=ProposalEnvelope)
+@router.post(
+    "/proposals/island-summary",
+    response_model=ProposalEnvelope,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
 def propose_island_summary(payload: ProposeIslandSummaryRequest) -> ProposalEnvelope:
     summary_result = suggest_island_summary(SuggestIslandSummaryRequest(doc=payload.doc, islandId=payload.islandId))
     target_island = next((item for item in payload.doc.islands if item.id == payload.islandId), None)
@@ -594,7 +613,10 @@ def propose_island_summary(payload: ProposeIslandSummaryRequest) -> ProposalEnve
     )
 
 
-@router.post("/proposals/audit")
+@router.post(
+    "/proposals/audit",
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
 def record_proposal_decision(payload: ProposalDecisionAuditRequest) -> ProposalDecisionAuditResponse:
     if payload.decision not in {"accepted", "rejected", "held"}:
         raise HTTPException(
@@ -619,7 +641,11 @@ def record_proposal_decision(payload: ProposalDecisionAuditRequest) -> ProposalD
     )
 
 
-@router.post("/generate-narrative", response_model=GenerateNarrativeResponse)
+@router.post(
+    "/generate-narrative",
+    response_model=GenerateNarrativeResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
 def generate_narrative(payload: GenerateNarrativeRequest) -> GenerateNarrativeResponse:
     try:
         llm_response = generate_with_fallback(
@@ -637,7 +663,11 @@ def generate_narrative(payload: GenerateNarrativeRequest) -> GenerateNarrativeRe
 
     return _parse_generate_narrative_response(llm_response.raw_text, payload)
 
-@router.post("/check-narrative", response_model=CheckNarrativeResponse)
+@router.post(
+    "/check-narrative",
+    response_model=CheckNarrativeResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
 def check_narrative(payload: CheckNarrativeRequest) -> CheckNarrativeResponse:
     _validate_check_narrative_input(payload)
 

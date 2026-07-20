@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
@@ -16,21 +16,28 @@
 
 - 現在の問題: `03_Implement/frontend/src/domain/policy/access_control_metadata.ts`は、`normalizeAccessControlMetadata`・`validateAccessControlMetadata`・型`AccessControlMetadata`をexportしているが、リポジトリ全体をgrepしてもこのファイル自身以外に一切の参照（import）が無い。テストファイルからの参照も無い。
 - 利用者または開発への影響: 実害はない（未参照のため実行パスに影響しない）が、認可/ポリシー関連の機能として意図的に作られたまま配線されずに残ったスキャフォールディングである可能性が高い。
+- 判断結果: 導入コミット`a3e5405b`以降、一度もimport・テスト・契約参照が追加されていない。現行の`ADR-0059`とAPI正本は、SaaS profileでclient由来のrole/group/policyRefを認可根拠にせず、server-owned metadataとtrusted resolverを使うことを要求する。raw policyRefを正規化してfrontendへ保持させる本モジュールは将来境界としても採用できないため、旧スキャフォールディングと判断した。
 
 ## 対応方針
 
-- 実施すること: このファイルが（a）将来の機能のために意図的に残されたものか、（b）廃止された旧設計の残骸かをMaintainerが確認し、(b)であれば削除する。
-- 実施しないこと: このファイルの削除そのもの。ファイル単位の削除は影響範囲の見落としリスクがあるため、機械的には実施しない。
+- 実施したこと: 未参照かつ現行の信頼境界と一致しない`access_control_metadata.ts`を削除した。
+- 実施しないこと: backendの`AccessControlAdapter`、server-owned access metadata、tenant resolver、認可判定の変更。
 
 ## 受入条件
 
-- [ ] このモジュールの位置づけ（維持/削除）が決定される。
-- [ ] 削除する場合、`02_Architecture/schemas.md`等の正本文書に本モジュールへの言及が無いことを確認する。
+- [x] このモジュールを旧スキャフォールディングと確定し、削除する。
+- [x] `02_Architecture/schemas.md`、`api.md`、`architecture.md`に本モジュールへの参照が無く、現行SaaS信頼境界と逆向きであることを確認する。
 
 ## 検証計画
 
 - 実行する確認: 削除する場合、`npm run typecheck`および`npm run test`（frontend）。
 - 期待結果: 既存のビルド・テストに影響がないことを確認する。
+
+## Validation
+
+- `node node_modules/vitest/vitest.mjs run`
+- `node node_modules/typescript/bin/tsc --noEmit`
+- `python 01_Plans/docs_check.py --root .`
 
 ## 補足
 

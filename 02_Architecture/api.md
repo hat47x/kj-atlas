@@ -376,6 +376,38 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - 404: `doc_id` が存在しない
   - 422: hash format などの契約違反
 
+### 2.11 実装済み response model の補助API
+
+次のAPIはDocument CRUDとは別の、実装済みの限定契約である。response fieldの型定義は `02_Architecture/schemas.md` §13を正本とする。
+
+**POST** `/admin/provision/hil-rs/a2a3-gate:validate`
+
+- Request body: `A2A3GateValidationRequest`。HIL-RS-02の固定値（`freezeContractId` / `schemaVersion` / `overridePolicy` / lock・freeze・status・未解決要求フラグ）だけを受理し、未知fieldは拒否する。
+- Response: `A2A3GateValidationResponse`
+  - `go: true`
+  - `schemaVersion: "1.0.0"`
+  - `freezeContractId: "HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
+- Error:
+  - 409: 固定されたgate invariantとの不一致
+  - 422: literal違反、必須field欠落、未知fieldなどのrequest schema違反
+
+**GET** `/docs/{doc_id}/similar-candidate-groups`
+
+- Request header: 通常のDocument read認可に従い、`X-Read-Only: 1 | true` をread-only contextとして扱う。
+- Response: `CandidateListViewModel`。Documentから決定論的に導出するread-only viewであり、merge判断を自動適用しない。
+  - `generatedAt: string (ISO 8601)`
+  - `groups: SimilarCandidateGroup[]`
+  - `totalGroupCount: number`（0以上、常に `groups.length` と一致）
+- Error:
+  - 403: 認可または安全境界違反
+  - 404: `doc_id` が存在しない
+
+**GET** `/ai/provider-status`
+
+- Response: `ProviderStatusResponse`
+  - `providerKind: "none" | "local" | "large-scale"`
+- 設定解決後のprovider種別を表示用に返すread-only echoであり、providerへの疎通確認は行わない。`local_http` 設定は `local` に正規化される。
+
 ---
 
 ## 3. レスポンス例（概要）
@@ -606,6 +638,7 @@ export type StrictProvisioningError = {
   - `200` response (idempotent retry): `{ userId, reviewerRef, ownerRef, provisioned=false }`
   - 冪等: 同一 `provider+externalUid` の再試行は `provisioned=false` を返す
   - `409` response: 既存subjectへ矛盾する `displayName` / `email` を再投入した場合は `identity_already_provisioned_conflict` と可読 `message` を返す
+  - runtime境界: `local-dev`、`evaluation`、`enterprise-production`のsingle-tenant profileだけで提供する。`saas-multitenant`ではDB参照・書込前に`404 strict_provisioning_unavailable`、未知・解決不能profileでは`503 runtime_policy_unavailable`として閉じ、SaaS membership provisioningへfallbackしない
 
 型契約（I/F固定）:
 
@@ -630,10 +663,10 @@ export type AdminProvisionUserConflictError = {
 };
 ```
 
-- 判定規約: クライアントは `2xx + provisioned`、`403 + code=identity_not_provisioned`、`409 + code=identity_already_provisioned_conflict` の3分岐のみを必須サポートとする。
+- 判定規約: single-tenantクライアントがidentity処理として必須サポートするのは `2xx + provisioned`、`403 + code=identity_not_provisioned`、`409 + code=identity_already_provisioned_conflict` の3分岐とする。runtime境界の`404`／`503`はidentity結果へfallbackせず、管理surface自体を停止する。
 - 非目標: 本契約ではページング・検索・一括削除・SCIM互換項目は定義しない。
 
-本APIは将来の管理者CLI/SCIM連携の最小置換点として扱う。
+本APIはsingle-tenant互換の管理者CLI連携の最小置換点として扱う。SaaSのTenantMembership／SCIM連携はverified IdP、active tenant、`membership.provision`を再検証する別契約とし、本APIを再利用しない。
 
 ### 9.4 移行契約（expand/contract）
 
@@ -696,7 +729,7 @@ export type AdminAgentRegistrationSummary = {
 
 ## 10. SaaS TenantContext / capability契約（ADR-0059 / ADR-0061、L0 Planned）
 
-本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・全tenant-scoped APIへの`tenantSessionVersion` guard・越境テストが完了するまでSaaS profileを有効化しない。bootstrap policy、session context、conditional active tenant変更のfail-closed routeとfrontend entry gateに加え、信頼済みauth edgeのidentity resolver・tenant resolver・active tenant session adapterを3点同時にだけ受け付ける起動前bundle境界を実装済みである。bundle非注入時はidentity/session adapterをunavailable、tenant resolverをsingle-tenant互換へ戻してsession context系を503として閉じる。実auth edge adapter、anti-forgery付きsession形式、SaaS backend runtime、Document／Admin／import／export等の共通version preconditionは未実装・非公開である。
+本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・全tenant-scoped APIへの`tenantSessionVersion` guard・越境テストが完了するまでSaaS profileを有効化しない。bootstrap policy、session context、conditional active tenant変更のfail-closed routeとfrontend entry gateに加え、信頼済みauth edgeのidentity resolver・tenant resolver・active tenant session adapterを3点同時にだけ受け付ける起動前bundle境界を実装済みである。profile、型付き非秘密policy、bundleの型・欠損・相互必須、started-state、構築済みPDP／capability／binding componentの実型を状態変更なしでpreflightし、DB初期化前とadapter有効化前に同じ判定を再実行する。single-tenant profileへのbundle注入、SaaS profileでのbundle欠損、未知profile、設定と実componentの不一致をDB接続前に起動拒否する。SaaS profileではPostgreSQL、JIT無効、external access-control、`deny` fail-safe、external document binding、external tenant capabilityに加え、対応する3つのexternal component実体を必須とする。preflight済みの同一instanceだけをApp stateとDocument resource resolverへ渡す。bundle非注入のsingle-tenant profileではidentity/session adapterをunavailable、tenant resolverとDocument resource resolverをsingle-tenant互換へ戻してsession context系を503として閉じる。SaaS bundle有効化時はDocument resource resolverもserver-owned metadata＋trusted binding resolverへ同じlifespan内で切り替え、公開visibility／policy headerを認可根拠にしない。Document、Tenant Admin、文書内容を扱うAI mutation、context mutationには共通version preconditionを実装済みであり、Document context auditは世代確認と認可が成功するまで監査進行stateを更新せず、event completeness trackerを検証済み`tenantId + docId`単位に分離する。登録済みの全Document／Document access admin routeが各共通認可境界を呼ぶことはcontract testで固定する。実auth edge adapter、anti-forgery付きsession形式、実binding/PDP service、import／share／MCP／webhook／非同期job開始点への横断適用は未実装・非公開である。
 
 ### 10.1 session context（GET/POST version guard実装済み・SaaS runtime gated）
 
@@ -745,11 +778,11 @@ export type ActiveTenantRequestV1 = {
 
 frontend clientは現在の検証済み`availableTenants`にないtenantを通信前に拒否し、`no-store`・same-origin JSONでactive tenant変更を要求する。要求には現在の`tenantSessionVersion`を含め、成功responseは既存validatorに加えてprincipal不変、要求tenant一致、新versionへの変更を確認した後だけ遷移へ使用する。遷移時は進行中requestをabortし、workerをdisposeし、object URLと文書・選択・検索等のmemory stateを破棄し、旧browser storage scopeだけを削除してhard document replacementを行う。cleanup/storage削除の一部が失敗しても旧DOMを継続利用せずreplacementを優先する。未検証responseではcleanup、storage変更、navigationを開始しない。別タブ通知は旧DOMを早くblockする補助に限り、通知欠落時も次requestのserver preconditionで停止する。
 
-Workspace用tenant controlは、検証済みmembershipが1件ならactive tenant表示だけ、複数なら`availableTenants`だけをoptionとするselectを構築する。tenant IDの自由入力、tenant検索、role/group解釈を持たず、active tenant自身・allowlist外・不正sessionから変更要求を発火しない。未保存変更の保存／破棄／取消を選ぶalert dialog、選択・旧scope・server応答を再検証するrequest coordinator、App保存・request/worker/object URL/timer cleanup・旧scope削除・hard replacementを起動する任意注入hostは実装済みである。App hostは注入sessionとbrowser scopeが完全一致する場合だけcontrolを構築し、切替確定後または応答不明時は旧tenant本文をloading／blocked stateへ置換する。切替確認は同じ認証sessionの他タブにも影響することを常時説明する。固定channel名へ`null`だけを送る別タブ通知と、受信、`pageshow.persisted`、online復帰、5分以上の非表示復帰で旧Appをblocked化しrequest／workerを停止するcoherence境界も実装済みである。通知はbest-effortであり、失敗してもlocal hard replacementを止めない。SaaS entry pointはbootstrapで検証したsession contextと一致するbrowser scopeをAppへ同時注入し、文書read/write/export監査clientはそのopaque versionだけを正式headerへ付与する。serverの`tenant_session_changed`は通常の文書競合として扱わず、runtime cleanup後に旧Appをblocked化する。stale response／worker結果を世代単位でcommit拒否する共通guardは未実装である。
+Workspace用tenant controlは、検証済みmembershipが1件ならactive tenant表示だけ、複数なら`availableTenants`だけをoptionとするselectを構築する。tenant IDの自由入力、tenant検索、role/group解釈を持たず、active tenant自身・allowlist外・不正sessionから変更要求を発火しない。未保存変更の保存／破棄／取消を選ぶalert dialog、選択・旧scope・server応答を再検証するrequest coordinator、App保存・request/worker/object URL/timer cleanup・旧scope削除・hard replacementを起動する任意注入hostは実装済みである。App hostは注入sessionとbrowser scopeが完全一致する場合だけcontrolを構築し、切替確定後または応答不明時は旧tenant本文をloading／blocked stateへ置換する。切替確認は同じ認証sessionの他タブにも影響することを常時説明する。固定channel名へ`null`だけを送る別タブ通知と、受信、`pageshow.persisted`、online復帰、5分以上の非表示復帰で旧Appをblocked化しrequest／workerを停止するcoherence境界も実装済みである。通知はbest-effortであり、失敗してもlocal hard replacementを止めない。SaaS entry pointはbootstrapで検証したsession contextと一致するbrowser scopeをAppへ同時注入し、文書read/write/export監査と文書内容を扱うAI mutation clientはそのopaque versionだけを正式headerへ付与する。serverの`tenant_session_changed`は通常の文書競合やAI provider障害として扱わず、runtime cleanup後に旧Appをblocked化する。App runtime cleanupはtenant session generationを単調に無効化し、Document read/write、export監査、AI mutation、diff／診断worker、bundle生成の遅延成功結果を開始時generationが一致する場合だけ呼出元へ返す。bundleはgeneration照合後にだけzip downloadへ進む。ローカルDocument／view／comparison／review-pack／patch importもFile／zip／integrity／fingerprintの非同期結果を同じguardへ通し、review-pack snapshot URLは最後の検証後にだけ生成する。PNG／HTML snapshot、patch、agent taskの非同期生成結果もguard成功後にだけdownload／clipboardへ渡す。public packはmanifest／Document／任意viewを同一generationで取得・検証してから一括commitし、stale時はAPI／組込みsampleへ自動fallbackしない。子コンポーネントが所有する問い合わせbundle import workerとtrace workerもAppから同じguardを受け取り、stale結果をstate更新やclipboard開始へ渡さない。将来追加するserver import／share等のendpoint、clipboard API呼出し後のOS側commit取消は未実装である。
 
 `principalId`は認証済みUserに対応するserver-managed opaque IDであり、表示名やemail、外部IdP subjectを返さない。browser storage scopeのprincipal要素にはこの値だけを使う。
 
-実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。server runtime profileをprofile名非公開の2値へ写像する`GET /session/bootstrap-policy`、strict frontend client、profile別entry pointも実装済みで、frontendは成功・エラーresponseを4KiBまでに限定し、未知mode、余分なfield、非UTF-8、不正JSONを利用しない。session responseの内部builderと`GET /session/context` routeは、active tenantの再照合、opaque principalId、allowlist済みtenant候補、trusted capability resolverの既知capabilityだけを受理し、識別子・一覧件数・response sizeを上限内へ閉じる。不正・欠損したcapability snapshotは`503 capability_resolution_unavailable`、不正・過大なsession値は`503 session_context_unavailable`としてfail-closedにする。`POST /session/active-tenant`も現在contextと要求tenantのmembershipを再確認し、検証済み選択結果だけをtrusted session persisterへ渡す。frontend側はsession GET/POSTを`no-store`・same-originで行い、成功・エラーresponseのstreamを64KiBまでで打ち切って超過時はcancelする。成功response validatorを通過し、active tenantがavailableTenantsと一致したcontextだけをbrowser storage scope／transitionへ渡す。request coordinatorと任意注入App hostもcurrent session、要求tenant、旧scope、POST成功responseのprincipal／active tenantを独立に再検証し、未保存変更の取消・保存失敗では通信やcleanupを開始しない。未知・重複capability、余分なfield、非UTF-8、非表示・過大値は利用しない。strict external HTTP capability resolver、application lifecycleの既定unavailable配線、identity/tenant/persisterを部分注入させない起動前bundle境界は実装済みである。HTTP headerやqueryを直接verified evidenceへ変換する処理、実auth edge adapterとanti-forgery付きsession persisterの接続、production entryからApp hostへのsession注入は未実装であり、SaaS profileは引き続き閉じる。
+実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。server runtime profileをprofile名非公開の2値へ写像する`GET /session/bootstrap-policy`、strict frontend client、profile別entry pointも実装済みで、frontendは成功・エラーresponseを4KiBまでに限定し、未知mode、余分なfield、非UTF-8、不正JSONを利用しない。session responseの内部builderと`GET /session/context` routeは、active tenantの再照合、opaque principalId、allowlist済みtenant候補、trusted capability resolverの既知capabilityだけを受理し、識別子・一覧件数・response sizeを上限内へ閉じる。不正・欠損したcapability snapshotは`503 capability_resolution_unavailable`、不正・過大なsession値は`503 session_context_unavailable`としてfail-closedにする。`POST /session/active-tenant`も現在contextと要求tenantのmembershipを再確認し、検証済み選択結果だけをtrusted session persisterへ渡す。frontend側はsession GET/POSTを`no-store`・same-originで行い、成功・エラーresponseのstreamを64KiBまでで打ち切って超過時はcancelする。成功response validatorを通過し、active tenantがavailableTenantsと一致したcontextだけをbrowser storage scope／transitionへ渡す。request coordinatorと任意注入App hostもcurrent session、要求tenant、旧scope、POST成功responseのprincipal／active tenantを独立に再検証し、未保存変更の取消・保存失敗では通信やcleanupを開始しない。未知・重複capability、余分なfield、非UTF-8、非表示・過大値は利用しない。strict external HTTP capability resolver、application lifecycleの既定unavailable配線、identity/tenant/persisterを部分注入させずruntime profileとも原子的に照合する起動前bundle境界は実装済みである。SaaS frontend entryはpolicy／session bootstrap成功後の検証済みcontextとbrowser scopeをApp hostへ同時注入し、single-tenant entryは従来どおり未注入で起動する。HTTP headerやqueryを直接verified evidenceへ変換する処理、実auth edge adapterとanti-forgery付きsession persisterの接続は未実装であり、SaaS profileは引き続き閉じる。
 
 frontend entryはbuild時の`KJ_ATLAS_RUNTIME_PROFILE`をclosed-worldに解決する。未指定・`local-dev`・`evaluation`・`enterprise-production`はpolicy通信を行わず従来のlocal-first Appをmountする。`saas-multitenant`だけはserver bootstrap policyが`tenant-session-required`と一致した後、session GETとresponse再検証を完了し、成功時だけ`deployment + tenantId + principalId` scope付きAppをmountする。未知・空・非canonical build値、policy取得失敗・不一致、401、403、session解決不能、不正response、不正deploymentは旧本文をmountしないretry可能なblocked stateへ分離し、upstream message、profile、principal、tenant値を表示しない。lifecycle abortは失敗表示へ変換せず破棄する。現行backendは`saas-multitenant`を起動前に拒否するため、このentry配線だけでSaaS対応済みとは扱わない。
 
@@ -797,7 +830,7 @@ export type TenantScopedAccessRequestV1 = {
 - `noop`、endpoint欠損時noop fallback、`read_only` fail-safeはSaaS profileで禁止する。§8.3〜8.6の互換挙動はsingle-tenant profileだけに適用する。
 - auditにはtenantId、opaque actor/resource ID、action、decision、policy/capability version、correlation IDだけを記録し、本文、タイトル、role/group生値、tokenを記録しない。
 
-Tenant-scoped access-control entry pointは、TenantContext欠損、resource tenant欠損、両tenant不一致をそれぞれ`tenant_context_missing`、`resource_tenant_missing`、`tenant_mismatch`として外部PDP呼出し前にdenyする。このguardは`read_only` fail-safeから独立し、tenant境界の不備をread許可へ変換しない。Document routeのresource解決もapplication lifecycleで設定するresolver境界とし、現行profileは公開headerを読む`SingleTenantHeaderResourceResolver`、将来SaaS profileはheaderを無視して`tenantId + docId`をDB lookupする`ServerOwnedDocumentResourceResolver`を使用する。後者は既存行のtenantを確認し、未整備のvisibility/policyRefを`Restricted`/欠損へ倒すためdeny modeで安全側に停止する。server-owned policy metadata storeと外部binding resolver adapterは実装済みだがSaaS runtime配線は未実装であり、単一テナント互換resolverをSaaS境界として扱わない。
+Tenant-scoped access-control entry pointは、TenantContext欠損、resource tenant欠損、両tenant不一致をそれぞれ`tenant_context_missing`、`resource_tenant_missing`、`tenant_mismatch`として外部PDP呼出し前にdenyする。このguardは`read_only` fail-safeから独立し、tenant境界の不備をread許可へ変換しない。Document routeのresource解決もapplication lifecycleで設定するresolver境界とし、現行profileは公開headerを読む`SingleTenantHeaderResourceResolver`、SaaS profileはheaderを無視して`tenantId + docId`をDB lookupする`ServerOwnedDocumentResourceResolver`を使用する。後者は既存行のtenantを確認し、未整備のvisibility/policyRefを`Restricted`/欠損へ倒すためdeny modeで安全側に停止する。server-owned policy metadata store、外部binding resolver adapter、SaaS bundle有効化時のresolver切替は実装済みである。実binding service／PDP接続と越境matrixが未完了のためSaaS profileは閉じたままとし、単一テナント互換resolverをSaaS境界として扱わない。
 
 `external_http` binding resolverは、server-owned metadataから得た`tenantId`、非秘密`bindingId`、`policyVersion`だけを信頼済みendpointへPOSTする。tenantIdは256文字以下、bindingId/policyVersionは128文字以下のcanonical ID、request全体は64KiB以下に限定し、不正・過大lookupはtransport前に解決失敗へ倒す。応答は`{"policyRef": string}`だけを受理し、64KiB超、余分なfield、空白・制御文字を含む値、2,048文字超、非JSON、4xx拒否、timeout/transport障害は解決失敗とする。raw request/responseや内部例外詳細をclient・監査・logへ反射しない。返却されたpolicyRefはAccessRequest内だけでPDPへ渡し、永続化しない。resolver未設定は従来どおりunavailableとして`Restricted + policy_ref_missing`へ倒す。
 

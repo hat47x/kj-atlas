@@ -1596,6 +1596,7 @@
   "side_panel.trace.cancel_analytics": "分析を中止",
   "side_panel.trace.analytics_progress": "トレース分析（{mode}）: {stage}（{percent}%）",
   "side_panel.trace.analytics_failed": "トレース分析に失敗しました",
+  "side_panel.trace.failed": "トレースの計算に失敗しました。もう一度お試しください",
   "side_panel.trace.progress": "{kind}: {stage}（{percent}%）",
   "side_panel.trace.cancelled": "トレースを中止しました",
   "side_panel.trace.copy_contradiction_failed": "矛盾トレースをコピーできませんでした",

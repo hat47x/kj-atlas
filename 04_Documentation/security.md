@@ -150,6 +150,17 @@ export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/d
 - `Org` または `Restricted` の対象で `policyRef` がない場合、local fail-safe が働きます。`read_only` では読み取りだけを許可し、`deny` では拒否します。
 - `Public` と `Unlisted` は `policyRef` 欠損による強制 fail-safe の対象外です。公開範囲を広げる前に、visibility と policyRef を確認してください。
 
+### SaaS用resolverは設定不備を起動時に拒否する
+
+次の2 resolverは、上記の `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` とfallback契約が異なります。
+
+- `KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER`
+- `KJ_ATLAS_TENANT_CAPABILITY_RESOLVER`
+
+どちらも `none` または `external_http` だけを受理します。`external_http` を選んだのにendpointがない場合、または `none` のままendpointやAPI keyだけを残した場合は、`noop` / `none` へ静かに後退せず、設定エラーとして起動を拒否します。不明なresolver名、安全でないURL、credential・query・fragmentを含むURLもfail-closedで拒否します。
+
+この起動時拒否は設定ミスを隠さないための安全境界です。resolverを無効化する場合は、対応するHTTP endpointとAPI keyも同時に削除してください。全キーと入力制約は `02_Architecture/runtime_parameter_registry.md` を参照してください。
+
 
 ## 障害診断時の共有境界
 
@@ -187,6 +198,7 @@ export、share、障害調査でどの情報を削るか迷う場合は、[data_
 - [ ] share/export の出力に秘密情報や内部メモが混ざっていない。
 - [ ] access control 障害時の fail-safe が `read_only` など保守的な値になっている。
 - [ ] `external_http` を使う場合、PDP の接続先（endpoint）が設定され、`noop` にフォールバックしていない。
+- [ ] Document policy binding / tenant capability resolverを`external_http`にする場合はendpointが設定され、`none`にする場合はHTTP endpoint・API keyが残っていない。
 
 ## 迷ったときの判断
 

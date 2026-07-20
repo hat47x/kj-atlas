@@ -515,7 +515,7 @@ class _Ce4AuditTrackerState(BaseModel):
     proposal_source_bundle_hash: str | None = None
 
 
-_ce4_audit_event_tracker: dict[tuple[str, str], _Ce4AuditTrackerState] = {}
+_ce4_audit_event_tracker: dict[tuple[str, str, str, str], _Ce4AuditTrackerState] = {}
 _ce4_audit_tracker_lock = Lock()
 
 
@@ -525,10 +525,16 @@ def reset_ce4_audit_event_tracker() -> None:
 
 
 def _record_ce4_event_and_validate_completeness(
-    *, equivalence_key: str, bundle_hash: str, operation: str, source_bundle_hash: str | None
+    *,
+    tenant_id: str,
+    doc_id: str,
+    equivalence_key: str,
+    bundle_hash: str,
+    operation: str,
+    source_bundle_hash: str | None,
 ) -> None:
     with _ce4_audit_tracker_lock:
-        tracker_key = (equivalence_key, bundle_hash)
+        tracker_key = (tenant_id, doc_id, equivalence_key, bundle_hash)
         state = _ce4_audit_event_tracker.setdefault(tracker_key, _Ce4AuditTrackerState())
         state.seen_operations.add(operation)
         if operation == "proposal":
@@ -581,6 +587,15 @@ def post_context_audit(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
+    access_request, decision, tenant = _authorize_request(
+        request,
+        db,
+        action="read",
+        doc_id=doc_id,
+        safe_mode=payload.safeMode,
+        read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
+    )
+
     if payload.queryHash is not None and payload.queryHash != payload.equivalenceKey:
         raise _ce4_validation_error("query_hash_mismatch", "queryHash must equal equivalenceKey for CE4 equivalence checks")
     if payload.operation in {"proposal", "apply"} and payload.sourceBundleHash is None:
@@ -599,20 +614,14 @@ def post_context_audit(
         raise _ce4_validation_error("operation_command_mismatch", f"command '{payload.command}' is invalid for operation '{payload.operation}'")
     if settings.ce4_audit_require_all_events:
         _record_ce4_event_and_validate_completeness(
+            tenant_id=tenant.tenant_id,
+            doc_id=doc_id,
             equivalence_key=payload.equivalenceKey,
             bundle_hash=payload.bundleHash,
             operation=payload.operation,
             source_bundle_hash=payload.sourceBundleHash,
         )
 
-    access_request, decision, tenant = _authorize_request(
-        request,
-        db,
-        action="read",
-        doc_id=doc_id,
-        safe_mode=payload.safeMode,
-        read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
-    )
     dispatcher = getattr(request.app.state, "audit_dispatcher", None)
     if dispatcher is not None:
         dispatcher.emit(

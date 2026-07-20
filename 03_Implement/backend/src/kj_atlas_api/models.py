@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from sqlalchemy import CheckConstraint, Index, Integer, Text
+from sqlalchemy import CheckConstraint, Index, Integer, Text, text
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -128,6 +128,12 @@ class DocumentAccessMetadataRow(Base):
 class DocumentAccessAdminAuditEventRow(Base):
     __tablename__ = "document_access_admin_audit_events"
     __table_args__ = (
+        ForeignKeyConstraint(
+            ["tenant_id", "doc_id"],
+            ["documents.tenant_id", "documents.id"],
+            name="fk_document_access_admin_audit_tenant_document",
+            ondelete="RESTRICT",
+        ),
         CheckConstraint(
             "action = 'document.policy.update'",
             name="ck_document_access_admin_audit_action",
@@ -182,6 +188,12 @@ class UserIdentityRow(Base):
             "identity_provider_id",
             "subject",
             name="uq_user_identities_identity_provider_subject",
+        ),
+        Index(
+            "uq_user_identities_provider_lower_external_uid",
+            text("lower(provider)"),
+            text("lower(external_uid)"),
+            unique=True,
         ),
     )
 

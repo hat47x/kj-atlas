@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import HTTPException
 from starlette.requests import Request
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.auth_context import _header, _normalize_provider, resolve_identity_context
@@ -20,9 +20,12 @@ def _request(headers: dict[str, str]) -> Request:
     return Request(scope)
 
 
-def _db_session() -> Session:
+def _db_session(*, allow_legacy_ambiguous_identities: bool = False) -> Session:
     engine = create_engine("sqlite+pysqlite:///:memory:")
     Base.metadata.create_all(engine)
+    if allow_legacy_ambiguous_identities:
+        with engine.begin() as connection:
+            connection.execute(text("DROP INDEX uq_user_identities_provider_lower_external_uid"))
     return Session(engine)
 
 
@@ -74,7 +77,7 @@ def test_resolve_identity_context_raises_when_identity_missing_and_jit_disabled(
 
 
 def test_resolve_identity_context_raises_conflict_for_duplicate_provider_subject() -> None:
-    with _db_session() as db:
+    with _db_session(allow_legacy_ambiguous_identities=True) as db:
         db.add_all(
             [
                 UserRow(

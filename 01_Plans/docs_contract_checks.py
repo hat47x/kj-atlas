@@ -14,11 +14,24 @@ RELATIVE_LINK_RULE_ID = "DC-LNK-001"
 CURRENT_HISTORY_RULE_ID = "DC-CUR-001"
 HISTORY_METADATA_RULE_ID = "DC-HIS-001"
 ARCHITECTURE_BASELINE_RULE_ID = "DC-ARC-001"
+API_RESPONSE_MODEL_RULE_ID = "DC-API-001"
 PUBLIC_BOUNDARY_RULE_ID = "DC-PUB-001"
 SAFETY_ROUTE_RULE_ID = "DC-SAF-001"
 NPM_SCRIPT_COMMAND_RULE_ID = "DC-CMD-001"
 ADR_ID_UNIQUENESS_RULE_ID = "DC-ADR-001"
+ADR_TRACEABILITY_PATH_RULE_ID = "DC-ADR-002"
+CI_JOB_TIMEOUT_RULE_ID = "DC-CI-001"
 ADR_FILENAME_RE = re.compile(r"^ADR-(?P<id>\d{4})-[^.]+\.md$")
+ADR_TRACEABILITY_PATH_RE = re.compile(
+    r"^- (?:Supersedes|Superseded by|Derived-from):\s+`(?P<target>01_Plans/adr/[^`]+)`",
+    re.MULTILINE,
+)
+CI_WORKFLOW_PATHS = (
+    Path(".github/workflows/ci.yml"),
+    Path(".github/workflows/release.yml"),
+)
+CI_JOB_HEADER_RE = re.compile(r"^  (?P<job>[A-Za-z0-9_-]+):\s*$")
+CI_JOB_TIMEOUT_RE = re.compile(r"^    timeout-minutes:\s*(?P<minutes>\d+)\s*$")
 DOCUMENT_TYPE_RE = re.compile(r"export type (Document\w*)\s*=\s*\{\s*\r?\n\s*version:\s*([^;]+);")
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
@@ -39,6 +52,25 @@ CURRENT_ONLY_PATHS = (
     Path("02_Architecture/data_model_operations_overview.md"),
     Path("03_Implement/frontend/docs/e2e_testing.md"),
 )
+DOCUMENTED_RESPONSE_MODEL_REQUIRED_TERMS = {
+    Path("02_Architecture/api.md"): (
+        "/admin/provision/hil-rs/a2a3-gate:validate",
+        "A2A3GateValidationResponse",
+        "/docs/{doc_id}/similar-candidate-groups",
+        "CandidateListViewModel",
+        "/ai/provider-status",
+        "ProviderStatusResponse",
+    ),
+    Path("02_Architecture/schemas.md"): (
+        "A2A3GateValidationResponse",
+        "CandidateListViewModel",
+        "SimilarCandidateGroup",
+        "generatedAt",
+        "totalGroupCount",
+        "ProviderStatusResponse",
+        "providerKind",
+    ),
+}
 HISTORY_REQUIRED_LABELS = (
     "Status: Informative history",
     "Source document:",
@@ -439,6 +471,92 @@ def check_document_contract_baseline(
                 )
             )
 
+    return findings
+
+
+def check_adr_traceability_paths(root: Path, markdown_paths: list[Path]) -> list[DocsCheckFinding]:
+    """Reject traceability fields that point to a nonexistent ADR file."""
+    repository_root = root.resolve()
+    findings: list[DocsCheckFinding] = []
+
+    for supplied_path in markdown_paths:
+        relative_path = supplied_path if not supplied_path.is_absolute() else supplied_path.relative_to(repository_root)
+        if relative_path.parent != Path("01_Plans/adr") or not ADR_FILENAME_RE.match(relative_path.name):
+            continue
+        source = repository_root / relative_path
+        text = source.read_text(encoding="utf-8")
+        for match in ADR_TRACEABILITY_PATH_RE.finditer(text):
+            target = match.group("target")
+            if (repository_root / target).is_file():
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=ADR_TRACEABILITY_PATH_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=text.count("\n", 0, match.start()) + 1,
+                    target=target,
+                    message=f"ADR traceability target does not exist: {target}",
+                    fix_hint="Remove the false traceability claim or point it to the tracked ADR that records the decision.",
+                )
+            )
+
+    return findings
+
+
+def check_ci_job_timeouts(
+    root: Path,
+    workflow_paths: tuple[Path, ...] = CI_WORKFLOW_PATHS,
+) -> list[DocsCheckFinding]:
+    """Require every job in the maintained GitHub Actions workflows to have a bounded timeout."""
+    findings: list[DocsCheckFinding] = []
+    for relative_path in workflow_paths:
+        source = root / relative_path
+        lines = source.read_text(encoding="utf-8").splitlines()
+        jobs_index = lines.index("jobs:")
+        job_headers = [
+            (index, match.group("job"))
+            for index, line in enumerate(lines[jobs_index + 1 :], start=jobs_index + 1)
+            if (match := CI_JOB_HEADER_RE.match(line))
+        ]
+        for position, (start_index, job_name) in enumerate(job_headers):
+            end_index = job_headers[position + 1][0] if position + 1 < len(job_headers) else len(lines)
+            timeout_match = next(
+                (CI_JOB_TIMEOUT_RE.match(line) for line in lines[start_index + 1 : end_index] if CI_JOB_TIMEOUT_RE.match(line)),
+                None,
+            )
+            if timeout_match and 1 <= int(timeout_match.group("minutes")) <= 360:
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=CI_JOB_TIMEOUT_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=start_index + 1,
+                    target=job_name,
+                    message=f"workflow job `{job_name}` is missing a valid timeout-minutes value",
+                    fix_hint="Set timeout-minutes to an integer from 1 through 360 at the job level.",
+                )
+            )
+    return findings
+
+
+def check_documented_response_models(root: Path) -> list[DocsCheckFinding]:
+    """Keep implemented auxiliary response contracts visible in both API docs."""
+    findings: list[DocsCheckFinding] = []
+    for path, required_terms in DOCUMENTED_RESPONSE_MODEL_REQUIRED_TERMS.items():
+        text = (root / path).read_text(encoding="utf-8")
+        for term in required_terms:
+            if term in text:
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=API_RESPONSE_MODEL_RULE_ID,
+                    path=path.as_posix(),
+                    line=1,
+                    target=term,
+                    message=f"implemented response contract marker is missing: {term}",
+                    fix_hint="Restore the endpoint/model contract and its response fields from the backend response_model definition.",
+                )
+            )
     return findings
 
 
@@ -1040,8 +1158,11 @@ def main() -> int:
     markdown_paths = tracked_markdown_paths(root)
     findings = check_relative_links(root, markdown_paths)
     findings.extend(check_adr_id_uniqueness(root, markdown_paths))
+    findings.extend(check_adr_traceability_paths(root, markdown_paths))
+    findings.extend(check_ci_job_timeouts(root))
     findings.extend(check_current_history_headings(root))
     findings.extend(check_document_contract_baseline(root))
+    findings.extend(check_documented_response_models(root))
     findings.extend(check_history_metadata(root))
     findings.extend(check_public_boundary(root))
     findings.extend(check_safety_routes(root))

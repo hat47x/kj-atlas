@@ -1,7 +1,5 @@
 import type { Card } from "./types";
 
-export const CARD_QUALITY_SCHEMA_VERSION = "1.0.0" as const;
-
 // 6 representative fixture kinds, per qualitative_card_quality_requirements.md §7.
 export const CARD_QUALITY_FIXTURE_KINDS = [
   "single_center",

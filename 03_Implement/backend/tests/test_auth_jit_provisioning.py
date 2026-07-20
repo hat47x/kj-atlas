@@ -5,7 +5,7 @@ from collections.abc import Iterator
 
 from fastapi.testclient import TestClient
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from kj_atlas_api.db import get_db
@@ -24,11 +24,18 @@ from kj_atlas_api.settings import settings
 
 
 @contextmanager
-def _sqlite_client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker]]:
+def _sqlite_client(
+    tmp_path,
+    *,
+    allow_legacy_ambiguous_identities: bool = False,
+) -> Iterator[tuple[TestClient, sessionmaker]]:
     db_path = tmp_path / "auth_jit.sqlite3"
     engine = create_engine(f"sqlite:///{db_path}")
     session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     Base.metadata.create_all(bind=engine)
+    if allow_legacy_ambiguous_identities:
+        with engine.begin() as connection:
+            connection.execute(text("DROP INDEX uq_user_identities_provider_lower_external_uid"))
 
     def _get_test_db():
         db = session_local()
@@ -413,7 +420,7 @@ def test_admin_provision_rejects_ambiguous_identity_mapping(tmp_path) -> None:
     original_allow_jit = settings.allow_jit_provisioning
     settings.allow_jit_provisioning = False
     try:
-        with _sqlite_client(tmp_path) as fixture:
+        with _sqlite_client(tmp_path, allow_legacy_ambiguous_identities=True) as fixture:
             client, session_local = fixture
             with session_local() as db:
                 user_1 = UserRow(
@@ -471,7 +478,7 @@ def test_docs_strict_mode_rejects_ambiguous_identity_mapping(tmp_path) -> None:
     original_allow_jit = settings.allow_jit_provisioning
     settings.allow_jit_provisioning = False
     try:
-        with _sqlite_client(tmp_path) as fixture:
+        with _sqlite_client(tmp_path, allow_legacy_ambiguous_identities=True) as fixture:
             client, session_local = fixture
             with session_local() as db:
                 user_1 = UserRow(
@@ -568,6 +575,37 @@ def test_admin_provision_contract_rejects_blank_provider_or_external_uid(tmp_pat
             assert blank_external_uid.status_code == 400
     finally:
         settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level1
+@pytest.mark.parametrize(
+    ("runtime_profile", "expected_status", "expected_code"),
+    [
+        ("saas-multitenant", 404, "strict_provisioning_unavailable"),
+        ("unknown", 503, "runtime_policy_unavailable"),
+    ],
+)
+def test_strict_provisioning_is_unavailable_outside_known_single_tenant_profiles(
+    tmp_path,
+    runtime_profile: str,
+    expected_status: int,
+    expected_code: str,
+) -> None:
+    with _sqlite_client(tmp_path) as fixture:
+        client, session_local = fixture
+        client.app.state.runtime_profile = runtime_profile
+
+        response = client.post(
+            "/admin/provision/users",
+            json={"provider": "oidc", "externalUid": "blocked-user"},
+        )
+
+        assert response.status_code == expected_status
+        assert response.json()["detail"]["code"] == expected_code
+        with session_local() as db:
+            assert db.query(UserRow).count() == 0
+            assert db.query(UserIdentityRow).count() == 0
+            assert db.query(TenantMembershipRow).count() == 0
 
 
 @pytest.mark.auth_level1

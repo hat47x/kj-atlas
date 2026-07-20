@@ -21,6 +21,7 @@ class MainWiringTest(unittest.TestCase):
     CHECKS_WITH_PATHS = (
         "check_relative_links",
         "check_adr_id_uniqueness",
+        "check_adr_traceability_paths",
         "check_npm_script_commands",
         "check_compose_service_commands",
         "check_runtime_parameter_key_commands",
@@ -31,9 +32,11 @@ class MainWiringTest(unittest.TestCase):
     CHECKS_WITH_ROOT = (
         "check_current_history_headings",
         "check_document_contract_baseline",
+        "check_documented_response_models",
         "check_history_metadata",
         "check_public_boundary",
         "check_safety_routes",
+        "check_ci_job_timeouts",
     )
 
     def _run_main(self, root: Path, *, finding=None):
@@ -409,6 +412,129 @@ class DocumentContractBaselineTest(unittest.TestCase):
         paths_with_findings = {f.path for f in findings}
         self.assertIn("02_Architecture/api.md", paths_with_findings)
         self.assertIn("02_Architecture/data_model_operations_overview.md", paths_with_findings)
+
+
+class DocumentedResponseModelsTest(unittest.TestCase):
+    def _write_required_docs(self, root: Path) -> None:
+        for path, terms in MODULE.DOCUMENTED_RESPONSE_MODEL_REQUIRED_TERMS.items():
+            target = root / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("\n".join(terms), encoding="utf-8")
+
+    def test_accepts_all_required_endpoint_and_model_markers(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_required_docs(root)
+
+            findings = MODULE.check_documented_response_models(root)
+
+        self.assertEqual(findings, [])
+
+    def test_reports_missing_marker_in_each_canonical_doc(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write_required_docs(root)
+            api_path = root / "02_Architecture" / "api.md"
+            api_path.write_text(
+                api_path.read_text(encoding="utf-8").replace("/ai/provider-status", ""),
+                encoding="utf-8",
+            )
+            schemas_path = root / "02_Architecture" / "schemas.md"
+            schemas_path.write_text(
+                schemas_path.read_text(encoding="utf-8").replace("totalGroupCount", ""),
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_documented_response_models(root)
+
+        self.assertEqual(
+            {(finding.path, finding.target) for finding in findings},
+            {
+                ("02_Architecture/api.md", "/ai/provider-status"),
+                ("02_Architecture/schemas.md", "totalGroupCount"),
+            },
+        )
+        self.assertTrue(all(finding.rule_id == "DC-API-001" for finding in findings))
+
+
+class AdrTraceabilityPathCheckTest(unittest.TestCase):
+    def test_reports_missing_adr_traceability_target(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            adr_dir = root / "01_Plans" / "adr"
+            adr_dir.mkdir(parents=True)
+            source = Path("01_Plans/adr/ADR-0001-source.md")
+            (root / source).write_text(
+                "# ADR-0001\n\n- Supersedes: `01_Plans/adr/ADR-0002-missing.md`\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_adr_traceability_paths(root, [source])
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_id, "DC-ADR-002")
+        self.assertEqual(findings[0].line, 3)
+        self.assertEqual(findings[0].target, "01_Plans/adr/ADR-0002-missing.md")
+
+    def test_accepts_existing_adr_and_ignores_superseded_non_adr_documents(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            adr_dir = root / "01_Plans" / "adr"
+            adr_dir.mkdir(parents=True)
+            source = Path("01_Plans/adr/ADR-0001-source.md")
+            target = Path("01_Plans/adr/ADR-0002-target.md")
+            (root / source).write_text(
+                "# ADR-0001\n\n"
+                "- Derived-from: `01_Plans/adr/ADR-0002-target.md`\n"
+                "- Supersedes: `01_Plans/legacy-plan.md`\n",
+                encoding="utf-8",
+            )
+            (root / target).write_text("# ADR-0002\n", encoding="utf-8")
+
+            findings = MODULE.check_adr_traceability_paths(root, [source, target])
+
+        self.assertEqual(findings, [])
+
+
+class CiJobTimeoutCheckTest(unittest.TestCase):
+    def test_reports_each_job_without_a_valid_timeout(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            workflow = root / "workflow.yml"
+            workflow.write_text(
+                "jobs:\n"
+                "  missing:\n"
+                "    runs-on: ubuntu-latest\n"
+                "  zero:\n"
+                "    runs-on: ubuntu-latest\n"
+                "    timeout-minutes: 0\n"
+                "  valid:\n"
+                "    runs-on: ubuntu-latest\n"
+                "    timeout-minutes: 30\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_ci_job_timeouts(root, (Path("workflow.yml"),))
+
+        self.assertEqual([finding.target for finding in findings], ["missing", "zero"])
+        self.assertTrue(all(finding.rule_id == "DC-CI-001" for finding in findings))
+
+    def test_accepts_bounded_timeout_for_every_job(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            workflow = root / "workflow.yml"
+            workflow.write_text(
+                "jobs:\n"
+                "  first-job:\n"
+                "    timeout-minutes: 5\n"
+                "  second_job:\n"
+                "    timeout-minutes: 360\n",
+                encoding="utf-8",
+            )
+
+            findings = MODULE.check_ci_job_timeouts(root, (Path("workflow.yml"),))
+
+        self.assertEqual(findings, [])
 
 
 class HistoryMetadataTest(unittest.TestCase):

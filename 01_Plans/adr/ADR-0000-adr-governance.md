@@ -107,4 +107,3 @@
   `01_Plans/phase2_qualitative_integration.md`, `01_Plans/phase3_review_governance.md`,
   `01_Plans/phaseX_future_backlog.md`, `01_Plans/phaseX_cli_tool.md`,
   `01_Plans/phaseX_local_llm_integration.md`
-- Supersedes: `01_Plans/adr/ADR-0020-issue-context-lifecycle.md`

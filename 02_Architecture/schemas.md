@@ -997,7 +997,7 @@ target physical schema:
 - `documents(tenant_id, id, version, updated_at, payload_json)` with `UNIQUE(tenant_id, id)`
 - `merge_decision_logs(tenant_id, doc_id, ...)` with `FOREIGN KEY(tenant_id, doc_id) -> documents(tenant_id, id)`
 - `document_access_metadata(tenant_id, doc_id, visibility, policy_binding_id, policy_version, updated_at)` with `PRIMARY KEY(tenant_id, doc_id)` and composite Document FK。`Org/Restricted`は非空binding ID必須。raw policyRefは保存しない。
-- `document_access_admin_audit_events(event_id, tenant_id, principal_id, doc_id, action, decision, policy_version, capability_version, correlation_id, occurred_at)`。metadata更新と同一transactionで追加し、binding ID、raw policyRef、title、本文、tokenは列として持たない。
+- `document_access_admin_audit_events(event_id, tenant_id, principal_id, doc_id, action, decision, policy_version, capability_version, correlation_id, occurred_at)` with `FOREIGN KEY(tenant_id, doc_id) -> documents(tenant_id, id) ON DELETE RESTRICT`。metadata更新と同一transactionで追加し、binding ID、raw policyRef、title、本文、tokenは列として持たない。監査を暗黙に連鎖削除せず、Document lifecycle方針が確定するまでは監査が存在するDocumentの削除をDBで拒否する。
 - 将来の`agent_registrations`、job、その他audit eventにもtenantIdを必須伝播する。
 
 tenantIdはserver-managed列であり、`DocumentV1` payload、view.json、import/export bundleの認可値として追加しない。現行`provider + external_uid`一意制約はsingle-tenant互換期間の実装であり、SaaS profileでは`identityProviderId + subject`とTenantMembershipへ移行する。共有schema型SaaSは、上記制約に加えPostgreSQL RLS等のDB側tenant guardを必須とする。
@@ -1012,7 +1012,7 @@ export type TenantBrowserStorageScopeV1 = {
 };
 ```
 
-tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し、反復中のindex変化でentryを取りこぼさない。検証済みsession responseだけを受け付けるtransition coordinatorが、request abort、worker dispose、object URL・memory state破棄hook、旧scope削除、hard document replacementを順に実行する。cleanup/storage削除の一部が失敗しても旧DOMを継続利用しない。未保存変更の保存／破棄／取消をclosed-worldに受けるrequest coordinatorは、current sessionと旧scopeの一致、allowlist内の切替先、POST成功responseのprincipal不変と要求tenant一致を再検証し、確認取消・保存失敗・不正responseではcleanupやnavigationを開始しない。Appの任意注入hostはsessionとscopeの完全一致をmount時に再確認し、切替確定後は旧本文をloadingへ、失敗・応答不明時はblocked stateへ置換してから、保存、runtime cleanup、旧scope削除、hard replacementを実行する。現段階では実auth edge adapterとproduction entryからApp hostへのsession注入を行わない。既存3 profileはlocal-first起動を維持し、`saas-multitenant` buildだけがpolicy一致とsession成功後にscope付きAppをmountする。未知build profileとpolicy不一致はsingle-tenantへfallbackしない。
+tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し、反復中のindex変化でentryを取りこぼさない。検証済みsession responseだけを受け付けるtransition coordinatorが、request abort、worker dispose、object URL・memory state破棄hook、旧scope削除、hard document replacementを順に実行する。cleanup/storage削除の一部が失敗しても旧DOMを継続利用しない。未保存変更の保存／破棄／取消をclosed-worldに受けるrequest coordinatorは、current sessionと旧scopeの一致、allowlist内の切替先、POST成功responseのprincipal不変と要求tenant一致を再検証し、確認取消・保存失敗・不正responseではcleanupやnavigationを開始しない。Appの任意注入hostはsessionとscopeの完全一致をmount時に再確認し、切替確定後は旧本文をloadingへ、失敗・応答不明時はblocked stateへ置換してから、保存、runtime cleanup、旧scope削除、hard replacementを実行する。既存3 profileはlocal-first起動を維持し、`saas-multitenant` buildだけがpolicy一致とsession成功後に検証済みsession contextとscopeをAppへ同時注入してmountする。未知build profileとpolicy不一致はsingle-tenantへfallbackしない。現段階では実auth edge adapterとanti-forgery付きsession persisterをbackend runtimeへ接続しないため、SaaS profileの起動拒否は維持する。
 
 実装段階:
 
@@ -1024,11 +1024,11 @@ tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し
 | Document/判断ログ/backfillのtenant-scoped repository | 解決済みTenantContext必須で実装済み。認証済み利用者はUser/Tenant/Membershipのactive状態を各requestで確認し、repository・PDP payload・auditへ伝播 | production auth edge接続と全consumer伝播までSaaS blocker継続 |
 | `user_identities`の`identityProviderId + subject`移行 | Expand・backfill・二重書き済み。lookupは新binding優先、旧行fallback成功時は自己補完、二重一致は拒否 | 互換IdPは検証済みissuerではなく、旧列contractも残るためSaaS blockerは継続 |
 | Document複合PK/FK、全consumerのtenant必須化 | Document/判断ログの複合PK・unique・FKとrepository経路は実装済み | PostgreSQL実地検証とMCP/worker/cache/storage等のconsumer伝播が未完了のためSaaS blocker継続 |
-| PostgreSQL RLS等のDB側guard | Document/判断ログのENABLE+FORCE RLS policy、repositoryごとのtransaction-local `kj_atlas.tenant_id`設定を実装。SQLiteはno-op | PostgreSQL直接SQL・pool再利用の実地matrixが未実施のためSaaS blocker継続 |
-| verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaim再照合、membership allowlist内部service、resolverのmembership IDとDB再生成値の再一致、信頼済みrequest context共通境界、既知capabilityだけを返す`GET /session/context`、allowlist再照合後だけtrusted persisterへ渡す`POST /session/active-tenant`、identity/tenant/persisterを3点同時にだけ受ける起動前bundle、Document routeの同一docId GET/PUT tenant A/B matrixまで実装 | auth edgeからのverified evidenceとanti-forgery付きsession persister実接続、trusted host mapping、MCP/worker/browserを含む完全matrixは未実装のためblocker継続 |
-| server-owned Document access metadata | tenant/doc複合FK、visibility/binding/version制約、PostgreSQL RLS、tenant-scoped repository、strict external HTTP binding resolverを実装。client policy headerはSaaS resolverで無視し、raw policyRefはrequest内だけで利用 | auth/capability/binding/PDPのSaaS runtime配線・PostgreSQL実地検証が未完了のためSaaS blocker継続 |
+| PostgreSQL RLS等のDB側guard | Document／判断ログ／Document access metadata／管理監査のENABLE+FORCE RLS policy、repositoryごとのtransaction-local `kj_atlas.tenant_id`設定を実装。4表すべてのtenant A/B read・cross-tenant update・contextなしpool再利用に加え、自tenant行のtenantId再割当を`WITH CHECK`で拒否する条件付きPostgreSQL matrixを定義。migrationでRLSを有効化する全表の`USING`／`WITH CHECK`存在は常時contract testで検査する。SQLiteはno-op | 分離したmigration/runtime roleを使うPostgreSQL実地matrixが未実行のためSaaS blocker継続 |
+| verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaim再照合、membership allowlist内部service、resolverのmembership IDとDB再生成値の再一致、信頼済みrequest context共通境界、既知capabilityだけを返す`GET /session/context`、allowlist再照合後だけtrusted persisterへ渡す`POST /session/active-tenant`、identity/tenant/persisterを3点同時にだけ受ける起動前bundle、profile／policy／bundle／実componentのDB初期化前preflight、Document routeの同一docId GET/PUT tenant A/B matrixまで実装 | auth edgeからのverified evidenceとanti-forgery付きsession persister実接続、実capability/PDP service、trusted host mapping、MCP/worker/browserを含む完全matrixは未実装のためblocker継続 |
+| server-owned Document access metadata | tenant/doc複合FK、visibility/binding/version制約、PostgreSQL RLS、tenant-scoped repository、strict external HTTP binding resolver、SaaS時のserver-owned resource resolver切替を実装。client policy headerはSaaS resolverで無視し、raw policyRefはrequest内だけで利用。preflight済みbinding/PDP/capability componentの同一instanceをruntimeへ配線する | auth edge、実binding/PDP/capability service、PostgreSQL実地検証が未完了のためSaaS blocker継続 |
 | Document access metadata管理API・監査 | verified/trusted TenantContextと`document.policy.manage`専用のlist/detail/conditional PUT、秘密値を反射しないstrict入力、tenant-scoped transactional audit、strict external capability/binding resolver、PostgreSQL RLS migrationを実装 | trusted SaaS auth edge、実policy service/PDP接続、PostgreSQL実地検証、frontend配線が未完了のためruntimeではfail-closed無効 |
-| browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、各保存値のoptional tenant scope、App全永続consumerを単一scopeへbindingするfacade、途中scope変更拒否、App unmount時のrequest abort/task cancel/worker dispose、同一docId tenant A/B test、strict bootstrap policy/session GET/active tenant POST client、profile別entry point、App mount前bootstrap／blocked-state gate、membership 1件はlabel・複数はallowlist selectだけのtenant control、保存／破棄／取消dialog、検証済みresponseだけを受けるtransition coordinator、App保存・runtime cleanup・旧scope削除・hard replacementを起動する任意注入hostを実装 | trusted auth/session persisterとproduction entryからApp hostへのsession注入が未実装のためSaaS blocker継続 |
+| browser storage namespace | productionのlocalStorage利用をstorage moduleへ集約し、各保存値のoptional tenant scope、App全永続consumerを単一scopeへbindingするfacade、途中scope変更拒否、App unmount時のrequest abort/task cancel/worker dispose、同一docId tenant A/B test、strict bootstrap policy/session GET/active tenant POST client、profile別entry point、App mount前bootstrap／blocked-state gate、検証済みsession contextとscopeのApp同時注入、membership 1件はlabel・複数はallowlist selectだけのtenant control、保存／破棄／取消dialog、検証済みresponseだけを受けるtransition coordinator、App保存・runtime cleanup・旧scope削除・hard replacementを起動するhostを実装 | trusted auth/session persisterのbackend runtime接続と実ブラウザtenant A/B matrixが未完了のためSaaS blocker継続 |
 
 ## 11. Polygon contract keys（FB-P0-2A2B2C）
 
@@ -1091,6 +1091,48 @@ export type A1ErrorEnvelope = {
 - `message` へ email / external_uid など生IDを含めない。
 - `contractId` は違反した契約IDを必ず指す。
 - A2/A3 で errorCode 列挙を拡張しない。
+
+## 13. 実装済み response view model
+
+Document本体へ永続化しない補助APIのresponse modelを次で固定する。全modelは未知fieldを拒否する。
+
+```ts
+export type A2A3GateValidationResponse = {
+  go: true;
+  schemaVersion: "1.0.0";
+  freezeContractId: "HIL-RS-02-A1-CONTRACT-FREEZE-v1";
+};
+
+export type SimilarCandidateScoreSummary = {
+  min: number;
+  max: number;
+  avg: number;
+};
+
+export type SimilarCandidateGroup = {
+  groupId: string;
+  targetCardId: string;
+  candidateCardIds: string[];
+  scoreSummary: SimilarCandidateScoreSummary;
+  reasonCodes: string[];
+  snapshotVersion: string;
+};
+
+export type CandidateListViewModel = {
+  generatedAt: string; // ISO 8601。現行実装ではDocument.updatedAt
+  groups: SimilarCandidateGroup[];
+  totalGroupCount: number; // >= 0、かつgroups.lengthと一致
+};
+
+export type ProviderStatusResponse = {
+  providerKind: "none" | "local" | "large-scale";
+};
+```
+
+- `CandidateListViewModel` は保存済みDocumentから都度導出するread-only viewであり、Document schemaへの加算ではない。
+- `SimilarCandidateGroup` の並びは `targetCardId` / `candidateCardIds` / `groupId`、候補card IDの並びはcard IDによって決定論的に固定する。
+- `ProviderStatusResponse` は設定解決結果のechoであり、疎通状態や最後のAI実行結果を表さない。
+- 対応endpointとerror境界は `02_Architecture/api.md` §2.11を参照する。
 
 ## 14. DOMAIN-EXPR-02 加算スキーマ拡張（2026-06-21）
 

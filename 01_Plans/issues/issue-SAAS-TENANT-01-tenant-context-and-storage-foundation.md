@@ -48,6 +48,12 @@
 
 各段階でtenant context欠落、backfill不整合、複合FK不整合、RLS context残留、PDP fail-openのいずれかを検出した場合は次段階へ進まない。
 
+## 予算申告
+
+- 複雑性予算（`ADR-0043` CB-1..4）: 初期表示への純増=`+1`（検証済みSaaS session時だけ、active tenantを誤認しないための`TenantSessionControl`をcore toolbarへ表示） / 保留操作の距離=不変（カード・島の保留導線は変更しない） / 取り消し導線=あり（切替前confirmationの取消、切替後はallowlist内のtenantを同じselectorから再選択）。CB-1/CB-3は安全境界を利用者へ常時示すための限定的な純増として許容する。
+- 性能予算（`ADR-0046` PB-1..5）: 代表規模でのKJ主要操作=bootstrap完了後は不変 / 100ms超同期処理=追加なし。PB-2初期表示はruntime policy確認とsession context取得を逐次実行するため**要改善（所要時間未計測）**。現在は両待機中に`aria-busy`付きloading viewを表示してPB-5の無反応状態を避ける。AC-12の実ブラウザ検証で、代表環境の操作可能化時間を計測し、数秒超なら段階表示または待機理由の具体化を行う。
+- 触れるUQ次元（`ADR-0044`）: UQ-1（active tenantの理解）、UQ-2（切替・取消の操作）、UQ-3（keyboard/focus）、UQ-4（390/768/1440px）、UQ-5（loading/blocked/switching状態）、UQ-6（ja/en）。
+
 ## 受入条件
 
 - [x] AC-1: `tenants`、`identity_providers`、`tenant_identity_providers`、`tenant_memberships`が実装され、identityは`identity_provider_id + subject`で一意になる。
@@ -398,3 +404,117 @@
 - SaaS runtime entryでbootstrap済みsession contextと一致するbrowser storage scopeをAppへ同時注入するようにし、App側のclosed-world再検証を通過したcontextだけを文書clientへ渡す。単一テナントentryはsession未注入のままとし、既存requestへheaderを追加しない。
 - `GET/PUT /docs/{doc_id}`と`POST /docs/{doc_id}/export-audit`へ単一の`KJ-Atlas-Tenant-Session-Version`を付与した。clientは呼出時にもsession contractを再検証し、不正contextは通信前に拒否する。serverの`409 tenant_session_changed`はDocument metadata競合として保存再試行へ流さず、runtime resourceをcleanupして旧Appをblocked化する。
 - client／bootstrap／tenant switch／coherenceの近接62件、frontend全体1,263件・218 file、frontend typecheck、docs-checkを通過した。文書以外のtenant-scoped client、document request自体の共通abort／世代commit guard、実ブラウザ複数タブE2E、SaaS runtime起動許可は未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: AI and context session precondition wiring
+
+- 文書内容・source ID・proposal判断を扱う全`POST /ai/*`と`POST /context/*`へ共通dependencyを追加した。SaaS profileではtrusted identity／tenant sessionを再解決し、単一`KJ-Atlas-Tenant-Session-Version`をendpoint本体、LLM transport、audit記録、bundle生成より先に照合する。read-onlyな`GET /ai/provider-status`はtenant資源を扱わないため対象外とした。single-tenant profileは既存requestを維持する。
+- frontendのlayout、merge、island summary、proposal audit、relation summary、narrative check／generationの7 mutationへ、bootstrap済みsessionのopaque versionだけを付与した。`tenant_session_changed`はprovider fallbackへ流さず、既存runtime cleanup後に旧Appをblocked化する共通ラッパーを通す。merge候補のlocal fallbackは404/405/501、network failure、または`provider_unavailable`の503だけに限定し、session/capability系503を処理継続へ変換しない。
+- backend route dependency／AI／context近接48件と全体605件・条件付き25件skip、frontend client／App source guard近接64件と全体1,267件・218 file、backend Ruff、frontend typecheck、docs-check、active issue validatorを通過した。import、share、MCP、webhook、非同期job開始点、request／worker結果の世代commit guard、実ブラウザ複数タブE2E、SaaS runtime起動許可は未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: stale network response generation guard
+
+- App instanceごとのtenant session generation guardを追加し、runtime cleanupの開始時にgenerationを単調に無効化する。Document read／create／write、export監査、文書内容を扱うAI mutationは開始時generation内で成功した結果だけを呼出元へ返し、別タブ通知、bfcache／online／長時間非表示復帰、serverの`tenant_session_changed`後に到着した旧成功responseをDocument state、AI proposal、監査後続処理へcommitしない。
+- guardはtenant、principal、capability、生`tenantSessionVersion`を保持・比較せず、client expected-contextの認可根拠化を避ける。single-tenantでも同じApp lifecycle整合性を得るが、request headerやserver認可契約は変更しない。server不一致時のcleanupは共通request wrapperだけが一度行い、Document conflictやprovider fallbackへ変換しない。
+- 遅延Promiseの現generation成功／無効化後拒否／次generation分離をunit testで固定した。frontend近接39件と全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。workerのabort／dispose後の全結果、import処理、object URL、全tenant-scoped非ブラウザclientを同じgenerationで横断的にcommit拒否する境界、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: stale App worker result generation guard
+
+- Document比較diff worker、outline診断worker、bundle生成task／workerのPromiseをnetwork responseと同じtenant session generation guardへ通した。既存abort／disposeに遅延成功結果のcommit拒否を重ね、旧generationのdiff／診断結果をstateへ適用せず、旧generationのbundle zipをdownloadへ渡さない。
+- stale専用例外はblocked Appの状態表示へ上書きせず破棄し、それ以外のworker失敗契約は維持する。近接worker／bundle／App source guard 77件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。
+- `InquiryJourneyPrototypePanel`等のApp外worker、File／zip／public pack import、PNG等の非worker非同期export、object URLの生成前後、全tenant-scoped非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: stale local import generation guard
+
+- App内のDocument JSON、view metadata、comparison Document、review-pack zip、patch、patch baselineの全File読取をtenant session generation guardへ通した。scope失効後に完了した読取は解析・preview・comparison・patch stateへcommitせず、エラー表示でblocked viewを上書きしない。
+- review-packはzip展開とintegrity検証、patchはfingerprint検証の各非同期境界もguardし、snapshot object URL生成を最後の非同期検証より後へ移した。これによりstale検証結果からURLを生成・保持しない。SafeMode、import validation、人手適用前previewの既存境界は変更しない。
+- import／integrity／patch／App source guard近接69件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。server import、public pack、PNG等の非worker非同期export、App外worker、全tenant-scoped非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: stale asynchronous export generation guard
+
+- abstract map Markdown／HTML snapshot、viewport／visible-bounds PNG、patch export、agent task Markdown／JSONの非同期生成結果をtenant session generation guardへ通した。scope失効後に完了したBlob、data URL、fingerprint付きpatch、task sheetはdownload／clipboard APIを呼ばず破棄する。
+- 同期SVG／JSON exportは同一event turn内で生成・downloadするため今回の非同期結果境界の対象外とした。clipboard書込APIを呼び出した後のOS側commitは取消不能であり、生成結果の照合を呼出直前に置く境界までとする。
+- export／patch／agent task／App source guard近接57件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。server import、public pack、App外worker、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: stale public pack generation guard
+
+- public pack loaderをmanifest、Document、任意viewの全fetch／text decode／strict parseをtenant session generation guard内で完了してからApp stateへ一括commitする構造へ変更した。view取得前にDocumentだけをcommitする中間状態を廃止した。
+- loader結果をloaded／not-found／staleのclosed unionへ分離し、stale時はDocument APIや組込みsampleへ自動fallbackしない。これにより旧scopeで開始したpack内容を新scopeの代替sourceとして再読込・commitしない。
+- public pack／Document／view／App source guard近接64件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。server import、App外worker、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: child worker generation guard
+
+- Appから問い合わせjourney panelとSidePanelへtenant session generation guardを注入し、子コンポーネント所有の問い合わせbundle import worker、trace／trace analytics workerの完了結果を同じscopeで照合する構造へ変更した。
+- 問い合わせbundleはFile読込とworker parseを一つのguarded taskとして扱い、traceは結果照合後だけstate更新またはclipboard処理へ進む。既存のAbortController／worker disposeも併用し、stale時は利用者向けエラーへ変換せず破棄する。
+- worker／tenant generation／App source guard近接46件とfrontend全体1,270件・219 file、typecheck、production build、docs-check、active issue validatorを通過した。将来のserver import／share endpoint、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: runtime profile and adapter bundle binding
+
+- trusted SaaS identity／tenant／session adapter bundleをruntime profileのtenant-session modeと起動時に原子的に照合するよう変更した。single-tenant profileへのbundle注入、SaaS profileでのbundle欠損、未知profileをadapter有効化前に拒否する。
+- これによりtrusted tenant resolverだけが有効で`tenantSessionVersion` preconditionは無効という混成構成を防止する。現行releaseの`saas-multitenant` settings起動拒否は変更せず、既存3 profileはbundle非注入時だけ従来のsingle-tenant resolverで起動する。
+- profile／bundle・session近接57件とbackend全体610件pass・条件付き25件skip、backend全体Ruff、変更対象format check、docs-check、active issue validatorを通過した。repository全体のformat checkは既存71ファイルが未整形のため非変更範囲として除外した。実auth edge adapter、PostgreSQL実地matrix、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-4/5/6/7/8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: trusted adapter shutdown deactivation
+
+- application lifespan終了時にtrusted SaaS identity／tenant／session adapterをApp stateから同時に無効化し、tenant resolverをsingle-tenant既定へ戻すようにした。bundle定義自体を再起動用に保持しても、次回の初期化でruntime profileとの相互必須照合を通過するまでadapterを再有効化しない。
+- これによりshutdown後やlifespan再利用時に、開始済みフラグだけが解除されてtrusted resolver／persisterが残る非対称な状態を防止する。SaaS profileの起動拒否と既存single-tenant profileのsession API fail-closedは変更しない。
+- profile／bundle・session近接20件、backend全体611件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実auth edge adapter、PostgreSQL実地matrix、MCP等の非ブラウザclient、実ブラウザ複数タブE2Eは未完了であり、AC-4/5/6/7/8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: single-tenant strict provisioning surface guard
+
+- `local-default` User／Identity／Membershipへ書き込む`POST /admin/provision/users`を既存3つのsingle-tenant profileだけに限定した。`saas-multitenant`では`404 strict_provisioning_unavailable`、未知・解決不能profileでは`503 runtime_policy_unavailable`としてDB処理前に閉じ、future SaaSのmembership provisioningへfallbackしない。
+- 本文やtenant資源を扱わない既存A2/A3契約検証routeはこのsurface guardの対象外とした。SaaS membership provisioningはverified IdP、active tenant、`membership.provision`を再検証する別契約が必要であり、今回実装していない。
+- strict provisioning／JIT近接19件、backend全体613件pass・条件付き25件skip、Ruff、docs-check、active issue validatorを通過した。実capability付きmembership provisioning、Platform operator認可主体、実auth edge adapterは未完了であり、AC-4/6/7/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: SaaS server-owned Document resource runtime wiring
+
+- trusted SaaS adapter bundleを`tenant-session-required` profileで有効化する際、Document resource resolverも`ServerOwnedDocumentResourceResolver`へ切り替え、DB正本のaccess metadataとtrusted policy binding resolverだけを使うようにした。公開`x-doc-visibility`／`x-policy-ref`はSaaS認可根拠へ入らない。
+- bundle非注入のsingle-tenant profileとlifespan終了時は`SingleTenantHeaderResourceResolver`へ戻す。profile／bundle不一致ではresolver切替前に起動拒否する既存境界を維持し、binding metadata／resolver不達は`Restricted`＋policyRef欠損としてdeny側へ倒す。
+- runtime／Document resource／binding resolver近接51件、backend全体613件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実binding service／PDP接続、trusted auth edge、PostgreSQL実地matrixは未完了であり、AC-4/5/7/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: SaaS runtime dependency safety policy
+
+- 現行の`saas-multitenant`予約値一律拒否とは独立した`TrustedSaasRuntimePolicy`を追加した。PostgreSQL、JIT provisioning無効、external access-control、`deny` fail-safe、external Document policy binding、external tenant capabilityの完全セットを必須にする。
+- production lifespanはこの非秘密policyをsettingsから構築し、DB初期化前にpreflightする。trusted adapter初期化も同じpolicyと型を再検証し、予約profile拒否を将来解除してもunsafe policy object、SQLite、noop/mock、read-only、resolver欠損がadapter有効化へ進まない。
+- runtime policy／settings近接45件、backend全体622件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実PostgreSQL RLS matrix、実PDP／binding／capability service、trusted auth edgeは未完了であり、AC-4/5/7/10/12/13と現行SaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: trusted SaaS bundle preflight before DB initialization
+
+- runtime profile、`TrustedSaasRuntimePolicy`、trusted adapter bundleの型・欠損・profile相互必須、started-state判定を、App stateを変更しない共通preflightへ集約した。production lifespanはDB初期化前にpreflightし、実adapter適用直前にも同じ判定を再実行する。
+- unsafe policyだけでなく、SaaS profileでbundleが未注入、不正、部分的、single-tenant profileへ注入済みの構成もDB接続前に停止する。preflight成功だけではidentity／tenant／session／Document resolverを有効化しないことを固定した。
+- trusted runtime近接25件、backend全体624件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実auth edge bundleの注入、PostgreSQL RLS実地matrix、実PDP／binding／capability serviceは未完了であり、AC-4/5/7/10/12/13と現行SaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: concrete SaaS policy component preflight
+
+- access-control、tenant capability、Document policy bindingのcomponentをDB初期化前に構築し、`TrustedSaasRuntimeComponents`としてprofile／policy／auth bundleと同じpreflightへ渡すようにした。SaaSでは`ExternalPolicyAccessControlAdapter`、`ExternalHttpTenantCapabilityResolver`、`ExternalHttpDocumentPolicyBindingResolver`の実体を必須にする。
+- 設定値がexternalでもbuilder結果がnoop／unavailable／不正objectへ退避または差し替えられた場合はDB接続前に停止する。preflight後に別instanceを再構築せず、検証済みの同一PDP／capability／binding instanceだけをApp stateとserver-owned Document resource resolverへ配線する。
+- trusted runtime近接30件、backend全体629件pass・条件付き25件skip、Ruff、変更対象format check、docs-check、active issue validatorを通過した。実PDP／binding／capability serviceへの到達性、trusted auth edge、PostgreSQL RLS実地matrixは未完了であり、AC-4/5/7/10/12/13と現行SaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: complete protected-table RLS matrix definition
+
+- 条件付きPostgreSQL RLS testをmigrationで保護する4表すべてへ拡張した。Document／判断ログ／Document access metadata／管理監査について、tenant Aからtenant Bが不可視であること、同一pool接続の再利用時にtransaction-local tenant contextが漏れずcontextなしでは0件になること、tenant Aからtenant Bへの直接UPDATEが0件でありtenant Bの値が不変であることを同じmatrixで検証する。
+- migrationでRLSを有効化する表集合とmatrix対象model集合が完全一致することを、PostgreSQLなしで常時実行する契約testにも固定した。migration用と非superuser・非`BYPASSRLS` runtime用の分離credential、`row_security=on`、pool size 1という既存の実行条件は維持した。ローカル環境にはDockerと`psql`がないため実PostgreSQL実行は未実施であり、関連migration／tenant DB guard／matrix coverage test 15件pass・条件付き1件skip、Ruff、変更対象format checkを通過した。AC-5とSaaS profile起動拒否は維持する。
+
+### Implementation checkpoint 2026-07-20: stale context-audit state mutation guard
+
+- `POST /docs/{docId}/context-audit`の認可と`tenantSessionVersion`確認を、CE4監査event completeness trackerの検証・更新より前へ移した。これにより古いタブ、header欠損、世代不一致のrequestはresource lookupだけでなくprocess内監査進行stateも変更せず`tenant_session_changed`で停止する。
+- stale requestでtracker更新関数が呼ばれない回帰testを追加し、Document audit／session precondition／tenant isolation／access-control近接44件、backend全体631件pass・条件付き25件skip、Ruff、docs-check、active issue validatorを通過した。実auth edge、import／share／MCP／webhook／非同期jobの同一世代guard、実ブラウザ複数タブE2Eは未完了であり、AC-8/10/12/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: registered route authorization coverage guard
+
+- FastAPIへ登録された全Document routeが`_authorize_request`、全Document access admin routeが`_authorize_document_policy_management`を呼ぶことをcontract testへ固定した。新規routeが共通のtenant解決・session世代確認・認可境界を省略すると、実装者が個別のnegative testを追加し忘れても検出する。
+- AI／context routeのdependency全件検査を含むsession precondition test 7件、Ruff、変更対象format checkを通過した。非公開のimport／share／webhook／job endpointとMCPはこの登録route集合に含まれず、実装時に別の境界が必要であるため、AC-8/10/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: tenant-scoped context-audit progress state
+
+- CE4 context auditのevent completeness tracker keyを`tenantId + equivalenceKey + bundleHash`へ変更した。tenant Aのquery／bundle／proposal進行は、同じhashを送るtenant Bのapply検証を充足せず、検証済みtenant contextが異なる監査進行stateを合流させない。
+- tenant Aのquery後もtenant Bのapplyでqueryを含む全不足eventを返すnegative testを追加し、Document audit integration 23件とRuffを通過した。trackerはprocess-localな既存CE4検証機構であり、共有SaaSの永続監査正本にはしない。実auth edgeと全consumer越境matrixは未完了のため、AC-8/10/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: document-scoped context-audit progress state
+
+- CE4 context auditのevent completeness tracker keyへ`docId`も追加し、`tenantId + docId + equivalenceKey + bundleHash`へ限定した。同一tenant内で内容・queryが同じ別Documentでも、doc Aのquery／bundle／proposal進行をdoc Bのapplyへ流用できない。
+- doc Aのquery後もdoc Bのapplyでqueryを含む全不足eventを返すnegative testを追加し、Document audit integration 24件とRuffを通過した。actor/session単位の永続監査正本化は実auth edge・監査service側の未完了契約であり、AC-8/10/13とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-20: RLS tenant reassignment write-check coverage
+
+- RLS coverage contractを、migrationで`ENABLE ROW LEVEL SECURITY`する表集合とmodel集合の一致だけでなく、全対象表に`USING`と`WITH CHECK`を持つpolicyが定義されることまで拡張した。既存tenant B行をtenant A contextから更新する`USING`側に加え、自tenant行のtenantIdをtenant Bへ書き換える退避を拒否する`WITH CHECK`側を明示する。
+- 条件付きPostgreSQL matrixでは、依存行を持たないDocumentと管理監査行のtenantId再割当がSQL errorになり、rollback後もtenant A所属のままであることを追加した。関連migration／tenant DB guard／coverage contract 15件pass・実PostgreSQL 1件skip、Ruffと変更対象format checkを通過した。実地実行までAC-5とSaaS profile起動拒否を維持する。

@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+from types import SimpleNamespace
 
 import httpx
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -15,7 +17,10 @@ from kj_atlas_api.access_control import AccessDecision
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
 from kj_atlas_api.models import Base
-from kj_atlas_api.routes.docs import reset_ce4_audit_event_tracker
+from kj_atlas_api.routes.docs import (
+    _record_ce4_event_and_validate_completeness,
+    reset_ce4_audit_event_tracker,
+)
 from kj_atlas_api.settings import settings
 
 
@@ -169,6 +174,105 @@ def test_post_export_audit_emits_export_event(tmp_path) -> None:
     assert event.metadata["amrClass"] == "single_factor"
     assert event.metadata["assuranceLevel"] == "low"
     assert event.metadata["authAgeBucket"] == "unknown"
+
+
+def test_context_audit_rejects_stale_session_before_tracker_mutation(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tracker_called = False
+
+    def _unexpected_tracker_mutation(**_: object) -> None:
+        nonlocal tracker_called
+        tracker_called = True
+
+    monkeypatch.setattr(
+        "kj_atlas_api.routes.docs.resolve_trusted_saas_request_session",
+        lambda **_: SimpleNamespace(
+            session=SimpleNamespace(tenant_session_version="session-v2")
+        ),
+    )
+    monkeypatch.setattr(
+        "kj_atlas_api.routes.docs._record_ce4_event_and_validate_completeness",
+        _unexpected_tracker_mutation,
+    )
+
+    with _sqlite_client(tmp_path) as client:
+        original_runtime_profile = client.app.state.runtime_profile
+        try:
+            client.app.state.runtime_profile = "saas-multitenant"
+            response = client.post(
+                "/docs/doc-context/context-audit",
+                headers={"KJ-Atlas-Tenant-Session-Version": "session-v1"},
+                json={
+                    "operation": "query",
+                    "safeMode": True,
+                    "equivalenceKey": "a" * 64,
+                    "bundleHash": "b" * 64,
+                    "queryHash": "a" * 64,
+                    "dryRun": True,
+                    "sideEffect": "none",
+                    "command": "context-query",
+                    "channel": "api",
+                    "schemaVersion": "ce4.audit.v1",
+                },
+            )
+        finally:
+            client.app.state.runtime_profile = original_runtime_profile
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "tenant_session_changed"
+    assert tracker_called is False
+
+
+def test_context_audit_tracker_does_not_share_progress_between_tenants() -> None:
+    common = {
+        "doc_id": "shared-doc",
+        "equivalence_key": "a" * 64,
+        "bundle_hash": "b" * 64,
+        "source_bundle_hash": None,
+    }
+    _record_ce4_event_and_validate_completeness(
+        tenant_id="tenant-a",
+        operation="query",
+        **common,
+    )
+
+    with pytest.raises(HTTPException) as captured:
+        _record_ce4_event_and_validate_completeness(
+            tenant_id="tenant-b",
+            operation="apply",
+            **common,
+        )
+
+    assert captured.value.status_code == 409
+    assert captured.value.detail["code"] == "missing_event"
+    assert captured.value.detail["missingEvents"] == ["bundle", "proposal", "query"]
+
+
+def test_context_audit_tracker_does_not_share_progress_between_documents() -> None:
+    common = {
+        "tenant_id": "tenant-a",
+        "equivalence_key": "a" * 64,
+        "bundle_hash": "b" * 64,
+        "source_bundle_hash": None,
+    }
+    _record_ce4_event_and_validate_completeness(
+        doc_id="doc-a",
+        operation="query",
+        **common,
+    )
+
+    with pytest.raises(HTTPException) as captured:
+        _record_ce4_event_and_validate_completeness(
+            doc_id="doc-b",
+            operation="apply",
+            **common,
+        )
+
+    assert captured.value.status_code == 409
+    assert captured.value.detail["code"] == "missing_event"
+    assert captured.value.detail["missingEvents"] == ["bundle", "proposal", "query"]
 
 
 def test_context_audit_endpoint_emits_four_operation_events(tmp_path) -> None:

@@ -1,7 +1,7 @@
 import json
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from kj_atlas_api.llm.provider import (
     LLMRequest,
@@ -11,6 +11,9 @@ from kj_atlas_api.llm.provider import (
     generate_with_fallback,
 )
 from kj_atlas_api.models_ai import SummarizeIslandRelationRequest, SummarizeIslandRelationResponse
+from kj_atlas_api.tenant_session_precondition import (
+    require_tenant_scoped_api_precondition,
+)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger(__name__)
@@ -112,7 +115,11 @@ def _parse_relation_summary_response(
     return response
 
 
-@router.post("/summarize-island-relation", response_model=SummarizeIslandRelationResponse)
+@router.post(
+    "/summarize-island-relation",
+    response_model=SummarizeIslandRelationResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
 def summarize_island_relation(payload: SummarizeIslandRelationRequest) -> SummarizeIslandRelationResponse:
     _validate_relation_summary_input(payload)
 

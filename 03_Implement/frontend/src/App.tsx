@@ -145,8 +145,11 @@ import {
 } from "./domain/view/evidence_overlay";
 import {
   computePerspectiveRendering,
+  DEFAULT_PERSPECTIVE_PRESETS,
   PERSPECTIVE_MODE_VALUES,
+  restorePerspectivePresets,
   type PerspectiveMode,
+  type PerspectivePreset,
   type PerspectiveState,
 } from "./domain/view/perspective";
 import { DEFAULT_VIEW_PRESETS, migrateViewPresets, removeViewPreset, renameViewPreset, replaceViewPreset, resolveSummaryAbstractFromPatch, type ViewPatch, type ViewPreset } from "./domain/view/presets";
@@ -203,6 +206,10 @@ import {
   installTenantSessionCoherenceBoundary,
   type TenantSessionCoherenceBoundary,
 } from "./session/tenant_session_coherence";
+import {
+  StaleTenantSessionResultError,
+  TenantSessionGenerationGuard,
+} from "./session/tenant_session_generation";
 import { TenantSessionControl } from "./ui/TenantSessionControl";
 import { TenantChangeConfirmationDialog } from "./ui/TenantChangeConfirmationDialog";
 import {
@@ -1270,6 +1277,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const [evidenceOverlayDimOthers, setEvidenceOverlayDimOthers] = useState(true);
   const [perspectiveMode, setPerspectiveMode] = useState<PerspectiveMode>("default");
   const [perspectiveStrictFilter, setPerspectiveStrictFilter] = useState(false);
+  const [perspectivePresets, setPerspectivePresets] = useState<PerspectivePreset[]>(DEFAULT_PERSPECTIVE_PRESETS);
   const [viewPresets, setViewPresets] = useState<ViewPreset[]>(DEFAULT_VIEW_PRESETS);
   const [activePresetId, setActivePresetId] = useState<string | null>("default-explore");
   const [viewMode, setViewMode] = useState<ViewMode>("explore");
@@ -1374,10 +1382,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const diffAbortRef = useRef<AbortController | null>(null);
   const tenantSwitchAbortRef = useRef<AbortController | null>(null);
   const tenantSessionCoherenceRef = useRef<TenantSessionCoherenceBoundary | null>(null);
+  const tenantSessionGenerationGuardRef = useRef(new TenantSessionGenerationGuard());
   const tenantControlRef = useRef<HTMLSelectElement | null>(null);
   const viewLocalePersistenceScopeRef = useRef(createViewLocalePersistenceScope({ docId: "", viewMode: "explore", allowPersistence: true }));
 
   const cleanupRuntimeResources = useCallback(() => {
+    tenantSessionGenerationGuardRef.current.invalidate();
     cleanupAppRuntimeResources({
       abortControllers: [
         tenantSwitchAbortRef.current,
@@ -1401,6 +1411,39 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setTenantSwitchUiState({ status: "blocked" });
     return true;
   }, [cleanupRuntimeResources, verifiedTenantSession]);
+
+  const runTenantScopedTask = useCallback(<T,>(
+    task: () => Promise<T>,
+  ): Promise<T> => tenantSessionGenerationGuardRef.current.run(task), []);
+
+  const runTenantScopedOptionalTask = useCallback(async <T,>(
+    task: () => Promise<T>,
+  ): Promise<T | undefined> => {
+    try {
+      return await runTenantScopedTask(task);
+    } catch (error) {
+      if (error instanceof StaleTenantSessionResultError) {
+        return undefined;
+      }
+      throw error;
+    }
+  }, [runTenantScopedTask]);
+
+  const runTenantScopedApiRequest = useCallback(async <T,>(
+    request: () => Promise<T>,
+  ): Promise<T> => {
+    try {
+      return await runTenantScopedTask(request);
+    } catch (error) {
+      if (
+        error instanceof ApiError
+        && error.code === "tenant_session_changed"
+      ) {
+        blockStaleTenantSession();
+      }
+      throw error;
+    }
+  }, [blockStaleTenantSession, runTenantScopedTask]);
 
   useEffect(() => {
     return cleanupRuntimeResources;
@@ -1495,7 +1538,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       diffWorkerClientRef.current = new DiffWorkerClient();
     }
 
-    void diffWorkerClientRef.current.computeDiff(
+    void runTenantScopedTask(() => diffWorkerClientRef.current!.computeDiff(
       {
         baseDoc: reviewDiffBaseSnapshot,
         baseView: { readingOrder: reviewDiffBaseSnapshot.readingOrder },
@@ -1513,7 +1556,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           }));
         },
       },
-    ).then((outcome) => {
+    )).then((outcome) => {
       if (controller.signal.aborted || outcome?.status === "cancelled") {
         setStatusMessage(t("app.status.diff.cancelled"));
         return;
@@ -1526,6 +1569,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setIsDiffFallbackMode(outcome.usedFallback);
       const next = [...outcome.result.documentDiff, ...outcome.result.viewDiff];
       setMergeItems(next);
+    }).catch((error: unknown) => {
+      if (!(error instanceof StaleTenantSessionResultError)) {
+        throw error;
+      }
     }).finally(() => {
       setIsDiffComputing(false);
       setComputeProgressMessage(null);
@@ -1538,7 +1585,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         diffAbortRef.current = null;
       }
     };
-  }, [comparisonDocument, reviewDiffBaseSnapshot]);
+  }, [comparisonDocument, reviewDiffBaseSnapshot, runTenantScopedTask]);
   const mergeEvaluation = useMemo(() => {
     if (!document || !comparisonDocument || !reviewDiffBaseSnapshot) {
       return { evaluations: [], selectedIdsWithPrerequisites: new Set<string>() };
@@ -2087,9 +2134,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setStatusMessage(t(isReload ? "app.status.document_reloading" : "app.status.document_loading"));
 
       try {
-        const loaded = await getDocument(docId, {
+        const loaded = await runTenantScopedApiRequest(() => getDocument(docId, {
           tenantSessionContext: verifiedTenantSession,
-        });
+        }));
         if (isStale()) {
           return false;
         }
@@ -2133,9 +2180,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           const defaultDocument = createDefaultDocument(docId);
 
           try {
-            const saved = await putDocument(docId, defaultDocument, undefined, {
-              tenantSessionContext: verifiedTenantSession,
-            });
+            const saved = await runTenantScopedApiRequest(() => putDocument(
+              docId,
+              defaultDocument,
+              undefined,
+              { tenantSessionContext: verifiedTenantSession },
+            ));
             if (isStale()) {
               return false;
             }
@@ -2178,7 +2228,6 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
             if (
               saveError instanceof ApiError
               && saveError.code === "tenant_session_changed"
-              && blockStaleTenantSession()
             ) {
               return false;
             }
@@ -2189,7 +2238,6 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           if (
             error instanceof ApiError
             && error.code === "tenant_session_changed"
-            && blockStaleTenantSession()
           ) {
             return false;
           }
@@ -2212,8 +2260,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     [
       appStorage,
       applyResolvedLocaleForView,
-      blockStaleTenantSession,
       rememberRecentDocumentId,
+      runTenantScopedApiRequest,
       verifiedTenantSession,
     ]
   );
@@ -2556,12 +2604,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setStatusMessage(t("app.status.saving"));
 
     try {
-      const saved = await putDocument(
+      const saved = await runTenantScopedApiRequest(() => putDocument(
         document.id,
         withUpdatedTimestamp(document),
         docEtag ?? undefined,
         { tenantSessionContext: verifiedTenantSession },
-      );
+      ));
       const savedDocument = normalizeDocument(saved.document);
       pendingCardDragSnapshotRef.current = null;
       setHistory({
@@ -2581,7 +2629,6 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       if (
         error instanceof ApiError
         && error.code === "tenant_session_changed"
-        && blockStaleTenantSession()
       ) {
         return false;
       }
@@ -2787,7 +2834,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setStatusMessage(t("app.status.island_summary.requesting"));
 
     try {
-      const proposal = await proposeIslandSummary(document, targetIsland.id, `${document.id}:${document.updatedAt}`);
+      const proposal = await runTenantScopedApiRequest(() => proposeIslandSummary(
+        document,
+        targetIsland.id,
+        `${document.id}:${document.updatedAt}`,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
       setIslandSummaryProposal(proposal);
       setStatusMessage(t("app.status.island_summary.ready_unreviewed"));
       setLastAiCallOutcome("ok");
@@ -2799,7 +2851,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     } finally {
       setIsSuggestingIslandSummary(false);
     }
-  }, [document, isSuggestingIslandSummary, selectedIslandId]);
+  }, [
+    document,
+    isSuggestingIslandSummary,
+    runTenantScopedApiRequest,
+    selectedIslandId,
+    verifiedTenantSession,
+  ]);
 
   const handleAdoptIslandSummaryProposal = useCallback(async () => {
     if (!document || !selectedIslandId || !islandSummaryProposal) {
@@ -2820,29 +2878,62 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       ...previousWarnings,
       [selectedIslandId]: islandSummaryProposal.diff.warnings ?? [],
     }));
-    await recordProposalDecision(islandSummaryProposal.proposalId, "adopt", "human");
+    await runTenantScopedApiRequest(() => recordProposalDecision(
+      islandSummaryProposal.proposalId,
+      "adopt",
+      "human",
+      undefined,
+      { tenantSessionContext: verifiedTenantSession },
+    ));
     setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} adopted ${islandSummaryProposal.proposalId}`]);
     setIslandSummaryProposal(null);
-  }, [applyDocumentChange, document, islandSummaryProposal, selectedIslandId]);
+  }, [
+    applyDocumentChange,
+    document,
+    islandSummaryProposal,
+    runTenantScopedApiRequest,
+    selectedIslandId,
+    verifiedTenantSession,
+  ]);
 
   const handleRejectIslandSummaryProposal = useCallback(async () => {
     if (!islandSummaryProposal) {
       return;
     }
-    await recordProposalDecision(islandSummaryProposal.proposalId, "reject", "human");
+    await runTenantScopedApiRequest(() => recordProposalDecision(
+      islandSummaryProposal.proposalId,
+      "reject",
+      "human",
+      undefined,
+      { tenantSessionContext: verifiedTenantSession },
+    ));
     setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} rejected ${islandSummaryProposal.proposalId}`]);
     setIslandSummaryProposal(null);
     setStatusMessage(t("app.status.island_summary.rejected"));
-  }, [islandSummaryProposal]);
+  }, [
+    islandSummaryProposal,
+    runTenantScopedApiRequest,
+    verifiedTenantSession,
+  ]);
 
   const handleHoldIslandSummaryProposal = useCallback(async () => {
     if (!islandSummaryProposal) {
       return;
     }
-    await recordProposalDecision(islandSummaryProposal.proposalId, "hold", "human");
+    await runTenantScopedApiRequest(() => recordProposalDecision(
+      islandSummaryProposal.proposalId,
+      "hold",
+      "human",
+      undefined,
+      { tenantSessionContext: verifiedTenantSession },
+    ));
     setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} held ${islandSummaryProposal.proposalId}`]);
     setStatusMessage(t("app.status.island_summary.held"));
-  }, [islandSummaryProposal]);
+  }, [
+    islandSummaryProposal,
+    runTenantScopedApiRequest,
+    verifiedTenantSession,
+  ]);
 
   const handleSuggestLayout = useCallback(async (mode: "suggest" | "resuggest" = "suggest") => {
     if (!document || isSuggesting) {
@@ -2858,7 +2949,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setStatusMessage(t("suggestion.panel.status.requesting_draft"));
 
     try {
-      const result = await suggestLayout(document, suggestionInstruction.trim() || undefined);
+      const result = await runTenantScopedApiRequest(() => suggestLayout(
+        document,
+        suggestionInstruction.trim() || undefined,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
       setSuggestionIteration((previous) => previous + 1);
       setSuggestionId(result.suggestionId);
       setSuggestedDocument(markSuggestedFieldsUnreviewed(cloneDocument(result.suggestedDoc), document));
@@ -2897,7 +2992,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     } finally {
       setIsSuggesting(false);
     }
-  }, [document, isSuggesting, resuggestStopperEnabled, suggestionInstruction]);
+  }, [
+    document,
+    isSuggesting,
+    resuggestStopperEnabled,
+    runTenantScopedApiRequest,
+    suggestionInstruction,
+    verifiedTenantSession,
+  ]);
 
   const handleDiscardSuggestion = useCallback(() => {
     setSuggestedDocument(null);
@@ -2927,10 +3029,20 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
       let result: { suggestions: MergeSuggestion[] };
       try {
-        result = await suggestMerges(document, remoteInstruction);
+        result = await runTenantScopedApiRequest(() => suggestMerges(
+          document,
+          remoteInstruction,
+          { tenantSessionContext: verifiedTenantSession },
+        ));
       } catch (error) {
         const isApiUnavailable =
-          error instanceof ApiError && (error.status === 404 || error.status === 405 || error.status === 501 || error.status === 503);
+          error instanceof ApiError
+          && (
+            error.status === 404
+            || error.status === 405
+            || error.status === 501
+            || (error.status === 503 && error.code === "provider_unavailable")
+          );
         const isNetworkUnavailable = error instanceof TypeError;
 
         if (!isApiUnavailable && !isNetworkUnavailable) {
@@ -2972,7 +3084,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     } finally {
       setIsSuggestingMerges(false);
     }
-  }, [document, isSuggestingMerges, mergeSuggestionInstruction]);
+  }, [
+    document,
+    isSuggestingMerges,
+    mergeSuggestionInstruction,
+    runTenantScopedApiRequest,
+    verifiedTenantSession,
+  ]);
 
   const handleMergeSuggestionTextChange = useCallback((groupId: string, value: string) => {
     setMergeSuggestions((previousSuggestions) =>
@@ -3089,7 +3207,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
       setIsSharePanelOpen(true);
 
-      const parseResult = parseDocumentJson(await selectedFile.text());
+      const rawText = await runTenantScopedOptionalTask(() => selectedFile.text());
+      if (rawText === undefined) {
+        return;
+      }
+      const parseResult = parseDocumentJson(rawText);
       if (!parseResult.ok) {
         setPendingImportedDocument(null);
         setImportDocumentError(parseResult.error);
@@ -3104,7 +3226,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setImportDocumentError(null);
       setStatusMessage(t(isReadOnly ? "app.status.import.document_validated_read_only" : "app.status.import.document_validated"));
     },
-    [isReadOnly]
+    [isReadOnly, runTenantScopedOptionalTask]
   );
 
   const handleImportClick = useCallback(() => {
@@ -3124,7 +3246,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
 
     try {
-      const rawText = await selectedFile.text();
+      const rawText = await runTenantScopedOptionalTask(() => selectedFile.text());
+      if (rawText === undefined) {
+        return;
+      }
       const parsedJson: unknown = JSON.parse(rawText);
       const parsedDocument = extractComparisonDocument(parsedJson);
 
@@ -3155,7 +3280,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         detail: error instanceof Error ? error.message : t("app.status.error_detail_unknown"),
       }));
     }
-  }, [document]);
+  }, [document, runTenantScopedOptionalTask]);
 
 
   const handleApplySelectedMergeItems = useCallback(() => {
@@ -3260,6 +3385,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setEvidenceOverlayScope(importedPerspective.evidenceOverlayPrefs.scope);
       setEvidenceOverlayDimOthers(importedPerspective.evidenceOverlayPrefs.dimOthers);
     }
+    setPerspectivePresets(restorePerspectivePresets(metadata.viewState.perspectivePresets));
     setViewPresets(sanitizeViewPresets(metadata.viewState.presets));
     setActivePresetId(typeof metadata.viewState.activePresetId === "string" ? metadata.viewState.activePresetId : null);
     setMergeAuditLog(sanitizeMergeAuditLog(metadata.mergeAuditLog));
@@ -3294,15 +3420,26 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setStatusMessage(t("app.status.import.view_loaded", { statusPrefix, visibility: metadata.visibility }));
   }, [appStorage, applyResolvedLocaleForView]);
 
-  const loadPublicPack = useCallback(async (requestedPackId: string | null): Promise<boolean> => {
-    const manifestResponse = await fetch("./packs/index.json", { cache: "no-store" });
+  const loadPublicPack = useCallback(async (
+    requestedPackId: string | null,
+  ): Promise<"loaded" | "not-found" | "stale"> => {
+    const manifestResponse = await runTenantScopedOptionalTask(
+      () => fetch("./packs/index.json", { cache: "no-store" }),
+    );
+    if (manifestResponse === undefined) {
+      return "stale";
+    }
     if (!manifestResponse.ok) {
-      return false;
+      return "not-found";
     }
 
     let manifestPayload: unknown;
     try {
-      manifestPayload = JSON.parse(await manifestResponse.text()) as unknown;
+      const manifestText = await runTenantScopedOptionalTask(() => manifestResponse.text());
+      if (manifestText === undefined) {
+        return "stale";
+      }
+      manifestPayload = JSON.parse(manifestText) as unknown;
     } catch {
       throw new Error(t("app.status.public_pack.invalid_index_json"));
     }
@@ -3320,13 +3457,44 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }));
     }
 
-    const documentResponse = await fetch(`./packs/${targetPack.documentPath}`, { cache: "no-store" });
+    const documentResponse = await runTenantScopedOptionalTask(
+      () => fetch(`./packs/${targetPack.documentPath}`, { cache: "no-store" }),
+    );
+    if (documentResponse === undefined) {
+      return "stale";
+    }
     if (!documentResponse.ok) {
       throw new Error(t("app.status.public_pack.document_fetch_failed", { path: targetPack.documentPath }));
     }
-    const documentParseResult = parseDocumentJson(await documentResponse.text());
+    const documentText = await runTenantScopedOptionalTask(() => documentResponse.text());
+    if (documentText === undefined) {
+      return "stale";
+    }
+    const documentParseResult = parseDocumentJson(documentText);
     if (!documentParseResult.ok) {
       throw new Error(t("app.status.public_pack.document_invalid", { detail: documentParseResult.error }));
+    }
+
+    let importedViewMetadata: ExportViewMetadata | null = null;
+    if (targetPack.viewPath) {
+      const viewResponse = await runTenantScopedOptionalTask(
+        () => fetch(`./packs/${targetPack.viewPath}`, { cache: "no-store" }),
+      );
+      if (viewResponse === undefined) {
+        return "stale";
+      }
+      if (!viewResponse.ok) {
+        throw new Error(t("app.status.public_pack.view_fetch_failed", { path: targetPack.viewPath }));
+      }
+      const viewText = await runTenantScopedOptionalTask(() => viewResponse.text());
+      if (viewText === undefined) {
+        return "stale";
+      }
+      const viewParseResult = parseViewJson(viewText);
+      if (!viewParseResult.ok) {
+        throw new Error(t("app.status.public_pack.view_invalid", { detail: viewParseResult.error }));
+      }
+      importedViewMetadata = viewParseResult.metadata;
     }
 
     pendingCardDragSnapshotRef.current = null;
@@ -3376,16 +3544,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
     setPackVisibility(targetPack.visibility);
 
-    if (targetPack.viewPath) {
-      const viewResponse = await fetch(`./packs/${targetPack.viewPath}`, { cache: "no-store" });
-      if (!viewResponse.ok) {
-        throw new Error(t("app.status.public_pack.view_fetch_failed", { path: targetPack.viewPath }));
-      }
-      const viewParseResult = parseViewJson(await viewResponse.text());
-      if (!viewParseResult.ok) {
-        throw new Error(t("app.status.public_pack.view_invalid", { detail: viewParseResult.error }));
-      }
-      applyImportedViewMetadata(viewParseResult.metadata, documentParseResult.document, importedViewMode, t("app.status.public_pack.loaded_prefix"));
+    if (importedViewMetadata) {
+      applyImportedViewMetadata(importedViewMetadata, documentParseResult.document, importedViewMode, t("app.status.public_pack.loaded_prefix"));
     }
 
     setSafeMode(true);
@@ -3394,8 +3554,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setViewVisibility(persistedVisibility.viewVisibility);
     }
     setStatusMessage(t("app.status.public_pack.loaded", { packId: targetPack.id, visibility: targetPack.visibility }));
-    return true;
-  }, [appStorage, applyImportedViewMetadata]);
+    return "loaded";
+  }, [appStorage, applyImportedViewMetadata, runTenantScopedOptionalTask]);
 
   const openBuiltInSample = useCallback(() => {
     const builtInSample = createDefaultDocument(DEFAULT_DOCUMENT_ID);
@@ -3460,7 +3620,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
     try {
       const loadedFromPack = await loadPublicPack(null);
-      if (!loadedFromPack) {
+      if (loadedFromPack === "stale") {
+        return;
+      }
+      if (loadedFromPack === "not-found") {
         const loadedFromApi = await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
         if (!loadedFromApi) {
           openBuiltInSample();
@@ -3507,7 +3670,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
       try {
         const loadedFromPack = await loadPublicPack(requestedPackId);
-        if (loadedFromPack) {
+        if (loadedFromPack === "stale") {
+          return;
+        }
+        if (loadedFromPack === "loaded") {
           setIsLoading(false);
           return;
         }
@@ -3536,7 +3702,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      const parseResult = parseViewJson(await selectedFile.text());
+      const rawText = await runTenantScopedOptionalTask(() => selectedFile.text());
+      if (rawText === undefined) {
+        return;
+      }
+      const parseResult = parseViewJson(rawText);
       if (!parseResult.ok) {
         setStatusMessage(t("app.status.import.view_metadata_load_failed", { detail: parseResult.error }));
         return;
@@ -3544,11 +3714,15 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
       applyImportedViewMetadata(parseResult.metadata, document, viewMode, t("app.status.import.view_metadata_loaded_prefix"));
     },
-    [applyImportedViewMetadata, document]
+    [applyImportedViewMetadata, document, runTenantScopedOptionalTask]
   );
 
   const handleLoadDocumentFile = useCallback(async (selectedFile: File) => {
-    const parseResult = parseDocumentJson(await selectedFile.text());
+    const rawText = await runTenantScopedOptionalTask(() => selectedFile.text());
+    if (rawText === undefined) {
+      return;
+    }
+    const parseResult = parseDocumentJson(rawText);
     if (!parseResult.ok) {
       setPendingImportedDocument(null);
       setImportDocumentError(parseResult.error);
@@ -3562,7 +3736,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     });
     setImportDocumentError(null);
     setStatusMessage(t(isReadOnly ? "app.status.import.document_validated_read_only" : "app.status.import.document_validated"));
-  }, [isReadOnly]);
+  }, [isReadOnly, runTenantScopedOptionalTask]);
 
   const handleInvalidReviewPackFileType = useCallback(() => {
     setPackImportError(t("app.status.import.review_pack_zip_required"));
@@ -3578,7 +3752,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
 
     try {
-      const zipImportResult = await readZipFiles(selectedFile);
+      const zipImportResult = await runTenantScopedOptionalTask(() => readZipFiles(selectedFile));
+      if (zipImportResult === undefined) {
+        return;
+      }
       const entries = zipImportResult.entries;
       const paths = detectReviewPackFiles(entries);
       if (!paths.documentPath) {
@@ -3625,15 +3802,6 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      const previousSnapshotUrl = importedPackSnapshotUrl;
-      let nextSnapshotUrl: string | null = null;
-      if (paths.snapshotPath) {
-        const snapshotRaw = entries.get(paths.snapshotPath);
-        if (snapshotRaw instanceof Uint8Array) {
-          nextSnapshotUrl = URL.createObjectURL(new Blob([new Uint8Array(snapshotRaw)], { type: "image/png" }));
-        }
-      }
-
       if (paths.integrityPath) {
         const integrityRaw = entries.get(paths.integrityPath);
         if (typeof integrityRaw !== "string") {
@@ -3658,12 +3826,26 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           setStatusMessage(message);
           return;
         }
-        const verification = await verifyIntegrityManifest(parsedIntegrity.manifest, entries);
+        const verification = await runTenantScopedOptionalTask(
+          () => verifyIntegrityManifest(parsedIntegrity.manifest, entries),
+        );
+        if (verification === undefined) {
+          return;
+        }
         if (!verification.ok) {
           const message = t("app.status.import.review_pack_integrity_verification_failed");
           setPackImportError(message);
           setStatusMessage(message);
           return;
+        }
+      }
+
+      const previousSnapshotUrl = importedPackSnapshotUrl;
+      let nextSnapshotUrl: string | null = null;
+      if (paths.snapshotPath) {
+        const snapshotRaw = entries.get(paths.snapshotPath);
+        if (snapshotRaw instanceof Uint8Array) {
+          nextSnapshotUrl = URL.createObjectURL(new Blob([new Uint8Array(snapshotRaw)], { type: "image/png" }));
         }
       }
 
@@ -3739,7 +3921,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         setStatusMessage(message);
       }
     }
-  }, [appStorage, applyImportedViewMetadata, importedPackSnapshotUrl]);
+  }, [appStorage, applyImportedViewMetadata, importedPackSnapshotUrl, runTenantScopedOptionalTask]);
 
   const handleReviewPackFileChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -3757,7 +3939,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const handleLoadPatchFile = useCallback(async (selectedFile: File) => {
     try {
-      const rawText = await selectedFile.text();
+      const rawText = await runTenantScopedOptionalTask(() => selectedFile.text());
+      if (rawText === undefined) {
+        return;
+      }
       const parsedJson: unknown = JSON.parse(rawText);
       const parsedPatch = parsePatchDocument(parsedJson);
 
@@ -3770,7 +3955,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      const fingerprintVerification = await verifyPatchFingerprint(parsedPatch);
+      const fingerprintVerification = await runTenantScopedOptionalTask(
+        () => verifyPatchFingerprint(parsedPatch),
+      );
+      if (fingerprintVerification === undefined) {
+        return;
+      }
       if (!parsedPatch.patchFingerprint) {
         setPatchFingerprintStatus({ status: t("app.status.patch.fingerprint_missing") });
         setPatchTrustLabel("unknown");
@@ -3816,10 +4006,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }
       setStatusMessage(t("app.status.patch.load_failed"));
     }
-  }, [abstractMapView, summaryView]);
+  }, [abstractMapView, runTenantScopedOptionalTask, summaryView]);
 
   const handleLoadPatchBaselineFile = useCallback(async (selectedFile: File) => {
-    const parseResult = parseDocumentJson(await selectedFile.text());
+    const rawText = await runTenantScopedOptionalTask(() => selectedFile.text());
+    if (rawText === undefined) {
+      return;
+    }
+    const parseResult = parseDocumentJson(rawText);
     if (!parseResult.ok) {
       setPatchBaselineDoc(null);
       setPatchBaselineFileName(null);
@@ -3830,7 +4024,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setPatchBaselineDoc(parseResult.document);
     setPatchBaselineFileName(selectedFile.name);
     setStatusMessage(t("app.status.patch.baseline_loaded"));
-  }, [abstractMapView, summaryView]);
+  }, [abstractMapView, runTenantScopedOptionalTask, summaryView]);
 
   const handleFixProposalCheckedChange = useCallback((fixId: string, checked: boolean) => {
     setSelectedFixProposalIdSet((previousSet) => {
@@ -3878,15 +4072,18 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return;
     }
 
-    const exportedPatch = await buildPatchForExport(pendingPatchImport.patch, {
+    const exportedPatch = await runTenantScopedOptionalTask(() => buildPatchForExport(pendingPatchImport.patch, {
       author: patchExportAuthor,
       authorNote: patchExportAuthorNote,
       sourceApp: "kj-atlas",
-    });
+    }));
+    if (exportedPatch === undefined) {
+      return;
+    }
 
     downloadTextFile(`${pendingPatchImport.fileName.replace(/\.json$/i, "")}.export.json`, "application/json", `${JSON.stringify(exportedPatch, null, 2)}\n`);
     setStatusMessage(t("app.status.patch.exported_fingerprint"));
-  }, [patchExportAuthor, patchExportAuthorNote, pendingPatchImport]);
+  }, [patchExportAuthor, patchExportAuthorNote, pendingPatchImport, runTenantScopedOptionalTask]);
 
   const handleResetPatchToOriginal = useCallback(() => {
     if (!pendingPatchImport) {
@@ -6781,7 +6978,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
     try {
       const payload = buildSummarizeIslandRelationPayload(document, selectedIslandRelationEdge);
-      const result = await summarizeIslandRelation(payload);
+      const result = await runTenantScopedApiRequest(() => summarizeIslandRelation(
+        payload,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
       const sourceSignature = buildRelationSummarySourceSignature(selectedIslandRelationEdge);
       const nextDocument = upsertRelationSummaryWithHistory(document, {
         sourceSignature,
@@ -6803,7 +7003,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     } finally {
       setIsGeneratingRelationSummary(false);
     }
-  }, [applyDocumentChange, document, isGeneratingRelationSummary, selectedIslandRelationEdge]);
+  }, [
+    applyDocumentChange,
+    document,
+    isGeneratingRelationSummary,
+    runTenantScopedApiRequest,
+    selectedIslandRelationEdge,
+    verifiedTenantSession,
+  ]);
 
   const handleRelationSummaryCommit = useCallback(
     (value: string) => {
@@ -7272,7 +7479,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setIsCheckingNarrative(true);
       setNarrativeCheckError(null);
       try {
-        const result = await checkNarrative(document, narrativeText, document.readingOrder);
+        const result = await runTenantScopedApiRequest(() => checkNarrative(
+          document,
+          narrativeText,
+          document.readingOrder,
+          { tenantSessionContext: verifiedTenantSession },
+        ));
         setNarrativeIssues(result.issues);
         setLastAiCallOutcome("ok");
 
@@ -7319,7 +7531,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         setIsCheckingNarrative(false);
       }
     },
-    [applyDocumentChange, document, narrativeText]
+    [
+      applyDocumentChange,
+      document,
+      narrativeText,
+      runTenantScopedApiRequest,
+      verifiedTenantSession,
+    ]
   );
 
   const handleGenerateNarrativeFromReadingOrder = useCallback(async () => {
@@ -7331,7 +7549,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setNarrativeGenerationError(null);
     try {
       const draftIndex = generatedNarratives.length + 1;
-      const result = await generateNarrative(document, `Draft ${draftIndex}`);
+      const result = await runTenantScopedApiRequest(() => generateNarrative(
+        document,
+        `Draft ${draftIndex}`,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
       const nextNarrative: Narrative = {
         id: crypto.randomUUID(),
         title: `Generated Draft ${draftIndex}`,
@@ -7361,7 +7583,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     } finally {
       setIsGeneratingNarrative(false);
     }
-  }, [applyDocumentChange, document, generatedNarratives.length]);
+  }, [
+    applyDocumentChange,
+    document,
+    generatedNarratives.length,
+    runTenantScopedApiRequest,
+    verifiedTenantSession,
+  ]);
 
 
   const readingOrderSnippets = useMemo(() => {
@@ -7579,7 +7807,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     const controller = new AbortController();
     diagnosticsAbortRef.current = controller;
     setIsDiagnosticsRunning(true);
-    void diagnosticsWorkerClientRef.current.computeDiagnostics({
+    void runTenantScopedTask(() => diagnosticsWorkerClientRef.current!.computeDiagnostics({
       doc: document,
       view: { readingMode, reviewedOnly, collapsedIslandIds: [...collapsedIslandIds].sort() },
       options: { safeMode: true, deterministicNowIso: document.updatedAt || document.createdAt },
@@ -7591,7 +7819,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           percent: progress.percent,
         }));
       },
-    }).then((outcome) => {
+    })).then((outcome) => {
       if (outcome.status === "cancelled") {
         setStatusMessage(t("app.status.diagnostics.cancelled"));
         return;
@@ -7613,12 +7841,16 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         distributions: distributionReport.findings.length,
         balances: dialecticBalanceReport.findings.length,
       }));
+    }).catch((error: unknown) => {
+      if (!(error instanceof StaleTenantSessionResultError)) {
+        throw error;
+      }
     }).finally(() => {
       setIsDiagnosticsRunning(false);
       setComputeProgressMessage(null);
       diagnosticsAbortRef.current = null;
     });
-  }, [collapsedIslandIds, document, readingMode, reviewedOnly]);
+  }, [collapsedIslandIds, document, readingMode, reviewedOnly, runTenantScopedTask]);
 
   useEffect(() => {
     setOutlineQualityReport(null);
@@ -8339,24 +8571,21 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const reportAgentTaskExportAudit = useCallback(() => {
     if (!document) return;
-    void postExportAudit(
+    void runTenantScopedApiRequest(() => postExportAudit(
       document.id,
       { safeMode, exportKind: "agent-task" },
       { tenantSessionContext: verifiedTenantSession },
-    ).catch((error: unknown) => {
-      if (error instanceof ApiError && error.code === "tenant_session_changed") {
-        blockStaleTenantSession();
-      }
+    )).catch(() => {
       // Fail-open by design (spec §3.4 / ADR-0049 D2): the backend audit
       // dispatcher itself never blocks on send failure, and this call is
       // reporting after the local export already completed -- there is
       // nothing to roll back, so a network error here is silently ignored
       // rather than surfaced as an export failure the user didn't cause.
     });
-  }, [blockStaleTenantSession, document, safeMode, verifiedTenantSession]);
+  }, [document, runTenantScopedApiRequest, safeMode, verifiedTenantSession]);
 
   const handleCopyAgentTaskSheet = useCallback(async () => {
-    const output = await buildCurrentAgentTaskSheet();
+    const output = await runTenantScopedOptionalTask(buildCurrentAgentTaskSheet);
     if (!output) return;
     try {
       await navigator.clipboard.writeText(output.taskSheetMd);
@@ -8365,23 +8594,23 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     } catch {
       setStatusMessage(t("agent_task_export.copy_failed"));
     }
-  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit]);
+  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
 
   const handleDownloadAgentTaskSheet = useCallback(async () => {
-    const output = await buildCurrentAgentTaskSheet();
+    const output = await runTenantScopedOptionalTask(buildCurrentAgentTaskSheet);
     if (!output) return;
     downloadTextFile("task-sheet.md", "text/markdown", output.taskSheetMd);
     setStatusMessage(t("agent_task_export.downloaded_md"));
     reportAgentTaskExportAudit();
-  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit]);
+  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
 
   const handleDownloadAgentTaskJson = useCallback(async () => {
-    const output = await buildCurrentAgentTaskSheet();
+    const output = await runTenantScopedOptionalTask(buildCurrentAgentTaskSheet);
     if (!output) return;
     downloadTextFile("task.json", "application/json", output.taskJson);
     setStatusMessage(t("agent_task_export.downloaded_json"));
     reportAgentTaskExportAudit();
-  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit]);
+  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
 
   // EXT-AGENT-02: parsing/reviewing a pasted response never touches the
   // document (AC-6); only a per-proposal "Import" click does, one
@@ -8522,22 +8751,40 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      void recordProposalDecision(proposalId, "adopt", "human");
+      void runTenantScopedApiRequest(() => recordProposalDecision(
+        proposalId,
+        "adopt",
+        "human",
+        undefined,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
       setAgentImportedProposalReviews((previous) =>
         previous.map((item) => (item.proposalId === proposalId ? { ...item, status: "adopted" as const } : item))
       );
       setStatusMessage(t("agent_response_import.adopted_status_message"));
     },
-    [document, agentImportedProposalReviews, applyDocumentChange]
+    [
+      document,
+      agentImportedProposalReviews,
+      applyDocumentChange,
+      runTenantScopedApiRequest,
+      verifiedTenantSession,
+    ]
   );
 
   const handleRejectAgentImportedProposal = useCallback((proposalId: string) => {
-    void recordProposalDecision(proposalId, "reject", "human");
+    void runTenantScopedApiRequest(() => recordProposalDecision(
+      proposalId,
+      "reject",
+      "human",
+      undefined,
+      { tenantSessionContext: verifiedTenantSession },
+    ));
     setAgentImportedProposalReviews((previous) =>
       previous.map((item) => (item.proposalId === proposalId ? { ...item, status: "rejected" as const } : item))
     );
     setStatusMessage(t("agent_response_import.rejected_status_message"));
-  }, []);
+  }, [runTenantScopedApiRequest, verifiedTenantSession]);
 
   const handleExportAgentImportedProposalPatchFile = useCallback(
     (proposalId: string) => {
@@ -8903,6 +9150,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           evidenceOverlayDimOthers,
           perspectiveMode,
           perspectiveStrictFilter,
+          perspectivePresets,
           locale: getActiveLocale(),
           presets: viewPresets,
           activePresetId: activePresetId ?? undefined,
@@ -8944,6 +9192,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       lodShowLoneWolvesWhenFar,
       perspectiveMode,
       perspectiveStrictFilter,
+      perspectivePresets,
       viewPresets,
       activePresetId,
       reviewEvents,
@@ -8956,6 +9205,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return;
     }
 
+    let unsubscribeBundleProgress: (() => void) | null = null;
     try {
       setIsBundleExportRunning(true);
       const exportTimestamp = formatBundleTimestamp(new Date());
@@ -8993,6 +9243,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           evidenceOverlayDimOthers,
           perspectiveMode,
           perspectiveStrictFilter,
+          perspectivePresets,
           locale: getActiveLocale(),
           presets: viewPresets,
           activePresetId: activePresetId ?? undefined,
@@ -9006,8 +9257,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
       const controller = new AbortController();
       bundleAbortRef.current = controller;
-      const unsubscribe = bundleRunnerRef.current.onProgress((progress) => setComputeProgressMessage(progress.message));
-      const outcome = await bundleRunnerRef.current.run(async (ctx) => {
+      unsubscribeBundleProgress = bundleRunnerRef.current.onProgress((progress) => setComputeProgressMessage(progress.message));
+      const outcome = await runTenantScopedTask(() => bundleRunnerRef.current.run(async (ctx) => {
         ctx.reportProgress({ message: t("app.status.bundle.progress.building"), completed: 1, total: 3 });
         await ctx.yieldToMainThread();
         const files = await buildExportBundleWithWorkers(document, viewMetadata, {
@@ -9069,8 +9320,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           }),
         });
         return { files, zipBlob };
-      });
-      unsubscribe();
+      }));
+      unsubscribeBundleProgress();
+      unsubscribeBundleProgress = null;
       if (outcome.status === "cancelled" || outcome.result === null) {
         setStatusMessage(t("app.status.bundle.cancelled"));
         return;
@@ -9080,6 +9332,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setStatusMessage(t("app.status.bundle.exported", { count: files.length }));
 
     } catch (error) {
+      if (error instanceof StaleTenantSessionResultError) {
+        return;
+      }
       const message = error instanceof Error ? error.message : t("app.status.bundle.failed_unknown");
       if (message.toLowerCase().includes("cancelled")) {
         setStatusMessage(t("app.status.bundle.cancelled"));
@@ -9087,6 +9342,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         setStatusMessage(t("app.status.bundle.failed", { detail: message }));
       }
     } finally {
+      unsubscribeBundleProgress?.();
       setIsBundleExportRunning(false);
       setComputeProgressMessage(null);
       bundleAbortRef.current = null;
@@ -9123,6 +9379,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     outlineQualityReport,
     outlineRecommendations,
     perspectiveMode,
+    perspectivePresets,
     packVisibility,
     viewPresets,
           activePresetId,
@@ -9131,6 +9388,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     readingMode,
     readingNavEnabled,
     reviewedOnly,
+    runTenantScopedTask,
     safeMode,
     mergeAuditLog,
     selectedCard?.id,
@@ -9153,7 +9411,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
 
     try {
-      const pngBlob = await exportCanvasToPngBlob({
+      const pngBlob = await runTenantScopedOptionalTask(() => exportCanvasToPngBlob({
         doc: focusedVisibleDocument,
         viewState: {
           visibleIslandIds: visibleIslandIdSet,
@@ -9165,7 +9423,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         camera: canvasCamera,
         area,
         scale: 2,
-      });
+      }));
+      if (pngBlob === undefined) {
+        return;
+      }
 
       const model = buildAbstractMapExport(document, {
         visibleIslandIds: visibleIslandIdSet,
@@ -9195,6 +9456,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     visibleIslandIdSet,
     safeMode,
     includeUnreviewedDraftsInExport,
+    runTenantScopedOptionalTask,
   ]);
 
   const handleExportAbstractMapHtmlWithPng = useCallback(async () => {
@@ -9210,7 +9472,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
 
     try {
-      const pngBlob = await exportCanvasToPngBlob({
+      const pngBlob = await runTenantScopedOptionalTask(() => exportCanvasToPngBlob({
         doc: focusedVisibleDocument,
         viewState: {
           visibleIslandIds: visibleIslandIdSet,
@@ -9222,7 +9484,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         camera: canvasCamera,
         area,
         scale: 2,
-      });
+      }));
+      if (pngBlob === undefined) {
+        return;
+      }
 
       const model = buildAbstractMapExport(document, {
         visibleIslandIds: visibleIslandIdSet,
@@ -9230,7 +9495,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         includeUnreviewedDrafts: !safeMode && includeUnreviewedDraftsInExport,
       });
 
-      const snapshotDataUrl = await readBlobAsDataUrl(pngBlob);
+      const snapshotDataUrl = await runTenantScopedOptionalTask(() => readBlobAsDataUrl(pngBlob));
+      if (snapshotDataUrl === undefined) {
+        return;
+      }
       downloadTextFile("report.html", "text/html", exportAbstractMapHTML(model, { snapshotDataUrl }));
       downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
       setStatusMessage(t("app.status.export.abstract_html"));
@@ -9251,6 +9519,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     visibleIslandIdSet,
     safeMode,
     includeUnreviewedDraftsInExport,
+    runTenantScopedOptionalTask,
   ]);
 
   const getSvgExportFilename = useCallback((mode: "viewport" | "visible-bounds") => {
@@ -9393,7 +9662,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
 
     try {
-      const pngBlob = await exportCanvasToPngBlob({
+      const pngBlob = await runTenantScopedOptionalTask(() => exportCanvasToPngBlob({
         doc: focusedVisibleDocument,
         viewState: {
           visibleIslandIds: visibleIslandIdSet,
@@ -9405,7 +9674,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         camera: canvasCamera,
         area,
         scale: pngExportScale,
-      });
+      }));
+      if (pngBlob === undefined) {
+        return;
+      }
       downloadBlobFile(getPngExportFilename("viewport", pngExportScale), pngBlob);
       downloadViewMetadata("viewport", area);
       setStatusMessage(t("app.status.export.png_viewport", { scale: pngExportScale }));
@@ -9427,6 +9699,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     visibleIslandIdSet,
     safeMode,
     includeUnreviewedDraftsInExport,
+    runTenantScopedOptionalTask,
   ]);
 
   const handleExportPngVisibleBounds = useCallback(async () => {
@@ -9457,7 +9730,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
 
     try {
-      const pngBlob = await exportCanvasToPngBlob({
+      const pngBlob = await runTenantScopedOptionalTask(() => exportCanvasToPngBlob({
         doc: focusedVisibleDocument,
         viewState: {
           visibleIslandIds: visibleIslandIdSet,
@@ -9469,7 +9742,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         camera: canvasCamera,
         area,
         scale: pngExportScale,
-      });
+      }));
+      if (pngBlob === undefined) {
+        return;
+      }
       downloadBlobFile(getPngExportFilename("visible-bounds", pngExportScale), pngBlob);
       downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
       setStatusMessage(t("app.status.export.png_visible_bounds", { scale: pngExportScale }));
@@ -9491,6 +9767,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     visibleIslandIdSet,
     safeMode,
     includeUnreviewedDraftsInExport,
+    runTenantScopedOptionalTask,
   ]);
 
   const handleExportViewMetadataViewport = useCallback(() => {
@@ -10611,6 +10888,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
               document={document}
               onRestoreDocument={(snapshotDocument) => applyDocumentChange(snapshotDocument)}
               onDiscardRestoredDocument={discardLatestDocumentChange}
+              runTenantScopedOptionalTask={runTenantScopedOptionalTask}
             />
           ),
         },
@@ -10878,6 +11156,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         <SidePanel
           isReadOnly={isReadOnly}
           isAdvancedUiEnabled={isAdvancedUiEnabled}
+          runTenantScopedOptionalTask={runTenantScopedOptionalTask}
           selectedCard={selectedCard}
           sourceCardsForSelectedCanonical={sourceCardsForSelectedCanonical}
           missingSourceCardIdsForSelectedCanonical={missingSourceCardIdsForSelectedCanonical}

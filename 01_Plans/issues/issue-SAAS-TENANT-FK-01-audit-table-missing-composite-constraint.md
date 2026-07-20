@@ -3,12 +3,12 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/alembic/versions/20260717_0011_add_document_access_admin_audit.py`
+- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/alembic/versions/20260720_0012_add_admin_audit_document_fk.py`, `03_Implement/backend/tests/test_document_access_admin_audit_migration.py`, `03_Implement/backend/tests/test_alembic_lineage.py`, `02_Architecture/schemas.md`
 - Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - Expected verification level: `integration`
 
@@ -19,18 +19,25 @@
 
 ## 対応方針
 
-- 実施すること: `DocumentAccessAdminAuditEventRow`に`(tenant_id, doc_id) -> (documents.tenant_id, documents.id)`の複合外部キー制約を追加するかどうかをMaintainerが判断する。
-- 実施しないこと: 制約の追加そのもの。追加する場合の`ondelete`挙動（監査証跡が文書削除後も残るべきか、他の2表と同じ`CASCADE`に揃えるべきか）はコンプライアンス上の判断を伴い、コーディングエージェントが独断で選ぶべきではない。また、`issue-SAAS-TENANT-01`のAC-3チェック状態自体の修正も、当該issueが他セッションにより活発に編集中のため本issueでは行わない。
+- 実施したこと: ORMと加算migration`20260720_0012`へtenant/doc複合外部キーを追加した。`ON DELETE RESTRICT`とし、監査を暗黙に連鎖削除せず、未確定のDocument lifecycleを先取りしないfail-closed境界にした。既存DBに孤立・越境監査行がある場合はmigrationを停止し、暗黙修復・削除しない。SQLite migration testで制約形状と別tenant文書への監査挿入拒否を固定した。
+- 実施しないこと: Document削除API、監査保持期限、監査削除手順、既存AC-3の意味変更。
 
 ## 受入条件
 
-- [ ] `DocumentAccessAdminAuditEventRow`のtenant/doc複合制約について、追加する/しないの方針が決定される。
-- [ ] 追加する場合、既存の監査挿入経路（`routes/document_access_admin.py`）を壊さずmigrationが追加され、テストがgreenであることを確認する。
+- [x] `DocumentAccessAdminAuditEventRow`へtenant/doc複合制約を`ON DELETE RESTRICT`で追加する。
+- [x] 既存の監査挿入経路を壊さず、migrationと近接テストがgreenであることを確認する。
 
 ## 検証計画
 
 - 実行する確認: 方針決定・実装後、`python3 -m pytest tests/test_document_access_admin_audit_migration.py`等の関連テスト。
 - 期待結果: 複合制約追加後も既存の監査記録フローが正常に動作する。
+
+## Validation
+
+- `pytest tests/test_document_access_admin_audit_migration.py tests/test_document_access_admin_routes.py tests/test_alembic_lineage.py -q`: 18 passed。
+- `pytest -q`: 603 passed, 25 skipped。
+- `ruff check src/kj_atlas_api/models.py tests/test_document_access_admin_audit_migration.py tests/test_alembic_lineage.py`: passed。
+- `python ../../01_Plans/docs_check.py --root ../..`: passed。
 
 ## 補足
 

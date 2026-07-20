@@ -1596,6 +1596,7 @@
   "side_panel.trace.cancel_analytics": "Cancel analytics",
   "side_panel.trace.analytics_progress": "Trace analytics ({mode}): {stage} ({percent}%)",
   "side_panel.trace.analytics_failed": "Failed to compute trace analytics",
+  "side_panel.trace.failed": "Failed to compute the trace. Please try again",
   "side_panel.trace.progress": "{kind}: {stage} ({percent}%)",
   "side_panel.trace.cancelled": "Trace cancelled",
   "side_panel.trace.copy_contradiction_failed": "Failed to copy contradiction trace",
