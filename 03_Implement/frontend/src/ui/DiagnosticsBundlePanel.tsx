@@ -279,10 +279,10 @@ export function DiagnosticsBundlePanel({
               {t("diagnostics_bundle.download")}
             </button>
             {copyStatus === "copied" ? (
-              <span style={{ fontSize: 12, color: "#166534" }}>{t("diagnostics_bundle.copied")}</span>
+              <span role="status" aria-live="polite" style={{ fontSize: 12, color: "#166534" }}>{t("diagnostics_bundle.copied")}</span>
             ) : null}
             {copyStatus === "failed" ? (
-              <span style={{ fontSize: 12, color: "#b91c1c" }}>{t("diagnostics_bundle.copy_failed")}</span>
+              <span role="status" aria-live="polite" style={{ fontSize: 12, color: "#b91c1c" }}>{t("diagnostics_bundle.copy_failed")}</span>
             ) : null}
           </div>
         </div>

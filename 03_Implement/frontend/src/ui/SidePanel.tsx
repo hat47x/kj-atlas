@@ -3208,10 +3208,10 @@ export function SidePanel({
                 {t("side_panel.edge_inspector.copy_explanation")}
               </button>
               {copyExplanationFeedback === "copied" ? (
-                <div style={{ fontSize: 12, color: "#166534", marginTop: 6 }}>{t("side_panel.copy.copied")}</div>
+                <div role="status" aria-live="polite" style={{ fontSize: 12, color: "#166534", marginTop: 6 }}>{t("side_panel.copy.copied")}</div>
               ) : null}
               {copyExplanationFeedback === "failed" ? (
-                <div style={{ fontSize: 12, color: "#b91c1c", marginTop: 6 }}>{t("side_panel.copy.failed")}</div>
+                <div role="status" aria-live="polite" style={{ fontSize: 12, color: "#b91c1c", marginTop: 6 }}>{t("side_panel.copy.failed")}</div>
               ) : null}
             </div>
           ) : null}

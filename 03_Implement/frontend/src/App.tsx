@@ -222,6 +222,7 @@ const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 // "small island" eligible for the protection mark (non-scoring; a bare
 // threshold, not a rank).
 const SMALL_ISLAND_MAX_MEMBERS = 2;
+const PROPOSAL_AUDIT_TRAIL_LIMIT = 50;
 const HISTORY_LIMIT = 50;
 const GRID_SNAP_SIZE = 10;
 const SUGGESTION_MOVE_THRESHOLD = 1;
@@ -2885,7 +2886,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       undefined,
       { tenantSessionContext: verifiedTenantSession },
     ));
-    setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} adopted ${islandSummaryProposal.proposalId}`]);
+    setProposalAuditTrail((current) => {
+      const next = [...current, `${new Date().toISOString()} adopted ${islandSummaryProposal.proposalId}`];
+      return next.length > PROPOSAL_AUDIT_TRAIL_LIMIT ? next.slice(next.length - PROPOSAL_AUDIT_TRAIL_LIMIT) : next;
+    });
     setIslandSummaryProposal(null);
   }, [
     applyDocumentChange,
@@ -2907,7 +2911,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       undefined,
       { tenantSessionContext: verifiedTenantSession },
     ));
-    setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} rejected ${islandSummaryProposal.proposalId}`]);
+    setProposalAuditTrail((current) => {
+      const next = [...current, `${new Date().toISOString()} rejected ${islandSummaryProposal.proposalId}`];
+      return next.length > PROPOSAL_AUDIT_TRAIL_LIMIT ? next.slice(next.length - PROPOSAL_AUDIT_TRAIL_LIMIT) : next;
+    });
     setIslandSummaryProposal(null);
     setStatusMessage(t("app.status.island_summary.rejected"));
   }, [
@@ -2927,7 +2934,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       undefined,
       { tenantSessionContext: verifiedTenantSession },
     ));
-    setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} held ${islandSummaryProposal.proposalId}`]);
+    setProposalAuditTrail((current) => {
+      const next = [...current, `${new Date().toISOString()} held ${islandSummaryProposal.proposalId}`];
+      return next.length > PROPOSAL_AUDIT_TRAIL_LIMIT ? next.slice(next.length - PROPOSAL_AUDIT_TRAIL_LIMIT) : next;
+    });
     setStatusMessage(t("app.status.island_summary.held"));
   }, [
     islandSummaryProposal,
