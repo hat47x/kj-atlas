@@ -48,7 +48,11 @@
 
 各段階でtenant context欠落、backfill不整合、複合FK不整合、RLS context残留、PDP fail-openのいずれかを検出した場合は次段階へ進まない。
 
-## 予算申告
+### Step 1 (Contract) 確認チェックポイント（2026-07-20）
+
+`schemas.md` §10.4、`api.md` §9.3〜9.5・§10〜10.5、`runtime_parameter_registry.md` の `saas-multitenant` profile契約、および実装済みmigration（`20260716_0006`〜`20260717_0011`）を突き合わせた結果、`TenantContextV1`/`TenantSummaryV1`/`TenantMembershipV1`/`EffectiveCapability`、`tenants`/`identity_providers`/`tenant_identity_providers`/`user_identities`/`tenant_memberships` の形状、`documents`等の複合`tenant_id + id`キー、tenant-scoped access-request/session/active-tenant契約、Tenant Admin document-access endpointは既に文書化・整合済みであることを確認した。段階1〜2は歴史的に厳密な「先にcontract、次にexpand」の順で1コミットには分かれていないが、現時点の内容としては整合している。
+
+残る既知のギャップ: `agent_registrations`（`api.md` §9.5）は現状 `docId` にのみ束縛され、D10が求める tenant 束縛を持たない。これは `schemas.md` §10.4 で既に将来対応事項として明記済みで、対応要否・時期は本チェックポイントでは判断しない。
 
 - 複雑性予算（`ADR-0043` CB-1..4）: 初期表示への純増=`+1`（検証済みSaaS session時だけ、active tenantを誤認しないための`TenantSessionControl`をcore toolbarへ表示） / 保留操作の距離=不変（カード・島の保留導線は変更しない） / 取り消し導線=あり（切替前confirmationの取消、切替後はallowlist内のtenantを同じselectorから再選択）。CB-1/CB-3は安全境界を利用者へ常時示すための限定的な純増として許容する。
 - 性能予算（`ADR-0046` PB-1..5）: 代表規模でのKJ主要操作=bootstrap完了後は不変 / 100ms超同期処理=追加なし。PB-2初期表示はruntime policy確認とsession context取得を逐次実行するため**要改善（所要時間未計測）**。現在は両待機中に`aria-busy`付きloading viewを表示してPB-5の無反応状態を避ける。AC-12の実ブラウザ検証で、代表環境の操作可能化時間を計測し、数秒超なら段階表示または待機理由の具体化を行う。
