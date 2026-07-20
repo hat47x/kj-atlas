@@ -1,7 +1,7 @@
 # 反復的探究のデータモデル
 
-- Status: 採択済み設計目標（未実装）
-- Updated: 2026-07-15
+- Status: 採択済み設計目標（Phase 2実装中）
+- Updated: 2026-07-20
 - Decision: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`
 - Requirements: `00_Prompt/w_type_iterative_inquiry_requirements.md`
 - Implementation: `01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md`
@@ -155,9 +155,11 @@ flowchart LR
 - 対象範囲の `RoundHandoffV1`、`FieldworkRequestV1`、`CardLineageEdgeV1`。
 - schema version、各成果のdigest、共有範囲とSafeMode結果。
 
-importは参照がbundle内で閉じていること、digestが一致すること、親グラフに循環がないこと、未知キー・未知versionをfail-closedで拒否できることを検証する。
+SafeModeによるマスクは元スナップショットを変更しない。共有用の派生bundleを作り、マスク後の内容に新しいdigestを付ける（§4.4 SafeMode派生bundle契約 参照）。元bundleのdigestやIDを秘匿性の代用にしない。
 
-SafeModeによるマスクは元スナップショットを変更しない。共有用の派生bundleを作り、マスク後の内容に新しいdigestを付ける。元bundleのdigestやIDを秘匿性の代用にしない。
+importは参照がbundle内で閉じていること、digestが一致すること、親グラフに循環がないこと、未知キー・未知versionをfail-closedで拒否できることを検証する（§4.5 Import strict validation契約 参照）。
+
+部分範囲の共有は、選択ラウンドとその祖先に限定した自己完結bundleとして作成する（§4.6 部分共有契約 参照）。
 
 ### 4.3 削除と保持
 
@@ -168,7 +170,85 @@ SafeModeによるマスクは元スナップショットを変更しない。共
 - 削除後に残す監査情報は、削除日時、対象種別、実行結果など本文を含まない最小メタデータに限定する。主体情報の扱いは認証・監査ポリシーへ従う。
 - 保持上限、分岐削除UI、置換手順はPhase 2のfixtureで検証し、標準運用がない間は探究を `L1` へ昇格しない。
 
-## 5. UI境界
+### 4.4 SafeMode派生bundle契約
+
+SafeModeは既定ONの安全機構であり、探究bundleを他者と共有する前に適用される。この節はSafeMode適用の永続契約であり、以下の実装（`inquiry_bundle_safe_mode.ts` `deriveInquirySafeModeBundle()`）と一致しなければならない。
+
+**原則**:
+1. SafeMode派生は元bundleを変更しない。派生bundleは新しい自己完結`InquiryBundleV1`であり、独自のdigestを持つ。
+2. マスク後に各snapshotの`canonicalDigest`を再計算する。派生bundleのdigestは派生bundle自身の内容を指し、元bundleのdigestではない。
+3. 秘匿性をdigestやIDに依存しない。digestは改ざん検出のためのものであり、秘匿や認可の代用としない。
+
+**フィールドポリシー**: すべての永続フィールドは、次のいずれかのポリシーを明示的に割り当てられる。新規フィールド追加時はコンパイル時に網羅性が強制される。
+
+| ポリシー | 意味 |
+|---|---|
+| `preserve` | そのまま複製する。構造的/参照/識別/時刻フィールドに適用する。 |
+| `redact` | `SafeModePolicy.redactText()` で人が読める自由文をマスクする。タイトル・theme・カード本文・narrative・critique内容・問い・理解変化記述に適用する。 |
+| `omit` | フィールドごと削除する。再提案diff（`reproposalDiffs`）と矛盾判定（`contradictionSignalDecisions`）は内容を安全に列挙できないため、全体をomitする。 |
+| `rebuild` | 子オブジェクトを再帰的にSafeMode処理する。journey・snapshots・cardLineage・handoff・fieldworkRequest・fieldworkOutcome・document・cards・islands・narratives・evidenceLinks等の複合型に適用する。 |
+
+**ポリシーが適用される主な型**: `InquiryBundleV1`、`InquiryJourneyV1`、`RoundRecordV1`、`RoundHandoffV1`、`FieldworkRequestV1`、`FieldworkOutcomeV1`、`RoundSnapshotV1`、`CardAddressV1`、`RoundArtifactRefV1`、`CardLineageEdgeV1`の全variant、`DocumentV1`、`Card`、`CardMeta`、`CardKa`、`Island`、全geometry/shape variant、`EvidenceLink`、`CritiqueInput`、`ReviewAttribution`、`Narrative`、`NarrativeCheck`、`RelationSummary`、`RelationSummaryHistoryEntry`、`MergeSuggestionDecisionEntry`、`PatchApplyLogEntry`、`DeterministicTieBreak`、`ShelfEntry`。
+
+**非変更項目**: `human_reviewed`状態・review attribution・provenanceフラグはSafeMode派生で変更しない。これらは内容のマスク後も事実情報として保持する。
+
+**`safeModeApplied`フラグ**: 現時点では関数戻り値（`InquirySafeModeBundleResult.safeModeApplied`）として返し、永続bundleへ記録しない。受信側がSafeMode適用を確認できるexport metadata（`InquiryExportInfoV1`）は、bundle型への追加が未了のため保留する。追加後、本節の対象となる。
+
+**未知`CardLineageEdgeV1`種別**: 未知の種別は表示用既定値`related`へ正規化する（安全側の措置）。
+
+### 4.5 Import strict validation契約
+
+import（`inquiry_bundle_io.ts` `parseInquiryBundleJson()`）はすべての入力bundleを3段階で検証する。検証に失敗したbundleは受理しない（fail-closed）。
+
+**Phase 1 — 容量境界**:
+- 警告境界: 5 MiB（`INQUIRY_BUNDLE_WARNING_BYTES`）。超過時は読込を禁止せず、通常より時間がかかる可能性をUIで伝える。
+- 絶対上限: 20 MiB（`INQUIRY_BUNDLE_MAX_BYTES`）。UTF-8 byte長が上限を超える入力は `payload_too_large` で拒否する。
+- この上限はbundle契約の定数であり、環境変数ではない。「保存できるが再取込できない」状態を作らないため、export側（`serializeInquiryBundle()`）も同じ境界を適用する。
+
+**Phase 2 — 形状検証（`validateBundleShape`）**:
+- 未知キー: すべてのオブジェクトで許可されたキーのみを受け付ける。未知キーは `invalid_shape` で拒否する。
+- 未知version: `INQUIRY_SCHEMA_VERSION`（現行 `"1.0.0"`）と一致しないschema versionは拒否する。前方互換性のためのversion交渉は未実装。
+- 未知enum値: すべての識別子フィールド（`stage`・`status`・edge `kind`等）は事前定義された値のみを受け付ける。
+- 型不整合: 文字列が期待されるフィールドに数値・真偽値・オブジェクトが来た場合は拒否する。
+
+**Phase 3 — 意味検証（`validateInquiryBundle()`）**:
+28種の検証コード（`InquiryValidationIssueCode`）により、以下を確認する:
+- schema versionの一貫性
+- 時刻の正準形式
+- round IDの一意性
+- stage/statusの有効性
+- 親参照の循環不在
+- iterationの順序正当性
+- head/leafの一貫性
+- snapshot所有権（出力snapshotが当該ラウンドの所有であること）
+- digest形式（`sha256:<64桁小文字16進数>`）と一致
+- lineage edgeの方向・多重度
+- handoff成果物の存在確認
+- 自己完結性（全参照がbundle内で解決されること）
+
+**往復対称性**: export（`serializeInquiryBundle`）とimport（`parseInquiryBundleJson`）は対称である。exportされたbundleは必ずimportでき、importされたbundleを変更なく再exportすると同一のJSON表現とdigestが得られる。
+
+**`undefined`とdigestの関係**: 実行時オブジェクトの`undefined`フィールドは`JSON.stringify`で省略される。digestはJSON成果物表現から計算するため、同じ論理内容を持つbundleは常に同じdigestを持つ。
+
+### 4.6 部分共有契約
+
+部分範囲の共有（`inquiry_bundle_projection.ts` `deriveInquiryRoundBundle()`）は、選択ラウンドとその祖先に限定した自己完結bundleを作成する。
+
+**範囲選択**:
+- 選択ラウンドから`parentRoundIds`を再帰的に辿り、起点までの全祖先を包含する。
+- 包含ラウンドの`inputSnapshotIds`・`outputSnapshotId`・journeyの`originSnapshotIds`が参照する全snapshotを含める。
+- 派生bundleの`headRoundIds`は`[selectedRoundId]`に、`defaultHeadRoundId`は`selectedRoundId`に設定する。
+
+**fail-closed動作**:
+- 範囲外snapshotへの依存が存在する場合（`RoundHandoffV1.carryoverRefs`・`heldRefs`・`FieldworkOutcomeV1.responseCardRefs`・`CardLineageEdgeV1`のアドレスが範囲外snapshotを指す場合）、投影は`dependency_outside_scope`で失敗し、未解決snapshot IDの一覧を返す。
+- 依存を黙って削除したり、別分岐を暗黙に追加したりしない。
+- 呼び出し側は「別のラウンドを選ぶ」または「探究全体を共有する」ように利用者へ案内する。
+
+**非破壊**:
+- 元bundleとsnapshotは変更しない。派生bundleは`structuredClone`による深い複製である。
+- 派生bundleは既存の`validateInquiryBundle()`とstrict export/importを通過する検証済みの自己完結bundleであり、`InquiryBundleV1`としての完全性を満たす。
+
+**partial scopeの表示**: 現時点ではexport metadata（`InquiryExportInfoV1.scope`）をbundle型へ追加していないため、部分範囲であることの表示はbundle外の呼び出し側が責任を持つ。bundle型への追加後、本節の対象となる。
 
 - 通常モードへ6段階、進捗率、履歴パネルを追加しない。
 - 高度機能を有効にしたときだけ「現状把握・2回目」のような現在位置を一行で示す。
@@ -190,6 +270,9 @@ SafeModeによるマスクは元スナップショットを変更しない。共
 5. `KJ_ATLAS_LLM_PROVIDER=none` で作成、引継ぎ、停止・再開、分岐、比較が成立する。
 6. bundleの参照は内部で閉じ、外部サーバーがなくても検証・閲覧できる。
 7. 個人情報・未レビュー本文の削除またはマスクを、不変性を理由に妨げない。共有物は派生bundleとして作り直す。
+8. SafeMode派生は元bundleを変更しない。派生bundleは新しい自己完結`InquiryBundleV1`であり、独自のdigestを持つ。マスク後snapshotの`canonicalDigest`は再計算される。
+9. export（`serializeInquiryBundle`）とimport（`parseInquiryBundleJson`）は対称である。exportされたbundleは必ずimportでき、変更なく再exportすると同一のJSON表現とdigestが得られる。
+10. 削除は内容を含む成果物を生成しない。削除後の監査情報は削除日時・対象種別・結果コードに限定され、カード本文・snapshot・系譜を含まない。
 
 ## 7. 段階的導入
 

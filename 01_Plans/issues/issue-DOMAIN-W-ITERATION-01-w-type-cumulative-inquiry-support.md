@@ -97,7 +97,7 @@
 - [x] AC-8: 中断後の再開ブリーフから、問い、未解決点、次の行動、元成果へ移動できる。
 - [x] AC-9: 引継ぎ確認を一件ずつ採用・修正・見送り・保留でき、未回答でも保存できる。
 - [x] AC-10: `KJ_ATLAS_LLM_PROVIDER=none` で中核操作を完了できる。
-- [ ] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。
+- [x] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。→ `inquiry_journey_model.md` §4.4（SafeMode派生bundle契約）、§4.5（Import strict validation契約）、§4.6（部分共有契約）、§4.3（削除と保持）、§6 不変条件 8-10 として契約化済み（2026-07-20）。SafeMode適用結果のbundle内metadata（`InquiryExportInfoV1`）は型追加が未了のため、別途follow-upする。
 - [x] AC-12: マウス・キーボード・390px・代表規模のE2Eが通る。
 
 ## 6) 実装タスク分解 / Task breakdown
