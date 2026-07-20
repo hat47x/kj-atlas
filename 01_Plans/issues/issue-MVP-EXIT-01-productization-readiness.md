@@ -71,7 +71,7 @@ kj-atlasを、機能デモとして動くMVPから、一般利用者が継続利
 - [ ] 公開文書のリリース候補画像を確認する。
 - [ ] 候補commitの必須CIと人間確認を根拠に最終出荷判断を記録する。
 - [x] タグ・候補commit・品質証跡・実際の成果物が一意に対応し、検証用artifactを正式配布物と誤認しない。（`RELEASE-DOC-01` Phase AがDone済みのため充足を確認。2026-07-20更新）
-- [ ] Compose向けに案内する安全設定が実際の`api`へ配送され、未対応設定を有効と誤認しない。
+- [x] Compose向けに案内する安全設定が実際の`api`へ配送され、未対応設定を有効と誤認しない。（`ENV-COMPOSE-01` Done済みのため充足を確認。LLM stub・外部接続test doubleのDocker integration確認はscope-excludedのfollow-upとして引き続き対象外。2026-07-20更新）
 - [x] fresh cloneの標準Composeが認証なしでLANへ暗黙公開されず、非loopback公開の安全要件が文書化される。（`DEPLOY-NET-01` Done済みのため充足を確認。非loopback公開自体の別profile化はPhase Bとして引き続き対象外。2026-07-20更新）
 
 ## 実施済み
