@@ -82,6 +82,11 @@ export function MenuBar({ categories }: MenuBarProps) {
     ? [{ id: "__collapsed__", label: t("menu_bar.collapsed_trigger") }]
     : categories.map((category) => ({ id: category.id, label: category.label }));
 
+  // Stable ref so the collapse-transition effect below stays scoped to
+  // isCollapsed without re-firing on unrelated topEntries changes.
+  const topEntriesRef = useRef(topEntries);
+  topEntriesRef.current = topEntries;
+
   // If crossing the collapse breakpoint unmounts the top-level button that
   // currently holds focus (e.g. "File" mid-resize), the browser drops focus
   // to <body> with nothing to catch it. Redirect to whatever top entry
@@ -92,12 +97,11 @@ export function MenuBar({ categories }: MenuBarProps) {
     }
     wasCollapsedRef.current = isCollapsed;
     if (typeof document !== "undefined" && (document.activeElement === document.body || document.activeElement === null)) {
-      const firstId = topEntries[0]?.id;
+      const firstId = topEntriesRef.current[0]?.id;
       if (firstId) {
         topButtonRefs.current.get(firstId)?.focus();
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCollapsed]);
 
   // Only focus a row if it's actually enabled; otherwise fall back to the
