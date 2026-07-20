@@ -1320,6 +1320,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const [mergeSuggestionError, setMergeSuggestionError] = useState<string | null>(null);
   const [isSuggestingMerges, setIsSuggestingMerges] = useState(false);
   const [isSuggestingIslandSummary, setIsSuggestingIslandSummary] = useState(false);
+  const [isRecordingIslandSummaryDecision, setIsRecordingIslandSummaryDecision] = useState(false);
   const [islandSummarySuggestionWarningsByIslandId, setIslandSummarySuggestionWarningsByIslandId] = useState<Record<string, string[]>>({});
   const [islandSummaryProposal, setIslandSummaryProposal] = useState<IslandSummaryProposal | null>(null);
   const [proposalAuditTrail, setProposalAuditTrail] = useState<string[]>([]);
@@ -2861,7 +2862,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   ]);
 
   const handleAdoptIslandSummaryProposal = useCallback(async () => {
-    if (!document || !selectedIslandId || !islandSummaryProposal) {
+    if (!document || !selectedIslandId || !islandSummaryProposal || isRecordingIslandSummaryDecision) {
       return;
     }
     const nextDocument = updateIslandSummaryWithHistory(
@@ -2879,68 +2880,86 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       ...previousWarnings,
       [selectedIslandId]: islandSummaryProposal.diff.warnings ?? [],
     }));
-    await runTenantScopedApiRequest(() => recordProposalDecision(
-      islandSummaryProposal.proposalId,
-      "adopt",
-      "human",
-      undefined,
-      { tenantSessionContext: verifiedTenantSession },
-    ));
-    setProposalAuditTrail((current) => {
-      const next = [...current, `${new Date().toISOString()} adopted ${islandSummaryProposal.proposalId}`];
-      return next.length > PROPOSAL_AUDIT_TRAIL_LIMIT ? next.slice(next.length - PROPOSAL_AUDIT_TRAIL_LIMIT) : next;
-    });
-    setIslandSummaryProposal(null);
+    setIsRecordingIslandSummaryDecision(true);
+    try {
+      await runTenantScopedApiRequest(() => recordProposalDecision(
+        islandSummaryProposal.proposalId,
+        "adopt",
+        "human",
+        undefined,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
+      setProposalAuditTrail((current) => {
+        const next = [...current, `${new Date().toISOString()} adopted ${islandSummaryProposal.proposalId}`];
+        return next.length > PROPOSAL_AUDIT_TRAIL_LIMIT ? next.slice(next.length - PROPOSAL_AUDIT_TRAIL_LIMIT) : next;
+      });
+      setIslandSummaryProposal(null);
+    } finally {
+      setIsRecordingIslandSummaryDecision(false);
+    }
   }, [
     applyDocumentChange,
     document,
     islandSummaryProposal,
+    isRecordingIslandSummaryDecision,
     runTenantScopedApiRequest,
     selectedIslandId,
     verifiedTenantSession,
   ]);
 
   const handleRejectIslandSummaryProposal = useCallback(async () => {
-    if (!islandSummaryProposal) {
+    if (!islandSummaryProposal || isRecordingIslandSummaryDecision) {
       return;
     }
-    await runTenantScopedApiRequest(() => recordProposalDecision(
-      islandSummaryProposal.proposalId,
-      "reject",
-      "human",
-      undefined,
-      { tenantSessionContext: verifiedTenantSession },
-    ));
-    setProposalAuditTrail((current) => {
-      const next = [...current, `${new Date().toISOString()} rejected ${islandSummaryProposal.proposalId}`];
-      return next.length > PROPOSAL_AUDIT_TRAIL_LIMIT ? next.slice(next.length - PROPOSAL_AUDIT_TRAIL_LIMIT) : next;
-    });
-    setIslandSummaryProposal(null);
-    setStatusMessage(t("app.status.island_summary.rejected"));
+    setIsRecordingIslandSummaryDecision(true);
+    try {
+      await runTenantScopedApiRequest(() => recordProposalDecision(
+        islandSummaryProposal.proposalId,
+        "reject",
+        "human",
+        undefined,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
+      setProposalAuditTrail((current) => {
+        const next = [...current, `${new Date().toISOString()} rejected ${islandSummaryProposal.proposalId}`];
+        return next.length > PROPOSAL_AUDIT_TRAIL_LIMIT ? next.slice(next.length - PROPOSAL_AUDIT_TRAIL_LIMIT) : next;
+      });
+      setIslandSummaryProposal(null);
+      setStatusMessage(t("app.status.island_summary.rejected"));
+    } finally {
+      setIsRecordingIslandSummaryDecision(false);
+    }
   }, [
     islandSummaryProposal,
+    isRecordingIslandSummaryDecision,
     runTenantScopedApiRequest,
     verifiedTenantSession,
   ]);
 
   const handleHoldIslandSummaryProposal = useCallback(async () => {
-    if (!islandSummaryProposal) {
+    if (!islandSummaryProposal || isRecordingIslandSummaryDecision) {
       return;
     }
-    await runTenantScopedApiRequest(() => recordProposalDecision(
-      islandSummaryProposal.proposalId,
-      "hold",
-      "human",
-      undefined,
-      { tenantSessionContext: verifiedTenantSession },
-    ));
-    setProposalAuditTrail((current) => {
-      const next = [...current, `${new Date().toISOString()} held ${islandSummaryProposal.proposalId}`];
-      return next.length > PROPOSAL_AUDIT_TRAIL_LIMIT ? next.slice(next.length - PROPOSAL_AUDIT_TRAIL_LIMIT) : next;
-    });
-    setStatusMessage(t("app.status.island_summary.held"));
+    setIsRecordingIslandSummaryDecision(true);
+    try {
+      await runTenantScopedApiRequest(() => recordProposalDecision(
+        islandSummaryProposal.proposalId,
+        "hold",
+        "human",
+        undefined,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
+      setProposalAuditTrail((current) => {
+        const next = [...current, `${new Date().toISOString()} held ${islandSummaryProposal.proposalId}`];
+        return next.length > PROPOSAL_AUDIT_TRAIL_LIMIT ? next.slice(next.length - PROPOSAL_AUDIT_TRAIL_LIMIT) : next;
+      });
+      setStatusMessage(t("app.status.island_summary.held"));
+    } finally {
+      setIsRecordingIslandSummaryDecision(false);
+    }
   }, [
     islandSummaryProposal,
+    isRecordingIslandSummaryDecision,
     runTenantScopedApiRequest,
     verifiedTenantSession,
   ]);
@@ -11341,6 +11360,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           onHoldIslandSummaryProposal={() => {
             void handleHoldIslandSummaryProposal();
           }}
+          isRecordingIslandSummaryDecision={isRecordingIslandSummaryDecision}
           isSuggestingIslandSummary={isSuggestingIslandSummary}
           islandSummarySuggestionWarnings={selectedIsland ? islandSummarySuggestionWarningsByIslandId[selectedIsland.id] ?? [] : []}
           summaryGroundingItems={summaryGroundingItems}
