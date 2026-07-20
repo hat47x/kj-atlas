@@ -1,4 +1,5 @@
 import type { ExportViewMetadata } from "../export/view_metadata";
+import { t } from "../i18n/translate";
 import { validateView } from "./schema_validation";
 
 export function parseViewJson(rawText: string): { ok: true; metadata: ExportViewMetadata } | { ok: false; error: string } {
@@ -11,8 +12,8 @@ export function parseViewJson(rawText: string): { ok: true; metadata: ExportView
     return { ok: true, metadata: result.value };
   } catch (error) {
     if (error instanceof SyntaxError) {
-      return { ok: false, error: "Invalid JSON in view.json" };
+      return { ok: false, error: t("app.status.import.view_json_invalid") };
     }
-    return { ok: false, error: error instanceof Error ? error.message : "Unknown view parse error" };
+    return { ok: false, error: error instanceof Error ? error.message : t("app.status.import.view_parse_error_unknown") };
   }
 }

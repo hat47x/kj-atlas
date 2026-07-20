@@ -7519,10 +7519,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
             ...document,
             narratives: nextNarratives,
           }),
-          "Recorded consistency check"
+          t("app.status.narrative.consistency_check_recorded")
         );
       } catch (error) {
-        const fallback = error instanceof ApiError ? error.message : "Failed to check narrative consistency";
+        const fallback = error instanceof ApiError ? error.message : t("app.status.narrative.consistency_check_failed");
         const message = resolveAiProviderErrorMessage(error, fallback);
         setNarrativeCheckError(message);
         setNarrativeIssues([]);
@@ -7567,7 +7567,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           ...document,
           narratives: [...(document.narratives ?? []), nextNarrative],
         }),
-        "Generated narrative draft"
+        t("app.status.narrative.draft_generated")
       );
       setNarrativeText(result.text);
       setNarrativeIssues([]);
@@ -7576,7 +7576,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }
       setLastAiCallOutcome("ok");
     } catch (error) {
-      const fallback = error instanceof ApiError ? error.message : "Failed to generate narrative";
+      const fallback = error instanceof ApiError ? error.message : t("app.status.narrative.generation_failed");
       const message = resolveAiProviderErrorMessage(error, fallback);
       setNarrativeGenerationError(message);
       setLastAiCallOutcome(classifyAiProviderError(error));

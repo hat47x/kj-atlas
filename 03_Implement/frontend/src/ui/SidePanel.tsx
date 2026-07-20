@@ -2321,7 +2321,7 @@ export function SidePanel({
           <div style={{ display: "grid", gap: 6 }}>
             {readingOrderItems.map((item, index) => (
               <div
-                key={`${item.id}_${index}`}
+                key={item.id}
                 style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 6, backgroundColor: "#f8fafc" }}
               >
                 <div style={{ fontSize: 11, color: "#64748b" }}>{item.id}</div>
