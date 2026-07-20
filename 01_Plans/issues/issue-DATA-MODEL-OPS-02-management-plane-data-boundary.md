@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/research-2026-07-12-master-data-design-review.md`（maintainer 提示「マスタデータ管理UIの前にデータ設計の見直し」）
 - Priority: P2
-- Owner: TBD
+- Owner: Claude Code
 - Scope: `03_Implement/backend/`（一覧API・エージェント登録）, `03_Implement/frontend/src/storage/`（recent/プリセットの正本格下げ）, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`
 - Related Backlog: `DATA-MODEL-OPS-02`
 - Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`, `01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md`
@@ -55,7 +55,7 @@
 - [x] AC-3: localStorage「最近」はサーバー一覧のキャッシュとして再定義され、両者の不一致時はサーバーを正とする。→ `data_model_operations_overview.md` CRUD表 + `recent.ts` コメントとして契約反映済み（2026-07-17）。不一致時のサーバー優先ロジック実装は `GET /docs` API実装時に追加する。
 - [x] AC-4: View/PerspectiveとQueryPresetの置き場判断が契約へ反映され、device-local QueryPresetには「この端末のみ」が利用者に見える形で明示される。→ `PatchWorkspacePanel.tsx` + i18n en/ja に device-local 明示追加済み（2026-07-17）。
 - [x] AC-5: エージェント登録の正本・認可モデルが EXT-CONN-02 の実装前提として固定される（トークンは平文保存しない）。→ `api.md` §9.5 として固定済み（2026-07-16、下記「実装記録」参照）。
-- [ ] AC-6: 管理UI設計要求（Round 8）の入力パッケージ（確定した正本・権限・本文非表示原則・対象画面一覧）が `ui_design_handoff.md` の受け渡し形式で準備できる状態になる。
+- [x] AC-6: 管理UI設計要求（Round 8）の入力パッケージ（確定した正本・権限・本文非表示原則・対象画面一覧）が `ui_design_handoff.md` の受け渡し形式で準備できる状態になる。→ `ui_design_handoff.md`「正本と役割」表にD1〜D4の正本（`data_model_operations_overview.md` §4・§5.2、`schemas.md` §3.4.1、`api.md` §2.4・§9.5）を指す行を追加し、既存の受け渡しパッケージ手順（画面一覧=`ui_catalog.md`、対象issue/ADR anchor参照）から辿れる状態にした（2026-07-20）。
 
 ### AC-1 実装証跡（2026-07-16）
 
