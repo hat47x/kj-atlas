@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
 import re
 import socket
@@ -13,6 +14,8 @@ from uuid import uuid4
 
 from kj_atlas_api.settings import settings
 from kj_atlas_api.trusted_http import open_trusted_http
+
+logger = logging.getLogger(__name__)
 
 MAX_LLM_PROVIDER_REQUEST_BYTES = 1024 * 1024
 MAX_LLM_PROVIDER_RESPONSE_BYTES = 1024 * 1024
@@ -394,7 +397,8 @@ def _generate_via_http(
         reason = exc.reason
         if isinstance(reason, socket.timeout):
             raise ProviderRequestError.timeout(f"{provider_name} request timed out", metadata) from exc
-        raise ProviderRequestError.unavailable(f"{provider_name} request failed: {reason}", metadata) from exc
+        logger.warning("%s request failed: %s", provider_name, reason, exc_info=True)
+        raise ProviderRequestError.unavailable(f"{provider_name} request failed", metadata) from exc
     except TimeoutError as exc:
         raise ProviderRequestError.timeout(
             f"{provider_name} request timed out",
@@ -499,6 +503,6 @@ def generate_with_fallback(req: LLMRequest) -> LLMResponse:
             execution_path=f"{exc.metadata.provider_name}->none",
         )
         raise ProviderDisabledError(
-            f"LLM provider '{exc.metadata.provider_name}' failed and fallbacked to none: {exc}",
+            f"LLM provider '{exc.metadata.provider_name}' failed ({exc.code}) and fallbacked to none",
             fallback_metadata,
         ) from exc

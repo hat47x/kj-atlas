@@ -79,6 +79,12 @@ export function StartPanel({
   }, []);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      onClose();
+      return;
+    }
+
     if (event.key !== "Tab") {
       return;
     }
