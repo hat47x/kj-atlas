@@ -4110,7 +4110,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return;
     }
 
-    downloadTextFile(`${pendingPatchImport.fileName.replace(/\.json$/i, "")}.export.json`, "application/json", `${JSON.stringify(exportedPatch, null, 2)}\n`);
+    const sanitizedFileStem = pendingPatchImport.fileName.replace(/\.json$/i, "").trim().replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, "-");
+    downloadTextFile(`${sanitizedFileStem || "patch"}.export.json`, "application/json", `${JSON.stringify(exportedPatch, null, 2)}\n`);
     setStatusMessage(t("app.status.patch.exported_fingerprint"));
   }, [patchExportAuthor, patchExportAuthorNote, pendingPatchImport, runTenantScopedOptionalTask]);
 
