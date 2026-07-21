@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+from hashlib import sha256
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -624,12 +625,13 @@ def record_proposal_decision(payload: ProposalDecisionAuditRequest) -> ProposalD
             detail="decision must be one of accepted|rejected|held",
         )
     status = payload.decision
+    actor_ref_hash = sha256(payload.actor.encode("utf-8")).hexdigest()[:24]
     logger.info(
         "proposal_decision_audit",
         extra={
             "proposalId": payload.proposalId,
             "decision": status,
-            "actor": payload.actor,
+            "actorRefHash": actor_ref_hash,
             "reason": payload.reason or "",
         },
     )
