@@ -6261,7 +6261,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const usesShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "g";
-      if (!usesShortcut || !canCreateIsland) {
+      if (!usesShortcut || !canCreateIsland || isEditableHotkeyTarget(event.target)) {
         return;
       }
 
@@ -6336,7 +6336,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const isModifierPressed = event.metaKey || event.ctrlKey;
-      if (!isModifierPressed) {
+      if (!isModifierPressed || isEditableHotkeyTarget(event.target)) {
         return;
       }
 
@@ -6652,15 +6652,17 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     // U=critique, R=reviewed) are modifier-less single keys so the core
     // "preserve ambiguity" operations sit closer than confirming ones (CB-2).
     // Reuses the existing isEditableHotkeyTarget guard (shared with Cmd+1/2/3
-    // and Cmd/Ctrl+K) so typing is never interrupted. Gated on !readingNavEnabled
-    // to avoid colliding with useHotkeys.ts's own plain "r" (reading-order
-    // reviewedOnly filter) — the two features are never active at once.
+    // and Cmd/Ctrl+K) so typing is never interrupted. Only the "r" branch is
+    // additionally gated on !readingNavEnabled, to avoid colliding with
+    // useHotkeys.ts's own plain "r" (reading-order reviewedOnly filter) —
+    // the two "r" bindings are never active at once. H/U have no such
+    // collision and must stay reachable while reading-nav mode is on.
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) {
         return;
       }
 
-      if (readingNavEnabled || isEditableHotkeyTarget(event.target)) {
+      if (isEditableHotkeyTarget(event.target)) {
         return;
       }
 
@@ -6688,7 +6690,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      if (lowerKey === "r") {
+      if (lowerKey === "r" && !readingNavEnabled) {
         event.preventDefault();
         handleCardTextReviewedChange(selectedCard.id, selectedCard.textReviewed !== true);
       }
