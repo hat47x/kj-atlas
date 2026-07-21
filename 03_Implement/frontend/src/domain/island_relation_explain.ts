@@ -1,3 +1,4 @@
+import { SafeModePolicy } from "./policy/safe_mode";
 import type { DocumentV1, EdgeType, KnownEdgeType } from "./types";
 import { resolveKnownEdgeType } from "./types";
 
@@ -72,10 +73,14 @@ function getIslandLabel(document: DocumentV1, islandId: string): string {
   return island?.title?.trim() || islandId;
 }
 
-function getCardSnippet(document: DocumentV1, cardId: string): string {
+function getCardSnippet(document: DocumentV1, cardId: string, safeMode: boolean): string {
   const card = document.cards.find((entry) => entry.id === cardId);
   if (!card) {
     return `${cardId} (missing card)`;
+  }
+
+  if (!SafeModePolicy.canExposeText("card.text", "share", safeMode)) {
+    return `${card.id}: ${SafeModePolicy.summarizeForSafeMode(card.text)}`;
   }
 
   const normalized = card.text.replace(/\s+/g, " ").trim();
@@ -89,7 +94,8 @@ function getCardSnippet(document: DocumentV1, cardId: string): string {
 
 export function buildIslandRelationExplanation(
   document: DocumentV1,
-  edgeSelection: IslandRelationEdgeSelection
+  edgeSelection: IslandRelationEdgeSelection,
+  safeMode: boolean = true
 ): IslandRelationExplanation {
   const title = `Relation: ${getIslandLabel(document, edgeSelection.fromIslandId)} ↔ ${getIslandLabel(document, edgeSelection.toIslandId)}`;
 
@@ -113,7 +119,7 @@ export function buildIslandRelationExplanation(
     bodyLines.push("- (none)");
   } else {
     for (const cardId of groundingCardIds) {
-      bodyLines.push(`- ${getCardSnippet(document, cardId)}`);
+      bodyLines.push(`- ${getCardSnippet(document, cardId, safeMode)}`);
     }
   }
 

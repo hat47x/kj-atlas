@@ -556,8 +556,8 @@ export function SidePanel({
       return null;
     }
 
-    return buildIslandRelationExplanation(document, selectedIslandRelationEdge);
-  }, [document, selectedIslandRelationEdge]);
+    return buildIslandRelationExplanation(document, selectedIslandRelationEdge, safeMode);
+  }, [document, safeMode, selectedIslandRelationEdge]);
 
   useEffect(() => {
     setHasImagePreviewError(false);
