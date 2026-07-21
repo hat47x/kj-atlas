@@ -1667,8 +1667,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return null;
     }
 
-    return buildPatchSummary(pendingPatchImport.patch, patchConflictReport ?? undefined, patchBaselineSignatureMatch);
-  }, [patchBaselineSignatureMatch, patchConflictReport, pendingPatchImport]);
+    return buildPatchSummary(pendingPatchImport.patch, patchConflictReport ?? undefined, patchBaselineSignatureMatch, safeMode);
+  }, [patchBaselineSignatureMatch, patchConflictReport, pendingPatchImport, safeMode]);
   useEffect(() => {
     setSelectedFixProposalIdSet((previousSet) => {
       const nextIds = new Set(patchFixProposals.map((proposal) => proposal.fixId));
@@ -7999,7 +7999,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
 
     try {
-      const safeText = safeMode ? outline : outline;
+      const safeText = outline;
       await navigator.clipboard.writeText(safeText);
       setStatusMessage(t("app.status.outline.copied"));
     } catch {

@@ -32,6 +32,7 @@ describe("patch_summary", () => {
         ],
         nonConflictingOpIds: ["3", "2", "1"],
       },
+      false,
       false
     );
 
@@ -70,5 +71,31 @@ describe("patch_summary", () => {
     expect(markdown).toContain("## Stats");
     expect(markdown).toContain("## Highlights");
     expect(markdown).not.toContain("## Warnings");
+  });
+
+  it("masks card, island, and relation text in highlights under SafeMode (default)", () => {
+    const patch: PatchDocument = {
+      kind: "kj-atlas-patch",
+      version: 1,
+      ops: [
+        { id: "1", kind: "upsert_card", card: { id: "card-b", text: "Card B detail", x: 0, y: 0 } },
+        { id: "2", kind: "upsert_relation_summary", relationSummary: { id: "r1", createdAt: "2024-01-01", islandAId: "a", islandBId: "b", relationType: "related", derived: false, text: "Relation summary text", reviewed: false, groundingCardIds: [], groundingEdgeIds: [], sourceSignature: "sig-b" } },
+        { id: "3", kind: "upsert_island", island: { id: "island-a", cardIds: [], title: "Island A", summaryText: "Summary A" } },
+      ],
+    };
+
+    const maskedByDefault = buildPatchSummary(patch);
+    const maskedExplicit = buildPatchSummary(patch, undefined, undefined, true);
+
+    for (const summary of [maskedByDefault, maskedExplicit]) {
+      const detailsByLabel = new Map(summary.highlights.map((item) => [item.label, item.detail]));
+      expect(detailsByLabel.get("Card card-b")).not.toContain("Card B detail");
+      expect(detailsByLabel.get("Card card-b")).toContain("[REDACTED]");
+      expect(detailsByLabel.get("Relation sig-b")).not.toContain("Relation summary text");
+      expect(detailsByLabel.get("Relation sig-b")).toContain("[REDACTED]");
+      expect(detailsByLabel.get("Island island-a")).toContain("Island A");
+      expect(detailsByLabel.get("Island island-a")).not.toContain("Summary A");
+      expect(detailsByLabel.get("Island island-a")).toContain("[REDACTED]");
+    }
   });
 });
