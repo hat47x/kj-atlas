@@ -2564,6 +2564,134 @@
     <p style="font-size:11.5px; color:#7b8794; line-height:1.6; margin:10px 0 0;">その他（Admin3区分・登録専用フォーム・token一度表示・スコアリング禁止・amber管理警告への流用禁止・fail-closed等）はP33と概念書で完全一致。プロトタイプ（kj-atlas Admin設計.dc.html）に上記4点を反映済み。</p>
   </section>
 
+  <!-- ===== P35 N-1/N-2 事後設計照合 ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P35</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">棚卸し2026-07-20・N-1/N-2</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">無審査出荷2面の事後設計レビュー方針</h3>
+    </div>
+    <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;"><strong style="font-weight:700; color:#b91c1c;">問題 ─</strong> Round 6「新規画面設計は原則なし」宣言後、design docに一度も現れず恒久タブとして本番稼働中の2面がある。<code style="font-family:'Noto Sans Mono',monospace;">RepresentativeVisualCuePrototypePanel</code>（視覚言語からの明確な逸脱＋計測器混入）と <code style="font-family:'Noto Sans Mono',monospace;">InquiryJourneyPrototypePanel</code>（925行・安全境界に近い破壊的操作）。A-1と同型（移行宣言後の無審査出荷）のため、同じ体制で1件の依頼にまとめて照合する。</p>
+
+    <div class="card-note" style="border:1px solid #fecaca; background:#fef2f2; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11.5px; font-weight:700; color:#b91c1c;">N-1: RepresentativeVisualCuePrototypePanel ― 視覚言語逸脱の論点</div>
+      <ul style="margin:6px 0 0; padding-left:16px; font-size:12px; line-height:1.65; color:#3e4c59;">
+        <li>生の絵文字・手描き風グリフの直接表示は、slate/amber/teal中心の視覚言語（P1・4チャネル1意味）から明確に逸脱。<strong style="font-weight:700;">恒久タブとして正式化するなら、まずカードアイコン表現を既存トークンへ再設計</strong>（型=色チャネルと衝突しない中立枠＋グリフはslate線画に統一）。</li>
+        <li>試行時間・誤答数・5段階評価の記録は<strong style="font-weight:700;">計測器であり反スコアリング方針に反する</strong>。製品面に残すなら「評価」ではなく「試行ログ（時系列の事実記録）」に読み替え、数値を前面に出さない（診断タブと同じ反スコアリング文言規則を適用）。</li>
+        <li><strong style="font-weight:700;">推奨判定=△（正式化条件つき）</strong>: 視覚トークン差し替え＋計測器の反スコアリング化が完了するまでは実験用限定タブとして隔離（メニュー常設化しない）を暫定線引きとする。</li>
+      </ul>
+    </div>
+    <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11.5px; font-weight:700; color:#b45309;">N-2: InquiryJourneyPrototypePanel（＝DOMAIN-W-ITERATION-01 Phase 2）</div>
+      <ul style="margin:6px 0 0; padding-left:16px; font-size:12px; line-height:1.65; color:#3e4c59;">
+        <li>ラウンドタイムライン・引き継ぎ/再開ブリーフ・分岐比較・カード来歴はいずれも<strong style="font-weight:700;">保留・違和感・可逆性の核と親和性が高い</strong>実装内容で、方向自体に反対はない。</li>
+        <li>ファイルimport/export・分岐検出・<strong style="font-weight:700;">破壊的な「探究終了」確認</strong>は安全境界に接するため、A-1（エージェント連携）と同じ観点＝<strong style="font-weight:700;">破棄させない確認（保存/破棄/取消の3択）・SafeMode既定ONの継承・出典/文面のサニタイズ</strong>を適用して照合する。</li>
+        <li>925行の大型面をタブとして常設する場合、<strong style="font-weight:700;">P29確定6分類（ファイル/編集/カード/表示/作業/共有）のどこに位置するか</strong>を明確化する（新規7分類は作らない＝CB-1）。「作業」内の新タブ、または独立の探究モードとして領域4と別扱いにするかは実機照合時に判断。</li>
+      </ul>
+    </div>
+    <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd; margin-top:12px;">
+      <div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">照合に必要な資料</div>
+      <p style="font-size:12px; color:#475569; line-height:1.6; margin:6px 0 0;">両パネルの実機スクリーンショット（主要状態＋「探究終了」確認モーダル＋import/export）＋チェックリスト自己申告（P28）。受領後、P31/P32と同形式で判定を記録する。</p>
+    </div>
+  </section>
+
+  <!-- ===== P36 F-1 Tenant session制御群の設計照合 ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P36</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">棚卸し2026-07-20・F-1</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">Tenant session制御群 ― 概念設計との対応（ADR gate前の先行照合）</h3>
+    </div>
+    <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;"><code style="font-family:'Noto Sans Mono',monospace;">TenantSessionControl</code> / <code style="font-family:'Noto Sans Mono',monospace;">TenantSessionBootstrapGate</code> / <code style="font-family:'Noto Sans Mono',monospace;">TenantSessionRuntimeGate</code> / <code style="font-family:'Noto Sans Mono',monospace;">TenantChangeConfirmationDialog</code> は<code style="font-family:'Noto Sans Mono',monospace;">runtime profile=saas-multitenant</code>時のみ有効・既定非表示で実装着手済み。<strong style="font-weight:700;">有効化の可否とは別に、既定OFFの実装と概念設計（R8-E・P33図EE系）の対応を今すぐ照合できる</strong>。</p>
+    <figure style="margin:12px 0 6px;">
+      <div class="wf" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+          <thead><tr style="background:#f8fafc; text-align:left;"><th style="padding:8px 11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb; width:34%;">実装コンポーネント</th><th style="padding:8px 11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">対応する概念設計（P33/P34）</th></tr></thead>
+          <tbody style="color:#3e4c59; line-height:1.55;">
+            <tr><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9; font-family:'Noto Sans Mono',monospace; font-size:10.5px;">TenantSessionControl</td><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9;">R8-Eヘッダーswitcher（単一membership=非表示・複数=サーバー返却候補のみ・自由入力不可）</td></tr>
+            <tr><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9; font-family:'Noto Sans Mono',monospace; font-size:10.5px;">TenantSessionBootstrapGate</td><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9;">tenant mismatch/PDP不達のblocked state（Empty/read-onlyと区別・旧tenant本文を残さない）</td></tr>
+            <tr><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9; font-family:'Noto Sans Mono',monospace; font-size:10.5px;">TenantSessionRuntimeGate</td><td style="padding:8px 11px; border-bottom:1px solid #f1f5f9;">切替確認中の同時表示禁止（P34追加分）＋request cache破棄を含む状態リセット</td></tr>
+            <tr><td style="padding:8px 11px; font-family:'Noto Sans Mono',monospace; font-size:10.5px;">TenantChangeConfirmationDialog</td><td style="padding:8px 11px;">未保存変更ありの3択モーダル（保存して切替／破棄して切替／取消）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図MM ─ 4コンポーネントはR8-E設計と1:1対応。既定非表示のため本体アプリのCB-1に影響なし。照合は実機スクリーンショット（<code style="font-family:monospace;">profile=saas-multitenant</code>有効時のstaging等）で実施し、amber未使用（管理系はslate中立）・token非残存の同等原則が守られているかを確認する。</figcaption>
+    </figure>
+    <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd; margin-top:10px;"><div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">照合に必要な資料</div><p style="font-size:12px; color:#475569; line-height:1.6; margin:6px 0 0;">4コンポーネントの実機スクリーンショット（bootstrap/runtime gateのblocked state、確認dialog、switcher単一/複数）。ADR-0059/0061 Implementation gate成立後にF-2（Admin/Platform面）へ進む前段。</p></div>
+  </section>
+
+  <!-- ===== P37 N-1 視覚キューの本設計 ===== -->
+  <section class="issue" style="padding:30px 0 0; margin-top:28px; border-top:3px solid #eef2ff;">
+    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; background:#4338ca; border-radius:5px; padding:3px 9px;">P37</span>
+      <span style="font-size:12px; font-weight:700; color:#94a3b8;">N-1 本設計</span>
+      <h3 style="font-size:19px; font-weight:700; margin:0;">代表視覚キューを視覚言語内で成立させる ― 第5チャネル問題の解法</h3>
+    </div>
+    <p style="font-size:14px; line-height:1.75; color:#3e4c59; margin:14px 0 6px;">P35は判定（△）に留めた。ここでは「絵文字を止める」の先の<strong style="font-weight:700;">本設計</strong>を与える。核心は<strong style="font-weight:700;">視覚キューは意味チャネルではなく想起補助である</strong>という位置づけ ― 型/保持/確認/根拠の4チャネル（P2）に<strong style="font-weight:700;">干渉も競合もしない従属レイヤー</strong>として設計する。生の絵文字が問題なのは、多色で型色・amberと色が衝突し、太さ・作風が不統一で、意味を持つように見えてしまう（第5の無管理チャネル化）ためである。</p>
+
+    <!-- 原則 -->
+    <div class="card-note" style="border:1px solid #c7d2fe; background:#f5f7ff; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11px; font-weight:700; color:#3730a3; letter-spacing:0.04em;">視覚キューの4原則</div>
+      <ol style="margin:7px 0 0; padding-left:18px; font-size:12px; line-height:1.7; color:#3e4c59;">
+        <li><strong style="font-weight:700;">単色・線画に正規化</strong>: キューは<strong style="font-weight:700;">slate単色の線アイコン</strong>（塗りなし・1.5px・currentColor=slate-500）に統一。多色不可。これで型色（緑/青/紫）ともamber（保持系）とも色相で競合しない。ローカル写真は<strong style="font-weight:700;">グレースケール寄りの中立枠にクリップ</strong>（周囲2px slate枠）し、彩度で本文・状態を上回らせない。</li>
+        <li><strong style="font-weight:700;">専用スロットに隔離</strong>: キューは本文左の<strong style="font-weight:700;">20×20固定スロット</strong>に置く。<strong style="font-weight:700;">メタ行（型/保持/違和感/未レビュー/矛盾の指定席）には絶対に入れない</strong> ― 状態チャネルの場所を奪わない。未設定時はスロットを描かず本文が左詰め（純増ゼロ）。</li>
+        <li><strong style="font-weight:700;">意味を持たせない</strong>: キューは<strong style="font-weight:700;">個人の想起の手がかり</strong>であり、型・優先度・感情などの意味を担わせない。凡例には「視覚キュー＝内容を思い出すための任意の目印（意味を持ちません）」の1行のみ。色分類・ランク付けの手段に転用しない（反スコアリング）。</li>
+        <li><strong style="font-weight:700;">キュレート集合＋任意</strong>: 自由絵文字入力を廃し、<strong style="font-weight:700;">slate線画の小さなセット</strong>（場所・人・時間・数・問い・引用…等の抽象ピクトグラム）＋ローカル写真から選ぶ。既定は「なし」。LOD遠景では非表示（P4の点表示を妨げない）。</li>
+      </ol>
+    </div>
+
+    <!-- before/after -->
+    <figure style="margin:14px 0 6px;">
+      <div style="display:flex; gap:14px; flex-wrap:wrap;">
+        <div class="wf" style="border:1px solid #fecaca; border-radius:8px; overflow:hidden; width:220px;">
+          <div style="background:#fef2f2; border-bottom:1px solid #fecaca; padding:5px 9px; font-size:10px; font-weight:700; color:#b91c1c;">Before ・ 生絵文字</div>
+          <div style="padding:10px; background:#fff;">
+            <div style="background:#fff; border:1px solid #d7dde5; border-left:3px solid #3b82f6; border-radius:9px; padding:8px 10px; display:flex; align-items:center; gap:8px;">
+              <span style="font-size:20px;">🔥</span>
+              <span style="font-size:13px; color:#1f2933;">現場で見た混雑</span>
+            </div>
+            <div style="font-size:10px; color:#b91c1c; margin-top:7px; line-height:1.5;">多色絵文字が型色・amberと色衝突。作風不統一・意味誤読。</div>
+          </div>
+        </div>
+        <div class="wf" style="border:1px solid #bbf7d0; border-radius:8px; overflow:hidden; width:220px;">
+          <div style="background:#ecfdf5; border-bottom:1px solid #bbf7d0; padding:5px 9px; font-size:10px; font-weight:700; color:#15803d;">After ・ slate線画キュー</div>
+          <div style="padding:10px; background:#fff;">
+            <div style="background:#fff; border:1px solid #d7dde5; border-left:3px solid #3b82f6; border-radius:9px; overflow:hidden;">
+              <div style="display:flex; align-items:center; gap:4px; padding:6px 9px 5px; border-bottom:1px solid #f1f5f9;">
+                <span style="font-size:9px; font-weight:600; padding:1px 6px; border-radius:4px; background:#dbeafe; color:#1d4ed8;">主張</span>
+                <span style="margin-left:auto; width:7px; height:7px; border-radius:999px; background:#f59e0b;"></span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; padding:8px 9px;">
+                <span style="width:20px; height:20px; flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; color:#64748b;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 21s-7-5.2-7-10a7 7 0 0 1 14 0c0 4.8-7 10-7 10z"/><circle cx="12" cy="11" r="2.5"/></svg>
+                </span>
+                <span style="font-size:13px; color:#1f2933;">現場で見た混雑</span>
+              </div>
+            </div>
+            <div style="font-size:10px; color:#15803d; margin-top:7px; line-height:1.5;">単色線画・本文左の専用スロット。メタ行の状態と非干渉。</div>
+          </div>
+        </div>
+      </div>
+      <figcaption style="font-size:12px; color:#7b8794; margin-top:8px; line-height:1.55;">図NN ─ キューは本文左20pxスロットのslate線画（例=場所ピン）。型バッジ・未レビュー点はメタ行に不可侵で残り、キューは色相を持たないため4チャネルと一切競合しない。未設定なら本文が左端から始まる。</figcaption>
+    </figure>
+
+    <!-- 計測器の廃止 -->
+    <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:12px 14px; margin-top:10px;">
+      <div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">計測器の反スコアリング化（製品面からの分離）</div>
+      <ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.65; color:#854d0e;">
+        <li><strong style="font-weight:700;">5段階評価は全廃</strong>: これは主観の点数化そのもので反スコアリングに真正面から反する。製品面から削除。</li>
+        <li><strong style="font-weight:700;">試行時間・誤答数は「試行ログ（事実の時系列）」に読み替え</strong>: 集計・平均・正答率・ランキングを出さず、「キューを選んだ／変えた」という<strong style="font-weight:700;">事実イベントの履歴</strong>としてのみ残す（メモ・版履歴と同格）。良し悪しを断じない。</li>
+        <li><strong style="font-weight:700;">計測は製品と分離</strong>: ユーザビリティ試験の計測が要るなら、製品タブではなく<strong style="font-weight:700;">明示的な調査モード（別ビルド/フラグ）</strong>に隔離し、被験者に告知。恒久タブに計測器を混ぜない。</li>
+      </ul>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px;">
+      <div class="card-note" style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; background:#fbfcfd;"><div style="font-size:11px; font-weight:700; color:#0e7490; letter-spacing:0.06em;">CB自己申告</div><ul style="margin:7px 0 0; padding-left:16px; font-size:12px; line-height:1.6; color:#475569;"><li><strong>CB-1</strong>: 既定「なし」・未設定はスロット非描画。初期表示の純増なし。</li><li><strong>CB-2</strong>: メタ行（保持系の席）に侵入しないため保留・違和感の優先度を侵さない。</li><li><strong>CB-3</strong>: 絵文字を<strong style="color:#15803d;">線画キューへ置換</strong>（純増でなく置換）。計測器は削除。</li><li><strong>CB-4</strong>: キュー設定・変更は可逆、履歴に事実として残る。</li></ul></div>
+      <div class="axis" style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;"><div style="background:#f8fafc; padding:7px 13px; font-size:11px; font-weight:700; color:#334155; border-bottom:1px solid #e5e7eb;">5判断軸 自己評価</div><table style="width:100%; border-collapse:collapse; font-size:11.5px;"><tbody style="color:#3e4c59;"><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">1 思考を雑にしない</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">2 早すぎる収束を防ぐ</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#64748b; font-weight:700;">−</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">3 保留・対立を保持</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#64748b; font-weight:700;">−</td></tr><tr><td style="padding:5px 13px; border-bottom:1px solid #f1f5f9;">4 差分・監査に載る</td><td style="padding:5px 10px; border-bottom:1px solid #f1f5f9; color:#15803d; font-weight:700;">○</td></tr><tr><td style="padding:5px 13px;">5 人間/AI文脈の峻別</td><td style="padding:5px 10px; color:#15803d; font-weight:700;">◎</td></tr></tbody></table></div>
+    </div>
+    <div class="card-note" style="border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:11px 14px; margin-top:12px;"><div style="font-size:11px; font-weight:700; color:#b45309; letter-spacing:0.06em;">移行コスト</div><p style="font-size:12.5px; line-height:1.6; color:#854d0e; margin:6px 0 0;">カードに任意フィールド <code style="font-family:monospace;">cue</code>（アイコンID or ローカル画像参照）を追加（スキーマの既存拡張範囲）。線画アイコン集合の用意＋本文左スロットの条件描画。5段階評価の削除・計測ログの読み替えはむしろ実装を減らす。LOD遠景での非表示はP4のズーム分岐に相乗り。</p></div>
+  </section>
+
   <!-- CLOSING -->
   <section style="padding:34px 0 56px; margin-top:28px; border-top:3px solid #eef2ff;">
     <div style="display:flex; align-items:baseline; gap:12px; margin-top:18px;">
