@@ -99,6 +99,7 @@
 - [x] AC-10: `KJ_ATLAS_LLM_PROVIDER=none` で中核操作を完了できる。
 - [x] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。→ `inquiry_journey_model.md` §4.4（SafeMode派生bundle契約）、§4.5（Import strict validation契約）、§4.6（部分共有契約）、§4.3（削除と保持）、§6 不変条件 8-10 として契約化済み（2026-07-20）。SafeMode適用結果のbundle内metadata（`InquiryExportInfoV1`）は型追加が未了のため、別途follow-upする。
 - [x] AC-12: マウス・キーボード・390px・代表規模のE2Eが通る。
+- [ ] AC-13: 探究終了（破壊的操作）の確認は、A-1（エージェント連携）と同型の保存・破棄・取消の3択とし、SafeMode既定ONの継承と出典・文面のサニタイズを満たす。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -114,6 +115,7 @@
 - [x] T7 手動中核UIとa11y/i18n/性能回帰を実装する。
 - [x] T8 マウス・キーボード・390pxのE2Eとスクリーンショットを取得する。
 - [ ] T9 Phase 2の実使用後に、AI支援を別issueへ分割するか判断する。
+- [ ] T10 Claude Design（外部レビュー、2026-07-21 P35）の指摘を踏まえ、探究終了確認をAC-13の3択へ改修し、常設タブ化時のメニュー分類（P29確定6分類：ファイル/編集/カード/表示/作業/共有）内の配置は実機照合時に決定する（新規7分類は作らない＝CB-1）。
 
 ### Phase 0 実装証跡（2026-07-15）
 
