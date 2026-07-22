@@ -39,7 +39,6 @@ function proposalStatusLabel(status: Ce2SuggestionCandidate["status"]): string {
     case "rejected":
       return t("suggestion.panel.proposal_status.rejected");
     case "proposed":
-    default:
       return t("suggestion.panel.proposal_status.proposed");
   }
 }
@@ -49,7 +48,6 @@ function proposalReviewStateLabel(reviewState: Ce2SuggestionCandidate["reviewSta
     case "human_reviewed":
       return t("suggestion.panel.review_state.human_reviewed");
     case "unreviewed":
-    default:
       return t("suggestion.panel.review_state.unreviewed");
   }
 }

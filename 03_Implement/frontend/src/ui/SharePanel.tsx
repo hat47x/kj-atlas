@@ -233,7 +233,6 @@ function publishVisibilityLabel(value: PublishVisibility): string {
     case "Restricted":
       return t("share.panel.visibility.restricted");
     case "Unlisted":
-    default:
       return t("share.panel.visibility.unlisted");
   }
 }

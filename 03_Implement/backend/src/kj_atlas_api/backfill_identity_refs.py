@@ -86,8 +86,12 @@ def _load_mapping(mapping_path: Path) -> dict[str, str]:
 
 
 def _validated_mapping(db: Session, mapping: dict[str, str]) -> dict[str, str]:
-    user_ids = {row.user_id for row in db.query(UserIdentityRow.user_id).distinct()}
-    unknown = sorted(user_id for user_id in mapping.values() if user_id not in user_ids)
+    candidate_ids = set(mapping.values())
+    known_ids = {
+        row.user_id
+        for row in db.query(UserIdentityRow.user_id).filter(UserIdentityRow.user_id.in_(candidate_ids)).distinct()
+    }
+    unknown = sorted(candidate_ids - known_ids)
     if unknown:
         raise ValueError(f"mapping contains unknown users.id values: {', '.join(unknown)}")
     return mapping
