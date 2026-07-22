@@ -537,6 +537,26 @@ class Settings(BaseSettings):
             value=self.access_control_external_http_idp_issuer,
             value_key="KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER",
         )
+        _validate_optional_header_value(
+            value=self.auth_provider_field,
+            value_key="KJ_ATLAS_AUTH_PROVIDER_FIELD",
+        )
+        _validate_optional_header_value(
+            value=self.auth_user_field,
+            value_key="KJ_ATLAS_AUTH_USER_FIELD",
+        )
+        _validate_optional_header_value(
+            value=self.auth_email_field,
+            value_key="KJ_ATLAS_AUTH_EMAIL_FIELD",
+        )
+        _validate_optional_header_value(
+            value=self.auth_name_field,
+            value_key="KJ_ATLAS_AUTH_NAME_FIELD",
+        )
+        _validate_optional_header_value(
+            value=self.auth_subject_field,
+            value_key="KJ_ATLAS_AUTH_SUBJECT_FIELD",
+        )
 
         normalized_fail_safe_mode = self.access_control_fail_safe_mode.strip().lower()
         if normalized_fail_safe_mode not in {"read_only", "deny"}:
