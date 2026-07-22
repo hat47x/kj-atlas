@@ -58,5 +58,9 @@ export function saveQueryPresets(
     return;
   }
 
-  window.localStorage.setItem(queryPresetStorageKey(scope), JSON.stringify(presets));
+  try {
+    window.localStorage.setItem(queryPresetStorageKey(scope), JSON.stringify(presets));
+  } catch {
+    // Storage may be disabled or full. The in-memory presets remain usable.
+  }
 }

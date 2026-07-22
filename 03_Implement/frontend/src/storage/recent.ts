@@ -49,7 +49,11 @@ export function pushRecentDocumentId(docId: string, scope?: TenantBrowserStorage
   const next = [docId, ...current].slice(0, MAX_RECENT_DOC_IDS);
 
   if (isStorageAvailable()) {
-    window.localStorage.setItem(recentStorageKey(scope), JSON.stringify(next));
+    try {
+      window.localStorage.setItem(recentStorageKey(scope), JSON.stringify(next));
+    } catch {
+      // Storage may be disabled or full. The in-memory recent-doc cache remains usable.
+    }
   }
 
   return next;

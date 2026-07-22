@@ -85,5 +85,9 @@ export function saveViewLocaleForDocumentView(
     [viewMode]: locale,
   };
 
-  window.localStorage.setItem(storageKey, JSON.stringify(byDoc));
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(byDoc));
+  } catch {
+    // Storage may be disabled or full. The in-memory locale remains usable.
+  }
 }

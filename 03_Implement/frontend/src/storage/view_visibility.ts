@@ -84,5 +84,9 @@ export function saveViewVisibilityForDocument(
   const storageKey = visibilityStorageKey(scope);
   const byDoc = parsePersistedVisibilityByDoc(window.localStorage.getItem(storageKey));
   byDoc[docId] = visibility;
-  window.localStorage.setItem(storageKey, JSON.stringify(byDoc));
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(byDoc));
+  } catch {
+    // Storage may be disabled or full. The in-memory visibility remains usable.
+  }
 }
