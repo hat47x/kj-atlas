@@ -1145,6 +1145,7 @@
   "side_panel.merge_history.warnings": "Warnings",
   "side_panel.merge_history.copy_json": "Copy entry JSON",
   "side_panel.merge_history.copy_md": "Copy summary MD",
+  "side_panel.merge_history.copy_failed": "Copy to clipboard failed.",
   "side_panel.pack_assets.title": "Pack assets",
   "side_panel.pack_assets.snapshot": "Snapshot",
   "side_panel.pack_assets.snapshot_alt": "Imported review pack snapshot",

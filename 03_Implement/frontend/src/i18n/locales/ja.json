@@ -1145,6 +1145,7 @@
   "side_panel.merge_history.warnings": "警告",
   "side_panel.merge_history.copy_json": "履歴JSONをコピー",
   "side_panel.merge_history.copy_md": "要約MDをコピー",
+  "side_panel.merge_history.copy_failed": "クリップボードへのコピーに失敗しました。",
   "side_panel.pack_assets.title": "パックの添付情報",
   "side_panel.pack_assets.snapshot": "スナップショット",
   "side_panel.pack_assets.snapshot_alt": "取り込んだレビューパックのスナップショット",

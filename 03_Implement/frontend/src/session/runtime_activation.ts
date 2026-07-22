@@ -50,6 +50,7 @@ export async function verifyTenantSessionRuntimePolicy(input: Readonly<{
     if (isAbortFailure(error, input.signal)) {
       throw error;
     }
+    console.warn("Tenant session runtime policy check failed.", error);
     return false;
   }
 }
