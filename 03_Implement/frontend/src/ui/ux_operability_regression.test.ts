@@ -1008,7 +1008,7 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain("if (!review.patch || review.patchSignatureMismatch) break;");
 
     // patch.ops whitelist + delete_* warning badge (spec §4.2).
-    expect(importSource).toContain("PATCH_OP_KIND_WHITELIST");
+    expect(importSource).toContain("parsePatchOp");
     expect(importSource).toContain("patchHasDeleteOps");
 
     // AC-5 prompt-injection boundary: proposal text is plain string data
