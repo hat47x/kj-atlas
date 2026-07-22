@@ -115,29 +115,31 @@ export class BundleZipWorkerClient {
     const abortListener = () => this.fallbackRunner.cancel();
     options.signal?.addEventListener("abort", abortListener, { once: true });
 
-    const outcome = await this.fallbackRunner.run(async (ctx) => {
-      ctx.reportProgress({ message: "collect", completed: 1, total: 2 });
-      await ctx.yieldToMainThread();
-      if (ctx.isCancelled()) {
-        return null;
-      }
-      const zipBuffer = await buildBundleZipArrayBuffer(payload.files, {
-        onProgress: (percent) => {
-          options.onProgress?.(percent);
-        },
+    try {
+      const outcome = await this.fallbackRunner.run(async (ctx) => {
+        ctx.reportProgress({ message: "collect", completed: 1, total: 2 });
+        await ctx.yieldToMainThread();
+        if (ctx.isCancelled()) {
+          return null;
+        }
+        const zipBuffer = await buildBundleZipArrayBuffer(payload.files, {
+          onProgress: (percent) => {
+            options.onProgress?.(percent);
+          },
+        });
+        ctx.reportProgress({ message: "zip", completed: 2, total: 2 });
+        return { zipBuffer };
       });
-      ctx.reportProgress({ message: "zip", completed: 2, total: 2 });
-      return { zipBuffer };
-    });
 
-    unsubscribe();
-    options.signal?.removeEventListener("abort", abortListener);
+      if (outcome.status === "cancelled" || outcome.result === null) {
+        return { status: "cancelled", usedFallback: true };
+      }
 
-    if (outcome.status === "cancelled" || outcome.result === null) {
-      return { status: "cancelled", usedFallback: true };
+      return { status: "completed", result: outcome.result, usedFallback: true };
+    } finally {
+      unsubscribe();
+      options.signal?.removeEventListener("abort", abortListener);
     }
-
-    return { status: "completed", result: outcome.result, usedFallback: true };
   }
 
   cancel(requestId: string): void {

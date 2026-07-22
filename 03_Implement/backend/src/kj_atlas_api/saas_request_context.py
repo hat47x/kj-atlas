@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import cast
 
@@ -19,6 +20,8 @@ from kj_atlas_api.tenant_context import (
     TenantContextResolver,
     recheck_trusted_tenant_context,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,6 +69,7 @@ def resolve_trusted_saas_request_session(
     except HTTPException:
         raise
     except Exception:
+        logger.warning("SaaS identity resolver raised an unexpected error", exc_info=True)
         raise _error(
             status_code=503,
             code="tenant_admin_auth_unavailable",
@@ -74,6 +78,7 @@ def resolve_trusted_saas_request_session(
     try:
         principal_id = identity.user_id
     except Exception:
+        logger.warning("resolved identity raised reading user_id", exc_info=True)
         raise _error(
             status_code=503,
             code="tenant_admin_auth_unavailable",
@@ -102,6 +107,7 @@ def resolve_trusted_saas_request_session(
     except HTTPException:
         raise
     except Exception:
+        logger.warning("tenant context resolver raised an unexpected error", exc_info=True)
         raise _error(
             status_code=503,
             code="tenant_context_resolution_unavailable",
@@ -114,6 +120,7 @@ def resolve_trusted_saas_request_session(
             and _canonical_identifier(tenant.membership_id)
         )
     except Exception:
+        logger.warning("resolved tenant context raised computing trust", exc_info=True)
         raise _error(
             status_code=503,
             code="tenant_context_resolution_unavailable",

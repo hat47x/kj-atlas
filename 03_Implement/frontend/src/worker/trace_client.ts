@@ -100,23 +100,26 @@ export class TraceWorkerClient {
     const abortListener = () => this.fallbackRunner.cancel();
     options.signal?.addEventListener("abort", abortListener, { once: true });
 
-    const outcome = await this.fallbackRunner.run(async (ctx) => {
-      for (let i = 0; i < stages.length; i += 1) {
-        ctx.reportProgress({ message: stages[i] ?? "render", completed: i + 1, total: stages.length });
-        await ctx.yieldToMainThread();
-        if (ctx.isCancelled()) {
-          return null;
+    try {
+      const outcome = await this.fallbackRunner.run(async (ctx) => {
+        for (let i = 0; i < stages.length; i += 1) {
+          ctx.reportProgress({ message: stages[i] ?? "render", completed: i + 1, total: stages.length });
+          await ctx.yieldToMainThread();
+          if (ctx.isCancelled()) {
+            return null;
+          }
         }
-      }
-      return computeTrace({ ...payload, options: { ...payload.options, safeMode: payload.options.safeMode ?? true } });
-    });
+        return computeTrace({ ...payload, options: { ...payload.options, safeMode: payload.options.safeMode ?? true } });
+      });
 
-    unsubscribe();
-    options.signal?.removeEventListener("abort", abortListener);
-    if (outcome.status === "cancelled" || outcome.result === null) {
-      return { status: "cancelled", usedFallback: true };
+      if (outcome.status === "cancelled" || outcome.result === null) {
+        return { status: "cancelled", usedFallback: true };
+      }
+      return { status: "completed", result: outcome.result, usedFallback: true };
+    } finally {
+      unsubscribe();
+      options.signal?.removeEventListener("abort", abortListener);
     }
-    return { status: "completed", result: outcome.result, usedFallback: true };
   }
 
   private computeAnalyticsViaWorker(payload: TraceAnalyticsRequestPayload, options: { onProgress?: (progress: { stage: string; percent: number }) => void; signal?: AbortSignal }): Promise<TraceAnalyticsComputeResult> {
@@ -178,27 +181,30 @@ export class TraceWorkerClient {
     const abortListener = () => this.fallbackRunner.cancel();
     options.signal?.addEventListener("abort", abortListener, { once: true });
 
-    const outcome = await this.fallbackRunner.run(async (ctx) => {
-      for (let i = 0; i < stages.length; i += 1) {
-        ctx.reportProgress({ message: stages[i] ?? "render", completed: i + 1, total: stages.length });
-        await ctx.yieldToMainThread();
-        if (ctx.isCancelled()) {
-          return null;
+    try {
+      const outcome = await this.fallbackRunner.run(async (ctx) => {
+        for (let i = 0; i < stages.length; i += 1) {
+          ctx.reportProgress({ message: stages[i] ?? "render", completed: i + 1, total: stages.length });
+          await ctx.yieldToMainThread();
+          if (ctx.isCancelled()) {
+            return null;
+          }
         }
-      }
-      const analytics = computeTraceAnalytics(payload.doc, payload.options.startCardId, {
-        ...payload.options,
-        safeMode: payload.options.safeMode ?? true,
+        const analytics = computeTraceAnalytics(payload.doc, payload.options.startCardId, {
+          ...payload.options,
+          safeMode: payload.options.safeMode ?? true,
+        });
+        return { analyticsMd: buildTraceAnalyticsMd(analytics), analytics };
       });
-      return { analyticsMd: buildTraceAnalyticsMd(analytics), analytics };
-    });
 
-    unsubscribe();
-    options.signal?.removeEventListener("abort", abortListener);
-    if (outcome.status === "cancelled" || outcome.result === null) {
-      return { status: "cancelled", usedFallback: true };
+      if (outcome.status === "cancelled" || outcome.result === null) {
+        return { status: "cancelled", usedFallback: true };
+      }
+      return { status: "completed", result: outcome.result, usedFallback: true };
+    } finally {
+      unsubscribe();
+      options.signal?.removeEventListener("abort", abortListener);
     }
-    return { status: "completed", result: outcome.result, usedFallback: true };
   }
 
   cancel(requestId: string): void {

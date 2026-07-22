@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hmac
+import logging
 import re
 from typing import Protocol, cast
 
@@ -8,6 +9,7 @@ from fastapi import HTTPException, Request, Response
 
 from kj_atlas_api.tenant_context import TenantContext
 
+logger = logging.getLogger(__name__)
 
 MAX_TENANT_SESSION_VERSION_LENGTH = 128
 _TENANT_SESSION_VERSION_PATTERN = re.compile(
@@ -106,6 +108,7 @@ def resolve_active_tenant_session_version(
     except HTTPException:
         raise
     except Exception:
+        logger.warning("active tenant session persister raised resolving current version", exc_info=True)
         raise _session_context_unavailable() from None
 
 
@@ -153,4 +156,5 @@ def persist_active_tenant_selection(
     except HTTPException:
         raise
     except Exception:
+        logger.warning("active tenant session persister raised persisting selection", exc_info=True)
         raise _active_tenant_update_unavailable() from None

@@ -1550,7 +1550,10 @@ export function SidePanel({
                           <button
                             type="button"
                             onClick={async () => {
-                              await copyText(JSON.stringify(entry, null, 2));
+                              const copied = await copyText(JSON.stringify(entry, null, 2));
+                              if (!copied) {
+                                onEvidenceTraceError(t("side_panel.merge_history.copy_failed"));
+                              }
                             }}
                           >
                             {t("side_panel.merge_history.copy_json")}
@@ -1558,7 +1561,10 @@ export function SidePanel({
                           <button
                             type="button"
                             onClick={async () => {
-                              await copyText(buildMergeSummaryMarkdown(entry));
+                              const copied = await copyText(buildMergeSummaryMarkdown(entry));
+                              if (!copied) {
+                                onEvidenceTraceError(t("side_panel.merge_history.copy_failed"));
+                              }
                             }}
                           >
                             {t("side_panel.merge_history.copy_md")}
