@@ -59,9 +59,7 @@ function applyCardOp(document: Document, op: HilRsDiffOp): boolean {
 
   if (op.opType === "add") {
     if (index !== -1 || !op.after || typeof op.after !== "object") return false;
-    const next = op.after as Partial<Document["cards"][number]>;
-    if (typeof next.id !== "string" || typeof next.text !== "string" || typeof next.x !== "number" || typeof next.y !== "number") return false;
-    document.cards.push(next as Document["cards"][number]);
+    document.cards.push(op.after as Document["cards"][number]);
     return true;
   }
 
