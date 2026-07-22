@@ -7836,6 +7836,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       diagnosticsWorkerClientRef.current = new DiagnosticsWorkerClient();
     }
 
+    diagnosticsAbortRef.current?.abort();
     const controller = new AbortController();
     diagnosticsAbortRef.current = controller;
     setIsDiagnosticsRunning(true);
@@ -7878,9 +7879,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         throw error;
       }
     }).finally(() => {
-      setIsDiagnosticsRunning(false);
-      setComputeProgressMessage(null);
-      diagnosticsAbortRef.current = null;
+      if (diagnosticsAbortRef.current === controller) {
+        diagnosticsAbortRef.current = null;
+        setIsDiagnosticsRunning(false);
+        setComputeProgressMessage(null);
+      }
     });
   }, [collapsedIslandIds, document, readingMode, reviewedOnly, runTenantScopedTask]);
 
@@ -9242,8 +9245,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
+    if (isBundleExportRunning) {
+      return;
+    }
 
     let unsubscribeBundleProgress: (() => void) | null = null;
+    let capturedBundleController: AbortController | null = null;
     try {
       setIsBundleExportRunning(true);
       const exportTimestamp = formatBundleTimestamp(new Date());
@@ -9294,6 +9301,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       });
 
       const controller = new AbortController();
+      capturedBundleController = controller;
       bundleAbortRef.current = controller;
       unsubscribeBundleProgress = bundleRunnerRef.current.onProgress((progress) => setComputeProgressMessage(progress.message));
       const outcome = await runTenantScopedTask(() => bundleRunnerRef.current.run(async (ctx) => {
@@ -9381,9 +9389,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }
     } finally {
       unsubscribeBundleProgress?.();
-      setIsBundleExportRunning(false);
-      setComputeProgressMessage(null);
-      bundleAbortRef.current = null;
+      if (bundleAbortRef.current === capturedBundleController) {
+        bundleAbortRef.current = null;
+        setIsBundleExportRunning(false);
+        setComputeProgressMessage(null);
+      }
     }
   }, [
     abstractMapView,
@@ -9401,6 +9411,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     focusTarget.focusIslandId,
     hideSourceCards,
     hierarchyLevel,
+    isBundleExportRunning,
     isReadingOrderEditMode,
     lodEnabled,
     lodLevelOverride,
