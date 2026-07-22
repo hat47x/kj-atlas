@@ -135,6 +135,64 @@ function parseRelationSummary(value: unknown): RelationSummary | null {
   return value as RelationSummary;
 }
 
+export function parsePatchOp(item: unknown): PatchOp | null {
+  if (!isRecord(item) || typeof item.id !== "string" || typeof item.kind !== "string") {
+    return null;
+  }
+
+  if (item.kind === "upsert_card") {
+    const card = parseCard(item.card);
+    if (!card) return null;
+    return { id: item.id, kind: item.kind, card };
+  }
+
+  if (item.kind === "delete_card" && typeof item.cardId === "string") {
+    return { id: item.id, kind: item.kind, cardId: item.cardId };
+  }
+
+  if (item.kind === "upsert_island") {
+    const island = parseIsland(item.island);
+    if (!island) return null;
+    return { id: item.id, kind: item.kind, island };
+  }
+
+  if (item.kind === "delete_island" && typeof item.islandId === "string") {
+    return { id: item.id, kind: item.kind, islandId: item.islandId };
+  }
+
+  if (item.kind === "upsert_edge") {
+    const edge = parseEdge(item.edge);
+    if (!edge) return null;
+    return { id: item.id, kind: item.kind, edge };
+  }
+
+  if (item.kind === "delete_edge" && typeof item.edgeId === "string") {
+    return { id: item.id, kind: item.kind, edgeId: item.edgeId };
+  }
+
+  if (item.kind === "upsert_relation_summary") {
+    const relationSummary = parseRelationSummary(item.relationSummary);
+    if (!relationSummary) return null;
+    return { id: item.id, kind: item.kind, relationSummary };
+  }
+
+  if (item.kind === "delete_relation_summary" && typeof item.sourceSignature === "string") {
+    return { id: item.id, kind: item.kind, sourceSignature: item.sourceSignature };
+  }
+
+  if (item.kind === "upsert_evidence_link") {
+    const evidenceLink = parseEvidenceLink(item.evidenceLink);
+    if (!evidenceLink) return null;
+    return { id: item.id, kind: item.kind, evidenceLink };
+  }
+
+  if (item.kind === "delete_evidence_link" && typeof item.evidenceLinkId === "string") {
+    return { id: item.id, kind: item.kind, evidenceLinkId: item.evidenceLinkId };
+  }
+
+  return null;
+}
+
 export function parsePatchDocument(value: unknown): PatchDocument | null {
   if (!isRecord(value) || value.kind !== "kj-atlas-patch" || value.version !== 1 || !Array.isArray(value.ops)) {
     return null;
@@ -149,71 +207,9 @@ export function parsePatchDocument(value: unknown): PatchDocument | null {
   const ops: PatchOp[] = [];
 
   for (const item of value.ops) {
-    if (!isRecord(item) || typeof item.id !== "string" || typeof item.kind !== "string") {
-      return null;
-    }
-
-    if (item.kind === "upsert_card") {
-      const card = parseCard(item.card);
-      if (!card) return null;
-      ops.push({ id: item.id, kind: item.kind, card });
-      continue;
-    }
-
-    if (item.kind === "delete_card" && typeof item.cardId === "string") {
-      ops.push({ id: item.id, kind: item.kind, cardId: item.cardId });
-      continue;
-    }
-
-    if (item.kind === "upsert_island") {
-      const island = parseIsland(item.island);
-      if (!island) return null;
-      ops.push({ id: item.id, kind: item.kind, island });
-      continue;
-    }
-
-    if (item.kind === "delete_island" && typeof item.islandId === "string") {
-      ops.push({ id: item.id, kind: item.kind, islandId: item.islandId });
-      continue;
-    }
-
-    if (item.kind === "upsert_edge") {
-      const edge = parseEdge(item.edge);
-      if (!edge) return null;
-      ops.push({ id: item.id, kind: item.kind, edge });
-      continue;
-    }
-
-    if (item.kind === "delete_edge" && typeof item.edgeId === "string") {
-      ops.push({ id: item.id, kind: item.kind, edgeId: item.edgeId });
-      continue;
-    }
-
-    if (item.kind === "upsert_relation_summary") {
-      const relationSummary = parseRelationSummary(item.relationSummary);
-      if (!relationSummary) return null;
-      ops.push({ id: item.id, kind: item.kind, relationSummary });
-      continue;
-    }
-
-    if (item.kind === "delete_relation_summary" && typeof item.sourceSignature === "string") {
-      ops.push({ id: item.id, kind: item.kind, sourceSignature: item.sourceSignature });
-      continue;
-    }
-
-    if (item.kind === "upsert_evidence_link") {
-      const evidenceLink = parseEvidenceLink(item.evidenceLink);
-      if (!evidenceLink) return null;
-      ops.push({ id: item.id, kind: item.kind, evidenceLink });
-      continue;
-    }
-
-    if (item.kind === "delete_evidence_link" && typeof item.evidenceLinkId === "string") {
-      ops.push({ id: item.id, kind: item.kind, evidenceLinkId: item.evidenceLinkId });
-      continue;
-    }
-
-    return null;
+    const op = parsePatchOp(item);
+    if (!op) return null;
+    ops.push(op);
   }
 
   return {

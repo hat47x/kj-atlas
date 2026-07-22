@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { t } from "../i18n/translate";
 import type { ClaimType } from "../domain/view/claim_type_checks";
 
@@ -43,10 +43,12 @@ export function BulkOperationsBar({
 }: BulkOperationsBarProps) {
   const [isReasonEditorOpen, setIsReasonEditorOpen] = useState(false);
   const [reason, setReason] = useState("");
+  const triggerButtonRef = useRef<HTMLButtonElement>(null);
 
   const closeReasonEditor = () => {
     setIsReasonEditorOpen(false);
     setReason("");
+    setTimeout(() => triggerButtonRef.current?.focus(), 0);
   };
 
   const submitReason = () => {
@@ -83,6 +85,12 @@ export function BulkOperationsBar({
           data-ui-region="bulk-critique-reason"
           role="dialog"
           aria-label={t("bulk_ops_bar.reason_editor.title")}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              closeReasonEditor();
+            }
+          }}
           style={{
             position: "absolute",
             right: 0,
@@ -151,6 +159,7 @@ export function BulkOperationsBar({
         {t("bulk_ops_bar.toggle_critique")}
       </button>
       <button
+        ref={triggerButtonRef}
         type="button"
         style={buttonStyle}
         aria-expanded={isReasonEditorOpen}
