@@ -46,4 +46,16 @@ describe("ShelfPanel accessibility (UQ-2)", () => {
     );
     expect(html).toContain("後で再考");
   });
+
+  it("makes the focus-card row keyboard-operable when onFocusCard is provided", () => {
+    const html = renderToStaticMarkup(
+      createElement(ShelfPanel, {
+        cards: [{ id: "c1", text: "退避中カード", x: 0, y: 0 }],
+        shelf: [{ cardId: "c1", shelvedAt: "2026-06-21T00:00:00Z" }],
+        onFocusCard: () => {},
+      })
+    );
+    expect(html).toContain('role="button"');
+    expect(html).toContain('tabindex="0"');
+  });
 });

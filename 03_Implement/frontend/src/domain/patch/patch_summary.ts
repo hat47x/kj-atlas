@@ -1,3 +1,4 @@
+import { SafeModePolicy } from "../policy/safe_mode";
 import type { ConflictReport } from "./conflict_detect";
 import type { PatchDocument } from "./patch_apply";
 
@@ -84,8 +85,12 @@ function buildWarnings(conflictReport?: ConflictReport, signatureMatch?: boolean
 export function buildPatchSummary(
   patch: PatchDocument,
   conflictReport?: ConflictReport,
-  signatureMatch?: boolean
+  signatureMatch?: boolean,
+  safeMode: boolean = true
 ): PatchSummaryModel {
+  const canExposeCardText = SafeModePolicy.canExposeText("card.text", "share", safeMode);
+  const canExposeIslandSummary = SafeModePolicy.canExposeText("island.summary", "share", safeMode);
+  const canExposeRelationSummary = SafeModePolicy.canExposeText("relation.summary", "share", safeMode);
   const stats: PatchSummaryModel["stats"] = {
     upsertCards: 0,
     deleteCards: 0,
@@ -109,7 +114,7 @@ export function buildPatchSummary(
           priority: 2,
           stableKey: `card:${op.card.id}`,
           label: `Card ${op.card.id}`,
-          detail: formatSnippet(clipText(op.card.text)),
+          detail: canExposeCardText ? formatSnippet(clipText(op.card.text)) : SafeModePolicy.summarizeForSafeMode(op.card.text),
         });
         break;
       case "delete_card":
@@ -127,7 +132,13 @@ export function buildPatchSummary(
           priority: 0,
           stableKey: `island:${op.island.id}`,
           label: `Island ${op.island.id}`,
-          detail: formatSnippet(clipText(`${op.island.title ?? ""} ${op.island.summaryText ?? ""}`)),
+          detail: formatSnippet(
+            clipText(
+              `${op.island.title ?? ""} ${
+                canExposeIslandSummary ? (op.island.summaryText ?? "") : SafeModePolicy.summarizeForSafeMode(op.island.summaryText ?? "")
+              }`
+            )
+          ),
         });
         break;
       case "delete_island":
@@ -151,7 +162,9 @@ export function buildPatchSummary(
           priority: 1,
           stableKey: `relation:${op.relationSummary.sourceSignature}`,
           label: `Relation ${op.relationSummary.sourceSignature}`,
-          detail: formatSnippet(clipText(op.relationSummary.text)),
+          detail: canExposeRelationSummary
+            ? formatSnippet(clipText(op.relationSummary.text))
+            : SafeModePolicy.summarizeForSafeMode(op.relationSummary.text),
         });
         break;
       case "delete_relation_summary":

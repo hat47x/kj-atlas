@@ -11,7 +11,6 @@ from kj_atlas_api.tenant_context import TenantContext
 
 logger = logging.getLogger(__name__)
 
-
 MAX_TENANT_SESSION_VERSION_LENGTH = 128
 _TENANT_SESSION_VERSION_PATTERN = re.compile(
     rf"[A-Za-z0-9][A-Za-z0-9._~-]{{0,{MAX_TENANT_SESSION_VERSION_LENGTH - 1}}}"
@@ -109,7 +108,7 @@ def resolve_active_tenant_session_version(
     except HTTPException:
         raise
     except Exception:
-        logger.warning("Failed to resolve current tenant session version", exc_info=True)
+        logger.warning("active tenant session persister raised resolving current version", exc_info=True)
         raise _session_context_unavailable() from None
 
 
@@ -157,5 +156,5 @@ def persist_active_tenant_selection(
     except HTTPException:
         raise
     except Exception:
-        logger.warning("Failed to advance tenant session version", exc_info=True)
+        logger.warning("active tenant session persister raised persisting selection", exc_info=True)
         raise _active_tenant_update_unavailable() from None

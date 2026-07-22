@@ -5,7 +5,7 @@ import type { MergeSuggestionDecision } from "../domain/merge_suggestion_decisio
 import type { MergeDecisionAuditEvent } from "../domain/merge/decision_audit_events";
 import { evaluateMergeDecisionTrustBoundary } from "../domain/hil_rs_trusted_boundary";
 import { normalizeHilDecisionReason } from "../domain/hil_rs_decision_reason";
-import { t } from "../i18n/translate";
+import { getActiveLocale, t } from "../i18n/translate";
 
 type MergeSuggestionDraft = MergeSuggestion & {
   editedText: string;
@@ -254,7 +254,9 @@ export function MergeSuggestionsPanel({
             <div style={{ fontSize: 12, fontWeight: 600 }}>{t("merge_suggestions.cards_in_group")}</div>
             <div style={{ fontSize: 11, color: "#334155" }}>
               {t("merge_suggestions.decision_label", { decision: decisionLabel(suggestion.latestDecision) })}
-              {suggestion.latestDecidedAt ? ` (${new Date(suggestion.latestDecidedAt).toLocaleString()})` : ""}
+              {suggestion.latestDecidedAt
+                ? ` (${new Date(suggestion.latestDecidedAt).toLocaleString(getActiveLocale() === "ja" ? "ja-JP" : "en-US")})`
+                : ""}
             </div>
           </div>
           <ul style={{ margin: "0 0 8px", paddingLeft: 18 }}>
@@ -365,7 +367,9 @@ export function MergeSuggestionsPanel({
           {latestAuditEventByGroup?.get(suggestion.groupId) ? (
             <div style={{ fontSize: 11, color: "#334155", marginBottom: 6 }}>
               {t("merge_suggestions.audit_event_recorded", {
-                decidedAt: new Date(latestAuditEventByGroup.get(suggestion.groupId)!.decidedAt).toLocaleString(),
+                decidedAt: new Date(latestAuditEventByGroup.get(suggestion.groupId)!.decidedAt).toLocaleString(
+                  getActiveLocale() === "ja" ? "ja-JP" : "en-US",
+                ),
                 decision: decisionLabel(latestAuditEventByGroup.get(suggestion.groupId)!.decision),
               })}
             </div>

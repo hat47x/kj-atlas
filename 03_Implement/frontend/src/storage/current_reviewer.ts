@@ -53,7 +53,11 @@ export function saveCurrentReviewerRef(
 ): string {
   const sanitized = sanitizeReviewerRef(value);
   if (isStorageAvailable()) {
-    window.localStorage.setItem(currentReviewerStorageKey(scope), sanitized);
+    try {
+      window.localStorage.setItem(currentReviewerStorageKey(scope), sanitized);
+    } catch {
+      // Storage may be disabled or full. The in-memory reviewer ref remains usable.
+    }
   }
 
   return sanitized;

@@ -233,7 +233,6 @@ function publishVisibilityLabel(value: PublishVisibility): string {
     case "Restricted":
       return t("share.panel.visibility.restricted");
     case "Unlisted":
-    default:
       return t("share.panel.visibility.unlisted");
   }
 }
@@ -987,7 +986,7 @@ export function SharePanel({
                     <button type="button" onClick={closePreShareGate} style={actionButtonStyle}>
                       {t("share.panel.pre_share_gate.back")}
                     </button>
-                    <button type="button" onClick={confirmPreShareGate} style={actionButtonStyle}>
+                    <button type="button" onClick={confirmPreShareGate} disabled={isBundleExportRunning} style={actionButtonStyle}>
                       {t("share.panel.pre_share_gate.continue")}
                     </button>
                   </div>

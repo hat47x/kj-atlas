@@ -64,5 +64,9 @@ export function saveViewModeForDocument(
   const storageKey = viewModeStorageKey(scope);
   const byDoc = parseViewModeByDoc(window.localStorage.getItem(storageKey));
   byDoc[docId] = mode;
-  window.localStorage.setItem(storageKey, JSON.stringify(byDoc));
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(byDoc));
+  } catch {
+    // Storage may be disabled or full. The in-memory view mode remains usable.
+  }
 }

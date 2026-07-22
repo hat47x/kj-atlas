@@ -109,23 +109,26 @@ export class DiffWorkerClient {
 
     const abortListener = () => this.fallbackRunner.cancel();
     options.signal?.addEventListener("abort", abortListener, { once: true });
-    const outcome = await this.fallbackRunner.run(async (ctx) => buildMergeItemsIncremental(payload.baseDoc, payload.incomingDoc, ctx, payload.options));
-    unsubscribe();
-    options.signal?.removeEventListener("abort", abortListener);
+    try {
+      const outcome = await this.fallbackRunner.run(async (ctx) => buildMergeItemsIncremental(payload.baseDoc, payload.incomingDoc, ctx, payload.options));
 
-    if (outcome.status === "cancelled") {
-      return { status: "cancelled", usedFallback: true };
+      if (outcome.status === "cancelled") {
+        return { status: "cancelled", usedFallback: true };
+      }
+
+      const items = outcome.result.items;
+      return {
+        status: "completed",
+        usedFallback: true,
+        result: {
+          documentDiff: items.filter((item) => item.kind !== "view.field"),
+          viewDiff: items.filter((item) => item.kind === "view.field"),
+        },
+      };
+    } finally {
+      unsubscribe();
+      options.signal?.removeEventListener("abort", abortListener);
     }
-
-    const items = outcome.result.items;
-    return {
-      status: "completed",
-      usedFallback: true,
-      result: {
-        documentDiff: items.filter((item) => item.kind !== "view.field"),
-        viewDiff: items.filter((item) => item.kind === "view.field"),
-      },
-    };
   }
 
   cancel(requestId: string): void {

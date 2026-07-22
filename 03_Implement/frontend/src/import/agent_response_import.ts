@@ -1,6 +1,7 @@
 import { sanitizeMarkdownForDisplay } from "./markdown_sanitize";
 import { ZIP_MAX_TEXT_FILE_BYTES } from "./zip_import";
-import type { PatchV1, PatchOpKind } from "../domain/patch/patch_types";
+import type { PatchOp, PatchV1 } from "../domain/patch/patch_types";
+import { parsePatchOp } from "../domain/patch/patch_apply";
 
 // EXT-AGENT-02 (ADR-0049 D3, spec `02_Architecture/external_agent_collaboration_spec.md`
 // §4/§5): parses/validates/sanitizes an external AI agent's pasted "agent-response.v1"
@@ -22,19 +23,6 @@ export const AGENT_RESPONSE_PROPOSAL_KINDS = [
 export type AgentResponseProposalKind = (typeof AGENT_RESPONSE_PROPOSAL_KINDS)[number];
 
 const FORBIDDEN_SCORING_FIELDS = ["score", "rank", "confidence", "priority"] as const;
-
-const PATCH_OP_KIND_WHITELIST: readonly PatchOpKind[] = [
-  "upsert_card",
-  "delete_card",
-  "upsert_island",
-  "delete_island",
-  "upsert_edge",
-  "delete_edge",
-  "upsert_relation_summary",
-  "delete_relation_summary",
-  "upsert_evidence_link",
-  "delete_evidence_link",
-];
 
 export type AgentResponseTargetRef = {
   islandId?: string;
@@ -110,7 +98,9 @@ function parsePatch(value: unknown, mode: AgentResponseImportMode, warnings: str
     return { hasDeleteOps: false };
   }
 
-  const validOps = value.ops.filter((op) => isRecord(op) && PATCH_OP_KIND_WHITELIST.includes(op.kind as PatchOpKind));
+  const validOps = value.ops
+    .map((op) => parsePatchOp(op))
+    .filter((op): op is PatchOp => op !== null);
   if (validOps.length !== value.ops.length) {
     warnings.push("patch.ops_outside_whitelist_discarded");
   }
@@ -118,7 +108,7 @@ function parsePatch(value: unknown, mode: AgentResponseImportMode, warnings: str
     return { hasDeleteOps: false };
   }
 
-  const hasDeleteOps = validOps.some((op) => isRecord(op) && typeof op.kind === "string" && op.kind.startsWith("delete_"));
+  const hasDeleteOps = validOps.some((op) => op.kind.startsWith("delete_"));
 
   const patch: PatchV1 = {
     kind: "kj-atlas-patch",
@@ -127,7 +117,7 @@ function parsePatch(value: unknown, mode: AgentResponseImportMode, warnings: str
     author: sanitizeString(value.author),
     authorNote: sanitizeString(value.authorNote),
     sourceApp: sanitizeString(value.sourceApp),
-    ops: validOps as PatchV1["ops"],
+    ops: validOps,
   };
   return { patch, hasDeleteOps };
 }

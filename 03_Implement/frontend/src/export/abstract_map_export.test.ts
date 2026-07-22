@@ -77,7 +77,7 @@ function createDocument(): DocumentV1 {
 describe("abstract map export", () => {
   it("builds deterministic export model and stays pure", () => {
     const doc = createDocument();
-    const viewState = { visibleIslandIds: new Set(["i1", "i2"]), abstractMapView: true };
+    const viewState = { visibleIslandIds: new Set(["i1", "i2"]), abstractMapView: true, safeMode: false };
 
     const first = buildAbstractMapExport(doc, viewState);
     const second = buildAbstractMapExport(doc, viewState);
@@ -91,6 +91,7 @@ describe("abstract map export", () => {
     const model = buildAbstractMapExport(createDocument(), {
       visibleIslandIds: new Set(["i1", "i2"]),
       abstractMapView: true,
+      safeMode: false,
     });
 
     expect(model.islands.find((item) => item.id === "i1")?.summaryReviewed).toBe(false);
@@ -108,6 +109,7 @@ describe("abstract map export", () => {
     const model = buildAbstractMapExport(createDocument(), {
       visibleIslandIds: new Set(["i1", "i2"]),
       abstractMapView: false,
+      safeMode: false,
     });
 
     expect(model.relations.some((item) => item.derived)).toBe(false);
@@ -119,6 +121,7 @@ describe("abstract map export", () => {
       visibleIslandIds: new Set(["i1", "i2"]),
       abstractMapView: true,
       includeUnreviewedDrafts: false,
+      safeMode: false,
     });
 
     expect(model.islands.find((item) => item.id === "i1")?.summaryText).toBe("UNREVIEWED hidden");
@@ -129,6 +132,7 @@ describe("abstract map export", () => {
     const model = buildAbstractMapExport(createDocument(), {
       visibleIslandIds: new Set(["i1", "i2"]),
       abstractMapView: true,
+      safeMode: false,
     });
 
     expect(model.islands.find((item) => item.id === "i1")?.summaryText).toBe("UNREVIEWED hidden");
@@ -140,6 +144,7 @@ describe("abstract map export", () => {
       visibleIslandIds: new Set(["i1", "i2"]),
       abstractMapView: true,
       includeUnreviewedDrafts: true,
+      safeMode: false,
     });
 
     const markdown = exportAbstractMapMarkdown(model);
@@ -167,6 +172,7 @@ describe("abstract map export", () => {
     const model = buildAbstractMapExport(createDocument(), {
       visibleIslandIds: new Set(["i1", "i2"]),
       abstractMapView: true,
+      safeMode: false,
     });
 
     const markdown = exportAbstractMapMarkdown(model, { snapshotFilename: "snapshot.png" });
@@ -175,6 +181,29 @@ describe("abstract map export", () => {
     expect(markdown).toContain("![Abstract Map Snapshot](snapshot.png)");
     expect(html).toContain('<img src="data:image/png;base64,abc"');
     expect(html).toContain("Abstract Map Snapshot");
+  });
+
+  it("masks island summary, relation summary, grounding snippets, and representative text under SafeMode (default)", () => {
+    const model = buildAbstractMapExport(createDocument(), {
+      visibleIslandIds: new Set(["i1", "i2"]),
+      abstractMapView: true,
+      includeUnreviewedDrafts: true,
+    });
+
+    const reviewedIsland = model.islands.find((item) => item.id === "i2");
+    expect(reviewedIsland?.summaryReviewed).toBe(true);
+    expect(reviewedIsland?.summaryText).toBe("UNREVIEWED hidden");
+
+    const persistedRelation = model.relations.find((item) => !item.derived && item.type === "related");
+    expect(persistedRelation?.summaryText).toBeUndefined();
+
+    const snippet = model.relations
+      .flatMap((item) => item.groundingCards ?? [])
+      .find((item) => item.id === "c1")?.snippet;
+    expect(snippet).toMatch(/^\[REDACTED\]/);
+
+    const representative = model.representatives.find((item) => item.representativeCardId === "c4");
+    expect(representative?.representativeText).toMatch(/^\[REDACTED\]/);
   });
 
 });

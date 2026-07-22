@@ -34,6 +34,7 @@ type NarrativesPanelProps = {
   document: DocumentV1 | null;
   hideSourceCards: boolean;
   onFocusItem: (kind: "card" | "island", id: string) => void;
+  safeMode: boolean;
 };
 
 const severityColorMap: Record<NarrativeIssue["severity"], string> = {
@@ -65,6 +66,7 @@ export function NarrativesPanel({
   document,
   hideSourceCards,
   onFocusItem,
+  safeMode,
 }: NarrativesPanelProps) {
   const panelTitleId = useId();
   const [selectedNarrativeId, setSelectedNarrativeId] = useState<string | null>(null);
@@ -135,7 +137,7 @@ export function NarrativesPanel({
       return;
     }
 
-    const content = buildNarrativeMarkdown(selectedNarrative, readingOrderSnippets, groundingEntries, document.evidenceLinks ?? []);
+    const content = buildNarrativeMarkdown(selectedNarrative, readingOrderSnippets, groundingEntries, document.evidenceLinks ?? [], safeMode);
     const fileStem = sanitizeFileStem(selectedNarrative.title || selectedNarrative.id);
     downloadTextFile(`${fileStem}.md`, "text/markdown", content);
   };
@@ -145,7 +147,7 @@ export function NarrativesPanel({
       return;
     }
 
-    const content = buildNarrativeHtml(selectedNarrative, readingOrderSnippets, groundingEntries, document.evidenceLinks ?? []);
+    const content = buildNarrativeHtml(selectedNarrative, readingOrderSnippets, groundingEntries, document.evidenceLinks ?? [], safeMode);
     const fileStem = sanitizeFileStem(selectedNarrative.title || selectedNarrative.id);
     downloadTextFile(`${fileStem}.html`, "text/html", content);
   };

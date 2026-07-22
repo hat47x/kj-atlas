@@ -507,7 +507,7 @@ def resolve_access_decision(
     except AccessControlInvalidRequestError:
         return apply_adapter_failsafe(request=request, mode=fail_safe_mode, reason="adapter_error")
     except Exception:
-        logger.warning("Access control adapter raised unexpected error", exc_info=True)
+        logger.warning("access control adapter raised an unexpected error; failing safe", exc_info=True)
         return apply_adapter_failsafe(request=request, mode=fail_safe_mode, reason="adapter_error")
 
     if not isinstance(decision, AccessDecision):

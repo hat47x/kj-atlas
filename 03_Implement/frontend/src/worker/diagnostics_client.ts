@@ -141,31 +141,34 @@ export class DiagnosticsWorkerClient {
     });
     const abortListener = () => this.fallbackRunner.cancel();
     options.signal?.addEventListener("abort", abortListener, { once: true });
-    const outcome = await this.fallbackRunner.run(async (ctx) => {
-      const marks = [10, 30, 50, 70, 85, 100];
-      for (let i = 0; i < marks.length; i += 1) {
-        ctx.reportProgress({ message: stages[i] ?? "render", completed: i + 1, total: marks.length });
-        await ctx.yieldToMainThread();
-        if (ctx.isCancelled()) {
-          return null;
+    try {
+      const outcome = await this.fallbackRunner.run(async (ctx) => {
+        const marks = [10, 30, 50, 70, 85, 100];
+        for (let i = 0; i < marks.length; i += 1) {
+          ctx.reportProgress({ message: stages[i] ?? "render", completed: i + 1, total: marks.length });
+          await ctx.yieldToMainThread();
+          if (ctx.isCancelled()) {
+            return null;
+          }
         }
-      }
-      return computeDiagnostics({ ...payload, options: { ...payload.options, safeMode: payload.options?.safeMode ?? true } });
-    });
-    unsubscribe();
-    options.signal?.removeEventListener("abort", abortListener);
+        return computeDiagnostics({ ...payload, options: { ...payload.options, safeMode: payload.options?.safeMode ?? true } });
+      });
 
-    if (outcome.status === "cancelled" || outcome.result === null) {
-      return { status: "cancelled", usedFallback: true };
+      if (outcome.status === "cancelled" || outcome.result === null) {
+        return { status: "cancelled", usedFallback: true };
+      }
+      return {
+        status: "completed",
+        usedFallback: true,
+        result: {
+          diagnosticsMd: outcome.result.diagnosticsMd,
+          diagnosticsData: normalizeDiagnosticsData(outcome.result.diagnosticsData),
+        },
+      };
+    } finally {
+      unsubscribe();
+      options.signal?.removeEventListener("abort", abortListener);
     }
-    return {
-      status: "completed",
-      usedFallback: true,
-      result: {
-        diagnosticsMd: outcome.result.diagnosticsMd,
-        diagnosticsData: normalizeDiagnosticsData(outcome.result.diagnosticsData),
-      },
-    };
   }
 
   cancel(requestId: string): void {

@@ -556,8 +556,8 @@ export function SidePanel({
       return null;
     }
 
-    return buildIslandRelationExplanation(document, selectedIslandRelationEdge);
-  }, [document, selectedIslandRelationEdge]);
+    return buildIslandRelationExplanation(document, selectedIslandRelationEdge, safeMode);
+  }, [document, safeMode, selectedIslandRelationEdge]);
 
   useEffect(() => {
     setHasImagePreviewError(false);
@@ -976,6 +976,15 @@ export function SidePanel({
       .sort((left, right) => (right.cardCount - left.cardCount) || left.id.localeCompare(right.id))
       .slice(0, 5);
   }, [islandDistributionRows]);
+
+  const parentIslandOptions = useMemo(() => {
+    return (document?.islands ?? [])
+      .filter((island) => island.id !== selectedIsland?.id)
+      .map((island) => ({
+        id: island.id,
+        label: island.title?.trim() ? `${island.title} (${island.id})` : island.id,
+      }));
+  }, [document?.islands, selectedIsland?.id]);
 
   const claimTypeMixSection = claimTypeMixReport ? (
     <details style={{ marginTop: 8 }}>
@@ -1550,7 +1559,10 @@ export function SidePanel({
                           <button
                             type="button"
                             onClick={async () => {
-                              await copyText(JSON.stringify(entry, null, 2));
+                              const copied = await copyText(JSON.stringify(entry, null, 2));
+                              if (!copied) {
+                                onEvidenceTraceError(t("side_panel.merge_history.copy_failed"));
+                              }
                             }}
                           >
                             {t("side_panel.merge_history.copy_json")}
@@ -1558,7 +1570,10 @@ export function SidePanel({
                           <button
                             type="button"
                             onClick={async () => {
-                              await copyText(buildMergeSummaryMarkdown(entry));
+                              const copied = await copyText(buildMergeSummaryMarkdown(entry));
+                              if (!copied) {
+                                onEvidenceTraceError(t("side_panel.merge_history.copy_failed"));
+                              }
                             }}
                           >
                             {t("side_panel.merge_history.copy_md")}
@@ -2418,13 +2433,11 @@ export function SidePanel({
             }}
           >
             <option value="">{t("side_panel.none")}</option>
-            {(document?.islands ?? [])
-              .filter((island) => island.id !== selectedIsland.id)
-              .map((island) => (
-                <option key={island.id} value={island.id}>
-                  {island.title?.trim() ? `${island.title} (${island.id})` : island.id}
-                </option>
-              ))}
+            {parentIslandOptions.map((island) => (
+              <option key={island.id} value={island.id}>
+                {island.label}
+              </option>
+            ))}
           </select>
 
           {summaryView || abstractMapView ? (

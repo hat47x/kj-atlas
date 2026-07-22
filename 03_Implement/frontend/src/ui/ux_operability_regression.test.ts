@@ -61,7 +61,7 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain('lowerKey === "h"');
     expect(appSource).toContain('lowerKey === "u"');
     expect(appSource).toContain('lowerKey === "r"');
-    expect(appSource).toContain("if (readingNavEnabled || isEditableHotkeyTarget(event.target))");
+    expect(appSource).toContain("if (isEditableHotkeyTarget(event.target))");
     expect(appSource).toContain("handleCardHoldStateChange(selectedCard.id");
     expect(appSource).toContain("handleCardCritiqueChange(selectedCard.id");
     expect(appSource).toContain("handleCardTextReviewedChange(selectedCard.id");
@@ -215,12 +215,13 @@ describe("UX Operability regression contracts", () => {
     // existing bindings are untouched. H/U/R are NEW plain-letter bindings;
     // 'r' already exists in useHotkeys.ts but ONLY inside the reading-path
     // feature (gated by onReadingPathToggleReviewedOnly, itself gated by
-    // readingNavEnabled) — this effect explicitly excludes readingNavEnabled
+    // readingNavEnabled) — only the "r" branch here excludes readingNavEnabled
     // so the two "r" bindings are mutually exclusive, never both live.
     expect(appSource).toContain('lowerKey === "h"');
     expect(appSource).toContain('lowerKey === "u"');
     expect(appSource).toContain('lowerKey === "r"');
-    expect(appSource).toContain("if (readingNavEnabled || isEditableHotkeyTarget(event.target))");
+    expect(appSource).toContain("if (isEditableHotkeyTarget(event.target))");
+    expect(appSource).toContain('lowerKey === "r" && !readingNavEnabled');
     // Existing bindings preserved verbatim (AC-5 non-regression).
     expect(appSource).toContain('lowerKey === "z" && !event.shiftKey');
     expect(appSource).toContain('event.key.toLowerCase() !== "k"');
@@ -1007,7 +1008,7 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain("if (!review.patch || review.patchSignatureMismatch) break;");
 
     // patch.ops whitelist + delete_* warning badge (spec §4.2).
-    expect(importSource).toContain("PATCH_OP_KIND_WHITELIST");
+    expect(importSource).toContain("parsePatchOp");
     expect(importSource).toContain("patchHasDeleteOps");
 
     // AC-5 prompt-injection boundary: proposal text is plain string data

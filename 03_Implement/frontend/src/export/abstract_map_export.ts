@@ -1,4 +1,5 @@
 import { buildIslandRelationExplanation } from "../domain/island_relation_explain";
+import { SafeModePolicy } from "../domain/policy/safe_mode";
 import { getDerivedIslandEdges } from "../domain/island_edge_aggregate";
 import { buildRelationSummarySourceSignature } from "../domain/relation_summary_ops";
 import { isCanonicalCard, resolveKnownEdgeType, type DocumentV1, type EdgeType } from "../domain/types";
@@ -9,6 +10,7 @@ export type AbstractMapExportViewState = {
   visibleIslandIds: Set<string>;
   abstractMapView: boolean;
   includeUnreviewedDrafts?: boolean;
+  safeMode?: boolean;
 };
 
 export type AbstractMapExportIsland = {
@@ -104,58 +106,75 @@ function reviewLabel(reviewed?: boolean): string {
   return reviewed ? "reviewed" : "UNREVIEWED";
 }
 
-function buildGroundingCards(document: DocumentV1, cardIds: string[]): AbstractMapExportGroundingCard[] {
+function buildGroundingCards(document: DocumentV1, cardIds: string[], safeMode: boolean): AbstractMapExportGroundingCard[] {
+  const canExposeCardText = SafeModePolicy.canExposeText("card.text", "share", safeMode);
   const cardsById = new Map(document.cards.map((card) => [card.id, card]));
   return cardIds
     .map((cardId) => cardsById.get(cardId))
     .filter((card): card is NonNullable<typeof card> => Boolean(card))
-    .map((card) => ({ id: card.id, snippet: normalizeTextSnippet(card.text) }));
+    .map((card) => ({ id: card.id, snippet: canExposeCardText ? normalizeTextSnippet(card.text) : SafeModePolicy.summarizeForSafeMode(card.text) }));
 }
 
-function buildDraftTemplate(document: DocumentV1, relation: Pick<AbstractMapExportRelation, "islandAId" | "islandBId" | "type" | "derived" | "groundingCardIds" | "groundingEdgeIds">): string {
-  const explanation = buildIslandRelationExplanation(document, {
-    edgeId: relation.derived
-      ? `derived:${relation.islandAId}:${relation.islandBId}:${relation.type}`
-      : `persisted:${relation.islandAId}:${relation.islandBId}:${relation.type}`,
-    fromIslandId: relation.islandAId,
-    toIslandId: relation.islandBId,
-    type: relation.type,
-    isDerived: relation.derived,
-    contributingEdgeIds: relation.groundingEdgeIds,
-    contributingCardIds: relation.groundingCardIds,
-  });
+function buildDraftTemplate(
+  document: DocumentV1,
+  relation: Pick<AbstractMapExportRelation, "islandAId" | "islandBId" | "type" | "derived" | "groundingCardIds" | "groundingEdgeIds">,
+  safeMode: boolean
+): string {
+  const explanation = buildIslandRelationExplanation(
+    document,
+    {
+      edgeId: relation.derived
+        ? `derived:${relation.islandAId}:${relation.islandBId}:${relation.type}`
+        : `persisted:${relation.islandAId}:${relation.islandBId}:${relation.type}`,
+      fromIslandId: relation.islandAId,
+      toIslandId: relation.islandBId,
+      type: relation.type,
+      isDerived: relation.derived,
+      contributingEdgeIds: relation.groundingEdgeIds,
+      contributingCardIds: relation.groundingCardIds,
+    },
+    safeMode
+  );
 
   return explanation.body;
 }
 
 function buildRelationRowBase(
   document: DocumentV1,
-  relation: Omit<AbstractMapExportRelation, "draftTemplateText" | "groundingCards">
+  relation: Omit<AbstractMapExportRelation, "draftTemplateText" | "groundingCards">,
+  safeMode: boolean
 ): AbstractMapExportRelation {
   const summaryText = relation.summaryText?.trim();
   const hasSummary = Boolean(summaryText && summaryText.length > 0);
   const draftTemplateText = hasSummary
     ? undefined
-    : buildDraftTemplate(document, {
-        islandAId: relation.islandAId,
-        islandBId: relation.islandBId,
-        type: relation.type,
-        derived: relation.derived,
-        groundingCardIds: relation.groundingCardIds,
-        groundingEdgeIds: relation.groundingEdgeIds,
-      });
+    : buildDraftTemplate(
+        document,
+        {
+          islandAId: relation.islandAId,
+          islandBId: relation.islandBId,
+          type: relation.type,
+          derived: relation.derived,
+          groundingCardIds: relation.groundingCardIds,
+          groundingEdgeIds: relation.groundingEdgeIds,
+        },
+        safeMode
+      );
 
   return {
     ...relation,
     summaryText: hasSummary ? summaryText : undefined,
     draftTemplateText,
-    groundingCards: buildGroundingCards(document, relation.groundingCardIds ?? []),
+    groundingCards: buildGroundingCards(document, relation.groundingCardIds ?? [], safeMode),
   };
 }
 
 export function buildAbstractMapExport(doc: DocumentV1, viewState: AbstractMapExportViewState): AbstractMapExportModel {
   const visibleIslandIds = viewState.visibleIslandIds;
   const includeUnreviewedDrafts = viewState.includeUnreviewedDrafts ?? false;
+  const safeMode = viewState.safeMode ?? true;
+  const canExposeIslandSummary = SafeModePolicy.canExposeText("island.summary", "share", safeMode);
+  const canExposeRelationSummary = SafeModePolicy.canExposeText("relation.summary", "share", safeMode);
   const visibleIslands = doc.islands
     .filter((island) => visibleIslandIds.has(island.id))
     .sort((a, b) => a.id.localeCompare(b.id));
@@ -173,7 +192,7 @@ export function buildAbstractMapExport(doc: DocumentV1, viewState: AbstractMapEx
 
     const normalizedSummaryText = island.summaryText?.trim() ?? "";
     const isSummaryReviewed = island.summaryReviewed === true;
-    const shouldIncludeSummary = normalizedSummaryText.length > 0 && (isSummaryReviewed || includeUnreviewedDrafts);
+    const shouldIncludeSummary = canExposeIslandSummary && normalizedSummaryText.length > 0 && (isSummaryReviewed || includeUnreviewedDrafts);
 
     return {
       id: island.id,
@@ -210,12 +229,12 @@ export function buildAbstractMapExport(doc: DocumentV1, viewState: AbstractMapEx
         islandBId,
         type: edge.type,
         derived: false,
-        summaryText: summary?.reviewed === true || includeUnreviewedDrafts ? summary?.text : undefined,
+        summaryText: canExposeRelationSummary && (summary?.reviewed === true || includeUnreviewedDrafts) ? summary?.text : undefined,
         summaryReviewed: summary?.reviewed,
         warnings: summary?.warnings,
         groundingCardIds: summary?.groundingCardIds ?? [],
         groundingEdgeIds: summary?.groundingEdgeIds ?? [edge.id],
-      })
+      }, safeMode)
     );
   }
 
@@ -248,12 +267,12 @@ export function buildAbstractMapExport(doc: DocumentV1, viewState: AbstractMapEx
           islandBId: derivedEdge.toId,
           type: derivedEdge.type,
           derived: true,
-          summaryText: summary?.reviewed === true || includeUnreviewedDrafts ? summary?.text : undefined,
+          summaryText: canExposeRelationSummary && (summary?.reviewed === true || includeUnreviewedDrafts) ? summary?.text : undefined,
           summaryReviewed: summary?.reviewed,
           warnings: summary?.warnings,
           groundingCardIds: summary?.groundingCardIds ?? derivedEdge.contributingCardIds,
           groundingEdgeIds: summary?.groundingEdgeIds ?? derivedEdge.contributingEdgeIds,
-        })
+        }, safeMode)
       );
     }
   }
@@ -276,11 +295,12 @@ export function buildAbstractMapExport(doc: DocumentV1, viewState: AbstractMapEx
     return a.derived ? 1 : -1;
   });
 
+  const canExposeRepresentativeText = SafeModePolicy.canExposeText("card.text", "share", safeMode);
   const representatives = doc.cards
     .filter((card) => Array.isArray(card.repOf) && card.repOf.length > 0)
     .map((card) => ({
       representativeCardId: card.id,
-      representativeText: normalizeTextSnippet(card.text),
+      representativeText: canExposeRepresentativeText ? normalizeTextSnippet(card.text) : SafeModePolicy.summarizeForSafeMode(card.text),
       originalCardIds: card.repOf ?? [],
     }))
     .sort((a, b) => a.representativeCardId.localeCompare(b.representativeCardId));

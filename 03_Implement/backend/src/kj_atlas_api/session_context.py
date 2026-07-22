@@ -18,7 +18,6 @@ from kj_atlas_api.tenant_context import (
 
 logger = logging.getLogger(__name__)
 
-
 KNOWN_EFFECTIVE_CAPABILITIES = frozenset(
     {
         "document.read",
@@ -219,7 +218,7 @@ def build_tenant_session_context(
     except HTTPException:
         raise
     except Exception:
-        logger.warning("Failed to resolve tenant capabilities", exc_info=True)
+        logger.warning("tenant capability resolution raised an unexpected error", exc_info=True)
         _capability_resolution_unavailable()
 
     return TenantSessionContext(

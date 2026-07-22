@@ -14,7 +14,6 @@ from kj_atlas_api.session_context import (
     TenantSessionContext,
     build_tenant_session_context,
 )
-
 from kj_atlas_api.tenant_context import (
     SingleTenantContextResolver,
     TenantContext,
@@ -70,7 +69,7 @@ def resolve_trusted_saas_request_session(
     except HTTPException:
         raise
     except Exception:
-        logger.warning("SaaS identity resolution failed", exc_info=True)
+        logger.warning("SaaS identity resolver raised an unexpected error", exc_info=True)
         raise _error(
             status_code=503,
             code="tenant_admin_auth_unavailable",
@@ -79,7 +78,7 @@ def resolve_trusted_saas_request_session(
     try:
         principal_id = identity.user_id
     except Exception:
-        logger.warning("Failed to extract principal_id from resolved identity", exc_info=True)
+        logger.warning("resolved identity raised reading user_id", exc_info=True)
         raise _error(
             status_code=503,
             code="tenant_admin_auth_unavailable",
@@ -108,7 +107,7 @@ def resolve_trusted_saas_request_session(
     except HTTPException:
         raise
     except Exception:
-        logger.warning("Tenant context resolution failed", exc_info=True)
+        logger.warning("tenant context resolver raised an unexpected error", exc_info=True)
         raise _error(
             status_code=503,
             code="tenant_context_resolution_unavailable",
@@ -121,7 +120,7 @@ def resolve_trusted_saas_request_session(
             and _canonical_identifier(tenant.membership_id)
         )
     except Exception:
-        logger.warning("Trusted tenant validation failed", exc_info=True)
+        logger.warning("resolved tenant context raised computing trust", exc_info=True)
         raise _error(
             status_code=503,
             code="tenant_context_resolution_unavailable",

@@ -77,6 +77,7 @@ export async function bootstrapTenantSession(input: Readonly<{
     if (isAbortFailure(error, input.signal)) {
       throw error;
     }
+    console.warn("Tenant session bootstrap failed.", error);
     return { status: "blocked", reason: blockReasonFor(error) };
   }
 
@@ -89,7 +90,8 @@ export async function bootstrapTenantSession(input: Readonly<{
         input.deployment,
       ),
     };
-  } catch {
+  } catch (error) {
+    console.warn("Tenant session bootstrap produced an invalid storage scope.", error);
     return { status: "blocked", reason: "invalid_deployment" };
   }
 }

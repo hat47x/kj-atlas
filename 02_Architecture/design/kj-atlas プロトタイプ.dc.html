@@ -214,11 +214,14 @@
               <sc-if value="{{ card.hasTags }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px; padding:1px 6px; border-radius:4px; background:#f1f5f9; color:#64748b;">{{ card.tags }} tag</span></sc-if>
             </span>
           </div>
-          <div style="padding:10px 11px; font-size:14px; line-height:1.5; color:#1f2933;">
+          <div style="padding:10px 11px; font-size:14px; line-height:1.5; color:#1f2933; display:flex; align-items:flex-start; gap:8px;">
+            <sc-if value="{{ card.hasCue }}" hint-placeholder-val="{{ false }}"><span title="視覚キュー（想起の目印・意味なし）" style="width:20px; height:20px; flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; color:#64748b; margin-top:1px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 21s-7-5.2-7-10a7 7 0 0 1 14 0c0 4.8-7 10-7 10z"/><circle cx="12" cy="11" r="2.5"/></svg></span></sc-if>
+            <span style="flex:1; min-width:0;">
             <sc-if value="{{ card.notEditing }}" hint-placeholder-val="{{ true }}"><span>{{ card.text }}</span></sc-if>
             <sc-if value="{{ card.editing }}" hint-placeholder-val="{{ false }}">
               <input value="{{ editingText }}" autofocus onClick="{{ onEditClick }}" onInput="{{ onEditInput }}" onKeyDown="{{ onEditKey }}" onBlur="{{ onEditBlur }}" style="width:100%; border:1px solid #93c5fd; border-radius:5px; outline:none; font-family:inherit; font-size:14px; color:#1f2933; padding:3px 6px; background:#fff;" />
             </sc-if>
+            </span>
           </div>
           </div>
           </sc-if>
@@ -786,7 +789,7 @@
 class Component extends DCLogic {
   state = {
     cards: [
-      { id:'c1', type:'fact',       text:'観察した事実メモ',     hold:false, unclear:false, reviewed:true,  tags:0, x:70,  y:96,  island:true,  contra:0, rootOut:0, rootIn:0, seq:1, source:'IV-01 p.2 l.14' },
+      { id:'c1', type:'fact',       text:'観察した事実メモ',     hold:false, unclear:false, reviewed:true,  tags:0, x:70,  y:96,  island:true,  contra:0, rootOut:0, rootIn:0, seq:1, source:'IV-01 p.2 l.14', cue:'place' },
       { id:'c2', type:'claim',      text:'そこから言える主張',   hold:false, unclear:false, reviewed:false, tags:0, x:322, y:96,  island:true,  contra:1, rootOut:0, rootIn:2, seq:2, source:'IV-01 p.3 l.02' },
       { id:'c3', type:'hypothesis', text:'問いとして残す仮説',   hold:false, unclear:false, reviewed:false, tags:0, x:70,  y:312, island:false, contra:0, rootOut:0, rootIn:0, seq:3, source:'IV-02 p.1 l.20' },
       { id:'c4', type:'unknown',    text:'まだ曖昧な主張',       hold:true,  unclear:true,  reviewed:false, tags:1, x:322, y:312, island:false, contra:1, rootOut:1, rootIn:0, seq:4, source:'IV-02 p.4 l.08', memo:'事実か解釈か未確定。判断を保留し、次回の比較で再検討する。' },
@@ -1524,6 +1527,7 @@ class Component extends DCLogic {
         seq:c.seq||'', hasSeq: !!c.seq && s.showSeq, lone,
         hold:c.hold, unclear:c.unclear, notReviewed:!c.reviewed, hasTags:c.tags>0, tags:c.tags,
         hasMemo: !!c.memo,
+        hasCue: !!c.cue,
         editing: c.id===s.editingId, notEditing: c.id!==s.editingId,
         compact, full: !compact,
         selected: sel, connecting: s.connectFrom===c.id,

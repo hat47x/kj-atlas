@@ -38,7 +38,7 @@ describe("buildIslandRelationExplanation", () => {
       contributingCardIds: ["card-2", "card-1"],
     };
 
-    const explanation = buildIslandRelationExplanation(document, selection);
+    const explanation = buildIslandRelationExplanation(document, selection, false);
 
     expect(explanation.title).toBe("Relation: Island A ↔ Island B");
     expect(explanation.groundingEdgeIds).toEqual(["edge-islands"]);
@@ -71,7 +71,7 @@ describe("buildIslandRelationExplanation", () => {
       ],
     };
 
-    const explanation = buildIslandRelationExplanation(document, selection);
+    const explanation = buildIslandRelationExplanation(document, selection, false);
 
     expect(explanation.groundingEdgeIds).toEqual(["edge-1", "edge-2"]);
     expect(explanation.groundingCardIds).toEqual([
@@ -91,25 +91,52 @@ describe("buildIslandRelationExplanation", () => {
   });
 
   it("exports stable markdown", () => {
-    const explanation = buildIslandRelationExplanation(document, {
+    const explanation = buildIslandRelationExplanation(
+      document,
+      {
+        edgeId: "edge-islands",
+        fromIslandId: "island-a",
+        toIslandId: "island-b",
+        type: "related",
+        isDerived: false,
+        contributingCardIds: ["card-2", "card-1"],
+      },
+      false
+    );
+
+    expect(formatIslandRelationExplanationMarkdown(explanation)).toMatchInlineSnapshot(`
+      "## Relation: Island A ↔ Island B
+
+      Type: RELATED
+      Grounding cards:
+      - card-2: second
+      - card-1: first
+
+      Grounding edge IDs: edge-islands
+      Grounding card IDs: card-2, card-1"
+    `);
+  });
+
+  it("masks card snippets under SafeMode (default) but keeps titles and structure", () => {
+    const selection: IslandRelationEdgeSelection = {
       edgeId: "edge-islands",
       fromIslandId: "island-a",
       toIslandId: "island-b",
       type: "related",
       isDerived: false,
       contributingCardIds: ["card-2", "card-1"],
-    });
+    };
 
-    expect(formatIslandRelationExplanationMarkdown(explanation)).toMatchInlineSnapshot(`
-      "## Relation: Island A ↔ Island B
-      
-      Type: RELATED
-      Grounding cards:
-      - card-2: second
-      - card-1: first
-      
-      Grounding edge IDs: edge-islands
-      Grounding card IDs: card-2, card-1"
-    `);
+    const maskedByDefault = buildIslandRelationExplanation(document, selection);
+    const maskedExplicit = buildIslandRelationExplanation(document, selection, true);
+
+    for (const explanation of [maskedByDefault, maskedExplicit]) {
+      expect(explanation.title).toBe("Relation: Island A ↔ Island B");
+      expect(explanation.body).not.toContain("second");
+      expect(explanation.body).not.toContain("first");
+      expect(explanation.body).toContain("card-2: [REDACTED]");
+      expect(explanation.body).toContain("card-1: [REDACTED]");
+      expect(explanation.groundingCardIds).toEqual(["card-2", "card-1"]);
+    }
   });
 });

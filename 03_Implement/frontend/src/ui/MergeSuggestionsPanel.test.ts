@@ -1,8 +1,8 @@
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MergeSuggestionsPanel } from "./MergeSuggestionsPanel";
-import { t } from "../i18n/translate";
+import { setActiveLocale, t } from "../i18n/translate";
 
 function buildProps() {
   return {
@@ -65,6 +65,22 @@ function buildProps() {
 }
 
 describe("MergeSuggestionsPanel", () => {
+  afterEach(() => setActiveLocale("ja"));
+
+  it("formats decision timestamps using the active app locale, not the browser default", () => {
+    const timestamp = "2026-02-28T10:00:00.000Z";
+
+    setActiveLocale("en");
+    const htmlEn = renderToStaticMarkup(React.createElement(MergeSuggestionsPanel, buildProps()));
+    expect(htmlEn).toContain(new Date(timestamp).toLocaleString("en-US"));
+    expect(htmlEn).not.toContain(new Date(timestamp).toLocaleString("ja-JP"));
+
+    setActiveLocale("ja");
+    const htmlJa = renderToStaticMarkup(React.createElement(MergeSuggestionsPanel, buildProps()));
+    expect(htmlJa).toContain(new Date(timestamp).toLocaleString("ja-JP"));
+    expect(htmlJa).not.toContain(new Date(timestamp).toLocaleString("en-US"));
+  });
+
   it("shows deterministic-heuristic guidance, decision status, and four decision actions", () => {
     const html = renderToStaticMarkup(React.createElement(MergeSuggestionsPanel, buildProps()));
 

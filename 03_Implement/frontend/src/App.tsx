@@ -1667,8 +1667,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return null;
     }
 
-    return buildPatchSummary(pendingPatchImport.patch, patchConflictReport ?? undefined, patchBaselineSignatureMatch);
-  }, [patchBaselineSignatureMatch, patchConflictReport, pendingPatchImport]);
+    return buildPatchSummary(pendingPatchImport.patch, patchConflictReport ?? undefined, patchBaselineSignatureMatch, safeMode);
+  }, [patchBaselineSignatureMatch, patchConflictReport, pendingPatchImport, safeMode]);
   useEffect(() => {
     setSelectedFixProposalIdSet((previousSet) => {
       const nextIds = new Set(patchFixProposals.map((proposal) => proposal.fixId));
@@ -4110,7 +4110,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return;
     }
 
-    downloadTextFile(`${pendingPatchImport.fileName.replace(/\.json$/i, "")}.export.json`, "application/json", `${JSON.stringify(exportedPatch, null, 2)}\n`);
+    const sanitizedFileStem = pendingPatchImport.fileName.replace(/\.json$/i, "").trim().replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, "-");
+    downloadTextFile(`${sanitizedFileStem || "patch"}.export.json`, "application/json", `${JSON.stringify(exportedPatch, null, 2)}\n`);
     setStatusMessage(t("app.status.patch.exported_fingerprint"));
   }, [patchExportAuthor, patchExportAuthorNote, pendingPatchImport, runTenantScopedOptionalTask]);
 
@@ -6260,7 +6261,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const usesShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "g";
-      if (!usesShortcut || !canCreateIsland) {
+      if (!usesShortcut || !canCreateIsland || isEditableHotkeyTarget(event.target)) {
         return;
       }
 
@@ -6335,7 +6336,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const isModifierPressed = event.metaKey || event.ctrlKey;
-      if (!isModifierPressed) {
+      if (!isModifierPressed || isEditableHotkeyTarget(event.target)) {
         return;
       }
 
@@ -6651,15 +6652,17 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     // U=critique, R=reviewed) are modifier-less single keys so the core
     // "preserve ambiguity" operations sit closer than confirming ones (CB-2).
     // Reuses the existing isEditableHotkeyTarget guard (shared with Cmd+1/2/3
-    // and Cmd/Ctrl+K) so typing is never interrupted. Gated on !readingNavEnabled
-    // to avoid colliding with useHotkeys.ts's own plain "r" (reading-order
-    // reviewedOnly filter) — the two features are never active at once.
+    // and Cmd/Ctrl+K) so typing is never interrupted. Only the "r" branch is
+    // additionally gated on !readingNavEnabled, to avoid colliding with
+    // useHotkeys.ts's own plain "r" (reading-order reviewedOnly filter) —
+    // the two "r" bindings are never active at once. H/U have no such
+    // collision and must stay reachable while reading-nav mode is on.
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) {
         return;
       }
 
-      if (readingNavEnabled || isEditableHotkeyTarget(event.target)) {
+      if (isEditableHotkeyTarget(event.target)) {
         return;
       }
 
@@ -6687,7 +6690,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      if (lowerKey === "r") {
+      if (lowerKey === "r" && !readingNavEnabled) {
         event.preventDefault();
         handleCardTextReviewedChange(selectedCard.id, selectedCard.textReviewed !== true);
       }
@@ -7833,6 +7836,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       diagnosticsWorkerClientRef.current = new DiagnosticsWorkerClient();
     }
 
+    diagnosticsAbortRef.current?.abort();
     const controller = new AbortController();
     diagnosticsAbortRef.current = controller;
     setIsDiagnosticsRunning(true);
@@ -7875,9 +7879,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         throw error;
       }
     }).finally(() => {
-      setIsDiagnosticsRunning(false);
-      setComputeProgressMessage(null);
-      diagnosticsAbortRef.current = null;
+      if (diagnosticsAbortRef.current === controller) {
+        diagnosticsAbortRef.current = null;
+        setIsDiagnosticsRunning(false);
+        setComputeProgressMessage(null);
+      }
     });
   }, [collapsedIslandIds, document, readingMode, reviewedOnly, runTenantScopedTask]);
 
@@ -7996,7 +8002,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
 
     try {
-      const safeText = safeMode ? outline : outline;
+      const safeText = outline;
       await navigator.clipboard.writeText(safeText);
       setStatusMessage(t("app.status.outline.copied"));
     } catch {
@@ -9239,8 +9245,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
+    if (isBundleExportRunning) {
+      return;
+    }
 
     let unsubscribeBundleProgress: (() => void) | null = null;
+    let capturedBundleController: AbortController | null = null;
     try {
       setIsBundleExportRunning(true);
       const exportTimestamp = formatBundleTimestamp(new Date());
@@ -9291,6 +9301,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       });
 
       const controller = new AbortController();
+      capturedBundleController = controller;
       bundleAbortRef.current = controller;
       unsubscribeBundleProgress = bundleRunnerRef.current.onProgress((progress) => setComputeProgressMessage(progress.message));
       const outcome = await runTenantScopedTask(() => bundleRunnerRef.current.run(async (ctx) => {
@@ -9378,9 +9389,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }
     } finally {
       unsubscribeBundleProgress?.();
-      setIsBundleExportRunning(false);
-      setComputeProgressMessage(null);
-      bundleAbortRef.current = null;
+      if (bundleAbortRef.current === capturedBundleController) {
+        bundleAbortRef.current = null;
+        setIsBundleExportRunning(false);
+        setComputeProgressMessage(null);
+      }
     }
   }, [
     abstractMapView,
@@ -9398,6 +9411,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     focusTarget.focusIslandId,
     hideSourceCards,
     hierarchyLevel,
+    isBundleExportRunning,
     isReadingOrderEditMode,
     lodEnabled,
     lodLevelOverride,
@@ -9457,6 +9471,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         },
         camera: canvasCamera,
         area,
+        safeMode,
         scale: 2,
       }));
       if (pngBlob === undefined) {
@@ -9467,6 +9482,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         visibleIslandIds: visibleIslandIdSet,
         abstractMapView,
         includeUnreviewedDrafts: !safeMode && includeUnreviewedDraftsInExport,
+        safeMode,
       });
 
       const snapshotFilename = "snapshot.png";
@@ -9518,6 +9534,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         },
         camera: canvasCamera,
         area,
+        safeMode,
         scale: 2,
       }));
       if (pngBlob === undefined) {
@@ -9528,6 +9545,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         visibleIslandIds: visibleIslandIdSet,
         abstractMapView,
         includeUnreviewedDrafts: !safeMode && includeUnreviewedDraftsInExport,
+        safeMode,
       });
 
       const snapshotDataUrl = await runTenantScopedOptionalTask(() => readBlobAsDataUrl(pngBlob));
@@ -9600,6 +9618,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       },
       camera: canvasCamera,
       area,
+      safeMode,
     });
 
     downloadTextFile(getSvgExportFilename("viewport"), "image/svg+xml", svg);
@@ -9657,6 +9676,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       },
       camera: canvasCamera,
       area,
+      safeMode,
     });
 
     downloadTextFile(getSvgExportFilename("visible-bounds"), "image/svg+xml", svg);
@@ -9708,6 +9728,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         },
         camera: canvasCamera,
         area,
+        safeMode,
         scale: pngExportScale,
       }));
       if (pngBlob === undefined) {
@@ -9776,6 +9797,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         },
         camera: canvasCamera,
         area,
+        safeMode,
         scale: pngExportScale,
       }));
       if (pngBlob === undefined) {
@@ -10986,6 +11008,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
               readingOrderSnippets={readingOrderSnippets}
               document={document}
               hideSourceCards={hideSourceCards}
+              safeMode={safeMode}
             />
           ),
         },
