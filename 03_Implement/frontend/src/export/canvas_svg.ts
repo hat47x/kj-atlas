@@ -21,6 +21,7 @@ export type ExportCanvasToSvgInput = {
     viewportHeight: number;
   };
   area: ExportArea;
+  safeMode: boolean;
 };
 
 function escapeXml(value: string): string {
@@ -90,7 +91,7 @@ function islandLabel(island: Island): string {
   return island.title?.trim() || island.id;
 }
 
-export function exportCanvasToSVG({ doc, viewState, camera: _camera, area }: ExportCanvasToSvgInput): string {
+export function exportCanvasToSVG({ doc, viewState, camera: _camera, area, safeMode }: ExportCanvasToSvgInput): string {
   const cardsById = new Map(doc.cards.map((card) => [card.id, card]));
   const islands = doc.islands.filter((island) => viewState.visibleIslandIds.has(island.id));
   const cards = doc.cards.filter((card) => {
@@ -132,9 +133,12 @@ export function exportCanvasToSVG({ doc, viewState, camera: _camera, area }: Exp
       `<text x="${bounds.x + 10}" y="${bounds.y + 20}" font-size="14" font-weight="600" fill="#0f172a" font-family="sans-serif">${escapeXml(title)}</text>`
     );
 
-    if (island.summaryText?.trim()) {
+    const hasSummary = typeof island.summaryText === "string" && island.summaryText.trim().length > 0;
+    const hideUnreviewedSummary = safeMode && island.summaryReviewed === false && hasSummary;
+    if (hasSummary) {
+      const summaryText = hideUnreviewedSummary ? "(unreviewed — hidden)" : truncateText(island.summaryText as string, 90);
       labelElements.push(
-        `<text x="${bounds.x + 10}" y="${bounds.y + 40}" font-size="12" fill="#334155" font-family="sans-serif">${escapeXml(truncateText(island.summaryText, 90))}</text>`
+        `<text x="${bounds.x + 10}" y="${bounds.y + 40}" font-size="12" fill="#334155" font-family="sans-serif">${escapeXml(summaryText)}</text>`
       );
     }
   }

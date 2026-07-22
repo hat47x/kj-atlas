@@ -61,6 +61,7 @@ describe("canvas_svg export", () => {
       viewState,
       camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
       area: bounds!,
+      safeMode: true,
     });
 
     expect(svg).toContain("<svg");
@@ -89,6 +90,7 @@ describe("canvas_svg export", () => {
       viewState,
       camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
       area: bounds!,
+      safeMode: true,
     });
 
     expect(svg).toContain('stroke-dasharray="4 4"');
@@ -114,6 +116,7 @@ describe("canvas_svg export", () => {
       viewState,
       camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
       area: bounds!,
+      safeMode: true,
     });
 
     const lineCount = (svg.match(/<line /g) ?? []).length;
@@ -138,6 +141,7 @@ describe("canvas_svg export", () => {
       viewState,
       camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
       area: bounds!,
+      safeMode: true,
     });
 
     expect(svg).not.toContain("Source card");
@@ -180,6 +184,7 @@ describe("canvas_svg export", () => {
       viewState,
       camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
       area: bounds!,
+      safeMode: true,
     });
 
     expect(svg).toContain("<rect");
@@ -203,6 +208,7 @@ describe("canvas_svg export", () => {
       viewState,
       camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
       area: bounds ?? { x: 0, y: 0, w: 100, h: 100 },
+      safeMode: true,
     });
 
     expect(JSON.stringify(doc)).toBe(before);

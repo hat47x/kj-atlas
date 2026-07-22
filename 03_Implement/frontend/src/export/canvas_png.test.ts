@@ -114,6 +114,7 @@ describe("canvas_png export", () => {
       viewState,
       camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
       area: area!,
+      safeMode: true,
       scale: 2,
     });
 
@@ -152,6 +153,7 @@ describe("canvas_png export", () => {
       viewState: normalViewState,
       camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
       area: normalBounds!,
+      safeMode: true,
       scale: 1,
     });
     const abstractPng = await exportCanvasToPngBlob({
@@ -159,6 +161,7 @@ describe("canvas_png export", () => {
       viewState: abstractMapViewState,
       camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
       area: abstractBounds!,
+      safeMode: true,
       scale: 2,
     });
 
