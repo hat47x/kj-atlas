@@ -69,6 +69,14 @@ export function ShelfPanel({ cards, shelf, isReadOnly = false, onRestoreCard, on
               cursor: onFocusCard ? "pointer" : "default",
             }}
             onClick={() => onFocusCard?.(card.id)}
+            role="button"
+            tabIndex={onFocusCard ? 0 : undefined}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onFocusCard?.(card.id);
+              }
+            }}
             title={card.text}
           >
             {card.text.trim().split("\n")[0].slice(0, 80)}
