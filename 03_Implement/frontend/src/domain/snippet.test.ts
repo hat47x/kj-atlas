@@ -15,6 +15,7 @@ function doc(overrides: Partial<DocumentV1> = {}): DocumentV1 {
       { id: "c3", text: "", x: 20, y: 0 },
     ],
     edges: [],
+    islands: [],
     ...overrides,
   };
 }
