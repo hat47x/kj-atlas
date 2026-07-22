@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, type KeyboardEvent } from "react";
 import { t } from "../i18n/translate";
 import type { ParsedAgentProposal, AgentResponseImportMode } from "../import/agent_response_import";
 
@@ -85,6 +85,7 @@ export function AgentResponseImportPanel({
   onExportPatchFile,
 }: AgentResponseImportPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const parseErrorsId = useId();
 
   useEffect(() => {
     if (!isOpen || !panelRef.current) return;
@@ -171,6 +172,8 @@ export function AgentResponseImportPanel({
           value={pastedText}
           onChange={(event) => onPastedTextChange(event.target.value)}
           rows={8}
+          aria-describedby={parseErrors.length > 0 ? parseErrorsId : undefined}
+          aria-invalid={parseErrors.length > 0}
           style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, fontFamily: "monospace", fontSize: 12 }}
         />
       </label>
@@ -185,7 +188,7 @@ export function AgentResponseImportPanel({
       </button>
 
       {parseErrors.length > 0 ? (
-        <div style={{ border: "1px solid #fecaca", borderRadius: 6, backgroundColor: "#fef2f2", padding: 8, fontSize: 12, color: "#991b1b" }}>
+        <div id={parseErrorsId} style={{ border: "1px solid #fecaca", borderRadius: 6, backgroundColor: "#fef2f2", padding: 8, fontSize: 12, color: "#991b1b" }}>
           {parseErrors.join("; ")}
         </div>
       ) : null}
