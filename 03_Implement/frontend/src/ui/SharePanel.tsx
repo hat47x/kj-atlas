@@ -987,7 +987,7 @@ export function SharePanel({
                     <button type="button" onClick={closePreShareGate} style={actionButtonStyle}>
                       {t("share.panel.pre_share_gate.back")}
                     </button>
-                    <button type="button" onClick={confirmPreShareGate} style={actionButtonStyle}>
+                    <button type="button" onClick={confirmPreShareGate} disabled={isBundleExportRunning} style={actionButtonStyle}>
                       {t("share.panel.pre_share_gate.continue")}
                     </button>
                   </div>
