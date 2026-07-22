@@ -9460,6 +9460,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         },
         camera: canvasCamera,
         area,
+        safeMode,
         scale: 2,
       }));
       if (pngBlob === undefined) {
@@ -9470,6 +9471,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         visibleIslandIds: visibleIslandIdSet,
         abstractMapView,
         includeUnreviewedDrafts: !safeMode && includeUnreviewedDraftsInExport,
+        safeMode,
       });
 
       const snapshotFilename = "snapshot.png";
@@ -9521,6 +9523,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         },
         camera: canvasCamera,
         area,
+        safeMode,
         scale: 2,
       }));
       if (pngBlob === undefined) {
@@ -9531,6 +9534,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         visibleIslandIds: visibleIslandIdSet,
         abstractMapView,
         includeUnreviewedDrafts: !safeMode && includeUnreviewedDraftsInExport,
+        safeMode,
       });
 
       const snapshotDataUrl = await runTenantScopedOptionalTask(() => readBlobAsDataUrl(pngBlob));
@@ -9603,6 +9607,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       },
       camera: canvasCamera,
       area,
+      safeMode,
     });
 
     downloadTextFile(getSvgExportFilename("viewport"), "image/svg+xml", svg);
@@ -9660,6 +9665,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       },
       camera: canvasCamera,
       area,
+      safeMode,
     });
 
     downloadTextFile(getSvgExportFilename("visible-bounds"), "image/svg+xml", svg);
@@ -9711,6 +9717,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         },
         camera: canvasCamera,
         area,
+        safeMode,
         scale: pngExportScale,
       }));
       if (pngBlob === undefined) {
@@ -9779,6 +9786,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         },
         camera: canvasCamera,
         area,
+        safeMode,
         scale: pngExportScale,
       }));
       if (pngBlob === undefined) {
@@ -10989,6 +10997,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
               readingOrderSnippets={readingOrderSnippets}
               document={document}
               hideSourceCards={hideSourceCards}
+              safeMode={safeMode}
             />
           ),
         },

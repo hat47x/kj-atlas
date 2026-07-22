@@ -29,7 +29,9 @@ describe("narrative_export", () => {
       {
         card_1: "first card",
       },
-      groundingEntries
+      groundingEntries,
+      [],
+      false
     );
 
     expect(output).toContain("DRAFT (UNREVIEWED) — Please verify against the diagram.");
@@ -54,7 +56,9 @@ describe("narrative_export", () => {
       {
         card_1: "Snippet <safe>",
       },
-      groundingEntries
+      groundingEntries,
+      [],
+      false
     );
 
     expect(output).toContain("Reviewed by human");
@@ -85,10 +89,29 @@ describe("narrative_export", () => {
       },
     ];
 
-    const markdown = buildNarrativeMarkdown(item, {}, [], evidenceLinks);
-    const html = buildNarrativeHtml(item, {}, [], evidenceLinks);
+    const markdown = buildNarrativeMarkdown(item, {}, [], evidenceLinks, false);
+    const html = buildNarrativeHtml(item, {}, [], evidenceLinks, false);
 
     expect(markdown).toContain("card_2 contradicts card_1 [held]");
     expect(html).toContain('<span class="contradiction-state">[held]</span>');
+  });
+
+  it("masks card snippets, island summaries under SafeMode (default)", () => {
+    const output = buildNarrativeMarkdown(
+      {
+        id: "n4",
+        title: "Draft B",
+        text: "Line 1",
+        reviewed: false,
+        basedOnReadingOrder: ["card_1"],
+      },
+      { card_1: "Secret snippet" },
+      groundingEntries
+    );
+
+    expect(output).not.toContain("Secret snippet");
+    expect(output).not.toContain("Card one");
+    expect(output).not.toContain("Summary text");
+    expect(output).toContain("[REDACTED]");
   });
 });

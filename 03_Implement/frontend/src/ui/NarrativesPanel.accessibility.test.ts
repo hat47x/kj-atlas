@@ -49,6 +49,7 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof NarrativesPa
     onReferenceClick: vi.fn(),
     document: documentFixture,
     hideSourceCards: false,
+    safeMode: true,
     onFocusItem: vi.fn(),
     ...overrides,
   };
