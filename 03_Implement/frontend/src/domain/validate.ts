@@ -12,6 +12,8 @@ import type {
   MergeSuggestionDecisionEntry,
   Narrative,
   NarrativeCheck,
+  NarrativeCheckIssue,
+  NarrativeCheckReference,
   PatchApplyLogEntry,
   PatchApplyStats,
   PatchConflictMeta,
@@ -564,6 +566,85 @@ function parseReadingOrder(value: unknown): string[] | undefined {
   return ids.length > 0 ? ids : undefined;
 }
 
+function parseNarrativeCheckReference(value: unknown): NarrativeCheckReference | null {
+  if (!isRecord(value) || typeof value.id !== "string" || (value.kind !== "card" && value.kind !== "island")) {
+    return null;
+  }
+
+  return { id: value.id, kind: value.kind };
+}
+
+function parseNarrativeCheckIssue(value: unknown): NarrativeCheckIssue | null {
+  if (
+    !isRecord(value)
+    || (value.severity !== "info" && value.severity !== "warn" && value.severity !== "error")
+    || typeof value.message !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    severity: value.severity,
+    message: value.message,
+    ...(Array.isArray(value.references)
+      ? { references: value.references.map(parseNarrativeCheckReference).filter((ref): ref is NarrativeCheckReference => ref !== null) }
+      : {}),
+  };
+}
+
+function parseNarrativeCheck(value: unknown): NarrativeCheck | null {
+  if (
+    !isRecord(value)
+    || typeof value.id !== "string"
+    || typeof value.createdAt !== "string"
+    || value.kind !== "consistency"
+    || !Array.isArray(value.issues)
+  ) {
+    return null;
+  }
+
+  return {
+    id: value.id,
+    createdAt: value.createdAt,
+    kind: "consistency",
+    issues: value.issues.map(parseNarrativeCheckIssue).filter((issue): issue is NarrativeCheckIssue => issue !== null),
+  };
+}
+
+function parseRelationSummaryHistoryEntry(value: unknown): RelationSummaryHistoryEntry | null {
+  if (
+    !isRecord(value)
+    || typeof value.id !== "string"
+    || typeof value.createdAt !== "string"
+    || (value.changeKind !== "ai" && value.changeKind !== "manual" && value.changeKind !== "rollback" && value.changeKind !== "import" && value.changeKind !== "unknown")
+    || !(typeof value.fromText === "string" || value.fromText === null)
+    || !(typeof value.toText === "string" || value.toText === null)
+    || !(typeof value.fromReviewed === "boolean" || value.fromReviewed === null)
+    || !(typeof value.toReviewed === "boolean" || value.toReviewed === null)
+  ) {
+    return null;
+  }
+
+  return {
+    id: value.id,
+    createdAt: value.createdAt,
+    changeKind: value.changeKind,
+    fromText: value.fromText,
+    toText: value.toText,
+    fromReviewed: value.fromReviewed,
+    toReviewed: value.toReviewed,
+    ...(Array.isArray(value.warningsSnapshot)
+      ? { warningsSnapshot: value.warningsSnapshot.filter((w): w is string => typeof w === "string") }
+      : {}),
+    ...(Array.isArray(value.groundingCardIdsSnapshot)
+      ? { groundingCardIdsSnapshot: value.groundingCardIdsSnapshot.filter((id): id is string => typeof id === "string") }
+      : {}),
+    ...(Array.isArray(value.groundingEdgeIdsSnapshot)
+      ? { groundingEdgeIdsSnapshot: value.groundingEdgeIdsSnapshot.filter((id): id is string => typeof id === "string") }
+      : {}),
+  };
+}
+
 function parseNarratives(value: unknown): Narrative[] | undefined {
   if (!Array.isArray(value)) {
     return undefined;
@@ -590,7 +671,9 @@ function parseNarratives(value: unknown): Narrative[] | undefined {
       ...(Array.isArray(item.basedOnReadingOrder)
         ? { basedOnReadingOrder: item.basedOnReadingOrder.filter((id): id is string => typeof id === "string") }
         : {}),
-      ...(Array.isArray(item.checks) ? { checks: item.checks.filter(isRecord) as NarrativeCheck[] } : {}),
+      ...(Array.isArray(item.checks)
+        ? { checks: item.checks.map(parseNarrativeCheck).filter((check): check is NarrativeCheck => check !== null) }
+        : {}),
     });
   }
 
@@ -644,7 +727,9 @@ function parseRelationSummaries(value: unknown): RelationSummary[] | undefined {
       ...(Array.isArray(item.warnings)
         ? { warnings: item.warnings.filter((w): w is string => typeof w === "string") }
         : {}),
-      ...(Array.isArray(item.history) ? { history: item.history.filter(isRecord) as RelationSummaryHistoryEntry[] } : {}),
+      ...(Array.isArray(item.history)
+        ? { history: item.history.map(parseRelationSummaryHistoryEntry).filter((entry): entry is RelationSummaryHistoryEntry => entry !== null) }
+        : {}),
     });
   }
 
