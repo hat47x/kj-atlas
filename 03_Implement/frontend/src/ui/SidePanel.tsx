@@ -1459,7 +1459,7 @@ export function SidePanel({
           <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 8 }}>
             {t("side_panel.reproposal_diffs.latest_title")}
           </div>
-          {[...(document?.reproposalDiffs ?? [])].reverse().slice(0, 3).map((diff) => (
+          {[...document!.reproposalDiffs!].reverse().slice(0, 3).map((diff) => (
             <div key={diff.proposalId} style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 6 }}>
               <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>
                 <strong>{t("hil_rs_rediff_preview.proposal")}:</strong> {diff.proposalId}
