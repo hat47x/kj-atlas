@@ -1,0 +1,12 @@
+{
+  "projectId": "ded56cba-06ff-44ce-9e7d-eb3f31357721",
+  "pkg": "kj-atlas-frontend",
+  "globalName": "KjAtlasFrontend",
+  "shape": "package",
+  "componentSrcMap": {
+    "App": null
+  },
+  "libOverrides": {
+    "source-kit.mjs": "excludes src/main.tsx from the synth-entry sweep — its module-scope ReactDOM.createRoot(getElementById('root')!) throws when the render-check validator loads the bundle with no #root present, aborting the IIFE before window.KjAtlasFrontend is assigned (see BUNDLE_EXPORT 50/50 root cause)"
+  }
+}
