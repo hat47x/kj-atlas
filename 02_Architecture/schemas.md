@@ -1427,3 +1427,70 @@ ADR-0054「後段が前段の安全原則を弱めることはない」に従い
 - Research: `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`（追補A3: TRACE 定量根拠）
 - Spec: `02_Architecture/external_agent_collaboration_spec.md`（§3.3a 制約節の埋め込みプロファイル）
 - Frontend: `03_Implement/frontend/src/domain/types.ts`（CRITIQUE_TAGS / AgentProposalDecisionEntry）, `03_Implement/frontend/src/domain/hil_rs_payload.ts`（内部 critique 収集の前例）, `03_Implement/frontend/src/export/context_bundle_projection.ts`（外部読み取り面の安全境界前例）
+
+## 19. DOMAIN-VISUAL-CUE-01 契約先行固定: Island.representativeCue（代表視覚手掛かり）（2026-07-29）
+
+ADR-0060 Accepted（2026-07-20）§8 の保存決定（`02_Architecture/design/representative_visual_cue/storage_candidate_comparison.md` T6、§5決定サマリー）を契約として固定する。本節は**契約の固定のみ**を行い、issue-DOMAIN-VISUAL-CUE-01 の T7（実装）は本節を先行させたうえで小さなPRへ分割して進める（契約先行。§18 EXT-CONN-03 と同じ運用）。加算原則に従い、`Island` への追加フィールドはすべて optional。
+
+### 19.1 RepresentativeVisualCue
+
+```ts
+// 供給経路（ADR-0060 選択肢4のA/B）。C（外部素材）・D（生成画像）は
+// ADR-0060 §8 によりT8へ延期し、本契約には含めない。
+export type RepresentativeVisualCueKind =
+  | "hand_drawn"   // 経路A: 手描き・基本図形。ベクター命令列としてIndexedDB保存（上限4KB）
+  | "user_image"   // 経路A: 利用者画像。48×48pxへリサイズしIndexedDB保存（上限16KB）
+  | "preset_svg"   // 経路B: 同梱プリセットSVG。JS bundle同梱（計16KB/最大32種）。cueIdのみDocumentV1へ出力
+  | "emoji";       // 経路B: Unicode絵文字。画像本体なし（0 bytes）。cueIdのみDocumentV1へ出力
+
+export type RepresentativeVisualCue = {
+  kind: RepresentativeVisualCueKind;
+  cueId: string;     // preset_svg/emoji: プリセット集合・絵文字文字そのものを指すID。hand_drawn/user_image: imageRef と対になる識別子
+  altText: string;   // 支援技術向け代替テキスト（AC-4必須）
+  imageRef?: string; // IndexedDB上の画像本体を指す参照キー。kind が hand_drawn/user_image の場合のみ有効
+};
+
+// Island への加算（optional）:
+//   representativeCue?: RepresentativeVisualCue;
+```
+
+- Support level: `L2`（採用参照はDocumentV1の一部として自動往復。ADR-0060 §8「決定」に基づく）
+- 欠落時: 従来挙動（代表視覚手掛かりなしの通常島）
+- 1島1手掛かり（1:1関係。独立配列は正規化過剰として不採用 — `storage_candidate_comparison.md` §2.1）。
+
+### 19.2 権利情報の対象外（経路C/Dとの境界）
+
+- 本契約は経路A（`hand_drawn`/`user_image`）・経路B（`preset_svg`/`emoji`）のみを対象とし、ライセンス・出典・帰属・取得時点等の権利情報フィールドは**含まない**。経路C（外部素材）・D（生成画像）導入時に、ADR-0060 の受理未了項目（原典・ライセンス・帰属表示の確認、外部providerのAPI利用条件）を満たしたうえで別途加算する（契約先行。本節を先に更新してから実装する）。
+- `hand_drawn`/`user_image`/`preset_svg`/`emoji` はいずれも自己完結（利用者自身の描画・画像、または同梱済み一次配布物）であり、権利確認を要さない。
+
+### 19.3 取り込み境界
+
+- import/validate（寛容・厳格の両モード）は `Island.representativeCue` の既知キー（`kind`/`cueId`/`altText`/`imageRef`）のみを受理する。`kind` が4値のいずれでもない、または `cueId`/`altText` が欠落・非文字列の場合は `representativeCue` フィールド自体を省略する（`Card.meta`/`Card.ka` の空値削除規約と同じ。DOMAIN-TRACE-01 §15.3 / DOMAIN-KA-01 §17.2 に倣う）。
+- `imageRef` は `kind` が `hand_drawn`/`user_image` 以外のとき無視する（`preset_svg`/`emoji` に紛れ込んでも保持しない）。
+- 画像本体（IndexedDBエントリ）自体はDocumentV1 JSONの一部ではなく、本契約のスコープ外。export/import時のbundle同梱・復元手順は `storage_candidate_comparison.md` §4「import/export境界」を正本とし、実装時に別途定義する。
+
+### 19.4 UI・非目標
+
+- 本契約はスキーマ・往復保持のみを定義する。選択コンテキストでの手掛かり選択UI、本文左20×20固定スロットの描画、IndexedDB連携の実装は本節の対象外（issue T7 の後続小PRで行う）。
+- 非目標: 島作成時の自動生成・自動採用、画像だけによる意味伝達、装飾目的の常設表示（ADR-0060「提案する決定」3・4に整合）。5段階評価等のスコアリングUIは反スコアリング方針により対象外（issue §2 参照）。
+
+### 19.5 成果物・共有境界
+
+- SafeMode / share-export: `kind`/`cueId`/`imageRef` は構造識別子（プリセットID・絵文字文字・IndexedDB参照キー）であり人間の自由記述を含まないため既定で保全する。`altText` は人間が記述する代替テキストであり、`title`/`critique` と同一の redaction チャネル（`SafeModePolicy.redactText`）で扱う（`inquiry_bundle_safe_mode.ts` の `sanitizeRepresentativeCue`）。KA §17.4 の「別基準を新設しない」規約に従う。
+- narrative export 等への反映要否は実装時に別途判断する（本契約は妨げない）。
+- 旧式 `Island.imageUrl`/`imageReviewed`（外部URL直接表示・由来/権利/代替テキストなし）とは別フィールドであり、本契約は旧式フィールドの往復保持・SafeMode遮断（`SEC-VISUAL-ASSET-01`）に影響しない。両者を混同しない。
+- 削除時に監査情報は残さない（手掛かりは思考内容ではなく補助表示であり、監査証跡の対象外 — `storage_candidate_comparison.md` §3.2）。
+
+### 19.6 後方互換
+
+- 新フィールドは optional。旧データ（`representativeCue` 欠落）は従来挙動として解釈する。
+- `version: 1`（本書時点の唯一の文書契約。旧DocumentV1/V2区分は退役済み）のまま。破壊的変更なし。
+- 寛容/厳格の両検証モードで、`kind`/`cueId`/`altText`/`imageRef` のいずれかが不正な要素は `representativeCue` フィールド全体を省略し、島の他フィールドは保全する。
+
+### 19.7 参照
+
+- ADR: `ADR-0060-representative-visual-cue-source-boundary.md`
+- Issue: `DOMAIN-VISUAL-CUE-01-representative-visual-cues`
+- 保存決定（T6）: `02_Architecture/design/representative_visual_cue/storage_candidate_comparison.md`
+- 絵文字比較（T5）: `02_Architecture/design/unicode_emoji_os_comparison.md`
+- Frontend: `03_Implement/frontend/src/domain/types.ts`（RepresentativeVisualCue, Island.representativeCue）

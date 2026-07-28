@@ -36,6 +36,7 @@ import {
   type PatchConflictMeta,
   type RelationSummary,
   type RelationSummaryHistoryEntry,
+  type RepresentativeVisualCue,
   type ReviewAttribution,
   type ShelfEntry,
   type SummaryHistoryEntry,
@@ -251,6 +252,7 @@ const ISLAND_FIELDS = {
   geometry: "rebuild",
   shape: "rebuild",
   shapeStale: "preserve",
+  representativeCue: "rebuild",
 } satisfies Record<keyof Island, FieldPolicy>;
 
 type RectGeometry = Extract<IslandGeometry, { type: "rect" }>;
@@ -721,6 +723,19 @@ function sanitizeSummaryHistory(entry: SummaryHistoryEntry): SummaryHistoryEntry
   };
 }
 
+// DOMAIN-VISUAL-CUE-01 (schemas.md §19.5): altText is human-authored
+// descriptive text (same redaction channel as title/critique). kind/cueId
+// are structural identifiers (preset id or emoji character), imageRef is an
+// opaque IndexedDB key — none of these three carry human free-text content.
+function sanitizeRepresentativeCue(cue: RepresentativeVisualCue): RepresentativeVisualCue {
+  return {
+    kind: cue.kind,
+    cueId: cue.cueId,
+    altText: redact(cue.altText),
+    ...(cue.imageRef !== undefined ? { imageRef: cue.imageRef } : {}),
+  };
+}
+
 function sanitizeIsland(island: Island): Island {
   return {
     id: island.id,
@@ -741,6 +756,9 @@ function sanitizeIsland(island: Island): Island {
     ...(island.geometry !== undefined ? { geometry: cloneGeometry(island.geometry) } : {}),
     ...(island.shape !== undefined ? { shape: sanitizeShape(island.shape) } : {}),
     ...(island.shapeStale !== undefined ? { shapeStale: island.shapeStale } : {}),
+    ...(island.representativeCue !== undefined
+      ? { representativeCue: sanitizeRepresentativeCue(island.representativeCue) }
+      : {}),
   };
 }
 

@@ -148,6 +148,21 @@ export type SummaryHistoryEntry = {
   groundingIds?: string[];
 };
 
+// DOMAIN-VISUAL-CUE-01 (schemas.md §19): representative visual cue for an
+// Island. Supply paths A (hand_drawn/user_image) and B (preset_svg/emoji)
+// only — paths C (external material) and D (generated image) are deferred
+// to T8 (ADR-0060 §8) and deliberately excluded here (no rights/license
+// fields until that contract is fixed).
+export type RepresentativeVisualCueKind = "hand_drawn" | "user_image" | "preset_svg" | "emoji";
+
+export type RepresentativeVisualCue = {
+  kind: RepresentativeVisualCueKind;
+  cueId: string;
+  altText: string;
+  /** IndexedDB reference key. Only meaningful when kind is hand_drawn/user_image. */
+  imageRef?: string;
+};
+
 export type Island = {
   id: string;
   cardIds: string[];
@@ -167,6 +182,7 @@ export type Island = {
   geometry?: IslandGeometry;
   shape?: IslandShape;
   shapeStale?: boolean;
+  representativeCue?: RepresentativeVisualCue;
 };
 
 export type EvidenceLink = {

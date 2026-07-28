@@ -103,6 +103,48 @@ describe("validateDocumentV1Strict", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("accepts a valid Island.representativeCue and rejects unknown kind / missing altText (DOMAIN-VISUAL-CUE-01, schemas.md §19.3)", () => {
+    const valid = validateDocumentV1Strict({
+      ...validDocument,
+      islands: [
+        {
+          id: "i1",
+          cardIds: ["c1"],
+          representativeCue: { kind: "emoji", cueId: "📍", altText: "location" },
+        },
+      ],
+    });
+    expect(valid.ok).toBe(true);
+
+    const unknownKind = validateDocumentV1Strict({
+      ...validDocument,
+      islands: [
+        {
+          id: "i1",
+          cardIds: ["c1"],
+          representativeCue: { kind: "external_url", cueId: "x", altText: "y" },
+        },
+      ],
+    });
+    expect(unknownKind.ok).toBe(false);
+    if (unknownKind.ok) return;
+    expect(unknownKind.errors).toContain(
+      "islands[0].representativeCue.kind: must be 'hand_drawn' | 'user_image' | 'preset_svg' | 'emoji'"
+    );
+
+    const missingAltText = validateDocumentV1Strict({
+      ...validDocument,
+      islands: [
+        {
+          id: "i1",
+          cardIds: ["c1"],
+          representativeCue: { kind: "preset_svg", cueId: "place" },
+        },
+      ],
+    });
+    expect(missingAltText.ok).toBe(false);
+  });
+
   it("keeps shape compatibility for rect and polygon islands", () => {
     const result = validateDocumentV1Strict({
       ...validDocument,

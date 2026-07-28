@@ -19,6 +19,7 @@ import type {
   PatchConflictMeta,
   RelationSummary,
   RelationSummaryHistoryEntry,
+  RepresentativeVisualCue,
   ShelfEntry,
   SummaryHistoryEntry,
   Transform,
@@ -295,6 +296,28 @@ function parseSummaryHistory(value: unknown): SummaryHistoryEntry[] | undefined 
   return entries.length > 0 ? entries : undefined;
 }
 
+// DOMAIN-VISUAL-CUE-01 (schemas.md §19.3): fail-closed to known keys
+// (kind/cueId/altText/imageRef). imageRef is ignored outside
+// hand_drawn/user_image (mirrors Card.meta/Card.ka empty-value omission).
+function parseRepresentativeCue(value: unknown): RepresentativeVisualCue | undefined {
+  if (
+    !isRecord(value)
+    || (value.kind !== "hand_drawn" && value.kind !== "user_image" && value.kind !== "preset_svg" && value.kind !== "emoji")
+    || typeof value.cueId !== "string"
+    || typeof value.altText !== "string"
+  ) {
+    return undefined;
+  }
+
+  const canHaveImageRef = value.kind === "hand_drawn" || value.kind === "user_image";
+  return {
+    kind: value.kind,
+    cueId: value.cueId,
+    altText: value.altText,
+    ...(canHaveImageRef && typeof value.imageRef === "string" ? { imageRef: value.imageRef } : {}),
+  };
+}
+
 function parseIslands(value: unknown): Island[] {
   if (!Array.isArray(value)) {
     return [];
@@ -384,6 +407,7 @@ function parseIslands(value: unknown): Island[] {
       geometry: normalizedGeometry,
       shape,
       shapeStale: typeof item.shapeStale === "boolean" ? item.shapeStale : undefined,
+      representativeCue: parseRepresentativeCue(item.representativeCue),
     });
   }
 

@@ -66,6 +66,12 @@ function addSensitiveDocumentFields(document: DocumentV1): void {
           versionToken: "SECRET_SHAPE_VERSION",
         },
       },
+      representativeCue: {
+        kind: "user_image",
+        cueId: "cue-1",
+        altText: "SECRET_CUE_ALT_TEXT",
+        imageRef: "idb-ref-1",
+      },
     },
   ];
   document.readingOrder = ["island-1"];
@@ -285,6 +291,10 @@ describe("deriveInquirySafeModeBundle", () => {
     expect(safeDocument.edges[0].type).toBe("related");
     expect(safeDocument.islands[0].imageUrl).toBeUndefined();
     expect(safeDocument.islands[0].imageReviewed).toBeUndefined();
+    expect(safeDocument.islands[0].representativeCue?.kind).toBe("user_image");
+    expect(safeDocument.islands[0].representativeCue?.cueId).toBe("cue-1");
+    expect(safeDocument.islands[0].representativeCue?.imageRef).toBe("idb-ref-1");
+    expect(safeDocument.islands[0].representativeCue?.altText).not.toBe("SECRET_CUE_ALT_TEXT");
     expect(safeDocument.reproposalDiffs).toBeUndefined();
     expect(safeDocument.contradictionSignalDecisions).toBeUndefined();
     expect(safeDocument.patchApplyLog?.[0].baseDocSignature).toBeUndefined();

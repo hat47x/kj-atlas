@@ -69,7 +69,7 @@
 - [x] T4b C0からC4の非製品プロトタイプ表示を作り、実装担当者による予備操作確認を実施する。高度な作業モード内のセッション限定UIとして実装し、マウス、キーボード、390px、ローカル画像通信をE2Eで確認した。代表利用者による効果比較はAC-6として未完了のまま残す。
 - [x] T5 Unicode絵文字と固定画像セットについて、OS間表示、アクセシビリティ、ライセンス、配布容量を比較する。→ `02_Architecture/design/unicode_emoji_os_comparison.md` として完了（2026-07-20）。推奨: Unicode絵文字をPhase 1既定とし、OS間不一致が確認されたcueだけを個別SVG化する。
 - [x] T6 採用参照、権利情報、画像本体、サムネイルの保存候補を比較し、ADRを受理または更新する。→ `02_Architecture/design/representative_visual_cue/storage_candidate_comparison.md` に比較完了（2026-07-20）。ADR-0060 Accepted・§8保存決定反映・`data_model_operations_overview.md` 更新済み。
-- [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。
+- [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。→ 小PR 1件目（契約先行の型・往復保持・SafeMode）完了（2026-07-29）: `schemas.md` §19 に `Island.representativeCue`（`RepresentativeVisualCue`: kind=hand_drawn/user_image/preset_svg/emoji, cueId, altText, imageRef）を契約固定。`types.ts`/`validate.ts`（寛容パース・往復保持）/`validate_doc.ts`（厳格検証）/`inquiry_bundle_safe_mode.ts`（altTextのみredact、kind/cueId/imageRefは保全）へ実装し、テスト追加（tsc 0エラー、frontend回帰225ファイル/1310テスト全pass）。選択UI・20×20スロット描画・IndexedDB連携・E2E・実画面評価（AC-7〜AC-10）は未着手のまま残る。次の小PRはUI（手描き/基本図形→利用者画像→絵文字/プリセットの順、issue本文記載順）。
 - [ ] T8 実利用で不足が確認された場合だけ、外部素材と生成画像をそれぞれ別issueへ分割する。
 - [x] T9 現行`Island.imageUrl`の自動外部取得とレビュー自動昇格を`SEC-VISUAL-ASSET-01`へ分離し、SafeModeで遮断する。
 

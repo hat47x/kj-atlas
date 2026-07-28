@@ -432,6 +432,7 @@ function validateIsland(item: unknown, index: number, errors: string[]): item is
       "geometry",
       "shape",
       "shapeStale",
+      "representativeCue",
     ],
     path,
     errors
@@ -500,6 +501,33 @@ function validateIsland(item: unknown, index: number, errors: string[]): item is
   if (item.shapeStale !== undefined && typeof item.shapeStale !== "boolean") {
     errors.push(`${path}.shapeStale: must be a boolean when provided`);
     valid = false;
+  }
+  if (item.representativeCue !== undefined) {
+    // DOMAIN-VISUAL-CUE-01 (schemas.md §19.3): strict mode rejects unknown
+    // keys and out-of-enum kind outright (fail-closed contract enforcement).
+    if (!isRecord(item.representativeCue)) {
+      errors.push(`${path}.representativeCue: must be an object when provided`);
+      valid = false;
+    } else {
+      const cue = item.representativeCue;
+      hasOnlyKeys(cue, ["kind", "cueId", "altText", "imageRef"], `${path}.representativeCue`, errors);
+      if (cue.kind !== "hand_drawn" && cue.kind !== "user_image" && cue.kind !== "preset_svg" && cue.kind !== "emoji") {
+        errors.push(`${path}.representativeCue.kind: must be 'hand_drawn' | 'user_image' | 'preset_svg' | 'emoji'`);
+        valid = false;
+      }
+      if (typeof cue.cueId !== "string") {
+        errors.push(`${path}.representativeCue.cueId: must be a string`);
+        valid = false;
+      }
+      if (typeof cue.altText !== "string") {
+        errors.push(`${path}.representativeCue.altText: must be a string`);
+        valid = false;
+      }
+      if (cue.imageRef !== undefined && typeof cue.imageRef !== "string") {
+        errors.push(`${path}.representativeCue.imageRef: must be a string when provided`);
+        valid = false;
+      }
+    }
   }
 
   return valid;

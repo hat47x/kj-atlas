@@ -117,6 +117,74 @@ describe("validateImportedDocument", () => {
   });
 
 
+  it("keeps island representativeCue from imported v2 JSON and drops invalid ones (DOMAIN-VISUAL-CUE-01, schemas.md §19.3)", () => {
+    const now = new Date().toISOString();
+    const result = validateImportedDocument({
+      version: 1,
+      id: "doc_cue",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [],
+      islands: [
+        {
+          id: "i_emoji",
+          cardIds: ["c1"],
+          representativeCue: { kind: "emoji", cueId: "📍", altText: "location" },
+        },
+        {
+          id: "i_user_image",
+          cardIds: ["c1"],
+          representativeCue: {
+            kind: "user_image",
+            cueId: "cue-2",
+            altText: "photo",
+            imageRef: "idb-key-1",
+          },
+        },
+        {
+          // preset_svg with an imageRef should have it stripped (only meaningful for hand_drawn/user_image)
+          id: "i_preset_with_stray_ref",
+          cardIds: ["c1"],
+          representativeCue: { kind: "preset_svg", cueId: "place", altText: "place", imageRef: "should-be-dropped" },
+        },
+        {
+          // unknown kind => whole field omitted, rest of island preserved
+          id: "i_invalid_kind",
+          cardIds: ["c1"],
+          representativeCue: { kind: "external_url", cueId: "x", altText: "y" },
+        },
+        {
+          // missing altText => whole field omitted
+          id: "i_missing_alt",
+          cardIds: ["c1"],
+          representativeCue: { kind: "emoji", cueId: "📍" },
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const byId = (id: string) => result.document.islands.find((island) => island.id === id);
+    expect(byId("i_emoji")?.representativeCue).toEqual({ kind: "emoji", cueId: "📍", altText: "location" });
+    expect(byId("i_user_image")?.representativeCue).toEqual({
+      kind: "user_image",
+      cueId: "cue-2",
+      altText: "photo",
+      imageRef: "idb-key-1",
+    });
+    expect(byId("i_preset_with_stray_ref")?.representativeCue).toEqual({
+      kind: "preset_svg",
+      cueId: "place",
+      altText: "place",
+    });
+    expect(byId("i_invalid_kind")?.representativeCue).toBeUndefined();
+    expect(byId("i_invalid_kind")?.id).toBe("i_invalid_kind");
+    expect(byId("i_missing_alt")?.representativeCue).toBeUndefined();
+  });
+
   it("keeps island placardCardId from imported v1 JSON", () => {
     const now = new Date().toISOString();
     const result = validateImportedDocument({
