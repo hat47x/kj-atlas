@@ -77,9 +77,11 @@ export function buildHttpApp(config: HttpTransportConfig, server: McpServer): Ex
   // session to notify on or tear down -- still gated behind auth so an
   // unauthenticated caller learns nothing from the response shape either way.
   app.get(MCP_PATH, requireAuth, async (req, res) => {
+    await connectPromise;
     await transport.handleRequest(req, res);
   });
   app.delete(MCP_PATH, requireAuth, async (req, res) => {
+    await connectPromise;
     await transport.handleRequest(req, res);
   });
 
