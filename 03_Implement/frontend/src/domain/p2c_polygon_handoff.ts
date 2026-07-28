@@ -1,3 +1,4 @@
+import { fnv1aHash } from "../utils/fnv1a_hash";
 import { padPolygonFromCentroid } from "./geometry/polygon_pad";
 import { P2C_DETERMINISTIC_TIE_BREAK_ORDER, type P2CTieBreakKey } from "./merge/p2c_tie_break_contract";
 
@@ -20,15 +21,6 @@ export type P2CMockValidationLog = {
   ownerOfFix: "A2" | "A3";
   evidence: string;
 };
-
-function fnv1aHash(input: string): string {
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < input.length; i += 1) {
-    hash ^= input.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return (hash >>> 0).toString(16).padStart(8, "0");
-}
 
 function normalizePoints(points: readonly Point[]): Point[] {
   return points.map((point) => ({

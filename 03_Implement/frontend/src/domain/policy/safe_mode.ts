@@ -1,3 +1,5 @@
+import { fnv1aHash } from "../../utils/fnv1a_hash";
+
 export type SafeMode = boolean;
 
 export type SafeModeContext = "ui" | "share" | "review-pack" | "diff";
@@ -6,12 +8,7 @@ export type SafeModeEntity = "card.text" | "island.summary" | "relation.summary"
 const REDACTED = "[REDACTED]";
 
 function shortHash(text: string): string {
-  let hash = 2166136261;
-  for (let index = 0; index < text.length; index += 1) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return `h${(hash >>> 0).toString(16).padStart(8, "0")}`;
+  return `h${fnv1aHash(text)}`;
 }
 
 export const SafeModePolicy = {

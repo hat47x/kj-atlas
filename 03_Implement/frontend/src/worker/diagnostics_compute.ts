@@ -18,7 +18,7 @@ function toSafeOutline(data: DiagnosticsData["outlineReport"]): DiagnosticsData[
   };
 }
 
-function buildDiagnosticsMd(data: DiagnosticsData): string {
+function buildDiagnosticsMd(data: DiagnosticsData, safeMode: boolean): string {
   const lines: string[] = ["# Diagnostics", "", "## Outline quality report (I10)", ""];
   lines.push(`- schemaVersion: ${data.schemaVersion}`);
   lines.push(`- totalIslands: ${data.outlineReport.stats.totalIslands}`);
@@ -28,7 +28,7 @@ function buildDiagnosticsMd(data: DiagnosticsData): string {
   for (const finding of data.outlineReport.findings) {
     const refs = (finding.entityRefs ?? []).map((ref) => `${ref.kind}:${ref.id}`).sort();
     lines.push(`- [${finding.severity.toUpperCase()}] ${finding.code}: ${finding.title}`);
-    if (finding.detail.trim().length > 0 && SafeModePolicy.canExposeText("diagnostics.detail", "ui", false)) {
+    if (finding.detail.trim().length > 0 && SafeModePolicy.canExposeText("diagnostics.detail", "ui", safeMode)) {
       lines.push(`  - detail: ${finding.detail}`);
     }
     if (refs.length > 0) {
@@ -121,6 +121,6 @@ export function computeDiagnostics(payload: DiagnosticsRequestPayload): { diagno
 
   return {
     diagnosticsData,
-    diagnosticsMd: buildDiagnosticsMd(diagnosticsData),
+    diagnosticsMd: buildDiagnosticsMd(diagnosticsData, safeMode),
   };
 }
