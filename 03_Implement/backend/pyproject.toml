@@ -20,7 +20,7 @@ dependencies = [
 test = [
   "pytest",
   "httpx",
-  "ruff",
+  "ruff==0.15.22",
 ]
 
 [tool.setuptools.packages.find]
