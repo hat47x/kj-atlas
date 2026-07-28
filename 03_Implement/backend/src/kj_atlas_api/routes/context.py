@@ -80,8 +80,6 @@ def _resolve_ce4_bundle_contract(payload: object = Body(...)) -> Ce4ResolveBundl
         code = str(exc)
         if code == "safe_mode_required":
             raise HTTPException(status_code=422, detail={"code": "safe_mode_required"}) from exc
-        if code == "dry_run_requires_no_side_effect":
-            raise HTTPException(status_code=422, detail={"code": "dry_run_requires_no_side_effect"}) from exc
         logger.warning("ce4_bundle_resolve_failed", extra={"error": code}, exc_info=True)
         raise HTTPException(status_code=400, detail={"code": "invalid_ce4_bundle_request"}) from exc
 
@@ -99,9 +97,6 @@ def _resolve_ce4_bundle_contract(payload: object = Body(...)) -> Ce4ResolveBundl
     }
     if any(not event.strip() for event in required_events.values()):
         raise HTTPException(status_code=422, detail={"code": "audit_chain_incomplete"})
-
-    if request.dryRun and response.sideEffect != "none":
-        raise HTTPException(status_code=422, detail={"code": "dry_run_requires_no_side_effect"})
 
     return response
 
