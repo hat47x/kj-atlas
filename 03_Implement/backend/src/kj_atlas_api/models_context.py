@@ -277,8 +277,6 @@ def build_ce4_resolved_bundle(request: Ce4ResolveBundleRequest) -> Ce4ResolveBun
     )
 
     side_effect = "none" if request.dryRun else "write"
-    if request.dryRun and side_effect != "none":
-        raise ValueError("dry_run_requires_no_side_effect")
 
     return Ce4ResolveBundleResponse(
         equivalenceKey=equivalence_key,
