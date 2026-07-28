@@ -8,5 +8,6 @@
   },
   "libOverrides": {
     "source-kit.mjs": "excludes src/main.tsx from the synth-entry sweep — its module-scope ReactDOM.createRoot(getElementById('root')!) throws when the render-check validator loads the bundle with no #root present, aborting the IIFE before window.KjAtlasFrontend is assigned (see BUNDLE_EXPORT 50/50 root cause)"
-  }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
 }
