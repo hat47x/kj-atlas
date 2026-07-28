@@ -112,5 +112,5 @@ Updated: 2026-07-20
 - [Segoe UI Emoji](https://learn.microsoft.com/en-us/typography/font-list/segoe-ui-emoji) — Windows 11
 - [Apple Color Emoji](https://developer.apple.com/fonts/) — macOS / iOS
 - `03_Implement/frontend/src/ui/RepresentativeVisualCuePrototypePanel.tsx` — 現行emoji使用コード
-- `01_Plans/adr/ADR-0060-representative-visual-cue-supply-boundary.md` — 供給経路と保存境界（Draft）
+- `01_Plans/adr/ADR-0060-representative-visual-cue-source-boundary.md` — 供給経路と保存境界（Accepted）
 - `01_Plans/issues/issue-DOMAIN-VISUAL-CUE-01-representative-visual-cues.md` — T5・T6・T7

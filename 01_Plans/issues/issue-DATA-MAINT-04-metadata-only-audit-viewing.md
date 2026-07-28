@@ -23,7 +23,7 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0035` Accepted 2026-07-13）
 - DecisionQueueRef（未確定時の参照先）: Resolved（`ADR-0035` Accepted 2026-07-13）
 
 ## 1) 課題 / Problem statement
