@@ -1,4 +1,5 @@
 import type { Card, DocumentV1, Edge, EvidenceLink, Island, RelationSummary } from "../types";
+import { stableSerialize } from "../../utils/stable_serialize";
 import type { PatchDocument, PatchOp, PatchOpKind } from "./patch_apply";
 
 export type ConflictItem = {
@@ -39,19 +40,6 @@ function getPatchOpEntityKey(op: PatchOp): string {
     case "delete_evidence_link":
       return `evidenceLink:${op.evidenceLinkId}`;
   }
-}
-
-function stableSerialize(value: unknown): string {
-  if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
-  }
-
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableSerialize(item)).join(",")}]`;
-  }
-
-  const entries = Object.entries(value).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-  return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${stableSerialize(item)}`).join(",")}}`;
 }
 
 function isEqual(left: unknown, right: unknown): boolean {

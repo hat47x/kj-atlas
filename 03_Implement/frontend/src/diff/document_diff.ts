@@ -1,12 +1,6 @@
 import type { DocumentV1, RelationSummary } from "../domain/types";
+import { stableSerialize } from "../utils/stable_serialize";
 import type { MergeEntityKind, MergeItem, MergeItemKind } from "./merge_items";
-
-function stableSerialize(value: unknown): string {
-  if (value === null || typeof value !== "object") return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map((item) => stableSerialize(item)).join(",")}]`;
-  const entries = Object.entries(value).sort(([a], [b]) => a.localeCompare(b));
-  return `{${entries.map(([key, entry]) => `${JSON.stringify(key)}:${stableSerialize(entry)}`).join(",")}}`;
-}
 
 function changedFields<T extends object>(before: T, after: T): string[] {
   const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
