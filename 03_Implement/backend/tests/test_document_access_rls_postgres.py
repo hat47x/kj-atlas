@@ -148,6 +148,13 @@ def _seed_tenant_documents(
                     payload_json="{}",
                 )
             )
+            # Force the documents row to be physically inserted (and thus
+            # visible to the FK check of the dependent rows below) before
+            # they are added to the same flush. PostgreSQL FK checks bypass
+            # RLS, but SQLAlchemy's automatic dependency sort across 3
+            # sibling tables sharing the same (tenant_id, doc_id) composite
+            # FK to `documents` is not reliable enough to trust implicitly.
+            db.flush()
             db.add(
                 DocumentAccessMetadataRow(
                     tenant_id=tenant_id,

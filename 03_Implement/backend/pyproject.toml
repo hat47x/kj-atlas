@@ -22,6 +22,14 @@ test = [
   "httpx",
   "ruff==0.15.22",
 ]
+# SAAS-TENANT-01 AC-5: driver for `postgresql+psycopg` (see
+# kj_atlas_api.db._normalize_database_url). Only needed to run the
+# `postgres`-marked tests (README.md "tenant RLSの実地matrix"); not a
+# runtime dependency of the app itself (production DB URL scheme is
+# postgresql+asyncpg, normalized at import time).
+postgres = [
+  "psycopg[binary]",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

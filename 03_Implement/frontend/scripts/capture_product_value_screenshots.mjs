@@ -250,8 +250,8 @@ async function captureFirstValue(browser) {
   await page.goto(baseUrl);
   fixture.enableSample();
   await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
-  await page.getByRole("option", { name: "利用者が最初に困ること" }).click();
-  await page.getByRole("option", { name: "観察メモから見えた根拠" }).click({ modifiers: ["Shift"] });
+  await page.getByRole("button", { name: "利用者が最初に困ること" }).click();
+  await page.getByRole("button", { name: "観察メモから見えた根拠" }).click({ modifiers: ["Shift"] });
   await page.getByRole("banner").getByRole("button", { name: /島を作成|Create Island/ }).click();
   await page.locator('[data-ui-region="selection-context"]').waitFor({ state: "visible" });
   await captureScreenshot(page, files.firstValue);
@@ -264,8 +264,8 @@ async function captureFirstValuePreflight(browser) {
   await page.goto(baseUrl);
   fixture.enableSample();
   await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
-  await page.getByRole("option", { name: "利用者が最初に困ること" }).click();
-  await page.getByRole("option", { name: "観察メモから見えた根拠" }).click({ modifiers: ["Shift"] });
+  await page.getByRole("button", { name: "利用者が最初に困ること" }).click();
+  await page.getByRole("button", { name: "観察メモから見えた根拠" }).click({ modifiers: ["Shift"] });
   await page.getByRole("banner").getByRole("button", { name: /島を作成|Create Island/ }).click();
   await page.getByRole("button", { name: /共有と再現|Share & Reproduce/ }).click();
   const summary = page.getByTestId("share-domain-expression-summary");
@@ -285,7 +285,7 @@ async function captureAmbiguity(browser) {
   await page.goto(baseUrl);
   fixture.enableSample();
   await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
-  await page.getByRole("option", { name: "まだ曖昧な主張" }).click();
+  await page.getByRole("button", { name: "まだ曖昧な主張" }).click();
   await page.locator('[data-ui-region="selection-context"]').waitFor({ state: "visible" });
   await captureScreenshot(page, files.ambiguity);
   await page.close();
@@ -301,7 +301,7 @@ async function captureAmbiguityPreflight(browser) {
   await page.goto(baseUrl);
   fixture.enableSample();
   await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
-  await page.getByRole("option", { name: "まだ曖昧な主張" }).click();
+  await page.getByRole("button", { name: "まだ曖昧な主張" }).click();
   await page.getByRole("button", { name: /共有と再現|Share & Reproduce/ }).click();
   const summary = page.getByTestId("share-domain-expression-summary");
   await summary.waitFor({ state: "visible" });
@@ -320,7 +320,7 @@ async function captureReviewPack(browser) {
   await page.goto(baseUrl);
   fixture.enableSample();
   await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
-  await page.getByRole("option", { name: "共有前に確認する主張" }).click();
+  await page.getByRole("button", { name: "共有前に確認する主張" }).click();
   await page.getByRole("button", { name: /共有と再現|Share & Reproduce/ }).click();
   await page.getByLabel(/読解アウトラインを含める|Include reading outline/).uncheck();
   await page.getByLabel(/診断結果を含める|Include diagnostics/).uncheck();
@@ -343,7 +343,7 @@ async function captureReadOnlyReview(browser) {
   await page.goto(readOnlyUrl.toString());
   fixture.enableSample();
   await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
-  await page.getByRole("option", { name: "共有前に確認する主張" }).click();
+  await page.getByRole("button", { name: "共有前に確認する主張" }).click();
   await page.getByText(/読み取り専用モードが有効|Read-only mode is active/).waitFor({ state: "visible" });
   await captureScreenshot(page, files.readOnlyReview);
   await page.close();

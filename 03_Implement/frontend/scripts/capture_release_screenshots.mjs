@@ -177,7 +177,7 @@ async function capture() {
     await page.setViewportSize({ width: 1440, height: 900 });
     await captureScreenshot(page, files.overview);
 
-    await page.getByRole("option", { name: /ユーザー課題を集める/ }).click();
+    await page.getByRole("button", { name: /ユーザー課題を集める/ }).click();
     await page.locator('[data-panel="selection-context"]').waitFor({ state: "visible" });
     await captureScreenshot(page, files.selection);
 

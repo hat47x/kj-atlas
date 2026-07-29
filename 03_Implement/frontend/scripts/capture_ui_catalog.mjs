@@ -184,7 +184,7 @@ async function capture() {
     // 2. Canvas with domain badges (claimType / holdState / critique / unreviewed)
     await step("ui-card-domain-badges", async () => {
       const page = await openSample(browser);
-      await page.getByRole("option", { name: /まだ曖昧な主張/ }).click();
+      await page.getByRole("button", { name: /まだ曖昧な主張/ }).click();
       await page.locator('[data-ui-region="selection-context"]').waitFor({ state: "visible" });
       await hideTransientStatus(page);
       await page.screenshot({ path: out("ui-card-domain-badges.png"), clip: { x: 0, y: 120, width: 980, height: 560 } });
@@ -194,7 +194,7 @@ async function capture() {
     // 3. Selection-context for a card (basic) with hold-state control
     await step("ui-selection-context-holdstate", async () => {
       const page = await openSample(browser);
-      await page.getByRole("option", { name: /まだ曖昧な主張/ }).click();
+      await page.getByRole("button", { name: /まだ曖昧な主張/ }).click();
       const aside = page.locator('[data-ui-region="selection-context"]');
       await aside.waitFor({ state: "visible" });
       await page.getByText(/判断保留/).first().scrollIntoViewIfNeeded().catch(() => {});
@@ -206,7 +206,7 @@ async function capture() {
     // 4. Island selection-context
     await step("ui-selection-context-island", async () => {
       const page = await openSample(browser);
-      await page.getByRole("option", { name: /確認が残るまとまり/ }).first().click().catch(async () => {
+      await page.getByRole("button", { name: /確認が残るまとまり/ }).first().click().catch(async () => {
         // fallback: click island title text
         await page.getByText(/確認が残るまとまり/).first().click();
       });
@@ -219,7 +219,7 @@ async function capture() {
     // 5. Advanced ON -> work-mode panels surfaced in the dedicated work-mode region
     await step("ui-advanced-work-mode-panels", async () => {
       const page = await openSample(browser);
-      await page.getByRole("option", { name: /まだ曖昧な主張/ }).click();
+      await page.getByRole("button", { name: /まだ曖昧な主張/ }).click();
       await page.getByRole("button", { name: /^詳細$|^Advanced$/ }).click();
       await page.getByRole("button", { name: /^作業モード$|^Work mode$/ }).click();
       await page.locator('[data-ui-region="work-mode"]').waitFor({ state: "visible" });
@@ -241,7 +241,7 @@ async function capture() {
     // 7. Card context menu (right-click)
     await step("ui-card-context-menu", async () => {
       const page = await openSample(browser);
-      await page.getByRole("option", { name: /そこから言える主張/ }).click({ button: "right" });
+      await page.getByRole("button", { name: /そこから言える主張/ }).click({ button: "right" });
       await page.waitForTimeout(300);
       await hideTransientStatus(page);
       await page.screenshot({ path: out("ui-card-context-menu.png"), clip: { x: 0, y: 120, width: 980, height: 560 } });
@@ -251,7 +251,7 @@ async function capture() {
     // 8. Card inline edit (double-click)
     await step("ui-card-inline-edit", async () => {
       const page = await openSample(browser);
-      await page.getByRole("option", { name: /そこから言える主張/ }).dblclick();
+      await page.getByRole("button", { name: /そこから言える主張/ }).dblclick();
       await page.waitForTimeout(300);
       await hideTransientStatus(page);
       await page.screenshot({ path: out("ui-card-inline-edit.png"), clip: { x: 0, y: 120, width: 980, height: 560 } });
@@ -261,7 +261,7 @@ async function capture() {
     // 9. Share & Reproduce pre-share preflight (full panel)
     await step("ui-share-preflight", async () => {
       const page = await openSample(browser);
-      await page.getByRole("option", { name: /そこから言える主張/ }).click();
+      await page.getByRole("button", { name: /そこから言える主張/ }).click();
       await page.getByRole("button", { name: /共有と再現|Share & Reproduce/ }).click();
       await page.locator('[data-panel="share-replay"]').waitFor({ state: "visible" });
       await hideTransientStatus(page);
@@ -272,7 +272,7 @@ async function capture() {
     // 10. Read-only mode
     await step("ui-read-only-mode", async () => {
       const page = await openSample(browser, { readOnly: true });
-      await page.getByRole("option", { name: /そこから言える主張/ }).click();
+      await page.getByRole("button", { name: /そこから言える主張/ }).click();
       await page.locator('[data-ui-region="selection-context"]').waitFor({ state: "visible" });
       await hideTransientStatus(page);
       await page.screenshot({ path: out("ui-read-only-mode.png") });
