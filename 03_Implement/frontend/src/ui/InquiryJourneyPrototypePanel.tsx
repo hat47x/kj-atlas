@@ -30,6 +30,7 @@ import type { DocumentV1 } from "../domain/types";
 import { downloadTextFile } from "../export/narrative_export";
 import { t } from "../i18n/translate";
 import { InquiryBundleWorkerClient } from "../worker/inquiry_bundle_client";
+import { InquiryEndConfirmationDialog, type InquiryEndDecision } from "./InquiryEndConfirmationDialog";
 
 type InquiryJourneyPrototypePanelProps = {
   document: DocumentV1 | null;
@@ -426,8 +427,8 @@ export function InquiryJourneyPrototypePanel({
     });
   };
 
-  const handleExport = async () => {
-    if (!bundle) return;
+  const handleExport = async (): Promise<boolean> => {
+    if (!bundle) return false;
     setIsBusy(true);
     setMessage(null);
     try {
@@ -443,7 +444,7 @@ export function InquiryJourneyPrototypePanel({
               : "inquiry_journey.prototype.export_error"
           ),
         });
-        return;
+        return false;
       }
       const serialized = await serializeInquiryBundle(projection.bundle);
       if (!serialized.ok) {
@@ -455,7 +456,7 @@ export function InquiryJourneyPrototypePanel({
               : "inquiry_journey.prototype.export_error"
           ),
         });
-        return;
+        return false;
       }
       const scopeSuffix = effectiveExportRoundId ? `-${fileStem(effectiveExportRoundId)}` : "";
       downloadTextFile(
@@ -469,9 +470,36 @@ export function InquiryJourneyPrototypePanel({
           ? "inquiry_journey.prototype.exported_round"
           : "inquiry_journey.prototype.exported"),
       });
+      return true;
     } finally {
       setIsBusy(false);
     }
+  };
+
+  // DOMAIN-W-ITERATION-01 AC-13 / T10: 3-choice end confirmation (save/
+  // discard/cancel), matching A-1's TenantChangeConfirmationDialog pattern.
+  // "save" only clears the on-screen inquiry once export actually succeeds
+  // (handleExport's own error message stays visible and the dialog remains
+  // open otherwise, so a failed save never silently discards the bundle).
+  const handleEndConfirmationDecision = async (decision: InquiryEndDecision) => {
+    if (decision === "cancel") {
+      setIsConfirmingEnd(false);
+      return;
+    }
+    if (decision === "save") {
+      const exported = await handleExport();
+      if (!exported) return;
+    }
+    setBundle(null);
+    setBranchUndoCheckpoint(null);
+    setMessage(null);
+    setIsConfirmingEnd(false);
+    setRecordParentRoundId("");
+    setComparisonFromRoundId("");
+    setComparisonToRoundId("");
+    setExportRoundId("");
+    setLineageCardId("");
+    setResumePreviewSnapshotId("");
   };
 
   const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -873,32 +901,10 @@ export function InquiryJourneyPrototypePanel({
               {t("inquiry_journey.prototype.end")}
             </button>
           ) : (
-            <div role="group" aria-label={t("inquiry_journey.prototype.end_confirm")} style={{ display: "grid", gap: 6 }}>
-              <div style={{ fontSize: 12, color: "#92400e" }}>{t("inquiry_journey.prototype.end_confirm")}</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBundle(null);
-                    setBranchUndoCheckpoint(null);
-                    setMessage(null);
-                    setIsConfirmingEnd(false);
-                    setRecordParentRoundId("");
-                    setComparisonFromRoundId("");
-                    setComparisonToRoundId("");
-                    setExportRoundId("");
-                    setLineageCardId("");
-                    setResumePreviewSnapshotId("");
-                  }}
-                  style={{ whiteSpace: "normal" }}
-                >
-                  {t("inquiry_journey.prototype.end_confirm_action")}
-                </button>
-                <button type="button" onClick={() => setIsConfirmingEnd(false)}>
-                  {t("inquiry_journey.prototype.end_cancel")}
-                </button>
-              </div>
-            </div>
+            <InquiryEndConfirmationDialog
+              isProcessing={isBusy}
+              onDecision={(decision) => void handleEndConfirmationDecision(decision)}
+            />
           )}
         </>
       )}

@@ -496,6 +496,11 @@ function CardViewComponent({
       ) : null}
       {!markerMode && isEditing ? (
         <textarea
+          // MVP-EXIT-01 screen-reader acceptance: without an accessible name a
+          // screen reader announces this field as an unlabeled edit box, so the
+          // "focus moved to the card body input" step of
+          // 04_Documentation/acceptance_check.md is not audible.
+          aria-label={t("card_view.edit_textarea_label")}
           defaultValue={card.text}
           autoFocus
           onFocus={(event) => event.currentTarget.select()}
