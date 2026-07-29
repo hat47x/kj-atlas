@@ -64,7 +64,7 @@
 - [x] AC-2: 既存データが`local-default`へ損失なくbackfillされ、再実行しても結果が変わらない。
 - [x] AC-3: `documents`と全Document従属表がtenant複合制約を持ち、docIdだけのDB query/joinが静的検査またはtestで検出される。
 - [ ] AC-4: SaaS profileでtenant不明・不一致、membership停止、adapter欠損、PDP不達をreadも含めてdenyする。
-- [ ] AC-5: shared schemaでDB側tenant guardが有効で、別tenant contextを使った直接SQLも行を取得・更新できない。
+- [x] AC-5: shared schemaでDB側tenant guardが有効で、別tenant contextを使った直接SQLも行を取得・更新できない。→ 実PostgreSQL・非superuser/非BYPASSRLS runtime roleでの実地検証完了（2026-07-29チェックポイント）。
 - [ ] AC-6: `GET /session/context`とactive tenant変更がmembership allowlistだけを返し、自由入力tenantの発見・切替を許可しない。
 - [ ] AC-7: Workspace、Tenant Admin、Platform Control Planeのcapability/audienceが分離され、Platform operatorに文書readが暗黙付与されない。
 - [ ] AC-8: cache、job、MCP、agent credential、audit、storage keyにtenantIdが伝播し、欠落時は処理を停止する。
@@ -522,3 +522,12 @@
 
 - RLS coverage contractを、migrationで`ENABLE ROW LEVEL SECURITY`する表集合とmodel集合の一致だけでなく、全対象表に`USING`と`WITH CHECK`を持つpolicyが定義されることまで拡張した。既存tenant B行をtenant A contextから更新する`USING`側に加え、自tenant行のtenantIdをtenant Bへ書き換える退避を拒否する`WITH CHECK`側を明示する。
 - 条件付きPostgreSQL matrixでは、依存行を持たないDocumentと管理監査行のtenantId再割当がSQL errorになり、rollback後もtenant A所属のままであることを追加した。関連migration／tenant DB guard／coverage contract 15件pass・実PostgreSQL 1件skip、Ruffと変更対象format checkを通過した。実地実行までAC-5とSaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-07-29: real PostgreSQL RLS field validation
+
+- ローカル環境にDocker（v28.3.3）が利用可能であることを確認し、`03_Implement/deploy/docker-compose.yml`の共有DB設定・loopback限定方針（`DEPLOY-NET-01`）には触れず、検証専用の使い捨て`postgres:16-alpine`コンテナ（ホストport 15432、非公開設定と分離）を起動した。README記載の手順どおり、migration所有者ロールと、superuser属性・`BYPASSRLS`を持たない`kj_atlas_runtime`ロールを分離して作成した。
+- `psycopg[binary]`が本プロジェクトの依存関係に一度も宣言されていなかったため（`db.py`の`_normalize_database_url`が`postgresql+asyncpg`を`postgresql+psycopg`へ変換する一方、同期driverが未導入）、`pyproject.toml`へ`postgres` optional-dependency groupとして追加し、次回以降のセッションが本手順を再現できるようにした。
+- 全13件のAlembic migrationを実PostgreSQLへ適用し、`test_document_access_rls_postgres.py`（AC-5のRLS matrix本体）を実行した結果、**実PostgreSQLでしか再現しない実バグを発見**: テストの`_seed_tenant_documents`が`documents`・`document_access_metadata`・`merge_decision_logs`・`document_access_admin_audit_events`の4行を単一flushで追加しており、SQLAlchemyのUnit of Workが複数テーブルにまたがる複合列（`tenant_id`+`doc_id`）FKの依存順序を正しく解決できず、`documents`行が物理挿入される前に依存行のINSERTが実行され`ForeignKeyViolation`になっていた（PostgreSQLのFK制約チェック自体はRLSをバイパスするため、RLS設計側の不備ではないことも確認した）。`db.flush()`を`documents`行追加の直後に挿入し依存行の追加より前に置くテスト側修正で解消した（製品コードは無変更）。
+- 併せて`kj_atlas_runtime`ロールへ`ALTER DEFAULT PRIVILEGES`でのsequence USAGE権限が漏れていたため付与し（`merge_decision_logs.id`等の自動採番列に必要）、`test_docs_roundtrip.py`のPostgres roundtripテストがAlembicをsubprocessで呼ぶ際に`alembic`実行体をPATH解決できない既知の問題（2026-07-18チェックポイント既述）を、venvの`bin`をPATHへ前置して解消した。
+- 検証: `pytest -m postgres`で対象19件（`test_document_access_rls_postgres.py`のpool再利用・tenant A/B越境・RLS coverage matrixを含む2件、`test_docs_roundtrip.py`のtenant分離roundtrip 17件）が実PostgreSQL・非superuser runtime roleに対して全pass。backend全体スイートも同一実PostgreSQL環境下で実行し回帰なしを確認した（実行結果は本checkpoint更新後にRunning記録を追記）。
+- 未実施のまま残る項目: 実trusted auth edge（IdP/OIDC/SAML検証）アダプタの実runtime接続、実外部PDP/binding/capability serviceへの到達性検証、複数タブでのtenant切替の実ブラウザE2E。これらは外部サービスまたは実ブラウザ複数タブ自動化が必要であり、AC-4/6/7/8/10/12/13とSaaS profile起動拒否は引き続き維持する。AC-5はPostgreSQL RLS実地検証の完了により充足したと判断する。

@@ -99,7 +99,7 @@
 - [x] AC-10: `KJ_ATLAS_LLM_PROVIDER=none` で中核操作を完了できる。
 - [x] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。→ `inquiry_journey_model.md` §4.4（SafeMode派生bundle契約）、§4.5（Import strict validation契約）、§4.6（部分共有契約）、§4.3（削除と保持）、§6 不変条件 8-10 として契約化済み（2026-07-20）。SafeMode適用結果のbundle内metadata（`InquiryExportInfoV1`）は型追加が未了のため、別途follow-upする。
 - [x] AC-12: マウス・キーボード・390px・代表規模のE2Eが通る。
-- [ ] AC-13: 探究終了（破壊的操作）の確認は、A-1（エージェント連携）と同型の保存・破棄・取消の3択とし、SafeMode既定ONの継承と出典・文面のサニタイズを満たす。
+- [x] AC-13: 探究終了（破壊的操作）の確認は、A-1（エージェント連携）と同型の保存・破棄・取消の3択とし、SafeMode既定ONの継承と出典・文面のサニタイズを満たす。→ 2026-07-29チェックポイントで完了。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -115,7 +115,7 @@
 - [x] T7 手動中核UIとa11y/i18n/性能回帰を実装する。
 - [x] T8 マウス・キーボード・390pxのE2Eとスクリーンショットを取得する。
 - [ ] T9 Phase 2の実使用後に、AI支援を別issueへ分割するか判断する。
-- [ ] T10 Claude Design（外部レビュー、2026-07-21 P35）の指摘を踏まえ、探究終了確認をAC-13の3択へ改修し、常設タブ化時のメニュー分類（P29確定6分類：ファイル/編集/カード/表示/作業/共有）内の配置は実機照合時に決定する（新規7分類は作らない＝CB-1）。
+- [ ] T10 Claude Design（外部レビュー、2026-07-21 P35）の指摘を踏まえ、探究終了確認をAC-13の3択へ改修し、常設タブ化時のメニュー分類（P29確定6分類：ファイル/編集/カード/表示/作業/共有）内の配置は実機照合時に決定する（新規7分類は作らない＝CB-1）。→ 3択への改修（AC-13本体）は2026-07-29チェックポイントで完了。常設タブ化時のメニュー配置は未着手のまま残す（プロトタイプ内の高度機能タブのまま。実機照合＝Claude Design側の判断待ち）。
 
 ### Phase 0 実装証跡（2026-07-15）
 
@@ -222,6 +222,14 @@
 - 永続型の主要オブジェクトごとに全フィールドの扱いを型で列挙した。将来フィールドが追加された場合はSafeMode方針を明示するまでtypecheckを失敗させ、未知フィールドを含む入力も派生前のstrict validationでfail-closedにする。
 - unit testで自由記述、URL、署名、主体参照、任意JSON payloadが派生物へ残らないこと、構造と人手レビュー状態の維持、元bundle非変更、digest再計算、strict roundtrip、未知フィールド拒否を確認した。
 - `safeModeApplied: true`は現時点では関数結果だけに返し、永続bundleへ記録しない。共有範囲とSafeMode適用結果を受信側でも確認できる契約version、保持・履歴削除、テナント境界が未決定のため、画面に「安全な共有」として公開せず、AC-11とsupport levelは引き続き未完了の`L0: Planned`とする。
+
+### AC-13 探究終了の3択確認（2026-07-29）
+
+- `InquiryEndConfirmationDialog.tsx`を新設し、A-1（`TenantChangeConfirmationDialog`、SAAS-TENANT-01 F-1）と同一のalertdialogパターン（`role="alertdialog"`、取消への初期focus、Escape=取消、Tabフォーカストラップ、処理中は3操作を無効化しaria-liveで告知）で、探究終了を保存/破棄/取消の3択へ改修した。従来の2択（`role="group"`、終了/続ける）を置き換えた。
+- ダイアログは動的コンテンツを一切補間しない静的文言のみで構成し、SafeMode既定ONの継承をラウンド・カード本文の露出なしという構造で満たす（テストで`t(...)`呼び出しが第二引数を取らないことを固定）。
+- `handleExport()`を`Promise<boolean>`へ変更し、「保存」選択時はexportが実際に成功した場合のみ画面上の探究をクリアする。exportが失敗した場合はエラーメッセージを表示したままダイアログを開いたままにし、失敗時に黙って破棄しない。
+- unit test 5件（alertdialog契約、処理中の3操作無効化とaria-live、日本語/英語の文言、フォーカス/Escapeの実装確認、動的コンテンツ非補間の確認）、E2E `inquiry_end_confirmation.spec.ts` 2件（キーボードでのフォーカス管理・Escape取消・discard、保存→ダウンロード確認後のクリア）を追加し、Chromiumで実行して確認した。既存のinquiry系E2E 4件（round comparison, handoff review, partial export, capacity budget）に回帰がないことも確認した。
+- 検証: frontend typecheck pass、対象unit test 5件・既存i18nテストスイート含め全pass、Playwright新規2件・既存4件全pass。T10の3択改修部分はこれで完了。常設タブ化時のメニュー配置は別途Claude Design実機照合待ちとして残す。
 
 ## 7) 検証計画 / Validation plan
 
