@@ -219,3 +219,7 @@ result
 result-*
 # Claude Code（個人ローカル設定。秘匿情報を含むため git 管理外。詳細は .claude/README.md / ADR-0045）
 .claude/settings.local.json
+.claude/worktrees/
+
+# Playwright
+**/test-results/
