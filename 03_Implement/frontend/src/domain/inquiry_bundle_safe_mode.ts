@@ -210,7 +210,7 @@ const CARD_FIELDS = {
 
 const CARD_META_FIELDS = {
   seq: "preserve",
-  source: "omit",
+  source: "rebuild",
 } satisfies Record<keyof CardMeta, FieldPolicy>;
 
 const CARD_KA_FIELDS = {
@@ -504,6 +504,14 @@ export type InquirySafeModeBundleResult =
   | { ok: true; bundle: InquiryBundleV1; safeModeApplied: true }
   | { ok: false; errors: InquiryBundleIoError[] };
 
+export type DocumentSafeModeProjectionOptions = Readonly<{
+  /**
+   * Source references have their own explicit share opt-in (schemas.md §15.4).
+   * Inquiry bundles do not expose that opt-in and therefore keep the default.
+   */
+  includeSourceReferences?: boolean;
+}>;
+
 function redact(value: string): string {
   return SafeModePolicy.redactText(value, true);
 }
@@ -629,8 +637,17 @@ function cloneTransform(transform: Transform): Transform {
   return { panX: transform.panX, panY: transform.panY, zoom: transform.zoom };
 }
 
-function sanitizeCardMeta(meta: CardMeta): CardMeta | undefined {
-  return meta.seq === undefined ? undefined : { seq: meta.seq };
+function sanitizeCardMeta(
+  meta: CardMeta,
+  includeSourceReferences: boolean,
+): CardMeta | undefined {
+  const sanitized: CardMeta = {
+    ...(meta.seq !== undefined ? { seq: meta.seq } : {}),
+    ...(includeSourceReferences && meta.source !== undefined
+      ? { source: meta.source }
+      : {}),
+  };
+  return Object.keys(sanitized).length === 0 ? undefined : sanitized;
 }
 
 function sanitizeCardKa(ka: CardKa): CardKa {
@@ -640,8 +657,10 @@ function sanitizeCardKa(ka: CardKa): CardKa {
   };
 }
 
-function sanitizeCard(card: Card): Card {
-  const meta = card.meta === undefined ? undefined : sanitizeCardMeta(card.meta);
+function sanitizeCard(card: Card, includeSourceReferences: boolean): Card {
+  const meta = card.meta === undefined
+    ? undefined
+    : sanitizeCardMeta(card.meta, includeSourceReferences);
   return {
     id: card.id,
     text: redact(card.text),
@@ -956,7 +975,16 @@ function sanitizeShelfEntry(entry: ShelfEntry): ShelfEntry {
   };
 }
 
-function sanitizeDocument(document: DocumentV1): DocumentV1 {
+/**
+ * Builds a structurally importable SafeMode projection without changing the
+ * working Document. The exhaustive field maps above make newly persisted
+ * fields a compile-time decision instead of silently copying future free text.
+ */
+export function deriveDocumentSafeModeProjection(
+  document: DocumentV1,
+  options: DocumentSafeModeProjectionOptions = {},
+): DocumentV1 {
+  const includeSourceReferences = options.includeSourceReferences ?? false;
   return {
     version: document.version,
     id: document.id,
@@ -964,7 +992,9 @@ function sanitizeDocument(document: DocumentV1): DocumentV1 {
     createdAt: document.createdAt,
     updatedAt: document.updatedAt,
     transform: cloneTransform(document.transform),
-    cards: document.cards.map(sanitizeCard),
+    cards: document.cards.map((card) =>
+      sanitizeCard(card, includeSourceReferences)
+    ),
     edges: document.edges.map(sanitizeEdge),
     islands: document.islands.map(sanitizeIsland),
     ...(document.readingOrder !== undefined ? { readingOrder: [...document.readingOrder] } : {}),
@@ -1002,7 +1032,7 @@ function sanitizeSnapshot(snapshot: RoundSnapshotV1): RoundSnapshotV1 {
     snapshotId: snapshot.snapshotId,
     createdAt: snapshot.createdAt,
     canonicalDigest: snapshot.canonicalDigest,
-    document: sanitizeDocument(snapshot.document),
+    document: deriveDocumentSafeModeProjection(snapshot.document),
   };
 }
 

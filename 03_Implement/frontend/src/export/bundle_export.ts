@@ -1,4 +1,5 @@
 import type { DocumentV1 } from "../domain/types";
+import { deriveDocumentSafeModeProjection } from "../domain/inquiry_bundle_safe_mode";
 import { buildContradictionTraceMd } from "../domain/view/contradiction_trace";
 import { analyzeContradictions, type ContradictionReport } from "../domain/view/contradiction_checks";
 import { analyzeDialecticBalance, type DialecticBalanceReport } from "../domain/view/dialectic_balance";
@@ -172,7 +173,10 @@ function resolveExportGranularity(context: BundleExportContext): ExportGranulari
  * references never leave the workspace without an explicit opt-in. Backup
  * JSON/PUT paths do not go through here and keep meta intact.
  */
-function resolveShareDocument(doc: DocumentV1, context: BundleExportContext): DocumentV1 {
+function resolveShareDocument(
+  doc: DocumentV1,
+  context: BundleExportContext,
+): DocumentV1 {
   if (context.includeSourceReferences) {
     return doc;
   }
@@ -189,6 +193,18 @@ function resolveShareDocument(doc: DocumentV1, context: BundleExportContext): Do
       return rest;
     }),
   };
+}
+
+function resolveBundledDocument(
+  sourceScopedDocument: DocumentV1,
+  context: BundleExportContext,
+): DocumentV1 {
+  if (!(context.safeMode ?? true)) {
+    return sourceScopedDocument;
+  }
+  return deriveDocumentSafeModeProjection(sourceScopedDocument, {
+    includeSourceReferences: context.includeSourceReferences ?? false,
+  });
 }
 
 function shouldIncludeSelectedCardTraces(context: BundleExportContext): boolean {
@@ -246,31 +262,32 @@ function buildDiagnosticsMd(doc: DocumentV1, context: BundleExportContext): stri
 }
 
 export function buildExportBundle(doc: DocumentV1, viewState: unknown, context: BundleExportContext): BundleFile[] {
-  doc = resolveShareDocument(doc, context);
   const safeMode = context.safeMode ?? true;
+  const contentDocument = resolveShareDocument(doc, context);
+  const bundledDocument = resolveBundledDocument(contentDocument, context);
   const root = context.rootFolderPath.endsWith("/") ? context.rootFolderPath.slice(0, -1) : context.rootFolderPath;
   const bundleFiles: BundleFile[] = [
     toJsonFile(`${root}/bundle_manifest.json`, buildBundleManifest(context)),
-    toJsonFile(`${root}/document.json`, doc),
-    toJsonFile(`${root}/merge_decision_audit.json`, { entries: buildMergeDecisionAuditEntries(doc) }),
+    toJsonFile(`${root}/document.json`, bundledDocument),
+    toJsonFile(`${root}/merge_decision_audit.json`, { entries: buildMergeDecisionAuditEntries(bundledDocument) }),
     toJsonFile(`${root}/view.json`, viewState),
   ];
 
   if (context.includeOutline) {
-    const outline = buildReadingOutlineMd(doc, context.readingState, resolveOutlineOptions(context, safeMode));
+    const outline = buildReadingOutlineMd(contentDocument, context.readingState, resolveOutlineOptions(context, safeMode));
     bundleFiles.push({ path: `${root}/outline.md`, content: outline, mime: "text/markdown" });
   }
 
   if (context.includeDiagnostics) {
     bundleFiles.push({
       path: `${root}/diagnostics.md`,
-      content: buildDiagnosticsMd(doc, context),
+      content: buildDiagnosticsMd(contentDocument, context),
       mime: "text/markdown",
     });
   }
 
   if (shouldIncludeSelectedCardTraces(context) && context.selectedCardId) {
-    const evidenceTrace = buildEvidenceTraceMd(doc, context.selectedCardId, { safeMode });
+    const evidenceTrace = buildEvidenceTraceMd(contentDocument, context.selectedCardId, { safeMode });
     if (!evidenceTrace.startsWith("Error:")) {
       bundleFiles.push({
         path: `${root}/evidence_trace_${context.selectedCardId}.md`,
@@ -279,7 +296,7 @@ export function buildExportBundle(doc: DocumentV1, viewState: unknown, context: 
       });
     }
 
-    const contradictionTrace = buildContradictionTraceMd(doc, context.selectedCardId, { safeMode });
+    const contradictionTrace = buildContradictionTraceMd(contentDocument, context.selectedCardId, { safeMode });
     if (!contradictionTrace.startsWith("Error:")) {
       bundleFiles.push({
         path: `${root}/contradiction_trace_${context.selectedCardId}.md`,
@@ -288,7 +305,7 @@ export function buildExportBundle(doc: DocumentV1, viewState: unknown, context: 
       });
     }
 
-    const analytics = computeTraceAnalytics(doc, context.selectedCardId, { kind: "both", safeMode, maxHops: 4, maxNodes: 80, includeCycleDetection: true });
+    const analytics = computeTraceAnalytics(contentDocument, context.selectedCardId, { kind: "both", safeMode, maxHops: 4, maxNodes: 80, includeCycleDetection: true });
     bundleFiles.push({
       path: `${root}/trace_analytics_${context.selectedCardId}.md`,
       content: buildTraceAnalyticsMd(analytics),
@@ -305,18 +322,19 @@ export async function buildExportBundleWithWorkers(
   context: BundleExportContext,
   options: { signal?: AbortSignal; onProgress?: (stage: BundleExportProgressStage) => void } = {}
  ): Promise<BundleFile[]> {
-  doc = resolveShareDocument(doc, context);
   const safeMode = context.safeMode ?? true;
+  const contentDocument = resolveShareDocument(doc, context);
+  const bundledDocument = resolveBundledDocument(contentDocument, context);
   const root = context.rootFolderPath.endsWith("/") ? context.rootFolderPath.slice(0, -1) : context.rootFolderPath;
   const bundleFiles: BundleFile[] = [
     toJsonFile(`${root}/bundle_manifest.json`, buildBundleManifest(context)),
-    toJsonFile(`${root}/document.json`, doc),
-    toJsonFile(`${root}/merge_decision_audit.json`, { entries: buildMergeDecisionAuditEntries(doc) }),
+    toJsonFile(`${root}/document.json`, bundledDocument),
+    toJsonFile(`${root}/merge_decision_audit.json`, { entries: buildMergeDecisionAuditEntries(bundledDocument) }),
     toJsonFile(`${root}/view.json`, viewState),
   ];
 
   if (context.includeOutline) {
-    const outline = buildReadingOutlineMd(doc, context.readingState, resolveOutlineOptions(context, safeMode));
+    const outline = buildReadingOutlineMd(contentDocument, context.readingState, resolveOutlineOptions(context, safeMode));
     bundleFiles.push({ path: `${root}/outline.md`, content: outline, mime: "text/markdown" });
   }
 
@@ -326,7 +344,7 @@ export async function buildExportBundleWithWorkers(
     if (context.includeDiagnostics) {
       options.onProgress?.("diagnostics");
       const diagnosticsOutcome = await diagnosticsClient.computeDiagnostics({
-        doc,
+        doc: contentDocument,
         view: {
           readingMode: context.readingMode,
           reviewedOnly: context.reviewedOnly,
@@ -349,7 +367,7 @@ export async function buildExportBundleWithWorkers(
         includeRationale: false,
       };
       options.onProgress?.("evidence_trace");
-      const evidenceOutcome = await traceClient.computeTrace({ doc, options: { ...sharedOptions, kind: "evidence" } }, { signal: options.signal });
+      const evidenceOutcome = await traceClient.computeTrace({ doc: contentDocument, options: { ...sharedOptions, kind: "evidence" } }, { signal: options.signal });
       if (evidenceOutcome.status === "cancelled") {
         throw new Error("Trace generation cancelled");
       }
@@ -358,7 +376,7 @@ export async function buildExportBundleWithWorkers(
       }
 
       options.onProgress?.("contradiction_trace");
-      const contradictionOutcome = await traceClient.computeTrace({ doc, options: { ...sharedOptions, kind: "contradiction" } }, { signal: options.signal });
+      const contradictionOutcome = await traceClient.computeTrace({ doc: contentDocument, options: { ...sharedOptions, kind: "contradiction" } }, { signal: options.signal });
       if (contradictionOutcome.status === "cancelled") {
         throw new Error("Trace generation cancelled");
       }
@@ -368,7 +386,7 @@ export async function buildExportBundleWithWorkers(
 
       options.onProgress?.("trace_analytics");
       const analyticsOutcome = await traceClient.computeTraceAnalytics({
-        doc,
+        doc: contentDocument,
         options: {
           startCardId: context.selectedCardId,
           kind: "both",

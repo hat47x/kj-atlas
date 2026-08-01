@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { DocumentV1 } from "../domain/types";
+import { validateDocumentV1Strict } from "../domain/validate_doc";
 import JSZip from "jszip";
 import { buildBundleZipBlob, buildExportBundle, buildExportBundleWithWorkers } from "./bundle_export";
 import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
+import { parseDocumentJson } from "../import/document_import";
+import { detectReviewPackFiles, readZipFiles } from "../import/zip_import";
 import evidenceAddBaseRaw from "../../tests/fixtures/review-selective-merge/evidence-add.base.json?raw";
 import evidenceAddIncomingRaw from "../../tests/fixtures/review-selective-merge/evidence-add.incoming.json?raw";
 import claimTypeBaseRaw from "../../tests/fixtures/review-selective-merge/claim-type.base.json?raw";
@@ -384,12 +387,16 @@ describe("buildExportBundle", () => {
     expect(outline).not.toContain("SECRET_UNREVIEWED_SUMMARY");
     expect(diagnostics).not.toContain("SECRET_DIAGNOSTIC_DETAIL");
   });
-  test("defaults to safe mode for exports when context.safeMode is omitted", () => {
+  test("defaults to safe mode for exports when context.safeMode is omitted", async () => {
     const docWithSecret: DocumentV1 = {
       ...baseDoc,
       cards: baseDoc.cards.map((card) => ({ ...card, text: card.id === "c2" ? "SECRET_TEXT_DO_NOT_LEAK" : card.text })),
       islands: [{ ...baseDoc.islands[0], summaryReviewed: false, summaryText: "SECRET_TEXT_DO_NOT_LEAK" }],
     };
+    Object.assign(docWithSecret.cards[0], {
+      futureSensitiveField: "SECRET_FUTURE_FIELD_DO_NOT_LEAK",
+    });
+    const sourceBefore = structuredClone(docWithSecret);
 
     const files = buildExportBundle(docWithSecret, { camera: { zoom: 1 } }, {
       rootFolderPath: "kj-atlas-export-20260101-010203",
@@ -410,11 +417,70 @@ describe("buildExportBundle", () => {
       },
     });
 
-    const markdownJoined = files
-      .filter((file) => file.mime === "text/markdown")
+    const bundleText = files
       .map((file) => String(file.content))
       .join("\n");
-    expect(markdownJoined).not.toContain("SECRET_TEXT_DO_NOT_LEAK");
+    expect(bundleText).not.toContain("SECRET_TEXT_DO_NOT_LEAK");
+    expect(bundleText).not.toContain("SECRET_FUTURE_FIELD_DO_NOT_LEAK");
+
+    const documentJson = String(files.find((file) => file.path.endsWith("/document.json"))?.content ?? "");
+    const parsedDocument = JSON.parse(documentJson) as unknown;
+    expect(documentJson).toContain("[REDACTED]");
+    expect(validateDocumentV1Strict(parsedDocument)).toMatchObject({ ok: true });
+    expect(docWithSecret).toEqual(sourceBefore);
+
+    const zipBlob = await buildBundleZipBlob(files);
+    const imported = await readZipFiles(new File(
+      [zipBlob],
+      "kj-atlas-export-20260101-010203.zip",
+      { type: "application/zip" },
+    ));
+    const documentPath = detectReviewPackFiles(imported.entries).documentPath;
+    const importedDocumentJson = documentPath === null
+      ? undefined
+      : imported.entries.get(documentPath);
+    expect(typeof importedDocumentJson).toBe("string");
+    const parsedImport = parseDocumentJson(String(importedDocumentJson));
+    expect(parsedImport).toMatchObject({ ok: true });
+    if (parsedImport.ok) {
+      expect(JSON.stringify(parsedImport.document)).not.toContain("SECRET_");
+      expect(parsedImport.document.cards[0]?.text).toContain("[REDACTED]");
+      expect(parsedImport.document.cards[0]?.textReviewed).toBe(true);
+    }
+  });
+
+  test("keeps the complete document in a bundle only when SafeMode is explicitly disabled", () => {
+    const docWithSecret: DocumentV1 = {
+      ...baseDoc,
+      cards: baseDoc.cards.map((card) => ({
+        ...card,
+        text: card.id === "c2" ? "SECRET_TEXT_ALLOWED_WITH_SAFEMODE_OFF" : card.text,
+      })),
+    };
+
+    const files = buildExportBundle(docWithSecret, { camera: { zoom: 1 } }, {
+      rootFolderPath: "kj-atlas-export-20260101-010203",
+      safeMode: false,
+      includeOutline: false,
+      includeDiagnostics: false,
+      includeSelectedCardTraces: false,
+      selectedCardId: null,
+      deterministicNowIso: "2026-01-02T00:00:00.000Z",
+      readingMode: "islands",
+      reviewedOnly: false,
+      readingState: {
+        readingNavEnabled: false,
+        readingIndex: 0,
+        readingMode: "islands",
+        reviewedOnly: false,
+        safeMode: false,
+        generatedAt: "2026-01-02T00:00:00.000Z",
+      },
+    });
+
+    const documentJson = String(files.find((file) => file.path.endsWith("/document.json"))?.content ?? "");
+    expect(documentJson).toContain("SECRET_TEXT_ALLOWED_WITH_SAFEMODE_OFF");
+    expect(validateDocumentV1Strict(JSON.parse(documentJson) as unknown)).toMatchObject({ ok: true });
   });
 
   test("strips Card.meta from shared document.json by default (schemas.md 15.4)", () => {
@@ -486,7 +552,7 @@ describe("buildExportBundle", () => {
     expect(parsed.cards.find((card) => card.id === "c1")?.meta).toEqual({ seq: 7, source: "INTERVIEW_A_LINE_12" });
   });
 
-  test("worker bundle path also strips Card.meta by default", async () => {
+  test("worker bundle path masks document content and strips Card.meta by default", async () => {
     globalThis.Worker = class {
       constructor() {
         throw new Error("worker unavailable");
@@ -497,9 +563,25 @@ describe("buildExportBundle", () => {
     const docWithMeta: DocumentV1 = {
       ...baseDoc,
       cards: baseDoc.cards.map((card) =>
-        card.id === "c1" ? { ...card, meta: { seq: 7, source: "INTERVIEW_A_LINE_12" } } : card,
+        card.id === "c1"
+          ? {
+              ...card,
+              text: "SECRET_WORKER_DOCUMENT_TEXT",
+              meta: { seq: 7, source: "INTERVIEW_A_LINE_12" },
+            }
+          : card,
       ),
+      islands: [{
+        ...baseDoc.islands[0],
+        summaryText: "SECRET_WORKER_DOCUMENT_TEXT",
+        summaryReviewed: false,
+      }],
+      mergeSuggestionDecisions: baseDoc.mergeSuggestionDecisions?.map((decision) => ({
+        ...decision,
+        rationale: "SECRET_WORKER_DOCUMENT_TEXT",
+      })),
     };
+    const sourceBefore = structuredClone(docWithMeta);
 
     const files = await buildExportBundleWithWorkers(docWithMeta, { camera: { zoom: 1 } }, {
       rootFolderPath: "kj-atlas-export-20260101-010203",
@@ -523,9 +605,12 @@ describe("buildExportBundle", () => {
 
     const documentJson = String(files.find((file) => file.path.endsWith("/document.json"))?.content ?? "");
     expect(documentJson).not.toContain("INTERVIEW_A_LINE_12");
-    // integrity.json must hash the stripped document, so it must not embed the raw reference either.
     const joined = files.map((file) => String(file.content)).join("\n");
     expect(joined).not.toContain("INTERVIEW_A_LINE_12");
+    expect(joined).not.toContain("SECRET_WORKER_DOCUMENT_TEXT");
+    expect(documentJson).toContain("[REDACTED]");
+    expect(validateDocumentV1Strict(JSON.parse(documentJson) as unknown)).toMatchObject({ ok: true });
+    expect(docWithMeta).toEqual(sourceBefore);
   });
 
   test("falls back when worker init fails and still emits diagnostics/traces", async () => {

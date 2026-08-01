@@ -3,13 +3,13 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Security
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0
 - Owner: Maintainer
-- Scope: `03_Implement/frontend/src/export/bundle_export.ts`, `03_Implement/frontend/src/export/bundle_export.test.ts`, `03_Implement/frontend/src/ui/SharePanel.tsx`, `03_Implement/frontend/src/i18n/locales/{en,ja}.json`
-- Related ADR/Spec: `AGENTS.md`（SafeMode既定ONは最優先の安全境界）, `02_Architecture/architecture.md`, `THREAT_MODEL.md`
+- Scope: `03_Implement/frontend/src/export/bundle_export.ts`, `03_Implement/frontend/src/export/bundle_export.test.ts`, `03_Implement/frontend/src/domain/inquiry_bundle_safe_mode.ts`
+- Related ADR/Spec: `AGENTS.md`（SafeMode既定ONは最優先の安全境界）, `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`, `02_Architecture/architecture.md`, `02_Architecture/schemas.md` §15.4, `THREAT_MODEL.md`
 - Expected verification level: `unit`
 
 ## 課題
@@ -34,10 +34,10 @@
 
 ## 受入条件
 
-- [ ] SafeMode ONで生成されたバンドルの `document.json` が、`SharePanel` の開示文言（共有/レビューパックのマスクは無効化不可）と矛盾しない内容になっている。
-- [ ] `bundle_export.test.ts` に、`document.json`（またはバンドル内の全ファイル）を対象にしたリーク検証テストが追加され、意図した挙動（マスクされる／除外される／文言が実態を正しく説明する、のいずれか採用した方針）を担保する。
-- [ ] 関連する安全・互換性を損なわない（特に既存の正規インポート/ラウンドトリップフローが壊れないことを確認する）。
-- [ ] 宣言した検証を実行するか、未実施理由を記録する。
+- [x] SafeMode ONで生成されたバンドルの `document.json` が、`SharePanel` の開示文言（共有/レビューパックのマスクは無効化不可）と矛盾しない内容になっている。
+- [x] `bundle_export.test.ts` に、`document.json`（またはバンドル内の全ファイル）を対象にしたリーク検証テストが追加され、意図した挙動（マスクされる／除外される／文言が実態を正しく説明する、のいずれか採用した方針）を担保する。
+- [x] 関連する安全・互換性を損なわない（特に既存の正規インポート/ラウンドトリップフローが壊れないことを確認する）。
+- [x] 宣言した検証を実行するか、未実施理由を記録する。
 
 ## 検証計画
 
@@ -46,6 +46,27 @@
   - 採用した方針に応じて `src/import/zip_import.test.ts` も実行し、ラウンドトリップ（インポート）に回帰がないことを確認する。
 - 期待結果:
   - 新規/更新したテストがSafeMode ON時の `document.json` の扱い（マスク・除外・文言修正のいずれか）を正しく検証し、全テストが green になる。
+
+## 実装・判断記録（2026-08-01）
+
+- 採用方針: `(a)`。既存の共有SafeMode契約を維持しつつ、再取込に必要な `DocumentV1` の構造を残せるため、SafeMode用の派生Documentを `document.json` として出力する。
+- 適用範囲:
+  - 既存の問い合わせバンドル用SafeMode投影をDocument単位で再利用し、自由記述をマスク、外部URL・再提案差分・矛盾判断などの秘匿対象を省略する。
+  - 同期経路と実運用のworker経路の両方で同じ投影を使用する。
+  - 作業中Document、`PUT /docs`、バックアップ用Document JSONは変更しない。SafeMode OFF時は従来どおり共有範囲内の完全なDocumentを出力する。
+  - `Card.meta.source` はSafeModeとは独立した既存の明示オプトインを維持する。
+- 互換性の解釈:
+  - SafeMode版 `document.json` は `DocumentV1` としてZIPから再取込できる構造的に有効な派生物であり、秘匿前本文を復元するlossless backupではない。
+  - 本文をマスクしても既存のレビュー状態は出所文書の構造メタデータとして保持する。新たに `human_reviewed` を設定する処理は追加していない。
+  - 投影は既知フィールドから新規オブジェクトを再構成する。型にフィールドが増えた場合は網羅的フィールド方針がコンパイル時に判断を要求し、実行時の未知フィールドは共有物へコピーしない。
+- ADR判断: 新しいDocumentスキーマや安全境界は導入せず、Accepted済みのSafeMode/share契約を実装へ揃える修正なので新規ADRは不要。
+- 検証結果:
+  - `src/export/bundle_export.test.ts`: 18 tests passed。全ファイルのsentinel漏えい否定、未知フィールドのfail-closed、SafeMode OFF、出典参照オプトイン、同期/worker経路、元Document非破壊を確認。
+  - export → ZIP → `readZipFiles` → `parseDocumentJson`: SafeMode派生Documentの再取込成功を確認。
+  - 関連テスト（SafeMode投影、ZIP import、locale不変、review-pack workflowを含む）: 35 tests passed。
+  - frontend全テスト: 226 files / 1316 tests passed。
+  - TypeScript型検査、production build: passed。
+  - `python 01_Plans/docs_check.py`: passed。
 
 ## 補足
 
