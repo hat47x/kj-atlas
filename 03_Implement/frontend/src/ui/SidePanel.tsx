@@ -37,6 +37,7 @@ import { TraceWorkerClient } from "../worker/trace_client";
 import type { TraceAnalytics } from "../worker/trace_analytics";
 import type { MergeAuditEntry } from "../domain/view/audit_log";
 import { RepresentativeVisualCueMark } from "./RepresentativeVisualCueMark";
+import { RepresentativeVisualCueHandDrawnEditor } from "./RepresentativeVisualCueHandDrawnEditor";
 
 type SummaryGroundingItem = {
   id: string;
@@ -127,7 +128,7 @@ type SidePanelProps = {
   summaryGroundingItems: SummaryGroundingItem[];
   onImageUrlChange: (value: string) => void;
   onImageReviewedChange: (value: boolean) => void;
-  onRepresentativeVisualCueChange: (value: RepresentativeVisualCue | undefined) => void;
+  onRepresentativeVisualCueChange: (value: RepresentativeVisualCue | undefined) => boolean;
   onIslandCollapsedChange: (value: boolean) => void;
   isSelectedIslandCollapsed: boolean;
   hasIslands: boolean;
@@ -2896,6 +2897,13 @@ export function SidePanel({
                     );
                   })}
                 </div>
+                {document ? (
+                  <RepresentativeVisualCueHandDrawnEditor
+                    documentId={document.id}
+                    disabled={isReadOnly === true}
+                    onAdopt={onRepresentativeVisualCueChange}
+                  />
+                ) : null}
                 {selectedIsland.representativeCue ? (
                   <>
                     <label

@@ -94,6 +94,8 @@ T5の結論（`unicode_emoji_os_comparison.md`）:
 
 削除後に監査情報は残さない。手掛かりは思考内容ではなく補助表示であり、監査証跡の対象外とする。
 
+実装上は、採用・変更・削除のUndo要件を満たすため、文書履歴（past / present / future）のいずれかが参照しているエントリを即時削除しない。参照が全履歴から外れたときに、同一documentかつ同一browser storage scopeの不要エントリを削除する。SaaS scopeは`deployment + tenantId + principalId`で分離し、別scopeの参照から画像本体を解決しない。この遅延削除は監査保持ではなく、既存の文書Undo期間だけに限定した可逆性境界である。
+
 ## 4. import/export 境界
 
 | コンポーネント | export | import |

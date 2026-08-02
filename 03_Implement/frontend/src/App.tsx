@@ -39,6 +39,7 @@ import { computeTidyIslandLayout, generateOrthogonalIslandOutline } from "./doma
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
+import { deleteUnreferencedHandDrawnCueAssets } from "./domain/representative_visual_cue_assets";
 import { updateCardHoldStateAndShelf, type HoldStateSelection } from "./domain/hold_state_ops";
 import { resolveDecisionOriginTrace, resolveRepresentativeOriginTrace } from "./domain/merge_traceability";
 import { collectMergeCandidates } from "./domain/merge_candidates";
@@ -55,6 +56,7 @@ import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
 import { Shell } from "./ui/Shell";
 import { SidePanel } from "./ui/SidePanel";
+import { RepresentativeVisualCueAssetScopeProvider } from "./ui/RepresentativeVisualCueAssetScope";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
 import { WorkModeTabs } from "./ui/WorkModeTabs";
 import { InquiryJourneyPrototypePanel } from "./ui/InquiryJourneyPrototypePanel";
@@ -4956,9 +4958,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   );
 
   const handleIslandRepresentativeVisualCueChange = useCallback(
-    (islandId: string, representativeCue: Island["representativeCue"]) => {
+    (islandId: string, representativeCue: Island["representativeCue"]): boolean => {
       if (!document) {
-        return;
+        return false;
       }
 
       const nextIslands = document.islands.map((island) => {
@@ -4984,10 +4986,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
       const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
       if (!hasChanges) {
-        return;
+        return false;
       }
 
-      applyDocumentChange(
+      return applyDocumentChange(
         {
           ...document,
           islands: nextIslands,
@@ -4997,6 +4999,35 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     },
     [applyDocumentChange, document],
   );
+
+  useEffect(() => {
+    if (!history) {
+      return;
+    }
+    const documents = [...history.past, history.present, ...history.future];
+    const retainedImageRefs = new Set(
+      documents.flatMap((candidate) =>
+        candidate.islands.flatMap((island) => {
+          const cue = island.representativeCue;
+          return cue?.kind === "hand_drawn" && cue.imageRef ? [cue.imageRef] : [];
+        }),
+      ),
+    );
+    void deleteUnreferencedHandDrawnCueAssets(
+      history.present.id,
+      retainedImageRefs,
+      appStorage.scope,
+    ).catch(() => {
+      // Best-effort garbage collection only. Read/write remains fail-closed at
+      // the asset operation boundary; a cleanup retry occurs on the next
+      // document-history change.
+    });
+  }, [
+    appStorage.scope?.deployment,
+    appStorage.scope?.principalId,
+    appStorage.scope?.tenantId,
+    history,
+  ]);
 
   const handleCardCritiqueChange = useCallback(
     (cardId: string, rawCritique: string) => {
@@ -11240,7 +11271,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }
 
   return (
-    <>
+    <RepresentativeVisualCueAssetScopeProvider scope={appStorage.scope}>
     <Shell
       title={t("app.title")}
       subtitle={t("app.subtitle.document", {
@@ -11456,10 +11487,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           }}
           onRepresentativeVisualCueChange={(value) => {
             if (!selectedIsland) {
-              return;
+              return false;
             }
 
-            handleIslandRepresentativeVisualCueChange(selectedIsland.id, value);
+            return handleIslandRepresentativeVisualCueChange(selectedIsland.id, value);
           }}
           onIslandCollapsedChange={(value) => {
             if (!selectedIsland) {
@@ -12063,6 +12094,6 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         onDecision={handleTenantSwitchDecision}
       />
     ) : null}
-    </>
+    </RepresentativeVisualCueAssetScopeProvider>
   );
 }
