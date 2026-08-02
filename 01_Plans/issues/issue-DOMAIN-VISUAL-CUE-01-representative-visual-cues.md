@@ -69,7 +69,7 @@
 - [x] T4b C0からC4の非製品プロトタイプ表示を作り、実装担当者による予備操作確認を実施する。高度な作業モード内のセッション限定UIとして実装し、マウス、キーボード、390px、ローカル画像通信をE2Eで確認した。代表利用者による効果比較はAC-6として未完了のまま残す。
 - [x] T5 Unicode絵文字と固定画像セットについて、OS間表示、アクセシビリティ、ライセンス、配布容量を比較する。→ `02_Architecture/design/unicode_emoji_os_comparison.md` として完了（2026-07-20）。推奨: Unicode絵文字をPhase 1既定とし、OS間不一致が確認されたcueだけを個別SVG化する。
 - [x] T6 採用参照、権利情報、画像本体、サムネイルの保存候補を比較し、ADRを受理または更新する。→ `02_Architecture/design/representative_visual_cue/storage_candidate_comparison.md` に比較完了（2026-07-20）。ADR-0060 Accepted・§8保存決定反映・`data_model_operations_overview.md` 更新済み。
-- [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。→ 小PR 1件目（契約先行の型・往復保持・SafeMode）完了（2026-07-29）。小PR 2件目（基本図形の選択UI・20×20描画・保存・Undo・390px・a11y）完了（2026-08-02）。手描きデータのIndexedDB連携、利用者画像、絵文字比較、代表利用者評価（AC-6〜AC-10）は未完了のまま残る。
+- [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。→ 小PR 1件目（契約先行の型・往復保持・SafeMode）完了（2026-07-29）。小PR 2件目（基本図形の選択UI・20×20描画・保存・Undo・390px・a11y）完了（2026-08-02）。小PR 3件目（手描き入力・scope分離IndexedDB・4KB上限・再読込・Undo期間後の削除）完了（2026-08-02、`82b173eb`）。手描きassetのbundle同梱/復元、利用者画像、絵文字比較、代表利用者評価（AC-6〜AC-10）は未完了のまま残る。
 - [ ] T8 実利用で不足が確認された場合だけ、外部素材と生成画像をそれぞれ別issueへ分割する。
 - [x] T9 現行`Island.imageUrl`の自動外部取得とレビュー自動昇格を`SEC-VISUAL-ASSET-01`へ分離し、SafeModeで遮断する。
 
@@ -89,6 +89,15 @@
 - E2Eで Advanced UI OFF時の非表示、キーボード選択、390pxの横見切れなし、axe違反0、外部request 0、解除後Undo、保存payloadを確認した。既存の視覚手掛かり評価prototypeと旧式島画像のSafeMode遮断も含め4件成功。
 - frontend全回帰は228ファイル / 1327テスト成功。typecheck、production build、docs-checkも成功。390px実画面を目視し、図形・ラベル・代替テキスト欄に横方向の見切れがないことを確認した。
 - このチェックポイントは通信不要の基本図形だけを製品経路へ昇格する。外部素材、生成AI、写真、第三者SVG、手描きバイナリ保存を暗黙に有効化しない。
+
+### Phase 1 手描きIndexedDBチェックポイント（2026-08-02）
+
+- 高度UIの代表視覚手掛かり内へ、20×20座標系の単色自由線入力を追加した。Pointer Eventsでマウス・ペン・タッチを同じ境界に載せ、矢印キーとSpace/Enterで描画開始・移動・停止できる代替操作、一画戻す、全消去、明示採用を備える。採用前は文書を変更しない。
+- 手描き本体はversion 1の座標列としてstrict validationし、未知キー、非整数・範囲外座標、空の画、64画超・512点超、UTF-8 JSON 4KB超を拒否する。`DocumentV1`には不透明な`imageRef`と代替テキストだけを保存し、外部通信・Base64埋め込み・自動採用は行わない。
+- IndexedDBレコードはlocal scopeまたは`deployment + tenantId + principalId`で分離し、別scopeの参照を解決しない。表示キャッシュもscopeと`imageRef`の両方が一致する場合だけ描画し、tenant切替時の旧scope表示を防ぐ。
+- 解除・変更・島削除のUndoを成立させるため、文書履歴のpast/present/futureが参照中のassetは保持する。全履歴から参照が外れた時点で同一document/scopeの不要assetを削除し、監査情報として残さない。文書変更が拒否された場合は先行保存したassetを削除し、参照だけ／本体だけの不整合を残さない。
+- 390px Chromium E2Eで、ポインターとキーボード描画、4KB/scopeレコード、採用、20×20表示、PUT保存、再読込、解除、Undo、履歴終了後のIndexedDB削除、横見切れなし、axe違反0を確認した。基本図形を含む対象2件、frontend全230ファイル / 1,342テスト、typecheck、production build、Playwright通常構成196 passed / SaaS専用3 skipped、docs-check、active issue validator、diff-checkを通過した。
+- 実装は`82b173eb`。Document JSONだけを別端末へ移した場合は画像本体を復元できないため、手描きassetのbundle同梱/import復元は未完了と明記する。利用者画像、絵文字、代表利用者による効果比較もT7/AC-6〜10に残す。
 
 ## 6) 依存関係 / Dependencies
 
