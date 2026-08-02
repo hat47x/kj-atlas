@@ -1760,16 +1760,18 @@ export function SidePanel({
             />
             {t("side_panel.reading_path.include_unreviewed")}
           </label>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
-            <input
-              type="checkbox"
-              checked={outlineAppendDiagnostics}
-              onChange={(event) => {
-                onOutlineAppendDiagnosticsChange(event.target.checked);
-              }}
-            />
-            {t("side_panel.outline.append_diagnostics")}
-          </label>
+          {isAdvancedUiEnabled ? (
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+              <input
+                type="checkbox"
+                checked={outlineAppendDiagnostics}
+                onChange={(event) => {
+                  onOutlineAppendDiagnosticsChange(event.target.checked);
+                }}
+              />
+              {t("side_panel.outline.append_diagnostics")}
+            </label>
+          ) : null}
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
             <input
               type="checkbox"
@@ -1790,7 +1792,13 @@ export function SidePanel({
             />
             {t("side_panel.outline.append_ka_fields")}
           </label>
-          <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
+          {isAdvancedUiEnabled ? (
+            <>
+              <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>
+              {isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}
+              {isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
+            </>
+          ) : null}
           <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.unreviewed_draft_warning")}</div>
           {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.safe_mode_excluded")}</div> : null}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -1801,7 +1809,7 @@ export function SidePanel({
               {t("side_panel.outline.download_md")}
             </button>
           </div>
-          {outlineQualityReport ? (
+          {isAdvancedUiEnabled && outlineQualityReport ? (
             <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc", marginTop: 8 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>{t("side_panel.outline.quality_report")}</div>
               <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>
@@ -2099,16 +2107,18 @@ export function SidePanel({
             />
             {t("side_panel.reading_path.include_unreviewed")}
           </label>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
-            <input
-              type="checkbox"
-              checked={outlineAppendDiagnostics}
-              onChange={(event) => {
-                onOutlineAppendDiagnosticsChange(event.target.checked);
-              }}
-            />
-            {t("side_panel.outline.append_diagnostics")}
-          </label>
+          {isAdvancedUiEnabled ? (
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+              <input
+                type="checkbox"
+                checked={outlineAppendDiagnostics}
+                onChange={(event) => {
+                  onOutlineAppendDiagnosticsChange(event.target.checked);
+                }}
+              />
+              {t("side_panel.outline.append_diagnostics")}
+            </label>
+          ) : null}
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
             <input
               type="checkbox"
@@ -2129,7 +2139,13 @@ export function SidePanel({
             />
             {t("side_panel.outline.append_ka_fields")}
           </label>
-          <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
+          {isAdvancedUiEnabled ? (
+            <>
+              <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>
+              {isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}
+              {isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
+            </>
+          ) : null}
           <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.unreviewed_draft_warning")}</div>
           {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.safe_mode_excluded")}</div> : null}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -2140,7 +2156,7 @@ export function SidePanel({
               {t("side_panel.outline.download_md")}
             </button>
           </div>
-          {outlineQualityReport ? (
+          {isAdvancedUiEnabled && outlineQualityReport ? (
             <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc", marginTop: 8 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>{t("side_panel.outline.quality_report")}</div>
               <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>

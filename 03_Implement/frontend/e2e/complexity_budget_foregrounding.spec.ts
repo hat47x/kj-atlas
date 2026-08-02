@@ -188,8 +188,9 @@ test("iterative inquiry prototype saves and resumes repeated stages without chan
   if (!downloadedBundle.ok) throw new Error(JSON.stringify(downloadedBundle.errors, null, 2));
 
   await prototype.getByRole("button", { name: "画面上の探究を閉じる" }).click();
-  await expect(prototype.getByRole("group", { name: "保存していない変更は失われます。探究ファイルを保存済みか確認してください。" })).toBeVisible();
-  await prototype.getByRole("button", { name: "保存せず閉じる" }).click();
+  const endInquiryDialog = page.getByRole("alertdialog", { name: "探究を終了しますか？" });
+  await expect(endInquiryDialog).toContainText("保存していない変更は失われます。探究ファイルを保存済みか確認してください。");
+  await endInquiryDialog.getByRole("button", { name: "保存せず閉じる" }).click();
   await expect(prototype.getByRole("list", { name: "探究の記録" })).toHaveCount(0);
   await prototype.locator('input[type="file"]').setInputFiles(downloadedPath);
   await expect(prototype.getByRole("status").last()).toContainText("記録を再開しました");

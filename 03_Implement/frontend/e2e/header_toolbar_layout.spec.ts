@@ -45,6 +45,35 @@ async function collectHeaderButtons(page: Page): Promise<Box[]> {
   );
 }
 
+async function collectHeaderSearchAndFilterItems(page: Page): Promise<Box[]> {
+  return page
+    .locator(
+      '[data-ui-region="header-search"] > *, [data-ui-region="domain-state-filter"] > *',
+    )
+    .evaluateAll((nodes) =>
+      nodes
+        .filter((node) => {
+          const style = getComputedStyle(node);
+          const rect = node.getBoundingClientRect();
+          return style.display !== "none" && rect.width > 0 && rect.height > 0;
+        })
+        .map((node) => {
+          const rect = node.getBoundingClientRect();
+          return {
+            text: (node.textContent ?? (node as HTMLInputElement).placeholder ?? "")
+              .replace(/\s+/g, " ")
+              .trim(),
+            x: rect.x,
+            y: rect.y,
+            right: rect.right,
+            bottom: rect.bottom,
+            width: rect.width,
+            height: rect.height,
+          };
+        }),
+    );
+}
+
 async function collectFixedPanels(page: Page): Promise<Box[]> {
   return page.locator("body *").evaluateAll((nodes) =>
     nodes
@@ -88,6 +117,14 @@ for (const viewport of checkedViewports) {
     const verticalish = buttons.filter((entry) => entry.height > 44 || (entry.width > 0 && entry.height / entry.width > 1.2)).map((entry) => entry.text);
     expect(offscreen).toEqual([]);
     expect(verticalish).toEqual([]);
+
+    const searchAndFilterItems = await collectHeaderSearchAndFilterItems(page);
+    expect(searchAndFilterItems.length).toBeGreaterThan(0);
+    expect(
+      searchAndFilterItems
+        .filter((entry) => entry.x < 0 || entry.right > viewport.width)
+        .map((entry) => entry.text),
+    ).toEqual([]);
 
     await page.getByRole("button", { name: VIEW_BUTTON }).click();
     const viewPanels = await collectFixedPanels(page);

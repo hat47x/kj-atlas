@@ -30,7 +30,19 @@ export function SearchBar({
   const displayedIndex = hasMatches ? currentMatchIndex + 1 : 0;
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", minWidth: 0, whiteSpace: "nowrap" }}>
+    <div
+      data-ui-region="header-search"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        rowGap: 4,
+        flexWrap: "wrap",
+        width: "100%",
+        minWidth: 0,
+        whiteSpace: "nowrap",
+      }}
+    >
       <input
         type="text"
         value={query}

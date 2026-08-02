@@ -185,7 +185,18 @@ export function Shell({
           ) : null}
         </div>
         {headerCenter ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: "1 1 360px", minWidth: 280, maxWidth: 520, padding: "0 4px", overflow: "hidden" }}>
+          <div
+            data-ui-region="header-center"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              flex: "1 1 360px",
+              minWidth: 0,
+              maxWidth: 520,
+              padding: "0 4px",
+            }}
+          >
             {headerCenter}
           </div>
         ) : (

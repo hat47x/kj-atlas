@@ -1,9 +1,8 @@
 import { expect, test, type Download, type Page } from "@playwright/test";
-import { DIAGNOSTICS_BUNDLE_BUTTON } from "./helpers/i18n";
+import { ADVANCED_UI_BUTTON, DIAGNOSTICS_BUNDLE_BUTTON } from "./helpers/i18n";
 
 // PRODUCT-OPS-02 (ADR-0053): support diagnostics bundle (diag-bundle.v1).
-// Covers: trigger is reachable without enabling Advanced (this is a support
-// tool, not a power-user feature), generation is blocked until a
+// Covers: the trigger follows the Advanced disclosure boundary, generation is blocked until a
 // classification is explicitly chosen, the full-text preview always renders
 // before copy/download are usable, forbidden content (card text, document
 // id, raw User-Agent) never appears in the generated output, download
@@ -60,6 +59,11 @@ async function readDownloadText(download: Download): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
+async function enableAdvancedUi(page: Page): Promise<void> {
+  await page.getByRole("button", { name: ADVANCED_UI_BUTTON }).click();
+  await expect(page.getByRole("button", { name: DIAGNOSTICS_BUNDLE_BUTTON })).toBeVisible();
+}
+
 test.beforeEach(async ({ page }) => {
   await routeFixture(page);
   await page.setViewportSize({ width: 1400, height: 900 });
@@ -70,13 +74,18 @@ test.beforeEach(async ({ page }) => {
   await expect(startPanel).toBeHidden();
 });
 
-test("trigger is reachable without enabling Advanced UI", async ({ page }) => {
+test("trigger is hidden until Advanced UI is enabled", async ({ page }) => {
+  await expect(page.getByRole("button", { name: DIAGNOSTICS_BUNDLE_BUTTON })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Run diagnostics|診断を実行/ })).toHaveCount(0);
+  await enableAdvancedUi(page);
   await expect(page.getByRole("button", { name: DIAGNOSTICS_BUNDLE_BUTTON })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Run diagnostics|診断を実行/ }).first()).toBeVisible();
 });
 
 test("generation is blocked until a classification is chosen; preview shows the fixed shape and excludes forbidden content", async ({
   page,
 }) => {
+  await enableAdvancedUi(page);
   await page.getByRole("button", { name: DIAGNOSTICS_BUNDLE_BUTTON }).click();
 
   const panel = page.locator('[data-ui-region="diagnostics-bundle"]');
@@ -110,6 +119,7 @@ test("generation is blocked until a classification is chosen; preview shows the 
 });
 
 test("download produces the exact previewed JSON", async ({ page }) => {
+  await enableAdvancedUi(page);
   await page.getByRole("button", { name: DIAGNOSTICS_BUNDLE_BUTTON }).click();
   await page.getByTestId("diagnostics-bundle-classification-select").selectOption("WEB-ENTRY");
   await page.getByTestId("diagnostics-bundle-generate").click();
@@ -127,6 +137,7 @@ test("download produces the exact previewed JSON", async ({ page }) => {
 
 test("copy shows confirmation feedback", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await enableAdvancedUi(page);
   await page.getByRole("button", { name: DIAGNOSTICS_BUNDLE_BUTTON }).click();
   await page.getByTestId("diagnostics-bundle-classification-select").selectOption("IMPORT-VALIDATION");
   await page.getByTestId("diagnostics-bundle-generate").click();
@@ -136,6 +147,7 @@ test("copy shows confirmation feedback", async ({ page, context }) => {
 });
 
 test("Escape closes the panel, returns focus to the trigger, and discards the generated preview", async ({ page }) => {
+  await enableAdvancedUi(page);
   const trigger = page.getByRole("button", { name: DIAGNOSTICS_BUNDLE_BUTTON });
   await trigger.click();
 
@@ -162,6 +174,7 @@ test("renders in Japanese locale", async ({ page }) => {
   await startPanel.getByRole("button", { name: /Open sample|サンプルを開く/ }).click();
   await expect(startPanel).toBeHidden();
 
+  await enableAdvancedUi(page);
   await page.getByRole("button", { name: DIAGNOSTICS_BUNDLE_BUTTON }).click();
   const panel = page.locator('[data-ui-region="diagnostics-bundle"]');
   await expect(panel).toBeVisible();

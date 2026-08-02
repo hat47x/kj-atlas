@@ -1291,6 +1291,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   useEffect(() => {
     if (!isAdvancedUiEnabled) {
       setGuidedFlowEnabled(false);
+      setIsDiagnosticsBundleOpen(false);
     }
   }, [isAdvancedUiEnabled]);
 
@@ -8994,24 +8995,27 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           {t("agent_response_import.title")}
         </button>
       ) : null}
-      <button
-        ref={diagnosticsBundleTriggerRef}
-        type="button"
-        onClick={() => setIsDiagnosticsBundleOpen((current) => !current)}
-        aria-pressed={isDiagnosticsBundleOpen}
-        title={t("diagnostics_bundle.title")}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: isDiagnosticsBundleOpen ? "#e0e7ff" : "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: "pointer",
-        }}
-      >
-        {t("diagnostics_bundle.title")}
-      </button>
+      {isAdvancedUiEnabled ? (
+        <button
+          ref={diagnosticsBundleTriggerRef}
+          data-ui-complexity-tier="advanced-content"
+          type="button"
+          onClick={() => setIsDiagnosticsBundleOpen((current) => !current)}
+          aria-pressed={isDiagnosticsBundleOpen}
+          title={t("diagnostics_bundle.title")}
+          style={{
+            border: "1px solid #cbd5e1",
+            backgroundColor: isDiagnosticsBundleOpen ? "#e0e7ff" : "#ffffff",
+            color: "#0f172a",
+            borderRadius: 6,
+            padding: "6px 12px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          {t("diagnostics_bundle.title")}
+        </button>
+      ) : null}
       <button
         data-ui-core-action="create-card"
         type="button"
