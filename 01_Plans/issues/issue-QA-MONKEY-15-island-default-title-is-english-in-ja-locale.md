@@ -3,12 +3,12 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Bug
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `MVP-EXIT-01`（人間受入項目の機械代替検証後に実施したモンキーテストで発見）
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/i18n/`
+- Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/i18n/`, `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/e2e/first_meaningful_map_mouse_flow.spec.ts`
 - Related Backlog: `QA-MONKEY-15`
 - Related ADR/Spec: `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`（G3 日本語UI / V0-V1 初回価値）, `04_Documentation/acceptance_check.md`
 - Expected verification level: `e2e`
@@ -55,6 +55,10 @@ side panel タイトル欄の値: Island 1
 
 実施しないこと: 既存文書に入っている `Island N` の一括書き換え（利用者が付けた名前と区別できないため）。
 
+### 採用判断
+
+案Aを採用する。新規島の `title` は空文字として保存し、表示時に文書内の安定した島順序から連番を求め、localeに応じて `島 N` / `Island N` を組み立てる。これにより文書内容のlocale不変性を維持しつつ、従来の英語表示と連番を保つ。利用者が付けたタイトル、および既存文書に保存済みの `Island N` はそのまま表示し、自動変換しない。
+
 ## 予算申告
 
 - 複雑性予算（`ADR-0043`）: N/A
@@ -63,16 +67,24 @@ side panel タイトル欄の値: Island 1
 
 ## 受入条件
 
-- [ ] 案Aまたは案Bを選び、理由を記録する。
-- [ ] `?locale=ja` で島を作成したとき、キャンバスと右側パネルに英語の既定名が表示されない。
-- [ ] `?locale=en` の表示が退行しない。
-- [ ] 文書のlocale不変性に関する既存テスト（`document_locale_invariance.test.ts`）が成功する。
-- [ ] 既存文書に保存済みの `Island N` を開いても表示が壊れない。
+- [x] 案Aまたは案Bを選び、理由を記録する。
+- [x] `?locale=ja` で島を作成したとき、キャンバスと右側パネルに英語の既定名が表示されない。
+- [x] `?locale=en` の表示が退行しない。
+- [x] 文書のlocale不変性に関する既存テスト（`document_locale_invariance.test.ts`）が成功する。
+- [x] 既存文書に保存済みの `Island N` を開いても表示が壊れない。
 
 ## 検証計画
 
 - 実行する確認: 上記再現手順を ja / en の双方で実行。`vitest run src/i18n/`。島作成を含む既存E2E（`first_meaningful_map_mouse_flow.spec.ts` ほか）。
 - 期待結果: ja で英語の既定名が出ない。en が従来どおり。i18n・E2Eに退行なし。
+
+## 検証結果
+
+- `tsc --noEmit`: 成功。
+- `vitest run`: 227 files / 1324 tests 成功。locale不変性、日英の派生表示、利用者タイトル、既存 `Island N` の互換性を含む。
+- `playwright test e2e/first_meaningful_map_mouse_flow.spec.ts e2e/selection_target_after_island_creation.spec.ts`: 4 tests 成功。日本語の `島 1`、英語の `Island 1`、空タイトルの保存、島作成後の選択対象を実ブラウザで確認。
+- `vite build`: 成功。
+- `python 01_Plans/docs_check.py`: 成功。
 
 ## 補足
 

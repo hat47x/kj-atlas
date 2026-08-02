@@ -628,6 +628,7 @@
   "app.status.deleted_preset": "Deleted preset: {name}",
   "app.loading_canvas": "Loading canvas...",
   "canvas.island.default_title": "Island",
+  "canvas.island.default_title_numbered": "Island {number}",
   "canvas.island.select_label": "Select island {id}",
   "canvas.island.card_count_title": "{count} card(s) in island",
   "canvas.island.outline_complexity_badge": "Shape: {count}",

@@ -24,6 +24,7 @@ export const ISLAND_TITLE_MARGIN_TOP = 6;
 
 type IslandViewProps = {
   island: Island;
+  displayTitle?: string;
   cards: Card[];
   isSelected: boolean;
   isPeeking?: boolean;
@@ -50,12 +51,16 @@ type EdgeHitbox = {
   style: CSSProperties;
 };
 
-export function resolveIslandRepresentativeTitle(island: Island, cards: Card[]): string {
+export function resolveIslandRepresentativeTitle(
+  island: Island,
+  cards: Card[],
+  fallbackTitle = t("canvas.island.default_title"),
+): string {
   const placardText = island.placardCardId
     ? cards.find((card) => card.id === island.placardCardId)?.text?.trim() ?? ""
     : "";
 
-  return placardText || island.title?.trim() || t("canvas.island.default_title");
+  return placardText || island.title?.trim() || fallbackTitle;
 }
 
 const EDGE_HITBOXES: EdgeHitbox[] = [
@@ -155,6 +160,7 @@ export function getIslandBounds(island: Island, cards: Card[]) {
 
 function IslandViewComponent({
   island,
+  displayTitle,
   cards,
   isSelected,
   isPeeking = false,
@@ -179,7 +185,8 @@ function IslandViewComponent({
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
   const placardCard = island.placardCardId ? cards.find((card) => card.id === island.placardCardId) : undefined;
   const placardText = placardCard?.text?.trim() ?? "";
-  const representativeTitle = resolveIslandRepresentativeTitle(island, cards);
+  const resolvedDisplayTitle = displayTitle?.trim() || island.title?.trim() || t("canvas.island.default_title");
+  const representativeTitle = resolveIslandRepresentativeTitle(island, cards, resolvedDisplayTitle);
   const hasSummary = typeof island.summaryText === "string" && island.summaryText.trim().length > 0;
   const hideUnreviewedSummary = safeMode && island.summaryReviewed === false && hasSummary;
   const isCollapsed = isCollapsedForView ?? island.collapsed === true;
@@ -405,7 +412,7 @@ function IslandViewComponent({
           gap: 6,
         }}
       >
-        {showTitleLabel ? (isCollapsed ? representativeTitle : island.title && island.title.length > 0 ? island.title : t("canvas.island.default_title")) : null}
+        {showTitleLabel ? (isCollapsed ? representativeTitle : resolvedDisplayTitle) : null}
         <span
           style={{
             fontSize: 10,

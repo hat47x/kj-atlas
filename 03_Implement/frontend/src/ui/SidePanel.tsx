@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { resolveIslandDisplayTitle } from "../i18n/island_title";
 import { getActiveLocale, t } from "../i18n/translate";
 
 import { CRITIQUE_TAGS, KNOWN_EDGE_TYPES, resolveKnownEdgeType } from "../domain/types";
@@ -663,7 +664,9 @@ export function SidePanel({
   const selectedCardLabel = selectedCardCount === 1
     ? t("side_panel.selection.card_single")
     : t("side_panel.selection.card_multiple", { count: selectedCardCount });
-  const selectedIslandTitle = selectedIsland?.title?.trim() || selectedIsland?.id || "";
+  const selectedIslandTitle = selectedIsland && document
+    ? resolveIslandDisplayTitle(selectedIsland, document.islands)
+    : "";
   const selectedCardText = selectedCard?.text.trim() || selectedCard?.id || "";
   const cardQualityOriginalText = cardQualityAssistState
     ? cardQualityRestoreTarget(cardQualityAssistState)
@@ -957,7 +960,7 @@ export function SidePanel({
       const island = islandById.get(row.id);
       return {
         id: row.id,
-        title: island?.title?.trim() ? island.title : row.id,
+        title: island ? resolveIslandDisplayTitle(island, document.islands) : row.id,
         cardCount: row.cardCount,
         degree: row.degree,
       };
@@ -982,7 +985,7 @@ export function SidePanel({
       .filter((island) => island.id !== selectedIsland?.id)
       .map((island) => ({
         id: island.id,
-        label: island.title?.trim() ? `${island.title} (${island.id})` : island.id,
+        label: `${resolveIslandDisplayTitle(island, document?.islands ?? [])} (${island.id})`,
       }));
   }, [document?.islands, selectedIsland?.id]);
 

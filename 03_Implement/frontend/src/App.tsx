@@ -192,6 +192,7 @@ import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
 import { buildReadOnlyBlockedMessage, resolveReadOnlyFromSearch } from "./domain/policy/read_only";
 import { DEFAULT_PACK_VISIBILITY, DEFAULT_VIEW_VISIBILITY, type PublishVisibility } from "./domain/policy/publish_visibility";
 import { getActiveLocale, setActiveLocale, subscribeActiveLocaleChange, t } from "./i18n/translate";
+import { resolveIslandDisplayTitle } from "./i18n/island_title";
 import { resolveViewLocale } from "./i18n/view_locale_resolution";
 import { resolvePublicPackIdFromSearch } from "./domain/policy/public_pack";
 import { createCancelableTaskRunner } from "./utils/compute_scheduler";
@@ -915,12 +916,12 @@ function pushHistorySnapshot(history: DocumentHistory, nextDocument: DocumentV1)
   };
 }
 
-function createIslandFromSelection(selectedCardIds: string[], existingIslands: Island[]): Island {
+function createIslandFromSelection(selectedCardIds: string[]): Island {
   return {
     id: crypto.randomUUID(),
     cardIds: selectedCardIds,
     collapsed: false,
-    title: `Island ${existingIslands.length + 1}`,
+    title: "",
   };
 }
 
@@ -4730,7 +4731,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
     const uniqueSelectedCardIds = Array.from(new Set(selectedCardIds));
 
-    const newIsland = createIslandFromSelection(uniqueSelectedCardIds, document.islands);
+    const newIsland = createIslandFromSelection(uniqueSelectedCardIds);
 
     applyDocumentChange({
       ...document,
@@ -8052,6 +8053,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       <IslandView
         key={island.id}
         island={island}
+        displayTitle={resolveIslandDisplayTitle(island, document?.islands ?? focusedVisibleDocument.islands)}
         cards={focusedVisibleDocument.cards}
         isSelected={selectedIslandId === island.id}
         isShapeStale={stalePolygonIslandIdSet.has(island.id)}
@@ -8088,6 +8090,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     ));
   }, [
     focusedVisibleDocument,
+    document?.islands,
     handleIslandCollapsedChange,
     handleIslandSelect,
     isPickingEdgeTarget,
@@ -8114,8 +8117,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     return (document.readingOrder ?? []).map((entryId) => {
       const island = document.islands.find((item) => item.id === entryId);
       if (island) {
-        const label = island.title?.trim() ? island.title.trim() : `Island ${island.id}`;
-        return { id: entryId, label };
+        return { id: entryId, label: resolveIslandDisplayTitle(island, document.islands) };
       }
 
       const card = document.cards.find((item) => item.id === entryId);
@@ -8134,16 +8136,20 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
 
     const allRenderEdges = getEdgesToRender(document, true);
+    const resolveIslandLabel = (islandId: string): string => {
+      const island = document.islands.find((item) => item.id === islandId);
+      return island ? resolveIslandDisplayTitle(island, document.islands) : islandId;
+    };
 
     return allRenderEdges
       .filter((edge) => edge.isDerived)
       .map((edge) => {
         const fromLabel =
           edge.fromKind === "island"
-            ? `Island ${edge.fromId}`
+            ? resolveIslandLabel(edge.fromId)
             : (cardsById.get(edge.fromId)?.text ?? edge.fromId);
         const toLabel =
-          edge.toKind === "island" ? `Island ${edge.toId}` : (cardsById.get(edge.toId)?.text ?? edge.toId);
+          edge.toKind === "island" ? resolveIslandLabel(edge.toId) : (cardsById.get(edge.toId)?.text ?? edge.toId);
 
         return {
           id: edge.id,

@@ -3,14 +3,31 @@ import { buildFirstMeaningfulMapDocument } from "./helpers/product_value_fixture
 
 const START_PANEL = '[data-panel="start-document-entry"]';
 
-async function routeFirstValueFixture(page: Page): Promise<{ enableSample: () => void }> {
+async function routeFirstValueFixture(
+  page: Page,
+): Promise<{ enableSample: () => void; savedIslandTitles: () => Array<string | undefined> | null }> {
   let shouldReturnSample = false;
+  let savedIslandTitles: Array<string | undefined> | null = null;
 
   await page.route("**/packs/index.json", async (route) => {
     await route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
   });
 
-  await page.route("**/docs/doc_phase1_canvas", async (route) => {
+  await page.route("**/docs/*", async (route) => {
+    if (route.request().method() === "PUT") {
+      const savedDocument = route.request().postDataJSON() as {
+        islands?: Array<{ title?: string }>;
+      };
+      savedIslandTitles = savedDocument.islands?.map((island) => island.title) ?? [];
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        headers: { ETag: '"first-value-sample-saved"' },
+        body: JSON.stringify(savedDocument),
+      });
+      return;
+    }
+
     const document = shouldReturnSample
       ? buildFirstMeaningfulMapDocument()
       : buildFirstMeaningfulMapDocument([]);
@@ -27,6 +44,7 @@ async function routeFirstValueFixture(page: Page): Promise<{ enableSample: () =>
     enableSample: () => {
       shouldReturnSample = true;
     },
+    savedIslandTitles: () => savedIslandTitles,
   };
 }
 
@@ -66,9 +84,14 @@ test("mouse first-value flow creates a visible first island from the sample", as
   const selectionPanel = page.locator('[data-ui-region="selection-context"]');
   await expect(selectionPanel).toBeVisible();
   await expect(selectionPanel).toContainText(/島を選択中|Island selected/);
-  await expect(selectionPanel).toContainText("Island 1");
+  await expect(selectionPanel).toContainText("島 1");
+  await expect(selectionPanel).not.toContainText("Island 1");
   await expect(selectionPanel).toContainText("first value user problem");
   await expect(selectionPanel).toContainText("first value observation memo");
+
+  const islandTitleInput = page.getByLabel(/タイトル|Title/);
+  await expect(islandTitleInput).toHaveValue("");
+
   await expect(selectionPanel).not.toContainText(/選択: 2 件のカードを選択中|Selection: 2 cards selected/);
 
   await page.keyboard.press("Control+Z");
@@ -76,4 +99,26 @@ test("mouse first-value flow creates a visible first island from the sample", as
   await page.keyboard.press("Control+Y");
   await expect(page.getByTestId("status-message")).toContainText("操作をやり直しました");
   await expect(islandSelect).toBeVisible();
+
+  await page.locator('[data-ui-core-action="save"]').click();
+  await expect.poll(() => fixture.savedIslandTitles()).toEqual([""]);
+});
+
+test("the same untitled island document keeps the English numbered fallback", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = await routeFirstValueFixture(page);
+
+  await page.goto("/?locale=en");
+  fixture.enableSample();
+  await page.getByRole("button", { name: "Open sample" }).click();
+
+  const firstCard = page.getByRole("button", { name: "first value user problem" });
+  const secondCard = page.getByRole("button", { name: "first value observation memo" });
+  await firstCard.click();
+  await secondCard.click({ modifiers: ["Shift"] });
+  await page.getByRole("banner").getByRole("button", { name: "Create Island" }).click();
+
+  const selectionPanel = page.locator('[data-ui-region="selection-context"]');
+  await expect(selectionPanel).toContainText("Island 1");
+  await expect(page.getByLabel("Title")).toHaveValue("");
 });

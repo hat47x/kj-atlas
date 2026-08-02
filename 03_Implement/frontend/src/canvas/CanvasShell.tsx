@@ -35,6 +35,7 @@ import {
   type LabelItem,
 } from "../domain/view/label_culling";
 import { getIslandBounds, ISLAND_TITLE_MARGIN_LEFT, ISLAND_TITLE_MARGIN_TOP } from "./IslandView";
+import { resolveIslandDisplayTitle } from "../i18n/island_title";
 import { t } from "../i18n/translate";
 import { LabelVisibilityContext } from "./LabelVisibilityContext";
 
@@ -651,7 +652,7 @@ export function CanvasShell({
         continue;
       }
 
-      const islandTitle = island.title && island.title.length > 0 ? island.title : t("canvas.island.default_title");
+      const islandTitle = resolveIslandDisplayTitle(island, document.islands);
       candidates.push({
         id: buildIslandTitleLabelId(island.id),
         kind: "islandTitle",
