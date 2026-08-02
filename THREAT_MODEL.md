@@ -14,6 +14,7 @@
 6. 外部エージェント向けMCP投影
 7. 標準Composeのネットワーク公開境界
 8. SaaSを想定したテナント分離（現行非対応の適用限界を含む）
+9. Backend JSON request boundary
 
 ## 資産 / Assets
 
@@ -116,6 +117,20 @@ stdio段階では listen port を開かず外部到達不可だったが、strea
 - 全route（metadata含む）に60 req/min/IPのrate limitを適用し、単純な洪水要求を早期にthrottleする
 - transportはstateless（`sessionIdGenerator: undefined`）とし、session固定化やsession storageに起因する攻撃面を持たない
 - request bodyは1MBに制限し、過大payloadでのメモリ消費を防ぐ
+
+### 6-2) Backend JSON request boundary（SEC-DOC-BOUND-03）
+
+- 構文的に妥当でも過度に深いJSONがparserの再帰上限を超え、未捕捉例外や500を発生させる
+- `ContextQuery.constraints` の再帰構造がCPU・メモリ・canonical hash処理を無制限に消費する
+- validation errorへraw inputやsecret相当値が混入する
+
+**想定対策**
+
+- backendの `application/json` / `application/*+json` request bodyを、JSON parserより前の反復的scannerで検査し、構造ネスト64超過を `400 json_nesting_too_deep` でfail-closedに拒否する
+- `ContextQuery.constraints` をJSON互換値、深さ8以下、総ノード数1024以下、canonical UTF-8 64 KiB以下に制限し、違反を `400 invalid_constraints` で拒否する
+- 境界エラーは安定したcodeだけを返し、raw input、validation context、parser例外を反射しない
+- API key認証をbody検査より外側に維持し、認証失敗をrequest bodyの走査より先に拒否する
+- 浅い巨大JSON全般のbyte上限は本issueでは追加しない。Document/identityの値長上限は `SEC-DOC-BOUND-01`、公開面のrate/body上限は各transport境界で扱う
 
 ### 7) 標準Composeのネットワーク公開境界（DEPLOY-NET-01）
 

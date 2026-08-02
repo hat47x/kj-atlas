@@ -31,9 +31,16 @@ def _validate_payload(model_type, payload: object):
     try:
         return model_type.model_validate(payload)
     except ValidationError as exc:
-        if any(error.get("type") == "extra_forbidden" for error in exc.errors()):
+        errors = exc.errors(
+            include_url=False,
+            include_context=False,
+            include_input=False,
+        )
+        if any(error.get("type") == "extra_forbidden" for error in errors):
             raise HTTPException(status_code=400, detail={"code": "unknown_contract_key"}) from exc
-        raise HTTPException(status_code=400, detail=exc.errors()) from exc
+        if any("constraints" in error.get("loc", ()) for error in errors):
+            raise HTTPException(status_code=400, detail={"code": "invalid_constraints"}) from exc
+        raise HTTPException(status_code=400, detail=errors) from exc
 
 
 @router.post("/query", response_model=ContextQueryValidationResponse)
@@ -55,7 +62,9 @@ def build_context_bundle(payload: object = Body(...)) -> ContextBundleResponse:
         if str(exc) == "preview_required":
             raise HTTPException(status_code=422, detail={"code": "preview_required"}) from exc
         logger.warning("context_bundle_build_failed", extra={"error": str(exc)}, exc_info=True)
-        raise HTTPException(status_code=400, detail={"code": "invalid_context_bundle_request"}) from exc
+        raise HTTPException(
+            status_code=400, detail={"code": "invalid_context_bundle_request"}
+        ) from exc
 
     if not CONTEXT_FOUNDATION_ADAPTER.verify_bundle_determinism(response):
         raise HTTPException(status_code=409, detail={"code": "nondeterministic_bundle"})
@@ -84,7 +93,9 @@ def _resolve_ce4_bundle_contract(payload: object = Body(...)) -> Ce4ResolveBundl
         raise HTTPException(status_code=400, detail={"code": "invalid_ce4_bundle_request"}) from exc
 
     if not (response.equivalenceKey and response.bundleHash):
-        raise HTTPException(status_code=422, detail={"code": "equivalence_and_bundle_hash_required"})
+        raise HTTPException(
+            status_code=422, detail={"code": "equivalence_and_bundle_hash_required"}
+        )
 
     if not response.queryCanonicalHash:
         raise HTTPException(status_code=422, detail={"code": "query_canonical_hash_required"})

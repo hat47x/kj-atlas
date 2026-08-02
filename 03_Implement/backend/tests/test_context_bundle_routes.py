@@ -6,7 +6,12 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from kj_atlas_api.main import app
-from kj_atlas_api.models_context import build_bundle as real_build_bundle
+from kj_atlas_api.models_context import (
+    MAX_CONTEXT_CONSTRAINT_BYTES,
+    MAX_CONTEXT_CONSTRAINT_DEPTH,
+    MAX_CONTEXT_CONSTRAINT_NODES,
+    build_bundle as real_build_bundle,
+)
 from kj_atlas_api.settings import settings
 
 
@@ -82,7 +87,10 @@ def test_context_query_hash_matches_cross_runtime_fixture() -> None:
         with TestClient(app) as client:
             response = client.post("/context/query", json=payload)
             assert response.status_code == 200
-            assert response.json()["queryCanonicalHash"] == "f8f19c1dd1fdfff86c2a4b394bd3d10493c06001d3ef1783d54bf6620939fd46"
+            assert (
+                response.json()["queryCanonicalHash"]
+                == "f8f19c1dd1fdfff86c2a4b394bd3d10493c06001d3ef1783d54bf6620939fd46"
+            )
     finally:
         settings.api_key = original_api_key
 
@@ -126,7 +134,37 @@ def test_context_query_rejects_invalid_depth_boundary() -> None:
             assert response.status_code == 400
             detail = response.json()["detail"]
             assert isinstance(detail, list)
-            assert any(error.get("loc") == ["depth"] or error.get("loc") == ("depth",) for error in detail)
+            assert any(
+                error.get("loc") == ["depth"] or error.get("loc") == ("depth",) for error in detail
+            )
+    finally:
+        settings.api_key = original_api_key
+
+
+def test_context_query_rejects_bounded_constraint_violations_without_reflection() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            nested: object = "secret-nested-value"
+            for _ in range(MAX_CONTEXT_CONSTRAINT_DEPTH + 1):
+                nested = {"next": nested}
+
+            invalid_constraints = [
+                nested,
+                {"items": list(range(MAX_CONTEXT_CONSTRAINT_NODES + 1))},
+                {"text": "secret-oversized-value" + ("x" * MAX_CONTEXT_CONSTRAINT_BYTES)},
+            ]
+            for constraints in invalid_constraints:
+                payload = _query_payload()
+                payload["constraints"] = constraints
+                response = client.post("/context/query", json=payload)
+
+                assert response.status_code == 400
+                assert response.json() == {"detail": {"code": "invalid_constraints"}}
+                serialized_response = response.text
+                assert "secret-nested-value" not in serialized_response
+                assert "secret-oversized-value" not in serialized_response
     finally:
         settings.api_key = original_api_key
 
@@ -156,7 +194,10 @@ def test_context_bundle_rejects_unknown_stub_dataset_id() -> None:
             assert response.status_code == 400
             detail = response.json()["detail"]
             assert isinstance(detail, list)
-            assert any(error.get("loc") == ["stubDatasetId"] or error.get("loc") == ("stubDatasetId",) for error in detail)
+            assert any(
+                error.get("loc") == ["stubDatasetId"] or error.get("loc") == ("stubDatasetId",)
+                for error in detail
+            )
     finally:
         settings.api_key = original_api_key
 
@@ -169,8 +210,12 @@ def test_context_hashes_are_deterministic_for_same_canonical_query() -> None:
             query_payload = _query_payload()
             bundle_payload = _bundle_payload()
 
-            query_bodies = [client.post("/context/query", json=query_payload).json() for _ in range(3)]
-            bundle_bodies = [client.post("/context/bundle", json=bundle_payload).json() for _ in range(3)]
+            query_bodies = [
+                client.post("/context/query", json=query_payload).json() for _ in range(3)
+            ]
+            bundle_bodies = [
+                client.post("/context/bundle", json=bundle_payload).json() for _ in range(3)
+            ]
 
             query_hashes = [body["queryCanonicalHash"] for body in query_bodies]
             bundle_hashes = [body["bundleHash"] for body in bundle_bodies]
@@ -252,7 +297,9 @@ def test_context_bundle_preserves_ambiguity_as_constraints_not_solved_facts() ->
             assert {item["kind"] for item in body["evidence"]} == {"support", "counter_opinion"}
             assert any(item["reviewed"] is False for item in body["evidence"])
 
-            semantic_items = body["selected"] + body["relations"] + body["evidence"] + body["contradictions"]
+            semantic_items = (
+                body["selected"] + body["relations"] + body["evidence"] + body["contradictions"]
+            )
             assert semantic_items
             assert all(item["resolutionState"] == "unresolved" for item in semantic_items)
             assert all(item["aiDisposition"] == "constraint" for item in semantic_items)
@@ -265,7 +312,8 @@ def test_context_resolve_route_contract_paths_are_unique() -> None:
     routes = [
         (route.path, ",".join(sorted(route.methods)))
         for route in app.router.routes
-        if getattr(route, "path", None) in {"/context/bundles:resolve", "/context/v1/bundles:resolve"}
+        if getattr(route, "path", None)
+        in {"/context/bundles:resolve", "/context/v1/bundles:resolve"}
     ]
     assert routes.count(("/context/bundles:resolve", "POST")) == 1
     assert routes.count(("/context/v1/bundles:resolve", "POST")) == 1
@@ -280,6 +328,7 @@ def test_context_bundle_returns_409_when_bundle_hash_is_nondeterministic(monkeyp
 
     original_api_key = settings.api_key
     settings.api_key = None
+
     class _TamperedAdapter:
         def validate_query(self, query):
             return "a" * 64
@@ -298,8 +347,6 @@ def test_context_bundle_returns_409_when_bundle_hash_is_nondeterministic(monkeyp
             assert response.json()["detail"]["code"] == "nondeterministic_bundle"
     finally:
         settings.api_key = original_api_key
-
-
 
 
 def test_context_bundle_uses_mock_provider_contract(monkeypatch) -> None:
@@ -364,7 +411,10 @@ def test_context_resolve_bundle_returns_contract_context_decision_consequences()
             body = response.json()
             assert body["schemaVersion"] == "1.0.0"
             # Context
-            assert isinstance(body["queryCanonicalHash"], str) and len(body["queryCanonicalHash"]) == 64
+            assert (
+                isinstance(body["queryCanonicalHash"], str)
+                and len(body["queryCanonicalHash"]) == 64
+            )
             # Decision
             assert body["proposalLifecycle"] == "proposed"
             assert body["sideEffect"] == "none"

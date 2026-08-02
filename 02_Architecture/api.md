@@ -200,6 +200,8 @@ CE-1のHTTP endpoint、status/error、副作用を本節の正本とする。型
 
 logical type、HTTP envelope、下流handoffのkey所属は [`schemas.md` CE1 v1 layer ownership matrix](schemas.md#ce1-v1-layer-ownership-matrixlogical--transport--handoff) を正本とする。`queryId`は`ContextQueryV1`だけに属し、`schemaVersion="1.0.0"`はHTTP response metadata、`sourceBundleHash`はCE2/CE4のread-only handoff値である。
 
+JSON request 共通のtransport安全境界として、backendは `application/json` / `application/*+json` の構造ネストをparser前段で64以下に制限する。超過時は入力値やparser例外を反射せず `400 json_nesting_too_deep` を返す。この制限はlogical type、canonical hash入力、schema versionを変更しない。API keyが設定されている場合は認証をbody検査より先に行う。
+
 **POST** `/context/query`
 
 - Purpose: Query Preview通過済みの `ContextQuery` を検証・正規化する。
@@ -208,7 +210,9 @@ logical type、HTTP envelope、下流handoffのkey所属は [`schemas.md` CE1 v1
 - Error:
   - `422 preview_required`: `previewConfirmed != true`
   - `400 unknown_contract_key`: CE1 v1 最小I/F外のキー、または enum/range違反を fail-closed で拒否
-  - `422 invalid_query_contract`: enum/rangeの補助バリデーション。上記2語彙を置換しない
+  - `400 invalid_constraints`: `constraints` がJSON互換ではない、深さ8・総ノード数1024・canonical UTF-8 64 KiBのいずれかを超過
+  - `400 json_nesting_too_deep`: JSON request body の構造ネストが64を超過
+  - `422 invalid_query_contract`: enum/rangeの補助バリデーション。既存の契約・安全境界エラー語彙を置換しない
 
 **POST** `/context/bundle`
 
@@ -216,6 +220,8 @@ logical type、HTTP envelope、下流handoffのkey所属は [`schemas.md` CE1 v1
 - Request body: `ContextBundleRequest`
 - Response body: `ContextBundleResponse`。`schemaVersion`はtransport metadataでcanonical bundle hash対象外。`queryId` / `sourceBundleHash`はresponseへ含めない
 - Error:
+  - `400 invalid_constraints`: `query.constraints` がJSON互換ではない、深さ8・総ノード数1024・canonical UTF-8 64 KiBのいずれかを超過
+  - `400 json_nesting_too_deep`: JSON request body の構造ネストが64を超過
   - `409 nondeterministic_bundle`: 同一canonical queryでdeterministic `bundleHash`が成立しない
   - `400 unknown_contract_key`: closed-world envelopeまたは型の未定義キー
 

@@ -22,6 +22,7 @@ from kj_atlas_api.routes.document_access_admin import (
     router as document_access_admin_router,
 )
 from kj_atlas_api.routes.session import router as session_router
+from kj_atlas_api.request_body_safety import JsonRequestBodySafetyMiddleware
 from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_capability import build_tenant_capability_resolver
 from kj_atlas_api.trusted_saas_runtime import (
@@ -94,6 +95,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="kj-atlas API", lifespan=lifespan)
+app.add_middleware(JsonRequestBodySafetyMiddleware)
 
 
 @app.middleware("http")

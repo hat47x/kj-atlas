@@ -4,7 +4,48 @@ from hashlib import sha256
 import json
 from typing import Literal, Protocol
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+MAX_CONTEXT_CONSTRAINT_DEPTH = 8
+MAX_CONTEXT_CONSTRAINT_NODES = 1024
+MAX_CONTEXT_CONSTRAINT_BYTES = 64 * 1024
+
+
+def _validate_context_constraints(value: dict[str, object]) -> dict[str, object]:
+    stack: list[tuple[object, int]] = [(value, 0)]
+    node_count = 0
+
+    while stack:
+        current, depth = stack.pop()
+        node_count += 1
+        if node_count > MAX_CONTEXT_CONSTRAINT_NODES:
+            raise ValueError("constraints exceed the node limit")
+        if depth > MAX_CONTEXT_CONSTRAINT_DEPTH:
+            raise ValueError("constraints exceed the nesting limit")
+
+        if isinstance(current, dict):
+            if any(not isinstance(key, str) for key in current):
+                raise ValueError("constraints must use string keys")
+            stack.extend((item, depth + 1) for item in current.values())
+        elif isinstance(current, list):
+            stack.extend((item, depth + 1) for item in current)
+        elif current is not None and not isinstance(current, (str, int, float, bool)):
+            raise ValueError("constraints must contain JSON-compatible values")
+
+    try:
+        serialized = json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise ValueError("constraints must contain canonical JSON values") from exc
+    if len(serialized) > MAX_CONTEXT_CONSTRAINT_BYTES:
+        raise ValueError("constraints exceed the byte limit")
+    return value
 
 
 class ContextQuery(BaseModel):
@@ -19,6 +60,8 @@ class ContextQuery(BaseModel):
     safeModePolicy: Literal["strict"]
     outputMode: Literal["summary", "proposal", "candidate"]
     previewConfirmed: bool = False
+
+    _bounded_constraints = field_validator("constraints")(_validate_context_constraints)
 
 
 class ContextQueryValidationResponse(BaseModel):
@@ -192,12 +235,16 @@ def _canonical_query_hash_payload(query: ContextQuery) -> dict[str, object]:
 
 def _canonical_bundle_hash_payload(bundle: ContextBundleResponse) -> dict[str, object]:
     return {
-        "selected": sorted((_stable_value(item) for item in bundle.selected), key=lambda item: item["id"]),
+        "selected": sorted(
+            (_stable_value(item) for item in bundle.selected), key=lambda item: item["id"]
+        ),
         "relations": sorted(
             (_stable_value(item) for item in bundle.relations),
             key=lambda item: (item["type"], item["from"], item["to"]),
         ),
-        "evidence": sorted((_stable_value(item) for item in bundle.evidence), key=lambda item: item["cardId"]),
+        "evidence": sorted(
+            (_stable_value(item) for item in bundle.evidence), key=lambda item: item["cardId"]
+        ),
         "contradictions": sorted(
             (_stable_value(item) for item in bundle.contradictions),
             key=lambda item: (-int(item["weight"]), item["id"]),
@@ -233,9 +280,13 @@ def build_bundle(request: ContextBundleRequest) -> ContextBundleResponse:
         if len(selected) != before_count:
             excluded_reason.append("safe_mode_unreviewed_text")
 
-    relations = sorted(_STUB_DATASET["relations"], key=lambda item: (item["type"], item["from"], item["to"]))
+    relations = sorted(
+        _STUB_DATASET["relations"], key=lambda item: (item["type"], item["from"], item["to"])
+    )
     evidence = sorted(_STUB_DATASET["evidence"], key=lambda item: item["cardId"])
-    contradictions = sorted(_STUB_DATASET["contradictions"], key=lambda item: (-item["weight"], item["id"]))
+    contradictions = sorted(
+        _STUB_DATASET["contradictions"], key=lambda item: (-item["weight"], item["id"])
+    )
 
     review_flags = ReviewFlags(
         reviewed=sum(1 for item in selected if item["reviewed"] is True),
@@ -249,7 +300,11 @@ def build_bundle(request: ContextBundleRequest) -> ContextBundleResponse:
         evidence=evidence,
         contradictions=contradictions,
         reviewFlags=review_flags,
-        truncationMeta={"stubDatasetId": request.stubDatasetId, "depth": query.depth, "holdState": _HOLD_STATE_DATA_SOURCE},
+        truncationMeta={
+            "stubDatasetId": request.stubDatasetId,
+            "depth": query.depth,
+            "holdState": _HOLD_STATE_DATA_SOURCE,
+        },
         excludedReason=sorted(excluded_reason),
         queryCanonicalHash=query_hash,
     )

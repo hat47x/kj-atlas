@@ -97,7 +97,7 @@ export type ContextQueryV1 = {
   goal: string;
   scope: "document" | "view" | "island";
   depth: number; // 0..5
-  constraints: Record<string, unknown>;
+  constraints: Record<string, unknown>; // depth <= 8, nodes <= 1024, canonical UTF-8 <= 64 KiB
   reviewFilter: "reviewedOnly" | "includeUnreviewed";
   safeModePolicy: "strict";
   outputMode: "summary" | "proposal" | "candidate";
@@ -132,9 +132,11 @@ export type ContextBundleV1 = {
 
 - `previewConfirmed=false` は契約違反（`422 preview_required`）。
 - 同一 canonical query で `bundleHash` 不一致は fail 判定。
-- CE1 v1 エラー語彙は `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の3種に固定する。
+- CE1 v1 の契約エラー語彙は `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` に固定し、安全境界エラーとして `invalid_constraints` を追加する。transport 共通の `json_nesting_too_deep` は logical type の語彙には含めない。
 - CE1 v1 は **最小I/F固定** とし、`ContextQueryV1` / `ContextBundleV1` への未定義キー追加を禁止する（拡張は v2 でのみ許可）。
 - CE1 v1 は closed-world 契約とし、Contract Test/Stub API の双方で unknown key reject（`400 unknown_contract_key`）を同一意味で扱う。
+- `constraints` はJSON互換値だけを許可し、rootを0とした深さ8以下、総ノード数1024以下、canonical JSONのUTF-8表現64 KiB以下に制限する。違反は入力値を反射しない `400 invalid_constraints` とする。この制約はfield追加・削除、canonicalization規則、hash入力を変更しない。
+- backend の `application/json` / `application/*+json` request body はJSON parserの前段で構造ネスト64以下に制限し、超過を入力値を反射しない `400 json_nesting_too_deep` とする。これはtransport安全境界であり、CE1 logical typeやversionを変更しない。
 - CE2/CE4 は backend 実装完了待ちを行わず、mock `ContextQuery/ContextBundle` 契約で先行検証する（mock-first）。
 - CE2/CE4 への連携は read-only handoff とし、契約更新は CE1 再起票でのみ許可する。
 - CE2/CE4 側で `sourceBundleHash === bundleHash` を照合できない場合は fail-closed（適用停止）とする。
@@ -144,18 +146,19 @@ CE1 A2 stub contract（検証専用）:
 - `POST /context/query`
   - request: `ContextQueryV1`（closed-world; unknown key reject）
   - success: `200 ContextQueryValidationResponse`（layer matrix参照）
-  - error: `422 preview_required`, `400 unknown_contract_key`
+  - error: `422 preview_required`, `400 unknown_contract_key`, `400 invalid_constraints`, `400 json_nesting_too_deep`
 - `POST /context/bundle`
   - request: `ContextBundleRequest`（layer matrix参照）
   - success: `200 ContextBundleResponse`（layer matrix参照）
-  - error: `409 nondeterministic_bundle`, `400 unknown_contract_key`
+  - error: `409 nondeterministic_bundle`, `400 unknown_contract_key`, `400 invalid_constraints`, `400 json_nesting_too_deep`
 
 Contract test観点（CE1 v1）:
 
 1. `previewConfirmed=false` は常に `422 preview_required`。
 2. 同一 canonical query 3回再実行で `queryCanonicalHash` / `bundleHash` が3/3一致。
 3. 未定義キーは常に `400 unknown_contract_key`。
-4. CE2/CE4 連携キー `sourceBundleHash === bundleHash` を比較可能。
+4. `constraints` のresource bound違反は常に `400 invalid_constraints`、JSON bodyの構造ネスト64超過は常に `400 json_nesting_too_deep`。
+5. CE2/CE4 連携キー `sourceBundleHash === bundleHash` を比較可能。
 
 
 Mock Validation Plan（implementation-decoupled）:
@@ -184,7 +187,7 @@ CE0/CE1 の下流実装が参照すべき固定シグネチャ一覧を次で凍
 - `HilRsDocSyncCheckV1`（Contract ID: `HIL-RS-DOCSYNC-IF`）
 
 互換ルール（v1固定）:
-- v1 の必須キー集合とエラー意味論（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）は変更しない。
+- v1 の必須キー集合と契約エラー意味論（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）は変更しない。安全境界エラー（`invalid_constraints` / `json_nesting_too_deep`）はfield構造・hash規則・versionを変更しない。
 - 拡張は v2 追加でのみ許可し、v1 の `sameQuery && sameBundle` 判定は維持する。
 - Contract Freeze 中は、上記シグネチャに対する破壊的変更・改名・削除を禁止する。
 
@@ -209,7 +212,7 @@ export type HilRsDocSyncCheckV1 = {
 ```
 
 
-- v1 はエラーコード意味論（`preview_required` / `nondeterministic_bundle` / `unknown_contract_key`）を固定し、変更しない。
+- v1 は契約エラーコード意味論（`preview_required` / `nondeterministic_bundle` / `unknown_contract_key`）を固定し、変更しない。安全境界エラー（`invalid_constraints` / `json_nesting_too_deep`）はfield構造・hash規則・versionを変更しない。
 - 拡張時は v2 を追加し、v1 の必須キーと判定式 `sameQuery && sameBundle` を維持する。
 
 `bundleHash` 契約（`CE1-HASH-DET-IF` / bundleHash関連節）:
