@@ -69,7 +69,7 @@
 - [x] T4b C0からC4の非製品プロトタイプ表示を作り、実装担当者による予備操作確認を実施する。高度な作業モード内のセッション限定UIとして実装し、マウス、キーボード、390px、ローカル画像通信をE2Eで確認した。代表利用者による効果比較はAC-6として未完了のまま残す。
 - [x] T5 Unicode絵文字と固定画像セットについて、OS間表示、アクセシビリティ、ライセンス、配布容量を比較する。→ `02_Architecture/design/unicode_emoji_os_comparison.md` として完了（2026-07-20）。推奨: Unicode絵文字をPhase 1既定とし、OS間不一致が確認されたcueだけを個別SVG化する。
 - [x] T6 採用参照、権利情報、画像本体、サムネイルの保存候補を比較し、ADRを受理または更新する。→ `02_Architecture/design/representative_visual_cue/storage_candidate_comparison.md` に比較完了（2026-07-20）。ADR-0060 Accepted・§8保存決定反映・`data_model_operations_overview.md` 更新済み。
-- [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。→ 小PR 1件目（契約先行の型・往復保持・SafeMode）完了（2026-07-29）: `schemas.md` §19 に `Island.representativeCue`（`RepresentativeVisualCue`: kind=hand_drawn/user_image/preset_svg/emoji, cueId, altText, imageRef）を契約固定。`types.ts`/`validate.ts`（寛容パース・往復保持）/`validate_doc.ts`（厳格検証）/`inquiry_bundle_safe_mode.ts`（altTextのみredact、kind/cueId/imageRefは保全）へ実装し、テスト追加（tsc 0エラー、frontend回帰225ファイル/1310テスト全pass）。選択UI・20×20スロット描画・IndexedDB連携・E2E・実画面評価（AC-7〜AC-10）は未着手のまま残る。次の小PRはUI（手描き/基本図形→利用者画像→絵文字/プリセットの順、issue本文記載順）。
+- [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。→ 小PR 1件目（契約先行の型・往復保持・SafeMode）完了（2026-07-29）。小PR 2件目（基本図形の選択UI・20×20描画・保存・Undo・390px・a11y）完了（2026-08-02）。手描きデータのIndexedDB連携、利用者画像、絵文字比較、代表利用者評価（AC-6〜AC-10）は未完了のまま残る。
 - [ ] T8 実利用で不足が確認された場合だけ、外部素材と生成画像をそれぞれ別issueへ分割する。
 - [x] T9 現行`Island.imageUrl`の自動外部取得とレビュー自動昇格を`SEC-VISUAL-ASSET-01`へ分離し、SafeModeで遮断する。
 
@@ -80,6 +80,15 @@
 - UX評価: `02_Architecture/representative_visual_cue_evaluation.md` と `02_Architecture/design/representative_visual_cue/phase0_scenarios.json` を用い、同じ目的の島を探す課題を文字のみ・手描き・基本図形・写真・絵文字/プリセットで比較する。時間、誤選択、意味誤認、原資料遡及、主観的負担を記録し、見栄えや利用時間だけでは採択しない。
 - 予備操作証跡: `03_Implement/frontend/src/ui/RepresentativeVisualCuePrototypePanel.tsx`、`03_Implement/frontend/src/domain/representative_visual_cue_prototype.test.ts`、`03_Implement/frontend/e2e/representative_visual_cue_prototype.spec.ts`。結果はセッション内だけに保持し、文書スキーマ、外部provider、利用者評価結果を構成しない。
 - Stop条件: 関連性を説明できない候補、画像だけによる意味伝達、意図しない外部通信、権利情報欠落、SafeMode回避、初期表示の複雑化のいずれかを確認した場合は実装を昇格しない。
+
+### Phase 1 基本図形UIチェックポイント（2026-08-02）
+
+- 高度UIで島を選択した場合だけ、一段深い詳細として4種の中立的な基本図形（円・三角形・ひし形・平行線）を表示する。既定は未設定で、通常UIの初期表示差分は0。
+- 採用した図形は `Island.representativeCue` に `preset_svg` として保存し、島表札の左へ20×20の単色線画で併記する。画像だけで意味を伝えず、キャンバス上の図形は装飾扱いとして表札の読み上げを重複させない。
+- 選択、代替テキスト編集、解除、Undo、PUT保存往復を実装した。空の代替テキストはUIから確定できず、最大80文字とした。readOnlyでは変更操作を無効化する。
+- E2Eで Advanced UI OFF時の非表示、キーボード選択、390pxの横見切れなし、axe違反0、外部request 0、解除後Undo、保存payloadを確認した。既存の視覚手掛かり評価prototypeと旧式島画像のSafeMode遮断も含め4件成功。
+- frontend全回帰は228ファイル / 1327テスト成功。typecheck、production build、docs-checkも成功。390px実画面を目視し、図形・ラベル・代替テキスト欄に横方向の見切れがないことを確認した。
+- このチェックポイントは通信不要の基本図形だけを製品経路へ昇格する。外部素材、生成AI、写真、第三者SVG、手描きバイナリ保存を暗黙に有効化しない。
 
 ## 6) 依存関係 / Dependencies
 
