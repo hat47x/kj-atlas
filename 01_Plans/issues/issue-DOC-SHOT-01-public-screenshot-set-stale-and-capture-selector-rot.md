@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Documentation
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `MVP-EXIT-01`
 - Priority: P1
@@ -38,9 +38,9 @@
 ## 受入条件
 
 - [x] capture script 3本が現行UIに対して最後まで実行できる。
-- [ ] 公開画像23件が候補commitのUIと一致する。
-- [ ] `04_Documentation/assets/screenshots/README.md` のprovenance行（対象revision、撮影日、browser、生成結果）が更新されている。
-- [ ] 再撮影した画像に秘密情報が含まれないことを目視確認する。
+- [x] 公開画像23件が候補commitのUIと一致する。
+- [x] `04_Documentation/assets/screenshots/README.md` のprovenance行（対象revision、撮影日、browser、生成結果）が更新されている。
+- [x] 再撮影した画像に秘密情報が含まれないことを目視確認する。
 
 ## 検証計画
 
@@ -54,6 +54,13 @@ node ./scripts/capture_ui_catalog.mjs
 ```
 
 - 期待結果: 5/5、6/6、12/12の生成成功。生成物とヘッダー構成が現行UIと一致する。
+
+## 検証結果
+
+- source revision `6757d855c3ef6c0f7b444020e18f5ecd62fa4ec9`、2026-08-02、Playwright 1.58.2 / Playwright管理 Chromium 145.0.7632.6で再撮影した。
+- release 5/5、product-value 6/6、UI catalog 12/12、合計23/23件の生成に成功した。
+- 23件を目視し、秘密情報・API key・顧客データがないこと、日本語ラベルと SafeMode / 未レビュー / readOnly の境界、390 / 768 / 960pxを含むレイアウトを確認した。
+- 初回目視で `ui-selection-context-island.png` が島未選択のまま成功扱いになる問題を検出した。島選択をキーボード操作へ変更し、選択状態の表示を待つfail guardを追加してから12件を再生成した。
 
 ## 補足
 

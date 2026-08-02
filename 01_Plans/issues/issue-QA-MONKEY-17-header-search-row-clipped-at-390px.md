@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Bug
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `MVP-EXIT-01`（人間受入項目の機械代替検証後に実施したモンキーテストで発見）
 - Priority: P2
@@ -76,12 +76,18 @@ clipped:
 - [x] 390pxで、検索欄・「状態フィルタ」・「非一致を非表示」がいずれも viewport 内に収まる（`left >= 0` かつ `right <= viewport幅`）。
 - [x] 768px / 960px / 1440px のレイアウトが退行しない。
 - [x] 切れが残る要素がある場合は、スクロールなど到達手段がある。
-- [ ] 公開画像 `mobile-toolbar-smoke-390.png` を `DOC-SHOT-01` の再撮影に合わせて更新する。
+- [x] 公開画像 `mobile-toolbar-smoke-390.png` を `DOC-SHOT-01` の再撮影に合わせて更新する。
 
 ## 検証計画
 
 - 実行する確認: 代表4幅（390 / 768 / 960 / 1440）で、ヘッダー内の可視要素の矩形が viewport に収まることを確認するE2E。既存の `header_toolbar_layout.spec.ts` / viewport系E2E。
 - 期待結果: 4幅すべてで見切れ0件。既存E2Eに退行なし。
+
+## 検証結果
+
+- `header_toolbar_layout.spec.ts` を含む近接E2E 19件成功。390 / 768 / 920 / 1280 / 1440pxでヘッダー検索行の可視要素がviewport内に収まることを矩形で確認した。
+- `ui-responsive-768.png` / `ui-responsive-960.png` / `mobile-toolbar-smoke-390.png` を再生成し、目視で退行と見切れがないことを確認した。
+- frontend全体のVitest 1324件、typecheck、build、docs-checkが成功した。
 
 ## 補足
 

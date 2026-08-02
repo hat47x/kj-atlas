@@ -16,13 +16,13 @@
 
 ### 現行の検証済みセット
 
-共通条件: source revision `1367740d8d03cf53bc0ad1eb09ffc45684ff51e1`、撮影日2026-07-11、locale `ja`、`KJ_ATLAS_LLM_PROVIDER=none`、秘密情報なし、Playwright 1.58.2、Google Chrome 150.0.7871.101。
+共通条件: source revision `6757d855c3ef6c0f7b444020e18f5ecd62fa4ec9`、撮影日2026-08-02、locale `ja`、`KJ_ATLAS_LLM_PROVIDER=none`、秘密情報なし、Playwright 1.58.2、Playwright管理 Chromium 145.0.7632.6。
 
 | Capture ID | 対象 | fixture | viewport | 生成スクリプト | 検証結果 |
 | --- | --- | --- | --- | --- | --- |
-| `release-ui-20260711` | `start-document-entry.png`, `app-canvas-overview.png`, `selection-context-card.png`, `share-export-safe-mode.png`, `mobile-toolbar-smoke-390.png` | `doc_phase1_canvas`の決定論的release sample | 1440×900、390×720 | `capture_release_screenshots.mjs` | 5/5生成成功 |
-| `product-value-ui-20260711` | `product-value-*.png` 6件 | first meaningful map、ambiguity、review packの決定論的fixture | 1440×900 | `capture_product_value_screenshots.mjs` | 6/6生成成功。重複した`島を作成`をヘッダーへ限定するselector修正後に再実行 |
-| `ui-catalog-20260711` | `ui-*.png` 12件 | `buildCatalogDocument()` / `doc_phase1_canvas` | 1440×900、768×900、960×900 | `capture_ui_catalog.mjs` | 12/12生成成功 |
+| `release-ui-20260802` | `start-document-entry.png`, `app-canvas-overview.png`, `selection-context-card.png`, `share-export-safe-mode.png`, `mobile-toolbar-smoke-390.png` | `doc_phase1_canvas`の決定論的release sample | 1440×900、390×720 | `capture_release_screenshots.mjs` | 5/5生成成功 |
+| `product-value-ui-20260802` | `product-value-*.png` 6件 | first meaningful map、ambiguity、review packの決定論的fixture | 1440×900 | `capture_product_value_screenshots.mjs` | 6/6生成成功 |
+| `ui-catalog-20260802` | `ui-*.png` 12件 | `buildCatalogDocument()` / `doc_phase1_canvas` | 1440×900、768×900、960×900 | `capture_ui_catalog.mjs` | 12/12生成成功。島選択をキーボード操作し、選択状態の表示を待つようにして再実行 |
 
 標準コマンド:
 
@@ -33,7 +33,7 @@ node .\scripts\capture_product_value_screenshots.mjs
 node .\scripts\capture_ui_catalog.mjs
 ```
 
-2026-07-11の検証環境ではPlaywright同梱Chromiumを取得できなかったため、`KJ_ATLAS_SCREENSHOT_BROWSER_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe` を指定して撮影した。これはbrowser実体だけの代替であり、fixture、locale、viewport、出力先、撮影操作は各正本スクリプトと同一である。未指定時は従来どおりPlaywright管理browserを使う。
+2026-08-02は `KJ_ATLAS_SCREENSHOT_BROWSER_PATH` を指定せず、Playwright管理 Chromium で撮影した。23件すべてを目視し、秘密情報・API key・顧客データがないこと、日本語ラベルと SafeMode / 未レビュー / readOnly の境界が意図どおりであること、390pxを含む対象viewportで主要操作が見切れないことを確認した。初回確認で `ui-selection-context-island.png` が島未選択の状態を撮っていたため、capture scriptへ状態確認を追加してから最終セットを再生成した。
 
 ### stale判定と公開Go条件
 
