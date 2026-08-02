@@ -139,4 +139,25 @@ describe("IslandView accessibility controls", () => {
     expect(renderIsland(island, { safeMode: true })).not.toContain("images.example.test");
     expect(renderIsland(island, { safeMode: false })).toContain("images.example.test");
   });
+
+  it("renders a representative cue beside the title as a decorative fixed-size mark", () => {
+    const island: Island = {
+      id: "island-cue",
+      title: "Cue island",
+      cardIds: ["c1"],
+      representativeCue: {
+        kind: "preset_svg",
+        cueId: "shape-circle",
+        altText: "Circle",
+      },
+    };
+
+    const html = renderIsland(island, { safeMode: true });
+
+    expect(html).toContain('data-representative-visual-cue="shape-circle"');
+    expect(html).toContain('width="20" height="20"');
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).not.toContain('aria-label="Circle"');
+    expect(html).not.toContain("http");
+  });
 });

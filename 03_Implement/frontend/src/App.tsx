@@ -4955,6 +4955,49 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     [applyDocumentChange, document]
   );
 
+  const handleIslandRepresentativeVisualCueChange = useCallback(
+    (islandId: string, representativeCue: Island["representativeCue"]) => {
+      if (!document) {
+        return;
+      }
+
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId) {
+          return island;
+        }
+
+        const currentCue = island.representativeCue;
+        if (
+          currentCue?.kind === representativeCue?.kind
+          && currentCue?.cueId === representativeCue?.cueId
+          && currentCue?.altText === representativeCue?.altText
+          && currentCue?.imageRef === representativeCue?.imageRef
+        ) {
+          return island;
+        }
+
+        return {
+          ...island,
+          representativeCue,
+        };
+      });
+
+      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        t(representativeCue ? "app.history.island.visual_cue_updated" : "app.history.island.visual_cue_removed"),
+      );
+    },
+    [applyDocumentChange, document],
+  );
+
   const handleCardCritiqueChange = useCallback(
     (cardId: string, rawCritique: string) => {
       if (!document) {
@@ -11410,6 +11453,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
             }
 
             handleIslandImageReviewedChange(selectedIsland.id, value);
+          }}
+          onRepresentativeVisualCueChange={(value) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleIslandRepresentativeVisualCueChange(selectedIsland.id, value);
           }}
           onIslandCollapsedChange={(value) => {
             if (!selectedIsland) {
