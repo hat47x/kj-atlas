@@ -62,12 +62,12 @@ ADR-0040 Phase 1 読取UI第一級化 完了。Schema変更なし、既存往復
 
 ## 4) 受入条件 / Acceptance criteria
 
-- [ ] カード/島選択時に claimType と reviewState がバッジ等で確認できる。
-- [ ] 「未レビュー」「根拠なし」「違和感あり」で対象を絞り込める。
-- [ ] schema（DocumentV2）に変更がない（往復保存フィールドの読取のみ）。
-- [ ] AI/worker/API が `human_reviewed` を自動昇格しない（CE0-REVIEW-IF 非後退）。
-- [ ] `KJ_ATLAS_LLM_PROVIDER=none` 既定でも表示・絞り込みが成立する。
-- [ ] E2E で状態表示と絞り込みを検証する。
+- [x] カード/島選択時に claimType と reviewState がバッジ等で確認できる。→ CardView の claimType badge（fact/claim/hypothesis 色分けpill）、critique indicator、unreviewed amber dot、SidePanel の claimType・違和感テキスト・critiqueTags 表示（上記 Done 2026-06-20 節）。
+- [x] 「未レビュー」「根拠なし」「違和感あり」で対象を絞り込める。→ `DomainStateFilterBar.tsx` + `domain_state_filter.ts` に claimType / unreviewedOnly / hasCritique / holdStates のフィルタを実装（`domain_state_filter.test.ts` 56行で検証）。
+- [x] schema（DocumentV2）に変更がない（往復保存フィールドの読取のみ）。→ Done 2026-06-20 節「Schema: 変更なし (ADR-0040 Phase 1 非破壊原則遵守)」。
+- [x] AI/worker/API が `human_reviewed` を自動昇格しない（CE0-REVIEW-IF 非後退）。→ `core_value_guard.test.ts` CVI-3「human_reviewed promotion is human-only」で担保。
+- [x] `KJ_ATLAS_LLM_PROVIDER=none` 既定でも表示・絞り込みが成立する。→ 表示・絞り込みは純 frontend 処理で LLM 非依存（provider=none でも成立）。
+- [x] E2E で状態表示と絞り込みを検証する。→ `e2e/domain_expression_keyboard_access.spec.ts`（状態表示・キーボード到達性）。
 
 ## 5) 検証計画 / Validation plan
 
