@@ -480,6 +480,7 @@ function CardViewComponent({
       ) : null}
       {!markerMode && !isTextReviewed ? (
         <span
+          role="img"
           aria-label={t("card_view.unreviewed")}
           title={t("card_view.unreviewed")}
           style={{

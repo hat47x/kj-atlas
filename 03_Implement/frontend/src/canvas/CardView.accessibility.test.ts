@@ -62,8 +62,9 @@ describe("CardView accessibility (UQ-2)", () => {
     expect(html).toContain("保留");
   });
 
-  it("labels unreviewed indicator with aria-label", () => {
+  it("gives the labeled unreviewed indicator a valid semantic role", () => {
     const html = renderCard({ textReviewed: false });
+    expect(html).toContain('role="img"');
     expect(html).toContain('aria-label="カード本文は未レビューです"');
   });
 

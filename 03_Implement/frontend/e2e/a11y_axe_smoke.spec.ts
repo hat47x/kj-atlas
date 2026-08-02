@@ -64,6 +64,31 @@ test("canvas with a card selected has no automatable a11y violations", async ({ 
   await expectNoViolations(page, "canvas with selection context");
 });
 
+test("island editor has named fields and no automatable a11y violations", async ({ page }) => {
+  await page.goto("/?locale=en");
+  await page.getByRole("button", { name: /Open sample|サンプルを開く/ }).click();
+  await expect(page.locator('[data-panel="start-document-entry"]')).toBeHidden();
+
+  const island = page.getByRole("button", { name: "Select island domain-island" });
+  await island.focus();
+  await island.press("Enter");
+  await expect(page.getByRole("textbox", { name: "ID", exact: true })).toHaveValue("domain-island");
+  await expect(page.getByRole("textbox", { name: "Title", exact: true })).toHaveValue(
+    "unresolved review cluster",
+  );
+  await expectNoViolations(page, "island editor");
+});
+
+test("card inline editor has no automatable a11y violations", async ({ page }) => {
+  await page.goto("/?locale=en");
+  await page.getByRole("button", { name: /Open sample|サンプルを開く/ }).click();
+  await expect(page.locator('[data-panel="start-document-entry"]')).toBeHidden();
+
+  await page.getByRole("button", { name: "ambiguous target claim" }).dblclick();
+  await expect(page.getByRole("textbox", { name: "Edit card text", exact: true })).toBeVisible();
+  await expectNoViolations(page, "card inline editor");
+});
+
 test("canvas legend has no automatable a11y violations", async ({ page }) => {
   await page.goto("/?locale=en");
   await page.getByRole("button", { name: /Open sample|サンプルを開く/ }).click();

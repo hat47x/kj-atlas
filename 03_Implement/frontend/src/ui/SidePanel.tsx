@@ -2394,10 +2394,14 @@ export function SidePanel({
         <>
           <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>{t("side_panel.island_editor.title")}</div>
 
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+          <label
+            htmlFor="selected-island-id"
+            style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}
+          >
             ID
           </label>
           <input
+            id="selected-island-id"
             type="text"
             readOnly
             value={selectedIsland.id}
@@ -2471,10 +2475,14 @@ export function SidePanel({
             {t("side_panel.island_editor.collapsed")}
           </label>
 
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+          <label
+            htmlFor="selected-island-title"
+            style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}
+          >
             {t("side_panel.island_editor.title_label")}
           </label>
           <input
+            id="selected-island-title"
             type="text"
             value={selectedIsland.title ?? ""}
             onChange={(event) => {
@@ -3596,10 +3604,14 @@ export function SidePanel({
               </details>
               {selectedCard.canonicalId ? (
                 <>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+                  <label
+                    htmlFor="selected-card-canonical-id"
+                    style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}
+                  >
                     canonicalId
                   </label>
                   <input
+                    id="selected-card-canonical-id"
                     type="text"
                     readOnly
                     value={selectedCard.canonicalId}

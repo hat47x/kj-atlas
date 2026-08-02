@@ -3,12 +3,12 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Bug
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `MVP-EXIT-01`（人間受入項目の機械代替検証後に実施したモンキーテストで発見）
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/e2e/a11y_axe_smoke.spec.ts`
+- Scope: `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/canvas/CardView.tsx`, `03_Implement/frontend/src/canvas/CardView.accessibility.test.ts`, `03_Implement/frontend/e2e/a11y_axe_smoke.spec.ts`
 - Related Backlog: `QA-MONKEY-14`
 - Related ADR/Spec: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/issues/issue-UI-QUALITY-A11Y-07-card-inline-editor-missing-accessible-name.md`
 - Expected verification level: `e2e`
@@ -67,8 +67,9 @@ start panel / カード選択 / 凡例 / 共有パネル / 作業モード / エ
 ## 対応方針
 
 - 実施すること:
-  - 島エディタの `ID` 欄・`タイトル` 欄（および `canonicalId` 欄）を `<label htmlFor>` + `id`、または `aria-label` で関連付ける。同一パネル内で方式を揃える。
-  - `a11y_axe_smoke.spec.ts` に「島を選択した状態」と「カード本文インライン編集中の状態」を追加する。
+  - 島エディタの `ID` 欄・`タイトル` 欄とカードの `canonicalId` 欄を `<label htmlFor>` + `id` で関連付けた。
+  - `a11y_axe_smoke.spec.ts` に「島を選択した状態」と「カード本文インライン編集中の状態」を追加した。
+  - 追加したインライン編集状態で既知の `aria-prohibited-attr` が顕在化したため、未レビュー標識へ `role="img"` を付与し、既存の見た目と音声ラベルを維持した。カード名から状態を分離する残課題は `QA-MONKEY-16` の範囲に残す。
 - 実施しないこと:
   - 島エディタの項目構成やレイアウトの変更。
   - `ID` 欄を非表示にすること（表示可否は別途 `CARD-META-UI-01` の範囲）。
@@ -81,15 +82,19 @@ start panel / カード選択 / 凡例 / 共有パネル / 作業モード / エ
 
 ## 受入条件
 
-- [ ] 島を選択した状態で axe の `label` 違反が0件になる。
-- [ ] 島の `ID` 欄・`タイトル` 欄の accessible name が、画面上の見出し文言と一致する。
-- [ ] `a11y_axe_smoke.spec.ts` が島選択状態とインライン編集状態を走査し、成功する。
-- [ ] 既存のaxe対象8状態に退行がない。
+- [x] 島を選択した状態で axe の `label` 違反が0件になる。
+- [x] 島の `ID` 欄・`タイトル` 欄の accessible name が、画面上の見出し文言と一致する。
+- [x] `a11y_axe_smoke.spec.ts` が島選択状態とインライン編集状態を走査し、成功する。
+- [x] 既存のaxe対象8状態に退行がない。
 
-## 検証計画
+## 検証結果
 
-- 実行する確認: 上記再現手順でのaxe再実行、`playwright test e2e/a11y_axe_smoke.spec.ts`、`vitest run src/ui/`。
-- 期待結果: violations 0件。追加した2状態を含めて全件成功。
+- `playwright test e2e/a11y_axe_smoke.spec.ts`: `10 passed`。追加2状態を含めaxe violations 0件。
+- `playwright test e2e/canvas_focus_order.spec.ts e2e/retention_keyboard_shortcuts.spec.ts`: `5 passed`。
+- `vitest run`: `226 files / 1320 tests passed`。
+- `tsc --noEmit`: pass。
+- `vite build`: pass（既知のchunk-size warningのみ）。
+- `git diff --check`（対象ファイル）: pass。
 
 ## 補足
 
