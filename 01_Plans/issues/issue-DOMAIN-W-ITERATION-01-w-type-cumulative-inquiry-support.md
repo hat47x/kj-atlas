@@ -97,7 +97,7 @@
 - [x] AC-8: 中断後の再開ブリーフから、問い、未解決点、次の行動、元成果へ移動できる。
 - [x] AC-9: 引継ぎ確認を一件ずつ採用・修正・見送り・保留でき、未回答でも保存できる。
 - [x] AC-10: `KJ_ATLAS_LLM_PROVIDER=none` で中核操作を完了できる。
-- [x] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。→ `inquiry_journey_model.md` §4.4（SafeMode派生bundle契約）、§4.5（Import strict validation契約）、§4.6（部分共有契約）、§4.3（削除と保持）、§6 不変条件 8-10 として契約化済み（2026-07-20）。SafeMode適用結果のbundle内metadata（`InquiryExportInfoV1`）は型追加が未了のため、別途follow-upする。
+- [x] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。→ `inquiry_journey_model.md` §4.4（SafeMode派生bundle契約）、§4.5（Import strict validation契約）、§4.6（部分共有契約）、§4.3（削除と保持）、§6 不変条件 8-10 として契約化済み（2026-07-20）。SafeMode適用結果と共有範囲を受信側で検証できるbundle内metadata（`InquiryExportInfoV1`）も実装・検証済み（2026-08-02、`aa74a0c9`）。保持・履歴削除の実体化はbackend永続化とともに未完了のため、support levelは`L0: Planned`を維持する。
 - [x] AC-12: マウス・キーボード・390px・代表規模のE2Eが通る。
 - [x] AC-13: 探究終了（破壊的操作）の確認は、A-1（エージェント連携）と同型の保存・破棄・取消の3択とし、SafeMode既定ONの継承と出典・文面のサニタイズを満たす。→ 2026-07-29チェックポイントで完了。
 
@@ -222,6 +222,14 @@
 - 永続型の主要オブジェクトごとに全フィールドの扱いを型で列挙した。将来フィールドが追加された場合はSafeMode方針を明示するまでtypecheckを失敗させ、未知フィールドを含む入力も派生前のstrict validationでfail-closedにする。
 - unit testで自由記述、URL、署名、主体参照、任意JSON payloadが派生物へ残らないこと、構造と人手レビュー状態の維持、元bundle非変更、digest再計算、strict roundtrip、未知フィールド拒否を確認した。
 - `safeModeApplied: true`は現時点では関数結果だけに返し、永続bundleへ記録しない。共有範囲とSafeMode適用結果を受信側でも確認できる契約version、保持・履歴削除、テナント境界が未決定のため、画面に「安全な共有」として公開せず、AC-11とsupport levelは引き続き未完了の`L0: Planned`とする。
+
+### AC-11 SafeMode共有metadataと偽装拒否（2026-08-02）
+
+- 通常のローカル保存は従来どおり本文を保持し、`exportInfo`を付けない。外部共有用の別操作はUI上のSafeMode設定にかかわらず必ずSafeModeを適用し、`exportInfo`へ`scope: "full"`または`scope: "round"`、`safeModeApplied: true`を記録する。部分共有では`selectedRoundId`が唯一の先端および既定先端と一致しなければstrict validationで拒否する。
+- import/exportはmetadataの未知キー、不正型、`safeModeApplied: false`、範囲不整合をfail-closedで拒否する。さらに受信bundleを再度SafeMode派生して固定点を照合し、生本文を残したまま`safeModeApplied: true`だけを偽装したbundleも拒否する。SafeModeの伏字処理は正規の伏字表現に対して冪等とした。
+- 高度機能パネルへ「SafeMode共有コピーを保存」を追加し、取込後は適用済み状態と全体・選択ラウンド範囲を読取専用表示する。日本語・英語表示と390px幅の連続保存・再取込・横切れなしをE2Eで確認した。
+- 実装は`aa74a0c9`。frontend typecheck、229 files / 1,333 unit tests、production build、Playwright通常構成195 passed / SaaS専用3 skipped、docs-check、active issue validator、`git diff --check`を通過した。
+- これによりSafeMode共有metadataの未完了項目は解消した。backend永続化に伴う保持・履歴削除の実装、T9、T10の常設タブ配置は未完了であり、support levelは`L0: Planned`を維持する。
 
 ### AC-13 探究終了の3択確認（2026-07-29）
 
