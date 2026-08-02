@@ -54,6 +54,53 @@ describe("applyHilRsRediffPayload", () => {
     expect(result.document.cards[0].textReviewed).toBeUndefined();
   });
 
+  it("builds an added card from targetRef and complete proposed content", () => {
+    const result = applyHilRsRediffPayload(BASE, {
+      ...PAYLOAD,
+      diffOps: [
+        {
+          opId: "add-card",
+          opType: "add",
+          targetRef: "card:c2:variant",
+          before: null,
+          after: { text: "beta", x: 10, y: 20 },
+        },
+      ],
+    });
+
+    expect(result.appliedOpIds).toEqual(["add-card"]);
+    expect(result.skippedOpIds).toEqual([]);
+    expect(result.document.cards[1]).toEqual({
+      id: "c2:variant",
+      text: "beta",
+      x: 10,
+      y: 20,
+    });
+  });
+
+  it.each([
+    ["missing text", { id: "c2", x: 10, y: 20 }],
+    ["mismatched id", { id: "different", text: "beta", x: 10, y: 20 }],
+    ["non-finite x", { id: "c2", text: "beta", x: Number.NaN, y: 20 }],
+  ])("skips incomplete card add payloads: %s", (_label, after) => {
+    const result = applyHilRsRediffPayload(BASE, {
+      ...PAYLOAD,
+      diffOps: [
+        {
+          opId: "invalid-add",
+          opType: "add",
+          targetRef: "card:c2",
+          before: null,
+          after,
+        },
+      ],
+    });
+
+    expect(result.appliedOpIds).toEqual([]);
+    expect(result.skippedOpIds).toEqual(["invalid-add"]);
+    expect(result.document.cards).toEqual(BASE.cards);
+  });
+
   it("rejects rediff operations that attempt to inject review state", () => {
     const result = applyHilRsRediffPayload(BASE, {
       ...PAYLOAD,

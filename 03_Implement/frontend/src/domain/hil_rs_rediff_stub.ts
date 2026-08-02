@@ -69,7 +69,12 @@ export function buildHilRsRediffStub(
         opType: "add",
         targetRef: `card:${suggestedCard.id}`,
         before: null,
-        after: { x: suggestedCard.x, y: suggestedCard.y },
+        after: {
+          id: suggestedCard.id,
+          text: suggestedCard.text,
+          x: suggestedCard.x,
+          y: suggestedCard.y,
+        },
       });
       continue;
     }

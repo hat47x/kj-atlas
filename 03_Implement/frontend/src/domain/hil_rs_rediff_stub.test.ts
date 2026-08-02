@@ -44,6 +44,11 @@ describe("buildHilRsRediffStub", () => {
     expect(payload).not.toBeNull();
     expect(payload?.traceKey).toContain("card:c1:2");
     expect(payload?.diffOps.map((op) => op.opType)).toEqual(["add", "move", "remove"]);
+    expect(payload?.diffOps.find((op) => op.opType === "add")).toMatchObject({
+      targetRef: "card:c3",
+      before: null,
+      after: { id: "c3", text: "gamma", x: 20, y: 20 },
+    });
   });
 
 

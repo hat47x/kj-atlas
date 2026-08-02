@@ -55,7 +55,12 @@ describe("hil_rs_client_apply integration", () => {
     expect(result.skippedOpIds).toHaveLength(0);
     expect(result.document.cards).toHaveLength(3);
     expect(result.document.cards.find((card) => card.id === "c1")?.x).toBe(10);
-    expect(result.document.cards.some((card) => card.x === 230 && card.y === 70)).toBe(true);
+    expect(result.document.cards.find((card) => card.id === "c3")).toEqual({
+      id: "c3",
+      text: "gamma",
+      x: 230,
+      y: 70,
+    });
   });
 
   it("preserves critique data through full preview-rediff-apply loop (DOMAIN-EXPR-03)", () => {

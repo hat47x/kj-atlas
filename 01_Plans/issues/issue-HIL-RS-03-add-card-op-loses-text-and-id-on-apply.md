@@ -3,14 +3,14 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/frontend/src/domain/hil_rs_apply.ts`, `03_Implement/frontend/src/domain/hil_rs_rediff_stub.ts`, `03_Implement/frontend/src/domain/hil_rs_contract.ts`
+- Scope: `03_Implement/frontend/src/domain/hil_rs_apply.ts`, `03_Implement/frontend/src/domain/hil_rs_rediff_stub.ts`, `03_Implement/frontend/src/domain/hil_rs_apply.test.ts`, `03_Implement/frontend/src/domain/hil_rs_rediff_stub.test.ts`, `03_Implement/frontend/src/domain/hil_rs_client_apply.integration.test.ts`
 - Related ADR/Spec: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`, `issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md`
-- Expected verification level: `unit`
+- Expected verification level: `unit + integration`
 
 ## 課題
 
@@ -24,28 +24,48 @@
 
 ## 対応方針
 
-- 実施すること（人間の設計判断が必要。次のいずれかを選ぶ）:
-  - (a) `hil_rs_rediff_stub.ts` の `"add"` 生成箇所を修正し、`after` に `id`（または少なくとも `text`）を含める。ただし、これは提案元（将来の実AI再提案プロバイダ）が同じ形式に従う保証がないため、根本解決にはならない可能性がある。
-  - (b) `hil_rs_apply.ts` の `applyCardOp()` 側で、`"add"` 適用時に `target.id`（解析済み）を明示的にマージし、`text` については「追加時は空文字列を初期値とする」等の明確なデフォルト方針を定める。
-  - (c) 上記の組み合わせ、または `HilRsDiffOp` の型自体を `opType` ごとに判別可能なユニオン型に強め、`add` の `after` が `Card` 全体（`id`/`text`/`x`/`y`）を含むことを型レベルで強制する。
-  - いずれの方針でも、「追加されたカードの初期 `text` は何であるべきか」（空文字列か、それとも別の情報源から補完するか）という製品判断が必要。
-- 実施しないこと:
-  - HIL-RS再提案フロー全体の再設計（本issueはカード追加時のid/text欠落という一点に閉じる）。
+- (a)と(b)を組み合わせる。
+  - 正規生成元はadd操作の`after`へ、suggested cardの`id`、`text`、`x`、`y`をすべて含める。
+  - 適用側は`targetRef`から得たIDを正本としてカードを再構築し、`after.id`が存在して不一致の場合、`text`欠損、非数値・非有限座標の場合はその操作をskipする。
+- `text`は空文字で補完せず、suggested cardの実テキストを使う。提案に本文がなければ、空カードを捏造せず適用しない。
+- A1-REDIFF-IFの契約ID、schema version、汎用`before`/`after`形状は凍結互換のため変更しない。不完全な外部payloadが構造検証を通っても、Documentへcommitする適用境界で拒否する。
+- `targetRef`は最初のコロンだけをnamespace区切りとして解析し、契約上許される後続コロンを含むIDでも`targetRef`全体と同じIDを生成する。
+- 追加カードへは必須4フィールドだけをallowlistで構築し、提案payloadの未知フィールドやレビュー状態をDocumentへコピーしない。
+- HIL-RS再提案フロー全体の再設計は行わない。
+
+## 実施結果
+
+- 正規preview-rediff-apply経路で`c3`が`{ id: "c3", text: "gamma", x: 230, y: 70 }`として追加される回帰テストを固定した。
+- 不完全payload、ID矛盾、`NaN`座標、レビュー状態注入はskipされ、元Documentを変更しない。
+- 既存のmove/remove、critique保持、proposal-only・人手適用境界は変更していない。
 
 ## 受入条件
 
-- [ ] HIL-RS再提案経由で追加されたカードが、`id`（`targetRef` と一致）と `text`（明確に定義されたデフォルトまたは実データ）を欠かずに `document.cards` に入る。
-- [ ] `hil_rs_client_apply.integration.test.ts` の既存テストが継続して通過する。
-- [ ] 関連する安全・互換性を損なわない。
-- [ ] 宣言した検証を実行するか、未実施理由を記録する。
+- [x] HIL-RS再提案経由で追加されたカードが、`targetRef`と一致する`id`、suggested cardの実`text`、有限な`x`/`y`を持って`document.cards`に入る。
+- [x] `hil_rs_client_apply.integration.test.ts` の既存フローを維持し、追加カードの全必須フィールドを新規アサーションで確認する。
+- [x] 不完全・矛盾payload、レビュー状態注入をcommitせず、凍結済みA1契約とproposal-only・人手適用境界を維持する。
+- [x] 宣言した検証とfrontend全体回帰を実行し、結果を記録する。
 
-## 検証計画
+## 検証
 
-- 実行する確認:
-  - `npx vitest run src/domain/hil_rs_apply.test.ts src/domain/hil_rs_client_apply.integration.test.ts`
-  - 追加されたカードの `id`/`text` が期待どおりであることを検証する新規アサーションを追加する。
-- 期待結果:
-  - 追加されたカードが `id`/`text`/`x`/`y` すべてを正しく持つ。
+- HIL-RS近接unit・integration・契約テスト:
+  - `node node_modules/vitest/vitest.mjs run src/domain/hil_rs_apply.test.ts src/domain/hil_rs_client_apply.integration.test.ts src/domain/hil_rs_rediff_stub.test.ts src/domain/hil_rs_contract.test.ts`
+  - `4 files / 29 tests passed`
+- frontend全体回帰:
+  - `node node_modules/vitest/vitest.mjs run`
+  - `226 files / 1320 tests passed`
+- 型検査:
+  - `node node_modules/typescript/bin/tsc --noEmit`
+  - passed
+- production build:
+  - `node node_modules/vite/bin/vite.js build`
+  - passed（既存のchunk size warningのみ）
+- issue/document contract:
+  - `python 01_Plans/docs_check.py`
+  - passed
+- patch integrity:
+  - `git diff --check -- <HIL-RS-03 changed files>`
+  - passed
 
 ## 補足
 

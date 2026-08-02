@@ -29,9 +29,30 @@ function hasReviewProtectedField(value: unknown): boolean {
 }
 
 function parseTargetRef(targetRef: string): { kind: "card" | "island"; id: string } | null {
-  const [kind, id] = targetRef.split(":");
-  if ((kind !== "card" && kind !== "island") || !id) return null;
+  const separatorIndex = targetRef.indexOf(":");
+  if (separatorIndex < 0) return null;
+  const kind = targetRef.slice(0, separatorIndex);
+  const id = targetRef.slice(separatorIndex + 1);
+  if ((kind !== "card" && kind !== "island") || !id || id.startsWith(":") || /\s/.test(id)) return null;
   return { kind, id };
+}
+
+function buildCardFromAddPayload(
+  targetId: string,
+  value: unknown,
+): Document["cards"][number] | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const after = value as Record<string, unknown>;
+  if ("id" in after && after.id !== targetId) return null;
+  if (typeof after.text !== "string") return null;
+  if (typeof after.x !== "number" || !Number.isFinite(after.x)) return null;
+  if (typeof after.y !== "number" || !Number.isFinite(after.y)) return null;
+  return {
+    id: targetId,
+    text: after.text,
+    x: after.x,
+    y: after.y,
+  };
 }
 
 function cloneDocument(document: Document): Document {
@@ -58,8 +79,10 @@ function applyCardOp(document: Document, op: HilRsDiffOp): boolean {
   const index = document.cards.findIndex((card) => card.id === target.id);
 
   if (op.opType === "add") {
-    if (index !== -1 || !op.after || typeof op.after !== "object") return false;
-    document.cards.push(op.after as Document["cards"][number]);
+    if (index !== -1) return false;
+    const card = buildCardFromAddPayload(target.id, op.after);
+    if (!card) return false;
+    document.cards.push(card);
     return true;
   }
 
