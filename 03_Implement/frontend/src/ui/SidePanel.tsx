@@ -15,13 +15,17 @@ import {
   formatIslandRelationExplanationMarkdown,
   type IslandRelationEdgeSelection,
 } from "../domain/island_relation_explain";
-import type { Card, ContradictionSignalReviewStatus, CritiqueTag, DocumentV1, EvidenceLink, HoldState, Island, RelationSummary } from "../domain/types";
+import type { Card, ContradictionSignalReviewStatus, CritiqueTag, DocumentV1, EvidenceLink, HoldState, Island, RelationSummary, RepresentativeVisualCue } from "../domain/types";
 import { RELATION_SUMMARY_TEXT_MAX_LENGTH } from "../domain/relation_summary_ops";
 import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
 import type { ContradictionReport, ContradictionSignal } from "../domain/view/contradiction_checks";
 import { signatureKeyForContradictionSignal } from "../domain/view/contradiction_checks";
 import { shouldLoadLegacyIslandImage } from "../domain/legacy_island_image";
+import {
+  createRepresentativeVisualCuePreset,
+  REPRESENTATIVE_VISUAL_CUE_PRESETS,
+} from "../domain/representative_visual_cue_presets";
 import { rankDistributionIslands, type DistributionReport } from "../domain/view/distribution_checks";
 import type { ClaimType, ClaimTypeMixReport } from "../domain/view/claim_type_checks";
 import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
@@ -32,6 +36,7 @@ import { runTraceRequest } from "../utils/trace_request_lifecycle";
 import { TraceWorkerClient } from "../worker/trace_client";
 import type { TraceAnalytics } from "../worker/trace_analytics";
 import type { MergeAuditEntry } from "../domain/view/audit_log";
+import { RepresentativeVisualCueMark } from "./RepresentativeVisualCueMark";
 
 type SummaryGroundingItem = {
   id: string;
@@ -122,6 +127,7 @@ type SidePanelProps = {
   summaryGroundingItems: SummaryGroundingItem[];
   onImageUrlChange: (value: string) => void;
   onImageReviewedChange: (value: boolean) => void;
+  onRepresentativeVisualCueChange: (value: RepresentativeVisualCue | undefined) => void;
   onIslandCollapsedChange: (value: boolean) => void;
   isSelectedIslandCollapsed: boolean;
   hasIslands: boolean;
@@ -309,6 +315,7 @@ export function SidePanel({
   summaryGroundingItems,
   onImageUrlChange,
   onImageReviewedChange,
+  onRepresentativeVisualCueChange,
   onIslandCollapsedChange,
   isSelectedIslandCollapsed,
   hasIslands,
@@ -2830,6 +2837,110 @@ export function SidePanel({
             />
             {t("side_panel.reviewed")}
           </label>
+
+          {isAdvancedUiEnabled ? (
+            <details
+              data-domain-feature="representative-visual-cue"
+              style={{
+                border: "1px solid #cbd5e1",
+                borderRadius: 8,
+                padding: 8,
+                marginBottom: 10,
+                backgroundColor: "#f8fafc",
+              }}
+            >
+              <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#334155" }}>
+                {t("side_panel.visual_cue.title")}
+              </summary>
+              <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
+                <div style={{ fontSize: 11, lineHeight: 1.5, color: "#475569" }}>
+                  {t("side_panel.visual_cue.description", { title: selectedIslandTitle })}
+                </div>
+                <div
+                  role="group"
+                  aria-label={t("side_panel.visual_cue.preset_group")}
+                  style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}
+                >
+                  {REPRESENTATIVE_VISUAL_CUE_PRESETS.map((preset) => {
+                    const label = t(preset.labelKey);
+                    const isSelected =
+                      selectedIsland.representativeCue?.kind === "preset_svg"
+                      && selectedIsland.representativeCue.cueId === preset.cueId;
+                    const cue = createRepresentativeVisualCuePreset(preset.cueId, label);
+                    return (
+                      <button
+                        key={preset.cueId}
+                        type="button"
+                        aria-pressed={isSelected}
+                        aria-label={t("side_panel.visual_cue.select_preset", { label })}
+                        disabled={isReadOnly}
+                        onClick={() => {
+                          onRepresentativeVisualCueChange(cue);
+                        }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          minWidth: 0,
+                          border: isSelected ? "2px solid #0284c7" : "1px solid #cbd5e1",
+                          borderRadius: 6,
+                          padding: "8px 10px",
+                          backgroundColor: isSelected ? "#e0f2fe" : "#ffffff",
+                          color: "#334155",
+                          cursor: isReadOnly ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        <RepresentativeVisualCueMark cue={cue} />
+                        <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedIsland.representativeCue ? (
+                  <>
+                    <label
+                      htmlFor="selected-island-visual-cue-alt-text"
+                      style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155" }}
+                    >
+                      {t("side_panel.visual_cue.alt_text")}
+                    </label>
+                    <input
+                      id="selected-island-visual-cue-alt-text"
+                      type="text"
+                      value={selectedIsland.representativeCue.altText}
+                      disabled={isReadOnly}
+                      onChange={(event) => {
+                        onRepresentativeVisualCueChange({
+                          ...selectedIsland.representativeCue!,
+                          altText: event.target.value,
+                        });
+                      }}
+                      style={{
+                        width: "100%",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 6,
+                        padding: "6px 8px",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={isReadOnly}
+                      onClick={() => {
+                        onRepresentativeVisualCueChange(undefined);
+                      }}
+                    >
+                      {t("side_panel.visual_cue.remove")}
+                    </button>
+                  </>
+                ) : (
+                  <div role="status" style={{ fontSize: 11, color: "#64748b" }}>
+                    {t("side_panel.visual_cue.none")}
+                  </div>
+                )}
+              </div>
+            </details>
+          ) : null}
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             {t("side_panel.image_url")}

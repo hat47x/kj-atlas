@@ -12,6 +12,7 @@ import {
 } from "../domain/view/label_culling";
 import type { Card, Island, Point } from "../domain/types";
 import { t } from "../i18n/translate";
+import { RepresentativeVisualCueMark } from "../ui/RepresentativeVisualCueMark";
 import { LabelVisibilityContext } from "./LabelVisibilityContext";
 
 const CARD_WIDTH = 220;
@@ -412,6 +413,9 @@ function IslandViewComponent({
           gap: 6,
         }}
       >
+        {showTitleLabel && island.representativeCue ? (
+          <RepresentativeVisualCueMark cue={island.representativeCue} />
+        ) : null}
         {showTitleLabel ? (isCollapsed ? representativeTitle : resolvedDisplayTitle) : null}
         <span
           style={{
