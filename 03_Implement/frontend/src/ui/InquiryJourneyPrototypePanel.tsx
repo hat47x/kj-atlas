@@ -12,6 +12,7 @@ import {
   serializeInquiryBundle,
 } from "../domain/inquiry_bundle_io";
 import { deriveInquiryRoundBundle } from "../domain/inquiry_bundle_projection";
+import { prepareInquiryBundleForShare } from "../domain/inquiry_bundle_share";
 import {
   buildInquiryHandoffReview,
   saveInquiryRoundHandoff,
@@ -476,6 +477,43 @@ export function InquiryJourneyPrototypePanel({
     }
   };
 
+  const handleShareExport = async (): Promise<void> => {
+    if (!bundle) return;
+    setIsBusy(true);
+    setMessage(null);
+    try {
+      const shared = await prepareInquiryBundleForShare(
+        bundle,
+        effectiveExportRoundId || undefined,
+      );
+      if (!shared.ok) {
+        setMessage({
+          kind: "error",
+          text: t(
+            shared.reason === "dependency_outside_scope"
+              ? "inquiry_journey.prototype.export_scope_dependency"
+              : "inquiry_journey.prototype.share_export_error",
+          ),
+        });
+        return;
+      }
+      const scopeSuffix = effectiveExportRoundId ? `-${fileStem(effectiveExportRoundId)}` : "";
+      downloadTextFile(
+        `${fileStem(bundle.journey.title)}${scopeSuffix}.safe-share.kj-atlas-inquiry.json`,
+        "application/json",
+        shared.json,
+      );
+      setMessage({
+        kind: "status",
+        text: t(effectiveExportRoundId
+          ? "inquiry_journey.prototype.share_exported_round"
+          : "inquiry_journey.prototype.share_exported"),
+      });
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
   // DOMAIN-W-ITERATION-01 AC-13 / T10: 3-choice end confirmation (save/
   // discard/cancel), matching A-1's TenantChangeConfirmationDialog pattern.
   // "save" only clears the on-screen inquiry once export actually succeeds
@@ -886,11 +924,32 @@ export function InquiryJourneyPrototypePanel({
             <div style={{ fontSize: 12, color: "#92400e" }}>
               {t("inquiry_journey.prototype.export_scope_safety_hint")}
             </div>
+            <div style={{ fontSize: 12, color: "#166534" }}>
+              {t("inquiry_journey.prototype.share_export_hint")}
+            </div>
+            {bundle.exportInfo ? (
+              <div
+                data-testid="inquiry-export-info"
+                style={{ fontSize: 12, color: "#334155", overflowWrap: "anywhere" }}
+              >
+                {t(
+                  bundle.exportInfo.scope === "round"
+                    ? "inquiry_journey.prototype.imported_share_info_round"
+                    : "inquiry_journey.prototype.imported_share_info_full",
+                  bundle.exportInfo.scope === "round"
+                    ? { roundId: bundle.exportInfo.selectedRoundId }
+                    : undefined,
+                )}
+              </div>
+            ) : null}
           </fieldset>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>
             <button type="button" disabled={isBusy} onClick={() => void handleExport()} style={{ whiteSpace: "normal" }}>
               {t("inquiry_journey.prototype.export")}
+            </button>
+            <button type="button" disabled={isBusy} onClick={() => void handleShareExport()} style={{ whiteSpace: "normal" }}>
+              {t("inquiry_journey.prototype.share_export")}
             </button>
             <button type="button" disabled={isBusy} onClick={() => inputRef.current?.click()} style={{ whiteSpace: "normal" }}>
               {t("inquiry_journey.prototype.import")}

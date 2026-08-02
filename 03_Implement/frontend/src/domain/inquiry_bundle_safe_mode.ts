@@ -12,6 +12,7 @@ import {
   type RoundSnapshotV1,
 } from "./inquiry_journey";
 import { SafeModePolicy } from "./policy/safe_mode";
+import { canonicalizeJson } from "./patch/patch_fingerprint";
 import {
   resolveKnownEdgeType,
   type Card,
@@ -52,6 +53,7 @@ const BUNDLE_FIELDS = {
   journey: "rebuild",
   snapshots: "rebuild",
   cardLineage: "rebuild",
+  exportInfo: "preserve",
 } satisfies Record<keyof InquiryBundleV1, FieldPolicy>;
 
 const JOURNEY_FIELDS = {
@@ -513,6 +515,9 @@ export type DocumentSafeModeProjectionOptions = Readonly<{
 }>;
 
 function redact(value: string): string {
+  if (/^\[REDACTED\](?: \(len:\d+\))?$/.test(value)) {
+    return value;
+  }
   return SafeModePolicy.redactText(value, true);
 }
 
@@ -1036,6 +1041,22 @@ function sanitizeSnapshot(snapshot: RoundSnapshotV1): RoundSnapshotV1 {
   };
 }
 
+function sanitizeBundleContents(bundle: InquiryBundleV1): InquiryBundleV1 {
+  return {
+    schemaVersion: bundle.schemaVersion,
+    journey: sanitizeJourney(bundle.journey),
+    snapshots: bundle.snapshots.map(sanitizeSnapshot),
+    cardLineage: bundle.cardLineage.map(sanitizeLineage),
+    ...(bundle.exportInfo
+      ? { exportInfo: structuredClone(bundle.exportInfo) }
+      : {}),
+  };
+}
+
+export function isInquirySafeModeBundle(bundle: InquiryBundleV1): boolean {
+  return canonicalizeJson(sanitizeBundleContents(bundle)) === canonicalizeJson(bundle);
+}
+
 /**
  * Builds an external-use SafeMode projection without changing the source bundle.
  *
@@ -1050,12 +1071,7 @@ export async function deriveInquirySafeModeBundle(
   const validated = await serializeInquiryBundle(source);
   if (!validated.ok) return validated;
 
-  const sanitized: InquiryBundleV1 = {
-    schemaVersion: validated.bundle.schemaVersion,
-    journey: sanitizeJourney(validated.bundle.journey),
-    snapshots: validated.bundle.snapshots.map(sanitizeSnapshot),
-    cardLineage: validated.bundle.cardLineage.map(sanitizeLineage),
-  };
+  const sanitized = sanitizeBundleContents(validated.bundle);
 
   const serialized = await serializeInquiryBundle(sanitized);
   if (!serialized.ok) return serialized;

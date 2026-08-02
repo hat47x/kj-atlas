@@ -82,6 +82,17 @@ export type RoundSnapshotV1 = {
   document: DocumentV1;
 };
 
+export type InquiryExportInfoV1 =
+  | {
+      scope: "full";
+      safeModeApplied: true;
+    }
+  | {
+      scope: "round";
+      selectedRoundId: string;
+      safeModeApplied: true;
+    };
+
 type OneToOneLineageKind = "carried" | "edited";
 
 export type CardLineageEdgeV1 =
@@ -125,6 +136,7 @@ export type InquiryBundleV1 = {
   journey: InquiryJourneyV1;
   snapshots: RoundSnapshotV1[];
   cardLineage: CardLineageEdgeV1[];
+  exportInfo?: InquiryExportInfoV1;
 };
 
 export type InquiryValidationIssueCode =
@@ -142,6 +154,7 @@ export type InquiryValidationIssueCode =
   | "invalid_head_round"
   | "missing_leaf_head"
   | "invalid_default_head"
+  | "invalid_export_info"
   | "duplicate_snapshot_id"
   | "missing_origin_snapshot"
   | "duplicate_origin_snapshot"
@@ -410,6 +423,15 @@ export function validateInquiryBundle(bundle: InquiryBundleV1): InquiryValidatio
     && !headIds.has(bundle.journey.defaultHeadRoundId)
   ) {
     addIssue("invalid_default_head", "journey.defaultHeadRoundId");
+  }
+  if (bundle.exportInfo?.scope === "round") {
+    if (
+      bundle.journey.headRoundIds.length !== 1
+      || bundle.journey.headRoundIds[0] !== bundle.exportInfo.selectedRoundId
+      || bundle.journey.defaultHeadRoundId !== bundle.exportInfo.selectedRoundId
+    ) {
+      addIssue("invalid_export_info", "exportInfo.selectedRoundId");
+    }
   }
 
   const snapshotsById = new Map(bundle.snapshots.map((snapshot) => [snapshot.snapshotId, snapshot]));

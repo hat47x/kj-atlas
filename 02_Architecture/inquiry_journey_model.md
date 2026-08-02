@@ -155,6 +155,13 @@ flowchart LR
 - 対象範囲の `RoundHandoffV1`、`FieldworkRequestV1`、`CardLineageEdgeV1`。
 - schema version、各成果のdigest、共有範囲とSafeMode結果。
 
+外部共有用の派生bundleは任意の `InquiryExportInfoV1` を持つ。ローカル保存bundleはこのfieldを持たず、共有用コピーだけが次のclosed unionを記録する。
+
+- 探究全体: `{ scope: "full", safeModeApplied: true }`
+- 選択ラウンドまで: `{ scope: "round", selectedRoundId: string, safeModeApplied: true }`
+
+`scope: "round"` の `selectedRoundId` は、派生bundleの唯一のheadかつdefault headと一致しなければならない。`safeModeApplied` は `true` 以外を許可せず、strict importは同じSafeMode変換を再適用してbundleが固定点であることを確認する。raw本文を残したままmetadataだけを付加したbundleは拒否する。既存のローカル保存bundleはmetadata省略のまま往復できる。
+
 SafeModeによるマスクは元スナップショットを変更しない。共有用の派生bundleを作り、マスク後の内容に新しいdigestを付ける（§4.4 SafeMode派生bundle契約 参照）。元bundleのdigestやIDを秘匿性の代用にしない。
 
 importは参照がbundle内で閉じていること、digestが一致すること、親グラフに循環がないこと、未知キー・未知versionをfail-closedで拒否できることを検証する（§4.5 Import strict validation契約 参照）。
@@ -192,7 +199,7 @@ SafeModeは既定ONの安全機構であり、探究bundleを他者と共有す�
 
 **非変更項目**: `human_reviewed`状態・review attribution・provenanceフラグはSafeMode派生で変更しない。これらは内容のマスク後も事実情報として保持する。
 
-**`safeModeApplied`フラグ**: 現時点では関数戻り値（`InquirySafeModeBundleResult.safeModeApplied`）として返し、永続bundleへ記録しない。受信側がSafeMode適用を確認できるexport metadata（`InquiryExportInfoV1`）は、bundle型への追加が未了のため保留する。追加後、本節の対象となる。
+**`safeModeApplied`フラグ**: `InquiryExportInfoV1.safeModeApplied` として共有用派生bundleへ永続化する。値は `true` のみ許可し、import時にmetadataと実内容の一致を再検証する。ローカル保存bundleは `exportInfo` を省略し、SafeMode適用済みと誤認させない。
 
 **未知`CardLineageEdgeV1`種別**: 未知の種別は表示用既定値`related`へ正規化する（安全側の措置）。
 
@@ -248,7 +255,7 @@ import（`inquiry_bundle_io.ts` `parseInquiryBundleJson()`）はすべての入�
 - 元bundleとsnapshotは変更しない。派生bundleは`structuredClone`による深い複製である。
 - 派生bundleは既存の`validateInquiryBundle()`とstrict export/importを通過する検証済みの自己完結bundleであり、`InquiryBundleV1`としての完全性を満たす。
 
-**partial scopeの表示**: 現時点ではexport metadata（`InquiryExportInfoV1.scope`）をbundle型へ追加していないため、部分範囲であることの表示はbundle外の呼び出し側が責任を持つ。bundle型への追加後、本節の対象となる。
+**partial scopeの表示**: 共有用派生bundleは `InquiryExportInfoV1.scope="round"` と `selectedRoundId` を記録する。import UIはこのmetadataを読取専用で表示する。ローカル部分保存は共有物ではないためmetadataを持たず、既存の安全警告を維持する。
 
 - 通常モードへ6段階、進捗率、履歴パネルを追加しない。
 - 高度機能を有効にしたときだけ「現状把握・2回目」のような現在位置を一行で示す。
@@ -287,7 +294,7 @@ import（`inquiry_bundle_io.ts` `parseInquiryBundleJson()`）はすべての入�
 
 Phase 0・1で操作模型が理解されない場合は永続契約へ進まない。Phase 2で代表規模の容量・読込時間が性能予算を満たさない場合は、スナップショット圧縮または差分格納を内部最適化として比較する。ただし、外部契約は完全な成果を再構成できることを維持する。
 
-**実装状況（2026-07-19）**: Phase 2のうち、`inquiry_bundle_io.ts` にローカルexport/import境界を実装した。既存の`DocumentV1` strict validator、自己完結参照検証、保存後JSON表現由来のSHA-256 digest検証を組み合わせ、未知キー・未知version・未知enum・参照切れ・改変を拒否する。高度機能内の試作パネルから、現在文書を起点とする正式bundleの作成、ラウンドsnapshotと低負担なカード系譜の記録、JSONファイルの保存・再読込、任意の2ラウンドの読取専用比較、過去成果を復元して作る非破壊分岐、分岐の一括取消、現在の分岐先端から元カード・所有ラウンド・記録済み出典を辿る読取専用表示、問い・理解の変化・未解決点・次の行動・前回成果をまとめる再開ブリーフまで操作できる。比較は既存の文書差分を再利用し、カード、島、関係要約、読み順の変化の所在だけを表示する。再開ブリーフも既存のラウンドと引継ぎ情報だけから導出し、記録のない内容を推測しない。前回成果は同じパネル内で読み取り専用表示し、キャンバスや履歴を変更しない。分岐は選択snapshotを`applyDocumentChange()`でキャンバスへ復元し、同じ内容を子snapshotとして記録する。300カード・30島・6ラウンドの代表規模は1成果73,955 bytes、探究manifest 2,161 bytes、自己完結bundle 1,460,390 bytesであり、JSON集約の容量は許容範囲だった。当初、画面読込の最大長時間タスクは243から294msでPB-3の100ms目安を超えたが、`PERF-INQUIRY-01`でstrict validationとdigest照合をworkerへ移し、単独実行で93から95msへ改善した。並列CIでは125msを観測するため150msを退行上限とし、100msを設計目標として維持する。性能面のPhase 3停止条件、同段階反復の比較、過去成果からの分岐、カード系譜の読取表示、再開ブリーフ、引継ぎ確認（2026-07-19 手動引継ぎE2E）は完了したが、SafeMode派生bundleはドメイン関数としての試作（`safeModeApplied` は関数結果のみで永続bundleへ未記録、受信側検証契約・保持境界は未定義）にとどまり、保持・削除も未実装のため、Phase 2全体とL1昇格は未完了である。
+**実装状況（2026-08-02）**: Phase 2のうち、`inquiry_bundle_io.ts` にローカルexport/import境界を実装した。既存の`DocumentV1` strict validator、自己完結参照検証、保存後JSON表現由来のSHA-256 digest検証を組み合わせ、未知キー・未知version・未知enum・参照切れ・改変を拒否する。高度機能内の試作パネルから、現在文書を起点とする正式bundleの作成、ラウンドsnapshotと低負担なカード系譜の記録、JSONファイルの保存・再読込、任意の2ラウンドの読取専用比較、過去成果を復元して作る非破壊分岐、分岐の一括取消、現在の分岐先端から元カード・所有ラウンド・記録済み出典を辿る読取専用表示、問い・理解の変化・未解決点・次の行動・前回成果をまとめる再開ブリーフまで操作できる。比較は既存の文書差分を再利用し、カード、島、関係要約、読み順の変化の所在だけを表示する。再開ブリーフも既存のラウンドと引継ぎ情報だけから導出し、記録のない内容を推測しない。前回成果は同じパネル内で読み取り専用表示し、キャンバスや履歴を変更しない。分岐は選択snapshotを`applyDocumentChange()`でキャンバスへ復元し、同じ内容を子snapshotとして記録する。300カード・30島・6ラウンドの代表規模は1成果73,955 bytes、探究manifest 2,161 bytes、自己完結bundle 1,460,390 bytesであり、JSON集約の容量は許容範囲だった。当初、画面読込の最大長時間タスクは243から294msでPB-3の100ms目安を超えたが、`PERF-INQUIRY-01`でstrict validationとdigest照合をworkerへ移し、単独実行で93から95msへ改善した。並列CIでは125msを観測するため150msを退行上限とし、100msを設計目標として維持する。性能面のPhase 3停止条件、同段階反復の比較、過去成果からの分岐、カード系譜の読取表示、再開ブリーフ、引継ぎ確認、SafeMode共有用派生bundleの永続metadataと受信側再検証は完了した。保持・削除の標準UIとbackend永続化は未実装のため、Phase 2全体とL1昇格は未完了である。
 
 ## 8. 根拠と関連文書
 

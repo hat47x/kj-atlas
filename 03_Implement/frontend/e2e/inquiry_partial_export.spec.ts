@@ -71,5 +71,30 @@ test("DOMAIN-W-ITERATION-01 saves a selected round as an immutable self-containe
   expect(full.ok).toBe(true);
   if (!full.ok) return;
   expect(full.bundle.journey.roundRecords).toHaveLength(3);
+
+  await scopeSelect.selectOption("round-r3-1");
+  const shareDownloadPromise = page.waitForEvent("download");
+  await panel.getByRole("button", { name: "Save SafeMode share copy" }).click();
+  const shareDownload = await shareDownloadPromise;
+  expect(shareDownload.suggestedFilename()).toMatch(
+    /-round-r3-1\.safe-share\.kj-atlas-inquiry\.json$/,
+  );
+  const sharePath = testInfo.outputPath("safe-share-inquiry.kj-atlas-inquiry.json");
+  await shareDownload.saveAs(sharePath);
+  const shareRaw = await readFile(sharePath, "utf8");
+  const shared = await parseInquiryBundleJson(shareRaw);
+  expect(shared.ok).toBe(true);
+  if (!shared.ok) return;
+  expect(shared.bundle.exportInfo).toEqual({
+    scope: "round",
+    selectedRoundId: "round-r3-1",
+    safeModeApplied: true,
+  });
+  expect(shareRaw).toContain("[REDACTED]");
+  expect(shareRaw).not.toContain("受付開始直後に来庁者が同じ質問を三度尋ねた");
+  await panel.locator('input[type="file"]').setInputFiles(sharePath);
+  await expect(panel.getByTestId("inquiry-export-info")).toContainText(
+    "SafeMode applied; scope ends at round-r3-1",
+  );
   expect(await scope.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
 });

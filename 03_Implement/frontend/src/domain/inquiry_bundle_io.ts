@@ -1,4 +1,5 @@
 import { canonicalizeJson } from "./patch/patch_fingerprint";
+import { isInquirySafeModeBundle } from "./inquiry_bundle_safe_mode";
 import { validateDocumentV1Strict } from "./validate_doc";
 import {
   INQUIRY_SCHEMA_VERSION,
@@ -50,6 +51,12 @@ function checkKeys(value: Record<string, unknown>, allowed: readonly string[], p
 function requireString(value: unknown, path: string, errors: ShapeErrors): value is string {
   if (typeof value === "string") return true;
   errors.push({ code: "invalid_shape", path, message: "Must be a string." });
+  return false;
+}
+
+function requireTrue(value: unknown, path: string, errors: ShapeErrors): value is true {
+  if (value === true) return true;
+  errors.push({ code: "invalid_shape", path, message: "Must be true." });
   return false;
 }
 
@@ -224,12 +231,29 @@ function validateLineage(value: unknown, path: string, errors: ShapeErrors): voi
   }
 }
 
+function validateExportInfo(value: unknown, path: string, errors: ShapeErrors): void {
+  if (!isRecord(value)) {
+    errors.push({ code: "invalid_shape", path, message: "Must be an export information object." });
+    return;
+  }
+  if (value.scope === "full") {
+    checkKeys(value, ["scope", "safeModeApplied"], path, errors);
+  } else if (value.scope === "round") {
+    checkKeys(value, ["scope", "selectedRoundId", "safeModeApplied"], path, errors);
+    requireString(value.selectedRoundId, `${path}.selectedRoundId`, errors);
+  } else {
+    checkKeys(value, ["scope", "selectedRoundId", "safeModeApplied"], path, errors);
+  }
+  requireEnum(value.scope, ["full", "round"], `${path}.scope`, errors);
+  requireTrue(value.safeModeApplied, `${path}.safeModeApplied`, errors);
+}
+
 function validateBundleShape(value: unknown): { ok: true; bundle: InquiryBundleV1 } | { ok: false; errors: ShapeErrors } {
   const errors: ShapeErrors = [];
   if (!isRecord(value)) {
     return { ok: false, errors: [{ code: "invalid_shape", path: "$", message: "Bundle must be an object." }] };
   }
-  checkKeys(value, ["schemaVersion", "journey", "snapshots", "cardLineage"], "$", errors);
+  checkKeys(value, ["schemaVersion", "journey", "snapshots", "cardLineage", "exportInfo"], "$", errors);
   requireString(value.schemaVersion, "$.schemaVersion", errors);
   validateJourney(value.journey, "$.journey", errors);
   if (!Array.isArray(value.snapshots)) {
@@ -242,6 +266,7 @@ function validateBundleShape(value: unknown): { ok: true; bundle: InquiryBundleV
   } else {
     value.cardLineage.forEach((edge, index) => validateLineage(edge, `$.cardLineage[${index}]`, errors));
   }
+  if (value.exportInfo !== undefined) validateExportInfo(value.exportInfo, "$.exportInfo", errors);
   return errors.length > 0 ? { ok: false, errors } : { ok: true, bundle: value as InquiryBundleV1 };
 }
 
@@ -275,6 +300,15 @@ async function validateDigests(bundle: InquiryBundleV1): Promise<InquiryBundleIo
   return errors;
 }
 
+function validateExportClaim(bundle: InquiryBundleV1): InquiryBundleIoError[] {
+  if (!bundle.exportInfo || isInquirySafeModeBundle(bundle)) return [];
+  return [{
+    code: "invalid_bundle",
+    path: "$.exportInfo.safeModeApplied",
+    message: "SafeMode export metadata does not match the bundle contents.",
+  }];
+}
+
 export async function prepareInquiryBundleForExport(bundle: InquiryBundleV1): Promise<InquiryBundleV1> {
   const prepared = structuredClone(bundle);
   prepared.schemaVersion = INQUIRY_SCHEMA_VERSION;
@@ -298,6 +332,8 @@ export async function serializeInquiryBundle(bundle: InquiryBundleV1): Promise<{
       errors: issues.map((issue) => ({ code: "invalid_bundle", path: issue.path, message: issue.code })),
     };
   }
+  const exportClaimErrors = validateExportClaim(shape.bundle);
+  if (exportClaimErrors.length > 0) return { ok: false, errors: exportClaimErrors };
   const json = `${JSON.stringify(shape.bundle, null, 2)}\n`;
   if (utf8ByteLength(json) > INQUIRY_BUNDLE_MAX_BYTES) {
     return { ok: false, errors: [payloadTooLargeError()] };
@@ -328,6 +364,8 @@ export async function parseInquiryBundleJson(rawText: string): Promise<InquiryBu
     };
   }
 
+  const exportClaimErrors = validateExportClaim(shape.bundle);
+  if (exportClaimErrors.length > 0) return { ok: false, errors: exportClaimErrors };
   const digestErrors = await validateDigests(shape.bundle);
   return digestErrors.length > 0 ? { ok: false, errors: digestErrors } : { ok: true, bundle: shape.bundle };
 }
