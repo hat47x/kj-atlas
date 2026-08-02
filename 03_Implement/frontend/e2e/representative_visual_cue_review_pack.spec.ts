@@ -10,6 +10,7 @@ import {
 } from "./helpers/i18n";
 
 const imageRef = "visual-cue:12345678-1234-4123-8123-123456789abc";
+const userImageRef = "visual-cue:87654321-4321-4321-8321-cba987654321";
 const localScopeKey = "kj-atlas/local-scope/v1/";
 
 const asset = {
@@ -40,6 +41,37 @@ function buildDocumentWithHandDrawnCue(): DocumentV1 {
   };
 }
 
+function buildDocumentWithLocalCues(): DocumentV1 {
+  const document = buildDocumentWithHandDrawnCue();
+  return {
+    ...document,
+    cards: [
+      ...document.cards,
+      {
+        id: "image-cue-card",
+        text: "local image crop anchor",
+        x: 760,
+        y: 180,
+        textReviewed: true,
+      },
+    ],
+    islands: [
+      ...document.islands,
+      {
+        id: "image-cue-island",
+        title: "Local image crop",
+        cardIds: ["image-cue-card"],
+        representativeCue: {
+          kind: "user_image",
+          cueId: userImageRef,
+          imageRef: userImageRef,
+          altText: "Cross-device image crop",
+        },
+      },
+    ],
+  };
+}
+
 async function routeDocument(page: Page, document: DocumentV1): Promise<void> {
   await page.route("**/packs/index.json", (route) =>
     route.fulfill({ status: 404, contentType: "application/json", body: "{}" }),
@@ -67,8 +99,8 @@ async function openSample(page: Page, document: DocumentV1): Promise<void> {
   await page.getByRole("button", { name: START_PANEL_SAMPLE }).click();
 }
 
-async function seedAsset(page: Page, documentId: string): Promise<void> {
-  await page.evaluate(async ({ cueRef, scopeKey, targetDocumentId, cueAsset }) => {
+async function seedAssets(page: Page, documentId: string): Promise<unknown> {
+  return page.evaluate(async ({ drawingRef, cropRef, scopeKey, targetDocumentId, drawingAsset }) => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open("kj-atlas-representative-visual-cues", 2);
       request.onupgradeneeded = () => {
@@ -79,29 +111,52 @@ async function seedAsset(page: Page, documentId: string): Promise<void> {
       request.onerror = () => reject(request.error);
     });
     const transaction = database.transaction("assets-v2", "readwrite");
-    transaction.objectStore("assets-v2").put({
-      storageKey: JSON.stringify([scopeKey, cueRef]),
-      imageRef: cueRef,
-      scopeKey,
-      documentId: targetDocumentId,
-      scopeDocumentKey: JSON.stringify([scopeKey, targetDocumentId]),
-      assetJson: JSON.stringify(cueAsset),
-    });
+    const canvas = document.createElement("canvas");
+    canvas.width = 48;
+    canvas.height = 48;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("canvas unavailable");
+    }
+    context.fillStyle = "#94a3b8";
+    context.fillRect(0, 0, 48, 48);
+    context.fillStyle = "#334155";
+    context.fillRect(12, 12, 24, 24);
+    const cropAsset = {
+      version: 1,
+      kind: "user_image",
+      width: 48,
+      height: 48,
+      mimeType: "image/png",
+      base64: canvas.toDataURL("image/png").split(",")[1],
+    };
+    for (const [cueRef, cueAsset] of [[drawingRef, drawingAsset], [cropRef, cropAsset]] as const) {
+      transaction.objectStore("assets-v2").put({
+        storageKey: JSON.stringify([scopeKey, cueRef]),
+        imageRef: cueRef,
+        scopeKey,
+        documentId: targetDocumentId,
+        scopeDocumentKey: JSON.stringify([scopeKey, targetDocumentId]),
+        assetJson: JSON.stringify(cueAsset),
+      });
+    }
     await new Promise<void>((resolve, reject) => {
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
       transaction.onabort = () => reject(transaction.error);
     });
     database.close();
+    return cropAsset;
   }, {
-    cueRef: imageRef,
+    drawingRef: imageRef,
+    cropRef: userImageRef,
     scopeKey: localScopeKey,
     targetDocumentId: documentId,
-    cueAsset: asset,
+    drawingAsset: asset,
   });
 }
 
-async function readAssetFromFreshContext(context: BrowserContext): Promise<unknown> {
+async function readAssetFromFreshContext(context: BrowserContext, cueRef: string): Promise<unknown> {
   const pages = context.pages();
   const page = pages[0];
   return page.evaluate(async ({ cueRef, scopeKey }) => {
@@ -118,7 +173,7 @@ async function readAssetFromFreshContext(context: BrowserContext): Promise<unkno
     });
     database.close();
     return record ? JSON.parse(record.assetJson) : null;
-  }, { cueRef: imageRef, scopeKey: localScopeKey });
+  }, { cueRef, scopeKey: localScopeKey });
 }
 
 test("migrates a legacy scoped hand-drawn asset without losing its document binding", async ({ page }) => {
@@ -173,19 +228,19 @@ test("migrates a legacy scoped hand-drawn asset without losing its document bind
   expect(stores).toEqual(["assets-v2"]);
 });
 
-test("explicit review-pack opt-in restores a hand-drawn cue in a fresh browser context", async ({ browser }) => {
+test("explicit review-pack opt-in restores drawing and image-crop cues in a fresh browser context", async ({ browser }) => {
   test.setTimeout(60_000);
-  const document = buildDocumentWithHandDrawnCue();
+  const document = buildDocumentWithLocalCues();
   const senderContext = await browser.newContext({ acceptDownloads: true });
   const senderPage = await senderContext.newPage();
   await openSample(senderPage, document);
-  await seedAsset(senderPage, document.id);
+  const userImageAsset = await seedAssets(senderPage, document.id);
   await senderPage.reload();
   await senderPage.getByRole("button", { name: START_PANEL_SAMPLE }).click();
 
   await senderPage.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
   const includeDrawing = senderPage.getByRole("checkbox", {
-    name: "Include hand-drawn visual cues (1)",
+    name: "Include local visual cues (2)",
   });
   await expect(includeDrawing).not.toBeChecked();
   await expect(senderPage.locator("[data-share-preflight-visual-cue-assets]")).toContainText(
@@ -214,14 +269,16 @@ test("explicit review-pack opt-in restores a hand-drawn cue in a fresh browser c
     .getByRole("dialog", { name: "Share & Reproduce" })
     .locator('input[type="file"][accept*=".zip"]')
     .setInputFiles({
-      name: "hand-drawn-review-pack.zip",
+      name: "local-visual-cues-review-pack.zip",
       mimeType: "application/zip",
       buffer: reviewPackBuffer,
     });
 
   await expect(receiverPage.getByTestId("status-message")).toContainText("Review pack imported");
   await expect(receiverPage.locator(`[data-representative-visual-cue="${imageRef}"]`)).toHaveCount(1);
-  await expect.poll(() => readAssetFromFreshContext(receiverContext)).toEqual(asset);
+  await expect(receiverPage.locator(`[data-representative-visual-cue="${userImageRef}"]`)).toHaveCount(1);
+  await expect.poll(() => readAssetFromFreshContext(receiverContext, imageRef)).toEqual(asset);
+  await expect.poll(() => readAssetFromFreshContext(receiverContext, userImageRef)).toEqual(userImageAsset);
 
   await senderContext.close();
   await receiverContext.close();

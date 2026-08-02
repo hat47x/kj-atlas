@@ -53,7 +53,7 @@ type SharePanelProps = {
   onResetCurrentReviewerRef: () => void;
   onExportViewViewport: () => void;
   onExportViewVisibleBounds: () => void;
-  handDrawnVisualCueCount: number;
+  portableVisualCueCount: number;
   onExportBundleZip: (options: {
     includeOutline: boolean;
     includeDiagnostics: boolean;
@@ -331,7 +331,7 @@ export function SharePanel({
   onResetCurrentReviewerRef,
   onExportViewViewport,
   onExportViewVisibleBounds,
-  handDrawnVisualCueCount,
+  portableVisualCueCount,
   onExportBundleZip,
   isBundleExportRunning,
   onCancelBundleExport,
@@ -455,10 +455,10 @@ export function SharePanel({
   }, [isOpen]);
 
   useEffect(() => {
-    if (handDrawnVisualCueCount === 0) {
+    if (portableVisualCueCount === 0) {
       setBundleIncludeVisualCueAssets(false);
     }
-  }, [handDrawnVisualCueCount]);
+  }, [portableVisualCueCount]);
 
   const closePanelAndRestoreFocus = () => {
     onToggleOpen();
@@ -547,7 +547,7 @@ export function SharePanel({
     ? t("share.panel.preflight.source_references.included")
     : t("share.panel.preflight.source_references.excluded");
   const visualCueAssetPolicy = bundleIncludeVisualCueAssets
-    ? t("share.panel.preflight.visual_cue_assets.included", { count: handDrawnVisualCueCount })
+    ? t("share.panel.preflight.visual_cue_assets.included", { count: portableVisualCueCount })
     : t("share.panel.preflight.visual_cue_assets.excluded");
   const canUseSelectedCardTraces = canIncludeTraces && bundleExportGranularity === "detail";
   const selectedCardTracesChecked = bundleIncludeSelectedCardTraces && canUseSelectedCardTraces;
@@ -918,20 +918,20 @@ export function SharePanel({
                 alignItems: "center",
                 gap: 8,
                 fontSize: 12,
-                color: handDrawnVisualCueCount > 0 ? "#334155" : "#94a3b8",
+                color: portableVisualCueCount > 0 ? "#334155" : "#94a3b8",
                 ...wrapRowStyle,
               }}>
                 <input
                   type="checkbox"
-                  checked={bundleIncludeVisualCueAssets && handDrawnVisualCueCount > 0}
-                  disabled={handDrawnVisualCueCount === 0}
+                  checked={bundleIncludeVisualCueAssets && portableVisualCueCount > 0}
+                  disabled={portableVisualCueCount === 0}
                   onChange={(event) => {
                     setBundleIncludeVisualCueAssets(event.target.checked);
                   }}
                 />
-                {t("share.panel.export.bundle_include_visual_cue_assets", { count: handDrawnVisualCueCount })}
+                {t("share.panel.export.bundle_include_visual_cue_assets", { count: portableVisualCueCount })}
               </label>
-              {bundleIncludeVisualCueAssets && handDrawnVisualCueCount > 0 ? (
+              {bundleIncludeVisualCueAssets && portableVisualCueCount > 0 ? (
                 <div role="status" style={{ fontSize: 11, color: "#9a3412" }}>
                   {t("share.panel.export.bundle_include_visual_cue_assets_warning")}
                 </div>
@@ -984,7 +984,7 @@ export function SharePanel({
                     includeOutline: bundleIncludeOutline,
                     includeDiagnostics: bundleIncludeDiagnostics,
                     includeSelectedCardTraces: selectedCardTracesChecked,
-                    includeVisualCueAssets: bundleIncludeVisualCueAssets && handDrawnVisualCueCount > 0,
+                    includeVisualCueAssets: bundleIncludeVisualCueAssets && portableVisualCueCount > 0,
                     exportGranularity: bundleExportGranularity,
                   };
 

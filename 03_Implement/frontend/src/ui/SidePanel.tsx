@@ -38,6 +38,7 @@ import type { TraceAnalytics } from "../worker/trace_analytics";
 import type { MergeAuditEntry } from "../domain/view/audit_log";
 import { RepresentativeVisualCueMark } from "./RepresentativeVisualCueMark";
 import { RepresentativeVisualCueHandDrawnEditor } from "./RepresentativeVisualCueHandDrawnEditor";
+import { RepresentativeVisualCueImageEditor } from "./RepresentativeVisualCueImageEditor";
 
 type SummaryGroundingItem = {
   id: string;
@@ -2898,11 +2899,18 @@ export function SidePanel({
                   })}
                 </div>
                 {document ? (
-                  <RepresentativeVisualCueHandDrawnEditor
-                    documentId={document.id}
-                    disabled={isReadOnly === true}
-                    onAdopt={onRepresentativeVisualCueChange}
-                  />
+                  <>
+                    <RepresentativeVisualCueHandDrawnEditor
+                      documentId={document.id}
+                      disabled={isReadOnly === true}
+                      onAdopt={onRepresentativeVisualCueChange}
+                    />
+                    <RepresentativeVisualCueImageEditor
+                      documentId={document.id}
+                      disabled={isReadOnly === true}
+                      onAdopt={onRepresentativeVisualCueChange}
+                    />
+                  </>
                 ) : null}
                 {selectedIsland.representativeCue ? (
                   <>

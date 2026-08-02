@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
 import {
-  loadHandDrawnCueAsset,
-  type HandDrawnCueAssetV1,
+  loadRepresentativeVisualCueAsset,
+  type RepresentativeVisualCueAssetV1,
   visualCueAssetScopeKey,
 } from "../domain/representative_visual_cue_assets";
 import { isRepresentativeVisualCuePresetId } from "../domain/representative_visual_cue_presets";
@@ -17,24 +17,24 @@ type RepresentativeVisualCueMarkProps = {
 export function RepresentativeVisualCueMark({ cue, size = 20 }: RepresentativeVisualCueMarkProps) {
   const scope = useRepresentativeVisualCueAssetScope();
   const scopeKey = visualCueAssetScopeKey(scope);
-  const [loadedHandDrawnAsset, setLoadedHandDrawnAsset] = useState<{
+  const [loadedPortableAsset, setLoadedPortableAsset] = useState<{
     imageRef: string;
     scopeKey: string;
-    asset: HandDrawnCueAssetV1;
+    asset: RepresentativeVisualCueAssetV1;
   } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setLoadedHandDrawnAsset(null);
-    if (cue.kind !== "hand_drawn" || !cue.imageRef) {
+    setLoadedPortableAsset(null);
+    if ((cue.kind !== "hand_drawn" && cue.kind !== "user_image") || !cue.imageRef) {
       return () => {
         cancelled = true;
       };
     }
-    void loadHandDrawnCueAsset(cue.imageRef, scope)
+    void loadRepresentativeVisualCueAsset(cue.imageRef, scope)
       .then((asset) => {
-        if (!cancelled && asset) {
-          setLoadedHandDrawnAsset({
+        if (!cancelled && asset?.kind === cue.kind) {
+          setLoadedPortableAsset({
             imageRef: cue.imageRef!,
             scopeKey,
             asset,
@@ -43,7 +43,7 @@ export function RepresentativeVisualCueMark({ cue, size = 20 }: RepresentativeVi
       })
       .catch(() => {
         if (!cancelled) {
-          setLoadedHandDrawnAsset(null);
+          setLoadedPortableAsset(null);
         }
       });
     return () => {
@@ -52,17 +52,41 @@ export function RepresentativeVisualCueMark({ cue, size = 20 }: RepresentativeVi
   }, [cue.imageRef, cue.kind, scopeKey]);
 
   const isPreset = cue.kind === "preset_svg" && isRepresentativeVisualCuePresetId(cue.cueId);
-  const handDrawnAsset =
-    cue.kind === "hand_drawn"
+  const portableAsset =
+    (cue.kind === "hand_drawn" || cue.kind === "user_image")
     && cue.imageRef
-    && loadedHandDrawnAsset?.imageRef === cue.imageRef
-    && loadedHandDrawnAsset.scopeKey === scopeKey
-      ? loadedHandDrawnAsset.asset
+    && loadedPortableAsset?.imageRef === cue.imageRef
+    && loadedPortableAsset.scopeKey === scopeKey
+    && loadedPortableAsset.asset.kind === cue.kind
+      ? loadedPortableAsset.asset
       : null;
-  if (!isPreset && !handDrawnAsset) {
+  if (!isPreset && !portableAsset) {
     return null;
   }
 
+  if (portableAsset?.kind === "user_image") {
+    return (
+      <img
+        aria-hidden="true"
+        data-representative-visual-cue={cue.cueId}
+        width={size}
+        height={size}
+        src={`data:image/png;base64,${portableAsset.base64}`}
+        alt=""
+        style={{
+          display: "block",
+          flex: "0 0 auto",
+          width: size,
+          height: size,
+          borderRadius: 2,
+          objectFit: "cover",
+          filter: "saturate(0.75)",
+        }}
+      />
+    );
+  }
+
+  const handDrawnAsset = portableAsset?.kind === "hand_drawn" ? portableAsset : null;
   return (
     <svg
       aria-hidden="true"

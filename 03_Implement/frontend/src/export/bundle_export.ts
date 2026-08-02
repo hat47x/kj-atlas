@@ -1,9 +1,9 @@
 import type { DocumentV1 } from "../domain/types";
 import {
-  HAND_DRAWN_CUE_BUNDLE_FILE_NAME,
-  parseHandDrawnCueAssetBundle,
-  stripHandDrawnVisualCues,
-  type HandDrawnCueAssetBundleV1,
+  VISUAL_CUE_BUNDLE_FILE_NAME,
+  parseRepresentativeVisualCueAssetBundle,
+  stripPortableVisualCues,
+  type RepresentativeVisualCueAssetBundleV1,
 } from "../domain/representative_visual_cue_assets";
 import { deriveDocumentSafeModeProjection } from "../domain/inquiry_bundle_safe_mode";
 import { buildContradictionTraceMd } from "../domain/view/contradiction_trace";
@@ -61,7 +61,7 @@ export type BundleExportContext = {
    * Explicit opt-in requires the exact, preloaded asset bundle.
    */
   includeVisualCueAssets?: boolean;
-  handDrawnVisualCueAssetBundle?: HandDrawnCueAssetBundleV1;
+  visualCueAssetBundle?: RepresentativeVisualCueAssetBundleV1;
 };
 
 function sortObjectKeys<T>(value: T): T {
@@ -191,7 +191,7 @@ function resolveShareDocument(
 ): DocumentV1 {
   const visualCueScopedDocument = context.includeVisualCueAssets
     ? doc
-    : stripHandDrawnVisualCues(doc);
+    : stripPortableVisualCues(doc);
   if (context.includeSourceReferences) {
     return visualCueScopedDocument;
   }
@@ -262,37 +262,37 @@ function buildBundleManifest(context: BundleExportContext): {
           },
         }
       : {}),
-    ...(context.includeVisualCueAssets && context.handDrawnVisualCueAssetBundle
+    ...(context.includeVisualCueAssets && context.visualCueAssetBundle
       ? {
           representativeVisualCueAssets: {
             version: "1" as const,
-            count: context.handDrawnVisualCueAssetBundle.assets.length,
+            count: context.visualCueAssetBundle.assets.length,
           },
         }
       : {}),
   };
 }
 
-function appendHandDrawnCueAssetFile(
+function appendPortableVisualCueAssetFile(
   files: BundleFile[],
   root: string,
   bundledDocument: DocumentV1,
   context: BundleExportContext,
 ): void {
   if (!context.includeVisualCueAssets) {
-    if (context.handDrawnVisualCueAssetBundle) {
-      throw new Error("hand-drawn visual cue assets require explicit export opt-in");
+    if (context.visualCueAssetBundle) {
+      throw new Error("representative visual cue assets require explicit export opt-in");
     }
     return;
   }
-  if (!context.handDrawnVisualCueAssetBundle) {
-    throw new Error("hand-drawn visual cue asset bundle is required");
+  if (!context.visualCueAssetBundle) {
+    throw new Error("representative visual cue asset bundle is required");
   }
-  const assetBundle = parseHandDrawnCueAssetBundle(
-    context.handDrawnVisualCueAssetBundle,
+  const assetBundle = parseRepresentativeVisualCueAssetBundle(
+    context.visualCueAssetBundle,
     bundledDocument,
   );
-  files.push(toJsonFile(`${root}/${HAND_DRAWN_CUE_BUNDLE_FILE_NAME}`, assetBundle));
+  files.push(toJsonFile(`${root}/${VISUAL_CUE_BUNDLE_FILE_NAME}`, assetBundle));
 }
 
 function buildDiagnosticsMd(doc: DocumentV1, context: BundleExportContext): string {
@@ -322,7 +322,7 @@ export function buildExportBundle(doc: DocumentV1, viewState: unknown, context: 
     toJsonFile(`${root}/merge_decision_audit.json`, { entries: buildMergeDecisionAuditEntries(bundledDocument) }),
     toJsonFile(`${root}/view.json`, viewState),
   ];
-  appendHandDrawnCueAssetFile(bundleFiles, root, bundledDocument, context);
+  appendPortableVisualCueAssetFile(bundleFiles, root, bundledDocument, context);
 
   if (context.includeOutline) {
     const outline = buildReadingOutlineMd(contentDocument, context.readingState, resolveOutlineOptions(context, safeMode));
@@ -383,7 +383,7 @@ export async function buildExportBundleWithWorkers(
     toJsonFile(`${root}/merge_decision_audit.json`, { entries: buildMergeDecisionAuditEntries(bundledDocument) }),
     toJsonFile(`${root}/view.json`, viewState),
   ];
-  appendHandDrawnCueAssetFile(bundleFiles, root, bundledDocument, context);
+  appendPortableVisualCueAssetFile(bundleFiles, root, bundledDocument, context);
 
   if (context.includeOutline) {
     const outline = buildReadingOutlineMd(contentDocument, context.readingState, resolveOutlineOptions(context, safeMode));

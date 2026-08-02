@@ -101,8 +101,8 @@ T5の結論（`unicode_emoji_os_comparison.md`）:
 | コンポーネント | export | import |
 |---|---|---|
 | 採用参照 + 権利情報 | `DocumentV1` の一部として自動往復（JSONフィールドとして出力） | strict validationで未知cueId・不正ライセンス形式を拒否 |
-| 手描きデータ | 既定では参照と本体を除外。件数・機微情報警告を伴う一回限りの明示opt-in時だけ、文書参照と完全一致する `representative_visual_cue_assets.json` を出力しintegrity hash対象にする | 文書ID・全参照・件数・容量・strict schema・integrity対象を検証後、同一scopeへ単一transactionで再格納。asset fileがなければdanglingな`hand_drawn` cueを除去 |
-| 利用者画像 | IndexedDBからBase64エンコードしてbundleに含める | Base64デコードしてIndexedDBへ再格納。48×48制限を再検証 |
+| 手描きデータ | 既定では参照と本体を除外。件数・機微情報警告を伴う一回限りの明示opt-in時だけ、文書参照と完全一致する `representative_visual_cue_assets.json` を出力しintegrity hash対象にする | 文書ID・全参照・参照kind・件数・容量・strict schema・integrity対象を検証後、同一scopeへ単一transactionで再格納。asset fileがなければdanglingな`hand_drawn` cueを除去 |
+| 利用者画像 | 原本を保持せず、端末内で切り抜き・減彩した48×48 PNGだけをIndexedDBへ保存する。review packでは手描きと同じく既定除外し、明示opt-in時だけBase64で同じasset fileへ含める | Base64のcanonical形式、PNG signature、IHDR、chunk CRC・終端、48×48、16KB上限、参照kindを再検証してIndexedDBへ格納。asset fileがなければdanglingな`user_image` cueを除去 |
 | プリセットSVG | **出力しない**（cueIdだけを出力し、import側が自身のJS bundleから解決） | cueIdが既知プリセットに含まれることを確認 |
 | Unicode絵文字 | **出力しない**（cueIdだけを出力。emojiは文字であり配布不要） | cueIdが既知emojiセットに含まれることを確認 |
 

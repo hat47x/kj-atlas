@@ -40,13 +40,13 @@ import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
 import {
-  buildHandDrawnCueAssetBundle,
-  collectHandDrawnCueImageRefs,
-  deleteUnreferencedHandDrawnCueAssets,
-  parseHandDrawnCueAssetBundle,
-  restoreHandDrawnCueAssetBundle,
-  stripHandDrawnVisualCues,
-  type HandDrawnCueAssetBundleV1,
+  buildRepresentativeVisualCueAssetBundle,
+  collectPortableVisualCueImageRefs,
+  deleteUnreferencedRepresentativeVisualCueAssets,
+  parseRepresentativeVisualCueAssetBundle,
+  restoreRepresentativeVisualCueAssetBundle,
+  stripPortableVisualCues,
+  type RepresentativeVisualCueAssetBundleV1,
 } from "./domain/representative_visual_cue_assets";
 import { updateCardHoldStateAndShelf, type HoldStateSelection } from "./domain/hold_state_ops";
 import { resolveDecisionOriginTrace, resolveRepresentativeOriginTrace } from "./domain/merge_traceability";
@@ -3891,8 +3891,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }
 
       let importedDocument = parsedDocument.document;
-      let handDrawnVisualCueAssetBundle: HandDrawnCueAssetBundleV1 | null = null;
-      let omittedHandDrawnCueCount = 0;
+      let visualCueAssetBundle: RepresentativeVisualCueAssetBundleV1 | null = null;
+      let omittedPortableVisualCueCount = 0;
       if (paths.visualCueAssetsPath) {
         const visualCueAssetsRaw = entries.get(paths.visualCueAssetsPath);
         if (typeof visualCueAssetsRaw !== "string") {
@@ -3902,7 +3902,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           return;
         }
         try {
-          handDrawnVisualCueAssetBundle = parseHandDrawnCueAssetBundle(
+          visualCueAssetBundle = parseRepresentativeVisualCueAssetBundle(
             JSON.parse(visualCueAssetsRaw) as unknown,
             importedDocument,
           );
@@ -3913,16 +3913,16 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           return;
         }
       } else {
-        omittedHandDrawnCueCount = collectHandDrawnCueImageRefs(importedDocument).length;
-        importedDocument = stripHandDrawnVisualCues(importedDocument);
+        omittedPortableVisualCueCount = collectPortableVisualCueImageRefs(importedDocument).length;
+        importedDocument = stripPortableVisualCues(importedDocument);
       }
 
-      if (handDrawnVisualCueAssetBundle) {
+      if (visualCueAssetBundle) {
         try {
           const restoredCount = await runTenantScopedOptionalTask(() =>
-            restoreHandDrawnCueAssetBundle(
+            restoreRepresentativeVisualCueAssetBundle(
               importedDocument,
-              handDrawnVisualCueAssetBundle,
+              visualCueAssetBundle,
               appStorage.scope,
             ),
           );
@@ -3996,7 +3996,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         warningCount:
           zipImportResult.skippedUnsupportedCount
           + paths.ignoredFileCount
-          + omittedHandDrawnCueCount,
+          + omittedPortableVisualCueCount,
       });
       setImportedPackDiagnosticsMd(diagnosticsText);
       setImportedPackSnapshotUrl(nextSnapshotUrl);
@@ -5076,11 +5076,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       documents.flatMap((candidate) =>
         candidate.islands.flatMap((island) => {
           const cue = island.representativeCue;
-          return cue?.kind === "hand_drawn" && cue.imageRef ? [cue.imageRef] : [];
+          return (cue?.kind === "hand_drawn" || cue?.kind === "user_image") && cue.imageRef
+            ? [cue.imageRef]
+            : [];
         }),
       ),
     );
-    void deleteUnreferencedHandDrawnCueAssets(
+    void deleteUnreferencedRepresentativeVisualCueAssets(
       history.present.id,
       retainedImageRefs,
       appStorage.scope,
@@ -9464,8 +9466,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       const outcome = await runTenantScopedTask(() => bundleRunnerRef.current.run(async (ctx) => {
         ctx.reportProgress({ message: t("app.status.bundle.progress.building"), completed: 1, total: 3 });
         await ctx.yieldToMainThread();
-        const handDrawnVisualCueAssetBundle = options.includeVisualCueAssets
-          ? await buildHandDrawnCueAssetBundle(document, appStorage.scope)
+        const visualCueAssetBundle = options.includeVisualCueAssets
+          ? await buildRepresentativeVisualCueAssetBundle(document, appStorage.scope)
           : undefined;
         const files = await buildExportBundleWithWorkers(document, viewMetadata, {
           rootFolderPath,
@@ -9505,7 +9507,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           packVisibility,
           includeSourceReferences: includeSourceReferencesInExport,
           includeVisualCueAssets: options.includeVisualCueAssets,
-          handDrawnVisualCueAssetBundle,
+          visualCueAssetBundle,
         }, {
           signal: controller.signal,
           onProgress: (stage) => ctx.reportProgress({
@@ -10636,7 +10638,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }}
       onExportViewViewport={handleExportViewMetadataViewport}
       onExportViewVisibleBounds={handleExportViewMetadataVisibleBounds}
-      handDrawnVisualCueCount={document ? collectHandDrawnCueImageRefs(document).length : 0}
+      portableVisualCueCount={document ? collectPortableVisualCueImageRefs(document).length : 0}
       onExportBundleZip={(options) => {
         void handleExportBundleZip(options);
       }}

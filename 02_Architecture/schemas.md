@@ -1470,20 +1470,20 @@ export type RepresentativeVisualCue = {
 
 - import/validate（寛容・厳格の両モード）は `Island.representativeCue` の既知キー（`kind`/`cueId`/`altText`/`imageRef`）のみを受理する。`kind` が4値のいずれでもない、または `cueId`/`altText` が欠落・非文字列の場合は `representativeCue` フィールド自体を省略する（`Card.meta`/`Card.ka` の空値削除規約と同じ。DOMAIN-TRACE-01 §15.3 / DOMAIN-KA-01 §17.2 に倣う）。
 - `imageRef` は `kind` が `hand_drawn`/`user_image` 以外のとき無視する（`preset_svg`/`emoji` に紛れ込んでも保持しない）。
-- 画像本体（IndexedDBエントリ）自体はDocumentV1 JSONの一部ではない。`hand_drawn` はversion固定・未知キー拒否・整数座標0〜20・最大512点・JSON UTF-8 4KB以下のベクター命令列だけを保存し、文書には不透明な`imageRef`だけを保持する。IndexedDBレコードはlocal scopeまたは`deployment + tenantId + principalId`のtenant storage scopeで分離し、`scopeKey + imageRef` の複合キーで格納する。別scopeの同一`imageRef`は衝突せず、別scopeから画像本体を解決しない。旧v1ストアは初回接続時に同じ複合キー規則のv2ストアへ移行する。
-- review pack importは `representative_visual_cue_assets.json` がある場合、文書ID、文書内の全`hand_drawn.imageRef`との完全一致、重複なし、既知キーだけ、1件4KB・全体400件/2MB以下を先に検証する。`integrity.json` があるpackでは同ファイルが整合性対象に含まれていなければ拒否する。検証後、現在のbrowser storage scopeへ単一transactionで全件復元し、1件でも失敗すれば文書を取り込まない。
-- asset fileがないreview packやDocument JSON単体では画像本体を復元できないため、dangling参照を残さず`hand_drawn`の`representativeCue`全体を取り除く。`preset_svg`等の自己完結した手掛かりは保持する。
+- 画像本体（IndexedDBエントリ）自体はDocumentV1 JSONの一部ではない。`hand_drawn` はversion固定・未知キー拒否・整数座標0〜20・最大512点・JSON UTF-8 4KB以下のベクター命令列だけを保存する。`user_image` は利用者が選んだ原本を保持せず、ブラウザ内で切り抜き・減彩した48×48 PNGの複製だけを保存する。PNG signature、IHDR寸法・方式・先頭位置、chunk型・CRC、IDAT存在、IEND終端とブラウザ画像decodeを再検証し、1件16KBを上限とする。文書にはいずれも不透明な`imageRef`だけを保持する。IndexedDBレコードはlocal scopeまたは`deployment + tenantId + principalId`のtenant storage scopeで分離し、`scopeKey + imageRef` の複合キーで格納する。別scopeの同一`imageRef`は衝突せず、別scopeから画像本体を解決しない。旧v1ストアは初回接続時に同じ複合キー規則のv2ストアへ移行する。
+- review pack importは `representative_visual_cue_assets.json` がある場合、文書ID、文書内の全`hand_drawn`/`user_image`の`imageRef`との完全一致、参照kindとasset kindの一致、重複なし、既知キーだけ、手描き1件4KB・画像1件16KB・全体400件/2MB以下を先に検証する。`integrity.json` があるpackでは同ファイルが整合性対象に含まれていなければ拒否する。検証後、現在のbrowser storage scopeへ単一transactionで全件復元し、1件でも失敗すれば文書を取り込まない。
+- asset fileがないreview packやDocument JSON単体では画像本体を復元できないため、dangling参照を残さず`hand_drawn`/`user_image`の`representativeCue`全体を取り除く。`preset_svg`等の自己完結した手掛かりは保持する。
 
 ### 19.4 UI・非目標
 
-- 選択コンテキストの高度機能UIでは、基本図形と手描きを明示操作で採用できる。手描きはPointer Events（マウス・ペン・タッチ）と、矢印キー + Space/Enterによる代替操作を持ち、採用前は文書を変更しない。採用済み手掛かりは表札左の20×20固定スロットへ文字と併記する。
-- 利用者画像とUnicode絵文字はissue T7の後続小PRとし、本節の実装済み範囲へ含めない。手描きのreview pack同梱・復元は実装済み。
+- 選択コンテキストの高度機能UIでは、基本図形、手描き、利用者画像の切り抜きを明示操作で採用できる。手描きはPointer Events（マウス・ペン・タッチ）と、矢印キー + Space/Enterによる代替操作を持つ。利用者画像はPNG/JPEG/WebP（10MB以下・各辺8000px以下）を端末内だけで読み、キーボード操作可能な横位置・縦位置・拡大の調整後に48×48 PNGへ変換する。いずれも採用前は文書を変更しない。採用済み手掛かりは表札左の20×20固定スロットへ文字と併記する。
+- Unicode絵文字はissue T7の後続小PRとし、本節の実装済み範囲へ含めない。手描きと利用者画像のreview pack同梱・復元は実装済み。
 - 非目標: 島作成時の自動生成・自動採用、画像だけによる意味伝達、装飾目的の常設表示（ADR-0060「提案する決定」3・4に整合）。5段階評価等のスコアリングUIは反スコアリング方針により対象外（issue §2 参照）。
 
 ### 19.5 成果物・共有境界
 
 - SafeMode / share-export: `preset_svg`/`emoji` の `kind`/`cueId` は構造識別子として既定で保全する。`altText` は人間が記述する代替テキストであり、`title`/`critique` と同一の redaction チャネル（`SafeModePolicy.redactText`）で扱う（`inquiry_bundle_safe_mode.ts` の `sanitizeRepresentativeCue`）。KA §17.4 の「別基準を新設しない」規約に従う。
-- `hand_drawn` は画像本体だけでなく形状そのものが機微情報になり得るため、review packでは参照と本体を既定で除外する。利用者が件数と警告を確認して一回限りの明示opt-inを行った場合だけ、SafeMode投影後の文書参照と完全一致する `representative_visual_cue_assets.json` を同梱し、`bundle_manifest.json`へversion/countを記録し、`integrity.json`のhash対象に含める。asset欠落・参照不一致時はexportを中止する。
+- `hand_drawn`/`user_image` は画像本体だけでなく形状や切り抜き自体が機微情報になり得るため、review packでは参照と本体を既定で除外する。利用者が件数と警告を確認して一回限りの明示opt-inを行った場合だけ、SafeMode投影後の文書参照と完全一致する `representative_visual_cue_assets.json` を同梱し、`bundle_manifest.json`へversion/countを記録し、`integrity.json`のhash対象に含める。asset欠落・参照不一致・kind不一致時はexportを中止する。
 - narrative export 等への反映要否は実装時に別途判断する（本契約は妨げない）。
 - 旧式 `Island.imageUrl`/`imageReviewed`（外部URL直接表示・由来/権利/代替テキストなし）とは別フィールドであり、本契約は旧式フィールドの往復保持・SafeMode遮断（`SEC-VISUAL-ASSET-01`）に影響しない。両者を混同しない。
 - 削除時に監査情報は残さない（手掛かりは思考内容ではなく補助表示であり、監査証跡の対象外 — `storage_candidate_comparison.md` §3.2）。文書Undoを成立させるため、過去・現在・未来の履歴snapshotが参照中の画像本体は保持し、参照が全履歴から外れた時点で同一document/scopeのIndexedDBエントリを削除する。

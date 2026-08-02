@@ -37,7 +37,7 @@ function buildProps(safeMode: boolean, overrides: Partial<React.ComponentProps<t
     onExportViewViewport: vi.fn(),
     onExportViewVisibleBounds: vi.fn(),
     onExportBundleZip: vi.fn(),
-    handDrawnVisualCueCount: 0,
+    portableVisualCueCount: 0,
     isBundleExportRunning: false,
     onCancelBundleExport: vi.fn(),
     computeProgressMessage: null,

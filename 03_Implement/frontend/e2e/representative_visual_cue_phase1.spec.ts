@@ -213,3 +213,99 @@ test("hand-drawn cue persists in scoped IndexedDB, supports keyboard drawing and
     }, imageRef),
   ).toBe(true);
 });
+
+test("user image is cropped locally to a bounded 48x48 PNG without retaining or uploading the source", async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.setViewportSize({ width: 390, height: 720 });
+  const externalRequests: string[] = [];
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if ((url.protocol === "http:" || url.protocol === "https:") && !["127.0.0.1", "localhost"].includes(url.hostname)) {
+      externalRequests.push(request.url());
+    }
+  });
+
+  await enableAdvancedUiIfNeeded(page);
+  await page.locator('button[aria-label*="domain-island"]').first().press("Enter");
+  const cueDetails = page
+    .locator('[data-ui-region="selection-context"]')
+    .locator('[data-domain-feature="representative-visual-cue"]');
+  await cueDetails.locator("summary").press("Enter");
+  const editor = cueDetails.locator('[data-visual-cue-editor="user-image"]');
+  const sourcePng = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+    "base64",
+  );
+  await editor.locator('input[type="file"]').setInputFiles({
+    name: "private-source.png",
+    mimeType: "image/png",
+    buffer: sourcePng,
+  });
+
+  const preview = editor.getByRole("img", { name: "画像切り抜きのプレビュー" });
+  await expect(preview).toBeVisible();
+  const horizontal = editor.getByLabel("横位置");
+  await horizontal.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(horizontal).toHaveValue("51");
+  const adopt = editor.getByRole("button", { name: "画像の切り抜きを採用" });
+  await expect(adopt).toBeEnabled();
+  await adopt.click();
+
+  const adoptedMark = page.locator('[data-representative-visual-cue^="visual-cue:"]');
+  await expect(adoptedMark).toHaveCount(1);
+  const imageRef = await adoptedMark.getAttribute("data-representative-visual-cue");
+  expect(imageRef).toMatch(/^visual-cue:[0-9a-f-]+$/);
+  const storedAsset = await page.evaluate(async (ref) => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("kj-atlas-representative-visual-cues", 2);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    try {
+      return await new Promise<{ assetJson: string }>((resolve, reject) => {
+        const request = database
+          .transaction("assets-v2", "readonly")
+          .objectStore("assets-v2")
+          .get(JSON.stringify(["kj-atlas/local-scope/v1/", ref]));
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    } finally {
+      database.close();
+    }
+  }, imageRef);
+  const asset = JSON.parse(storedAsset.assetJson) as {
+    kind: string;
+    width: number;
+    height: number;
+    mimeType: string;
+    base64: string;
+  };
+  expect(asset).toMatchObject({
+    kind: "user_image",
+    width: 48,
+    height: 48,
+    mimeType: "image/png",
+  });
+  const storedBytes = Buffer.from(asset.base64, "base64");
+  expect(storedBytes.byteLength).toBeLessThanOrEqual(16 * 1024);
+  expect([...storedBytes.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+  expect(storedBytes.readUInt32BE(16)).toBe(48);
+  expect(storedBytes.readUInt32BE(20)).toBe(48);
+  expect(storedBytes.equals(sourcePng)).toBe(false);
+
+  const saveRequestPromise = page.waitForRequest(
+    (request) => request.method() === "PUT" && /\/docs\//.test(request.url()),
+  );
+  await page.locator('button[data-ui-core-action="save"]').click();
+  const savedDocument = JSON.parse((await saveRequestPromise).postData() ?? "{}") as DocumentV1;
+  expect(savedDocument.islands[0]?.representativeCue).toEqual({
+    kind: "user_image",
+    cueId: imageRef,
+    imageRef,
+    altText: "切り抜いた画像の印",
+  });
+
+  expect(externalRequests).toEqual([]);
+});

@@ -6,9 +6,11 @@ import type { DocumentV1 } from "./types";
 
 export const HAND_DRAWN_CUE_ASSET_MAX_BYTES = 4 * 1024;
 export const HAND_DRAWN_CUE_COORDINATE_MAX = 20;
-export const HAND_DRAWN_CUE_BUNDLE_MAX_ASSETS = 400;
-export const HAND_DRAWN_CUE_BUNDLE_MAX_BYTES = 2 * 1024 * 1024;
-export const HAND_DRAWN_CUE_BUNDLE_FILE_NAME = "representative_visual_cue_assets.json";
+export const USER_IMAGE_CUE_ASSET_MAX_BYTES = 16 * 1024;
+export const USER_IMAGE_CUE_DIMENSION = 48;
+export const VISUAL_CUE_BUNDLE_MAX_ASSETS = 400;
+export const VISUAL_CUE_BUNDLE_MAX_BYTES = 2 * 1024 * 1024;
+export const VISUAL_CUE_BUNDLE_FILE_NAME = "representative_visual_cue_assets.json";
 const DATABASE_NAME = "kj-atlas-representative-visual-cues";
 const DATABASE_VERSION = 2;
 const LEGACY_STORE_NAME = "assets";
@@ -30,12 +32,23 @@ export type HandDrawnCueAssetV1 = Readonly<{
   strokes: readonly (readonly HandDrawnCuePointV1[])[];
 }>;
 
-export type HandDrawnCueAssetBundleV1 = Readonly<{
+export type UserImageCueAssetV1 = Readonly<{
+  version: 1;
+  kind: "user_image";
+  width: 48;
+  height: 48;
+  mimeType: "image/png";
+  base64: string;
+}>;
+
+export type RepresentativeVisualCueAssetV1 = HandDrawnCueAssetV1 | UserImageCueAssetV1;
+
+export type RepresentativeVisualCueAssetBundleV1 = Readonly<{
   version: "1";
   documentId: string;
   assets: readonly Readonly<{
     imageRef: string;
-    asset: HandDrawnCueAssetV1;
+    asset: RepresentativeVisualCueAssetV1;
   }>[];
 }>;
 
@@ -116,6 +129,196 @@ export function parseHandDrawnCueAsset(value: unknown): HandDrawnCueAssetV1 {
 
 export function serializeHandDrawnCueAsset(asset: HandDrawnCueAssetV1): string {
   return JSON.stringify(parseHandDrawnCueAsset(asset));
+}
+
+function decodeCanonicalBase64(value: string): Uint8Array {
+  if (
+    value.length === 0
+    || value.length > Math.ceil(USER_IMAGE_CUE_ASSET_MAX_BYTES / 3) * 4
+    || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value)
+  ) {
+    throw new Error("invalid user image visual cue encoding");
+  }
+  let binary: string;
+  try {
+    binary = atob(value);
+  } catch {
+    throw new Error("invalid user image visual cue encoding");
+  }
+  if (btoa(binary) !== value) {
+    throw new Error("user image visual cue encoding is not canonical");
+  }
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+function pngCrc32(bytes: Uint8Array): number {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+export function encodeUserImageCuePng(bytes: Uint8Array): string {
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+  return btoa(binary);
+}
+
+export function parseUserImageCueAsset(value: unknown): UserImageCueAssetV1 {
+  if (
+    !isRecord(value)
+    || !hasExactKeys(value, ["base64", "height", "kind", "mimeType", "version", "width"])
+    || value.version !== 1
+    || value.kind !== "user_image"
+    || value.width !== USER_IMAGE_CUE_DIMENSION
+    || value.height !== USER_IMAGE_CUE_DIMENSION
+    || value.mimeType !== "image/png"
+    || typeof value.base64 !== "string"
+  ) {
+    throw new Error("invalid user image visual cue asset");
+  }
+  const bytes = decodeCanonicalBase64(value.base64);
+  if (bytes.byteLength > USER_IMAGE_CUE_ASSET_MAX_BYTES || bytes.byteLength < 24) {
+    throw new Error("user image visual cue exceeds 16KB or is truncated");
+  }
+  const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+  if (
+    signature.some((byte, index) => bytes[index] !== byte)
+    || String.fromCharCode(bytes[12], bytes[13], bytes[14], bytes[15]) !== "IHDR"
+  ) {
+    throw new Error("user image visual cue is not a PNG");
+  }
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if (
+    view.getUint32(8) !== 13
+    || view.getUint32(16) !== USER_IMAGE_CUE_DIMENSION
+    || view.getUint32(20) !== USER_IMAGE_CUE_DIMENSION
+    || view.getUint8(24) !== 8
+    || ![0, 2, 4, 6].includes(view.getUint8(25))
+    || view.getUint8(26) !== 0
+    || view.getUint8(27) !== 0
+    || ![0, 1].includes(view.getUint8(28))
+  ) {
+    throw new Error("user image visual cue must be 48x48");
+  }
+  let offset = 8;
+  let chunkIndex = 0;
+  let sawIdat = false;
+  let sawIend = false;
+  while (offset + 12 <= bytes.byteLength) {
+    const length = view.getUint32(offset);
+    const chunkEnd = offset + 12 + length;
+    if (chunkEnd > bytes.byteLength) {
+      throw new Error("user image visual cue PNG is truncated");
+    }
+    const type = String.fromCharCode(
+      bytes[offset + 4],
+      bytes[offset + 5],
+      bytes[offset + 6],
+      bytes[offset + 7],
+    );
+    if (!/^[A-Za-z]{4}$/.test(type)) {
+      throw new Error("user image visual cue PNG has an invalid chunk type");
+    }
+    const expectedCrc = view.getUint32(offset + 8 + length);
+    const actualCrc = pngCrc32(bytes.subarray(offset + 4, offset + 8 + length));
+    if (expectedCrc !== actualCrc) {
+      throw new Error("user image visual cue PNG failed integrity validation");
+    }
+    if ((chunkIndex === 0 && type !== "IHDR") || (chunkIndex > 0 && type === "IHDR")) {
+      throw new Error("user image visual cue PNG has an invalid header");
+    }
+    if (type === "IDAT") {
+      if (length === 0) {
+        throw new Error("user image visual cue PNG has empty image data");
+      }
+      sawIdat = true;
+    }
+    if (type === "IEND") {
+      if (length !== 0 || chunkEnd !== bytes.byteLength) {
+        throw new Error("user image visual cue PNG has trailing data");
+      }
+      sawIend = true;
+      break;
+    }
+    offset = chunkEnd;
+    chunkIndex += 1;
+  }
+  if (!sawIdat || !sawIend) {
+    throw new Error("user image visual cue PNG is incomplete");
+  }
+  return {
+    version: 1,
+    kind: "user_image",
+    width: 48,
+    height: 48,
+    mimeType: "image/png",
+    base64: value.base64,
+  };
+}
+
+export function parseRepresentativeVisualCueAsset(value: unknown): RepresentativeVisualCueAssetV1 {
+  if (!isRecord(value)) {
+    throw new Error("invalid representative visual cue asset");
+  }
+  if (value.kind === "hand_drawn") {
+    return parseHandDrawnCueAsset(value);
+  }
+  if (value.kind === "user_image") {
+    return parseUserImageCueAsset(value);
+  }
+  throw new Error("unknown representative visual cue asset kind");
+}
+
+function serializeRepresentativeVisualCueAsset(asset: RepresentativeVisualCueAssetV1): string {
+  return JSON.stringify(parseRepresentativeVisualCueAsset(asset));
+}
+
+async function validateUserImageCueDecodes(asset: UserImageCueAssetV1): Promise<void> {
+  const bytes = decodeCanonicalBase64(asset.base64);
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  const blob = new Blob([buffer], { type: asset.mimeType });
+  if (typeof createImageBitmap === "function") {
+    const bitmap = await createImageBitmap(blob);
+    try {
+      if (bitmap.width !== USER_IMAGE_CUE_DIMENSION || bitmap.height !== USER_IMAGE_CUE_DIMENSION) {
+        throw new Error("decoded user image visual cue has invalid dimensions");
+      }
+    } finally {
+      bitmap.close();
+    }
+    return;
+  }
+  if (typeof Image === "undefined") {
+    throw new Error("user image visual cue decoding is unavailable");
+  }
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => {
+        if (
+          image.naturalWidth === USER_IMAGE_CUE_DIMENSION
+          && image.naturalHeight === USER_IMAGE_CUE_DIMENSION
+        ) {
+          resolve();
+        } else {
+          reject(new Error("decoded user image visual cue has invalid dimensions"));
+        }
+      };
+      image.onerror = () => reject(new Error("user image visual cue cannot be decoded"));
+      image.src = objectUrl;
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
 
 export function visualCueAssetScopeKey(scope?: TenantBrowserStorageScope): string {
@@ -202,7 +405,31 @@ export async function saveHandDrawnCueAsset(
   asset: HandDrawnCueAssetV1,
   scope?: TenantBrowserStorageScope,
 ): Promise<string> {
-  const assetJson = serializeHandDrawnCueAsset(asset);
+  return saveRepresentativeVisualCueAsset(documentId, asset, scope);
+}
+
+export async function saveUserImageCueAsset(
+  documentId: string,
+  pngBytes: Uint8Array,
+  scope?: TenantBrowserStorageScope,
+): Promise<string> {
+  const asset = parseUserImageCueAsset({
+    version: 1,
+    kind: "user_image",
+    width: USER_IMAGE_CUE_DIMENSION,
+    height: USER_IMAGE_CUE_DIMENSION,
+    mimeType: "image/png",
+    base64: encodeUserImageCuePng(pngBytes),
+  });
+  return saveRepresentativeVisualCueAsset(documentId, asset, scope);
+}
+
+async function saveRepresentativeVisualCueAsset(
+  documentId: string,
+  asset: RepresentativeVisualCueAssetV1,
+  scope?: TenantBrowserStorageScope,
+): Promise<string> {
+  const assetJson = serializeRepresentativeVisualCueAsset(asset);
   const scopeKey = visualCueAssetScopeKey(scope);
   const imageRef = `visual-cue:${crypto.randomUUID()}`;
   const database = await openDatabase();
@@ -221,6 +448,14 @@ export async function loadHandDrawnCueAsset(
   imageRef: string,
   scope?: TenantBrowserStorageScope,
 ): Promise<HandDrawnCueAssetV1 | null> {
+  const asset = await loadRepresentativeVisualCueAsset(imageRef, scope);
+  return asset?.kind === "hand_drawn" ? asset : null;
+}
+
+export async function loadRepresentativeVisualCueAsset(
+  imageRef: string,
+  scope?: TenantBrowserStorageScope,
+): Promise<RepresentativeVisualCueAssetV1 | null> {
   const database = await openDatabase();
   try {
     const transaction = database.transaction(STORE_NAME, "readonly");
@@ -234,13 +469,20 @@ export async function loadHandDrawnCueAsset(
     if (!record || record.scopeKey !== scopeKey) {
       return null;
     }
-    return parseHandDrawnCueAsset(JSON.parse(record.assetJson));
+    return parseRepresentativeVisualCueAsset(JSON.parse(record.assetJson));
   } finally {
     database.close();
   }
 }
 
 export async function deleteHandDrawnCueAsset(
+  imageRef: string,
+  scope?: TenantBrowserStorageScope,
+): Promise<boolean> {
+  return deleteRepresentativeVisualCueAsset(imageRef, scope);
+}
+
+export async function deleteRepresentativeVisualCueAsset(
   imageRef: string,
   scope?: TenantBrowserStorageScope,
 ): Promise<boolean> {
@@ -265,23 +507,29 @@ export async function deleteHandDrawnCueAsset(
   }
 }
 
-export function collectHandDrawnCueImageRefs(document: DocumentV1): string[] {
+export function collectPortableVisualCueImageRefs(document: DocumentV1): string[] {
   return [...new Set(
     document.islands.flatMap((island) => {
       const cue = island.representativeCue;
-      return cue?.kind === "hand_drawn" && cue.imageRef ? [cue.imageRef] : [];
+      return (cue?.kind === "hand_drawn" || cue?.kind === "user_image") && cue.imageRef
+        ? [cue.imageRef]
+        : [];
     }),
   )].sort();
 }
 
-export function stripHandDrawnVisualCues(document: DocumentV1): DocumentV1 {
-  if (!document.islands.some((island) => island.representativeCue?.kind === "hand_drawn")) {
+export function stripPortableVisualCues(document: DocumentV1): DocumentV1 {
+  if (!document.islands.some((island) => {
+    const kind = island.representativeCue?.kind;
+    return kind === "hand_drawn" || kind === "user_image";
+  })) {
     return document;
   }
   return {
     ...document,
     islands: document.islands.map((island) => {
-      if (island.representativeCue?.kind !== "hand_drawn") {
+      const kind = island.representativeCue?.kind;
+      if (kind !== "hand_drawn" && kind !== "user_image") {
         return island;
       }
       const { representativeCue: _representativeCue, ...rest } = island;
@@ -290,10 +538,10 @@ export function stripHandDrawnVisualCues(document: DocumentV1): DocumentV1 {
   };
 }
 
-export function parseHandDrawnCueAssetBundle(
+export function parseRepresentativeVisualCueAssetBundle(
   value: unknown,
   document: DocumentV1,
-): HandDrawnCueAssetBundleV1 {
+): RepresentativeVisualCueAssetBundleV1 {
   if (
     !isRecord(value)
     || !hasExactKeys(value, ["assets", "documentId", "version"])
@@ -301,9 +549,9 @@ export function parseHandDrawnCueAssetBundle(
     || value.documentId !== document.id
     || !Array.isArray(value.assets)
     || value.assets.length === 0
-    || value.assets.length > HAND_DRAWN_CUE_BUNDLE_MAX_ASSETS
+    || value.assets.length > VISUAL_CUE_BUNDLE_MAX_ASSETS
   ) {
-    throw new Error("invalid hand-drawn visual cue asset bundle");
+    throw new Error("invalid representative visual cue asset bundle");
   }
 
   const seen = new Set<string>();
@@ -315,64 +563,81 @@ export function parseHandDrawnCueAssetBundle(
       || !VALID_IMAGE_REF.test(entry.imageRef)
       || seen.has(entry.imageRef)
     ) {
-      throw new Error("invalid hand-drawn visual cue asset bundle entry");
+      throw new Error("invalid representative visual cue asset bundle entry");
     }
     seen.add(entry.imageRef);
     return {
       imageRef: entry.imageRef,
-      asset: parseHandDrawnCueAsset(entry.asset),
+      asset: parseRepresentativeVisualCueAsset(entry.asset),
     };
   });
 
-  const expectedRefs = collectHandDrawnCueImageRefs(document);
+  const expectedRefs = collectPortableVisualCueImageRefs(document);
   const actualRefs = [...seen].sort();
   if (
     expectedRefs.length !== actualRefs.length
     || expectedRefs.some((imageRef, index) => imageRef !== actualRefs[index])
   ) {
-    throw new Error("hand-drawn visual cue asset bundle does not match document references");
+    throw new Error("representative visual cue asset bundle does not match document references");
   }
 
-  const bundle: HandDrawnCueAssetBundleV1 = {
+  const cueKindByRef = new Map(
+    document.islands.flatMap((island) => {
+      const cue = island.representativeCue;
+      return (cue?.kind === "hand_drawn" || cue?.kind === "user_image") && cue.imageRef
+        ? [[cue.imageRef, cue.kind] as const]
+        : [];
+    }),
+  );
+  if (assets.some((entry) => cueKindByRef.get(entry.imageRef) !== entry.asset.kind)) {
+    throw new Error("representative visual cue asset kind does not match document reference");
+  }
+
+  const bundle: RepresentativeVisualCueAssetBundleV1 = {
     version: "1",
     documentId: document.id,
     assets: assets.sort((left, right) => left.imageRef.localeCompare(right.imageRef)),
   };
-  if (new TextEncoder().encode(JSON.stringify(bundle)).byteLength > HAND_DRAWN_CUE_BUNDLE_MAX_BYTES) {
-    throw new Error("hand-drawn visual cue asset bundle exceeds 2MB");
+  if (new TextEncoder().encode(JSON.stringify(bundle)).byteLength > VISUAL_CUE_BUNDLE_MAX_BYTES) {
+    throw new Error("representative visual cue asset bundle exceeds 2MB");
   }
   return bundle;
 }
 
-export async function buildHandDrawnCueAssetBundle(
+export async function buildRepresentativeVisualCueAssetBundle(
   document: DocumentV1,
   scope?: TenantBrowserStorageScope,
-): Promise<HandDrawnCueAssetBundleV1> {
-  const imageRefs = collectHandDrawnCueImageRefs(document);
-  if (imageRefs.length === 0 || imageRefs.length > HAND_DRAWN_CUE_BUNDLE_MAX_ASSETS) {
-    throw new Error("document has no exportable hand-drawn visual cue assets");
+): Promise<RepresentativeVisualCueAssetBundleV1> {
+  const imageRefs = collectPortableVisualCueImageRefs(document);
+  if (imageRefs.length === 0 || imageRefs.length > VISUAL_CUE_BUNDLE_MAX_ASSETS) {
+    throw new Error("document has no exportable representative visual cue assets");
   }
   const assets = [];
   for (const imageRef of imageRefs) {
-    const asset = await loadHandDrawnCueAsset(imageRef, scope);
+    const asset = await loadRepresentativeVisualCueAsset(imageRef, scope);
     if (!asset) {
-      throw new Error(`hand-drawn visual cue asset is unavailable (${imageRef})`);
+      throw new Error(`representative visual cue asset is unavailable (${imageRef})`);
     }
     assets.push({ imageRef, asset });
   }
-  return parseHandDrawnCueAssetBundle({
+  return parseRepresentativeVisualCueAssetBundle({
     version: "1",
     documentId: document.id,
     assets,
   }, document);
 }
 
-export async function restoreHandDrawnCueAssetBundle(
+export async function restoreRepresentativeVisualCueAssetBundle(
   document: DocumentV1,
   value: unknown,
   scope?: TenantBrowserStorageScope,
 ): Promise<number> {
-  const bundle = parseHandDrawnCueAssetBundle(value, document);
+  const bundle = parseRepresentativeVisualCueAssetBundle(value, document);
+  for (const entry of bundle.assets) {
+    if (entry.asset.kind === "user_image") {
+      await validateUserImageCueDecodes(entry.asset);
+    }
+  }
   const scopeKey = visualCueAssetScopeKey(scope);
   const database = await openDatabase();
   try {
@@ -406,7 +671,7 @@ export async function restoreHandDrawnCueAssetBundle(
             scopeKey,
             document.id,
             entry.imageRef,
-            serializeHandDrawnCueAsset(entry.asset),
+            serializeRepresentativeVisualCueAsset(entry.asset),
           ));
           remaining -= 1;
           if (remaining === 0) {
@@ -423,7 +688,7 @@ export async function restoreHandDrawnCueAssetBundle(
   }
 }
 
-export async function deleteUnreferencedHandDrawnCueAssets(
+export async function deleteUnreferencedRepresentativeVisualCueAssets(
   documentId: string,
   retainedImageRefs: ReadonlySet<string>,
   scope?: TenantBrowserStorageScope,

@@ -8,7 +8,7 @@ import {
   buildExportBundleWithWorkers,
   type BundleExportContext,
 } from "./bundle_export";
-import type { HandDrawnCueAssetBundleV1 } from "../domain/representative_visual_cue_assets";
+import type { RepresentativeVisualCueAssetBundleV1 } from "../domain/representative_visual_cue_assets";
 import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
 import { parseDocumentJson } from "../import/document_import";
 import { detectReviewPackFiles, readZipFiles } from "../import/zip_import";
@@ -51,7 +51,7 @@ const baseDoc: DocumentV1 = {
 };
 
 const handDrawnImageRef = "visual-cue:12345678-1234-4123-8123-123456789abc";
-const handDrawnAssetBundle: HandDrawnCueAssetBundleV1 = {
+const handDrawnAssetBundle: RepresentativeVisualCueAssetBundleV1 = {
   version: "1",
   documentId: baseDoc.id,
   assets: [{
@@ -251,7 +251,7 @@ describe("buildExportBundle", () => {
   test("includes an exact hand-drawn asset set only after explicit opt-in", async () => {
     const context = buildBasicContext({
       includeVisualCueAssets: true,
-      handDrawnVisualCueAssetBundle: handDrawnAssetBundle,
+      visualCueAssetBundle: handDrawnAssetBundle,
     });
     const files = await buildExportBundleWithWorkers(docWithHandDrawnCue, {}, context);
     const documentFile = files.find((file) => file.path.endsWith("/document.json"));
@@ -281,7 +281,7 @@ describe("buildExportBundle", () => {
     expect(() => buildExportBundle(
       docWithHandDrawnCue,
       {},
-      buildBasicContext({ handDrawnVisualCueAssetBundle: handDrawnAssetBundle }),
+      buildBasicContext({ visualCueAssetBundle: handDrawnAssetBundle }),
     )).toThrow(/explicit export opt-in/);
 
     expect(() => buildExportBundle(
@@ -289,9 +289,9 @@ describe("buildExportBundle", () => {
       {},
       buildBasicContext({
         includeVisualCueAssets: true,
-        handDrawnVisualCueAssetBundle: handDrawnAssetBundle,
+        visualCueAssetBundle: handDrawnAssetBundle,
       }),
-    )).toThrow(/invalid hand-drawn visual cue asset bundle/);
+    )).toThrow(/invalid representative visual cue asset bundle/);
   });
 
   test("always includes document.json, merge_decision_audit.json and view.json sorted by path", () => {

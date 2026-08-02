@@ -69,7 +69,7 @@
 - [x] T4b C0からC4の非製品プロトタイプ表示を作り、実装担当者による予備操作確認を実施する。高度な作業モード内のセッション限定UIとして実装し、マウス、キーボード、390px、ローカル画像通信をE2Eで確認した。代表利用者による効果比較はAC-6として未完了のまま残す。
 - [x] T5 Unicode絵文字と固定画像セットについて、OS間表示、アクセシビリティ、ライセンス、配布容量を比較する。→ `02_Architecture/design/unicode_emoji_os_comparison.md` として完了（2026-07-20）。推奨: Unicode絵文字をPhase 1既定とし、OS間不一致が確認されたcueだけを個別SVG化する。
 - [x] T6 採用参照、権利情報、画像本体、サムネイルの保存候補を比較し、ADRを受理または更新する。→ `02_Architecture/design/representative_visual_cue/storage_candidate_comparison.md` に比較完了（2026-07-20）。ADR-0060 Accepted・§8保存決定反映・`data_model_operations_overview.md` 更新済み。
-- [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。→ 小PR 1件目（契約先行の型・往復保持・SafeMode）完了（2026-07-29）。小PR 2件目（基本図形の選択UI・20×20描画・保存・Undo・390px・a11y）完了（2026-08-02）。小PR 3件目（手描き入力・scope分離IndexedDB・4KB上限・再読込・Undo期間後の削除）完了（2026-08-02、`82b173eb`）。小PR 4件目（手描きassetのreview pack明示同梱・integrity・別browser復元・旧store移行）完了（2026-08-02、`04827403`）。利用者画像、絵文字比較、代表利用者評価（AC-6〜AC-10）は未完了のまま残る。
+- [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。→ 小PR 1件目（契約先行の型・往復保持・SafeMode）完了（2026-07-29）。小PR 2件目（基本図形の選択UI・20×20描画・保存・Undo・390px・a11y）完了（2026-08-02）。小PR 3件目（手描き入力・scope分離IndexedDB・4KB上限・再読込・Undo期間後の削除）完了（2026-08-02、`82b173eb`）。小PR 4件目（手描きassetのreview pack明示同梱・integrity・別browser復元・旧store移行）完了（2026-08-02、`04827403`）。小PR 5件目（利用者画像の端末内切り抜き・48×48 PNG化・16KB/scope保存・原本非保持・review pack既定除外/明示移送）完了（2026-08-02）。絵文字比較、代表利用者評価、代表規模性能計測（AC-6〜AC-10）は未完了のまま残る。
 - [ ] T8 実利用で不足が確認された場合だけ、外部素材と生成画像をそれぞれ別issueへ分割する。
 - [x] T9 現行`Island.imageUrl`の自動外部取得とレビュー自動昇格を`SEC-VISUAL-ASSET-01`へ分離し、SafeModeで遮断する。
 
@@ -107,6 +107,15 @@
 - IndexedDBは`scopeKey + imageRef`の複合キーを持つv2 storeへ移行し、別scopeの同一`imageRef`を衝突させない。Chromiumで旧v1 storeからの移行と、送信側とは独立したfresh browser contextへのreview pack取込・描画復元を確認した。
 - frontend全233ファイル / 1,372テスト、typecheck、production build、Playwright通常構成198 passed / SaaS専用3 skipped、docs-check、active issue validator、diff-checkを通過した。実装は`04827403`。
 - T7は完了扱いにしない。利用者画像、絵文字比較、代表利用者による効果比較、代表規模性能計測（AC-6〜AC-10）が残る。
+
+### Phase 1 利用者画像切り抜きチェックポイント（2026-08-02）
+
+- 高度UIの代表視覚手掛かり内へ、PNG/JPEG/WebP（10MB以下・各辺8000px以下）の端末内切り抜きを追加した。横位置・縦位置・拡大はラベル付きrange操作としてキーボードでも調整でき、明示採用までは文書を変更しない。
+- 選択した原本はobject URLでブラウザ内だけに読み、保持・送信しない。採用時は正方形へ切り抜き、減彩した48×48 PNGの複製だけをscope分離IndexedDBへ保存する。1件16KBを上限とし、文書には`user_image`の不透明な`imageRef`と代替テキストだけを保持する。
+- 保存・import時はcanonical Base64、PNG signature、IHDR寸法・方式・先頭位置、chunk型・CRC、IDAT存在、IEND終端とブラウザ画像decodeをstrict validationする。文書参照のkindとasset kindが一致しないbundleも拒否する。表示時もscope・`imageRef`・kindがすべて一致する場合だけdata URLとして描画する。
+- review packでは手描きと利用者画像を「端末内の視覚手掛かり」として同じ境界で扱い、参照と本体を既定除外する。件数と機微情報警告を確認した一回限りの明示opt-in時だけ、文書参照と完全一致するintegrity対象asset fileへ同梱する。asset fileなしのimportではdanglingな`user_image`参照を除去する。
+- Chromium 390px E2Eで、画像選択、キーボード切り抜き調整、採用、48×48/16KB PNG保存、原本と保存物の不一致、外部request 0、PUT保存を確認した。基本図形・手描き・review pack移送を含む対象5件、frontend全233ファイル / 1,378テスト、typecheck、production build、docs-check、active issue validator、diff-checkを通過した。
+- T7は完了扱いにしない。絵文字比較、代表利用者による効果比較、代表規模性能計測（AC-6〜AC-10）が残る。外部素材・生成画像は実利用で不足が確認された場合だけT8で別issue化する。
 
 ## 6) 依存関係 / Dependencies
 
