@@ -566,17 +566,20 @@ def build_access_control_adapter(*, adapter_name: str, mock_allow: bool | None =
         )
 
     endpoint = http_endpoint or _get_configured_endpoint()
-    if endpoint:
-        return ExternalPolicyAccessControlAdapter(
-            config=ExternalPolicyAdapterConfig(
-                endpoint=endpoint,
-                timeout_seconds=http_timeout_seconds or settings.access_control_external_http_timeout_seconds,
-                auth_mode=cast(AdapterAuthMode, settings.access_control_external_http_auth_mode),
-                static_bearer_token=http_api_key or settings.access_control_external_http_static_bearer_token,
-                idp_issuer=settings.access_control_external_http_idp_issuer,
-            )
+    if endpoint is None:
+        raise RuntimeError(
+            "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT is required "
+            "for the external HTTP access-control adapter"
         )
-    return NoopAccessControlAdapter()
+    return ExternalPolicyAccessControlAdapter(
+        config=ExternalPolicyAdapterConfig(
+            endpoint=endpoint,
+            timeout_seconds=http_timeout_seconds or settings.access_control_external_http_timeout_seconds,
+            auth_mode=cast(AdapterAuthMode, settings.access_control_external_http_auth_mode),
+            static_bearer_token=http_api_key or settings.access_control_external_http_static_bearer_token,
+            idp_issuer=settings.access_control_external_http_idp_issuer,
+        )
+    )
 
 
 def _get_configured_endpoint() -> str | None:

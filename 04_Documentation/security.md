@@ -119,6 +119,7 @@ export KJ_ATLAS_AUDIT_HTTP_ENDPOINT='https://audit.example.com/events'
 注意:
 
 - 接続先（endpoint）と API key は秘密情報として扱います。
+- `KJ_ATLAS_AUDIT_TRANSPORT=http` を指定した場合、endpointは必須です。未設定ならnoopへ縮退せず、設定エラーとして起動を拒否します。
 - SafeMode 中に audit HTTP 連携を許可する場合は、`KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE=true` の理由を運用記録に残してください。
 - audit には必要最小限のメタ情報だけを含め、生の秘密情報を含めないでください。
 
@@ -146,13 +147,13 @@ export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/d
 
 注意:
 
-- `external_http` を指定しても接続先（endpoint）が未設定の場合、現行実装は `noop` にフォールバックします。外部 PDP を必須にする環境では、接続先の未設定を運用上の設定失敗として扱ってください。
+- `external_http` を指定した場合、接続先（endpoint）は必須です。未設定なら `noop` にフォールバックせず、設定エラーとして起動を拒否します。外部PDPを使わない場合はadapterを明示的に`noop`へ戻してください。
 - `Org` または `Restricted` の対象で `policyRef` がない場合、local fail-safe が働きます。`read_only` では読み取りだけを許可し、`deny` では拒否します。
 - `Public` と `Unlisted` は `policyRef` 欠損による強制 fail-safe の対象外です。公開範囲を広げる前に、visibility と policyRef を確認してください。
 
-### SaaS用resolverは設定不備を起動時に拒否する
+### 外部HTTP連携は設定不備を起動時に拒否する
 
-次の2 resolverは、上記の `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` とfallback契約が異なります。
+次の2 resolverも、access-controlと監査HTTPと同じ完全設定の原則を使います。
 
 - `KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER`
 - `KJ_ATLAS_TENANT_CAPABILITY_RESOLVER`
@@ -197,7 +198,7 @@ export、share、障害調査でどの情報を削るか迷う場合は、[data_
 - [ ] SafeMode 中に外部サービスとの共有を許可していない、または許可理由を記録している。
 - [ ] share/export の出力に秘密情報や内部メモが混ざっていない。
 - [ ] access control 障害時の fail-safe が `read_only` など保守的な値になっている。
-- [ ] `external_http` を使う場合、PDP の接続先（endpoint）が設定され、`noop` にフォールバックしていない。
+- [ ] `external_http` を使う場合、PDP の接続先（endpoint）を同時に設定し、設定検証を通過して起動している。
 - [ ] Document policy binding / tenant capability resolverを`external_http`にする場合はendpointが設定され、`none`にする場合はHTTP endpoint・API keyが残っていない。
 
 ## 迷ったときの判断

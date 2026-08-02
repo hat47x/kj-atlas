@@ -71,16 +71,40 @@ def test_http_integration_rejects_orphaned_endpoint_and_bearer() -> None:
                 "https://pdp.example.invalid/decide"
             ),
         )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as exc_info:
         Settings(
             KJ_ATLAS_AUDIT_TRANSPORT="http",
             KJ_ATLAS_AUDIT_HTTP_API_KEY="orphan-secret",
         )
+    assert "orphan-secret" not in str(exc_info.value)
     with pytest.raises(ValueError):
         Settings(
             KJ_ATLAS_ACCESS_CONTROL_ADAPTER="external_http",
             KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER="issuer-without-endpoint",
         )
+
+
+@pytest.mark.parametrize(
+    ("settings_overrides", "required_key"),
+    [
+        (
+            {"KJ_ATLAS_ACCESS_CONTROL_ADAPTER": "external_http"},
+            "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT",
+        ),
+        (
+            {"KJ_ATLAS_AUDIT_TRANSPORT": "http"},
+            "KJ_ATLAS_AUDIT_HTTP_ENDPOINT",
+        ),
+    ],
+)
+def test_enabled_http_integration_requires_endpoint(
+    settings_overrides: dict[str, object],
+    required_key: str,
+) -> None:
+    with pytest.raises(ValueError) as exc_info:
+        Settings(**settings_overrides)
+
+    assert required_key in str(exc_info.value)
 
 
 @pytest.mark.parametrize("secret", ["", "has whitespace", "control\nvalue", "bidi\u202evalue"])
@@ -137,7 +161,10 @@ def test_http_integration_rejects_unsafe_bounds(
 
 
 def test_http_integration_normalizes_transport_and_rejects_unknown_value() -> None:
-    configured = Settings(KJ_ATLAS_AUDIT_TRANSPORT="  HTTP ")
+    configured = Settings(
+        KJ_ATLAS_AUDIT_TRANSPORT="  HTTP ",
+        KJ_ATLAS_AUDIT_HTTP_ENDPOINT="http://127.0.0.1:9000/audit",
+    )
 
     assert configured.audit_transport == "http"
 

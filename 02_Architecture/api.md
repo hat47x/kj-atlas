@@ -558,12 +558,12 @@ fail-safe マトリクス:
 ### 8.5 実運用アダプタ設定（OIDC/SAML接続）
 
 - `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` で、APIは外部 policy 接続先（endpoint）へ `POST` 委譲する。
-- endpointはcredential/query/fragmentを含まないHTTPS、またはloopback HTTPに限定し、固定bearerやIdP issuerだけが残る不完全設定、0以下または30秒超のtimeoutを起動時に拒否する。endpoint未設定時のsingle-tenant互換fallback自体は維持する。
+- endpointはcredential/query/fragmentを含まないHTTPS、またはloopback HTTPに限定する。`external_http` を選択した場合はendpointを必須とし、欠損、固定bearerやIdP issuerだけが残る不完全設定、0以下または30秒超のtimeoutを起動時に拒否する。
 - request body は `AccessRequest` 契約から構成し、`auth.roles/groups` と `resource.policyRef` の意味解釈は行わない。一方で送信前の安全境界として、UTF-8 JSON全体を64KiB以下、識別子を256文字以下、`policyRef`を2,048文字以下、roles/groupsを各64件以下の重複なしcanonical文字列に限定する。
 - subject/resource欠損、制御文字・前後空白、未知のaction/visibility、型不正、上限超過を含むserver-composed requestはtransport前に拒否し、raw値をclient・logへ反射せず`adapter_error`としてfail-safeを適用する。
 - request header には `x-acl-auth-mode: none|oidc|saml` を付与し、必要時のみ `Authorization: Bearer <static>` / `x-idp-issuer` / `x-trace-id` を付与する。
 - 応答は `allow:boolean`（必須）+ `readOnly:boolean?` + `reason:string?` の最小契約。object以外、余分なfield、64KiB超、非UTF-8/非JSON、512文字超または制御文字を含むreasonは受理せず、応答値をclient・logへ反射せずに`policy_ref_invalid`としてfail-safeを適用する。
-- `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` が未設定の場合、`external_http` 指定でも `noop` へフォールバックする（可用性優先）。
+- `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` が未設定の場合、`external_http` を `noop` へフォールバックせず、設定不備として起動を拒否する（`ADR-0062`）。明示的な `noop` と、完全設定後のPDP実行時障害に対する `read_only|deny` は従来どおり維持する。
 
 ### 8.6 互換性
 
@@ -827,7 +827,7 @@ export type TenantScopedAccessRequestV1 = {
 - `tenantSessionVersion`欠損・不一致ではresource lookup前に`409 tenant_session_changed`へ閉じ、現在tenantやresourceの存在を応答へ混入させない。
 - 他tenantのresource IDは`404`相当とし、list/search/count/paginationにも存在を混入させない。
 - current tenant内でresourceの存在が認可済みだが操作capabilityが不足する場合は`403`を返してよい。
-- `noop`、endpoint欠損時noop fallback、`read_only` fail-safeはSaaS profileで禁止する。§8.3〜8.6の互換挙動はsingle-tenant profileだけに適用する。
+- 明示的な`noop`と`read_only` fail-safeはSaaS profileで禁止する。endpoint欠損時noop fallbackは`ADR-0062`によりprofileを問わず廃止し、外部HTTP方式の不完全設定は起動時に拒否する。§8.3〜8.6のうち明示的なsingle-tenant互換挙動だけを既存profileへ適用する。
 - auditにはtenantId、opaque actor/resource ID、action、decision、policy/capability version、correlation IDだけを記録し、本文、タイトル、role/group生値、tokenを記録しない。
 
 Tenant-scoped access-control entry pointは、TenantContext欠損、resource tenant欠損、両tenant不一致をそれぞれ`tenant_context_missing`、`resource_tenant_missing`、`tenant_mismatch`として外部PDP呼出し前にdenyする。このguardは`read_only` fail-safeから独立し、tenant境界の不備をread許可へ変換しない。Document routeのresource解決もapplication lifecycleで設定するresolver境界とし、現行profileは公開headerを読む`SingleTenantHeaderResourceResolver`、SaaS profileはheaderを無視して`tenantId + docId`をDB lookupする`ServerOwnedDocumentResourceResolver`を使用する。後者は既存行のtenantを確認し、未整備のvisibility/policyRefを`Restricted`/欠損へ倒すためdeny modeで安全側に停止する。server-owned policy metadata store、外部binding resolver adapter、SaaS bundle有効化時のresolver切替は実装済みである。実binding service／PDP接続と越境matrixが未完了のためSaaS profileは閉じたままとし、単一テナント互換resolverをSaaS境界として扱わない。

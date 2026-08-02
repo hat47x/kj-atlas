@@ -365,6 +365,12 @@ def build_audit_dispatcher() -> AuditDispatcher:
     enabled = settings.audit_export_enabled
     allow_in_safe_mode = settings.audit_allow_in_safe_mode
     queue_size = settings.audit_queue_size
+    endpoint = settings.audit_http_endpoint
+
+    if settings.audit_transport == "http" and endpoint is None:
+        raise RuntimeError(
+            "KJ_ATLAS_AUDIT_HTTP_ENDPOINT is required for the HTTP audit transport"
+        )
 
     if not enabled:
         return AuditDispatcher(
@@ -375,16 +381,11 @@ def build_audit_dispatcher() -> AuditDispatcher:
         )
 
     if settings.audit_transport == "http":
-        endpoint = settings.audit_http_endpoint
-        if not endpoint:
-            logger.warning("KJ_ATLAS_AUDIT_TRANSPORT=http but KJ_ATLAS_AUDIT_HTTP_ENDPOINT missing; fallback noop")
-            transport: AuditTransport = NoopAuditTransport()
-        else:
-            transport = HttpAuditTransport(
-                endpoint=endpoint,
-                api_key=settings.audit_http_api_key,
-                timeout_seconds=settings.audit_http_timeout_seconds,
-            )
+        transport: AuditTransport = HttpAuditTransport(
+            endpoint=endpoint,
+            api_key=settings.audit_http_api_key,
+            timeout_seconds=settings.audit_http_timeout_seconds,
+        )
     else:
         transport = NoopAuditTransport()
 

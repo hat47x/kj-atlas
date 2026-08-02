@@ -95,9 +95,7 @@ def _validate_optional_http_integration(
             raise ValueError(f"{endpoint_key} and {api_key_key} require the HTTP integration")
         return
     if endpoint is None:
-        if api_key is not None:
-            raise ValueError(f"{api_key_key} requires {endpoint_key}")
-        return
+        raise ValueError(f"{endpoint_key} is required when the HTTP integration is enabled")
     _validate_trusted_http_endpoint(endpoint=endpoint, endpoint_key=endpoint_key)
     _validate_canonical_bearer(api_key=api_key, api_key_key=api_key_key)
 

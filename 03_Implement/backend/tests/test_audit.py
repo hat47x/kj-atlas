@@ -7,6 +7,7 @@ from kj_atlas_api.audit import (
     AuditEvent,
     HttpAuditTransport,
     MAX_AUDIT_EVENT_BYTES,
+    build_audit_dispatcher,
     build_event,
     sanitize_metadata,
 )
@@ -139,6 +140,51 @@ def test_dispatcher_fail_open_on_transport_failure() -> None:
 
     assert result.sent is False
     assert result.reason == "send_failed"
+
+
+def test_build_audit_dispatcher_http_rejects_missing_endpoint(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.setattr("kj_atlas_api.audit.settings.audit_transport", "http")
+    monkeypatch.setattr("kj_atlas_api.audit.settings.audit_http_endpoint", None)
+
+    with pytest.raises(RuntimeError) as exc_info:
+        build_audit_dispatcher()
+
+    assert "KJ_ATLAS_AUDIT_HTTP_ENDPOINT" in str(exc_info.value)
+
+
+def test_build_audit_dispatcher_http_uses_configured_transport(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    captured: dict[str, object] = {}
+
+    def recording_http_transport(
+        endpoint: str,
+        api_key: str | None,
+        timeout_seconds: float,
+    ) -> RecordingTransport:
+        captured.update(
+            endpoint=endpoint,
+            api_key=api_key,
+            timeout_seconds=timeout_seconds,
+        )
+        return RecordingTransport()
+
+    monkeypatch.setattr("kj_atlas_api.audit.settings.audit_export_enabled", True)
+    monkeypatch.setattr("kj_atlas_api.audit.settings.audit_transport", "http")
+    monkeypatch.setattr(
+        "kj_atlas_api.audit.settings.audit_http_endpoint",
+        "https://audit.example.invalid/events",
+    )
+    monkeypatch.setattr("kj_atlas_api.audit.settings.audit_http_api_key", "test-key")
+    monkeypatch.setattr("kj_atlas_api.audit.settings.audit_http_timeout_seconds", 1.5)
+    monkeypatch.setattr("kj_atlas_api.audit.HttpAuditTransport", recording_http_transport)
+
+    dispatcher = build_audit_dispatcher()
+
+    assert dispatcher.enabled is True
+    assert captured == {
+        "endpoint": "https://audit.example.invalid/events",
+        "api_key": "test-key",
+        "timeout_seconds": 1.5,
+    }
 
 
 def test_dispatcher_logs_a_warning_when_queue_flush_itself_fails(caplog) -> None:  # type: ignore[no-untyped-def]

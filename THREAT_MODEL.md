@@ -147,6 +147,7 @@ stdio段階では listen port を開かず外部到達不可だったが、strea
 - trusted endpointの3xx redirectで接続先検証を迂回し、固定bearer、tenant context、policyRef、promptを別hostへ転送する
 - 外部PDPの巨大・非object・拡張field付き応答でmemoryを圧迫する、または未検証値を認可判断・client errorへ混入させる
 - 外部PDP・監査HTTPの非TLS／credential入りendpoint、孤立したbearer/issuer、負または過大timeoutにより秘密漏えい・誤接続・起動後障害を生じる
+- 外部PDP・監査HTTPを明示選択してもendpoint欠損時にnoopへ縮退し、認可の全許可や監査停止を運用者が有効な連携と誤認する
 - LLM HTTP providerの巨大・非object・拡張field付き応答でmemoryを圧迫する、または未検証値をproposal処理へ混入させる
 
 **SaaS提供前に必要な対策**
@@ -171,7 +172,7 @@ stdio段階では listen port を開かず外部到達不可だったが、strea
 - tenant-scoped Appはsession responseの再検証とstorage scope構築が成功するまでmountせず、認証・認可・解決障害・不正responseを旧本文のないblocked stateへ分離する。error detailやprincipal/tenant値を表示せず、abort済みbootstrap結果を再利用しない
 - tenant switcherはserver検証済みmembershipが複数ある場合だけallowlist selectとして表示し、自由入力・tenant検索・role/group解釈を提供しない。active tenant自身、allowlist外ID、invalid sessionから変更要求を発火しない
 - tenant switch用App hostは注入sessionとbrowser storage scopeの完全一致を再検証し、切替確定後に旧本文をloadingへ、通信・応答障害時はblocked stateへ置換する。保存成功後だけsession変更へ進み、request/worker/object URL/timer cleanupと旧scopeだけのstorage削除をhard replacement前に実行する。raw localStorageはAppへ露出せずscope付きfacadeへ閉じる
-- 外部PDP・監査HTTPの設定をtrusted HTTPS（loopbackだけHTTP可）、canonical secret/header、bounded timeoutへ限定し、孤立設定を起動時に拒否する
+- 外部PDP・監査HTTPの設定をtrusted HTTPS（loopbackだけHTTP可）、canonical secret/header、bounded timeoutへ限定する。`external_http` / `http` の明示選択時はendpointを必須とし、欠損をnoopへ縮退させず、DB初期化・request受付前に起動を拒否する
 - 監査eventのtenantIdをserver-resolved必須fieldとし、64KiBの送信上限、bounded metadata、credential系redactionで欠落・過大・秘密混入eventを外部連携へ流さない
 - LLM HTTP provider応答を1MiB以下のclosed-world `text` objectへ限定し、不正応答は値を反射せずprovider validationで停止する
 - LLM HTTP requestを1MiB以下、canonical task、finite temperature、bounded max tokensへ限定し、過大prompt・不正数値はtransport前に値を反射せず停止する。validation失敗をfallbackで隠さない

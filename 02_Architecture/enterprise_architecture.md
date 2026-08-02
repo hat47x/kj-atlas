@@ -451,7 +451,7 @@ interface AccessControlAdapter {
 - active tenantを認証セッション単位で直列化し、server-issued `tenantSessionVersion`により複数タブ、同時切替、bfcache、遅延responseのstale requestをresource lookup前に拒否する。cross-tab通知はUX補助に留める。
 - 同一docIdを持つ2tenantの越境negative matrixをintegration/E2Eで固定する。
 
-現行AccessControlAdapterのroles/groups外部委譲は維持するが、tenant一致は外部PDPだけへ委譲しない。`noop`、`read_only` fail-safe、endpoint欠損時fallbackはSaaS profileでは利用できない。
+現行AccessControlAdapterのroles/groups外部委譲は維持するが、tenant一致は外部PDPだけへ委譲しない。`ADR-0062`によりendpoint欠損時fallbackは全profileで廃止する。明示的な`noop`と`read_only` fail-safeはsingle-tenant互換として維持するが、SaaS profileでは利用できない。
 
 ---
 

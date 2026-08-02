@@ -378,14 +378,15 @@ def test_external_http_adapter_invalid_response_uses_deny_fail_safe(
     assert decision.reason == "policy_ref_invalid"
 
 
-def test_build_access_control_adapter_external_http_fallbacks_to_noop_when_endpoint_missing(
+def test_build_access_control_adapter_external_http_rejects_missing_endpoint(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr("kj_atlas_api.settings.settings.access_control_external_http_endpoint", None)
 
-    adapter = build_access_control_adapter(adapter_name="external_http")
+    with pytest.raises(RuntimeError) as exc_info:
+        build_access_control_adapter(adapter_name="external_http")
 
-    assert adapter.name == "noop"
+    assert "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT" in str(exc_info.value)
 
 
 def test_external_http_auth_mode_setting_rejects_invalid_value() -> None:

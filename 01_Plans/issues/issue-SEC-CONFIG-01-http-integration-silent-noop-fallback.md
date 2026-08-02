@@ -3,13 +3,13 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Security
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/backend/src/kj_atlas_api/access_control.py`, `03_Implement/backend/src/kj_atlas_api/audit.py`, `03_Implement/backend/tests/test_trusted_http_settings.py`, `03_Implement/backend/tests/test_access_control_external_http_adapter.py`
-- Related ADR/Spec: `THREAT_MODEL.md`, `AGENTS.md`（SafeMode/アクセス制御はfail-closedが最優先の安全境界）
+- Scope: `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`, `02_Architecture/api.md`, `02_Architecture/enterprise_architecture.md`, `02_Architecture/runtime_parameter_registry.md`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/backend/src/kj_atlas_api/access_control.py`, `03_Implement/backend/src/kj_atlas_api/audit.py`, `03_Implement/backend/tests/test_trusted_http_settings.py`, `03_Implement/backend/tests/test_access_control_external_http_adapter.py`, `03_Implement/backend/tests/test_audit.py`, `04_Documentation/configuration.md`, `04_Documentation/security.md`, `THREAT_MODEL.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`, `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/api.md`, `THREAT_MODEL.md`
 - Expected verification level: `unit`
 
 ## 課題
@@ -26,32 +26,46 @@
 
 ## 対応方針
 
-- 実施すること（人間の設計判断が必要）:
-  - (a) `test_build_access_control_adapter_external_http_fallbacks_to_noop_when_endpoint_missing` が固定している現在の挙動を「意図しない抜け穴」と判断するなら、`_validate_trusted_http_resolver()` と同様に `Settings()` 構築時点でfail-closed（`ValueError`）にする。この場合、当該テストと `test_http_integration_normalizes_transport_and_rejects_unknown_value` の両方を、新しい契約に合わせて更新する必要がある。
-  - (b) 逆に現在の「設定不備時はnoopへ縮退する」を意図した設計として維持するなら、少なくとも `access_control.py` 側にも `audit.py` と同様の `logger.warning(...)` を追加し、運用者が気づけるようにする（audit側と同水準の検知可能性を確保する）。
-  - どちらを採るかは、この経路が「意図的なグレースフルデグレード」なのか「見落とし」なのかという製品/運用ポリシー判断そのものであり、当issueの対応方針としてはこの判断を待つ。
-- 実施しないこと:
-  - `document_policy_binding_resolver`/`tenant_capability_resolver` 側（既にfail-closed）の変更。
+- (a) のfail-fastを採用した。外部HTTP連携の選択とendpointを不可分の設定とし、警告後のnoop縮退では認可の全許可を防げないためである。
+- `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` または `KJ_ATLAS_AUDIT_TRANSPORT=http` を明示した場合、対応endpointがなければ `Settings()` 構築時に `ValueError` で停止する。
+- runtime builderにも防御層を置き、設定差し替えや直接呼び出しでもendpoint欠落時に例外を送出し、noopへ縮退させない。
+- 既定値と明示的な `noop` は維持する。完全設定後のaccess-control実行時障害は既存の `read_only|deny`、audit送信障害は既存のfail-openを維持し、起動時の到達性probeは行わない。
+- 全runtime profileへ同じ規則を適用する。個人OSS・プレリリースで既存利用者向け移行契約がないため、互換flagは追加しない。
+- `document_policy_binding_resolver`/`tenant_capability_resolver` 側は変更しない。
+
+## 実施結果
+
+- `ADR-0062` に判断、代替案、互換影響、安全境界を固定した。
+- Settings検証とaccess-control/auditの両builderから暗黙のnoop fallbackを除去した。
+- 欠落拒否、秘密値非反射、既定noop、完全設定時のHTTP transport選択、既存の実行時障害方針をテストで確認した。
+- runtime registry、API、enterprise architecture、公開設定・安全ガイド、脅威モデルを同じ契約へ同期した。
 
 ## 受入条件
 
-- [ ] 上記(a)または(b)のいずれかの方針が採用され、`KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` かつエンドポイント未設定の状態が、少なくとも運用者に検知可能な形になる。
-- [ ] 既存のテスト（`test_build_access_control_adapter_external_http_fallbacks_to_noop_when_endpoint_missing` 等）が、採用した方針を正しく反映する形に更新される。
-- [ ] 関連する安全・互換性を損なわない。
-- [ ] 宣言した検証を実行するか、未実施理由を記録する。
+- [x] (a)を採用し、access-controlとauditの明示的HTTP選択でendpointが未設定なら起動時および直接builder呼び出し時に検知・拒否される。
+- [x] 既存のfallbackテストとaudit transport正規化テストを新契約へ更新し、欠落拒否と完全設定の正常系を追加した。
+- [x] 既定/明示noop、access-control実行時fail-safe、audit送信時fail-open、秘密値非反射を維持した。
+- [x] 宣言した検証を実行し、結果と対象外の既存失敗を記録した。
 
-## 検証計画
+## 検証
 
-- 実行する確認:
-  - `python -m pytest tests/test_trusted_http_settings.py tests/test_access_control_external_http_adapter.py tests/test_access_control_adapter_contract.py tests/test_access_control_adapter_contracts.py -q`
-- 期待結果:
-  - 採用した方針に沿ってテストが更新され、全て green。
+- `python -m pytest tests/test_trusted_http_settings.py tests/test_access_control_external_http_adapter.py tests/test_access_control_adapter_contract.py tests/test_access_control_adapter_contracts.py tests/test_audit.py -q`
+  - `67 passed`
+- `python -m ruff check .`
+  - passed
+- `python 01_Plans/docs_check.py`
+  - passed
+- `git diff --check`
+  - passed
+- backend全体回帰（補助コマンドの検索パスを補正し、既存の別OS向け `.venv/lib64` を走査する1件を除外）
+  - `636 passed, 25 skipped, 1 deselected`
+- 除外した `test_project_env_access_points_use_kj_atlas_prefix` は別OS環境で単独実行し、既存のmonkey test scriptsにある非 `KJ_ATLAS_*` 環境変数5件を検出した。当issueの変更ファイル外にある既存失敗のため修正しない。
 
 ## 補足
 
 - 依存・リスク・ロールバックがある場合だけ記載する。
   - この所見は round 26 の「backend config validation」調査から得られたが、機械的な修正を試みる前に既存テスト（fallback-to-noopを意図として固定するテスト）を発見したため、修正を保留してissue化した。
-  - ADR化が必要になる条件: (a)を採用しfail-closedにする場合、既存デプロイでこの設定漏れに依存している環境があれば起動不能になるため、影響範囲次第では新規ADRでトレードオフを固定する。
+  - (a)の採用と互換影響は `ADR-0062` に固定した。明示的HTTP連携を選びながらendpointを欠く既存構成は起動しなくなるため、正しいendpointを設定するか、連携を使わない意図を明示して `noop` に戻す。
 
 ---
 
