@@ -2908,8 +2908,13 @@ export function SidePanel({
                       id="selected-island-visual-cue-alt-text"
                       type="text"
                       value={selectedIsland.representativeCue.altText}
+                      maxLength={80}
+                      required
                       disabled={isReadOnly}
                       onChange={(event) => {
+                        if (event.target.value.trim().length === 0) {
+                          return;
+                        }
                         onRepresentativeVisualCueChange({
                           ...selectedIsland.representativeCue!,
                           altText: event.target.value,
