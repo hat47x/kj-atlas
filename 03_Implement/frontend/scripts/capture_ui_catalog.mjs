@@ -206,13 +206,11 @@ async function capture() {
     // 4. Island selection-context
     await step("ui-selection-context-island", async () => {
       const page = await openSample(browser);
-      await page.getByRole("button", { name: /確認が残るまとまり/ }).first().click().catch(async () => {
-        // fallback: click island title text
-        await page.getByText(/確認が残るまとまり/).first().click();
-      });
-      await page.locator('[data-ui-region="selection-context"]').waitFor({ state: "visible" });
+      await page.getByRole("button", { name: /^島 .* を選択$/ }).first().click();
+      const selectionContext = page.locator('[data-ui-region="selection-context"]');
+      await selectionContext.getByText("島を選択中").waitFor({ state: "visible" });
       await hideTransientStatus(page);
-      await page.locator('[data-ui-region="selection-context"]').screenshot({ path: out("ui-selection-context-island.png") });
+      await selectionContext.screenshot({ path: out("ui-selection-context-island.png") });
       await page.close();
     });
 
