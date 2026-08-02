@@ -531,3 +531,9 @@
 - 併せて`kj_atlas_runtime`ロールへ`ALTER DEFAULT PRIVILEGES`でのsequence USAGE権限が漏れていたため付与し（`merge_decision_logs.id`等の自動採番列に必要）、`test_docs_roundtrip.py`のPostgres roundtripテストがAlembicをsubprocessで呼ぶ際に`alembic`実行体をPATH解決できない既知の問題（2026-07-18チェックポイント既述）を、venvの`bin`をPATHへ前置して解消した。
 - 検証: `pytest -m postgres`で対象19件（`test_document_access_rls_postgres.py`のpool再利用・tenant A/B越境・RLS coverage matrixを含む2件、`test_docs_roundtrip.py`のtenant分離roundtrip 17件）が実PostgreSQL・非superuser runtime roleに対して全pass。backend全体スイートも同一実PostgreSQL環境下で実行し回帰なしを確認した（実行結果は本checkpoint更新後にRunning記録を追記）。
 - 未実施のまま残る項目: 実trusted auth edge（IdP/OIDC/SAML検証）アダプタの実runtime接続、実外部PDP/binding/capability serviceへの到達性検証、複数タブでのtenant切替の実ブラウザE2E。これらは外部サービスまたは実ブラウザ複数タブ自動化が必要であり、AC-4/6/7/8/10/12/13とSaaS profile起動拒否は引き続き維持する。AC-5はPostgreSQL RLS実地検証の完了により充足したと判断する。
+
+### Implementation checkpoint 2026-08-02: multi-tab tenant session drift browser matrix
+
+- `saas-multitenant`専用のPlaywright構成と、同一認証sessionを共有する2タブの実ブラウザnegative matrixを追加した（実装commit `fc84be3b`）。tenant Aの旧DOMを開いたままtenant Bへ切り替え、`BroadcastChannel`通知を受けた旧タブが即時遮断されること、切替前に開始した遅延Document応答を解放しても旧内容が再表示されないことを固定した。
+- `BroadcastChannel`を利用不能にした経路では、旧タブのPUTが`tenantSessionVersion`不一致によりDocument lookup・mutationより前で409拒否され、自動retryされず、tenant Bの同一Document IDへ書き込まれないことを確認した。bfcache復元経路では、390x720・日本語表示で`pageshow.persisted`後に旧内容を除去し、回復見出しへfocusを移し、横overflowを発生させないことを固定した。
+- 検証は専用SaaS E2E 3件、既存Playwright 195件pass・専用3件skip、frontend unit 1,329件・228 file、typecheck、production buildを通過した。これはmock session/APIを使うbrowser側の基盤検証であり、実trusted auth edge、export/import/Admin/MCP/非同期jobを含む全consumer、外部PDP/binding/capability serviceのnegative matrixは未完了である。したがってAC-13は未充足のまま、AC-4/6/7/8/10/12/13と現行SaaS profile起動拒否を維持する。
