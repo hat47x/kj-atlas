@@ -1,7 +1,7 @@
 # Issue: MVP-EXIT-01 MVP脱却に向けた製品化準備
 
 - Type: Program
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0
@@ -100,6 +100,22 @@ Goへ戻すために必要な残作業:
 
 組織内の正式承認は、導入組織が存在し、その組織が要求する場合だけ追加する。`DATA-MAINT-04` のmetadata-only監査表示や外部接続の将来レーンは独立した製品候補であり、一般公開の必須出口にはしない。削除、アーカイブ、所有者移管を標準機能外とする境界は `ADR-0035` で確定している。
 
+### Productization Gate Record（2026-08-02）
+
+- Candidate: `52860060c0ce3b1ed900c888e0a77263177df580`
+- Scope: 2026-07-29のNo-Go要因の解消確認、アクセシビリティ出口条件、候補全体の回帰。
+- Result:
+  - G2 主要操作: **Go**。既存のキーボード専用経路10/10を維持し、関連E2Eも通過。
+  - G3 日本語UI: **Go**。`QA-MONKEY-15` Doneを確認。
+  - G4 画面耐性: **Go**。`QA-MONKEY-17` Doneを確認。
+  - G5 公開文書: **Go**。`DOC-SHOT-01` と `DOC-IA-01` はDoneで、公開画像23件の再撮影証跡を確認。
+  - G7 ビルドと回帰: **Go**。typecheck、本番build、full Vitest 228 files / 1329 tests、full Playwright 195/195が候補に対して成功。
+  - accessibility出口条件: **Go**。`QA-MONKEY-14` と `QA-MONKEY-16` はDone。axe smoke 10/10、未レビューカード専用E2E 1/1が成功。
+  - G0 / G1 / G6: 今回の変更範囲外。既存の完了証跡と安全境界を維持。
+- Remaining Blocker / Major: なし。
+- Residual risk: 実機スクリーンリーダーの読み上げ語順、IME変換中の挙動、OSショートカット競合は、2026-07-29の人間受入ログに記録済みの残余リスクとして維持する。
+- Decision: **Go**（候補の技術的出荷判定）。タグ作成、push、release公開は本作業の対象外で、Maintainerが別途実行する。
+
 ## 受入条件
 
 - [x] UI上の主要操作に日本語の表示と回帰検査がある。
@@ -108,8 +124,8 @@ Goへ戻すために必要な残作業:
 - [x] 一般利用者向け文書と開発者向け文書を分離する。
 - [x] share/export、SafeMode、AI提案、import sanitizeの説明が画面・文書・実装で一致する。
 - [x] 製品化の残作業を所有issueへ分解し、必要な長期判断だけをADRへ分離する。
-- [ ] 公開文書のリリース候補画像を確認する。（2026-07-29に確認を実施。結果は不一致で未充足。`DOC-SHOT-01` で再撮影する）
-- [x] 候補commitの必須CIと人間確認を根拠に最終出荷判断を記録する。（2026-07-29のGate Recordで **No-Go** を記録。full CIは候補commit確定後に再実行し、同Recordを更新する）
+- [x] 公開文書のリリース候補画像を確認する。（`DOC-SHOT-01` で公開画像23件を再撮影し、2026-08-02にDone証跡を再確認）
+- [x] 候補commitの必須CIと人間確認を根拠に最終出荷判断を記録する。（2026-08-02のGate Recordで候補 `52860060` を **Go** と判定）
 - [x] タグ・候補commit・品質証跡・実際の成果物が一意に対応し、検証用artifactを正式配布物と誤認しない。（`RELEASE-DOC-01` Phase AがDone済みのため充足を確認。2026-07-20更新）
 - [x] Compose向けに案内する安全設定が実際の`api`へ配送され、未対応設定を有効と誤認しない。（`ENV-COMPOSE-01` Done済みのため充足を確認。LLM stub・外部接続test doubleのDocker integration確認はscope-excludedのfollow-upとして引き続き対象外。2026-07-20更新）
 - [x] fresh cloneの標準Composeが認証なしでLANへ暗黙公開されず、非loopback公開の安全要件が文書化される。（`DEPLOY-NET-01` Done済みのため充足を確認。非loopback公開自体の別profile化はPhase Bとして引き続き対象外。2026-07-20更新）

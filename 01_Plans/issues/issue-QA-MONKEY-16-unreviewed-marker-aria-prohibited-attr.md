@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Bug
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `MVP-EXIT-01`（人間受入項目の機械代替検証後に実施したモンキーテストで発見）
 - Priority: P2
@@ -69,10 +69,10 @@ role=button name="レビュー済みのカード"                          ← �
 
 ## 受入条件
 
-- [ ] インライン編集中のaxeで `aria-prohibited-attr` が0件になる。
-- [ ] 未レビューのカードの accessible name が本文のみになる。
-- [ ] 未レビュー状態が支援技術に伝わり続ける（name以外の経路で確認する）。
-- [ ] 既存E2Eのカード名指定（`getByRole("button", { name: ... })`）が退行しない。
+- [x] インライン編集中のaxeで `aria-prohibited-attr` が0件になる。
+- [x] 未レビューのカードの accessible name が本文のみになる。
+- [x] 未レビュー状態が支援技術に伝わり続ける（name以外の経路で確認する）。
+- [x] 既存E2Eのカード名指定（`getByRole("button", { name: ... })`）が退行しない。
 
 ## 検証計画
 
@@ -84,3 +84,11 @@ role=button name="レビュー済みのカード"                          ← �
 - 既存E2Eがこの混入で落ちていないのは、Playwright の `name` オプションが既定で部分一致のため。`exact: true` を使う箇所が増えると顕在化する。
 - `QA-MONKEY-14` と同じく、`a11y_axe_smoke.spec.ts` がインライン編集中の状態を走査していれば検出できた。走査状態の追加は `QA-MONKEY-14` 側で扱う。
 - 調査記録: `03_Implement/frontend/docs/mvp_exit_monkey_test_log_2026-07-29.md`
+
+## 実施結果（2026-08-02）
+
+- 未レビュー状態をカード名から分離し、`aria-describedby` が参照する非表示テキストとして公開した。視覚的な琥珀色の点は `aria-hidden="true"` とし、見た目と位置は変更していない。
+- 通常カードとインライン編集欄の双方で、名前は操作対象、説明は未レビュー状態という役割分担にした。遠距離マーカー表示では存在しない説明IDを参照しない。
+- 実ブラウザでカード名 `unreviewed card body`、説明 `Card text is unreviewed`、編集欄名 `Edit card text` を確認した。
+- 検証: `CardView.accessibility.test.ts` 11/11、専用E2E 1/1、axe smoke 10/10、full Vitest 228 files / 1329 tests、full Playwright 195/195、typecheck、本番build。
+- 実装候補: `52860060c0ce3b1ed900c888e0a77263177df580`
