@@ -2,7 +2,7 @@
 
 区分: Internal / Design decision input（DOMAIN-VISUAL-CUE-01 T6）
 
-Updated: 2026-07-20
+Updated: 2026-08-02
 
 目的: T5（emoji比較）の結論を踏まえ、代表視覚手掛かりシステムの4つのデータコンポーネント（採用参照、権利情報、画像本体、サムネイル）の保存方式を比較し、ADR-0060 の受理条件「画像保存先、容量上限、削除、import/export、オフライン表示をfixtureで比較する」を充足する。本比較の結論は ADR-0060 の決定事項として反映する。
 
@@ -101,7 +101,7 @@ T5の結論（`unicode_emoji_os_comparison.md`）:
 | コンポーネント | export | import |
 |---|---|---|
 | 採用参照 + 権利情報 | `DocumentV1` の一部として自動往復（JSONフィールドとして出力） | strict validationで未知cueId・不正ライセンス形式を拒否 |
-| 手描きデータ | IndexedDBからJSONシリアル化してbundleの一部として出力 | 復元時にIndexedDBへ再格納 |
+| 手描きデータ | 既定では参照と本体を除外。件数・機微情報警告を伴う一回限りの明示opt-in時だけ、文書参照と完全一致する `representative_visual_cue_assets.json` を出力しintegrity hash対象にする | 文書ID・全参照・件数・容量・strict schema・integrity対象を検証後、同一scopeへ単一transactionで再格納。asset fileがなければdanglingな`hand_drawn` cueを除去 |
 | 利用者画像 | IndexedDBからBase64エンコードしてbundleに含める | Base64デコードしてIndexedDBへ再格納。48×48制限を再検証 |
 | プリセットSVG | **出力しない**（cueIdだけを出力し、import側が自身のJS bundleから解決） | cueIdが既知プリセットに含まれることを確認 |
 | Unicode絵文字 | **出力しない**（cueIdだけを出力。emojiは文字であり配布不要） | cueIdが既知emojiセットに含まれることを確認 |

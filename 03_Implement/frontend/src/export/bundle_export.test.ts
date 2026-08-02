@@ -2,7 +2,13 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import type { DocumentV1 } from "../domain/types";
 import { validateDocumentV1Strict } from "../domain/validate_doc";
 import JSZip from "jszip";
-import { buildBundleZipBlob, buildExportBundle, buildExportBundleWithWorkers } from "./bundle_export";
+import {
+  buildBundleZipBlob,
+  buildExportBundle,
+  buildExportBundleWithWorkers,
+  type BundleExportContext,
+} from "./bundle_export";
+import type { HandDrawnCueAssetBundleV1 } from "../domain/representative_visual_cue_assets";
 import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
 import { parseDocumentJson } from "../import/document_import";
 import { detectReviewPackFiles, readZipFiles } from "../import/zip_import";
@@ -43,6 +49,57 @@ const baseDoc: DocumentV1 = {
     },
   ],
 };
+
+const handDrawnImageRef = "visual-cue:12345678-1234-4123-8123-123456789abc";
+const handDrawnAssetBundle: HandDrawnCueAssetBundleV1 = {
+  version: "1",
+  documentId: baseDoc.id,
+  assets: [{
+    imageRef: handDrawnImageRef,
+    asset: {
+      version: 1,
+      kind: "hand_drawn",
+      width: 20,
+      height: 20,
+      strokes: [[{ x: 1, y: 2 }, { x: 3, y: 4 }]],
+    },
+  }],
+};
+const docWithHandDrawnCue: DocumentV1 = {
+  ...baseDoc,
+  islands: [{
+    ...baseDoc.islands[0],
+    representativeCue: {
+      kind: "hand_drawn",
+      cueId: handDrawnImageRef,
+      imageRef: handDrawnImageRef,
+      altText: "hand drawn cue",
+    },
+  }],
+};
+
+function buildBasicContext(overrides: Partial<BundleExportContext> = {}): BundleExportContext {
+  return {
+    rootFolderPath: "kj-atlas-export-20260101-010203",
+    safeMode: true,
+    includeOutline: false,
+    includeDiagnostics: false,
+    includeSelectedCardTraces: false,
+    selectedCardId: null,
+    deterministicNowIso: "2026-01-02T00:00:00.000Z",
+    readingMode: "islands",
+    reviewedOnly: false,
+    readingState: {
+      readingNavEnabled: false,
+      readingIndex: 0,
+      readingMode: "islands",
+      reviewedOnly: false,
+      safeMode: true,
+      generatedAt: "2026-01-02T00:00:00.000Z",
+    },
+    ...overrides,
+  };
+}
 
 async function sha256Hex(input: string): Promise<string> {
   const bytes = new TextEncoder().encode(input);
@@ -177,6 +234,64 @@ describe("buildExportBundle", () => {
     expect(manifest.exportGranularity).toBe("overview");
     expect(manifest.generatedAt).toBe("2026-01-02T00:00:00.000Z");
     expect(manifest.visibility).toEqual({ view: "Unlisted", pack: "Org" });
+  });
+
+  test("excludes hand-drawn references and bodies from a shared bundle by default", () => {
+    const sourceBefore = structuredClone(docWithHandDrawnCue);
+    const files = buildExportBundle(docWithHandDrawnCue, {}, buildBasicContext());
+    const documentFile = files.find((file) => file.path.endsWith("/document.json"));
+    const manifestFile = files.find((file) => file.path.endsWith("/bundle_manifest.json"));
+
+    expect(JSON.parse(String(documentFile?.content)).islands[0]).not.toHaveProperty("representativeCue");
+    expect(files.some((file) => file.path.endsWith("/representative_visual_cue_assets.json"))).toBe(false);
+    expect(JSON.parse(String(manifestFile?.content))).not.toHaveProperty("representativeVisualCueAssets");
+    expect(docWithHandDrawnCue).toEqual(sourceBefore);
+  });
+
+  test("includes an exact hand-drawn asset set only after explicit opt-in", async () => {
+    const context = buildBasicContext({
+      includeVisualCueAssets: true,
+      handDrawnVisualCueAssetBundle: handDrawnAssetBundle,
+    });
+    const files = await buildExportBundleWithWorkers(docWithHandDrawnCue, {}, context);
+    const documentFile = files.find((file) => file.path.endsWith("/document.json"));
+    const assetFile = files.find((file) => file.path.endsWith("/representative_visual_cue_assets.json"));
+    const manifestFile = files.find((file) => file.path.endsWith("/bundle_manifest.json"));
+    const integrityFile = files.find((file) => file.path.endsWith("/integrity.json"));
+
+    expect(JSON.parse(String(documentFile?.content)).islands[0].representativeCue.imageRef).toBe(handDrawnImageRef);
+    expect(JSON.parse(String(assetFile?.content))).toEqual(handDrawnAssetBundle);
+    expect(JSON.parse(String(manifestFile?.content)).representativeVisualCueAssets).toEqual({
+      version: "1",
+      count: 1,
+    });
+    const integrity = JSON.parse(String(integrityFile?.content)) as { files: Array<{ path: string }> };
+    expect(integrity.files.map((entry) => entry.path)).toContain(
+      "kj-atlas-export-20260101-010203/representative_visual_cue_assets.json",
+    );
+  });
+
+  test("fails closed when hand-drawn asset opt-in and payload do not match", () => {
+    expect(() => buildExportBundle(
+      docWithHandDrawnCue,
+      {},
+      buildBasicContext({ includeVisualCueAssets: true }),
+    )).toThrow(/bundle is required/);
+
+    expect(() => buildExportBundle(
+      docWithHandDrawnCue,
+      {},
+      buildBasicContext({ handDrawnVisualCueAssetBundle: handDrawnAssetBundle }),
+    )).toThrow(/explicit export opt-in/);
+
+    expect(() => buildExportBundle(
+      { ...docWithHandDrawnCue, id: "different-document" },
+      {},
+      buildBasicContext({
+        includeVisualCueAssets: true,
+        handDrawnVisualCueAssetBundle: handDrawnAssetBundle,
+      }),
+    )).toThrow(/invalid hand-drawn visual cue asset bundle/);
   });
 
   test("always includes document.json, merge_decision_audit.json and view.json sorted by path", () => {

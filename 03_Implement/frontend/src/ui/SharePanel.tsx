@@ -53,7 +53,14 @@ type SharePanelProps = {
   onResetCurrentReviewerRef: () => void;
   onExportViewViewport: () => void;
   onExportViewVisibleBounds: () => void;
-  onExportBundleZip: (options: { includeOutline: boolean; includeDiagnostics: boolean; includeSelectedCardTraces: boolean; exportGranularity: ExportGranularity }) => void;
+  handDrawnVisualCueCount: number;
+  onExportBundleZip: (options: {
+    includeOutline: boolean;
+    includeDiagnostics: boolean;
+    includeSelectedCardTraces: boolean;
+    includeVisualCueAssets: boolean;
+    exportGranularity: ExportGranularity;
+  }) => void;
   isBundleExportRunning: boolean;
   onCancelBundleExport: () => void;
   computeProgressMessage: string | null;
@@ -324,6 +331,7 @@ export function SharePanel({
   onResetCurrentReviewerRef,
   onExportViewViewport,
   onExportViewVisibleBounds,
+  handDrawnVisualCueCount,
   onExportBundleZip,
   isBundleExportRunning,
   onCancelBundleExport,
@@ -381,6 +389,7 @@ export function SharePanel({
   const [bundleIncludeOutline, setBundleIncludeOutline] = useState(true);
   const [bundleIncludeDiagnostics, setBundleIncludeDiagnostics] = useState(true);
   const [bundleIncludeSelectedCardTraces, setBundleIncludeSelectedCardTraces] = useState(true);
+  const [bundleIncludeVisualCueAssets, setBundleIncludeVisualCueAssets] = useState(false);
   const [bundleExportGranularity, setBundleExportGranularity] = useState<ExportGranularity>("detail");
   const bundleGranularityFieldName = useId();
   const bundleTraceHintId = useId();
@@ -445,6 +454,12 @@ export function SharePanel({
     return () => window.cancelAnimationFrame(frame);
   }, [isOpen]);
 
+  useEffect(() => {
+    if (handDrawnVisualCueCount === 0) {
+      setBundleIncludeVisualCueAssets(false);
+    }
+  }, [handDrawnVisualCueCount]);
+
   const closePanelAndRestoreFocus = () => {
     onToggleOpen();
     window.requestAnimationFrame(() => {
@@ -458,6 +473,7 @@ export function SharePanel({
     includeOutline: boolean;
     includeDiagnostics: boolean;
     includeSelectedCardTraces: boolean;
+    includeVisualCueAssets: boolean;
     exportGranularity: ExportGranularity;
   } | null>(null);
   const exportBundleButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -488,6 +504,7 @@ export function SharePanel({
     }
 
     onExportBundleZip(pendingBundleExportOptions);
+    setBundleIncludeVisualCueAssets(false);
     setPendingBundleExportOptions(null);
   };
 
@@ -529,6 +546,9 @@ export function SharePanel({
   const sourceReferencePolicy = includeSourceReferences
     ? t("share.panel.preflight.source_references.included")
     : t("share.panel.preflight.source_references.excluded");
+  const visualCueAssetPolicy = bundleIncludeVisualCueAssets
+    ? t("share.panel.preflight.visual_cue_assets.included", { count: handDrawnVisualCueCount })
+    : t("share.panel.preflight.visual_cue_assets.excluded");
   const canUseSelectedCardTraces = canIncludeTraces && bundleExportGranularity === "detail";
   const selectedCardTracesChecked = bundleIncludeSelectedCardTraces && canUseSelectedCardTraces;
   const selectedCardTraceHint = !canIncludeTraces
@@ -757,6 +777,15 @@ export function SharePanel({
                   <dt style={preflightTermStyle}>{t("share.panel.preflight.source_references")}</dt>
                   <dd style={{ ...preflightValueStyle, ...(includeSourceReferences ? { color: "#9a3412", fontWeight: 700 } : {}) }}>{sourceReferencePolicy}</dd>
                 </div>
+                <div style={preflightRowStyle} data-share-preflight-visual-cue-assets="">
+                  <dt style={preflightTermStyle}>{t("share.panel.preflight.visual_cue_assets")}</dt>
+                  <dd style={{
+                    ...preflightValueStyle,
+                    ...(bundleIncludeVisualCueAssets ? { color: "#9a3412", fontWeight: 700 } : {}),
+                  }}>
+                    {visualCueAssetPolicy}
+                  </dd>
+                </div>
                 <div style={preflightRowStyle}>
                   <dt style={preflightTermStyle}>{t("share.panel.preflight.output_formats")}</dt>
                   <dd style={preflightValueStyle}>{t("share.panel.preflight.output_formats_value")}</dd>
@@ -884,6 +913,29 @@ export function SharePanel({
                 />
                 {t("share.panel.export.bundle_include_diagnostics")}
               </label>
+              <label style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 12,
+                color: handDrawnVisualCueCount > 0 ? "#334155" : "#94a3b8",
+                ...wrapRowStyle,
+              }}>
+                <input
+                  type="checkbox"
+                  checked={bundleIncludeVisualCueAssets && handDrawnVisualCueCount > 0}
+                  disabled={handDrawnVisualCueCount === 0}
+                  onChange={(event) => {
+                    setBundleIncludeVisualCueAssets(event.target.checked);
+                  }}
+                />
+                {t("share.panel.export.bundle_include_visual_cue_assets", { count: handDrawnVisualCueCount })}
+              </label>
+              {bundleIncludeVisualCueAssets && handDrawnVisualCueCount > 0 ? (
+                <div role="status" style={{ fontSize: 11, color: "#9a3412" }}>
+                  {t("share.panel.export.bundle_include_visual_cue_assets_warning")}
+                </div>
+              ) : null}
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: canUseSelectedCardTraces ? "#334155" : "#94a3b8", ...wrapRowStyle }}>
                 <input
                   type="checkbox"
@@ -932,12 +984,14 @@ export function SharePanel({
                     includeOutline: bundleIncludeOutline,
                     includeDiagnostics: bundleIncludeDiagnostics,
                     includeSelectedCardTraces: selectedCardTracesChecked,
+                    includeVisualCueAssets: bundleIncludeVisualCueAssets && handDrawnVisualCueCount > 0,
                     exportGranularity: bundleExportGranularity,
                   };
 
                   // AC-5: skip the gate entirely when there is nothing to disclose.
                   if (unreviewedTotal === 0 && domainExpressionSummary.critiqueTargets === 0 && domainExpressionSummary.contradictionLinks === 0) {
                     onExportBundleZip(options);
+                    setBundleIncludeVisualCueAssets(false);
                     return;
                   }
 

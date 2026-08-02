@@ -39,6 +39,7 @@ describe("zip review pack import", () => {
       "kj-atlas-review-pack-2026/view.json": '{"version":"1","generatedAt":"2025-01-01T00:00:00.000Z","docSignature":"doc","camera":{"panX":0,"panY":0,"zoom":1},"viewState":{"summaryView":false,"abstractMapView":false,"hideSourceCards":false,"maxDepth":"all","focusIslandId":null,"showReadingOrder":false},"export":{"mode":"viewport"}}',
       "kj-atlas-review-pack-2026/diagnostics.md": "# diag",
       "kj-atlas-review-pack-2026/snapshot.png": buildPngWithDimensions(100, 100),
+      "kj-atlas-review-pack-2026/representative_visual_cue_assets.json": '{"version":"1","documentId":"doc","assets":[]}',
       "kj-atlas-review-pack-2026/ignored.txt": "ignored",
     });
 
@@ -48,6 +49,7 @@ describe("zip review pack import", () => {
     expect(entries.has("view.json")).toBe(true);
     expect(entries.has("diagnostics.md")).toBe(true);
     expect(entries.has("snapshot.png")).toBe(true);
+    expect(entries.has("representative_visual_cue_assets.json")).toBe(true);
     expect(entries.has("ignored.txt")).toBe(false);
     expect(imported.skippedUnsupportedCount).toBe(1);
 
@@ -56,6 +58,7 @@ describe("zip review pack import", () => {
     expect(detection.viewPath).toBe("view.json");
     expect(detection.snapshotPath).toBe("snapshot.png");
     expect(detection.diagnosticsPath).toBe("diagnostics.md");
+    expect(detection.visualCueAssetsPath).toBe("representative_visual_cue_assets.json");
   });
 
   test("detects nested document/view paths", async () => {

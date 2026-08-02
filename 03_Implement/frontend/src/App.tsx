@@ -39,7 +39,15 @@ import { computeTidyIslandLayout, generateOrthogonalIslandOutline } from "./doma
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
-import { deleteUnreferencedHandDrawnCueAssets } from "./domain/representative_visual_cue_assets";
+import {
+  buildHandDrawnCueAssetBundle,
+  collectHandDrawnCueImageRefs,
+  deleteUnreferencedHandDrawnCueAssets,
+  parseHandDrawnCueAssetBundle,
+  restoreHandDrawnCueAssetBundle,
+  stripHandDrawnVisualCues,
+  type HandDrawnCueAssetBundleV1,
+} from "./domain/representative_visual_cue_assets";
 import { updateCardHoldStateAndShelf, type HoldStateSelection } from "./domain/hold_state_ops";
 import { resolveDecisionOriginTrace, resolveRepresentativeOriginTrace } from "./domain/merge_traceability";
 import { collectMergeCandidates } from "./domain/merge_candidates";
@@ -3859,6 +3867,15 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           setStatusMessage(message);
           return;
         }
+        if (
+          paths.visualCueAssetsPath
+          && !parsedIntegrity.manifest.files.some((file) => file.path === paths.visualCueAssetsPath)
+        ) {
+          const message = t("app.status.import.review_pack_visual_cue_assets_integrity_missing");
+          setPackImportError(message);
+          setStatusMessage(message);
+          return;
+        }
         const verification = await runTenantScopedOptionalTask(
           () => verifyIntegrityManifest(parsedIntegrity.manifest, entries),
         );
@@ -3867,6 +3884,53 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         }
         if (!verification.ok) {
           const message = t("app.status.import.review_pack_integrity_verification_failed");
+          setPackImportError(message);
+          setStatusMessage(message);
+          return;
+        }
+      }
+
+      let importedDocument = parsedDocument.document;
+      let handDrawnVisualCueAssetBundle: HandDrawnCueAssetBundleV1 | null = null;
+      let omittedHandDrawnCueCount = 0;
+      if (paths.visualCueAssetsPath) {
+        const visualCueAssetsRaw = entries.get(paths.visualCueAssetsPath);
+        if (typeof visualCueAssetsRaw !== "string") {
+          const message = t("app.status.import.review_pack_visual_cue_assets_text_required");
+          setPackImportError(message);
+          setStatusMessage(message);
+          return;
+        }
+        try {
+          handDrawnVisualCueAssetBundle = parseHandDrawnCueAssetBundle(
+            JSON.parse(visualCueAssetsRaw) as unknown,
+            importedDocument,
+          );
+        } catch {
+          const message = t("app.status.import.review_pack_visual_cue_assets_invalid");
+          setPackImportError(message);
+          setStatusMessage(message);
+          return;
+        }
+      } else {
+        omittedHandDrawnCueCount = collectHandDrawnCueImageRefs(importedDocument).length;
+        importedDocument = stripHandDrawnVisualCues(importedDocument);
+      }
+
+      if (handDrawnVisualCueAssetBundle) {
+        try {
+          const restoredCount = await runTenantScopedOptionalTask(() =>
+            restoreHandDrawnCueAssetBundle(
+              importedDocument,
+              handDrawnVisualCueAssetBundle,
+              appStorage.scope,
+            ),
+          );
+          if (restoredCount === undefined) {
+            return;
+          }
+        } catch {
+          const message = t("app.status.import.review_pack_visual_cue_assets_restore_failed");
           setPackImportError(message);
           setStatusMessage(message);
           return;
@@ -3888,11 +3952,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       pendingCardDragSnapshotRef.current = null;
       setHistory({
         past: [],
-        present: cloneDocument(parsedDocument.document),
+        present: cloneDocument(importedDocument),
         future: [],
       });
-      setActiveDocumentId(parsedDocument.document.id);
-      const importedViewMode = appStorage.loadViewModeForDocument(parsedDocument.document.id) ?? "explore";
+      setActiveDocumentId(importedDocument.id);
+      const importedViewMode = appStorage.loadViewModeForDocument(importedDocument.id) ?? "explore";
       setViewMode(importedViewMode);
       setSelectedRecentDocumentId("");
       setDocEtag(null);
@@ -3925,11 +3989,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setPackVisibility(DEFAULT_PACK_VISIBILITY);
       setImportedPackSummary({
         fileName: selectedFile.name,
-        cardCount: parsedDocument.document.cards.length,
-        islandCount: parsedDocument.document.islands.length,
+        cardCount: importedDocument.cards.length,
+        islandCount: importedDocument.islands.length,
         perspectiveMode: parsedView.metadata.viewState.perspectiveMode ?? "default",
         visibility: parsedView.metadata.visibility,
-        warningCount: zipImportResult.skippedUnsupportedCount + paths.ignoredFileCount,
+        warningCount:
+          zipImportResult.skippedUnsupportedCount
+          + paths.ignoredFileCount
+          + omittedHandDrawnCueCount,
       });
       setImportedPackDiagnosticsMd(diagnosticsText);
       setImportedPackSnapshotUrl(nextSnapshotUrl);
@@ -3938,7 +4005,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }
       applyImportedViewMetadata(
         parsedView.metadata,
-        parsedDocument.document,
+        importedDocument,
         importedViewMode,
         t("app.status.import.review_pack_imported_prefix"),
       );
@@ -9324,7 +9391,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       ]
   );
 
-  const handleExportBundleZip = useCallback(async (options: { includeOutline: boolean; includeDiagnostics: boolean; includeSelectedCardTraces: boolean; exportGranularity: "overview" | "detail" }) => {
+  const handleExportBundleZip = useCallback(async (options: {
+    includeOutline: boolean;
+    includeDiagnostics: boolean;
+    includeSelectedCardTraces: boolean;
+    includeVisualCueAssets: boolean;
+    exportGranularity: "overview" | "detail";
+  }) => {
     if (!document) {
       setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
@@ -9391,6 +9464,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       const outcome = await runTenantScopedTask(() => bundleRunnerRef.current.run(async (ctx) => {
         ctx.reportProgress({ message: t("app.status.bundle.progress.building"), completed: 1, total: 3 });
         await ctx.yieldToMainThread();
+        const handDrawnVisualCueAssetBundle = options.includeVisualCueAssets
+          ? await buildHandDrawnCueAssetBundle(document, appStorage.scope)
+          : undefined;
         const files = await buildExportBundleWithWorkers(document, viewMetadata, {
           rootFolderPath,
           safeMode: safeMode ?? true,
@@ -9428,6 +9504,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           viewVisibility,
           packVisibility,
           includeSourceReferences: includeSourceReferencesInExport,
+          includeVisualCueAssets: options.includeVisualCueAssets,
+          handDrawnVisualCueAssetBundle,
         }, {
           signal: controller.signal,
           onProgress: (stage) => ctx.reportProgress({
@@ -9481,6 +9559,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
   }, [
     abstractMapView,
+    appStorage,
     canvasCamera,
     contradictionReport,
     currentLod?.level,
@@ -10557,6 +10636,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }}
       onExportViewViewport={handleExportViewMetadataViewport}
       onExportViewVisibleBounds={handleExportViewMetadataVisibleBounds}
+      handDrawnVisualCueCount={document ? collectHandDrawnCueImageRefs(document).length : 0}
       onExportBundleZip={(options) => {
         void handleExportBundleZip(options);
       }}

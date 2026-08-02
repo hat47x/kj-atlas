@@ -1,4 +1,10 @@
 import type { DocumentV1 } from "../domain/types";
+import {
+  HAND_DRAWN_CUE_BUNDLE_FILE_NAME,
+  parseHandDrawnCueAssetBundle,
+  stripHandDrawnVisualCues,
+  type HandDrawnCueAssetBundleV1,
+} from "../domain/representative_visual_cue_assets";
 import { deriveDocumentSafeModeProjection } from "../domain/inquiry_bundle_safe_mode";
 import { buildContradictionTraceMd } from "../domain/view/contradiction_trace";
 import { analyzeContradictions, type ContradictionReport } from "../domain/view/contradiction_checks";
@@ -50,6 +56,12 @@ export type BundleExportContext = {
    * (seq/source) unless the user explicitly opts in. Independent of safeMode.
    */
   includeSourceReferences?: boolean;
+  /**
+   * DOMAIN-VISUAL-CUE-01: hand-drawn bodies are excluded by default.
+   * Explicit opt-in requires the exact, preloaded asset bundle.
+   */
+  includeVisualCueAssets?: boolean;
+  handDrawnVisualCueAssetBundle?: HandDrawnCueAssetBundleV1;
 };
 
 function sortObjectKeys<T>(value: T): T {
@@ -177,15 +189,18 @@ function resolveShareDocument(
   doc: DocumentV1,
   context: BundleExportContext,
 ): DocumentV1 {
+  const visualCueScopedDocument = context.includeVisualCueAssets
+    ? doc
+    : stripHandDrawnVisualCues(doc);
   if (context.includeSourceReferences) {
-    return doc;
+    return visualCueScopedDocument;
   }
-  if (!doc.cards.some((card) => card.meta !== undefined)) {
-    return doc;
+  if (!visualCueScopedDocument.cards.some((card) => card.meta !== undefined)) {
+    return visualCueScopedDocument;
   }
   return {
-    ...doc,
-    cards: doc.cards.map((card) => {
+    ...visualCueScopedDocument,
+    cards: visualCueScopedDocument.cards.map((card) => {
       if (card.meta === undefined) {
         return card;
       }
@@ -230,7 +245,12 @@ function resolveOutlineOptions(context: BundleExportContext, safeMode: boolean):
   };
 }
 
-function buildBundleManifest(context: BundleExportContext): { exportGranularity: ExportGranularity; generatedAt: string; visibility?: { view?: PublishVisibility; pack?: PublishVisibility } } {
+function buildBundleManifest(context: BundleExportContext): {
+  exportGranularity: ExportGranularity;
+  generatedAt: string;
+  visibility?: { view?: PublishVisibility; pack?: PublishVisibility };
+  representativeVisualCueAssets?: { version: "1"; count: number };
+} {
   return {
     exportGranularity: resolveExportGranularity(context),
     generatedAt: context.deterministicNowIso,
@@ -242,7 +262,37 @@ function buildBundleManifest(context: BundleExportContext): { exportGranularity:
           },
         }
       : {}),
+    ...(context.includeVisualCueAssets && context.handDrawnVisualCueAssetBundle
+      ? {
+          representativeVisualCueAssets: {
+            version: "1" as const,
+            count: context.handDrawnVisualCueAssetBundle.assets.length,
+          },
+        }
+      : {}),
   };
+}
+
+function appendHandDrawnCueAssetFile(
+  files: BundleFile[],
+  root: string,
+  bundledDocument: DocumentV1,
+  context: BundleExportContext,
+): void {
+  if (!context.includeVisualCueAssets) {
+    if (context.handDrawnVisualCueAssetBundle) {
+      throw new Error("hand-drawn visual cue assets require explicit export opt-in");
+    }
+    return;
+  }
+  if (!context.handDrawnVisualCueAssetBundle) {
+    throw new Error("hand-drawn visual cue asset bundle is required");
+  }
+  const assetBundle = parseHandDrawnCueAssetBundle(
+    context.handDrawnVisualCueAssetBundle,
+    bundledDocument,
+  );
+  files.push(toJsonFile(`${root}/${HAND_DRAWN_CUE_BUNDLE_FILE_NAME}`, assetBundle));
 }
 
 function buildDiagnosticsMd(doc: DocumentV1, context: BundleExportContext): string {
@@ -272,6 +322,7 @@ export function buildExportBundle(doc: DocumentV1, viewState: unknown, context: 
     toJsonFile(`${root}/merge_decision_audit.json`, { entries: buildMergeDecisionAuditEntries(bundledDocument) }),
     toJsonFile(`${root}/view.json`, viewState),
   ];
+  appendHandDrawnCueAssetFile(bundleFiles, root, bundledDocument, context);
 
   if (context.includeOutline) {
     const outline = buildReadingOutlineMd(contentDocument, context.readingState, resolveOutlineOptions(context, safeMode));
@@ -332,6 +383,7 @@ export async function buildExportBundleWithWorkers(
     toJsonFile(`${root}/merge_decision_audit.json`, { entries: buildMergeDecisionAuditEntries(bundledDocument) }),
     toJsonFile(`${root}/view.json`, viewState),
   ];
+  appendHandDrawnCueAssetFile(bundleFiles, root, bundledDocument, context);
 
   if (context.includeOutline) {
     const outline = buildReadingOutlineMd(contentDocument, context.readingState, resolveOutlineOptions(context, safeMode));

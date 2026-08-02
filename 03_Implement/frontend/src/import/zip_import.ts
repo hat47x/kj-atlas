@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import { HAND_DRAWN_CUE_BUNDLE_FILE_NAME } from "../domain/representative_visual_cue_assets";
 
 const ALLOWED_EXTENSIONS = [".json", ".md", ".png"] as const;
 const STRIPPABLE_ROOT_PREFIXES = ["kj-atlas-review-pack-"] as const;
@@ -189,6 +190,7 @@ export type ReviewPackPaths = {
   diagnosticsPath: string | null;
   outlinePath: string | null;
   integrityPath: string | null;
+  visualCueAssetsPath: string | null;
   ignoredFileCount: number;
 };
 
@@ -211,8 +213,17 @@ export function detectReviewPackFiles(entries: Map<string, Uint8Array | string>)
   const diagnosticsPath = findFilePath(paths, "diagnostics.md");
   const outlinePath = findFilePath(paths, "outline.md");
   const integrityPath = findFilePath(paths, "integrity.json");
+  const visualCueAssetsPath = findFilePath(paths, HAND_DRAWN_CUE_BUNDLE_FILE_NAME);
 
-  const knownPathSet = new Set([documentPath, viewPath, snapshotPath, diagnosticsPath, outlinePath, integrityPath].filter(Boolean));
+  const knownPathSet = new Set([
+    documentPath,
+    viewPath,
+    snapshotPath,
+    diagnosticsPath,
+    outlinePath,
+    integrityPath,
+    visualCueAssetsPath,
+  ].filter(Boolean));
 
   return {
     documentPath,
@@ -221,6 +232,7 @@ export function detectReviewPackFiles(entries: Map<string, Uint8Array | string>)
     diagnosticsPath,
     outlinePath,
     integrityPath,
+    visualCueAssetsPath,
     ignoredFileCount: paths.filter((path) => !knownPathSet.has(path)).length,
   };
 }

@@ -128,13 +128,16 @@ test("hand-drawn cue persists in scoped IndexedDB, supports keyboard drawing and
   expect(imageRef).toMatch(/^visual-cue:[0-9a-f-]+$/);
   const storedAsset = await page.evaluate(async (ref) => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("kj-atlas-representative-visual-cues", 1);
+      const request = indexedDB.open("kj-atlas-representative-visual-cues", 2);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
     try {
       return await new Promise<{ scopeKey: string; assetJson: string }>((resolve, reject) => {
-        const request = database.transaction("assets", "readonly").objectStore("assets").get(ref);
+        const request = database
+          .transaction("assets-v2", "readonly")
+          .objectStore("assets-v2")
+          .get(JSON.stringify(["kj-atlas/local-scope/v1/", ref]));
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
@@ -191,13 +194,16 @@ test("hand-drawn cue persists in scoped IndexedDB, supports keyboard drawing and
   await expect.poll(async () =>
     page.evaluate(async (ref) => {
       const database = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open("kj-atlas-representative-visual-cues", 1);
+        const request = indexedDB.open("kj-atlas-representative-visual-cues", 2);
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
       try {
         return await new Promise<boolean>((resolve, reject) => {
-          const request = database.transaction("assets", "readonly").objectStore("assets").get(ref);
+          const request = database
+            .transaction("assets-v2", "readonly")
+            .objectStore("assets-v2")
+            .get(JSON.stringify(["kj-atlas/local-scope/v1/", ref]));
           request.onsuccess = () => resolve(request.result === undefined);
           request.onerror = () => reject(request.error);
         });
