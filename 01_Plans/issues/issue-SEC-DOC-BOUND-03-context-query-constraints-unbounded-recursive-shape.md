@@ -3,14 +3,14 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Security
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models_context.py`, `03_Implement/backend/src/kj_atlas_api/context_adapter.py`, `03_Implement/backend/src/kj_atlas_api/routes/context.py`, `03_Implement/backend/src/kj_atlas_api/main.py`
-- Related ADR/Spec: `issue-SEC-DOC-BOUND-01-unbounded-document-and-identity-fields.md`, `issue-SEC-DOC-BOUND-02-unbounded-list-fields-in-llm-prompts.md`, `issue-CE0-contract-freeze.md`, `issue-CE1-context-query-bundle-foundation.md`
-- Expected verification level: `unit`
+- Scope: `03_Implement/backend/src/kj_atlas_api/request_body_safety.py`, `03_Implement/backend/src/kj_atlas_api/models_context.py`, `03_Implement/backend/src/kj_atlas_api/routes/context.py`, `03_Implement/backend/src/kj_atlas_api/main.py`, 近接テスト、`02_Architecture/api.md`, `02_Architecture/schemas.md`, `THREAT_MODEL.md`
+- Related ADR/Spec: `ADR-0039`, `ADR-0047`, `issue-SEC-DOC-BOUND-01-unbounded-document-and-identity-fields.md`, `issue-CE0-contract-freeze.md`, `issue-CE1-context-query-bundle-foundation.md`, `02_Architecture/api.md`, `02_Architecture/schemas.md`, `THREAT_MODEL.md`
+- Expected verification level: `unit + integration`
 
 ## 課題
 
@@ -26,34 +26,37 @@
 
 ## 対応方針
 
-- 実施すること（人間の設計判断が必要。次のいずれか、または組み合わせ）:
-  - (a) アプリ全体のリクエストボディ解析に対して、深さ・サイズの安全弁を設ける（例: FastAPI/Starletteのボディ読み取りをラップし、事前にJSON文字列の深さ/長さを軽量にチェックする、または `sys.setrecursionlimit` に依存しない反復的なJSONバリデーションに置き換える）。
-  - (b) `main.py` にキャッチオールの例外ハンドラを追加し、未捕捉例外（`RecursionError` を含む）を安全な5xx（詳細を漏らさない）に正規化する。これは本問題を隠すのではなく、同種の未知のクラッシュ経路全般に対する安全網として有効（`issue-SEC-AUDIT-LOG-01` で確立した「例外詳細のサニタイズ」方針とも整合する）。
-  - (c) `_stable_value()` 自体にも深さ/ノード数上限を追加し、`constraints` フィールドに `Field` レベルの制約（例: JSON文字列化後の最大バイト数）を設ける。ただしこれは(a)のフレームワークレベルの欠落を塞がない点に注意。
-  - 上記のいずれを採用するかは、既存の `AuditEvent.metadata`（`audit.py`、フラットな辞書をキー数・キー長・値長で制約する確立済みパターン）のような、再帰構造に対する確立済みの制約パターンがこのコードベースに存在しないため、設計判断が必要。
-- 実施しないこと:
-  - `ContextQuery`/`ContextBundleResponse` の凍結されたフィールド構造（`issue-CE0-contract-freeze.md`）自体の変更。
+- 採用:
+  - backendの `application/json` / `application/*+json` bodyをparser前段の反復的scannerで検査し、構造ネスト64超過を `400 json_nesting_too_deep` で拒否する。`sys.setrecursionlimit` や再帰的な事前parseには依存しない。
+  - `ContextQuery.constraints` をJSON互換値、深さ8以下、総ノード数1024以下、canonical UTF-8 64 KiB以下に制限し、違反を `400 invalid_constraints` で拒否する。
+  - validation errorからraw input/contextを除き、境界違反は安定したcodeだけを返す。API key認証はbody走査より先に行う。
+- 不採用:
+  - catch-all例外ハンドラは追加しない。既知の失敗クラスはparser前で4xxにし、未知のprogramming errorまで一律に隠さない。
+  - 全JSON bodyのbyte上限は追加しない。浅い巨大値のfield制約は `SEC-DOC-BOUND-01`、公開transportのrate/body上限は各境界で扱う。
+  - `ContextQuery`/`ContextBundleResponse` のfield構造、canonicalization、hash入力、schema versionは変更しない。
+- ADR判断:
+  - field/versionを変更しない局所的な安全境界であり、選択肢と残余リスクを本issueおよび現行正本へ記録できるため、新規ADRは作成しない（`ADR-0039` / `ADR-0047`）。
 
 ## 受入条件
 
-- [ ] 深くネストしたJSONボディを `/context/query` または `/context/bundle` に送っても、素の500ではなく、クリーンな4xx（または安全にサニタイズされた5xx）が返る。
-- [ ] 採用した対応が `constraints` フィールドだけでなく、JSONボディを受け取る他のエンドポイントにも及ぶフレームワークレベルの欠落かどうかを踏まえた範囲になっている。
-- [ ] 関連する安全・互換性を損なわない（`ContextQuery`/`ContextBundleResponse` の凍結契約を破壊しない）。
-- [ ] 宣言した検証を実行するか、未実施理由を記録する。
+- [x] 深くネストしたJSONボディを `/context/query`、`/context/bundle`、他のJSON endpointへ送っても、素の500ではなくサニタイズされた4xxが返る。
+- [x] `constraints` 固有のresource boundと、全JSON endpoint共通のparser前安全境界を実装した。
+- [x] `ContextQuery`/`ContextBundleResponse` の凍結field契約、hash規則、SafeMode、認証順序を破壊しない。
+- [x] 近接テスト、backend回帰、lint、docs-check、diff-checkを実行し、環境起因の未実施範囲を記録した。
 
-## 検証計画
+## 検証結果
 
-- 実行する確認:
-  - 深くネストした `constraints`（および可能であれば他のJSONボディエンドポイント）を使った回帰テストを追加し、クリーンなエラー応答（4xxまたはサニタイズされた5xx）を返すことを確認する。
-  - `pytest 03_Implement/backend/tests`（対応するテストファイル）
-- 期待結果:
-  - 深いネスト入力に対してサーバーがクラッシュせず、意図したエラー応答を返す。
+- 近接回帰: `test_request_body_safety.py`, `test_context_bundle_routes.py`, `test_api_key.py` は `27 passed`。
+- backend回帰（migration系7ファイルと既知のenv-prefix違反1件を明示除外）: `622 passed, 25 skipped, 1 deselected`。
+- 全backend回帰の参考結果: `626 passed, 25 skipped, 16 failed`。失敗15件はWSL環境に `alembic` executableがないため、残る1件は既存 `monkey_adversarial_probes.mjs` の `ONLY/SEED/ACTIONS/VIEWPORT` によるenv-prefix違反で、いずれも本変更外。
+- `ruff check .`: pass。
+- `01_Plans/docs_check.py`: pass（`active_memos=59`, `tracked_markdown=467`）。
+- `git diff --check`（本issue対象ファイル）: pass。
 
 ## 補足
 
-- 依存・リスク・ロールバックがある場合だけ記載する。
-  - この調査は3体の独立検証者のうち2体がセッション利用上限により失敗し、1体のみが完了した（PARTIALLY CONFIRMED判定）。核心となる事実（`constraints` フィールドの制約欠如、`_stable_value()` の未制限再帰、キャッチオールハンドラの不在、SEC-DOC-BOUND-01/02との非重複）はすべてorigin/mainのソースを直接読んで検証済みだが、「深いネストJSONで実際に`RecursionError`が発生する具体的な閾値」は同検証者もPython実行環境が使えず実測できておらず、対応着手前に実測での再現を推奨する。
-- ADR化が必要になる条件: フレームワーク全体のリクエストボディ安全弁（上記(a)）を追加する場合、既存の全JSONエンドポイントの挙動に影響しうるため、影響範囲次第では新規ADRでトレードオフを固定する。
+- rollbackは `JsonRequestBodySafetyMiddleware` の登録と `ContextQuery` validatorを同時に戻す。片方だけ戻すとparser前またはcanonicalization前の一方に欠落が再発する。
+- 残余リスクは浅い巨大JSON全般であり、本issueでは `constraints` の64 KiB上限だけを扱った。
 
 ---
 
