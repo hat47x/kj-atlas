@@ -81,7 +81,9 @@ test("domain expression state controls are reachable with keyboard after card se
   await page.getByRole("button", { name: "Open sample" }).click();
   await expect(page.locator(START_PANEL)).toBeHidden();
 
-  const targetCard = page.getByRole("button", { name: "ambiguous target claim" });
+  const targetCard = page
+    .getByRole("button", { name: "ambiguous target claim" })
+    .and(page.locator("[aria-pressed]"));
   await expect(targetCard).toBeVisible();
   await targetCard.focus();
   await expect(targetCard).toBeFocused();
@@ -246,7 +248,9 @@ test("keyboard shelf and restore remain stable across saves and reloads", async 
   await page.getByRole("button", { name: "Open sample" }).click();
   await expect(page.locator(START_PANEL)).toBeHidden();
 
-  const targetCard = page.getByRole("button", { name: "ambiguous target claim" });
+  const targetCard = page
+    .getByRole("button", { name: "ambiguous target claim" })
+    .and(page.locator("[aria-pressed]"));
   await expect(targetCard).toBeVisible();
   const initialBox = await targetCard.boundingBox();
   expect(initialBox).not.toBeNull();
@@ -281,7 +285,11 @@ test("keyboard shelf and restore remain stable across saves and reloads", async 
 
   await page.reload();
   await page.getByRole("button", { name: "Close start panel" }).click();
-  await expect(page.getByRole("button", { name: "ambiguous target claim" })).toHaveCount(0);
+  await expect(
+    page
+      .getByRole("button", { name: "ambiguous target claim" })
+      .and(page.locator("[aria-pressed]")),
+  ).toHaveCount(0);
 
   const restoredShelf = page.getByRole("region", { name: "Shelf (set aside)" });
   await expect(restoredShelf).toContainText("ambiguous target claim");
@@ -291,7 +299,9 @@ test("keyboard shelf and restore remain stable across saves and reloads", async 
   await page.keyboard.press("Enter");
 
   await expect(restoredShelf).toHaveCount(0);
-  const restoredCard = page.getByRole("button", { name: "ambiguous target claim" });
+  const restoredCard = page
+    .getByRole("button", { name: "ambiguous target claim" })
+    .and(page.locator("[aria-pressed]"));
   await expect(restoredCard).toBeVisible();
   const restoredBox = await restoredCard.boundingBox();
   expect(restoredBox).not.toBeNull();

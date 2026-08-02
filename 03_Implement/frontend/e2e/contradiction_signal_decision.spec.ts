@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { enableAdvancedUiIfNeeded } from "./helpers/i18n";
 
 // DOMAIN-EXPR-04 (ADR-0040 Phase 4, schemas.md §16): human review decisions on
 // analyzeContradictions() signals. Covers: signal appears after running
@@ -76,8 +77,11 @@ async function openSample(page: Page): Promise<void> {
 }
 
 async function runDiagnosticsAndExpandContradictionSignals(page: Page): Promise<void> {
+  await enableAdvancedUiIfNeeded(page);
   await page.getByRole("button", { name: RUN_DIAGNOSTICS_BUTTON }).first().click();
-  const contradictionSummary = page.getByText(/矛盾シグナル \(\d+\)|Contradiction signals \(\d+\)/).first();
+  const contradictionSummary = page
+    .getByText(/矛盾シグナル \(\d+\)|Contradiction signals \(\d+\)/)
+    .first();
   await expect(contradictionSummary).toBeVisible();
   await contradictionSummary.click();
 }

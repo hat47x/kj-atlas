@@ -62,10 +62,45 @@ describe("CardView accessibility (UQ-2)", () => {
     expect(html).toContain("保留");
   });
 
-  it("gives the labeled unreviewed indicator a valid semantic role", () => {
+  it("keeps the unreviewed indicator out of the card name and exposes it as a description", () => {
     const html = renderCard({ textReviewed: false });
-    expect(html).toContain('role="img"');
-    expect(html).toContain('aria-label="カード本文は未レビューです"');
+    expect(html).toContain('aria-describedby="card-unreviewed-description-c1"');
+    expect(html).toContain('id="card-unreviewed-description-c1" hidden=""');
+    expect(html).toContain("カード本文は未レビューです");
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).not.toContain('role="img"');
+    expect(html).not.toContain('aria-label="カード本文は未レビューです"');
+  });
+
+  it("describes the inline editor with the same unreviewed state", () => {
+    const html = renderToStaticMarkup(
+      createElement(CardView, {
+        card: { id: "c1", text: "テストカード", x: 0, y: 0, textReviewed: false },
+        isSelected: true,
+        isEditing: true,
+        onMove: vi.fn(),
+        onSelect: vi.fn(),
+      })
+    );
+
+    expect(html).toContain('aria-label="カード本文を編集"');
+    expect(html).toContain('aria-describedby="card-unreviewed-description-c1"');
+    expect(html).toContain('id="card-unreviewed-description-c1" hidden=""');
+  });
+
+  it("does not leave a dangling unreviewed description reference in marker mode", () => {
+    const html = renderToStaticMarkup(
+      createElement(CardView, {
+        card: { id: "c1", text: "テストカード", x: 0, y: 0, textReviewed: false },
+        isSelected: false,
+        markerMode: true,
+        onMove: vi.fn(),
+        onSelect: vi.fn(),
+      })
+    );
+
+    expect(html).not.toContain("aria-describedby");
+    expect(html).not.toContain("card-unreviewed-description-c1");
   });
 
   it("renders representative count badge", () => {

@@ -124,11 +124,9 @@ test("S4 import-to-safe-export: the pre-share gate reflects the just-imported do
   await expect(page.getByText(DOCUMENT_REPLACED_STATUS)).toBeVisible();
 
   for (const card of seed.cards) {
-    // exact: true -- the unreviewed card's accessible name embeds a "Card
-    // text is unreviewed" status label containing "reviewed" as a substring,
-    // which would otherwise ambiguously match the other card's "reviewed
-    // import" text under Playwright's default substring matching.
-    await expect(page.getByText(card.text, { exact: true })).toBeVisible();
+    // Card text remains the accessible name at every zoom level; review state
+    // is exposed separately as an accessible description.
+    await expect(page.getByRole("main").getByRole("button", { name: card.text, exact: true })).toBeVisible();
   }
 
   // The export trigger lives inside the same share/reproduce panel as the

@@ -326,6 +326,7 @@ test("slow diagnostics shows progress and can be cancelled", async ({ page }) =>
   await page.goto("/");
   await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
 
+  await enableAdvancedUiIfNeeded(page);
   await page.getByRole("button", { name: /診断を実行|Run diagnostics/ }).first().click();
   await expect(page.getByText("診断中: アウトライン（10%）").first()).toBeVisible();
   await expect(page.getByRole("button", { name: /^処理中|^Working/ }).first()).toBeDisabled();

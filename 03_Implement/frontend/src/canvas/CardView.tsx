@@ -136,6 +136,7 @@ function CardViewComponent({
     shelved: { bg: "#f1f5f9", fg: "#64748b" },
   };
   const holdStateLabel = holdState ? t(`side_panel.hold_state.${holdState}`) : "";
+  const unreviewedDescriptionId = `card-unreviewed-description-${card.id}`;
 
   const clearDragState = (event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
@@ -319,6 +320,9 @@ function CardViewComponent({
       // to the textarea below -- the root is not an operable element then.
       role={isEditing ? undefined : "button"}
       aria-pressed={isEditing ? undefined : isSelected}
+      aria-describedby={
+        !markerMode && !isEditing && !isTextReviewed ? unreviewedDescriptionId : undefined
+      }
       data-focus={isFocused ? "card" : undefined}
       tabIndex={isEditing ? -1 : 0}
       onKeyDown={handleKeyDown}
@@ -479,21 +483,25 @@ function CardViewComponent({
         </div>
       ) : null}
       {!markerMode && !isTextReviewed ? (
-        <span
-          role="img"
-          aria-label={t("card_view.unreviewed")}
-          title={t("card_view.unreviewed")}
-          style={{
-            position: "absolute",
-            top: 6,
-            right: 6,
-            width: 7,
-            height: 7,
-            borderRadius: "50%",
-            backgroundColor: "#f59e0b",
-            opacity: 0.7,
-          }}
-        />
+        <>
+          <span id={unreviewedDescriptionId} hidden>
+            {t("card_view.unreviewed")}
+          </span>
+          <span
+            aria-hidden="true"
+            title={t("card_view.unreviewed")}
+            style={{
+              position: "absolute",
+              top: 6,
+              right: 6,
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              backgroundColor: "#f59e0b",
+              opacity: 0.7,
+            }}
+          />
+        </>
       ) : null}
       {!markerMode && isEditing ? (
         <textarea
@@ -502,6 +510,7 @@ function CardViewComponent({
           // "focus moved to the card body input" step of
           // 04_Documentation/acceptance_check.md is not audible.
           aria-label={t("card_view.edit_textarea_label")}
+          aria-describedby={!isTextReviewed ? unreviewedDescriptionId : undefined}
           defaultValue={card.text}
           autoFocus
           onFocus={(event) => event.currentTarget.select()}
