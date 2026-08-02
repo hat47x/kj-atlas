@@ -1,0 +1,279 @@
+import {
+  expect,
+  test,
+  type BrowserContext,
+  type Page,
+  type Route,
+} from "@playwright/test";
+
+const TENANT_SESSION_HEADER = "kj-atlas-tenant-session-version";
+const START_PANEL = '[data-panel="start-document-entry"]';
+
+type TenantId = "tenant-a" | "tenant-b";
+
+type ServerState = {
+  activeTenantId: TenantId;
+  tenantSessionVersion: string;
+  staleRequestCount: number;
+  documentLookupCount: number;
+  acceptedMutationCount: number;
+  documents: Record<TenantId, ReturnType<typeof buildDocument>>;
+};
+
+function buildDocument(tenantId: TenantId) {
+  const now = "2026-08-02T00:00:00.000Z";
+  return {
+    version: 1,
+    id: "doc_phase1_canvas",
+    title: `${tenantId} fixture`,
+    createdAt: now,
+    updatedAt: now,
+    transform: { panX: 0, panY: 0, zoom: 1 },
+    cards: [
+      {
+        id: "shared-card",
+        text: `${tenantId} confidential card`,
+        textReviewed: true,
+        x: 120,
+        y: 120,
+      },
+    ],
+    edges: [],
+    islands: [],
+    readingOrder: [],
+    narratives: [],
+    evidenceLinks: [],
+    mergeSuggestionDecisions: [],
+  };
+}
+
+function createServerState(): ServerState {
+  return {
+    activeTenantId: "tenant-a",
+    tenantSessionVersion: "session-v1",
+    staleRequestCount: 0,
+    documentLookupCount: 0,
+    acceptedMutationCount: 0,
+    documents: {
+      "tenant-a": buildDocument("tenant-a"),
+      "tenant-b": buildDocument("tenant-b"),
+    },
+  };
+}
+
+function sessionContext(state: ServerState) {
+  const activeTenant = state.activeTenantId === "tenant-a"
+    ? { id: "tenant-a", displayName: "Tenant A" }
+    : { id: "tenant-b", displayName: "Tenant B" };
+  return {
+    principalId: "principal-1",
+    activeTenant,
+    availableTenants: [
+      { id: "tenant-a", displayName: "Tenant A" },
+      { id: "tenant-b", displayName: "Tenant B" },
+    ],
+    effectiveCapabilities: [
+      "document.read",
+      "document.write",
+      "document.export",
+    ],
+    capabilityVersion: `capability-${state.activeTenantId}`,
+    tenantSessionVersion: state.tenantSessionVersion,
+  };
+}
+
+async function fulfillJson(route: Route, status: number, body: unknown, headers: Record<string, string> = {}) {
+  await route.fulfill({
+    status,
+    contentType: "application/json",
+    headers,
+    body: JSON.stringify(body),
+  });
+}
+
+async function installSaasServer(context: BrowserContext, state: ServerState) {
+  await context.route(/^https?:\/\/[^/]+\/api\//, async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+
+    if (url.pathname === "/api/session/bootstrap-policy") {
+      await fulfillJson(route, 200, { tenantSessionMode: "tenant-session-required" });
+      return;
+    }
+    if (url.pathname === "/api/session/context") {
+      await fulfillJson(route, 200, sessionContext(state));
+      return;
+    }
+    if (url.pathname === "/api/session/active-tenant") {
+      const payload = request.postDataJSON() as {
+        tenantId?: string;
+        expectedTenantSessionVersion?: string;
+      };
+      if (payload.expectedTenantSessionVersion !== state.tenantSessionVersion) {
+        state.staleRequestCount += 1;
+        await fulfillJson(route, 409, {
+          detail: {
+            code: "tenant_session_changed",
+            message: "Session context changed",
+          },
+        });
+        return;
+      }
+      if (payload.tenantId !== "tenant-a" && payload.tenantId !== "tenant-b") {
+        await fulfillJson(route, 404, { detail: { code: "tenant_not_available" } });
+        return;
+      }
+      state.activeTenantId = payload.tenantId;
+      state.tenantSessionVersion = state.tenantSessionVersion === "session-v1"
+        ? "session-v2"
+        : "session-v3";
+      await fulfillJson(route, 200, sessionContext(state), {
+        "Cache-Control": "no-store",
+      });
+      return;
+    }
+    if (url.pathname === "/api/packs/index.json") {
+      await fulfillJson(route, 404, {});
+      return;
+    }
+    if (url.pathname === "/api/ai/provider-status") {
+      await fulfillJson(route, 200, { providerKind: "none" });
+      return;
+    }
+    if (url.pathname === "/api/docs/doc_phase1_canvas") {
+      const expectedVersion = request.headers()[TENANT_SESSION_HEADER];
+      if (expectedVersion !== state.tenantSessionVersion) {
+        state.staleRequestCount += 1;
+        await fulfillJson(route, 409, {
+          detail: {
+            code: "tenant_session_changed",
+            message: "Session context changed",
+          },
+        });
+        return;
+      }
+
+      state.documentLookupCount += 1;
+      if (request.method() === "PUT") {
+        state.acceptedMutationCount += 1;
+        state.documents[state.activeTenantId] = request.postDataJSON() as ReturnType<typeof buildDocument>;
+      }
+      await fulfillJson(route, 200, state.documents[state.activeTenantId], {
+        ETag: `"${state.activeTenantId}-revision"`,
+      });
+      return;
+    }
+
+    await fulfillJson(route, 404, { detail: { code: "not_found" } });
+  });
+}
+
+async function openWorkspace(page: Page, locale: "en" | "ja" = "en") {
+  await page.goto(`/?locale=${locale}`);
+  await expect(page.locator(START_PANEL)).toBeVisible();
+  await page.locator(START_PANEL).getByRole("button", {
+    name: locale === "en" ? "Close start panel" : "開始パネルを閉じる",
+  }).click();
+  await expect(page.locator(START_PANEL)).toBeHidden();
+}
+
+test.skip(
+  process.env.KJ_ATLAS_E2E_SAAS !== "1",
+  "Runs only with playwright.saas.config.ts and the SaaS runtime profile.",
+);
+
+test("cross-tab switch blocks the old DOM and discards a delayed tenant result", async ({ browser }) => {
+  const state = createServerState();
+  const context = await browser.newContext();
+  await installSaasServer(context, state);
+  const pageA = await context.newPage();
+  const pageB = await context.newPage();
+
+  await Promise.all([openWorkspace(pageA), openWorkspace(pageB)]);
+  await expect(pageA.getByRole("button", { name: "tenant-a confidential card" })).toBeVisible();
+
+  let releaseDelayedResponse: (() => Promise<void>) | undefined;
+  await pageA.route("**/api/docs/doc_phase1_canvas", async (route) => {
+    releaseDelayedResponse = async () => {
+      await fulfillJson(route, 200, state.documents["tenant-a"], {
+        ETag: '"tenant-a-delayed"',
+      });
+    };
+  });
+  await pageA.reload({ waitUntil: "domcontentloaded" });
+  await expect(pageA.getByLabel("Current workspace: Tenant A")).toBeVisible();
+  await expect.poll(() => releaseDelayedResponse).toBeDefined();
+
+  await pageB.getByLabel("Current workspace: Tenant A").selectOption("tenant-b");
+  await expect(pageB.getByLabel("Current workspace: Tenant B")).toBeVisible();
+  await expect(pageB.getByRole("button", { name: "tenant-b confidential card" })).toBeVisible();
+
+  const blockedHeading = pageA.getByRole("heading", { name: "We couldn’t verify access" });
+  await expect(blockedHeading).toBeVisible();
+  await expect(blockedHeading).toBeFocused();
+  await expect(pageA.getByText("tenant-a confidential card", { exact: true })).toHaveCount(0);
+
+  await releaseDelayedResponse?.();
+  await expect(blockedHeading).toBeVisible();
+  await expect(pageA.getByText("tenant-a confidential card", { exact: true })).toHaveCount(0);
+
+  await context.close();
+});
+
+test("without BroadcastChannel a stale PUT is rejected before document lookup and never retried", async ({ browser }) => {
+  const state = createServerState();
+  const context = await browser.newContext();
+  await context.addInitScript(() => {
+    Object.defineProperty(window, "BroadcastChannel", {
+      configurable: true,
+      value: undefined,
+    });
+  });
+  await installSaasServer(context, state);
+  const pageA = await context.newPage();
+  const pageB = await context.newPage();
+
+  await Promise.all([openWorkspace(pageA), openWorkspace(pageB)]);
+  const lookupsBeforeSwitch = state.documentLookupCount;
+
+  await pageB.getByLabel("Current workspace: Tenant A").selectOption("tenant-b");
+  await expect(pageB.getByLabel("Current workspace: Tenant B")).toBeVisible();
+
+  await expect(pageA.getByRole("button", { name: "tenant-a confidential card" })).toBeVisible();
+  await pageA.getByRole("button", { name: "New card" }).click();
+  const editor = pageA.getByRole("textbox", { name: "Edit card text" });
+  await editor.fill("stale tenant-a mutation");
+  await editor.press("Enter");
+  await pageA.getByRole("button", { name: "Save" }).click();
+
+  await expect(pageA.getByRole("heading", { name: "We couldn’t verify access" })).toBeVisible();
+  expect(state.staleRequestCount).toBe(1);
+  expect(state.documentLookupCount).toBe(lookupsBeforeSwitch + 1);
+  expect(state.acceptedMutationCount).toBe(0);
+  expect(JSON.stringify(state.documents["tenant-b"])).not.toContain("stale tenant-a mutation");
+
+  await context.close();
+});
+
+test("a 390px Japanese bfcache restoration blocks stale content and focuses the recovery state", async ({ browser }) => {
+  const state = createServerState();
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 720 },
+  });
+  await installSaasServer(context, state);
+  const page = await context.newPage();
+  await openWorkspace(page, "ja");
+  await expect(page.getByRole("button", { name: "tenant-a confidential card" })).toBeVisible();
+
+  await page.evaluate(() => {
+    window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
+  });
+
+  const blockedHeading = page.getByRole("heading", { name: "アクセスを確認できません" });
+  await expect(blockedHeading).toBeVisible();
+  await expect(blockedHeading).toBeFocused();
+  await expect(page.getByText("tenant-a confidential card", { exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  await context.close();
+});
