@@ -5,6 +5,7 @@ import {
   type Page,
   type Route,
 } from "@playwright/test";
+import JSZip from "jszip";
 
 const TENANT_SESSION_HEADER = "kj-atlas-tenant-session-version";
 const START_PANEL = '[data-panel="start-document-entry"]';
@@ -177,6 +178,95 @@ async function openWorkspace(page: Page, locale: "en" | "ja" = "en") {
   await expect(page.locator(START_PANEL)).toBeHidden();
 }
 
+async function openSharePanel(page: Page) {
+  await page.getByRole("button", { name: "Share & Reproduce" }).click();
+  await expect(page.getByRole("dialog", { name: "Share & Reproduce" })).toBeVisible();
+}
+
+async function installControllableBundleZipWorker(context: BrowserContext) {
+  await context.addInitScript(() => {
+    const NativeWorker = window.Worker;
+
+    class ControllableBundleZipWorker extends EventTarget {
+      private requestId: string | null = null;
+
+      constructor(scriptUrl: string | URL, options?: WorkerOptions) {
+        super();
+        if (!String(scriptUrl).includes("bundle_zip.worker")) {
+          return new NativeWorker(scriptUrl, options) as unknown as ControllableBundleZipWorker;
+        }
+      }
+
+      postMessage(message: unknown) {
+        if (!message || typeof message !== "object") {
+          return;
+        }
+
+        const payload = message as { type?: string; requestId?: string };
+        if (payload.type === "bundle.zip.request" && payload.requestId) {
+          this.requestId = payload.requestId;
+          Object.defineProperty(window, "__kjTenantBundleZipStarted", {
+            configurable: true,
+            value: true,
+          });
+          return;
+        }
+        if (payload.type === "bundle.zip.cancel" && payload.requestId === this.requestId) {
+          Object.defineProperty(window, "__kjTenantBundleZipCancelled", {
+            configurable: true,
+            value: true,
+          });
+          this.dispatchEvent(new MessageEvent("message", {
+            data: {
+              type: "bundle.zip.cancelled",
+              requestId: payload.requestId,
+            },
+          }));
+        }
+      }
+
+      terminate() {
+        this.requestId = null;
+      }
+    }
+
+    window.Worker = ControllableBundleZipWorker as unknown as typeof Worker;
+  });
+}
+
+async function installControllableReviewPackRead(context: BrowserContext) {
+  await context.addInitScript(() => {
+    const nativeArrayBuffer = File.prototype.arrayBuffer;
+    let releaseRead: (() => void) | null = null;
+
+    File.prototype.arrayBuffer = function arrayBuffer() {
+      if (this.name !== "stale-review-pack.zip") {
+        return nativeArrayBuffer.call(this);
+      }
+
+      Object.defineProperty(window, "__kjTenantPackReadStarted", {
+        configurable: true,
+        value: true,
+      });
+      return new Promise<ArrayBuffer>((resolve, reject) => {
+        releaseRead = () => {
+          nativeArrayBuffer.call(this).then((value) => {
+            Object.defineProperty(window, "__kjTenantPackReadFinished", {
+              configurable: true,
+              value: true,
+            });
+            resolve(value);
+          }, reject);
+        };
+        Object.defineProperty(window, "__kjReleaseTenantPackRead", {
+          configurable: true,
+          value: () => releaseRead?.(),
+        });
+      });
+    };
+  });
+}
+
 test.skip(
   process.env.KJ_ATLAS_E2E_SAAS !== "1",
   "Runs only with playwright.saas.config.ts and the SaaS runtime profile.",
@@ -251,6 +341,81 @@ test("without BroadcastChannel a stale PUT is rejected before document lookup an
   expect(state.documentLookupCount).toBe(lookupsBeforeSwitch + 1);
   expect(state.acceptedMutationCount).toBe(0);
   expect(JSON.stringify(state.documents["tenant-b"])).not.toContain("stale tenant-a mutation");
+
+  await context.close();
+});
+
+test("cross-tab switch cancels an old tenant bundle before it can download", async ({ browser }) => {
+  const state = createServerState();
+  const context = await browser.newContext();
+  await installControllableBundleZipWorker(context);
+  await installSaasServer(context, state);
+  const pageA = await context.newPage();
+  const pageB = await context.newPage();
+  let downloadCount = 0;
+  pageA.on("download", () => {
+    downloadCount += 1;
+  });
+
+  await Promise.all([openWorkspace(pageA), openWorkspace(pageB)]);
+  await openSharePanel(pageA);
+  await pageA.getByRole("button", { name: "Export bundle (.zip)" }).click();
+  await expect.poll(() => pageA.evaluate(
+    () => Boolean((window as Window & { __kjTenantBundleZipStarted?: boolean }).__kjTenantBundleZipStarted),
+  )).toBe(true);
+
+  await pageB.getByLabel("Current workspace: Tenant A").selectOption("tenant-b");
+  await expect(pageB.getByLabel("Current workspace: Tenant B")).toBeVisible();
+
+  const blockedHeading = pageA.getByRole("heading", { name: "We couldn’t verify access" });
+  await expect(blockedHeading).toBeVisible();
+  await expect.poll(() => pageA.evaluate(
+    () => Boolean((window as Window & { __kjTenantBundleZipCancelled?: boolean }).__kjTenantBundleZipCancelled),
+  )).toBe(true);
+  await expect.poll(() => downloadCount).toBe(0);
+  await expect(pageA.getByText("tenant-a confidential card", { exact: true })).toHaveCount(0);
+
+  await context.close();
+});
+
+test("cross-tab switch discards a review pack that finishes reading for the old tenant", async ({ browser }) => {
+  const state = createServerState();
+  const context = await browser.newContext();
+  await installControllableReviewPackRead(context);
+  await installSaasServer(context, state);
+  const pageA = await context.newPage();
+  const pageB = await context.newPage();
+  const reviewPack = new JSZip();
+  reviewPack.file("document.json", "{}");
+  reviewPack.file("view.json", "{}");
+  const reviewPackBuffer = await reviewPack.generateAsync({ type: "nodebuffer" });
+
+  await Promise.all([openWorkspace(pageA), openWorkspace(pageB)]);
+  await openSharePanel(pageA);
+  await pageA.locator('input[accept*=".zip"]').last().setInputFiles({
+    name: "stale-review-pack.zip",
+    mimeType: "application/zip",
+    buffer: reviewPackBuffer,
+  });
+  await expect.poll(() => pageA.evaluate(
+    () => Boolean((window as Window & { __kjTenantPackReadStarted?: boolean }).__kjTenantPackReadStarted),
+  )).toBe(true);
+  const lookupsBeforeSwitch = state.documentLookupCount;
+
+  await pageB.getByLabel("Current workspace: Tenant A").selectOption("tenant-b");
+  await expect(pageB.getByLabel("Current workspace: Tenant B")).toBeVisible();
+  const blockedHeading = pageA.getByRole("heading", { name: "We couldn’t verify access" });
+  await expect(blockedHeading).toBeVisible();
+
+  await pageA.evaluate(() => {
+    (window as Window & { __kjReleaseTenantPackRead?: () => void }).__kjReleaseTenantPackRead?.();
+  });
+  await expect.poll(() => pageA.evaluate(
+    () => Boolean((window as Window & { __kjTenantPackReadFinished?: boolean }).__kjTenantPackReadFinished),
+  )).toBe(true);
+  await expect(blockedHeading).toBeVisible();
+  await expect(pageA.getByText("tenant-a confidential card", { exact: true })).toHaveCount(0);
+  expect(state.documentLookupCount).toBe(lookupsBeforeSwitch + 1);
 
   await context.close();
 });

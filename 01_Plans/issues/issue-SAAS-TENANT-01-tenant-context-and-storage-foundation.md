@@ -537,3 +537,9 @@
 - `saas-multitenant`専用のPlaywright構成と、同一認証sessionを共有する2タブの実ブラウザnegative matrixを追加した（実装commit `fc84be3b`）。tenant Aの旧DOMを開いたままtenant Bへ切り替え、`BroadcastChannel`通知を受けた旧タブが即時遮断されること、切替前に開始した遅延Document応答を解放しても旧内容が再表示されないことを固定した。
 - `BroadcastChannel`を利用不能にした経路では、旧タブのPUTが`tenantSessionVersion`不一致によりDocument lookup・mutationより前で409拒否され、自動retryされず、tenant Bの同一Document IDへ書き込まれないことを確認した。bfcache復元経路では、390x720・日本語表示で`pageshow.persisted`後に旧内容を除去し、回復見出しへfocusを移し、横overflowを発生させないことを固定した。
 - 検証は専用SaaS E2E 3件、既存Playwright 195件pass・専用3件skip、frontend unit 1,329件・228 file、typecheck、production buildを通過した。これはmock session/APIを使うbrowser側の基盤検証であり、実trusted auth edge、export/import/Admin/MCP/非同期jobを含む全consumer、外部PDP/binding/capability serviceのnegative matrixは未完了である。したがってAC-13は未充足のまま、AC-4/6/7/8/10/12/13と現行SaaS profile起動拒否を維持する。
+
+### Implementation checkpoint 2026-08-03: multi-tab asynchronous review-pack boundary
+
+- 同一認証sessionを共有する2タブのbrowser matrixへ、review-pack export/importの非同期完了競合を追加した。tenant Aでbundle ZIP workerを開始したまま別タブからtenant Bへ切り替えた場合、旧タブのruntime cleanupがworkerをcancelし、旧tenantのZIPをdownloadしないことを固定した。
+- tenant Aでreview-pack ZIPのFile読込を開始し、別タブのtenant B切替後に読込を完了させる経路も追加した。generation guardが旧結果をparse／import stateへ渡さず、旧本文をblocked DOMへ戻さず、tenant BのDocument再取得以外の追加lookupを発生させないことを確認した。SafeMode、proposal-only、importの明示的人手適用境界、SaaS profile起動拒否は変更していない。
+- 検証は専用SaaS E2E 5件（既存3件＋新規2件）、tenant session generation／cross-tab coherence／bundle export／ZIP importの近接unit 40件、frontend typecheckを通過した。今回の範囲はbrowser内の非同期review-pack consumerに限定し、実trusted auth edge、server側import/share endpoint、Admin/MCP/非同期job、外部PDP/binding/capability serviceを含む完全matrixは未完了である。したがってAC-13は未充足のまま、AC-4/6/7/8/10/12/13と現行SaaS profile起動拒否を維持する。
