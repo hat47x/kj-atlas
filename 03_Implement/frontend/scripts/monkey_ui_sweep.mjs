@@ -2,12 +2,12 @@
 // acceptance work: keyboard navigation, focus management, card inline edit,
 // header toolbar, view / share panels, work mode tabs, legend.
 //
-// Usage: SEED=1 ACTIONS=150 VIEWPORT=1440 node monkey.mjs
+// Usage: KJ_ATLAS_MONKEY_SEED=1 KJ_ATLAS_MONKEY_ACTIONS=150 KJ_ATLAS_MONKEY_VIEWPORT=1440 node monkey.mjs
 import { chromium } from "@playwright/test";
 
-const SEED = Number(process.env.SEED ?? "1");
-const ACTIONS = Number(process.env.ACTIONS ?? "150");
-const WIDTH = Number(process.env.VIEWPORT ?? "1440");
+const SEED = Number(process.env.KJ_ATLAS_MONKEY_SEED ?? "1");
+const ACTIONS = Number(process.env.KJ_ATLAS_MONKEY_ACTIONS ?? "150");
+const WIDTH = Number(process.env.KJ_ATLAS_MONKEY_VIEWPORT ?? "1440");
 const HEIGHT = WIDTH <= 420 ? 720 : 900;
 const baseUrl = process.env.KJ_ATLAS_BASE_URL ?? "http://127.0.0.1:4173/?locale=ja";
 
