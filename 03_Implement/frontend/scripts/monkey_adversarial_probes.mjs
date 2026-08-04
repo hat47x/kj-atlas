@@ -2,7 +2,7 @@
 // acceptance work. Each probe states the documented expectation it checks.
 import { chromium } from "@playwright/test";
 
-const only = process.env.ONLY ? process.env.ONLY.split(",") : null;
+const only = process.env.KJ_ATLAS_MONKEY_ONLY ? process.env.KJ_ATLAS_MONKEY_ONLY.split(",") : null;
 const out = [];
 const rec = (id, title, ok, detail) =>
   out.push({ id, title, result: ok ? "ok" : "SUSPECT", detail });
