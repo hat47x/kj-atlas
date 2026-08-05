@@ -22,7 +22,8 @@
 | タスク | 先に読む正本 |
 |---|---|
 | 価値・要件判断 | `01_Plans/adr/ADR-0001-value-to-requirements.md` |
-| 用語・KJ法 | `00_Prompt/domain.md` |
+| 用語・KJ法の概念 | `00_Prompt/domain.md` |
+| KJ法の実行（束ね・表札・空白・検査） | `00_Prompt/kj_technique.md` |
 | カード品質 | `00_Prompt/qualitative_card_quality_requirements.md` |
 | W型反復 | `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/inquiry_journey_model.md` |
 | 全体構成 | `02_Architecture/architecture.md` |
