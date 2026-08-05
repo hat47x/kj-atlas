@@ -41,10 +41,14 @@ class MainWiringTest(unittest.TestCase):
 
     def _run_main(self, root: Path, *, finding=None):
         markdown_paths = [Path("README.md"), Path("04_Documentation/guide.md")]
+        html_paths = [Path("02_Architecture/view.html")]
         mocks = {}
         with ExitStack() as stack:
             tracked = stack.enter_context(
                 patch.object(MODULE, "tracked_markdown_paths", return_value=markdown_paths)
+            )
+            tracked_html = stack.enter_context(
+                patch.object(MODULE, "tracked_documentation_html_paths", return_value=html_paths)
             )
             for name in self.CHECKS_WITH_PATHS + self.CHECKS_WITH_ROOT:
                 return_value = [finding] if name == "check_safety_routes" and finding else []
@@ -57,8 +61,13 @@ class MainWiringTest(unittest.TestCase):
                 exit_code = MODULE.main()
 
         tracked.assert_called_once_with(root.resolve())
+        tracked_html.assert_called_once_with(root.resolve())
         for name in self.CHECKS_WITH_PATHS:
-            mocks[name].assert_called_once_with(root.resolve(), markdown_paths)
+            if name == "check_relative_links":
+                # Link checking also covers documentation HTML (DX-DOC-07).
+                mocks[name].assert_called_once_with(root.resolve(), markdown_paths + html_paths)
+            else:
+                mocks[name].assert_called_once_with(root.resolve(), markdown_paths)
         for name in self.CHECKS_WITH_ROOT:
             mocks[name].assert_called_once_with(root.resolve())
         return exit_code, output.getvalue()
@@ -154,6 +163,96 @@ class RelativeLinkCheckTest(unittest.TestCase):
 
         self.assertEqual(len(findings), 1)
         self.assertIn("escapes the repository", findings[0].message)
+
+    def test_reports_missing_target_in_documentation_html(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "02_Architecture").mkdir()
+            source = root / "02_Architecture" / "view.html"
+            source.write_text(textwrap.dedent("""\
+                <!doctype html>
+                <html><body>
+                <p><a href="missing.md">gone</a></p>
+                </body></html>
+            """), encoding="utf-8")
+
+            findings = MODULE.check_relative_links(root, [Path("02_Architecture/view.html")])
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_id, "DC-LNK-001")
+        self.assertEqual(findings[0].path, "02_Architecture/view.html")
+        # The anchor sits on line 3 of the file; normalization must not shift it.
+        self.assertEqual(findings[0].line, 3)
+        self.assertEqual(findings[0].target, "missing.md")
+
+    def test_accepts_existing_target_in_documentation_html(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "02_Architecture").mkdir()
+            (root / "02_Architecture" / "source.md").write_text("# Source\n", encoding="utf-8")
+            source = root / "02_Architecture" / "view.html"
+            source.write_text('<a href="source.md">source</a>\n', encoding="utf-8")
+
+            findings = MODULE.check_relative_links(root, [Path("02_Architecture/view.html")])
+
+        self.assertEqual(findings, [])
+
+    def test_ignores_html_code_scripts_and_external_targets(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "02_Architecture").mkdir()
+            source = root / "02_Architecture" / "view.html"
+            source.write_text(textwrap.dedent("""\
+                <code>[inline](missing-inline.md)</code>
+                <script src="https://cdn.example.com/x.js"></script>
+                <script>var link = "[js](missing-js.md)";</script>
+                <a href="https://example.com/missing">web</a>
+                <a href="#section">anchor</a>
+                <img src="missing-image.png">
+            """), encoding="utf-8")
+
+            findings = MODULE.check_relative_links(root, [Path("02_Architecture/view.html")])
+
+        # <code> is stripped like inline code, script bodies are dropped, and
+        # external/anchor targets are skipped. src attributes are not link
+        # targets for this rule, which only reads anchors.
+        self.assertEqual(findings, [])
+
+    def test_html_to_markdownish_preserves_line_numbers_and_shapes(self):
+        raw = textwrap.dedent("""\
+            <p>intro</p>
+            <script>
+            dropped
+            </script>
+            <a href="t.md">label</a>
+            <code>01_Plans/x.md</code>
+        """)
+
+        text = MODULE.html_to_markdownish(raw)
+
+        self.assertEqual(text.count("\n"), raw.count("\n"))
+        self.assertIn("[label](t.md)", text)
+        self.assertIn("`01_Plans/x.md`", text)
+        self.assertNotIn("dropped", text)
+
+    def test_tracked_documentation_html_paths_excludes_application_html(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            (root / "02_Architecture").mkdir()
+            (root / "03_Implement" / "frontend").mkdir(parents=True)
+            (root / "02_Architecture" / "view.html").write_text("<p>doc</p>\n", encoding="utf-8")
+            (root / "03_Implement" / "frontend" / "index.html").write_text(
+                '<script type="module" src="/src/main.tsx"></script>\n', encoding="utf-8"
+            )
+            subprocess.run(
+                ["git", "-C", str(root), "add", "02_Architecture/view.html", "03_Implement/frontend/index.html"],
+                check=True,
+            )
+
+            paths = MODULE.tracked_documentation_html_paths(root)
+
+        self.assertEqual(paths, [Path("02_Architecture/view.html")])
 
     def test_tracked_markdown_paths_excludes_untracked_files(self):
         with tempfile.TemporaryDirectory() as td:

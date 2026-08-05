@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -37,13 +37,31 @@
 
 どこまで対称にするか（全検査をHTMLへ広げるか、リンクとリポジトリパスの2件に絞るか）も判断対象である。
 
+## 対応（2026-08-05）
+
+### スコープ判断: リンク検査のみ拡張し、repo-path検査は拡張しない
+
+`check_repository_path_commands` は `_is_current_public_doc()` で `CURRENT_PUBLIC_DOC_ROOTS`（`README.md` / `CONTRIBUTING.md` / `04_Documentation` / `03_Implement/frontend/docs/e2e_testing.md`）に限定されている。**`02_Architecture` は含まれない**ため、この検査はそもそも設計文書のMarkdownにも適用されていない。HTMLへ拡張しても現状の効果はゼロであり、`ADR-0039` の「予測だけで実装しない」に反する。同じ理由で npm script / `KJ_ATLAS_*` キー / CLI option / localhost の各検査も拡張しない。
+
+一方 `check_relative_links` は全追跡Markdownに適用されるため、HTMLへの拡張に実効がある。現在の対象は5件（`business-intent-boundary-and-phases.html` と `design/*.dc.html` 4件）。
+
+### アプリHTMLを除外する必要があった
+
+`03_Implement/frontend/index.html` は `src="/src/main.tsx"` を持つ。これは dev server のルート基準で、リポジトリルート基準ではない。全HTMLを対象にすると本検査が**アプリ本体で誤検知**する。HTMLはMarkdownと違い実行時成果物でもあるため、文書HTMLとアプリHTMLを分ける必要がある。`DOCUMENTATION_HTML_ROOTS`（`00_Prompt` / `01_Plans` / `02_Architecture` / `04_Documentation`）で区別した。
+
+### 実装: 検査を分岐させず、HTMLをMarkdown等価テキストへ正規化する
+
+各検査をHTML用に複製するのではなく、正規化関数を1つ置いて既存検査へ流す方式を採った（`html_to_markdownish`）。`<a href="X">label</a>` → `[label](X)`、`<code>Y</code>` → バックティック、`<script>`/`<style>` 本体は破棄。これにより `MARKDOWN_LINK_RE` と `_without_code()` がそのまま機能し、検査ロジックのフォークが発生しない。
+
+**行番号を保存する制約**を課した。findings は走査テキストから行番号を算出するため、正規化で行が詰まると読者が開くファイルに存在しない位置を報告してしまう。破棄・書き換えのすべてで改行数を維持している。既知の制限として終了タグが複数行に跨らないことを仮定している。
+
 ## Acceptance
 
-- [ ] HTML 文書がリンク切れ・存在しないリポジトリパスの検査対象に入る。
-- [ ] `02_Architecture/design/*.dc.html` を含む既存HTMLが検査を通る、または違反が起票される。
-- [ ] `AGENTS.md` §3 の「Markdown を正本として残す」制約を、解除できるかどうか判断して記録する。
+- [x] HTML 文書がリンク切れの検査対象に入る（repo-path検査は上記スコープ判断により対象外）。
+- [x] `02_Architecture/design/*.dc.html` を含む既存HTML5件が検査を通る（誤検知ゼロを実リポジトリで確認）。
+- [x] `AGENTS.md` §3 の制約を実態へ更新した。`02_Architecture` に適用される文書契約検査はリンク検査だけであり、それがHTMLを覆ったため**検査被覆の観点での置換制約は解消**した。残る制約は被参照数（パス変更で参照側が壊れる）であり、これは docs_check とは独立した別の理由である。
 
 ## Validation
 
-- `python 01_Plans/docs_check.py --root .`
-- HTML 側に意図的な壊れたリンクを入れた fixture で、検査が検出することを確認する。
+- `python3 -m unittest discover -s 01_Plans/tests -t 01_Plans/tests`: 86 tests OK（既存81＋新規5）。新規は HTML でのリンク切れ検出、実在リンクの受理、`<code>`/`<script>`/外部URL/アンカーの無視、行番号保存、アプリHTML除外。
+- 実リポジトリに対する `docs_contract_checks.py --root .`: `ok: checked 471 tracked Markdown files`、走査対象HTML5件で findings ゼロ。
