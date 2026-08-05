@@ -86,11 +86,3 @@
 - Related: `01_Plans/issues/issue-EXT-CONN-01-readonly-mcp-server.md`（Accepted に伴い Open）, `issue-EXT-CONN-02-webhook-proposal-ingest.md`, `issue-EXT-CONN-03-critique-constraint-export.md`, `issue-EXT-CONN-04-evidence-trail-landing-view.md`（段階ゲートにより Draft 維持）
 
 ---
-
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] 必須ヘッダ（Status/Date/Deciders/Scope）を記載した。
-- [x] 必須章（Context/Decision/Consequences/Traceability）を記載した。
-- [x] Decision に採用理由と非目標がある。
-- [x] Traceability に関連文書を1件以上記載した。
-- [x] 実装進捗は ADR ではなく Issue で管理する前提を維持した。

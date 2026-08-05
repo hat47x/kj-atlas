@@ -46,11 +46,3 @@
   - この所見は3体の独立検証者のうち2体がセッション接続エラーで失敗した調査から得られたが、該当コード（`IslandView.tsx:561-572`）と比較対象パターン（`CanvasShell.tsx`の`setPointerCapture`関連4箇所）はorigin/mainのソースを直接読んで確認済み。
 
 ---
-
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] `Source Issue` が運用状態と整合している。
-- [x] `Related ADR/Spec` が最低1件ある。
-- [x] 受入条件に「安全」「互換」「検証」が含まれる。
-- [x] `Validation plan` に具体コマンドがある。
-- [x] 非目標が明記されスコープ逸脱を防いでいる。

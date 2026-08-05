@@ -91,11 +91,3 @@
 | VR5 | Deferred backlog | Direction is retained, but activation waits for real users/cooperators and a safe public/share path; it is not implementation-mandatory now. | No social diffusion KPI requiring real external participants is made mandatory before the milestone exists. |
 
 This baseline keeps `ADR-0039` governance right-sizing intact: Stream H may refine planning issue memos, but must not edit implementation files or force VR4/VR5 Open while activation is deferred.
-
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] 必須ヘッダ（Status/Date/Deciders/Scope）を記載した。
-- [x] 必須章（Context/Decision/Consequences/Traceability）を記載した。
-- [x] Decision に採用理由と非目標がある。
-- [x] Traceability に関連文書を1件以上記載した。
-- [x] 実装進捗は ADR ではなく Issue で管理する前提を維持した。

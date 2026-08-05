@@ -65,14 +65,6 @@
 3. 対象外編集
 4. 4回目修復（>3 retries）
 
-## Authoring Checklist（人間/生成AI 共通）
-
-- [ ] `Source Issue` が運用状態と整合している（未運用時は `N/A`、運用時はURL）。
-- [ ] `Related ADR/Spec` が最低1件ある。
-- [ ] 受入条件に「安全」「互換」「検証」が含まれる。
-- [ ] `Validation plan` に具体コマンドがある。
-- [ ] 非目標が明記されスコープ逸脱を防いでいる。
-
 ## 2026-04-26 Stream J strict serial run（1ファイル1ブランチ）
 
 ### Phase 1: Read（開始時同期）
