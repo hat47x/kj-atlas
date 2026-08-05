@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>外部エージェント協調: 信頼境界とライフサイクル — kj-atlas</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #0f172a;
+    --muted: #475569;
+    --line: #cbd5e1;
+    --panel: #f8fafc;
+    --accent: #0f766e;
+    --untrusted: #92400e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1120;
+      --fg: #e2e8f0;
+      --muted: #94a3b8;
+      --line: #334155;
+      --panel: #131c2e;
+      --accent: #2dd4bf;
+      --untrusted: #fbbf24;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 20px 64px;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", Meiryo, sans-serif;
+    font-size: 14px;
+    line-height: 1.75;
+    max-width: 980px;
+    margin-inline: auto;
+  }
+  h1 { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
+  h2 { font-size: 15px; font-weight: 800; margin: 32px 0 8px; padding-top: 16px; border-top: 1px solid var(--line); }
+  h3 { font-size: 13px; font-weight: 700; margin: 20px 0 6px; color: var(--muted); }
+  p, li { margin: 6px 0; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; }
+  .meta { color: var(--muted); font-size: 12px; margin: 0 0 20px; }
+  .note { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; padding: 10px 14px; margin: 14px 0; }
+  .diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 14px 0; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--panel); font-weight: 700; }
+  ul { padding-left: 22px; }
+</style>
+</head>
+<body>
+
+<h1>外部エージェント協調: 信頼境界とライフサイクル</h1>
+<p class="meta">
+  区分: 設計ビュー・非正本 / 更新: 2026-08-06<br>
+  正本は <code>02_Architecture/external_agent_collaboration_spec.md</code>。本書はその図解ビューであり、内容が食い違う場合は正本を優先する。
+</p>
+
+<div class="note">
+  この仕様が扱うのは <strong>非信頼の外部エージェントへ「思考」を委任し、出力を提案としてのみ持ち帰る</strong>経路である。
+  外部エージェントの出力は常に<strong>データ</strong>として扱い、<strong>指示</strong>として扱わない。
+</div>
+
+<h2>1. アクターと信頼境界（§2）</h2>
+
+<div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+  participant K as kj-atlas（自己ホスト・信頼）
+  participant H as 利用者（人間・信頼・操作主体）
+  participant A as 外部エージェント（非信頼）
+
+  Note over K,H: 境界A: 依頼パッケージ<br/>共有・書き出し境界
+  K->>H: AgentTaskPackage v1（書き出し）
+  H->>A: タスクシート投函（貼付・添付）
+
+  rect rgba(146,64,0,0.08)
+    Note over A: 思考の委任先<br/>出力はデータ、指示ではない
+    A-->>H: 応答（自由形式の思考結果）
+  end
+
+  Note over H,K: 境界B: 応答 / import信頼境界
+  H->>K: AgentResponse v1（取り込み）
+  K->>K: 検証・サニタイズ・提案化（未レビュー）
+</pre>
+</div>
+
+<p>境界の性質はエージェント基盤ごとに異なる。M365等の組織契約に依存する経路は、本仕様の管轄外（§7 で個別注意）。</p>
+
+<h2>2. AgentResponse のライフサイクル（§5）</h2>
+
+<div class="diagram">
+<pre class="mermaid">
+stateDiagram-v2
+  [*] --> drafted
+  drafted --> exported: 書き出し・監査記録
+  exported --> awaiting: 外部・不透明<br/>（kj-atlasは追跡しない）
+  awaiting --> imported: 取り込み
+  imported --> under_review: under-review
+
+  state under_review {
+    [*] --> per_proposal
+  }
+
+  under_review --> adopted: 提案ごとに採否
+  under_review --> rejected: 提案ごとに採否
+  under_review --> held: 提案ごとに採否
+
+  adopted --> applied: 適用（可逆）
+
+  note right of awaiting
+    kj-atlas が保持するのは
+    drafted/exported と
+    imported 以降のみ
+  end note
+
+  note right of applied
+    ⌘Z で復帰可能
+  end note
+</pre>
+</div>
+
+<p>すべての採否は既存の決定ログへ記録される（merge系 = <code>merge-decision-logs</code>、CE4系 = <code>context-audit</code> operation=proposal/apply）。</p>
+
+<h2>3. 出力境界の既定値（§3.4）</h2>
+
+<table>
+  <thead><tr><th>項目</th><th>既定</th></tr></thead>
+  <tbody>
+    <tr><td>未レビュー本文</td><td>既定除外（<code>includeUnreviewedDrafts</code> 明示時のみ含む）</td></tr>
+    <tr><td>出典参照（<code>Card.meta.seq/source</code>）</td><td>既定OFF</td></tr>
+    <tr><td>主体メタ（起票者・作成者・最終更新者）</td><td>別ゲートで同梱判断が固定されるまで含めない</td></tr>
+    <tr><td>SafeMode</td><td>状態表示付きで適用（redaction注記付き）</td></tr>
+  </tbody>
+</table>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  (function () {
+    var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (window.mermaid) {
+      window.mermaid.initialize({
+        startOnLoad: true,
+        theme: dark ? "dark" : "neutral",
+        securityLevel: "strict"
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>
