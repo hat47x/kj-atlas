@@ -137,15 +137,6 @@
 - Open準備判定: Audience/Goal/公開境界/Validation/Non-goal が充足しており、依存なしで起票可能。
 - 重複責務排除: 運用時エスカレーション手順は DOC-OPS-05-11（operations）に委譲し、本Issueでは扱わない。
 
-## Authoring Checklist（人間/生成AI 共通）
-
-- [ ] `Source Issue` が運用状態と整合している（未運用時は `N/A`、運用時はURL）。
-- [ ] `Related ADR/Spec` が最低1件ある。
-- [ ] 受入条件に「安全」「互換」「検証」が含まれる。
-- [ ] `Validation plan` に具体コマンドがある。
-- [ ] 非目標が明記されスコープ逸脱を防いでいる。
-
-
 ## 12) Stream G Set1 AC/DoD clarification（Phase 1〜5）
 
 ### Phase 1 Read

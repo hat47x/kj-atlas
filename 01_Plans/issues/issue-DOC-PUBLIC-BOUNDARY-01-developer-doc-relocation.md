@@ -157,14 +157,6 @@ DOC-PUBLIC-BOUNDARY-01 Open化。DecisionStatus=Fixed、scope定義済み。ADR-
 
 ---
 
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] `Source Issue` が運用状態と整合している。
-- [x] `Related ADR/Spec` が最低1件ある。
-- [x] 受入条件に「安全」「互換」「検証」が含まれる。
-- [x] `Validation plan` に具体コマンドがある。
-- [x] 非目標が明記されスコープ逸脱を防いでいる。
-
 ## Stream G documentation/public boundary pass (2026-06-13)
 
 ### Plan

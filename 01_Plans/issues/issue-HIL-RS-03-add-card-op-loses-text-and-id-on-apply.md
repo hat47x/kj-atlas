@@ -70,11 +70,3 @@
   - この所見は当初「型安全性の抜け穴（`as any`相当のキャストが不正なペイロードを通す）」という round-24 の別角度の調査から見つかったが、実際に `applyCardOp()` の `"add"` 分岐へ `id`/`text`/`x`/`y` の型チェックを追加したところ、`hil_rs_client_apply.integration.test.ts` の既存テスト（正規の生成元 `hil_rs_rediff_stub.ts` が作る `after: {x, y}` のみのペイロード）が失敗することが判明し、機械的な修正では済まないことが分かった。そのため当該修正は取り下げ、本issueとして正しい対応方針の判断を依頼する。
 
 ---
-
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] `Source Issue` が運用状態と整合している。
-- [x] `Related ADR/Spec` が最低1件ある。
-- [x] 受入条件に「安全」「互換」「検証」が含まれる。
-- [x] `Validation plan` に具体コマンドがある。
-- [x] 非目標が明記されスコープ逸脱を防いでいる。

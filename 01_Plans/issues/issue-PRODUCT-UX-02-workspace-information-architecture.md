@@ -134,15 +134,6 @@
 
 ---
 
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] `Source Issue` が運用状態と整合している。
-- [x] `Related ADR/Spec` が最低1件ある。
-- [x] 受入条件に「安全」「互換」「検証」が含まれる。
-- [x] `Validation plan` に具体コマンドがある。
-- [x] 非目標が明記されスコープ逸脱を防いでいる。
-
-
 ## Stream I 要件契約固定パック（2026-05-18）
 
 ### Phase 1: Read同期サマリ
@@ -250,4 +241,3 @@
   - Browser verification at `http://127.0.0.1:4173/?locale=ja` confirmed the right panel shows `現在の選択`, `カードを選択中`, `レビュー状態`, and the focus action after selecting a card.
 - Residual productization follow-up:
   - 画面全体のタブ設計やURL単位の作業モード永続化は、本Issueの段階実装範囲外。必要になった場合は `ADR-0031` のナビゲーション階層判断として別Issue化する。
-

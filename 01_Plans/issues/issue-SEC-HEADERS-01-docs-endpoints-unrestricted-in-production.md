@@ -46,11 +46,3 @@
   - この所見はround 27の「CORS/セキュリティヘッダー」調査から得られた。同調査で見つかった「X-Content-Type-Options/X-Frame-Options が全レスポンスに欠けている」問題は、既存テストとの矛盾がなく機械的に修正済み（同PRの `main.py` の `add_security_headers` ミドルウェア）。本issueは、それとは別の「/docs系エンドポイントの本番露出」という、製品判断が必要な部分のみを切り出したもの。
 
 ---
-
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] `Source Issue` が運用状態と整合している。
-- [x] `Related ADR/Spec` が最低1件ある。
-- [x] 受入条件に「安全」「互換」「検証」が含まれる。
-- [x] `Validation plan` に具体コマンドがある。
-- [x] 非目標が明記されスコープ逸脱を防いでいる。

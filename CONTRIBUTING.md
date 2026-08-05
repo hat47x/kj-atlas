@@ -136,28 +136,13 @@ IssueとADRは混在させず、次の基準で分離して運用します。
 
 ## ラベル運用ガイド / Labeling guidance（GitHub Issues運用開始後）
 
-### 標準ラベル
-
-- `bug`: 不具合・回帰
-- `enhancement`: 機能改善・機能追加
-- `good first issue`: 初回貢献に適した小さく明確な課題
-- `help wanted`: 担当者を広く募集したい課題
-- `security`: セキュリティ関連（詳細は `SECURITY.md` 優先）
-- `docs`: ドキュメント修正・追記
-
-### `good first issue` の付与目安
-
-- 変更範囲が限定的（目安: 1〜3ファイル）
-- 完了条件が箇条書きで明確
-- 前提知識が少なくても着手可能（参考リンクあり）
-- ローカルで再現・確認しやすい
+GitHub Issuesは現在運用していません（`ADR-0039`により、移行runbookと通知体制は実運用開始まで延期）。ラベル分類は運用開始時に定めます。
 
 ### メンテナのトリアージ方針（現在）
 
 1. DiscussionsまたはPRで受けた内容を、質問、Action、Decision、Securityへ一次分類する。
 2. Actionは既存memoとの重複を確認し、`01_Plans/issues/`へ起票する。
 3. DecisionはADR化トリガーを確認し、Securityは公開転記せず`SECURITY.md`へ誘導する。
-4. GitHub Issues運用開始後に限り、上記標準ラベルを適用する。
 
 
 ### E2Eドキュメント整合ルール

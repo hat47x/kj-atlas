@@ -72,11 +72,3 @@
   - ADR化が必要になる条件: `document.json` のSafeMode下での扱い（マスク付き別ファイル化、除外、生データのまま許容など）が既存の共有/エクスポート契約（schemas.md, THREAT_MODEL.md）に影響する場合は新規ADRでトレードオフを固定する。
 
 ---
-
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] `Source Issue` が運用状態と整合している。
-- [x] `Related ADR/Spec` が最低1件ある。
-- [x] 受入条件に「安全」「互換」「検証」が含まれる。
-- [x] `Validation plan` に具体コマンドがある。
-- [x] 非目標が明記されスコープ逸脱を防いでいる。

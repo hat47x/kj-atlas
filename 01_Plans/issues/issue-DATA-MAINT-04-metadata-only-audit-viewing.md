@@ -188,11 +188,3 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
   - SafeMode、share/export、public exposure、review attribution、merge decision log の意味が変わる。
 
 ---
-
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] `Source Issue` が運用状態と整合している。
-- [x] `Related ADR/Spec` が最低1件ある。
-- [x] 受入条件に「安全」「互換」「検証」が含まれる。
-- [x] `Validation plan` に具体コマンドがある。
-- [x] 非目標が明記されスコープ逸脱を防いでいる。
