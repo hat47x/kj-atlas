@@ -49,6 +49,7 @@ kj-atlasは現在、個人開発・プレリリース・実運用者不在の段
 | P0 | issue memoの Requirement meta I/F 儀礼（本表の最上段P0「Requirement I/F一律記入」の未完部分） | TEMPLATE.md からは除去済みだったが既存99件に残存。`PriorityClass` は必須 `Priority` と、`VerificationLevel` は必須 `Expected verification level` と重複（同一issue内に両方が併存）。`GoNoGoGate` はどのツールも参照しない | 重複3項目（`PriorityClass` / `VerificationLevel` / `GoNoGoGate`）を撤去。`RequirementID`（validatorが重複検出に使用）・`RequirementStatement`・`AcceptanceScenario`・`SecurityGateImpact` は実内容を持つため維持 |
 | P1 | 採択済み決定のissueへの書き写し（`DecisionStatus: Fixed` / `DecisionQueueRef`） | 122件中110件が「参照先ADRは既にAccepted」という記録のみで、何もブロックしていない。ADR側Statusとの二重管理 | Fixed/Resolved の110件を撤去。実際に未決の12件（`Pending`）は記録として維持。未決記録が着手を禁じないことを `AGENTS.md` §6 に明記 |
 | P2 | ADR-0039 適用を各issue冒頭へ複製 | 263件中66件が同一の定型文1行。リポジトリ全体の方針を各ファイルで再掲 | 定型文のみ撤去。issue固有の内容を伴う変種10件（`ADR-0040 Phase 2。加算的・後方互換のschema拡張を含む。` 等）は維持 |
+| P0 | ADRとissue memoの `Authoring Checklist` 儀礼 | 10 ADR + 42 issueに同一の5項目チェックボックスが verbatim で出現。全ファイルが100%チェック済みか100%未チェックで、混在した自己評価は皆無。`ADR-0039` の `ADR-0000` への amendment（本表P1「仮想多役割会議」と同時期の決定）が既にこの項目を「必須→推奨」へ降格していたが、`TEMPLATE.md` が降格後もチェックボックスを再生産し続けていた | 52ファイルから撤去。降格の事実そのものに言及するADR-0000/ADR-0039本文、および6件目の項目が実内容を持つ1issueは維持 |
 
 ## 維持するもの
 
