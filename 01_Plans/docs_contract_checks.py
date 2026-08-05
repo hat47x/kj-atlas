@@ -7,6 +7,7 @@ import json
 import re
 import subprocess
 from dataclasses import dataclass
+from html.parser import HTMLParser
 from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 
@@ -36,6 +37,18 @@ DOCUMENT_TYPE_RE = re.compile(r"export type (Document\w*)\s*=\s*\{\s*\r?\n\s*ver
 FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\r\n]*?(?P=ticks)")
 MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]\r\n]*\]\((?P<target><[^>\r\n]+>|[^)\r\n]+)\)")
+HTML_SUFFIXES = frozenset({".html", ".htm"})
+# HTML is scanned only where it is documentation. Unlike Markdown, HTML is also
+# a runtime artifact in this repository: 03_Implement/frontend/index.html carries
+# src="/src/main.tsx", which is root-relative to the dev server, not to the
+# repository, and would be a false positive for the repository-relative link
+# rule. Documentation roots keep the two apart.
+DOCUMENTATION_HTML_ROOTS = (
+    Path("00_Prompt"),
+    Path("01_Plans"),
+    Path("02_Architecture"),
+    Path("04_Documentation"),
+)
 HEADING_RE = re.compile(r"^#{1,6}\s+(?P<title>.+)$", re.MULTILINE)
 HISTORY_HEADING_RE = re.compile(
     r"(?:(?<![A-Za-z])stream(?![A-Za-z])|rerun|checkpoint|reaffirmation|execution\s+(?:log|record)|"
@@ -249,6 +262,122 @@ def _without_code(text: str) -> str:
     return INLINE_CODE_RE.sub("", _without_fenced_code(text))
 
 
+class _HtmlToMarkdownish(HTMLParser):
+    """Translate HTML into the Markdown shapes the contract checks already scan.
+
+    The checks below are written against Markdown syntax (MARKDOWN_LINK_RE,
+    BACKTICK_TOKEN_RE, and the fenced/inline code strippers). Rather than
+    forking each check for HTML, HTML is normalized into the equivalent
+    Markdown text once and fed through the existing checks unchanged:
+
+    - `<a href="X">label</a>` becomes `[label](X)`, so link checking works.
+    - `<code>Y</code>` becomes a backticked token, so `_without_code()` can
+      strip it for link checking while path checking can still see it.
+    - `<script>` / `<style>` bodies are dropped; they are never documentation.
+
+    Newlines are preserved for every construct that is dropped or rewritten,
+    because findings report a line number computed from the scanned text. A
+    normalizer that collapsed lines would report positions that do not exist
+    in the file the reader opens.
+
+    Known limitation: end tags are assumed not to span lines (`</a>` etc.),
+    which holds for generated and hand-written HTML in this repository.
+    """
+
+    _DROP_BODY_TAGS = frozenset({"script", "style"})
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._parts: list[str] = []
+        self._drop_depth = 0
+        self._anchor_href: str | None = None
+        self._anchor_label: list[str] | None = None
+        self._code_depth = 0
+
+    # -- emission helpers ------------------------------------------------
+    def _emit(self, text: str) -> None:
+        if self._anchor_label is not None:
+            self._anchor_label.append(text)
+        else:
+            self._parts.append(text)
+
+    def _emit_newlines_only(self, raw: str) -> None:
+        # Always lands in the top-level buffer: line structure is a property of
+        # the file, not of the anchor label being accumulated.
+        self._parts.append("\n" * raw.count("\n"))
+
+    # -- HTMLParser hooks ------------------------------------------------
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._emit_newlines_only(self.get_starttag_text() or "")
+        if tag in self._DROP_BODY_TAGS:
+            self._drop_depth += 1
+            return
+        if self._drop_depth:
+            return
+        if tag == "a":
+            href = next((value for name, value in attrs if name == "href"), None)
+            self._anchor_href = href
+            self._anchor_label = []
+            return
+        if tag == "code":
+            self._code_depth += 1
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._emit_newlines_only(self.get_starttag_text() or "")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in self._DROP_BODY_TAGS:
+            self._drop_depth = max(0, self._drop_depth - 1)
+            return
+        if self._drop_depth:
+            return
+        if tag == "a" and self._anchor_label is not None:
+            label = "".join(self._anchor_label)
+            href = self._anchor_href
+            self._anchor_label = None
+            self._anchor_href = None
+            self._parts.append(f"[{label}]({href})" if href is not None else label)
+            return
+        if tag == "code" and self._code_depth:
+            self._code_depth -= 1
+
+    def handle_data(self, data: str) -> None:
+        if self._drop_depth:
+            self._emit_newlines_only(data)
+            return
+        self._emit(f"`{data}`" if self._code_depth else data)
+
+    def handle_comment(self, data: str) -> None:
+        self._emit_newlines_only(data)
+
+    def result(self) -> str:
+        # An unclosed anchor still contributes its label text.
+        if self._anchor_label is not None:
+            self._parts.append("".join(self._anchor_label))
+            self._anchor_label = None
+        return "".join(self._parts)
+
+
+def html_to_markdownish(raw: str) -> str:
+    """Return `raw` HTML rewritten into the Markdown shapes the checks scan."""
+    parser = _HtmlToMarkdownish()
+    parser.feed(raw)
+    parser.close()
+    return parser.result()
+
+
+def contract_source_text(root: Path, relative_path: Path) -> str:
+    """Return the text a contract check should scan for `relative_path`.
+
+    Markdown is returned as-is; documentation HTML is normalized first. Each
+    check keeps applying its own filter on top (for example `_without_code()`).
+    """
+    raw = (root / relative_path).read_text(encoding="utf-8")
+    if relative_path.suffix.lower() in HTML_SUFFIXES:
+        return html_to_markdownish(raw)
+    return raw
+
+
 def _link_destination(raw_target: str) -> str:
     target = raw_target.strip()
     if target.startswith("<"):
@@ -272,7 +401,7 @@ def check_relative_links(root: Path, markdown_paths: list[Path]) -> list[DocsChe
         source = supplied_path if supplied_path.is_absolute() else repository_root / supplied_path
         source = source.resolve()
         source_label = source.relative_to(repository_root).as_posix()
-        text = _without_code(source.read_text(encoding="utf-8"))
+        text = _without_code(contract_source_text(repository_root, Path(source_label)))
 
         for match in MARKDOWN_LINK_RE.finditer(text):
             destination = _link_destination(match.group("target"))
@@ -1145,6 +1274,28 @@ def tracked_markdown_paths(root: Path) -> list[Path]:
     return [path for path in paths if (root / path).is_file()]
 
 
+def tracked_documentation_html_paths(root: Path) -> list[Path]:
+    """Return tracked HTML paths under the documentation roots.
+
+    HTML design views live beside their Markdown source (see AGENTS.md section 3
+    "文書の形式"). They are scanned so that a document does not escape link
+    validation by being written as HTML. Application and build HTML is excluded
+    on purpose -- see DOCUMENTATION_HTML_ROOTS.
+    """
+    result = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "-z", "--", "*.html", "*.htm"],
+        check=True,
+        capture_output=True,
+    )
+    paths = [Path(raw.decode("utf-8")) for raw in result.stdout.split(b"\0") if raw]
+    return [
+        path
+        for path in paths
+        if (root / path).is_file()
+        and any(path == doc_root or doc_root in path.parents for doc_root in DOCUMENTATION_HTML_ROOTS)
+    ]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate tracked Markdown contracts.")
     parser.add_argument(
@@ -1156,7 +1307,7 @@ def main() -> int:
     args = parser.parse_args()
     root = args.root.resolve()
     markdown_paths = tracked_markdown_paths(root)
-    findings = check_relative_links(root, markdown_paths)
+    findings = check_relative_links(root, markdown_paths + tracked_documentation_html_paths(root))
     findings.extend(check_adr_id_uniqueness(root, markdown_paths))
     findings.extend(check_adr_traceability_paths(root, markdown_paths))
     findings.extend(check_ci_job_timeouts(root))

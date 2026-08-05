@@ -25,6 +25,7 @@ from docs_contract_checks import (
     check_repository_path_commands,
     check_runtime_parameter_key_commands,
     check_safety_routes,
+    tracked_documentation_html_paths as contract_tracked_documentation_html_paths,
     tracked_markdown_paths as contract_tracked_markdown_paths,
 )
 from issues.validate_active_issue_memos import discover_active_rows, validate
@@ -91,7 +92,10 @@ def run_docs_check(
         )
 
     markdown_paths = contract_tracked_markdown_paths(repository_root)
-    errors.extend(finding.render() for finding in check_relative_links(repository_root, markdown_paths))
+    # Documentation HTML is link-checked alongside Markdown so that a document
+    # cannot escape validation by being authored as an HTML view (DX-DOC-07).
+    link_paths = markdown_paths + contract_tracked_documentation_html_paths(repository_root)
+    errors.extend(finding.render() for finding in check_relative_links(repository_root, link_paths))
     errors.extend(finding.render() for finding in check_adr_id_uniqueness(repository_root, markdown_paths))
     errors.extend(finding.render() for finding in check_adr_traceability_paths(repository_root, markdown_paths))
     errors.extend(finding.render() for finding in check_ci_job_timeouts(repository_root))
