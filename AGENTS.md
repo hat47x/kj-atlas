@@ -59,6 +59,16 @@
 
 人間向け入口は `README.md`、一般公開文書の入口は `04_Documentation/public_index.md` です。
 
+### 文書の形式
+
+- `01_Plans/`（ADR・issue）は Markdown を維持します。正規化・機械検証・差分レビューの対象であり、形式を揺らしません。
+- `02_Architecture/` の設計文書は、構造や状態遷移が図で伝わる場合にスタンドアロン HTML + Mermaid のビューを持てます（`02_Architecture/design/*.dc.html` が先例）。Mermaid は CDN 取得で構いません。
+- HTML ビューを追加する場合、**Markdown 側を正本として残します。** 理由は2点あり、どちらも実測に基づきます。
+  1. `docs_check.py` は `git ls-files -- *.md` で Markdown だけを走査します。`.md` を削除すると、その文書はリンク切れ・存在しないリポジトリパスの検証対象から外れます。
+  2. 主要な設計文書は他文書から多数参照されています（`schemas.md` は109ファイル、`architecture.md` は98ファイル、`value_traceability.md` は42ファイルから）。パスを変えると参照側が壊れます。
+- HTML ビューの冒頭には、正本の Markdown パスと「食い違う場合は正本を優先する」ことを明記します。
+- `docs_check.py` を HTML へ拡張するまでは、被参照の多い文書の Markdown を HTML へ置換しません。追跡は `01_Plans/issues/issue-DX-DOC-07-docs-check-html-coverage.md` です。
+
 ## 4. 作業手順
 
 1. **確認**: 対象、期待結果、非目標を短く定める。
