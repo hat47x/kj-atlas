@@ -580,3 +580,40 @@
 - 実行時に検証コピー環境の副作用（前回セッション由来と思われる`node_modules/.vite/deps`と`test-results`のroot所有ファイル）でPlaywright/Viteの起動が一度失敗したため、`wsl.exe -u root`でownershipをmbs0267へ復旧してから再実行した。production codeへの変更はない。
 - 変更はtest 1ファイル（`03_Implement/frontend/e2e/tenant_session_multitab.spec.ts`）のみで、production code、backend、他のfrontend testは無変更である。SafeMode既定ON、proposal-only、human-only `human_reviewed`、`KJ_ATLAS_LLM_PROVIDER=none`、fail-closed tenant check、既存5 testの契約はいずれも変更していない。
 - 本testが確認したのはAI mutation 7種（layout、merge、island summary、proposal audit、relation summary、narrative check／generation）のうちnarrative generationの1種だけである。残り6種の同条件での実ブラウザ確認、import／share／Admin／MCPを含む全consumerの越境matrix、実trusted auth edge、実外部PDP／binding／capability serviceへの到達性はいずれも本checkpointの範囲外であり、防御的multi-layer検証の1レイヤーを厚くしたに過ぎない。AC-13が要求する「複数タブ・同時切替・bfcache・遅延responseでの古い`tenantSessionVersion`を持つGET/PUT/export/import/Admin更新」の全consumer負matrixはまだ完了していないため、AC-8/10/12/13を含め、いずれのAcceptance Criteriaも新たにチェック済みへ変更しない。`saas-multitenant`のsettings起動拒否も維持する。
+
+### 訂正（2026-08-06）: 上記AI mutation testの証明範囲を過大に記述していた
+
+上記checkpointの記述「AI mutation側についても他5 testと同じ実ブラウザ・実`BroadcastChannel`条件下で成立することを確認した」は、実際にtestが証明する範囲より強い主張だった。多視点の敵対的レビューで指摘され、`App.tsx`を直接読んで確認した。
+
+`tenantSwitchUiState.status === "blocked"`になった時点で、`App`のrender関数は`<TenantSessionBlockedView>`を返して即時early-returnする（App.tsx:11346-11353）。これは`<Shell>`以下——`NarrativesPanel`を含む——を一切renderしない、完全に別のDOM木である。testの実行順序を読み直すと、`blockedHeading`の可視性は`releaseDelayedNarrative()`を呼ぶ**前**に既にassertされている。つまりtabAは、保留していたAI応答が解放されるより前に、cross-tabのBroadcastChannel通知だけで既にblocked viewへ遷移済みである。
+
+したがって本testが実際に証明しているのは、「narrative生成中でも汎用のtenant切替blocking機構（test 1と同型）は機能する」ことであり、「narrative生成に固有のtenant session generation guard（`TenantSessionGenerationGuard.run()`、2026-07-20チェックポイント）がAI mutationの遅延応答を実際に破棄した」ことではない。後者を破棄する仕組みが完全に欠落していても——たとえば`handleGenerateNarrativeFromReadingOrder`（App.tsx:7729）から`runTenantScopedApiRequest`のラップが丸ごと外れていても——本testは同じ理由（blocked viewがNarrativesPanel自体を never renderする）でpassし続ける。
+
+対比として、既存test 3・4は`window.__kjTenantBundleZipCancelled`／`__kjTenantPackReadFinished`という、DOM表示に依存しない機構固有の観測点を持ち、汎用blockingとは独立に自分の対象機構が実際に発火したことを証明する。今回追加したAI mutation testにはこの水準の計装が無い。
+
+本testの価値がゼロという意味ではない——「narrative生成中に別タブでtenant切替が起きても、生成中のtextが漏れて表示されることはない」という利用者が実際に観測しうる結果は正しく検証されている。ただし「AI mutation固有のgeneration guardコード経路を検証した」という当初の記述は取り下げ、上記の限定された主張に置き換える。AI mutation固有の経路を実ブラウザで検証するための計装追加（既存test 3/4と同水準）は、issue `issue-SAAS-TENANT-E2E-01-ai-mutation-guard-instrumentation-gap.md`として別途起票し、production codeへの計装追加が必要なため拙速な修正を避けた。
+
+### Implementation checkpoint 2026-08-06: 敵対的レビューで発見された契約自体の欠陥を修正
+
+Workflowによる多視点敵対的レビュー（backend契約・frontend契約・E2E testの3レンズ、各lens 1名のレビュー、finding毎3票の検証）を実施した。検証フェーズはAnthropicのセッション利用上限に達し大半の投票が失敗したため、レビューで見つかった11件のfindingを人間（本人）が直接コードを読んで再検証した。
+
+**backend `test_tenant_session_precondition.py`（4件確認・修正）**
+
+- `_endpoint_referenced_names`は`ast.Name`ノードを無差別に集めるだけで、実際に呼び出されたか（`ast.Call`）を区別しなかった。この関数を使う3つのself-check（`_installs_tenant_scoped_boundary`、no-tenant-resource DB非到達検査、session route自己解決検査）はいずれも、デバッグログの引数やdeadコードへの参照など「言及されただけで呼ばれていない」ケースを「guard済み」と誤認しうる。既存の2026-07-20契約（prefix限定版、160-162行目）は元から`ast.Call`でフィルタしており、新規追加分だけがこれより弱い基準を使っていた。`_endpoint_called_objects`へ置き換え、`ast.Call`かつ`func.id`が実際に呼ばれた名前だけを対象にした。
+- 同時に、呼ばれた名前を`route.endpoint.__globals__`で実オブジェクトへ解決し、対象オブジェクトとの同一性で比較する方式に変えた。これにより`from kj_atlas_api.db import get_db as _session_factory`のような別名importが、文字列一致の検査（旧`"get_db" not in ...`）を回避しつつ実際にはDBへ到達する、という迂回を防ぐ。`_authorize_request`／`_authorize_document_policy_management`／`resolve_trusted_saas_request_session`／`require_current_tenant_session_version`を実オブジェクトとしてimportし、比較対象をこれらの同一性チェックへ統一した。
+- `_registered_api_routes()`が`dict[(method, path)] = route`を無条件に上書きしていたため、同じ(method, path)へ2つのAPIRouteが登録された場合、後から登録された方だけが監査対象に残る。しかしStarlette/FastAPIの実dispatchは**最初に登録された方**を採用するため、guard済みの後発routeだけが検査され、実際のtrafficを受けるguard無しの先発routeが検査対象から漏れる恐れがあった。現状は31 (method, path)に重複が無く未発火だが、辞書構築時に重複を検知して`assert`で落ちるよう変更した。
+- いずれも修正内容を実際の攻撃シナリオ（`if False:`分岐でない、純粋な無呼び出し参照／別名importからの直接呼び出し）で再現し、旧ロジックが誤って"guarded"と判定し、新ロジックが正しく"unguarded"と判定することを確認した。`if False:`分岐のような到達可能性解析が必要なケースはAST単体では区別できず、意図的にスコープ外とした（完全なdataflow解析は既存のprefix限定契約にも無く、本契約もこの点で既存契約と同水準に留める）。
+
+**frontend `client.test.ts`（2件確認・修正、2件は記録のみ）**
+
+- `enumerateClientRequests()`の宣言検出regexが`export async function name(`だけに一致し、`export const name = async (...) => {...}`のようなarrow export形式を認識しなかった。認識されない宣言のfetch呼び出しは**直前に一致した宣言へ誤帰属**し、その宣言がheaderを送っていれば誤って"guarded"と判定される。現時点で`client.ts`はarrow exportを1つも使っていないため未発火だが、正規表現を両形式に一致するよう拡張した。
+- 「App経由のcall siteがtenant session wrapperを通る」ことを検査するtestが`App.tsx`だけを走査し、`client.ts`を直接importする他ファイル（`NarrativesPanel.tsx`等、既存で確認済み）にある将来のcall siteを一切検査していなかった。既存の`productionSourceModules()`を再利用し、`client.ts`自身を除く全productionファイルを走査するよう拡張した。App.tsx以外のファイルではローカル変数名が`verifiedTenantSession`と一致する保証が無いため、判定基準は「厳密な変数名一致」から「何らかの識別子で`tenantSessionContext`が渡されている」へ緩めたが、これは元の検査もローカル変数名の字句一致でしかなく実行時の検証ではなかった点と同水準であり、実質的な弱化ではない。
+- 見送った2件（`fetch`を変数へ代入して間接呼び出しする経路の検出漏れ、分岐を持つ関数の分岐単位でないheader付与判定）は、regexベースの現行アーキテクチャでは完全に閉じきれず、正しく閉じるには実質的なTS ASTパーサ導入が必要と判断し、無理に埋めなかった。両方とも現時点で悪用可能な実例は無い（`client.ts`に該当パターンは存在しない）。`issue-SAAS-TENANT-E2E-01-ai-mutation-guard-instrumentation-gap.md`へ記録した。
+
+**検証**
+
+- backend: `pytest tests/test_tenant_session_precondition.py` 12/12 pass、`pytest`全体647 passed・25 skipped、`ruff check .` all checks passed。
+- frontend: `~/kjnative-fe`（Node 20.20.2、`.nvmrc`指定バージョン。既定の`/usr/bin/node`は18.19.1で`globalThis.crypto`欠如により無関係な失敗が多発するため`nvm use 20`必須）で`npx tsc --noEmit` pass、`client.test.ts` 35/35 pass、frontend全体1,380/1,381 pass・230/232 file pass（失敗2 fileは既知の非本質的環境依存、`issue-DX-CI-TEST-01`）、`npm run build` pass。
+- `git diff --check` pass。修正はtest 2ファイル（backend 1・frontend 1）のみで、production codeは無変更。
+
+**教訓**: fail-closedな網羅性契約そのものの検証ロジック（AST走査・regex）に、契約が守ろうとしている脆弱性と同型のバグが入り込みうる。今回は既存の隣接コード（backendのprefix限定契約が`ast.Call`を使っていた）と比較する敵対的レビューによって発見された。同種の契約を今後追加する際は、既存の最も厳格な実装パターンとの一致を意図的に確認する。
