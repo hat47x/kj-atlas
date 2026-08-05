@@ -27,17 +27,17 @@
 | 可逆性を守る | 配置、分類、共有前確認をやり直せる | `00_Prompt/domain.md` | snapshot / diff / dry-run / readOnly 境界を維持する | `dryRun=true` で副作用が発生しない |
 | 安全に共有できる | export/share 時に未レビュー本文や意図しない情報が混ざらない | `THREAT_MODEL.md`, `02_Architecture/schemas.md` | SafeMode既定ON、share/export policy、`visibility` はラベル用途に限定 | SafeMode / readOnly / visibility の優先順位が崩れない |
 | Local-first で小さく始められる | LLMや外部サービスなしでも導入・検証できる | `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/deployment.md` | `KJ_ATLAS_LLM_PROVIDER=none` を既定にし、SQLite / PostgreSQL を切替可能にする | 既定構成で外部 LLM にデータを渡さない |
-| 生成AI経路を混同しない | AIなし、LLMProvider、外部エージェント成果物連携を選べるが、それぞれのデータ境界と人間レビュー境界を誤解しない | `ADR-0009`, `ADR-0028`, `ADR-0049`, `02_Architecture/external_agent_collaboration_spec.md` | Lane A（AI無効）/B（LLMProvider）/C（外部エージェント成果物連携）/D（将来の直接連携）を分け、proposal-only・SafeMode・監査・暗黙エスカレーション禁止を共通不変条件にする | 新規生成AIissueが対象Lane、データ境界、Go/No-Go、ADR要否を宣言している |
-| 企業・行政運用に接続できる | 組織の認証、認可、監査基盤へ安全に接続できる | `02_Architecture/enterprise_architecture.md` | AuthContext、AccessControlAdapter、audit transport をアプリ本体から分離する | アプリ本体に role/group 判定ロジックを持ち込まない |
+| 生成AI経路を混同しない | AIなし、LLMProvider、外部エージェント成果物連携を選べるが、それぞれのデータ境界と人間レビュー境界を誤解しない | `ADR-0009`, `ADR-0028`, `ADR-0049`, `02_Architecture/design/external_agent_collaboration_spec.html` | Lane A（AI無効）/B（LLMProvider）/C（外部エージェント成果物連携）/D（将来の直接連携）を分け、proposal-only・SafeMode・監査・暗黙エスカレーション禁止を共通不変条件にする | 新規生成AIissueが対象Lane、データ境界、Go/No-Go、ADR要否を宣言している |
+| 企業・行政運用に接続できる | 組織の認証、認可、監査基盤へ安全に接続できる | `02_Architecture/design/enterprise_architecture.html` | AuthContext、AccessControlAdapter、audit transport をアプリ本体から分離する | アプリ本体に role/group 判定ロジックを持ち込まない |
 | 環境変数の混乱を防ぐ | 利用者が設定すべきキーを迷わない | `02_Architecture/runtime_parameter_registry.md` | 公開設定キーは例外なく `KJ_ATLAS_*` に統一する | 04文書、Compose、runbook が正本と同期している |
-| データ運用境界を誤解させない | MVPで保守できるデータと将来契約を区別できる | `02_Architecture/data_model_operations_overview.md`, `ADR-0033` | 物理ER、論理ER、CRUD表、ステークホルダー別保守責任を分けて示す | 型の存在を標準CRUD対応と誤読させない |
+| データ運用境界を誤解させない | MVPで保守できるデータと将来契約を区別できる | `02_Architecture/design/data_model_operations_overview.html`, `ADR-0033` | 物理ER、論理ER、CRUD表、ステークホルダー別保守責任を分けて示す | 型の存在を標準CRUD対応と誤読させない |
 | 定性情報の意味を損なわない | 本文だけですぐ記録でき、後から一中心・文脈・出典・認識上の位置づけを任意に整えられる | `00_Prompt/qualitative_card_quality_requirements.md`, `ADR-0001` P-08 | `Card.text` を正本とし、品質支援を保存後のproposal-onlyにする。少数意見・矛盾は保持する | 必須追加入力、品質採点、自動書換え、自動削除がなく、元本文へ戻れる |
-| ラウンド間で思考を深める | 問題提起から手順化までを反復・分岐し、中間成果と問いの変化を失わず再開できる | `00_Prompt/w_type_iterative_inquiry_requirements.md`, `ADR-0057`（Accepted）, `02_Architecture/inquiry_journey_model.md` | 可変 `DocumentV1` と独立探究・不変成果DAGを分離し、明示的引継ぎ、現場への問い、カード系譜を任意の高度機能として扱う | 通常利用非回帰、同段階反復、前段階分岐、自己完結bundle、provider none、SafeModeを検証する |
+| ラウンド間で思考を深める | 問題提起から手順化までを反復・分岐し、中間成果と問いの変化を失わず再開できる | `00_Prompt/w_type_iterative_inquiry_requirements.md`, `ADR-0057`（Accepted）, `02_Architecture/design/inquiry_journey_model.html` | 可変 `DocumentV1` と独立探究・不変成果DAGを分離し、明示的引継ぎ、現場への問い、カード系譜を任意の高度機能として扱う | 通常利用非回帰、同段階反復、前段階分岐、自己完結bundle、provider none、SafeModeを検証する |
 | 多数のまとまりを見つけ直しやすくする | 島や選択した情報集合に、表札と併記する任意の小さな視覚手掛かりを設定できる | `00_Prompt/representative_visual_cue_requirements.md`, `ADR-0060`（Proposed） | 標準KJ法の手描きシンボルを起点に、基本図形・利用者画像、絵文字・同梱素材、外部素材、生成画像を別経路で段階導入する。一次視覚資料と識別画像を分ける | 画像なしとの探索課題比較、原資料遡及、非自動採用、a11y、SafeMode、権利・来歴、非表示・取り消しを検証する |
 | カードメタデータを混同しない | 状態、出典、起票者、レビュー者を別々の意味として確認できる | `02_Architecture/schemas.md`, `02_Architecture/review_attribution.md`, `CARD-META-UI-01`, `DOMAIN-TRACE-01` | `Card.meta` 系は通し番号/出典と主体メタを分離し、起票者などの個人・組織識別はSidePanel/共有前確認/redaction境界を先に決める | 出典参照トグルと主体メタ同梱が別ゲートで、review attribution や所有者移管と混同されない |
 | 価値を裏切らない（不変条件の保護） | 機能が増えても保留/proposal-only/人手昇格/SafeModeが崩れない | `02_Architecture/value_traceability.md` §2.5, `ADR-0041` | 散在する非後退テストを CVI-1..7 として単一の砦へ索引化する | CVI 横断テストが赤になる変更を検知できる |
 | 思考を雑にしない（認知負荷の予算） | 機能が増えても初期の静けさと保留の容易さが保たれる | `00_Prompt/domain.md`, `ADR-0043`, `ADR-0030` | 複雑性予算（CB-1..4）で初期表示の純増と保留距離を抑える | UI追加issueで複雑性予算を申告し悪化時にゲート確認 |
-| 待たされて思考が途切れない（性能予算） | 大規模文書でも対話操作が即応し、重い処理は待機表示される | `02_Architecture/architecture.md`, `ADR-0046` | 性能予算（PB-1..5）で代表規模・worker化基準（100ms超）・劣化可視化を固定 | 代表規模fixtureの最小性能アサーション＋性能影響issueの予算申告 |
+| 待たされて思考が途切れない（性能予算） | 大規模文書でも対話操作が即応し、重い処理は待機表示される | `02_Architecture/design/architecture.html`, `ADR-0046` | 性能予算（PB-1..5）で代表規模・worker化基準（100ms超）・劣化可視化を固定 | 代表規模fixtureの最小性能アサーション＋性能影響issueの予算申告 |
 
 ---
 
@@ -124,7 +124,7 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 | 価値: 開始 | 迷わず最初の意味ある配置へ | `ADR-0032` V0/V1 | `PRODUCT-UX-01`(Done), `PRODUCT-VALUE-01` | 被覆 |
 | 価値: 外在化 | メモ・違和感をカード化 | `ADR-0032` V1 | `PRODUCT-VALUE-01`, `DOMAIN-EXPR-01` | 被覆 |
 | 価値: 定性情報の品質 | 意味・意図を保ち、一枚一中心、再文脈化・遡及可能なカードを低負担で作る | `qualitative_card_quality_requirements.md`, `ADR-0001` P-08 | `DOMAIN-CARD-QUALITY-01` | 被覆（自己確認、前後比較、原文復元を実装・E2E確認済み） |
-| 価値: 反復的探究 | 6ラウンドを経験と思考の往復として扱い、中間成果・引継ぎ・分岐を保持する | `w_type_iterative_inquiry_requirements.md`, `ADR-0057`, `inquiry_journey_model.md` | `DOMAIN-W-ITERATION-01`, `PERF-INQUIRY-01` | 被覆（現在文書からの開始、反復snapshot、ローカルファイル保存・再開、任意の2ラウンドの比較、過去成果からの非破壊分岐、代表容量、読込非ブロッキング化を検証済み。引継ぎはL0/未実装） |
+| 価値: 反復的探究 | 6ラウンドを経験と思考の往復として扱い、中間成果・引継ぎ・分岐を保持する | `w_type_iterative_inquiry_requirements.md`, `ADR-0057`, `02_Architecture/design/inquiry_journey_model.html` | `DOMAIN-W-ITERATION-01`, `PERF-INQUIRY-01` | 被覆（現在文書からの開始、反復snapshot、ローカルファイル保存・再開、任意の2ラウンドの比較、過去成果からの非破壊分岐、代表容量、読込非ブロッキング化を検証済み。引継ぎはL0/未実装） |
 | 価値: 構造化 | まとまり・関係・未整理の同時保持 | `ADR-0032` V2 | `PRODUCT-UX-02`(Done), `PRODUCT-VALUE-02` | 被覆 |
 | 価値: レビュー | AI候補の人間採否・proposal-only | `ADR-0032` V3 | `PRODUCT-VALUE-02`, `CE2`, `CE3` | 被覆 |
 | 価値: 成果物化と共有 | 確定/保留/根拠/未レビューを束ねた成果物 | `ADR-0032` V4 | `PRODUCT-UX-03`(Done), `PRODUCT-VALUE-03` | 被覆 |
@@ -140,7 +140,7 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 | ドメイン: 違和感→再提案 | Critique入力と再提案差分 | `domain.md`, `ADR-0001` P-04 | `DOMAIN-EXPR-03`（Phase 3） | 被覆 |
 | ドメイン: 根拠・主張・矛盾 | Evidence/ClaimType/Contradictionのレビュー | `ai_cognitive_externalization_requirements.md` | `DOMAIN-EXPR-04`（Phase 4） | 被覆 |
 | ドメイン: 出典・主体メタ | 通し番号/原データ遡及と、起票者/作成者などの主体メタを区別する | `schemas.md`, `review_attribution.md`, `ADR-0048` | `DOMAIN-TRACE-01`（通し番号・出典）, `CARD-META-UI-01`（起票者などのUI/保存/redaction境界） | 被覆（主体メタはDraft境界。実装時はADR要否を再確認） |
-| ドメイン: 可逆性 | 配置やり直し・履歴・差分 | `domain.md`（可逆性） | snapshot/diff（`ADR-0032`基盤）, `summary_history_ops`, HIL-RS, `CE3` | 被覆（MVPはsnapshot基盤。汎用undoは`architecture.md`§10非目標） |
+| ドメイン: 可逆性 | 配置やり直し・履歴・差分 | `domain.md`（可逆性） | snapshot/diff（`ADR-0032`基盤）, `summary_history_ops`, HIL-RS, `CE3` | 被覆（MVPはsnapshot基盤。汎用undoは`02_Architecture/design/architecture.html`§10非目標） |
 | ドメイン: 用語整合 | 00↔02語彙同期 | `domain.md` | `DOMAIN-ALIGN-01`(Done) | 被覆 |
 
 **判定（2026-06-02）**: 全観点が担当issue/ADRへ接続済み（未接続=0件）。プロダクト価値・UI/UX・ドメイン表現の要件は VR0–VR5 のフェーズへ落とし込み済みであり、新規起票すべき本物の穴は無い。実装順序は DOMAIN-EXPR は Phase 1→4、VR4/VR5 は実ユーザー/協力者参加まで延期（`ADR-0039`）。
@@ -234,8 +234,8 @@ UI/UX 品質を次元（UQ）で定義し、各次元の担保（既存テスト
 | Lane | 名前 | 主な正本 | 判断の要点 |
 |---|---|---|---|
 | A | 手動中核 / AI無効 | `ADR-0041`, 本書 CVI-6 | `KJ_ATLAS_LLM_PROVIDER=none` で開始、外在化、構造化、共有前確認の主要価値が成立することを守る。 |
-| B | LLMProvider 経路 | `ADR-0009`, `llm_provider_spec.md`, `llm_escalation_policy.md` | kj-atlas 内部の provider 抽象で生成補助を行う。opt-in、proposal-only、暗黙の外部provider遷移禁止を守る。 |
-| C | 外部エージェント成果物連携 | `ADR-0049`, `external_agent_collaboration_spec.md` | 人間が依頼パッケージを共有し、応答を import 境界で取り込む。kj-atlas は Tier 0/1 で外部エージェントを直接呼ばない。 |
+| B | LLMProvider 経路 | `ADR-0009`, `llm_provider_spec.md`, `02_Architecture/design/llm_escalation_policy.html` | kj-atlas 内部の provider 抽象で生成補助を行う。opt-in、proposal-only、暗黙の外部provider遷移禁止を守る。 |
+| C | 外部エージェント成果物連携 | `ADR-0049`, `02_Architecture/design/external_agent_collaboration_spec.html` | 人間が依頼パッケージを共有し、応答を import 境界で取り込む。kj-atlas は Tier 0/1 で外部エージェントを直接呼ばない。 |
 | D | 将来の直接API/Agent連携 | `ADR-0049` Tier 2 予約, AUTH-* 系 | 認証、到達性、tenant境界、監査、費用制御、失敗時動作を決める新ADRなしに実装しない。 |
 
 レーン横断で守る不変条件は次の通り。

@@ -3,9 +3,9 @@
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 > 現行契約の読み方は `02_Architecture/contract_reading_guide.md`、2026年5月のStream / freeze形成履歴は [Schema contract formation history](history/schema-contract-formation-2026-05.md) を参照する。
-> MVPで実際に運用サポートするデータ構造、埋め込み限定の構造、契約のみの構造は `02_Architecture/data_model_operations_overview.md` を参照する。
+> MVPで実際に運用サポートするデータ構造、埋め込み限定の構造、契約のみの構造は `02_Architecture/design/data_model_operations_overview.html` を参照する。
 > ADR-0033 で定義した Support/Maintenance/Contract Boundary（L1/L1.5/L2/L2.5/L3/L0）を正本とし、本書の型定義単体で運用保証を主張しない。
-> `ADR-0057` は、反復的探究を独立 `InquiryJourneyV1` + 不変 `RoundSnapshotV1` DAGとして扱う設計を採択した。共有用派生bundleは任意の `InquiryExportInfoV1` でSafeMode適用と全体／選択ラウンド範囲を記録し、ローカル保存bundleはこのmetadataを省略する。詳細は `02_Architecture/inquiry_journey_model.md` を参照する。実装・移行・CRUDが揃うまでは `L0: Planned` であり、現行 `DocumentV1` の型、version gate、保存契約へ履歴キーを追加しない。
+> `ADR-0057` は、反復的探究を独立 `InquiryJourneyV1` + 不変 `RoundSnapshotV1` DAGとして扱う設計を採択した。共有用派生bundleは任意の `InquiryExportInfoV1` でSafeMode適用と全体／選択ラウンド範囲を記録し、ローカル保存bundleはこのmetadataを省略する。詳細は `02_Architecture/design/inquiry_journey_model.html` を参照する。実装・移行・CRUDが揃うまでは `L0: Planned` であり、現行 `DocumentV1` の型、version gate、保存契約へ履歴キーを追加しない。
 本ドキュメントは、kj-atlas の **MVPで扱う永続データの最小スキーマ** を定義します。
 
 - YAGNI方針に従い、MVPで標準運用しない型は「運用サポート済み」と扱いません
@@ -395,7 +395,7 @@ export type Edge = {
 
 `DocumentV1`（`version: 1`）は、kj-atlas が唯一サポートする永続Document契約である（`ADR-0058`）。カード・エッジのMVPスナップショット保存に加え、島、文章化、根拠リンク、レビュー関連情報を含む現在の完全構造を、単一の型・単一のversion番号で表す。過去に存在した最小構造専用の別型、および`version: 2`を名乗る別契約は存在しない。
 
-`DocumentV1` に含まれる構造は、標準API/UIで個別CRUDできることを意味しない。標準の永続化単位は引き続き `Document` 全体であり、個別CRUDの有無は `02_Architecture/data_model_operations_overview.md` のCRUD表に従う。
+`DocumentV1` に含まれる構造は、標準API/UIで個別CRUDできることを意味しない。標準の永続化単位は引き続き `Document` 全体であり、個別CRUDの有無は `02_Architecture/design/data_model_operations_overview.html` のCRUD表に従う。
 
 ```ts
 export type CardClaimType = "fact" | "claim" | "hypothesis" | "unknown";
@@ -629,7 +629,7 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 運用ルール:
 - 下流（import/export/validator/worker）は `mockSchemaVersion` を参照して fixture 互換性を判定してよい。
 - 本番永続データには `mockSchemaVersion` を書き込まない（read-only検証メタ）。
-- `mockSchemaVersion` を更新する場合は `schemas.md` と `data_model_operations_overview.md` を同時更新する。
+- `mockSchemaVersion` を更新する場合は `schemas.md` と `02_Architecture/design/data_model_operations_overview.html` を同時更新する。
 
 ### 6.1 Document versioning / support level運用ルール（ADR-0058固定）
 
@@ -638,7 +638,7 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
   - **Partial**: `L2/L2.5` の埋め込み限定/契約限定フィールド（例: `evidenceLinks` / `reviewAttribution` / `critiqueInputs`）を含む。保存・往復は保証するが個別CRUDは保証しない。
 - 数値 `version: 1` 以外（`version` 欠損、文字列版、`version: 2` 以降を含む旧版・未知版）はすべてfail-closedで拒否する。旧版を`DocumentV1`へ読込時正規化する経路は存在しない（`ADR-0058`、`DATA-CONTRACT-RESET-01`）。
 - 非互換変更（必須キー追加、既存キー意味変更、削除）は、新たな次version（`version: 2`以降）を明示的に導入し、その移行判断・移行手順を別ADR/issueで先に定めない限り行わない。`version: 1` の意味を現行構造から変更しない。
-- 次version導入前に実装が先行することを禁止し、契約文書（`schemas.md` / `data_model_operations_overview.md` / 該当issue AC）を先に同期する。
+- 次version導入前に実装が先行することを禁止し、契約文書（`schemas.md` / `02_Architecture/design/data_model_operations_overview.html` / 該当issue AC）を先に同期する。
 
 ---
 
@@ -810,7 +810,7 @@ export type PublicPackManifest = {
 ### 8.7 トレーサビリティ（FB-RM-PUB-01）
 
 - 要求元: `01_Plans/adr/ADR-0007-future-backlog.md` の `FB-RM-PUB-01`（schema検証と既存データ互換）。
-- 上位整合: `02_Architecture/architecture.md` §11（visibility enum / default補完 / SafeMode優先）。
+- 上位整合: `02_Architecture/design/architecture.html` §11（visibility enum / default補完 / SafeMode優先）。
 - 本節（schemas.md）は、実装者向けの単一契約として default/fallback/strict validation/I/F境界を具体化する。
 
 
@@ -1313,7 +1313,7 @@ TRACE（arXiv:2606.13174）の知見「記憶への保存では選好違反の57
 
 1. 配布経路が2つある（手動レーン=タスクシート同梱、自動レーン=EXT-CONN-01 MCP サーバーの読み取りツール）。独立文書なら1つの正本形状を両経路で共有でき、ガードレール節専用形式だと MCP 経路で二重定義になる。
 2. 制約の語彙はタスクパッケージと独立に進化しうる（版管理の分離）。
-3. `external_agent_collaboration_spec.md` §3.3 のタスクシートには「制約」節として同一 JSON を埋め込む（同 spec 参照）。定義の重複を作らない。
+3. `02_Architecture/design/external_agent_collaboration_spec.html` §3.3 のタスクシートには「制約」節として同一 JSON を埋め込む（同 spec 参照）。定義の重複を作らない。
 
 **内部設計の外部化**: 本契約は HIL-RS の内部 critique 収集（`buildHilRsCritiqueInputs`: card/island の `critiqueTags`＋自由記述 → `CritiqueInput.constraintHints`）と同じ源泉・同じ5種タグ語彙（§18.3）を用いる。新しい語彙・新しいAI権限を導入しない（語彙重複禁止の既存規約に従う）。
 
@@ -1412,7 +1412,7 @@ ADR-0054「後段が前段の安全原則を弱めることはない」に従い
 
 ### 18.7 配布（輸送を新設しない）
 
-- **手動レーン**: `external_agent_collaboration_spec.md` §3.3 のタスクシートに任意節「制約」として同梱（同 spec §3.3a 参照）。`constraintExportOptIn` が ON の文書でのみ生成される。
+- **手動レーン**: `02_Architecture/design/external_agent_collaboration_spec.html` §3.3 のタスクシートに任意節「制約」として同梱（同 spec §3.3a 参照）。`constraintExportOptIn` が ON の文書でのみ生成される。
 - **自動レーン**: EXT-CONN-01 の MCP サーバー（`03_Implement/mcp/`）に読み取り専用ツール `get_agent_constraints` を追加する。既存 `get_context_projection` と同じサーバー・同じ投影コア共有パターン（`03_Implement/frontend/src/export/agent_constraints_export.ts` を monorepo import）であり、**新しい輸送・新しいサービスは作らない**（issue の「EXT-CONN-01 の投影に合流」の充足形）。`constraintExportOptIn` が OFF の文書に対してはエラー応答（契約 payload を返さない）。
 - **用語の区別**: `ContextProjectionConstraint`（context-projection.v1 の**取得範囲**セレクタ: reviewed-only/evidence/contradiction/summary）と本契約の **constraint（訂正制約）** は別概念。取得範囲セレクタへ `"constraints"` 値を追加する案は、この語衝突を避けるため採らず、独立ツールとした。
 
@@ -1428,7 +1428,7 @@ ADR-0054「後段が前段の安全原則を弱めることはない」に従い
 - ADR: `ADR-0054-external-connection-layer-staged-introduction.md`（段階3）, `ADR-0049-external-flat-rate-agent-collaboration.md`（安全境界の正本）, `ADR-0041-core-value-invariants-single-guard.md`（CVI-2 proposal-only）
 - Issue: `EXT-CONN-03-critique-constraint-export`
 - Research: `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`（追補A3: TRACE 定量根拠）
-- Spec: `02_Architecture/external_agent_collaboration_spec.md`（§3.3a 制約節の埋め込みプロファイル）
+- Spec: `02_Architecture/design/external_agent_collaboration_spec.html`（§3.3a 制約節の埋め込みプロファイル）
 - Frontend: `03_Implement/frontend/src/domain/types.ts`（CRITIQUE_TAGS / AgentProposalDecisionEntry）, `03_Implement/frontend/src/domain/hil_rs_payload.ts`（内部 critique 収集の前例）, `03_Implement/frontend/src/export/context_bundle_projection.ts`（外部読み取り面の安全境界前例）
 
 ## 19. DOMAIN-VISUAL-CUE-01 契約先行固定: Island.representativeCue（代表視覚手掛かり）（2026-07-29）

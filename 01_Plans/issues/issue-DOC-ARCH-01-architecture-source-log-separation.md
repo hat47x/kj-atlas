@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `00_Prompt/`, `02_Architecture/`, `AGENTS.md`
 - Related Backlog: `N/A`
-- Related ADR/Spec: `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `02_Architecture/architecture.md`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
+- Related ADR/Spec: `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `02_Architecture/design/architecture.html`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
 - Dependencies: N/A
 - Expected verification level: `docs-check`
 
@@ -27,7 +27,7 @@
 ## 2) 背景 / Context
 
 - `domain.md` は概念の憲法として扱われる。
-- `architecture.md` / `schemas.md` / `api.md` は実装者が参照する設計正本である。
+- `02_Architecture/design/architecture.html` / `schemas.md` / `api.md` は実装者が参照する設計正本である。
 - `AGENTS.md` は新規AIエージェントの入口であり、新しい主要文書を追加した場合は Project Map 更新が必要である。
 
 ## 3) 判断基準による優先度評価
@@ -40,7 +40,7 @@
 ## 4) 提案する解決策 / Proposed solution
 
 - `02_Architecture/value_traceability.md` を追加し、価値、設計要素、受入条件、検証観点を対応付ける。
-- `architecture.md` から value traceability へ導線を追加する。
+- `02_Architecture/design/architecture.html` から value traceability へ導線を追加する。
 - `AGENTS.md` の Project Map に新規文書を追加する。
 - `02_Architecture/contract_reading_guide.md` を追加し、現行契約と履歴ログの読み分けを明示する。
 - 後続タスクとして、`api.md` / `schemas.md` の正本本文と Stream 実行ログを段階的に分離する。
@@ -54,7 +54,7 @@ Non-goals:
 ## 5) 受入条件 / Acceptance criteria
 
 - [x] 価値から設計要素へ辿る文書が `02_Architecture` に追加される。
-- [x] `architecture.md` と `AGENTS.md` から新規文書へ辿れる。
+- [x] `02_Architecture/design/architecture.html` と `AGENTS.md` から新規文書へ辿れる。
 - [x] SafeMode / share/export / proposal-only / review attribution の価値対応が説明される。
 - [x] `api.md` / `schemas.md` の現行契約と Stream / freeze 履歴の読み分け導線がある。
 - [x] `api.md` / `schemas.md` の正本/ログ分離は後続タスクとして明記され、今回PRでは契約値を変更しない。
@@ -62,7 +62,7 @@ Non-goals:
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1: `02_Architecture/value_traceability.md` を追加する。
-- [x] T2: `architecture.md` に価値トレーサビリティ導線を追加する。
+- [x] T2: `02_Architecture/design/architecture.html` に価値トレーサビリティ導線を追加する。
 - [x] T3: `AGENTS.md` の Project Map を同期する。
 - [x] T4: `api.md` / `schemas.md` のログ分離方針を本メモに残す。
 - [x] T5: `02_Architecture/contract_reading_guide.md` を追加し、現行契約/履歴ログの読み分けを明示する。
@@ -79,7 +79,7 @@ Non-goals:
 
 ## 8) 代替案 / Alternatives considered
 
-- `architecture.md` に直接長い対応表を追加する:
+- `02_Architecture/design/architecture.html` に直接長い対応表を追加する:
   - 却下。最上位設計文書がさらに肥大化する。
 - すぐに `api.md` / `schemas.md` を分割する:
   - 保留。差分が大きくなるため、まず価値導線を作ってから段階的に分離する。
@@ -98,5 +98,5 @@ Non-goals:
 ## 11) Closeout
 
 - Completed by: PR #2131 `[codex] Align 00 and 02 value documentation`
-- Result: `value_traceability.md` と `contract_reading_guide.md` を追加し、`architecture.md` / `api.md` / `schemas.md` / `AGENTS.md` から導線を張った。
+- Result: `value_traceability.md` と `contract_reading_guide.md` を追加し、`02_Architecture/design/architecture.html` / `api.md` / `schemas.md` / `AGENTS.md` から導線を張った。
 - Validation: `git diff --check`, active issue memo validator, validator unit tests, Markdown relative link check, `rg` 導線確認。

@@ -48,7 +48,7 @@
 - validate: 未知種別は `type: "related"` へ正規化しつつ元値を保全するフィールド（または未知許容）で往復損失をなくす。
 - 描画（EdgeLayer）: 種別を線形＋終端記号で区別（因果=矢印、相互=両矢印、対立=負記号/破線、同値==記号）。色は既存トークンの意味再利用（ADR-0048 D1）。
 - 操作: 関係線の右クリック/選択メニューに種別を独立項目として提示（一手で到達）。ダブルクリック循環は補助。
-- 波及同期: RelationSummary.relationType・edge_aggregate・narrative_export の種別対応、i18n、`data_model_operations_overview.md`。
+- 波及同期: RelationSummary.relationType・edge_aggregate・narrative_export の種別対応、i18n、`02_Architecture/design/data_model_operations_overview.html`。
 
 ## 5) 受け入れ条件 / Acceptance criteria
 

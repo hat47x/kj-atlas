@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 from dataclasses import dataclass
@@ -59,10 +60,10 @@ CURRENT_ONLY_PATHS = (
     Path("01_Plans/project-progress-dashboard.md"),
     Path("01_Plans/issues/README.md"),
     Path("01_Plans/documentation_quality.md"),
-    Path("02_Architecture/architecture.md"),
+    Path("02_Architecture/design/architecture.html"),
     Path("02_Architecture/api.md"),
     Path("02_Architecture/schemas.md"),
-    Path("02_Architecture/data_model_operations_overview.md"),
+    Path("02_Architecture/design/data_model_operations_overview.html"),
     Path("03_Implement/frontend/docs/e2e_testing.md"),
 )
 DOCUMENTED_RESPONSE_MODEL_REQUIRED_TERMS = {
@@ -151,7 +152,7 @@ AGENT_SAFETY_REQUIRED_TERMS = (
 )
 AGENT_SAFETY_REQUIRED_ROUTES = (
     "THREAT_MODEL.md",
-    "02_Architecture/architecture.md",
+    "02_Architecture/design/architecture.html",
     "04_Documentation/public_index.md",
 )
 PUBLIC_SAFETY_ROUTES = {
@@ -273,6 +274,7 @@ class _HtmlToMarkdownish(HTMLParser):
     - `<a href="X">label</a>` becomes `[label](X)`, so link checking works.
     - `<code>Y</code>` becomes a backticked token, so `_without_code()` can
       strip it for link checking while path checking can still see it.
+    - `<h1>`..`<h6>` become `#`-prefixed headings, so `HEADING_RE` works.
     - `<script>` / `<style>` bodies are dropped; they are never documentation.
 
     Newlines are preserved for every construct that is dropped or rewritten,
@@ -285,6 +287,7 @@ class _HtmlToMarkdownish(HTMLParser):
     """
 
     _DROP_BODY_TAGS = frozenset({"script", "style"})
+    _HEADING_TAGS = {"h1": 1, "h2": 2, "h3": 3, "h4": 4, "h5": 5, "h6": 6}
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -306,6 +309,24 @@ class _HtmlToMarkdownish(HTMLParser):
         # the file, not of the anchor label being accumulated.
         self._parts.append("\n" * raw.count("\n"))
 
+    def _open_heading(self, level: int) -> None:
+        # HEADING_RE anchors on `^#`, so the marker has to reach line start.
+        # Indentation already emitted for this line is swapped for it, which
+        # keeps the newline count -- and reported line numbers -- unchanged.
+        while self._parts:
+            tail = self._parts[-1]
+            if not tail:
+                self._parts.pop()
+                continue
+            trimmed = tail.rstrip(" \t")
+            if trimmed == tail:
+                break
+            if trimmed:
+                self._parts[-1] = trimmed
+                break
+            self._parts.pop()
+        self._parts.append("#" * level + " ")
+
     # -- HTMLParser hooks ------------------------------------------------
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         self._emit_newlines_only(self.get_starttag_text() or "")
@@ -321,6 +342,9 @@ class _HtmlToMarkdownish(HTMLParser):
             return
         if tag == "code":
             self._code_depth += 1
+            return
+        if tag in self._HEADING_TAGS:
+            self._open_heading(self._HEADING_TAGS[tag])
 
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         self._emit_newlines_only(self.get_starttag_text() or "")
@@ -487,8 +511,7 @@ def check_current_history_headings(
     """Return DC-CUR-001 findings when execution-history headings enter current docs."""
     findings: list[DocsCheckFinding] = []
     for relative_path in markdown_paths:
-        source = root / relative_path
-        text = _without_code(source.read_text(encoding="utf-8"))
+        text = _without_code(contract_source_text(root, relative_path))
         for match in HEADING_RE.finditer(text):
             title = match.group("title").strip()
             if not HISTORY_HEADING_RE.search(title):
@@ -510,7 +533,7 @@ def check_document_contract_baseline(
     root: Path,
     schemas_path: Path = Path("02_Architecture/schemas.md"),
     api_path: Path = Path("02_Architecture/api.md"),
-    data_model_path: Path = Path("02_Architecture/data_model_operations_overview.md"),
+    data_model_path: Path = Path("02_Architecture/design/data_model_operations_overview.html"),
 ) -> list[DocsCheckFinding]:
     """Return DC-ARC-001 findings when the single-DocumentV1 baseline (ADR-0058) regresses.
 
@@ -574,7 +597,10 @@ def check_document_contract_baseline(
             )
         )
 
-    for label, path in (("api.md", api_path), ("data_model_operations_overview.md", data_model_path)):
+    for label, path in (
+        ("api.md", api_path),
+        ("data_model_operations_overview.html", data_model_path),
+    ):
         text = (root / path).read_text(encoding="utf-8")
         if "DocumentV2" in text:
             offset = text.find("DocumentV2")
@@ -737,7 +763,9 @@ def check_history_metadata(
         current_path = (source.parent / source_match.group("target")).resolve()
         if not current_path.exists():
             continue
-        backlink = relative_path.relative_to(current_path.parent.relative_to(root)).as_posix()
+        # relpath, not relative_to: the source document need not be an ancestor
+        # of its history directory (02_Architecture/design -> ../history).
+        backlink = os.path.relpath(root / relative_path, current_path.parent).replace(os.sep, "/")
         current_text = current_path.read_text(encoding="utf-8")
         if backlink not in current_text:
             findings.append(

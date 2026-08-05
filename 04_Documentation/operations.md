@@ -201,7 +201,7 @@ API status:
 - SafeModeの緩和、外部共有範囲の拡大、不可逆なデータ変更が必要である。
 - 変更後に安全な状態へ戻せる確信がない。
 
-組織が職務分離を必要とする場合は、[strict mode例外緩和仕様](../02_Architecture/strict_mode_exception_approval_flow.md)を組織用プロファイルとして適用します。
+組織が職務分離を必要とする場合は、[strict mode例外緩和仕様](../02_Architecture/design/strict_mode_exception_approval_flow.html)を組織用プロファイルとして適用します。
 
 ### 障害復旧の最小手順
 

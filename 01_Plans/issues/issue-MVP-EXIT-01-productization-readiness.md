@@ -7,7 +7,7 @@
 - Owner: Maintainer / Productization owner
 - Scope: `00_Prompt/`, `01_Plans/`, `02_Architecture/`, `03_Implement/`, `04_Documentation/`
 - Related Backlog: `MVP-EXIT-01`
-- Related ADR/Spec: `README.md`, `ROADMAP.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/issues/issue-RELEASE-DOC-01-release-artifact-contract-and-runbook.md`, `01_Plans/issues/issue-ENV-COMPOSE-01-runtime-setting-delivery-and-effective-verification.md`, `01_Plans/issues/issue-DEPLOY-NET-01-loopback-default-and-network-exposure-boundary.md`, `02_Architecture/architecture.md`, `04_Documentation/public_index.md`
+- Related ADR/Spec: `README.md`, `ROADMAP.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/issues/issue-RELEASE-DOC-01-release-artifact-contract-and-runbook.md`, `01_Plans/issues/issue-ENV-COMPOSE-01-runtime-setting-delivery-and-effective-verification.md`, `01_Plans/issues/issue-DEPLOY-NET-01-loopback-default-and-network-exposure-boundary.md`, `02_Architecture/design/architecture.html`, `04_Documentation/public_index.md`
 - Expected verification level: `integration`
 
 ## 目的

@@ -18,7 +18,7 @@ Current normative anchors:
 - [CE4 API/CLI/GUI equivalence and audit](../api.md#29-ce4-apicligui-同値性監査契約ce4-api-cli-audit)
 - [Auth and strict provisioning API](../api.md#9-auth-schema-01-api契約jit--strict-provisioning)
 - [Schema contracts](../schemas.md#12-ce1ce2ce4-型契約実装非依存)
-- [Architecture responsibility and trust boundaries](../architecture.md#7a-ce-0-責務信頼境界consensusworking-repositioning)
+- [Architecture responsibility and trust boundaries](../design/architecture.html#ce0-boundary)
 - [CE1 v1 reconciliation issue](../../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)
 
 この文書は形成履歴であり、現在のrequired/optional key、HTTP envelope、endpoint、status/error、認証、副作用、安全境界を上書きしない。以下の`fixed`、`freeze`、`Decision`、`read-only 正本`は当時の記録である。

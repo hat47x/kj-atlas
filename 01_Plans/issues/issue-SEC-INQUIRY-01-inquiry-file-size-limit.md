@@ -8,7 +8,7 @@
 - Owner: Codex / Maintainer
 - Scope: `03_Implement/frontend/src/domain/inquiry_bundle_io.ts`, `03_Implement/frontend/src/worker/inquiry_bundle_client.ts`, `03_Implement/frontend/src/ui/InquiryJourneyPrototypePanel.tsx`
 - Related Backlog: `DOMAIN-W-ITERATION-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `02_Architecture/inquiry_journey_model.md`, `01_Plans/issues/issue-PERF-INQUIRY-01-representative-inquiry-import-non-blocking.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `02_Architecture/design/inquiry_journey_model.html`, `01_Plans/issues/issue-PERF-INQUIRY-01-representative-inquiry-import-non-blocking.md`
 - Expected verification level: `e2e`
 
 ## 1) 課題

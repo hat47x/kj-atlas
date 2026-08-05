@@ -1,8 +1,9 @@
+from html.parser import HTMLParser
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[3]
-DATA_MODEL_OVERVIEW = ROOT / "02_Architecture/data_model_operations_overview.md"
+DATA_MODEL_OVERVIEW = ROOT / "02_Architecture/design/data_model_operations_overview.html"
 SCHEMAS = ROOT / "02_Architecture/schemas.md"
 API = ROOT / "02_Architecture/api.md"
 ADR_0033 = ROOT / "01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md"
@@ -15,11 +16,112 @@ DATA_MODEL_ISSUE = (
 SUPPORT_LEVELS = {"L1", "L1.5", "L2", "L2.5", "L3", "L0"}
 
 
+class _ProseExtractor(HTMLParser):
+    """Reduce documentation HTML to the Markdown-equivalent prose the checks scan.
+
+    `<code>` becomes a backticked token so token assertions read the same for
+    Markdown and HTML sources; `<script>` / `<style>` bodies are dropped.
+    """
+
+    _DROP_BODY_TAGS = frozenset({"script", "style"})
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._parts: list[str] = []
+        self._drop_depth = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self._DROP_BODY_TAGS:
+            self._drop_depth += 1
+        elif tag == "code" and not self._drop_depth:
+            self._parts.append("`")
+
+    def handle_endtag(self, tag):
+        if tag in self._DROP_BODY_TAGS:
+            self._drop_depth = max(0, self._drop_depth - 1)
+        elif tag == "code" and not self._drop_depth:
+            self._parts.append("`")
+
+    def handle_data(self, data):
+        if not self._drop_depth:
+            self._parts.append(data)
+
+    def result(self) -> str:
+        return "".join(self._parts)
+
+
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _prose(path: Path) -> str:
+    """Return `path` as Markdown-equivalent prose (HTML sources are normalized)."""
+    text = _read(path)
+    if path.suffix.lower() not in (".html", ".htm"):
+        return text
+    parser = _ProseExtractor()
+    parser.feed(text)
+    parser.close()
+    return parser.result()
+
+
+class _TableCollector(HTMLParser):
+    """Collect every HTML table as (header_cells, body_rows) of plain-text cells.
+
+    `<code>` content is re-wrapped in backticks so the row labels this module
+    asserts on read the same whether the source is Markdown or HTML.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.tables: list[tuple[list[str], list[list[str]]]] = []
+        self._header: list[str] = []
+        self._body: list[list[str]] = []
+        self._row: list[str] = []
+        self._cell: list[str] | None = None
+        self._is_header_cell = False
+        self._code_depth = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "table":
+            self._header, self._body = [], []
+        elif tag == "tr":
+            self._row = []
+        elif tag in ("td", "th"):
+            self._cell = []
+            self._is_header_cell = tag == "th"
+        elif tag == "code" and self._cell is not None:
+            self._code_depth += 1
+            self._cell.append("`")
+
+    def handle_endtag(self, tag):
+        if tag == "code" and self._cell is not None and self._code_depth:
+            self._code_depth -= 1
+            self._cell.append("`")
+        elif tag in ("td", "th") and self._cell is not None:
+            text = "".join(self._cell).strip()
+            if self._is_header_cell:
+                self._header.append(text)
+            else:
+                self._row.append(text)
+            self._cell = None
+        elif tag == "tr" and self._row:
+            self._body.append(self._row)
+            self._row = []
+        elif tag == "table":
+            self.tables.append((self._header, self._body))
+
+    def handle_data(self, data):
+        if self._cell is not None:
+            self._cell.append(data.replace("\n", " "))
+
+
 def _table_rows(text: str, required_header: str) -> list[list[str]]:
+    """Return the body rows of the table whose header joins to `required_header`.
+
+    Markdown tables are matched on their pipe-delimited header line; HTML tables
+    are matched on their `<th>` cells joined with the same separator.
+    """
     lines = text.splitlines()
     for index, line in enumerate(lines):
         if line.startswith("|") and required_header in line:
@@ -31,7 +133,15 @@ def _table_rows(text: str, required_header: str) -> list[list[str]]:
                 rows.append(cells)
             if rows:
                 return rows
-    raise AssertionError(f"missing markdown table: {required_header}")
+
+    collector = _TableCollector()
+    collector.feed(text)
+    collector.close()
+    for header, body in collector.tables:
+        if body and required_header in " | ".join(header):
+            return body
+
+    raise AssertionError(f"missing table: {required_header}")
 
 
 def _find_row(rows: list[list[str]], label: str) -> list[str]:
@@ -98,7 +208,7 @@ def test_document_v1_field_table_keeps_embedded_and_contract_boundaries() -> Non
 
 
 def test_data_model_contract_references_are_wired_across_design_docs() -> None:
-    overview = _read(DATA_MODEL_OVERVIEW)
+    overview = _prose(DATA_MODEL_OVERVIEW)
     schemas = _read(SCHEMAS)
     api = _read(API)
     adr = _read(ADR_0033)
@@ -109,7 +219,7 @@ def test_data_model_contract_references_are_wired_across_design_docs() -> None:
             assert support_level in text
 
     for text in (schemas, api):
-        assert "data_model_operations_overview.md" in text
+        assert "data_model_operations_overview.html" in text
 
     for token in (
         "個別CRUD",

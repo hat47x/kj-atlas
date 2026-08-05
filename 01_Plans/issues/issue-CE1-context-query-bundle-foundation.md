@@ -38,7 +38,7 @@ CE1 defines the minimum contract for turning a reviewed query preview into a det
 - Canonical references:
   - `02_Architecture/api.md`
   - `02_Architecture/schemas.md`
-  - `02_Architecture/architecture.md`
+  - `02_Architecture/design/architecture.html`
   - `03_Implement/backend/src/kj_atlas_api/routes/context.py`
   - `03_Implement/backend/tests/test_context_bundle_routes.py`
   - `03_Implement/frontend/src/domain/context/query_preview.ts`
@@ -1638,7 +1638,7 @@ handoffKeys:
 ## Stream D update（2026-05-04 / CE1 ContextQuery/ContextBundle I/F freeze）
 
 ### Phase 1 Read同期
-- Read Order 1〜13 のうち、CE1契約固定に必要な上流（`00_Prompt/*`, `ADR-0001`, `ADR-0028`, `02_Architecture/architecture.md`, `02_Architecture/schemas.md`, `ADR-0019`）を再確認。
+- Read Order 1〜13 のうち、CE1契約固定に必要な上流（`00_Prompt/*`, `ADR-0001`, `ADR-0028`, `02_Architecture/design/architecture.html`, `02_Architecture/schemas.md`, `ADR-0019`）を再確認。
 - Scope を docs-only / single-file（本Issueのみ）に再固定し、実装レイヤ（handler/UI/DB/worker）非編集を再確認。
 - 既存凍結語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）と Contract IDs（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）に衝突がないことを確認。
 
@@ -1939,7 +1939,7 @@ handoffKeys:
 ## Stream CE1 update（2026-05-06 / ContextQuery-ContextBundle Foundation contract-only）
 
 ### Phase 1 Read（latest mandatory read）
-- 本Issueを基準に、Read Order上流（`00_Prompt/*`、`ADR-0001`、`02_Architecture/architecture.md`、`02_Architecture/schemas.md`、`ADR-0028`、`ADR-0019`）を再読し、CE1の責務を **contract-only / docs-only / mock-first** に固定した。
+- 本Issueを基準に、Read Order上流（`00_Prompt/*`、`ADR-0001`、`02_Architecture/design/architecture.html`、`02_Architecture/schemas.md`、`ADR-0028`、`ADR-0019`）を再読し、CE1の責務を **contract-only / docs-only / mock-first** に固定した。
 - 編集許可が `issue-CE1-context-query-bundle-foundation.md` のみであることを再確認し、実装層（backend/frontend/worker/DB）を非対象として分離した。
 
 ### Phase 2 ADR（Context / Decision / Consequences）
@@ -2131,7 +2131,7 @@ handoffKeys:
 ## Stream C update（2026-05-07 / CE1インターフェース先行 mock-first）
 
 ### Phase 1) Read
-- Read Order上位（`system_prompt.md` / `domain.md` / `handoff.md` / `agent_handover.md` / `ai_cognitive_externalization_requirements.md` / `ADR-0001` / `architecture.md` / `schemas.md` / `ADR-0028`）を再確認。
+- Read Order上位（`system_prompt.md` / `domain.md` / `handoff.md` / `agent_handover.md` / `ai_cognitive_externalization_requirements.md` / `ADR-0001` / `02_Architecture/design/architecture.html` / `schemas.md` / `ADR-0028`）を再確認。
 - 本ストリームの編集許可を **本issueのみ** と再確認（backend/frontend/schema本体は非編集）。
 - CE0未完了時でも依存切断して進めるため、`ContextQueryV1` / `ContextBundleV1` / error semantics固定を優先対象として確定。
 

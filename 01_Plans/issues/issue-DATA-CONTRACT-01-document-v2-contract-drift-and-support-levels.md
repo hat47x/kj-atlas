@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `02_Architecture/schemas.md`, `02_Architecture/api.md`, `01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
 - Related Backlog: `DATA-CONTRACT-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/design/data_model_operations_overview.html`, `02_Architecture/schemas.md`, `02_Architecture/api.md`
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）
@@ -49,7 +49,7 @@
 ## 2) 背景 / Context
 
 - `ADR-0033` は、型が存在することと運用保守できることを分ける方針を採用した。
-- `data_model_operations_overview.md` はCRUD境界を示すが、型定義のドリフト検出そのものは別Issueで扱う必要がある。
+- `02_Architecture/design/data_model_operations_overview.html` はCRUD境界を示すが、型定義のドリフト検出そのものは別Issueで扱う必要がある。
 - SafeMode、share/export、review attribution は、型ドリフトが安全性ドリフトになりやすい領域である。
 
 ## 3) 判断基準による優先度評価
@@ -87,7 +87,7 @@
 - [x] T2 差分をサポートレベル別に分類し、削除/保留/実装同期の判断を記録する。
 - [x] T3 `PUT create-if-absent` をMVP Create契約として固定し、`POST /docs` の昇格要否を判定する。
 - [x] T4 型・バリデーション・APIテストを同期する。
-- [x] T5 `data_model_operations_overview.md` と `schemas.md` のサポート記述を更新する。
+- [x] T5 `02_Architecture/design/data_model_operations_overview.html` と `schemas.md` のサポート記述を更新する。
 
 進捗メモ:
 
@@ -151,7 +151,7 @@
 
 ## 13) Stream D fail-safe stop gates
 
-- [x] Stop gate A（後方互換）: `schemas.md` の version gate ルール（破壊的変更は version を上げる）が明記され、`data_model_operations_overview.md` と語彙一致している。
+- [x] Stop gate A（後方互換）: `schemas.md` の version gate ルール（破壊的変更は version を上げる）が明記され、`02_Architecture/design/data_model_operations_overview.html` と語彙一致している。
 - [x] Stop gate B（support level）: `L1/L1.5/L2/L2.5/L3/L0` の定義が契約文書と運用境界文書で一致している。
 - [x] Stop gate C（責務衝突）: Platform operator / Security officer / Support / Developer の責務分離が衝突なく記述されている。
 - 判定: **Proceed**（3つのStop gateは現行文書上で満たされる。実装依存は凍結契約で切断済み）。
@@ -159,7 +159,7 @@
 ## 14) Stream D → 下流引き渡しチェックリスト
 
 - [x] `schemas.md` の `DocumentV2` support level と version gate 定義を参照先として固定した。
-- [x] `data_model_operations_overview.md` の CRUD/運用責務表と語彙一致（L1/L1.5/L2/L2.5/L3/L0）を確認した。
+- [x] `02_Architecture/design/data_model_operations_overview.html` の CRUD/運用責務表と語彙一致（L1/L1.5/L2/L2.5/L3/L0）を確認した。
 - [x] 復旧runbook側（`DATA-MAINT-01`）で必須の契約整合チェック（`Document.version`、埋め込み往復保持、`merge_decision_logs`連携）を明記した。
 - [x] 非目標（個別CRUD実装、管理UI実装）を再確認し、実装Issueへ越境しないことを固定した。
 
@@ -170,7 +170,7 @@
 - 特に `critiqueInputs` / `reproposalDiffs` / `reviewAttribution` / `deterministicTieBreak` は、A1契約として往復保持が必要だが、運用上は個別編集対象外という境界を維持する必要がある。
 
 ### Decision
-- `DocumentV2` の support level を `L1/L1.5/L2/L2.5/L3/L0` で固定し、`schemas.md` と `data_model_operations_overview.md` で同一語彙を必須化する。
+- `DocumentV2` の support level を `L1/L1.5/L2/L2.5/L3/L0` で固定し、`schemas.md` と `02_Architecture/design/data_model_operations_overview.html` で同一語彙を必須化する。
 - `PUT /docs/{doc_id}` create-if-absent をMVPの唯一の標準Create契約として維持し、`POST /docs` は将来候補（L0）扱いを継続する。
 - 後方互換の判定は feature flag ではなく version gate を優先し、非互換変更は version 更新なしで導入しない。
 
@@ -183,7 +183,7 @@
 ## 16) Stream D phase sync（2026-05-20）
 
 ### Context
-- DocumentV2契約は `schemas.md` / `schemas_review_attribution.md` / `data_model_operations_overview.md` の解釈差でドリフトしやすい。
+- DocumentV2契約は `schemas.md` / `schemas_review_attribution.md` / `02_Architecture/design/data_model_operations_overview.html` の解釈差でドリフトしやすい。
 
 ### Decision
 - Critical判定ルール（Section: Stream D contract drift rule）をVerifyの一次ゲートとして固定する。
@@ -208,7 +208,7 @@
 
 ## 19) Stream D Phase execution log（2026-05-20）
 
-1. Read: `schemas.md` / `data_model_operations_overview.md` の契約語彙と support level を再確認。
+1. Read: `schemas.md` / `02_Architecture/design/data_model_operations_overview.html` の契約語彙と support level を再確認。
 2. Context/Decision/Consequences: DocumentV2契約ドリフト判定の C/D/C を再固定。
 3. CRUD境界固定: MVP標準Create契約を `PUT /docs/{doc_id}` create-if-absent に固定。
 4. ドリフト監査反映: version gate と support level語彙一致を一次ゲート化。
@@ -232,7 +232,7 @@
 - Document監査イベント節に `/docs/{doc_id}/context-audit` を追加し、`operation` / hash / dry-run / command / channel / schemaVersion の契約と 409/422 の失敗分類を明示する。
 
 ### Consequences
-- `api.md` が `docs.py` / backend tests / `data_model_operations_overview.md` の現行境界と一致し、実装済み契約を非MVPと誤読するリスクを下げる。
+- `api.md` が `docs.py` / backend tests / `02_Architecture/design/data_model_operations_overview.html` の現行境界と一致し、実装済み契約を非MVPと誤読するリスクを下げる。
 - `POST /docs` や個別CRUDを標準契約へ昇格する変更は、引き続き本IssueまたはADR経由で扱う。
 - 追加実装は行わず、契約文書とIssue記録の同期に限定する。
 

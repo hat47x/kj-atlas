@@ -165,7 +165,7 @@ KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST=<host-list>
 - 入力IR正本: `02_Architecture/llm_input_ir_spec.md`
 - 実行制約: `02_Architecture/llm_runtime_constraints.md`
 - 品質戦略: `02_Architecture/llm_quality_strategy.md`
-- エスカレーション方針: `02_Architecture/llm_escalation_policy.md`
+- エスカレーション方針: `02_Architecture/design/llm_escalation_policy.html`
 - 計画正本: `01_Plans/adr/ADR-0009-local-llm-integration.md`
 
 

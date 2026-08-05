@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: TBD（A=Productization Program Owner / R=Security Officer）
-- Scope: `01_Plans/`, `02_Architecture/enterprise_architecture.md`, `03_Implement/frontend/src/export/`, `04_Documentation/security.md`
+- Scope: `01_Plans/`, `02_Architecture/design/enterprise_architecture.html`, `03_Implement/frontend/src/export/`, `04_Documentation/security.md`
 - Related Backlog: `SOCIAL-DIFFUSION-03`
 - Related ADR/Spec: `01_Plans/adr/ADR-0038-social-diffusion-of-explainable-consensus.md`, `01_Plans/adr/ADR-0036-value-to-social-goal-realization-roadmap.md`, `ROADMAP.md`, `THREAT_MODEL.md`
 - Expected verification level: `docs-check`
@@ -56,7 +56,7 @@
 - [ ] T1 社会配布物の非欠落必須要素（保留/反対/未レビュー/根拠/SafeMode結果）を定義する。
 - [ ] T2 公開モードのSafeMode解除不可を標準として明記する。
 - [ ] T3 既存 `publish:static` 出力との整合を確認する。
-- [ ] T4 方式A/B境界の安全指針を `security.md` / `enterprise_architecture.md` と同期する。
+- [ ] T4 方式A/B境界の安全指針を `security.md` / `02_Architecture/design/enterprise_architecture.html` と同期する。
 
 ## 7) 検証計画 / Validation plan
 

@@ -5,9 +5,9 @@
 - Source Issue: N/A
 - Priority: P0
 - Owner: Security Officer + System Owner + Platform Operator
-- Scope: `04_Documentation/operations.md`, `04_Documentation/security.md`, `02_Architecture/enterprise_architecture.md`
+- Scope: `04_Documentation/operations.md`, `04_Documentation/security.md`, `02_Architecture/design/enterprise_architecture.html`
 - Related Backlog: N/A
-- Related ADR/Spec: `ADR-0001`, `ADR-0019`, `ADR-0020`, `02_Architecture/enterprise_architecture.md`, `THREAT_MODEL.md`
+- Related ADR/Spec: `ADR-0001`, `ADR-0019`, `ADR-0020`, `02_Architecture/design/enterprise_architecture.html`, `THREAT_MODEL.md`
 - Dependencies: N/A
 - Expected verification level: `docs-check`
 
@@ -20,7 +20,7 @@
 ## 2) 背景 / Context
 
 - `04_Documentation/operations.md` は strict mode 例外時に Security Officer + System Owner の2者承認と Platform Operator の記録責務を要求済み。
-- `02_Architecture/enterprise_architecture.md` は監査最小情報（PII非保存）と SafeMode/read-only 優先順位を固定済み。
+- `02_Architecture/design/enterprise_architecture.html` は監査最小情報（PII非保存）と SafeMode/read-only 優先順位を固定済み。
 - `THREAT_MODEL.md` はPII最小化と漏えい防止の既定を前提としており、運用例外でもこの前提を崩せない。
 
 ## 3) 判断基準による優先度評価
@@ -65,7 +65,7 @@
 - 実行コマンド:
   - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
-  - `rg -n "strict mode|例外|最小監査|SafeMode/read-only|PII" 04_Documentation/operations.md 04_Documentation/security.md 02_Architecture/enterprise_architecture.md`
+  - `rg -n "strict mode|例外|最小監査|SafeMode/read-only|PII" 04_Documentation/operations.md 04_Documentation/security.md 02_Architecture/design/enterprise_architecture.html`
 - 期待結果:
   - 参照契約（strict mode責任、監査最小化、SafeMode優先）と実行計画の整合が確認できる。
 - 未実施時の理由・代替検証:
@@ -86,7 +86,7 @@
 
 ## 10) Additional context
 
-- D1〜D4（承認順序/TTL、適用スコープ、代理承認、SLA）は `02_Architecture/strict_mode_exception_approval_flow.md` 6.8節で固定済み。
+- D1〜D4（承認順序/TTL、適用スコープ、代理承認、SLA）は `02_Architecture/design/strict_mode_exception_approval_flow.html` 6.8節で固定済み。
 - 本Issueの残作業は文書同期（operations/security/enterprise）と進捗同期（dashboard/decision-pack/README）に限定する。
 
 - 関連Issue/PR/議論ログ: N/A
@@ -122,7 +122,7 @@
 
 ## 12) 完了同期ログ（2026-03-08）
 
-- 同期対象（01/02/04）: `01_Plans/project-progress-dashboard.md` / `02_Architecture/enterprise_architecture.md` / `04_Documentation/operations.md` / `04_Documentation/security.md`。
+- 同期対象（01/02/04）: `01_Plans/project-progress-dashboard.md` / `02_Architecture/design/enterprise_architecture.html` / `04_Documentation/operations.md` / `04_Documentation/security.md`。
 - 固定値整合: D1〜D4（4h, tenant/2h, 代理承認なし, 48h+15m/60m）を全対象文書で再確認。
 - 停止条件整合: 未確定事項が1件でも残る場合は `StoppedForClarification` を維持する契約を再確認。
 - 検証: validator/unit test/`rg` により再現可能な形で確認。
@@ -137,7 +137,7 @@
 ### Plan
 
 - 目的: AUTH-OPS-03 の設計正本に CDC（Change Decision Contract）を明文化し、Plan→Execute→Verify→Proceed の運用規律を欠落なく適用できる状態にする。
-- 変更範囲: `02_Architecture/strict_mode_exception_approval_flow.md` のみ（実装変更なし）。
+- 変更範囲: `02_Architecture/design/strict_mode_exception_approval_flow.html` のみ（実装変更なし）。
 - 受入条件:
   - CDCの Context/Decision/Consequence 定義が明記されている。
   - CDC未確定時に `ApprovalPending` へ遷移禁止が明記されている。
@@ -145,13 +145,13 @@
 
 ### Execute
 
-- `strict_mode_exception_approval_flow.md` に「1.2 CDC（Change Decision Contract）明文化」節を追加。
+- `02_Architecture/design/strict_mode_exception_approval_flow.html` に「1.2 CDC（Change Decision Contract）明文化」節を追加。
 - CDC最小テンプレート（Context/Decision/Consequence/承認者/適用日/見直し日）を追加。
 - CDC未確定時は `DraftRequest` 維持、`ApprovalPending` 遷移禁止を追記。
 
 ### Verify
 
-- `rg -n "CDC|Change Decision Contract|ApprovalPending|StoppedForClarification|D1|D2|D3|D4" 02_Architecture/strict_mode_exception_approval_flow.md`
+- `rg -n "CDC|Change Decision Contract|ApprovalPending|StoppedForClarification|D1|D2|D3|D4" 02_Architecture/design/strict_mode_exception_approval_flow.html`
 - 期待: CDC節と停止条件・固定値の両方が同一文書内で確認できる。
 
 ### Proceed
@@ -205,14 +205,14 @@
 
 - Phase 1 Read: AUTH-ARCH-01 / AUTH-SCHEMA-01 / AUTH-API-02 / AUTH-E2E-01 と AUTH-OPS-03 正本を再読し、D1〜D4・役割語彙・停止条件を再確認。
 - Phase 2 Plan: 同期順序 `02_Architecture -> 04_Documentation -> 01_Plans` を固定し、AUTH以外への越境編集を禁止。
-- Phase 3 Execute: `strict_mode_exception_approval_flow.md` / `enterprise_architecture.md` 参照に合わせ、operations/security に運用チェックを追記。
+- Phase 3 Execute: `02_Architecture/design/strict_mode_exception_approval_flow.html` / `02_Architecture/design/enterprise_architecture.html` 参照に合わせ、operations/security に運用チェックを追記。
 - Phase 4 Verify: docs差分確認で `StoppedForClarification` 条件と D1〜D4 が全層一致することを確認。
 - Phase 5 Proceed: 次回再開条件は「D1〜D4改定要求がないこと、かつ 3層同期ログが同日で揃うこと」。
 
 ## 19) Stream G execution record (2026-05-20)
 
 - Phase 1 Read & Terminology Gate: 用語（Security Officer / System Owner / Platform Operator）、2者承認+実行責務分離、D1〜D4 固定値を再監査。
-- Phase 2 Architecture: `strict_mode_exception_approval_flow.md` を起点に承認条件・停止条件・復旧条件・失効条件の整合を確認（仕様変更なし、契約維持）。
+- Phase 2 Architecture: `02_Architecture/design/strict_mode_exception_approval_flow.html` を起点に承認条件・停止条件・復旧条件・失効条件の整合を確認（仕様変更なし、契約維持）。
 - Phase 3 Documentation: `operations.md` / `security.md` に申請→承認→実施→監査→失効の運用チェックリストを追記し、導線を正本参照へ統一。
 - Phase 4 Plans: dashboard / decision-pack / 本issue の状態整合を確認し、AUTH-OPS-03 は Done 維持。
 - Phase 5 Verify（4観点）: 用語・役割・導線・D1〜D4 一致、self-correction 0/3、停止条件違反0件。

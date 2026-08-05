@@ -128,7 +128,7 @@ R9-Bでは、Round 8と同じ架空文書を使って構いません（一貫性
 
 ## プロジェクト側の受領条件
 
-- 回答は`02_Architecture/design/design-request-gaps-2026-07-20.md`のN-3/N-7詳細仕様、`ADR-0049`（external-flat-rate-agent-collaboration, Status: Proposed）、`02_Architecture/external_agent_collaboration_spec.md`、`02_Architecture/design/ui_design_handoff.md`の5領域IA定義へ照合する。
+- 回答は`02_Architecture/design/design-request-gaps-2026-07-20.md`のN-3/N-7詳細仕様、`ADR-0049`（external-flat-rate-agent-collaboration, Status: Proposed）、`02_Architecture/design/external_agent_collaboration_spec.html`、`02_Architecture/design/ui_design_handoff.md`の5領域IA定義へ照合する。
 - R9-Aで△/✗が出た場合、または R9-Bの新規画面いずれについても、△/✗・新規レッドラインはissue化してから実装する。本Roundの成果物だけでは実装着手の根拠にしない。
 - R9-Bの「文書を開く」一覧UI自体はRound 8 R8-Aの管轄であり、本Roundでは扱わない（R8-A採否とは独立に進められる）。
 - 実装ラウンドでは実機スクリーンショットを取得し、`design-qa-checklist.md`で4軸（A.視覚言語/B.状態遷移/C.核の保護/D.a11y・契約）の照合を行う。
@@ -141,6 +141,6 @@ R9-Bでは、Round 8と同じ架空文書を使って構いません（一貫性
 - Related: `02_Architecture/design/design-request-2026-07-round8.md`（視覚言語の再利用元、R8-Aとの境界）
 - Related: `02_Architecture/design/design-qa-checklist.md`（4軸✓/△/✗規約の正本）
 - Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（Status: Proposed）
-- Related: `02_Architecture/external_agent_collaboration_spec.md`
+- Related: `02_Architecture/design/external_agent_collaboration_spec.html`
 - Related: `01_Plans/dogfood-log-2026-07-10.md`（N-7の再開導線摩擦）
 - Related issues: `issue-UI-QUALITY-A11Y-07-start-panel-focus-return.md`, `issue-QA-MONKEY-03-search-state-document-scope.md`

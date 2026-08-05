@@ -198,7 +198,7 @@
 ### Phase 4: Verify（責務分離・固定値）
 
 - 役割分離（Security Officer / System Owner / Platform Operator）は AUTH-OPS-03 で運用責務として保持し、ARCH では設計境界のみを定義する責務分離に矛盾なし。
-- strict mode 例外運用の固定値（D1〜D4）は本Issueで再定義せず、`02_Architecture/strict_mode_exception_approval_flow.md` 正本参照に限定。
+- strict mode 例外運用の固定値（D1〜D4）は本Issueで再定義せず、`02_Architecture/design/strict_mode_exception_approval_flow.html` 正本参照に限定。
 
 ### Phase 5: Proceed（契約固定）
 
@@ -209,7 +209,7 @@
 ### Phase 1 Read同期
 
 - `AUTH-ARCH-01` → `AUTH-SCHEMA-01` → `AUTH-API-02` → `AUTH-IMPL-01` → `AUTH-E2E-01` の順序依存を再確認した。
-- `02_Architecture/strict_mode_exception_approval_flow.md` と `02_Architecture/enterprise_architecture.md` を AUTH 系契約の正本として参照し、下流が上流を上書きしていないことを確認した。
+- `02_Architecture/design/strict_mode_exception_approval_flow.html` と `02_Architecture/design/enterprise_architecture.html` を AUTH 系契約の正本として参照し、下流が上流を上書きしていないことを確認した。
 
 ### Phase 2 ADR/契約明文化
 
@@ -242,7 +242,7 @@
 
 ### Phase 2 ADR明文化
 
-- Context: 役割分離、2者承認、strict 例外緩和、固定値 D1〜D4 は `strict_mode_exception_approval_flow.md` の正本に収束済み。
+- Context: 役割分離、2者承認、strict 例外緩和、固定値 D1〜D4 は `02_Architecture/design/strict_mode_exception_approval_flow.html` の正本に収束済み。
 - Decision: AUTH-ARCH-01 では上流契約の再定義を禁止し、下流は参照のみ許可。
 - Consequences: 下流（Schema/API/E2E）が安全側で固定可能。
 
@@ -277,7 +277,7 @@
 ## Stream E phase execution log (2026-05-20)
 
 - Read: AUTH系の直列依存を `AUTH-ARCH-01 -> AUTH-SCHEMA-01 -> AUTH-API-02 -> AUTH-E2E-01` で再確認。
-- ADR/CDC明文化: 既存正本（`ADR-0020`, `enterprise_architecture.md`, `schemas_review_attribution.md`）に未承認決定の確定化がないことを確認。
+- ADR/CDC明文化: 既存正本（`ADR-0020`, `02_Architecture/design/enterprise_architecture.html`, `schemas_review_attribution.md`）に未承認決定の確定化がないことを確認。
 - I/F先行定義: `reviewerRef/ownerRef = user:<users.id>` と strict時 `identity_not_provisioned` の契約境界を再固定。
 - モックIdP活用: `AUTH_PROVIDER_PROFILE` + ヘッダー差替で mock IdP 回帰を維持し、アプリ本体にIdP固有分岐を追加しない方針を維持。
 - 実装/文書同期: 本issueは docs契約の整合確認のみ実施（新規仕様追加なし）。

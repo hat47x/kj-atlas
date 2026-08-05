@@ -11,7 +11,7 @@
 
 性能に関する記述は分散し、基準として機能していない（事実）。
 
-- `02_Architecture/architecture.md`: 「カード数が百数十程度であれば実装とデバッグが簡単」と**前提を置くだけ**で、上限・劣化検知の基準がない。
+- `02_Architecture/design/architecture.html`: 「カード数が百数十程度であれば実装とデバッグが簡単」と**前提を置くだけ**で、上限・劣化検知の基準がない。
 - `02_Architecture/runtime_parameter_registry.md`: HTTP timeout（audit 2.0s / access-control 1.5s）と Failure budget はあるが、**フロントの描画・計算の性能予算はない**。
 - worker 群（`diff` / `diagnostics` / `trace` / `bundle_zip`）で重い計算の非ブロッキング化は実装済みだが、**「いつ worker 化すべきか」「メインスレッドを何 ms 以上ブロックしないか」の基準がない**。
 - `PRODUCT-UX-04`（大規模文書・低速環境の操作性、Done）は**定性的**（見切れ・待機表示の有無）で、`large_document_operability.spec.ts` も性能アサーション（時間・件数閾値）を持たない＝**回帰を防ぐ定量予算がない**。
@@ -28,7 +28,7 @@
 
 数値は厳密 SLA ではなく**劣化検知のための目安（個人OSS段階）**。代表環境（デスクトップ・中位スペック）での目標。
 
-- **PB-1 代表規模**: 「快適に使える」基準規模をカード約300・島約30とする（architecture.md の「百数十」前提を実用域へ更新）。これを超えても壊れない（degrade gracefully）こと。
+- **PB-1 代表規模**: 「快適に使える」基準規模をカード約300・島約30とする（`02_Architecture/design/architecture.html` の「百数十」前提を実用域へ更新）。これを超えても壊れない（degrade gracefully）こと。
 - **PB-2 初期表示**: 代表規模の文書を開いてから操作可能になるまでの体感を、明確な待機表示なしで数秒以内に収める。超える場合は待機状態を可視化する（`ADR-0044` UQ-5）。
 - **PB-3 メインスレッド非ブロッキング**: 単一の同期処理でメインスレッドを長時間（目安 100ms 超）ブロックしない。超える計算（diff / diagnostics / trace / bundle・大規模集計）は worker へ逃がす。これを **worker 化の判断基準**として固定する。
 - **PB-4 対話操作の即応**: 選択・パン/ズーム・フィルタ切替・保留トグル等の対話操作は、入力に対し即応（体感遅延なし）。重い再計算は debounce / メモ化 / worker で分離する。
@@ -62,12 +62,12 @@
   - 自己申告は形骸化しうる → 「悪化」時のみゲート確認で最小の強制力を持たせる。
 - 移行時に必要な対応:
   - `02_Architecture/value_traceability.md` に「応答性の性能予算」を価値判断として追記する。
-  - `02_Architecture/architecture.md` の「百数十」前提に、PB-1 代表規模（約300）への参照を補足する。
+  - `02_Architecture/design/architecture.html` の「百数十」前提に、PB-1 代表規模（約300）への参照を補足する。
   - 性能アサーション追加 issue（`PERF-BUDGET-01`）を Draft 候補とする（`ADR-0039` 軽量運用）。
 
 ## Traceability
 
-- Related: `02_Architecture/architecture.md`（規模前提）, `02_Architecture/runtime_parameter_registry.md`（timeout/Failure budget）
+- Related: `02_Architecture/design/architecture.html`（規模前提）, `02_Architecture/runtime_parameter_registry.md`（timeout/Failure budget）
 - Related: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`（認知負荷予算と対をなす計算負荷予算）
 - Related: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-4 レイアウト堅牢性・UQ-5 状態可視性）
 - Related: `01_Plans/issues/issue-PRODUCT-UX-04-responsive-large-document-operability.md`

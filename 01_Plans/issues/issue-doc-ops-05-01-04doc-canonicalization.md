@@ -7,7 +7,7 @@
 - Owner: TBD
 - Scope: `04_Documentation/canonicalization.md`
 - Related Backlog: `DOC-OPS-05`
-- Related ADR/Spec: `04_Documentation/canonicalization.md`, `02_Architecture/schemas.md`, `02_Architecture/architecture.md`
+- Related ADR/Spec: `04_Documentation/canonicalization.md`, `02_Architecture/schemas.md`, `02_Architecture/design/architecture.html`
 - Dependencies: `DOC-OPS-05`
 - Expected verification level: `docs-check`
 
@@ -772,7 +772,7 @@
 
 ### Phase 1 Read: Scope / Related ADR確認
 - Scope確認: `04_Documentation/canonicalization.md` を対象とする docs-only issue として固定。
-- Related ADR/Spec確認: 02_Architecture/schemas.md, 02_Architecture/architecture.md, 01_Plans/documentation_quality.md を参照し、00〜02の正本を上書きしない。
+- Related ADR/Spec確認: 02_Architecture/schemas.md, 02_Architecture/design/architecture.html, 01_Plans/documentation_quality.md を参照し、00〜02の正本を上書きしない。
 - 変更境界: 本issueメモの更新に限定し、他ファイル編集は行わない。
 
 ### Phase 2 Plan: 分類判定 + Go/No-Go Gate定義
@@ -965,7 +965,7 @@
 ## 21) Stream G DOC-OPS-05 content lane run（2026-04-22 / canonicalization）
 
 ### Phase 1 Read（Scope / Related ADR/Spec / Verification）
-- 再読対象: Scope=`04_Documentation/canonicalization.md`、Related ADR/Spec（`02_Architecture/schemas.md`, `02_Architecture/architecture.md`）、Expected verification level=`docs-check` を再確認。
+- 再読対象: Scope=`04_Documentation/canonicalization.md`、Related ADR/Spec（`02_Architecture/schemas.md`, `02_Architecture/design/architecture.html`）、Expected verification level=`docs-check` を再確認。
 - 事前想定との差分ログ:
   - 差分G-01: 既存ログは多数あるが、`Expected verification level=docs-check` を「実行コマンド結果」と対で記録した節が不足。
   - 差分G-02: ACに「実行順序（canonicalization→narratives→local_llm_ops_guide）」の明示がなかった。
@@ -1356,7 +1356,7 @@
 
 ### Phase 2 ADR/CDC（明文化）
 - Context: canonicalization は設計・契約寄り情報が中心で、公開資料としては「概要のみ」を維持し内部正本へ誘導する必要がある。
-- Decision: **Move internal** を採用継続。`04_Documentation/canonicalization.md` は外部向け stub、詳細は `02_Architecture/schemas.md` / `02_Architecture/architecture.md` に集約する。
+- Decision: **Move internal** を採用継続。`04_Documentation/canonicalization.md` は外部向け stub、詳細は `02_Architecture/schemas.md` / `02_Architecture/design/architecture.html` に集約する。
 - Consequences:
   - 利点: 公開境界の明確化、内部詳細の露出抑制、参照正本の一貫性向上。
   - 副作用: 外部向け情報量は限定されるため、詳細確認は内部正本参照が前提。

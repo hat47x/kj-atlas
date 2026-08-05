@@ -11,7 +11,7 @@
 
 ## 1. 現状の全量棚卸し（3層整理）
 
-既存の正本 `02_Architecture/data_model_operations_overview.md`（ER図・CRUD表・サポートレベル L1〜L3）を基礎に、「マスタデータ管理」の観点で再整理した。
+既存の正本 `02_Architecture/design/data_model_operations_overview.html`（ER図・CRUD表・サポートレベル L1〜L3）を基礎に、「マスタデータ管理」の観点で再整理した。
 
 ### 層1: 業務データ本体 — 見直し不要（意図的設計）
 
@@ -48,18 +48,18 @@
   - EXT-CONN-02 の前提。最小案: `agent_registrations`（id・表示名・トークンハッシュ・作成者・有効/無効・作成日時）＋ ingest ログとの相関。
   - スコープ判断: 登録・失効を admin API に置くか（M2 と同じ strict provisioning 型）、文書所有者に委ねるか。
 - **D4: 管理面データの表示原則**
-  - 管理UIは一般利用者の操作導線から分離する（既定: `data_model_operations_overview.md` §6 の方針を踏襲）。
+  - 管理UIは一般利用者の操作導線から分離する（既定: `02_Architecture/design/data_model_operations_overview.html` §6 の方針を踏襲）。
   - 本文非表示原則: 管理面（一覧・棚卸し・監査）では `payload_json` 本文を出さない（DATA-MAINT-01/04 と同一原則）。
 
 ## 3. 提言（次アクション・maintainer 判断待ち）
 
 1. **DATA-MODEL-OPS-02 を Draft 起票**（本文書と同時）: D1〜D4 を受入条件の形で固定する「管理面データ境界」issue。DecisionStatus は Pending（D1 の削除/アーカイブ部分が ADR-0035 の受理に依存。ただし一覧API・リネーム・複製・D2・D3 は ADR-0035 と独立に判断可能）。
-2. **順序**: D1〜D4 の判断固定 → schemas.md / data_model_operations_overview.md の同期 → **その後に** Claude Design へ管理UI（マスタデータ管理面）の設計要求（Round 8 候補）。UI要求時に渡す入力は「確定した正本・権限・本文非表示原則」であり、これが無いまま要求すると localStorage 実態を追認する画面になる。
-3. **ADR 要否**: D1 のうち削除・アーカイブ・所有者移管は ADR-0035 の領分（既存）。一覧API・タイトル編集・複製・プリセット置き場・エージェント登録は、`data_model_operations_overview.md` §7 の更新ルール（新しい標準APIはER/CRUD表の同時更新）に従えば **新規ADRなしで issue 側で決められる**見込み。ただし D3 は EXT-CONN-02 の認可設計と一体なので、ADR-0054 の Accepted 判断に含めて確認するのが安全。
+2. **順序**: D1〜D4 の判断固定 → schemas.md / `02_Architecture/design/data_model_operations_overview.html` の同期 → **その後に** Claude Design へ管理UI（マスタデータ管理面）の設計要求（Round 8 候補）。UI要求時に渡す入力は「確定した正本・権限・本文非表示原則」であり、これが無いまま要求すると localStorage 実態を追認する画面になる。
+3. **ADR 要否**: D1 のうち削除・アーカイブ・所有者移管は ADR-0035 の領分（既存）。一覧API・タイトル編集・複製・プリセット置き場・エージェント登録は、`02_Architecture/design/data_model_operations_overview.html` §7 の更新ルール（新しい標準APIはER/CRUD表の同時更新）に従えば **新規ADRなしで issue 側で決められる**見込み。ただし D3 は EXT-CONN-02 の認可設計と一体なので、ADR-0054 の Accepted 判断に含めて確認するのが安全。
 
 ## Traceability
 
-- Related: `02_Architecture/data_model_operations_overview.md`（現状の正本。§4 CRUD表・§5 ステークホルダー不足・§6 起票先）
+- Related: `02_Architecture/design/data_model_operations_overview.html`（現状の正本。§4 CRUD表・§5 ステークホルダー不足・§6 起票先）
 - Related: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`（層1を動かさない根拠）
 - Related: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`（D1 の削除/アーカイブ/移管ゲート）
 - Related: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`（D3 の背景）

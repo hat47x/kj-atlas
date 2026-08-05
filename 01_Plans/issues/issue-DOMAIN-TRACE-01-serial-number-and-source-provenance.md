@@ -95,7 +95,7 @@
 
 ### 実装
 
-- **契約先行**: schemas.md §15（新設）＋ §5 項目5更新、data_model_operations_overview.md §4.1 行追加。
+- **契約先行**: schemas.md §15（新設）＋ §5 項目5更新、`02_Architecture/design/data_model_operations_overview.html` §4.1 行追加。
 - **往復（4経路すべて）**: ①寛容 `validate.ts parseCardMeta`（有限数 seq・非空文字列 source のみ受理、無効値/未知キーは黙って破棄、全滅時は meta 自体を省略）②厳格 `validate_doc.ts`（meta ホワイトリスト＋`hasOnlyKeys(["seq","source"])`＋型検査）③CE3 パッチ経路 `patch_apply.ts parseCard`（`value as Card` による未知キー密輸を防ぐ明示再構築）④バックエンド `models.py CardMeta`（V2のみ。Pydantic 既定 `extra="ignore"` が §15.3 を実装。**CardMeta 追加前は PUT で meta が黙って全損していた**—T2で事前修正）。
 - **UI（選択時のみ・ADR-0048 D3改訂準拠）**: SidePanel 選択コンテキストに `#番号`・`原データ:` チップ（未設定時は非表示=AC-5）、カードインスペクタに遡及情報エディタ（空にすると欄削除・カード未設定時はバイト同一維持）。編集は `applyDocumentChange` 1ステップ（⌘Z 可逆）。
 - **カード面バッジ**: `CardView` メタ行に中立スレート色の `#n` テキスト（ピル無し=視覚言語チャネルを消費しない）。View パネル「通し番号をカードに表示」トグルで表示、**既定OFF**。

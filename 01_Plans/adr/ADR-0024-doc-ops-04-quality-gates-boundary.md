@@ -106,7 +106,7 @@ DoD（本ADR完了条件）:
 | --- | --- |
 | root docs (`README.md`, `CONTRIBUTING.md`, `AGENTS.md`) | `DC-RTE-001`, `DC-SAF-001`, `DC-LNK-001`, `DC-FMT-001` |
 | `01_Plans/adr/`, `01_Plans/issues/`, current運用入口 | `DC-ACT-001`, `DC-CUR-001`, `DC-LNK-001`, `DC-FMT-001`（非該当ruleは対象外） |
-| `02_Architecture/` current (`architecture.md`, `api.md`, `schemas.md`, `data_model_operations_overview.md`) | `DC-ARC-001`, `DC-CUR-001`, `DC-LNK-001`, `DC-FMT-001` |
+| `02_Architecture/` current (`02_Architecture/design/architecture.html`, `api.md`, `schemas.md`, `02_Architecture/design/data_model_operations_overview.html`) | `DC-ARC-001`, `DC-CUR-001`, `DC-LNK-001`, `DC-FMT-001` |
 | `02_Architecture/history/` | `DC-HIS-001`, `DC-LNK-001`, `DC-FMT-001` |
 | `04_Documentation/` current/public | `DC-PUB-001`, `DC-RTE-001`, `DC-SAF-001`, `DC-LNK-001`, `DC-FMT-001` |
 

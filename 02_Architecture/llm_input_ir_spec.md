@@ -26,7 +26,7 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 
 1. LLM出力スキーマ（`LLMRequest.output_schema` の中身）の設計。
 2. Provider transport 実装（HTTP / IPC / in-process）の選定。
-3. エスカレーション有効化手順そのもの（`llm_escalation_policy.md` の領域）。
+3. エスカレーション有効化手順そのもの（`02_Architecture/design/llm_escalation_policy.html` の領域）。
 4. 画像・音声・バイナリ添付の取り扱い。
 
 ### 0.3 Acceptance Criteria
@@ -502,7 +502,7 @@ A2 contract test では次を機械判定する。
 - Provider契約: `02_Architecture/llm_provider_spec.md`（`LLMRequest.inputs` の意味境界）。
 - 実行制約: `02_Architecture/llm_runtime_constraints.md`。
 - 品質ゲート: `02_Architecture/llm_quality_strategy.md`。
-- エスカレーション運用: `02_Architecture/llm_escalation_policy.md`。
+- エスカレーション運用: `02_Architecture/design/llm_escalation_policy.html`。
 
 
 ## 9. CE-1 ContextQuery/ContextBundle 最小I/F（Contract Freeze）

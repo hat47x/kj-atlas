@@ -91,7 +91,7 @@ DOMAIN-TRACE-01（§15、同一 ADR-0048 D3改訂バッチ）に続く実装。
 
 ### 実装
 
-- **契約先行**: schemas.md §17（新設）＋ data_model_operations_overview.md §4.1 行追加。
+- **契約先行**: schemas.md §17（新設）＋ `02_Architecture/design/data_model_operations_overview.html` §4.1 行追加。
 - **往復（3経路）**: ①寛容 `validate.ts parseCardKa`（`parseCardMeta` と同一パターン：既知キーのみ受理、両方欠落/空文字なら `ka` 自体省略）②厳格 `validate_doc.ts`（`hasOnlyKeys(["voice","value"])`）③CE3パッチ経路 `patch_apply.ts parseCard`（`meta`/`ka` 両方が独立に安全にサニタイズされるようリファクタ）④バックエンド `models.py CardKa`（`CardV2` のみ、`extra="ignore"` 既定で未知キー破棄）。
 - **UI（選択コンテキストのみ・カード面表示なし）**: SidePanel の遡及情報エディタ（`card-trace-editor`）の直後に KA エディタボックス（`card-ka-editor`）を追加。「心の声」「価値」の2つの textarea、KA ガードレール文言（嘘を書かない・話を盛らない・妄想しすぎない）をヒントとして表示。空にすると欄削除（`Card.meta` と同じ規約）。編集は `applyDocumentChange` 1操作=1履歴ステップ。
 - **成果物**: `reading_outline.ts` に `formatKaFields()` と `appendKaFields` オプション（既定 OFF）を追加。設定時のみ、KA欄が設定されているカードを列挙する独立セクションを本文末尾に追加（本文中のカードエントリには一切混在しない）。SharePanel/App.tsx に対応するトグル「KA欄（心の声・価値）を追加」を配線。

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; background:#f1f3f5; }
+  * { box-sizing:border-box; }
+  body { font-family:"Noto Sans JP", system-ui, sans-serif; color:#1f2933; -webkit-font-smoothing:antialiased; }
+  @page { size:A4; margin:0; }
+  @media print {
+    html { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    html, body { margin:0; padding:0; background:#fff; }
+    .doc { max-width:none !important; margin:0 !important; padding:0 0.7in !important; box-shadow:none !important; background:#fff !important; }
+    h1, h2, h3, h4 { break-after:avoid; }
+    figure, table, tr { break-inside:avoid; }
+    p, li { orphans:3; widows:3; }
+  }
+  .scroll { overflow-x:auto; }
+  table.grid { width:100%; border-collapse:collapse; font-size:12.5px; margin:14px 0 0; }
+  table.grid th { text-align:left; font-weight:600; color:#52606d; border-bottom:1.5px solid #cbd5e1; padding:7px 9px; background:#f8fafc; }
+  table.grid td { border-bottom:1px solid #e5e7eb; padding:7px 9px; vertical-align:top; line-height:1.6; }
+  code { font-family:"Noto Sans Mono", ui-monospace, monospace; font-size:0.9em; background:#f1f5f9; padding:1px 5px; border-radius:3px; color:#334155; word-break:break-word; }
+  pre.block { background:#0f172a; color:#e2e8f0; font-family:"Noto Sans Mono", ui-monospace, monospace; font-size:11.5px; line-height:1.65; padding:14px 16px; border-radius:6px; overflow-x:auto; margin:12px 0 0; }
+  pre.block code { background:none; color:inherit; padding:0; font-size:inherit; }
+  .mermaid { text-align:center; }
+  .badge { font-size:12px; font-weight:500; padding:5px 11px; border-radius:999px; border:1px solid; display:inline-block; }
+  .tag { font-family:"Noto Sans Mono", ui-monospace, monospace; font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; }
+  .verified { background:#dcfce7; color:#166534; }
+  .latent { background:#fef3c7; color:#92400e; }
+  .struct { background:#e0e7ff; color:#3730a3; }
+  ol.compact li, ul.compact li { margin:5px 0; line-height:1.7; }
+  a { color:#1d4ed8; }
+</style>
+</helmet>
+<main class="doc" style="box-sizing:border-box; max-width:8.5in; margin:0 auto; background:#ffffff; padding:0 clamp(20px,5vw,0.85in); box-shadow:0 1px 3px rgba(15,23,42,0.08), 0 12px 40px rgba(15,23,42,0.06);">
+
+  <!-- COVER -->
+  <header style="padding:64px 0 28px; border-bottom:1px solid #e5e7eb;">
+    <div style="display:flex; align-items:center; gap:10px; font-size:12.5px; letter-spacing:0.14em; color:#6b7280; text-transform:uppercase; font-weight:500;">
+      <span style="width:8px; height:8px; border-radius:2px; background:#be123c; display:inline-block;"></span>
+      kj-atlas ・ Architecture ・ 分析（2026-08-06）
+    </div>
+    <h1 style="font-size:29px; line-height:1.36; font-weight:700; margin:18px 0 0; letter-spacing:0.01em; text-wrap:balance;">関数従属性から見た<br>DocumentV1 の構造的整合性</h1>
+    <p style="font-size:15px; line-height:1.75; color:#52606d; margin:14px 0 0; max-width:38em; text-wrap:pretty;">
+      <code>DocumentV1</code> を「関数従属性（どの項目がどの項目を一意に決めるか）」の観点で読み直した記録。
+      <strong>同一のドメイン関係が複数のフィールドに分散し、読み取り側が推測で解決している箇所</strong>を特定し、
+      その機構と是正案を示す。カード本文・空間配置・見立て（<code>claimType</code> / <code>holdState</code>）は
+      対象外とする ── これらは正規化になじまない KJ法固有の表現であり、本分析の適用範囲ではない。
+    </p>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:22px;">
+      <span class="badge" style="background:#fef2f2; color:#b91c1c; border-color:#fecaca;">F-3 統合関係の4重表現（検証済み）</span>
+      <span class="badge" style="background:#fffbeb; color:#b45309; border-color:#fde68a;">F-4 解決経路の固定値（潜在欠陥）</span>
+      <span class="badge" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;">F-5 島所属の未強制</span>
+    </div>
+    <div style="margin:20px 0 0; padding:11px 14px; background:#f8fafc; border-left:3px solid #cbd5e1; border-radius:0 4px 4px 0;">
+      <p style="font-size:12.5px; line-height:1.75; color:#52606d; margin:0;">
+        本書が正本（<code>AGENTS.md</code> §3）。データ構造の運用境界は
+        <a href="data_model_operations_overview.html">data_model_operations_overview.html</a>、
+        型定義は <a href="../schemas.md">schemas.md</a>、責務境界は
+        <a href="architecture.html">architecture.html</a> を正本とする。<br>
+        本書は<strong>分析であり決定ではない</strong>。実装着手には ADR-0047 のゲート判定と issue 起票を要する。
+      </p>
+    </div>
+  </header>
+
+  <!-- 01 分析の枠組み -->
+  <section style="padding:30px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">01</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">分析の枠組みと適用範囲</h2>
+    </div>
+    <p style="font-size:13.5px; line-height:1.8; color:#3e4c59; margin:12px 0 0;">
+      関数従属性 <code>x → y</code> とは「x の値に対して y の値が一意に対応する」関係を指す。
+      本分析の主張は単純である ── <strong>同一の関数従属性を複数箇所に保持すると、
+      それらを一致させる仕組みが存在しない限り、読み取り側は推測せざるを得なくなる。</strong>
+    </p>
+    <p style="font-size:13.5px; line-height:1.8; color:#3e4c59; margin:10px 0 0;">
+      <code>DocumentV1</code> は単一JSONスナップショットであり、物理DBの外部キー制約を持たない
+      （<code>documents.payload_json</code> は不透明なTEXT）。したがって整合性を保つ手段は
+      <strong>検証コード（<code>validate_doc.ts</code>）の不変条件</strong>だけである。
+      この前提は変えない ── ローカルファーストと単一ファイル可搬性はアーキテクチャ目標であり、
+      物理正規化はその目標と衝突する。
+    </p>
+
+    <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">1.1 適用範囲の線引き</h3>
+    <table class="grid">
+      <thead><tr><th style="width:30%;">領域</th><th style="width:14%;">適用</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>統合関係、島所属、辺の端点、レビュー帰属、判断ログ、テナント/利用者対応</td><td><strong>適用する</strong></td><td>システム内世界の<strong>確定事実</strong>。「統合されたか否か」は解釈ではなく事実であり、関数従属性が実在する</td></tr>
+        <tr><td><code>text</code> / <code>summaryText</code> / <code>critique</code></td><td>適用しない</td><td>内容は正規化の対象ではない。言葉を選び直すこと自体がKJ法の作業</td></tr>
+        <tr><td><code>x</code> / <code>y</code>（空間配置）</td><td>適用しない</td><td>KJ法において配置は意味である。正規形の概念が適用できない</td></tr>
+        <tr><td><code>claimType</code> / <code>holdState</code> / <code>critiqueTags</code></td><td>適用しない</td><td>利用者の<strong>現在の見立て</strong>。可逆であり、確定を意図しない</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px; color:#6b7280; margin:12px 0 0;">
+      この線引きから得られた対比軸 ──<strong>「確定事実」と「現在の見立て」</strong>── は、本分析の範囲を超えて
+      SafeMode の redact 判定、export の既定ON/OFF、L0〜L3 の割当根拠にも適用余地がある。本書では指摘に留める。
+    </p>
+  </section>
+
+  <!-- 02 F-3 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">02</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">F-3 統合関係が4フィールド・2実装に分散</h2>
+      <span class="tag verified">検証済み</span>
+    </div>
+    <p style="font-size:13.5px; line-height:1.8; color:#3e4c59; margin:12px 0 0;">
+      「N枚のカードを1枚へ統合した」というドメイン関係は一つである。しかし現行実装では、
+      <strong>2つの関数が、排他的なフィールド集合で、同じ関係を書いている</strong>。
+    </p>
+
+    <div class="scroll">
+    <table class="grid">
+      <thead><tr>
+        <th style="width:22%;">書き込む対象</th>
+        <th style="width:39%;"><code>applyCanonicalization()</code><br><span style="font-weight:400; color:#6b7280;">domain/canonical_ops.ts</span></th>
+        <th><code>createRepresentativeMerge()</code><br><span style="font-weight:400; color:#6b7280;">domain/representative_merge.ts</span></th>
+      </tr></thead>
+      <tbody>
+        <tr><td>新カード（統合先）へ</td><td><code>sources: string[]</code></td><td><code>repOf: string[]</code></td></tr>
+        <tr><td>元カード（統合元）へ</td><td><code>canonicalId: string</code></td><td><code>mergedIntoCardId: string</code></td></tr>
+        <tr><td>島の更新</td><td>元カードを<strong>残したまま</strong>統合先を追加</td><td><code>rewire</code> 指定時のみ元カードを<strong>除去</strong>して統合先を追加</td></tr>
+        <tr><td><code>readingOrder</code></td><td>元カードを除去し統合先を挿入</td><td><strong>更新しない</strong></td></tr>
+        <tr><td><code>edges</code></td><td><strong>更新しない</strong></td><td><code>rewire</code> 指定時のみ端点を張り替え</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p style="font-size:13.5px; line-height:1.8; color:#3e4c59; margin:14px 0 0;">
+      結果として<strong>同一のドメイン事象が、2種類の構造的に異なる文書状態を生む</strong>。
+      どちらの経路を通ったかは、どのフィールドが埋まっているかからしか判別できない。
+    </p>
+
+    <figure style="margin:18px 0 0;">
+      <pre class="mermaid">
+flowchart TB
+    EV(["ドメイン事象<br/>N枚のカードを1枚へ統合した"]):::event
+
+    EV --> W1["applyCanonicalization()"]:::writer
+    EV --> W2["createRepresentativeMerge()"]:::writer
+
+    W1 --> F1["新カード.sources[]"]:::field
+    W1 --> F2["元カード.canonicalId"]:::field
+    W2 --> F3["新カード.repOf[]"]:::field
+    W2 --> F4["元カード.mergedIntoCardId"]:::field
+
+    F1 --> R{{"resolveRepresentativeCard()<br/>読み取り時に順次試行"}}:::resolver
+    F2 --> R
+    F3 --> R
+    F4 --> R
+
+    R -->|"1st"| O1["resolvedBy = repOf"]:::out
+    R -->|"2nd"| O2["resolvedBy = mergedIntoCardId"]:::out
+    R -->|"3rd"| O3["resolvedBy = fallback<br/>ID順で先頭を代表とみなす"]:::warn
+    R -->|"失敗"| O4["resolvedBy = unresolved"]:::warn
+
+    O1 --> UI["UI表示・監査イベント"]:::ui
+    O2 --> UI
+    O3 --> UI
+    O4 --> UI
+
+    classDef event fill:#f5f3ff,stroke:#7c3aed,stroke-width:1.6px,color:#4c1d95
+    classDef writer fill:#eff6ff,stroke:#2563eb,stroke-width:1.3px,color:#1e3a8a
+    classDef field fill:#f8fafc,stroke:#94a3b8,stroke-width:1px,color:#334155
+    classDef resolver fill:#fef2f2,stroke:#dc2626,stroke-width:1.6px,color:#7f1d1d
+    classDef out fill:#ecfdf5,stroke:#059669,stroke-width:1px,color:#065f46
+    classDef warn fill:#fef3c7,stroke:#d97706,stroke-width:1.3px,color:#78350f
+    classDef ui fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#334155
+      </pre>
+      <figcaption style="font-size:12.5px; color:#6b7280; margin-top:10px; line-height:1.7;">
+        一つの関係を4フィールドで表した結果、読み取り側に<strong>フォールバック探索</strong>が必要になった。
+        <code>domain/merge_traceability.ts</code> の
+        <code>representativeResolvedBy: "repOf" | "mergedIntoCardId" | "fallback" | "unresolved"</code> は、
+        <strong>「どの経路で解決できたか」を利用者と監査へ報告するための型</strong>である。
+        この型の存在自体が、構造が推測を必要としている証拠になっている。
+      </figcaption>
+    </figure>
+
+    <div style="margin:18px 0 0; padding:13px 16px; background:#fffbeb; border-left:3px solid #f59e0b; border-radius:0 4px 4px 0;">
+      <p style="font-size:13px; line-height:1.8; color:#78350f; margin:0;">
+        <strong>挙動差は保持すべき仕様である。</strong>
+        <code>applyCanonicalization()</code> が元カードを島に残すのは、
+        「代表カードと出典カードを両方たどれる」という kj-atlas 固有の設計
+        （<code>isSourceCard()</code>、出典カードの開示UI）に基づく。
+        したがって是正の方向は<strong>2つの挙動を1つに統合することではなく、
+        関係の重複だけを解消して挙動差を明示的な属性にすること</strong>である。
+      </p>
+    </div>
+  </section>
+
+  <!-- 03 F-4 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">03</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">F-4 解決経路が固定値で返る</h2>
+      <span class="tag latent">潜在（未露出）</span>
+    </div>
+    <p style="font-size:13.5px; line-height:1.8; color:#3e4c59; margin:12px 0 0;">
+      <code>resolveRepresentativeOriginTrace()</code> は統合元IDを3経路から収集する
+      ── <code>repOf</code>、<code>mergedIntoCardId</code> の逆引き走査、<code>sources</code> ──
+      にもかかわらず、返り値の <code>representativeResolvedBy</code> を
+      <strong>経路によらず <code>"repOf"</code> に固定している</strong>。
+    </p>
+    <pre class="block"><code>// domain/merge_traceability.ts
+
+  if (representative?.repOf && representative.repOf.length &gt; 0) { ... }      // 経路1
+  for (const card of document.cards) {
+    if (card.mergedIntoCardId === representativeCardId) { ... }               // 経路2
+  }
+  if (representative &amp;&amp; sourceIds.size === 0 &amp;&amp; Array.isArray(representative.sources)) { ... }  // 経路3
+
+  return {
+    representativeCardId,
+    sourceCardIds,
+    missingSourceCardIds,
+    representativeResolvedBy: "repOf",   // ← 経路2・経路3で解決しても "repOf" と報告される
+  };</code></pre>
+    <table class="grid">
+      <thead><tr><th style="width:26%;">呼び出し経路</th><th style="width:24%;">影響</th><th>状態</th></tr></thead>
+      <tbody>
+        <tr><td><code>resolveDecisionOriginTrace()</code> 経由</td><td>影響なし</td><td>呼び出し側が実際の解決経路で上書きするため、正しい値が返る</td></tr>
+        <tr><td><code>App.tsx</code> からの直接呼び出し</td><td><strong>誤った来歴を返す</strong></td><td>現時点では呼び出し側が <code>sourceCardIds</code> / <code>missingSourceCardIds</code> のみを使用し、<code>representativeResolvedBy</code> を参照していないため<strong>未露出</strong>。この値を使う変更が入った時点で顕在化する</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px; color:#6b7280; margin:12px 0 0;">
+      単体テストは <code>toEqual</code> で固定値 <code>"repOf"</code> を期待しているため、この不整合を検出しない
+      （<code>merge_traceability.test.ts</code>）。F-3 を是正すれば本項は構造的に消滅する。
+      是正しない場合は、返り値を実際の経路に合わせる単独修正が必要。
+    </p>
+  </section>
+
+  <!-- 04 F-5 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">04</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">F-5 島所属の関数従属性が強制されていない</h2>
+      <span class="tag struct">構造</span>
+    </div>
+    <p style="font-size:13.5px; line-height:1.8; color:#3e4c59; margin:12px 0 0;">
+      <code>App.tsx</code> はカードから島を引くとき <code>islands.find(i =&gt; i.cardIds.includes(cardId))</code>
+      ── <strong>最初に一致した島を採用</strong> ── としている。これは
+      <code>cardId → islandId</code> を関数（一意）とみなす実装である。
+      しかし <code>Island.cardIds[]</code> は逆方向の配列であり、
+      <strong>同一カードが複数の島に列挙されていても strict 検証は通過する</strong>。
+      関係が「島 → カード群」の形で保持されているため、「カード → 島」の一意性を表現できていない。
+    </p>
+
+    <h3 style="font-size:15px; font-weight:700; margin:20px 0 0;">4.1 既存の一意制約は手書きで、対象が非対称</h3>
+    <p style="font-size:13px; line-height:1.75; color:#3e4c59; margin:8px 0 0;">
+      複合キー相当の一意制約は、既に一部の関係で手実装されている。ただし対象が揃っていない。
+    </p>
+    <table class="grid">
+      <thead><tr><th style="width:32%;">関係</th><th style="width:34%;">一意性の扱い</th><th>実装箇所</th></tr></thead>
+      <tbody>
+        <tr><td><code>evidenceLinks</code></td><td><strong>あり</strong> ── <code>(fromCardId, toCardId, type)</code> の重複を検出</td><td><code>validate_doc.ts</code> / <code>validate.ts</code></td></tr>
+        <tr><td><code>shelf</code></td><td><strong>あり</strong> ── <code>cardId</code> の重複を検出</td><td><code>validate_doc.ts</code></td></tr>
+        <tr><td>島所属 <code>(islandId, cardId)</code></td><td><strong>なし</strong> ── 島をまたぐ重複を検出しない</td><td>—</td></tr>
+        <tr><td>統合関係 <code>(統合先, 統合元)</code></td><td><strong>なし</strong> ── 4フィールド間の一致も検証しない</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px; color:#6b7280; margin:12px 0 0;">
+      一意制約が必要であること自体は既に認識され実装されている。欠けているのは<strong>どの関係に必要かを
+      体系的に判定する手順</strong>であり、個別の実装力ではない。
+    </p>
+  </section>
+
+  <!-- 05 F-6 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">05</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">F-6 イベントログが状態から導出されている</h2>
+      <span class="tag struct">構造</span>
+    </div>
+    <p style="font-size:13.5px; line-height:1.8; color:#3e4c59; margin:12px 0 0;">
+      kj-atlas には統合判断のイベント記録が既に存在する ──
+      <code>DocumentV1.mergeSuggestionDecisions[]</code> と物理テーブル <code>merge_decision_logs</code>。
+      ところが <code>domain/merge_decision_audit.ts</code> は、監査イベントを作るために
+      <code>resolveDecisionOriginTrace()</code> を呼び、<strong>カード側に散らばった状態から
+      来歴を再構成している</strong>。依存が逆転している。
+    </p>
+    <figure style="margin:16px 0 0;">
+      <pre class="mermaid">
+flowchart LR
+    subgraph NOW["現行：状態が正本、記録が導出"]
+      direction TB
+      S1["カードの4フィールド<br/>（上書きされる状態）"]:::state
+      T1["resolveDecisionOriginTrace()<br/>推測による再構成"]:::guess
+      L1["監査イベント / 判断ログ"]:::log
+      S1 --> T1 --> L1
+    end
+
+    subgraph TO["是正案：記録が正本、状態が導出"]
+      direction TB
+      L2["統合イベント（追記のみ）<br/>統合先・統合元・方式・時刻"]:::log2
+      T2["導出関数<br/>推測なし"]:::derive
+      S2["カード側の表示用フィールド"]:::state2
+      L2 --> T2 --> S2
+    end
+
+    NOW -.->|"依存の向きを反転させる"| TO
+
+    classDef state fill:#fef2f2,stroke:#dc2626,stroke-width:1.2px,color:#7f1d1d
+    classDef guess fill:#fef3c7,stroke:#d97706,stroke-width:1.4px,color:#78350f
+    classDef log fill:#f1f5f9,stroke:#94a3b8,stroke-width:1px,color:#334155
+    classDef log2 fill:#ecfdf5,stroke:#059669,stroke-width:1.6px,color:#065f46
+    classDef derive fill:#eff6ff,stroke:#2563eb,stroke-width:1.2px,color:#1e3a8a
+    classDef state2 fill:#f8fafc,stroke:#94a3b8,stroke-width:1px,color:#334155
+      </pre>
+      <figcaption style="font-size:12.5px; color:#6b7280; margin-top:10px; line-height:1.7;">
+        追記のみの記録を正本とし、可変な状態をそこから導出する構成は、簿記のデータモデル
+        （仕訳は追記のみ・訂正は赤黒で相殺、残高サマリは導出）と同型である。
+        kj-atlas の <code>merge_decision_logs</code> は既に追記型として設計されており、
+        <strong>正本化に必要な器はある</strong>。
+      </figcaption>
+    </figure>
+    <p style="font-size:12.5px; color:#6b7280; margin:12px 0 0;">
+      なお「追記のみ」を全モデルへ広げる主張ではない。不変であるべきは
+      <strong>確定した事象</strong>（統合判断、レビュー帰属、<code>RoundSnapshotV1</code>）であり、
+      作業中の <code>DocumentV1</code> は可変のままでよい。現行の
+      <code>DocumentV1</code>（可変）と <code>RoundSnapshotV1</code>（不変）の分離はこの区別と整合している。
+    </p>
+  </section>
+
+  <!-- 06 発散 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">06</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">F-7 機能単位の追加が構造を発散させている</h2>
+      <span class="tag struct">構造</span>
+    </div>
+    <p style="font-size:13.5px; line-height:1.8; color:#3e4c59; margin:12px 0 0;">
+      <code>DocumentV1</code> は21フィールドを持ち、うち12が optional である。
+      optional フィールドの多くは、機能issueが1件ずつ追加した経緯を持つ
+      （<code>shelf</code> ← DOMAIN-EXPR-02、<code>contradictionSignalDecisions</code> ← DOMAIN-EXPR-04、
+      <code>ka</code> ← DOMAIN-KA-01、<code>meta</code> ← DOMAIN-TRACE-01、
+      <code>representativeCue</code> ← DOMAIN-VISUAL-CUE-01）。
+    </p>
+    <p style="font-size:13.5px; line-height:1.8; color:#3e4c59; margin:10px 0 0;">
+      これは設計の失敗ではなく、<strong>採用している手順の必然的な帰結</strong>である。
+      機能から出発すると、その機能が必要とする最小のフィールドが追加される。
+      関係から出発した場合と違い、既存の関係と統合されるかどうかは検討の対象にならない。
+      F-3 はまさにこの形で生じた ── 2つの機能issueが、同じ関係を、互いを知らずに実装した。
+    </p>
+    <div style="margin:16px 0 0; padding:13px 16px; background:#f8fafc; border-left:3px solid #2563eb; border-radius:0 4px 4px 0;">
+      <p style="font-size:13px; line-height:1.8; color:#3e4c59; margin:0;">
+        <code>ADR-0058</code>（単一 <code>DocumentV1</code>・追加のみ）は
+        <strong>version 分裂という別の失敗を正しく防いでいる</strong>。
+        ただし「追加のみ」は構造の縮約経路を持たないため、
+        <strong>関係の重複を検出する手順を伴わない限り、発散は単調に進む</strong>。
+        本書が提案するのは ADR-0058 の撤回ではなく、その手前に
+        <strong>「新しい optional を足す前に、既存の関係と重複しないかを確認する」</strong>
+        という一段を挟むことである。
+      </p>
+    </div>
+  </section>
+
+  <!-- 07 是正案 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">07</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">是正案</h2>
+    </div>
+    <p style="font-size:13px; line-height:1.75; color:#3e4c59; margin:10px 0 0;">
+      物理DBの正規化は<strong>行わない</strong>。ローカルファーストと単一JSON可搬性を壊すため、
+      適用範囲を「文書内の論理不変条件」に限定する。
+    </p>
+    <div class="scroll">
+    <table class="grid">
+      <thead><tr><th style="width:8%;">段</th><th style="width:24%;">内容</th><th style="width:26%;">対応する所見</th><th>破壊的変更</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>R1</strong></td>
+          <td><code>resolveRepresentativeOriginTrace()</code> の返り値を実際の解決経路に合わせる</td>
+          <td>F-4 のみ</td>
+          <td>なし。単独で実施可能。スキーマ不変</td>
+        </tr>
+        <tr>
+          <td><strong>R2</strong></td>
+          <td>関数従属性の不変条件を <code>validate_doc.ts</code> へ追加 ──
+            島所属 <code>(islandId, cardId)</code> の島をまたぐ重複、
+            統合関係4フィールドの相互一致</td>
+          <td>F-5、F-3の検出</td>
+          <td>なし（検証強化のみ）。ただし<strong>既存文書が新規則で不合格になり得る</strong>ため、
+            warn 段階を先行させる判断が要る</td>
+        </tr>
+        <tr>
+          <td><strong>R3</strong></td>
+          <td>統合イベントを <code>DocumentV1</code> 内の正本として定義し、
+            カード側4フィールドを導出値へ格下げ。統合方式
+            （<code>canonicalization</code> / <code>representative</code>）と
+            島・辺の張り替え有無をイベント属性として明示</td>
+          <td>F-3、F-4、F-6</td>
+          <td><strong>あり（追加は非破壊、格下げは破壊的）</strong>。
+            ADR-0058 の範囲内で「追加＋導出」に留めるか、version gate を要するかの判断が必要</td>
+        </tr>
+        <tr>
+          <td><strong>R4</strong></td>
+          <td>TS↔Python の契約ドリフト検出テストを追加（F-1 の再発防止）。
+            7表現のうち導出可能なものを機械生成へ移す</td>
+          <td>F-1（既報）、F-7</td>
+          <td>なし。テスト追加</td>
+        </tr>
+        <tr>
+          <td><strong>R5</strong></td>
+          <td>設計手順として「新しい optional を追加する前に、表現しようとしている関係が
+            既存の関係と重複しないかを確認する」を <code>AGENTS.md</code> へ追記</td>
+          <td>F-7</td>
+          <td>なし。手順の追記</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="font-size:12.5px; color:#6b7280; margin:12px 0 0;">
+      R1・R4・R5 は独立に実施できる。R2 は R3 の前提となり、R3 は最も大きい。
+      R3 を選ばない場合でも R1・R2 は F-4・F-5 を解消する。
+    </p>
+  </section>
+
+  <!-- 08 未検証・限界 -->
+  <section style="padding:32px 0 56px;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">08</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">検証状態と本分析の限界</h2>
+    </div>
+    <table class="grid">
+      <thead><tr><th style="width:12%;">所見</th><th style="width:18%;">検証状態</th><th>根拠</th></tr></thead>
+      <tbody>
+        <tr><td><strong>F-3</strong></td><td><span class="tag verified">コードで確認</span></td><td><code>canonical_ops.ts</code> / <code>representative_merge.ts</code> / <code>merge_traceability.ts</code> の実読</td></tr>
+        <tr><td><strong>F-4</strong></td><td><span class="tag latent">実装確認・未露出</span></td><td>固定値は実在。呼び出し側が当該値を未使用のため利用者影響は現時点でなし</td></tr>
+        <tr><td><strong>F-5</strong></td><td><span class="tag verified">コードで確認</span></td><td><code>App.tsx</code> の first-match 実装と、検証側に島またぎ重複チェックが無いことを確認</td></tr>
+        <tr><td><strong>F-6</strong></td><td><span class="tag verified">コードで確認</span></td><td><code>merge_decision_audit.ts</code> が <code>resolveDecisionOriginTrace()</code> を呼ぶ依存の向き</td></tr>
+        <tr><td><strong>F-7</strong></td><td><span class="tag struct">計数と経緯</span></td><td>21フィールド／12 optional の計数と、各フィールドのissue由来コメント</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">8.1 本分析が到達していない範囲</h3>
+    <ul class="compact" style="font-size:13px; color:#3e4c59; padding-left:22px; margin:10px 0 0;">
+      <li><strong>既存データへの影響を測っていない。</strong> F-3 の不整合が実際の保存済み文書に
+        どれだけ存在するかは未調査。R2 の warn 段階で計測してから R3 の要否を判断すべきである。</li>
+      <li><strong>辺の端点（<code>fromKind</code>/<code>toKind</code> が optional）は分析したが本書に含めていない。</strong>
+        端点種別が省略可能なため同一IDが文脈で別実体に解決され得るが、
+        現行の運用規模で問題が顕在化した証跡を確認できなかった。ADR-0047 R-1 の基準を満たさないため保留。</li>
+      <li><strong><code>summaryText</code> と <code>summaryHistory[]</code> の導出関係</strong>も同型の課題だが、
+        F-3 と違い読み取り時の推測を発生させていないため、優先度を下げた。</li>
+      <li><strong>本書は分析であり決定ではない。</strong> R1〜R5 の実施には ADR-0047 のゲート判定と
+        issue 起票を要する。</li>
+    </ul>
+
+    <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">8.2 参照した外部知見</h3>
+    <p style="font-size:12.5px; line-height:1.8; color:#6b7280; margin:10px 0 0;">
+      関数従属性・定義域制約・複合キーの観点、および「追記のみの記録を正本とし可変な集計を導出する」構成は、
+      渡辺幸三による業務システム設計の一連の論考（ブログ「設計者の発言」、
+      情報システム学会メールマガジン 2022.10.28 No.17-07「『データ・ファースト』な設計スタイルを身につけよう」、
+      三要素分析法）を参照した。<br><br>
+      ただし当該体系は<strong>業務システムの物理DB設計</strong>を前提とする。
+      kj-atlas はローカルファーストの単一JSON永続化を目標に持つため、
+      物理正規化・複合主キーの主張はそのまま適用せず、
+      <strong>論理不変条件の設計としてのみ採用</strong>した（§07 冒頭）。
+      またカード本文・空間配置・見立てへは適用しない（§1.1）。
+    </p>
+  </section>
+
+</main>
+</x-dc>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: "neutral",
+    fontFamily: '"Noto Sans JP", system-ui, sans-serif',
+    flowchart: { curve: "basis", padding: 14 }
+  });
+  function renderMermaidDiagrams() {
+    var nodes = document.querySelectorAll(".mermaid:not([data-processed])");
+    if (nodes.length) { mermaid.run({ nodes: nodes }); }
+  }
+  var scheduled = null;
+  function scheduleRender() {
+    if (scheduled !== null) { return; }
+    scheduled = setTimeout(function () { scheduled = null; renderMermaidDiagrams(); }, 60);
+  }
+  new MutationObserver(scheduleRender).observe(document.documentElement, { childList: true, subtree: true });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", scheduleRender);
+  } else {
+    scheduleRender();
+  }
+  window.addEventListener("load", scheduleRender);
+</script>
+</body>
+</html>

@@ -52,6 +52,6 @@ Maintainerが本ADRを提案通り受理した。`CARD-META-UI-01` の `Decision
 - Related: `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`
 - Related: `02_Architecture/schemas.md`
 - Related: `02_Architecture/review_attribution.md`
-- Related: `02_Architecture/data_model_operations_overview.md`
+- Related: `02_Architecture/design/data_model_operations_overview.html`
 - Related: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
 - ADR-0047 R-3（非機能境界）: 新しいメタデータ区分が個人情報・監査・共有範囲の既存不変条件と衝突しうるという、既存境界に覆われない新機能の判断である。

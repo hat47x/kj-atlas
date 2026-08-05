@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; background:#f1f3f5; }
+  * { box-sizing:border-box; }
+  body { font-family:"Noto Sans JP", system-ui, sans-serif; color:#1f2933; -webkit-font-smoothing:antialiased; }
+  @page { size:A4; margin:0; }
+  @media print {
+    html { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    html, body { margin:0; padding:0; background:#fff; }
+    .doc { max-width:none !important; margin:0 !important; padding:0 0.7in !important; box-shadow:none !important; background:#fff !important; }
+    h1, h2, h3, h4 { break-after:avoid; }
+    figure, table, tr { break-inside:avoid; }
+    p, li { orphans:3; widows:3; }
+  }
+  .scroll { overflow-x:auto; }
+  table.grid { width:100%; border-collapse:collapse; font-size:12px; margin:14px 0 0; }
+  table.grid th { text-align:left; font-weight:600; color:#52606d; border-bottom:1.5px solid #cbd5e1; padding:6px 8px; background:#f8fafc; }
+  table.grid td { border-bottom:1px solid #e5e7eb; padding:6px 8px; vertical-align:top; line-height:1.6; }
+  table.crud { min-width:760px; }
+  code { font-family:"Noto Sans Mono", ui-monospace, monospace; font-size:0.9em; background:#f1f5f9; padding:1px 5px; border-radius:3px; color:#334155; word-break:break-word; }
+  .mermaid { text-align:center; }
+  .badge { font-size:12px; font-weight:500; padding:5px 11px; border-radius:999px; border:1px solid; display:inline-block; }
+  .lvl { font-family:"Noto Sans Mono", ui-monospace, monospace; font-size:11px; font-weight:600; padding:2px 6px; border-radius:3px; white-space:nowrap; }
+  .l1 { background:#dcfce7; color:#166534; }
+  .l15 { background:#ecfccb; color:#3f6212; }
+  .l2 { background:#dbeafe; color:#1e40af; }
+  .l25 { background:#e0e7ff; color:#3730a3; }
+  .l3 { background:#f1f5f9; color:#475569; }
+  .l0 { background:#fef3c7; color:#92400e; }
+  ol.compact li, ul.compact li { margin:4px 0; line-height:1.65; }
+  a { color:#1d4ed8; }
+</style>
+</helmet>
+<main class="doc" style="box-sizing:border-box; max-width:8.5in; margin:0 auto; background:#ffffff; padding:0 clamp(20px,5vw,0.85in); box-shadow:0 1px 3px rgba(15,23,42,0.08), 0 12px 40px rgba(15,23,42,0.06);">
+
+  <!-- COVER -->
+  <header style="padding:64px 0 28px; border-bottom:1px solid #e5e7eb;">
+    <div style="display:flex; align-items:center; gap:10px; font-size:12.5px; letter-spacing:0.14em; color:#6b7280; text-transform:uppercase; font-weight:500;">
+      <span style="width:8px; height:8px; border-radius:2px; background:#b45309; display:inline-block;"></span>
+      kj-atlas ・ Architecture ・ Data Model
+    </div>
+    <h1 style="font-size:30px; line-height:1.34; font-weight:700; margin:18px 0 0; letter-spacing:0.01em; text-wrap:balance;">MVPデータモデル・運用俯瞰</h1>
+    <p style="font-size:15px; line-height:1.7; color:#52606d; margin:14px 0 0; max-width:38em; text-wrap:pretty;">
+      kj-atlas MVPで「どのデータ構造を<strong>実際に運用できるか</strong>」と「どの構造は将来契約・派生情報・限定的な保守対象に留まるか」を俯瞰する。最も重要なのはカードやまとまりを扱えることではなく、利用者と運用者が<strong>「どこまでが正式に保守されるデータか」を誤解しない</strong>ことである。
+    </p>
+    <div style="margin:22px 0 0; padding:12px 14px; background:#f8fafc; border-left:3px solid #cbd5e1; border-radius:0 4px 4px 0;">
+      <p style="font-size:12.5px; line-height:1.8; color:#52606d; margin:0;">
+        本書が正本（<code>AGENTS.md</code> §3）。環境変数・実行パラメータの正本は <a href="../runtime_parameter_registry.md">runtime_parameter_registry.md</a>。本書ではデータ構造と運用境界のみを扱う。<br>
+        型定義の詳細 → <a href="../schemas.md">schemas.md</a>　／　API入出力 → <a href="../api.md">api.md</a>　／　認証・認可境界 → <a href="enterprise_architecture.html">enterprise_architecture.html</a><br>
+        2026年5月のStream D形成記録 → <a href="../history/data-model-operations-stream-d-2026-05.md">Data Model Operations formation history</a>（本書には現行契約だけを記載する）
+      </p>
+    </div>
+  </header>
+
+  <!-- 01 基本方針 -->
+  <section style="padding:30px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">01</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">MVPの基本方針と境界クラス</h2>
+    </div>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:10px 0 0;">MVPは、データ構造の全てをサポートする段階ではない。利用者が価値を確認できる最小単位として、<strong>ドキュメント全体のスナップショット保存</strong>を中心にする。<code>schemas.md</code> にはMVPの最小永続データに加えて Contract Freeze・AI連携・review attribution・audit連携などの将来契約も含まれるため、本書では次の4区分を明確に分ける。</p>
+    <table class="grid">
+      <thead><tr><th style="width:20%;">区分</th><th style="width:38%;">意味</th><th>MVPでの扱い</th></tr></thead>
+      <tbody>
+        <tr><td><strong>運用サポート</strong></td><td>標準API/UIで作成・参照・更新でき、通常運用の対象になる</td><td><code>Document</code> スナップショット、認証ユーザーの事前登録、マージ判断ログの追記/参照</td></tr>
+        <tr><td><strong>埋め込み限定</strong></td><td><code>Document</code> 内には保存されるが、個別エンティティとしてのCRUDを持たない</td><td>Card、Edge、Island、Narrative、RelationSummary、PatchApplyLog、ReviewAttribution など</td></tr>
+        <tr><td><strong>派生/読み取り中心</strong></td><td>保存済みデータや入力から生成され、標準的な保守対象ではない</td><td>SimilarCandidateGroup、ContextBundle、各種 audit event</td></tr>
+        <tr><td><strong>契約のみ/将来拡張</strong></td><td>型や境界を先に固定しているが、MVP運用の完全対象ではない</td><td>CE系Context契約、proposal/apply監査、詳細な証跡・根拠リンク管理、差分同期</td></tr>
+      </tbody>
+    </table>
+
+    <h3 id="support-boundary-classes" style="font-size:15px; font-weight:700; margin:22px 0 0;">1.1 ADR-0033 境界クラス（固定）</h3>
+    <p style="font-size:12.5px; color:#6b7280; margin:6px 0 0;">本書のCRUD表・フィールド支援レベルは、ADR-0033 の Support/Maintenance/Contract Boundary Table と同じ語彙で運用する。</p>
+    <figure style="margin:14px 0 0;">
+      <pre class="mermaid">
+flowchart TB
+    S1["L1: Supported<br/>標準API/UIで日常運用できる<br/>例: Document snapshot"]:::a
+    S2["L1.5: Append-read<br/>追記・参照のみを標準運用とする<br/>例: merge decision log"]:::b
+    S3["L2: Embedded-only<br/>Document内埋め込みで保持し<br/>個別CRUDは提供しない"]:::c
+    S4["L2.5: Contract-limited<br/>保存はするが個別編集UI・<br/>個別CRUDを持たない契約先行"]:::d
+    S5["L3: Derived<br/>生成・表示対象であり<br/>永続保守対象ではない"]:::e
+    S6["L0: Planned<br/>運用手順を定義中で<br/>標準運用を保証しない"]:::f
+
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+
+    classDef a fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#166534
+    classDef b fill:#ecfccb,stroke:#65a30d,stroke-width:1.2px,color:#3f6212
+    classDef c fill:#dbeafe,stroke:#2563eb,stroke-width:1.2px,color:#1e40af
+    classDef d fill:#e0e7ff,stroke:#4f46e5,stroke-width:1.2px,color:#3730a3
+    classDef e fill:#f1f5f9,stroke:#94a3b8,stroke-width:1.2px,color:#475569
+    classDef f fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#92400e
+      </pre>
+      <figcaption style="font-size:12.5px; color:#6b7280; margin-top:9px; line-height:1.65;">上ほど運用保証が強い。「型がある」ことを「MVPで保守できる」ことと同一視しないための語彙である。</figcaption>
+    </figure>
+  </section>
+
+  <!-- 02 物理永続化 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">02</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">物理永続化モデル</h2>
+    </div>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:10px 0 0;">現行実装の物理テーブルは、論理エンティティを細かく正規化する構成ではない。ドキュメント本体は <code>documents.payload_json</code> にスナップショットとして保存し、必要な補助ログだけを別テーブルに分離する。</p>
+    <figure style="margin:16px 0 0;">
+      <pre class="mermaid">
+erDiagram
+    TENANT_ROW ||--o{ TENANT_IDP_ROW : allows
+    IDENTITY_PROVIDER_ROW ||--o{ TENANT_IDP_ROW : binds
+    TENANT_ROW ||--o{ TENANT_MEMBERSHIP_ROW : has
+    USER_ROW ||--o{ TENANT_MEMBERSHIP_ROW : joins
+    USER_ROW ||--o{ USER_IDENTITY_ROW : maps
+    DOCUMENT_ROW ||--o{ MERGE_DECISION_LOG_ROW : has
+
+    TENANT_ROW {
+        text id PK
+        text display_name
+        text lifecycle_state
+        text created_at
+        text updated_at
+    }
+
+    IDENTITY_PROVIDER_ROW {
+        text id PK
+        text issuer
+        text audience
+        text lifecycle_state
+        text created_at
+        text updated_at
+    }
+
+    TENANT_IDP_ROW {
+        text tenant_id PK,FK
+        text identity_provider_id PK,FK
+        text lifecycle_state
+        text created_at
+        text updated_at
+    }
+
+    TENANT_MEMBERSHIP_ROW {
+        text tenant_id PK,FK
+        text user_id PK,FK
+        text lifecycle_state
+        text created_at
+        text updated_at
+    }
+
+    USER_ROW {
+        text id PK
+        text display_name
+        text email
+        text lifecycle_state
+        text created_at
+        text updated_at
+    }
+
+    USER_IDENTITY_ROW {
+        integer id PK
+        text user_id FK
+        text provider
+        text external_uid
+        text created_at
+    }
+
+    DOCUMENT_ROW {
+        text id PK
+        text tenant_id
+        integer version
+        text updated_at
+        text payload_json
+    }
+
+    MERGE_DECISION_LOG_ROW {
+        integer id PK
+        text tenant_id
+        text doc_id FK
+        text decision_id
+        text group_id
+        text snapshot_version
+        text decided_at
+        text payload_json
+    }
+      </pre>
+      <figcaption style="font-size:12.5px; color:#6b7280; margin-top:9px; line-height:1.65;">現行実装の物理ER。Card / Edge / Island 等は <code>documents.payload_json</code> の中に埋め込まれ、独立したテーブルを持たない。</figcaption>
+    </figure>
+
+    <table class="grid">
+      <thead><tr><th style="width:24%;">物理テーブル</th><th style="width:30%;">主な責務</th><th>運用上の注意</th></tr></thead>
+      <tbody>
+        <tr><td><code>tenants</code></td><td>server-managedなtenant lifecycle</td><td><code>local-default</code> をsingle-tenant互換用に保持する。<strong>表示名を認可keyにしない</strong></td></tr>
+        <tr><td><code>identity_providers</code></td><td>issuer + audienceで識別する将来のtrust configuration</td><td>表はexpand済みだが、現行 <code>user_identities</code> とのbindingは未実装。秘密値は保存しない</td></tr>
+        <tr><td><code>tenant_identity_providers</code></td><td>tenantが利用可能なIdPのbinding</td><td>複合PK/FKは実装済み。SaaSのverified claim解決は未実装</td></tr>
+        <tr><td><code>tenant_memberships</code></td><td>tenantと内部Userのactive membership</td><td>migrationで既存Userを <code>local-default</code> へbackfillし、新規JIT/strict provisioningでも同membershipを作る</td></tr>
+        <tr><td><code>documents</code></td><td><code>DocumentV1</code> のスナップショット保存</td><td><code>tenant_id</code> は <code>local-default</code> でexpand済み。ただし <code>id</code> が全体PKのままで<strong>複合PK/FK・RLSは未実装</strong>。Card/Edge/Island等は <code>payload_json</code> 内に埋め込む</td></tr>
+        <tr><td><code>merge_decision_logs</code></td><td>Manual assisted merge の判断ログをappend-onlyに近い形で保存</td><td><code>tenant_id</code> はexpand済みだが、親Documentとの複合FKは未実装。通常更新・削除APIは持たない</td></tr>
+        <tr><td><code>users</code></td><td>認証主体の内部ユーザー表現</td><td>lifecycle stateは持つが、MVPの管理画面で全ライフサイクルを扱う段階ではない</td></tr>
+        <tr><td><code>user_identities</code></td><td>IdPなど外部認証subjectと内部ユーザーの対応</td><td><code>provider + external_uid</code> を内部 <code>user:&lt;users.id&gt;</code> に正規化する</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px; color:#6b7280; margin:10px 0 0;"><code>DATA-MODEL-OPS-02</code>（D1〜D4、2026-07-13代理裁可）により管理面（マスタデータ）レイヤーの正本を固定した。<strong>いずれも新しい物理テーブルを本ER図へ追加しない。</strong>D1 文書一覧: 既存 <code>documents</code> を対象にした本文非含有の射影。D2 View/Perspective状態・QueryPreset: 既存 <code>view.json</code> とdevice-local（browser storage）を正本のまま維持。D3 エージェント登録: <code>agent_registrations</code> 相当をサーバー正本として採用済みだが、実装は <code>EXT-CONN-02</code> で行う契約先行決定であり、実装されるまで本ER図には含めない。</p>
+
+    <h3 style="font-size:15px; font-weight:700; margin:24px 0 0;">2.1 SaaS tenant target model <span style="font-size:11.5px; color:#94a3b8; font-weight:500;">ADR-0059・expand foundation実装済み</span></h3>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:8px 0 0;">次は <code>ADR-0059</code> でAcceptedとなった<strong>最終target</strong>である。Alembic <code>20260716_0006</code> でtenant/IdP/membership表、Document/判断ログのtenant列、<code>local-default</code> backfillを実装し、Document/判断ログ/backfillのDB queryは内部TenantContext必須repositoryへ集約した。一方、verified TenantContext解決、identity binding移行、Document複合PK/FK、RLS、全consumerへの伝播、越境テストは<strong>未実装</strong>であり、完了までSupport levelは <span class="lvl l0">L0</span> とする。</p>
+    <figure style="margin:14px 0 0;">
+      <pre class="mermaid">
+erDiagram
+    TENANT_ROW ||--o{ TENANT_IDP_ROW : allows
+    IDENTITY_PROVIDER_ROW ||--o{ TENANT_IDP_ROW : bound_to
+    USER_ROW ||--o{ USER_IDENTITY_ROW : maps
+    IDENTITY_PROVIDER_ROW ||--o{ USER_IDENTITY_ROW : verifies
+    TENANT_ROW ||--o{ TENANT_MEMBERSHIP_ROW : has
+    USER_ROW ||--o{ TENANT_MEMBERSHIP_ROW : joins
+    TENANT_ROW ||--o{ DOCUMENT_ROW : owns
+    DOCUMENT_ROW ||--o{ MERGE_DECISION_LOG_ROW : has
+
+    TENANT_ROW {
+        text id PK
+        text display_name
+        text lifecycle_state
+    }
+
+    IDENTITY_PROVIDER_ROW {
+        text id PK
+        text issuer
+        text audience
+        text lifecycle_state
+    }
+
+    TENANT_IDP_ROW {
+        text tenant_id FK
+        text identity_provider_id FK
+        text lifecycle_state
+    }
+
+    USER_IDENTITY_ROW {
+        integer id PK
+        text user_id FK
+        text identity_provider_id FK
+        text subject
+    }
+
+    TENANT_MEMBERSHIP_ROW {
+        text tenant_id FK
+        text user_id FK
+        text lifecycle_state
+    }
+
+    DOCUMENT_ROW {
+        text tenant_id PK
+        text id PK
+        integer version
+        text updated_at
+        text payload_json
+    }
+
+    MERGE_DECISION_LOG_ROW {
+        text tenant_id FK
+        text doc_id FK
+        integer id
+        text payload_json
+    }
+      </pre>
+      <figcaption style="font-size:12.5px; color:#6b7280; margin-top:9px; line-height:1.65;">target model では <code>DOCUMENT_ROW</code> の主キーが <code>tenant_id + id</code> の複合になる点が現行ERとの最大の差分である。</figcaption>
+    </figure>
+    <ul class="compact" style="font-size:13px; color:#3e4c59; padding-left:22px; margin:12px 0 0;">
+      <li>identityは <code>identity_provider_id + subject</code>、membershipは <code>tenant_id + user_id</code> で一意にする。</li>
+      <li>Documentとすべての子行は <code>tenant_id + id</code> の複合識別・複合外部キーを使い、<strong>docIdだけのquery/joinを提供しない</strong>。</li>
+      <li>tenantIdはserver-managed列であり、DocumentV1 payloadやimport/export値から<strong>認可境界を復元しない</strong>。</li>
+      <li>shared schema型SaaSはアプリfilterだけでなく PostgreSQL RLS 等のDB側tenant guardを必須とする。SQLiteはsingle-tenant用途に限定する。</li>
+      <li>agent registration、job、cache、search index、object-storage key、audit、backup manifestにも同じtenantIdを伝播する。</li>
+    </ul>
+    <p style="font-size:12.5px; color:#6b7280; margin:10px 0 0;"><code>20260716_0006</code> の <code>tenant_id</code> 既定値は既存single-tenant APIを維持するための<strong>expand限定措置</strong>である。Document repositoryはTenantContext必須だが、現行routeは内部 <code>single_tenant_adapter</code> から <code>local-default</code> を注入する。SaaS profileを有効化する前に、verified contextを解決し、全consumerをtenant必須へ切り替え、暗黙 <code>local-default</code> へ依存しない制約段階へ進む。</p>
+  </section>
+
+  <!-- 03 論理データモデル -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">03</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">論理データモデル</h2>
+    </div>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:10px 0 0;">次のER図は、物理テーブルではなく <code>Document</code> スナップショット<strong>内</strong>の論理構造を示す。運用上は多くが <code>documents.payload_json</code> の中に含まれ、個別CRUDの対象ではない。</p>
+    <figure style="margin:16px 0 0;">
+      <pre class="mermaid">
+erDiagram
+    DOCUMENT ||--o{ CARD : contains
+    DOCUMENT ||--o{ EDGE : contains
+    DOCUMENT ||--o{ EVIDENCE_LINK : contains
+    DOCUMENT ||--o{ ISLAND : contains
+    DOCUMENT ||--o{ NARRATIVE : contains
+    DOCUMENT ||--o{ RELATION_SUMMARY : contains
+    DOCUMENT ||--o{ PATCH_APPLY_LOG_ENTRY : contains
+    DOCUMENT ||--o{ MERGE_SUGGESTION_DECISION : contains
+    DOCUMENT ||--o{ CRITIQUE_INPUT : contains
+    DOCUMENT ||--o{ REPROPOSAL_DIFF : contains
+    DOCUMENT ||--o| REVIEW_ATTRIBUTION : has
+    DOCUMENT ||--o| DETERMINISTIC_TIE_BREAK : has
+    DOCUMENT ||--o{ MERGE_DECISION_LOG : has
+    DOCUMENT ||--o{ SIMILAR_CANDIDATE_GROUP : derives
+    DOCUMENT ||--o{ AUDIT_EVENT : emits
+
+    CARD ||--o{ EDGE : endpoint
+    CARD ||--o{ EVIDENCE_LINK : evidence_endpoint
+    ISLAND ||--o{ EDGE : endpoint
+    ISLAND ||--o{ CARD : groups
+    NARRATIVE ||--o{ CARD : references
+    RELATION_SUMMARY ||--o{ EDGE : summarizes
+      </pre>
+    </figure>
+
+    <table class="grid">
+      <thead><tr><th style="width:24%;">論理データ</th><th style="width:36%;">MVPでの位置づけ</th><th>保守方法</th></tr></thead>
+      <tbody>
+        <tr><td><code>DocumentV1</code></td><td>カード、線、島、文章化、レビュー帰属、判断ログ連携などを含む唯一のスナップショット</td><td><code>GET /docs/{doc_id}</code> と <code>PUT /docs/{doc_id}</code> で全体を取得/置換する。個別構造の完全CRUDはMVP範囲外</td></tr>
+        <tr><td><code>Card</code></td><td>利用者が置く主要情報単位。<code>claimType</code> による事実/主張/仮説の分類を含む</td><td>画面操作またはインポート後、ドキュメント全体保存で反映する</td></tr>
+        <tr><td><code>Edge</code></td><td>カード/島間の関係。<code>fromKind</code> / <code>toKind</code> で endpoint 種別を保持できる</td><td>個別APIは持たず、ドキュメント全体保存で反映する</td></tr>
+        <tr><td><code>EvidenceLink</code></td><td>根拠・反証のリンク</td><td><code>DocumentV1.evidenceLinks</code> の埋め込み構造として保存する。個別CRUDは持たない</td></tr>
+        <tr><td><code>Island</code></td><td>まとまり、囲み、構造化の単位</td><td><code>DocumentV1</code> 内の埋め込み構造。旧式の <code>imageUrl</code> / <code>imageReviewed</code> も往復保持するが、SafeModeではURLを取得しない。shapeやreview状態の完全保守は段階導入</td></tr>
+        <tr><td><code>Narrative</code> / <code>RelationSummary</code></td><td>文章化・要約成果物</td><td>共有前確認やレビューと連動するが、MVPでは個別CRUDを正本にしない</td></tr>
+        <tr><td><code>ReviewAttribution</code></td><td>人間レビュー済み状態と主体の追跡</td><td><code>user:&lt;users.id&gt;</code> 正規化を前提にする。<strong>自動昇格は禁止</strong></td></tr>
+        <tr><td><code>MergeDecisionRecord</code></td><td>類似統合などの人間判断ログ</td><td><code>merge_decision_logs</code> に追記し、group/snapshot単位で参照する</td></tr>
+        <tr><td><code>SimilarCandidateGroup</code></td><td>類似候補の表示用派生情報</td><td>保存済みDocumentから導出する。通常保守対象ではない</td></tr>
+        <tr><td><code>ContextQuery</code> / <code>ContextBundle</code></td><td>AI入力・提案前の安全な文脈境界</td><td>契約先行。MVPではmock/検証用I/Fを含み、永続保守対象とは分ける</td></tr>
+        <tr><td><code>InquiryJourneyV1</code></td><td>W型累積KJ法のラウンドDAGを束ねる独立manifest</td><td><code>ADR-0057</code> の採択済み設計目標。現行 <code>DocumentV1</code> へ埋め込まず、実装までは <span class="lvl l0">L0</span> とする（<a href="inquiry_journey_model.html">inquiry_journey_model.html</a>）</td></tr>
+        <tr><td><code>RoundSnapshotV1</code></td><td>人が確認した節目の不変な文書成果</td><td>意味のある配置を含む <code>DocumentV1</code> 成果を再現する。現行API・DB・標準UIでは未実装</td></tr>
+        <tr><td><code>RepresentativeVisualCue</code></td><td>島または選択集合の再認識を助ける任意の絵文字・アイコン・画像</td><td>ADR-0060 Accepted（2026-07-20）。採用参照・権利情報は <code>DocumentV1.islands[].representativeCue</code> へ埋め込み（<span class="lvl l2">L2</span> 契約確定）。画像本体は経路別（IndexedDB/JS bundle/OSフォント）。コード実装はT7で着手</td></tr>
+        <tr><td><code>SourceVisualMaterial</code></td><td>観察・取材・利用者作成で得た写真・図・スケッチと元文脈</td><td><code>DOMAIN-VISUAL-CUE-01</code> / <code>ADR-0060</code> で代表手掛かりと分離した計画対象。代表手掛かりの保存契約確定後、一次視覚資料の保存契約を別途決定する</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 04 CRUD -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">04</span>
+      <h2 id="crud-support-table" style="font-size:20px; font-weight:700; margin:0;">CRUDサポート表</h2>
+    </div>
+    <div class="scroll">
+    <table class="grid crud">
+      <thead><tr>
+        <th style="width:15%;">データ領域</th><th style="width:7%;">Support level</th><th>Create</th><th>Read</th><th>Update</th><th>Delete</th><th>MVP保守責任</th><th style="width:23%;">備考</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Documentスナップショット</td><td><span class="lvl l1">L1</span></td><td><code>PUT /docs/{doc_id}</code> で存在しなければ作成</td><td><code>GET /docs/{doc_id}</code></td><td><code>PUT</code> で全体置換</td><td>標準APIなし</td><td>Document owner / Platform operator</td><td>API文書上の <code>POST /docs</code> は任意/将来候補として扱い、実装契約化は <code>DATA-CONTRACT-01</code> で同期する</td></tr>
+        <tr><td>Card / Edge</td><td><span class="lvl l2">L2</span></td><td>Document作成・更新に含める</td><td>Document取得に含まれる</td><td>Document全体保存で反映</td><td>Document全体保存で除去</td><td>Standard user / Document owner</td><td>個別カードAPIや個別エッジAPIはMVP範囲外。<code>claimType</code> と endpoint kind はスナップショット内で往復保持する</td></tr>
+        <tr><td>EvidenceLink</td><td><span class="lvl l2">L2</span></td><td>Document作成・更新に含める</td><td>Document取得に含まれる</td><td>Document全体保存で反映</td><td>Document全体保存で除去</td><td>Standard user / Reviewer</td><td>個別APIは持たない。SafeMode/share/exportでは未レビュー本文や根拠の扱いを別途確認する</td></tr>
+        <tr><td>Island / IslandShape</td><td><span class="lvl l2">L2</span></td><td>DocumentV1に含める</td><td>Document取得に含まれる</td><td>Document全体保存で反映</td><td>Document全体保存で除去</td><td>Standard user / Reviewer</td><td>shape再計算、階層、collapseなどはUI/実装の段階的対応が必要</td></tr>
+        <tr><td>Narrative / RelationSummary</td><td><span class="lvl l2">L2</span></td><td>DocumentV1またはexport処理に含める</td><td>Document取得またはexport成果物で参照</td><td>Document全体保存で反映</td><td>Document全体保存で除去</td><td>Reviewer / Document owner</td><td>文章化品質、根拠、未レビュー状態の表示は製品化issueで継続管理する</td></tr>
+        <tr><td>ReviewAttribution</td><td><span class="lvl l25">L2.5</span></td><td>DocumentV1更新時に含める</td><td>Document取得に含まれる</td><td>認証主体と一致する場合のみ更新を許可</td><td>標準削除APIなし</td><td>Reviewer / Security officer</td><td><code>human_reviewed</code> は<strong>人手操作のみ</strong>。AIや自動処理で昇格しない</td></tr>
+        <tr><td>MergeDecisionRecord</td><td><span class="lvl l15">L1.5</span></td><td><code>POST /docs/{doc_id}/merge-decision-logs</code></td><td>group/snapshot別GET</td><td>標準更新APIなし</td><td>標準削除APIなし</td><td>Reviewer / Audit operator</td><td>追記ログとして扱い、訂正は新しい判断記録で表現する方針</td></tr>
+        <tr><td>SimilarCandidateGroup</td><td><span class="lvl l3">L3</span></td><td>保存済みDocumentから導出</td><td><code>GET /docs/{doc_id}/similar-candidate-groups</code></td><td>標準更新APIなし</td><td>標準削除APIなし</td><td>Reviewer</td><td>結果の正しさは候補生成ロジックの検証対象で、データ保守対象ではない</td></tr>
+        <tr><td>ContextQuery / ContextBundle</td><td><span class="lvl l25">L2.5</span></td><td>request/responseとして生成</td><td>API/CLI/contract testで参照</td><td>永続更新なし</td><td>永続削除なし</td><td>Developer / AI integration owner</td><td>契約先行。利用者データの永続保守とは分け、実装済み運用としては扱わない</td></tr>
+        <tr><td>Export / Context audit event</td><td><span class="lvl l3">L3</span></td><td>各audit endpointで送信</td><td>アプリ内の標準一覧APIなし。本文を含まない監査メタデータ閲覧候補は <code>DATA-MAINT-04</code> でOpen管理する</td><td>標準更新APIなし</td><td>標準削除APIなし</td><td>Audit operator / Security officer</td><td>監査基盤への委譲を前提とし、アプリ本体に監査ログ閲覧UIを持たない。本文・未レビュー情報・横断検索を含む場合はADR必須</td></tr>
+        <tr><td>User / UserIdentity</td><td><span class="lvl l1">L1</span></td><td><code>POST /admin/provision/users</code></td><td>標準一覧APIなし</td><td>標準更新APIなし</td><td>標準削除APIなし</td><td>Platform operator</td><td>strict provisioningの入口。退避、無効化、棚卸しは <code>DATA-MAINT-01</code> の対象</td></tr>
+        <tr><td>文書一覧（Document index projection）</td><td><span class="lvl l1">L1</span></td><td>標準Createなし（既存 <code>documents</code> の射影）</td><td><code>GET /docs</code>（<code>id</code>/<code>title</code>/<code>updatedAt</code> のallowlistのみ、本文非含有）</td><td>標準更新APIなし</td><td>標準削除APIなし</td><td>Platform operator / Document owner</td><td>対象は現認可主体がread可能な文書に限定し、owner/ACL解決不能時はfail-closed。localStorageの「最近」は非正本キャッシュへ格下げする（<code>DATA-MODEL-OPS-02</code> D1確定）</td></tr>
+        <tr><td>View/Perspective状態</td><td><span class="lvl l2">L2</span></td><td>既存 <code>view.json</code> 保存に含める</td><td>既存 <code>view.json</code> 取得に含まれる</td><td>既存 <code>view.json</code> 保存で反映</td><td>ファイル管理に依存</td><td>Standard user</td><td><code>DocumentV1</code> へ埋め込まず、既存 <code>view.json.viewState</code> を正本とする（<code>DATA-MODEL-OPS-02</code> D2確定）</td></tr>
+        <tr><td>QueryPreset（Patch workspace）</td><td><span class="lvl l3">L3</span></td><td>device-local（browser storage）</td><td>device-local</td><td>device-local</td><td>device-local</td><td>Standard user</td><td>当面device-localを維持し、UIで「この端末のみ」と明示する。利用実績なしにユーザー従属テーブルを新設しない（<code>DATA-MODEL-OPS-02</code> D2確定）</td></tr>
+        <tr><td>エージェント登録<br/>（<code>agent_registrations</code>）</td><td><span class="lvl l0">L0</span></td><td><code>POST /admin/agent-registrations</code>（契約先行、実装は <code>EXT-CONN-02</code>）</td><td><code>GET /admin/agent-registrations</code>（<code>token</code>/<code>tokenHash</code> 非含有、契約先行）</td><td>標準更新APIなし</td><td><code>DELETE /admin/agent-registrations/{id}</code>（失効、契約先行）</td><td>将来: Platform operator（admin strict provisioning限定）</td><td>サーバー正本として採用済み（<code>DATA-MODEL-OPS-02</code> D3確定）。登録・失効はadminのstrict provisioning型操作に限定し、平文tokenは作成時に一度だけ表示・以後はhashのみで照合する。<strong>登録自体は文書書込権限とみなさず</strong>、ingestごとに別途許可判定する。API型契約は <code>api.md</code> §9.5 に先行固定済み</td></tr>
+        <tr><td>Import/Review Pack artifact</td><td><span class="lvl l3">L3</span></td><td>import/export処理で生成・取込</td><td>ファイルまたはUI上の結果で参照</td><td>再export/再importで更新</td><td>ファイル管理に依存</td><td>Standard user / Document owner</td><td>DBの正本ではなく、共有・移行用成果物として扱う</td></tr>
+        <tr><td>InquiryJourney / RoundSnapshot</td><td><span class="lvl l0">L0</span></td><td>標準経路なし</td><td>標準経路なし</td><td>標準経路なし</td><td>標準経路なし</td><td>将来: Standard user / Document owner</td><td><code>ADR-0057</code> は独立探究 + 不変成果DAG + 自己完結bundleを採択済み。型・fixture・操作模型・roundtrip・削除境界を <code>DOMAIN-W-ITERATION-01</code> で検証するまで、現行CRUD対応を主張しない</td></tr>
+        <tr><td>RepresentativeVisualCue / image asset</td><td><span class="lvl l0">L0</span></td><td>標準経路なし</td><td>標準経路なし</td><td>標準経路なし</td><td>標準経路なし</td><td>将来: Standard user / Document owner</td><td><code>ADR-0060</code> はProposed。手描き・基本図形・利用者画像、Unicode絵文字・同梱素材、外部素材、生成画像の供給経路と、採用参照・権利情報・画像本体・サムネイルの保存をfixtureで比較するまで、<code>DocumentV1</code> やDBへ追加しない</td></tr>
+        <tr><td>SourceVisualMaterial</td><td><span class="lvl l0">L0</span></td><td>標準経路なし</td><td>標準経路なし</td><td>標準経路なし</td><td>標準経路なし</td><td>将来: Field worker / Standard user / Document owner</td><td>写真・図が観察データや根拠である場合の計画対象。代表表示の切り抜きと元資料・撮影文脈・出典を分離し、容量・機微情報・削除を決めるまで現行CRUD対応を主張しない</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="documentv1-field-support" style="font-size:15px; font-weight:700; margin:24px 0 0;">4.1 DocumentV1フィールド支援レベル表</h3>
+    <p style="font-size:12.5px; color:#6b7280; margin:6px 0 0;"><code>DocumentV1</code> は全フィールドを個別運用できるという意味ではない。次の表は frontend/backend/API/設計上の現在の扱いを、保守レベルとして固定する。</p>
+    <div class="scroll">
+    <table class="grid crud">
+      <thead><tr><th style="width:15%;">フィールド</th><th style="width:7%;">Support level</th><th style="width:21%;">frontend型</th><th style="width:21%;">backend保存/検証</th><th style="width:10%;">MVP保守レベル</th><th>次アクション</th></tr></thead>
+      <tbody>
+        <tr><td><code>version</code> / <code>id</code> / <code>createdAt</code> / <code>updatedAt</code> / <code>transform</code></td><td><span class="lvl l1">L1</span></td><td>必須</td><td>必須</td><td>運用サポート</td><td><code>PUT /docs/{doc_id}</code> のCreate/Update契約で維持する</td></tr>
+        <tr><td><code>cards[]</code></td><td><span class="lvl l2">L2</span></td><td><code>Card[]</code>。<code>claimType</code>、統合元、批評、レビュー状態を含む</td><td><code>Card[]</code> として保存。<code>claimType</code> も往復保持する</td><td>埋め込み限定</td><td>個別カードCRUDは作らず、スナップショット保存の互換を維持する</td></tr>
+        <tr><td><code>edges[]</code></td><td><span class="lvl l2">L2</span></td><td><code>Edge[]</code>。<code>fromKind</code> / <code>toKind</code> を含む</td><td><code>Edge[]</code> として保存。endpoint kind も往復保持する</td><td>埋め込み限定</td><td>島endpointを含む関係のUI/API検証を <code>DATA-CONTRACT-01</code> で継続する</td></tr>
+        <tr><td><code>islands[]</code></td><td><span class="lvl l2">L2</span></td><td><code>Island[]</code>。階層、collapse、shape、summary、旧式 <code>imageUrl</code> / <code>imageReviewed</code> を含む</td><td>保存/検証あり。geometry/shapeの互換正規化と旧式画像フィールドの往復保持あり</td><td>埋め込み限定</td><td>SafeModeでは旧式URLを取得しない。由来・権利・代替テキストを持つ新モデルへの移行は <code>SEC-VISUAL-ASSET-01</code> / <code>DOMAIN-VISUAL-CUE-01</code> で扱う</td></tr>
+        <tr><td><code>readingOrder</code></td><td><span class="lvl l2">L2</span></td><td>optional</td><td>optional</td><td>埋め込み限定</td><td>文章化・共有時の読み順として扱う</td></tr>
+        <tr><td><code>narratives</code></td><td><span class="lvl l2">L2</span></td><td>optional</td><td>optional</td><td>埋め込み限定</td><td>個別CRUDではなく、成果物化と共有前確認で扱う</td></tr>
+        <tr><td><code>relationSummaries</code></td><td><span class="lvl l2">L2</span></td><td>optional</td><td>optional。本文長上限あり</td><td>埋め込み限定</td><td>要約品質、根拠、レビュー状態の検証を継続する</td></tr>
+        <tr><td><code>evidenceLinks</code></td><td><span class="lvl l2">L2</span></td><td>optional。根拠/反証リンク</td><td>optional。往復保持する</td><td>埋め込み限定</td><td>share/exportとSafeModeでの表示・抑制条件を <code>PRODUCT-VALUE-02/03</code> と同期する</td></tr>
+        <tr><td><code>patchApplyLog</code></td><td><span class="lvl l2">L2</span></td><td>optional。evidence件数を含むstats</td><td>optional。evidence件数を保持し、旧データは0として補完する</td><td>埋め込み限定</td><td>patch適用監査の保持範囲を <code>DATA-CONTRACT-01</code> で継続確認する</td></tr>
+        <tr><td><code>mergeSuggestionDecisions</code></td><td><span class="lvl l2">L2</span></td><td>optional</td><td>optional</td><td>埋め込み限定</td><td>append-onlyの <code>merge_decision_logs</code> と混同しない</td></tr>
+        <tr><td><code>critiqueInputs</code> / <code>reproposalDiffs</code></td><td><span class="lvl l25">L2.5</span></td><td>optional。A1契約型として掲載し、strict/import検証で往復保持</td><td>backend契約型として保存。<code>island:</code> targetRef と片側 <code>null</code> の可逆差分を許可</td><td>契約のみ/限定保存</td><td>個別編集UIや個別CRUDはMVP範囲外。SafeMode/share/exportでの扱いはテスト観点に残す</td></tr>
+        <tr><td><code>reviewAttribution</code></td><td><span class="lvl l25">L2.5</span></td><td>optional。A1契約型として掲載し、<code>reviewedAt</code> の状態別制約と生ID禁止を検証</td><td>backend契約型として保存。認証主体一致を検証</td><td>契約のみ/限定保存</td><td>review attribution正本との同期を継続し、監査閲覧・検索は製品化issueで扱う</td></tr>
+        <tr><td><code>deterministicTieBreak</code></td><td><span class="lvl l25">L2.5</span></td><td>optional。固定順序をstrict/import検証で保持</td><td>backend契約型として保存</td><td>契約のみ/限定保存</td><td>polygon handoff契約との関係を維持する</td></tr>
+        <tr><td><code>cards[].meta</code>（<code>seq</code>/<code>source</code>）</td><td><span class="lvl l25">L2.5</span></td><td>optional。通し番号と原データ遡及参照（schemas.md §15）。meta内の未知キーはfail-closedで破棄</td><td><code>CardMeta</code> として保存。未知キーは受理しない</td><td>契約のみ/限定保存</td><td>共有向け書き出しは既定除外＋明示トグル（§15.4）。起票者等の主体メタは <code>CARD-META-UI-01</code> の確定まで追加しない</td></tr>
+        <tr><td><code>contradictionSignalDecisions</code></td><td><span class="lvl l25">L2.5</span></td><td>optional。矛盾シグナル（<code>analyzeContradictions()</code>）への人間レビュー決定（採用/保留/却下、schemas.md §16）</td><td>optional。往復保持し、不正要素は破棄する</td><td>契約のみ/限定保存</td><td>AI/検出ロジックは書き込み経路を持たない（<code>ADR-0041</code> CVI-2）。review pack/narrative契約は変更しない</td></tr>
+        <tr><td><code>cards[].ka</code>（<code>voice</code>/<code>value</code>）</td><td><span class="lvl l25">L2.5</span></td><td>optional。KA法の心の声・価値（schemas.md §17）。<code>text</code>（出来事の正本）とは別フィールドで併記しない</td><td><code>CardKa</code> として保存。両方欠落/空文字なら <code>ka</code> 自体を省略</td><td>契約のみ/限定保存</td><td>カード面（キャンバス）には表示しない。narrative export/review pack は既定OFFの任意セクション。SafeMode露出判定は <code>card.text</code> と同一チャネル</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 style="font-size:15px; font-weight:700; margin:24px 0 0;">4.2 DocumentV1サポートレベルとOpen化ゲート</h3>
+    <ul class="compact" style="font-size:13px; color:#3e4c59; padding-left:22px; margin:8px 0 0;">
+      <li><code>DocumentV1</code> の運用境界は <code>L1/L1.5/L2/L2.5/L3/L0</code> で固定し、<code>schemas.md</code> の versioning ルールと同時更新を必須とする。</li>
+      <li>Open化（実装チーム着手可）条件: (1) <code>schemas.md</code> の versioning / support level定義が更新済み、(2) 本書のCRUD表とフィールド支援表が同じ語彙（L1〜L0）で同期されている、(3) <code>DATA-CONTRACT-01</code> / <code>DATA-MODEL-OPS-01</code> / <code>DATA-MAINT-01</code> のACに、同じ境界分類と検証レベルが反映されている。</li>
+      <li>非互換変更は feature flag ではなく <strong>version gate優先</strong> とし、gate未導入時は契約変更を行わない（fail-closed）。</li>
+    </ul>
+  </section>
+
+  <!-- 05 ステークホルダー -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">05</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">ステークホルダー別の運用境界</h2>
+    </div>
+    <table class="grid">
+      <thead><tr><th style="width:18%;">ステークホルダー</th><th style="width:26%;">期待される操作</th><th style="width:28%;">MVPで保証する範囲</th><th>製品化に向けた不足</th></tr></thead>
+      <tbody>
+        <tr><td>Standard user</td><td>カードを置く、関係を見る、保存する、共有前確認を行う</td><td>ドキュメント単位の保存/復元と、SafeMode前提の共有導線</td><td>個別カード履歴、誤操作復元、一覧/検索、共同編集</td></tr>
+        <tr><td>Reviewer</td><td>要約、候補、レビュー状態、判断ログを確認する</td><td>人間判断ログとreview attributionの境界</td><td>レビュー作業キュー、差分比較、レビュー証跡の検索</td></tr>
+        <tr><td>Document owner</td><td>ドキュメントの内容と共有範囲を管理する</td><td>ドキュメント全体更新、export/review pack</td><td>削除/アーカイブ、所有者移管、保管期限</td></tr>
+        <tr><td>Platform operator</td><td>DB接続、バックアップ、復旧、ユーザー事前登録を管理する</td><td>SQLite/PostgreSQL切替、admin provisioning</td><td>管理UI、棚卸し、データ検証、復旧手順の標準化</td></tr>
+        <tr><td>Security officer</td><td>SafeMode、監査連携、未レビュー情報の共有抑制を確認する</td><td>SafeMode既定ON、audit endpoint、strict provisioning</td><td>監査ログ閲覧、例外承認とデータライフサイクルの統合</td></tr>
+        <tr><td>Support</td><td>利用者から再現情報を受け取り、問題を切り分ける</td><td>diagnosticsや共有前確認の情報を補助的に利用</td><td>個人情報を含まない支援パッケージ、データ破損時の安全な切り戻し</td></tr>
+        <tr><td>Developer / Maintainer</td><td>スキーマ、API、移行、テストを維持する</td><td>契約文書、型、単体/結合テスト</td><td>DocumentV1の正本同期、マイグレーション、互換性ゲート</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size:15px; font-weight:700; margin:24px 0 0;">5.1 管理・復旧・棚卸しの最小運用境界 <span style="font-size:11.5px; color:#94a3b8; font-weight:500;">DATA-MAINT-01</span></h3>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:8px 0 0;"><code>DATA-MAINT-01</code> では、MVPのデータ構造をすべて管理対象に広げるのではなく、運用者が本番導入前に最低限確認できる<strong>読み取り・退避・復旧確認</strong>を先に固定する。<code>ADR-0035</code> は2026-07-13にAcceptedされ、利用者本文・未レビュー情報・所有権・削除・アーカイブ・保管期限のように組織方針と監査責任を変える操作を標準機能にしない境界を固定した。</p>
+    <div class="scroll">
+    <table class="grid crud">
+      <thead><tr><th style="width:13%;">運用</th><th style="width:14%;">主担当 / 承認</th><th style="width:13%;">対象データ</th><th style="width:22%;">MVPで許容する手段</th><th style="width:20%;">必須確認</th><th>Stop / ADR化条件</th></tr></thead>
+      <tbody>
+        <tr><td>ドキュメント棚卸し</td><td>Platform operator / System owner</td><td><code>documents</code>（<span class="lvl l1">L1</span>）</td><td>読み取り専用のDB確認または将来CLI/API候補。標準一覧APIや管理UIは未提供</td><td>件数、<code>id</code>、<code>version</code>、<code>updated_at</code>、JSON構造の妥当性を確認し、<code>payload_json</code> 本文の閲覧を運用標準にしない</td><td>一般管理UI、検索、本文閲覧、利用者向け一覧を実装する場合は別issue</td></tr>
+        <tr><td>ユーザー棚卸し</td><td>Platform operator / Security officer</td><td><code>users</code>, <code>user_identities</code>（<span class="lvl l1">L1</span>）</td><td>strict provisioning の登録結果を読み取りで確認する。ライフサイクル管理UIは未提供</td><td><code>provider</code> + <code>external_uid</code> の重複、無効化予定ユーザー、登録主体と監査責任の整合を確認する</td><td>無効化、削除、SCIM、権限ロール管理を製品機能にする場合はADR</td></tr>
+        <tr><td>バックアップ</td><td>Platform operator / System owner</td><td>SQLite/PostgreSQLの永続DB</td><td>環境標準のDBバックアップを用いる。SQLiteはDBファイルの停止時スナップショット、PostgreSQLは <code>pg_dump</code> 等を候補にする</td><td>DB種別、取得日時、アプリrevision、秘匿情報の保護、バックアップ保管先を記録する</td><td>保持期間、暗号化、外部保管を製品標準として固定する場合は組織方針またはADR</td></tr>
+        <tr><td>復旧確認</td><td>Platform operator / Document owner</td><td><code>documents</code>, <code>merge_decision_logs</code></td><td>まず検証環境へ復元し、Document再投入またはDB restoreのどちらで復旧したかを記録する</td><td><code>Document.version</code>、schema version gate、<code>merge_decision_logs.doc_id</code>、判断ログの時系列、L1/L1.5優先復旧を確認する</td><td>本番への破壊的restore、互換性不明なDocumentの受け入れ、ログ欠落を伴う復旧はStop</td></tr>
+        <tr><td>支援用情報の共有</td><td>Support / Security officer</td><td>diagnostics、共有前確認結果、非機微メタデータ</td><td>SafeMode既定ONの範囲で、本文を含まない再現情報と設定状態を共有する</td><td>PII、未レビュー本文、根拠未確認の要約、組織秘密を除外したことを確認する</td><td>サポート担当の本文閲覧、管理者横断閲覧、未レビュー情報の共有を許可する場合はADR</td></tr>
+        <tr><td>アーカイブ・削除・所有者移管</td><td>Document owner / Security officer</td><td><code>documents</code>, <code>merge_decision_logs</code>, review attribution</td><td><strong>MVPでは実装しない。</strong>必要性とリスクを分類し、直接DB操作を標準手順にしない</td><td>削除対象、判断ログ保持、所有者変更の監査責任、復旧不能性を事前に記録する</td><td>いずれかを製品機能として実装する場合はADRと専用issueが必須</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="font-size:12.5px; color:#6b7280; margin:10px 0 0;">読み取り中心の棚卸しとバックアップ/復旧演習は、現時点では運用設計と検証観点の対象とする。書き込み系の管理操作は、認可・監査・データライフサイクルの合意が揃うまで実装対象に含めない。</p>
+
+    <h3 style="font-size:15px; font-weight:700; margin:24px 0 0;">5.2 Workspace / Admin・Audit の表示分離 <span style="font-size:11.5px; color:#94a3b8; font-weight:500;">DATA-MODEL-OPS-02 D4</span></h3>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:8px 0 0;"><code>DATA-MODEL-OPS-02</code> D4（2026-07-13代理裁可）により、通常利用者のWorkspace文書一覧とAdmin/Audit管理面の表示範囲を分離する。</p>
+    <table class="grid">
+      <thead><tr><th style="width:26%;">面</th><th>表示できる範囲</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Workspace文書一覧</strong><br/>Standard user / Document owner</td><td>認可済み文書のタイトルを表示できる。対象は「文書一覧（Document index projection）」（§04）に従う</td></tr>
+        <tr><td><strong>Admin/Audit管理面</strong><br/>Platform operator / Security officer / Audit operator</td><td><code>id</code> / <code>version</code> / <code>updatedAt</code> 等の固定allowlistだけを扱う。<strong>タイトル、<code>payload_json</code>、カード、narrative、review pack、diff、未レビュー本文は表示・検索の対象にしない</strong></td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px; color:#6b7280; margin:10px 0 0;">この分離は表示範囲の原則であり、Admin/Audit向けの新しい一覧APIやUIの実装可否そのものを決めるものではない。実装する場合は、この allowlist 境界と <code>ADR-0035</code> の高権限操作境界を維持する。</p>
+  </section>
+
+  <!-- 06 起票先 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">06</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">運用設計の不足と起票先</h2>
+    </div>
+    <table class="grid">
+      <thead><tr><th style="width:22%;">ID</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td><code>ADR-0033</code></td><td>MVPデータサポート境界と保守方針を固定する</td></tr>
+        <tr><td><code>ADR-0035</code></td><td>高権限データライフサイクル操作を標準管理機能にしない境界を固定する（Accepted 2026-07-13）</td></tr>
+        <tr><td><code>DATA-MODEL-OPS-01</code></td><td>ER/CRUD俯瞰とサポートレベル表の継続更新</td></tr>
+        <tr><td><code>DATA-MODEL-OPS-02</code></td><td>管理面（マスタデータ）レイヤー（文書一覧/プリセット/エージェント登録）の境界固定とサーバー正本化（D1〜D4確定、実装は別途）</td></tr>
+        <tr><td><code>DATA-MAINT-01</code></td><td>管理・復旧・棚卸し・データ保管運用の設計</td></tr>
+        <tr><td><code>DATA-MAINT-03</code></td><td>高権限データライフサイクル操作を標準機能にしない分類判断（Done / Fixed）</td></tr>
+        <tr><td><code>DATA-MAINT-04</code></td><td>本文を含まない監査メタデータ閲覧候補のOpen境界</td></tr>
+        <tr><td><code>DATA-CONTRACT-01</code></td><td>DocumentV1/API/frontend/backend間の契約ドリフト解消</td></tr>
+        <tr><td><code>CARD-META-UI-01</code></td><td>カード起票者・出典などのprovenanceメタデータUI境界</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px; line-height:1.75; color:#6b7280; margin:12px 0 0;"><code>DATA-MAINT-01</code> は、読み取り専用の棚卸し候補、SQLite/PostgreSQL別のバックアップ/復旧演習、削除・アーカイブ・所有者移管・管理者本文閲覧のStop条件を管理する。<code>DATA-MAINT-03</code> とAccepted済み <code>ADR-0035</code> により、これらの高権限操作は標準機能外と確定した。本文を含まない監査メタデータ閲覧だけは <code>DATA-MAINT-04</code> でOpenとして分離するが、<strong>Open化は実装許可ではない</strong>。標準管理画面や書き込み系管理APIを追加する場合は、一般利用者の操作導線から分離し、監査・認可・データライフサイクルの契約を先行させる。</p>
+
+    <h3 style="font-size:15px; font-weight:700; margin:24px 0 0;">6.1 カードメタデータの表示・操作境界</h3>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:8px 0 0;">カード上の状態メタデータ（主張種別、保留、違和感、未レビュー）は既存UIで段階的に扱う。一方で、起票者・作成者・出典・取り込み元・最終更新者などの provenance/accountability メタデータは、個人情報・共有/export・review attribution・所有者移管と衝突しやすい。これらを標準UIまたは <code>Card.meta</code> として扱う場合は、<code>CARD-META-UI-01</code> でUI境界、保存境界、redaction方針、ADR要否を先に確認する。</p>
+    <table class="grid">
+      <thead><tr><th style="width:17%;">分類</th><th style="width:22%;">現行の例</th><th style="width:32%;">表示・操作</th><th>保存・共有境界</th></tr></thead>
+      <tbody>
+        <tr><td>状態メタデータ</td><td><code>claimType</code>, <code>holdState</code>, <code>critiqueTags</code>, <code>textReviewed</code></td><td>カード上の短いバッジと選択時の詳細で確認・編集する</td><td><code>DocumentV1.cards[]</code> の既存契約に従う</td></tr>
+        <tr><td>非主体の遡及情報</td><td><code>Card.meta.seq</code>, <code>Card.meta.source</code>, <code>Card.sources</code></td><td><code>seq</code> / <code>source</code> は遡及情報エディタ、<code>Card.sources</code> は代表カードと出典カードの関係として表示する。両者を混同しない</td><td>共有向け書き出しでは既定除外。既存の「出典参照を含める」を明示選択した場合だけ含める</td></tr>
+        <tr><td>レビュー帰属</td><td><code>reviewState</code>, <code>reviewAttribution</code></td><td>レビュー状態と「誰がレビューしたか」の設計であり、起票者や作成者を表さない</td><td><a href="../review_attribution.md">review_attribution.md</a> の人手昇格・redaction境界に従う</td></tr>
+        <tr><td>責任主体メタデータ</td><td>起票者、作成者、最終更新者、所有者</td><td>現行MVPでは<strong>保存・編集・推測しない</strong>。カード本体へ常設せず、「記録情報」で提供していないことを説明する</td><td>importの未知キーは受理せず、共有/export/review pack/外部エージェント依頼にも含めない</td></tr>
+        <tr><td>公開説明用の出所分類</td><td>利用者入力、import由来、AI提案由来</td><td>現行スキーマから確実に導出できない分類は表示しない</td><td>将来追加時も個人識別子とは別の列挙として判断する</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px; line-height:1.75; color:#6b7280; margin:12px 0 0;">現行MVPのカード詳細パネルでは、既存スキーマから導出できるカードID、代表カード/出典カードの区別、ドキュメントの作成日時・更新日時だけを「記録情報」として表示する。起票者・作成者・最終更新者・レビュー者などの責任主体は現行データモデルにないため、UIで補完・推測せず「提供していない」と扱う。<code>Card.meta.seq</code> / <code>Card.meta.source</code> は既存の遡及情報エディタで扱う非主体メタであり、責任主体メタを追加したことを意味しない。この表示追加は保存契約、import受理キー、共有/exportの既定値、SafeModeの境界を変更しない。</p>
+    <p style="font-size:12.5px; line-height:1.75; color:#6b7280; margin:10px 0 0;">「記録情報」は初期状態で折りたたみ、選択したカードの補助情報として右側パネルに置く。マウスでは見出しをクリックし、キーボードではカードへTabで移動してEnterまたはSpaceで選択した後、見出しへTabで移動してEnterまたはSpaceで展開できる。展開後の項目は読み取り専用であり、フォーカス可能な編集欄を増やさない。日時はUIの言語に合う形式で表示し、元のISO日時は <code>time</code> 要素の <code>dateTime</code> として保持する。未設定の値は推測せず「利用できません」、データモデル自体にない責任主体は「提供していません」と区別する。共有前確認の「出典参照」は非主体の <code>seq</code> / <code>source</code> だけを対象とし、責任主体メタデータの同梱許可には使わない。SafeModeの状態にかかわらず既定OFFを維持する。importでは <code>Card.meta</code> の既知キーだけを受理し、未知の <code>author</code>、<code>creator</code>、<code>owner</code> 等を権限・所有・レビュー済みの根拠として扱わない。</p>
+  </section>
+
+  <!-- 07 更新ルール -->
+  <section style="padding:32px 0 56px;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">07</span>
+      <h2 id="update-rules" style="font-size:20px; font-weight:700; margin:0;">更新ルール</h2>
+    </div>
+    <ul class="compact" style="font-size:13px; color:#3e4c59; padding-left:22px; margin:12px 0 0;">
+      <li>新しい永続テーブル、Document内エンティティ、または標準APIを追加した場合は、本書のER図とCRUD表を<strong>同時に</strong>更新する。</li>
+      <li>「型がある」ことを「MVPで保守できる」こととして扱わない。CRUD表で保守手段が空欄になる場合は、契約のみ/派生/将来拡張として明示する。</li>
+      <li>利用者や運用者の責任が増える変更は、<code>01_Plans/issues/</code> に受入条件と検証レベルを起票する。</li>
+      <li>データライフサイクル、削除、監査、所有者移管など、組織運用上の方針を変える変更はADR化する。</li>
+    </ul>
+  </section>
+
+</main>
+</x-dc>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: "neutral",
+    fontFamily: '"Noto Sans JP", system-ui, sans-serif',
+    flowchart: { curve: "basis", padding: 14 }
+  });
+  function renderMermaidDiagrams() {
+    var nodes = document.querySelectorAll(".mermaid:not([data-processed])");
+    if (nodes.length) { mermaid.run({ nodes: nodes }); }
+  }
+  var scheduled = null;
+  function scheduleRender() {
+    if (scheduled !== null) { return; }
+    scheduled = setTimeout(function () { scheduled = null; renderMermaidDiagrams(); }, 60);
+  }
+  new MutationObserver(scheduleRender).observe(document.documentElement, { childList: true, subtree: true });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", scheduleRender);
+  } else {
+    scheduleRender();
+  }
+  window.addEventListener("load", scheduleRender);
+</script>
+</body>
+</html>

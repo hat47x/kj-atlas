@@ -7,7 +7,7 @@
 - Owner: Platform Architecture Owner + Security Officer
 - Scope: `01_Plans/`, `02_Architecture/`, `04_Documentation/`
 - Related Backlog: N/A
-- Related ADR/Spec: `ADR-0001`, `ADR-0011`, `02_Architecture/architecture.md`, `02_Architecture/schemas.md`, `02_Architecture/enterprise_architecture.md`
+- Related ADR/Spec: `ADR-0001`, `ADR-0011`, `02_Architecture/design/architecture.html`, `02_Architecture/schemas.md`, `02_Architecture/design/enterprise_architecture.html`
 - Dependencies: N/A
 - Expected verification level: `docs-check`
 
@@ -88,7 +88,7 @@
 
 - AGENTS.md は上流整合（00〜02）を実装着手条件としている。
 - `schemas.md` は互換性判断の単一正本であり、要件段階で変更有無を宣言する必要がある。
-- `enterprise_architecture.md` は組織要件（役割分離/監査）の根拠であり、責任分界点の要求定義に必須。
+- `02_Architecture/design/enterprise_architecture.html` は組織要件（役割分離/監査）の根拠であり、責任分界点の要求定義に必須。
 
 ## 3) 判断基準による優先度評価
 

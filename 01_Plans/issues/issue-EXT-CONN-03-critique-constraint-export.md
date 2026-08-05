@@ -5,9 +5,9 @@
 - Source Issue: N/A（`ADR-0054` 段階3）
 - Priority: P3
 - Owner: TBD
-- Scope: `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/domain/types.ts`（加算フィールド）, `03_Implement/mcp/`（読み取りツール追加）, `02_Architecture/schemas.md` §18（契約正本・固定済み）, `02_Architecture/external_agent_collaboration_spec.md` §3.3a（埋め込みプロファイル・固定済み）
+- Scope: `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/domain/types.ts`（加算フィールド）, `03_Implement/mcp/`（読み取りツール追加）, `02_Architecture/schemas.md` §18（契約正本・固定済み）, `02_Architecture/design/external_agent_collaboration_spec.html` §3.3a（埋め込みプロファイル・固定済み）
 - Related Backlog: `EXT-CONN-03`
-- Related ADR/Spec: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`, `02_Architecture/schemas.md` §18（agent-constraints.v1 正本）, `02_Architecture/external_agent_collaboration_spec.md` §3.3a, `01_Plans/issues/issue-EXT-AGENT-01-agent-task-package-export.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`, `02_Architecture/schemas.md` §18（agent-constraints.v1 正本）, `02_Architecture/design/external_agent_collaboration_spec.html` §3.3a, `01_Plans/issues/issue-EXT-AGENT-01-agent-task-package-export.md`
 - Expected verification level: `unit` + `integration`
 
 ## Requirement meta I/F（共通キー）
@@ -27,7 +27,7 @@ TRACE（arXiv:2606.13174）は「Mem0 記憶を使っても適用可能な選好
 
 要点のみ再掲する。詳細・契約不変条件は §18 を正とする。
 
-- **D1 契約形態**: 独立文書 `agent-constraints.v1` を正とし、`agent-task.v1` タスクシートへの同梱は埋め込みプロファイル（`external_agent_collaboration_spec.md` §3.3a）とする。手動レーンと MCP 自動レーンで正本形状を共有し、二重定義を作らない。
+- **D1 契約形態**: 独立文書 `agent-constraints.v1` を正とし、`agent-task.v1` タスクシートへの同梱は埋め込みプロファイル（`02_Architecture/design/external_agent_collaboration_spec.html` §3.3a）とする。手動レーンと MCP 自動レーンで正本形状を共有し、二重定義を作らない。
 - **D2 源泉**（すべて文書内・人間の判断のみ・決定論的に再導出可能）: card/island の critiqueTags＋自由記述、`Card.holdState==="held"`、`mergeSuggestionDecisions` の reject/defer、新設 `agentProposalDecisions` の rejected/held。`contradictionSignalDecisions`・`shelf` は v1 の源泉に含めない（§18.3 に理由記載）。
 - **D3 持続化の補修**: エージェント提案への採否は現状セッション状態＋バックエンド監査のみで文書に残らない。`mergeSuggestionDecisions`/`contradictionSignalDecisions` と同じ「決定の文書内持続化」パターンで `DocumentV2.agentProposalDecisions?`（加算・optional）を新設する。副次効果として**却下が ⌘Z で取り消し可能・リロード後も保持**になる（保全思想の改善）。
 - **D4 安全境界**（EXT-CONN-01 の原則を弱めない）: 未レビューカードの ID はいかなる形でも出さず件数のみ集計（`counts.withheldCardConstraints`）。proposal target は taskId/proposalId のエコーバックのみで文書内部 ID を含まない。自由記述は SafeMode ON で秘匿（`note: null`＋`noteRedacted: true`、`card.text` と同一判定チャネル）。契約はカード本文フィールドを持たない。
@@ -108,7 +108,7 @@ TRACE（arXiv:2606.13174）は「Mem0 記憶を使っても適用可能な選好
 
 - Derived-from: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`
 - Related: `02_Architecture/schemas.md` §18（契約正本・2026-07-15 固定）
-- Related: `02_Architecture/external_agent_collaboration_spec.md` §3.3a（埋め込みプロファイル・2026-07-15 固定）
+- Related: `02_Architecture/design/external_agent_collaboration_spec.html` §3.3a（埋め込みプロファイル・2026-07-15 固定）
 - Related: `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`（追補A3: TRACE 定量根拠）
 - Related: `01_Plans/issues/issue-EXT-CONN-01-readonly-mcp-server.md`, `issue-EXT-CONN-02-webhook-proposal-ingest.md`
 - Related: `03_Implement/frontend/src/domain/hil_rs_payload.ts`（内部 critique→constraint 設計の前例）, `03_Implement/frontend/src/export/context_bundle_projection.ts`（外部読み取り面の安全境界前例）

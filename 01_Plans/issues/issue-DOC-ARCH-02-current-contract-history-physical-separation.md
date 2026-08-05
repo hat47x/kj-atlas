@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer / Architecture contributor
-- Scope: `02_Architecture/architecture.md`, `02_Architecture/api.md`, `02_Architecture/schemas.md`, `02_Architecture/schemas_review_attribution.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/contract_reading_guide.md`, `02_Architecture/history/`（新規）, `AGENTS.md`（導線のみ）
+- Scope: `02_Architecture/design/architecture.html`, `02_Architecture/api.md`, `02_Architecture/schemas.md`, `02_Architecture/schemas_review_attribution.md`, `02_Architecture/design/data_model_operations_overview.html`, `02_Architecture/contract_reading_guide.md`, `02_Architecture/history/`（新規）, `AGENTS.md`（導線のみ）
 - Related Backlog: `DOC-ARCH-01`, `DATA-CONTRACT-01`
 - Related ADR/Spec: `01_Plans/issues/issue-DOC-ARCH-01-architecture-source-log-separation.md`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `02_Architecture/contract_reading_guide.md`
 - Expected verification level: `integration`
@@ -25,10 +25,10 @@
 
 | 対象 | 現在の不一致 |
 |---|---|
-| `ContextQueryV1` | `architecture.md` は `scope:string[]` / depth列挙 / SafeMode object、`schemas.md` は `queryId` / scope列挙 / depth数値 / `safeModePolicy:"strict"`。 |
+| `ContextQueryV1` | `02_Architecture/design/architecture.html` は `scope:string[]` / depth列挙 / SafeMode object、`schemas.md` は `queryId` / scope列挙 / depth数値 / `safeModePolicy:"strict"`。 |
 | `ContextBundleV1` | `api.md` はresponseに `queryId` を要求する一方、`schemas.md` の型とbackend response modelには無い。`schemaVersion` の掲載位置も一致しない。 |
 | `Card` / `DocumentV2` | 冒頭の合成型に `holdState`, `shelf`, `meta`, `contradictionSignalDecisions`, `ka` がなく、後段の§14〜17だけに加算定義がある。 |
-| 文書構造 | `architecture.md`、`api.md`、`schemas.md`、data model overviewに日付付きfreeze、Stream実行ログ、checkpoint、reaffirmationが残り、章番号も前後する。 |
+| 文書構造 | `02_Architecture/design/architecture.html`、`api.md`、`schemas.md`、data model overviewに日付付きfreeze、Stream実行ログ、checkpoint、reaffirmationが残り、章番号も前後する。 |
 
 closed-world契約では、一方の「正本」に従ったpayloadが別の「正本」で `unknown_contract_key` になり得る。SafeMode契約の形まで異なるため、単なる可読性ではなく安全・実装境界の問題である。
 
@@ -50,10 +50,10 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 
 ### 4.1 責務別の物理SSOT
 
-- `architecture.md`: コンポーネント、責務、信頼境界だけを正本化し、型シグネチャを再定義しない。
+- `02_Architecture/design/architecture.html`: コンポーネント、責務、信頼境界だけを正本化し、型シグネチャを再定義しない。
 - `schemas.md`: 型、キー、列挙、既定値、version、互換規則の唯一の正本。DocumentV2は採択済みoptional fieldを含む合成型を先に読める形にする。
 - `api.md`: endpoint、status/error、認証・副作用の正本。payloadはschema型名とanchorを参照し、同じ型を再定義しない。
-- `data_model_operations_overview.md`: 現行の物理モデル、CRUD、support level、運用責任だけを保持する。
+- `02_Architecture/design/data_model_operations_overview.html`: 現行の物理モデル、CRUD、support level、運用責任だけを保持する。
 - `contract_reading_guide.md`: Contract ID/型/論点から唯一の正本anchorへ向かう索引。契約値を複製しない。
 - `02_Architecture/history/`: Stream/freeze/rerun/checkpoint/reaffirmation等の形成履歴。各ファイルに `Informative`, 元文書, 対象期間, snapshot/日付, 現行正本への逆リンクを付ける。
 
@@ -76,7 +76,7 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 ## 5) 受入条件 / Acceptance criteria
 
 - [x] Contract ID・型・endpointごとに、現行の規範定義が物理的に1箇所だけ存在する。
-- [x] `architecture.md` は責務、`schemas.md` は型、`api.md` はendpointという責務分離を守り、他文書はanchor参照だけを持つ。
+- [x] `02_Architecture/design/architecture.html` は責務、`schemas.md` は型、`api.md` はendpointという責務分離を守り、他文書はanchor参照だけを持つ。
 - [x] `ContextQueryV1`, `ContextBundleV1`, `ProposalPatchV1`, `AuditEventV1` のキー・列挙・既定値・errorが一意で、現行model/fixture/contract testと整合するか、差異が専用子Issueへ明示される。
 - [x] `api.md` の既知 `ContextBundle.queryId` 不一致と `schemaVersion` 掲載差異が、根拠付きで解消または子Issue化される。
 - [x] `Card` / `DocumentV2` の合成型が、`holdState`, `shelf`, `meta`, `contradictionSignalDecisions`, `ka` を含む採択済みoptional fieldを一読で網羅する。
@@ -91,7 +91,7 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 - [x] T1 規範節・履歴節・重複定義・既知衝突のinventoryをファイル/anchor/Contract ID単位で作る。
 - [x] T2 競合解消規則に従い、各型・endpoint・運用境界の唯一の正本anchorを決める。CE1 v1の値Conflictは`CE1-CONTRACT-01`へ分離し、本Issueで推測統合しない。
 - [x] T3 `schemas.md` の現行合成型を先頭側へ統合し、重複定義を参照へ変える。
-- [x] T4 `architecture.md` / `api.md` / data model overviewを責務別に縮約する。
+- [x] T4 `02_Architecture/design/architecture.html` / `api.md` / data model overviewを責務別に縮約する。
 - [x] T5 `02_Architecture/history/` へ形成履歴を移し、メタと逆リンクを付ける。
 - [x] T6 reading guideと`AGENTS.md`を新しい参照順へ同期する。
 - [x] T7 backend/frontendの対象contract/roundtrip testsとMarkdownチェックで、意味非変更とリンク整合を検証する。
@@ -101,8 +101,8 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 
 - 実行コマンド:
   - `rg -n "ContextQueryV1|ContextBundleV1|ProposalPatchV1|AuditEventV1" 02_Architecture`
-  - `rg -n "holdState|shelf|meta|contradictionSignalDecisions|ka" 02_Architecture/schemas.md 02_Architecture/data_model_operations_overview.md`
-  - `rg -n "^#{1,4} .*?(Stream|freeze|rerun|execution log|checkpoint|reaffirmation)" 02_Architecture/architecture.md 02_Architecture/api.md 02_Architecture/schemas.md 02_Architecture/data_model_operations_overview.md`
+  - `rg -n "holdState|shelf|meta|contradictionSignalDecisions|ka" 02_Architecture/schemas.md 02_Architecture/design/data_model_operations_overview.html`
+  - `rg -n "^#{1,4} .*?(Stream|freeze|rerun|execution log|checkpoint|reaffirmation)" 02_Architecture/design/architecture.html 02_Architecture/api.md 02_Architecture/schemas.md 02_Architecture/design/data_model_operations_overview.html`
   - `python -m pytest 03_Implement/backend/tests/test_context_bundle_routes.py 03_Implement/backend/tests/test_data_model_operations_contract.py`
   - frontendのimport/schema validation/roundtrip対象テスト（package scriptまたは対象Vitest）
   - `git diff --check`
@@ -142,22 +142,22 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 
 - T2: 責務別SSOTを `schemas.md`（型）、`api.md`（endpoint/status/error/envelope）、data model overview（CRUD/support level）へ固定した。CE1 v1の `queryId` / `schemaVersion` / `sourceBundleHash` は値を推測せず、`CE1-CONTRACT-01`へ分離した。
 - T3: `Card`へ`holdState?` / `meta?` / `ka?`、`DocumentV2`へ`shelf?` / `contradictionSignalDecisions?`を統合した。後段§14〜§17は型の再定義をやめ、§3.2/§3.5参照へ変更した。
-- T5 partial (H-D): `data_model_operations_overview.md` former §1.2/§1.3/§8〜§13を`history/data-model-operations-stream-d-2026-05.md`へ移し、元文書・履歴索引・reading guideの双方向導線を追加した。
+- T5 partial (H-D): `02_Architecture/design/data_model_operations_overview.html` former §1.2/§1.3/§8〜§13を`history/data-model-operations-stream-d-2026-05.md`へ移し、元文書・履歴索引・reading guideの双方向導線を追加した。
 - 検証: Active issue validator 31件pass、triage active=31 / ready=14 / blocked=17 / stopper=0、validator unit 10件pass、CE1 backend contract 18件pass、CE1 frontend contract 9件pass、変更文書の相対link 17件エラー0、合成型定義の重複0、data model overviewの履歴見出し0。
 - 未完了: H-A/H-B/H-C（architecture/api/schemas履歴移動）、API縮約、AGENTS最終同期、contract/roundtrip testsの全量確認。契約値、runtime、Document version、SafeMode、share/export既定は変更していない。
 
 ## 進捗記録 2026-07-15: H-A architecture history slice
 
-- T4 partial / T5 H-A: `architecture.md`のCE0 snapshot、旧§7A.2.1型・method・event-order再掲、2026-05-04 baseline、Stream B反映メモを`history/architecture-contract-freeze-formation-2026-04-to-05.md`へ物理移動した。
+- T4 partial / T5 H-A: `02_Architecture/design/architecture.html`のCE0 snapshot、旧§7A.2.1型・method・event-order再掲、2026-05-04 baseline、Stream B反映メモを`history/architecture-contract-freeze-formation-2026-04-to-05.md`へ物理移動した。
 - 現行側は責務・信頼境界を維持し、型を`schemas.md`、endpoint/status/errorを`api.md`、未解決CE1差異を`CE1-CONTRACT-01`へ参照する。履歴索引・inventory・元文書の双方向導線を同期した。
-- 検証: 移動元39行の履歴保持、変更文書の相対link 21件、`architecture.md`の履歴風見出し0件、Active issue validator 33件、validator/triage unit 11件、CE1 backend contract 18件、CE1 frontend contract 9件がpassした。
+- 検証: 移動元39行の履歴保持、変更文書の相対link 21件、`02_Architecture/design/architecture.html`の履歴風見出し0件、Active issue validator 33件、validator/triage unit 11件、CE1 backend contract 18件、CE1 frontend contract 9件がpassした。
 - `main`統合後のActive集合は33件（Draft 18 / Open 8 / In Progress 7）。H-B/H-C、§7A.6/§7Bの責務別縮約、API縮約、AGENTS最終同期、contract/roundtrip tests全量確認は未完了。
 - 契約値、runtime、Document version、SafeMode、未レビュー保護、proposal-only、share/export既定は変更していない。
 
 ## 進捗記録 2026-07-15: H-B API history / responsibility slice
 
 - T4 partial / T5 H-B: `api.md`の旧Phase 1〜6、mock validation plan、Stream A log、CE0/CE1 sync/freeze/handoff、Auth freeze note、末尾addendumを`history/api-contract-formation-2026-04-to-05.md`へ物理移動した。
-- 現行§2.8はendpoint/status/error/副作用に縮約し、型・キー・canonicalization・version互換を`schemas.md`、責務・信頼境界を`architecture.md`、未解決`queryId`/`schemaVersion` envelope差異を`CE1-CONTRACT-01`へ参照する。CE4 mock/stub境界は現行§2.9.5へ移設し、意味を変更していない。
+- 現行§2.8はendpoint/status/error/副作用に縮約し、型・キー・canonicalization・version互換を`schemas.md`、責務・信頼境界を`02_Architecture/design/architecture.html`、未解決`queryId`/`schemaVersion` envelope差異を`CE1-CONTRACT-01`へ参照する。CE4 mock/stub境界は現行§2.9.5へ移設し、意味を変更していない。
 - 検証: 削除対象の実質190行中188行を履歴または現行節へ原文保持し、残る2行は意味を維持した見出し名/節番号の正規化。相対link 23件、`api.md`の履歴風見出し0件、Active issue validator 33件、validator/triage unit 11件、CE1 backend contract 18件、CE1 frontend contract 9件がpassした。
 - 履歴索引、reading guide、inventory、元文書の双方向導線を同期した。H-C、§7A.6/§7Bの責務別縮約、AGENTS最終同期、contract/roundtrip tests全量確認は未完了。
 - 契約値、runtime、Document version、SafeMode、未レビュー保護、proposal-only、share/export既定は変更していない。
@@ -172,7 +172,7 @@ closed-world契約では、一方の「正本」に従ったpayloadが別の「�
 
 ## 完了記録 2026-07-15: responsibility SSOT / recurrence handoff closeout
 
-- T4: `architecture.md`の重複§7A.6を除去し、§7BをCE1/CE2/CE4の責務・信頼境界と正本リンクへ縮約した。required key、列挙、error、HTTP副作用の再掲をやめ、型=`schemas.md`、HTTP=`api.md`、責務=`architecture.md`へ一意化した。
+- T4: `02_Architecture/design/architecture.html`の重複§7A.6を除去し、§7BをCE1/CE2/CE4の責務・信頼境界と正本リンクへ縮約した。required key、列挙、error、HTTP副作用の再掲をやめ、型=`schemas.md`、HTTP=`api.md`、責務=`02_Architecture/design/architecture.html`へ一意化した。
 - T8: current/history分離、責務別SSOT、history必須メタ、既知CE1 Conflict、負例fixtureの検査境界を`DX-DOC-02`へ引き渡した。checker/CI実装は同Issueのスコープに残す。
 - Closeout検証: current 4文書の履歴見出し0、CE主要型定義は`schemas.md`各1箇所、architecture内のrequired key/error/enum再掲0、history 4ファイルの必須メタ欠落0、変更文書の相対link 18件エラー0、validator unit 11件がpassした。issue validatorはclose直前35件、Done反映後34件をpass。直前の最新`main`統合後にはbackend contract/roundtrip 48件、frontend contract/schema/roundtrip 76件もpass済み。
 - SafeMode既定ON、未レビュー保護、proposal-only、`human_reviewed`人手昇格、provider=`none`、Document version、share/export既定を変更していない。全Acceptance criteriaとT1〜T8を満たしたためDoneとする。

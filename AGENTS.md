@@ -25,8 +25,8 @@
 | 用語・KJ法の概念 | `00_Prompt/domain.md` |
 | KJ法の実行（束ね・表札・空白・検査） | `00_Prompt/kj_technique.md` |
 | カード品質 | `00_Prompt/qualitative_card_quality_requirements.md` |
-| W型反復 | `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/design/inquiry_journey_model.dc.html` |
-| 全体構成 | `02_Architecture/design/architecture.dc.html` |
+| W型反復 | `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/design/inquiry_journey_model.html` |
+| 全体構成 | `02_Architecture/design/architecture.html` |
 | Document契約・互換性 | `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`, `02_Architecture/schemas.md` |
 | API | `02_Architecture/api.md` |
 | 環境変数 | `02_Architecture/runtime_parameter_registry.md` |
@@ -62,11 +62,11 @@
 ### 文書の形式（2026-08-05改定）
 
 - `01_Plans/`（ADR・issue）は Markdown を維持します。正規化・機械検証・差分レビューの対象であり、形式を揺らしません。
-- **新規の `02_Architecture/` 設計文書は、原則 HTML + Mermaid 単独（`.dc.html`）で作成します。** Markdown を並行して作らない。理由は継ぎ目のドリフトです（`02_Architecture/contract-seam-integrity-2026-08-05.dc.html` が実例と根拠を示す：手保守で二重化された契約表現は片方だけが更新されドリフトするが、単一表現ならその余地がない）。対象読者は開発者であり、構造・状態遷移・階層を図で伝えることが認知負荷を下げる目的に直結する文書（アーキテクチャ、状態機械、承認フロー、DAG的データモデル等）から優先する。純粋な原則列挙・箇条書き方針文書まで無理に図解化する必要はない。
+- **新規の `02_Architecture/` 設計文書は、原則 HTML + Mermaid 単独（`.dc.html`）で作成します。** Markdown を並行して作らない。理由は継ぎ目のドリフトです（`02_Architecture/contract-seam-integrity-2026-08-05.html` が実例と根拠を示す：手保守で二重化された契約表現は片方だけが更新されドリフトするが、単一表現ならその余地がない）。対象読者は開発者であり、構造・状態遷移・階層を図で伝えることが認知負荷を下げる目的に直結する文書（アーキテクチャ、状態機械、承認フロー、DAG的データモデル等）から優先する。純粋な原則列挙・箇条書き方針文書まで無理に図解化する必要はない。
 - **既存 Markdown 設計文書は、図解が必要になった段階で HTML + Mermaid 化し、Markdown を退役させます。** 変換時は参照元リンクをすべて新パスへ置き換える（`git grep -l 'ファイル名\.md'` で洗い出す）。**旧来のように Markdown 側を正本として残し続けることはしません** — 双方向に手保守される表現はどちらかがドリフトする、というのが上記実例で確認された構造的リスクだからです。参照コストは変換時の一括更新で払い切り、その後の継続コストにしない。
 - 文書HTMLはリンク切れ検査の対象です（`DX-DOC-07`）。`00_Prompt` / `01_Plans` / `02_Architecture` / `04_Documentation` 配下の追跡HTMLが対象で、アプリ・ビルド成果物のHTMLは除外されます（`03_Implement/frontend/index.html` の `src="/src/main.tsx"` は dev server 基準であり、リポジトリ基準ではないため）。
 - Mermaid は CDN 取得で構いませんが、**`.dc.html` は `file://` で直接開く運用を前提とするため ES module 版（`.esm.mjs`）を使わない。** Chrome は `file://` 上の module script を CORS でブロックし、図が全て空白になる。UMD版（`mermaid.min.js`）を classic `<script>` で読み込む。
-- `<x-dc>` ランタイム（`support.js`）は読み込み後に DOM を非同期で再構築し、その前に描画した Mermaid SVG を破棄する。`mermaid.initialize({ startOnLoad: false, ... })` とし、`MutationObserver` で `.mermaid:not([data-processed])` を検出するたびに再描画する（`contract-seam-integrity-2026-08-05.dc.html` の実装を雛形にする）。
+- `<x-dc>` ランタイム（`support.js`）は読み込み後に DOM を非同期で再構築し、その前に描画した Mermaid SVG を破棄する。`mermaid.initialize({ startOnLoad: false, ... })` とし、`MutationObserver` で `.mermaid:not([data-processed])` を検出するたびに再描画する（`contract-seam-integrity-2026-08-05.html` の実装を雛形にする）。
 - 新規・既存いずれの `.dc.html` も、Claude Design のエクスポート形式（`<x-dc>` + `<script src="./support.js">` + `helmet`）を保持する。
 
 ## 4. 作業手順

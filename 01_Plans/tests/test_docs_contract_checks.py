@@ -386,7 +386,10 @@ class DocumentContractBaselineTest(unittest.TestCase):
         (root / "02_Architecture").mkdir(parents=True, exist_ok=True)
         (root / "02_Architecture" / "schemas.md").write_text(schemas_text, encoding="utf-8")
         (root / "02_Architecture" / "api.md").write_text(api_text, encoding="utf-8")
-        (root / "02_Architecture" / "data_model_operations_overview.md").write_text(data_model_text, encoding="utf-8")
+        (root / "02_Architecture" / "design").mkdir(parents=True, exist_ok=True)
+        (root / "02_Architecture" / "design" / "data_model_operations_overview.html").write_text(
+            data_model_text, encoding="utf-8"
+        )
 
     def test_accepts_the_single_documentv1_baseline(self):
         with tempfile.TemporaryDirectory() as td:
@@ -510,7 +513,9 @@ class DocumentContractBaselineTest(unittest.TestCase):
 
         paths_with_findings = {f.path for f in findings}
         self.assertIn("02_Architecture/api.md", paths_with_findings)
-        self.assertIn("02_Architecture/data_model_operations_overview.md", paths_with_findings)
+        self.assertIn(
+            "02_Architecture/design/data_model_operations_overview.html", paths_with_findings
+        )
 
 
 class DocumentedResponseModelsTest(unittest.TestCase):
@@ -737,8 +742,10 @@ class SafetyRouteTest(unittest.TestCase):
     def _write_fixtures(self, root: Path, agent_text: str, public_text: str) -> None:
         (root / "AGENTS.md").write_text(agent_text, encoding="utf-8")
         (root / "THREAT_MODEL.md").write_text("# Threat model\n", encoding="utf-8")
-        (root / "02_Architecture").mkdir()
-        (root / "02_Architecture" / "architecture.md").write_text("# Architecture\n", encoding="utf-8")
+        (root / "02_Architecture" / "design").mkdir(parents=True)
+        (root / "02_Architecture" / "design" / "architecture.html").write_text(
+            "<h1>Architecture</h1>\n", encoding="utf-8"
+        )
         docs = root / "04_Documentation"
         docs.mkdir()
         (docs / "public_index.md").write_text(public_text, encoding="utf-8")
@@ -776,7 +783,7 @@ class SafetyRouteTest(unittest.TestCase):
         self.assertTrue(all(f.rule_id == "DC-SAF-001" for f in findings))
         targets = {f.target for f in findings}
         self.assertIn("SafeModeは既定ON", targets)
-        self.assertIn("02_Architecture/architecture.md", targets)
+        self.assertIn("02_Architecture/design/architecture.html", targets)
         self.assertIn("security.md", targets)
         self.assertIn("human_reviewed", targets)
 

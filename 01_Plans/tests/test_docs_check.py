@@ -1,4 +1,5 @@
 import importlib.util
+import os
 import subprocess
 import sys
 import tempfile
@@ -35,7 +36,7 @@ class DocsCheckEntrypointTest(unittest.TestCase):
             encoding="utf-8",
         )
         (root / "02_Architecture" / "api.md").write_text("DocumentV1 API.\n", encoding="utf-8")
-        (root / "02_Architecture" / "data_model_operations_overview.md").write_text(
+        (root / "02_Architecture" / "design" / "data_model_operations_overview.html").write_text(
             "DocumentV1 support.\n", encoding="utf-8"
         )
         for relative_path, required_terms in CHECKS.DOCUMENTED_RESPONSE_MODEL_REQUIRED_TERMS.items():
@@ -72,21 +73,24 @@ class DocsCheckEntrypointTest(unittest.TestCase):
         history_dir = root / "02_Architecture" / "history"
         history_dir.mkdir(parents=True, exist_ok=True)
         history = history_dir / "formation.md"
-        source = root / CHECKS.CURRENT_ONLY_PATHS[3]
+        source_path = CHECKS.CURRENT_ONLY_PATHS[3]
+        source = root / source_path
+        to_history = os.path.relpath(history, source.parent).replace(os.sep, "/")
+        to_source = os.path.relpath(source, history.parent).replace(os.sep, "/")
         source.write_text(
-            "# Current contract\n\n[Formation history](history/formation.md)\n",
+            f"# Current contract\n\n[Formation history]({to_history})\n",
             encoding="utf-8",
         )
         history.write_text(
             "# Formation history\n\n"
             "Status: Informative history\n\n"
-            "Source document: [Current](../architecture.md)\n\n"
+            f"Source document: [Current]({to_source})\n\n"
             "Source anchors: former §1\n\n"
             "Covered period: 2026-01-01\n\n"
             "Snapshot / source revision: `abc123`\n\n"
             "Retention reason: Preserve formation context.\n\n"
             "Current normative anchors:\n\n"
-            "- [Current](../architecture.md#current-contract)\n\n"
+            f"- [Current]({to_source}#current-contract)\n\n"
             "## Former record\n",
             encoding="utf-8",
         )

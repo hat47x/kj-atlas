@@ -24,7 +24,7 @@
 
 - 対象スコープ: kj-atlas（単一 Document の編集体験）
 - 文書種別: Plan（実装可能な要求 + 受け入れ判定 + 段階導入）
-- 上位整合の原則: `domain.md` / `value_to_requirements.md` / `architecture.md` を優先
+- 上位整合の原則: `domain.md` / `value_to_requirements.md` / `02_Architecture/design/architecture.html` を優先
 
 ---
 
@@ -34,7 +34,7 @@
 - `00_Prompt/domain.md`
 - `01_Plans/adr/ADR-0001-value-to-requirements.md`
 - `01_Plans/adr/ADR-0002-internal-roadmap.md`
-- `02_Architecture/architecture.md`
+- `02_Architecture/design/architecture.html`
 - `02_Architecture/schemas.md`
 - `02_Architecture/island_shapes.md`
 
@@ -121,7 +121,7 @@ normal PC display で overview/detail の往復時、文脈保持と編集集中
 | NFR-02 | merge/shape/hierarchy に「正解スコア」「ランキング」を導入しない。 |
 | NFR-03 | 旧データ（shape/hierarchy欠損）を互換読み込みできる。 |
 | NFR-04 | auto-fit は deterministic（同一入力→同一出力）である。 |
-| NFR-05 | `architecture.md` の責務分離（Domain Model / Canvas Engine / Renderer）を崩さない。 |
+| NFR-05 | `02_Architecture/design/architecture.html` の責務分離（Domain Model / Canvas Engine / Renderer）を崩さない。 |
 
 ---
 
@@ -270,7 +270,7 @@ normal PC display で overview/detail の往復時、文脈保持と編集集中
 ## 11. 実装着手前チェックリスト
 
 - C-01: `schemas.md` の optional 拡張で要求を表現できるか。
-- C-02: `architecture.md` の責務境界を維持しているか。
+- C-02: `02_Architecture/design/architecture.html` の責務境界を維持しているか。
 - C-03: review flags を自動変更していないか。
 - C-04: UI/API に「正解・採点・ランキング」を導入していないか。
 - C-05: overview/detail が表示状態に限定され、Document本体を暗黙変更しないか。

@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `02_Architecture/`, `04_Documentation/`
 - Related Backlog: `ENV-CONFIG-DRIFT-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`, `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md`, `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/deployment.md`, `02_Architecture/enterprise_architecture.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`, `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md`, `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/deployment.md`, `02_Architecture/design/enterprise_architecture.html`
 - Dependencies: `01_Plans/issues/issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md`
 - Expected verification level: `docs-check`
 
@@ -28,7 +28,7 @@
 
 - `runtime_parameter_registry.md` は公開環境変数の単一正本である。
 - 04文書ではすべての公開環境変数を記載する方針が確定している。
-- `enterprise_architecture.md` は strict mode を本番標準として扱う。
+- `02_Architecture/design/enterprise_architecture.html` は strict mode を本番標準として扱う。
 
 ## 3) 判断基準による優先度評価
 
@@ -42,7 +42,7 @@
 - `runtime_parameter_registry.md` に profile guidance を追加する。
 - local-dev / evaluation / enterprise-production の推奨設定差分を表で示す。
 - 実装既定値と本番推奨値が異なる項目は、その理由と安全境界を明記する。
-- `deployment.md` と `enterprise_architecture.md` から profile guidance へ導線を追加する。
+- `deployment.md` と `02_Architecture/design/enterprise_architecture.html` から profile guidance へ導線を追加する。
 
 Non-goals:
 
@@ -54,14 +54,14 @@ Non-goals:
 
 - [x] `runtime_parameter_registry.md` に実行プロファイル表が追加される。
 - [x] `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` の実装既定と enterprise production の `false` 推奨が区別される。
-- [x] `deployment.md` と `enterprise_architecture.md` からプロファイル表へ辿れる。
+- [x] `deployment.md` と `02_Architecture/design/enterprise_architecture.html` からプロファイル表へ辿れる。
 - [x] 公開設定キーはすべて `KJ_ATLAS_` で始まる方針を維持する。
 
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1: `runtime_parameter_registry.md` に profile guidance を追加する。
 - [x] T2: `deployment.md` に評価/本番プロファイル参照を追加する。
-- [x] T3: `enterprise_architecture.md` に strict profile 参照を追加する。
+- [x] T3: `02_Architecture/design/enterprise_architecture.html` に strict profile 参照を追加する。
 - [x] T4: 00/02の環境変数例に非 `KJ_ATLAS_` が混入していないことを確認する。
 
 ## 7) 検証計画 / Validation plan
@@ -96,7 +96,7 @@ Non-goals:
 ## 11) Closeout
 
 - Completed by: PR #2131 `[codex] Align 00 and 02 value documentation`
-- Result: `runtime_parameter_registry.md` に `local-dev` / `evaluation` / `enterprise-production` の profile guidance を追加し、`deployment.md` と `enterprise_architecture.md` から導線を張った。
+- Result: `runtime_parameter_registry.md` に `local-dev` / `evaluation` / `enterprise-production` の profile guidance を追加し、`deployment.md` と `02_Architecture/design/enterprise_architecture.html` から導線を張った。
 - Validation: `git diff --check`, active issue memo validator, validator unit tests, 非 `KJ_ATLAS_` 公開環境変数例の `rg` 確認。
 
 

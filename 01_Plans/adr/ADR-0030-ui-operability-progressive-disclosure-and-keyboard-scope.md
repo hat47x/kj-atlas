@@ -62,7 +62,7 @@ kj-atlas の UI操作モデルとして、次を確定方針とする（**仕様
 
 - Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`
 - Related: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
-- Related: `02_Architecture/architecture.md`
+- Related: `02_Architecture/design/architecture.html`
 - Related: `01_Plans/issues/issue-UX-OPERABILITY-01-pointer-keyboard-flow-review.md`
 - Related: `01_Plans/issues/issue-UX-OPERABILITY-02-keyboard-card-selection.md`
 - Related: `01_Plans/issues/issue-UX-OPERABILITY-03-contextual-selection-panel.md`

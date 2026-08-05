@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; background:#f1f3f5; }
+  * { box-sizing:border-box; }
+  body { font-family:"Noto Sans JP", system-ui, sans-serif; color:#1f2933; -webkit-font-smoothing:antialiased; }
+  @page { size:A4; margin:0; }
+  @media print {
+    html { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    html, body { margin:0; padding:0; background:#fff; }
+    .doc { max-width:none !important; margin:0 !important; padding:0 0.7in !important; box-shadow:none !important; background:#fff !important; }
+    h1, h2, h3, h4 { break-after:avoid; }
+    figure, table, tr { break-inside:avoid; }
+    p, li { orphans:3; widows:3; }
+  }
+  table.grid { width:100%; border-collapse:collapse; font-size:13px; margin:14px 0 0; }
+  table.grid th { text-align:left; font-weight:600; color:#52606d; border-bottom:1.5px solid #cbd5e1; padding:7px 9px; background:#f8fafc; }
+  table.grid td { border-bottom:1px solid #e5e7eb; padding:7px 9px; vertical-align:top; line-height:1.6; }
+  code { font-family:"Noto Sans Mono", ui-monospace, monospace; font-size:0.92em; background:#f1f5f9; padding:1px 5px; border-radius:3px; color:#334155; }
+  pre.block { font-family:"Noto Sans Mono", monospace; font-size:12px; line-height:1.65; background:#0f172a; color:#e2e8f0; padding:13px 15px; border-radius:6px; margin:12px 0 0; overflow-x:auto; }
+  .mermaid { text-align:center; }
+  .badge { font-size:12px; font-weight:500; padding:5px 11px; border-radius:999px; border:1px solid; display:inline-block; }
+</style>
+</helmet>
+<main class="doc" style="box-sizing:border-box; max-width:8.5in; margin:0 auto; background:#ffffff; padding:0 clamp(20px,5vw,0.85in); box-shadow:0 1px 3px rgba(15,23,42,0.08), 0 12px 40px rgba(15,23,42,0.06);">
+
+  <!-- COVER -->
+  <header style="padding:64px 0 28px; border-bottom:1px solid #e5e7eb;">
+    <div style="display:flex; align-items:center; gap:10px; font-size:12.5px; letter-spacing:0.14em; color:#6b7280; text-transform:uppercase; font-weight:500;">
+      <span style="width:8px; height:8px; border-radius:2px; background:#0891b2; display:inline-block;"></span>
+      kj-atlas ・ Architecture Spec ・ ADR-0049
+    </div>
+    <h1 style="font-size:29px; line-height:1.34; font-weight:700; margin:18px 0 0; letter-spacing:0.01em; text-wrap:balance;">外部定額AIエージェント非同期協調 仕様</h1>
+    <p style="font-size:15px; line-height:1.7; color:#52606d; margin:14px 0 0; max-width:38em; text-wrap:pretty;">
+      組織が定額課金で契約済みのAIエージェント（Copilot Studio / ChatGPT Enterprise等）に思考ワークロードを委ね、kj-atlasは<strong>文脈の供給・結果の検証・人間レビュー・可逆な適用</strong>に徹する（AgentTaskPackage / AgentResponse v1）。
+    </p>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:22px;">
+      <span class="badge" style="background:#ecfeff; color:#0e7490; border-color:#a5f3fc;">Tier 0=人間仲介・非同期</span>
+      <span class="badge" style="background:#fef2f2; color:#b91c1c; border-color:#fecaca;">反スコアリング（score/rank/confidence禁止）</span>
+      <span class="badge" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;">提案のみ・全て可逆</span>
+    </div>
+    <p style="font-size:12.5px; line-height:1.7; color:#6b7280; margin:20px 0 0; padding:10px 13px; background:#f8fafc; border-left:3px solid #cbd5e1;">
+      本書が正本（新規設計文書はHTML単独。<code>AGENTS.md</code> §3）。正本区分: 本書が外部エージェント連携契約の正本（決定は<code>ADR-0049</code>）。対象読者: 実装者、Copilot Studio等でエージェントを構成する運用者。
+    </p>
+  </header>
+
+  <!-- 1. 目的と原則 -->
+  <section style="padding:30px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">01</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">目的と原則</h2>
+    </div>
+    <table class="grid">
+      <thead><tr><th style="width:8%;">#</th><th style="width:22%;">原則</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>非同期・人間仲介</td><td>kj-atlasは外部と直接通信しない（Tier 0）。書き出し・取り込みは人間の明示操作</td></tr>
+        <tr><td>2</td><td>提案のみ</td><td>エージェント出力は常にAI由来・未レビューの提案。自動確定なし。適用は人間操作・全て可逆・監査記録</td></tr>
+        <tr><td>3</td><td>反スコアリング</td><td>応答契約に数値スコア・順位・確度を含めない（存在すれば取り込み時に破棄）</td></tr>
+        <tr><td>4</td><td>境界の再利用</td><td>出力は共有・書き出し境界（SafeMode/preflight/export-audit）、入力はimport信頼境界（検証・サニタイズ）を通る。新しい抜け道を作らない</td></tr>
+        <tr><td>5</td><td>ベンダー非依存</td><td>契約は汎用。Copilot Studioは代表プロファイル（§7）</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 2. アクターと信頼境界 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">02</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">用語・アクター・信頼境界</h2>
+    </div>
+    <table class="grid">
+      <thead><tr><th style="width:22%;">アクター</th><th style="width:16%;">信頼</th><th>役割</th></tr></thead>
+      <tbody>
+        <tr><td>kj-atlas（自己ホスト）</td><td style="color:#15803d;">信頼</td><td>パッケージ生成・応答検証・提案化・レビュー・適用・監査</td></tr>
+        <tr><td>利用者（人間）</td><td style="color:#15803d;">信頼（操作主体）</td><td>書き出し確認・エージェントへの投函・応答の持ち帰り・提案の採否</td></tr>
+        <tr><td>外部エージェント</td><td style="color:#b91c1c; font-weight:700;">非信頼</td><td>思考の委任先。出力はデータとして扱い、指示として扱わない</td></tr>
+        <tr><td>エージェント基盤（M365等）</td><td>組織契約に依存</td><td>データ境界は組織のライセンス/テナント設定に従う（本仕様の管轄外・§7注意）</td></tr>
+      </tbody>
+    </table>
+
+    <figure style="margin:18px 0 0;">
+      <pre class="mermaid">
+flowchart LR
+    KJ1["kj-atlas<br/>(自己ホスト・信頼)"]:::trusted
+    H1["人間<br/>(操作主体)"]:::trusted
+    EXT["外部エージェント<br/>(非信頼・出力はデータ)"]:::untrusted
+    H2["人間"]:::trusted
+    KJ2["kj-atlas"]:::trusted
+
+    KJ1 -->|"A: 依頼パッケージ<br/>共有・書き出し境界"| H1
+    H1 --> EXT
+    EXT --> H2
+    H2 -->|"B: 応答<br/>import信頼境界"| KJ2
+
+    classDef trusted fill:#ecfdf5,stroke:#059669,stroke-width:1.5px,color:#065f46
+    classDef untrusted fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#7f1d1d
+      </pre>
+      <figcaption style="font-size:12.5px; color:#6b7280; margin-top:9px; line-height:1.65;">kj-atlasは外部エージェントと直接通信しない。人間が両側の境界（A: 書き出し、B: 取り込み）を必ず仲介する。</figcaption>
+    </figure>
+  </section>
+
+  <!-- 3. AgentTaskPackage -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">03</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">AgentTaskPackage v1（依頼パッケージ）</h2>
+    </div>
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:12px 0 0;"><strong>形態:</strong> 正=単一Markdown「タスクシート」（チャットへ貼り付け/添付可能・人間可読）。随伴（任意）=<code>task.json</code>＋<code>context_bundle.json</code>（Tier 1のフォルダ授受ではこちらを正とする）。</p>
+
+    <pre class="block">{
+  "schemaVersion": "agent-task.v1",
+  "taskId": "uuid",
+  "createdAt": "ISO8601",
+  "docId": "string",
+  "baseDocSignature": "string (CE3 PatchV1 と同一の文書署名)",
+  "bundleHash": "string (CE1)",
+  "queryCanonicalHash": "string (CE1)",
+  "taskKind": "island_titles | merge_candidates | narrative_draft | opposing_viewpoints | critique_suggestions | free_analysis",
+  "locale": "ja"
+}</pre>
+
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:16px 0 0;"><strong>タスクシート構成（生成順序固定）:</strong></p>
+    <table class="grid">
+      <thead><tr><th style="width:6%;">#</th><th style="width:20%;">節</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>依頼</td><td>taskKind別の指示文（何を・どの範囲で・何件程度）</td></tr>
+        <tr><td>2</td><td>ガードレール（固定文）</td><td>「出力は提案であり確定しない／点数・順位・％を付けない／曖昧・対立はそのまま保持／出典のない断定をしない／応答はJSONのみ」</td></tr>
+        <tr><td>3</td><td>文脈</td><td>ContextBundle抜粋。Preview確認済み範囲のみ、SafeMode適用済み</td></tr>
+        <tr><td>4</td><td>応答契約</td><td>§4スキーマのインライン提示＋最小記入例</td></tr>
+        <tr><td>5</td><td>相関ブロック</td><td>§3.2のJSONをコードフェンスで埋め込み（エコーバック指示付き）</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:14px 0 0;"><strong>出力境界（必須）:</strong> SafeMode状態表示・未レビュー本文は既定除外・出典参照は既定OFF・主体メタ（CARD-META-UI-01）は別ゲート確定まで含めない。<code>/docs/{id}/export-audit</code> に <code>exportKind: "agent-task"</code> を記録する。</p>
+  </section>
+
+  <!-- 4. AgentResponse -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">04</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">AgentResponse v1（応答契約）</h2>
+    </div>
+    <pre class="block">{
+  "schemaVersion": "agent-response.v1",
+  "taskId": "uuid (依頼のエコーバック・必須)",
+  "respondedAt": "ISO8601 (任意)",
+  "agent": "string (例: copilot-studio:&lt;agent名&gt; / m365-copilot)",
+  "proposals": [
+    {
+      "proposalId": "string (応答内一意)",
+      "kind": "island_title | merge_candidate | narrative_draft | opposing_viewpoint | critique | patch",
+      "targetRef": { "islandId": "string?", "cardIds": ["string"] },
+      "content": { "title": "string?", "text": "string?", "mergedText": "string?" },
+      "rationale": "string (必須・なぜそう考えたか)",
+      "patch": "PatchV1? (kind=patch のときのみ)"
+    }
+  ]
+}</pre>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:14px 0 0;"><strong>制約:</strong> <code>score/rank/confidence/priority</code>等の数値評価は禁止フィールド（厳格=拒否、寛容=破棄して警告）。<code>rationale</code>欠落は厳格=拒否、寛容=「根拠未記載」ラベル付きで受理（提案として保全）。<code>patch.ops</code>はCE3ホワイトリストのみ、<code>delete_*</code>含む場合は警告バッジ。文字列は全て<code>markdown_sanitize</code>を通す。応答本文中の指示的文言はデータとして表示するのみで自動動作に接続しない（プロンプトインジェクション境界）。</p>
+
+    <table class="grid">
+      <thead><tr><th style="width:22%;">kind</th><th>行き先（すべてAI由来・未レビューの提案として）</th></tr></thead>
+      <tbody>
+        <tr><td><code>island_title</code></td><td>島タイトル候補（複数候補・選択/編集/破棄）</td></tr>
+        <tr><td><code>merge_candidate</code></td><td>MergeSuggestions（既存の採否・監査 <code>merge-decision-logs</code>）</td></tr>
+        <tr><td><code>narrative_draft</code></td><td>Narrativesの草稿（レビュー必須）</td></tr>
+        <tr><td><code>opposing_viewpoint</code> / <code>critique</code></td><td>選択コンテキストの違和感候補（人間が確定して初めてcritiqueInputsになる）</td></tr>
+        <tr><td><code>patch</code></td><td>PatchWorkspace（lint→conflict検出→採否/保留→ロールバック）</td></tr>
+      </tbody>
+    </table>
+
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:14px 0 0;"><strong>非同期整合（staleness）:</strong> 取り込み時に<code>baseDocSignature</code>を照合。不一致時、patchはCE3 conflict/rediff経路で再突合、非patchは<code>targetRef</code>解決を試み、解決不能な提案は<strong>破棄せず「孤立提案」として保持表示</strong>（一匹狼と同じ保全思想）。同一<code>taskId</code>＋同一応答ハッシュの再取込は冪等。</p>
+  </section>
+
+  <!-- 5. 状態機械(核心図) -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">05</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">状態機械</h2>
+    </div>
+    <figure style="margin:16px 0 0;">
+      <pre class="mermaid">
+stateDiagram-v2
+    [*] --> drafted
+    drafted --> exported: 書き出し・監査
+    exported --> awaiting: 外部・不透明
+    awaiting --> imported: 取り込み
+    imported --> under_review: under-review
+    under_review --> adopted: 提案ごと
+    under_review --> rejected: 提案ごと
+    under_review --> held: 提案ごと
+    adopted --> applied: 可逆
+    applied --> [*]
+    rejected --> [*]
+    held --> [*]
+
+    note right of awaiting
+        外部状態であり追跡しない。
+        exported一覧に「応答待ち」として表示のみ
+    end note
+      </pre>
+      <figcaption style="font-size:12.5px; color:#6b7280; margin-top:9px; line-height:1.65;">kj-atlasが保持するのは <code>drafted</code>/<code>exported</code> と <code>imported</code> 以降のみ。すべての採否は既存の決定ログへ記録される（merge系=<code>merge-decision-logs</code>、CE4系=<code>context-audit</code>）。</figcaption>
+    </figure>
+  </section>
+
+  <!-- 6. 検証レベル -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">06</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">検証レベル（Expected verification）</h2>
+    </div>
+    <table class="grid">
+      <thead><tr><th style="width:26%;">レベル</th><th>対象</th></tr></thead>
+      <tbody>
+        <tr><td>unit/integration</td><td>契約: golden fixture（task package生成のスナップショット・response取込のラウンドトリップ）</td></tr>
+        <tr><td>integration</td><td>不変条件:「自動確定なし」「スコア破棄」「サニタイズ」「stale時の非破壊」</td></tr>
+        <tr><td>e2e</td><td>利用フロー: 依頼書き出し→（模擬応答貼付け）→提案出現（未レビュー）→1件採用→⌘Zで復帰</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 7. Copilot Studio プロファイル -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">07</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">Copilot / Copilot Studio プロファイル（代表運用）</h2>
+    </div>
+    <figure style="margin:16px 0 0;">
+      <pre class="mermaid">
+flowchart LR
+    S1["①範囲を選び<br/>タスクシート書き出し"] --> S2["②Copilotチャットへ<br/>貼付け/添付"]
+    S2 --> S3["③返ってきたJSONを<br/>「応答を取り込む」へ貼付け"]
+    S3 --> S4["④提案(未レビュー)を<br/>採用/却下/保留"]
+
+    classDef step fill:#f8fafc,stroke:#94a3b8,stroke-width:1px,color:#334155
+    class S1,S2,S3,S4 step
+      </pre>
+      <figcaption style="font-size:12.5px; color:#6b7280; margin-top:9px; line-height:1.65;">§7.1 最短運用（追加構築なし・M365 Copilotチャット）。</figcaption>
+    </figure>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:14px 0 0;"><strong>§7.2 Copilot Studioエージェント化（推奨・再現性向上）:</strong> Instructionsテンプレートに役割「KJ法支援の候補生成器。確定しない」、§3.3のガードレール全文、「応答はagent-response.v1のJSONのみ」を含める。ナレッジは不要（文脈は毎回タスクシートで供給）。逸脱時リカバリ定型文を用意する。</p>
+    <div style="margin:14px 0 0; padding:13px 15px; background:#fffbeb; border-left:3px solid #f59e0b; border-radius:0 4px 4px 0;">
+      <p style="font-size:13px; line-height:1.7; color:#78350f; margin:0;"><strong>§7.3 注意（データ境界）:</strong> タスクシートに載るのはSafeMode適用済み・人間確認済みの範囲のみだが、<strong>組織のエージェント基盤のデータ取り扱い（テナント境界・ログ保持・学習利用設定）は組織側の契約・設定に従う</strong>。</p>
+    </div>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:14px 0 0;"><strong>§7.4 Tier 1/2（将来・概要のみ）:</strong> Tier 1=受け渡しフォルダ（SharePoint/OneDrive）に投函・回収、Power Automateで仲介、kj-atlas本体は無改修。Tier 2=Copilot StudioアクションからAPI直接呼び出し（AUTH-*決裁後に別途仕様化。本書は予約のみ）。</p>
+  </section>
+
+  <!-- 8. 実装マッピング -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">08</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">実装マッピング（Tier 0）</h2>
+    </div>
+    <table class="grid">
+      <thead><tr><th style="width:22%;">要素</th><th style="width:38%;">実装先</th><th>再利用</th></tr></thead>
+      <tbody>
+        <tr><td>依頼書き出し</td><td>frontend（SharePanel系or専用パネル）＋ <code>export/</code></td><td>ContextQueryPreviewPanel・SafeModePolicy・bundle_export・export-audit</td></tr>
+        <tr><td>応答取り込み</td><td>frontend <code>import/agent_response_import.ts</code>（新規）</td><td>zip_importの制限値・markdown_sanitize・import検証パターン</td></tr>
+        <tr><td>提案化</td><td>既存面へ変換（§4.3）</td><td>MergeSuggestions・Narratives・PatchWorkspace・critique候補</td></tr>
+        <tr><td>監査</td><td>既存ルート</td><td>/export-audit・/context-audit・merge-decision-logs</td></tr>
+        <tr><td>バックエンド</td><td><strong>新規エンドポイント不要</strong>（Tier 0）</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 総括 -->
+  <section style="padding:34px 0 56px;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">∑</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">総括</h2>
+    </div>
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:12px 0 0; text-wrap:pretty;">
+      本仕様の骨格は「境界を増やさない」ことにある。新しい輸送・新しいAI権限を作らず、<strong>既存の共有/書き出し境界とimport信頼境界に、外部エージェントとの往復を乗せる</strong>。状態機械が示すとおり、kj-atlasが管理下に置くのは書き出しと取り込み以降だけであり、外部での滞在時間（<code>awaiting</code>）は意図的に追跡しない ─ 非信頼領域を無理に可視化しようとしないことも、境界設計の一部である。
+    </p>
+    <p style="font-size:12px; line-height:1.6; color:#94a3b8; margin:14px 0 0;">
+      Decision: <code>ADR-0049-external-flat-rate-agent-collaboration.md</code> ・ Related: <code>llm_provider_spec.md</code>, <code>enterprise_architecture.md</code> §4, <code>api.md</code>, <code>schemas.md</code> ・ Related issues: <code>EXT-AGENT-01/02/03</code>
+    </p>
+  </section>
+
+</main>
+</x-dc>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: "neutral",
+    fontFamily: '"Noto Sans JP", system-ui, sans-serif',
+    flowchart: { curve: "basis", padding: 14 },
+    stateDiagram: { fontFamily: '"Noto Sans JP", sans-serif' }
+  });
+  function renderMermaidDiagrams() {
+    var nodes = document.querySelectorAll(".mermaid:not([data-processed])");
+    if (nodes.length) { mermaid.run({ nodes: nodes }); }
+  }
+  var scheduled = null;
+  function scheduleRender() {
+    if (scheduled !== null) { return; }
+    scheduled = setTimeout(function () { scheduled = null; renderMermaidDiagrams(); }, 60);
+  }
+  new MutationObserver(scheduleRender).observe(document.documentElement, { childList: true, subtree: true });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", scheduleRender);
+  } else {
+    scheduleRender();
+  }
+  window.addEventListener("load", scheduleRender);
+</script>
+</body>
+</html>

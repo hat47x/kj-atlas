@@ -7,7 +7,7 @@
 - Owner: TBD (Productization Program Owner / Security Officer / QA Lead)
 - Scope: `00_Prompt/`, `01_Plans/adr/`, `01_Plans/issues/`, `02_Architecture/`, `04_Documentation/`
 - Related Backlog: `GENAI-GOV-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0009-local-llm-integration.md`, `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`, `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`, `02_Architecture/llm_provider_spec.md`, `02_Architecture/llm_input_ir_spec.md`, `02_Architecture/llm_escalation_policy.md`, `02_Architecture/external_agent_collaboration_spec.md`, `02_Architecture/value_traceability.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0009-local-llm-integration.md`, `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`, `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`, `02_Architecture/llm_provider_spec.md`, `02_Architecture/llm_input_ir_spec.md`, `02_Architecture/design/llm_escalation_policy.html`, `02_Architecture/design/external_agent_collaboration_spec.html`, `02_Architecture/value_traceability.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -25,7 +25,7 @@
 
 - `ADR-0009` / `llm_provider_spec.md`: kj-atlas 内部から LLMProvider を呼び出す provider 抽象。
 - `ADR-0028`: 認知外在化のため、AI出力を提案として扱い、人間が採否する CE フェーズ計画。
-- `ADR-0049` / `external_agent_collaboration_spec.md`: kj-atlas が外部エージェントを直接呼ばず、人間が依頼パッケージと応答を仲介する成果物ベース連携。
+- `ADR-0049` / `02_Architecture/design/external_agent_collaboration_spec.html`: kj-atlas が外部エージェントを直接呼ばず、人間が依頼パッケージと応答を仲介する成果物ベース連携。
 
 これらは相補的だが、同じ「生成AI」として読むと、次の誤解が起きる。
 
@@ -60,8 +60,8 @@
 | Lane | 名前 | 代表文書 | データ境界 | 現在の扱い | 追加ADRが必要になる条件 |
 |---|---|---|---|---|---|
 | A | 手動中核 / AI無効 | `ADR-0041`, `value_traceability.md` | 外部AIへ共有しない | 既定・必須ベースライン | AIなしで主要価値が成立しなくなる変更 |
-| B | LLMProvider 経路 | `ADR-0009`, `llm_provider_spec.md`, `llm_escalation_policy.md` | `LLMRequest` / `LLMResponse` と `KJ_ATLAS_*` 設定 | opt-in。proposal-only の生成補助 | provider列挙、外部共有条件、fallback、監査語彙を変える変更 |
-| C | 外部エージェント成果物連携 | `ADR-0049`, `external_agent_collaboration_spec.md`, `EXT-AGENT-01..03` | 人間が依頼パッケージを共有し、応答を import 境界で取り込む | Proposed。Tier 0 は手動授受のみ | kj-atlas からの自動送信、自動受信、外部状態追跡、応答自動適用 |
+| B | LLMProvider 経路 | `ADR-0009`, `llm_provider_spec.md`, `02_Architecture/design/llm_escalation_policy.html` | `LLMRequest` / `LLMResponse` と `KJ_ATLAS_*` 設定 | opt-in。proposal-only の生成補助 | provider列挙、外部共有条件、fallback、監査語彙を変える変更 |
+| C | 外部エージェント成果物連携 | `ADR-0049`, `02_Architecture/design/external_agent_collaboration_spec.html`, `EXT-AGENT-01..03` | 人間が依頼パッケージを共有し、応答を import 境界で取り込む | Proposed。Tier 0 は手動授受のみ | kj-atlas からの自動送信、自動受信、外部状態追跡、応答自動適用 |
 | D | 将来の直接API/Agent連携 | `ADR-0049` Tier 2 予約, AUTH-* 系 | kj-atlas API と外部Agent/APIの直接通信 | 未承認・予約のみ | 認証、到達性、データ保持、tenant境界、失敗時動作、費用制御を決める新ADR |
 
 ### レーン横断の不変条件
@@ -157,6 +157,6 @@ ADR化が必要になる条件:
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0009-local-llm-integration.md`, `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`, `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`
-- Related: `02_Architecture/value_traceability.md`, `02_Architecture/llm_provider_spec.md`, `02_Architecture/external_agent_collaboration_spec.md`
+- Related: `02_Architecture/value_traceability.md`, `02_Architecture/llm_provider_spec.md`, `02_Architecture/design/external_agent_collaboration_spec.html`
 - Related issues: `issue-EXT-AGENT-01-agent-task-package-export.md`, `issue-EXT-AGENT-02-agent-response-import.md`, `issue-EXT-AGENT-03-copilot-studio-reference-kit.md`, `issue-CE2-low-risk-ai-assist.md`, `issue-CE3-patch-workspace-presets.md`, `issue-CE4-api-cli-audit-integration.md`
 - Derived-from: 2026-07-06 生成AI関連ADR/issueの横断整理

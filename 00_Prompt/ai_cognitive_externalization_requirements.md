@@ -20,7 +20,7 @@ Its goal is not to let AI decide for humans, but to provide an external structur
 
 - `00_Prompt/domain.md`
 - `01_Plans/adr/ADR-0001-value-to-requirements.md`
-- `02_Architecture/architecture.md`
+- `02_Architecture/design/architecture.html`
 - `02_Architecture/schemas.md`
 
 今後、AI関連機能を追加する際は、本書を参照して整合性を確認すること。

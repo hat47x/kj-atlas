@@ -12,7 +12,7 @@
 - **価値ループ V0–V4 と社会目標系列 VR0–VR5**（`ADR-0032`, `value_traceability.md:44-114`）。
 - **生成AIレーン A–D**（`GENAI-GOV-01`, `value_traceability.md:230-251`）。
 - **根幹価値不変条件 CVI-1..7**（`ADR-0041`, `value_traceability.md:168-181`）。
-- **外部接続の段階導入 EXT-CONN-01..04**（`ADR-0054`、issue 群）と**外部エージェント成果物連携**（`ADR-0049` / `external_agent_collaboration_spec.md`）。
+- **外部接続の段階導入 EXT-CONN-01..04**（`ADR-0054`、issue 群）と**外部エージェント成果物連携**（`ADR-0049` / `02_Architecture/design/external_agent_collaboration_spec.html`）。
 
 ### 0.1 4 例 × 既存索引 対応表
 
@@ -127,11 +127,11 @@
 
 ### 3-1. 位置づけ・現状
 
-VR3「レビュー可能成果物」〜 VR4「価値観測」（`value_traceability.md:108-109`）、Lane C（外部エージェント成果物連携, `value_traceability.md:238`）。単体の正本 ADR は無く、`ADR-0032`（価値ループ）＋ `ADR-0049`/`external_agent_collaboration_spec.md`（外部エージェント）＋ EXT-CONN-02/03 の合成。
+VR3「レビュー可能成果物」〜 VR4「価値観測」（`value_traceability.md:108-109`）、Lane C（外部エージェント成果物連携, `value_traceability.md:238`）。単体の正本 ADR は無く、`ADR-0032`（価値ループ）＋ `ADR-0049`/`02_Architecture/design/external_agent_collaboration_spec.html`（外部エージェント）＋ EXT-CONN-02/03 の合成。
 
 **既に在るもの**:
-- **外部エージェントへの思考委任（Tier 0）**: 組織が定額契約した AI（Copilot/ChatGPT Enterprise 等）へ依頼パッケージを渡し、応答を import 境界で取り込む（`external_agent_collaboration_spec.md:9-16`）。kj-atlas は文脈供給・検証・レビュー・可逆適用に徹する。
-- **応答の proposal-only 着地**: `AgentResponse v1` は種別ごとに未レビュー提案として着地（`external_agent_collaboration_spec.md:98-105`）。実装は `agent_response_import.ts`。禁止フィールド（score/rank/confidence/priority）は破棄/拒否（`:90`）。
+- **外部エージェントへの思考委任（Tier 0）**: 組織が定額契約した AI（Copilot/ChatGPT Enterprise 等）へ依頼パッケージを渡し、応答を import 境界で取り込む（`02_Architecture/design/external_agent_collaboration_spec.html` §01 原則）。kj-atlas は文脈供給・検証・レビュー・可逆適用に徹する。
+- **応答の proposal-only 着地**: `AgentResponse v1` は種別ごとに未レビュー提案として着地（`02_Architecture/design/external_agent_collaboration_spec.html` §04 取り込み経路）。実装は `agent_response_import.ts`。禁止フィールド（score/rank/confidence/priority）は破棄/拒否（同 §04 制約）。
 - **AI 補助の構造化候補（CE-2）**: 島タイトル候補・merge 候補・矛盾/根拠由来の論点候補（`ADR-0028:78-81`）、すべて proposal-only。
 - **「最小人的整理」の成果物化（V4）**: 確定点/保留点/未レビュー/根拠導線/SafeMode 結果を束ねた review pack / narrative（`PRODUCT-VALUE-03` 受入条件 `:30-35`、証跡 `review_pack_trace_export.spec.ts`）。これが「戦略・アクションの読み手向け入力」。
 - **トリガー型出力の堆積場（EXT-CONN-02, Draft）**: 会議前ブリーフ等 ephemeral な AI 出力を「提案カード」として縁側レーンへ堆積（`EXT-CONN-02:27-28,49`）。
@@ -152,9 +152,9 @@ VR3「レビュー可能成果物」〜 VR4「価値観測」（`value_traceabil
 ### 3-3. 受入条件＝ローカル小規模試行
 
 **T3-A: AI 自動整理の proposal 堆積（Tier 0 取込のローカル試行）**
-- 前提/セットアップ: WSL frontend。SafeMode ON、provider=none。手作りの `agent-response.v1` JSON（`external_agent_collaboration_spec.md:69-86` 準拠）を模擬応答として用意（島タイトル候補 2 + narrative_draft 1）。
+- 前提/セットアップ: WSL frontend。SafeMode ON、provider=none。手作りの `agent-response.v1` JSON（`02_Architecture/design/external_agent_collaboration_spec.html` §04 スキーマ準拠）を模擬応答として用意（島タイトル候補 2 + narrative_draft 1）。
 - 操作: 「応答を取り込む」で JSON を貼付（`agent_response_import.ts` 経路）。
-- 期待結果（機械判定）: 提案は全件 `unreviewed` で着地し、**人間が採用するまで文書本体（カード/島）が変わらない**（`external_agent_collaboration_spec.md:14` 原則2、`PRODUCT-VALUE-02` 受入 `:35`）。取込前後で document のカード集合ハッシュが不変。→ 自動整理でも proposal-only を保つことを検証。
+- 期待結果（機械判定）: 提案は全件 `unreviewed` で着地し、**人間が採用するまで文書本体（カード/島）が変わらない**（`02_Architecture/design/external_agent_collaboration_spec.html` §01 原則2、`PRODUCT-VALUE-02` 受入 `:35`）。取込前後で document のカード集合ハッシュが不変。→ 自動整理でも proposal-only を保つことを検証。
 
 **T3-B: 最小人的整理→成果物 6 要素（既存 e2e の受入化）**
 - 前提: fixture `buildReviewPackTraceDocument()`（`PRODUCT-VALUE-03` 証跡 `:40`）。
@@ -164,7 +164,7 @@ VR3「レビュー可能成果物」〜 VR4「価値観測」（`value_traceabil
 **T3-C: 取込時の反スコアリング（番兵試行）**
 - 前提: `agent-response.v1` に `score:0.9`・`rank:1` 等の禁止フィールドを混入させた模擬応答。
 - 操作: 取込。
-- 期待結果（機械判定）: 禁止フィールドは破棄されるか取込拒否（`external_agent_collaboration_spec.md:90`）。着地提案の直列化に `score|rank|confidence|priority` が現れない（正規表現）。→ 数値評価を採否の正本にしない不変条件を検証。
+- 期待結果（機械判定）: 禁止フィールドは破棄されるか取込拒否（`02_Architecture/design/external_agent_collaboration_spec.html` §04 制約）。着地提案の直列化に `score|rank|confidence|priority` が現れない（正規表現）。→ 数値評価を採否の正本にしない不変条件を検証。
 
 **T3-D（番兵・現フェーズ外の安全確認）: フル bundle 共有の SafeMode 漏えい検査**
 - 前提: 既知 P0（`SEC-EXPORT-BUNDLE-01`）を試行で検出する目的。fixture の未レビューカード本文に一意な番兵文字列 `SENTINEL-XYZ` を入れる。

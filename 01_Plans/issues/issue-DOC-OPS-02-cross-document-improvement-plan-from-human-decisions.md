@@ -7,7 +7,7 @@
 - Owner: Platform Architecture Owner + Security Officer
 - Scope: `01_Plans/`, `02_Architecture/`, `04_Documentation/`, `AGENTS.md`
 - Related Backlog: N/A
-- Related ADR/Spec: `ADR-0001`, `ADR-0021`, `02_Architecture/strict_mode_exception_approval_flow.md`, `04_Documentation/security.md`, `04_Documentation/security_operational_guidelines.md`
+- Related ADR/Spec: `ADR-0001`, `ADR-0021`, `02_Architecture/design/strict_mode_exception_approval_flow.html`, `04_Documentation/security.md`, `04_Documentation/security_operational_guidelines.md`
 - Dependencies: N/A
 - Expected verification level: `docs-check`
 
@@ -20,7 +20,7 @@
 ## 2) 背景 / Context
 
 - strict/non-strict の二重プロファイル運用を許容する判断が確定済み。
-- `security.md` と `strict_mode_exception_approval_flow.md` に可読性改善は入ったが、関連ドキュメント（operations / enterprise_architecture / issues）まで含めた同期運用計画は未整理。
+- `security.md` と `02_Architecture/design/strict_mode_exception_approval_flow.html` に可読性改善は入ったが、関連ドキュメント（operations / enterprise_architecture / issues）まで含めた同期運用計画は未整理。
 - AGENTSのProject Mapに新規文書は追記済みだが、横断改善の実施順序と完了判定が未定義。
 
 ## 3) 判断基準による優先度評価
@@ -47,7 +47,7 @@
 
 - [x] 役割定義の参照元が `04_Documentation/security_operational_guidelines.md` を起点に統一される。
 - [x] strict/non-strict の表現で「強制」ではなく「ガイドライン参照」であることが 01/02/04 の対象文書に反映される。
-- [x] `enterprise_architecture.md` / `strict_mode_exception_approval_flow.md` / `security.md` / `operations.md` の参照リンク整合が確認できる。
+- [x] `02_Architecture/design/enterprise_architecture.html` / `02_Architecture/design/strict_mode_exception_approval_flow.html` / `security.md` / `operations.md` の参照リンク整合が確認できる。
 - [x] 文書横断レビューのチェックリスト（用語、役割、導線、表現）を本issueに保持できる。
 - [x] docs-check 検証結果が再現可能なコマンドで記録される。
 
@@ -110,8 +110,8 @@
 
 ### 実施順序（固定）
 
-1. AUTH-OPS-03 正本（`strict_mode_exception_approval_flow.md`）の固定値を参照基準にする。
-2. 02（`enterprise_architecture.md`）へ責務境界/停止条件/復旧条件を同期する。
+1. AUTH-OPS-03 正本（`02_Architecture/design/strict_mode_exception_approval_flow.html`）の固定値を参照基準にする。
+2. 02（`02_Architecture/design/enterprise_architecture.html`）へ責務境界/停止条件/復旧条件を同期する。
 3. 04（`operations.md` / `security.md`）へRunbookと最小監査項目を同期する。
 4. 01（dashboard/decision-pack/issues README）へ状態遷移とDecision Queue反映を同期する。
 5. AGENTS.md の導線・ドリフト検知項目を更新し、以後の再発を防止する。
@@ -125,7 +125,7 @@
 
 ## 13) Stream G同期ログ（2026-04-30）
 
-- Phase 1 Read同期: `strict_mode_exception_approval_flow.md` を起点に `enterprise_architecture.md` → `operations.md` → `security.md` → `decision-pack-2026-03-human-judgement.md` → 本issue の順で再読。
+- Phase 1 Read同期: `02_Architecture/design/strict_mode_exception_approval_flow.html` を起点に `02_Architecture/design/enterprise_architecture.html` → `operations.md` → `security.md` → `decision-pack-2026-03-human-judgement.md` → 本issue の順で再読。
 - Phase 2 Plan: AC/DoD の不足がないことを確認し、未完チェックボックスのみを最小更新対象に固定。
 - Phase 3 Sync: DOC-OPS-02固定順序（`02_Architecture -> 04_Documentation -> 01_Plans -> AGENTS.md`）への適合を再確認し、本issueの未完チェックを完了状態へ同期。
 - Phase 4 Verify: 用語（Security Officer/System Owner/Platform Operator）・役割分離・導線・固定値D1〜D4（4h / tenant+2h / 代理承認なし / 48h+15m/60m）の一致を確認。
@@ -147,7 +147,7 @@
 ## 14) Stream C governance lock record (2026-05-20)
 
 ### Context
-- 対象は AUTH ガバナンス関連の文書同期のみ（`02_Architecture/strict_mode_exception_approval_flow.md` / `02_Architecture/enterprise_architecture.md` / AUTH系issue）。
+- 対象は AUTH ガバナンス関連の文書同期のみ（`02_Architecture/design/strict_mode_exception_approval_flow.html` / `02_Architecture/design/enterprise_architecture.html` / AUTH系issue）。
 - 用語は `Security Officer / System Owner / Platform Operator` を単一語彙として維持し、別名導入を禁止する。
 - 固定値は AUTH-OPS-03 の D1〜D4（4h / tenant+2h / 代理承認なし / 48h+15m/60m）を正本参照で扱う。
 

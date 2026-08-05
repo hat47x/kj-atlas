@@ -20,7 +20,7 @@
 
 ## Stream D drift-check update（2026-04-30）
 
-- Phase 1 Read: `02_Architecture/strict_mode_exception_approval_flow.md` を起点に `operations.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` の導線を再確認。
+- Phase 1 Read: `02_Architecture/design/strict_mode_exception_approval_flow.html` を起点に `operations.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` の導線を再確認。
 - Phase 2 情報構造: 本文責務を維持（operations=runbook / security=基底方針 / guidelines=運用判断補助）。
 - Phase 3 用語統一: `Security Officer / System Owner / Platform Operator`、状態語彙、D1〜D4固定値の一致を確認。
 - Phase 4 品質ゲート: docs-check と `git diff --check` 前提、自己修復上限3回を維持。
@@ -244,7 +244,7 @@
 - 設計起因の不整合は文書で解消せず停止報告する方針を再確認。
 
 ### Phase 2 Read同期
-- 対象文書と関連正本（`strict_mode_exception_approval_flow.md` / `security.md` / `operations.md` / `e2e_testing.md`）を再読。
+- 対象文書と関連正本（`02_Architecture/design/strict_mode_exception_approval_flow.html` / `security.md` / `operations.md` / `e2e_testing.md`）を再読。
 - `Improve external` 分類と public-exposure 境界を維持。
 
 ### Phase 3 Execute

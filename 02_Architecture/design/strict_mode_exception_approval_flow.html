@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; background:#f1f3f5; }
+  * { box-sizing:border-box; }
+  body { font-family:"Noto Sans JP", system-ui, sans-serif; color:#1f2933; -webkit-font-smoothing:antialiased; }
+  @page { size:A4; margin:0; }
+  @media print {
+    html { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    html, body { margin:0; padding:0; background:#fff; }
+    .doc { max-width:none !important; margin:0 !important; padding:0 0.7in !important; box-shadow:none !important; background:#fff !important; }
+    h1, h2, h3, h4 { break-after:avoid; }
+    figure, table, tr, .card-note { break-inside:avoid; }
+    p, li { orphans:3; widows:3; }
+  }
+  table.grid { width:100%; border-collapse:collapse; font-size:13px; margin:14px 0 0; }
+  table.grid th { text-align:left; font-weight:600; color:#52606d; border-bottom:1.5px solid #cbd5e1; padding:7px 9px; background:#f8fafc; }
+  table.grid td { border-bottom:1px solid #e5e7eb; padding:7px 9px; vertical-align:top; line-height:1.6; }
+  code { font-family:"Noto Sans Mono", ui-monospace, monospace; font-size:0.92em; background:#f1f5f9; padding:1px 5px; border-radius:3px; color:#334155; }
+  pre.block { font-family:"Noto Sans Mono", monospace; font-size:12px; line-height:1.65; background:#0f172a; color:#e2e8f0; padding:13px 15px; border-radius:6px; margin:12px 0 0; overflow-x:auto; }
+  .mermaid { text-align:center; }
+  .badge { font-size:12px; font-weight:500; padding:5px 11px; border-radius:999px; border:1px solid; display:inline-block; }
+</style>
+</helmet>
+<main class="doc" style="box-sizing:border-box; max-width:8.5in; margin:0 auto; background:#ffffff; padding:0 clamp(20px,5vw,0.85in); box-shadow:0 1px 3px rgba(15,23,42,0.08), 0 12px 40px rgba(15,23,42,0.06);">
+
+  <!-- COVER -->
+  <header style="padding:64px 0 28px; border-bottom:1px solid #e5e7eb;">
+    <div style="display:flex; align-items:center; gap:10px; font-size:12.5px; letter-spacing:0.14em; color:#6b7280; text-transform:uppercase; font-weight:500;">
+      <span style="width:8px; height:8px; border-radius:2px; background:#7c3aed; display:inline-block;"></span>
+      kj-atlas ・ Architecture Spec ・ AUTH-OPS-03
+    </div>
+    <h1 style="font-size:30px; line-height:1.34; font-weight:700; margin:18px 0 0; letter-spacing:0.01em; text-wrap:balance;">strict mode 例外緩和 承認フロー仕様</h1>
+    <p style="font-size:15px; line-height:1.7; color:#52606d; margin:14px 0 0; max-width:38em; text-wrap:pretty;">
+      <code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=false</code>（strict）を本番標準としつつ、例外的に <code>true</code> へ緩和する際の承認フローを設計レベルで固定する。人間が短時間で判断でき、AIエージェントが推測で承認フローを補完しないことを目的とする。
+    </p>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:22px;">
+      <span class="badge" style="background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe;">Status: Accepted (2026-03-06, D1〜D4 fixed)</span>
+      <span class="badge" style="background:#fef2f2; color:#b91c1c; border-color:#fecaca;">適用範囲=組織運用の一時緩和のみ</span>
+    </div>
+    <p style="font-size:12.5px; line-height:1.7; color:#6b7280; margin:20px 0 0; padding:10px 13px; background:#f8fafc; border-left:3px solid #cbd5e1;">
+      本書が正本（新規設計文書はHTML単独。<code>AGENTS.md</code> §3）。適用範囲: 組織運用で <code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=false</code> を一時的に緩和する場合だけ適用する。個人OSSの日常開発・通常復旧の承認フローではない。2者承認を用意できない場合は例外を有効化せず、strict設定を維持する。
+    </p>
+    <p style="font-size:12px; line-height:1.6; color:#94a3b8; margin:10px 0 0;">
+      Owner: Security Officer / System Owner / Platform Operator ・ Scope: <code>enterprise_architecture.md</code>, <code>04_Documentation/operations.md</code>, <code>security.md</code>, <code>security_operational_guidelines.md</code>, <code>acceptance_check.md</code>, <code>03_Implement/frontend/docs/e2e_testing.md</code> ・ Related issue: <code>issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md</code>
+    </p>
+  </header>
+
+  <!-- 0. 読み方・登場人物 -->
+  <section style="padding:30px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">00</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">この文書の読み方・登場人物</h2>
+    </div>
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:12px 0 0;">認証の専門知識が深くなくても、次の順序で読むと判断しやすい: <strong>1章（目的）</strong>→<strong>4章（状態遷移）</strong>→<strong>6章（Q1〜Q10）</strong>→<strong>8章（停止/復旧）</strong>。</p>
+    <table class="grid">
+      <thead><tr><th style="width:26%;">役割</th><th>責務</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Security Officer</strong></td><td>セキュリティ妥当性を判断する責任者</td></tr>
+        <tr><td><strong>System Owner</strong></td><td>業務継続上の妥当性を判断する責任者</td></tr>
+        <tr><td><strong>Platform Operator</strong></td><td>設定変更と運用記録を行う実行担当</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 1. 目的 / 2. 非目標 / 3. 固定契約 -->
+  <section style="padding:30px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">01</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">目的・非目標・固定済み契約</h2>
+    </div>
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:12px 0 0;"><strong>目的:</strong> strictを本番標準としつつ、例外的に緩和する際の承認フローを設計レベルで固定する。(1) 人間が「何を決めれば作業開始できるか」を短時間で判断できること、(2) AIエージェントが推測で承認フローを補完せず停止条件を守れること。</p>
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:10px 0 0;"><strong>非目標:</strong> コードで承認バイパスを実装すること／監査スキーマへPIIを追加すること／既存のSafeMode・read-only優先順位を変更すること。</p>
+    <table class="grid">
+      <thead><tr><th style="width:34%;">固定済み契約</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td>strict標準</td><td><code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=false</code>。例外緩和は通常「一時変更」として扱う</td></tr>
+        <tr><td>恒常運用の扱い</td><td>組織ポリシーで <code>true</code> を恒常採用する場合は「例外フロー」ではなく別途「公開運用プロファイル」を定義・審査・監査する</td></tr>
+        <tr><td>2者承認責務</td><td>Security Officer + System Owner</td></tr>
+        <tr><td>実行責務</td><td>Platform Operator（承認済み変更のみ実行）</td></tr>
+        <tr><td>監査最小項目</td><td>時刻 / 理由 / 承認者 / 対象環境 / 復旧条件</td></tr>
+        <tr><td>PII非保存</td><td>subject生値、roles/groups/policyRef生値、自由記述PIIを保存しない</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 4. 状態遷移(核心図) -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">02</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">設計全体像（状態遷移）</h2>
+    </div>
+    <figure style="margin:16px 0 0;">
+      <pre class="mermaid">
+stateDiagram-v2
+    [*] --> DraftRequest
+    DraftRequest --> ApprovalPending
+    ApprovalPending --> Approved
+    Approved --> ActiveException
+    ActiveException --> RollbackPending
+    RollbackPending --> Closed
+    Closed --> [*]
+
+    DraftRequest --> StoppedForClarification: 未確定項目が実施に必須
+    ApprovalPending --> StoppedForClarification
+    Approved --> StoppedForClarification
+    ActiveException --> StoppedForClarification
+
+    DraftRequest --> Rejected: 承認却下
+    ApprovalPending --> Rejected
+
+    StoppedForClarification --> [*]
+    Rejected --> [*]
+
+    note right of ApprovalPending
+        承認情報が欠損している場合、
+        Approved へ遷移してはならない
+    end note
+    note right of RollbackPending
+        復旧記録が未完了の場合、
+        Closed へ遷移してはならない
+    end note
+      </pre>
+      <figcaption style="font-size:12.5px; color:#6b7280; margin-top:9px; line-height:1.65;">実線＝正常経路。<code>StoppedForClarification</code> / <code>Rejected</code> はどの申請段階からも到達しうる（強制ガード＝Fail Fast）。再申請は新しい <code>requestId</code> で行う。</figcaption>
+    </figure>
+
+    <table class="grid">
+      <thead><tr><th style="width:26%;">状態</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td><code>DraftRequest</code></td><td>申請を書き始めた段階（まだ承認判定できない）</td></tr>
+        <tr><td><code>ApprovalPending</code></td><td>2者承認待ち</td></tr>
+        <tr><td><code>Approved</code></td><td>承認済みだが、まだ設定変更は実行していない</td></tr>
+        <tr><td><code>ActiveException</code></td><td><code>...=true</code> が適用中</td></tr>
+        <tr><td><code>RollbackPending</code></td><td>戻し作業待ち（期限到来／停止条件成立）</td></tr>
+        <tr><td><code>Closed</code></td><td><code>...=false</code> へ戻し、記録も完了</td></tr>
+        <tr><td><code>StoppedForClarification</code></td><td>未確定事項があるため実行停止</td></tr>
+        <tr><td><code>Rejected</code></td><td>承認却下で終了（再申請は新しい <code>requestId</code>）</td></tr>
+      </tbody>
+    </table>
+
+    <figure style="margin:20px 0 0;">
+      <pre class="mermaid">
+sequenceDiagram
+    participant Op as Platform Operator
+    participant SO as Security Officer
+    participant SYS as System Owner
+
+    Op->>Op: DraftRequest を作成
+    Op->>SO: 承認依頼
+    Op->>SYS: 承認依頼
+    SO-->>Op: 承認（安全妥当性）
+    SYS-->>Op: 承認（業務継続妥当性）
+    Note over Op: ApprovalPending → Approved
+    Op->>Op: 設定変更を実施（ActiveException）
+    Note over Op: TTL到達 or 停止条件成立
+    Op->>Op: RollbackPending
+    Op->>Op: ...=false へ戻し記録完了（Closed）
+      </pre>
+      <figcaption style="font-size:12.5px; color:#6b7280; margin-top:9px; line-height:1.65;">1件の申請を追う時系列例（§4.3）。承認（A/R）と実行（A/R）が異なる主体に分離されている点が要点。</figcaption>
+    </figure>
+  </section>
+
+  <!-- 5. RACI -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">03</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">役割分離（RACI）</h2>
+    </div>
+    <table class="grid">
+      <thead><tr><th style="width:30%;">タスク</th><th>Security Officer</th><th>System Owner</th><th>Platform Operator</th></tr></thead>
+      <tbody>
+        <tr><td>申請妥当性レビュー（安全）</td><td>A/R</td><td>C</td><td>I</td></tr>
+        <tr><td>申請妥当性レビュー（業務継続）</td><td>C</td><td>A/R</td><td>I</td></tr>
+        <tr><td>例外発動実行</td><td>I</td><td>I</td><td>A/R</td></tr>
+        <tr><td>復旧実行（strict復帰）</td><td>C</td><td>C</td><td>A/R</td></tr>
+        <tr><td>監査記録の整合確認</td><td>A</td><td>A</td><td>R</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px; color:#6b7280; margin:10px 0 0;">凡例: A=Accountable, R=Responsible, C=Consulted, I=Informed。承認（A/R）と実行（A/R）を分離し、単独判断で緩和が常態化しないようにする。</p>
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:14px 0 0;">
+      <strong>HIL-RS Governance連携補強（A1 Contract Hardening）:</strong> Security Officer / System Owner は承認責務のみ、Platform Operator は実行責務のみを負う。<code>requester</code> と <code>approver</code> の兼務は禁止し、<code>approver_a != approver_b</code> を必須とする（dual-control）。<code>Approval Record=Pending</code> が1件でも残る場合、<code>Approved</code> / <code>ActiveException</code> への遷移は禁止する。<code>decisionQueueTransition</code> は <code>Pending → Approved</code> または <code>Pending → Rejected</code> のみ許可し、Pending bypassを禁止する。
+    </p>
+  </section>
+
+  <!-- 6. Q1-Q10 / D1-D4 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">04</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">Q1〜Q10 決裁結果（D1〜D4 固定値）</h2>
+    </div>
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:12px 0 0;">本節の値と異なる運用を行う場合は、新しい <code>requestId</code> で再承認する。「未決のまま実行」は禁止。未決項目が1つでも実施判断に影響する場合は <code>StoppedForClarification</code>。</p>
+    <table class="grid">
+      <thead><tr><th style="width:8%;">ID</th><th style="width:26%;">決定テーマ</th><th style="width:30%;">固定値</th><th>実務メモ</th></tr></thead>
+      <tbody>
+        <tr><td>D1</td><td>承認順序 / 承認TTL</td><td>Security Officer先行、TTL=4h</td><td>4h以内に2者承認が揃わない申請は失効</td></tr>
+        <tr><td>D2</td><td>適用スコープ / 最大継続時間</td><td>tenant単位、最大2h</td><td>2h経過時は自動でstrict復帰へ遷移</td></tr>
+        <tr><td>D3</td><td>復旧判定者 / 代理承認</td><td>2者共同判定、代理承認なし</td><td>代理承認は常に不可（緊急時も再申請）</td></tr>
+        <tr><td>D4</td><td>保存先 / 事後レビュー / SLA</td><td>変更台帳+監査ID相互参照、48hレビュー、15m一次/60m二次</td><td>SLA違反はインシデント管理へ接続</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px; color:#6b7280; margin:12px 0 0;">決裁記録（確定）: 2026-03-06 ・ Security Officer, System Owner, Platform Architecture Owner ・ Rationale: strict既定運用を維持しつつ、例外運用時間・承認期限・監査SLAを最小化して誤運用余地を縮小する ・ Review date: 2026-06-30。</p>
+
+    <pre class="block">[Approval Flow Decision Record]
+- Date (UTC):
+- Decider(s):
+- Selected options: Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A
+- Rationale:
+- Effective from:
+- Review date:</pre>
+    <p style="font-size:12px; color:#94a3b8; margin:8px 0 0;">採択記録フォーマット（必須テンプレート）。</p>
+  </section>
+
+  <!-- 7. データ契約 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">05</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">最小データ契約（実行記録）</h2>
+    </div>
+    <pre class="block">{
+  "requestId": "AUTH-OPS-03-YYYYMMDD-###",
+  "state": "ActiveException | Closed | StoppedForClarification | Rejected",
+  "approvedBy": ["security_officer_id", "system_owner_id"],
+  "executedBy": "platform_operator_id",
+  "startedAt": "UTC timestamp",
+  "rollbackBy": "UTC timestamp",
+  "endedAt": "UTC timestamp | null",
+  "targetEnvironment": "prod|stg|dev",
+  "reasonCode": "predefined enum",
+  "policyRefPresent": true
+}</pre>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:10px 0 0;"><strong>制約:</strong> <code>approvedBy</code> は2者必須（重複不可）。<code>policyRefPresent</code> は存在フラグのみ（生値保存禁止）。自由記述フィールドに個人識別子を含めない。</p>
+  </section>
+
+  <!-- 8. 停止・復旧 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">06</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">運用停止・復旧ルール</h2>
+    </div>
+    <table class="grid">
+      <thead><tr><th style="width:30%;">区分</th><th>条件</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="3">停止条件<br><span style="font-weight:400; color:#94a3b8;">→ <code>StoppedForClarification</code></span></td><td>Q1〜Q10の未確定項目が、発動/復旧判定に必要</td></tr>
+        <tr><td>2者承認の片方が不在で代理承認条件が未定義</td></tr>
+        <tr><td>監査保存先が不明で記録責務を満たせない</td></tr>
+        <tr><td rowspan="4">復旧条件<br><span style="font-weight:400; color:#94a3b8;">→ strict復帰実行</span></td><td>承認TTL到達</td></tr>
+        <tr><td>例外最大継続時間到達</td></tr>
+        <tr><td>Security Officer または System Owner が停止指示</td></tr>
+        <tr><td>監査記録不整合が発見された</td></tr>
+      </tbody>
+    </table>
+    <div style="margin:16px 0 0; padding:13px 15px; background:#fffbeb; border-left:3px solid #f59e0b; border-radius:0 4px 4px 0;">
+      <p style="font-size:13px; line-height:1.7; color:#78350f; margin:0;"><strong>非矛盾ルール（§8.4）:</strong> 停止条件は「例外を有効化してよいか」の判定にのみ使用する。復旧条件は「すでに有効な例外をstrictに戻す」判定にのみ使用する。<strong>両方が同時に成立した場合、優先順位は「復旧実行 &gt; 停止記録」</strong>とする（先にstrict復帰を完了させる）。</p>
+    </div>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:14px 0 0;"><strong>復旧完了判定:</strong> <code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=false</code> へ復帰済み／<code>endedAt</code>と復旧理由が記録済み／事後レビューの期限と担当が記録済み。</p>
+  </section>
+
+  <!-- 9. 文書反映トレース + 状態更新方針 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">07</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">実装/文書反映トレースと状態更新方針</h2>
+    </div>
+    <figure style="margin:14px 0 0;">
+      <pre class="mermaid">
+flowchart LR
+    A["本書<br/>Q1〜Q10採択確定"] --> B["enterprise_architecture.md<br/>§4.5へ同期"]
+    B --> C["operations.md<br/>Runbookテンプレへ反映"]
+    C --> D["security.md<br/>停止条件・監査項目へ反映"]
+    D --> E["issue-AUTH-OPS-03<br/>Draft → Open"]
+
+    classDef step fill:#f8fafc,stroke:#94a3b8,stroke-width:1px,color:#334155
+    class A,B,C,D,E step
+      </pre>
+    </figure>
+    <table class="grid">
+      <thead><tr><th style="width:16%;">状態</th><th style="width:34%;">移行条件</th><th>必須エビデンス</th></tr></thead>
+      <tbody>
+        <tr><td>Draft</td><td>D1〜D4 のうち1つでも未確定</td><td>未確定項目の列挙</td></tr>
+        <tr><td>Open</td><td>D1〜D4確定、反映先未同期</td><td>本書 §04 の固定値</td></tr>
+        <tr><td>In Progress</td><td><code>enterprise_architecture.md</code> / <code>operations.md</code> / <code>security.md</code> へ同期開始</td><td>同期差分への参照</td></tr>
+        <tr><td>Done</td><td>3文書同期 + issue README/decision-pack が整合</td><td>docs-check結果と最終要約</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px; color:#6b7280; margin:10px 0 0;">本方針により、AUTH-OPS-03 は「決定固定だけでDoneにしない」。運用文書同期と進捗管理同期の両方が完了した時点でDoneとする。</p>
+  </section>
+
+  <!-- CDC / 用語 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">08</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">CDC（Change Decision Contract）と用語</h2>
+    </div>
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:12px 0 0;">AUTH系の設計変更は、実装/運用反映前に <strong>CDC</strong> を必ず確定する。<strong>C（Context）</strong>=変更対象・非目標・D1〜D4との整合。<strong>D（Decision）</strong>=採択/却下した選択肢・理由・適用開始日・失効条件。<strong>C（Consequence）</strong>=影響範囲・検証方法・ロールバック条件・停止条件。CDC未確定の変更要求は <code>DraftRequest</code> のままとし、<code>ApprovalPending</code> へ遷移しない。</p>
+    <pre class="block">[CDC]
+- Context:
+- Decision:
+- Consequence:
+- Approved by:
+- Effective from (UTC):
+- Expire/Review by (UTC):</pre>
+    <table class="grid">
+      <thead><tr><th style="width:20%;">用語</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td>strict</td><td><code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=false</code> の状態。未登録主体を拒否する</td></tr>
+        <tr><td>例外緩和</td><td><code>...=true</code> に変更して運用すること</td></tr>
+        <tr><td>承認フロー</td><td>例外緩和を実施してよいかを決める手順</td></tr>
+        <tr><td>復旧</td><td>例外終了後に <code>...=false</code> へ戻すこと</td></tr>
+        <tr><td>Q1〜Q10</td><td>現在未確定の運用判断項目（順序、TTL、代理承認など）</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:14px 0 0;"><strong>運用プロファイルの選択:</strong> (1) strict標準プロファイル（推奨既定）— <code>false</code>を通常運用、<code>true</code>は承認付き一時運用。(2) 公開運用プロファイル（条件付き）— <code>true</code>を継続運用（SNS的な多ユーザ閲覧など事前登録制を維持しづらいケース）。この場合はアクセス境界・監視・フェイルセーフ・定期レビューの補完統制を <code>04_Documentation/security_operational_guidelines.md</code> で提示する。どちらのプロファイルでもSafeMode既定ON・PII最小化・監査最小化契約は維持する。</p>
+  </section>
+
+  <!-- 検証履歴(旧Stream各ログの集約) -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">09</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">整合検証の履歴</h2>
+    </div>
+    <p style="font-size:13px; line-height:1.7; color:#6b7280; margin:10px 0 0;">用語（Security Officer / System Owner / Platform Operator）・役割分離・D1〜D4固定値・下流文書（<code>enterprise_architecture.md</code> / <code>operations.md</code> / <code>security.md</code>）との整合を、複数回にわたり監査した記録。各回とも同一の4観点（用語・役割・導線・固定値）を再検証している。</p>
+    <table class="grid">
+      <thead><tr><th style="width:14%;">日付</th><th style="width:20%;">パス</th><th style="width:16%;">判定</th><th>要点</th></tr></thead>
+      <tbody>
+        <tr><td>2026-05-06</td><td>Stream D</td><td style="color:#15803d;">Go</td><td>AUTH-ARCH-01→SCHEMA→API→IMPL→E2Eの順序依存を再確認。Schema/API境界の固定状態を確認</td></tr>
+        <tr><td>2026-05-10</td><td>DOC-OPS-02 Stream F</td><td style="color:#15803d;">整合</td><td>同期順序を <code>02_Architecture → 04_Documentation → 01_Plans → AGENTS.md</code> に固定</td></tr>
+        <tr><td>2026-05-20</td><td>Stream G</td><td style="color:#15803d;">Pass（0/3 self-correction）</td><td>4観点（用語/役割/導線/固定値）すべて一致</td></tr>
+        <tr><td>2026-05-20</td><td>Stream A</td><td style="color:#b45309;">Hold/Needs-decision</td><td>SoD・停止条件を再確認。<code>pendingDecisionQueueCount&gt;0</code> のため保留判定（検証失敗・未定義競合は検出せず）</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 総括 -->
+  <section style="padding:34px 0 56px;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">∑</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">総括</h2>
+    </div>
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:12px 0 0; text-wrap:pretty;">
+      本仕様の骨格は単純である ─ <strong>承認と実行を分離し（RACI）、停止条件を「有効化前」に、復旧条件を「有効化後」に限定し、両者が競合したら復旧を優先する。</strong>D1〜D4の固定値がこの骨格に具体的な数値（TTL=4h、最大継続=2h、代理承認なし、48hレビュー）を与え、AIエージェントを含む実行者が推測で承認フローを補完する余地をなくす。
+    </p>
+  </section>
+
+</main>
+</x-dc>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: "neutral",
+    fontFamily: '"Noto Sans JP", system-ui, sans-serif',
+    flowchart: { curve: "basis", padding: 14 },
+    sequence: { actorFontFamily: '"Noto Sans JP", sans-serif', noteFontFamily: '"Noto Sans JP", sans-serif' },
+    stateDiagram: { fontFamily: '"Noto Sans JP", sans-serif' }
+  });
+  function renderMermaidDiagrams() {
+    var nodes = document.querySelectorAll(".mermaid:not([data-processed])");
+    if (nodes.length) { mermaid.run({ nodes: nodes }); }
+  }
+  var scheduled = null;
+  function scheduleRender() {
+    if (scheduled !== null) { return; }
+    scheduled = setTimeout(function () { scheduled = null; renderMermaidDiagrams(); }, 60);
+  }
+  new MutationObserver(scheduleRender).observe(document.documentElement, { childList: true, subtree: true });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", scheduleRender);
+  } else {
+    scheduleRender();
+  }
+  window.addEventListener("load", scheduleRender);
+</script>
+</body>
+</html>

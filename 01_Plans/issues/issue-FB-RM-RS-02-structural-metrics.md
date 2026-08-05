@@ -29,7 +29,7 @@
 
 - 価値・判断軸（`ADR-0001`）: Human-in-the-loop のレビュー品質を定量化する基盤として有効（高）。
 - 安全（`THREAT_MODEL.md` / SafeMode）: 外部送信不要でローカル計算可能。SafeModeを破らず導入可能（高）。
-- 企業・行政要件（`enterprise_architecture.md`）: 監査説明性（「なぜ警告したか」）を補強できる（中〜高）。
+- 企業・行政要件（`02_Architecture/design/enterprise_architecture.html`）: 監査説明性（「なぜ警告したか」）を補強できる（中〜高）。
 - 後方互換（`schemas.md`）: 既存schemaを破壊せず `diagnostics` 拡張で導入可能（高）。
 
 ## 3) 提案する解決策 / Proposed solution

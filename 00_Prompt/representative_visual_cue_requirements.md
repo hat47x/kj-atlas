@@ -190,5 +190,5 @@ kj-atlasはこの連続性を保ち、次を優先する。
 - `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 - `01_Plans/adr/ADR-0060-representative-visual-cue-source-boundary.md`
 - `01_Plans/issues/issue-DOMAIN-VISUAL-CUE-01-representative-visual-cues.md`
-- `02_Architecture/data_model_operations_overview.md`
+- `02_Architecture/design/data_model_operations_overview.html`
 - `02_Architecture/representative_visual_cue_evaluation.md`

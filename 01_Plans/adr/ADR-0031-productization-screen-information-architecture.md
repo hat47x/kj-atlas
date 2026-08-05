@@ -84,7 +84,7 @@
 - Related: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`
 - Related: `01_Plans/issues/issue-UX-OPERABILITY-01-pointer-keyboard-flow-review.md`
 - Related: `ROADMAP.md`
-- Related: `02_Architecture/architecture.md`
+- Related: `02_Architecture/design/architecture.html`
 - Supersedes: N/A
 - Superseded by: N/A
 - Derived-from: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`

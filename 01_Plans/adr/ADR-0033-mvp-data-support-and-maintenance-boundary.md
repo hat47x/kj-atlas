@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-05-17
 - Deciders: Project Maintainers
-- Scope: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/schemas.md`
+- Scope: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/design/data_model_operations_overview.html`, `02_Architecture/schemas.md`
 
 ## Context
 
@@ -29,7 +29,7 @@ MVPでは、データサポート境界を次の4区分で管理する。
 | 派生/読み取り中心 | 保存済みデータやリクエストから生成され、保守対象ではない | SimilarCandidateGroup、ContextBundle、audit event |
 | 契約のみ/将来拡張 | 型やI/Fは固定するが、MVPでは完全保守しない | CE契約、差分同期、証跡・根拠リンクの完全管理 |
 
-`02_Architecture/data_model_operations_overview.md` を、MVPデータモデル、論理ER、CRUDサポート表、ステークホルダー別運用境界の俯瞰文書として追加する。この文書は `schemas.md` や `api.md` の詳細を置き換えず、「実際に運用できる範囲」を読むための入口とする。
+`02_Architecture/design/data_model_operations_overview.html` を、MVPデータモデル、論理ER、CRUDサポート表、ステークホルダー別運用境界の俯瞰文書として追加する。この文書は `schemas.md` や `api.md` の詳細を置き換えず、「実際に運用できる範囲」を読むための入口とする。
 
 採用理由は、MVPのスナップショット保存方針を維持しつつ、製品化に必要なデータ運用課題を隠さず分離できるためである。現段階で全エンティティを正規化し、個別CRUDを実装すると、UI、API、移行、監査の範囲が一気に広がり、MVPで確認したい価値よりも管理機構が先行する。
 
@@ -64,8 +64,8 @@ MVPでは、データサポート境界を次の4区分で管理する。
 ## Acceptance Criteria / Definition of Done
 
 - ADR-0033 is **Accepted** and defines a non-ambiguous boundary for MVP support vs maintenance vs contract-only concerns.
-- `data_model_operations_overview.md` uses the same four support classes (`L1`, `L1.5`, `L2`, `L2.5`, `L3`, `L0`) and the same terminology as this ADR.
-- `schemas.md` explicitly states that schema presence does not imply operational support, and points readers to `data_model_operations_overview.md` for the boundary table.
+- `02_Architecture/design/data_model_operations_overview.html` uses the same four support classes (`L1`, `L1.5`, `L2`, `L2.5`, `L3`, `L0`) and the same terminology as this ADR.
+- `schemas.md` explicitly states that schema presence does not imply operational support, and points readers to `02_Architecture/design/data_model_operations_overview.html` for the boundary table.
 - No statement in this ADR implies that Card/Edge/Island/Narrative have independent CRUD or operational recovery guarantees in MVP.
 - Downstream implementation work is split into issues (`DATA-MODEL-OPS-01`, `DATA-MAINT-01`, `DATA-CONTRACT-01`) rather than marked as already implemented.
 
@@ -82,14 +82,14 @@ MVPでは、データサポート境界を次の4区分で管理する。
 - 移行時に必要な対応:
   - `DATA-MAINT-01` で、一覧、アーカイブ/削除、バックアップ、復旧、データ検証、ユーザー棚卸しを設計する。
   - `DATA-CONTRACT-01` で、DocumentV2とAPIの正本差分を棚卸しし、必要な実装・テストを分割する。
-  - 新しい永続テーブルまたは標準CRUDを追加する場合は、本ADRの区分と `data_model_operations_overview.md` のCRUD表を更新する。
+  - 新しい永続テーブルまたは標準CRUDを追加する場合は、本ADRの区分と `02_Architecture/design/data_model_operations_overview.html` のCRUD表を更新する。
 
 ## Traceability
 
-- Related: `02_Architecture/data_model_operations_overview.md`
+- Related: `02_Architecture/design/data_model_operations_overview.html`
 - Related: `02_Architecture/schemas.md`
 - Related: `02_Architecture/api.md`
-- Related: `02_Architecture/enterprise_architecture.md`
+- Related: `02_Architecture/design/enterprise_architecture.html`
 - Related: `01_Plans/adr/ADR-0032-product-value-realization-model.md`
 - Related: `01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md`
 - Related: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`

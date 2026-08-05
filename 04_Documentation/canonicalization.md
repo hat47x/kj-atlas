@@ -72,7 +72,7 @@ hash が一致していても、提案はまだ「候補」です。内容の正
 詳細な schema と設計上の根拠は、次の文書を参照してください。
 
 - [schemas.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/schemas.md)
-- [architecture.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/architecture.md)
+- [architecture.html](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/design/architecture.html)
 - [ce2_low_risk_ai_assist.md](ce2_low_risk_ai_assist.md)
 
 ## 関連文書

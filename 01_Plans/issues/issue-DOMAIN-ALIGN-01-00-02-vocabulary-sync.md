@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `00_Prompt/`, `02_Architecture/`
 - Related Backlog: `N/A`
-- Related ADR/Spec: `00_Prompt/domain.md`, `00_Prompt/handoff.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/architecture.md`, `02_Architecture/schemas.md`, `02_Architecture/review_attribution.md`
+- Related ADR/Spec: `00_Prompt/domain.md`, `00_Prompt/handoff.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/design/architecture.html`, `02_Architecture/schemas.md`, `02_Architecture/review_attribution.md`
 - Dependencies: N/A
 - Expected verification level: `docs-check`
 
@@ -28,7 +28,7 @@
 
 - `domain.md` は保留、違和感、可逆性を最上位概念として定義している。
 - `ai_cognitive_externalization_requirements.md` は Consensus Graph / WorkingGraph / ContextProjectionGraph を中核に置いている。
-- `architecture.md` と `schemas.md` は Contract Freeze で同語彙を固定している。
+- `02_Architecture/design/architecture.html` と `schemas.md` は Contract Freeze で同語彙を固定している。
 
 ## 3) 判断基準による優先度評価
 

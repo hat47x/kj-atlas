@@ -141,4 +141,4 @@ curl -H "X-API-Key: <key>" http://localhost:8080/api/docs/<doc_id>
 - [configuration.md](configuration.md)
 - [operations.md](operations.md)
 - [acceptance_check.md](acceptance_check.md)
-- [strict_mode_exception_approval_flow.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/strict_mode_exception_approval_flow.md)
+- [strict_mode_exception_approval_flow.html](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/design/strict_mode_exception_approval_flow.html)

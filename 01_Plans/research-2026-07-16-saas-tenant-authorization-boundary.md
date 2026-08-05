@@ -8,7 +8,7 @@
 
 ## 0. 結論
 
-現行kj-atlasは、外部認証・外部PDPへ接続できる**単一デプロイ／単一テナント相当のOSS**であり、共有DB型SaaSのマルチテナント分離を保証していない。`enterprise_architecture.md`もSaaSマルチテナント管理を非目標としている。
+現行kj-atlasは、外部認証・外部PDPへ接続できる**単一デプロイ／単一テナント相当のOSS**であり、共有DB型SaaSのマルチテナント分離を保証していない。`02_Architecture/design/enterprise_architecture.html`もSaaSマルチテナント管理を非目標としている。
 
 SaaS対応では、テナントを単なる表示ラベルや外部PDPの判定条件にせず、アプリ本体が必ず守る**構造的なデータ境界**にする必要がある。具体的には、すべての永続データ・API・キャッシュ・非同期処理・監査・外部エージェント資格情報を`tenantId`でスコープし、主体テナントと資源テナントの不一致をPDP呼出前に必ず拒否する。
 
@@ -220,11 +220,11 @@ SaaSでは「管理者」を1種類にしない。
 
 ## Traceability
 
-- `02_Architecture/enterprise_architecture.md`（現行はintegration readiness、SaaS multi-tenant非目標）
+- `02_Architecture/design/enterprise_architecture.html`（現行はintegration readiness、SaaS multi-tenant非目標）
 - `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`（Accepted）
 - `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - `02_Architecture/api.md` §8、§9
-- `02_Architecture/data_model_operations_overview.md` §2、§4、§5.2
+- `02_Architecture/design/data_model_operations_overview.html` §2、§4、§5.2
 - `02_Architecture/runtime_parameter_registry.md`（現行profilesとaccess-control設定）
 - `THREAT_MODEL.md`
 - `03_Implement/backend/src/kj_atlas_api/models.py`

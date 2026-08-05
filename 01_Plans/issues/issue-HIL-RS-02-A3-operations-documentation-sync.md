@@ -7,7 +7,7 @@
 - Owner: Stream B（HIL-RS-02-A3 運用文書同期準備）
 - Scope: `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`（docs planning only）
 - Out of scope: 実装変更、allowlist外Issue/ADR編集、契約再定義、`04_Documentation/**` 本体編集
-- Related ADR/Spec: `ADR-0027`, `ADR-0028`, `ADR-0039`, `02_Architecture/strict_mode_exception_approval_flow.md`
+- Related ADR/Spec: `ADR-0027`, `ADR-0028`, `ADR-0039`, `02_Architecture/design/strict_mode_exception_approval_flow.html`
 - Dependencies: `issue-HIL-RS-02-A1-governance-contract-hardening.md`（Done 2026-06-20）, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
 
@@ -154,7 +154,7 @@ HIL-RS-02-A3 operations documentation sync planning complete.
 ## Stream C execution record（2026-05-10, Documentation/Ops）
 
 ### Phase 1: Read
-- `02_Architecture/strict_mode_exception_approval_flow.md`（正本）と `04_Documentation/operations.md` / `security.md` / `security_operational_guidelines.md` の語彙・役割・導線・D1〜D4 を再確認。
+- `02_Architecture/design/strict_mode_exception_approval_flow.html`（正本）と `04_Documentation/operations.md` / `security.md` / `security_operational_guidelines.md` の語彙・役割・導線・D1〜D4 を再確認。
 
 ### Phase 2: Plan
 - AC/DoD不足として、`operations.md` 側に「監査導線クイックチェック（4観点+停止条件+証跡）」を追記する方針を固定。
@@ -213,7 +213,7 @@ HIL-RS-02-A3 operations documentation sync planning complete.
   - AC-2（A1未完時 Hold維持）を最優先ゲートとして再確認。
   - DoDとして docs-only 範囲逸脱が 0 件であることを確認。
 - リンク整合:
-  - 参照リンクは `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md` のまま維持。
+  - 参照リンクは `ADR-0027`, `ADR-0028`, `02_Architecture/design/strict_mode_exception_approval_flow.html` のまま維持。
   - A1/A2本文への直接編集導線を追加しない（read-only参照のみ）。
 
 ### Proceed（A1完了までDraft/Conditional維持）

@@ -7,7 +7,7 @@
 - Owner: Codex (Product Ops evidence steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/backend/`, `04_Documentation/diagnostics.md`, `04_Documentation/operations.md`, `SUPPORT.md`
 - Related Backlog: `PRODUCT-OPS-01`
-- Related ADR/Spec: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `02_Architecture/architecture.md`
+- Related ADR/Spec: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `02_Architecture/design/architecture.html`
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）

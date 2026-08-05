@@ -6,7 +6,7 @@
 - Priority: P0
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/export/bundle_export.ts`, `03_Implement/frontend/src/export/bundle_export.test.ts`, `03_Implement/frontend/src/domain/inquiry_bundle_safe_mode.ts`
-- Related ADR/Spec: `AGENTS.md`（SafeMode既定ONは最優先の安全境界）, `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`, `02_Architecture/architecture.md`, `02_Architecture/schemas.md` §15.4, `THREAT_MODEL.md`
+- Related ADR/Spec: `AGENTS.md`（SafeMode既定ONは最優先の安全境界）, `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`, `02_Architecture/design/architecture.html`, `02_Architecture/schemas.md` §15.4, `THREAT_MODEL.md`
 - Expected verification level: `unit`
 
 ## 課題
