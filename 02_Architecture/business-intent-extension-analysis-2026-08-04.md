@@ -49,7 +49,7 @@
 | **VR系列（value_traceability.md:112,114）** | 「新規作業はVR4とVR5に限定」、かつVR4/VR5はADR-0039により activation 延期中 | 提案Phase 5（組織・企業間）はVR5領域＝延期対象。提案自身も「実ユーザー・協力組織が得られるまで着手しない」としており整合 |
 | **schemas.md version gate** | `DocumentV1`(version:1)がADR-0058により唯一の永続契約。加算原則（全optional）ならversion維持、非互換変更はversion:2＋別ADR先行が必須 | 提案の「DocumentV1へ入れない」判断は正しい。ADR-0057の前例（schemas.md:8）が「現行DocumentV1の型・version gate・保存契約へ履歴キーを追加しない」と明記。**R-4は成立しない**（加算で足りる） |
 | **ADR-0043 複雑性予算 CB-1〜CB-4** | 初期表示への純増禁止、追加は置換・包含・モード分離、保留操作を遠くしない | 提案§8.1（企業機能は明示選択時のみ、通常キャンバス不変）が既に整合。issue本文に1行の自己申告が必要 |
-| **CVI-1 の砦が挙動ベースでない** | `core_value_guard.test.ts`は`readSource(...)`＋`toContain(...)`でテストファイルの文字列を検査するのみ（実装確認済み） | **これが最大の残存リスク**。新しいエクスポート面（Intent Package MD+JSON）を追加しても、redaction忘れがあってもテストは緑のまま通る |
+| **CVI-1 の砦が挙動ベースでない** | **解消（2026-08-05、Step 0.5実施）**。`bundle_export.test.ts`・`inquiry_bundle_safe_mode.test.ts`・`diagnostics_bundle.test.ts`・`review_pack_workflow.integration.test.ts`には番兵秘密の不出現を検査する挙動テストが既に存在していた（新規作成ではなく、`core_value_guard.test.ts`が索引していなかっただけ）。同ファイルを4件の実在テストへ索引更新した | 新しいエクスポート面（Intent Package MD+JSON）を追加する際は、同様の番兵検査を該当テストへ追加したうえで`core_value_guard.test.ts`へ索引する運用を維持する |
 | SEC-EXPORT-BUNDLE-01（document.jsonのSafeMode迂回） | **Done**（P0、解消済み） | 当初懸念していた「P0未解消のまま新エクスポート面を追加する」問題は既に解消。ただしCVI-1の砦の弱さは残る |
 | ADR-0049（外部エージェント連携） | **Status: Proposed**（Acceptedでない） | 提案Phase 3はこの契約の拡張に依存する。**未充足の前提**。Phase 3着手前にADR-0049のAccept判断が必要 |
 | EXT-CONN-02 | Draft。ゲート＝EXT-CONN-01の運用実績＋D3 admin認可の実装/検証 | 提案Phase 4はこのゲートを継承する。別途landing済みの活性化シナリオ文書のT2-A（MCP外部頭脳クエリのドッグフード）がこのゲートを解除する最短経路 |
@@ -73,12 +73,12 @@
 - **この記録がADR-0047のR-1トリガーを成立させ、Step 1以降の設計判断を authorize する。** 逆に、ここで価値が確認できなければ以降に進まない判断が正当化される。
 - 提案§19.7（UIを作る前にMarkdown手動運用で価値検証する）と同じ主張であり、ADR-0042のドッグフード枠組みに乗る。
 
-### Step 0.5: CVI-1の砦を挙動ベースへ格上げ（Step 2の前提）
+### Step 0.5: CVI-1の砦を挙動ベースへ格上げ（Step 2の前提）— **完了（2026-08-05）**
 
-新しいエクスポート面を追加する前に、全エクスポート面（bundle・review pack・inquiry bundle・将来の意図パッケージ）に対し「番兵秘密が生成物のどのファイルにも現れない」ことを挙動で検査する回帰を入れる。現状のソース文字列照合では、新面のredaction忘れを検出できない。
+新しいエクスポート面を追加する前に、全エクスポート面（bundle・review pack・inquiry bundle・診断バンドル）に対し「番兵秘密が生成物のどのファイルにも現れない」ことを挙動で検査する回帰を求めていた。調査の結果、この挙動検査は4つの主要エクスポート面すべてに**既に存在していた**（`bundle_export.test.ts`、`inquiry_bundle_safe_mode.test.ts`、`diagnostics_bundle.test.ts`、`review_pack_workflow.integration.test.ts`）。真のギャップは新規テストの欠如ではなく、`core_value_guard.test.ts`のCVI-1エントリが弱い例（`safe_mode.test.ts`のポリシー単体テスト）だけを索引し、これら4件の実在する挙動テストを索引していなかったことだった。索引を修正し、ADR-0041の「既存テストを索引する」方式に合わせた。
 
 - 既存のアーキ整合性分析（`architecture-coherence-synthesis-2026-07-23.md`）の推奨項目と同一。
-- Step 2の安全前提であり、Step 0とは並行可能。
+- 将来の意図パッケージ（Intent Package MD+JSON）を追加する際は、同様の番兵検査をそのエクスポートのテストへ追加し、`core_value_guard.test.ts`へ索引することで、この砦を維持する。
 
 ### Step 1: 境界ADR 1本（Step 0の記録を根拠に）
 
