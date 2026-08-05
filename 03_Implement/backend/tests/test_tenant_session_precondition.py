@@ -8,9 +8,11 @@ from types import SimpleNamespace
 from fastapi import Depends, FastAPI, Request
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
+from starlette.routing import Route as StarletteRoute
 
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app as main_app
+from kj_atlas_api.routes.admin import require_single_tenant_provisioning_surface
 from kj_atlas_api.tenant_session_precondition import (
     require_tenant_scoped_api_precondition,
     require_tenant_session_request_precondition,
@@ -159,3 +161,140 @@ def test_all_document_and_document_admin_routes_use_shared_authorization_boundar
                 if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
             }
             assert boundary_call in called_functions, route.path
+
+
+# The prefix-scoped coverage guards above only inspect routes under the four
+# prefixes that exist today. A route registered under any other prefix -- the
+# Admin, import/share and webhook surfaces this issue still lists as residual --
+# would match no prefix at all and therefore be asserted by nothing. The
+# contract below inverts that default: every registered route must either
+# install a shared tenant-scoped boundary, or be named here with a reason that
+# is itself mechanically re-checked.
+
+_TENANT_SCOPED_BOUNDARY_CALLS = frozenset(
+    {"_authorize_request", "_authorize_document_policy_management"}
+)
+
+# Route touches no tenant-scoped resource and cannot reach the database.
+_NO_TENANT_RESOURCE = "no-tenant-resource"
+# Route is refused outright before any DB work on tenant-session runtimes.
+_SAAS_SURFACE_BLOCKED = "saas-surface-blocked"
+# Route issues the opaque version, so it cannot also require it as a header.
+_TENANT_SESSION_VERSION_SOURCE = "tenant-session-version-source"
+# Route carries the expected version in its request body instead of a header.
+_BODY_BORNE_EXPECTED_VERSION = "body-borne-expected-version"
+
+_UNGUARDED_ROUTE_EXEMPTIONS: dict[tuple[str, str], str] = {
+    ("GET", "/healthz"): _NO_TENANT_RESOURCE,
+    ("GET", "/ai/provider-status"): _NO_TENANT_RESOURCE,
+    ("POST", "/admin/provision/hil-rs/a2a3-gate:validate"): _NO_TENANT_RESOURCE,
+    ("GET", "/session/bootstrap-policy"): _NO_TENANT_RESOURCE,
+    ("POST", "/admin/provision/users"): _SAAS_SURFACE_BLOCKED,
+    ("GET", "/session/context"): _TENANT_SESSION_VERSION_SOURCE,
+    ("POST", "/session/active-tenant"): _BODY_BORNE_EXPECTED_VERSION,
+}
+
+# FastAPI registers its own schema and documentation routes as plain Starlette
+# routes rather than APIRoute instances. Nothing else may hide there: a mounted
+# ASGI sub-application would also skip APIRoute inspection, and with it every
+# tenant boundary assertion in this module.
+_NON_API_ROUTE_PATHS = frozenset({"/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"})
+
+
+def _flattened_dependency_calls(dependant: object) -> set[object]:
+    """Collect every dependency callable reachable from a route's dependant."""
+    collected: set[object] = set()
+    pending = list(getattr(dependant, "dependencies", ()))
+    while pending:
+        sub_dependant = pending.pop()
+        if sub_dependant.call is not None:
+            collected.add(sub_dependant.call)
+        pending.extend(sub_dependant.dependencies)
+    return collected
+
+
+def _endpoint_referenced_names(route: APIRoute) -> set[str]:
+    endpoint_tree = ast.parse(textwrap.dedent(inspect.getsource(route.endpoint)))
+    return {node.id for node in ast.walk(endpoint_tree) if isinstance(node, ast.Name)}
+
+
+def _registered_api_routes() -> dict[tuple[str, str], APIRoute]:
+    registered: dict[tuple[str, str], APIRoute] = {}
+    for route in main_app.routes:
+        if not isinstance(route, APIRoute):
+            continue
+        for method in route.methods:
+            registered[(method, route.path)] = route
+    return registered
+
+
+def _installs_tenant_scoped_boundary(route: APIRoute) -> bool:
+    if require_tenant_scoped_api_precondition in _flattened_dependency_calls(route.dependant):
+        return True
+    return bool(_TENANT_SCOPED_BOUNDARY_CALLS & _endpoint_referenced_names(route))
+
+
+def _exempt_routes(reason: str) -> dict[tuple[str, str], APIRoute]:
+    registered = _registered_api_routes()
+    return {
+        route_key: registered[route_key]
+        for route_key, route_reason in _UNGUARDED_ROUTE_EXEMPTIONS.items()
+        if route_reason == reason
+    }
+
+
+def test_every_registered_route_is_tenant_guarded_or_explicitly_exempt() -> None:
+    registered = _registered_api_routes()
+    assert registered
+
+    unguarded = {
+        route_key
+        for route_key, route in registered.items()
+        if not _installs_tenant_scoped_boundary(route)
+    }
+
+    # Set equality both ways: a newly registered route that skips the shared
+    # boundary fails until it is classified, and a stale exemption fails once
+    # the route it excused is guarded or removed.
+    assert unguarded == set(_UNGUARDED_ROUTE_EXEMPTIONS)
+
+
+def test_no_non_api_routes_escape_the_authorization_contract() -> None:
+    non_api_routes = [route for route in main_app.routes if not isinstance(route, APIRoute)]
+
+    for route in non_api_routes:
+        assert type(route) is StarletteRoute, route
+    assert {route.path for route in non_api_routes} == _NON_API_ROUTE_PATHS
+
+
+def test_no_tenant_resource_exemptions_cannot_reach_the_database() -> None:
+    exempt_routes = _exempt_routes(_NO_TENANT_RESOURCE)
+    assert exempt_routes
+
+    for route_key, route in exempt_routes.items():
+        assert get_db not in _flattened_dependency_calls(route.dependant), route_key
+        assert "get_db" not in _endpoint_referenced_names(route), route_key
+
+
+def test_saas_blocked_exemption_keeps_its_runtime_surface_guard() -> None:
+    exempt_routes = _exempt_routes(_SAAS_SURFACE_BLOCKED)
+    assert exempt_routes
+
+    for route_key, route in exempt_routes.items():
+        dependency_calls = _flattened_dependency_calls(route.dependant)
+        assert require_single_tenant_provisioning_surface in dependency_calls, route_key
+
+
+def test_session_route_exemptions_resolve_the_trusted_session_themselves() -> None:
+    version_source_routes = _exempt_routes(_TENANT_SESSION_VERSION_SOURCE)
+    body_borne_routes = _exempt_routes(_BODY_BORNE_EXPECTED_VERSION)
+    assert version_source_routes
+    assert body_borne_routes
+
+    for route_key, route in {**version_source_routes, **body_borne_routes}.items():
+        referenced_names = _endpoint_referenced_names(route)
+        assert "resolve_trusted_saas_request_session" in referenced_names, route_key
+
+    for route_key, route in body_borne_routes.items():
+        referenced_names = _endpoint_referenced_names(route)
+        assert "require_current_tenant_session_version" in referenced_names, route_key
