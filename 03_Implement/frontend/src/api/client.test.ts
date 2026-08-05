@@ -297,10 +297,20 @@ function productionSourceModules(directory: string): readonly string[] {
   return collected;
 }
 
+// Matches both `export async function name(` and an arrow-exported
+// equivalent (`export const name = async (` / `export const name = (`).
+// Client.ts only uses the function-declaration style today, but the arrow
+// style is equally idiomatic TS and this enumeration must not have a blind
+// spot the moment someone adds one -- a fetch() call whose declaration this
+// regex fails to recognize gets silently attributed to the *previous*
+// matched declaration instead of raising, per the loop below.
+const CLIENT_FUNCTION_DECLARATION_RE =
+  /^export (?:async function (\w+)\(|const (\w+) = (?:async )?\()/gm;
+
 function enumerateClientRequests(): readonly EnumeratedClientRequest[] {
   const source = readFrontendModule(CLIENT_MODULE_PATH);
-  const declarations = [...source.matchAll(/^export async function (\w+)\(/gm)].map((match) => ({
-    name: match[1] ?? "",
+  const declarations = [...source.matchAll(CLIENT_FUNCTION_DECLARATION_RE)].map((match) => ({
+    name: match[1] ?? match[2] ?? "",
     index: match.index ?? 0,
     headerLength: match[0].length,
   }));
@@ -461,8 +471,13 @@ describe("tenant session version client coverage contract", () => {
     ).toEqual([]);
   });
 
-  it("sends every guarded client request from App through the tenant session wrapper", () => {
-    const appSource = readFrontendModule(APP_MODULE_PATH);
+  it("sends every guarded client request through the tenant session wrapper, from any production module", () => {
+    // Scoped to App.tsx until 2026-08-06: today it is the only caller, but
+    // api/client.ts is already imported directly by other production files
+    // (NarrativesPanel.tsx, MergeSuggestionsPanel.tsx, session/*.ts), so a
+    // guarded call added there would previously have gone unchecked. Every
+    // production module except client.ts itself (which defines, not calls,
+    // these functions) is scanned now.
     const guardedFunctionNames = [
       ...new Set(
         enumerateClientRequests()
@@ -472,34 +487,56 @@ describe("tenant session version client coverage contract", () => {
     ].sort();
     expect(guardedFunctionNames.length).toBeGreaterThan(0);
 
-    const callSiteLocations: string[] = [];
-    for (const functionName of guardedFunctionNames) {
-      for (const match of appSource.matchAll(new RegExp(`\\b${functionName}\\s*\\(`, "g"))) {
-        const matchIndex = match.index ?? 0;
-        if (isCommentedOccurrence(appSource, matchIndex)) {
-          continue;
-        }
+    const callerModulePaths = productionSourceModules(FRONTEND_SRC_ROOT).filter(
+      (modulePath) => modulePath !== CLIENT_MODULE_PATH,
+    );
+    expect(callerModulePaths).toContain(APP_MODULE_PATH);
 
-        const location = `${functionName} (App.tsx:${lineNumberAt(appSource, matchIndex)})`;
-        callSiteLocations.push(location);
-        expect({
-          location,
-          wrappedInGenerationGuard: appSource
-            .slice(Math.max(0, matchIndex - TENANT_SCOPED_WRAPPER.length), matchIndex)
-            .endsWith(TENANT_SCOPED_WRAPPER),
-          passesVerifiedSession: balancedCallArguments(
-            appSource,
+    let totalCallSites = 0;
+    let totalSessionOptionOccurrences = 0;
+    for (const modulePath of callerModulePaths) {
+      const moduleSource = readFrontendModule(modulePath);
+
+      for (const functionName of guardedFunctionNames) {
+        for (const match of moduleSource.matchAll(new RegExp(`\\b${functionName}\\s*\\(`, "g"))) {
+          const matchIndex = match.index ?? 0;
+          if (isCommentedOccurrence(moduleSource, matchIndex)) {
+            continue;
+          }
+
+          const location = `${functionName} (${modulePath}:${lineNumberAt(moduleSource, matchIndex)})`;
+          totalCallSites += 1;
+          // The session-bearing variable is not required to be named
+          // verifiedTenantSession outside App.tsx -- a future caller in a
+          // different module may reasonably bind its own verified session
+          // under a different local name. What must hold everywhere is that
+          // some identifier is passed (the request is not sent bare) and
+          // that the call is wrapped in the generation guard.
+          const passedSessionIdentifier = balancedCallArguments(
+            moduleSource,
             matchIndex + match[0].length - 1,
-          ).includes("tenantSessionContext: verifiedTenantSession"),
-        }).toEqual({ location, wrappedInGenerationGuard: true, passesVerifiedSession: true });
+          ).match(/tenantSessionContext:\s*(\w+)/)?.[1];
+          expect({
+            location,
+            wrappedInGenerationGuard: moduleSource
+              .slice(Math.max(0, matchIndex - TENANT_SCOPED_WRAPPER.length), matchIndex)
+              .endsWith(TENANT_SCOPED_WRAPPER),
+            passesSessionIdentifier: passedSessionIdentifier !== undefined,
+          }).toEqual({ location, wrappedInGenerationGuard: true, passesSessionIdentifier: true });
+        }
       }
+
+      // Every session-bearing option object in this module belongs to one of
+      // the call sites just scanned; a stray one would mean a guarded request
+      // escaped the loop above (e.g. inside a function this test does not
+      // recognize as one of guardedFunctionNames).
+      totalSessionOptionOccurrences += [
+        ...moduleSource.matchAll(/tenantSessionContext:\s*\w+/g),
+      ].length;
     }
 
-    // Every session-bearing option object in App belongs to one of the call
-    // sites above; a stray one would mean a guarded request escaped the loop.
-    expect(appSource.match(/tenantSessionContext: verifiedTenantSession/g)).toHaveLength(
-      callSiteLocations.length,
-    );
+    expect(totalCallSites).toBeGreaterThan(0);
+    expect(totalSessionOptionOccurrences).toBe(totalCallSites);
   });
 });
 

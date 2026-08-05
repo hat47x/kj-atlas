@@ -10,9 +10,13 @@ from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from starlette.routing import Route as StarletteRoute
 
+from kj_atlas_api.active_tenant_session import require_current_tenant_session_version
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app as main_app
 from kj_atlas_api.routes.admin import require_single_tenant_provisioning_surface
+from kj_atlas_api.routes.docs import _authorize_request
+from kj_atlas_api.routes.document_access_admin import _authorize_document_policy_management
+from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
 from kj_atlas_api.tenant_session_precondition import (
     require_tenant_scoped_api_precondition,
     require_tenant_session_request_precondition,
@@ -171,9 +175,7 @@ def test_all_document_and_document_admin_routes_use_shared_authorization_boundar
 # install a shared tenant-scoped boundary, or be named here with a reason that
 # is itself mechanically re-checked.
 
-_TENANT_SCOPED_BOUNDARY_CALLS = frozenset(
-    {"_authorize_request", "_authorize_document_policy_management"}
-)
+_TENANT_SCOPED_BOUNDARY_CALLS = frozenset({_authorize_request, _authorize_document_policy_management})
 
 # Route touches no tenant-scoped resource and cannot reach the database.
 _NO_TENANT_RESOURCE = "no-tenant-resource"
@@ -213,9 +215,26 @@ def _flattened_dependency_calls(dependant: object) -> set[object]:
     return collected
 
 
-def _endpoint_referenced_names(route: APIRoute) -> set[str]:
+def _endpoint_called_objects(route: APIRoute) -> set[object]:
+    """Objects actually CALLED in the endpoint body, resolved through the
+    endpoint's own module globals.
+
+    Deliberately requires ast.Call, not just ast.Name: a bare reference to an
+    identifier (an unused local, a debug-log argument, a name mentioned only
+    inside a dead branch) proves nothing was invoked. Resolving through
+    __globals__ rather than matching the literal spelling also means an
+    aliased import (`from x import get_db as _session_factory`) still
+    resolves to the same underlying object -- the alias cannot hide a call
+    from this check the way a name-string comparison would let it.
+    """
     endpoint_tree = ast.parse(textwrap.dedent(inspect.getsource(route.endpoint)))
-    return {node.id for node in ast.walk(endpoint_tree) if isinstance(node, ast.Name)}
+    called_names = {
+        node.func.id
+        for node in ast.walk(endpoint_tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+    }
+    endpoint_globals = route.endpoint.__globals__
+    return {endpoint_globals[name] for name in called_names if name in endpoint_globals}
 
 
 def _registered_api_routes() -> dict[tuple[str, str], APIRoute]:
@@ -224,14 +243,23 @@ def _registered_api_routes() -> dict[tuple[str, str], APIRoute]:
         if not isinstance(route, APIRoute):
             continue
         for method in route.methods:
-            registered[(method, route.path)] = route
+            key = (method, route.path)
+            # A silent dict overwrite here would let a second route registered
+            # under an already-used (method, path) hide the first from every
+            # check below, while Starlette's actual dispatch serves whichever
+            # route was registered FIRST -- the opposite of what got audited.
+            assert key not in registered, (
+                f"duplicate route registration for {key}: "
+                f"{registered.get(key)} and {route} both claim it"
+            )
+            registered[key] = route
     return registered
 
 
 def _installs_tenant_scoped_boundary(route: APIRoute) -> bool:
     if require_tenant_scoped_api_precondition in _flattened_dependency_calls(route.dependant):
         return True
-    return bool(_TENANT_SCOPED_BOUNDARY_CALLS & _endpoint_referenced_names(route))
+    return bool(_TENANT_SCOPED_BOUNDARY_CALLS & _endpoint_called_objects(route))
 
 
 def _exempt_routes(reason: str) -> dict[tuple[str, str], APIRoute]:
@@ -273,7 +301,7 @@ def test_no_tenant_resource_exemptions_cannot_reach_the_database() -> None:
 
     for route_key, route in exempt_routes.items():
         assert get_db not in _flattened_dependency_calls(route.dependant), route_key
-        assert "get_db" not in _endpoint_referenced_names(route), route_key
+        assert get_db not in _endpoint_called_objects(route), route_key
 
 
 def test_saas_blocked_exemption_keeps_its_runtime_surface_guard() -> None:
@@ -292,9 +320,7 @@ def test_session_route_exemptions_resolve_the_trusted_session_themselves() -> No
     assert body_borne_routes
 
     for route_key, route in {**version_source_routes, **body_borne_routes}.items():
-        referenced_names = _endpoint_referenced_names(route)
-        assert "resolve_trusted_saas_request_session" in referenced_names, route_key
+        assert resolve_trusted_saas_request_session in _endpoint_called_objects(route), route_key
 
     for route_key, route in body_borne_routes.items():
-        referenced_names = _endpoint_referenced_names(route)
-        assert "require_current_tenant_session_version" in referenced_names, route_key
+        assert require_current_tenant_session_version in _endpoint_called_objects(route), route_key
