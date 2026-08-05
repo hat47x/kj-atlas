@@ -4,7 +4,6 @@
 
 - Type: <Feature / Bug / Process / Security / Documentation>
 - Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: <P0 / P1 / P2 / P3>
 - Owner: Maintainer

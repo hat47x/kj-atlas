@@ -2,7 +2,6 @@
 
 - Type: Feature request / UX
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: VALUE-DOGFOOD-01
 - Priority: P1
 - Owner: Codex

@@ -2,7 +2,6 @@
 
 - Type: Process
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex (Project governance evidence steward; accountable cleanup owner remains Repository Maintainer)

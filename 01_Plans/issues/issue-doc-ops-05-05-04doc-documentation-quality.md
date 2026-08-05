@@ -2,7 +2,6 @@
 
 - Type: Documentation quality
 - Status: Done
-- Lifecycle: Draft
 - Source Issue: N/A
 - Priority: P2
 - Owner: Stream J (DOC-OPS-05-05 Draft整備)

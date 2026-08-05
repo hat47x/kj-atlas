@@ -23,7 +23,6 @@
 
 - `Type`
 - `Status`
-- `Lifecycle`
 - `Source Issue`
 - `Priority`
 - `Scope`

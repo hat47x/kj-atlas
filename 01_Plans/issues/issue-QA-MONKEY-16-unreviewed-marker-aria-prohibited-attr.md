@@ -4,7 +4,6 @@
 
 - Type: Bug
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `MVP-EXIT-01`（人間受入項目の機械代替検証後に実施したモンキーテストで発見）
 - Priority: P2
 - Owner: Maintainer

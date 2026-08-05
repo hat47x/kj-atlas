@@ -2,7 +2,6 @@
 
 - Type: Documentation quality
 - Status: Done
-- Lifecycle: Ready
 - Source Issue: N/A
 - Priority: P2
 - Owner: Stream E

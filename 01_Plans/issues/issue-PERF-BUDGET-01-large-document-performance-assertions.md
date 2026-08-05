@@ -12,7 +12,6 @@
 - Existing E2E passes (cannot verify locally; CI only)
 
 Completed: CI/local Playwright verification of layout and export budget
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
 - Completion: 2026-07-10; `large_document_operability.spec.ts` passed in 7.3s with the 120-card / 12-island fixture.

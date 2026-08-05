@@ -2,7 +2,6 @@
 
 - Type: Bug / Security / Privacy / UX / Documentation
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `DOMAIN-VISUAL-CUE-01`
 - Priority: P1
 - Owner: Codex / Maintainer

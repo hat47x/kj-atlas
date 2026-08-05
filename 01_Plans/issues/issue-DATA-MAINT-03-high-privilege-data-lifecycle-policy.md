@@ -1,7 +1,6 @@
 # Issue Draft: DATA-MAINT-03 高権限データライフサイクル方針の判断
 
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex

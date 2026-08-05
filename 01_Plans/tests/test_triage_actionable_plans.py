@@ -24,7 +24,6 @@ class TriageActionablePlansTest(unittest.TestCase):
                 # Issue Draft: AAA-01
                 - Type: Process
                 - Status: Open
-                - Lifecycle: Draft -> Open -> In Progress -> Done
                 - Source Issue: N/A
                 - Priority: P1
                 - Owner: Architecture Owner
@@ -37,7 +36,6 @@ class TriageActionablePlansTest(unittest.TestCase):
                 # Issue Draft: BBB-01
                 - Type: Implementation
                 - Status: Draft
-                - Lifecycle: Draft -> Open -> In Progress -> Done
                 - Source Issue: TBD
                 - Priority: P2
                 - Owner: Frontend Owner

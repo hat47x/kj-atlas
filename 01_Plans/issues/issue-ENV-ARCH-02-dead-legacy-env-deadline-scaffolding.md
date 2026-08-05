@@ -4,7 +4,6 @@
 
 - Type: Process
 - Status: Draft
-- Lifecycle: Draft
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer

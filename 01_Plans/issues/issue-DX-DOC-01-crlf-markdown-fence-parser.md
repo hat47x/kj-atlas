@@ -2,7 +2,6 @@
 
 - Type: Bug / Test portability
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: Full frontend test run on Windows
 - Priority: P2
 - Owner: Codex

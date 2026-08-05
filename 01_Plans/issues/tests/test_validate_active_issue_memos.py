@@ -83,7 +83,6 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
                     """
                     - Type: Process / Documentation quality
                     - Status: In Progress
-                    - Lifecycle: Draft -> Open -> In Progress -> Done -> GC(削除)
                     - Source Issue: TBD
                     - Priority: P1
                     - Scope: `01_Plans/issues/`
@@ -115,7 +114,6 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
                     """
                     - Type: Process / Documentation quality
                     - Status: Draft
-                    - Lifecycle: Draft -> Open -> In Progress -> Done -> GC(削除)
                     - Source Issue: TBD
                     - Priority: P1
                     - Scope: `01_Plans/issues/`
@@ -147,7 +145,6 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
                     """
                     - Type: Process / Documentation quality
                     - Status: Open
-                    - Lifecycle: Draft -> Open -> In Progress -> Done -> GC(削除)
                     - Source Issue: https://example.com/1
                     - Priority: P1
                     - Scope: `01_Plans/issues/`
@@ -179,7 +176,6 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
                     """
                     - Type: Process / Documentation quality
                     - Status: Open
-                    - Lifecycle: Draft -> Open -> In Progress -> Done -> GC(削除)
                     - Source Issue: https://example.com/2
                     - Priority: P1
                     - Scope: `01_Plans/issues/`
@@ -232,7 +228,6 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
                     """
                     - Type: Process / Documentation quality
                     - Status: Active
-                    - Lifecycle: Draft -> Open -> In Progress -> Done -> GC(削除)
                     - Source Issue: https://example.com/1
                     - Priority: P1
                     - Scope: `01_Plans/issues/`
@@ -264,7 +259,6 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
                 """\
                 - Type: Process
                 - Status: Draft
-                - Lifecycle: Draft -> Open -> In Progress -> Done
                 - Source Issue: TBD
                 - Priority: P1
                 - Scope: `01_Plans/`
@@ -309,7 +303,6 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
                     """
                     - Type: Process / Documentation quality
                     - Status: Open
-                    - Lifecycle: Draft -> Open -> In Progress -> Done -> GC(削除)
                     - Source Issue: https://example.com/1
                     - Priority: P1
                     - Scope: `01_Plans/issues/`

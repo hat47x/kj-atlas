@@ -2,7 +2,6 @@
 
 - Type: Feature request
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 
 ## Done 2026-06-21
 全5タスク完了（T1-T5 at contract/docs-check level）。DecisionStatus Fixed（DATA-MAINT-03 Doneにより高権限操作分類確定済み）。

@@ -2,7 +2,6 @@
 
 - Type: Process
 - Status: Done
-- Lifecycle: Draft -> Hold -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Stream A（HIL-RS governance contract freeze lead）

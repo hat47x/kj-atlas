@@ -2,7 +2,6 @@
 
 - Type: Bug / Test infrastructure
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `PRODUCT-QA-01`
 - Priority: P1
 - Owner: Codex

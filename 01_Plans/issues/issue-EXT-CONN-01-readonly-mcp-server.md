@@ -6,7 +6,6 @@
 
 ## Draft→Open 2026-07-12
 `ADR-0054` が maintainer により Accepted（受理時条件: 用語「庭」→「縁側」置換、ADR側で対応済み）。本Issueの唯一のゲートが解消したため Open 化。
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A（`ADR-0054` 段階1）
 - Priority: P2
 - Owner: TBD

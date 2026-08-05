@@ -2,7 +2,6 @@
 
 - Type: UX / Documentation alignment
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: VALUE-DOGFOOD-01
 - Priority: P2
 - Owner: Codex

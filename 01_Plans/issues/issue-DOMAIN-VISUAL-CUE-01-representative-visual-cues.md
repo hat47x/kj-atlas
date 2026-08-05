@@ -2,7 +2,6 @@
 
 - Type: Feature request / UX / AI / Data governance
 - Status: Open
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Codex / Maintainer

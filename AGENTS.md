@@ -83,7 +83,7 @@
 現段階は個人OSS・プレリリースであり、`ADR-0039` を適用します。
 
 - 意思決定者と実行者は `Maintainer` に集約する。
-- issue memoは `Type / Status / Lifecycle / Source Issue / Priority / Scope / Related ADR / Expected verification level / Acceptance / Validation` を最小項目とする。
+- issue memoは `Type / Status / Source Issue / Priority / Scope / Related ADR / Expected verification level / Acceptance / Validation` を最小項目とする。
 - ADRは、長期的・横断的・破壊的な契約変更、安全境界変更、複数の合理的選択肢が残る場合に限る。
 - 2者承認、Decision Queue、RACI、KPIは、実ユーザーまたは継続的な協力者が現れるまで既定では使わない。
 - 進捗の正本はActive issue memoとGit履歴であり、手書きダッシュボードは正本にしない。

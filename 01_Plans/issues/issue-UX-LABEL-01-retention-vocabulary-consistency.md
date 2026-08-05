@@ -2,7 +2,6 @@
 
 - Type: UX / Content design
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: UX-WORKFLOW-01
 - Priority: P2
 - Owner: Codex

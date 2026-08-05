@@ -2,7 +2,6 @@
 
 - Type: Security
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Codex

@@ -2,7 +2,6 @@
 
 - Type: Process
 - Status: Done
-- Lifecycle: Draft -> Ready -> Hold -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（Done 2026-06-20）
 - Priority: P1
 - Owner: Stream B（HIL-RS-02-A3 運用文書同期準備）

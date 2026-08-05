@@ -4,7 +4,6 @@
 
 - Type: Bug / Documentation quality / Tooling
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer / Developer Experience contributor

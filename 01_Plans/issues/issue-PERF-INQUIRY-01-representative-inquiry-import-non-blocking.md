@@ -3,7 +3,6 @@
 - Type: Quality / Performance / UX
 - Status: Done
 - Completion: 2026-07-18; strict validationとdigest照合をmodule workerへ移し、代表規模のUI読込を単独実行の最大長時間タスク93から95ms、完了1.18から1.45秒で検証した。
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex / Maintainer

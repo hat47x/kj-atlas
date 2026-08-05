@@ -2,7 +2,6 @@
 
 - Type: DX / Test infrastructure
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `PERF-BUDGET-01`
 - Priority: P2
 - Owner: Codex

@@ -2,7 +2,6 @@
 
 - Type: Feature request
 - Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: TBD（A=Productization Program Owner / R=Security Officer）

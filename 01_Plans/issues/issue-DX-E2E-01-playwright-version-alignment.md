@@ -2,7 +2,6 @@
 
 - Type: Bug / Developer experience
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: UX-STATE-01 validation
 - Priority: P2
 - Owner: Codex

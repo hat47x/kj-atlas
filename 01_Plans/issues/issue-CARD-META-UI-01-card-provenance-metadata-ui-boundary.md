@@ -2,7 +2,6 @@
 
 - Type: Feature request / Security / UX
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: TBD (Productization Program Owner / Security Officer / UX Lead)
