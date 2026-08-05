@@ -2,7 +2,6 @@
 
 - Type: Feature request
 - Status: Done
-- Lifecycle: Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Auth Architecture Lead（Security/Identity）

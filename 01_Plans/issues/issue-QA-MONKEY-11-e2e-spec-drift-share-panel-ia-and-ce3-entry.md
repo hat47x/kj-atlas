@@ -2,7 +2,6 @@
 
 - Type: Bug (test drift)
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `QA-MONKEY-10`（修正検証中の発見）
 - Priority: P2
 - Owner: TBD

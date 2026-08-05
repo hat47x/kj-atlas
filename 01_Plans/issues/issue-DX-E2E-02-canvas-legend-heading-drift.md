@@ -2,7 +2,6 @@
 
 - Type: Bug / E2E maintenance
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: UX-LABEL-01 validation
 - Priority: P2
 - Owner: Codex

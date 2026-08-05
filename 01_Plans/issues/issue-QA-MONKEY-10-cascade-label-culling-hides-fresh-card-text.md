@@ -2,7 +2,6 @@
 
 - Type: Bug / UX friction
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `VALUE-DOGFOOD-01`（初回ドッグフード走行での発見）
 - Priority: P2
 - Owner: TBD

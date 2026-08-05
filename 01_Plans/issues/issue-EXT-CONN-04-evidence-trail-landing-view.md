@@ -2,7 +2,6 @@
 
 - Type: Feature request
 - Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A（`ADR-0054` 役割B。Claude Design P32 先行相談 B-2 の回答で新設が確定）
 - Priority: P3
 - Owner: TBD

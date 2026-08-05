@@ -5,7 +5,6 @@
 - Completion: 2026-07-10; `responsiveness_performance_budget.spec.ts` passed in 10.8s with backend-backed initial document loading.
 - Evidence: document replacement, search/filter, card selection, View panel opening, Share panel opening, and long-task budget all remain within the representative thresholds.
 - Note: the related four-spec regression run initially reached 10/11 because of an independent stale `Critique:` assertion; the test drift is tracked in `01_Plans/issues/issue-DX-E2E-04-critique-label-assertion-drift.md` and is not a performance failure.
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex

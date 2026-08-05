@@ -4,7 +4,6 @@
 
 - Type: Testing
 - Status: Done
-- Lifecycle: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer

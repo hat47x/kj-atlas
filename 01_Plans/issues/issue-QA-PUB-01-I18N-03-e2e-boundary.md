@@ -2,7 +2,6 @@
 
 - Type: QA/E2E verification boundary plan
 - Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Open Readiness: Prepared
 - Execution: Ready

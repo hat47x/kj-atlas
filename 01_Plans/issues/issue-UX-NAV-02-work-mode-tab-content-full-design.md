@@ -2,7 +2,6 @@
 
 - Type: Feature request
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/issues/issue-UX-NAV-01-work-mode-surface-navigation-hierarchy.md`（Done。§68で「フルなタブ設計は本Issueの対象外、必要なら別途」と明記済み）
 - Priority: P2
 - Owner: TBD

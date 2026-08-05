@@ -2,7 +2,6 @@
 
 - Type: Process
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Product Owner + Platform Architecture Owner

@@ -3,7 +3,6 @@
 - Type: Bug
 - Status: Done
 - Resolution: UX-NAV-02のタブ化により副次的に解消。2026-07-13検証済み。
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A（Claude Design 実装照合レビュー 2026-07-11, P31 △「QA-MONKEY-11 候補収集の重なり」からの再検証で発見。**QA-MONKEY-11 自体は e2e 文言/IA ドリフトのみで重なりの記載は無く、誤帰属であることを確認済み**。本issueは独立した新規バグとして起票する）
 - Priority: P2
 - Owner: TBD

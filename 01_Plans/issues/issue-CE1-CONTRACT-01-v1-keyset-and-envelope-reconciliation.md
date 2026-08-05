@@ -2,7 +2,6 @@
 
 - Type: Architecture contract / Compatibility
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `DOC-ARCH-02`（`CI-CE1-01`〜`CI-CE1-03` の異義定義を分離）
 - Priority: P1
 - Owner: Maintainer / Backend and Frontend contract contributor

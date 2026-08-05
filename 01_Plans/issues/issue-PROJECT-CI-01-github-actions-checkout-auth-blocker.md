@@ -2,7 +2,6 @@
 
 - Type: Bug
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0
 - Owner: TBD

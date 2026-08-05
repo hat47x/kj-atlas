@@ -2,7 +2,6 @@
 
 - Type: Process
 - Status: Done
-- Lifecycle: Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Data Schema Lead（Backend/DB）

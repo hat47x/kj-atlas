@@ -4,7 +4,6 @@
 
 - Type: Documentation
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `MVP-EXIT-01`
 - Priority: P2
 - Owner: Maintainer

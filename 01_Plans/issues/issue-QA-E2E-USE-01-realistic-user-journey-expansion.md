@@ -2,7 +2,6 @@
 
 - Type: Process
 - Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Open Readiness: Prepared
 - Execution: Ready

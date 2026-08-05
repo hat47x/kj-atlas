@@ -2,7 +2,6 @@
 
 - Type: Implementation
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: TBD
 - Priority: P1
 - Owner: Frontend Owner

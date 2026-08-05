@@ -4,7 +4,6 @@
 
 - Type: Security / Feature
 - Status: In Progress
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: User request 2026-07-16 / `01_Plans/research-2026-07-16-saas-tenant-authorization-boundary.md`
 - Priority: P1
 - Owner: Maintainer

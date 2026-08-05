@@ -4,7 +4,6 @@
 
 - Type: Security
 - Status: Draft
-- Lifecycle: Draft
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer

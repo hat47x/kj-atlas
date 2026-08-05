@@ -2,7 +2,6 @@
 
 - Type: Documentation quality
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0 (Stream D highest)
 - Owner: Codex

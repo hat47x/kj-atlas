@@ -4,7 +4,6 @@
 
 - Type: Security / Bug / Documentation
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer / Deployment contributor

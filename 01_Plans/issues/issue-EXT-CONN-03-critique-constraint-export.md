@@ -2,7 +2,6 @@
 
 - Type: Feature request
 - Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A（`ADR-0054` 段階3）
 - Priority: P3
 - Owner: TBD

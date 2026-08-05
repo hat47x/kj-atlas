@@ -2,7 +2,6 @@
 
 - Type: Feature request / Design decision
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/research-2026-07-12-master-data-design-review.md`（maintainer 提示「マスタデータ管理UIの前にデータ設計の見直し」）
 - Priority: P2
 - Owner: Claude Code

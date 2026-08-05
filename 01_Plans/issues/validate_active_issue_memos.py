@@ -30,7 +30,6 @@ ALLOWED_VERIFICATION_LEVELS = {"docs-check", "unit", "integration", "e2e"}
 REQUIRED_FIELDS = [
     "- Type:",
     "- Status:",
-    "- Lifecycle:",
     "- Source Issue:",
     "- Priority:",
     "- Scope:",

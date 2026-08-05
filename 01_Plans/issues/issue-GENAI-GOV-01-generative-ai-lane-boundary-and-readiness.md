@@ -2,7 +2,6 @@
 
 - Type: Process / Architecture
 - Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: TBD (Productization Program Owner / Security Officer / QA Lead)

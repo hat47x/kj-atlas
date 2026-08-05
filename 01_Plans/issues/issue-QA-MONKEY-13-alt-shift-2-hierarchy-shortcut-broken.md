@@ -2,7 +2,6 @@
 
 - Type: Bug
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `DX-E2E-07`（e2e契約再照合バッチの検証中に発見。テスト側のドリフトではなく実挙動のバグと判定しT4に基づき分離）
 - Priority: P2
 - Owner: TBD

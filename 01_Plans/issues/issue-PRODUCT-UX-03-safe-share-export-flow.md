@@ -2,7 +2,6 @@
 
 - Type: Feature request
 - Status: Done
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex (Product UX evidence steward; accountable owner remains Productization Program Owner)

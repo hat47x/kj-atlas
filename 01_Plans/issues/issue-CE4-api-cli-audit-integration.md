@@ -1,7 +1,6 @@
 # Issue Draft: CE4 API/CLI/監査統合（Stream H / CE4専任 / contract-only）
 
 - Type: Feature request
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Status: Done
 - Source Issue: N/A (Done 2026-06-20)
 - Priority: P2

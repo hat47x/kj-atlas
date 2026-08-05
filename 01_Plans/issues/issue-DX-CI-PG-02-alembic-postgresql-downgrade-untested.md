@@ -4,7 +4,6 @@
 
 - Type: Bug
 - Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer

@@ -3,7 +3,6 @@
 - Type: Security / Performance / UX
 - Status: Done
 - Completion: 2026-07-18; 6・12・18ラウンドの実測から5MiB警告・20MiB拒否境界を固定し、UI preflight、domain parser、exportへ対称に適用した。
-- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex / Maintainer
