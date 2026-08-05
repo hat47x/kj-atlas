@@ -6,6 +6,7 @@ import {
   type Route,
 } from "@playwright/test";
 import JSZip from "jszip";
+import { openAdvancedWorkMode, selectWorkModeTab } from "./helpers/i18n";
 
 const TENANT_SESSION_HEADER = "kj-atlas-tenant-session-version";
 const START_PANEL = '[data-panel="start-document-entry"]';
@@ -439,6 +440,49 @@ test("a 390px Japanese bfcache restoration blocks stale content and focuses the 
   await expect(blockedHeading).toBeFocused();
   await expect(page.getByText("tenant-a confidential card", { exact: true })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  await context.close();
+});
+
+test("cross-tab switch discards a delayed AI narrative proposal for the old tenant", async ({ browser }) => {
+  const state = createServerState();
+  const context = await browser.newContext();
+  await installSaasServer(context, state);
+  const pageA = await context.newPage();
+  const pageB = await context.newPage();
+
+  await Promise.all([openWorkspace(pageA), openWorkspace(pageB)]);
+  await expect(pageA.getByRole("button", { name: "tenant-a confidential card" })).toBeVisible();
+
+  await openAdvancedWorkMode(pageA);
+  await selectWorkModeTab(pageA, "narrative");
+  await expect(pageA.getByRole("tabpanel", { name: "Narrative" })).toBeVisible();
+
+  let releaseDelayedNarrative: (() => Promise<void>) | undefined;
+  await pageA.route("**/api/ai/generate-narrative", async (route) => {
+    releaseDelayedNarrative = async () => {
+      await fulfillJson(route, 200, {
+        text: "tenant-a confidential narrative draft",
+        basedOnReadingOrder: [],
+      });
+    };
+  });
+
+  await pageA.getByRole("button", { name: "Generate from Reading Order" }).click();
+  await expect.poll(() => releaseDelayedNarrative).toBeDefined();
+
+  await pageB.getByLabel("Current workspace: Tenant A").selectOption("tenant-b");
+  await expect(pageB.getByLabel("Current workspace: Tenant B")).toBeVisible();
+  await expect(pageB.getByRole("button", { name: "tenant-b confidential card" })).toBeVisible();
+
+  const blockedHeading = pageA.getByRole("heading", { name: "We couldn’t verify access" });
+  await expect(blockedHeading).toBeVisible();
+  await expect(pageA.getByText("tenant-a confidential narrative draft", { exact: true })).toHaveCount(0);
+
+  await releaseDelayedNarrative?.();
+  await expect(blockedHeading).toBeVisible();
+  await expect(pageA.getByText("tenant-a confidential narrative draft", { exact: true })).toHaveCount(0);
+  await expect(pageB.getByText("tenant-a confidential narrative draft", { exact: true })).toHaveCount(0);
 
   await context.close();
 });
