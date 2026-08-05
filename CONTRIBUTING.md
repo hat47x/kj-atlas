@@ -76,105 +76,16 @@ pytest
 
 
 
-## Frontend lint 段階導入ガイド（ADR-0018 Follow-up）
+## Frontend の品質ゲート
 
-Frontend lint は Phase A/B/C で段階導入します。
-既定運用は **Phase B（fail-on-error）** です。
+CI の frontend ゲートは2つだけです。どちらも失敗すればPRを止めます。
 
-### Phase別チェックリストと完了条件
+- `frontend-typecheck`: `tsc --noEmit`
+- `frontend-test`: `vitest run`（全件）
 
-- **Phase A（warn-only）**
-  - [ ] ローカルで `npm run lint` を実行し、結果を確認した。
-  - [ ] CI `frontend-lint` が warning可視化として動作している。
-  - [ ] lint例外は期限付きIssueで管理している。
-- **Phase B（fail-on-error）**
-  - [ ] `FRONTEND_LINT_PHASE=B` がCIに設定済み。
-  - [ ] `frontend-lint` 失敗時にPRがfailになる。
-  - [ ] 期限切れ例外を解消済み。
-- **Phase C（tighten）**
-  - [ ] 新規ルールは warn期間を経て error 化している。
-  - [ ] ルール追加時に規約・CI・本ガイドを同一PRで同期している。
+ローカルでは `cd 03_Implement/frontend && npm ci` の後、`npm run typecheck` と `npm run test` を実行します。
 
-### 開発者の実行手順（`npm run lint`）
-
-```bash
-cd 03_Implement/frontend
-npm ci
-npm run lint
-npm run typecheck
-npm run test
-```
-
-- `npm run lint` が失敗した場合は、違反修正を優先してください。
-- 直ちに解消不能な場合のみ、**期限付き例外Issue**（理由・担当・期限）を登録し、PR本文へリンクします。
-- 期限の目安は14日以内。期限切れ例外が残るPRは原則マージしません。
-
-### 期限付き例外の運用（必須）
-
-例外申請時は、以下をIssue本文に必ず記載してください。
-
-- 対象ルール（例: `@typescript-eslint/no-explicit-any`）
-- 発生箇所（ファイル/行）
-- 直ちに解消できない理由
-- 解消担当者
-- 解消期限（原則14日以内）
-- 解消PR（後追いで追記可）
-
-運用ルール:
-
-1. 期限切れ例外が1件でも残る場合、Phase B/Cではマージ停止。
-2. 期限延長は1回ごとに理由をIssueコメントで明記。
-3. 恒久除外（eslint-disable固定化）は禁止。必要ならADR/Issueで方針決定を行う。
-
-### 失敗時の切り分け（CI / ローカル共通）
-
-1. **`frontend-lint` のみ失敗**
-   - `npm run lint` を再実行し、ルール違反を修正。
-2. **`frontend-typecheck` のみ失敗**
-   - `npm run typecheck` で型エラーを特定し、型定義や呼び出し側を修正。
-3. **`frontend-test` のみ失敗**
-   - `npm run test` と `npm run build` を分けて再実行し、テスト不安定かビルド破壊かを切り分け。
-4. **複数ジョブ失敗**
-   - lint → typecheck → test/build の順で修正（上流の静的エラーから潰す）。
-
-CIの `FRONTEND_LINT_PHASE` が `A/B/C` 以外なら設定不正です。Repository Variables を修正してください。
-
-### CI責務分離（保守者向け）
-
-- `frontend-lint`: lintポリシー適用（Phase Aは警告、Phase B/Cは失敗）。
-- `frontend-typecheck`: TypeScript型検査。
-- `frontend-test`: Frontendテストとbuild検証。
-
-CIは変更パスからアプリ検証範囲を判定します。文書と内部issueだけの変更では`docs-contract`を実行し、frontend/backendの重いjobは省略します。`03_Implement/frontend/`または`03_Implement/backend/`を変更した場合は該当側を実行し、CI workflowや変更範囲分類器を変更した場合は両方を実行します。判定規則の正本は`01_Plans/ci_change_scope.py`です。
-
-fail-on-error条件:
-
-- `frontend-lint`: `FRONTEND_LINT_PHASE=A` のみ警告継続。それ以外（B/C）は失敗でPRを停止。
-- `frontend-typecheck`: 常に失敗でPRを停止。
-- `frontend-test`: 常に失敗でPRを停止。
-
-### 差分監査（規約 / CONTRIBUTING / CI）
-
-同一PRで次を確認してください。
-
-1. `02_Architecture/coding_standards.md` にPhaseとexit criteriaがある。
-2. 本書に `npm run lint` 手順・失敗時対処・例外運用がある。
-3. `.github/workflows/ci.yml` のジョブ責務とfail条件が文書記述と一致する。
-4. `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md` の Follow-up 要件と矛盾がない。
-
-確認コマンド:
-
-```bash
-rg -n "frontend-lint|frontend-typecheck|frontend-test|FRONTEND_LINT_PHASE|npm run lint|Phase A|Phase B|Phase C" \
-  02_Architecture/coding_standards.md CONTRIBUTING.md .github/workflows/ci.yml
-```
-
-サンプルPR自己レビュー（推奨）:
-
-1. `FRONTEND_LINT_PHASE` の値が想定（通常は `B`）か。
-2. `frontend-lint` 失敗時にCI Summaryへ phase と outcome が出るか。
-3. lint/typecheck/test のどのジョブが失敗したかを1行で説明できるか。
-4. 規約・本書・CIの記述差分が残っていないか（上記 `rg` で確認）。
+独立したリンタは導入していません（`npm run lint` は `npm run typecheck` の別名です）。特定範囲だけ再実行したい場合は `npm run test:i18n` や `npm run test:regression-guards` を使えますが、CIはこれらを個別ジョブにせず `frontend-test` で一括検証します。
 
 ## Issue と ADR の使い分け（必須）
 

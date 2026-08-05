@@ -45,6 +45,14 @@
 - CIは `frontend-lint` / `frontend-typecheck` / `frontend-test` に責務分離し、Phase B 以降の fail-on-error 条件を明示する。
 - 文書とCIの同期確認は、同一PR内の差分監査コマンドで検証する。
 
+### 2026-08-05 追記: 上記の運用実装は撤去した（決定自体は維持）
+
+「静的検知を段階導入する」という本ADRの決定は維持する。ただし上記4項目の運用実装は、**段階導入の対象となる独立したリンタが実際には導入されなかった**ため撤去した。`npm run lint` は `npm run typecheck`（`tsc --noEmit`）の別名であり、`frontend-lint` ジョブは `frontend-typecheck` と同一コマンドを実行していた。
+
+そのため Phase A/B/C のチェックリスト、移行証跡、14日期限の例外Issue運用、`FRONTEND_LINT_PHASE` 変数、差分監査手順は、いずれも存在しないツールを統治していた。`ADR-0039`（個人OSS段階の過剰ガバナンス回避）に照らして撤去し、CIゲートを `frontend-typecheck` と `frontend-test` の2つへ整理した。
+
+実のリンタを導入する時点で、専用ジョブと運用方針を改めて定める。その際に本ADRの決定を再び運用実装へ落とす。
+
 ## Consequences
 
 - ルールと背景の責務分離により、規約文書は短く運用可能になる。
