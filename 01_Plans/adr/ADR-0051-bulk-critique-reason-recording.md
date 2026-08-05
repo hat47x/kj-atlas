@@ -53,3 +53,4 @@ Trade-offs:
 
 - Related issue: `01_Plans/issues/issue-UX-WORKFLOW-01-hold-critique-action-continuity.md`
 - Related ADR: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`
+- ADR-0047 R-1（実使用の摩擦）: Context に記した「hold -> reason -> review loop」の破綻は、出荷済み一括批評機能の実利用で顕在化した設計トレードオフである。

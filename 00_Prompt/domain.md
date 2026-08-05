@@ -89,6 +89,12 @@
 
 要件、低負担な確認方法、受入条件の正本は `00_Prompt/qualitative_card_quality_requirements.md` とします。
 
+### 3.2 表札（Label）の内容品質
+
+表札は分類名ではありません。その束（クラスタ・島）が何を訴えているかの代弁です。ある表札を別の束の上に置いても違和感なく成立してしまうなら、それは代弁ではなく分類名であり、書き直しが必要です。
+
+要件（転写検査を含む）の正本は `00_Prompt/kj_technique.md` 第3章、AI支援としての扱いは `00_Prompt/qualitative_card_quality_requirements.md` 第5章とします。
+
 ---
 
 ## 4. Cluster と Island の違い

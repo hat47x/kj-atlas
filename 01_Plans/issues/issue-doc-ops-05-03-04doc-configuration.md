@@ -147,14 +147,6 @@
 - 要判断区分: **なし（DecisionStatus=Fixed）**
 - 再開条件（保留時のみ）: N/A
 
-## Authoring Checklist（人間/生成AI 共通）
-- [ ] `Source Issue` が運用状態と整合している（未運用時は `N/A`、運用時はURL）。
-- [ ] `Related ADR/Spec` が最低1件ある。
-- [ ] 受入条件に「安全」「互換」「検証」が含まれる。
-- [ ] `Validation plan` に具体コマンドがある。
-- [ ] 非目標が明記されスコープ逸脱を防いでいる。
-
-
 ## 12) Stream H Set1 AC/DoD clarification（Phase 1〜5）
 
 ### Phase 1 Read

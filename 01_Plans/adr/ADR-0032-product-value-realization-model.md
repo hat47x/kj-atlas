@@ -92,15 +92,6 @@ KPIは次の3条件を満たすもののみ採用する。
 
 ---
 
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] 必須ヘッダ（Status/Date/Deciders/Scope）を記載した。
-- [x] 必須章（Context/Decision/Consequences/Traceability）を記載した。
-- [x] Decision に採用理由と非目標がある。
-- [x] Traceability に関連文書を1件以上記載した。
-- [x] 実装進捗は ADR ではなく Issue で管理する前提を維持した。
-
-
 ## Stream H Finalization Pack (2026-05-20)
 
 ### Context

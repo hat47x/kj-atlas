@@ -65,3 +65,4 @@
 - Related: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 - Related: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`
+- ADR-0047 R-3（非機能境界・複雑性予算）: 外部画像取得・生成という新機能を、ADR-0043の複雑性予算内に収めるための境界判断である。

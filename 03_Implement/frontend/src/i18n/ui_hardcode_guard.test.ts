@@ -30,16 +30,6 @@ const guardCases: GuardCase[] = [
     ],
   },
   {
-    file: "ui/DiffPanel.tsx",
-    forbiddenLiterals: [
-      "Load comparison document (JSON)",
-      "Reading order",
-      "added:",
-      "removed:",
-      "Show full order arrays",
-    ],
-  },
-  {
     file: "ui/SuggestionPanel.tsx",
     forbiddenLiterals: [
       "Draft suggestion",

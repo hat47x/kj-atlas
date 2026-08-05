@@ -152,11 +152,6 @@ jobs:
       - name: Typecheck
         run: ${{ steps.pm.outputs.run }} typecheck
 
-      - name: Record typecheck responsibility
-        if: always()
-        run: |
-          echo "frontend-typecheck: fail-on-error (always)" >> "$GITHUB_STEP_SUMMARY"
-
   frontend-test:
     name: Frontend test + build
     needs: change-scope
@@ -233,11 +228,6 @@ jobs:
 
       - name: Build
         run: ${{ steps.pm.outputs.run }} build
-
-      - name: Record test/build responsibility
-        if: always()
-        run: |
-          echo "frontend-test: fail-on-error (always)" >> "$GITHUB_STEP_SUMMARY"
 
   backend:
     name: Backend lint + test

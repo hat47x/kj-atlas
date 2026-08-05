@@ -24,6 +24,34 @@ describe("CVI-1 SafeMode default ON", () => {
     expect(source).toContain("blocks text exposure in share/review contexts when safe mode is on");
     expect(source).toContain("SafeModePolicy");
   });
+
+  // The check above only proves the SafeModePolicy *function* behaves correctly
+  // in isolation -- it never serializes a real document/bundle and checks the
+  // actual export output. The behavioral egress checks below already exist in
+  // the export test suite; they were just never indexed here. Each asserts
+  // that a sentinel value placed in unreviewed/free-text fields does not
+  // appear anywhere in the serialized export artifact.
+  it("has existing behavioral egress guard in export/bundle_export.test.ts", () => {
+    const source = readSource("export/bundle_export.test.ts");
+    expect(source).toContain("SECRET_TEXT_DO_NOT_LEAK");
+    expect(source).toMatch(/expect\(bundleText\)\.not\.toContain\(.SECRET_TEXT_DO_NOT_LEAK.\)/);
+  });
+
+  it("has existing behavioral egress guard in domain/inquiry_bundle_safe_mode.test.ts", () => {
+    const source = readSource("domain/inquiry_bundle_safe_mode.test.ts");
+    expect(source).toMatch(/expect\(safeJson\)\.not\.toContain\(.SECRET_.\)/);
+    expect(source).toMatch(/expect\(safeJson\)\.toContain\(.\[REDACTED\]/);
+  });
+
+  it("has existing behavioral egress guard in export/diagnostics_bundle.test.ts", () => {
+    const source = readSource("export/diagnostics_bundle.test.ts");
+    expect(source).toMatch(/expect\(JSON\.stringify\(bundle\)\)\.not\.toContain\(.SECRET.\)/);
+  });
+
+  it("has existing behavioral egress guard in diff/review_pack_workflow.integration.test.ts", () => {
+    const source = readSource("diff/review_pack_workflow.integration.test.ts");
+    expect(source).toMatch(/expect\(JSON\.stringify\(auditEntry\)\)\.not\.toContain\(/);
+  });
 });
 
 // ── CVI-2: proposal-only (auto-apply/confirm/publish prohibited) ──

@@ -115,14 +115,6 @@ T1-T4は、`02_Architecture/data_model_operations_overview.md` の `5.1 管理�
 
 ---
 
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] `Source Issue` が運用状態と整合している。
-- [x] `Related ADR/Spec` が最低1件ある。
-- [x] 受入条件に「安全」「互換」「検証」が含まれる。
-- [x] `Validation plan` に具体コマンドがある。
-- [x] 非目標が明記されスコープ逸脱を防いでいる。
-
 ## 11) 運用境界（含む / 含まない）
 
 - 含む:

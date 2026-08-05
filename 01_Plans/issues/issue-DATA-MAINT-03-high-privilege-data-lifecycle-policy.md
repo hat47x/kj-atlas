@@ -379,11 +379,3 @@ Maintainer への推奨判断経路:
 - `rg -n "Post-2398 governance-context decision freshness|e6a72667dbd3794|ADR-0039|DecisionStatus=Pending|Status: Proposed|DATA-MAINT-04|implicit acceptance" 01_Plans\issues\issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans\adr\ADR-0035-privileged-data-lifecycle-boundary.md`
 
 ---
-
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] `Source Issue` が運用状態と整合している。
-- [x] `Related ADR/Spec` が最低1件ある。
-- [x] 受入条件に「安全」「互換」「検証」が含まれる。
-- [x] `Validation plan` に具体コマンドがある。
-- [x] 非目標が明記されスコープ逸脱を防いでいる。

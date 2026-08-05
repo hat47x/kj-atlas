@@ -7,7 +7,6 @@ import { join } from "node:path";
 import { ImportPanel } from "./ImportPanel";
 import { SharePanel } from "./SharePanel";
 import { ReviewDiffPanel } from "./ReviewDiffPanel";
-import { DiffPanel } from "./DiffPanel";
 import { SuggestionPanel } from "./SuggestionPanel";
 import { setActiveLocale } from "../i18n/translate";
 import { t } from "../i18n/translate";
@@ -168,19 +167,6 @@ function buildSuggestionProps() {
   };
 }
 
-function buildDiffProps() {
-  return {
-    comparisonFileName: "baseline.json",
-    comparisonDocument: buildDocumentFixture(),
-    diffResult: null,
-    currentCardIdSet: new Set<string>(),
-    currentIslandIdSet: new Set<string>(),
-    onLoadComparisonDocument: vi.fn(),
-    onJumpToItem: vi.fn(),
-    safeMode: true,
-  };
-}
-
 afterEach(() => {
   setActiveLocale("ja");
 });
@@ -192,7 +178,6 @@ describe("i18n functional equivalence", () => {
       "ImportPanel.tsx",
       "SharePanel.tsx",
       "ReviewDiffPanel.tsx",
-      "DiffPanel.tsx",
       "SuggestionPanel.tsx",
       "safe_mode_status.ts",
     ] as const;
@@ -250,19 +235,6 @@ describe("i18n functional equivalence", () => {
     expect(metrics(enHtml)).toEqual(metrics(jaHtml));
     expect(jaHtml).not.toContain("Apply selected merge");
     expect(enHtml).toContain("Apply selected merge");
-  });
-
-  it("keeps DiffPanel structure equivalent between ja/en", () => {
-    const props = buildDiffProps();
-
-    setActiveLocale("ja");
-    const jaHtml = renderToStaticMarkup(React.createElement(DiffPanel, props));
-    setActiveLocale("en");
-    const enHtml = renderToStaticMarkup(React.createElement(DiffPanel, props));
-
-    expect(metrics(enHtml)).toEqual(metrics(jaHtml));
-    expect(jaHtml).not.toContain("Load comparison document (JSON)");
-    expect(enHtml).toContain("Load comparison document (JSON)");
   });
 
   it("keeps SuggestionPanel structure equivalent between ja/en", () => {

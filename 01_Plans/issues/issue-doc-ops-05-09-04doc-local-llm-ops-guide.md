@@ -137,14 +137,6 @@
 - Open準備判定: Audience/Goal/公開境界/Validation/Non-goal が充足しており、依存なしで起票可能。
 - 重複責務排除: 一般セキュリティ統制は DOC-OPS-05-13/14 に委譲し、本IssueではLLM運用境界のみ扱う。
 
-## Authoring Checklist（人間/生成AI 共通）
-
-- [ ] `Source Issue` が運用状態と整合している（未運用時は `N/A`、運用時はURL）。
-- [ ] `Related ADR/Spec` が最低1件ある。
-- [ ] 受入条件に「安全」「互換」「検証」が含まれる。
-- [ ] `Validation plan` に具体コマンドがある。
-- [ ] 非目標が明記されスコープ逸脱を防いでいる。
-
 ## 13) Stream I execution record（DOC-OPS-05 non-conflict lane）
 
 ### Phase 1 Read

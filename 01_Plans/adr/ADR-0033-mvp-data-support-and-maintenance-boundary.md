@@ -96,11 +96,3 @@ MVPでは、データサポート境界を次の4区分で管理する。
 - Related: `01_Plans/issues/issue-DATA-CONTRACT-01-document-v2-contract-drift-and-support-levels.md`
 
 ---
-
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] 必須ヘッダ（Status/Date/Deciders/Scope）を記載した。
-- [x] 必須章（Context/Decision/Consequences/Traceability）を記載した。
-- [x] Decision に採用理由と非目標がある。
-- [x] Traceability に関連文書を1件以上記載した。
-- [x] 実装進捗は ADR ではなく Issue で管理する前提を維持した。
