@@ -67,6 +67,7 @@ v1のtop-level keyは `schemaVersion/generatedAt/app/client/incident/runtime/doc
 - Related: `THREAT_MODEL.md`
 - Related: `04_Documentation/diagnostics.md`
 - Related: `04_Documentation/operations.md`
+- ADR-0047 R-3（非機能境界）: 新しい共有面（診断バンドル）が既存のSafeMode・共有抑制の不変条件を裏から毀損しうるという、既存境界に覆われない新機能の判断である。
 - Related: `SUPPORT.md`
 - Related: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
 - Related: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
