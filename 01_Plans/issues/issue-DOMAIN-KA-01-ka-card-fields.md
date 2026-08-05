@@ -14,13 +14,8 @@
 
 - RequirementID: DOMAIN-KA-01
 - RequirementStatement: KA法（本質的価値抽出法）のカード3分割（出来事/心の声/価値）を、`Card.text`=出来事の正本を維持したまま「心の声」「価値」の optional 追加フィールドとして導入し、選択コンテキストで閲覧・編集できるようにする。
-- PriorityClass（Must / Should / Could）: Could
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=カードを選択 / 操作=選択コンテキストで「心の声」「価値」を入力→保存→再読込→旧クライアント相当の取り込み / 期待結果=両フィールドが保持され、未入力カードは従来どおり表示される（KA欄は強制されない）。旧形式文書の取り込みで欠落・破壊が起きない / 除外=価値によるグルーピングの自動化・AI 推定、カード面（キャンバス）への常時3欄表示、claimType との統合。
-- GoNoGoGate（Required / Optional / N/A）: Required（スキーマ契約に触れるため schemas.md 同期と後方互換確認を完了条件とする）
 - SecurityGateImpact: import-sanitize（新フィールドの取り込み経路検証）
-- VerificationLevel: integration
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0048 D3 改訂）
-- DecisionQueueRef: `ADR-0048`
 
 ## 1) 課題 / Problem statement
 

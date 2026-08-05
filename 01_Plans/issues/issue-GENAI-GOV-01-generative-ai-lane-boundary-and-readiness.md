@@ -14,11 +14,8 @@
 
 - RequirementID: GENAI-GOV-01
 - RequirementStatement: 生成AI関連の作業を単一機能として扱わず、`provider=none` の手動中核、LLMProvider 経路、外部定額エージェント成果物連携、将来の直接API/Agent連携を別レーンとして明示し、各レーンのデータ境界・人間レビュー境界・監査・SafeMode・Go/No-Go条件を統一的に判定できるようにする。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=新しい生成AI関連ADR/issue/実装提案が起票される / 操作=提案者またはレビュー担当者が本Issueのレーン表と共通不変条件で分類する / 期待結果=対象が1つ以上のレーン、データ境界、proposal-only境界、SafeMode/監査/検証レベル、ADR要否へ明確に対応づく。不明な場合は Draft または Decision Queue に留まり、実装着手しない / 除外=特定ベンダー選定、モデル品質ベンチマーク実装、新しい外部通信経路の認可。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact: SafeMode / share-export / import-sanitize / public-exposure / external-service-boundary
-- VerificationLevel: docs-check
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef: `ADR-0009`, `ADR-0028`, `ADR-0049`, `PRODUCT-QA-01`
 

@@ -14,13 +14,8 @@
 
 - RequirementID: CE1-CONTRACT-01
 - RequirementStatement: closed-worldのCE1 v1について、論理型、HTTP request/response envelope、下流handoff keyを分離し、各required keyとversioning判断を一意にする。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=CE1 ContextQuery/ContextBundleを実装または利用する / 操作=schemasから型、apiからendpointを読む / 期待結果=同一payloadが文書間でrequiredにもunknownにもならず、`schemaVersion`と`queryId`の所属を一意に判断できる / 除外=CE2/CE4の権限拡張、新しいAI機能。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed（照合実施はFixed。v1破壊的変更が必要と判明した場合の値決定はADRへ停止）
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1. 課題
 

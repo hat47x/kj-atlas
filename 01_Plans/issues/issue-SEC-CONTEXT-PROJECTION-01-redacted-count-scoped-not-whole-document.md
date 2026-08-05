@@ -1,7 +1,5 @@
 # Issue Draft: SEC-CONTEXT-PROJECTION-01 redactedCountが全文書ではなく絞り込み後の部分集合のみを計上
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Security
 - Status: Draft
 - Source Issue: N/A

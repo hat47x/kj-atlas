@@ -1,7 +1,5 @@
 # Issue: SAAS-TENANT-FK-02 UserIdentityRowモデルに大文字小文字非依存の一意インデックスが宣言されていない
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Done
 - Source Issue: N/A

@@ -16,13 +16,8 @@
 
 - RequirementID: RELEASE-DOC-01
 - RequirementStatement: タグを作る前提、同一commitの品質判定、workflowが生成・保持・公開する成果物、生成しない成果物、失敗時の停止と記録を、手順書・workflow・変更履歴で一貫したリリース契約として示す。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=maintainerが候補commitを出荷しようとしている / 操作=release手順に従って候補を判定しタグを作る / 期待結果=同じSHAの品質証跡、タグ形式、生成物、取得場所、保持境界、非生成物、rollback判断を事前に理解でき、workflow結果と記録を対応付けられる / 除外=本Issueだけでcontainer registry、package registry、自動deploy、署名基盤を新設すること。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure / supply-chain
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 課題
 

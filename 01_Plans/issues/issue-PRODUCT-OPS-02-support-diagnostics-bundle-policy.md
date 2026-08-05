@@ -28,13 +28,8 @@
 
 - RequirementID: PRODUCT-OPS-02
 - RequirementStatement: サポートへ共有できる診断バンドルを導入するか、導入する場合に何を含め、何を必ず除外し、利用者がどこで確認・キャンセルできるかを決定する。
-- PriorityClass（Must / Should / Could）: Could
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=利用者が保存失敗、backend未接続、取り込み失敗、共有前警告などの問題をサポートへ相談したい / 操作=診断バンドル作成または診断情報共有の導線を開く / 期待結果=共有前に内容、マスク状態、共有してはいけない情報が分かり、未承認の自動送信が起きない / 除外=自動ログ送信、チケットシステム連携、未加工本文や秘密情報を含むバンドル。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0053` Accepted 2026-07-13）
-- DecisionQueueRef（未確定時の参照先）: Resolved（実装は`ADR-0053`のallowlistと着手ゲートに従う）
 
 ## 1) 課題 / Problem statement
 

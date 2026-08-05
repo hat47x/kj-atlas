@@ -14,13 +14,8 @@
 
 - RequirementID: DOC-UI-CATALOG-01
 - RequirementStatement: 公開UIカタログを利用者向けの現行画面説明へ限定し、内部設計ブリーフを物理分離するとともに、スクリーンショットがどの版をいつ検証したものか追跡できるようにする。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=`ui_catalog.md` がGist公開対象である / 操作=一般利用者がUIカタログを読む、保守者が画像台帳を確認する / 期待結果=公開版に内部課題・ADR・進捗が混入せず、画像の対象版と確認日を判定できる / 除外=UI再設計、スクリーンショット差分基盤の新設。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

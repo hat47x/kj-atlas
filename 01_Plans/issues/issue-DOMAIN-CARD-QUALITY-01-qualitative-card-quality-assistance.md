@@ -14,13 +14,8 @@
 
 - RequirementID: DOMAIN-CARD-QUALITY-01
 - RequirementStatement: 利用者が本文だけですぐカードを保存できる操作性を保ちながら、元の意味への忠実性、一枚一中心、必要な文脈、元記録への遡及、観察と解釈の区別、少数・矛盾情報の保持を、保存後または要求時の任意提案で支援する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=利用者が定性情報をカードへ記録する、AIは無効でもよい / 操作=本文を保存し、必要に応じて品質支援を開き、一件ずつ提案を採用・見送り・保留する / 期待結果=保存は遮断されず、採用前の本文は変わらず、元の意味・少数意見・矛盾が保持され、マウスとキーボードで本文へ戻れる / 除外=研究品質の認定、事実確認の自動化、品質スコア、全メタデータの必須化。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

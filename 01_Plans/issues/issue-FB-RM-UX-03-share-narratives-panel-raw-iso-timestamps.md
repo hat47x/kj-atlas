@@ -1,7 +1,5 @@
 # Issue: FB-RM-UX-03 SharePanel/NarrativesPanelがcreatedAtをlocale整形せず生ISO文字列で表示
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Draft
 - Source Issue: N/A

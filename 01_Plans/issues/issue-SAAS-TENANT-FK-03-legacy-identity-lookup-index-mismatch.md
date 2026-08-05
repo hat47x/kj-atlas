@@ -1,7 +1,5 @@
 # Issue: SAAS-TENANT-FK-03 レガシーID紐付け照会がexternal_uidの大文字小文字非依存indexを使えていない
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Draft
 - Source Issue: N/A

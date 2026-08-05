@@ -18,13 +18,8 @@
 
 - RequirementID: EXT-CONN-01
 - RequirementStatement: 外部エージェント（Claude Code / ChatGPT / Copilot Studio）が、レビュー済み等の制約付き投影として kj-atlas の文脈を読み取れる read-only MCP サーバーを提供する。書き込みツールは持たない。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario: 前提=ADR-0054 Accepted / 操作=MCPクライアントから制約付き投影（reviewed-only 等）を読む / 期待結果=SafeMode境界どおりの内容だけが返り、監査相関（bundleHash等）が記録される / 除外=書き込み、トリガー実装、通知。
-- GoNoGoGate（Required / Optional / N/A）: Required（公開面のためセキュリティ照合必須）
 - SecurityGateImpact: SafeMode / share-export / public-exposure
-- VerificationLevel: integration
-- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0054` Accepted 2026-07-12）
-- DecisionQueueRef: N/A（解消済み）
 
 ## 背景
 

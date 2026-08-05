@@ -15,13 +15,8 @@
 
 - RequirementID: `DOC-OPS-05-13`
 - RequirementStatement: `04_Documentation/security.md` を「内部文書へ移動」または「対外文書として改善」のどちらかに分類し、実行計画を固定する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=`04_Documentation` の文書分類を棚卸し済み`; 操作=対象文書の読者・目的・配置先を判定する; 期待結果=分類結果と次の変更方針が issue と関連文書に残る; 除外=本文の全面改稿や実装修正`
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A（DecisionStatus=Fixed）
 
 ## Stream D drift-check update（2026-04-30）
 

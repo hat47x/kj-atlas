@@ -14,13 +14,8 @@
 
 - RequirementID: PRODUCT-UX-04
 - RequirementStatement: 製品化対象として、狭い画面、大きな文書、低速環境でも主要操作が見切れず、待機状態と復帰方法が理解できる状態にする。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=標準サンプルと大きめの文書を複数viewportで開く / 操作=検索、選択、表示切替、共有前確認、診断を実行する / 期待結果=見切れ、重なり、反応なしに見える状態、フォーカス迷子がない / 除外=モバイル専用ネイティブUI。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / public-exposure）: SafeMode / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: `ADR-0031`
 
 ## 1) 課題 / Problem statement
 

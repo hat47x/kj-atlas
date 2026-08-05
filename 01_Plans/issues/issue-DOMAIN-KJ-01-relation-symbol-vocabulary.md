@@ -14,13 +14,8 @@
 
 - RequirementID: DOMAIN-KJ-01
 - RequirementStatement: KJ法原典の関係記号に対応する関係種別（関連=無方向既定/因果=有向/相互/対立/同値）を、契約文書先行・追加的・ラウンドトリップ保全の条件下で EdgeType へ拡張し、キャンバス上で種別を付与・変更・視認できるようにする。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=2枚のカード間に関係線がある / 操作=右クリック等で種別を「因果」へ変更→保存→再読込→旧仕様相当の取り込み経路を通す / 期待結果=種別と向きが保持され、未知種別を破棄せず「関連（不明）」として保全する。EdgeLayer で種別が視覚的に区別できる / 除外=関係線の自動推定（AI）、negate/contradicts の廃止、破壊的スキーマ変更（version: 3）。
-- GoNoGoGate（Required / Optional / N/A）: Required（スキーマ契約に触れるため、schemas.md 同期と後方互換確認を完了条件とする）
 - SecurityGateImpact: import-sanitize（取り込み時の未知種別の扱いを変更するため、寛容/厳格の両検証を通す）
-- VerificationLevel: integration
-- DecisionStatus（Fixed / Pending）: Fixed（採択は ADR-0048 D3。実装開始は前提条件3点の充足後）
-- DecisionQueueRef: `ADR-0048`
 
 ## 1) 課題 / Problem statement
 

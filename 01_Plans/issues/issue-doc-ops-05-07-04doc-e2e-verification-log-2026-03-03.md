@@ -22,9 +22,6 @@
 ## Requirement meta I/F
 - RequirementID: `DOC-OPS-05-07`
 - RequirementStatement: E2E検証ログの監査可能性を担保するDraft計画を固定し、実行前に必要証跡項目を欠落なく定義する。
-- GoNoGoGate: Required
-- VerificationLevel: docs-check
-- DecisionStatus: Fixed
 
 ## Classification（Fixed）
 - Decision: **Move internal**
@@ -403,8 +400,6 @@
 ### Required meta check（must remain synchronized）
 - RequirementID: `DOC-OPS-05-07`
 - Classification: `Move internal`
-- GoNoGoGate: `Required`
-- VerificationLevel: `docs-check`
 - ProceedDecision: `Hold`
 - Dependency status: `05-06完了待ち（単方向依存）`
 

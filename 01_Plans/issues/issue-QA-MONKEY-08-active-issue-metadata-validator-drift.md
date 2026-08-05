@@ -14,13 +14,8 @@
 
 - RequirementID: QA-MONKEY-08
 - RequirementStatement: Active issue memo index and memo metadata must validate cleanly so new internal issues can be triaged reliably.
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=current active issue table / 操作=`python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / 期待結果=no missing required fields and no index status/source mismatch / 除外=completed issue memos not listed in the active table.
-- GoNoGoGate（Required / Optional / N/A）: N/A
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

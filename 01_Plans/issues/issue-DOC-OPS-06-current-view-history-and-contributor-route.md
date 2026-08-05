@@ -14,13 +14,8 @@
 
 - RequirementID: DOC-OPS-06
 - RequirementStatement: 新規メンバーとAIが、反復実行ログや旧運用に遮られず、現在の課題正本、優先作業、貢献開始手順、E2E正本、文書品質基準へ最短で到達できるようにする。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=fresh cloneの新規参加者またはAI / 操作=READMEから課題を選び、貢献手順と検証手順を辿る / 期待結果=現行issue memo運用、現在のActive集合、唯一のE2E手順、Normativeな文書品質基準へ5分以内に到達する / 除外=過去issue本文の全修正、役割分離の再導入。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

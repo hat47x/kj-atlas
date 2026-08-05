@@ -14,11 +14,8 @@
 
 - RequirementID: DOMAIN-VISUAL-CUE-01
 - RequirementStatement: 島または利用者が選んだ情報集合に、内容を代表する任意の小さな視覚手掛かりを文字と併記し、意味を早く確定したり他者へ暗黙に伝えたりせず、目的のまとまりを見つけ直す負担を下げる。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=利用者が多数の島を含む文書を開いている / 操作=島を選び、手描き・基本図形・撮影写真・絵文字・プリセット・権利確認済み外部素材・生成候補から任意の手掛かりを確認して採用する / 期待結果=表札と手掛かりを併用して島を見つけ直せ、画像なしへ戻せ、一次資料と識別画像を区別でき、外部通信と権利条件を事前確認できる / 除外=自動分類、自動採用、画像だけの意味伝達、装飾目的の常設画像。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef（未確定時の参照先）: `ADR-0060`
 

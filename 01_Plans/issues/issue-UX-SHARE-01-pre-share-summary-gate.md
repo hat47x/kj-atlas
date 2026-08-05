@@ -14,13 +14,8 @@
 
 - RequirementID: UX-SHARE-01
 - RequirementStatement: 共有・書き出しの直前に「未レビュー n件・違和感 m件・矛盾 k件は既定で非表示（SafeMode）」であることを1枚のサマリで明示し、利用者が保持中の情報の露出範囲を確認してから出力できるようにする。件数は所在提示であり評価ではない（反スコアリング）。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=未レビュー・違和感・矛盾を含む文書で「共有と再現」を開く / 操作=書き出しを実行しようとする / 期待結果=直前サマリに3種の件数と「既定で非表示」の説明が表示され、戻って編集または続行を選べる。準備度・スコア・%は表示されない / 除外=共有フロー全体の再設計（PRODUCT-UX-03 Done の再決定）、公開範囲・粒度選択そのものの変更、出典参照トグル（DOMAIN-TRACE-01 所有）。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: SafeMode / share-export（安全境界の明示性強化。境界自体は不変・弱めない）
-- VerificationLevel: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0048 憲章の適用。Round 4 設計 §領域5）
-- DecisionQueueRef: `ADR-0048`
 
 ## 1) 課題 / Problem statement
 

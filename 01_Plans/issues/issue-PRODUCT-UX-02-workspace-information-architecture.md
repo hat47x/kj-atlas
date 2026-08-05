@@ -14,13 +14,8 @@
 
 - RequirementID: PRODUCT-UX-02
 - RequirementStatement: キャンバス、選択コンテキスト、作業モード、共有前確認を画面上で整理し、一般利用者が主作業と高度機能を混同しない状態にする。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=標準サンプルをブラウザで開く / 操作=カード選択、島選択、表示切替、レビュー、共有パネル表示を行う / 期待結果=選択対象の確認が現在表示範囲に出て、高度機能は明示的なモードまたはタブとして分離される / 除外=全コンポーネントの見た目刷新。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: `ADR-0031`
 
 ## 1) 課題 / Problem statement
 

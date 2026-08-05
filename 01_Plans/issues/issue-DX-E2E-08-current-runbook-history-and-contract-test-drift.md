@@ -15,13 +15,8 @@
 
 - RequirementID: DX-E2E-08
 - RequirementStatement: E2E実務手順の単一正本を、現行コマンド、適用境界、失敗時証跡、安全確認だけで再現できるrunbookへ戻し、過去Stream計画・旧issue昇格テンプレート・廃止済みCLIを正本として固定するテストを除去する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=fresh cloneの開発者がE2Eを実行する / 操作=正本を上から読み、対象レーンを選んで記載コマンドを実行する / 期待結果=現行CLIだけで準備・実行・失敗記録まで到達し、過去のStreamやDraft昇格手順を現行必須条件と誤認しない / 除外=過去issue memoの履歴削除、E2Eシナリオ自体の機能追加。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 課題
 

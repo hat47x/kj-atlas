@@ -1,7 +1,5 @@
 # Issue: FB-RM-UX-02 エージェント取込レビュー一覧が無制限に蓄積
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Draft
 - Source Issue: N/A

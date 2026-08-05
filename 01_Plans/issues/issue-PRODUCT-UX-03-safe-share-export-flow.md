@@ -14,13 +14,8 @@
 
 - RequirementID: PRODUCT-UX-03
 - RequirementStatement: 共有、エクスポート、レビューパック取り込みを、SafeModeと公開範囲を確認してから実行する利用目的起点のフローへ整理する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=標準サンプルを開きSafeMode ONで作業する / 操作=共有と再現を開き、出力目的、公開範囲、未レビュー情報、出力形式を確認してエクスポートする / 期待結果=何を共有するか、誰に見せるか、安全状態は何かが実行前に分かる / 除外=新しい共有サービス連携。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / public-exposure）: SafeMode / share-export / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: `ADR-0031`
 
 ## 1) 課題 / Problem statement
 

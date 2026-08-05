@@ -1,7 +1,5 @@
 # Issue: DX-BACKEND-DT-01 Pydantic datetimeフィールドがtimezone-aware強制になっていない
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Process
 - Status: Draft
 - Source Issue: N/A

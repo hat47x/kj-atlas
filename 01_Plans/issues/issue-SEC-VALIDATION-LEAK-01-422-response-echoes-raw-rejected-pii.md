@@ -1,7 +1,5 @@
 # Issue: SEC-VALIDATION-LEAK-01 グローバルなRequestValidationErrorハンドラが拒否された生PII値を422レスポンスへそのまま返す
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Security
 - Status: Draft
 - Source Issue: N/A

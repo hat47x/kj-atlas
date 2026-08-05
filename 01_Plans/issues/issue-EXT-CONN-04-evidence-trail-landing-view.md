@@ -14,11 +14,8 @@
 
 - RequirementID: EXT-CONN-04
 - RequirementStatement: 外部に配信されたブリーフの「なぜ？」リンクから来訪した閲覧者が、そのブリーフが基づくレビュー済みカード群と関係線を読み取り専用トレイルとして辿れる。
-- PriorityClass（Must / Should / Could）: Could
 - AcceptanceScenario: 前提=EXT-CONN-01/02 稼働・ブリーフに相関ID（bundleHash等）が埋まっている / 操作=ブリーフの「なぜ？」リンクを開く / 期待結果=基づくレビュー済みカードと根拠経路だけが読み取り専用で提示される / 除外=編集、未レビュー・違和感・保留の既定表示、確からしさ%。
-- GoNoGoGate（Required / Optional / N/A）: Required（外部露出面のため共有前確認と同格の露出規則）
 - SecurityGateImpact: SafeMode / share-export / public-exposure
-- VerificationLevel: e2e
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef: `ADR-0054` は Accepted 済み（2026-07-12）。残るゲートは**段階1/2の進行（相関IDつきブリーフの実在）＋実装レッドライン受領**（充足後に Open 化）。
 

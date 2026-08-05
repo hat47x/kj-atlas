@@ -14,13 +14,8 @@
 
 - RequirementID: DX-E2E-07
 - RequirementStatement: Current-main E2E expectations must follow the accepted command addresses, work-mode disclosure, single-primary-selection model, and share/export flow without restoring obsolete UI solely for stale tests.
-- PriorityClass: Must
 - AcceptanceScenario: 前提=current main のUIと145件のPlaywright suite / 操作=全件を実ブラウザで実行 / 期待結果=現行契約に対する実不具合だけが失敗し、旧UI住所や文言による偽陰性がない / 除外=timeout引き上げだけでの緑化、ADR-0054、外部接続実装。
-- GoNoGoGate: Required
 - SecurityGateImpact: SafeMode / share-export / import-sanitize
-- VerificationLevel: e2e
-- DecisionStatus: Fixed（既存ADR/Done issueの現行UI契約へテストを追随する）
-- DecisionQueueRef: N/A
 
 ## Problem
 

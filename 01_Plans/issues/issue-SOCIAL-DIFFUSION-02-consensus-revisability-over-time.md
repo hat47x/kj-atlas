@@ -14,11 +14,8 @@
 
 - RequirementID: SOCIAL-DIFFUSION-02
 - RequirementStatement: 共有済みの合意成果物を、版を越えて再オープンし、差分と根拠付きで見直せるようにし、過去合意を不可逆に固定しない。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=共有済みレビューパック（Consensus Graph由来）がある / 操作=後の版で再オープンし、差分・根拠・レビュー履歴を辿る / 期待結果=過去合意が見直し可能で、再評価導線と source trace が残る / 除外=合意の自動上書き、履歴の破壊的削除、署名必須化。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / public-exposure）: SafeMode / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef（未確定時の参照先）: `ADR-0038`
 

@@ -14,13 +14,8 @@
 
 - RequirementID: DOMAIN-W-ITERATION-01
 - RequirementStatement: 通常の一ラウンド利用を複雑にせず、高度な利用者がR1問題提起からR6手順化までのKJ法を反復・分岐し、中間成果、未解決点、現場への問い、カード系譜を失わず停止・再開できる探究支援を提供する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=利用者が複雑な課題について現状把握ラウンドを実施中 / 操作=中断し、追加取材を行い、同じ段階の2回目として再開し、本質追求後に新しい矛盾から現状把握へ分岐する / 期待結果=各時点のカード・配置・文章・未解決点が残り、前後差分と元情報を辿れ、AIなしでも引継ぎ・分岐できる / 除外=固定順ウィザード、進捗採点、プロジェクト管理、AI自動移行。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A（`ADR-0057` Accepted）
 
 ## 1) 課題 / Problem statement
 

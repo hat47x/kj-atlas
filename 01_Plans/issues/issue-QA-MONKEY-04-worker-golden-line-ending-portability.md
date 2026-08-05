@@ -14,13 +14,8 @@
 
 - RequirementID: QA-MONKEY-04
 - RequirementStatement: Worker golden tests must be stable across Windows CRLF and LF working trees.
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=Windows checkout / 操作=`npm run test` / 期待結果=golden markdown comparisons pass regardless of CRLF fixture checkout / 除外=semantic golden content changes.
-- GoNoGoGate（Required / Optional / N/A）: N/A
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A
-- VerificationLevel（docs-check / unit / integration / e2e）: unit
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

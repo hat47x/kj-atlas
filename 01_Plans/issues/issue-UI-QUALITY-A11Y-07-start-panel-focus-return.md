@@ -1,7 +1,5 @@
 # Issue: UI-QUALITY-A11Y-07 StartPanelのfocus復帰導線が未定義
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Feature
 - Status: Draft
 - Source Issue: N/A

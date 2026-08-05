@@ -14,13 +14,8 @@
 
 - RequirementID: SEC-VISUAL-ASSET-01
 - RequirementStatement: SafeModeが有効な間は、既存文書に保存された島画像URLを画面表示のために自動取得せず、URLの変更を人間レビュー済み状態へ自動昇格させない。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=外部画像URLを含む既存文書をSafeModeで開く / 操作=キャンバスを表示し、島の詳細を開く / 期待結果=画像への通信は発生せず、遮断理由が表示され、URLは文書内に保持される / 除外=SafeModeを利用者が明示的に解除した後の旧式プレビュー、新しい代表視覚手掛かりの供給経路
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / import-sanitize
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: `ADR-0060`
 
 ## 1) 課題 / Problem statement
 

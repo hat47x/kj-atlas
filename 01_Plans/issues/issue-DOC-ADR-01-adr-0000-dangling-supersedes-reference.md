@@ -1,7 +1,5 @@
 # Issue: DOC-ADR-01 ADR-0000のSupersedes参照が存在しないファイルを指している
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Documentation
 - Status: Done
 - Source Issue: N/A

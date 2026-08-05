@@ -14,13 +14,8 @@
 
 - RequirementID: PROV-ERROR-01
 - RequirementStatement: バックエンドの `ProviderError.to_contract()`（`code`: `provider_unavailable`|`provider_timeout`|`provider_validation`、`ProviderDisabledError.disabled_reason`）を HTTP エラーレスポンスの構造化フィールドとしてフロントエンドまで欠落なく伝播し、`App.tsx` の正規表現による文字列一致判定を廃止して `code` を直接参照する形へ置き換える。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=`provider=local` かつ接続先が停止している / 操作=AI提案を実行 / 期待結果=ユーザーには「AI機能に接続できません」という**未翻訳の生例外文を含まない**ローカライズ済みメッセージが表示され、`provider=none`（意図的無効）のメッセージとは異なる文言になる / 除外=リトライの自動化、エラーからの自動フォールバック挙動の変更（`llm_escalation_policy.md` の既定を変えない）。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: N/A（`trace_id`・生例外文はエンドユーザー画面へ出さず開発者ログのみに残す方針を維持）
-- VerificationLevel: integration
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0050 D2）
-- DecisionQueueRef: `ADR-0050`
 
 ## 1) 課題 / Problem statement
 

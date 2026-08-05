@@ -1,7 +1,5 @@
 # Issue: SEC-DOC-BOUND-05 merge-decision-logs系GETがpagination無しで無制限に増える監査履歴を返す
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Security
 - Status: Draft
 - Source Issue: N/A

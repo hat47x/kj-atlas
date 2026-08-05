@@ -22,9 +22,6 @@
 ## Requirement meta I/F
 - RequirementID: `DOC-OPS-05-06`
 - RequirementStatement: E2E運用文書の公開改善方針を維持しつつ、Open化判定情報を固定する。
-- GoNoGoGate: Required
-- VerificationLevel: docs-check
-- DecisionStatus: Fixed
 
 ## Phase 1 Read Gate matrix（ADR-0022/0023/0024/0025 対応）
 
@@ -515,8 +512,6 @@
 ### Required meta check（must remain synchronized）
 - RequirementID: `DOC-OPS-05-06`
 - Classification: `Improve external`
-- GoNoGoGate: `Required`
-- VerificationLevel: `docs-check`
 - ProceedDecision: `Hold`
 - Dependency status: `05-05完了待ち（単方向依存）`
 

@@ -14,13 +14,8 @@
 ## Requirement meta I/F（共通キー）
 - RequirementID: `CE3-PATCH-WORKSPACE`
 - RequirementStatement: 候補比較・部分採用・保留・廃棄を可逆に実行できる。
-- PriorityClass: Must
 - AcceptanceScenario: 前提=CE2完了 / 操作=複数候補比較 / 期待結果=rollback可能 / 除外=Core/Consensus直接編集
-- GoNoGoGate: Required
 - SecurityGateImpact: SafeMode
-- VerificationLevel: e2e
-- DecisionStatus: Fixed
-- DecisionQueueRef: `UNC-CE-01-01`
 
 ## 1) 機能要件（具体）
 

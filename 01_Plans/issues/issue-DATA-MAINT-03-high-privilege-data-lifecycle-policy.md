@@ -16,13 +16,8 @@
 
 - RequirementID: DATA-MAINT-03
 - RequirementStatement: 削除、アーカイブ、所有者移管、管理者本文閲覧、監査ログ閲覧、保持期限管理を製品標準機能にするか、組織ごとの運用判断に留めるかを決める。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=Productization Program Owner、Security officer、Platform operatorが本番導入可否を判断する / 操作=高権限データ操作の方針案を読む / 期待結果=実装してよい操作、ADRが必要な操作、組織判断に委ねる操作が区別できる / 除外=本Issue内での削除API、管理UI、本文横断閲覧機能の実装。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0035` Accepted 2026-07-13）
-- DecisionQueueRef（未確定時の参照先）: Resolved
 
 ## Decision resolution 2026-07-13
 

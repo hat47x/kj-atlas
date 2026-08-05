@@ -1,7 +1,5 @@
 # Issue Draft: DOC-ADR-02 ADR-0047モラトリアムの再起票条件を引用していないADRが9件
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Process
 - Status: Draft
 - Source Issue: N/A

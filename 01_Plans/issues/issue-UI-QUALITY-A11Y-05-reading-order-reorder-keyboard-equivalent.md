@@ -1,7 +1,5 @@
 # Issue: UI-QUALITY-A11Y-05 読み順並び替えのキーボード到達性を確認する
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Quality
 - Status: Done
 - Source Issue: N/A

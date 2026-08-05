@@ -14,11 +14,8 @@
 
 - RequirementID: EXT-CONN-02
 - RequirementStatement: 外部エージェントの観察・ブリーフを `agent-response.v1` 互換 payload として HTTP で受信し、提案カード（未レビュー・自動確定なし・個別undo可）としてのみ着地させる。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario: 前提=EXT-CONN-01 稼働・ADR-0054 Accepted / 操作=外部エージェントが webhook へ観察を POST する / 期待結果=提案として未レビュー着地し、人間が採用するまで文書は変わらない / 除外=Consensus直接書き込み、自動採用、通知。
-- GoNoGoGate（Required / Optional / N/A）: Required（悪性入力の一次面）
 - SecurityGateImpact: import-sanitize / SafeMode / public-exposure
-- VerificationLevel: e2e
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef: `ADR-0054` はAccepted済み（2026-07-12）、`DATA-MODEL-OPS-02` D3はFixed済み（2026-07-13）。残るゲートは **EXT-CONN-01の運用実績 + D3の契約先行同期・admin認可実装/検証**。通常ownerが登録・失効できず、wrong/revoked/wrong-document tokenが拒否されるまでDraftを維持する。
 

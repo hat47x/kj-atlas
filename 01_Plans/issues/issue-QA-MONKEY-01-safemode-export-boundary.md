@@ -14,13 +14,8 @@
 
 - RequirementID: QA-MONKEY-01
 - RequirementStatement: Explore preset and share/export controls must not relax SafeMode default ON or expose unreviewed drafts while SafeMode is ON.
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=frontend dev server + SQLite API / 操作=Open app, choose Explore, open share/export panel / 期待結果=SafeMode remains ON and "include unreviewed drafts" is not available while SafeMode is ON / 除外=SafeMode OFF explicit local review workflow.
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

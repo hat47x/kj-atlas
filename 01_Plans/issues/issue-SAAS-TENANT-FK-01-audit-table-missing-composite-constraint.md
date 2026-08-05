@@ -1,7 +1,5 @@
 # Issue: SAAS-TENANT-FK-01 監査テーブルにtenant複合外部キー制約がない
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Done
 - Source Issue: N/A

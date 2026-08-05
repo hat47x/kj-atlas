@@ -14,13 +14,8 @@
 
 - RequirementID: EXT-AGENT-03
 - RequirementStatement: Copilot / Copilot Studio を代表とする定額エージェントとの往復運用を、利用者・運用者が追加開発なしで再現できる参照キット（エージェント Instructions テンプレート・逸脱時リカバリ定型文・運用手順・データ境界チェックリスト）として文書化する。
-- PriorityClass（Must / Should / Could）: Could
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=EXT-AGENT-01/02 が利用可能 / 操作=文書の手順どおり M365 Copilot（またはCopilot Studio エージェント）で往復を実施 / 期待結果=手順内のテンプレートだけで依頼→応答→取込が完了し、確認チェックリスト（テナント設定・ログ・学習利用）を運用者が判定できる / 除外=Copilot Studio 環境の構築代行、Tier 1/2 の実装、他ベンダー個別手順の網羅（汎用契約で代替）。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: share-export（外部授受の運用手順。SafeMode/確認チェックリストを含む）
-- VerificationLevel: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0049 D4・spec §7）
-- DecisionQueueRef: `ADR-0049`
 
 ## 1) 課題 / Problem statement
 

@@ -14,13 +14,8 @@
 
 - RequirementID: DX-DOC-02
 - RequirementStatement: ADR-0024がmerge blockingとしたdocs-checkを単一コマンドとCI jobとして実装し、Active issue集合、現行契約SSOT、current/history境界、公開境界、相対リンクの欠落をfail-closedで検出する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=文書またはissue memoを変更するPR / 操作=ローカルとCIで同じdocs-checkを実行する / 期待結果=active file未掲載、stale index、異義契約、currentへの履歴再混入、公開不可情報、リンク切れが非0終了でmergeを止める / 除外=文章の主観的採点、全Markdownのstyle lint。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

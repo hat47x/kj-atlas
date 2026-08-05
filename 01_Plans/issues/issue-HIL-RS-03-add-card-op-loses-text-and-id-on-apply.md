@@ -1,7 +1,5 @@
 # Issue: HIL-RS-03 HIL-RS "add" カード適用がid/textを欠いたまま追加してしまう
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Done
 - Source Issue: N/A

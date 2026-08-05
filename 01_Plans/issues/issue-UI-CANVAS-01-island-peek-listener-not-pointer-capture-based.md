@@ -1,7 +1,5 @@
 # Issue: UI-CANVAS-01 折りたたみ島のピーク操作がwindowリスナーに依存し、蓄積・固着しうる
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Draft
 - Source Issue: N/A

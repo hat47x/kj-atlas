@@ -14,13 +14,8 @@
 
 - RequirementID: QA-MONKEY-02
 - RequirementStatement: CE3 candidate collection must remain usable in the documented `KJ_ATLAS_LLM_PROVIDER=none` fallback environment.
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=API starts with `KJ_ATLAS_LLM_PROVIDER=none` / 操作=click `Collect candidates` / 期待結果=UI falls back to deterministic local collection without surfacing `Service Unavailable` / 除外=provider contract validation failures.
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

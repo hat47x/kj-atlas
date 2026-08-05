@@ -6,8 +6,6 @@
 - Owner: Stream E
 - Scope: `01_Plans/issues/` only
 - Phase: A1 Interface Contract
-- DecisionStatus: Fixed
-- VerificationLevel: docs-check
 
 ## Dependencies
 - DependsOn: N/A

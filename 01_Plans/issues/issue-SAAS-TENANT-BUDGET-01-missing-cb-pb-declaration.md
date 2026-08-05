@@ -1,7 +1,5 @@
 # Issue: SAAS-TENANT-BUDGET-01 SaaSテナント作業に複雑性・性能予算申告がない
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Process
 - Status: Done
 - Source Issue: N/A

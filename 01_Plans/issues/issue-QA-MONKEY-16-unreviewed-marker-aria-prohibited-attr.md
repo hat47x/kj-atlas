@@ -1,7 +1,5 @@
 # Issue: QA-MONKEY-16 未レビュー標識のaria-labelが禁止属性で、カード名に状態が混入する
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Done
 - Source Issue: `MVP-EXIT-01`（人間受入項目の機械代替検証後に実施したモンキーテストで発見）

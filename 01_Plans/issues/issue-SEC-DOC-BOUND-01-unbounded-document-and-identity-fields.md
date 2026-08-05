@@ -1,7 +1,5 @@
 # Issue: SEC-DOC-BOUND-01 ドキュメント/ユーザー関連フィールドの上限未設定
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Security
 - Status: Draft
 - Source Issue: N/A

@@ -14,11 +14,8 @@
 
 - RequirementID: SOCIAL-DIFFUSION-04
 - RequirementStatement: 社会的普及の採用・価値を、個人追跡・行動スコアリング・監視テレメトリを用いず、opt-in・集計・ローカルファースト・成果物ベースの非監視シグナルで観測する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=社会配布が運用される / 操作=非監視シグナル（成果物に含まれる保留/根拠要素の充足率、再オープン可能性の自己診断など）を定義し取得する / 期待結果=採用傾向が個人を追跡せず観測でき、観測自体が漏洩経路にならない / 除外=個人追跡、行動スコアリング、外部送信を前提とする監視テレメトリ。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / public-exposure）: SafeMode / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef（未確定時の参照先）: `ADR-0038`
 

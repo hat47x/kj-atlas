@@ -14,13 +14,8 @@
 
 - RequirementID: QA-MONKEY-06
 - RequirementStatement: Header toolbar controls must remain readable and non-overlapping at the default desktop browser viewport.
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=1280x720 browser viewport / 操作=open app and open view/share controls / 期待結果=toolbar buttons do not wrap into vertical unreadable labels or occlude canvas/right panels / 除外=very narrow mobile layout, which should be handled by its own breakpoint spec.
-- GoNoGoGate（Required / Optional / N/A）: N/A
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export labels must remain visible.
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

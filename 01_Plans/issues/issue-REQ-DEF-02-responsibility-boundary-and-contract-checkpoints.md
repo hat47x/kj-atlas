@@ -54,27 +54,18 @@
 
 - RequirementID: `REQ-DEF-02-R1`
 - RequirementStatement: 要求定義時点で決定責務と承認責務を分離し、各要求に RACI を必須記載する。
-- PriorityClass: `Must`
 - RACI: **A:** Platform Architecture Owner / **R:** Security Officer / **C:** Product Owner, Implementer / **I:** Reviewer, Operations
-- VerificationLevel: `docs-check`
-- DecisionStatus: `Fixed`
 
 ### R-2: ContractImpact判定固定（RequirementStatement）
 
 - RequirementID: `REQ-DEF-02-R2`
 - RequirementStatement: 各要求に対し schema/api/policy/ops の契約影響有無を「あり/なし」で明示する。
-- PriorityClass: `Must`
 - ContractImpact: **schema:** なし / **api:** なし / **policy:** あり / **ops:** あり
-- VerificationLevel: `docs-check`
-- DecisionStatus: `Fixed`
 
 ### R-3: Go/No-Go判定固定（RequirementStatement）
 
 - RequirementID: `REQ-DEF-02-R3`
 - RequirementStatement: 要件未確定のまま実装Issueへ進まない停止条件を必須化する。
-- PriorityClass: `Must`
-- VerificationLevel: `docs-check`
-- DecisionStatus: `Fixed`
 
 #### Go/No-Go matrix（要求定義ゲート）
 

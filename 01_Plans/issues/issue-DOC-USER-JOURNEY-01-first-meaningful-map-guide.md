@@ -14,13 +14,8 @@
 
 - RequirementID: DOC-USER-JOURNEY-01
 - RequirementStatement: 初回利用者が、起動方法の理解だけで止まらず、AI無効・SafeMode ON の安全な既定構成で「標準サンプルのカードを確認する、まとまりを作る、未確定を残す、保存し、共有前確認まで進む」という最初の価値到達を公開文書だけで再現できるようにする。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=初回利用者がアプリを起動済み、`KJ_ATLAS_LLM_PROVIDER=none`、SafeMode ON / 操作=秘密情報を含まない標準サンプルの3カードを確認し、まとまりと保留点を作り、保存・再読込・共有前確認を行う / 期待結果=何を配置し、何をまだ決めておらず、外部共有はまだ行っていないかを説明できる / 除外=AI提案、自動分類、外部共有の実行、クラウド同期。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 
