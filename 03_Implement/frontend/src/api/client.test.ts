@@ -1,3 +1,5 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { join, relative, resolve, sep } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -166,6 +168,338 @@ describe("tenant-scoped document request precondition", () => {
       },
     })).rejects.toBeInstanceOf(InvalidTenantSessionContextError);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TENANT SESSION VERSION CLIENT COVERAGE CONTRACT
+//
+// The assertions above enumerate the requests whoever wrote them remembered:
+// `toHaveBeenCalledTimes(7)` pins the seven AI mutations that existed then, so
+// an eighth tenant-scoped request added to this module would be asserted by
+// nothing at all. That is the same fail-open shape the backend's registered
+// route coverage guard had until 2026-08-06, when it was inverted so that
+// every registered FastAPI route must install a shared tenant boundary or
+// appear in an exemption table whose reasons are themselves mechanically
+// re-checked (`backend/tests/test_tenant_session_precondition.py`).
+//
+// The contract below is that inversion on the client side: every fetch() call
+// site in the frontend's production source is enumerated, and each backend
+// request must either attach the opaque tenant session version through the one
+// shared helper or be named here with a reason that is re-verified.
+//
+// Scope stated rather than implied. The backend refuses every tenant-scoped
+// request that omits the header, so a client that forgets it fails closed with
+// `409 tenant_session_changed` before any resource lookup -- this contract
+// guards a functional boundary against future drift, it is not the thing that
+// keeps tenants apart. And it inspects the exported function that lexically
+// contains each fetch(), so a request issued from a private helper is
+// attributed to that function, exactly as the backend contract inspects
+// `route.endpoint` rather than the helpers the endpoint calls.
+// ---------------------------------------------------------------------------
+
+const FRONTEND_SRC_ROOT = resolve(__dirname, "..");
+const CLIENT_MODULE_PATH = "api/client.ts";
+const APP_MODULE_PATH = "App.tsx";
+const TENANT_SCOPED_WRAPPER = "runTenantScopedApiRequest(() => ";
+
+// Request can neither address nor carry a tenant-scoped resource: constant
+// path, no request body, no tenant-scoped request options.
+const NO_TENANT_RESOURCE = "no-tenant-resource";
+// Request is where the opaque version comes from, so it cannot also demand it.
+const TENANT_SESSION_VERSION_SOURCE = "tenant-session-version-source";
+// Request carries the expected version in its JSON body instead of a header.
+const BODY_BORNE_EXPECTED_VERSION = "body-borne-expected-version";
+// The reason codes above are the backend exemption table's own. Its fourth
+// reason -- `saas-surface-blocked`, for POST /admin/provision/users -- has no
+// client counterpart because this module never requests that path, which the
+// request enumeration below re-confirms by set equality.
+
+const UNGUARDED_CLIENT_REQUEST_EXEMPTIONS: Readonly<Record<string, string>> = {
+  "GET /session/bootstrap-policy": NO_TENANT_RESOURCE,
+  "GET /ai/provider-status": NO_TENANT_RESOURCE,
+  "GET /session/context": TENANT_SESSION_VERSION_SOURCE,
+  "POST /session/active-tenant": BODY_BORNE_EXPECTED_VERSION,
+};
+
+type EnumeratedClientRequest = Readonly<{
+  functionName: string;
+  requestKey: string;
+  attachesVersionHeader: boolean;
+  acceptsTenantScopedOptions: boolean;
+  interpolatesPathValues: boolean;
+  requestInit: string;
+  functionSource: string;
+}>;
+
+function readFrontendModule(modulePath: string): string {
+  return readFileSync(resolve(FRONTEND_SRC_ROOT, modulePath), "utf8");
+}
+
+function lineNumberAt(source: string, index: number): number {
+  return source.slice(0, index).split("\n").length;
+}
+
+function balancedCallArguments(source: string, openParenIndex: number): string {
+  let depth = 0;
+  for (let index = openParenIndex; index < source.length; index += 1) {
+    const character = source[index];
+    if (character === "(") {
+      depth += 1;
+    } else if (character === ")") {
+      depth -= 1;
+      if (depth === 0) {
+        return source.slice(openParenIndex + 1, index);
+      }
+    }
+  }
+  throw new Error(`Unbalanced call at line ${lineNumberAt(source, openParenIndex)}`);
+}
+
+function fetchCallSites(source: string): readonly Readonly<{ index: number; args: string }>[] {
+  return [...source.matchAll(/\bfetch\s*\(/g)].map((match) => {
+    const matchIndex = match.index ?? 0;
+    return {
+      index: matchIndex,
+      args: balancedCallArguments(source, matchIndex + match[0].length - 1),
+    };
+  });
+}
+
+function splitRequestArguments(args: string): Readonly<{ url: string; init: string }> {
+  let depth = 0;
+  for (let index = 0; index < args.length; index += 1) {
+    const character = args[index];
+    if (character === "(" || character === "{" || character === "[") {
+      depth += 1;
+    } else if (character === ")" || character === "}" || character === "]") {
+      depth -= 1;
+    } else if (character === "," && depth === 0) {
+      return { url: args.slice(0, index).trim(), init: args.slice(index + 1) };
+    }
+  }
+  return { url: args.trim(), init: "" };
+}
+
+function productionSourceModules(directory: string): readonly string[] {
+  const collected: string[] = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const entryPath = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      collected.push(...productionSourceModules(entryPath));
+      continue;
+    }
+    if (!/\.tsx?$/.test(entry.name) || /\.test\.tsx?$/.test(entry.name)) {
+      continue;
+    }
+    collected.push(relative(FRONTEND_SRC_ROOT, entryPath).split(sep).join("/"));
+  }
+  return collected;
+}
+
+function enumerateClientRequests(): readonly EnumeratedClientRequest[] {
+  const source = readFrontendModule(CLIENT_MODULE_PATH);
+  const declarations = [...source.matchAll(/^export async function (\w+)\(/gm)].map((match) => ({
+    name: match[1] ?? "",
+    index: match.index ?? 0,
+    headerLength: match[0].length,
+  }));
+
+  return fetchCallSites(source).map((site) => {
+    const declaration = [...declarations]
+      .reverse()
+      .find((candidate) => candidate.index < site.index);
+    if (!declaration) {
+      throw new Error(
+        `fetch() at line ${lineNumberAt(source, site.index)} is outside an exported function`,
+      );
+    }
+    const nextDeclaration = declarations.find((candidate) => candidate.index > declaration.index);
+    const functionSource = source.slice(declaration.index, nextDeclaration?.index ?? source.length);
+    if (/\bfunction\b/.test(source.slice(declaration.index + declaration.headerLength, site.index))) {
+      throw new Error(
+        `fetch() at line ${lineNumberAt(source, site.index)} is not directly inside ${declaration.name}`,
+      );
+    }
+
+    const { url, init } = splitRequestArguments(site.args);
+    const template = url.match(/^`\$\{API_BASE\}([^`]*)`$/);
+    if (!template) {
+      throw new Error(
+        `fetch() at line ${lineNumberAt(source, site.index)} does not target the API base: ${url}`,
+      );
+    }
+    const requestPath = (template[1] ?? "").replace(
+      /\$\{([^}]+)\}/g,
+      (_match, expression: string) => `{${expression}}`,
+    );
+    const method = init.match(/method:\s*"([A-Z]+)"/)?.[1] ?? "GET";
+
+    return {
+      functionName: declaration.name,
+      requestKey: `${method} ${requestPath}`,
+      attachesVersionHeader: functionSource.includes("tenantSessionPreconditionHeaders"),
+      acceptsTenantScopedOptions: functionSource.includes("TenantScopedRequestOptions"),
+      interpolatesPathValues: (template[1] ?? "").includes("${"),
+      requestInit: init,
+      functionSource,
+    };
+  });
+}
+
+function exemptClientRequests(reason: string): readonly EnumeratedClientRequest[] {
+  return enumerateClientRequests().filter(
+    (request) => UNGUARDED_CLIENT_REQUEST_EXEMPTIONS[request.requestKey] === reason,
+  );
+}
+
+// A name occurrence inside a line comment, a block-comment body line, or a
+// block-comment opener is prose, not a call site.
+function isCommentedOccurrence(source: string, index: number): boolean {
+  const linePrefix = source.slice(source.lastIndexOf("\n", index) + 1, index);
+  return linePrefix.includes("//") || /^\s*\*/.test(linePrefix) || /^\s*\/\*/.test(linePrefix);
+}
+
+describe("tenant session version client coverage contract", () => {
+  it("keeps every backend request inside the shared api client module", () => {
+    const modulesWithFetch = productionSourceModules(FRONTEND_SRC_ROOT).filter(
+      (modulePath) => fetchCallSites(readFrontendModule(modulePath)).length > 0,
+    );
+
+    expect([...modulesWithFetch].sort()).toEqual([APP_MODULE_PATH, CLIENT_MODULE_PATH]);
+
+    // App's own fetches load bundled public-pack files from the frontend
+    // origin, never the backend API, so they address no tenant-scoped
+    // resource. Their staleness boundary is the tenant session generation
+    // guard, not a request header.
+    for (const site of fetchCallSites(readFrontendModule(APP_MODULE_PATH))) {
+      const { url } = splitRequestArguments(site.args);
+      expect(url).toMatch(/^["`]\.\/packs\//);
+      expect(url).not.toContain("API_BASE");
+    }
+  });
+
+  it("requires every enumerated client request to attach the version or be exempt", () => {
+    const requests = enumerateClientRequests();
+    expect(requests.length).toBeGreaterThan(0);
+
+    const unguarded = new Set(
+      requests
+        .filter((request) => !request.attachesVersionHeader)
+        .map((request) => request.requestKey),
+    );
+
+    // Set equality both ways: a new tenant-scoped request that skips the
+    // shared helper fails until it is classified, and a stale exemption fails
+    // once the request it excused starts attaching the version or disappears.
+    expect([...unguarded].sort()).toEqual(
+      Object.keys(UNGUARDED_CLIENT_REQUEST_EXEMPTIONS).sort(),
+    );
+  });
+
+  it("lets exactly the guarded requests receive a verified session", () => {
+    for (const request of enumerateClientRequests()) {
+      expect({
+        request: request.requestKey,
+        acceptsTenantScopedOptions: request.acceptsTenantScopedOptions,
+      }).toEqual({
+        request: request.requestKey,
+        acceptsTenantScopedOptions: request.attachesVersionHeader,
+      });
+    }
+  });
+
+  it("re-checks that no-tenant-resource exemptions cannot address or carry a resource", () => {
+    const exemptRequests = exemptClientRequests(NO_TENANT_RESOURCE);
+    expect(exemptRequests.length).toBeGreaterThan(0);
+
+    for (const request of exemptRequests) {
+      expect({
+        request: request.requestKey,
+        interpolatesPathValues: request.interpolatesPathValues,
+        sendsRequestBody: /\bbody:/.test(request.requestInit),
+      }).toEqual({
+        request: request.requestKey,
+        interpolatesPathValues: false,
+        sendsRequestBody: false,
+      });
+    }
+  });
+
+  it("re-checks that the session route exemptions own the opaque version themselves", () => {
+    const versionSourceRequests = exemptClientRequests(TENANT_SESSION_VERSION_SOURCE);
+    const bodyBorneRequests = exemptClientRequests(BODY_BORNE_EXPECTED_VERSION);
+    expect(versionSourceRequests.length).toBeGreaterThan(0);
+    expect(bodyBorneRequests.length).toBeGreaterThan(0);
+
+    for (const request of [...versionSourceRequests, ...bodyBorneRequests]) {
+      expect(request.functionSource).toContain("parseTenantSessionContext");
+    }
+    for (const request of versionSourceRequests) {
+      expect(/\bbody:/.test(request.requestInit)).toBe(false);
+    }
+    for (const request of bodyBorneRequests) {
+      expect(request.requestInit).toContain(
+        "expectedTenantSessionVersion: currentSession.tenantSessionVersion",
+      );
+    }
+  });
+
+  it("keeps the version header name bound to the one shared helper", () => {
+    const clientSource = readFrontendModule(CLIENT_MODULE_PATH);
+
+    expect(clientSource.match(/"KJ-Atlas-Tenant-Session-Version"/g)).toHaveLength(1);
+    expect(clientSource.match(/TENANT_SESSION_VERSION_HEADER/g)).toHaveLength(2);
+    expect(
+      productionSourceModules(FRONTEND_SRC_ROOT).filter(
+        (modulePath) =>
+          modulePath !== CLIENT_MODULE_PATH
+          && /KJ-Atlas-Tenant-Session-Version|TENANT_SESSION_VERSION_HEADER/.test(
+            readFrontendModule(modulePath),
+          ),
+      ),
+    ).toEqual([]);
+  });
+
+  it("sends every guarded client request from App through the tenant session wrapper", () => {
+    const appSource = readFrontendModule(APP_MODULE_PATH);
+    const guardedFunctionNames = [
+      ...new Set(
+        enumerateClientRequests()
+          .filter((request) => request.attachesVersionHeader)
+          .map((request) => request.functionName),
+      ),
+    ].sort();
+    expect(guardedFunctionNames.length).toBeGreaterThan(0);
+
+    const callSiteLocations: string[] = [];
+    for (const functionName of guardedFunctionNames) {
+      for (const match of appSource.matchAll(new RegExp(`\\b${functionName}\\s*\\(`, "g"))) {
+        const matchIndex = match.index ?? 0;
+        if (isCommentedOccurrence(appSource, matchIndex)) {
+          continue;
+        }
+
+        const location = `${functionName} (App.tsx:${lineNumberAt(appSource, matchIndex)})`;
+        callSiteLocations.push(location);
+        expect({
+          location,
+          wrappedInGenerationGuard: appSource
+            .slice(Math.max(0, matchIndex - TENANT_SCOPED_WRAPPER.length), matchIndex)
+            .endsWith(TENANT_SCOPED_WRAPPER),
+          passesVerifiedSession: balancedCallArguments(
+            appSource,
+            matchIndex + match[0].length - 1,
+          ).includes("tenantSessionContext: verifiedTenantSession"),
+        }).toEqual({ location, wrappedInGenerationGuard: true, passesVerifiedSession: true });
+      }
+    }
+
+    // Every session-bearing option object in App belongs to one of the call
+    // sites above; a stray one would mean a guarded request escaped the loop.
+    expect(appSource.match(/tenantSessionContext: verifiedTenantSession/g)).toHaveLength(
+      callSiteLocations.length,
+    );
   });
 });
 
