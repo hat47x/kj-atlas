@@ -14,13 +14,8 @@
 
 - RequirementID: DATA-MODEL-OPS-02
 - RequirementStatement: 暗黙のまま分散している管理面データ（文書インデックス・プリセット・エージェント登録）の正本・権限・本文非表示原則を固定し、管理UI設計要求（Claude Design）の前提入力を揃える。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario: 前提=本Issueの D1〜D4 が判断済み / 操作=別端末から同一ユーザーが利用を再開する / 期待結果=自分の文書一覧（メタデータのみ）に到達でき、削除等の高権限操作は境界どおり不在または承認付きで提供される / 除外=payload本文の一覧表示、管理UIの実装そのもの（設計要求は後続）。
-- GoNoGoGate（Required / Optional / N/A）: Required（公開範囲・本文非表示原則に接触）
 - SecurityGateImpact: SafeMode / public-exposure / share-export
-- VerificationLevel: integration
-- DecisionStatus（Fixed / Pending）: Fixed（D1〜D4を2026-07-13にmaintainer代理裁可）
-- DecisionQueueRef: Resolved（`ADR-0035` Accepted、D1〜D4は下記判断で固定）
 
 ## Draft→Open 2026-07-13: D1〜D4 代理裁可
 

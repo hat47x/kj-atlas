@@ -14,13 +14,8 @@
 
 - RequirementID: UX-CMDK-01
 - RequirementStatement: 全コマンドを検索・実行できるコマンドパレット（⌘K/Ctrl+K）を導入し、収納5層（ADR-0048 D2）の第5層＝「新機能の既定の住所」を実体化する。常時表示ゼロで到達可能量を増やす。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=文書を開いた状態 / 操作=⌘K→コマンド名を入力→Enter / 期待結果=該当コマンドが実行され、Esc で閉じるとトリガ元へフォーカス復帰。入力欄フォーカス中に開いてもテキストを破壊しない / 除外=自然文/AI 解釈（Pending・ADR-0048）、文書内容の全文検索（既存検索の領分）。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: SafeMode（共有系コマンドは既存の共有前確認フローを経由し、パレットから直接出力しない）
-- VerificationLevel: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0048 D2）
-- DecisionQueueRef: `ADR-0048`
 
 ## 1) 課題 / Problem statement
 

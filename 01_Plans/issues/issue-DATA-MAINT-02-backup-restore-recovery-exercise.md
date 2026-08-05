@@ -14,13 +14,8 @@
 
 - RequirementID: DATA-MAINT-02
 - RequirementStatement: MVPのDocument保存と判断ログについて、隔離環境でバックアップ、復元、整合確認を行う代表演習を定義し、製品化判断に使える証跡として残せるようにする。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=Platform operatorが検証環境でkj-atlasの永続DBを扱う / 操作=代表Documentと`merge_decision_logs`を作成し、バックアップ、復元、整合確認を行う / 期待結果=復元後のDocument、判断ログ、共有前安全確認が破綻していないことを説明できる / 除外=本番DBへの破壊的restore、法域別保持期限の自動判定、削除/所有者移管の製品実装。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## Dependency graph（DATA-MAINT）
 

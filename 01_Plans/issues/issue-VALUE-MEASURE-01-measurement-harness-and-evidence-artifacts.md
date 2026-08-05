@@ -14,11 +14,8 @@
 
 - RequirementID: VALUE-MEASURE-01
 - RequirementStatement: 価値ループ V0–V4 の各価値仮説を `Hypothesis → Action(操作列) → Evidence(証拠ID) → Decision` の再実行可能な観測単位として束ね、証拠成果物の形式と再測定手順を固定する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=PRODUCT-VALUE-01..03 の価値仮説とKPIが存在する / 操作=各価値ループの操作列をE2E名または手動手順へ割当て、証拠ID・形式・保存先・再測定一致条件を定義する / 期待結果=同一手順で同一種類の証拠が再取得でき、版間比較が可能 / 除外=個人追跡、行動スコアリング、監視テレメトリ。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode（観測が漏洩経路にならないこと）
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef（未確定時の参照先）: `ADR-0037`
 

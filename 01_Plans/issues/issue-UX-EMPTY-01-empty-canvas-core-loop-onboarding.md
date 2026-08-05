@@ -14,13 +14,8 @@
 
 - RequirementID: UX-EMPTY-01
 - RequirementStatement: 文書を開いた/作成した後のカード0枚キャンバスで、最初の一手と中核ループ（書く→並べる→束ねる→つなぐ→保留する）を、常設せず操作で消える誘導として提示する。「保留は健全」という核思想を初回体験で伝える。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=新規文書を作成し provider=none・詳細OFF / 操作=空キャンバスを表示→最初のカードを作成 / 期待結果=空状態ヒント（最初の一手＋「決めないのは健全」）が表示され、カード作成と同時に消える。各ループ段階の示唆はその操作を一度行うと再表示されない / 除外=StartPanel（入口）の再設計、常設チュートリアル、AI 依存の誘導。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: N/A
-- VerificationLevel: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0048 D3 憲章＋壁打ち観点1）
-- DecisionQueueRef: `ADR-0048`
 
 ## 1) 課題 / Problem statement
 

@@ -14,11 +14,8 @@
 
 - RequirementID: EXT-CONN-03
 - RequirementStatement: 人間がカード・島・エージェント提案へ付けた違和感タグ（5種）・保留・却下を、次回以降のエージェント実行に渡る機械可読な制約（`agent-constraints.v1`）として輸出する。違和感は理由不要のまま輸出でき、輸出は既定で無効・明示 opt-in とする。
-- PriorityClass（Must / Should / Could）: Could
 - AcceptanceScenario: 前提=EXT-CONN-01/02 稼働・文書の constraintExportOptIn ON / 操作=外部エージェントが次回タスク取得時（タスクシート同梱 or MCP `get_agent_constraints`）に constraint を受け取る / 期待結果=過去の違和感・保留・却下が制約として明示され、同種の提案が繰り返されにくくなる / 除外=制約の自動学習・スコアリング・エージェント側の遵守検証。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: share-export / SafeMode
-- VerificationLevel: unit + integration
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef: `ADR-0054` は Accepted 済み（2026-07-12）。**constraint 契約の `schemas.md` 先行固定は 2026-07-15 に充足**（§18）。残るゲートは**段階1/2 の運用知見**（EXT-CONN-01 subslice C の稼働と EXT-CONN-02 の実装・運用開始。充足後に Open 化）。
 

@@ -53,13 +53,8 @@
 
 - RequirementID: PROJECT-GOV-01
 - RequirementStatement: 最新mainに収束した状態を前提に、remote branch、open PR、内部issue、ADRの重複・停滞・正本不明状態を棚卸しし、今後の作業開始時に誤った入力を使わない運用へ整える。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=2026-05-21時点で `origin/main` が `2a93c95e` まで取得済み / 操作=branch/PR/issue/ADRを棚卸しし、canonical/duplicate/stale/unknownへ分類する / 期待結果=新規作業が最新mainと内部issue/ADRの正本を入力にできる / 除外=このIssue単体で全branchを削除すること。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

@@ -14,11 +14,8 @@
 
 - RequirementID: SOCIAL-DIFFUSION-03
 - RequirementStatement: 広域配布（Static Publish / Review Pack配布）でも保留・反対・未レビュー・根拠参照が欠落せず、SafeMode配布既定ON・解除不可の公開モードを社会配布の標準とする。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=公開候補の成果物がある / 操作=Static Publishまたはレビューパック配布を生成し、公開モードで確認する / 期待結果=保留/反対/未レビュー/根拠が残り、SafeModeが解除不可で適用される / 除外=匿名化要件の組織別最終確定、認証付き配信の実装、SNS型公開。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / public-exposure）: SafeMode / share-export / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef（未確定時の参照先）: `ADR-0038`
 

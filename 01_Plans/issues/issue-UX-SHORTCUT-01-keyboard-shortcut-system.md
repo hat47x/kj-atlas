@@ -14,13 +14,8 @@
 
 - RequirementID: UX-SHORTCUT-01
 - RequirementStatement: ADR-0048 D2 のショートカット原則（保持系を修飾なし最短キー・Esc 段階処理・ブラウザ標準不上書き・入力中単一キー無効・OS 別表記・メニュー/パレット併記）を実装し、チートシート（?）で発見可能にする。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=カードを選択 / 操作=H（保留切替）・U（違和感）・R（レビュー済み切替）、テキスト編集中に同キー、? でチートシート / 期待結果=選択時のみ状態が切替わり ⌘Z で戻る。編集中は文字入力になる。チートシートに OS に応じた表記で全キーが並ぶ / 除外=キーのユーザー再割当（リバインド）機能、viewMode 既存バインド（Cmd+1/2/3 等）の変更。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: N/A（共有系のキーは設けない）
-- VerificationLevel: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0048 D2）
-- DecisionQueueRef: `ADR-0048`
 
 ## 1) 課題 / Problem statement
 

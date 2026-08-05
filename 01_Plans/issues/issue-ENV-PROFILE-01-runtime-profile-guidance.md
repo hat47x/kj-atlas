@@ -15,13 +15,8 @@
 
 - RequirementID: ENV-PROFILE-01
 - RequirementStatement: 実行環境ごとの推奨設定プロファイルを明示し、既定値と本番推奨値の見え方を分離する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=公開環境変数はすべて `KJ_ATLAS_` で始まる; 操作=runtime registry と deployment/enterprise docs を読む; 期待結果=local-dev/evaluation/enterprise-production の違いを判断できる; 除外=実装既定値の変更。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

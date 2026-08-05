@@ -14,13 +14,8 @@
 
 - RequirementID: PRODUCT-UX-01
 - RequirementStatement: 初回利用者が、起動後に新規作成、サンプル確認、既存文書読み込み、安全状態確認へ迷わず到達できる文書入口を用意する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=ブラウザでkj-atlasを初回起動する / 操作=新規作成、サンプルを開く、document.jsonを読み込む、SafeMode状態を確認する / 期待結果=内部管理用語やレガシー導線に迷わず、現在の作業開始方法が分かる / 除外=認証付きポータルやクラウド同期の実装。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / import-sanitize
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: `ADR-0031`
 
 ## 1) 課題 / Problem statement
 

@@ -46,13 +46,8 @@
 
 - RequirementID: UX-NAV-01
 - RequirementStatement: ADR-0031 が定める5領域のうち「作業モード面（領域4：レビュー/差分/ナラティブ/AI提案/パッチ/診断）」に独立した画面領域（DOM上の home）を与え、現在は選択コンテキスト領域（領域3）の内部に注入されている高度機能群を、既定OFFの明示的モード面へ移設する。これにより、選択直後に選択対象の確認・編集を視野内へ出すという領域3の責務を構造的に回復する。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=詳細（advanced）を ON にした状態でカード/島を選択 / 操作=作業モード（差分・ナラティブ・マージ/パッチ・AI提案・診断）を開く / 期待結果=作業モード一式は選択コンテキスト aside の外にある独立領域（`data-ui-region="work-mode"`）に表示され、選択コンテキスト aside には選択対象＋基本編集/レビューのみが残り、Escape で閉じてトリガへフォーカス復帰する / 除外=viewMode ピル（探索/レビュー/要約）の改名、document/view/pack スキーマ変更、レガシー機能削除、ADR-0030/0031/0043 の再決定。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: share-export（共有・再現・差分導線の再配置を含むため非回帰確認が必要）
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A（Phase 1 は既定OFFの作業モードオーバーレイとして実装済み。URL/history persistence 等は必要時に別 issue 化する）
 
 ## 1) 課題 / Problem statement
 

@@ -14,13 +14,8 @@
 
 - RequirementID: PROJECT-CI-01
 - RequirementStatement: GitHub Actions が pull request の merge ref を checkout できず、CI がコード実行前に失敗する状態を解消する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=PR 上で GitHub Actions CI が実行される / 操作=Actions が `actions/checkout` で PR merge ref を取得する / 期待結果=checkout が成功し、frontend/backend の各 job が実テストへ進む / 除外=本Issueでアプリケーション実装、SafeMode方針、リリース判定権限を変更すること。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

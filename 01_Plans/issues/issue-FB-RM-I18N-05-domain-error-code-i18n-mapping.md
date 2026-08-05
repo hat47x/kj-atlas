@@ -1,7 +1,5 @@
 # Issue: FB-RM-I18N-05 マージ適用・文書検証のドメインエラーがi18n対象外
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Draft
 - Source Issue: N/A

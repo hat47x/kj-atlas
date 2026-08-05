@@ -15,13 +15,8 @@
 
 - RequirementID: DATA-CONTRACT-DOC-01
 - RequirementStatement: ADR-0058で採択・実装された唯一の完全な`DocumentV1`契約へcurrent architecture文書と現行fixtureを同期し、旧`DocumentV2`/version 2/Legacy読込契約の再混入を`DC-ARC-001`で防止する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=単一V1実装とADR-0058がmainへ統合済み / 操作=current architectureと現行fixtureを読み、docs-checkと契約testを実行する / 期待結果=永続Documentの型・版・必須key・support levelが単一V1で一致し、旧V2入力は負例だけに残る / 除外=過去ADR・Done issue・historyに記録された当時のDocumentV2表記、将来の明示的DocumentV2導入。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: import-sanitize / SafeMode / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 課題
 

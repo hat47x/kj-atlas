@@ -15,13 +15,8 @@
 
 - RequirementID: DOC-ARCH-01
 - RequirementStatement: 00/02 文書から、プロジェクト価値、設計正本、実行ログ、後続フェーズ契約を迷わず辿れるようにする。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=00/02が上流正本である; 操作=価値トレーサビリティと正本/ログ分離方針を確認する; 期待結果=新規参加者とAIエージェントが価値から設計へ辿れる; 除外=設計契約そのものの変更。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

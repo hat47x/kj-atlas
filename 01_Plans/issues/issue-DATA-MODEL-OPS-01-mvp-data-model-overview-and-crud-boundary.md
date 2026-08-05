@@ -14,13 +14,8 @@
 
 - RequirementID: DATA-MODEL-OPS-01
 - RequirementStatement: MVPで運用サポートするデータ構造、埋め込み限定の構造、派生/契約のみの構造をER図とCRUD表で継続的に識別できるようにする。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=開発者または運用者がMVPのデータ構造を確認する / 操作=`data_model_operations_overview.md` を読む / 期待結果=物理テーブル、論理エンティティ、CRUD可否、保守責任が区別できる / 除外=個別CRUD実装、管理画面実装。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: share-export / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## Dependency graph（Stream I）
 

@@ -15,13 +15,8 @@
 
 - RequirementID: ENV-CONFIG-DRIFT-01
 - RequirementStatement: public runtime configuration keys are exhaustively documented and every public environment variable starts with `KJ_ATLAS_`.
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=ADR-0021 and runtime registry are accepted; 操作=Compose build, backend settings load, frontend build, and docs-check are executed; 期待結果=only `KJ_ATLAS_*` keys are exposed to users and all accepted keys are documented; 除外=changing SafeMode/share/export policy.
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed (with pending queue for governance-only items)
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

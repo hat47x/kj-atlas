@@ -27,13 +27,8 @@
 
 - RequirementID: UX-NAV-02
 - RequirementStatement: 作業モードの5つの同格面を、状態を失わないmanual-activation tabsとしてキーボード・支援技術・狭幅画面から一貫して操作できるようにする。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario: 前提=作業モードを開く / 操作=矢印・Home/End・Enter/Space・Tab・Escapeで移動する / 期待結果=focusとactive panelが区別され、既存4面の状態が保持され、診断面から対象へ戻れる / 除外=タブ永続化、タブ順カスタマイズ、診断ロジック高度化。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact: SafeMode / proposal-only / anti-scoring（既存境界の非回帰）
-- VerificationLevel: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（2026-07-13 maintainer代理裁可）
-- DecisionQueueRef: Resolved（本Issueの着手ゲートで固定。ADR-0052とは独立）
 
 ## 背景
 

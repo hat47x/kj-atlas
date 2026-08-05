@@ -1,7 +1,5 @@
 # Issue: SEC-RATE-LIMIT-01 backend APIにrate limitが一切ない（MCP transportとの非対称）
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Security
 - Status: Draft
 - Source Issue: N/A

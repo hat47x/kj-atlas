@@ -6,8 +6,6 @@
 - Owner: Stream E
 - Scope: `01_Plans/issues/` only
 - Phase: A2 Mock Validation
-- DecisionStatus: Fixed
-- VerificationLevel: docs-check
 
 ## Plan → Execute → Verify → Proceed
 - Plan: A1契約 (`CTR-FB-P2B-01-V1`) への適合性をモックで検証する。

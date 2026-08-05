@@ -14,13 +14,8 @@
 
 - RequirementID: CARD-META-UI-01
 - RequirementStatement: カードの状態メタデータ（主張種別・保留・違和感・レビュー状態）と、起票者・作成者・出典・更新者などの provenance/accountability メタデータを混同せず、利用者が必要な情報を自然に確認・入力でき、共有/export/SafeMode/個人情報境界を誤解しないUI方針を確定する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=利用者がカードを作成または選択している / 操作=カード本体・右側詳細パネル・共有前確認を見る / 期待結果=カード本文の状態メタと、起票者/出典/作成日時などの責任主体メタが区別して表示され、未設定時も「未設定」または非表示方針が一貫する。個人を特定し得る値は既定で共有物へ含まれず、含める場合は明示確認とredaction方針がある / 除外=管理者本文閲覧、横断検索、所有者移管、カード個別CRUD API、実名/メールの既定保存。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0056` Accepted 2026-07-16）
-- DecisionQueueRef（未確定時の参照先）: Resolved（`ADR-0056` の決定案1〜5で固定）
 
 ## Draft→Open 2026-07-16: ADR-0056 Accepted
 

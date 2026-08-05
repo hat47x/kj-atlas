@@ -17,13 +17,8 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
 
 - RequirementID: DATA-MAINT-04
 - RequirementStatement: Security officer / Audit operator が、利用者本文や未レビュー情報に触れずに、共有・エクスポート・Context操作などの監査メタデータを確認できる最小境界を定義する。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=`ADR-0035` がAcceptedまたは後続ADRで同等の境界が固定される / 操作=監査メタデータ閲覧の対象項目、権限、除外情報、検証レベルを読む / 期待結果=本文を含まない読み取り専用の監査閲覧候補と、ADRが必要な高権限閲覧が区別できる / 除外=本文閲覧、未レビュー情報閲覧、横断検索、保持期限管理、削除、所有者移管、監査ログを共有する標準導線。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0035` Accepted 2026-07-13）
-- DecisionQueueRef（未確定時の参照先）: Resolved（`ADR-0035` Accepted 2026-07-13）
 
 ## 1) 課題 / Problem statement
 

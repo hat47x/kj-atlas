@@ -14,13 +14,8 @@
 
 - RequirementID: DOMAIN-TRACE-01
 - RequirementStatement: 質的研究の実践（原データへの遡及・監査可能性）を支えるため、カードに任意の通し番号と出典参照（原発話・行番号・URL 等の自由記述）を追加的フィールドとして保持し、選択時に参照できるようにする。
-- PriorityClass（Must / Should / Could）: Could
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=カードを選択 / 操作=通し番号と出典を入力→保存→再読込→旧形式往復 / 期待結果=値が保持され、選択コンテキストに「#番号」「原データ: 出典」が表示される。未設定カードは従来どおり。既定ではカード面（キャンバス）に番号バッジを常時表示しない / 除外=出典の自動取得・リンク先の取得/埋め込み、`Card.sources`（統合元 id）の意味変更、採番の自動連番強制。
-- GoNoGoGate（Required / Optional / N/A）: Required（スキーマ契約に触れるため schemas.md 同期と後方互換確認を完了条件とする）
 - SecurityGateImpact: share-export（出典は内部情報を含み得るため、SafeMode/共有前チェックでの扱いを明示する）
-- VerificationLevel: integration
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0048 D3 改訂。カード面常時表示のみ実装時の CB-1 自己申告で最終判断）
-- DecisionQueueRef: `ADR-0048`
 
 ## 1) 課題 / Problem statement
 

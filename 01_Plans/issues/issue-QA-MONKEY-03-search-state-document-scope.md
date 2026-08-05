@@ -14,13 +14,8 @@
 
 - RequirementID: QA-MONKEY-03
 - RequirementStatement: Search query and hide-non-matches state must not leak across document boundaries.
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=sample document open / 操作=enter a no-match query, enable hide non-matches, create or open another document / 期待結果=search field is cleared and new document content is visible / 除外=within-document search continuity.
-- GoNoGoGate（Required / Optional / N/A）: N/A
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

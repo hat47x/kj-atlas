@@ -1,7 +1,5 @@
 # Issue: DX-BACKEND-CE4-01 CE4監査追跡辞書がプロセス寿命全体で無制限に蓄積
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Process
 - Status: Draft
 - Source Issue: N/A

@@ -14,13 +14,8 @@
 
 - RequirementID: UX-MENU-01
 - RequirementStatement: フラットに並ぶヘッダ操作を「分類済みメニューバー＋最頻操作のスリムバー」へ包含し（ADR-0048 D2 第3層）、機能が増えても常時表示が一定に保たれる構造にする。390/768/960/1440px の各幅で主要操作と SafeMode/AI チップが画面外へ消えない。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=文書を開いた状態 / 操作=各メニューを開閉・項目実行・390px へ縮小 / 期待結果=分類済みメニューに既存コマンドが収まり項目右にショートカット併記、スリムバーは最頻操作のみ、390px ではメニューが集約されても全コマンドへ到達可能で SafeMode/AI チップは常時固定 / 除外=新コマンドの追加、viewMode ピルの改名、⌘K パレット本体（UX-CMDK-01）。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: SafeMode（チップの常時可視性を全幅で維持。共有系メニュー項目は既存確認フロー経由）
-- VerificationLevel: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0048 D2。分類名も Round 6 で確定＝下記「1.1 命名（確定）」）
-- DecisionQueueRef: `ADR-0048`
 
 ## 1) 課題 / Problem statement
 

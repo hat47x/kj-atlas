@@ -1,7 +1,5 @@
 # Issue: FB-RM-I18N-04 動的翻訳キーのカタログ網羅性を固定する
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Done
 - Source Issue: N/A

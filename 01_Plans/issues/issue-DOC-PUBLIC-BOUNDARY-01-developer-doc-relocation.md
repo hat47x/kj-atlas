@@ -25,13 +25,8 @@ DOC-PUBLIC-BOUNDARY-01 Open化。DecisionStatus=Fixed、scope定義済み。ADR-
 
 - RequirementID: DOC-PUBLIC-BOUNDARY-01
 - RequirementStatement: `04_Documentation/` の一般公開向け本文と、開発者・AIエージェント・内部検証向け文書の管理場所を分離し、Gist公開本文に管理情報が混ざらない状態を維持する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=`04_Documentation/` を公開候補として読む / 操作=公開対象一覧と各文書の対象読者を確認 / 期待結果=一般利用者向け本文、開発者向け手順、内部管理文書が別管理になっている / 除外=履歴上の古いissue本文の全文置換。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

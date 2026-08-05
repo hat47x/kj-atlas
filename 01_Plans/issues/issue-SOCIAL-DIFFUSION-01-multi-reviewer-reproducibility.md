@@ -14,11 +14,8 @@
 
 - RequirementID: SOCIAL-DIFFUSION-01
 - RequirementStatement: 同一レビューパックを独立した複数レビュアーが読んだとき、確定点・保留点・根拠・未レビュー情報の読み取り結果が再現的に一致することを、観測可能な形で扱う。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=PRODUCT-VALUE-03の成果物パッケージが生成できる / 操作=同一パックを複数レビュアーが独立に読み、確定/保留/根拠/未レビューを抽出する / 期待結果=読み取り結果の一致率が観測でき、不一致箇所が成果物の改善点として残る / 除外=結論の正誤判定、合意の強制、レビュアー個人の評価。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / public-exposure）: SafeMode / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef（未確定時の参照先）: `ADR-0038`
 

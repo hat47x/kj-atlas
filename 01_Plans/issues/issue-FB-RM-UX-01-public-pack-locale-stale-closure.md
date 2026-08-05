@@ -1,7 +1,5 @@
 # Issue: FB-RM-UX-01 公開パック読込のロケール解決がstale closureで古い値を参照
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Draft
 - Source Issue: N/A

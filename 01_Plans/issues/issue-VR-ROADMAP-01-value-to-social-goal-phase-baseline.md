@@ -14,11 +14,8 @@
 
 - RequirementID: VR-ROADMAP-01
 - RequirementStatement: 価値ループ V0–V4 を社会的目標まで一直線に並べた VR0–VR5 フェーズ系列を、既存issueの再配置として固定し、各フェーズの Entry/Exit Gate と担当issueを追跡可能にする。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=ADR-0035がProposedで存在する / 操作=VR0–VR5の担当issueとExit Gateを value_traceability と突合する / 期待結果=各VRに正担当issueとExit条件が1対1で対応し、未接続フェーズが0件 / 除外=新しい価値原則の追加、実装着手。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode（非後退の確認のみ）
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef（未確定時の参照先）: `ADR-0036`
 

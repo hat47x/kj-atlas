@@ -15,13 +15,8 @@
 
 - RequirementID: DOMAIN-ALIGN-01
 - RequirementStatement: 00層の正規語彙を、02層で実際に使われる Island / Consensus Graph / WorkingGraph / ContextProjectionGraph へ同期する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=domain.mdが概念上位正本である; 操作=00/02の中核語彙を確認する; 期待結果=用語の意味とコード/設計上の対応が一致する; 除外=新概念の追加。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

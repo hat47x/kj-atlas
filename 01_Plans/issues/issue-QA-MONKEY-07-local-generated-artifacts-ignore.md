@@ -14,13 +14,8 @@
 
 - RequirementID: QA-MONKEY-07
 - RequirementStatement: Local fallback setup artifacts must not appear as accidental untracked source changes.
-- PriorityClass（Must / Should / Could）: Could
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=manual SQLite/frontend setup / 操作=install frontend dependencies and create local SQLite DB / 期待結果=`node_modules/` and local `*.db` files are ignored / 除外=tracked fixture databases, if introduced intentionally later.
-- GoNoGoGate（Required / Optional / N/A）: N/A
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

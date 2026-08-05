@@ -14,13 +14,8 @@
 
 - RequirementID: QA-MONKEY-05
 - RequirementStatement: Island canvas controls must expose unique, purposeful accessible controls without duplicate select targets or nested button names.
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=document with one selected card / 操作=Create Island, inspect DOM/accessibility tree / 期待結果=one select/focus target per island and no compound button name containing child controls / 除外=visual-only island labels that are not interactive.
-- GoNoGoGate（Required / Optional / N/A）: N/A
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

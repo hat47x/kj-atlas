@@ -14,13 +14,8 @@
 
 - RequirementID: DOC-ARCH-02
 - RequirementStatement: 実装者がキーワードや日付から推測せず、Contract ID・型・endpoint・運用支援レベルの現行値を物理的に一意な正本から読めるようにし、Stream/freeze/rerun等の形成履歴を現在契約から分離する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=closed-worldのCE1/DocumentV2契約を変更または実装する / 操作=architecture→api/schema→ops boundaryを読む / 期待結果=同じ型・Contract IDの異義定義に遭遇せず、現行キー・列挙・既定値・禁止事項・支援レベルを一意に特定できる / 除外=新規契約追加、runtime挙動変更、履歴削除。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

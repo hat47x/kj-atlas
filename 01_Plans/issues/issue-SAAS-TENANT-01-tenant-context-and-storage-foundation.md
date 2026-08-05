@@ -1,7 +1,5 @@
 # Issue: SAAS-TENANT-01 TenantContext・保存境界・越境防止の実装
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Security / Feature
 - Status: In Progress
 - Source Issue: User request 2026-07-16 / `01_Plans/research-2026-07-16-saas-tenant-authorization-boundary.md`

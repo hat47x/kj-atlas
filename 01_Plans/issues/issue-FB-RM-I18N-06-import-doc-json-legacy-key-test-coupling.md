@@ -1,7 +1,5 @@
 # Issue: FB-RM-I18N-06 `app.toolbar.import_doc_json_legacy`がproductionで未使用だがtestに直結している
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Draft
 - Source Issue: N/A

@@ -1,7 +1,5 @@
 # Issue: UI-QUALITY-A11Y-06 差分/診断/バンドル出力の進行状況がスクリーンリーダーへ未通知
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Feature
 - Status: Draft
 - Source Issue: N/A

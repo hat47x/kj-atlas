@@ -14,13 +14,8 @@
 
 - RequirementID: QA-SMOKE-08
 - RequirementStatement: 標準サンプル `doc_phase1_canvas` を開いたとき、必要プロセス起動済みの環境では `/api/docs/doc_phase1_canvas` が 500 にならず、利用者がキャンバス読み込みエラーなしで操作を開始できる。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=installation/e2e 手順に沿って frontend と backend を起動 / 操作=Chromium で `http://127.0.0.1:5173/?locale=ja` を開く / 期待結果=`/api/docs/doc_phase1_canvas` が 2xx で返り、画面本文に `Internal Server Error` が出ない / 除外=backend を起動しない frontend-only 開発時の既知の接続失敗。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

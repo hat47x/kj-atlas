@@ -14,13 +14,8 @@
 
 - RequirementID: UI-QUALITY-A11Y-04
 - RequirementStatement: 作業モードのナビゲーション意味論を実際の操作モデルと一致させ、キーボード利用者やスクリーンリーダー利用者に存在しないタブリストを提示しない。
-- PriorityClass: Should
 - AcceptanceScenario: 作業モードを開いた利用者がマウスまたはキーボードを操作したとき、表示中の高度機能へ予測可能な順序で到達でき、Escapeで閉じられ、起点へフォーカスが戻り、選択した方式に適したdialog/heading/regionのDOM意味論が使われている。
-- GoNoGoGate: Optional
 - SecurityGateImpact: N/A
-- VerificationLevel: e2e
-- DecisionStatus: Fixed
-- DecisionQueueRef: `ADR-0055`
 
 ## 1) 課題
 

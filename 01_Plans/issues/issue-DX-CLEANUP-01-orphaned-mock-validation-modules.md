@@ -1,7 +1,5 @@
 # Issue: DX-CLEANUP-01 P2A/P2B系mock-validationモジュールが未参照
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Process
 - Status: Done
 - Source Issue: N/A

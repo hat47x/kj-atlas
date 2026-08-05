@@ -22,9 +22,6 @@
 ## Requirement meta I/F
 - RequirementID: `DOC-OPS-05-05`
 - RequirementStatement: 内部品質基準文書としての扱いを固定し、Open化審査に必要な判断情報を揃える。
-- GoNoGoGate: Required
-- VerificationLevel: docs-check
-- DecisionStatus: Fixed
 
 ## Classification（Fixed）
 - Decision: **Move internal**
@@ -482,8 +479,6 @@
 ### Required meta check（must remain synchronized）
 - RequirementID: `DOC-OPS-05-05`
 - Classification: `Move internal`
-- GoNoGoGate: `Required`
-- VerificationLevel: `docs-check`
 - ProceedDecision: `Hold`
 - Dependency status: `先行固定（他Issueの着手前提）`
 

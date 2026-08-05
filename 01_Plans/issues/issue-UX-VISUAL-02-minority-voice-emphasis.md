@@ -14,13 +14,8 @@
 
 - RequirementID: UX-VISUAL-02
 - RequirementStatement: 一匹狼（どの島にも属さないカード）・小さな島・単独の違和感を「弱い/劣る」でなく保護対象として淡く強調し、多数派への収束圧力に抗する表示を提供する。点数・順位・比率は提示しない（反スコアリング）。
-- PriorityClass（Must / Should / Could）: Could
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=島に属するカード群と、属さないカード1枚を含む文書を開く / 操作=キャンバスを俯瞰・凡例を開く / 期待結果=一匹狼カードに控えめな「少数」マークが付き、凡例に意味（保護対象であり劣後ではない）が記載される。件数・比率・順位は表示されない / 除外=少数意見の自動抽出/AI 判定、強調の常時大型表示、スコア化。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: N/A（表示のみ）
-- VerificationLevel: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0048 D3 改訂）
-- DecisionQueueRef: `ADR-0048`
 
 ## 1) 課題 / Problem statement
 

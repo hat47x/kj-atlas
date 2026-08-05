@@ -15,12 +15,8 @@
 
 - RequirementID: UI-QUALITY-A11Y-01
 - RequirementStatement: ADR-0044 UQ-2（アクセシビリティ）が「薄い」と判定された課題に対し、主要対話要素にrole/aria/ラベルが付きスクリーンリーダで意味が取れることをユニットテストで検証できるようにする。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario: 前提=新規UIコンポーネントが追加される / 操作=accessibility testファイルを実行する / 期待結果=aria-label/role/titleの欠落が検出される / 除外=WCAG適合認証、E2Eレベルのスクリーンリーダ実機テスト
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: N/A
-- VerificationLevel: unit
-- DecisionStatus: Fixed
 
 ## 1) 課題
 

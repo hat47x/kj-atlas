@@ -1,7 +1,5 @@
 # Issue Draft: DX-CI-PNPM-01 未完了のpnpm移行をrevertした記録と再開時の論点
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Process
 - Status: Draft
 - Source Issue: N/A

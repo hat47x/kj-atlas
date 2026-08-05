@@ -1,7 +1,5 @@
 # Issue: UI-RESILIENCE-01 React error boundaryが皆無で、未捕捉の描画例外が未保存作業を復旧不能に破棄する
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Draft
 - Source Issue: N/A

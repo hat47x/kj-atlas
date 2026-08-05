@@ -95,6 +95,8 @@
 - ADRは、長期的・横断的・破壊的な契約変更、安全境界変更、複数の合理的選択肢が残る場合に限る。
 - 2者承認、Decision Queue、RACI、KPIは、実ユーザーまたは継続的な協力者が現れるまで既定では使わない。
 - 進捗の正本はActive issue memoとGit履歴であり、手書きダッシュボードは正本にしない。
+- issue本文に記録された未決事項（`DecisionStatus: Pending` 等）は、**何が未決かの記録であり、それ自体が着手を禁じるゲートではありません。** 未決のまま進められる部分は進め、決定が必要になった時点で判断を仰いでください。ただし SafeMode・`human_reviewed`・外部共有条件・自動適用に触れる変更は例外で、`GENAI-GOV-01`（`02_Architecture/value_traceability.md` §2.9）のとおり実装PRより先にADRまたは内部issueで扱います。
+- 決定済みの参照（採択済みADRを指す `DecisionStatus: Fixed` 等）はissue本文へ書き写さない。ADR側のStatusが正本であり、二重管理は取りやめました。
 
 削減対象と再導入条件は `01_Plans/lean_operations_inventory.md` を参照してください。
 

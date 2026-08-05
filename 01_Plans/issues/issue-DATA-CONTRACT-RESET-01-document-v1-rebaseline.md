@@ -14,13 +14,8 @@
 
 - RequirementID: DATA-CONTRACT-RESET-01
 - RequirementStatement: 現行DocumentV2を唯一のDocumentV1へ再基線化し、未使用の旧V1互換機能を除却して、公開前の保存・取込・API契約を一つにする。
-- PriorityClass: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=移行対象となる実利用データと安定API利用者がいない / 操作=新V1を保存、取得、export、importする / 期待結果=全機能を損失なく往復でき、旧最小V1、旧V2、版番号欠落は拒否される / 除外=Document以外のV1契約、DB正規化、個別CRUD追加。
-- GoNoGoGate: Required
 - SecurityGateImpact: import-sanitize
-- VerificationLevel: integration
-- DecisionStatus: Fixed
-- DecisionQueueRef: `ADR-0058`
 
 ## 1) 課題 / Problem statement
 

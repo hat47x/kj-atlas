@@ -14,13 +14,8 @@
 
 - RequirementID: PRODUCT-OPS-01
 - RequirementStatement: 利用中のエラー、保存失敗、backend未接続、取り込み失敗、共有前警告に対して、利用者が次に取るべき行動と安全に共有できる診断情報を理解できる状態にする。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=保存失敗、API未接続、取り込み失敗、共有前警告のいずれかが発生する / 操作=画面のエラー表示と診断文書を確認する / 期待結果=再試行、保存、再読み込み、管理者への共有、共有してはいけない情報が分かる / 除外=24時間サポート体制やチケットシステム連携。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 

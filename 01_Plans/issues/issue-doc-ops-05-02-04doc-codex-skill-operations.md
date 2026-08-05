@@ -14,13 +14,8 @@
 ## Requirement meta I/F（共通キー）
 - RequirementID: `DOC-OPS-05-02`
 - RequirementStatement: 対象文書の公開境界を明示し、Open化判定に必要な判断情報を不足なく揃える。
-- PriorityClass: Must
 - AcceptanceScenario: 前提=DOC-OPS-05前半はIssue品質固定; 操作=公開/内部分類根拠と検証手順を記載; 期待結果=Ready/Hold/Needs-decision判定可能; 除外=本体文書改稿
-- GoNoGoGate: Required
 - SecurityGateImpact: public-exposure
-- VerificationLevel: docs-check
-- DecisionStatus: Fixed
-- DecisionQueueRef: N/A（DecisionStatus=Fixed）
 
 ## Proposed classification
 - Decision: **Move internal（維持）**

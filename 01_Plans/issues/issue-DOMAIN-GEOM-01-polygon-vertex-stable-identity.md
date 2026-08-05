@@ -1,7 +1,5 @@
 # Issue: DOMAIN-GEOM-01 島の頂点編集リストがインデックスキーで安定IDを持たない
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Feature
 - Status: Draft
 - Source Issue: N/A

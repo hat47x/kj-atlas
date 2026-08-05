@@ -1,7 +1,5 @@
 # Issue: SEC-EXPORT-BUNDLE-01 document.json内でSafeModeの秘匿保証が完全にバイパスされる
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Security
 - Status: Done
 - Source Issue: N/A

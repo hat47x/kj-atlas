@@ -14,13 +14,8 @@
 
 - RequirementID: PROV-VIS-01
 - RequirementStatement: 現在有効な LLM provider（none/local/large-scale/fixture）と直近の呼び出し結果（成功／`provider_unavailable`／`provider_timeout`／`provider_validation`／未使用）を、View パネル内に読み取り専用で表示する。ランタイムでの provider 切替 UI は提供しない。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=`KJ_ATLAS_LLM_PROVIDER=none`（既定） / 操作=View パネルを開く / 期待結果=「AI: 無効（none）」等が表示され、切替ボタンは存在しない。AI提案を実行し接続エラーが起きた場合、パネルの状態ラベルが `provider_unavailable` 等へ変わる（PROV-ERROR-01 の構造化エラーに依存） / 除外=provider のランタイム変更 UI、％・スコア・信頼度の表示。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: N/A（表示のみ・ガバナンス境界は不変＝運用者設定のまま）
-- VerificationLevel: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0050 D1）
-- DecisionQueueRef: `ADR-0050`
 
 ## 1) 課題 / Problem statement
 

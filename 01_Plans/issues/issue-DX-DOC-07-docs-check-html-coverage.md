@@ -1,7 +1,5 @@
 # Issue Draft: DX-DOC-07 docs_check がHTML文書を走査していない
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Process
 - Status: Done
 - Source Issue: N/A

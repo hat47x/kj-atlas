@@ -6,8 +6,6 @@
 - Owner: Stream E
 - Scope: `01_Plans/issues/` only
 - Phase: A3 Implementation Plan
-- DecisionStatus: Fixed
-- VerificationLevel: docs-check
 
 ## Plan → Execute → Verify → Proceed
 - Plan: A2合格を着手条件として実装手順を小粒度化する。

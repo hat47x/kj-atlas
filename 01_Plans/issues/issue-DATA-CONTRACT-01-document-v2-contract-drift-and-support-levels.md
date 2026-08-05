@@ -14,13 +14,8 @@
 
 - RequirementID: DATA-CONTRACT-01
 - RequirementStatement: DocumentV2、API文書、frontend型、backend型、実装ルートの差分を棚卸しし、MVP運用サポート範囲と将来契約を一貫して説明・検証できるようにする。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=開発者がDocumentV2またはAPIを変更する / 操作=正本文書とfrontend/backend型を照合する / 期待結果=実装済み、埋め込み限定、契約のみの差分が明示され、必要なテストが分かる / 除外=全構造の個別CRUD実装。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed (2026-05-18)
-- DecisionQueueRef（未確定時の参照先）: `ADR-0033`
 
 ## Dependency graph（Stream I）
 

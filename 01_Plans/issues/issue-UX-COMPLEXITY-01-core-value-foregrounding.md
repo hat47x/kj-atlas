@@ -14,13 +14,8 @@
 
 - RequirementID: UX-COMPLEXITY-01
 - RequirementStatement: アプリ規模の拡大に伴い機能が増えても、初期表示では MVP の主要価値（カードを書く・並べる・束ねる・つなぐ／曖昧さの保留）が前景化され、高度・企業向け機能は段階開示の背後に留まる状態を、一回限りの再編ではなく継続規律として維持する。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=標準サンプルを既定（`KJ_ATLAS_LLM_PROVIDER=none`・詳細トグルOFF）で開く / 操作=初期表示および単一選択直後に見える主要操作を数える / 期待結果=主要操作は MVP 中核（作成・編集・整理・選択確認・保存・共有前確認）に限定され、AI・CE3パッチ・差分・SSO・公開範囲・監査・集約エッジ等は明示的な開示操作（詳細トグル／モード／メニュー）の背後にある / 除外=全画面のビジュアル刷新、機能削除。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: `ADR-0043`
 
 ## 1) 課題 / Problem statement
 

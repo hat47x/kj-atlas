@@ -1,7 +1,5 @@
 # Issue: UX-TRACE-01 トレースダウンロード失敗時にボタンが恒久的に無効化される
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Bug
 - Status: Done
 - Source Issue: N/A

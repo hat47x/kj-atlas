@@ -14,13 +14,8 @@
 
 - RequirementID: UX-VISUAL-01
 - RequirementStatement: カードの状態表示（claimType・保留系・未レビュー・違和感・矛盾）を ADR-0048 D1 の4チャネル規則（色/形/位置/密度）に従いメタ行へ再配置し、本文の文頭が常に読める状態にする。あわせて既定OFFの開閉式凡例をキャンバス内に提供する。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=claimType・holdState・critique・未レビューが同時に付いたカードを含む文書を開く / 操作=カードを目視・凡例を開閉 / 期待結果=バッジが本文1行目に重ならず、状態はメタ行・左エッジ・右上・行末に分散し、凡例で全チャネルの意味を参照できる / 除外=状態の追加・スキーマ変更・LOD 閾値の変更。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A（表示のみ）
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0048 D1）
-- DecisionQueueRef: `ADR-0048`
 
 ## 1) 課題 / Problem statement
 

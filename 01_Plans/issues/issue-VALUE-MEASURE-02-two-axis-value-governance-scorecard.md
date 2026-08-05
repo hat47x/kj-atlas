@@ -14,11 +14,8 @@
 
 - RequirementID: VALUE-MEASURE-02
 - RequirementStatement: 価値KPI軸（活性化/曖昧さ保持/成果物レビュー可能性）と統治軸（SafeMode境界/review帰属/証拠再現性）の二軸スコアカードを、`MVP-EXIT-01` Program Gate と `PRODUCT-QA-01` の判定入力として運用化する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=VALUE-MEASURE-01の証拠成果物が取得できる / 操作=二軸へKPIと統治チェックを集約し、`Go / Conditional Go / No-Go` を `candidate/date/reviewer/decision/artifactId/re-decision` 付きで記録する / 期待結果=判定がスコアカードから再現でき、統治軸の後退時は即No-Goになる / 除外=自動Go/No-Go確定、個人追跡。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export（統治軸の後退検知）
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef（未確定時の参照先）: `ADR-0037`
 

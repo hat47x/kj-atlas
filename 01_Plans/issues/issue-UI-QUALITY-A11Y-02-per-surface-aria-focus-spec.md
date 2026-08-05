@@ -18,13 +18,8 @@
 
 - RequirementID: UI-QUALITY-A11Y-02
 - RequirementStatement: 壁打ち Round 4 で確定した画面別 a11y 仕様（フォーカス初期位置・Tab順・Escape挙動・読み上げ順・aria 属性）を、新設・改修サーフェス（作業モードタブ／選択コンテキスト／共有前確認／凡例／一括操作バー）へ適用し、e2e で固定する。
-- PriorityClass（Must / Should / Could）: Could
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=キーボード/スクリーンリーダで操作 / 操作=作業モードを開く→タブ移動→Esc、カード選択→読み上げ、共有直前サマリ→Esc / 期待結果=仕様表どおりのフォーカス遷移・読み上げ順（型→保持系→確認→根拠→本文）・aria 属性が観測される / 除外=既存 Done 面（StartPanel 等 A11Y-01/QA-MONKEY-09 の再検証）、視覚デザイン変更。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: N/A
-- VerificationLevel: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（Round 4 §a11y 仕様）
-- DecisionQueueRef: `ADR-0048`
 
 ## 1) 課題 / Problem statement
 

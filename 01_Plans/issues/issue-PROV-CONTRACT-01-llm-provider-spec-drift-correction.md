@@ -14,13 +14,8 @@
 
 - RequirementID: PROV-CONTRACT-01
 - RequirementStatement: `llm_provider_spec.md` §4 が「正規形に固定」と記載する `LLMRequest`/`LLMResponse` を、実装（`provider.py` の `LLMRequest{task,prompt,temperature,max_tokens}` → `LLMResponse{raw_text,metadata}`）と一致する「現在実装済みの最小契約」として記述し直し、`inputs`/`output_schema`/`usage`/構造化`output`は Phase-2（未配線）として明示的に分離する。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=`llm_provider_spec.md` を読む実装者 / 操作=§4 を参照して LocalProvider/LargeScaleProvider の実装差分を確認 / 期待結果=文書の記載どおりに実装されていることが確認でき、未配線の項目は「Phase-2」と明記されているため実装漏れと誤認しない / 除外=IR配線の実装そのもの（本Issueはドキュメント修正のみ）。
-- GoNoGoGate（Required / Optional / N/A）: N/A
 - SecurityGateImpact: N/A
-- VerificationLevel: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0050 D3）
-- DecisionQueueRef: `ADR-0050`
 
 ## 1) 課題 / Problem statement
 

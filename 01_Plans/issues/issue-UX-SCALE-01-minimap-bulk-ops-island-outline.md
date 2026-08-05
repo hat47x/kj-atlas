@@ -14,13 +14,8 @@
 
 - RequirementID: UX-SCALE-01
 - RequirementStatement: 大規模文書（PB-1: 約300カード/30島）での見通しと操作を、(a) ミニマップ、(b) 複数選択の一括操作バー、(c) 島の直交描線（矩形/L字/コの字）＋複雑さ表示＋可逆な「整える」、(d) ズーム連動の関係線エスカレーション、で拡充する。いずれも既存 LOD・構造レベル・読み順可視化（実装済み）を再決定せず拡張する。
-- PriorityClass（Must / Should / Could）: Could
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=300カード/30島規模のフィクスチャ / 操作=縮小して俯瞰→ミニマップでビュー移動→複数選択して一括保留→島の「整える」→ズームアウト / 期待結果=現在ビューがミニマップに表示され移動できる。一括操作が1回の取り消しで戻る。島は凸空白を含まない直交描線になり複雑さが表札に出る。省略カードの関係線は同島内=内部化・異島間=表札へ昇格 / 除外=WebGL 化・仮想化等のレンダリング刷新（ADR-0046 非目標）、LOD 閾値の再設計。
-- GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact: N/A
-- VerificationLevel: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0048。ただし着手は段階1/2 issue 完了後）
-- DecisionQueueRef: `ADR-0048`
 
 ## 1) 課題 / Problem statement
 

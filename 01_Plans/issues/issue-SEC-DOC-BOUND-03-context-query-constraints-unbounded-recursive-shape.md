@@ -1,7 +1,5 @@
 # Issue: SEC-DOC-BOUND-03 ContextQuery.constraintsが無制限の再帰構造を許容し、深いネストで未捕捉例外を招く
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Security
 - Status: Done
 - Source Issue: N/A

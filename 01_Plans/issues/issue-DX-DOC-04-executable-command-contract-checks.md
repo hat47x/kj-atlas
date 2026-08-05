@@ -16,13 +16,8 @@
 
 - RequirementID: DX-DOC-04
 - RequirementStatement: current/public文書からコピー可能なコマンドを抽出し、HTTP route、CLI option、npm script、Compose service、repository pathを現行の機械可読な正本へ静的照合して、実行不能な例をCIで阻止する。
-- PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=利用者またはfresh cloneの貢献者が文書のコマンドをコピーする / 操作=記載されたhealth check、validator、npm、Composeコマンドを選ぶ / 期待結果=対象名と引数が現行実装に存在し、安全な前提・実行場所・非保証範囲が分かる / 除外=破壊的コマンドのCI実行、外部URLの常時到達性検査、組織固有インフラの検証。
-- GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 課題
 

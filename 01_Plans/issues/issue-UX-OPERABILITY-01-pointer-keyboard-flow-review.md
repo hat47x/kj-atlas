@@ -4,7 +4,6 @@
 - Status: Done
 - Priority: P1
 - Owner: Stream C
-- DecisionStatus: Fixed
 - Execution: Ready
 - Scope: `01_Plans/issues/issue-UX-OPERABILITY-01..05*.md`（docs + frontend ui）
 - Related Backlog: `UX-OPERABILITY-01`

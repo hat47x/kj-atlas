@@ -1,7 +1,5 @@
 # Issue: SEC-HTTP-02 tenant切替で同一の「membership非activeチェック」が403と404に分岐
 
-> 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
-
 - Type: Security
 - Status: Draft
 - Source Issue: N/A

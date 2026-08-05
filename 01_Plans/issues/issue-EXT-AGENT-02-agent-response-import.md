@@ -14,13 +14,8 @@
 
 - RequirementID: EXT-AGENT-02
 - RequirementStatement: 外部エージェントの応答（agent-response.v1・貼り付け/ファイル）を import 信頼境界（検証・サニタイズ・容量制限）で受け、種別ごとに既存の提案面（マージ候補・島タイトル候補・ナラティブ草稿・違和感候補・PatchWorkspace）へ AI 由来・未レビューの提案として流し込む。自動確定なし・全操作可逆・監査記録を不変条件とする。
-- PriorityClass（Must / Should / Could）: Should
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=EXT-AGENT-01 で書き出した依頼に対する応答 JSON を得ている / 操作=「応答を取り込む」へ貼付け→検証結果を確認→取り込み / 期待結果=提案が種別ごとの既存面に未レビューとして出現し、taskId でグルーピング表示される。score/rank/confidence フィールドは破棄され警告表示。baseDocSignature 不一致時は conflict/rediff 経路に乗り黙って適用されない。1件採用→⌘Z で復帰できる / 除外=外部からの自動受信、応答の自動適用、エージェント品質の保証。
-- GoNoGoGate（Required / Optional / N/A）: Required（外部由来データの取り込み経路の新設のため、import-sanitize 検証を完了条件とする）
 - SecurityGateImpact: import-sanitize（非信頼データの新規取込面。指示文言をデータとして扱いいかなる自動動作にも接続しない）
-- VerificationLevel: e2e
-- DecisionStatus（Fixed / Pending）: Fixed（ADR-0049 D3・spec §4）
-- DecisionQueueRef: `ADR-0049`
 
 ## 1) 課題 / Problem statement
 
