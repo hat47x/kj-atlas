@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,10 +13,12 @@ from kj_atlas_api.access_control import (
     AccessControlInvalidPolicyError,
     AccessControlUnreachableError,
     AccessDecision,
+    AuthContext,
 )
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
-from kj_atlas_api.models import Base
+from kj_atlas_api.models import LOCAL_DEFAULT_TENANT_ID, Base
+from kj_atlas_api.tenant_context import TenantContext
 
 
 class DenyAllAdapter:
@@ -100,6 +103,59 @@ def test_adapter_unset_keeps_existing_docs_roundtrip(tmp_path) -> None:
 
         get_resp = client.get("/docs/doc-compat")
         assert get_resp.status_code == 200
+
+
+def test_tenant_scoped_profile_denies_read_when_adapter_is_missing(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Same request as the roundtrip above -- adapter unset, document present in
+    # the caller's own tenant -- so a 404 or a tenant-boundary reason cannot be
+    # mistaken for the denial under test. Only the runtime profile differs.
+    monkeypatch.setattr(
+        "kj_atlas_api.routes.docs.resolve_trusted_saas_request_session",
+        lambda **_: SimpleNamespace(
+            identity=SimpleNamespace(
+                auth_context=AuthContext(actor_ref="user-1", user_id="user-1"),
+            ),
+            tenant=TenantContext(
+                tenant_id=LOCAL_DEFAULT_TENANT_ID,
+                membership_id="membership-1",
+                resolved_by="verified_claim",
+            ),
+            session=SimpleNamespace(tenant_session_version="session-v2"),
+        ),
+    )
+
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = None
+        seed_resp = client.put(
+            "/docs/doc-adapter-missing",
+            json=_sample_payload("doc-adapter-missing"),
+        )
+        assert seed_resp.status_code == 200
+
+        original_runtime_profile = client.app.state.runtime_profile
+        try:
+            client.app.state.runtime_profile = "saas-multitenant"
+            read_resp = client.get(
+                "/docs/doc-adapter-missing",
+                headers={"KJ-Atlas-Tenant-Session-Version": "session-v2"},
+            )
+            write_resp = client.put(
+                "/docs/doc-adapter-missing",
+                json=_sample_payload("doc-adapter-missing"),
+                headers={"KJ-Atlas-Tenant-Session-Version": "session-v2"},
+            )
+        finally:
+            client.app.state.runtime_profile = original_runtime_profile
+
+    assert read_resp.status_code == 403
+    assert read_resp.json()["detail"] == "Access denied: adapter_missing"
+    assert "access-test" not in read_resp.text
+    assert "alpha" not in read_resp.text
+    assert write_resp.status_code == 403
+    assert write_resp.json()["detail"] == "Access denied: adapter_missing"
 
 
 def test_fail_safe_deny_when_policy_ref_missing_for_restricted_visibility(tmp_path) -> None:

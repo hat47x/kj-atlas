@@ -193,7 +193,8 @@ def _authorize_request(
     safe_mode: bool,
     read_only: bool,
 ) -> tuple[AccessRequest, AccessDecision, TenantContext]:
-    if tenant_session_precondition_required(request):
+    tenant_scoped_session_required = tenant_session_precondition_required(request)
+    if tenant_scoped_session_required:
         trusted_session = resolve_trusted_saas_request_session(
             request=request,
             db=db,
@@ -240,6 +241,16 @@ def _authorize_request(
         )
         if tenant_boundary is not None:
             enforce_access(tenant_boundary, action=action)
+        if tenant_scoped_session_required:
+            # A tenant-scoped runtime has no PDP to consult, so nothing --
+            # reads included -- may be allowed from here. The SaaS startup
+            # preflight and the lifespan adapter factory already keep this
+            # unreachable while both hold; stating the deny at the enforcement
+            # point keeps the guarantee local, like every sibling condition.
+            enforce_access(
+                AccessDecision(allow=False, reason="adapter_missing"),
+                action=action,
+            )
         decision = AccessDecision(allow=True)
         return access_request, decision, tenant
 

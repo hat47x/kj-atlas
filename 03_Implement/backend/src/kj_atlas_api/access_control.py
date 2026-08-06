@@ -28,6 +28,7 @@ FailSafeReason = Literal[
     "policy_ref_unreachable",
     "policy_ref_invalid",
     "adapter_error",
+    "adapter_missing",
 ]
 MAX_ACCESS_CONTROL_RESPONSE_BYTES = 64 * 1024
 MAX_ACCESS_CONTROL_REQUEST_BYTES = 64 * 1024
