@@ -1488,6 +1488,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, [importedPackSnapshotUrl]);
 
   useEffect(() => {
+    // SAAS-TENANT-UX-01: intentionally outside the tenant session generation
+    // guard. providerKind is a process-wide config echo (backend settings.py
+    // has no tenant-scoped provider configuration, and none is planned), not
+    // a tenant resource, so there is no stale-generation response to guard
+    // against here the way there is for tenant-scoped document/AI calls.
     // PROV-VIS-01: fetch the configured provider kind once. This is a static
     // config echo (no connectivity check); failures are silently ignored so
     // the badge simply stays unknown rather than surfacing a spurious error.
