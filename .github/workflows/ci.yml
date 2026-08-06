@@ -12,6 +12,7 @@ jobs:
     outputs:
       frontend: ${{ steps.scope.outputs.frontend }}
       backend: ${{ steps.scope.outputs.backend }}
+      base_commit: ${{ steps.scope.outputs.base_commit }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,6 +36,8 @@ jobs:
               base_commit="$(git rev-list --max-parents=0 HEAD)"
             fi
           fi
+
+          echo "base_commit=${base_commit}" >> "$GITHUB_OUTPUT"
 
           git diff --name-only "$base_commit" HEAD | python 01_Plans/ci_change_scope.py >> "$GITHUB_OUTPUT"
 
@@ -61,6 +64,11 @@ jobs:
         run: |
           set -euo pipefail
 
+          # NOTE: this resolution intentionally differs from change-scope.outputs.base_commit
+          # and must not be replaced by it. On a push to a non-default branch this job diffs
+          # against the merge-base with the default branch (the whole branch), whereas
+          # change-scope uses github.event.before (only the newly pushed commits). This job is
+          # also a fail-closed gate that deliberately runs without `needs:` on any other job.
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             git fetch --no-tags origin "${{ github.base_ref }}"
             base_commit="$(git merge-base FETCH_HEAD HEAD)"
@@ -91,66 +99,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Detect Node version
-        id: node
-        run: |
-          if [ -f "$GITHUB_WORKSPACE/.nvmrc" ]; then
-            echo "version=$(cat "$GITHUB_WORKSPACE/.nvmrc")" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=lts/*" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Detect package manager
-        id: pm
-        run: |
-          if [ -f pnpm-lock.yaml ]; then
-            echo "manager=pnpm" >> "$GITHUB_OUTPUT"
-            echo "install=pnpm install --frozen-lockfile" >> "$GITHUB_OUTPUT"
-            echo "run=pnpm" >> "$GITHUB_OUTPUT"
-            echo "lockfile=pnpm-lock.yaml" >> "$GITHUB_OUTPUT"
-          elif [ -f yarn.lock ]; then
-            echo "manager=yarn" >> "$GITHUB_OUTPUT"
-            echo "install=yarn install --frozen-lockfile" >> "$GITHUB_OUTPUT"
-            echo "run=yarn" >> "$GITHUB_OUTPUT"
-            echo "lockfile=yarn.lock" >> "$GITHUB_OUTPUT"
-          elif [ -f package-lock.json ]; then
-            echo "manager=npm" >> "$GITHUB_OUTPUT"
-            echo "install=npm ci" >> "$GITHUB_OUTPUT"
-            echo "run=npm run" >> "$GITHUB_OUTPUT"
-            echo "lockfile=package-lock.json" >> "$GITHUB_OUTPUT"
-          else
-            echo "No supported lockfile found" >&2
-            exit 1
-          fi
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup frontend toolchain
+        id: setup
+        uses: ./.github/actions/setup-frontend
         with:
-          node-version: ${{ steps.node.outputs.version }}
-          cache: ${{ steps.pm.outputs.manager }}
-          cache-dependency-path: 03_Implement/frontend/${{ steps.pm.outputs.lockfile }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable corepack (pnpm/yarn)
-        if: steps.pm.outputs.manager != 'npm'
-        run: corepack enable
-
-      - name: Install dependencies
-        run: |
-          install_cmd="${{ steps.pm.outputs.install }}"
-          for attempt in 1 2 3; do
-            echo "Install attempt ${attempt}/3"
-            $install_cmd && break
-            if [ "$attempt" = "3" ]; then
-              echo "All install attempts failed" >&2
-              exit 1
-            fi
-            echo "Retrying in $((attempt * 15))s..."
-            sleep $((attempt * 15))
-          done
-
       - name: Typecheck
-        run: ${{ steps.pm.outputs.run }} typecheck
+        run: ${{ steps.setup.outputs.run }} typecheck
 
   frontend-test:
     name: Frontend test + build
@@ -165,69 +121,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Detect Node version
-        id: node
-        run: |
-          if [ -f "$GITHUB_WORKSPACE/.nvmrc" ]; then
-            echo "version=$(cat "$GITHUB_WORKSPACE/.nvmrc")" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=lts/*" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Detect package manager
-        id: pm
-        run: |
-          if [ -f pnpm-lock.yaml ]; then
-            echo "manager=pnpm" >> "$GITHUB_OUTPUT"
-            echo "install=pnpm install --frozen-lockfile" >> "$GITHUB_OUTPUT"
-            echo "run=pnpm" >> "$GITHUB_OUTPUT"
-            echo "lockfile=pnpm-lock.yaml" >> "$GITHUB_OUTPUT"
-          elif [ -f yarn.lock ]; then
-            echo "manager=yarn" >> "$GITHUB_OUTPUT"
-            echo "install=yarn install --frozen-lockfile" >> "$GITHUB_OUTPUT"
-            echo "run=yarn" >> "$GITHUB_OUTPUT"
-            echo "lockfile=yarn.lock" >> "$GITHUB_OUTPUT"
-          elif [ -f package-lock.json ]; then
-            echo "manager=npm" >> "$GITHUB_OUTPUT"
-            echo "install=npm ci" >> "$GITHUB_OUTPUT"
-            echo "run=npm run" >> "$GITHUB_OUTPUT"
-            echo "lockfile=package-lock.json" >> "$GITHUB_OUTPUT"
-          else
-            echo "No supported lockfile found" >&2
-            exit 1
-          fi
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup frontend toolchain
+        id: setup
+        uses: ./.github/actions/setup-frontend
         with:
-          node-version: ${{ steps.node.outputs.version }}
-          cache: ${{ steps.pm.outputs.manager }}
-          cache-dependency-path: 03_Implement/frontend/${{ steps.pm.outputs.lockfile }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable corepack (pnpm/yarn)
-        if: steps.pm.outputs.manager != 'npm'
-        run: corepack enable
-
-      - name: Install dependencies
-        run: |
-          install_cmd="${{ steps.pm.outputs.install }}"
-          for attempt in 1 2 3; do
-            echo "Install attempt ${attempt}/3"
-            $install_cmd && break
-            if [ "$attempt" = "3" ]; then
-              echo "All install attempts failed" >&2
-              exit 1
-            fi
-            echo "Retrying in $((attempt * 15))s..."
-            sleep $((attempt * 15))
-          done
-
       - name: Test
-        run: ${{ steps.pm.outputs.run }} test
+        run: ${{ steps.setup.outputs.run }} test
 
       - name: Build
-        run: ${{ steps.pm.outputs.run }} build
+        run: ${{ steps.setup.outputs.run }} build
 
   backend:
     name: Backend lint + test
@@ -281,17 +185,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git fetch --no-tags origin "${{ github.base_ref }}"
-            base_commit="$(git merge-base FETCH_HEAD HEAD)"
-          else
-            before="${{ github.event.before }}"
-            if [ -n "$before" ] && ! printf '%s' "$before" | grep -Eq '^0+$' && git cat-file -e "${before}^{commit}" 2>/dev/null; then
-              base_commit="$before"
-            else
-              base_commit="$(git rev-list --max-parents=0 HEAD)"
-            fi
-          fi
+          base_commit="${{ needs.change-scope.outputs.base_commit }}"
 
           changed_files="$(git diff --name-only "$base_commit" HEAD)"
           idp_boundary=false
