@@ -220,11 +220,11 @@ CE1 can move from `Open` toward closeout when the following are recorded togethe
 - Scope: docs-only（Issue + schema/APIのCE1 I/F節）
 - Non-Goals: handler/UI/DB/workerの実装詳細化
 - Acceptance Criteria:
-  - [ ] Issue内にADR形式（Context/Decision/Consequences）でCE1 v1固定理由を明記
-  - [ ] `ContextQueryV1` / `ContextBundleV1` のclosed-world契約をschema/API双方で一致
-  - [ ] `previewConfirmed=false -> 422 preview_required` をI/F契約として固定
-  - [ ] `queryCanonicalHash` / `bundleHash` の決定論要件と失敗時`409 nondeterministic_bundle`を固定
-  - [ ] mock validation計画（実実装依存切断）を明記
+  - [x] Issue内にADR形式（Context/Decision/Consequences）でCE1 v1固定理由を明記 → Closure Record 2026-06-20 + 多数の Phase 2 ADR-style C/D/Cセクション。
+  - [x] `ContextQueryV1` / `ContextBundleV1` のclosed-world契約をschema/API双方で一致 → Current Completion Assessment「fixed in architecture: Pass — api.md, schemas.md」。
+  - [x] `previewConfirmed=false -> 422 preview_required` をI/F契約として固定 → Current Completion Assessment「Preview gate fixed: Pass — 422 preview_required is specified and tested」。
+  - [x] `queryCanonicalHash` / `bundleHash` の決定論要件と失敗時`409 nondeterministic_bundle`を固定 → Current Completion Assessment「Deterministic bundle failure fixed: Pass — 409 nondeterministic_bundle is specified and tested」。
+  - [x] mock validation計画（実実装依存切断）を明記 → Current Completion Assessment「Frontend mock-first validation present: Pass — query_preview.ts + query_preview.test.ts」。
 - Validation Plan:
   - [ ] issue memo validator
   - [ ] unit test for issue memo validator

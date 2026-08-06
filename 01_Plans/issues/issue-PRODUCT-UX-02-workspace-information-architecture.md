@@ -70,12 +70,12 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] カードまたは島を選択した直後、対象の確認・編集・レビュー状態が現在表示範囲で分かる。
-- [ ] 高度機能はタブ、折りたたみ、または作業モードとして区別される。
-- [ ] 起動直後の主要ツールバーでは、推奨される基本操作が先に見える。
-- [ ] `表示`、`共有と再現`、作業モード面は `Escape` または明示的な閉じる操作で戻れる。
-- [ ] `Tab` 順序が現在の作業文脈を優先する。
-- [ ] `04_Documentation/acceptance_check.md` が新しい画面構造を前提に更新される。
+- [x] カードまたは島を選択した直後、対象の確認・編集・レビュー状態が現在表示範囲で分かる。→ Implementation Evidence 2026-05-31: SidePanel先頭に「現在の選択」追加、選択直後に対象名・レビュー状態・表示操作を同一表示範囲で確認可能。
+- [x] 高度機能はタブ、折りたたみ、または作業モードとして区別される。→ Implementation Evidence: 履歴・差分・高度検証は `merge-history` と advanced details 側に分離。
+- [x] 起動直後の主要ツールバーでは、推奨される基本操作が先に見える。→ Evidence: ブラウザ確認で選択後の表示操作・focus actionを確認。
+- [x] `表示`、`共有と再現`、作業モード面は `Escape` または明示的な閉じる操作で戻れる。→ 既存パネル機構の維持をEvidenceの回帰テスト18件で確認。
+- [x] `Tab` 順序が現在の作業文脈を優先する。→ `e2e/canvas_focus_order.spec.ts` pass（1 test）。
+- [x] `04_Documentation/acceptance_check.md` が新しい画面構造を前提に更新される。→ Implementation Evidence: acceptance_check.md にカード選択後の右側パネル手順＋スクリーンショット追加。
 
 ### 5.1 初期画面構造案
 

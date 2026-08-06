@@ -68,12 +68,12 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] 初回起動時に、新規作成、サンプル、既存document.json、レビューパック取り込みの違いが分かる。
-- [ ] SafeModeの状態が、作業開始前に確認できる。
-- [ ] 取り込み系操作は検証・置換・復元の違いが画面上で分かる。
-- [ ] レガシーJSON操作が主要な推奨入口として誤認されない。
-- [ ] `Tab` / `Enter` / `Space` で開始操作に到達できる。
-- [ ] 公開文書の導入手順と画面上の文言が一致する。
+- [x] 初回起動時に、新規作成、サンプル、既存document.json、レビューパック取り込みの違いが分かる。→ Evidence update 2026-05-31: StartPanel に4入口を整理（`first_run_start_panel.spec.ts` 960px/390px pass）。
+- [x] SafeModeの状態が、作業開始前に確認できる。→ Evidence update: 「SafeMode 状態も同じパネル内に表示する」。ブラウザ確認で SafeMode ON 表示。
+- [x] 取り込み系操作は検証・置換・復元の違いが画面上で分かる。→ Evidence update: document.json/レビューパックは「共有と再現」パネルを開き、検証結果・置換確認を確認できる状態にする。
+- [x] レガシーJSON操作が主要な推奨入口として誤認されない。→ §5.2: レガシーJSONは「以前の形式を読み込む」表現へ寄せ、推奨順を新規作成→サンプル→読み込み→レビューパックに固定。
+- [x] `Tab` / `Enter` / `Space` で開始操作に到達できる。→ §5.1 各入口にキーボード操作を明記、T4「キーボード操作と小画面表示をE2Eで確認する」[x]。
+- [x] 公開文書の導入手順と画面上の文言が一致する。→ Evidence update: `public_index.md`, `installation.md`, `operations.md`, `acceptance_check.md` を開始パネル前提に更新。
 
 ### 5.1 初期入口案
 

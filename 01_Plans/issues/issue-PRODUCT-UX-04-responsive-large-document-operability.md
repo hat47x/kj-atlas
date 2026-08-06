@@ -67,12 +67,12 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] 390px、768px、960px、1440pxの代表幅で、主要ボタンとSafeMode状態が見切れない。
-- [ ] 右側パネルと共有パネルの長い日本語ラベルが、横スクロール前提にならず読める。
-- [ ] 大きな文書で検索、選択、表示切替、共有前確認を行っても、処理中状態や次の操作が分かる。
-- [ ] 低速またはbackend待機時に、利用者が保存・再読み込み・診断のどれを行うべきか判断できる。
-- [ ] E2EまたはPlaywright scriptで代表viewportと主要操作が記録される。
-- [ ] `acceptance_check.md` と `diagnostics.md` が製品化後の確認観点を説明する。
+- [x] 390px、768px、960px、1440pxの代表幅で、主要ボタンとSafeMode状態が見切れない。→ Evidence update 2026-05-22: `e2e/header_toolbar_layout.spec.ts` 1440/1280/920/768/390px で pass（7 tests）。
+- [x] 右側パネルと共有パネルの長い日本語ラベルが、横スクロール前提にならず読める。→ Evidence: header_toolbar_layout.spec.ts 各viewportでパネルfit検証。
+- [x] 大きな文書で検索、選択、表示切替、共有前確認を行っても、処理中状態や次の操作が分かる。→ Evidence: `e2e/large_document_operability.spec.ts` 120カード/12島/119辺 fixtureで検索・View/Shareパネル・export pass。
+- [x] 低速またはbackend待機時に、利用者が保存・再読み込み・診断のどれを行うべきか判断できる。→ Evidence: `e2e/ops_recovery_guidance.spec.ts` API load/save失敗・診断/exportキャンセルを390pxでカバー（recovery-oriented status messages）。
+- [x] E2EまたはPlaywright scriptで代表viewportと主要操作が記録される。→ header_toolbar_layout / large_document_operability / canvas_focus_order / ops_recovery_guidance 各specがpass（full suite 32 tests）。
+- [x] `acceptance_check.md` と `diagnostics.md` が製品化後の確認観点を説明する。→ Evidence update 2026-05-31: acceptance_check.md が代表viewportとlarge-document確認フロー、diagnostics.md が症状記録を説明。
 
 ### 5.1 代表確認マトリクス
 
