@@ -37,6 +37,10 @@ Done statusの7 issueに、**廃止済みのOpenゲート礼式に由来するme
 
 **実施状況**: PRODUCT-UX-01/02/03/04、REQ-DEF-01/02/03 の37件は2026-08-07に削除済み（`0883f476`）。CE4は実装タスク（API/CLI監査・契約テスト）と同セクションに混在するため、20件を個別に精査してから判断する（未実施、本issueで追跡）。
 
+**関連する同型パターン（追加確認 2026-08-07）**:
+- `issue-doc-ops-05-01..14` シリーズは DOC-OPS-05 Set1 の固定5フェーズprotocol（AGENTS.md §4で廃止）に由来する AC/DoD テンプレートを含む。`05-01` は10件done/5件unchecked、他は大部分0件done。ただし `Status:` 形式が異なるため、Done判定自体の妥当性を含めて個別精査が必要（本issueでは追跡のみ）。
+- `issue-doc-ops-05-01` のDone判定は、対象 `canonicalization.md` に `Move internal` / `Improve external` 語彙が見当たらず（grep 0件）、Done statusと実体の乖離が疑われる。別issue（DOC-OPS-09）で調査する。
+
 ## 対応方針（案）
 
 - (a) 各Done issueの受入条件セクションから、上記パターンのmeta-AC行を **`- [x]` にせず「廃止」と明示して削除**する。Done issueの受入条件は実装ACのみを残す。
