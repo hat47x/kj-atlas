@@ -7,7 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/auth_context.py`, `03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py`, `03_Implement/backend/src/kj_atlas_api/tenant_context.py`, `03_Implement/backend/src/kj_atlas_api/main.py`, `03_Implement/backend/src/kj_atlas_api/settings.py`
 - Related Backlog: `SAAS-TENANT-01`
-- Related ADR/Spec: `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`, `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md`
+- Related ADR/Spec: `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`, `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md`, `01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`
 - Expected verification level: `e2e`
 
 ## 課題
@@ -35,6 +35,8 @@ AGENTS.md §6は「長期的・横断的・破壊的な契約変更、安全境�
 `SAAS-TENANT-01`のAC-4（tenant不明のdeny）は resolver 単体では証明済みだが、実HTTPリクエスト経由では検証不可能——テストでしか到達しない経路のため、本番同等の検証ができない。AC-6（`GET /session/context`のmembership allowlist）、AC-7（capability/audience分離）、AC-8（tenantId伝播）、AC-9（export/import再認可）、AC-10（越境negative matrix）、AC-12/13（実画面回帰）も、実質的に「本物のauthenticated principal」を前提としており、この層が無い限りe2eでの本番同等証明ができない。settings-level fail-fast（saas-multitenant profileの起動拒否）は、この欠落を理由に維持されている——このissueが解決されるまで、その起動拒否を緩めてはならない。
 
 ## Acceptance
+
+> 2026-08-06: AC-1の前提として`ADR-0063`（`01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`）を`Proposed`で起票済み。受理はMaintainer判断であり、本issueのStatusとチェックボックスは未変更のまま。
 
 - [ ] ADRが起票され、プロトコル範囲（OIDC先行か、SAML同時か）、ライブラリ、鍵ローテーション、IdP到達不能時の失敗モードが受理されている。
 - [ ] `SaasIdentityContextResolver`の具象実装が存在し、JWT/SAML assertion検証、issuer/audience検証、期限切れ、署名不正をfail-closedで拒否するunit testを持つ。
