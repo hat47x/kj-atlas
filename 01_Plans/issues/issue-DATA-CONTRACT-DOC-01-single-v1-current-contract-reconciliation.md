@@ -7,8 +7,8 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer / Data contract contributor
-- Scope: `02_Architecture/schemas.md`, `02_Architecture/contract_reading_guide.md`, `02_Architecture/contract_consolidation_inventory.md`, `02_Architecture/api.md`, `02_Architecture/design/data_model_operations_overview.html`, `03_Implement/frontend/e2e/card_quality_assistance.spec.ts`, `03_Implement/frontend/src/import/zip_import.test.ts`, `01_Plans/issues/issue-DATA-CONTRACT-RESET-01-document-v1-rebaseline.md`, `01_Plans/docs_contract_checks.py`, `01_Plans/tests/test_docs_contract_checks.py`
-- Related ADR/Spec: `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `02_Architecture/design/data_model_operations_overview.html`
+- Scope: `02_Architecture/schemas.md`, `02_Architecture/contract_reading_guide.md`, `02_Architecture/contract_consolidation_inventory.md`, `02_Architecture/api.md`, `02_Architecture/data_model_operations_overview.html`, `03_Implement/frontend/e2e/card_quality_assistance.spec.ts`, `03_Implement/frontend/src/import/zip_import.test.ts`, `01_Plans/issues/issue-DATA-CONTRACT-RESET-01-document-v1-rebaseline.md`, `01_Plans/docs_contract_checks.py`, `01_Plans/tests/test_docs_contract_checks.py`
+- Related ADR/Spec: `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `02_Architecture/data_model_operations_overview.html`
 - Expected verification level: integration
 
 ## Requirement meta I/F（共通キー）
@@ -78,9 +78,9 @@ ADR-0058と`DATA-CONTRACT-RESET-01`は、旧最小V1と旧V2を廃止し、現�
 - `schemas.md`: §3.4/§3.5の二重`Document`定義（旧最小`DocumentV1`と`DocumentV2`）を単一の`DocumentV1`（`version: 1`、`islands`必須、全optional fieldとsafety注記を保持）へ統合した。§6.0.1/§6.1のversion運用ルールを、Full/Partial/Legacy 3区分・`version: 3`以降の拡張余地という記述から、「`version: 1`以外はすべてfail-closedで拒否し、旧版正規化経路は存在しない」という現行実装どおりの記述へ書き換えた。`mockSchemaVersion`を`mock-2026-05-19-dv2`から`mock-2026-07-16-v1`へ更新した。残る19箇所の`DocumentV2`/`version: 2`本文参照（§7A、§14、§16-18等）をすべて`DocumentV1`/`version: 1`へ更新した。DOMAIN-KJ-01のEdge型語彙version（§3.3、無関係な別概念）は変更していない。
 - `contract_reading_guide.md`: §4のCard/Document合成型参照を`DocumentV2`/§3.5から`DocumentV1`/§3.4へ更新した。
 - `contract_consolidation_inventory.md`: 冒頭に注記を追加し、本書内の`DocumentV2`/§3.5表記がADR-0058前の形成対象を指すpre-rebaseline名称であることを明示した（本書自体はStatus: Informative working inventoryのため、Conflict inventory表の値自体は変更していない）。
-- `api.md`、`02_Architecture/design/data_model_operations_overview.html`: 事前確認の結果、既にV1で記述済みであり変更不要だった（実装者は既に移行済みで、文書側の2ファイルのみが取り残されていた）。
+- `api.md`、`02_Architecture/data_model_operations_overview.html`: 事前確認の結果、既にV1で記述済みであり変更不要だった（実装者は既に移行済みで、文書側の2ファイルのみが取り残されていた）。
 - `card_quality_assistance.spec.ts`（T7で新規作成した本issueとは別のe2e spec）・`zip_import.test.ts`: 成功系fixtureの`version: 2`を`version: 1`へ修正した。`validate.test.ts`の拒否負例（`version: 2`が拒否されることを確認するテスト）はそのまま維持した。
-- `01_Plans/docs_contract_checks.py`: `DC-ARC-001`（`check_document_contract_baseline`）を新規実装した。(a) `schemas.md`内の永続Document型定義が1件のみであること、(b) その型が`DocumentV1`/`version: 1`であること、(c) `DocumentV2`/`Legacy`という語がcurrent文書に再出現しないこと、(d) `api.md`/`02_Architecture/design/data_model_operations_overview.html`が`DocumentV1`を参照し`DocumentV2`を参照しないこと、を検証する。`01_Plans/tests/test_docs_contract_checks.py`に正常系1件・負例4件（型重複、DocumentV2/Legacy再混入、誤った型名・version、api/data-model側の参照欠落）を追加した。
+- `01_Plans/docs_contract_checks.py`: `DC-ARC-001`（`check_document_contract_baseline`）を新規実装した。(a) `schemas.md`内の永続Document型定義が1件のみであること、(b) その型が`DocumentV1`/`version: 1`であること、(c) `DocumentV2`/`Legacy`という語がcurrent文書に再出現しないこと、(d) `api.md`/`02_Architecture/data_model_operations_overview.html`が`DocumentV1`を参照し`DocumentV2`を参照しないこと、を検証する。`01_Plans/tests/test_docs_contract_checks.py`に正常系1件・負例4件（型重複、DocumentV2/Legacy再混入、誤った型名・version、api/data-model側の参照欠落）を追加した。
 - `01_Plans/issues/issue-DATA-CONTRACT-RESET-01-document-v1-rebaseline.md`: Follow-upセクションを追記し、T1-T5のDone記録を過去の実装完了記録として保ったまま、文書側の回帰是正を本issueへ切り出したことを明記した。
 
 検証結果:

@@ -7,7 +7,7 @@
 - Owner: Codex (local execution)
 - Scope: `03_Implement/frontend/src/i18n/`, `03_Implement/frontend/src/ui/`, `04_Documentation/configuration.md`
 - Related Backlog: `FB-RM-I18N-02` (`01_Plans/adr/ADR-0007-future-backlog.md`)
-- Related ADR/Spec: `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0007-future-backlog.md`, `02_Architecture/design/architecture.html`
+- Related ADR/Spec: `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0007-future-backlog.md`, `02_Architecture/architecture.html`
 - Dependencies: `FB-RM-I18N-02` (`01_Plans/adr/ADR-0007-future-backlog.md`)
 - Expected verification level: `unit`
 

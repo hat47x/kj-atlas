@@ -23,7 +23,7 @@
 ## 受入条件
 
 - [x] このモジュールを旧スキャフォールディングと確定し、削除する。
-- [x] `02_Architecture/schemas.md`、`api.md`、`02_Architecture/design/architecture.html`に本モジュールへの参照が無く、現行SaaS信頼境界と逆向きであることを確認する。
+- [x] `02_Architecture/schemas.md`、`api.md`、`02_Architecture/architecture.html`に本モジュールへの参照が無く、現行SaaS信頼境界と逆向きであることを確認する。
 
 ## 検証計画
 

@@ -7,7 +7,7 @@
 - Owner: Claude Code
 - Scope: `03_Implement/frontend/src/import/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `EXT-AGENT-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（D3）, `02_Architecture/design/external_agent_collaboration_spec.html`（§4/§5 正本）, `01_Plans/issues/issue-CE3-patch-workspace-presets.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（D3）, `02_Architecture/external_agent_collaboration_spec.html`（§4/§5 正本）, `01_Plans/issues/issue-CE3-patch-workspace-presets.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -70,7 +70,7 @@
 
 ## Traceability
 
-- Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`, `02_Architecture/design/external_agent_collaboration_spec.html`（§4/§5/§6）
+- Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`, `02_Architecture/external_agent_collaboration_spec.html`（§4/§5/§6）
 - Related: `01_Plans/issues/issue-EXT-AGENT-01-agent-task-package-export.md`, `issue-CE3-patch-workspace-presets.md`, `issue-QA-MONKEY-01-safemode-export-boundary.md`
 - Related: `01_Plans/issues/issue-GENAI-GOV-01-generative-ai-lane-boundary-and-readiness.md`（Lane C: 外部エージェント成果物連携）, `02_Architecture/value_traceability.md` §2.9
 - Derived-from: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`

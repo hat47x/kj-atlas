@@ -57,9 +57,9 @@
     </p>
     <div style="margin:22px 0 0; padding:12px 14px; background:#f8fafc; border-left:3px solid #cbd5e1; border-radius:0 4px 4px 0;">
       <p style="font-size:12.5px; line-height:1.8; color:#52606d; margin:0;">
-        本書が正本（<code>AGENTS.md</code> §3）。環境変数・実行パラメータの正本は <a href="../runtime_parameter_registry.md">runtime_parameter_registry.md</a>。本書ではデータ構造と運用境界のみを扱う。<br>
-        型定義の詳細 → <a href="../schemas.md">schemas.md</a>　／　API入出力 → <a href="../api.md">api.md</a>　／　認証・認可境界 → <a href="enterprise_architecture.html">enterprise_architecture.html</a><br>
-        2026年5月のStream D形成記録 → <a href="../history/data-model-operations-stream-d-2026-05.md">Data Model Operations formation history</a>（本書には現行契約だけを記載する）
+        本書が正本（<code>AGENTS.md</code> §3）。環境変数・実行パラメータの正本は <a href="runtime_parameter_registry.md">runtime_parameter_registry.md</a>。本書ではデータ構造と運用境界のみを扱う。<br>
+        型定義の詳細 → <a href="schemas.md">schemas.md</a>　／　API入出力 → <a href="api.md">api.md</a>　／　認証・認可境界 → <a href="enterprise_architecture.html">enterprise_architecture.html</a><br>
+        2026年5月のStream D形成記録 → <a href="history/data-model-operations-stream-d-2026-05.md">Data Model Operations formation history</a>（本書には現行契約だけを記載する）
       </p>
     </div>
   </header>
@@ -485,7 +485,7 @@ erDiagram
       <tbody>
         <tr><td>状態メタデータ</td><td><code>claimType</code>, <code>holdState</code>, <code>critiqueTags</code>, <code>textReviewed</code></td><td>カード上の短いバッジと選択時の詳細で確認・編集する</td><td><code>DocumentV1.cards[]</code> の既存契約に従う</td></tr>
         <tr><td>非主体の遡及情報</td><td><code>Card.meta.seq</code>, <code>Card.meta.source</code>, <code>Card.sources</code></td><td><code>seq</code> / <code>source</code> は遡及情報エディタ、<code>Card.sources</code> は代表カードと出典カードの関係として表示する。両者を混同しない</td><td>共有向け書き出しでは既定除外。既存の「出典参照を含める」を明示選択した場合だけ含める</td></tr>
-        <tr><td>レビュー帰属</td><td><code>reviewState</code>, <code>reviewAttribution</code></td><td>レビュー状態と「誰がレビューしたか」の設計であり、起票者や作成者を表さない</td><td><a href="../review_attribution.md">review_attribution.md</a> の人手昇格・redaction境界に従う</td></tr>
+        <tr><td>レビュー帰属</td><td><code>reviewState</code>, <code>reviewAttribution</code></td><td>レビュー状態と「誰がレビューしたか」の設計であり、起票者や作成者を表さない</td><td><a href="review_attribution.md">review_attribution.md</a> の人手昇格・redaction境界に従う</td></tr>
         <tr><td>責任主体メタデータ</td><td>起票者、作成者、最終更新者、所有者</td><td>現行MVPでは<strong>保存・編集・推測しない</strong>。カード本体へ常設せず、「記録情報」で提供していないことを説明する</td><td>importの未知キーは受理せず、共有/export/review pack/外部エージェント依頼にも含めない</td></tr>
         <tr><td>公開説明用の出所分類</td><td>利用者入力、import由来、AI提案由来</td><td>現行スキーマから確実に導出できない分類は表示しない</td><td>将来追加時も個人識別子とは別の列挙として判断する</td></tr>
       </tbody>

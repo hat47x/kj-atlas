@@ -52,9 +52,9 @@
     </div>
     <div style="margin:20px 0 0; padding:12px 14px; background:#f8fafc; border-left:3px solid #cbd5e1; border-radius:0 4px 4px 0;">
       <p style="font-size:12.5px; line-height:1.8; color:#52606d; margin:0;">
-        本書が正本（<code>AGENTS.md</code> §3）。環境変数・実行パラメータの正本は <a href="../runtime_parameter_registry.md">runtime_parameter_registry.md</a>。<br>
-        価値判断と設計要素の対応 → <a href="../value_traceability.md">value_traceability.md</a>　／　現行契約と履歴ログの読み分け → <a href="../contract_reading_guide.md">contract_reading_guide.md</a><br>
-        MVPで運用サポートするデータ構造 → <a href="data_model_operations_overview.html">data_model_operations_overview.html</a>　／　CE0/CE1 freeze形成記録 → <a href="../history/architecture-contract-freeze-formation-2026-04-to-05.md">contract-freeze formation history</a>
+        本書が正本（<code>AGENTS.md</code> §3）。環境変数・実行パラメータの正本は <a href="runtime_parameter_registry.md">runtime_parameter_registry.md</a>。<br>
+        価値判断と設計要素の対応 → <a href="value_traceability.md">value_traceability.md</a>　／　現行契約と履歴ログの読み分け → <a href="contract_reading_guide.md">contract_reading_guide.md</a><br>
+        MVPで運用サポートするデータ構造 → <a href="data_model_operations_overview.html">data_model_operations_overview.html</a>　／　CE0/CE1 freeze形成記録 → <a href="history/architecture-contract-freeze-formation-2026-04-to-05.md">contract-freeze formation history</a>
       </p>
     </div>
   </header>
@@ -75,7 +75,7 @@
     </table>
 
     <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">1.4 プロダクト価値実現の責務境界</h3>
-    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:8px 0 0;">製品化では、単に機能が存在するだけでなく、利用者が価値を受け取る流れを構造として支える必要がある。価値実現ループの正本は <a href="../value_traceability.md">value_traceability.md</a> と <code>ADR-0032</code> とし、本書では責務境界だけを固定する。</p>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:8px 0 0;">製品化では、単に機能が存在するだけでなく、利用者が価値を受け取る流れを構造として支える必要がある。価値実現ループの正本は <a href="value_traceability.md">value_traceability.md</a> と <code>ADR-0032</code> とし、本書では責務境界だけを固定する。</p>
     <table class="grid">
       <thead><tr><th style="width:18%;">要素</th><th>固定する責務境界</th></tr></thead>
       <tbody>
@@ -168,7 +168,7 @@ flowchart TB
         <tr><td><code>POST /docs</code></td><td>サーバ採番の新規作成候補。MVP必須ではなく、実装契約化は <code>DATA-CONTRACT-01</code> で扱う</td></tr>
       </tbody>
     </table>
-    <p style="font-size:12.5px; color:#6b7280; margin:10px 0 0;">認証・共有の詳細は、文書保存APIとは分けて <a href="enterprise_architecture.html">enterprise_architecture.html</a>、<a href="../review_attribution.md">review_attribution.md</a>、share/export関連仕様で扱う。</p>
+    <p style="font-size:12.5px; color:#6b7280; margin:10px 0 0;">認証・共有の詳細は、文書保存APIとは分けて <a href="enterprise_architecture.html">enterprise_architecture.html</a>、<a href="review_attribution.md">review_attribution.md</a>、share/export関連仕様で扱う。</p>
   </section>
 
   <!-- 04 LLM Provider -->
@@ -257,7 +257,7 @@ flowchart LR
     <table class="grid">
       <thead><tr><th style="width:26%;">Contract ID</th><th>Responsibility boundary</th></tr></thead>
       <tbody>
-        <tr><td><code>CE0-CTX-IF</code></td><td>ContextQuery / ContextBundle の安全境界、Query Preview必須経路、決定論的bundle生成。具体的なキーは <a href="../schemas.md">schemas.md</a> を参照</td></tr>
+        <tr><td><code>CE0-CTX-IF</code></td><td>ContextQuery / ContextBundle の安全境界、Query Preview必須経路、決定論的bundle生成。具体的なキーは <a href="schemas.md">schemas.md</a> を参照</td></tr>
         <tr><td><code>CE0-SAFEMODE-IF</code></td><td>safeMode 既定ON、<code>allowUnreviewedText=false</code> 既定、未レビュー本文保護</td></tr>
         <tr><td><code>CE0-REVIEW-IF</code></td><td><code>unreviewed</code> / <code>human_reviewed</code> の遷移境界（昇格は人手のみ）</td></tr>
         <tr><td><code>CG-01..05</code></td><td>Working / ContextProjection / Consensus 分離、<code>patch + approval</code> のみ、proposal-only、監査4点セット必須</td></tr>
@@ -313,7 +313,7 @@ flowchart LR
       <li>語彙 collision は 0 件固定（契約語彙は <code>ConsensusGraph</code> / <code>WorkingGraph</code> / <code>ContextProjectionGraph</code> に統一）。</li>
       <li>Verify自己修復は最大3回。4回目相当で停止し、推測継続を禁止する。</li>
     </ul>
-    <p style="font-size:12.5px; color:#6b7280; margin:12px 0 0;"><strong>Interface contract references:</strong> 本書は型シグネチャ・required/optional key・endpoint・status/error を再定義しない。型・キー・列挙・version互換 → <a href="../schemas.md#12-ce1ce2ce4-型契約実装非依存">schemas.md §1.2</a>、endpoint・認証・status/error・副作用 → <a href="../api.md#27-ce4-audit-integration-contractapicli-equivalence">api.md §2.7〜§2.9</a>、CE1 v1のlogical/transport/handoff所属 → <a href="../schemas.md#ce1-v1-layer-ownership-matrixlogical--transport--handoff">schemas.md layer ownership matrix</a>。旧 Interface Freeze の型・method・event-order 再掲と CE0入力snapshotの識別子は <a href="../history/architecture-contract-freeze-formation-2026-04-to-05.md">形成履歴</a> へ移した。</p>
+    <p style="font-size:12.5px; color:#6b7280; margin:12px 0 0;"><strong>Interface contract references:</strong> 本書は型シグネチャ・required/optional key・endpoint・status/error を再定義しない。型・キー・列挙・version互換 → <a href="schemas.md#12-ce1ce2ce4-型契約実装非依存">schemas.md §1.2</a>、endpoint・認証・status/error・副作用 → <a href="api.md#27-ce4-audit-integration-contractapicli-equivalence">api.md §2.7〜§2.9</a>、CE1 v1のlogical/transport/handoff所属 → <a href="schemas.md#ce1-v1-layer-ownership-matrixlogical--transport--handoff">schemas.md layer ownership matrix</a>。旧 Interface Freeze の型・method・event-order 再掲と CE0入力snapshotの識別子は <a href="history/architecture-contract-freeze-formation-2026-04-to-05.md">形成履歴</a> へ移した。</p>
   </section>
 
   <!-- 06 CE-1/2/4 -->
@@ -323,7 +323,7 @@ flowchart LR
       <h2 style="font-size:20px; font-weight:700; margin:0;">CE-1 / CE-2 / CE-4 責務境界</h2>
       <span style="font-size:11.5px; color:#94a3b8; font-weight:500;">mock-first</span>
     </div>
-    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:10px 0 0;">本節は各CEが守る責務と信頼境界だけを定義する。型・required/optional key・列挙・version互換は <a href="../schemas.md">schemas.md</a>、endpoint・status/error・副作用は <a href="../api.md">api.md</a> を正本とし、本書では再定義しない。</p>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:10px 0 0;">本節は各CEが守る責務と信頼境界だけを定義する。型・required/optional key・列挙・version互換は <a href="schemas.md">schemas.md</a>、endpoint・status/error・副作用は <a href="api.md">api.md</a> を正本とし、本書では再定義しない。</p>
     <table class="grid">
       <thead><tr><th style="width:16%;">CE</th><th style="width:30%;">責務</th><th style="width:28%;">禁止</th><th>正本</th></tr></thead>
       <tbody>
@@ -331,19 +331,19 @@ flowchart LR
           <td><strong>CE1</strong><br/>CONTEXT-FOUNDATION<br/><span style="font-size:11px; color:#6b7280;"><code>CE1-CTXQ-IF</code> / <code>CE1-CTXB-IF</code> / <code>CE1-HASH-DET-IF</code> / <code>CE1-PREVIEW-GATE-IF</code></span></td>
           <td>Query Previewを必須経路とし、同一queryから決定論的なContext Bundleを生成する。CE2/CE4はbackend完了を待たずmock-firstで検証し、受け渡しをread-onlyに保つ</td>
           <td>Preview bypass、非決定論bundleの成功扱い、下流によるCE1契約の暗黙変更</td>
-          <td><a href="../schemas.md#ce1-context-foundation">schemas.md</a>／<a href="../api.md#28-context-query--bundle-contractce1-context-foundation">api.md</a></td>
+          <td><a href="schemas.md#ce1-context-foundation">schemas.md</a>／<a href="api.md#28-context-query--bundle-contractce1-context-foundation">api.md</a></td>
         </tr>
         <tr>
           <td><strong>CE2</strong><br/>LOW-RISK-AI-ASSIST<br/><span style="font-size:11px; color:#6b7280;"><code>CE2-PROPOSAL-IF</code> / <code>CE2-LIFECYCLE-IF</code> / <code>CE2-DRIFT-STOP-IF</code> / <code>CE2-NO-AUTOAPPLY-IF</code></span></td>
           <td>AI出力をproposal-onlyとして管理し、CE1由来bundleとの整合を確認してから人間の判断へ渡す</td>
           <td>API/UI/workerからのauto-apply、AIによるreview昇格、契約差異を推測で補った継続</td>
-          <td><a href="../schemas.md#ce2-low-risk-ai-assist">schemas.md</a>／<a href="../api.md#290-proposal-only--apicli監査責務境界">api.md</a></td>
+          <td><a href="schemas.md#ce2-low-risk-ai-assist">schemas.md</a>／<a href="api.md#290-proposal-only--apicli監査責務境界">api.md</a></td>
         </tr>
         <tr>
           <td><strong>CE4</strong><br/>API-CLI-AUDIT</td>
           <td>API/CLI/GUIの同値性、監査4点セット、dry-runの無副作用を横断して検証する</td>
           <td>監査欠損の成功扱い、dry-runでの永続化・外部共有・review昇格、未実装依存を理由とする契約検証停止</td>
-          <td><a href="../schemas.md#ce4-api-cli-audit">schemas.md</a>／<a href="../api.md#29-ce4-apicligui-同値性監査契約ce4-api-cli-audit">api.md</a></td>
+          <td><a href="schemas.md#ce4-api-cli-audit">schemas.md</a>／<a href="api.md#29-ce4-apicligui-同値性監査契約ce4-api-cli-audit">api.md</a></td>
         </tr>
       </tbody>
     </table>
@@ -370,7 +370,7 @@ flowchart LR
 
     <h3 style="font-size:15px; font-weight:700; margin:20px 0 0;">7.3 AuthContext / JIT / strict 境界 <span style="font-size:11.5px; color:#94a3b8; font-weight:500;">AUTH-ARCH-01</span></h3>
     <ul class="compact" style="font-size:13px; color:#3e4c59; padding-left:22px; margin:8px 0 0;">
-      <li>認証境界の正本は <code>ADR-0020</code> とし、実装契約は <a href="../schemas.md">schemas.md</a> / <a href="../api.md">api.md</a> / <a href="../review_attribution.md">review_attribution.md</a> を同一論点で同期する。</li>
+      <li>認証境界の正本は <code>ADR-0020</code> とし、実装契約は <a href="schemas.md">schemas.md</a> / <a href="api.md">api.md</a> / <a href="review_attribution.md">review_attribution.md</a> を同一論点で同期する。</li>
       <li><code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=true</code> では未登録subjectをJITで <code>users</code> + <code>user_identities</code> 作成、<code>false</code> では <code>403</code> 拒否して事前プロビジョニング導線へ誘導する。</li>
       <li>attribution の正規キーは <code>users.id</code> で、外部subjectは <code>user_identities</code> でのみ解決する。</li>
     </ul>
@@ -383,7 +383,7 @@ flowchart LR
       <li>tenant従属データはDB複合制約とDB側tenant guardで分離し、cache・job・MCP・audit・agent credential にも同じ context を伝播する。</li>
       <li>Workspace Data Plane、Tenant Admin、Platform Control Plane は route・auth audience・capability を分離する。Platform運用権限から文書 read を暗黙導出しない。</li>
       <li>tenant不明・不一致、membership停止、PDP/adapter障害、DB guard不成立は read を含めて fail-closed とする。</li>
-      <li>型と永続制約は <a href="../schemas.md">schemas.md</a>、endpoint/status/error は <a href="../api.md">api.md</a>、profile gate は <a href="../runtime_parameter_registry.md">runtime_parameter_registry.md</a>、実装進捗は <code>issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md</code> を正本とする。</li>
+      <li>型と永続制約は <a href="schemas.md">schemas.md</a>、endpoint/status/error は <a href="api.md">api.md</a>、profile gate は <a href="runtime_parameter_registry.md">runtime_parameter_registry.md</a>、実装進捗は <code>issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md</code> を正本とする。</li>
     </ul>
   </section>
 
@@ -403,7 +403,7 @@ flowchart LR
         <li>自動最適配置（正解クラスタ提示）</li>
       </ul>
     </div>
-    <p style="font-size:12.5px; line-height:1.75; color:#6b7280; margin:16px 0 0;"><strong>形成履歴（Informative）:</strong> 2026-05-04のinterface-only baselineとStream B反映メモは、現行契約と誤認されないよう <a href="../history/architecture-contract-freeze-formation-2026-04-to-05.md">Architecture contract-freeze formation history</a> へ分離した。現行の責務境界は本書、型は <a href="../schemas.md">schemas.md</a>、endpoint/status/error は <a href="../api.md">api.md</a> を正本とする。</p>
+    <p style="font-size:12.5px; line-height:1.75; color:#6b7280; margin:16px 0 0;"><strong>形成履歴（Informative）:</strong> 2026-05-04のinterface-only baselineとStream B反映メモは、現行契約と誤認されないよう <a href="history/architecture-contract-freeze-formation-2026-04-to-05.md">Architecture contract-freeze formation history</a> へ分離した。現行の責務境界は本書、型は <a href="schemas.md">schemas.md</a>、endpoint/status/error は <a href="api.md">api.md</a> を正本とする。</p>
   </section>
 
 </main>

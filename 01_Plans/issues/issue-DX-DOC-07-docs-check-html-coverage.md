@@ -23,7 +23,7 @@
 
 ## 影響と当面の回避
 
-被参照の多い設計文書（`schemas.md` は109ファイル、`02_Architecture/design/architecture.html` は98ファイル、`value_traceability.md` は42ファイルから参照）を HTML へ置換すると、リンク検証の対象外になったうえで参照側も壊れる。そのため `AGENTS.md` §3 で当面**Markdown を正本として残し、HTML は追加のビューに限る**と定めた。本Issueが解消するまでこの制約を維持する。
+被参照の多い設計文書（`schemas.md` は109ファイル、`02_Architecture/architecture.html` は98ファイル、`value_traceability.md` は42ファイルから参照）を HTML へ置換すると、リンク検証の対象外になったうえで参照側も壊れる。そのため `AGENTS.md` §3 で当面**Markdown を正本として残し、HTML は追加のビューに限る**と定めた。本Issueが解消するまでこの制約を維持する。
 
 ## 論点（人的判断が必要な理由）
 

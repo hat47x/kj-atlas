@@ -20,7 +20,7 @@
 | 実装照合手順 | `02_Architecture/design/design-qa-checklist.md` |
 | 各設計依頼と回答の形成履歴 | `02_Architecture/design/design-request-2026-07-round*.md`、同ディレクトリの `.dc.html` |
 | 公開画像の撮影・検証台帳 | `04_Documentation/assets/screenshots/README.md` |
-| 管理面データ境界（文書一覧・View/Preset・エージェント登録）の正本・権限・本文非表示原則（`DATA-MODEL-OPS-02` D1〜D4、Round 8入力） | `02_Architecture/design/data_model_operations_overview.html` §4 CRUDサポート表（文書一覧/View・Perspective/QueryPreset/エージェント登録の各行）・§5.2（Workspace/Admin・Audit表示分離）、`02_Architecture/schemas.md` §3.4.1（`DocumentListItemV1`）、`02_Architecture/api.md` §2.4（List）・§9.5（エージェント登録API） |
+| 管理面データ境界（文書一覧・View/Preset・エージェント登録）の正本・権限・本文非表示原則（`DATA-MODEL-OPS-02` D1〜D4、Round 8入力） | `02_Architecture/data_model_operations_overview.html` §4 CRUDサポート表（文書一覧/View・Perspective/QueryPreset/エージェント登録の各行）・§5.2（Workspace/Admin・Audit表示分離）、`02_Architecture/schemas.md` §3.4.1（`DocumentListItemV1`）、`02_Architecture/api.md` §2.4（List）・§9.5（エージェント登録API） |
 
 本書は上記正本の索引と受け渡し境界であり、ADRやissueの決定内容を上書きしない。矛盾時は上流のAccepted ADRとvalue traceabilityを優先する。
 

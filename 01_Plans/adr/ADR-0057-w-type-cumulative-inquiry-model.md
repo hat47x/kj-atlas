@@ -3,7 +3,7 @@
 - Status: Accepted（2026-07-15、独立探究集約 + 不変スナップショットDAGを採択）
 - Date: 2026-07-15
 - Deciders: Project Maintainers（ユーザー委任による方針確定）
-- Scope: `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/design/inquiry_journey_model.html`, `02_Architecture/schemas.md`, `02_Architecture/design/data_model_operations_overview.html`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/src/ui/`
+- Scope: `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/inquiry_journey_model.html`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.html`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/src/ui/`
 
 ## 背景
 
@@ -42,7 +42,7 @@
 11. **共有・移行時は、manifestと参照する全成果を自己完結bundleへ収める。** SafeModeのマスクは元成果を書き換えず、マスク後の派生bundleを新しい整合性確認値で作る。
 12. **受理は永続化コードの即時着手を意味しない。** 型・不変条件・固定fixture、メモリ内操作模型、低忠実度UIの順で検証し、通常利用非回帰を確認してからローカルroundtripへ進む。
 
-詳細な型境界、保存、bundle、導入順序は `02_Architecture/design/inquiry_journey_model.html` を正本とする。実装・移行・運用CRUDが揃うまでは、新しい型を `L0: Planned` として扱う。
+詳細な型境界、保存、bundle、導入順序は `02_Architecture/inquiry_journey_model.html` を正本とする。実装・移行・運用CRUDが揃うまでは、新しい型を `L0: Planned` として扱う。
 
 ## 比較結果
 
@@ -139,7 +139,7 @@
 ## 追跡関係
 
 - Requirements: `00_Prompt/w_type_iterative_inquiry_requirements.md`
-- Architecture: `02_Architecture/design/inquiry_journey_model.html`
+- Architecture: `02_Architecture/inquiry_journey_model.html`
 - Source issue: `01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md`
 - Related: `00_Prompt/qualitative_card_quality_requirements.md`
 - Related: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
@@ -147,7 +147,7 @@
 - Related: `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`
 - Related: `02_Architecture/schemas.md`
-- Related: `02_Architecture/design/data_model_operations_overview.html`
+- Related: `02_Architecture/data_model_operations_overview.html`
 - Research: [Microsoft Azure Architecture Center: Event Sourcing pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/event-sourcing)
 - Research: [W3C PROV-O](https://www.w3.org/TR/prov-o/)
 - Research: [RFC 8785: JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html)

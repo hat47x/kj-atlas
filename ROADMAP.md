@@ -92,7 +92,7 @@ kj-atlas は以下を中核とする：
 
 > MVP において API 利用が困難であることへの回答。LLMアダプタ基盤（C）と整合させる。
 >
-> 仕様化（2026-07-05）: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（決定）＋ `02_Architecture/design/external_agent_collaboration_spec.html`（契約正本）。(b) 構造化変更指示ルートを AgentTaskPackage/AgentResponse v1 として具体化（Copilot / Copilot Studio プロファイル同梱・Tier 0 手動授受を MVP とする）。実装は `EXT-AGENT-01/02/03`。
+> 仕様化（2026-07-05）: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（決定）＋ `02_Architecture/external_agent_collaboration_spec.html`（契約正本）。(b) 構造化変更指示ルートを AgentTaskPackage/AgentResponse v1 として具体化（Copilot / Copilot Studio プロファイル同梱・Tier 0 手動授受を MVP とする）。実装は `EXT-AGENT-01/02/03`。
 
 ## ローカライゼーション（Localization Strategy）
 

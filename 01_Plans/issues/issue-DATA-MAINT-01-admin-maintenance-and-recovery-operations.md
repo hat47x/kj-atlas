@@ -9,9 +9,9 @@
 - Source Issue: N/A
 - Priority: P2 (Stream D third)
 - Owner: Codex
-- Scope: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `02_Architecture/design/data_model_operations_overview.html`（本Streamでは契約整理のみ）
+- Scope: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `02_Architecture/data_model_operations_overview.html`（本Streamでは契約整理のみ）
 - Related Backlog: `DATA-MAINT-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/design/data_model_operations_overview.html`, `02_Architecture/design/enterprise_architecture.html`
+- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/enterprise_architecture.html`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -86,13 +86,13 @@
 - [x] T4 Document削除/アーカイブ/所有者移管のADR要否を判定する。
 - [x] T5 代表的な復旧演習をintegration testまたはrunbook検証で確認する。
 
-T1-T4は、`02_Architecture/design/data_model_operations_overview.html` の `5.1 管理・復旧・棚卸しの最小運用境界` で契約レベルの整理を完了した。T5は `DATA-MAINT-02` の代表SQLite復旧演習とrunbook検証結果を受けて、親issueの境界確認として完了扱いにする。実装、管理UI/API、PostgreSQL実環境での復旧演習は本IssueのStop条件を維持し、別issueで扱う。
+T1-T4は、`02_Architecture/data_model_operations_overview.html` の `5.1 管理・復旧・棚卸しの最小運用境界` で契約レベルの整理を完了した。T5は `DATA-MAINT-02` の代表SQLite復旧演習とrunbook検証結果を受けて、親issueの境界確認として完了扱いにする。実装、管理UI/API、PostgreSQL実環境での復旧演習は本IssueのStop条件を維持し、別issueで扱う。
 
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
   - `git diff --check -- 01_Plans/issues 02_Architecture`
-  - `rg -n "DATA-MAINT-01|棚卸し|バックアップ|復旧確認|アーカイブ|所有者移管|Support|L1\\.5|L2\\.5|ADR" 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/design/data_model_operations_overview.html`
+  - `rg -n "DATA-MAINT-01|棚卸し|バックアップ|復旧確認|アーカイブ|所有者移管|Support|L1\\.5|L2\\.5|ADR" 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/data_model_operations_overview.html`
 - 期待結果:
   - 管理・復旧の最小運用境界が、IssueとArchitecture文書で追跡できる。
 - 未実施時の理由・代替検証:
@@ -218,7 +218,7 @@ T1-T4は、`02_Architecture/design/data_model_operations_overview.html` の `5.1
 
 ### Decision
 
-- `02_Architecture/design/data_model_operations_overview.html` に `5.1 管理・復旧・棚卸しの最小運用境界（DATA-MAINT-01）` を追加し、運用ごとに主担当、承認者、対象データ、MVPで許容する手段、必須確認、Stop/ADR化条件を固定した。
+- `02_Architecture/data_model_operations_overview.html` に `5.1 管理・復旧・棚卸しの最小運用境界（DATA-MAINT-01）` を追加し、運用ごとに主担当、承認者、対象データ、MVPで許容する手段、必須確認、Stop/ADR化条件を固定した。
 - MVPで許容する管理運用は、読み取り専用の棚卸し、環境標準のバックアップ、検証環境での復旧確認、本文を含まない支援情報共有に限定する。
 - ドキュメント本文の横断閲覧、アーカイブ、削除、所有者移管、ユーザーライフサイクル管理、SCIM、書き込み系管理API/UIは、ADRまたは別issueで合意するまで実装しない。
 
@@ -231,7 +231,7 @@ T1-T4は、`02_Architecture/design/data_model_operations_overview.html` の `5.1
 ### Verify
 
 - `git diff --check -- 01_Plans/issues 02_Architecture`
-- `rg -n "DATA-MAINT-01|棚卸し|バックアップ|復旧確認|アーカイブ|所有者移管|Support|L1\\.5|L2\\.5|ADR" 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/design/data_model_operations_overview.html`
+- `rg -n "DATA-MAINT-01|棚卸し|バックアップ|復旧確認|アーカイブ|所有者移管|Support|L1\\.5|L2\\.5|ADR" 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/data_model_operations_overview.html`
 
 ## 21) DATA-MAINT-02 recovery evidence handoff（2026-05-24）
 
@@ -304,8 +304,8 @@ T1-T4は、`02_Architecture/design/data_model_operations_overview.html` の `5.1
 
 ### Verify
 
-- `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 02_Architecture/design/data_model_operations_overview.html`
-- `rg -n "DATA-MAINT-03|削除|アーカイブ|所有者移管|管理者本文閲覧|保持期限|ADR" 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/design/data_model_operations_overview.html 02_Architecture/api.md`
+- `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 02_Architecture/data_model_operations_overview.html`
+- `rg -n "DATA-MAINT-03|削除|アーカイブ|所有者移管|管理者本文閲覧|保持期限|ADR" 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/data_model_operations_overview.html 02_Architecture/api.md`
 
 ## 24) ADR-0035 / DATA-MAINT-04 判断ルート同期（2026-06-01）
 

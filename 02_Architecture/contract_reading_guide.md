@@ -2,7 +2,7 @@
 
 この文書は、`02_Architecture` の設計文書を読むときに、どの記述を現在の正本として扱い、どの記述を履歴・監査ログとして扱うかを示す案内です。
 
-`02_Architecture/design/architecture.html`、`api.md`、`schemas.md`、`02_Architecture/design/data_model_operations_overview.html` の形成履歴は `history/` へ分離済みです。初見の利用者や開発者は、本ガイドから責務別の現行正本anchorへ進んでください。
+`02_Architecture/architecture.html`、`api.md`、`schemas.md`、`02_Architecture/data_model_operations_overview.html` の形成履歴は `history/` へ分離済みです。初見の利用者や開発者は、本ガイドから責務別の現行正本anchorへ進んでください。
 
 ---
 
@@ -22,13 +22,13 @@
 | 知りたいこと | 先に読む文書 | 補足で読む文書 |
 |---|---|---|
 | プロジェクト価値と設計の対応 | `value_traceability.md` | `00_Prompt/domain.md`, `ADR-0001` |
-| 全体構成と責務境界 | `02_Architecture/design/architecture.html` | `deployment.md`, `02_Architecture/design/enterprise_architecture.html` |
+| 全体構成と責務境界 | `02_Architecture/architecture.html` | `deployment.md`, `02_Architecture/enterprise_architecture.html` |
 | API の入出力契約 | `api.md` | `schemas.md` |
 | 永続データと view/pack metadata | `schemas.md` | `api.md` |
-| W型反復的探究の採択済み設計目標 | `02_Architecture/design/inquiry_journey_model.html` | `ADR-0057`, `w_type_iterative_inquiry_requirements.md` |
-| 環境変数と実行プロファイル | `runtime_parameter_registry.md` | `deployment.md`, `02_Architecture/design/enterprise_architecture.html` |
-| 企業・行政運用 | `02_Architecture/design/enterprise_architecture.html` | `02_Architecture/design/strict_mode_exception_approval_flow.html`, `runtime_parameter_registry.md` |
-| LLM 実行制約 | `llm_runtime_constraints.md` | `llm_provider_spec.md`, `02_Architecture/design/llm_escalation_policy.html` |
+| W型反復的探究の採択済み設計目標 | `02_Architecture/inquiry_journey_model.html` | `ADR-0057`, `w_type_iterative_inquiry_requirements.md` |
+| 環境変数と実行プロファイル | `runtime_parameter_registry.md` | `deployment.md`, `02_Architecture/enterprise_architecture.html` |
+| 企業・行政運用 | `02_Architecture/enterprise_architecture.html` | `02_Architecture/strict_mode_exception_approval_flow.html`, `runtime_parameter_registry.md` |
+| LLM 実行制約 | `llm_runtime_constraints.md` | `llm_provider_spec.md`, `02_Architecture/llm_escalation_policy.html` |
 
 ---
 
@@ -59,7 +59,7 @@
 
 `Card` / `DocumentV1` の採択済みoptional field（`holdState`, `meta`, `ka`, `shelf`, `contradictionSignalDecisions`）は §3.2 / §3.4 の合成型を正本とし、後段§14〜§17は意味・安全・互換規則を補足します。
 
-`02_Architecture/design/data_model_operations_overview.html` は現行の物理モデル、CRUD、support level、運用責任だけを正本とします。2026年5月の形成記録は [Architecture history](history/data-model-operations-stream-d-2026-05.md) で参照します。
+`02_Architecture/data_model_operations_overview.html` は現行の物理モデル、CRUD、support level、運用責任だけを正本とします。2026年5月の形成記録は [Architecture history](history/data-model-operations-stream-d-2026-05.md) で参照します。
 
 ---
 

@@ -17,14 +17,14 @@ Current normative anchors:
 - [CE0 responsibility-boundary meta-contract](../schemas.md#11-ce0-責務境界メタ契約)
 - [CE1/CE2/CE4 type contracts](../schemas.md#12-ce1ce2ce4-型契約実装非依存)
 - [Document versioning and support levels](../schemas.md#61-document-versioning--support-level運用ルールdata-contract-01固定)
-- [Current data operations boundary](../design/data_model_operations_overview.html)
+- [Current data operations boundary](../data_model_operations_overview.html)
 - [CE1 v1 reconciliation issue](../../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)
 
 この文書は形成履歴であり、現在の型、required/optional key、列挙、validation、version、migration、support level、SafeMode境界を上書きしない。以下の`固定`、`freeze`、`Decision`、`Stop`は当時の記録である。
 
 ## Former §1.0.1 Stream D drift audit gate（2026-05-20）
 
-本書の運用境界は `02_Architecture/design/data_model_operations_overview.html` と対で解釈する。次のいずれかを満たした場合は drift として `Stop` 判定にする。
+本書の運用境界は `02_Architecture/data_model_operations_overview.html` と対で解釈する。次のいずれかを満たした場合は drift として `Stop` 判定にする。
 
 1. `L1/L1.5/L2/L2.5/L3/L0` の語彙または意味が文書間で不一致。
 2. `PUT /docs/{doc_id}` create-if-absent をMVP標準Create契約とする記述が不一致。
@@ -197,9 +197,9 @@ Phase直列実行（Read必須）で Data Contract & Model Ops を確認した�
 
 1. Contract drift抽出: `DATA-CONTRACT-01` の観点（frontend/backend/api/schema）で `DocumentV2` 契約差分を再確認し、`version gate` 優先の fail-closed を維持。
 2. Support level定義: `L1/L1.5/L2/L2.5/L3/L0` の語彙を本書の正本として再固定。新規フィールドは未分類なら `L2.5` 扱い。
-3. CRUD境界更新（参照）: 個別CRUDの可否は `02_Architecture/design/data_model_operations_overview.html` の表を正本とし、本書は型契約に限定。
+3. CRUD境界更新（参照）: 個別CRUDの可否は `02_Architecture/data_model_operations_overview.html` の表を正本とし、本書は型契約に限定。
 4. Admin maintenance/recovery境界更新（参照）: 管理・復旧の実装可否は `DATA-MAINT-01` で管理し、契約変更を先行条件に据える。
-5. Verify: `schemas.md` / `schemas_review_attribution.md` / `02_Architecture/design/data_model_operations_overview.html` 間で support level 語彙と責務分離の矛盾がないことを確認。
+5. Verify: `schemas.md` / `schemas_review_attribution.md` / `02_Architecture/data_model_operations_overview.html` 間で support level 語彙と責務分離の矛盾がないことを確認。
 
 ## Former §12 Stream D reaffirmation (2026-05-19)
 
@@ -212,7 +212,7 @@ Phase直列実行（Read必須）で Data Contract & Model Ops を確認した�
 
 ### Consequences
 - 後方互換判定を version gate 基準で統一でき、feature flag による暫定互換運用を抑止できる。
-- `02_Architecture/design/data_model_operations_overview.html` / `schemas_review_attribution.md` / `issue-DATA-CONTRACT-01` と同一語彙で運用責務境界を同期できる。
+- `02_Architecture/data_model_operations_overview.html` / `schemas_review_attribution.md` / `issue-DATA-CONTRACT-01` と同一語彙で運用責務境界を同期できる。
 
 ## Former §13 Stream B contract lock sync (2026-05-20)
 
@@ -226,4 +226,4 @@ Phase直列実行（Read必須）で Data Contract & Model Ops を確認した�
 
 ### Consequences
 - Stream B から下流への引き渡しは mock-first で再現可能になり、実装進捗待ちなしで契約検証を継続できる。
-- CRUD保証の主張は `02_Architecture/design/data_model_operations_overview.html` 側に限定され、契約文書単体の誤読リスクを抑制できる。
+- CRUD保証の主張は `02_Architecture/data_model_operations_overview.html` 側に限定され、契約文書単体の誤読リスクを抑制できる。

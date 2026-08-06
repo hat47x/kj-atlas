@@ -58,7 +58,7 @@ This issue is the read-only SSOT for the CE0 contract freeze. Downstream CE0 cor
 
 ### Recommended Closure Path
 
-1. Confirm current-main drift checks for `02_Architecture/schemas.md`, `02_Architecture/design/architecture.html`, CE0 core graph, and CE1.
+1. Confirm current-main drift checks for `02_Architecture/schemas.md`, `02_Architecture/architecture.html`, CE0 core graph, and CE1.
 2. Resolve or explicitly continue holding `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`, and `pendingDecisionQueueCount>0`.
 3. Ensure downstream CE0/CE1/CE2/CE4 documents reference this issue instead of copying or redefining the contract.
 4. Keep Product QA and MVP Exit documents clear that CE0 provides contract readiness only, not release approval.
@@ -564,7 +564,7 @@ This issue is the read-only SSOT for the CE0 contract freeze. Downstream CE0 cor
 - input_contract_snapshot: `ce0-contract-freeze-2026-04-27`（fixed）
 - scope_guard:
   - `01_Plans/issues/issue-CE0-contract-freeze.md`
-  - `02_Architecture/design/architecture.html（7A CE0節のみ）`
+  - `02_Architecture/architecture.html（7A CE0節のみ）`
   - `02_Architecture/schemas.md（1.1 CE0契約節のみ）`
 - stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / unapproved_finalize=0`
 
@@ -578,7 +578,7 @@ This issue is the read-only SSOT for the CE0 contract freeze. Downstream CE0 cor
 - Consequences: CE1/CE2/CE4 との競合を回避しつつ、CE0を単独で凍結維持できる。
 
 ### Phase 3 契約固定（contract-only）
-- 実施: `02_Architecture/design/architecture.html` CE0節に snapshot 固定値と No-Go canonical IDs を追記。
+- 実施: `02_Architecture/architecture.html` CE0節に snapshot 固定値と No-Go canonical IDs を追記。
 - 実施: `schemas.md` CE0契約節に snapshot 固定値と drift-stop canonical IDs を追記。
 - 非実施: CE0 Contract ID追加・改名・削除、実装コード変更、共有統合ファイル編集。
 
@@ -1186,7 +1186,7 @@ type PatchProposal = {
 
 - run_id: `stream-b-ce0-2026-04-29-10`
 - assignee: `Stream B（CE0 Contract Freeze 専任）`
-- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md / issue-CE0-core-graph-repositioning.md / 02_Architecture/design/architecture.html（CE0節のみ）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md / issue-CE0-core-graph-repositioning.md / 02_Architecture/architecture.html（CE0節のみ）`
 - stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
 
 ### Phase 1 Read & Gap分析
@@ -1493,7 +1493,7 @@ type PatchProposal = {
 ### Phase 1: Read（Read再同期）
 - Inputs（読んだ対象）:
   - `01_Plans/issues/issue-CE0-contract-freeze.md`
-  - read-only参照: `ADR-0026` / `ADR-0027` / `ADR-0028` / `02_Architecture/design/architecture.html` / `02_Architecture/schemas.md`
+  - read-only参照: `ADR-0026` / `ADR-0027` / `ADR-0028` / `02_Architecture/architecture.html` / `02_Architecture/schemas.md`
 - Decisions:
   - 現行メタデータを確認: Status=`Open` / Priority=`P1` / Scope=`docs-only, contract-only, mock-first` / Dependencies=`CE-0` / Verification=`docs-check`。
   - 既存AC/DoDと fail-safe を維持し、Contract ID再定義禁止を継続。
@@ -1646,7 +1646,7 @@ type PatchProposal = {
 
 - run_id: `stream-b-ce0-2026-05-03-01`
 - assignee: `Stream B（CE0 Contract Freeze 専任）`
-- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md, 01_Plans/issues/issue-CE0-core-graph-repositioning.md, 02_Architecture/design/architecture.html(CE0該当節), 02_Architecture/schemas.md(CE0該当節)`（本runの実編集は本Issueのみ）
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md, 01_Plans/issues/issue-CE0-core-graph-repositioning.md, 02_Architecture/architecture.html(CE0該当節), 02_Architecture/schemas.md(CE0該当節)`（本runの実編集は本Issueのみ）
 - stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
 
 ### Phase 1 Read同期
@@ -2725,7 +2725,7 @@ type PatchProposal = {
 - stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
 
 ### Phase 1 Read
-- Read Order（`00_Prompt/system_prompt.md` → `00_Prompt/domain.md` → `00_Prompt/handoff.md` → `00_Prompt/agent_handover.md` → `00_Prompt/ai_cognitive_externalization_requirements.md` → `01_Plans/adr/ADR-0001-value-to-requirements.md` → `02_Architecture/design/architecture.html` → `02_Architecture/schemas.md` → `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`）を再実行し、本Issueも再読。
+- Read Order（`00_Prompt/system_prompt.md` → `00_Prompt/domain.md` → `00_Prompt/handoff.md` → `00_Prompt/agent_handover.md` → `00_Prompt/ai_cognitive_externalization_requirements.md` → `01_Plans/adr/ADR-0001-value-to-requirements.md` → `02_Architecture/architecture.html` → `02_Architecture/schemas.md` → `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`）を再実行し、本Issueも再読。
 - 固定順序 **Plan → Execute → Verify → Proceed**、および contract-only / docs-only / single-file 制約を再確認。
 
 ### Phase 2 Plan

@@ -20,7 +20,7 @@
 
 ## Stream D drift-check update（2026-04-30）
 
-- Phase 1 Read: `02_Architecture/design/strict_mode_exception_approval_flow.html` を起点に `operations.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` の導線を再確認。
+- Phase 1 Read: `02_Architecture/strict_mode_exception_approval_flow.html` を起点に `operations.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` の導線を再確認。
 - Phase 2 情報構造: 本文責務を維持（operations=runbook / security=基底方針 / guidelines=運用判断補助）。
 - Phase 3 用語統一: `Security Officer / System Owner / Platform Operator`、状態語彙、D1〜D4固定値の一致を確認。
 - Phase 4 品質ゲート: docs-check と `git diff --check` 前提、自己修復上限3回を維持。
@@ -544,7 +544,7 @@
 ## Stream G DOC-OPS-02 sync run（2026-04-30）
 
 ### Phase 1 Read同期
-- `02_Architecture/design/strict_mode_exception_approval_flow.html` を正本に、`04_Documentation/security.md` / `04_Documentation/operations.md` / `02_Architecture/design/enterprise_architecture.html` を順次再読した。
+- `02_Architecture/strict_mode_exception_approval_flow.html` を正本に、`04_Documentation/security.md` / `04_Documentation/operations.md` / `02_Architecture/enterprise_architecture.html` を順次再読した。
 
 ### Phase 2 Plan（AC/DoD補完）
 - AC/DoD不足なし。docs-only範囲で、D1〜D4再定義を行わず参照同期のみ実施する方針を固定。
@@ -634,7 +634,7 @@
 ## Stream G Documentation Ops log（2026-05-20, 5Phase + CDC）
 
 ### Phase 1 Read同期
-- `02_Architecture/design/strict_mode_exception_approval_flow.html` を正本に、`04_Documentation/security.md` と `04_Documentation/operations.md` の整合を再読。
+- `02_Architecture/strict_mode_exception_approval_flow.html` を正本に、`04_Documentation/security.md` と `04_Documentation/operations.md` の整合を再読。
 - DOC-OPS-02 の同期観点（用語/役割/導線/固定値）を再確認。
 
 ### Phase 2 Context / Decision / Consequences

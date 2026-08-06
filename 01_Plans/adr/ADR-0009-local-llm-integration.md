@@ -38,7 +38,7 @@ This is a phased checklist plan for local LLM integration in kj-atlas, covering 
 - [x] `llm_provider_spec.md` のI/F定義をレビュー確定。
 - [x] `llm_runtime_constraints.md` の通信制約（in-process/IPC優先）をレビュー確定。
 - [x] `llm_quality_strategy.md` の二層評価基準をレビュー確定。
-- [x] `02_Architecture/design/llm_escalation_policy.html` の既定無効・opt-in条件をレビュー確定。
+- [x] `02_Architecture/llm_escalation_policy.html` の既定無効・opt-in条件をレビュー確定。
 
 **完了条件**
 - 4文書の用語整合（provider, safeMode, escalation）に矛盾がない。
@@ -93,7 +93,7 @@ This is a phased checklist plan for local LLM integration in kj-atlas, covering 
 ### Phase D CDC（Context / Decision / Consequences）
 
 **Context**
-- `02_Architecture/design/llm_escalation_policy.html` には決定論的トリガと無効時/有効時ルーティングがあるが、運用実装へ渡す最低形式がADR側で未確定だった。
+- `02_Architecture/llm_escalation_policy.html` には決定論的トリガと無効時/有効時ルーティングがあるが、運用実装へ渡す最低形式がADR側で未確定だった。
 - Local-first 原則を維持しつつ、外部送信を例外経路として監査可能に固定する必要がある。
 
 **Decision**
@@ -121,7 +121,7 @@ This is a phased checklist plan for local LLM integration in kj-atlas, covering 
 
 **Context**
 - 運用移行判定に必要なSLO/KPIが未定義だと、Offline/Intranet/Enterprise間で成功判定が揺れる。
-- `llm_runtime_constraints.md` / `02_Architecture/design/llm_escalation_policy.html` が求める監査可能性を、日次運用手順へ落とし込む必要がある。
+- `llm_runtime_constraints.md` / `02_Architecture/llm_escalation_policy.html` が求める監査可能性を、日次運用手順へ落とし込む必要がある。
 
 **Decision**
 - SLO/KPIを次で固定する：

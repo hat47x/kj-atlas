@@ -164,9 +164,9 @@ Open化条件:
 
 `DOC-ARCH-02`が作成したclean baselineを、T1/T3のarchitecture checkerへ次の境界で引き継ぐ。
 
-- current対象: `02_Architecture/design/architecture.html`、`api.md`、`schemas.md`、`02_Architecture/design/data_model_operations_overview.html`。`history/`はInformativeとして別ルールで検査し、currentの重複定義件数へ混ぜない。
+- current対象: `02_Architecture/architecture.html`、`api.md`、`schemas.md`、`02_Architecture/data_model_operations_overview.html`。`history/`はInformativeとして別ルールで検査し、currentの重複定義件数へ混ぜない。
 - current/history分離: current対象の見出しへ`Stream`、`freeze`、`rerun`、`execution log`、`checkpoint`、`reaffirmation`が再混入したらfailする。正当な現行用語を誤検出しないよう、見出し単位・allowlist最小で実装する。
-- 責務別SSOT: CE1/CE2/CE4の型定義は`schemas.md`、endpoint/status/error/副作用は`api.md`、責務・信頼境界は`02_Architecture/design/architecture.html`だけが定義する。参照リンクとContract ID索引は重複定義として数えない。
+- 責務別SSOT: CE1/CE2/CE4の型定義は`schemas.md`、endpoint/status/error/副作用は`api.md`、責務・信頼境界は`02_Architecture/architecture.html`だけが定義する。参照リンクとContract ID索引は重複定義として数えない。
 - history metadata: `Status: Informative history`、Source document/anchors、Covered period、Snapshot/source revision、Retention reason、Current normative anchorsの欠落または逆リンク切れをfailする。
 - 既知Conflict: `queryId` / `schemaVersion`差異は`CE1-CONTRACT-01`へ委譲済みであり、同IssueがOpenの間は「解消済み」と推測して一方の値をcheckerへ固定しない。
 - 受入fixture: currentへの履歴見出し再挿入、architectureへのrequired key再掲、history metadata欠落、現行anchor切れを各1件以上の負例にする。
@@ -235,7 +235,7 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 
 ## T3進捗 2026-07-15: `DC-CUR-001`
 
-- Document V1再基準化を含む別ブランチ統合後、`02_Architecture/design/data_model_operations_overview.html` に履歴へ移管済みのStream D旧§1.2/1.3・§8〜13が再混入していた。ER、CRUD、支援レベル、運用境界を残し、形成履歴104行だけを除去した。
+- Document V1再基準化を含む別ブランチ統合後、`02_Architecture/data_model_operations_overview.html` に履歴へ移管済みのStream D旧§1.2/1.3・§8〜13が再混入していた。ER、CRUD、支援レベル、運用境界を残し、形成履歴104行だけを除去した。
 - current-only 7文書のMarkdown見出しを検査し、Stream、rerun、checkpoint、reaffirmation、execution log/recordなどの実行履歴見出しを `DC-CUR-001` で拒否する純関数を追加した。本文、コード記法、`downstream` のような部分一致は対象外とする。
 - 単一docs-checkで01_Plans 11 tests、issue validator 12 tests、Active memo 23件、追跡Markdown 374件が成功した。T3全体はarchitecture、history、public checkerが残るため継続する。
 
@@ -243,12 +243,12 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 
 - `02_Architecture/history/` の形成履歴4件について、Informative status、元文書、元anchor、対象期間、source revision、保持理由、現行正本anchorの7項目を検査する。
 - Current normative anchorsに現行文書へのリンクがあり、Source documentに指定された元文書から履歴ファイルへ逆リンクできることをfail-closedで確認する。履歴本文の意味や当時の判断はcurrent契約比較の対象にしない。
-- 逆リンクが欠けていた `02_Architecture/design/data_model_operations_overview.html` に形成履歴への導線を追加した。T3全体はarchitectureとpublic checkerが残るため継続する。
+- 逆リンクが欠けていた `02_Architecture/data_model_operations_overview.html` に形成履歴への導線を追加した。T3全体はarchitectureとpublic checkerが残るため継続する。
 - 単一docs-checkで01_Plans 13 tests、issue validator 12 tests、Active memo 23件、追跡Markdown 374件が成功した。
 
 ## `DC-ARC-001` baseline blocker 2026-07-15
 
-- ADR-0058とDoneの`DATA-CONTRACT-RESET-01`は単一の完全な`DocumentV1`へ同期済みとするが、current `schemas.md`には旧最小V1定義と完全な`DocumentV2` / version 2定義、Legacy V1→V2正規化、mock dv2等が29行残る。`api.md`と`02_Architecture/design/data_model_operations_overview.html`のV1契約、および実装のversion 1 gateと矛盾する。
+- ADR-0058とDoneの`DATA-CONTRACT-RESET-01`は単一の完全な`DocumentV1`へ同期済みとするが、current `schemas.md`には旧最小V1定義と完全な`DocumentV2` / version 2定義、Legacy V1→V2正規化、mock dv2等が29行残る。`api.md`と`02_Architecture/data_model_operations_overview.html`のV1契約、および実装のversion 1 gateと矛盾する。
 - `contract_reading_guide.md`/inventoryの旧V2案内と、成功系`card_quality_assistance.spec.ts`/`zip_import.test.ts`のversion 2 fixtureも同時に見つかった。型・optional field・安全注記を欠落なく再整合するP1 follow-up `DATA-CONTRACT-DOC-01`をOpenで起票した。
 - `DC-ARC-001`は同issueのclean baseline後に、単一型定義、version/key一致、旧Legacy規範なし、DocumentV1支援表を決定論的fixtureで固定する。既知のbaseline failureを先にblocking化して無関係な文書変更を止めない。
 
@@ -259,7 +259,7 @@ fresh-cloneの貢献者導線とcurrent-only文書のclean baselineを、T3/T7�
 
 ## T3進捗 2026-07-16: `DC-ARC-001` clean baseline確立、`DC-CUR-001` E2E正本追加、T6/AC棚卸し
 
-- `issue-DATA-CONTRACT-DOC-01`のclean baselineが確立された（`schemas.md`の単一`DocumentV1`/`version: 1`統合、`contract_reading_guide.md`/inventoryの旧V2案内是正、fixture修正）。これを受けて`DC-ARC-001`（`check_document_contract_baseline`）を実装し、単一Document型定義・`DocumentV1`/`version: 1`・`DocumentV2`/`Legacy`語の非再混入・`api.md`/`02_Architecture/design/data_model_operations_overview.html`の`DocumentV1`参照を決定論的fixtureで固定した。正常系1件・負例4件を追加した。
+- `issue-DATA-CONTRACT-DOC-01`のclean baselineが確立された（`schemas.md`の単一`DocumentV1`/`version: 1`統合、`contract_reading_guide.md`/inventoryの旧V2案内是正、fixture修正）。これを受けて`DC-ARC-001`（`check_document_contract_baseline`）を実装し、単一Document型定義・`DocumentV1`/`version: 1`・`DocumentV2`/`Legacy`語の非再混入・`api.md`/`02_Architecture/data_model_operations_overview.html`の`DocumentV1`参照を決定論的fixtureで固定した。正常系1件・負例4件を追加した。
 - `issue-DX-E2E-08`のrunbook縮約完了を受けて、`DC-CUR-001`の`CURRENT_ONLY_PATHS`へ`03_Implement/frontend/docs/e2e_testing.md`を追加し、既定パスだけで再混入を検出することを確認する負例fixtureを追加した。
 - T6（PR templateの証跡欄）は`.github/pull_request_template.md`に`command/result/not_executed_reason/resume_condition`が既に存在すること（commit `439867a9`）を確認し、チェック済みへ更新した。棚卸しの結果、対応する受入条件2件（architecture領域の異義定義検出、CI失敗理由の対象ファイル/rule ID/修正先表示）も充足済みへ更新した。
 - T3は architecture / current-history / relative-link の3 checkerが完了し、public boundary checkerとSafeMode/share-export/proposal-only/human review不変条件参照checkerが未実装のため、T3自体は継続する。この2件は本follow-upのスコープ外とし、別途スコープ設計を要する。

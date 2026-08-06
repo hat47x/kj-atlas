@@ -5,9 +5,9 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: TBD (Productization Program Owner / Security Officer / UX Lead)
-- Scope: `02_Architecture/schemas.md`, `02_Architecture/design/data_model_operations_overview.html`, `02_Architecture/review_attribution.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/frontend/src/canvas/CardView.tsx`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/export/`, `04_Documentation/`
+- Scope: `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/review_attribution.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/frontend/src/canvas/CardView.tsx`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/export/`, `04_Documentation/`
 - Related Backlog: `CARD-META-UI-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0056-card-provenance-metadata-boundary.md`（本Issueの境界提案、Accepted 2026-07-16）, `02_Architecture/schemas.md`（`Card.meta` 将来拡張）, `02_Architecture/design/data_model_operations_overview.html`, `02_Architecture/review_attribution.md`, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0056-card-provenance-metadata-boundary.md`（本Issueの境界提案、Accepted 2026-07-16）, `02_Architecture/schemas.md`（`Card.meta` 将来拡張）, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/review_attribution.md`, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -46,7 +46,7 @@
 - `SidePanel.tsx` では選択カードの本文、レビュー状態、主張種別、保留、違和感、根拠リンクを確認できる。
 - `review_attribution.md` は「レビューした人/いつ」の設計であり、「カードを起票した人/作った人」の設計ではない。
 - `schemas.md` は最小 `DocumentV1` では出自情報を持たないと明記し、将来拡張として `Card.meta`（出自情報、タグ、引用元など）を挙げている。
-- `02_Architecture/design/data_model_operations_overview.html` は Card を L2 embedded-only とし、個別カードCRUDや個別カード管理UIをMVP標準とはしていない。
+- `02_Architecture/data_model_operations_overview.html` は Card を L2 embedded-only とし、個別カードCRUDや個別カード管理UIをMVP標準とはしていない。
 - `DOMAIN-TRACE-01` は通し番号と原データ遡及（`seq` / `source`）の実装候補を管理している。本Issueはその上位境界として、起票者・作成者・最終更新者などの個人/組織識別に関わるUI、保存、redaction、ADR要否を扱う。
 
 ## 3) 判断基準による優先度評価
@@ -108,7 +108,7 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [x] T1 `schemas.md` と `02_Architecture/design/data_model_operations_overview.html` で `Card.meta` の扱いを「未確定・本Issue管理」に接続する。
+- [x] T1 `schemas.md` と `02_Architecture/data_model_operations_overview.html` で `Card.meta` の扱いを「未確定・本Issue管理」に接続する。
 - [x] T2 `review_attribution.md` に、レビュー帰属とカード起票者/provenanceメタを混同しない注記を追加する。
 - [x] T3 UI仕様案を作る（カード本体、SidePanel、共有前確認、import警告）。
 - [x] T4 永続先候補を比較し、Acceptedの`ADR-0056`により主体メタデータをMVPでは永続化しない境界に固定する。
@@ -138,7 +138,7 @@
 ## 完了記録（2026-07-16）
 
 - Acceptedの `ADR-0056` に従い、起票者・作成者・所有者等の主体メタデータをMVPでは保存・編集・推測しない境界を維持した。境界変更がないため、新しいADRは起票していない。
-- `02_Architecture/design/data_model_operations_overview.html` に、状態、非主体の遡及情報、レビュー帰属、責任主体、公開説明用出所の分類と、表示・操作・共有境界を追加した。
+- `02_Architecture/data_model_operations_overview.html` に、状態、非主体の遡及情報、レビュー帰属、責任主体、公開説明用出所の分類と、表示・操作・共有境界を追加した。
 - `schemas.md` に残っていたPending表記をAccepted判断へ更新し、旧 `DocumentV2` 表記を現行の `DocumentV1` へ修正した。
 - SidePanelの記録日時を画面言語に合う形式で表示し、元のISO日時は `time` 要素の `dateTime` として保持した。
 - `card_trace_meta.spec.ts` でマウス選択、キーボード選択と展開、共有前確認を含む6件が成功した。`pnpm typecheck` とブラウザでの日本語表示確認も成功した。
@@ -175,7 +175,7 @@
 ## Traceability
 
 - Related: `02_Architecture/schemas.md`（`Card.meta` 将来拡張）
-- Related: `02_Architecture/design/data_model_operations_overview.html`（CardはL2 embedded-only、個別CRUDなし）
+- Related: `02_Architecture/data_model_operations_overview.html`（CardはL2 embedded-only、個別CRUDなし）
 - Related: `02_Architecture/review_attribution.md`（レビュー帰属と起票者メタの分離）
 - Related: `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`（通し番号・原データ出典の具体実装候補）
 - Related: `03_Implement/frontend/e2e/card_meta_row.spec.ts`（状態メタ行の既存UI証跡）

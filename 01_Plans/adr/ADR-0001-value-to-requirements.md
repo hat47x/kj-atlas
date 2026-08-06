@@ -170,7 +170,7 @@
   - `AI-09-2`: AIはラウンド移行、過去成果、系譜、レビュー状態、唯一の仮説を自動確定しない。
   - `AI-09-3`: `KJ_ATLAS_LLM_PROVIDER=none` で作成、引継ぎ、停止・再開、分岐、比較を完了できる。
 
-詳細要件は `00_Prompt/w_type_iterative_inquiry_requirements.md`、データ境界は `02_Architecture/design/inquiry_journey_model.html`、設計判断は `ADR-0057` を正本とする。
+詳細要件は `00_Prompt/w_type_iterative_inquiry_requirements.md`、データ境界は `02_Architecture/inquiry_journey_model.html`、設計判断は `ADR-0057` を正本とする。
 
 ---
 

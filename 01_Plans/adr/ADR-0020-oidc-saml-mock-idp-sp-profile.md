@@ -8,7 +8,7 @@
 ## Context
 
 `kj-atlas` は enterprise/government 運用を想定しつつ、OSS として軽量性・安全性・再現性を維持する必要がある。
-既存方針では、アプリ本体は認証機構を内包せず、外部基盤（リバースプロキシ / IdP）へ委譲する。`02_Architecture/design/enterprise_architecture.html`
+既存方針では、アプリ本体は認証機構を内包せず、外部基盤（リバースプロキシ / IdP）へ委譲する。`02_Architecture/enterprise_architecture.html`
 
 一方で、OIDC/SAML 連携の実装～検証を AI エージェント主体で継続するには、次の論点を同時に解く必要がある。
 
@@ -27,7 +27,7 @@
 - `kj-atlas` Backend は、信頼されたプロキシから渡される認証済みヘッダーを受け取って `AuthContext` を構築する。
 - アプリ本体はパスワード・秘密情報・認証セッションを保持しない。
 
-この判断は、`02_Architecture/design/enterprise_architecture.html` の「認証は外部責務」「アプリは署名済みユーザコンテキストを受け取る」方針を具体化するものである。
+この判断は、`02_Architecture/enterprise_architecture.html` の「認証は外部責務」「アプリは署名済みユーザコンテキストを受け取る」方針を具体化するものである。
 
 
 ### 1.1) 認証責務境界（固定）
@@ -36,7 +36,7 @@
 - Backend の責務は「信頼境界の検証（trusted proxy）」「入力ヘッダー/JWT の検証」「`AuthContext` 正規化」の3点に限定する。
 - `AuthContext` 正規化後の契約（`userId`/`provider`/`subject`）のみをアプリ内部の認可・帰属判定に使用し、生のヘッダー差異を下流へ漏らさない。
 
-### 1.2) `02_Architecture/design/enterprise_architecture.html` との整合項目
+### 1.2) `02_Architecture/enterprise_architecture.html` との整合項目
 
 1. 認証外部委譲（IdP/IAP）とアプリ非保持原則を維持する。
 2. `AuthContext` はアプリ内部I/Fの唯一契約とし、provider依存分岐を実装へ持ち込まない。
@@ -301,7 +301,7 @@ AUTH-ARCH-01 で固定した論点と、継続検討論点を分離する。
 
 ## Traceability
 
-- Related: `02_Architecture/design/enterprise_architecture.html`
+- Related: `02_Architecture/enterprise_architecture.html`
 - Related: `02_Architecture/schemas.md`
 - Related: `02_Architecture/api.md`
 - Related: `02_Architecture/review_attribution.md`

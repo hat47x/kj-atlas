@@ -36,7 +36,7 @@ class DocsCheckEntrypointTest(unittest.TestCase):
             encoding="utf-8",
         )
         (root / "02_Architecture" / "api.md").write_text("DocumentV1 API.\n", encoding="utf-8")
-        (root / "02_Architecture" / "design" / "data_model_operations_overview.html").write_text(
+        (root / "02_Architecture" / "data_model_operations_overview.html").write_text(
             "DocumentV1 support.\n", encoding="utf-8"
         )
         for relative_path, required_terms in CHECKS.DOCUMENTED_RESPONSE_MODEL_REQUIRED_TERMS.items():

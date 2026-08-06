@@ -7,7 +7,7 @@
 - Owner: Product Owner + Platform Architecture Owner
 - Scope: `01_Plans/`, `02_Architecture/`
 - Related Backlog: N/A
-- Related ADR/Spec: `ADR-0001`, `ADR-0010`, `ADR-0011`, `ADR-0012`, `02_Architecture/design/architecture.html`
+- Related ADR/Spec: `ADR-0001`, `ADR-0010`, `ADR-0011`, `ADR-0012`, `02_Architecture/architecture.html`
 - Dependencies: N/A
 - Expected verification level: `docs-check`
 

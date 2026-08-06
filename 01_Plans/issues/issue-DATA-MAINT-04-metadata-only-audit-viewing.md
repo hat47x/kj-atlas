@@ -5,9 +5,9 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Codex
-- Scope: `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`（Done 2026-06-20）, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `02_Architecture/design/data_model_operations_overview.html`, `02_Architecture/api.md`
+- Scope: `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`（Done 2026-06-20）, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/api.md`
 - Related Backlog: `DATA-MAINT-04`
-- Related ADR/Spec: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `02_Architecture/design/data_model_operations_overview.html`, `02_Architecture/api.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/api.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `integration`
 
 ## Draft→Open 2026-07-13
@@ -29,7 +29,7 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
 ## 2) 背景 / Context
 
 - `api.md` は、Document監査イベントとCE4監査契約を持つが、監査ログ閲覧UIや保持期限管理は含めていない。
-- `02_Architecture/design/data_model_operations_overview.html` は、Export / Context audit event を派生/読み取り中心のデータとして扱い、アプリ本体に監査ログ閲覧UIを持たない前提を書いている。
+- `02_Architecture/data_model_operations_overview.html` は、Export / Context audit event を派生/読み取り中心のデータとして扱い、アプリ本体に監査ログ閲覧UIを持たない前提を書いている。
 - `DATA-MAINT-03` は、高権限操作のうち監査ログ閲覧だけを、本文を含まない範囲で内部issue化可能と分類した。
 - `ADR-0035` は2026-07-13にAcceptedされ、本IssueのOpen化前提は満たされた。ただし本Issueは実装許可ではなく、本文なしメタデータのallowlistとread-only境界を固定する検討器である。
 
@@ -44,7 +44,7 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
 
 - 変更対象:
   - 監査メタデータ閲覧で扱ってよい項目、扱ってはいけない項目、権限、監査証跡、検証レベルの整理。
-  - `api.md` と `02_Architecture/design/data_model_operations_overview.html` にある既存監査イベント契約との整合確認。
+  - `api.md` と `02_Architecture/data_model_operations_overview.html` にある既存監査イベント契約との整合確認。
   - 実装へ進む場合の専用API/CLI/UI issue分割条件。
 - 変更の最小単位:
   - まず本Issueで、本文を含まない読み取り専用メタデータの候補と、ADRが必要な高権限閲覧を分ける。
@@ -159,8 +159,8 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
 - 実行コマンド:
   - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py`
   - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py`
-  - `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/design/data_model_operations_overview.html 02_Architecture/api.md`
-  - `rg -n "DATA-MAINT-04|監査メタデータ|本文を含まない|ADR-0035|audit metadata|audit viewing" 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/design/data_model_operations_overview.html 02_Architecture/api.md`
+  - `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/data_model_operations_overview.html 02_Architecture/api.md`
+  - `rg -n "DATA-MAINT-04|監査メタデータ|本文を含まない|ADR-0035|audit metadata|audit viewing" 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/data_model_operations_overview.html 02_Architecture/api.md`
 - 期待結果:
   - DATA-MAINT-04がOpenとして追跡され、本文なしallowlistとread-only境界が固定されるまで実装に進まない。
   - 監査閲覧候補が本文を含まない範囲に限定され、本文閲覧や横断検索はADR必須として残る。

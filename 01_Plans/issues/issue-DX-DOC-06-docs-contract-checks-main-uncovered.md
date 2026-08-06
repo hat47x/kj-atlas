@@ -12,7 +12,7 @@
 ## 課題
 
 - 現在の問題: `01_Plans/docs_contract_checks.py`の`main()`関数（CLIエントリポイント、L1030-1066）は13個の`check_*`関数を呼び出して束ねるが、この`main()`自体を直接呼び出すテストが存在しない（テストファイル内で`\bmain\b`にマッチするのは`unittest.main()`のみ）。対照的に、個々の`check_*`関数はそれぞれ2〜7件の直接テストを持つ。
-- 単純な追加ではない理由: `main()`が呼び出す`check_document_contract_baseline`・`check_public_boundary`・`check_safety_routes`・`check_history_metadata`は、`schemas.md`・`api.md`・`02_Architecture/design/data_model_operations_overview.html`など実リポジトリ内の固定相対パスを無条件に`(root / fixed_path).read_text(...)`で読む。既存の`check_*`単体テストはtmp_dir fixtureに必要最小限のファイルだけを用意して個別関数を直接呼ぶパターンだが、`main()`を同じ手法でテストしようとすると、13個すべてのcheckが要求するパス前提を同時に満たす完全なmulti-fileフィクスチャが必要になり、揃わない限り`FileNotFoundError`で落ちる。これは「ついでに」書けるテストではなく、フィクスチャ設計自体が相応の作業になる。
+- 単純な追加ではない理由: `main()`が呼び出す`check_document_contract_baseline`・`check_public_boundary`・`check_safety_routes`・`check_history_metadata`は、`schemas.md`・`api.md`・`02_Architecture/data_model_operations_overview.html`など実リポジトリ内の固定相対パスを無条件に`(root / fixed_path).read_text(...)`で読む。既存の`check_*`単体テストはtmp_dir fixtureに必要最小限のファイルだけを用意して個別関数を直接呼ぶパターンだが、`main()`を同じ手法でテストしようとすると、13個すべてのcheckが要求するパス前提を同時に満たす完全なmulti-fileフィクスチャが必要になり、揃わない限り`FileNotFoundError`で落ちる。これは「ついでに」書けるテストではなく、フィクスチャ設計自体が相応の作業になる。
 - 利用者または開発への影響: `main()`のwiring（どのcheckを呼ぶか、`findings`の集約、exit code分岐、出力フォーマット）に対する回帰保護が無い。個々の`check_*`関数自体は保護されているため、実害は「新しいcheckを追加/削除した際の呼び出し漏れ」のような配線ミスに限られる。
 
 ## 対応方針

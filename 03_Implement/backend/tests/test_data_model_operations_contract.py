@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[3]
-DATA_MODEL_OVERVIEW = ROOT / "02_Architecture/design/data_model_operations_overview.html"
+DATA_MODEL_OVERVIEW = ROOT / "02_Architecture/data_model_operations_overview.html"
 SCHEMAS = ROOT / "02_Architecture/schemas.md"
 API = ROOT / "02_Architecture/api.md"
 ADR_0033 = ROOT / "01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md"

@@ -770,7 +770,7 @@
 
 ### Phase 1: Read（開始時Read必須）
 - 開始時Read（Read Order上流）: `00_Prompt/system_prompt.md` → `00_Prompt/domain.md` → `00_Prompt/handoff.md` → `00_Prompt/agent_handover.md` → `00_Prompt/ai_cognitive_externalization_requirements.md`。
-- 判断軸Read: `01_Plans/adr/ADR-0001-value-to-requirements.md` / `02_Architecture/design/architecture.html` / `02_Architecture/schemas.md`。
+- 判断軸Read: `01_Plans/adr/ADR-0001-value-to-requirements.md` / `02_Architecture/architecture.html` / `02_Architecture/schemas.md`。
 - Issue固有Read: `Scope=04_Documentation/installation.md` と `Related ADR/Spec`、`Requirement meta I/F` を再確認し、`VerificationLevel=docs-check` を固定。
 
 ### Phase 2: Plan
@@ -1174,7 +1174,7 @@
 ## Stream H dedicated sync record（2026-04-24）
 
 ### Phase 1 Read
-- `02_Architecture/design/strict_mode_exception_approval_flow.html` を起点に、AUTH-OPS-03 / DOC-OPS-02 の正本語彙（Security Officer / System Owner / Platform Operator、StoppedForClarification、D1〜D4）を再確認した。
+- `02_Architecture/strict_mode_exception_approval_flow.html` を起点に、AUTH-OPS-03 / DOC-OPS-02 の正本語彙（Security Officer / System Owner / Platform Operator、StoppedForClarification、D1〜D4）を再確認した。
 - 本Issueの Scope と Related ADR/Spec を再読し、Docs-only かつ単一Issue更新で進めることを確認した。
 
 ### Phase 2 ADR（Context / Decision / Consequences）

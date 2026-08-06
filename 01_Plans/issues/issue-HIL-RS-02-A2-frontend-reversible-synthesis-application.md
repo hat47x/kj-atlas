@@ -7,7 +7,7 @@
 - Owner: Frontend Owner
 - Scope: `03_Implement/frontend/`
 - Related Backlog: `HIL-RS-02`
-- Related ADR/Spec: `ADR-0027`, `ADR-0026`, `02_Architecture/design/architecture.html`, `02_Architecture/schemas.md`
+- Related ADR/Spec: `ADR-0027`, `ADR-0026`, `02_Architecture/architecture.html`, `02_Architecture/schemas.md`
 - Dependencies: `HIL-RS-02`
 - Expected verification level: `unit`
 

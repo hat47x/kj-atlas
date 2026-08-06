@@ -5,9 +5,9 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex / Maintainer
-- Scope: `00_Prompt/w_type_iterative_inquiry_requirements.md`, `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `02_Architecture/design/inquiry_journey_model.html`, `02_Architecture/schemas.md`, `02_Architecture/design/data_model_operations_overview.html`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/e2e/`
+- Scope: `00_Prompt/w_type_iterative_inquiry_requirements.md`, `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `02_Architecture/inquiry_journey_model.html`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.html`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `DOMAIN-W-ITERATION-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/design/inquiry_journey_model.html`, `00_Prompt/qualitative_card_quality_requirements.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/inquiry_journey_model.html`, `00_Prompt/qualitative_card_quality_requirements.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -91,7 +91,7 @@
 - [x] AC-8: 中断後の再開ブリーフから、問い、未解決点、次の行動、元成果へ移動できる。
 - [x] AC-9: 引継ぎ確認を一件ずつ採用・修正・見送り・保留でき、未回答でも保存できる。
 - [x] AC-10: `KJ_ATLAS_LLM_PROVIDER=none` で中核操作を完了できる。
-- [x] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。→ `02_Architecture/design/inquiry_journey_model.html` §4.4（SafeMode派生bundle契約）、§4.5（Import strict validation契約）、§4.6（部分共有契約）、§4.3（削除と保持）、§07 不変条件 8-10 として契約化済み（2026-07-20）。SafeMode適用結果と共有範囲を受信側で検証できるbundle内metadata（`InquiryExportInfoV1`）も実装・検証済み（2026-08-02、`aa74a0c9`）。保持・履歴削除の実体化はbackend永続化とともに未完了のため、support levelは`L0: Planned`を維持する。
+- [x] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。→ `02_Architecture/inquiry_journey_model.html` §4.4（SafeMode派生bundle契約）、§4.5（Import strict validation契約）、§4.6（部分共有契約）、§4.3（削除と保持）、§07 不変条件 8-10 として契約化済み（2026-07-20）。SafeMode適用結果と共有範囲を受信側で検証できるbundle内metadata（`InquiryExportInfoV1`）も実装・検証済み（2026-08-02、`aa74a0c9`）。保持・履歴削除の実体化はbackend永続化とともに未完了のため、support levelは`L0: Planned`を維持する。
 - [x] AC-12: マウス・キーボード・390px・代表規模のE2Eが通る。
 - [x] AC-13: 探究終了（破壊的操作）の確認は、A-1（エージェント連携）と同型の保存・破棄・取消の3択とし、SafeMode既定ONの継承と出典・文面のサニタイズを満たす。→ 2026-07-29チェックポイントで完了。
 
@@ -101,7 +101,7 @@
 - [x] T2 要件とADRを起票し、価値トレーサビリティへ接続する。
 - [x] T3 代表fixtureとメモリ内状態機械を作り、段階・反復・分岐の語彙をunit testで固定する。
 - [x] T4 高度機能内の低忠実度プロトタイプを作り、初期表示差分0と操作理解を確認する。
-- [x] T5 広域比較を行い、`RoundSnapshotV1` の境界と採択方式を `ADR-0057` / `02_Architecture/design/inquiry_journey_model.html` へ固定する。
+- [x] T5 広域比較を行い、`RoundSnapshotV1` の境界と採択方式を `ADR-0057` / `02_Architecture/inquiry_journey_model.html` へ固定する。
 - [x] T6 ADR受理後、型・validation・ローカル保存・import/export・roundtripを実装する。
 - [x] T6a 自己完結bundleのローカルexport/import、strict validation、digest検証、roundtripを実装する。
 - [x] T6b 現在文書から正式bundleを作り、画面からJSONファイルへ保存・再読込できるようにする。
@@ -287,7 +287,7 @@
 
 - Requirements: `00_Prompt/w_type_iterative_inquiry_requirements.md`
 - Accepted decision: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`
-- Architecture: `02_Architecture/design/inquiry_journey_model.html`
+- Architecture: `02_Architecture/inquiry_journey_model.html`
 - Card quality: `00_Prompt/qualitative_card_quality_requirements.md`
 - Value coverage: `02_Architecture/value_traceability.md`
 - Derived-from: 2026-07-15 ユーザー指摘「KJ法は6ラウンドのW型進行に見られるように、高度実務ではイテレーションで思考を深める」

@@ -49,7 +49,7 @@
 
 ## 進捗記録 2026-07-15: AI入口と契約テストの分離
 
-- backendのデータモデル契約テストが、AGENTSに `02_Architecture/design/data_model_operations_overview.html` の個別列挙を要求し、タスク別最小読取への変更をCIで拒否していた。
+- backendのデータモデル契約テストが、AGENTSに `02_Architecture/data_model_operations_overview.html` の個別列挙を要求し、タスク別最小読取への変更をCIで拒否していた。
 - データモデル設計文書間の参照検査は維持し、AI入口だけを対象外にした。AGENTSは `02_Architecture/` のタスク別入口を示し、個別ファイル目録を持たない。
 - `test_data_model_operations_contract.py` の対象testとbackend非PostgreSQL test全体で回帰を確認する。
 

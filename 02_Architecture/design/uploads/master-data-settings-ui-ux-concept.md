@@ -170,7 +170,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 ## Traceability
 
 - `01_Plans/issues/issue-DATA-MODEL-OPS-02-management-plane-data-boundary.md`（D1〜D4）
-- `02_Architecture/design/data_model_operations_overview.html` §4、§5.2
+- `02_Architecture/data_model_operations_overview.html` §4、§5.2
 - `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`
 - `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
 - `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
@@ -180,5 +180,5 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 - `02_Architecture/design/ui_design_handoff.md`
 - `01_Plans/research-2026-07-16-saas-tenant-authorization-boundary.md`
 - `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`（Accepted）
-- `02_Architecture/design/enterprise_architecture.html`（SaaS multi-tenantは現行非目標）
+- `02_Architecture/enterprise_architecture.html`（SaaS multi-tenantは現行非目標）
 - `THREAT_MODEL.md`

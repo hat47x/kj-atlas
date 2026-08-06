@@ -14,7 +14,7 @@
 - **配布/Static Publish**: `ADR-0038` 柱3（`SOCIAL-DIFFUSION-03` 証拠定着型の安全配布、SafeMode 配布既定ON、ROADMAP 方式A/C 整合）で被覆済み（VR5 として延期方向）。
 - **observability/error-recovery**: `PRODUCT-OPS-01`（Done）/`PRODUCT-OPS-02`（Open）で issue 被覆・実行中。
 - **security 姿勢**: `THREAT_MODEL.md` / `SECURITY.md` / `ADR-0017` / CVI-1（`ADR-0041`）で被覆。
-- **AI品質**: `llm_quality_strategy.md` / `02_Architecture/design/llm_escalation_policy.html` / `llm_input_ir_spec.md` / `llm_runtime_constraints.md` で被覆。
+- **AI品質**: `llm_quality_strategy.md` / `02_Architecture/llm_escalation_policy.html` / `llm_input_ir_spec.md` / `llm_runtime_constraints.md` で被覆。
 - **i18n / privacy / testing-CI / extensibility / export-interop / contributor-onboarding / collaboration-future**: それぞれ既存 ADR/doc/issue（ROADMAP localization・`src/i18n` テスト群・`ADR-0019`・`ADR-0007` future-backlog・`schemas.md` pack 契約・`CONTRIBUTING.md`＋`agent_collaboration.md`・ROADMAP 長期）で被覆、または `ADR-0039` により適切に延期。
 
 triage は `actionable_adrs=0`（ADR が作業をブロックしていない）、一方 active issues は約22件（うち ready 約12件）＝**実行待ちが豊富**。

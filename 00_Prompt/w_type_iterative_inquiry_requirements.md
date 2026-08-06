@@ -180,7 +180,7 @@ AIの出力はproposal-onlyとし、`KJ_ATLAS_LLM_PROVIDER=none` でも、ラウ
 - SafeMode既定ONでは、未レビュー本文、現場の生データ、個人情報を含む出典を暗黙にラウンド間共有物やAI入力へ含めない。
 - import時は、ラウンド履歴や段階ラベルを権限、事実確認、`human_reviewed` の根拠として信頼しない。
 - import時は、bundle内参照の完結、digest、親グラフの非巡回、version gate、未知キー拒否を検証する。
-- 詳細な型境界、保存、共有、段階的導入は `02_Architecture/design/inquiry_journey_model.html` を正本とする。
+- 詳細な型境界、保存、共有、段階的導入は `02_Architecture/inquiry_journey_model.html` を正本とする。
 
 ## 9. 受入条件
 
