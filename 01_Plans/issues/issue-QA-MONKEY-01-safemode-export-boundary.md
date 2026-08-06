@@ -7,7 +7,7 @@
 - Owner: TBD
 - Scope: `03_Implement/frontend`
 - Related Backlog: `QA-MONKEY-01`
-- Related ADR/Spec: `AGENTS.md`, `THREAT_MODEL.md`, `02_Architecture/design/architecture.html`, `04_Documentation/e2e_testing.md`
+- Related ADR/Spec: `AGENTS.md`, `THREAT_MODEL.md`, `02_Architecture/architecture.html`, `04_Documentation/e2e_testing.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -26,7 +26,7 @@
 ## 2) 背景 / Context
 
 - `AGENTS.md` marks SafeMode default ON and leak prevention as the highest-priority safety rule.
-- `THREAT_MODEL.md` and `02_Architecture/design/architecture.html` keep share/export redaction as a safety boundary.
+- `THREAT_MODEL.md` and `02_Architecture/architecture.html` keep share/export redaction as a safety boundary.
 - `04_Documentation/e2e_testing.md` requires no additional share/export exposure while SafeMode is ON.
 
 ## 3) 判断基準による優先度評価

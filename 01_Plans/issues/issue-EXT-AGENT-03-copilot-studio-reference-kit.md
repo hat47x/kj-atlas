@@ -5,9 +5,9 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: Claude Code
-- Scope: `04_Documentation/`, `02_Architecture/design/external_agent_collaboration_spec.html`（参照）, `03_Implement/frontend/e2e/`（スモークのみ）
+- Scope: `04_Documentation/`, `02_Architecture/external_agent_collaboration_spec.html`（参照）, `03_Implement/frontend/e2e/`（スモークのみ）
 - Related Backlog: `EXT-AGENT-03`
-- Related ADR/Spec: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（D4・Copilot プロファイル）, `02_Architecture/design/external_agent_collaboration_spec.html`（§7 正本）, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（主体メタ表示・共有境界）
+- Related ADR/Spec: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（D4・Copilot プロファイル）, `02_Architecture/external_agent_collaboration_spec.html`（§7 正本）, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（主体メタ表示・共有境界）
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -66,7 +66,7 @@
 
 ## Traceability
 
-- Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`, `02_Architecture/design/external_agent_collaboration_spec.html`（§7）
+- Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`, `02_Architecture/external_agent_collaboration_spec.html`（§7）
 - Related: `01_Plans/issues/issue-EXT-AGENT-01-agent-task-package-export.md`, `issue-EXT-AGENT-02-agent-response-import.md`, `04_Documentation/README.md`（公開境界）
 - Related: `01_Plans/issues/issue-GENAI-GOV-01-generative-ai-lane-boundary-and-readiness.md`（Lane C: 外部エージェント成果物連携）, `02_Architecture/value_traceability.md` §2.9
 - Derived-from: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`

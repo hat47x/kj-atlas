@@ -5,16 +5,16 @@
 - Source Issue: N/A
 - Priority: P0 (Stream D highest)
 - Owner: Codex
-- Scope: `02_Architecture/design/data_model_operations_overview.html`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `AGENTS.md`, `03_Implement/backend/tests/test_data_model_operations_contract.py`
+- Scope: `02_Architecture/data_model_operations_overview.html`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `AGENTS.md`, `03_Implement/backend/tests/test_data_model_operations_contract.py`
 - Related Backlog: `DATA-MODEL-OPS-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/design/data_model_operations_overview.html`
+- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.html`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: DATA-MODEL-OPS-01
 - RequirementStatement: MVPで運用サポートするデータ構造、埋め込み限定の構造、派生/契約のみの構造をER図とCRUD表で継続的に識別できるようにする。
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=開発者または運用者がMVPのデータ構造を確認する / 操作=`02_Architecture/design/data_model_operations_overview.html` を読む / 期待結果=物理テーブル、論理エンティティ、CRUD可否、保守責任が区別できる / 除外=個別CRUD実装、管理画面実装。
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=開発者または運用者がMVPのデータ構造を確認する / 操作=`02_Architecture/data_model_operations_overview.html` を読む / 期待結果=物理テーブル、論理エンティティ、CRUD可否、保守責任が区別できる / 除外=個別CRUD実装、管理画面実装。
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: share-export / public-exposure
 
 ## Dependency graph（Stream I）
@@ -41,7 +41,7 @@
 ## 2) 背景 / Context
 
 - `ADR-0033` は、MVPデータサポートを「運用サポート」「埋め込み限定」「派生/読み取り中心」「契約のみ/将来拡張」に分ける。
-- `02_Architecture/design/data_model_operations_overview.html` は、物理ER、論理ER、CRUD表、ステークホルダー別運用境界を示す入口として追加された。
+- `02_Architecture/data_model_operations_overview.html` は、物理ER、論理ER、CRUD表、ステークホルダー別運用境界を示す入口として追加された。
 - 今後、DocumentV2、review attribution、AI連携、監査連携の実装が進むと、この表の同期が崩れやすい。
 
 ## 3) 判断基準による優先度評価
@@ -54,7 +54,7 @@
 ## 4) 提案する解決策 / Proposed solution
 
 - 変更対象:
-  - `02_Architecture/design/data_model_operations_overview.html` のER図、CRUD表、ステークホルダー表。
+  - `02_Architecture/data_model_operations_overview.html` のER図、CRUD表、ステークホルダー表。
   - `schemas.md` / `api.md` / `AGENTS.md` からの参照導線。
 - 変更の最小単位:
   - 新しい永続テーブル、Document内論理エンティティ、標準APIが追加された時点で、本Issueの観点に沿ってCRUD表を更新する。
@@ -90,7 +90,7 @@
 ### Stream D validation extension（AC/DoD運用固定）
 
 - AC運用:
-  1) `L1/L1.5/L2/L2.5/L3/L0` が `schemas.md` / `02_Architecture/design/data_model_operations_overview.html` / DATA系3Issueで一致する。
+  1) `L1/L1.5/L2/L2.5/L3/L0` が `schemas.md` / `02_Architecture/data_model_operations_overview.html` / DATA系3Issueで一致する。
   2) 「型がある=運用可能」を否定する注記が維持される。
   3) `DATA-CONTRACT-01` と `DATA-MAINT-01` への依存境界が重複なく記述される。
 - DoD運用:
@@ -117,7 +117,7 @@
 ## 11) 運用境界（含む / 含まない）
 
 - 含む:
-  - `02_Architecture/design/data_model_operations_overview.html` のER/CRUD/ステークホルダー境界の継続更新。
+  - `02_Architecture/data_model_operations_overview.html` のER/CRUD/ステークホルダー境界の継続更新。
   - `schemas.md` との用語同期（support level名称を含む）。
   - Stream G成果としての境界表メンテナンス。
 - 含まない:
@@ -144,13 +144,13 @@
 
 - [x] AC-04: CRUD表の全行に support level（L1/L1.5/L2/L2.5/L3/L0）が明示され、`schemas.md` の定義と同一語彙である。
 - [x] AC-05: 互換性判定の責務が「契約更新（Architecture）→実装追従（Implement）」の順序で記述されている。
-- [x] DoD-01: 新規フィールド追加時に、`schemas.md` と `02_Architecture/design/data_model_operations_overview.html` を同一コミットで更新する運用規則が明記されている。
+- [x] DoD-01: 新規フィールド追加時に、`schemas.md` と `02_Architecture/data_model_operations_overview.html` を同一コミットで更新する運用規則が明記されている。
 - [x] DoD-02: 「型がある=運用可能」誤読を防ぐ注意書きが維持されている。
 - 判定: **Proceed**（MVP運用境界の固定化は完了、実装依存は契約凍結で切断）。
 
 ## 14) Stream D → 下流引き渡しチェックリスト
 
-- [x] 新規データ構造追加時に `schemas.md` と `02_Architecture/design/data_model_operations_overview.html` を同一コミットで更新する規則を固定した。
+- [x] 新規データ構造追加時に `schemas.md` と `02_Architecture/data_model_operations_overview.html` を同一コミットで更新する規則を固定した。
 - [x] CRUD表の全行に support level と運用責務主体を併記し、運用者誤読の防止条件を満たした。
 - [x] 例外時フロー参照として `DATA-MAINT-01` への導線を維持した。
 - [x] `DATA-CONTRACT-01` で扱う契約ドリフト観点（frontend/backend/api/schema整合）との境界を重複なく明記した。
@@ -184,7 +184,7 @@
 
 ## 19) Stream D Phase execution log（2026-05-20）
 
-1. Read: `schemas.md` / `02_Architecture/design/data_model_operations_overview.html` / `data_handling.md` の境界記述を再読。
+1. Read: `schemas.md` / `02_Architecture/data_model_operations_overview.html` / `data_handling.md` の境界記述を再読。
 2. Context/Decision/Consequences: 本Issueの C/D/C を Stream D 判定の正本として再確認。
 3. CRUD境界固定: `PUT /docs/{doc_id}` create-if-absent と `L1/L1.5/L2/L2.5/L3/L0` を固定語彙として扱う。
 4. ドリフト監査反映: 語彙不一致・version gate欠落・契約不一致を Stop 条件として再確認。
@@ -197,10 +197,10 @@
 
 ### Context
 - 本Issueの AC-04 / 下流引き渡しでは、CRUD表の全行に `L1/L1.5/L2/L2.5/L3/L0` を併記することを完了条件としていた。
-- `02_Architecture/design/data_model_operations_overview.html` の本文は支援レベルの定義を持っていたが、CRUD表と `DocumentV2` フィールド表の各行には support level 列がなく、読者が「分類定義」と「具体データ領域」を照合する必要が残っていた。
+- `02_Architecture/data_model_operations_overview.html` の本文は支援レベルの定義を持っていたが、CRUD表と `DocumentV2` フィールド表の各行には support level 列がなく、読者が「分類定義」と「具体データ領域」を照合する必要が残っていた。
 
 ### Decision
-- `02_Architecture/design/data_model_operations_overview.html` の CRUDサポート表に `Support level` 列を追加し、各データ領域を `L1/L1.5/L2/L2.5/L3` へ直接対応させる。
+- `02_Architecture/data_model_operations_overview.html` の CRUDサポート表に `Support level` 列を追加し、各データ領域を `L1/L1.5/L2/L2.5/L3` へ直接対応させる。
 - `DocumentV2フィールド支援レベル表` にも `Support level` 列を追加し、スナップショットの正本フィールド、埋め込み限定フィールド、契約限定フィールドを同じ語彙で示す。
 - 実装変更、個別CRUD追加、管理UI/API追加は行わない。今回の修正は docs-check 範囲に限定する。
 
@@ -226,7 +226,7 @@
   - CRUDサポート表の各行に `Support level`、Create/Read/Update/Delete、MVP保守責任、備考がある。
   - 主要データ領域（Document、Card/Edge、EvidenceLink、ReviewAttribution、MergeDecisionRecord、ContextBundleなど）が期待する `L1/L1.5/L2/L2.5/L3` に分類されている。
   - DocumentV2主要フィールドが `L1/L2/L2.5` の境界を維持し、個別CRUD保証に読める状態へ戻らない。
-  - `AGENTS.md`、`schemas.md`、`api.md` から `02_Architecture/design/data_model_operations_overview.html` への参照導線が維持される。
+  - `AGENTS.md`、`schemas.md`、`api.md` から `02_Architecture/data_model_operations_overview.html` への参照導線が維持される。
 
 ### Consequences
 - DATA-MODEL-OPS-01 の docs-check が、人間の読み合わせだけでなくCIで再現可能になる。
@@ -244,7 +244,7 @@
 ### Decision
 
 - 本Issueは **Done** とする。
-- 理由: `02_Architecture/design/data_model_operations_overview.html` に物理ER、論理ER、CRUDサポート表、DocumentV2フィールド支援レベル、ステークホルダー別運用境界、DATA-MAINT-01への導線が揃っている。`schemas.md` と `api.md` からの参照導線も維持され、`03_Implement/backend/tests/test_data_model_operations_contract.py` によって主要な境界語彙と表構造を回帰検知できる。
+- 理由: `02_Architecture/data_model_operations_overview.html` に物理ER、論理ER、CRUDサポート表、DocumentV2フィールド支援レベル、ステークホルダー別運用境界、DATA-MAINT-01への導線が揃っている。`schemas.md` と `api.md` からの参照導線も維持され、`03_Implement/backend/tests/test_data_model_operations_contract.py` によって主要な境界語彙と表構造を回帰検知できる。
 - 実装変更は不要。MVPのデータ構造は全てを個別CRUDで支援する段階ではないため、本Issueは「どこまでが運用サポート済みかを誤読させない設計正本」を固定する範囲で完了する。
 
 ### Verification

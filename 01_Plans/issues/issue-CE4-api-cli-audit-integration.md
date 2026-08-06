@@ -14,7 +14,7 @@
 - Expected verification level: `docs-check`
 
 ## Done 2026-06-20
-CE4 API/CLI/Audit contract frozen in `02_Architecture/design/architecture.html`. equivalenceKey AND bundleHash, Audit 4-event set, fail-closed, dryRun sideEffect=none, CE1 mock接続確立。実装詳細（HTTP/CLI数値コード/監査配送）は実装フェーズに委譲。
+CE4 API/CLI/Audit contract frozen in `02_Architecture/architecture.html`. equivalenceKey AND bundleHash, Audit 4-event set, fail-closed, dryRun sideEffect=none, CE1 mock接続確立。実装詳細（HTTP/CLI数値コード/監査配送）は実装フェーズに委譲。
 
 ## Draft→Open 2026-06-20
 CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（proposal-only, fail-closed, 監査4点セット）。

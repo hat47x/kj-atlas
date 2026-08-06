@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P0
 - Owner: Maintainer
-- Scope: `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`, `02_Architecture/api.md`, `02_Architecture/design/enterprise_architecture.html`, `02_Architecture/runtime_parameter_registry.md`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/backend/src/kj_atlas_api/access_control.py`, `03_Implement/backend/src/kj_atlas_api/audit.py`, `03_Implement/backend/tests/test_trusted_http_settings.py`, `03_Implement/backend/tests/test_access_control_external_http_adapter.py`, `03_Implement/backend/tests/test_audit.py`, `04_Documentation/configuration.md`, `04_Documentation/security.md`, `THREAT_MODEL.md`
+- Scope: `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`, `02_Architecture/api.md`, `02_Architecture/enterprise_architecture.html`, `02_Architecture/runtime_parameter_registry.md`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/backend/src/kj_atlas_api/access_control.py`, `03_Implement/backend/src/kj_atlas_api/audit.py`, `03_Implement/backend/tests/test_trusted_http_settings.py`, `03_Implement/backend/tests/test_access_control_external_http_adapter.py`, `03_Implement/backend/tests/test_audit.py`, `04_Documentation/configuration.md`, `04_Documentation/security.md`, `THREAT_MODEL.md`
 - Related ADR/Spec: `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`, `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/api.md`, `THREAT_MODEL.md`
 - Expected verification level: `unit`
 

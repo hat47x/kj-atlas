@@ -195,7 +195,7 @@
 ### Phase 1 Read同期
 
 - `AUTH-ARCH-01` → `AUTH-SCHEMA-01` → `AUTH-API-02` → `AUTH-IMPL-01` → `AUTH-E2E-01` の順序依存を再確認した。
-- `02_Architecture/design/strict_mode_exception_approval_flow.html` と `02_Architecture/design/enterprise_architecture.html` を AUTH 系契約の正本として参照し、下流が上流を上書きしていないことを確認した。
+- `02_Architecture/strict_mode_exception_approval_flow.html` と `02_Architecture/enterprise_architecture.html` を AUTH 系契約の正本として参照し、下流が上流を上書きしていないことを確認した。
 
 ### Phase 2 ADR/契約明文化
 

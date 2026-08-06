@@ -60,10 +60,10 @@ CURRENT_ONLY_PATHS = (
     Path("01_Plans/project-progress-dashboard.md"),
     Path("01_Plans/issues/README.md"),
     Path("01_Plans/documentation_quality.md"),
-    Path("02_Architecture/design/architecture.html"),
+    Path("02_Architecture/architecture.html"),
     Path("02_Architecture/api.md"),
     Path("02_Architecture/schemas.md"),
-    Path("02_Architecture/design/data_model_operations_overview.html"),
+    Path("02_Architecture/data_model_operations_overview.html"),
     Path("03_Implement/frontend/docs/e2e_testing.md"),
 )
 DOCUMENTED_RESPONSE_MODEL_REQUIRED_TERMS = {
@@ -152,7 +152,7 @@ AGENT_SAFETY_REQUIRED_TERMS = (
 )
 AGENT_SAFETY_REQUIRED_ROUTES = (
     "THREAT_MODEL.md",
-    "02_Architecture/design/architecture.html",
+    "02_Architecture/architecture.html",
     "04_Documentation/public_index.md",
 )
 PUBLIC_SAFETY_ROUTES = {
@@ -533,7 +533,7 @@ def check_document_contract_baseline(
     root: Path,
     schemas_path: Path = Path("02_Architecture/schemas.md"),
     api_path: Path = Path("02_Architecture/api.md"),
-    data_model_path: Path = Path("02_Architecture/design/data_model_operations_overview.html"),
+    data_model_path: Path = Path("02_Architecture/data_model_operations_overview.html"),
 ) -> list[DocsCheckFinding]:
     """Return DC-ARC-001 findings when the single-DocumentV1 baseline (ADR-0058) regresses.
 
@@ -764,7 +764,8 @@ def check_history_metadata(
         if not current_path.exists():
             continue
         # relpath, not relative_to: the source document need not be an ancestor
-        # of its history directory (02_Architecture/design -> ../history).
+        # of its history directory (a doc nested one level deeper than
+        # 02_Architecture/history/ would break relative_to's assumption).
         backlink = os.path.relpath(root / relative_path, current_path.parent).replace(os.sep, "/")
         current_text = current_path.read_text(encoding="utf-8")
         if backlink not in current_text:

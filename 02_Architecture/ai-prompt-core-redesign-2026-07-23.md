@@ -29,7 +29,7 @@
 
 ### 保持すべきハード不変条件（再設計で絶対に後退させない）
 1. **応答スキーマ形状**: 各プロンプト内の schema リテラル文字列は、パーサ（`_parse_*`）が要求する形状と完全一致で維持する。キーは英語のまま。
-2. **反スコアリング**: `ADR-0048:40`（設計憲章の反パターン「スコア・ランキング・準備度%等の単一正解誘導」）、`02_Architecture/design/external_agent_collaboration_spec.html`（§01 原則3・§04 禁止フィールド score/rank/confidence/priority）。フロントは既に強制（`agent_task_export.ts:72-73`）。
+2. **反スコアリング**: `ADR-0048:40`（設計憲章の反パターン「スコア・ランキング・準備度%等の単一正解誘導」）、`02_Architecture/external_agent_collaboration_spec.html`（§01 原則3・§04 禁止フィールド score/rank/confidence/priority）。フロントは既に強制（`agent_task_export.ts:72-73`）。
 3. **SafeMode / 未レビュー保護**: `ADR-0028:57`（CE0-SAFEMODE-IF）, `:279`（Guard-01: SafeMode ON 時、未レビュー本文を AI 入力へ含めない）, `llm_provider_spec.md:16`（safeMode 既定 ON・漏えい防止）。
 4. **提案のみ / 自動確定なし**: `ADR-0028:56`（AI は候補生成器・自動確定禁止）, `:132-137`（D5 Stop 条件）, `ADR-0057:38`（AI は自動移行・過去成果の書換え・仮説の自動決定をしない）。現行プロンプトの "advisory only / proposal only / never claim certainty"（`ai.py:118, 261-262, 434`）はこの不変条件の表現であり、**言い換えても意味を保持**する。
 
@@ -58,7 +58,7 @@
 
 - **G6 — ビルダー自身に SafeMode ゲートが無い（後退させず「要検証」として旗立て）。** 5 ビルダーは `card.text` を無条件でシリアライズする（`ai.py:101,113,180,251,428`）。フロントは `SafeModePolicy.canExposeText`／`summarizeForSafeMode` でゲートする（`safe_mode.ts:17-51`, `agent_task_export.ts:144-145`）が、バックエンドのビルダーには相当物が無い。LLM 呼び出し（とくに `large-scale`/external）は信頼境界（`llm_provider_spec.md:42-43`, `ADR-0028:279`）。**これは既存のアーキ状態であり、地の文の書き換えでは変わらない** — 本再設計は現行ビルダーと *完全に同じデータ*だけをシリアライズし（新規テキストフィールドを足さない）、不変条件を保持する。ただし (a) ビルダーに redaction ゲートが無く上流依存であること、(b) G5 の追加提案は redaction ゲート無しに採用してはならないこと、(c) 未レビュー本文が external に到達しないことの専用検証が必要なこと、を明示的に旗立てする。
 
-- **G7 — 再設計の共通構造をフロントの正本イディオムに合わせる。** `agent_task_export.ts:301-335` と `02_Architecture/design/external_agent_collaboration_spec.html`（§03 タスクシート構成）はセクション順を固定している（**依頼→ガードレール→文脈→応答契約→相関ブロック**）。バックエンドは単一文字列だが、この順序に寄せる: **目的（依頼）→ ガードレール（反スコアリング・advisory・KJ 憲章）→ 応答契約（schema）→ 文脈（データ）**。schema をデータ直前に置くことで、モデルが「何を返すか」を見た直後に入力を読む流れになる。
+- **G7 — 再設計の共通構造をフロントの正本イディオムに合わせる。** `agent_task_export.ts:301-335` と `02_Architecture/external_agent_collaboration_spec.html`（§03 タスクシート構成）はセクション順を固定している（**依頼→ガードレール→文脈→応答契約→相関ブロック**）。バックエンドは単一文字列だが、この順序に寄せる: **目的（依頼）→ ガードレール（反スコアリング・advisory・KJ 憲章）→ 応答契約（schema）→ 文脈（データ）**。schema をデータ直前に置くことで、モデルが「何を返すか」を見た直後に入力を読む流れになる。
 
 ---
 
@@ -128,12 +128,12 @@
   ```python
   card_lines = [f'- id="{card.id}", text="{card.text}"' for card in payload.doc.cards]
   ```
-  他の全ビルダーは `json.dumps(card.text)` を使う（`ai.py:101,113,180,251`, `ai_relations.py:57`）。結果: (a) `"` や改行を含むカード本文が行構造を壊しプロンプト scaffolding に漏れ出す（`02_Architecture/design/external_agent_collaboration_spec.html` §04 が inbound 方向で警告するプロンプトインジェクション/構造混同面の outbound 版）；(b) イディオム不整合。**`json.dumps` への修正を推奨**（付録 B・データ形式変更なので地の文だけでなくコード修正として旗立て）。
+  他の全ビルダーは `json.dumps(card.text)` を使う（`ai.py:101,113,180,251`, `ai_relations.py:57`）。結果: (a) `"` や改行を含むカード本文が行構造を壊しプロンプト scaffolding に漏れ出す（`02_Architecture/external_agent_collaboration_spec.html` §04 が inbound 方向で警告するプロンプトインジェクション/構造混同面の outbound 版）；(b) イディオム不整合。**`json.dumps` への修正を推奨**（付録 B・データ形式変更なので地の文だけでなくコード修正として旗立て）。
 - **G1**: `mergedTextDraft`・`rationale` は user-facing なのに日本語指定なし。
 - **G2**: merge は「類似度スコア/確度」の誘惑が最大。反スコアリング未表現は最も危険。
 - **G3（一枚一志）**: mergedTextDraft はカード本文の *統合*。異なる主張を均さず、区別すべき声は区別する、が未表現。統合＝声を潰す、になりやすい。
 - **G5**: `claimType` を渡していない。fact と hypothesis の統合可否は claimType 依存。
-- **rationale**: schema/パーサとも任意だが、`02_Architecture/design/external_agent_collaboration_spec.html`（§04 rationale） は rationale 欠落を「根拠未記載」ラベルで受理（保全）とする方針。rationale の記載を促す方が良い。
+- **rationale**: schema/パーサとも任意だが、`02_Architecture/external_agent_collaboration_spec.html`（§04 rationale） は rationale 欠落を「根拠未記載」ラベルで受理（保全）とする方針。rationale の記載を促す方が良い。
 - **良好**: 「propose only, do not apply/delete」（`ai.py:434`）は自動確定なし不変条件の表現 — 保持。
 
 ---
@@ -368,7 +368,7 @@ return "\n".join(
 - **M4〔J〕 統合妥当性**: 各 group のカードが実際に重複/言い換えで、統合しても意味が保たれる（誤統合でない）。
 - **M5〔J〕 一枚一志**: mergedTextDraft が構成カードの区別すべき主張を潰していない（`ADR-0048:40`）。
 - **M6〔J〕 保守性（過剰統合の抑制）**: 迷う程度の弱い類似を候補化していない（少数意見を統合で消さない・`ADR-0048:49`）。
-- **M7〔J〕 rationale**: なぜ統合できるかが簡潔に述べられている（`02_Architecture/design/external_agent_collaboration_spec.html`（§04 rationale））。
+- **M7〔J〕 rationale**: なぜ統合できるかが簡潔に述べられている（`02_Architecture/external_agent_collaboration_spec.html`（§04 rationale））。
 
 ---
 
@@ -390,7 +390,7 @@ return "\n".join(
    ```python
    card_lines = [f'- id="{card.id}", text={json.dumps(card.text)}' for card in payload.doc.cards]
    ```
-   理由: `"`/改行を含むカード本文による行構造破壊・outbound プロンプト構造混同の解消（`02_Architecture/design/external_agent_collaboration_spec.html` §04）。**データ形式変更なので、merge ビルダーの pin テストが将来足された場合は要同期**（現状は無し）。
+   理由: `"`/改行を含むカード本文による行構造破壊・outbound プロンプト構造混同の解消（`02_Architecture/external_agent_collaboration_spec.html` §04）。**データ形式変更なので、merge ビルダーの pin テストが将来足された場合は要同期**（現状は無し）。
 
 2. **temperature の per-task 調整（任意・軽微）** — 全ルートが既定 `temperature=0.2`（`provider.py:31`）。発散が要る #3 narrative・#5 merge は `LLMRequest(..., temperature=0.4〜0.5)` 程度が妥当な一方、#1 check・#4 layout は 0.2 維持が良い。これはルート側 `LLMRequest` 生成箇所（`ai.py:511-514, 546-550, 653-657` 等）の変更であり、プロンプトではないので **flag に留める**。
 

@@ -4,9 +4,9 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex
-- Scope: `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `02_Architecture/design/data_model_operations_overview.html`, `02_Architecture/design/enterprise_architecture.html`, `02_Architecture/api.md`
+- Scope: `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/enterprise_architecture.html`, `02_Architecture/api.md`
 - Related Backlog: `DATA-MAINT-03`
-- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/design/data_model_operations_overview.html`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/data_model_operations_overview.html`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `docs-check`
 
 ## Done 2026-06-20
@@ -32,7 +32,7 @@
 ## 2) 背景 / Context
 
 - `ADR-0033` は、Admin maintenance ops を `L0: Planned` とし、削除/保管期限/所有者移管/復旧手順を完了扱いにしない。
-- `02_Architecture/design/data_model_operations_overview.html` は、アーカイブ・削除・所有者移管をMVPでは実装しないと明記している。
+- `02_Architecture/data_model_operations_overview.html` は、アーカイブ・削除・所有者移管をMVPでは実装しないと明記している。
 - `api.md` は、管理者向け一覧、削除、アーカイブ、所有者移管、保管期限管理を非MVPまたは別Issueで扱う拡張としている。
 
 ## 3) 判断基準による優先度評価
@@ -75,7 +75,7 @@
 
 - 実行コマンド:
   - `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
-  - `rg -n "DATA-MAINT-03|削除|アーカイブ|所有者移管|管理者本文閲覧|保持期限|ADR" 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/design/data_model_operations_overview.html 02_Architecture/api.md`
+  - `rg -n "DATA-MAINT-03|削除|アーカイブ|所有者移管|管理者本文閲覧|保持期限|ADR" 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/data_model_operations_overview.html 02_Architecture/api.md`
 - 期待結果:
   - 未決の高権限操作が、DATA-MAINT-01の曖昧な残課題ではなく、独立した判断待ちissueとして追跡できる。
 - 未実施時の理由・代替検証:
@@ -152,8 +152,8 @@
 
 ### Verify
 
-- `git diff --check -- 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 02_Architecture/design/data_model_operations_overview.html 02_Architecture/api.md`
-- `rg -n "ADR-0035|高権限|管理者本文閲覧|所有者移管|保持期限|標準機能にしない|メタデータ閲覧" 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 02_Architecture/design/data_model_operations_overview.html 02_Architecture/api.md`
+- `git diff --check -- 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 02_Architecture/data_model_operations_overview.html 02_Architecture/api.md`
+- `rg -n "ADR-0035|高権限|管理者本文閲覧|所有者移管|保持期限|標準機能にしない|メタデータ閲覧" 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 02_Architecture/data_model_operations_overview.html 02_Architecture/api.md`
 
 ## 15) DATA-MAINT-04 split for metadata-only audit viewing（2026-06-01）
 
@@ -177,8 +177,8 @@
 
 ### Verify
 
-- `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/design/data_model_operations_overview.html 02_Architecture/api.md`
-- `rg -n "DATA-MAINT-04|監査メタデータ|本文を含まない|ADR-0035|audit metadata|audit viewing" 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/design/data_model_operations_overview.html 02_Architecture/api.md`
+- `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/data_model_operations_overview.html 02_Architecture/api.md`
+- `rg -n "DATA-MAINT-04|監査メタデータ|本文を含まない|ADR-0035|audit metadata|audit viewing" 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/data_model_operations_overview.html 02_Architecture/api.md`
 
 ## 16) ADR-0035 acceptance packet sync（2026-06-02）
 

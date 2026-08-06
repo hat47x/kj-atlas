@@ -5,7 +5,7 @@
 - Source Issue: `DOMAIN-VISUAL-CUE-01`
 - Priority: P1
 - Owner: Codex / Maintainer
-- Scope: `03_Implement/frontend/src/canvas/IslandView.tsx`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/domain/legacy_island_image.ts`, `02_Architecture/design/data_model_operations_overview.html`, `02_Architecture/schemas.md`
+- Scope: `03_Implement/frontend/src/canvas/IslandView.tsx`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/domain/legacy_island_image.ts`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/schemas.md`
 - Related Backlog: `SEC-VISUAL-ASSET-01`, `DOMAIN-VISUAL-CUE-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0060-representative-visual-cue-source-boundary.md`, `00_Prompt/representative_visual_cue_requirements.md`
 - Expected verification level: `e2e`

@@ -7,7 +7,7 @@
 - Owner: Claude Code
 - Scope: `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `EXT-AGENT-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（D2）, `02_Architecture/design/external_agent_collaboration_spec.html`（§3 正本）, `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（D2）, `02_Architecture/external_agent_collaboration_spec.html`（§3 正本）, `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）
@@ -68,7 +68,7 @@
 
 ## Traceability
 
-- Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`, `02_Architecture/design/external_agent_collaboration_spec.html`（§3/§6）
+- Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`, `02_Architecture/external_agent_collaboration_spec.html`（§3/§6）
 - Related: `01_Plans/issues/issue-EXT-AGENT-02-agent-response-import.md`, `issue-EXT-AGENT-03-copilot-studio-reference-kit.md`
 - Related: `01_Plans/issues/issue-GENAI-GOV-01-generative-ai-lane-boundary-and-readiness.md`（Lane C: 外部エージェント成果物連携）, `02_Architecture/value_traceability.md` §2.9
 - Derived-from: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`

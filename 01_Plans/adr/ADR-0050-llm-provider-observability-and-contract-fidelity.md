@@ -11,7 +11,7 @@
 - **既に十分に決定・文書化済みと確認できたもの**（本ADRの対象外・再決定しない）:
   - Provider抽象（`none|fixture|local|large-scale`）・設定キー・safeMode既定ON・ローカルファースト方針（`ADR-0009` Accepted、`llm_provider_spec.md` §1-3）。
   - ローカルLLM `/generate` 契約が **意図的に kj-atlas 独自形状**（OpenAI/Ollama 非互換）であり、実運用には薄いアダプタ層が必要という判断（`04_Documentation/local_llm_ops_guide.md` に明記済み）。GPU無し確認用のモックアダプタ（`03_Implement/deploy/tools/mock_local_llm.py`）も実装済み。
-  - エスカレーション方針・品質ゲート・HIL-RS A1契約（`02_Architecture/design/llm_escalation_policy.html`・`llm_quality_strategy.md`・`hil_rs_01_a1_minimum_interface_contract.md`）は凍結済み。
+  - エスカレーション方針・品質ゲート・HIL-RS A1契約（`02_Architecture/llm_escalation_policy.html`・`llm_quality_strategy.md`・`hil_rs_01_a1_minimum_interface_contract.md`）は凍結済み。
 - **確認された真のギャップ**（コード読解で実証済み・本ADRの対象）:
   1. **プロバイダの可視性ゼロ**: `KJ_ATLAS_LLM_PROVIDER` は運用者が deploy 時に設定する環境変数のみで、アプリ内に「今どの provider が有効か」を示す UI が一切ない（grep で確認: 該当 UI 要素なし）。
   2. **エラー分類がバックエンド→フロントエンドの経路で失われる**（3層すべてで確認）:
@@ -28,7 +28,7 @@
 ### D1. プロバイダ可視性（読み取り専用・運用者設定を維持）
 
 - View パネル（`ViewControlsPanel`、UX-VISUAL-01/02 のトグル群と同じ節）に「AI プロバイダ」表示を追加する: 現在の `provider_kind`（none/local/large-scale/fixture）を**読み取り専用**で表示する。
-- **ランタイム切替 UI は提供しない**: provider の変更は既存どおり運用者による環境変数設定＋再起動のみとする。これは SafeMode が既定ONで運用者制御のままである既存方針（`02_Architecture/design/enterprise_architecture.html` §03）と同じガバナンス境界であり、エンドユーザーが個別に `large-scale`（外部送信）へ昇格できてしまう抜け道を作らない。
+- **ランタイム切替 UI は提供しない**: provider の変更は既存どおり運用者による環境変数設定＋再起動のみとする。これは SafeMode が既定ONで運用者制御のままである既存方針（`02_Architecture/enterprise_architecture.html` §03）と同じガバナンス境界であり、エンドユーザーが個別に `large-scale`（外部送信）へ昇格できてしまう抜け道を作らない。
 - 直近の呼び出し結果（成功/`provider_unavailable`/`provider_timeout`/`provider_validation`/未使用）を**非スコアリングの状態ラベル**として併記する（％・点数・信頼度は表示しない）。
 - 複雑性予算: 表示は View パネル内（既存の開示済み領域）に追加するため、初期表示アンカーへの純増はゼロ（CB-1）。
 

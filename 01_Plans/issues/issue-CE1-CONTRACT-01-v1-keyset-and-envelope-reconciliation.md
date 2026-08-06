@@ -5,7 +5,7 @@
 - Source Issue: `DOC-ARCH-02`（`CI-CE1-01`〜`CI-CE1-03` の異義定義を分離）
 - Priority: P1
 - Owner: Maintainer / Backend and Frontend contract contributor
-- Scope: `02_Architecture/schemas.md`, `02_Architecture/api.md`, `02_Architecture/design/architecture.html`, `03_Implement/backend/src/kj_atlas_api/models_context.py`, `03_Implement/backend/src/kj_atlas_api/routes/context.py`, `03_Implement/backend/tests/test_context_bundle_routes.py`, `03_Implement/frontend/src/domain/context/query_preview.ts`, 同test
+- Scope: `02_Architecture/schemas.md`, `02_Architecture/api.md`, `02_Architecture/architecture.html`, `03_Implement/backend/src/kj_atlas_api/models_context.py`, `03_Implement/backend/src/kj_atlas_api/routes/context.py`, `03_Implement/backend/tests/test_context_bundle_routes.py`, `03_Implement/frontend/src/domain/context/query_preview.ts`, 同test
 - Related Backlog: `DOC-ARCH-02`, `CE1-CONTEXT-FOUNDATION`
 - Related ADR/Spec: `00_Prompt/ai_cognitive_externalization_requirements.md`, `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `02_Architecture/contract_consolidation_inventory.md`
 - Expected verification level: `integration`
@@ -23,7 +23,7 @@ CE1 v1はclosed-worldでありながら、現在は次の定義が同時に存�
 
 | 論点 | 定義A | 定義B / 実装現況 | 危険 |
 |---|---|---|---|
-| `ContextQueryV1` | `02_Architecture/design/architecture.html`旧signatureは`scope:string[]`、depth列挙、SafeMode object | `schemas.md`、backend、frontendは`queryId`、scope列挙、depth整数、`safeModePolicy:"strict"`、`previewConfirmed` | 片方準拠payloadが他方でunknownになる |
+| `ContextQueryV1` | `02_Architecture/architecture.html`旧signatureは`scope:string[]`、depth列挙、SafeMode object | `schemas.md`、backend、frontendは`queryId`、scope列挙、depth整数、`safeModePolicy:"strict"`、`previewConfirmed` | 片方準拠payloadが他方でunknownになる |
 | `ContextBundleV1.queryId` | `api.md` §2.8はresponse required | `schemas.md`、backend response、frontend mockには存在しない | v1 required keyの削除なのか文書誤記なのか未判定 |
 | `schemaVersion` | backend HTTP responseは`"1.0.0"`を返す | `schemas.md`の論理`ContextBundleV1`とfrontend mockには含まれない | 論理bundle本体とtransport envelopeが混同される |
 | `sourceBundleHash` | CE2/CE4 handoffでは必要 | CE1 bundle responseでは`bundleHash`から派生する | CE1 core fieldとして永続化される危険 |
@@ -60,7 +60,7 @@ Non-goals:
 - [x] T1 現行文書、backend model/route/test、frontend type/testからkey matrixを抽出する。
 - [x] T2 `queryId`、`schemaVersion`、`sourceBundleHash`の所属を契約形成記録まで遡って判定する。
 - [x] T3 `schemas.md`へ唯一の論理型、`api.md`へ唯一のtransport契約を反映する。
-- [x] T4 `02_Architecture/design/architecture.html`の旧type signatureを責務参照へ縮約し、形成記録はhistoryへ移す。
+- [x] T4 `02_Architecture/architecture.html`の旧type signatureを責務参照へ縮約し、形成記録はhistoryへ移す。
 - [x] T5 backend/frontend contract testを同じmatrixでgreenにする。
 - [x] T6 `DOC-ARCH-02`のConflict inventoryをResolvedまたはADR-requiredへ更新する。
 
@@ -90,7 +90,7 @@ Stop時は推測で統合せず、ADR-0047 R-4の破壊的契約変更としてv
 
 - 形成順、現行SSOT、backend/frontend実装を照合し、`queryId`はlogical query専用、`schemaVersion="1.0.0"`はHTTP response metadata、`sourceBundleHash`は下流が`bundleHash`から派生するread-only handoff値と判定した。
 - 旧API形成記録のbundle response `queryId`は、後発のschema型にも稼働中responseにも存在しないtype再掲上の誤帰属であり、Informative historyとして保持する。現行v1 fieldの追加・削除は行わない。
-- `schemas.md`へlogical/transport/handoff matrix、`api.md`へendpointとresponse型参照、`02_Architecture/design/architecture.html`へ解決済みmatrix導線を反映し、Conflict inventory `CI-CE1-01..03`をResolvedへ更新した。
+- `schemas.md`へlogical/transport/handoff matrix、`api.md`へendpointとresponse型参照、`02_Architecture/architecture.html`へ解決済みmatrix導線を反映し、Conflict inventory `CI-CE1-01..03`をResolvedへ更新した。
 - frontend logical bundle validatorへunknown-key拒否を追加し、`queryId` / `schemaVersion` / `sourceBundleHash`の混入をfail-closed化した。frontendの`queryCanonicalHash`をbackendと同じ全object key辞書順canonical JSON + SHA-256 lowercase hexへ同期し、共通fixture hashを両runtimeのtestで固定した。
 
 ## 完了記録 2026-07-15

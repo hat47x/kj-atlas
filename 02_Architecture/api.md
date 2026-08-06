@@ -3,7 +3,7 @@
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 > 現行契約と Stream / freeze 履歴の読み分けは `02_Architecture/contract_reading_guide.md` を参照する。
-> MVPのCRUDサポート表と運用保守境界は `02_Architecture/design/data_model_operations_overview.html` を参照する。
+> MVPのCRUDサポート表と運用保守境界は `02_Architecture/data_model_operations_overview.html` を参照する。
 本ドキュメントは、kj-atlas の **MVP API（Documentの保存・取得）** を定義します。
 
 - MVPでは **スナップショット保存** を基本とします
@@ -225,7 +225,7 @@ JSON request 共通のtransport安全境界として、backendは `application/j
   - `409 nondeterministic_bundle`: 同一canonical queryでdeterministic `bundleHash`が成立しない
   - `400 unknown_contract_key`: closed-world envelopeまたは型の未定義キー
 
-SafeMode既定ON、未レビュー本文保護、proposal-only、`human_reviewed`人手昇格、Consensus Graph直接更新禁止は [architecture.html §05](design/architecture.html#ce0-boundary) を正本とする。
+SafeMode既定ON、未レビュー本文保護、proposal-only、`human_reviewed`人手昇格、Consensus Graph直接更新禁止は [architecture.html §05](architecture.html#ce0-boundary) を正本とする。
 
 
 旧Phase手順、mock validation plan、Stream A freeze logは[形成履歴](history/api-contract-formation-2026-04-to-05.md)へ分離した。
@@ -872,4 +872,4 @@ Tenant Adminは`document.policy.manage`、`membership.provision`と`agent.regist
 
 ## 11. 形成履歴（Informative）
 
-2026-04-30〜2026-05-19のCE0/CE1/CE4 mock-first、Stream同期、freeze/handoff形成記録は [API contract formation history](history/api-contract-formation-2026-04-to-05.md) へ分離した。現在の型は`schemas.md`、責務・信頼境界は`02_Architecture/design/architecture.html`、endpoint/status/error/認証/副作用は本書を正本とする。
+2026-04-30〜2026-05-19のCE0/CE1/CE4 mock-first、Stream同期、freeze/handoff形成記録は [API contract formation history](history/api-contract-formation-2026-04-to-05.md) へ分離した。現在の型は`schemas.md`、責務・信頼境界は`02_Architecture/architecture.html`、endpoint/status/error/認証/副作用は本書を正本とする。

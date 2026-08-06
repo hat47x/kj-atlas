@@ -211,7 +211,7 @@
 ### Phase 1 Read同期
 
 - `AUTH-ARCH-01` → `AUTH-SCHEMA-01` → `AUTH-API-02` → `AUTH-IMPL-01` → `AUTH-E2E-01` の順序依存を再確認した。
-- `02_Architecture/design/strict_mode_exception_approval_flow.html` と `02_Architecture/design/enterprise_architecture.html` を AUTH 系契約の正本として参照し、下流が上流を上書きしていないことを確認した。
+- `02_Architecture/strict_mode_exception_approval_flow.html` と `02_Architecture/enterprise_architecture.html` を AUTH 系契約の正本として参照し、下流が上流を上書きしていないことを確認した。
 
 ### Phase 2 ADR/契約明文化
 
@@ -263,7 +263,7 @@
 ## Stream E phase execution log (2026-05-20)
 
 - Read: AUTH系の直列依存を `AUTH-ARCH-01 -> AUTH-SCHEMA-01 -> AUTH-API-02 -> AUTH-E2E-01` で再確認。
-- ADR/CDC明文化: 既存正本（`ADR-0020`, `02_Architecture/design/enterprise_architecture.html`, `schemas_review_attribution.md`）に未承認決定の確定化がないことを確認。
+- ADR/CDC明文化: 既存正本（`ADR-0020`, `02_Architecture/enterprise_architecture.html`, `schemas_review_attribution.md`）に未承認決定の確定化がないことを確認。
 - I/F先行定義: `reviewerRef/ownerRef = user:<users.id>` と strict時 `identity_not_provisioned` の契約境界を再固定。
 - モックIdP活用: `AUTH_PROVIDER_PROFILE` + ヘッダー差替で mock IdP 回帰を維持し、アプリ本体にIdP固有分岐を追加しない方針を維持。
 - 実装/文書同期: 本issueは docs契約の整合確認のみ実施（新規仕様追加なし）。

@@ -2,7 +2,7 @@
 
 Status: Informative history
 
-Source document: [`02_Architecture/design/architecture.html`](../design/architecture.html)
+Source document: [`02_Architecture/architecture.html`](../architecture.html)
 
 Source anchors: former §7A.0 Input Contract Snapshot, former §7A.2.1 Interface Freeze, former post-§12 Contract Freeze Baseline, former §13 Stream B Contract Reflection Note
 
@@ -14,8 +14,8 @@ Retention reason: CE0/CE1の型・method・event-orderをarchitecture層でfreez
 
 Current normative anchors:
 
-- [Architecture responsibilities and trust boundaries](../design/architecture.html#ce0-responsibility)
-- [Architecture input/output boundary](../design/architecture.html#ce0-io-boundary)
+- [Architecture responsibilities and trust boundaries](../architecture.html#ce0-responsibility)
+- [Architecture input/output boundary](../architecture.html#ce0-io-boundary)
 - [Schema contracts](../schemas.md#12-ce1ce2ce4-型契約実装非依存)
 - [API Context Query / Bundle endpoints](../api.md#28-context-query--bundle-contractce1-context-foundation)
 - [CE1 v1 reconciliation issue](../../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)

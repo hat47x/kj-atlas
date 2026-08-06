@@ -156,7 +156,7 @@ EXT-CONN-02の輸送・着地規律の上に、runtime-feedback意味論のpaylo
 - Related: `01_Plans/adr/ADR-0056-card-provenance-metadata-boundary.md`（カード来歴メタデータ境界）
 - Related: `02_Architecture/schemas.md`（version gate・加算原則）
 - Related: `02_Architecture/value_traceability.md`（VR0..VR5、GENAI-GOV-01 Lane A..D）
-- Related: `02_Architecture/design/external_agent_collaboration_spec.html`（AgentTaskPackage/AgentResponse v1）
+- Related: `02_Architecture/external_agent_collaboration_spec.html`（AgentTaskPackage/AgentResponse v1）
 - Related: `02_Architecture/architecture-coherence-synthesis-2026-07-23.md`（CVI-1砦の弱点）
 - Related: `02_Architecture/activation-scenarios-requirements-2026-07-23.md`（T2-AがEXT-CONN-02ゲートを解除する経路）
 - Related issues: `issue-EXT-CONN-01-readonly-mcp-server.md`, `issue-EXT-CONN-02-webhook-proposal-ingest.md`, `issue-SEC-EXPORT-BUNDLE-01-document-json-bypasses-safemode-redaction.md`（Done）, `issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md`

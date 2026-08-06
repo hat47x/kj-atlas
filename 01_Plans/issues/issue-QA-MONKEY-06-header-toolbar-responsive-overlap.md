@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/ui`
 - Related Backlog: `QA-MONKEY-06`
-- Related ADR/Spec: `04_Documentation/e2e_testing.md`, `02_Architecture/design/architecture.html`
+- Related ADR/Spec: `04_Documentation/e2e_testing.md`, `02_Architecture/architecture.html`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）

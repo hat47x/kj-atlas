@@ -62,7 +62,7 @@
   - 手動授受の往復手間（Tier 1 で軽減可能）。エージェント側の応答契約逸脱（壊れた JSON）への再依頼運用が必要（定型文で対処）。
   - 応答品質はエージェント側能力に依存する（kj-atlas は検証とレビューで防御し、品質は保証しない）。
 - 移行時に必要な対応（Action は issue で管理）:
-  - 仕様正本: `02_Architecture/design/external_agent_collaboration_spec.html`（本 ADR と同時制定）。
+  - 仕様正本: `02_Architecture/external_agent_collaboration_spec.html`（本 ADR と同時制定）。
   - 起票: `EXT-AGENT-01`（依頼パッケージ書き出し）/ `EXT-AGENT-02`（応答取り込み→提案化）/ `EXT-AGENT-03`（Copilot Studio 参照キット＋利用者向け文書）。
   - `ROADMAP` 要件D・`ADR-0007` FB-RM-MID-07 へ本 ADR を参照付け（本経路は同要件の (b) 構造化変更指示ルートの具体化。(a) ローカルLLM反映ルートは併存のまま将来判断）。
 
@@ -71,6 +71,6 @@
 - Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`（P-03 レビュー追跡・P-04 HIL・P-07 自己ホスト/プライバシー既定・非目標）
 - Related: `01_Plans/adr/ADR-0007-future-backlog.md`（FB-RM-MID-07）, `ROADMAP.md`（要件D）
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（R-1: 従量課金困難という記録済みの実利用摩擦への応答）
-- Related: `02_Architecture/llm_provider_spec.md`, `02_Architecture/design/enterprise_architecture.html`（§03 アクセス制御/SafeMode/外部送出）, `02_Architecture/api.md`（context/export 監査）
+- Related: `02_Architecture/llm_provider_spec.md`, `02_Architecture/enterprise_architecture.html`（§03 アクセス制御/SafeMode/外部送出）, `02_Architecture/api.md`（context/export 監査）
 - Related: `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`, `issue-CE3-patch-workspace-presets.md`, `issue-CE4-api-cli-audit-integration.md`
 - Derived-from: `ROADMAP.md` 要件D（2026-06 記録の従量課金摩擦）および 2026-07-05 の企業・自治体向け定額エージェント連携要件

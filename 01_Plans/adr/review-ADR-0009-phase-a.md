@@ -2,7 +2,7 @@
 
 - Status: Accepted (Phase A complete)
 - Date: 2026-03-02
-- Scope: `02_Architecture/llm_provider_spec.md`, `llm_runtime_constraints.md`, `llm_quality_strategy.md`, `02_Architecture/design/llm_escalation_policy.html`
+- Scope: `02_Architecture/llm_provider_spec.md`, `llm_runtime_constraints.md`, `llm_quality_strategy.md`, `02_Architecture/llm_escalation_policy.html`
 - Related: `01_Plans/adr/ADR-0009-local-llm-integration.md`
 
 ## 1) Plan（照合観点）

@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `03_Implement/frontend/src/canvas`
 - Related Backlog: `QA-MONKEY-05`
-- Related ADR/Spec: `02_Architecture/design/architecture.html`, `04_Documentation/e2e_testing.md`
+- Related ADR/Spec: `02_Architecture/architecture.html`, `04_Documentation/e2e_testing.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）

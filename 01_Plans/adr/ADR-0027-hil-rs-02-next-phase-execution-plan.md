@@ -5,7 +5,7 @@
 - Deciders: Project Maintainers
 - Scope: `01_Plans/`, `02_Architecture/`, `03_Implement/frontend/`, `04_Documentation/`
 - Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
-- Related: `ADR-0026`, `00_Prompt/domain.md`, `02_Architecture/design/architecture.html`, `02_Architecture/schemas.md`
+- Related: `ADR-0026`, `00_Prompt/domain.md`, `02_Architecture/architecture.html`, `02_Architecture/schemas.md`
 
 ## Context
 

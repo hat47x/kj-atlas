@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-07-20
 - Deciders: Product Owner / UX Lead / Security Officer / Project Maintainers
-- Scope: `00_Prompt/representative_visual_cue_requirements.md`, `02_Architecture/schemas.md`, `02_Architecture/design/data_model_operations_overview.html`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/import/`
+- Scope: `00_Prompt/representative_visual_cue_requirements.md`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.html`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/import/`
 
 ## 背景
 

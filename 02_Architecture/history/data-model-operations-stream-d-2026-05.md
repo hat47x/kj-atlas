@@ -2,7 +2,7 @@
 
 Status: Informative history
 
-Source document: [`02_Architecture/design/data_model_operations_overview.html`](../design/data_model_operations_overview.html)
+Source document: [`02_Architecture/data_model_operations_overview.html`](../data_model_operations_overview.html)
 
 Source anchors: former §1.2, §1.3, §8〜§13
 
@@ -14,10 +14,10 @@ Retention reason: `DocumentV2` support level、CRUD境界、migration整合を�
 
 Current normative anchors:
 
-- [Support level](../design/data_model_operations_overview.html#support-boundary-classes)
-- [CRUDサポート表](../design/data_model_operations_overview.html#crud-support-table)
-- [DocumentV1フィールド支援レベル](../design/data_model_operations_overview.html#documentv1-field-support)
-- [更新ルール](../design/data_model_operations_overview.html#update-rules)
+- [Support level](../data_model_operations_overview.html#support-boundary-classes)
+- [CRUDサポート表](../data_model_operations_overview.html#crud-support-table)
+- [DocumentV1フィールド支援レベル](../data_model_operations_overview.html#documentv1-field-support)
+- [更新ルール](../data_model_operations_overview.html#update-rules)
 - [Schema versioning](../schemas.md#61-document-versioning--support-level運用ルールdata-contract-01固定)
 
 この文書は形成履歴であり、現在のsupport level、version、endpoint、運用責任を上書きしない。

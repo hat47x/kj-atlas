@@ -38,7 +38,7 @@ CE0 fixes the graph responsibility boundary before downstream implementation wor
 ### Canonical Contract
 
 - Contract references:
-  - `02_Architecture/design/architecture.html` section `7A. CE-0`
+  - `02_Architecture/architecture.html` section `7A. CE-0`
   - `02_Architecture/schemas.md` section `1.1 CE0 Contract Freeze`
   - `01_Plans/issues/issue-CE0-contract-freeze.md`
 - Contract IDs are read-only references:
@@ -89,7 +89,7 @@ CE0 fixes the graph responsibility boundary before downstream implementation wor
 
 CE0 Core Graph repositioning can move toward closeout when these are recorded together:
 
-1. Current-main checks confirm no drift in `02_Architecture/design/architecture.html`, `schemas.md`, and `issue-CE0-contract-freeze.md`.
+1. Current-main checks confirm no drift in `02_Architecture/architecture.html`, `schemas.md`, and `issue-CE0-contract-freeze.md`.
 2. CE1/CE2/CE4 references use `ConsensusGraph` and the canonical No-Go IDs without introducing aliases.
 3. Implementation-facing work has separate evidence that no direct write, auto-apply, auto-publish, review auto-promotion, or SafeMode relaxation path exists.
 4. `PRODUCT-QA-01` and `MVP-EXIT-01` continue to classify this as contract readiness only, not release approval.
@@ -825,7 +825,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 
 ## Phase Execution Record（2026-04-27 / Stream C）
 ### Phase Read（最新Read同期）
-- `00_Prompt/system_prompt.md` / `00_Prompt/domain.md` / `00_Prompt/handoff.md` / `00_Prompt/agent_handover.md` / `00_Prompt/ai_cognitive_externalization_requirements.md` / `01_Plans/adr/ADR-0001-value-to-requirements.md` / `02_Architecture/design/architecture.html` / `02_Architecture/schemas.md` / `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md` / 本Issueを再読した。
+- `00_Prompt/system_prompt.md` / `00_Prompt/domain.md` / `00_Prompt/handoff.md` / `00_Prompt/agent_handover.md` / `00_Prompt/ai_cognitive_externalization_requirements.md` / `01_Plans/adr/ADR-0001-value-to-requirements.md` / `02_Architecture/architecture.html` / `02_Architecture/schemas.md` / `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md` / 本Issueを再読した。
 - `role / transition / no-go` と SafeMode境界の差分は検出されず、`held` 停止条件は未発火。
 
 ### Phase Plan（最新Read同期）

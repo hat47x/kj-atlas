@@ -3,7 +3,7 @@
 - Status: Accepted（2026-07-13、maintainer 代理裁可。高権限操作の包括解禁は不採用）
 - Date: 2026-06-01
 - Deciders: Maintainer
-- Scope: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/design/data_model_operations_overview.html`, `02_Architecture/api.md`
+- Scope: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/api.md`
 
 ## Context
 
@@ -89,7 +89,7 @@ Maintainer の選択肢:
 
 - `DATA-MAINT-03` は、高権限操作ごとの分類とStop条件を記録している。
 - `DATA-MAINT-04` は、本文アクセスと監査メタデータ閲覧を分離し、Draftのまま維持している。
-- `02_Architecture/design/data_model_operations_overview.html` は、MVPで支援するデータ、埋め込み構造、派生情報、未支援のライフサイクル操作を区別している。
+- `02_Architecture/data_model_operations_overview.html` は、MVPで支援するデータ、埋め込み構造、派生情報、未支援のライフサイクル操作を区別している。
 - `PRODUCT-QA-01` と `MVP-EXIT-01` は、未解決の高権限操作を隠れた実装漏れではなく、リリースゲート対象の製品境界判断として扱っている。
 
 ## Current-main decision freshness（2026-06-13、2026-07-13解決）
@@ -130,7 +130,7 @@ Productization Program Owner / QA Lead が次に確認する事項:
 
 - `DATA-MAINT-03` は本ADRを参照先として、DecisionStatusをAccepted後にFixedへ進める。
 - 本文を含まない監査メタデータ閲覧候補は `DATA-MAINT-04` でDraftとして追跡し、本ADRがAcceptedされるまで実装着手しない。
-- `02_Architecture/design/data_model_operations_overview.html` と `api.md` は、高権限データライフサイクル操作の標準提供なし、メタデータ限定の監査閲覧候補のみissueで検討可、という境界へ同期する。
+- `02_Architecture/data_model_operations_overview.html` と `api.md` は、高権限データライフサイクル操作の標準提供なし、メタデータ限定の監査閲覧候補のみissueで検討可、という境界へ同期する。
 - `PRODUCT-QA-01` / `MVP-EXIT-01` は、削除や管理者本文閲覧の未実装を単独のリリース阻害ではなく、明示された製品境界として扱う。ただし本番運用で必須と判断される場合は、別ADR/issueをリリース条件へ戻す。
 
 ## Post-2398 governance-context note (2026-06-14、2026-07-13更新)
@@ -148,7 +148,7 @@ Productization Program Owner / QA Lead が次に確認する事項:
 - Related: `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
 - Related: `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`
 - Related: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
-- Related: `02_Architecture/design/data_model_operations_overview.html`
+- Related: `02_Architecture/data_model_operations_overview.html`
 - Related: `02_Architecture/api.md`
 - Related: `04_Documentation/security.md`
 - Supersedes: N/A

@@ -290,7 +290,7 @@
 ## Stream H dedicated sync record（2026-04-24）
 
 ### Phase 1 Read
-- `02_Architecture/design/strict_mode_exception_approval_flow.html` を起点に、AUTH-OPS-03 / DOC-OPS-02 の正本語彙（Security Officer / System Owner / Platform Operator、StoppedForClarification、D1〜D4）を再確認した。
+- `02_Architecture/strict_mode_exception_approval_flow.html` を起点に、AUTH-OPS-03 / DOC-OPS-02 の正本語彙（Security Officer / System Owner / Platform Operator、StoppedForClarification、D1〜D4）を再確認した。
 - 本Issueの Scope と Related ADR/Spec を再読し、Docs-only かつ単一Issue更新で進めることを確認した。
 
 ### Phase 2 ADR（Context / Decision / Consequences）
