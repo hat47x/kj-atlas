@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from "react";
 
 import type { NarrativeIssue, NarrativeIssueReference } from "../api/client";
 import { buildNarrativeGrounding } from "../domain/grounding";
+import { formatTimestamp } from "../domain/format_timestamp";
 import type { DocumentV1, EvidenceLink, Narrative } from "../domain/types";
 import {
   buildNarrativeHtml,
@@ -249,7 +250,7 @@ export function NarrativesPanel({
                   }}
                 >
                   <div style={{ fontWeight: 700 }}>{entry.title}</div>
-                  <div style={{ fontSize: 11, color: "#64748b" }}>{t("narratives.panel.created_at", { value: entry.createdAt ?? t("narratives.panel.generated_at_export_time") })}</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>{t("narratives.panel.created_at", { value: entry.createdAt ? formatTimestamp(entry.createdAt) : t("narratives.panel.generated_at_export_time") })}</div>
                   <div style={{ fontSize: 11, color: "#b45309" }}>{t("narratives.panel.status", { value: entry.reviewed ? t("narratives.panel.status_reviewed") : t("narratives.panel.status_unreviewed") })}</div>
                   <div style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>{entry.text}</div>
                 </button>
@@ -318,7 +319,7 @@ export function NarrativesPanel({
                       }}
                       style={{ fontSize: 12, cursor: "pointer" }}
                     >
-                      {isExpanded ? "▼" : "▶"} {t("narratives.panel.check_summary", { createdAt: check.createdAt, kind: check.kind, issueCount: check.issues.length, errors: counts.error, warnings: counts.warn, infos: counts.info })}
+                      {isExpanded ? "▼" : "▶"} {t("narratives.panel.check_summary", { createdAt: formatTimestamp(check.createdAt), kind: check.kind, issueCount: check.issues.length, errors: counts.error, warnings: counts.warn, infos: counts.info })}
                     </button>
                     {isExpanded ? (
                       <ul style={{ margin: "6px 0 0", paddingLeft: 16, display: "grid", gap: 6 }}>

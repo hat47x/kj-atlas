@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { resolveIslandDisplayTitle } from "../i18n/island_title";
-import { getActiveLocale, t } from "../i18n/translate";
+import { t } from "../i18n/translate";
 
+import { formatTimestamp } from "../domain/format_timestamp";
 import { CRITIQUE_TAGS, KNOWN_EDGE_TYPES, resolveKnownEdgeType } from "../domain/types";
 import type { EdgeType, KnownEdgeType } from "../domain/types";
 import { cardQualityRestoreTarget, currentCardQualityQuestion, type CardQualityAssistState, type CardQualityDecision } from "../domain/card_quality";
@@ -511,16 +512,6 @@ export function SidePanel({
   const mergeAuditEntries = useMemo(() => {
     return [...mergeAuditLog].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   }, [mergeAuditLog]);
-
-  const formatTimestamp = (createdAt: string) => {
-    const parsedDate = new Date(createdAt);
-    if (Number.isNaN(parsedDate.getTime())) {
-      return createdAt;
-    }
-
-    return parsedDate.toLocaleString(getActiveLocale() === "ja" ? "ja-JP" : "en-US");
-  };
-
 
   const copyText = async (value: string): Promise<boolean> => {
     try {
