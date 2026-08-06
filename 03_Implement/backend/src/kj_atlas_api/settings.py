@@ -1,19 +1,13 @@
 import ipaddress
 import os
 import re
-from datetime import date
 from urllib.parse import urlsplit
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-LEGACY_ENV_COMPAT_DEADLINE = date(2026, 12, 31)
 _LLM_HOST_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
-
-
-def _current_utc_date() -> date:
-    return date.today()
 
 
 def _validate_trusted_http_resolver(
