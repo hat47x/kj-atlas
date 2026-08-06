@@ -1,4 +1,4 @@
-# Issue Draft: DX-CLEANUP-08 audit.event_to_log_fields が未使用
+# Issue Draft: DX-CLEANUP-09 audit.event_to_log_fields が未使用
 
 - Type: Process
 - Status: Draft

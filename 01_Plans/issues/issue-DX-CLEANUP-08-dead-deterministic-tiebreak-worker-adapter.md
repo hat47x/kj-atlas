@@ -1,4 +1,4 @@
-# Issue Draft: DX-CLEANUP-07 deterministic tiebreak worker adapter の参照源が `src/` 外に偏在
+# Issue Draft: DX-CLEANUP-08 deterministic tiebreak worker adapter の参照源が `src/` 外に偏在
 
 - Type: Process
 - Status: Draft
