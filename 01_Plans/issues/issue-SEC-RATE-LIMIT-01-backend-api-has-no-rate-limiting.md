@@ -32,3 +32,13 @@
 ## 補足
 
 - 発見経緯: SaaSテナント対応マージ後の広範な棚卸し（第6ラウンド）で発見。`01_Plans`内の既存rate-limit言及は、ADR-0059や関連research文書内の「将来rate limitを実装する場合はtenantIdをkeyに含める」という前向きな設計メモのみで、「backendにrate limitがない」という現状のギャップ自体はどこにも記録されていなかった。
+
+## 実装記録（2026-08-06）: デプロイ形態を確認し、方式選定の前提を1つ確定
+
+上記「対応方針」が保留していた論点のうち、「FastAPI/uvicornの実際のデプロイ形態（単一worker/複数worker）」は事実確認だけで解決できる部分だったため確認した。方針決定・実装そのものはまだ行っていない。
+
+- `03_Implement/backend/Dockerfile:21`と`03_Implement/deploy/docker-compose.yml:33`の`uvicorn`起動コマンドはいずれも`--workers`未指定（既定値=1）。`gunicorn`は`03_Implement`のプロジェクトコードに存在しない（`grep -rln gunicorn`のヒットは`.venv`内のuvicorn自身の`workers.py`のみで無関係）。Kubernetes等のmanifestも存在しない。つまり**現在の唯一の配布経路は単一プロセス・単一workerのuvicornである**。
+- この事実により、「プロセス内limiterでは複数worker間で状態が共有されず不十分」という懸念は、少なくとも現在の配布形態では当てはまらない。プロセス内limiterで正しく機能する。
+- 既存の非対称性（MCP側`http_server.ts:32-38`）を直接確認した: `express-rate-limit`をin-memory（既定store、Redis等の外部store未使用）・`windowMs`+`limit: 60`・`app.use(limiter)`で全routeへグローバルに適用している。つまりこのリポジトリには既に「プロセス内・in-memory・全route一括」というrate limit方式の前例が存在し、今回の判断はこれと同種の方式を後追いするか、別の方式を選ぶかという選択になる。
+- 上記2点から、backend側も同種の**プロセス内（in-memory）limiter**を採用するのが、新規の外部store依存を持たずMCP側と対称になる自然な選択と考えられる。Python/FastAPI側の対応候補は`slowapi`（`limits`パッケージを基盤とし、Flask-Limiterと同型のAPIをFastAPI/Starlette向けに提供）。`limits`はin-memoryとRedis/Memcached等の外部storeを同じAPIで切替できるため、将来複数worker構成へ移行する場合もstorage backendの差し替えだけで対応でき、今回in-memoryを選んでも将来の選択肢を閉じない。
+- **ただし、これは方式（in-process vs 分散）の論点だけを狭めるものであり、以下は依然Maintainer判断のまま残す**: (a) rate limitを導入するかどうかそのもの、(b) 導入する場合の対象エンドポイント範囲（`/admin/provision/users`とJIT provisioning経路は受入条件で最小限として既に指定されているが、`/session/active-tenant`や他の書き込み系routeまで広げるか）、(c) 具体的な閾値（MCP側の60 req/min/IPを踏襲するか、backend APIの実際の利用パターンに応じた別の値にするか）、(d) 既存のE2E/integration test群（短時間に多数requestを送るテストがあれば）への影響評価。これらはbackend APIの全requestパスに新しい挙動（429応答）を追加する変更であり、機械的に決定できる範囲を超える。
