@@ -31,8 +31,11 @@ Done statusの7 issueに、**廃止済みのOpenゲート礼式に由来するme
 | REQ-DEF-01 value-realization-requirements-baseline | 3 |
 | REQ-DEF-02 responsibility-boundary-and-contract-checkpoints | 3 |
 | REQ-DEF-03 acceptance-scenarios-and-issue-splitting | 3 |
+| CE4-api-cli-audit-integration | 20/60件が同パターン（G1-G4、Open化条件、tri-state、後退ゼロ等） |
 
 **なぜこれらは永遠にチェックされないか**: これらのmeta-ACは、`AGENTS.md` §4（固定5フェーズ・RACI更新不要）と§6（2者承認・Decision Queue・RACI・KPIは既定で使わない）で廃止された礼式の一部である。`lean_operations_inventory.md` P1 は `DecisionStatus: Fixed` のissue本文書き写しを「撤去対象」と明記し、`AGENTS.md` §6 は「決定済みの参照はADR側Statusが正本、二重管理は取りやめ」と定めている。O-OPEN-* チェックはOpenゲート判定の残骸であり、issueが既にDoneへ到達した時点で判定済み（または礼式廃止で不要）である。
+
+**実施状況**: PRODUCT-UX-01/02/03/04、REQ-DEF-01/02/03 の37件は2026-08-07に削除済み（`0883f476`）。CE4は実装タスク（API/CLI監査・契約テスト）と同セクションに混在するため、20件を個別に精査してから判断する（未実施、本issueで追跡）。
 
 ## 対応方針（案）
 
