@@ -4,6 +4,27 @@
 
 Updated: 2026-08-03
 
+## 2026-08-06: WSL backend pytest runner unavailable
+
+- 事象: `python3 -m pytest` で Inquiry bundle backend tests の実行を試みたが、`No module named pytest` で開始できなかった。
+- 原因: 現在利用可能な WSL Python 環境に backend の test extra が導入されていない。Windows 側の Python launcher も実体環境を提供していない。
+- 対応: `~/kj-backend-venv` の既存仮想環境を発見し、そこで対象テストを実行する経路へ切り替えた。
+- 再発防止: backend の検証開始前に `python3 -m pytest --version` と既存仮想環境を確認し、依存がなければ未実行として明記する。
+
+## 2026-08-06: 新migration追加後のAlembic head固定テスト失敗
+
+- 事象: Inquiry bundle migration追加後、`test_alembic_has_single_head` が旧head `20260720_0013` を期待して失敗した。
+- 原因: migration graphは線形のまま新headへ進んだが、テストの固定期待値を追随していなかった。
+- 対応: 期待headを `20260806_0014` へ更新して対象テストを再実行する。
+- 再発防止: 新migration追加時はAlembic lineage testのhead期待値を同じ変更単位で確認する。
+
+## 2026-08-06: 新規repository testのruff未使用import
+
+- 事象: Inquiry bundle repository testに `Session` の未使用importがあり、ruffが失敗した。
+- 原因: test fixtureの型注釈を簡略化した後にimportだけが残った。
+- 対応: 未使用importを削除し、対象ファイルのruffを再実行する。
+- 再発防止: テスト追加後は対象Pythonファイルにruffを実行する。
+
 記録形式・対象・参照タイミングは `01_Plans/agent_failure_lessons.md` を参照。末尾へ追記する。
 
 ## 2026-08-03: CI trailing whitespace check が複数回失敗（CRLF行末混入）

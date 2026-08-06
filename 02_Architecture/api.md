@@ -870,6 +870,53 @@ Tenant Adminは`document.policy.manage`、`membership.provision`と`agent.regist
 
 既存profileは内部`local-default` TenantContextを注入する互換resolverを使用できる。認証済み利用者ではUser、Tenant、TenantMembershipがすべてactiveであることをrequestごとに確認し、停止・欠損時は`tenant_membership_inactive`で拒否する。匿名利用は既存single-tenant互換に限ってmembershipなしを維持する。Document routeはapplication lifecycleで設定された信頼済みresolverだけを呼び、公開Document APIへtenantIdを入力項目として追加せず、header・query・path・payloadのtenant値をresolverへ渡さない。URLのdocIdは解決済みTenantContext内で検索し、同じcontextを外部PDP payload、本文を含まないaudit metadata、PostgreSQL transaction-local DB settingへ伝播する。PostgreSQL RLSはsetting欠落時にread/writeとも行を許可せず、SQLiteではこのDB guardをSaaS境界として扱わない。exportされたtenantIdやmembershipをimport先の権限として採用しない。
 
-## 11. 形成履歴（Informative）
+## 11. Inquiry bundle lifecycle API（L0 Planned、ADR-0057 / SAAS-TENANT-01）
+
+Inquiry bundle は `DocumentV1` の optional field ではなく、W型累積探究の lifecycle を保存する独立リソースである。backend は payload の内部schemaを解釈せず、client が管理する opaque JSON bundle を tenant と `journey_id` の組で保持する。これにより、このAPIの追加は `DocumentV1`、既存の import/export、または SafeMode の契約を変更しない。
+
+### 11.1 共通境界
+
+- tenant は request body、path、query、header の利用者入力から決定しない。server-resolved identity と active membership から解決された trusted `TenantContext` のみを使用する。
+- tenant session precondition がある構成では、既存の `tenantSessionVersion` guard を適用する。trusted tenant context を解決できない場合は fail-closed（`403 tenant_context_untrusted`）とする。
+- `journey_id` は空でない、前後に空白がない、printable、最大256文字の canonical文字列でなければならない。不正値は `422`（`invalid_journey_id`）とする。
+- request body は JSON として有限値だけを受け付け、UTF-8 serialized payload が **5 MiBを超える場合は保存せず `413`**（`inquiry_bundle_too_large`）とする。
+- backend は payload の未知keyや将来versionを解釈・変換しない。Inquiry bundle のstrict import/export、SafeMode projection、DocumentV1との関係は既存のfrontend/domain契約が保持する。
+
+### 11.2 Endpoint契約
+
+**POST** `/inquiry-bundles/{journey_id}`
+
+- Request body: JSON object/value（opaque Inquiry bundle payload）
+- Response: `204 No Content`
+- 同じ server-resolved tenant と `journey_id` の組が存在する場合は payload と `updated_at` を置換する（tenant-local upsert）。
+- validation error: `422`（JSONでない、非有限値、または不正な `journey_id`）
+- size error: `413`（serialized payload が5 MiB超）
+
+**GET** `/inquiry-bundles/{journey_id}`
+
+- Response: 保存時の opaque JSON payload（`DocumentV1` ではない）
+- Not found: `404 Inquiry bundle not found`
+- `journey_id` validation、trusted tenant resolution、tenant session precondition はPOSTと同じである。
+
+**DELETE** `/inquiry-bundles/{journey_id}`
+
+- Response: `204 No Content`
+- 削除単位は一つの探究全体（`tenant_id + journey_id`）であり、ラウンド単体や `DocumentV1` の一部は削除しない。
+- 対象がない場合は `404` とし、既存bundleを変更せず、削除監査も生成しない。
+- 対象行の削除と本文なしの削除監査イベントは同一DB transactionで原子的に確定する。監査には `event_id`、server-resolved `tenant_id`、`journey_id`、`principal_id`、action=`inquiry_bundle.delete`、outcome=`deleted`、`occurred_at` のみを記録し、payload本文・カード本文・秘密情報を複製しない。
+
+### 11.3 Migration / persistence model
+
+- `inquiry_bundles`: primary key `(tenant_id, journey_id)`、`payload_json`、`updated_at`。`tenant_id` は `tenants.id` を参照し、PostgreSQLではRLSを有効化して tenant setting と一致する行だけを許可する。
+- `inquiry_bundle_deletion_audit_events`: deletion evidence専用のappend record。`tenant_id` は `tenants.id` を参照し、action/outcomeを固定値制約で制限する。PostgreSQLではこの表にもRLSを適用する。
+- migration revision: `20260806_0014_add_inquiry_bundle_storage`（前 revision `20260720_0013`）。
+- retention期限、保持件数、backend上の履歴削除・purge job はこの追加だけでは定義・実装しない。したがってInquiry/W型のsupport levelは **`L0: Planned`** のままであり、AC-11を完了扱いにしない。
+
+### 11.4 非対象・互換性
+
+- SafeModeの既定ON、proposal-only、`human_reviewed` の人手限定、import/exportのstrict validation、DocumentV1のschemaは変更しない。
+- このAPIは保存境界を追加するだけで、SafeMode未適用の既存ローカルexportを自動的に安全な共有へ昇格させない。共有・exportの安全境界は既存契約に従う。
+
+## 12. 形成履歴（Informative）
 
 2026-04-30〜2026-05-19のCE0/CE1/CE4 mock-first、Stream同期、freeze/handoff形成記録は [API contract formation history](history/api-contract-formation-2026-04-to-05.md) へ分離した。現在の型は`schemas.md`、責務・信頼境界は`02_Architecture/architecture.html`、endpoint/status/error/認証/副作用は本書を正本とする。
