@@ -39,7 +39,7 @@ Done statusの7 issueに、**廃止済みのOpenゲート礼式に由来するme
 
 **関連する同型パターン（追加確認 2026-08-07）**:
 - `issue-doc-ops-05-01..14` シリーズは DOC-OPS-05 Set1 の固定5フェーズprotocol（AGENTS.md §4で廃止）に由来する AC/DoD テンプレートを含む。`05-01` は10件done/5件unchecked、他は大部分0件done。ただし `Status:` 形式が異なるため、Done判定自体の妥当性を含めて個別精査が必要（本issueでは追跡のみ）。
-- `issue-doc-ops-05-01` のDone判定は、対象 `canonicalization.md` に `Move internal` / `Improve external` 語彙が見当たらず（grep 0件）、Done statusと実体の乖離が疑われる。別issue（DOC-OPS-09）で調査する。
+- `issue-doc-ops-05-01` のDone判定は、対象 `canonicalization.md` に `Move internal` / `Improve external` 語彙が見当たらず（grep 0件）、Done statusと実体の乖離が疑われた。→ **DOC-OPS-09で調査完了（2026-08-07）**: 5件の「未チェック」はStream G共通ACテンプレのテンプレ定義であり本issueのACではない。実体の7 ACは全て`[x]`でDone判定は妥当。`Move internal`推奨は実際の配置判断で「対外改善（公開候補）」へ上書きされている。
 
 ## 対応方針（案）
 
