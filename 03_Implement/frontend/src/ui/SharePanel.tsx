@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import type { PatchSummaryModel } from "../domain/patch/patch_summary";
 import type { PatchApplyLogEntry } from "../domain/types";
+import { formatTimestamp } from "../domain/format_timestamp";
 import type { PatchLintIssue } from "../domain/patch/patch_lint";
 import type { FixProposal } from "../domain/patch/patch_fix";
 import type { TrustLabel } from "../domain/patch/patch_types";
@@ -1386,7 +1387,7 @@ export function SharePanel({
                 {sortedPatchApplyLogEntries.map((entry) => (
                   <details key={entry.id} style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8 }}>
                     <summary style={{ cursor: "pointer", fontSize: 12, color: "#0f172a" }}>
-                      {entry.createdAt} · {entry.patchTitle ?? entry.patchSourceSignature ?? entry.id}
+                      {formatTimestamp(entry.createdAt)} · {entry.patchTitle ?? entry.patchSourceSignature ?? entry.id}
                     </summary>
                     <div style={{ marginTop: 8, display: "grid", gap: 6, fontSize: 11, color: "#334155" }}>
                       <div>
