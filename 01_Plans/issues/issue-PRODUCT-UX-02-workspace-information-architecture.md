@@ -153,9 +153,6 @@
 | 要件から実装へ手戻りなく移行できる。 | AC/DoDをOpen前に固定し、未確定はPending化する。 | Draft→Open条件を満たしたIssueのみ実装に着手する。 | checklist充足率、No-Go件数、Pending解消件数。 |
 
 ### Phase 4: Draft→Open 条件（要件側ゲート）
-- [ ] `DecisionStatus=Fixed` の要求のみでACが評価可能（PendingはDecision Queueへ退避済み）。
-- [ ] 依存が `契約依存`（schema/api/policy/ops）と `実装依存`（UI/Backend/E2E）に分離されている。
-- [ ] Validation plan のコマンドがこのIssue本文だけで再実行可能。
 
 ### Phase 5-6: Verify / Proceed 引き継ぎ条件
 - Verify合格条件: 価値仮説とACの1対1追跡が可能で、非検証要件が残っていない。
@@ -165,10 +162,6 @@
 ## Open化判定メタ（Draft gate解除条件）
 
 ### Open化に必要な最小条件（全件必須）
-- [ ] O-OPEN-01: `Owner` が `TBD` ではなく、実行責務者（個人またはロール）に確定している。
-- [ ] O-OPEN-02: 依存Issue/ADRごとに `依存待ち理由` と `再開条件` が1:1で明示されている。
-- [ ] O-OPEN-03: `Acceptance criteria` と `Validation plan` が `Expected verification level` と一致している。
-- [ ] O-OPEN-04: docs-only範囲外の要求が本文に混入していない（本memoの範囲と矛盾しない）。
 
 ### 依存待ち理由（未解消時は Draft 維持）
 | Dependency | 依存待ち理由 | 再開条件 | Owner |
