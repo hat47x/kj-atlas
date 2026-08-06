@@ -19,6 +19,7 @@ Updated: 2026-08-03
 - 原因: pnpm移行がrevert（`DX-CI-PNPM-01`）された後に残った `.pnpm/` 配下の古い `esbuild@0.28.1` エントリと、アクティブな `esbuild@0.21.5` の混在。`.pnpm/esbuild@0.28.1` のバイナリが欠落していた。
 - 対応: `rm -rf node_modules/.pnpm/esbuild@0.28.1 node_modules/.pnpm/@esbuild+win32-x64@0.28.1` で古いエントリを除去 → vitest正常起動（233 files / 1372 tests pass）。
 - 再発防止: esbuild系の起動エラーはまず `.pnpm/` 配下のバージョン重複を確認する。pnpm関連ファイルがrevertされた後のnode_modules操作には注意する。
+- **再発（2026-08-03）**: 同じ `.pnpm/esbuild@0.28.1` が再生成されており再発。pnpm installが走るたびに0.28.1が復活する可能性が高い。除去コマンドはその場で再実行する。根本解決は `node_modules` をクリーンに再構築するか、pnpm移行を正式に完了するか、`.pnpm` 配下のesbuildを0.21に固定する運用の検討が必要。
 
 ## 2026-08-02: 作業ディレクトリ依存のgit pathspecエラー
 
