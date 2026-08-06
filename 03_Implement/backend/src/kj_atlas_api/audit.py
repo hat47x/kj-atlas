@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 import math
 from collections import deque
@@ -395,7 +394,3 @@ def build_audit_dispatcher() -> AuditDispatcher:
         transport=transport,
         queue_size=queue_size,
     )
-
-
-def event_to_log_fields(event: AuditEvent) -> dict[str, object]:
-    return json.loads(event.model_dump_json())
