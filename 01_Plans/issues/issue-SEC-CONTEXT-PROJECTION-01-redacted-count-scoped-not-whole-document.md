@@ -1,7 +1,7 @@
 # Issue Draft: SEC-CONTEXT-PROJECTION-01 redactedCountが全文書ではなく絞り込み後の部分集合のみを計上
 
 - Type: Security
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
