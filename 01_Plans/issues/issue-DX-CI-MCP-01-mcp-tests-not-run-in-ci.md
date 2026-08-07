@@ -1,7 +1,7 @@
 # Issue Draft: DX-CI-MCP-01 MCPテストスイートがCI未実行・ローカルも依存未インストール
 
 - Type: Process / Tooling
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -27,9 +27,9 @@
 
 ## 受入条件
 
-- [ ] MCPテストがCIまたはローカルで実行可能になり、全テストが通る。
-- [ ] 実行方法（コマンド）が文書化される。
-- [ ] `python 01_Plans/docs_check.py` が通る。
+- [x] MCPテストがCIまたはローカルで実行可能になり、全テストが通る。→ `ci.yml` にMCPジョブ（`npm ci` + typecheck + test）を追加（2026-08-07）。ローカルで `npm install` 実行後、6ファイル/49テスト + typecheck pass。
+- [x] 実行方法（コマンド）が文書化される。→ `03_Implement/mcp/package.json` の `test: vitest run` / `typecheck: tsc --noEmit` をCIジョブが直接利用。
+- [x] `python 01_Plans/docs_check.py` が通る。→ pass（active_memos=65, tracked_markdown=488）。
 
 ## 検証計画
 
