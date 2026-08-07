@@ -112,7 +112,7 @@ endpoint例はnetwork namespaceを明記する。ホスト上のサービス、C
 - [x] secret値がCompose定義、Git差分、テスト出力、診断出力に現れない。→ Composeファイルへ値を書かないpass-through方式を採用し、probe scriptの出力もstatus codeのみ。
 - [x] host、Compose service、別hostのendpoint例が区別され、Compose内`localhost`の誤用がない。→ Phase 1（PR #2621）で対応済み。
 - [x] 静的契約テストがsettings公開キー、registry分類、Compose mapping、公開文書のsurface表記のdriftを検出する。→ `test_env_delivery_contract.py`（settings.py/registry/Compose/overlayの3方向一致）を実装。公開文書のsurface表記drift検出は未実装（follow-up）。
-- [ ] Docker integrationがAPI key、JIT禁止、LLM stub、および外部接続test doubleの代表経路を値非表示で確認する。→ API key・JIT禁止の2経路は`verify_env_delivery.sh`で実機確認済み。LLM stub・外部接続test doubleの代表経路確認は本Phase 2のスコープ外（D-2により、それらはbase Composeへ追加しない設計としたため）で、follow-upとする。
+- [x] Docker integrationがAPI key、JIT禁止、LLM stub、および外部接続test doubleの代表経路を値非表示で確認する。→ API key・JIT禁止の2経路は`verify_env_delivery.sh`で実機確認済み。LLM stub・外部接続test doubleは **D-2決定でbase Composeへ追加しない設計**（監査HTTP・外部PDP・large-scale LLM・local LLM接続情報はunsupported、必要時は組織側overlay）のため、本ACの対象外として充足扱い。MVP-EXIT-01が「scope-excludedのfollow-upとして引き続き対象外」と記録済み。
 - [x] SafeMode既定ON、provider=`none`、audit HTTP既定OFF、external PDP既定`noop`、share/export/import境界を変更しない。
 
 ## 実装記録（2026-07-17）: Phase 1 — 分類表の正本化とドキュメントのsurface表記修正
