@@ -774,10 +774,10 @@ This issue is the read-only SSOT for the CE0 contract freeze. Downstream CE0 cor
 - [x] Vocabulary collision = 0 → Current Completion Assessment「No-Go ID freeze: Pass」。
 - [x] SafeMode regression = 0 → Current Completion Assessment「SafeMode boundary: Pass（default ON, allowUnreviewedText=false）」。
 - [x] No-Go語彙一致（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）→ §No-Go canonical IDs 5件が固定・差分ゼロ確認（複数checkpoint）。
-- [ ] CE1/CE2/CE4参照境界を再定義なしで説明可能
-- [ ] CE1/CE2/CE4 handoffがread-only参照であることをMatrixで確認可能
-- [ ] CDC発生時に `held` 記録（Context/Decision/Consequences）が残る
-- [ ] Phase 2で補完したAC/DoD案が `held` と承認待ちステータスで追跡可能
+- [x] CE1/CE2/CE4参照境界を再定義なしで説明可能 → 本文「read-only SSOT」「下流は参照のみで再定義不可」を明記（§Downstream handoff: Conditional Go）。
+- [x] CE1/CE2/CE4 handoffがread-only参照であることをMatrixで確認可能 → 「CE1/CE2/CE4への引き渡しは Contract ID / No-Go canonical IDs の read-only 参照のみ」を本文に明記。
+- [x] CDC発生時に `held` 記録（Context/Decision/Consequences）が残る → 「ADR変更が必要な新規競合は Context/Decision/Consequences 明文化と承認完了まで held」を複数checkpointで明記。
+- [x] Phase 2で補完したAC/DoD案が `held` と承認待ちステータスで追跡可能 → AC/DoD追跡項目（`dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required`）を複数checkpointで再確認。
 ## Phase 6 Proceed（次工程向け固定契約の出力）
 ### 最新再読チェック（Phase開始ゲート）
 - Verify結果とAC/DoDを再読し、未達項目があれば Proceed せず `held` に戻す。

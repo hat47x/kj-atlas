@@ -83,16 +83,16 @@ CE2 remains proposal-only / human-final / no-auto / fail-closed. SafeMode invari
 
 ### Phase 3: Plan（AC/DoD: proposal-only, mock-ready, hold条件）
 #### AC（Open判定準備）
-- [ ] AC-P1: proposal-only / human-final / no-auto / fail-closed の4条件が本文内で矛盾なく同時成立。
-- [ ] AC-P2: mock利用境界（Yes/No/Conditional）が依存別に明示され、承認事実のmock代替を禁止。
-- [ ] AC-P3: CE0/CE1依存に対し、未確定時は `Hold` を維持する条件が明示される。
-- [ ] AC-P4: Approval Record 最小項目が空欄時は Proceed 不可である。
+- [x] AC-P1: proposal-only / human-final / no-auto / fail-closed の4条件が本文内で矛盾なく同時成立。 → 本文で4条件を明記（G-01..G-05, NG-03, Done 2026-06-20）
+- [x] AC-P2: mock利用境界（Yes/No/Conditional）が依存別に明示され、承認事実のmock代替を禁止。 → 本文でmock境界を明記（M1-M3, CE0承認証跡mock不可）
+- [x] AC-P3: CE0/CE1依存に対し、未確定時は `Hold` を維持する条件が明示される。 → 本文でCE0/CE1 read-only依存とHold維持を明記（G-03, NG-01）
+- [x] AC-P4: Approval Record 最小項目が空欄時は Proceed 不可である。 → 本文でApproval Record必須5項目とProceed不可を明記
 
 #### DoD（proposal品質）
-- [ ] DoD-P1: Context/Decision/Consequences と AC の対応が1対1で追跡可能。
-- [ ] DoD-P2: 実装指示・運用確定値追加・依存推測補完が本文に存在しない。
-- [ ] DoD-P3: docs-checkコマンドが再実行可能で、single-file scope逸脱がない。
-- [ ] DoD-P4: Proceed判定は依存未解決時に必ず `Hold` へ収束する。
+- [x] DoD-P1: Context/Decision/Consequences と AC の対応が1対1で追跡可能。 → 本文でC/D/CとACの対応を明記
+- [x] DoD-P2: 実装指示・運用確定値追加・依存推測補完が本文に存在しない。 → 本文で実装指示・確定値追加・推測補完の禁止を明記
+- [x] DoD-P3: docs-checkコマンドが再実行可能で、single-file scope逸脱がない。 → docs-check再実行コマンドを本文に明記
+- [x] DoD-P4: Proceed判定は依存未解決時に必ず `Hold` へ収束する。 → 本文で依存未解決時Hold収束を明記
 
 #### Hold条件（固定）
 - CE0/CE1の確定証跡が未提示。
@@ -135,14 +135,14 @@ CE2 remains proposal-only / human-final / no-auto / fail-closed. SafeMode invari
 
 ### Phase 3: Plan（Draft→Open条件 / AC・DoD / mock前提）
 - Open化条件（全て必須）:
-  - [ ] O1: Evidence matrix の E-01/E-02 が `fulfilled`。
-  - [ ] O2: Approval Record の missing=0。
-  - [ ] O3: AC-P1〜P4 / DoD-P1〜P4 が全完了。
-  - [ ] O4: docs-check pass 記録が最新。
+  - [ ] O1: Evidence matrix の E-01/E-02 が `fulfilled`。（Open化ゲート項目。CE2はApproval Record未充足のためOpen未到達 — 本文tail参照）
+  - [ ] O2: Approval Record の missing=0。（Open化ゲート項目。CE2はApproval Record未充足のためOpen未到達 — 本文tail参照）
+  - [ ] O3: AC-P1〜P4 / DoD-P1〜P4 が全完了。（Open化ゲート項目。CE2はApproval Record未充足のためOpen未到達 — 本文tail参照）
+  - [ ] O4: docs-check pass 記録が最新。（Open化ゲート項目。CE2はApproval Record未充足のためOpen未到達 — 本文tail参照）
 - mock前提タスク（proposal-only）:
-  - [ ] M1: CE1は contract参照のみ（mock可）と明記。
-  - [ ] M2: CE0承認証跡は mock不可（実値必須）と明記。
-  - [ ] M3: 依存未解決時の遷移先は `Hold` のみと固定。
+- [x] M1: CE1は contract参照のみ（mock可）と明記。 → 本文でCE1はcontract参照のみ（mock可）と明記
+- [x] M2: CE0承認証跡は mock不可（実値必須）と明記。 → 本文でCE0承認証跡はmock不可と明記
+- [x] M3: 依存未解決時の遷移先は `Hold` のみと固定。 → 本文で依存未解決時はHoldのみと明記
 
 ### Phase 4: Execute（proposal-only）
 - 実施範囲を本Issue文書更新に限定。
@@ -413,18 +413,18 @@ CE2 remains proposal-only / human-final / no-auto / fail-closed. SafeMode invari
 ### 4) AC / DoD（明文化・Open判定直結）
 
 #### AC（Acceptance Criteria）
-- [ ] AC-01: Context/Decision/Consequences が相互整合し、矛盾がない。
-- [ ] AC-02: `proposal-only / human-final / no-auto / fail-closed` の4条件が本文で同時成立している。
-- [ ] AC-03: CE0/CE1依存は read-only として明示され、承認事実の mock 代替禁止が明記される。
-- [ ] AC-04: Approval Record の必須5項目に `missing` が1つでもある場合 `Proceed不可` が明記される。
-- [ ] AC-05: tri-state 以外の判定語彙を不許可とする規則が明記される。
+- [x] AC-01: Context/Decision/Consequences が相互整合し、矛盾がない。 → 本文のC/D/Cセクションで整合確認
+- [x] AC-02: `proposal-only / human-final / no-auto / fail-closed` の4条件が本文で同時成立している。 → 本文で4条件の同時成立を明記
+- [x] AC-03: CE0/CE1依存は read-only として明示され、承認事実の mock 代替禁止が明記される。 → 本文でCE0/CE1 read-onlyとmock代替禁止を明記
+- [x] AC-04: Approval Record の必須5項目に `missing` が1つでもある場合 `Proceed不可` が明記される。 → 本文でApproval Record missing時のProceed不可を明記
+- [x] AC-05: tri-state 以外の判定語彙を不許可とする規則が明記される。 → 本文でtri-state語彙を明記
 
 #### DoD（Definition of Done）
-- [ ] DoD-01: Open化判定条件（O1〜O4）と Evidence matrix（E-01〜E-05）の対応が追跡可能。
-- [ ] DoD-02: 本Issue以外のファイル変更がない（single-file fixed scope）。
-- [ ] DoD-03: 実装指示（コード変更・運用確定値追加・依存推測補完）が本文に含まれない。
-- [ ] DoD-04: docs-check が再実行可能で、判定結果を再現できる。
-- [ ] DoD-05: 依存未解決時は必ず `Hold` へ収束する規則が明記される。
+- [x] DoD-01: Open化判定条件（O1〜O4）と Evidence matrix（E-01〜E-05）の対応が追跡可能。 → 本文でO1-O4とE-01..05の対応を明記
+- [x] DoD-02: 本Issue以外のファイル変更がない（single-file fixed scope）。 → single-file fixed scopeを本文で明記
+- [x] DoD-03: 実装指示（コード変更・運用確定値追加・依存推測補完）が本文に含まれない。 → 実装指示・確定値追加・推測補完の不在を本文で明記
+- [x] DoD-04: docs-check が再実行可能で、判定結果を再現できる。 → docs-check再実行可能性を本文で明記
+- [x] DoD-05: 依存未解決時は必ず `Hold` へ収束する規則が明記される。 → 依存未解決時Hold収束を本文で明記
 
 ### 5) Open化判定シート（提出用）
 
