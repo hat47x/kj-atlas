@@ -24,6 +24,21 @@
 - 本文を含まない監査メタデータの read-only 一覧/検索APIを実装する（`DATA-MAINT-04` A1の範囲）。
 - 返却は allowlist に限定し、本文・未レビュー情報・secret・生IdP識別子・policyRef生値を一切返さない。
 - `ADR-0035` の本文禁止・標準機能外境界を緩和しない。
+
+## スコープ確認（2026-08-07）: exportイベントの永続化が前提
+
+A1（export event lookup）を実装するには、まず **export監査イベントの永続化** が必要である。現状の監査構成はemit-onlyであり、read APIが照会できるローカル保存が存在しない。
+
+- `audit.py` の `AuditDispatcher` は `NoopAuditTransport`（破棄）または `HttpAuditTransport`（外部送信）で、`build_event` したイベントをローカルへ保存しない。
+- ローカル唯一の監査テーブル `document_access_admin_audit_events` は `action = 'document.policy.update'` に制約され、exportイベントを保存しない。
+- `routes/docs.py` の `POST /{doc_id}/export-audit` はイベントをdispatcherへemitするだけで、read APIで照会できる保存先を持たない。
+
+したがって本issueは **2段階** になる:
+
+1. **前提（設計判断が必要）**: exportイベントの保存先と保持ポリシーを決める（新テーブル or ローカルtransport、保持期間、tenant境界、`DX-BACKEND-CE4-01`（無制限メモリ蓄積）との関係）。これは `ADR-0035` の監査境界に触れるため、実装前にADRまたは内部issueで確定する。
+2. **本件（A1）**: 保存されたイベントの read-only allowlist一覧/検索API。段階1の保存先が決まってから実装可能。
+
+段階1の設計判断は `GENAI-GOV-01` の監査境界方針（`02_Architecture/value_traceability.md` §2.9）に従い、実装PRより先にADRまたは内部issueで扱う。→ `issue-DATA-MAINT-06-export-audit-event-persistence.md` として起票済み（2026-08-07）。本issueは段階1の判断待ちのままDraftで維持する。
 - Support / Platform operator が本文を標準導線で閲覧できるようにしない。
 
 ## 受入条件
