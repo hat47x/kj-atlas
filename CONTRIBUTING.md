@@ -87,6 +87,12 @@ CI の frontend ゲートは2つだけです。どちらも失敗すればPRを�
 
 独立したリンタは導入していません（`npm run lint` は `npm run typecheck` の別名です）。特定範囲だけ再実行したい場合は `npm run test:i18n` や `npm run test:regression-guards` を使えますが、CIはこれらを個別ジョブにせず `frontend-test` で一括検証します。
 
+## MCP の品質ゲート
+
+`03_Implement/mcp/` の変更時は、CI の `mcp` ジョブ（`npm ci` → `npm run typecheck` → `npm test`）が走ります。`03_Implement/mcp/**` が変更されたPRは、このゲートが通らないとマージできません。
+
+ローカルでは `cd 03_Implement/mcp && npm ci` の後、`npm run typecheck` と `npm test` を実行します。
+
 ## Issue と ADR の使い分け（必須）
 
 IssueとADRは混在させず、次の基準で分離して運用します。
