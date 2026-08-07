@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 FRONTEND_PREFIX = "03_Implement/frontend/"
 BACKEND_PREFIX = "03_Implement/backend/"
+MCP_PREFIX = "03_Implement/mcp/"
 RUN_ALL_PATHS = {
     ".github/workflows/ci.yml",
     "01_Plans/ci_change_scope.py",
@@ -18,6 +19,7 @@ RUN_ALL_PATHS = {
 class ChangeScope:
     frontend: bool
     backend: bool
+    mcp: bool
 
 
 def classify_changes(paths: list[str]) -> ChangeScope:
@@ -26,6 +28,7 @@ def classify_changes(paths: list[str]) -> ChangeScope:
     return ChangeScope(
         frontend=run_all or any(path.startswith(FRONTEND_PREFIX) for path in normalized),
         backend=run_all or any(path.startswith(BACKEND_PREFIX) for path in normalized),
+        mcp=run_all or any(path.startswith(MCP_PREFIX) for path in normalized),
     )
 
 
@@ -33,6 +36,7 @@ def main() -> int:
     scope = classify_changes(sys.stdin.readlines())
     print(f"frontend={str(scope.frontend).lower()}")
     print(f"backend={str(scope.backend).lower()}")
+    print(f"mcp={str(scope.mcp).lower()}")
     return 0
 
 
