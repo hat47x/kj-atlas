@@ -31,6 +31,8 @@
 
 現状はCI実行に問題を起こしていない（重複が動作を壊しているわけではない）。整理すれば `.github/workflows/ci.yml` の行数削減と、setup手順を変更する際の同期漏れリスクの低減が見込める。
 
+**状態追記（2026-08-07）**: `mcp` ジョブが追加され（`6f13f62d`）、`actions/setup-node` を直接使うため、frontendの `setup-frontend` composite action と並ぶNodeセットアップの別系統が生まれた。base_commit解決は `ci.yml:68` のNOTEどおり change-scope と docs-contract で意図的に別挙動（`github.event.before` vs 再解決）のため、無条件の統合はできない。統合する場合は、各ジョブの base_commit 仕様の一致を確認してから行う。
+
 ## Acceptance
 
 - [ ] Node/PM検出＋installブロックが1箇所（composite actionまたは等価な仕組み）に集約されている。
