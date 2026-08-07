@@ -2139,6 +2139,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setActiveLocale(resolved.locale);
   }, [isReadOnly, locationSearch]);
 
+  // FB-RM-UX-01: loadPublicPack must not re-run on isReadOnly/locationSearch
+  // changes (it feeds a mount-only effect), but it calls the latest
+  // applyResolvedLocaleForView. Keep the latest callback in a ref so the
+  // closure stays fresh without widening loadPublicPack's deps.
+  const applyResolvedLocaleForViewRef = useRef(applyResolvedLocaleForView);
+  applyResolvedLocaleForViewRef.current = applyResolvedLocaleForView;
+
   const loadDocument = useCallback(
     async (docId: string, options?: { allowCreateOnNotFound?: boolean; isReload?: boolean }): Promise<boolean> => {
       const allowCreateOnNotFound = options?.allowCreateOnNotFound ?? false;
@@ -3552,7 +3559,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setActiveDocumentId(documentParseResult.document.id);
     const importedViewMode = appStorage.loadViewModeForDocument(documentParseResult.document.id) ?? "explore";
     setViewMode(importedViewMode);
-    applyResolvedLocaleForView({
+    applyResolvedLocaleForViewRef.current({
       docId: documentParseResult.document.id,
       viewMode: importedViewMode,
       persistedLocale: appStorage.loadViewLocaleForDocumentView(documentParseResult.document.id, importedViewMode),
@@ -3615,7 +3622,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     });
     setActiveDocumentId(builtInSample.id);
     setViewMode(sampleViewMode);
-    applyResolvedLocaleForView({
+    applyResolvedLocaleForViewRef.current({
       docId: builtInSample.id,
       viewMode: sampleViewMode,
       persistedLocale: appStorage.loadViewLocaleForDocumentView(builtInSample.id, sampleViewMode),
