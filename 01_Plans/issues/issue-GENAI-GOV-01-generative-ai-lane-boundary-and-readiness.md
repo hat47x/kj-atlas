@@ -1,7 +1,7 @@
 # Issue Draft: GENAI-GOV-01 生成AIレーン境界と導入判断ゲート
 
 - Type: Process / Architecture
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: TBD (Productization Program Owner / Security Officer / QA Lead)
