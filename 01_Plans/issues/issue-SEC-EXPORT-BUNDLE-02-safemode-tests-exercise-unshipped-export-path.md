@@ -1,7 +1,7 @@
 # Issue Draft: SEC-EXPORT-BUNDLE-02 SafeModeエクスポートテストが未出荷の経路を検証している
 
 - Type: Security
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
