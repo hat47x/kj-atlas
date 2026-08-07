@@ -98,6 +98,17 @@ npm ci
 npm run build
 ```
 
+## MCP read-only server
+
+```bash
+cd 03_Implement/mcp
+npm ci
+npm run typecheck
+npm test
+```
+
+The MCP server provides read-only tools (`get_document`, `get_agent_constraints`) for AI agent collaboration. CI gate: `mcp` job (`npm ci` → typecheck → test) runs on `03_Implement/mcp/**` changes. Local setup and CI details: [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+
 ## Static publish artifact (index/assets/packs)
 
 ```bash

@@ -12,6 +12,7 @@ jobs:
     outputs:
       frontend: ${{ steps.scope.outputs.frontend }}
       backend: ${{ steps.scope.outputs.backend }}
+      mcp: ${{ steps.scope.outputs.mcp }}
       base_commit: ${{ steps.scope.outputs.base_commit }}
     steps:
       - name: Checkout
@@ -132,6 +133,35 @@ jobs:
 
       - name: Build
         run: ${{ steps.setup.outputs.run }} build
+
+  mcp:
+    name: MCP typecheck + test
+    needs: change-scope
+    if: needs.change-scope.outputs.mcp == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: 03_Implement/mcp
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: 03_Implement/mcp/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
 
   backend:
     name: Backend lint + test

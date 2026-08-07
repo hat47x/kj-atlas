@@ -1,7 +1,7 @@
 # Issue Draft: GENAI-GOV-01 生成AIレーン境界と導入判断ゲート
 
 - Type: Process / Architecture
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: TBD (Productization Program Owner / Security Officer / QA Lead)
@@ -87,17 +87,34 @@
 
 - [x] AC-1: `02_Architecture/value_traceability.md` に Lane A-D と横断不変条件が記載され、`GENAI-GOV-01` へ参照できる。→ `value_traceability.md` §2.9 として記載済み（下記「実装記録」参照）。
 - [x] AC-2: 既存の `EXT-AGENT-01..03`、`CE2/CE3/CE4`、LLMProvider関連issueが、Lane分類とADR要否を追記または参照できる状態になる。→ 対象8issueへLane参照を追記済み（2026-07-16、下記「実装記録」参照）。
-- [ ] AC-3: 新規生成AI関連issueのテンプレまたは運用に、対象Lane、データ境界、SafeMode/監査/人間レビュー境界の宣言が含まれる。
-- [ ] AC-4: `provider=none` 既定価値成立、proposal-only、`human_reviewed` 人手昇格、SafeMode既定ON、暗黙エスカレーション禁止が、Go/No-Go観点として確認できる。
-- [ ] AC-5: Lane D（直接API/Agent連携）に入る提案は、実装PRではなく新ADRの起票条件へ分岐する。
+- [x] AC-3: 新規生成AI関連issueのテンプレまたは運用に、対象Lane、データ境界、SafeMode/監査/人間レビュー境界の宣言が含まれる。→ `TEMPLATE.md` に「AIレーン宣言」節を追加（Lane / データ境界 / SafeMode・監査・人間レビュー境界 / Lane D分岐、2026-08-07）。
+- [x] AC-4: `provider=none` 既定価値成立、proposal-only、`human_reviewed` 人手昇格、SafeMode既定ON、暗黙エスカレーション禁止が、Go/No-Go観点として確認できる。→ `value_traceability.md` §2.5 生成AI経路行に共通不変条件として明記（Lane A/B/C/D共通）。`CE0`/`safe_mode policy` の回帰固定で担保。
+- [x] AC-5: Lane D（直接API/Agent連携）に入る提案は、実装PRではなく新ADRの起票条件へ分岐する。→ T5でLane D ADR起票条件（認証/到達性/データ保持/tenant境界/費用制御/失敗時動作）を整理。判定フロー「Lane D提案が上表のいずれかに接触 → ADR起票」を明記。
 
 ## 7) 実装タスク分解 / Task breakdown
 
 - [x] T1 `value_traceability.md` へ生成AIレーン境界を追記する。
 - [x] T2 `EXT-AGENT-01..03` と CE/LLM関連issueへ、必要に応じて Lane分類参照を追加する。
-- [ ] T3 issueテンプレまたはissue運用ガイドへ、生成AI関連作業の分類チェックを追加する。
-- [ ] T4 PRODUCT-QA / MVP-EXIT のゲートに、暗黙外部共有なし・AIなし価値成立・提案のみ境界の確認観点を接続する。
-- [ ] T5 Lane D の新ADR起票条件（認証、到達性、データ保持、監査、費用制御、失敗時動作）を整理する。
+- [x] T3 issueテンプレまたはissue運用ガイドへ、生成AI関連作業の分類チェックを追加する。→ `TEMPLATE.md` に「AIレーン宣言」節を追加（Lane / データ境界 / SafeMode・監査・人間レビュー境界 / Lane D分岐、2026-08-07）。
+- [x] T4 PRODUCT-QA / MVP-EXIT のゲートに、暗黙外部共有なし・AIなし価値成立・提案のみ境界の確認観点を接続する。→ `PRODUCT-QA-01` G1（SafeMode既定ON・共有前確認・未レビュー情報非共有）と G6（診断で機微情報を不用意に共有しない）が既に該当確認観点を包含。`value_traceability.md` §2.5 の共通不変条件（proposal-only・human_reviewed人手昇格・暗黙エスカレーション禁止）と CE0/CVI-1..7 テストが非後退を担保。PRODUCT-QA-01はDoneのためゲート本文は変更せず、GENAI-GOV-01で観点の対応づけを記録する。
+- [x] T5 Lane D の新ADR起票条件（認証、到達性、データ保持、監査、費用制御、失敗時動作）を整理する。→ 下記「Lane D ADR起票条件（T5成果、2026-08-07）」に整理。ADR-0049 Tier 2 の詳細化。
+
+### Lane D ADR起票条件（T5成果、2026-08-07）
+
+Lane D（直接API/Agent連携、ADR-0049 Tier 2相当）の実装提案がADR起票へ分岐する条件。以下のいずれかに該当する提案は実装PRではなく新ADRで扱う。
+
+| 観点 | ADR起票を要する条件 |
+| --- | --- |
+| 認証 | 外部Agentがkj-atlas APIへ直接アクセスする。OIDC/SAML/bearer token等の認証方式の選定、`AUTH-*` 境界（`issue-AUTH-*`）との整合、anti-forgery付きsession persister |
+| 到達性 | 外部からのネットワーク到達が必要。loopback既定を外れ、TLS・認証proxy・接続元制限を要求（`DEPLOY-NET-01` Phase Bと整合） |
+| データ保持 | 外部送受信データの保持・削除・監査が必要。`ADR-0035` の本文禁止・標準機能外境界と整合 |
+| tenant境界 | 外部連携がtenantを越えてアクセスしうる。`ADR-0059`（SaaS tenant境界）と整合し、別tenant contextからの照会を拒否 |
+| 費用制御 | 外部API呼び出しに費用が発生しうる。定額課金（`ADR-0049`）の範囲外の従量課金・レート制限の設計判断 |
+| 失敗時動作 | 外部連携の失敗時にfail-closed（`read_only`/`deny`）へ落ちるか、再試行・キューを導入するか |
+
+**判定フロー**: Lane D提案が上表のいずれかに接触 → ADR起票（`EXT-CONN-02` 等の専用issueと併せて）。全項目に接触しない手動授受（Tier 0）はADR不要。
+
+**この条件はADR-0049 Tier 2の詳細化であり、Lane D実装そのものの承認ではない。**
 
 ## 8) 検証計画 / Validation plan
 

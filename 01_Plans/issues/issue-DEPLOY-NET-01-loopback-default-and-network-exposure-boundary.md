@@ -104,7 +104,7 @@ Phase Bの配布profileは本Issueの必須実装にしない。新しいbind-ad
 - [x] contract testがhost IP省略、`0.0.0.0`、loopback以外のbase mappingを検出する。→ `01_Plans/tests/test_deploy_network_exposure_contract.py`を新規追加、修正前の設定に対する負例（fail確認）も実施済み（下記「実装記録」参照）。
 - [x] Docker-capable hostでrendered Composeのweb bindingが`127.0.0.1:<port>`であることを確認する。→ `docker compose config`と実際の`docker compose up`の両方で確認済み。
 - [x] 可能なintegration環境では同一ホストからhealth/UIへ到達でき、非loopback interfaceを宛先とする接続が成功しないことを確認する。→ 実機Dockerで確認済み（下記「実装記録」参照）。
-- [ ] 非loopback公開を提供する場合、明示profileとTLS・認証proxy・接続元制限・撤回手順が同時に定義される。→ Phase B（本Issueの必須実装外）として保留。非loopback公開は現時点で提供しない。
+- [x] 非loopback公開を提供する場合、明示profileとTLS・認証proxy・接続元制限・撤回手順が同時に定義される。→ 条件（非loopback公開を提供する）が成立しないため充足扱い。非loopback公開は現時点で提供せず、Phase Bとして明示保留（本issue「非loopback公開は現時点で提供しない」）。提供開始時に本ACを再評価する。
 - [x] SafeMode、share/export、import sanitize、provider=`none`、AI proposal-onlyの既定を変更しない。→ 本変更はport bindingのみで、これらのシステムへのコード変更は無し。
 
 ## 検証計画

@@ -93,7 +93,7 @@ findingはrule ID、文書、行、検出token、照合先、正しい候補を�
 - [x] manual/mutatingコマンドはCIで実行されず、データ消失・秘密情報・本番利用に関する警告と停止条件を維持する。→ 本Issueでは静的照合のみを追加し、CI実行コマンドやworkflowの変更は一切行っていない。
 - [x] localとCIが同じ`docs_check.py`から検査し、current repositoryでpassする。→ `check_npm_script_commands`を`docs_check.py`へ統合し、現行repositoryでpass済み（下記「実装記録」参照）。
 - [x] SafeMode、share/export、provider=`none`、import sanitizeの安全既定を変更しない。→ アプリ実装・workflowは無改修。
-- [ ] Doneの`DX-DOC-03`と`DOC-OPS-06`から本follow-upへ到達できる。→ 本セッションでは未確認・未対応（follow-up）。
+- [x] Doneの`DX-DOC-03`と`DOC-OPS-06`から本follow-upへ到達できる。→ `issue-DX-DOC-03` に「Follow-up」節、`issue-DOC-OPS-06` に「Follow-up 2026-08-07: 実行コマンドの静的照合」節を追加し、本DX-DOC-04へのリンクを明記（2026-08-07）。
 
 ## 検証計画
 

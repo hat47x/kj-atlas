@@ -127,10 +127,10 @@ DATA-MAINT-03 Done + ADR-0035 Acceptedにより依存充足。監査メタデー
 ### Open化チェックリスト
 
 - [x] `ADR-0035` がAccepted、または同等の後続ADRで「本文を含まない監査メタデータ閲覧だけを検討可能」と固定されている。（2026-07-13充足）
-- [ ] A1-A4 のどれを最初の実装候補にするかを1つだけ選ぶ。複数同時に進める場合は別issueへ分割する。
-- [ ] 返却項目、検索条件、権限、監査証跡、エラー時の表示方針を、本文を含まない範囲で固定する。
-- [ ] UIを持つ場合は、マウス操作とキーボード操作の代表シナリオ、フォーカス順、viewport evidence、スクリーンショットを `PRODUCT-QA-01` へ渡す。
-- [ ] API/CLIだけで始める場合も、本文・未レビュー情報・secret・生IdP識別子が返らないことを integration test で確認する。
+- [x] A1-A4 のどれを最初の実装候補にするかを1つだけ選ぶ。複数同時に進める場合は別issueへ分割する。→ **A1 share/export event lookup を初期候補として選択**（本文の推奨初期値どおり）。実装は `issue-DATA-MAINT-05-share-export-event-lookup.md` へ分割起票（2026-08-07）。人間確認（「本文閲覧なしでも運用価値を持つか」）は実装着手前に `DATA-MAINT-05` で確認する。
+- [x] 返却項目、検索条件、権限、監査証跡、エラー時の表示方針を、本文を含まない範囲で固定する。→ A1の返却allowlist（event type, timestamp, traceId, docId, exportKind, safeMode, result, rejectReasonCode）を `DATA-MAINT-05` に固定（2026-08-07）。本文・未レビュー・secret・生IdP・policyRef生値を返さない方針を明記。
+- [ ] UIを持つ場合は、マウス操作とキーボード操作の代表シナリオ、フォーカス順、viewport evidence、スクリーンショットを `PRODUCT-QA-01` へ渡す。→ A1はAPI優先（UIは後続）。UI着手時に評価。
+- [ ] API/CLIだけで始める場合も、本文・未レビュー情報・secret・生IdP識別子が返らないことを integration test で確認する。→ `DATA-MAINT-05` の受入条件に含む。
 
 ### 実装へ進めない条件
 

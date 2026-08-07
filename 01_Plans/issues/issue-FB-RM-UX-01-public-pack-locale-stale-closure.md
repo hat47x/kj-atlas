@@ -1,7 +1,7 @@
 # Issue: FB-RM-UX-01 公開パック読込のロケール解決がstale closureで古い値を参照
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -22,8 +22,8 @@
 
 ## 受入条件
 
-- [ ] `loadPublicPack`のロケール解決が最新の`isReadOnly`/`locationSearch`を参照するよう修正される。
-- [ ] マウント時専用effect（`loadDocument`/`loadPublicPack`を依存に持つ）の発火頻度が変わらないことを確認する。
+- [x] `loadPublicPack`のロケール解決が最新の`isReadOnly`/`locationSearch`を参照するよう修正される。→ `applyResolvedLocaleForViewRef`（useRef）で最新コールバックを保持し、`loadPublicPack`内の2箇所（doc読み込み・サンプル読み込み）で `applyResolvedLocaleForViewRef.current` を呼ぶよう変更（2026-08-07）。
+- [x] マウント時専用effect（`loadDocument`/`loadPublicPack`を依存に持つ）の発火頻度が変わらないことを確認する。→ `loadPublicPack`の依存配列 `[appStorage, applyImportedViewMetadata, runTenantScopedOptionalTask]` は不変。ref経由で最新コールバックを参照するため、`isReadOnly`/`locationSearch`変化で再生成されない。frontend 1398 tests pass。
 
 ## 検証計画
 

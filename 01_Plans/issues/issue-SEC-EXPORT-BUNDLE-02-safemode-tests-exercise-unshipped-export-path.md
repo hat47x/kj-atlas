@@ -1,7 +1,7 @@
 # Issue Draft: SEC-EXPORT-BUNDLE-02 SafeModeエクスポートテストが未出荷の経路を検証している
 
 - Type: Security
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
@@ -31,3 +31,10 @@
 ## 影響
 
 現状、SafeModeの中核保証（未レビュー本文・診断詳細の匿名化）について、実際に出荷されるエクスポート経路への直接的な回帰テストが存在しない。`worker/diagnostics_compute.ts` 側の変更（本セッションの別PRで修正した tautological gate のような）が将来再発しても、既存テストスイートは検出できない。
+
+## 解決記録（2026-08-07）
+
+- **対応**: 論点3（出荷経路用の同等テストを追加）を採用。`buildExportBundleWithWorkers`（出荷経路）に対し、SafeMode ONで未レビュー島summaryとカード本文に秘密文字列を含むdocを渡し、`diagnostics.md`・`outline.md`・全文書バンドルに秘密が含まれないことを検証するテストを `bundle_export.test.ts` に追加（「shipped worker path hides unreviewed text and diagnostic detail under SafeMode」）。
+- **テストがworker fallback経路を検証する理由**: `DiagnosticsWorkerClient.computeDiagnostics` はworker非利用環境で `computeDiagnostics`（`worker/diagnostics_compute.ts`）を直接呼ぶfallbackを持つため、unit testで出荷経路の `buildDiagnosticsMd` のSafeMode秘匿を実際に検証できる。
+- **検証**: frontend 234 files / 1398 tests（+1）pass、typecheck 0 errors。
+- Status: Done

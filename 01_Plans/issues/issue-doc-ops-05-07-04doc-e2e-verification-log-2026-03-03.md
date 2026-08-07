@@ -43,15 +43,15 @@
 
 ### Phase 3: Plan（AC/DoD）
 #### Acceptance Criteria
-- [ ] AC-1: ログ必須項目を定義済み（`日時 / シナリオID / 実行経路 / コマンド / 結果 / 失敗理由 / 再開条件 / 実行者ロール / 証跡リンク`）。
-- [ ] AC-2: 保存方針を定義済み（内部保管、改ざん防止のため追記型、公開文書には要約のみ）。
-- [ ] AC-3: 用語を `Go/NoGo`, `Proceed/Hold/Stop`, `docs-check` に統一。
-- [ ] AC-4: 実ログ生成を非目標として明記。
+- AC-1: ログ必須項目を定義済み（`日時 / シナリオID / 実行経路 / コマンド / 結果 / 失敗理由 / 再開条件 / 実行者ロール / 証跡リンク`）。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- AC-2: 保存方針を定義済み（内部保管、改ざん防止のため追記型、公開文書には要約のみ）。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- AC-3: 用語を `Go/NoGo`, `Proceed/Hold/Stop`, `docs-check` に統一。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- AC-4: 実ログ生成を非目標として明記。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
 
 #### Definition of Done
-- [ ] DoD-1: 本Issue単体で監査観点（粒度/証跡/保存/停止条件）を再読可能。
-- [ ] DoD-2: 05-06の試験設計（Compose/SQLite/blocked記録）と相互参照可能。
-- [ ] DoD-3: 依存未確定時は ProceedDecision を **Hold** に維持。
+- DoD-1: 本Issue単体で監査観点（粒度/証跡/保存/停止条件）を再読可能。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- DoD-2: 05-06の試験設計（Compose/SQLite/blocked記録）と相互参照可能。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- DoD-3: 依存未確定時は ProceedDecision を **Hold** に維持。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
 
 ### Phase 4: Execute（Draft本文のみ更新）
 - 実施: 本Issueメモのみ更新（Allowlist内）。
@@ -90,10 +90,10 @@
 ## Stream H Ready化 pass（2026-05-06 / DOC-OPS-05-07）
 
 ### 1) Ready gate（監査ログ運用の判定条件）
-- [ ] RG-0507-1: AC-1〜AC-4 の判定結果（done/pending/hold）記録。
-- [ ] RG-0507-2: DoD-1〜DoD-3 の判定結果（done/pending/hold）記録。
-- [ ] RG-0507-3: Candidate destination と公開除外境界の根拠が1段落で明示。
-- [ ] RG-0507-4: 05-05/05-06 と `Go/NoGo`, `Proceed/Hold/Stop` 語彙一致確認。
+- RG-0507-1: AC-1〜AC-4 の判定結果（done/pending/hold）記録。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- RG-0507-2: DoD-1〜DoD-3 の判定結果（done/pending/hold）記録。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- RG-0507-3: Candidate destination と公開除外境界の根拠が1段落で明示。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- RG-0507-4: 05-05/05-06 と `Go/NoGo`, `Proceed/Hold/Stop` 語彙一致確認。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
 
 ### 2) 品質ゲート（docs-check）
 - Gate-L1: validator実行で必須キー欠落なし。
@@ -240,10 +240,10 @@
 
 ### Phase 3: Ready化（AC/DoD・入力/出力・担当・依存解除条件）
 - AC/DoD Readyセット（本Issueで確認すべき共通最小セット）:
-  - [ ] AC-R1: 受入条件が測定可能な判定文（done/pending/hold いずれか）で記録されている。
-  - [ ] AC-R2: `ProceedDecision` と `Dependency status` が矛盾しない。
-  - [ ] DoD-R1: 実装禁止境界（docs-only / proposal-only など）が明示されている。
-  - [ ] DoD-R2: `Hold` 継続条件と `Stop` 条件（上限超過・競合未解決）が明示されている。
+  - AC-R1: 受入条件が測定可能な判定文（done/pending/hold いずれか）で記録されている。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+  - AC-R2: `ProceedDecision` と `Dependency status` が矛盾しない。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+  - DoD-R1: 実装禁止境界（docs-only / proposal-only など）が明示されている。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+  - DoD-R2: `Hold` 継続条件と `Stop` 条件（上限超過・競合未解決）が明示されている。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
 - 入力（Implementation lane input）:
   - 承認証跡、依存Issueの最新判定、固定語彙（Go/NoGo・Proceed/Hold/Stop・pass/fail/blocked）。
 - 出力（Implementation lane output expectation）:
@@ -256,11 +256,11 @@
   - 依存Issueの Approval Record 5項目が確定し、相互参照リンクで追跡可能であること。
 
 ### Phase 4: 引継ぎ（実装レーン即着手チェックリスト）
-- [ ] H1: Scope逸脱なし（本Issue外の仕様確定をしていない）。
-- [ ] H2: AC/DoDの未完了項目が `pending/hold` で可視化されている。
-- [ ] H3: 実装開始ゲート（Proceed条件）が1箇所に集約されている。
-- [ ] H4: Verifyコマンド（validator/rg/diff-check）が再実行可能。
-- [ ] H5: 依存未解除時は `Hold` を維持し、推測で `Proceed` しない。
+- H1: Scope逸脱なし（本Issue外の仕様確定をしていない）。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- H2: AC/DoDの未完了項目が `pending/hold` で可視化されている。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- H3: 実装開始ゲート（Proceed条件）が1箇所に集約されている。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- H4: Verifyコマンド（validator/rg/diff-check）が再実行可能。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- H5: 依存未解除時は `Hold` を維持し、推測で `Proceed` しない。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
 
 ### Verify結果（本pass）
 - 判定: `Hold` 維持（依存証跡未確定のため）。

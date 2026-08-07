@@ -117,9 +117,9 @@
 - 停止要因は `DOC-OPS-05依存証跡未確定` と `3Issue横断の語彙整合未確認`。
 
 ### AC/DoD解除条件（Open化条件）
-- [ ] U1: `Classification: Improve external` の根拠段落に公開境界（含む/含まない）を1段落で追記。
-- [ ] U2: 05/05/07との相互リンクが存在し、各Issueの Proceed 判定日時が記録されている。
-- [ ] U3: `Dependency status` が更新され、Hold解除の根拠を明記。
+- U1: `Classification: Improve external` の根拠段落に公開境界（含む/含まない）を1段落で追記。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- U2: 05/05/07との相互リンクが存在し、各Issueの Proceed 判定日時が記録されている。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- U3: `Dependency status` が更新され、Hold解除の根拠を明記。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
 
 ### Validation plan（コマンド）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
@@ -181,10 +181,10 @@
 ## Stream H Ready化 pass（2026-05-06 / DOC-OPS-05-06）
 
 ### 1) Ready gate（Open判定前の必須条件）
-- [ ] RG-0506-1: AC-1〜AC-4 が `done/pending/hold` で判定記録済み。
-- [ ] RG-0506-2: DoD-1〜DoD-3 が `done/pending/hold` で判定記録済み。
-- [ ] RG-0506-3: Approval Record 5項目が記録済み。
-- [ ] RG-0506-4: 05-05/05-07 の `ProceedDecision` と再判定日が同期済み。
+- RG-0506-1: AC-1〜AC-4 が `done/pending/hold` で判定記録済み。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- RG-0506-2: DoD-1〜DoD-3 が `done/pending/hold` で判定記録済み。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- RG-0506-3: Approval Record 5項目が記録済み。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- RG-0506-4: 05-05/05-07 の `ProceedDecision` と再判定日が同期済み。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
 
 ### 2) 品質ゲート定義（docs-check）
 - Gate-E1: `validate_active_issue_memos.py` pass。
@@ -334,10 +334,10 @@
 
 ### Phase 3: Ready化（AC/DoD・入力/出力・担当・依存解除条件）
 - AC/DoD Readyセット（本Issueで確認すべき共通最小セット）:
-  - [ ] AC-R1: 受入条件が測定可能な判定文（done/pending/hold いずれか）で記録されている。
-  - [ ] AC-R2: `ProceedDecision` と `Dependency status` が矛盾しない。
-  - [ ] DoD-R1: 実装禁止境界（docs-only / proposal-only など）が明示されている。
-  - [ ] DoD-R2: `Hold` 継続条件と `Stop` 条件（上限超過・競合未解決）が明示されている。
+  - AC-R1: 受入条件が測定可能な判定文（done/pending/hold いずれか）で記録されている。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+  - AC-R2: `ProceedDecision` と `Dependency status` が矛盾しない。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+  - DoD-R1: 実装禁止境界（docs-only / proposal-only など）が明示されている。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+  - DoD-R2: `Hold` 継続条件と `Stop` 条件（上限超過・競合未解決）が明示されている。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
 - 入力（Implementation lane input）:
   - 承認証跡、依存Issueの最新判定、固定語彙（Go/NoGo・Proceed/Hold/Stop・pass/fail/blocked）。
 - 出力（Implementation lane output expectation）:
@@ -350,11 +350,11 @@
   - 依存Issueの Approval Record 5項目が確定し、相互参照リンクで追跡可能であること。
 
 ### Phase 4: 引継ぎ（実装レーン即着手チェックリスト）
-- [ ] H1: Scope逸脱なし（本Issue外の仕様確定をしていない）。
-- [ ] H2: AC/DoDの未完了項目が `pending/hold` で可視化されている。
-- [ ] H3: 実装開始ゲート（Proceed条件）が1箇所に集約されている。
-- [ ] H4: Verifyコマンド（validator/rg/diff-check）が再実行可能。
-- [ ] H5: 依存未解除時は `Hold` を維持し、推測で `Proceed` しない。
+- H1: Scope逸脱なし（本Issue外の仕様確定をしていない）。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- H2: AC/DoDの未完了項目が `pending/hold` で可視化されている。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- H3: 実装開始ゲート（Proceed条件）が1箇所に集約されている。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- H4: Verifyコマンド（validator/rg/diff-check）が再実行可能。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
+- H5: 依存未解除時は `Hold` を維持し、推測で `Proceed` しない。（廃止済み5-phase礼式の自査scaffold。DOC-OPS-08参照）
 
 ### Verify結果（本pass）
 - 判定: `Hold` 維持（依存証跡未確定のため）。

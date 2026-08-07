@@ -35,11 +35,13 @@ Done statusの7 issueに、**廃止済みのOpenゲート礼式に由来するme
 
 **なぜこれらは永遠にチェックされないか**: これらのmeta-ACは、`AGENTS.md` §4（固定5フェーズ・RACI更新不要）と§6（2者承認・Decision Queue・RACI・KPIは既定で使わない）で廃止された礼式の一部である。`lean_operations_inventory.md` P1 は `DecisionStatus: Fixed` のissue本文書き写しを「撤去対象」と明記し、`AGENTS.md` §6 は「決定済みの参照はADR側Statusが正本、二重管理は取りやめ」と定めている。O-OPEN-* チェックはOpenゲート判定の残骸であり、issueが既にDoneへ到達した時点で判定済み（または礼式廃止で不要）である。
 
-**実施状況**: PRODUCT-UX-01/02/03/04、REQ-DEF-01/02/03 の37件は2026-08-07に削除済み（`0883f476`）。CE4は実装タスク（API/CLI監査・契約テスト）と同セクションに混在するため、20件を個別に精査してから判断する（未実施、本issueで追跡）。
+**実施状況**: PRODUCT-UX-01/02/03/04、REQ-DEF-01/02/03 の37件は2026-08-07に削除済み（`0883f476`）。CE0（4件）・CE2（21件契約項目）・CE4（28件契約項目）は証跡付きチェックオフ済み。CE2の4件（O-items）・CE4の32件はOpen化礼式scaffoldとして注記済み（Open未到達・Proceed=Holdの実態を反映）。CE1の3件はStop Conditions（fail-safe、発動しなかった条件）として維持。
 
 **関連する同型パターン（追加確認 2026-08-07）**:
 - `issue-doc-ops-05-01..14` シリーズは DOC-OPS-05 Set1 の固定5フェーズprotocol（AGENTS.md §4で廃止）に由来する AC/DoD テンプレートを含む。`05-01` は10件done/5件unchecked、他は大部分0件done。ただし `Status:` 形式が異なるため、Done判定自体の妥当性を含めて個別精査が必要（本issueでは追跡のみ）。
-- `issue-doc-ops-05-01` のDone判定は、対象 `canonicalization.md` に `Move internal` / `Improve external` 語彙が見当たらず（grep 0件）、Done statusと実体の乖離が疑われる。別issue（DOC-OPS-09）で調査する。
+- `issue-doc-ops-05-01` のDone判定は、対象 `canonicalization.md` に `Move internal` / `Improve external` 語彙が見当たらず（grep 0件）、Done statusと実体の乖離が疑われた。→ **DOC-OPS-09で調査完了（2026-08-07）**: 5件の「未チェック」はStream G共通ACテンプレのテンプレ定義であり本issueのACではない。実体の7 ACは全て`[x]`でDone判定は妥当。`Move internal`推奨は実際の配置判断で「対外改善（公開候補）」へ上書きされている。
+- `issue-doc-ops-05-01` の「Open化準備リスト」（5件）は廃止済み5-phase礼式の残骸と判断し、2026-08-07に撤去した（`411632b9`）。実AC（§5）と完了T1..T7で担保済み。
+- `issue-doc-ops-05-02..14`（12件）は同型の ceremony AC/DoD テンプレートを含み、かつ各issueが固有の分類決定（Move internal / Improve external）を本文に持つ。→ **DOC-OPS-10で解決済み（2026-08-07）**: 全14件（05-01..14）の未チェック0件へ整理。§5テンプレAC・T1-T3は証跡付き`[x]`、RG/H/U/AC-R/DoD-R/Open化準備リストは注記へ変換、分類決定は維持。
 
 ## 対応方針（案）
 

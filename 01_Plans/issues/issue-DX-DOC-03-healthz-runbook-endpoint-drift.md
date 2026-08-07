@@ -37,3 +37,7 @@ Update the ADR example to the implemented `/api/healthz` endpoint. No API contra
 
 - Completed: 2026-07-13
 - Classification: current-runbook copy/paste drift.
+
+## Follow-up
+
+- 文書内の実行コマンドを現行契約へ静的照合する横断チェックは `issue-DX-DOC-04-executable-command-contract-checks.md` へ切り出し、`docs_contract_checks.py` の実行コマンド照合ルール（DC-CMD-001等）で追跡する。本issueはendpoint値の是正に限定し、横断チェックはDX-DOC-04を正本とする。

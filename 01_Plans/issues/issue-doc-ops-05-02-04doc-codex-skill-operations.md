@@ -22,12 +22,9 @@
 - Rationale: 内部運用手順・権限運用の性格が強く、公開境界を越えると誤公開リスクがある。
 
 ## Acceptance criteria / DoD（補完合意済み）
-- [ ] AC1 分類方針（Move internal）と根拠（Audience/Goal/Public boundary）を単一箇所で参照可能。
-- [ ] AC2 GoNoGoGate=Required の No-Go 条件（内部運用手順・非公開導線を含む場合）を明記。
-- [ ] AC3 Validation plan は `docs-check` と一致。
-- [ ] AC4 Proceed を `Ready/Hold/Needs-decision` 三値で記録。
-- [ ] DoD1 Verifyは `git diff --check` と memo validator の成功を必須化。
-- [ ] DoD2 Self-correction は最大3回、4回目相当は停止して Hold。
+- 分類方針（Move internal）と根拠（Audience/Goal/Public boundary）→ 上記 Proposed classification に記録済み。
+- 検証（`git diff --check`・memo validator）→ 本文 Mini Phase の Verify に記録済み（5-phase礼式は AGENTS.md §4 で廃止、AC/DoDチェックボックスは撤去）。
+- 下記 Mini Phase 1..5（Read→Plan→Execute→Verify→Proceed）は廃止済み5-phase礼式の実行記録であり、本issueの受入条件ではない。
 
 ## Mini Phase（single cycle）
 ### 1) Read

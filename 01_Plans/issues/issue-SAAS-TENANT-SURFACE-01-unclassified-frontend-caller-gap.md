@@ -1,7 +1,7 @@
 # Issue Draft: SAAS-TENANT-SURFACE-01 frontend呼び出しを持たないtenant-guarded backend routeが9件
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer

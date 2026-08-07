@@ -123,7 +123,15 @@ async def add_security_headers(request: Request, call_next):
 
 @app.exception_handler(RequestValidationError)
 def handle_validation_error(_, exc: RequestValidationError) -> JSONResponse:
-    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+    # SEC-VALIDATION-LEAK-01: pydantic v2's error dict includes the rejected raw
+    # value under `input` (PII leak) and a non-serializable exception under `ctx`
+    # (would break the response). Return only the safe serializable fields —
+    # type/loc/msg — matching the routes/docs.py A1ErrorResponse pattern.
+    errors = [
+        {key: error[key] for key in ("type", "loc", "msg") if key in error}
+        for error in exc.errors()
+    ]
+    return JSONResponse(status_code=422, content={"detail": errors})
 
 
 @app.get("/healthz")
