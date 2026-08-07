@@ -4,6 +4,7 @@
 - Status: Done
 - Priority: P1
 - Owner: Stream F（CE2 Open化準備専任 / proposal-only）
+- Open gate status: **Not opened**（Approval Record `approved_at/approved_by/decision/evidence` が `TBD/missing`。本文「Human Tasks Before Open Review」参照。実装着手は人間のApproval Record充足後に再評価）
 
 ## Done 2026-06-20
 CE2 low-risk AI assist decision gate satisfied. All Go conditions met:
