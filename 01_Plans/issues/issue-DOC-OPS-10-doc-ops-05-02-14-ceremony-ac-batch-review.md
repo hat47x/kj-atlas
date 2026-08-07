@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-10 doc-ops-05-02..14 の礼式AC/DoD一括整理
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: `01_Plans/issues/issue-DOC-OPS-08-stale-governance-meta-acs-in-done-issues.md`
 - Priority: P3
 - Owner: Maintainer
@@ -39,10 +39,10 @@
 
 ## 受入条件
 
-- [ ] 11件それぞれで、礼式AC/DoDの扱い（撤去 or テンプレ注記 or 維持）が決定され、本文に反映される。
-- [ ] 各issueの分類決定（Move internal / Improve external）は失われない。
-- [ ] 05-13/14（解決済み）は変更しない。
-- [ ] `python 01_Plans/docs_check.py` が通る。
+- [x] 11件それぞれで、礼式AC/DoDの扱い（撤去 or テンプレ注記 or 維持）が決定され、本文に反映される。→ 2026-08-07に全14件（05-01..14）の未チェック0件へ整理完了。§5テンプレACは証跡付き`[x]`、T1-T3は証跡付き`[x]`、RG/H/U/AC-R/DoD-R/Open化準備リストは注記へ変換。
+- [x] 各issueの分類決定（Move internal / Improve external）は失われない。→ 全issueの Classification / 推奨アクション節を維持。
+- [x] 05-13/14（解決済み）は変更しない。→ 元々未チェック0件、変更なし。
+- [x] `python 01_Plans/docs_check.py` が通る。→ pass（active_memos=62, tracked_markdown=482）。
 
 ## 検証計画
 
