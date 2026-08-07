@@ -226,9 +226,9 @@ CE1 can move from `Open` toward closeout when the following are recorded togethe
   - [x] `queryCanonicalHash` / `bundleHash` の決定論要件と失敗時`409 nondeterministic_bundle`を固定 → Current Completion Assessment「Deterministic bundle failure fixed: Pass — 409 nondeterministic_bundle is specified and tested」。
   - [x] mock validation計画（実実装依存切断）を明記 → Current Completion Assessment「Frontend mock-first validation present: Pass — query_preview.ts + query_preview.test.ts」。
 - Validation Plan:
-  - [ ] issue memo validator
-  - [ ] unit test for issue memo validator
-  - [ ] `git diff --check`
+  - [x] issue memo validator → `01_Plans/issues/validate_active_issue_memos.py` 存在、docs_check で実行（2026-08-07）。
+  - [x] unit test for issue memo validator → `01_Plans/issues/tests/test_validate_active_issue_memos.py` 存在。
+  - [x] `git diff --check` → 本issueの各checkpointで実行・pass。
 - Stop Conditions:
   - [ ] 依存先未定義（CE0/CE2/CE4 handoff key不成立）
   - [ ] 契約語彙衝突（error semantics / contract id collision）
