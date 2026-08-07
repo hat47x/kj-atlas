@@ -35,7 +35,7 @@ Done statusの7 issueに、**廃止済みのOpenゲート礼式に由来するme
 
 **なぜこれらは永遠にチェックされないか**: これらのmeta-ACは、`AGENTS.md` §4（固定5フェーズ・RACI更新不要）と§6（2者承認・Decision Queue・RACI・KPIは既定で使わない）で廃止された礼式の一部である。`lean_operations_inventory.md` P1 は `DecisionStatus: Fixed` のissue本文書き写しを「撤去対象」と明記し、`AGENTS.md` §6 は「決定済みの参照はADR側Statusが正本、二重管理は取りやめ」と定めている。O-OPEN-* チェックはOpenゲート判定の残骸であり、issueが既にDoneへ到達した時点で判定済み（または礼式廃止で不要）である。
 
-**実施状況**: PRODUCT-UX-01/02/03/04、REQ-DEF-01/02/03 の37件は2026-08-07に削除済み（`0883f476`）。CE4は実装タスク（API/CLI監査・契約テスト）と同セクションに混在するため、20件を個別に精査してから判断する（未実施、本issueで追跡）。
+**実施状況**: PRODUCT-UX-01/02/03/04、REQ-DEF-01/02/03 の37件は2026-08-07に削除済み（`0883f476`）。CE0（4件）・CE2（21件契約項目）・CE4（28件契約項目）は証跡付きチェックオフ済み。CE2の4件（O-items）・CE4の32件はOpen化礼式scaffoldとして注記済み（Open未到達・Proceed=Holdの実態を反映）。CE1の3件はStop Conditions（fail-safe、発動しなかった条件）として維持。
 
 **関連する同型パターン（追加確認 2026-08-07）**:
 - `issue-doc-ops-05-01..14` シリーズは DOC-OPS-05 Set1 の固定5フェーズprotocol（AGENTS.md §4で廃止）に由来する AC/DoD テンプレートを含む。`05-01` は10件done/5件unchecked、他は大部分0件done。ただし `Status:` 形式が異なるため、Done判定自体の妥当性を含めて個別精査が必要（本issueでは追跡のみ）。
