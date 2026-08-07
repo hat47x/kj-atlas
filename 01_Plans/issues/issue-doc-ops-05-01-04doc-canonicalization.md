@@ -760,13 +760,8 @@
   - `git diff --check`
 
 ### Phase 5) Proceed（Open化準備リスト）
-- Open readiness: **Ready**（Draft→Open候補）。
-- Open化準備リスト:
-  - [ ] Classification（Move internal / Improve external）が固定されている。
-  - [ ] Audience / Goal / Public boundary / Next action が本文で追跡可能。
-  - [ ] docs-check 手順が本文に明示されている。
-  - [ ] 共有統合ファイルを更新しない独立レーン条件を満たしている。
-  - [ ] 実装コード非変更（docs-only）を満たしている。
+- Open readiness: **Ready**（Draft→Open候補）。→ 2026-08-07 に実AC（§5）が全て `[x]` であることをDOC-OPS-09で確認済み。下記のOpen化準備チェックリストは廃止済み5-phase礼式（AGENTS.md §4）の残骸であり、本issueの受入条件ではないため撤去した。
+- 分類・境界追跡・docs-check・独立レーン・docs-only の5観点は、本issueの実AC（§5、全て `[x]`）と §6 の完了T1..T7で担保済み。
 
 ## 19) Requested 5-phase execution (Scope-limited)
 
