@@ -86,7 +86,7 @@ DOC-PUBLIC-BOUNDARY-01 Open化。DecisionStatus=Fixed、scope定義済み。ADR-
 - [x] 利用者入口・管理者入口・開発者入口の3系統が明文化されている。
 - [x] 相互リンク規約（public→利用者限定、README(04)→管理、README(root)→二系統分離）が明文化されている。
 - [x] 開発者向けE2E正本が `03_Implement/frontend/docs/e2e_testing.md` に固定される。（本Issueでは導線明示まで）→ 移管済み（2026-06-20）: `04_Documentation/e2e_testing.md` は11行のSupersededリダイレクトstubへ、正本は `03_Implement/frontend/docs/e2e_testing.md`（257行）へ移管。
-- [ ] `codex_skill_operations.md` と検証ログテンプレートの移管先が決まり、リンク切れがない。（後続タスク → `issue-DOC-PUBLIC-BOUNDARY-02-internal-doc-relocation.md` で追跡、2026-08-07）
+- [x] `codex_skill_operations.md` と検証ログテンプレートの移管先が決まり、リンク切れがない。→ `DOC-PUBLIC-BOUNDARY-02`（Done 2026-08-07）で移管実行: codex_skill_operations→`00_Prompt/`、e2e_verification_log→`01_Plans/issues/e2e_verification_logs/`。旧パスは移転案内stub、README除外一覧更新、docs_check pass。
 - [x] Gist公開前検索で `AGENTS.md`、`01_Plans`、`ADR-`、内部管理ログが公開本文へ混ざらない方針が明文化されている。
 - [x] 歴史的なissue本文を除き、現行ADRと設計文書の `04_Documentation/e2e_testing.md` 参照が解消されている。→ 現行ADR・設計文書・00_Prompt・README・CONTRIBUTING の旧パス参照0件。リダイレクトstubのみが旧パスを保持（安全設計）。
 
