@@ -17,6 +17,7 @@ function doc(overrides: Partial<DocumentV1> = {}): DocumentV1 {
       { id: "d", text: "D", x: 30, y: 0 },
     ],
     edges: [],
+    islands: [],
     evidenceLinks: [
       { id: "e1", fromCardId: "a", toCardId: "b", type: "supports" },
       { id: "e2", fromCardId: "b", toCardId: "c", type: "supports" },
