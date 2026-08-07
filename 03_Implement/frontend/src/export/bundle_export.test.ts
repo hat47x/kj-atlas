@@ -564,6 +564,49 @@ describe("buildExportBundle", () => {
     }
   });
 
+  test("shipped worker path hides unreviewed text and diagnostic detail under SafeMode (SEC-EXPORT-BUNDLE-02)", async () => {
+    const docWithSecret: DocumentV1 = {
+      ...baseDoc,
+      cards: baseDoc.cards.map((card) => ({ ...card, text: card.id === "c2" ? "SECRET_WORKER_TEXT_DO_NOT_LEAK" : card.text })),
+      islands: [{ ...baseDoc.islands[0], summaryReviewed: false, summaryText: "SECRET_WORKER_SUMMARY_DO_NOT_LEAK" }],
+    };
+
+    const files = await buildExportBundleWithWorkers(docWithSecret, { camera: { zoom: 1 } }, {
+      rootFolderPath: "kj-atlas-export-20260101-010203",
+      safeMode: true,
+      includeOutline: true,
+      includeDiagnostics: true,
+      includeSelectedCardTraces: false,
+      selectedCardId: null,
+      deterministicNowIso: "2026-01-02T00:00:00.000Z",
+      readingMode: "islands",
+      reviewedOnly: false,
+      readingState: {
+        readingNavEnabled: false,
+        readingIndex: 0,
+        readingMode: "islands",
+        reviewedOnly: false,
+        safeMode: true,
+        generatedAt: "2026-01-02T00:00:00.000Z",
+      },
+      outlineOptions: {
+        includeUnreviewedSummaries: true,
+      },
+    });
+
+    const bundleText = files
+      .map((file) => String(file.content))
+      .join("\n");
+
+    expect(bundleText).not.toContain("SECRET_WORKER_TEXT_DO_NOT_LEAK");
+    expect(bundleText).not.toContain("SECRET_WORKER_SUMMARY_DO_NOT_LEAK");
+
+    const diagnostics = String(files.find((file) => file.path.endsWith("/diagnostics.md"))?.content ?? "");
+    const outline = String(files.find((file) => file.path.endsWith("/outline.md"))?.content ?? "");
+    expect(diagnostics).not.toContain("SECRET_WORKER_");
+    expect(outline).not.toContain("SECRET_WORKER_");
+  });
+
   test("keeps the complete document in a bundle only when SafeMode is explicitly disabled", () => {
     const docWithSecret: DocumentV1 = {
       ...baseDoc,
