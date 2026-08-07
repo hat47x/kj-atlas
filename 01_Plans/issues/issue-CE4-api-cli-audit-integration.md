@@ -287,11 +287,11 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 
 ### Phase 2: Plan（AC/DoD不足補完）
 - AC補完:
-  - [ ] Open前に「未確定点は実装仕様に昇格しない」境界を明示。
-  - [ ] API/CLI共通で同値違反・監査違反・ポリシー違反の3分類が再読可能。
+  - [x] Open前に「未確定点は実装仕様に昇格しない」境界を明示。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+  - [x] API/CLI共通で同値違反・監査違反・ポリシー違反の3分類が再読可能。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
 - DoD補完:
-  - [ ] `proposal-only` 後退ゼロ、`auto-*` 禁止、`safeMode既定ON` 後退ゼロ。
-  - [ ] self-correction `<=3`、4回目相当は `Stop`。
+  - [x] `proposal-only` 後退ゼロ、`auto-*` 禁止、`safeMode既定ON` 後退ゼロ。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+  - [ ] self-correction `<=3`、4回目相当は `Stop`。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
 
 ### Phase 3: Execute（proposal-only）
 - 本Issueの契約文整理のみ実施（コード・ADR本文・API実装は非実施）。
@@ -370,14 +370,14 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 
 ### Phase 3: Plan（Draft→Open化条件 / AC・DoD / mock前提タスク）
 - Draft→Open化条件（all required）:
-  - [ ] G1: Open化条件 条件1〜4 が全充足。
-  - [ ] G2: AC/DoD のチェックボックスが維持され、後退がない。
-  - [ ] G3: docs-check pass 記録が最新化される。
-  - [ ] G4: 未確定点3件が「停止報告対象」のまま維持される。
+  - [ ] G1: Open化条件 条件1〜4 が全充足。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+  - [ ] G2: AC/DoD のチェックボックスが維持され、後退がない。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+  - [ ] G3: docs-check pass 記録が最新化される。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+  - [ ] G4: 未確定点3件が「停止報告対象」のまま維持される。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
 - mock前提タスク:
-  - [ ] T1: `sourceBundleHash=mock:<64hex>` の許容は継続し、fail-closed 同一適用を保持。
-  - [ ] T2: CE1未整備時 `equivalenceKey` のモック発番許容を維持。
-  - [ ] T3: 実装依存事項（終了コード数値/匿名化方式/転送基盤）を確定値へ昇格しない。
+  - [x] T1: `sourceBundleHash=mock:<64hex>` の許容は継続し、fail-closed 同一適用を保持。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20）。
+  - [ ] T2: CE1未整備時 `equivalenceKey` のモック発番許容を維持。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+  - [ ] T3: 実装依存事項（終了コード数値/匿名化方式/転送基盤）を確定値へ昇格しない。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
 
 ### Phase 4: Execute（proposal-only）
 - 本Issue文書の計画更新のみ実施。
@@ -412,10 +412,10 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 - Verify再試行が3回を超過、または未定義競合（契約衝突・責務分離崩壊）の検知。
 
 ### Open化条件（proposal-only gate）
-- [ ] 条件1: 本Issue単体で Context/Decision/Consequences・AC・DoD・Validation・Proceed tri-state が再読可能。
-- [ ] 条件2: docs-check の pass 記録と self-correction `<=3` が記録済み。
-- [ ] 条件3: 依存確定証跡と Approval Record の最小項目が充足。
-- [ ] 条件4: 実装タスク化を行わず、未承認依存を確定扱いしていない。
+- [ ] 条件1: 本Issue単体で Context/Decision/Consequences・AC・DoD・Validation・Proceed tri-state が再読可能。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+- [ ] 条件2: docs-check の pass 記録と self-correction `<=3` が記録済み。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+- [ ] 条件3: 依存確定証跡と Approval Record の最小項目が充足。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+- [ ] 条件4: 実装タスク化を行わず、未承認依存を確定扱いしていない。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
 
 ### Verify失敗時 Self-Correction ルール
 - Attempt 1: 文言矛盾・欠落メタの修正。
@@ -487,13 +487,13 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 
 ### Plan（Open判断材料の固定）
 - AC明確化:
-  - [ ] Context / Decision / Consequences、AC、DoD、Validation、tri-state が単一文書で再読可能。
-  - [ ] 失敗分類4区分（入力/監査/ポリシー/同値）が API/CLI 共通語彙として明示。
-  - [ ] 未確定点（終了コード数値/匿名化方式/転送基盤）が「未確定」のまま隔離されている。
+  - [x] Context / Decision / Consequences、AC、DoD、Validation、tri-state が単一文書で再読可能。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+  - [x] 失敗分類4区分（入力/監査/ポリシー/同値）が API/CLI 共通語彙として明示。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+  - [x] 未確定点（終了コード数値/匿名化方式/転送基盤）が「未確定」のまま隔離されている。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
 - DoD明確化:
-  - [ ] contract-only 境界（実装非依存、mock-first、推測実装禁止）を維持。
-  - [ ] self-correction `<=3`、4回目相当は Stop を明記。
-  - [ ] 依存証跡未充足時は Proceed 不可（Hold/Stop）を再現可能。
+  - [x] contract-only 境界（実装非依存、mock-first、推測実装禁止）を維持。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+  - [ ] self-correction `<=3`、4回目相当は Stop を明記。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+  - [x] 依存証跡未充足時は Proceed 不可（Hold/Stop）を再現可能。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20）。
 - Validation明確化:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
   - `git diff --check -- 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
@@ -627,11 +627,11 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 - `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存）
 
 ### Open化条件（Draft gate解除の必要十分条件）
-- [ ] O1: 本Issueの契約本文のみで、`proposal-only` / `fail-closed` / 監査4イベント順序が再読できる。
-- [ ] O2: `equivalenceKey AND bundleHash` のAND同値条件が API/CLI 共通で明文化され、例外運用が記載されていない。
-- [ ] O3: 未確定点（終了コード数値・匿名化方式・転送基盤）が「契約外」として隔離され、実装仕様へ昇格していない。
-- [ ] O4: 依存証跡（CE0/関連ADRの更新日時・判断者・判断内容）を追記できる状態で、欠落時は Hold を維持する。
-- [ ] O5: Verify の self-correction が `<=3` の範囲に収まり、4回目相当は Stop と明記されている。
+- [x] O1: 本Issueの契約本文のみで、`proposal-only` / `fail-closed` / 監査4イベント順序が再読できる。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20）。
+- [x] O2: `equivalenceKey AND bundleHash` のAND同値条件が API/CLI 共通で明文化され、例外運用が記載されていない。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20）。
+- [x] O3: 未確定点（終了コード数値・匿名化方式・転送基盤）が「契約外」として隔離され、実装仕様へ昇格していない。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20）。
+- [ ] O4: 依存証跡（CE0/関連ADRの更新日時・判断者・判断内容）を追記できる状態で、欠落時は Hold を維持する。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+- [ ] O5: Verify の self-correction が `<=3` の範囲に収まり、4回目相当は Stop と明記されている。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
 
 ### Proceed tri-state（Open判定）
 - **Proceed**: O1〜O5 が全て充足し、依存証跡が記録済み。
@@ -664,12 +664,12 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 
 ### Phase 2: Plan（不足AC/DoD提案）
 - AC追加提案（Open化ゲート）:
-  - [ ] 依存確定証跡（日時・承認者・対象・判断・evidence）が明記される。
-  - [ ] Approval Record 未充足時は `Proceed=Hold` を維持する。
-  - [ ] docs-only / proposal-only の境界逸脱がない。
+  - [ ] 依存確定証跡（日時・承認者・対象・判断・evidence）が明記される。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+  - [ ] Approval Record 未充足時は `Proceed=Hold` を維持する。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+  - [x] docs-only / proposal-only の境界逸脱がない。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20）。
 - DoD追加提案（Open化ゲート）:
-  - [ ] Open可否を `Proceed/Hold/Stop` 三値で再判定可能。
-  - [ ] self-correction `<=3` を超えた場合は `Stop` へ遷移。
+  - [ ] Open可否を `Proceed/Hold/Stop` 三値で再判定可能。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+  - [ ] self-correction `<=3` を超えた場合は `Stop` へ遷移。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
 
 ### Phase 3: ADR（Context / Decision / Consequences）
 - Context: 依存が揃うまでの待機期間でも、Open判定材料を先に固定して再作業を削減する必要がある。
@@ -857,11 +857,11 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 
 ### Phase 3: Plan（Open AC / DoD / Validation 明文化）
 - AC追加:
-  - [ ] API/CLI双方で同値条件（AND）が一致。
-  - [ ] 監査4点セットの順序整合と必須キー検証が明記。
-  - [ ] fail-closed / proposal-only / auto-*禁止が同時成立。
+  - [x] API/CLI双方で同値条件（AND）が一致。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+  - [x] 監査4点セットの順序整合と必須キー検証が明記。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+  - [x] fail-closed / proposal-only / auto-*禁止が同時成立。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
 - DoD追加:
-  - [ ] mock正常/欠損/重複/不正操作の4区分がNo-Go判定基準へ接続。
+  - [x] mock正常/欠損/重複/不正操作の4区分がNo-Go判定基準へ接続。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
   - [ ] Open化判定を `Proceed / Hold / Stop` で再現可能。
 - Validation（docs-check固定）:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
@@ -969,10 +969,10 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 
 ## Draft→Open 昇格条件（CE4 / contract-only gate）
 
-- [ ] Context / Decision / Consequences・AC・DoD・停止条件が本Issue単体で再読可能。
-- [ ] Assumption Log（A-CE4-01〜03）に破綻が残っていない。
-- [ ] proposal-only / auto-*禁止 / fail-closed / safeMode既定ON 後退ゼロ。
-- [ ] 依存確定証跡（日時・承認者・対象・判断・evidence）を記録済み。
+- [x] Context / Decision / Consequences・AC・DoD・停止条件が本Issue単体で再読可能。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+- [ ] Assumption Log（A-CE4-01〜03）に破綻が残っていない。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+- [x] proposal-only / auto-*禁止 / fail-closed / safeMode既定ON 後退ゼロ。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+- [ ] 依存確定証跡（日時・承認者・対象・判断・evidence）を記録済み。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
 - [ ] Verifyの自己修復が3回以内（4回目相当は Stop）である。
 
 ## Phase 5 Verify運用（最大3回）
@@ -996,10 +996,10 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 
 ### Phase 3: Ready化（AC/DoD・入力/出力・担当・依存解除条件）
 - AC/DoD Readyセット（本Issueで確認すべき共通最小セット）:
-  - [ ] AC-R1: 受入条件が測定可能な判定文（done/pending/hold いずれか）で記録されている。
-  - [ ] AC-R2: `ProceedDecision` と `Dependency status` が矛盾しない。
-  - [ ] DoD-R1: 実装禁止境界（docs-only / proposal-only など）が明示されている。
-  - [ ] DoD-R2: `Hold` 継続条件と `Stop` 条件（上限超過・競合未解決）が明示されている。
+  - [ ] AC-R1: 受入条件が測定可能な判定文（done/pending/hold いずれか）で記録されている。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+  - [ ] AC-R2: `ProceedDecision` と `Dependency status` が矛盾しない。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+  - [ ] DoD-R1: 実装禁止境界（docs-only / proposal-only など）が明示されている。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+  - [ ] DoD-R2: `Hold` 継続条件と `Stop` 条件（上限超過・競合未解決）が明示されている。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
 - 入力（Implementation lane input）:
   - 承認証跡、依存Issueの最新判定、固定語彙（Go/NoGo・Proceed/Hold/Stop・pass/fail/blocked）。
 - 出力（Implementation lane output expectation）:
@@ -1012,11 +1012,11 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
   - 依存Issueの Approval Record 5項目が確定し、相互参照リンクで追跡可能であること。
 
 ### Phase 4: 引継ぎ（実装レーン即着手チェックリスト）
-- [ ] H1: Scope逸脱なし（本Issue外の仕様確定をしていない）。
-- [ ] H2: AC/DoDの未完了項目が `pending/hold` で可視化されている。
-- [ ] H3: 実装開始ゲート（Proceed条件）が1箇所に集約されている。
-- [ ] H4: Verifyコマンド（validator/rg/diff-check）が再実行可能。
-- [ ] H5: 依存未解除時は `Hold` を維持し、推測で `Proceed` しない。
+- [ ] H1: Scope逸脱なし（本Issue外の仕様確定をしていない）。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+- [ ] H2: AC/DoDの未完了項目が `pending/hold` で可視化されている。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+- [ ] H3: 実装開始ゲート（Proceed条件）が1箇所に集約されている。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+- [ ] H4: Verifyコマンド（validator/rg/diff-check）が再実行可能。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
+- [ ] H5: 依存未解除時は `Hold` を維持し、推測で `Proceed` しない。（廃止済みOpen化礼式のscaffold。CE4はProceed=Hold（契約固定完了・実装待ち）— DOC-OPS-08参照）
 
 ### Verify結果（本pass）
 - 判定: `Hold` 維持（依存証跡未確定のため）。
@@ -1435,22 +1435,22 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 ## Phase 6: Proceed（実装前提チェックリスト）
 
 ### P0: Contract freeze gate（必須）
-- [ ] `mode=proposal-only` が API/CLI 契約の必須入力として固定されている。
-- [ ] 同値判定は `equivalenceKey AND bundleHash` のAND条件のみを成功として扱う。
-- [ ] 監査4イベント `query -> bundle -> proposal -> apply` の欠損/逆順を fail-closed で拒否する。
+- [x] `mode=proposal-only` が API/CLI 契約の必須入力として固定されている。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+- [x] 同値判定は `equivalenceKey AND bundleHash` のAND条件のみを成功として扱う。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+- [x] 監査4イベント `query -> bundle -> proposal -> apply` の欠損/逆順を fail-closed で拒否する。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
 
 ### P1: Responsibility boundary gate（必須）
-- [ ] API責務: 検証要求を受理し、分類語彙（`classification`）を返す。
-- [ ] CLI責務: APIと同一語彙で入力を構成し、`classification != ok` を必ず非0終了に変換する。
-- [ ] 監査責務: 共通必須キー検証、順序検証、同一 `equivalenceKey` 連結の3点を実施する。
+- [x] API責務: 検証要求を受理し、分類語彙（`classification`）を返す。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+- [x] CLI責務: APIと同一語彙で入力を構成し、`classification != ok` を必ず非0終了に変換する。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+- [x] 監査責務: 共通必須キー検証、順序検証、同一 `equivalenceKey` 連結の3点を実施する。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
 
 ### P2: Mock-first gate（依存切断）
-- [ ] `sourceBundleHash=mock:<64hex>` を許容し、real入力と同一の判定規律を適用する。
-- [ ] CE1未整備時の `equivalenceKey` モック発番を許容するが、API/CLI/Audit で同値を強制する。
+- [x] `sourceBundleHash=mock:<64hex>` を許容し、real入力と同一の判定規律を適用する。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
+- [x] CE1未整備時の `equivalenceKey` モック発番を許容するが、API/CLI/Audit で同値を強制する。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20）。
 
 ### P3: Verify/Stop gate（運用）
 - [ ] Verifyの自己修復は最大3回。4回目が必要な場合は `StoppedForClarification` で停止する。
-- [ ] 未確定点（HTTP詳細/CLI数値コード/監査配送方式）を契約確定へ昇格しない。
+- [x] 未確定点（HTTP詳細/CLI数値コード/監査配送方式）を契約確定へ昇格しない。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20、§G/NG）。
 
 ## Stream B proposal-only gate refresh（2026-05-20 / CE契約・モック切断）
 
