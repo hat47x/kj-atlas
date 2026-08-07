@@ -36,3 +36,11 @@
 ## 影響
 
 外部エージェントが `constraint: "summary"` で問い合わせた場合、SafeModeによってどの程度の秘匿が行われているかのシグナルを一切得られない。反スコアリング・SafeMode境界の安全側フェイルには該当しない（情報を過小に見せるだけで、秘匿すべきでない情報を漏らすわけではない）が、この工具の安全性表面の一部として、意図した仕様なのか見落としなのかを明確にすべきである。
+
+## 解決記録（2026-08-07）
+
+- **決定**: 論点の(a)「文書全体に対する秘匿件数の集計」を正とした。`context_bundle_projection.test.ts:55` の不変条件（「countsは文書全体を報告し、投影後の部分集合だけではない」）が既に契約として明文化されており、`reviewedCount`/`unreviewedCount` が(a)で実装済みのため、`redactedCount` を(a)に揃えるのは契約への整合であり新規設計判断ではない。
+- **修正**: `context_bundle_projection.ts` の `redactedCount` を `allCards` 全体（文書全体）に対して計算するよう変更。`summary` 制約（空のscope）でも SafeMode 秘匿量を報告する。
+- **テスト**: `context_bundle_projection.test.ts` の3既存アサーションを文書全体意味論へ更新（`reviewed-only` OFF→redacted:1、ON→redacted:4、`summary` OFF→redacted:1）。`summary` + `safeMode: true` → redacted:4 の新規テストを追加。
+- **検証**: frontend 234 files / 1397 tests（+1）pass、typecheck 0 errors、MCP 49 tests pass。
+- Status: Done

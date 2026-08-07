@@ -52,8 +52,10 @@ describe("buildContextProjection: reviewed-only constraint", () => {
     expect(projection.cards.every((card) => card.reviewed)).toBe(true);
     expect(projection.cards.every((card) => card.redacted === false)).toBe(true);
     expect(projection.cards.find((card) => card.id === "c1")?.text).toBe("reviewed claim one");
-    // counts still report the whole document, not just the projected subset.
-    expect(projection.counts).toEqual({ reviewed: 3, unreviewed: 1, redacted: 0 });
+    // counts still report the whole document, not just the projected subset
+    // (SEC-CONTEXT-PROJECTION-01): c3 is unreviewed, so it is redacted even
+    // with SafeMode OFF.
+    expect(projection.counts).toEqual({ reviewed: 3, unreviewed: 1, redacted: 1 });
   });
 
   it("redacts even reviewed card text when SafeMode is ON (external surface == share boundary)", async () => {
@@ -65,7 +67,9 @@ describe("buildContextProjection: reviewed-only constraint", () => {
       expect(card.text).not.toContain("reviewed");
       expect(card.text.startsWith("[REDACTED]")).toBe(true);
     }
-    expect(projection.counts.redacted).toBe(3);
+    // Whole-document redacted count (SEC-CONTEXT-PROJECTION-01): all 4 cards,
+    // including unreviewed c3, are redacted under SafeMode.
+    expect(projection.counts.redacted).toBe(4);
   });
 });
 
@@ -113,13 +117,24 @@ describe("buildContextProjection: summary constraint", () => {
     const projection = await buildContextProjection({ doc: buildDoc(), constraint: "summary", safeMode: false });
 
     expect(projection.cards).toEqual([]);
-    expect(projection.counts).toEqual({ reviewed: 3, unreviewed: 1, redacted: 0 });
+    // redacted counts the whole document (SEC-CONTEXT-PROJECTION-01): c3 is
+    // unreviewed, so it is redacted even with SafeMode OFF.
+    expect(projection.counts).toEqual({ reviewed: 3, unreviewed: 1, redacted: 1 });
     expect(projection.islands).toEqual([{ id: "i1", title: "First island" }]);
     expect(projection.relations).toEqual([{ from: "c1", to: "c2", type: "related" }]);
     // summary carries both link structures, but never a link touching an
     // unreviewed card (2026-07-13 gate) -- ev2 (c3 unreviewed) is excluded.
     expect(projection.evidence).toEqual([{ from: "c2", to: "c1" }]);
     expect(projection.contradictions).toEqual([{ from: "c4", to: "c2" }]);
+  });
+
+  it("reports whole-document redacted count under SafeMode even with an empty card scope (SEC-CONTEXT-PROJECTION-01)", async () => {
+    const projection = await buildContextProjection({ doc: buildDoc(), constraint: "summary", safeMode: true });
+
+    expect(projection.cards).toEqual([]);
+    // Previously this was always 0 because the empty scope loop never ran,
+    // hiding how much content SafeMode redacts. Now it reports all 4 cards.
+    expect(projection.counts.redacted).toBe(4);
   });
 
   it("never references an unreviewed card's id, even bare, via relations/evidence/contradictions", async () => {

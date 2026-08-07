@@ -152,13 +152,20 @@ export async function buildContextProjection(input: ContextProjectionInput): Pro
     cardIdsInScope = new Set(contradicts.flatMap((link) => [link.from, link.to]));
   }
 
+  // SEC-CONTEXT-PROJECTION-01: redactedCount reports the WHOLE document, not
+  // just the in-scope subset — consistent with reviewedCount/unreviewedCount
+  // and the documented invariant ("counts report the whole document"). The
+  // summary constraint has an empty card set, so counting only in-scope cards
+  // would always yield 0 and hide how much content SafeMode redacts.
   let redactedCount = 0;
+  for (const card of allCards) {
+    if (projectCardText(card, safeMode).redacted) redactedCount += 1;
+  }
   const cards: ProjectedCard[] = allCards
     .filter((card) => cardIdsInScope.has(card.id))
     .map((card) => {
       const reviewed = isReviewed(card);
       const projected = projectCardText(card, safeMode);
-      if (projected.redacted) redactedCount += 1;
       return {
         id: card.id,
         claimType: card.claimType ?? null,
