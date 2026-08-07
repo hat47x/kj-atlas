@@ -40,6 +40,13 @@
 - 契約チェックポイント: <この変更が既存契約（schema/API/policy）と交差する箇所、または N/A>
 - 停止基準: <要件未確定・競合発生時に Proceed しない条件、または N/A>
 
+## AIレーン宣言（GENAI-GOV-01。生成AI関連作業のみ、任意）
+
+- Lane: <A（LLM利用）/ B（外部素材）/ C（提案型生成）/ D（直接API・Agent連携）の該当、または N/A>
+- データ境界: <この変更が外部送受信・保持するデータ、または N/A>
+- SafeMode/監査/人間レビュー境界: <既定ON / proposal-only / human_reviewed人手昇格との交差、または N/A>
+- Lane Dの場合: 実装PRではなく新ADRの起票条件へ分岐する（`GENAI-GOV-01` T5）。
+
 ## 検証計画
 
 - 実行する確認:

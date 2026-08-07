@@ -95,9 +95,26 @@
 
 - [x] T1 `value_traceability.md` へ生成AIレーン境界を追記する。
 - [x] T2 `EXT-AGENT-01..03` と CE/LLM関連issueへ、必要に応じて Lane分類参照を追加する。
-- [ ] T3 issueテンプレまたはissue運用ガイドへ、生成AI関連作業の分類チェックを追加する。
+- [x] T3 issueテンプレまたはissue運用ガイドへ、生成AI関連作業の分類チェックを追加する。→ `TEMPLATE.md` に「AIレーン宣言」節を追加（Lane / データ境界 / SafeMode・監査・人間レビュー境界 / Lane D分岐、2026-08-07）。
 - [ ] T4 PRODUCT-QA / MVP-EXIT のゲートに、暗黙外部共有なし・AIなし価値成立・提案のみ境界の確認観点を接続する。
-- [ ] T5 Lane D の新ADR起票条件（認証、到達性、データ保持、監査、費用制御、失敗時動作）を整理する。
+- [x] T5 Lane D の新ADR起票条件（認証、到達性、データ保持、監査、費用制御、失敗時動作）を整理する。→ 下記「Lane D ADR起票条件（T5成果、2026-08-07）」に整理。ADR-0049 Tier 2 の詳細化。
+
+### Lane D ADR起票条件（T5成果、2026-08-07）
+
+Lane D（直接API/Agent連携、ADR-0049 Tier 2相当）の実装提案がADR起票へ分岐する条件。以下のいずれかに該当する提案は実装PRではなく新ADRで扱う。
+
+| 観点 | ADR起票を要する条件 |
+| --- | --- |
+| 認証 | 外部Agentがkj-atlas APIへ直接アクセスする。OIDC/SAML/bearer token等の認証方式の選定、`AUTH-*` 境界（`issue-AUTH-*`）との整合、anti-forgery付きsession persister |
+| 到達性 | 外部からのネットワーク到達が必要。loopback既定を外れ、TLS・認証proxy・接続元制限を要求（`DEPLOY-NET-01` Phase Bと整合） |
+| データ保持 | 外部送受信データの保持・削除・監査が必要。`ADR-0035` の本文禁止・標準機能外境界と整合 |
+| tenant境界 | 外部連携がtenantを越えてアクセスしうる。`ADR-0059`（SaaS tenant境界）と整合し、別tenant contextからの照会を拒否 |
+| 費用制御 | 外部API呼び出しに費用が発生しうる。定額課金（`ADR-0049`）の範囲外の従量課金・レート制限の設計判断 |
+| 失敗時動作 | 外部連携の失敗時にfail-closed（`read_only`/`deny`）へ落ちるか、再試行・キューを導入するか |
+
+**判定フロー**: Lane D提案が上表のいずれかに接触 → ADR起票（`EXT-CONN-02` 等の専用issueと併せて）。全項目に接触しない手動授受（Tier 0）はADR不要。
+
+**この条件はADR-0049 Tier 2の詳細化であり、Lane D実装そのものの承認ではない。**
 
 ## 8) 検証計画 / Validation plan
 
