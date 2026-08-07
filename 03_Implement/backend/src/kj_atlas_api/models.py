@@ -36,12 +36,23 @@ class IdentityProviderRow(Base):
     issuer: Mapped[str] = mapped_column(Text, nullable=False)
     audience: Mapped[str] = mapped_column(Text, nullable=False)
     lifecycle_state: Mapped[str] = mapped_column(Text, nullable=False, default="active")
+    # ADR-0063 D3: protocol discriminator. v1 accepts {'oidc'} only; unknown is fail-closed.
+    protocol: Mapped[str] = mapped_column(Text, nullable=False, default="oidc")
+    # ADR-0063 D4: JWKS endpoint for this provider. Nullable (not all providers use JWKS).
+    jwks_uri: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
 class TenantIdentityProviderRow(Base):
     __tablename__ = "tenant_identity_providers"
+    __table_args__ = (
+        UniqueConstraint(
+            "identity_provider_id",
+            "external_tenant_ref",
+            name="uq_tenant_identity_providers_idp_ref",
+        ),
+    )
 
     tenant_id: Mapped[str] = mapped_column(
         Text,
@@ -53,6 +64,9 @@ class TenantIdentityProviderRow(Base):
         ForeignKey("identity_providers.id", ondelete="CASCADE"),
         primary_key=True,
     )
+    # ADR-0063 D8: external organization reference from the IdP claim.
+    # Maps into tenants.id; nullable when the row expresses membership only.
+    external_tenant_ref: Mapped[str | None] = mapped_column(Text, nullable=True)
     lifecycle_state: Mapped[str] = mapped_column(Text, nullable=False, default="active")
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
