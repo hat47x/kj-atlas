@@ -1,7 +1,7 @@
 # Issue Draft: DOC-PUBLIC-BOUNDARY-02 内部文書2件の移管実行
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: `01_Plans/issues/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`
 - Priority: P3
 - Owner: Maintainer
@@ -22,17 +22,17 @@
 
 ## 対応方針（案）
 
-- `codex_skill_operations.md`（AIエージェント運用手順）: `00_Prompt/` または `01_Plans/` へ移設（DOC-PUBLIC-BOUNDARY-01 §5「AIエージェント向けは 00_Prompt/ または 01_Plans/ へ」）。
-- `e2e_verification_log_2026-03-03.md`（検証記録）: `03_Implement/` の該当領域または `01_Plans/` へ移設（検証証跡のため）。
-- 移設先を決定したら、`04_Documentation/README.md` の除外一覧とリンクを更新し、旧パスに `Superseded` リダイレクトstub（e2e_testing.md と同じ方式）を置くか、参照元issueを直接更新する。
-- 移設先の決定は人間の確認を要する（どのディレクトリが正本として適切かの判断）。本issueで移設先案を示し、承認後に実行する。
+- `codex_skill_operations.md`（AIエージェント運用手順）: `00_Prompt/` へ移設（DOC-PUBLIC-BOUNDARY-01 §5「AIエージェント向けは 00_Prompt/ または 01_Plans/ へ」。00_Prompt に agent_collaboration.md / agent_handover.md が既存）。
+- `e2e_verification_log_2026-03-03.md`（検証記録）: `01_Plans/issues/e2e_verification_logs/` へ移設（doc-ops-05-07 の Candidate destination どおり）。
+- 移設先を決定したら、`04_Documentation/README.md` の除外一覧とリンクを更新し、旧パスに `Superseded` リダイレクトstub（e2e_testing.md と同じ方式）を置く。
+- **実行完了（2026-08-07）**: 両文書をgit mvで移設し、旧パスに移転案内stubを作成、`04_Documentation/README.md` の除外一覧・リンクを更新、移設後の相対リンク（security.md/release.md）を絶対リンクへ修正。
 
 ## 受入条件
 
-- [ ] 2文書の移設先が決定される（00_Prompt/01_Plans/03_Implement のいずれか）。
-- [ ] `04_Documentation/README.md` の除外一覧・リンクが新パスへ更新される。
-- [ ] 旧パスへの参照が壊れない（リダイレクトstubまたは参照元更新）。
-- [ ] `python 01_Plans/docs_check.py` が通る。
+- [x] 2文書の移設先が決定される（00_Prompt/01_Plans/03_Implement のいずれか）。→ codex_skill_operations→`00_Prompt/`、e2e_verification_log→`01_Plans/issues/e2e_verification_logs/`。
+- [x] `04_Documentation/README.md` の除外一覧・リンクが新パスへ更新される。→ 除外マトリクスとGist除外一覧を更新（2026-08-07）。
+- [x] 旧パスへの参照が壊れない（リダイレクトstubまたは参照元更新）。→ 旧パスにSuperseded移転案内stubを作成。issueメモ内の旧パス参照は歴史的記録として許容（DOC-PUBLIC-BOUNDARY-01 AC3）。
+- [x] `python 01_Plans/docs_check.py` が通る。→ pass（active_memos=63, tracked_markdown=484）。
 
 ## 検証計画
 
