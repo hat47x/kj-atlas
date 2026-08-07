@@ -110,10 +110,10 @@ HIL-RS-02-A3 operations documentation sync planning complete.
 - [x] fixedKeysDiff==0 を維持する限り、未承認でも Draftへ逆戻しせず Ready+Holdで待機可能。
 
 ## 受入条件（Execute完了判定）
-- [ ] AC-1: Status=Ready へ遷移し、Draft解除条件が明示される。
-- [ ] AC-2: A1未完時は `Current: Hold` を維持し、Open化禁止を明記。
-- [ ] AC-3: DOC-OPS-02の4観点が欠落なく保持される。
-- [ ] AC-4: fixed key再定義・pending bypass・scope外編集が0件。
+- [x] AC-1: Status=Ready へ遷移し、Draft解除条件が明示される。→ Done 2026-06-20: Draft解除条件 5/5 ✅ / Ready定義 4/4 ✅ / Ready判定「Ready + Hold」。
+- [x] AC-2: A1未完時は `Current: Hold` を維持し、Open化禁止を明記。→ Done: A1 gate satisfied（HIL-RS-01-A1 + HIL-RS-02-A1 Done）、「A1承認待ちのため Open化しない」。
+- [x] AC-3: DOC-OPS-02の4観点が欠落なく保持される。→ Done: 「DOC-OPS-02 4観点（用語/役割/導線/固定値D1-D4）保持」。
+- [x] AC-4: fixed key再定義・pending bypass・scope外編集が0件。→ Done: 「fixed key再定義・pending bypass・scope外編集: 0件」。
 
 ## 検証導線（Verify手順）
 1. `rg -n "Status:|Lifecycle:|Draft解除条件|Ready定義|依存切断条件|Go:|Hold:|Stop:|Current" 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`

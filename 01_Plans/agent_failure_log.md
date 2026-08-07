@@ -40,6 +40,7 @@ Updated: 2026-08-03
 - 原因: pnpm移行がrevert（`DX-CI-PNPM-01`）された後に残った `.pnpm/` 配下の古い `esbuild@0.28.1` エントリと、アクティブな `esbuild@0.21.5` の混在。`.pnpm/esbuild@0.28.1` のバイナリが欠落していた。
 - 対応: `rm -rf node_modules/.pnpm/esbuild@0.28.1 node_modules/.pnpm/@esbuild+win32-x64@0.28.1` で古いエントリを除去 → vitest正常起動（233 files / 1372 tests pass）。
 - 再発防止: esbuild系の起動エラーはまず `.pnpm/` 配下のバージョン重複を確認する。pnpm関連ファイルがrevertされた後のnode_modules操作には注意する。
+- **再発（2026-08-03）**: 同じ `.pnpm/esbuild@0.28.1` が再生成されており再発。pnpm installが走るたびに0.28.1が復活する可能性が高い。除去コマンドはその場で再実行する。根本解決は `node_modules` をクリーンに再構築するか、pnpm移行を正式に完了するか、`.pnpm` 配下のesbuildを0.21に固定する運用の検討が必要。
 
 ## 2026-08-02: 作業ディレクトリ依存のgit pathspecエラー
 
@@ -61,3 +62,10 @@ Updated: 2026-08-03
 - 原因: 並行プロセス（別エージェントのgit操作）との競合、または中断されたマージの残骸。
 - 対応: `rm -f .git/index.lock` でロックを除去してから再試行。マージ中は連続で複数ブランチをマージしない。
 - 再発防止: git操作が `Unable to write index` / `index.lock` で失敗したら、まずロックファイルを確認・除去する。複数ブランチの連続マージは1つずつ確認しながら進める。
+
+## 2026-08-06: 削除対象コードを `src/` だけで検索して統合テストの参照を見落とした
+
+- 事象: `deterministic_tiebreak_worker_adapter.ts` を「未使用」と判定して削除。実際は `tests/tiebreak/deterministic_tie_break.integration.test.ts` が参照しており、`npx vitest run --config tests/tiebreak/vitest.config.tiebreak.ts` が壊れるところだった。
+- 原因: デッドコード判定のgrepを `src/` 配下に限定した。このadapterは `tests/tiebreak/vitest.config.tiebreak.ts`（`include: ["tests/tiebreak/**/*.test.ts"]` の別設定）で実行される統合テストだけが参照しており、通常の `vitest run` には現れなかった。作業ツリー上に残っていた別worktreeのテストが検出の手掛かりになった。
+- 対応: `git show 62dca731~1:<path>` から復元し、`tests/tiebreak/vitest.config.tiebreak.ts` で3 tests passを確認。DX-CLEANUP-08（番号衝突のため08へ再番号、旧07）を「参照源がsrc外に偏在」の検討対象として訂正した。
+- 再発防止: 「削除対象か」の判定は **`src/` だけでなく `tests/`・`e2e/`・別vitest設定・build設定を含めたリポジトリ全体** で参照を検索する。特に `vitest.config.*.ts` が複数ある場合は、別設定のテストがどのファイルを include するかを確認してから削除判断する。コミット前に `git grep` をリポジトリルート基準で実行する。

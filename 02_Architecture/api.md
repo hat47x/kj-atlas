@@ -112,6 +112,7 @@ Document 本体の標準CRUDとは別に、共有・Context操作の監査連携
   - 409: CE4の4点監査イベントが `apply` 時点で揃わない、または deterministic 判定が不成立
   - 422: operation/command不一致、`dryRun` 違反、`sourceBundleHash` 欠損などの契約違反
 - 目的: `query -> bundle -> proposal -> apply` の監査4点を同一 `equivalenceKey` / `bundleHash` で接続し、proposal-only / dry-run の境界を検証する。
+- 消費者境界（外部消費者向け）: 本エンドポイントは`03_Implement/frontend/src`のUIから直接呼び出されることを想定しない。`channel: "api" | "cli" | "gui"`はGUI以外の呼び出し元（CLI、将来のAgent/MCP連携等）を対等な一級市民として扱うために存在する契約であり、2026-08-06時点で`03_Implement/frontend/src`・`03_Implement/mcp/src`のいずれからも実呼び出しは無い。read-only MCPサーバー（`03_Implement/mcp/`）はこの経路を外部消費者として結線する候補に挙げたが、`channel`enumに`"mcp"`相当のスロットが無いことを理由に意図的に未結線としている（`03_Implement/mcp/src/audit_log.ts`、`03_Implement/mcp/README.md`「Non-goals」節、`issue-EXT-CONN-01-readonly-mcp-server.md` AC-3既知ギャップ）。分類の根拠と不確実性は`issue-SAAS-TENANT-SURFACE-01-unclassified-frontend-caller-gap.md`の実装記録を参照。
 
 
 ### 2.6 Merge Decision Log（CTR-2B-02-DECISION-LOG-V1）

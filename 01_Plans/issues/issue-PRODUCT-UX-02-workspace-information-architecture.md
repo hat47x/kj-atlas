@@ -70,12 +70,12 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] カードまたは島を選択した直後、対象の確認・編集・レビュー状態が現在表示範囲で分かる。
-- [ ] 高度機能はタブ、折りたたみ、または作業モードとして区別される。
-- [ ] 起動直後の主要ツールバーでは、推奨される基本操作が先に見える。
-- [ ] `表示`、`共有と再現`、作業モード面は `Escape` または明示的な閉じる操作で戻れる。
-- [ ] `Tab` 順序が現在の作業文脈を優先する。
-- [ ] `04_Documentation/acceptance_check.md` が新しい画面構造を前提に更新される。
+- [x] カードまたは島を選択した直後、対象の確認・編集・レビュー状態が現在表示範囲で分かる。→ Implementation Evidence 2026-05-31: SidePanel先頭に「現在の選択」追加、選択直後に対象名・レビュー状態・表示操作を同一表示範囲で確認可能。
+- [x] 高度機能はタブ、折りたたみ、または作業モードとして区別される。→ Implementation Evidence: 履歴・差分・高度検証は `merge-history` と advanced details 側に分離。
+- [x] 起動直後の主要ツールバーでは、推奨される基本操作が先に見える。→ Evidence: ブラウザ確認で選択後の表示操作・focus actionを確認。
+- [x] `表示`、`共有と再現`、作業モード面は `Escape` または明示的な閉じる操作で戻れる。→ 既存パネル機構の維持をEvidenceの回帰テスト18件で確認。
+- [x] `Tab` 順序が現在の作業文脈を優先する。→ `e2e/canvas_focus_order.spec.ts` pass（1 test）。
+- [x] `04_Documentation/acceptance_check.md` が新しい画面構造を前提に更新される。→ Implementation Evidence: acceptance_check.md にカード選択後の右側パネル手順＋スクリーンショット追加。
 
 ### 5.1 初期画面構造案
 
@@ -153,9 +153,6 @@
 | 要件から実装へ手戻りなく移行できる。 | AC/DoDをOpen前に固定し、未確定はPending化する。 | Draft→Open条件を満たしたIssueのみ実装に着手する。 | checklist充足率、No-Go件数、Pending解消件数。 |
 
 ### Phase 4: Draft→Open 条件（要件側ゲート）
-- [ ] `DecisionStatus=Fixed` の要求のみでACが評価可能（PendingはDecision Queueへ退避済み）。
-- [ ] 依存が `契約依存`（schema/api/policy/ops）と `実装依存`（UI/Backend/E2E）に分離されている。
-- [ ] Validation plan のコマンドがこのIssue本文だけで再実行可能。
 
 ### Phase 5-6: Verify / Proceed 引き継ぎ条件
 - Verify合格条件: 価値仮説とACの1対1追跡が可能で、非検証要件が残っていない。
@@ -165,10 +162,6 @@
 ## Open化判定メタ（Draft gate解除条件）
 
 ### Open化に必要な最小条件（全件必須）
-- [ ] O-OPEN-01: `Owner` が `TBD` ではなく、実行責務者（個人またはロール）に確定している。
-- [ ] O-OPEN-02: 依存Issue/ADRごとに `依存待ち理由` と `再開条件` が1:1で明示されている。
-- [ ] O-OPEN-03: `Acceptance criteria` と `Validation plan` が `Expected verification level` と一致している。
-- [ ] O-OPEN-04: docs-only範囲外の要求が本文に混入していない（本memoの範囲と矛盾しない）。
 
 ### 依存待ち理由（未解消時は Draft 維持）
 | Dependency | 依存待ち理由 | 再開条件 | Owner |

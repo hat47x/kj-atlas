@@ -38,11 +38,11 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] CVI-1..7 を一覧で確認できる単一の横断テストが存在し、緑である。
-- [ ] 各 CVI が `value_traceability.md` §2.5 の担保テスト/契約に 1:1 で対応づく。
-- [ ] 担保が欠落していた CVI は最小ケースで新規カバーされる（無ければ「全CVI既存担保あり」を明記）。
-- [ ] スキーマ・実行挙動に変更がない（テスト追加のみ）。
-- [ ] CI（既存 vitest/pytest 実行）に含まれ、回帰時に赤になる。
+- [x] CVI-1..7 を一覧で確認できる単一の横断テストが存在し、緑である。→ `src/domain/core_value_guard.test.ts`（145行、CVI-1..7 を全て記述）が `npx vitest run` でpass。
+- [x] 各 CVI が `value_traceability.md` §2.5 の担保テスト/契約に 1:1 で対応づく。→ §2.5 にCVI-1..7各行と担保テスト（safe_mode / ce2_proposal_only / ce2_suggestion_candidates / CE0契約 / test_audit / NoneProvider / state_filter）を明記。
+- [x] 担保が欠落していた CVI は最小ケースで新規カバーされる（無ければ「全CVI既存担保あり」を明記）。→ 全CVI既存担保あり（§2.5 対応表）。本issueは索引化＋欠落補完のため再実装なし。
+- [x] スキーマ・実行挙動に変更がない（テスト追加のみ）。→ テストのみのissue（§非目標、§8 ロールバック=ガードテスト無効化）。
+- [x] CI（既存 vitest/pytest 実行）に含まれ、回帰時に赤になる。→ `core_value_guard.test.ts` は既存 vitest 実行（`npm run test`）に含まれる。
 
 ## 6) 検証計画 / Validation plan
 

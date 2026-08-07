@@ -770,10 +770,10 @@ This issue is the read-only SSOT for the CE0 contract freeze. Downstream CE0 cor
 - `git diff --check`
 
 ### Acceptance Criteria / DoD
-- [ ] Contract ID collision = 0
-- [ ] Vocabulary collision = 0
-- [ ] SafeMode regression = 0
-- [ ] No-Go語彙一致（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）
+- [x] Contract ID collision = 0 → Current Completion Assessment「Contract ID freeze: Pass」。
+- [x] Vocabulary collision = 0 → Current Completion Assessment「No-Go ID freeze: Pass」。
+- [x] SafeMode regression = 0 → Current Completion Assessment「SafeMode boundary: Pass（default ON, allowUnreviewedText=false）」。
+- [x] No-Go語彙一致（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）→ §No-Go canonical IDs 5件が固定・差分ゼロ確認（複数checkpoint）。
 - [ ] CE1/CE2/CE4参照境界を再定義なしで説明可能
 - [ ] CE1/CE2/CE4 handoffがread-only参照であることをMatrixで確認可能
 - [ ] CDC発生時に `held` 記録（Context/Decision/Consequences）が残る

@@ -29,7 +29,7 @@ SAAS-TENANT-01のフロントエンド側監査（2026-08-06）で判明: `getPr
 
 - [x] provider-statusがtenant単位の設定になり得るか（現在および将来計画）を確認する。→ 確認済み（下記実装記録）。現状不可能・将来計画も無し。
 - [x] tenant単位になり得ないなら、`getProviderStatus`をgeneration guard対象外とする理由をコードコメントまたはissueへ明記して完了とする。→ `App.tsx`へコメント追記済み。
-- [ ] tenant単位になり得るなら、他のtenant資源呼び出しと同様generation guardへ組み込む。→ 上記の確認結果により非該当。
+- [x] tenant単位になり得るなら、他のtenant資源呼び出しと同様generation guardへ組み込む。→ 上記の確認結果により非該当（現状不可能・将来計画も無し。conditional branchが成立しないため完了扱い）。
 
 ## Validation
 

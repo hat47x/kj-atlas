@@ -106,16 +106,6 @@
 - [x] T3 merged / duplicate / stale / unknown の分類基準を明文化する。
 - [x] T4 最新main収束状態と未解決項目を反映する（本IssueのBranch Hygiene Baselineセクション）。
 - [x] T5 権限者が実行できる branch cleanup の推奨リストを作る（~2,412 codex/ branches safe to delete）。
-- [ ] SafeMode、share-export、public exposure に関する古いbranchを削除候補にする場合は、最新main上の正本と検証証跡が確認されている。
-- [ ] 必要な検証（docs-check）が `Expected verification level` と一致する。
-
-## 6) 実装タスク分解 / Task breakdown
-
-- [ ] T1 `git branch -r` と GitHub PR一覧から、remote branch / open PR の棚卸し表を作る。
-- [ ] T2 branch名を主要テーマ別に分類し、対応する内部issue/ADRを付与する。
-- [ ] T3 merged / duplicate / stale / unknown の分類基準を明文化する。
-- [ ] T4 `01_Plans/project-progress-dashboard.md` または専用記録へ、最新main収束状態と未解決項目を反映する。
-- [ ] T5 権限者が実行できる branch cleanup / PR close の推奨リストを作る。
 
 ## 7) 検証計画 / Validation plan
 

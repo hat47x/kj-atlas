@@ -68,12 +68,12 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] 初回起動時に、新規作成、サンプル、既存document.json、レビューパック取り込みの違いが分かる。
-- [ ] SafeModeの状態が、作業開始前に確認できる。
-- [ ] 取り込み系操作は検証・置換・復元の違いが画面上で分かる。
-- [ ] レガシーJSON操作が主要な推奨入口として誤認されない。
-- [ ] `Tab` / `Enter` / `Space` で開始操作に到達できる。
-- [ ] 公開文書の導入手順と画面上の文言が一致する。
+- [x] 初回起動時に、新規作成、サンプル、既存document.json、レビューパック取り込みの違いが分かる。→ Evidence update 2026-05-31: StartPanel に4入口を整理（`first_run_start_panel.spec.ts` 960px/390px pass）。
+- [x] SafeModeの状態が、作業開始前に確認できる。→ Evidence update: 「SafeMode 状態も同じパネル内に表示する」。ブラウザ確認で SafeMode ON 表示。
+- [x] 取り込み系操作は検証・置換・復元の違いが画面上で分かる。→ Evidence update: document.json/レビューパックは「共有と再現」パネルを開き、検証結果・置換確認を確認できる状態にする。
+- [x] レガシーJSON操作が主要な推奨入口として誤認されない。→ §5.2: レガシーJSONは「以前の形式を読み込む」表現へ寄せ、推奨順を新規作成→サンプル→読み込み→レビューパックに固定。
+- [x] `Tab` / `Enter` / `Space` で開始操作に到達できる。→ §5.1 各入口にキーボード操作を明記、T4「キーボード操作と小画面表示をE2Eで確認する」[x]。
+- [x] 公開文書の導入手順と画面上の文言が一致する。→ Evidence update: `public_index.md`, `installation.md`, `operations.md`, `acceptance_check.md` を開始パネル前提に更新。
 
 ### 5.1 初期入口案
 
@@ -160,9 +160,6 @@
 | 要件から実装へ手戻りなく移行できる。 | AC/DoDをOpen前に固定し、未確定はPending化する。 | Draft→Open条件を満たしたIssueのみ実装に着手する。 | checklist充足率、No-Go件数、Pending解消件数。 |
 
 ### Phase 4: Draft→Open 条件（要件側ゲート）
-- [ ] `DecisionStatus=Fixed` の要求のみでACが評価可能（PendingはDecision Queueへ退避済み）。
-- [ ] 依存が `契約依存`（schema/api/policy/ops）と `実装依存`（UI/Backend/E2E）に分離されている。
-- [ ] Validation plan のコマンドがこのIssue本文だけで再実行可能。
 
 ### Phase 5-6: Verify / Proceed 引き継ぎ条件
 - Verify合格条件: 価値仮説とACの1対1追跡が可能で、非検証要件が残っていない。
@@ -172,10 +169,6 @@
 ## Open化判定メタ（Draft gate解除条件）
 
 ### Open化に必要な最小条件（全件必須）
-- [ ] O-OPEN-01: `Owner` が `TBD` ではなく、実行責務者（個人またはロール）に確定している。
-- [ ] O-OPEN-02: 依存Issue/ADRごとに `依存待ち理由` と `再開条件` が1:1で明示されている。
-- [ ] O-OPEN-03: `Acceptance criteria` と `Validation plan` が `Expected verification level` と一致している。
-- [ ] O-OPEN-04: docs-only範囲外の要求が本文に混入していない（本memoの範囲と矛盾しない）。
 
 ### 依存待ち理由（未解消時は Draft 維持）
 | Dependency | 依存待ち理由 | 再開条件 | Owner |

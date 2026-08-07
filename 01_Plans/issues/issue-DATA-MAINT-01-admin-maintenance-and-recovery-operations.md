@@ -71,12 +71,12 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] Platform operatorが文書件数、更新日時、ユーザー事前登録状態を確認できる。
-- [ ] バックアップと復旧の標準手順が、SQLite/PostgreSQLそれぞれで説明されている。
-- [ ] Document削除/アーカイブの要否とリスクが整理され、実装する場合はGo/No-Go条件がある。
-- [ ] サポート共有用の情報から、不要な本文や未レビュー情報を除外する方針が明示されている。
-- [ ] `merge_decision_logs` とDocument復旧の整合条件が検証される。
-- [ ] 管理操作は監査・認可境界と整合し、一般利用者の操作導線に混入しない。
+- [x] Platform operatorが文書件数、更新日時、ユーザー事前登録状態を確認できる。→ `data_model_operations_overview.html` §5.1 ドキュメント棚卸し/ユーザー棚卸し（`id`/`version`/`updated_at`、payload本文閲覧は運用標準にしない）。
+- [x] バックアップと復旧の標準手順が、SQLite/PostgreSQLそれぞれで説明されている。→ §5.1 バックアップ/復旧確認（SQLiteは停止時スナップショット、PostgreSQLは `pg_dump` 等、T3）。
+- [x] Document削除/アーカイブの要否とリスクが整理され、実装する場合はGo/No-Go条件がある。→ §5.1 アーカイブ・削除・所有者移管（MVPでは実装しない。実装する場合はADRと専用issue必須、T4 + ADR-0035）。
+- [x] サポート共有用の情報から、不要な本文や未レビュー情報を除外する方針が明示されている。→ §5.1 ドキュメント棚卸し（`payload_json` 本文の閲覧を運用標準にしない）＋ ADR-0035。
+- [x] `merge_decision_logs` とDocument復旧の整合条件が検証される。→ §5.1 復旧確認（`Document.version`、schema version gate、`merge_decision_logs.doc_id`、時系列、L1/L1.5優先復旧）。
+- [x] 管理操作は監査・認可境界と整合し、一般利用者の操作導線に混入しない。→ §5.1 末尾（書き込み系管理APIは一般利用者の操作導線から分離し、監査・認可・データライフサイクルの契約を先行）。
 
 ## 6) 実装タスク分解 / Task breakdown
 
