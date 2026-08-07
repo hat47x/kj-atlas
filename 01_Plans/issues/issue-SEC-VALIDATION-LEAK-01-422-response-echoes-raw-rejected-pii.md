@@ -1,7 +1,7 @@
 # Issue: SEC-VALIDATION-LEAK-01 グローバルなRequestValidationErrorハンドラが拒否された生PII値を422レスポンスへそのまま返す
 
 - Type: Security
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
@@ -35,10 +35,10 @@
 
 ## 受入条件
 
-- [ ] 修正方針が決定される。
-- [ ] `/ai/*`系エンドポイントに対して、`reviewerRef`/`ownerRef`にメールアドレス等の生PIIを含むドキュメントを送信しても、422レスポンスに当該値が含まれないことを確認する。
-- [ ] `tests/test_docs_a1_error_contract.py::test_put_document_returns_a1_error_contract_for_pii_violation`と同種の統合テストを対象エンドポイントに追加する。
-- [ ] 宣言した検証を実行するか、未実施理由を記録する。
+- [x] 修正方針が決定される。→ (a) `handle_validation_error` で `exc.errors()` の各要素から `input`（および非直列化可能な `ctx`）を除外し、`type`/`loc`/`msg` のみを返す。`routes/docs.py` の `A1ErrorResponse` と同じ安全パターン（2026-08-07）。
+- [x] `/ai/*`系エンドポイントに対して、`reviewerRef`/`ownerRef`にメールアドレス等の生PIIを含むドキュメントを送信しても、422レスポンスに当該値が含まれないことを確認する。→ `tests/test_validation_error_pii_redaction.py` で `/ai/check-narrative`・`/ai/generate-narrative` にPII付きdocを送信し、レスポンスにメール・provider接頭辞IDが含まれないことを確認（2026-08-07）。
+- [x] `tests/test_docs_a1_error_contract.py::test_put_document_returns_a1_error_contract_for_pii_violation`と同種の統合テストを対象エンドポイントに追加する。→ `tests/test_validation_error_pii_redaction.py`（3テスト）を追加。
+- [x] 宣言した検証を実行するか、未実施理由を記録する。→ backend 648 passed / 25 skipped（+3新規）。
 
 ## 検証計画
 
