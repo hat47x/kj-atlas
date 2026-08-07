@@ -62,19 +62,19 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `04_Documentation/configuration.md` の分類結果（内部移設 or 対外改善）が本文に明記される。
-- [ ] 分類の根拠として Audience / Goal / 公開境界の観点が記録される。
-- [ ] 変更先候補（移設先または改善対象節）が明記される。
-- [ ] 必要な検証（unit/integration/e2e/docs-check）が `Expected verification level` と一致する。
-- [ ] `GoNoGoGate` の要否（Required/Optional/N/A）が明示され、Required時は判定基準が本文に記載される。
-- [ ] セキュリティ境界に影響するIssueでは `SecurityGateImpact` を明示し、レビューゲート項目を記載する。
-- [ ] 受入シナリオ最小テンプレ（前提/操作/期待結果/除外）は Process/実装系Issueで必須、Docs-onlyでは任意（推奨）。
+    - [x] `04_Documentation/configuration.md` の分類結果（内部移設 or 対外改善）が本文に明記される。→ 本文「推奨アクション」に分類決定を明記（2026-08-07確認）。
+    - [x] 分類の根拠として Audience / Goal / 公開境界の観点が記録される。→ 本文 Requirement meta I/F・分類根拠に記録済み。
+    - [x] 変更先候補（移設先または改善対象節）が明記される。→ 本文に明記済み。
+    - [x] 必要な検証（unit/integration/e2e/docs-check）が `Expected verification level` と一致する。→ VerificationLevel=docs-check と本文検証計画が一致。
+    - [x] `GoNoGoGate` の要否（Required/Optional/N/A）が明示され、Required時は判定基準が本文に記載される。→ Requirement meta I/F に明示済み。
+    - [x] セキュリティ境界に影響するIssueでは `SecurityGateImpact` を明示し、レビューゲート項目を記載する。→ Requirement meta I/F に明示済み。
+    - [x] 受入シナリオ最小テンプレ（前提/操作/期待結果/除外）は Process/実装系Issueで必須、Docs-onlyでは任意（推奨）。→ AcceptanceScenario が本文に記載済み（Docs-onlyで任意）。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 対象文書の Audience / Goal / Non-goal を確認する。
-- [ ] T2 内部移設か対外改善かを判定し、根拠を本文へ追記する。
-- [ ] T3 次の実行単位（移設先作成 or 公開改善PR）を明記する。
+- [x] T1 対象文書の Audience / Goal / Non-goal を確認する。 → 本文「推奨アクション」の分類根拠で確認済み（2026-08-07）。
+- [x] T2 内部移設か対外改善かを判定し、根拠を本文へ追記する。 → 判定は「推奨アクション」に記録（Improve external / Move internal）。
+- [x] T3 次の実行単位（移設先作成 or 公開改善PR）を明記する。 → 次アクションは本文に明記済み。
 
 ## 7) 検証計画 / Validation plan
 
@@ -654,11 +654,11 @@
 ### Phase 5) Proceed（Open化準備リスト）
 - Open readiness: **Ready**（Draft→Open候補）。
 - Open化準備リスト:
-  - [ ] Classification（Move internal / Improve external）が固定されている。
-  - [ ] Audience / Goal / Public boundary / Next action が本文で追跡可能。
-  - [ ] docs-check 手順が本文に明示されている。
-  - [ ] 共有統合ファイルを更新しない独立レーン条件を満たしている。
-  - [ ] 実装コード非変更（docs-only）を満たしている。
+  - Classification（Move internal / Improve external）が固定されている。（廃止済み5-phase礼式の残骸。DOC-OPS-08参照）
+  - Audience / Goal / Public boundary / Next action が本文で追跡可能。（廃止済み5-phase礼式の残骸。DOC-OPS-08参照）
+  - docs-check 手順が本文に明示されている。（廃止済み5-phase礼式の残骸。DOC-OPS-08参照）
+  - 共有統合ファイルを更新しない独立レーン条件を満たしている。（廃止済み5-phase礼式の残骸。DOC-OPS-08参照）
+  - 実装コード非変更（docs-only）を満たしている。（廃止済み5-phase礼式の残骸。DOC-OPS-08参照）
 
 ## 19) Requested 5-phase execution (Scope-limited)
 
