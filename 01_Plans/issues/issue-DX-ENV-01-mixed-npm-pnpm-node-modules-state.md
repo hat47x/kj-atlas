@@ -16,7 +16,8 @@
 - `node_modules/.pnpm/`（74エントリ）と `.modules.yaml`（pnpmマーカー）が、npmでインストールされた依存と共存している。
 - pnpm移行がrevert（`DX-CI-PNPM-01`）された後に `.pnpm/esbuild@0.28.1` が残り、アクティブな `esbuild@0.21.5`（vite 5が要求）と混在して `vitest run` が `Cannot start service: Host version "0.28.1" does not match binary version "0.21.5"` で起動不能になる。
 - 2026-08-02〜08-07の間に **3回** 発生し、毎回 `rm -rf node_modules/.pnpm/esbuild@0.28.1 node_modules/.pnpm/@esbuild+win32-x64@0.28.1` で復旧した。pnpm関連操作や依存再インストールが走ると再発する。
-- CIは影響を受けない（`ci.yml`はnpmモードで動き、`include: ["src/**/*.test.ts"]` でe2eを除外しているため）が、ローカル開発者のみが被る。
+- **ビルドも壊れる（2026-08-07確認）**: stale `.pnpm/rollup@4.62.3`（rootの正しいrollupは4.57.1）がviteのrollupプラグインに解決され、`vite build` が `Source phase import "vite/modulepreload-polyfill" in "index.html" must be external` で失敗する。`rm -rf node_modules/.pnpm/rollup@4.62.3 ...` で解消し、build成功（28s）。
+- CIは影響を受けない（`ci.yml`はnpmモードで動き、`include: ["src/**/*.test.ts"]` でe2eを除外しているため）が、ローカル開発・ビルドの両方が被る。
 
 ## 対応方針（案）
 

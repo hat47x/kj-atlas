@@ -21,6 +21,7 @@ Updated: 2026-08-03
 - 再発防止: esbuild系の起動エラーはまず `.pnpm/` 配下のバージョン重複を確認する。pnpm関連ファイルがrevertされた後のnode_modules操作には注意する。
 - **再発（2026-08-03）**: 同じ `.pnpm/esbuild@0.28.1` が再生成されており再発。pnpm installが走るたびに0.28.1が復活する可能性が高い。除去コマンドはその場で再実行する。根本解決は `node_modules` をクリーンに再構築するか、pnpm移行を正式に完了するか、`.pnpm` 配下のesbuildを0.21に固定する運用の検討が必要。
 - **根本原因の特定（2026-08-07）**: `node_modules` が npm/pnpm混在状態（`.pnpm/` 74エントリ + `.modules.yaml`）であることを確認。`issue-DX-ENV-01-mixed-npm-pnpm-node-modules-state.md` として起票し、クリーン再構築を推奨。
+- **ビルドも壊れる（2026-08-07）**: stale `.pnpm/rollup@4.62.3` が `vite build` を `Source phase import "vite/modulepreload-polyfill" must be external` で失敗させる。`rm -rf node_modules/.pnpm/rollup@4.62.3 ...` で解消。混在node_modulesはesbuild（vitest）だけでなくrollup（vite build）も壊すため、`vite build` 実行前に `.pnpm/` 配下のrollup/esbuild重複を確認する。
 
 ## 2026-08-02: 作業ディレクトリ依存のgit pathspecエラー
 
