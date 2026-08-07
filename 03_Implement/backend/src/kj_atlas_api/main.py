@@ -21,6 +21,7 @@ from kj_atlas_api.routes.context import router as context_router
 from kj_atlas_api.routes.document_access_admin import (
     router as document_access_admin_router,
 )
+from kj_atlas_api.routes.inquiry_bundles import router as inquiry_bundles_router
 from kj_atlas_api.routes.session import router as session_router
 from kj_atlas_api.request_body_safety import JsonRequestBodySafetyMiddleware
 from kj_atlas_api.settings import settings
@@ -144,4 +145,5 @@ app.include_router(ai_router)
 app.include_router(ai_relations_router)
 app.include_router(context_router)
 app.include_router(document_access_admin_router)
+app.include_router(inquiry_bundles_router)
 app.include_router(session_router)

@@ -293,6 +293,9 @@ flowchart LR
     <div style="margin:16px 0 0; padding:13px 15px; background:#ecfdf5; border-left:3px solid #059669; border-radius:0 4px 4px 0;">
       <p style="font-size:13px; line-height:1.7; color:#065f46; margin:0;"><strong>実装状況（2026-08-02）:</strong> Phase 2のうち、<code>inquiry_bundle_io.ts</code> にローカルexport/import境界を実装。試作パネルから正式bundle作成・ラウンドsnapshot記録・カード系譜記録・JSON保存/再読込・2ラウンド比較・非破壊分岐・分岐一括取消・カード系譜表示・再開ブリーフまで操作可能。300カード・30島・6ラウンドで1成果73,955 bytes、bundle 1,460,390 bytesは許容範囲。画面読込の最大長時間タスクは<code>PERF-INQUIRY-01</code>でstrict validationとdigest照合をworkerへ移し、単独実行93〜95ms（並列CI 125ms、退行上限150ms、設計目標100ms）。保持・削除の標準UIとbackend永続化は未実装のため、Phase 2全体とL1昇格は未完了。</p>
     </div>
+    <div style="margin:16px 0 0; padding:13px 15px; background:#fff7ed; border-left:3px solid #ea580c; border-radius:0 4px 4px 0;">
+      <p style="font-size:13px; line-height:1.7; color:#9a3412; margin:0;"><strong>Backend lifecycle checkpoint (2026-08-06):</strong> tenant-scoped opaque bundle save/read and inquiry-level delete with content-free deletion audit are implemented. Retention policy, expiry enforcement, and purge/history-retention operations remain unspecified or unimplemented; Phase 2 and L1 promotion remain incomplete.</p>
+    </div>
   </section>
 
   <!-- 8. 根拠と関連文書 -->

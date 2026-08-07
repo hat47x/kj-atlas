@@ -283,6 +283,14 @@
 
 通常時はラウンド履歴を読み込まず、代表規模のキャンバス操作へ追加計算を入れない。履歴比較・再開ブリーフが100msを超える場合は待機表示またはworker化の判定対象にする。
 
+## Current completion correction (2026-08-06)
+
+AC-11 remains incomplete. The checklist entry above must not be treated as a completed acceptance criterion: backend persistence, retention, and inquiry-level history deletion are not implemented. The support level remains `L0: Planned` until those boundaries have an implementation and direct verification.
+
+### Backend persistence checkpoint (2026-08-06)
+
+The independent backend lifecycle boundary is now implemented for tenant-scoped opaque bundle save, read, and inquiry-level delete. Deletion writes content-free audit evidence in the same transaction, and focused route/repository tests cover roundtrip, validation, tenant isolation, deletion audit, and missing-delete rollback. Retention policy, expiry enforcement, and purge/history-retention operations remain unimplemented; AC-11 therefore remains open and `L0: Planned`.
+
 ## Traceability
 
 - Requirements: `00_Prompt/w_type_iterative_inquiry_requirements.md`

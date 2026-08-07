@@ -182,6 +182,59 @@ class DocumentAccessAdminAuditEventRow(Base):
     occurred_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class InquiryBundleRow(Base):
+    """Tenant-scoped opaque InquiryBundleV1 storage.
+
+    The backend deliberately does not interpret the bundle contract.  This keeps
+    Inquiry lifecycle persistence independent of DocumentV1 and lets the client
+    retain ownership of the bundle schema.
+    """
+
+    __tablename__ = "inquiry_bundles"
+
+    tenant_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    journey_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    payload_json: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class InquiryBundleDeletionAuditEventRow(Base):
+    """Minimal durable deletion evidence; bundle contents are never copied here."""
+
+    __tablename__ = "inquiry_bundle_deletion_audit_events"
+    __table_args__ = (
+        CheckConstraint(
+            "action = 'inquiry_bundle.delete'",
+            name="ck_inquiry_bundle_deletion_audit_action",
+        ),
+        CheckConstraint(
+            "outcome = 'deleted'",
+            name="ck_inquiry_bundle_deletion_audit_outcome",
+        ),
+        Index(
+            "ix_inquiry_bundle_deletion_audit_tenant_occurred",
+            "tenant_id",
+            "occurred_at",
+        ),
+    )
+
+    event_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    journey_id: Mapped[str] = mapped_column(Text, nullable=False)
+    principal_id: Mapped[str] = mapped_column(Text, nullable=False)
+    action: Mapped[str] = mapped_column(Text, nullable=False)
+    outcome: Mapped[str] = mapped_column(Text, nullable=False)
+    occurred_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class UserRow(Base):
     __tablename__ = "users"
 
