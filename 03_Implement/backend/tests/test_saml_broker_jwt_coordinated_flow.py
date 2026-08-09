@@ -135,14 +135,7 @@ def _authenticate_via_oauth(
 # ============================================================================
 
 
-class _StubCapabilityResolver:
-    def resolve(self, *, db, principal_id, tenant):
-        from kj_atlas_api.session_context import CapabilitySnapshot
-
-        return CapabilitySnapshot(
-            effective_capabilities=("document.read", "document.write"),
-            capability_version="stub-v1",
-        )
+from tests.conftest import StubCapabilityResolver
 
 
 def _seed_backend(db) -> None:
@@ -218,7 +211,7 @@ def _saas_backend(tmp_path, jwk: dict) -> Iterator:
                 client.app.state.saas_identity_context_resolver = resolver
                 client.app.state.tenant_context_resolver = ClaimBasedTenantContextResolver()
                 client.app.state.active_tenant_session_persister = persister
-                client.app.state.tenant_capability_resolver = _StubCapabilityResolver()
+                client.app.state.tenant_capability_resolver = StubCapabilityResolver()
                 try:
                     yield client, persister
                 finally:

@@ -143,14 +143,7 @@ def _get_jwks_from_idp(idp_client: TestClient) -> dict[str, object]:
 # ---------------------------------------------------------------------------
 
 
-class _StubCapabilityResolver:
-    def resolve(self, *, db, principal_id, tenant):
-        from kj_atlas_api.session_context import CapabilitySnapshot
-
-        return CapabilitySnapshot(
-            effective_capabilities=("document.read", "document.write"),
-            capability_version="stub-v1",
-        )
+from tests.conftest import StubCapabilityResolver
 
 
 def _seed_backend_db(db: Session) -> None:
@@ -272,7 +265,7 @@ def _backend_saas_client(
                 client.app.state.saas_identity_context_resolver = identity_resolver
                 client.app.state.tenant_context_resolver = ClaimBasedTenantContextResolver()
                 client.app.state.active_tenant_session_persister = session_persister
-                client.app.state.tenant_capability_resolver = _StubCapabilityResolver()
+                client.app.state.tenant_capability_resolver = StubCapabilityResolver()
                 try:
                     yield client, session_persister
                 finally:

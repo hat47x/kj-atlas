@@ -44,18 +44,7 @@ from kj_atlas_api.tenant_context import (
 from kj_atlas_api.trusted_auth_edge import JwtSaasIdentityContextResolver
 
 
-class _StubCapabilityResolver:
-    """Minimal capability resolver that returns a fixed snapshot."""
-
-    def resolve(
-        self, *, db: Session, principal_id: str, tenant: TenantContext
-    ) -> CapabilitySnapshot:
-        return CapabilitySnapshot(
-            effective_capabilities=("document.read", "document.write"),
-            capability_version="stub-v1",
-        )
-
-TIMESTAMP = "2026-08-07T00:00:00Z"
+from tests.conftest import TIMESTAMP, StubCapabilityResolver
 ISSUER = "https://broker.invalid/issuer"
 AUDIENCE = "kj-atlas"
 
@@ -226,7 +215,7 @@ def _saas_e2e_client(
                 client.app.state.saas_identity_context_resolver = identity_resolver
                 client.app.state.tenant_context_resolver = ClaimBasedTenantContextResolver()
                 client.app.state.active_tenant_session_persister = session_persister
-                client.app.state.tenant_capability_resolver = _StubCapabilityResolver()
+                client.app.state.tenant_capability_resolver = StubCapabilityResolver()
                 try:
                     yield client, session_persister
                 finally:

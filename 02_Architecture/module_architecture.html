@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>kj-atlas モジュールアーキテクチャ — 依存関係とデータフロー</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 0 auto; padding: 24px; color: #0f172a; background: #f8fafc; }
+  h1 { border-bottom: 2px solid #2563eb; padding-bottom: 8px; }
+  h2 { margin-top: 32px; color: #1e40af; }
+  .mermaid { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
+  th { background: #f1f5f9; }
+</style>
+</head>
+<body>
+
+<h1>kj-atlas モジュールアーキテクチャ</h1>
+
+<h2>1. モジュール依存グラフ</h2>
+<div class="mermaid">
+graph TB
+    subgraph "Entry Point"
+        MAIN[main.py<br/>FastAPI app + lifespan]
+    end
+
+    subgraph "Routes"
+        DOCS[routes/docs.py<br/>Document CRUD + auth]
+        ADMIN[routes/admin.py<br/>Provisioning + IdP reg]
+        SESSION[routes/session.py<br/>Session context + switch]
+    end
+
+    subgraph "Auth Edge (ADR-0063)"
+        TAE[trusted_auth_edge.py<br/>JWT verify + jti + tenant claim]
+        JWKS[jwks_store.py<br/>JWKS cache + rotation]
+    end
+
+    subgraph "Identity & Tenant"
+        AC[auth_context.py<br/>ResolvedIdentity + header auth]
+        TC[tenant_context.py<br/>TenantContext + claim resolver]
+        IB[identity_binding.py<br/>User identity lookup]
+    end
+
+    subgraph "Session"
+        ATS[active_tenant_session.py<br/>Version + cookie persister]
+        TSP[tenant_session_precondition.py<br/>Version guard]
+        SRC[saas_request_context.py<br/>Request pipeline]
+    end
+
+    subgraph "Runtime Policy"
+        TSR[trusted_saas_runtime.py<br/>Policy + bundle + preflight]
+        RB[runtime_bootstrap.py<br/>Profile → mode mapping]
+    end
+
+    subgraph "Adapters"
+        ACL[access_control.py<br/>PDP + tenant boundary]
+        TCA[tenant_capability.py<br/>Capability resolver]
+        DPB[document_policy_binding.py<br/>Binding resolver]
+        DAR[document_access_resource.py<br/>Resource resolver]
+    end
+
+    subgraph "Foundation"
+        SET[settings.py<br/>All config]
+        MOD[models.py<br/>DB schema]
+        DB[db.py<br/>Session + engine]
+    end
+
+    MAIN --> DOCS
+    MAIN --> ADMIN
+    MAIN --> SESSION
+    MAIN --> TSR
+
+    DOCS --> AC
+    DOCS --> SRC
+    DOCS --> DAR
+
+    ADMIN --> IB
+    ADMIN --> SET
+
+    SRC --> TAE
+    SRC --> TC
+    SRC --> ATS
+
+    TAE --> JWKS
+    TAE --> SET
+    TAE --> MOD
+
+    TC --> MOD
+
+    ATS --> TC
+
+    TSP --> ATS
+    TSP --> SRC
+    TSP --> RB
+
+    TSR --> ACL
+    TSR --> TCA
+    TSR --> DPB
+    TSR --> DAR
+    TSR --> ATS
+    TSR --> TC
+    TSR --> AC
+
+    AC --> IB
+    AC --> SET
+
+    ACL --> TC
+    TCA --> TC
+    DAR --> TC
+</div>
+
+<h2>2. リクエスト処理シーケンス（SaaS JWT モード）</h2>
+<div class="mermaid">
+sequenceDiagram
+    participant Client
+    participant FastAPI as FastAPI (main.py)
+    participant TSP as tenant_session_precondition
+    participant SRC as saas_request_context
+    participant TAE as trusted_auth_edge
+    participant JWKS as jwks_store
+    participant TC as tenant_context
+    participant ATS as active_tenant_session
+    participant ACL as access_control
+    participant DAR as document_access_resource
+
+    Client->>FastAPI: GET /docs/{id}<br/>X-Kj-Atlas-Authorization: Bearer JWT<br/>Kj-Atlas-Tenant-Session-Version: v1
+
+    FastAPI->>TSP: tenant_session_precondition_required()
+    TSP-->>FastAPI: True (saas-multitenant)
+
+    FastAPI->>SRC: resolve_trusted_saas_request_session()
+
+    SRC->>TAE: JwtSaasIdentityContextResolver.resolve()
+    TAE->>TAE: _extract_bearer_token()
+    TAE->>TAE: jwt.decode(unverified peek) → iss/aud
+    TAE->>JWKS: _fetch_jwks_keys(provider)
+    JWKS-->>TAE: cached keys (or fresh fetch)
+    TAE->>TAE: _verify_jwt(RS256, iss, aud, exp, iat, nbf)
+    TAE->>TAE: _jti_cache.check_and_record(jti)
+    TAE->>TAE: _resolve_tenant_claim(tenant_ref)
+    TAE-->>SRC: ResolvedIdentity + VerifiedTenantClaim
+
+    SRC->>TC: ClaimBasedTenantContextResolver.resolve(claim)
+    TC->>TC: resolve_verified_claim_tenant_context()
+    TC-->>SRC: TenantContext (tenant-a, verified_claim)
+
+    SRC->>ATS: resolve_active_tenant_session_version()
+    ATS-->>SRC: version=v1
+
+    SRC-->>FastAPI: TrustedSaasRequestSession
+
+    FastAPI->>DAR: resource_resolver.resolve(tenant, doc_id)
+    DAR-->>FastAPI: AccessResource (tenant-a, doc-1)
+
+    FastAPI->>ACL: access_control_adapter.authorize()
+    ACL-->>FastAPI: AccessDecision (granted)
+
+    FastAPI->>DAR: get_document_row(tenant, doc_id)
+    DAR-->>FastAPI: DocumentRow (tenant-a's payload)
+
+    FastAPI-->>Client: 200 + tenant-a's document
+</div>
+
+<h2>3. レイヤーアーキテクチャ</h2>
+<div class="mermaid">
+graph TB
+    subgraph "Presentation Layer"
+        ROUTES[Routes<br/>docs.py / admin.py / session.py]
+    end
+
+    subgraph "Authentication Layer"
+        AUTH_EDGE[Auth Edge<br/>trusted_auth_edge.py]
+        JWKS_STORE[JWKS Store<br/>jwks_store.py]
+    end
+
+    subgraph "Authorization Layer"
+        TENANT_CTX[Tenant Context<br/>tenant_context.py]
+        ACCESS_CTL[Access Control<br/>access_control.py]
+        TENANT_CAP[Tenant Capability<br/>tenant_capability.py]
+        DOC_BIND[Doc Policy Binding<br/>document_policy_binding.py]
+        DOC_RES[Doc Access Resource<br/>document_access_resource.py]
+    end
+
+    subgraph "Session Layer"
+        SESSION_MGR[Session Manager<br/>active_tenant_session.py]
+        SESSION_PRE[Session Precondition<br/>tenant_session_precondition.py]
+        SAAS_CTX[SaaS Request Context<br/>saas_request_context.py]
+    end
+
+    subgraph "Domain Layer"
+        IDENTITY[Identity<br/>auth_context.py + identity_binding.py]
+        MODELS[Models<br/>models.py]
+    end
+
+    subgraph "Infrastructure Layer"
+        RUNTIME[Runtime Policy<br/>trusted_saas_runtime.py]
+        SETTINGS[Settings<br/>settings.py]
+        DB[Database<br/>db.py]
+    end
+
+    ROUTES --> AUTH_EDGE
+    ROUTES --> TENANT_CTX
+    ROUTES --> SESSION_MGR
+    AUTH_EDGE --> JWKS_STORE
+    AUTH_EDGE --> IDENTITY
+    TENANT_CTX --> ACCESS_CTL
+    TENANT_CTX --> TENANT_CAP
+    TENANT_CTX --> DOC_RES
+    SESSION_MGR --> SESSION_PRE
+    SAAS_CTX --> AUTH_EDGE
+    SAAS_CTX --> TENANT_CTX
+    SAAS_CTX --> SESSION_MGR
+    IDENTITY --> MODELS
+    RUNTIME --> SETTINGS
+    RUNTIME --> DB
+</div>
+
+<h2>4. セッション状態マシン</h2>
+<div class="mermaid">
+stateDiagram-v2
+    [*] --> Unauthenticated: App start
+    Unauthenticated --> Authenticating: /login redirect
+    Authenticating --> Authenticated: JWT obtained
+    Authenticated --> SessionActive: /session/context 200
+    SessionActive --> SessionStale: 409 tenant_session_changed
+    SessionStale --> SessionActive: Retry with new version
+    SessionActive --> TenantSwitching: POST /session/active-tenant
+    TenantSwitching --> SessionActive: 200 + new version cookie
+    TenantSwitching --> TenantUnavailable: 404 tenant_not_available
+    Authenticated --> Unauthenticated: Token expired / logout
+    SessionActive --> Unauthenticated: Token expired / logout
+</div>
+
+<h2>5. データモデル関連図（テナント認証）</h2>
+<div class="mermaid">
+erDiagram
+    tenants {
+        text id PK
+        text display_name
+        text lifecycle_state
+    }
+    identity_providers {
+        text id PK
+        text issuer
+        text audience
+        text protocol
+        text jwks_uri
+        text lifecycle_state
+    }
+    tenant_identity_providers {
+        text tenant_id PK,FK
+        text identity_provider_id PK,FK
+        text external_tenant_ref
+        text lifecycle_state
+    }
+    users {
+        text id PK
+        text display_name
+        text lifecycle_state
+    }
+    user_identities {
+        text user_id FK
+        text identity_provider_id FK
+        text subject
+        text external_uid
+    }
+    tenant_memberships {
+        text tenant_id PK,FK
+        text user_id PK,FK
+        text lifecycle_state
+    }
+    documents {
+        text tenant_id PK,FK
+        text id PK
+        text payload_json
+    }
+
+    tenants ||--o{ tenant_identity_providers : "belongs to"
+    identity_providers ||--o{ tenant_identity_providers : "authenticates"
+    tenants ||--o{ tenant_memberships : "has members"
+    users ||--o{ tenant_memberships : "belongs to"
+    users ||--o{ user_identities : "identified by"
+    identity_providers ||--o{ user_identities : "issues identity"
+    tenants ||--o{ documents : "owns"
+</div>
+
+<h2>6. モジュール責務一覧</h2>
+<table>
+<tr><th>モジュール</th><th>層</th><th>責務</th><th>依存元</th></tr>
+<tr><td><code>main.py</code></td><td>Entry</td><td>FastAPI app, lifespan, 全 route 登録, SaaS bundle 配線</td><td>全 routes, trusted_saas_runtime</td></tr>
+<tr><td><code>trusted_auth_edge.py</code></td><td>Auth</td><td>JWT 検証 (RS256/ES256), aud 配列, jti replay, tenant claim 抽出, JWKS fetch</td><td>saas_request_context</td></tr>
+<tr><td><code>jwks_store.py</code></td><td>Auth</td><td>JWKS キャッシュ (600s TTL, 60s cooldown, 1800s stale)</td><td>trusted_auth_edge</td></tr>
+<tr><td><code>tenant_context.py</code></td><td>AuthZ</td><td>TenantContext 解決, claim→tenant マッピング, membership 検証</td><td>saas_request_context, routes/docs</td></tr>
+<tr><td><code>active_tenant_session.py</code></td><td>Session</td><td>セッション version 管理, cookie 発行, atomic compare-and-swap</td><td>saas_request_context, tenant_session_precondition</td></tr>
+<tr><td><code>saas_request_context.py</code></td><td>Session</td><td>完全な SaaS リクエストパイプライン (identity→tenant→session→capability)</td><td>routes/docs</td></tr>
+<tr><td><code>trusted_saas_runtime.py</code></td><td>Infra</td><td>起動前ポリシー検証, adapter bundle, preflight, init/release</td><td>main.py</td></tr>
+<tr><td><code>auth_context.py</code></td><td>Domain</td><td>ResolvedIdentity, header 認証 (single-tenant), TRUSTED_PROXIES</td><td>routes/docs</td></tr>
+<tr><td><code>settings.py</code></td><td>Infra</td><td>全設定キー (JWT, tenant, proxy, LLM, audit, PDP)</td><td>全モジュール</td></tr>
+<tr><td><code>routes/admin.py</code></td><td>Route</td><td>User provisioning, IdP 登録, A2A3 gate</td><td>main.py</td></tr>
+</table>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default'});</script>
+</body>
+</html>
