@@ -53,7 +53,7 @@ python3 deploy/tools/openai_compatible_adapter.py --port 8001
 # DeepSeek（クラウド・高品質）
 export LLM_API_KEY="sk-..."
 python3 deploy/tools/openai_compatible_adapter.py --port 8001 \
-  --base-url https://api.deepseek.com/v1 --model deepseek-chat
+  --base-url https://api.deepseek.com/v1 --model deepseek-v4-flash
 
 # OpenAI
 export LLM_API_KEY="sk-..."
@@ -82,6 +82,23 @@ pytest tests/test_kj_session_e2e.py -v -m external_llm
 | **`openai_compatible_adapter.py`** | **全 OpenAI 互換 API** | **本番・開発用統一アダプタ** |
 
 > **非推奨**: `ollama_adapter.py` と `deepseek_adapter.py` は `openai_compatible_adapter.py` に統合されました。今後は統一アダプタを使用してください。
+
+## タスク別モデル選択
+
+`KJ_ATLAS_LLM_TASK_MODEL_MAP` でタスクごとに異なるモデルを指定できます（ADR-0065）。
+
+```bash
+# 例: 軽量タスクはflash、高度な推論はpro
+export KJ_ATLAS_LLM_TASK_MODEL_MAP="re_layout=deepseek-v4-flash,suggest_merges=deepseek-v4-flash,generate_narrative=deepseek-v4-pro,detect_contradiction=deepseek-v4-pro"
+
+# 1M トークンコンテキストウィンドウが必要な場合
+export KJ_ATLAS_LLM_TASK_MODEL_MAP="generate_narrative=deepseek-v4-pro[1m]"
+```
+
+> **DeepSeek モデル名** (2026年8月現在):
+> - `deepseek-v4-pro` — フラッグシップ推論モデル。複雑な判断・文章生成に。
+> - `deepseek-v4-flash` — 高速・低コストモデル。簡易タスクに。
+> - `deepseek-v4-pro[1m]` — 1M トークンコンテキストウィンドウ付き。大規模文書処理に。
 
 ## 全 AI エンドポイント一覧
 

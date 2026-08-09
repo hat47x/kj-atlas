@@ -32,7 +32,7 @@
 
 ```python
 # settings.py / 環境変数
-KJ_ATLAS_LLM_TASK_MODEL_MAP = "re_layout=deepseek-chat,..."
+KJ_ATLAS_LLM_TASK_MODEL_MAP = "re_layout=deepseek-v4-flash,..."
 ```
 
 未設定タスクはデフォルトモデルにフォールバックする。
@@ -51,13 +51,13 @@ v1 では優先度 1 と 3 を実装する。優先度 2 は Phase 2。
 
 | 複雑度 | 推奨モデル | 月額コスト目安 (DeepSeek) |
 |---|---|---|
-| 低 (re_layout, suggest_merges) | `deepseek-chat` | $0.14/1M tokens |
-| 中 (refine, summary, importance, groups, relation) | `deepseek-chat` | $0.14/1M tokens |
-| 高 (check_narrative, detect_contradiction) | `deepseek-chat` または `deepseek-reasoner` | $0.55/1M tokens |
-| 最高 (generate_narrative) | `deepseek-reasoner` | $0.55/1M tokens |
+| 低 (re_layout, suggest_merges) | `deepseek-v4-flash` | $0.14/1M tokens |
+| 中 (refine, summary, importance, groups, relation) | `deepseek-v4-flash` | $0.14/1M tokens |
+| 高 (check_narrative, detect_contradiction) | `deepseek-v4-flash` または `deepseek-v4-pro` | $0.55/1M tokens |
+| 最高 (generate_narrative) | `deepseek-v4-pro` | $0.55/1M tokens |
 
-> DeepSeek の場合、`deepseek-chat` でも十分な品質が得られる。コスト最適化が重要になる
-> までは全タスクに `deepseek-chat` を使用し、タスク別マッピングは後から注入する。
+> DeepSeek の場合、`deepseek-v4-flash` でも十分な品質が得られる。コスト最適化が重要になる
+> までは全タスクに `deepseek-v4-flash` を使用し、タスク別マッピングは後から注入する。
 
 ### D4: 段階的実装計画
 

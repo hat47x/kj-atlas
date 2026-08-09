@@ -11,15 +11,15 @@ Usage:
 
     # Multiple backends with per-model routing
     python3 openai_compatible_adapter.py --port 8001 --backends "
-      deepseek-chat@https://api.deepseek.com/v1:sk-xxx,
-      deepseek-reasoner@https://api.deepseek.com/v1:sk-xxx,
+      deepseek-v4-flash@https://api.deepseek.com/v1:sk-xxx,
+      deepseek-v4-pro@https://api.deepseek.com/v1:sk-xxx,
       llama3@http://localhost:11434/v1:
     "
 
     # Via environment
     export LLM_DEFAULT_BASE_URL=http://localhost:11434/v1
     export LLM_DEFAULT_API_KEY=""
-    export LLM_BACKENDS="deepseek-chat@https://api.deepseek.com/v1:sk-xxx"
+    export LLM_BACKENDS="deepseek-v4-flash@https://api.deepseek.com/v1:sk-xxx"
     python3 openai_compatible_adapter.py --port 8001
 
 Backend config format: ``model@base_url:api_key``
