@@ -16,6 +16,7 @@ from kj_atlas_api.main import app as main_app
 from kj_atlas_api.routes.admin import require_single_tenant_provisioning_surface
 from kj_atlas_api.routes.docs import _authorize_request
 from kj_atlas_api.routes.document_access_admin import _authorize_document_policy_management
+from kj_atlas_api.routes.inquiry_bundles import _trusted_session as _inquiry_bundle_trusted_session
 from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
 from kj_atlas_api.tenant_session_precondition import (
     require_tenant_scoped_api_precondition,
@@ -175,7 +176,9 @@ def test_all_document_and_document_admin_routes_use_shared_authorization_boundar
 # install a shared tenant-scoped boundary, or be named here with a reason that
 # is itself mechanically re-checked.
 
-_TENANT_SCOPED_BOUNDARY_CALLS = frozenset({_authorize_request, _authorize_document_policy_management})
+_TENANT_SCOPED_BOUNDARY_CALLS = frozenset(
+    {_authorize_request, _authorize_document_policy_management, _inquiry_bundle_trusted_session}
+)
 
 # Route touches no tenant-scoped resource and cannot reach the database.
 _NO_TENANT_RESOURCE = "no-tenant-resource"
@@ -192,6 +195,10 @@ _UNGUARDED_ROUTE_EXEMPTIONS: dict[tuple[str, str], str] = {
     ("POST", "/admin/provision/hil-rs/a2a3-gate:validate"): _NO_TENANT_RESOURCE,
     ("GET", "/session/bootstrap-policy"): _NO_TENANT_RESOURCE,
     ("POST", "/admin/provision/users"): _SAAS_SURFACE_BLOCKED,
+    # ADR-0063/0064: Platform Control Plane — IdP registration is an admin
+    # operation, not a tenant-scoped resource.
+    ("POST", "/admin/provision/identity-providers"): _SAAS_SURFACE_BLOCKED,
+    ("POST", "/admin/provision/tenant-identity-providers"): _SAAS_SURFACE_BLOCKED,
     ("GET", "/session/context"): _TENANT_SESSION_VERSION_SOURCE,
     ("POST", "/session/active-tenant"): _BODY_BORNE_EXPECTED_VERSION,
 }

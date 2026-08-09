@@ -60,7 +60,7 @@ class MutableTenantResolver:
     resolved_by: str = "verified_claim"
     membership_id_override: str | None = None
 
-    def resolve(self, *, db: Session, user_id: str | None) -> TenantContext:
+    def resolve(self, *, db: Session, user_id: str | None, claim: object = None) -> TenantContext:
         if self.membership_id_override is not None:
             return TenantContext(
                 tenant_id=self.tenant_id,
@@ -110,7 +110,7 @@ class MutableCapabilityResolver:
 
 
 class RaisingTenantResolver:
-    def resolve(self, *, db: Session, user_id: str | None) -> TenantContext:  # noqa: ARG002
+    def resolve(self, *, db: Session, user_id: str | None, claim: object = None) -> TenantContext:  # noqa: ARG002
         raise RuntimeError("secret tenant resolver failure")
 
 

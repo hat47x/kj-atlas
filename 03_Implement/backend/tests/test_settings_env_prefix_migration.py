@@ -132,16 +132,16 @@ def test_settings_normalizes_available_runtime_profile(monkeypatch) -> None:  # 
     assert loaded.runtime_profile == "enterprise-production"
 
 
-def test_settings_rejects_reserved_saas_runtime_profile(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+def test_settings_accepts_saas_runtime_profile(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    # ADR-0063 D9-6: saas-multitenant is no longer unconditionally blocked at
+    # Settings init. Startup validation is handled by TrustedSaasRuntimePolicy
+    # and the main.py lifespan preflight instead.
     _unset_related_envs()
     monkeypatch.setenv("KJ_ATLAS_RUNTIME_PROFILE", "saas-multitenant")
 
-    try:
-        Settings()
-        assert False, "Expected unfinished SaaS profile to fail fast"
-    except ValueError as exc:
-        assert "saas-multitenant is reserved and unavailable" in str(exc)
-        assert "SAAS-TENANT-01" in str(exc)
+    loaded = Settings()
+
+    assert loaded.runtime_profile == "saas-multitenant"
 
 
 def test_settings_rejects_unknown_runtime_profile(monkeypatch) -> None:  # type: ignore[no-untyped-def]
@@ -348,3 +348,88 @@ def test_settings_rejects_legacy_ce4_stub_key(monkeypatch) -> None:  # type: ign
         assert False, "Expected legacy CE4 stub key to be rejected"
     except ValueError as exc:
         assert "CE4_STUB_UNRESOLVED_CONTRACTS" in str(exc)
+
+
+# ---------------------------------------------------------------------------
+# ADR-0063: JWT / tenant claim settings validation
+# ---------------------------------------------------------------------------
+
+
+def test_jwt_algorithms_default_is_valid(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    loaded = Settings()
+    assert loaded.jwt_algorithms == "RS256,ES256"
+
+
+def test_jwt_algorithms_rejects_empty(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_JWT_ALGORITHMS", " , , ")
+    try:
+        Settings()
+        assert False, "Expected empty algorithm list to be rejected"
+    except ValueError as exc:
+        assert "at least one algorithm" in str(exc)
+
+
+def test_jwt_algorithms_rejects_unknown(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_JWT_ALGORITHMS", "RS256,NONE")
+    try:
+        Settings()
+        assert False, "Expected unknown algorithm to be rejected"
+    except ValueError as exc:
+        assert "unknown algorithms" in str(exc)
+        assert "NONE" in str(exc)
+
+
+def test_jwt_algorithms_rejects_hmac(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_JWT_ALGORITHMS", "HS256,RS256")
+    try:
+        Settings()
+        assert False, "Expected HMAC algorithm to be rejected"
+    except ValueError as exc:
+        assert "HMAC" in str(exc)
+
+
+def test_jwt_algorithms_normalizes_whitespace(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_JWT_ALGORITHMS", " ES256 , RS256 ")
+    loaded = Settings()
+    assert loaded.jwt_algorithms == "ES256,RS256"
+
+
+def test_tenant_claim_name_default_is_valid(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    loaded = Settings()
+    assert loaded.tenant_claim_name == "tenant_ref"
+
+
+def test_tenant_claim_name_rejects_empty(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_TENANT_CLAIM_NAME", "   ")
+    try:
+        Settings()
+        assert False, "Expected empty claim name to be rejected"
+    except ValueError as exc:
+        assert "must not be empty" in str(exc)
+
+
+def test_tenant_claim_name_rejects_spaces(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_TENANT_CLAIM_NAME", "tenant claim")
+    try:
+        Settings()
+        assert False, "Expected claim name with spaces to be rejected"
+    except ValueError as exc:
+        assert "must not contain spaces" in str(exc)
+
+
+def test_tenant_claim_name_rejects_leading_whitespace(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_TENANT_CLAIM_NAME", " tenant_ref")
+    try:
+        Settings()
+        assert False, "Expected claim name with leading whitespace to be rejected"
+    except ValueError as exc:
+        assert "leading/trailing whitespace" in str(exc)

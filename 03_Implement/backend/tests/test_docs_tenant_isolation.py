@@ -22,7 +22,7 @@ TIMESTAMP = "2026-07-17T00:00:00Z"
 class MutableTenantResolver:
     tenant_id: str
 
-    def resolve(self, *, db: Session, user_id: str | None) -> TenantContext:  # noqa: ARG002
+    def resolve(self, *, db: Session, user_id: str | None, claim: object = None) -> TenantContext:  # noqa: ARG002
         return TenantContext(
             tenant_id=self.tenant_id,
             membership_id=f"membership-{self.tenant_id}",

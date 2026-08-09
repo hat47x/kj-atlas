@@ -486,3 +486,56 @@ test("cross-tab switch discards a delayed AI narrative proposal for the old tena
 
   await context.close();
 });
+
+test("authentication required shows sign-in button and retry is unavailable", async ({ browser }) => {
+  const context = await browser.newContext();
+  await context.route(/^https?:\/\/[^/]+\/api\//, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/api/session/bootstrap-policy") {
+      await fulfillJson(route, 200, { tenantSessionMode: "tenant-session-required" });
+      return;
+    }
+    await fulfillJson(route, 401, {
+      detail: { code: "missing_token", message: "Authentication required" },
+    });
+  });
+
+  const page = await context.newPage();
+  await page.goto("/?locale=en");
+
+  const blockedHeading = page.getByRole("heading", { name: "We couldn't verify access" });
+  await expect(blockedHeading).toBeVisible();
+  await expect(blockedHeading).toBeFocused();
+
+  const signInButton = page.getByRole("button", { name: "Sign in" });
+  await expect(signInButton).toBeVisible();
+
+  const retryButton = page.getByRole("button", { name: "Retry" });
+  await expect(retryButton).toHaveCount(0);
+
+  await context.close();
+});
+
+test("stale session version after tenant switch surfaces 409 and blocks retry", async ({ browser }) => {
+  const state = createServerState();
+  const context = await browser.newContext();
+  await installSaasServer(context, state);
+  const page = await context.newPage();
+
+  await openWorkspace(page);
+  await expect(page.getByRole("button", { name: "tenant-a confidential card" })).toBeVisible();
+
+  state.tenantSessionVersion = "stale-version";
+
+  await page.getByRole("button", { name: "New card" }).click();
+  const editor = page.getByRole("textbox", { name: "Edit card text" });
+  await editor.fill("stale mutation after version change");
+  await editor.press("Enter");
+  await page.getByRole("button", { name: "Save" }).click();
+
+  const blockedHeading = page.getByRole("heading", { name: "We couldn't verify access" });
+  await expect(blockedHeading).toBeVisible();
+  await expect(page.getByText("stale mutation after version change", { exact: true })).toHaveCount(0);
+
+  await context.close();
+});

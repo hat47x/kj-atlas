@@ -44,7 +44,7 @@ class MutableTenantResolver:
     tenant_id: str = "tenant-a"
     resolved_by: str = "verified_claim"
 
-    def resolve(self, *, db: Session, user_id: str | None) -> TenantContext:
+    def resolve(self, *, db: Session, user_id: str | None, claim: object = None) -> TenantContext:
         assert user_id == "user-1"
         if self.resolved_by in {"verified_claim", "trusted_host_mapping"}:
             return select_active_tenant_context(
