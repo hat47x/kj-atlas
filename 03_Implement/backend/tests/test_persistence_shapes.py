@@ -1,5 +1,5 @@
 from sqlalchemy import String, Text
-from sqlalchemy.dialects import mysql
+from sqlalchemy.dialects import mssql, mysql
 from sqlalchemy.schema import CreateTable
 
 from kj_atlas_api.models import Base
@@ -8,6 +8,7 @@ from kj_atlas_api.persistence_shapes import (
     OIDC_ISSUER_MAX_CHARS,
     DataShape,
     PERSISTENT_TEXT_SPECS,
+    portable_check_constraint_sql,
 )
 
 
@@ -85,3 +86,16 @@ def test_mysql_uses_longtext_only_for_content_objects() -> None:
         PERSISTENT_TEXT_SPECS["inquiry_bundle_deletion_audit_events.journey_id"].proposed_max_chars
         == 256
     )
+
+
+def test_mssql_uses_varchar_max_and_portable_check_expressions() -> None:
+    documents_ddl = str(
+        CreateTable(Base.metadata.tables["documents"]).compile(dialect=mssql.dialect())
+    )
+    assert "payload_json VARCHAR(max)" in documents_ddl
+    assert "tenant_id VARCHAR(128)" in documents_ddl
+    assert portable_check_constraint_sql("length(trim(task)) > 0", "mssql") == (
+        "len(trim(task)) > 0"
+    )
+    assert portable_check_constraint_sql("safe_mode IS TRUE", "mssql") == "safe_mode = 1"
+    assert portable_check_constraint_sql("safe_mode IS TRUE", "postgresql") == ("safe_mode IS TRUE")

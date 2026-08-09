@@ -8,7 +8,7 @@ from sqlalchemy import engine_from_config, pool
 # ENV-ARCH-01 enforces KJ_ATLAS_* only, so remove legacy key before importing app settings.
 os.environ.pop("DATABASE_URL", None)
 
-from kj_atlas_api.db import _normalize_database_url
+from kj_atlas_api.database_support import alembic_config_database_url
 from kj_atlas_api.models import Base
 from kj_atlas_api.persistence_shapes import install_portable_text_ddl_hook
 from kj_atlas_api.settings import settings
@@ -18,7 +18,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option("sqlalchemy.url", _normalize_database_url(settings.database_url))
+config.set_main_option("sqlalchemy.url", alembic_config_database_url(settings.database_url))
 
 target_metadata = Base.metadata
 install_portable_text_ddl_hook()

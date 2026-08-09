@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sqlite3
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -18,7 +19,7 @@ def _run_alembic(db_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["KJ_ATLAS_DATABASE_URL"] = f"sqlite:///{db_path}"
     return subprocess.run(
-        ["alembic", *args],
+        [sys.executable, "-m", "alembic", *args],
         cwd=BACKEND_DIR,
         env=env,
         check=False,

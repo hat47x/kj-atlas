@@ -21,7 +21,7 @@
 - `KJ_ATLAS_DATABASE_URL`
   - 既定値: `sqlite:///./kj_atlas.db`
   - `sqlite+aiosqlite://...` / `postgresql+asyncpg://...` が与えられた場合は、Phase 1 の同期SQLAlchemy実装で扱えるよう内部で同期ドライバURLへ正規化して利用
-  - 正式対応はSQLite、PostgreSQL、MySQL 8.4、MariaDB 11.4。SQL Server、Oracle、CockroachDBは候補として管理し、実DB検証完了までは接続前に拒否
+  - 正式対応はSQLite、PostgreSQL、MySQL 8.4、MariaDB 11.4、SQL Server 2022。Oracle、CockroachDBは候補として管理し、実DB検証完了までは接続前に拒否
   - 対応状況と昇格条件: `02_Architecture/database_portability.md`
 - `KJ_ATLAS_LLM_PROVIDER`
   - 既定値: `none`
@@ -52,6 +52,14 @@ MySQL/MariaDBはoptional driverを導入し、single-tenant構成で使用しま
 pip install -e ".[mysql]"
 export KJ_ATLAS_DATABASE_URL="mysql+pymysql://user:password@localhost:3306/kj_atlas"
 # MariaDB: mariadb+pymysql://user:password@localhost:3306/kj_atlas
+alembic upgrade head
+```
+
+SQL Server 2022もoptional driverを導入し、single-tenant構成で使用します。接続先databaseは事前に作成してください。
+
+```bash
+pip install -e ".[mssql]"
+export KJ_ATLAS_DATABASE_URL="mssql+pymssql://user:password@localhost:1433/kj_atlas"
 alembic upgrade head
 ```
 

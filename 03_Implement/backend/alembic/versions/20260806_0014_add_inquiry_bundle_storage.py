@@ -42,7 +42,7 @@ def upgrade() -> None:
         sa.Column("journey_id", sa.Text(), nullable=False),
         sa.Column("payload_json", sa.Text(), nullable=False),
         sa.Column("updated_at", sa.Text(), nullable=False),
-        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="RESTRICT"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="NO ACTION"),
         sa.PrimaryKeyConstraint("tenant_id", "journey_id"),
     )
     op.create_table(
@@ -62,7 +62,7 @@ def upgrade() -> None:
             "outcome = 'deleted'",
             name="ck_inquiry_bundle_deletion_audit_outcome",
         ),
-        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="RESTRICT"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="NO ACTION"),
         sa.PrimaryKeyConstraint("event_id"),
     )
     op.create_index(

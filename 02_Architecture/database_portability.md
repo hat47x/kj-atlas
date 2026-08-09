@@ -10,7 +10,7 @@ DB対応の正本は本書とする。SQLAlchemyがdialectを提供している�
 | PostgreSQL | postgresql | Verified | named constraint DDL + RLS | 対応 | 対応 |
 | MySQL 8.4 | mysql | Verified | named constraint DDL | 対応 | 非対応 |
 | MariaDB 11.4 | mysql | Verified | named constraint DDL | 対応 | 非対応 |
-| SQL Server | mssql | Candidate | 未実装 | 未対応 | 非対応 |
+| SQL Server 2022 | mssql | Verified | named constraint DDL | 対応 | 非対応 |
 | Oracle Database | oracle | Candidate | 未実装 | 未対応 | 非対応 |
 | CockroachDB | cockroachdb | Candidate | 未実装 | 未対応 | 非対応 |
 
@@ -36,9 +36,11 @@ DB可搬性を理由に、現行の全`TEXT`列へ一律の桁数を設定しな
 
 現行ORMの永続文字列列は列単位で`persistence_shapes.py`へ分類し、新しい文字列列が未分類ならテストで停止する。内部ID 128、外部発行ID 512、URI 2048、email 320、表示名 255、timestamp 40、closed-set state 32文字を基準とし、OIDC複合lookupはissuer 512＋audience 255をAPI受入上限とする。content object以外は同カタログから`VARCHAR(n)`へ変換し、SQLite/PostgreSQL/MySQL/MariaDBのmodelとmigrationで重複定義しない。
 
-content objectはSQLite/PostgreSQLで`TEXT`、MySQL/MariaDBで`LONGTEXT`へ写像する。MySQL 8.4とMariaDB 11.4の実DBで1 MiB超のDocument roundtripを確認済みであり、MySQL familyを理由にNAS/S3を必須化しない。
+content objectはSQLite/PostgreSQLで`TEXT`、MySQL/MariaDBで`LONGTEXT`、SQL Serverで`VARCHAR(MAX)`へ写像する。MySQL 8.4、MariaDB 11.4、SQL Server 2022の実DBで1 MiB超のDocument roundtripを確認済みであり、これらのDBを理由にNAS/S3を必須化しない。
 
 MySQL familyの昇格matrixはfresh、upgrade/downgrade、tenant複合FK、case-insensitive IdP unique、1 MiB超LOB、logical backup/restoreを含む。2026-08-10のMySQL 8.4とMariaDB 11.4で、復元先の2文書と最大1,048,587文字のpayloadを照合した。このmatrixはDB family単位のparameterized testとし、将来candidateの検証契約に再利用する。
+
+SQL Server 2022も同じpromotion gateでfresh、guarded downgrade/re-upgrade、tenant複合FK、CI collation上のIdP unique、transaction rollbackとpool再利用、1 MiB超`VARCHAR(MAX)`、native backup/restoreを検証する。SQLの差分は`NO ACTION`、check expression、LOB型のportable DDL変換に閉じ込め、repository/APIにSQL Server分岐を持ち込まない。
 
 外部IdPのsubject、audience、external tenant reference等は外部仕様が任意長を許し得るが、本製品が無制限入力を索引へ格納することまでは意味しない。超過時のhash代替は同一性・監査表示を損なうため暗黙には行わず、受入上限をAPIで明示して拒否する。内部生成IDと外部発行IDを同じ型aliasへ統合しない。
 
@@ -96,4 +98,4 @@ CandidateをVerifiedへ変更するには、対象versionを固定した実DBに
 
 ## Current next step
 
-`DATA-GENERATION-01`でrevision／blob設計は確定したが、外部storageのruntime接続優先度は引き続き低く保つ。本issueではinline DB Content Storeを標準経路として、既存データ分布とAPI入力契約を照合したidentifier上限確定、bounded identifier migration、各DBのinline LOBを含む実DBmatrixを優先する。inline LOBがUnsupportedと実証されたDB、または容量・共有要件が実測された環境だけ、NAS/S3等を`content_blobs`の物理backendとして再評価する。
+`DATA-GENERATION-01`でrevision／blob設計は確定したが、外部storageのruntime接続優先度は引き続き低く保つ。inline DB Content Storeを標準経路とし、次のcandidateはOracleとCockroachDBから需要・CI負荷・ライセンス条件で選ぶ。inline LOBがUnsupportedと実証されたDB、または容量・共有要件が実測された環境だけ、NAS/S3等を`content_blobs`の物理backendとして再評価する。

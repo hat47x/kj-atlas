@@ -23,18 +23,26 @@ CONSTRAINT_NAME = "fk_document_access_admin_audit_tenant_document"
 
 
 def _assert_no_orphaned_audit_events(bind: Connection) -> None:
+    audit = sa.table(
+        TABLE_NAME,
+        sa.column("event_id"),
+        sa.column("tenant_id"),
+        sa.column("doc_id"),
+    )
+    documents = sa.table("documents", sa.column("tenant_id"), sa.column("id"))
     orphan = bind.execute(
-        sa.text(
-            """
-            SELECT audit.event_id, audit.tenant_id, audit.doc_id
-            FROM document_access_admin_audit_events AS audit
-            LEFT JOIN documents AS document
-              ON document.tenant_id = audit.tenant_id
-             AND document.id = audit.doc_id
-            WHERE document.id IS NULL
-            LIMIT 1
-            """
+        sa.select(audit.c.event_id, audit.c.tenant_id, audit.c.doc_id)
+        .select_from(
+            audit.outerjoin(
+                documents,
+                sa.and_(
+                    documents.c.tenant_id == audit.c.tenant_id,
+                    documents.c.id == audit.c.doc_id,
+                ),
+            )
         )
+        .where(documents.c.id.is_(None))
+        .limit(1)
     ).first()
     if orphan is not None:
         raise RuntimeError(
@@ -53,7 +61,7 @@ def upgrade() -> None:
                 "documents",
                 ["tenant_id", "doc_id"],
                 ["tenant_id", "id"],
-                ondelete="RESTRICT",
+                ondelete="NO ACTION",
             )
         return
 
@@ -63,7 +71,7 @@ def upgrade() -> None:
         "documents",
         ["tenant_id", "doc_id"],
         ["tenant_id", "id"],
-        ondelete="RESTRICT",
+        ondelete="NO ACTION",
     )
 
 

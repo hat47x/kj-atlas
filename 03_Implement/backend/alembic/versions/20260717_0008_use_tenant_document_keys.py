@@ -10,6 +10,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
+from kj_atlas_api.database_support import database_support_for_backend
+
 revision: str = "20260717_0008"
 down_revision: str | None = "20260717_0007"
 branch_labels: str | Sequence[str] | None = None
@@ -24,48 +26,40 @@ NEW_LOG_UNIQUE = "uq_merge_decision_logs_tenant_doc_decision"
 
 
 def _assert_existing_rows_are_consistent(bind: sa.Connection) -> None:
+    documents = sa.table("documents", sa.column("id"), sa.column("tenant_id"))
+    tenants = sa.table("tenants", sa.column("id"))
+    logs = sa.table("merge_decision_logs", sa.column("doc_id"), sa.column("tenant_id"))
     orphan_document = bind.execute(
-        sa.text(
-            """
-            SELECT 1
-            FROM documents AS d
-            LEFT JOIN tenants AS t ON t.id = d.tenant_id
-            WHERE t.id IS NULL
-            LIMIT 1
-            """
-        )
+        sa.select(sa.literal(1))
+        .select_from(documents.outerjoin(tenants, tenants.c.id == documents.c.tenant_id))
+        .where(tenants.c.id.is_(None))
+        .limit(1)
     ).first()
     if orphan_document is not None:
         raise RuntimeError("documents contains tenant_id values that do not exist in tenants")
 
     mismatched_log = bind.execute(
-        sa.text(
-            """
-            SELECT 1
-            FROM merge_decision_logs AS m
-            LEFT JOIN documents AS d
-              ON d.tenant_id = m.tenant_id
-             AND d.id = m.doc_id
-            WHERE d.id IS NULL
-            LIMIT 1
-            """
+        sa.select(sa.literal(1))
+        .select_from(
+            logs.outerjoin(
+                documents,
+                sa.and_(
+                    documents.c.tenant_id == logs.c.tenant_id,
+                    documents.c.id == logs.c.doc_id,
+                ),
+            )
         )
+        .where(documents.c.id.is_(None))
+        .limit(1)
     ).first()
     if mismatched_log is not None:
         raise RuntimeError("merge_decision_logs contains tenant/document mismatches")
 
 
 def _assert_global_document_ids_are_restorable(bind: sa.Connection) -> None:
+    documents = sa.table("documents", sa.column("id"))
     duplicate = bind.execute(
-        sa.text(
-            """
-            SELECT id
-            FROM documents
-            GROUP BY id
-            HAVING COUNT(*) > 1
-            LIMIT 1
-            """
-        )
+        sa.select(documents.c.id).group_by(documents.c.id).having(sa.func.count() > 1).limit(1)
     ).first()
     if duplicate is not None:
         raise RuntimeError(
@@ -300,7 +294,7 @@ def _constraint_ddl_upgrade(bind: sa.Connection) -> None:
         "tenants",
         ["tenant_id"],
         ["id"],
-        ondelete="RESTRICT",
+        ondelete="NO ACTION",
     )
     op.create_foreign_key(
         NEW_LOG_DOCUMENT_FK,
@@ -347,10 +341,11 @@ def _constraint_ddl_downgrade(bind: sa.Connection) -> None:
 def upgrade() -> None:
     bind = op.get_bind()
     _assert_existing_rows_are_consistent(bind)
-    if bind.dialect.name == "sqlite":
+    strategy = database_support_for_backend(bind.dialect.name).migration_strategy
+    if strategy == "sqlite-rebuild":
         _sqlite_upgrade(bind)
         return
-    if bind.dialect.name in {"postgresql", "mysql", "mariadb"}:
+    if strategy == "constraint-ddl":
         _constraint_ddl_upgrade(bind)
         return
     raise RuntimeError(f"Unsupported database dialect: {bind.dialect.name}")
@@ -359,10 +354,11 @@ def upgrade() -> None:
 def downgrade() -> None:
     bind = op.get_bind()
     _assert_global_document_ids_are_restorable(bind)
-    if bind.dialect.name == "sqlite":
+    strategy = database_support_for_backend(bind.dialect.name).migration_strategy
+    if strategy == "sqlite-rebuild":
         _sqlite_downgrade(bind)
         return
-    if bind.dialect.name in {"postgresql", "mysql", "mariadb"}:
+    if strategy == "constraint-ddl":
         _constraint_ddl_downgrade(bind)
         return
     raise RuntimeError(f"Unsupported database dialect: {bind.dialect.name}")

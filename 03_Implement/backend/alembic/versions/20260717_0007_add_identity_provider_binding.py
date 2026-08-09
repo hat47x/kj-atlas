@@ -32,11 +32,13 @@ def _index_names(inspector: sa.Inspector, table_name: str) -> set[str]:
 
 
 def _constraint_names(inspector: sa.Inspector, table_name: str) -> set[str]:
-    return {
-        constraint["name"]
-        for constraint in inspector.get_unique_constraints(table_name)
-        if constraint["name"] is not None
-    }
+    try:
+        constraints = inspector.get_unique_constraints(table_name)
+    except NotImplementedError:
+        # Some SQLAlchemy dialect/driver combinations expose unique indexes
+        # through get_indexes() but do not implement this optional reflector.
+        return set()
+    return {constraint["name"] for constraint in constraints if constraint["name"] is not None}
 
 
 def _legacy_binding(provider: str) -> tuple[str, str]:
@@ -149,7 +151,7 @@ def upgrade() -> None:
                 "identity_providers",
                 ["identity_provider_id"],
                 ["id"],
-                ondelete="RESTRICT",
+                ondelete="NO ACTION",
             )
 
     _backfill_identity_bindings(bind)

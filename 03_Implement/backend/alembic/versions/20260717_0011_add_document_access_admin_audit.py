@@ -43,7 +43,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["tenant_id"],
             ["tenants.id"],
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         sa.PrimaryKeyConstraint("event_id"),
     )

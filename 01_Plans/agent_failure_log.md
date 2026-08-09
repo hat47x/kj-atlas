@@ -281,3 +281,80 @@ Updated: 2026-08-03
 - 原因: indexとforeign keyのみをmigration依存として考慮し、PostgreSQL policy expressionの列依存を考慮していなかった。
 - 対応: 0020が対象tableのpolicy定義を`pg_policies`から保存し、型変更中だけ解除した後に同一定義を復元するようにした。
 - 再発防止: PostgreSQLの列型migrationはRLS policyの保存とfresh・downgrade・re-upgradeの実DB検証を必須とする。
+
+## 2026-08-10: Alembicがpercent-encoded DB URLを設定展開と誤認
+
+- 事象: SQL Server検証の記号入りpasswordをpercent-encodeしたURLで、Alembicがengine生成前に`invalid interpolation syntax`で停止した。
+- 原因: Alembicの`set_main_option`がConfigParserのpercent interpolationを使うのに、URLの`%`をescapeせず設定していた。
+- 対応: 正規化後URLをAlembic設定に入れる直前だけ`%`を`%%`へescapeし、SQLAlchemyが受け取る値は元のURLに戻るようにした。
+- 再発防止: migration testにpercent-encoded passwordを含むURLのAlembic設定契約を追加する。
+
+## 2026-08-10: identity duplicate probeのLIMITがSQL Serverで停止
+
+- 事象: SQL Server 2022 fresh migrationのrevision 0005で、case-insensitive duplicate検査の`LIMIT 1`が構文エラーになった。
+- 原因: migrationの読取queryを汎用SQLAlchemy式ではなくSQLite/PostgreSQL/MySQL系のraw SQLで書いていた。
+- 対応: duplicate probeをSQLAlchemy Coreの`select().group_by().having().limit()`へ変更し、dialectに`TOP`または`LIMIT`をコンパイルさせる。SQL ServerではDBのCI collation付き元unique制約を利用する。
+- 再発防止: migration内の一般DMLはrawな件数制限構文を避け、SQLAlchemy Core式を優先する。
+
+## 2026-08-10: SQL ServerがON DELETE RESTRICTを拒否
+
+- 事象: SQL Server 2022 fresh migrationのrevision 0007で、foreign keyの`ON DELETE RESTRICT`が構文エラーになった。
+- 原因: SQL Serverは同じ参照中削除拒否の意味に`NO ACTION`を使い、`RESTRICT`キーワードを受理しない。
+- 対応: 非遅延foreign keyで同じ振る舞いになる`NO ACTION`へORMとmigrationを統一した。
+- 再発防止: 参照中削除拒否の共通DDLは、全verified/candidate DBが受理する`NO ACTION`を用いる。
+
+## 2026-08-10: pymssql dialectがunique constraint reflectionを未実装
+
+- 事象: SQL Server 2022 fresh migrationのrevision 0007で、`Inspector.get_unique_constraints()`が`NotImplementedError`を返した。
+- 原因: SQLAlchemyのpymssql dialectはこのoptional reflection APIを実装しておらず、unique indexは`get_indexes()`側で取得する構成だった。
+- 対応: optional reflectorが未実装の場合は空集合とし、従来から併用しているindex reflectionで判定を継続する。
+- 再発防止: Inspectorのoptional APIをmigration gateに使う場合は、未実装dialectでも代替reflectionが成立するようにする。
+
+## 2026-08-10: tenant-key整合性probeのLIMITがSQL Serverで停止
+
+- 事象: SQL Server 2022 fresh migrationのrevision 0008で、orphan・tenant mismatch・duplicate検査のraw `LIMIT 1`が構文エラーになった。
+- 原因: revision 0005と同種の件数制限SQLが、tenant-keyとadmin audit FKの事前検査にも残っていた。
+- 対応: outer join・group by・havingを含む全4probeをSQLAlchemy Core式へ変更し、dialect別の件数制限はcompilerへ委譲した。
+- 再発防止: Alembic migration内の`LIMIT`を静的検索し、対応DBに依存するraw構文を残さない。
+
+## 2026-08-10: tenant-key migration strategyがSQL Serverを未登録
+
+- 事象: SQL Server 2022 fresh migrationのrevision 0008で、実行可能なnamed constraint DDLを持つにもかかわらず`Unsupported database dialect`で停止した。
+- 原因: MySQL family昇格時にconstraint DDL strategyの許可集合を個別backend名で更新し、次候補のSQL Serverを未登録のままにしていた。
+- 対応: SQL Serverを同じnamed constraint DDL strategyに追加した。
+- 再発防止: 後続でdialect名の直接集合をcapability-based migration helperへ置き換え、registryと実行strategyの二重管理を解消する。
+
+## 2026-08-10: SQL Server check constraintがlength関数を拒否
+
+- 事象: SQL Server 2022 fresh migrationのrevision 0010で、check constraint内の`length(trim(...))`が未知の関数として停止した。
+- 原因: CheckConstraintがraw SQL文字列であり、SQLAlchemyの関数compilerを経由せず、SQL Serverが必要とする`LEN`へ変換されなかった。
+- 対応: 歴史create-table用の集約DDL hookでSQL Serverのみ`length(`を`len(`へ変換した。content objectも同じ集約点で`VARCHAR(MAX)`へ写像した。
+- 再発防止: 型・照合順序・check式のDDL差分は個々のmodel/migrationではなくportable DDL hookに集約する。
+
+## 2026-08-10: SQL Server check constraintがIS TRUEを拒否
+
+- 事象: SQL Server 2022 fresh migrationのrevision 0018で、BIT型の`safe_mode IS TRUE`制約が構文エラーになった。
+- 原因: SQL Serverはboolean literalと`IS TRUE/FALSE`構文を持たず、BIT列は1/0と比較する必要がある。
+- 対応: portable DDL hookでSQL Serverのcheck式だけ`IS TRUE/FALSE`を`= 1/0`へ変換する。
+- 再発防止: raw CheckConstraintの論理値表現もportable DDL変換のテスト対象に含める。
+
+## 2026-08-10: SQL Server portable text downgradeがPK依存で停止
+
+- 事象: SQL Server 2022の0020 downgradeが、primary key依存中のidentifierを`VARCHAR(MAX)`へ変更しようとして停止した。
+- 原因: SQL Server fresh schemaは歴史DDL hookにより0019時点で既にbounded型だが、0020 downgradeがSQLite/PostgreSQLの履歴的`TEXT`形状へ一律に戻そうとした。
+- 対応: MySQL familyと同様、SQL Serverの0020 downgradeを物理no-opとし、実際の0019 fresh shapeを維持する。
+- 再発防止: migration downgradeの目標型は論理revisionだけでなく、対象familyのfresh DDL hook適用後形状と照合する。
+
+## 2026-08-10: SQL Serverの自動命名default constraintがcolumn dropを防止
+
+- 事象: SQL Server 2022 downgradeのrevision 0014で、server default付き`protocol`列の削除が、自動命名されたdefault constraint依存により停止した。
+- 原因: SQL Serverはdefaultを列属性ではなく独立constraintとして作成し、列削除前の明示削除が必要だった。
+- 対応: Alembicの`mssql_drop_default=True`を付け、カタログから実constraint名を解決して先に削除する。
+- 再発防止: server default付き列をdowngradeで削除するmigrationはSQL Serverのdefault dependencyも検証する。
+
+## 2026-08-10: admin audit migration testがbare Alembicへ依存
+
+- 事象: `NO ACTION`回帰のSQLite migration test 4件が、PATH上に`alembic`実行fileがなくtest本体前に停止した。
+- 原因: 当該testが他の修正済みmigration testと異なり、bare command名を残していた。
+- 対応: `sys.executable -m alembic`でpytestと同じPython環境を使うように統一した。
+- 再発防止: migration testのsubprocess起動にbare `alembic`が残っていないことを静的検索する。

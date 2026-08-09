@@ -37,6 +37,9 @@ postgres = [
 mysql = [
   "pymysql>=1.1,<2",
 ]
+mssql = [
+  "pymssql>=2.3,<3",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -52,6 +55,7 @@ pythonpath = [
 markers = [
   "postgres: tests that require PostgreSQL",
   "mysql: tests that require MySQL or MariaDB",
+  "mssql: tests that require Microsoft SQL Server",
   "auth_level1: required AuthContext contract coverage",
   "auth_level2: conditional federation fixture coverage",
   "external_llm: tests that require any OpenAI-compatible adapter on port 8001",

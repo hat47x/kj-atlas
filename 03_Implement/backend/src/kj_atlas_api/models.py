@@ -54,7 +54,7 @@ class ContentObjectReferenceRow(Base):
     content_id: Mapped[str] = mapped_column(Text, primary_key=True)
     tenant_id: Mapped[str] = mapped_column(
         Text,
-        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        ForeignKey("tenants.id", ondelete="NO ACTION"),
         nullable=False,
     )
     storage_backend: Mapped[str] = mapped_column(Text, nullable=False)
@@ -104,13 +104,13 @@ class ContentBlobRow(Base):
             ["tenant_id", "base_digest"],
             ["content_blobs.tenant_id", "content_blobs.content_digest"],
             name="fk_content_blobs_base",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         Index("ix_content_blobs_tenant_state", "tenant_id", "storage_state"),
     )
 
     tenant_id: Mapped[str] = mapped_column(
-        Text, ForeignKey("tenants.id", ondelete="RESTRICT"), primary_key=True
+        Text, ForeignKey("tenants.id", ondelete="NO ACTION"), primary_key=True
     )
     content_digest: Mapped[str] = mapped_column(Text, primary_key=True)
     storage_backend: Mapped[str] = mapped_column(Text, nullable=False)
@@ -136,13 +136,13 @@ class AiGenerationRunRow(Base):
             ["tenant_id", "output_digest"],
             ["content_blobs.tenant_id", "content_blobs.content_digest"],
             name="fk_ai_generation_runs_output_blob",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         Index("ix_ai_generation_runs_tenant_created", "tenant_id", "created_at"),
     )
 
     tenant_id: Mapped[str] = mapped_column(
-        Text, ForeignKey("tenants.id", ondelete="RESTRICT"), primary_key=True
+        Text, ForeignKey("tenants.id", ondelete="NO ACTION"), primary_key=True
     )
     ai_run_id: Mapped[str] = mapped_column(Text, primary_key=True)
     task: Mapped[str] = mapped_column(Text, nullable=False)
@@ -181,19 +181,19 @@ class CanvasRevisionRow(Base):
             ["tenant_id", "content_digest"],
             ["content_blobs.tenant_id", "content_blobs.content_digest"],
             name="fk_canvas_revisions_blob",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         ForeignKeyConstraint(
             ["tenant_id", "source_revision_id"],
             ["canvas_revisions.tenant_id", "canvas_revisions.revision_id"],
             name="fk_canvas_revisions_source",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         ForeignKeyConstraint(
             ["tenant_id", "ai_run_ref"],
             ["ai_generation_runs.tenant_id", "ai_generation_runs.ai_run_id"],
             name="fk_canvas_revisions_ai_run",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         Index("ix_canvas_revisions_tenant_doc_created", "tenant_id", "doc_id", "created_at"),
     )
@@ -229,7 +229,7 @@ class CanvasRevisionParentRow(Base):
             ["tenant_id", "parent_revision_id"],
             ["canvas_revisions.tenant_id", "canvas_revisions.revision_id"],
             name="fk_canvas_revision_parents_parent",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         UniqueConstraint(
             "tenant_id",
@@ -260,7 +260,7 @@ class CanvasRevisionHeadRow(Base):
             ["tenant_id", "revision_id"],
             ["canvas_revisions.tenant_id", "canvas_revisions.revision_id"],
             name="fk_canvas_revision_heads_revision",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
     )
 
@@ -323,7 +323,7 @@ class GenerationDeletionAuditEventRow(Base):
 
     event_id: Mapped[str] = mapped_column(Text, primary_key=True)
     tenant_id: Mapped[str] = mapped_column(
-        Text, ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False
+        Text, ForeignKey("tenants.id", ondelete="NO ACTION"), nullable=False
     )
     target_kind: Mapped[str] = mapped_column(Text, nullable=False)
     target_ref: Mapped[str] = mapped_column(Text, nullable=False)
@@ -404,7 +404,7 @@ class DocumentRow(Base):
 
     tenant_id: Mapped[str] = mapped_column(
         Text,
-        ForeignKey("tenants.id", name="fk_documents_tenant_id", ondelete="RESTRICT"),
+        ForeignKey("tenants.id", name="fk_documents_tenant_id", ondelete="NO ACTION"),
         primary_key=True,
         nullable=False,
         default=LOCAL_DEFAULT_TENANT_ID,
@@ -455,7 +455,7 @@ class DocumentAccessAdminAuditEventRow(Base):
             ["tenant_id", "doc_id"],
             ["documents.tenant_id", "documents.id"],
             name="fk_document_access_admin_audit_tenant_document",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         CheckConstraint(
             "action = 'document.policy.update'",
@@ -475,7 +475,7 @@ class DocumentAccessAdminAuditEventRow(Base):
     event_id: Mapped[str] = mapped_column(Text, primary_key=True)
     tenant_id: Mapped[str] = mapped_column(
         Text,
-        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        ForeignKey("tenants.id", ondelete="NO ACTION"),
         nullable=False,
     )
     principal_id: Mapped[str] = mapped_column(Text, nullable=False)
@@ -500,7 +500,7 @@ class InquiryBundleRow(Base):
 
     tenant_id: Mapped[str] = mapped_column(
         Text,
-        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        ForeignKey("tenants.id", ondelete="NO ACTION"),
         primary_key=True,
     )
     journey_id: Mapped[str] = mapped_column(Text, primary_key=True)
@@ -531,7 +531,7 @@ class InquiryBundleDeletionAuditEventRow(Base):
     event_id: Mapped[str] = mapped_column(Text, primary_key=True)
     tenant_id: Mapped[str] = mapped_column(
         Text,
-        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        ForeignKey("tenants.id", ondelete="NO ACTION"),
         nullable=False,
     )
     journey_id: Mapped[str] = mapped_column(Text, nullable=False)
@@ -581,7 +581,7 @@ class UserIdentityRow(Base):
     external_uid: Mapped[str] = mapped_column(Text, nullable=False)
     identity_provider_id: Mapped[str | None] = mapped_column(
         Text,
-        ForeignKey("identity_providers.id", ondelete="RESTRICT"),
+        ForeignKey("identity_providers.id", ondelete="NO ACTION"),
         nullable=True,
     )
     subject: Mapped[str | None] = mapped_column(Text, nullable=True)

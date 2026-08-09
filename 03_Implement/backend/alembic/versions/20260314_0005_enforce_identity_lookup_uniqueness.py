@@ -21,14 +21,20 @@ def _has_index(inspector: sa.Inspector, table_name: str, index_name: str) -> boo
 
 
 def _has_case_insensitive_duplicates(bind: sa.Connection) -> bool:
-    duplicate_probe = sa.text(
-        """
-        SELECT 1
-        FROM user_identities
-        GROUP BY lower(provider), lower(external_uid)
-        HAVING COUNT(*) > 1
-        LIMIT 1
-        """
+    identities = sa.table(
+        "user_identities",
+        sa.column("provider"),
+        sa.column("external_uid"),
+    )
+    duplicate_probe = (
+        sa.select(sa.literal(1))
+        .select_from(identities)
+        .group_by(
+            sa.func.lower(identities.c.provider),
+            sa.func.lower(identities.c.external_uid),
+        )
+        .having(sa.func.count() > 1)
+        .limit(1)
     )
     return bind.execute(duplicate_probe).first() is not None
 
@@ -49,7 +55,7 @@ def upgrade() -> None:
     # MySQL-family fresh DDL gives these columns an explicit
     # utf8mb4_unicode_ci collation. The original composite unique constraint
     # therefore already enforces the same case-insensitive identity.
-    if bind.dialect.name in {"mysql", "mariadb"}:
+    if bind.dialect.name in {"mysql", "mariadb", "mssql"}:
         return
 
     if not _has_index(
@@ -70,7 +76,7 @@ def downgrade() -> None:
     if not inspector.has_table("user_identities"):
         return
 
-    if bind.dialect.name in {"mysql", "mariadb"}:
+    if bind.dialect.name in {"mysql", "mariadb", "mssql"}:
         return
 
     op.execute(sa.text("DROP INDEX IF EXISTS uq_user_identities_provider_lower_external_uid"))

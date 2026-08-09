@@ -60,12 +60,12 @@ def upgrade() -> None:
         sa.CheckConstraint("byte_size >= 0", name="ck_content_blobs_byte_size"),
         sa.CheckConstraint("stored_byte_size >= 0", name="ck_content_blobs_stored_byte_size"),
         sa.CheckConstraint("length(content_digest) = 64", name="ck_content_blobs_digest_length"),
-        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="RESTRICT"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="NO ACTION"),
         sa.ForeignKeyConstraint(
             ["tenant_id", "base_digest"],
             ["content_blobs.tenant_id", "content_blobs.content_digest"],
             name="fk_content_blobs_base",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         sa.PrimaryKeyConstraint("tenant_id", "content_digest"),
     )
@@ -103,13 +103,13 @@ def upgrade() -> None:
             ["tenant_id", "content_digest"],
             ["content_blobs.tenant_id", "content_blobs.content_digest"],
             name="fk_canvas_revisions_blob",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         sa.ForeignKeyConstraint(
             ["tenant_id", "source_revision_id"],
             ["canvas_revisions.tenant_id", "canvas_revisions.revision_id"],
             name="fk_canvas_revisions_source",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         sa.PrimaryKeyConstraint("tenant_id", "revision_id"),
     )
@@ -138,7 +138,7 @@ def upgrade() -> None:
             ["tenant_id", "parent_revision_id"],
             ["canvas_revisions.tenant_id", "canvas_revisions.revision_id"],
             name="fk_canvas_revision_parents_parent",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         sa.PrimaryKeyConstraint("tenant_id", "revision_id", "parent_revision_id"),
         sa.UniqueConstraint(
@@ -165,7 +165,7 @@ def upgrade() -> None:
             ["tenant_id", "revision_id"],
             ["canvas_revisions.tenant_id", "canvas_revisions.revision_id"],
             name="fk_canvas_revision_heads_revision",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         sa.PrimaryKeyConstraint("tenant_id", "doc_id", "head_name"),
     )

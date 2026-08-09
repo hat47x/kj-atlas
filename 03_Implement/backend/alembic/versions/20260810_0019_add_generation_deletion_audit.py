@@ -50,7 +50,7 @@ def upgrade() -> None:
             "AND storage_backend IS NOT NULL)",
             name="ck_generation_deletion_audit_target_shape",
         ),
-        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="RESTRICT"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="NO ACTION"),
         sa.PrimaryKeyConstraint("event_id"),
     )
     op.create_index(

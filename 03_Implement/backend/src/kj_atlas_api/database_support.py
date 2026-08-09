@@ -44,10 +44,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=True,
         inline_content="verified",
     ),
-    # Candidate entries are intentionally rejected by runtime and Alembic until
-    # their schema/migration matrix passes against the real database. Keeping
-    # candidates here prevents database-specific conditionals spreading across
-    # settings, runtime, migrations, and documentation.
+    # Verified and candidate entries stay together so capability decisions do
+    # not spread across settings, runtime, migrations, and documentation.
     "mysql": DatabaseSupport(
         backend="mysql",
         family="mysql",
@@ -67,10 +65,10 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
     "mssql": DatabaseSupport(
         backend="mssql",
         family="mssql",
-        support_level="candidate",
-        migration_strategy="unimplemented",
+        support_level="verified",
+        migration_strategy="constraint-ddl",
         shared_schema_saas=False,
-        inline_content="candidate",
+        inline_content="verified",
     ),
     "oracle": DatabaseSupport(
         backend="oracle",
@@ -97,7 +95,7 @@ def database_support_for_backend(backend: str) -> DatabaseSupport:
     if support is None:
         raise ValueError(
             f"Unsupported database backend: {normalized_backend or '<empty>'}. "
-            "Verified backends: sqlite, postgresql, mysql, mariadb"
+            "Verified backends: sqlite, postgresql, mysql, mariadb, mssql"
         )
     return support
 
@@ -116,7 +114,7 @@ def require_verified_database_url(database_url: str) -> DatabaseSupport:
         raise ValueError(
             f"Database backend '{support.backend}' is a candidate, not a verified runtime. "
             "Its identifier types and Alembic migration matrix must be completed before use. "
-            "Verified backends: sqlite, postgresql, mysql, mariadb"
+            "Verified backends: sqlite, postgresql, mysql, mariadb, mssql"
         )
     return support
 
@@ -133,6 +131,11 @@ def normalize_sync_database_url(database_url: str) -> str:
 
     # URL.__str__ masks passwords, which would pass literal *** to the driver.
     return url.render_as_string(hide_password=False)
+
+
+def alembic_config_database_url(database_url: str) -> str:
+    """Return a normalized URL escaped for ConfigParser interpolation."""
+    return normalize_sync_database_url(database_url).replace("%", "%%")
 
 
 def registered_database_support() -> tuple[DatabaseSupport, ...]:

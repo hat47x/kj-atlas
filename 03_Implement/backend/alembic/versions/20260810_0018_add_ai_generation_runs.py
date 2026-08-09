@@ -40,12 +40,12 @@ def upgrade() -> None:
             "length(output_digest) = 64", name="ck_ai_generation_runs_output_digest"
         ),
         sa.CheckConstraint("safe_mode IS TRUE", name="ck_ai_generation_runs_safe_mode"),
-        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="RESTRICT"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="NO ACTION"),
         sa.ForeignKeyConstraint(
             ["tenant_id", "output_digest"],
             ["content_blobs.tenant_id", "content_blobs.content_digest"],
             name="fk_ai_generation_runs_output_blob",
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         ),
         sa.PrimaryKeyConstraint("tenant_id", "ai_run_id"),
     )
@@ -61,7 +61,7 @@ def upgrade() -> None:
             _TABLE,
             ["tenant_id", "ai_run_ref"],
             ["tenant_id", "ai_run_id"],
-            ondelete="RESTRICT",
+            ondelete="NO ACTION",
         )
     if op.get_bind().dialect.name == "postgresql":
         op.execute(sa.text(f"ALTER TABLE {_TABLE} ENABLE ROW LEVEL SECURITY"))

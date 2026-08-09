@@ -82,4 +82,4 @@ def downgrade() -> None:
         )
     op.drop_column("tenant_identity_providers", "external_tenant_ref")
     op.drop_column("identity_providers", "jwks_uri")
-    op.drop_column("identity_providers", "protocol")
+    op.drop_column("identity_providers", "protocol", mssql_drop_default=True)

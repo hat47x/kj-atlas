@@ -121,9 +121,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    if op.get_bind().dialect.name in {"mysql", "mariadb"}:
-        # Fresh MySQL-family schemas were already bounded by the historical
-        # DDL hook before this revision, so their 0019 shape is still VARCHAR.
+    if op.get_bind().dialect.name in {"mysql", "mariadb", "mssql"}:
+        # Fresh MySQL-family and SQL Server schemas were already bounded by the
+        # historical DDL hook before this revision, so their 0019 shape is
+        # still VARCHAR.
         return
     _alter(bounded=False)
     _restore_sqlite_expression_indexes()

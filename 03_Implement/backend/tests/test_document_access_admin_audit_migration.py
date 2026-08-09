@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sqlite3
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -21,7 +22,7 @@ def _run_alembic(db_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["KJ_ATLAS_DATABASE_URL"] = f"sqlite:///{db_path}"
     return subprocess.run(
-        ["alembic", *args],
+        [sys.executable, "-m", "alembic", *args],
         cwd=BACKEND_DIR,
         env=env,
         check=False,
@@ -78,7 +79,7 @@ def test_model_declares_tenant_document_composite_foreign_key() -> None:
         == {"documents.tenant_id", "documents.id"}
     ]
     assert len(document_constraints) == 1
-    assert document_constraints[0].ondelete == "RESTRICT"
+    assert document_constraints[0].ondelete == "NO ACTION"
 
 
 def test_migration_upgrades_existing_valid_audit_rows_without_loss(tmp_path: Path) -> None:

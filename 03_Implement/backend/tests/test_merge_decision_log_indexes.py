@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 from sqlalchemy import create_engine, inspect
@@ -40,7 +41,12 @@ def test_merge_decision_log_indexes_created_by_alembic_upgrade_head(tmp_path) ->
     env = os.environ.copy()
     env["KJ_ATLAS_DATABASE_URL"] = f"sqlite:///{db_path}"
 
-    subprocess.run(["alembic", "upgrade", "head"], check=True, cwd=BACKEND_DIR, env=env)
+    subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        check=True,
+        cwd=BACKEND_DIR,
+        env=env,
+    )
 
     index_names = _index_names(env["KJ_ATLAS_DATABASE_URL"])
     assert "ix_merge_decision_logs_doc_group_id" in index_names

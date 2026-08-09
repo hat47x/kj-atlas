@@ -16,12 +16,12 @@
 
 ## 対応方針
 
-- 実施したこと: ORMと加算migration`20260720_0012`へtenant/doc複合外部キーを追加した。`ON DELETE RESTRICT`とし、監査を暗黙に連鎖削除せず、未確定のDocument lifecycleを先取りしないfail-closed境界にした。既存DBに孤立・越境監査行がある場合はmigrationを停止し、暗黙修復・削除しない。SQLite migration testで制約形状と別tenant文書への監査挿入拒否を固定した。
+- 実施したこと: ORMと加算migration`20260720_0012`へtenant/doc複合外部キーを追加した。参照中削除を拒否する`ON DELETE NO ACTION`（非遅延制約で`RESTRICT`と同等）とし、監査を暗黙に連鎖削除せず、未確定のDocument lifecycleを先取りしないfail-closed境界にした。既存DBに孤立・越境監査行がある場合はmigrationを停止し、暗黙修復・削除しない。SQLite migration testで制約形状と別tenant文書への監査挿入拒否を固定した。
 - 実施しないこと: Document削除API、監査保持期限、監査削除手順、既存AC-3の意味変更。
 
 ## 受入条件
 
-- [x] `DocumentAccessAdminAuditEventRow`へtenant/doc複合制約を`ON DELETE RESTRICT`で追加する。
+- [x] `DocumentAccessAdminAuditEventRow`へtenant/doc複合制約を`ON DELETE NO ACTION`で追加し、参照中削除をfail closedにする。
 - [x] 既存の監査挿入経路を壊さず、migrationと近接テストがgreenであることを確認する。
 
 ## 検証計画

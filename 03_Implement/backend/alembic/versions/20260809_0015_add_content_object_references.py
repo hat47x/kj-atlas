@@ -54,7 +54,7 @@ def upgrade() -> None:
             "length(sha256_digest) = 64",
             name="ck_content_object_references_digest_length",
         ),
-        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="RESTRICT"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="NO ACTION"),
         sa.PrimaryKeyConstraint("content_id"),
     )
     op.create_index(

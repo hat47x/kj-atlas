@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum
 
-from sqlalchemy import MetaData, String, Table, Text, event
+from sqlalchemy import CheckConstraint, MetaData, String, Table, Text, event, text
 from sqlalchemy.dialects.mysql import LONGTEXT
+from sqlalchemy.dialects.mssql import VARCHAR as MSSQL_VARCHAR
 
 
 class DataShape(str, Enum):
@@ -39,6 +40,13 @@ STATE = _bounded(32, "closed-set lifecycle, action, decision, or protocol discri
 OIDC_ISSUER_MAX_CHARS = 512
 OIDC_AUDIENCE_MAX_CHARS = 255
 URI_MAX_CHARS = 2048
+
+
+def portable_check_constraint_sql(sql: str, backend: str) -> str:
+    """Normalize the small closed set of raw check-expression differences."""
+    if backend != "mssql":
+        return sql
+    return sql.replace("length(", "len(").replace(" IS TRUE", " = 1").replace(" IS FALSE", " = 0")
 
 
 # This catalog is intentionally explicit. A coverage test rejects every new SQLAlchemy
@@ -210,7 +218,10 @@ def apply_persistent_text_shapes(metadata: MetaData) -> None:
             table.columns[column_name].type = String(spec.proposed_max_chars)
         else:
             table.columns[column_name].type = (
-                Text().with_variant(LONGTEXT(), "mysql").with_variant(LONGTEXT(), "mariadb")
+                Text()
+                .with_variant(LONGTEXT(), "mysql")
+                .with_variant(LONGTEXT(), "mariadb")
+                .with_variant(MSSQL_VARCHAR(None), "mssql")
             )
 
 
@@ -221,6 +232,14 @@ def install_portable_text_ddl_hook() -> None:
 
     @event.listens_for(Table, "before_create", propagate=True)
     def _apply_before_create(table: Table, _connection, **_kwargs: object) -> None:
+        if _connection.dialect.name == "mssql":
+            for constraint in table.constraints:
+                if isinstance(constraint, CheckConstraint):
+                    constraint.sqltext = text(
+                        portable_check_constraint_sql(
+                            str(constraint.sqltext), _connection.dialect.name
+                        )
+                    )
         for column in table.columns:
             spec = PERSISTENT_TEXT_SPECS.get(f"{table.name}.{column.name}")
             if (
@@ -230,6 +249,14 @@ def install_portable_text_ddl_hook() -> None:
                 and isinstance(column.type, Text)
             ):
                 column.type = LONGTEXT()
+                continue
+            if (
+                spec is not None
+                and spec.proposed_max_chars is None
+                and _connection.dialect.name == "mssql"
+                and isinstance(column.type, Text)
+            ):
+                column.type = MSSQL_VARCHAR(None)
                 continue
             if (
                 spec is not None

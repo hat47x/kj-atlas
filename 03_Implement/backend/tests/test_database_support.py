@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from kj_atlas_api.database_support import (
+    alembic_config_database_url,
     database_support_for_backend,
     database_support_for_url,
     normalize_sync_database_url,
@@ -18,6 +19,7 @@ def test_verified_database_capabilities_are_explicit() -> None:
     postgres = database_support_for_backend("postgresql")
     mysql = database_support_for_backend("mysql")
     mariadb = database_support_for_backend("mariadb")
+    mssql = database_support_for_backend("mssql")
 
     assert sqlite.is_verified is True
     assert sqlite.migration_strategy == "sqlite-rebuild"
@@ -33,12 +35,22 @@ def test_verified_database_capabilities_are_explicit() -> None:
         assert support.migration_strategy == "constraint-ddl"
         assert support.shared_schema_saas is False
         assert support.inline_content == "verified"
+    assert mssql.is_verified is True
+    assert mssql.family == "mssql"
+    assert mssql.migration_strategy == "constraint-ddl"
+    assert mssql.shared_schema_saas is False
+    assert mssql.inline_content == "verified"
+
+
+def test_alembic_config_url_escapes_percent_encoding_without_exposing_credentials() -> None:
+    url = "mssql+pymssql://user:encoded%21password@db/kj_atlas"
+
+    assert alembic_config_database_url(url) == url.replace("%", "%%")
 
 
 @pytest.mark.parametrize(
     ("url", "backend", "family"),
     [
-        ("mssql+pyodbc://user:secret@db/kj_atlas", "mssql", "mssql"),
         ("oracle+oracledb://user:secret@db/kj_atlas", "oracle", "oracle"),
         ("cockroachdb://user:secret@db/kj_atlas", "cockroachdb", "cockroachdb"),
     ],
@@ -94,7 +106,7 @@ def test_registry_has_no_duplicate_backends() -> None:
 def test_settings_rejects_candidate_before_engine_creation(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.setenv(
         "KJ_ATLAS_DATABASE_URL",
-        "mssql+pyodbc://sensitive-user:secret-password@db/kj_atlas",
+        "oracle+oracledb://sensitive-user:secret-password@db/kj_atlas",
     )
 
     with pytest.raises(ValidationError) as captured:
