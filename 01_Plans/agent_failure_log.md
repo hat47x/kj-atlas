@@ -78,3 +78,10 @@ Updated: 2026-08-03
 - 原因: validatorが`01_Plans/issues/`配下にあることを確認せず、記憶したパスを使用した。
 - 対応: `rg --files`で実体を確認し、`python 01_Plans/issues/validate_active_issue_memos.py`で再実行する。
 - 再発防止: リポジトリ内スクリプトは実行前に`rg --files`で現在の配置を確認する。
+
+## 2026-08-09: Python 3.10で`StrEnum`を使用して新規テスト収集に失敗
+
+- 事象: 永続列分類テストが`ImportError: cannot import name 'StrEnum'`で収集失敗した。初回実行ではpytestのcapture一時ファイル消失も重なり、原因が表示されなかった。
+- 原因: 開発時にPython 3.11追加の`enum.StrEnum`を選び、backendのPython 3.10互換性を確認していなかった。
+- 対応: `class DataShape(str, Enum)`へ変更し、captureを無効化して再実行して3件passを確認した。
+- 再発防止: backendの新規標準ライブラリAPIはPython 3.10で利用可能か確認し、不可なら互換表現を使う。pytest capture自体が失敗した場合は`-s`で本来の収集エラーを確認する。

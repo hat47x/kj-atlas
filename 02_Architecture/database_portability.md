@@ -34,6 +34,10 @@ DB可搬性を理由に、現行の全`TEXT`列へ一律の桁数を設定しな
 | Bounded descriptive text | 表示名、email、URI、状態値 | 入力契約と業務上限を先に定義し、検索・索引要件に応じた型にする |
 | Content object | `documents.payload_json`、inquiry bundle、判断ログpayload | 内容を切り詰めない。サイズ上限はDoS対策・運用容量として別途定義し、DB列長と混同しない |
 
+現行ORMの棚卸し結果は74 `TEXT`列（identifier 36、bounded descriptive text 35、content object 3）である。列単位の正本は`persistence_shapes.py`とし、ORMへ新しい`TEXT`列を追加したとき未分類ならテストで停止する。提案上限は、内部ID 128、外部発行ID 512、URI 2048、email 320、表示名 255、timestamp 40、closed-set state 32文字を基準とする。これはmigration候補値であり、既存データ分布、API入力契約、UTF-8索引byte数を確認するまでは物理制約として適用しない。
+
+外部IdPのsubject、audience、external tenant reference等は外部仕様が任意長を許し得るが、本製品が無制限入力を索引へ格納することまでは意味しない。超過時のhash代替は同一性・監査表示を損なうため暗黙には行わず、受入上限をAPIで明示して拒否する。内部生成IDと外部発行IDを同じ型aliasへ統合しない。
+
 Content objectの保存先はrepositoryから直接選ばない。将来の`ContentStore` portを介し、少なくとも次の実装候補を同じ契約で扱う。
 
 - `database`: 現行互換の既定。本文をDB transaction内に保持する。
@@ -57,4 +61,4 @@ CandidateをVerifiedへ変更するには、対象versionを固定した実DBに
 
 ## Current next step
 
-次の作業はDB製品の昇格より先にdata-shape inventoryを行う。識別子は意味別の生成・受入規則を確定し、content objectは保存先非依存のport、参照metadata、障害時状態遷移を設計する。その結果に基づいてbounded identifier migrationを行い、その後にMySQL/MariaDBのmigration strategyと実DBmatrixへ進む。需要が変わった場合、同じpromotion gateを使ってSQL Server、Oracle、CockroachDBを先行させてもよい。
+data-shape inventoryは完了した。次に既存データ分布とAPI入力契約を照合して提案上限を確定し、content objectの保存先非依存port、参照metadata、障害時状態遷移を設計する。その後にbounded identifier migrationを行い、MySQL/MariaDBのmigration strategyと実DBmatrixへ進む。需要が変わった場合、同じpromotion gateを使ってSQL Server、Oracle、CockroachDBを先行させてもよい。

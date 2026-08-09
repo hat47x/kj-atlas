@@ -28,7 +28,7 @@
 - [x] AC-1: SQLite/PostgreSQLのverified状態とmigration strategyが一か所で定義される。
 - [x] AC-2: MySQL/MariaDB、SQL Server、Oracle、CockroachDBがcandidateとして分類され、runtimeではfail-fastになる。
 - [x] AC-3: DB URLエラーがcredentialやURL全体を反射しない。
-- [ ] AC-4: 全永続列がidentifier／bounded descriptive text／content objectへ棚卸しされ、identifierの意味別最大長と受入規則が定義される。
+- [x] AC-4: 全永続列がidentifier／bounded descriptive text／content objectへ棚卸しされ、identifierの意味別最大長と受入規則が定義される。
 - [ ] AC-4a: identifier/index文字列が棚卸し結果に基づくbounded portable型へ移行され、SQLite/PostgreSQL回帰が通る。
 - [ ] AC-4b: `ContentStore` port、DB実装、object参照metadata、digest検証、障害時状態遷移、orphan回収契約が設計される。object storageの実装・既定化は別issueで扱える。
 - [ ] AC-5: MySQL/MariaDBでfresh migration、roundtrip、複合制約、upgrade/downgradeが実DBで通る。
@@ -49,6 +49,13 @@
 - `documents.payload_json`、`inquiry_bundles.payload_json`、`merge_decision_logs.payload_json`はcontent object候補であり、identifier migrationとは別トラックにした。本文をDB可搬性のために切り詰めない。
 - 保存先は当面DBを維持する。将来S3互換storageまたはfile serviceへ移せるportを設計するが、DB/object間の原子的commitを仮定せず、pending／ready／deleting／failed等の状態遷移、再試行、digest検証、orphan回収を決めるまでruntime切替を公開しない。
 - object本体を外部化しても、tenant scope、object key、byte size、digest、schema version等のmetadataはDBに保持し、一覧・認可・整合性の正本を分散させない。
+
+## Phase 2 inventory checkpoint 2026-08-09
+
+- ORMの全74 `TEXT`列を列単位で分類し、identifier 36、bounded descriptive text 35、content object 3とした。新しい`TEXT`列が未分類ならcoverage testで停止する。
+- 内部ID 128、外部発行ID 512、URI 2048、email 320、表示名 255、timestamp 40、closed-set state 32文字をmigration候補として記録した。既存データ分布とAPI入力契約の照合前にはDB制約へ適用しない。
+- content objectは`documents.payload_json`、`inquiry_bundles.payload_json`、`merge_decision_logs.payload_json`の3列だけであることを固定した。文字数上限を持たせず、byte-size policyと保存先設計を別課題として維持する。
+- `tests/test_persistence_shapes.py` 3件と対象Ruffを通過した。AC-4aの物理migrationとAC-4bのContentStore契約は未着手のまま分離している。
 
 ## Phase 1 checkpoint 2026-08-09
 
