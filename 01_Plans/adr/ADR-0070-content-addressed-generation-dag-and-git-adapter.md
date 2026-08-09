@@ -23,6 +23,9 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 8. 圧縮はcanonical JSONを前提に、content-addressed chunk／deltaと定期full snapshotを組み合わせる。delta chainは有界とし、復元costまたはdelta比率が閾値を超えたらfull snapshotへ戻す。具体値は代表データbenchmarkで確定する。
 9. Gitは任意のarchive／import-export／offline collaboration adapter候補とし、標準runtime正本にはしない。採用時もアプリrevision IDとSHA-256 digestを正本にし、Git object IDやbranch refを認可・真正性の根拠にしない。
 10. Git adapterはbare repository、server-managed ref、hook無効、worktreeなしを前提とする。tenant分離、暗号化、GC、削除、pack backup/restore、同時書込を検証するまで有効化しない。
+11. revisionと物理blobを分離する。複数revisionが同じ`tenant + content digest`のimmutable blobを参照でき、保存backendはdatabase／NAS／S3／将来Gitのいずれでもよい。revisionごとにobjectを複製しない。
+12. NAS／S3はrevision DAGと競合する代替正本ではなく、full snapshot／delta／chunkの物理blob backend候補とする。ただしruntime切替、coordinator、domain FKの実装優先度を下げ、revision schemaと圧縮benchmarkが確定するまで凍結する。
+13. 現行`content_object_references`は外部保存の先行metadataであり、最終schemaとは扱わない。revision導入時に`content_blobs`（digest identity）と`canvas_revisions`（論理世代）へ責務分離し、既存tableを互換migrationまたは撤去対象として再評価する。
 
 ## Alternatives
 
@@ -41,6 +44,20 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 - AI提案と人間採用の系譜を保ちつつ、proposal-onlyとhuman review境界を維持できる。
 - revision DAG、delta生成、GC、保持pin、domain row参照、共有bundleの追加設計が必要になる。
 - Gitの圧縮効果はJSON canonical化と変更局所性に依存するため、実データbenchmarkなしに採用効果を断定しない。
+- object storageを先行実装しないことで二重参照・二重GCを避ける一方、大容量・低価格・共有storageが必要になった時点で同じblob contractへ追加できる。
+
+## Preliminary benchmark 2026-08-09
+
+実キャンバスの大規模fixtureが未整備のため、300カード、100世代、各世代5カード更新、安定key順の複数行JSONという合成条件で一次計測した。
+
+| 方式 | 合計bytes | 備考 |
+| --- | ---: | --- |
+| raw full snapshot x100 | 12,781,223 | 最終1世代は130,103 bytes |
+| gzip full snapshot x100 | 476,633 | 世代単位の独立復元が容易 |
+| gzip delta x99 | 41,446 | 初期full snapshot分を加える必要がある |
+| Git repository after aggressive GC | 112,612 | `.git`全体。worktree 130,103 bytesは別 |
+
+この結果はGit packとdelta方式の両方に圧縮価値があることを示すが、実データ、分岐、並べ替え、巨大本文、復元時間を含まない。Git直接採用の根拠にはせず、revision／blob分離と代表fixture整備を先行する。
 
 ## Non-goals
 

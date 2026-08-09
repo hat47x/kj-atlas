@@ -26,6 +26,7 @@
 - [ ] AC-6: retention pin、ephemeral GC、governed保持、tenant-scoped orphan回収が実装される。
 - [ ] AC-7: AI run metadataの最小契約、SafeMode、redaction、保持期間が実装される。
 - [ ] AC-8: optional Git adapterを採否判断し、採用時はbare repo、hook禁止、tenant分離、GC、backup/restoreを検証する。
+- [x] AC-9: revisionと物理blobの責務が分離され、object storage作業がrevision schema確定前に先行しない。
 
 ## 検証計画
 
@@ -40,3 +41,11 @@
 - autosaveはminimal metadata、AI proposalは別AI run参照、人間採用はsource proposal参照、人手reviewはopaque actor必須としてfail closedにした。
 - 初期値はephemeral 50件／7日、delta chain 32、delta比率0.7だが、物理保存へ適用する前に代表データbenchmarkで確定する。
 - Gitは標準runtime正本にせず、optional archive／exchange adapter候補とした。ADR-0070はProposedであり、Git adapter実装は未着手。
+
+## Storage interaction checkpoint 2026-08-09
+
+- 現行object referenceは「1 content ID = 1 locator」、revision DAGは「複数revision = 共有digest blob」であり、そのまま並行実装すると参照・retention・orphan GCが二重化すると確認した。
+- 論理`canvas_revisions`と物理`content_blobs`へ責務を分離する方針へ修正した。database／NAS／S3／Gitはblob backend候補であり、revision正本の代替にはしない。
+- NAS/S3 adapterは実験的実装として保持するが、runtime設定、coordinator、domain FKの優先度を下げて凍結する。大容量、複数instance共有、DB inline非対応等の実需が現れるまで外部storageは必須化しない。
+- 合成300カード・100世代・5カード/世代更新の一次計測はraw 12,781,223 bytes、gzip full 476,633 bytes、gzip delta 41,446 bytes（初期full別）、Git aggressive GC後112,612 bytesだった。実データfixtureと復元時間を含まないため採用判定は保留する。
+- 次はrevision／blob schema、branch headのcompare-and-swap、full／delta復元契約を先行する。既存`content_object_references`は最終schemaではなく、互換migrationまたは撤去候補として扱う。

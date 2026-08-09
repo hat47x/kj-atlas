@@ -34,7 +34,7 @@ DB可搬性を理由に、現行の全`TEXT`列へ一律の桁数を設定しな
 | Bounded descriptive text | 表示名、email、URI、状態値 | 入力契約と業務上限を先に定義し、検索・索引要件に応じた型にする |
 | Content object | `documents.payload_json`、inquiry bundle、判断ログpayload | 内容を切り詰めない。サイズ上限はDoS対策・運用容量として別途定義し、DB列長と混同しない |
 
-現行ORMの棚卸し結果は74 `TEXT`列（identifier 36、bounded descriptive text 35、content object 3）である。列単位の正本は`persistence_shapes.py`とし、ORMへ新しい`TEXT`列を追加したとき未分類ならテストで停止する。提案上限は、内部ID 128、外部発行ID 512、URI 2048、email 320、表示名 255、timestamp 40、closed-set state 32文字を基準とする。これはmigration候補値であり、既存データ分布、API入力契約、UTF-8索引byte数を確認するまでは物理制約として適用しない。
+現行ORMの棚卸し結果は83 `TEXT`列（content参照metadataを含む）である。列単位の正本は`persistence_shapes.py`とし、ORMへ新しい`TEXT`列を追加したとき未分類ならテストで停止する。提案上限は、内部ID 128、外部発行ID 512、URI 2048、email 320、表示名 255、timestamp 40、closed-set state 32文字を基準とする。これはmigration候補値であり、既存データ分布、API入力契約、UTF-8索引byte数を確認するまでは物理制約として適用しない。
 
 外部IdPのsubject、audience、external tenant reference等は外部仕様が任意長を許し得るが、本製品が無制限入力を索引へ格納することまでは意味しない。超過時のhash代替は同一性・監査表示を損なうため暗黙には行わず、受入上限をAPIで明示して拒否する。内部生成IDと外部発行IDを同じ型aliasへ統合しない。
 
@@ -59,7 +59,7 @@ NAS／S3のlocatorは`tenant_id`と`content_id`それぞれのSHA-256から決�
 
 S3実装は特定SDKをContent Storeへ直結せず、`put_object`／`get_object`／`delete_object`のclient portを介する。AWS S3、MinIO等のS3互換製品、テストdoubleの差をこのportのadapterへ閉じ込め、core packageへ必須cloud dependencyを追加しない。
 
-Content Store上の編集世代は物理backendと分離し、`ADR-0070`のcontent-addressed revision DAG候補で扱う。Gitを利用する場合も新しいstorage backendまたはarchive adapterであり、Git commit／branchをDB metadata、tenant認可、human reviewの正本にしない。schema version、ETag、Inquiry round snapshot、merge decision log、編集revisionは別概念を維持する。
+Content Store上の編集世代は物理backendと分離し、`ADR-0070`のcontent-addressed revision DAG候補で扱う。論理revisionは共有可能な`tenant + digest` blobを参照し、database／NAS／S3／Gitはその物理backend候補とする。Git commit／branchをDB metadata、tenant認可、human reviewの正本にしない。schema version、ETag、Inquiry round snapshot、merge decision log、編集revisionは別概念を維持する。
 
 Content Storeの操作契約は一つの汎用CRUDへ統合せず、次の3 portに分離する。
 
@@ -71,7 +71,7 @@ Content Storeの操作契約は一つの汎用CRUDへ統合せず、次の3 port
 
 各portはUTF-8 byte sizeとSHA-256 digestを持つ`ContentBlob`を受け渡す。現行DB実装ではinline本文から都度算出し、schema migrationを発生させない。外部保存へ昇格するときはdigest、byte size、schema version、storage stateをDB metadataへ永続化する。adapterはtransactionをcommitせず、認可対象の更新、監査証跡、content metadataをapplication側が一つの処理単位として確定できるようにする。
 
-`content_object_references`は外部化に先行するmetadata正本であり、`content_id`、tenant、backend、locator、state、byte size、SHA-256 digest、schema version、時刻を保持する。既存inline payloadは自動backfillせず、現在の3列を正本として維持する。domain rowとの参照FKと実データ移行は、content種別ごとのrollback手順と一緒に後続migrationで追加する。
+`content_object_references`は外部化検討時の暫定metadataであり、最終正本とはしない。revision DAG導入時に論理revisionと物理digest blobへ責務分離し、互換migrationまたは撤去を判断する。既存inline payloadは自動backfillせず、現在の3列を正本として維持する。
 
 状態は`pending -> ready|failed`、`ready -> deleting|failed`、`failed -> pending|deleting`を許可する。`deleting`からの物理削除完了は行削除とcontent-free監査証跡で表し、`deleting -> ready`の復活は許さない。NAS/S3への書込成功後にDB確定が失敗したobject、またはDB参照がなくなったobjectはorphan候補とし、tenant・content ID prefixと保留期間を確認する回収処理以外から削除しない。
 
@@ -92,4 +92,4 @@ CandidateをVerifiedへ変更するには、対象versionを固定した実DBに
 
 ## Current next step
 
-data-shape inventory、保存先非依存port／inline DB adapter、外部content参照metadata、基本状態機械、NAS/S3 adapterは完了した。次にdomain rowとの参照方式、metadataとobject操作を調停するcoordinator、移行・rollback、orphan回収を実装し、既存データ分布とAPI入力契約を照合してidentifier上限を確定する。その後にbounded identifier migrationと各DBの実DBmatrixへ進む。
+外部storage実装は`DATA-GENERATION-01`のrevision／blob設計確定まで凍結する。本issueではinline DB Content Storeを標準経路として、既存データ分布とAPI入力契約を照合したidentifier上限確定、bounded identifier migration、各DBのinline LOBを含む実DBmatrixを優先する。inline LOBがUnsupportedと実証されたDBだけ、NAS/S3等を必須構成として再評価する。

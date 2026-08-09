@@ -30,7 +30,7 @@
 - [x] AC-3: DB URLエラーがcredentialやURL全体を反射しない。
 - [x] AC-4: 全永続列がidentifier／bounded descriptive text／content objectへ棚卸しされ、identifierの意味別最大長と受入規則が定義される。
 - [ ] AC-4a: identifier/index文字列が棚卸し結果に基づくbounded portable型へ移行され、SQLite/PostgreSQL回帰が通る。
-- [ ] AC-4b: `ContentStore` port、DB実装、object参照metadata、digest検証、障害時状態遷移、orphan回収契約が設計される。object storageの実装・既定化は別issueで扱える。
+- [x] AC-4b: `ContentStore` portとinline DB実装が設計・接続される。外部object metadata／GCはDB対応の昇格条件から外し、`DATA-GENERATION-01`のrevision／blob設計後に再評価する。
 - [ ] AC-5: MySQL/MariaDBでfresh migration、roundtrip、複合制約、upgrade/downgradeが実DBで通る。
 - [ ] AC-6: 公開文書でMySQL/MariaDBをverifiedへ昇格し、driver optional dependencyとCIを追加する。
 - [ ] AC-7: 将来candidateの追加が既存repository/APIへDB固有分岐を増やさず、同じ検証契約を再利用できる。
@@ -79,6 +79,12 @@
 - S3 adapterはSDK非依存client portを利用し、bucketをruntime側、object keyをDB locator側へ分離した。AWS SDK等はまだoptional dependencyへ追加していない。
 - locatorはtenant ID／content IDのSHA-256から生成し、生の識別子をpath/keyへ含めない。NAS/S3とも読取時にDB metadataのbyte sizeとdigestを検証し、不一致はfail closedとした。
 - 外部adapter、digest、tenant別locator、path escape、tamper検出、冪等削除、inline DB adapter、状態機械の対象19件とRuffを通過した。metadata／object間coordinator、domain row FK、runtime設定、実S3 client、orphan回収が残るため、保存先切替は公開しない。
+
+## Priority correction after generation DAG review 2026-08-09
+
+- NAS/S3を独立したcontent正本として先行すると、content-addressed revision DAGのdigest blob、参照数、retention、orphan GCと二重管理になるため、外部storage coordinator／runtime設定／domain FKを本issueの昇格gateから外した。
+- inline DB Content StoreをDB portabilityの標準経路として維持する。NAS/S3 adapterは削除せず実験的候補として凍結し、必要性が確認された場合に`DATA-GENERATION-01`の物理blob backendとして再開する。
+- MySQL/MariaDB等の候補DBはinline LOB実地検証を先に行い、未対応と判明した場合だけ外部blob backendを必須化する。未検証段階で「外部保存せざるを得ない」と仮定しない。
 
 ## Phase 1 checkpoint 2026-08-09
 

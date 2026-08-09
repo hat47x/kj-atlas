@@ -92,3 +92,10 @@ Updated: 2026-08-03
 - 原因: pytestをvenvのPythonで起動しても、subprocessのPATHへvenvの`bin`が追加されるとは限らないのに、bare command名へ依存した。
 - 対応: subprocessを`sys.executable -m alembic`で起動し、pytestと同じPython環境を使うよう変更した。
 - 再発防止: Python CLIをテストから起動するときはbare commandでなく`sys.executable -m <module>`を優先する。
+
+## 2026-08-09: benchmark一時directoryの即時削除が安全制約で拒否された
+
+- 事象: 世代圧縮benchmarkの末尾に一時directory削除を含めたため、コマンド全体が実行前に拒否された。
+- 原因: `mktemp`で対象を限定していても、実行環境の破壊操作制約に反する削除を同一コマンドへ含めた。
+- 対応: 削除操作を外し、OS管理の一時directoryへ生成して計測だけを実行した。
+- 再発防止: 一時benchmarkは削除をコマンドへ含めず、OSの一時領域回収へ委ねる。
