@@ -246,6 +246,27 @@ class _CardAssessment(BaseModel):
     rationale: str | None = None
 
     proposalId: str = Field(min_length=1)
+
+
+class SuggestDocumentTitleRequest(BaseModel):
+    """Request to suggest document titles based on content overview."""
+    model_config = ConfigDict(extra="forbid")
+
+    # Island titles and a sample of reviewed card texts to base suggestions on.
+    islandTitles: list[str] = Field(min_length=0, max_length=50)
+    cardTexts: list[str] = Field(min_length=0, max_length=50)
+    currentTitle: str | None = Field(default=None, max_length=500)
+
+
+class _DocumentTitleCandidate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: str = Field(min_length=1, max_length=500)
+
+
+class SuggestDocumentTitleResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    candidates: list[_DocumentTitleCandidate] = Field(min_length=1, max_length=3)
     status: Literal["accepted", "rejected", "held"]
     reviewState: Literal["unreviewed"]
     recordedAt: str = Field(min_length=1)

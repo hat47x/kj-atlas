@@ -12,6 +12,7 @@ from kj_atlas_api.llm.provider import (
     LLMRequest,
     LLMCallMetadata,
     LLMResponse,
+    DeepSeekProvider,
     LargeScaleProvider,
     LocalProvider,
     MAX_LLM_PROVIDER_REQUEST_BYTES,
@@ -559,3 +560,165 @@ def test_settings_accept_large_scale_with_opt_in_and_escalation(monkeypatch: pyt
     assert loaded.llm_provider == "large-scale"
     assert loaded.llm_large_scale_opt_in is True
     assert loaded.llm_escalation_enabled is True
+
+
+# ---------------------------------------------------------------------------
+# DeepSeek provider tests
+# ---------------------------------------------------------------------------
+
+
+def test_get_provider_supports_deepseek() -> None:
+    original = settings.llm_provider
+    original_key = settings.deepseek_api_key
+    try:
+        settings.llm_provider = "deepseek"
+        settings.deepseek_api_key = "sk-test-key"
+        assert isinstance(get_provider(), DeepSeekProvider)
+    finally:
+        settings.llm_provider = original
+        settings.deepseek_api_key = original_key
+
+
+def test_deepseek_provider_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+    monkeypatch.delenv("KJ_ATLAS_DEEPSEEK_API_KEY", raising=False)
+
+    with pytest.raises(ValueError, match="KJ_ATLAS_DEEPSEEK_API_KEY"):
+        Settings()
+
+
+def test_deepseek_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_API_KEY", "sk-test-key")
+
+    loaded = Settings()
+    assert loaded.llm_provider == "deepseek"
+    assert loaded.deepseek_base_url == "https://api.deepseek.com"
+    assert loaded.deepseek_model == "deepseek-chat"
+    assert loaded.deepseek_api_key == "sk-test-key"
+
+
+def test_deepseek_settings_custom_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_API_KEY", "sk-test-key")
+    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_MODEL", "deepseek-reasoner")
+
+    loaded = Settings()
+    assert loaded.deepseek_model == "deepseek-reasoner"
+
+
+def test_deepseek_provider_returns_openai_chat_response(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = settings.deepseek_api_key
+    original_url = settings.deepseek_base_url
+    original_model = settings.deepseek_model
+    settings.deepseek_api_key = "sk-test-key"
+    settings.deepseek_base_url = "https://api.deepseek.com"
+    settings.deepseek_model = "deepseek-chat"
+
+    def _fake_urlopen(req, timeout_seconds=120):
+        assert req.full_url == "https://api.deepseek.com/v1/chat/completions"
+        assert req.headers["Authorization"] == "Bearer sk-test-key"
+        payload = json.loads(req.data.decode("utf-8"))
+        assert payload["model"] == "deepseek-chat"
+        assert len(payload["messages"]) == 2
+        assert payload["messages"][0]["role"] == "system"
+        assert payload["messages"][1]["role"] == "user"
+        assert payload["stream"] is False
+        response = {
+            "choices": [{"message": {"content": "提案タイトル：地域ヒアリングの構造化"}}]
+        }
+        return _StubHTTPResponse(json.dumps(response))
+
+    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+
+    try:
+        response = DeepSeekProvider().generate(
+            LLMRequest(task="suggest_document_title", prompt="test prompt")
+        )
+        assert response.raw_text == "提案タイトル：地域ヒアリングの構造化"
+        assert response.provider == "deepseek"
+        assert response.metadata.provider_kind == "deepseek"
+        assert response.metadata.model_id == "deepseek-chat"
+        assert response.transport == "http"
+        assert response.trace_id.startswith("llm-")
+    finally:
+        settings.deepseek_api_key = original_key
+        settings.deepseek_base_url = original_url
+        settings.deepseek_model = original_model
+
+
+def test_deepseek_task_model_map_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = settings.deepseek_api_key
+    original_url = settings.deepseek_base_url
+    original_model = settings.deepseek_model
+    original_map = settings.llm_task_model_map
+    settings.deepseek_api_key = "sk-test-key"
+    settings.deepseek_base_url = "https://api.deepseek.com"
+    settings.deepseek_model = "deepseek-chat"
+    settings.llm_task_model_map = "suggest_document_title=deepseek-reasoner"
+
+    def _fake_urlopen(req, timeout_seconds=120):
+        payload = json.loads(req.data.decode("utf-8"))
+        # Task-model map should override the default model
+        assert payload["model"] == "deepseek-reasoner"
+        return _StubHTTPResponse(
+            '{"choices":[{"message":{"content":"ok"}}]}'
+        )
+
+    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+
+    try:
+        response = DeepSeekProvider().generate(
+            LLMRequest(task="suggest_document_title", prompt="test")
+        )
+        assert response.metadata.model_id == "deepseek-reasoner"
+    finally:
+        settings.deepseek_api_key = original_key
+        settings.deepseek_base_url = original_url
+        settings.deepseek_model = original_model
+        settings.llm_task_model_map = original_map
+
+
+def test_deepseek_auth_error_401(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = settings.deepseek_api_key
+    original_url = settings.deepseek_base_url
+    settings.deepseek_api_key = "sk-invalid"
+    settings.deepseek_base_url = "https://api.deepseek.com"
+
+    def _fake_urlopen(req, timeout_seconds=120):
+        raise error.HTTPError(
+            req.full_url, 401, "Unauthorized", {}, io.BytesIO(b"{}")
+        )
+
+    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+
+    try:
+        with pytest.raises(ProviderRequestError, match="authentication failed"):
+            DeepSeekProvider().generate(
+                LLMRequest(task="suggest_document_title", prompt="test")
+            )
+    finally:
+        settings.deepseek_api_key = original_key
+        settings.deepseek_base_url = original_url
+
+
+def test_deepseek_empty_choices_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = settings.deepseek_api_key
+    original_url = settings.deepseek_base_url
+    settings.deepseek_api_key = "sk-test-key"
+    settings.deepseek_base_url = "https://api.deepseek.com"
+
+    def _fake_urlopen(req, timeout_seconds=120):
+        return _StubHTTPResponse('{"choices":[]}')
+
+    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+
+    try:
+        with pytest.raises(ProviderRequestError, match="missing choices"):
+            DeepSeekProvider().generate(
+                LLMRequest(task="suggest_document_title", prompt="test")
+            )
+    finally:
+        settings.deepseek_api_key = original_key
+        settings.deepseek_base_url = original_url

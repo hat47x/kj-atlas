@@ -105,6 +105,9 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale LLM 利用の明示 opt-in | direct | 通常値 | `false` のとき `large-scale`/`external` provider 指定が起動時に拒否されることを確認する（validator で既に強制） |
 | `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale接続を許可するcanonical hostのカンマ区切り。URL、wildcard、port、path、重複は不可 | direct | 通常値（ホスト名リスト。認証情報を含まない） | allowlist 外ホストへの接続が拒否されることを確認する |
 | `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM 失敗時に `none` へ退避する | direct | 通常値 | LLM 呼び出し失敗時に `none` provider へフォールバックすることを確認する |
+| `KJ_ATLAS_DEEPSEEK_API_KEY` | 未設定 | DeepSeek API 認証キー。`KJ_ATLAS_LLM_PROVIDER=deepseek` 時は必須 | direct | 秘密値 | 未設定時に `KJ_ATLAS_LLM_PROVIDER=deepseek` で起動拒否されることを確認する |
+| `KJ_ATLAS_DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | DeepSeek API のbase URL。credential/query/fragmentなしのHTTPS | direct | 通常値（接続先URL。認証情報は別キー） | リクエストが正しいURLへ送信されることを確認する |
+| `KJ_ATLAS_DEEPSEEK_MODEL` | `deepseek-chat` | DeepSeek API に渡すmodel ID。256文字以下のcanonical | direct | 通常値 | 呼び出しペイロードの model フィールドが設定値と一致することを確認する |
 | `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護する | direct / base Compose | 秘密値 | 未設定時は `/healthz` 以外も無防備。設定時: キーなしは 401、正しい `X-API-Key` は成功、誤ったキーも 401（値自体は出力しない） |
 | `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit event のHTTP連携を有効化する | direct | 通常値 | `true` 時に監査イベントが transport 経由で送出されること（内容は出力せず送信有無のみ確認） |
 | `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | audit transport。`noop` または `http` | direct | 通常値 | `http` 指定時に HTTP transport が選択されることをログで確認する |

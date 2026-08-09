@@ -103,6 +103,10 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale 利用の明示 opt-in |
 | `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale接続を許可するhostのカンマ区切り。URLやwildcardは不可 |
 | `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM 失敗時に `none` へ退避する |
+| `KJ_ATLAS_DEEPSEEK_API_KEY` | 未設定 | DeepSeek API 認証キー。`KJ_ATLAS_LLM_PROVIDER=deepseek` 時は必須 |
+| `KJ_ATLAS_DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | DeepSeek API のbase URL |
+| `KJ_ATLAS_DEEPSEEK_MODEL` | `deepseek-chat` | DeepSeek API に渡すmodel ID |
+| `KJ_ATLAS_LLM_TASK_MODEL_MAP` | 未設定 | タスク別モデル割当（`task=model,...`）。未設定タスクは既定モデル |
 | `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護 |
 | `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | 監査イベントを HTTP の接続先に連携する |
 | `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http` |

@@ -447,6 +447,202 @@ def _generate_via_http(
     return LLMResponse(raw_text=text, metadata=metadata)
 
 
+class DeepSeekProvider:
+    provider_name = "deepseek"
+    provider_kind = "deepseek"
+
+    def generate(self, req: LLMRequest) -> LLMResponse:
+        from kj_atlas_api.settings import settings
+
+        if not settings.deepseek_api_key:
+            metadata = _new_metadata(
+                provider_kind=self.provider_kind,
+                provider_name=self.provider_name,
+                model_id=settings.deepseek_model,
+                transport="http",
+            )
+            raise ProviderRequestError.unavailable(
+                "KJ_ATLAS_DEEPSEEK_API_KEY is required for deepseek provider",
+                metadata,
+            )
+
+        model_id = resolve_model_for_task(req.task, req)
+        # If the resolved model doesn't look like a DeepSeek model, use the default.
+        if model_id == settings.local_llm_model or model_id == "default":
+            model_id = settings.deepseek_model
+
+        return _generate_via_openai_chat(
+            req,
+            base_url=settings.deepseek_base_url.rstrip("/"),
+            model_id=model_id,
+            api_key=settings.deepseek_api_key,
+            provider_name=self.provider_name,
+            provider_kind=self.provider_kind,
+        )
+
+
+def _generate_via_openai_chat(
+    req: LLMRequest,
+    *,
+    base_url: str,
+    model_id: str,
+    api_key: str,
+    provider_name: str,
+    provider_kind: str,
+) -> LLMResponse:
+    metadata = _new_metadata(
+        provider_kind=provider_kind,
+        provider_name=provider_name,
+        model_id=model_id,
+        transport="http",
+    )
+
+    if (
+        not isinstance(req.task, str)
+        or len(req.task) > MAX_LLM_TASK_LENGTH
+        or not _LLM_TASK.fullmatch(req.task)
+    ):
+        raise ProviderRequestError.validation(
+            f"{provider_name} request had an invalid task",
+            metadata,
+        )
+    if not isinstance(req.prompt, str) or not req.prompt:
+        raise ProviderRequestError.validation(
+            f"{provider_name} request had an invalid prompt",
+            metadata,
+        )
+    if (
+        not isinstance(req.temperature, (int, float))
+        or isinstance(req.temperature, bool)
+        or not math.isfinite(req.temperature)
+        or not 0 <= req.temperature <= 2
+    ):
+        raise ProviderRequestError.validation(
+            f"{provider_name} request had invalid temperature",
+            metadata,
+        )
+    if (
+        not isinstance(req.max_tokens, int)
+        or isinstance(req.max_tokens, bool)
+        or not 1 <= req.max_tokens <= MAX_LLM_OUTPUT_TOKENS
+    ):
+        raise ProviderRequestError.validation(
+            f"{provider_name} request had invalid max_tokens",
+            metadata,
+        )
+
+    system_prompt = f"You are performing the task: {req.task}. Respond with only the requested output, no preamble."
+    payload = {
+        "model": model_id,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": req.prompt},
+        ],
+        "temperature": req.temperature,
+        "max_tokens": req.max_tokens,
+        "stream": False,
+    }
+    serialized = json.dumps(payload, allow_nan=False, ensure_ascii=False).encode("utf-8")
+    if len(serialized) > MAX_LLM_PROVIDER_REQUEST_BYTES:
+        raise ProviderRequestError.validation(
+            f"{provider_name} request exceeded the size limit",
+            metadata,
+        )
+
+    endpoint = f"{base_url.rstrip('/')}/v1/chat/completions"
+    req_obj = request.Request(
+        endpoint,
+        data=serialized,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
+    )
+
+    try:
+        with open_trusted_http(req_obj, timeout_seconds=120) as resp:
+            response_body = resp.read(MAX_LLM_PROVIDER_RESPONSE_BYTES + 1)
+    except error.HTTPError as exc:
+        if exc.code == 401 or exc.code == 403:
+            raise ProviderRequestError.unavailable(
+                f"{provider_name} authentication failed (HTTP {exc.code})",
+                metadata,
+            ) from exc
+        if exc.code in (408, 504):
+            raise ProviderRequestError.timeout(
+                f"{provider_name} request timed out with status {exc.code}",
+                metadata,
+            ) from exc
+        raise ProviderRequestError.unavailable(
+            f"{provider_name} request failed with status {exc.code}",
+            metadata,
+        ) from exc
+    except error.URLError as exc:
+        reason = exc.reason
+        if isinstance(reason, socket.timeout):
+            raise ProviderRequestError.timeout(
+                f"{provider_name} request timed out",
+                metadata,
+            ) from exc
+        logger.warning("%s request failed: %s", provider_name, reason, exc_info=True)
+        raise ProviderRequestError.unavailable(
+            f"{provider_name} request failed",
+            metadata,
+        ) from exc
+    except TimeoutError as exc:
+        raise ProviderRequestError.timeout(
+            f"{provider_name} request timed out",
+            metadata,
+        ) from exc
+    except OSError as exc:
+        raise ProviderRequestError.unavailable(
+            f"{provider_name} request failed",
+            metadata,
+        ) from exc
+
+    if len(response_body) > MAX_LLM_PROVIDER_RESPONSE_BYTES:
+        raise ProviderRequestError.validation(
+            f"{provider_name} response exceeded the size limit",
+            metadata,
+        )
+    try:
+        body = json.loads(response_body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise ProviderRequestError.validation(
+            f"{provider_name} response was not valid JSON",
+            metadata,
+        ) from None
+
+    if not isinstance(body, dict):
+        raise ProviderRequestError.validation(
+            f"{provider_name} response had an invalid shape",
+            metadata,
+        )
+
+    # OpenAI chat completions format: {"choices": [{"message": {"content": "..."}}]}
+    choices = body.get("choices")
+    if not isinstance(choices, list) or len(choices) == 0:
+        raise ProviderRequestError.validation(
+            f"{provider_name} response missing choices",
+            metadata,
+        )
+    message = choices[0].get("message")
+    if not isinstance(message, dict):
+        raise ProviderRequestError.validation(
+            f"{provider_name} response missing message",
+            metadata,
+        )
+    content = message.get("content")
+    if not isinstance(content, str):
+        raise ProviderRequestError.validation(
+            f"{provider_name} response missing content",
+            metadata,
+        )
+
+    return LLMResponse(raw_text=content, metadata=metadata)
+
+
 class NoOpProvider(NoneProvider):
     """Explicit no-op provider for adapter registry wiring."""
 
@@ -485,6 +681,7 @@ def _build_default_registry() -> ProviderRegistry:
     registry.register("none", NoOpProvider)
     registry.register("local", LocalProvider, aliases=("local_http",))
     registry.register("large-scale", LargeScaleProvider, aliases=("large_scale", "external"))
+    registry.register("deepseek", DeepSeekProvider)
     return registry
 
 

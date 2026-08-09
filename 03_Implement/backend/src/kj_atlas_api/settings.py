@@ -179,6 +179,9 @@ LEGACY_ENV_KEYS = {
     "LLM_LARGE_SCALE_OPT_IN",
     "LARGE_SCALE_LLM_ALLOWLIST",
     "LLM_FALLBACK_TO_NONE",
+    "DEEPSEEK_API_KEY",
+    "DEEPSEEK_BASE_URL",
+    "DEEPSEEK_MODEL",
     "API_KEY",
     "AUDIT_EXPORT_ENABLED",
     "AUDIT_TRANSPORT",
@@ -261,6 +264,19 @@ class Settings(BaseSettings):
     llm_fallback_to_none: bool = Field(
         default=True,
         validation_alias="KJ_ATLAS_LLM_FALLBACK_TO_NONE",
+    )
+    # DeepSeek API settings (OpenAI-compatible)
+    deepseek_api_key: str | None = Field(
+        default=None,
+        validation_alias="KJ_ATLAS_DEEPSEEK_API_KEY",
+    )
+    deepseek_base_url: str = Field(
+        default="https://api.deepseek.com",
+        validation_alias="KJ_ATLAS_DEEPSEEK_BASE_URL",
+    )
+    deepseek_model: str = Field(
+        default="deepseek-chat",
+        validation_alias="KJ_ATLAS_DEEPSEEK_MODEL",
     )
     api_key: str | None = Field(
         default=None,
@@ -481,8 +497,18 @@ class Settings(BaseSettings):
         require_verified_database_url(self.database_url)
 
         provider = self.llm_provider.strip().lower()
-        if provider not in {"none", "local", "local_http", "large-scale", "large_scale", "external"}:
+        if provider not in {"none", "local", "local_http", "large-scale", "large_scale", "external", "deepseek"}:
             raise ValueError(f"Unsupported KJ_ATLAS_LLM_PROVIDER: {self.llm_provider}")
+
+        if provider == "deepseek":
+            if not self.deepseek_api_key:
+                raise ValueError(
+                    "KJ_ATLAS_LLM_PROVIDER=deepseek requires KJ_ATLAS_DEEPSEEK_API_KEY"
+                )
+            _validate_trusted_http_endpoint(
+                endpoint=self.deepseek_base_url,
+                endpoint_key="KJ_ATLAS_DEEPSEEK_BASE_URL",
+            )
 
         if provider in {"large-scale", "large_scale", "external"}:
             if not self.llm_large_scale_opt_in:

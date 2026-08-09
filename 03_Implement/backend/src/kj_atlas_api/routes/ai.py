@@ -32,6 +32,8 @@ from kj_atlas_api.models_ai import (
     RefineCardTextResponse,
     SuggestCardGroupsRequest,
     SuggestCardGroupsResponse,
+    SuggestDocumentTitleRequest,
+    SuggestDocumentTitleResponse,
     SuggestIslandSummaryRequest,
     SuggestIslandSummaryResponse,
     _CardRef,
@@ -869,3 +871,58 @@ def assess_card_importance(payload: AssessCardImportanceRequest) -> AssessCardIm
         _raise_llm_http_error(exc)
     _audit_llm_trace("assess_card_importance", llm_response)
     return _parse_assess_card_importance_response(llm_response.raw_text)
+
+
+@router.post(
+    "/suggest-document-title",
+    response_model=SuggestDocumentTitleResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def suggest_document_title(payload: SuggestDocumentTitleRequest) -> SuggestDocumentTitleResponse:
+    try:
+        llm_response = generate_with_fallback(
+            LLMRequest(
+                task="suggest_document_title",
+                prompt=_build_suggest_document_title_prompt(payload),
+                temperature=0.4,
+                max_tokens=300,
+            )
+        )
+    except ProviderDisabledError as exc:
+        _raise_llm_http_error(exc)
+    except ProviderRequestError as exc:
+        _raise_llm_http_error(exc)
+    _audit_llm_trace("suggest_document_title", llm_response)
+    return _parse_suggest_document_title_response(llm_response.raw_text)
+
+
+def _build_suggest_document_title_prompt(payload: SuggestDocumentTitleRequest) -> str:
+    islands = "\n".join(f"  - {t}" for t in payload.islandTitles[:20]) if payload.islandTitles else "(none)"
+    cards = "\n".join(f"  - {t}" for t in payload.cardTexts[:30]) if payload.cardTexts else "(none)"
+    current = f'\nCurrent title: "{payload.currentTitle}"' if payload.currentTitle else ""
+    return (
+        f"Suggest 1-3 short document titles (each max 80 chars, in Japanese) that "
+        f"capture the overall theme of this KJ-method canvas. "
+        f"The document contains these island labels and card texts. "
+        f"Do NOT rank or score the candidates — present them as equal alternatives.{current}\n"
+        f"Island labels:\n{islands}\n"
+        f"Sample card texts:\n{cards}\n"
+        f'Return JSON: {{"candidates": [{{"title": "..."}}]}}'
+    )
+
+
+def _parse_suggest_document_title_response(raw_text: str) -> SuggestDocumentTitleResponse:
+    data = json.loads(raw_text)
+    from kj_atlas_api.models_ai import _DocumentTitleCandidate
+    candidates_raw = data.get("candidates", [])
+    if not isinstance(candidates_raw, list) or len(candidates_raw) == 0:
+        raise ValueError("suggest_document_title response had no candidates")
+    candidates = [
+        _DocumentTitleCandidate(
+            title=str(c.get("title", ""))[:500]
+        )
+        for c in candidates_raw[:3]
+    ]
+    if not candidates:
+        raise ValueError("suggest_document_title response had empty candidates")
+    return SuggestDocumentTitleResponse(candidates=candidates)
