@@ -23,7 +23,7 @@
 - [x] AC-3: ephemeral revisionがactor／AI run metadataを持たない契約テストがある。
 - [x] AC-4: revision DAG、content object参照、head更新のDB schemaとmigrationが実装される。
 - [ ] AC-5: canonical JSON、full snapshot／delta選択、最大chain depth、復元検証が代表データでbenchmarkされる。
-- [ ] AC-6: retention pin、ephemeral GC、governed保持、tenant-scoped orphan回収が実装される。
+- [x] AC-6: retention pin、ephemeral GC、governed保持、tenant-scoped orphan回収が実装される。
 - [x] AC-7: AI run metadataの最小契約、SafeMode、redaction、保持期間が実装される。
 - [x] AC-8: Gitを標準runtimeから除外し、archive／交換限定の将来adapter候補と判断する。実装する場合はbare repo、hook禁止、tenant分離、GC、backup/restoreを別gateで検証する。
 - [x] AC-9: revisionと物理blobの責務が分離され、object storage作業がrevision schema確定前に先行しない。
@@ -103,4 +103,11 @@
 - `generation_deletion_audit_events`を追加し、revision／blob GCについてtenant、対象IDまたはdigest、backend、executor、結果、時刻だけをappend-only evidenceとして保存する。本文と外部locatorは監査へ複製しない。PostgreSQLではFORCE RLSを適用した。
 - revision削除は条件付きDELETEが成功した場合だけ同じtransactionへ監査rowを追加する。保護対象や別tenantを削除できない既存条件を維持した。
 - blob GCは`ready|failed|deleting`の期限超過orphanを対象とし、row lock下でrevision参照とdelta base参照を再確認する。database blobはmetadataを、NAS／S3等は注入されたadapterで物理objectを削除してからmetadataを消す。object不在は冪等成功、削除例外は`deleting`状態と失敗監査を残す。
-- migration fresh upgrade／downgrade、外部削除成功・失敗、監査、列分類、lineageを含む9件とRuffを通過した。AC-6にはbranch到達性に基づく件数保持が残るため未完了を維持する。
+- migration fresh upgrade／downgrade、外部削除成功・失敗、監査、列分類、lineageを含む9件とRuffを通過した。
+
+## DAG reachability retention checkpoint 2026-08-10
+
+- 全head、pin、checkpoint／governed revision、human acceptance等のsource参照先を保持rootとし、各rootからparent pathごとに設定件数以内のephemeral revisionを保持するtenant-scoped pruningを追加した。
+- 複数branchの保持集合をunionするため、merge共有祖先はどれか一つのrootから保持範囲内なら残る。範囲外は保持側との境界edgeを切断し、候補DAGをchild-firstで削除して各削除監査を残す。
+- 欠損parent、DAG cycle、削除直前のhead／pin／parent／source保護変更は`GenerationGcConflict`としてtransaction全体をfail closedにする。checkpoint／governed自体は候補集合へ入らない。
+- branch、merge、共有祖先、複数head、監査を含むrepositoryテストとRuffを通過した。これによりAC-6を完了した。

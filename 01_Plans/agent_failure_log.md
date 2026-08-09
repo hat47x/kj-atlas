@@ -155,3 +155,24 @@ Updated: 2026-08-03
 - 原因: working directoryが既に`03_Implement/backend`であるのに、同じprefixをpathへ再度付けた。
 - 対応: backend基準の`alembic/versions/...`へ修正して同じ検証を再実行する。
 - 再発防止: 長い検証コマンドではworking directoryと最初の対象pathを実行前に照合する。
+
+## 2026-08-10: backend基準の検査でrepository prefix重複を再発
+
+- 事象: reachability保持テスト追加後の確認が、先頭の`sed`対象なしで停止した。
+- 原因: working directoryをbackendへ指定しながら、repository root基準pathを再度使用した。
+- 対応: この作業単位の以後の検証pathをbackend基準へ統一する。
+- 再発防止: working directoryを固定した連続検証では、コマンド内pathの基準を混在させない。
+
+## 2026-08-10: reachability保持テストでSQLAlchemy select importを欠落
+
+- 事象: Ruffが新規テスト内2箇所の`select`を未定義として検出した。
+- 原因: query assertion追加時に既存importへ`select`を追加していなかった。
+- 対応: `sqlalchemy.select`を明示importした。
+- 再発防止: 新しいquery構築APIをテストへ追加した直後に対象ファイルのRuffを実行する。
+
+## 2026-08-10: reachability GCがSQLite FK cascade無効時に祖先削除を停止
+
+- 事象: branch保持テストで新しい側の候補を削除後、残存parent edgeが古い候補を保護し`GenerationGcConflict`となった。
+- 原因: candidate revision削除時の親edge除去をDBの`ON DELETE CASCADE`だけに依存し、テスト接続ではSQLite外部キー処理が無効だった。
+- 対応: retention pruning transaction内でcandidate自身の親edgeを明示削除してからrevisionを条件付き削除する。
+- 再発防止: GCの進行順序に必要なcleanupは、接続別のcascade有効化だけへ依存させない。

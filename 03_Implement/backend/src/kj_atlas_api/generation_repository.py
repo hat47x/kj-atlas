@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from dataclasses import dataclass
 
 from sqlalchemy import delete, exists, select, update
 from sqlalchemy.orm import aliased
@@ -18,6 +19,16 @@ from kj_atlas_api.tenant_db_guard import apply_database_tenant_context
 
 class RevisionHeadConflict(RuntimeError):
     pass
+
+
+class GenerationGcConflict(RuntimeError):
+    pass
+
+
+@dataclass(frozen=True)
+class EphemeralHistoryPruneResult:
+    deleted_revision_ids: tuple[str, ...]
+    cut_parent_edges: int
 
 
 def list_ephemeral_gc_candidates(
@@ -256,6 +267,150 @@ def delete_unreferenced_blob_gc_candidate(
         )
     )
     return True
+
+
+def prune_ephemeral_history_by_reachability(
+    db: Session,
+    *,
+    tenant: TenantContext,
+    older_than: str,
+    keep_per_root: int,
+    executor_ref: str,
+    occurred_at: str,
+    audit_event_id_for: Callable[[str], str],
+) -> EphemeralHistoryPruneResult:
+    """Retain the nearest ephemeral ancestors of every durable DAG root.
+
+    All mutations remain in the caller's transaction. A cycle or concurrent
+    protection change aborts with ``GenerationGcConflict`` so boundary edge
+    cuts cannot commit without their corresponding revision deletions.
+    """
+    if keep_per_root < 1:
+        raise ValueError("ephemeral history retention count must be positive")
+    apply_database_tenant_context(db=db, tenant=tenant)
+    revisions = list(
+        db.scalars(
+            select(CanvasRevisionRow)
+            .where(CanvasRevisionRow.tenant_id == tenant.tenant_id)
+            .with_for_update()
+        ).all()
+    )
+    revision_by_id = {row.revision_id: row for row in revisions}
+    parents = list(
+        db.scalars(
+            select(CanvasRevisionParentRow).where(
+                CanvasRevisionParentRow.tenant_id == tenant.tenant_id
+            )
+        ).all()
+    )
+    parent_ids_by_child: dict[str, list[str]] = {}
+    for edge in parents:
+        parent_ids_by_child.setdefault(edge.revision_id, []).append(edge.parent_revision_id)
+
+    roots = {
+        row.revision_id for row in revisions if row.generation_tier != "ephemeral"
+    }
+    roots.update(row.source_revision_id for row in revisions if row.source_revision_id)
+    roots.update(
+        db.scalars(
+            select(CanvasRevisionHeadRow.revision_id).where(
+                CanvasRevisionHeadRow.tenant_id == tenant.tenant_id
+            )
+        ).all()
+    )
+    roots.update(
+        db.scalars(
+            select(CanvasRevisionPinRow.revision_id).where(
+                CanvasRevisionPinRow.tenant_id == tenant.tenant_id
+            )
+        ).all()
+    )
+
+    retained: set[str] = set()
+    best_ephemeral_count: dict[str, int] = {}
+    pending = [
+        (revision_id, 1 if revision_by_id[revision_id].generation_tier == "ephemeral" else 0)
+        for revision_id in roots
+        if revision_id in revision_by_id
+    ]
+    while pending:
+        revision_id, ephemeral_count = pending.pop()
+        previous = best_ephemeral_count.get(revision_id)
+        if previous is not None and previous <= ephemeral_count:
+            continue
+        best_ephemeral_count[revision_id] = ephemeral_count
+        if ephemeral_count > keep_per_root:
+            continue
+        retained.add(revision_id)
+        for parent_id in parent_ids_by_child.get(revision_id, ()):
+            parent = revision_by_id.get(parent_id)
+            if parent is None:
+                raise GenerationGcConflict("revision DAG references a missing parent")
+            pending.append(
+                (
+                    parent_id,
+                    ephemeral_count + (1 if parent.generation_tier == "ephemeral" else 0),
+                )
+            )
+
+    candidates = {
+        row.revision_id
+        for row in revisions
+        if row.generation_tier == "ephemeral"
+        and row.created_at < older_than
+        and row.revision_id not in retained
+    }
+    children_in_candidates: dict[str, set[str]] = {revision_id: set() for revision_id in candidates}
+    for edge in parents:
+        if edge.parent_revision_id in candidates and edge.revision_id in candidates:
+            children_in_candidates[edge.parent_revision_id].add(edge.revision_id)
+
+    deletion_order: list[str] = []
+    remaining = set(candidates)
+    while remaining:
+        ready = sorted(
+            revision_id
+            for revision_id in remaining
+            if not (children_in_candidates[revision_id] & remaining)
+        )
+        if not ready:
+            raise GenerationGcConflict("revision DAG cycle prevents retention pruning")
+        deletion_order.extend(ready)
+        remaining.difference_update(ready)
+
+    boundary_edges = [
+        edge
+        for edge in parents
+        if edge.parent_revision_id in candidates and edge.revision_id not in candidates
+    ]
+    for edge in boundary_edges:
+        db.delete(edge)
+    db.flush()
+
+    for revision_id in deletion_order:
+        db.execute(
+            delete(CanvasRevisionParentRow).where(
+                CanvasRevisionParentRow.tenant_id == tenant.tenant_id,
+                CanvasRevisionParentRow.revision_id == revision_id,
+            )
+        )
+        if not delete_ephemeral_gc_candidate(
+            db,
+            tenant=tenant,
+            revision_id=revision_id,
+            older_than=older_than,
+            audit_event_id=audit_event_id_for(revision_id),
+            executor_ref=executor_ref,
+            occurred_at=occurred_at,
+        ):
+            raise GenerationGcConflict(
+                f"revision {revision_id!r} became protected during retention pruning"
+            )
+        db.flush()
+    return EphemeralHistoryPruneResult(
+        deleted_revision_ids=tuple(deletion_order),
+        cut_parent_edges=len(boundary_edges),
+    )
 
 
 def _blob_deletion_audit(

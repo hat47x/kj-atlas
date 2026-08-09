@@ -1,16 +1,18 @@
 from hashlib import sha256
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 from kj_atlas_api.generation_repository import (
+    GenerationGcConflict,
     RevisionHeadConflict,
     advance_revision_head,
-    delete_unreferenced_blob_gc_candidate,
     delete_ephemeral_gc_candidate,
+    delete_unreferenced_blob_gc_candidate,
     list_ephemeral_gc_candidates,
     list_unreferenced_blob_candidates,
+    prune_ephemeral_history_by_reachability,
 )
 from kj_atlas_api.models import (
     Base,
@@ -306,6 +308,184 @@ def test_revision_head_compare_and_swap_is_tenant_scoped(tmp_path) -> None:
             failed_audit = db.get(GenerationDeletionAuditEventRow, "audit-failed-blob")
             assert failed_audit is not None
             assert failed_audit.outcome == "failed"
+    finally:
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+def test_reachability_pruning_keeps_each_branch_window_and_deletes_shared_ancestry(
+    tmp_path,
+) -> None:
+    engine = create_engine(f"sqlite:///{tmp_path / 'generation-retention.sqlite3'}")
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(engine)
+    digest = sha256(b"retention").hexdigest()
+    timestamp = "2026-08-09T00:00:00Z"
+    old_timestamp = "2026-07-01T00:00:00Z"
+    try:
+        with session_local() as db:
+            db.add(
+                TenantRow(
+                    id="tenant-a",
+                    display_name="tenant-a",
+                    lifecycle_state="active",
+                    created_at=timestamp,
+                    updated_at=timestamp,
+                )
+            )
+            db.commit()
+            db.add(
+                DocumentRow(
+                    tenant_id="tenant-a",
+                    id="doc",
+                    version=1,
+                    updated_at=timestamp,
+                    payload_json="{}",
+                )
+            )
+            db.add(
+                ContentBlobRow(
+                    tenant_id="tenant-a",
+                    content_digest=digest,
+                    storage_backend="database",
+                    locator=None,
+                    representation="full_json",
+                    base_digest=None,
+                    delta_depth=0,
+                    byte_size=9,
+                    stored_byte_size=9,
+                    storage_state="ready",
+                    schema_version="document-v1",
+                    created_at=old_timestamp,
+                )
+            )
+            db.commit()
+            for revision_id in ("r0", "r1", "r2", "r3", "b1", "b2", "merge"):
+                db.add(
+                    CanvasRevisionRow(
+                        tenant_id="tenant-a",
+                        revision_id=revision_id,
+                        doc_id="doc",
+                        content_digest=digest,
+                        generation_tier="ephemeral",
+                        generation_reason="autosave",
+                        generation_origin="system",
+                        actor_ref=None,
+                        ai_run_ref=None,
+                        source_revision_id=None,
+                        created_at=old_timestamp,
+                    )
+                )
+            db.commit()
+            for child, parent in (
+                ("r1", "r0"),
+                ("r2", "r1"),
+                ("r3", "r2"),
+                ("b1", "r0"),
+                ("b2", "b1"),
+                ("merge", "r3"),
+            ):
+                db.add(
+                    CanvasRevisionParentRow(
+                        tenant_id="tenant-a",
+                        revision_id=child,
+                        parent_revision_id=parent,
+                        parent_order=0,
+                    )
+                )
+            db.add(
+                CanvasRevisionParentRow(
+                    tenant_id="tenant-a",
+                    revision_id="merge",
+                    parent_revision_id="b2",
+                    parent_order=1,
+                )
+            )
+            for head_name, revision_id in (
+                ("main", "r3"),
+                ("branch", "b2"),
+                ("merged", "merge"),
+            ):
+                db.add(
+                    CanvasRevisionHeadRow(
+                        tenant_id="tenant-a",
+                        doc_id="doc",
+                        head_name=head_name,
+                        revision_id=revision_id,
+                        head_version=1,
+                        updated_at=timestamp,
+                    )
+                )
+            db.commit()
+
+            result = prune_ephemeral_history_by_reachability(
+                db,
+                tenant=_tenant("tenant-a"),
+                older_than="2026-08-01T00:00:00Z",
+                keep_per_root=2,
+                executor_ref="system:gc",
+                occurred_at=timestamp,
+                audit_event_id_for=lambda revision_id: f"audit-{revision_id}",
+            )
+            db.flush()
+
+            assert result.deleted_revision_ids == ("r1", "r0")
+            assert result.cut_parent_edges == 2
+            assert set(
+                db.scalars(
+                    select(CanvasRevisionRow.revision_id).where(
+                        CanvasRevisionRow.tenant_id == "tenant-a"
+                    )
+                ).all()
+            ) == {"r2", "r3", "b1", "b2", "merge"}
+            assert set(
+                db.scalars(
+                    select(GenerationDeletionAuditEventRow.target_ref).where(
+                        GenerationDeletionAuditEventRow.tenant_id == "tenant-a"
+                    )
+                ).all()
+            ) == {"r0", "r1"}
+
+            for revision_id in ("cycle-a", "cycle-b"):
+                db.add(
+                    CanvasRevisionRow(
+                        tenant_id="tenant-a",
+                        revision_id=revision_id,
+                        doc_id="doc",
+                        content_digest=digest,
+                        generation_tier="ephemeral",
+                        generation_reason="autosave",
+                        generation_origin="system",
+                        actor_ref=None,
+                        ai_run_ref=None,
+                        source_revision_id=None,
+                        created_at=old_timestamp,
+                    )
+                )
+            db.commit()
+            for child, parent in (("cycle-a", "cycle-b"), ("cycle-b", "cycle-a")):
+                db.add(
+                    CanvasRevisionParentRow(
+                        tenant_id="tenant-a",
+                        revision_id=child,
+                        parent_revision_id=parent,
+                        parent_order=0,
+                    )
+                )
+            db.commit()
+
+            with pytest.raises(GenerationGcConflict, match="cycle"):
+                prune_ephemeral_history_by_reachability(
+                    db,
+                    tenant=_tenant("tenant-a"),
+                    older_than="2026-08-01T00:00:00Z",
+                    keep_per_root=2,
+                    executor_ref="system:gc",
+                    occurred_at=timestamp,
+                    audit_event_id_for=lambda revision_id: f"cycle-audit-{revision_id}",
+                )
+            assert db.get(CanvasRevisionRow, ("tenant-a", "cycle-a")) is not None
+            assert db.get(CanvasRevisionRow, ("tenant-a", "cycle-b")) is not None
     finally:
         Base.metadata.drop_all(engine)
         engine.dispose()

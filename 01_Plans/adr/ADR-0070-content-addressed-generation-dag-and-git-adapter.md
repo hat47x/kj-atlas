@@ -31,6 +31,7 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 16. revision削除時は保護条件を同じDELETE statementで再評価し、候補列挙後のpin/head追加競合をfail closedにする。blob sweepはrevision参照とdelta base参照がともにゼロで、`failed|deleting`の保留期限超過objectだけを対象とする。
 17. AI実行は`ai_generation_runs`へ分離し、task、監査ログ接続用trace ID、入力IR digest、出力blob digest、policy version、SafeMode、作成・保持期限だけを保存する。prompt、入出力本文、provider、model、transportはrevision DAGへ複製しない。AI proposal revisionだけが同一tenantのAI runを参照でき、SafeMode無効のrunはDB制約で拒否する。
 18. GCによるrevision／blob削除は本文を含まないappend-only監査を残す。blob GCは対象rowをlockしたトランザクション内で参照を再確認し、`deleting`へ遷移してから物理backendを削除し、metadata削除と成功監査を同じtransactionへ置く。物理削除失敗時はrowを`deleting`のまま残して失敗監査を記録し、retry可能にする。外部I/O中のrow lockはGC worker限定の安全性優先trade-offとして許容する。
+19. ephemeral件数保持は単一branchの連番ではなくtenant内DAG到達性で計算する。全head、pin、checkpoint／governed revision、source参照先をrootとし、各rootから各parent path上で設定件数以内のephemeralをunionして保持する。保持範囲外との境界edgeを切断した後、候補部分DAGをchild-firstで削除する。共有祖先がいずれかのrootから保持範囲内なら削除せず、cycle、欠損parent、削除中の保護条件変更はtransaction全体をfail closedにする。
 
 ## Alternatives
 
