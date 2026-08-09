@@ -125,7 +125,7 @@ def upgrade() -> None:
                 "documents",
                 sa.Column(
                     "tenant_id",
-                    sa.Text(),
+                    sa.String(128),
                     nullable=False,
                     server_default=LOCAL_DEFAULT_TENANT_ID,
                 ),
@@ -146,7 +146,7 @@ def upgrade() -> None:
                 "merge_decision_logs",
                 sa.Column(
                     "tenant_id",
-                    sa.Text(),
+                    sa.String(128),
                     nullable=False,
                     server_default=LOCAL_DEFAULT_TENANT_ID,
                 ),
@@ -184,7 +184,7 @@ def upgrade() -> None:
                       AND tenant_memberships.user_id = users.id
                 )
                 """
-            ),
+            ).bindparams(sa.bindparam("tenant_id", type_=sa.String(128))),
             {
                 "tenant_id": LOCAL_DEFAULT_TENANT_ID,
                 "created_at": MIGRATION_TIMESTAMP,
@@ -242,8 +242,7 @@ def downgrade() -> None:
             elif table_name == "tenant_memberships":
                 count = bind.execute(
                     sa.text(
-                        "SELECT COUNT(*) FROM tenant_memberships "
-                        "WHERE tenant_id != 'local-default'"
+                        "SELECT COUNT(*) FROM tenant_memberships WHERE tenant_id != 'local-default'"
                     )
                 ).scalar()
                 if count:
@@ -254,8 +253,7 @@ def downgrade() -> None:
             elif table_name == "identity_providers":
                 count = bind.execute(
                     sa.text(
-                        "SELECT COUNT(*) FROM identity_providers "
-                        "WHERE id NOT LIKE 'idp-legacy-%'"
+                        "SELECT COUNT(*) FROM identity_providers WHERE id NOT LIKE 'idp-legacy-%'"
                     )
                 ).scalar()
                 if count:

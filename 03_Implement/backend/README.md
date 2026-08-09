@@ -21,7 +21,7 @@
 - `KJ_ATLAS_DATABASE_URL`
   - 既定値: `sqlite:///./kj_atlas.db`
   - `sqlite+aiosqlite://...` / `postgresql+asyncpg://...` が与えられた場合は、Phase 1 の同期SQLAlchemy実装で扱えるよう内部で同期ドライバURLへ正規化して利用
-  - 正式対応はSQLite/PostgreSQL。MySQL/MariaDB、SQL Server、Oracle、CockroachDBは候補として管理するが、schema/migrationの実DB検証完了までは接続前に拒否
+  - 正式対応はSQLite、PostgreSQL、MySQL 8.4、MariaDB 11.4。SQL Server、Oracle、CockroachDBは候補として管理し、実DB検証完了までは接続前に拒否
   - 対応状況と昇格条件: `02_Architecture/database_portability.md`
 - `KJ_ATLAS_LLM_PROVIDER`
   - 既定値: `none`
@@ -45,6 +45,15 @@ uvicorn kj_atlas_api.main:app --reload
 ```
 
 PostgreSQL を使う場合は `KJ_ATLAS_DATABASE_URL` を PostgreSQL の URL に変更してください。
+
+MySQL/MariaDBはoptional driverを導入し、single-tenant構成で使用します。
+
+```bash
+pip install -e ".[mysql]"
+export KJ_ATLAS_DATABASE_URL="mysql+pymysql://user:password@localhost:3306/kj_atlas"
+# MariaDB: mariadb+pymysql://user:password@localhost:3306/kj_atlas
+alembic upgrade head
+```
 
 ## Minimal backup / restore
 

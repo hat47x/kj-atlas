@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sqlite3
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -18,7 +19,7 @@ def _run_alembic(db_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["KJ_ATLAS_DATABASE_URL"] = f"sqlite:///{db_path}"
     return subprocess.run(
-        ["alembic", *args],
+        [sys.executable, "-m", "alembic", *args],
         cwd=BACKEND_DIR,
         env=env,
         check=False,
@@ -98,20 +99,12 @@ def test_migration_allows_same_doc_id_per_tenant_and_enforces_log_fk(
     con = sqlite3.connect(db_path)
     try:
         primary_key_columns = {
-            row[1]: row[5]
-            for row in con.execute("PRAGMA table_info('documents')")
-            if row[5] > 0
+            row[1]: row[5] for row in con.execute("PRAGMA table_info('documents')") if row[5] > 0
         }
         assert primary_key_columns == {"tenant_id": 1, "id": 2}
 
-        foreign_keys = list(
-            con.execute("PRAGMA foreign_key_list('merge_decision_logs')")
-        )
-        composite_pairs = {
-            (row[3], row[4])
-            for row in foreign_keys
-            if row[2] == "documents"
-        }
+        foreign_keys = list(con.execute("PRAGMA foreign_key_list('merge_decision_logs')"))
+        composite_pairs = {(row[3], row[4]) for row in foreign_keys if row[2] == "documents"}
         assert composite_pairs == {("tenant_id", "tenant_id"), ("doc_id", "id")}
 
         _insert_tenant(con, "tenant-b")
@@ -133,9 +126,9 @@ def test_migration_allows_same_doc_id_per_tenant_and_enforces_log_fk(
             ),
         )
         con.commit()
-        assert con.execute(
-            "SELECT COUNT(*) FROM documents WHERE id = 'shared-doc'"
-        ).fetchone() == (2,)
+        assert con.execute("SELECT COUNT(*) FROM documents WHERE id = 'shared-doc'").fetchone() == (
+            2,
+        )
         assert con.execute(
             """
             SELECT COUNT(*) FROM merge_decision_logs
@@ -205,13 +198,9 @@ def test_downgrade_refuses_duplicate_doc_ids_then_restores_global_key(
     con = sqlite3.connect(db_path)
     try:
         primary_key_columns = {
-            row[1]: row[5]
-            for row in con.execute("PRAGMA table_info('documents')")
-            if row[5] > 0
+            row[1]: row[5] for row in con.execute("PRAGMA table_info('documents')") if row[5] > 0
         }
-        indexes = {
-            row[1] for row in con.execute("PRAGMA index_list('documents')")
-        }
+        indexes = {row[1] for row in con.execute("PRAGMA index_list('documents')")}
         assert primary_key_columns == {"id": 1}
         assert "ix_documents_tenant_id_id" in indexes
     finally:

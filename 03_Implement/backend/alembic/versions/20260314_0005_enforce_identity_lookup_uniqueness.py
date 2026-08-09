@@ -46,7 +46,15 @@ def upgrade() -> None:
             "Resolve duplicate (lower(provider), lower(external_uid)) rows before applying migration."
         )
 
-    if not _has_index(inspector, "user_identities", "uq_user_identities_provider_lower_external_uid"):
+    # MySQL-family fresh DDL gives these columns an explicit
+    # utf8mb4_unicode_ci collation. The original composite unique constraint
+    # therefore already enforces the same case-insensitive identity.
+    if bind.dialect.name in {"mysql", "mariadb"}:
+        return
+
+    if not _has_index(
+        inspector, "user_identities", "uq_user_identities_provider_lower_external_uid"
+    ):
         op.create_index(
             "uq_user_identities_provider_lower_external_uid",
             "user_identities",
@@ -60,6 +68,9 @@ def downgrade() -> None:
     inspector = sa.inspect(bind)
 
     if not inspector.has_table("user_identities"):
+        return
+
+    if bind.dialect.name in {"mysql", "mariadb"}:
         return
 
     op.execute(sa.text("DROP INDEX IF EXISTS uq_user_identities_provider_lower_external_uid"))

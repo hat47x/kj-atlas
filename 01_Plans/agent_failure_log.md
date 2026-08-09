@@ -176,3 +176,108 @@ Updated: 2026-08-03
 - 原因: candidate revision削除時の親edge除去をDBの`ON DELETE CASCADE`だけに依存し、テスト接続ではSQLite外部キー処理が無効だった。
 - 対応: retention pruning transaction内でcandidate自身の親edgeを明示削除してからrevisionを条件付き削除する。
 - 再発防止: GCの進行順序に必要なcleanupは、接続別のcascade有効化だけへ依存させない。
+
+## 2026-08-10: tenant-key migrationテストがbare Alembicへ依存
+
+- 事象: portable text migration回帰のうち既存tenant-key migrationテスト2件が`FileNotFoundError: alembic`で停止した。他7件は通過した。
+- 原因: 同テストだけが`sys.executable -m alembic`ではなくPATH上のbare commandを起動していた。
+- 対応: pytestと同じ仮想環境のPython moduleとしてAlembicを起動するよう統一した。
+- 再発防止: migration subprocessはPATH上のconsole scriptへ依存せず、`sys.executable -m alembic`を使う。
+
+## 2026-08-10: MySQL 8.4 fresh migrationがlower式indexで停止
+
+- 事象: 検証専用にcandidate guardを迂回したMySQL 8.4 fresh migrationがrevision 0005でSQL構文エラーとなった。
+- 原因: SQLite/PostgreSQL向けの`CREATE UNIQUE INDEX ... (lower(provider), lower(external_uid))`形式をMySQLへそのまま発行した。
+- 対応: MySQL familyでは対象列を明示的なcase-insensitive collationにし、既存のraw composite unique constraintで同じ一意性を担保して式indexを省略する。
+- 再発防止: expression indexはmigration strategyの方言matrixで実DB検証し、共通DDLと仮定しない。
+
+## 2026-08-10: SQLite batch型変更が式unique indexを消失
+
+- 事象: portable text migration後のSQLite schemaからcase-insensitive identity unique indexが消え、既存migrationテストが失敗した。
+- 原因: SQLiteのtable rebuild時にAlembic reflectionが式indexを復元できなかった。
+- 対応: 0020のupgrade／downgrade双方で既知の式index存在を確認し、欠落時に明示再作成する。
+- 再発防止: SQLite batch migration後は列型だけでなく、unique／expression indexの実schemaも回帰確認する。
+
+## 2026-08-10: MySQL identity provider複合uniqueが最大key byte数を超過
+
+- 事象: MySQL 8.4 fresh migrationがrevision 0006の`issuer + audience` unique constraintで3072-byte上限を超えて停止した。
+- 原因: URI一般上限2048とaudience 512を、そのままutf8mb4複合索引列へ適用していた。
+- 対応: OIDC lookup契約をissuer 512、audience 255、非索引JWKS URI 2048へ分離し、API境界でも同じ上限を拒否する。
+- 再発防止: 複合index列は文字数だけでなく対象charsetの最大byte数合計を実DB gateで検証する。
+
+## 2026-08-10: MySQLがdefault付きTEXT追加列を拒否
+
+- 事象: MySQL 8.4 fresh migrationがrevision 0006の`documents.tenant_id TEXT NOT NULL DEFAULT`で停止した。
+- 原因: portable create-table hookは`op.add_column`へ作用せず、履歴migrationの追加identifier列がTEXTのままだった。
+- 対応: 過去migration内の全`add_column(Text)`を棚卸しし、tenant/internal ID 128、external subject 512、state 32、URI 2048の分類済みString型へ修正した。
+- 再発防止: fresh migrationのportable型検査はcreate tableとadd/alter columnを別々に実DBで通す。
+
+## 2026-08-10: tenant document key migrationがMySQL strategy未登録で停止
+
+- 事象: MySQL fresh migrationはrevision 0007まで進んだ後、0008の明示的なunsupported dialect guardで停止した。
+- 原因: 0008はSQLite rebuildとPostgreSQL named-constraint DDLだけを許可し、同じnamed-constraint操作が可能なMySQL familyを未検証のまま除外していた。
+- 対応: PostgreSQL固有ではない処理をconstraint-DDL strategyへ改名し、MySQL/MariaDB familyを同じ経路へ追加して実DBで継続検証する。
+- 再発防止: migration分岐はbackend名の列挙より、実際に必要なmigration strategy単位で共有する。
+
+## 2026-08-10: MySQL inspectorが主キーconstraint名を返さず停止
+
+- 事象: 0008をconstraint-DDL経路へ追加後、主キー名必須検査でMySQL migrationが停止した。
+- 原因: MySQL inspectorのprimary key nameは`None`だが、DDL上は予約名`PRIMARY`でdropする仕様差を未吸収だった。
+- 対応: MySQL/MariaDB familyだけ欠落名を`PRIMARY`へ正規化し、PostgreSQLのnamed constraint検査は維持する。
+- 再発防止: constraint reflectionの名前有無も実DB family matrixの検証項目に含める。
+
+## 2026-08-10: portable text downgradeがMySQL索引列をTEXTへ戻して停止
+
+- 事象: MySQL headから0007へのdowngradeが0020で`ai_run_id TEXT`への変更を拒否され停止した。
+- 原因: MySQL fresh schemaは履歴DDL hookにより0019時点でもbounded型だが、SQLite/PostgreSQL既存DB向けのTEXT復元を一律実行した。
+- 対応: MySQL/MariaDBでは0020 downgradeを物理no-opとし、履歴上の0019 portable schemaを維持する。
+- 再発防止: downgradeの目標物理schemaは、各familyのfresh migrationで実際に生成される直前revisionと照合する。
+
+## 2026-08-10: MySQL downgradeが外部キー利用中indexの明示dropを拒否
+
+- 事象: 0019 downgradeでtenant外部キーが利用する複合indexをtableより先にdropしようとしてMySQLが停止した。
+- 原因: 直後にtableをdropするにもかかわらず、Alembic生成形の明示index dropを残していた。MySQLは外部キー補助indexとして利用中のため単独dropを拒否する。
+- 対応: table削除直前の冗長なindex dropを関連6 migrationから除去し、table dropによるindex自動削除へ統一した。
+- 再発防止: downgrade順序はindex、foreign key、tableの依存を実DBで確認し、tableと同時消滅するindexを先行dropしない。
+
+## 2026-08-10: MySQLがIdP外部キー補助に利用中のunique削除を拒否
+
+- 事象: 0014 downgradeで`tenant_identity_providers(identity_provider_id, external_tenant_ref)` uniqueをdropできなかった。
+- 原因: MySQLがuniqueを`identity_provider_id`外部キーの補助indexとして選び、代替indexが存在しなかった。
+- 対応: downgrade前に単列補助indexを作り、re-upgradeでuniqueを復元した後に補助indexを除去する対称処理を追加した。
+- 再発防止: MySQLのconstraint downgradeでは、明示DDLだけでなくDBが選択した外部キー補助index依存も検証する。
+
+## 2026-08-10: membership user index downgradeがMySQL外部キー依存で停止
+
+- 事象: 0013 downgradeで`tenant_memberships.user_id` indexをdropできなかった。
+- 原因: MySQLが同indexをusers外部キーの補助として利用しており、0012相当の代替indexがなかった。
+- 対応: downgrade時だけ保持用単列indexへ切り替え、re-upgradeで正規indexを復元後に保持用indexを除去する。
+- 再発防止: index追加migrationのroundtripでは、MySQLが外部キー補助へ採用した場合の対称操作も検証する。
+
+## 2026-08-10: MySQL TEXTが1 MiB inline content roundtripを拒否
+
+- 事象: head migration後のMySQL 8.4へ1 MiB超の`documents.payload_json`を保存すると`Data too long`となった。
+- 原因: SQLAlchemyの汎用TextがMySQLでは最大約64 KiBのTEXTへコンパイルされ、content object要件に不足した。
+- 対応: content object 3列だけをMySQL/MariaDBではLONGTEXTへ写像し、SQLite/PostgreSQLでは無制限Textを維持するvariantと履歴DDL hookを追加した。
+- 再発防止: inline LOB promotion gateに1 MiB超の実roundtripを含め、単なるText型コンパイル成功で対応判定しない。
+
+## 2026-08-10: pytestの出力キャプチャ一時fileが消失
+
+- 事象: SQLite回帰suiteのcollection中にpytestのキャプチャ用一時fileが消失し、testを1件も実行せず`FileNotFoundError`で終了した。
+- 原因: test対象の失敗ではなく、実行環境のpytest global captureと一時directoryの競合と判定した。
+- 対応: `-s`でglobal captureを無効化し、同一suiteを再実行する。
+- 再発防止: 並行agent環境で同事象が出た場合は、test変更前にcapture無効化で環境要因を切り分ける。
+
+## 2026-08-10: PostgreSQLのtenant backfillでparameter型推論が衝突
+
+- 事象: PostgreSQL fresh migrationのrevision 0006で、tenant membership backfillが`text versus character varying`の`AmbiguousParameter`で停止した。
+- 原因: `tenant_id`の物理型を`VARCHAR(128)`へ変更した一方、同じbind parameterを過去の`TEXT`列と新規`VARCHAR`列で比較するraw SQLに型指定がなかった。
+- 対応: migrationの`tenant_id` bind parameterを`String(128)`と明示した。
+- 再発防止: 歴史migrationの列型をDDL hookで変換する場合、同一parameterを異なる物理型に使うbackfillもfresh PostgreSQLで検証する。
+
+## 2026-08-10: PostgreSQL RLS policyが列型変更を防止
+
+- 事象: portable text revision 0020で`tenant_id`を`VARCHAR`へ変更する際、同列を参照するRLS policy依存によりPostgreSQLがDDLを拒否した。
+- 原因: indexとforeign keyのみをmigration依存として考慮し、PostgreSQL policy expressionの列依存を考慮していなかった。
+- 対応: 0020が対象tableのpolicy定義を`pg_policies`から保存し、型変更中だけ解除した後に同一定義を復元するようにした。
+- 再発防止: PostgreSQLの列型migrationはRLS policyの保存とfresh・downgrade・re-upgradeの実DB検証を必須とする。

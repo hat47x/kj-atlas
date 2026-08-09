@@ -14,7 +14,7 @@ kj-atlasはSQLAlchemy ORMを利用しているが、ORMが接続可能なDBと�
 ## Decision
 
 1. DB方言の判断は単一の能力レジストリへ集約し、各backendに`family`、`support_level`、`migration_strategy`、`shared_schema_saas`を持たせる。
-2. `verified`はSQLite/PostgreSQLだけとする。MySQL/MariaDB、SQL Server、Oracle、CockroachDBは`candidate`として登録するが、実DBmatrix完了までruntimeとAlembicをfail-fastで拒否する。
+2. `verified`はSQLite、PostgreSQL、MySQL 8.4、MariaDB 11.4とする。SQL Server、Oracle、CockroachDBは`candidate`として登録するが、実DBmatrix完了までruntimeとAlembicをfail-fastで拒否する。
 3. driver差ではなくDB familyを拡張単位にする。MySQLとMariaDBは同じfamilyとして共通化し、差分が実証された箇所だけ個別capabilityへ分離する。
 4. candidateの昇格には、fresh migration、upgrade/downgrade、複合PK/FK・unique/check/index、CRUD roundtrip、transaction、backup/restoreの実DB検証を必須とする。SQLAlchemyのmock dialectやSQL生成だけでは昇格しない。
 5. 物理型はDB都合で一律変換せず、identifier、bounded descriptive text、content objectへ分類する。識別子の上限はID生成規則・外部契約・索引要件から意味別に決め、payloadや長文を一律VARCHAR化しない。
@@ -27,7 +27,7 @@ kj-atlasはSQLAlchemy ORMを利用しているが、ORMが接続可能なDBと�
 
 - 未検証DBで途中まで起動してからmigrationや制約で壊れる状態を防げる。
 - 将来DBの追加は候補登録ではなく、型・migration・実DB証跡を伴う明示的な昇格になる。
-- MySQL/MariaDB対応前にbounded identifier型への移行が必要となり、即時のURL許可より作業量は増える。
+- MySQL/MariaDBはbounded identifierと`LONGTEXT` content写像を適用し、single-tenant runtimeとして利用できる。共有schema SaaS対応は含まない。
 - 大容量contentをDB外へ移せるが、DB/object間の原子的commitを仮定せず、補償処理と整合性検証を実装する必要がある。
 - SQLite/PostgreSQLの既存利用、SafeMode、proposal-only、export/import境界は変更しない。
 
@@ -35,7 +35,7 @@ kj-atlasはSQLAlchemy ORMを利用しているが、ORMが接続可能なDBと�
 
 - SQLAlchemyが提供する全dialectを一括して正式対応しない。
 - DB固有機能を最小公倍数へ落としてPostgreSQL RLSを弱めない。
-- candidate DB用driverを、実DB検証前に必須runtime依存へ追加しない。
+- DB固有driverを必須runtime依存へ追加せず、検証済みDBもoptional dependencyで導入する。
 
 ## Traceability
 

@@ -79,6 +79,5 @@ def downgrade() -> None:
     if op.get_bind().dialect.name == "postgresql":
         op.execute(sa.text(f"DROP POLICY IF EXISTS {_AUDIT_POLICY} ON {_AUDIT_TABLE}"))
         op.execute(sa.text(f"DROP POLICY IF EXISTS {_BUNDLE_POLICY} ON {_BUNDLE_TABLE}"))
-    op.drop_index("ix_inquiry_bundle_deletion_audit_tenant_occurred", table_name=_AUDIT_TABLE)
     op.drop_table(_AUDIT_TABLE)
     op.drop_table(_BUNDLE_TABLE)

@@ -16,9 +16,7 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 POLICY_NAME = "kj_atlas_document_access_admin_audit_tenant_isolation"
-TENANT_EXPRESSION = (
-    "tenant_id = NULLIF(current_setting('kj_atlas.tenant_id', true), '')"
-)
+TENANT_EXPRESSION = "tenant_id = NULLIF(current_setting('kj_atlas.tenant_id', true), '')"
 
 
 def upgrade() -> None:
@@ -60,12 +58,8 @@ def upgrade() -> None:
     if bind.dialect.name != "postgresql":
         return
 
-    op.execute(
-        "ALTER TABLE document_access_admin_audit_events ENABLE ROW LEVEL SECURITY"
-    )
-    op.execute(
-        "ALTER TABLE document_access_admin_audit_events FORCE ROW LEVEL SECURITY"
-    )
+    op.execute("ALTER TABLE document_access_admin_audit_events ENABLE ROW LEVEL SECURITY")
+    op.execute("ALTER TABLE document_access_admin_audit_events FORCE ROW LEVEL SECURITY")
     op.execute(
         f"""
         CREATE POLICY {POLICY_NAME} ON document_access_admin_audit_events
@@ -78,21 +72,8 @@ def upgrade() -> None:
 def downgrade() -> None:
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
-        op.execute(
-            f"DROP POLICY IF EXISTS {POLICY_NAME} "
-            "ON document_access_admin_audit_events"
-        )
-        op.execute(
-            "ALTER TABLE document_access_admin_audit_events "
-            "NO FORCE ROW LEVEL SECURITY"
-        )
-        op.execute(
-            "ALTER TABLE document_access_admin_audit_events "
-            "DISABLE ROW LEVEL SECURITY"
-        )
+        op.execute(f"DROP POLICY IF EXISTS {POLICY_NAME} ON document_access_admin_audit_events")
+        op.execute("ALTER TABLE document_access_admin_audit_events NO FORCE ROW LEVEL SECURITY")
+        op.execute("ALTER TABLE document_access_admin_audit_events DISABLE ROW LEVEL SECURITY")
 
-    op.drop_index(
-        "ix_document_access_admin_audit_tenant_occurred",
-        table_name="document_access_admin_audit_events",
-    )
     op.drop_table("document_access_admin_audit_events")

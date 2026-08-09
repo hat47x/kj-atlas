@@ -19,6 +19,7 @@ depends_on: str | Sequence[str] | None = None
 
 TABLE_NAME = "tenant_memberships"
 INDEX_NAME = "ix_tenant_memberships_user_id"
+MYSQL_FK_KEEP_INDEX = "ix_tenant_memberships_user_id_fk_keep"
 
 
 def _has_index(inspector: sa.Inspector, table_name: str, index_name: str) -> bool:
@@ -39,6 +40,10 @@ def upgrade() -> None:
             ["user_id"],
             unique=False,
         )
+    if bind.dialect.name in {"mysql", "mariadb"} and _has_index(
+        sa.inspect(bind), TABLE_NAME, MYSQL_FK_KEEP_INDEX
+    ):
+        op.drop_index(MYSQL_FK_KEEP_INDEX, table_name=TABLE_NAME)
 
 
 def downgrade() -> None:
@@ -49,4 +54,13 @@ def downgrade() -> None:
         return
 
     if _has_index(inspector, TABLE_NAME, INDEX_NAME):
+        if bind.dialect.name in {"mysql", "mariadb"} and not _has_index(
+            inspector, TABLE_NAME, MYSQL_FK_KEEP_INDEX
+        ):
+            op.create_index(
+                MYSQL_FK_KEEP_INDEX,
+                TABLE_NAME,
+                ["user_id"],
+                unique=False,
+            )
         op.drop_index(INDEX_NAME, table_name=TABLE_NAME)

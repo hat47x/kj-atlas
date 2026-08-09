@@ -55,9 +55,7 @@ def _backfill_identity_bindings(bind: sa.Connection) -> None:
         identity_provider_id, issuer = _legacy_binding(str(raw_provider))
         normalized_provider = str(raw_provider).strip().lower()
         existing = bind.execute(
-            sa.text(
-                "SELECT issuer, audience FROM identity_providers WHERE id = :provider_id"
-            ),
+            sa.text("SELECT issuer, audience FROM identity_providers WHERE id = :provider_id"),
             {"provider_id": identity_provider_id},
         ).first()
         if existing is None:
@@ -129,12 +127,12 @@ def upgrade() -> None:
     if "identity_provider_id" not in columns:
         op.add_column(
             "user_identities",
-            sa.Column("identity_provider_id", sa.Text(), nullable=True),
+            sa.Column("identity_provider_id", sa.String(128), nullable=True),
         )
     if "subject" not in columns:
         op.add_column(
             "user_identities",
-            sa.Column("subject", sa.Text(), nullable=True),
+            sa.Column("subject", sa.String(512), nullable=True),
         )
 
     inspector = sa.inspect(bind)
@@ -176,8 +174,7 @@ def downgrade() -> None:
         return
 
     if NEW_UNIQUE_NAME in (
-        _constraint_names(inspector, "user_identities")
-        | _index_names(inspector, "user_identities")
+        _constraint_names(inspector, "user_identities") | _index_names(inspector, "user_identities")
     ):
         op.drop_index(NEW_UNIQUE_NAME, table_name="user_identities")
 

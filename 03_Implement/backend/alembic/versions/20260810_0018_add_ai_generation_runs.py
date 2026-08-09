@@ -33,8 +33,12 @@ def upgrade() -> None:
         sa.Column("created_at", sa.Text(), nullable=False),
         sa.Column("retention_expires_at", sa.Text(), nullable=True),
         sa.CheckConstraint("length(trim(task)) > 0", name="ck_ai_generation_runs_task"),
-        sa.CheckConstraint("length(input_ir_digest) = 64", name="ck_ai_generation_runs_input_digest"),
-        sa.CheckConstraint("length(output_digest) = 64", name="ck_ai_generation_runs_output_digest"),
+        sa.CheckConstraint(
+            "length(input_ir_digest) = 64", name="ck_ai_generation_runs_input_digest"
+        ),
+        sa.CheckConstraint(
+            "length(output_digest) = 64", name="ck_ai_generation_runs_output_digest"
+        ),
         sa.CheckConstraint("safe_mode IS TRUE", name="ck_ai_generation_runs_safe_mode"),
         sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(
@@ -62,7 +66,11 @@ def upgrade() -> None:
     if op.get_bind().dialect.name == "postgresql":
         op.execute(sa.text(f"ALTER TABLE {_TABLE} ENABLE ROW LEVEL SECURITY"))
         op.execute(sa.text(f"ALTER TABLE {_TABLE} FORCE ROW LEVEL SECURITY"))
-        op.execute(sa.text(f"CREATE POLICY {_POLICY} ON {_TABLE} USING ({_TENANT_USING}) WITH CHECK ({_TENANT_USING})"))
+        op.execute(
+            sa.text(
+                f"CREATE POLICY {_POLICY} ON {_TABLE} USING ({_TENANT_USING}) WITH CHECK ({_TENANT_USING})"
+            )
+        )
 
 
 def downgrade() -> None:
@@ -71,5 +79,4 @@ def downgrade() -> None:
         batch_op.drop_constraint("ck_canvas_revisions_ai_proposal", type_="check")
     if op.get_bind().dialect.name == "postgresql":
         op.execute(sa.text(f"DROP POLICY IF EXISTS {_POLICY} ON {_TABLE}"))
-    op.drop_index("ix_ai_generation_runs_tenant_created", table_name=_TABLE)
     op.drop_table(_TABLE)

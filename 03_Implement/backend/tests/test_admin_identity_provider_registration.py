@@ -16,6 +16,7 @@ from kj_atlas_api.models import (
     Base,
     TenantRow,
 )
+from kj_atlas_api.persistence_shapes import OIDC_AUDIENCE_MAX_CHARS, OIDC_ISSUER_MAX_CHARS
 from kj_atlas_api.trusted_saas_runtime import TrustedSaasRuntimePolicy
 from tests.conftest import TIMESTAMP
 
@@ -76,6 +77,25 @@ def _admin_test_client(tmp_path) -> Iterator[TestClient]:
 
 
 class TestRegisterIdentityProvider:
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("issuer", "i" * (OIDC_ISSUER_MAX_CHARS + 1)),
+            ("audience", "a" * (OIDC_AUDIENCE_MAX_CHARS + 1)),
+        ],
+    )
+    def test_rejects_lookup_values_above_portable_acceptance_bound(
+        self, tmp_path, field: str, value: str
+    ) -> None:
+        payload = {
+            "issuer": "https://broker.example.com/issuer",
+            "audience": "kj-atlas",
+            field: value,
+        }
+        with _admin_test_client(tmp_path) as client:
+            response = client.post("/admin/provision/identity-providers", json=payload)
+        assert response.status_code == 422
+
     def test_registers_valid_oidc_provider(self, tmp_path) -> None:
         with _admin_test_client(tmp_path) as client:
             resp = client.post(
@@ -203,7 +223,8 @@ class TestRegisterIdentityProvider:
 
 class TestRegisterTenantIdentityProvider:
     def test_links_tenant_to_provider_with_external_ref(
-        self, tmp_path,
+        self,
+        tmp_path,
     ) -> None:
         with _admin_test_client(tmp_path) as client:
             idp_resp = client.post(
@@ -285,11 +306,13 @@ class TestRegisterTenantIdentityProvider:
                 "externalTenantRef": "org-dup",
             }
             r1 = client.post(
-                "/admin/provision/tenant-identity-providers", json=payload,
+                "/admin/provision/tenant-identity-providers",
+                json=payload,
             )
             assert r1.status_code == 201
             r2 = client.post(
-                "/admin/provision/tenant-identity-providers", json=payload,
+                "/admin/provision/tenant-identity-providers",
+                json=payload,
             )
             assert r2.status_code == 409
 

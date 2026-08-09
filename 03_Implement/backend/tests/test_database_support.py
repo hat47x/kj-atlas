@@ -16,6 +16,8 @@ from kj_atlas_api.settings import Settings
 def test_verified_database_capabilities_are_explicit() -> None:
     sqlite = database_support_for_backend("sqlite")
     postgres = database_support_for_backend("postgresql")
+    mysql = database_support_for_backend("mysql")
+    mariadb = database_support_for_backend("mariadb")
 
     assert sqlite.is_verified is True
     assert sqlite.migration_strategy == "sqlite-rebuild"
@@ -25,13 +27,17 @@ def test_verified_database_capabilities_are_explicit() -> None:
     assert postgres.migration_strategy == "constraint-ddl"
     assert postgres.shared_schema_saas is True
     assert postgres.inline_content == "verified"
+    for support in (mysql, mariadb):
+        assert support.is_verified is True
+        assert support.family == "mysql"
+        assert support.migration_strategy == "constraint-ddl"
+        assert support.shared_schema_saas is False
+        assert support.inline_content == "verified"
 
 
 @pytest.mark.parametrize(
     ("url", "backend", "family"),
     [
-        ("mysql+pymysql://user:secret@db/kj_atlas", "mysql", "mysql"),
-        ("mariadb+pymysql://user:secret@db/kj_atlas", "mariadb", "mysql"),
         ("mssql+pyodbc://user:secret@db/kj_atlas", "mssql", "mssql"),
         ("oracle+oracledb://user:secret@db/kj_atlas", "oracle", "oracle"),
         ("cockroachdb://user:secret@db/kj_atlas", "cockroachdb", "cockroachdb"),
@@ -88,7 +94,7 @@ def test_registry_has_no_duplicate_backends() -> None:
 def test_settings_rejects_candidate_before_engine_creation(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.setenv(
         "KJ_ATLAS_DATABASE_URL",
-        "mysql+pymysql://sensitive-user:secret-password@db/kj_atlas",
+        "mssql+pyodbc://sensitive-user:secret-password@db/kj_atlas",
     )
 
     with pytest.raises(ValidationError) as captured:

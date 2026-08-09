@@ -18,7 +18,7 @@ def test_alembic_has_single_head() -> None:
     script = _script_directory()
     heads = script.get_heads()
 
-    assert heads == ["20260810_0019"], (
+    assert heads == ["20260810_0020"], (
         "alembic migration graph must stay linear to avoid stream-merge conflicts: "
         f"unexpected heads={heads}"
     )

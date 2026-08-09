@@ -72,5 +72,4 @@ def upgrade() -> None:
 def downgrade() -> None:
     if op.get_bind().dialect.name == "postgresql":
         op.execute(sa.text(f"DROP POLICY IF EXISTS {_POLICY} ON {_TABLE}"))
-    op.drop_index("ix_generation_deletion_audit_tenant_occurred", table_name=_TABLE)
     op.drop_table(_TABLE)

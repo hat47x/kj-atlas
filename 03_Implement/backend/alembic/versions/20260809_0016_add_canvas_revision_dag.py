@@ -187,7 +187,5 @@ def downgrade() -> None:
             op.execute(sa.text(f"DROP POLICY IF EXISTS {_policy_name(table_name)} ON {table_name}"))
     op.drop_table("canvas_revision_heads")
     op.drop_table("canvas_revision_parents")
-    op.drop_index("ix_canvas_revisions_tenant_doc_created", table_name="canvas_revisions")
     op.drop_table("canvas_revisions")
-    op.drop_index("ix_content_blobs_tenant_state", table_name="content_blobs")
     op.drop_table("content_blobs")

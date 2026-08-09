@@ -51,18 +51,18 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
     "mysql": DatabaseSupport(
         backend="mysql",
         family="mysql",
-        support_level="candidate",
-        migration_strategy="unimplemented",
+        support_level="verified",
+        migration_strategy="constraint-ddl",
         shared_schema_saas=False,
-        inline_content="candidate",
+        inline_content="verified",
     ),
     "mariadb": DatabaseSupport(
         backend="mariadb",
         family="mysql",
-        support_level="candidate",
-        migration_strategy="unimplemented",
+        support_level="verified",
+        migration_strategy="constraint-ddl",
         shared_schema_saas=False,
-        inline_content="candidate",
+        inline_content="verified",
     ),
     "mssql": DatabaseSupport(
         backend="mssql",
@@ -97,7 +97,7 @@ def database_support_for_backend(backend: str) -> DatabaseSupport:
     if support is None:
         raise ValueError(
             f"Unsupported database backend: {normalized_backend or '<empty>'}. "
-            "Verified backends: sqlite, postgresql"
+            "Verified backends: sqlite, postgresql, mysql, mariadb"
         )
     return support
 
@@ -116,7 +116,7 @@ def require_verified_database_url(database_url: str) -> DatabaseSupport:
         raise ValueError(
             f"Database backend '{support.backend}' is a candidate, not a verified runtime. "
             "Its identifier types and Alembic migration matrix must be completed before use. "
-            "Verified backends: sqlite, postgresql"
+            "Verified backends: sqlite, postgresql, mysql, mariadb"
         )
     return support
 

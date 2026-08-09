@@ -25,23 +25,32 @@ down_revision: str | None = "20260806_0014"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
+_MYSQL_IDP_FK_INDEX = "ix_tenant_identity_providers_identity_provider_id"
+
+
+def _has_index(bind: sa.Connection, index_name: str) -> bool:
+    return any(
+        index["name"] == index_name
+        for index in sa.inspect(bind).get_indexes("tenant_identity_providers")
+    )
+
 
 def upgrade() -> None:
     bind = op.get_bind()
     # ADD COLUMN works on both SQLite and PostgreSQL.
     op.add_column(
         "identity_providers",
-        sa.Column("protocol", sa.Text(), nullable=False, server_default="oidc"),
+        sa.Column("protocol", sa.String(32), nullable=False, server_default="oidc"),
     )
     op.add_column(
         "identity_providers",
-        sa.Column("jwks_uri", sa.Text(), nullable=True),
+        sa.Column("jwks_uri", sa.String(2048), nullable=True),
     )
     op.add_column(
         "tenant_identity_providers",
         sa.Column(
             "external_tenant_ref",
-            sa.Text(),
+            sa.String(512),
             nullable=True,
         ),
     )
@@ -54,9 +63,18 @@ def upgrade() -> None:
             "uq_tenant_identity_providers_idp_ref",
             ["identity_provider_id", "external_tenant_ref"],
         )
+    if bind.dialect.name in {"mysql", "mariadb"} and _has_index(bind, _MYSQL_IDP_FK_INDEX):
+        op.drop_index(_MYSQL_IDP_FK_INDEX, table_name="tenant_identity_providers")
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    if bind.dialect.name in {"mysql", "mariadb"} and not _has_index(bind, _MYSQL_IDP_FK_INDEX):
+        op.create_index(
+            _MYSQL_IDP_FK_INDEX,
+            "tenant_identity_providers",
+            ["identity_provider_id"],
+        )
     with op.batch_alter_table("tenant_identity_providers") as batch_op:
         batch_op.drop_constraint(
             "uq_tenant_identity_providers_idp_ref",

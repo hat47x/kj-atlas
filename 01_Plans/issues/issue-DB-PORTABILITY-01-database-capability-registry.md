@@ -1,7 +1,7 @@
 # Issue: DB-PORTABILITY-01 DB能力レジストリと段階的な多DB対応
 
 - Type: Architecture / Feature
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: User request 2026-08-09
 - Priority: P2
@@ -29,11 +29,11 @@
 - [x] AC-2: MySQL/MariaDB、SQL Server、Oracle、CockroachDBがcandidateとして分類され、runtimeではfail-fastになる。
 - [x] AC-3: DB URLエラーがcredentialやURL全体を反射しない。
 - [x] AC-4: 全永続列がidentifier／bounded descriptive text／content objectへ棚卸しされ、identifierの意味別最大長と受入規則が定義される。
-- [ ] AC-4a: identifier/index文字列が棚卸し結果に基づくbounded portable型へ移行され、SQLite/PostgreSQL回帰が通る。
+- [x] AC-4a: identifier/index文字列が棚卸し結果に基づくbounded portable型へ移行され、SQLite/PostgreSQL回帰が通る。
 - [x] AC-4b: `ContentStore` portとinline DB実装が設計・接続される。外部object metadata／GCはDB対応の昇格条件から外し、`DATA-GENERATION-01`のrevision／blob設計後に再評価する。
-- [ ] AC-5: MySQL/MariaDBでfresh migration、roundtrip、複合制約、upgrade/downgradeが実DBで通る。
-- [ ] AC-6: 公開文書でMySQL/MariaDBをverifiedへ昇格し、driver optional dependencyとCIを追加する。
-- [ ] AC-7: 将来candidateの追加が既存repository/APIへDB固有分岐を増やさず、同じ検証契約を再利用できる。
+- [x] AC-5: MySQL/MariaDBでfresh migration、roundtrip、複合制約、upgrade/downgradeが実DBで通る。
+- [x] AC-6: 公開文書でMySQL/MariaDBをverifiedへ昇格し、driver optional dependencyとCIを追加する。
+- [x] AC-7: 将来candidateの追加が既存repository/APIへDB固有分岐を増やさず、同じ検証契約を再利用できる。
 - [x] AC-8: shared-schema SaaSはPostgreSQL限定を維持し、candidate追加で安全条件を緩和しない。
 
 ## 検証計画
@@ -99,3 +99,10 @@
 - MySQL/MariaDBを同一familyとして登録し、SQL Server、Oracle、CockroachDBも将来候補として同じ昇格手順へ載せた。現行TEXT主キー・索引がMySQL系で成立しないため、未検証のまま接続だけ許可する対応は行っていない。
 - SQLite/PostgreSQLだけを正式対応、共有schema SaaSはPostgreSQLだけとする既存境界を維持した。AC-4〜7は後続段階として残す。
 - 検証はdatabase registry／Settings／trusted SaaS runtime近接72件、SQLite tenant-key migration 2件、変更対象Ruff、Active issue validator 60件を通過した。backend全体は791件pass・25件skip・10件deselectで、今回と無関係な既存`ProposalDecisionAuditResponse` field不整合1件だけが単独再実行でもfailした。docs-checkも既存`KJ_ATLAS_LLM_TASK_MODEL_MAP`のruntime registry未登録1件でfailしており、本issueでは別領域の修正を混在させない。
+
+## MySQL family promotion checkpoint 2026-08-10
+
+- 文字列の意味別上限を`persistence_shapes.py`からORMとmigrationへ適用し、content objectだけは無制限のままMySQL/MariaDBで`LONGTEXT`へ写像した。OIDCのissuer 512文字・audience 255文字はAPI受入上限と物理制約を一致させた。
+- MySQL 8.4とMariaDB 11.4の同一parameterized matrixでfresh migration、1 MiB超inline content、tenant複合FK、大文字小文字非依存IdP unique、duplicate docId付きguarded downgrade、解消後のdowngrade/re-upgradeを検証した。
+- 両DBでlogical dumpを別databaseへ復元し、2文書と最大1,048,587文字のpayloadが一致することを確認した。PostgreSQL 16でもfresh、0020 downgrade/re-upgrade、RLS policy保存、既存PostgreSQL suite 18件を通過した。
+- capability registry、optional PyMySQL dependency、GitHub Actions services、README、公開対応表を同時に更新した。repository/APIにMySQL専用経路を作らず、差分を物理型・migration strategy・共通検証fixtureに閉じ込めた。

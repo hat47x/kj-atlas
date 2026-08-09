@@ -6,10 +6,16 @@ from sqlalchemy import Boolean, CheckConstraint, Index, Integer, Text, text
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+from kj_atlas_api.persistence_shapes import apply_persistent_text_shapes
+
 
 RELATION_SUMMARY_TEXT_MAX_LENGTH = 4000
 DOCUMENT_V1_MOCK_SCHEMA_VERSION = "mock-2026-05-19-dv1"
 LOCAL_DEFAULT_TENANT_ID = "local-default"
+
+
+def _supports_case_insensitive_expression_index(_ddl, _target, bind, **_kwargs: object) -> bool:
+    return bind.dialect.name not in {"mysql", "mariadb"}
 
 
 class Base(DeclarativeBase):
@@ -376,9 +382,7 @@ class TenantIdentityProviderRow(Base):
 
 class TenantMembershipRow(Base):
     __tablename__ = "tenant_memberships"
-    __table_args__ = (
-        Index("ix_tenant_memberships_user_id", "user_id"),
-    )
+    __table_args__ = (Index("ix_tenant_memberships_user_id", "user_id"),)
 
     tenant_id: Mapped[str] = mapped_column(
         Text,
@@ -566,11 +570,13 @@ class UserIdentityRow(Base):
             text("lower(provider)"),
             text("lower(external_uid)"),
             unique=True,
-        ),
+        ).ddl_if(callable_=_supports_case_insensitive_expression_index),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[str] = mapped_column(Text, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[str] = mapped_column(
+        Text, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     provider: Mapped[str] = mapped_column(Text, nullable=False)
     external_uid: Mapped[str] = mapped_column(Text, nullable=False)
     identity_provider_id: Mapped[str | None] = mapped_column(
@@ -709,7 +715,9 @@ class ShapeGeneratedFrom(BaseModel):
 class IslandShape(BaseModel):
     kind: Literal["rect", "polygon"]
     points: list[Point] | None = Field(default=None, exclude_if=lambda value: value is None)
-    generatedFrom: ShapeGeneratedFrom | None = Field(default=None, exclude_if=lambda value: value is None)
+    generatedFrom: ShapeGeneratedFrom | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
 
     @model_validator(mode="after")
     def ensure_shape_points(self) -> "IslandShape":
@@ -728,7 +736,9 @@ class IslandGeometry(BaseModel):
     w: float | None = Field(default=None, exclude_if=lambda value: value is None)
     h: float | None = Field(default=None, exclude_if=lambda value: value is None)
     points: list[Point] | None = Field(default=None, exclude_if=lambda value: value is None)
-    polygon: dict[str, list[Point]] | None = Field(default=None, exclude_if=lambda value: value is None)
+    polygon: dict[str, list[Point]] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
 
     @model_validator(mode="after")
     def ensure_geometry_polygon(self) -> "IslandGeometry":
@@ -768,7 +778,9 @@ class Island(BaseModel):
     summaryText: str | None = None
     summaryReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     summaryGrounding: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
-    summaryHistory: list[SummaryHistoryEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
+    summaryHistory: list[SummaryHistoryEntry] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     imageUrl: str | None = None
     imageReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     critique: str | None = None
@@ -808,7 +820,9 @@ class EvidenceLink(BaseModel):
     note: str | None = Field(default=None, exclude_if=lambda value: value is None)
     createdAt: datetime | None = Field(default=None, exclude_if=lambda value: value is None)
     # DOMAIN-EXPR-04 (2026-06-27): reversible contradiction review state
-    contradictionState: Literal["unconfirmed", "confirmed", "held", "resolved"] | None = Field(default=None, exclude_if=lambda value: value is None)
+    contradictionState: Literal["unconfirmed", "confirmed", "held", "resolved"] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
 
 
 class NarrativeCheckReference(BaseModel):
@@ -819,7 +833,9 @@ class NarrativeCheckReference(BaseModel):
 class NarrativeCheckIssue(BaseModel):
     severity: Literal["info", "warn", "error"]
     message: str
-    references: list[NarrativeCheckReference] | None = Field(default=None, exclude_if=lambda value: value is None)
+    references: list[NarrativeCheckReference] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
 
 
 class NarrativeCheck(BaseModel):
@@ -834,11 +850,13 @@ class Narrative(BaseModel):
     title: str
     text: str
     createdAt: datetime | None = Field(default=None, exclude_if=lambda value: value is None)
-    basedOnReadingOrder: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    basedOnReadingOrder: list[str] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     reviewed: bool
-    checks: list[NarrativeCheck] | None = Field(default=None, exclude_if=lambda value: value is None)
-
-
+    checks: list[NarrativeCheck] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
 
 
 class RelationSummaryHistoryEntry(BaseModel):
@@ -850,9 +868,14 @@ class RelationSummaryHistoryEntry(BaseModel):
     fromReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     toReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     warningsSnapshot: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
-    groundingCardIdsSnapshot: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
-    groundingEdgeIdsSnapshot: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    groundingCardIdsSnapshot: list[str] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    groundingEdgeIdsSnapshot: list[str] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     note: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
 
 class RelationSummary(BaseModel):
     id: str
@@ -867,9 +890,9 @@ class RelationSummary(BaseModel):
     groundingEdgeIds: list[str]
     warnings: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     sourceSignature: str
-    history: list[RelationSummaryHistoryEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
-
-
+    history: list[RelationSummaryHistoryEntry] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
 
 
 class PatchApplyStats(BaseModel):
@@ -901,7 +924,9 @@ class PatchApplyLogEntry(BaseModel):
     patchSourceSignature: str | None = Field(default=None, exclude_if=lambda value: value is None)
     appliedOpIds: list[str]
     stats: PatchApplyStats
-    conflictMeta: PatchApplyConflictMeta | None = Field(default=None, exclude_if=lambda value: value is None)
+    conflictMeta: PatchApplyConflictMeta | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     note: str | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
@@ -933,11 +958,13 @@ class MergeSuggestionDecision(BaseModel):
     # provenance snapshot. Optional for back-compat with entries persisted before this
     # field existed.
     representativeCardId: str | None = Field(default=None, exclude_if=lambda value: value is None)
-    representativeResolvedBy: Literal["repOf", "mergedIntoCardId", "fallback", "unresolved"] | None = Field(
+    representativeResolvedBy: (
+        Literal["repOf", "mergedIntoCardId", "fallback", "unresolved"] | None
+    ) = Field(default=None, exclude_if=lambda value: value is None)
+    sourceCardIds: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    missingSourceCardIds: list[str] | None = Field(
         default=None, exclude_if=lambda value: value is None
     )
-    sourceCardIds: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
-    missingSourceCardIds: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 class MergeDecisionRecord(BaseModel):
@@ -992,7 +1019,9 @@ class CritiqueInput(BaseModel):
     schemaVersion: Literal["1.0.0"]
     critiqueId: str
     targetRef: str
-    critiqueType: Literal["too_close", "too_far", "not_the_same", "feels_off", "no_articulable_reason"]
+    critiqueType: Literal[
+        "too_close", "too_far", "not_the_same", "feels_off", "no_articulable_reason"
+    ]
     createdAt: datetime
     iteration: int = Field(ge=1)
     comment: str | None = Field(default=None, exclude_if=lambda value: value is None)
@@ -1003,7 +1032,9 @@ class CritiqueInput(BaseModel):
     def validate_target_ref_kind(cls, value: str) -> str:
         allowed_prefixes = ("card:", "island:", "cluster:", "edge:", "proposal:")
         if not value.startswith(allowed_prefixes):
-            raise ValueError("targetRef must start with card:, island:, cluster:, edge:, or proposal:")
+            raise ValueError(
+                "targetRef must start with card:, island:, cluster:, edge:, or proposal:"
+            )
         return value
 
 
@@ -1050,7 +1081,9 @@ class ReviewAttribution(BaseModel):
     @classmethod
     def validate_reviewer_ref_opaque(cls, value: str) -> str:
         if "@" in value or value.startswith(("sso:", "oidc:", "saml:", "provider:")):
-            raise ValueError("reviewerRef must be opaque and must not contain email-like/provider identifiers")
+            raise ValueError(
+                "reviewerRef must be opaque and must not contain email-like/provider identifiers"
+            )
         return value
 
     @field_validator("ownerRef")
@@ -1059,7 +1092,9 @@ class ReviewAttribution(BaseModel):
         if value is None:
             return None
         if "@" in value or value.startswith(("sso:", "oidc:", "saml:", "provider:")):
-            raise ValueError("ownerRef must be opaque and must not contain email-like/provider identifiers")
+            raise ValueError(
+                "ownerRef must be opaque and must not contain email-like/provider identifiers"
+            )
         return value
 
     @model_validator(mode="after")
@@ -1158,14 +1193,17 @@ class PolygonHandoffExpectedOutputContract(BaseModel):
 
     outputPolygonHash: str = Field(pattern=r"^[0-9a-f]{64}$")
     paddingViolationCount: int = Field(ge=0)
-    tieBreakOrder: list[
-        Literal[
-            "padding_compliance",
-            "self_intersection_avoidance",
-            "minimum_area_delta",
-            "minimum_vertex_count",
+    tieBreakOrder: (
+        list[
+            Literal[
+                "padding_compliance",
+                "self_intersection_avoidance",
+                "minimum_area_delta",
+                "minimum_vertex_count",
+            ]
         ]
-    ] | None = Field(default=None, min_length=4, max_length=4)
+        | None
+    ) = Field(default=None, min_length=4, max_length=4)
     tieBreakOrderChanged: bool = False
 
 
@@ -1225,15 +1263,33 @@ class DocumentV1(BaseModel):
     islands: list[Island]
     readingOrder: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     narratives: list[Narrative] | None = Field(default=None, exclude_if=lambda value: value is None)
-    relationSummaries: list[RelationSummary] | None = Field(default=None, exclude_if=lambda value: value is None)
-    evidenceLinks: list[EvidenceLink] | None = Field(default=None, exclude_if=lambda value: value is None)
-    patchApplyLog: list[PatchApplyLogEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
-    mergeSuggestionDecisions: list[MergeSuggestionDecision] | None = Field(default=None, exclude_if=lambda value: value is None)
-    contradictionSignalDecisions: list[ContradictionSignalDecision] | None = Field(default=None, exclude_if=lambda value: value is None)
-    critiqueInputs: list[CritiqueInput] | None = Field(default=None, exclude_if=lambda value: value is None)
-    reproposalDiffs: list[ReproposalDiff] | None = Field(default=None, exclude_if=lambda value: value is None)
-    reviewAttribution: ReviewAttribution | None = Field(default=None, exclude_if=lambda value: value is None)
-    deterministicTieBreak: DeterministicTieBreak | None = Field(default=None, exclude_if=lambda value: value is None)
+    relationSummaries: list[RelationSummary] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    evidenceLinks: list[EvidenceLink] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    patchApplyLog: list[PatchApplyLogEntry] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    mergeSuggestionDecisions: list[MergeSuggestionDecision] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    contradictionSignalDecisions: list[ContradictionSignalDecision] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    critiqueInputs: list[CritiqueInput] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    reproposalDiffs: list[ReproposalDiff] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    reviewAttribution: ReviewAttribution | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    deterministicTieBreak: DeterministicTieBreak | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     shelf: list[ShelfEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
@@ -1265,3 +1321,6 @@ class SuggestMergesRequest(BaseModel):
 
 class SuggestMergesResponse(BaseModel):
     suggestions: list[MergeSuggestion]
+
+
+apply_persistent_text_shapes(Base.metadata)

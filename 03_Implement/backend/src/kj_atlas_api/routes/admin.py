@@ -23,6 +23,11 @@ from kj_atlas_api.models import (
     UserIdentityRow,
     UserRow,
 )
+from kj_atlas_api.persistence_shapes import (
+    OIDC_AUDIENCE_MAX_CHARS,
+    OIDC_ISSUER_MAX_CHARS,
+    URI_MAX_CHARS,
+)
 from kj_atlas_api.reviewer_ref import (
     ReviewerRefResolutionInput,
     build_reviewer_ref_resolver_adapter,
@@ -34,9 +39,7 @@ from kj_atlas_api.tenant_foundation import ensure_local_default_membership
 router = APIRouter(prefix="/admin/provision", tags=["admin"])
 
 _IDENTITY_CONFLICT_CODE = "identity_already_provisioned_conflict"
-_IDENTITY_CONFLICT_MESSAGE = (
-    "Identity already provisioned with conflicting profile attributes."
-)
+_IDENTITY_CONFLICT_MESSAGE = "Identity already provisioned with conflicting profile attributes."
 
 
 class ProvisionUserRequest(BaseModel):
@@ -94,7 +97,9 @@ def require_single_tenant_provisioning_surface(request: Request) -> None:
         )
 
 
-def _resolve_identity_row(*, db: Session, provider: str, external_uid: str) -> UserIdentityRow | None:
+def _resolve_identity_row(
+    *, db: Session, provider: str, external_uid: str
+) -> UserIdentityRow | None:
     try:
         return resolve_user_identity(
             db=db,
@@ -131,9 +136,7 @@ def provision_user(
     display_name = _normalize_optional_field(payload.displayName)
     email = _normalize_optional_field(payload.email)
     if not provider or not external_uid:
-        raise HTTPException(
-            status_code=400, detail="provider and externalUid must be non-empty"
-        )
+        raise HTTPException(status_code=400, detail="provider and externalUid must be non-empty")
 
     identity = _resolve_identity_row(db=db, provider=provider, external_uid=external_uid)
     if identity is not None:
@@ -289,10 +292,14 @@ _VALID_PROTOCOLS_V1 = frozenset({"oidc"})
 class RegisterIdentityProviderRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    issuer: str = Field(min_length=1)
-    audience: str = Field(min_length=1)
+    issuer: str = Field(min_length=1, max_length=OIDC_ISSUER_MAX_CHARS)
+    audience: str = Field(min_length=1, max_length=OIDC_AUDIENCE_MAX_CHARS)
     protocol: str = "oidc"
-    jwksUri: str | None = Field(default=None, validation_alias="jwksUri")
+    jwksUri: str | None = Field(
+        default=None,
+        max_length=URI_MAX_CHARS,
+        validation_alias="jwksUri",
+    )
 
 
 class RegisterIdentityProviderResponse(BaseModel):

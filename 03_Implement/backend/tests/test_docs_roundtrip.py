@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -39,12 +40,18 @@ def postgres_client() -> Iterator[TestClient]:
             allow_module_level=False,
         )
 
-    subprocess.run(["alembic", "upgrade", "head"], check=True, cwd=BACKEND_DIR)
+    subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        check=True,
+        cwd=BACKEND_DIR,
+    )
 
     yield from _client_for_database_url(postgres_url, use_create_drop_tables=False)
 
 
-def _client_for_database_url(database_url: str, *, use_create_drop_tables: bool) -> Iterator[TestClient]:
+def _client_for_database_url(
+    database_url: str, *, use_create_drop_tables: bool
+) -> Iterator[TestClient]:
     engine = create_engine(_normalize_database_url(database_url))
     session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
@@ -89,8 +96,6 @@ def _sample_payload(doc_id: str) -> dict:
         "edges": [],
         "islands": [],
     }
-
-
 
 
 def _sample_payload_v1_with_collapsed(doc_id: str) -> dict:
@@ -141,8 +146,6 @@ def _sample_payload_v1_with_collapsed(doc_id: str) -> dict:
             },
         ],
     }
-
-
 
 
 def _sample_payload_v1_with_canonical(doc_id: str) -> dict:
@@ -209,10 +212,6 @@ def _sample_payload_v1_with_shelf(doc_id: str) -> dict:
     }
 
 
-
-
-
-
 def _sample_payload_v1_with_merge_suggestion_decisions(doc_id: str) -> dict:
     return {
         "version": 1,
@@ -242,7 +241,9 @@ def _sample_payload_v1_with_merge_suggestion_decisions(doc_id: str) -> dict:
     }
 
 
-def _sample_merge_decision_record(*, decision_id: str, group_id: str, snapshot_version: str, action: str = "defer") -> dict:
+def _sample_merge_decision_record(
+    *, decision_id: str, group_id: str, snapshot_version: str, action: str = "defer"
+) -> dict:
     return {
         "decisionId": decision_id,
         "groupId": group_id,
@@ -267,9 +268,7 @@ def _sample_payload_v1_with_relation_summaries(doc_id: str) -> dict:
             {"id": "card-1", "text": "alpha", "x": 12.5, "y": -9.0},
             {"id": "card-2", "text": "beta", "x": 212.5, "y": 91.0},
         ],
-        "edges": [
-            {"id": "edge-1", "fromId": "card-1", "toId": "card-2", "type": "related"}
-        ],
+        "edges": [{"id": "edge-1", "fromId": "card-1", "toId": "card-2", "type": "related"}],
         "islands": [
             {"id": "island-1", "cardIds": ["card-1"]},
             {"id": "island-2", "cardIds": ["card-2"]},
@@ -456,9 +455,6 @@ def _assert_v1_collapsed_roundtrip(client: TestClient) -> None:
     assert get_islands_by_id["child-island"]["placardCardId"] == "card-2"
 
 
-
-
-
 def _assert_v1_merge_suggestion_decisions_roundtrip(client: TestClient) -> None:
     doc_id = "doc-roundtrip-v1-merge-decisions"
     payload = _sample_payload_v1_with_merge_suggestion_decisions(doc_id)
@@ -499,7 +495,9 @@ def _assert_merge_decision_logs_contract_roundtrip(client: TestClient) -> None:
     assert append_first.status_code == 201
     assert append_first.json()["action"] == "accept"
 
-    append_second = client.post(f"/docs/{doc_id}/merge-decision-logs", json={"record": second_record})
+    append_second = client.post(
+        f"/docs/{doc_id}/merge-decision-logs", json={"record": second_record}
+    )
     assert append_second.status_code == 201
     assert append_second.json()["action"] == "partial"
 
@@ -526,7 +524,9 @@ def _assert_merge_decision_logs_contract_validation(client: TestClient) -> None:
         snapshot_version="snap-invalid",
         action="auto",
     )
-    invalid_response = client.post(f"/docs/{doc_id}/merge-decision-logs", json={"record": invalid_record})
+    invalid_response = client.post(
+        f"/docs/{doc_id}/merge-decision-logs", json={"record": invalid_record}
+    )
     assert invalid_response.status_code == 422
 
     first_record = _sample_merge_decision_record(
@@ -539,12 +539,14 @@ def _assert_merge_decision_logs_contract_validation(client: TestClient) -> None:
         group_id="group-dup",
         snapshot_version="snap-dup-2",
     )
-    first_response = client.post(f"/docs/{doc_id}/merge-decision-logs", json={"record": first_record})
+    first_response = client.post(
+        f"/docs/{doc_id}/merge-decision-logs", json={"record": first_record}
+    )
     assert first_response.status_code == 201
-    duplicate_response = client.post(f"/docs/{doc_id}/merge-decision-logs", json={"record": second_record})
+    duplicate_response = client.post(
+        f"/docs/{doc_id}/merge-decision-logs", json={"record": second_record}
+    )
     assert duplicate_response.status_code == 409
-
-
 
 
 def _assert_similar_candidate_groups_contract_default(client: TestClient) -> None:
@@ -569,15 +571,19 @@ def _assert_similar_candidate_groups_contract_default(client: TestClient) -> Non
     assert len(group["snapshotVersion"]) == 12
 
 
-
-
 def _assert_similar_candidate_groups_excludes_non_eligible_cards(client: TestClient) -> None:
     doc_id = "doc-similar-candidate-groups-filter"
     payload = _sample_payload_v1_with_merge_suggestion_decisions(doc_id)
     payload["cards"] = [
         {"id": "card-1", "text": "gamma delta", "x": 0, "y": 0},
         {"id": "card-2", "text": "delta gamma", "x": 10, "y": 10},
-        {"id": "card-merged", "text": "gamma delta", "x": 20, "y": 20, "mergedIntoCardId": "card-1"},
+        {
+            "id": "card-merged",
+            "text": "gamma delta",
+            "x": 20,
+            "y": 20,
+            "mergedIntoCardId": "card-1",
+        },
         {"id": "card-source", "text": "gamma delta", "x": 30, "y": 30, "sources": ["raw-1"]},
     ]
 
@@ -594,6 +600,7 @@ def _assert_similar_candidate_groups_excludes_non_eligible_cards(client: TestCli
     assert group["candidateCardIds"] == ["card-2"]
     assert group["reasonCodes"] == ["token_signature"]
     assert group["scoreSummary"] == {"min": 0.75, "max": 0.75, "avg": 0.75}
+
 
 def _assert_similar_candidate_groups_missing_doc(client: TestClient) -> None:
     response = client.get("/docs/not-found/similar-candidate-groups")
@@ -619,7 +626,10 @@ def _assert_similar_candidate_groups_deterministic_order_contract(client: TestCl
 
     assert response_json["totalGroupCount"] == 2
     assert [group["targetCardId"] for group in response_json["groups"]] == ["card-a", "card-c"]
-    assert [group["candidateCardIds"] for group in response_json["groups"]] == [["card-b"], ["card-d"]]
+    assert [group["candidateCardIds"] for group in response_json["groups"]] == [
+        ["card-b"],
+        ["card-d"],
+    ]
 
     for group in response_json["groups"]:
         assert set(group.keys()) == {
@@ -633,6 +643,7 @@ def _assert_similar_candidate_groups_deterministic_order_contract(client: TestCl
         assert group["reasonCodes"] == ["token_signature"]
         assert group["scoreSummary"] == {"min": 0.75, "max": 0.75, "avg": 0.75}
         assert len(group["snapshotVersion"]) == 12
+
 
 def _assert_v1_relation_summary_roundtrip(client: TestClient) -> None:
     doc_id = "doc-roundtrip-v1-relations"
@@ -697,8 +708,6 @@ def _assert_v1_evidence_links_roundtrip(client: TestClient) -> None:
     assert get_json["patchApplyLog"][0]["stats"]["deleteEvidenceLinks"] == 0
 
 
-
-
 def _assert_v1_polygon_geometry_roundtrip(client: TestClient) -> None:
     doc_id = "doc-roundtrip-v1-polygon"
     payload = {
@@ -754,7 +763,11 @@ def _sample_payload_v1_with_card_meta(doc_id: str) -> dict:
                 "text": "utterance about onboarding",
                 "x": 0,
                 "y": 0,
-                "meta": {"seq": 42, "source": "interview-A line 12", "createdBy": "alice@example.com"},
+                "meta": {
+                    "seq": 42,
+                    "source": "interview-A line 12",
+                    "createdBy": "alice@example.com",
+                },
             },
             {"id": "card-plain", "text": "no meta", "x": 300, "y": 0},
         ],
@@ -800,7 +813,11 @@ def _sample_payload_v1_with_card_ka(doc_id: str) -> dict:
                 "text": "event: waited 40 minutes at the counter",
                 "x": 0,
                 "y": 0,
-                "ka": {"voice": "honestly it felt exhausting", "value": "the relief of not waiting", "authorRating": 5},
+                "ka": {
+                    "voice": "honestly it felt exhausting",
+                    "value": "the relief of not waiting",
+                    "authorRating": 5,
+                },
             },
             {"id": "card-plain", "text": "no ka", "x": 300, "y": 0},
         ],
@@ -847,7 +864,11 @@ def _sample_payload_v1_with_contradiction_signal_decisions(doc_id: str) -> dict:
         "edges": [],
         "islands": [],
         "contradictionSignalDecisions": [
-            {"signatureKey": "C001:island:a|island:b", "status": "accepted", "decidedAt": "2026-07-08T00:00:00Z"},
+            {
+                "signatureKey": "C001:island:a|island:b",
+                "status": "accepted",
+                "decidedAt": "2026-07-08T00:00:00Z",
+            },
         ],
     }
 
@@ -860,14 +881,22 @@ def _assert_v1_contradiction_signal_decisions_roundtrip(client: TestClient) -> N
     assert put_response.status_code == 200
     put_decisions = put_response.json()["contradictionSignalDecisions"]
     assert put_decisions == [
-        {"signatureKey": "C001:island:a|island:b", "status": "accepted", "decidedAt": "2026-07-08T00:00:00Z"},
+        {
+            "signatureKey": "C001:island:a|island:b",
+            "status": "accepted",
+            "decidedAt": "2026-07-08T00:00:00Z",
+        },
     ]
 
     get_response = client.get(f"/docs/{doc_id}")
     assert get_response.status_code == 200
     get_decisions = get_response.json()["contradictionSignalDecisions"]
     assert get_decisions == [
-        {"signatureKey": "C001:island:a|island:b", "status": "accepted", "decidedAt": "2026-07-08T00:00:00Z"},
+        {
+            "signatureKey": "C001:island:a|island:b",
+            "status": "accepted",
+            "decidedAt": "2026-07-08T00:00:00Z",
+        },
     ]
 
 
@@ -911,12 +940,26 @@ def _assert_v1_edge_vocabulary_roundtrip(client: TestClient) -> None:
     put_response = client.put(f"/docs/{doc_id}", json=payload)
     assert put_response.status_code == 200
     put_types = [edge["type"] for edge in put_response.json()["edges"]]
-    assert put_types == ["related", "negate", "causal", "mutual", "equivalence", "future-vocab-2030"]
+    assert put_types == [
+        "related",
+        "negate",
+        "causal",
+        "mutual",
+        "equivalence",
+        "future-vocab-2030",
+    ]
 
     get_response = client.get(f"/docs/{doc_id}")
     assert get_response.status_code == 200
     get_types = [edge["type"] for edge in get_response.json()["edges"]]
-    assert get_types == ["related", "negate", "causal", "mutual", "equivalence", "future-vocab-2030"]
+    assert get_types == [
+        "related",
+        "negate",
+        "causal",
+        "mutual",
+        "equivalence",
+        "future-vocab-2030",
+    ]
 
 
 def _assert_v1_edge_empty_type_rejected(client: TestClient) -> None:
@@ -968,6 +1011,7 @@ def _assert_etag_optimistic_locking(client: TestClient) -> None:
     second_etag = fresh_put.headers.get("etag")
     assert second_etag
     assert second_etag != first_etag
+
 
 def test_docs_put_get_roundtrip_sqlite(sqlite_client: TestClient) -> None:
     _assert_put_get_roundtrip(sqlite_client)
@@ -1035,8 +1079,6 @@ def test_docs_v1_shelf_roundtrip_postgres(postgres_client: TestClient) -> None:
     _assert_v1_shelf_roundtrip(postgres_client)
 
 
-
-
 def test_docs_v1_merge_suggestion_decisions_roundtrip_sqlite(sqlite_client: TestClient) -> None:
     _assert_v1_merge_suggestion_decisions_roundtrip(sqlite_client)
 
@@ -1062,7 +1104,6 @@ def test_docs_merge_decision_logs_contract_validation_postgres(postgres_client: 
     _assert_merge_decision_logs_contract_validation(postgres_client)
 
 
-
 def test_docs_similar_candidate_groups_contract_default_sqlite(sqlite_client: TestClient) -> None:
     _assert_similar_candidate_groups_contract_default(sqlite_client)
 
@@ -1071,16 +1112,22 @@ def test_docs_similar_candidate_groups_missing_doc_sqlite(sqlite_client: TestCli
     _assert_similar_candidate_groups_missing_doc(sqlite_client)
 
 
-def test_docs_similar_candidate_groups_excludes_non_eligible_cards_sqlite(sqlite_client: TestClient) -> None:
+def test_docs_similar_candidate_groups_excludes_non_eligible_cards_sqlite(
+    sqlite_client: TestClient,
+) -> None:
     _assert_similar_candidate_groups_excludes_non_eligible_cards(sqlite_client)
 
 
-def test_docs_similar_candidate_groups_deterministic_order_contract_sqlite(sqlite_client: TestClient) -> None:
+def test_docs_similar_candidate_groups_deterministic_order_contract_sqlite(
+    sqlite_client: TestClient,
+) -> None:
     _assert_similar_candidate_groups_deterministic_order_contract(sqlite_client)
 
 
 @pytest.mark.postgres
-def test_docs_similar_candidate_groups_contract_default_postgres(postgres_client: TestClient) -> None:
+def test_docs_similar_candidate_groups_contract_default_postgres(
+    postgres_client: TestClient,
+) -> None:
     _assert_similar_candidate_groups_contract_default(postgres_client)
 
 
@@ -1090,13 +1137,18 @@ def test_docs_similar_candidate_groups_missing_doc_postgres(postgres_client: Tes
 
 
 @pytest.mark.postgres
-def test_docs_similar_candidate_groups_excludes_non_eligible_cards_postgres(postgres_client: TestClient) -> None:
+def test_docs_similar_candidate_groups_excludes_non_eligible_cards_postgres(
+    postgres_client: TestClient,
+) -> None:
     _assert_similar_candidate_groups_excludes_non_eligible_cards(postgres_client)
 
 
 @pytest.mark.postgres
-def test_docs_similar_candidate_groups_deterministic_order_contract_postgres(postgres_client: TestClient) -> None:
+def test_docs_similar_candidate_groups_deterministic_order_contract_postgres(
+    postgres_client: TestClient,
+) -> None:
     _assert_similar_candidate_groups_deterministic_order_contract(postgres_client)
+
 
 def test_docs_v1_relation_summary_roundtrip_sqlite(sqlite_client: TestClient) -> None:
     _assert_v1_relation_summary_roundtrip(sqlite_client)
@@ -1107,7 +1159,9 @@ def test_docs_v1_relation_summary_roundtrip_postgres(postgres_client: TestClient
     _assert_v1_relation_summary_roundtrip(postgres_client)
 
 
-def test_docs_v1_relation_summary_without_history_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+def test_docs_v1_relation_summary_without_history_roundtrip_sqlite(
+    sqlite_client: TestClient,
+) -> None:
     _assert_v1_relation_summary_without_history_roundtrip(sqlite_client)
 
 
@@ -1146,11 +1200,15 @@ def test_docs_v1_contradiction_signal_decisions_roundtrip_sqlite(sqlite_client: 
 
 
 @pytest.mark.postgres
-def test_docs_v1_contradiction_signal_decisions_roundtrip_postgres(postgres_client: TestClient) -> None:
+def test_docs_v1_contradiction_signal_decisions_roundtrip_postgres(
+    postgres_client: TestClient,
+) -> None:
     _assert_v1_contradiction_signal_decisions_roundtrip(postgres_client)
 
 
-def test_docs_v1_contradiction_signal_decision_invalid_status_rejected_sqlite(sqlite_client: TestClient) -> None:
+def test_docs_v1_contradiction_signal_decision_invalid_status_rejected_sqlite(
+    sqlite_client: TestClient,
+) -> None:
     _assert_v1_contradiction_signal_decision_invalid_status_rejected(sqlite_client)
 
 
@@ -1164,7 +1222,9 @@ def test_docs_v1_edge_vocabulary_roundtrip_postgres(postgres_client: TestClient)
 
 
 @pytest.mark.postgres
-def test_docs_v1_relation_summary_without_history_roundtrip_postgres(postgres_client: TestClient) -> None:
+def test_docs_v1_relation_summary_without_history_roundtrip_postgres(
+    postgres_client: TestClient,
+) -> None:
     _assert_v1_relation_summary_without_history_roundtrip(postgres_client)
 
 
@@ -1178,7 +1238,9 @@ def test_docs_v1_polygon_geometry_roundtrip_postgres(postgres_client: TestClient
     _assert_v1_polygon_geometry_roundtrip(postgres_client)
 
 
-def _sample_payload_v1_with_hil_rs_contract_fields(doc_id: str, *, reviewer_ref: str = "user:u-1") -> dict:
+def _sample_payload_v1_with_hil_rs_contract_fields(
+    doc_id: str, *, reviewer_ref: str = "user:u-1"
+) -> dict:
     return {
         "version": 1,
         "id": doc_id,
@@ -1237,7 +1299,9 @@ def _sample_payload_v1_with_hil_rs_contract_fields(doc_id: str, *, reviewer_ref:
 
 def _assert_v1_hil_rs_contract_fields_roundtrip(client: TestClient) -> None:
     doc_id = "doc-roundtrip-v1-hil-rs"
-    payload = _sample_payload_v1_with_hil_rs_contract_fields(doc_id, reviewer_ref="reviewer:opaque-1")
+    payload = _sample_payload_v1_with_hil_rs_contract_fields(
+        doc_id, reviewer_ref="reviewer:opaque-1"
+    )
 
     put_response = client.put(
         f"/docs/{doc_id}",
@@ -1269,7 +1333,9 @@ def test_docs_v1_hil_rs_contract_fields_roundtrip_postgres(postgres_client: Test
     _assert_v1_hil_rs_contract_fields_roundtrip(postgres_client)
 
 
-def test_docs_v1_hil_rs_contract_fields_reject_spoofed_reviewer_sqlite(sqlite_client: TestClient) -> None:
+def test_docs_v1_hil_rs_contract_fields_reject_spoofed_reviewer_sqlite(
+    sqlite_client: TestClient,
+) -> None:
     doc_id = "doc-roundtrip-v1-hil-rs-spoofed"
     payload = _sample_payload_v1_with_hil_rs_contract_fields(doc_id, reviewer_ref="reviewer:other")
 

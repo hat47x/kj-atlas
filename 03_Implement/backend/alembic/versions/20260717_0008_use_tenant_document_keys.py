@@ -36,9 +36,7 @@ def _assert_existing_rows_are_consistent(bind: sa.Connection) -> None:
         )
     ).first()
     if orphan_document is not None:
-        raise RuntimeError(
-            "documents contains tenant_id values that do not exist in tenants"
-        )
+        raise RuntimeError("documents contains tenant_id values that do not exist in tenants")
 
     mismatched_log = bind.execute(
         sa.text(
@@ -54,9 +52,7 @@ def _assert_existing_rows_are_consistent(bind: sa.Connection) -> None:
         )
     ).first()
     if mismatched_log is not None:
-        raise RuntimeError(
-            "merge_decision_logs contains tenant/document mismatches"
-        )
+        raise RuntimeError("merge_decision_logs contains tenant/document mismatches")
 
 
 def _assert_global_document_ids_are_restorable(bind: sa.Connection) -> None:
@@ -186,13 +182,9 @@ def _sqlite_upgrade(bind: sa.Connection) -> None:
     )
     bind.execute(sa.text("DROP TABLE merge_decision_logs"))
     bind.execute(sa.text("DROP TABLE documents"))
+    bind.execute(sa.text("ALTER TABLE documents__tenant_key RENAME TO documents"))
     bind.execute(
-        sa.text("ALTER TABLE documents__tenant_key RENAME TO documents")
-    )
-    bind.execute(
-        sa.text(
-            "ALTER TABLE merge_decision_logs__tenant_key RENAME TO merge_decision_logs"
-        )
+        sa.text("ALTER TABLE merge_decision_logs__tenant_key RENAME TO merge_decision_logs")
     )
     _sqlite_create_indexes(bind, tenant_key=True)
 
@@ -257,21 +249,19 @@ def _sqlite_downgrade(bind: sa.Connection) -> None:
     )
     bind.execute(sa.text("DROP TABLE merge_decision_logs"))
     bind.execute(sa.text("DROP TABLE documents"))
+    bind.execute(sa.text("ALTER TABLE documents__global_key RENAME TO documents"))
     bind.execute(
-        sa.text("ALTER TABLE documents__global_key RENAME TO documents")
-    )
-    bind.execute(
-        sa.text(
-            "ALTER TABLE merge_decision_logs__global_key RENAME TO merge_decision_logs"
-        )
+        sa.text("ALTER TABLE merge_decision_logs__global_key RENAME TO merge_decision_logs")
     )
     _sqlite_create_indexes(bind, tenant_key=False)
 
 
 def _named_primary_key(inspector: sa.Inspector) -> str:
     primary_key_name = inspector.get_pk_constraint("documents").get("name")
+    if not primary_key_name and inspector.bind.dialect.name in {"mysql", "mariadb"}:
+        return "PRIMARY"
     if not isinstance(primary_key_name, str) or not primary_key_name:
-        raise RuntimeError("documents primary key must be named for PostgreSQL migration")
+        raise RuntimeError("documents primary key must be named for constraint-DDL migration")
     return primary_key_name
 
 
@@ -292,7 +282,7 @@ def _matching_foreign_key_names(
     return names
 
 
-def _postgres_upgrade(bind: sa.Connection) -> None:
+def _constraint_ddl_upgrade(bind: sa.Connection) -> None:
     inspector = sa.inspect(bind)
     for name in _matching_foreign_key_names(
         inspector,
@@ -327,7 +317,7 @@ def _postgres_upgrade(bind: sa.Connection) -> None:
     )
 
 
-def _postgres_downgrade(bind: sa.Connection) -> None:
+def _constraint_ddl_downgrade(bind: sa.Connection) -> None:
     op.drop_constraint(NEW_LOG_DOCUMENT_FK, "merge_decision_logs", type_="foreignkey")
     op.drop_constraint(NEW_LOG_UNIQUE, "merge_decision_logs", type_="unique")
     op.drop_constraint(NEW_DOCUMENT_TENANT_FK, "documents", type_="foreignkey")
@@ -360,8 +350,8 @@ def upgrade() -> None:
     if bind.dialect.name == "sqlite":
         _sqlite_upgrade(bind)
         return
-    if bind.dialect.name == "postgresql":
-        _postgres_upgrade(bind)
+    if bind.dialect.name in {"postgresql", "mysql", "mariadb"}:
+        _constraint_ddl_upgrade(bind)
         return
     raise RuntimeError(f"Unsupported database dialect: {bind.dialect.name}")
 
@@ -372,7 +362,7 @@ def downgrade() -> None:
     if bind.dialect.name == "sqlite":
         _sqlite_downgrade(bind)
         return
-    if bind.dialect.name == "postgresql":
-        _postgres_downgrade(bind)
+    if bind.dialect.name in {"postgresql", "mysql", "mariadb"}:
+        _constraint_ddl_downgrade(bind)
         return
     raise RuntimeError(f"Unsupported database dialect: {bind.dialect.name}")

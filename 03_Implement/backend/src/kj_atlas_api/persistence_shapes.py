@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum
 
+from sqlalchemy import MetaData, String, Table, Text, event
+from sqlalchemy.dialects.mysql import LONGTEXT
+
 
 class DataShape(str, Enum):
     IDENTIFIER = "identifier"
@@ -33,6 +36,9 @@ EXTERNAL_ID = _identifier(512, "externally issued identifier with a product acce
 VERSION_ID = _identifier(128, "version, digest prefix, or policy identifier")
 TIMESTAMP = _bounded(40, "canonical RFC 3339 timestamp with timezone and fractional seconds")
 STATE = _bounded(32, "closed-set lifecycle, action, decision, or protocol discriminator")
+OIDC_ISSUER_MAX_CHARS = 512
+OIDC_AUDIENCE_MAX_CHARS = 255
+URI_MAX_CHARS = 2048
 
 
 # This catalog is intentionally explicit. A coverage test rejects every new SQLAlchemy
@@ -43,7 +49,9 @@ PERSISTENT_TEXT_SPECS: dict[str, PersistentTextSpec] = {
     "ai_generation_runs.task": _identifier(128, "provider-neutral LLM task discriminator"),
     "ai_generation_runs.trace_id": INTERNAL_ID,
     "ai_generation_runs.input_ir_digest": _identifier(64, "lowercase SHA-256 input IR identity"),
-    "ai_generation_runs.output_digest": _identifier(64, "lowercase SHA-256 output content identity"),
+    "ai_generation_runs.output_digest": _identifier(
+        64, "lowercase SHA-256 output content identity"
+    ),
     "ai_generation_runs.policy_version": VERSION_ID,
     "ai_generation_runs.created_at": TIMESTAMP,
     "ai_generation_runs.retention_expires_at": TIMESTAMP,
@@ -91,20 +99,22 @@ PERSISTENT_TEXT_SPECS: dict[str, PersistentTextSpec] = {
     "content_object_references.content_id": INTERNAL_ID,
     "content_object_references.tenant_id": INTERNAL_ID,
     "content_object_references.storage_backend": STATE,
-    "content_object_references.locator": _bounded(
-        2048, "server-managed NAS path or S3 object key"
-    ),
+    "content_object_references.locator": _bounded(2048, "server-managed NAS path or S3 object key"),
     "content_object_references.storage_state": STATE,
     "content_object_references.sha256_digest": _bounded(64, "lowercase SHA-256 digest"),
     "content_object_references.schema_version": VERSION_ID,
     "content_object_references.created_at": TIMESTAMP,
     "content_object_references.updated_at": TIMESTAMP,
     "identity_providers.id": INTERNAL_ID,
-    "identity_providers.issuer": _bounded(2048, "OIDC issuer URI"),
-    "identity_providers.audience": _bounded(512, "OIDC audience value"),
+    "identity_providers.issuer": _bounded(
+        OIDC_ISSUER_MAX_CHARS, "OIDC issuer URI acceptance bound"
+    ),
+    "identity_providers.audience": _bounded(
+        OIDC_AUDIENCE_MAX_CHARS, "OIDC audience acceptance bound"
+    ),
     "identity_providers.lifecycle_state": STATE,
     "identity_providers.protocol": STATE,
-    "identity_providers.jwks_uri": _bounded(2048, "JWKS URI"),
+    "identity_providers.jwks_uri": _bounded(URI_MAX_CHARS, "JWKS URI"),
     "identity_providers.created_at": TIMESTAMP,
     "identity_providers.updated_at": TIMESTAMP,
     "tenants.id": INTERNAL_ID,
@@ -178,3 +188,61 @@ PERSISTENT_TEXT_SPECS: dict[str, PersistentTextSpec] = {
     "merge_decision_logs.decided_at": TIMESTAMP,
     "merge_decision_logs.payload_json": CONTENT_OBJECT,
 }
+
+
+def apply_persistent_text_shapes(metadata: MetaData) -> None:
+    """Apply the catalog's bounded types to current ORM metadata in place."""
+    actual_text_columns = {
+        f"{table.name}.{column.name}"
+        for table in metadata.tables.values()
+        for column in table.columns
+        if isinstance(column.type, Text)
+    }
+    missing = actual_text_columns - PERSISTENT_TEXT_SPECS.keys()
+    if missing:
+        raise RuntimeError(f"persistent text columns lack a data shape: {sorted(missing)}")
+    for qualified_name, spec in PERSISTENT_TEXT_SPECS.items():
+        table_name, column_name = qualified_name.split(".", 1)
+        table = metadata.tables.get(table_name)
+        if table is None or column_name not in table.columns:
+            continue
+        if spec.proposed_max_chars is not None:
+            table.columns[column_name].type = String(spec.proposed_max_chars)
+        else:
+            table.columns[column_name].type = (
+                Text().with_variant(LONGTEXT(), "mysql").with_variant(LONGTEXT(), "mariadb")
+            )
+
+
+def install_portable_text_ddl_hook() -> None:
+    """Make historical create-table migrations use the same portable type catalog."""
+    if getattr(install_portable_text_ddl_hook, "_installed", False):
+        return
+
+    @event.listens_for(Table, "before_create", propagate=True)
+    def _apply_before_create(table: Table, _connection, **_kwargs: object) -> None:
+        for column in table.columns:
+            spec = PERSISTENT_TEXT_SPECS.get(f"{table.name}.{column.name}")
+            if (
+                spec is not None
+                and spec.proposed_max_chars is None
+                and _connection.dialect.name in {"mysql", "mariadb"}
+                and isinstance(column.type, Text)
+            ):
+                column.type = LONGTEXT()
+                continue
+            if (
+                spec is not None
+                and spec.proposed_max_chars is not None
+                and isinstance(column.type, Text)
+            ):
+                collation = None
+                if (
+                    table.name == "user_identities"
+                    and column.name in {"provider", "external_uid"}
+                    and _connection.dialect.name in {"mysql", "mariadb"}
+                ):
+                    collation = "utf8mb4_unicode_ci"
+                column.type = String(spec.proposed_max_chars, collation=collation)
+
+    setattr(install_portable_text_ddl_hook, "_installed", True)
