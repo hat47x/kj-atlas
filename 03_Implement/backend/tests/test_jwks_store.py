@@ -2,12 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
 
 from kj_atlas_api.jwks_store import (
-    JWKS_COOLDOWN_SECONDS,
-    JWKS_MAX_STALE_SECONDS,
-    JWKS_NORMAL_TTL_SECONDS,
     JwksStore,
 )
 

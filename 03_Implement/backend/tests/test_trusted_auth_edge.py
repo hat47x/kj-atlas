@@ -6,7 +6,6 @@ JWT → JWKS → subject → tenant claim pipeline.
 
 from __future__ import annotations
 
-import json
 import time as _time_module
 from unittest.mock import patch
 

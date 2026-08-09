@@ -23,13 +23,11 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest.mock import patch
 
 import jwt as pyjwt
-import pytest
 from starlette.requests import Request
 
 from kj_atlas_api.active_tenant_session import InMemoryActiveTenantSessionPersister
@@ -52,10 +50,8 @@ from kj_atlas_api.tenant_context import (
     TenantContext,
 )
 
+from tests.conftest import TIMESTAMP, StubCapabilityResolver
 from tests.level2.mock_idp import app as mock_idp_app
-
-
-TIMESTAMP = "2026-08-08T00:00:00Z"
 ISSUER = "http://mock-idp.local/mock-client"
 AUDIENCE = "kj-atlas"
 
@@ -135,9 +131,6 @@ def _authenticate_via_oauth(
 # ============================================================================
 
 
-from tests.conftest import StubCapabilityResolver
-
-
 def _seed_backend(db) -> None:
     db.add_all([
         UserRow(id="user-1", display_name="Alice", email="alice@mock-idp.local",
@@ -194,8 +187,10 @@ def _saas_backend(tmp_path, jwk: dict) -> Iterator:
 
     def _gdb():
         db = SL()
-        try: yield db
-        finally: db.close()
+        try:
+            yield db
+        finally:
+            db.close()
 
     store = JwksStore()
     store.set("idp-1", [jwk])

@@ -14,7 +14,6 @@ from contextlib import contextmanager
 from unittest.mock import patch
 
 import jwt
-import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
@@ -35,7 +34,6 @@ from kj_atlas_api.models import (
     UserIdentityRow,
     UserRow,
 )
-from kj_atlas_api.session_context import CapabilitySnapshot
 from kj_atlas_api.tenant_context import (
     ClaimBasedTenantContextResolver,
     SingleTenantContextResolver,

@@ -14,13 +14,10 @@ from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
 from kj_atlas_api.models import (
     Base,
-    IdentityProviderRow,
-    TenantIdentityProviderRow,
     TenantRow,
 )
 from kj_atlas_api.trusted_saas_runtime import TrustedSaasRuntimePolicy
-
-TIMESTAMP = "2026-08-08T00:00:00Z"
+from tests.conftest import TIMESTAMP
 
 
 # ---------------------------------------------------------------------------

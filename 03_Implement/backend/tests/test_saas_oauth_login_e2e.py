@@ -18,9 +18,6 @@ from contextlib import contextmanager
 from unittest.mock import patch
 
 import jwt as pyjwt
-import pytest
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -45,7 +42,7 @@ from kj_atlas_api.tenant_context import (
     TenantContext,
 )
 
-# Import mock IdP app
+from tests.conftest import StubCapabilityResolver
 from tests.level2.mock_idp import app as mock_idp_app
 
 TIMESTAMP = "2026-08-07T00:00:00Z"
@@ -142,8 +139,6 @@ def _get_jwks_from_idp(idp_client: TestClient) -> dict[str, object]:
 # Backend SaaS fixture (reuses pattern from test_saas_e2e_tenant_isolation.py)
 # ---------------------------------------------------------------------------
 
-
-from tests.conftest import StubCapabilityResolver
 
 
 def _seed_backend_db(db: Session) -> None:
