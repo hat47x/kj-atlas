@@ -21,7 +21,7 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 6. AI proposal revisionは`ai_run_ref`を必須とする。AI runのtask、入力IR digest、出力digest、policy version等は別recordへ置き、全revisionへprovider/model/promptを複製しない。raw promptや未レビュー本文を世代metadataへ保存しない。
 7. 人がAI proposalを採用した場合は、人間originの新revisionを作り、source proposal revisionを参照する。AI proposalをhuman-authored／human-reviewedへ書き換えない。
 8. 圧縮はcanonical JSONを前提に、content-addressed chunk／deltaと定期full snapshotを組み合わせる。delta chainは有界とし、復元costまたはdelta比率が閾値を超えたらfull snapshotへ戻す。具体値は代表データbenchmarkで確定する。
-9. Gitは任意のarchive／import-export／offline collaboration adapter候補とし、標準runtime正本にはしない。採用時もアプリrevision IDとSHA-256 digestを正本にし、Git object IDやbranch refを認可・真正性の根拠にしない。
+9. Gitはarchive／import-export／offline collaborationに限定した任意adapter候補とし、標準runtime正本またはhot-path blob backendにはしない。採用時もアプリrevision IDとSHA-256 digestを正本にし、Git object IDやbranch refを認可・真正性の根拠にしない。
 10. Git adapterはbare repository、server-managed ref、hook無効、worktreeなしを前提とする。tenant分離、暗号化、GC、削除、pack backup/restore、同時書込を検証するまで有効化しない。
 11. revisionと物理blobを分離する。複数revisionが同じ`tenant + content digest`のimmutable blobを参照でき、保存backendはdatabase／NAS／S3／将来Gitのいずれでもよい。revisionごとにobjectを複製しない。
 12. NAS／S3はrevision DAGと競合する代替正本ではなく、full snapshot／delta／chunkの物理blob backend候補とする。ただしruntime切替、coordinator、domain FKの実装優先度を下げ、revision schemaと圧縮benchmarkが確定するまで凍結する。
@@ -61,6 +61,8 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 この結果はGit packとdelta方式の両方に圧縮価値があることを示すが、実データ、分岐、並べ替え、巨大本文、復元時間を含まない。Git直接採用の根拠にはせず、revision／blob分離と代表fixture整備を先行する。
 
 追試として実装codecを用いた同規模の再現可能benchmarkでは、raw 11,273,323 bytes、保存447,181 bytes、full 100、delta 0、encode約720ms、100世代restore合計約41msとなった。したがってgzip fullを当面の既定とし、deltaは常設前提にせず、実データでfullより有利な場合だけadaptiveに採用する。
+
+同一fixtureを100 Git commitとして保存しaggressive GCした追試では、`.git`全体113,646 bytes、commit作成＋GC約37.8秒、3世代の`git show`復元約194msだった。Git packはgzip fullより約4倍小さいが、書込・GCと任意世代読取のhot-path costが大きい。したがって標準runtimeはgzip full＋DB metadataとし、Gitは明示的なarchive／交換処理でのみ再評価する。
 
 ## Non-goals
 

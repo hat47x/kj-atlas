@@ -25,7 +25,7 @@
 - [ ] AC-5: canonical JSON、full snapshot／delta選択、最大chain depth、復元検証が代表データでbenchmarkされる。
 - [ ] AC-6: retention pin、ephemeral GC、governed保持、tenant-scoped orphan回収が実装される。
 - [ ] AC-7: AI run metadataの最小契約、SafeMode、redaction、保持期間が実装される。
-- [ ] AC-8: optional Git adapterを採否判断し、採用時はbare repo、hook禁止、tenant分離、GC、backup/restoreを検証する。
+- [x] AC-8: Gitを標準runtimeから除外し、archive／交換限定の将来adapter候補と判断する。実装する場合はbare repo、hook禁止、tenant分離、GC、backup/restoreを別gateで検証する。
 - [x] AC-9: revisionと物理blobの責務が分離され、object storage作業がrevision schema確定前に先行しない。
 
 ## 検証計画
@@ -71,3 +71,10 @@
 - raw合計11,273,323 bytesに対しadaptive codecは447,181 bytes、encode約720ms、100世代restore合計約41msだった。
 - full 100件、delta 0件となった。canonical JSON全体をgzipするだけで反復構造が十分圧縮され、このfixtureではdelta envelopeが比率閾値を満たさなかった。
 - 当面はgzip fullを既定、deltaは有効性が実測された場合だけ使う。実利用由来fixture、branch／merge、1MiB級データ、Git pack同条件比較が残るためAC-5は未完了を維持する。
+
+## Git pack comparison 2026-08-10
+
+- 同じ100世代をGit commitへ保存し、aggressive GC後の`.git`全体、作成時間、0／50／99世代の`git show`復元をbenchmarkへ統合した。
+- Gitは113,646 bytesでgzip full 447,181 bytesより約4倍小さかった。一方、100 commit＋GCは約37.8秒、3世代復元は約194msで、codecのencode約0.70秒、100世代restore約43msよりhot path costが大きい。
+- Gitを標準runtime正本／blob backendにしない判断を確定し、AC-8を完了した。将来のarchive／交換adapterは、利用要求が生じた場合だけ別gateで実装する。
+- AC-5には実利用由来fixture、branch／merge、1MiB級データが残る。現時点の標準候補はcontent-addressed revision DAG＋gzip full blobである。

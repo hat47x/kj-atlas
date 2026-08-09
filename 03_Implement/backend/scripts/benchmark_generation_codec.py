@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
+import tempfile
 import time
+from pathlib import Path
 
 from kj_atlas_api.generation_codec import canonical_json_bytes, encode_generation, restore_generation
 
@@ -16,6 +20,61 @@ def document(cards: list[dict[str, object]], generation: int) -> dict[str, objec
         "islands": [],
         "transform": {"panX": 0, "panY": 0, "zoom": 1},
     }
+
+
+def tree_size(path: Path) -> int:
+    return sum(item.stat().st_size for item in path.rglob("*") if item.is_file())
+
+
+def benchmark_git(generations: list[bytes]) -> dict[str, object]:
+    if shutil.which("git") is None:
+        return {"available": False}
+    with tempfile.TemporaryDirectory(prefix="kj-generation-git-") as directory:
+        repository = Path(directory)
+        subprocess.run(["git", "init", "-q", str(repository)], check=True)
+        subprocess.run(
+            ["git", "-C", str(repository), "config", "user.email", "benchmark@example.invalid"],
+            check=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(repository), "config", "user.name", "KJ benchmark"],
+            check=True,
+        )
+        commit_ids: list[str] = []
+        started = time.perf_counter()
+        for index, generation in enumerate(generations):
+            (repository / "document.json").write_bytes(generation)
+            subprocess.run(
+                ["git", "-C", str(repository), "add", "document.json"], check=True
+            )
+            subprocess.run(
+                ["git", "-C", str(repository), "commit", "-q", "-m", f"generation {index}"],
+                check=True,
+            )
+            commit_ids.append(
+                subprocess.check_output(
+                    ["git", "-C", str(repository), "rev-parse", "HEAD"], text=True
+                ).strip()
+            )
+        subprocess.run(
+            ["git", "-C", str(repository), "gc", "--aggressive", "--prune=now"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+        write_ms = (time.perf_counter() - started) * 1000
+        restore_started = time.perf_counter()
+        for index in (0, len(generations) // 2, len(generations) - 1):
+            restored = subprocess.check_output(
+                ["git", "-C", str(repository), "show", f"{commit_ids[index]}:document.json"]
+            )
+            assert restored == generations[index]
+        restore_ms = (time.perf_counter() - restore_started) * 1000
+        return {
+            "available": True,
+            "repositoryBytes": tree_size(repository / ".git"),
+            "writeAndGcMs": round(write_ms, 2),
+            "restoreThreeGenerationsMs": round(restore_ms, 2),
+        }
 
 
 def main() -> None:
@@ -71,6 +130,7 @@ def main() -> None:
         "maxDeltaDepth": max(blob.delta_depth for blob in blobs),
         "encodeMs": round(encode_ms, 2),
         "restoreMs": round(restore_ms, 2),
+        "git": benchmark_git(canonical_generations),
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
