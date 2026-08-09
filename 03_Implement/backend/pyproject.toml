@@ -24,6 +24,7 @@ test = [
   "httpx",
   "ruff==0.15.22",
   "python-multipart",
+  "requests",
 ]
 # SAAS-TENANT-01 AC-5: driver for `postgresql+psycopg` (see
 # kj_atlas_api.db._normalize_database_url). Only needed to run the
@@ -40,6 +41,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 addopts = [
   "--strict-markers",
+  "-m", "not ollama",
 ]
 pythonpath = [
   "src",

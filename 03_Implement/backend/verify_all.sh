@@ -94,7 +94,20 @@ check "Federation + settings + session tests" \
     -q
 
 # ------------------------------------------------------------------
-# 7. Docs check
+# 7. LLM tests (mock integration)
+# ------------------------------------------------------------------
+check "LLM integration tests (mock — all 6 AI tasks)" \
+  $VENV_PYTHON -m pytest tests/test_llm_provider.py \
+    tests/test_llm_settings.py \
+    tests/test_ai_prompt.py \
+    tests/test_ai_provider_error_contract.py \
+    tests/test_ai_provider_status_route.py \
+    tests/test_ai_relations_route.py \
+    tests/test_llm_integration.py \
+    -m "not ollama" -q
+
+# ------------------------------------------------------------------
+# 8. Docs check
 # ------------------------------------------------------------------
 check "Documentation contract checks" \
   $VENV_PYTHON "$(git rev-parse --show-toplevel 2>/dev/null || echo '/mnt/d/GIT/kj-atlas')/01_Plans/docs_check.py"
