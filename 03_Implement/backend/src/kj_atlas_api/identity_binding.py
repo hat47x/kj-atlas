@@ -129,7 +129,10 @@ def resolve_user_identity(
         db.query(UserIdentityRow)
         .filter(
             func.lower(UserIdentityRow.provider) == normalize_provider(provider),
-            UserIdentityRow.external_uid == subject,
+            # SAAS-TENANT-FK-03: apply lower() to both sides so the
+            # uq_user_identities_provider_lower_external_uid index is
+            # fully usable (lower(provider), lower(external_uid)).
+            func.lower(UserIdentityRow.external_uid) == subject.lower(),
         )
         .limit(2)
         .all()

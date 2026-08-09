@@ -1,7 +1,8 @@
 # Issue: SAAS-TENANT-FK-03 レガシーID紐付け照会がexternal_uidの大文字小文字非依存indexを使えていない
 
 - Type: Bug
-- Status: Draft
+- Status: Done
+- Resolution: 2026-08-09 — `identity_binding.py:132` の `external_uid` 比較に `func.lower()` を適用。`uq_user_identities_provider_lower_external_uid` インデックスが完全利用可能になった
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer

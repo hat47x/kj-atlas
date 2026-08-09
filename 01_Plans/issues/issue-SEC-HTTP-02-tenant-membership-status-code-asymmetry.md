@@ -1,7 +1,8 @@
 # Issue: SEC-HTTP-02 tenant切替で同一の「membership非activeチェック」が403と404に分岐
 
 - Type: Security
-- Status: Draft
+- Status: Done
+- Resolution: 2026-08-09 — 意図的アンチエニュメレーション設計であることを `tenant_context.py:129-135` にコメント明記。`api.md §10.2` にも「不明tenantは404相当」として文書化済み
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer

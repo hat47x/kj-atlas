@@ -1,7 +1,8 @@
 # Issue: SAAS-TENANT-MIGRATION-01 tenant基盤migrationのdowngrade()にデータ安全確認がない
 
 - Type: Bug
-- Status: Draft
+- Status: Done
+- Resolution: 2026-08-09 — downgrade() にデータ安全ガードを追加。各行数 > バックフィル分のときに RuntimeError で拒否
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer

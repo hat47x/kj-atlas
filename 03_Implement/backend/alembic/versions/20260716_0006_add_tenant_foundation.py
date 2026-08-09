@@ -219,6 +219,8 @@ def downgrade() -> None:
         if "tenant_id" in _column_names(sa.inspect(bind), "documents"):
             op.drop_column("documents", "tenant_id")
 
+    # SAAS-TENANT-MIGRATION-01: data-safety guard — refuse to drop
+    # tenant tables that contain rows beyond the local-default backfill.
     inspector = sa.inspect(bind)
     for table_name in (
         "tenant_memberships",
@@ -227,5 +229,51 @@ def downgrade() -> None:
         "tenants",
     ):
         if inspector.has_table(table_name):
+            if table_name == "tenants":
+                count = bind.execute(
+                    sa.text("SELECT COUNT(*) FROM tenants WHERE id != 'local-default'")
+                ).scalar()
+                if count:
+                    raise RuntimeError(
+                        f"Downgrade refused: {count} non-default tenant(s) "
+                        "would be permanently deleted. Back up tenant data "
+                        "before downgrading."
+                    )
+            elif table_name == "tenant_memberships":
+                count = bind.execute(
+                    sa.text(
+                        "SELECT COUNT(*) FROM tenant_memberships "
+                        "WHERE tenant_id != 'local-default'"
+                    )
+                ).scalar()
+                if count:
+                    raise RuntimeError(
+                        f"Downgrade refused: {count} non-default "
+                        "membership(s) would be permanently deleted."
+                    )
+            elif table_name == "identity_providers":
+                count = bind.execute(
+                    sa.text(
+                        "SELECT COUNT(*) FROM identity_providers "
+                        "WHERE id NOT LIKE 'idp-legacy-%'"
+                    )
+                ).scalar()
+                if count:
+                    raise RuntimeError(
+                        f"Downgrade refused: {count} non-legacy identity "
+                        "provider(s) would be permanently deleted."
+                    )
+            elif table_name == "tenant_identity_providers":
+                count = bind.execute(
+                    sa.text(
+                        "SELECT COUNT(*) FROM tenant_identity_providers "
+                        "WHERE tenant_id != 'local-default'"
+                    )
+                ).scalar()
+                if count:
+                    raise RuntimeError(
+                        f"Downgrade refused: {count} non-default "
+                        "tenant-IdP binding(s) would be permanently deleted."
+                    )
             op.drop_table(table_name)
             inspector = sa.inspect(bind)
