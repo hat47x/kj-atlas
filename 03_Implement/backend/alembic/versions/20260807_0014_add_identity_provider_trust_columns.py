@@ -27,6 +27,8 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    # ADD COLUMN works on both SQLite and PostgreSQL.
     op.add_column(
         "identity_providers",
         sa.Column("protocol", sa.Text(), nullable=False, server_default="oidc"),
@@ -43,19 +45,23 @@ def upgrade() -> None:
             nullable=True,
         ),
     )
-    op.create_unique_constraint(
-        "uq_tenant_identity_providers_idp_ref",
-        "tenant_identity_providers",
-        ["identity_provider_id", "external_tenant_ref"],
-    )
+    # CREATE UNIQUE CONSTRAINT: use batch mode for SQLite compatibility.
+    # SQLite does not support ALTER TABLE ADD CONSTRAINT; batch mode
+    # transparently uses a copy-and-move strategy for SQLite while
+    # emitting native ALTER on PostgreSQL.
+    with op.batch_alter_table("tenant_identity_providers") as batch_op:
+        batch_op.create_unique_constraint(
+            "uq_tenant_identity_providers_idp_ref",
+            ["identity_provider_id", "external_tenant_ref"],
+        )
 
 
 def downgrade() -> None:
-    op.drop_constraint(
-        "uq_tenant_identity_providers_idp_ref",
-        "tenant_identity_providers",
-        type_="unique",
-    )
+    with op.batch_alter_table("tenant_identity_providers") as batch_op:
+        batch_op.drop_constraint(
+            "uq_tenant_identity_providers_idp_ref",
+            type_="unique",
+        )
     op.drop_column("tenant_identity_providers", "external_tenant_ref")
     op.drop_column("identity_providers", "jwks_uri")
     op.drop_column("identity_providers", "protocol")
