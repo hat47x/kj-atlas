@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from sqlalchemy import CheckConstraint, Index, Integer, Text, text
+from sqlalchemy import Boolean, CheckConstraint, Index, Integer, Text, text
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -119,6 +119,36 @@ class ContentBlobRow(Base):
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class AiGenerationRunRow(Base):
+    __tablename__ = "ai_generation_runs"
+    __table_args__ = (
+        CheckConstraint("length(trim(task)) > 0", name="ck_ai_generation_runs_task"),
+        CheckConstraint("length(input_ir_digest) = 64", name="ck_ai_generation_runs_input_digest"),
+        CheckConstraint("length(output_digest) = 64", name="ck_ai_generation_runs_output_digest"),
+        CheckConstraint("safe_mode IS TRUE", name="ck_ai_generation_runs_safe_mode"),
+        ForeignKeyConstraint(
+            ["tenant_id", "output_digest"],
+            ["content_blobs.tenant_id", "content_blobs.content_digest"],
+            name="fk_ai_generation_runs_output_blob",
+            ondelete="RESTRICT",
+        ),
+        Index("ix_ai_generation_runs_tenant_created", "tenant_id", "created_at"),
+    )
+
+    tenant_id: Mapped[str] = mapped_column(
+        Text, ForeignKey("tenants.id", ondelete="RESTRICT"), primary_key=True
+    )
+    ai_run_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    task: Mapped[str] = mapped_column(Text, nullable=False)
+    trace_id: Mapped[str] = mapped_column(Text, nullable=False)
+    input_ir_digest: Mapped[str] = mapped_column(Text, nullable=False)
+    output_digest: Mapped[str] = mapped_column(Text, nullable=False)
+    policy_version: Mapped[str] = mapped_column(Text, nullable=False)
+    safe_mode: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    retention_expires_at: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
 class CanvasRevisionRow(Base):
     __tablename__ = "canvas_revisions"
     __table_args__ = (
@@ -129,6 +159,11 @@ class CanvasRevisionRow(Base):
         CheckConstraint(
             "generation_origin IN ('human', 'ai_proposal', 'system', 'import')",
             name="ck_canvas_revisions_origin",
+        ),
+        CheckConstraint(
+            "(generation_origin = 'ai_proposal' AND ai_run_ref IS NOT NULL) OR "
+            "(generation_origin != 'ai_proposal' AND ai_run_ref IS NULL)",
+            name="ck_canvas_revisions_ai_proposal",
         ),
         ForeignKeyConstraint(
             ["tenant_id", "doc_id"],
@@ -146,6 +181,12 @@ class CanvasRevisionRow(Base):
             ["tenant_id", "source_revision_id"],
             ["canvas_revisions.tenant_id", "canvas_revisions.revision_id"],
             name="fk_canvas_revisions_source",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "ai_run_ref"],
+            ["ai_generation_runs.tenant_id", "ai_generation_runs.ai_run_id"],
+            name="fk_canvas_revisions_ai_run",
             ondelete="RESTRICT",
         ),
         Index("ix_canvas_revisions_tenant_doc_created", "tenant_id", "doc_id", "created_at"),

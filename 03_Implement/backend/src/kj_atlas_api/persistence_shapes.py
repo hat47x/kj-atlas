@@ -38,6 +38,15 @@ STATE = _bounded(32, "closed-set lifecycle, action, decision, or protocol discri
 # This catalog is intentionally explicit. A coverage test rejects every new SQLAlchemy
 # Text column until its product meaning is classified here.
 PERSISTENT_TEXT_SPECS: dict[str, PersistentTextSpec] = {
+    "ai_generation_runs.tenant_id": INTERNAL_ID,
+    "ai_generation_runs.ai_run_id": INTERNAL_ID,
+    "ai_generation_runs.task": _identifier(128, "provider-neutral LLM task discriminator"),
+    "ai_generation_runs.trace_id": INTERNAL_ID,
+    "ai_generation_runs.input_ir_digest": _identifier(64, "lowercase SHA-256 input IR identity"),
+    "ai_generation_runs.output_digest": _identifier(64, "lowercase SHA-256 output content identity"),
+    "ai_generation_runs.policy_version": VERSION_ID,
+    "ai_generation_runs.created_at": TIMESTAMP,
+    "ai_generation_runs.retention_expires_at": TIMESTAMP,
     "content_blobs.tenant_id": INTERNAL_ID,
     "content_blobs.content_digest": _identifier(64, "lowercase SHA-256 content identity"),
     "content_blobs.storage_backend": STATE,

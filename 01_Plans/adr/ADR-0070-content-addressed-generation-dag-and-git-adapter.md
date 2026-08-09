@@ -29,6 +29,7 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 14. canonical JSONはUTF-8、key辞書順、余分な空白なし、NaN/Infinity禁止とする。full/deltaの選択は保存backendではなくcodecが決め、delta chain上限または圧縮比閾値を超えた場合はfull gzipへ戻す。復元後digest検証に成功するまでDocumentとして解釈しない。
 15. retention GCはmark-and-sweep型とし、まず候補だけを列挙する。head、DAG parent、source proposal、明示pinから到達するrevisionを削除せず、checkpoint／governedを自動期限削除しない。revision削除後も参照数ゼロと保留期間を確認するまで物理blobを削除しない。
 16. revision削除時は保護条件を同じDELETE statementで再評価し、候補列挙後のpin/head追加競合をfail closedにする。blob sweepはrevision参照とdelta base参照がともにゼロで、`failed|deleting`の保留期限超過objectだけを対象とする。
+17. AI実行は`ai_generation_runs`へ分離し、task、監査ログ接続用trace ID、入力IR digest、出力blob digest、policy version、SafeMode、作成・保持期限だけを保存する。prompt、入出力本文、provider、model、transportはrevision DAGへ複製しない。AI proposal revisionだけが同一tenantのAI runを参照でき、SafeMode無効のrunはDB制約で拒否する。
 
 ## Alternatives
 
@@ -45,6 +46,7 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 - DB、NAS、S3、将来のGit保存で同じ論理世代を利用できる。
 - autosaveへ重いAI・actor属性を付けないため、容量・PII・監査ノイズを抑えられる。
 - AI提案と人間採用の系譜を保ちつつ、proposal-onlyとhuman review境界を維持できる。
+- AI実行の再現・監査接続に必要な最小identityを保持しつつ、promptや生成本文の重複保存を避けられる。provider実行詳細は既存監査ログをtrace IDで参照する。
 - revision DAG、delta生成、GC、保持pin、domain row参照、共有bundleの追加設計が必要になる。
 - Gitの圧縮効果はJSON canonical化と変更局所性に依存するため、実データbenchmarkなしに採用効果を断定しない。
 - object storageを先行実装しないことで二重参照・二重GCを避ける一方、大容量・低価格・共有storageが必要になった時点で同じblob contractへ追加できる。

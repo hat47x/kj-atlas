@@ -106,3 +106,38 @@ Updated: 2026-08-03
 - 原因: 単一文字の反復データはfull gzipが極端に小さくなり、codecが意図通りfull snapshotを選んだ。
 - 対応: 複数カードの局所変更fixtureへ置換し、delta選択を明示assertしてからnegative pathを検証した。
 - 再発防止: adaptive codecの分岐テストではrepresentation選択も前提条件としてassertする。
+
+## 2026-08-10: pytest capture一時ファイル消失でテスト開始前に停止
+
+- 事象: AI生成lineageの対象テスト実行が、pytest終了処理の`FileNotFoundError`で停止し、テストは未実行だった。
+- 原因: 実行環境上でpytestのcapture用一時ファイルが途中で消失した。実装コード起因の失敗ではない。
+- 対応: captureを無効化する`-s`を付け、同一テスト群を再実行する。
+- 再発防止: この環境でcaptureの一時ファイル消失が再発した場合は、初回から`-s`を使用して本来の結果を取得する。
+
+## 2026-08-10: backendテストをシステムPythonで起動して収集失敗
+
+- 事象: capture無効化後の対象テストが`sqlalchemy`および`alembic.config`不足で収集失敗した。
+- 原因: PATH上のpytestがシステムPythonを使用し、backendの`.venv`を使用していなかった。
+- 対応: `03_Implement/backend/.venv/bin/python -m pytest`で再実行する。
+- 再発防止: backendのPython検証は仮想環境のPythonを明示して起動する。
+
+## 2026-08-10: AI lineageテストfixtureの親子insert順序が未確定
+
+- 事象: SQLiteで外部キーを有効化した新規テスト2件が、tenantとcontent blobの同一flush時に外部キー違反となった。
+- 原因: ORM relationshipを持たないfixtureで親子rowを同一flushへ積み、tenantのinsert完了を明示していなかった。
+- 対応: tenantを先にcommitし、その後documentとblobを登録する順序へ変更した。
+- 再発防止: relationshipなしの外部キーfixtureでは、親レコードをflushまたはcommitしてから子を追加する。
+
+## 2026-08-10: issue validatorで仮想環境の相対pathを誤指定
+
+- 事象: Ruff成功後、repository rootから`.venv/bin/python`を指定したためissue validatorだけが起動しなかった。
+- 原因: backend配下の仮想環境pathを、作業directory変更後も同じ相対pathで参照した。
+- 対応: `03_Implement/backend/.venv/bin/python`をrepository rootから明示して再実行する。
+- 再発防止: 複数directoryを跨ぐ検証では実行前に仮想環境pathを基準directoryに合わせる。
+
+## 2026-08-10: 並行作業の未完成issueが全体memo検証を停止
+
+- 事象: active issue memo全体検証が、今回の対象外である新規`issue-DOMAIN-TITLE-01`の必須項目不足を検出して停止した。
+- 原因: validatorは作業ツリー内の全active memoを対象とし、並行作業中の未完成ファイルも検査する。
+- 対応: 対象外ファイルは変更せず、同じvalidator関数で`issue-DATA-GENERATION-01`だけを個別検証する。
+- 再発防止: 並行作業がある場合は全体検証の失敗対象を確認し、対象issueの個別検証を併記する。

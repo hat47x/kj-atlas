@@ -24,7 +24,7 @@
 - [x] AC-4: revision DAG、content object参照、head更新のDB schemaとmigrationが実装される。
 - [ ] AC-5: canonical JSON、full snapshot／delta選択、最大chain depth、復元検証が代表データでbenchmarkされる。
 - [ ] AC-6: retention pin、ephemeral GC、governed保持、tenant-scoped orphan回収が実装される。
-- [ ] AC-7: AI run metadataの最小契約、SafeMode、redaction、保持期間が実装される。
+- [x] AC-7: AI run metadataの最小契約、SafeMode、redaction、保持期間が実装される。
 - [x] AC-8: Gitを標準runtimeから除外し、archive／交換限定の将来adapter候補と判断する。実装する場合はbare repo、hook禁止、tenant分離、GC、backup/restoreを別gateで検証する。
 - [x] AC-9: revisionと物理blobの責務が分離され、object storage作業がrevision schema確定前に先行しない。
 
@@ -91,3 +91,9 @@
 - ephemeral revision削除は候補取得後の無条件deleteにせず、head／parent／source／pin不在と期限・tierを単一DELETE文で再評価する。候補選定後にpin等が追加された競合でも削除しない。
 - blob sweep候補はtenant内でrevision参照もdelta base参照もなく、`failed|deleting`かつ保留期限超過のものだけに限定した。`ready` blobや他blobのbaseを物理削除候補にしない。
 - repository／codec／policyの15件とRuffを通過した。外部objectの実削除、削除監査、branch到達性に基づく件数保持が残るためAC-6は未完了を維持する。
+
+## AI generation run lineage checkpoint 2026-08-10
+
+- `ai_generation_runs`を追加し、task、trace ID、入力IR digest、出力blob digest、policy version、SafeMode、作成時刻、保持期限だけを保存する最小契約とした。prompt、入力本文、生成本文、provider、model、transportの列は持たず、実行詳細は既存監査ログへtrace IDで接続する。
+- SafeModeは常にtrueであることをDB制約で強制した。AI proposal revisionはAI run参照必須、非AI revisionは参照禁止とし、tenant複合FKにより別tenantのrun参照を拒否する。出力digestも同一tenantのcontent blobへ接続した。
+- PostgreSQLでは新tableへFORCE RLSを適用し、SQLite fresh upgrade／downgradeを含むmigrationを追加した。lineage／SafeMode／payload非保持／列分類／migrationの26件を通過し、AC-7を完了した。
