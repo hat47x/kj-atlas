@@ -50,6 +50,7 @@ import {
 } from "./domain/representative_visual_cue_assets";
 import { updateCardHoldStateAndShelf, type HoldStateSelection } from "./domain/hold_state_ops";
 import { resolveDecisionOriginTrace, resolveRepresentativeOriginTrace } from "./domain/merge_traceability";
+import { moveCardToIsland } from "./domain/island_edge_aggregate";
 import { collectMergeCandidates } from "./domain/merge_candidates";
 import {
   appendMergeSuggestionDecision,
@@ -2584,13 +2585,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
                 );
               });
               if (targetIsland) {
+                // R2(a): moveCardToIsland() removes draggedCardId from any island it
+                // already belonged to — leaving it behind would let the same card belong
+                // to two islands at once, which getIslandsForCard() treats as valid
+                // (card→island is one-to-many there) while most other call sites assume
+                // single membership.
                 present = {
                   ...present,
-                  islands: present.islands.map((island) =>
-                    island.id === targetIsland.id
-                      ? { ...island, cardIds: [...island.cardIds, draggedCardId] }
-                      : island
-                  ),
+                  islands: moveCardToIsland(present.islands, draggedCardId, targetIsland.id),
                 };
               }
             }
@@ -4958,9 +4960,19 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           return island;
         }
 
+        if ((island.placardCardId ?? undefined) === (placardCardId ?? undefined)) {
+          return island;
+        }
+
+        // titleReviewed staleness fix: swapping the placard card changes what text is
+        // effectively displayed as the island's title (表札), so a review recorded
+        // against the prior configuration no longer describes what's shown. Only
+        // handleIslandTitleChange (a direct title edit, self-attested) may set
+        // titleReviewed back to true.
         return {
           ...island,
           placardCardId,
+          titleReviewed: false,
         };
       });
 
@@ -6998,8 +7010,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     return perspectiveRendering.notes[0];
   }, [evidenceOverlayLodLevel, perspectiveMode, perspectiveRendering]);
 
+  // F-8: don't gate on selectedCard.canonicalId. A card that was itself merged into
+  // another card (canonicalId set) can still be a representative of its OWN sources from
+  // an earlier merge (chained canonicalization) — resolveRepresentativeOriginTrace already
+  // returns an empty trace for genuine leaf source cards, so it alone is the correct signal.
   const representativeOriginTraceForSelectedCard = useMemo(() => {
-    if (!document || !selectedCard || selectedCard.canonicalId) {
+    if (!document || !selectedCard) {
       return {
         representativeCardId: selectedCard?.id ?? "",
         sourceCardIds: [] as string[],
@@ -7011,7 +7027,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, [document, selectedCard]);
 
   const sourceCardsForSelectedCanonical = useMemo(() => {
-    if (!document || !selectedCard || selectedCard.canonicalId) {
+    if (!document || !selectedCard) {
       return [] as DocumentV1["cards"];
     }
 
@@ -7326,7 +7342,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, [sourceCardsForSelectedCanonical]);
 
   useEffect(() => {
-    if (!selectedCard || selectedCard.canonicalId || (sourceCardsForSelectedCanonical.length === 0 && missingSourceCardIdsForSelectedCanonical.length === 0)) {
+    if (!selectedCard || (sourceCardsForSelectedCanonical.length === 0 && missingSourceCardIdsForSelectedCanonical.length === 0)) {
       setRevealedSourceCardIds(new Set());
       return;
     }

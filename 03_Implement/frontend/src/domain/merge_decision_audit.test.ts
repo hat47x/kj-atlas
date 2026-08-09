@@ -116,5 +116,115 @@ describe("merge_decision_audit", () => {
   it("returns empty entries when no decisions are recorded", () => {
     expect(buildMergeDecisionAuditEntries(createDocument())).toEqual([]);
   });
+
+  // R3-tier-1 (F-9 fix): the audit entry must report what was true AT DECISION TIME,
+  // not be silently recomputed from whatever the cards currently look like.
+  it("prefers a decision-time snapshot over live re-resolution when present", () => {
+    const doc = createDocument({
+      cards: [
+        // c-rep no longer has repOf at all — if this used live resolution it would
+        // fall through to "fallback" and report a different representative entirely.
+        { id: "c-rep", text: "canonical", x: 0, y: 0 },
+        { id: "c-a", text: "source a", x: 100, y: 0 },
+      ],
+      mergeSuggestionDecisions: [
+        {
+          id: "d-1",
+          groupId: "group-1",
+          decision: "accept",
+          decidedAt: "2026-01-03T00:00:00.000Z",
+          cardIds: ["c-a"],
+          mergedTextDraft: "merged",
+          editedText: "merged",
+          representativeCardId: "c-rep",
+          representativeResolvedBy: "repOf",
+          sourceCardIds: ["c-a"],
+          missingSourceCardIds: [],
+        },
+      ],
+    });
+
+    expect(buildMergeDecisionAuditEntries(doc)).toEqual([
+      {
+        actorType: "human",
+        cardIds: ["c-a"],
+        decisionId: "d-1",
+        decisionType: "accept",
+        decidedAt: "2026-01-03T00:00:00.000Z",
+        groupId: "group-1",
+        representativeCardId: "c-rep",
+        representativeResolvedBy: "repOf",
+        sourceCardIds: ["c-a"],
+        missingSourceCardIds: [],
+      },
+    ]);
+  });
+
+  it("stays stable across a later merge of the same cards, unlike live re-resolution", () => {
+    // c-a was the representative when d-1 was decided (snapshotted). c-a has since
+    // itself been merged into c-rep-2 — resolveDecisionOriginTrace(doc, ["c-a"]) today
+    // would resolve differently. The snapshot must not follow that change.
+    const doc = createDocument({
+      cards: [
+        { id: "c-a", text: "was representative, now a source", x: 0, y: 0, mergedIntoCardId: "c-rep-2" },
+        { id: "c-rep-2", text: "later representative", x: 200, y: 0, repOf: ["c-a"] },
+      ],
+      mergeSuggestionDecisions: [
+        {
+          id: "d-1",
+          groupId: "group-1",
+          decision: "accept",
+          decidedAt: "2026-01-03T00:00:00.000Z",
+          cardIds: ["c-a"],
+          mergedTextDraft: "merged",
+          editedText: "merged",
+          representativeCardId: "c-a",
+          representativeResolvedBy: "unresolved",
+          sourceCardIds: [],
+          missingSourceCardIds: [],
+        },
+      ],
+    });
+
+    const entries = buildMergeDecisionAuditEntries(doc);
+    expect(entries[0]?.representativeCardId).toBe("c-a");
+    expect(entries[0]?.representativeResolvedBy).toBe("unresolved");
+  });
+
+  it("still falls back to live resolution for legacy entries with no snapshot", () => {
+    const doc = createDocument({
+      cards: [
+        { id: "c-rep", text: "canonical", x: 0, y: 0, repOf: ["c-a"] },
+        { id: "c-a", text: "source a", x: 100, y: 0, mergedIntoCardId: "c-rep" },
+      ],
+      mergeSuggestionDecisions: [
+        {
+          id: "d-legacy",
+          groupId: "group-1",
+          decision: "accept",
+          decidedAt: "2026-01-03T00:00:00.000Z",
+          cardIds: ["c-a"],
+          mergedTextDraft: "merged",
+          editedText: "merged",
+          // no representativeCardId — pre-R3-tier-1 entry.
+        },
+      ],
+    });
+
+    expect(buildMergeDecisionAuditEntries(doc)).toEqual([
+      {
+        actorType: "human",
+        cardIds: ["c-a"],
+        decisionId: "d-legacy",
+        decisionType: "accept",
+        decidedAt: "2026-01-03T00:00:00.000Z",
+        groupId: "group-1",
+        representativeCardId: "c-rep",
+        representativeResolvedBy: "repOf",
+        sourceCardIds: ["c-a"],
+        missingSourceCardIds: [],
+      },
+    ]);
+  });
 });
 

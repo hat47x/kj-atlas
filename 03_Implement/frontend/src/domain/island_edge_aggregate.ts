@@ -1,4 +1,4 @@
-import type { DocumentV1, Edge, EdgeType } from "./types";
+import type { DocumentV1, Edge, EdgeType, Island } from "./types";
 
 export type DerivedIslandEdge = {
   id: string;
@@ -45,6 +45,34 @@ export function getIslandsForCard(document: DocumentV1, cardId: string): string[
   }
 
   return islandIds;
+}
+
+// R2(a): a card should belong to at most one island — getIslandsForCard() above
+// tolerates the one-to-many case for read paths that must survive a transient
+// violation, but every write path that joins a card to an island should use this
+// helper so it never CREATES one. Removes cardId from every other island's
+// cardIds while adding it to targetIslandId's, in one pass.
+export function moveCardToIsland(islands: Island[], cardId: string, targetIslandId: string): Island[] {
+  let didChange = false;
+
+  const nextIslands = islands.map((island) => {
+    if (island.id === targetIslandId) {
+      if (island.cardIds.includes(cardId)) {
+        return island;
+      }
+      didChange = true;
+      return { ...island, cardIds: [...island.cardIds, cardId] };
+    }
+
+    if (island.cardIds.includes(cardId)) {
+      didChange = true;
+      return { ...island, cardIds: island.cardIds.filter((id) => id !== cardId) };
+    }
+
+    return island;
+  });
+
+  return didChange ? nextIslands : islands;
 }
 
 export function getDerivedIslandEdges(document: DocumentV1): DerivedIslandEdge[] {

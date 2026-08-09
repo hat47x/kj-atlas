@@ -845,6 +845,12 @@ function isMergeSuggestionDecision(value: unknown): value is MergeSuggestionDeci
   return value === "accept" || value === "partial" || value === "reject" || value === "defer";
 }
 
+function isRepresentativeResolvedBy(
+  value: unknown
+): value is "repOf" | "mergedIntoCardId" | "fallback" | "unresolved" {
+  return value === "repOf" || value === "mergedIntoCardId" || value === "fallback" || value === "unresolved";
+}
+
 function parseMergeSuggestionDecisions(value: unknown): MergeSuggestionDecisionEntry[] | undefined {
   if (!Array.isArray(value)) {
     return undefined;
@@ -882,6 +888,16 @@ function parseMergeSuggestionDecisions(value: unknown): MergeSuggestionDecisionE
       ...(typeof item.note === "string" ? { note: item.note } : {}),
       ...(typeof item.snapshotVersion === "string" ? { snapshotVersion: item.snapshotVersion } : {}),
       ...(typeof item.rationale === "string" ? { rationale: item.rationale } : {}),
+      ...(typeof item.representativeCardId === "string" ? { representativeCardId: item.representativeCardId } : {}),
+      ...(isRepresentativeResolvedBy(item.representativeResolvedBy)
+        ? { representativeResolvedBy: item.representativeResolvedBy }
+        : {}),
+      ...(Array.isArray(item.sourceCardIds)
+        ? { sourceCardIds: item.sourceCardIds.filter((id): id is string => typeof id === "string") }
+        : {}),
+      ...(Array.isArray(item.missingSourceCardIds)
+        ? { missingSourceCardIds: item.missingSourceCardIds.filter((id): id is string => typeof id === "string") }
+        : {}),
     });
   }
 

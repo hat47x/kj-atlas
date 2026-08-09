@@ -50,7 +50,12 @@ describe("merge_suggestion_decisions", () => {
         }
       );
 
-      expect(next.mergeSuggestionDecisions?.at(-1)).not.toHaveProperty("representativeCardId");
+      // R3-tier-1: every append now snapshots a representative/source resolution
+      // (fallback here — c1/c2 have no repOf/mergedIntoCardId/sources of their own).
+      expect(next.mergeSuggestionDecisions?.at(-1)).toMatchObject({
+        representativeCardId: "c1",
+        representativeResolvedBy: "fallback",
+      });
       return next;
     }, base);
 
@@ -89,6 +94,10 @@ describe("merge_suggestion_decisions", () => {
         note: "Human-reviewed: normalize duplicates",
         snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
         rationale: undefined,
+        representativeCardId: "c1",
+        representativeResolvedBy: "fallback",
+        sourceCardIds: ["c2"],
+        missingSourceCardIds: [],
       },
     ]);
   });

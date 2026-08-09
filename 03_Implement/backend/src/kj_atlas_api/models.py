@@ -604,14 +604,38 @@ class PatchApplyLogEntry(BaseModel):
 
 
 class MergeSuggestionDecision(BaseModel):
+    # No explicit extra= override here previously meant Pydantic's default
+    # extra="ignore" applied — decisionId/action/selectedCardIds/note/snapshotVersion
+    # were already being silently dropped on every server round-trip, the same F-1
+    # pattern (Island.representativeCue) applied to this type. Fixed alongside adding
+    # the R3-tier-1 snapshot fields below rather than left half-mirrored.
+    model_config = ConfigDict(extra="forbid")
+
     id: str
+    decisionId: str | None = Field(default=None, exclude_if=lambda value: value is None)
     groupId: str
     decision: Literal["accept", "partial", "reject", "defer"]
+    action: Literal["accept", "partial", "reject", "defer"] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     decidedAt: datetime
+    decidedBy: str | None = Field(default=None, exclude_if=lambda value: value is None)
     cardIds: list[str]
+    selectedCardIds: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     mergedTextDraft: str
     editedText: str
+    note: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    snapshotVersion: str | None = Field(default=None, exclude_if=lambda value: value is None)
     rationale: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    # R3-tier-1 (functional-dependency-integrity-2026-08-06.html §08, F-9): decision-time
+    # provenance snapshot. Optional for back-compat with entries persisted before this
+    # field existed.
+    representativeCardId: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    representativeResolvedBy: Literal["repOf", "mergedIntoCardId", "fallback", "unresolved"] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    sourceCardIds: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    missingSourceCardIds: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 class MergeDecisionRecord(BaseModel):

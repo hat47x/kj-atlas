@@ -363,6 +363,16 @@ export type MergeSuggestionDecisionEntry = {
   note?: string;
   snapshotVersion?: string;
   rationale?: string;
+  /**
+   * R3-tier-1 (functional-dependency-integrity-2026-08-06.html §08, F-9): decision-time
+   * provenance snapshot. Keep in sync with the identical, independently-declared copy of
+   * this type in ./merge_suggestion_decisions.ts — this duplication is itself a known F-7
+   * instance, out of scope to deduplicate here.
+   */
+  representativeCardId?: string;
+  representativeResolvedBy?: "repOf" | "mergedIntoCardId" | "fallback" | "unresolved";
+  sourceCardIds?: string[];
+  missingSourceCardIds?: string[];
 };
 
 export type PatchApplyStats = {

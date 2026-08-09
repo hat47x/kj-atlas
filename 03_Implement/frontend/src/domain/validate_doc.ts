@@ -1028,6 +1028,12 @@ function validateMergeSuggestionDecision(value: unknown): value is MergeSuggesti
   return value === "accept" || value === "partial" || value === "reject" || value === "defer";
 }
 
+function validateRepresentativeResolvedBy(
+  value: unknown
+): value is "repOf" | "mergedIntoCardId" | "fallback" | "unresolved" {
+  return value === "repOf" || value === "mergedIntoCardId" || value === "fallback" || value === "unresolved";
+}
+
 function validateMergeSuggestionDecisionEntry(
   item: unknown,
   index: number,
@@ -1039,7 +1045,7 @@ function validateMergeSuggestionDecisionEntry(
     return false;
   }
 
-  hasOnlyKeys(item, ["id", "decisionId", "groupId", "decision", "action", "decidedAt", "decidedBy", "cardIds", "selectedCardIds", "mergedTextDraft", "editedText", "note", "snapshotVersion", "rationale"], path, errors);
+  hasOnlyKeys(item, ["id", "decisionId", "groupId", "decision", "action", "decidedAt", "decidedBy", "cardIds", "selectedCardIds", "mergedTextDraft", "editedText", "note", "snapshotVersion", "rationale", "representativeCardId", "representativeResolvedBy", "sourceCardIds", "missingSourceCardIds"], path, errors);
 
   let valid = true;
   if (typeof item.id !== "string") {
@@ -1095,6 +1101,20 @@ function validateMergeSuggestionDecisionEntry(
   }
   if (item.rationale !== undefined && typeof item.rationale !== "string") {
     errors.push(`${path}.rationale: must be a string when provided`);
+    valid = false;
+  }
+  if (item.representativeCardId !== undefined && typeof item.representativeCardId !== "string") {
+    errors.push(`${path}.representativeCardId: must be a string when provided`);
+    valid = false;
+  }
+  if (item.representativeResolvedBy !== undefined && !validateRepresentativeResolvedBy(item.representativeResolvedBy)) {
+    errors.push(`${path}.representativeResolvedBy: must be 'repOf' | 'mergedIntoCardId' | 'fallback' | 'unresolved' when provided`);
+    valid = false;
+  }
+  if (item.sourceCardIds !== undefined && !validateStringArray(item.sourceCardIds, `${path}.sourceCardIds`, errors)) {
+    valid = false;
+  }
+  if (item.missingSourceCardIds !== undefined && !validateStringArray(item.missingSourceCardIds, `${path}.missingSourceCardIds`, errors)) {
     valid = false;
   }
 

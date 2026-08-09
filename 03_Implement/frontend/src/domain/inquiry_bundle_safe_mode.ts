@@ -408,6 +408,12 @@ const MERGE_DECISION_FIELDS = {
   note: "redact",
   snapshotVersion: "redact",
   rationale: "redact",
+  // R3-tier-1: decision-time provenance snapshot. Same category as cardIds/
+  // selectedCardIds/decision/action above — structural ids and an enum, not free text.
+  representativeCardId: "preserve",
+  representativeResolvedBy: "preserve",
+  sourceCardIds: "preserve",
+  missingSourceCardIds: "preserve",
 } satisfies Record<keyof MergeSuggestionDecisionEntry, FieldPolicy>;
 
 const PATCH_LOG_FIELDS = {
@@ -962,6 +968,16 @@ function sanitizeMergeDecision(entry: MergeSuggestionDecisionEntry): MergeSugges
     ...(entry.note !== undefined ? { note: redact(entry.note) } : {}),
     ...(entry.snapshotVersion !== undefined ? { snapshotVersion: redact(entry.snapshotVersion) } : {}),
     ...(entry.rationale !== undefined ? { rationale: redact(entry.rationale) } : {}),
+    ...(entry.representativeCardId !== undefined
+      ? { representativeCardId: entry.representativeCardId }
+      : {}),
+    ...(entry.representativeResolvedBy !== undefined
+      ? { representativeResolvedBy: entry.representativeResolvedBy }
+      : {}),
+    ...(entry.sourceCardIds !== undefined ? { sourceCardIds: [...entry.sourceCardIds] } : {}),
+    ...(entry.missingSourceCardIds !== undefined
+      ? { missingSourceCardIds: [...entry.missingSourceCardIds] }
+      : {}),
   };
 }
 

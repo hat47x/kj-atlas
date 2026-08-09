@@ -30,7 +30,18 @@ export function buildMergeDecisionAuditEntries(document: DocumentV1): MergeDecis
 
   return decisions.map((decision) => {
     const cardIds = sortCardIds(decision.cardIds);
-    const originTrace = resolveDecisionOriginTrace(document, cardIds);
+    // R3-tier-1 (F-9 fix): prefer the decision-time snapshot when present so the audit
+    // entry stays stable across later merges of the same cards. Entries recorded before
+    // this field existed have no snapshot — fall back to live re-resolution for those,
+    // same as before.
+    const originTrace = decision.representativeCardId !== undefined
+      ? {
+          representativeCardId: decision.representativeCardId,
+          representativeResolvedBy: decision.representativeResolvedBy ?? "unresolved",
+          sourceCardIds: decision.sourceCardIds ?? [],
+          missingSourceCardIds: decision.missingSourceCardIds ?? [],
+        }
+      : resolveDecisionOriginTrace(document, cardIds);
 
     return {
       decisionId: decision.id,

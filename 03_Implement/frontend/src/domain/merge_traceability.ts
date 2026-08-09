@@ -74,22 +74,39 @@ export function resolveRepresentativeOriginTrace(document: DocumentV1, represent
   const representative = document.cards.find((card) => card.id === representativeCardId);
   const cardsById = new Map(document.cards.map((card) => [card.id, card]));
 
+  // Each source is consulted independently and unioned (not "first non-empty wins"):
+  // repOf and sources are mutually exclusive per card under the current writers
+  // (applyCanonicalization sets sources; createRepresentativeMerge sets repOf), but a
+  // future or hand-edited document could legitimately populate more than one, and an
+  // early-exit here would silently drop those extra ids instead of surfacing them via
+  // sourceCardIds/missingSourceCardIds.
   const sourceIds = new Set<string>();
+  let resolvedBy: RepresentativeOriginTrace["representativeResolvedBy"] = "unresolved";
+
   if (representative?.repOf && representative.repOf.length > 0) {
     for (const sourceId of representative.repOf) {
       sourceIds.add(sourceId);
     }
+    resolvedBy = "repOf";
   }
 
+  let foundViaMergedIntoCardId = false;
   for (const card of document.cards) {
     if (card.mergedIntoCardId === representativeCardId) {
       sourceIds.add(card.id);
+      foundViaMergedIntoCardId = true;
     }
   }
+  if (foundViaMergedIntoCardId && resolvedBy === "unresolved") {
+    resolvedBy = "mergedIntoCardId";
+  }
 
-  if (representative && sourceIds.size === 0 && Array.isArray(representative.sources)) {
+  if (representative && Array.isArray(representative.sources) && representative.sources.length > 0) {
     for (const sourceId of representative.sources) {
       sourceIds.add(sourceId);
+    }
+    if (resolvedBy === "unresolved") {
+      resolvedBy = "fallback";
     }
   }
 
@@ -108,7 +125,7 @@ export function resolveRepresentativeOriginTrace(document: DocumentV1, represent
     representativeCardId,
     sourceCardIds,
     missingSourceCardIds,
-    representativeResolvedBy: "repOf",
+    representativeResolvedBy: resolvedBy,
   };
 }
 

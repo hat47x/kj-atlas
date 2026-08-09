@@ -1,11 +1,16 @@
 import type { DocumentV1 } from "./types";
 import { STREAM_B_CONTRACTS } from "./stream_b_contract";
+import { resolveDecisionOriginTrace, type RepresentativeOriginTrace } from "./merge_traceability";
 
 export const MERGE_SUGGESTION_DECISIONS = ["accept", "partial", "reject", "defer"] as const;
 const DECISION_LOG_SNAPSHOT_VERSION = STREAM_B_CONTRACTS.decisionLog.contractId;
 
 export type MergeSuggestionDecision = (typeof MERGE_SUGGESTION_DECISIONS)[number];
 
+// NOTE: this type is independently (identically) re-declared in ./types.ts, which is
+// what App.tsx / merge_decision_audit.ts / inquiry_bundle_safe_mode.ts actually import —
+// an F-7-pattern duplication that pre-dates this change. Both copies must be kept in
+// sync; deduplicating them is out of scope here.
 export type MergeSuggestionDecisionEntry = {
   id: string;
   decisionId?: string;
@@ -21,6 +26,18 @@ export type MergeSuggestionDecisionEntry = {
   note?: string;
   snapshotVersion?: string;
   rationale?: string;
+  /**
+   * R3-tier-1 (functional-dependency-integrity-2026-08-06.html §08, F-9): the
+   * representative/source resolution AT DECISION TIME, snapshotted here so a later
+   * merge involving the same cards cannot silently change what an already-recorded
+   * audit entry reports. Optional for back-compat with entries recorded before this
+   * field existed — buildMergeDecisionAuditEntries() falls back to live re-resolution
+   * only when these are absent.
+   */
+  representativeCardId?: string;
+  representativeResolvedBy?: RepresentativeOriginTrace["representativeResolvedBy"];
+  sourceCardIds?: string[];
+  missingSourceCardIds?: string[];
 };
 
 type AppendMergeSuggestionDecisionInput = {
@@ -68,6 +85,7 @@ export function appendMergeSuggestionDecision(
   }
 
   const decisionId = idFactory();
+  const originTrace = resolveDecisionOriginTrace(document, sortedCardIds);
   const entry: MergeSuggestionDecisionEntry = {
     id: decisionId,
     decisionId,
@@ -83,6 +101,10 @@ export function appendMergeSuggestionDecision(
     note: input.decisionReason ?? input.editedText,
     snapshotVersion: DECISION_LOG_SNAPSHOT_VERSION,
     rationale: input.rationale,
+    representativeCardId: originTrace.representativeCardId,
+    representativeResolvedBy: originTrace.representativeResolvedBy,
+    sourceCardIds: originTrace.sourceCardIds,
+    missingSourceCardIds: originTrace.missingSourceCardIds,
   };
 
   return {

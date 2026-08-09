@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { getDerivedIslandEdges, getIslandsForCard } from "./island_edge_aggregate";
-import type { DocumentV1 } from "./types";
+import { getDerivedIslandEdges, getIslandsForCard, moveCardToIsland } from "./island_edge_aggregate";
+import type { DocumentV1, Island } from "./types";
 
 const baseDocument: DocumentV1 = {
   version: 1,
@@ -126,5 +126,46 @@ describe("getDerivedIslandEdges", () => {
         contributingCardIds: ["card-a", "card-lone", "card-z"],
       },
     ]);
+  });
+});
+
+describe("moveCardToIsland", () => {
+  const islands: Island[] = [
+    { id: "island-a", cardIds: ["card-a", "card-z"] },
+    { id: "island-b", cardIds: ["card-b"] },
+    { id: "island-c", cardIds: ["card-c"] },
+  ];
+
+  it("removes the card from its prior island while adding it to the target (R2(a))", () => {
+    const next = moveCardToIsland(islands, "card-a", "island-b");
+
+    expect(next.find((island) => island.id === "island-a")?.cardIds).toEqual(["card-z"]);
+    expect(next.find((island) => island.id === "island-b")?.cardIds).toEqual(["card-b", "card-a"]);
+    expect(next.find((island) => island.id === "island-c")?.cardIds).toEqual(["card-c"]);
+  });
+
+  it("removes the card from every island it belongs to, not just the first match", () => {
+    const multiMembership: Island[] = [
+      { id: "island-a", cardIds: ["card-a"] },
+      { id: "island-b", cardIds: ["card-a", "card-b"] },
+      { id: "island-c", cardIds: ["card-c"] },
+    ];
+
+    const next = moveCardToIsland(multiMembership, "card-a", "island-c");
+
+    expect(next.find((island) => island.id === "island-a")?.cardIds).toEqual([]);
+    expect(next.find((island) => island.id === "island-b")?.cardIds).toEqual(["card-b"]);
+    expect(next.find((island) => island.id === "island-c")?.cardIds).toEqual(["card-c", "card-a"]);
+  });
+
+  it("is a no-op (same array reference) when the card is already the target's sole member", () => {
+    const next = moveCardToIsland(islands, "card-b", "island-b");
+    expect(next).toBe(islands);
+  });
+
+  it("does not mutate islands that never contained the card and are not the target", () => {
+    const next = moveCardToIsland(islands, "card-a", "island-b");
+    const unaffected = next.find((island) => island.id === "island-c");
+    expect(unaffected).toBe(islands[2]);
   });
 });

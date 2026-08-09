@@ -93,6 +93,7 @@
 - 環境変数変更: `KJ_ATLAS_*` 命名を守り、`runtime_parameter_registry.md` と設定例を同期する。
 - UI視覚変更: 対象画面を実ブラウザで確認する。スクリーンショットは公開文書または視覚回帰の根拠として必要な場合だけ更新する。
 - SafeMode・共有・import変更: fail-closed、proposal-only、人手レビュー境界を対象テストで確認する。
+- `DocumentV1`へ新しいoptionalフィールドを追加する前（R5、`02_Architecture/functional-dependency-integrity-2026-08-06.html` §08）: (1) 表現しようとしている関係を、既存のフィールドが既にカバーしていないか確認する — 同一関係を複数フィールドで表さない。(2) その関係が確定事実（統合・所属・帰属など）か利用者の現在の見立て（`claimType`/`holdState`等）かを判定し、後者なら正規化・不変条件の対象にしない。(3) 追加する型に対応するPydanticモデルのフィールドも同時に追加し、`test_ts_python_contract_drift.py`の対象型リストに含める。(4) SafeMode向けのredact/preserve/omitポリシー（`inquiry_bundle_safe_mode.ts`）を判断する。
 
 無関係なダッシュボード、decision-pack、過去ログ、全Project Mapを同じPRで更新しません。
 
