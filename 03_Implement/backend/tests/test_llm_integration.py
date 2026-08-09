@@ -153,3 +153,39 @@ class TestOllamaLLMIntegration:
                          "Find merge candidates. Return JSON only.",
                          model="deepseek-r1:7b", timeout=130)
         assert len(text) > 10
+
+
+DEEPSEEK_URL = "http://localhost:8003/generate"
+
+
+@pytest.mark.deepseek
+class TestDeepSeekIntegration:
+    """DeepSeek API tests via deepseek_adapter.py."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        try:
+            httpx.get("http://localhost:8003/", timeout=3)
+        except Exception:
+            pytest.skip("DeepSeek adapter not running on port 8003")
+
+    def test_deepseek_refine_card_text(self):
+        text = _generate(DEEPSEEK_URL, "refine_card_text",
+                         "Card: Auto-save when closing document. Return JSON only.",
+                         model="deepseek-chat", timeout=60)
+        assert len(text) > 10
+
+    def test_deepseek_detect_contradiction(self):
+        text = _generate(DEEPSEEK_URL, "detect_contradiction",
+                         "Card A: All data must be encrypted at rest.\n"
+                         "Card B: Data should be stored as plain text. Return JSON only.",
+                         model="deepseek-chat", timeout=60)
+        assert len(text) > 10
+
+    def test_deepseek_assess_card_importance(self):
+        text = _generate(DEEPSEEK_URL, "assess_card_importance",
+                         '- id="a", text="Security audit log"\n'
+                         '- id="b", text="Dark mode theme"\n'
+                         '- id="c", text="Two-factor authentication"\nReturn JSON only.',
+                         model="deepseek-chat", timeout=60)
+        assert len(text) > 10

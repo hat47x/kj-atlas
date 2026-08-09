@@ -63,6 +63,33 @@ POST {base_url}/generate
 
 各タスクの出力スキーマは `02_Architecture/llm_provider_spec.md` を参照してください。
 
+## 方法 4: DeepSeek API（クラウドLLM、高品質）
+
+DeepSeek API は OpenAI 互換の chat completions API を提供します。
+
+```bash
+# 1. API キーを設定
+export DEEPSEEK_API_KEY="sk-..."
+
+# 2. アダプタを起動
+python3 deploy/tools/deepseek_adapter.py --port 8001 --model deepseek-chat
+
+# 3. バックエンドに接続
+KJ_ATLAS_LLM_PROVIDER=local \
+KJ_ATLAS_LOCAL_LLM_BASE_URL=http://localhost:8001 \
+KJ_ATLAS_LOCAL_LLM_MODEL=deepseek-chat \
+.venv/bin/uvicorn kj_atlas_api.main:app
+
+# 4. テスト実行
+pytest tests/test_kj_session_e2e.py -v -m "not ollama"
+```
+
+| アダプタ | ファイル | 利点 | 欠点 |
+|---|---|---|---|
+| モック | `mock_local_llm.py` | GPU不要・決定論的 | 固定出力のみ |
+| Ollama | `ollama_adapter.py` | ローカル実行・無料 | CPUでは低速 |
+| **DeepSeek** | **`deepseek_adapter.py`** | **高品質・高速** | **APIキー・従量課金** |
+
 ## 全 AI エンドポイント一覧
 
 | エンドポイント | メソッド | LLM タスク | 説明 |

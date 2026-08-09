@@ -51,6 +51,7 @@ markers = [
   "auth_level1: required AuthContext contract coverage",
   "auth_level2: conditional federation fixture coverage",
   "ollama: tests that require a running Ollama server + adapter",
+  "deepseek: tests that require a running DeepSeek API adapter",
 ]
 
 [tool.ruff]
