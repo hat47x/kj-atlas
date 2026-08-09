@@ -3770,7 +3770,13 @@ export function SidePanel({
                   />
                 </>
               ) : null}
-              {!selectedCard.canonicalId && (hasSourceCardsForSelectedCanonical || hasMissingSourceCardsForSelectedCanonical) ? (
+              {/* F-8: do not gate on selectedCard.canonicalId — a card that was itself
+                  merged into another card can still be a representative of its OWN
+                  sources from an earlier merge (chained canonicalization). This guard
+                  independently re-introduced the bug App.tsx's computation already
+                  fixed; hasSourceCardsForSelectedCanonical/hasMissingSourceCardsForSelectedCanonical
+                  alone are the correct signal. */}
+              {hasSourceCardsForSelectedCanonical || hasMissingSourceCardsForSelectedCanonical ? (
                 <div style={{ marginBottom: 12 }}>
                   <details>
                     <summary style={{ fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
