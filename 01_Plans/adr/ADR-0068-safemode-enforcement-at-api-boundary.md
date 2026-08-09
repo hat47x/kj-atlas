@@ -105,9 +105,31 @@ R-3 該当の是非は保守者が確認すること。
 - proposal-only / 反スコアリング / `human_reviewed` 人手昇格の各境界は変更しない。
 - LLM 応答側（出力）のフィルタリングは本ADRの範囲外。
 
+## 追記（2026-08-09）: ADR-0069 との境界重複
+
+> **`ADR-0069` と本ADRは同じ境界を対象としており、独立に実装すると衝突する。着手前に採択順序を確認すること。**
+
+`ADR-0069`（LLM投入IRをAI入力の実経路とする、Proposed）が起票された。本ADRの前提のうち一点が、その後の調査で変わっている。
+
+本ADRは「SafeMode の入力側保護がどこにも実装されていない」ことを前提に、`/ai/*` の各リクエストモデルへ `safeMode` を追加する方向（D1）を提案した。しかし `02_Architecture/llm_input_ir_spec.md`（`ADR-0009` Accepted、Phase B の正本）§7.1 が、**同じ保護を既に凍結仕様として定めている** ── `meta.safe_mode` と `constraints.safe_mode` の双方を必須かつ `true` とし、欠落または `false` の場合は IR 生成を失敗させる。実装が存在しないだけである（`ir_version` / `graph_summary` / `cluster_candidates` は `03_Implement` 配下に0件）。
+
+したがって二つの経路がある。
+
+- **本ADR D1**: `/ai/*` のリクエスト契約へ `safeMode` を追加し、`routes/ai.py` で強制する。
+- **`ADR-0069` D4=A**: IR 構築をサーバ側へ置き、IR §7.1 の既存規定で強制する。
+
+`ADR-0069` が採択される場合、本ADRの D1 は吸収されうる。D2（未レビュー本文検出時の挙動）と D3（後方互換）は、どちらの経路でも決着が要るため引き続き有効である。
+
+**両者を別々のAIエージェントが並行して実装しないこと。** 保守者が採択順序を決め、後続側はその決定を前提に再検討すること。
+
+根拠と実測は `02_Architecture/canvas-projection-asymmetry-2026-08-09.html` を参照。
+
 ## Traceability
 
 - Implementation: `01_Plans/issues/issue-SEC-AI-SAFEMODE-01-safemode-not-enforced-at-api-boundary.md`
+- Related: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`（**境界が重複する。上記追記を参照**）
+- Related: `02_Architecture/llm_input_ir_spec.md` §7.1（SafeMode を凍結仕様として既に規定）
+- Related: `02_Architecture/canvas-projection-asymmetry-2026-08-09.html`
 - Related: `02_Architecture/architecture.html` §05（CE-0 禁止事項の出典）
 - Related: `02_Architecture/llm_escalation_policy.html` §04（CE2-C2 停止条件の出典）
 - Related: `01_Plans/adr/ADR-0041-core-value-invariants-single-guard.md`

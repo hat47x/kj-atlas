@@ -10,6 +10,8 @@
 - Expected verification level: `integration`
 
 > **本issueは `ADR-0068` の採択を前提とする。** ADR が Proposed の間は着手しないこと。
+>
+> **追記（2026-08-09）: `AI-IR-PROJECTION-01` と境界が重複する。** `02_Architecture/llm_input_ir_spec.md` §7.1（`ADR-0009` Accepted の凍結仕様）が同じ SafeMode 保護を既に規定しており、`ADR-0069` はそれをサーバ側で実装する方向を提案している。**両者を並行して実装しないこと。** 詳細は `ADR-0068` の「追記（2026-08-09）」を参照。
 
 ## 課題
 
