@@ -15,8 +15,12 @@ from kj_atlas_api.llm.provider import (
     get_provider,
 )
 from kj_atlas_api.models_ai import (
+    AssessCardImportanceRequest,
+    AssessCardImportanceResponse,
     CheckNarrativeRequest,
     CheckNarrativeResponse,
+    DetectContradictionRequest,
+    DetectContradictionResponse,
     GenerateNarrativeRequest,
     GenerateNarrativeResponse,
     ProposalDecisionAuditRequest,
@@ -24,8 +28,13 @@ from kj_atlas_api.models_ai import (
     ProposalEnvelope,
     ProposeIslandSummaryRequest,
     ProviderStatusResponse,
+    RefineCardTextRequest,
+    RefineCardTextResponse,
+    SuggestCardGroupsRequest,
+    SuggestCardGroupsResponse,
     SuggestIslandSummaryRequest,
     SuggestIslandSummaryResponse,
+    _CardRef,
 )
 from kj_atlas_api.models import (
     Card,
@@ -688,3 +697,175 @@ def check_narrative(payload: CheckNarrativeRequest) -> CheckNarrativeResponse:
     _audit_llm_trace("check_narrative", llm_response)
 
     return _parse_narrative_check_response(llm_response.raw_text, payload)
+
+
+# ---------------------------------------------------------------------------
+# ADR-0064: KJ-method card-level AI operations
+# ---------------------------------------------------------------------------
+
+
+def _build_refine_card_text_prompt(payload: RefineCardTextRequest) -> str:
+    ctx = f"\nContext: {payload.context}" if payload.context else ""
+    return (
+        f"Refine the wording of this KJ-method card. "
+        f"Make it clearer and more concise while preserving the original meaning. "
+        f"Return JSON: {{\"refinedText\": \"...\", \"reasoning\": \"...\"}}\n"
+        f"Card text: {payload.cardText}{ctx}"
+    )
+
+
+def _parse_refine_card_text_response(raw_text: str) -> RefineCardTextResponse:
+    data = json.loads(raw_text)
+    return RefineCardTextResponse(
+        refinedText=str(data.get("refinedText", data.get("refined_text", ""))),
+        reasoning=data.get("reasoning"),
+    )
+
+
+def _build_suggest_card_groups_prompt(payload: SuggestCardGroupsRequest) -> str:
+    cards = "\n".join(f'  - id="{c.id}", text="{c.text}"' for c in payload.cards)
+    return (
+        f"Group these KJ-method cards into thematic islands. "
+        f"Return JSON: {{\"groups\": [{{\"label\": \"...\", \"cardIds\": [\"...\"], "
+        f"\"rationale\": \"...\"}}]}}\nCards:\n{cards}"
+    )
+
+
+def _parse_suggest_card_groups_response(raw_text: str) -> SuggestCardGroupsResponse:
+    data = json.loads(raw_text)
+    from kj_atlas_api.models_ai import _SuggestedGroup
+    return SuggestCardGroupsResponse(
+        groups=[_SuggestedGroup(
+            label=str(g.get("label", "")),
+            cardIds=[str(c) for c in g.get("cardIds", g.get("card_ids", []))],
+            rationale=g.get("rationale"),
+        ) for g in data.get("groups", [])]
+    )
+
+
+def _build_detect_contradiction_prompt(payload: DetectContradictionRequest) -> str:
+    return (
+        f"Determine if these two KJ-method cards contradict each other. "
+        f"Return JSON: {{\"hasContradiction\": true|false, \"explanation\": \"...\"}}\n"
+        f"Card A (id={payload.cardA.id}): {payload.cardA.text}\n"
+        f"Card B (id={payload.cardB.id}): {payload.cardB.text}"
+    )
+
+
+def _parse_detect_contradiction_response(raw_text: str) -> DetectContradictionResponse:
+    data = json.loads(raw_text)
+    return DetectContradictionResponse(
+        hasContradiction=bool(data.get("hasContradiction", data.get("has_contradiction", False))),
+        explanation=data.get("explanation"),
+    )
+
+
+def _build_assess_card_importance_prompt(payload: AssessCardImportanceRequest) -> str:
+    cards = "\n".join(f'  - id="{c.id}", text="{c.text}"' for c in payload.cards)
+    return (
+        f"Assess the importance of each KJ-method card relative to the others. "
+        f"Rate each as 'high', 'medium', or 'low' with a brief rationale. "
+        f"Return JSON: {{\"assessments\": [{{\"cardId\": \"...\", \"importance\": "
+        f"\"high|medium|low\", \"rationale\": \"...\"}}]}}\nCards:\n{cards}"
+    )
+
+
+def _parse_assess_card_importance_response(raw_text: str) -> AssessCardImportanceResponse:
+    data = json.loads(raw_text)
+    from kj_atlas_api.models_ai import _CardAssessment
+    return AssessCardImportanceResponse(
+        assessments=[_CardAssessment(
+            cardId=str(a.get("cardId", a.get("card_id", ""))),
+            importance=str(a.get("importance", "medium")),
+            rationale=a.get("rationale"),
+        ) for a in data.get("assessments", [])]
+    )
+
+
+# ---------------------------------------------------------------------------
+# Card-level AI endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/refine-card-text",
+    response_model=RefineCardTextResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def refine_card_text(payload: RefineCardTextRequest) -> RefineCardTextResponse:
+    try:
+        llm_response = generate_with_fallback(
+            LLMRequest(
+                task="refine_card_text",
+                prompt=_build_refine_card_text_prompt(payload),
+            )
+        )
+    except ProviderDisabledError as exc:
+        _raise_llm_http_error(exc)
+    except ProviderRequestError as exc:
+        _raise_llm_http_error(exc)
+    _audit_llm_trace("refine_card_text", llm_response)
+    return _parse_refine_card_text_response(llm_response.raw_text)
+
+
+@router.post(
+    "/suggest-card-groups",
+    response_model=SuggestCardGroupsResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def suggest_card_groups(payload: SuggestCardGroupsRequest) -> SuggestCardGroupsResponse:
+    try:
+        llm_response = generate_with_fallback(
+            LLMRequest(
+                task="suggest_card_groups",
+                prompt=_build_suggest_card_groups_prompt(payload),
+            )
+        )
+    except ProviderDisabledError as exc:
+        _raise_llm_http_error(exc)
+    except ProviderRequestError as exc:
+        _raise_llm_http_error(exc)
+    _audit_llm_trace("suggest_card_groups", llm_response)
+    return _parse_suggest_card_groups_response(llm_response.raw_text)
+
+
+@router.post(
+    "/detect-contradiction",
+    response_model=DetectContradictionResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def detect_contradiction(payload: DetectContradictionRequest) -> DetectContradictionResponse:
+    try:
+        llm_response = generate_with_fallback(
+            LLMRequest(
+                task="detect_contradiction",
+                prompt=_build_detect_contradiction_prompt(payload),
+            )
+        )
+    except ProviderDisabledError as exc:
+        _raise_llm_http_error(exc)
+    except ProviderRequestError as exc:
+        _raise_llm_http_error(exc)
+    _audit_llm_trace("detect_contradiction", llm_response)
+    return _parse_detect_contradiction_response(llm_response.raw_text)
+
+
+@router.post(
+    "/assess-card-importance",
+    response_model=AssessCardImportanceResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def assess_card_importance(payload: AssessCardImportanceRequest) -> AssessCardImportanceResponse:
+    try:
+        llm_response = generate_with_fallback(
+            LLMRequest(
+                task="assess_card_importance",
+                prompt=_build_assess_card_importance_prompt(payload),
+            )
+        )
+    except ProviderDisabledError as exc:
+        _raise_llm_http_error(exc)
+    except ProviderRequestError as exc:
+        _raise_llm_http_error(exc)
+    _audit_llm_trace("assess_card_importance", llm_response)
+    return _parse_assess_card_importance_response(llm_response.raw_text)

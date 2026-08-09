@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -161,6 +163,87 @@ class ProposalDecisionAuditRequest(BaseModel):
 
 class ProposalDecisionAuditResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+
+# ---------------------------------------------------------------------------
+# ADR-0064: KJ-method card-level AI operations
+# ---------------------------------------------------------------------------
+
+
+class RefineCardTextRequest(BaseModel):
+    """Request to refine/improve the wording of a single KJ-method card."""
+    model_config = ConfigDict(extra="forbid")
+
+    cardText: str = Field(min_length=1, max_length=2000)
+    context: str | None = Field(default=None, max_length=2000)
+
+
+class RefineCardTextResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    refinedText: str
+    reasoning: str | None = None
+
+
+class SuggestCardGroupsRequest(BaseModel):
+    """Request to suggest groupings/islands for a set of KJ-method cards."""
+    model_config = ConfigDict(extra="forbid")
+
+    cards: list[_CardRef] = Field(min_length=2, max_length=100)
+
+
+class _CardRef(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str = Field(min_length=1, max_length=256)
+    text: str = Field(min_length=1, max_length=2000)
+
+
+class SuggestCardGroupsResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    groups: list[_SuggestedGroup]
+
+
+class _SuggestedGroup(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    label: str
+    cardIds: list[str]
+    rationale: str | None = None
+
+
+class DetectContradictionRequest(BaseModel):
+    """Request to detect contradiction between two KJ-method cards."""
+    model_config = ConfigDict(extra="forbid")
+
+    cardA: _CardRef
+    cardB: _CardRef
+
+
+class DetectContradictionResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    hasContradiction: bool
+    explanation: str | None = None
+
+
+class AssessCardImportanceRequest(BaseModel):
+    """Request to assess the importance/centrality of KJ-method cards."""
+    model_config = ConfigDict(extra="forbid")
+
+    cards: list[_CardRef] = Field(min_length=1, max_length=100)
+
+
+class AssessCardImportanceResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    assessments: list[_CardAssessment]
+
+
+class _CardAssessment(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    cardId: str
+    importance: str  # "high" | "medium" | "low"
+    rationale: str | None = None
 
     proposalId: str = Field(min_length=1)
     status: Literal["accepted", "rejected", "held"]

@@ -89,7 +89,35 @@ def build_text_for_task(task: str, prompt: str) -> str:
     if task == "check_narrative":
         return json.dumps({"issues": []})
 
-    # No other task strings are emitted by kj-atlas; return an empty object as a safe default.
+    # ADR-0064: KJ-method card-level operations
+    if task == "refine_card_text":
+        return json.dumps({
+            "refinedText": "（モック）カード文面の改善提案です。元の意味を保持しつつ明確化しています。",
+            "reasoning": "同義語の選択と冗長表現の除去により可読性を向上。"})
+    if task == "suggest_card_groups":
+        card_ids = _CARD_LINE.findall(prompt)
+        if len(card_ids) >= 2:
+            mid = len(card_ids) // 2
+            return json.dumps({"groups": [
+                {"label": "グループA（モック）", "cardIds": card_ids[:mid],
+                 "rationale": "主題の類似性に基づく自動グループ化"},
+                {"label": "グループB（モック）", "cardIds": card_ids[mid:],
+                 "rationale": "残りのカードを補完グループとして分類"},
+            ]})
+        return json.dumps({"groups": []})
+    if task == "detect_contradiction":
+        return json.dumps({
+            "hasContradiction": False,
+            "explanation": "（モック）2枚のカード間に明示的な矛盾は検出されませんでした。"})
+    if task == "assess_card_importance":
+        card_ids = _CARD_LINE.findall(prompt)
+        levels = ["high", "medium", "low"]
+        return json.dumps({"assessments": [
+            {"cardId": cid, "importance": levels[i % 3] if i < 3 else "medium",
+             "rationale": "（モック）カードの位置と内容に基づく自動重要度評価"}
+            for i, cid in enumerate(card_ids)
+        ]})
+
     return json.dumps({})
 
 

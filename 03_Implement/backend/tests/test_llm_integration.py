@@ -85,11 +85,38 @@ class TestMockLLMIntegration:
             _generate(MOCK_URL, "check_narrative", "check test"))
         assert "issues" in data
 
-    def test_all_six_tasks_non_empty(self):
+    def test_all_ten_tasks_non_empty(self):
         for task in ["re_layout", "suggest_merges", "suggest_island_summary",
                      "summarize_island_relation", "generate_narrative",
-                     "check_narrative"]:
-            assert len(_generate(MOCK_URL, task, "test")) > 0
+                     "check_narrative", "refine_card_text",
+                     "suggest_card_groups", "detect_contradiction",
+                     "assess_card_importance"]:
+            assert len(_generate(MOCK_URL, task, "test")) > 0, f"Empty for {task}"
+
+    # ADR-0064: KJ-method card-level tests
+    def test_refine_card_text_valid_json(self):
+        data = json.loads(
+            _generate(MOCK_URL, "refine_card_text",
+                      'Card text: test card. Return JSON.'))
+        assert "refinedText" in data
+
+    def test_suggest_card_groups_valid_json(self):
+        data = json.loads(
+            _generate(MOCK_URL, "suggest_card_groups",
+                      'Cards:\n  - id="a", text="A"\n  - id="b", text="B"'))
+        assert "groups" in data
+
+    def test_detect_contradiction_valid_json(self):
+        data = json.loads(
+            _generate(MOCK_URL, "detect_contradiction",
+                      'Card A: X\nCard B: Y'))
+        assert "hasContradiction" in data
+
+    def test_assess_card_importance_valid_json(self):
+        data = json.loads(
+            _generate(MOCK_URL, "assess_card_importance",
+                      'Cards:\n  - id="a", text="Important"\n  - id="b", text="Minor"'))
+        assert "assessments" in data
 
 
 @pytest.mark.ollama
