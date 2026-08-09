@@ -1,30 +1,23 @@
 from collections.abc import Generator
 
 from sqlalchemy import create_engine
-from sqlalchemy.engine.url import make_url
 from sqlalchemy.orm import Session, sessionmaker
 
+from kj_atlas_api.database_support import (
+    database_support_for_url,
+    normalize_sync_database_url,
+)
 from kj_atlas_api.settings import settings
 
 
 def _normalize_database_url(database_url: str) -> str:
-    """Normalize async SQLAlchemy URLs to sync drivers for this Phase 1 sync stack."""
-    url = make_url(database_url)
-
-    # NOTE: use render_as_string(hide_password=False), not str(url). SQLAlchemy's
-    # str(URL) masks the password as "***", which would otherwise be passed verbatim
-    # to the driver and cause "password authentication failed" on the postgres path.
-    if url.drivername == "sqlite+aiosqlite":
-        return url.set(drivername="sqlite").render_as_string(hide_password=False)
-
-    if url.drivername == "postgresql+asyncpg":
-        return url.set(drivername="postgresql+psycopg").render_as_string(hide_password=False)
-
-    return database_url
+    """Backward-compatible import path for migration and test callers."""
+    return normalize_sync_database_url(database_url)
 
 
 normalized_database_url = _normalize_database_url(settings.database_url)
-is_sqlite = normalized_database_url.startswith("sqlite")
+database_support = database_support_for_url(normalized_database_url)
+is_sqlite = database_support.backend == "sqlite"
 engine = create_engine(
     normalized_database_url,
     connect_args={"check_same_thread": False} if is_sqlite else {},

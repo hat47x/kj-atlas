@@ -21,6 +21,8 @@
 - `KJ_ATLAS_DATABASE_URL`
   - 既定値: `sqlite:///./kj_atlas.db`
   - `sqlite+aiosqlite://...` / `postgresql+asyncpg://...` が与えられた場合は、Phase 1 の同期SQLAlchemy実装で扱えるよう内部で同期ドライバURLへ正規化して利用
+  - 正式対応はSQLite/PostgreSQL。MySQL/MariaDB、SQL Server、Oracle、CockroachDBは候補として管理するが、schema/migrationの実DB検証完了までは接続前に拒否
+  - 対応状況と昇格条件: `02_Architecture/database_portability.md`
 - `KJ_ATLAS_LLM_PROVIDER`
   - 既定値: `none`
   - 値: `none | local | large-scale`（後方互換エイリアス: `local_http`, `external`）

@@ -6,6 +6,8 @@ from urllib.parse import urlsplit
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from kj_atlas_api.database_support import require_verified_database_url
+
 
 _LLM_HOST_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 
@@ -472,6 +474,11 @@ class Settings(BaseSettings):
         # Startup validation is handled by TrustedSaasRuntimePolicy.validate() and
         # validate_trusted_saas_runtime_preflight() in main.py lifespan.
         self.runtime_profile = normalized_runtime_profile
+
+        # A SQLAlchemy dialect being importable does not mean kj-atlas migrations
+        # and safety invariants are verified for it. Candidate databases remain
+        # fail-closed until their real-DB matrix is complete.
+        require_verified_database_url(self.database_url)
 
         provider = self.llm_provider.strip().lower()
         if provider not in {"none", "local", "local_http", "large-scale", "large_scale", "external"}:

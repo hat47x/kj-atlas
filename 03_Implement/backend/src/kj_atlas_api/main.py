@@ -7,11 +7,11 @@ from alembic.script import ScriptDirectory
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sqlalchemy.engine import make_url
 
 from kj_atlas_api.access_control import build_access_control_adapter
 from kj_atlas_api.audit import build_audit_dispatcher
 from kj_atlas_api.db import init_db
+from kj_atlas_api.database_support import database_support_for_url
 from kj_atlas_api.document_policy_binding import build_document_policy_binding_resolver
 from kj_atlas_api.routes.ai import router as ai_router
 from kj_atlas_api.routes.ai_relations import router as ai_relations_router
@@ -48,7 +48,7 @@ def _assert_linear_migration_history() -> None:
 
 def _trusted_saas_runtime_policy() -> TrustedSaasRuntimePolicy:
     return TrustedSaasRuntimePolicy(
-        database_backend=make_url(settings.database_url).get_backend_name(),
+        database_backend=database_support_for_url(settings.database_url).backend,
         allow_jit_provisioning=settings.allow_jit_provisioning,
         access_control_adapter=settings.access_control_adapter,
         access_control_fail_safe_mode=settings.access_control_fail_safe_mode,
