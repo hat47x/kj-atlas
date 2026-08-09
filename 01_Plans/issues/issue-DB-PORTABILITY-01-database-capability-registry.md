@@ -113,3 +113,9 @@
 - `pyproject.toml`のdriver extra／marker、実test marker、GitHub Actionsのextra install／pytest command、公開support matrixを横断する契約testを追加した。次のDB追加で宣言更新が一つでも欠ければSQLite unit test段階で停止する。
 - 公開表はDatabase名、SQLAlchemy backend、再利用familyを分離し、MariaDBのbackend=`mariadb`とfamily=`mysql`を曖昧にしない形へ改訂した。
 - SQLite基準のbackend全体回帰は830件pass、3件skip、49件deselect。失敗3件は並行中のAI response model、外部LLM接続、公開LLM設定文書に限定され、DB宣言契約11件は通過した。
+
+## Full verified database audit 2026-08-10
+
+- 現行commit上で固定versionの全Verified DBを再起動し、SQLite基準に加えて実DBmatrixを再実行した。
+- PostgreSQL 16はfresh migrationとRLS suiteを含め19件pass・1件skip、MySQL 8.4/MariaDB 11.4はpromotion matrix 2件pass、SQL Server 2022は1件pass、CockroachDB 26.2.3は1件passとなった。
+- Oracle AI Database Free 23.26.2は同じ現行系列でORM CLOB roundtripとData Pump restoreを含む1件pass（175.95秒）。これによりSQLite以外の全backendでfresh、constraint、LOB、transaction、migration往復、backup/restoreのprovider別契約が現行codeに対して成立することを再確認した。
