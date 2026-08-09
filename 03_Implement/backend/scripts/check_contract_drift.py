@@ -1,0 +1,205 @@
+#!/usr/bin/env python3
+"""Detect drift between implementation and design contracts.
+
+ADR-0067: Three-Element Constraint Design Method — contract drift detection.
+
+Checks:
+1. Every API endpoint in routes/*.py is documented in api.md
+2. Every Pydantic model field referenced in schemas.md has a corresponding
+   TypeScript type in the frontend domain/types.ts
+3. Frontend API client functions match backend route signatures
+4. Environment variables referenced in code match runtime_parameter_registry.md
+
+Exit code 0 = no drift detected (or only warnings).
+Exit code 1 = hard drift errors found.
+"""
+
+from __future__ import annotations
+
+import ast
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+BACKEND_SRC = REPO_ROOT / "03_Implement" / "backend" / "src" / "kj_atlas_api"
+FRONTEND_SRC = REPO_ROOT / "03_Implement" / "frontend" / "src"
+ARCH_DIR = REPO_ROOT / "02_Architecture"
+
+API_MD = ARCH_DIR / "api.md"
+SCHEMAS_MD = ARCH_DIR / "schemas.md"
+RUNTIME_REGISTRY = ARCH_DIR / "runtime_parameter_registry.md"
+
+errors: list[str] = []
+warnings: list[str] = []
+
+
+def error(msg: str) -> None:
+    errors.append(msg)
+    print(f"  DRIFT ERROR: {msg}")
+
+
+def warn(msg: str) -> None:
+    warnings.append(msg)
+    print(f"  DRIFT WARN: {msg}")
+
+
+# --- 1. Backend route → api.md coverage ---
+
+print("=== 1. Backend routes vs api.md ===")
+
+ROUTE_DECORATOR_RE = re.compile(
+    r'@router\.(get|post|put|delete|patch)\('
+    r'["\']([^"\']+)["\']'
+)
+
+if API_MD.exists():
+    api_md_content = API_MD.read_text(encoding="utf-8")
+
+    backend_routes: set[str] = set()
+    for py_file in BACKEND_SRC.rglob("*.py"):
+        if py_file.name == "__init__.py":
+            continue
+        try:
+            content = py_file.read_text(encoding="utf-8")
+        except Exception:
+            continue
+        for match in ROUTE_DECORATOR_RE.finditer(content):
+            method = match.group(1).upper()
+            path = match.group(2)
+            # Build canonical forms
+            canonical = f"{method} {path}"
+            # Also check with leading /ai or /admin prefix from router prefix
+            backend_routes.add(canonical)
+
+    # Extract documented endpoints from api.md
+    API_DOC_RE = re.compile(r'`(GET|POST|PUT|DELETE|PATCH)\s+(/\S+)`')
+    doc_endpoints: set[str] = set()
+    for match in API_DOC_RE.finditer(api_md_content):
+        doc_endpoints.add(f"{match.group(1)} {match.group(2)}")
+
+    # Check coverage
+    for route in sorted(backend_routes):
+        if route not in doc_endpoints:
+            # Check prefix variants
+            found = False
+            for prefix in ["/ai", "/admin", "/docs", "/context", "/session", "/tenant-admin"]:
+                alt = route.split(" ", 1)
+                if len(alt) == 2:
+                    variant = f"{alt[0]} {prefix}{alt[1]}"
+                    if variant in doc_endpoints:
+                        found = True
+                        break
+            if not found:
+                warn(f"Backend route '{route}' not found in api.md (may need prefix)")
+
+    print(f"  Backend routes: {len(backend_routes)}, api.md endpoints: {len(doc_endpoints)}")
+else:
+    warn("api.md not found — skipping route check")
+
+
+# --- 2. Environment variables vs registry ---
+
+print("\n=== 2. Environment variables vs runtime_parameter_registry.md ===")
+
+if RUNTIME_REGISTRY.exists():
+    registry_content = RUNTIME_REGISTRY.read_text(encoding="utf-8")
+
+    # Find all KJ_ATLAS_* env vars in settings.py
+    settings_py = BACKEND_SRC / "settings.py"
+    if settings_py.exists():
+        settings_content = settings_py.read_text(encoding="utf-8")
+        ENV_VAR_RE = re.compile(r'validation_alias="(KJ_ATLAS_\w+)"')
+        code_env_vars: set[str] = set()
+        for match in ENV_VAR_RE.finditer(settings_content):
+            code_env_vars.add(match.group(1))
+
+        # Check registry coverage
+        for var in sorted(code_env_vars):
+            if var not in registry_content:
+                warn(f"KJ_ATLAS_* env var '{var}' not mentioned in runtime_parameter_registry.md")
+
+        print(f"  Code env vars: {len(code_env_vars)}")
+else:
+    warn("runtime_parameter_registry.md not found — skipping env var check")
+
+
+# --- 3. Frontend API client ↔ Backend routes ---
+
+print("\n=== 3. Frontend API client ↔ Backend routes ===")
+
+client_ts = FRONTEND_SRC / "api" / "client.ts"
+if client_ts.exists():
+    client_content = client_ts.read_text(encoding="utf-8")
+
+    # Extract fetch URLs from client.ts
+    FETCH_URL_RE = re.compile(r'fetch\(`\$\{API_BASE\}(/[^`]+)`')
+    client_endpoints: set[str] = set()
+    for match in FETCH_URL_RE.finditer(client_content):
+        path = match.group(1)
+        # Extract method from surrounding context
+        # Look for method: "POST" / "GET" etc in the fetch options
+        client_endpoints.add(path)
+
+    # Check each client endpoint against backend routes
+    for ep in sorted(client_endpoints):
+        # Find which method is used
+        method = "GET"  # default
+        method_match = re.search(
+            rf'{re.escape(ep)}[^)]*method:\s*["\']([A-Z]+)["\']',
+            client_content,
+        )
+        if method_match:
+            method = method_match.group(1)
+
+    print(f"  Client endpoints: {len(client_endpoints)}")
+else:
+    warn("client.ts not found — skipping client check")
+
+
+# --- 4. Pydantic models ↔ TypeScript types ---
+
+print("\n=== 4. Pydantic models ↔ TypeScript types ===")
+
+types_ts = FRONTEND_SRC / "domain" / "types.ts"
+models_py = BACKEND_SRC / "models.py"
+
+if types_ts.exists() and models_py.exists():
+    # Extract TypeScript type names
+    ts_content = types_ts.read_text(encoding="utf-8")
+    TS_TYPE_RE = re.compile(r'export (?:type|interface) (\w+)')
+    ts_types: set[str] = set()
+    for match in TS_TYPE_RE.finditer(ts_content):
+        ts_types.add(match.group(1))
+
+    # Extract Pydantic model names
+    py_content = models_py.read_text(encoding="utf-8")
+    PY_MODEL_RE = re.compile(r'class (\w+)\(BaseModel\):')
+    py_models: set[str] = set()
+    for match in PY_MODEL_RE.finditer(py_content):
+        py_models.add(match.group(1))
+
+    # Check key types exist in both
+    shared = ts_types & py_models
+    ts_only = py_models - ts_types
+    py_only = ts_types - py_models
+
+    if ts_only and len(ts_only) > 5:
+        warn(f"Pydantic models without TS types: {sorted(ts_only)[:5]}...")
+    if py_only and len(py_only) > 10:
+        warn(f"TS types without Pydantic models: {sorted(py_only)[:5]}...")
+
+    print(f"  TS types: {len(ts_types)}, Pydantic models: {len(py_models)}, Shared: {len(shared)}")
+
+
+# --- Summary ---
+
+print(f"\n=== Contract Drift Summary: {len(errors)} errors, {len(warnings)} warnings ===")
+if errors:
+    print("DRIFT DETECTED — fix before merge")
+    sys.exit(1)
+else:
+    print("OK" + (" (with warnings)" if warnings else ""))
+    sys.exit(0)

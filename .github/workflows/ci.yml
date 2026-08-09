@@ -60,6 +60,12 @@ jobs:
       - name: Run docs contract checks
         run: python 01_Plans/docs_check.py
 
+      - name: Run design consistency checks (ADR-0067)
+        run: python 03_Implement/backend/scripts/check_design_consistency.py
+
+      - name: Run contract drift detection (ADR-0067)
+        run: python 03_Implement/backend/scripts/check_contract_drift.py
+
       - name: Check changed-file whitespace
         shell: bash
         run: |
