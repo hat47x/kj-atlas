@@ -59,6 +59,8 @@ NAS／S3のlocatorは`tenant_id`と`content_id`それぞれのSHA-256から決�
 
 S3実装は特定SDKをContent Storeへ直結せず、`put_object`／`get_object`／`delete_object`のclient portを介する。AWS S3、MinIO等のS3互換製品、テストdoubleの差をこのportのadapterへ閉じ込め、core packageへ必須cloud dependencyを追加しない。
 
+Content Store上の編集世代は物理backendと分離し、`ADR-0070`のcontent-addressed revision DAG候補で扱う。Gitを利用する場合も新しいstorage backendまたはarchive adapterであり、Git commit／branchをDB metadata、tenant認可、human reviewの正本にしない。schema version、ETag、Inquiry round snapshot、merge decision log、編集revisionは別概念を維持する。
+
 Content Storeの操作契約は一つの汎用CRUDへ統合せず、次の3 portに分離する。
 
 | Port | 更新特性 | DB実装の責務 |
