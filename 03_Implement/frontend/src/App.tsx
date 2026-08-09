@@ -11,6 +11,7 @@ import {
   putDocument,
   recordProposalDecision,
   proposeIslandSummary,
+  suggestDocumentTitle,
   suggestMerges,
   summarizeIslandRelation,
   suggestLayout,
@@ -80,6 +81,7 @@ import { AgentTaskExportPanel } from "./ui/AgentTaskExportPanel";
 import { AgentResponseImportPanel, type ImportedProposalReview } from "./ui/AgentResponseImportPanel";
 import { DiagnosticsBundlePanel } from "./ui/DiagnosticsBundlePanel";
 import { RecentDocumentsDialog } from "./ui/RecentDocumentsDialog";
+import { DocumentTitleEditor } from "./ui/DocumentTitleEditor";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
 import { CanvasLegend } from "./ui/CanvasLegend";
 import { Minimap } from "./ui/Minimap";
@@ -2333,6 +2335,38 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return true;
     },
     [isReadOnly]
+  );
+
+  const handleUpdateDocumentTitle = useCallback(
+    (newTitle: string) => {
+      if (!document) return;
+      const updated: DocumentV1 = { ...document, title: newTitle };
+      applyDocumentChange(updated, undefined, { preserveSuggestionPreview: true });
+    },
+    [document, applyDocumentChange],
+  );
+
+  const handleSuggestDocumentTitle = useCallback(
+    async (islandTitles: string[], cardTexts: string[], currentTitle: string | undefined) => {
+      return runTenantScopedApiRequest(() => suggestDocumentTitle(islandTitles, cardTexts, currentTitle, {
+        tenantSessionContext: verifiedTenantSession,
+      }));
+    },
+    [runTenantScopedApiRequest, verifiedTenantSession],
+  );
+
+  const islandTitlesForSuggestion = useMemo(
+    () => (document?.islands ?? []).map((i) => i.title).filter((t): t is string => !!t),
+    [document],
+  );
+
+  const cardTextsForSuggestion = useMemo(
+    () =>
+      (document?.cards ?? [])
+        .filter((c) => (c as { textReviewed?: boolean }).textReviewed !== false)
+        .slice(0, 30)
+        .map((c) => c.text),
+    [document],
   );
 
 
@@ -8562,6 +8596,15 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const headerCenter = (
     <div data-ui-complexity-tier="core-context" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <DocumentTitleEditor
+        documentTitle={document?.title}
+        islandTitles={islandTitlesForSuggestion}
+        cardTexts={cardTextsForSuggestion}
+        onTitleChange={handleUpdateDocumentTitle}
+        isReadOnly={isReadOnly}
+        onSuggestTitle={handleSuggestDocumentTitle}
+        providerEnabled={providerKind !== null && providerKind !== "none"}
+      />
       <SearchBar
         query={searchQuery}
         totalMatches={matchedCardIds.length}

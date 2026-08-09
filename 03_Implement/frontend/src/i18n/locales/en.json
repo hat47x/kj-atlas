@@ -1747,5 +1747,8 @@
   "tenant_session.change_confirm.cancel": "Cancel",
   "tenant_session.change_confirm.discard": "Discard and switch",
   "tenant_session.change_confirm.save": "Save and switch",
-  "tenant_session.change_confirm.processing": "Checking your changes…"
+  "tenant_session.change_confirm.processing": "Checking your changes…",
+  "document_title.untitled": "Untitled",
+  "document_title.click_to_edit": "Click to edit title",
+  "document_title.suggest": "Suggest title"
 }

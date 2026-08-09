@@ -1747,5 +1747,8 @@
   "tenant_session.change_confirm.cancel": "取消",
   "tenant_session.change_confirm.discard": "破棄して切り替え",
   "tenant_session.change_confirm.save": "保存して切り替え",
-  "tenant_session.change_confirm.processing": "変更を確認しています…"
+  "tenant_session.change_confirm.processing": "変更を確認しています…",
+  "document_title.untitled": "無題",
+  "document_title.click_to_edit": "クリックしてタイトルを編集",
+  "document_title.suggest": "タイトルを提案"
 }

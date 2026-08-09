@@ -587,6 +587,48 @@ export type IslandSummaryProposal = {
   rationale: string;
 };
 
+export type DocumentTitleCandidate = {
+  title: string;
+};
+
+export type SuggestDocumentTitleResponse = {
+  candidates: DocumentTitleCandidate[];
+};
+
+export async function suggestDocumentTitle(
+  islandTitles: string[],
+  cardTexts: string[],
+  currentTitle: string | undefined,
+  requestOptions: TenantScopedRequestOptions = {},
+): Promise<SuggestDocumentTitleResponse> {
+  const response = await fetch(`${API_BASE}/ai/suggest-document-title`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...tenantSessionPreconditionHeaders(requestOptions),
+    },
+    body: JSON.stringify({
+      islandTitles,
+      cardTexts,
+      currentTitle: currentTitle ?? null,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, {
+      code: errorDetail.code,
+      disabledReason: errorDetail.disabledReason,
+    });
+  }
+
+  const body = (await response.json()) as SuggestDocumentTitleResponse;
+  if (!body.candidates || body.candidates.length === 0) {
+    throw new ApiError(500, "No title candidates returned");
+  }
+  return body;
+}
+
 export async function proposeIslandSummary(
   doc: DocumentV1,
   islandId: string,
