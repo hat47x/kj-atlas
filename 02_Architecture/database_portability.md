@@ -41,8 +41,17 @@ DB可搬性を理由に、現行の全`TEXT`列へ一律の桁数を設定しな
 Content objectの保存先はrepositoryから直接選ばない。将来の`ContentStore` portを介し、少なくとも次の実装候補を同じ契約で扱う。
 
 - `database`: 現行互換の既定。本文をDB transaction内に保持する。
-- `object`: S3互換object storageまたは管理対象file service。DBにはtenant、object key、content type、byte size、digest、schema version、作成・更新時刻等の参照メタデータを保持する。
+- `nas`: NASまたは管理対象file service。DBにはserver-managed相対pathを保持し、共有rootや資格情報をlocatorへ含めない。
+- `s3`: S3互換object storage。DBにはbucket設定と分離したserver-managed object keyを保持し、署名URLや資格情報を永続化しない。
 - `hybrid`は独立した第三の永続方式にせず、size・tenant policy等により上記実装へ委譲するrouterとしてのみ検討する。
+
+DB能力レジストリはinline content対応を`verified`／`candidate`／`unsupported`で表す。保存方式は次の順で決定する。
+
+1. runtime DB自体がVerifiedでなければ、外部保存を選んでもDB backendは起動許可しない。metadata、constraint、transactionの検証は依然必要である。
+2. `database`はinline content能力がVerifiedの場合だけ選択できる。
+3. inline contentがUnsupportedのDBを将来Verifiedへ昇格する場合、`nas`または`s3`を必須構成とする。
+4. `nas`／`s3`は保存adapter、資格情報、暗号化、health check、backup/restore、障害演習が完了するまで設定値として公開しない。
+5. 自動fallbackで保存先を変えない。障害時にDBからNAS/S3へ暗黙退避すると正本・retention・監査境界が変わるため、fail closedとする。
 
 Content Storeの操作契約は一つの汎用CRUDへ統合せず、次の3 portに分離する。
 
@@ -53,6 +62,10 @@ Content Storeの操作契約は一つの汎用CRUDへ統合せず、次の3 port
 | `AppendOnlyLogContentStore` | immutable appendとgroup/snapshot別列挙 | append/listのみ。update/deleteを契約へ持たせない |
 
 各portはUTF-8 byte sizeとSHA-256 digestを持つ`ContentBlob`を受け渡す。現行DB実装ではinline本文から都度算出し、schema migrationを発生させない。外部保存へ昇格するときはdigest、byte size、schema version、storage stateをDB metadataへ永続化する。adapterはtransactionをcommitせず、認可対象の更新、監査証跡、content metadataをapplication側が一つの処理単位として確定できるようにする。
+
+`content_object_references`は外部化に先行するmetadata正本であり、`content_id`、tenant、backend、locator、state、byte size、SHA-256 digest、schema version、時刻を保持する。既存inline payloadは自動backfillせず、現在の3列を正本として維持する。domain rowとの参照FKと実データ移行は、content種別ごとのrollback手順と一緒に後続migrationで追加する。
+
+状態は`pending -> ready|failed`、`ready -> deleting|failed`、`failed -> pending|deleting`を許可する。`deleting`からの物理削除完了は行削除とcontent-free監査証跡で表し、`deleting -> ready`の復活は許さない。NAS/S3への書込成功後にDB確定が失敗したobject、またはDB参照がなくなったobjectはorphan候補とし、tenant・content ID prefixと保留期間を確認する回収処理以外から削除しない。
 
 外部保存へ切り替える場合もDB metadataを認可・整合性の正本とし、object keyを利用者入力から直接組み立てない。tenant context欠落時はfail closed、読取時はdigestとschema versionを検証し、DB更新とobject操作の不一致を補償できる状態遷移・回収処理を必須とする。署名URL、暗号化、retention、backup/restore、orphan回収、SafeMode付きexportは実装前のpromotion gateで検証する。
 
@@ -71,4 +84,4 @@ CandidateをVerifiedへ変更するには、対象versionを固定した実DBに
 
 ## Current next step
 
-data-shape inventoryと保存先非依存port／inline DB adapterは完了した。次に既存データ分布とAPI入力契約を照合して提案上限を確定し、外部content参照metadata、障害時状態遷移、移行・rollbackを設計する。その後にbounded identifier migrationを行い、MySQL/MariaDBのmigration strategyと実DBmatrixへ進む。需要が変わった場合、同じpromotion gateを使ってSQL Server、Oracle、CockroachDBを先行させてもよい。
+data-shape inventory、保存先非依存port／inline DB adapter、外部content参照metadataと基本状態機械は完了した。次にdomain rowとの参照方式、NAS/S3 adapter、移行・rollback、orphan回収を実装し、既存データ分布とAPI入力契約を照合してidentifier上限を確定する。その後にbounded identifier migrationと各DBの実DBmatrixへ進む。

@@ -16,6 +16,51 @@ class Base(DeclarativeBase):
     pass
 
 
+class ContentObjectReferenceRow(Base):
+    __tablename__ = "content_object_references"
+    __table_args__ = (
+        CheckConstraint(
+            "storage_backend IN ('database', 'nas', 's3')",
+            name="ck_content_object_references_backend",
+        ),
+        CheckConstraint(
+            "storage_state IN ('pending', 'ready', 'deleting', 'failed')",
+            name="ck_content_object_references_state",
+        ),
+        CheckConstraint(
+            "(storage_backend = 'database' AND locator IS NULL) OR "
+            "(storage_backend IN ('nas', 's3') AND locator IS NOT NULL "
+            "AND length(trim(locator)) > 0)",
+            name="ck_content_object_references_locator",
+        ),
+        CheckConstraint("byte_size >= 0", name="ck_content_object_references_byte_size"),
+        CheckConstraint(
+            "length(sha256_digest) = 64",
+            name="ck_content_object_references_digest_length",
+        ),
+        Index(
+            "ix_content_object_references_tenant_state",
+            "tenant_id",
+            "storage_state",
+        ),
+    )
+
+    content_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    storage_backend: Mapped[str] = mapped_column(Text, nullable=False)
+    locator: Mapped[str | None] = mapped_column(Text, nullable=True)
+    storage_state: Mapped[str] = mapped_column(Text, nullable=False)
+    byte_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    sha256_digest: Mapped[str] = mapped_column(Text, nullable=False)
+    schema_version: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class TenantRow(Base):
     __tablename__ = "tenants"
 

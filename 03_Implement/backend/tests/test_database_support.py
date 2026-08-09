@@ -20,9 +20,11 @@ def test_verified_database_capabilities_are_explicit() -> None:
     assert sqlite.is_verified is True
     assert sqlite.migration_strategy == "sqlite-rebuild"
     assert sqlite.shared_schema_saas is False
+    assert sqlite.inline_content == "verified"
     assert postgres.is_verified is True
     assert postgres.migration_strategy == "constraint-ddl"
     assert postgres.shared_schema_saas is True
+    assert postgres.inline_content == "verified"
 
 
 @pytest.mark.parametrize(
@@ -47,6 +49,7 @@ def test_future_databases_are_registered_without_being_enabled(
     assert support.is_verified is False
     assert support.migration_strategy == "unimplemented"
     assert support.shared_schema_saas is False
+    assert support.inline_content == "candidate"
 
     with pytest.raises(ValueError, match="candidate, not a verified runtime"):
         require_verified_database_url(url)

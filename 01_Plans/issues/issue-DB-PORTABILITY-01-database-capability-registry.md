@@ -65,6 +65,14 @@
 - `journey_id`の既存API上限256文字を検出し、棚卸し候補128文字を256へ訂正した。物理型の候補値より既存入力契約を優先する回帰テストを追加した。
 - adapter／分類／repository／API roundtrip／tenant分離の対象18件とRuffを通過した。外部参照metadata、状態遷移、移行・rollback、orphan回収は未実装のためAC-4bは未完了を維持する。
 
+## Phase 2 external reference checkpoint 2026-08-09
+
+- 保存方式を`database`／`nas`／`s3`へ分離した。NAS locatorは管理対象rootからの相対path、S3 locatorはbucket設定と分離したobject keyとし、資格情報や署名URLをDBへ保存しない。
+- DB能力レジストリへinline contentの`verified`／`candidate`／`unsupported`分類を追加した。inline未対応DBは将来`nas`または`s3`を必須化できるが、外部保存を理由に未検証DB自体をruntime許可しない。
+- `content_object_references` metadata tableとSQLite/PostgreSQL migrationを追加した。tenant、backend、locator、state、byte size、SHA-256 digest、schema version、時刻を保持し、backend／locator整合性をDB制約でも強制する。PostgreSQLではtenant RLSを有効化する。
+- `pending`／`ready`／`deleting`／`failed`のfail-closed状態遷移を実装した。既存inline本文のbackfillやdomain row FKは行わず、移行・rollback設計まで正本を切り替えない。
+- fresh SQLite migration、downgrade、制約、状態遷移、DB能力、分類網羅の30件とRuffを通過した。NAS/S3 adapter、domain row参照、orphan回収実装が残るためAC-4bは未完了を維持する。
+
 ## Phase 1 checkpoint 2026-08-09
 
 - `database_support.py`へverified/candidate、DB family、migration strategy、shared-schema SaaS可否を集約した。

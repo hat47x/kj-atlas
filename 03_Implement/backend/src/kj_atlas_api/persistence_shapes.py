@@ -38,6 +38,17 @@ STATE = _bounded(32, "closed-set lifecycle, action, decision, or protocol discri
 # This catalog is intentionally explicit. A coverage test rejects every new SQLAlchemy
 # Text column until its product meaning is classified here.
 PERSISTENT_TEXT_SPECS: dict[str, PersistentTextSpec] = {
+    "content_object_references.content_id": INTERNAL_ID,
+    "content_object_references.tenant_id": INTERNAL_ID,
+    "content_object_references.storage_backend": STATE,
+    "content_object_references.locator": _bounded(
+        2048, "server-managed NAS path or S3 object key"
+    ),
+    "content_object_references.storage_state": STATE,
+    "content_object_references.sha256_digest": _bounded(64, "lowercase SHA-256 digest"),
+    "content_object_references.schema_version": VERSION_ID,
+    "content_object_references.created_at": TIMESTAMP,
+    "content_object_references.updated_at": TIMESTAMP,
     "identity_providers.id": INTERNAL_ID,
     "identity_providers.issuer": _bounded(2048, "OIDC issuer URI"),
     "identity_providers.audience": _bounded(512, "OIDC audience value"),

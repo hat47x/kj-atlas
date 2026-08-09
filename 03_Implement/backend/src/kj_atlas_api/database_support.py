@@ -8,6 +8,7 @@ from sqlalchemy.engine import URL, make_url
 
 DatabaseSupportLevel = Literal["verified", "candidate"]
 MigrationStrategy = Literal["sqlite-rebuild", "constraint-ddl", "unimplemented"]
+InlineContentSupport = Literal["verified", "candidate", "unsupported"]
 
 
 @dataclass(frozen=True)
@@ -19,6 +20,7 @@ class DatabaseSupport:
     support_level: DatabaseSupportLevel
     migration_strategy: MigrationStrategy
     shared_schema_saas: bool
+    inline_content: InlineContentSupport
 
     @property
     def is_verified(self) -> bool:
@@ -32,6 +34,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         support_level="verified",
         migration_strategy="sqlite-rebuild",
         shared_schema_saas=False,
+        inline_content="verified",
     ),
     "postgresql": DatabaseSupport(
         backend="postgresql",
@@ -39,6 +42,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         support_level="verified",
         migration_strategy="constraint-ddl",
         shared_schema_saas=True,
+        inline_content="verified",
     ),
     # Candidate entries are intentionally rejected by runtime and Alembic until
     # their schema/migration matrix passes against the real database. Keeping
@@ -50,6 +54,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         support_level="candidate",
         migration_strategy="unimplemented",
         shared_schema_saas=False,
+        inline_content="candidate",
     ),
     "mariadb": DatabaseSupport(
         backend="mariadb",
@@ -57,6 +62,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         support_level="candidate",
         migration_strategy="unimplemented",
         shared_schema_saas=False,
+        inline_content="candidate",
     ),
     "mssql": DatabaseSupport(
         backend="mssql",
@@ -64,6 +70,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         support_level="candidate",
         migration_strategy="unimplemented",
         shared_schema_saas=False,
+        inline_content="candidate",
     ),
     "oracle": DatabaseSupport(
         backend="oracle",
@@ -71,6 +78,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         support_level="candidate",
         migration_strategy="unimplemented",
         shared_schema_saas=False,
+        inline_content="candidate",
     ),
     "cockroachdb": DatabaseSupport(
         backend="cockroachdb",
@@ -78,6 +86,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         support_level="candidate",
         migration_strategy="unimplemented",
         shared_schema_saas=False,
+        inline_content="candidate",
     ),
 }
 

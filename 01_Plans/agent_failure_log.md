@@ -85,3 +85,10 @@ Updated: 2026-08-03
 - 原因: 開発時にPython 3.11追加の`enum.StrEnum`を選び、backendのPython 3.10互換性を確認していなかった。
 - 対応: `class DataShape(str, Enum)`へ変更し、captureを無効化して再実行して3件passを確認した。
 - 再発防止: backendの新規標準ライブラリAPIはPython 3.10で利用可能か確認し、不可なら互換表現を使う。pytest capture自体が失敗した場合は`-s`で本来の収集エラーを確認する。
+
+## 2026-08-09: migrationテストがPATH上の`alembic`を見つけられなかった
+
+- 事象: 新規migrationテスト2件が`FileNotFoundError: alembic`で停止した。
+- 原因: pytestをvenvのPythonで起動しても、subprocessのPATHへvenvの`bin`が追加されるとは限らないのに、bare command名へ依存した。
+- 対応: subprocessを`sys.executable -m alembic`で起動し、pytestと同じPython環境を使うよう変更した。
+- 再発防止: Python CLIをテストから起動するときはbare commandでなく`sys.executable -m <module>`を優先する。
