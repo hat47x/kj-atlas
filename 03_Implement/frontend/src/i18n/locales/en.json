@@ -1737,6 +1737,7 @@
   "tenant_session.bootstrap.blocked.session_unavailable": "Access information is temporarily unavailable. Wait a moment, then retry.",
   "tenant_session.bootstrap.blocked.invalid_session_response": "The workspace was not opened because the access response could not be verified safely.",
   "tenant_session.bootstrap.blocked.invalid_deployment": "This deployment’s storage scope could not be identified safely. Contact your administrator.",
+  "tenant_session.bootstrap.login": "Sign in",
   "tenant_session.bootstrap.retry": "Retry",
   "tenant_session.control.scope_label": "Workspace",
   "tenant_session.control.active_aria": "Current workspace: {name}",

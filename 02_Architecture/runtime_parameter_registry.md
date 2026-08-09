@@ -98,6 +98,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | LLM provider 種別。`none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` | direct / base Compose | 通常値 | 起動ログまたは `/healthz` で provider 名（値のみ）を確認する |
 | `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLM のbase URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 | direct / llm-stub overlay のみ | 通常値（接続先ホスト名。認証情報は含まない） | overlay 使用時、`local` provider 経由のリクエストが stub へ到達すること（成否のみ確認、payload は出力しない） |
 | `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLM に渡す256文字以下のcanonical model ID | direct / llm-stub overlay のみ | 通常値 | stub 側ログの model 欄が設定値と一致することを確認する |
+| `KJ_ATLAS_LLM_TASK_MODEL_MAP` | 未設定（空文字） | ADR-0065: タスク別モデル割当（`task=model,...`）。未設定タスクは既定モデル。 | direct | 通常値 | 指定 task のリクエスト model が設定値と一致することをログで確認する |
 | `KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL` | 未設定 | large-scale LLM のbase URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 | direct | 通常値（接続先ホスト名。認証情報は別キー） | allowlist 外ホストを設定した場合に呼び出しが拒否されることを確認する |
 | `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | 未設定 | large-scale LLM に渡す256文字以下のcanonical model ID | direct | 通常値 | 呼び出しペイロードの model フィールドが設定値と一致することを確認する |
 | `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale LLM への昇格許可 | direct | 通常値 | `false` のとき large-scale provider への昇格が拒否されることを確認する |

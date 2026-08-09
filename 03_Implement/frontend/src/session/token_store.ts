@@ -14,28 +14,42 @@ export interface TokenSet {
   refreshToken?: string;
 }
 
+function _storage(): Storage | null {
+  try {
+    return sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
 /** Store tokens from a successful OAuth token exchange. */
 export function storeTokens(tokens: TokenSet): void {
-  sessionStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+  const s = _storage();
+  if (!s) return;
+  s.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
   if (tokens.refreshToken) {
-    sessionStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+    s.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
   }
 }
 
 /** Retrieve the stored access token, or null if not authenticated. */
 export function getAccessToken(): string | null {
-  return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+  const s = _storage();
+  return s ? s.getItem(ACCESS_TOKEN_KEY) : null;
 }
 
 /** Retrieve the stored refresh token. */
 export function getRefreshToken(): string | null {
-  return sessionStorage.getItem(REFRESH_TOKEN_KEY);
+  const s = _storage();
+  return s ? s.getItem(REFRESH_TOKEN_KEY) : null;
 }
 
 /** Clear all stored tokens (logout). */
 export function clearTokens(): void {
-  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+  const s = _storage();
+  if (!s) return;
+  s.removeItem(ACCESS_TOKEN_KEY);
+  s.removeItem(REFRESH_TOKEN_KEY);
 }
 
 /** Build the Authorization header value for API requests. */

@@ -1737,6 +1737,7 @@
   "tenant_session.bootstrap.blocked.session_unavailable": "現在、アクセス情報を確認できません。時間をおいて再試行してください。",
   "tenant_session.bootstrap.blocked.invalid_session_response": "アクセス応答を安全に確認できなかったため、ワークスペースを開きませんでした。",
   "tenant_session.bootstrap.blocked.invalid_deployment": "このデプロイの保存領域を安全に識別できません。管理者にお問い合わせください。",
+  "tenant_session.bootstrap.login": "サインイン",
   "tenant_session.bootstrap.retry": "再試行",
   "tenant_session.control.scope_label": "ワークスペース",
   "tenant_session.control.active_aria": "現在のワークスペース: {name}",
