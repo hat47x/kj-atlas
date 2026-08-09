@@ -21,7 +21,7 @@
 - [x] AC-1: ephemeral／checkpoint／governedの3 tierとreason分類が定義される。
 - [x] AC-2: AI proposalとhuman acceptanceが別revisionとして関連付けられ、AIがhuman reviewへ昇格できない。
 - [x] AC-3: ephemeral revisionがactor／AI run metadataを持たない契約テストがある。
-- [ ] AC-4: revision DAG、content object参照、head更新のDB schemaとmigrationが実装される。
+- [x] AC-4: revision DAG、content object参照、head更新のDB schemaとmigrationが実装される。
 - [ ] AC-5: canonical JSON、full snapshot／delta選択、最大chain depth、復元検証が代表データでbenchmarkされる。
 - [ ] AC-6: retention pin、ephemeral GC、governed保持、tenant-scoped orphan回収が実装される。
 - [ ] AC-7: AI run metadataの最小契約、SafeMode、redaction、保持期間が実装される。
@@ -49,3 +49,11 @@
 - NAS/S3 adapterは実験的実装として保持するが、runtime設定、coordinator、domain FKの優先度を下げて凍結する。大容量、複数instance共有、DB inline非対応等の実需が現れるまで外部storageは必須化しない。
 - 合成300カード・100世代・5カード/世代更新の一次計測はraw 12,781,223 bytes、gzip full 476,633 bytes、gzip delta 41,446 bytes（初期full別）、Git aggressive GC後112,612 bytesだった。実データfixtureと復元時間を含まないため採用判定は保留する。
 - 次はrevision／blob schema、branch headのcompare-and-swap、full／delta復元契約を先行する。既存`content_object_references`は最終schemaではなく、互換migrationまたは撤去候補として扱う。
+
+## Revision DAG schema checkpoint 2026-08-09
+
+- `content_blobs`を`tenant + SHA-256 digest`の物理identity、`canvas_revisions`を論理世代、`canvas_revision_parents`を順序付きDAG edge、`canvas_revision_heads`をdocument内branch headとして分離した。
+- full JSON／gzip full／gzip deltaを区別し、deltaだけがbase digestと正のdepthを持つDB制約を追加した。既存Document本文は移動・backfillしていない。
+- revision、blob、source revision、parent、head、Documentをtenant複合FKで接続し、PostgreSQLでは全4テーブルへFORCE RLSを追加した。
+- headは`head_version`一致時だけ更新するcompare-and-swap repositoryを追加した。stale writerは`RevisionHeadConflict`で停止し、別tenantの同名document／headへ影響しない。
+- ORM／lineage／分類／policy／CASの17件と、fresh SQLite upgrade／downgrade 2件を通過した。AC-4を完了し、次はAC-5のcanonical化・delta生成・復元benchmarkへ進む。

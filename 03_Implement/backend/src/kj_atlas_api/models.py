@@ -71,6 +71,160 @@ class TenantRow(Base):
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class ContentBlobRow(Base):
+    __tablename__ = "content_blobs"
+    __table_args__ = (
+        CheckConstraint(
+            "storage_backend IN ('database', 'nas', 's3', 'git')",
+            name="ck_content_blobs_backend",
+        ),
+        CheckConstraint(
+            "representation IN ('full_json', 'gzip_json', 'gzip_delta')",
+            name="ck_content_blobs_representation",
+        ),
+        CheckConstraint(
+            "(representation = 'gzip_delta' AND base_digest IS NOT NULL AND delta_depth > 0) "
+            "OR (representation != 'gzip_delta' AND base_digest IS NULL AND delta_depth = 0)",
+            name="ck_content_blobs_delta_shape",
+        ),
+        CheckConstraint(
+            "storage_state IN ('pending', 'ready', 'deleting', 'failed')",
+            name="ck_content_blobs_state",
+        ),
+        CheckConstraint("byte_size >= 0", name="ck_content_blobs_byte_size"),
+        CheckConstraint("stored_byte_size >= 0", name="ck_content_blobs_stored_byte_size"),
+        CheckConstraint("length(content_digest) = 64", name="ck_content_blobs_digest_length"),
+        ForeignKeyConstraint(
+            ["tenant_id", "base_digest"],
+            ["content_blobs.tenant_id", "content_blobs.content_digest"],
+            name="fk_content_blobs_base",
+            ondelete="RESTRICT",
+        ),
+        Index("ix_content_blobs_tenant_state", "tenant_id", "storage_state"),
+    )
+
+    tenant_id: Mapped[str] = mapped_column(
+        Text, ForeignKey("tenants.id", ondelete="RESTRICT"), primary_key=True
+    )
+    content_digest: Mapped[str] = mapped_column(Text, primary_key=True)
+    storage_backend: Mapped[str] = mapped_column(Text, nullable=False)
+    locator: Mapped[str | None] = mapped_column(Text, nullable=True)
+    representation: Mapped[str] = mapped_column(Text, nullable=False)
+    base_digest: Mapped[str | None] = mapped_column(Text, nullable=True)
+    delta_depth: Mapped[int] = mapped_column(Integer, nullable=False)
+    byte_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    stored_byte_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    storage_state: Mapped[str] = mapped_column(Text, nullable=False)
+    schema_version: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class CanvasRevisionRow(Base):
+    __tablename__ = "canvas_revisions"
+    __table_args__ = (
+        CheckConstraint(
+            "generation_tier IN ('ephemeral', 'checkpoint', 'governed')",
+            name="ck_canvas_revisions_tier",
+        ),
+        CheckConstraint(
+            "generation_origin IN ('human', 'ai_proposal', 'system', 'import')",
+            name="ck_canvas_revisions_origin",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "doc_id"],
+            ["documents.tenant_id", "documents.id"],
+            name="fk_canvas_revisions_document",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "content_digest"],
+            ["content_blobs.tenant_id", "content_blobs.content_digest"],
+            name="fk_canvas_revisions_blob",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "source_revision_id"],
+            ["canvas_revisions.tenant_id", "canvas_revisions.revision_id"],
+            name="fk_canvas_revisions_source",
+            ondelete="RESTRICT",
+        ),
+        Index("ix_canvas_revisions_tenant_doc_created", "tenant_id", "doc_id", "created_at"),
+    )
+
+    tenant_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    revision_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    doc_id: Mapped[str] = mapped_column(Text, nullable=False)
+    content_digest: Mapped[str] = mapped_column(Text, nullable=False)
+    generation_tier: Mapped[str] = mapped_column(Text, nullable=False)
+    generation_reason: Mapped[str] = mapped_column(Text, nullable=False)
+    generation_origin: Mapped[str] = mapped_column(Text, nullable=False)
+    actor_ref: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ai_run_ref: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_revision_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class CanvasRevisionParentRow(Base):
+    __tablename__ = "canvas_revision_parents"
+    __table_args__ = (
+        CheckConstraint(
+            "revision_id != parent_revision_id",
+            name="ck_canvas_revision_parents_not_self",
+        ),
+        CheckConstraint("parent_order >= 0", name="ck_canvas_revision_parents_order"),
+        ForeignKeyConstraint(
+            ["tenant_id", "revision_id"],
+            ["canvas_revisions.tenant_id", "canvas_revisions.revision_id"],
+            name="fk_canvas_revision_parents_revision",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "parent_revision_id"],
+            ["canvas_revisions.tenant_id", "canvas_revisions.revision_id"],
+            name="fk_canvas_revision_parents_parent",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint(
+            "tenant_id",
+            "revision_id",
+            "parent_order",
+            name="uq_canvas_revision_parents_order",
+        ),
+    )
+
+    tenant_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    revision_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    parent_revision_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    parent_order: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class CanvasRevisionHeadRow(Base):
+    __tablename__ = "canvas_revision_heads"
+    __table_args__ = (
+        CheckConstraint("length(trim(head_name)) > 0", name="ck_canvas_revision_heads_name"),
+        CheckConstraint("head_version > 0", name="ck_canvas_revision_heads_version"),
+        ForeignKeyConstraint(
+            ["tenant_id", "doc_id"],
+            ["documents.tenant_id", "documents.id"],
+            name="fk_canvas_revision_heads_document",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "revision_id"],
+            ["canvas_revisions.tenant_id", "canvas_revisions.revision_id"],
+            name="fk_canvas_revision_heads_revision",
+            ondelete="RESTRICT",
+        ),
+    )
+
+    tenant_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    doc_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    head_name: Mapped[str] = mapped_column(Text, primary_key=True)
+    revision_id: Mapped[str] = mapped_column(Text, nullable=False)
+    head_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class IdentityProviderRow(Base):
     __tablename__ = "identity_providers"
     __table_args__ = (
