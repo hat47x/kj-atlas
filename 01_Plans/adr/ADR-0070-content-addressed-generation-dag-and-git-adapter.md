@@ -28,6 +28,7 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 13. 現行`content_object_references`は外部保存の先行metadataであり、最終schemaとは扱わない。revision導入時に`content_blobs`（digest identity）と`canvas_revisions`（論理世代）へ責務分離し、既存tableを互換migrationまたは撤去対象として再評価する。
 14. canonical JSONはUTF-8、key辞書順、余分な空白なし、NaN/Infinity禁止とする。full/deltaの選択は保存backendではなくcodecが決め、delta chain上限または圧縮比閾値を超えた場合はfull gzipへ戻す。復元後digest検証に成功するまでDocumentとして解釈しない。
 15. retention GCはmark-and-sweep型とし、まず候補だけを列挙する。head、DAG parent、source proposal、明示pinから到達するrevisionを削除せず、checkpoint／governedを自動期限削除しない。revision削除後も参照数ゼロと保留期間を確認するまで物理blobを削除しない。
+16. revision削除時は保護条件を同じDELETE statementで再評価し、候補列挙後のpin/head追加競合をfail closedにする。blob sweepはrevision参照とdelta base参照がともにゼロで、`failed|deleting`の保留期限超過objectだけを対象とする。
 
 ## Alternatives
 

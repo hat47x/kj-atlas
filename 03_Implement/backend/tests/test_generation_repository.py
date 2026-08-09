@@ -7,7 +7,9 @@ from sqlalchemy.orm import sessionmaker
 from kj_atlas_api.generation_repository import (
     RevisionHeadConflict,
     advance_revision_head,
+    delete_ephemeral_gc_candidate,
     list_ephemeral_gc_candidates,
+    list_unreferenced_blob_candidates,
 )
 from kj_atlas_api.models import (
     Base,
@@ -165,6 +167,51 @@ def test_revision_head_compare_and_swap_is_tenant_scoped(tmp_path) -> None:
                     older_than="2026-08-01T00:00:00Z",
                 )
             ] == ["old-free"]
+            assert (
+                delete_ephemeral_gc_candidate(
+                    db,
+                    tenant=_tenant("tenant-a"),
+                    revision_id="old-pinned",
+                    older_than="2026-08-01T00:00:00Z",
+                )
+                is False
+            )
+            assert (
+                delete_ephemeral_gc_candidate(
+                    db,
+                    tenant=_tenant("tenant-a"),
+                    revision_id="old-free",
+                    older_than="2026-08-01T00:00:00Z",
+                )
+                is True
+            )
+
+            orphan_digest = sha256(b"orphan").hexdigest()
+            db.add(
+                ContentBlobRow(
+                    tenant_id="tenant-a",
+                    content_digest=orphan_digest,
+                    storage_backend="database",
+                    locator=None,
+                    representation="full_json",
+                    base_digest=None,
+                    delta_depth=0,
+                    byte_size=6,
+                    stored_byte_size=6,
+                    storage_state="failed",
+                    schema_version="document-v1",
+                    created_at="2026-07-01T00:00:00Z",
+                )
+            )
+            db.commit()
+            assert [
+                row.content_digest
+                for row in list_unreferenced_blob_candidates(
+                    db,
+                    tenant=_tenant("tenant-a"),
+                    older_than="2026-08-01T00:00:00Z",
+                )
+            ] == [orphan_digest]
     finally:
         Base.metadata.drop_all(engine)
         engine.dispose()

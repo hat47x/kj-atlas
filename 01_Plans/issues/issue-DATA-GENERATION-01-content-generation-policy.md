@@ -85,3 +85,9 @@
 - GCは削除から始めず、期限超過ephemeralの候補列挙として実装した。current head、他revisionの親、human acceptance等のsource、明示pinは候補から除外する。checkpoint／governedはtier条件で除外する。
 - 候補選定はtenant context必須、古い順、件数上限付きであり、別tenantの同名revisionを参照・選定しない。物理blob削除はrevision参照がなくなったことを別工程で確認するまで行わない。
 - ORM／lineage／分類／fresh upgrade-downgrade／GC候補の9件とRuffを通過した。実削除、branch到達性に基づく件数保持、blob orphan回収が残るためAC-6は未完了を維持する。
+
+## Conditional revision delete and blob sweep checkpoint 2026-08-10
+
+- ephemeral revision削除は候補取得後の無条件deleteにせず、head／parent／source／pin不在と期限・tierを単一DELETE文で再評価する。候補選定後にpin等が追加された競合でも削除しない。
+- blob sweep候補はtenant内でrevision参照もdelta base参照もなく、`failed|deleting`かつ保留期限超過のものだけに限定した。`ready` blobや他blobのbaseを物理削除候補にしない。
+- repository／codec／policyの15件とRuffを通過した。外部objectの実削除、削除監査、branch到達性に基づく件数保持が残るためAC-6は未完了を維持する。
