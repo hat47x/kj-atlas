@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-"""DeepSeek API adapter for kj-atlas local LLM provider.
+"""DeepSeek API adapter for kj-atlas — DEPRECATED.
+
+Use ``openai_compatible_adapter.py`` instead. This file is retained for
+backward compatibility only and will be removed in a future release.
+
+    python3 openai_compatible_adapter.py --port 8001 \
+      --base-url https://api.deepseek.com/v1 --model deepseek-v4-flash
+
+(Original docstring follows)
+---
+
+DeepSeek API adapter for kj-atlas local LLM provider.
 
 Bridges DeepSeek's OpenAI-compatible chat completions API to kj-atlas's
 ``POST /generate`` contract. Requires a DeepSeek API key.

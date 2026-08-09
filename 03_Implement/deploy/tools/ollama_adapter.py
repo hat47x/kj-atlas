@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
-"""Ollama adapter for kj-atlas local LLM provider.
+"""Ollama adapter for kj-atlas — DEPRECATED.
+
+Use ``openai_compatible_adapter.py`` instead. This file is retained for
+backward compatibility only and will be removed in a future release.
+
+Ollama v0.1.14+ supports the OpenAI-compatible API natively, so the
+unified adapter works with Ollama out of the box:
+
+    python3 openai_compatible_adapter.py --port 8001
+
+(Original docstring follows)
+---
+
+Ollama adapter for kj-atlas local LLM provider.
 
 Bridges Ollama's native API to kj-atlas's ``POST /generate`` contract::
 
