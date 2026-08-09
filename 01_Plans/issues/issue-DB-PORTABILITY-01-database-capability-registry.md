@@ -73,6 +73,13 @@
 - `pending`／`ready`／`deleting`／`failed`のfail-closed状態遷移を実装した。既存inline本文のbackfillやdomain row FKは行わず、移行・rollback設計まで正本を切り替えない。
 - fresh SQLite migration、downgrade、制約、状態遷移、DB能力、分類網羅の30件とRuffを通過した。NAS/S3 adapter、domain row参照、orphan回収実装が残るためAC-4bは未完了を維持する。
 
+## Phase 2 NAS/S3 adapter checkpoint 2026-08-09
+
+- NAS adapterは管理root内の決定的locatorへ同一directory一時fileを書き、flush・fsync後にatomic replaceする。絶対path、`..`、root外解決を拒否し、中断した`.pending` fileを公開しない。
+- S3 adapterはSDK非依存client portを利用し、bucketをruntime側、object keyをDB locator側へ分離した。AWS SDK等はまだoptional dependencyへ追加していない。
+- locatorはtenant ID／content IDのSHA-256から生成し、生の識別子をpath/keyへ含めない。NAS/S3とも読取時にDB metadataのbyte sizeとdigestを検証し、不一致はfail closedとした。
+- 外部adapter、digest、tenant別locator、path escape、tamper検出、冪等削除、inline DB adapter、状態機械の対象19件とRuffを通過した。metadata／object間coordinator、domain row FK、runtime設定、実S3 client、orphan回収が残るため、保存先切替は公開しない。
+
 ## Phase 1 checkpoint 2026-08-09
 
 - `database_support.py`へverified/candidate、DB family、migration strategy、shared-schema SaaS可否を集約した。

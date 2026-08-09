@@ -53,6 +53,12 @@ DB能力レジストリはinline content対応を`verified`／`candidate`／`uns
 4. `nas`／`s3`は保存adapter、資格情報、暗号化、health check、backup/restore、障害演習が完了するまで設定値として公開しない。
 5. 自動fallbackで保存先を変えない。障害時にDBからNAS/S3へ暗黙退避すると正本・retention・監査境界が変わるため、fail closedとする。
 
+NAS／S3のlocatorは`tenant_id`と`content_id`それぞれのSHA-256から決定的に生成し、生の識別子をpath/keyへ露出させない。locatorをAPI入力として受理せず、DB値が改変されても絶対path、`..`、管理root外symlinkを拒否する。NAS書込は同一directoryの一時fileへwrite・flush・fsyncした後にatomic replaceし、途中fileを公開しない。S3 adapterはbucketをruntime設定として保持し、DB locatorにはobject keyだけを保存する。
+
+読取時はNAS/S3から得たUTF-8 bytesについてbyte sizeとSHA-256をDB metadataと照合し、一致しなければ本文を返さない。S3 object metadataのdigestが存在する場合もDB digestと一致させる。削除は冪等に扱うが、object不在をDB metadata削除成功と自動解釈しない。DB状態遷移と監査確定は後続coordinatorが担当する。
+
+S3実装は特定SDKをContent Storeへ直結せず、`put_object`／`get_object`／`delete_object`のclient portを介する。AWS S3、MinIO等のS3互換製品、テストdoubleの差をこのportのadapterへ閉じ込め、core packageへ必須cloud dependencyを追加しない。
+
 Content Storeの操作契約は一つの汎用CRUDへ統合せず、次の3 portに分離する。
 
 | Port | 更新特性 | DB実装の責務 |
@@ -84,4 +90,4 @@ CandidateをVerifiedへ変更するには、対象versionを固定した実DBに
 
 ## Current next step
 
-data-shape inventory、保存先非依存port／inline DB adapter、外部content参照metadataと基本状態機械は完了した。次にdomain rowとの参照方式、NAS/S3 adapter、移行・rollback、orphan回収を実装し、既存データ分布とAPI入力契約を照合してidentifier上限を確定する。その後にbounded identifier migrationと各DBの実DBmatrixへ進む。
+data-shape inventory、保存先非依存port／inline DB adapter、外部content参照metadata、基本状態機械、NAS/S3 adapterは完了した。次にdomain rowとの参照方式、metadataとobject操作を調停するcoordinator、移行・rollback、orphan回収を実装し、既存データ分布とAPI入力契約を照合してidentifier上限を確定する。その後にbounded identifier migrationと各DBの実DBmatrixへ進む。
