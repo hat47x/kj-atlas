@@ -22,6 +22,8 @@ class DatabaseSupport:
     shared_schema_saas: bool
     inline_content: InlineContentSupport
     atomic_primary_key_replacement: bool
+    optional_dependency: str | None
+    test_marker: str | None
 
     @property
     def is_verified(self) -> bool:
@@ -37,6 +39,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=False,
         inline_content="verified",
         atomic_primary_key_replacement=False,
+        optional_dependency=None,
+        test_marker=None,
     ),
     "postgresql": DatabaseSupport(
         backend="postgresql",
@@ -46,6 +50,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=True,
         inline_content="verified",
         atomic_primary_key_replacement=False,
+        optional_dependency="postgres",
+        test_marker="postgres",
     ),
     # Verified and candidate entries stay together so capability decisions do
     # not spread across settings, runtime, migrations, and documentation.
@@ -57,6 +63,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=False,
         inline_content="verified",
         atomic_primary_key_replacement=False,
+        optional_dependency="mysql",
+        test_marker="mysql",
     ),
     "mariadb": DatabaseSupport(
         backend="mariadb",
@@ -66,6 +74,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=False,
         inline_content="verified",
         atomic_primary_key_replacement=False,
+        optional_dependency="mysql",
+        test_marker="mysql",
     ),
     "mssql": DatabaseSupport(
         backend="mssql",
@@ -75,6 +85,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=False,
         inline_content="verified",
         atomic_primary_key_replacement=False,
+        optional_dependency="mssql",
+        test_marker="mssql",
     ),
     "oracle": DatabaseSupport(
         backend="oracle",
@@ -84,6 +96,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=False,
         inline_content="verified",
         atomic_primary_key_replacement=False,
+        optional_dependency="oracle",
+        test_marker="oracle",
     ),
     "cockroachdb": DatabaseSupport(
         backend="cockroachdb",
@@ -93,6 +107,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=False,
         inline_content="verified",
         atomic_primary_key_replacement=True,
+        optional_dependency="cockroachdb",
+        test_marker="cockroachdb",
     ),
 }
 
@@ -103,7 +119,7 @@ def database_support_for_backend(backend: str) -> DatabaseSupport:
     if support is None:
         raise ValueError(
             f"Unsupported database backend: {normalized_backend or '<empty>'}. "
-            "Verified backends: sqlite, postgresql, mysql, mariadb, mssql, oracle, cockroachdb"
+            f"Verified backends: {', '.join(verified_database_backends())}"
         )
     return support
 
@@ -122,7 +138,7 @@ def require_verified_database_url(database_url: str) -> DatabaseSupport:
         raise ValueError(
             f"Database backend '{support.backend}' is a candidate, not a verified runtime. "
             "Its identifier types and Alembic migration matrix must be completed before use. "
-            "Verified backends: sqlite, postgresql, mysql, mariadb, mssql, oracle, cockroachdb"
+            f"Verified backends: {', '.join(verified_database_backends())}"
         )
     return support
 
@@ -149,3 +165,12 @@ def alembic_config_database_url(database_url: str) -> str:
 def registered_database_support() -> tuple[DatabaseSupport, ...]:
     """Stable, read-only registry view for contract tests and documentation tooling."""
     return tuple(_DATABASE_SUPPORT_BY_BACKEND.values())
+
+
+def verified_database_backends() -> tuple[str, ...]:
+    """Return verified backend names in the registry's stable presentation order."""
+    return tuple(
+        support.backend
+        for support in _DATABASE_SUPPORT_BY_BACKEND.values()
+        if support.is_verified
+    )

@@ -13,7 +13,7 @@ kj-atlasはSQLAlchemy ORMを利用しているが、ORMが接続可能なDBと�
 
 ## Decision
 
-1. DB方言の判断は単一の能力レジストリへ集約し、各backendに`family`、`support_level`、`migration_strategy`、`shared_schema_saas`を持たせる。
+1. DB方言の判断は単一の能力レジストリへ集約し、各backendに`family`、`support_level`、`migration_strategy`、`shared_schema_saas`、optional driver、実DBtest markerを持たせる。
 2. `verified`はSQLite、PostgreSQL、MySQL 8.4、MariaDB 11.4、SQL Server 2022、CockroachDB 26.2、Oracle AI Database 26aiとする。今後の未検証DBは`candidate`として登録し、実DBmatrix完了までruntimeとAlembicをfail-fastで拒否する。
 3. driver差ではなくDB familyを拡張単位にする。MySQLとMariaDBは同じfamilyとして共通化し、差分が実証された箇所だけ個別capabilityへ分離する。
 4. candidateの昇格には、fresh migration、upgrade/downgrade、複合PK/FK・unique/check/index、CRUD roundtrip、transaction、backup/restoreの実DB検証を必須とする。SQLAlchemyのmock dialectやSQL生成だけでは昇格しない。

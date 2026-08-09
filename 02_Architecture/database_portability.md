@@ -4,15 +4,15 @@ DB対応の正本は本書とする。SQLAlchemyがdialectを提供している�
 
 ## Support matrix
 
-| Backend | Family | 状態 | Migration strategy | Single-tenant | Shared-schema SaaS |
-| --- | --- | --- | --- | --- | --- |
-| SQLite | sqlite | Verified | table rebuild | 対応 | 非対応 |
-| PostgreSQL | postgresql | Verified | named constraint DDL + RLS | 対応 | 対応 |
-| MySQL 8.4 | mysql | Verified | named constraint DDL | 対応 | 非対応 |
-| MariaDB 11.4 | mysql | Verified | named constraint DDL | 対応 | 非対応 |
-| SQL Server 2022 | mssql | Verified | named constraint DDL | 対応 | 非対応 |
-| CockroachDB 26.2 | cockroachdb | Verified | named constraint DDL + atomic PK replacement | 対応 | 非対応 |
-| Oracle AI Database 26ai | oracle | Verified | named constraint DDL | 対応 | 非対応 |
+| Database | SQLAlchemy backend | Family | 状態 | Migration strategy | Single-tenant | Shared-schema SaaS |
+| --- | --- | --- | --- | --- | --- | --- |
+| SQLite | sqlite | sqlite | Verified | table rebuild | 対応 | 非対応 |
+| PostgreSQL | postgresql | postgresql | Verified | named constraint DDL + RLS | 対応 | 対応 |
+| MySQL 8.4 | mysql | mysql | Verified | named constraint DDL | 対応 | 非対応 |
+| MariaDB 11.4 | mariadb | mysql | Verified | named constraint DDL | 対応 | 非対応 |
+| SQL Server 2022 | mssql | mssql | Verified | named constraint DDL | 対応 | 非対応 |
+| CockroachDB 26.2 | cockroachdb | cockroachdb | Verified | named constraint DDL + atomic PK replacement | 対応 | 非対応 |
+| Oracle AI Database 26ai | oracle | oracle | Verified | named constraint DDL | 対応 | 非対応 |
 
 `Candidate`はロードマップ上の分類であり、接続許可や互換性保証ではない。candidate URLはengine生成・migration開始前に拒否する。
 
@@ -21,6 +21,7 @@ DB対応の正本は本書とする。SQLAlchemyがdialectを提供している�
 - backend名ではなくfamilyを再利用単位にする。MySQL/MariaDBは、差が確認されるまで同じfamilyとして扱う。
 - repositoryとAPIはDB非依存に保つ。DB差分は能力レジストリ、migration strategy、実DB fixtureへ閉じ込める。
 - migration strategyは少数のclosed setとし、新DBごとにアプリ全体へbooleanや条件分岐を増やさない。
+- optional dependency、pytest marker、実DBtest、CI実行、公開support matrixは能力レジストリとの静的契約testで同期し、一覧文字列を手書きで複製しない。
 - identifier/index対象文字列、検索・表示用のbounded text、本文・bundle等のcontent objectを区別する。可搬性のために本文を不必要に短いVARCHARへ変換しない。
 - SQL方言のコンパイル成功だけでVerifiedへ昇格しない。
 
@@ -97,6 +98,8 @@ CandidateをVerifiedへ変更するには、対象versionを固定した実DBに
 4. Documentと主要tenant従属データのCRUD roundtrip
 5. transaction rollback、connection pool再利用、backup/restoreの代表演習
 6. optional driver、CI、installation/configuration文書の同期
+
+この同期自体もpromotion後の保守契約である。Verified backendをレジストリへ追加したのにdriver extra、marker、実DBtest、CI command、公開表のいずれかが欠ける場合、通常のunit test段階で失敗させる。
 
 共有schema SaaSへの昇格は別判定とし、DB側tenant guard、contextなしdeny、tenant A/B越境、pool context残留のnegative matrixを追加で必須とする。single-tenant対応からSaaS対応を推論しない。
 

@@ -106,3 +106,10 @@
 - MySQL 8.4とMariaDB 11.4の同一parameterized matrixでfresh migration、1 MiB超inline content、tenant複合FK、大文字小文字非依存IdP unique、duplicate docId付きguarded downgrade、解消後のdowngrade/re-upgradeを検証した。
 - 両DBでlogical dumpを別databaseへ復元し、2文書と最大1,048,587文字のpayloadが一致することを確認した。PostgreSQL 16でもfresh、0020 downgrade/re-upgrade、RLS policy保存、既存PostgreSQL suite 18件を通過した。
 - capability registry、optional PyMySQL dependency、GitHub Actions services、README、公開対応表を同時に更新した。repository/APIにMySQL専用経路を作らず、差分を物理型・migration strategy・共通検証fixtureに閉じ込めた。
+
+## Declaration synchronization checkpoint 2026-08-10
+
+- 全当初candidate昇格後、能力レジストリへoptional dependencyと実DBtest markerを集約した。Verified一覧を同レジストリから生成し、runtime error文の手書きbackend列挙を撤去した。
+- `pyproject.toml`のdriver extra／marker、実test marker、GitHub Actionsのextra install／pytest command、公開support matrixを横断する契約testを追加した。次のDB追加で宣言更新が一つでも欠ければSQLite unit test段階で停止する。
+- 公開表はDatabase名、SQLAlchemy backend、再利用familyを分離し、MariaDBのbackend=`mariadb`とfamily=`mysql`を曖昧にしない形へ改訂した。
+- SQLite基準のbackend全体回帰は830件pass、3件skip、49件deselect。失敗3件は並行中のAI response model、外部LLM接続、公開LLM設定文書に限定され、DB宣言契約11件は通過した。

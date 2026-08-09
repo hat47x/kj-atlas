@@ -9,6 +9,7 @@ from kj_atlas_api.database_support import (
     normalize_sync_database_url,
     registered_database_support,
     require_verified_database_url,
+    verified_database_backends,
 )
 from kj_atlas_api.settings import Settings
 
@@ -67,6 +68,7 @@ def test_unknown_database_is_rejected_without_echoing_credentials() -> None:
 
     message = str(captured.value)
     assert "Unsupported database backend: db2" in message
+    assert f"Verified backends: {', '.join(verified_database_backends())}" in message
     assert "sensitive-user" not in message
     assert "secret-password" not in message
 
