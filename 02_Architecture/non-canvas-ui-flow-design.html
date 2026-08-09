@@ -1,0 +1,1073 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>キャンバス外UIフロー設計 — kj-atlas</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #0f172a;
+    --muted: #475569;
+    --line: #cbd5e1;
+    --panel: #f8fafc;
+    --accent: #0f766e;
+    --hold: #92400e;
+    --biz: #2563eb;
+    --data: #7c3aed;
+    --func: #0891b2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1120;
+      --fg: #e2e8f0;
+      --muted: #94a3b8;
+      --line: #334155;
+      --panel: #131c2e;
+      --accent: #2dd4bf;
+      --hold: #fbbf24;
+      --biz: #60a5fa;
+      --data: #a78bfa;
+      --func: #22d3ee;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 20px 64px;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", Meiryo, sans-serif;
+    font-size: 14px;
+    line-height: 1.75;
+    max-width: 1100px;
+    margin-inline: auto;
+  }
+  h1 { font-size: 22px; font-weight: 800; margin: 0 0 4px; }
+  h2 { font-size: 16px; font-weight: 800; margin: 36px 0 10px; padding-top: 18px; border-top: 1px solid var(--line); }
+  h3 { font-size: 14px; font-weight: 700; margin: 24px 0 8px; }
+  h4 { font-size: 13px; font-weight: 700; margin: 18px 0 6px; color: var(--muted); }
+  p, li { margin: 6px 0; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; }
+  .meta { color: var(--muted); font-size: 12px; margin: 0 0 20px; }
+  .note { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; padding: 10px 14px; margin: 14px 0; }
+  .note.hold { border-left-color: var(--hold); }
+  .note.biz { border-left-color: var(--biz); }
+  .note.data { border-left-color: var(--data); }
+  .note.func { border-left-color: var(--func); }
+  .diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 14px 0; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--panel); font-weight: 700; }
+  ul { padding-left: 22px; }
+  .src { color: var(--muted); font-size: 12px; }
+  .triad { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 14px 0; }
+  .triad > div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+  .triad > div.b { border-top: 3px solid var(--biz); }
+  .triad > div.d { border-top: 3px solid var(--data); }
+  .triad > div.f { border-top: 3px solid var(--func); }
+  .triad h4 { margin: 0 0 6px; font-size: 13px; }
+  .flow-step { display: flex; gap: 12px; align-items: flex-start; margin: 8px 0; }
+  .flow-step .num { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .tension { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; padding: 8px 12px; margin: 8px 0; font-size: 13px; }
+  @media (prefers-color-scheme: dark) {
+    .tension { background: #292524; border-color: #713f12; }
+  }
+</style>
+</head>
+<body>
+
+<h1>キャンバス外UIフロー設計</h1>
+<p class="meta">
+  区分: 設計ビュー / 更新: 2026-08-08<br>
+  正本は各ADR、<code>api.md</code>、<code>schemas.md</code>、<code>master-data-settings-ui-ux-concept.md</code>。
+  本書はキャンバス外の全画面を<strong>業務設計・データ設計・機能設計の三者牽制関係</strong>を通して構造化した設計ビューであり、
+  内容が正本と食い違う場合は正本を優先する。
+</p>
+
+<div class="note">
+  <strong>本書の目的:</strong> KJ法キャンバス（カード配置・島形成・関係線・保留操作）を除く全UIフローについて、
+  「なぜその画面が必要か（業務）」「何を扱い何を扱わないか（データ）」「どのAPI/契約で実現するか（機能）」の
+  三者が相互に牽制し合う構造を可視化する。単独の次元から画面を正当化せず、三者が揃わない画面は設計しない。
+</div>
+
+<!-- ============================================================ -->
+<h2>1. 三者牽制の基本原理</h2>
+
+<div class="diagram">
+<pre class="mermaid">
+flowchart TB
+  subgraph BIZ["業務設計（Business Design）"]
+    direction TB
+    B1["利用者journey<br/>誰が・何のために・どの順序で"]
+    B2["運用シナリオ<br/>日常・例外・復旧・移行"]
+    B3["価値実現経路<br/>VR0〜VR5・CVI不変条件"]
+  end
+
+  subgraph DATA["データ設計（Data Design）"]
+    direction TB
+    D1["正本・保存範囲<br/>サーバー/文書内/端末のみ/環境変数"]
+    D2["境界クラス<br/>L1運用〜L0計画・埋込限定・派生"]
+    D3["非表示原則<br/>本文・タイトル・未レビュー情報の届出範囲"]
+  end
+
+  subgraph FUNC["機能設計（Functional Design）"]
+    direction TB
+    F1["API契約<br/>endpoint・入出力・error semantics"]
+    F2["認可capability<br/>誰が・どのscopeで・何を"]
+    F3["画面state機械<br/>Loading/Empty/Ready/Error/Blocked"]
+  end
+
+  BIZ -->|"必要とする操作は<br/>データ正本と一致するか"| DATA
+  DATA -->|"保存範囲・境界クラスは<br/>APIが実現可能か"| FUNC
+  FUNC -->|"API契約・capabilityは<br/>業務シナリオを完遂できるか"| BIZ
+
+  BIZ -->|"業務要求が<br/>未契約APIを要求していないか"| FUNC
+  DATA -->|"データ非表示原則を<br/>業務表示要求が侵していないか"| BIZ
+  FUNC -->|"APIの有無が<br/>データ境界クラスを歪めていないか"| DATA
+
+  classDef biz fill:#2563eb22,stroke:#2563eb,stroke-width:1px;
+  classDef data fill:#7c3aed22,stroke:#7c3aed,stroke-width:1px;
+  classDef func fill:#0891b222,stroke:#0891b2,stroke-width:1px;
+  class B1,B2,B3 biz
+  class D1,D2,D3 data
+  class F1,F2,F3 func
+</pre>
+</div>
+
+<div class="tension">
+  <strong>牽制の実践:</strong> 各画面の設計判断は、3つの問いに答えられなければ着工しない。
+  <br>① 業務: この画面がないと、どの利用者journeyが完遂できないか。
+  <br>② データ: この画面が扱うデータの正本はどこか。本文・タイトルを表示しない原則を侵さないか。
+  <br>③ 機能: 必要なAPI契約は確定済みか。capabilityの検証経路は存在するか。
+</div>
+
+<!-- ============================================================ -->
+<h2>2. 画面全体マップ</h2>
+
+<p>キャンバスを中心に据え、その周囲に6つの画面群を配置する。キャンバスは常に主であり、他の画面は従である。</p>
+
+<div class="diagram">
+<pre class="mermaid">
+flowchart TB
+  subgraph CORE["キャンバス（主）"]
+    CANVAS["カード配置・島形成<br/>関係線・保留・違和感<br/>選択コンテキスト"]
+  end
+
+  subgraph G1["G1: 入口・文書"]
+    START["開始パネル"]
+    DOCLIST["文書一覧"]
+    IMPORT["取込"]
+  end
+
+  subgraph G2["G2: 共有・出力"]
+    SHARE["共有前確認"]
+    EXPORT["エクスポート"]
+    AGENT_EXPORT["エージェントタスク出力"]
+  end
+
+  subgraph G3["G3: AI・提案"]
+    SUGGEST["AI提案パネル"]
+    MERGE["マージ候補レビュー"]
+    AGENT_IMPORT["エージェント応答取込"]
+    PATCH["Patchワークスペース"]
+  end
+
+  subgraph G4["G4: 高度作業"]
+    NARRATIVE["ナラティブ"]
+    SHELF["保留棚卸し"]
+    INQUIRY["探求ジャーニー"]
+  end
+
+  subgraph G5["G5: 管理面（本文非表示）"]
+    ACCESS["アクセス登録<br/>(single-tenant)"]
+    DOC_ACCESS["文書アクセス設定<br/>(future SaaS)"]
+    AGENT_REG["エージェント登録<br/>(将来)"]
+    SYSTEM["システム状態<br/>(読取専用・将来)"]
+  end
+
+  subgraph G6["G6: Session・Tenant"]
+    LOGIN["認証フロー"]
+    TENANT_SEL["テナント選択"]
+    SCOPE_ERR["scope異常時復旧"]
+  end
+
+  G1 -->|"文書を開く"| CORE
+  CORE -->|"共有・出力"| G2
+  CORE -->|"AI・提案"| G3
+  CORE -->|"高度作業"| G4
+  G6 -->|"session解決後"| G1
+  G6 -->|"tenant確定後"| G5
+
+  classDef core fill:#0f766e22,stroke:#0f766e,stroke-width:2px;
+  classDef group fill:#94a3b822,stroke:#94a3b8,stroke-dasharray:4 3;
+  class CANVAS core
+  class G1,G2,G3,G4,G5,G6 group
+</pre>
+</div>
+
+<!-- ============================================================ -->
+<h2>3. G1: 入口・文書 グループ</h2>
+
+<h3>3.1 三者牽制マトリクス</h3>
+
+<div class="triad">
+  <div class="b">
+    <h4>🟦 業務設計</h4>
+    <ul>
+      <li><strong>利用者:</strong> Standard user（認証済み）</li>
+      <li><strong>目的:</strong> 作業対象の文書を見つけて開く。新規作成・サンプル・ファイル取込で文書を開始する</li>
+      <li><strong>journey:</strong> 起動 → 開始パネル（新規/サンプル/再開/取込）→ キャンバス</li>
+      <li><strong>摩擦（記録済み）:</strong> 再読込後に直前文書へ自動復帰しない（dogfood-log-2026-07-10）</li>
+      <li><strong>非目標:</strong> 文書削除・アーカイブ・所有者移管・bulk操作・本文プレビュー</li>
+    </ul>
+  </div>
+  <div class="d">
+    <h4>🟣 データ設計</h4>
+    <ul>
+      <li><strong>正本:</strong> サーバー <code>GET /docs</code>（id, title, updatedAt のみ）</li>
+      <li><strong>境界クラス:</strong> L1 Supported（文書インデックス）</li>
+      <li><strong>表示する情報:</strong> title, updatedAt（相対/ローカライズ）, id（補助）</li>
+      <li><strong>表示しない情報:</strong> 本文抜粋、カード数、レビュー状態、サムネイル、payload_json</li>
+      <li><strong>端末キャッシュ:</strong> localStorageの「最近」は表示順補助のみ。サーバー確認失敗時はキャッシュから候補表示しない</li>
+    </ul>
+  </div>
+  <div class="f">
+    <h4>🟢 機能設計</h4>
+    <ul>
+      <li><strong>API:</strong> <code>GET /docs</code>（認可済み射影）、文書を開くは <code>GET /docs/{doc_id}</code></li>
+      <li><strong>capability:</strong> <code>document.read</code></li>
+      <li><strong>state機械:</strong> Loading (skeleton) → Empty/Ready/ACL不達/Network error/Read-only</li>
+      <li><strong>契約状態:</strong> <code>GET /docs</code> のapi.md/schemas.md契約は未固定（Round 8 R8-A入力済み、実装未着手）</li>
+      <li><strong>置換対象:</strong> 現行StartPanelの「最近のドキュメント」ダイアログ</li>
+    </ul>
+  </div>
+</div>
+
+<h3>3.2 開始パネル → キャンバス フロー</h3>
+
+<div class="diagram">
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+
+  [*] --> AppInit : 起動
+  AppInit --> SessionCheck : session解決
+  SessionCheck --> StartPanel : session有効
+  SessionCheck --> BlockedState : session無効/期限切れ
+  BlockedState --> SessionCheck : 再認証
+
+  StartPanel --> CanvasNew : 新規作成
+  StartPanel --> CanvasSample : サンプルを開く
+  StartPanel --> CanvasFile : ファイルから読み込み
+  StartPanel --> CanvasReviewPack : review pack import
+  StartPanel --> CanvasResume : 前回の文書を開く（再開導線・新設）
+  StartPanel --> DocListDialog : ドキュメントを開く...（サーバー一覧）
+
+  DocListDialog --> CanvasOpen : 文書選択→開く
+  DocListDialog --> StartPanel : キャンセル/Escape
+
+  CanvasOpen --> Canvas : 文書読み込み成功
+  CanvasNew --> Canvas : 空文書生成
+  CanvasSample --> Canvas : サンプル読み込み
+  CanvasFile --> Canvas : ファイルparse成功
+  CanvasResume --> Canvas : 前回文書復元
+
+  state StartPanel {
+    [*] --> Idle
+    Idle --> Creating : 新規作成 click
+    Idle --> OpeningRecent : 再開 click
+    Idle --> OpeningList : 一覧 click
+    Idle --> Importing : ファイル選択
+  }
+
+  note right of DocListDialog
+    状態: Loading / Empty / Ready / ACL不達 / Network error / Read-only
+    Empty時は「アクセスできるドキュメントはありません」＋新規作成・ファイル取込
+    ACL不達時は空偽装せず「確認できないため表示しない」＋再試行
+  end note
+</pre>
+</div>
+
+<h3>3.3 文書一覧ダイアログの状態設計</h3>
+
+<table>
+  <thead><tr><th>状態</th><th>表示</th><th>利用者操作</th><th>データ牽制</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Loading</td>
+      <td>行の形を保つskeleton。前回キャッシュの実データは表示しない</td>
+      <td>なし（操作不能）</td>
+      <td>キャッシュからの候補表示禁止（データ設計§2）</td>
+    </tr>
+    <tr>
+      <td>Empty</td>
+      <td>「アクセスできるドキュメントはありません」＋新規作成・ファイル取込への導線</td>
+      <td>新規作成、ファイルから読み込み</td>
+      <td>権限不足のEmptyと区別（0件≠権限なし）</td>
+    </tr>
+    <tr>
+      <td>Ready</td>
+      <td>title中心のlist。id補助表示。active文書は「開いています」静表示</td>
+      <td>行選択→開く、タイトル/ID絞り込み</td>
+      <td>本文・カード数・サムネイル非表示</td>
+    </tr>
+    <tr>
+      <td>ACL不達/403</td>
+      <td>「確認できないため表示しない」＋再試行。キャッシュfallbackなし</td>
+      <td>再試行</td>
+      <td>空偽装禁止（データ設計§2 Empty≠権限不足）</td>
+    </tr>
+    <tr>
+      <td>Network error</td>
+      <td>「認可済み一覧を確認できない」＋再試行＋ファイル取込導線</td>
+      <td>再試行、ファイルから読み込み</td>
+      <td>キャッシュfallback禁止</td>
+    </tr>
+    <tr>
+      <td>Read-only</td>
+      <td>開くことは可能。新規作成・タイトル変更は非表示またはdisabled理由表示</td>
+      <td>開く</td>
+      <td>書込不可を視覚+テキストで説明</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="tension">
+  <strong>三者牽制ポイント:</strong> 「文書一覧にタイトルを出す」という業務上の当然の要求に対し、データ設計は
+  「タイトルはDocumentスナップショットの一部であり、一覧APIは <code>id/title/updatedAt</code> のみを返す」
+  と境界を引き、機能設計は「一覧だけを使った背後の全文書PUT（タイトル変更）は許可しない」と制約する。
+  タイトル変更は文書を開いた編集文脈でのみ行う。→ 一覧のインライン編集は三者が揃わないため提供しない。
+</div>
+
+<!-- ============================================================ -->
+<h2>4. G2: 共有・出力 グループ</h2>
+
+<h3>4.1 三者牽制マトリクス</h3>
+
+<div class="triad">
+  <div class="b">
+    <h4>🟦 業務設計</h4>
+    <ul>
+      <li><strong>利用者:</strong> Standard user（文書を開いている状態）</li>
+      <li><strong>目的:</strong> 文書の内容を、確認可能な形で他者と共有する</li>
+      <li><strong>journey:</strong> キャンバス → 共有と再現パネル → 共有前確認 → 出力形式選択 → 書き出し</li>
+      <li><strong>必須確認:</strong> SafeModeチェック、公開範囲確認、未レビュー情報の扱い、出力形式、レビューパック粒度</li>
+      <li><strong>非目標:</strong> 共有URL発行、リアルタイム共同編集、公開先ディレクトリ管理</li>
+    </ul>
+  </div>
+  <div class="d">
+    <h4>🟣 データ設計</h4>
+    <ul>
+      <li><strong>正本:</strong> Documentスナップショット（<code>payload_json</code>）</li>
+      <li><strong>出力に含む:</strong> レビュー済みカード・島・関係。SafeMode ON時は未レビュー除外</li>
+      <li><strong>出力に含まない:</strong> SafeMode ON時の未レビュー本文、出典参照の生URL（設定による）</li>
+      <li><strong>出力形式:</strong> document.json, view.json, abstract map, canvas PNG/SVG, review pack</li>
+      <li><strong>共有範囲:</strong> 出力ファイルの受け渡し。サーバー媒介の共有機能は持たない</li>
+    </ul>
+  </div>
+  <div class="f">
+    <h4>🟢 機能設計</h4>
+    <ul>
+      <li><strong>API:</strong> 出力はすべてクライアント側で生成（<code>export/</code> モジュール）</li>
+      <li><strong>契約:</strong> document.json/view.json形式はschemas.mdで固定</li>
+      <li><strong>state機械:</strong> 共有前確認（SafeMode/公開範囲/未レビュー/形式）→ プレビュー → 出力実行</li>
+      <li><strong>安全:</strong> SafeMode ON時は未レビュー情報の自動除外、共有前の明示確認必須</li>
+      <li><strong>実装状態:</strong> 共有前確認パネル・エクスポート機能とも実装済み</li>
+    </ul>
+  </div>
+</div>
+
+<h3>4.2 共有前確認フロー</h3>
+
+<div class="diagram">
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+
+  [*] --> ShareEntry : 「共有と再現」パネルを開く
+  ShareEntry --> SafeModeCheck : SafeModeチェック
+  SafeModeCheck --> VisibilityCheck : SafeMode OK / 未レビュー除外確認
+  VisibilityCheck --> UnreviewedCheck : 公開範囲（全体/島/カード）確認
+  UnreviewedCheck --> FormatSelect : 未レビュー情報の扱い確認
+  FormatSelect --> OutputPreview : 出力形式選択
+  OutputPreview --> ExecuteExport : プレビュー確認
+  ExecuteExport --> [*] : 出力完了
+
+  SafeModeCheck --> ShareBlocked : SafeMode警告（未レビュー含む）
+  ShareBlocked --> SafeModeCheck : 未レビュー除外を確認
+
+  state SafeModeCheck {
+    SafeON : SafeMode ON → 未レビュー本文は出力から除外される
+    SafeOFF : SafeMode OFF → 全情報が出力される（警告表示）
+  }
+
+  note right of OutputPreview
+    プレビューは実際の出力内容の忠実な表示。
+    「後から再確認できない」情報（未レビュー・出典参照）を
+    色と文言の両方で明示する。
+  end note
+</pre>
+</div>
+
+<!-- ============================================================ -->
+<h2>5. G3: AI・提案 グループ</h2>
+
+<h3>5.1 三者牽制マトリクス</h3>
+
+<div class="triad">
+  <div class="b">
+    <h4>🟦 業務設計</h4>
+    <ul>
+      <li><strong>利用者:</strong> Standard user（AI提案を補助として使う）</li>
+      <li><strong>目的:</strong> AIが生成した候補（島ラベル・関係・カード分類・矛盾検出）を人間が審査し、採用/棄却する</li>
+      <li><strong>journey:</strong> キャンバス → AI提案パネル → per-proposalレビュー → Adopt/Reject</li>
+      <li><strong>鉄則:</strong> AIは候補生成に留まり、確定しない。人間の明示操作なしに文書へ反映されない</li>
+      <li><strong>非目標:</strong> 一括Adopt/Reject、スコアリング、AIの自律実行、チャットUI</li>
+    </ul>
+  </div>
+  <div class="d">
+    <h4>🟣 データ設計</h4>
+    <ul>
+      <li><strong>正本:</strong> AI提案は派生データ（L3 Derived）。文書本体には人間がAdoptした結果のみ残る</li>
+      <li><strong>提案構造:</strong> proposal種別・対象ラベル・内容・根拠・diff（該当時）</li>
+      <li><strong>表示する情報:</strong> 提案内容、根拠、影響範囲、競合の有無</li>
+      <li><strong>表示しない情報:</strong> score/rank/confidence（反スコアリング）、AIの内部状態</li>
+      <li><strong>エージェント応答:</strong> agent-response.v1互換payload。未レビュー提案カードとしてのみ着地</li>
+    </ul>
+  </div>
+  <div class="f">
+    <h4>🟢 機能設計</h4>
+    <ul>
+      <li><strong>API:</strong> <code>POST /ai/*</code>（提案生成）、提案のAdopt/Rejectはクライアント側でdocument差分として適用</li>
+      <li><strong>capability:</strong> <code>document.write</code>（Adopt時）</li>
+      <li><strong>state機械:</strong> 提案一覧 → per-proposal詳細 → Adopt確認 → 適用/棄却</li>
+      <li><strong>安全:</strong> proposal-only、SafeMode ON時はAI提案の出典参照を秘匿、人間の明示Adoptのみ</li>
+      <li><strong>実装状態:</strong> SuggestionPanel, MergeSuggestionsPanel, PatchWorkspacePanel 実装済み</li>
+    </ul>
+  </div>
+</div>
+
+<h3>5.2 AI提案 → マージ候補 → エージェント応答 フロー</h3>
+
+<div class="diagram">
+<pre class="mermaid">
+flowchart TB
+  subgraph AI_SURFACE["AI提案面（キャンバス右・作業モード）"]
+    SUG["AI提案パネル<br/>提案一覧（種別・対象・内容概要）"]
+    MERGE["マージ候補パネル<br/>他者/他文書からのmerge提案"]
+    AGENT_IMP["エージェント応答取込<br/>外部エージェントからの提案"]
+  end
+
+  subgraph REVIEW["per-proposal 審査"]
+    DETAIL["提案詳細<br/>内容・根拠・影響範囲・競合"]
+    DIFF["差分表示<br/>SuggestionDiffLayer / ReviewDiffPanel"]
+    DECIDE{"人間の判断"}
+  end
+
+  subgraph OUTCOME["結果"]
+    ADOPT["Adopt → document差分適用<br/>MergeDecisionLog追記"]
+    REJECT["Reject → 提案を棄却<br/>（文書に影響なし）"]
+    PATCH_OUT["パッチ書出（mismatch時）<br/>in-app適用を拒否"]
+  end
+
+  SUG --> DETAIL
+  MERGE --> DETAIL
+  AGENT_IMP --> DETAIL
+  DETAIL --> DIFF
+  DIFF --> DECIDE
+  DECIDE -->|"Adopt（明示操作）"| ADOPT
+  DECIDE -->|"Reject"| REJECT
+  DECIDE -->|"patchSignatureMismatch"| PATCH_OUT
+
+  classDef surface fill:#0891b222,stroke:#0891b2;
+  classDef review fill:#7c3aed22,stroke:#7c3aed;
+  classDef outcome fill:#0f766e22,stroke:#0f766e;
+  class SUG,MERGE,AGENT_IMP surface
+  class DETAIL,DIFF,DECIDE review
+  class ADOPT,REJECT,PATCH_OUT outcome
+</pre>
+</div>
+
+<div class="tension">
+  <strong>三者牽制ポイント:</strong> 業務上「AI提案を一括で採用したい」という要求が生じうるが、データ設計は
+  「各提案は独立した根拠と影響範囲を持ち、相互に競合しうる」とし、機能設計は「per-proposalの明示Adoptのみ。
+  一括操作は提供しない」と制約する。また、patchSignatureMismatch時はin-app適用を拒否しパッチ書出に留める
+  （データの整合性を機能が守る）。エージェント応答のorphaned提案はAdopt不能（対象が解決不能）。
+</div>
+
+<!-- ============================================================ -->
+<h2>6. G4: 高度作業 グループ</h2>
+
+<h3>6.1 三者牽制マトリクス</h3>
+
+<div class="triad">
+  <div class="b">
+    <h4>🟦 業務設計</h4>
+    <ul>
+      <li><strong>ナラティブ（B型叙述）:</strong> 空間配置から文章化し、A型図と照合する</li>
+      <li><strong>保留棚卸し:</strong> 保留・未決・棚上げ状態のカードを一覧し、状態変更または対処する</li>
+      <li><strong>探求ジャーニー（W型）:</strong> R1（問題提起）→R2（現状把握）→R3（本質追求）→R4（構想）→R5（具体策）→R6（手順）の累積的KJ法</li>
+      <li><strong>利用者:</strong> Standard user（キャンバス作業の延長として使う）</li>
+      <li><strong>表示:</strong> 既定OFF。「詳細」ONの作業モード面として段階開示</li>
+    </ul>
+  </div>
+  <div class="d">
+    <h4>🟣 データ設計</h4>
+    <ul>
+      <li><strong>ナラティブ:</strong> Document内埋め込み（L2 Embedded-only）。個別CRUDなし</li>
+      <li><strong>保留棚:</strong> Card.holdState（"hold"/"undecided"/"shelved"）をDocument内から抽出したビュー</li>
+      <li><strong>探求ジャーニー:</strong> RoundSnapshot DAGとしてDocument内埋め込み。InquiryBundle（L1.5 Append-read）</li>
+      <li><strong>表示する情報:</strong> ナラティブ本文、保留カードの一覧と状態、ラウンド間の系譜</li>
+      <li><strong>表示しない情報:</strong> スコア、準備度、進捗率、完了判定</li>
+    </ul>
+  </div>
+  <div class="f">
+    <h4>🟢 機能設計</h4>
+    <ul>
+      <li><strong>API:</strong> ナラティブ・保留棚はクライアント側のdocument内データ操作のみ</li>
+      <li><strong>探求ジャーニー:</strong> <code>POST /context/bundles:resolve</code>（context投影）</li>
+      <li><strong>state:</strong> 各作業モードは独立した開閉状態。キャンバス選択とは分離</li>
+      <li><strong>実装状態:</strong> NarrativesPanel, ShelfPanel 実装済み。InquiryJourneyPrototypePanel 試作</li>
+    </ul>
+  </div>
+</div>
+
+<h3>6.2 保留棚卸し → 探求ジャーニー フロー</h3>
+
+<div class="diagram">
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+
+  [*] --> CanvasWork : キャンバス作業中
+  CanvasWork --> ShelfReview : 保留棚卸しを開く
+
+  state ShelfReview {
+    [*] --> ShelfList : 保留中カード一覧
+    ShelfList --> ShelfDetail : カード選択
+    ShelfDetail --> ChangeState : holdState変更
+    ShelfDetail --> NavigateCanvas : キャンバスで表示
+    ShelfDetail --> ShelfList : 選択解除
+  }
+
+  CanvasWork --> InquiryJourney : 探求ジャーニーを開く
+
+  state InquiryJourney {
+    [*] --> RoundList : ラウンド一覧
+    RoundList --> RoundDetail : ラウンド選択
+    RoundDetail --> RoundContext : ContextProjectionGraph表示
+    RoundContext --> NewRound : 次ラウンド作成
+    NewRound --> RoundDetail : 新ラウンド表示
+  }
+
+  ShelfReview --> CanvasWork : 閉じる
+  InquiryJourney --> CanvasWork : 閉じる
+
+  note right of ShelfReview
+    保留は「意味を確定しない健全な状態」。
+    棚卸しUIは「解決」を促さず、状態変更と
+    キャンバスへのナビゲーションのみを提供する。
+  end note
+
+  note right of InquiryJourney
+    W型累積KJ法の6ラウンド構造。
+    各ラウンドは前ラウンドの出力を入力とし、
+    カード・島・関係の系譜をDAGとして保持する。
+    実装はInquiryJourneyPrototypePanel（試作段階）。
+  end note
+</pre>
+</div>
+
+<!-- ============================================================ -->
+<h2>7. G5: 管理面 グループ（本文非表示）</h2>
+
+<h3>7.1 管理面全体の設計根拠</h3>
+
+<div class="note hold">
+  <strong>管理面の基本原則:</strong> 管理面はキャンバス（本文を扱う面）とは別サーフェスとし、
+  「この画面は文書本文を表示しません」という境界説明を常に置く。
+  本文・カード・ナラティブ・レビュー状態は一切表示しない。
+  capability不足時は該当面を提供せず、APIもfail-closed。
+</div>
+
+<h3>7.2 三者牽制マトリクス（管理面全体）</h3>
+
+<div class="triad">
+  <div class="b">
+    <h4>🟦 業務設計</h4>
+    <ul>
+      <li><strong>アクセス登録（現行）:</strong> Platform operatorが新規利用者identityをstrict provisioning</li>
+      <li><strong>文書アクセス設定（future SaaS）:</strong> Tenant Adminがactive tenantの文書visibility/policyを管理</li>
+      <li><strong>エージェント登録（将来）:</strong> Tenant Adminが外部エージェントのtokenを発行・失効</li>
+      <li><strong>システム状態（将来候補）:</strong> Platform operatorがprovider状態等を読み取り専用で確認</li>
+      <li><strong>監査（将来）:</strong> Security/Audit operatorがallowlist内のmetadataを確認</li>
+    </ul>
+  </div>
+  <div class="d">
+    <h4>🟣 データ設計</h4>
+    <ul>
+      <li><strong>正本:</strong> サーバー（users, user_identities, document_access_metadata, agent登録）</li>
+      <li><strong>表示:</strong> identity情報（provider, external UID, display name）、docId、visibility、binding状態</li>
+      <li><strong>非表示:</strong> 文書タイトル・本文・カード・ナラティブ・レビュー状態・未レビュー情報</li>
+      <li><strong>token:</strong> 作成直後の完了面で一度だけ表示。平文再表示・伏字・検索はしない</li>
+      <li><strong>監査:</strong> DATA-MAINT-04解禁まで表示しない（allowlist未定義）</li>
+    </ul>
+  </div>
+  <div class="f">
+    <h4>🟢 機能設計</h4>
+    <ul>
+      <li><strong>API:</strong> <code>POST /admin/provision/users</code>, <code>GET/PUT /tenant-admin/document-access</code></li>
+      <li><strong>capability:</strong> 面ごとに独立（document.policy.manage と membership.provision は相互に暗黙付与しない）</li>
+      <li><strong>実装ゲート:</strong> アクセス登録UIは認可主体固定待ち、文書アクセス設定UIはtrusted auth edge接続待ち、エージェント登録UIはEXT-CONN-02契約待ち、監査UIはDATA-MAINT-04判断待ち</li>
+      <li><strong>SaaS:</strong> Tenant Admin / Platform Control Plane / Workspaceの3面をroute・見出し・パンくずで分離</li>
+    </ul>
+  </div>
+</div>
+
+<h3>7.3 管理面のroute分離とcapability gate</h3>
+
+<div class="diagram">
+<pre class="mermaid">
+flowchart TB
+  subgraph WORKSPACE["Workspace（本文あり）"]
+    W1["文書キャンバス"]
+    W2["共有・出力"]
+    W3["AI提案・作業モード"]
+  end
+
+  subgraph TENANT_ADMIN["Tenant Admin（本文なし）"]
+    T1["文書アクセス設定<br/>capability: document.policy.manage"]
+    T2["Membership管理<br/>capability: membership.provision"]
+    T3["エージェント登録・失効<br/>capability: agent.register/revoke"]
+  end
+
+  subgraph PLATFORM["Platform Control Plane（本文なし）"]
+    P1["Tenant lifecycle<br/>capability: tenant.provision/suspend"]
+    P2["IdP接続状態<br/>capability: platform.configure"]
+    P3["システム状態（読取専用）"]
+  end
+
+  USER["利用者（認証済み）"] -->|"session解決"| GATE{"capability検証"}
+  GATE -->|"document.read"| WORKSPACE
+  GATE -->|"document.policy.manage<br/>等"| TENANT_ADMIN
+  GATE -->|"tenant.provision<br/>等"| PLATFORM
+  GATE -->|"capability不足"| BLOCKED["blocked state<br/>本文なし・再確認・戻る"]
+
+  classDef ws fill:#0f766e22,stroke:#0f766e;
+  classDef ta fill:#7c3aed22,stroke:#7c3aed;
+  classDef pc fill:#2563eb22,stroke:#2563eb;
+  class WORKSPACE,W1,W2,W3 ws
+  class TENANT_ADMIN,T1,T2,T3 ta
+  class PLATFORM,P1,P2,P3 pc
+</pre>
+</div>
+
+<h3>7.4 アクセス登録フロー（現行single-tenant）</h3>
+
+<div class="diagram">
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+
+  [*] --> Entry : Adminメニュー→「アクセス登録」
+  Entry --> FormDisplay : 登録フォーム表示
+
+  state FormDisplay {
+    [*] --> FillForm : フォーム入力
+    FillForm --> ConfirmIntent : 送信前確認
+    ConfirmIntent --> Submit : 確認→送信
+    ConfirmIntent --> FillForm : 修正
+  }
+
+  Submit --> Success : 登録成功
+  Submit --> Conflict : 競合（既存identity）
+  Submit --> Error : エラー
+
+  Success --> Receipt : 結果receipt表示
+  Conflict --> Receipt : 競合の扱い説明
+  Error --> FillForm : 修正後再試行
+
+  Receipt --> [*] : 閉じる
+
+  note right of FormDisplay
+    フォーム項目: provider, external UID, display name, email（任意）
+    「新しいIDを事前登録する操作」であることを表示。
+    削除・無効化・ロール付与を連想させるUIは置かない。
+    一覧・検索・棚卸しは別契約が必要（本画面では提供しない）。
+  end note
+</pre>
+</div>
+
+<h3>7.5 文書アクセス設定フロー（future SaaS / implementation gated）</h3>
+
+<div class="diagram">
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+
+  [*] --> TenantGate : Tenant Admin入口
+  TenantGate --> CapCheck : active tenant + document.policy.manage検証
+  CapCheck --> DocList : capability有効
+  CapCheck --> Blocked : capability不足→blocked
+
+  state DocList {
+    [*] --> Loading : 一覧取得中
+    Loading --> Ready : 取得成功
+    Loading --> Error : 取得失敗
+    Ready --> Select : 行選択
+    Error --> Retry : 再試行
+  }
+
+  Select --> EditForm : 編集
+
+  state EditForm {
+    [*] --> ShowCurrent : 現在値表示（docId固定）
+    ShowCurrent --> Modify : visibility / binding変更
+    Modify --> DiffReview : 差分確認
+    DiffReview --> Save : 保存実行
+    Save --> SaveSuccess : 成功（policy version receipt）
+    Save --> SaveConflict : 409競合→再読込
+  }
+
+  SaveSuccess --> DocList : 一覧へ戻る
+
+  note right of DocList
+    表示: docId, visibility, binding状態, policy version, updatedAt
+    非表示: 文書タイトル, 本文, カード, レビュー状態, 件数集計
+    metadata未登録は「Restricted / binding未設定」、Public既定にしない
+    binding resolver不達は「権限設定を確認できないため利用不可」
+  end note
+</pre>
+</div>
+
+<div class="tension">
+  <strong>三者牽制ポイント:</strong> 業務上「文書の公開範囲を簡単に設定したい」という要求に対し、
+  データ設計は「管理面は文書タイトルすら表示しない。docIdだけを扱う」と境界を引き、
+  機能設計は「bulk edit、CSV import/export、全doc一括公開は提供しない」と制約する。
+  → 一覧からのタイトル検索・bulk変更は三者が揃わないため提供しない。
+  また、tokenは作成直後の一度だけ表示し、平文再表示・伏字・一覧でのtoken欄自体を持たない
+  （データ設計が「tokenの保存・再表示を禁止」し、機能設計が「作成直後の完了面以外ではtokenをDOMに残さない」）。
+</div>
+
+<!-- ============================================================ -->
+<h2>8. G6: Session・Tenant グループ</h2>
+
+<h3>8.1 三者牽制マトリクス</h3>
+
+<div class="triad">
+  <div class="b">
+    <h4>🟦 業務設計</h4>
+    <ul>
+      <li><strong>利用者:</strong> 全利用者（認証前）</li>
+      <li><strong>目的:</strong> 認証を通じてidentityを確立し、操作可能なtenant scopeを確定する</li>
+      <li><strong>journey:</strong> アプリ起動 → session bootstrap → 認証（必要な場合）→ tenant選択（複数membership時）→ Workspace</li>
+      <li><strong>tenant切替:</strong> セッション単位で1つのactive tenant。切替時は全タブ影響・未保存確認・旧scope完全破棄</li>
+      <li><strong>異常時:</strong> membership失効、tenant mismatch、PDP不達時はblocked state（本文非表示・再確認導線）</li>
+    </ul>
+  </div>
+  <div class="d">
+    <h4>🟣 データ設計</h4>
+    <ul>
+      <li><strong>正本:</strong> サーバー（session context, tenant membership, capabilities）</li>
+      <li><strong>session情報:</strong> principal, active tenant, memberships, capabilities, tenantSessionVersion</li>
+      <li><strong>非表示:</strong> raw error, capability名, role/group, policyRef, tenant/principal ID（blocked stateでの反射防止）</li>
+      <li><strong>端末:</strong> tenant-scoped localStorage。切替時に旧scope完全削除</li>
+      <li><strong>タブ間:</strong> BroadcastChannelは補助。payloadにtenant ID, principal, version, title, 本文を含めない</li>
+    </ul>
+  </div>
+  <div class="f">
+    <h4>🟢 機能設計</h4>
+    <ul>
+      <li><strong>API:</strong> <code>GET /session/bootstrap-policy</code>, <code>GET /session/context</code>, <code>POST /session/active-tenant</code></li>
+      <li><strong>guard:</strong> tenantSessionVersionによるstale request防止。409時は全面blocked state</li>
+      <li><strong>state:</strong> Bootstrap → Session解決 → Tenant選択（複数時）→ Workspace / Blocked</li>
+      <li><strong>実装状態:</strong> フロントエンドsession bootstrap・tenant switcher・blocked state実装済み。trusted auth edge backend接続待ちでSaaS profileは起動拒否中</li>
+    </ul>
+  </div>
+</div>
+
+<h3>8.2 認証 → Tenant選択 → 異常復旧 フロー</h3>
+
+<div class="diagram">
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+
+  [*] --> AppStart : アプリ起動
+  AppStart --> Bootstrap : GET /session/bootstrap-policy
+  Bootstrap --> AuthRequired : 認証必要
+  Bootstrap --> SessionResolve : 既存session有効
+
+  AuthRequired --> AuthFlow : 外部IdPへリダイレクト
+  AuthFlow --> SessionResolve : 認証完了→callback
+
+  state SessionResolve {
+    [*] --> GetContext : GET /session/context
+    GetContext --> CheckMembership : membership確認
+    CheckMembership --> SingleTenant : 1件→自動選択
+    CheckMembership --> MultiTenant : 複数→選択UI
+    CheckMembership --> NoMembership : 0件→blocked
+  }
+
+  MultiTenant --> TenantSelect : tenant選択UI表示
+  TenantSelect --> ConfirmSwitch : 選択確定
+  ConfirmSwitch --> Workspace : 切替完了
+
+  SingleTenant --> Workspace : 文書一覧表示
+
+  state Workspace {
+    [*] --> DocEntry : 文書入口
+    DocEntry --> Canvas : キャンバス作業
+    Canvas --> TenantSwitch : tenant切替操作
+  }
+
+  TenantSwitch --> UnsavedCheck : 未保存確認
+  UnsavedCheck --> Cleanup : 保存/破棄/取消→旧scope破棄
+  Cleanup --> SessionResolve : 新tenantでsession再解決
+
+  Workspace --> ScopeError : tenantSessionVersion不一致
+  Workspace --> MembershipLost : membership失効検知
+  Workspace --> BfcacheRestore : bfcache復帰
+
+  ScopeError --> BlockedState : 全面blocked state
+  MembershipLost --> BlockedState : 全面blocked state
+  BfcacheRestore --> BlockedState : 全面blocked state
+
+  state BlockedState {
+    [*] --> Explain : 「利用範囲を再確認しています」
+    Explain --> ReauthOption : 再認証
+    Explain --> RetryOption : 再試行
+    Explain --> BackOption : Workspaceへ戻る
+  }
+
+  ReauthOption --> Bootstrap : 再認証
+  RetryOption --> SessionResolve : session再取得
+
+  note right of BlockedState
+    blocked stateでは旧本文・Admin metadataを
+    背景へ残さず、全面を置換する。
+    raw error, capability名, role/group,
+    policyRef, tenant/principal IDを反射しない。
+  end note
+</pre>
+</div>
+
+<div class="tension">
+  <strong>三者牽制ポイント:</strong> 業務上「複数tenantを同時に別タブで編集したい」という要求が生じうるが、
+  データ設計は「active tenantは認証セッション単位で1つ。tenant-scoped localStorageは切替時に完全破棄」とし、
+  機能設計は「BroadcastChannelで全タブへ切替を通知。古いタブのGET/PUT/export/importは
+  tenantSessionVersionでresource lookup前に拒否」と制約する。
+  → 複数tenant同時編集UIは三者が揃わないため提供しない。
+</div>
+
+<!-- ============================================================ -->
+<h2>9. 未解決の設計課題（三者未成立）</h2>
+
+<p>以下の画面/機能は、業務設計・データ設計・機能設計のいずれかが未確定であり、現時点では設計着手の前提を満たさない。</p>
+
+<table>
+  <thead><tr><th>画面/機能</th><th>業務設計</th><th>データ設計</th><th>機能設計</th><th>不足</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>文書削除UI</td>
+      <td>✗（標準機能にしないとADR-0033で決定済み）</td>
+      <td>△（物理削除か論理削除か未確定）</td>
+      <td>✗（DELETE endpoint未契約）</td>
+      <td>3/3</td>
+    </tr>
+    <tr>
+      <td>文書アーカイブUI</td>
+      <td>✗（標準機能にしない）</td>
+      <td>✗（lifecycle state列なし）</td>
+      <td>✗（APIなし）</td>
+      <td>3/3</td>
+    </tr>
+    <tr>
+      <td>ユーザー一覧UI</td>
+      <td>△（運用必要性はあるが未定義）</td>
+      <td>△（表示項目のallowlist未定義）</td>
+      <td>✗（GET /admin/users未契約）</td>
+      <td>2.5/3</td>
+    </tr>
+    <tr>
+      <td>監査UI</td>
+      <td>△（DATA-MAINT-04判断待ち）</td>
+      <td>✗（allowlist未定義）</td>
+      <td>△（audit eventログのみ実装）</td>
+      <td>2/3</td>
+    </tr>
+    <tr>
+      <td>エージェント登録UI</td>
+      <td>✓（EXT-CONN-02で契約予定）</td>
+      <td>△（テーブル未実装）</td>
+      <td>✗（API契約未確定）</td>
+      <td>1.5/3</td>
+    </tr>
+    <tr>
+      <td>文書アクセス設定UI（SaaS）</td>
+      <td>✓（ADR-0059 Accepted）</td>
+      <td>✓（document_access_metadataテーブル実装済み）</td>
+      <td>△（trusted auth edge・PDP配線未完了）</td>
+      <td>0.5/3</td>
+    </tr>
+    <tr>
+      <td>Platform Control Plane</td>
+      <td>△（VR5活性化待ち）</td>
+      <td>△（tenant/idpテーブルは実装済みだがlifecycle操作未定義）</td>
+      <td>✗（tenant.provision/suspend API未契約）</td>
+      <td>2/3</td>
+    </tr>
+    <tr>
+      <td>外部コンパイラ連携（BusinessIntent）</td>
+      <td>△（Step 0検証中）</td>
+      <td>△（BusinessIntentPackageV1未定義）</td>
+      <td>✗（APIなし）</td>
+      <td>2/3</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2>10. 画面間遷移と状態保持の全体俯瞰</h2>
+
+<div class="diagram">
+<pre class="mermaid">
+flowchart TB
+  subgraph LIFECYCLE["アプリケーションライフサイクル"]
+    BOOT["起動<br/>bootstrap policy取得"]
+    SESSION["session解決<br/>context取得"]
+    TENANT["tenant確定<br/>（単一/複数選択）"]
+    READY["Workspace表示"]
+    SHUTDOWN["終了・切替"]
+  end
+
+  subgraph MAIN["主画面（キャンバスあり）"]
+    START_P["開始パネル"]
+    CANVAS_MAIN["キャンバス本体"]
+    RIGHT["右パネル<br/>（選択コンテキスト）"]
+    WORKMODE["作業モード面<br/>（詳細ON時）"]
+  end
+
+  subgraph DIALOGS["モーダル/Dialog面"]
+    DOCLIST_D["文書一覧"]
+    SHARE_D["共有前確認"]
+    EXPORT_D["エクスポート"]
+    IMPORT_D["取込"]
+    AGENTEXP_D["エージェントタスク出力"]
+    AGENTIMP_D["エージェント応答取込"]
+    SETTINGS_D["設定系dialog"]
+  end
+
+  subgraph ADMIN["管理面（別route）"]
+    ACCESS_A["アクセス登録"]
+    DOCACCESS_A["文書アクセス設定"]
+    AGENTREG_A["エージェント登録"]
+  end
+
+  BOOT --> SESSION --> TENANT --> READY
+  READY --> START_P
+  START_P --> CANVAS_MAIN
+  CANVAS_MAIN --> RIGHT
+  CANVAS_MAIN --> WORKMODE
+
+  CANVAS_MAIN --> DOCLIST_D
+  CANVAS_MAIN --> SHARE_D
+  CANVAS_MAIN --> EXPORT_D
+  CANVAS_MAIN --> IMPORT_D
+  CANVAS_MAIN --> AGENTEXP_D
+  CANVAS_MAIN --> AGENTIMP_D
+
+  READY --> ADMIN
+  ADMIN --> READY : 管理面を閉じる
+
+  SHUTDOWN --> BOOT : tenant切替・再認証
+
+  classDef lifecycle fill:#2563eb22,stroke:#2563eb;
+  classDef main fill:#0f766e22,stroke:#0f766e;
+  classDef dialog fill:#7c3aed22,stroke:#7c3aed;
+  classDef admin fill:#92400e22,stroke:#92400e;
+  class BOOT,SESSION,TENANT,READY,SHUTDOWN lifecycle
+  class START_P,CANVAS_MAIN,RIGHT,WORKMODE main
+  class DOCLIST_D,SHARE_D,EXPORT_D,IMPORT_D,AGENTEXP_D,AGENTIMP_D,SETTINGS_D dialog
+  class ACCESS_A,DOCACCESS_A,AGENTREG_A admin
+</pre>
+</div>
+
+<!-- ============================================================ -->
+<h2>11. 複雑性予算への収め方</h2>
+
+<table>
+  <thead><tr><th>画面</th><th>初期表示への影響</th><th>配置先</th><th>置換・包含・分離</th></tr></thead>
+  <tbody>
+    <tr><td>文書一覧</td><td>純増なし</td><td>開始パネル「ドキュメントを開く…」+ Fileメニュー</td><td>現行「最近のドキュメント」dialogを置換</td></tr>
+    <tr><td>共有前確認</td><td>純増なし</td><td>「共有と再現」パネル内</td><td>既存パネルの一部（実装済み）</td></tr>
+    <tr><td>AI提案</td><td>純増なし</td><td>作業モード面（詳細ON時）</td><td>右パネルの「詳細」トグルで段階開示（実装済み）</td></tr>
+    <tr><td>保留棚卸し</td><td>純増なし</td><td>作業モード面（詳細ON時）</td><td>同上</td></tr>
+    <tr><td>探求ジャーニー</td><td>純増なし</td><td>作業モード面（詳細ON時）</td><td>同上（試作段階）</td></tr>
+    <tr><td>アクセス登録</td><td>純増なし</td><td>Admin別route</td><td>Workspaceと分離。キャンバスツールバーに置かない</td></tr>
+    <tr><td>文書アクセス設定</td><td>純増なし</td><td>Admin別route</td><td>同上（implementation gated）</td></tr>
+    <tr><td>エージェント登録</td><td>純増なし</td><td>Admin別route</td><td>同上（将来）</td></tr>
+    <tr><td>tenant選択</td><td>純増なし</td><td>ヘッダー（membership複数時のみ表示）</td><td>単一membership時はlabel、複数時のみswitcher（実装済み）</td></tr>
+    <tr><td>blocked state</td><td>純増なし</td><td>全面（異常時のみ）</td><td>通常画面を全面置換。0件Emptyやread-onlyと区別</td></tr>
+  </tbody>
+</table>
+
+<div class="note hold">
+  <strong>複雑性予算の鉄則:</strong> 新しい操作を既定表示へ純増させない。
+  置換・包含・モード分離で収める。キャンバスを主、他を従とする。
+  保留操作（状態変更）を確定操作（削除・確定）より遠くしない。
+</div>
+
+<!-- ============================================================ -->
+<h2>12. 検証観点（三者牽制の完全性チェック）</h2>
+
+<ul>
+  <li><strong>業務→データ:</strong> 各画面が扱うデータの正本は明確か。本文・タイトルを表示しない原則を侵す画面はないか。</li>
+  <li><strong>データ→機能:</strong> 保存範囲（サーバー/文書内/端末のみ/環境変数）とAPIの対応は取れているか。境界クラスL1〜L0と実装状態は一致するか。</li>
+  <li><strong>機能→業務:</strong> 必要なAPI契約が未確定のまま画面設計を進めていないか。capability検証経路は存在するか。</li>
+  <li><strong>業務→機能:</strong> 業務要求が未契約APIを暗黙に前提としていないか。</li>
+  <li><strong>データ→業務:</strong> 表示要求がデータ非表示原則を侵していないか（管理面での本文表示、一覧でのタイトル編集など）。</li>
+  <li><strong>機能→データ:</strong> APIの有無がデータ境界クラスを歪めていないか（APIがあるからL1運用可能、と誤認させていないか）。</li>
+  <li><strong>横断:</strong> Standard userにAdmin入口が見えない。Admin面で本文が漏れない。tenant越境がない。amberが保留・違和感以外に使われていない。</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2>Traceability</h2>
+
+<ul>
+  <li><code>02_Architecture/design/ui_design_handoff.md</code> — 5領域IA、侵してはならない核、5判断軸、複雑性予算</li>
+  <li><code>02_Architecture/design/master-data-settings-ui-ux-concept.md</code> — 管理面4区分、本文非表示原則、SaaS tenant分離</li>
+  <li><code>02_Architecture/data_model_operations_overview.html</code> — データ境界クラスL1〜L0、CRUDサポート表</li>
+  <li><code>02_Architecture/enterprise_architecture.html</code> — 責務境界、外部基盤接続点</li>
+  <li><code>02_Architecture/business-intent-boundary-and-phases.html</code> — 業務意図拡張の責務境界とフェーズゲート</li>
+  <li><code>02_Architecture/api.md</code> — API契約正本</li>
+  <li><code>02_Architecture/schemas.md</code> — データ型契約正本</li>
+  <li><code>01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md</code> — データ境界クラス定義</li>
+  <li><code>01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md</code> — 複雑性予算</li>
+  <li><code>01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md</code> — UI/UX品質基準</li>
+  <li><code>01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md</code> — 視覚言語・コマンド到達</li>
+  <li><code>01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md</code> — W型探求モデル</li>
+  <li><code>01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md</code> — SaaS tenant認可境界</li>
+  <li><code>01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md</code> — 複数タブ・セッション並行性</li>
+  <li><code>01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md</code> — 外部エージェント連携（Proposed）</li>
+  <li><code>04_Documentation/ui_catalog.md</code> — 現行UIカタログ</li>
+</ul>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  (function () {
+    var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (window.mermaid) {
+      window.mermaid.initialize({
+        startOnLoad: true,
+        theme: dark ? "dark" : "neutral",
+        flowchart: { htmlLabels: true, curve: "basis" },
+        securityLevel: "strict"
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

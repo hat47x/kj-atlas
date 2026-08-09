@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; background:#f1f3f5; }
+  * { box-sizing:border-box; }
+  body { font-family:"Noto Sans JP", system-ui, sans-serif; color:#1f2933; -webkit-font-smoothing:antialiased; }
+  @page { size:A4; margin:0; }
+  @media print {
+    html { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    html, body { margin:0; padding:0; background:#fff; }
+    .doc { max-width:none !important; margin:0 !important; padding:0 0.7in !important; box-shadow:none !important; background:#fff !important; }
+    h1, h2, h3, h4 { break-after:avoid; }
+    figure, table, tr { break-inside:avoid; }
+    p, li { orphans:3; widows:3; }
+  }
+  .scroll { overflow-x:auto; }
+  table.grid { width:100%; border-collapse:collapse; font-size:12.5px; margin:14px 0 0; }
+  table.grid th { text-align:left; font-weight:600; color:#52606d; border-bottom:1.5px solid #cbd5e1; padding:7px 9px; background:#f8fafc; }
+  table.grid td { border-bottom:1px solid #e5e7eb; padding:7px 9px; vertical-align:top; line-height:1.6; }
+  code { font-family:"Noto Sans Mono", ui-monospace, monospace; font-size:0.9em; background:#f1f5f9; padding:1px 5px; border-radius:3px; color:#334155; word-break:break-word; }
+  .mermaid { text-align:center; }
+  .badge { font-size:12px; font-weight:500; padding:5px 11px; border-radius:999px; border:1px solid; display:inline-block; }
+  .tag { font-family:"Noto Sans Mono", ui-monospace, monospace; font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; }
+  .measured { background:#dcfce7; color:#166534; }
+  .proposal { background:#e0e7ff; color:#3730a3; }
+  .open { background:#fef3c7; color:#92400e; }
+  .none { background:#fee2e2; color:#991b1b; }
+  ol.compact li, ul.compact li { margin:5px 0; line-height:1.75; }
+  a { color:#1d4ed8; }
+  blockquote { margin:12px 0 0; padding:10px 16px; border-left:3px solid #cbd5e1; background:#f8fafc; font-size:13px; line-height:1.8; color:#3e4c59; }
+</style>
+</helmet>
+<main class="doc" style="box-sizing:border-box; max-width:8.5in; margin:0 auto; background:#ffffff; padding:0 clamp(20px,5vw,0.85in); box-shadow:0 1px 3px rgba(15,23,42,0.08), 0 12px 40px rgba(15,23,42,0.06);">
+
+  <!-- COVER -->
+  <header style="padding:64px 0 28px; border-bottom:1px solid #e5e7eb;">
+    <div style="display:flex; align-items:center; gap:10px; font-size:12.5px; letter-spacing:0.14em; color:#6b7280; text-transform:uppercase; font-weight:500;">
+      <span style="width:8px; height:8px; border-radius:2px; background:#7c3aed; display:inline-block;"></span>
+      kj-atlas ・ Architecture ・ 分析（2026-08-09）
+    </div>
+    <h1 style="font-size:29px; line-height:1.36; font-weight:700; margin:18px 0 0; letter-spacing:0.01em; text-wrap:balance;">座標は誰のものか<br>── 人間とAIの表現非対称性とキャンバス階層の投影設計</h1>
+    <p style="font-size:15px; line-height:1.75; color:#52606d; margin:14px 0 0; max-width:38em; text-wrap:pretty;">
+      KJ法キャンバスにおいて、<strong>座標が意味を持つのは人間側であり、生成AIにとって意味を持つのはカード・島のあいだの論理的関係である</strong>。
+      この非対称性を、キャンバスの階層構造の設計へどう反映するかを検討する。
+      結論から述べると、必要な論理投影は<strong>すでに3つ実装されており、AI入力経路だけがそれらを迂回している</strong>。
+    </p>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:22px;">
+      <span class="badge" style="background:#fee2e2; color:#991b1b; border-color:#fecaca;">AIへ渡る関係情報: 実質ゼロ（実測）</span>
+      <span class="badge" style="background:#ecfdf5; color:#047857; border-color:#a7f3d0;">座標非依存の論理投影: 既に3実装</span>
+    </div>
+    <div style="margin:20px 0 0; padding:11px 14px; background:#f8fafc; border-left:3px solid #cbd5e1; border-radius:0 4px 4px 0;">
+      <p style="font-size:12.5px; line-height:1.75; color:#52606d; margin:0;">
+        本書は <code>AGENTS.md</code> §3 の文書形式方針（<code>02_Architecture/</code> 直下・HTML + Mermaid 単独）に従う分析文書である。
+        責務境界は <a href="architecture.html">architecture.html</a>、
+        データ構造の運用境界は <a href="data_model_operations_overview.html">data_model_operations_overview.html</a> を正本とし、本書はそれらを置き換えない。<br>
+        本書は<strong>分析と設計提案であり、決定ではない</strong>。§07 の候補は ADR-0047 のゲート判定と issue 起票を経て着手する。
+        <span class="tag measured">実測</span> はコード実読・実行で確認した事実、<span class="tag proposal">提案</span> は本書の設計提案である。
+      </p>
+    </div>
+  </header>
+
+  <!-- 01 -->
+  <section style="padding:30px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">01</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">問い ── 座標は「まだ言語化されていない意味」である</h2>
+    </div>
+    <p style="font-size:13.5px; line-height:1.85; color:#3e4c59; margin:12px 0 0;">
+      KJ法において、カードを動かす行為は結果の記録ではなく<strong>思考そのもの</strong>である。
+      「この2枚は近い気がする」という感覚は、まだ言葉になっていない。近づけて置くことで、その感覚が保持され、後から検討できる。
+      座標は、<strong>言語化される前の意味を仮置きする媒体</strong>として機能している。
+    </p>
+    <p style="font-size:13.5px; line-height:1.85; color:#3e4c59; margin:10px 0 0;">
+      ここから、AIへ座標を渡すことの問題が導かれる。座標を渡して「この配置から意味を読み取れ」と求めることは、
+      <strong>人間がまだ決めていないことをAIに推測させる</strong>ことに等しい。これは本プロジェクトの明文の要求と衝突する。
+    </p>
+    <blockquote>
+      AIは内容を採点せず、<strong>出典や文脈を推測せず</strong>、利用者の確認前に本文や状態を変更しません。<br>
+      <span style="font-size:11.5px; color:#6b7280;">── <code>00_Prompt/domain.md:88</code></span>
+    </blockquote>
+    <p style="font-size:13.5px; line-height:1.85; color:#3e4c59; margin:12px 0 0;">
+      逆に、人間が<strong>言語化を完了した層</strong>── 島に囲んだ、表札を立てた、関係線を引いた、主張種別を付けた ──
+      は、推測ではなく人間が確定させた事実である。AIが扱ってよいのはこちらであり、また扱うべきなのもこちらである。
+    </p>
+  </section>
+
+  <!-- 02 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">02</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">KJ法自身が持つ「昇格の梯子」</h2>
+    </div>
+    <p style="font-size:13.5px; line-height:1.85; color:#3e4c59; margin:12px 0 0;">
+      重要なのは、この「空間 → 論理」の変換が本プロジェクト固有の設計判断ではなく、
+      <strong>KJ法という方法そのものの手順</strong>だという点である。KJ法の各工程は、暗黙の空間的意味を明示的な論理構造へ昇格させる段として並んでいる。
+    </p>
+    <figure style="margin:18px 0 0;">
+      <pre class="mermaid">
+flowchart LR
+    S["空間的近接<br/>x, y<br/><b>未言語化</b>"]:::spatial
+    I["囲み＝島<br/>cardIds<br/><b>群として確定</b>"]:::logical
+    P["表札<br/>placardCardId / title<br/><b>概念として命名</b>"]:::logical
+    E["関係線<br/>edges: related / negate /<br/>causal / mutual / equivalence<br/><b>関係として型付け</b>"]:::logical
+    N["文章化<br/>readingOrder → narratives<br/><b>叙述として接続</b>"]:::logical
+
+    S -->|"囲む"| I
+    I -->|"名を与える"| P
+    P -->|"線を引く"| E
+    E -->|"読み順を決める"| N
+
+    classDef spatial fill:#fef3c7,stroke:#d97706,stroke-width:1.8px,color:#78350f
+    classDef logical fill:#eff6ff,stroke:#2563eb,stroke-width:1.3px,color:#1e3a8a
+      </pre>
+      <figcaption style="font-size:12.5px; color:#6b7280; margin-top:10px; line-height:1.7;">
+        左端（黄）だけが人間専用の未言語化領域。右側（青）はすべて人間が明示的に確定させた層である。
+        この梯子は既存実装の語彙とそのまま対応する ── <code>Island.cardIds</code>、<code>placardCardId</code>、
+        <code>KNOWN_EDGE_TYPES</code>（ADR-0048 D3 で固定）、<code>readingOrder</code> / <code>narratives</code>。
+      </figcaption>
+    </figure>
+    <p style="font-size:13px; line-height:1.8; color:#3e4c59; margin:14px 0 0;">
+      設計上の含意はこうである。<strong>AIとの協働境界は、この梯子のどこかに引くのではなく、梯子の左端と右側のあいだに引く。</strong>
+      人間は梯子を登る主体であり、AIは登り終えた段の上でだけ働く。
+    </p>
+  </section>
+
+  <!-- 03 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">03</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">実測 ── AIは実際に何を受け取っているか</h2>
+      <span class="tag measured">実測</span>
+    </div>
+    <p style="font-size:13px; line-height:1.75; color:#3e4c59; margin:10px 0 0;">
+      <code>routes/ai.py</code> の全プロンプト構築関数を走査し、各関数が参照する文書構造を機械的に抽出した。
+    </p>
+    <div class="scroll">
+    <table class="grid">
+      <thead><tr>
+        <th style="width:27%;">プロンプト構築関数</th>
+        <th>edges</th><th>evidence<br>Links</th><th>relation<br>Summaries</th><th>reading<br>Order</th><th>cardIds</th><th>claim<br>Type</th><th>x / y</th>
+      </tr></thead>
+      <tbody>
+        <tr><td><code>_build_prompt</code><br><span style="font-size:11px; color:#6b7280;">suggest-layout</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>YES</td><td>—</td><td><strong>YES</strong></td></tr>
+        <tr><td><code>_build_merge_prompt</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>YES</td><td>—</td><td>—</td></tr>
+        <tr><td><code>_build_island_summary_prompt</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>YES</td><td>—</td><td>—</td></tr>
+        <tr><td><code>_build_generate_narrative_prompt</code></td><td>—</td><td>—</td><td>—</td><td>YES</td><td>YES</td><td>—</td><td>—</td></tr>
+        <tr><td><code>_build_narrative_check_prompt</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>YES</td><td>—</td><td>—</td></tr>
+        <tr><td><code>_build_suggest_card_groups_prompt</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>YES</td><td>—</td><td>—</td></tr>
+        <tr><td><code>_build_detect_contradiction_prompt</code></td><td>—</td><td><strong>—</strong></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td><code>_build_refine_card_text_prompt</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td><code>_build_assess_card_importance_prompt</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div style="margin:16px 0 0; padding:13px 16px; background:#fef2f2; border-left:3px solid #dc2626; border-radius:0 4px 4px 0;">
+      <p style="font-size:13px; line-height:1.85; color:#7f1d1d; margin:0;">
+        <strong>どのプロンプトも <code>edges</code> を渡していない。</strong>
+        ADR-0048 D3 で固定したKJ法の関係語彙（<code>related</code> / <code>negate</code>（対立）/ <code>causal</code> / <code>mutual</code> / <code>equivalence</code>）は、
+        <strong>AIに一度も届いていない</strong>。<code>evidenceLinks</code>、<code>relationSummaries</code>、<code>claimType</code>、
+        島階層（<code>parentIslandId</code>）、表札（<code>placardCardId</code>）も同様である。
+      </p>
+    </div>
+
+    <p style="font-size:13.5px; line-height:1.85; color:#3e4c59; margin:16px 0 0;">
+      つまり現状は「AIが座標を受け取ってしまっている」という問題ですらない。座標が渡るのは <code>suggest-layout</code> 1件だけで、
+      これは<strong>出力が座標である以上むしろ妥当</strong>である（§05.3 の例外）。実際の問題は逆方向にある ──
+      <strong>AIは論理構造をほとんど何も受け取っておらず、キャンバスを「文字列の袋」として扱っている。</strong>
+    </p>
+
+    <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">3.1 具体的に何が起きているか</h3>
+    <table class="grid">
+      <thead><tr><th style="width:30%;">エンドポイント</th><th>受け取っていない構造と、その帰結</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>POST /ai/detect-contradiction</code></td>
+          <td><strong>矛盾を扱うAPIが、人間が既に記録した矛盾を見ていない。</strong> 2枚のカードの <code>text</code> だけを受け取る（<code>routes/ai.py:746-752</code>）。<code>EvidenceLink.type = "contradicts"</code> も <code>contradictionState</code>（<code>unconfirmed</code>/<code>confirmed</code>/<code>held</code>/<code>resolved</code>）も渡らないため、人間が「確認済み」「保留」と判断済みの矛盾を再提示しうる。</td>
+        </tr>
+        <tr>
+          <td><code>POST /ai/suggest-card-groups</code></td>
+          <td><strong>グルーピング提案が、既存のグルーピングを知らない。</strong> <code>id</code> と <code>text</code> の平坦なリストのみ（<code>routes/ai.py:725-731</code>）。既存の島、島の階層、カード間の関係、<code>holdState</code>（保留中）を見ずに提案するため、人間が既に下した判断と衝突する候補を出しうる。</td>
+        </tr>
+        <tr>
+          <td><code>POST /ai/generate-narrative</code></td>
+          <td><code>readingOrder</code> は渡るが <code>edges</code> は渡らない。叙述の骨格である因果（<code>causal</code>）・対立（<code>negate</code>）が使えず、順序だけから文章を組むことになる。</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 04 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">04</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">既に存在する3つの論理投影</h2>
+      <span class="tag measured">実測</span>
+    </div>
+    <p style="font-size:13.5px; line-height:1.85; color:#3e4c59; margin:12px 0 0;">
+      本件で最も重要な発見は、<strong>座標非依存の論理投影が既に3つ実装されており、AI入力経路だけがそのすべてを迂回している</strong>ことである。
+      新しい層を発明する必要はない。
+    </p>
+    <div class="scroll">
+    <table class="grid">
+      <thead><tr><th style="width:26%;">投影</th><th style="width:30%;">出力する論理構造</th><th style="width:22%;">現在の用途</th><th>AI入力での使用</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>getDerivedIslandEdges()</code><br><span style="font-size:11px; color:#6b7280;">domain/island_edge_aggregate.ts</span></td>
+          <td>カード間の辺を<strong>島レベルの関係へ集約</strong>。<code>contributingEdgeIds</code> / <code>contributingCardIds</code> で根拠を保持</td>
+          <td>キャンバス描画、bounds、outline品質、SVG/抽象マップexport（5箇所）</td>
+          <td><span class="tag none">未使用</span></td>
+        </tr>
+        <tr>
+          <td><code>buildAbstractMapExport()</code><br><span style="font-size:11px; color:#6b7280;">export/abstract_map_export.ts</span></td>
+          <td><strong>完全に座標非依存</strong>の構造モデル。islands（title / summary / reviewed / member数）、relations（型付き・derived判別・grounding付き）、representatives（統合来歴）</td>
+          <td>Markdown / HTML export（人間向け）</td>
+          <td><span class="tag none">未使用</span></td>
+        </tr>
+        <tr>
+          <td><code>ContextBundleResponse</code><br><span style="font-size:11px; color:#6b7280;">models_context.py:89-101</span></td>
+          <td>CE-0 が定めた<strong>AI入力の正式契約</strong>。<code>selected</code> / <code>relations</code> / <code>evidence</code> / <code>contradictions</code> / <code>reviewFlags</code>。座標フィールドを持たない</td>
+          <td>stub のみ（<code>build_bundle()</code> は <code>_STUB_DATASET</code> を返す）</td>
+          <td><span class="tag none">未接続</span></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div style="margin:16px 0 0; padding:13px 16px; background:#ecfdf5; border-left:3px solid #059669; border-radius:0 4px 4px 0;">
+      <p style="font-size:13px; line-height:1.85; color:#065f46; margin:0;">
+        <strong><code>buildAbstractMapExport()</code> は SafeMode と未レビュー除外を既に実装している</strong>
+        （<code>AbstractMapExportViewState.safeMode</code> / <code>includeUnreviewedDrafts</code>）。
+        すなわち、AI入力として最も適した形をしている投影が、
+        <code>SEC-AI-SAFEMODE-01</code> で指摘した「API境界にSafeMode強制が無い」問題の答えも同時に持っている。
+        2つの課題が同じ解へ収束する。
+      </p>
+    </div>
+
+    <figure style="margin:20px 0 0;">
+      <pre class="mermaid">
+flowchart TB
+    DOC["DocumentV1<br/>単一スナップショット"]:::doc
+
+    DOC --> SP["空間層<br/>x, y, transform, shape, collapsed"]:::spatial
+    DOC --> LG["論理層<br/>cardIds, parentIslandId, placardCardId,<br/>edges, evidenceLinks, claimType, readingOrder"]:::logical
+
+    SP --> HUM(["人間<br/>キャンバス操作"]):::human
+    LG --> HUM
+
+    LG --> P1["getDerivedIslandEdges()"]:::proj
+    LG --> P2["buildAbstractMapExport()<br/>SafeMode実装済み"]:::proj
+    P1 --> USE["描画 / export"]:::use
+    P2 --> USE
+
+    CB["ContextBundle<br/>CE-0 の正式契約<br/>（stub のみ）"]:::stub
+
+    DOC -.->|"生のまま<br/>関係を落として渡す"| PR["_build_prompt 系<br/>routes/ai.py"]:::bypass
+    PR --> AI(["LLM"]):::ai
+    CB -.->|"未接続"| AI
+
+    classDef doc fill:#f8fafc,stroke:#64748b,stroke-width:1.4px,color:#334155
+    classDef spatial fill:#fef3c7,stroke:#d97706,stroke-width:1.3px,color:#78350f
+    classDef logical fill:#eff6ff,stroke:#2563eb,stroke-width:1.3px,color:#1e3a8a
+    classDef proj fill:#ecfdf5,stroke:#059669,stroke-width:1.3px,color:#065f46
+    classDef stub fill:#f1f5f9,stroke:#94a3b8,stroke-width:1.2px,stroke-dasharray: 4 3,color:#475569
+    classDef bypass fill:#fef2f2,stroke:#dc2626,stroke-width:1.6px,color:#7f1d1d
+    classDef human fill:#f5f3ff,stroke:#7c3aed,stroke-width:1.4px,color:#4c1d95
+    classDef ai fill:#fdf4ff,stroke:#a855f7,stroke-width:1.4px,color:#6b21a8
+    classDef use fill:#f8fafc,stroke:#94a3b8,stroke-width:1px,color:#334155
+      </pre>
+      <figcaption style="font-size:12.5px; color:#6b7280; margin-top:10px; line-height:1.7;">
+        赤の破線が現状のAI経路。論理層で計算済みの投影（緑）を使わず、<code>DocumentV1</code> から直接プロンプト文字列を組み立てている。
+        CE-0 が定めた正式な入力契約（灰・破線）は接続されていない。
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- 05 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">05</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">設計原則の提案</h2>
+      <span class="tag proposal">提案</span>
+    </div>
+
+    <h3 style="font-size:15px; font-weight:700; margin:16px 0 0;">5.1 三層への整理</h3>
+    <p style="font-size:13px; line-height:1.75; color:#3e4c59; margin:8px 0 0;">
+      <code>DocumentV1</code> のフィールドを、<strong>誰にとって一次情報か</strong>で3層に分類する。
+      物理的な分割ではない ── 単一JSON可搬性（<code>architecture.html</code>）は維持し、<strong>投影の規則として</strong>整理する。
+    </p>
+    <table class="grid">
+      <thead><tr><th style="width:16%;">層</th><th style="width:36%;">フィールド</th><th style="width:16%;">一次情報の所有者</th><th>AIへの扱い</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>空間層</strong></td>
+          <td><code>x</code>, <code>y</code>, <code>transform</code>, <code>geometry</code>, <code>shape</code>, <code>collapsed</code></td>
+          <td>人間</td>
+          <td><strong>渡さない。</strong>ただし構造的事実へ変換したものは渡してよい（5.2）</td>
+        </tr>
+        <tr>
+          <td><strong>論理層</strong></td>
+          <td><code>cardIds</code>, <code>parentIslandId</code>, <code>placardCardId</code>, <code>edges</code>, <code>evidenceLinks</code>, <code>claimType</code>, <code>readingOrder</code>, <code>relationSummaries</code></td>
+          <td>人間が確定させた共有事実</td>
+          <td><strong>渡す。</strong>現在ほぼ渡っていない部分（§03）</td>
+        </tr>
+        <tr>
+          <td><strong>状態層</strong></td>
+          <td><code>textReviewed</code>, <code>reviewState</code>, <code>holdState</code>, <code>critique</code>, <code>critiqueTags</code></td>
+          <td>人間の現在の見立て</td>
+          <td><strong>選択的に渡す。</strong>「保留中」「違和感あり」は AI が尊重すべき境界（CVI-7）。ただしAIが解消・正当化してはならない</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">5.2 「未言語化の近接」の扱い ── 座標を渡さずに事実だけ渡す</h3>
+    <p style="font-size:13.5px; line-height:1.85; color:#3e4c59; margin:8px 0 0;">
+      空間層を一律に遮断すると、ひとつ失うものがある。<strong>「空間的にまとまっているが、まだ島になっていないカード群」</strong>という状態は、
+      KJ法の梯子（§02）の途中にいることを示す有意味な情報である。
+    </p>
+    <p style="font-size:13.5px; line-height:1.85; color:#3e4c59; margin:10px 0 0;">
+      ここは区別できる。<strong>「近接している」という観測を渡すことと、「近接が何を意味するか」を推測させることは別である。</strong>
+      前者は事実の報告であり、後者は <code>domain.md</code> が禁じる推測にあたる。したがって:
+    </p>
+    <ul class="compact" style="font-size:13px; color:#3e4c59; padding-left:22px; margin:10px 0 0;">
+      <li><strong>渡してよい</strong>: 「未所属カードが N 枚あり、そのうち M 枚は空間的に1つのまとまりを成している」という<strong>構造的事実</strong>。座標そのものは渡さない。</li>
+      <li><strong>渡してはならない</strong>: 生の <code>x</code> / <code>y</code>、および「この配置はこういう意味だと思われる」という解釈。</li>
+      <li>AIの応答は「まだ島になっていない塊があります」という<strong>気づきの提示</strong>までとし、島の中身を提案する場合も proposal-only（CVI-2）として人間の確定を待つ。</li>
+    </ul>
+    <p style="font-size:12.5px; color:#6b7280; margin:12px 0 0;">
+      これは「AIが人間に梯子を登るよう促す」形であり、AIが勝手に梯子を登ることとは異なる。KJ法の主体性を侵さずにAIが貢献できる領域である。
+    </p>
+
+    <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">5.3 例外 ── 出力が空間である場合</h3>
+    <p style="font-size:13.5px; line-height:1.85; color:#3e4c59; margin:8px 0 0;">
+      <code>POST /ai/suggest-layout</code> は<strong>出力が座標そのもの</strong>であるため、入力に座標を含めることが妥当な唯一の例外である。
+      ただしこれは「例外」として明示されるべきで、既定ではない。加えて現状は<strong>座標を渡しながら関係を渡していない</strong>ため、
+      「関係の近さを配置へ反映する」という配置提案の本来の根拠を欠いている。この例外においてこそ <code>edges</code> が必要である。
+    </p>
+
+    <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">5.4 階層構造への含意</h3>
+    <p style="font-size:13px; line-height:1.75; color:#3e4c59; margin:8px 0 0;">
+      「AIにどの粒度で渡すか」は階層の設計と直結する。既存構造には次の非対称がある。
+    </p>
+    <table class="grid">
+      <thead><tr><th style="width:26%;">要素</th><th style="width:34%;">論理的定義</th><th>空間表現</th></tr></thead>
+      <tbody>
+        <tr><td>島</td><td><code>cardIds</code>（一次）</td><td><code>shape</code> は <code>cardIds</code>＋座標から<strong>導出</strong>され、<code>generatedFrom.versionToken</code> で陳腐化を追跡（<code>polygon_stale.ts</code>）</td></tr>
+        <tr><td>島の関係</td><td>カード辺からの<strong>集約導出</strong>（<code>getDerivedIslandEdges</code>）</td><td>描画時に線として表現</td></tr>
+        <tr><td><strong>カード</strong></td><td><strong>無し</strong> ── 論理的な「位置」を持たない</td><td><code>x</code> / <code>y</code> が一次</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:13.5px; line-height:1.85; color:#3e4c59; margin:12px 0 0;">
+      島は「論理が一次・空間が導出」という正しい向きで設計されているのに対し、<strong>カードだけが空間のみを持つ</strong>。
+      カードの論理的位置は「どの島に属するか」であり、それは <code>Island.cardIds</code> に逆方向で保持されている
+      （<a href="functional-dependency-integrity-2026-08-06.html">functional-dependency-integrity-2026-08-06.html</a> の
+      <strong>F-5「島所属の関数従属性が強制されていない」</strong>と同根である）。
+      <strong>階層設計としては、カードの論理的所属を一次情報として扱えるようにすることが、AI投影の前提になる。</strong>
+    </p>
+  </section>
+
+  <!-- 06 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">06</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">付随所見 ── 構造の欠如が生む代償</h2>
+    </div>
+    <p style="font-size:13.5px; line-height:1.85; color:#3e4c59; margin:12px 0 0;">
+      <code>POST /ai/assess-card-importance</code>（<code>routes/ai.py:763-770</code>）は、各カードを
+      <code>high</code> / <code>medium</code> / <code>low</code> で評定するよう LLM に求めている。
+      これは明文の要求と抵触する。
+    </p>
+    <blockquote>
+      <strong>AIは内容を採点せず</strong>、出典や文脈を推測せず…<br>
+      <span style="font-size:11.5px; color:#6b7280;">── <code>00_Prompt/domain.md:88</code></span><br><br>
+      （非目標）画像による自動分類、品質評価、<strong>重要度評価</strong>、感情判定。<br>
+      <span style="font-size:11.5px; color:#6b7280;">── <code>00_Prompt/representative_visual_cue_requirements.md:28</code></span>
+    </blockquote>
+    <p style="font-size:13.5px; line-height:1.85; color:#3e4c59; margin:12px 0 0;">
+      本書の文脈で注目すべきは、<strong>この採点が「構造が無いこと」の代償として現れている</strong>点である。
+      AIに関係グラフが渡っていれば、「重要さ」は採点ではなく<strong>構造的観測</strong>として答えられる ──
+      「このカードは3つの島にまたがる5本の関係から参照されている」「このカードは2件の矛盾の当事者である」。
+      これは順位付けではなく事実の提示であり、反スコアリングと衝突しない。
+      <strong>論理投影を渡すことは、採点への誘因そのものを減らす。</strong>
+    </p>
+    <p style="font-size:12.5px; color:#6b7280; margin:10px 0 0;">
+      本項は本書の主題（投影設計）に隣接する独立の課題である。エンドポイントの存廃は別途判断を要する。
+    </p>
+  </section>
+
+  <!-- 07 -->
+  <section style="padding:32px 0 0;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">07</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">検討課題（ADR / issue 化の候補）</h2>
+      <span class="tag proposal">提案</span>
+    </div>
+    <div class="scroll">
+    <table class="grid">
+      <thead><tr><th style="width:10%;">候補</th><th style="width:34%;">内容</th><th style="width:24%;">性質</th><th>ADR-0047 ゲート見立て</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>C1</strong></td>
+          <td>AI入力を <code>DocumentV1</code> 直渡しから<strong>論理投影経由</strong>へ切り替える。既存の <code>buildAbstractMapExport</code> / <code>getDerivedIslandEdges</code> をサーバ側へ持つか、<code>ContextBundle</code> を実装して接続するかを決める</td>
+          <td>設計判断。<strong>ADR が要る</strong></td>
+          <td>R-3（CE-0 の <code>CE0-CTX-IF</code> 契約と実装の乖離）</td>
+        </tr>
+        <tr>
+          <td><strong>C2</strong></td>
+          <td><code>detect-contradiction</code> に <code>evidenceLinks</code> と <code>contradictionState</code> を渡す。人間が確定・保留済みの矛盾を再提示しない</td>
+          <td>C1 の一部として実施可。単独でも意味がある</td>
+          <td>C1 に従属</td>
+        </tr>
+        <tr>
+          <td><strong>C3</strong></td>
+          <td><code>suggest-card-groups</code> に既存の島・階層・<code>holdState</code> を渡す。人間の既決と衝突する提案を減らす</td>
+          <td>同上</td>
+          <td>C1 に従属</td>
+        </tr>
+        <tr>
+          <td><strong>C4</strong></td>
+          <td><code>suggest-layout</code> に <code>edges</code> を渡す（§5.3）。座標を渡す唯一の例外であることを契約へ明記</td>
+          <td>同上</td>
+          <td>C1 に従属</td>
+        </tr>
+        <tr>
+          <td><strong>C5</strong></td>
+          <td>「未言語化の近接」を座標なしの構造的事実として渡す仕組み（§5.2）。<strong>新機能</strong>であり、KJ法の主体性境界の判断を伴う</td>
+          <td>設計判断。<strong>ADR が要る</strong></td>
+          <td>要判断。予測実装を避けるなら、C1 の実使用後に判断すべき</td>
+        </tr>
+        <tr>
+          <td><strong>C6</strong></td>
+          <td><code>assess-card-importance</code> の採点と <code>domain.md</code> の整合（§06）。エンドポイント廃止か、構造的観測への置換か</td>
+          <td>設計判断。<strong>ADR が要る</strong></td>
+          <td>R-3（CVI 群と明文要求の境界）</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="font-size:12.5px; color:#6b7280; margin:12px 0 0;">
+      <strong>推奨順序</strong>: C1 を先に決める。C2〜C4 は C1 の実装形が決まれば設計判断を伴わない適用作業になる。
+      C5 は C1 の実使用で「AIが構造を得ると何が変わるか」を観測してから判断するのが、ADR-0039 の予測実装回避と整合する。
+      C6 は本書と独立に進められる。
+    </p>
+  </section>
+
+  <!-- 08 -->
+  <section style="padding:32px 0 56px;">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <span style="font-size:13px; font-weight:700; color:#94a3b8; letter-spacing:0.08em;">08</span>
+      <h2 style="font-size:20px; font-weight:700; margin:0;">検証状態と本書の限界</h2>
+    </div>
+    <table class="grid">
+      <thead><tr><th style="width:34%;">主張</th><th style="width:16%;">状態</th><th>根拠</th></tr></thead>
+      <tbody>
+        <tr><td>どのプロンプトも <code>edges</code> を渡していない</td><td><span class="tag measured">実測</span></td><td><code>routes/ai.py</code> 全 <code>_build_*prompt*</code> 関数の機械的走査</td></tr>
+        <tr><td>座標が渡るのは <code>suggest-layout</code> のみ</td><td><span class="tag measured">実測</span></td><td>同上</td></tr>
+        <tr><td><code>buildAbstractMapExport</code> が座標非依存</td><td><span class="tag measured">実測</span></td><td><code>export/abstract_map_export.ts</code> に座標参照ゼロ。型定義を実読</td></tr>
+        <tr><td><code>getDerivedIslandEdges</code> がAI入力に未使用</td><td><span class="tag measured">実測</span></td><td>全参照5箇所を確認（描画・bounds・outline品質・SVG/抽象マップexport）</td></tr>
+        <tr><td><code>ContextBundle</code> が stub</td><td><span class="tag measured">実測</span></td><td><code>build_bundle()</code> が <code>_STUB_DATASET</code> を返す（<code>models_context.py:263-313</code>）</td></tr>
+        <tr><td>島の shape が cardIds から導出</td><td><span class="tag measured">実測</span></td><td><code>polygon_stale.ts</code> の <code>generatedFrom</code> / <code>versionToken</code> 実装</td></tr>
+        <tr><td>三層への整理と投影規則</td><td><span class="tag proposal">提案</span></td><td>本書 §05。採否は保守者判断</td></tr>
+        <tr><td>「未言語化の近接」の受け渡し</td><td><span class="tag proposal">提案</span></td><td>本書 §5.2。<strong>未実装・未検証の新機能案</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">8.1 本書が到達していない範囲</h3>
+    <ul class="compact" style="font-size:13px; color:#3e4c59; padding-left:22px; margin:10px 0 0;">
+      <li><strong>効果を測っていない。</strong> 「AIに関係を渡すと出力品質が上がる」は本書では未検証の仮説である。C1 の実装後にドッグフード（ADR-0042）で確認すべきである。</li>
+      <li><strong>トークン量の見積もりが無い。</strong> 論理構造を渡すと入力が増える。代わりに座標を落とせる分と差し引きでどうなるか、代表規模（カード300・島30）での実測が要る。</li>
+      <li><strong>フロントエンド実装をサーバへ移す是非を判断していない。</strong> <code>buildAbstractMapExport</code> / <code>getDerivedIslandEdges</code> は TypeScript にある。API境界で投影するならサーバ実装が要り、TS↔Python の第2の契約ドリフト源（<code>test_ts_python_contract_drift.py</code> の対象）になりうる。C1 の主要な設計論点である。</li>
+      <li><strong>MCP・外部エージェント連携との関係を扱っていない。</strong> <code>external_agent_collaboration_spec</code> の <code>AgentTaskPackage</code> も同じ投影を必要とするはずだが、本書では突き合わせていない。</li>
+      <li><strong>本書は分析と提案であり決定ではない。</strong> §07 の C1・C5・C6 は ADR を要する。</li>
+    </ul>
+  </section>
+
+</main>
+</x-dc>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: "neutral",
+    fontFamily: '"Noto Sans JP", system-ui, sans-serif',
+    flowchart: { curve: "basis", padding: 14 }
+  });
+  function renderMermaidDiagrams() {
+    var nodes = document.querySelectorAll(".mermaid:not([data-processed])");
+    if (nodes.length) { mermaid.run({ nodes: nodes }); }
+  }
+  var scheduled = null;
+  function scheduleRender() {
+    if (scheduled !== null) { return; }
+    scheduled = setTimeout(function () { scheduled = null; renderMermaidDiagrams(); }, 60);
+  }
+  new MutationObserver(scheduleRender).observe(document.documentElement, { childList: true, subtree: true });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", scheduleRender);
+  } else {
+    scheduleRender();
+  }
+  window.addEventListener("load", scheduleRender);
+</script>
+</body>
+</html>

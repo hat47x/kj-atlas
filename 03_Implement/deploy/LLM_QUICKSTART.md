@@ -81,7 +81,7 @@ pytest tests/test_kj_session_e2e.py -v -m external_llm
 | `mock_local_llm.py` | — | テスト用決定論的スタブ（GPU不要・常時利用可能） |
 | **`openai_compatible_adapter.py`** | **全 OpenAI 互換 API** | **本番・開発用統一アダプタ** |
 
-> **非推奨**: `ollama_adapter.py` と `deepseek_adapter.py` は `openai_compatible_adapter.py` に統合されました。今後は統一アダプタを使用してください。
+> **削除済み**: `ollama_adapter.py` と `deepseek_adapter.py` は `openai_compatible_adapter.py` に統合されました。
 
 ## タスク別モデル選択
 
