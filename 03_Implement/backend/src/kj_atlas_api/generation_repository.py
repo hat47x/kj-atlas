@@ -1,13 +1,61 @@
-from sqlalchemy import update
+from sqlalchemy import exists, select, update
+from sqlalchemy.orm import aliased
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.models import CanvasRevisionHeadRow
+from kj_atlas_api.models import (
+    CanvasRevisionHeadRow,
+    CanvasRevisionParentRow,
+    CanvasRevisionPinRow,
+    CanvasRevisionRow,
+)
 from kj_atlas_api.tenant_context import TenantContext
 from kj_atlas_api.tenant_db_guard import apply_database_tenant_context
 
 
 class RevisionHeadConflict(RuntimeError):
     pass
+
+
+def list_ephemeral_gc_candidates(
+    db: Session,
+    *,
+    tenant: TenantContext,
+    older_than: str,
+    limit: int = 100,
+) -> list[CanvasRevisionRow]:
+    if limit < 1:
+        raise ValueError("GC candidate limit must be positive")
+    apply_database_tenant_context(db=db, tenant=tenant)
+    child = aliased(CanvasRevisionParentRow)
+    source = aliased(CanvasRevisionRow)
+    return list(
+        db.scalars(
+            select(CanvasRevisionRow)
+            .where(
+                CanvasRevisionRow.tenant_id == tenant.tenant_id,
+                CanvasRevisionRow.generation_tier == "ephemeral",
+                CanvasRevisionRow.created_at < older_than,
+                ~exists().where(
+                    CanvasRevisionHeadRow.tenant_id == CanvasRevisionRow.tenant_id,
+                    CanvasRevisionHeadRow.revision_id == CanvasRevisionRow.revision_id,
+                ),
+                ~exists().where(
+                    child.tenant_id == CanvasRevisionRow.tenant_id,
+                    child.parent_revision_id == CanvasRevisionRow.revision_id,
+                ),
+                ~exists().where(
+                    source.tenant_id == CanvasRevisionRow.tenant_id,
+                    source.source_revision_id == CanvasRevisionRow.revision_id,
+                ),
+                ~exists().where(
+                    CanvasRevisionPinRow.tenant_id == CanvasRevisionRow.tenant_id,
+                    CanvasRevisionPinRow.revision_id == CanvasRevisionRow.revision_id,
+                ),
+            )
+            .order_by(CanvasRevisionRow.created_at.asc(), CanvasRevisionRow.revision_id.asc())
+            .limit(limit)
+        ).all()
+    )
 
 
 def advance_revision_head(

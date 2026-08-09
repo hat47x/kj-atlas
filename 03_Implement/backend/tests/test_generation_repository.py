@@ -4,10 +4,16 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.generation_repository import RevisionHeadConflict, advance_revision_head
+from kj_atlas_api.generation_repository import (
+    RevisionHeadConflict,
+    advance_revision_head,
+    list_ephemeral_gc_candidates,
+)
 from kj_atlas_api.models import (
     Base,
     CanvasRevisionHeadRow,
+    CanvasRevisionParentRow,
+    CanvasRevisionPinRow,
     CanvasRevisionRow,
     ContentBlobRow,
     DocumentRow,
@@ -117,6 +123,48 @@ def test_revision_head_compare_and_swap_is_tenant_scoped(tmp_path) -> None:
             assert tenant_b is not None
             assert tenant_b.revision_id == "rev-1"
             assert tenant_b.head_version == 1
+
+            for revision_id in ("old-free", "old-pinned", "old-parent"):
+                db.add(
+                    CanvasRevisionRow(
+                        tenant_id="tenant-a",
+                        revision_id=revision_id,
+                        doc_id="doc",
+                        content_digest=digest,
+                        generation_tier="ephemeral",
+                        generation_reason="autosave",
+                        generation_origin="system",
+                        actor_ref=None,
+                        ai_run_ref=None,
+                        source_revision_id=None,
+                        created_at="2026-07-01T00:00:00Z",
+                    )
+                )
+            db.add(
+                CanvasRevisionPinRow(
+                    tenant_id="tenant-a",
+                    revision_id="old-pinned",
+                    pin_reason="user",
+                    created_at=timestamp,
+                )
+            )
+            db.add(
+                CanvasRevisionParentRow(
+                    tenant_id="tenant-a",
+                    revision_id="rev-2",
+                    parent_revision_id="old-parent",
+                    parent_order=0,
+                )
+            )
+            db.commit()
+            assert [
+                row.revision_id
+                for row in list_ephemeral_gc_candidates(
+                    db,
+                    tenant=_tenant("tenant-a"),
+                    older_than="2026-08-01T00:00:00Z",
+                )
+            ] == ["old-free"]
     finally:
         Base.metadata.drop_all(engine)
         engine.dispose()

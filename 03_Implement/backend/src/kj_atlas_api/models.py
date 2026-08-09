@@ -225,6 +225,24 @@ class CanvasRevisionHeadRow(Base):
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class CanvasRevisionPinRow(Base):
+    __tablename__ = "canvas_revision_pins"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["tenant_id", "revision_id"],
+            ["canvas_revisions.tenant_id", "canvas_revisions.revision_id"],
+            name="fk_canvas_revision_pins_revision",
+            ondelete="CASCADE",
+        ),
+        CheckConstraint("length(trim(pin_reason)) > 0", name="ck_canvas_revision_pins_reason"),
+    )
+
+    tenant_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    revision_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    pin_reason: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class IdentityProviderRow(Base):
     __tablename__ = "identity_providers"
     __table_args__ = (

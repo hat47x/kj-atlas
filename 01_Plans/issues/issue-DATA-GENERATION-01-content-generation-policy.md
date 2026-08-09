@@ -78,3 +78,10 @@
 - Gitは113,646 bytesでgzip full 447,181 bytesより約4倍小さかった。一方、100 commit＋GCは約37.8秒、3世代復元は約194msで、codecのencode約0.70秒、100世代restore約43msよりhot path costが大きい。
 - Gitを標準runtime正本／blob backendにしない判断を確定し、AC-8を完了した。将来のarchive／交換adapterは、利用要求が生じた場合だけ別gateで実装する。
 - AC-5には実利用由来fixture、branch／merge、1MiB級データが残る。現時点の標準候補はcontent-addressed revision DAG＋gzip full blobである。
+
+## Retention pin and GC candidate checkpoint 2026-08-10
+
+- `canvas_revision_pins`を追加し、tenant/revision複合FK、非空reason、PostgreSQL FORCE RLSで明示保持を表現した。
+- GCは削除から始めず、期限超過ephemeralの候補列挙として実装した。current head、他revisionの親、human acceptance等のsource、明示pinは候補から除外する。checkpoint／governedはtier条件で除外する。
+- 候補選定はtenant context必須、古い順、件数上限付きであり、別tenantの同名revisionを参照・選定しない。物理blob削除はrevision参照がなくなったことを別工程で確認するまで行わない。
+- ORM／lineage／分類／fresh upgrade-downgrade／GC候補の9件とRuffを通過した。実削除、branch到達性に基づく件数保持、blob orphan回収が残るためAC-6は未完了を維持する。
