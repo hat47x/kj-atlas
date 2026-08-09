@@ -11,7 +11,7 @@ external_tenant_ref to tenant_identity_providers.
   Nullable: not all idp rows need a tenant binding.
 
 Revision ID: 20260807_0014
-Revises: 20260720_0013
+Revises: 20260806_0014
 """
 
 from collections.abc import Sequence
@@ -21,7 +21,7 @@ import sqlalchemy as sa
 
 
 revision: str = "20260807_0014"
-down_revision: str | None = "20260720_0013"
+down_revision: str | None = "20260806_0014"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

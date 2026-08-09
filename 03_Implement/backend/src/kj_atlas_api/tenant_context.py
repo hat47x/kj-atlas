@@ -51,13 +51,47 @@ class TenantSummary:
 
 
 class TenantContextResolver(Protocol):
-    def resolve(self, *, db: Session, user_id: str | None) -> TenantContext:
+    # ADR-0063 D7: claim is optional for backward compatibility with single-tenant
+    # profile. SaaS profile must pass a VerifiedTenantClaim.
+    def resolve(
+        self,
+        *,
+        db: Session,
+        user_id: str | None,
+        claim: VerifiedTenantClaim | None = None,
+    ) -> TenantContext:
         ...
 
 
 class SingleTenantContextResolver:
-    def resolve(self, *, db: Session, user_id: str | None) -> TenantContext:
+    def resolve(
+        self,
+        *,
+        db: Session,
+        user_id: str | None,
+        claim: VerifiedTenantClaim | None = None,
+    ) -> TenantContext:
         return resolve_single_tenant_context(db=db, user_id=user_id)
+
+
+class ClaimBasedTenantContextResolver:
+    """ADR-0063 D9-4: SaaS tenant resolver that delegates to
+    resolve_verified_claim_tenant_context() with the auth-edge claim."""
+
+    def resolve(
+        self,
+        *,
+        db: Session,
+        user_id: str | None,
+        claim: VerifiedTenantClaim | None = None,
+    ) -> TenantContext:
+        if claim is None:
+            _deny_untrusted_tenant_context()
+        return resolve_verified_claim_tenant_context(
+            db=db,
+            user_id=user_id,
+            claim=claim,
+        )
 
 
 LOCAL_DEFAULT_TENANT_CONTEXT = TenantContext(
@@ -98,6 +132,10 @@ def _active_membership_context(
     user_id: str,
     tenant_id: str,
     resolved_by: TenantResolutionMethod,
+    # SEC-HTTP-02: intentional anti-enumeration asymmetry (api.md §10.2):
+    # - Current tenant membership inactive → 403 tenant_membership_inactive
+    # - Switch target not available → 404 tenant_not_available
+    # Unknown tenants must not be distinguishable from forbidden ones.
     unavailable_status: Literal["forbidden", "not_found"],
 ) -> TenantContext:
     user = db.get(UserRow, user_id)

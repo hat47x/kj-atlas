@@ -20,6 +20,7 @@ from kj_atlas_api.tenant_context import (
     TenantContextResolver,
     recheck_trusted_tenant_context,
 )
+from kj_atlas_api.trusted_auth_edge import JwtIdentityError
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,15 @@ def resolve_trusted_saas_request_session(
         )
     except HTTPException:
         raise
+    except JwtIdentityError as exc:
+        # ADR-0063 D6: identity-layer errors carry their own status codes.
+        # 401 = missing/bad token, 403 = identity not provisioned,
+        # 503 = JWKS unavailable.
+        raise _error(
+            status_code=exc.status_code,
+            code=exc.code,
+            message="Authentication failed.",
+        ) from None
     except Exception:
         logger.warning("SaaS identity resolver raised an unexpected error", exc_info=True)
         raise _error(
@@ -103,7 +113,11 @@ def resolve_trusted_saas_request_session(
         SingleTenantContextResolver(),
     )
     try:
-        tenant = tenant_resolver.resolve(db=db, user_id=principal_id)
+        tenant = tenant_resolver.resolve(
+            db=db,
+            user_id=principal_id,
+            claim=identity.verified_tenant_claim,
+        )
     except HTTPException:
         raise
     except Exception:

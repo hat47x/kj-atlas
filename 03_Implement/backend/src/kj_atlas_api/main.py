@@ -31,6 +31,7 @@ from kj_atlas_api.trusted_saas_runtime import (
     TrustedSaasRuntimePolicy,
     initialize_trusted_saas_runtime,
     release_trusted_saas_runtime,
+    validate_saas_providers_exist,
     validate_trusted_saas_runtime_preflight,
 )
 
@@ -53,6 +54,9 @@ def _trusted_saas_runtime_policy() -> TrustedSaasRuntimePolicy:
         access_control_fail_safe_mode=settings.access_control_fail_safe_mode,
         document_policy_binding_resolver=settings.document_policy_binding_resolver,
         tenant_capability_resolver=settings.tenant_capability_resolver,
+        # ADR-0063 D9-6: auth-edge settings
+        jwt_algorithms=settings.jwt_algorithms,
+        tenant_claim_name=settings.tenant_claim_name,
     )
 
 
@@ -78,6 +82,9 @@ async def lifespan(app: FastAPI):
         runtime_components=runtime_components,
     )
     init_db()
+    # ADR-0063 D9-6: post-DB-init check for active identity providers.
+    if settings.runtime_profile == "saas-multitenant":
+        validate_saas_providers_exist()
     app.state.runtime_profile = settings.runtime_profile
     app.state.audit_dispatcher = build_audit_dispatcher()
     app.state.access_control_adapter = runtime_components.access_control_adapter
@@ -96,6 +103,32 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="kj-atlas API", lifespan=lifespan)
+
+# ADR-0063 D9-6: install the trusted SaaS runtime adapter bundle at module
+# scope so that initialize_trusted_saas_runtime() can find it during lifespan.
+# The bundle is only installed for saas-multitenant; other profiles are unaffected.
+if settings.runtime_profile == "saas-multitenant":
+    from kj_atlas_api.active_tenant_session import (
+        InMemoryActiveTenantSessionPersister,
+    )
+    from kj_atlas_api.jwks_store import JwksStore
+    from kj_atlas_api.tenant_context import ClaimBasedTenantContextResolver
+    from kj_atlas_api.trusted_auth_edge import JwtSaasIdentityContextResolver
+    from kj_atlas_api.trusted_saas_runtime import (
+        TrustedSaasRuntimeAdapters,
+        install_trusted_saas_runtime,
+    )
+    install_trusted_saas_runtime(
+        app,
+        TrustedSaasRuntimeAdapters(
+            identity_context_resolver=JwtSaasIdentityContextResolver(
+                jwks_store=JwksStore(),
+            ),
+            tenant_context_resolver=ClaimBasedTenantContextResolver(),
+            active_tenant_session_persister=InMemoryActiveTenantSessionPersister(),
+        ),
+    )
+
 app.add_middleware(JsonRequestBodySafetyMiddleware)
 
 

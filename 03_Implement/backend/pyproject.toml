@@ -23,6 +23,7 @@ test = [
   "pytest",
   "httpx",
   "ruff==0.15.22",
+  "python-multipart",
 ]
 # SAAS-TENANT-01 AC-5: driver for `postgresql+psycopg` (see
 # kj_atlas_api.db._normalize_database_url). Only needed to run the

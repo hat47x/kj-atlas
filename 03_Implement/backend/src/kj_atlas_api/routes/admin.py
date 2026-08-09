@@ -14,14 +14,21 @@ from kj_atlas_api.identity_binding import (
     ensure_user_identity_binding,
     resolve_user_identity,
 )
-from kj_atlas_api.models import UserIdentityRow, UserRow
-from kj_atlas_api.models import A2A3GateValidationRequest, A2A3GateValidationResponse
+from kj_atlas_api.models import (
+    A2A3GateValidationRequest,
+    A2A3GateValidationResponse,
+    IdentityProviderRow,
+    TenantIdentityProviderRow,
+    TenantRow,
+    UserIdentityRow,
+    UserRow,
+)
 from kj_atlas_api.reviewer_ref import (
     ReviewerRefResolutionInput,
     build_reviewer_ref_resolver_adapter,
 )
 from kj_atlas_api.runtime_bootstrap import resolve_tenant_session_bootstrap_mode
-from kj_atlas_api.settings import settings
+from kj_atlas_api.settings import settings, _validate_trusted_http_endpoint
 from kj_atlas_api.tenant_foundation import ensure_local_default_membership
 
 router = APIRouter(prefix="/admin/provision", tags=["admin"])
@@ -268,4 +275,215 @@ def validate_a2_a3_gate(payload: A2A3GateValidationRequest) -> A2A3GateValidatio
     go = all(payload_dict[key] == value for key, value in frozen_values.items())
     if not go:
         raise HTTPException(status_code=409, detail="A2/A3 gate invariants violated")
+    return A2A3GateValidationResponse(go=True)
+
+
+# ---------------------------------------------------------------------------
+# ADR-0063 D9-1 / ADR-0064: Identity Provider registration (Platform Control Plane)
+# ---------------------------------------------------------------------------
+
+
+_VALID_PROTOCOLS_V1 = frozenset({"oidc"})
+
+
+class RegisterIdentityProviderRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    issuer: str = Field(min_length=1)
+    audience: str = Field(min_length=1)
+    protocol: str = "oidc"
+    jwksUri: str | None = Field(default=None, validation_alias="jwksUri")
+
+
+class RegisterIdentityProviderResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    identityProviderId: str
+    issuer: str
+    audience: str
+    protocol: str
+    jwksUri: str | None = None
+
+
+class RegisterTenantIdentityProviderRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tenantId: str = Field(min_length=1)
+    identityProviderId: str = Field(min_length=1)
+    externalTenantRef: str | None = None
+
+
+class RegisterTenantIdentityProviderResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tenantId: str
+    identityProviderId: str
+    externalTenantRef: str | None = None
+
+
+@router.post(
+    "/identity-providers",
+    response_model=RegisterIdentityProviderResponse,
+    status_code=201,
+    dependencies=[Depends(require_single_tenant_provisioning_surface)],
+)
+def register_identity_provider(
+    payload: RegisterIdentityProviderRequest,
+    db: Session = Depends(get_db),
+) -> RegisterIdentityProviderResponse:
+    """ADR-0063 D9-1: register a trusted identity provider (broker / IdP).
+
+    Validates the JWKS URI against the trusted-HTTP-endpoint contract.
+    Protocol v1 accepts 'oidc' only.
+    """
+    issuer = payload.issuer.strip()
+    audience = payload.audience.strip()
+    protocol = payload.protocol.strip().lower()
+
+    if protocol not in _VALID_PROTOCOLS_V1:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "unsupported_protocol",
+                "message": f"Protocol must be one of: {', '.join(sorted(_VALID_PROTOCOLS_V1))}",
+            },
+        )
+
+    if payload.jwksUri is not None:
+        jwks_uri = payload.jwksUri.strip()
+        if not jwks_uri:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "code": "invalid_jwks_uri",
+                    "message": "jwksUri must be non-empty if provided.",
+                },
+            )
+        try:
+            _validate_trusted_http_endpoint(
+                endpoint=jwks_uri,
+                endpoint_key="jwksUri",
+            )
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "code": "invalid_jwks_uri",
+                    "message": str(exc),
+                },
+            ) from None
+    else:
+        jwks_uri = None
+
+    # Check for duplicate issuer+audience.
+    existing = (
+        db.query(IdentityProviderRow)
+        .filter(
+            IdentityProviderRow.issuer == issuer,
+            IdentityProviderRow.audience == audience,
+        )
+        .one_or_none()
+    )
+    if existing is not None:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "identity_provider_exists",
+                "message": "An identity provider with this issuer+audience already exists.",
+            },
+        )
+
+    provider_id = f"idp-{uuid4().hex[:12]}"
+    now_iso = datetime.now(timezone.utc).isoformat()
+    db.add(
+        IdentityProviderRow(
+            id=provider_id,
+            issuer=issuer,
+            audience=audience,
+            protocol=protocol,
+            jwks_uri=jwks_uri,
+            lifecycle_state="active",
+            created_at=now_iso,
+            updated_at=now_iso,
+        )
+    )
+    db.commit()
+    return RegisterIdentityProviderResponse(
+        identityProviderId=provider_id,
+        issuer=issuer,
+        audience=audience,
+        protocol=protocol,
+        jwksUri=jwks_uri,
+    )
+
+
+@router.post(
+    "/tenant-identity-providers",
+    response_model=RegisterTenantIdentityProviderResponse,
+    status_code=201,
+    dependencies=[Depends(require_single_tenant_provisioning_surface)],
+)
+def register_tenant_identity_provider(
+    payload: RegisterTenantIdentityProviderRequest,
+    db: Session = Depends(get_db),
+) -> RegisterTenantIdentityProviderResponse:
+    """ADR-0063 D8: link a tenant to an identity provider with an external
+    tenant reference (mapping the broker's organization claim to tenants.id).
+    """
+    tenant_id = payload.tenantId.strip()
+    provider_id = payload.identityProviderId.strip()
+    external_ref = payload.externalTenantRef.strip() if payload.externalTenantRef else None
+    if external_ref == "":
+        external_ref = None
+
+    # Verify tenant exists.
+    tenant = db.get(TenantRow, tenant_id)
+    if tenant is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "tenant_not_found",
+                "message": "Tenant does not exist.",
+            },
+        )
+
+    # Verify identity provider exists.
+    provider = db.get(IdentityProviderRow, provider_id)
+    if provider is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "identity_provider_not_found",
+                "message": "Identity provider does not exist.",
+            },
+        )
+
+    # Check for duplicate (identity_provider_id, external_tenant_ref).
+    existing = db.get(TenantIdentityProviderRow, (tenant_id, provider_id))
+    if existing is not None:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "tenant_identity_provider_exists",
+                "message": "This tenant is already linked to this identity provider.",
+            },
+        )
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    db.add(
+        TenantIdentityProviderRow(
+            tenant_id=tenant_id,
+            identity_provider_id=provider_id,
+            external_tenant_ref=external_ref,
+            lifecycle_state="active",
+            created_at=now_iso,
+            updated_at=now_iso,
+        )
+    )
+    db.commit()
+    return RegisterTenantIdentityProviderResponse(
+        tenantId=tenant_id,
+        identityProviderId=provider_id,
+        externalTenantRef=external_ref,
+    )
     return A2A3GateValidationResponse(go=True)

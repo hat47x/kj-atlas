@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 from uuid import uuid4
 
 from fastapi import HTTPException, Request
@@ -23,6 +23,12 @@ from kj_atlas_api.reviewer_ref import (
 from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_foundation import ensure_local_default_membership
 
+if TYPE_CHECKING:
+    from kj_atlas_api.tenant_context import VerifiedTenantClaim
+
+# One-time warning flag for TRUSTED_PROXIES configuration.
+_trusted_proxies_warned = False
+
 
 @dataclass(frozen=True)
 class ResolvedIdentity:
@@ -30,6 +36,10 @@ class ResolvedIdentity:
     reviewer_ref: str | None
     owner_ref: str | None
     auth_context: AuthContext
+    # ADR-0063 D7: verified tenant claim from the auth edge.
+    # None for single-tenant profile (header mode). Populated by
+    # JwtSaasIdentityContextResolver when a broker-issued JWT is verified.
+    verified_tenant_claim: VerifiedTenantClaim | None = None
 
 
 class SaasIdentityContextResolver(Protocol):
@@ -74,7 +84,65 @@ def _resolve_identity_row(*, db: Session, provider: str, external_uid: str) -> U
         ) from None
 
 
+def _check_trusted_proxy(request: Request) -> None:
+    """ADR-0063 correction #2: verify the request came from a trusted proxy.
+
+    Only applies to single-tenant header-based auth. When
+    KJ_ATLAS_TRUSTED_PROXIES is configured, requests from non-proxy IPs
+    are rejected to prevent header spoofing attacks.
+    """
+    import ipaddress
+    import logging
+
+    logger = logging.getLogger(__name__)
+    global _trusted_proxies_warned
+    raw_cidrs = settings.trusted_proxies.strip()
+    if not raw_cidrs:
+        if not _trusted_proxies_warned:
+            _trusted_proxies_warned = True
+            logger.warning(
+                "TRUSTED_PROXIES is not configured. All forwarded auth "
+                "headers (X-Forwarded-User etc.) are accepted from any "
+                "origin. Set KJ_ATLAS_TRUSTED_PROXIES to a comma-separated "
+                "list of trusted proxy CIDRs for production use."
+            )
+        return  # Not configured — backward compatible.
+
+    client_ip = request.client.host if request.client else None
+    if client_ip is None:
+        raise HTTPException(
+            status_code=403,
+            detail={"code": "untrusted_proxy",
+                    "message": "Client IP could not be determined."},
+        )
+
+    try:
+        client_addr = ipaddress.ip_address(client_ip)
+    except ValueError:
+        raise HTTPException(
+            status_code=403,
+            detail={"code": "untrusted_proxy",
+                    "message": "Invalid client IP address."},
+        ) from None
+
+    for cidr in raw_cidrs.split(","):
+        cidr = cidr.strip()
+        if not cidr:
+            continue
+        if client_addr in ipaddress.ip_network(cidr, strict=False):
+            return  # Trusted.
+
+    raise HTTPException(
+        status_code=403,
+        detail={"code": "untrusted_proxy",
+                "message": "Request did not originate from a trusted proxy."},
+    )
+
+
 def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdentity:
+    # ADR-0063 correction #2: verify trusted proxy before reading forwarded headers.
+    _check_trusted_proxy(request)
+
     reviewer_ref_adapter = build_reviewer_ref_resolver_adapter(
         adapter_name=settings.reviewer_ref_resolver_adapter
     )

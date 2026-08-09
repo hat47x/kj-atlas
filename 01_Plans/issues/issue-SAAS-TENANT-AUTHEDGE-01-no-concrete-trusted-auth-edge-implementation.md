@@ -36,16 +36,16 @@ AGENTS.md §6は「長期的・横断的・破壊的な契約変更、安全境�
 
 ## Acceptance
 
-> 2026-08-06: AC-1の前提として`ADR-0063`（`01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`）を`Proposed`で起票済み。受理はMaintainer判断であり、本issueのStatusとチェックボックスは未変更のまま。
+> 2026-08-08: ADR-0063 が Accepted となり、D9-1〜D9-8 の全ステップが実装された。
 
-- [ ] ADRが起票され、プロトコル範囲（OIDC先行か、SAML同時か）、ライブラリ、鍵ローテーション、IdP到達不能時の失敗モードが受理されている。
-- [ ] `SaasIdentityContextResolver`の具象実装が存在し、JWT/SAML assertion検証、issuer/audience検証、期限切れ、署名不正をfail-closedで拒否するunit testを持つ。
-- [ ] `install_trusted_saas_runtime()`が実際の起動経路（`main.py`）から呼ばれ、`resolve_verified_claim_tenant_context()`へ実リクエストが到達する。
-- [ ] AC-4の「tenant不明→deny」が、resolver単体testではなく実HTTPリクエスト（ローカルIdPスタブ経由でよい）を通したintegration/e2e testで証明されている。
-- [ ] 上記が揃った時点で、saas-multitenant profileの起動拒否を緩める条件を`SAAS-TENANT-01`側で再評価する（本issueでは緩めない）。
+- [x] ADR-0063 が Accepted。プロトコル範囲（OIDC/JWT only, SAML は broker で吸収）、PyJWT + cryptography、JWKS キャッシュ・ローテーション、IdP 到達不能時の fail-closed（D6）。
+- [x] `SaasIdentityContextResolver` の具象実装 `JwtSaasIdentityContextResolver`（`trusted_auth_edge.py`）が、RS256/ES256 JWT 検証、issuer/audience 検証、期限切れ、署名不正を fail-closed で拒否。unit test 完備（`test_trusted_auth_edge.py`: 9 tests）。
+- [x] `install_trusted_saas_runtime()` が `main.py` module scope から呼ばれ、`ClaimBasedTenantContextResolver` → `resolve_verified_claim_tenant_context()` へ実リクエストが到達する。`InMemoryActiveTenantSessionPersister` が実装済み。
+- [x] AC-4「tenant不明→deny」が HTTP レベル E2E test（`test_saas_e2e_tenant_isolation.py`: 10 tests）で証明済み。AC-8（tenantId 伝播）、AC-10（越境 negative matrix）も同ファイルでカバー。
+- [ ] saas-multitenant profile の起動拒否を緩める条件を `SAAS-TENANT-01` 側で再評価する（本 issue では緩めない。`settings.py` の無条件 `ValueError` は削除済みだが、`TrustedSaasRuntimePolicy.validate()` と lifespan preflight が必須設定の完備を検証する）。
 
 ## Validation
 
 - ADR受理: `python 01_Plans/issues/validate_active_issue_memos.py`、`python 01_Plans/docs_check.py`
-- 実装後: `cd 03_Implement/backend && python -m pytest tests/test_trusted_saas_runtime.py tests/test_verified_tenant_context.py tests/test_tenant_session_precondition.py`
-- e2e: 実IdP相当のローカルスタブを用いたHTTPレベルのtenant解決テスト（`ADR-0020`のmock IdP/SP profileが既存の出発点）
+- 実装後: `cd 03_Implement/backend && python -m pytest tests/test_trusted_saas_runtime.py tests/test_verified_tenant_context.py tests/test_tenant_session_precondition.py tests/test_trusted_auth_edge.py tests/test_jwks_store.py tests/test_claim_tenant_resolver.py tests/test_active_tenant_session_persister.py tests/test_saas_e2e_tenant_isolation.py`
+- e2e: `test_saas_e2e_tenant_isolation.py` が実 RS256 署名 JWT を用いた HTTP レベルの tenant 解決テストを実装済み

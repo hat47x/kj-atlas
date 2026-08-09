@@ -52,7 +52,12 @@ class TrustedSaasRuntimeAdapters:
 
 @dataclass(frozen=True, slots=True)
 class TrustedSaasRuntimePolicy:
-    """Validated non-secret settings required before a shared SaaS startup."""
+    """Validated non-secret settings required before a shared SaaS startup.
+
+    ADR-0063 D9-6: includes auth-edge-side checks (JWT algorithms,
+    tenant claim name, mode). Active identity_providers rows are
+    checked post-DB-init in _validate_saas_providers_exist().
+    """
 
     database_backend: str
     allow_jit_provisioning: bool
@@ -60,6 +65,9 @@ class TrustedSaasRuntimePolicy:
     access_control_fail_safe_mode: str
     document_policy_binding_resolver: str
     tenant_capability_resolver: str
+    # ADR-0063 D9-6: JWT auth-edge settings
+    jwt_algorithms: str = "RS256,ES256"
+    tenant_claim_name: str = "tenant_ref"
 
     def validate(self) -> None:
         requirements = (
@@ -75,6 +83,10 @@ class TrustedSaasRuntimePolicy:
                 self.tenant_capability_resolver == "external_http",
                 "external tenant capability resolution",
             ),
+            # ADR-0063 D9-6: JWT algorithms must be non-empty (Settings already
+            # validates no-HMAC, known-algorithms-only, but cross-check here).
+            (bool(self.jwt_algorithms.strip()), "JWT algorithm allowlist set"),
+            (bool(self.tenant_claim_name.strip()), "tenant claim name set"),
         )
         missing = [label for available, label in requirements if not available]
         if missing:
@@ -255,3 +267,46 @@ def release_trusted_saas_runtime(app: FastAPI) -> None:
     app.state.active_tenant_session_persister = None
     app.state.document_access_resource_resolver = SingleTenantHeaderResourceResolver()
     setattr(app.state, _STARTED_STATE_KEY, False)
+
+
+def validate_saas_providers_exist() -> None:
+    """ADR-0063 D9-6: post-DB-init check that at least one active identity
+    provider with a JWKS URI is registered.
+
+    Called after database initialization in the lifespan. Logs a warning
+    rather than blocking startup, so that the admin API can be used to
+    register the first provider (chicken-and-egg problem).
+    """
+    import logging
+
+    from kj_atlas_api.models import IdentityProviderRow
+
+    logger = logging.getLogger(__name__)
+    try:
+        from kj_atlas_api.db import SessionLocal
+
+        db = SessionLocal()
+        try:
+            count = (
+                db.query(IdentityProviderRow)
+                .filter(
+                    IdentityProviderRow.lifecycle_state == "active",
+                    IdentityProviderRow.jwks_uri.isnot(None),
+                )
+                .count()
+            )
+            if count == 0:
+                logger.warning(
+                    "SaaS profile: no active identity providers with JWKS URI "
+                    "found. Register at least one via "
+                    "POST /admin/provision/identity-providers before "
+                    "authentication requests will succeed."
+                )
+        finally:
+            db.close()
+    except Exception:
+        logger.warning(
+            "SaaS profile: could not check identity_providers table "
+            "(database may not be ready).",
+            exc_info=True,
+        )

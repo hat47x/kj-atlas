@@ -10,12 +10,16 @@ JWT requirements (ADR-0063 D2/D4):
 - Token header jku/x5u/embedded key references are never followed.
 - kid is resolved from the fetched JWK set only.
 - Clock skew tolerance: 60 seconds (fixed, not configurable).
-- exp/iss/aud/alg validation is enforced on every call.
+- exp/iss/aud/alg/iat validation is enforced on every call.
+- jti replay detection with bounded time-based cache.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import logging
+import time
+from dataclasses import dataclass, field
+from threading import Lock
 
 import jwt
 from fastapi import Request
@@ -23,12 +27,74 @@ from sqlalchemy.orm import Session
 
 from kj_atlas_api.auth_context import AuthContext, ResolvedIdentity
 from kj_atlas_api.jwks_store import JwksStore
-from kj_atlas_api.models import IdentityProviderRow
+from kj_atlas_api.models import IdentityProviderRow, TenantIdentityProviderRow
+from kj_atlas_api.settings import settings
+from kj_atlas_api.tenant_context import VerifiedTenantClaim
 
-# ADR-0063 D4: algorithm allowlist (RS256, ES256). HMAC and 'none' rejected.
-_JWT_ALGORITHMS = frozenset({"RS256", "ES256"})
-# ADR-0063 D4: clock skew 60 seconds fixed.
+logger = logging.getLogger(__name__)
 _JWT_CLOCK_SKEW_SECONDS = 60
+# ADR-0064: maximum JWKS response size in bytes (128 KiB).
+_JWKS_MAX_RESPONSE_BYTES = 128 * 1024
+# Maximum JWT lifetime for jti replay cache (default: 1 hour + 60s skew).
+_JTI_CACHE_TTL_SECONDS = 3660
+# Maximum number of jti entries to retain.
+_JTI_CACHE_MAX_ENTRIES = 100_000
+# Allowed JWK key types. HMAC ('oct') is always rejected.
+_ALLOWED_JWK_KEY_TYPES = frozenset({"RSA", "EC"})
+
+
+# ---------------------------------------------------------------------------
+# JTI replay detection
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class _JtiCache:
+    """Thread-safe, time-bounded cache of recently seen JWT IDs."""
+
+    _seen: dict[str, float] = field(default_factory=dict)
+    _lock: Lock = field(default_factory=Lock)
+
+    def check_and_record(self, jti: str, now: float | None = None) -> bool:
+        """Return True if jti is new (not replayed). Records it atomically."""
+        if now is None:
+            now = time.monotonic()
+        with self._lock:
+            # Evict expired entries.
+            expired = [k for k, ts in self._seen.items() if now - ts > _JTI_CACHE_TTL_SECONDS]
+            for k in expired:
+                del self._seen[k]
+            if jti in self._seen:
+                return False
+            # Bound cache size.
+            if len(self._seen) >= _JTI_CACHE_MAX_ENTRIES:
+                oldest = min(self._seen.items(), key=lambda x: x[1])[0]
+                del self._seen[oldest]
+            self._seen[jti] = now
+            return True
+
+
+# Global JTI replay cache shared across all resolver instances.
+_jti_cache = _JtiCache()
+
+
+# ---------------------------------------------------------------------------
+# Algorithm helpers
+# ---------------------------------------------------------------------------
+
+
+def _jwt_algorithms() -> list[str]:
+    """Return the configured JWT algorithm allowlist (comma-separated setting).
+
+    Settings validation guarantees a non-empty, HMAC-free list of known
+    asymmetric algorithms. This is defense-in-depth: an empty list passed
+    to jwt.decode(algorithms=[]) would silently accept any algorithm,
+    including 'none'.
+    """
+    algorithms = [alg.strip() for alg in settings.jwt_algorithms.split(",") if alg.strip()]
+    if not algorithms:
+        raise JwtIdentityError(status_code=503, code="configuration_error")
+    return algorithms
 
 # Header name carrying the JWT bearer token (ADR-0020 §3-2 jwt_header mode).
 _JWT_HEADER = "X-Kj-Atlas-Authorization"
@@ -69,6 +135,52 @@ def _resolve_identity_provider(db: Session, issuer: str, audience: str) -> Ident
     )
 
 
+def _resolve_key_by_kid(
+    jwks_keys: list[dict[str, object]],
+    kid: str | None,
+) -> object:
+    """Find a JWK by kid and return its cryptography key object.
+
+    ADR-0063 D4: kid is resolved from the fetched JWK set only;
+    jku/x5u/embedded key references are never followed.
+
+    If kid is None and the JWKS contains exactly one key, that key is used
+    (compatibility with single-key IdPs that omit kid).
+    """
+    if kid is None:
+        if len(jwks_keys) == 1:
+            return _key_from_jwk_dict(jwks_keys[0])
+        raise JwtIdentityError(status_code=401, code="invalid_token")
+    for key_dict in jwks_keys:
+        if key_dict.get("kid") == kid:
+            return _key_from_jwk_dict(key_dict)
+    raise JwtIdentityError(status_code=401, code="invalid_token")
+
+
+def _key_from_jwk_dict(key_dict: dict[str, object]) -> object:
+    """Convert a JWK dict to a cryptography key, rejecting non-RSA/EC types."""
+    kty = key_dict.get("kty")
+    if not isinstance(kty, str) or kty not in _ALLOWED_JWK_KEY_TYPES:
+        raise JwtIdentityError(status_code=401, code="invalid_token")
+    pyjwk = jwt.PyJWK.from_dict(key_dict)  # type: ignore[attr-defined]
+    return pyjwk.key
+
+
+def _normalize_audience(raw_aud: object) -> list[str]:
+    """Normalize the aud claim to a list of audience strings.
+
+    OIDC allows aud to be a single string or an array. Returns a non-empty
+    list of unique audience values.
+    """
+    if isinstance(raw_aud, str):
+        return [raw_aud]
+    if isinstance(raw_aud, list):
+        result = [str(v) for v in raw_aud if isinstance(v, str)]
+        if result:
+            return list(dict.fromkeys(result))  # deduplicate preserving order
+    return []
+
+
 def _verify_jwt(
     token: str,
     jwks_keys: list[dict[str, object]],
@@ -77,35 +189,101 @@ def _verify_jwt(
 ) -> dict[str, object]:
     """Verify a JWT token against the given JWK set and expected issuer/audience.
 
+    For tokens with aud as an array (OIDC), each audience value is tried
+    until one matches the expected provider audience.
+
     Raises JwtIdentityError on any verification failure.
     """
+    # ADR-0063 D4: resolve kid from the fetched JWK set only.
     try:
-        # jwt.decode() with algorithms= rejects 'none' and HMAC automatically.
+        header_unverified = jwt.get_unverified_header(token)
+    except jwt.PyJWTError:
+        raise JwtIdentityError(status_code=401, code="invalid_token") from None
+    kid = header_unverified.get("kid")
+
+    try:
+        signing_key = _resolve_key_by_kid(jwks_keys, kid)
+    except JwtIdentityError:
+        raise
+    except Exception:
+        raise JwtIdentityError(status_code=401, code="invalid_token") from None
+
+    try:
         return jwt.decode(
             token,
-            key=jwt.PyJWKSet.from_dict({"keys": jwks_keys}),
-            algorithms=list(_JWT_ALGORITHMS),
+            key=signing_key,
+            algorithms=list(_jwt_algorithms()),
             issuer=issuer,
             audience=audience,
             options={
-                "require": ["exp", "iss", "aud", "sub"],
+                "require": ["exp", "iss", "aud", "sub", "iat"],
                 "verify_signature": True,
                 "verify_exp": True,
                 "verify_iss": True,
                 "verify_aud": True,
+                "verify_iat": True,
+                "verify_nbf": True,
             },
             leeway=_JWT_CLOCK_SKEW_SECONDS,
         )
+    except jwt.InvalidAudienceError:
+        # OIDC compliance: if aud is an array, try each value.
+        pass
     except jwt.ExpiredSignatureError:
         raise JwtIdentityError(status_code=401, code="token_expired") from None
     except jwt.InvalidIssuerError:
         raise JwtIdentityError(status_code=401, code="invalid_issuer") from None
-    except jwt.InvalidAudienceError:
-        raise JwtIdentityError(status_code=401, code="invalid_audience") from None
     except jwt.InvalidSignatureError:
         raise JwtIdentityError(status_code=401, code="invalid_signature") from None
     except jwt.PyJWTError:
         raise JwtIdentityError(status_code=401, code="invalid_token") from None
+
+    # If direct audience match failed, peek at the aud claim and try each value.
+    try:
+        claims_unverified = jwt.decode(
+            token,
+            options={"verify_signature": False},
+            algorithms=list(_jwt_algorithms()),
+        )
+    except jwt.PyJWTError:
+        raise JwtIdentityError(status_code=401, code="invalid_token") from None
+
+    aud_values = _normalize_audience(claims_unverified.get("aud"))
+    if not aud_values:
+        raise JwtIdentityError(status_code=401, code="invalid_audience") from None
+
+    last_error = None
+    for aud in aud_values:
+        try:
+            return jwt.decode(
+                token,
+                key=signing_key,
+                algorithms=list(_jwt_algorithms()),
+                issuer=issuer,
+                audience=aud,
+                options={
+                    "require": ["exp", "iss", "aud", "sub", "iat"],
+                    "verify_signature": True,
+                    "verify_exp": True,
+                    "verify_iss": True,
+                    "verify_aud": True,
+                    "verify_iat": True,
+                },
+                leeway=_JWT_CLOCK_SKEW_SECONDS,
+            )
+        except jwt.InvalidAudienceError as exc:
+            last_error = exc
+            continue
+        except jwt.ExpiredSignatureError:
+            raise JwtIdentityError(status_code=401, code="token_expired") from None
+        except jwt.InvalidIssuerError:
+            raise JwtIdentityError(status_code=401, code="invalid_issuer") from None
+        except jwt.InvalidSignatureError:
+            raise JwtIdentityError(status_code=401, code="invalid_signature") from None
+        except jwt.PyJWTError:
+            raise JwtIdentityError(status_code=401, code="invalid_token") from None
+
+    raise JwtIdentityError(status_code=401, code="invalid_audience") from last_error
 
 
 def _resolve_subject_to_user_id(db: Session, provider_id: str, subject: str) -> str | None:
@@ -121,6 +299,53 @@ def _resolve_subject_to_user_id(db: Session, provider_id: str, subject: str) -> 
         .one_or_none()
     )
     return row.user_id if row is not None else None
+
+
+def _resolve_tenant_claim(
+    *,
+    db: Session,
+    verified_claims: dict[str, object],
+    provider: IdentityProviderRow,
+    subject: str,
+) -> VerifiedTenantClaim:
+    """ADR-0063 D8: extract the external tenant ref from verified JWT claims
+    and map it to a kj-atlas tenant_id via tenant_identity_providers.
+
+    A missing or unmapped tenant claim is denied (401) — the token carries
+    insufficient evidence to establish tenant context.
+    """
+    tenant_claim_name = settings.tenant_claim_name
+    external_tenant_ref = verified_claims.get(tenant_claim_name)
+    if not isinstance(external_tenant_ref, str) or not external_tenant_ref:
+        logger.info(
+            "auth edge: missing tenant claim provider=%s subject=%s",
+            provider.id, subject,
+        )
+        raise JwtIdentityError(status_code=401, code="missing_tenant_claim")
+
+    tenant_provider = (
+        db.query(TenantIdentityProviderRow)
+        .filter(
+            TenantIdentityProviderRow.identity_provider_id == provider.id,
+            TenantIdentityProviderRow.external_tenant_ref == external_tenant_ref,
+            TenantIdentityProviderRow.lifecycle_state == "active",
+        )
+        .one_or_none()
+    )
+    if tenant_provider is None:
+        logger.info(
+            "auth edge: unknown tenant provider=%s ref=%s subject=%s",
+            provider.id, external_tenant_ref, subject,
+        )
+        raise JwtIdentityError(status_code=401, code="unknown_tenant")
+
+    return VerifiedTenantClaim(
+        tenant_id=tenant_provider.tenant_id,
+        identity_provider_id=provider.id,
+        issuer=provider.issuer,
+        audience=provider.audience,
+        subject=subject,
+    )
 
 
 class JwtSaasIdentityContextResolver:
@@ -141,6 +366,7 @@ class JwtSaasIdentityContextResolver:
         """
         token = _extract_bearer_token(request)
         if token is None:
+            logger.info("auth edge: missing bearer token")
             raise JwtIdentityError(status_code=401, code="missing_token")
 
         # Peek at issuer / audience without trusting the signature yet.
@@ -148,31 +374,76 @@ class JwtSaasIdentityContextResolver:
             claims_unverified: dict[str, object] = jwt.decode(
                 token,
                 options={"verify_signature": False},
-                algorithms=list(_JWT_ALGORITHMS),
+                algorithms=list(_jwt_algorithms()),
             )
         except jwt.PyJWTError:
             raise JwtIdentityError(status_code=401, code="invalid_token") from None
 
         issuer = claims_unverified.get("iss")
-        audience = claims_unverified.get("aud")
-        if not isinstance(issuer, str) or not isinstance(audience, str):
+        audience_raw = claims_unverified.get("aud")
+        if not isinstance(issuer, str):
             raise JwtIdentityError(status_code=401, code="invalid_token")
 
-        provider = _resolve_identity_provider(db, issuer, audience)
+        # OIDC compliance: aud may be a string or list of strings.
+        aud_values = _normalize_audience(audience_raw)
+        if not aud_values:
+            raise JwtIdentityError(status_code=401, code="invalid_token")
+
+        # Try each audience value against known providers.
+        provider = None
+        matched_audience = ""
+        for aud in aud_values:
+            provider = _resolve_identity_provider(db, issuer, aud)
+            if provider is not None:
+                matched_audience = aud
+                break
         if provider is None:
+            raise JwtIdentityError(status_code=401, code="unknown_provider")
+        if provider is None:
+            logger.info(
+                "auth edge: unknown provider issuer=%s", issuer,
+            )
             raise JwtIdentityError(status_code=401, code="unknown_provider")
 
         # Fetch JWKS and verify with signature.
         keys = self._fetch_jwks_keys(provider)
 
-        verified = _verify_jwt(token, keys, issuer, audience)
+        verified = _verify_jwt(token, keys, issuer, matched_audience)
+
+        # jti replay detection: reject tokens whose jti has been seen before.
+        jti = verified.get("jti")
+        if isinstance(jti, str) and not _jti_cache.check_and_record(jti):
+            logger.warning(
+                "auth edge: jti replay detected sub=%s jti=%s",
+                verified.get("sub"), jti,
+            )
+            raise JwtIdentityError(status_code=401, code="token_replayed")
+
         subject = verified.get("sub")
         if not isinstance(subject, str):
             raise JwtIdentityError(status_code=401, code="invalid_token")
 
         user_id = _resolve_subject_to_user_id(db, provider.id, subject)
         if user_id is None:
+            logger.info(
+                "auth edge: identity not provisioned provider=%s subject=%s",
+                provider.id, subject,
+            )
             raise JwtIdentityError(status_code=403, code="identity_not_provisioned")
+
+        logger.debug(
+            "auth edge: JWT verified provider=%s subject=%s user=%s tenant=%s",
+            provider.id, subject, user_id,
+            verified.get(settings.tenant_claim_name),
+        )
+
+        # ADR-0063 D7/D8: resolve tenant claim from verified JWT.
+        verified_tenant_claim = _resolve_tenant_claim(
+            db=db,
+            verified_claims=verified,
+            provider=provider,
+            subject=subject,
+        )
 
         return ResolvedIdentity(
             user_id=user_id,
@@ -184,6 +455,7 @@ class JwtSaasIdentityContextResolver:
                 provider=provider.id,
                 external_uid=subject,
             ),
+            verified_tenant_claim=verified_tenant_claim,
         )
 
     def _fetch_jwks_keys(self, provider: IdentityProviderRow) -> list[dict[str, object]]:
@@ -213,17 +485,39 @@ class JwtSaasIdentityContextResolver:
 
 
 def _fetch_jwks(jwks_uri: str | None) -> list[dict[str, object]]:
-    """Fetch and parse a JWKS endpoint. jwks_uri must be validated at write time."""
+    """Fetch and parse a JWKS endpoint.
+
+    ADR-0063 D4: follows the trusted-HTTP convention — no redirects,
+    bounded response size, HTTPS required (except loopback), no
+    credentials/query/fragment in URL.
+    """
     import json
+    from urllib.parse import urlparse
 
     import httpx
 
     if not jwks_uri:
         raise JwtIdentityError(status_code=503, code="jwks_unavailable")
 
+    # Fetch-time URL validation (defense-in-depth beyond write-time check).
+    parsed = urlparse(jwks_uri)
+    if parsed.scheme not in ("http", "https"):
+        raise JwtIdentityError(status_code=503, code="jwks_unavailable")
+    if parsed.scheme == "http" and parsed.hostname not in {
+        "localhost", "127.0.0.1", "::1",
+    }:
+        raise JwtIdentityError(status_code=503, code="jwks_unavailable")
+
     try:
-        response = httpx.get(jwks_uri, timeout=10.0)
+        response = httpx.get(
+            jwks_uri,
+            timeout=10.0,
+            follow_redirects=False,
+        )
         response.raise_for_status()
+        # Bound response size to prevent DoS/amplification.
+        if len(response.content) > _JWKS_MAX_RESPONSE_BYTES:
+            raise JwtIdentityError(status_code=503, code="jwks_unavailable")
         data = json.loads(response.text)
     except (httpx.HTTPError, json.JSONDecodeError, OSError):
         raise JwtIdentityError(status_code=503, code="jwks_unavailable") from None

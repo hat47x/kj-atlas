@@ -212,7 +212,11 @@ def _authorize_request(
             "tenant_context_resolver",
             SingleTenantContextResolver(),
         )
-        tenant = resolver.resolve(db=db, user_id=identity.user_id)
+        tenant = resolver.resolve(
+            db=db,
+            user_id=identity.user_id,
+            claim=identity.verified_tenant_claim,
+        )
     resource_resolver: DocumentAccessResourceResolver = getattr(
         request.app.state,
         "document_access_resource_resolver",

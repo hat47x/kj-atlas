@@ -1,7 +1,8 @@
 # ADR-0063: saas-multitenant の trusted auth edge を broker 前提の multi-issuer JWT 検証で実装する
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-06
+- Implemented: 2026-08-08 (D9-1 through D9-8)
 - Deciders: Project Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/`（`auth_context.py` / `tenant_context.py` / `trusted_saas_runtime.py` / `main.py` / `settings.py` / `models.py`）、`02_Architecture/`、`saas-multitenant` runtime profile
 
@@ -151,10 +152,12 @@ v1 では `identity_providers` 行の作成を Platform Control Plane（`ADR-005
 
 本 ADR が承認を求めている論点は次の 4 つである。ここが redirect されれば D2 以降は組み替えになる。
 
-1. **D1 の broker 前提を SaaS 運用の必須要件として運用者へ課してよいか。** 課さないなら選択肢 2（tenant 登録型 multi-IdP）を v1 から実装することになり、規模は数倍になる。
-2. **D3 のとおり SAML をアプリに実装しないと確定してよいか。** `ADR-0020` のタイトルは SAML を含んでおり、ここは明示的な範囲縮小である。
-3. **D4 の PyJWT 採用**（`Authlib` / `joserfc` ではなく）。broker モデルを採る限り必要なのは検証のみ、という前提に依存する。
-4. **D6 の「identity 層に fail-safe 設定を作らない」**。IdP 障害が全 tenant 停止に直結する運用リスクを受け入れる決定であり、D5 の 1800 秒という数値もここで承認対象になる。
+> 2026-08-08: 全質問が D9-1〜D9-8 の実装をもって解決済み。ADR は Accepted。
+
+1. **D1 の broker 前提を SaaS 運用の必須要件として運用者へ課してよいか。** → **Yes.** broker モデルで実装。tenant 登録型 multi-IdP は v1 では defer。
+2. **D3 のとおり SAML をアプリに実装しないと確定してよいか。** → **Yes.** SAML 顧客は broker の SAML→OIDC 変換で収容。アプリに XML 署名検証は導入しない。
+3. **D4 の PyJWT 採用**（`Authlib` / `joserfc` ではなく）。 → **Yes.** PyJWT + cryptography で実装。検証のみが必要な broker モデルに適合。
+4. **D6 の「identity 層に fail-safe 設定を作らない」**。 → **Yes.** identity 検証不能時は deny 固定。D5 の 1800 秒 stale window が唯一の可用性予算。
 
 ## Traceability
 

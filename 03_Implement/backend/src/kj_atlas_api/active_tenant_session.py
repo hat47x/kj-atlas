@@ -3,6 +3,8 @@ from __future__ import annotations
 import hmac
 import logging
 import re
+import secrets
+from threading import Lock
 from typing import Protocol, cast
 
 from fastapi import HTTPException, Request, Response
@@ -158,3 +160,82 @@ def persist_active_tenant_selection(
     except Exception:
         logger.warning("active tenant session persister raised persisting selection", exc_info=True)
         raise _active_tenant_update_unavailable() from None
+
+
+def _new_session_version() -> str:
+    """Generate an unpredictable session version token."""
+    return secrets.token_urlsafe(32)
+
+
+class InMemoryActiveTenantSessionPersister:
+    """ADR-0063 D9-6: thread-safe in-memory session persister for saas-multitenant.
+
+    Stores per-principal session versions in a dict. persist() atomically
+    compares the expected version before issuing a new one, and sets a
+    session cookie (Kj-Atlas-Tenant-Session-Version) on the response.
+
+    ADR-0064 D4: cookie-based session for mock/OAuth login flow.
+
+    Production upgrade path (ADR-0064 Phase 3): Replace with a Redis or
+    database-backed implementation that:
+    - Persists sessions across process restarts
+    - Supports horizontal scaling (shared session store)
+    - Signs/encrypts the session cookie (currently plain token_urlsafe)
+    - Adds CSRF token binding (currently SameSite=strict cookie only)
+    """
+
+    _COOKIE_KEY = "Kj-Atlas-Tenant-Session-Version"
+
+    def __init__(self) -> None:
+        self._sessions: dict[str, str] = {}
+        self._lock = Lock()
+
+    def current_version(
+        self,
+        *,
+        request: Request,
+        principal_id: str,
+        active_tenant: TenantContext,
+    ) -> str:
+        with self._lock:
+            # ADR-0064: try to read existing session from cookie first.
+            try:
+                cookie_version = request.cookies.get(self._COOKIE_KEY)
+                if cookie_version and principal_id in self._sessions:
+                    if hmac.compare_digest(cookie_version, self._sessions[principal_id]):
+                        return self._sessions[principal_id]
+            except (KeyError, AttributeError):
+                pass
+            if principal_id not in self._sessions:
+                self._sessions[principal_id] = _new_session_version()
+            return self._sessions[principal_id]
+
+    def persist(
+        self,
+        *,
+        request: Request,
+        response: Response,
+        principal_id: str,
+        previous_tenant: TenantContext,
+        selected_tenant: TenantContext,
+        expected_tenant_session_version: str,
+    ) -> str:
+        with self._lock:
+            current = self._sessions.get(principal_id)
+            if current is not None and not hmac.compare_digest(
+                current, expected_tenant_session_version
+            ):
+                raise TenantSessionChangedError(
+                    "tenant session version mismatch"
+                )
+            new_version = _new_session_version()
+            self._sessions[principal_id] = new_version
+            # ADR-0064 D4: set session cookie on the response.
+            response.set_cookie(
+                key=self._COOKIE_KEY,
+                value=new_version,
+                httponly=True,
+                samesite="strict",
+                max_age=3600,
+            )
+            return new_version

@@ -105,6 +105,23 @@ def _validate_optional_header_value(*, value: str | None, value_key: str) -> Non
         raise ValueError(f"{value_key} must be a bounded canonical header value")
 
 
+def _validate_trusted_proxies(raw: str) -> str:
+    """Validate comma-separated CIDR ranges. Returns normalized form."""
+    if not raw.strip():
+        return ""
+    cidrs = [cidr.strip() for cidr in raw.split(",") if cidr.strip()]
+    if not cidrs:
+        return ""
+    for cidr in cidrs:
+        try:
+            ipaddress.ip_network(cidr, strict=False)
+        except ValueError:
+            raise ValueError(
+                f"KJ_ATLAS_TRUSTED_PROXIES contains invalid CIDR: {cidr}"
+            ) from None
+    return ",".join(cidrs)
+
+
 def _validate_optional_llm_model_id(*, value: str | None, value_key: str) -> None:
     if value is not None and (
         not value
@@ -368,6 +385,15 @@ class Settings(BaseSettings):
         default="x-auth-subject",
         validation_alias="KJ_ATLAS_AUTH_SUBJECT_FIELD",
     )
+    # ADR-0063 correction #2: CIDR-based trusted proxy allowlist for
+    # header-based auth (single-tenant / legacy header mode). When empty,
+    # all origins are allowed with a startup warning (backward compat).
+    # When set, only requests from listed CIDRs can use forwarded auth headers.
+    # Comma-separated IPv4/IPv6 CIDR ranges, e.g. "10.0.0.0/8,172.16.0.0/12".
+    trusted_proxies: str = Field(
+        default="",
+        validation_alias="KJ_ATLAS_TRUSTED_PROXIES",
+    )
     reviewer_ref_resolver_adapter: str = Field(
         default="user_id",
         validation_alias="KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER",
@@ -391,6 +417,19 @@ class Settings(BaseSettings):
     ce4_stub_unresolved_contracts: bool = Field(
         default=True,
         validation_alias="KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS",
+    )
+    # ADR-0063 D4: JWT algorithm allowlist (comma-separated). Default RS256,ES256.
+    # HMAC and 'none' are always rejected regardless of this setting.
+    jwt_algorithms: str = Field(
+        default="RS256,ES256",
+        validation_alias="KJ_ATLAS_JWT_ALGORITHMS",
+    )
+    # ADR-0063 D8: JWT claim name that carries the external tenant/organization
+    # reference. The claim value is matched against
+    # tenant_identity_providers.external_tenant_ref to resolve tenant_id.
+    tenant_claim_name: str = Field(
+        default="tenant_ref",
+        validation_alias="KJ_ATLAS_TENANT_CLAIM_NAME",
     )
 
     model_config = SettingsConfigDict(
@@ -422,11 +461,9 @@ class Settings(BaseSettings):
                 "KJ_ATLAS_RUNTIME_PROFILE must be one of "
                 "local-dev|evaluation|enterprise-production|saas-multitenant"
             )
-        if normalized_runtime_profile == "saas-multitenant":
-            raise ValueError(
-                "KJ_ATLAS_RUNTIME_PROFILE=saas-multitenant is reserved and unavailable "
-                "until SAAS-TENANT-01 completes its fail-closed implementation gate"
-            )
+        # ADR-0063 D9-6: saas-multitenant is no longer unconditionally blocked.
+        # Startup validation is handled by TrustedSaasRuntimePolicy.validate() and
+        # validate_trusted_saas_runtime_preflight() in main.py lifespan.
         self.runtime_profile = normalized_runtime_profile
 
         provider = self.llm_provider.strip().lower()
@@ -593,6 +630,45 @@ class Settings(BaseSettings):
             raise ValueError(
                 "KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS must remain true in CE4"
             )
+
+        # ADR-0063 D4: validate JWT algorithm allowlist.
+        _KNOWN_JWT_ALGORITHMS = frozenset(
+            {"RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "PS256", "PS384", "PS512"}
+        )
+        raw_algorithms = [
+            alg.strip() for alg in self.jwt_algorithms.split(",") if alg.strip()
+        ]
+        if not raw_algorithms:
+            raise ValueError("KJ_ATLAS_JWT_ALGORITHMS must contain at least one algorithm")
+        if any(alg.startswith("HS") for alg in raw_algorithms):
+            raise ValueError(
+                "KJ_ATLAS_JWT_ALGORITHMS must not contain HMAC algorithms (HS256/HS384/HS512)"
+            )
+        unknown = [alg for alg in raw_algorithms if alg not in _KNOWN_JWT_ALGORITHMS]
+        if unknown:
+            raise ValueError(
+                "KJ_ATLAS_JWT_ALGORITHMS contains unknown algorithms: "
+                + ", ".join(unknown)
+            )
+        self.jwt_algorithms = ",".join(raw_algorithms)
+
+        # ADR-0063 D8: validate tenant claim name.
+        claim_name = self.tenant_claim_name.strip()
+        if not claim_name:
+            raise ValueError("KJ_ATLAS_TENANT_CLAIM_NAME must not be empty")
+        if len(claim_name) > 256:
+            raise ValueError("KJ_ATLAS_TENANT_CLAIM_NAME must be ≤ 256 characters")
+        if claim_name != self.tenant_claim_name:
+            raise ValueError("KJ_ATLAS_TENANT_CLAIM_NAME must not have leading/trailing whitespace")
+        if any(not c.isprintable() for c in claim_name):
+            raise ValueError("KJ_ATLAS_TENANT_CLAIM_NAME must be printable")
+        if " " in claim_name:
+            raise ValueError("KJ_ATLAS_TENANT_CLAIM_NAME must not contain spaces")
+        self.tenant_claim_name = claim_name
+
+        # ADR-0063 correction #2: validate trusted proxy CIDRs.
+        normalized_proxies = _validate_trusted_proxies(self.trusted_proxies)
+        self.trusted_proxies = normalized_proxies
 
         return self
 
