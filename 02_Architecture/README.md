@@ -88,13 +88,24 @@ SAML / OIDC / Broker / JWT の協調認証フローに関する文書。
 
 ## LLM・AI
 
+AI 支援機能（レイアウト提案、マージ候補、ナラティブ生成など）の設計・実装・運用。
+
 | 文書 | 形式 | 内容 |
 |---|---|---|
-| [`llm_provider_spec.md`](llm_provider_spec.md) | Markdown | LLM プロバイダ仕様 |
-| [`llm_input_ir_spec.md`](llm_input_ir_spec.md) | Markdown | LLM 入力 IR 仕様 |
-| [`llm_quality_strategy.md`](llm_quality_strategy.md) | Markdown | LLM 品質戦略 |
-| [`llm_runtime_constraints.md`](llm_runtime_constraints.md) | Markdown | LLM 実行時制約 |
-| [`llm_escalation_policy.html`](llm_escalation_policy.html) | HTML | LLM エスカレーションポリシー |
+| [`llm_provider_spec.md`](llm_provider_spec.md) | Markdown | LLM プロバイダ仕様（`/generate` 契約・タスク別出力スキーマ） |
+| [`llm_input_ir_spec.md`](llm_input_ir_spec.md) | Markdown | LLM 入力 IR 仕様（プロンプト構築・文書表現） |
+| [`llm_quality_strategy.md`](llm_quality_strategy.md) | Markdown | LLM 品質戦略（SLO・フォールバック・検証） |
+| [`llm_runtime_constraints.md`](llm_runtime_constraints.md) | Markdown | LLM 実行時制約（タイムアウト・サイズ上限・同時実行） |
+| [`llm_escalation_policy.html`](llm_escalation_policy.html) | HTML | LLM エスカレーションポリシー（intermediate/final_judgement ルーティング） |
+
+**運用ガイド**:
+
+| 文書 | 形式 | 内容 |
+|---|---|---|
+| [`../03_Implement/deploy/LLM_QUICKSTART.md`](../03_Implement/deploy/LLM_QUICKSTART.md) | Markdown | LLM クイックスタート（mock/実LLMの起動・設定・トラブルシューティング） |
+| [`../04_Documentation/local_llm_ops_guide.md`](../04_Documentation/local_llm_ops_guide.md) | Markdown | 実 LLM 運用ガイド（アダプタ作成・デプロイ） |
+
+**おすすめの読み順**: `LLM_QUICKSTART.md`（即実践）→ `llm_provider_spec.md`（仕様）→ `llm_escalation_policy.html`（発展）
 
 ---
 
