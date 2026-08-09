@@ -358,3 +358,24 @@ Updated: 2026-08-03
 - 原因: 当該testが他の修正済みmigration testと異なり、bare command名を残していた。
 - 対応: `sys.executable -m alembic`でpytestと同じPython環境を使うように統一した。
 - 再発防止: migration testのsubprocess起動にbare `alembic`が残っていないことを静的検索する。
+
+## 2026-08-10: CockroachDBのschema lockがtenant-key migrationを防止
+
+- 事象: CockroachDB v26.2.3 fresh migrationのrevision 0008で、`documents` primary key変更が`schema_locked = true`により拒否された。
+- 原因: CockroachDB v26.2が新規tableをschema lock付きで作成し、同じAlembic lineageの後続revisionも明示的にunlockしない限り変更できなかった。
+- 対応: portable DDL hookの`after_create`でCockroachDB tableだけ`schema_locked = false`とし、後続migrationと将来upgradeを可能にした。
+- 再発防止: CockroachDB promotion matrixでfreshだけでなく、列・PK・FKを変えるdowngrade/re-upgradeを必須とする。
+
+## 2026-08-10: CockroachDBがprimary keyの分割置換を拒否
+
+- 事象: schema lock解除後のrevision 0008で、primary keyを先にdropし、次のstatementで新primary keyをaddするDDLが未実装機能として拒否された。
+- 原因: CockroachDBはprimary keyのdrop/addを同一transactionまたは同一`ALTER TABLE`内で行うことを必要とするが、従来のAlembic operationは2 statementに分割していた。
+- 対応: `atomic_primary_key_replacement`能力をDBレジストリに追加し、必要なDBだけdrop/addを1つの`ALTER TABLE`へコンパクトにした。
+- 再発防止: backend名で分岐せず、schema変更の必要能力をレジストリから選択する。
+
+## 2026-08-10: CockroachDBの式indexが冗長な列型変更を防止
+
+- 事象: fresh migrationのrevision 0020で`external_uid`を既に同じ上限の`VARCHAR`へ変更しようとし、`lower(external_uid)`式indexの内部computed column依存により拒否された。
+- 原因: CockroachDB fresh schemaは歴史DDL hookにより対象列が既にbounded型だが、履歴上の型変更を再実行していた。
+- 対応: CockroachDBでは0020のupgrade/downgradeを物理no-opとし、歴史DDL hookが作った同一形状を維持する。
+- 再発防止: fresh DDL変換で将来revisionの目標形状を先取りするDBは、同revisionの冗長DDLと式index依存を実DBで検証する。

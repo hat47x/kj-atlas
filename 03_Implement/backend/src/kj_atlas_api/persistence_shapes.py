@@ -272,4 +272,13 @@ def install_portable_text_ddl_hook() -> None:
                     collation = "utf8mb4_unicode_ci"
                 column.type = String(spec.proposed_max_chars, collation=collation)
 
+    @event.listens_for(Table, "after_create", propagate=True)
+    def _unlock_cockroach_schema(table: Table, _connection, **_kwargs: object) -> None:
+        if _connection.dialect.name != "cockroachdb":
+            return
+        quote = _connection.dialect.identifier_preparer.quote
+        _connection.execute(
+            text(f"ALTER TABLE {quote(table.name)} SET (schema_locked = false)")
+        )
+
     setattr(install_portable_text_ddl_hook, "_installed", True)

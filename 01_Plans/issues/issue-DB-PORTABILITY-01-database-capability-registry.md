@@ -26,7 +26,7 @@
 ## 受入条件
 
 - [x] AC-1: SQLite/PostgreSQLのverified状態とmigration strategyが一か所で定義される。
-- [x] AC-2: 未検証DBがcandidateとして分類され、runtimeではfail-fastになる。検証後のMySQL/MariaDBとSQL Serverは個別昇格証跡を伴ってVerifiedへ移行し、Oracle/CockroachDBはcandidateを維持する。
+- [x] AC-2: 未検証DBがcandidateとして分類され、runtimeではfail-fastになる。検証後のMySQL/MariaDB、SQL Server、CockroachDBは個別昇格証跡を伴ってVerifiedへ移行し、Oracleはcandidateを維持する。
 - [x] AC-3: DB URLエラーがcredentialやURL全体を反射しない。
 - [x] AC-4: 全永続列がidentifier／bounded descriptive text／content objectへ棚卸しされ、identifierの意味別最大長と受入規則が定義される。
 - [x] AC-4a: identifier/index文字列が棚卸し結果に基づくbounded portable型へ移行され、SQLite/PostgreSQL回帰が通る。

@@ -21,6 +21,7 @@ class DatabaseSupport:
     migration_strategy: MigrationStrategy
     shared_schema_saas: bool
     inline_content: InlineContentSupport
+    atomic_primary_key_replacement: bool
 
     @property
     def is_verified(self) -> bool:
@@ -35,6 +36,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         migration_strategy="sqlite-rebuild",
         shared_schema_saas=False,
         inline_content="verified",
+        atomic_primary_key_replacement=False,
     ),
     "postgresql": DatabaseSupport(
         backend="postgresql",
@@ -43,6 +45,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         migration_strategy="constraint-ddl",
         shared_schema_saas=True,
         inline_content="verified",
+        atomic_primary_key_replacement=False,
     ),
     # Verified and candidate entries stay together so capability decisions do
     # not spread across settings, runtime, migrations, and documentation.
@@ -53,6 +56,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         migration_strategy="constraint-ddl",
         shared_schema_saas=False,
         inline_content="verified",
+        atomic_primary_key_replacement=False,
     ),
     "mariadb": DatabaseSupport(
         backend="mariadb",
@@ -61,6 +65,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         migration_strategy="constraint-ddl",
         shared_schema_saas=False,
         inline_content="verified",
+        atomic_primary_key_replacement=False,
     ),
     "mssql": DatabaseSupport(
         backend="mssql",
@@ -69,6 +74,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         migration_strategy="constraint-ddl",
         shared_schema_saas=False,
         inline_content="verified",
+        atomic_primary_key_replacement=False,
     ),
     "oracle": DatabaseSupport(
         backend="oracle",
@@ -77,14 +83,16 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         migration_strategy="unimplemented",
         shared_schema_saas=False,
         inline_content="candidate",
+        atomic_primary_key_replacement=False,
     ),
     "cockroachdb": DatabaseSupport(
         backend="cockroachdb",
         family="cockroachdb",
-        support_level="candidate",
-        migration_strategy="unimplemented",
+        support_level="verified",
+        migration_strategy="constraint-ddl",
         shared_schema_saas=False,
-        inline_content="candidate",
+        inline_content="verified",
+        atomic_primary_key_replacement=True,
     ),
 }
 
@@ -95,7 +103,7 @@ def database_support_for_backend(backend: str) -> DatabaseSupport:
     if support is None:
         raise ValueError(
             f"Unsupported database backend: {normalized_backend or '<empty>'}. "
-            "Verified backends: sqlite, postgresql, mysql, mariadb, mssql"
+            "Verified backends: sqlite, postgresql, mysql, mariadb, mssql, cockroachdb"
         )
     return support
 
@@ -114,7 +122,7 @@ def require_verified_database_url(database_url: str) -> DatabaseSupport:
         raise ValueError(
             f"Database backend '{support.backend}' is a candidate, not a verified runtime. "
             "Its identifier types and Alembic migration matrix must be completed before use. "
-            "Verified backends: sqlite, postgresql, mysql, mariadb, mssql"
+            "Verified backends: sqlite, postgresql, mysql, mariadb, mssql, cockroachdb"
         )
     return support
 

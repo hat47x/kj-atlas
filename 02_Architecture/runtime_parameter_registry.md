@@ -94,7 +94,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | Key | Default | Purpose | Delivery surface | Secret | Probe (non-secret) |
 | --- | --- | --- | --- | --- | --- |
 | `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | Backend/MCPの実行profile。`local-dev`, `evaluation`, `enterprise-production`を受理する。`saas-multitenant`は予約値で、現行releaseでは両processが起動拒否。 | direct / base Compose | 通常値 | 起動ログまたは `/healthz` で profile 名（値のみ）を確認する |
-| `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | 永続化 DB 接続先。VerifiedはSQLite/PostgreSQLのみ。candidate/未知DBはengine生成・migration前に拒否する。対応表は`database_portability.md` | direct / base Compose | 資格情報を含み得る（URL に password を埋め込む場合がある） | `/healthz` が 200 を返し、起動ログに接続エラーがないことを確認する（URL 値は出力しない） |
+| `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | 永続化 DB 接続先。VerifiedはSQLite、PostgreSQL、MySQL 8.4、MariaDB 11.4、SQL Server 2022、CockroachDB 26.2。candidate/未知DBはengine生成・migration前に拒否する。対応表は`database_portability.md` | direct / base Compose | 資格情報を含み得る（URL に password を埋め込む場合がある） | `/healthz` が 200 を返し、起動ログに接続エラーがないことを確認する（URL 値は出力しない） |
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | LLM provider 種別。`none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` | direct / base Compose | 通常値 | 起動ログまたは `/healthz` で provider 名（値のみ）を確認する |
 | `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLM のbase URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 | direct / llm-stub overlay のみ | 通常値（接続先ホスト名。認証情報は含まない） | overlay 使用時、`local` provider 経由のリクエストが stub へ到達すること（成否のみ確認、payload は出力しない） |
 | `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLM に渡す256文字以下のcanonical model ID | direct / llm-stub overlay のみ | 通常値 | stub 側ログの model 欄が設定値と一致することを確認する |

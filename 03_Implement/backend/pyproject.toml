@@ -40,6 +40,10 @@ mysql = [
 mssql = [
   "pymssql>=2.3,<3",
 ]
+cockroachdb = [
+  "sqlalchemy-cockroachdb>=2.0,<3",
+  "psycopg[binary]",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -56,6 +60,7 @@ markers = [
   "postgres: tests that require PostgreSQL",
   "mysql: tests that require MySQL or MariaDB",
   "mssql: tests that require Microsoft SQL Server",
+  "cockroachdb: tests that require CockroachDB",
   "auth_level1: required AuthContext contract coverage",
   "auth_level2: conditional federation fixture coverage",
   "external_llm: tests that require any OpenAI-compatible adapter on port 8001",

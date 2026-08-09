@@ -286,8 +286,12 @@ def _constraint_ddl_upgrade(bind: sa.Connection) -> None:
         op.drop_constraint(name, "merge_decision_logs", type_="foreignkey")
     op.drop_constraint(OLD_LOG_UNIQUE, "merge_decision_logs", type_="unique")
     op.drop_index(OLD_DOCUMENT_INDEX, table_name="documents")
-    op.drop_constraint(_named_primary_key(sa.inspect(bind)), "documents", type_="primary")
-    op.create_primary_key(NEW_DOCUMENT_PK, "documents", ["tenant_id", "id"])
+    _replace_document_primary_key(
+        bind,
+        old_name=_named_primary_key(sa.inspect(bind)),
+        new_name=NEW_DOCUMENT_PK,
+        columns=["tenant_id", "id"],
+    )
     op.create_foreign_key(
         NEW_DOCUMENT_TENANT_FK,
         "documents",
@@ -315,8 +319,12 @@ def _constraint_ddl_downgrade(bind: sa.Connection) -> None:
     op.drop_constraint(NEW_LOG_DOCUMENT_FK, "merge_decision_logs", type_="foreignkey")
     op.drop_constraint(NEW_LOG_UNIQUE, "merge_decision_logs", type_="unique")
     op.drop_constraint(NEW_DOCUMENT_TENANT_FK, "documents", type_="foreignkey")
-    op.drop_constraint(_named_primary_key(sa.inspect(bind)), "documents", type_="primary")
-    op.create_primary_key("pk_documents_id", "documents", ["id"])
+    _replace_document_primary_key(
+        bind,
+        old_name=_named_primary_key(sa.inspect(bind)),
+        new_name="pk_documents_id",
+        columns=["id"],
+    )
     op.create_foreign_key(
         "fk_merge_decision_logs_doc_id",
         "merge_decision_logs",
@@ -336,6 +344,29 @@ def _constraint_ddl_downgrade(bind: sa.Connection) -> None:
         ["tenant_id", "id"],
         unique=True,
     )
+
+
+def _replace_document_primary_key(
+    bind: sa.Connection,
+    *,
+    old_name: str,
+    new_name: str,
+    columns: list[str],
+) -> None:
+    support = database_support_for_backend(bind.dialect.name)
+    if support.atomic_primary_key_replacement:
+        quote = bind.dialect.identifier_preparer.quote
+        column_sql = ", ".join(quote(column) for column in columns)
+        op.execute(
+            sa.text(
+                f"ALTER TABLE {quote('documents')} "
+                f"DROP CONSTRAINT {quote(old_name)}, "
+                f"ADD CONSTRAINT {quote(new_name)} PRIMARY KEY ({column_sql})"
+            )
+        )
+        return
+    op.drop_constraint(old_name, "documents", type_="primary")
+    op.create_primary_key(new_name, "documents", columns)
 
 
 def upgrade() -> None:

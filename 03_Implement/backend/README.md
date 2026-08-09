@@ -21,7 +21,7 @@
 - `KJ_ATLAS_DATABASE_URL`
   - 既定値: `sqlite:///./kj_atlas.db`
   - `sqlite+aiosqlite://...` / `postgresql+asyncpg://...` が与えられた場合は、Phase 1 の同期SQLAlchemy実装で扱えるよう内部で同期ドライバURLへ正規化して利用
-  - 正式対応はSQLite、PostgreSQL、MySQL 8.4、MariaDB 11.4、SQL Server 2022。Oracle、CockroachDBは候補として管理し、実DB検証完了までは接続前に拒否
+  - 正式対応はSQLite、PostgreSQL、MySQL 8.4、MariaDB 11.4、SQL Server 2022、CockroachDB 26.2。Oracleは候補として管理し、実DB検証完了までは接続前に拒否
   - 対応状況と昇格条件: `02_Architecture/database_portability.md`
 - `KJ_ATLAS_LLM_PROVIDER`
   - 既定値: `none`
@@ -62,6 +62,16 @@ pip install -e ".[mssql]"
 export KJ_ATLAS_DATABASE_URL="mssql+pymssql://user:password@localhost:1433/kj_atlas"
 alembic upgrade head
 ```
+
+CockroachDB 26.2もoptional dialectを導入し、single-tenant構成で使用します。接続先databaseは事前に作成してください。
+
+```bash
+pip install -e ".[cockroachdb]"
+export KJ_ATLAS_DATABASE_URL="cockroachdb+psycopg://user:password@localhost:26257/kj_atlas"
+alembic upgrade head
+```
+
+`--insecure`はローカル試験専用です。本番ではCockroachDBのTLS構成と適切な`sslmode`を使用してください。
 
 ## Minimal backup / restore
 

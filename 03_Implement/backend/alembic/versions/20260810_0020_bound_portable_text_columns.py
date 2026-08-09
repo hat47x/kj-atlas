@@ -116,13 +116,18 @@ def _restore_sqlite_expression_indexes() -> None:
 
 
 def upgrade() -> None:
+    if op.get_bind().dialect.name == "cockroachdb":
+        # The historical DDL portability hook already creates these columns
+        # with their bounded types. Re-altering them would conflict with
+        # CockroachDB's hidden computed columns for expression indexes.
+        return
     _alter(bounded=True)
     _restore_sqlite_expression_indexes()
 
 
 def downgrade() -> None:
-    if op.get_bind().dialect.name in {"mysql", "mariadb", "mssql"}:
-        # Fresh MySQL-family and SQL Server schemas were already bounded by the
+    if op.get_bind().dialect.name in {"mysql", "mariadb", "mssql", "cockroachdb"}:
+        # Fresh schemas on these backends were already bounded by the
         # historical DDL hook before this revision, so their 0019 shape is
         # still VARCHAR.
         return

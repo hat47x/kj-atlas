@@ -20,6 +20,7 @@ def test_verified_database_capabilities_are_explicit() -> None:
     mysql = database_support_for_backend("mysql")
     mariadb = database_support_for_backend("mariadb")
     mssql = database_support_for_backend("mssql")
+    cockroachdb = database_support_for_backend("cockroachdb")
 
     assert sqlite.is_verified is True
     assert sqlite.migration_strategy == "sqlite-rebuild"
@@ -40,6 +41,12 @@ def test_verified_database_capabilities_are_explicit() -> None:
     assert mssql.migration_strategy == "constraint-ddl"
     assert mssql.shared_schema_saas is False
     assert mssql.inline_content == "verified"
+    assert cockroachdb.is_verified is True
+    assert cockroachdb.family == "cockroachdb"
+    assert cockroachdb.migration_strategy == "constraint-ddl"
+    assert cockroachdb.atomic_primary_key_replacement is True
+    assert cockroachdb.shared_schema_saas is False
+    assert cockroachdb.inline_content == "verified"
 
 
 def test_alembic_config_url_escapes_percent_encoding_without_exposing_credentials() -> None:
@@ -48,22 +55,12 @@ def test_alembic_config_url_escapes_percent_encoding_without_exposing_credential
     assert alembic_config_database_url(url) == url.replace("%", "%%")
 
 
-@pytest.mark.parametrize(
-    ("url", "backend", "family"),
-    [
-        ("oracle+oracledb://user:secret@db/kj_atlas", "oracle", "oracle"),
-        ("cockroachdb://user:secret@db/kj_atlas", "cockroachdb", "cockroachdb"),
-    ],
-)
-def test_future_databases_are_registered_without_being_enabled(
-    url: str,
-    backend: str,
-    family: str,
-) -> None:
+def test_future_database_is_registered_without_being_enabled() -> None:
+    url = "oracle+oracledb://user:secret@db/kj_atlas"
     support = database_support_for_url(url)
 
-    assert support.backend == backend
-    assert support.family == family
+    assert support.backend == "oracle"
+    assert support.family == "oracle"
     assert support.is_verified is False
     assert support.migration_strategy == "unimplemented"
     assert support.shared_schema_saas is False

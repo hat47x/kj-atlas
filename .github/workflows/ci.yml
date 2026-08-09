@@ -241,7 +241,22 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[test,mysql,mssql]" alembic psycopg[binary] uvicorn
+          pip install -e ".[test,mysql,mssql,cockroachdb]" alembic uvicorn
+
+      - name: Start CockroachDB
+        run: |
+          docker run --name kj-atlas-cockroach-ci --detach --publish 26257:26257 \
+            cockroachdb/cockroach:v26.2.3 \
+            start-single-node --insecure --advertise-addr=localhost
+          for attempt in $(seq 1 30); do
+            if docker exec kj-atlas-cockroach-ci cockroach sql --insecure \
+              --host=localhost:26257 --execute='SELECT 1' >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs kj-atlas-cockroach-ci
+          exit 1
 
       - name: Lint (ruff)
         run: ruff check src tests
@@ -293,7 +308,7 @@ jobs:
       - name: Test (SQLite except auth level suites)
         env:
           KJ_ATLAS_DATABASE_URL: sqlite:///./kj_atlas.db
-        run: pytest -m "not postgres and not mysql and not mssql and not auth_level1 and not auth_level2"
+        run: pytest -m "not postgres and not mysql and not mssql and not cockroachdb and not auth_level1 and not auth_level2"
 
       - name: Test (Auth Level1 required)
         env:
@@ -347,3 +362,9 @@ jobs:
           KJ_ATLAS_RUN_MSSQL_TESTS: "1"
           KJ_ATLAS_TEST_MSSQL_URL: mssql+pymssql://sa:KjAtlas_CI_2026%21@127.0.0.1:1433/kj_atlas
         run: pytest -m mssql
+
+      - name: Test (CockroachDB)
+        env:
+          KJ_ATLAS_RUN_COCKROACHDB_TESTS: "1"
+          KJ_ATLAS_TEST_COCKROACHDB_URL: cockroachdb+psycopg://root@127.0.0.1:26257/kj_atlas?sslmode=disable
+        run: pytest -m cockroachdb
