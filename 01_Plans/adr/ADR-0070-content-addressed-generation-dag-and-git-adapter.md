@@ -60,6 +60,8 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 
 この結果はGit packとdelta方式の両方に圧縮価値があることを示すが、実データ、分岐、並べ替え、巨大本文、復元時間を含まない。Git直接採用の根拠にはせず、revision／blob分離と代表fixture整備を先行する。
 
+追試として実装codecを用いた同規模の再現可能benchmarkでは、raw 11,273,323 bytes、保存447,181 bytes、full 100、delta 0、encode約720ms、100世代restore合計約41msとなった。したがってgzip fullを当面の既定とし、deltaは常設前提にせず、実データでfullより有利な場合だけadaptiveに採用する。
+
 ## Non-goals
 
 - 本ADRだけでGitをruntime保存先として有効化しない。

@@ -64,3 +64,10 @@
 - deterministic gzip fullと、base/currentの共通prefix・suffixに基づくgzip deltaを実装した。deltaがfullの設定比率以下で、chain depth上限未満の場合だけdeltaを採用する。
 - 復元時はbase digest、復元後byte size、SHA-256をすべて照合し、圧縮破損、base不一致、改ざん、未知representationをfail closedにした。
 - codec／policy／head CASの15件とRuffを通過した。合成fixtureでの可逆性は確認したが、実キャンバスfixtureの容量・復元時間benchmarkが残るためAC-5は未完了を維持する。
+
+## Reproducible 300-card benchmark 2026-08-10
+
+- `scripts/benchmark_generation_codec.py`を追加し、300カード、100世代、各世代5カード更新を再現可能にした。
+- raw合計11,273,323 bytesに対しadaptive codecは447,181 bytes、encode約720ms、100世代restore合計約41msだった。
+- full 100件、delta 0件となった。canonical JSON全体をgzipするだけで反復構造が十分圧縮され、このfixtureではdelta envelopeが比率閾値を満たさなかった。
+- 当面はgzip fullを既定、deltaは有効性が実測された場合だけ使う。実利用由来fixture、branch／merge、1MiB級データ、Git pack同条件比較が残るためAC-5は未完了を維持する。
