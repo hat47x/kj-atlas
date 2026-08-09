@@ -99,3 +99,10 @@ Updated: 2026-08-03
 - 原因: `mktemp`で対象を限定していても、実行環境の破壊操作制約に反する削除を同一コマンドへ含めた。
 - 対応: 削除操作を外し、OS管理の一時directoryへ生成して計測だけを実行した。
 - 再発防止: 一時benchmarkは削除をコマンドへ含めず、OSの一時領域回収へ委ねる。
+
+## 2026-08-10: delta復元negative testがfull snapshotを選択した
+
+- 事象: wrong-base拒否テストが例外を発生させず失敗した。
+- 原因: 単一文字の反復データはfull gzipが極端に小さくなり、codecが意図通りfull snapshotを選んだ。
+- 対応: 複数カードの局所変更fixtureへ置換し、delta選択を明示assertしてからnegative pathを検証した。
+- 再発防止: adaptive codecの分岐テストではrepresentation選択も前提条件としてassertする。

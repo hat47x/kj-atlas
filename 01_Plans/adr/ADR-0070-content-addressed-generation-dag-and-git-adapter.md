@@ -26,6 +26,7 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 11. revisionと物理blobを分離する。複数revisionが同じ`tenant + content digest`のimmutable blobを参照でき、保存backendはdatabase／NAS／S3／将来Gitのいずれでもよい。revisionごとにobjectを複製しない。
 12. NAS／S3はrevision DAGと競合する代替正本ではなく、full snapshot／delta／chunkの物理blob backend候補とする。ただしruntime切替、coordinator、domain FKの実装優先度を下げ、revision schemaと圧縮benchmarkが確定するまで凍結する。
 13. 現行`content_object_references`は外部保存の先行metadataであり、最終schemaとは扱わない。revision導入時に`content_blobs`（digest identity）と`canvas_revisions`（論理世代）へ責務分離し、既存tableを互換migrationまたは撤去対象として再評価する。
+14. canonical JSONはUTF-8、key辞書順、余分な空白なし、NaN/Infinity禁止とする。full/deltaの選択は保存backendではなくcodecが決め、delta chain上限または圧縮比閾値を超えた場合はfull gzipへ戻す。復元後digest検証に成功するまでDocumentとして解釈しない。
 
 ## Alternatives
 

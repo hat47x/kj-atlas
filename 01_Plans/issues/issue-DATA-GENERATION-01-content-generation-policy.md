@@ -57,3 +57,10 @@
 - revision、blob、source revision、parent、head、Documentをtenant複合FKで接続し、PostgreSQLでは全4テーブルへFORCE RLSを追加した。
 - headは`head_version`一致時だけ更新するcompare-and-swap repositoryを追加した。stale writerは`RevisionHeadConflict`で停止し、別tenantの同名document／headへ影響しない。
 - ORM／lineage／分類／policy／CASの17件と、fresh SQLite upgrade／downgrade 2件を通過した。AC-4を完了し、次はAC-5のcanonical化・delta生成・復元benchmarkへ進む。
+
+## Canonical full/delta codec checkpoint 2026-08-10
+
+- JSONをUTF-8、key順、空白なし、NaN禁止でcanonical化し、そのSHA-256をrevisionのcontent identityとした。
+- deterministic gzip fullと、base/currentの共通prefix・suffixに基づくgzip deltaを実装した。deltaがfullの設定比率以下で、chain depth上限未満の場合だけdeltaを採用する。
+- 復元時はbase digest、復元後byte size、SHA-256をすべて照合し、圧縮破損、base不一致、改ざん、未知representationをfail closedにした。
+- codec／policy／head CASの15件とRuffを通過した。合成fixtureでの可逆性は確認したが、実キャンバスfixtureの容量・復元時間benchmarkが残るためAC-5は未完了を維持する。
