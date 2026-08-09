@@ -44,6 +44,16 @@ Content objectの保存先はrepositoryから直接選ばない。将来の`Cont
 - `object`: S3互換object storageまたは管理対象file service。DBにはtenant、object key、content type、byte size、digest、schema version、作成・更新時刻等の参照メタデータを保持する。
 - `hybrid`は独立した第三の永続方式にせず、size・tenant policy等により上記実装へ委譲するrouterとしてのみ検討する。
 
+Content Storeの操作契約は一つの汎用CRUDへ統合せず、次の3 portに分離する。
+
+| Port | 更新特性 | DB実装の責務 |
+| --- | --- | --- |
+| `VersionedDocumentContentStore` | version付きcreate/update、ETagによる楽観的競合制御 | tenant-scoped rowのload/save。ETag判定とcommitはapplication側 |
+| `ReplaceableBundleContentStore` | journey単位の全置換と明示削除 | tenant-scoped rowのload/replace/delete。削除監査とcommitは同じapplication transaction |
+| `AppendOnlyLogContentStore` | immutable appendとgroup/snapshot別列挙 | append/listのみ。update/deleteを契約へ持たせない |
+
+各portはUTF-8 byte sizeとSHA-256 digestを持つ`ContentBlob`を受け渡す。現行DB実装ではinline本文から都度算出し、schema migrationを発生させない。外部保存へ昇格するときはdigest、byte size、schema version、storage stateをDB metadataへ永続化する。adapterはtransactionをcommitせず、認可対象の更新、監査証跡、content metadataをapplication側が一つの処理単位として確定できるようにする。
+
 外部保存へ切り替える場合もDB metadataを認可・整合性の正本とし、object keyを利用者入力から直接組み立てない。tenant context欠落時はfail closed、読取時はdigestとschema versionを検証し、DB更新とobject操作の不一致を補償できる状態遷移・回収処理を必須とする。署名URL、暗号化、retention、backup/restore、orphan回収、SafeMode付きexportは実装前のpromotion gateで検証する。
 
 ## Promotion gate
@@ -61,4 +71,4 @@ CandidateをVerifiedへ変更するには、対象versionを固定した実DBに
 
 ## Current next step
 
-data-shape inventoryは完了した。次に既存データ分布とAPI入力契約を照合して提案上限を確定し、content objectの保存先非依存port、参照metadata、障害時状態遷移を設計する。その後にbounded identifier migrationを行い、MySQL/MariaDBのmigration strategyと実DBmatrixへ進む。需要が変わった場合、同じpromotion gateを使ってSQL Server、Oracle、CockroachDBを先行させてもよい。
+data-shape inventoryと保存先非依存port／inline DB adapterは完了した。次に既存データ分布とAPI入力契約を照合して提案上限を確定し、外部content参照metadata、障害時状態遷移、移行・rollbackを設計する。その後にbounded identifier migrationを行い、MySQL/MariaDBのmigration strategyと実DBmatrixへ進む。需要が変わった場合、同じpromotion gateを使ってSQL Server、Oracle、CockroachDBを先行させてもよい。

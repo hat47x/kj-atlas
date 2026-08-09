@@ -37,3 +37,12 @@ def test_identifier_and_bounded_text_proposals_have_positive_limits() -> None:
         if spec.shape is not DataShape.CONTENT_OBJECT:
             assert spec.proposed_max_chars is not None
             assert spec.proposed_max_chars > 0
+
+
+def test_journey_identifier_preserves_the_existing_api_limit() -> None:
+    assert PERSISTENT_TEXT_SPECS[
+        "inquiry_bundles.journey_id"
+    ].proposed_max_chars == 256
+    assert PERSISTENT_TEXT_SPECS[
+        "inquiry_bundle_deletion_audit_events.journey_id"
+    ].proposed_max_chars == 256

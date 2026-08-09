@@ -55,7 +55,15 @@
 - ORMの全74 `TEXT`列を列単位で分類し、identifier 36、bounded descriptive text 35、content object 3とした。新しい`TEXT`列が未分類ならcoverage testで停止する。
 - 内部ID 128、外部発行ID 512、URI 2048、email 320、表示名 255、timestamp 40、closed-set state 32文字をmigration候補として記録した。既存データ分布とAPI入力契約の照合前にはDB制約へ適用しない。
 - content objectは`documents.payload_json`、`inquiry_bundles.payload_json`、`merge_decision_logs.payload_json`の3列だけであることを固定した。文字数上限を持たせず、byte-size policyと保存先設計を別課題として維持する。
-- `tests/test_persistence_shapes.py` 3件と対象Ruffを通過した。AC-4aの物理migrationとAC-4bのContentStore契約は未着手のまま分離している。
+- `tests/test_persistence_shapes.py` 3件と対象Ruffを通過した。AC-4aの物理migrationとAC-4bのContentStore設計は後続工程として分離した。
+
+## Phase 2 Content Store checkpoint 2026-08-09
+
+- 汎用CRUDを避け、Documentのversion付き保存、Inquiry bundleの全置換・削除、merge decision logの追記専用保存を3つのportへ分離した。
+- 現行3つのinline `payload_json`列を利用するDB adapterを追加し、既存repositoryとPUT／GET／append／delete経路をadapterへ接続した。API response、ETag、削除監査、commit位置は変更していない。
+- `ContentBlob`でUTF-8 byte sizeとSHA-256 digestを共通化した。現行DBでは本文から算出し、外部保存時にmetadata列へ永続化するための契約境界とした。
+- `journey_id`の既存API上限256文字を検出し、棚卸し候補128文字を256へ訂正した。物理型の候補値より既存入力契約を優先する回帰テストを追加した。
+- adapter／分類／repository／API roundtrip／tenant分離の対象18件とRuffを通過した。外部参照metadata、状態遷移、移行・rollback、orphan回収は未実装のためAC-4bは未完了を維持する。
 
 ## Phase 1 checkpoint 2026-08-09
 

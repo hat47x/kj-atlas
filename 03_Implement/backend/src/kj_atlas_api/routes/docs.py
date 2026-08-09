@@ -25,6 +25,11 @@ from kj_atlas_api.access_control import (
 from kj_atlas_api.audit import build_event
 from kj_atlas_api.auth_assurance import build_auth_assurance_metadata
 from kj_atlas_api.auth_context import resolve_identity_context
+from kj_atlas_api.content_store import ContentBlob
+from kj_atlas_api.database_content_store import (
+    DatabaseAppendOnlyLogContentStore,
+    DatabaseDocumentContentStore,
+)
 from kj_atlas_api.db import get_db
 from kj_atlas_api.document_access_resource import (
     DocumentAccessResourceResolver,
@@ -39,8 +44,6 @@ from kj_atlas_api.models import (
     Card,
     CandidateListViewModel,
     DocumentPayload,
-    DocumentRow,
-    MergeDecisionLogRow,
     MergeDecisionRecord,
     A1ErrorResponse,
     PolygonHandoffContractVerificationRequest,
@@ -468,19 +471,13 @@ def put_document(
         if "*" not in expected_etags and current_etag not in expected_etags:
             raise HTTPException(status_code=409, detail="ETag mismatch")
 
-    if doc_row is None:
-        doc_row = DocumentRow(
-            id=doc_id,
-            tenant_id=tenant.tenant_id,
-            version=document.version,
-            updated_at=document.updatedAt.isoformat(),
-            payload_json=payload_json,
-        )
-        db.add(doc_row)
-    else:
-        doc_row.version = document.version
-        doc_row.updated_at = document.updatedAt.isoformat()
-        doc_row.payload_json = payload_json
+    DatabaseDocumentContentStore(db).save(
+        tenant=tenant,
+        doc_id=doc_id,
+        version=document.version,
+        updated_at=document.updatedAt.isoformat(),
+        content=ContentBlob.from_text(payload_json),
+    )
 
     db.commit()
     response.headers["ETag"] = _format_etag(_compute_etag(payload_json))
@@ -736,16 +733,15 @@ def append_merge_decision_log(
         raise HTTPException(status_code=404, detail="Document not found")
 
     record = payload.record
-    row = MergeDecisionLogRow(
-        tenant_id=tenant.tenant_id,
+    DatabaseAppendOnlyLogContentStore(db).append(
+        tenant=tenant,
         doc_id=doc_id,
         decision_id=record.decisionId,
         group_id=record.groupId,
         snapshot_version=record.snapshotVersion,
         decided_at=record.decidedAt.isoformat(),
-        payload_json=record.model_dump_json(),
+        content=ContentBlob.from_text(record.model_dump_json()),
     )
-    db.add(row)
     try:
         db.commit()
     except IntegrityError as exc:

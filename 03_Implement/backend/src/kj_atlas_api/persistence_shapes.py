@@ -63,13 +63,17 @@ PERSISTENT_TEXT_SPECS: dict[str, PersistentTextSpec] = {
     "documents.payload_json": CONTENT_OBJECT,
     "inquiry_bundle_deletion_audit_events.event_id": INTERNAL_ID,
     "inquiry_bundle_deletion_audit_events.tenant_id": INTERNAL_ID,
-    "inquiry_bundle_deletion_audit_events.journey_id": INTERNAL_ID,
+    "inquiry_bundle_deletion_audit_events.journey_id": _identifier(
+        256, "journey identifier; matches the existing API acceptance contract"
+    ),
     "inquiry_bundle_deletion_audit_events.principal_id": EXTERNAL_ID,
     "inquiry_bundle_deletion_audit_events.action": STATE,
     "inquiry_bundle_deletion_audit_events.outcome": STATE,
     "inquiry_bundle_deletion_audit_events.occurred_at": TIMESTAMP,
     "inquiry_bundles.tenant_id": INTERNAL_ID,
-    "inquiry_bundles.journey_id": INTERNAL_ID,
+    "inquiry_bundles.journey_id": _identifier(
+        256, "journey identifier; matches the existing API acceptance contract"
+    ),
     "inquiry_bundles.payload_json": CONTENT_OBJECT,
     "inquiry_bundles.updated_at": TIMESTAMP,
     "tenant_identity_providers.tenant_id": INTERNAL_ID,

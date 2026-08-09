@@ -8,12 +8,14 @@ from uuid import uuid4
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
+from kj_atlas_api.content_store import ContentBlob
+from kj_atlas_api.database_content_store import DatabaseBundleContentStore
 from kj_atlas_api.db import get_db
 from kj_atlas_api.inquiry_bundle_repository import (
     delete_inquiry_bundle,
     get_inquiry_bundle_row,
 )
-from kj_atlas_api.models import InquiryBundleDeletionAuditEventRow, InquiryBundleRow
+from kj_atlas_api.models import InquiryBundleDeletionAuditEventRow
 from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
 from kj_atlas_api.tenant_session_precondition import (
     require_tenant_session_request_precondition,
@@ -83,22 +85,13 @@ def put_inquiry_bundle(
     journey_id = _canonical_journey_id(journey_id)
     payload_json = _serialize_opaque_payload(payload)
     trusted_session = _trusted_session(request=request, db=db)
-    existing = get_inquiry_bundle_row(
-        db, tenant=trusted_session.tenant, journey_id=journey_id
-    )
     recorded_at = datetime.now(timezone.utc).isoformat()
-    if existing is None:
-        db.add(
-            InquiryBundleRow(
-                tenant_id=trusted_session.tenant.tenant_id,
-                journey_id=journey_id,
-                payload_json=payload_json,
-                updated_at=recorded_at,
-            )
-        )
-    else:
-        existing.payload_json = payload_json
-        existing.updated_at = recorded_at
+    DatabaseBundleContentStore(db).replace(
+        tenant=trusted_session.tenant,
+        journey_id=journey_id,
+        updated_at=recorded_at,
+        content=ContentBlob.from_text(payload_json),
+    )
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
