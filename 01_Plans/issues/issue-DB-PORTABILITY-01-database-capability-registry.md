@@ -119,3 +119,9 @@
 - 現行commit上で固定versionの全Verified DBを再起動し、SQLite基準に加えて実DBmatrixを再実行した。
 - PostgreSQL 16はfresh migrationとRLS suiteを含め19件pass・1件skip、MySQL 8.4/MariaDB 11.4はpromotion matrix 2件pass、SQL Server 2022は1件pass、CockroachDB 26.2.3は1件passとなった。
 - Oracle AI Database Free 23.26.2は同じ現行系列でORM CLOB roundtripとData Pump restoreを含む1件pass（175.95秒）。これによりSQLite以外の全backendでfresh、constraint、LOB、transaction、migration往復、backup/restoreのprovider別契約が現行codeに対して成立することを再確認した。
+
+## Driver URL hardening checkpoint 2026-08-10
+
+- backend名だけのVerified判定では、`mysql://`、`mssql://`、`oracle://`等がoptional dependencyに含まれないSQLAlchemy既定driverを選び、engine生成時まで失敗を遅延させる不足があった。
+- 能力レジストリへ検証済み同期driverと受理drivernameを追加した。driver省略URLと既存の`sqlite+aiosqlite`／`postgresql+asyncpg`は検証済み同期driverへ正規化し、明示された未検証driverは資格情報を露出せずfail-fastにした。
+- 全backendのdriver契約整合性、URL構成要素の保存、未検証driver拒否をparameterized testで固定し、関連29件と変更対象Ruffを通過した。

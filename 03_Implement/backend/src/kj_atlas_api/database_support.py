@@ -22,6 +22,8 @@ class DatabaseSupport:
     shared_schema_saas: bool
     inline_content: InlineContentSupport
     atomic_primary_key_replacement: bool
+    sync_drivername: str
+    accepted_drivernames: tuple[str, ...]
     optional_dependency: str | None
     test_marker: str | None
 
@@ -39,6 +41,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=False,
         inline_content="verified",
         atomic_primary_key_replacement=False,
+        sync_drivername="sqlite",
+        accepted_drivernames=("sqlite", "sqlite+pysqlite", "sqlite+aiosqlite"),
         optional_dependency=None,
         test_marker=None,
     ),
@@ -50,6 +54,12 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=True,
         inline_content="verified",
         atomic_primary_key_replacement=False,
+        sync_drivername="postgresql+psycopg",
+        accepted_drivernames=(
+            "postgresql",
+            "postgresql+psycopg",
+            "postgresql+asyncpg",
+        ),
         optional_dependency="postgres",
         test_marker="postgres",
     ),
@@ -63,6 +73,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=False,
         inline_content="verified",
         atomic_primary_key_replacement=False,
+        sync_drivername="mysql+pymysql",
+        accepted_drivernames=("mysql", "mysql+pymysql"),
         optional_dependency="mysql",
         test_marker="mysql",
     ),
@@ -74,6 +86,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=False,
         inline_content="verified",
         atomic_primary_key_replacement=False,
+        sync_drivername="mariadb+pymysql",
+        accepted_drivernames=("mariadb", "mariadb+pymysql"),
         optional_dependency="mysql",
         test_marker="mysql",
     ),
@@ -85,6 +99,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=False,
         inline_content="verified",
         atomic_primary_key_replacement=False,
+        sync_drivername="mssql+pymssql",
+        accepted_drivernames=("mssql", "mssql+pymssql"),
         optional_dependency="mssql",
         test_marker="mssql",
     ),
@@ -96,6 +112,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=False,
         inline_content="verified",
         atomic_primary_key_replacement=False,
+        sync_drivername="oracle+oracledb",
+        accepted_drivernames=("oracle", "oracle+oracledb"),
         optional_dependency="oracle",
         test_marker="oracle",
     ),
@@ -107,6 +125,8 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         shared_schema_saas=False,
         inline_content="verified",
         atomic_primary_key_replacement=True,
+        sync_drivername="cockroachdb+psycopg",
+        accepted_drivernames=("cockroachdb", "cockroachdb+psycopg"),
         optional_dependency="cockroachdb",
         test_marker="cockroachdb",
     ),
@@ -133,25 +153,31 @@ def database_support_for_url(database_url: str) -> DatabaseSupport:
 
 
 def require_verified_database_url(database_url: str) -> DatabaseSupport:
-    support = database_support_for_url(database_url)
+    try:
+        url = make_url(database_url)
+    except Exception as error:
+        raise ValueError("KJ_ATLAS_DATABASE_URL must be a valid SQLAlchemy URL") from error
+    support = database_support_for_backend(url.get_backend_name())
     if not support.is_verified:
         raise ValueError(
             f"Database backend '{support.backend}' is a candidate, not a verified runtime. "
             "Its identifier types and Alembic migration matrix must be completed before use. "
             f"Verified backends: {', '.join(verified_database_backends())}"
         )
+    if url.drivername not in support.accepted_drivernames:
+        raise ValueError(
+            f"Unsupported SQLAlchemy driver for database backend '{support.backend}'. "
+            "Accepted driver names: "
+            f"{', '.join(support.accepted_drivernames)}"
+        )
     return support
 
 
 def normalize_sync_database_url(database_url: str) -> str:
     """Normalize supported async URLs for the synchronous SQLAlchemy stack."""
-    require_verified_database_url(database_url)
+    support = require_verified_database_url(database_url)
     url: URL = make_url(database_url)
-
-    if url.drivername == "sqlite+aiosqlite":
-        url = url.set(drivername="sqlite")
-    elif url.drivername == "postgresql+asyncpg":
-        url = url.set(drivername="postgresql+psycopg")
+    url = url.set(drivername=support.sync_drivername)
 
     # URL.__str__ masks passwords, which would pass literal *** to the driver.
     return url.render_as_string(hide_password=False)

@@ -22,6 +22,7 @@ DB対応の正本は本書とする。SQLAlchemyがdialectを提供している�
 - repositoryとAPIはDB非依存に保つ。DB差分は能力レジストリ、migration strategy、実DB fixtureへ閉じ込める。
 - migration strategyは少数のclosed setとし、新DBごとにアプリ全体へbooleanや条件分岐を増やさない。
 - optional dependency、pytest marker、実DBtest、CI実行、公開support matrixは能力レジストリとの静的契約testで同期し、一覧文字列を手書きで複製しない。
+- SQLAlchemy backendだけでなく、検証済み同期driverと受理するdrivernameも能力レジストリで管理する。driver省略URLと既存async URLは検証済み同期driverへ正規化し、未導入・未検証driverの明示指定はengine生成前に拒否する。
 - identifier/index対象文字列、検索・表示用のbounded text、本文・bundle等のcontent objectを区別する。可搬性のために本文を不必要に短いVARCHARへ変換しない。
 - SQL方言のコンパイル成功だけでVerifiedへ昇格しない。
 
@@ -99,7 +100,7 @@ CandidateをVerifiedへ変更するには、対象versionを固定した実DBに
 3. primary key、複合foreign key、unique、check、index、cascade/restrictの実制約検証
 4. Documentと主要tenant従属データのCRUD roundtrip
 5. transaction rollback、connection pool再利用、backup/restoreの代表演習
-6. optional driver、CI、installation/configuration文書の同期
+6. optional driver、受理URLと同期driverの正規化契約、CI、installation/configuration文書の同期
 
 この同期自体もpromotion後の保守契約である。Verified backendをレジストリへ追加したのにdriver extra、marker、実DBtest、CI command、公開表のいずれかが欠ける場合、通常のunit test段階で失敗させる。
 

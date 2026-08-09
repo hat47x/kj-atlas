@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 from pydantic import ValidationError
+from sqlalchemy.engine import make_url
 
 from kj_atlas_api.database_support import (
     alembic_config_database_url,
@@ -78,14 +79,60 @@ def test_malformed_database_url_is_rejected_with_stable_error() -> None:
         require_verified_database_url("not a database url")
 
 
-def test_sync_normalization_preserves_encoded_credentials() -> None:
-    assert normalize_sync_database_url("sqlite+aiosqlite:///./kj_atlas.db") == (
-        "sqlite:///./kj_atlas.db"
-    )
-    assert (
-        normalize_sync_database_url("postgresql+asyncpg://user:p%40ss@db:5432/kj_atlas")
-        == "postgresql+psycopg://user:p%40ss@db:5432/kj_atlas"
-    )
+@pytest.mark.parametrize(
+    ("database_url", "expected_drivername"),
+    [
+        ("sqlite+aiosqlite:///./kj_atlas.db", "sqlite"),
+        ("postgresql://user:p%40ss@db:5432/kj_atlas", "postgresql+psycopg"),
+        ("postgresql+asyncpg://user:p%40ss@db:5432/kj_atlas", "postgresql+psycopg"),
+        ("mysql://user:p%40ss@db:3306/kj_atlas", "mysql+pymysql"),
+        ("mariadb://user:p%40ss@db:3306/kj_atlas", "mariadb+pymysql"),
+        ("mssql://user:p%40ss@db:1433/kj_atlas", "mssql+pymssql"),
+        (
+            "oracle://user:p%40ss@db:1521?service_name=FREEPDB1",
+            "oracle+oracledb",
+        ),
+        (
+            "cockroachdb://user:p%40ss@db:26257/kj_atlas?sslmode=disable",
+            "cockroachdb+psycopg",
+        ),
+    ],
+)
+def test_sync_normalization_uses_verified_driver_and_preserves_url_parts(
+    database_url: str,
+    expected_drivername: str,
+) -> None:
+    original = make_url(database_url)
+    normalized = make_url(normalize_sync_database_url(database_url))
+
+    assert normalized.drivername == expected_drivername
+    assert normalized.username == original.username
+    assert normalized.password == original.password
+    assert normalized.host == original.host
+    assert normalized.database == original.database
+    assert normalized.query == original.query
+
+
+@pytest.mark.parametrize(
+    "database_url",
+    [
+        "postgresql+psycopg2://sensitive-user:secret-password@db/kj_atlas",
+        "mysql+mysqldb://sensitive-user:secret-password@db/kj_atlas",
+        "mariadb+mariadbconnector://sensitive-user:secret-password@db/kj_atlas",
+        "mssql+pyodbc://sensitive-user:secret-password@db/kj_atlas",
+        "oracle+cx_oracle://sensitive-user:secret-password@db/kj_atlas",
+        "cockroachdb+psycopg2://sensitive-user:secret-password@db/kj_atlas",
+    ],
+)
+def test_unverified_driver_is_rejected_without_echoing_credentials(
+    database_url: str,
+) -> None:
+    with pytest.raises(ValueError, match="Unsupported SQLAlchemy driver") as captured:
+        require_verified_database_url(database_url)
+
+    message = str(captured.value)
+    assert "sensitive-user" not in message
+    assert "secret-password" not in message
 
 
 def test_registry_has_no_duplicate_backends() -> None:

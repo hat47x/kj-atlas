@@ -7,6 +7,7 @@ from kj_atlas_api.database_support import (
     registered_database_support,
     verified_database_backends,
 )
+from sqlalchemy.engine import make_url
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -31,6 +32,14 @@ def test_every_external_verified_backend_declares_driver_and_real_db_marker() ->
             continue
         assert support.optional_dependency is not None, support.backend
         assert support.test_marker is not None, support.backend
+
+
+def test_every_backend_declares_a_consistent_verified_driver_contract() -> None:
+    for support in registered_database_support():
+        assert support.sync_drivername in support.accepted_drivernames
+        assert len(set(support.accepted_drivernames)) == len(support.accepted_drivernames)
+        for drivername in support.accepted_drivernames:
+            assert make_url(f"{drivername}://").get_backend_name() == support.backend
 
 
 def test_driver_extras_markers_tests_and_ci_stay_synchronized() -> None:

@@ -13,7 +13,7 @@ kj-atlasはSQLAlchemy ORMを利用しているが、ORMが接続可能なDBと�
 
 ## Decision
 
-1. DB方言の判断は単一の能力レジストリへ集約し、各backendに`family`、`support_level`、`migration_strategy`、`shared_schema_saas`、optional driver、実DBtest markerを持たせる。
+1. DB方言の判断は単一の能力レジストリへ集約し、各backendに`family`、`support_level`、`migration_strategy`、`shared_schema_saas`、検証済み同期driver、受理するSQLAlchemy drivername、optional driver、実DBtest markerを持たせる。
 2. `verified`はSQLite、PostgreSQL、MySQL 8.4、MariaDB 11.4、SQL Server 2022、CockroachDB 26.2、Oracle AI Database 26aiとする。今後の未検証DBは`candidate`として登録し、実DBmatrix完了までruntimeとAlembicをfail-fastで拒否する。
 3. driver差ではなくDB familyを拡張単位にする。MySQLとMariaDBは同じfamilyとして共通化し、差分が実証された箇所だけ個別capabilityへ分離する。
 4. candidateの昇格には、fresh migration、upgrade/downgrade、複合PK/FK・unique/check/index、CRUD roundtrip、transaction、backup/restoreの実DB検証を必須とする。SQLAlchemyのmock dialectやSQL生成だけでは昇格しない。
@@ -22,6 +22,7 @@ kj-atlasはSQLAlchemy ORMを利用しているが、ORMが接続可能なDBと�
 7. 各DB専用repositoryやAPIを作らず、差分は能力レジストリ、少数のmigration strategy、検証fixtureへ閉じ込める。
 8. content objectは将来の`ContentStore` portの背後に置く。現行互換のDB保存を既定とし、object storage実装を追加してもrepository/APIのDocument契約へ保存先分岐を漏らさない。
 9. object storage利用時もtenant・digest・schema version・size・object key等のmetadataはDBを正本とする。保存先の実行時切替やhybrid routingは、障害時状態遷移、移行・rollback、orphan回収が検証されるまで公開しない。
+10. driver省略URLと対応済みasync URLは、各backendの検証済み同期driverへ正規化する。別driverを明示したURLはbackendがVerifiedでも許可せず、資格情報を含まないエラーでengine生成前に停止する。
 
 ## Consequences
 
