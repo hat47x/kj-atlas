@@ -97,3 +97,10 @@
 - `ai_generation_runs`を追加し、task、trace ID、入力IR digest、出力blob digest、policy version、SafeMode、作成時刻、保持期限だけを保存する最小契約とした。prompt、入力本文、生成本文、provider、model、transportの列は持たず、実行詳細は既存監査ログへtrace IDで接続する。
 - SafeModeは常にtrueであることをDB制約で強制した。AI proposal revisionはAI run参照必須、非AI revisionは参照禁止とし、tenant複合FKにより別tenantのrun参照を拒否する。出力digestも同一tenantのcontent blobへ接続した。
 - PostgreSQLでは新tableへFORCE RLSを適用し、SQLite fresh upgrade／downgradeを含むmigrationを追加した。lineage／SafeMode／payload非保持／列分類／migrationの26件を通過し、AC-7を完了した。
+
+## Audited physical blob GC checkpoint 2026-08-10
+
+- `generation_deletion_audit_events`を追加し、revision／blob GCについてtenant、対象IDまたはdigest、backend、executor、結果、時刻だけをappend-only evidenceとして保存する。本文と外部locatorは監査へ複製しない。PostgreSQLではFORCE RLSを適用した。
+- revision削除は条件付きDELETEが成功した場合だけ同じtransactionへ監査rowを追加する。保護対象や別tenantを削除できない既存条件を維持した。
+- blob GCは`ready|failed|deleting`の期限超過orphanを対象とし、row lock下でrevision参照とdelta base参照を再確認する。database blobはmetadataを、NAS／S3等は注入されたadapterで物理objectを削除してからmetadataを消す。object不在は冪等成功、削除例外は`deleting`状態と失敗監査を残す。
+- migration fresh upgrade／downgrade、外部削除成功・失敗、監査、列分類、lineageを含む9件とRuffを通過した。AC-6にはbranch到達性に基づく件数保持が残るため未完了を維持する。

@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from kj_atlas_api.generation_repository import (
     RevisionHeadConflict,
     advance_revision_head,
+    delete_unreferenced_blob_gc_candidate,
     delete_ephemeral_gc_candidate,
     list_ephemeral_gc_candidates,
     list_unreferenced_blob_candidates,
@@ -19,6 +20,7 @@ from kj_atlas_api.models import (
     CanvasRevisionRow,
     ContentBlobRow,
     DocumentRow,
+    GenerationDeletionAuditEventRow,
     TenantRow,
 )
 from kj_atlas_api.tenant_context import TenantContext
@@ -173,6 +175,9 @@ def test_revision_head_compare_and_swap_is_tenant_scoped(tmp_path) -> None:
                     tenant=_tenant("tenant-a"),
                     revision_id="old-pinned",
                     older_than="2026-08-01T00:00:00Z",
+                    audit_event_id="audit-protected",
+                    executor_ref="system:gc",
+                    occurred_at=timestamp,
                 )
                 is False
             )
@@ -182,9 +187,18 @@ def test_revision_head_compare_and_swap_is_tenant_scoped(tmp_path) -> None:
                     tenant=_tenant("tenant-a"),
                     revision_id="old-free",
                     older_than="2026-08-01T00:00:00Z",
+                    audit_event_id="audit-revision",
+                    executor_ref="system:gc",
+                    occurred_at=timestamp,
                 )
                 is True
             )
+            db.flush()
+            revision_audit = db.get(GenerationDeletionAuditEventRow, "audit-revision")
+            assert revision_audit is not None
+            assert revision_audit.target_ref == "old-free"
+            assert revision_audit.outcome == "deleted"
+            assert db.get(GenerationDeletionAuditEventRow, "audit-protected") is None
 
             orphan_digest = sha256(b"orphan").hexdigest()
             db.add(
@@ -212,6 +226,86 @@ def test_revision_head_compare_and_swap_is_tenant_scoped(tmp_path) -> None:
                     older_than="2026-08-01T00:00:00Z",
                 )
             ] == [orphan_digest]
+            assert delete_unreferenced_blob_gc_candidate(
+                db,
+                tenant=_tenant("tenant-a"),
+                content_digest=orphan_digest,
+                older_than="2026-08-01T00:00:00Z",
+                audit_event_id="audit-blob",
+                executor_ref="system:gc",
+                occurred_at=timestamp,
+            )
+            db.flush()
+            blob_audit = db.get(GenerationDeletionAuditEventRow, "audit-blob")
+            assert blob_audit is not None
+            assert blob_audit.target_ref == orphan_digest
+            assert blob_audit.outcome == "deleted"
+            assert db.get(ContentBlobRow, ("tenant-a", orphan_digest)) is None
+
+            external_digest = sha256(b"external orphan").hexdigest()
+            failed_digest = sha256(b"failed external orphan").hexdigest()
+            for content_digest, backend, locator in (
+                (external_digest, "nas", "tenants/a/content/external.json"),
+                (failed_digest, "s3", "tenants/a/content/failed.json"),
+            ):
+                db.add(
+                    ContentBlobRow(
+                        tenant_id="tenant-a",
+                        content_digest=content_digest,
+                        storage_backend=backend,
+                        locator=locator,
+                        representation="gzip_json",
+                        base_digest=None,
+                        delta_depth=0,
+                        byte_size=15,
+                        stored_byte_size=15,
+                        storage_state="ready",
+                        schema_version="document-v1",
+                        created_at="2026-07-01T00:00:00Z",
+                    )
+                )
+            db.commit()
+
+            deleted: list[tuple[str, str]] = []
+
+            def _delete_external(backend: str, locator: str) -> bool:
+                deleted.append((backend, locator))
+                return True
+
+            assert delete_unreferenced_blob_gc_candidate(
+                db,
+                tenant=_tenant("tenant-a"),
+                content_digest=external_digest,
+                older_than="2026-08-01T00:00:00Z",
+                audit_event_id="audit-external-blob",
+                executor_ref="system:gc",
+                occurred_at=timestamp,
+                delete_external=_delete_external,
+            )
+            db.flush()
+            assert deleted == [("nas", "tenants/a/content/external.json")]
+            assert db.get(ContentBlobRow, ("tenant-a", external_digest)) is None
+
+            def _fail_delete(_backend: str, _locator: str) -> bool:
+                raise OSError("storage unavailable")
+
+            assert not delete_unreferenced_blob_gc_candidate(
+                db,
+                tenant=_tenant("tenant-a"),
+                content_digest=failed_digest,
+                older_than="2026-08-01T00:00:00Z",
+                audit_event_id="audit-failed-blob",
+                executor_ref="system:gc",
+                occurred_at=timestamp,
+                delete_external=_fail_delete,
+            )
+            db.flush()
+            failed_blob = db.get(ContentBlobRow, ("tenant-a", failed_digest))
+            assert failed_blob is not None
+            assert failed_blob.storage_state == "deleting"
+            failed_audit = db.get(GenerationDeletionAuditEventRow, "audit-failed-blob")
+            assert failed_audit is not None
+            assert failed_audit.outcome == "failed"
     finally:
         Base.metadata.drop_all(engine)
         engine.dispose()

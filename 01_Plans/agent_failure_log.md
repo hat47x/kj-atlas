@@ -141,3 +141,17 @@ Updated: 2026-08-03
 - 原因: validatorは作業ツリー内の全active memoを対象とし、並行作業中の未完成ファイルも検査する。
 - 対応: 対象外ファイルは変更せず、同じvalidator関数で`issue-DATA-GENERATION-01`だけを個別検証する。
 - 再発防止: 並行作業がある場合は全体検証の失敗対象を確認し、対象issueの個別検証を併記する。
+
+## 2026-08-10: GC監査テストがautoflush無効sessionで未flush rowを検索
+
+- 事象: revision削除成功後の監査行確認が`None`となり、対象テスト1件が失敗した。
+- 原因: repositoryは監査rowをsessionへ追加していたが、既存fixtureは`autoflush=False`であり、`Session.get`前にINSERTされていなかった。
+- 対応: repositoryのcommit責務は変更せず、永続化を確認するテスト側で明示的にflushする。
+- 再発防止: `autoflush=False`のrepositoryテストでは、追加rowをqueryする前にflushする。
+
+## 2026-08-10: backend内からmigrationのrepository相対pathを重複指定
+
+- 事象: 最終回帰コマンドが先頭の`chmod`で対象なしとなり、テスト開始前に停止した。
+- 原因: working directoryが既に`03_Implement/backend`であるのに、同じprefixをpathへ再度付けた。
+- 対応: backend基準の`alembic/versions/...`へ修正して同じ検証を再実行する。
+- 再発防止: 長い検証コマンドではworking directoryと最初の対象pathを実行前に照合する。

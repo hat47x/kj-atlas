@@ -284,6 +284,50 @@ class CanvasRevisionPinRow(Base):
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class GenerationDeletionAuditEventRow(Base):
+    """Content-free evidence for revision and physical blob GC decisions."""
+
+    __tablename__ = "generation_deletion_audit_events"
+    __table_args__ = (
+        CheckConstraint(
+            "action IN ('revision_gc.delete', 'blob_gc.delete')",
+            name="ck_generation_deletion_audit_action",
+        ),
+        CheckConstraint(
+            "outcome IN ('deleted', 'not_found', 'failed')",
+            name="ck_generation_deletion_audit_outcome",
+        ),
+        CheckConstraint(
+            "target_kind IN ('revision', 'blob')",
+            name="ck_generation_deletion_audit_target_kind",
+        ),
+        CheckConstraint(
+            "(target_kind = 'revision' AND action = 'revision_gc.delete' "
+            "AND storage_backend IS NULL) OR "
+            "(target_kind = 'blob' AND action = 'blob_gc.delete' "
+            "AND storage_backend IS NOT NULL)",
+            name="ck_generation_deletion_audit_target_shape",
+        ),
+        Index(
+            "ix_generation_deletion_audit_tenant_occurred",
+            "tenant_id",
+            "occurred_at",
+        ),
+    )
+
+    event_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(
+        Text, ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False
+    )
+    target_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    target_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    storage_backend: Mapped[str | None] = mapped_column(Text, nullable=True)
+    action: Mapped[str] = mapped_column(Text, nullable=False)
+    outcome: Mapped[str] = mapped_column(Text, nullable=False)
+    executor_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    occurred_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class IdentityProviderRow(Base):
     __tablename__ = "identity_providers"
     __table_args__ = (

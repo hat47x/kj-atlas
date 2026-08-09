@@ -30,6 +30,7 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 15. retention GCはmark-and-sweep型とし、まず候補だけを列挙する。head、DAG parent、source proposal、明示pinから到達するrevisionを削除せず、checkpoint／governedを自動期限削除しない。revision削除後も参照数ゼロと保留期間を確認するまで物理blobを削除しない。
 16. revision削除時は保護条件を同じDELETE statementで再評価し、候補列挙後のpin/head追加競合をfail closedにする。blob sweepはrevision参照とdelta base参照がともにゼロで、`failed|deleting`の保留期限超過objectだけを対象とする。
 17. AI実行は`ai_generation_runs`へ分離し、task、監査ログ接続用trace ID、入力IR digest、出力blob digest、policy version、SafeMode、作成・保持期限だけを保存する。prompt、入出力本文、provider、model、transportはrevision DAGへ複製しない。AI proposal revisionだけが同一tenantのAI runを参照でき、SafeMode無効のrunはDB制約で拒否する。
+18. GCによるrevision／blob削除は本文を含まないappend-only監査を残す。blob GCは対象rowをlockしたトランザクション内で参照を再確認し、`deleting`へ遷移してから物理backendを削除し、metadata削除と成功監査を同じtransactionへ置く。物理削除失敗時はrowを`deleting`のまま残して失敗監査を記録し、retry可能にする。外部I/O中のrow lockはGC worker限定の安全性優先trade-offとして許容する。
 
 ## Alternatives
 
@@ -50,6 +51,7 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 - revision DAG、delta生成、GC、保持pin、domain row参照、共有bundleの追加設計が必要になる。
 - Gitの圧縮効果はJSON canonical化と変更局所性に依存するため、実データbenchmarkなしに採用効果を断定しない。
 - object storageを先行実装しないことで二重参照・二重GCを避ける一方、大容量・低価格・共有storageが必要になった時点で同じblob contractへ追加できる。
+- GC監査はrevision IDまたはdigest、backend、結果だけを保持し、削除済み本文やlocatorを複製しない。
 
 ## Preliminary benchmark 2026-08-09
 
