@@ -9,6 +9,65 @@
 3. 変更リスクに応じたテストを実行し、未実施項目は明記する。
 4. SafeMode、共有・export、import、AI提案に関わる安全不変条件を緩和しない。
 5. 現在のissueだけを更新し、同じ進捗を複数の台帳へ転記しない。
+6. **設計判断は業務設計・データ設計・機能設計の三要素牽制を通す**（§1.1 三要素牽制設計法）
+7. **KJ操作ごとに適切なモデルレベルを選択する**（§1.2 操作別モデルレベル）
+8. **自律判断の許容範囲をレベルで自覚する**（§1.3 自律性レベル）
+
+### 1.1 三要素牽制設計法（ADR-0067）
+
+設計判断を下す際は、以下の3次元から相互に制約を突きつけ、矛盾がなくなるまで反復する。三者が揃わない設計判断は着工しない。
+
+| 次元 | 問い | 参照先 |
+|------|------|--------|
+| **業務設計** (Business) | 誰が・何のために・どの順序で行うか。何をしてはならないか | ADR-0001, ADR-0044, `value_traceability.md` |
+| **データ設計** (Data) | 何が保存され、何が表示され、何が境界を越えるか | `schemas.md`, `data_model_operations_overview.html`, ADR-0033 |
+| **機能設計** (Function) | 誰が・どのAPIで・どの状態遷移を通して操作するか | `api.md`, `enterprise_architecture.html` |
+
+**反復手順:**
+1. 起点となる次元から初期設計を描く
+2. 残り2次元から制約を突きつける
+3. 矛盾があれば3次元のいずれかを補正
+4. 三者が整合するまで2-3を繰り返す
+5. 整合した時点で設計判断として記録する
+
+**適用範囲:**
+- 必須: 新規ADR起票時、画面/API新規設計時、データ境界変更時
+- 推奨: issueの設計判断記述時
+- 任意: 軽微な実装修正
+
+**実例:** 管理面のタイトル表示補正（`02_Architecture/design/admin-surface-metadata-display-correction.html`）を参照。業務上「管理者は文書を識別する必要がある」、データ上「タイトルは識別メタデータであり本文ではない」、機能上「一覧APIはタイトルを返す」の三者が揃ったことで補正が成立した。
+
+### 1.2 操作別モデルレベル
+
+KJ法の各操作には異なる推論深度が必要である。費用対効果を最適化するため、操作ごとに適切なモデルを選択する。
+
+| KJ操作 | 推論深度 | 推奨モデル | 根拠 |
+|--------|---------|-----------|------|
+| カード化（RawNote→Card） | 低 | DeepSeek | テキスト構造化。名詞止め→述語文は規則的 |
+| 束ね（2〜3枚のグループ化） | 低〜中 | DeepSeek | 近接性判断。幾何情報も利用可能 |
+| 表札作成（島ラベル） | 中 | DeepSeek / Sonnet | 共通性抽出。分類名ではなくadvocacy |
+| 関係線（5種別） | 中 | DeepSeek / Sonnet | 論理的関係の識別 |
+| 違和感検出（Critique） | 中〜高 | Sonnet | 「なんとなく違う」の言語化 |
+| 島形成（空間構造化） | 中 | DeepSeek / Sonnet | 空間配置提案 |
+| ナラティブ（B型叙述） | 高 | Sonnet / Opus | 空間→文章。A型照合を含む |
+| 矛盾検出 | 中〜高 | Sonnet | 論理的矛盾の検出 |
+| 文書タイトル提案 | 低〜中 | DeepSeek | 低品質許容・人間が編集前提 |
+| 三要素整合チェック | 中 | DeepSeek / Sonnet | 構造化判断記録の検証 |
+
+環境変数 `KJ_ATLAS_MODEL_LEVEL_LOW` / `_MEDIUM` / `_HIGH` で操作別にモデルを上書き可能。provider=`none` 時は全操作でAI呼び出しをスキップ。
+
+### 1.3 自律性レベル
+
+AIが自律的に判断できる範囲を4段階で定義する。現在のセッションがどのレベルで動作すべきかを、ユーザー指示または文書の明示的許可から判断する。
+
+| レベル | 定義 | 人間の役割 | 現在の状態 |
+|--------|------|-----------|-----------|
+| **L1: 補助** | AIは情報検索・整理・候補提示のみ。全判断は人間が下す | 全判断の主体 | **現在** |
+| **L2: 検証** | AIが三要素チェックを自律実行し、不整合を指摘。最終判断は人間 | 最終判断の主体 | P0-P1完了後 |
+| **L3: 実行** | AIが設計→実装→テストを自律実行し、人間が受入判定 | 受入判定の主体 | P2-P3完了後 |
+| **L4: 自律** | AIが方向指示から自律的に判断・実行。人間は方向指示のみ | 方向指示の主体 | 目標（P3完了後） |
+
+現在は **L1** で動作する。L2以上への移行は `issue-DOC-AI-01`（文書改善）の受入条件が満たされた後とする。
 
 ## 2. 最小読取ルール
 
@@ -24,8 +83,14 @@
 | 価値・要件判断 | `01_Plans/adr/ADR-0001-value-to-requirements.md` |
 | 用語・KJ法の概念 | `00_Prompt/domain.md` |
 | KJ法の実行（束ね・表札・空白・検査） | `00_Prompt/kj_technique.md` |
+| KJ操作のAI実行手順（入出力・判断基準・停止条件） | `00_Prompt/ai_kj_execution_procedures.md` |
 | カード品質 | `00_Prompt/qualitative_card_quality_requirements.md` |
 | W型反復 | `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/inquiry_journey_model.html` |
+| 設計方法論（三要素牽制） | `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md` |
+| 三要素整合チェックリスト | `02_Architecture/three-element-constraint-checklist.html` |
+| 非キャンバスUI・画面横断フロー | `02_Architecture/non-canvas-ui-flow-design.html` |
+| 管理面のデータ境界 | `02_Architecture/design/master-data-settings-ui-ux-concept.md`, `02_Architecture/design/admin-surface-metadata-display-correction.html` |
+| ドッグフーディング・AI協働計画 | `02_Architecture/dogfooding-ai-collaboration-plan.html` |
 | 全体構成 | `02_Architecture/architecture.html` |
 | Document契約・互換性 | `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`, `02_Architecture/schemas.md` |
 | API | `02_Architecture/api.md` |
