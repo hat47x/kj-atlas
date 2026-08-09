@@ -72,6 +72,8 @@ S3実装は特定SDKをContent Storeへ直結せず、`put_object`／`get_object
 
 Content Store上の編集世代は物理backendと分離し、`ADR-0070`で採択したcontent-addressed revision DAGで扱う。論理revisionは共有可能な`tenant + digest` blobを参照し、database／NAS／S3／Gitはその物理backend候補とする。Git commit／branchをDB metadata、tenant認可、human reviewの正本にしない。schema version、ETag、Inquiry round snapshot、merge decision log、編集revisionは別概念を維持する。
 
+Firestore／DynamoDB等のDocument DBは、SQLAlchemy RDB backendやrevision blob backendとして扱わない。document/item上限が代表canvasより小さく、分割保存は既存revision DAGとchunk／manifest／GCを二重化するためである。採用価値はpresence、cursor、最近使った文書、検索候補等の再構築可能な派生projectionに限定する。RDB transaction内outboxから非同期反映し、同期dual write、projectionからの正本逆生成、provider側ruleだけに依存した認可を禁止する。詳細は`ADR-0071`を正本とする。
+
 Content Storeの操作契約は一つの汎用CRUDへ統合せず、次の3 portに分離する。
 
 | Port | 更新特性 | DB実装の責務 |
