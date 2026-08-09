@@ -379,3 +379,17 @@ Updated: 2026-08-03
 - 原因: CockroachDB fresh schemaは歴史DDL hookにより対象列が既にbounded型だが、履歴上の型変更を再実行していた。
 - 対応: CockroachDBでは0020のupgrade/downgradeを物理no-opとし、歴史DDL hookが作った同一形状を維持する。
 - 再発防止: fresh DDL変換で将来revisionの目標形状を先取りするDBは、同revisionの冗長DDLと式index依存を実DBで検証する。
+
+## 2026-08-10: Oracleが明示的なON DELETE NO ACTIONを拒否
+
+- 事象: Oracle AI Database Free 23.26.2 fresh migrationのrevision 0007で、foreign keyの`ON DELETE NO ACTION`が`ORA-02000`となった。
+- 原因: Oracleは参照中削除拒否を既定動作として提供するが、DDL上の明示的な`NO ACTION`句を受理しない。
+- 対応: 論理model/migrationの削除動作は維持し、Oracle向けforeign key compilerだけが`NO ACTION`句を省略する。
+- 再発防止: 同じ参照動作でもDDL keywordの受理差がある場合は、repositoryや各migrationではなくdialect compiler境界へ閉じ込める。
+
+## 2026-08-10: Oracle Data Pumpのremap先事前作成が警告終了を発生
+
+- 事象: schema restore testでremap先userを先に作成したため、`impdp`は全tableを正常復元しながら`ORA-31684`を記録して終了code 5を返した。
+- 原因: schema exportにはuser作成metadataも含まれ、restore helperによる同名userの事前作成と競合した。
+- 対応: restore前は対象userをdropするだけにし、user・grant・tableの再作成をData Pumpへ一貫して委ねた。
+- 再発防止: backup/restore testはrow照合だけでなくutility終了codeも成功条件とし、警告付き部分成功を受理しない。

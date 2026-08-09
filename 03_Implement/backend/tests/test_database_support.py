@@ -6,7 +6,6 @@ from pydantic import ValidationError
 from kj_atlas_api.database_support import (
     alembic_config_database_url,
     database_support_for_backend,
-    database_support_for_url,
     normalize_sync_database_url,
     registered_database_support,
     require_verified_database_url,
@@ -20,6 +19,7 @@ def test_verified_database_capabilities_are_explicit() -> None:
     mysql = database_support_for_backend("mysql")
     mariadb = database_support_for_backend("mariadb")
     mssql = database_support_for_backend("mssql")
+    oracle = database_support_for_backend("oracle")
     cockroachdb = database_support_for_backend("cockroachdb")
 
     assert sqlite.is_verified is True
@@ -41,6 +41,12 @@ def test_verified_database_capabilities_are_explicit() -> None:
     assert mssql.migration_strategy == "constraint-ddl"
     assert mssql.shared_schema_saas is False
     assert mssql.inline_content == "verified"
+    assert oracle.is_verified is True
+    assert oracle.family == "oracle"
+    assert oracle.migration_strategy == "constraint-ddl"
+    assert oracle.atomic_primary_key_replacement is False
+    assert oracle.shared_schema_saas is False
+    assert oracle.inline_content == "verified"
     assert cockroachdb.is_verified is True
     assert cockroachdb.family == "cockroachdb"
     assert cockroachdb.migration_strategy == "constraint-ddl"
@@ -53,21 +59,6 @@ def test_alembic_config_url_escapes_percent_encoding_without_exposing_credential
     url = "mssql+pymssql://user:encoded%21password@db/kj_atlas"
 
     assert alembic_config_database_url(url) == url.replace("%", "%%")
-
-
-def test_future_database_is_registered_without_being_enabled() -> None:
-    url = "oracle+oracledb://user:secret@db/kj_atlas"
-    support = database_support_for_url(url)
-
-    assert support.backend == "oracle"
-    assert support.family == "oracle"
-    assert support.is_verified is False
-    assert support.migration_strategy == "unimplemented"
-    assert support.shared_schema_saas is False
-    assert support.inline_content == "candidate"
-
-    with pytest.raises(ValueError, match="candidate, not a verified runtime"):
-        require_verified_database_url(url)
 
 
 def test_unknown_database_is_rejected_without_echoing_credentials() -> None:
@@ -100,16 +91,16 @@ def test_registry_has_no_duplicate_backends() -> None:
     assert len({item.backend for item in registered}) == len(registered)
 
 
-def test_settings_rejects_candidate_before_engine_creation(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+def test_settings_rejects_unknown_database_before_engine_creation(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.setenv(
         "KJ_ATLAS_DATABASE_URL",
-        "oracle+oracledb://sensitive-user:secret-password@db/kj_atlas",
+        "db2://sensitive-user:secret-password@db/kj_atlas",
     )
 
     with pytest.raises(ValidationError) as captured:
         Settings(_env_file=None)
 
     message = str(captured.value)
-    assert "candidate, not a verified runtime" in message
+    assert "Unsupported database backend: db2" in message
     assert "sensitive-user" not in message
     assert "secret-password" not in message

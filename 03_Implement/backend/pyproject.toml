@@ -44,6 +44,9 @@ cockroachdb = [
   "sqlalchemy-cockroachdb>=2.0,<3",
   "psycopg[binary]",
 ]
+oracle = [
+  "oracledb>=3,<4",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -61,6 +64,7 @@ markers = [
   "mysql: tests that require MySQL or MariaDB",
   "mssql: tests that require Microsoft SQL Server",
   "cockroachdb: tests that require CockroachDB",
+  "oracle: tests that require Oracle Database",
   "auth_level1: required AuthContext contract coverage",
   "auth_level2: conditional federation fixture coverage",
   "external_llm: tests that require any OpenAI-compatible adapter on port 8001",

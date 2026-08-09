@@ -308,7 +308,7 @@ jobs:
       - name: Test (SQLite except auth level suites)
         env:
           KJ_ATLAS_DATABASE_URL: sqlite:///./kj_atlas.db
-        run: pytest -m "not postgres and not mysql and not mssql and not cockroachdb and not auth_level1 and not auth_level2"
+        run: pytest -m "not postgres and not mysql and not mssql and not cockroachdb and not oracle and not auth_level1 and not auth_level2"
 
       - name: Test (Auth Level1 required)
         env:
@@ -368,3 +368,48 @@ jobs:
           KJ_ATLAS_RUN_COCKROACHDB_TESTS: "1"
           KJ_ATLAS_TEST_COCKROACHDB_URL: cockroachdb+psycopg://root@127.0.0.1:26257/kj_atlas?sslmode=disable
         run: pytest -m cockroachdb
+
+  backend-oracle:
+    name: Backend Oracle Database matrix
+    needs: change-scope
+    if: needs.change-scope.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      oracle:
+        image: gvenzl/oracle-free:23.26.2-slim-faststart
+        env:
+          ORACLE_PASSWORD: KjAtlasOracle2026
+          APP_USER: kj_atlas
+          APP_USER_PASSWORD: KjAtlasOracle2026
+        ports:
+          - 1521:1521
+        options: >-
+          --health-cmd healthcheck.sh
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
+    defaults:
+      run:
+        working-directory: 03_Implement/backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Oracle test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test,oracle]" alembic
+
+      - name: Test (Oracle Database)
+        env:
+          KJ_ATLAS_RUN_ORACLE_TESTS: "1"
+          KJ_ATLAS_TEST_ORACLE_URL: oracle+oracledb://kj_atlas:KjAtlasOracle2026@127.0.0.1:1521?service_name=FREEPDB1
+          KJ_ATLAS_TEST_ORACLE_ADMIN_URL: oracle+oracledb://system:KjAtlasOracle2026@127.0.0.1:1521?service_name=FREEPDB1
+          KJ_ATLAS_TEST_ORACLE_CONTAINER: ${{ job.services.oracle.id }}
+        run: pytest -m oracle

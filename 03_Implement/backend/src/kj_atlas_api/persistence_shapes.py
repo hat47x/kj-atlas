@@ -1,9 +1,32 @@
 from dataclasses import dataclass
 from enum import Enum
 
-from sqlalchemy import CheckConstraint, MetaData, String, Table, Text, event, text
+from sqlalchemy import (
+    CheckConstraint,
+    ForeignKeyConstraint,
+    MetaData,
+    String,
+    Table,
+    Text,
+    event,
+    text,
+)
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.dialects.mssql import VARCHAR as MSSQL_VARCHAR
+
+
+@compiles(ForeignKeyConstraint, "oracle")
+def _compile_oracle_foreign_key(element, compiler, **kwargs: object) -> str:
+    """Omit Oracle's unsupported explicit NO ACTION while retaining its semantics."""
+    original_ondelete = element.ondelete
+    if original_ondelete != "NO ACTION":
+        return compiler.visit_foreign_key_constraint(element, **kwargs)
+    element.ondelete = None
+    try:
+        return compiler.visit_foreign_key_constraint(element, **kwargs)
+    finally:
+        element.ondelete = original_ondelete
 
 
 class DataShape(str, Enum):

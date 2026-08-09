@@ -1,5 +1,5 @@
 from sqlalchemy import String, Text
-from sqlalchemy.dialects import mssql, mysql
+from sqlalchemy.dialects import mssql, mysql, oracle
 from sqlalchemy.schema import CreateTable
 
 from kj_atlas_api.models import Base
@@ -99,3 +99,19 @@ def test_mssql_uses_varchar_max_and_portable_check_expressions() -> None:
     )
     assert portable_check_constraint_sql("safe_mode IS TRUE", "mssql") == "safe_mode = 1"
     assert portable_check_constraint_sql("safe_mode IS TRUE", "postgresql") == ("safe_mode IS TRUE")
+
+
+def test_oracle_uses_clob_and_omits_only_explicit_no_action() -> None:
+    documents_ddl = str(
+        CreateTable(Base.metadata.tables["documents"]).compile(dialect=oracle.dialect())
+    )
+    identities_ddl = str(
+        CreateTable(Base.metadata.tables["user_identities"]).compile(
+            dialect=oracle.dialect()
+        )
+    )
+
+    assert "payload_json CLOB" in documents_ddl
+    assert "tenant_id VARCHAR2(128 CHAR)" in documents_ddl
+    assert "NO ACTION" not in documents_ddl
+    assert "ON DELETE CASCADE" in identities_ddl
