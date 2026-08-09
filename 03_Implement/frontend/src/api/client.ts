@@ -10,6 +10,7 @@ import {
   parseTenantSessionBootstrapPolicy,
   type TenantSessionBootstrapPolicyV1,
 } from "./session_bootstrap_policy";
+import { authorizationHeader } from "../session/token_store";
 
 function resolveApiBase(): string {
   const rawValue = (import.meta.env.KJ_ATLAS_FRONTEND_API_BASE ?? "/api").trim();
@@ -68,14 +69,13 @@ export type TenantScopedRequestOptions = Readonly<{
 
 function tenantSessionPreconditionHeaders(
   options: TenantScopedRequestOptions,
-): Record<string, string> | undefined {
-  if (options.tenantSessionContext === undefined) {
-    return undefined;
+): Record<string, string> {
+  const headers: Record<string, string> = { ...authorizationHeader() };
+  if (options.tenantSessionContext !== undefined) {
+    const sessionContext = parseTenantSessionContext(options.tenantSessionContext);
+    headers[TENANT_SESSION_VERSION_HEADER] = sessionContext.tenantSessionVersion;
   }
-  const sessionContext = parseTenantSessionContext(options.tenantSessionContext);
-  return {
-    [TENANT_SESSION_VERSION_HEADER]: sessionContext.tenantSessionVersion,
-  };
+  return headers;
 }
 
 async function readBoundedUtf8Response(response: Response, maxBytes: number): Promise<string> {

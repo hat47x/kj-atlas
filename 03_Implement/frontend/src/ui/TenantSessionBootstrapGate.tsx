@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import { t } from "../i18n/translate";
+import { redirectToBrokerLogin } from "../session/oauth_login";
 import {
   bootstrapTenantSession,
   type TenantSessionBlockReason,
@@ -81,21 +82,39 @@ export function TenantSessionBlockedView({
         <p style={{ margin: 0, lineHeight: 1.6 }}>
           {t(`tenant_session.bootstrap.blocked.${reason}`)}
         </p>
-        <button
-          type="button"
-          onClick={onRetry}
-          style={{
-            justifySelf: "start",
-            border: "1px solid #334155",
-            borderRadius: 8,
-            padding: "8px 14px",
-            background: "#ffffff",
-            color: "#0f172a",
-            cursor: "pointer",
-          }}
-        >
-          {t("tenant_session.bootstrap.retry")}
-        </button>
+        {reason === "authentication_required" ? (
+          <button
+            type="button"
+            onClick={() => { void redirectToBrokerLogin(); }}
+            style={{
+              justifySelf: "start",
+              border: "1px solid #2563eb",
+              borderRadius: 8,
+              padding: "8px 14px",
+              background: "#2563eb",
+              color: "#ffffff",
+              cursor: "pointer",
+            }}
+          >
+            {t("tenant_session.bootstrap.login") || "Sign in"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onRetry}
+            style={{
+              justifySelf: "start",
+              border: "1px solid #334155",
+              borderRadius: 8,
+              padding: "8px 14px",
+              background: "#ffffff",
+              color: "#0f172a",
+              cursor: "pointer",
+            }}
+          >
+            {t("tenant_session.bootstrap.retry")}
+          </button>
+        )}
       </section>
     </main>
   );

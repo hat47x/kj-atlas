@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 
 import App from "./App";
+import { handleOAuthCallback } from "./session/oauth_callback";
 import { resolveRuntimeEntryMode } from "./session/runtime_activation";
 import { TenantSessionBlockedView } from "./ui/TenantSessionBootstrapGate";
 import { TenantSessionRuntimeGate } from "./ui/TenantSessionRuntimeGate";
@@ -43,8 +44,12 @@ function renderRuntimeEntry() {
   return <App />;
 }
 
-ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
-    {renderRuntimeEntry()}
-  </React.StrictMode>
-);
+// ADR-0064: handle OAuth callback before rendering the app.
+// The broker redirects back with ?code=...&state=... after login.
+void handleOAuthCallback().then(() => {
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      {renderRuntimeEntry()}
+    </React.StrictMode>
+  );
+});

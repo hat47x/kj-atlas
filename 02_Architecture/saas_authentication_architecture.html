@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>kj-atlas SaaS 認証アーキテクチャ — SAML/OIDC/Broker/JWT 協調フロー</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 24px; color: #0f172a; background: #f8fafc; }
+  h1 { border-bottom: 2px solid #2563eb; padding-bottom: 8px; }
+  h2 { margin-top: 32px; color: #1e40af; }
+  .mermaid { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
+  th { background: #f1f5f9; }
+  .status-ok { color: #16a34a; }
+  .status-pending { color: #d97706; }
+  code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+</style>
+</head>
+<body>
+
+<h1>kj-atlas SaaS 認証アーキテクチャ</h1>
+<p>ADR-0063 / ADR-0064 に基づく SAML / OIDC / Broker / JWT 協調認証フロー</p>
+
+<h2>1. 全体アーキテクチャ（3層モデル）</h2>
+<div class="mermaid">
+graph TB
+    subgraph "Layer 1: External IdP"
+        SAML[SAML IdP<br/>Okta / Azure AD]
+        GOOGLE[Google OAuth 2.0]
+        AZURE[Azure AD / Entra ID]
+    end
+
+    subgraph "Layer 2: Identity Broker"
+        BROKER[Keycloak / Authentik / WorkOS]
+        SAML2OIDC[SAML→OIDC 変換]
+        JWT_ISSUE[JWT 発行<br/>RS256 署名]
+        TENANT_CLAIM[tenant_ref claim 注入]
+    end
+
+    subgraph "Layer 3: kj-atlas Backend"
+        JWT_VERIFY[JwtSaasIdentityContextResolver<br/>JWT 検証 + jti replay]
+        TENANT_RESOLVE[ClaimBasedTenantContextResolver<br/>tenant_ref → tenant_id]
+        SESSION[InMemoryActiveTenantSessionPersister<br/>セッション管理 + cookie]
+        DOC_ACCESS[ServerOwnedDocumentResourceResolver<br/>テナントスコープ文書アクセス]
+    end
+
+    SAML -->|SAML Assertion| BROKER
+    GOOGLE -->|OIDC| BROKER
+    AZURE -->|OIDC| BROKER
+    BROKER --> SAML2OIDC
+    SAML2OIDC --> JWT_ISSUE
+    JWT_ISSUE --> TENANT_CLAIM
+    TENANT_CLAIM -->|X-Kj-Atlas-Authorization: Bearer JWT| JWT_VERIFY
+    JWT_VERIFY --> TENANT_RESOLVE
+    TENANT_RESOLVE --> SESSION
+    SESSION --> DOC_ACCESS
+</div>
+
+<h2>2. OAuth 2.0 認可コードグラント + PKCE フロー</h2>
+<div class="mermaid">
+sequenceDiagram
+    actor User
+    participant Frontend as kj-atlas Frontend
+    participant Broker as Identity Broker (Keycloak)
+    participant Backend as kj-atlas Backend
+
+    Note over Frontend,Backend: PKCE S256 による安全な認可コードグラント
+
+    Frontend->>Frontend: PKCE code_verifier 生成<br/>code_challenge = SHA256(verifier)
+    Frontend->>Frontend: state 生成 (CSRF対策)
+    Frontend->>Broker: GET /oauth/authorize?<br/>response_type=code&client_id=...&<br/>code_challenge=...&code_challenge_method=S256&state=...
+
+    Broker-->>User: Login form
+    User->>Broker: username + password + tenant選択
+    Broker->>Broker: 認証 + session cookie 発行
+
+    Broker-->>User: Consent screen
+    User->>Broker: Approve
+
+    Broker->>Frontend: 302 redirect_uri?code=AUTH_CODE&state=...
+    Frontend->>Frontend: state 検証 (CSRF)
+
+    Frontend->>Broker: POST /oauth/token<br/>grant_type=authorization_code&code=AUTH_CODE&<br/>code_verifier=...&client_id=...
+
+    Broker->>Broker: PKCE検証: SHA256(verifier) == challenge
+    Broker->>Frontend: { access_token: JWT, refresh_token: RT }
+
+    Frontend->>Frontend: storeTokens(JWT, RT)
+
+    Frontend->>Backend: GET /docs/{id}<br/>X-Kj-Atlas-Authorization: Bearer JWT<br/>Kj-Atlas-Tenant-Session-Version: ...
+
+    Backend->>Backend: JWT検証 (RS256, iss/aud/exp/iat/nbf, jti replay)
+    Backend->>Backend: tenant_ref → identity_providers → tenant_id
+    Backend->>Backend: membership + capability 検証
+    Backend->>Frontend: tenant-scoped document
+</div>
+
+<h2>3. JWT 検証パイプライン</h2>
+<div class="mermaid">
+flowchart LR
+    A[Request] --> B[_extract_bearer_token]
+    B --> C{token present?}
+    C -->|no| D[401 missing_token]
+    C -->|yes| E[jwt.decode<br/>verify_signature=False]
+    E --> F{iss/aud valid?}
+    F -->|no| G[401 unknown_provider]
+    F -->|yes| H[_fetch_jwks_keys<br/>cache / refresh / stale]
+    H --> I{keys available?}
+    I -->|no| J[503 jwks_unavailable]
+    I -->|yes| K[_resolve_key_by_kid<br/>RSA/EC only, kid-less fallback]
+    K --> L[jwt.decode<br/>verify_signature/exp/iss/aud/iat/nbf]
+    L --> M{signature valid?}
+    M -->|no| N[401 invalid_signature]
+    M -->|yes| O{aud matched?}
+    O -->|no| P[try aud array values]
+    P --> O
+    O -->|yes| Q{jti replayed?}
+    Q -->|yes| R[401 token_replayed]
+    Q -->|no| S[subject → user_id]
+    S --> T{provisioned?}
+    T -->|no| U[403 identity_not_provisioned]
+    T -->|yes| V[tenant_ref → tenant_id]
+    V --> W{tenant bound?}
+    W -->|no| X[401 unknown_tenant]
+    W -->|yes| Y[ResolvedIdentity + VerifiedTenantClaim]
+</div>
+
+<h2>4. テナント解決フロー</h2>
+<div class="mermaid">
+flowchart TB
+    subgraph "Identity Layer"
+        JWT[JWT verified claims]
+        JWT --> CLAIM[tenant_ref claim]
+        CLAIM --> IDP_LOOKUP[identity_providers<br/>issuer + audience + active + protocol=oidc]
+        IDP_LOOKUP --> TIP_LOOKUP[tenant_identity_providers<br/>identity_provider_id + external_tenant_ref]
+        TIP_LOOKUP --> TENANT_ID[tenant_id]
+    end
+
+    subgraph "Tenant Layer"
+        TENANT_ID --> VERIFY[VerifiedTenantClaim検証]
+        VERIFY --> IDP_ACTIVE{provider active?}
+        IDP_ACTIVE -->|no| DENY[403 tenant_context_untrusted]
+        IDP_ACTIVE -->|yes| TIP_ACTIVE{tenant-IdP binding active?}
+        TIP_ACTIVE -->|no| DENY
+        TIP_ACTIVE -->|yes| IDENTITY_MATCH{(idp_id, subject) → user_id?}
+        IDENTITY_MATCH -->|no / multiple| DENY
+        IDENTITY_MATCH -->|yes| MEMBERSHIP{membership active?}
+        MEMBERSHIP -->|no| DENY_INACTIVE[403 tenant_membership_inactive]
+        MEMBERSHIP -->|yes| TENANT_CTX[TenantContext<br/>resolved_by=verified_claim]
+    end
+
+    subgraph "Session Layer"
+        TENANT_CTX --> SESSION_VERSION[tenant_session_version]
+        SESSION_VERSION --> COOKIE_CHECK{cookie match?}
+        COOKIE_CHECK -->|no| STALE[409 tenant_session_changed]
+        COOKIE_CHECK -->|yes| CAPABILITY[capability resolution]
+        CAPABILITY --> DOC_ACCESS[tenant-scoped document access]
+    end
+</div>
+
+<h2>5. セッション管理</h2>
+<div class="mermaid">
+sequenceDiagram
+    participant Client
+    participant Backend
+    participant Persister as InMemoryActiveTenantSessionPersister
+
+    Note over Client,Persister: 初回アクセス（bootstrapping）
+
+    Client->>Backend: GET /docs/{id}<br/>X-Kj-Atlas-Authorization: Bearer JWT<br/>(no session version header)
+    Backend->>Persister: current_version(principal_id)
+    Persister->>Persister: 新規 version 生成
+    Persister-->>Backend: version=v1
+    Backend->>Backend: require_tenant_session_request_precondition<br/>(no header → bootstrapping OK)
+    Backend-->>Client: 200 + Set-Cookie: Kj-Atlas-Tenant-Session-Version=v1
+
+    Note over Client,Persister: 後続リクエスト
+
+    Client->>Backend: GET /docs/{id}<br/>Kj-Atlas-Tenant-Session-Version: v1
+    Backend->>Persister: current_version(principal_id)
+    Persister->>Persister: cookie=v1 → match → return v1
+    Persister-->>Backend: version=v1
+    Backend->>Backend: hmac.compare_digest(v1, v1) → OK
+    Backend-->>Client: 200
+
+    Note over Client,Persister: テナント切替
+
+    Client->>Backend: POST /session/active-tenant<br/>tenantId=tenant-b&expectedTenantSessionVersion=v1
+    Backend->>Persister: persist(v1 → v2)
+    Persister->>Persister: compare_and_swap(v1, v2) → OK
+    Persister-->>Backend: version=v2
+    Backend-->>Client: 200 + Set-Cookie: Kj-Atlas-Tenant-Session-Version=v2
+</div>
+
+<h2>6. テスト戦略</h2>
+<table>
+<tr><th>Level</th><th>内容</th><th>テスト数</th><th>状態</th></tr>
+<tr><td>0 (unit)</td><td>JWT resolver, JWKS store, tenant resolver, session persister</td><td>42</td><td class="status-ok">✅</td></tr>
+<tr><td>1 (HTTP E2E)</td><td>JWT → tenant isolation (10), OAuth login → API (11), coordinated flow (6)</td><td>27</td><td class="status-ok">✅</td></tr>
+<tr><td>2 (mock login)</td><td>OAuth 2.0 + PKCE + refresh + logout + UserInfo + OIDC Discovery</td><td>11</td><td class="status-ok">✅</td></tr>
+<tr><td>3 (broker E2E)</td><td>実 Keycloak + kj-atlas 統合テスト</td><td>—</td><td class="status-pending">📋 Phase 2</td></tr>
+<tr><td>4 (external IdP)</td><td>Google / Azure AD / SAML IdP 連携</td><td>—</td><td class="status-pending">📋 Phase 2</td></tr>
+<tr><td>Playwright</td><td>マルチタブテナント切替, bfcache, auth-required, stale 409</td><td>8</td><td class="status-ok">✅</td></tr>
+</table>
+
+<h2>7. 設定リファレンス</h2>
+<table>
+<tr><th>キー</th><th>既定値</th><th>説明</th></tr>
+<tr><td><code>KJ_ATLAS_RUNTIME_PROFILE</code></td><td><code>local-dev</code></td><td>実行プロファイル。SaaS は <code>saas-multitenant</code></td></tr>
+<tr><td><code>KJ_ATLAS_JWT_ALGORITHMS</code></td><td><code>RS256,ES256</code></td><td>JWT 署名アルゴリズム allowlist</td></tr>
+<tr><td><code>KJ_ATLAS_TENANT_CLAIM_NAME</code></td><td><code>tenant_ref</code></td><td>テナント識別子を運ぶ JWT claim 名</td></tr>
+<tr><td><code>KJ_ATLAS_TRUSTED_PROXIES</code></td><td>（空）</td><td>header 認証の信頼プロキシ CIDR リスト</td></tr>
+<tr><td><code>KJ_ATLAS_BROKER_BASE_URL</code></td><td><code>http://localhost:18081</code></td><td>Identity broker のベース URL（フロントエンド用）</td></tr>
+</table>
+
+<h2>8. 主要コンポーネント一覧</h2>
+<table>
+<tr><th>コンポーネント</th><th>ファイル</th><th>責務</th></tr>
+<tr><td>JwtSaasIdentityContextResolver</td><td><code>trusted_auth_edge.py</code></td><td>JWT 検証 + subject 解決 + tenant claim 抽出</td></tr>
+<tr><td>JwksStore</td><td><code>jwks_store.py</code></td><td>JWKS キャッシュ (600s TTL, 60s cooldown, 1800s max-stale)</td></tr>
+<tr><td>JtiCache</td><td><code>trusted_auth_edge.py</code></td><td>JWT ID リプレイ検出 (3660s TTL, 100K エントリ上限)</td></tr>
+<tr><td>ClaimBasedTenantContextResolver</td><td><code>tenant_context.py</code></td><td>VerifiedTenantClaim → TenantContext</td></tr>
+<tr><td>InMemoryActiveTenantSessionPersister</td><td><code>active_tenant_session.py</code></td><td>セッション管理 + cookie (本番は Redis 移行)</td></tr>
+<tr><td>TrustedSaasRuntimePolicy</td><td><code>trusted_saas_runtime.py</code></td><td>SaaS 起動前ポリシー検証 (DB/JIT/PDP/binding/capability/JWT)</td></tr>
+<tr><td>ServerOwnedDocumentResourceResolver</td><td><code>document_access_resource.py</code></td><td>テナントスコープ文書リソース解決</td></tr>
+<tr><td>RegisterIdentityProviderRequest</td><td><code>routes/admin.py</code></td><td>IdP 登録管理 API</td></tr>
+</table>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default'});</script>
+</body>
+</html>
