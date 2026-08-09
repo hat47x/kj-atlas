@@ -385,6 +385,13 @@ class Settings(BaseSettings):
         default="x-auth-subject",
         validation_alias="KJ_ATLAS_AUTH_SUBJECT_FIELD",
     )
+    # ADR-0065: per-task model override (comma-separated task=model pairs).
+    # Example: "re_layout=deepseek-chat,generate_narrative=deepseek-reasoner"
+    # Unlisted tasks use the default model (local_llm_model).
+    llm_task_model_map: str = Field(
+        default="",
+        validation_alias="KJ_ATLAS_LLM_TASK_MODEL_MAP",
+    )
     # ADR-0063 correction #2: CIDR-based trusted proxy allowlist for
     # header-based auth (single-tenant / legacy header mode). When empty,
     # all origins are allowed with a startup warning (backward compat).

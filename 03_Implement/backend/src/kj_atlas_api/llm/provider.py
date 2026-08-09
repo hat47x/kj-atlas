@@ -30,6 +30,33 @@ class LLMRequest:
     prompt: str
     temperature: float = 0.2
     max_tokens: int = 2000
+    # ADR-0065: optional model override (highest priority).
+    model: str | None = None
+
+
+def resolve_model_for_task(task: str, request: LLMRequest | None = None) -> str:
+    """ADR-0065: resolve the model for a given task.
+
+    Priority: request.model > KJ_ATLAS_LLM_TASK_MODEL_MAP > default model.
+    """
+    from kj_atlas_api.settings import settings
+
+    # 1. Request-level override (highest priority)
+    if request and request.model:
+        return request.model
+
+    # 2. Task-model map from settings
+    raw_map = settings.llm_task_model_map.strip()
+    if raw_map:
+        for pair in raw_map.split(","):
+            pair = pair.strip()
+            if "=" in pair:
+                t, m = pair.split("=", 1)
+                if t.strip() == task and m.strip():
+                    return m.strip()
+
+    # 3. Default model
+    return settings.local_llm_model or "default"
 
 
 @dataclass(frozen=True)
@@ -185,10 +212,12 @@ class LocalProvider:
     provider_kind = "local"
 
     def generate(self, req: LLMRequest) -> LLMResponse:
+        # ADR-0065: resolve model per task + request override.
+        model_id = resolve_model_for_task(req.task, req)
         return _generate_via_http(
             req,
             base_url=settings.local_llm_base_url,
-            model_id=settings.local_llm_model,
+            model_id=model_id,
             provider_kind=self.provider_kind,
             provider_name=self.provider_name,
             missing_base_url_message="KJ_ATLAS_LOCAL_LLM_BASE_URL is not set",

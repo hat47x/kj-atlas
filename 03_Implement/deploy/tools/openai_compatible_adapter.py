@@ -1,33 +1,32 @@
 #!/usr/bin/env python3
-"""OpenAI-compatible API adapter for kj-atlas local LLM provider.
+"""OpenAI-compatible API adapter for kj-atlas — multi-LLM routing.
 
-A single adapter that works with ANY OpenAI-compatible API endpoint:
-DeepSeek, OpenAI, Ollama (v0.1.14+), Groq, Together, vLLM, etc.
+Routes kj-atlas /generate requests to different LLM backends based on
+the ``model`` field in the request body. Supports simultaneous use of
+multiple providers with different models, API keys, and endpoints.
 
-Bridges the provider's chat completions API to kj-atlas's
-``POST /generate`` contract::
-
-    POST /generate  {"task","prompt","temperature","max_tokens","model"}
-    → {"text": "<JSON>"}
-
-Quick start:
-    # Ollama (local, free)
+Usage:
+    # Single backend (Ollama)
     python3 openai_compatible_adapter.py --port 8001
 
-    # DeepSeek (cloud, high quality)
-    export LLM_API_KEY="sk-..."
-    python3 openai_compatible_adapter.py --port 8001 \
-      --base-url https://api.deepseek.com/v1 --model deepseek-chat
+    # Multiple backends with per-model routing
+    python3 openai_compatible_adapter.py --port 8001 --backends "
+      deepseek-chat@https://api.deepseek.com/v1:sk-xxx,
+      deepseek-reasoner@https://api.deepseek.com/v1:sk-xxx,
+      llama3@http://localhost:11434/v1:
+    "
 
-    # OpenAI
-    export LLM_API_KEY="sk-..."
-    python3 openai_compatible_adapter.py --port 8001 \
-      --base-url https://api.openai.com/v1 --model gpt-4o-mini
+    # Via environment
+    export LLM_DEFAULT_BASE_URL=http://localhost:11434/v1
+    export LLM_DEFAULT_API_KEY=""
+    export LLM_BACKENDS="deepseek-chat@https://api.deepseek.com/v1:sk-xxx"
+    python3 openai_compatible_adapter.py --port 8001
 
-Design:
-    This is the canonical production adapter. Provider-specific adapters
-    (ollama_adapter.py, deepseek_adapter.py) are superseded by this
-    unified implementation. mock_local_llm.py remains the test-only stub.
+Backend config format: ``model@base_url:api_key``
+
+- ``model``: model name (matched against /generate request ``model`` field)
+- ``base_url``: API base URL (OpenAI-compatible)
+- ``api_key``: API key (empty string for no-auth, e.g. local Ollama)
 """
 
 from __future__ import annotations
@@ -38,39 +37,90 @@ import logging
 import os
 import re
 import sys
+from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import requests
 
 logger = logging.getLogger("openai-adapter")
 
-# Defaults — override via CLI or environment.
-DEFAULT_BASE_URL = os.environ.get("LLM_API_BASE_URL", "http://localhost:11434/v1")
-DEFAULT_MODEL = os.environ.get("LLM_MODEL", "deepseek-r1:7b")
-DEFAULT_API_KEY = os.environ.get("LLM_API_KEY", "")
-DEFAULT_TIMEOUT = 120
-# Most OpenAI-compatible APIs use this header. Override with --api-key-header
-# for non-standard providers.
-DEFAULT_API_KEY_HEADER = "Bearer"
-
-# JSON schema enforced via system prompt for reliable structured output.
 _SYSTEM_PROMPT = (
     "You are a precise JSON generator. Return ONLY valid JSON matching "
-    "the requested schema. No markdown, no explanation, no code fences. "
-    "No  tags. No commentary before or after the JSON."
+    "the requested schema. No markdown, no explanation, no code fences."
 )
 
 
-class OpenAICompatibleAdapter(BaseHTTPRequestHandler):
-    """HTTP handler bridging OpenAI-compatible API → kj-atlas /generate."""
+# ---- Backend config ----
 
-    base_url: str = DEFAULT_BASE_URL
-    model: str = DEFAULT_MODEL
-    api_key: str = DEFAULT_API_KEY
-    api_key_header: str = DEFAULT_API_KEY_HEADER
-    timeout: int = DEFAULT_TIMEOUT
 
-    # ---- HTTP dispatch ----
+@dataclass
+class Backend:
+    model: str
+    base_url: str
+    api_key: str
+
+
+def _parse_backends(raw: str) -> dict[str, Backend]:
+    """Parse backend config string into {model_name: Backend} map.
+
+    Format: "model@base_url:api_key,model2@base_url2:api_key2,..."
+    """
+    backends: dict[str, Backend] = {}
+    if not raw.strip():
+        return backends
+    for entry in raw.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        model, rest = entry.split("@", 1)
+        if ":" in rest:
+            base_url, api_key = rest.rsplit(":", 1)
+        else:
+            base_url, api_key = rest, ""
+        backends[model.strip()] = Backend(
+            model=model.strip(), base_url=base_url.strip(),
+            api_key=api_key.strip(),
+        )
+    return backends
+
+
+# ---- JSON extraction ----
+
+
+def _extract_json(text: str) -> str:
+    text = re.sub(r"", "", text)
+    text = re.sub(r"", "", text)
+    fence = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
+    if fence:
+        candidate = fence.group(1).strip()
+        if _is_valid_json(candidate):
+            return candidate
+    for pattern in [r"\{[\s\S]*\}", r"\[[\s\S]*\]"]:
+        matches = list(re.finditer(pattern, text))
+        for match in reversed(matches):
+            candidate = match.group(0)
+            if _is_valid_json(candidate):
+                return candidate
+    return text.strip()
+
+
+def _is_valid_json(text: str) -> bool:
+    try:
+        json.loads(text)
+        return True
+    except (json.JSONDecodeError, ValueError):
+        return False
+
+
+# ---- HTTP handler ----
+
+
+class MultiBackendAdapter(BaseHTTPRequestHandler):
+    """Routes /generate requests to the correct LLM backend by model name."""
+
+    backends: dict[str, Backend] = {}
+    default_backend: Backend | None = None
+    timeout: int = 120
 
     def do_POST(self):
         if self.path.rstrip("/") != "/generate":
@@ -88,55 +138,55 @@ class OpenAICompatibleAdapter(BaseHTTPRequestHandler):
         prompt = str(body.get("prompt", ""))
         temperature = float(body.get("temperature", 0.2))
         max_tokens = int(body.get("max_tokens", 2000))
+        model = str(body.get("model", ""))
 
-        logger.info("task=%s model=%s prompt_len=%d url=%s",
-                     task, self.model, len(prompt), self.base_url)
+        backend = self._resolve_backend(model)
+        logger.info("task=%s model=%s → %s", task, model, backend.base_url)
 
         try:
-            text = self._call_api(prompt, temperature, max_tokens)
+            text = self._call_backend(backend, prompt, temperature, max_tokens)
             text = _extract_json(text)
             self._respond(200, {"text": text})
         except requests.HTTPError as exc:
-            logger.error("API HTTP error %s: %s", exc.response.status_code,
-                         exc.response.text[:200] if exc.response else "")
-            self._respond(502, {"error": f"upstream API error: {exc}"})
+            logger.error("HTTP %s: %s", exc.response.status_code if exc.response else "?", str(exc)[:200])
+            self._respond(502, {"error": f"upstream error: {exc}"})
         except requests.Timeout:
-            self._respond(504, {"error": "upstream API timeout"})
+            self._respond(504, {"error": "upstream timeout"})
         except Exception as exc:
-            logger.error("API call failed: %s", exc)
+            logger.error("Failed: %s", exc)
             self._respond(502, {"error": str(exc)})
 
     def do_GET(self):
         self._respond(200, {
-            "status": "ok", "model": self.model,
-            "base_url": self.base_url, "type": "openai-compatible",
+            "status": "ok", "type": "openai-compatible-multi-backend",
+            "backends": list(self.backends.keys()),
+            "default": self.default_backend.model if self.default_backend else None,
         })
 
-    # ---- Internal ----
+    def _resolve_backend(self, model: str) -> Backend:
+        if self.backends.get(model):
+            return self.backends[model]
+        if self.default_backend:
+            return self.default_backend
+        raise RuntimeError(f"No backend for model '{model}' and no default configured")
 
-    def _call_api(self, prompt: str, temperature: float,
-                  max_tokens: int) -> str:
+    def _call_backend(self, backend: Backend, prompt: str,
+                      temperature: float, max_tokens: int) -> str:
         headers = {"Content-Type": "application/json"}
-        if self.api_key:
-            headers["Authorization"] = (
-                f"{self.api_key_header} {self.api_key}"
-                if self.api_key_header else self.api_key
-            )
-
+        if backend.api_key:
+            headers["Authorization"] = f"Bearer {backend.api_key}"
         resp = requests.post(
-            f"{self.base_url}/chat/completions",
+            f"{backend.base_url}/chat/completions",
             json={
-                "model": self.model,
+                "model": backend.model,
                 "messages": [
                     {"role": "system", "content": _SYSTEM_PROMPT},
                     {"role": "user", "content": prompt},
                 ],
-                "temperature": temperature,
-                "max_tokens": max_tokens,
+                "temperature": temperature, "max_tokens": max_tokens,
                 "stream": False,
             },
-            headers=headers,
-            timeout=self.timeout,
+            headers=headers, timeout=self.timeout,
         )
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"]
@@ -153,76 +203,41 @@ class OpenAICompatibleAdapter(BaseHTTPRequestHandler):
         logger.info("%s", fmt % args)
 
 
-# ---- JSON extraction (shared) ----
-
-
-def _extract_json(text: str) -> str:
-    """Extract JSON from model output.
-
-    Handles: markdown ```json fences,  tags (deepseek-r1),
-    leading/trailing text, and bare JSON objects/arrays.
-    """
-    text = text.strip()
-
-    # Strip deepseek-r1  reasoning blocks
-    text = re.sub(r"", "", text)
-    text = re.sub(r"", "", text)
-
-    # Try markdown code fences
-    fence = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
-    if fence:
-        candidate = fence.group(1).strip()
-        if _is_valid_json(candidate):
-            return candidate
-
-    # Try the longest JSON-like substring (handles text before/after JSON)
-    for pattern in [r"\{[\s\S]*\}", r"\[[\s\S]*\]"]:
-        matches = list(re.finditer(pattern, text))
-        for match in reversed(matches):
-            candidate = match.group(0)
-            if _is_valid_json(candidate):
-                return candidate
-
-    return text
-
-
-def _is_valid_json(text: str) -> bool:
-    try:
-        json.loads(text)
-        return True
-    except (json.JSONDecodeError, ValueError):
-        return False
-
-
 # ---- Entry point ----
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="OpenAI-compatible adapter for kj-atlas /generate")
+        description="Multi-backend OpenAI-compatible adapter for kj-atlas")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8001)
-    parser.add_argument("--base-url", default=DEFAULT_BASE_URL,
-                        help="API base URL (default: $LLM_API_BASE_URL or Ollama)")
-    parser.add_argument("--model", default=DEFAULT_MODEL,
-                        help="Model name (default: $LLM_MODEL or deepseek-r1:7b)")
-    parser.add_argument("--api-key", default=DEFAULT_API_KEY,
-                        help="API key (default: $LLM_API_KEY)")
-    parser.add_argument("--api-key-header", default=DEFAULT_API_KEY_HEADER,
-                        help="Auth header prefix (default: 'Bearer')")
-    parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT)
+    parser.add_argument("--backends", default=os.environ.get("LLM_BACKENDS", ""),
+                        help='"model@base_url:api_key,model2@base_url2:key2,..."')
+    parser.add_argument("--default-base-url",
+                        default=os.environ.get("LLM_DEFAULT_BASE_URL",
+                                               "http://localhost:11434/v1"))
+    parser.add_argument("--default-model",
+                        default=os.environ.get("LLM_DEFAULT_MODEL", "local"))
+    parser.add_argument("--default-api-key",
+                        default=os.environ.get("LLM_DEFAULT_API_KEY", ""))
+    parser.add_argument("--timeout", type=int, default=120)
     args = parser.parse_args()
 
-    OpenAICompatibleAdapter.base_url = args.base_url.rstrip("/")
-    OpenAICompatibleAdapter.model = args.model
-    OpenAICompatibleAdapter.api_key = args.api_key
-    OpenAICompatibleAdapter.api_key_header = args.api_key_header
-    OpenAICompatibleAdapter.timeout = args.timeout
+    backends = _parse_backends(args.backends)
+    default = Backend(model=args.default_model,
+                      base_url=args.default_base_url.rstrip("/"),
+                      api_key=args.default_api_key)
+
+    MultiBackendAdapter.backends = backends
+    MultiBackendAdapter.default_backend = default
+    MultiBackendAdapter.timeout = args.timeout
 
     logging.basicConfig(level=logging.INFO, stream=sys.stderr)
-    server = ThreadingHTTPServer((args.host, args.port), OpenAICompatibleAdapter)
-    logger.info("OpenAI-compatible adapter on http://%s:%s → %s (model=%s)",
-                args.host, args.port, args.base_url, args.model)
+    server = ThreadingHTTPServer((args.host, args.port), MultiBackendAdapter)
+    logger.info("Multi-backend adapter on http://%s:%s", args.host, args.port)
+    logger.info("  Default: %s → %s", default.model, default.base_url)
+    for b in backends.values():
+        logger.info("  Backend: %s → %s", b.model, b.base_url)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
