@@ -119,73 +119,62 @@ class TestMockLLMIntegration:
         assert "assessments" in data
 
 
-@pytest.mark.ollama
-class TestOllamaLLMIntegration:
-    """Real LLM tests via Ollama adapter."""
+EXTERNAL_LLM_URL = "http://localhost:8001/generate"
+
+
+@pytest.mark.external_llm
+class TestExternalLLMIntegration:
+    """Tests against any OpenAI-compatible adapter (unified).
+
+    The unified adapter (openai_compatible_adapter.py) works with:
+    - Ollama:       python3 openai_compatible_adapter.py --port 8001
+    - DeepSeek:     LLM_API_KEY=sk-... python3 openai_compatible_adapter.py
+                    --port 8001 --base-url https://api.deepseek.com/v1
+                    --model deepseek-chat
+    - OpenAI:       LLM_API_KEY=sk-... python3 openai_compatible_adapter.py
+                    --port 8001 --base-url https://api.openai.com/v1
+                    --model gpt-4o-mini
+
+    Run with: pytest tests/test_llm_integration.py -v -m external_llm
+    """
 
     @pytest.fixture(autouse=True)
     def setup(self):
         try:
-            httpx.get("http://localhost:11434/api/tags", timeout=3)
+            httpx.get(EXTERNAL_LLM_URL.replace("/generate", "/"), timeout=3)
         except Exception:
-            pytest.skip("Ollama not available")
-        # Start adapter if needed
-        for _ in range(3):
-            try:
-                httpx.get("http://localhost:8002/", timeout=1)
-                return
-            except Exception:
-                pass
-        pytest.skip("Ollama adapter not running on port 8002")
+            pytest.skip("OpenAI-compatible adapter not running on port 8001")
 
-    def test_ollama_connectivity(self):
-        r = httpx.get("http://localhost:8002/", timeout=5)
+    def test_external_llm_connectivity(self):
+        r = httpx.get(EXTERNAL_LLM_URL.replace("/generate", "/"), timeout=5)
         assert r.status_code == 200
 
-    def test_ollama_re_layout_non_empty(self):
-        text = _generate(OLLAMA_URL, "re_layout",
-                         "Place 3 cards in a grid. Return JSON only.",
-                         model="deepseek-r1:7b", timeout=130)
-        assert len(text) > 10
-
-    def test_ollama_suggest_merges_non_empty(self):
-        text = _generate(OLLAMA_URL, "suggest_merges",
-                         "Find merge candidates. Return JSON only.",
-                         model="deepseek-r1:7b", timeout=130)
-        assert len(text) > 10
-
-
-DEEPSEEK_URL = "http://localhost:8003/generate"
-
-
-@pytest.mark.deepseek
-class TestDeepSeekIntegration:
-    """DeepSeek API tests via deepseek_adapter.py."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        try:
-            httpx.get("http://localhost:8003/", timeout=3)
-        except Exception:
-            pytest.skip("DeepSeek adapter not running on port 8003")
-
-    def test_deepseek_refine_card_text(self):
-        text = _generate(DEEPSEEK_URL, "refine_card_text",
+    def test_external_refine_card_text(self):
+        text = _generate(EXTERNAL_LLM_URL, "refine_card_text",
                          "Card: Auto-save when closing document. Return JSON only.",
-                         model="deepseek-chat", timeout=60)
+                         timeout=130)
         assert len(text) > 10
 
-    def test_deepseek_detect_contradiction(self):
-        text = _generate(DEEPSEEK_URL, "detect_contradiction",
-                         "Card A: All data must be encrypted at rest.\n"
-                         "Card B: Data should be stored as plain text. Return JSON only.",
-                         model="deepseek-chat", timeout=60)
+    def test_external_detect_contradiction(self):
+        text = _generate(EXTERNAL_LLM_URL, "detect_contradiction",
+                         "Card A: Data must be encrypted.\n"
+                         "Card B: Data stored as plain text. Return JSON only.",
+                         timeout=130)
         assert len(text) > 10
 
-    def test_deepseek_assess_card_importance(self):
-        text = _generate(DEEPSEEK_URL, "assess_card_importance",
-                         '- id="a", text="Security audit log"\n'
-                         '- id="b", text="Dark mode theme"\n'
-                         '- id="c", text="Two-factor authentication"\nReturn JSON only.',
-                         model="deepseek-chat", timeout=60)
+    def test_external_assess_card_importance(self):
+        text = _generate(EXTERNAL_LLM_URL, "assess_card_importance",
+                         '- id="a", text="Security"\n'
+                         '- id="b", text="Theme"\n'
+                         '- id="c", text="2FA"\nReturn JSON only.',
+                         timeout=130)
+        assert len(text) > 10
+
+    def test_external_suggest_card_groups(self):
+        text = _generate(EXTERNAL_LLM_URL, "suggest_card_groups",
+                         '- id="a", text="Auto-save"\n'
+                         '- id="b", text="Export PDF"\n'
+                         '- id="c", text="Dark mode"\n'
+                         '- id="d", text="Night theme"\nReturn JSON only.',
+                         timeout=130)
         assert len(text) > 10

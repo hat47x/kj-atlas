@@ -28,7 +28,7 @@ import httpx
 import pytest
 
 MOCK_URL = "http://localhost:8001/generate"
-OLLAMA_URL = "http://localhost:8002/generate"
+EXTERNAL_LLM_URL = "http://localhost:8001/generate"
 
 _mock_proc = None
 
@@ -201,63 +201,55 @@ class TestKJSessionBusinessFlow:
 # ============================================================================
 
 
-@pytest.mark.ollama
-class TestKJSessionOllama:
-    """Real LLM verification of KJ business flows."""
+@pytest.mark.external_llm
+class TestKJSessionExternalLLM:
+    """Real LLM verification via any OpenAI-compatible adapter on port 8001."""
 
     @pytest.fixture(autouse=True)
     def setup(self):
         try:
-            httpx.get("http://localhost:11434/api/tags", timeout=3)
+            httpx.get("http://localhost:8001/", timeout=3)
         except Exception:
-            pytest.skip("Ollama not available")
-        for _ in range(3):
-            try:
-                httpx.get("http://localhost:8002/", timeout=1)
-                return
-            except Exception:
-                pass
-        pytest.skip("Ollama adapter not running on port 8002")
+            pytest.skip("OpenAI-compatible adapter not running on port 8001")
 
-    def _call_ollama(self, task, prompt):
-        r = httpx.post(OLLAMA_URL, json={
+    def _call_external(self, task, prompt):
+        r = httpx.post(EXTERNAL_LLM_URL, json={
             "task": task, "prompt": prompt,
-            "temperature": 0.1, "max_tokens": 300, "model": "deepseek-r1:7b",
+            "temperature": 0.1, "max_tokens": 300, "model": "any",
         }, timeout=130)
         r.raise_for_status()
         return r.json()["text"]
 
-    def test_ollama_refine_card_text(self):
-        text = self._call_ollama("refine_card_text",
-                                 "Card: Auto-save when closing document. Return JSON only.")
+    def test_external_refine_card_text(self):
+        text = self._call_external("refine_card_text",
+                                   "Card: Auto-save when closing document. Return JSON only.")
         assert len(text) > 10
 
-    def test_ollama_suggest_card_groups(self):
-        text = self._call_ollama("suggest_card_groups",
-                                 'Cards:\n  - id="a", text="Auto-save"\n  - id="b", text="Export"\n'
-                                 '  - id="c", text="Dark mode"\n  - id="d", text="Night theme"\nReturn JSON only.')
+    def test_external_suggest_card_groups(self):
+        text = self._call_external("suggest_card_groups",
+                                   '- id="a", text="Auto-save"\n- id="b", text="Export"\n'
+                                   '- id="c", text="Dark mode"\n- id="d", text="Night theme"')
         assert len(text) > 10
 
-    def test_ollama_detect_contradiction(self):
-        text = self._call_ollama("detect_contradiction",
-                                 "Card A: Data must be encrypted.\nCard B: Data stored as plain text.\nReturn JSON only.")
+    def test_external_detect_contradiction(self):
+        text = self._call_external("detect_contradiction",
+                                   "Card A: Data must be encrypted.\nCard B: Data stored as plain text.\nReturn JSON only.")
         assert len(text) > 10
 
-    def test_ollama_assess_card_importance(self):
-        text = self._call_ollama("assess_card_importance",
-                                 'Cards:\n  - id="a", text="Security"\n  - id="b", text="Theme"\nReturn JSON only.')
+    def test_external_assess_card_importance(self):
+        text = self._call_external("assess_card_importance",
+                                   '- id="a", text="Security"\n- id="b", text="Theme"')
         assert len(text) > 10
 
-    def test_ollama_full_four_card_tasks(self):
-        """All 4 new KJ card tasks via real LLM."""
+    def test_external_full_four_card_tasks(self):
         results = {}
         for task, prompt in [
             ("refine_card_text", "Card: Auto-save on close. Return JSON only."),
-            ("suggest_card_groups", 'Cards:\n  - id="a", text="A"\n  - id="b", text="B"\nReturn JSON only.'),
+            ("suggest_card_groups", '- id="a", text="A"\n- id="b", text="B"'),
             ("detect_contradiction", "Card A: X\nCard B: not X\nReturn JSON only."),
-            ("assess_card_importance", 'Cards:\n  - id="x", text="Important"\nReturn JSON only.'),
+            ("assess_card_importance", '- id="x", text="Important"'),
         ]:
-            text = self._call_ollama(task, prompt)
-            assert len(text) > 10, f"Empty response for {task}"
+            text = self._call_external(task, prompt)
+            assert len(text) > 10, f"Empty for {task}"
             results[task] = len(text)
         assert len(results) == 4

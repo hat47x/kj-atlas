@@ -40,55 +40,48 @@ curl http://localhost:8000/ai/provider-status
 # → {"providerKind":"local"}
 ```
 
-## 方法 3: 実 LLM サーバ（Ollama / llama.cpp / vLLM）
+## 方法 3: 実 LLM（OpenAI 互換 API 統一アダプタ）
 
-実際の LLM を使う場合は、kj-atlas の `/generate` 契約に準拠するアダプタが必要です。
-
-**リクエスト形式**:
-```json
-POST {base_url}/generate
-{
-  "task": "re_layout",
-  "prompt": "<プロンプト文字列>",
-  "temperature": 0.2,
-  "max_tokens": 2000,
-  "model": "任意のモデル識別子"
-}
-```
-
-**レスポンス形式**:
-```json
-{"text": "<タスク別の厳密なJSON文字列>"}
-```
-
-各タスクの出力スキーマは `02_Architecture/llm_provider_spec.md` を参照してください。
-
-## 方法 4: DeepSeek API（クラウドLLM、高品質）
-
-DeepSeek API は OpenAI 互換の chat completions API を提供します。
+`openai_compatible_adapter.py` は **すべての主要な生成 AI** に対応する単一のアダプタです。
+OpenAI / DeepSeek / Groq / Together / Ollama (v0.1.14+) / vLLM など、
+OpenAI 互換の chat completions API を持つすべてのプロバイダで動作します。
 
 ```bash
-# 1. API キーを設定
-export DEEPSEEK_API_KEY="sk-..."
+# Ollama（ローカル・無料）
+python3 deploy/tools/openai_compatible_adapter.py --port 8001
 
-# 2. アダプタを起動
-python3 deploy/tools/deepseek_adapter.py --port 8001 --model deepseek-chat
+# DeepSeek（クラウド・高品質）
+export LLM_API_KEY="sk-..."
+python3 deploy/tools/openai_compatible_adapter.py --port 8001 \
+  --base-url https://api.deepseek.com/v1 --model deepseek-chat
 
-# 3. バックエンドに接続
+# OpenAI
+export LLM_API_KEY="sk-..."
+python3 deploy/tools/openai_compatible_adapter.py --port 8001 \
+  --base-url https://api.openai.com/v1 --model gpt-4o-mini
+
+# Groq（高速推論）
+export LLM_API_KEY="gsk_..."
+python3 deploy/tools/openai_compatible_adapter.py --port 8001 \
+  --base-url https://api.groq.com/openai/v1 --model llama-3.3-70b
+
+# バックエンドに接続
 KJ_ATLAS_LLM_PROVIDER=local \
 KJ_ATLAS_LOCAL_LLM_BASE_URL=http://localhost:8001 \
-KJ_ATLAS_LOCAL_LLM_MODEL=deepseek-chat \
+KJ_ATLAS_LOCAL_LLM_MODEL=<model-name> \
 .venv/bin/uvicorn kj_atlas_api.main:app
 
-# 4. テスト実行
-pytest tests/test_kj_session_e2e.py -v -m "not ollama"
+# テスト
+pytest tests/test_llm_integration.py -v -m external_llm
+pytest tests/test_kj_session_e2e.py -v -m external_llm
 ```
 
-| アダプタ | ファイル | 利点 | 欠点 |
-|---|---|---|---|
-| モック | `mock_local_llm.py` | GPU不要・決定論的 | 固定出力のみ |
-| Ollama | `ollama_adapter.py` | ローカル実行・無料 | CPUでは低速 |
-| **DeepSeek** | **`deepseek_adapter.py`** | **高品質・高速** | **APIキー・従量課金** |
+| アダプタ | 対象 | 用途 |
+|---|---|---|
+| `mock_local_llm.py` | — | テスト用決定論的スタブ（GPU不要・常時利用可能） |
+| **`openai_compatible_adapter.py`** | **全 OpenAI 互換 API** | **本番・開発用統一アダプタ** |
+
+> **非推奨**: `ollama_adapter.py` と `deepseek_adapter.py` は `openai_compatible_adapter.py` に統合されました。今後は統一アダプタを使用してください。
 
 ## 全 AI エンドポイント一覧
 
