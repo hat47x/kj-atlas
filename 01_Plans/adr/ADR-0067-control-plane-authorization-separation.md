@@ -1,0 +1,130 @@
+# ADR-0067: 管理面（Control Plane）の認可を業務面から分離し、SaaSでも到達可能にする
+
+- Status: Proposed
+- Date: 2026-08-09
+- Deciders: Maintainer（本ADRは提案。採択判断は保守者が行う）
+- Scope: `03_Implement/backend/src/kj_atlas_api/routes/admin.py`, `main.py`, `settings.py`, `runtime_bootstrap.py`, `02_Architecture/enterprise_architecture.html`, `04_Documentation/security.md`, `THREAT_MODEL.md`
+
+## Context
+
+`ADR-0063`/`ADR-0064` で `saas-multitenant` の trusted auth edge が実装され、JWT 検証 → tenant 解決 → session 発行が動作するようになった。この過程で、**管理面（provisioning）側の認可がこの認証基盤の外側に取り残された**。
+
+コード実読と実行で確認した事実は次の3点である。
+
+### 事実1: 管理APIに業務APIと区別された認可がない
+
+`/admin/provision/*` の唯一の保護は `main.py:135-146` のグローバル middleware `require_api_key` である。
+
+```python
+if settings.api_key:
+    provided_key = request.headers.get("x-api-key")
+    ...
+```
+
+`settings.py:263-266` で `api_key` の既定値は `None` である。実行確認:
+
+```
+$ KJ_ATLAS_RUNTIME_PROFILE=enterprise-production python3 -c "from kj_atlas_api.settings import Settings; print(Settings().api_key)"
+None
+```
+
+すなわち `enterprise-production` は **API キー未設定のまま起動でき、その場合すべてのエンドポイントが無認証**になる。キーを設定した場合も、文書API・AI API・管理APIが**同一の共有静的キー1本**で保護される。
+
+これが重要なのは、`/admin/provision/identity-providers`（`routes/admin.py:324-417`）が**信頼する JWT 発行者と JWKS URI を登録する**エンドポイントだからである。ここへ到達できる主体は、自分が管理する鍵で IdP を登録し、`_resolve_identity_provider()`（`trusted_auth_edge.py:124-135`）の検索に一致するトークンを自ら発行して、**任意の利用者・任意のテナントとして認証**できる。`/admin/provision/tenant-identity-providers` は外部テナント参照と内部 `tenants.id` の対応を作るため、同様に越境の起点になる。
+
+`02_Architecture/enterprise_architecture.html` §06 は自らこう要求している。
+
+> Workspace Data Plane、Tenant Admin、Platform Control Plane の route、audience、capability を分離し、Platform operator へ文書 read を暗黙付与しない。
+
+現行実装はこの要求を満たしていない。
+
+### 事実2: SaaS プロファイルは文書化された手順で起動できない
+
+`routes/admin.py:75-94` の `require_single_tenant_provisioning_surface` は、`resolve_tenant_session_bootstrap_mode` が `single-tenant` 以外を返す場合に 404 を返す。`runtime_bootstrap.py:21-22` により `saas-multitenant` は `tenant-session-required` を返すため、SaaS では管理APIが到達不能になる。実行確認:
+
+```
+enterprise-production  -> ALLOWED
+saas-multitenant       -> HTTP 404 {'code': 'strict_provisioning_unavailable'}
+```
+
+一方 `trusted_saas_runtime.py:298-304` は起動時にこう警告する。
+
+> Register at least one via `POST /admin/provision/identity-providers` before authentication requests will succeed.
+
+**指示されたエンドポイントが、指示された状況で 404 を返す。** IdP 登録なしに認証は成立しないため、SaaS プロファイルは DB 直接操作なしにブートストラップできない。DB 直接投入を正規手順にすることは、企業・行政案件の監査要件（操作の認可・証跡）と整合しない。
+
+### 事実3: 「認証は外部IAP責務」という委譲が管理面では成立していない
+
+`ADR-0020` は認証プロトコルを前段 IAP へ委譲すると固定した。管理面もこの委譲で保護される、という解釈は成り立ちうる。しかし現状では次の3点により委譲が閉じていない。
+
+- IAP の存在を強制する仕組みがない（`enterprise-production` は無認証で起動する）。
+- 管理面と業務面が同一 origin・同一認証（あるいは無認証）で提供され、前段で分離するための要件が運用文書に記載されていない。
+- `THREAT_MODEL.md` と `04_Documentation/security.md` に「/admin を別経路で保護せよ」という運用要件の記述が見当たらない。
+
+## 決定すべき論点
+
+本ADRは以下を決める。**採択前に実装へ着手しない。**
+
+- **D1**: 管理面の認可方式。
+- **D2**: SaaS プロファイルにおける管理面の到達性とブートストラップ手順。
+- **D3**: `api_key` 未設定で本番相当 profile を起動できる現状の扱い。
+
+## 選択肢
+
+### D1: 管理面の認可方式
+
+| 案 | 内容 | 利点 | 欠点 |
+|---|---|---|---|
+| **A** | 業務面とは別の静的 bearer（`KJ_ATLAS_ADMIN_API_KEY`）を必須化し、`/admin/**` のみに適用 | 実装が最小。ブートストラップ時（IdP未登録）にも使える | 静的秘密の運用（ローテーション・失効）が残る。主体特定ができず監査が弱い |
+| **B** | trusted auth edge の JWT ＋ platform-operator capability claim を要求 | 主体が特定でき監査に載る。plane 分離の要求に最も整合 | IdP 未登録状態では使えない（ブートストラップに別経路が必要） |
+| **C** | 管理面を別 listen port / 別 ASGI app へ分離し、ネットワーク層で到達制御 | 前段委譲が構造的に閉じる。企業・行政の一般的な運用形 | デプロイ構成が複雑化。単一プロセス前提の現行構成から乖離 |
+| **D** | HTTP を廃し、ブートストラップ操作は CLI（`cli.py`）専用にする | HTTP 到達面が消える。最も攻撃面が小さい | 遠隔運用・自動化がしにくい。既存 `/admin/provision/users` の互換を壊す |
+
+### D2: SaaS でのブートストラップ
+
+| 案 | 内容 |
+|---|---|
+| **A** | 管理面を SaaS でも開放し、D1 の認可で保護する（`require_single_tenant_provisioning_surface` を認可判定へ置き換える） |
+| **B** | 管理面は SaaS でも 404 のまま維持し、IdP 登録は CLI / migration seed 専用とする |
+| **C** | 初回のみ有効なブートストラップトークン（環境変数、1回限り）を導入する |
+
+### D3: 本番相当 profile での認証必須化
+
+| 案 | 内容 |
+|---|---|
+| **A** | `enterprise-production` / `saas-multitenant` で認証手段が未設定なら `Settings()` 構築時に fail-fast（`ADR-0062` と同じ方針） |
+| **B** | 起動を許すが警告を出す |
+| **C** | 現状維持（前段 IAP 前提を運用文書で明記するに留める） |
+
+## 推奨（保守者の判断を拘束しない）
+
+**D1=A + B の二段**、**D2=A**、**D3=A** を推奨する。
+
+理由: ブートストラップという「IdP がまだ無い」状態が構造的に存在する以上、JWT のみ（B 単独）では D2 が閉じない。一方 A 単独では監査要件が満たせない。したがって「静的 admin bearer をブートストラップ専用の最小権限経路として残し、IdP 登録後の通常運用は capability claim で行う」二段構成が、`ADR-0062` の fail-fast 方針とも `enterprise_architecture` §06 の plane 分離要求とも整合する。D3=A は `ADR-0062` が access_control / audit に対して既に採った判断（明示選択したのに設定が無ければ起動を止める）を、認証そのものへ一貫適用するものである。
+
+ただし D1=C（ネットワーク分離）を採る組織も多く、これは deployment 側の選択として D1=A/B と排他ではない。C を「推奨構成」として文書化し、A/B をアプリ側の最低保証とする整理もありうる。
+
+## ADR-0047 ゲート判定
+
+`ADR-0047` の再起票基準に照らす。
+
+- **R-1（実使用の摩擦）**: 該当しない。ドッグフードログに該当記録はなく、本件はコード監査で発見した。
+- **R-3（非機能境界の超過）**: **該当すると考える。** `ADR-0063`/`ADR-0064` で追加した SaaS 認証機能が、既存の不変条件（`ADR-0041` CVI、`enterprise_architecture` の plane 分離要求）では覆えない管理面認可の境界を越えた。
+- **R-2 / R-4**: 該当しない。
+
+R-3 該当の是非は保守者が確認すること。非該当と判断される場合、本ADRは Rejected とし、`SEC-ADMIN-PLANE-01` も併せて取り下げる。
+
+## Non-goals
+
+- 認証プロトコル（OIDC/SAML）そのものをアプリへ実装しない（`ADR-0020` 維持）。
+- RBAC 評価ロジックをアプリ本体へ持ち込まない（`enterprise_architecture` の AccessControlAdapter 外部委譲を維持）。
+- `local-dev` / `evaluation` profile の開発利便性を損なう変更はしない。
+
+## Traceability
+
+- Implementation: `01_Plans/issues/issue-SEC-ADMIN-PLANE-01-admin-surface-authorization-and-saas-bootstrap.md`
+- Related: `01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md`（認証の外部委譲）
+- Related: `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`（D3=A の先例）
+- Related: `01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`（本件が露出した経緯）
+- Related: `02_Architecture/enterprise_architecture.html` §06（plane 分離要求）
+- Related: `THREAT_MODEL.md`
