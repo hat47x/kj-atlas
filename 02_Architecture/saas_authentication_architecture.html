@@ -22,6 +22,24 @@
 <h1>kj-atlas SaaS 認証アーキテクチャ</h1>
 <p>ADR-0063 / ADR-0064 に基づく SAML / OIDC / Broker / JWT 協調認証フロー</p>
 
+<nav style="background:#f1f5f9;padding:12px;border-radius:8px;margin:16px 0;">
+  📚 <a href="README.md">アーキテクチャ索引に戻る</a> |
+  📐 <a href="module_architecture.html">モジュール依存図</a> |
+  📋 <a href="api.md">API仕様</a> |
+  ⚙️ <a href="runtime_parameter_registry.md">設定一覧</a>
+</nav>
+
+<details open>
+<summary style="font-size:1.2em;font-weight:bold;cursor:pointer;padding:8px 0;">クイックサマリー（1分で理解する）</summary>
+<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:16px;margin:8px 0;">
+<p><strong>kj-atlas は認証を自前実装しません。</strong> 外部 IdP（Google, Azure AD, SAML IdP）がユーザを認証し、Broker（Keycloak）が SAML→OIDC 変換 + JWT 発行を行い、kj-atlas Backend が JWT を検証します。</p>
+<p><strong>3つの層</strong>: External IdP → Identity Broker → kj-atlas Backend</p>
+<p><strong>認可コードグラント + PKCE (S256)</strong>: CSRF と認可コード横取りを防止</p>
+<p><strong>JWT クレーム</strong>: <code>tenant_ref</code> でテナントを識別、<code>sub</code> でユーザを識別</p>
+<p><strong>テスト</strong>: 569 tests (ユニット + 統合 + E2E + Playwright)、Ruff lint clean</p>
+</div>
+</details>
+
 <h2>1. 全体アーキテクチャ（3層モデル）</h2>
 <div class="mermaid">
 graph TB
@@ -57,7 +75,8 @@ graph TB
     SESSION --> DOC_ACCESS
 </div>
 
-<h2>2. OAuth 2.0 認可コードグラント + PKCE フロー</h2>
+<details>
+<summary style="font-size:1.1em;font-weight:bold;cursor:pointer;padding:8px 0;">2. OAuth 2.0 認可コードグラント + PKCE フロー（クリックで展開）</summary>
 <div class="mermaid">
 sequenceDiagram
     actor User
@@ -96,6 +115,8 @@ sequenceDiagram
     Backend->>Frontend: tenant-scoped document
 </div>
 
+</details>
+
 <h2>3. JWT 検証パイプライン</h2>
 <div class="mermaid">
 flowchart LR
@@ -125,6 +146,8 @@ flowchart LR
     W -->|no| X[401 unknown_tenant]
     W -->|yes| Y[ResolvedIdentity + VerifiedTenantClaim]
 </div>
+
+</details>
 
 <h2>4. テナント解決フロー</h2>
 <div class="mermaid">
@@ -159,6 +182,8 @@ flowchart TB
     end
 </div>
 
+</details>
+
 <h2>5. セッション管理</h2>
 <div class="mermaid">
 sequenceDiagram
@@ -192,6 +217,8 @@ sequenceDiagram
     Persister-->>Backend: version=v2
     Backend-->>Client: 200 + Set-Cookie: Kj-Atlas-Tenant-Session-Version=v2
 </div>
+
+</details>
 
 <h2>6. テスト戦略</h2>
 <table>
