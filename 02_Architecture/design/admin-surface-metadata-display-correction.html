@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>管理面データ境界の実務補正 — kj-atlas</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #0f172a; --muted: #475569; --line: #cbd5e1;
+    --panel: #f8fafc; --accent: #0f766e; --hold: #92400e;
+    --biz: #2563eb; --data: #7c3aed; --func: #0891b2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1120; --fg: #e2e8f0; --muted: #94a3b8; --line: #334155;
+      --panel: #131c2e; --accent: #2dd4bf; --hold: #fbbf24;
+      --biz: #60a5fa; --data: #a78bfa; --func: #22d3ee;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 20px 64px; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", Meiryo, sans-serif;
+    font-size: 14px; line-height: 1.75; max-width: 1000px; margin-inline: auto;
+  }
+  h1 { font-size: 22px; font-weight: 800; margin: 0 0 4px; }
+  h2 { font-size: 16px; font-weight: 800; margin: 36px 0 10px; padding-top: 18px; border-top: 1px solid var(--line); }
+  h3 { font-size: 14px; font-weight: 700; margin: 24px 0 8px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; }
+  .meta { color: var(--muted); font-size: 12px; margin: 0 0 20px; }
+  .note { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; padding: 10px 14px; margin: 14px 0; }
+  .note.hold { border-left-color: var(--hold); }
+  .diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 14px 0; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--panel); font-weight: 700; }
+  ul { padding-left: 22px; }
+  .src { color: var(--muted); font-size: 12px; }
+  .correction { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 12px 16px; margin: 16px 0; }
+  @media (prefers-color-scheme: dark) {
+    .correction { background: #292524; border-color: #713f12; }
+  }
+  .correction .tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px; margin-right:8px; }
+  .tag.old { background:#fee2e2; color:#991b1b; }
+  .tag.new { background:#dcfce7; color:#166534; }
+  .boundary { background: var(--panel); border: 2px solid var(--line); border-radius: 8px; padding: 14px; margin: 14px 0; }
+  .boundary .above { color: var(--accent); font-weight: 700; }
+  .boundary .below { color: var(--hold); font-weight: 700; }
+  .boundary .divider { border-top: 2px dashed var(--line); margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<h1>管理面データ境界の実務補正</h1>
+<p class="meta">
+  区分: 設計判断 / 更新: 2026-08-08<br>
+  対象: <code>master-data-settings-ui-ux-concept.md</code> §3.3 管理面の本文非表示原則の補正<br>
+  起票理由: 原理が強固すぎて運用者の識別能力を奪い、実務に支障があるため
+</p>
+
+<div class="note hold">
+  <strong>補正の本質:</strong> 「本文非表示」原則は正しいが、「本文」の定義が広すぎた。
+  管理面で <strong>docIdのみ</strong> を表示する運用は、文書数が増えた時点で破綻する。
+  識別メタデータ（タイトル）は「本文」ではなく「索引情報」であり、管理面での表示は安全上の損失より識別上の利益が大きい。
+</div>
+
+<!-- ============================================================ -->
+<h2>1. 現行制約の診断</h2>
+
+<p>以下の3箇条が、実務上の識別能力を奪っている。</p>
+
+<table>
+  <thead><tr><th style="width:8%;">#</th><th style="width:35%;">現行規定</th><th style="width:12%;">出典</th><th>実務上の支障</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>P1</td>
+      <td>「文書を参照する必要がある行では<code>docId</code>だけを使い、<strong>タイトルへ解決しない</strong>」</td>
+      <td>master-data-settings §3.3 L121</td>
+      <td>管理者が50文書のアクセス設定をする時、<code>doc-7f2a</code> のようなopaque IDだけでは識別不能。運用ミス（誤った文書の公開範囲変更）を誘発する</td>
+    </tr>
+    <tr>
+      <td>P2</td>
+      <td>「一覧／検索対象は<code>docId</code>、visibility、binding状態、policy version、updatedAtだけとする。<strong>文書タイトル</strong>、本文、カード、review状態、件数集計は<strong>取得も表示もしない</strong>」</td>
+      <td>master-data-settings §3.3 L134</td>
+      <td>Tenant Adminが文書アクセス設定を行う際、対象文書の誤認リスクが高い。特に類似内容の文書が複数ある場合、docIdのみでは区別不能</td>
+    </tr>
+    <tr>
+      <td>P3</td>
+      <td>「一覧の表示候補は<code>registrationId</code>、表示名、<code>docId</code>、状態、作成日時、作成主体の固定メタデータ。<strong>文書タイトルと本文は表示しない</strong>」</td>
+      <td>master-data-settings §3.3 L144</td>
+      <td>エージェント登録時に、どの文書に対してtokenを発行するのかをdocIdのみで判断させるのは危険。誤った文書へのtoken発行は安全境界の侵害に直結する</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2>2. 補正: 「本文」の定義を分解する</h2>
+
+<p>現行の「本文非表示」原則は、以下の2つを区別せずに禁止していた。</p>
+
+<div class="boundary">
+  <div class="above">🟢 管理面で表示してよい情報 — 識別メタデータ</div>
+  <ul>
+    <li><strong>タイトル</strong> — 文書の識別子。利用者が文書に与えた名前。CardやNarrativeと異なり、それ自体が知的成果物の本体ではない</li>
+    <li><strong>docId</strong> — システム内部の識別子</li>
+    <li><strong>updatedAt</strong> — 最終更新日時（識別の補助）</li>
+  </ul>
+  <p style="font-size:12px; color: var(--muted); margin:6px 0 0;">
+    これらは「索引情報」であり、Workspaceの文書一覧でも既に表示されている。
+    管理面でこれらを表示しても、文書の知的成果物（カード・島・関係・ナラティブ）は一切露出しない。
+  </p>
+
+  <div class="divider"></div>
+
+  <div class="below">🔴 管理面で表示してはならない情報 — 知的成果物本体</div>
+  <ul>
+    <li><strong>カード本文</strong> (Card.body, Card.ka.*)</li>
+    <li><strong>島の構造・形状</strong> (Island.shape, Island.geometry)</li>
+    <li><strong>関係線</strong> (Edge)</li>
+    <li><strong>ナラティブ</strong> (Narrative)</li>
+    <li><strong>レビュー状態</strong> (ReviewAttribution)</li>
+    <li><strong>保留・違和感の内容</strong> (Card.holdState詳細, CritiqueInput)</li>
+    <li><strong>証跡リンク</strong> (EvidenceLink)</li>
+    <li><strong>件数集計</strong>（カード数・島数・未レビュー件数等。統計であっても本文の特徴を漏らす）</li>
+  </ul>
+  <p style="font-size:12px; color: var(--muted); margin:6px 0 0;">
+    これらは「本文」であり、管理面の目的（アクセス制御・外部接続管理）に必要ない。
+    むしろ、管理権限と本文閲覧権限の分離（職務分離）を破壊する。
+  </p>
+</div>
+
+<h3>2.1 補正後の三者牽制</h3>
+
+<div class="diagram">
+<pre class="mermaid">
+flowchart TB
+  subgraph PRINCIPLE["本文非表示原則（補正後）"]
+    direction TB
+    META["識別メタデータ<br/>タイトル / docId / updatedAt<br/>→ 管理面で表示可"]
+    BODY["知的成果物本体<br/>カード / 島 / 関係 / ナラティブ<br/>→ 管理面で表示不可（変更なし）"]
+  end
+
+  subgraph RATIONALE["根拠"]
+    R1["タイトルは索引情報であり<br/>知的成果物の本体ではない"]
+    R2["タイトル表示により誤操作リスクが<br/>低下し安全上の利益がある"]
+    R3["Workspace文書一覧で既に<br/>タイトル表示は許容されている"]
+  end
+
+  META --> R1
+  META --> R2
+  BODY --> R3
+
+  classDef meta fill:#0f766e22,stroke:#0f766e;
+  classDef body fill:#92400e22,stroke:#92400e;
+  class META,R1,R2 meta
+  class BODY,R3 body
+</pre>
+</div>
+
+<!-- ============================================================ -->
+<h2>3. 条文補正</h2>
+
+<h3>3.1 文書アクセス設定面（§3.3 第2項）</h3>
+
+<div class="correction">
+  <span class="tag old">現行</span>
+  「一覧／検索対象は<code>docId</code>、visibility、binding状態、policy version、updatedAtだけとする。文書タイトル、本文、カード、review状態、件数集計は取得も表示もしない。」
+  <br><br>
+  <span class="tag new">補正</span>
+  「一覧／検索対象は<strong>タイトル</strong>、<code>docId</code>、visibility、binding状態、policy version、updatedAtとする。本文（カード・島・関係・ナラティブ・レビュー状態・証跡リンク）、件数集計は取得も表示もしない。タイトルは識別メタデータであり、本文には該当しない。」
+</div>
+
+<h3>3.2 エージェント登録面（§3.3 第3項）</h3>
+
+<div class="correction">
+  <span class="tag old">現行</span>
+  「一覧の表示候補は<code>registrationId</code>、表示名、<code>docId</code>、状態、作成日時、作成主体の固定メタデータ。文書タイトルと本文は表示しない。」
+  <br><br>
+  <span class="tag new">補正</span>
+  「一覧の表示候補は<code>registrationId</code>、表示名、<strong>対象文書タイトル</strong>、<code>docId</code>、状態、作成日時、作成主体の固定メタデータ。本文（カード・島・関係・ナラティブ・レビュー状態）は表示しない。文書タイトルは対象文書の誤認防止のために表示する。」
+</div>
+
+<h3>3.3 Adminヘッダー境界説明（§3.3 導入部）</h3>
+
+<div class="correction">
+  <span class="tag old">現行</span>
+  「Adminヘッダーには、通常Workspaceと混同しない名称と『この画面は文書本文を表示しません』という境界説明を置く。文書を参照する必要がある行では<code>docId</code>だけを使い、タイトルへ解決しない。」
+  <br><br>
+  <span class="tag new">補正</span>
+  「Adminヘッダーには、通常Workspaceと混同しない名称と『この画面は文書本文（カード・島・ナラティブ）を表示しません』という境界説明を置く。文書を参照する必要がある行では、識別メタデータとしてタイトルと<code>docId</code>を併記する。タイトルを介した横断本文検索・プレビューは行わない。」
+</div>
+
+<!-- ============================================================ -->
+<h2>4. 新規要求: 文書タイトル生成（AI提案）</h2>
+
+<div class="note">
+  <strong>要求:</strong> 文書の内容から人間向けのタイトルを生成する仕組みが必要である。
+  現行は新規作成時に利用者が手動でタイトルを入力する以外に手段がなく、
+  内容を反映したタイトルが付与されない文書が蓄積しやすい。
+</div>
+
+<h3>4.1 設計判断</h3>
+
+<p>タイトル生成は、既存のAI提案パターン（proposal-only）に完全に収まるため、新たな原理的問題を生まない。</p>
+
+<table>
+  <thead><tr><th>観点</th><th>判断</th></tr></thead>
+  <tbody>
+    <tr><td>業務設計</td><td>利用者が文書の内容を表現するタイトルを効率的に付与できる。新規作成直後・編集中・共有前の各タイミングでタイトル提案を受けられる</td></tr>
+    <tr><td>データ設計</td><td>タイトルはDocumentV1.title（L1 Supported）の一部。AI提案は派生データ（L3）であり、人間がAdoptした結果のみが文書本体に残る。変更なし</td></tr>
+    <tr><td>機能設計</td><td>既存のSuggestionPanelパターンを流用。提案種別「title」を追加。1件ずつの明示Adopt/Reject。一括適用なし。SafeMode ON時はカード本文をAIへ送信しない（タイトル提案に必要な範囲だけをcontextとして投影）</td></tr>
+    <tr><td>反スコアリング</td><td>複数候補を提示するが、順位付け・スコア・「最適」表示は行わない。候補は並列に提示し、利用者が選ぶ</td></tr>
+    <tr><td>複雑性予算</td><td>既存SuggestionPanelへの提案種別追加（置換ではなく包含）。新規画面は作らない</td></tr>
+  </tbody>
+</table>
+
+<h3>4.2 タイトル提案フロー</h3>
+
+<div class="diagram">
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+
+  [*] --> Trigger : タイトル提案トリガー
+  Trigger --> ContextProjection : context投影（SafeMode考慮）
+  ContextProjection --> AIProposal : AIがタイトル候補を生成
+  AIProposal --> ReviewCandidates : 候補一覧表示
+
+  state ReviewCandidates {
+    [*] --> ShowCandidates : 複数候補を並列表示
+    ShowCandidates --> Select : 利用者が1件選択
+    ShowCandidates --> RejectAll : 全棄却
+    ShowCandidates --> Retry : 再生成
+  }
+
+  Select --> Adopt : タイトルに採用
+  Adopt --> [*] : Document.title更新
+  RejectAll --> [*] : 変更なし
+  Retry --> ContextProjection : 再生成
+
+  note right of Trigger
+    トリガータイミング:
+    1. 新規作成直後（カードがある程度配置された時点）
+    2. タイトル編集フィールドの「AIに提案を依頼」
+    3. 共有前確認の「タイトル確認」ステップ
+  end note
+
+  note right of ContextProjection
+    SafeMode ON時は未レビューカードの本文を
+    プロンプトへ含めない。
+    島ラベル・レビュー済みカード本文・関係構造から
+    タイトルを提案する。
+  end note
+</pre>
+</div>
+
+<h3>4.3 制約</h3>
+
+<ul>
+  <li>AI提案はproposal-only。人間が明示的にAdoptするまでタイトルは変更されない</li>
+  <li>複数候補を並列提示し、順位・スコア・「最適」表示は行わない</li>
+  <li>SafeMode ON時は未レビュー本文をAIへ送信しない。provider=none時は機能自体を無効化（provider無効状態を劣化フォールバックとして扱わない）</li>
+  <li>タイトル提案の採用はMergeDecisionLogへ記録しない（タイトルは文書構造の一部であり、カードや島のようなmerge判断対象ではない）</li>
+  <li>タイトル変更は通常の文書保存競合処理（PUT /docs/{doc_id}のversion check）に載せる</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2>5. 理念との衝突評価</h2>
+
+<p>今回の補正は、以下の核（ui_design_handoff.md の「侵してはならない核」）と衝突しない。</p>
+
+<table>
+  <thead><tr><th>核</th><th>衝突評価</th></tr></thead>
+  <tbody>
+    <tr><td>コア価値は「少ない操作で曖昧さを保持できること」</td><td>✅ 衝突なし。管理面のタイトル表示は識別のための最小情報追加であり、操作の複雑化ではない</td></tr>
+    <tr><td>保留は意味を確定しない健全な状態</td><td>✅ 衝突なし。管理面は保留状態を扱わない</td></tr>
+    <tr><td>キャンバスを主、AIとの対話を従とする</td><td>✅ 衝突なし。タイトル提案はAI提案パターンに完全準拠</td></tr>
+    <tr><td>単一正解、ランキング、採点で結論を誘導しない</td><td>✅ 衝突なし。タイトル候補は並列提示</td></tr>
+    <tr><td>SafeModeは既定ON、共有前確認を必須</td><td>✅ 衝突なし。タイトル提案はSafeModeを尊重</td></tr>
+    <tr><td>管理面の本文非表示</td><td>⚠️ 補正あり。ただし「本文」の定義を「知的成果物本体」に限定する実務的補正であり、原則の否定ではない</td></tr>
+  </tbody>
+</table>
+
+<p>理念との衝突が大きい項目はない。補正は「本文非表示」原則の<strong>定義の精緻化</strong>であり、原則そのものの放棄ではない。</p>
+
+<!-- ============================================================ -->
+<h2>6. 実施計画</h2>
+
+<table>
+  <thead><tr><th>項目</th><th>種類</th><th>依存</th><th>優先度</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>master-data-settings-ui-ux-concept.md の補正</td>
+      <td>正本更新</td>
+      <td>なし（即時）</td>
+      <td>高</td>
+    </tr>
+    <tr>
+      <td>non-canvas-ui-flow-design.html の該当節修正</td>
+      <td>設計ビュー更新</td>
+      <td>正本更新後</td>
+      <td>高</td>
+    </tr>
+    <tr>
+      <td>タイトル生成（AI提案）のissue起票</td>
+      <td>新規issue</td>
+      <td>なし</td>
+      <td>中</td>
+    </tr>
+    <tr>
+      <td>管理面UI実装時のタイトル表示確認</td>
+      <td>実装照合項目</td>
+      <td>各管理面の実装ゲート解除後</td>
+      <td>中</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2>Traceability</h2>
+
+<ul>
+  <li><code>02_Architecture/design/master-data-settings-ui-ux-concept.md</code> — 補正対象の正本</li>
+  <li><code>02_Architecture/design/ui_design_handoff.md</code> — 侵してはならない核・5判断軸</li>
+  <li><code>02_Architecture/non-canvas-ui-flow-design.html</code> — 補正反映先の設計ビュー</li>
+  <li><code>02_Architecture/data_model_operations_overview.html</code> — データ境界クラス定義</li>
+  <li><code>01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md</code> — L1〜L0境界</li>
+</ul>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  (function () {
+    var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (window.mermaid) {
+      window.mermaid.initialize({
+        startOnLoad: true,
+        theme: dark ? "dark" : "neutral",
+        flowchart: { htmlLabels: true, curve: "basis" },
+        securityLevel: "strict"
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

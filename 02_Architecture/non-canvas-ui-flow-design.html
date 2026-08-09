@@ -420,7 +420,7 @@ stateDiagram-v2
     <h4>🟦 業務設計</h4>
     <ul>
       <li><strong>利用者:</strong> Standard user（AI提案を補助として使う）</li>
-      <li><strong>目的:</strong> AIが生成した候補（島ラベル・関係・カード分類・矛盾検出）を人間が審査し、採用/棄却する</li>
+      <li><strong>目的:</strong> AIが生成した候補（島ラベル・関係・カード分類・矛盾検出・<strong>文書タイトル</strong>）を人間が審査し、採用/棄却する</li>
       <li><strong>journey:</strong> キャンバス → AI提案パネル → per-proposalレビュー → Adopt/Reject</li>
       <li><strong>鉄則:</strong> AIは候補生成に留まり、確定しない。人間の明示操作なしに文書へ反映されない</li>
       <li><strong>非目標:</strong> 一括Adopt/Reject、スコアリング、AIの自律実行、チャットUI</li>
@@ -455,6 +455,7 @@ stateDiagram-v2
 flowchart TB
   subgraph AI_SURFACE["AI提案面（キャンバス右・作業モード）"]
     SUG["AI提案パネル<br/>提案一覧（種別・対象・内容概要）"]
+    TITLE["タイトル提案<br/>文書内容からのタイトル候補生成"]
     MERGE["マージ候補パネル<br/>他者/他文書からのmerge提案"]
     AGENT_IMP["エージェント応答取込<br/>外部エージェントからの提案"]
   end
@@ -472,6 +473,7 @@ flowchart TB
   end
 
   SUG --> DETAIL
+  TITLE --> DETAIL
   MERGE --> DETAIL
   AGENT_IMP --> DETAIL
   DETAIL --> DIFF
@@ -483,7 +485,7 @@ flowchart TB
   classDef surface fill:#0891b222,stroke:#0891b2;
   classDef review fill:#7c3aed22,stroke:#7c3aed;
   classDef outcome fill:#0f766e22,stroke:#0f766e;
-  class SUG,MERGE,AGENT_IMP surface
+  class SUG,TITLE,MERGE,AGENT_IMP surface
   class DETAIL,DIFF,DECIDE review
   class ADOPT,REJECT,PATCH_OUT outcome
 </pre>
@@ -580,15 +582,25 @@ stateDiagram-v2
 </div>
 
 <!-- ============================================================ -->
-<h2>7. G5: 管理面 グループ（本文非表示）</h2>
+<h2>7. G5: 管理面 グループ（本文非表示・メタデータ識別）</h2>
 
 <h3>7.1 管理面全体の設計根拠</h3>
 
 <div class="note hold">
-  <strong>管理面の基本原則:</strong> 管理面はキャンバス（本文を扱う面）とは別サーフェスとし、
-  「この画面は文書本文を表示しません」という境界説明を常に置く。
-  本文・カード・ナラティブ・レビュー状態は一切表示しない。
+  <strong>管理面の基本原則（2026-08-08 補正）:</strong> 管理面はキャンバス（本文を扱う面）とは別サーフェスとし、
+  「この画面は文書本文（カード・島・ナラティブ）を表示しません」という境界説明を常に置く。
+  <strong>識別メタデータ（タイトル・docId・updatedAt）は表示してよい。</strong>
+  カード・ナラティブ・レビュー状態・件数集計は表示しない。
   capability不足時は該当面を提供せず、APIもfail-closed。
+</div>
+
+<div class="note">
+  <strong>補正根拠:</strong> 「本文非表示」原則の「本文」定義が広すぎた。
+  タイトルは索引情報であり、カードやナラティブのような知的成果物の本体ではない。
+  管理面でdocIdのみを表示する運用は文書数が増えると破綻し、
+  誤った文書への設定変更リスクを高める。
+  タイトル表示による識別精度の向上は、安全上の利益が損失を上回る。
+  詳細は <a href="design/admin-surface-metadata-display-correction.html">admin-surface-metadata-display-correction.html</a> を参照。
 </div>
 
 <h3>7.2 三者牽制マトリクス（管理面全体）</h3>
@@ -608,8 +620,8 @@ stateDiagram-v2
     <h4>🟣 データ設計</h4>
     <ul>
       <li><strong>正本:</strong> サーバー（users, user_identities, document_access_metadata, agent登録）</li>
-      <li><strong>表示:</strong> identity情報（provider, external UID, display name）、docId、visibility、binding状態</li>
-      <li><strong>非表示:</strong> 文書タイトル・本文・カード・ナラティブ・レビュー状態・未レビュー情報</li>
+      <li><strong>表示（識別メタデータ）:</strong> 文書タイトル、docId、updatedAt、identity情報（provider, external UID, display name）、visibility、binding状態</li>
+      <li><strong>非表示（知的成果物本体）:</strong> カード本文・島構造・関係線・ナラティブ・レビュー状態・未レビュー情報・証跡リンク・件数集計</li>
       <li><strong>token:</strong> 作成直後の完了面で一度だけ表示。平文再表示・伏字・検索はしない</li>
       <li><strong>監査:</strong> DATA-MAINT-04解禁まで表示しない（allowlist未定義）</li>
     </ul>
@@ -733,21 +745,25 @@ stateDiagram-v2
   SaveSuccess --> DocList : 一覧へ戻る
 
   note right of DocList
-    表示: docId, visibility, binding状態, policy version, updatedAt
-    非表示: 文書タイトル, 本文, カード, レビュー状態, 件数集計
+    表示: タイトル, docId, visibility, binding状態, policy version, updatedAt
+    非表示: 本文（カード・島・関係・ナラティブ）, レビュー状態, 件数集計
     metadata未登録は「Restricted / binding未設定」、Public既定にしない
     binding resolver不達は「権限設定を確認できないため利用不可」
+    タイトルは識別メタデータであり、誤操作防止のために表示する
   end note
 </pre>
 </div>
 
 <div class="tension">
-  <strong>三者牽制ポイント:</strong> 業務上「文書の公開範囲を簡単に設定したい」という要求に対し、
-  データ設計は「管理面は文書タイトルすら表示しない。docIdだけを扱う」と境界を引き、
+  <strong>三者牽制ポイント（2026-08-08 補正）:</strong> 業務上「文書の公開範囲を簡単に設定したい」という要求に対し、
+  データ設計は「管理面はタイトル（識別メタデータ）を表示するが、カード本文・島構造・ナラティブ（知的成果物本体）は表示しない」と境界を引き、
   機能設計は「bulk edit、CSV import/export、全doc一括公開は提供しない」と制約する。
-  → 一覧からのタイトル検索・bulk変更は三者が揃わないため提供しない。
+  → 一覧からのbulk変更は三者が揃わないため提供しない。
   また、tokenは作成直後の一度だけ表示し、平文再表示・伏字・一覧でのtoken欄自体を持たない
   （データ設計が「tokenの保存・再表示を禁止」し、機能設計が「作成直後の完了面以外ではtokenをDOMに残さない」）。
+  <br><br>
+  <strong>補正詳細:</strong> タイトル表示は <a href="design/admin-surface-metadata-display-correction.html">admin-surface-metadata-display-correction.html</a> の補正判断による。
+  本文非表示原則は維持しつつ、「本文」の定義を「知的成果物本体」に限定し、「識別メタデータ」を区別する。
 </div>
 
 <!-- ============================================================ -->
@@ -866,6 +882,11 @@ stateDiagram-v2
 
 <p>以下の画面/機能は、業務設計・データ設計・機能設計のいずれかが未確定であり、現時点では設計着手の前提を満たさない。</p>
 
+<div class="note">
+  <strong>2026-08-08 補正済み:</strong> 管理面での文書タイトル非表示は補正済み（<a href="design/admin-surface-metadata-display-correction.html">補正文書</a>）。
+  「本文」の定義を「知的成果物本体」に限定し、「識別メタデータ（タイトル・docId・updatedAt）」は管理面で表示可能とした。
+</div>
+
 <table>
   <thead><tr><th>画面/機能</th><th>業務設計</th><th>データ設計</th><th>機能設計</th><th>不足</th></tr></thead>
   <tbody>
@@ -875,6 +896,13 @@ stateDiagram-v2
       <td>△（物理削除か論理削除か未確定）</td>
       <td>✗（DELETE endpoint未契約）</td>
       <td>3/3</td>
+    </tr>
+    <tr>
+      <td>文書タイトル生成（AI提案）</td>
+      <td>✓（既存AI提案パターンに準拠）</td>
+      <td>✓（DocumentV1.title、L1 Supported）</td>
+      <td>△（SuggestionPanel拡張で実現可能、未着手）</td>
+      <td>0.5/3</td>
     </tr>
     <tr>
       <td>文書アーカイブUI</td>

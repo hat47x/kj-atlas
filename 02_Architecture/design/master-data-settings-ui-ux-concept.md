@@ -118,7 +118,7 @@ Adminは通常のWorkspaceとは別サーフェスとする。現行のアクセ
 4. **システム状態**: providerの有効/無効、SafeMode既定、構成プロファイル等、秘密を含まない診断値だけを読み取り専用で表示する将来候補。値の編集はデプロイ手順へ案内する。
 5. **監査**: `DATA-MAINT-04`が解禁されるまでナビゲーションにも空の一覧にも追加しない。
 
-Adminヘッダーには、通常Workspaceと混同しない名称と「この画面は文書本文を表示しません」という境界説明を置く。文書を参照する必要がある行では`docId`だけを使い、タイトルへ解決しない。
+Adminヘッダーには、通常Workspaceと混同しない名称と「この画面は文書本文（カード・島・ナラティブ）を表示しません」という境界説明を置く。文書を参照する必要がある行では、識別メタデータとしてタイトルと`docId`を併記する。タイトルを介した横断本文検索・プレビューは行わない。
 
 #### アクセス登録
 
@@ -131,7 +131,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 #### 文書アクセス設定（future SaaS / implementation gated）
 
 - Tenant Adminのactive tenant固定面とし、scope見出しにtenant名とopaque tenant IDを示す。tenant自由入力、他tenant検索、Platform Control Planeからの横断表示は設けない。
-- 一覧／検索対象は`docId`、visibility、binding状態（設定済み／未設定／解決不能）、policy version、updatedAtだけとする。文書タイトル、本文、カード、review状態、件数集計は取得も表示もしない。
+- 一覧／検索対象は**タイトル**、`docId`、visibility、binding状態（設定済み／未設定／解決不能）、policy version、updatedAtとする。本文（カード・島・関係・ナラティブ・レビュー状態・証跡リンク）、件数集計は取得も表示もしない。タイトルは識別メタデータであり、本文には該当しない。
 - 編集フォームは`docId`を固定表示し、visibilityと非秘密の`policyBindingId`、`policyVersion`だけを扱う。`Org/Restricted`ではbinding IDを必須、`Public/Unlisted`では任意とし、生のpolicyRef、policy URL、token、secretを入力する欄を作らない。
 - metadata未登録は`Restricted / binding未設定`として表示し、Public既定やread-only fallbackにしない。binding resolver不達は「権限設定を確認できないため利用不可」とし、文書0件のEmptyと区別する。
 - 変更は即時反映に見せず、差分確認、保存中の二重実行防止、成功receipt（policy version）、409競合時の再読込を用意する。bulk edit、CSV import/export、全doc一括公開は提供しない。
@@ -141,7 +141,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 #### エージェント登録（将来）
 
 - single-tenant互換では認可済みPlatform operator、future SaaSではactive tenantの`agent.register/revoke`だけを使う。Platform operator、文書owner、`document.write`から発行・失効権限を推測しない。
-- 一覧の表示候補は`registrationId`、表示名、`docId`、状態、作成日時、作成主体の固定メタデータ。文書タイトルと本文は表示しない。
+- 一覧の表示候補は`registrationId`、表示名、**対象文書タイトル**、`docId`、状態、作成日時、作成主体の固定メタデータ。本文（カード・島・関係・ナラティブ・レビュー状態）は表示しない。文書タイトルは対象文書の誤認防止のために表示する。
 - 登録フォームでは対象文書をタイトル検索させず、認可済みの`docId`を明示入力または別の安全な選択契約で指定する。
 - tokenは作成直後の完了面で一度だけ表示する。「後から再表示できない」ことを表示前と表示中に伝え、copy操作と閉じる確認を用意する。
 - 保存後の一覧ではtokenを伏字にせず、token欄そのものを持たない。
@@ -154,7 +154,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 - 上記のWorkspace用tenant control、保存／破棄／取消alert dialog、切替request coordinator、任意注入App hostは実装済みであり、単一membership label、複数membership allowlist select、切替中disabled／status、日本語・英語accessible name、自由入力・旧scope不一致・response差替えの通信前／cleanup前拒否を固定した。App hostは切替確定後に旧本文をloading／blocked stateへ置換し、保存、request/worker/object URL/timer cleanup、旧scope削除、hard replacementを実行する。SaaS用production entryもbootstrapで検証したsession contextとbrowser scopeをAppへ同時注入する。ただし、trusted auth edgeとanti-forgery付きsession persisterがbackend runtimeへ未接続でSaaS profileを起動拒否しているため、tenant controlを運用画面としてはまだ解禁しない。
 - tenant切替時に未保存変更があれば保存・破棄・取消を選ばせる。確定後は文書、選択、検索、work mode、import preview、recent、QueryPreset、request cacheを破棄し、新tenantで再取得する。
 - 切替確認中やbackend未確認の間、旧tenantの本文と新tenantの管理UIを同時に表示しない。
-- **Tenant Admin**はactive tenantのmembership provisioning、document access metadata、agent registrationだけを扱う。本文と文書タイトルは表示しない。
+- **Tenant Admin**はactive tenantのmembership provisioning、document access metadata、agent registrationだけを扱う。本文（カード・島・関係・ナラティブ・レビュー状態）は表示しない。識別メタデータとして文書タイトルは表示する。
 - **Platform Control Plane**はtenant lifecycle、IdP接続状態、非秘密のsystem statusだけを扱い、全tenant文書を横断する一覧を持たない。
 - role名やgroup名からfrontendが操作可否を推測しない。backendが返すcapabilityと理由コードで表示し、APIが再検証する。
 - tenant mismatch、membership失効、PDP不達は権限なしのEmptyに見せず、「範囲を確認できないため表示しない」状態と再認証/戻る導線を示す。
