@@ -71,3 +71,10 @@ Updated: 2026-08-03
 - 原因: デッドコード判定のgrepを `src/` 配下に限定した。このadapterは `tests/tiebreak/vitest.config.tiebreak.ts`（`include: ["tests/tiebreak/**/*.test.ts"]` の別設定）で実行される統合テストだけが参照しており、通常の `vitest run` には現れなかった。作業ツリー上に残っていた別worktreeのテストが検出の手掛かりになった。
 - 対応: `git show 62dca731~1:<path>` から復元し、`tests/tiebreak/vitest.config.tiebreak.ts` で3 tests passを確認。DX-CLEANUP-08（番号衝突のため08へ再番号、旧07）を「参照源がsrc外に偏在」の検討対象として訂正した。
 - 再発防止: 「削除対象か」の判定は **`src/` だけでなく `tests/`・`e2e/`・別vitest設定・build設定を含めたリポジトリ全体** で参照を検索する。特に `vitest.config.*.ts` が複数ある場合は、別設定のテストがどのファイルを include するかを確認してから削除判断する。コミット前に `git grep` をリポジトリルート基準で実行する。
+
+## 2026-08-09: Active issue validatorの配置場所を取り違えた
+
+- 事象: `python 01_Plans/validate_active_issue_memos.py`を実行し、ファイル未存在で検証が開始しなかった。
+- 原因: validatorが`01_Plans/issues/`配下にあることを確認せず、記憶したパスを使用した。
+- 対応: `rg --files`で実体を確認し、`python 01_Plans/issues/validate_active_issue_memos.py`で再実行する。
+- 再発防止: リポジトリ内スクリプトは実行前に`rg --files`で現在の配置を確認する。

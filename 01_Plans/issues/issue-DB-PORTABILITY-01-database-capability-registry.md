@@ -19,7 +19,8 @@
 
 - DB backendの対応状態、family、migration strategy、共有SaaS可否を単一レジストリへ集約する。
 - 未検証candidateは資格情報を反射せず、engine生成・migration開始前に拒否する。
-- 次段階でidentifierとcontentの型を分離し、MySQL/MariaDB familyのmigrationと実DBmatrixを追加する。
+- 次段階でdata-shape inventoryを行い、identifier、bounded descriptive text、content objectを分離する。identifierの上限はDB製品都合ではなく、生成規則・外部契約・索引要件から決める。
+- content objectはDB保存を既定互換としつつ、将来のobject storage実装を`ContentStore` portの背後へ追加できるよう、参照metadataと障害時状態遷移を先に設計する。
 - SQL Server、Oracle、CockroachDBは同じ昇格手順を再利用し、需要に応じて順序を変更できるようにする。
 
 ## 受入条件
@@ -27,7 +28,9 @@
 - [x] AC-1: SQLite/PostgreSQLのverified状態とmigration strategyが一か所で定義される。
 - [x] AC-2: MySQL/MariaDB、SQL Server、Oracle、CockroachDBがcandidateとして分類され、runtimeではfail-fastになる。
 - [x] AC-3: DB URLエラーがcredentialやURL全体を反射しない。
-- [ ] AC-4: identifier/index文字列がbounded portable型へ移行され、SQLite/PostgreSQL回帰が通る。
+- [ ] AC-4: 全永続列がidentifier／bounded descriptive text／content objectへ棚卸しされ、identifierの意味別最大長と受入規則が定義される。
+- [ ] AC-4a: identifier/index文字列が棚卸し結果に基づくbounded portable型へ移行され、SQLite/PostgreSQL回帰が通る。
+- [ ] AC-4b: `ContentStore` port、DB実装、object参照metadata、digest検証、障害時状態遷移、orphan回収契約が設計される。object storageの実装・既定化は別issueで扱える。
 - [ ] AC-5: MySQL/MariaDBでfresh migration、roundtrip、複合制約、upgrade/downgradeが実DBで通る。
 - [ ] AC-6: 公開文書でMySQL/MariaDBをverifiedへ昇格し、driver optional dependencyとCIを追加する。
 - [ ] AC-7: 将来candidateの追加が既存repository/APIへDB固有分岐を増やさず、同じ検証契約を再利用できる。
@@ -39,6 +42,13 @@
 - SQLite/PostgreSQLの既存migration・roundtrip回帰。
 - candidate昇格時は一時的な実DB containerでfresh/upgrade/downgrade/constraint/CRUDを検証する。
 - SafeMode、proposal-only、share/export/importには変更を加えない。
+
+## Phase 2 design correction 2026-08-09
+
+- `TEXT`主キーの解消を単なるMySQL互換化として扱わず、ID体系の見直しを先行させる。UUID/ULID等の内部生成ID、IdP subject、URI、利用者入力値を同じ上限へ押し込まない。
+- `documents.payload_json`、`inquiry_bundles.payload_json`、`merge_decision_logs.payload_json`はcontent object候補であり、identifier migrationとは別トラックにした。本文をDB可搬性のために切り詰めない。
+- 保存先は当面DBを維持する。将来S3互換storageまたはfile serviceへ移せるportを設計するが、DB/object間の原子的commitを仮定せず、pending／ready／deleting／failed等の状態遷移、再試行、digest検証、orphan回収を決めるまでruntime切替を公開しない。
+- object本体を外部化しても、tenant scope、object key、byte size、digest、schema version等のmetadataはDBに保持し、一覧・認可・整合性の正本を分散させない。
 
 ## Phase 1 checkpoint 2026-08-09
 

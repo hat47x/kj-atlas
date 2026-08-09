@@ -17,15 +17,18 @@ kj-atlasはSQLAlchemy ORMを利用しているが、ORMが接続可能なDBと�
 2. `verified`はSQLite/PostgreSQLだけとする。MySQL/MariaDB、SQL Server、Oracle、CockroachDBは`candidate`として登録するが、実DBmatrix完了までruntimeとAlembicをfail-fastで拒否する。
 3. driver差ではなくDB familyを拡張単位にする。MySQLとMariaDBは同じfamilyとして共通化し、差分が実証された箇所だけ個別capabilityへ分離する。
 4. candidateの昇格には、fresh migration、upgrade/downgrade、複合PK/FK・unique/check/index、CRUD roundtrip、transaction、backup/restoreの実DB検証を必須とする。SQLAlchemyのmock dialectやSQL生成だけでは昇格しない。
-5. 識別子・索引対象文字列は、全DBで成立するbounded型へ一度だけ再設計する。payloadや長文まで一律VARCHAR化せず、identifierとcontentを型レベルで分離する。
+5. 物理型はDB都合で一律変換せず、identifier、bounded descriptive text、content objectへ分類する。識別子の上限はID生成規則・外部契約・索引要件から意味別に決め、payloadや長文を一律VARCHAR化しない。
 6. 共有schema型SaaSは、DB側tenant guardとpool再利用matrixを満たすDBだけに許可する。現時点ではPostgreSQL限定とし、single-tenant DB対応の追加からSaaS対応を推論しない。
 7. 各DB専用repositoryやAPIを作らず、差分は能力レジストリ、少数のmigration strategy、検証fixtureへ閉じ込める。
+8. content objectは将来の`ContentStore` portの背後に置く。現行互換のDB保存を既定とし、object storage実装を追加してもrepository/APIのDocument契約へ保存先分岐を漏らさない。
+9. object storage利用時もtenant・digest・schema version・size・object key等のmetadataはDBを正本とする。保存先の実行時切替やhybrid routingは、障害時状態遷移、移行・rollback、orphan回収が検証されるまで公開しない。
 
 ## Consequences
 
 - 未検証DBで途中まで起動してからmigrationや制約で壊れる状態を防げる。
 - 将来DBの追加は候補登録ではなく、型・migration・実DB証跡を伴う明示的な昇格になる。
 - MySQL/MariaDB対応前にbounded identifier型への移行が必要となり、即時のURL許可より作業量は増える。
+- 大容量contentをDB外へ移せるが、DB/object間の原子的commitを仮定せず、補償処理と整合性検証を実装する必要がある。
 - SQLite/PostgreSQLの既存利用、SafeMode、proposal-only、export/import境界は変更しない。
 
 ## Non-goals
