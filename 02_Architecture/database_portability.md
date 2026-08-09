@@ -59,7 +59,7 @@ NAS／S3のlocatorは`tenant_id`と`content_id`それぞれのSHA-256から決�
 
 S3実装は特定SDKをContent Storeへ直結せず、`put_object`／`get_object`／`delete_object`のclient portを介する。AWS S3、MinIO等のS3互換製品、テストdoubleの差をこのportのadapterへ閉じ込め、core packageへ必須cloud dependencyを追加しない。
 
-Content Store上の編集世代は物理backendと分離し、`ADR-0070`のcontent-addressed revision DAG候補で扱う。論理revisionは共有可能な`tenant + digest` blobを参照し、database／NAS／S3／Gitはその物理backend候補とする。Git commit／branchをDB metadata、tenant認可、human reviewの正本にしない。schema version、ETag、Inquiry round snapshot、merge decision log、編集revisionは別概念を維持する。
+Content Store上の編集世代は物理backendと分離し、`ADR-0070`で採択したcontent-addressed revision DAGで扱う。論理revisionは共有可能な`tenant + digest` blobを参照し、database／NAS／S3／Gitはその物理backend候補とする。Git commit／branchをDB metadata、tenant認可、human reviewの正本にしない。schema version、ETag、Inquiry round snapshot、merge decision log、編集revisionは別概念を維持する。
 
 Content Storeの操作契約は一つの汎用CRUDへ統合せず、次の3 portに分離する。
 
@@ -92,4 +92,4 @@ CandidateをVerifiedへ変更するには、対象versionを固定した実DBに
 
 ## Current next step
 
-外部storage実装は`DATA-GENERATION-01`のrevision／blob設計確定まで凍結する。本issueではinline DB Content Storeを標準経路として、既存データ分布とAPI入力契約を照合したidentifier上限確定、bounded identifier migration、各DBのinline LOBを含む実DBmatrixを優先する。inline LOBがUnsupportedと実証されたDBだけ、NAS/S3等を必須構成として再評価する。
+`DATA-GENERATION-01`でrevision／blob設計は確定したが、外部storageのruntime接続優先度は引き続き低く保つ。本issueではinline DB Content Storeを標準経路として、既存データ分布とAPI入力契約を照合したidentifier上限確定、bounded identifier migration、各DBのinline LOBを含む実DBmatrixを優先する。inline LOBがUnsupportedと実証されたDB、または容量・共有要件が実測された環境だけ、NAS/S3等を`content_blobs`の物理backendとして再評価する。

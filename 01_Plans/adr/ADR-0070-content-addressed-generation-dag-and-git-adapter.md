@@ -1,6 +1,6 @@
 # ADR-0070: KJキャンバス世代をcontent-addressed DAGで管理しGitを任意adapterとする
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-09
 - Deciders: Maintainer
 - Scope: Document persistence, Content Store, inquiry snapshots, AI collaboration provenance
@@ -70,6 +70,18 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 追試として実装codecを用いた同規模の再現可能benchmarkでは、raw 11,273,323 bytes、保存447,181 bytes、full 100、delta 0、encode約720ms、100世代restore合計約41msとなった。したがってgzip fullを当面の既定とし、deltaは常設前提にせず、実データでfullより有利な場合だけadaptiveに採用する。
 
 同一fixtureを100 Git commitとして保存しaggressive GCした追試では、`.git`全体113,646 bytes、commit作成＋GC約37.8秒、3世代の`git show`復元約194msだった。Git packはgzip fullより約4倍小さいが、書込・GCと任意世代読取のhot-path costが大きい。したがって標準runtimeはgzip full＋DB metadataとし、Gitは明示的なarchive／交換処理でのみ再評価する。
+
+## Extended representative benchmark 2026-08-10
+
+既存frontendの実Document fixtureを起点にした40世代、同fixtureの2 branch＋merge、同じDocument形状を1.15 MiBへ拡張した20世代を`benchmark_generation_scenarios.py`で追試した。
+
+| 条件 | 世代サイズ | raw合計 | adaptive保存 | full/delta | encode / 全restore | Git pack | Git write+GC / 3 restore |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| fixture派生40世代 | 830–1,486 B | 46,192 B | 22,625 B | 40 / 0 | 14.73 / 1.43 ms | 56,549 B | 16.39 s / 185.46 ms |
+| branch＋merge 4世代 | 814–834 B | 3,298 B | 1,977 B | 4 / 0 | 1.23 / 0.16 ms | 29,796 B | 2.59 s / 179.85 ms |
+| 1.15 MiB級20世代 | 1,156,489–1,157,646 B | 23,140,981 B | 11,794,985 B | 20 / 0 | 2.91 s / 187.48 ms | 694,796 B | 12.95 s / 295.09 ms |
+
+全条件でdeltaは選択されず最大depthは0だった。Git packは特に大容量反復データで高圧縮だが、metadata込み小規模履歴ではgzip fullより大きく、全条件でwrite／GCと任意世代restoreの固定costが顕著だった。よって`delta_chain_max_depth=32`と比率0.7は上限guardrailとして維持するが、runtimeの容量見積りはdeltaを前提にせずgzip fullで行う。Gitをhot pathから除外する判断も維持する。
 
 ## Non-goals
 

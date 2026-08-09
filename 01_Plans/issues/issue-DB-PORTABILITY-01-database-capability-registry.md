@@ -86,6 +86,12 @@
 - inline DB Content StoreをDB portabilityの標準経路として維持する。NAS/S3 adapterは削除せず実験的候補として凍結し、必要性が確認された場合に`DATA-GENERATION-01`の物理blob backendとして再開する。
 - MySQL/MariaDB等の候補DBはinline LOB実地検証を先に行い、未対応と判明した場合だけ外部blob backendを必須化する。未検証段階で「外部保存せざるを得ない」と仮定しない。
 
+## Generation DAG dependency resolved 2026-08-10
+
+- `DATA-GENERATION-01`は全受入条件を完了し、`ADR-0070`をAcceptedとした。`content_blobs`、revision DAG、adaptive codec、保持pin、監査付きGCが物理backend共通の境界として確定した。
+- 1.15 MiB級20世代ではgzip fullが約11.79 MB、Git packが約0.69 MBだった一方、Git write＋GCは約12.95秒を要した。Gitはarchive／交換候補、database inlineはruntime標準という優先順位を維持する。
+- NAS／S3の再開条件は「候補DBのinline LOB不成立」または「容量・複数instance共有要件の実測」とし、先行してruntime切替を公開しない。
+
 ## Phase 1 checkpoint 2026-08-09
 
 - `database_support.py`へverified/candidate、DB family、migration strategy、shared-schema SaaS可否を集約した。

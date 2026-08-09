@@ -1,7 +1,7 @@
 # Issue: DATA-GENERATION-01 KJキャンバス世代管理と保持ポリシー
 
 - Type: Architecture / Data
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: User request 2026-08-09
 - Priority: P2
@@ -22,7 +22,7 @@
 - [x] AC-2: AI proposalとhuman acceptanceが別revisionとして関連付けられ、AIがhuman reviewへ昇格できない。
 - [x] AC-3: ephemeral revisionがactor／AI run metadataを持たない契約テストがある。
 - [x] AC-4: revision DAG、content object参照、head更新のDB schemaとmigrationが実装される。
-- [ ] AC-5: canonical JSON、full snapshot／delta選択、最大chain depth、復元検証が代表データでbenchmarkされる。
+- [x] AC-5: canonical JSON、full snapshot／delta選択、最大chain depth、復元検証が代表データでbenchmarkされる。
 - [x] AC-6: retention pin、ephemeral GC、governed保持、tenant-scoped orphan回収が実装される。
 - [x] AC-7: AI run metadataの最小契約、SafeMode、redaction、保持期間が実装される。
 - [x] AC-8: Gitを標準runtimeから除外し、archive／交換限定の将来adapter候補と判断する。実装する場合はbare repo、hook禁止、tenant分離、GC、backup/restoreを別gateで検証する。
@@ -40,7 +40,7 @@
 - `generation_policy.py`へ3 tier、11 reason、4 origin、revision metadata、初期retention guardrailを定義した。
 - autosaveはminimal metadata、AI proposalは別AI run参照、人間採用はsource proposal参照、人手reviewはopaque actor必須としてfail closedにした。
 - 初期値はephemeral 50件／7日、delta chain 32、delta比率0.7だが、物理保存へ適用する前に代表データbenchmarkで確定する。
-- Gitは標準runtime正本にせず、optional archive／exchange adapter候補とした。ADR-0070はProposedであり、Git adapter実装は未着手。
+- Gitは標準runtime正本にせず、optional archive／exchange adapter候補とした。このcheckpoint時点ではADR-0070はProposedであり、Git adapter実装は未着手だった。
 
 ## Storage interaction checkpoint 2026-08-09
 
@@ -111,3 +111,10 @@
 - 複数branchの保持集合をunionするため、merge共有祖先はどれか一つのrootから保持範囲内なら残る。範囲外は保持側との境界edgeを切断し、候補DAGをchild-firstで削除して各削除監査を残す。
 - 欠損parent、DAG cycle、削除直前のhead／pin／parent／source保護変更は`GenerationGcConflict`としてtransaction全体をfail closedにする。checkpoint／governed自体は候補集合へ入らない。
 - branch、merge、共有祖先、複数head、監査を含むrepositoryテストとRuffを通過した。これによりAC-6を完了した。
+
+## Extended representative codec benchmark 2026-08-10
+
+- `scripts/benchmark_generation_scenarios.py`を追加し、既存frontendの実Document fixture由来40世代、2 branch＋merge 4世代、1.15 MiB級20世代を再現可能にした。各世代はcanonical化、adaptive encode、親指定restore、digest検証を通す。
+- adaptive保存量は順に22,625 B／1,977 B／11,794,985 Bで、全64世代がgzip full、delta 0、最大depth 0だった。現行prefix/suffix deltaは代表条件でgzip fullを上回らないため、容量設計はdelta効果を見込まず、比率0.7とdepth 32は将来の有利な入力だけを許可するguardrailとして維持する。
+- 同条件のGit aggressive packは56,549 B／29,796 B／694,796 Bだったが、write＋GCは16.39 s／2.59 s／12.95 s、3世代restoreは185.46 ms／179.85 ms／295.09 msだった。大容量時の圧縮優位は確認した一方、runtime hot path不採用の判断は維持する。
+- 実fixture、branch、merge、1 MiB超、Git同条件、復元時間まで揃ったためAC-5を完了した。これによりDATA-GENERATION-01の全受入条件が実装または判断済みとなった。
