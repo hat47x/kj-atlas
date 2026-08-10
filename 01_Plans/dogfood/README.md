@@ -9,7 +9,8 @@ kj-atlas を使った kj-atlas 開発プロセスの管理。ADR-0042（ドッ�
 | `doc_kj_atlas_dogfood_r1.json` | R1 問題提起: 開発プロセスの摩擦と設計課題 | カード化完了（17C/15E/5I） |
 | `doc_kj_atlas_dogfood_r2.json` | R2 現状把握: 設計判断の実態と構造的課題 | カード化完了（16C/17E/5I/2N/8E） |
 | `doc_kj_atlas_dogfood_r3.json` | R3 本質追求: 不整合が生まれ解消されない根本原因 | カード化完了（12C/12E/5I/1N/5E） |
-| (R4 未着手) | R4 構想: どうあるべきか | 未着手 |
+| `doc_kj_atlas_dogfood_r4.json` | R4 構想: 開発プロセスの理想像 | カード化完了（10C/10E/4I/1N） |
+| (R5 未着手) | R5 具体策: 理想と現実の差を埋める手 | 未着手 |
 
 ## 使い方
 
