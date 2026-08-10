@@ -194,9 +194,62 @@ if types_ts.exists() and models_py.exists():
     print(f"  TS types: {len(ts_types)}, Pydantic models: {len(py_models)}, Shared: {len(shared)}")
 
 
+# --- Warning categories for baseline tracking ---
+
+warning_categories = {
+    "route_docs": sum(1 for w in warnings if "not found in api.md" in w),
+    "env_vars": sum(1 for w in warnings if "env var" in w or "KJ_ATLAS_" in w),
+    "pydantic_ts": sum(1 for w in warnings if "Pydantic" in w or "TS types" in w),
+}
+total_warnings = len(warnings)
+
 # --- Summary ---
 
 print(f"\n=== Contract Drift Summary: {len(errors)} errors, {len(warnings)} warnings ===")
+
+# Baseline check (R3 root cause 1 countermeasure — R5-c01)
+baseline_path_d = None
+for i, arg in enumerate(sys.argv):
+    if arg == "--baseline" and i + 1 < len(sys.argv):
+        baseline_path_d = Path(sys.argv[i + 1])
+        break
+
+if baseline_path_d:
+    current = {
+        "total_warnings": total_warnings,
+        "total_errors": len(errors),
+        "categories": warning_categories,
+    }
+    if baseline_path_d.exists():
+        try:
+            baseline = json.loads(baseline_path_d.read_text())
+            increased = []
+            for cat, count in current["categories"].items():
+                base_count = baseline.get("categories", {}).get(cat, 0)
+                if count > base_count:
+                    increased.append(f"{cat}: {base_count}→{count} (+{count - base_count})")
+            if increased:
+                print(f"FAILED — drift warning count increased in: {', '.join(increased)}")
+                print(f"  Baseline: {baseline_path_d} (update with --update-baseline after fixing)")
+                sys.exit(1)
+            elif current["total_warnings"] < baseline.get("total_warnings", 0):
+                print(f"  Drift decreased: {baseline['total_warnings']}→{current['total_warnings']}")
+                print(f"  Consider updating baseline: --update-baseline")
+        except (json.JSONDecodeError, KeyError):
+            print(f"  Warning: baseline file corrupt, skipping baseline check")
+    else:
+        print(f"  Baseline created: {baseline_path_d} ({total_warnings} warnings)")
+        baseline_path_d.write_text(json.dumps(current, indent=2))
+
+if "--update-baseline" in sys.argv and baseline_path_d:
+    current = {
+        "total_warnings": total_warnings,
+        "total_errors": len(errors),
+        "categories": warning_categories,
+    }
+    baseline_path_d.write_text(json.dumps(current, indent=2))
+    print(f"  Baseline updated: {baseline_path_d} ({total_warnings} warnings)")
+
 if errors:
     print("DRIFT DETECTED — fix before merge")
     sys.exit(1)
