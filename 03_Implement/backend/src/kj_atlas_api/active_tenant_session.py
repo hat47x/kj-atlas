@@ -14,8 +14,14 @@ from kj_atlas_api.tenant_context import TenantContext
 logger = logging.getLogger(__name__)
 
 MAX_TENANT_SESSION_VERSION_LENGTH = 128
+# SEC-TENANT-SESSION-01: the leading character used to be restricted to
+# [A-Za-z0-9], but _new_session_version()'s secrets.token_urlsafe(32) can
+# start with "-" or "_" (~3.1% of outputs) -- every position uses the same
+# base64url-plus-cookie-safe class instead, matching what the generator can
+# actually produce (fix direction (b); RFC 6265 cookie-octet already allows
+# "-"/"_" anywhere, so this doesn't weaken the cookie-safety property).
 _TENANT_SESSION_VERSION_PATTERN = re.compile(
-    rf"[A-Za-z0-9][A-Za-z0-9._~-]{{0,{MAX_TENANT_SESSION_VERSION_LENGTH - 1}}}"
+    rf"[A-Za-z0-9._~-]{{1,{MAX_TENANT_SESSION_VERSION_LENGTH}}}"
 )
 
 
@@ -167,6 +173,16 @@ def _new_session_version() -> str:
     return secrets.token_urlsafe(32)
 
 
+def _new_canonical_session_version() -> str:
+    """Generate a session version and validate it before any caller can store
+    or return it. SEC-TENANT-SESSION-01: a non-canonical value stored in
+    self._sessions permanently 503s that principal until process restart,
+    since nothing else ever overwrites it. With the widened pattern above
+    this should never actually raise; it stays as a structural guarantee in
+    case _new_session_version()'s implementation changes later."""
+    return canonical_tenant_session_version(_new_session_version())
+
+
 class InMemoryActiveTenantSessionPersister:
     """ADR-0063 D9-6: thread-safe in-memory session persister for saas-multitenant.
 
@@ -207,7 +223,7 @@ class InMemoryActiveTenantSessionPersister:
             except (KeyError, AttributeError):
                 pass
             if principal_id not in self._sessions:
-                self._sessions[principal_id] = _new_session_version()
+                self._sessions[principal_id] = _new_canonical_session_version()
             return self._sessions[principal_id]
 
     def persist(
@@ -228,7 +244,7 @@ class InMemoryActiveTenantSessionPersister:
                 raise TenantSessionChangedError(
                     "tenant session version mismatch"
                 )
-            new_version = _new_session_version()
+            new_version = _new_canonical_session_version()
             self._sessions[principal_id] = new_version
             # ADR-0064 D4: set session cookie on the response.
             response.set_cookie(

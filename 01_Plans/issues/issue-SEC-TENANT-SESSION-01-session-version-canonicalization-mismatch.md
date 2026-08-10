@@ -1,7 +1,7 @@
 # Issue: SEC-TENANT-SESSION-01 テナントセッション版数の3.1%が自己検証に失敗し、当該利用者が恒久的に503になる
 
 - Type: Bug / Security（可用性）
-- Status: Open
+- Status: Done
 - Source Issue: N/A
 - Priority: P0
 - Owner: Unassigned
@@ -102,14 +102,28 @@ ValueError: tenant session version is not canonical
 
 ## 受入条件
 
-- [ ] AC-1: `_new_session_version()` が生成する値が、`canonical_tenant_session_version()` を**常に**通過する。20万回規模の統計的テストで 0 件失敗を確認する。
-- [ ] AC-2: `persist()` は、サーバ側状態の更新および `set_cookie` の**前に**新版数を検証する。検証失敗時は状態を変更せず例外を送出する。
-- [ ] AC-3: 非正規値が何らかの理由で格納された場合でも、当該 principal が恒久的に 503 へ固定されない（回復経路があるか、そもそも格納され得ないことをテストで固定する）。
-- [ ] AC-4: `test_persist_returns_new_version` が確定的に成功する。
-- [ ] AC-5: 生成器または検証器のどちらを変更したかを、`active_tenant_session.py` のコメントに理由付きで記録する。
+- [x] AC-1: `_new_session_version()` が生成する値が、`canonical_tenant_session_version()` を**常に**通過する。20万回規模の統計的テストで 0 件失敗を確認する。→ `test_new_session_version_always_canonicalizes`（20万回、0件失敗）。
+- [x] AC-2: `persist()` は、サーバ側状態の更新および `set_cookie` の**前に**新版数を検証する。検証失敗時は状態を変更せず例外を送出する。
+- [x] AC-3: 非正規値が何らかの理由で格納された場合でも、当該 principal が恒久的に 503 へ固定されない（回復経路があるか、そもそも格納され得ないことをテストで固定する）。→ `current_version()`側にも同型の未検証格納があったため同時に修正（下記実装記録）。
+- [x] AC-4: `test_persist_returns_new_version` が確定的に成功する。
+- [x] AC-5: 生成器または検証器のどちらを変更したかを、`active_tenant_session.py` のコメントに理由付きで記録する。→ (b)検証器側を変更。
 
 ## 検証
 
 - `python -m pytest tests/test_active_tenant_session_persister.py -q`
 - `python -m pytest tests/test_tenant_session_precondition.py tests/test_session_context_routes.py -q`
 - backend 全体回帰
+
+## 実装記録（2026-08-10）
+
+- 対応方針(b)を採用: 検証器（`_TENANT_SESSION_VERSION_PATTERN`）を先頭文字も含め全位置`[A-Za-z0-9._~-]`へ統一し、生成器（`secrets.token_urlsafe`のbase64urlアルファベット）が実際に生成し得る値と一致させた。RFC 6265 cookie-octetは`-`/`_`をどの位置でも許容するため、cookie値としての安全性は変わらない。
+- **調査の過程で、issue本文が明示していなかった同型の欠陥箇所をもう1つ発見した**: `current_version()`（初回セッション作成時）も`_new_session_version()`の戻り値を検証せず`self._sessions`へ直接格納していた。`persist()`だけでなくこの経路も同じ「恒久化する503」を引き起こせるため、両方に対応した。
+- 生成直後に検証する`_new_canonical_session_version()`を新設し、`current_version()`・`persist()`の両方の格納箇所をこれに差し替えた（格納より前に検証が走る構造にすることで、AC-2の順序要件をコード構造として保証する）。修正後のパターンでは実際には失敗し得ないが、将来`_new_session_version()`の実装が変わった場合の構造的な保険として残す。
+- 新規テスト3件を追加: (1) 20万回規模の統計的検証（AC-1）、(2) `persist()`が生成器の退行時に状態を汚染しないことの確認（`monkeypatch`で不正値を強制）、(3) `current_version()`側の同種確認。
+- 検証結果:
+  - `test_active_tenant_session_persister.py`: 8 passed（新規3件含む）。
+  - `test_tenant_session_precondition.py` + `test_session_context_routes.py`: 58 passed（対象2ファイル分含む）。
+  - 修正前パターンで同じ統計テストを実行し3.12%（6230/200000）の失敗を独立に再現し、修正後パターンで0/200000であることを確認した。
+  - backend全体回帰（`pytest -m "not postgres and not mysql and not mssql and not cockroachdb and not oracle and not auth_level1 and not auth_level2"`、CI本流と同一マーカー除外）を実行。失敗が観測された場合は、未修正の`origin/main`（本変更を含まない新規clone）でも同一テストが同一理由で失敗することを個別に確認し、本変更による新規回帰でないことを検証した（例: `test_ce2_proposal_api.py::test_record_proposal_decision_maps_to_lifecycle_status_without_review_promotion`はpydantic `extra_forbidden`検証エラーで無変更のmainでも同一失敗）。
+  - `ruff check src/kj_atlas_api/active_tenant_session.py tests/test_active_tenant_session_persister.py`: pass。
+  - `git diff --check`: pass。
