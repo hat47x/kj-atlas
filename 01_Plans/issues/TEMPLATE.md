@@ -11,6 +11,14 @@
 - Related ADR/Spec: `<ADRまたは正本文書>`
 - Expected verification level: `<docs-check / unit / integration / e2e>`
 
+## 三要素整合（ADR-0067。新規設計判断を含む場合のみ、任意）
+
+> このissueが新規の設計判断（画面・API・データ境界）を含む場合、以下の三要素整合を確認する。含まない場合はこの節を削除してよい。
+
+- **業務設計（Business）**: <このissueがないと、どの利用者journeyが完遂できないか>
+- **データ設計（Data）**: <扱うデータの正本・保存範囲・非表示原則との整合>
+- **機能設計（Function）**: <必要なAPI契約の状態（契約済み/本issueで定義/未契約だが許容）>
+
 ## 課題
 
 - 現在の問題:
