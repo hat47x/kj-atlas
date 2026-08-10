@@ -12,10 +12,19 @@ This script performs mechanical checks on design documents:
 
 Exit code 0 = all checks pass (or only warnings).
 Exit code 1 = hard errors found.
+
+Warning baseline (--baseline PATH):
+  When a baseline JSON file is provided, the script compares current warning
+  counts by category against the stored baseline. If ANY category's count has
+  INCREASED, the script exits with code 1 (new warnings introduced).
+  If counts decreased, it suggests updating the baseline.
+  This prevents the warning gap from growing — addressing R3 root cause 1
+  (non-mandatory documentation processes).
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import sys
@@ -192,9 +201,64 @@ for html_file in html_files:
 
 print(f"  Found {mermaid_count} Mermaid diagrams in {len(html_files)} HTML files")
 
+# --- Warning categories for baseline tracking ---
+
+warning_categories = {
+    "adr_refs": sum(1 for e in errors if "references non-existent ADR" in e),
+    "api_endpoints": sum(1 for w in warnings if "references API endpoint" in w),
+    "agdmd_refs": sum(1 for w in warnings if "AGENTS.md reading table" in w),
+    "mermaid": 0,  # No warnings currently generated for mermaid
+}
+total_warnings = len(warnings)
+
 # --- Summary ---
 
 print(f"\n=== Summary: {len(errors)} errors, {len(warnings)} warnings ===")
+
+# Baseline check (R3 root cause 1 countermeasure)
+baseline_path = None
+for i, arg in enumerate(sys.argv):
+    if arg == "--baseline" and i + 1 < len(sys.argv):
+        baseline_path = Path(sys.argv[i + 1])
+        break
+
+if baseline_path:
+    current = {
+        "total_warnings": total_warnings,
+        "total_errors": len(errors),
+        "categories": warning_categories,
+    }
+    if baseline_path.exists():
+        try:
+            baseline = json.loads(baseline_path.read_text())
+            increased = []
+            for cat, count in current["categories"].items():
+                base_count = baseline.get("categories", {}).get(cat, 0)
+                if count > base_count:
+                    increased.append(f"{cat}: {base_count}→{count} (+{count - base_count})")
+            if increased:
+                print(f"FAILED — warning count increased in: {', '.join(increased)}")
+                print(f"  Baseline: {baseline_path} (update with --update-baseline after fixing)")
+                sys.exit(1)
+            elif current["total_warnings"] < baseline.get("total_warnings", 0):
+                print(f"  Warning count decreased: {baseline['total_warnings']}→{current['total_warnings']}")
+                print(f"  Consider updating baseline: --update-baseline")
+        except (json.JSONDecodeError, KeyError):
+            print(f"  Warning: baseline file corrupt, skipping baseline check")
+    else:
+        print(f"  Baseline created: {baseline_path} ({total_warnings} warnings)")
+        baseline_path.write_text(json.dumps(current, indent=2))
+
+# --update-baseline flag
+if "--update-baseline" in sys.argv and baseline_path:
+    current = {
+        "total_warnings": total_warnings,
+        "total_errors": len(errors),
+        "categories": warning_categories,
+    }
+    baseline_path.write_text(json.dumps(current, indent=2))
+    print(f"  Baseline updated: {baseline_path} ({total_warnings} warnings)")
+
 if errors:
     print("FAILED — hard errors found")
     sys.exit(1)

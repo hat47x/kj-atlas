@@ -61,7 +61,7 @@ jobs:
         run: python 01_Plans/docs_check.py
 
       - name: Run design consistency checks (ADR-0067)
-        run: python 03_Implement/backend/scripts/check_design_consistency.py
+        run: python 03_Implement/backend/scripts/check_design_consistency.py --baseline 02_Architecture/design_consistency_baseline.json
 
       - name: Run contract drift detection (ADR-0067)
         run: python 03_Implement/backend/scripts/check_contract_drift.py
