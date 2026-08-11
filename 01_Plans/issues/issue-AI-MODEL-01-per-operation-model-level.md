@@ -1,7 +1,7 @@
 # Issue: AI-MODEL-01 KJ操作別モデルレベル定義
 
 - Type: Feature
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P0
 - Owner: Maintainer
@@ -47,6 +47,10 @@
 - [ ] provider=none 時は全操作でAI呼び出しをスキップ
 - [ ] モデルレベル定義が AGENTS.md に反映されている
 
+
+## 完了記録（2026-08-12）
+
+AGENTS.md §1.2に10操作の推論深度・推奨モデル表を定義。resolve_model_for_task + KJ_ATLAS_LLM_TASK_MODEL_MAPで実装
 ## 補足
 
 - DeepSeek API の provider 追加（issue-AI-PROVIDER-01）に依存

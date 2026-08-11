@@ -1,7 +1,7 @@
 # Issue: DOMAIN-TITLE-01 文書タイトルのAI提案生成
 
 - Type: Feature
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
@@ -63,6 +63,10 @@
   2. Adopt/Rejectが正しく動作する
   3. SafeMode ON時に未レビュー本文が送信されない
 
+
+## 完了記録（2026-08-12）
+
+POST /ai/suggest-document-title + DocumentTitleEditor + e2e test実装済み。実機動作確認はKJ_ATLAS_DEEPSEEK_API_KEY投入後に実施
 ## 補足
 
 - 依存: 既存SuggestionPanelの提案種別拡張が可能であること（構造確認要）

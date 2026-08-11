@@ -1,7 +1,7 @@
 # Issue: DOGFOOD-01 kj-atlas によるプロジェクト自己管理の開始
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
@@ -42,6 +42,10 @@
 - [ ] ドッグフーディング中に発見された kj-atlas 自体の改善点が1件以上 issue 化されている
 - [ ] 文書は `01_Plans/dogfood/` に配置し、export/import手順が文書化されている
 
+
+## 完了記録（2026-08-12）
+
+W型R1-R6ドッグフード文書作成+週次運用確立（01_Plans/dogfood/）。改善8件を発見・対応
 ## 補足
 
 - 本issueはプロセス改善であり、コード変更を直接要求しない

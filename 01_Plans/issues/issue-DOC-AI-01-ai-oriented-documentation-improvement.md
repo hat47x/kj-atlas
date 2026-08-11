@@ -1,7 +1,7 @@
 # Issue: DOC-AI-01 生成AI向け文書の改善
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P0
 - Owner: Maintainer
@@ -40,6 +40,10 @@
 - [ ] 00_Prompt/*.md のKJ操作にAI実行手順が追加されている
 - [ ] 既存の核（SafeMode・proposal-only・反スコアリング・キャンバス主従）を侵していない
 
+
+## 完了記録（2026-08-12）
+
+AGENTS.md §1.1三要素牽制・§1.2モデルレベル・§1.3自律性レベルを追加。00_Prompt/ai_kj_execution_procedures.mdも作成
 ## 補足
 
 - 本issueは `dogfooding-ai-collaboration-plan.html` のP1項目

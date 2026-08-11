@@ -1,7 +1,7 @@
 # Issue: AI-PROVIDER-01 DeepSeek API provider 追加
 
 - Type: Feature
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
@@ -33,10 +33,10 @@
 
 ## 受入条件
 
-- [ ] `KJ_ATLAS_LLM_PROVIDER=deepseek` でDeepSeek APIが使用可能
-- [ ] 環境変数でAPI key・base URL・model名が設定可能
-- [ ] provider=none時は当然に全AI呼び出しをスキップ（既存動作を変更しない）
-- [ ] 既存の安全境界（SafeMode・提案のサニタイズ・未レビュー除外）がDeepSeek利用時も機能する
+- [x] `KJ_ATLAS_LLM_PROVIDER=deepseek` でDeepSeek APIが使用可能 — provider.py DeepSeekProvider実装
+- [x] 環境変数でAPI key・base URL・model名が設定可能 — settings.py 3変数 + runtime_parameter_registry.md登録
+- [x] provider=none時は当然に全AI呼び出しをスキップ（既存動作を変更しない）
+- [x] 既存の安全境界（SafeMode・提案のサニタイズ・未レビュー除外）がDeepSeek利用時も機能する — test_llm_provider.py 8 tests
 
 ## 補足
 
