@@ -137,3 +137,9 @@
 - 通常APIは正規化済みURLでengineを生成していた一方、Alembicとidentity backfill CLIはSQLAlchemyを直接呼び、Verified URL／driver境界と未導入extraの案内が分散していた。
 - `create_verified_database_engine()`へengine生成を集約し、通常API、Alembic online migration、backfill CLIを接続した。未導入driver／dialectは接続URLや資格情報を表示せず、能力レジストリのoptional dependency名を使った導入方法を返す。
 - 公開installationへ全Verified backendのpip extraと検証済み同期driverを追加し、能力レジストリとの静的契約testで記載漏れを防止した。diagnosticsにも同エラーからの復旧導線を追加した。
+
+## MySQL transaction gate checkpoint 2026-08-11
+
+- promotion gateはtransaction rollbackとconnection pool再利用を必須としていたが、MySQL/MariaDB共通matrixにはconstraint、LOB、migration往復、backup/restoreだけが実装され、transaction項目が欠落していた。
+- pool size 1の同一engineで未commit行をrollbackし、connection返却後にpoolから再取得した接続で行が存在しないことを検証する処理を共通matrixへ追加した。MySQLとMariaDBで同じテストを実行し、DB family共通化の境界を維持する。
+- 固定imageのMySQL 8.4.11とMariaDB 11.4.12で、fresh migration、rollback／pool再利用、constraint、LOB、migration往復、logical backup／別database restoreを含む各1件がpassした。一時containerは検証後に削除した。
