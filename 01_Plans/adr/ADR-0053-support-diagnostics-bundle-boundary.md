@@ -47,6 +47,14 @@ v1のtop-level keyは `schemaVersion/generatedAt/app/client/incident/runtime/doc
 - サーバー側でのバンドル組み立て、管理者による他利用者分の収集。
 - 監査ログ本文の同梱（`DATA-MAINT-04` / `ADR-0035` の境界に従う）。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | サポート切り分けに必要な再現情報を揃えつつ、転記漏れ・過剰貼り付けの両方向の事故を防ぐ。診断バンドルはshare/exportと同等の外部共有リスクを持ち、未加工本文・API key・token・個人情報の混入経路になってはならない | 機能: 明示ボタンからのみ生成し、コピー/ダウンロード前に全文プレビュー必須。データ: 送信機能を持たずローカル生成に限定 |
+| **データ設計** | 許可リスト方式（revision/ブラウザfamily/障害分類コード/SafeMode状態/provider種別/件数のみ）と禁止リスト（本文・Document id・API key・token・個人識別子・生UA・cookie）を固定。SafeMode ON/OFFで出力項目の露出境界を変えない | 業務: 新しい診断項目の追加には本ADRの更新が必要（意図的な摩擦）。機能: 未知キーは全階層で拒否し単一UTF-8 JSONとして生成 |
+| **機能設計** | 既存のcontent diagnostics workerやreview/export bundleを流用せず許可された値だけから新オブジェクトを組み立てる。生成時に新しいAPI要求を行わずlocalStorage/IndexedDB/cacheへ保存しない。閉じた時点でメモリ上のスナップショットを破棄 | 業務: プレビューとコピー/ダウンロードは同一の不変JSON文字列を使う。データ: v1のtop-level keyとフィールドを固定し自由記述フィールドを設けない |
+
 ## Consequences
 
 - サポートが受け取る情報が一定になり、切り分けが速くなる。利用者は「何が含まれ、何が含まれないか」をプレビューで確認してから共有できる。

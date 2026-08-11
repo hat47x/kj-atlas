@@ -29,6 +29,14 @@ axeの横断スモークテストで、現在のUIに2つのARIA構造上の課�
 - axeの警告を無言で無効化しない。延期するルールIDと判断理由をテスト・issueに残す。
 - 見出し構造、コントラスト、フォームラベルなど、設計判断を要しないa11y課題をこのADRへ戻さない。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | キャンバスのカードは自由配置・ドラッグ・複数選択を行う操作要素。支援技術へ誤った操作モデル（listboxの矢印キー契約等）を伝えるとキーボード操作を混乱させる | 機能: マウス・Tab/矢印/Enter/Space/Escape・スクリーンリーダー・ドラッグ中のフォーカス保持・モバイル幅を同じE2E仕様で検証。データ: カードの複数選択と島作成の単一主対象モデルは変更しない |
+| **データ設計** | カードを`role="button"`+`aria-pressed`で表し、`aria-pressed`は選択集合への所属を表す。編集中はカードrootからbutton semantics/aria-pressed/tab stopを外しtextareaへ完全移譲 | 業務: 通常activationは単一主対象化、Shift+activationは所属toggle。機能: listbox/option・grid/gridcell・role=applicationは採用しない |
+| **機能設計** | 最近のドキュメント選択等のフォームは`role="menu"`の外へ移し、menuにはコマンドだけを残す。`menuitem`から独立dialogまたは既存開始パネルを開く。`role="none"`ラッパーは採用しない | 業務: マウス操作とキーボード操作の等価性を固定。データ: 実装完了まではaxeスモークに2つの明示的除外が残り`UI-QUALITY-A11Y-03`で解除 |
+
 ## Consequences
 
 - 実装完了までは、axeスモークに2つの明示的な除外が残る。

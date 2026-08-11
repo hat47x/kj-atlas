@@ -30,6 +30,14 @@ Add an explicit `Add reason` action to the bulk operation bar for selections of 
 3. Store a separate group-level note. Deferred because the current data model has no group-note field and the selected cards are the visible targets of the action.
 4. Generate a reason with AI. Rejected because recording human context must not depend on an optional provider.
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 一括保留後に理由を記録するには選択→1枚選択→note編集の往復が必要で、hold→reason→reviewループが破綻する。保留と理由記録を同じ選択コンテキストから到達可能にする | 機能: Escape/cancelで文書を変更せず閉じ、Ctrl+Enter/Cmd+Enterで保存。データ: 理由記録はAI providerに依存せず`KJ_ATLAS_LLM_PROVIDER=none`でも利用可能 |
+| **データ設計** | トリムした共有理由を選択済みカードの既存critique noteへ空行区切りで追記する。既存noteと著作者の文言を保存し、一括操作で決して置き換えない。更新は1つのdocument/history操作として記録 | 業務: AIで理由を生成しない（人の文脈の記録は任意のproviderに依存させない）。機能: 既存noteを置き換える選択肢を否決 |
+| **機能設計** | 2枚以上の選択で`Add reason`アクションを明示追加。quick critique flagはマーカーだけ欲しい利用者向けに別操作として維持。操作は既存history機構で可逆 | 業務: 共有理由が広すぎる場合は個別noteを後から精緻化。データ: 繰り返し使用でnoteが長くなるがUIは著作者文を重複排除しない |
+
 ## Consequences
 
 Positive:
