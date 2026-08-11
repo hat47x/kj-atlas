@@ -1,7 +1,7 @@
 # Issue: DX-CODEGEN-02 コード生成パイプラインのロジック生成への拡張
 
 - Type: Feature
-- Status: Draft
+- Status: Done
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/scripts/generate_from_design_decision.py`, `02_Architecture/code-generation-from-design-decisions.html`
@@ -40,11 +40,15 @@
 
 ## 受入条件
 
-- [ ] `ui_component`型で`pattern: "form"`を指定したコンポーネントが、input+onChange+保存ボタンのJSXロジックを含む骨格を生成する（ドライラン）
-- [ ] `pattern: "list"`でリスト表示の`map`ロジックを生成する
-- [ ] Escape/Ctrl+Enterハンドリングが既存document_titleパターンに準拠して生成される
-- [ ] 既存の骨格生成テスト（10 tests）がすべてパスする
-- [ ] `codegen_results.md`にロジック生成の成功率を骨格成功率と別に記録する
+- [x] `ui_component`型で`pattern: "form"`を指定したコンポーネントが、input+onChange+保存ボタンのJSXロジックを含む骨格を生成する（ドライラン）— SettingsNoteFormで検証
+- [x] `pattern: "list"`でリスト表示の`map`ロジックを生成する — ReadingOrderListで検証
+- [x] Escape/Ctrl+Enterハンドリングが既存document_titleパターンに準拠して生成される — handleKeyDown生成を確認
+- [x] 既存の骨格生成テスト（10 tests）がすべてパスする — test_codegen_pipeline.py 12 passed
+- [x] `codegen_results.md`にロジック生成の成功率を骨格成功率と別に記録する — ロジック100%（2/2）
+
+## 完了記録（2026-08-12）
+
+form/listパターンのJSXロジック生成を実装（edbc65c4）。適用2件で成功率100%（2/2、骨格80%とは別計上）。L3自律の核心（自動実装）への第一歩が完了。
 
 ## 補足
 

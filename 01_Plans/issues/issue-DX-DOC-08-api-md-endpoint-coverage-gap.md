@@ -1,7 +1,7 @@
 # Issue: DX-DOC-08 api.md エンドポイントカバレッジ不整合
 
 - Type: Documentation
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
@@ -31,9 +31,13 @@
 
 ## 受入条件
 
-- [ ] `check_design_consistency.py` の警告数が現在の139件から有意に減少（50件未満を目標）
-- [ ] 全実装済みバックエンドルートがapi.mdに文書化されている
-- [ ] 計画段階のエンドポイントが「将来」セクションに整理されている
+- [x] `check_design_consistency.py` の警告数が現在の139件から有意に減少（50件未満を目標）— **1件まで削減（99%）**
+- [x] 全実装済みバックエンドルートがapi.mdに文書化されている — §2.12-2.14に追加。route_docs警告0件（check_contract_drift.py）
+- [x] 計画段階のエンドポイントが「将来」セクションに整理されている — OAuth/SAMLは外部IdPとしてスコープ外に明確化
+
+## 完了記録（2026-08-12）
+
+警告数を139→1件に削減（api.mdにAI/監査/session/admin/systemエンドポイントを追加 + スクリプトのパス正規化・prefix解決）。契約ドリフトのroute_docsも0件。残る1警告はmutationテストのシナリオ記述。
 
 ## 補足
 
