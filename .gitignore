@@ -225,3 +225,6 @@ result-*
 **/test-results/
 
 _local/
+
+# DeepSeek API token (never commit)
+03_Implement/DEEPSEEK_TOKEN.TXT
