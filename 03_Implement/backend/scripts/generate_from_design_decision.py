@@ -103,6 +103,22 @@ def generate_route_handler(decision: dict[str, Any]) -> str:
     endpoint = f"/{task_name.replace('_', '-')}"
     temperature = decision.get("temperature", 0.4)
     max_tokens = decision.get("maxTokens", 300)
+    # DX-CODEGEN-02: optional promptHint improves the generated prompt scaffold.
+    prompt_hint = decision.get("promptHint")
+    if prompt_hint:
+        # If the hint already contains a full instruction, embed it; otherwise
+        # wrap as a task description.
+        if isinstance(prompt_hint, str) and len(prompt_hint) > 20:
+            prompt_scaffold = f"    return (\n        {json.dumps(prompt_hint, ensure_ascii=False)}\n    )"
+        else:
+            prompt_scaffold = (
+                "    parts = [f\"Perform task: "
+                + json.dumps(prompt_hint, ensure_ascii=False)
+                + "\", json.dumps(payload.model_dump(), ensure_ascii=False)]\n"
+                "    return \"\\n\".join(parts)"
+            )
+    else:
+        prompt_scaffold = "    return json.dumps(payload.model_dump(), ensure_ascii=False)"
 
     return f"""
 @router.post(
@@ -129,8 +145,7 @@ def {camel}(payload: {pascal}Request) -> {pascal}Response:
 
 
 def _build_{task_name}_prompt(payload: {pascal}Request) -> str:
-    # TODO: Customize prompt for this task
-    return json.dumps(payload.model_dump(), ensure_ascii=False)
+{prompt_scaffold}
 
 
 def _parse_{task_name}_response(raw_text: str) -> {pascal}Response:

@@ -225,3 +225,19 @@ def test_data_boundary_generates_field_validation() -> None:
     assert "Field(min_length=1, max_length=500)" in result.stdout
     assert "Field(default=False)" in result.stdout
     assert "..." not in result.stdout  # no bare required-marker in Field()
+
+
+def test_ai_task_prompt_hint_generates_scaffold() -> None:
+    """promptHint embeds a task instruction in the prompt scaffold."""
+    decision = _verified({
+        "type": "ai_task",
+        "taskName": "summarize_document",
+        "humanReadableName": "文書要約",
+        "promptHint": "文書のカードと島から全体要約を生成してください。",
+        "requestFields": [{"name": "doc", "type": "DocumentV1"}],
+        "responseFields": [{"name": "summary", "type": "str"}],
+    })
+    result = _run_script(decision, "--dry-run")
+    assert result.returncode == 0, result.stderr
+    assert "全体要約を生成してください" in result.stdout  # prompt hint embedded
+    assert "# TODO: Customize prompt" not in result.stdout  # scaffold replaced
