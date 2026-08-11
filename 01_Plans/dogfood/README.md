@@ -58,8 +58,8 @@ R1〜R6の完全サイクルは初期構築として完了した。以後は短�
 |------|------|---------------------|
 | 設計整合警告数 | `check_design_consistency.py` | 1（目標50未満✅、139→1） |
 | 三要素検証済みADR数 | ADRの`Three-Element Verification`節 | 75/75（全ADR✅、目標10） |
-| 実API検証操作数 | `ai_eval_results.md` | 0/2（`run_ai_eval.py`で完全自動化、API key投入で実行） |
-| 自律実行率 | 四半期判定ADR | L2: ①②達成+③自動化 / L3: 基盤整備+①達成 |
+| 実API検証操作数 | `ai_eval_results.md` | **2/2達成**（refine_card_text 10/10・suggest_island_summary 4/4） |
+| 自律実行率 | 四半期判定ADR | **L2: 昇格条件全達成**（①1件・②75件・③2/2） / L3: 基盤整備+①達成 |
 
 ### コード生成成功率（L3自律基準①、3軸）
 
