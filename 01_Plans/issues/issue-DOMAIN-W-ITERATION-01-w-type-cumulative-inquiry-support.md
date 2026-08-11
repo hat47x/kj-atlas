@@ -114,6 +114,7 @@
 ## 依存関係
 
 - `01_Plans/issues/issue-DATA-INQUIRY-RETENTION-01-backend-expiry-and-purge-policy.md`（AC-11の保持期限・purge。方針決定と実装が前提）
+- `01_Plans/issues/issue-DATA-INQUIRY-CONCURRENCY-01-unconditional-bundle-replace-and-delete.md`（長期停止・再開時のlost update防止）
 
 ### Phase 0 実装証跡（2026-07-15）
 
