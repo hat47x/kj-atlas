@@ -2,7 +2,26 @@
 
 - 対応: `issue-AI-EVAL-01`（L2基準③）
 - 更新: 2026-08-11
-- 状態: 未実施（DeepSeek API key待ち）
+- 状態: **パイプライン検証済み・実API実行待ち（DeepSeek API key投入のみ）**
+
+## 評価パイプラインの検証状況
+
+### リハーサル完了（2026-08-11、モックLLMで8テスト合格）
+
+`test_ai_eval_pipeline.py`（8 tests passed）で評価手順の実効性を実証済み:
+
+| 検証項目 | テスト | 結果 |
+|---------|--------|------|
+| 評価用fixtureがDocumentV1として有効 | `test_fixture_is_valid_document_v1` | ✅ 4島/12カード/6エッジ |
+| refine-card-textリクエスト組立 | `test_fixture_has_reviewed_cards_for_refine` | ✅ 10カード |
+| suggest-island-summaryリクエスト組立 | `test_fixture_has_islands_for_summary` | ✅ 4島 |
+| DeepSeek task-model配線 | `test_deepseek_provider_wired_for_eval_tasks` | ✅ |
+| refine-card-textエンドポイント経由 | `test_refine_card_text_endpoint_mock_eval` | ✅ 200応答 |
+| refine-card-text全10カード駆動 | `test_refine_card_text_eval_covers_all_fixture_cards` | ✅ 10回呼出 |
+| suggest-island-summaryエンドポイント経由 | `test_suggest_island_summary_endpoint_mock_eval` | ✅ summary+groundingIds |
+| suggest-island-summary全4島駆動 | `test_suggest_island_summary_eval_covers_all_fixture_islands` | ✅ 4回呼出 |
+
+**結論**: 評価手順は実エンドポイント経由で完全に動作する。`KJ_ATLAS_DEEPSEEK_API_KEY` を設定し、backendを起動して同一の手順を実行するだけで実API評価が行える。コード変更は不要。
 
 ## 評価方法
 
