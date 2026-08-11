@@ -1,7 +1,7 @@
 # Issue: DX-CODEGEN-01 コード生成パイプラインのui_component型・data_boundary型への拡張
 
 - Type: Feature
-- Status: Draft
+- Status: Done
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/scripts/generate_from_design_decision.py`, `02_Architecture/code-generation-from-design-decisions.html`
@@ -39,11 +39,11 @@
 
 ## 受入条件
 
-- [ ] `ui_component` 型でDocumentTitleEditor相当のコンポーネントを生成できる（ドライラン）
-- [ ] `data_boundary` 型でSuggestDocumentTitle相当の型を生成できる（ドライラン）
-- [ ] 三要素整合チェックを通過していない設計判断では生成を拒否する
-- [ ] `code-generation-from-design-decisions.html` に新規型の生成パターンが追記されている
-- [ ] 既存のai_task型テストがすべてパスする
+- [x] `ui_component` 型でDocumentTitleEditor相当のコンポーネントを生成できる（ドライラン）— CardQualityAssistで検証
+- [x] `data_boundary` 型でSuggestDocumentTitle相当の型を生成できる（ドライラン）— CardQualityStateで検証
+- [x] 三要素整合チェックを通過していない設計判断では生成を拒否する — `test_codegen_pipeline.py`で検証
+- [x] `code-generation-from-design-decisions.html` に新規型の生成パターンが追記されている — §4.1a/§5.1a
+- [x] 既存のai_task型テストがすべてパスする — `test_codegen_pipeline.py` 8 passed（ec3b9268, a3ccae53）
 
 ## 補足
 
