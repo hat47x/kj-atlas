@@ -253,6 +253,7 @@ flowchart TB
     "type": "ui_component",
     "componentName": "CardQualityAssist",
     "description": "カード品質自己チェック表示",
+    "pattern": "basic",        // "basic" | "form" | "list"（DX-CODEGEN-02）
     "props": [
       {"name": "cardId", "type": "string"},
       {"name": "onApply", "type": "() => void"}
@@ -262,6 +263,30 @@ flowchart TB
   },
   "threeElementVerification": { "business": "...", "data": "...", "function": "..." }
 }</code></pre>
+
+<h3>4.1b ロジック生成パターン（DX-CODEGEN-02）</h3>
+
+<p><code>pattern</code>フィールドでJSXロジックの生成を選択する。骨格生成（DX-CODEGEN-01）を超えて、共通UIパターンのロジックを自動生成する。</p>
+
+<table>
+  <thead><tr><th>pattern</th><th>生成されるJSXロジック</th><th>実装状態</th></tr></thead>
+  <tbody>
+    <tr><td><code>basic</code></td><td>骨格のみ（props型・data-testid・i18nキー）。後方互換</td><td>✅ DX-CODEGEN-01</td></tr>
+    <tr><td><code>form</code></td><td>textarea + onChange + 保存/キャンセルボタン + Escape/Ctrl+Enter（document_titleパターン準拠）</td><td>✅ DX-CODEGEN-02</td></tr>
+    <tr><td><code>list</code></td><td>items.mapリスト表示 + 追加ボタン</td><td>✅ DX-CODEGEN-02</td></tr>
+  </tbody>
+</table>
+
+<h3>4.1c 既存実装チェック（DX-CODEGEN-01改善）</h3>
+
+<p>生成前に既存実装を検出し、重複コードの生成を防止する。</p>
+
+<ul>
+  <li>ファイル名完全一致: 対象.tsxが既に存在すれば生成を拒否</li>
+  <li>トークン部分一致: <code>BulkReasonEditor</code> → <code>BulkOperationsBar</code>（"Bulk"トークン）等を検出して拒否</li>
+  <li>汎用トークン（Editor/Component/Panel等）は除外して誤検出を防止</li>
+  <li>data_boundary型はクラス存在チェック</li>
+</ul>
 
 <h3>4.2 制約</h3>
 
