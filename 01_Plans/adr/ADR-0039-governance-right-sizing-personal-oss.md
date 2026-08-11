@@ -60,6 +60,14 @@
 - `VR-ROADMAP-01` / `VALUE-MEASURE-01,02` / `SOCIAL-DIFFUSION-01..04` → **Draft の deferred backlog**（非アクティブ、優先度実質 P3）。
 - `DQ-VR-ROADMAP-01` → **Approved（deferred activation）/ Resolved**。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | solo・プレリリース段階では重量級ガバナンスを KEEP / RELAX-DEFER / NON-RELAXABLE の3区分に適正化する。仮想多役割を単一Maintainerへ集約し安全不変条件は緩和しない | データ: 進捗の正本は issue/ADR としダッシュボードは任意の参照レイヤへ降格。機能: 外部トラッカー運用は実運用開始まで不要 |
+| **データ設計** | 進捗の正本は issue/ADR。ダッシュボードは現状スナップショットのみ保持し、per-rerun 同期ログの追記を停止・過去ログは凍結する | 業務: 「いま何が active で何が延期か」を1名でも追跡可能にする。機能: `validate_active_issue_memos.py` 等の軽量自動検証は維持 |
+| **機能設計** | 自動・軽量の検証スクリプトは維持。期限付きDecision Queue・Program Gate・Release Readiness・観測スコアカード・社会的普及KPIはdirectionとして保持しactivation延期。Status遷移・ADR確定はMaintainer単独で行ってよい | データ: スコアカード・KPIの観測データ生成はactivation延期。業務: 役割分離（RACI・2者承認・SoD）は協力者が継続参加した時点で再導入 |
+
 ## Consequences
 
 - 期待される効果:
