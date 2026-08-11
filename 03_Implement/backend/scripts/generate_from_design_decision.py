@@ -324,6 +324,10 @@ def _generate_ai_task(design: dict, args: Any) -> None:
     print("=== Generated client function ===")
     print(generate_client_function(design))
 
+    # DX-CODEGEN-03: generate endpoint tests (success + provider-disabled).
+    print("\n=== Generated tests ===")
+    print(_generate_ai_task_tests(design))
+
     if args.dry_run:
         print("\n[Dry run — no files written]")
         return
@@ -550,6 +554,69 @@ export function {pascal}({{
     print(f"  1. src/ui/{pascal}.tsx — component")
     print(f"  2. src/i18n/locales/ja.json + en.json — i18n keys")
     print(f"  3. src/App.tsx — import + integration")
+
+
+def _generate_ai_task_tests(design: dict) -> str:
+    """Generate endpoint tests for an ai_task (DX-CODEGEN-03).
+
+    Follows the existing test_ai_provider_error_contract.py pattern:
+    monkeypatch ai.generate_with_fallback with a stub, assert HTTP 200.
+    Provider-disabled case asserts a structured error.
+    """
+    task_name = design["taskName"]
+    endpoint = f"/ai/{task_name.replace('_', '-')}"
+    request_fields = design.get("requestFields", [])
+
+    # Build a valid request payload for the success case.
+    payload_entries = []
+    for field in request_fields:
+        fname = field["name"]
+        ftype = field.get("type", "str")
+        if "list" in ftype or "[]" in ftype:
+            payload_entries.append(f'"{fname}": []')
+        elif "bool" in ftype:
+            payload_entries.append(f'"{fname}": true')
+        elif "int" in ftype:
+            payload_entries.append(f'"{fname}": 1')
+        else:
+            payload_entries.append(f'"{fname}": "test"')
+    payload = "{" + ", ".join(payload_entries) + "}" if payload_entries else "{}"
+
+    return f'''import pytest
+from fastapi.testclient import TestClient
+
+from kj_atlas_api.llm.provider import LLMCallMetadata, LLMResponse, ProviderDisabledError
+from kj_atlas_api.main import app
+from kj_atlas_api.routes import ai
+
+
+def _stub_metadata() -> LLMCallMetadata:
+    return LLMCallMetadata(
+        provider_kind="deepseek", provider_name="deepseek", model_id="deepseek-chat",
+        transport="http", requested_at="2026-08-12T00:00:00Z", trace_id="llm-codegen-test",
+    )
+
+
+def test_{task_name}_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _fake_generate(req):
+        assert req.task == "{task_name}"
+        return LLMResponse(raw_text='{{"result": "ok"}}', metadata=_stub_metadata())
+
+    monkeypatch.setattr(ai, "generate_with_fallback", _fake_generate)
+    with TestClient(app) as client:
+        resp = client.post("{endpoint}", json={payload})
+    assert resp.status_code == 200, resp.text
+
+
+def test_{task_name}_provider_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _fake_generate(req):
+        raise ProviderDisabledError("AI is disabled", _stub_metadata())
+
+    monkeypatch.setattr(ai, "generate_with_fallback", _fake_generate)
+    with TestClient(app) as client:
+        resp = client.post("{endpoint}", json={payload})
+    assert resp.status_code == 503
+'''
 
 
 def _generate_data_boundary(design: dict, args: Any) -> None:

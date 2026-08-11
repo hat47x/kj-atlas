@@ -293,3 +293,25 @@ def test_data_boundary_generates_tests() -> None:
     block = result.stdout.split("=== Generated tests ===", 1)[1]
     test_code = block.split("[Dry run", 1)[0].lstrip("\n").rstrip()
     ast.parse(test_code)  # raises SyntaxError if invalid
+
+
+def test_ai_task_generates_endpoint_tests() -> None:
+    """ai_task emits success + provider-disabled tests (DX-CODEGEN-03)."""
+    import ast
+
+    decision = _verified({
+        "type": "ai_task",
+        "taskName": "summarize_document",
+        "humanReadableName": "文書要約",
+        "requestFields": [{"name": "doc", "type": "DocumentV1"}],
+        "responseFields": [{"name": "summary", "type": "str"}],
+    })
+    result = _run_script(decision, "--dry-run")
+    assert result.returncode == 0, result.stderr
+    assert "Generated tests" in result.stdout
+    assert "def test_summarize_document_success" in result.stdout
+    assert "def test_summarize_document_provider_disabled" in result.stdout
+    assert "/ai/summarize-document" in result.stdout  # router prefix applied
+    block = result.stdout.split("=== Generated tests ===", 1)[1]
+    test_code = block.split("[Dry run", 1)[0].lstrip("\n").rstrip()
+    ast.parse(test_code)  # raises SyntaxError if invalid
