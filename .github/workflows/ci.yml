@@ -314,7 +314,11 @@ jobs:
       - name: Test (SQLite except auth level suites)
         env:
           KJ_ATLAS_DATABASE_URL: sqlite:///./kj_atlas.db
-        run: pytest -m "not postgres and not mysql and not mssql and not cockroachdb and not oracle and not auth_level1 and not auth_level2"
+        # `not external_llm` restates pyproject's addopts default: an explicit
+        # -m on the command line replaces that default rather than adding to it,
+        # so omitting it here silently runs the tests that need a real external
+        # LLM endpoint.
+        run: pytest -m "not postgres and not mysql and not mssql and not cockroachdb and not oracle and not auth_level1 and not auth_level2 and not external_llm"
 
       - name: Test (Auth Level1 required)
         env:
