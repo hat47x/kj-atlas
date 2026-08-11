@@ -111,6 +111,14 @@ Productization Program Owner / QA Lead が次に確認する事項:
 
 この確認では、API、UI、CLI、runtime behavior、SafeMode、share/export、公開文書、`DATA-MAINT-04` のDraft状態を変更しない。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 削除・アーカイブ・所有者移管・管理者本文閲覧・文書横断検索・保持期限自動化は現在の製品化段階では標準導線の外に置く。未実装状態は隠れた欠落ではなく明示された製品境界として扱う | 機能: 高権限操作を「便利な管理機能」としてまとめて実装しようとする場合は停止。データ: Platform operator/Security officer/Supportが利用者本文へ標準的にアクセスできるように見える誤解を避ける |
+| **データ設計** | 高権限ライフサイクル操作（削除/アーカイブ/所有者移管/保持期限自動化）は標準機能にしない。本文を含まない監査メタデータ閲覧候補だけを`DATA-MAINT-04`で継続検討 | 業務: 本文・未レビュー情報・Document JSON全体・review pack本文・diff本文を管理者/Support向け標準導線で閲覧させない。機能: 自動削除・標準保持期間・所有者移管・削除方式を製品既定値として固定しない |
+| **機能設計** | 削除・アーカイブ・所有者移管のAPI/UI/CLIを解禁しない（可逆な状態遷移は将来候補として保持）。将来製品化する場合はADRと専用issueで権限・監査・復旧・検証を先に合意 | 業務: `DATA-MAINT-04`を本文閲覧や横断検索へ広げる場合は停止。データ: この確認でAPI・UI・CLI・runtime behavior・SafeMode・share/export・公開文書・DATA-MAINT-04のDraft状態を変更しない |
+
 ## Consequences
 
 期待される効果:
