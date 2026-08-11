@@ -164,6 +164,11 @@ class ProposalDecisionAuditRequest(BaseModel):
 class ProposalDecisionAuditResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    proposalId: str = Field(min_length=1)
+    status: Literal["accepted", "rejected", "held"]
+    reviewState: Literal["unreviewed"]
+    recordedAt: str = Field(min_length=1)
+
 
 # ---------------------------------------------------------------------------
 # ADR-0064: KJ-method card-level AI operations

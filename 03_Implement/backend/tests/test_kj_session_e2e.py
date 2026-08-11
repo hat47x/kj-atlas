@@ -23,12 +23,19 @@ import json
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import httpx
 import pytest
 
 MOCK_URL = "http://localhost:8001/generate"
 EXTERNAL_LLM_URL = "http://localhost:8001/generate"
+# Resolved from this file, not hardcoded: an absolute developer-machine path
+# breaks the mock server startup on every other checkout, including CI.
+# tests -> backend -> 03_Implement -> repository root
+MOCK_SERVER = (
+    Path(__file__).resolve().parents[3] / "03_Implement" / "deploy" / "tools" / "mock_local_llm.py"
+)
 
 _mock_proc = None
 
@@ -39,7 +46,7 @@ def _ensure_mock():
         return
     _mock_proc = subprocess.Popen(
         [sys.executable,
-         "/mnt/d/GIT/kj-atlas/03_Implement/deploy/tools/mock_local_llm.py",
+         str(MOCK_SERVER),
          "--host", "127.0.0.1", "--port", "8001"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
