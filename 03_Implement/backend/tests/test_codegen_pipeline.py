@@ -141,3 +141,26 @@ def test_check_only_mode() -> None:
     result = _run_script(_verified_ai_task(), "--check-only")
     assert result.returncode == 0
     assert "Three-element verification passed" in result.stdout
+
+
+def test_ui_component_existing_implementation_rejected() -> None:
+    """BulkReasonEditor overlaps BulkOperationsBar (token 'Bulk') → refused."""
+    decision = _verified({
+        "type": "ui_component",
+        "componentName": "BulkReasonEditor",
+        "props": [],
+        "i18nKeys": [],
+        "testIds": [],
+    })
+    result = _run_script(decision, "--dry-run")
+    assert result.returncode == 1
+    assert "already exist" in result.stdout
+    assert "BulkOperationsBar" in result.stdout
+
+
+def test_ui_component_no_existing_match_generates() -> None:
+    """CardQualityAssist does not overlap existing components → generates."""
+    decision = _verified_ui_component()
+    result = _run_script(decision, "--dry-run")
+    assert result.returncode == 0, result.stderr
+    assert "Generating UI component: TestComponent" in result.stdout

@@ -268,6 +268,19 @@ def main() -> int:
         print("OK: Three-element verification passed")
         return 0
 
+    # Existing-implementation check (prevents generating duplicate code).
+    # ui_component/data_boundary types target files that may already exist;
+    # if so, flag and refuse to generate (the human should review the existing
+    # implementation instead of duplicating it).
+    existing_conflicts = _find_existing_implementations(design)
+    if existing_conflicts:
+        print("ERROR: target file(s) already exist — refusing to generate duplicate code:")
+        for conflict in existing_conflicts:
+            print(f"  - {conflict}")
+        print("Review the existing implementation; if this design decision is a")
+        print("refactor, generate with intent to modify, not to duplicate.")
+        return 1
+
     design_type = design.get("type")
     if design_type == "ai_task":
         _generate_ai_task(design, args)
@@ -307,6 +320,61 @@ def _generate_ai_task(design: dict, args: Any) -> None:
     print(f"  2. {ROUTES_AI_PY} — add route handler + prompt/parse functions + imports")
     print(f"  3. {CLIENT_TS} — add client function + types")
     print(f"  4. {AGENTS_MD} — add to operation model level table")
+
+
+def _find_existing_implementations(design: dict) -> list[str]:
+    """Detect target files that already exist for the design decision.
+
+    Prevents generating duplicate code when the feature is already
+    implemented.
+
+    For ui_component: matches the exact target file, AND does a token
+    partial-match against existing ui/*.tsx filenames (e.g. BulkReasonEditor
+    matches BulkOperationsBar via the "Bulk" token). Exact matches are
+    hard conflicts; token matches are warnings the caller decides on.
+
+    For data_boundary: checks whether the class already exists in
+    models_ai.py / models.py.
+    """
+    conflicts: list[str] = []
+    design_type = design.get("type")
+
+    if design_type == "ui_component":
+        name = design.get("componentName", "")
+        has_sep = "_" in name or "-" in name or (name and name[0].islower())
+        pascal = "".join(w.capitalize() for w in name.replace("-", "_").split("_")) if has_sep else name
+        target = FRONTEND_SRC / "ui" / f"{pascal}.tsx"
+        if target.exists():
+            conflicts.append(f"{target.relative_to(REPO_ROOT)} (exact ui_component already exists)")
+            return conflicts
+
+        # Token partial-match: warn about related existing components.
+        # Generic suffixes (Editor/Component/Panel/View/Dialog) are too broad
+        # and cause false positives, so only distinctive tokens count.
+        GENERIC_UI_TOKENS = {"Editor", "Component", "Panel", "View", "Dialog", "Bar", "Menu", "Modal"}
+        tokens = [t for t in re.split(r"(?=[A-Z])", name) if t and t not in GENERIC_UI_TOKENS]
+        ui_dir = FRONTEND_SRC / "ui"
+        if ui_dir.exists():
+            for f in ui_dir.glob("*.tsx"):
+                base = f.stem
+                for token in tokens:
+                    if len(token) >= 3 and token in base and base != pascal:
+                        conflicts.append(
+                            f"{f.relative_to(REPO_ROOT)} (token '{token}' matches existing component)"
+                        )
+                        break
+
+    elif design_type == "data_boundary":
+        type_name = design.get("typeName", "")
+        has_sep = "_" in type_name or "-" in type_name or (type_name and type_name[0].islower())
+        pascal = "".join(w.capitalize() for w in type_name.replace("-", "_").split("_")) if has_sep else type_name
+        for module in (MODELS_AI_PY, BACKEND_SRC / "models.py"):
+            if module.exists():
+                content = module.read_text(encoding="utf-8")
+                if f"class {pascal}" in content:
+                    conflicts.append(f"{module.relative_to(REPO_ROOT)} contains class {pascal}")
+
+    return conflicts
 
 
 def _generate_ui_component(design: dict, args: Any) -> None:
