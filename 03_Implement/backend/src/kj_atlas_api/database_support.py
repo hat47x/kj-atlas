@@ -30,6 +30,7 @@ class DatabaseSupport:
     ci_image: str | None
     optional_dependency: str | None
     test_marker: str | None
+    recovery_test: str
 
     @property
     def is_verified(self) -> bool:
@@ -51,6 +52,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image=None,
         optional_dependency=None,
         test_marker=None,
+        recovery_test="tests/test_data_maintenance_recovery_exercise.py",
     ),
     "postgresql": DatabaseSupport(
         backend="postgresql",
@@ -70,6 +72,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image="postgres:16-alpine",
         optional_dependency="postgres",
         test_marker="postgres",
+        recovery_test="tests/test_postgres_backup_restore.py",
     ),
     # Verified and candidate entries stay together so capability decisions do
     # not spread across settings, runtime, migrations, and documentation.
@@ -87,6 +90,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image="mysql:8.4",
         optional_dependency="mysql",
         test_marker="mysql",
+        recovery_test="tests/test_mysql_family_portability.py",
     ),
     "mariadb": DatabaseSupport(
         backend="mariadb",
@@ -102,6 +106,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image="mariadb:11.4",
         optional_dependency="mysql",
         test_marker="mysql",
+        recovery_test="tests/test_mysql_family_portability.py",
     ),
     "mssql": DatabaseSupport(
         backend="mssql",
@@ -117,6 +122,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image="mcr.microsoft.com/mssql/server:2022-latest",
         optional_dependency="mssql",
         test_marker="mssql",
+        recovery_test="tests/test_mssql_portability.py",
     ),
     "oracle": DatabaseSupport(
         backend="oracle",
@@ -132,6 +138,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image="gvenzl/oracle-free:23.26.2-slim-faststart",
         optional_dependency="oracle",
         test_marker="oracle",
+        recovery_test="tests/test_oracle_portability.py",
     ),
     "cockroachdb": DatabaseSupport(
         backend="cockroachdb",
@@ -147,6 +154,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image="cockroachdb/cockroach:v26.2.3",
         optional_dependency="cockroachdb",
         test_marker="cockroachdb",
+        recovery_test="tests/test_cockroachdb_portability.py",
     ),
 }
 

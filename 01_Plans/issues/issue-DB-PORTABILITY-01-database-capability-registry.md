@@ -149,3 +149,4 @@
 - PostgreSQLの`pg_dump`／`pg_restore`隔離復元は`DATA-MAINT-02`の手動演習証跡に留まり、現行`postgres` marker／CIから退行を検出できなかった。
 - CI service containerをtestへ明示注入し、1 MiB超の固有Documentをsourceへ作成、custom-format dump、別databaseへの`pg_restore --exit-on-error --no-owner`、Document version／本文長／Alembic revision照合、source rowと一時databaseのcleanupまでを自動化した。
 - PostgreSQL 16.14の一時containerでfresh migrationと新しいrestore test 1件がpassし、test内cleanup後にcontainerも削除した。
+- MySQLとPostgreSQLで復旧証跡の自動matrix追随漏れが続いたため、各Verified backendの`recovery_test`を能力レジストリへ追加した。宣言先file、restore処理、外部DB markerが欠ける場合は通常の宣言契約testで停止する。
