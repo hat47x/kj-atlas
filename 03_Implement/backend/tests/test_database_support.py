@@ -6,6 +6,7 @@ from sqlalchemy.engine import make_url
 
 from kj_atlas_api.database_support import (
     alembic_config_database_url,
+    create_verified_database_engine,
     database_support_for_backend,
     normalize_sync_database_url,
     registered_database_support,
@@ -138,6 +139,29 @@ def test_unverified_driver_is_rejected_without_echoing_credentials(
 def test_registry_has_no_duplicate_backends() -> None:
     registered = registered_database_support()
     assert len({item.backend for item in registered}) == len(registered)
+
+
+def test_engine_creation_reports_missing_optional_driver_without_credentials(
+    monkeypatch,
+) -> None:  # type: ignore[no-untyped-def]
+    def missing_driver(*args, **kwargs):  # type: ignore[no-untyped-def]
+        raise ModuleNotFoundError("No module named 'pymysql'")
+
+    monkeypatch.setattr(
+        "kj_atlas_api.database_support.create_engine",
+        missing_driver,
+    )
+
+    with pytest.raises(RuntimeError) as captured:
+        create_verified_database_engine(
+            "mysql://sensitive-user:secret-password@db/kj_atlas"
+        )
+
+    message = str(captured.value)
+    assert "backend 'mysql'" in message
+    assert 'pip install -e ".[mysql]"' in message
+    assert "sensitive-user" not in message
+    assert "secret-password" not in message
 
 
 def test_settings_rejects_unknown_database_before_engine_creation(monkeypatch) -> None:  # type: ignore[no-untyped-def]

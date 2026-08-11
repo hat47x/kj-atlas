@@ -74,6 +74,7 @@ curl -fsS http://127.0.0.1:8000/healthz
 | 画面が真っ白 | frontend build、console error、nginx logs |
 | `Internal Server Error` が表示される | backend が起動しているか、`/api/healthz` が成功するか。標準サンプル `doc_phase1_canvas` は初回ブラウザ表示時に作成されるため、初回表示前の `/api/docs/doc_phase1_canvas` は 404 が正常（5xx の場合のみ backend を調査） |
 | 保存に失敗 | API status、`X-API-Key`、backend logs、DB 接続 |
+| `Database driver for backend '...' is not available`でbackendまたはmigrationが停止する | [installation.mdのVerified DB別pip extra表](installation.md#sqlite以外のverified-dbを直接使う場合)を確認し、同じ仮想環境へ対象extraを導入する。URLやpasswordを診断ログへ貼らない |
 | `password authentication failed for user "kj_atlas"` が backend logs に出る | まず `env \| grep -i kj_atlas`（export 済み変数が compose を上書きし `down -v` でも直らない）と `docker compose config`（db 側パスワードと `KJ_ATLAS_DATABASE_URL` 内パスワードの一致）。次に古い `kj_atlas_pgdata` volume の残存（`pg_isready` は認証未検証のため db は healthy に見える）。詳細と復旧手順は installation.md の同名項目を参照 |
 | AI 提案が出ない | `KJ_ATLAS_LLM_PROVIDER`、provider endpoint、SafeMode |
 | 書き出しが失敗、または長時間終わらない | 対象ドキュメントの schema、画面上の進捗・中止メッセージ、ブラウザ console |

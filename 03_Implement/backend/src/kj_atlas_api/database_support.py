@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
-from sqlalchemy.engine import URL, make_url
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine, URL, make_url
+from sqlalchemy.exc import NoSuchModuleError
 
 
 DatabaseSupportLevel = Literal["verified", "candidate"]
@@ -28,6 +30,7 @@ class DatabaseSupport:
     ci_image: str | None
     optional_dependency: str | None
     test_marker: str | None
+    recovery_test: str
 
     @property
     def is_verified(self) -> bool:
@@ -49,6 +52,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image=None,
         optional_dependency=None,
         test_marker=None,
+        recovery_test="tests/test_data_maintenance_recovery_exercise.py",
     ),
     "postgresql": DatabaseSupport(
         backend="postgresql",
@@ -68,6 +72,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image="postgres:16-alpine",
         optional_dependency="postgres",
         test_marker="postgres",
+        recovery_test="tests/test_postgres_backup_restore.py",
     ),
     # Verified and candidate entries stay together so capability decisions do
     # not spread across settings, runtime, migrations, and documentation.
@@ -85,6 +90,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image="mysql:8.4",
         optional_dependency="mysql",
         test_marker="mysql",
+        recovery_test="tests/test_mysql_family_portability.py",
     ),
     "mariadb": DatabaseSupport(
         backend="mariadb",
@@ -100,6 +106,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image="mariadb:11.4",
         optional_dependency="mysql",
         test_marker="mysql",
+        recovery_test="tests/test_mysql_family_portability.py",
     ),
     "mssql": DatabaseSupport(
         backend="mssql",
@@ -115,6 +122,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image="mcr.microsoft.com/mssql/server:2022-latest",
         optional_dependency="mssql",
         test_marker="mssql",
+        recovery_test="tests/test_mssql_portability.py",
     ),
     "oracle": DatabaseSupport(
         backend="oracle",
@@ -130,6 +138,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image="gvenzl/oracle-free:23.26.2-slim-faststart",
         optional_dependency="oracle",
         test_marker="oracle",
+        recovery_test="tests/test_oracle_portability.py",
     ),
     "cockroachdb": DatabaseSupport(
         backend="cockroachdb",
@@ -145,6 +154,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         ci_image="cockroachdb/cockroach:v26.2.3",
         optional_dependency="cockroachdb",
         test_marker="cockroachdb",
+        recovery_test="tests/test_cockroachdb_portability.py",
     ),
 }
 
@@ -202,6 +212,26 @@ def normalize_sync_database_url(database_url: str) -> str:
 def alembic_config_database_url(database_url: str) -> str:
     """Return a normalized URL escaped for ConfigParser interpolation."""
     return normalize_sync_database_url(database_url).replace("%", "%%")
+
+
+def create_verified_database_engine(database_url: str, **kwargs: Any) -> Engine:
+    """Create an engine through the verified URL and optional-driver boundary."""
+    normalized_url = normalize_sync_database_url(database_url)
+    support = database_support_for_url(normalized_url)
+    try:
+        return create_engine(normalized_url, **kwargs)
+    except (ImportError, ModuleNotFoundError, NoSuchModuleError) as error:
+        if support.optional_dependency is None:
+            install_hint = "Install the backend runtime dependencies."
+        else:
+            install_hint = (
+                "Install the backend optional dependency with "
+                f'`pip install -e ".[{support.optional_dependency}]"`.'
+            )
+        raise RuntimeError(
+            f"Database driver for backend '{support.backend}' is not available. "
+            f"{install_hint}"
+        ) from error
 
 
 def registered_database_support() -> tuple[DatabaseSupport, ...]:

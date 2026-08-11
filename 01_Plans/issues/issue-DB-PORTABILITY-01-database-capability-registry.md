@@ -131,3 +131,22 @@
 - 能力レジストリと宣言契約はbackend名を照合していたが、実DBの検証対象名・versionとCI imageは対象外だった。このため、OracleのCI／昇格証跡が`Free 23.26.2`である一方、対応表と運用見出しが抽象的な`26ai`表記でも検査を通過していた。
 - 各backendへ`verification_target`と`ci_image`を追加し、公開support matrixのDatabase列とCI workflowのimage tagを同じレジストリから静的照合する契約へ拡張した。SQLiteは標準library利用のためCI imageを持たず、外部Verified DBは全てimageを必須とする。
 - 正本の対象をPostgreSQL 16、MySQL 8.4、MariaDB 11.4、SQL Server 2022、CockroachDB 26.2.3、Oracle AI Database Free 23.26.2へ揃え、README・運用文書・runtime registryの重複version列挙を正本参照または同じ表記へ修正した。関連32件と変更対象Ruffを通過した。
+
+## Engine creation and installation checkpoint 2026-08-11
+
+- 通常APIは正規化済みURLでengineを生成していた一方、Alembicとidentity backfill CLIはSQLAlchemyを直接呼び、Verified URL／driver境界と未導入extraの案内が分散していた。
+- `create_verified_database_engine()`へengine生成を集約し、通常API、Alembic online migration、backfill CLIを接続した。未導入driver／dialectは接続URLや資格情報を表示せず、能力レジストリのoptional dependency名を使った導入方法を返す。
+- 公開installationへ全Verified backendのpip extraと検証済み同期driverを追加し、能力レジストリとの静的契約testで記載漏れを防止した。diagnosticsにも同エラーからの復旧導線を追加した。
+
+## MySQL transaction gate checkpoint 2026-08-11
+
+- promotion gateはtransaction rollbackとconnection pool再利用を必須としていたが、MySQL/MariaDB共通matrixにはconstraint、LOB、migration往復、backup/restoreだけが実装され、transaction項目が欠落していた。
+- pool size 1の同一engineで未commit行をrollbackし、connection返却後にpoolから再取得した接続で行が存在しないことを検証する処理を共通matrixへ追加した。MySQLとMariaDBで同じテストを実行し、DB family共通化の境界を維持する。
+- 固定imageのMySQL 8.4.11とMariaDB 11.4.12で、fresh migration、rollback／pool再利用、constraint、LOB、migration往復、logical backup／別database restoreを含む各1件がpassした。一時containerは検証後に削除した。
+
+## PostgreSQL recovery CI checkpoint 2026-08-11
+
+- PostgreSQLの`pg_dump`／`pg_restore`隔離復元は`DATA-MAINT-02`の手動演習証跡に留まり、現行`postgres` marker／CIから退行を検出できなかった。
+- CI service containerをtestへ明示注入し、1 MiB超の固有Documentをsourceへ作成、custom-format dump、別databaseへの`pg_restore --exit-on-error --no-owner`、Document version／本文長／Alembic revision照合、source rowと一時databaseのcleanupまでを自動化した。
+- PostgreSQL 16.14の一時containerでfresh migrationと新しいrestore test 1件がpassし、test内cleanup後にcontainerも削除した。
+- MySQLとPostgreSQLで復旧証跡の自動matrix追随漏れが続いたため、各Verified backendの`recovery_test`を能力レジストリへ追加した。宣言先file、restore処理、外部DB markerが欠ける場合は通常の宣言契約testで停止する。

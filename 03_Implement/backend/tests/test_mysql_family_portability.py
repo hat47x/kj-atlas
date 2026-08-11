@@ -133,7 +133,7 @@ def test_mysql_family_promotion_matrix(database_url: str) -> None:
     upgrade = _run_alembic(database_url, "upgrade", "head")
     assert upgrade.returncode == 0, upgrade.stderr
 
-    engine = create_engine(database_url)
+    engine = create_engine(database_url, pool_size=1, max_overflow=0)
     large_payload = '{"text":"' + ("x" * (1024 * 1024)) + '"}'
     with engine.begin() as connection:
         for tenant_id in ("tenant-a", "tenant-b"):
@@ -172,6 +172,25 @@ def test_mysql_family_promotion_matrix(database_url: str) -> None:
                 )
             )
             > 1024 * 1024
+        )
+    transaction = engine.connect()
+    rollback = transaction.begin()
+    transaction.execute(
+        text(
+            "INSERT INTO tenants "
+            "(id,display_name,lifecycle_state,created_at,updated_at) "
+            "VALUES ('rolled-back','rolled-back','active',:timestamp,:timestamp)"
+        ),
+        {"timestamp": TIMESTAMP},
+    )
+    rollback.rollback()
+    transaction.close()
+    with engine.connect() as reused_connection:
+        assert (
+            reused_connection.scalar(
+                text("SELECT COUNT(*) FROM tenants WHERE id='rolled-back'")
+            )
+            == 0
         )
     engine.dispose()
 

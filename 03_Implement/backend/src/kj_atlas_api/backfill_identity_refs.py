@@ -5,8 +5,9 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+
+from kj_atlas_api.database_support import create_verified_database_engine
 
 from kj_atlas_api.document_repository import list_document_rows
 from kj_atlas_api.models import UserIdentityRow
@@ -98,7 +99,7 @@ def _validated_mapping(db: Session, mapping: dict[str, str]) -> dict[str, str]:
 
 
 def run_backfill(*, database_url: str, mapping_path: Path, dry_run: bool) -> BackfillStats:
-    engine = create_engine(database_url)
+    engine = create_verified_database_engine(database_url)
     session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
     try:

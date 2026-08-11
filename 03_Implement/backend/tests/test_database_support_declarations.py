@@ -43,6 +43,18 @@ def test_every_backend_declares_a_consistent_verified_driver_contract() -> None:
             assert make_url(f"{drivername}://").get_backend_name() == support.backend
 
 
+def test_every_verified_backend_declares_an_executable_recovery_test() -> None:
+    for support in registered_database_support():
+        if not support.is_verified:
+            continue
+        recovery_path = BACKEND_ROOT / support.recovery_test
+        assert recovery_path.is_file(), support.backend
+        source = recovery_path.read_text(encoding="utf-8")
+        assert "restore" in source.lower(), support.backend
+        if support.test_marker is not None:
+            assert f"@pytest.mark.{support.test_marker}" in source, support.backend
+
+
 def test_driver_extras_markers_tests_and_ci_stay_synchronized() -> None:
     pyproject = (BACKEND_ROOT / "pyproject.toml").read_text(encoding="utf-8")
     workflow = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(
@@ -122,3 +134,20 @@ def test_operations_runbook_has_one_section_for_every_verified_backend() -> None
             continue
         anchor = f'<a id="database-{support.backend}"></a>'
         assert operations.count(anchor) == 1, support.backend
+
+
+def test_public_installation_lists_every_verified_driver_extra() -> None:
+    installation = (REPO_ROOT / "04_Documentation" / "installation.md").read_text(
+        encoding="utf-8"
+    )
+
+    for support in registered_database_support():
+        if not support.is_verified:
+            continue
+        dependency = support.optional_dependency or "built-in"
+        row = (
+            f"| `{support.backend}` | "
+            f"{'`' + dependency + '`' if support.optional_dependency else dependency} | "
+            f"`{support.sync_drivername}` |"
+        )
+        assert installation.count(row) == 1, support.backend

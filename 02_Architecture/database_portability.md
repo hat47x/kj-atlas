@@ -21,7 +21,7 @@ DB対応の正本は本書とする。SQLAlchemyがdialectを提供している�
 - backend名ではなくfamilyを再利用単位にする。MySQL/MariaDBは、差が確認されるまで同じfamilyとして扱う。
 - repositoryとAPIはDB非依存に保つ。DB差分は能力レジストリ、migration strategy、実DB fixtureへ閉じ込める。
 - migration strategyは少数のclosed setとし、新DBごとにアプリ全体へbooleanや条件分岐を増やさない。
-- optional dependency、pytest marker、実DBtest、CI実行、公開support matrixは能力レジストリとの静的契約testで同期し、一覧文字列を手書きで複製しない。
+- optional dependency、pytest marker、実DBtest、復旧test、CI実行、公開support matrixは能力レジストリとの静的契約testで同期し、一覧文字列を手書きで複製しない。
 - Verifiedの検証対象名とCI imageも能力レジストリへ保持する。対応表のversion表記やCI tagだけを単独更新できないよう契約testで照合する。
 - SQLAlchemy backendだけでなく、検証済み同期driverと受理するdrivernameも能力レジストリで管理する。driver省略URLと既存async URLは検証済み同期driverへ正規化し、未導入・未検証driverの明示指定はengine生成前に拒否する。
 - identifier/index対象文字列、検索・表示用のbounded text、本文・bundle等のcontent objectを区別する。可搬性のために本文を不必要に短いVARCHARへ変換しない。
