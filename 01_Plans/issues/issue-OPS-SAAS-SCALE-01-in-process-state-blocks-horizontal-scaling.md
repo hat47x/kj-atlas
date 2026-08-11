@@ -1,87 +1,66 @@
-# Issue: OPS-SAAS-SCALE-01 SaaS認証状態がプロセス内保持のため水平スケールできない
+# Issue: OPS-SAAS-SCALE-01 SaaS認証sessionの水平スケール準備
 
 - Type: Operations / Security
 - Status: Open
 - Source Issue: N/A
 - Priority: P1
-- Owner: Unassigned
-- Scope: `03_Implement/backend/src/kj_atlas_api/active_tenant_session.py`, `03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py`, `03_Implement/backend/src/kj_atlas_api/main.py`, `04_Documentation/operations.md`, `02_Architecture/enterprise_architecture.html`
-- Related ADR/Spec: `01_Plans/adr/ADR-0064-saml-oidc-broker-jwt-coordinated-auth-flow.md`（Phase 3-2）, `01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`, `02_Architecture/enterprise_architecture.html`
+- Owner: Maintainer
+- Scope: `03_Implement/backend/src/kj_atlas_api/active_tenant_session.py`, `03_Implement/backend/src/kj_atlas_api/saas_auth_state.py`, `03_Implement/backend/src/kj_atlas_api/main.py`, `04_Documentation/operations.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`, `01_Plans/adr/ADR-0064-saml-oidc-broker-jwt-coordinated-auth-flow.md`, `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（Proposed）
 - Expected verification level: `integration`
 
-## 課題
+## 現在の課題
 
-`saas-multitenant` プロファイルに**実際に配線されている**認証状態保持は、いずれもプロセス内メモリである（`main.py:110-130`）。
+当初はtenant session versionとJWT `jti` replay cacheがprocess内にあり、複数workerで状態を共有できなかった。2026-08-11にPostgreSQL共有store、CAS更新、startup preflight、DB障害時fail-closedを実装し、process-local state自体は解消した。
 
-```python
-if settings.runtime_profile == "saas-multitenant":
-    install_trusted_saas_runtime(app, TrustedSaasRuntimeAdapters(
-        identity_context_resolver=JwtSaasIdentityContextResolver(jwks_store=JwksStore()),
-        tenant_context_resolver=ClaimBasedTenantContextResolver(),
-        active_tenant_session_persister=InMemoryActiveTenantSessionPersister(),
-    ))
-```
+ただし共有行は`principal_id`を主キーとしてversionだけを保持する。認証session IDとactive tenantを保存しないため、次の意味で水平スケール対応は未完了である。
 
-| 状態 | 実体 | 複数プロセス時の帰結 |
-|---|---|---|
-| テナントセッション版数 | `InMemoryActiveTenantSessionPersister._sessions`（dict） | ワーカーをまたぐとセッション不一致 → 409 / 503 が頻発 |
-| JWT リプレイ検出 | `trusted_auth_edge._jti_cache`（module global） | **別ワーカーに当てるだけでリプレイが成立** |
-| JWKS キャッシュ | `JwksStore._entries` | 機能影響は小（各ワーカーが個別に取得）。ただし IdP への JWKS 取得が worker 数倍になる |
+- 切替後の次requestで、Bearer tokenのtenant claimから元tenantへ戻り得る。
+- 同じprincipalの別browser/device sessionが同じversionを共有し、切替やlogoutが相互干渉する。
+- version cookieはDB lookupで照合されず、session ownershipやanti-forgeryを証明しない。
+- 複数store instanceで同じprincipal/versionを参照できるtestは、認証session単位の継続性を証明しない。
 
-`uvicorn --workers N` や Kubernetes 複数レプリカという、企業・行政案件では標準的な可用性構成が**現状では成立しない**。単一プロセス運用は SPOF となり、通常は許容されない。
+詳細なデータ/API修正は`SAAS-TENANT-SESSION-BINDING-01`、方式判断は`ADR-0074`を正本とする。本issueは複数worker・複数replicaという運用条件で、そのsession正本が共有・失効・障害処理まで成立することを検証する。
 
-### 既存の認識状況
+## Bearer replay防御との境界
 
-- セッション側は `active_tenant_session.py:178-184` の docstring で自認あり。`ADR-0064` の Phase 3-2 に「`InMemoryActiveTenantSessionPersister` → Redis/DB ベース」として列挙されている。
-- **リプレイ検出側には自認がない。** `trusted_auth_edge.py:1-15` の docstring は「jti replay detection with bounded time-based cache」を達成済み特性として宣言しており、プロセス内である旨の記載がない（`SEC-AUTH-REPLAY-01` 制約2）。
+通常のBearer access tokenは有効期間中に複数requestで再利用され、`jti`は任意のtoken識別子である。同じaccess-token `jti`をworker横断で一回使用化する旧ACは撤回する。強いreplay防御の方式判断は`AUTH-ONE-TIME-JWT-01`と`ADR-0074`を正本とし、本issueでは独自のJWT replay ledgerを導入しない。
 
-つまり ADR-0064 Phase 3 は将来項目として列挙されているが、**SaaS プロファイルは既に起動可能な状態で出荷されており**、列挙と実態の間に運用上のギャップがある。
-
-## 対応方針（実装者向け）
-
-`ADR-0064` Phase 3-2 の実装化。ただし以下を決めてから着手すること。
-
-- **D1: 共有ストアの選択**。Redis / PostgreSQL / その他。既に PostgreSQL は SaaS の必須要件（`TrustedSaasRuntimePolicy.validate()` が `database_backend == "postgresql"` を要求、`trusted_saas_runtime.py:74`）であるため、依存を増やさない選択肢として DB 実装が有力。ただしセッション更新の頻度と TTL 掃除のコストを見積もること。
-- **D2: 単一プロセス運用の扱い**。共有ストア未設定時に (a) fail-fast する、(b) インメモリで起動し警告する、(c) 単一プロセス構成として明示的に許容する、のいずれか。`ADR-0062` の fail-fast 方針との整合を検討すること。
-- **D3: `_jti_cache` の共有化範囲**。セッションと同じストアに載せるか、別扱いか。`SEC-AUTH-REPLAY-01` の制約3（O(n) 走査）の解消と同時に設計すること。
-
-D1〜D3 が設計判断として重いと判断される場合は、`ADR-0064` の Phase 3 を独立 ADR へ切り出すこと。本issueは実装課題として起票しており、ADR 化の要否は保守者が判断する。
+JWKS cacheはinstanceごとでよい。これはBrokerへの取得負荷には影響するが、署名検証の安全境界をprocess共有状態へ依存させない。取得集中、cooldown、max-staleの運用検証が必要になれば別issueで扱う。
 
 ## 受入条件
 
-- [ ] AC-1: 複数ワーカー（最低2）構成で、テナントセッションが維持されることを integration テストで確認する。
-- [ ] AC-2: 複数ワーカー構成で、同一 `jti` のトークン再送が**どのワーカーに当たっても**拒否されることを確認する。
-- [ ] AC-3: 共有ストア障害時の挙動が定義され、fail-closed（認証拒否）であることをテストで固定する。認証が素通りしないこと。
-- [ ] AC-4: 共有ストア未設定での起動時挙動が D2 の決定どおりであることをテストで固定する。
-- [ ] AC-5: `04_Documentation/operations.md` に、SaaS の推奨デプロイ構成（プロセス数・共有ストア・障害時挙動）を記載する。
-- [ ] AC-6: `trusted_auth_edge.py` の docstring が、共有化後の実際の保証範囲を記述している。
-- [ ] AC-7: `ADR-0064` Phase 3-2 の状態を実装済みへ更新する。
+- [x] AC-1: PostgreSQL共有storeで、独立する2 store instanceが同じprincipal単位versionを参照し、CAS競合で一方だけが成功する。
+- [x] AC-2: 共有表が未migrationまたはDB不達ならSaaS startupを拒否し、稼働中のsession version解決・切替も503へfail-closedしてin-memoryへfallbackしない。
+- [x] AC-3: 運用・API・認証architecture文書が、現行保証をprincipal単位version共有までに限定し、本番利用gate未充足と明記する。
+- [ ] AC-4: `ADR-0074`で採択された認証session正本を最低2 worker／2 app instanceが共有し、active tenant、version、期限、失効を一貫して解決する。
+- [ ] AC-5: 同一sessionの複数tabはworkerをまたいでもversionを共有し、同じprincipalの別sessionは切替・logout・idle expiryで相互干渉しない。
+- [ ] AC-6: DB切断、CAS競合、rolling restart、key rotation中に旧tenant requestをresource lookup前に拒否し、新tenantへ自動再送しない。
+- [ ] AC-7: migration upgrade/downgradeと、最低2 workerのHTTP integration testをCIで固定する。単に2つのrepository objectを同じSQLite DBへ向けるtestで代替しない。
+- [ ] AC-8: `04_Documentation/operations.md`にdeployment topology、migration順序、rolling restart、session失効、障害時runbookを記載する。
 
 ## 依存関係
 
-- `01_Plans/issues/issue-SEC-TENANT-SESSION-01-session-version-canonicalization-mismatch.md`（先に解消しておくこと。非正規版数の問題を共有ストアへ持ち込まない）
+- `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（採択が前提）
+- `01_Plans/issues/issue-SAAS-TENANT-SESSION-BINDING-01-principal-keyed-session-state.md`（認証session正本の実装）
 
-### 連携（依存ではない）
+## 非目標
 
-`SEC-AUTH-REPLAY-01` は本issueの D3（`_jti_cache` の共有化範囲）の決定を待つ側であり、本issueが同issueを待つわけではない。ただし `SEC-AUTH-REPLAY-01` の制約3（O(n) 走査）の解消方針は D3 の設計に影響するため、**D3 を決める前に同issueの分析結果を参照すること**。両者を同一PRで実施してもよい。
+- access token `jti`の一回使用化を復活させない。
+- sticky sessionを共有正本の代替にしない。
+- JWKS responseや秘密鍵をDBへ保存しない。
+- single-tenant profileへ共有sessionを強制しない。
 
 ## 検証
 
-- `python -m pytest tests/test_active_tenant_session_persister.py tests/test_tenant_session_precondition.py -q`
-- `python -m pytest tests/test_saas_e2e_tenant_isolation.py -q`
-- 複数ワーカー構成での手動またはCI検証（手順を `04_Documentation/operations.md` へ記録）
+- `python -m pytest tests/test_saas_auth_state.py tests/test_active_tenant_session_persister.py -q`
+- `python -m pytest tests/test_tenant_session_precondition.py tests/test_saas_e2e_tenant_isolation.py -q`
+- PostgreSQL、最低2 API worker、同一session／別sessionのHTTP matrix
+- migration upgrade → downgrade → upgrade
 
-## 実装・訂正記録（2026-08-11）
+## 経緯
 
-- D1: SaaSで既に必須のPostgreSQLを共有ストアとし、Redis等の追加依存は導入しない。tenant session版数を共有DBへ移した。
-- D2: `saas-multitenant`は共有表の起動前queryに失敗した場合にfail-fastする。稼働中もin-memoryへfallbackせずfail-closedする。
-- D3訂正: access token `jti`の一回使用化は通常のBearer token再利用を壊すため撤回した。sender-constrained replay防御方式は`AUTH-ONE-TIME-JWT-01`を正本とする。
-- AC-1: 独立する2 store instanceのintegration testでsession共有とCAS競合を固定した。AC-2は未達のため本issueをOpenへ戻した。
-- AC-3/4: DB例外はauth/session境界で503へ変換され、未migration DBはstartup preflightで拒否される。欠損表testを追加した。
-- AC-5〜7: operations、認証architecture、resolver docstring、ADR Phase 3を実際の保証範囲へ同期した。
-
-## 訂正（2026-08-11）: 共有化と認証セッション束縛は別問題
-
-- 共有DB化はworker間で同じversionを参照できるようにしたが、行キーは`principal_id`であり、`selected_tenant`を保存していない。したがって`ADR-0061`が要求する「認証セッション単位のactive tenant state」を満たしておらず、AC-1を完了扱いにできない。
-- 同一principalの独立した認証セッションが干渉する問題と、切替後の次requestで選択tenantを再現できない問題を`SAAS-TENANT-SESSION-BINDING-01`へ分離した。同issueのAC-1〜7が完了するまで、本issueのAC-1および`SAAS-TENANT-01`のAC-6/13は未達とする。
-- PostgreSQL共有ストア、CAS、障害時fail-closed、startup preflight自体は有効な基盤として維持する。今回の訂正は共有化の価値を取り消すものではなく、保証範囲を「principal単位version共有」までに限定する。
+- D1: 既にSaaS必須のPostgreSQLを共有storeに採用し、Redis依存は追加しなかった。
+- D2: 共有store未設定・未migration・不達はfail-fast／fail-closedとした。
+- 旧D3: access-token `jti` ledgerは通常のBearer再利用を壊すため実装を撤回した。
+- 共有化後の再監査で、principal単位version共有と認証session単位のactive tenant正本は別要件だと判明したため、本issueを後者の複数worker運用検証へ再基準化した。

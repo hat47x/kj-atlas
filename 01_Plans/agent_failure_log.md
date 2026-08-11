@@ -434,3 +434,9 @@ Updated: 2026-08-03
 - 原因: 過去の別checkoutのWindows venv構成を確認なしに当てはめ、失敗ログ検索も実行体名だけに狭めたため、既記録のcapture制約を見落とした。
 - 対応: `.venv`の実体を確認し、`03_Implement/backend/.venv/bin/python`、専用`TMPDIR`、capture無効の`-s`で再実行した。
 - 再発防止: checkoutごとにvenv実体を確認し、pytest失敗時は例外文字列でも失敗ログを再検索する。この環境ではproject venv＋専用`TMPDIR`＋`-s`を既定にする。
+## 2026-08-11: shell検索文字列のbacktickを未保護で実行
+
+- 事象: `rg`の二重引用符内にMarkdownのbacktick付き`jti`を置き、shellが`jti`をcommand substitutionとして実行して`command not found`を出した。
+- 原因: 検索語をshell構文として解釈される引用方式で渡した。
+- 対応: 出力に秘密情報や状態変更がないことを確認し、以後の検索語は単一引用符またはbacktickを含まない表現にする。
+- 再発防止: shellへ渡す検索文字列にbacktick、`$()`、変数展開がないか実行前に確認し、Markdown断片は原則として単一引用符で囲む。
