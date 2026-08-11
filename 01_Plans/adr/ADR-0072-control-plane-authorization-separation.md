@@ -97,6 +97,14 @@ saas-multitenant       -> HTTP 404 {'code': 'strict_provisioning_unavailable'}
 | **B** | 起動を許すが警告を出す |
 | **C** | 現状維持（前段 IAP 前提を運用文書で明記するに留める） |
 
+## Three-Element Verification（ADR-0067 暫定適用・提案として）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 管理面（provisioning）側の認可が認証基盤の外側に取り残され、`/admin/provision/identity-providers`が信頼するJWT発行者とJWKS URIを登録するエンドポイントとして任意の利用者・任意のテナントとして認証できる越境の起点になる。管理面の認可を業務面から分離しSaaSでも到達可能にする | 機能: 業務面とは別の静的bearer（KJ_ATLAS_ADMIN_API_KEY）とtrusted auth edgeのJWT+platform-operator capability claimの二段構成。データ: IdP未登録状態（ブートストラップ）と通常運用（capability claim）を構造的に区別 |
+| **データ設計** | `enterprise-production`はAPIキー未設定のまま起動でき、その場合すべてのエンドポイントが無認証になる。キーを設定しても文書API・AI API・管理APIが同一の共有静的キー1本で保護される。D3=Aで本番相当profileでは認証を必須化 | 業務: 明示選択したのに設定が無ければ起動を止める（ADR-0062のfail-fast方針を認証へ一貫適用）。機能: 管理面の認可はcapability claimで監査に載せる |
+| **機能設計** | D1=A+Bの二段（静的admin bearerはブートストラップ専用の最小権限経路、IdP登録後はcapability claim）。D2=AでSaaSでも管理面を開放し`require_single_tenant_provisioning_surface`を認可判定へ置換。D1=C（ネットワーク分離）はdeployment側の選択として文書化 | 業務: R-3（非機能境界の超過）としてADR-0063/0064で追加したSaaS認証が管理面認可の境界を越えた。データ: D3=AはADR-0062の判断を認証そのものへ一貫適用 |
+
 ## 推奨（保守者の判断を拘束しない）
 
 **D1=A + B の二段**、**D2=A**、**D3=A** を推奨する。
