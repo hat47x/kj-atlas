@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/ui/SuggestionPanel.tsx`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`
 - Related ADR/Spec: `ADR-0049-external-flat-rate-agent-collaboration.md` (Proposed), `02_Architecture/design/admin-surface-metadata-display-correction.html`
+- Expected verification level: `e2e`
 
 ## 課題
 
