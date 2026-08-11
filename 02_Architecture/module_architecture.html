@@ -136,8 +136,8 @@ sequenceDiagram
     TAE->>TAE: jwt.decode(unverified peek) → iss/aud
     TAE->>JWKS: _fetch_jwks_keys(provider)
     JWKS-->>TAE: cached keys (or fresh fetch)
-    TAE->>TAE: _verify_jwt(RS256, iss, aud, exp, iat, nbf)
-    TAE->>TAE: _jti_cache.check_and_record(jti)
+    TAE->>TAE: _verify_jwt(RS256, iss, aud, exp, iat, nbf, jti)
+    TAE->>DB: record provider-scoped jti digest (unique insert)
     TAE->>TAE: _resolve_tenant_claim(tenant_ref)
     TAE-->>SRC: ResolvedIdentity + VerifiedTenantClaim
 

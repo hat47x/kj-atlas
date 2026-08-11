@@ -10,6 +10,7 @@ from typing import Protocol, cast
 from fastapi import HTTPException, Request, Response
 
 from kj_atlas_api.tenant_context import TenantContext
+from kj_atlas_api.saas_auth_state import DatabaseSaasAuthStateStore
 
 logger = logging.getLogger(__name__)
 
@@ -278,6 +279,80 @@ class InMemoryActiveTenantSessionPersister:
                 ]
                 for principal_id in matching_principals:
                     del self._sessions[principal_id]
+        response.delete_cookie(
+            key=self._COOKIE_KEY,
+            httponly=True,
+            secure=self._secure_cookie,
+            samesite="strict",
+            path="/",
+        )
+
+
+class DatabaseActiveTenantSessionPersister:
+    """Cluster-wide tenant-session version persistence for SaaS runtimes."""
+
+    _COOKIE_KEY = InMemoryActiveTenantSessionPersister._COOKIE_KEY
+
+    def __init__(
+        self,
+        *,
+        store: DatabaseSaasAuthStateStore,
+        secure_cookie: bool = True,
+    ) -> None:
+        self._store = store
+        self._secure_cookie = secure_cookie
+
+    def current_version(
+        self,
+        *,
+        request: Request,
+        principal_id: str,
+        active_tenant: TenantContext,
+    ) -> str:
+        version = self._store.current_or_create_session_version(
+            principal_id=principal_id,
+            new_version=_new_session_version(),
+        )
+        return canonical_tenant_session_version(version)
+
+    def persist(
+        self,
+        *,
+        request: Request,
+        response: Response,
+        principal_id: str,
+        previous_tenant: TenantContext,
+        selected_tenant: TenantContext,
+        expected_tenant_session_version: str,
+    ) -> str:
+        expected = canonical_tenant_session_version(expected_tenant_session_version)
+        new_version = canonical_tenant_session_version(_new_session_version())
+        if not self._store.rotate_session_version(
+            principal_id=principal_id,
+            expected_version=expected,
+            new_version=new_version,
+        ):
+            raise TenantSessionChangedError("tenant session version mismatch")
+        response.set_cookie(
+            key=self._COOKIE_KEY,
+            value=new_version,
+            httponly=True,
+            secure=self._secure_cookie,
+            samesite="strict",
+            max_age=3600,
+            path="/",
+        )
+        return new_version
+
+    def clear(self, *, request: Request, response: Response) -> None:
+        cookie_version = request.cookies.get(self._COOKIE_KEY)
+        if cookie_version:
+            try:
+                canonical_tenant_session_version(cookie_version)
+            except ValueError:
+                pass
+            else:
+                self._store.clear_session_version(session_version=cookie_version)
         response.delete_cookie(
             key=self._COOKIE_KEY,
             httponly=True,

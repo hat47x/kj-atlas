@@ -83,6 +83,7 @@ def _issue_jwt(*, provider: str, claims: dict[str, object]) -> dict[str, object]
         "tenant_ref": tenant_ref,
         "iat": now - 60,
         "exp": now + 3600,
+        "jti": secrets.token_urlsafe(24),
         **c,
     }
     token = jwt.encode(

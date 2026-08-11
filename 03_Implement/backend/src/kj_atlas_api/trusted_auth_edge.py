@@ -10,16 +10,15 @@ JWT requirements (ADR-0063 D2/D4):
 - Token header jku/x5u/embedded key references are never followed.
 - kid is resolved from the fetched JWK set only.
 - Clock skew tolerance: 60 seconds (fixed, not configurable).
-- exp/iss/aud/alg/iat validation is enforced on every call.
-- jti replay detection with bounded time-based cache.
+- exp/iss/aud/alg/iat/jti validation is enforced on every call.
+- jti replay detection is atomic and cluster-wide in the shared SaaS database.
 """
 
 from __future__ import annotations
 
 import logging
-import time
-from dataclasses import dataclass, field
-from threading import Lock
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 
 import jwt
 from fastapi import Request
@@ -28,6 +27,11 @@ from sqlalchemy.orm import Session
 from kj_atlas_api.auth_context import AuthContext, ResolvedIdentity
 from kj_atlas_api.jwks_store import JwksStore
 from kj_atlas_api.models import IdentityProviderRow, TenantIdentityProviderRow
+from kj_atlas_api.saas_auth_state import (
+    DatabaseSaasAuthStateStore,
+    InMemoryReplayStore,
+    ReplayDetectedError,
+)
 from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_context import VerifiedTenantClaim
 
@@ -35,47 +39,8 @@ logger = logging.getLogger(__name__)
 _JWT_CLOCK_SKEW_SECONDS = 60
 # ADR-0064: maximum JWKS response size in bytes (128 KiB).
 _JWKS_MAX_RESPONSE_BYTES = 128 * 1024
-# Maximum JWT lifetime for jti replay cache (default: 1 hour + 60s skew).
-_JTI_CACHE_TTL_SECONDS = 3660
-# Maximum number of jti entries to retain.
-_JTI_CACHE_MAX_ENTRIES = 100_000
 # Allowed JWK key types. HMAC ('oct') is always rejected.
 _ALLOWED_JWK_KEY_TYPES = frozenset({"RSA", "EC"})
-
-
-# ---------------------------------------------------------------------------
-# JTI replay detection
-# ---------------------------------------------------------------------------
-
-
-@dataclass
-class _JtiCache:
-    """Thread-safe, time-bounded cache of recently seen JWT IDs."""
-
-    _seen: dict[str, float] = field(default_factory=dict)
-    _lock: Lock = field(default_factory=Lock)
-
-    def check_and_record(self, jti: str, now: float | None = None) -> bool:
-        """Return True if jti is new (not replayed). Records it atomically."""
-        if now is None:
-            now = time.monotonic()
-        with self._lock:
-            # Evict expired entries.
-            expired = [k for k, ts in self._seen.items() if now - ts > _JTI_CACHE_TTL_SECONDS]
-            for k in expired:
-                del self._seen[k]
-            if jti in self._seen:
-                return False
-            # Bound cache size.
-            if len(self._seen) >= _JTI_CACHE_MAX_ENTRIES:
-                oldest = min(self._seen.items(), key=lambda x: x[1])[0]
-                del self._seen[oldest]
-            self._seen[jti] = now
-            return True
-
-
-# Global JTI replay cache shared across all resolver instances.
-_jti_cache = _JtiCache()
 
 
 # ---------------------------------------------------------------------------
@@ -216,7 +181,7 @@ def _verify_jwt(
             issuer=issuer,
             audience=audience,
             options={
-                "require": ["exp", "iss", "aud", "sub", "iat"],
+                "require": ["exp", "iss", "aud", "sub", "iat", "jti"],
                 "verify_signature": True,
                 "verify_exp": True,
                 "verify_iss": True,
@@ -262,7 +227,7 @@ def _verify_jwt(
                 issuer=issuer,
                 audience=aud,
                 options={
-                    "require": ["exp", "iss", "aud", "sub", "iat"],
+                    "require": ["exp", "iss", "aud", "sub", "iat", "jti"],
                     "verify_signature": True,
                     "verify_exp": True,
                     "verify_iss": True,
@@ -318,8 +283,8 @@ def _resolve_tenant_claim(
     external_tenant_ref = verified_claims.get(tenant_claim_name)
     if not isinstance(external_tenant_ref, str) or not external_tenant_ref:
         logger.info(
-            "auth edge: missing tenant claim provider=%s subject=%s",
-            provider.id, subject,
+            "auth edge: missing tenant claim provider=%s",
+            provider.id,
         )
         raise JwtIdentityError(status_code=401, code="missing_tenant_claim")
 
@@ -334,8 +299,8 @@ def _resolve_tenant_claim(
     )
     if tenant_provider is None:
         logger.info(
-            "auth edge: unknown tenant provider=%s ref=%s subject=%s",
-            provider.id, external_tenant_ref, subject,
+            "auth edge: unknown tenant provider=%s",
+            provider.id,
         )
         raise JwtIdentityError(status_code=401, code="unknown_tenant")
 
@@ -355,8 +320,14 @@ class JwtSaasIdentityContextResolver:
     resolves the token subject to a kj-atlas user, and returns a ResolvedIdentity.
     """
 
-    def __init__(self, *, jwks_store: JwksStore):
+    def __init__(
+        self,
+        *,
+        jwks_store: JwksStore,
+        auth_state_store: DatabaseSaasAuthStateStore | InMemoryReplayStore | None = None,
+    ):
         self._jwks = jwks_store
+        self._auth_state = auth_state_store or InMemoryReplayStore()
 
     def resolve(self, *, db: Session, request: Request) -> ResolvedIdentity:
         """Verify the bearer token and resolve to a kj-atlas identity.
@@ -398,8 +369,6 @@ class JwtSaasIdentityContextResolver:
                 matched_audience = aud
                 break
         if provider is None:
-            raise JwtIdentityError(status_code=401, code="unknown_provider")
-        if provider is None:
             logger.info(
                 "auth edge: unknown provider issuer=%s", issuer,
             )
@@ -410,12 +379,22 @@ class JwtSaasIdentityContextResolver:
 
         verified = _verify_jwt(token, keys, issuer, matched_audience)
 
-        # jti replay detection: reject tokens whose jti has been seen before.
+        # A unique DB insert makes replay rejection atomic across all workers.
         jti = verified.get("jti")
-        if isinstance(jti, str) and not _jti_cache.check_and_record(jti):
+        exp = verified.get("exp")
+        if not isinstance(jti, str) or not jti or not isinstance(exp, (int, float)):
+            raise JwtIdentityError(status_code=401, code="invalid_token")
+        try:
+            self._auth_state.record_jti(
+                provider_id=provider.id,
+                jti=jti,
+                expires_at=datetime.fromtimestamp(exp, tz=timezone.utc)
+                + timedelta(seconds=_JWT_CLOCK_SKEW_SECONDS),
+            )
+        except ReplayDetectedError:
             logger.warning(
-                "auth edge: jti replay detected sub=%s jti=%s",
-                verified.get("sub"), jti,
+                "auth edge: jti replay detected provider=%s",
+                provider.id,
             )
             raise JwtIdentityError(status_code=401, code="token_replayed")
 
@@ -426,15 +405,14 @@ class JwtSaasIdentityContextResolver:
         user_id = _resolve_subject_to_user_id(db, provider.id, subject)
         if user_id is None:
             logger.info(
-                "auth edge: identity not provisioned provider=%s subject=%s",
-                provider.id, subject,
+                "auth edge: identity not provisioned provider=%s",
+                provider.id,
             )
             raise JwtIdentityError(status_code=403, code="identity_not_provisioned")
 
         logger.debug(
-            "auth edge: JWT verified provider=%s subject=%s user=%s tenant=%s",
-            provider.id, subject, user_id,
-            verified.get(settings.tenant_claim_name),
+            "auth edge: JWT verified provider=%s",
+            provider.id,
         )
 
         # ADR-0063 D7/D8: resolve tenant claim from verified JWT.

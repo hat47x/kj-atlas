@@ -24,7 +24,7 @@ ADR-0063 D9 により trusted auth edge（JWT 検証 → tenant 解決 → sessi
 | `JwtSaasIdentityContextResolver` — JWT 検証 (RS256/ES256) | ✅ ADR-0063 D9-3 |
 | `JwksStore` — JWKS キャッシュ・ローテーション | ✅ ADR-0063 D9-2 |
 | `ClaimBasedTenantContextResolver` — claim → tenant 解決 | ✅ ADR-0063 D9-4 |
-| `InMemoryActiveTenantSessionPersister` — セッション永続化 | ✅ ADR-0063 D9-6 |
+| `DatabaseActiveTenantSessionPersister` — PostgreSQL共有セッション永続化 | ✅ OPS-SAAS-SCALE-01 |
 | `main.py` SaaS bundle wiring | ✅ ADR-0063 D9-6 |
 | Level 2 mock IdP — RS256 JWT + `/jwks.json` | ✅ ADR-0063 D9-7 |
 | E2E HTTP tenant isolation test | ✅ ADR-0063 D9-8 (10 tests) |
@@ -162,10 +162,10 @@ Level 2 mock IdP に以下を追加する：
 5. Level 3 E2E test (実 Broker + kj-atlas)
 6. フロントエンドのログインリダイレクト対応
 
-#### Phase 3: 本番運用準備 (将来)
+#### Phase 3: 本番運用準備
 
-1. `TRUSTED_PROXIES` 実装
-2. `InMemoryActiveTenantSessionPersister` → Redis/DB ベース
+1. ✅ `TRUSTED_PROXIES` 実装
+2. ✅ PostgreSQL共有の`DatabaseActiveTenantSessionPersister`とJWT replay ledger（2026-08-11）
 3. SCIM provisioning
 4. Audit logging for auth events
 
@@ -181,7 +181,7 @@ Level 2 mock IdP に以下を追加する：
 - SAML 顧客は Broker の SAML→OIDC 変換を通じて kj-atlas を利用できる。
 - OAuth 2.0 ログインフローは kj-atlas 本体に実装されず、Broker が担当する。
 - フロントエンドは最小限の認証状態管理（リダイレクト + JWT 保持）で済む。
-- SPAへ返すのは短命access tokenだけとし、module memoryにのみ保持する。`sessionStorage` / `localStorage`へtokenを保存せず、reload後は再認証する。refresh token grantと`refresh_token`応答はSPA clientで無効にする。
+- SPA／BFFへ返すaccess tokenは短命かつ要求ごとに一意な`jti`を持つone-time credentialとし、再送や並列fetchへ同じtokenを再利用しない。browserへ渡す場合もmodule memoryだけに保持し、`sessionStorage` / `localStorage`へ保存せず、使用後またはreload後は再取得する。refresh token grantと`refresh_token`応答はSPA clientで無効にする。
 - tenant-session cookieは`HttpOnly; SameSite=Strict; Path=/`とし、`local-dev`以外では`Secure`を必須にする。ログアウトでは同じ属性とpathで失効させる。
 
 ## Non-goals

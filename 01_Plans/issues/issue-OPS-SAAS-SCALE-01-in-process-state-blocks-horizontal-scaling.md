@@ -1,7 +1,7 @@
 # Issue: OPS-SAAS-SCALE-01 SaaS認証状態がプロセス内保持のため水平スケールできない
 
 - Type: Operations / Security
-- Status: Open
+- Status: Resolved
 - Source Issue: N/A
 - Priority: P1
 - Owner: Unassigned
@@ -70,3 +70,12 @@ D1〜D3 が設計判断として重いと判断される場合は、`ADR-0064` �
 - `python -m pytest tests/test_active_tenant_session_persister.py tests/test_tenant_session_precondition.py -q`
 - `python -m pytest tests/test_saas_e2e_tenant_isolation.py -q`
 - 複数ワーカー構成での手動またはCI検証（手順を `04_Documentation/operations.md` へ記録）
+
+## 解決記録（2026-08-11）
+
+- D1: SaaSで既に必須のPostgreSQLを共有ストアとし、Redis等の追加依存は導入しない。session版数とJWT replay ledgerを同じauth-state境界へ集約した。
+- D2: `saas-multitenant`は共有表の起動前queryに失敗した場合にfail-fastする。稼働中もin-memoryへfallbackせずfail-closedする。
+- D3: JWT `jti`を必須化し、provider-scoped SHA-256 digestのprimary key insertで別worker間の同時利用を原子的に拒否する。期限切れ同一digestだけをpoint deleteするため、認証ごとの全件走査を廃止した。
+- AC-1/2: 独立する2 store instanceと2 threadのintegration testでsession共有、CAS競合、同一jtiの単一受理を固定した。
+- AC-3/4: DB例外はauth/session境界で503へ変換され、未migration DBはstartup preflightで拒否される。欠損表testを追加した。
+- AC-5〜7: operations、認証architecture、resolver docstring、ADR Phase 3を実装状態へ同期した。

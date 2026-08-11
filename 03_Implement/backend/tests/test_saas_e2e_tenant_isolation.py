@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import time
+from uuid import uuid4
 from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest.mock import patch
@@ -92,6 +93,7 @@ def _sign_jwt(
         "sub": subject,
         "iat": now - 60,
         "exp": now - 3600 if expired else now + 3600,
+        "jti": str(uuid4()),
     }
     if not omit_tenant_claim:
         payload["tenant_ref"] = tenant_ref

@@ -53,6 +53,9 @@ class SessionPersister:
     def persist(self, **_: object) -> str:
         return "session-v2"
 
+    def clear(self, **_: object) -> None:
+        return None
+
 
 def _bundle() -> TrustedSaasRuntimeAdapters:
     return TrustedSaasRuntimeAdapters(

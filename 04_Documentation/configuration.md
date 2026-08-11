@@ -57,7 +57,7 @@
 - `local-dev`: SQLite + `KJ_ATLAS_LLM_PROVIDER=none` で最小起動。
 - `evaluation`: Compose + PostgreSQL で検証。監査HTTPと外部PDPは原則 `noop`。
 - `enterprise-production`: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を基本に、fail-safe を `read_only` または `deny` で固定。
-- `saas-multitenant`: 将来予約値。現行releaseでは安全条件が未完了のため起動時に拒否されます。
+- `saas-multitenant`: PostgreSQL共有認証状態、外部PDP、外部document binding、外部tenant capability、JIT無効、deny fail-safeをすべて満たす場合だけ起動します。
 
 `KJ_ATLAS_RUNTIME_PROFILE`でprofile名を指定します。Docker Composeの既定は`evaluation`、backendを直接起動したときの未指定既定は`local-dev`です。
 
@@ -92,7 +92,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 
 | 変数 | 既定値 | 用途 |
 | --- | --- | --- |
-| `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | `local-dev`, `evaluation`, `enterprise-production`。`saas-multitenant`は予約値で現行releaseでは起動拒否。 |
+| `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | `local-dev`, `evaluation`, `enterprise-production`, `saas-multitenant`。SaaSは共有認証表を含む最新migrationと必須policyを起動前検査。 |
 | `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | backend が使うSQLAlchemy接続URL。正式対応DB、検証済みdriver、single-tenant／shared-schema SaaSの範囲は[DB対応表](../02_Architecture/database_portability.md)を正本とする。driver省略URLと対応済みasync URLは検証済み同期driverへ正規化され、未検証driverと未知DBはengine生成前に拒否される |
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` |
 | `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLMのHTTPSまたはloopback HTTP base URL |
@@ -156,7 +156,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_POSTGRES_DB` | `kj_atlas` | Compose PostgreSQL の database 名 |
 | `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
 | `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | Compose PostgreSQL の password |
-| `KJ_ATLAS_RUNTIME_PROFILE` | `evaluation`（Compose） | backendとfrontendへ同じ実行profileを渡す。`saas-multitenant`は現行releaseでは起動不可 |
+| `KJ_ATLAS_RUNTIME_PROFILE` | `evaluation`（Compose） | backendとfrontendへ同じ実行profileを渡す。`saas-multitenant`はPostgreSQL共有認証表と必須外部adapterが必要 |
 | `KJ_ATLAS_FRONTEND_API_BASE` | `/api` | frontend が呼び出す API base path |
 
 PostgreSQL image や frontend build tool の内部名は、kj-atlas の公開設定キーではありません。利用者は上の `KJ_ATLAS_*` だけを設定します。

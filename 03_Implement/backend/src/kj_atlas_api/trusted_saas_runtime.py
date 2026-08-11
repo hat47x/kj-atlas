@@ -43,6 +43,7 @@ class TrustedSaasRuntimeAdapters:
             (self.tenant_context_resolver, "resolve"),
             (self.active_tenant_session_persister, "current_version"),
             (self.active_tenant_session_persister, "persist"),
+            (self.active_tenant_session_persister, "clear"),
         )
         if any(
             not callable(getattr(adapter, method, None)) for adapter, method in required_methods

@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from kj_atlas_api.access_control import build_access_control_adapter
 from kj_atlas_api.audit import build_audit_dispatcher
-from kj_atlas_api.db import init_db
+from kj_atlas_api.db import SessionLocal, init_db
 from kj_atlas_api.database_content_store import DocumentRevisionDivergence
 from kj_atlas_api.database_support import database_support_for_url
 from kj_atlas_api.document_policy_binding import build_document_policy_binding_resolver
@@ -31,6 +31,7 @@ from kj_atlas_api.routes.inquiry_bundles import router as inquiry_bundles_router
 from kj_atlas_api.routes.session import router as session_router
 from kj_atlas_api.request_body_safety import JsonRequestBodySafetyMiddleware
 from kj_atlas_api.settings import settings
+from kj_atlas_api.saas_auth_state import DatabaseSaasAuthStateStore
 from kj_atlas_api.tenant_capability import build_tenant_capability_resolver
 from kj_atlas_api.trusted_saas_runtime import (
     TrustedSaasRuntimeComponents,
@@ -88,6 +89,8 @@ async def lifespan(app: FastAPI):
         runtime_components=runtime_components,
     )
     init_db()
+    if settings.runtime_profile == "saas-multitenant":
+        _saas_auth_state_store.preflight()
     # ADR-0063 D9-6: post-DB-init check for active identity providers.
     if settings.runtime_profile == "saas-multitenant":
         validate_saas_providers_exist()
@@ -109,13 +112,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="kj-atlas API", lifespan=lifespan)
+_saas_auth_state_store = DatabaseSaasAuthStateStore(SessionLocal)
 
 # ADR-0063 D9-6: install the trusted SaaS runtime adapter bundle at module
 # scope so that initialize_trusted_saas_runtime() can find it during lifespan.
 # The bundle is only installed for saas-multitenant; other profiles are unaffected.
 if settings.runtime_profile == "saas-multitenant":
     from kj_atlas_api.active_tenant_session import (
-        InMemoryActiveTenantSessionPersister,
+        DatabaseActiveTenantSessionPersister,
         tenant_session_cookie_is_secure,
     )
     from kj_atlas_api.jwks_store import JwksStore
@@ -131,9 +135,11 @@ if settings.runtime_profile == "saas-multitenant":
         TrustedSaasRuntimeAdapters(
             identity_context_resolver=JwtSaasIdentityContextResolver(
                 jwks_store=JwksStore(),
+                auth_state_store=_saas_auth_state_store,
             ),
             tenant_context_resolver=ClaimBasedTenantContextResolver(),
-            active_tenant_session_persister=InMemoryActiveTenantSessionPersister(
+            active_tenant_session_persister=DatabaseActiveTenantSessionPersister(
+                store=_saas_auth_state_store,
                 secure_cookie=tenant_session_cookie_is_secure(
                     settings.runtime_profile,
                 ),

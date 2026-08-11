@@ -7,6 +7,7 @@ JWT → JWKS → subject → tenant claim pipeline.
 from __future__ import annotations
 
 import time as _time_module
+from uuid import uuid4
 from unittest.mock import patch
 
 import jwt
@@ -75,6 +76,8 @@ def _build_token(
     tenant_ref: str = "org-123",
     kid: str = "test-key-1",
     expired: bool = False,
+    jti: str | None = None,
+    include_jti: bool = True,
 ) -> str:
     import time
 
@@ -87,6 +90,8 @@ def _build_token(
         "iat": now - 60,
         "exp": now - 3600 if expired else now + 3600,
     }
+    if include_jti:
+        payload["jti"] = jti or str(uuid4())
     headers: dict[str, object] = {"kid": kid}
     return jwt.encode(
         payload,
@@ -283,6 +288,7 @@ class TestJwtSaasIdentityContextResolver:
             "sub": "subject-1",
             "iat": now - 60,
             "exp": now + 3600,
+            "jti": str(uuid4()),
         }
         token = jwt.encode(
             payload,
@@ -431,12 +437,12 @@ class TestJtiReplayDetection:
                 )
                 assert identity.user_id == "user-1"
 
-    def test_token_without_jti_is_accepted(
+    def test_token_without_jti_is_rejected(
         self, db: Session, key_pair: tuple,
     ) -> None:
-        """Tokens without jti are accepted (jti is optional in JWT spec)."""
+        """The SaaS broker contract requires jti for cluster-wide replay defence."""
         private_key, jwk = key_pair
-        token = _build_token(private_key=private_key)  # no jti
+        token = _build_token(private_key=private_key, include_jti=False)
 
         store = JwksStore()
         store.set("idp-1", [jwk])
@@ -444,10 +450,9 @@ class TestJtiReplayDetection:
             "kj_atlas_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
-            identity = resolver.resolve(
-                db=db, request=_request_with_token(token),
-            )
-        assert identity.user_id == "user-1"
+            with pytest.raises(JwtIdentityError) as exc:
+                resolver.resolve(db=db, request=_request_with_token(token))
+        assert exc.value.code == "invalid_token"
 
 
 # ---------------------------------------------------------------------------
@@ -615,6 +620,7 @@ def _build_token_with_custom_time(
         "tenant_ref": "org-123",
         "iat": now + iat_offset,
         "exp": now + 7200,
+        "jti": str(uuid4()),
     }
     if nbf_offset != 0:
         payload["nbf"] = now + nbf_offset
@@ -657,6 +663,7 @@ def _build_token_with_aud_array(
         "iss": "https://broker.invalid/issuer",
         "aud": audience, "sub": "subject-1",
         "tenant_ref": "org-123", "iat": now - 60, "exp": now + 3600,
+        "jti": str(uuid4()),
     }
     return jwt.encode(
         payload,
@@ -672,6 +679,7 @@ def _build_token_without_kid(private_key) -> str:
         "iss": "https://broker.invalid/issuer",
         "aud": "kj-atlas", "sub": "subject-1",
         "tenant_ref": "org-123", "iat": now - 60, "exp": now + 3600,
+        "jti": str(uuid4()),
     }
     return jwt.encode(
         payload,

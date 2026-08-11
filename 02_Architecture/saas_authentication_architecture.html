@@ -59,7 +59,7 @@ graph TB
     subgraph "Layer 3: kj-atlas Backend"
         JWT_VERIFY[JwtSaasIdentityContextResolver<br/>JWT 検証 + jti replay]
         TENANT_RESOLVE[ClaimBasedTenantContextResolver<br/>tenant_ref → tenant_id]
-        SESSION[InMemoryActiveTenantSessionPersister<br/>セッション管理 + cookie]
+        SESSION[DatabaseActiveTenantSessionPersister<br/>共有セッション管理 + cookie]
         DOC_ACCESS[ServerOwnedDocumentResourceResolver<br/>テナントスコープ文書アクセス]
     end
 
@@ -189,7 +189,7 @@ flowchart TB
 sequenceDiagram
     participant Client
     participant Backend
-    participant Persister as InMemoryActiveTenantSessionPersister
+    participant Persister as DatabaseActiveTenantSessionPersister
 
     Note over Client,Persister: 初回アクセス（bootstrapping）
 
@@ -246,9 +246,9 @@ sequenceDiagram
 <tr><th>コンポーネント</th><th>ファイル</th><th>責務</th></tr>
 <tr><td>JwtSaasIdentityContextResolver</td><td><code>trusted_auth_edge.py</code></td><td>JWT 検証 + subject 解決 + tenant claim 抽出</td></tr>
 <tr><td>JwksStore</td><td><code>jwks_store.py</code></td><td>JWKS キャッシュ (600s TTL, 60s cooldown, 1800s max-stale)</td></tr>
-<tr><td>JtiCache</td><td><code>trusted_auth_edge.py</code></td><td>JWT ID リプレイ検出 (3660s TTL, 100K エントリ上限)</td></tr>
+<tr><td>DatabaseSaasAuthStateStore</td><td><code>saas_auth_state.py</code></td><td>PostgreSQL共有のJWT ID一意登録とtenant session版数の原子的更新</td></tr>
 <tr><td>ClaimBasedTenantContextResolver</td><td><code>tenant_context.py</code></td><td>VerifiedTenantClaim → TenantContext</td></tr>
-<tr><td>InMemoryActiveTenantSessionPersister</td><td><code>active_tenant_session.py</code></td><td>セッション管理 + cookie (本番は Redis 移行)</td></tr>
+<tr><td>DatabaseActiveTenantSessionPersister</td><td><code>active_tenant_session.py</code></td><td>複数instance共有session管理 + security cookie</td></tr>
 <tr><td>TrustedSaasRuntimePolicy</td><td><code>trusted_saas_runtime.py</code></td><td>SaaS 起動前ポリシー検証 (DB/JIT/PDP/binding/capability/JWT)</td></tr>
 <tr><td>ServerOwnedDocumentResourceResolver</td><td><code>document_access_resource.py</code></td><td>テナントスコープ文書リソース解決</td></tr>
 <tr><td>RegisterIdentityProviderRequest</td><td><code>routes/admin.py</code></td><td>IdP 登録管理 API</td></tr>

@@ -1,7 +1,7 @@
 # Issue: SEC-AUTH-REPLAY-01 JWTリプレイ防御が宣言どおりに機能しない（jti任意・プロセス内・毎回O(n)）
 
 - Type: Security
-- Status: Open
+- Status: Resolved
 - Source Issue: N/A
 - Priority: P1
 - Owner: Unassigned
@@ -98,3 +98,11 @@ if provider is None:                              # ← 到達不能
 - `python -m pytest tests/test_trusted_auth_edge.py -q`
 - `python -m pytest tests/test_saas_oauth_login_e2e.py tests/test_saml_broker_jwt_coordinated_flow.py -q`
 - `python -m pytest tests/ -q`（backend 全体回帰）
+
+## 解決記録（2026-08-11）
+
+- `jti`をSaaS broker tokenの必須claimへ固定し、欠損tokenは`invalid_token`として拒否する。
+- process-local `_JtiCache`を廃止し、PostgreSQL共有表へのprovider-scoped SHA-256 digestのunique insertへ置換した。認証ごとの全件走査と満杯時走査は存在せず、同一keyの期限切れpoint deleteとinsertだけを行う。
+- 独立する2 store instanceの同時claim testで、同じ`jti`はcluster全体で1回だけ受理されることを固定した。
+- unknown providerのlogを到達可能にし、tenant ref、subject、user ID、生`jti`をauth-edge logへ出さない形に統一した。
+- module docstring、operations、認証architectureをcluster-wide保証へ同期した。

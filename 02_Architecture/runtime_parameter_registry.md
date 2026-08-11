@@ -55,7 +55,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 ### SaaS profile implementation gate（ADR-0059）
 
 - `KJ_ATLAS_RUNTIME_PROFILE`でprofileを明示選択する。`local-dev`、`evaluation`、`enterprise-production`は正規化して受理する。
-- `saas-multitenant`は予約値として認識するが、現行releaseでは常に起動をfail-fastにする。無視して`local-dev`へfallbackしない。
+- `saas-multitenant`は必須policy、実adapter、PostgreSQL共有認証表をすべて起動前検査し、不足時はfail-fastする。無視して`local-dev`やin-memory状態へfallbackしない。
 - backendのtrusted SaaS adapter bundleは`saas-multitenant`と相互必須である。profile、非秘密runtime safety policy、bundleの型・欠損・相互必須、started-stateに加え、構築済みPDP／capability／binding componentの実型を状態変更なしでpreflightし、DB初期化前とadapter有効化前に同じ判定を再実行する。single-tenant profileへのbundle注入、SaaS profileでのbundle欠損、未知profile、設定はexternalでも実componentがnoop／unavailableとなる構成はDB接続前に起動拒否する。runtime safety policyはPostgreSQL、JIT無効、external access-control、`deny` fail-safe、external document binding、external tenant capabilityを必須とし、実componentも`ExternalPolicyAccessControlAdapter`、`ExternalHttpTenantCapabilityResolver`、`ExternalHttpDocumentPolicyBindingResolver`の完全セットを必須とする。現行の予約profile拒否を将来解除しても、この完全セットが欠ける構成は起動しない。
 - backendはvalidation済みprofileを起動時にsnapshotし、`GET /session/bootstrap-policy`でprofile名を公開せず`single-tenant`または`tenant-session-required`へclosed-worldに写像する。frontend buildも同じprofileを受け取り、既存3 profileはpolicy通信なしでlocal-first起動、`saas-multitenant`だけはserver policy一致とsession bootstrap成功までAppをmountしない。未知・空・非canonical build値、policy不一致・取得失敗はsingle-tenantへfallbackせずblocked stateへ閉じる。
 - 実装issueの後続段階で、tenant解決、PDP、DB guardのcross-key validationがすべて成立した場合だけ起動拒否を解除する。
@@ -93,7 +93,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 
 | Key | Default | Purpose | Delivery surface | Secret | Probe (non-secret) |
 | --- | --- | --- | --- | --- | --- |
-| `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | Backend/MCPの実行profile。`local-dev`, `evaluation`, `enterprise-production`を受理する。`saas-multitenant`は予約値で、現行releaseでは両processが起動拒否。 | direct / base Compose | 通常値 | 起動ログまたは `/healthz` で profile 名（値のみ）を確認する |
+| `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | Backend/MCPの実行profile。`local-dev`, `evaluation`, `enterprise-production`, `saas-multitenant`を受理する。SaaS backendはPostgreSQL共有認証表と必須policyを検査し、不足時は起動拒否。 | direct / base Compose | 通常値 | 起動ログまたは `/healthz` で profile 名（値のみ）を確認する |
 | `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | 永続化 DB 接続先。Verifiedの検証対象versionと利用範囲は`database_portability.md`を正本とする。candidate/未知DBはengine生成・migration前に拒否する | direct / base Compose | 資格情報を含み得る（URL に password を埋め込む場合がある） | `/healthz` が 200 を返し、起動ログに接続エラーがないことを確認する（URL 値は出力しない） |
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | LLM provider 種別。`none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` | direct / base Compose | 通常値 | 起動ログまたは `/healthz` で provider 名（値のみ）を確認する |
 | `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLM のbase URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 | direct / llm-stub overlay のみ | 通常値（接続先ホスト名。認証情報は含まない） | overlay 使用時、`local` provider 経由のリクエストが stub へ到達すること（成否のみ確認、payload は出力しない） |
@@ -192,7 +192,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 
 - LLMのbase URLはcredential/query/fragment、空白・制御文字・backslashを含まないHTTPS、またはloopback HTTPだけを受理します。model IDは256文字以下で空白・制御文字・backslashなしとします。
 - `KJ_ATLAS_LLM_PROVIDER=large-scale`, `large_scale`, `external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true`、`KJ_ATLAS_LLM_ESCALATION_ENABLED=true`、base URL、model、allowlistの完全セットを必須にします。allowlistはcanonical hostだけを受理し、URL、wildcard、port、path、空要素、重複を拒否します。base URLのhostnameがallowlistにない構成も起動時に拒否します。
-- `KJ_ATLAS_RUNTIME_PROFILE` は `local-dev`, `evaluation`, `enterprise-production`, `saas-multitenant` だけを名前として認識し、`saas-multitenant`は`SAAS-TENANT-01`完了まで起動を拒否します。
+- `KJ_ATLAS_RUNTIME_PROFILE` は `local-dev`, `evaluation`, `enterprise-production`, `saas-multitenant` だけを名前として認識し、SaaSは安全条件が欠ける場合だけ起動を拒否します。
 - trusted SaaS identity resolver、tenant resolver、active tenant session persisterは環境変数やrequest headerから選択せず、application起動前の同一adapter bundleとしてのみ注入します。3要素の部分設定、起動後の差し替え、未検証のstate objectは拒否し、bundle非注入時はsession APIをfail-closedに保ちます。SaaS bundle有効化時はDocument resource resolverもserver-owned metadata＋trusted binding resolverへ切り替えます。application lifespan終了時は3 adapterをApp stateから同時に無効化し、Document resource resolverもsingle-tenant互換へ戻します。再起動時もruntime profileとの照合を通過するまで再有効化しません。
 - `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` は `noop`, `mock`, `external_http` だけを許可します。
 - `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` は `read_only`, `deny` だけを許可します。

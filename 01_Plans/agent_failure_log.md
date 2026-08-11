@@ -400,3 +400,17 @@ Updated: 2026-08-03
 - 原因: `_start_mock()`がHTTP到達だけを確認し、生成した子processの生存を確認していなかった。demo終了時の子process cleanupもなかった。
 - 対応: 子processの早期終了を起動失敗として扱い、demo所有processを`finally`でterminate/waitする。script pathもcheckout相対で解決した。
 - 再発防止: local service harnessはhealth確認と同時に「自分が起動したprocessが生存していること」を検証し、所有processだけを必ず終了する。
+
+## 2026-08-11: system Pythonでpytestを起動して検証環境を誤った
+
+- 事象: SaaS共有認証状態の対象testをsystem Pythonで起動し、最初はpytest captureの`FileNotFoundError`、一時directory固定後はSQLAlchemy/Alembic欠損で収集失敗した。
+- 原因: repositoryに既存`.venv`があるのに、汎用の`python -m pytest`を使った。system側pytest環境は依存関係も一時領域もproject検証条件を満たしていなかった。
+- 対応: repositoryの`.venv/bin/python -m pytest`と専用`TMPDIR`へ切り替えた。
+- 再発防止: backend検証は最初にproject venvの存在を確認し、以後すべて同じinterpreterへ固定する。
+
+## 2026-08-11: JWT jti必須化後にE2E発行fixtureが旧claim形状を維持
+
+- 事象: backend全体回帰でSaaS tenant isolation、OAuth、SAML broker協調flowの16件が`invalid_token`になった。
+- 原因: resolverの`jti`必須化に対し、unit token builderだけを先に更新し、共有mock IdPとtenant isolation用JWT発行helperが`jti`を発行していなかった。
+- 対応: mock IdPとE2E helperがtokenごとに一意な`jti`を発行するよう更新した。
+- 再発防止: JWT claim contract変更時はunit builderだけでなく、mock IdP、direct token endpoint、OAuth/SAML協調E2Eを同時に検索・更新する。
