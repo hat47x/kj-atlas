@@ -58,6 +58,14 @@ issue-DOC-OPS-04（ADR候補B）で確認された主要課題は以下。
 - 例外承認の役割分離・承認手順の定義。
 - 実装コード・ランタイム制約の変更。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 読者前提・目的・非目標・到達状態の記載粒度が文書ごとに揺れ、文書横断で判断基準がずれる。可読性の最低基線（Readability Baseline）を定義し初読コストと再開コストを下げる | 機能: RBL-1 Audience・RBL-2 Goal/Non-goal等を新規作成・大幅改訂時の最小基線として適用。データ: 対象文書にAudience/Goal/Non-goal/Outcomeを明示 |
+| **データ設計** | AC補完としてAudience/Goal/Non-goal/OutcomeとUpstream Reference/Downstream Applyを各1件以上明示。今回編集対象と非対象を明示し境界をレビュー可能にする | 業務: 初読者の理解開始点が揃い読解コストを低減。機能: 変更レビュー時に適用境界（In/Out）が明確になり差分判定の再現性が上がる |
+| **機能設計** | DoD補完としてADR本文にContext/Decision/Consequences/Traceabilityを必須記載し、ADR-0022 I/F逸脱の有無をVerifyで明示（逸脱時は理由を記録） | 業務: 文書横断での用語ドリフトを早期検知しやすくする。データ: 執筆時に最小メタ記載の確認コストが増える（副作用） |
+
 ## Consequences
 
 - 期待効果:

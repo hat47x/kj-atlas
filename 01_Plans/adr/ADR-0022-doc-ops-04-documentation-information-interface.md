@@ -61,6 +61,14 @@ DOC-OPS-04 系 ADR 群の共通I/Fとして、次を採用する（**ADR-A承認
 - 例外承認の役割分離・承認SLAの確定。
 - `03_Implement/` 配下の変更規約。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | DOC-OPS-04系ADR（可読性・品質ゲート・変更統治）は文書間の参照I/Fが揃わないと用語・見出し・判定メタの競合を起こす。B/C/Dを並列化する前に最低限の情報設計I/Fを先行固定する | 機能: issue補助メモはPlan→Execute→Verify→Proceed、ADRはContext/Decision/Consequences/Traceabilityの見出しI/Fを必須化。データ: 用語I/F（正本/暫定メモ/決裁入力/例外承認）を固定語彙として統一 |
+| **データ設計** | 判定メタI/Fを比較可能性の最小セットとして固定（issue補助メモ: Type/Status/Scope/Related ADR/Expected verification level/Source Issue、ADR: Status/Date/Deciders/Scope） | 業務: B/C/Dの同時起票で用語・見出し・メタの基線が一致しマージ競合が減る。機能: レビュー時に「内容の是非」と「フォーマット差異」を分離して判定できる |
+| **機能設計** | 参照I/Fを後続ADRの拘束条件として固定し、品質ゲートのCI必須化境界と例外承認フローの恒久ルールはC/D側ADRで扱う | 業務: Aの承認が遅延するとB/C/Dの実編集開始が遅れる（依存の副作用）。データ: docs-check/CIのfail-on-error境界と例外承認の役割分離は別ADRの範囲 |
+
 ## Consequences
 
 - 期待効果:
