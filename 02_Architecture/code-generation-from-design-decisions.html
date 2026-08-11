@@ -212,19 +212,26 @@ flowchart TB
    - Backend model pattern: read models_ai.py RefineCardTextRequest/Response
    - Backend route pattern: read routes/ai.py refine_card_text endpoint
    - Frontend client pattern: read client.ts suggestLayout function
-   - Test pattern: read test_llm_provider.py
+   - Test pattern: read test_ai_provider_error_contract.py (mock LLM)
 
 2. Generate each file following the EXACT same structure as the pattern,
    substituting only the task-specific names, fields, and types.
 
 3. Add imports to existing import blocks (do not create new import sections).
 
-4. Validate by running:
+4. Use the design decision's promptHint to scaffold the prompt builder
+   (no bare TODO; embed the task instruction).
+
+5. Generate the corresponding tests (DX-CODEGEN-03): roundtrip/validation
+   for data_boundary, endpoint success + 503 for ai_task.
+
+6. Validate by running:
    - python -m py_compile on each modified .py file
    - python check_contract_drift.py
    - python check_design_consistency.py
+   - ast.parse on generated code and generated tests
 
-5. Do NOT create new architectural patterns. Follow existing conventions strictly.
+7. Do NOT create new architectural patterns. Follow existing conventions strictly.
 
 ## Constraints
 - SafeMode: filter unreviewed card text before sending to AI
