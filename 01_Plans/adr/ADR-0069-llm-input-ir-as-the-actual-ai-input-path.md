@@ -125,6 +125,14 @@ IR スキーマは `ir_version: {"const": "1.0"}` かつ `additionalProperties: 
 - `POST /ai/assess-card-importance` の採点と `00_Prompt/domain.md:88`（「AIは内容を採点せず」）の抵触。`issue-AI-IMPORTANCE-SCORING-01` で採点APIを廃止して解消済み。本ADRが将来提供する`graph_summary`は、順位や等級を持たない構造的観測（中心性・連結成分・矛盾サブグラフ）に限定する。
 - IR の上限値（`MAX_CARDS=200` / `MAX_RELATIONS=400` / `MAX_TEXT_CHARS=12000`、§5.1）が現行規模に妥当かの再検討。実装時に代表規模で計測し、必要なら別途起票する。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | KJ法キャンバスでは座標が意味を持つのは人間側で、AIにとって意味を持つのはカード・島の論理的関係。この非対称性を踏まえ、AIは論理構造（関係語彙・島階層・holdState）を実際に受け取る必要がある | 機能: `routes/ai.py`の全プロンプト構築関数で`edges`/`evidenceLinks`/`relationSummaries`/`claimType`/`parentIslandId`を渡す。データ: 関係語彙（related/negate/causal/mutual/equivalence）をAIへ届ける |
+| **データ設計** | 凍結済みの`LLMRequest.inputs` IR（llm_input_ir_spec.md §4）をAI入力の実経路とする。`graph_summary`（中心性・連結成分・矛盾サブグラフ）は順位や等級を持たない構造的観測に限定。SafeModeの入力側強制（constraints.safe_mode）とPII最小化をサーバ側契約へ | 業務: 矛盾検出が既存`evidenceLinks`を、グルーピング提案が既存の島を見る。機能: 決定論的切り詰め（MAX_CARDS=200/MAX_RELATIONS=400/MAX_TEXT_CHARS=12000）で大規模文書のAI入力を再現可能にする |
+| **機能設計** | 既存の4投影層（island_edge_aggregate/abstract_map_export/ContextBundle/LLMRequest.inputs IR）のうちIRを実装してAI経路へ接続。`POST /ai/*`はIRを経由し、直渡し経路にエンドポイントを積み上げない | 業務: 採点API（assess-card-importance）は廃止済み（issue-AI-IMPORTANCE-SCORING-01）。データ: 座標はsuggest-layoutの出力に限定し、島を矩形でなく関係の集合として提示 |
+
 ## Consequences
 
 ### 期待される効果

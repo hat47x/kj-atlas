@@ -82,6 +82,14 @@
 | `A2-PROPOSAL-ENVELOPE-V1` | `sourceBundleHash`, `proposalId`, `policySnapshot` | `proposalEnvelope` | `schema_mismatch` |
 | `A3-DOC-SYNC-CHECK-V1` | `contractId`, `syncTargets[]`, `auditDigest` | `syncResult`, `drift[]` | `drift_detected` |
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 「議論→意思決定→文書化→進捗同期」を1サイクルで完結させる計画フェーズとし、議論と実行ログの分散による判断根拠の追跡困難を防ぐ。会議ログ定型・Decision Queue未確定管理・dashboard同期を単一文書として固定する | 機能: A1（Governance contract hardening）をOpen化し、A2（frontend適用）/A3（ops & docs同期）はDraftで先行準備、A1完了後にOpen化。データ: 実装変更はA2/A3 issueがOpen化されるまで行わない |
+| **データ設計** | 未確定項目はDecision Queueへ記録し確定扱いしない。HIL-RS凍結I/F（A1-CRITIQUE-IF等のContract IDs）は変更禁止。SafeMode既定ON・share/export漏洩防止・責務分離（human_dual_control_only）を後退させない | 業務: 議事録は論点ごとに「提案・懸念・反証・結論」を含む。機能: docs-check（validator+unittest+diff check）がExit Criteriaとして成功必須 |
+| **機能設計** | Exit Criteria（EC-1議事録/EC-2 ADR完全性/EC-3 issue最小分解/EC-4 dashboard同期/EC-5 docs-check）を固定。planフェーズの判断根拠を1サイクルで追跡可能にする | 業務: 実装速度より監査容易性を優先し短期速度は低下する。データ: Active issue数が増え同期ドキュメントの更新コストが増加する |
+
 ## Consequences
 
 - 期待効果:
