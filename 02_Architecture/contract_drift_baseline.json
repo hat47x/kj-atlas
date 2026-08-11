@@ -1,9 +1,9 @@
 {
-  "total_warnings": 14,
+  "total_warnings": 11,
   "total_errors": 0,
   "categories": {
-    "route_docs": 12,
+    "route_docs": 11,
     "env_vars": 0,
-    "pydantic_ts": 2
+    "pydantic_ts": 0
   }
 }
