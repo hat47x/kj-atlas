@@ -79,3 +79,9 @@ D1〜D3 が設計判断として重いと判断される場合は、`ADR-0064` �
 - AC-1: 独立する2 store instanceのintegration testでsession共有とCAS競合を固定した。AC-2は未達のため本issueをOpenへ戻した。
 - AC-3/4: DB例外はauth/session境界で503へ変換され、未migration DBはstartup preflightで拒否される。欠損表testを追加した。
 - AC-5〜7: operations、認証architecture、resolver docstring、ADR Phase 3を実際の保証範囲へ同期した。
+
+## 訂正（2026-08-11）: 共有化と認証セッション束縛は別問題
+
+- 共有DB化はworker間で同じversionを参照できるようにしたが、行キーは`principal_id`であり、`selected_tenant`を保存していない。したがって`ADR-0061`が要求する「認証セッション単位のactive tenant state」を満たしておらず、AC-1を完了扱いにできない。
+- 同一principalの独立した認証セッションが干渉する問題と、切替後の次requestで選択tenantを再現できない問題を`SAAS-TENANT-SESSION-BINDING-01`へ分離した。同issueのAC-1〜7が完了するまで、本issueのAC-1および`SAAS-TENANT-01`のAC-6/13は未達とする。
+- PostgreSQL共有ストア、CAS、障害時fail-closed、startup preflight自体は有効な基盤として維持する。今回の訂正は共有化の価値を取り消すものではなく、保証範囲を「principal単位version共有」までに限定する。

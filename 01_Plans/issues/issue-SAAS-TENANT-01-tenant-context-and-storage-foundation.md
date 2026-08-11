@@ -633,3 +633,9 @@ Workflowによる多視点敵対的レビュー（backend契約・frontend契約
 - `ruff format --check`は変更した3ファイルとも**変更前HEADの時点で既に不一致**である（未変更のmain checkoutで同じ3ファイルが`Would reformat`になることを確認した）。`ruff format --diff`が今回の追加行を一切書き換えないことを確認したうえで、無関係な大量整形を避けるため再formatは行っていない。
 - 環境制約: Docker/PostgreSQLを起動していないため`postgres` marker 25件はskipであり、AC-5の実地検証は2026-07-29の結果に依拠する（今回はRLS・migration関連の変更なし）。frontendとMCPは無変更のため未実行。
 - **AC-4のチェックは変更しない**。今回埋めたのは条件4「adapter欠損」のrequest時の対称性のみで、条件1/2/3/5は着手時点で既に実装済みだった。AC-4全体の充足判断には従来から残る実trusted auth edge（IdP/OIDC/SAML検証）の実runtime接続と、実外部PDP／binding／capability serviceへの到達性検証が必要であり、本変更はそれらを充足しない。AC-4を含むAC-6/7/8/9/10/12/13は未チェックのままとし、`saas-multitenant`のsettings起動拒否も維持する。
+
+### 設計監査 checkpoint 2026-08-11: principal単位共有ストアは認証セッション正本ではない
+
+- 水平スケール対応で追加された`saas_tenant_sessions`を、`ADR-0061` D1/D2とactive tenant切替のrequest chainに照らして再監査した。DB行は`principal_id`を主キーとして`session_version`だけを保持し、`DatabaseActiveTenantSessionPersister.persist()`へ渡された`selected_tenant`は保存されない。次requestのtenantはBearer tokenのverified tenant claimから再解決されるため、POST成功responseがtenant Bでも次のGETがtenant Aへ戻り得る。また、同一principalの独立した認証セッションが同じversionを共有し、一方の切替・logoutが他方へ波及する。
+- これは`ADR-0061`が定めた「1つの認証セッションにactive tenantは1つ」「trusted auth/session adapterがactive tenantとversionを原子的に解決・更新」という実装gateを満たさない。既存testは選択contextがpersisterへ渡ることとversion rotationを別々に確認するだけで、切替後の次requestおよび同一principal・別sessionの非干渉を検証していなかった。
+- 修正にはtrustedな認証セッション識別子の供給元（Broker claimまたはBFF server session）とmigrationを決める必要があり、principalやaccess token `jti`への安易な流用は別のセキュリティ欠陥を生む。詳細、選択肢、受入条件を`issue-SAAS-TENANT-SESSION-BINDING-01-principal-keyed-session-state.md`へ起票した。決定・実装完了までAC-6/13とSaaS profileの本番利用gateは未充足のままとする。
