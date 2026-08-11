@@ -163,8 +163,14 @@ def persist_active_tenant_selection(
 
 
 def _new_session_version() -> str:
-    """Generate an unpredictable session version token."""
-    return secrets.token_urlsafe(32)
+    """Generate a token accepted by the stricter header/cookie canonical form."""
+    # token_urlsafe may start with '-' or '_', while our canonical external
+    # representation deliberately starts with an alphanumeric character.
+    # Rejection sampling preserves the token format and essentially all entropy.
+    while True:
+        candidate = secrets.token_urlsafe(32)
+        if _TENANT_SESSION_VERSION_PATTERN.fullmatch(candidate) is not None:
+            return candidate
 
 
 class InMemoryActiveTenantSessionPersister:
@@ -198,17 +204,27 @@ class InMemoryActiveTenantSessionPersister:
         active_tenant: TenantContext,
     ) -> str:
         with self._lock:
+            stored_version = self._sessions.get(principal_id)
+            if stored_version is not None:
+                try:
+                    canonical_tenant_session_version(stored_version)
+                except ValueError:
+                    # Rotate legacy/corrupted in-memory state instead of fixing
+                    # the principal in a permanent 503 loop until restart.
+                    stored_version = _new_session_version()
+                    self._sessions[principal_id] = stored_version
             # ADR-0064: try to read existing session from cookie first.
             try:
                 cookie_version = request.cookies.get(self._COOKIE_KEY)
-                if cookie_version and principal_id in self._sessions:
-                    if hmac.compare_digest(cookie_version, self._sessions[principal_id]):
-                        return self._sessions[principal_id]
+                if cookie_version and stored_version is not None:
+                    if hmac.compare_digest(cookie_version, stored_version):
+                        return stored_version
             except (KeyError, AttributeError):
                 pass
-            if principal_id not in self._sessions:
-                self._sessions[principal_id] = _new_session_version()
-            return self._sessions[principal_id]
+            if stored_version is None:
+                stored_version = _new_session_version()
+                self._sessions[principal_id] = stored_version
+            return stored_version
 
     def persist(
         self,
@@ -228,7 +244,9 @@ class InMemoryActiveTenantSessionPersister:
                 raise TenantSessionChangedError(
                     "tenant session version mismatch"
                 )
-            new_version = _new_session_version()
+            # Validate before mutating server state or issuing the cookie. This
+            # keeps a faulty future generator from persisting a poison version.
+            new_version = canonical_tenant_session_version(_new_session_version())
             self._sessions[principal_id] = new_version
             # ADR-0064 D4: set session cookie on the response.
             response.set_cookie(

@@ -1,7 +1,7 @@
 # Issue: SEC-TENANT-SESSION-01 テナントセッション版数の3.1%が自己検証に失敗し、当該利用者が恒久的に503になる
 
 - Type: Bug / Security（可用性）
-- Status: Open
+- Status: Done
 - Source Issue: N/A
 - Priority: P0
 - Owner: Unassigned
@@ -102,14 +102,20 @@ ValueError: tenant session version is not canonical
 
 ## 受入条件
 
-- [ ] AC-1: `_new_session_version()` が生成する値が、`canonical_tenant_session_version()` を**常に**通過する。20万回規模の統計的テストで 0 件失敗を確認する。
-- [ ] AC-2: `persist()` は、サーバ側状態の更新および `set_cookie` の**前に**新版数を検証する。検証失敗時は状態を変更せず例外を送出する。
-- [ ] AC-3: 非正規値が何らかの理由で格納された場合でも、当該 principal が恒久的に 503 へ固定されない（回復経路があるか、そもそも格納され得ないことをテストで固定する）。
-- [ ] AC-4: `test_persist_returns_new_version` が確定的に成功する。
-- [ ] AC-5: 生成器または検証器のどちらを変更したかを、`active_tenant_session.py` のコメントに理由付きで記録する。
+- [x] AC-1: `_new_session_version()` が生成する値が、`canonical_tenant_session_version()` を**常に**通過する。20万回規模の統計的テストで 0 件失敗を確認する。
+- [x] AC-2: `persist()` は、サーバ側状態の更新および `set_cookie` の**前に**新版数を検証する。検証失敗時は状態を変更せず例外を送出する。
+- [x] AC-3: 非正規値が何らかの理由で格納された場合でも、当該 principal が恒久的に 503 へ固定されない（回復経路があるか、そもそも格納され得ないことをテストで固定する）。
+- [x] AC-4: `test_persist_returns_new_version` が確定的に成功する。
+- [x] AC-5: 生成器または検証器のどちらを変更したかを、`active_tenant_session.py` のコメントに理由付きで記録する。
 
 ## 検証
 
 - `python -m pytest tests/test_active_tenant_session_persister.py -q`
 - `python -m pytest tests/test_tenant_session_precondition.py tests/test_session_context_routes.py -q`
 - backend 全体回帰
+
+## 完了記録（2026-08-11）
+
+- validatorの先頭英数字制約を維持し、`token_urlsafe(32)`をrejection samplingしてcanonical tokenだけを返す生成器へ変更した。20万回生成で非canonical 0件を確認する回帰testを追加した。
+- `persist()`は新版数をcanonical検証してからstate更新とCookie発行を行う。将来generatorが壊れた場合も既存stateとresponse headerを変更しないnegative testを追加した。
+- 旧versionや異常系で既に非canonical stateが残っているprincipalは`current_version()`で安全にrotateし、再起動まで503へ固定されない回復経路を追加した。
