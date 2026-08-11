@@ -428,3 +428,9 @@ Updated: 2026-08-03
 - 原因: 既存の古いissue表現を踏襲し、現行canonical status一覧を起票前に確認しなかった。
 - 対応: 完了状態を`Done`へ修正し、triageとdocs-checkを再実行した。
 - 再発防止: 新規issueは`issue_memo_status.py`のcanonical statusを確認し、作成直後にtriageを通す。
+## 2026-08-11: backend venv形式と既知pytest capture制約の確認漏れ
+
+- 事象: `/mnt/d/GIT/kj-atlas`で`./.venv/Scripts/python.exe`を実行して実行体なしで失敗し、WSL venvへ直した再実行もpytest capture一時file消失でtest開始前に停止した。
+- 原因: 過去の別checkoutのWindows venv構成を確認なしに当てはめ、失敗ログ検索も実行体名だけに狭めたため、既記録のcapture制約を見落とした。
+- 対応: `.venv`の実体を確認し、`03_Implement/backend/.venv/bin/python`、専用`TMPDIR`、capture無効の`-s`で再実行した。
+- 再発防止: checkoutごとにvenv実体を確認し、pytest失敗時は例外文字列でも失敗ログを再検索する。この環境ではproject venv＋専用`TMPDIR`＋`-s`を既定にする。

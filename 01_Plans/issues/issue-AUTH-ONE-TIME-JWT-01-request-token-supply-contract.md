@@ -4,9 +4,9 @@
 - Status: Open
 - Source Issue: `SEC-AUTH-REPLAY-01`
 - Priority: P1
-- Owner: Unassigned
+- Owner: Maintainer
 - Scope: auth edge, frontend auth client, Broker/BFF integration, `ADR-0064`
-- Related ADR/Spec: `ADR-0064`, `OPS-SAAS-SCALE-01`, `SEC-AUTH-REPLAY-01`
+- Related ADR/Spec: `ADR-0064`, `ADR-0074`（Proposed）, `OPS-SAAS-SCALE-01`, `SEC-AUTH-REPLAY-01`
 - Expected verification level: integration
 
 ## 課題
@@ -26,13 +26,14 @@
 - 候補A: RFC 9449 DPoP。client鍵へaccess tokenをsender-constrainし、要求ごとのDPoP proof `jti`、`htm`、`htu`、`ath`を検証する。
 - 候補B: same-origin BFF session。Bearer tokenをbrowserへ渡さずBFFへ閉じ込め、browser要求はHttpOnly sessionとCSRF防御で扱う。
 - 候補C: 現行Bearer方式を維持し、短い有効期限、TLS、module-memory保持、audience制限を保証範囲として明記する。
-- DPoPはclient鍵管理、proxy後のcanonical URI、proof replay TTL、clock skew、nonce、retryを含むため、L1では採択しない。Maintainer判断用の比較とprototypeを先に行う。
+- 比較判断の正本は`ADR-0074`へ集約した。同ADRはactive tenant正本化とtoken replay露出縮小を同じserver-owned session境界で解く案Bを採用候補としている。DPoPを別系統で並行実装せず、ADRがAcceptedになるまで現行Bearer保証を超えて表明しない。
 
 ## 受入条件
 
 - [x] 通常のBearer access tokenを連続API要求へ使用できる契約を回帰testで復元する。
 - [x] `jti`欠損tokenをRFC 7519どおり通常Bearer JWTとして扱い、docstringとtestを一致させる。
-- [ ] DPoP、BFF、短命Bearer継続の業務・データ・機能trade-offをprototype根拠付きで比較し、方式をADRで決定する。
+- [x] DPoP、BFF、短命Bearer継続の業務・データ・機能trade-offを`ADR-0074`へ集約し、BFFを採用候補としてProposedにした。
+- [ ] `ADR-0074`をMaintainerがAcceptedまたはRejectedにし、本issueの実装方式を確定する。
 - [ ] 強いreplay防御を採る場合、別worker間でも要求proof再利用を拒否し、通常のaccess token再利用を壊さない。
 - [ ] timeout、応答不明retryがfail-closedし、mutationを重複実行しない。
 - [ ] refresh tokenをSPAへ渡さず、XSS時のcredential露出範囲を拡大しない。
@@ -40,7 +41,12 @@
 
 ## 暫定運用
 
-本issueの方式決定までは、共有tenant sessionによるbackend多worker運用は可能だが、JWT replay防御済みとは表明しない。Bearer tokenの保証範囲は短命、署名検証、issuer/audience制限、TLS、browser storage不使用までとする。
+本issueと`SAAS-TENANT-SESSION-BINDING-01`の方式決定までは、PostgreSQLが共有するのはprincipal単位versionだけであり、認証session単位のactive tenantを伴う多worker本番運用は未保証とする。JWT replay防御済みとも表明しない。Bearer tokenの保証範囲は短命、署名検証、issuer/audience制限、TLS、browser storage不使用までとする。
+
+## 依存関係
+
+- `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（採択が前提。DPoP/BFFの並行実装を避ける）
+- `01_Plans/issues/issue-SAAS-TENANT-SESSION-BINDING-01-principal-keyed-session-state.md`（BFF採択時は同一session正本として実装・検証する）
 
 ## 根拠
 

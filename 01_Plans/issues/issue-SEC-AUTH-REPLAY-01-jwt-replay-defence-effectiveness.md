@@ -1,12 +1,12 @@
 # Issue: SEC-AUTH-REPLAY-01 JWTリプレイ防御が宣言どおりに機能しない（jti任意・プロセス内・毎回O(n)）
 
 - Type: Security
-- Status: Open
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: Unassigned
+- Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py`, `03_Implement/backend/tests/test_trusted_auth_edge.py`, `01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`
-- Related ADR/Spec: `01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`, `01_Plans/issues/issue-OPS-SAAS-SCALE-01-in-process-state-blocks-horizontal-scaling.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`, `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（Proposed）, `01_Plans/issues/issue-AUTH-ONE-TIME-JWT-01-request-token-supply-contract.md`
 - Expected verification level: `unit`
 
 ## 課題
@@ -82,16 +82,16 @@ if provider is None:                              # ← 到達不能
 
 ## 受入条件
 
-- [ ] AC-1: `jti` を持たないトークンの扱いが明示的に決定され、コードと docstring と `04_Documentation/` の記述が一致している。
-- [ ] AC-2: `_JtiCache.check_and_record()` が、キャッシュ満杯時を含め1回あたり償却 O(1) で動作する。10万件投入後の1回あたり処理時間をベンチで確認する。
-- [ ] AC-3: `trusted_auth_edge.py` の docstring が、実際に成立する保証（プロセス内かクラスタ全体か）を正確に記述している。
-- [ ] AC-4: 未登録 issuer からの認証試行が INFO 以上でログに残る（到達不能コードの解消）。
-- [ ] AC-5: 認証エッジのログ出力に含める識別子が PII 方針（`THREAT_MODEL.md`）と整合していることを確認・記録する。
-- [ ] AC-6: リプレイ検出の既存テストが維持され、`jti` 無しトークンの挙動を固定するテストが追加されている。
+- [x] AC-1: `jti`を持たない通常Bearer tokenを許可し、code、docstring、運用文書を一致させた。
+- [x] AC-2: 誤ったone-time access-token方式と`_JtiCache`自体を削除したため、O(n) cache経路は存在しない。強いreplay防御の性能要件は採用方式のissueへ移した。
+- [x] AC-3: `trusted_auth_edge.py`のdocstringを、Bearer再利用は期限に従いsender-constrained replay防御は別protocolであるという実保証へ訂正した。
+- [x] AC-4: 未登録issuerをINFOで記録する分岐を到達可能にした。
+- [x] AC-5: auth edge logはprovider/issuerまでに限定し、tenant ref、subject、user ID、生`jti`を出さない。
+- [x] AC-6: 同じ有効Bearer tokenの連続利用、異なる`jti`、`jti`欠損を回帰testで固定した。
 
-## 依存関係
+## 後続課題（依存ではない）
 
-- `01_Plans/issues/issue-OPS-SAAS-SCALE-01-in-process-state-blocks-horizontal-scaling.md`（制約2の解決先）
+- 強いsender-constrained replay防御の方式判断と実装は`AUTH-ONE-TIME-JWT-01`および`ADR-0074`を正本とする。本issueは「存在していた不正確なone-time jti実装とO(n) cacheの撤去」を完了範囲とし、BFF/DPoPが未実装であることを隠さない。
 
 ## 検証
 
@@ -106,3 +106,8 @@ if provider is None:                              # ← 到達不能
 - 強いreplay防御はaccess token `jti`だけでは成立しない。DPoP/BFF/短命Bearer継続の方式判断は`AUTH-ONE-TIME-JWT-01`を正本とするため、本issueをOpenへ戻した。
 - unknown providerのlogを到達可能にし、tenant ref、subject、user ID、生`jti`をauth-edge logへ出さない形に統一した。
 - module docstring、operations、認証architectureを現行Bearer方式の保証範囲へ同期した。
+
+## 完了確認（2026-08-11）
+
+- 現コードに`_JtiCache`、`_jti_cache`、`token_replayed`経路が存在しないことを再確認した。
+- `TestBearerTokenJtiHandling`が同一tokenの連続利用と`jti`任意契約を直接検査する。旧issueの6 ACはすべて現在のコード／test／文書で充足し、未決の強いreplay防御は別issueへ一意に移管済みのためDoneとする。
