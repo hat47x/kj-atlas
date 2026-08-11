@@ -415,6 +415,137 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `providerKind: "none" | "local" | "large-scale"`
 - 設定解決後のprovider種別を表示用に返すread-only echoであり、providerへの疎通確認は行わない。`local_http` 設定は `local` に正規化される。
 
+### 2.12 AI/LLM生成API
+
+全エンドポイント共通:
+- tenant-scoped precondition必須（§10 参照）
+- proposal-only: AI出力は候補生成に留まり、人間の明示操作なしに文書へ反映されない
+- SafeMode ON時は未レビューカード本文をAIへ送信しない
+- `KJ_ATLAS_LLM_PROVIDER=none` 時は全エンドポイントが503（provider disabled）を返す
+- モデル選択は操作別モデルレベル定義（AGENTS.md §1.2）に従う
+
+**POST** `/ai/suggest-layout`
+
+- Request: `SuggestLayoutRequest`
+  - `doc: DocumentV1` — 現在の文書全体
+  - `instruction?: string` — 配置指示（任意）
+- Response: `SuggestLayoutResponse`
+  - `suggestionId: string` — 提案の一意識別子
+  - `suggestedDoc: DocumentV1` — 再配置後の文書
+  - `notes?: string` — AIからの補足
+- キャンバス全体の空間配置（島・カードの位置）を提案する。指示文があればそれに沿った配置を試みる。
+
+**POST** `/ai/suggest-merges`
+
+- Request: `SuggestMergesRequest`
+  - `doc: DocumentV1` — 現在の文書全体
+- Response: `SuggestMergesResponse`
+  - `suggestions: MergeSuggestion[]` — 統合候補の配列
+- 類似カードの統合候補を提案する。各候補は統合対象カード群と統合理由を含む。
+
+**POST** `/ai/suggest-island-summary`
+
+- Request: `SuggestIslandSummaryRequest`
+  - `islandId: string` — 対象の島ID
+  - `cardTexts: string[]` — 島に属するカードの本文（レビュー済みのみ）
+- Response: `SuggestIslandSummaryResponse`
+  - `summaryText: string` — 表札候補文
+- 島の表札（ラベル）を提案する。表札は分類名ではなく、カード群の訴えを代弁する文でなければならない（kj_technique.md §3 表札検査）。
+
+**POST** `/ai/proposals/island-summary`
+
+- Request: `ProposeIslandSummaryRequest`
+  - `doc: DocumentV1`
+  - `islandId: string`
+  - `sourceBundleHash: string` — context bundleのハッシュ
+- Response: `ProposalEnvelope`
+  - `type: "island_summary"`
+  - `proposalId: string`
+  - `diff: ProposalDiff` — `entityType: "island_summary"`, `field: "summaryText"`
+  - `status: "proposed"`
+  - `reviewState: "unreviewed"`
+- `/ai/suggest-island-summary` のproposalラッパー。人間の明示的Adopt/Reject/Hold操作を経て文書へ反映される。
+
+**POST** `/ai/proposals/audit`
+
+- Request: `ProposalDecisionAuditRequest`
+  - `proposalId: string`
+  - `decision: "adopt" | "reject" | "hold"`
+  - `reviewer: string` — `user:<users.id>` 形式
+- Response: `ProposalDecisionAuditResponse`
+  - `recorded: boolean`
+- proposalに対する人間の判断（Adopt/Reject/Hold）を記録する。記録は `merge_decision_logs` テーブルへ追記される。
+
+**POST** `/ai/generate-narrative`
+
+- Request: `GenerateNarrativeRequest`
+  - `doc: DocumentV1` — 現在の文書全体
+- Response: `GenerateNarrativeResponse`
+  - `narrative: Narrative` — 生成された文章
+- A型図解（空間配置）からB型叙述（文章）を生成する。生成後はA/B照合（kj_technique.md §5）を人間が実施する必要がある。
+
+**POST** `/ai/check-narrative`
+
+- Request: `CheckNarrativeRequest`
+  - `narrative: Narrative`
+  - `doc: DocumentV1`
+- Response: `CheckNarrativeResponse`
+  - `issues: NarrativeIssue[]` — A/B照合で検出された不整合
+- 生成されたナラティブとA型図解の整合性をチェックする。A型にあってB型で落ちた島、B型にあってA型にない記述を検出する。
+
+**POST** `/ai/refine-card-text`
+
+- Request: `RefineCardTextRequest`
+  - `cardText: string` — 元のカード本文
+  - `context?: string` — 周辺カードの本文（任意）
+- Response: `RefineCardTextResponse`
+  - `refinedText: string` — 改善された文
+  - `reasoning?: string` — 変更理由
+- カード本文を明確かつ簡潔に改善する。名詞止め禁止（動詞で終わる文）を遵守する。
+
+**POST** `/ai/suggest-card-groups`
+
+- Request: `SuggestCardGroupsRequest`
+  - `cards: CardRef[]` — カードの配列（id + text、最大100件）
+- Response: `SuggestCardGroupsResponse`
+  - `groups: SuggestedGroup[]` — グループの配列
+    - `label: string`
+    - `cardIds: string[]`
+    - `rationale?: string`
+- カード群のテーマ別グループ化（島候補）を提案する。1段目の束は2〜3枚が原則。
+
+**POST** `/ai/detect-contradiction`
+
+- Request: `DetectContradictionRequest`
+  - `cardA: CardRef`
+  - `cardB: CardRef`
+- Response: `DetectContradictionResponse`
+  - `hasContradiction: boolean`
+  - `explanation?: string`
+- 2枚のカード間の論理的矛盾を検出する。異なる意見（単なる相違）は矛盾として扱わない。
+
+**POST** `/ai/assess-card-importance`
+
+- Request: `AssessCardImportanceRequest`
+  - `cards: CardRef[]` — カードの配列（最大100件）
+- Response: `AssessCardImportanceResponse`
+  - `assessments: CardAssessment[]`
+    - `cardId: string`
+    - `importance: "high" | "medium" | "low"`
+    - `rationale?: string`
+- カード群の中での相対的重要度を評価する。重要度は表示補助であり、スコアリングや自動フィルタリングには使用しない（反スコアリング原則）。
+
+**POST** `/ai/suggest-document-title`
+
+- Request: `SuggestDocumentTitleRequest`
+  - `islandTitles: string[]` — 島の表札一覧（最大50件）
+  - `cardTexts: string[]` — レビュー済みカード本文（最大50件）
+  - `currentTitle?: string` — 現在のタイトル
+- Response: `SuggestDocumentTitleResponse`
+  - `candidates: DocumentTitleCandidate[]` — タイトル候補（1〜3件）
+    - `title: string`
+- 文書全体の内容を反映したタイトル候補を提案する。低品質許容・人間が書き換える前提。候補は並列提示し、順位付け・スコア表示は行わない。
+
 ---
 
 ## 3. レスポンス例（概要）
