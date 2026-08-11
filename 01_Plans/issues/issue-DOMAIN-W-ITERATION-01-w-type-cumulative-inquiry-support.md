@@ -91,7 +91,7 @@
 - [x] AC-8: 中断後の再開ブリーフから、問い、未解決点、次の行動、元成果へ移動できる。
 - [x] AC-9: 引継ぎ確認を一件ずつ採用・修正・見送り・保留でき、未回答でも保存できる。
 - [x] AC-10: `KJ_ATLAS_LLM_PROVIDER=none` で中核操作を完了できる。
-- [x] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。→ `02_Architecture/inquiry_journey_model.html` §4.4（SafeMode派生bundle契約）、§4.5（Import strict validation契約）、§4.6（部分共有契約）、§4.3（削除と保持）、§07 不変条件 8-10 として契約化済み（2026-07-20）。SafeMode適用結果と共有範囲を受信側で検証できるbundle内metadata（`InquiryExportInfoV1`）も実装・検証済み（2026-08-02、`aa74a0c9`）。保持・履歴削除の実体化はbackend永続化とともに未完了のため、support levelは`L0: Planned`を維持する。
+- [ ] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。SafeMode適用結果と共有範囲を受信側で検証できるbundle metadata、tenant-scoped backend保存、探究全体削除とcontent-free監査は実装済み。保持期限、expiry enforcement、purge/history-retention operationが未実装のため未完了とする。
 - [x] AC-12: マウス・キーボード・390px・代表規模のE2Eが通る。
 - [x] AC-13: 探究終了（破壊的操作）の確認は、A-1（エージェント連携）と同型の保存・破棄・取消の3択とし、SafeMode既定ONの継承と出典・文面のサニタイズを満たす。→ 2026-07-29チェックポイントで完了。
 
@@ -110,6 +110,10 @@
 - [x] T8 マウス・キーボード・390pxのE2Eとスクリーンショットを取得する。
 - [ ] T9 Phase 2の実使用後に、AI支援を別issueへ分割するか判断する。→ 判断状態（2026-08-07）: Phase 3のproposal-only AI支援は未実装で、現行は手動中核のみ（`inquiry_bundle_io`/`projection`/`safe_mode`/`share`）。T9は「Phase 2の実使用後」が前提のため、実使用フィードバック待ち。実使用でAI支援の不足が確認された場合のみ、別issueへ分割しPhase 3要件を具体化する。現時点では判断不能（実使用なし）。
 - [ ] T10 Claude Design（外部レビュー、2026-07-21 P35）の指摘を踏まえ、探究終了確認をAC-13の3択へ改修し、常設タブ化時のメニュー分類（P29確定6分類：ファイル/編集/カード/表示/作業/共有）内の配置は実機照合時に決定する（新規7分類は作らない＝CB-1）。→ 3択への改修（AC-13本体）は2026-07-29チェックポイントで完了。常設タブ化時のメニュー配置は未着手のまま残す（プロトタイプ内の高度機能タブのまま。実機照合＝Claude Design側の判断待ち）。
+
+## 依存関係
+
+- `01_Plans/issues/issue-DATA-INQUIRY-RETENTION-01-backend-expiry-and-purge-policy.md`（AC-11の保持期限・purge。方針決定と実装が前提）
 
 ### Phase 0 実装証跡（2026-07-15）
 
@@ -290,6 +294,12 @@ AC-11 remains incomplete. The checklist entry above must not be treated as a com
 ### Backend persistence checkpoint (2026-08-06)
 
 The independent backend lifecycle boundary is now implemented for tenant-scoped opaque bundle save, read, and inquiry-level delete. Deletion writes content-free audit evidence in the same transaction, and focused route/repository tests cover roundtrip, validation, tenant isolation, deletion audit, and missing-delete rollback. Retention policy, expiry enforcement, and purge/history-retention operations remain unimplemented; AC-11 therefore remains open and `L0: Planned`.
+
+### Backend payload limit correction checkpoint (2026-08-11)
+
+- 正本とfrontendは5 MiBを警告境界、20 MiBを絶対拒否上限としていたが、backend routeだけが5 MiBを絶対上限として413を返していた。このためfrontendで正当にexportできる5〜20 MiBのbundleをbackendへ保存できなかった。
+- backend絶対上限を20 MiBへ同期し、5 MiB超のpayloadが保存できること、20 MiB超のJSON payloadが本文を保存せず413 `inquiry_bundle_too_large`となることをroute testで固定した。5 MiB警告は利用者へ表示するfrontend責務のままで、backendが警告状態を永続化する契約は追加していない。
+- この修正は保持期限・purgeを実装しないためAC-11は未完了のままとする。
 
 ## Traceability
 

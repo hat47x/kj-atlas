@@ -27,9 +27,13 @@ from pathlib import Path
 import pytest
 
 from kj_atlas_api import models
+from kj_atlas_api.routes.inquiry_bundles import MAX_INQUIRY_BUNDLE_PAYLOAD_BYTES
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TYPES_TS_PATH = REPO_ROOT / "03_Implement" / "frontend" / "src" / "domain" / "types.ts"
+INQUIRY_BUNDLE_IO_TS_PATH = (
+    REPO_ROOT / "03_Implement" / "frontend" / "src" / "domain" / "inquiry_bundle_io.ts"
+)
 
 # TS type name -> Pydantic model class in kj_atlas_api.models. Names diverge in one case
 # (MergeSuggestionDecisionEntry / MergeSuggestionDecision) -- that mismatch is itself
@@ -61,6 +65,16 @@ KNOWN_TS_ONLY_GAPS: dict[str, set[str]] = {
 KNOWN_PY_ONLY_GAPS: dict[str, set[str]] = {}
 
 FIELD_LINE_RE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\??\s*:")
+
+
+def test_inquiry_bundle_absolute_byte_limit_matches_frontend_contract() -> None:
+    source = INQUIRY_BUNDLE_IO_TS_PATH.read_text(encoding="utf-8")
+    match = re.search(
+        r"INQUIRY_BUNDLE_MAX_BYTES\s*=\s*(\d+)\s*\*\s*1024\s*\*\s*1024",
+        source,
+    )
+    assert match is not None, "could not resolve frontend inquiry bundle absolute limit"
+    assert MAX_INQUIRY_BUNDLE_PAYLOAD_BYTES == int(match.group(1)) * 1024 * 1024
 
 
 def _extract_ts_type_fields(source: str, type_name: str) -> set[str]:

@@ -23,7 +23,7 @@ from kj_atlas_api.tenant_session_precondition import (
 
 
 router = APIRouter(prefix="/inquiry-bundles", tags=["inquiry-bundles"])
-MAX_INQUIRY_BUNDLE_PAYLOAD_BYTES = 5 * 1024 * 1024
+MAX_INQUIRY_BUNDLE_PAYLOAD_BYTES = 20 * 1024 * 1024
 MAX_JOURNEY_ID_LENGTH = 256
 
 

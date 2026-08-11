@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -156,11 +157,14 @@ def test_get_and_delete_are_tenant_scoped_and_delete_writes_content_free_audit(t
     assert "tenant-b-only" not in str(events[0].__dict__)
 
 
-def test_missing_or_empty_journey_id_and_oversized_payload_are_rejected(tmp_path) -> None:
+def test_missing_journey_id_and_payload_over_absolute_limit_are_rejected(tmp_path) -> None:
     with _client(tmp_path) as fixture:
         client, session_local, _ = fixture
         empty = client.post("/inquiry-bundles/%20", json={"version": 1})
-        oversized = client.post("/inquiry-bundles/too-big", json={"data": "x" * (5 * 1024 * 1024)})
+        oversized = client.post(
+            "/inquiry-bundles/too-big",
+            json={"data": "x" * (20 * 1024 * 1024)},
+        )
         with session_local() as db:
             rows = db.scalars(select(InquiryBundleRow)).all()
 
@@ -169,6 +173,20 @@ def test_missing_or_empty_journey_id_and_oversized_payload_are_rejected(tmp_path
     assert oversized.status_code == 413
     assert oversized.json()["detail"]["code"] == "inquiry_bundle_too_large"
     assert rows == []
+
+
+def test_payload_above_warning_boundary_but_below_absolute_limit_is_stored(tmp_path) -> None:
+    with _client(tmp_path) as fixture:
+        client, session_local, _ = fixture
+        payload = {"data": "x" * (5 * 1024 * 1024)}
+
+        response = client.post("/inquiry-bundles/large-valid", json=payload)
+        with session_local() as db:
+            row = db.get(InquiryBundleRow, ("tenant-a", "large-valid"))
+
+    assert response.status_code == 204
+    assert row is not None
+    assert json.loads(row.payload_json) == payload
 
 
 def test_routes_fail_closed_without_trusted_server_resolved_tenant(tmp_path) -> None:

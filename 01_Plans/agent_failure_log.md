@@ -440,3 +440,9 @@ Updated: 2026-08-03
 - 原因: 検索語をshell構文として解釈される引用方式で渡した。
 - 対応: 出力に秘密情報や状態変更がないことを確認し、以後の検索語は単一引用符またはbacktickを含まない表現にする。
 - 再発防止: shellへ渡す検索文字列にbacktick、`$()`、変数展開がないか実行前に確認し、Markdown断片は原則として単一引用符で囲む。
+## 2026-08-11: inquiry bundle境界testの標準library import漏れ
+
+- 事象: 5 MiB超bundle保存testはroute成功後、保存JSON照合時に`NameError: json is not defined`で1件失敗した。
+- 原因: 新しいassertで`json.loads()`を使ったが、test moduleのimport更新を同時に行わなかった。
+- 対応: `import json`を追加し、対象route suiteを再実行した。
+- 再発防止: 新しいmodule名をtestへ導入した場合は、実行前に対象fileのimportとRuffを確認する。
