@@ -165,6 +165,14 @@ This is a phased checklist plan for local LLM integration in kj-atlas, covering 
 
 
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | LFM2.5等の軽量ローカルLLMを主軸にした運用へ移行し、none/fixture/local/externalを設定で切替可能にする。本番はLocal-firstを基本とし必要時のみdeterministic triggerでエスカレーションする | 機能: Provider Interfaceで設定切替可能にしCIの既定をfixture+rule checksに固定して再現性を担保。データ: safeModeおよび漏えい防止を評価ゲートと運用手順の両面で満たす |
+| **データ設計** | `llm_provider_spec.md`でI/F定義、`llm_runtime_constraints.md`で通信制約（in-process/IPC優先）、`llm_quality_strategy.md`で二層評価基準をレビュー確定する | 業務: ローカルLLMの利用は秘密情報の外部送信を避けプライバシー既定（P-07）を維持。機能: エスカレーションはlarge-scaleへの明示opt-in時に限定 |
+| **機能設計** | Phase A仕様固定→Phase B/CでProvider実装と評価ゲートを段階導入。providerはnone/fixture/local/externalの切替を環境変数で実現 | 業務: provider=externalは明示設定時のみ利用（既定値はnone）。データ: 二層評価（品質・安全）で生成物の品質と漏えい防止を確認 |
+
 ## Consequences
 
 - 旧文書 `phaseX_local_llm_integration.md` は廃止し、本ADRへ参照を統一する。

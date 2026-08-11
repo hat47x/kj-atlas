@@ -47,6 +47,14 @@ Non-goals:
 | Public runtime contract | `KJ_ATLAS_*` only | Users / operators | Runtime registry, configuration docs, Compose input surface | MUST be documented and supported as public keys. |
 | Private adapter boundary | vendor-defined names (for example `POSTGRES_*`) | Compose/build implementation only | Third-party container `environment` / build internals | MUST NOT be exposed as public configuration keys. |
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | Composeデプロイは公式PostgreSQL等のthird-partyイメージを使い、そのイメージは独自のコンテナ環境契約を持つ。「全環境変数が`KJ_ATLAS_*`」を「公開設定は`KJ_ATLAS_*`」と「デプロイ内の全プロセスが非KJ_ATLAS名を受け取らない」の2解釈に分けて明確な境界を定める | 機能: 非`KJ_ATLAS_*`変数は公開設定として文書化・受付・要求しない。データ: 利用者向け公開文書とrunbookは`KJ_ATLAS_*`のみを設定させる |
+| **データ設計** | 第三者イメージやビルドツールがvendor-defined名を要求する場合、`KJ_ATLAS_*`入力からprivate名へサービス/ビルド境界で写像するadapter境界とする。直接の利用者設定は非対応 | 業務: 公開設定契約を単純かつ監査可能に保ち、third-partyイメージの環境APIを利用者へ露出しない。機能: vendor-defined名の直接設定は非対応 |
+| **機能設計** | より厳格な解釈（バンドルデプロイ内のプロセス環境に非`KJ_ATLAS_*`名を含めない）が必要なら別のアーキテクチャ変更として扱い、PostgreSQLをプロジェクト所有の初期化/runtime経路かmanaged-database限定に置換するまでDoneにしない | 業務: DBトポロジ再設計・レガシー非接頭辞変数の互換・SafeMode/access-control/export変更は非目標。データ: adapter境界は公開設定の例外ではなく写像として扱う |
+
 ## Consequences
 
 Expected benefits:
