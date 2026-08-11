@@ -1,7 +1,7 @@
 # Issue: EXT-AGENT-AUDIT-01 外部取込proposal判断の由来を監査連鎖へ接続する
 
 - Type: Architecture / Security / Data
-- Status: In Progress
+- Status: Done
 - Source Issue: EXT-AGENT-02
 - Priority: P2
 - Owner: Maintainer
@@ -22,10 +22,10 @@
 
 ## 受入条件
 
-- [ ] task exportからresponse import、proposal判断まで同一の相関chainを検証できる。※ export→importのローカル検証まで完了。判断監査endpointは未実装。
-- [ ] document・tenant越境、stale base、taskId再利用、bundleHash不一致を拒否する。※ tenant-scoped local ledger、document/stale/hash照合は完了。server側のtask消費記録は未実装。
-- [ ] 署名なしclipboard応答の由来強度をUIと監査eventで過大表示しない。※ UI表示は完了。監査eventは未実装。
-- [ ] idempotentなadopt/rejectと、監査失敗時に適用済みと表示しない順序をtestする。
+- [x] task exportからresponse import、proposal判断まで同一の相関chainを検証できる。
+- [x] document・tenant越境、stale base、taskId再利用、bundleHash不一致を拒否する。
+- [x] 署名なしclipboard応答の由来強度をUIと監査eventで過大表示しない。
+- [x] idempotentなadopt/rejectと、監査失敗時に適用済みと表示しない順序をtestする。
 - [x] CE2 endpointへ外部取込用の架空sourceBundleHashを送らない。
 
 ## 2026-08-11 実装チェックポイント
@@ -34,4 +34,7 @@
 - responseは相関ブロック全体をechoする。取込時にtaskId、document、base signature、bundle/query hash、task kindを台帳と照合する。
 - 旧responseはlenient modeだけで受け入れ、由来を`unverified-legacy`と表示する。strict modeでは完全相関を必須とする。
 - 提案の画面内識別子を`taskId + proposalId`へ変更し、別タスク間のproposalId衝突を除去した。
-- 残作業は、署名なしという由来強度を保持する外部提案専用のserver registry / decision eventと、監査成功後にだけ適用済みへ遷移させる順序制御である。
+- server側へcontent-freeな`external_agent_tasks`台帳を追加し、taskIdをテナント内一意として相関全体を固定する。出力は登録失敗時にfail-closedとする。
+- 外部提案は正規化後の内容指紋だけを共通proposal台帳へ登録し、本文・根拠は保存しない。由来は`external_agent / user_presented_unsigned`として判断eventにも固定する。
+- 採用・破棄は外部専用endpointへ冪等記録してからUI状態またはDocumentを変更する。監査失敗時は未適用のまま維持する。
+- 旧responseは表示のみ可能とし、完全相関がないため採用・破棄操作を無効化する。

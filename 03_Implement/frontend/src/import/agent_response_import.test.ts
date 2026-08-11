@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { extractJsonPayload, parseAgentResponse } from "./agent_response_import";
+import {
+  buildExternalProposalAuditId,
+  extractJsonPayload,
+  fingerprintAgentProposal,
+  parseAgentResponse,
+} from "./agent_response_import";
 import { ZIP_MAX_TEXT_FILE_BYTES } from "./zip_import";
 
 function buildValidResponseJson(overrides: Record<string, unknown> = {}): string {
@@ -220,5 +225,21 @@ describe("parseAgentResponse", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(typeof result.response.proposals[0].content.text).toBe("string");
+  });
+});
+
+describe("external proposal audit identity", () => {
+  it("namespaces repeated proposal ids by task and fingerprints sanitized content", async () => {
+    const parsed = parseAgentResponse(buildValidResponseJson());
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const proposal = parsed.response.proposals[0];
+    expect(await buildExternalProposalAuditId("task-a", "p1")).not.toBe(
+      await buildExternalProposalAuditId("task-b", "p1"),
+    );
+    expect(await fingerprintAgentProposal(proposal)).toHaveLength(64);
+    expect(await fingerprintAgentProposal({ ...proposal, rationale: "changed" })).not.toBe(
+      await fingerprintAgentProposal(proposal),
+    );
   });
 });

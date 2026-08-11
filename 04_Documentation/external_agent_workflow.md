@@ -119,7 +119,10 @@ Copilot などのチャット欄にそのまま貼り付けるだけで使えま
 ## 関連 API
 
 - `POST /docs/{id}/export-audit`（タスクシート書き出しの記録）
-- `POST /ai/proposals/audit` はアプリ内生成提案専用です。外部取込提案の採否監査は未実装であり、同APIへ由来情報を偽装して送りません。
+- `POST /ai/external-tasks/register`（本文を含まないタスク相関の登録。失敗時は書き出しを中止）
+- `POST /ai/external-proposals/register`（本文を含まない外部提案指紋の登録）
+- `POST /ai/external-proposals/audit`（外部提案の採否記録。成功後だけ文書へ反映）
+- `POST /ai/proposals/audit` はアプリ内生成提案専用であり、外部提案には使用しません。
 
 API の詳細は実装と設計正本を参照してください。この文書では、利用者・運用者向けの手順とデータ境界の確認だけを説明します。
 

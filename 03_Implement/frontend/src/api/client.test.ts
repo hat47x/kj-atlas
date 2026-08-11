@@ -13,7 +13,10 @@ import {
   postExportAudit,
   proposeIslandSummary,
   putDocument,
+  recordExternalAgentProposalDecision,
   recordProposalDecision,
+  registerExternalAgentProposal,
+  registerExternalAgentTask,
   summarizeIslandRelation,
   suggestMerges,
   suggestLayout,
@@ -106,6 +109,9 @@ describe("tenant-scoped document request precondition", () => {
       }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ suggestions: [] }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ proposalId: "proposal-1" }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ registered: true }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ registered: true }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ recorded: true }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({
         recorded: true,
         eventId: "event-1",
@@ -130,6 +136,34 @@ describe("tenant-scoped document request precondition", () => {
     await suggestLayout(createDocument(), undefined, requestOptions);
     await suggestMerges(createDocument(), undefined, requestOptions);
     await proposeIslandSummary(createDocument(), "island-1", "bundle-1", requestOptions);
+    await registerExternalAgentTask({
+      docId: "doc-1",
+      taskId: "task-1",
+      baseDocSignature: "doc-1:revision-1",
+      sourceBundleHash: "a".repeat(64),
+      queryCanonicalHash: "b".repeat(64),
+      taskKind: "critique_suggestions",
+      provenanceLevel: "user_presented_unsigned",
+    }, requestOptions);
+    await registerExternalAgentProposal({
+      docId: "doc-1",
+      taskId: "task-1",
+      baseDocSignature: "doc-1:revision-1",
+      sourceBundleHash: "a".repeat(64),
+      queryCanonicalHash: "b".repeat(64),
+      proposalId: "external-1",
+      proposalKind: "critique",
+      proposalFingerprint: "c".repeat(64),
+      provenanceLevel: "user_presented_unsigned",
+    }, requestOptions);
+    await recordExternalAgentProposalDecision({
+      docId: "doc-1",
+      proposalId: "external-1",
+      sourceBundleHash: "a".repeat(64),
+      idempotencyKey: "external-1:adopt",
+      decision: "adopt",
+      provenanceLevel: "user_presented_unsigned",
+    }, requestOptions);
     await recordProposalDecision({
       docId: "doc-1",
       proposalId: "proposal-1",
@@ -150,7 +184,7 @@ describe("tenant-scoped document request precondition", () => {
     await checkNarrative(createDocument(), "narrative", undefined, requestOptions);
     await generateNarrative(createDocument(), undefined, requestOptions);
 
-    expect(fetchMock).toHaveBeenCalledTimes(7);
+    expect(fetchMock).toHaveBeenCalledTimes(10);
     for (const [, init] of fetchMock.mock.calls) {
       expect(init).toMatchObject({
         headers: {

@@ -14,6 +14,8 @@ export type ImportedProposalStatus = "pending" | "adopted" | "rejected";
 export type ImportedProposalReview = ParsedAgentProposal & {
   reviewKey: string;
   taskId: string;
+  auditProposalId?: string;
+  sourceBundleHash?: string;
   provenance: AgentResponseProvenance;
   status: ImportedProposalStatus;
   orphaned: boolean;
@@ -238,7 +240,11 @@ export function AgentResponseImportPanel({
               {review.patchHasDeleteOps ? (
                 <div style={{ fontSize: 11, color: "#9a3412" }}>{t("agent_response_import.patch_delete_ops_warning")}</div>
               ) : null}
-              {review.status === "pending" ? (
+              {review.status === "pending" && !review.auditProposalId ? (
+                <div style={{ fontSize: 11, color: "#92400e" }}>
+                  {t("agent_response_import.audit_required_status_message")}
+                </div>
+              ) : review.status === "pending" ? (
                 <div style={{ display: "flex", gap: 6 }}>
                   {review.orphaned ? null : review.patchSignatureMismatch ? (
                     <button type="button" onClick={() => onExportPatchFile(review.reviewKey)} style={{ ...buttonStyle, flex: 1 }}>

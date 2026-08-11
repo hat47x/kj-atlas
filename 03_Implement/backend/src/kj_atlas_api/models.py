@@ -551,12 +551,53 @@ class UserIdentityRow(Base):
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class ExternalAgentTaskRow(Base):
+    __tablename__ = "external_agent_tasks"
+    __table_args__ = (
+        CheckConstraint(
+            "length(source_bundle_hash) = 64 AND length(query_canonical_hash) = 64",
+            name="ck_external_agent_tasks_hash_lengths",
+        ),
+        CheckConstraint(
+            "provenance_level = 'user_presented_unsigned'",
+            name="ck_external_agent_tasks_provenance",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "doc_id"],
+            ["documents.tenant_id", "documents.id"],
+            name="fk_external_agent_tasks_tenant_document",
+            ondelete="CASCADE",
+        ),
+    )
+
+    tenant_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    task_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    doc_id: Mapped[str] = mapped_column(Text, nullable=False)
+    base_doc_signature: Mapped[str] = mapped_column(Text, nullable=False)
+    source_bundle_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    query_canonical_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    task_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    provenance_level: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class AIProposalRow(Base):
     __tablename__ = "ai_proposals"
     __table_args__ = (
         CheckConstraint(
             "length(source_bundle_hash) = 64",
             name="ck_ai_proposals_bundle_hash_length",
+        ),
+        CheckConstraint("origin IN ('internal', 'external_agent')", name="ck_ai_proposals_origin"),
+        CheckConstraint(
+            "(origin = 'internal' AND task_id IS NULL AND base_doc_signature IS NULL "
+            "AND query_canonical_hash IS NULL AND proposal_fingerprint IS NULL "
+            "AND provenance_level IS NULL) OR "
+            "(origin = 'external_agent' AND task_id IS NOT NULL "
+            "AND base_doc_signature IS NOT NULL AND length(query_canonical_hash) = 64 "
+            "AND length(proposal_fingerprint) = 64 "
+            "AND provenance_level = 'user_presented_unsigned')",
+            name="ck_ai_proposals_external_provenance",
         ),
         ForeignKeyConstraint(
             ["tenant_id", "doc_id"],
@@ -571,6 +612,12 @@ class AIProposalRow(Base):
     proposal_id: Mapped[str] = mapped_column(Text, primary_key=True)
     proposal_kind: Mapped[str] = mapped_column(Text, nullable=False)
     source_bundle_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    origin: Mapped[str] = mapped_column(Text, nullable=False, default="internal", server_default="internal")
+    task_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    base_doc_signature: Mapped[str | None] = mapped_column(Text, nullable=True)
+    query_canonical_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    proposal_fingerprint: Mapped[str | None] = mapped_column(Text, nullable=True)
+    provenance_level: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
@@ -618,6 +665,16 @@ class AIProposalDecisionEventRow(Base):
             "reason_utf8_bytes >= 0",
             name="ck_ai_proposal_decision_events_reason_size",
         ),
+        CheckConstraint(
+            "proposal_origin IN ('internal', 'external_agent')",
+            name="ck_ai_proposal_decision_events_origin",
+        ),
+        CheckConstraint(
+            "(proposal_origin = 'internal' AND provenance_level IS NULL) OR "
+            "(proposal_origin = 'external_agent' "
+            "AND provenance_level = 'user_presented_unsigned')",
+            name="ck_ai_proposal_decision_events_provenance",
+        ),
         ForeignKeyConstraint(
             ["tenant_id", "doc_id"],
             ["documents.tenant_id", "documents.id"],
@@ -648,6 +705,8 @@ class AIProposalDecisionEventRow(Base):
     idempotency_key: Mapped[str] = mapped_column(Text, nullable=False)
     decision: Mapped[str] = mapped_column(Text, nullable=False)
     reviewer_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    proposal_origin: Mapped[str] = mapped_column(Text, nullable=False, default="internal", server_default="internal")
+    provenance_level: Mapped[str | None] = mapped_column(Text, nullable=True)
     reason_sha256: Mapped[str | None] = mapped_column(Text, nullable=True)
     reason_utf8_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
     recorded_at: Mapped[str] = mapped_column(Text, nullable=False)

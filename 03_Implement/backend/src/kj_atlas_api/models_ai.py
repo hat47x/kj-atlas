@@ -166,10 +166,73 @@ class ProposalDecisionAuditRequest(BaseModel):
 class ProposalDecisionAuditResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    recorded: Literal[True] = True
+    eventId: str = Field(min_length=1)
     proposalId: str = Field(min_length=1)
     status: Literal["accepted", "rejected", "held"]
-    reviewState: Literal["unreviewed"]
+    reviewState: Literal["unreviewed"] = "unreviewed"
     recordedAt: str = Field(min_length=1)
+
+
+class ExternalAgentProposalRegistrationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    docId: str = Field(min_length=1, max_length=128)
+    taskId: str = Field(min_length=1, max_length=128)
+    baseDocSignature: str = Field(min_length=1, max_length=512)
+    sourceBundleHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
+    queryCanonicalHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
+    proposalId: str = Field(min_length=1, max_length=128)
+    proposalKind: Literal[
+        "island_title",
+        "merge_candidate",
+        "narrative_draft",
+        "opposing_viewpoint",
+        "critique",
+        "patch",
+    ]
+    proposalFingerprint: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
+    provenanceLevel: Literal["user_presented_unsigned"]
+
+
+class ExternalAgentTaskRegistrationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    docId: str = Field(min_length=1, max_length=128)
+    taskId: str = Field(min_length=1, max_length=128)
+    baseDocSignature: str = Field(min_length=1, max_length=512)
+    sourceBundleHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
+    queryCanonicalHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
+    taskKind: Literal[
+        "island_titles",
+        "merge_candidates",
+        "narrative_draft",
+        "opposing_viewpoints",
+        "critique_suggestions",
+        "free_analysis",
+    ]
+    provenanceLevel: Literal["user_presented_unsigned"]
+
+
+class ExternalAgentTaskRegistrationResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    registered: Literal[True] = True
+    taskId: str
+    provenanceLevel: Literal["user_presented_unsigned"]
+
+
+class ExternalAgentProposalRegistrationResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    registered: Literal[True] = True
+    proposalId: str
+    provenanceLevel: Literal["user_presented_unsigned"]
+
+
+class ExternalAgentProposalDecisionRequest(ProposalDecisionAuditRequest):
+    provenanceLevel: Literal["user_presented_unsigned"]
+
 
 # ---------------------------------------------------------------------------
 # ADR-0064: KJ-method card-level AI operations
@@ -278,6 +341,3 @@ class SuggestDocumentTitleResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     candidates: list[_DocumentTitleCandidate] = Field(min_length=1, max_length=3)
-    status: Literal["accepted", "rejected", "held"]
-    reviewState: Literal["unreviewed"]
-    recordedAt: str = Field(min_length=1)

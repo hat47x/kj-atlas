@@ -2,6 +2,7 @@ import { sanitizeMarkdownForDisplay } from "./markdown_sanitize";
 import { ZIP_MAX_TEXT_FILE_BYTES } from "./zip_import";
 import type { PatchOp, PatchV1 } from "../domain/patch/patch_types";
 import { parsePatchOp } from "../domain/patch/patch_apply";
+import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
 import { AGENT_TASK_KINDS, type AgentTaskCorrelation } from "../export/agent_task_export";
 
 // EXT-AGENT-02 (ADR-0049 D3, spec `02_Architecture/external_agent_collaboration_spec.md`
@@ -83,6 +84,20 @@ export type AgentResponseImportResult =
   | { ok: false; errors: string[] };
 
 const FENCE_PATTERN = /```(?:json)?\s*([\s\S]*?)```/i;
+
+async function sha256Hex(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export async function fingerprintAgentProposal(proposal: ParsedAgentProposal): Promise<string> {
+  return sha256Hex(canonicalizeJson(proposal));
+}
+
+export async function buildExternalProposalAuditId(taskId: string, proposalId: string): Promise<string> {
+  return `external-${await sha256Hex(canonicalizeJson({ taskId, proposalId }))}`;
+}
 
 export function extractJsonPayload(rawInput: string): string {
   const fenceMatch = rawInput.match(FENCE_PATTERN);

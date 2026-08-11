@@ -9,7 +9,10 @@ import {
   getProviderStatus,
   postExportAudit,
   putDocument,
+  recordExternalAgentProposalDecision,
   recordProposalDecision,
+  registerExternalAgentProposal,
+  registerExternalAgentTask,
   proposeIslandSummary,
   suggestDocumentTitle,
   suggestMerges,
@@ -111,7 +114,13 @@ import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExp
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
 import { buildAgentTaskSheet, type AgentTaskKind } from "./export/agent_task_export";
-import { parseAgentResponse, type AgentResponseImportMode, type ParsedAgentProposal } from "./import/agent_response_import";
+import {
+  buildExternalProposalAuditId,
+  fingerprintAgentProposal,
+  parseAgentResponse,
+  type AgentResponseImportMode,
+  type ParsedAgentProposal,
+} from "./import/agent_response_import";
 import { recordAgentTaskExport, verifyAgentResponseCorrelation } from "./storage/agent_task_ledger";
 import { buildExportViewMetadata, type ExportViewMetadata } from "./export/view_metadata";
 import { buildBundleZipBlob, buildExportBundleWithWorkers, downloadBlobAsFile, formatBundleTimestamp, type BundleExportProgressStage } from "./export/bundle_export";
@@ -8855,9 +8864,27 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     });
   }, [document, runTenantScopedApiRequest, safeMode, verifiedTenantSession]);
 
+  const registerAgentTask = useCallback(async (output: Awaited<ReturnType<typeof buildAgentTaskSheet>>) => {
+    await runTenantScopedApiRequest(() => registerExternalAgentTask({
+      docId: output.correlation.docId,
+      taskId: output.correlation.taskId,
+      baseDocSignature: output.correlation.baseDocSignature,
+      sourceBundleHash: output.correlation.bundleHash,
+      queryCanonicalHash: output.correlation.queryCanonicalHash,
+      taskKind: output.correlation.taskKind,
+      provenanceLevel: "user_presented_unsigned",
+    }, { tenantSessionContext: verifiedTenantSession }));
+  }, [runTenantScopedApiRequest, verifiedTenantSession]);
+
   const handleCopyAgentTaskSheet = useCallback(async () => {
     const output = await runTenantScopedOptionalTask(buildCurrentAgentTaskSheet);
     if (!output) return;
+    try {
+      await registerAgentTask(output);
+    } catch {
+      setStatusMessage(t("agent_task_export.registration_failed"));
+      return;
+    }
     try {
       await navigator.clipboard.writeText(output.taskSheetMd);
       recordAgentTaskExport(output.correlation, appStorage.scope);
@@ -8866,40 +8893,49 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     } catch {
       setStatusMessage(t("agent_task_export.copy_failed"));
     }
-  }, [appStorage.scope, buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
+  }, [appStorage.scope, buildCurrentAgentTaskSheet, registerAgentTask, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
 
   const handleDownloadAgentTaskSheet = useCallback(async () => {
     const output = await runTenantScopedOptionalTask(buildCurrentAgentTaskSheet);
     if (!output) return;
+    try {
+      await registerAgentTask(output);
+    } catch {
+      setStatusMessage(t("agent_task_export.registration_failed"));
+      return;
+    }
     downloadTextFile("task-sheet.md", "text/markdown", output.taskSheetMd);
     recordAgentTaskExport(output.correlation, appStorage.scope);
     setStatusMessage(t("agent_task_export.downloaded_md"));
     reportAgentTaskExportAudit();
-  }, [appStorage.scope, buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
+  }, [appStorage.scope, buildCurrentAgentTaskSheet, registerAgentTask, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
 
   const handleDownloadAgentTaskJson = useCallback(async () => {
     const output = await runTenantScopedOptionalTask(buildCurrentAgentTaskSheet);
     if (!output) return;
+    try {
+      await registerAgentTask(output);
+    } catch {
+      setStatusMessage(t("agent_task_export.registration_failed"));
+      return;
+    }
     downloadTextFile("task.json", "application/json", output.taskJson);
     recordAgentTaskExport(output.correlation, appStorage.scope);
     setStatusMessage(t("agent_task_export.downloaded_json"));
     reportAgentTaskExportAudit();
-  }, [appStorage.scope, buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
+  }, [appStorage.scope, buildCurrentAgentTaskSheet, registerAgentTask, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
 
   // EXT-AGENT-02: parsing/reviewing a pasted response never touches the
   // document (AC-6); only a per-proposal "Import" click does, one
   // applyDocumentChange each, so Cmd+Z reverts a single imported item.
-  // context-audit (CE1/CE4's own query->bundle->proposal->apply chain) does
-  // not fit this event -- no real equivalenceKey/bundleHash chain exists
-  // for an externally-pasted response, and its command whitelist has no
-  // slot for it without a backend change. The CE2 proposal-decision endpoint
-  // requires a verified sourceBundleHash and therefore must not be fed a
-  // fabricated correlation value for pasted responses (EXT-AGENT-AUDIT-01).
+  // External responses use their own task/proposal registration endpoints.
+  // They retain unsigned user-presented provenance and must never be routed
+  // through CE1 context-audit or the internal CE2 decision endpoint.
   const handleToggleAgentResponseImport = useCallback(() => {
     setIsAgentResponseImportOpen((prev) => !prev);
   }, []);
 
-  const handleParseAgentResponse = useCallback(() => {
+  const handleParseAgentResponse = useCallback(async () => {
     if (!document) return;
     const result = parseAgentResponse(agentResponsePastedText, agentResponseImportMode);
     if (!result.ok) {
@@ -8930,24 +8966,67 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return;
     }
 
-    const newReviews: ImportedProposalReview[] = result.response.proposals
-      .filter((proposal) => !existingIds.has(`${result.response.taskId}:${proposal.proposalId}`))
-      .map((proposal) => ({
-        ...proposal,
-        reviewKey: `${result.response.taskId}:${proposal.proposalId}`,
-        taskId: result.response.taskId,
-        provenance: verification.provenance,
-        status: "pending" as const,
-        ...computeAgentProposalReviewFlags(proposal, document),
+    const proposals = result.response.proposals.filter(
+      (proposal) => !existingIds.has(`${result.response.taskId}:${proposal.proposalId}`),
+    );
+    let registrations: Array<{ proposal: ParsedAgentProposal; auditProposalId?: string }>;
+    try {
+      registrations = await Promise.all(proposals.map(async (proposal) => {
+        if (!result.response.correlation) return { proposal };
+        const auditProposalId = await buildExternalProposalAuditId(result.response.taskId, proposal.proposalId);
+        const proposalFingerprint = await fingerprintAgentProposal(proposal);
+        await runTenantScopedApiRequest(() => registerExternalAgentProposal({
+          docId: document.id,
+          taskId: result.response.taskId,
+          baseDocSignature: result.response.correlation!.baseDocSignature,
+          sourceBundleHash: result.response.correlation!.bundleHash,
+          queryCanonicalHash: result.response.correlation!.queryCanonicalHash,
+          proposalId: auditProposalId,
+          proposalKind: proposal.kind,
+          proposalFingerprint,
+          provenanceLevel: "user_presented_unsigned",
+        }, { tenantSessionContext: verifiedTenantSession }));
+        return { proposal, auditProposalId };
       }));
+    } catch {
+      setAgentResponseParseErrors(["payload.proposal_audit_registration_failed"]);
+      return;
+    }
+    const newReviews: ImportedProposalReview[] = registrations.map(({ proposal, auditProposalId }) => ({
+      ...proposal,
+      reviewKey: `${result.response.taskId}:${proposal.proposalId}`,
+      taskId: result.response.taskId,
+      auditProposalId,
+      sourceBundleHash: result.response.correlation?.bundleHash,
+      provenance: verification.provenance,
+      status: "pending" as const,
+      ...computeAgentProposalReviewFlags(proposal, document),
+    }));
     setAgentImportedProposalReviews((previous) => [...previous, ...newReviews]);
-  }, [appStorage.scope, document, agentResponsePastedText, agentResponseImportMode, agentImportedProposalReviews]);
+  }, [appStorage.scope, document, agentResponsePastedText, agentResponseImportMode, agentImportedProposalReviews, runTenantScopedApiRequest, verifiedTenantSession]);
 
   const handleAdoptAgentImportedProposal = useCallback(
-    (reviewKey: string) => {
+    async (reviewKey: string) => {
       if (!document) return;
       const review = agentImportedProposalReviews.find((item) => item.reviewKey === reviewKey);
       if (!review || review.status !== "pending" || review.orphaned) return;
+      if (!review.auditProposalId || !review.sourceBundleHash) {
+        setStatusMessage(t("agent_response_import.audit_required_status_message"));
+        return;
+      }
+      try {
+        await runTenantScopedApiRequest(() => recordExternalAgentProposalDecision({
+          docId: document.id,
+          proposalId: review.auditProposalId!,
+          sourceBundleHash: review.sourceBundleHash!,
+          idempotencyKey: `${review.auditProposalId}:adopt`,
+          decision: "adopt",
+          provenanceLevel: "user_presented_unsigned",
+        }, { tenantSessionContext: verifiedTenantSession }));
+      } catch {
+        setStatusMessage(t("agent_response_import.audit_failed_status_message"));
+        return;
+      }
 
       let adopted = false;
       switch (review.kind) {
@@ -9049,15 +9128,36 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       document,
       agentImportedProposalReviews,
       applyDocumentChange,
+      runTenantScopedApiRequest,
+      verifiedTenantSession,
     ]
   );
 
-  const handleRejectAgentImportedProposal = useCallback((reviewKey: string) => {
+  const handleRejectAgentImportedProposal = useCallback(async (reviewKey: string) => {
+    const review = agentImportedProposalReviews.find((item) => item.reviewKey === reviewKey);
+    if (!document || !review || review.status !== "pending") return;
+    if (!review.auditProposalId || !review.sourceBundleHash) {
+      setStatusMessage(t("agent_response_import.audit_required_status_message"));
+      return;
+    }
+    try {
+      await runTenantScopedApiRequest(() => recordExternalAgentProposalDecision({
+        docId: document.id,
+        proposalId: review.auditProposalId!,
+        sourceBundleHash: review.sourceBundleHash!,
+        idempotencyKey: `${review.auditProposalId}:reject`,
+        decision: "reject",
+        provenanceLevel: "user_presented_unsigned",
+      }, { tenantSessionContext: verifiedTenantSession }));
+    } catch {
+      setStatusMessage(t("agent_response_import.audit_failed_status_message"));
+      return;
+    }
     setAgentImportedProposalReviews((previous) =>
       previous.map((item) => (item.reviewKey === reviewKey ? { ...item, status: "rejected" as const } : item))
     );
     setStatusMessage(t("agent_response_import.rejected_status_message"));
-  }, []);
+  }, [agentImportedProposalReviews, document, runTenantScopedApiRequest, verifiedTenantSession]);
 
   const handleExportAgentImportedProposalPatchFile = useCallback(
     (reviewKey: string) => {

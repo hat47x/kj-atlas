@@ -23,6 +23,11 @@ from kj_atlas_api.models_ai import (
     CheckNarrativeResponse,
     DetectContradictionRequest,
     DetectContradictionResponse,
+    ExternalAgentProposalDecisionRequest,
+    ExternalAgentProposalRegistrationRequest,
+    ExternalAgentProposalRegistrationResponse,
+    ExternalAgentTaskRegistrationRequest,
+    ExternalAgentTaskRegistrationResponse,
     GenerateNarrativeRequest,
     GenerateNarrativeResponse,
     ProposalDecisionAuditRequest,
@@ -52,6 +57,8 @@ from kj_atlas_api.proposal_decision_repository import (
     ProposalDecisionConflict,
     ProposalNotRegistered,
     register_ai_proposal,
+    register_external_agent_proposal,
+    register_external_agent_task,
     record_proposal_decision as persist_proposal_decision,
 )
 from kj_atlas_api.routes.docs import _authorize_request, get_document_row
@@ -717,14 +724,12 @@ def propose_island_summary(
     return proposal
 
 
-@router.post(
-    "/proposals/audit",
-    dependencies=[Depends(require_tenant_scoped_api_precondition)],
-)
-def record_proposal_decision(
-    payload: ProposalDecisionAuditRequest,
+def _record_proposal_decision(
+    payload: ProposalDecisionAuditRequest | ExternalAgentProposalDecisionRequest,
     request: Request,
-    db: Session = Depends(get_db),
+    db: Session,
+    *,
+    expected_origin: str,
 ) -> ProposalDecisionAuditResponse:
     access_request, _, tenant = _authorize_request(
         request,
@@ -751,6 +756,7 @@ def record_proposal_decision(
             decision=payload.decision,
             reviewer_ref=reviewer_ref,
             reason=payload.reason,
+            expected_origin=expected_origin,
         )
 
     try:
@@ -782,11 +788,138 @@ def record_proposal_decision(
         },
     )
     return ProposalDecisionAuditResponse(
+        recorded=True,
         eventId=receipt.event_id,
         proposalId=receipt.proposal_id,
         status=receipt.status,
+        reviewState="unreviewed",
         recordedAt=receipt.recorded_at,
     )
+
+
+@router.post(
+    "/external-tasks/register",
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def register_external_task(
+    payload: ExternalAgentTaskRegistrationRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> ExternalAgentTaskRegistrationResponse:
+    _, _, tenant = _authorize_request(
+        request,
+        db,
+        action="write",
+        doc_id=payload.docId,
+        safe_mode=False,
+        read_only=False,
+    )
+    document = get_document_row(db, tenant=tenant, doc_id=payload.docId)
+    if document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    persisted_document = json.loads(document.payload_json)
+    if payload.baseDocSignature != f"{document.id}:{persisted_document['updatedAt']}":
+        raise HTTPException(status_code=409, detail="External task base document is stale")
+    try:
+        register_external_agent_task(
+            db,
+            tenant=tenant,
+            task_id=payload.taskId,
+            doc_id=payload.docId,
+            base_doc_signature=payload.baseDocSignature,
+            source_bundle_hash=payload.sourceBundleHash,
+            query_canonical_hash=payload.queryCanonicalHash,
+            task_kind=payload.taskKind,
+        )
+        db.commit()
+    except ProposalDecisionConflict as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=409, detail="External task registration conflicted"
+        ) from exc
+    return ExternalAgentTaskRegistrationResponse(
+        taskId=payload.taskId,
+        provenanceLevel=payload.provenanceLevel,
+    )
+
+
+@router.post(
+    "/external-proposals/register",
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def register_external_proposal(
+    payload: ExternalAgentProposalRegistrationRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> ExternalAgentProposalRegistrationResponse:
+    _, _, tenant = _authorize_request(
+        request,
+        db,
+        action="write",
+        doc_id=payload.docId,
+        safe_mode=False,
+        read_only=False,
+    )
+    document = get_document_row(db, tenant=tenant, doc_id=payload.docId)
+    if document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    persisted_document = json.loads(document.payload_json)
+    expected_base_signature = f"{document.id}:{persisted_document['updatedAt']}"
+    if payload.baseDocSignature != expected_base_signature:
+        raise HTTPException(status_code=409, detail="External proposal base document is stale")
+    try:
+        register_external_agent_proposal(
+            db,
+            tenant=tenant,
+            doc_id=payload.docId,
+            proposal_id=payload.proposalId,
+            proposal_kind=payload.proposalKind,
+            source_bundle_hash=payload.sourceBundleHash,
+            task_id=payload.taskId,
+            base_doc_signature=payload.baseDocSignature,
+            query_canonical_hash=payload.queryCanonicalHash,
+            proposal_fingerprint=payload.proposalFingerprint,
+        )
+        db.commit()
+    except ProposalDecisionConflict as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=409, detail="External proposal registration conflicted"
+        ) from exc
+    return ExternalAgentProposalRegistrationResponse(
+        proposalId=payload.proposalId,
+        provenanceLevel=payload.provenanceLevel,
+    )
+
+
+@router.post(
+    "/proposals/audit",
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def record_proposal_decision(
+    payload: ProposalDecisionAuditRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> ProposalDecisionAuditResponse:
+    return _record_proposal_decision(payload, request, db, expected_origin="internal")
+
+
+@router.post(
+    "/external-proposals/audit",
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def record_external_proposal_decision(
+    payload: ExternalAgentProposalDecisionRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> ProposalDecisionAuditResponse:
+    return _record_proposal_decision(payload, request, db, expected_origin="external_agent")
 
 
 @router.post(

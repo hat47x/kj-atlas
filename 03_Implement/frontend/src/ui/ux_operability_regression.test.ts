@@ -979,10 +979,13 @@ describe("UX Operability regression contracts", () => {
     // per-proposal adopt does, and each adopt is exactly one
     // applyDocumentChange call (except merge_candidate, which stages into
     // the existing ephemeral mergeSuggestions review surface instead).
-    expect(appSource).toContain("const handleParseAgentResponse = useCallback(() => {");
+    expect(appSource).toContain("const handleParseAgentResponse = useCallback(async () => {");
     const parseBlockEnd = appSource.indexOf("const handleAdoptAgentImportedProposal");
     const parseBlock = appSource.slice(appSource.indexOf("const handleParseAgentResponse"), parseBlockEnd);
     expect(parseBlock).not.toContain("applyDocumentChange(");
+    const adoptBlock = appSource.slice(parseBlockEnd, appSource.indexOf("const handleRejectAgentImportedProposal"));
+    expect(adoptBlock.indexOf("recordExternalAgentProposalDecision(")).toBeLessThan(adoptBlock.indexOf("applyDocumentChange("));
+    expect(adoptBlock).toContain('t("agent_response_import.audit_failed_status_message")');
     expect(appSource.match(/applyDocumentChange\(\{ \.\.\.document, islands: nextIslands \}, t\("app\.history\.agent_response\.island_title_imported"\)\)/g)).toHaveLength(1);
     expect(appSource).toContain('t("app.history.agent_response.narrative_imported")');
     expect(appSource).toContain('t("app.history.agent_response.patch_imported")');

@@ -63,6 +63,7 @@ def test_rls_scope_is_derived_from_every_tenant_scoped_model() -> None:
         "document_access_admin_audit_events",
         "document_access_metadata",
         "documents",
+        "external_agent_tasks",
         "generation_deletion_audit_events",
         "inquiry_bundle_deletion_audit_events",
         "inquiry_bundles",

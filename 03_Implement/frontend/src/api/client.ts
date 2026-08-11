@@ -686,6 +686,86 @@ export async function recordProposalDecision(
   return await response.json();
 }
 
+export async function registerExternalAgentProposal(
+  input: {
+    docId: string;
+    taskId: string;
+    baseDocSignature: string;
+    sourceBundleHash: string;
+    queryCanonicalHash: string;
+    proposalId: string;
+    proposalKind: string;
+    proposalFingerprint: string;
+    provenanceLevel: "user_presented_unsigned";
+  },
+  requestOptions: TenantScopedRequestOptions = {},
+): Promise<{ registered: true; proposalId: string; provenanceLevel: "user_presented_unsigned" }> {
+  const response = await fetch(`${API_BASE}/ai/external-proposals/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...tenantSessionPreconditionHeaders(requestOptions) },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
+  }
+  return await response.json();
+}
+
+export async function registerExternalAgentTask(
+  input: {
+    docId: string;
+    taskId: string;
+    baseDocSignature: string;
+    sourceBundleHash: string;
+    queryCanonicalHash: string;
+    taskKind: string;
+    provenanceLevel: "user_presented_unsigned";
+  },
+  requestOptions: TenantScopedRequestOptions = {},
+): Promise<{ registered: true; taskId: string; provenanceLevel: "user_presented_unsigned" }> {
+  const response = await fetch(`${API_BASE}/ai/external-tasks/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...tenantSessionPreconditionHeaders(requestOptions) },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
+  }
+  return await response.json();
+}
+
+export async function recordExternalAgentProposalDecision(
+  input: {
+    docId: string;
+    proposalId: string;
+    sourceBundleHash: string;
+    idempotencyKey: string;
+    decision: "adopt" | "reject" | "hold";
+    provenanceLevel: "user_presented_unsigned";
+  },
+  requestOptions: TenantScopedRequestOptions = {},
+): Promise<{
+  recorded: true;
+  eventId: string;
+  proposalId: string;
+  status: "accepted" | "rejected" | "held";
+  reviewState: "unreviewed";
+  recordedAt: string;
+}> {
+  const response = await fetch(`${API_BASE}/ai/external-proposals/audit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...tenantSessionPreconditionHeaders(requestOptions) },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
+  }
+  return await response.json();
+}
+
 // EXT-AGENT-01 (ADR-0049 D2, spec §3.4): the only frontend caller of
 // /docs/{docId}/export-audit today. Fail-open on the backend (audit send
 // failure never blocks the export itself) -- but a network/HTTP error here

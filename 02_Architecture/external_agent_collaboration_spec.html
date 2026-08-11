@@ -141,7 +141,7 @@ flowchart LR
         <tr><td>5</td><td>相関ブロック</td><td>§3.2のJSONをコードフェンスで埋め込み（エコーバック指示付き）</td></tr>
       </tbody>
     </table>
-    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:14px 0 0;"><strong>出力境界（必須）:</strong> SafeMode状態表示・未レビュー本文は既定除外・出典参照は既定OFF・主体メタ（CARD-META-UI-01）は別ゲート確定まで含めない。<code>/docs/{id}/export-audit</code> に <code>exportKind: "agent-task"</code> を記録する。</p>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:14px 0 0;"><strong>出力境界（必須）:</strong> SafeMode状態表示・未レビュー本文は既定除外・出典参照は既定OFF・主体メタ（CARD-META-UI-01）は別ゲート確定まで含めない。出力前に<code>/ai/external-tasks/register</code>へ本文なしの相関を登録し、失敗時は書き出さない。完了後は<code>/docs/{id}/export-audit</code> に <code>exportKind: "agent-task"</code> を記録する。</p>
   </section>
 
   <!-- 4. AgentResponse -->
@@ -181,6 +181,7 @@ flowchart LR
     </table>
 
     <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:14px 0 0;"><strong>非同期整合（staleness）:</strong> 取り込み時に<code>baseDocSignature</code>を照合。不一致時、patchはCE3 conflict/rediff経路で再突合、非patchは<code>targetRef</code>解決を試み、解決不能な提案は<strong>破棄せず「孤立提案」として保持表示</strong>（一匹狼と同じ保全思想）。同一<code>taskId</code>＋同一応答ハッシュの再取込は冪等。</p>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:8px 0 0;"><strong>判断監査:</strong> 正規化済み提案のSHA-256指紋だけを<code>/ai/external-proposals/register</code>へ登録する。採用・破棄は<code>/ai/external-proposals/audit</code>の成功後にだけ画面状態または文書へ反映する。由来は真正性を主張しない<code>user_presented_unsigned</code>として保持し、内部生成提案用endpointとは交差させない。</p>
   </section>
 
   <!-- 5. 状態機械(核心図) -->
