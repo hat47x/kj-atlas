@@ -228,3 +228,6 @@ _local/
 
 # DeepSeek API token (never commit)
 03_Implement/DEEPSEEK_TOKEN.TXT
+
+# Local-only files (user credentials, tokens, scratch)
+local/
