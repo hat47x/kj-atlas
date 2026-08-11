@@ -36,7 +36,6 @@ from kj_atlas_api.models_ai import (
     SuggestDocumentTitleResponse,
     SuggestIslandSummaryRequest,
     SuggestIslandSummaryResponse,
-    _CardRef,
 )
 from kj_atlas_api.models import (
     Card,
