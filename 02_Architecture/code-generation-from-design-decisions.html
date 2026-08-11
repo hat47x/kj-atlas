@@ -321,19 +321,34 @@ flowchart TB
 
 <h3>5.1a 入力形式（data_boundary型）</h3>
 
+<p><code>fields</code>に検証ルール（<code>minLength</code>/<code>maxLength</code>/<code>pattern</code>/<code>default</code>）を宣言すると、Pydanticの<code>Field(...)</code>制約として生成される（DX-CODEGEN-02）。</p>
+
 <pre class="block"><code>{
   "designDecision": {
     "type": "data_boundary",
-    "typeName": "CardQualityState",
-    "description": "カード品質自己チェックのsession-only状態",
-    "saveScope": "session-only",
+    "typeName": "FieldworkRequestV1",
+    "description": "W型累積KJ法の現場への問い",
+    "saveScope": "document",
     "fields": [
-      {"name": "cardId", "type": "str = Field(min_length=1)"},
-      {"name": "issues", "type": "list[str] = Field(default_factory=list)"}
+      {"name": "id", "type": "str", "minLength": 1, "maxLength": 64},
+      {"name": "question", "type": "str", "minLength": 1, "maxLength": 500},
+      {"name": "resolved", "type": "bool", "default": "False"},
+      {"name": "note", "type": "str | None", "default": "None"}
     ]
   },
   "threeElementVerification": { "business": "...", "data": "...", "function": "..." }
 }</code></pre>
+
+<p>生成されるPydanticモデル（検証制約付き）:</p>
+
+<pre class="block"><code>class FieldworkRequestV1(BaseModel):
+    """W型累積KJ法の現場への問い — document 保存."""
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(min_length=1, max_length=64)
+    question: str = Field(min_length=1, max_length=500)
+    resolved: bool = Field(default=False)
+    note: str | None = Field(default=None)</code></pre>
 
 <h2>6. CI統合</h2>
 
