@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/active_tenant_session.py`, `03_Implement/backend/src/kj_atlas_api/saas_auth_state.py`, `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/saas_request_context.py`, `03_Implement/backend/src/kj_atlas_api/routes/session.py`
-- Related ADR/Spec: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`, `02_Architecture/api.md` §10
+- Related ADR/Spec: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`, `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（Proposed）, `02_Architecture/api.md` §10
 - Expected verification level: `integration`
 
 ## 課題
@@ -29,7 +29,7 @@
 - 案B: BFF/server-side login sessionを正本とし、そのopaque server session IDへactive tenantを束縛する。
 - 案C: active tenant switchを廃止し、tenantごとにtokenを再発行する。これは現行UI/API契約の変更が大きい。
 
-推奨候補は案B、次点は案Aである。どちらも認証フローとデータモデルへ影響するため、Maintainerが選択し、必要なら`ADR-0061`の補足ADRをAcceptedにしてから実装する。
+比較と三要素牽制を`ADR-0074`へ分離し、案B（server-owned BFF session）を採用候補として記述した。同ADRはProposedであり、現行のSPA Bearer方式をまだ変更しない。MaintainerがBFF責務、cookie/CSRF、timeout、token保管、logout連携を確認してAcceptedにした後だけ実装する。
 
 ## 受入条件
 
@@ -48,6 +48,10 @@
 - per-tab tenant sessionは導入しない。
 - access token `jti`を一回使用nonceまたは認証セッションIDとして扱わない。
 - clientが送るcookie/header値だけからprincipal、tenant、session ownershipを確定しない。
+
+## 依存関係
+
+- `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（採択が前提。Proposed中はschema/API実装へ着手しない）
 
 ## 検証計画
 
