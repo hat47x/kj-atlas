@@ -47,6 +47,8 @@ ADRFILE_REF_RE = re.compile(r"`(ADR-\d{4}[^`]*)`")
 MD_REF_RE = re.compile(r"`([0-9A-Za-z_/.-]+\.md)`")
 HTML_REF_RE = re.compile(r"`([0-9A-Za-z_/.-]+\.html)`")
 API_ENDPOINT_RE = re.compile(r"`(GET|POST|PUT|DELETE|PATCH)\s+(/[^\s`]+)`")
+# api.md format: **METHOD** `/path`
+API_MD_BOLD_RE = re.compile(r"\*\*(GET|POST|PUT|DELETE|PATCH)\*\*\s+`(/\S+)`")
 SCHEMA_TYPE_RE = re.compile(r"`(DocumentV1|Card|Edge|Island|Narrative|EvidenceLink|[A-Z][A-Za-z0-9]+(?:V\d)?)`")
 
 errors: list[str] = []
@@ -103,6 +105,9 @@ if API_MD.exists():
     api_content = API_MD.read_text(encoding="utf-8")
     api_endpoints: set[str] = set()
     for match in API_ENDPOINT_RE.finditer(api_content):
+        api_endpoints.add(f"{match.group(1)} {match.group(2)}")
+    # Also match api.md bold format: **METHOD** `/path`
+    for match in API_MD_BOLD_RE.finditer(api_content):
         api_endpoints.add(f"{match.group(1)} {match.group(2)}")
 
     for doc_path in all_md_files:
