@@ -22,7 +22,7 @@
   - 既定値: `sqlite:///./kj_atlas.db`
   - driverを省略したURL（例: `mysql://...`）と対応済みasync URLは、能力レジストリに記録した検証済み同期driverへ正規化して利用
   - 明示driverは検証済みの組合せだけを受理する。例としてMySQLは`mysql+pymysql`、SQL Serverは`mssql+pymssql`、Oracleは`oracle+oracledb`を使用し、未導入・未検証driverはengine生成前に拒否する
-  - 正式対応はSQLite、PostgreSQL、MySQL 8.4、MariaDB 11.4、SQL Server 2022、CockroachDB 26.2、Oracle AI Database Free 23.26.2
+  - 正式対応はSQLite、PostgreSQL 16、MySQL 8.4、MariaDB 11.4、SQL Server 2022、CockroachDB 26.2.3、Oracle AI Database Free 23.26.2
   - 対応状況と昇格条件: `02_Architecture/database_portability.md`
 - `KJ_ATLAS_LLM_PROVIDER`
   - 既定値: `none`
@@ -64,7 +64,7 @@ export KJ_ATLAS_DATABASE_URL="mssql+pymssql://user:password@localhost:1433/kj_at
 alembic upgrade head
 ```
 
-CockroachDB 26.2もoptional dialectを導入し、single-tenant構成で使用します。接続先databaseは事前に作成してください。
+CockroachDB 26.2.3もoptional dialectを導入し、single-tenant構成で使用します。接続先databaseは事前に作成してください。
 
 ```bash
 pip install -e ".[cockroachdb]"
@@ -74,7 +74,7 @@ alembic upgrade head
 
 `--insecure`はローカル試験専用です。本番ではCockroachDBのTLS構成と適切な`sslmode`を使用してください。
 
-Oracle AI Database 26aiもThin modeのoptional driverを導入し、single-tenant構成で使用します。URLのpathはSIDとして解釈されるため、PDBへ接続するときは`service_name` query parameterを使用してください。
+Oracle AI Database Free 23.26.2もThin modeのoptional driverを導入し、single-tenant構成で使用します。URLのpathはSIDとして解釈されるため、PDBへ接続するときは`service_name` query parameterを使用してください。
 
 ```bash
 pip install -e ".[oracle]"
@@ -86,36 +86,9 @@ Oracle Database FreeにはCPU、RAM、ユーザーデータ量、同一論理環
 
 ## Minimal backup / restore
 
-`documents.payload_json` に `DocumentV1` 全体を JSON スナップショットとして保存しています。
+`documents.payload_json`には`DocumentV1`全体をJSON snapshotとして保存しています。バックアップは取得だけで完了とせず、本番とは別のdatabase／schema／pathへ復元してDocument、判断ログ、schema revision、大容量本文を照合してください。
 
-### SQLite
-
-- DB ファイル場所（既定）: `03_Implement/backend/kj_atlas.db`（`KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db` の場合）
-- バックアップ: API 停止中にファイルをそのままコピー
-
-```bash
-cp 03_Implement/backend/kj_atlas.db 03_Implement/backend/kj_atlas.db.bak
-```
-
-- リストア: 退避しておいた `.bak` を元ファイル名へ戻す
-
-```bash
-cp 03_Implement/backend/kj_atlas.db.bak 03_Implement/backend/kj_atlas.db
-```
-
-### PostgreSQL
-
-- バックアップ（最小例: custom format）
-
-```bash
-pg_dump -Fc "$KJ_ATLAS_DATABASE_URL" -f kj_atlas_pg.dump
-```
-
-- リストア（最小例）
-
-```bash
-pg_restore -d "$KJ_ATLAS_DATABASE_URL" --clean --if-exists kj_atlas_pg.dump
-```
+SQLite、PostgreSQL、MySQL、MariaDB、SQL Server、CockroachDB、Oracleの検証済み最小手順と中断条件は、公開運用正本の[`operations.md`「バックアップと隔離復元」](../../04_Documentation/operations.md#バックアップと隔離復元)を参照してください。製品別コマンドをこのREADMEへ重複記載しません。
 
 
 ## Tests

@@ -61,10 +61,10 @@ jobs:
         run: python 01_Plans/docs_check.py
 
       - name: Run design consistency checks (ADR-0067)
-        run: python 03_Implement/backend/scripts/check_design_consistency.py
+        run: python 03_Implement/backend/scripts/check_design_consistency.py --baseline 02_Architecture/design_consistency_baseline.json
 
       - name: Run contract drift detection (ADR-0067)
-        run: python 03_Implement/backend/scripts/check_contract_drift.py
+        run: python 03_Implement/backend/scripts/check_contract_drift.py --baseline 02_Architecture/contract_drift_baseline.json
 
       - name: Check changed-file whitespace
         shell: bash
@@ -361,6 +361,8 @@ jobs:
           KJ_ATLAS_RUN_MYSQL_TESTS: "1"
           KJ_ATLAS_TEST_MYSQL_URL: mysql+pymysql://root:kj_atlas@127.0.0.1:3306/kj_atlas
           KJ_ATLAS_TEST_MARIADB_URL: mariadb+pymysql://root:kj_atlas@127.0.0.1:3307/kj_atlas
+          KJ_ATLAS_TEST_MYSQL_CONTAINER: ${{ job.services.mysql.id }}
+          KJ_ATLAS_TEST_MARIADB_CONTAINER: ${{ job.services.mariadb.id }}
         run: pytest -m mysql
 
       - name: Test (SQL Server)

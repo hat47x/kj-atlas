@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `01_Plans/`, `02_Architecture/`, 新規 kj-atlas 文書
 - Related ADR/Spec: `ADR-0042-product-value-realization-loop.md`, `ADR-0067-three-element-constraint-design-method.md`, `02_Architecture/dogfooding-ai-collaboration-plan.html`
+- Expected verification level: `docs-check`
 
 ## 課題
 

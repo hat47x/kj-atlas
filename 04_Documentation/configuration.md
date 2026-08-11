@@ -93,7 +93,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | 変数 | 既定値 | 用途 |
 | --- | --- | --- |
 | `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | `local-dev`, `evaluation`, `enterprise-production`。`saas-multitenant`は予約値で現行releaseでは起動拒否。 |
-| `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | backend が使う DB 接続先。正式対応はSQLite/PostgreSQL。MySQL/MariaDB等の候補DBは実DB検証完了まで起動時に拒否 |
+| `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | backend が使うSQLAlchemy接続URL。正式対応DB、検証済みdriver、single-tenant／shared-schema SaaSの範囲は[DB対応表](../02_Architecture/database_portability.md)を正本とする。driver省略URLと対応済みasync URLは検証済み同期driverへ正規化され、未検証driverと未知DBはengine生成前に拒否される |
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` |
 | `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLMのHTTPSまたはloopback HTTP base URL |
 | `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLMで使う256文字以下のmodel ID |

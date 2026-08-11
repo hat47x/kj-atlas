@@ -16,6 +16,7 @@ class DatabaseSupport:
     """One registry for runtime, migration, and deployment database decisions."""
 
     backend: str
+    verification_target: str
     family: str
     support_level: DatabaseSupportLevel
     migration_strategy: MigrationStrategy
@@ -24,6 +25,7 @@ class DatabaseSupport:
     atomic_primary_key_replacement: bool
     sync_drivername: str
     accepted_drivernames: tuple[str, ...]
+    ci_image: str | None
     optional_dependency: str | None
     test_marker: str | None
 
@@ -35,6 +37,7 @@ class DatabaseSupport:
 _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
     "sqlite": DatabaseSupport(
         backend="sqlite",
+        verification_target="SQLite",
         family="sqlite",
         support_level="verified",
         migration_strategy="sqlite-rebuild",
@@ -43,11 +46,13 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         atomic_primary_key_replacement=False,
         sync_drivername="sqlite",
         accepted_drivernames=("sqlite", "sqlite+pysqlite", "sqlite+aiosqlite"),
+        ci_image=None,
         optional_dependency=None,
         test_marker=None,
     ),
     "postgresql": DatabaseSupport(
         backend="postgresql",
+        verification_target="PostgreSQL 16",
         family="postgresql",
         support_level="verified",
         migration_strategy="constraint-ddl",
@@ -60,6 +65,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
             "postgresql+psycopg",
             "postgresql+asyncpg",
         ),
+        ci_image="postgres:16-alpine",
         optional_dependency="postgres",
         test_marker="postgres",
     ),
@@ -67,6 +73,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
     # not spread across settings, runtime, migrations, and documentation.
     "mysql": DatabaseSupport(
         backend="mysql",
+        verification_target="MySQL 8.4",
         family="mysql",
         support_level="verified",
         migration_strategy="constraint-ddl",
@@ -75,11 +82,13 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         atomic_primary_key_replacement=False,
         sync_drivername="mysql+pymysql",
         accepted_drivernames=("mysql", "mysql+pymysql"),
+        ci_image="mysql:8.4",
         optional_dependency="mysql",
         test_marker="mysql",
     ),
     "mariadb": DatabaseSupport(
         backend="mariadb",
+        verification_target="MariaDB 11.4",
         family="mysql",
         support_level="verified",
         migration_strategy="constraint-ddl",
@@ -88,11 +97,13 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         atomic_primary_key_replacement=False,
         sync_drivername="mariadb+pymysql",
         accepted_drivernames=("mariadb", "mariadb+pymysql"),
+        ci_image="mariadb:11.4",
         optional_dependency="mysql",
         test_marker="mysql",
     ),
     "mssql": DatabaseSupport(
         backend="mssql",
+        verification_target="SQL Server 2022",
         family="mssql",
         support_level="verified",
         migration_strategy="constraint-ddl",
@@ -101,11 +112,13 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         atomic_primary_key_replacement=False,
         sync_drivername="mssql+pymssql",
         accepted_drivernames=("mssql", "mssql+pymssql"),
+        ci_image="mcr.microsoft.com/mssql/server:2022-latest",
         optional_dependency="mssql",
         test_marker="mssql",
     ),
     "oracle": DatabaseSupport(
         backend="oracle",
+        verification_target="Oracle AI Database Free 23.26.2",
         family="oracle",
         support_level="verified",
         migration_strategy="constraint-ddl",
@@ -114,11 +127,13 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         atomic_primary_key_replacement=False,
         sync_drivername="oracle+oracledb",
         accepted_drivernames=("oracle", "oracle+oracledb"),
+        ci_image="gvenzl/oracle-free:23.26.2-slim-faststart",
         optional_dependency="oracle",
         test_marker="oracle",
     ),
     "cockroachdb": DatabaseSupport(
         backend="cockroachdb",
+        verification_target="CockroachDB 26.2.3",
         family="cockroachdb",
         support_level="verified",
         migration_strategy="constraint-ddl",
@@ -127,6 +142,7 @@ _DATABASE_SUPPORT_BY_BACKEND: dict[str, DatabaseSupport] = {
         atomic_primary_key_replacement=True,
         sync_drivername="cockroachdb+psycopg",
         accepted_drivernames=("cockroachdb", "cockroachdb+psycopg"),
+        ci_image="cockroachdb/cockroach:v26.2.3",
         optional_dependency="cockroachdb",
         test_marker="cockroachdb",
     ),

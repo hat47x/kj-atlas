@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -55,6 +56,71 @@ def _expect_integrity_error(url: str, statement: str) -> None:
             connection.execute(text(statement), {"timestamp": TIMESTAMP})
     finally:
         engine.dispose()
+
+
+def _verify_backup_restore(database_url: str) -> None:
+    url = make_url(database_url)
+    backend = url.get_backend_name()
+    database = url.database or ""
+    if not re.fullmatch(r"[A-Za-z0-9_]+", database):
+        raise ValueError("MySQL family test database must use a simple identifier")
+    restore_database = f"{database}_restore"
+    container_env = {
+        "mysql": "KJ_ATLAS_TEST_MYSQL_CONTAINER",
+        "mariadb": "KJ_ATLAS_TEST_MARIADB_CONTAINER",
+    }
+    container = os.environ[container_env[backend]]
+    dump_command = "mysqldump" if backend == "mysql" else "mariadb-dump"
+    client_command = "mysql" if backend == "mysql" else "mariadb"
+    username = url.username or ""
+    password = url.password or ""
+    credential_args = ["-e", f"MYSQL_PWD={password}", container]
+
+    server_engine = create_engine(url.set(database=None))
+    with server_engine.begin() as connection:
+        connection.execute(text(f"DROP DATABASE IF EXISTS `{restore_database}`"))
+        connection.execute(text(f"CREATE DATABASE `{restore_database}`"))
+    server_engine.dispose()
+
+    exported = subprocess.run(
+        [
+            "docker",
+            "exec",
+            *credential_args,
+            dump_command,
+            f"--user={username}",
+            "--single-transaction",
+            "--skip-lock-tables",
+            database,
+        ],
+        check=False,
+        capture_output=True,
+    )
+    assert exported.returncode == 0, exported.stderr.decode(errors="replace")
+    imported = subprocess.run(
+        [
+            "docker",
+            "exec",
+            "-i",
+            *credential_args,
+            client_command,
+            f"--user={username}",
+            restore_database,
+        ],
+        input=exported.stdout,
+        check=False,
+        capture_output=True,
+    )
+    assert imported.returncode == 0, imported.stderr.decode(errors="replace")
+
+    restored = create_engine(url.set(database=restore_database))
+    with restored.connect() as connection:
+        count, largest = connection.execute(
+            text("SELECT COUNT(*), MAX(CHAR_LENGTH(payload_json)) FROM documents")
+        ).one()
+    restored.dispose()
+    assert count == 2
+    assert largest > 1024 * 1024
 
 
 @pytest.mark.mysql
@@ -135,3 +201,5 @@ def test_mysql_family_promotion_matrix(database_url: str) -> None:
     assert downgrade.returncode == 0, downgrade.stderr
     reupgrade = _run_alembic(database_url, "upgrade", "head")
     assert reupgrade.returncode == 0, reupgrade.stderr
+
+    _verify_backup_restore(database_url)

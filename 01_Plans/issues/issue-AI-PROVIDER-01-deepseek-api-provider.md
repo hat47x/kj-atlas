@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/llm/provider.py`, `03_Implement/backend/src/kj_atlas_api/settings.py`
 - Related ADR/Spec: `issue-AI-MODEL-01-per-operation-model-level.md`, `02_Architecture/dogfooding-ai-collaboration-plan.html`
+- Expected verification level: `integration`
 
 ## 課題
 

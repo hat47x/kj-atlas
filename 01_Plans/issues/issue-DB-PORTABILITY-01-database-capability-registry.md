@@ -125,3 +125,9 @@
 - backend名だけのVerified判定では、`mysql://`、`mssql://`、`oracle://`等がoptional dependencyに含まれないSQLAlchemy既定driverを選び、engine生成時まで失敗を遅延させる不足があった。
 - 能力レジストリへ検証済み同期driverと受理drivernameを追加した。driver省略URLと既存の`sqlite+aiosqlite`／`postgresql+asyncpg`は検証済み同期driverへ正規化し、明示された未検証driverは資格情報を露出せずfail-fastにした。
 - 全backendのdriver契約整合性、URL構成要素の保存、未検証driver拒否をparameterized testで固定し、関連29件と変更対象Ruffを通過した。
+
+## Verification target synchronization checkpoint 2026-08-11
+
+- 能力レジストリと宣言契約はbackend名を照合していたが、実DBの検証対象名・versionとCI imageは対象外だった。このため、OracleのCI／昇格証跡が`Free 23.26.2`である一方、対応表と運用見出しが抽象的な`26ai`表記でも検査を通過していた。
+- 各backendへ`verification_target`と`ci_image`を追加し、公開support matrixのDatabase列とCI workflowのimage tagを同じレジストリから静的照合する契約へ拡張した。SQLiteは標準library利用のためCI imageを持たず、外部Verified DBは全てimageを必須とする。
+- 正本の対象をPostgreSQL 16、MySQL 8.4、MariaDB 11.4、SQL Server 2022、CockroachDB 26.2.3、Oracle AI Database Free 23.26.2へ揃え、README・運用文書・runtime registryの重複version列挙を正本参照または同じ表記へ修正した。関連32件と変更対象Ruffを通過した。

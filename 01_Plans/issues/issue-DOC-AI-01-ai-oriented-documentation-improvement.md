@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `AGENTS.md`, `CLAUDE.md`, `RTK.md`, `00_Prompt/*.md`
 - Related ADR/Spec: `ADR-0067-three-element-constraint-design-method.md`, `02_Architecture/dogfooding-ai-collaboration-plan.html`
+- Expected verification level: `docs-check`
 
 ## 課題
 

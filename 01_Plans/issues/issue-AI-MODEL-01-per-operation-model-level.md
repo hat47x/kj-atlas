@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `00_Prompt/kj_technique.md`, `03_Implement/backend/src/kj_atlas_api/llm/provider.py`, `AGENTS.md`
 - Related ADR/Spec: `ADR-0067-three-element-constraint-design-method.md`, `02_Architecture/dogfooding-ai-collaboration-plan.html`
+- Expected verification level: `unit`
 
 ## 課題
 
