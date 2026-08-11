@@ -1,7 +1,7 @@
 # Issue: DB-OPS-01 Verified DBの運用runbookと復旧証跡を公開対応範囲へ揃える
 
 - Type: Documentation
-- Status: Draft
+- Status: Done
 - Source Issue: DB-PORTABILITY-01
 - Priority: P1
 - Owner: Maintainer
@@ -22,11 +22,11 @@
 
 ## 受入条件
 
-- [ ] 全Verified DBについて、固定検証version、backup方式、隔離restore方式、最小権限または管理権限が必要な箇所、復元後の整合確認が公開runbookから確認できる。
-- [ ] 共通手順は本番DBを直接上書きせず、復元先取り違え、schema version不一致、Document／判断ログ欠落、秘密情報を含むログ共有を中断条件に含む。
-- [ ] provider固有コマンドは既存の実DBpromotion testまたは再実行した同等環境と一致し、少なくとも一度は隔離restoreまで成功している。
-- [ ] `database_portability.md`のVerified backend追加時に、対応するprovider別運用節または明示的な非対応注記が欠ければ通常テストで検出される。
-- [ ] SQLite/PostgreSQLの既存手順とSafeMode共有前確認を後退させない。
+- [x] 全Verified DBについて、固定検証version、backup方式、隔離restore方式、最小権限または管理権限が必要な箇所、復元後の整合確認が公開runbookから確認できる。
+- [x] 共通手順は本番DBを直接上書きせず、復元先取り違え、schema version不一致、Document／判断ログ欠落、秘密情報を含むログ共有を中断条件に含む。
+- [x] provider固有コマンドは既存の実DBpromotion testまたは再実行した同等環境と一致し、少なくとも一度は隔離restoreまで成功している。
+- [x] `database_portability.md`のVerified backend追加時に、対応するprovider別運用節または明示的な非対応注記が欠ければ通常テストで検出される。
+- [x] SQLite/PostgreSQLの既存手順とSafeMode共有前確認を後退させない。
 
 ## 検証計画
 
@@ -37,3 +37,10 @@
 
 - DB固有手順をREADME、installation、operationsへ重複記載せず、`operations.md`を公開運用手順の正本として他文書から参照する。
 - `DATA-MAINT-02`は当時の正式範囲だったSQLite/PostgreSQLの代表演習としてDoneを維持する。本Issueは後からVerifiedへ昇格したDBの運用文書追随を扱い、過去Issueの完了証跡を書き換えない。
+
+## 完了記録（2026-08-11）
+
+- `operations.md`を運用正本とし、本番を上書きしない隔離復元、schema／Document／判断ログ／大容量本文／SafeModeの共通確認、中断条件を定義した。7つのVerified backendは固定anchorを持つprovider別節へ分離した。
+- SQLiteとPostgreSQLの既存演習に加え、SQL Server、CockroachDB、Oracleは現行promotion testのnative restore証跡をrunbookへ対応付けた。
+- MySQL/MariaDBは文書上の完了記録に対して現行自動testからlogical restoreが欠落していたため、`mysqldump`／`mariadb-dump`の終了code、別databaseへのimport、Document件数、1 MiB超本文長を検証する処理をmatrixへ追加した。MySQL 8.4.11とMariaDB 11.4.12の一時containerで各1件passを確認した。
+- 能力レジストリ上の全Verified backendに対応する運用anchorが一つずつ存在することを通常の宣言契約testへ追加し、READMEの重複コマンドは運用正本への参照へ縮約した。

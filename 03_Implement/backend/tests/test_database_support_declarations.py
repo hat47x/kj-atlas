@@ -98,3 +98,15 @@ def test_public_configuration_delegates_database_support_to_canonical_matrix() -
     assert "../02_Architecture/database_portability.md" in database_url_row
     assert "正式対応はSQLite/PostgreSQL" not in database_url_row
     assert "MySQL/MariaDB等の候補DB" not in database_url_row
+
+
+def test_operations_runbook_has_one_section_for_every_verified_backend() -> None:
+    operations = (REPO_ROOT / "04_Documentation" / "operations.md").read_text(
+        encoding="utf-8"
+    )
+
+    for support in registered_database_support():
+        if not support.is_verified:
+            continue
+        anchor = f'<a id="database-{support.backend}"></a>'
+        assert operations.count(anchor) == 1, support.backend

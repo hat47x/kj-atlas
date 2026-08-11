@@ -115,9 +115,40 @@ curl -fsS http://localhost:8080/api/healthz
 docker compose logs api --tail=100
 ```
 
-## バックアップ
+## バックアップと隔離復元
 
-PostgreSQL volume を使っている場合、更新や検証前に dump を取得します。取得先、保管期間、暗号化、外部保管の有無は組織ごとに決める運用事項です。kj-atlas の手順では、まず検証環境で復元できることと、安全確認を再現できることを重視します。
+取得先、保管期間、暗号化、外部保管の有無は組織ごとに決める運用事項です。kj-atlasでは、バックアップ取得だけを成功条件にせず、本番DBとは異なる名前・path・schemaへの隔離復元と内容確認までを一組の演習として扱います。
+
+実行前にDB製品とversion、アプリrevision、source、復元先、実行者を記録します。アプリruntimeの接続アカウントへDB作成・backup・restore権限を追加せず、運用者が別の管理資格情報で実行してください。以下は固定versionのpromotion matrixで確認した最小パターンであり、managed DBではprovider公式のbackup機能と権限モデルへ読み替えます。
+
+### 共通の復旧確認
+
+復旧演習は、本番DBを直接上書きする手順ではありません。検証環境または一時DBに復元し、次を確認します。
+
+| 確認項目 | 見る内容 |
+| --- | --- |
+| 対象 | DB製品/version、アプリrevision、バックアップ取得日時、source、復元先 |
+| Schema | `alembic_version`が想定revisionで、起動時のschema gateを通過すること |
+| Document | `id`、`version`、`updated_at`、画面またはAPIで読み込めること |
+| 判断ログ | `merge_decision_logs`が対象Documentに紐づき、group/snapshot単位の順序が崩れていないこと |
+| 大容量本文 | 代表canvasの`payload_json`が欠落・切詰めされず、byte数または文字数がsourceと一致すること |
+| 共有前確認 | SafeModeが有効で、未レビュー本文や個人情報を含む出力を不用意に共有しないこと |
+| 中断条件 | command失敗・警告付き部分成功、version不整合、件数・digest・本文長・判断ログの不一致、復元先取り違え、秘密情報を含むログ共有があれば完了扱いにしない |
+
+<a id="database-sqlite"></a>
+### SQLite
+
+APIを停止し、DBファイルを別pathへコピーします。復元演習では元ファイルを上書きせず、コピーしたDBを別の`sqlite:///...` URLで読み込みます。稼働中の単純なファイルコピーは未確定transactionやWALを欠落させ得るため使用しません。
+
+```bash
+cp 03_Implement/backend/kj_atlas.db kj_atlas-backup.sqlite3
+cp kj_atlas-backup.sqlite3 kj_atlas-restore.sqlite3
+```
+
+<a id="database-postgresql"></a>
+### PostgreSQL
+
+標準Composeの例です。`createdb`とrestoreはruntime userではなく、検証用databaseを作成できる運用資格情報で実行します。
 
 ```bash
 cd 03_Implement/deploy
@@ -131,19 +162,76 @@ docker compose exec db createdb -U kj_atlas kj_atlas_restore
 cat kj_atlas_backup.dump | docker compose exec -T db pg_restore -U kj_atlas -d kj_atlas_restore --clean --if-exists
 ```
 
-### 復旧演習
+<a id="database-mysql"></a>
+### MySQL 8.4
 
-復旧演習は、本番DBを直接上書きする手順ではありません。検証環境または一時DBに復元し、次の最小項目を確認します。
+`MYSQL_PWD`はこのshell processだけへ設定し、履歴や文書へ値を残しません。`CREATE DATABASE`は運用資格情報で行い、dump対象には整合snapshot用の`--single-transaction`を指定します。
 
-| 確認項目 | 見る内容 |
-| --- | --- |
-| 対象 | DB種別、アプリrevision、バックアップ取得日時、復元先 |
-| Document | `id`、`version`、`updated_at`、画面またはAPIで読み込めること |
-| 判断ログ | `merge_decision_logs` が対象Documentに紐づき、group/snapshot単位の順序が崩れていないこと |
-| 共有前確認 | SafeMode が有効で、未レビュー本文や個人情報を含む出力を不用意に共有しないこと |
-| 中断条件 | version不整合、判断ログ欠落、復元先取り違え、秘密情報を含むログ共有がある場合は完了扱いにしない |
+```bash
+MYSQL_PWD="$DB_ADMIN_PASSWORD" mysqldump --host="$DB_HOST" --user="$DB_ADMIN_USER" \
+  --single-transaction --skip-lock-tables kj_atlas > kj_atlas_mysql.sql
+MYSQL_PWD="$DB_ADMIN_PASSWORD" mysql --host="$DB_HOST" --user="$DB_ADMIN_USER" \
+  -e 'CREATE DATABASE kj_atlas_restore'
+MYSQL_PWD="$DB_ADMIN_PASSWORD" mysql --host="$DB_HOST" --user="$DB_ADMIN_USER" \
+  kj_atlas_restore < kj_atlas_mysql.sql
+```
 
-SQLite を使う開発・検証環境では、アプリを停止したうえでDBファイルを退避し、別パスへ戻して読み込み確認を行います。PostgreSQL を使う評価環境では、`pg_dump` と `pg_restore` の復元先を検証用DBに限定して確認します。
+<a id="database-mariadb"></a>
+### MariaDB 11.4
+
+MySQLと同じ分離方針で、MariaDB同梱clientを使用します。
+
+```bash
+MYSQL_PWD="$DB_ADMIN_PASSWORD" mariadb-dump --host="$DB_HOST" --user="$DB_ADMIN_USER" \
+  --single-transaction --skip-lock-tables kj_atlas > kj_atlas_mariadb.sql
+MYSQL_PWD="$DB_ADMIN_PASSWORD" mariadb --host="$DB_HOST" --user="$DB_ADMIN_USER" \
+  -e 'CREATE DATABASE kj_atlas_restore'
+MYSQL_PWD="$DB_ADMIN_PASSWORD" mariadb --host="$DB_HOST" --user="$DB_ADMIN_USER" \
+  kj_atlas_restore < kj_atlas_mariadb.sql
+```
+
+<a id="database-mssql"></a>
+### SQL Server 2022
+
+database backup権限と、復元先を作成できる管理権限が必要です。backup fileはSQL Server processから見える管理pathへ置きます。復元前に`RESTORE FILELISTONLY`で実際のlogical file名を確認し、`MOVE`の値へ使います。
+
+```sql
+BACKUP DATABASE [kj_atlas]
+  TO DISK = N'/var/opt/mssql/data/kj_atlas.bak'
+  WITH INIT, COPY_ONLY;
+RESTORE FILELISTONLY
+  FROM DISK = N'/var/opt/mssql/data/kj_atlas.bak';
+RESTORE DATABASE [kj_atlas_restore]
+  FROM DISK = N'/var/opt/mssql/data/kj_atlas.bak'
+  WITH MOVE N'<data-logical-name>' TO N'/var/opt/mssql/data/kj_atlas_restore.mdf',
+       MOVE N'<log-logical-name>' TO N'/var/opt/mssql/data/kj_atlas_restore_log.ldf';
+```
+
+<a id="database-cockroachdb"></a>
+### CockroachDB 26.2
+
+`BACKUP`権限と復元先作成権限が必要です。次はsingle-node検証で確認した`nodelocal`例です。multi-nodeやmanaged serviceでは共有object storage URIとKMS／IAMを組織側で定義します。
+
+```sql
+BACKUP DATABASE "kj_atlas" INTO 'nodelocal://1/kj_atlas-backup';
+RESTORE DATABASE "kj_atlas" FROM LATEST IN 'nodelocal://1/kj_atlas-backup'
+  WITH new_db_name = 'kj_atlas_restore';
+```
+
+<a id="database-oracle"></a>
+### Oracle AI Database 26ai
+
+Data Pump directoryへのread/write権限、source schemaのexport権限、復元schemaの作成・quota設定が必要です。passwordを引数へ埋め込まず、walletまたは対話入力等の組織標準のsecret受渡しを使用します。復元先schemaを事前作成してから`REMAP_SCHEMA`で隔離します。
+
+```bash
+expdp "$DB_ADMIN_USER@$ORACLE_SERVICE" SCHEMAS=KJ_ATLAS DIRECTORY=DATA_PUMP_DIR \
+  DUMPFILE=kj_atlas.dmp LOGFILE=kj_atlas_exp.log REUSE_DUMPFILES=YES
+impdp "$DB_ADMIN_USER@$ORACLE_SERVICE" DIRECTORY=DATA_PUMP_DIR \
+  DUMPFILE=kj_atlas.dmp LOGFILE=kj_atlas_imp.log \
+  REMAP_SCHEMA=KJ_ATLAS:RESTORED_SCHEMA
+```
+
+復元確認後は検証用database/schemaと一時backupを、組織の保持・監査方針に従って削除します。削除対象をsourceと照合し、名前が曖昧な状態では実行しません。
 
 ## ログを見る
 

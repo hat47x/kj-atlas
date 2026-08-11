@@ -361,6 +361,8 @@ jobs:
           KJ_ATLAS_RUN_MYSQL_TESTS: "1"
           KJ_ATLAS_TEST_MYSQL_URL: mysql+pymysql://root:kj_atlas@127.0.0.1:3306/kj_atlas
           KJ_ATLAS_TEST_MARIADB_URL: mariadb+pymysql://root:kj_atlas@127.0.0.1:3307/kj_atlas
+          KJ_ATLAS_TEST_MYSQL_CONTAINER: ${{ job.services.mysql.id }}
+          KJ_ATLAS_TEST_MARIADB_CONTAINER: ${{ job.services.mariadb.id }}
         run: pytest -m mysql
 
       - name: Test (SQL Server)

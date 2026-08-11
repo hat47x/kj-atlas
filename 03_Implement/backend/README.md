@@ -86,36 +86,9 @@ Oracle Database FreeにはCPU、RAM、ユーザーデータ量、同一論理環
 
 ## Minimal backup / restore
 
-`documents.payload_json` に `DocumentV1` 全体を JSON スナップショットとして保存しています。
+`documents.payload_json`には`DocumentV1`全体をJSON snapshotとして保存しています。バックアップは取得だけで完了とせず、本番とは別のdatabase／schema／pathへ復元してDocument、判断ログ、schema revision、大容量本文を照合してください。
 
-### SQLite
-
-- DB ファイル場所（既定）: `03_Implement/backend/kj_atlas.db`（`KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db` の場合）
-- バックアップ: API 停止中にファイルをそのままコピー
-
-```bash
-cp 03_Implement/backend/kj_atlas.db 03_Implement/backend/kj_atlas.db.bak
-```
-
-- リストア: 退避しておいた `.bak` を元ファイル名へ戻す
-
-```bash
-cp 03_Implement/backend/kj_atlas.db.bak 03_Implement/backend/kj_atlas.db
-```
-
-### PostgreSQL
-
-- バックアップ（最小例: custom format）
-
-```bash
-pg_dump -Fc "$KJ_ATLAS_DATABASE_URL" -f kj_atlas_pg.dump
-```
-
-- リストア（最小例）
-
-```bash
-pg_restore -d "$KJ_ATLAS_DATABASE_URL" --clean --if-exists kj_atlas_pg.dump
-```
+SQLite、PostgreSQL、MySQL、MariaDB、SQL Server、CockroachDB、Oracleの検証済み最小手順と中断条件は、公開運用正本の[`operations.md`「バックアップと隔離復元」](../../04_Documentation/operations.md#バックアップと隔離復元)を参照してください。製品別コマンドをこのREADMEへ重複記載しません。
 
 
 ## Tests
