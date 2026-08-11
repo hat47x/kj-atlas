@@ -122,6 +122,14 @@ SaaS runtime profileは、実判定可能なaccess-control adapterと`deny` fail
 5. **Platform operatorを全tenantのsuper-userにする**: 運用権限と顧客データ閲覧を不要に結合するため不採用。
 6. **tenantごとにUserを複製する**: 複数tenant所属とidentity lifecycleが不自然になるため、global Userとmembershipの分離を採用する。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 相互に信頼しない複数顧客を同じサービスへ収容するには、tenantをUI filterではなく構造境界として扱う必要がある。tenant不明・membership停止中はreadを含めてdenyする | 機能: 全APIがTenantContext必須。データ: tenantIdはserver-generated opaque ID、表示名を認可keyにしない |
+| **データ設計** | tenantIdは全リソース（Document, MergeDecisionLog, InquiryBundle, AuditEvent, cache, object storage key）に伝播する。shared schemaではPostgreSQL RLS等のDB側guardを必須とする | 業務: SQLiteはsingle-tenant限定。機能: docIdだけの既存DBアクセスは全面的棚卸しが必要 |
+| **機能設計** | TenantContextは署名・issuer・audience検証済みclaimまたはtrusted proxy mappingからのみ解決。browser入力を認可根拠にしない。active tenantはserver-issued tenantSessionVersionでguardする | データ: tenantIdをlocalStorageや表示名から復元しない。業務: tenant切替はcontext変更要求であり、backendがmembership再確認して新context発行 |
+
 ## Consequences
 
 - tenantはUI filterではなく、DB、API、認可、cache、非同期処理、監査を横断する必須contextになる。
