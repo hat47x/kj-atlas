@@ -254,11 +254,8 @@ def main() -> int:
         return 1
 
     design = decision.get("designDecision", decision)
-    if design.get("type") != "ai_task":
-        print(f"Error: only 'ai_task' type is currently supported, got '{design.get('type')}'")
-        return 1
 
-    # Verify three-element constraint check passed
+    # Verify three-element constraint check passed (all types)
     issues = check_three_element_verification(decision)
     if issues:
         print("ERROR: Design decision has NOT passed three-element verification:")
@@ -271,37 +268,158 @@ def main() -> int:
         print("OK: Three-element verification passed")
         return 0
 
+    design_type = design.get("type")
+    if design_type == "ai_task":
+        _generate_ai_task(design, args)
+    elif design_type == "ui_component":
+        _generate_ui_component(design, args)
+    elif design_type == "data_boundary":
+        _generate_data_boundary(design, args)
+    else:
+        print(f"Error: unsupported design decision type '{design_type}'")
+        print("Supported types: ai_task, ui_component, data_boundary")
+        return 1
+
+    return 0
+
+
+def _generate_ai_task(design: dict, args: Any) -> None:
     task_name = design["taskName"]
     print(f"Generating code for AI task: {task_name}")
     print(f"  Model level: {design.get('modelLevel', 'not specified')}")
     print(f"  Recommended model: {design.get('recommendedModel', 'not specified')}")
 
-    # Generate code
     print("\n=== Generated Pydantic models ===")
-    models_code = generate_pydantic_models(design)
-    print(models_code)
-
+    print(generate_pydantic_models(design))
     print("=== Generated route handler ===")
-    route_code = generate_route_handler(design)
-    print(route_code)
-
+    print(generate_route_handler(design))
     print("=== Generated client function ===")
-    client_code = generate_client_function(design)
-    print(client_code)
+    print(generate_client_function(design))
 
     if args.dry_run:
         print("\n[Dry run — no files written]")
-        return 0
+        return
 
     print("\nNote: This is a template generator. Review and customize the output")
     print("before inserting into the actual codebase.")
-    print(f"Target files:")
+    print("Target files:")
     print(f"  1. {MODELS_AI_PY} — append Pydantic models")
     print(f"  2. {ROUTES_AI_PY} — add route handler + prompt/parse functions + imports")
     print(f"  3. {CLIENT_TS} — add client function + types")
     print(f"  4. {AGENTS_MD} — add to operation model level table")
 
-    return 0
+
+def _generate_ui_component(design: dict, args: Any) -> None:
+    """Generate a React component skeleton from a three-element-verified design decision."""
+    name = design.get("componentName", design.get("name", "UntitledComponent"))
+    # If already PascalCase (no separators), use as-is; else normalize.
+    if "_" in name or "-" in name or name[0].islower():
+        pascal = "".join(w.capitalize() for w in name.replace("-", "_").split("_"))
+    else:
+        pascal = name
+    props = design.get("props", [])
+    i18n_keys = design.get("i18nKeys", [])
+    test_ids = design.get("testIds", [])
+
+    print(f"Generating UI component: {pascal}")
+    print(f"  Props: {', '.join(p['name'] for p in props) if props else '(none)'}")
+    print(f"  i18n keys: {', '.join(i18n_keys) if i18n_keys else '(none)'}")
+
+    # Prop type definitions
+    prop_lines = []
+    for prop in props:
+        pname = prop.get("name", "field")
+        ptype = prop.get("type", "string")
+        prop_lines.append(f"  {pname}: {ptype};")
+
+    prop_block = "\n".join(prop_lines) if prop_lines else "  // TODO: define props"
+
+    # i18n key pairs (ja/en)
+    i18n_lines = []
+    for key in i18n_keys:
+        short = key.split(".")[-1]
+        i18n_lines.append(f'  "{key}": "{short}",')
+
+    i18n_block = "\n".join(i18n_lines) if i18n_lines else '  "TODO": "TODO",'
+
+    # data-testid attributes
+    testid_block = " ".join(f'data-testid="{tid}"' for tid in test_ids)
+
+    component = f'''import React from "react";
+import {{ t }} from "../i18n/translate";
+
+export interface {pascal}Props {{
+{prop_block}
+}}
+
+export function {pascal}({{
+{", ".join(p.get("name", "field") for p in props) if props else ""}
+}}: {pascal}Props) {{
+  return (
+    <div {testid_block}>
+      <span>{{t("TODO")}}</span>
+    </div>
+  );
+}}
+'''
+    print("\n=== Generated component ===")
+    print(component)
+
+    print("=== i18n keys to add (ja/en) ===")
+    print(f"ja.json:\n{i18n_block}")
+    print(f"en.json:\n{i18n_block}")
+
+    if args.dry_run:
+        print("\n[Dry run — no files written]")
+        return
+
+    print("\nNote: This is a template generator. Review and customize the output")
+    print("before inserting into the actual codebase.")
+    print("Target files:")
+    print(f"  1. src/ui/{pascal}.tsx — component")
+    print(f"  2. src/i18n/locales/ja.json + en.json — i18n keys")
+    print(f"  3. src/App.tsx — import + integration")
+
+
+def _generate_data_boundary(design: dict, args: Any) -> None:
+    """Generate Pydantic models + contract notes from a three-element-verified design decision."""
+    type_name = design.get("typeName", design.get("name", "NewType"))
+    if "_" in type_name or "-" in type_name or type_name[0].islower():
+        pascal = "".join(w.capitalize() for w in type_name.replace("-", "_").split("_"))
+    else:
+        pascal = type_name
+    fields = design.get("fields", [])
+
+    print(f"Generating data boundary type: {pascal}")
+    print(f"  Fields: {len(fields)}")
+
+    field_lines = []
+    for field in fields:
+        fname = field.get("name", "field")
+        ftype = field.get("type", "str")
+        field_lines.append(f"    {fname}: {ftype}")
+
+    field_block = "\n".join(field_lines) if field_lines else "    # TODO: define fields"
+
+    model = f'''class {pascal}(BaseModel):
+    """{design.get('description', pascal)} — {design.get('saveScope', 'server')} 保存."""
+    model_config = ConfigDict(extra="forbid")
+
+{field_block}
+'''
+    print("\n=== Generated Pydantic model ===")
+    print(model)
+
+    if args.dry_run:
+        print("\n[Dry run — no files written]")
+        return
+
+    print("\nNote: This is a template generator. Review and customize the output")
+    print("before inserting into the actual codebase.")
+    print("Target files:")
+    print(f"  1. models_ai.py / models.py — Pydantic model")
+    print(f"  2. 02_Architecture/schemas.md — TypeScript type + section")
+    print(f"  3. 02_Architecture/api.md — endpoint contract (if API-changing)")
 
 
 if __name__ == "__main__":
