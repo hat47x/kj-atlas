@@ -196,6 +196,7 @@ flowchart TB
     <tr><td>5</td><td><code>tests/test_llm_provider.py</code></td><td>DeepSeekProviderテスト（正常系・認証エラー・空レスポンス）</td><td>既存テストのパターン</td></tr>
     <tr><td>6</td><td><code>AGENTS.md</code> §1.2</td><td>操作別モデルレベル表に1行追加</td><td>既存行のパターン</td></tr>
     <tr><td>7</td><td><code>ai_kj_execution_procedures.md</code></td><td>AI実行手順に1項目追加</td><td>既存項目のパターン</td></tr>
+    <tr><td>8</td><td><code>tests/test_codegen_{task}.py</code></td><td>エンドポイントテスト（成功 + provider-disabled 503）</td><td>test_ai_provider_error_contract.py のパターン（DX-CODEGEN-03）</td></tr>
   </tbody>
 </table>
 
@@ -361,6 +362,20 @@ flowchart TB
   <li><code>frontend typecheck + test</code> — TypeScript型チェック + Playwright e2e</li>
   <li><code>backend lint + test</code> — pytest + 契約テスト</li>
 </ol>
+
+<h2>7. テスト生成（DX-CODEGEN-03）</h2>
+
+<p>生成コードに対応するテストも自動生成される。生成物は構文検証（<code>ast.parse</code>）を通過する。</p>
+
+<table>
+  <thead><tr><th>型</th><th>生成テスト</th><th>パターン</th></tr></thead>
+  <tbody>
+    <tr><td><code>data_boundary</code></td><td>roundtripテスト（モデル→JSON→モデル）+ 検証制約テスト（min_length違反を拒否）</td><td>pytest + Pydantic ValidationError</td></tr>
+    <tr><td><code>ai_task</code></td><td>エンドポイント成功（stub LLM + HTTP 200）+ provider-disabled（HTTP 503）</td><td>test_ai_provider_error_contract.py（monkeypatchでgenerate_with_fallback差し替え）</td></tr>
+  </tbody>
+</table>
+
+<h2>Traceability</h2>
 
 <h2>Traceability</h2>
 
