@@ -204,3 +204,24 @@ def test_ui_component_list_pattern_generates_map() -> None:
     assert result.returncode == 0, result.stderr
     assert "items.map" in result.stdout
     assert "onAdd" in result.stdout
+
+
+def test_data_boundary_generates_field_validation() -> None:
+    """data_boundary emits Field(...) constraints from field specs."""
+    decision = _verified({
+        "type": "data_boundary",
+        "typeName": "FieldworkRequestV1",
+        "description": "W型の現場への問い",
+        "saveScope": "document",
+        "fields": [
+            {"name": "id", "type": "str", "minLength": 1, "maxLength": 64},
+            {"name": "question", "type": "str", "minLength": 1, "maxLength": 500},
+            {"name": "resolved", "type": "bool", "default": "False"},
+        ],
+    })
+    result = _run_script(decision, "--dry-run")
+    assert result.returncode == 0, result.stderr
+    assert "Field(min_length=1, max_length=64)" in result.stdout
+    assert "Field(min_length=1, max_length=500)" in result.stdout
+    assert "Field(default=False)" in result.stdout
+    assert "..." not in result.stdout  # no bare required-marker in Field()

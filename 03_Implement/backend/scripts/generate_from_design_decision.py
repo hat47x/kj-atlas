@@ -549,11 +549,26 @@ def _generate_data_boundary(design: dict, args: Any) -> None:
     print(f"Generating data boundary type: {pascal}")
     print(f"  Fields: {len(fields)}")
 
+    # DX-CODEGEN-02: generate field validation constraints from field specs.
+    # If a field declares minLength/maxLength/pattern, emit the Pydantic
+    # Field(...) constraint instead of a bare type annotation.
     field_lines = []
     for field in fields:
         fname = field.get("name", "field")
         ftype = field.get("type", "str")
-        field_lines.append(f"    {fname}: {ftype}")
+        constraints: list[str] = []
+        if field.get("minLength"):
+            constraints.append(f"min_length={field['minLength']}")
+        if field.get("maxLength"):
+            constraints.append(f"max_length={field['maxLength']}")
+        if field.get("pattern"):
+            constraints.append(f'pattern=r"{field["pattern"]}"')
+        if field.get("default") is not None:
+            constraints.append(f"default={field['default']}")
+        if constraints:
+            field_lines.append(f"    {fname}: {ftype} = Field({', '.join(constraints)})")
+        else:
+            field_lines.append(f"    {fname}: {ftype}")
 
     field_block = "\n".join(field_lines) if field_lines else "    # TODO: define fields"
 
