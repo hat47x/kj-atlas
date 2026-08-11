@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/alembic/versions/`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.html`
-- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/post-mvp-business-scope-design-program.html`
+- Related ADR/Spec: `01_Plans/adr/ADR-0073-document-ownership-and-lifecycle-model.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/post-mvp-business-scope-design-program.html`
 - Expected verification level: `unit`
 
 ## 課題
@@ -51,6 +51,10 @@ payload_json
 共有側は `document_access_metadata`（`visibility`: Public / Unlisted / Org / Restricted ＋ `policy_binding_id`）が既に実装済みである。すなわち **「誰に見せるか」は設計済みだが「誰のものか」が未設計** という状態にある。
 
 ## 論点（人的判断が必要な理由）
+
+> **2026-08-11: 本節の論点を `ADR-0073` として起票済み**（`01_Plans/adr/ADR-0073-document-ownership-and-lifecycle-model.md`、Status: Proposed）。D1（所有の単位）/ D2（ライフサイクル語彙）/ D3（移行初期値）の選択肢と推奨、三要素整合を同ADRへ整理した。本issueの着工は同ADRの採択後とする。
+>
+> なお起票時に4論点としていたうち「作成者と所有者を分けるか」は、ADR-0073 の D1=C（作成者は不変・帰属はテナント・管理権はcapability）を採ると自動的に決まるため、独立の論点から外した。
 
 データ列を足すこと自体は機械的だが、**何を表す列を足すか**は製品判断を伴う。
 
