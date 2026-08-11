@@ -1,0 +1,235 @@
+{
+  "version": 1,
+  "id": "doc_ai_eval_kj",
+  "title": "地域ヒアリングの整理 — AI評価用KJ法文書",
+  "createdAt": "2026-08-11T00:00:00.000Z",
+  "updatedAt": "2026-08-11T00:00:00.000Z",
+  "transform": {
+    "panX": 0,
+    "panY": 0,
+    "zoom": 0.7
+  },
+  "cards": [
+    {
+      "id": "c01",
+      "text": "高齢者は一人で買い物に行けない",
+      "x": 100,
+      "y": 50,
+      "claimType": "fact",
+      "textReviewed": true
+    },
+    {
+      "id": "c02",
+      "text": "商店街の店が次々と閉店している",
+      "x": 100,
+      "y": 150,
+      "claimType": "fact",
+      "textReviewed": true
+    },
+    {
+      "id": "c03",
+      "text": "バスの本数が減って不便になっている",
+      "x": 100,
+      "y": 250,
+      "claimType": "fact",
+      "textReviewed": true
+    },
+    {
+      "id": "c04",
+      "text": "宅配サービスを利用する高齢者が増えている",
+      "x": 350,
+      "y": 50,
+      "claimType": "fact",
+      "textReviewed": true
+    },
+    {
+      "id": "c05",
+      "text": "若い世代はネット通販を日常的に使っている",
+      "x": 350,
+      "y": 150,
+      "claimType": "fact",
+      "textReviewed": true
+    },
+    {
+      "id": "c06",
+      "text": "地元の食材を扱う直売所に人が集まる",
+      "x": 350,
+      "y": 250,
+      "claimType": "fact",
+      "textReviewed": true
+    },
+    {
+      "id": "c07",
+      "text": "移動販売車が地域を巡回している",
+      "x": 600,
+      "y": 50,
+      "claimType": "fact",
+      "textReviewed": true
+    },
+    {
+      "id": "c08",
+      "text": "公民館で週に一度サロンが開かれている",
+      "x": 600,
+      "y": 150,
+      "claimType": "fact",
+      "textReviewed": true
+    },
+    {
+      "id": "c09",
+      "text": "住民同士の助け合い活動が活発だ",
+      "x": 600,
+      "y": 250,
+      "claimType": "fact",
+      "textReviewed": true
+    },
+    {
+      "id": "c10",
+      "text": "買い物弱者を支える仕組みが十分でない",
+      "x": 850,
+      "y": 50,
+      "claimType": "claim",
+      "textReviewed": true
+    },
+    {
+      "id": "c11",
+      "text": "空き店舗を活用した新たな取り組みが始まっている",
+      "x": 850,
+      "y": 150,
+      "claimType": "claim",
+      "textReviewed": true
+    },
+    {
+      "id": "c12",
+      "text": "地域のつながりが買い物支援につながっている",
+      "x": 850,
+      "y": 250,
+      "claimType": "claim",
+      "textReviewed": true
+    }
+  ],
+  "edges": [
+    {
+      "id": "e01",
+      "fromId": "c01",
+      "toId": "c10",
+      "type": "causal"
+    },
+    {
+      "id": "e02",
+      "fromId": "c02",
+      "toId": "c10",
+      "type": "causal"
+    },
+    {
+      "id": "e03",
+      "fromId": "c03",
+      "toId": "c10",
+      "type": "causal"
+    },
+    {
+      "id": "e04",
+      "fromId": "c04",
+      "toId": "c12",
+      "type": "related"
+    },
+    {
+      "id": "e05",
+      "fromId": "c06",
+      "toId": "c12",
+      "type": "related"
+    },
+    {
+      "id": "e06",
+      "fromId": "c09",
+      "toId": "c12",
+      "type": "causal"
+    }
+  ],
+  "islands": [
+    {
+      "id": "i1",
+      "cardIds": [
+        "c01",
+        "c02",
+        "c03"
+      ],
+      "title": "高齢者の買い物困難",
+      "shape": {
+        "kind": "rect"
+      },
+      "geometry": {
+        "type": "rect",
+        "x": 80,
+        "y": 20,
+        "w": 200,
+        "h": 240
+      }
+    },
+    {
+      "id": "i2",
+      "cardIds": [
+        "c04",
+        "c05",
+        "c06"
+      ],
+      "title": "新しい購買手段の浸透",
+      "shape": {
+        "kind": "rect"
+      },
+      "geometry": {
+        "type": "rect",
+        "x": 330,
+        "y": 20,
+        "w": 200,
+        "h": 240
+      }
+    },
+    {
+      "id": "i3",
+      "cardIds": [
+        "c07",
+        "c08",
+        "c09"
+      ],
+      "title": "地域の助け合いの仕組み",
+      "shape": {
+        "kind": "rect"
+      },
+      "geometry": {
+        "type": "rect",
+        "x": 580,
+        "y": 20,
+        "w": 200,
+        "h": 240
+      }
+    },
+    {
+      "id": "i4",
+      "cardIds": [
+        "c10",
+        "c11",
+        "c12"
+      ],
+      "title": "支援の課題と新たな可能性",
+      "shape": {
+        "kind": "rect"
+      },
+      "geometry": {
+        "type": "rect",
+        "x": 830,
+        "y": 20,
+        "w": 200,
+        "h": 240
+      }
+    }
+  ],
+  "evidenceLinks": [],
+  "readingOrder": [
+    "i1",
+    "i2",
+    "i3",
+    "i4"
+  ],
+  "narratives": [],
+  "mergeSuggestionDecisions": []
+}
