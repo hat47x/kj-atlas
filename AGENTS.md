@@ -55,8 +55,8 @@ AIが自律的に判断できる範囲を4段階で定義する。現在のセ�
 **L2での動作**: AIは設計判断の三要素整合チェック（`three-element-constraint-checklist.html` の18項目）を自律実行し、不整合を指摘する。最終適用判断は人間が行う（SafeMode・proposal-only・human_reviewedの緩和禁止を維持）。
 
 **現在の自律性進捗**（2026-08-12。詳細は `01_Plans/dogfood/README.md` と `01_Plans/dogfood/codegen_results.md`）:
-- L2: ①警告1件 ✅ ②ADR 75/75件 ✅ ③実API検証 2/2達成（DeepSeek実API評価完了: refine_card_text 10/10・suggest_island_summary 4/4）— **L2昇格条件全達成**
-- L3: ①コード生成 骨格80%/ロジック100%/テスト100% ✅ ②管理面 auth edge待ち ③週次ドッグフード運用待ち
+- L2: ①警告1件 ✅ ②ADR 75/75件 ✅ ③実API検証 2/2達成（refine_card_text 10/10・suggest_island_summary 4/4）— **昇格済み（ADR-0075）**
+- L3: ①コード生成 ドライラン 骨格80%/ロジック100%/テスト100%・実適用66%（2/3） ②管理面 auth edge待ち ③週次ドッグフード運用待ち
 
 ## 2. 最小読取ルール
 
