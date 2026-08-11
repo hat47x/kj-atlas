@@ -164,3 +164,43 @@ def test_ui_component_no_existing_match_generates() -> None:
     result = _run_script(decision, "--dry-run")
     assert result.returncode == 0, result.stderr
     assert "Generating UI component: TestComponent" in result.stdout
+
+
+def test_ui_component_form_pattern_generates_jsx_logic() -> None:
+    """pattern='form' generates input + save + Escape/Ctrl+Enter logic."""
+    decision = _verified({
+        "type": "ui_component",
+        "componentName": "SettingsNoteForm",
+        "pattern": "form",
+        "props": [
+            {"name": "onSave", "type": "(note: string) => void"},
+            {"name": "onCancel", "type": "() => void"},
+        ],
+        "i18nKeys": ["settings_note.save"],
+        "testIds": ["settings-note-form"],
+    })
+    result = _run_script(decision, "--dry-run")
+    assert result.returncode == 0, result.stderr
+    assert "useState" in result.stdout
+    assert "handleKeyDown" in result.stdout
+    assert "ctrlKey" in result.stdout
+    assert "textarea" in result.stdout
+
+
+def test_ui_component_list_pattern_generates_map() -> None:
+    """pattern='list' generates items.map list rendering + add button."""
+    decision = _verified({
+        "type": "ui_component",
+        "componentName": "ReadingOrderList",
+        "pattern": "list",
+        "props": [
+            {"name": "items", "type": "ReadingOrderItem[]"},
+            {"name": "onAdd", "type": "(id: string) => void"},
+        ],
+        "i18nKeys": ["reading_order.add"],
+        "testIds": ["reading-order-list"],
+    })
+    result = _run_script(decision, "--dry-run")
+    assert result.returncode == 0, result.stderr
+    assert "items.map" in result.stdout
+    assert "onAdd" in result.stdout

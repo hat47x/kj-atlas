@@ -377,6 +377,93 @@ def _find_existing_implementations(design: dict) -> list[str]:
     return conflicts
 
 
+def _generate_imports(pattern: str) -> str:
+    """Return extra import lines needed for the given pattern."""
+    if pattern == "form":
+        return ""
+    if pattern == "list":
+        return ""
+    return ""
+
+
+def _generate_jsx_logic(pascal: str, props: list, pattern: str, test_ids: list) -> str:
+    """Generate JSX logic for common UI patterns (DX-CODEGEN-02).
+
+    pattern "basic": skeleton only (no JSX logic).
+    pattern "form": input + save/cancel buttons + Escape/Ctrl+Enter.
+    pattern "list": list rendering via map + add button.
+
+    The returned string is a plain (non-f) string so JSX braces are kept
+    verbatim. Pascal and test_ids are used only for minor substitutions.
+    """
+    testid_attrs = " ".join(f'data-testid="{v}"' for v in test_ids)
+
+    if pattern == "form":
+        return (
+            '  const [value, setValue] = useState("");\n'
+            '  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {\n'
+            '    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {\n'
+            '      e.preventDefault();\n'
+            '      onSave(value);\n'
+            '    } else if (e.key === "Escape") {\n'
+            '      e.preventDefault();\n'
+            '      onCancel?.();\n'
+            '    }\n'
+            '  };\n'
+            '  return (\n'
+            f'    <div {testid_attrs}>\n'
+            '      <textarea\n'
+            '        value={value}\n'
+            '        onChange={(e) => setValue(e.target.value)}\n'
+            '        onKeyDown={handleKeyDown}\n'
+            '        data-testid="form-input"\n'
+            '        placeholder={t("TODO")}\n'
+            '      />\n'
+            '      <button onClick={() => onSave(value)} data-testid="form-save">\n'
+            '        {t("TODO")}\n'
+            '      </button>\n'
+            '      {onCancel ? (\n'
+            '        <button onClick={onCancel} data-testid="form-cancel">\n'
+            '          {t("TODO")}\n'
+            '        </button>\n'
+            '      ) : null}\n'
+            '    </div>\n'
+            '  );'
+        )
+
+    if pattern == "list":
+        items_prop = "items"
+        for p in props:
+            if "[]" in p.get("type", "") or p.get("name") in ("items", "questions", "entries"):
+                items_prop = p.get("name")
+                break
+        return (
+            '  return (\n'
+            f'    <div {testid_attrs}>\n'
+            '      <ul data-testid="list">\n'
+            f'        {{{items_prop}.map((item, index) => (\n'
+            '          <li key={index}>{JSON.stringify(item)}</li>\n'
+            '        ))}\n'
+            '      </ul>\n'
+            '      {onAdd ? (\n'
+            '        <button onClick={() => onAdd?.("")} data-testid="list-add">\n'
+            '          {t("TODO")}\n'
+            '        </button>\n'
+            '      ) : null}\n'
+            '    </div>\n'
+            '  );'
+        )
+
+    # basic: skeleton only
+    return (
+        '  return (\n'
+        f'    <div {testid_attrs}>\n'
+        '      <span>{t("TODO")}</span>\n'
+        '    </div>\n'
+        '  );'
+    )
+
+
 def _generate_ui_component(design: dict, args: Any) -> None:
     """Generate a React component skeleton from a three-element-verified design decision."""
     name = design.get("componentName", design.get("name", "UntitledComponent"))
@@ -413,8 +500,13 @@ def _generate_ui_component(design: dict, args: Any) -> None:
     # data-testid attributes
     testid_block = " ".join(f'data-testid="{tid}"' for tid in test_ids)
 
-    component = f'''import React from "react";
-import {{ t }} from "../i18n/translate";
+    # DX-CODEGEN-02: pattern-driven JSX logic generation
+    pattern = design.get("pattern", "basic")
+    handler_block = _generate_jsx_logic(pascal, props, pattern, test_ids)
+    import_lines = _generate_imports(pattern)
+
+    component = f'''import React, {{ useState }} from "react";
+{import_lines}import {{ t }} from "../i18n/translate";
 
 export interface {pascal}Props {{
 {prop_block}
@@ -423,11 +515,7 @@ export interface {pascal}Props {{
 export function {pascal}({{
 {", ".join(p.get("name", "field") for p in props) if props else ""}
 }}: {pascal}Props) {{
-  return (
-    <div {testid_block}>
-      <span>{{t("TODO")}}</span>
-    </div>
-  );
+{handler_block}
 }}
 '''
     print("\n=== Generated component ===")
