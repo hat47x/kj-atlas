@@ -1,7 +1,7 @@
 # Issue: AI-IMPORTANCE-SCORING-01 重要度評価エンドポイントが「AIは内容を採点せず」と抵触している
 
 - Type: Product Invariant / AI Integration
-- Status: Open
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Unassigned
@@ -77,14 +77,14 @@ D-a〜D-c の選択が設計判断として重いと判断される場合は、�
 
 採択された方向により異なる。共通するもの:
 
-- [ ] AC-1: `00_Prompt/domain.md:88` の宣言と、`routes/ai.py` の実装が整合している状態をテストで固定する。
-- [ ] AC-2: `03_Implement/deploy/tools/kj_canvas_demo.py` が採択された方向に追随している。カードを序列として可視化する表示が残っていない（D-c を除く）。
-- [ ] AC-3: フロントエンド（`client.ts` および呼び出し側UI）が追随している。
-- [ ] AC-4: `00_Prompt/representative_visual_cue_requirements.md:28` の非目標一覧と矛盾しない。
+- [x] AC-1: `00_Prompt/domain.md:88` の宣言と、`routes/ai.py` の実装が整合している状態をテストで固定する。
+- [x] AC-2: `03_Implement/deploy/tools/kj_canvas_demo.py` が採択された方向に追随している。カードを序列として可視化する表示が残っていない（D-c を除く）。
+- [x] AC-3: フロントエンド（`client.ts` および呼び出し側UI）が追随している。
+- [x] AC-4: `00_Prompt/representative_visual_cue_requirements.md:28` の非目標一覧と矛盾しない。
 
 D-a を採る場合:
 
-- [ ] AC-5a: `POST /ai/assess-card-importance` が存在しないこと、および関連する型（`AssessCardImportanceRequest` / `AssessCardImportanceResponse` / `_CardAssessment`）が削除されていることを確認する。
+- [x] AC-5a: `POST /ai/assess-card-importance` が存在しないこと、および関連する型（`AssessCardImportanceRequest` / `AssessCardImportanceResponse` / `_CardAssessment`）が削除されていることを確認する。
 
 D-b を採る場合:
 
@@ -111,3 +111,12 @@ D-b を選ぶ場合のみ、`01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input
 - frontend: `npx vitest run` および `npx tsc --noEmit -p .`
 - `python 01_Plans/docs_check.py`
 - 手動: `python 03_Implement/deploy/tools/kj_canvas_demo.py`（`--real` なし）が採択後の挙動と一致すること
+
+## 完了記録（2026-08-11）
+
+- D-aを採用し、カード内容を`high` / `medium` / `low`へ序列化するAPI、Pydantic型、prompt/parser、mock応答、統合テストを削除した。
+- デモから重要度評価工程を削除し、全9タスク・6フェーズへ再構成した。
+- フロントエンドには呼び出しAPI・UIが存在しないことを確認した。
+- `test_ai_anti_scoring_contract.py`でroute、型、実装、デモから採点surfaceが復活しないことと、`domain.md`の明文不変条件を固定した。
+- 将来の代替はADR-0069の`graph_summary`による、順位・等級を含まない構造的観測に限定する。
+- 検証: backend全体 `909 passed, 33 skipped, 8 deselected`、対象回帰30件、ruff、docs-check、mock demo完走（9タスク・6フェーズ、終了後port解放）を確認した。

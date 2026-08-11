@@ -298,29 +298,6 @@ class DetectContradictionResponse(BaseModel):
     explanation: str | None = None
 
 
-class AssessCardImportanceRequest(BaseModel):
-    """Request to assess the importance/centrality of KJ-method cards."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    cards: list[_CardRef] = Field(min_length=1, max_length=100)
-
-
-class AssessCardImportanceResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    assessments: list[_CardAssessment]
-
-
-class _CardAssessment(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    cardId: str
-    importance: str  # "high" | "medium" | "low"
-    rationale: str | None = None
-
-    proposalId: str = Field(min_length=1)
-
-
 class SuggestDocumentTitleRequest(BaseModel):
     """Request to suggest document titles based on content overview."""
 

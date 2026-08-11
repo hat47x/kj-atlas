@@ -92,12 +92,11 @@ class TestMockLLMIntegration:
             _generate(MOCK_URL, "check_narrative", "check test"))
         assert "issues" in data
 
-    def test_all_ten_tasks_non_empty(self):
+    def test_all_nine_tasks_non_empty(self):
         for task in ["re_layout", "suggest_merges", "suggest_island_summary",
                      "summarize_island_relation", "generate_narrative",
                      "check_narrative", "refine_card_text",
-                     "suggest_card_groups", "detect_contradiction",
-                     "assess_card_importance"]:
+                     "suggest_card_groups", "detect_contradiction"]:
             assert len(_generate(MOCK_URL, task, "test")) > 0, f"Empty for {task}"
 
     # ADR-0064: KJ-method card-level tests
@@ -118,13 +117,6 @@ class TestMockLLMIntegration:
             _generate(MOCK_URL, "detect_contradiction",
                       'Card A: X\nCard B: Y'))
         assert "hasContradiction" in data
-
-    def test_assess_card_importance_valid_json(self):
-        data = json.loads(
-            _generate(MOCK_URL, "assess_card_importance",
-                      'Cards:\n  - id="a", text="Important"\n  - id="b", text="Minor"'))
-        assert "assessments" in data
-
 
 EXTERNAL_LLM_URL = "http://localhost:8001/generate"
 
@@ -166,14 +158,6 @@ class TestExternalLLMIntegration:
         text = _generate(EXTERNAL_LLM_URL, "detect_contradiction",
                          "Card A: Data must be encrypted.\n"
                          "Card B: Data stored as plain text. Return JSON only.",
-                         timeout=130)
-        assert len(text) > 10
-
-    def test_external_assess_card_importance(self):
-        text = _generate(EXTERNAL_LLM_URL, "assess_card_importance",
-                         '- id="a", text="Security"\n'
-                         '- id="b", text="Theme"\n'
-                         '- id="c", text="2FA"\nReturn JSON only.',
                          timeout=130)
         assert len(text) > 10
 

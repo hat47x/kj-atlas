@@ -393,3 +393,10 @@ Updated: 2026-08-03
 - 原因: schema exportにはuser作成metadataも含まれ、restore helperによる同名userの事前作成と競合した。
 - 対応: restore前は対象userをdropするだけにし、user・grant・tableの再作成をData Pumpへ一貫して委ねた。
 - 再発防止: backup/restore testはrow照合だけでなくutility終了codeも成功条件とし、警告付き部分成功を受理しない。
+
+## 2026-08-11: KJ demoが既存mock processを新規起動成功と誤認
+
+- 事象: `kj_canvas_demo.py`実行前からport 8001にtest mockが残り、新規mockはbind失敗したが既存processのhealth応答で起動成功と判定した。
+- 原因: `_start_mock()`がHTTP到達だけを確認し、生成した子processの生存を確認していなかった。demo終了時の子process cleanupもなかった。
+- 対応: 子processの早期終了を起動失敗として扱い、demo所有processを`finally`でterminate/waitする。script pathもcheckout相対で解決した。
+- 再発防止: local service harnessはhealth確認と同時に「自分が起動したprocessが生存していること」を検証し、所有processだけを必ず終了する。

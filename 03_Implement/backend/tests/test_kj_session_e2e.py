@@ -1,20 +1,19 @@
 """Comprehensive KJ-method session E2E test — full business flow.
 
 Simulates a complete KJ-method session using the mock LLM across all
-10 AI tasks in realistic business flow order. Uses the same pattern
+9 AI tasks in realistic business flow order. Uses the same pattern
 as test_llm_integration.py (direct mock calls, no backend startup).
 
 Business flows:
   1. Card Creation  → refine_card_text (individual cards)
   2. Grouping       → suggest_card_groups (bulk grouping)
   3. Review         → detect_contradiction (conflict detection)
-  4. Prioritization → assess_card_importance (importance ranking)
-  5. Layout         → re_layout (spatial arrangement)
-  6. Merge          → suggest_merges (consolidation)
-  7. Island Summary → suggest_island_summary
-  8. Island Relation→ summarize_island_relation
-  9. Narrative Gen  → generate_narrative
- 10. Narrative Check→ check_narrative
+  4. Layout         → re_layout (spatial arrangement)
+  5. Merge          → suggest_merges (consolidation)
+  6. Island Summary → suggest_island_summary
+  7. Island Relation→ summarize_island_relation
+  8. Narrative Gen  → generate_narrative
+  9. Narrative Check→ check_narrative
 """
 
 from __future__ import annotations
@@ -80,7 +79,7 @@ def _call(task: str, prompt: str) -> dict:
 
 
 class TestKJSessionBusinessFlow:
-    """Full KJ-method session: all 10 tasks in 6 business phases."""
+    """Full KJ-method session: all 9 tasks in 5 business phases."""
 
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -132,24 +131,8 @@ class TestKJSessionBusinessFlow:
             assert "hasContradiction" in data
             assert "explanation" in data
 
-    def test_phase4_importance_assessment_prioritization(self):
-        """Phase 4: Rate 5 cards by importance."""
-        cards = [
-            ("p1", "Security audit log for all data access"),
-            ("p2", "Dark mode color scheme"),
-            ("p3", "Real-time sync between devices"),
-            ("p4", "Export to PNG format"),
-            ("p5", "Two-factor authentication"),
-        ]
-        prompt = "\n".join(f'- id="{i}", text="{t}"' for i, t in cards)
-        data = _call("assess_card_importance", prompt)
-        assert "assessments" in data
-        assert len(data["assessments"]) == 5
-        for a in data["assessments"]:
-            assert a["importance"] in ("high", "medium", "low")
-
-    def test_phase5_layout_and_merges(self):
-        """Phase 5: Layout 4 cards and find merges."""
+    def test_phase4_layout_and_merges(self):
+        """Phase 4: Layout 4 cards and find merges."""
         prompt = (
             '- id="a", text="Auto-save"\n'
             '- id="b", text="Auto-save on close"\n'
@@ -163,8 +146,8 @@ class TestKJSessionBusinessFlow:
         merges = _call("suggest_merges", prompt + "Return JSON.")
         assert "suggestions" in merges
 
-    def test_phase6_island_summary_relation_narrative(self):
-        """Phase 6: Island summary, relation, narrative generation + check."""
+    def test_phase5_island_summary_relation_narrative(self):
+        """Phase 5: Island summary, relation, narrative generation + check."""
         island_prompt = (
             '- id="a", text="Auto-save prevents data loss"\n'
             '- id="b", text="Export enables sharing"'
@@ -183,13 +166,12 @@ class TestKJSessionBusinessFlow:
                       f'Narrative: {narrative["text"]}\nCards: a, b\nReturn JSON.')
         assert "issues" in check
 
-    def test_complete_kj_session_all_ten_tasks(self):
-        """One test: all 10 AI tasks in order with correct prompt format."""
+    def test_complete_kj_session_all_nine_tasks(self):
+        """One test: all 9 AI tasks in order with correct prompt format."""
         tasks = [
             ("refine_card_text", "Card: Auto-save when closing. Return JSON."),
             ("suggest_card_groups", '- id="a", text="A"\n- id="b", text="B"'),
             ("detect_contradiction", "Card A: X is true.\nCard B: X is false.\nReturn JSON."),
-            ("assess_card_importance", '- id="a", text="Critical"\n- id="b", text="Minor"'),
             ("re_layout", '- id="a", text="A"'),
             ("suggest_merges", '- id="a", text="A"'),
             ("suggest_island_summary", '- id="a", text="A"'),
@@ -243,20 +225,14 @@ class TestKJSessionExternalLLM:
                                    "Card A: Data must be encrypted.\nCard B: Data stored as plain text.\nReturn JSON only.")
         assert len(text) > 10
 
-    def test_external_assess_card_importance(self):
-        text = self._call_external("assess_card_importance",
-                                   '- id="a", text="Security"\n- id="b", text="Theme"')
-        assert len(text) > 10
-
-    def test_external_full_four_card_tasks(self):
+    def test_external_full_three_card_tasks(self):
         results = {}
         for task, prompt in [
             ("refine_card_text", "Card: Auto-save on close. Return JSON only."),
             ("suggest_card_groups", '- id="a", text="A"\n- id="b", text="B"'),
             ("detect_contradiction", "Card A: X\nCard B: not X\nReturn JSON only."),
-            ("assess_card_importance", '- id="x", text="Important"'),
         ]:
             text = self._call_external(task, prompt)
             assert len(text) > 10, f"Empty for {task}"
             results[task] = len(text)
-        assert len(results) == 4
+        assert len(results) == 3

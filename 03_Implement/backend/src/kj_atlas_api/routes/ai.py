@@ -17,8 +17,6 @@ from kj_atlas_api.llm.provider import (
     get_provider,
 )
 from kj_atlas_api.models_ai import (
-    AssessCardImportanceRequest,
-    AssessCardImportanceResponse,
     CheckNarrativeRequest,
     CheckNarrativeResponse,
     DetectContradictionRequest,
@@ -1035,32 +1033,6 @@ def _parse_detect_contradiction_response(raw_text: str) -> DetectContradictionRe
     )
 
 
-def _build_assess_card_importance_prompt(payload: AssessCardImportanceRequest) -> str:
-    cards = "\n".join(f'  - id="{c.id}", text="{c.text}"' for c in payload.cards)
-    return (
-        f"Assess the importance of each KJ-method card relative to the others. "
-        f"Rate each as 'high', 'medium', or 'low' with a brief rationale. "
-        f'Return JSON: {{"assessments": [{{"cardId": "...", "importance": '
-        f'"high|medium|low", "rationale": "..."}}]}}\nCards:\n{cards}'
-    )
-
-
-def _parse_assess_card_importance_response(raw_text: str) -> AssessCardImportanceResponse:
-    data = json.loads(raw_text)
-    from kj_atlas_api.models_ai import _CardAssessment
-
-    return AssessCardImportanceResponse(
-        assessments=[
-            _CardAssessment(
-                cardId=str(a.get("cardId", a.get("card_id", ""))),
-                importance=str(a.get("importance", "medium")),
-                rationale=a.get("rationale"),
-            )
-            for a in data.get("assessments", [])
-        ]
-    )
-
-
 # ---------------------------------------------------------------------------
 # Card-level AI endpoints
 # ---------------------------------------------------------------------------
@@ -1127,27 +1099,6 @@ def detect_contradiction(payload: DetectContradictionRequest) -> DetectContradic
         _raise_llm_http_error(exc)
     _audit_llm_trace("detect_contradiction", llm_response)
     return _parse_detect_contradiction_response(llm_response.raw_text)
-
-
-@router.post(
-    "/assess-card-importance",
-    response_model=AssessCardImportanceResponse,
-    dependencies=[Depends(require_tenant_scoped_api_precondition)],
-)
-def assess_card_importance(payload: AssessCardImportanceRequest) -> AssessCardImportanceResponse:
-    try:
-        llm_response = generate_with_fallback(
-            LLMRequest(
-                task="assess_card_importance",
-                prompt=_build_assess_card_importance_prompt(payload),
-            )
-        )
-    except ProviderDisabledError as exc:
-        _raise_llm_http_error(exc)
-    except ProviderRequestError as exc:
-        _raise_llm_http_error(exc)
-    _audit_llm_trace("assess_card_importance", llm_response)
-    return _parse_assess_card_importance_response(llm_response.raw_text)
 
 
 @router.post(

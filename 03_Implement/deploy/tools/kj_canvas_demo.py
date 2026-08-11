@@ -25,6 +25,7 @@ import json
 import subprocess
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -34,7 +35,6 @@ TASKS = [
     "refine_card_text",
     "suggest_card_groups",
     "detect_contradiction",
-    "assess_card_importance",
     "re_layout",
     "suggest_merges",
     "suggest_island_summary",
@@ -46,20 +46,25 @@ TASKS = [
 # ---- Mock LLM management ----
 
 
-def _start_mock():
-    subprocess.Popen(
+def _start_mock() -> subprocess.Popen[bytes]:
+    process = subprocess.Popen(
         [sys.executable,
-         "/mnt/d/GIT/kj-atlas/03_Implement/deploy/tools/mock_local_llm.py",
+         str(Path(__file__).resolve().with_name("mock_local_llm.py")),
          "--host", "127.0.0.1", "--port", "8001"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
     for _ in range(20):
         time.sleep(0.1)
+        if process.poll() is not None:
+            raise RuntimeError("Mock LLM exited before becoming ready; port 8001 may be occupied")
         try:
             httpx.get("http://localhost:8001/", timeout=0.5)
-            return
+            return process
         except Exception:
             pass
+    process.terminate()
+    process.wait(timeout=5)
+    raise RuntimeError("Mock LLM failed to start")
 
 
 # ---- LLM call ----
@@ -133,26 +138,9 @@ def phase3_contradiction():
         print(f"  「{a[:30]}...」 vs 「{b[:30]}...」 → {status}")
 
 
-def phase4_importance():
-    """重要度評価。"""
-    demo_phase("Phase 4: 重要度評価 → 優先順位付け")
-    cards = [
-        ("p1", "セキュリティ監査ログ"),
-        ("p2", "ダークモード配色"),
-        ("p3", "リアルタイム同期"),
-        ("p4", "PNG形式出力"),
-        ("p5", "二要素認証"),
-    ]
-    prompt = "\n".join(f'- id="{i}", text="{t}"' for i, t in cards)
-    data = call_llm("assess_card_importance", prompt)
-    for a in data["assessments"]:
-        bar = {"high": "■■■", "medium": "■■□", "low": "■□□"}.get(a["importance"], "???")
-        print(f"  {bar} {a['cardId']}: {a.get('rationale', '')[:50]}")
-
-
-def phase5_layout_and_merges():
+def phase4_layout_and_merges():
     """レイアウト提案と統合候補。"""
-    demo_phase("Phase 5: レイアウト + 統合候補")
+    demo_phase("Phase 4: レイアウト + 統合候補")
     prompt = (
         '- id="a", text="自動保存"\n'
         '- id="b", text="閉じるとき自動保存"\n'
@@ -166,9 +154,9 @@ def phase5_layout_and_merges():
     print(f"  Merges: {len(merges.get('suggestions', []))} suggestions")
 
 
-def phase6_narrative():
+def phase5_narrative():
     """ナラティブ生成 + 検証。"""
-    demo_phase("Phase 6: ナラティブ生成 + 品質チェック")
+    demo_phase("Phase 5: ナラティブ生成 + 品質チェック")
     prompt = '- 1. card id="a"\n- 2. card id="b"'
     narrative = call_llm("generate_narrative", prompt)
     text = narrative.get("text", "")
@@ -180,9 +168,9 @@ def phase6_narrative():
     print(f"  Issues found: {len(issues)}")
 
 
-def phase7_island_relation():
+def phase6_island_relation():
     """島の要約と関係性。"""
-    demo_phase("Phase 7: 島の要約 + 島間関係")
+    demo_phase("Phase 6: 島の要約 + 島間関係")
     summary = call_llm("suggest_island_summary",
                        '- id="a", text="自動保存でデータ損失防止"\n'
                        '- id="b", text="出力で共有を可能に"')
@@ -203,27 +191,32 @@ def main():
     print("║   KJ法キャンバス — 人間×生成AI コラボレーション    ║")
     print("╚══════════════════════════════════════════════════════╝")
 
-    if not args.real:
-        _start_mock()
-        print("\n  Mode: Mock LLM (高速デモ)")
-        print("  全10タスクを決定論的スタブで実演します")
-    else:
-        print("\n  Mode: 実LLM (adapter on port 8001)")
-        print("  複数モデルを組み合わせた本格デモ")
+    mock_process: subprocess.Popen[bytes] | None = None
+    try:
+        if not args.real:
+            mock_process = _start_mock()
+            print("\n  Mode: Mock LLM (高速デモ)")
+            print("  全9タスクを決定論的スタブで実演します")
+        else:
+            print("\n  Mode: 実LLM (adapter on port 8001)")
+            print("  複数モデルを組み合わせた本格デモ")
 
-    # Run all 7 phases
-    cards = phase1_card_creation()
-    phase2_grouping(cards)
-    phase3_contradiction()
-    phase4_importance()
-    phase5_layout_and_merges()
-    phase6_narrative()
-    phase7_island_relation()
+        # Run all 6 phases
+        cards = phase1_card_creation()
+        phase2_grouping(cards)
+        phase3_contradiction()
+        phase4_layout_and_merges()
+        phase5_narrative()
+        phase6_island_relation()
 
-    demo_phase("完了")
-    print(f"  {len(TASKS)} AIタスクすべて完了")
-    print("  人間のKJ法作業をAIが支援する一連の流れを実証しました")
-    print()
+        demo_phase("完了")
+        print(f"  {len(TASKS)} AIタスクすべて完了")
+        print("  人間のKJ法作業をAIが支援する一連の流れを実証しました")
+        print()
+    finally:
+        if mock_process is not None and mock_process.poll() is None:
+            mock_process.terminate()
+            mock_process.wait(timeout=5)
 
 
 if __name__ == "__main__":

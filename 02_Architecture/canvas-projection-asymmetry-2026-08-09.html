@@ -178,6 +178,9 @@ flowchart LR
         島階層（<code>parentIslandId</code>）、表札（<code>placardCardId</code>）も同様である。
       </p>
     </div>
+    <div class="callout" style="background:#ecfdf5; border-color:#059669;">
+      <p style="color:#065f46;"><strong>解消（2026-08-11）:</strong> <code>AI-IMPORTANCE-SCORING-01</code> は廃止案D-aを採用し、採点API・型・mock・デモ工程を削除した。将来の<code>graph_summary</code>は順位や等級を持たない構造的観測としてのみ検討する。</p>
+    </div>
 
     <p style="font-size:13.5px; line-height:1.85; color:#3e4c59; margin:16px 0 0;">
       つまり現状は「AIが座標を受け取ってしまっている」という問題ですらない。座標が渡るのは <code>suggest-layout</code> 1件だけで、
@@ -562,9 +565,9 @@ flowchart TB
         </tr>
         <tr>
           <td><strong>C5</strong></td>
-          <td><code>assess-card-importance</code> の採点と <code>domain.md</code> の整合（§07）。廃止するか、<code>graph_summary</code> ベースの構造的観測へ置換するか。<code>kj_canvas_demo.py</code> の Phase 4 も対象</td>
-          <td>設計判断。<strong>ADR が要る</strong></td>
-          <td>R-3（CVI 群と明文要求の境界）</td>
+          <td><code>assess-card-importance</code> の採点と <code>domain.md</code> の整合（§07）</td>
+          <td><strong>解消済み</strong>（D-a: API・型・デモ工程を廃止）</td>
+          <td><code>AI-IMPORTANCE-SCORING-01</code>（2026-08-11 Done）</td>
         </tr>
       </tbody>
     </table>

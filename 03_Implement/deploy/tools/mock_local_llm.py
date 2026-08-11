@@ -109,15 +109,6 @@ def build_text_for_task(task: str, prompt: str) -> str:
         return json.dumps({
             "hasContradiction": False,
             "explanation": "（モック）2枚のカード間に明示的な矛盾は検出されませんでした。"})
-    if task == "assess_card_importance":
-        card_ids = _CARD_LINE.findall(prompt)
-        levels = ["high", "medium", "low"]
-        return json.dumps({"assessments": [
-            {"cardId": cid, "importance": levels[i % 3] if i < 3 else "medium",
-             "rationale": "（モック）カードの位置と内容に基づく自動重要度評価"}
-            for i, cid in enumerate(card_ids)
-        ]})
-
     return json.dumps({})
 
 

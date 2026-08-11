@@ -17,7 +17,6 @@
 | `refine_card_text` | 文章改善（言い換え） | 中 |
 | `suggest_island_summary` | 複数カードの要約 | 中 |
 | `summarize_island_relation` | 関係性の説明 | 中 |
-| `assess_card_importance` | 優先順位付け | 中 |
 | `suggest_card_groups` | カテゴリ分類 | 中〜高 |
 | `check_narrative` | 論理的一貫性検証 | 高 |
 | `detect_contradiction` | 矛盾検出（論理推論） | 高 |
@@ -52,7 +51,7 @@ v1 では優先度 1 と 3 を実装する。優先度 2 は Phase 2。
 | 複雑度 | 推奨モデル | 月額コスト目安 (DeepSeek) |
 |---|---|---|
 | 低 (re_layout, suggest_merges) | `deepseek-v4-flash` | $0.14/1M tokens |
-| 中 (refine, summary, importance, groups, relation) | `deepseek-v4-flash` | $0.14/1M tokens |
+| 中 (refine, summary, groups, relation) | `deepseek-v4-flash` | $0.14/1M tokens |
 | 高 (check_narrative, detect_contradiction) | `deepseek-v4-flash` または `deepseek-v4-pro` | $0.55/1M tokens |
 | 最高 (generate_narrative) | `deepseek-v4-pro` | $0.55/1M tokens |
 
