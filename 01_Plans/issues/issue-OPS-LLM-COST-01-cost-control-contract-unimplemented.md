@@ -4,9 +4,9 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P2
-- Owner: Unassigned
+- Owner: Maintainer
 - Scope: `02_Architecture/llm_escalation_policy.html`, `03_Implement/backend/src/kj_atlas_api/llm/provider.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `04_Documentation/operations.md`
-- Related ADR/Spec: `02_Architecture/llm_escalation_policy.html`, `01_Plans/adr/ADR-0009-local-llm-integration.md`, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
+- Related ADR/Spec: `02_Architecture/llm_escalation_policy.html`, `01_Plans/adr/ADR-0009-local-llm-integration.md`, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（Proposed）
 - Expected verification level: `unit`
 
 ## 課題
@@ -22,19 +22,11 @@
 - 上限到達時の自動降格: 無し
 - 監視用メトリクス: 無し
 
-さらに、**システム全体にレート制限が存在しない**。
-
-```
-$ grep -rn "rate.limit\|RateLimit\|slowapi\|throttl" --include="*.py" 03_Implement/backend/src/
-(該当なし)
-```
-
-認証エンドポイント・LLM エンドポイント・文書 API のいずれも無制限に呼び出せる。
+全backend APIにrate limitがない問題も同時に発見されたが、これはLLM費用の計測・予算と責務、key、対象routeが異なる。`SEC-RATE-LIMIT-01`を正本とし、本issueでは扱わない。
 
 ## 影響
 
 - **予算統制**: 外部LLM（`KJ_ATLAS_LLM_PROVIDER=large-scale`）は従量課金である。上限が無いため、暴走クライアント・ループ・意図的濫用のいずれでもコストが青天井になる。企業・行政の調達では、コスト上限が技術的に担保されていることが要件になる場合がある。
-- **可用性**: レート制限が無いため、認証エンドポイントへの総当たりや LLM エンドポイントへの大量投入を抑制できない。`SEC-AUTH-REPLAY-01` 制約3（jti キャッシュの O(n) 走査）と組み合わさると、認証系の性能劣化が起きやすい。
 - **文書の信頼性**: 「上限到達時は自動でローカル専用モードに降格する」と読んだ運用担当者は、そのガードが働くと期待して外部LLMを有効化する。実際には働かない。
 
 ## 対応方針（実装者向け）
@@ -55,20 +47,25 @@ $ grep -rn "rate.limit\|RateLimit\|slowapi\|throttl" --include="*.py" 03_Impleme
 - 上限値の設定キー（`KJ_ATLAS_*` 命名規約に従う）を定義し、`02_Architecture/runtime_parameter_registry.md` へ登録する。
 - 上限到達時の挙動を決める。「ローカル専用へ降格」は `llm_fallback_to_none` / provider 切替との関係整理が要る。降格が SafeMode や proposal-only の境界を弱めないこと。
 
-### 段階4: レート制限
-
-- 対象（認証・LLM・文書API）と単位（IP / 主体 / テナント）を決める。SaaS ではテナント単位が要る。
-- 前段（リバースプロキシ / API Gateway）へ委譲するか、アプリで持つかは設計判断。`ADR-0020` の「認証は外部委譲」と同じ論法で前段委譲もありうるが、その場合は**運用文書に必須要件として明記**すること（`SEC-ADMIN-PLANE-01` と同じ論点）。
-
-段階3・4 は設計判断を含むため、着手前に ADR 要否を判断すること。
+段階2は`ADR-0050` D3が未配線としているprovider `usage`契約の採択を待つ。段階3は集計scope、共有store、hard/soft limit、fallback semanticsという別の設計判断を含むため、段階2の実測を得てから補足ADRの要否を判断する。
 
 ## 受入条件
 
 - [x] AC-1（段階1）: `llm_escalation_policy.html` §03 の記述が、実装済み機能と未実装の計画を区別している。未実装の断定表現が残っていない。
 - [ ] AC-2（段階2以降）: 外部LLM呼び出しの回数が計測され、参照可能である。
 - [ ] AC-3（段階3以降）: 上限設定と到達時挙動が実装され、テストで固定されている。降格時も SafeMode / proposal-only 境界が維持される。
-- [ ] AC-4（段階4以降）: レート制限の責務境界（アプリ / 前段）が決定され、前段委譲の場合は運用文書に必須要件として記載されている。
-- [ ] AC-5: 新規設定キーが `02_Architecture/runtime_parameter_registry.md` と同期している。
+- [ ] AC-4: 計測値がprovider自己申告値かlocal tokenizer推定値かを区別し、provider／model／task／tenant等の集計scopeと欠損時挙動が一意である。prompt／response本文、生token、個人識別子をmetricへ保存しない。
+- [ ] AC-5: 上限設定と到達時挙動に新規設定キーを使う場合、`02_Architecture/runtime_parameter_registry.md`、設定model、起動時validation、運用文書を同期する。
+- [ ] AC-6: 複数workerで同じ予算を共有し、同時requestのreserve／settleが上限を超えて外部providerを呼ばない。共有store不達時は外部呼出しを許可する側へfallbackしない。
+- [ ] AC-7: 全backend APIのrate limitは`SEC-RATE-LIMIT-01`で扱い、本issueへ重複実装・重複ACを作らない。
+
+## 依存関係
+
+- `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（D3 `usage`契約の採択が前提）
+
+### 連携（依存ではない）
+
+- `01_Plans/issues/issue-SEC-RATE-LIMIT-01-backend-api-has-no-rate-limiting.md`（全API rate limit。費用台帳とは独立に判断する）
 
 ## 検証
 
@@ -78,4 +75,4 @@ $ grep -rn "rate.limit\|RateLimit\|slowapi\|throttl" --include="*.py" 03_Impleme
 ## 進捗（2026-08-11）
 
 - 段階1を完了。現行保証をprovider既定無効、外部opt-in、要求／応答bytes、要求単位max output tokensに限定し、回数・実使用token計測、予算上限、自動降格、dashboardは未実装計画と明記した。
-- 段階2以降は共有計数store、集計scope、provider usageの信頼境界を決める必要があるためOpenを維持する。
+- 段階2以降は共有計数store、集計scope、provider usageの信頼境界を決める必要があるためOpenを維持する。全API rate limitは`SEC-RATE-LIMIT-01`へ分離した。
