@@ -42,6 +42,14 @@
 - 観測は `KJ_ATLAS_LLM_PROVIDER=none` 既定構成でも実行可能であること。
 - 自動でGo/No-Goを確定しない。判定は人間がDecision Queueへ記録する。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 機能完了と価値実感の乖離を埋める観測がissue本文の宣言止まりになっている。価値観測ハーネス（再現可能シナリオ実行）と二軸スコアカード（価値KPI軸/統治軸）の運用をVR4の観測基盤として固定する | 機能: 各価値ループV0〜V4に`Hypothesis→Action→Evidence→Decision`を1つの再実行可能な観測単位として束ねる。データ: 判定は人間がDecision Queueへ記録し自動でGo/No-Goを確定しない |
+| **データ設計** | 証拠成果物は`evidenceId/取得手順/形式/保存先/再測定一致条件`を持ち版間比較可能な固定形式とする。判定記録には`candidate/date/reviewer/decision/artifactId/re-decision condition`を必須化 | 業務: 価値KPI軸は定義可能・再測定可能・比較可能の3条件を満たすKPIのみ採用。機能: 統治軸の後退検知（safeMode後退・human_reviewed自動昇格）は即No-Goで緩和不可 |
+| **機能設計** | 操作列はE2Eシナリオ名（または手動受入手順）で固定し同一手順で同一種類の証拠を再取得できることを要件とする。スコアカードはMVP-EXIT-01とPRODUCT-QA-01の入力とし判定式は既存のGo/Conditional Go/No-Goを再利用 | 業務: 個人追跡・行動スコアリング・監視目的のテレメトリ拡張は行わない。データ: 観測は`KJ_ATLAS_LLM_PROVIDER=none`既定構成でも実行可能 |
+
 ## Consequences
 
 - 期待される効果:

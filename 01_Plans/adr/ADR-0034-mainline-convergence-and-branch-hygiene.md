@@ -26,6 +26,14 @@
 
 採用理由: 現状のbranch数と計画ストリーム数では、個々のissueが正しくても、全体として「いま何が正本か」を誤認するリスクがある。mainline収束を先に固定することで、MVP脱却の品質ゲートと人間判断の入力を安定させる。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 並行branchが2247件もあり、最新mainに入った内容と未統合/放棄された計画案を区別しにくい。個々のissueが正しくても「いま何が正本か」を誤認するリスクがある。最新mainを唯一の開発入力とし並行branchや古いPR branchを仕様・計画の正本として扱わない | 機能: 新規issue/ADR作成前に既存のissues/adrを検索し重複なし・上位/下位関係・supersedesを本文に明記。データ: branchは作業単位の一時置き場とし正本はmain上の00_Prompt/01_Plans/02_Architectureに限定 |
+| **データ設計** | 最新mainの健康状態は`PROJECT-BASELINE-01`でcandidate単位のbaseline recordとして確定。merged/abandoned/duplicateのremote branchは`PROJECT-GOV-01`で棚卸しし削除・保持・参照のみの分類案を作る | 業務: 古いbranch上にだけ存在する未統合の知見は即削除せず必要に応じて内部issueへ回収。機能: `PRODUCT-QA-01`のG0計画整合と`MVP-EXIT-01`のProgram Gateに再現可能な入力を渡す |
+| **機能設計** | 作業開始時に`git fetch --prune`とmainのfast-forward可否を確認し対象origin/main SHAを記録するintake手順を必須化 | 業務: 類似issueや過去branchに基づく二重実装・二重ADR・古い仕様の再導入を減らす。データ: このADRは運用統治を扱いプロダクト価値・UI・データ構造・SafeMode既定値の仕様変更は扱わない |
+
 ## Consequences
 
 - 期待される効果:
