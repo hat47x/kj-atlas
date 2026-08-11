@@ -24,6 +24,14 @@ kj-atlasはSQLAlchemy ORMを利用しているが、ORMが接続可能なDBと�
 9. object storage利用時もtenant・digest・schema version・size・object key等のmetadataはDBを正本とする。保存先の実行時切替やhybrid routingは、障害時状態遷移、移行・rollback、orphan回収が検証されるまで公開しない。
 10. driver省略URLと対応済みasync URLは、各backendの検証済み同期driverへ正規化する。別driverを明示したURLはbackendがVerifiedでも許可せず、資格情報を含まないエラーでengine生成前に停止する。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | ORMが接続可能なDBと、schema migration・制約・transaction・tenant分離まで保証できるDBは同義ではない。個人OSSとして需要に応じて優先順位を変更できる拡張点を先に用意する | 機能: 未検証DBはcandidate登録とし実DB matrix完了までruntimeとAlembicをfail-fastで拒否。データ: SQLite/PostgreSQLの既存利用・SafeMode・proposal-only・export/import境界は変更しない |
+| **データ設計** | DB方言の判断は単一の能力レジストリへ集約（family/support_level/migration_strategy/shared_schema_saas/検証済みdriver等）。物理型はidentifier・bounded descriptive text・content objectへ分類しpayloadや長文を一律VARCHAR化しない | 業務: MySQL/MariaDBは同一familyとして共通化し差分が実証された箇所だけ個別capabilityへ分離。機能: content objectは将来の`ContentStore` portの背後に置き保存先分岐をDocument契約へ漏らさない |
+| **機能設計** | candidate昇格はfresh migration・upgrade/downgrade・複合PK/FK・CRUD roundtrip・transaction・backup/restoreの実DB検証必須。共有schema SaaSはDB側tenant guardとpool再利用matrixを満たすDB（現時点PostgreSQL限定）だけに許可 | 業務: driver省略URLと対応済みasync URLは検証済み同期driverへ正規化し資格情報を含まないエラーでengine生成前に停止。データ: object storage利用時もmetadataはDBを正本とする |
+
 ## Consequences
 
 - 未検証DBで途中まで起動してからmigrationや制約で壊れる状態を防げる。

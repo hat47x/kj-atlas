@@ -49,6 +49,14 @@ kj-atlasは、外部PDPを使わない `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=noop` �
 3. **request時にunavailable adapterへ倒す**: 起動は成功して障害発見が遅れ、監査側との契約も揃わないため不採用。
 4. **起動時に接続先へprobeする**: 一時障害で起動不能となり、credentialを伴う副作用のない共通probe契約もないため不採用。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 運用者が外部PDPを有効化したつもりでも、設定漏れだけで認可が無警告の全許可へ変わる。明示した認可連携が設定欠損で全許可になる経路は既存のfail-closed安全不変条件で覆えない実際の境界超過 | 機能: 欠損時はSettings構築を`ValueError`で停止しDB初期化・外部通信・request受付より前に起動拒否。データ: エラーは欠損した設定キーだけを示し入力値を反射しない |
+| **データ設計** | `external_http`/`http`選択時は対応endpointを必須とする原子的設定。access-control builderが外部方式を受け取ったのにendpointを解決できない場合は例外送出 | 業務: 未設定時の既定`noop`は変更しない。機能: endpoint設定済みPDPの実行時障害は既存のfail-safe（read_only/deny）を適用 |
+| **機能設計** | 全runtime profileへ同じ完全性規則を適用（local-dev/evaluation/enterprise-production/saas-multitenant）。互換flagや「endpoint欠損を許可する」例外設定は追加しない | 業務: 外部連携を無効化する場合は方式を明示的に`noop`へ戻す。データ: 起動時のendpoint到達性probeは行わず構成完全性と一時的可用性を混同しない |
+
 ## Consequences
 
 - endpointを欠いた既存の明示HTTP構成は起動しなくなる。運用者は正しいendpointを設定するか、外部連携を使わない意図を `noop` で明示する必要がある。
