@@ -69,6 +69,14 @@ MVPでは、データサポート境界を次の4区分で管理する。
 - No statement in this ADR implies that Card/Edge/Island/Narrative have independent CRUD or operational recovery guarantees in MVP.
 - Downstream implementation work is split into issues (`DATA-MODEL-OPS-01`, `DATA-MAINT-01`, `DATA-CONTRACT-01`) rather than marked as already implemented.
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 利用者・レビュアー・運用者・セキュリティ担当者に対し、MVPで標準運用できるデータと将来契約を明確に区別できる境界を提供し、責任範囲をステークホルダー別に説明可能にする。削除・棚卸・復旧・所有者移管をMVP保証対象外として分離する | データ: スキーマに存在する型が運用サポートを意味しないことを明示し続ける。機能: 個別CRUDの無い型を標準操作として誤認しない運用が必要 |
+| **データ設計** | データ境界を4区分（運用サポート/埋め込み限定/派生・読み取り中心/契約のみ）で分類する。Card/Edge/Island/Narrative/ReviewAttribution は Document 内の埋め込み構造として保存し、merge decision log は append-only 契約、Derived read models は生成ロジックとして保守する | 機能: 新しい永続テーブルまたは標準CRUDを追加する際は本ADRの区分と CRUD 表を更新しなければならない。業務: 部分修復・個別監査・復旧の不足を運用上の既知制約として扱う |
+| **機能設計** | Document スナップショットの GET/PUT /docs/{doc_id}、merge decision log の append/read を標準APIとして維持し、Card/Edge/Island 等の個別CRUDを MVP 必須にしない。Support level（L0〜L3）を定義し、`data_model_operations_overview.html` を「実際に運用できる範囲」の入口とする | データ: スナップショット内構造の増加で全体置換保存の競合・検証・復旧が難しくなる副作用を許容する。業務: API・frontend型・backend型・実装ルートの同期確認を継続的な責務とする |
+
 ## Consequences
 
 - 期待される効果:
