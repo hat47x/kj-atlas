@@ -414,3 +414,10 @@ Updated: 2026-08-03
 - 原因: RFC 7519のaccess-token `jti`をRFC 9449の要求単位DPoP proof `jti`と混同し、通常のOAuth Bearer tokenをone-time credentialへ変更した。
 - 対応: access tokenのunique-insert replay ledgerと一回使用契約を撤回し、有効期限内の通常再利用を復元した。sender-constrained replay防御は方式決定issueへ分離した。
 - 再発防止: security claimを「防御に使える」と読むだけで実装せず、credential種別、正規clientの再利用契約、sender bindingの有無をRFCとE2Eで先に確認する。
+
+## 2026-08-11: 並行作業のissue metadata不備でdocs-checkが停止
+
+- 事象: LLM cost policyの文書整合後に`docs_check.py`を実行すると、対象外の`AI-EVAL-01`で`Source Issue`欠損と`Expected verification level: manual`不許可の2件が失敗した。
+- 原因: 並行作業で追加されたActive issueが、docs-checkの必須metadata契約を満たしていなかった。
+- 対応: 利用者の並行変更は編集せず、本変更のHTML構造・対象issue metadata・diffを個別検証する。全体gate未通過は明記する。
+- 再発防止: docs-check失敗時は対象差分との因果をpath単位で確認し、無関係な並行変更を勝手に修正しない。

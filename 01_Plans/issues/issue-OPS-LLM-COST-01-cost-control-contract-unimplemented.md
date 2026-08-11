@@ -64,7 +64,7 @@ $ grep -rn "rate.limit\|RateLimit\|slowapi\|throttl" --include="*.py" 03_Impleme
 
 ## 受入条件
 
-- [ ] AC-1（段階1）: `llm_escalation_policy.html` §03 の記述が、実装済み機能と未実装の計画を区別している。未実装の断定表現が残っていない。
+- [x] AC-1（段階1）: `llm_escalation_policy.html` §03 の記述が、実装済み機能と未実装の計画を区別している。未実装の断定表現が残っていない。
 - [ ] AC-2（段階2以降）: 外部LLM呼び出しの回数が計測され、参照可能である。
 - [ ] AC-3（段階3以降）: 上限設定と到達時挙動が実装され、テストで固定されている。降格時も SafeMode / proposal-only 境界が維持される。
 - [ ] AC-4（段階4以降）: レート制限の責務境界（アプリ / 前段）が決定され、前段委譲の場合は運用文書に必須要件として記載されている。
@@ -74,3 +74,8 @@ $ grep -rn "rate.limit\|RateLimit\|slowapi\|throttl" --include="*.py" 03_Impleme
 
 - `python -m pytest tests/ -k "llm or provider" -q`
 - `python 01_Plans/docs_check.py`
+
+## 進捗（2026-08-11）
+
+- 段階1を完了。現行保証をprovider既定無効、外部opt-in、要求／応答bytes、要求単位max output tokensに限定し、回数・実使用token計測、予算上限、自動降格、dashboardは未実装計画と明記した。
+- 段階2以降は共有計数store、集計scope、provider usageの信頼境界を決める必要があるためOpenを維持する。

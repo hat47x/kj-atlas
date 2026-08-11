@@ -130,7 +130,7 @@ flowchart TD
     <table class="grid">
       <thead><tr><th style="width:22%;">領域</th><th>固定する契約</th></tr></thead>
       <tbody>
-        <tr><td>コスト制御</td><td>月次または環境別の外部呼び出し上限（回数/トークン）を定義する。上限到達時は<strong>自動でローカル専用モードに降格</strong>する。運用ダッシュボードで、ローカル成功率・エスカレーション率・失敗率を監視する</td></tr>
+        <tr><td>コスト制御</td><td><strong>現行実装:</strong> provider既定は<code>none</code>、外部エスカレーションは明示opt-inで、1要求の入力bytes・応答bytes・最大出力token数を上限検証する。<br/><strong>未実装の計画:</strong> 月次／環境別の呼出回数・実使用token計測、予算上限、上限到達時のlocal-only降格、成功率・エスカレーション率・失敗率dashboard。これらは現時点の運用保証ではなく、設定値・共有計数store・降格時挙動を決定してから実装する</td></tr>
         <tr><td>セキュリティ・プライバシー</td><td>safeMode ON時は、禁止対象の生カード文面を外部サービスに渡さない。エスカレーションログは理由コードを保持し、本文は最小化またはハッシュ化する。送信経路・承認履歴・モデル識別子を監査可能にする</td></tr>
       </tbody>
     </table>
