@@ -60,6 +60,9 @@ jobs:
       - name: Run docs contract checks
         run: python 01_Plans/docs_check.py
 
+      - name: Validate dogfood documents (W-type R1-R6)
+        run: python 01_Plans/dogfood/validate_dogfood_docs.py
+
       - name: Run design consistency checks (ADR-0067)
         run: python 03_Implement/backend/scripts/check_design_consistency.py --baseline 02_Architecture/design_consistency_baseline.json
 
