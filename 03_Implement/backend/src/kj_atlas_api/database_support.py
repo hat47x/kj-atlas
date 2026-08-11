@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
-from sqlalchemy.engine import URL, make_url
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine, URL, make_url
+from sqlalchemy.exc import NoSuchModuleError
 
 
 DatabaseSupportLevel = Literal["verified", "candidate"]
@@ -202,6 +204,26 @@ def normalize_sync_database_url(database_url: str) -> str:
 def alembic_config_database_url(database_url: str) -> str:
     """Return a normalized URL escaped for ConfigParser interpolation."""
     return normalize_sync_database_url(database_url).replace("%", "%%")
+
+
+def create_verified_database_engine(database_url: str, **kwargs: Any) -> Engine:
+    """Create an engine through the verified URL and optional-driver boundary."""
+    normalized_url = normalize_sync_database_url(database_url)
+    support = database_support_for_url(normalized_url)
+    try:
+        return create_engine(normalized_url, **kwargs)
+    except (ImportError, ModuleNotFoundError, NoSuchModuleError) as error:
+        if support.optional_dependency is None:
+            install_hint = "Install the backend runtime dependencies."
+        else:
+            install_hint = (
+                "Install the backend optional dependency with "
+                f'`pip install -e ".[{support.optional_dependency}]"`.'
+            )
+        raise RuntimeError(
+            f"Database driver for backend '{support.backend}' is not available. "
+            f"{install_hint}"
+        ) from error
 
 
 def registered_database_support() -> tuple[DatabaseSupport, ...]:

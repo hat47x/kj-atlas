@@ -2,13 +2,16 @@ from logging.config import fileConfig
 import os
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import pool
 
 # CI may export legacy DATABASE_URL for unrelated services.
 # ENV-ARCH-01 enforces KJ_ATLAS_* only, so remove legacy key before importing app settings.
 os.environ.pop("DATABASE_URL", None)
 
-from kj_atlas_api.database_support import alembic_config_database_url
+from kj_atlas_api.database_support import (
+    alembic_config_database_url,
+    create_verified_database_engine,
+)
 from kj_atlas_api.models import Base
 from kj_atlas_api.persistence_shapes import install_portable_text_ddl_hook
 from kj_atlas_api.settings import settings
@@ -39,9 +42,8 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    connectable = create_verified_database_engine(
+        settings.database_url,
         poolclass=pool.NullPool,
     )
 

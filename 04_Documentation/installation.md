@@ -122,6 +122,22 @@ $env:KJ_ATLAS_LLM_PROVIDER="none"
 
 この手順では `pip install -e ".[test]"` によって backend package が開発用に登録されるため、Python の import path を個別に設定する必要はありません。
 
+#### SQLite以外のVerified DBを直接使う場合
+
+標準Docker ComposeはPostgreSQL用dependencyをimage構築時に導入します。backendを直接起動して別DBを使う場合は、`test`に加えて対象DBのoptional extraを同じ仮想環境へ導入してください。driverを省略したURLも内部で下表の同期driverへ正規化されますが、運用設定では明示形を推奨します。
+
+| SQLAlchemy backend | pip extra | 検証済み同期driver |
+| --- | --- | --- |
+| `sqlite` | built-in | `sqlite` |
+| `postgresql` | `postgres` | `postgresql+psycopg` |
+| `mysql` | `mysql` | `mysql+pymysql` |
+| `mariadb` | `mysql` | `mariadb+pymysql` |
+| `mssql` | `mssql` | `mssql+pymssql` |
+| `cockroachdb` | `cockroachdb` | `cockroachdb+psycopg` |
+| `oracle` | `oracle` | `oracle+oracledb` |
+
+たとえばMySQLなら`pip install -e ".[test,mysql]"`を実行してから`KJ_ATLAS_DATABASE_URL`を設定します。製品version、single-tenant／shared-schema SaaSの範囲、昇格条件は[DB対応表](../02_Architecture/database_portability.md)を確認してください。未検証driverを明示したURLは、別driverが偶然導入済みでも起動前に拒否されます。
+
 ### Frontend
 
 別の端末で実行します。

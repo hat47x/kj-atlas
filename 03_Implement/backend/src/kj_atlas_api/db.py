@@ -1,9 +1,9 @@
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from kj_atlas_api.database_support import (
+    create_verified_database_engine,
     database_support_for_url,
     normalize_sync_database_url,
 )
@@ -18,8 +18,8 @@ def _normalize_database_url(database_url: str) -> str:
 normalized_database_url = _normalize_database_url(settings.database_url)
 database_support = database_support_for_url(normalized_database_url)
 is_sqlite = database_support.backend == "sqlite"
-engine = create_engine(
-    normalized_database_url,
+engine = create_verified_database_engine(
+    settings.database_url,
     connect_args={"check_same_thread": False} if is_sqlite else {},
 )
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)

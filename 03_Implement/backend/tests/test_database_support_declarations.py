@@ -122,3 +122,20 @@ def test_operations_runbook_has_one_section_for_every_verified_backend() -> None
             continue
         anchor = f'<a id="database-{support.backend}"></a>'
         assert operations.count(anchor) == 1, support.backend
+
+
+def test_public_installation_lists_every_verified_driver_extra() -> None:
+    installation = (REPO_ROOT / "04_Documentation" / "installation.md").read_text(
+        encoding="utf-8"
+    )
+
+    for support in registered_database_support():
+        if not support.is_verified:
+            continue
+        dependency = support.optional_dependency or "built-in"
+        row = (
+            f"| `{support.backend}` | "
+            f"{'`' + dependency + '`' if support.optional_dependency else dependency} | "
+            f"`{support.sync_drivername}` |"
+        )
+        assert installation.count(row) == 1, support.backend
