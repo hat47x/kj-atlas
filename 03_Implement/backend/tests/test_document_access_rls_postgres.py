@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import re
 import subprocess
 import sys
 from collections.abc import Iterator
@@ -16,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from kj_atlas_api.db import _normalize_database_url
 from kj_atlas_api.models import (
+    Base,
     DocumentAccessAdminAuditEventRow,
     DocumentAccessMetadataRow,
     DocumentRow,
@@ -30,36 +30,41 @@ RUN_RLS_TESTS_ENV = "KJ_ATLAS_RUN_PG_RLS_TESTS"
 ADMIN_DATABASE_URL_ENV = "KJ_ATLAS_DATABASE_URL"
 RUNTIME_DATABASE_URL_ENV = "KJ_ATLAS_TEST_POSTGRES_RUNTIME_DATABASE_URL"
 BACKEND_DIR = Path(__file__).resolve().parents[1]
-RLS_PROTECTED_MODELS = (
-    DocumentRow,
-    MergeDecisionLogRow,
-    DocumentAccessMetadataRow,
-    DocumentAccessAdminAuditEventRow,
-)
+RLS_EXEMPT_TENANT_TABLES = {
+    # Control-plane mappings are resolved before a workspace tenant context
+    # exists. They are protected by the identity provisioning boundary rather
+    # than the workspace data-plane RLS policy.
+    "tenant_identity_providers": "control-plane identity-to-tenant resolution",
+    "tenant_memberships": "control-plane user-to-tenant resolution",
+}
 
 
-def test_postgres_rls_matrix_covers_every_migration_protected_table() -> None:
-    enabled_tables: set[str] = set()
-    write_checked_tables: set[str] = set()
-    for migration_path in (BACKEND_DIR / "alembic" / "versions").glob("*.py"):
-        migration_source = migration_path.read_text(encoding="utf-8")
-        enabled_tables.update(
-            re.findall(
-                r"ALTER TABLE ([a-z0-9_]+) ENABLE ROW LEVEL SECURITY",
-                migration_source,
-            )
-        )
-        write_checked_tables.update(
-            re.findall(
-                r"CREATE POLICY [^\r\n]+ ON ([a-z0-9_]+)\s+"
-                r"USING \([^\r\n]+\)\s+WITH CHECK \([^\r\n]+\)",
-                migration_source,
-            )
-        )
+def _rls_protected_table_names() -> set[str]:
+    tenant_scoped_tables = {
+        table.name for table in Base.metadata.sorted_tables if "tenant_id" in table.c
+    }
+    unknown_exemptions = RLS_EXEMPT_TENANT_TABLES.keys() - tenant_scoped_tables
+    assert not unknown_exemptions, f"stale RLS exemptions: {sorted(unknown_exemptions)}"
+    return tenant_scoped_tables - RLS_EXEMPT_TENANT_TABLES.keys()
 
-    protected_model_tables = {model.__tablename__ for model in RLS_PROTECTED_MODELS}
-    assert protected_model_tables == enabled_tables
-    assert write_checked_tables == enabled_tables
+
+def test_rls_scope_is_derived_from_every_tenant_scoped_model() -> None:
+    assert _rls_protected_table_names() == {
+        "ai_generation_runs",
+        "canvas_revision_heads",
+        "canvas_revision_parents",
+        "canvas_revision_pins",
+        "canvas_revisions",
+        "content_blobs",
+        "content_object_references",
+        "document_access_admin_audit_events",
+        "document_access_metadata",
+        "documents",
+        "generation_deletion_audit_events",
+        "inquiry_bundle_deletion_audit_events",
+        "inquiry_bundles",
+        "merge_decision_logs",
+    }
 
 
 def _tenant(tenant_id: str) -> TenantContext:
@@ -114,6 +119,59 @@ def postgres_rls_engines() -> Iterator[tuple[Engine, Engine]]:
     finally:
         runtime_engine.dispose()
         admin_engine.dispose()
+
+
+@pytest.mark.postgres
+def test_every_tenant_data_plane_table_has_forced_write_checked_rls(
+    postgres_rls_engines: tuple[Engine, Engine],
+) -> None:
+    admin_engine, runtime_engine = postgres_rls_engines
+    expected_tables = _rls_protected_table_names()
+
+    with admin_engine.connect() as connection:
+        table_posture = {
+            row.relname: (row.relrowsecurity, row.relforcerowsecurity)
+            for row in connection.execute(
+                text(
+                    "SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity "
+                    "FROM pg_class AS c "
+                    "JOIN pg_namespace AS n ON n.oid = c.relnamespace "
+                    "WHERE n.nspname = 'public' AND c.relkind = 'r'"
+                )
+            )
+            if row.relname in expected_tables
+        }
+        policy_rows = [
+            row
+            for row in connection.execute(
+                text(
+                    "SELECT tablename, policyname, permissive, roles, cmd, qual, with_check "
+                    "FROM pg_policies "
+                    "WHERE schemaname = 'public'"
+                )
+            )
+            if row.tablename in expected_tables
+        ]
+
+    assert set(table_posture) == expected_tables
+    assert all(enabled and forced for enabled, forced in table_posture.values())
+    assert {row.tablename for row in policy_rows} == expected_tables
+    assert len(policy_rows) == len(expected_tables), "each protected table must have one policy"
+    for policy in policy_rows:
+        assert policy.permissive == "PERMISSIVE", policy.policyname
+        assert policy.roles == ["public"], policy.policyname
+        assert policy.cmd == "ALL", policy.policyname
+        assert "current_setting('kj_atlas.tenant_id'" in policy.qual, policy.policyname
+        assert "current_setting('kj_atlas.tenant_id'" in policy.with_check, policy.policyname
+
+    # A missing tenant context must fail closed for every protected table,
+    # including newly introduced storage and revision-lineage tables.
+    with runtime_engine.connect() as connection:
+        for table_name in sorted(expected_tables):
+            visible_rows = connection.execute(
+                text(f'SELECT count(*) FROM "{table_name}"')
+            ).scalar_one()
+            assert visible_rows == 0, table_name
 
 
 def _seed_tenant_documents(

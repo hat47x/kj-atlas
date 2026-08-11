@@ -350,10 +350,23 @@ jobs:
           KJ_ATLAS_DATABASE_URL: postgresql+psycopg://kj_atlas:kj_atlas@localhost:5432/kj_atlas
         run: alembic upgrade head
 
+      - name: Prepare PostgreSQL RLS runtime role
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker exec -i "$POSTGRES_CONTAINER" psql -v ON_ERROR_STOP=1 -U kj_atlas -d kj_atlas <<'SQL'
+          CREATE ROLE kj_atlas_runtime LOGIN PASSWORD 'kj_atlas_runtime' NOSUPERUSER NOBYPASSRLS;
+          GRANT USAGE ON SCHEMA public TO kj_atlas_runtime;
+          GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO kj_atlas_runtime;
+          GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO kj_atlas_runtime;
+          SQL
+
       - name: Test (PostgreSQL)
         env:
           KJ_ATLAS_RUN_PG_TESTS: "1"
+          KJ_ATLAS_RUN_PG_RLS_TESTS: "1"
           KJ_ATLAS_DATABASE_URL: postgresql+psycopg://kj_atlas:kj_atlas@localhost:5432/kj_atlas
+          KJ_ATLAS_TEST_POSTGRES_RUNTIME_DATABASE_URL: postgresql+psycopg://kj_atlas_runtime:kj_atlas_runtime@localhost:5432/kj_atlas
           KJ_ATLAS_TEST_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: pytest -m postgres
 
