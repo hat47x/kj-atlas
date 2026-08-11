@@ -5,11 +5,11 @@
 - Source Issue: TBD
 - Priority: P0
 - Owner: Unassigned
-- Scope: `01_Plans/adr/ADR-0067-control-plane-authorization-separation.md`, `03_Implement/backend/src/kj_atlas_api/routes/admin.py`, `03_Implement/backend/src/kj_atlas_api/main.py`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `04_Documentation/security.md`, `04_Documentation/configuration.md`, `THREAT_MODEL.md`, `02_Architecture/enterprise_architecture.html`
-- Related ADR/Spec: `01_Plans/adr/ADR-0067-control-plane-authorization-separation.md`, `01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md`, `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`, `02_Architecture/enterprise_architecture.html`
+- Scope: `01_Plans/adr/ADR-0072-control-plane-authorization-separation.md`, `03_Implement/backend/src/kj_atlas_api/routes/admin.py`, `03_Implement/backend/src/kj_atlas_api/main.py`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `04_Documentation/security.md`, `04_Documentation/configuration.md`, `THREAT_MODEL.md`, `02_Architecture/enterprise_architecture.html`
+- Related ADR/Spec: `01_Plans/adr/ADR-0072-control-plane-authorization-separation.md`, `01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md`, `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`, `02_Architecture/enterprise_architecture.html`
 - Expected verification level: `integration`
 
-> **本issueは `ADR-0067` の採択を前提とする。** ADR が Proposed の間は着手しないこと。ADR が Rejected の場合、本issueも取り下げる。
+> **本issueは `ADR-0072` の採択を前提とする。** ADR が Proposed の間は着手しないこと。ADR が Rejected の場合、本issueも取り下げる。
 
 ## 課題
 
@@ -59,7 +59,7 @@ saas-multitenant      -> HTTP 404 {'code': 'strict_provisioning_unavailable', ..
 
 ## 対応方針
 
-`ADR-0067` の D1 / D2 / D3 の決定に従う。ADR の推奨は D1=A+B の二段、D2=A、D3=A だが、**採択された決定を正とする**。
+`ADR-0072` の D1 / D2 / D3 の決定に従う。ADR の推奨は D1=A+B の二段、D2=A、D3=A だが、**採択された決定を正とする**。
 
 実装時の注意:
 

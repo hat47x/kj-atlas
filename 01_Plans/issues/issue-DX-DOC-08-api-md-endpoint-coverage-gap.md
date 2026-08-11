@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `02_Architecture/api.md`, `03_Implement/backend/src/kj_atlas_api/routes/`
 - Related ADR/Spec: `ADR-0067-three-element-constraint-design-method.md`
+- Expected verification level: `docs-check`
 
 ## 課題
 
