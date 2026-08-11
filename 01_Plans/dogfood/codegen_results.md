@@ -25,6 +25,7 @@
 | 5 | 2026-08-11 | ui_component | FieldworkRequestPanel（W型・現場への問い） | Reactコンポーネント骨格 | 修正後（骨格として利用可） | JSXロジック・`FieldworkRequestV1`型定義・i18n翻訳の実装が必要。既存`InquiryJourneyPrototypePanel`との統合要検討 | ✅ |
 | 6 | 2026-08-12 | ui_component（form） | SettingsNoteForm（DX-CODEGEN-02ロジック生成） | Reactコンポーネント骨格+JSXロジック（textarea/保存/Escape/Ctrl+Enter） | 修正後（ロジック生成として利用可） | i18n翻訳とPropsの実フィールド名の調整が必要。JSXロジック（useState/handleKeyDown）はそのまま利用可 | ✅（ロジック） |
 | 7 | 2026-08-12 | ui_component（list） | ReadingOrderList（DX-CODEGEN-02ロジック生成） | Reactコンポーネント骨格+JSXロジック（items.map/追加ボタン） | 修正後（ロジック生成として利用可） | `ReadingOrderItem`型の定義とi18n翻訳が必要。listレンダリングはそのまま利用可 | ✅（ロジック） |
+| 8 | 2026-08-12 | data_boundary（検証） | FieldworkRequestV1（W型・現場への問いの型） | Pydanticモデル+Field()検証制約 | 修正後（検証生成として利用可） | `min_length`/`max_length`/`default`制約はそのまま利用可。description等の微調整が必要 | ✅（検証ロジック） |
 
 > **補足（適用4の訂正）**: BulkReasonEditorの生成は、既存実装（`BulkOperationsBar.tsx`の`onAddCritiqueReason`）との重複を検出できずに生成された。これはコード生成パイプラインの欠陥であり、既存実装チェック（e78c431a）を追加して解決した。成功率の正確な評価には、この「重複コード生成」を不採用として計上する必要がある。
 
@@ -47,12 +48,12 @@
 
 | 指標 | 値 |
 |------|-----|
-| 総生成数（ロジック） | 2 |
+| 総生成数（ロジック） | 3 |
 | そのまま採用 | 0 |
-| 修正後採用（ロジック部分はそのまま） | 2 |
+| 修正後採用（ロジック部分はそのまま） | 3 |
 | 不採用 | 0 |
-| **成功率（ロジック生成）** | **100%**（2/2。form/listパターン、JSXロジックはそのまま利用可） |
-| L3基準①（80%以上） | ✅ 達成（ロジック生成。サンプル2は初期ベースライン） |
+| **成功率（ロジック生成）** | **100%**（3/3。form/list/検証パターン、JSX・Field()制約はそのまま利用可） |
+| L3基準①（80%以上） | ✅ 達成（ロジック生成。サンプル3は初期ベースライン） |
 
 ## 生成→採用のフィードバック
 
