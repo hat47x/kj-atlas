@@ -155,7 +155,15 @@ describe("tenant-scoped document request precondition", () => {
 
     await getDocument("doc-1");
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/docs/doc-1");
+    // Assert the absence of the session header rather than the call arity.
+    // ADR-0064 made tenantSessionPreconditionHeaders always return an object
+    // so it can carry the OAuth Authorization header, so a single-tenant call
+    // now passes `{ headers: {} }` instead of omitting the init argument
+    // entirely. That is the same request on the wire; what this test exists to
+    // protect is that no tenant session version rides along with it.
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+    expect(url).toBe("/api/docs/doc-1");
+    expect(init?.headers ?? {}).not.toHaveProperty("KJ-Atlas-Tenant-Session-Version");
   });
 
   it("rejects malformed session input before network access", async () => {
@@ -201,6 +209,7 @@ describe("tenant-scoped document request precondition", () => {
 const FRONTEND_SRC_ROOT = resolve(__dirname, "..");
 const CLIENT_MODULE_PATH = "api/client.ts";
 const APP_MODULE_PATH = "App.tsx";
+const OAUTH_CALLBACK_MODULE_PATH = "session/oauth_callback.ts";
 const TENANT_SCOPED_WRAPPER = "runTenantScopedApiRequest(() => ";
 
 // Request can neither address nor carry a tenant-scoped resource: constant
@@ -376,7 +385,21 @@ describe("tenant session version client coverage contract", () => {
       (modulePath) => fetchCallSites(readFrontendModule(modulePath)).length > 0,
     );
 
-    expect([...modulesWithFetch].sort()).toEqual([APP_MODULE_PATH, CLIENT_MODULE_PATH]);
+    expect([...modulesWithFetch].sort()).toEqual(
+      [APP_MODULE_PATH, CLIENT_MODULE_PATH, OAUTH_CALLBACK_MODULE_PATH].sort(),
+    );
+
+    // ADR-0064: the OAuth callback exchanges an authorization code at the
+    // identity broker's token endpoint. That is a different origin from the
+    // backend API, and it runs before any tenant session exists -- this is the
+    // request that brings one into being, so there is nothing to attach yet.
+    // Pinning the URL to the broker base keeps the exemption from silently
+    // widening into backend API calls.
+    for (const site of fetchCallSites(readFrontendModule(OAUTH_CALLBACK_MODULE_PATH))) {
+      const { url } = splitRequestArguments(site.args);
+      expect(url).toMatch(/^`\$\{brokerBase\}/);
+      expect(url).not.toContain("API_BASE");
+    }
 
     // App's own fetches load bundled public-pack files from the frontend
     // origin, never the backend API, so they address no tenant-scoped
