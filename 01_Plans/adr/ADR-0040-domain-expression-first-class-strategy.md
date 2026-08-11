@@ -49,6 +49,14 @@
 - 非目標: 正解判定・採点・ランキング、AIによる保留の自動解除、矛盾の自動解決、証拠能力を持つ監査証跡。
 - 緩和禁止（`ADR-0039` / CE0契約）: proposal-only、`human_reviewed` 人手昇格、SafeMode既定ON、`KJ_ATLAS_LLM_PROVIDER=none` 既定でも各Phaseの主要価値が成立。AIは Hold/Critique を解消せず保持対象として扱う。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 中核概念（保留HoldState・違和感Critique・未統合Shelf・根拠EvidenceLink・矛盾Contradiction）が「概念の憲法」と「往復保存される型」の間で宙づりで、kj-atlasが単なるカード配置ツールに見える。中核概念を段階的・加算的・後方互換に第一級化し利用者が触れる作業状態へ昇格する | 機能: Phase 1は既存往復状態の読取UI（バッジ/絞り込み）でschema変更なし低リスク。データ: 非目標は正解判定・採点・ランキング・AIによる保留自動解除・矛盾自動解決 |
+| **データ設計** | schema変更は違和感/根拠/矛盾/claimTypeは変更なし（既存往復フィールドを読取UIへ）、保留HoldStateは加算的・任意`holdState?`を新設、未統合Shelfは加算的・任意Shelf membershipを新設。新フィールドは全てoptionalで欠落時は従来挙動 | 業務: 退避/復帰は可逆、内容削除と分離。機能: schema変更はschemas.md先行更新→import/export/validate/tests追随 |
+| **機能設計** | 4フェーズ（読取UI→保留+未統合→違和感→再提案ループ→根拠/矛盾をレビュー対象に接続）をDOMAIN-EXPR-01..04に分割。循環デッドロックはADR-0032をAcceptedにして解消 | 業務: 緩和禁止はproposal-only・human_reviewed人手昇格・SafeMode既定ON・provider=noneでも主要価値成立。データ: AIはHold/Critiqueを解消せず保持対象として扱う |
+
 ## Consequences
 
 - 期待される効果: domain.md 中核概念が利用者体験に到達し、社会的目標（曖昧さを保留する道具）の核が成立する。PV-02 の循環デッドロックが解消し、設計判断の保留が確定する。
