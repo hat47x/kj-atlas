@@ -267,3 +267,29 @@ def test_generated_pydantic_model_is_valid_python() -> None:
     model_code = model_code.split("[Dry run", 1)[0]
     model_code = model_code.lstrip("\n").rstrip()
     ast.parse(model_code)  # raises SyntaxError if invalid
+
+
+def test_data_boundary_generates_tests() -> None:
+    """data_boundary emits roundtrip + validation tests (DX-CODEGEN-03)."""
+    import ast
+
+    decision = _verified({
+        "type": "data_boundary",
+        "typeName": "FieldworkRequestV1",
+        "description": "W型の現場への問い",
+        "saveScope": "document",
+        "fields": [
+            {"name": "id", "type": "str", "minLength": 1, "maxLength": 64},
+            {"name": "question", "type": "str", "minLength": 1, "maxLength": 500},
+            {"name": "resolved", "type": "bool", "default": "False"},
+        ],
+    })
+    result = _run_script(decision, "--dry-run")
+    assert result.returncode == 0, result.stderr
+    assert "Generated tests" in result.stdout
+    assert "test_FieldworkRequestV1_roundtrip" in result.stdout
+    assert "test_FieldworkRequestV1_id_rejects_empty" in result.stdout
+    # Extract the generated test block and syntax-validate it.
+    block = result.stdout.split("=== Generated tests ===", 1)[1]
+    test_code = block.split("[Dry run", 1)[0].lstrip("\n").rstrip()
+    ast.parse(test_code)  # raises SyntaxError if invalid

@@ -596,6 +596,10 @@ def _generate_data_boundary(design: dict, args: Any) -> None:
     print("\n=== Generated Pydantic model ===")
     print(model)
 
+    # DX-CODEGEN-03: generate tests for the model.
+    print("\n=== Generated tests ===")
+    print(_generate_data_boundary_tests(pascal, fields))
+
     if args.dry_run:
         print("\n[Dry run — no files written]")
         return
@@ -606,6 +610,72 @@ def _generate_data_boundary(design: dict, args: Any) -> None:
     print(f"  1. models_ai.py / models.py — Pydantic model")
     print(f"  2. 02_Architecture/schemas.md — TypeScript type + section")
     print(f"  3. 02_Architecture/api.md — endpoint contract (if API-changing)")
+    print(f"  4. tests/test_codegen_{pascal}.py — generated tests")
+
+
+def _generate_data_boundary_tests(pascal: str, fields: list) -> str:
+    """Generate roundtrip + validation tests for a data_boundary model.
+
+    DX-CODEGEN-03: uses existing patterns (pytest, Pydantic ValidationError).
+    Validation tests are emitted only for fields with constraints.
+    """
+    # Field names for the roundtrip valid-input construction.
+    valid_values = []
+    for field in fields:
+        fname = field.get("name", "field")
+        ftype = field.get("type", "str")
+        # Pick a plausible valid value per type.
+        if "bool" in ftype:
+            valid_values.append(f"{fname}=True")
+        elif "| None" in ftype or ftype == "None":
+            valid_values.append(f"{fname}=None")
+        elif "int" in ftype:
+            valid_values.append(f"{fname}=1")
+        elif "list" in ftype or "[]" in ftype:
+            valid_values.append(f"{fname}=[]")
+        else:
+            valid_values.append(f'{fname}="valid"')
+
+    valid_args = ",\n        ".join(valid_values) if valid_values else ""
+
+    # Validation tests: for each constrained field, an invalid value.
+    validation_tests = []
+    for field in fields:
+        fname = field.get("name", "field")
+        if field.get("minLength"):
+            invalid = "''"
+            validation_tests.append(
+                f"""
+def test_{pascal}_{fname}_rejects_empty() -> None:
+    with pytest.raises(ValidationError):
+        {pascal}({fname}={invalid})"""
+            )
+        elif field.get("maxLength"):
+            invalid = "'x' * 1000"
+            validation_tests.append(
+                f"""
+def test_{pascal}_{fname}_rejects_too_long() -> None:
+    with pytest.raises(ValidationError):
+        {pascal}({fname}={invalid})"""
+            )
+
+    validation_block = "\n".join(validation_tests)
+
+    return f'''import pytest
+from pydantic import ValidationError
+
+from kj_atlas_api.models_ai import {pascal}
+
+
+def test_{pascal}_roundtrip() -> None:
+    m = {pascal}(
+        {valid_args}
+    )
+    data = m.model_dump()
+    m2 = {pascal}.model_validate(data)
+    assert m2 == m
+{validation_block}
+'''
 
 
 if __name__ == "__main__":
