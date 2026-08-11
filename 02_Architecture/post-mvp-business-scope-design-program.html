@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>post-MVP 業務全体設計プログラム — kj-atlas</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #0f172a; --muted: #475569; --line: #cbd5e1;
+    --panel: #f8fafc; --accent: #0f766e; --hold: #92400e;
+    --biz: #2563eb; --data: #7c3aed; --func: #0891b2; --gap: #b91c1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1120; --fg: #e2e8f0; --muted: #94a3b8; --line: #334155;
+      --panel: #131c2e; --accent: #2dd4bf; --hold: #fbbf24;
+      --biz: #60a5fa; --data: #a78bfa; --func: #22d3ee; --gap: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 20px 64px; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", Meiryo, sans-serif;
+    font-size: 14px; line-height: 1.75; max-width: 1040px; margin-inline: auto;
+  }
+  h1 { font-size: 22px; font-weight: 800; margin: 0 0 4px; }
+  h2 { font-size: 17px; font-weight: 800; margin: 40px 0 10px; padding-top: 18px; border-top: 1px solid var(--line); }
+  h3 { font-size: 14.5px; font-weight: 700; margin: 26px 0 8px; }
+  .meta { color: var(--muted); font-size: 12px; margin: 0 0 20px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--panel); font-weight: 700; }
+  code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.92em; }
+  .biz { border-left: 3px solid var(--biz); }
+  .data { border-left: 3px solid var(--data); }
+  .func { border-left: 3px solid var(--func); }
+  .note { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; padding: 10px 14px; margin: 14px 0; }
+  .gapbox { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--gap); border-radius: 6px; padding: 10px 14px; margin: 14px 0; }
+  .mermaid { text-align: center; margin: 18px 0; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 4px; }
+  .t-biz { background: #dbeafe; color: #1d4ed8; }
+  .t-data { background: #ede9fe; color: #6d28d9; }
+  .t-func { background: #cffafe; color: #0e7490; }
+  @media (prefers-color-scheme: dark) {
+    .t-biz { background: #1e3a5f; color: #93c5fd; }
+    .t-data { background: #3b2f5e; color: #c4b5fd; }
+    .t-func { background: #164e56; color: #67e8f9; }
+  }
+  .wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<h1>post-MVP 業務全体設計プログラム</h1>
+<p class="meta">
+  区分: 設計プログラム枠組み / 版: 第0版（枠組み＋第1反復） / 作成: 2026-08-10<br>
+  方法論: <code>ADR-0067</code> 三要素牽制設計法 / チェックリスト: <code>02_Architecture/three-element-constraint-checklist.html</code>
+</p>
+
+<div class="note">
+  <strong>この文書の位置づけ:</strong> 個別の設計判断を下す文書ではなく、<strong>判断の単位と順序を定める枠組み</strong>である。
+  個々の決定は各ADR・issueに残す。本書が担うのは (1) 何を設計対象とするかの全体像、(2) どの順で三要素分析にかけるか、
+  (3) 反復間で整合を失わないための引き継ぎ、の3点である。
+</div>
+
+<h2>1. 「MVP脱却」を定義する</h2>
+
+<p>
+  「業務全体を包括的に実現する」は、そのままでは設計対象にならない。まず現状との差分を構造として定義する。
+</p>
+
+<p>
+  現行MVPが成立させているのは <strong>「1人の実務者が、1つの文書で、KJ法を最後まで回せる」</strong> ことである。
+  <code>inquiry_journey_model.html</code> のW型反復は、この単独実務者の時間軸方向の深化を既に設計済みである。
+</p>
+
+<p>
+  対して業務全体とは <strong>「組織が、複数の主体と複数の探究を、統制の下で継続的に回せる」</strong> ことを指す。
+  差分は3つの軸に分解できる。要件キーワード15項目はいずれかの軸に射影される。
+</p>
+
+<div class="wrap">
+<table>
+  <thead><tr><th style="width:16%;">拡張軸</th><th style="width:30%;">MVP → 業務全体</th><th>該当する要件キーワード</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>主体の複数化</strong></td>
+      <td>1人 → 組織（誰が・どの権限で・いつまで）</td>
+      <td>システム初期状態 / テナント追加 / IdP連携・ユーザ設定 / 権限変更・組織変更 / ユーザ無効化</td>
+    </tr>
+    <tr>
+      <td><strong>成果物の複数化</strong></td>
+      <td>1文書 → 文書群とその生涯</td>
+      <td>マスタ設定 / キャンバス作成〜一覧〜管理 / キャンバス無効化</td>
+    </tr>
+    <tr>
+      <td><strong>境界の外部化</strong></td>
+      <td>ローカル完結 → 共有・外部連携・他組織</td>
+      <td>キャンバス公開・共有 / ユーザ間コラボレーション / 共同編集 / 生成AIコラボレーション / MCP利用 / CLI利用 / テナント間連携</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  この3軸は独立ではない。<strong>主体が確立しなければ成果物の帰属が決まらず、帰属が決まらなければ境界の外側へ何を出せるか決まらない。</strong>
+  したがって設計順序は原則としてこの並び順に従う。
+</p>
+
+<h2>2. アクターモデル</h2>
+
+<p>
+  現行は技術的に3種（Standard user / Tenant Admin / Platform operator）と外部AIエージェントを区別している
+  （<code>enterprise_architecture.html</code> §06 の plane 分離）。KJ法の実務から要求される役割をこれへ写像する。
+</p>
+
+<div class="wrap">
+<table>
+  <thead><tr><th style="width:18%;">実務上の役割</th><th style="width:30%;">その役割が必要とすること</th><th style="width:26%;">現行アクターへの写像</th><th>判定</th></tr></thead>
+  <tbody>
+    <tr><td>ファシリテーター<br>（セッション主宰）</td><td>探究の場を作り、参加者を招き、進行を保つ</td><td>Standard user ＋ 当該キャンバスの管理capability</td><td>capability</td></tr>
+    <tr><td>分析者</td><td>カード化・束ね・表札・関係線</td><td>Standard user</td><td>既存のまま</td></tr>
+    <tr><td>データ提供者</td><td>素材（記録・逐語録）の投入のみ。分析はしない</td><td>Standard user ＋ 投入限定capability</td><td>capability</td></tr>
+    <tr><td>レビュアー／依頼主</td><td>成果を読み判断する。編集しない</td><td>共有received側（read-only）</td><td>capability</td></tr>
+    <tr><td>監査担当</td><td>証跡を読む。<strong>知的成果物本体は見ない</strong></td><td>Tenant Admin ＋ 監査読取capability</td><td>capability</td></tr>
+    <tr><td>他組織の協働者</td><td>別組織に所属したまま特定の探究へ参加する</td><td style="color:var(--gap);"><strong>写像先が無い</strong></td><td style="color:var(--gap);"><strong>構造的に新規</strong></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>設計判断: アクター型を増やさず、capability集合で表現する</h3>
+
+<div class="wrap">
+<table>
+  <thead><tr><th style="width:10%;">次元</th><th style="width:45%;">この判断での主張</th><th>他次元への制約</th></tr></thead>
+  <tbody>
+    <tr class="biz"><td><span class="tag t-biz">業務</span></td><td>実務の役割は engagement ごとに流動的である。同一人物が回によってファシリテーターにも分析者にもなる</td><td>データ: 役割を人に固定的に持たせると、付け替えコストが利用そのものを阻害する</td></tr>
+    <tr class="data"><td><span class="tag t-data">データ</span></td><td>役割を型にすると <code>users</code> へ role 列が必要になり、<code>tenant_memberships</code> と二重管理になる。capability なら membership の属性で足りる</td><td>業務: 「この人は何ができるか」の正本が membership 側に一元化される</td></tr>
+    <tr class="func"><td><span class="tag t-func">機能</span></td><td>既存の <code>AccessControlAdapter</code> は capability 判定を外部PDPへ委譲済み。capability 集合はこの契約にそのまま乗る</td><td>データ: アクター型の追加は PDP 契約自体の変更を要し、外部委譲の境界を壊す</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  <strong>例外は「他組織の協働者」のみ。</strong>これは capability では表現できない。当人の identity が
+  <em>別テナントのIdPに属する</em>という構造的差異があり、<code>resolve_verified_claim_tenant_context()</code> の
+  「issuer/audience が当該テナントのprovider行と一致すること」という前提そのものに抵触する。
+  第5反復（テナント間連携）で構造として扱う。
+</p>
+
+<h2>3. 要件領域の依存構造</h2>
+
+<div class="mermaid">
+flowchart TB
+  subgraph L0["層0: 存在の前提"]
+    A1["システム初期状態"] --> A2["テナント追加"]
+  end
+  subgraph L1["層1: 主体の確立"]
+    A2 --> B1["IdP連携"]
+    B1 --> B2["ユーザ設定"]
+    B2 --> B3["権限・組織変更"]
+  end
+  subgraph L2["層2: 作業の器"]
+    B3 --> C1["マスタ設定"]
+    B3 --> C2["キャンバス作成〜一覧〜管理"]
+  end
+  subgraph L3["層3: 協働"]
+    C2 --> D1["公開・共有"]
+    D1 --> D2["ユーザ間コラボレーション"]
+    D2 --> D3["共同編集"]
+  end
+  subgraph L4["層4: 外部境界"]
+    C2 --> E1["生成AIコラボレーション"]
+    E1 --> E2["MCP利用"]
+    E1 --> E3["CLI利用"]
+  end
+  subgraph L5["層5: 組織間"]
+    D2 --> F1["テナント間連携"]
+    B1 --> F1
+  end
+  X["無効化<br/>（ユーザ／キャンバス）"]
+  X -.->|各層が自ら答える| L1
+  X -.-> L2
+  X -.-> L3
+  X -.-> L4
+  X -.-> L5
+</div>
+
+<div class="gapbox">
+  <strong>構造的発見: 「無効化」は層ではなく横断的性質である。</strong><br>
+  要件キーワードは「ユーザ無効化」「キャンバス無効化」を他と並列に挙げているが、これらを独立した層として最後に設計すると、
+  それまでの全設計に穴が空く。<strong>「Xが無効化されたとき、Xに依存する全てはどうなるか」は、各層が自分の設計時に答えるべき問い</strong>だからである。
+  例: 共有中のキャンバスの所有者が無効化されたとき共有は生き続けるか、共同編集の最中に参加者が権限を失ったら編集中の変更はどうなるか
+  — これらは「無効化の設計」では答えられず、「共有の設計」「共同編集の設計」が自ら答えねばならない。<br>
+  <strong>→ 本プログラムでは無効化を独立反復に置かず、各反復の三要素分析に「無効化時の振る舞い」を必須項目として組み込む。</strong>
+  これは <code>three-element-constraint-checklist.html</code> への追加提案でもある（現行18項目に含まれていない）。
+</div>
+
+<h2>4. 反復計画</h2>
+
+<div class="wrap">
+<table>
+  <thead><tr><th style="width:8%;">反復</th><th style="width:26%;">対象</th><th style="width:36%;">この反復が答える問い</th><th>先行条件</th></tr></thead>
+  <tbody>
+    <tr><td><strong>第1</strong></td><td>制御プレーン背骨<br>（初期状態・テナント追加・IdP・ユーザ・権限/組織）</td><td>誰が、どの権限で、いつから系に存在するか</td><td>なし（最下層）</td></tr>
+    <tr><td><strong>第2</strong></td><td>作業の器<br>（マスタ設定・キャンバスCRUD/一覧/管理）</td><td>成果物は誰に帰属し、どんな生涯を持つか</td><td>第1（帰属先の主体が要る）</td></tr>
+    <tr><td><strong>第3</strong></td><td>協働<br>（公開・共有・ユーザ間コラボ・共同編集）</td><td>複数主体が同一成果物へ関与するとき何が守られるか</td><td>第2（帰属が決まっていること）</td></tr>
+    <tr><td><strong>第4</strong></td><td>外部境界<br>（生成AI・MCP・CLI）</td><td>人間以外の主体の権限と証跡をどう扱うか</td><td>第2（対象と権限が要る）</td></tr>
+    <tr><td><strong>第5</strong></td><td>組織間<br>（テナント間連携）</td><td>信頼境界をまたぐ協働をどう成立させるか</td><td>第1・第3</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>5. 第1反復: 制御プレーン背骨の三要素分析</h2>
+
+<h3>5.1 起点に断裂がある（bootstrapの循環）</h3>
+
+<p>
+  第1反復の起点「システム初期状態 → テナント追加」は、<strong>現状では成立しない</strong>。
+  <code>ADR-0072</code> がコード実読で記録した事実は次のとおり:
+</p>
+
+<ul>
+  <li><code>saas-multitenant</code> で認証を成立させるには <code>identity_providers</code> 行が事前に必要である</li>
+  <li>その行を登録する <code>POST /admin/provision/identity-providers</code> は、同プロファイルで <strong>404</strong> を返す</li>
+  <li>起動時の警告文は、その到達不能なエンドポイントを使えと指示している</li>
+  <li>結果として、DB直接操作以外にテナントを作る経路が存在しない</li>
+</ul>
+
+<div class="wrap">
+<table>
+  <thead><tr><th style="width:10%;">次元</th><th style="width:45%;">主張</th><th>他次元への制約</th></tr></thead>
+  <tbody>
+    <tr class="biz"><td><span class="tag t-biz">業務</span></td><td>運用者は新規デプロイに最初のテナントと最初の管理者を作る。この操作<em>自体</em>が監査対象である</td><td>機能: 認可も証跡も無い経路（DB直接操作）を正規手順にはできない</td></tr>
+    <tr class="data"><td><span class="tag t-data">データ</span></td><td>初期状態は「テナント0・利用者0・IdP0」。この状態から最初の信頼点をどう作るかが定義されていない</td><td>業務: 信頼点を誰が作ったか記録できなければ監査に耐えない</td></tr>
+    <tr class="func"><td><span class="tag t-func">機能</span></td><td>認証は IdP 行に依存し、IdP 行の登録には認証が要る（循環）</td><td>データ: 循環を断つには「認証に依存しない初期経路」が構造として要る</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  三要素で見ると、<strong>循環を断てる点は機能次元にしかない</strong>。業務・データはいずれも「証跡が要る」という制約を出すだけで、
+  循環そのものは解けない。<code>ADR-0072</code> の D1=A+B（静的admin bearerをbootstrap専用の最小権限経路として残し、
+  IdP登録後の通常運用は capability claim で行う二段構成）は、この断裂点に正しく対応している。
+</p>
+
+<h3>5.2 業務次元からの追加制約 — ADR-0072に欠けている視点</h3>
+
+<div class="gapbox">
+  <strong>三要素分析で発見した設計上の欠落。</strong><br>
+  <code>ADR-0072</code> は「管理面をどう<em>認可</em>するか」を論じているが、<strong>「最初の管理者は誰であり、その人物の正当性はどう確認されるか」</strong>
+  という業務次元の問いを扱っていない。そしてこの問いの答えは <strong>profile によって異なる</strong>。
+  <div class="wrap">
+  <table style="margin-top:10px;">
+    <thead><tr><th style="width:26%;">profile</th><th style="width:37%;">最初の管理者とは誰か</th><th>正当性の根拠</th></tr></thead>
+    <tbody>
+      <tr><td><code>enterprise-production</code><br>（自己ホスト）</td><td>そのインスタンスをデプロイした人物</td><td><strong>物理的に自明</strong>。サーバへの到達権＝所有権。bootstrap token で十分</td></tr>
+      <tr><td><code>saas-multitenant</code><br>（共有基盤）</td><td>テナントを申し込んだ組織の代表者</td><td><strong>自明でない</strong>。組織の実在とドメイン所有の確認が要る。bootstrap token だけでは「申込者が本当にその組織の人か」を担保できない</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <code>ADR-0072</code> の D2 は「SaaSで管理面へ到達できるか」という<em>機能</em>の問いだけを立てており、この業務次元の差を明示していない。
+  同じ「bootstrap」という語で二つの異なる業務要件を指しているため、D2 のいずれの案を採っても SaaS 側は解ききれない。
+  <strong>→ ADR-0072 採択時に、この profile 差を D2 の中で分離することを提案する。</strong>
+</div>
+
+<h3>5.3 初期状態の状態機械</h3>
+
+<p>「システムの初期状態」を、遷移可能な状態として定義する。第1反復の設計対象はこの遷移列である。</p>
+
+<div class="mermaid">
+stateDiagram-v2
+  [*] --> S0
+  S0: S0 空<br/>migration直後・全テーブル空
+  S1: S1 制御プレーン到達可能<br/>bootstrap credential のみ有効
+  S2: S2 テナント1・管理者1<br/>IdP未設定（管理者はbootstrap経路のみ）
+  S3: S3 IdP登録済<br/>通常利用者が認証可能
+  S4: S4 定常運用
+  S0 --> S1: bootstrap credential 供給<br/>（環境変数／CLI）
+  S1 --> S2: テナント作成＋初期管理者付与<br/>【証跡必須】
+  S2 --> S3: IdP登録＋tenant紐付け<br/>【証跡必須】
+  S3 --> S4: 通常利用者の初回認証<br/>（JIT or 事前provisioning）
+  S4 --> S3: 全利用者失効
+  S2 --> S2: 管理者追加
+  note right of S1
+    この状態はbootstrap専用。
+    S3到達後もS1経路を残すか、
+    閉じるかは設計判断（未決）
+  end note
+</div>
+
+<p>
+  この状態機械が明らかにするのは、<strong>S1 を S3 到達後も開けたままにするか閉じるか</strong>という未決の判断である。
+  開けたままなら「IdPが壊れても復旧できる」（可用性）が、静的秘密が永続的な攻撃面として残る（機密性）。
+  閉じるなら攻撃面は消えるが、IdP障害時に系全体が復旧不能になる。
+  <code>ADR-0063</code> D6 が identity 検証について「fail-safe設定を作らない＝可用性より機密性」と既に決めている以上、
+  <strong>その一貫性からは「閉じる」が整合する</strong>が、これは可用性の予算をどこで支払うかの判断であり、保守者の決定を要する。
+</p>
+
+<h2>6. 設計に先立って判明した構造的欠落</h2>
+
+<p>
+  第1反復の三要素分析を進める過程で、<strong>第2反復以降が現行データ設計の上には載らない</strong>ことが判明した。
+  枠組みの段階で記録し、第2反復の起点とする。
+</p>
+
+<div class="gapbox">
+  <strong>欠落: <code>documents</code> テーブルに「主体」と「生涯」が無い。</strong><br>
+  現行の <code>DocumentRow</code>（<code>models.py</code>）の列は
+  <code>tenant_id</code> / <code>id</code>（複合主キー）／<code>version</code> / <code>updated_at</code> / <code>payload_json</code> のみである。
+  所有者列（<code>created_by</code>／<code>owner_user_id</code>）も <code>lifecycle_state</code> 列も存在しない。<br><br>
+  対照的に、<strong>同一性の側は既にライフサイクルを持っている</strong>: <code>identity_providers</code>・<code>tenants</code>・
+  <code>tenant_memberships</code> 等5テーブルが <code>lifecycle_state</code> を持つ。
+  <strong>主体には生涯があり、成果物には無い</strong>という非対称が、現行データ設計に存在する。
+</div>
+
+<div class="wrap">
+<table>
+  <thead><tr><th style="width:26%;">要件キーワード</th><th>この欠落によって現状では設計できないこと</th></tr></thead>
+  <tbody>
+    <tr><td>キャンバス一覧・管理</td><td>「自分の文書」で絞り込めない。テナント内が常に平坦な一覧になる</td></tr>
+    <tr><td>ユーザ無効化</td><td>「その人が所有していた文書をどうするか」が問いとして成立しない。所有が記録されていない</td></tr>
+    <tr><td>権限変更・組織変更</td><td>文書をチーム間で移す操作が定義できない。移動元・移動先の帰属概念が無い</td></tr>
+    <tr><td>キャンバス無効化</td><td>archive / trash / purge を表す列が無い（<code>non-canvas-ui-flow-design.html</code> §9 の「文書アーカイブUI: lifecycle state列なし」と一致）</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  なお共有側は <code>document_access_metadata</code>（<code>visibility</code>: Public / Unlisted / Org / Restricted ＋ <code>policy_binding_id</code>）
+  が既に存在する。<strong>「誰に見せるか」は設計済みだが「誰のものか」が未設計</strong>である、という状態にある。
+  第2反復はこの非対称の解消から始める。
+</p>
+
+<h2>7. 次の反復への引き継ぎ</h2>
+
+<ol>
+  <li><strong>第1反復の残作業</strong>: <code>ADR-0072</code> の採択（D1/D2/D3）。§5.2 の profile 差の分離を採択時に反映する。</li>
+  <li><strong>第2反復の起点</strong>: §6 の欠落（<code>documents</code> の所有者・lifecycle）。データ次元の補正が先行し、その後に業務・機能を突き合わせる。</li>
+  <li><strong>チェックリストへの提案</strong>: §3 の「無効化時の振る舞い」を <code>three-element-constraint-checklist.html</code> の必須項目へ追加する。</li>
+  <li><strong>未収集の外部知見</strong>: 類似製品（Miro / Notion / Figma / Slack / Atlassian）の組織モデル・bootstrap手順・共同編集の並行性モデルの比較調査は本版では未実施。第3反復（共同編集の並行性モデル選定）と第5反復（テナント間連携）では、この外部比較なしに判断すべきでない。</li>
+</ol>
+
+<h2>Traceability</h2>
+
+<ul>
+  <li><code>01_Plans/adr/ADR-0067-three-element-constraint-design-method.md</code> — 適用した方法論の正本</li>
+  <li><code>02_Architecture/three-element-constraint-checklist.html</code> — 着工前チェック（§3で追加提案）</li>
+  <li><code>01_Plans/adr/ADR-0072-control-plane-authorization-separation.md</code> — 第1反復の中核ADR（§5.2で欠落を指摘）</li>
+  <li><code>01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md</code> — identity 検証の fail-closed 方針（§5.3の一貫性根拠）</li>
+  <li><code>01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md</code> — tenant 境界の正本</li>
+  <li><code>02_Architecture/non-canvas-ui-flow-design.html</code> §9 — 既存の「三者未成立」一覧（§6と一致）</li>
+  <li><code>02_Architecture/enterprise_architecture.html</code> §06 — plane 分離要求（§2のアクター写像の根拠）</li>
+  <li><code>02_Architecture/inquiry_journey_model.html</code> — 単独実務者の時間軸方向の設計（§1の対比対象）</li>
+  <li><code>02_Architecture/design/master-data-settings-ui-ux-concept.md</code> — 第2反復のマスタ設定の先行設計</li>
+</ul>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default"
+});
+</script>
+
+</body>
+</html>
