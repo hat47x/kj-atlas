@@ -43,6 +43,14 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 | 独自revision DAG + Content Store | backend非依存 | 強い | DB metadataで維持 | policy制御可能 | 推奨候補 |
 | 独自DAG + optional Git adapter | 上記 + Git交換性 | 強い | coreから分離 | adapter単位で管理 | 将来候補 |
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | KJキャンバスは長期編集・分岐・統合・人間と生成AIの提案採否・探究ラウンドの節目を持つ。AI提案と人間採用の系譜を保ちつつproposal-onlyとhuman review境界を維持する | 機能: AI proposal revisionは`ai_run_ref`必須。人が採用した場合は人間originの新revisionを作りsourceを参照し、AI proposalをhuman-authoredへ書き換えない。データ: raw promptや未レビュー本文を世代metadataへ保存しない |
+| **データ設計** | キャンバス編集世代をGit非依存のcontent-addressed revision DAGとして定義（revisionはcontent digest+親、物理本文はContent Store）。ephemeral/checkpoint/governedの3 tierを採用し全操作event sourcingはしない。revisionと物理blobを分離し複数revisionが同一`tenant+digest`のimmutable blobを参照 | 業務: autosaveへ重いAI/actor属性を付けない（容量・PII・監査ノイズ低減）。機能: canonical JSON（UTF-8・key辞書順・NaN禁止）前提でcontent-addressed chunk/delta+定期full snapshot |
+| **機能設計** | Gitはarchive/import-export/offline collaboration限定の任意adapter。AI実行は`ai_generation_runs`へ分離しprompt・本文・provider/modelをDAGへ複製しない。retention GCはmark-and-sweep型でhead/DAG parent/source proposal/pinから到達するrevisionを削除せず、checkpoint/governedを自動期限削除しない | 業務: revision削除時は保護条件を同じDELETE statementで再評価しpin/head追加競合をfail closedに。データ: blob GCは対象rowをlockしたtransaction内で参照を再確認し`deleting`へ遷移してから物理backend削除、失敗時はrowを`deleting`のまま残しretry可能に |
+
 ## Consequences
 
 - DB、NAS、S3、将来のGit保存で同じ論理世代を利用できる。

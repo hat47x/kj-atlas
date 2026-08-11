@@ -45,6 +45,14 @@ KJキャンバスはJSON documentとして扱いやすく、FirestoreやDynamoDB
 4. source version不一致時のstale表示とRDB fallbackを確認する。
 5. SDK、credential、cost telemetry、health checkをoptional integrationへ閉じ込め、core runtime dependencyにしない。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | キャンバスはJSONとして扱いやすいが、永続化は本文だけでなくtenant認可・複合FK・identity一意性・監査・AI lineage・revision DAGを同じ整合性境界で管理する必要がある。JSON形状との相性だけで検証済みのtransaction/constraint/revision DAGを捨てない | 機能: RDBを正本として維持しDocument DBをDB能力レジストリへ登録しない。データ: realtime需要が生じたらDocument DBの強みだけを利用 |
+| **データ設計** | canvas本文・revision blobの物理保存は既存`ContentStore`境界で扱い、Document DB固有のchunkingを追加してrevision DAGを複製しない。Document DB採用候補は正本から再構築でき消失しても権限・履歴・監査を失わない派生用途（presence/read projection/cache manifest）に限定 | 業務: projectionは`tenant_id + projection_kind + source_version`を持ちRDB認可判定後だけ配信。機能: stale projectionはsource versionを返し更新遅延・欠落時はRDBへfallback |
+| **機能設計** | 派生更新はRDB transaction内のoutboxを起点に非同期反映しdual writeを行わない。projection側のsecurity rule/IAMだけを正本認可として信頼しない。Firestore/DynamoDBを抽象的Document DB adapterへ早期統合しない | 業務: outbox・projection worker・staleness表示・provider別障害試験が必要なため需要とSLO未確定の現時点では実装しない。データ: TTL・削除・tenant退会・SafeMode・暗号化・backup・費用上限をpromotion gateで実証するまでruntime設定を公開しない |
+
 ## Consequences
 
 - JSONとの形状上の相性だけで、既に検証済みのtransaction・constraint・revision DAGを捨てずに済む。
