@@ -54,10 +54,31 @@ ROUTE_DECORATOR_RE = re.compile(
     r'@router\.(get|post|put|delete|patch)\('
     r'["\']([^"\']+)["\']'
 )
+# router = APIRouter(prefix="/ai", tags=["ai"])
+ROUTER_PREFIX_RE = re.compile(r'APIRouter\([^)]*prefix=["\']([^"\']+)["\']')
+# Path-parameter canonicalization: {doc_id}/{journey_id}/{id} → {param}
+_PARAM_TOKEN_RE = re.compile(r"\{[a-zA-Z_][a-zA-Z0-9_]*\}")
+# Concrete resource IDs (test fixtures) → {param}
+_CONCRETE_ID_RE = re.compile(r"([a-z][a-z0-9]+(?:[-_][a-z0-9]+)+)")
+
+
+def _canonical(path: str) -> str:
+    normalized = _PARAM_TOKEN_RE.sub("{param}", path)
+    normalized = _CONCRETE_ID_RE.sub("{param}", normalized)
+    while "{param}/{param}" in normalized:
+        normalized = normalized.replace("{param}/{param}", "{param}")
+    return normalized
+
+
+def _router_prefix_for(content: str) -> str:
+    match = ROUTER_PREFIX_RE.search(content)
+    return match.group(1) if match else ""
+
 
 if API_MD.exists():
     api_md_content = API_MD.read_text(encoding="utf-8")
 
+    # Resolve each backend route with its router prefix, canonicalized.
     backend_routes: set[str] = set()
     for py_file in BACKEND_SRC.rglob("*.py"):
         if py_file.name == "__init__.py":
@@ -66,36 +87,28 @@ if API_MD.exists():
             content = py_file.read_text(encoding="utf-8")
         except Exception:
             continue
+        prefix = _router_prefix_for(content)
         for match in ROUTE_DECORATOR_RE.finditer(content):
             method = match.group(1).upper()
             path = match.group(2)
-            # Build canonical forms
-            canonical = f"{method} {path}"
-            # Also check with leading /ai or /admin prefix from router prefix
-            backend_routes.add(canonical)
+            full_path = f"{prefix.rstrip('/')}/{path.lstrip('/')}".rstrip("/") or "/"
+            backend_routes.add(f"{method} {_canonical(full_path)}")
 
-    # Extract documented endpoints from api.md
+    # Extract documented endpoints from api.md (both `METHOD /path` and
+    # **METHOD** `/path` formats), canonicalized.
     API_DOC_RE = re.compile(r'`(GET|POST|PUT|DELETE|PATCH)\s+(/\S+)`')
+    API_DOC_BOLD_RE = re.compile(r"\*\*(GET|POST|PUT|DELETE|PATCH)\*\*\s+`(/\S+)`")
     doc_endpoints: set[str] = set()
-    for match in API_DOC_RE.finditer(api_md_content):
-        doc_endpoints.add(f"{match.group(1)} {match.group(2)}")
+    for pattern in (API_DOC_RE, API_DOC_BOLD_RE):
+        for match in pattern.finditer(api_md_content):
+            doc_endpoints.add(f"{match.group(1)} {_canonical(match.group(2))}")
 
     # Check coverage
     for route in sorted(backend_routes):
         if route not in doc_endpoints:
-            # Check prefix variants
-            found = False
-            for prefix in ["/ai", "/admin", "/docs", "/context", "/session", "/tenant-admin"]:
-                alt = route.split(" ", 1)
-                if len(alt) == 2:
-                    variant = f"{alt[0]} {prefix}{alt[1]}"
-                    if variant in doc_endpoints:
-                        found = True
-                        break
-            if not found:
-                warn(f"Backend route '{route}' not found in api.md (may need prefix)")
+            warn(f"Backend route '{route}' not found in api.md")
 
-    print(f"  Backend routes: {len(backend_routes)}, api.md endpoints: {len(doc_endpoints)}")
+    print(f"  Backend routes: {len(backend_routes)}, api.md canonical endpoints: {len(doc_endpoints)}")
 else:
     warn("api.md not found — skipping route check")
 
