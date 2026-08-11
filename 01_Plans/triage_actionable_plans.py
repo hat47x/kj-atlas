@@ -129,7 +129,11 @@ def extract_dependency_adr_ids(lines: list[str]) -> tuple[str, ...]:
 
 
 def parse_issue(path: Path) -> IssueMemo:
-    lines = read_header_lines(path)
+    # Dependencies are intentionally kept in a dedicated section, which can be
+    # well below the metadata header in long-running issue memos. Read the full
+    # memo so a long implementation log cannot silently turn a blocked issue
+    # into a Ready issue.
+    lines = path.read_text(encoding="utf-8").splitlines()
     title = lines[0].lstrip("# ").strip() if lines else path.stem
     meta: dict[str, str] = {}
     for line in lines[1:20]:

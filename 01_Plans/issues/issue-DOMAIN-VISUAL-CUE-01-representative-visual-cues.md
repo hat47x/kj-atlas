@@ -50,8 +50,8 @@
 - [x] AC-5: `ADR-0060` の供給経路、許容ライセンス、保存境界が受理されている。→ ADR-0060 Accepted（2026-07-20）。T5（emoji比較）+ T6（保存候補比較）により受理条件を充足。
 - [ ] AC-6: Phase 0 fixtureで、画像なし・手描き・基本図形・撮影写真・絵文字・プリセットの再発見時間、見誤り、主観的負担を比較している。
 - [x] AC-7: Phase 1のオフライン選択をマウス、キーボード、390px、スクリーンリーダー相当で検証している。
-- [ ] AC-8: 外部素材を導入する場合、原典確認、クレジット、キャッシュ、削除、API停止をintegration/e2eで検証している。
-- [ ] AC-9: 生成画像を導入する場合、明示送信、proposal-only、SafeMode、provider固定、来歴をintegration/e2eで検証している。
+- [ ] AC-8（条件付き）: 外部素材を導入する場合、原典確認、クレジット、キャッシュ、削除、API停止をintegration/e2eで検証している。現時点では未導入のためT8の採用判断まで適用外であり、本issueのPhase 1完了を単独では妨げない。
+- [ ] AC-9（条件付き）: 生成画像を導入する場合、明示送信、proposal-only、SafeMode、provider固定、来歴をintegration/e2eで検証している。現時点では未導入のためT8の採用判断まで適用外であり、本issueのPhase 1完了を単独では妨げない。
 - [x] AC-10: 代表規模でレイアウト移動、メモリ、保存容量、読み込み時間が予算内である。
 
 ## 4) タスク / Tasks
@@ -65,7 +65,7 @@
 - [x] T4b C0からC4の非製品プロトタイプ表示を作り、実装担当者による予備操作確認を実施する。高度な作業モード内のセッション限定UIとして実装し、マウス、キーボード、390px、ローカル画像通信をE2Eで確認した。代表利用者による効果比較はAC-6として未完了のまま残す。
 - [x] T5 Unicode絵文字と固定画像セットについて、OS間表示、アクセシビリティ、ライセンス、配布容量を比較する。→ `02_Architecture/design/unicode_emoji_os_comparison.md` として完了（2026-07-20）。推奨: Unicode絵文字をPhase 1既定とし、OS間不一致が確認されたcueだけを個別SVG化する。
 - [x] T6 採用参照、権利情報、画像本体、サムネイルの保存候補を比較し、ADRを受理または更新する。→ `02_Architecture/design/representative_visual_cue/storage_candidate_comparison.md` に比較完了（2026-07-20）。ADR-0060 Accepted・§8保存決定反映・`02_Architecture/data_model_operations_overview.html` 更新済み。
-- [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。→ 小PR 1件目（契約先行の型・往復保持・SafeMode）完了（2026-07-29）。小PR 2件目（基本図形の選択UI・20×20描画・保存・Undo・390px・a11y）完了（2026-08-02）。小PR 3件目（手描き入力・scope分離IndexedDB・4KB上限・再読込・Undo期間後の削除）完了（2026-08-02、`82b173eb`）。小PR 4件目（手描きassetのreview pack明示同梱・integrity・別browser復元・旧store移行）完了（2026-08-02、`04827403`）。小PR 5件目（利用者画像の端末内切り抜き・48×48 PNG化・16KB/scope保存・原本非保持・review pack既定除外/明示移送）完了（2026-08-02、`c5ac22f0`）。小PR 6件目（300カード・30島のレイアウト・応答性・メモリ・保存容量回帰）完了（2026-08-02）。代表利用者による比較評価（AC-6）は未完了のまま残る。
+- [ ] T7 Phase 1を、手描き/基本図形、利用者画像切り抜き、絵文字/プリセットの小さなPRへ分割して実装し、E2Eと実画面評価を行う。→ 小PR 1件目（契約先行の型・往復保持・SafeMode）完了（2026-07-29）。小PR 2件目（基本図形の選択UI・20×20描画・保存・Undo・390px・a11y）完了（2026-08-02）。小PR 3件目（手描き入力・scope分離IndexedDB・4KB上限・再読込・Undo期間後の削除）完了（2026-08-02、`82b173eb`）。小PR 4件目（手描きassetのreview pack明示同梱・integrity・別browser復元・旧store移行）完了（2026-08-02、`04827403`）。小PR 5件目（利用者画像の端末内切り抜き・48×48 PNG化・16KB/scope保存・原本非保持・review pack既定除外/明示移送）完了（2026-08-02、`c5ac22f0`）。小PR 6件目（300カード・30島のレイアウト・応答性・メモリ・保存容量回帰）完了（2026-08-02）。絵文字/プリセット経路は `DOMAIN-VISUAL-CUE-EMOJI-01` の判定待ちであり、判定前にUI実装または契約廃止を進めない。代表利用者による比較評価（AC-6）は未完了のまま残る。
 - [ ] T8 実利用で不足が確認された場合だけ、外部素材と生成画像をそれぞれ別issueへ分割する。
 - [x] T9 現行`Island.imageUrl`の自動外部取得とレビュー自動昇格を`SEC-VISUAL-ASSET-01`へ分離し、SafeModeで遮断する。
 
@@ -128,6 +128,7 @@
 - `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 - `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - `01_Plans/issues/issue-SEC-VISUAL-ASSET-01-legacy-island-image-safe-mode.md`
+- `01_Plans/issues/issue-DOMAIN-VISUAL-CUE-EMOJI-01-p37-pivot-vs-adr0060-emoji-plan-unreconciled.md`（T7の絵文字/プリセット経路を停止。MaintainerがADR-0060を維持または改訂するまで実装判断を行わない）
 
 ## 7) ADR判定
 

@@ -154,6 +154,38 @@ class TriageActionablePlansTest(unittest.TestCase):
             report["errors"],
         )
 
+    def test_dependency_section_after_line_120_still_blocks_issue(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "adr").mkdir()
+            (root / "issues").mkdir()
+            dependency = root / "issues" / "issue-DEP-01.md"
+            dependency.write_text(
+                "# Issue: DEP-01\n- Status: Draft\n- Priority: P2\n",
+                encoding="utf-8",
+            )
+            issue = root / "issues" / "issue-LONG-01.md"
+            filler = "\n".join(f"checkpoint {index}" for index in range(130))
+            issue.write_text(
+                "# Issue: LONG-01\n"
+                "- Status: Open\n"
+                "- Priority: P2\n\n"
+                "## Implementation log\n"
+                f"{filler}\n\n"
+                "## Dependencies\n"
+                "- `issue-DEP-01.md`\n",
+                encoding="utf-8",
+            )
+
+            report = MODULE.collect(root)
+
+        long_issue = next(
+            item for item in report["actionable_issues"] if item["backlog_id"] == "LONG-01"
+        )
+        self.assertFalse(long_issue["ready"])
+        self.assertEqual(long_issue["blockers"], ("DEP-01:Draft",))
+        self.assertIn("issues/issue-DEP-01.md", long_issue["depends_on"])
+
 
 if __name__ == "__main__":
     unittest.main()

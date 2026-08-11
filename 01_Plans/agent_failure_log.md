@@ -446,3 +446,10 @@ Updated: 2026-08-03
 - 原因: 新しいassertで`json.loads()`を使ったが、test moduleのimport更新を同時に行わなかった。
 - 対応: `import json`を追加し、対象route suiteを再実行した。
 - 再発防止: 新しいmodule名をtestへ導入した場合は、実行前に対象fileのimportとRuffを確認する。
+
+## 2026-08-11: 長文issue triage回帰fixtureの字下げ不備
+
+- 事象: 120行以降の依存関係を検証するunit testで、対象issueが収集結果に存在せず`StopIteration`となった。
+- 原因: 複数行fixtureへ字下げなしの長文を埋め込んだためdedentが働かず、先頭メタデータが字下げされたままになった。
+- 対応: fixtureを行頭が明示的な文字列連結へ変更し、長文部分だけを挿入する形へ単純化した。
+- 再発防止: 動的な複数行内容を含むmetadata fixtureではdedentに依存せず、生成後の先頭行とmetadata行がcolumn 0であることが明白な構築方法を使う。
