@@ -52,6 +52,9 @@ def _rls_protected_table_names() -> set[str]:
 def test_rls_scope_is_derived_from_every_tenant_scoped_model() -> None:
     assert _rls_protected_table_names() == {
         "ai_generation_runs",
+        "ai_proposal_decision_events",
+        "ai_proposal_decision_states",
+        "ai_proposals",
         "canvas_revision_heads",
         "canvas_revision_parents",
         "canvas_revision_pins",

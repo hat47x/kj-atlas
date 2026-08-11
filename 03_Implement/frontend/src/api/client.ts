@@ -653,25 +653,37 @@ export async function proposeIslandSummary(
 }
 
 export async function recordProposalDecision(
-  proposalId: string,
-  decision: "adopt" | "reject" | "hold",
-  actor: string,
-  reason?: string,
+  input: {
+    docId: string;
+    proposalId: string;
+    sourceBundleHash: string;
+    idempotencyKey: string;
+    decision: "adopt" | "reject" | "hold";
+    reason?: string;
+  },
   requestOptions: TenantScopedRequestOptions = {},
-): Promise<void> {
+): Promise<{
+  recorded: true;
+  eventId: string;
+  proposalId: string;
+  status: "accepted" | "rejected" | "held";
+  reviewState: "unreviewed";
+  recordedAt: string;
+}> {
   const response = await fetch(`${API_BASE}/ai/proposals/audit`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...tenantSessionPreconditionHeaders(requestOptions),
     },
-    body: JSON.stringify({ proposalId, decision, actor, reason }),
+    body: JSON.stringify(input),
   });
 
   if (!response.ok) {
     const errorDetail = await parseErrorDetail(response);
     throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
+  return await response.json();
 }
 
 // EXT-AGENT-01 (ADR-0049 D2, spec §3.4): the only frontend caller of

@@ -1,11 +1,13 @@
 import json
 import logging
 import math
-from hashlib import sha256
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
+from kj_atlas_api.db import get_db
 from kj_atlas_api.llm.provider import (
     LLMRequest,
     ProviderDisabledError,
@@ -46,6 +48,13 @@ from kj_atlas_api.models import (
     SuggestMergesResponse,
     Transform,
 )
+from kj_atlas_api.proposal_decision_repository import (
+    ProposalDecisionConflict,
+    ProposalNotRegistered,
+    register_ai_proposal,
+    record_proposal_decision as persist_proposal_decision,
+)
+from kj_atlas_api.routes.docs import _authorize_request, get_document_row
 from kj_atlas_api.tenant_session_precondition import (
     require_tenant_scoped_api_precondition,
 )
@@ -70,7 +79,9 @@ def _raise_llm_http_error(exc: ProviderDisabledError | ProviderRequestError) -> 
         "provider_validation": 422,
         "provider_unavailable": 503,
     }
-    raise HTTPException(status_code=status_map.get(exc.code, 503), detail=exc.to_contract()) from exc
+    raise HTTPException(
+        status_code=status_map.get(exc.code, 503), detail=exc.to_contract()
+    ) from exc
 
 
 def _resolve_reading_order(payload: CheckNarrativeRequest) -> list[str]:
@@ -88,7 +99,9 @@ def _validate_check_narrative_input(payload: CheckNarrativeRequest) -> None:
     if payload.basedOnReadingOrder is None:
         return
 
-    known_ids = {card.id for card in payload.doc.cards} | {island.id for island in payload.doc.islands}
+    known_ids = {card.id for card in payload.doc.cards} | {
+        island.id for island in payload.doc.islands
+    }
     unknown_ids = [item_id for item_id in payload.basedOnReadingOrder if item_id not in known_ids]
     if unknown_ids:
         raise HTTPException(status_code=422, detail="basedOnReadingOrder included unknown id")
@@ -108,13 +121,17 @@ def _build_narrative_check_prompt(payload: CheckNarrativeRequest) -> str:
             )
         elif item_id in cards_by_id:
             card = cards_by_id[item_id]
-            reading_order_lines.append(f'- {index}. card id="{card.id}", text={json.dumps(card.text)}')
+            reading_order_lines.append(
+                f'- {index}. card id="{card.id}", text={json.dumps(card.text)}'
+            )
         else:
             reading_order_lines.append(f'- {index}. unknown id="{item_id}"')
 
     island_lines: list[str] = []
     for island in payload.doc.islands:
-        island_cards = [cards_by_id[card_id] for card_id in island.cardIds if card_id in cards_by_id]
+        island_cards = [
+            cards_by_id[card_id] for card_id in island.cardIds if card_id in cards_by_id
+        ]
         card_texts = [card.text for card in island_cards]
         island_lines.append(
             f'- id="{island.id}", title={json.dumps(island.title or "")}, cardIds={json.dumps(island.cardIds)}, cardTexts={json.dumps(card_texts)}'
@@ -130,7 +147,7 @@ def _build_narrative_check_prompt(payload: CheckNarrativeRequest) -> str:
             "Identify missing key islands/cards based on reading order.",
             "Identify contradictions such as reading-order mismatch or narrative claims not supported by any card text.",
             "Identify ambiguous transitions, e.g. pronouns like it/they/this/that without a clear referent.",
-            "If there are no issues, return {\"issues\":[]}.",
+            'If there are no issues, return {"issues":[]}.',
             "Use this exact schema:",
             '{"issues":[{"severity":"info|warn|error","message":string,"references":[{"id":string,"kind":"card|island"}]?}]}',
             "Only include references that exist in the input diagram.",
@@ -146,7 +163,9 @@ def _build_narrative_check_prompt(payload: CheckNarrativeRequest) -> str:
     )
 
 
-def _parse_narrative_check_response(raw_text: str, source_doc: CheckNarrativeRequest) -> CheckNarrativeResponse:
+def _parse_narrative_check_response(
+    raw_text: str, source_doc: CheckNarrativeRequest
+) -> CheckNarrativeResponse:
     try:
         parsed = json.loads(raw_text)
     except json.JSONDecodeError as exc:
@@ -158,7 +177,9 @@ def _parse_narrative_check_response(raw_text: str, source_doc: CheckNarrativeReq
     try:
         response = CheckNarrativeResponse.model_validate(parsed)
     except Exception as exc:
-        raise HTTPException(status_code=422, detail="Invalid narrative check response payload") from exc
+        raise HTTPException(
+            status_code=422, detail="Invalid narrative check response payload"
+        ) from exc
 
     known_card_ids = {card.id for card in source_doc.doc.cards}
     known_island_ids = {island.id for island in source_doc.doc.islands}
@@ -168,13 +189,15 @@ def _parse_narrative_check_response(raw_text: str, source_doc: CheckNarrativeReq
             continue
         for reference in issue.references:
             if reference.kind == "card" and reference.id not in known_card_ids:
-                raise HTTPException(status_code=422, detail="LLM response included unknown card reference")
+                raise HTTPException(
+                    status_code=422, detail="LLM response included unknown card reference"
+                )
             if reference.kind == "island" and reference.id not in known_island_ids:
-                raise HTTPException(status_code=422, detail="LLM response included unknown island reference")
+                raise HTTPException(
+                    status_code=422, detail="LLM response included unknown island reference"
+                )
 
     return response
-
-
 
 
 def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:
@@ -222,9 +245,13 @@ def _parse_island_summary_response(
     try:
         response = SuggestIslandSummaryResponse.model_validate(parsed)
     except Exception as exc:
-        raise HTTPException(status_code=422, detail="Invalid island summary response payload") from exc
+        raise HTTPException(
+            status_code=422, detail="Invalid island summary response payload"
+        ) from exc
 
-    target_island = next((item for item in source_doc.doc.islands if item.id == source_doc.islandId), None)
+    target_island = next(
+        (item for item in source_doc.doc.islands if item.id == source_doc.islandId), None
+    )
     if target_island is None:
         raise HTTPException(status_code=422, detail="islandId does not exist")
 
@@ -232,13 +259,19 @@ def _parse_island_summary_response(
     grounding_ids = response.groundingIds
 
     if len(grounding_ids) > 10:
-        raise HTTPException(status_code=422, detail="LLM response groundingIds must contain at most 10 ids")
+        raise HTTPException(
+            status_code=422, detail="LLM response groundingIds must contain at most 10 ids"
+        )
     if len(set(grounding_ids)) != len(grounding_ids):
-        raise HTTPException(status_code=422, detail="LLM response groundingIds must not contain duplicates")
+        raise HTTPException(
+            status_code=422, detail="LLM response groundingIds must not contain duplicates"
+        )
 
     for card_id in grounding_ids:
         if card_id not in member_card_ids:
-            raise HTTPException(status_code=422, detail="LLM response groundingIds included non-member card id")
+            raise HTTPException(
+                status_code=422, detail="LLM response groundingIds included non-member card id"
+            )
 
     return response
 
@@ -252,17 +285,23 @@ def _build_generate_narrative_prompt(payload: GenerateNarrativeRequest) -> str:
     for index, entry_id in enumerate(reading_order, start=1):
         if entry_id in islands_by_id:
             island = islands_by_id[entry_id]
-            island_card_texts = [cards_by_id[card_id].text for card_id in island.cardIds if card_id in cards_by_id]
+            island_card_texts = [
+                cards_by_id[card_id].text for card_id in island.cardIds if card_id in cards_by_id
+            ]
             reading_order_lines.append(
                 f'- {index}. island id="{island.id}", title={json.dumps(island.title or "")}, cardIds={json.dumps(island.cardIds)}, cardTexts={json.dumps(island_card_texts)}'
             )
         elif entry_id in cards_by_id:
             card = cards_by_id[entry_id]
-            reading_order_lines.append(f'- {index}. card id="{card.id}", text={json.dumps(card.text)}')
+            reading_order_lines.append(
+                f'- {index}. card id="{card.id}", text={json.dumps(card.text)}'
+            )
         else:
             reading_order_lines.append(f'- {index}. unknown id="{entry_id}"')
 
-    instruction_title = payload.narrativeTitle.strip() if payload.narrativeTitle else "Untitled draft narrative"
+    instruction_title = (
+        payload.narrativeTitle.strip() if payload.narrativeTitle else "Untitled draft narrative"
+    )
 
     return "\n".join(
         [
@@ -276,7 +315,7 @@ def _build_generate_narrative_prompt(payload: GenerateNarrativeRequest) -> str:
             "Use this exact schema:",
             '{"text":string,"basedOnReadingOrder":[string,...],"warnings":[string,...]?}',
             "basedOnReadingOrder must include only IDs from the provided reading order and preserve that order.",
-            f'Narrative title hint: {json.dumps(instruction_title)}',
+            f"Narrative title hint: {json.dumps(instruction_title)}",
             "Reading order:",
             *(reading_order_lines or ["- (empty)"]),
         ]
@@ -297,7 +336,9 @@ def _parse_generate_narrative_response(
     try:
         response = GenerateNarrativeResponse.model_validate(parsed)
     except Exception as exc:
-        raise HTTPException(status_code=422, detail="Invalid generate narrative response payload") from exc
+        raise HTTPException(
+            status_code=422, detail="Invalid generate narrative response payload"
+        ) from exc
 
     if response.text.strip() == "":
         raise HTTPException(status_code=422, detail="Generated narrative text must not be empty")
@@ -305,7 +346,9 @@ def _parse_generate_narrative_response(
     reading_order = source_doc.doc.readingOrder or []
     reading_order_set = set(reading_order)
     if any(item_id not in reading_order_set for item_id in response.basedOnReadingOrder):
-        raise HTTPException(status_code=422, detail="LLM response included unknown reading-order id")
+        raise HTTPException(
+            status_code=422, detail="LLM response included unknown reading-order id"
+        )
 
     if response.basedOnReadingOrder != reading_order:
         raise HTTPException(
@@ -315,33 +358,36 @@ def _parse_generate_narrative_response(
 
     return response
 
+
 def _build_prompt(payload: SuggestLayoutRequest) -> str:
     cards_by_id = {card.id: card for card in payload.doc.cards}
     card_lines = []
     for card in payload.doc.cards:
-        critique_text = f', critique={json.dumps(card.critique)}' if card.critique else ""
+        critique_text = f", critique={json.dumps(card.critique)}" if card.critique else ""
         card_lines.append(
             f'- id="{card.id}", text={json.dumps(card.text)}, x={card.x}, y={card.y}{critique_text}'
         )
 
     island_lines = []
     for island in payload.doc.islands:
-        island_cards = [cards_by_id[card_id] for card_id in island.cardIds if card_id in cards_by_id]
+        island_cards = [
+            cards_by_id[card_id] for card_id in island.cardIds if card_id in cards_by_id
+        ]
         if island_cards:
             x_values = [card.x for card in island_cards]
             y_values = [card.y for card in island_cards]
             bounds_text = (
-                f'bounds=({min(x_values):.2f},{min(y_values):.2f})-({max(x_values):.2f},{max(y_values):.2f}), '
-                f'anchor=({sum(x_values) / len(x_values):.2f},{sum(y_values) / len(y_values):.2f})'
+                f"bounds=({min(x_values):.2f},{min(y_values):.2f})-({max(x_values):.2f},{max(y_values):.2f}), "
+                f"anchor=({sum(x_values) / len(x_values):.2f},{sum(y_values) / len(y_values):.2f})"
             )
         else:
             bounds_text = "bounds=unknown, anchor=unknown"
 
         title_text = json.dumps(island.title) if island.title else '""'
-        critique_text = f', critique={json.dumps(island.critique)}' if island.critique else ""
+        critique_text = f", critique={json.dumps(island.critique)}" if island.critique else ""
         island_lines.append(
             f'- id="{island.id}", title={title_text}, cardIds={json.dumps(island.cardIds)}, '
-            f'{bounds_text}{critique_text}'
+            f"{bounds_text}{critique_text}"
         )
 
     instruction = payload.instruction.strip() if payload.instruction else "No extra instruction"
@@ -369,7 +415,9 @@ def _build_prompt(payload: SuggestLayoutRequest) -> str:
     )
 
 
-def _parse_suggestion(raw_text: str, source_doc: SuggestLayoutRequest) -> tuple[Transform, list[Card], str | None]:
+def _parse_suggestion(
+    raw_text: str, source_doc: SuggestLayoutRequest
+) -> tuple[Transform, list[Card], str | None]:
     try:
         parsed = json.loads(raw_text)
     except json.JSONDecodeError as exc:
@@ -399,7 +447,9 @@ def _parse_suggestion(raw_text: str, source_doc: SuggestLayoutRequest) -> tuple[
 
     source_cards_by_id = {card.id: card for card in source_doc.doc.cards}
     if len(cards_data) != len(source_cards_by_id):
-        raise HTTPException(status_code=422, detail="LLM response must include all cards exactly once")
+        raise HTTPException(
+            status_code=422, detail="LLM response must include all cards exactly once"
+        )
 
     suggested_cards_by_id: dict[str, Card] = {}
     for card_item in cards_data:
@@ -418,7 +468,12 @@ def _parse_suggestion(raw_text: str, source_doc: SuggestLayoutRequest) -> tuple[
 
         x = card_item.get("x")
         y = card_item.get("y")
-        if isinstance(x, bool) or isinstance(y, bool) or not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+        if (
+            isinstance(x, bool)
+            or isinstance(y, bool)
+            or not isinstance(x, (int, float))
+            or not isinstance(y, (int, float))
+        ):
             raise HTTPException(status_code=422, detail="Card x/y must be numbers")
         if not math.isfinite(float(x)) or not math.isfinite(float(y)):
             raise HTTPException(status_code=422, detail="Card x/y must be finite numbers")
@@ -455,7 +510,9 @@ def _build_merge_prompt(payload: SuggestMergesRequest) -> str:
     )
 
 
-def _parse_merge_suggestions(raw_text: str, source_doc: SuggestMergesRequest) -> list[MergeSuggestion]:
+def _parse_merge_suggestions(
+    raw_text: str, source_doc: SuggestMergesRequest
+) -> list[MergeSuggestion]:
     try:
         parsed = json.loads(raw_text)
     except json.JSONDecodeError as exc:
@@ -468,7 +525,9 @@ def _parse_merge_suggestions(raw_text: str, source_doc: SuggestMergesRequest) ->
     if not isinstance(suggestions_data, list):
         raise HTTPException(status_code=422, detail="LLM response missing suggestions array")
     if len(suggestions_data) > 10:
-        raise HTTPException(status_code=422, detail="LLM response included more than 10 suggestions")
+        raise HTTPException(
+            status_code=422, detail="LLM response included more than 10 suggestions"
+        )
 
     known_card_ids = {card.id for card in source_doc.doc.cards}
     parsed_suggestions: list[MergeSuggestion] = []
@@ -488,10 +547,14 @@ def _parse_merge_suggestions(raw_text: str, source_doc: SuggestMergesRequest) ->
         seen_group_ids.add(suggestion.groupId)
 
         if len(suggestion.cardIds) < 2:
-            raise HTTPException(status_code=422, detail="Each merge suggestion must include at least 2 cardIds")
+            raise HTTPException(
+                status_code=422, detail="Each merge suggestion must include at least 2 cardIds"
+            )
 
         if len(set(suggestion.cardIds)) != len(suggestion.cardIds):
-            raise HTTPException(status_code=422, detail="Each merge suggestion cardIds must not contain duplicates")
+            raise HTTPException(
+                status_code=422, detail="Each merge suggestion cardIds must not contain duplicates"
+            )
 
         unknown_ids = [card_id for card_id in suggestion.cardIds if card_id not in known_card_ids]
         if unknown_ids:
@@ -570,8 +633,6 @@ def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
     return SuggestMergesResponse(suggestions=suggestions)
 
 
-
-
 @router.post(
     "/suggest-island-summary",
     response_model=SuggestIslandSummaryResponse,
@@ -600,12 +661,30 @@ def suggest_island_summary(payload: SuggestIslandSummaryRequest) -> SuggestIslan
     response_model=ProposalEnvelope,
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
-def propose_island_summary(payload: ProposeIslandSummaryRequest) -> ProposalEnvelope:
-    summary_result = suggest_island_summary(SuggestIslandSummaryRequest(doc=payload.doc, islandId=payload.islandId))
-    target_island = next((item for item in payload.doc.islands if item.id == payload.islandId), None)
+def propose_island_summary(
+    payload: ProposeIslandSummaryRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> ProposalEnvelope:
+    _, _, tenant = _authorize_request(
+        request,
+        db,
+        action="write",
+        doc_id=payload.doc.id,
+        safe_mode=False,
+        read_only=False,
+    )
+    if get_document_row(db, tenant=tenant, doc_id=payload.doc.id) is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    summary_result = suggest_island_summary(
+        SuggestIslandSummaryRequest(doc=payload.doc, islandId=payload.islandId)
+    )
+    target_island = next(
+        (item for item in payload.doc.islands if item.id == payload.islandId), None
+    )
     if target_island is None:
         raise HTTPException(status_code=422, detail="islandId does not exist")
-    return ProposalEnvelope(
+    proposal = ProposalEnvelope(
         proposalId=f"proposal-{uuid4()}",
         type="island_summary",
         status="proposed",
@@ -622,34 +701,91 @@ def propose_island_summary(payload: ProposeIslandSummaryRequest) -> ProposalEnve
         },
         rationale="AI generated proposal only. Human decision is required before any apply.",
     )
+    try:
+        register_ai_proposal(
+            db,
+            tenant=tenant,
+            doc_id=payload.doc.id,
+            proposal_id=proposal.proposalId,
+            proposal_kind=proposal.type,
+            source_bundle_hash=proposal.sourceBundleHash,
+        )
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Proposal registration conflicted") from exc
+    return proposal
 
 
 @router.post(
     "/proposals/audit",
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
-def record_proposal_decision(payload: ProposalDecisionAuditRequest) -> ProposalDecisionAuditResponse:
-    if payload.decision not in {"accepted", "rejected", "held"}:
-        raise HTTPException(
-            status_code=422,
-            detail="decision must be one of accepted|rejected|held",
+def record_proposal_decision(
+    payload: ProposalDecisionAuditRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> ProposalDecisionAuditResponse:
+    access_request, _, tenant = _authorize_request(
+        request,
+        db,
+        action="write",
+        doc_id=payload.docId,
+        safe_mode=False,
+        read_only=False,
+    )
+    if get_document_row(db, tenant=tenant, doc_id=payload.docId) is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    reviewer_ref = access_request.auth.actor_ref if access_request.auth is not None else None
+    if reviewer_ref is None:
+        raise HTTPException(status_code=401, detail="Authenticated reviewer is required")
+
+    def _persist():
+        return persist_proposal_decision(
+            db,
+            tenant=tenant,
+            doc_id=payload.docId,
+            proposal_id=payload.proposalId,
+            source_bundle_hash=payload.sourceBundleHash,
+            idempotency_key=payload.idempotencyKey,
+            decision=payload.decision,
+            reviewer_ref=reviewer_ref,
+            reason=payload.reason,
         )
-    status = payload.decision
-    actor_ref_hash = sha256(payload.actor.encode("utf-8")).hexdigest()[:24]
+
+    try:
+        receipt = _persist()
+        db.commit()
+    except ProposalNotRegistered as exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ProposalDecisionConflict as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except IntegrityError:
+        db.rollback()
+        try:
+            receipt = _persist()
+            db.commit()
+        except ProposalNotRegistered as exc:
+            db.rollback()
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except (IntegrityError, ProposalDecisionConflict) as exc:
+            db.rollback()
+            raise HTTPException(status_code=409, detail="Proposal decision conflicted") from exc
     logger.info(
-        "proposal_decision_audit",
+        "proposal_decision_recorded",
         extra={
-            "proposalId": payload.proposalId,
-            "decision": status,
-            "actorRefHash": actor_ref_hash,
-            "reason": payload.reason or "",
+            "eventId": receipt.event_id,
+            "proposalId": receipt.proposal_id,
+            "status": receipt.status,
         },
     )
     return ProposalDecisionAuditResponse(
-        proposalId=payload.proposalId,
-        status=status,
-        reviewState="unreviewed",
-        recordedAt="server-log",
+        eventId=receipt.event_id,
+        proposalId=receipt.proposal_id,
+        status=receipt.status,
+        recordedAt=receipt.recorded_at,
     )
 
 
@@ -674,6 +810,7 @@ def generate_narrative(payload: GenerateNarrativeRequest) -> GenerateNarrativeRe
     _audit_llm_trace("generate_narrative", llm_response)
 
     return _parse_generate_narrative_response(llm_response.raw_text, payload)
+
 
 @router.post(
     "/check-narrative",
@@ -710,7 +847,7 @@ def _build_refine_card_text_prompt(payload: RefineCardTextRequest) -> str:
     return (
         f"Refine the wording of this KJ-method card. "
         f"Make it clearer and more concise while preserving the original meaning. "
-        f"Return JSON: {{\"refinedText\": \"...\", \"reasoning\": \"...\"}}\n"
+        f'Return JSON: {{"refinedText": "...", "reasoning": "..."}}\n'
         f"Card text: {payload.cardText}{ctx}"
     )
 
@@ -727,27 +864,31 @@ def _build_suggest_card_groups_prompt(payload: SuggestCardGroupsRequest) -> str:
     cards = "\n".join(f'  - id="{c.id}", text="{c.text}"' for c in payload.cards)
     return (
         f"Group these KJ-method cards into thematic islands. "
-        f"Return JSON: {{\"groups\": [{{\"label\": \"...\", \"cardIds\": [\"...\"], "
-        f"\"rationale\": \"...\"}}]}}\nCards:\n{cards}"
+        f'Return JSON: {{"groups": [{{"label": "...", "cardIds": ["..."], '
+        f'"rationale": "..."}}]}}\nCards:\n{cards}'
     )
 
 
 def _parse_suggest_card_groups_response(raw_text: str) -> SuggestCardGroupsResponse:
     data = json.loads(raw_text)
     from kj_atlas_api.models_ai import _SuggestedGroup
+
     return SuggestCardGroupsResponse(
-        groups=[_SuggestedGroup(
-            label=str(g.get("label", "")),
-            cardIds=[str(c) for c in g.get("cardIds", g.get("card_ids", []))],
-            rationale=g.get("rationale"),
-        ) for g in data.get("groups", [])]
+        groups=[
+            _SuggestedGroup(
+                label=str(g.get("label", "")),
+                cardIds=[str(c) for c in g.get("cardIds", g.get("card_ids", []))],
+                rationale=g.get("rationale"),
+            )
+            for g in data.get("groups", [])
+        ]
     )
 
 
 def _build_detect_contradiction_prompt(payload: DetectContradictionRequest) -> str:
     return (
         f"Determine if these two KJ-method cards contradict each other. "
-        f"Return JSON: {{\"hasContradiction\": true|false, \"explanation\": \"...\"}}\n"
+        f'Return JSON: {{"hasContradiction": true|false, "explanation": "..."}}\n'
         f"Card A (id={payload.cardA.id}): {payload.cardA.text}\n"
         f"Card B (id={payload.cardB.id}): {payload.cardB.text}"
     )
@@ -766,20 +907,24 @@ def _build_assess_card_importance_prompt(payload: AssessCardImportanceRequest) -
     return (
         f"Assess the importance of each KJ-method card relative to the others. "
         f"Rate each as 'high', 'medium', or 'low' with a brief rationale. "
-        f"Return JSON: {{\"assessments\": [{{\"cardId\": \"...\", \"importance\": "
-        f"\"high|medium|low\", \"rationale\": \"...\"}}]}}\nCards:\n{cards}"
+        f'Return JSON: {{"assessments": [{{"cardId": "...", "importance": '
+        f'"high|medium|low", "rationale": "..."}}]}}\nCards:\n{cards}'
     )
 
 
 def _parse_assess_card_importance_response(raw_text: str) -> AssessCardImportanceResponse:
     data = json.loads(raw_text)
     from kj_atlas_api.models_ai import _CardAssessment
+
     return AssessCardImportanceResponse(
-        assessments=[_CardAssessment(
-            cardId=str(a.get("cardId", a.get("card_id", ""))),
-            importance=str(a.get("importance", "medium")),
-            rationale=a.get("rationale"),
-        ) for a in data.get("assessments", [])]
+        assessments=[
+            _CardAssessment(
+                cardId=str(a.get("cardId", a.get("card_id", ""))),
+                importance=str(a.get("importance", "medium")),
+                rationale=a.get("rationale"),
+            )
+            for a in data.get("assessments", [])
+        ]
     )
 
 
@@ -896,7 +1041,11 @@ def suggest_document_title(payload: SuggestDocumentTitleRequest) -> SuggestDocum
 
 
 def _build_suggest_document_title_prompt(payload: SuggestDocumentTitleRequest) -> str:
-    islands = "\n".join(f"  - {t}" for t in payload.islandTitles[:20]) if payload.islandTitles else "(none)"
+    islands = (
+        "\n".join(f"  - {t}" for t in payload.islandTitles[:20])
+        if payload.islandTitles
+        else "(none)"
+    )
     cards = "\n".join(f"  - {t}" for t in payload.cardTexts[:30]) if payload.cardTexts else "(none)"
     current = f'\nCurrent title: "{payload.currentTitle}"' if payload.currentTitle else ""
     return (
@@ -913,14 +1062,12 @@ def _build_suggest_document_title_prompt(payload: SuggestDocumentTitleRequest) -
 def _parse_suggest_document_title_response(raw_text: str) -> SuggestDocumentTitleResponse:
     data = json.loads(raw_text)
     from kj_atlas_api.models_ai import _DocumentTitleCandidate
+
     candidates_raw = data.get("candidates", [])
     if not isinstance(candidates_raw, list) or len(candidates_raw) == 0:
         raise ValueError("suggest_document_title response had no candidates")
     candidates = [
-        _DocumentTitleCandidate(
-            title=str(c.get("title", ""))[:500]
-        )
-        for c in candidates_raw[:3]
+        _DocumentTitleCandidate(title=str(c.get("title", ""))[:500]) for c in candidates_raw[:3]
     ]
     if not candidates:
         raise ValueError("suggest_document_title response had empty candidates")

@@ -155,10 +155,12 @@ class ProposeIslandSummaryRequest(BaseModel):
 class ProposalDecisionAuditRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    proposalId: str = Field(min_length=1)
-    decision: Literal["accepted", "rejected", "held", "adopt", "reject", "hold"]
-    actor: str = Field(min_length=1)
-    reason: str | None = None
+    docId: str = Field(min_length=1, max_length=128)
+    proposalId: str = Field(min_length=1, max_length=128)
+    sourceBundleHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
+    idempotencyKey: str = Field(min_length=1, max_length=256)
+    decision: Literal["adopt", "reject", "hold"]
+    reason: str | None = Field(default=None, max_length=1000)
 
 
 class ProposalDecisionAuditResponse(BaseModel):
@@ -169,7 +171,6 @@ class ProposalDecisionAuditResponse(BaseModel):
     reviewState: Literal["unreviewed"]
     recordedAt: str = Field(min_length=1)
 
-
 # ---------------------------------------------------------------------------
 # ADR-0064: KJ-method card-level AI operations
 # ---------------------------------------------------------------------------
@@ -177,6 +178,7 @@ class ProposalDecisionAuditResponse(BaseModel):
 
 class RefineCardTextRequest(BaseModel):
     """Request to refine/improve the wording of a single KJ-method card."""
+
     model_config = ConfigDict(extra="forbid")
 
     cardText: str = Field(min_length=1, max_length=2000)
@@ -192,6 +194,7 @@ class RefineCardTextResponse(BaseModel):
 
 class SuggestCardGroupsRequest(BaseModel):
     """Request to suggest groupings/islands for a set of KJ-method cards."""
+
     model_config = ConfigDict(extra="forbid")
 
     cards: list[_CardRef] = Field(min_length=2, max_length=100)
@@ -218,6 +221,7 @@ class _SuggestedGroup(BaseModel):
 
 class DetectContradictionRequest(BaseModel):
     """Request to detect contradiction between two KJ-method cards."""
+
     model_config = ConfigDict(extra="forbid")
 
     cardA: _CardRef
@@ -233,6 +237,7 @@ class DetectContradictionResponse(BaseModel):
 
 class AssessCardImportanceRequest(BaseModel):
     """Request to assess the importance/centrality of KJ-method cards."""
+
     model_config = ConfigDict(extra="forbid")
 
     cards: list[_CardRef] = Field(min_length=1, max_length=100)
@@ -255,6 +260,7 @@ class _CardAssessment(BaseModel):
 
 class SuggestDocumentTitleRequest(BaseModel):
     """Request to suggest document titles based on content overview."""
+
     model_config = ConfigDict(extra="forbid")
 
     # Island titles and a sample of reviewed card texts to base suggestions on.

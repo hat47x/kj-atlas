@@ -1,10 +1,52 @@
+from collections.abc import Iterator
+
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import sessionmaker
 
+from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
+from kj_atlas_api.models import AIProposalDecisionEventRow, AIProposalRow, Base
 from kj_atlas_api.models_ai import ProposalEnvelope
 from kj_atlas_api.routes import ai
+
+
+@pytest.fixture()
+def sqlite_client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker]]:
+    engine = create_engine(
+        f"sqlite:///{tmp_path / 'ce2.sqlite3'}", connect_args={"check_same_thread": False}
+    )
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+
+    def _get_test_db():
+        with session_local() as db:
+            yield db
+
+    app.dependency_overrides[get_db] = _get_test_db
+    try:
+        with TestClient(app) as client:
+            client.headers.update({"x-forwarded-user": "ce2-reviewer", "x-auth-provider": "oidc"})
+            assert client.put("/docs/doc-1", json=_payload()["doc"]).status_code == 200
+            with session_local() as db:
+                db.add(
+                    AIProposalRow(
+                        tenant_id="local-default",
+                        doc_id="doc-1",
+                        proposal_id="proposal-1",
+                        proposal_kind="island_summary",
+                        source_bundle_hash="a" * 64,
+                        created_at="2026-08-11T00:00:00Z",
+                    )
+                )
+                db.commit()
+            yield client, session_local
+    finally:
+        app.dependency_overrides.clear()
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
 
 
 def _payload() -> dict:
@@ -27,7 +69,8 @@ def _payload() -> dict:
     }
 
 
-def test_propose_island_summary_returns_proposal_without_auto_apply() -> None:
+def test_propose_island_summary_returns_proposal_without_auto_apply(sqlite_client) -> None:
+    client, session_local = sqlite_client
     original_generate = ai.generate_with_fallback
 
     class _StubResponse:
@@ -35,8 +78,7 @@ def test_propose_island_summary_returns_proposal_without_auto_apply() -> None:
 
     ai.generate_with_fallback = lambda _: _StubResponse()
     try:
-        with TestClient(app) as client:
-            response = client.post("/ai/proposals/island-summary", json=_payload())
+        response = client.post("/ai/proposals/island-summary", json=_payload())
     finally:
         ai.generate_with_fallback = original_generate
     assert response.status_code == 200
@@ -47,6 +89,10 @@ def test_propose_island_summary_returns_proposal_without_auto_apply() -> None:
     assert body["sourceBundleHash"] == "a" * 64
     assert body["diff"]["before"] == "old summary"
     assert isinstance(body["diff"]["after"], str) and body["diff"]["after"].strip() != ""
+    with session_local() as db:
+        registered = db.get(AIProposalRow, ("local-default", "doc-1", body["proposalId"]))
+        assert registered is not None
+        assert registered.source_bundle_hash == "a" * 64
 
 
 def test_ai_proposal_envelope_rejects_review_promotion() -> None:
@@ -71,32 +117,38 @@ def test_ai_proposal_envelope_rejects_review_promotion() -> None:
         ProposalEnvelope.model_validate(body)
 
 
-def test_record_proposal_decision_maps_to_lifecycle_status_without_review_promotion() -> None:
-    expected = {
-        "accepted": "accepted",
-        "rejected": "rejected",
-        "held": "held",
+def _decision_payload(*, decision: str, key: str = "operation-1") -> dict:
+    return {
+        "docId": "doc-1",
+        "proposalId": "proposal-1",
+        "sourceBundleHash": "a" * 64,
+        "idempotencyKey": key,
+        "decision": decision,
     }
-    with TestClient(app) as client:
-        for decision, expected_status in expected.items():
-            response = client.post(
-                "/ai/proposals/audit",
-                json={"proposalId": "proposal-1", "decision": decision, "actor": "tester"},
-            )
-            assert response.status_code == 200
-            assert response.json()["status"] == expected_status
-            assert response.json()["reviewState"] == "unreviewed"
 
 
-def test_record_proposal_decision_rejects_alias_decision_vocab() -> None:
-    with TestClient(app) as client:
-        for decision in ("adopt", "reject", "hold"):
-            response = client.post(
-                "/ai/proposals/audit",
-                json={"proposalId": "proposal-1", "decision": decision, "actor": "tester"},
-            )
-            assert response.status_code == 422
-            assert response.json()["detail"] == "decision must be one of accepted|rejected|held"
+@pytest.mark.parametrize(
+    ("decision", "expected_status"),
+    [("adopt", "accepted"), ("reject", "rejected"), ("hold", "held")],
+)
+def test_record_proposal_decision_maps_to_lifecycle_status_without_review_promotion(
+    sqlite_client, decision: str, expected_status: str
+) -> None:
+    client, _ = sqlite_client
+    response = client.post("/ai/proposals/audit", json=_decision_payload(decision=decision))
+    assert response.status_code == 200
+    assert response.json()["recorded"] is True
+    assert response.json()["status"] == expected_status
+    assert response.json()["reviewState"] == "unreviewed"
+
+
+def test_record_proposal_decision_rejects_lifecycle_vocab(sqlite_client) -> None:
+    client, _ = sqlite_client
+    for decision in ("accepted", "rejected", "held"):
+        response = client.post(
+            "/ai/proposals/audit", json=_decision_payload(decision=decision, key=decision)
+        )
+        assert response.status_code == 422
 
 
 def test_propose_island_summary_rejects_invalid_source_bundle_hash() -> None:
@@ -107,15 +159,67 @@ def test_propose_island_summary_rejects_invalid_source_bundle_hash() -> None:
     assert response.status_code == 422
 
 
-def test_record_proposal_decision_rejects_unknown_fields_via_schema_validation() -> None:
-    with TestClient(app) as client:
-        response = client.post(
-            "/ai/proposals/audit",
-            json={
-                "proposalId": "proposal-1",
-                "decision": "accepted",
-                "actor": "tester",
-                "unexpected": True,
-            },
-        )
+def test_record_proposal_decision_rejects_unknown_fields_via_schema_validation(
+    sqlite_client,
+) -> None:
+    client, _ = sqlite_client
+    response = client.post(
+        "/ai/proposals/audit",
+        json={**_decision_payload(decision="adopt"), "unexpected": True},
+    )
     assert response.status_code == 422
+
+
+def test_record_proposal_decision_is_idempotent_and_does_not_store_reason(
+    sqlite_client,
+    caplog,
+) -> None:
+    client, session_local = sqlite_client
+    payload = {**_decision_payload(decision="hold"), "reason": "private explanation"}
+    first = client.post("/ai/proposals/audit", json=payload)
+    second = client.post("/ai/proposals/audit", json=payload)
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert second.json() == first.json()
+
+    with session_local() as db:
+        rows = list(db.scalars(select(AIProposalDecisionEventRow)))
+        assert len(rows) == 1
+        assert rows[0].reason_sha256 is not None
+        assert rows[0].reason_utf8_bytes == len("private explanation".encode("utf-8"))
+        assert "private explanation" not in repr(rows[0].__dict__)
+    assert "private explanation" not in caplog.text
+
+
+def test_record_proposal_decision_allows_held_then_terminal_and_rejects_later_change(
+    sqlite_client,
+) -> None:
+    client, _ = sqlite_client
+    held = client.post("/ai/proposals/audit", json=_decision_payload(decision="hold", key="hold-1"))
+    accepted = client.post(
+        "/ai/proposals/audit", json=_decision_payload(decision="adopt", key="adopt-1")
+    )
+    rejected = client.post(
+        "/ai/proposals/audit", json=_decision_payload(decision="reject", key="reject-1")
+    )
+    assert held.status_code == 200
+    assert accepted.status_code == 200
+    assert rejected.status_code == 409
+
+
+def test_record_proposal_decision_requires_existing_document(sqlite_client) -> None:
+    client, _ = sqlite_client
+    response = client.post(
+        "/ai/proposals/audit",
+        json={**_decision_payload(decision="adopt"), "docId": "missing"},
+    )
+    assert response.status_code == 404
+
+
+def test_record_proposal_decision_rejects_unregistered_proposal(sqlite_client) -> None:
+    client, _ = sqlite_client
+    response = client.post(
+        "/ai/proposals/audit",
+        json={**_decision_payload(decision="adopt"), "proposalId": "not-generated"},
+    )
+    assert response.status_code == 404

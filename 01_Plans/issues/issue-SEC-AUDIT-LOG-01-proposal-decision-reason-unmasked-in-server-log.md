@@ -1,7 +1,7 @@
 # Issue: SEC-AUDIT-LOG-01 提案却下理由（自由記述）がサーバーログへ無加工で記録される
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -22,8 +22,8 @@
 
 ## 受入条件
 
-- [ ] `reason`のログ記録方針（記録有無・上限・パイプライン統合）が決定される。
-- [ ] 決定に応じて`routes/ai.py`の実装が更新される。
+- [x] `reason`のログ記録方針（記録有無・上限・パイプライン統合）が決定される。
+- [x] 決定に応じて`routes/ai.py`の実装が更新される。
 
 ## 検証計画
 
@@ -33,3 +33,4 @@
 ## 補足
 
 - 発見経緯: 第18ラウンドの「バックエンド機微データのログ漏洩」観点監査で発見。同ラウンドで発見した`actor`（アクター識別子）の無加工ログ記録は、`audit.py`の既存sha256ハッシュ化規約に合わせる機械的修正として本ラウンドで直接対応済み（`routes/ai.py`）。`reason`は自由記述本文であるため機械的な修正が成立せず、本issueとして切り出した。
+- `CE2-AUDIT-CONTRACT-01`で方針を確定した。reasonは最大1000文字、通常logと監査DBの双方へ本文を保存せず、`reason_sha256`と`reason_utf8_bytes`だけを専用追記eventへ保存する。可読な理由本文を将来必要とする場合は、retention・閲覧権限・削除請求境界を持つ別の機微情報storeとして再設計する。

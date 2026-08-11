@@ -465,16 +465,26 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `status: "proposed"`
   - `reviewState: "unreviewed"`
 - `/ai/suggest-island-summary` のproposalラッパー。人間の明示的Adopt/Reject/Hold操作を経て文書へ反映される。
+- 成功時は本文を持たないproposal相関行を`ai_proposals`へ保存する。対象Documentが存在しない、またはwrite認可されない場合はproposalを生成・登録しない。
 
 **POST** `/ai/proposals/audit`
 
 - Request: `ProposalDecisionAuditRequest`
+  - `docId: string`
   - `proposalId: string`
+  - `sourceBundleHash: string` — proposal生成時の64桁SHA-256
+  - `idempotencyKey: string` — 利用者操作ごとに生成し、再送時は同じ値を使う
   - `decision: "adopt" | "reject" | "hold"`
-  - `reviewer: string` — `user:<users.id>` 形式
+  - `reason?: string` — 最大1000文字。本文は永続化せずdigestとUTF-8 byte数だけを監査する
 - Response: `ProposalDecisionAuditResponse`
-  - `recorded: boolean`
-- proposalに対する人間の判断（Adopt/Reject/Hold）を記録する。記録は `merge_decision_logs` テーブルへ追記される。
+  - `recorded: true`
+  - `eventId: string`
+  - `proposalId: string`
+  - `status: "accepted" | "rejected" | "held"`
+  - `reviewState: "unreviewed"`
+  - `recordedAt: string`
+- proposalに対する人間の判断（Adopt/Reject/Hold）をtenant・Document・source bundleへ結合し、生成時registry`ai_proposals`との一致を確認して記録する。未登録IDや別Documentのproposalは404、source bundle不一致は409とする。reviewerはclient入力を信頼せず、serverが認証contextから解決する。追記イベントの正本は`ai_proposal_decision_events`、競合制御用の現在状態は`ai_proposal_decision_states`とする。
+- 同じidempotency keyと同じ内容の再送は同じreceiptを返す。`held`からは`accepted/rejected`へ一度だけ進められ、終端後の変更は409になる。
 
 **POST** `/ai/generate-narrative`
 

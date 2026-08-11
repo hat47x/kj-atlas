@@ -1,7 +1,7 @@
 # Issue: CE2-AUDIT-CONTRACT-01 proposal判断APIの語彙・response・永続化契約を再統合する
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Source Issue: CE2-low-risk-ai-assist
 - Priority: P1
 - Owner: Maintainer
@@ -31,15 +31,25 @@
 - 実施すること: `reason`は通常server logへ本文を出さず、採択した監査正本のsize limit、sanitize、閲覧権限、retentionに従わせる。
 - 実施しないこと: response modelへ現在routeが渡すfieldを機械的に足すだけの修正、frontendだけをbackendの暫定語彙へ合わせる修正、server logを永続監査正本とみなすこと。
 
+## 契約checkpoint（2026-08-11）
+
+- `merge_decision_logs`は類似統合判断の`MergeDecisionRecord`専用であり、異なるpayloadを混在させると既存のgroup/snapshot復元APIが壊れるため流用しない。専用の追記型`ai_proposal_decision_events`を正本とする。
+- request語彙は人間操作の`adopt/reject/hold`、保存するlifecycleは`accepted/rejected/held`とし、backendの一箇所で写像する。
+- requestは`docId/proposalId/sourceBundleHash/idempotencyKey/decision/reason?`とする。actor/reviewerはclient申告を廃止し、認証・tenant解決後のserver-owned reviewer referenceだけを保存する。
+- proposal生成成功時に本文を持たない`ai_proposals`相関registryへtenant・Document・proposal ID・kind・source bundle hashを保存し、判断時に一致を必須化する。任意のproposal IDを監査済みにできないよう未登録IDは404にする。
+- 同じidempotency keyかつ同じ内容の再送は同じreceiptを返す。keyの内容不一致、異なる終端判断、終端後のholdは409とする。`held`から一度だけ`accepted`または`rejected`へ進められる。
+- reason本文は監査表にも通常logにも保存しない。UTF-8 byte長とSHA-256だけを保存し、最大1000文字に制限する。
+- 成功responseは`recorded/eventId/proposalId/status/reviewState/recordedAt`とし、`reviewState`はAI出力そのものの人間レビュー済み昇格を意味しないため`unreviewed`を維持する。
+
 ## 受入条件
 
-- [ ] request decision語彙とproposal lifecycle語彙の関係が公開APIで一意に定義され、frontend／backend／testが一致する。
-- [ ] 成功response shapeがOpenAPIとPydantic modelで一致し、正常requestが500にならない。
-- [ ] 判断が永続化された場合だけ成功を返し、同一proposalへの再送・競合・DB失敗時の契約が定義される。
-- [ ] tenant境界とdocument／proposal結合を検証し、別tenantのproposalへ判断を記録できない。
-- [ ] `reason`が通常server logへ無加工で残らず、上限・sanitize・retention・閲覧境界がテストされる。
-- [ ] proposal-only、human-final、no-auto-apply、`reviewState=unreviewed`の既存安全境界を後退させない。
-- [ ] backend API test、frontend client test、SQLite integration、tenant越境negative testが成功する。
+- [x] request decision語彙とproposal lifecycle語彙の関係が公開APIで一意に定義され、frontend／backend／testが一致する。
+- [x] 成功response shapeがOpenAPIとPydantic modelで一致し、正常requestが500にならない。
+- [x] 判断が永続化された場合だけ成功を返し、同一proposalへの再送・競合・DB失敗時の契約が定義される。
+- [x] tenant境界とdocument／proposal結合を検証し、別tenantのproposalへ判断を記録できない。
+- [x] `reason`が通常server logへ無加工で残らず、上限・sanitize・retention・閲覧境界がテストされる。
+- [x] proposal-only、human-final、no-auto-apply、`reviewState=unreviewed`の既存安全境界を後退させない。
+- [x] backend API test、frontend client test、SQLite integration、tenant越境negative testが成功する。
 
 ## 責任分界（REQ-DEF-02）
 
@@ -57,3 +67,12 @@
 
 - 2026-08-11のSQLite基準backend全回帰は`870 passed / 6 skipped / 34 deselected`で、本不整合1件と別途修正済みのtenant session version不具合1件がfailした。session不具合修正後、本件が既知の残存backend failureとなる。
 - `SEC-AUDIT-LOG-01`はreason方針の判断材料として本Issueへ統合して解決し、独立したserver-log修正だけを先行させない。
+
+## 完了記録（2026-08-11）
+
+- migration `20260811_0023`で生成相関registry`ai_proposals`、追記正本`ai_proposal_decision_events`、競合制御projection`ai_proposal_decision_states`を追加した。3表はtenant+Document複合外部keyを持ち、PostgreSQLではENABLE/FORCE RLSとtenant policyを持つ。
+- APIはclient申告actorを廃止し、Document write認可で解決したserver-owned reviewer referenceを保存する。Document不在は404、idempotency内容不一致・終端後変更・source bundle不一致は409とする。
+- `hold -> adopt|reject`だけを許可し、同一idempotency keyの同一再送は同じevent receiptを返す。reasonは最大1000文字で、本文を保存・log出力せずSHA-256とUTF-8 byte数だけを保存する。
+- frontendは監査成功後にisland summaryを適用する順序へ変更した。session再検証によるrequest再送でも同じidempotency keyを使う。
+- source bundle相関を持たない外部貼付proposalはCE2 endpointから外し、架空hashを作らず`EXT-AGENT-AUDIT-01`へ正しい相関連鎖を分離した。
+- SQLite/API/migration/RLS静的対象は`23 passed / 3 deselected`、SQLite基準全回帰は任意起動の外部LLM疎通だけを除き`881 passed / 3 skipped / 53 deselected`、frontend全回帰は`1409 passed`、TypeScript型検査はpassした。実DBpromotionはPostgreSQL 16（RLSを含む）`23 passed`、MySQL 8.4/MariaDB 11.4 `2 passed`、SQL Server 2022、CockroachDB 26.2、Oracle Free 23.26が各`1 passed`。

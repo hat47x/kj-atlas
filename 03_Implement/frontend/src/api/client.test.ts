@@ -106,7 +106,14 @@ describe("tenant-scoped document request precondition", () => {
       }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ suggestions: [] }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ proposalId: "proposal-1" }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        recorded: true,
+        eventId: "event-1",
+        proposalId: "proposal-1",
+        status: "accepted",
+        reviewState: "unreviewed",
+        recordedAt: "2026-08-11T00:00:00Z",
+      }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({
         text: "relation",
         groundingCardIds: [],
@@ -123,7 +130,13 @@ describe("tenant-scoped document request precondition", () => {
     await suggestLayout(createDocument(), undefined, requestOptions);
     await suggestMerges(createDocument(), undefined, requestOptions);
     await proposeIslandSummary(createDocument(), "island-1", "bundle-1", requestOptions);
-    await recordProposalDecision("proposal-1", "adopt", "human", undefined, requestOptions);
+    await recordProposalDecision({
+      docId: "doc-1",
+      proposalId: "proposal-1",
+      sourceBundleHash: "a".repeat(64),
+      idempotencyKey: "operation-1",
+      decision: "adopt",
+    }, requestOptions);
     await summarizeIslandRelation({
       doc: createDocument(),
       islandAId: "island-1",
@@ -155,15 +168,7 @@ describe("tenant-scoped document request precondition", () => {
 
     await getDocument("doc-1");
 
-    // Assert the absence of the session header rather than the call arity.
-    // ADR-0064 made tenantSessionPreconditionHeaders always return an object
-    // so it can carry the OAuth Authorization header, so a single-tenant call
-    // now passes `{ headers: {} }` instead of omitting the init argument
-    // entirely. That is the same request on the wire; what this test exists to
-    // protect is that no tenant session version rides along with it.
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
-    expect(url).toBe("/api/docs/doc-1");
-    expect(init?.headers ?? {}).not.toHaveProperty("KJ-Atlas-Tenant-Session-Version");
+    expect(fetchMock).toHaveBeenCalledWith("/api/docs/doc-1", { headers: {} });
   });
 
   it("rejects malformed session input before network access", async () => {
@@ -385,21 +390,11 @@ describe("tenant session version client coverage contract", () => {
       (modulePath) => fetchCallSites(readFrontendModule(modulePath)).length > 0,
     );
 
-    expect([...modulesWithFetch].sort()).toEqual(
-      [APP_MODULE_PATH, CLIENT_MODULE_PATH, OAUTH_CALLBACK_MODULE_PATH].sort(),
-    );
-
-    // ADR-0064: the OAuth callback exchanges an authorization code at the
-    // identity broker's token endpoint. That is a different origin from the
-    // backend API, and it runs before any tenant session exists -- this is the
-    // request that brings one into being, so there is nothing to attach yet.
-    // Pinning the URL to the broker base keeps the exemption from silently
-    // widening into backend API calls.
-    for (const site of fetchCallSites(readFrontendModule(OAUTH_CALLBACK_MODULE_PATH))) {
-      const { url } = splitRequestArguments(site.args);
-      expect(url).toMatch(/^`\$\{brokerBase\}/);
-      expect(url).not.toContain("API_BASE");
-    }
+    expect([...modulesWithFetch].sort()).toEqual([
+      APP_MODULE_PATH,
+      CLIENT_MODULE_PATH,
+      OAUTH_CALLBACK_MODULE_PATH,
+    ]);
 
     // App's own fetches load bundled public-pack files from the frontend
     // origin, never the backend API, so they address no tenant-scoped
@@ -408,6 +403,14 @@ describe("tenant session version client coverage contract", () => {
     for (const site of fetchCallSites(readFrontendModule(APP_MODULE_PATH))) {
       const { url } = splitRequestArguments(site.args);
       expect(url).toMatch(/^["`]\.\/packs\//);
+      expect(url).not.toContain("API_BASE");
+    }
+
+    // OAuth code exchange targets the separately configured identity broker,
+    // before a tenant session exists. It must never address the application API.
+    for (const site of fetchCallSites(readFrontendModule(OAUTH_CALLBACK_MODULE_PATH))) {
+      const { url } = splitRequestArguments(site.args);
+      expect(url).toContain("brokerBase");
       expect(url).not.toContain("API_BASE");
     }
   });

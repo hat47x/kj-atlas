@@ -2935,20 +2935,24 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       },
       { changeKind: "ai" }
     );
-    applyDocumentChange(nextDocument, t("app.status.island_summary.adopted_unreviewed"));
-    setIslandSummarySuggestionWarningsByIslandId((previousWarnings) => ({
-      ...previousWarnings,
-      [selectedIslandId]: islandSummaryProposal.diff.warnings ?? [],
-    }));
     setIsRecordingIslandSummaryDecision(true);
     try {
+      const idempotencyKey = crypto.randomUUID();
       await runTenantScopedApiRequest(() => recordProposalDecision(
-        islandSummaryProposal.proposalId,
-        "adopt",
-        "human",
-        undefined,
+        {
+          docId: document.id,
+          proposalId: islandSummaryProposal.proposalId,
+          sourceBundleHash: islandSummaryProposal.sourceBundleHash,
+          idempotencyKey,
+          decision: "adopt",
+        },
         { tenantSessionContext: verifiedTenantSession },
       ));
+      applyDocumentChange(nextDocument, t("app.status.island_summary.adopted_unreviewed"));
+      setIslandSummarySuggestionWarningsByIslandId((previousWarnings) => ({
+        ...previousWarnings,
+        [selectedIslandId]: islandSummaryProposal.diff.warnings ?? [],
+      }));
       setProposalAuditTrail((current) => {
         const next = [...current, `${new Date().toISOString()} adopted ${islandSummaryProposal.proposalId}`];
         return next.length > PROPOSAL_AUDIT_TRAIL_LIMIT ? next.slice(next.length - PROPOSAL_AUDIT_TRAIL_LIMIT) : next;
@@ -2968,16 +2972,20 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   ]);
 
   const handleRejectIslandSummaryProposal = useCallback(async () => {
-    if (!islandSummaryProposal || isRecordingIslandSummaryDecision) {
+    if (!document || !islandSummaryProposal || isRecordingIslandSummaryDecision) {
       return;
     }
     setIsRecordingIslandSummaryDecision(true);
     try {
+      const idempotencyKey = crypto.randomUUID();
       await runTenantScopedApiRequest(() => recordProposalDecision(
-        islandSummaryProposal.proposalId,
-        "reject",
-        "human",
-        undefined,
+        {
+          docId: document.id,
+          proposalId: islandSummaryProposal.proposalId,
+          sourceBundleHash: islandSummaryProposal.sourceBundleHash,
+          idempotencyKey,
+          decision: "reject",
+        },
         { tenantSessionContext: verifiedTenantSession },
       ));
       setProposalAuditTrail((current) => {
@@ -2992,21 +3000,26 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, [
     islandSummaryProposal,
     isRecordingIslandSummaryDecision,
+    document,
     runTenantScopedApiRequest,
     verifiedTenantSession,
   ]);
 
   const handleHoldIslandSummaryProposal = useCallback(async () => {
-    if (!islandSummaryProposal || isRecordingIslandSummaryDecision) {
+    if (!document || !islandSummaryProposal || isRecordingIslandSummaryDecision) {
       return;
     }
     setIsRecordingIslandSummaryDecision(true);
     try {
+      const idempotencyKey = crypto.randomUUID();
       await runTenantScopedApiRequest(() => recordProposalDecision(
-        islandSummaryProposal.proposalId,
-        "hold",
-        "human",
-        undefined,
+        {
+          docId: document.id,
+          proposalId: islandSummaryProposal.proposalId,
+          sourceBundleHash: islandSummaryProposal.sourceBundleHash,
+          idempotencyKey,
+          decision: "hold",
+        },
         { tenantSessionContext: verifiedTenantSession },
       ));
       setProposalAuditTrail((current) => {
@@ -3020,6 +3033,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, [
     islandSummaryProposal,
     isRecordingIslandSummaryDecision,
+    document,
     runTenantScopedApiRequest,
     verifiedTenantSession,
   ]);
@@ -8874,11 +8888,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   // context-audit (CE1/CE4's own query->bundle->proposal->apply chain) does
   // not fit this event -- no real equivalenceKey/bundleHash chain exists
   // for an externally-pasted response, and its command whitelist has no
-  // slot for it without a backend change. recordProposalDecision (the
-  // existing generic /ai/proposals/audit endpoint already used for
-  // island-summary adopt/hold/reject) is reused instead for every kind's
-  // adopt/reject here -- see the issue's completion record for the full
-  // reasoning.
+  // slot for it without a backend change. The CE2 proposal-decision endpoint
+  // requires a verified sourceBundleHash and therefore must not be fed a
+  // fabricated correlation value for pasted responses (EXT-AGENT-AUDIT-01).
   const handleToggleAgentResponseImport = useCallback(() => {
     setIsAgentResponseImportOpen((prev) => !prev);
   }, []);
@@ -9007,13 +9019,6 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      void runTenantScopedApiRequest(() => recordProposalDecision(
-        proposalId,
-        "adopt",
-        "human",
-        undefined,
-        { tenantSessionContext: verifiedTenantSession },
-      ));
       setAgentImportedProposalReviews((previous) =>
         previous.map((item) => (item.proposalId === proposalId ? { ...item, status: "adopted" as const } : item))
       );
@@ -9023,24 +9028,15 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       document,
       agentImportedProposalReviews,
       applyDocumentChange,
-      runTenantScopedApiRequest,
-      verifiedTenantSession,
     ]
   );
 
   const handleRejectAgentImportedProposal = useCallback((proposalId: string) => {
-    void runTenantScopedApiRequest(() => recordProposalDecision(
-      proposalId,
-      "reject",
-      "human",
-      undefined,
-      { tenantSessionContext: verifiedTenantSession },
-    ));
     setAgentImportedProposalReviews((previous) =>
       previous.map((item) => (item.proposalId === proposalId ? { ...item, status: "rejected" as const } : item))
     );
     setStatusMessage(t("agent_response_import.rejected_status_message"));
-  }, [runTenantScopedApiRequest, verifiedTenantSession]);
+  }, []);
 
   const handleExportAgentImportedProposalPatchFile = useCallback(
     (proposalId: string) => {

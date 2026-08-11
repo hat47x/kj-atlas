@@ -999,6 +999,9 @@ target physical schema:
 - `tenant_memberships(tenant_id, user_id, lifecycle_state, ...)` with `UNIQUE(tenant_id, user_id)`
 - `documents(tenant_id, id, version, updated_at, payload_json)` with `UNIQUE(tenant_id, id)`
 - `merge_decision_logs(tenant_id, doc_id, ...)` with `FOREIGN KEY(tenant_id, doc_id) -> documents(tenant_id, id)`
+- `ai_proposals(tenant_id, doc_id, proposal_id, proposal_kind, source_bundle_hash, created_at)` with composite Document FK and `PRIMARY KEY(tenant_id, doc_id, proposal_id)`。生成済みproposalの相関registryであり、提案本文・diff・rationaleは保持しない。
+- `ai_proposal_decision_states(tenant_id, doc_id, proposal_id, source_bundle_hash, status, version, updated_at)` with composite Document FK and `PRIMARY KEY(tenant_id, doc_id, proposal_id)`。`held -> accepted|rejected`の競合制御projectionであり監査eventの代替にはしない。
+- `ai_proposal_decision_events(event_id, tenant_id, doc_id, proposal_id, source_bundle_hash, idempotency_key, decision, reviewer_ref, reason_sha256, reason_utf8_bytes, recorded_at)` with composite Document FK and `UNIQUE(tenant_id, doc_id, idempotency_key)`。追記監査正本でありreason本文とclient申告actorを保存しない。
 - `document_access_metadata(tenant_id, doc_id, visibility, policy_binding_id, policy_version, updated_at)` with `PRIMARY KEY(tenant_id, doc_id)` and composite Document FK。`Org/Restricted`は非空binding ID必須。raw policyRefは保存しない。
 - `document_access_admin_audit_events(event_id, tenant_id, principal_id, doc_id, action, decision, policy_version, capability_version, correlation_id, occurred_at)` with `FOREIGN KEY(tenant_id, doc_id) -> documents(tenant_id, id) ON DELETE NO ACTION`。metadata更新と同一transactionで追加し、binding ID、raw policyRef、title、本文、tokenは列として持たない。監査を暗黙に連鎖削除せず、Document lifecycle方針が確定するまでは監査が存在するDocumentの削除をDBで拒否する。非遅延制約では`RESTRICT`と同じfail-closed動作となる。
 - 将来の`agent_registrations`、job、その他audit eventにもtenantIdを必須伝播する。

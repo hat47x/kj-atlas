@@ -551,6 +551,108 @@ class UserIdentityRow(Base):
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class AIProposalRow(Base):
+    __tablename__ = "ai_proposals"
+    __table_args__ = (
+        CheckConstraint(
+            "length(source_bundle_hash) = 64",
+            name="ck_ai_proposals_bundle_hash_length",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "doc_id"],
+            ["documents.tenant_id", "documents.id"],
+            name="fk_ai_proposals_tenant_document",
+            ondelete="CASCADE",
+        ),
+    )
+
+    tenant_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    doc_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    proposal_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    proposal_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    source_bundle_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class AIProposalDecisionStateRow(Base):
+    __tablename__ = "ai_proposal_decision_states"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('accepted', 'rejected', 'held')",
+            name="ck_ai_proposal_decision_states_status",
+        ),
+        CheckConstraint(
+            "length(source_bundle_hash) = 64",
+            name="ck_ai_proposal_decision_states_bundle_hash_length",
+        ),
+        CheckConstraint("version >= 1", name="ck_ai_proposal_decision_states_version"),
+        ForeignKeyConstraint(
+            ["tenant_id", "doc_id"],
+            ["documents.tenant_id", "documents.id"],
+            name="fk_ai_proposal_decision_states_tenant_document",
+            ondelete="CASCADE",
+        ),
+    )
+
+    tenant_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    doc_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    proposal_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    source_bundle_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(Text, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class AIProposalDecisionEventRow(Base):
+    __tablename__ = "ai_proposal_decision_events"
+    __table_args__ = (
+        CheckConstraint(
+            "decision IN ('accepted', 'rejected', 'held')",
+            name="ck_ai_proposal_decision_events_decision",
+        ),
+        CheckConstraint(
+            "length(source_bundle_hash) = 64",
+            name="ck_ai_proposal_decision_events_bundle_hash_length",
+        ),
+        CheckConstraint(
+            "reason_utf8_bytes >= 0",
+            name="ck_ai_proposal_decision_events_reason_size",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "doc_id"],
+            ["documents.tenant_id", "documents.id"],
+            name="fk_ai_proposal_decision_events_tenant_document",
+            ondelete="CASCADE",
+        ),
+        UniqueConstraint(
+            "tenant_id",
+            "doc_id",
+            "idempotency_key",
+            name="uq_ai_proposal_decision_events_idempotency",
+        ),
+        Index(
+            "ix_ai_proposal_decision_events_proposal_order",
+            "tenant_id",
+            "doc_id",
+            "proposal_id",
+            "recorded_at",
+            "event_id",
+        ),
+    )
+
+    event_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(Text, nullable=False)
+    doc_id: Mapped[str] = mapped_column(Text, nullable=False)
+    proposal_id: Mapped[str] = mapped_column(Text, nullable=False)
+    source_bundle_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(Text, nullable=False)
+    decision: Mapped[str] = mapped_column(Text, nullable=False)
+    reviewer_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    reason_sha256: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reason_utf8_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    recorded_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class MergeDecisionLogRow(Base):
     __tablename__ = "merge_decision_logs"
     __table_args__ = (
