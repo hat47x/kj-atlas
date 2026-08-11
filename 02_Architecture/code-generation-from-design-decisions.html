@@ -66,6 +66,16 @@
       <td>suggest_document_title（本セッションで実装）</td>
     </tr>
     <tr class="biz">
+      <td>新規UIコンポーネント</td>
+      <td>ui/{Component}.tsx + i18nキー + テスト（<code>ui_component</code>型）</td>
+      <td>CardQualityAssist（DX-CODEGEN-01でジェネレータ実装）</td>
+    </tr>
+    <tr class="biz">
+      <td>データ境界の新規型</td>
+      <td>Pydanticモデル + schemas.md/api.md追記（<code>data_boundary</code>型）</td>
+      <td>CardQualityState（DX-CODEGEN-01でジェネレータ実装）</td>
+    </tr>
+    <tr class="biz">
       <td>新規管理画面</td>
       <td>Admin route + Pydantic model + React component + i18n + tests</td>
       <td>文書アクセス設定画面（将来）</td>
@@ -222,6 +232,8 @@ flowchart TB
 
 <h2>4. 生成パターン: 新規UIコンポーネント</h2>
 
+<p><code>ui_component</code>型（DX-CODEGEN-01でジェネレータ実装済み）。三要素整合確認済みの設計判断からReactコンポーネントの骨格を生成する。</p>
+
 <h3>4.1 生成されるファイル</h3>
 
 <table>
@@ -234,6 +246,23 @@ flowchart TB
   </tbody>
 </table>
 
+<h3>4.1a 入力形式（ui_component型）</h3>
+
+<pre class="block"><code>{
+  "designDecision": {
+    "type": "ui_component",
+    "componentName": "CardQualityAssist",
+    "description": "カード品質自己チェック表示",
+    "props": [
+      {"name": "cardId", "type": "string"},
+      {"name": "onApply", "type": "() => void"}
+    ],
+    "i18nKeys": ["card_quality.title", "card_quality.apply"],
+    "testIds": ["card-quality-panel", "card-quality-apply"]
+  },
+  "threeElementVerification": { "business": "...", "data": "...", "function": "..." }
+}</code></pre>
+
 <h3>4.2 制約</h3>
 
 <ul>
@@ -243,9 +272,12 @@ flowchart TB
   <li>初期表示への純増禁止。既存要素の置換・包含・モード分離で収める</li>
   <li>data-testid属性を主要要素に付与</li>
   <li>Escapeによる段階閉鎖、triggerへのfocus復帰、キーボード到達性を維持</li>
+  <li>生成は三要素整合チェックを通過した設計判断のみ。出力はレビュー後に手動適用（proposal-only）</li>
 </ul>
 
 <h2>5. 生成パターン: データ境界変更</h2>
+
+<p><code>data_boundary</code>型（DX-CODEGEN-01でジェネレータ実装済み）。三要素整合確認済みの設計判断からPydanticモデル骨格と契約追記を生成する。</p>
 
 <h3>5.1 生成されるファイル</h3>
 
@@ -261,6 +293,22 @@ flowchart TB
     <tr><td>7</td><td><code>tests/</code></td><td>契約テスト + RLSテスト（SaaSの場合）</td></tr>
   </tbody>
 </table>
+
+<h3>5.1a 入力形式（data_boundary型）</h3>
+
+<pre class="block"><code>{
+  "designDecision": {
+    "type": "data_boundary",
+    "typeName": "CardQualityState",
+    "description": "カード品質自己チェックのsession-only状態",
+    "saveScope": "session-only",
+    "fields": [
+      {"name": "cardId", "type": "str = Field(min_length=1)"},
+      {"name": "issues", "type": "list[str] = Field(default_factory=list)"}
+    ]
+  },
+  "threeElementVerification": { "business": "...", "data": "...", "function": "..." }
+}</code></pre>
 
 <h2>6. CI統合</h2>
 
