@@ -43,3 +43,4 @@
 - PostgreSQL catalogの`relrowsecurity`、`relforcerowsecurity`、`pg_policies.qual`、`pg_policies.with_check`を検査し、runtime roleでtenant contextを設定しない全表readが0行になるtestを追加した。
 - CIへ非superuser・非`BYPASSRLS` runtime roleと最小のschema/table/sequence権限を追加し、RLS専用suiteを明示的に有効化した。
 - PostgreSQL 16の一時containerへfresh migrationを適用し、RLS test全3件passを確認した。通常のmetadata導出testも単独passし、Ruffとformat checkを通過した。
+- 2026-08-11に暫定`content_object_references`を`20260811_0022`で撤去したため、現行headの導出対象は13 data-plane表となった。過去checkpointの14表という実測値は当時のschema証跡として維持し、現行testはORM metadataとcatalogから13表を再導出する。

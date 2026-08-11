@@ -7,6 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
+from kj_atlas_api.content_store import ContentBlob
+from kj_atlas_api.database_content_store import DatabaseDocumentContentStore
 from kj_atlas_api.generation_codec import canonical_json_bytes, encode_generation
 from kj_atlas_api.generation_repository import (
     RevisionHeadConflict,
@@ -216,3 +218,34 @@ def verify_revision_dag_contract(engine: Engine) -> None:
             tenant=tenant,
             content_digest=large_blob.content_digest,
         ) == canonical_json_bytes(large_value)
+
+        document_store = DatabaseDocumentContentStore(db)
+        document_store.save(
+            tenant=tenant,
+            doc_id="portable-runtime-document",
+            version=1,
+            updated_at=TIMESTAMP,
+            content=ContentBlob.from_text('{"revision":1}'),
+        )
+        db.commit()
+        document_store.save(
+            tenant=tenant,
+            doc_id="portable-runtime-document",
+            version=1,
+            updated_at="2026-08-10T00:00:01Z",
+            content=ContentBlob.from_text('{"revision":2}'),
+        )
+        db.commit()
+        runtime_head = db.get(
+            CanvasRevisionHeadRow,
+            ("tenant-a", "portable-runtime-document", "main"),
+        )
+        assert runtime_head is not None
+        assert runtime_head.head_version == 2
+        assert (
+            document_store.load(
+                tenant=tenant,
+                doc_id="portable-runtime-document",
+            ).content.text
+            == '{"revision":2}'
+        )

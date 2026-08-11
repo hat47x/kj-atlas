@@ -11,8 +11,14 @@ from fastapi.responses import JSONResponse
 from kj_atlas_api.access_control import build_access_control_adapter
 from kj_atlas_api.audit import build_audit_dispatcher
 from kj_atlas_api.db import init_db
+from kj_atlas_api.database_content_store import DocumentRevisionDivergence
 from kj_atlas_api.database_support import database_support_for_url
 from kj_atlas_api.document_policy_binding import build_document_policy_binding_resolver
+from kj_atlas_api.generation_repository import (
+    GenerationBlobConflict,
+    GenerationBlobUnavailable,
+    RevisionHeadConflict,
+)
 from kj_atlas_api.routes.ai import router as ai_router
 from kj_atlas_api.routes.ai_relations import router as ai_relations_router
 from kj_atlas_api.routes.admin import router as admin_router
@@ -118,6 +124,7 @@ if settings.runtime_profile == "saas-multitenant":
         TrustedSaasRuntimeAdapters,
         install_trusted_saas_runtime,
     )
+
     install_trusted_saas_runtime(
         app,
         TrustedSaasRuntimeAdapters(
@@ -165,6 +172,21 @@ def handle_validation_error(_, exc: RequestValidationError) -> JSONResponse:
         for error in exc.errors()
     ]
     return JSONResponse(status_code=422, content={"detail": errors})
+
+
+@app.exception_handler(RevisionHeadConflict)
+def handle_revision_head_conflict(_, _exc: RevisionHeadConflict) -> JSONResponse:
+    return JSONResponse(status_code=409, content={"detail": "Document changed concurrently"})
+
+
+@app.exception_handler(DocumentRevisionDivergence)
+@app.exception_handler(GenerationBlobUnavailable)
+@app.exception_handler(GenerationBlobConflict)
+def handle_revision_storage_failure(_, _exc: Exception) -> JSONResponse:
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "Document revision storage failed integrity verification"},
+    )
 
 
 @app.get("/healthz")

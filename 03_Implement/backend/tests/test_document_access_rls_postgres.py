@@ -57,7 +57,6 @@ def test_rls_scope_is_derived_from_every_tenant_scoped_model() -> None:
         "canvas_revision_pins",
         "canvas_revisions",
         "content_blobs",
-        "content_object_references",
         "document_access_admin_audit_events",
         "document_access_metadata",
         "documents",

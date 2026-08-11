@@ -40,6 +40,7 @@ from kj_atlas_api.document_repository import (
     list_merge_decision_logs_by_group as list_merge_log_rows_by_group,
     list_merge_decision_logs_by_snapshot as list_merge_log_rows_by_snapshot,
 )
+from kj_atlas_api.generation_repository import RevisionHeadConflict
 from kj_atlas_api.models import (
     Card,
     CandidateListViewModel,
@@ -68,7 +69,9 @@ document_payload_adapter: TypeAdapter[DocumentPayload] = TypeAdapter(DocumentPay
 logger = logging.getLogger(__name__)
 
 
-def _validate_review_attribution_identity(*, document: DocumentPayload, identity: AuthContext) -> None:
+def _validate_review_attribution_identity(
+    *, document: DocumentPayload, identity: AuthContext
+) -> None:
     review_attribution = document.reviewAttribution
     if review_attribution is None or review_attribution.reviewState != "human_reviewed":
         return
@@ -101,7 +104,9 @@ def _validate_document_payload_with_a1_contract(document_payload: object) -> Doc
         document = document_payload_adapter.validate_python(document_payload)
     except ValidationError as exc:
         errors = exc.errors()
-        message = str(errors[0].get("msg", "document payload validation failed")) if errors else str(exc)
+        message = (
+            str(errors[0].get("msg", "document payload validation failed")) if errors else str(exc)
+        )
         code = "A1_REQUIRED_FIELD_MISSING"
         contract_id = "A1-REDIFF-IF"
         first_error_loc = tuple(errors[0].get("loc", ())) if errors else ()
@@ -184,7 +189,6 @@ def _validate_document_payload_with_a1_contract(document_payload: object) -> Doc
             )
 
     return document
-
 
 
 def _authorize_request(
@@ -321,8 +325,12 @@ def _is_candidate_eligible(card: Card) -> bool:
     return card.mergedIntoCardId is None and card.canonicalId is None and not card.sources
 
 
-def _build_similar_candidate_groups(document: DocumentPayload, *, payload_json: str) -> CandidateListViewModel:
-    cards = sorted((card for card in document.cards if _is_candidate_eligible(card)), key=lambda card: card.id)
+def _build_similar_candidate_groups(
+    document: DocumentPayload, *, payload_json: str
+) -> CandidateListViewModel:
+    cards = sorted(
+        (card for card in document.cards if _is_candidate_eligible(card)), key=lambda card: card.id
+    )
     grouped_by_normalized_text: dict[str, list[Card]] = {}
     grouped_by_token_signature: dict[str, list[Card]] = {}
     for card in cards:
@@ -360,9 +368,13 @@ def _build_similar_candidate_groups(document: DocumentPayload, *, payload_json: 
         )
 
     for normalized_text, grouped_cards in grouped_by_normalized_text.items():
-        register_group(reason_code="normalized_text", key=normalized_text, candidates=grouped_cards, score=1.0)
+        register_group(
+            reason_code="normalized_text", key=normalized_text, candidates=grouped_cards, score=1.0
+        )
     for signature, grouped_cards in grouped_by_token_signature.items():
-        register_group(reason_code="token_signature", key=signature, candidates=grouped_cards, score=0.75)
+        register_group(
+            reason_code="token_signature", key=signature, candidates=grouped_cards, score=0.75
+        )
 
     ordered_groups = sorted(
         groups_by_card_set.values(),
@@ -396,18 +408,22 @@ def get_document(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> DocumentPayload:
-    access_request, decision, tenant = _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
-
-    doc_row = get_document_row(
+    access_request, decision, tenant = _authorize_request(
+        request,
         db,
-        tenant=tenant,
+        action="read",
         doc_id=doc_id,
+        safe_mode=True,
+        read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
     )
-    if doc_row is None:
+
+    stored_document = DatabaseDocumentContentStore(db).load(tenant=tenant, doc_id=doc_id)
+    if stored_document is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
+    doc_row = stored_document.row
     response.headers["ETag"] = _format_etag(_compute_etag(doc_row.payload_json))
-    payload = json.loads(doc_row.payload_json)
+    payload = json.loads(stored_document.content.text)
 
     dispatcher = getattr(request.app.state, "audit_dispatcher", None)
     if dispatcher is not None:
@@ -427,7 +443,9 @@ def get_document(
                     "decision_reason": decision.reason,
                     "visibility": access_request.resource.visibility,
                     "policyRefPresent": access_request.resource.policy_ref is not None,
-                    "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
+                    "adapterName": getattr(
+                        getattr(request.app.state, "access_control_adapter", None), "name", "none"
+                    ),
                     "traceId": access_request.auth.trace_id,
                     **build_auth_assurance_metadata(access_request.auth),
                 },
@@ -448,7 +466,14 @@ def put_document(
     db: Session = Depends(get_db),
 ) -> DocumentPayload:
     document = _validate_document_payload_with_a1_contract(document_payload)
-    access_request, _, tenant = _authorize_request(request, db, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    access_request, _, tenant = _authorize_request(
+        request,
+        db,
+        action="write",
+        doc_id=doc_id,
+        safe_mode=True,
+        read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
+    )
 
     if document.id != doc_id:
         raise HTTPException(status_code=400, detail="Path doc_id and document.id must match")
@@ -471,15 +496,18 @@ def put_document(
         if "*" not in expected_etags and current_etag not in expected_etags:
             raise HTTPException(status_code=409, detail="ETag mismatch")
 
-    DatabaseDocumentContentStore(db).save(
-        tenant=tenant,
-        doc_id=doc_id,
-        version=document.version,
-        updated_at=document.updatedAt.isoformat(),
-        content=ContentBlob.from_text(payload_json),
-    )
-
-    db.commit()
+    try:
+        DatabaseDocumentContentStore(db).save(
+            tenant=tenant,
+            doc_id=doc_id,
+            version=document.version,
+            updated_at=document.updatedAt.isoformat(),
+            content=ContentBlob.from_text(payload_json),
+        )
+        db.commit()
+    except (IntegrityError, RevisionHeadConflict) as error:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Document changed concurrently") from error
     response.headers["ETag"] = _format_etag(_compute_etag(payload_json))
     return document
 
@@ -494,17 +522,22 @@ class ContextAuditPayload(BaseModel):
     safeMode: bool = True
     equivalenceKey: str = Field(pattern=r"^[0-9a-f]{64}$")
     bundleHash: str = Field(pattern=r"^[0-9a-f]{64}$")
-    sourceBundleHash: str | None = Field(default=None, pattern=r"^(?:[0-9a-f]{64}|mock:[0-9a-f]{64})$")
+    sourceBundleHash: str | None = Field(
+        default=None, pattern=r"^(?:[0-9a-f]{64}|mock:[0-9a-f]{64})$"
+    )
     queryHash: str | None = None
     dryRun: bool = True
     sideEffect: Literal["none"] = "none"
-    rejectReasonCode: Literal[
-        "none",
-        "missing_event",
-        "equivalence_mismatch",
-        "dry_run_side_effect",
-        "safemode_regression",
-    ] | None = None
+    rejectReasonCode: (
+        Literal[
+            "none",
+            "missing_event",
+            "equivalence_mismatch",
+            "dry_run_side_effect",
+            "safemode_regression",
+        ]
+        | None
+    ) = None
     command: str
     channel: Literal["api", "cli", "gui"] = "api"
     schemaVersion: Literal["ce4.audit.v1"] = "ce4.audit.v1"
@@ -517,6 +550,7 @@ _CE4_OPERATION_TO_COMMANDS: dict[str, set[str]] = {
     "apply": {"apply --dry-run"},
 }
 _CE4_REQUIRED_EVENT_SET = frozenset({"query", "bundle", "proposal", "apply"})
+
 
 def _ce4_validation_error(code: str, message: str) -> HTTPException:
     return HTTPException(status_code=422, detail={"code": code, "message": message})
@@ -609,21 +643,40 @@ def post_context_audit(
     )
 
     if payload.queryHash is not None and payload.queryHash != payload.equivalenceKey:
-        raise _ce4_validation_error("query_hash_mismatch", "queryHash must equal equivalenceKey for CE4 equivalence checks")
+        raise _ce4_validation_error(
+            "query_hash_mismatch", "queryHash must equal equivalenceKey for CE4 equivalence checks"
+        )
     if payload.operation in {"proposal", "apply"} and payload.sourceBundleHash is None:
-        raise _ce4_validation_error("missing_source_bundle_hash", "sourceBundleHash is required for proposal/apply operations")
+        raise _ce4_validation_error(
+            "missing_source_bundle_hash",
+            "sourceBundleHash is required for proposal/apply operations",
+        )
     if payload.operation == "apply" and not payload.dryRun:
-        raise _ce4_validation_error("apply_requires_dry_run", "CE4 apply operation requires dryRun=true")
-    if settings.ce4_dry_run_enforce_no_side_effect and payload.dryRun and payload.sideEffect != "none":
-        raise _ce4_validation_error("dry_run_side_effect_mismatch", "dryRun=true requires sideEffect=none")
+        raise _ce4_validation_error(
+            "apply_requires_dry_run", "CE4 apply operation requires dryRun=true"
+        )
+    if (
+        settings.ce4_dry_run_enforce_no_side_effect
+        and payload.dryRun
+        and payload.sideEffect != "none"
+    ):
+        raise _ce4_validation_error(
+            "dry_run_side_effect_mismatch", "dryRun=true requires sideEffect=none"
+        )
     if (
         payload.sourceBundleHash is not None
         and payload.sourceBundleHash.startswith("mock:")
         and not settings.ce4_source_bundle_hash_allow_mock
     ):
-        raise _ce4_validation_error("mock_source_bundle_hash_disabled", "mock sourceBundleHash is disabled by CE4 runtime policy")
+        raise _ce4_validation_error(
+            "mock_source_bundle_hash_disabled",
+            "mock sourceBundleHash is disabled by CE4 runtime policy",
+        )
     if payload.command not in _CE4_OPERATION_TO_COMMANDS[payload.operation]:
-        raise _ce4_validation_error("operation_command_mismatch", f"command '{payload.command}' is invalid for operation '{payload.operation}'")
+        raise _ce4_validation_error(
+            "operation_command_mismatch",
+            f"command '{payload.command}' is invalid for operation '{payload.operation}'",
+        )
     if settings.ce4_audit_require_all_events:
         _record_ce4_event_and_validate_completeness(
             tenant_id=tenant.tenant_id,
@@ -652,7 +705,9 @@ def post_context_audit(
                     "decision_reason": decision.reason,
                     "visibility": access_request.resource.visibility,
                     "policyRefPresent": access_request.resource.policy_ref is not None,
-                    "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
+                    "adapterName": getattr(
+                        getattr(request.app.state, "access_control_adapter", None), "name", "none"
+                    ),
                     "traceId": access_request.auth.trace_id,
                     "operation": payload.operation,
                     "equivalenceKey": payload.equivalenceKey,
@@ -681,7 +736,14 @@ def post_export_audit(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
-    access_request, decision, tenant = _authorize_request(request, db, action="export", doc_id=doc_id, safe_mode=payload.safeMode, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    access_request, decision, tenant = _authorize_request(
+        request,
+        db,
+        action="export",
+        doc_id=doc_id,
+        safe_mode=payload.safeMode,
+        read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
+    )
     dispatcher = getattr(request.app.state, "audit_dispatcher", None)
     if dispatcher is not None:
         dispatcher.emit(
@@ -701,7 +763,9 @@ def post_export_audit(
                     "decision_reason": decision.reason,
                     "visibility": access_request.resource.visibility,
                     "policyRefPresent": access_request.resource.policy_ref is not None,
-                    "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
+                    "adapterName": getattr(
+                        getattr(request.app.state, "access_control_adapter", None), "name", "none"
+                    ),
                     "traceId": access_request.auth.trace_id,
                     **build_auth_assurance_metadata(access_request.auth),
                 },
@@ -723,13 +787,23 @@ def append_merge_decision_log(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> MergeDecisionRecord:
-    _, _, tenant = _authorize_request(request, db, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
-
-    if get_document_row(
+    _, _, tenant = _authorize_request(
+        request,
         db,
-        tenant=tenant,
+        action="write",
         doc_id=doc_id,
-    ) is None:
+        safe_mode=True,
+        read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
+    )
+
+    if (
+        get_document_row(
+            db,
+            tenant=tenant,
+            doc_id=doc_id,
+        )
+        is None
+    ):
         raise HTTPException(status_code=404, detail="Document not found")
 
     record = payload.record
@@ -751,7 +825,9 @@ def append_merge_decision_log(
     return record
 
 
-@router.get("/{doc_id}/merge-decision-logs/by-group/{group_id}", response_model=list[MergeDecisionRecord])
+@router.get(
+    "/{doc_id}/merge-decision-logs/by-group/{group_id}", response_model=list[MergeDecisionRecord]
+)
 def list_merge_decision_logs_by_group(
     doc_id: str,
     group_id: str,
@@ -759,13 +835,23 @@ def list_merge_decision_logs_by_group(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> list[MergeDecisionRecord]:
-    _, _, tenant = _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
-
-    if get_document_row(
+    _, _, tenant = _authorize_request(
+        request,
         db,
-        tenant=tenant,
+        action="read",
         doc_id=doc_id,
-    ) is None:
+        safe_mode=True,
+        read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
+    )
+
+    if (
+        get_document_row(
+            db,
+            tenant=tenant,
+            doc_id=doc_id,
+        )
+        is None
+    ):
         raise HTTPException(status_code=404, detail="Document not found")
 
     rows = list_merge_log_rows_by_group(
@@ -777,7 +863,10 @@ def list_merge_decision_logs_by_group(
     return [MergeDecisionRecord.model_validate(json.loads(row.payload_json)) for row in rows]
 
 
-@router.get("/{doc_id}/merge-decision-logs/restore/{snapshot_version}", response_model=list[MergeDecisionRecord])
+@router.get(
+    "/{doc_id}/merge-decision-logs/restore/{snapshot_version}",
+    response_model=list[MergeDecisionRecord],
+)
 def restore_merge_decision_logs(
     doc_id: str,
     snapshot_version: str,
@@ -785,13 +874,23 @@ def restore_merge_decision_logs(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> list[MergeDecisionRecord]:
-    _, _, tenant = _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
-
-    if get_document_row(
+    _, _, tenant = _authorize_request(
+        request,
         db,
-        tenant=tenant,
+        action="read",
         doc_id=doc_id,
-    ) is None:
+        safe_mode=True,
+        read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
+    )
+
+    if (
+        get_document_row(
+            db,
+            tenant=tenant,
+            doc_id=doc_id,
+        )
+        is None
+    ):
         raise HTTPException(status_code=404, detail="Document not found")
 
     rows = list_merge_log_rows_by_snapshot(
@@ -810,7 +909,14 @@ def get_similar_candidate_groups(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> CandidateListViewModel:
-    _, _, tenant = _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    _, _, tenant = _authorize_request(
+        request,
+        db,
+        action="read",
+        doc_id=doc_id,
+        safe_mode=True,
+        read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
+    )
 
     doc_row = get_document_row(
         db,
@@ -824,7 +930,10 @@ def get_similar_candidate_groups(
     return _build_similar_candidate_groups(document, payload_json=doc_row.payload_json)
 
 
-@router.post("/{doc_id}/polygon-handoff/verify-contract", response_model=PolygonHandoffContractVerificationResponse)
+@router.post(
+    "/{doc_id}/polygon-handoff/verify-contract",
+    response_model=PolygonHandoffContractVerificationResponse,
+)
 def verify_polygon_handoff_contract(
     doc_id: str,
     payload: PolygonHandoffContractVerificationRequest,
@@ -841,11 +950,14 @@ def verify_polygon_handoff_contract(
         read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
     )
 
-    if get_document_row(
-        db,
-        tenant=tenant,
-        doc_id=doc_id,
-    ) is None:
+    if (
+        get_document_row(
+            db,
+            tenant=tenant,
+            doc_id=doc_id,
+        )
+        is None
+    ):
         raise HTTPException(status_code=404, detail="Document not found")
 
     failure_reasons, status = _evaluate_polygon_handoff_rollback(payload)
@@ -872,7 +984,9 @@ def _evaluate_polygon_handoff_rollback(
 
     tie_break_order_changed = expected_output.tieBreakOrderChanged
     if expected_output.tieBreakOrder is not None:
-        tie_break_order_changed = tuple(expected_output.tieBreakOrder) != payload.input.deterministicTieBreakOrder
+        tie_break_order_changed = (
+            tuple(expected_output.tieBreakOrder) != payload.input.deterministicTieBreakOrder
+        )
 
     if tie_break_order_changed:
         failure_reasons.append("tieBreakOrderChanged=true")

@@ -30,7 +30,7 @@ def _run_alembic(db_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
 
 def test_content_reference_migration_enforces_backend_locator_contract(tmp_path: Path) -> None:
     db_path = tmp_path / "content-reference.sqlite3"
-    upgrade = _run_alembic(db_path, "upgrade", "head")
+    upgrade = _run_alembic(db_path, "upgrade", "20260809_0015")
     assert upgrade.returncode == 0, upgrade.stderr
 
     con = sqlite3.connect(db_path)
@@ -88,9 +88,48 @@ def test_content_reference_migration_downgrades_cleanly(tmp_path: Path) -> None:
     con = sqlite3.connect(db_path)
     try:
         tables = {
-            row[0]
-            for row in con.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+            row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
         }
         assert "content_object_references" not in tables
     finally:
         con.close()
+
+
+def test_populated_legacy_content_reference_blocks_retirement(tmp_path: Path) -> None:
+    db_path = tmp_path / "content-reference-populated.sqlite3"
+    initial = _run_alembic(db_path, "upgrade", "20260811_0021")
+    assert initial.returncode == 0, initial.stderr
+    with sqlite3.connect(db_path) as connection:
+        connection.execute(
+            "INSERT INTO content_object_references "
+            "(content_id,tenant_id,storage_backend,locator,storage_state,byte_size,"
+            "sha256_digest,schema_version,created_at,updated_at) VALUES "
+            "('legacy','local-default','s3','tenant/legacy','ready',2,?,"
+            "'document-v1',?,?)",
+            ("0" * 64, TIMESTAMP, TIMESTAMP),
+        )
+
+    blocked = _run_alembic(db_path, "upgrade", "head")
+    assert blocked.returncode != 0
+    assert "content_object_references contains rows" in blocked.stderr
+
+
+def test_empty_legacy_content_reference_is_retired_and_reversible(tmp_path: Path) -> None:
+    db_path = tmp_path / "content-reference-retired.sqlite3"
+    upgrade = _run_alembic(db_path, "upgrade", "head")
+    assert upgrade.returncode == 0, upgrade.stderr
+    with sqlite3.connect(db_path) as connection:
+        tables = {
+            row[0]
+            for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+        }
+        assert "content_object_references" not in tables
+
+    downgrade = _run_alembic(db_path, "downgrade", "20260811_0021")
+    assert downgrade.returncode == 0, downgrade.stderr
+    with sqlite3.connect(db_path) as connection:
+        tables = {
+            row[0]
+            for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+        }
+        assert "content_object_references" in tables

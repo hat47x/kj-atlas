@@ -90,6 +90,18 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 - revision digestを署名、認可、human review証明として扱わない。
 - 既存`RoundSnapshotV1`、merge decision log、audit eventをrevisionへ置換しない。
 
+## Runtime integration amendment 2026-08-11
+
+既存Document APIをrevision DAGへ段階移行する際の曖昧性を次のとおり解消する。
+
+1. 現行frontendの`PUT /docs/{doc_id}`は利用者の明示的な保存操作からだけ呼ばれるため、`generation_reason=manual_save`、`generation_tier=checkpoint`、`generation_origin=human`として扱う。autosave、import、AI proposal、human acceptanceは既存PUTから推測せず、将来のserver-owned operation contextまたは専用APIで区別する。
+2. 通常Documentの既定head名は`main`とする。既存headがないDocumentの最初のmaterializeでversion 1を作り、以後の変更保存は現在headを単一parentに持つ。
+3. HTTP ETagは互換期間中も`documents.payload_json`のSHA-256を維持する。content digestはcanonical JSONのSHA-256、head versionはCAS用整数であり、三者を同じversionとして公開しない。
+4. byte-for-byteの入力表現ではなくcanonical JSON digestが現在headと同一なら、PUTはprojectionの互換fieldを更新できるが、新revision作成とhead version増加を行わない。意味のない世代増加を避ける一方、同一本文を監査checkpointとして残す用途は将来の明示操作に分離する。
+5. legacy DocumentはGETで暗黙に書き換えない。batch backfillまたは次回PUTのtransaction内で初期revisionを作る。headがない間だけ`documents.payload_json`をlegacy正本として読む。
+6. headが存在するDocumentでは、revision blobの復元・digest検証を成功させ、互換projectionとのcanonical一致を確認する。不一致時は一方を黙って上書きせずfail closedとし、修復runbookへ送る。
+7. PUTはDocument projection、blob、revision、parent、headを単一DB transactionへ置く。`If-Match`確認後の同時更新はhead CASで再検証し、stale writerへ409を返す。成功応答後の非同期dual writeは禁止する。
+
 ## Traceability
 
 - Implementation: `01_Plans/issues/issue-DATA-GENERATION-01-content-generation-policy.md`

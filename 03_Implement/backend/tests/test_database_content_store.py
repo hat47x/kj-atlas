@@ -1,6 +1,7 @@
 from hashlib import sha256
 
-from sqlalchemy import create_engine
+import pytest
+from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import sessionmaker
 
 from kj_atlas_api.content_store import ContentBlob
@@ -8,8 +9,16 @@ from kj_atlas_api.database_content_store import (
     DatabaseAppendOnlyLogContentStore,
     DatabaseBundleContentStore,
     DatabaseDocumentContentStore,
+    DocumentRevisionDivergence,
 )
-from kj_atlas_api.models import Base, TenantRow
+from kj_atlas_api.models import (
+    Base,
+    CanvasRevisionHeadRow,
+    CanvasRevisionParentRow,
+    CanvasRevisionRow,
+    DocumentRow,
+    TenantRow,
+)
 from kj_atlas_api.tenant_context import TenantContext
 
 
@@ -83,20 +92,26 @@ def test_database_content_stores_preserve_semantics_and_tenant_scope(tmp_path) -
                 decided_at="2026-08-09T00:00:00Z",
                 content=ContentBlob.from_text('{"decision":"keep"}'),
             )
-            assert document_a.row in db.new
+            assert document_a.row.id == "shared"
             db.commit()
+
+            head_a = db.get(CanvasRevisionHeadRow, ("tenant-a", "shared", "main"))
+            head_b = db.get(CanvasRevisionHeadRow, ("tenant-b", "shared", "main"))
+            assert head_a is not None and head_a.head_version == 1
+            assert head_b is not None and head_b.head_version == 1
 
             assert documents.load(tenant=tenant_a, doc_id="shared").content.text == '{"owner":"a"}'
             assert documents.load(tenant=tenant_b, doc_id="shared").content.text == '{"owner":"b"}'
             assert bundles.load(tenant=tenant_b, journey_id="journey") is None
-            assert logs.list_by_group(
-                tenant=tenant_b, doc_id="shared", group_id="group-1"
-            ) == []
-            assert len(
-                logs.list_by_snapshot(
-                    tenant=tenant_a, doc_id="shared", snapshot_version="snapshot-1"
+            assert logs.list_by_group(tenant=tenant_b, doc_id="shared", group_id="group-1") == []
+            assert (
+                len(
+                    logs.list_by_snapshot(
+                        tenant=tenant_a, doc_id="shared", snapshot_version="snapshot-1"
+                    )
                 )
-            ) == 1
+                == 1
+            )
 
             replaced = bundles.replace(
                 tenant=tenant_a,
@@ -108,6 +123,76 @@ def test_database_content_stores_preserve_semantics_and_tenant_scope(tmp_path) -
             assert bundles.delete(tenant=tenant_a, journey_id="journey") is True
             assert bundles.delete(tenant=tenant_a, journey_id="journey") is False
             db.rollback()
+    finally:
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+
+def test_document_store_materializes_legacy_parent_and_detects_divergence(tmp_path) -> None:
+    engine = create_engine(f"sqlite:///{tmp_path / 'document-revisions.sqlite3'}")
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+    tenant = _tenant("tenant-a")
+    try:
+        with session_local() as db:
+            db.add(_tenant_row("tenant-a"))
+            db.add(
+                DocumentRow(
+                    tenant_id="tenant-a",
+                    id="legacy",
+                    version=1,
+                    updated_at="2026-08-09T00:00:00Z",
+                    payload_json='{ "value": 1 }',
+                )
+            )
+            db.commit()
+
+            store = DatabaseDocumentContentStore(db)
+            store.save(
+                tenant=tenant,
+                doc_id="legacy",
+                version=1,
+                updated_at="2026-08-09T00:00:00Z",
+                content=ContentBlob.from_text('{ "value": 1 }'),
+            )
+            db.commit()
+            initial_head = db.get(CanvasRevisionHeadRow, ("tenant-a", "legacy", "main"))
+            assert initial_head is not None
+            assert initial_head.head_version == 1
+            assert db.scalar(select(func.count()).select_from(CanvasRevisionRow)) == 1
+            assert store.load(tenant=tenant, doc_id="legacy").content.text == '{"value":1}'
+
+            store.save(
+                tenant=tenant,
+                doc_id="legacy",
+                version=1,
+                updated_at="2026-08-09T00:01:00Z",
+                content=ContentBlob.from_text('{"value":2}'),
+            )
+            db.commit()
+            head = db.get(CanvasRevisionHeadRow, ("tenant-a", "legacy", "main"))
+            assert head is not None
+            assert head.head_version == 2
+            assert db.scalar(select(func.count()).select_from(CanvasRevisionRow)) == 2
+            assert db.scalar(select(func.count()).select_from(CanvasRevisionParentRow)) == 1
+
+            # Canonically identical no-op writes do not create another revision.
+            store.save(
+                tenant=tenant,
+                doc_id="legacy",
+                version=1,
+                updated_at="2026-08-09T00:01:00Z",
+                content=ContentBlob.from_text('{"value":2}'),
+            )
+            db.commit()
+            assert db.scalar(select(func.count()).select_from(CanvasRevisionRow)) == 2
+
+            row = db.get(DocumentRow, ("tenant-a", "legacy"))
+            assert row is not None
+            row.payload_json = '{"value":3}'
+            db.commit()
+            with pytest.raises(DocumentRevisionDivergence, match="differs"):
+                store.load(tenant=tenant, doc_id="legacy")
     finally:
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
@@ -133,9 +218,9 @@ def test_database_store_leaves_transaction_control_to_the_caller(tmp_path) -> No
             db.rollback()
 
         with session_local() as db:
-            assert DatabaseDocumentContentStore(db).load(
-                tenant=tenant, doc_id="rolled-back"
-            ) is None
+            assert (
+                DatabaseDocumentContentStore(db).load(tenant=tenant, doc_id="rolled-back") is None
+            )
     finally:
         Base.metadata.drop_all(bind=engine)
         engine.dispose()

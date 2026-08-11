@@ -132,6 +132,7 @@ docker compose logs api --tail=100
 | Document | `id`、`version`、`updated_at`、画面またはAPIで読み込めること |
 | 判断ログ | `merge_decision_logs`が対象Documentに紐づき、group/snapshot単位の順序が崩れていないこと |
 | 大容量本文 | 代表canvasの`payload_json`が欠落・切詰めされず、byte数または文字数がsourceと一致すること |
+| Revision blob | `main` headから本文を復元でき、`content_blobs`のdigest、byte size、1 MiB超payloadがsourceと一致すること |
 | 共有前確認 | SafeModeが有効で、未レビュー本文や個人情報を含む出力を不用意に共有しないこと |
 | 中断条件 | command失敗・警告付き部分成功、version不整合、件数・digest・本文長・判断ログの不一致、復元先取り違え、秘密情報を含むログ共有があれば完了扱いにしない |
 
@@ -232,6 +233,40 @@ impdp "$DB_ADMIN_USER@$ORACLE_SERVICE" DIRECTORY=DATA_PUMP_DIR \
 ```
 
 復元確認後は検証用database/schemaと一時backupを、組織の保持・監査方針に従って削除します。削除対象をsourceと照合し、名前が曖昧な状態では実行しません。
+
+## Document revisionの段階移行
+
+schema revision `20260811_0021`以降、新規保存と更新保存は`documents.payload_json`互換projectionとcontent-addressed revision DAGを同じtransactionへ保存します。既存Documentはheadがない間だけlegacy projectionから読み、GETだけではDBを書き換えません。次回PUTまたは明示backfillで`main` headを作成します。
+
+backfill前に上記の隔離復元を成功させ、対象tenant IDとDocument件数を記録してください。database URLには資格情報を含み得るため、shell履歴、ticket、通常ログへ残さない受渡し方法を使用します。既定はdry-runです。
+
+```bash
+cd 03_Implement/backend
+python -m kj_atlas_api.backfill_document_revisions \
+  --database-url "$KJ_ATLAS_DATABASE_URL" \
+  --tenant-id "$TARGET_TENANT_ID" \
+  --limit 100
+```
+
+出力の`candidates`を確認後、同じtenantと接続先に対して`--apply`を付けます。1回のtransactionを小さく保つため、`remaining`が0になるまでbatch単位で再実行します。
+
+```bash
+python -m kj_atlas_api.backfill_document_revisions \
+  --database-url "$KJ_ATLAS_DATABASE_URL" \
+  --tenant-id "$TARGET_TENANT_ID" \
+  --limit 100 \
+  --apply
+```
+
+次の場合は中断し、再実行前にDBを調査します。
+
+- tenantが存在しない、JSON復元・digest・byte size検証に失敗する。
+- 保存またはGETがHTTP 503 `Document revision storage failed integrity verification`になる。
+- 同じDocumentの`main` headと互換projectionがcanonical JSONとして一致しない。
+- backfill対象外のtenantにrevision/headが作成される。
+- `remaining`が減らない、または予想件数を超える。
+
+rollbackのためにrevision rowだけを手作業で削除してはいけません。Document、blob、parent、headは複合FKと保持規則で接続されています。問題がある場合は書込みを止め、隔離復元したbackupと比較してから修復方針を決めます。
 
 ## ログを見る
 

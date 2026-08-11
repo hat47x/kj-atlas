@@ -86,7 +86,7 @@ Content Storeの操作契約は一つの汎用CRUDへ統合せず、次の3 port
 
 各portはUTF-8 byte sizeとSHA-256 digestを持つ`ContentBlob`を受け渡す。現行DB実装ではinline本文から都度算出し、schema migrationを発生させない。外部保存へ昇格するときはdigest、byte size、schema version、storage stateをDB metadataへ永続化する。adapterはtransactionをcommitせず、認可対象の更新、監査証跡、content metadataをapplication側が一つの処理単位として確定できるようにする。
 
-`content_object_references`は外部化検討時の暫定metadataであり、最終正本とはしない。revision DAG導入時に論理revisionと物理digest blobへ責務分離し、互換migrationまたは撤去を判断する。既存inline payloadは自動backfillせず、現在の3列を正本として維持する。
+外部化検討時の暫定`content_object_references`はruntime未使用であることを確認し、`20260811_0022`で撤去した。既存行がある環境ではupgradeをfail closedに停止し、`content_blobs`への個別移行または実験データ削除の確認を要求する。以後、database／NAS／S3／Git候補の物理metadataは`content_blobs`だけに置き、別のcontent ID正本を再導入しない。
 
 状態は`pending -> ready|failed`、`ready -> deleting|failed`、`failed -> pending|deleting`を許可する。`deleting`からの物理削除完了は行削除とcontent-free監査証跡で表し、`deleting -> ready`の復活は許さない。NAS/S3への書込成功後にDB確定が失敗したobject、またはDB参照がなくなったobjectはorphan候補とし、tenant・content ID prefixと保留期間を確認する回収処理以外から削除しない。
 
@@ -109,4 +109,4 @@ CandidateをVerifiedへ変更するには、対象versionを固定した実DBに
 
 ## Current next step
 
-`DATA-GENERATION-01`でrevision／blob設計を確定し、`DATA-GENERATION-02` Phase 1で全Verified DBのportable binary LOBへinline codec bytesを保存・復元できることを実証した。ただしDocument GET/PUTは引き続き`documents.payload_json`を正本とし、revision head、保存reason、ETag互換を決定するPhase 2までrevision DAGをruntime正本とは表明しない。外部storageのruntime接続優先度は引き続き低く保つ。新しいDB familyは具体的需要を起点にcandidate登録し、同じpromotion gateを通す。容量・複数instance共有要件が実測された環境だけ、NAS/S3等を`content_blobs`の物理backendとして再評価する。
+`DATA-GENERATION-01`でrevision／blob設計を確定し、`DATA-GENERATION-02`で全Verified DBのportable binary LOBへinline codec bytesを保存・復元し、Document GET/PUTのruntime正本をrevision DAGへ移行した。`documents.payload_json`はETag互換と切戻しのための検証付きprojectionとして当面維持し、headとの不一致はfail closedにする。外部storageのruntime接続優先度は引き続き低く保つ。新しいDB familyは具体的需要を起点にcandidate登録し、同じpromotion gateを通す。容量・複数instance共有要件が実測された環境だけ、NAS/S3等を`content_blobs`の物理backendとして`DATA-GENERATION-03`の条件で再評価する。
