@@ -94,6 +94,14 @@
 38. 維持（緩和禁止）: SafeMode 既定ON・漏えい防止・proposal-only・`human_reviewed` 人手昇格・`KJ_ATLAS_LLM_PROVIDER=none` 既定の各不変条件。これらはガバナンスではなくプロダクト本体として維持する。
 39. 再導入: 外部協力者の継続参加、または公開リリースで実ユーザーが付いた時点で、役割分離・Decision Queue・観測スコアカードを段階的に戻す。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 従来の計画文書はroadmap/phase/value_to_requirementsに分散し、意思決定（なぜ）と実行計画（いつ・何を）が混在して判断根拠の追跡と差分レビューが困難。01_Plans配下の計画文書をADR形式へ全面移行する | 機能: 1 ADR=1意思決定境界、必須ヘッダ（Status/Date/Deciders/Scope）と必須章（Context/Decision/Consequences/Traceability）を固定。データ: 変更時は追記優先でSupersedes/Superseded byで履歴を残す |
+| **データ設計** | ADRには意思決定・背景・影響を記録し、実装タスクの進捗管理はIssueで行う。1 ADRの目安は50〜180行で200行超は分割候補。分割軸は意思決定境界（価値原則/要求マッピング/受入基準/運用手順） | 業務: どの判断がどの要件・設計・実装に影響するかを追跡しやすくする。機能: 親ADRは要約と索引に縮約し詳細は子ADRへ委譲して可読性を維持 |
+| **機能設計** | IssueはAction（何をするか/どう直すか）、ADRはDecision&Context（なぜその選択か/何を選ばなかったか）を記録。ADR起票トリガーはトレードオフ比較・非機能要件影響・半年後の新規参加者への背景説明の3条件 | 業務: 維持（緩和禁止）はSafeMode既定ON・漏えい防止・proposal-only・human_reviewed人手昇格・provider=none既定。データ: 再導入は外部協力者の継続参加または公開リリースで実ユーザーが付いた時点 |
+
 ## Consequences
 
 - どの判断が、どの要件・設計・実装に影響するかを追跡しやすくなる。
