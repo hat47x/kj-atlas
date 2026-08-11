@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.models import DocumentRow
+from tests.database_portability_contracts import verify_revision_dag_contract
 
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -50,13 +51,9 @@ def _reset_schema(database_url: str, admin_url: str) -> None:
         except Exception as error:
             if "ORA-01918" not in str(error):
                 raise
+        connection.execute(text(f'CREATE USER "{username.upper()}" IDENTIFIED BY "{password}"'))
         connection.execute(
-            text(f'CREATE USER "{username.upper()}" IDENTIFIED BY "{password}"')
-        )
-        connection.execute(
-            text(
-                f'GRANT CONNECT, RESOURCE, UNLIMITED TABLESPACE TO "{username.upper()}"'
-            )
+            text(f'GRANT CONNECT, RESOURCE, UNLIMITED TABLESPACE TO "{username.upper()}"')
         )
     engine.dispose()
 
@@ -233,9 +230,7 @@ def test_oracle_promotion_matrix() -> None:
     rollback.rollback()
     transaction.close()
     with engine.connect() as connection:
-        assert connection.scalar(
-            text("SELECT COUNT(*) FROM tenants WHERE id='rolled-back'")
-        ) == 0
+        assert connection.scalar(text("SELECT COUNT(*) FROM tenants WHERE id='rolled-back'")) == 0
     engine.dispose()
 
     _expect_integrity_error(
@@ -265,3 +260,6 @@ def test_oracle_promotion_matrix() -> None:
     assert reupgrade.returncode == 0, reupgrade.stderr
 
     _verify_data_pump_restore(database_url, admin_url)
+    engine = create_engine(database_url)
+    verify_revision_dag_contract(engine)
+    engine.dispose()

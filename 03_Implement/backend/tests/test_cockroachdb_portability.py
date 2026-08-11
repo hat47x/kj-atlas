@@ -12,6 +12,8 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 
+from tests.database_portability_contracts import verify_revision_dag_contract
+
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 TIMESTAMP = "2026-08-10T00:00:00Z"
@@ -37,9 +39,7 @@ def _run_alembic(url: str, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 def _system_url(database_url: str) -> str:
-    return make_url(database_url).set(database="defaultdb").render_as_string(
-        hide_password=False
-    )
+    return make_url(database_url).set(database="defaultdb").render_as_string(hide_password=False)
 
 
 def _reset_database(database_url: str) -> None:
@@ -70,10 +70,10 @@ def _verify_backup_restore(database_url: str) -> None:
     engine = create_engine(_system_url(database_url), isolation_level="AUTOCOMMIT")
     with engine.connect() as connection:
         connection.execute(text(f'DROP DATABASE IF EXISTS "{restored_database}" CASCADE'))
-        connection.execute(text(f'BACKUP DATABASE "{database}" INTO \'{collection}\''))
+        connection.execute(text(f"BACKUP DATABASE \"{database}\" INTO '{collection}'"))
         connection.execute(
             text(
-                f'RESTORE DATABASE "{database}" FROM LATEST IN \'{collection}\' '
+                f"RESTORE DATABASE \"{database}\" FROM LATEST IN '{collection}' "
                 f"WITH new_db_name = '{restored_database}'"
             )
         )
@@ -162,9 +162,10 @@ def test_cockroachdb_promotion_matrix() -> None:
     rollback.rollback()
     transaction.close()
     with engine.connect() as reused_connection:
-        assert reused_connection.scalar(
-            text("SELECT COUNT(*) FROM tenants WHERE id='rolled-back'")
-        ) == 0
+        assert (
+            reused_connection.scalar(text("SELECT COUNT(*) FROM tenants WHERE id='rolled-back'"))
+            == 0
+        )
     engine.dispose()
 
     _expect_integrity_error(
@@ -194,3 +195,6 @@ def test_cockroachdb_promotion_matrix() -> None:
     assert reupgrade.returncode == 0, reupgrade.stderr
 
     _verify_backup_restore(database_url)
+    engine = create_engine(database_url)
+    verify_revision_dag_contract(engine)
+    engine.dispose()

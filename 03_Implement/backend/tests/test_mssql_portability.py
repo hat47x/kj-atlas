@@ -11,6 +11,8 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 
+from tests.database_portability_contracts import verify_revision_dag_contract
+
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 TIMESTAMP = "2026-08-10T00:00:00Z"
@@ -204,3 +206,6 @@ def test_mssql_promotion_matrix() -> None:
     assert reupgrade.returncode == 0, reupgrade.stderr
 
     _verify_backup_restore(database_url)
+    engine = create_engine(database_url)
+    verify_revision_dag_contract(engine)
+    engine.dispose()

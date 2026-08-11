@@ -11,6 +11,8 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 
+from tests.database_portability_contracts import verify_revision_dag_contract
+
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 TIMESTAMP = "2026-08-10T00:00:00Z"
@@ -187,9 +189,7 @@ def test_mysql_family_promotion_matrix(database_url: str) -> None:
     transaction.close()
     with engine.connect() as reused_connection:
         assert (
-            reused_connection.scalar(
-                text("SELECT COUNT(*) FROM tenants WHERE id='rolled-back'")
-            )
+            reused_connection.scalar(text("SELECT COUNT(*) FROM tenants WHERE id='rolled-back'"))
             == 0
         )
     engine.dispose()
@@ -222,3 +222,6 @@ def test_mysql_family_promotion_matrix(database_url: str) -> None:
     assert reupgrade.returncode == 0, reupgrade.stderr
 
     _verify_backup_restore(database_url)
+    engine = create_engine(database_url)
+    verify_revision_dag_contract(engine)
+    engine.dispose()

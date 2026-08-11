@@ -24,6 +24,7 @@ from kj_atlas_api.models import (
 )
 from kj_atlas_api.tenant_context import TenantContext
 from kj_atlas_api.tenant_db_guard import apply_database_tenant_context
+from tests.database_portability_contracts import verify_revision_dag_contract
 
 
 RUN_RLS_TESTS_ENV = "KJ_ATLAS_RUN_PG_RLS_TESTS"
@@ -172,6 +173,14 @@ def test_every_tenant_data_plane_table_has_forced_write_checked_rls(
                 text(f'SELECT count(*) FROM "{table_name}"')
             ).scalar_one()
             assert visible_rows == 0, table_name
+
+
+@pytest.mark.postgres
+def test_postgres_revision_dag_portability_contract(
+    postgres_rls_engines: tuple[Engine, Engine],
+) -> None:
+    admin_engine, _runtime_engine = postgres_rls_engines
+    verify_revision_dag_contract(admin_engine)
 
 
 def _seed_tenant_documents(
