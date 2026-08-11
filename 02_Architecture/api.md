@@ -534,6 +534,28 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `explanation?: string`
 - 2枚のカード間の論理的矛盾を検出する。異なる意見（単なる相違）は矛盾として扱わない。
 
+**POST** `/ai/assess-card-importance`
+
+- Request: `AssessCardImportanceRequest`
+  - `cards: CardRef[]` — カードの配列（最大100件）
+- Response: `AssessCardImportanceResponse`
+  - `assessments: CardAssessment[]`
+    - `cardId: string`
+    - `importance: "high" | "medium" | "low"`
+    - `rationale?: string`
+- カード群の中での相対的重要度を評価する。重要度は表示補助であり、スコアリングや自動フィルタリングには使用しない（反スコアリング原則）。
+
+**POST** `/ai/summarize-island-relation`
+
+- Request: `SummarizeIslandRelationRequest`
+  - `doc: DocumentV1`
+  - `islandAId: string`, `islandBId: string`
+  - `relationType: "related" | "negate" | "causal" | "mutual" | "equivalence" | "unknown"`
+  - `derived: bool`, `groundingCardIds: string[]`, `groundingEdgeIds: string[]`
+- Response: `SummarizeIslandRelationResponse`
+  - `text: string`, `groundingCardIds: string[]`, `groundingEdgeIds: string[]`, `warnings: string[]`
+- 2つの島間の関係を要約する。関係種別は5語彙（related/negate/causal/mutual/equivalence）から選ぶ。
+
 **POST** `/ai/suggest-document-title`
 
 - Request: `SuggestDocumentTitleRequest`

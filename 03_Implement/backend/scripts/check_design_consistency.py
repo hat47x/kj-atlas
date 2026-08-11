@@ -100,15 +100,60 @@ for doc_path in all_md_files:
 
 # --- 2. API endpoint references ---
 
+# Path-parameter canonicalization: {id}/{docId}/{doc_id} all refer to the
+# same resource placeholder. Normalize before comparing.
+_PARAM_TOKEN_RE = re.compile(r"\{[a-zA-Z_][a-zA-Z0-9_]*\}")
+# Concrete resource IDs (test fixtures, sample docs) normalize to {param}.
+_CONCRETE_ID_RE = re.compile(r"([a-z][a-z0-9]+(?:[-_][a-z0-9]+)+)")
+
+
+def _canonicalize_endpoint(path: str) -> str:
+    # 1. Replace {named} placeholders
+    normalized = _PARAM_TOKEN_RE.sub("{param}", path)
+    # 2. Replace concrete resource ids (e.g. e2e-qa-roundtrip) with {param}
+    normalized = _CONCRETE_ID_RE.sub("{param}", normalized)
+    # 3. Collapse repeated {param} (GET /docs/{param}/{param} -> /docs/{param})
+    while "{param}/{param}" in normalized:
+        normalized = normalized.replace("{param}/{param}", "{param}")
+    return normalized
+
+
+# Endpoints that are NOT kj-atlas's own API: external IdP/broker endpoints
+# (OAuth/OIDC/SAML) and wildcard "future" references. These must not be
+# flagged as api.md gaps.
+EXTERNAL_ENDPOINT_PREFIXES = (
+    "/login",
+    "/oauth/",
+    "/.well-known/",
+    "/saml",
+)
+WILDCARD_ENDPOINT_PATTERNS = ("/*", "/")  # trailing wildcard or bare prefix
+
+
+def _is_external_or_wildcard(path: str) -> bool:
+    if any(path.startswith(p) for p in EXTERNAL_ENDPOINT_PREFIXES):
+        return True
+    # Wildcard / future-reference forms: "/ai/*", "/context/*", "POST /ai/"
+    # (bare path with no sub-resource = collection reference, not an endpoint)
+    if "*" in path:
+        return True
+    # A path that consists only of a prefix (no trailing sub-path after the
+    # last slash token) is a collection/future reference, e.g. "/ai/" or "/docs"
+    stripped = path.rstrip("/")
+    if "/" not in stripped or stripped.count("/") <= 1:
+        return True
+    return False
+
+
 print("\n=== 2. API endpoint references ===")
 if API_MD.exists():
     api_content = API_MD.read_text(encoding="utf-8")
     api_endpoints: set[str] = set()
     for match in API_ENDPOINT_RE.finditer(api_content):
-        api_endpoints.add(f"{match.group(1)} {match.group(2)}")
+        api_endpoints.add(f"{match.group(1)} {_canonicalize_endpoint(match.group(2))}")
     # Also match api.md bold format: **METHOD** `/path`
     for match in API_MD_BOLD_RE.finditer(api_content):
-        api_endpoints.add(f"{match.group(1)} {match.group(2)}")
+        api_endpoints.add(f"{match.group(1)} {_canonicalize_endpoint(match.group(2))}")
 
     for doc_path in all_md_files:
         try:
@@ -116,13 +161,18 @@ if API_MD.exists():
         except Exception:
             continue
         for match in API_ENDPOINT_RE.finditer(content):
-            ep = f"{match.group(1)} {match.group(2)}"
-            if ep not in api_endpoints:
-                # Only check design docs, not implementation code
-                if "02_Architecture" in str(doc_path) or "01_Plans" in str(doc_path):
-                    warn(f"{doc_path.relative_to(REPO_ROOT)}: references API endpoint '{ep}' not found in api.md")
+            raw_path = match.group(2)
+            ep = f"{match.group(1)} {_canonicalize_endpoint(raw_path)}"
+            if ep in api_endpoints:
+                continue
+            # Skip external IdP endpoints and wildcard future references
+            if _is_external_or_wildcard(raw_path):
+                continue
+            # Only check design docs, not implementation code
+            if "02_Architecture" in str(doc_path) or "01_Plans" in str(doc_path):
+                warn(f"{doc_path.relative_to(REPO_ROOT)}: references API endpoint '{ep}' not found in api.md")
 
-    print(f"  Found {len(api_endpoints)} endpoints in api.md")
+    print(f"  Found {len(api_endpoints)} canonical endpoints in api.md")
 else:
     warn("api.md not found — skipping API check")
 
