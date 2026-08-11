@@ -36,6 +36,7 @@ class IssueMemo:
     source_issue: str
     related_refs: tuple[str, ...]
     dependency_paths: tuple[str, ...]
+    dependency_adr_ids: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -112,6 +113,21 @@ def extract_dependency_paths(lines: list[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(refs))
 
 
+def extract_dependency_adr_ids(lines: list[str]) -> tuple[str, ...]:
+    in_dependencies = False
+    refs: list[str] = []
+    for line in lines:
+        if DEPENDENCY_HEADING_RE.match(line.strip()):
+            in_dependencies = True
+            continue
+        if in_dependencies and SECTION_RE.match(line.strip()):
+            break
+        if in_dependencies:
+            for value in BACKTICK_RE.findall(line):
+                refs.extend(re.findall(r"ADR-\d{4}", value))
+    return tuple(dict.fromkeys(refs))
+
+
 def parse_issue(path: Path) -> IssueMemo:
     lines = read_header_lines(path)
     title = lines[0].lstrip("# ").strip() if lines else path.stem
@@ -135,6 +151,7 @@ def parse_issue(path: Path) -> IssueMemo:
         source_issue=meta.get("Source Issue", "N/A"),
         related_refs=related_refs,
         dependency_paths=dependency_paths,
+        dependency_adr_ids=extract_dependency_adr_ids(lines),
     )
 
 
@@ -178,8 +195,11 @@ def parse_adr(path: Path) -> AdrRecord:
     )
 
 
-def build_actionable_issues(issues: list[IssueMemo], root: Path) -> list[ActionableIssue]:
+def build_actionable_issues(
+    issues: list[IssueMemo], adrs: list[AdrRecord], root: Path
+) -> list[ActionableIssue]:
     issue_by_path = {issue.path: issue for issue in issues}
+    adr_by_id = {adr.adr_id: adr for adr in adrs}
     dependents: dict[str, list[str]] = {issue.path: [] for issue in issues}
     for issue in issues:
         for dep_path in issue.dependency_paths:
@@ -214,6 +234,10 @@ def build_actionable_issues(issues: list[IssueMemo], root: Path) -> list[Actiona
             dep_issue = issue_by_path.get(dep_path)
             if dep_issue and dep_issue.path != issue.path and dep_issue.status != "Done":
                 blockers.append(f"{dep_issue.backlog_id}:{dep_issue.status}")
+        for adr_id in issue.dependency_adr_ids:
+            dep_adr = adr_by_id.get(adr_id)
+            if dep_adr is not None and dep_adr.status != "Accepted":
+                blockers.append(f"{adr_id}:{dep_adr.status}")
         ready = issue.status != "Draft" and not blockers
         classification = "Ready" if ready else "Blocked"
         actionable.append(
@@ -225,7 +249,7 @@ def build_actionable_issues(issues: list[IssueMemo], root: Path) -> list[Actiona
                 owner=issue.owner,
                 ready=ready,
                 blockers=tuple(blockers),
-                depends_on=issue.dependency_paths,
+                depends_on=issue.dependency_paths + issue.dependency_adr_ids,
                 unlocks=tuple(sorted(dependents.get(issue.path, []))),
                 classification=classification,
                 dependency_stage=dependency_stage(issue.path),
@@ -274,6 +298,7 @@ def collect(root: Path) -> dict[str, object]:
     adrs = [parse_adr(path) for path in adr_files]
     errors: list[TriageError] = []
     known_issue_paths = {issue.path for issue in issues}
+    known_adr_ids = {adr.adr_id for adr in adrs}
     for issue in issues:
         if issue.status == "Unknown":
             errors.append(TriageError(path=issue.path, reason="missing Status metadata"))
@@ -284,7 +309,12 @@ def collect(root: Path) -> dict[str, object]:
         for dep in issue.dependency_paths:
             if dep not in known_issue_paths:
                 errors.append(TriageError(path=issue.path, reason=f"dependency path not found: {dep}"))
-    actionable_issues = build_actionable_issues(issues, root)
+        for adr_id in issue.dependency_adr_ids:
+            if adr_id not in known_adr_ids:
+                errors.append(
+                    TriageError(path=issue.path, reason=f"dependency ADR not found: {adr_id}")
+                )
+    actionable_issues = build_actionable_issues(issues, adrs, root)
     actionable_adrs = build_actionable_adrs(adrs, issues)
     return {
         "actionable_issues": [asdict(item) for item in actionable_issues],

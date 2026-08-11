@@ -88,6 +88,72 @@ class TriageActionablePlansTest(unittest.TestCase):
             [{"path": "issues/issue-invalid.md", "reason": "invalid Status metadata: Draft (waiting)"}],
         )
 
+    def test_proposed_dependency_adr_blocks_issue_until_accepted(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "adr").mkdir()
+            (root / "issues").mkdir()
+            issue = root / "issues" / "issue-AAA-01-adr-blocked.md"
+            issue.write_text(textwrap.dedent("""\
+                # Issue: AAA-01
+                - Type: Contract
+                - Status: Open
+                - Source Issue: N/A
+                - Priority: P1
+                - Owner: Unassigned
+                - Related ADR/Spec: `ADR-9999`
+                - Expected verification level: `unit`
+
+                ## 依存関係
+                - `01_Plans/adr/ADR-9999-sample.md`（採択が前提）
+            """), encoding="utf-8")
+            adr = root / "adr" / "ADR-9999-sample.md"
+            adr.write_text(textwrap.dedent("""\
+                # ADR-9999: sample
+                - Status: Proposed
+                - Date: 2026-08-11
+                - Deciders: Maintainer
+            """), encoding="utf-8")
+
+            proposed_report = MODULE.collect(root)
+            adr.write_text(adr.read_text(encoding="utf-8").replace(
+                "Status: Proposed", "Status: Accepted"
+            ), encoding="utf-8")
+            accepted_report = MODULE.collect(root)
+
+        proposed = proposed_report["actionable_issues"][0]
+        self.assertFalse(proposed["ready"])
+        self.assertEqual(proposed["blockers"], ("ADR-9999:Proposed",))
+        self.assertIn("ADR-9999", proposed["depends_on"])
+        self.assertTrue(accepted_report["actionable_issues"][0]["ready"])
+
+    def test_missing_dependency_adr_is_a_triage_error(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "adr").mkdir()
+            (root / "issues").mkdir()
+            (root / "issues" / "issue-AAA-01-missing-adr.md").write_text(
+                textwrap.dedent("""\
+                    # Issue: AAA-01
+                    - Status: Open
+                    - Priority: P1
+
+                    ## Dependencies
+                    - `ADR-9999-missing.md`
+                """),
+                encoding="utf-8",
+            )
+
+            report = MODULE.collect(root)
+
+        self.assertIn(
+            {
+                "path": "issues/issue-AAA-01-missing-adr.md",
+                "reason": "dependency ADR not found: ADR-9999",
+            },
+            report["errors"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

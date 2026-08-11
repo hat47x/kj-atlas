@@ -421,3 +421,10 @@ Updated: 2026-08-03
 - 原因: 並行作業で追加されたActive issueが、docs-checkの必須metadata契約を満たしていなかった。
 - 対応: 利用者の並行変更は編集せず、本変更のHTML構造・対象issue metadata・diffを個別検証する。全体gate未通過は明記する。
 - 再発防止: docs-check失敗時は対象差分との因果をpath単位で確認し、無関係な並行変更を勝手に修正しない。
+
+## 2026-08-11: 完了issueへ非canonicalなResolved statusを使用
+
+- 事象: `DX-TRIAGE-ADR-GATE-01`を`Status: Resolved`で起票し、triageがinvalid statusとして停止した。
+- 原因: 既存の古いissue表現を踏襲し、現行canonical status一覧を起票前に確認しなかった。
+- 対応: 完了状態を`Done`へ修正し、triageとdocs-checkを再実行した。
+- 再発防止: 新規issueは`issue_memo_status.py`のcanonical statusを確認し、作成直後にtriageを通す。
