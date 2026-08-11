@@ -83,3 +83,18 @@ def test_canonical_support_matrix_lists_every_registered_backend_once() -> None:
             matrix,
         )
         assert len(rows) == 1, support.backend
+
+
+def test_public_configuration_delegates_database_support_to_canonical_matrix() -> None:
+    configuration = (
+        REPO_ROOT / "04_Documentation" / "configuration.md"
+    ).read_text(encoding="utf-8")
+    database_url_row = next(
+        line
+        for line in configuration.splitlines()
+        if line.startswith("| `KJ_ATLAS_DATABASE_URL` |")
+    )
+
+    assert "../02_Architecture/database_portability.md" in database_url_row
+    assert "正式対応はSQLite/PostgreSQL" not in database_url_row
+    assert "MySQL/MariaDB等の候補DB" not in database_url_row
