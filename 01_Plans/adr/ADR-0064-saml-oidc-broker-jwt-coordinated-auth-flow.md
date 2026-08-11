@@ -181,6 +181,8 @@ Level 2 mock IdP に以下を追加する：
 - SAML 顧客は Broker の SAML→OIDC 変換を通じて kj-atlas を利用できる。
 - OAuth 2.0 ログインフローは kj-atlas 本体に実装されず、Broker が担当する。
 - フロントエンドは最小限の認証状態管理（リダイレクト + JWT 保持）で済む。
+- SPAへ返すのは短命access tokenだけとし、module memoryにのみ保持する。`sessionStorage` / `localStorage`へtokenを保存せず、reload後は再認証する。refresh token grantと`refresh_token`応答はSPA clientで無効にする。
+- tenant-session cookieは`HttpOnly; SameSite=Strict; Path=/`とし、`local-dev`以外では`Secure`を必須にする。ログアウトでは同じ属性とpathで失効させる。
 
 ## Non-goals
 

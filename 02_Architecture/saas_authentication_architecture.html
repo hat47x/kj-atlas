@@ -103,9 +103,9 @@ sequenceDiagram
     Frontend->>Broker: POST /oauth/token<br/>grant_type=authorization_code&code=AUTH_CODE&<br/>code_verifier=...&client_id=...
 
     Broker->>Broker: PKCE検証: SHA256(verifier) == challenge
-    Broker->>Frontend: { access_token: JWT, refresh_token: RT }
+    Broker->>Frontend: { access_token: short-lived JWT }
 
-    Frontend->>Frontend: storeTokens(JWT, RT)
+    Frontend->>Frontend: keep JWT in module memory only
 
     Frontend->>Backend: GET /docs/{id}<br/>X-Kj-Atlas-Authorization: Bearer JWT<br/>Kj-Atlas-Tenant-Session-Version: ...
 
@@ -225,7 +225,7 @@ sequenceDiagram
 <tr><th>Level</th><th>内容</th><th>テスト数</th><th>状態</th></tr>
 <tr><td>0 (unit)</td><td>JWT resolver, JWKS store, tenant resolver, session persister</td><td>42</td><td class="status-ok">✅</td></tr>
 <tr><td>1 (HTTP E2E)</td><td>JWT → tenant isolation (10), OAuth login → API (11), coordinated flow (6)</td><td>27</td><td class="status-ok">✅</td></tr>
-<tr><td>2 (mock login)</td><td>OAuth 2.0 + PKCE + refresh + logout + UserInfo + OIDC Discovery</td><td>11</td><td class="status-ok">✅</td></tr>
+<tr><td>2 (mock login)</td><td>OAuth 2.0 + PKCE + refresh-token rejection + logout + UserInfo + OIDC Discovery</td><td>11</td><td class="status-ok">✅</td></tr>
 <tr><td>3 (broker E2E)</td><td>実 Keycloak + kj-atlas 統合テスト</td><td>—</td><td class="status-pending">📋 Phase 2</td></tr>
 <tr><td>4 (external IdP)</td><td>Google / Azure AD / SAML IdP 連携</td><td>—</td><td class="status-pending">📋 Phase 2</td></tr>
 <tr><td>Playwright</td><td>マルチタブテナント切替, bfcache, auth-required, stale 409</td><td>8</td><td class="status-ok">✅</td></tr>

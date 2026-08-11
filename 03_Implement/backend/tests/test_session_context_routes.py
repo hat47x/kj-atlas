@@ -11,7 +11,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from kj_atlas_api.access_control import AuthContext
-from kj_atlas_api.active_tenant_session import TenantSessionChangedError
+from kj_atlas_api.active_tenant_session import (
+    InMemoryActiveTenantSessionPersister,
+    TenantSessionChangedError,
+)
 from kj_atlas_api.auth_context import ResolvedIdentity
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
@@ -354,6 +357,34 @@ def test_bootstrap_policy_is_closed_when_the_server_profile_is_invalid(tmp_path)
     assert response.headers["cache-control"] == "no-store"
     assert response.headers["pragma"] == "no-cache"
     assert "shared-production" not in response.text
+
+
+def test_logout_expires_secure_tenant_session_cookie_without_jwt(tmp_path) -> None:
+    with _session_client(tmp_path) as fixture:
+        client, _, _, _, _ = fixture
+        original = client.app.state.active_tenant_session_persister
+        try:
+            client.app.state.active_tenant_session_persister = (
+                InMemoryActiveTenantSessionPersister(secure_cookie=True)
+            )
+            client.cookies.set(
+                "Kj-Atlas-Tenant-Session-Version",
+                "presented-version",
+            )
+            response = client.post("/session/logout")
+        finally:
+            client.app.state.active_tenant_session_persister = original
+
+    assert response.status_code == 204
+    cookie = response.headers["set-cookie"]
+    assert "Kj-Atlas-Tenant-Session-Version=" in cookie
+    assert "Max-Age=0" in cookie
+    assert "HttpOnly" in cookie
+    assert "Secure" in cookie
+    assert "SameSite=strict" in cookie
+    assert "Path=/" in cookie
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["pragma"] == "no-cache"
 
 
 def test_context_returns_only_allowlisted_tenants_and_trusted_capabilities(tmp_path) -> None:

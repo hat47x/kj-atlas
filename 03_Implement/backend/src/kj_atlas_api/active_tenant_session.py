@@ -39,8 +39,7 @@ class ActiveTenantSessionPersister(Protocol):
         request: Request,
         principal_id: str,
         active_tenant: TenantContext,
-    ) -> str:
-        ...
+    ) -> str: ...
 
     def persist(
         self,
@@ -51,8 +50,9 @@ class ActiveTenantSessionPersister(Protocol):
         previous_tenant: TenantContext,
         selected_tenant: TenantContext,
         expected_tenant_session_version: str,
-    ) -> str:
-        ...
+    ) -> str: ...
+
+    def clear(self, *, request: Request, response: Response) -> None: ...
 
 
 def canonical_tenant_session_version(value: object) -> str:
@@ -110,7 +110,9 @@ def resolve_active_tenant_session_version(
     except HTTPException:
         raise
     except Exception:
-        logger.warning("active tenant session persister raised resolving current version", exc_info=True)
+        logger.warning(
+            "active tenant session persister raised resolving current version", exc_info=True
+        )
         raise _session_context_unavailable() from None
 
 
@@ -173,6 +175,11 @@ def _new_session_version() -> str:
             return candidate
 
 
+def tenant_session_cookie_is_secure(runtime_profile: str) -> bool:
+    """Only the explicitly local HTTP profile may emit a non-Secure cookie."""
+    return runtime_profile.strip().lower() != "local-dev"
+
+
 class InMemoryActiveTenantSessionPersister:
     """ADR-0063 D9-6: thread-safe in-memory session persister for saas-multitenant.
 
@@ -192,9 +199,10 @@ class InMemoryActiveTenantSessionPersister:
 
     _COOKIE_KEY = "Kj-Atlas-Tenant-Session-Version"
 
-    def __init__(self) -> None:
+    def __init__(self, *, secure_cookie: bool = False) -> None:
         self._sessions: dict[str, str] = {}
         self._lock = Lock()
+        self._secure_cookie = secure_cookie
 
     def current_version(
         self,
@@ -241,9 +249,7 @@ class InMemoryActiveTenantSessionPersister:
             if current is not None and not hmac.compare_digest(
                 current, expected_tenant_session_version
             ):
-                raise TenantSessionChangedError(
-                    "tenant session version mismatch"
-                )
+                raise TenantSessionChangedError("tenant session version mismatch")
             # Validate before mutating server state or issuing the cookie. This
             # keeps a faulty future generator from persisting a poison version.
             new_version = canonical_tenant_session_version(_new_session_version())
@@ -253,7 +259,48 @@ class InMemoryActiveTenantSessionPersister:
                 key=self._COOKIE_KEY,
                 value=new_version,
                 httponly=True,
+                secure=self._secure_cookie,
                 samesite="strict",
                 max_age=3600,
+                path="/",
             )
             return new_version
+
+    def clear(self, *, request: Request, response: Response) -> None:
+        """Invalidate a presented version and expire its browser binding."""
+        cookie_version = request.cookies.get(self._COOKIE_KEY)
+        if cookie_version:
+            with self._lock:
+                matching_principals = [
+                    principal_id
+                    for principal_id, version in self._sessions.items()
+                    if hmac.compare_digest(cookie_version, version)
+                ]
+                for principal_id in matching_principals:
+                    del self._sessions[principal_id]
+        response.delete_cookie(
+            key=self._COOKIE_KEY,
+            httponly=True,
+            secure=self._secure_cookie,
+            samesite="strict",
+            path="/",
+        )
+
+
+def clear_active_tenant_session_cookie(*, request: Request, response: Response) -> None:
+    persister = getattr(request.app.state, "active_tenant_session_persister", None)
+    if persister is None:
+        raise _active_tenant_update_unavailable()
+    try:
+        cast(ActiveTenantSessionPersister, persister).clear(
+            request=request,
+            response=response,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.warning(
+            "active tenant session persister raised clearing cookie",
+            exc_info=True,
+        )
+        raise _active_tenant_update_unavailable() from None

@@ -1,7 +1,7 @@
 # Issue: SEC-TOKEN-STORAGE-01 セッションCookieにSecure欠落、refresh tokenをsessionStorageへ保持
 
 - Type: Security
-- Status: Open
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Unassigned
@@ -68,14 +68,22 @@ if (...) {
 
 ## 受入条件
 
-- [ ] AC-1: セッション Cookie が `Secure` と `path` を持ち、`local-dev` 以外で `Secure` が必ず有効であることを unit テストで固定する。
-- [ ] AC-2: トークン保存方式が決定され、実装と `ADR-0064` の記述が一致している。
-- [ ] AC-3: refresh token が（採択方式に応じて）JS から読めない、または発行されないことをテストで固定する。
-- [ ] AC-4: `THREAT_MODEL.md` に XSS 時のトークン奪取リスクと緩和策を記載する。
-- [ ] AC-5: ログアウト時にトークン・Cookie が確実に破棄されることを確認する。
+- [x] AC-1: セッション Cookie が `Secure` と `path` を持ち、`local-dev` 以外で `Secure` が必ず有効であることを unit テストで固定する。
+- [x] AC-2: トークン保存方式が決定され、実装と `ADR-0064` の記述が一致している。
+- [x] AC-3: refresh token が（採択方式に応じて）JS から読めない、または発行されないことをテストで固定する。
+- [x] AC-4: `THREAT_MODEL.md` に XSS 時のトークン奪取リスクと緩和策を記載する。
+- [x] AC-5: ログアウト時にトークン・Cookie が確実に破棄されることを確認する。
 
 ## 検証
 
 - `python -m pytest tests/test_active_tenant_session_persister.py -q`
 - frontend: `npx vitest run src/session/` および `npx tsc --noEmit -p .`
 - `python -m pytest tests/test_saas_oauth_login_e2e.py -q`
+
+## 完了記録（2026-08-11）
+
+- ADR-0064どおり、短命access tokenをmodule memoryだけに保持する方式へ戻した。browser storageへのtoken保存とrefresh token APIを削除し、想定外の`refresh_token`応答はaccess tokenごと拒否する。
+- mock brokerのSPA clientはauthorization-code grantだけを公開し、refresh tokenを発行しない。
+- tenant-session cookieは`HttpOnly; SameSite=Strict; Path=/`を明示し、`local-dev`以外で`Secure`を必須化した。
+- `POST /session/logout`はlive JWTなしで、提示されたopaque versionのserver-side bindingとbrowser cookieをともに失効する。
+- 検証: backend対象77件成功、frontend 237 files / 1421 tests成功、TypeScript typecheck成功、ruff成功、docs-check成功。

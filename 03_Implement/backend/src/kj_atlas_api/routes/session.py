@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from kj_atlas_api.active_tenant_session import (
     MAX_TENANT_SESSION_VERSION_LENGTH,
+    clear_active_tenant_session_cookie,
     persist_active_tenant_selection,
     require_current_tenant_session_version,
 )
@@ -91,10 +92,7 @@ def _session_response(request_session: TenantSessionContext) -> TenantSessionCon
     session_response = TenantSessionContextResponse(
         principalId=request_session.principal_id,
         activeTenant=_tenant_summary(request_session.active_tenant),
-        availableTenants=[
-            _tenant_summary(tenant)
-            for tenant in request_session.available_tenants
-        ],
+        availableTenants=[_tenant_summary(tenant) for tenant in request_session.available_tenants],
         effectiveCapabilities=list(request_session.effective_capabilities),
         capabilityVersion=request_session.capability_version,
         tenantSessionVersion=request_session.tenant_session_version,
@@ -139,6 +137,14 @@ def get_session_bootstrap_policy(
         ) from None
     response.headers.update(no_cache_headers)
     return policy
+
+
+@router.post("/logout", status_code=204)
+def logout_session(request: Request, response: Response) -> None:
+    """Expire the app tenant-session cookie without requiring a live JWT."""
+    clear_active_tenant_session_cookie(request=request, response=response)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
 
 
 @router.get("/context", response_model=TenantSessionContextResponse)

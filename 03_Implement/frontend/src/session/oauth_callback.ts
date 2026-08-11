@@ -101,21 +101,22 @@ export async function handleOAuthCallback(): Promise<OAuthCallbackResult> {
     const data: unknown = await response.json();
     const tokenData = data as Record<string, unknown>;
 
+    // The authorization code is single-use but still must not remain in the
+    // address bar or browser history after the broker accepted it.
+    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+    window.history.replaceState(null, "", cleanUrl);
+
     if (typeof tokenData.access_token !== "string") {
       return { handled: true, error: "oauth_invalid_token_response" };
     }
 
+    if ("refresh_token" in tokenData) {
+      return { handled: true, error: "oauth_refresh_token_not_allowed" };
+    }
+
     storeTokens({
       accessToken: tokenData.access_token as string,
-      refreshToken:
-        typeof tokenData.refresh_token === "string"
-          ? (tokenData.refresh_token as string)
-          : undefined,
     });
-
-    // Clean up the URL — remove OAuth params without reloading.
-    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
-    window.history.replaceState(null, "", cleanUrl);
 
     return { handled: true };
   } catch {

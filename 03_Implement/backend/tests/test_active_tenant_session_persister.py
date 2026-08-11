@@ -10,6 +10,7 @@ from kj_atlas_api.active_tenant_session import (
     TenantSessionChangedError,
     _new_session_version,
     canonical_tenant_session_version,
+    tenant_session_cookie_is_secure,
 )
 from kj_atlas_api.tenant_context import TenantContext
 from tests.conftest import fake_request, fake_response
@@ -27,6 +28,22 @@ def test_generated_session_versions_are_always_canonical() -> None:
     for _ in range(200_000):
         version = _new_session_version()
         assert canonical_tenant_session_version(version) == version
+
+
+@pytest.mark.parametrize(
+    ("runtime_profile", "expected"),
+    [
+        ("local-dev", False),
+        ("evaluation", True),
+        ("enterprise-production", True),
+        ("saas-multitenant", True),
+    ],
+)
+def test_secure_cookie_policy_is_local_dev_only(
+    runtime_profile: str,
+    expected: bool,
+) -> None:
+    assert tenant_session_cookie_is_secure(runtime_profile) is expected
 
 
 class TestInMemoryActiveTenantSessionPersister:
@@ -76,6 +93,62 @@ class TestInMemoryActiveTenantSessionPersister:
         )
         assert new_version != expected
         assert canonical_tenant_session_version(new_version) == new_version
+
+    @pytest.mark.parametrize(
+        ("secure_cookie", "secure_fragment"),
+        [(False, ""), (True, "; Secure")],
+    )
+    def test_persist_sets_scoped_security_cookie_attributes(
+        self,
+        secure_cookie: bool,
+        secure_fragment: str,
+    ) -> None:
+        persister = InMemoryActiveTenantSessionPersister(
+            secure_cookie=secure_cookie,
+        )
+        expected = persister.current_version(
+            request=fake_request(),
+            principal_id="user-1",
+            active_tenant=_tenant_ctx("tenant-a"),
+        )
+        response = fake_response()
+
+        persister.persist(
+            request=fake_request(),
+            response=response,
+            principal_id="user-1",
+            previous_tenant=_tenant_ctx("tenant-a"),
+            selected_tenant=_tenant_ctx("tenant-b"),
+            expected_tenant_session_version=expected,
+        )
+
+        cookie = response.headers["set-cookie"]
+        assert "HttpOnly" in cookie
+        assert "SameSite=strict" in cookie
+        assert "Path=/" in cookie
+        assert ("; Secure" in cookie) is bool(secure_fragment)
+
+    def test_clear_invalidates_server_version_and_matches_cookie_scope(self) -> None:
+        persister = InMemoryActiveTenantSessionPersister(secure_cookie=True)
+        version = persister.current_version(
+            request=fake_request(),
+            principal_id="user-1",
+            active_tenant=_tenant_ctx(),
+        )
+        response = fake_response()
+        request = fake_request()
+        request._cookies = {persister._COOKIE_KEY: version}
+
+        persister.clear(request=request, response=response)
+
+        assert "user-1" not in persister._sessions
+        cookie = response.headers["set-cookie"]
+        assert "Kj-Atlas-Tenant-Session-Version=" in cookie
+        assert "Max-Age=0" in cookie
+        assert "HttpOnly" in cookie
+        assert "Secure" in cookie
+        assert "SameSite=strict" in cookie
+        assert "Path=/" in cookie
 
     def test_persist_rejects_wrong_expected_version(self) -> None:
         persister = InMemoryActiveTenantSessionPersister()
@@ -159,6 +232,4 @@ class TestInMemoryActiveTenantSessionPersister:
             )
 
         assert persister._sessions["user-1"] == expected
-        assert "Kj-Atlas-Tenant-Session-Version" not in response.headers.get(
-            "set-cookie", ""
-        )
+        assert "Kj-Atlas-Tenant-Session-Version" not in response.headers.get("set-cookie", "")

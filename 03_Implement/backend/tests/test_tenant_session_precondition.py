@@ -194,6 +194,7 @@ _UNGUARDED_ROUTE_EXEMPTIONS: dict[tuple[str, str], str] = {
     ("GET", "/ai/provider-status"): _NO_TENANT_RESOURCE,
     ("POST", "/admin/provision/hil-rs/a2a3-gate:validate"): _NO_TENANT_RESOURCE,
     ("GET", "/session/bootstrap-policy"): _NO_TENANT_RESOURCE,
+    ("POST", "/session/logout"): _NO_TENANT_RESOURCE,
     ("POST", "/admin/provision/users"): _SAAS_SURFACE_BLOCKED,
     # ADR-0063/0064: Platform Control Plane — IdP registration is an admin
     # operation, not a tenant-scoped resource.

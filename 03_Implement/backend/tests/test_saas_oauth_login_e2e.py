@@ -498,7 +498,7 @@ class TestOAuthLoginE2E:
             assert "jwks_uri" in meta
 
     # ------------------------------------------------------------------
-    # ADR-0064: logout and refresh token
+    # ADR-0064: logout and browser-safe token grant
     # ------------------------------------------------------------------
 
     def test_logout_clears_session(self) -> None:
@@ -536,16 +536,13 @@ class TestOAuthLoginE2E:
             assert "after-logout" in r.headers["location"]
             assert "state=abc123" in r.headers["location"]
 
-    def test_refresh_token_grants_new_access_token(self) -> None:
-        """Refresh token grant returns a new access token."""
+    def test_refresh_token_grant_is_not_supported(self) -> None:
+        """The SPA client is not issued a browser-readable long-lived token."""
         with TestClient(mock_idp_app) as idp_client:
-            # Exchange refresh token directly.
             r = idp_client.post("/oauth/token", data={
                 "grant_type": "refresh_token",
                 "refresh_token": "any-opaque-refresh-token",
                 "client_id": "mock-client",
             })
-            assert r.status_code == 200, f"Refresh failed: {r.status_code} {r.text}"
-            data = r.json()
-            assert "access_token" in data
-            assert "refresh_token" in data
+            assert r.status_code == 400
+            assert r.json()["detail"] == "unsupported grant_type"

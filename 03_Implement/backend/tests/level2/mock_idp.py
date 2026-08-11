@@ -146,7 +146,7 @@ def openid_configuration() -> dict[str, object]:
         "userinfo_endpoint": f"{_MOCK_BASE}/oauth/userinfo",
         "jwks_uri": f"{_MOCK_BASE}/jwks.json",
         "response_types_supported": ["code"],
-        "grant_types_supported": ["authorization_code", "refresh_token"],
+        "grant_types_supported": ["authorization_code"],
         "subject_types_supported": ["public"],
         "id_token_signing_alg_values_supported": ["RS256"],
         "scopes_supported": ["openid", "profile", "email"],
@@ -291,9 +291,7 @@ def authorize_page(
     """Mock consent page. Displays requested scopes and forwards PKCE params."""
     challenge_info = ""
     if code_challenge:
-        challenge_info = (
-            f"<li>PKCE: S256 (challenge: {code_challenge[:20]}...)</li>"
-        )
+        challenge_info = f"<li>PKCE: S256 (challenge: {code_challenge[:20]}...)</li>"
 
     return f"""<!DOCTYPE html>
 <html><head><title>Mock IdP — Authorize</title></head>
@@ -314,8 +312,8 @@ def authorize_page(
   <input type="hidden" name="state" value="{state}">
   <input type="hidden" name="username" value="{username}">
   <input type="hidden" name="tenant_ref" value="{tenant_ref}">
-  <input type="hidden" name="code_challenge" value="{code_challenge or ''}">
-  <input type="hidden" name="code_challenge_method" value="{code_challenge_method or ''}">
+  <input type="hidden" name="code_challenge" value="{code_challenge or ""}">
+  <input type="hidden" name="code_challenge_method" value="{code_challenge_method or ""}">
   <button type="submit" name="approve" value="true">Approve</button>
   <button type="submit" name="deny" value="true">Deny</button>
 </form>
@@ -373,19 +371,8 @@ def token_exchange(
     redirect_uri: str = Form(f"{_MOCK_BASE}/callback"),
     client_id: str = Form("mock-client"),
     code_verifier: str | None = Form(None),
-    refresh_token: str | None = Form(None),
 ) -> dict[str, object]:
-    """Exchange authorization code (or refresh token) for JWT."""
-    # Refresh token grant.
-    if grant_type == "refresh_token":
-        if not refresh_token:
-            raise HTTPException(status_code=400, detail="missing_refresh_token")
-        result = _issue_jwt(provider=client_id, claims={
-            "sub": "mock-user", "tenant_ref": "mock-org",
-        })
-        result["refresh_token"] = secrets.token_urlsafe(48)
-        return result
-
+    """Exchange an authorization code for a short-lived JWT."""
     if grant_type != "authorization_code":
         raise HTTPException(status_code=400, detail="unsupported grant_type")
 
@@ -419,7 +406,6 @@ def token_exchange(
     }
     result = _issue_jwt(provider=str(pending["client_id"]), claims=claims)
     result["scope"] = pending.get("scope", "openid")
-    result["refresh_token"] = secrets.token_urlsafe(48)
     return result
 
 
@@ -442,7 +428,8 @@ def logout(
     if post_logout_redirect_uri:
         params = f"?state={state}" if state else ""
         response: object = RedirectResponse(
-            url=f"{post_logout_redirect_uri}{params}", status_code=302,
+            url=f"{post_logout_redirect_uri}{params}",
+            status_code=302,
         )
     else:
         response = HTMLResponse(
@@ -468,7 +455,9 @@ def userinfo(request: Request) -> dict[str, object]:
 
     try:
         unverified: dict[str, object] = jwt.decode(
-            token, options={"verify_signature": False}, algorithms=["RS256"],
+            token,
+            options={"verify_signature": False},
+            algorithms=["RS256"],
         )
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="invalid_token") from None

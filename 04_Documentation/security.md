@@ -62,6 +62,12 @@ curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 
 > 注意: 標準 Docker Compose はこのキーをホスト環境から pass-through 配送します（ホスト側で未設定の場合はコンテナ内でも未設定のままで、既定の無効状態を維持します。[runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照）。
 
+## ブラウザ認証トークン
+
+SaaS認証では、短命のaccess tokenを画面の実行中メモリだけに保持します。`localStorage`や`sessionStorage`には保存せず、画面を再読み込みした場合はbrokerで再認証します。SPA用clientではrefresh tokenを発行しないでください。想定外にrefresh tokenを含む応答を受け取った場合、画面はそのtoken応答全体を拒否します。
+
+tenant-session cookieはHttpOnly・SameSite=Strictで、`local-dev`以外ではSecureです。ログアウト処理ではaccess tokenのメモリ状態とtenant-session cookieの両方を破棄してください。XSS対策は引き続き必要ですが、browser storageへ長期資格情報を残さないことで、攻撃後の再利用可能時間を短くします。
+
 ## SafeMode の画面確認
 
 share/export の前は、「共有と再現」パネルの `共有前チェック` で SafeMode、公開範囲、未レビュー情報、出力形式を確認します。SafeMode が有効な状態では、export/share コンテキストで機微テキストをマスクすること、固定マスク対象を無効化できないこと、未レビューのドラフトを含めないことが画面上に示されます。

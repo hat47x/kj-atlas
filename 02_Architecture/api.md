@@ -899,6 +899,9 @@ export type AdminAgentRegistrationSummary = {
   - 認証session固有の保存形式、versionの原子的更新、anti-forgery検証はtrusted auth edgeが注入する`active_tenant_session_persister`の責務とする。persisterへはraw tenant値ではなく、server検証済みprincipal、旧TenantContext、旧version、選択済みTenantContextだけを渡し、成功時に新versionを返させる。
   - session adapter欠損・現versionの欠損／不正は`503 session_context_unavailable`、原子的な更新時の予期しない保存障害や同値／不正な新versionは`503 active_tenant_update_unavailable`として値を反射せず閉じ、保存前にresponse sizeとclosed-world契約を検証する。trusted adapterによるanti-forgery拒否はその拒否status/codeを維持する。
   - 不明tenant、他利用者のtenant、停止membershipは存在を推測させない`404`相当とする。
+- `POST /session/logout`
+  - live JWTを要求せず、提示されたopaque session versionのserver-side bindingを失効したうえで、`Kj-Atlas-Tenant-Session-Version` cookieを発行時と同じ`Path=/`、`HttpOnly`、`SameSite=Strict`、profile依存`Secure`属性で失効する。期限切れJWTがlogoutを妨げないよう、tenantやprincipalの解決は行わない。
+  - responseは`204`、`Cache-Control: no-store`、`Pragma: no-cache`とする。frontendはこの呼出しの成否にかかわらずmodule memory上のaccess tokenを破棄する。
 
 ```ts
 export type TenantSessionBootstrapPolicyV1 = {

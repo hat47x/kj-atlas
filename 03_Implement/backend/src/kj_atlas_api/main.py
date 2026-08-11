@@ -116,6 +116,7 @@ app = FastAPI(title="kj-atlas API", lifespan=lifespan)
 if settings.runtime_profile == "saas-multitenant":
     from kj_atlas_api.active_tenant_session import (
         InMemoryActiveTenantSessionPersister,
+        tenant_session_cookie_is_secure,
     )
     from kj_atlas_api.jwks_store import JwksStore
     from kj_atlas_api.tenant_context import ClaimBasedTenantContextResolver
@@ -132,7 +133,11 @@ if settings.runtime_profile == "saas-multitenant":
                 jwks_store=JwksStore(),
             ),
             tenant_context_resolver=ClaimBasedTenantContextResolver(),
-            active_tenant_session_persister=InMemoryActiveTenantSessionPersister(),
+            active_tenant_session_persister=InMemoryActiveTenantSessionPersister(
+                secure_cookie=tenant_session_cookie_is_secure(
+                    settings.runtime_profile,
+                ),
+            ),
         ),
     )
 
