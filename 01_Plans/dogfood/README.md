@@ -11,7 +11,7 @@ kj-atlas を使った kj-atlas 開発プロセスの管理。ADR-0042（ドッ�
 | `doc_kj_atlas_dogfood_r3.json` | R3 本質追求: 不整合が生まれ解消されない根本原因 | カード化完了（12C/12E/5I/1N/5E） |
 | `doc_kj_atlas_dogfood_r4.json` | R4 構想: 開発プロセスの理想像 | カード化完了（10C/10E/4I/1N） |
 | `doc_kj_atlas_dogfood_r5.json` | R5 具体策: 短期・中期・長期の3段階実行計画 | カード化完了（14C/11E/4I/1N/3E） |
-| (R6 未着手) | R6 手順: 実行順序と依存関係 | 未着手 |
+| `doc_kj_atlas_dogfood_r6.json` | R6 手順: 4フェーズ14ステップの依存関係付き実行計画 | カード化完了（14C/15E/4I/1N/2E） |
 
 ## 使い方
 
