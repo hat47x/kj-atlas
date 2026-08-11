@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-from threading import Lock
 from collections.abc import Callable
 from datetime import datetime, timezone
 
@@ -11,26 +9,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.models import JwtReplayTokenRow, SaasTenantSessionRow
-
-
-class ReplayDetectedError(Exception):
-    """The same provider-scoped JWT ID was already consumed."""
-
-
-class InMemoryReplayStore:
-    """Resolver-local test adapter; never installed by the SaaS runtime."""
-
-    def __init__(self) -> None:
-        self._seen: set[str] = set()
-        self._lock = Lock()
-
-    def record_jti(self, *, provider_id: str, jti: str, expires_at: datetime) -> None:
-        key = f"{provider_id}\0{jti}"
-        with self._lock:
-            if key in self._seen:
-                raise ReplayDetectedError
-            self._seen.add(key)
+from kj_atlas_api.models import SaasTenantSessionRow
 
 
 def _now_iso() -> str:
@@ -102,32 +81,7 @@ class DatabaseSaasAuthStateStore:
             )
             db.commit()
 
-    def record_jti(self, *, provider_id: str, jti: str, expires_at: datetime) -> None:
-        digest = hashlib.sha256(f"{provider_id}\0{jti}".encode()).hexdigest()
-        now = _now_iso()
-        with self._session_factory() as db:
-            # Permit reuse only after the prior token's verified expiry window.
-            db.execute(
-                delete(JwtReplayTokenRow).where(
-                    JwtReplayTokenRow.token_digest == digest,
-                    JwtReplayTokenRow.expires_at <= now,
-                )
-            )
-            db.add(
-                JwtReplayTokenRow(
-                    token_digest=digest,
-                    expires_at=expires_at.astimezone(timezone.utc).isoformat(),
-                    recorded_at=now,
-                )
-            )
-            try:
-                db.commit()
-            except IntegrityError:
-                db.rollback()
-                raise ReplayDetectedError from None
-
     def preflight(self) -> None:
-        """Fail startup when the shared auth tables are absent or inaccessible."""
+        """Fail startup when the shared tenant-session table is inaccessible."""
         with self._session_factory() as db:
             db.execute(select(SaasTenantSessionRow.principal_id).limit(1))
-            db.execute(select(JwtReplayTokenRow.token_digest).limit(1))

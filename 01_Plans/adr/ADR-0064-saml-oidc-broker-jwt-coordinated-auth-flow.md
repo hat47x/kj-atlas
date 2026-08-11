@@ -165,7 +165,7 @@ Level 2 mock IdP に以下を追加する：
 #### Phase 3: 本番運用準備
 
 1. ✅ `TRUSTED_PROXIES` 実装
-2. ✅ PostgreSQL共有の`DatabaseActiveTenantSessionPersister`とJWT replay ledger（2026-08-11）
+2. ✅ PostgreSQL共有の`DatabaseActiveTenantSessionPersister`（2026-08-11）。Bearer replay防御方式は`AUTH-ONE-TIME-JWT-01`で未決
 3. SCIM provisioning
 4. Audit logging for auth events
 
@@ -181,7 +181,7 @@ Level 2 mock IdP に以下を追加する：
 - SAML 顧客は Broker の SAML→OIDC 変換を通じて kj-atlas を利用できる。
 - OAuth 2.0 ログインフローは kj-atlas 本体に実装されず、Broker が担当する。
 - フロントエンドは最小限の認証状態管理（リダイレクト + JWT 保持）で済む。
-- SPA／BFFへ返すaccess tokenは短命かつ要求ごとに一意な`jti`を持つone-time credentialとし、再送や並列fetchへ同じtokenを再利用しない。browserへ渡す場合もmodule memoryだけに保持し、`sessionStorage` / `localStorage`へ保存せず、使用後またはreload後は再取得する。refresh token grantと`refresh_token`応答はSPA clientで無効にする。
+- SPAへ返す短命Bearer access tokenはmodule memoryだけに保持し、有効期間中の連続API要求へ使用できる。`sessionStorage` / `localStorage`へ保存せず、reload後は再認証する。refresh token grantと`refresh_token`応答はSPA clientで無効にする。sender-constrained replay防御は別ADRで方式決定する。
 - tenant-session cookieは`HttpOnly; SameSite=Strict; Path=/`とし、`local-dev`以外では`Secure`を必須にする。ログアウトでは同じ属性とpathで失効させる。
 
 ## Non-goals

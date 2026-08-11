@@ -408,9 +408,9 @@ Updated: 2026-08-03
 - 対応: repositoryの`.venv/bin/python -m pytest`と専用`TMPDIR`へ切り替えた。
 - 再発防止: backend検証は最初にproject venvの存在を確認し、以後すべて同じinterpreterへ固定する。
 
-## 2026-08-11: JWT jti必須化後にE2E発行fixtureが旧claim形状を維持
+## 2026-08-11: access tokenのjtiを要求単位nonceと誤認
 
-- 事象: backend全体回帰でSaaS tenant isolation、OAuth、SAML broker協調flowの16件が`invalid_token`になった。
-- 原因: resolverの`jti`必須化に対し、unit token builderだけを先に更新し、共有mock IdPとtenant isolation用JWT発行helperが`jti`を発行していなかった。
-- 対応: mock IdPとE2E helperがtokenごとに一意な`jti`を発行するよう更新した。
-- 再発防止: JWT claim contract変更時はunit builderだけでなく、mock IdP、direct token endpoint、OAuth/SAML協調E2Eを同時に検索・更新する。
+- 事象: `jti`必須化でE2E 16件が失敗し、fixtureへ`jti`を足すと同じBearer tokenを使う2要求目が`token_replayed`になった。
+- 原因: RFC 7519のaccess-token `jti`をRFC 9449の要求単位DPoP proof `jti`と混同し、通常のOAuth Bearer tokenをone-time credentialへ変更した。
+- 対応: access tokenのunique-insert replay ledgerと一回使用契約を撤回し、有効期限内の通常再利用を復元した。sender-constrained replay防御は方式決定issueへ分離した。
+- 再発防止: security claimを「防御に使える」と読むだけで実装せず、credential種別、正規clientの再利用契約、sender bindingの有無をRFCとE2Eで先に確認する。

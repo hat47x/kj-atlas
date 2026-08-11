@@ -32,7 +32,7 @@ graph TB
     end
 
     subgraph "Auth Edge (ADR-0063)"
-        TAE[trusted_auth_edge.py<br/>JWT verify + jti + tenant claim]
+        TAE[trusted_auth_edge.py<br/>Bearer JWT verify + tenant claim]
         JWKS[jwks_store.py<br/>JWKS cache + rotation]
     end
 
@@ -136,8 +136,7 @@ sequenceDiagram
     TAE->>TAE: jwt.decode(unverified peek) → iss/aud
     TAE->>JWKS: _fetch_jwks_keys(provider)
     JWKS-->>TAE: cached keys (or fresh fetch)
-    TAE->>TAE: _verify_jwt(RS256, iss, aud, exp, iat, nbf, jti)
-    TAE->>DB: record provider-scoped jti digest (unique insert)
+    TAE->>TAE: _verify_jwt(RS256, iss, aud, exp, iat, nbf)
     TAE->>TAE: _resolve_tenant_claim(tenant_ref)
     TAE-->>SRC: ResolvedIdentity + VerifiedTenantClaim
 
@@ -289,7 +288,7 @@ erDiagram
 <table>
 <tr><th>モジュール</th><th>層</th><th>責務</th><th>依存元</th></tr>
 <tr><td><code>main.py</code></td><td>Entry</td><td>FastAPI app, lifespan, 全 route 登録, SaaS bundle 配線</td><td>全 routes, trusted_saas_runtime</td></tr>
-<tr><td><code>trusted_auth_edge.py</code></td><td>Auth</td><td>JWT 検証 (RS256/ES256), aud 配列, jti replay, tenant claim 抽出, JWKS fetch</td><td>saas_request_context</td></tr>
+<tr><td><code>trusted_auth_edge.py</code></td><td>Auth</td><td>Bearer JWT 検証 (RS256/ES256), aud 配列, tenant claim 抽出, JWKS fetch</td><td>saas_request_context</td></tr>
 <tr><td><code>jwks_store.py</code></td><td>Auth</td><td>JWKS キャッシュ (600s TTL, 60s cooldown, 1800s stale)</td><td>trusted_auth_edge</td></tr>
 <tr><td><code>tenant_context.py</code></td><td>AuthZ</td><td>TenantContext 解決, claim→tenant マッピング, membership 検証</td><td>saas_request_context, routes/docs</td></tr>
 <tr><td><code>active_tenant_session.py</code></td><td>Session</td><td>セッション version 管理, cookie 発行, atomic compare-and-swap</td><td>saas_request_context, tenant_session_precondition</td></tr>

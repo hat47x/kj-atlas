@@ -61,15 +61,13 @@ profile の詳細は GitHub 上の [runtime_parameter_registry.md](https://githu
 
 `saas-multitenant` はPostgreSQLを共有ストアとして使い、APIを2プロセス以上または2レプリカ以上で運用できます。全API instanceを同じDBへ接続し、起動前に最新migrationを適用してください。テナントセッション版数と使用済みJWT IDはDBで共有されるため、sticky sessionは不要です。
 
-- Brokerが発行するaccess tokenには、一意で空でない`jti`を必須とします。
-- Bearer tokenはAPI要求ごとのone-time credentialとして扱います。同じtokenを通常操作の再送、retry、並列fetchへ再利用しないよう、Broker／BFFが要求ごとに新しい短命tokenを供給してください。
-- 現行frontend単体には要求単位token供給が未実装です。`AUTH-ONE-TIME-JWT-01`解消までは、対応するBroker／BFFを持たない構成を本番SaaSへ解禁しません。
-- JWT IDは生値ではなくprovider単位のSHA-256 digestだけを、tokenの期限とclock skewが切れるまで保持します。
+- Bearer access tokenは短命にし、署名、issuer、audience、期限を検証します。`jti`は任意であり、同じ有効tokenを通常の連続API要求へ使用できます。
+- 現行方式はsender-constrained tokenではないため、窃取されたBearer tokenそのものの再利用を検出できません。DPoP/BFF等の採否は`AUTH-ONE-TIME-JWT-01`で未決です。
 - 共有認証表が未migrationまたはDBへ接続できない場合、SaaS APIは起動に失敗します。
 - 稼働中に共有DBが利用不能になった場合、session解決・切替・JWT受理は503相当でfail-closedし、in-memory状態へfallbackしません。
 - JWKS cacheだけはinstanceごとです。安全性は変わりませんが、instance数に応じてBrokerへの取得回数が増えます。
 
-更新時はmigration完了後にAPI instanceをrolling restartし、最低2つのinstanceへ同じsession cookieと同じ`jti`を送る検証を行います。前者は同じsession versionを返し、後者は最初の1回だけ成功して以後`token_replayed`となることを確認します。
+更新時はmigration完了後にAPI instanceをrolling restartし、最低2つのinstanceが同じtenant session versionを共有できることを確認します。
 
 ## 起動
 

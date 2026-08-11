@@ -135,7 +135,6 @@ if settings.runtime_profile == "saas-multitenant":
         TrustedSaasRuntimeAdapters(
             identity_context_resolver=JwtSaasIdentityContextResolver(
                 jwks_store=JwksStore(),
-                auth_state_store=_saas_auth_state_store,
             ),
             tenant_context_resolver=ClaimBasedTenantContextResolver(),
             active_tenant_session_persister=DatabaseActiveTenantSessionPersister(

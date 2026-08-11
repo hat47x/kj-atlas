@@ -1,4 +1,4 @@
-"""add shared SaaS tenant-session and JWT replay state
+"""add shared SaaS tenant-session state
 
 Revision ID: 20260811_0025
 Revises: 20260811_0024
@@ -26,21 +26,7 @@ def upgrade() -> None:
             "session_version", name="uq_saas_tenant_sessions_version"
         ),
     )
-    op.create_table(
-        "jwt_replay_tokens",
-        sa.Column("token_digest", sa.String(64), nullable=False),
-        sa.Column("expires_at", sa.String(40), nullable=False),
-        sa.Column("recorded_at", sa.String(40), nullable=False),
-        sa.PrimaryKeyConstraint("token_digest"),
-    )
-    op.create_index(
-        "ix_jwt_replay_tokens_expires_at",
-        "jwt_replay_tokens",
-        ["expires_at"],
-    )
 
 
 def downgrade() -> None:
-    op.drop_index("ix_jwt_replay_tokens_expires_at", table_name="jwt_replay_tokens")
-    op.drop_table("jwt_replay_tokens")
     op.drop_table("saas_tenant_sessions")

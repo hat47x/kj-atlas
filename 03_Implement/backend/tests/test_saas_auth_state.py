@@ -1,18 +1,12 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta, timezone
-
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
 from kj_atlas_api.models import Base
-from kj_atlas_api.saas_auth_state import (
-    DatabaseSaasAuthStateStore,
-    ReplayDetectedError,
-)
+from kj_atlas_api.saas_auth_state import DatabaseSaasAuthStateStore
 
 
 def _stores(tmp_path) -> tuple[DatabaseSaasAuthStateStore, DatabaseSaasAuthStateStore]:
@@ -46,27 +40,6 @@ def test_two_instances_share_and_atomically_rotate_session_version(tmp_path) -> 
         expected_version="version-a",
         new_version="version-d",
     )
-
-
-def test_two_instances_allow_only_one_concurrent_jti_claim(tmp_path) -> None:
-    worker_a, worker_b = _stores(tmp_path)
-    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
-
-    def claim(store: DatabaseSaasAuthStateStore) -> str:
-        try:
-            store.record_jti(
-                provider_id="provider-1",
-                jti="shared-jti",
-                expires_at=expires_at,
-            )
-        except ReplayDetectedError:
-            return "replayed"
-        return "accepted"
-
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = list(pool.map(claim, (worker_a, worker_b)))
-
-    assert sorted(outcomes) == ["accepted", "replayed"]
 
 
 def test_preflight_fails_when_shared_auth_tables_are_missing(tmp_path) -> None:

@@ -376,11 +376,11 @@ class TestJwtSaasIdentityContextResolver:
 
 
 # ---------------------------------------------------------------------------
-# ADR-0064: jti replay detection tests
+# Bearer access-token jti compatibility tests
 # ---------------------------------------------------------------------------
 
 
-class TestJtiReplayDetection:
+class TestBearerTokenJtiHandling:
     def test_first_use_of_jti_is_accepted(
         self, db: Session, key_pair: tuple,
     ) -> None:
@@ -398,7 +398,7 @@ class TestJtiReplayDetection:
             )
         assert identity.user_id == "user-1"
 
-    def test_replay_of_jti_is_rejected(
+    def test_same_valid_access_token_can_be_used_for_multiple_requests(
         self, db: Session, key_pair: tuple,
     ) -> None:
         private_key, jwk = key_pair
@@ -410,13 +410,9 @@ class TestJtiReplayDetection:
             "kj_atlas_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
-            # First use — accepted.
-            resolver.resolve(db=db, request=_request_with_token(token))
-            # Second use — replayed.
-            with pytest.raises(JwtIdentityError) as exc:
-                resolver.resolve(db=db, request=_request_with_token(token))
-        assert exc.value.status_code == 401
-        assert exc.value.code == "token_replayed"
+            first = resolver.resolve(db=db, request=_request_with_token(token))
+            second = resolver.resolve(db=db, request=_request_with_token(token))
+        assert first.user_id == second.user_id == "user-1"
 
     def test_different_jtis_are_accepted(
         self, db: Session, key_pair: tuple,
@@ -437,10 +433,10 @@ class TestJtiReplayDetection:
                 )
                 assert identity.user_id == "user-1"
 
-    def test_token_without_jti_is_rejected(
+    def test_token_without_jti_is_accepted(
         self, db: Session, key_pair: tuple,
     ) -> None:
-        """The SaaS broker contract requires jti for cluster-wide replay defence."""
+        """RFC 7519 defines jti as optional for an ordinary bearer JWT."""
         private_key, jwk = key_pair
         token = _build_token(private_key=private_key, include_jti=False)
 
@@ -450,9 +446,8 @@ class TestJtiReplayDetection:
             "kj_atlas_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
-            with pytest.raises(JwtIdentityError) as exc:
-                resolver.resolve(db=db, request=_request_with_token(token))
-        assert exc.value.code == "invalid_token"
+            identity = resolver.resolve(db=db, request=_request_with_token(token))
+        assert identity.user_id == "user-1"
 
 
 # ---------------------------------------------------------------------------

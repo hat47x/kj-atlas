@@ -10,15 +10,16 @@ JWT requirements (ADR-0063 D2/D4):
 - Token header jku/x5u/embedded key references are never followed.
 - kid is resolved from the fetched JWK set only.
 - Clock skew tolerance: 60 seconds (fixed, not configurable).
-- exp/iss/aud/alg/iat/jti validation is enforced on every call.
-- jti replay detection is atomic and cluster-wide in the shared SaaS database.
+- exp/iss/aud/alg/iat validation is enforced on every call.
+- Bearer access-token reuse is governed by expiry; ``jti`` is not treated as a
+  one-time request nonce. Sender-constrained replay defence remains a separate
+  protocol concern.
 """
 
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 
 import jwt
 from fastapi import Request
@@ -27,11 +28,6 @@ from sqlalchemy.orm import Session
 from kj_atlas_api.auth_context import AuthContext, ResolvedIdentity
 from kj_atlas_api.jwks_store import JwksStore
 from kj_atlas_api.models import IdentityProviderRow, TenantIdentityProviderRow
-from kj_atlas_api.saas_auth_state import (
-    DatabaseSaasAuthStateStore,
-    InMemoryReplayStore,
-    ReplayDetectedError,
-)
 from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_context import VerifiedTenantClaim
 
@@ -181,7 +177,7 @@ def _verify_jwt(
             issuer=issuer,
             audience=audience,
             options={
-                "require": ["exp", "iss", "aud", "sub", "iat", "jti"],
+                "require": ["exp", "iss", "aud", "sub", "iat"],
                 "verify_signature": True,
                 "verify_exp": True,
                 "verify_iss": True,
@@ -227,7 +223,7 @@ def _verify_jwt(
                 issuer=issuer,
                 audience=aud,
                 options={
-                    "require": ["exp", "iss", "aud", "sub", "iat", "jti"],
+                    "require": ["exp", "iss", "aud", "sub", "iat"],
                     "verify_signature": True,
                     "verify_exp": True,
                     "verify_iss": True,
@@ -320,14 +316,8 @@ class JwtSaasIdentityContextResolver:
     resolves the token subject to a kj-atlas user, and returns a ResolvedIdentity.
     """
 
-    def __init__(
-        self,
-        *,
-        jwks_store: JwksStore,
-        auth_state_store: DatabaseSaasAuthStateStore | InMemoryReplayStore | None = None,
-    ):
+    def __init__(self, *, jwks_store: JwksStore):
         self._jwks = jwks_store
-        self._auth_state = auth_state_store or InMemoryReplayStore()
 
     def resolve(self, *, db: Session, request: Request) -> ResolvedIdentity:
         """Verify the bearer token and resolve to a kj-atlas identity.
@@ -378,25 +368,6 @@ class JwtSaasIdentityContextResolver:
         keys = self._fetch_jwks_keys(provider)
 
         verified = _verify_jwt(token, keys, issuer, matched_audience)
-
-        # A unique DB insert makes replay rejection atomic across all workers.
-        jti = verified.get("jti")
-        exp = verified.get("exp")
-        if not isinstance(jti, str) or not jti or not isinstance(exp, (int, float)):
-            raise JwtIdentityError(status_code=401, code="invalid_token")
-        try:
-            self._auth_state.record_jti(
-                provider_id=provider.id,
-                jti=jti,
-                expires_at=datetime.fromtimestamp(exp, tz=timezone.utc)
-                + timedelta(seconds=_JWT_CLOCK_SKEW_SECONDS),
-            )
-        except ReplayDetectedError:
-            logger.warning(
-                "auth edge: jti replay detected provider=%s",
-                provider.id,
-            )
-            raise JwtIdentityError(status_code=401, code="token_replayed")
 
         subject = verified.get("sub")
         if not isinstance(subject, str):

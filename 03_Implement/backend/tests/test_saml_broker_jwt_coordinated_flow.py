@@ -251,9 +251,6 @@ class TestCoordinatedSAMLBrokerJWTFlow:
             token_b, _ = _authenticate_via_oauth(
                 idp, username="bob", tenant_ref="org-456",
             )
-            token_a_second_request, _ = _authenticate_via_oauth(
-                idp, username="alice", tenant_ref="org-123",
-            )
             jwks = idp.get("/jwks.json").json()
 
         jwk = jwks["keys"][0]
@@ -262,7 +259,7 @@ class TestCoordinatedSAMLBrokerJWTFlow:
             sv = self._session_version(persister)
 
             r = backend.get("/docs/doc-1", headers={
-                "x-kj-atlas-authorization": f"Bearer {token_a_second_request}",
+                "x-kj-atlas-authorization": f"Bearer {token_a}",
                 "kj-atlas-tenant-session-version": sv,
             })
             assert r.status_code == 200, f"Alice: {r.json()}"
@@ -324,13 +321,7 @@ class TestCoordinatedSAMLBrokerJWTFlow:
         from fastapi.testclient import TestClient
 
         with TestClient(mock_idp_app) as idp:
-            token_first, _ = _authenticate_via_oauth(
-                idp, username="alice", tenant_ref="org-123",
-            )
-            token_second, _ = _authenticate_via_oauth(
-                idp, username="alice", tenant_ref="org-123",
-            )
-            token_wrong_session, _ = _authenticate_via_oauth(
+            token, _ = _authenticate_via_oauth(
                 idp, username="alice", tenant_ref="org-123",
             )
             jwks = idp.get("/jwks.json").json()
@@ -341,19 +332,19 @@ class TestCoordinatedSAMLBrokerJWTFlow:
             sv = self._session_version(persister)
 
             r1 = backend.get("/docs/doc-1", headers={
-                "x-kj-atlas-authorization": f"Bearer {token_first}",
+                "x-kj-atlas-authorization": f"Bearer {token}",
                 "kj-atlas-tenant-session-version": sv,
             })
             assert r1.status_code == 200
 
             r2 = backend.get("/docs/doc-1", headers={
-                "x-kj-atlas-authorization": f"Bearer {token_second}",
+                "x-kj-atlas-authorization": f"Bearer {token}",
                 "kj-atlas-tenant-session-version": sv,
             })
             assert r2.status_code == 200
 
             r3 = backend.get("/docs/doc-1", headers={
-                "x-kj-atlas-authorization": f"Bearer {token_wrong_session}",
+                "x-kj-atlas-authorization": f"Bearer {token}",
                 "kj-atlas-tenant-session-version": "wrong-version",
             })
             assert r3.status_code == 409

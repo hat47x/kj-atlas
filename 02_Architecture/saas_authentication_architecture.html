@@ -57,7 +57,7 @@ graph TB
     end
 
     subgraph "Layer 3: kj-atlas Backend"
-        JWT_VERIFY[JwtSaasIdentityContextResolver<br/>JWT 検証 + jti replay]
+        JWT_VERIFY[JwtSaasIdentityContextResolver<br/>Bearer JWT 検証]
         TENANT_RESOLVE[ClaimBasedTenantContextResolver<br/>tenant_ref → tenant_id]
         SESSION[DatabaseActiveTenantSessionPersister<br/>共有セッション管理 + cookie]
         DOC_ACCESS[ServerOwnedDocumentResourceResolver<br/>テナントスコープ文書アクセス]
@@ -109,7 +109,7 @@ sequenceDiagram
 
     Frontend->>Backend: GET /docs/{id}<br/>X-Kj-Atlas-Authorization: Bearer JWT<br/>Kj-Atlas-Tenant-Session-Version: ...
 
-    Backend->>Backend: JWT検証 (RS256, iss/aud/exp/iat/nbf, jti replay)
+    Backend->>Backend: JWT検証 (RS256, iss/aud/exp/iat/nbf)
     Backend->>Backend: tenant_ref → identity_providers → tenant_id
     Backend->>Backend: membership + capability 検証
     Backend->>Frontend: tenant-scoped document
@@ -136,9 +136,7 @@ flowchart LR
     M -->|yes| O{aud matched?}
     O -->|no| P[try aud array values]
     P --> O
-    O -->|yes| Q{jti replayed?}
-    Q -->|yes| R[401 token_replayed]
-    Q -->|no| S[subject → user_id]
+    O -->|yes| S[subject → user_id]
     S --> T{provisioned?}
     T -->|no| U[403 identity_not_provisioned]
     T -->|yes| V[tenant_ref → tenant_id]
@@ -246,7 +244,7 @@ sequenceDiagram
 <tr><th>コンポーネント</th><th>ファイル</th><th>責務</th></tr>
 <tr><td>JwtSaasIdentityContextResolver</td><td><code>trusted_auth_edge.py</code></td><td>JWT 検証 + subject 解決 + tenant claim 抽出</td></tr>
 <tr><td>JwksStore</td><td><code>jwks_store.py</code></td><td>JWKS キャッシュ (600s TTL, 60s cooldown, 1800s max-stale)</td></tr>
-<tr><td>DatabaseSaasAuthStateStore</td><td><code>saas_auth_state.py</code></td><td>PostgreSQL共有のJWT ID一意登録とtenant session版数の原子的更新</td></tr>
+<tr><td>DatabaseSaasAuthStateStore</td><td><code>saas_auth_state.py</code></td><td>PostgreSQL共有のtenant session版数の原子的更新</td></tr>
 <tr><td>ClaimBasedTenantContextResolver</td><td><code>tenant_context.py</code></td><td>VerifiedTenantClaim → TenantContext</td></tr>
 <tr><td>DatabaseActiveTenantSessionPersister</td><td><code>active_tenant_session.py</code></td><td>複数instance共有session管理 + security cookie</td></tr>
 <tr><td>TrustedSaasRuntimePolicy</td><td><code>trusted_saas_runtime.py</code></td><td>SaaS 起動前ポリシー検証 (DB/JIT/PDP/binding/capability/JWT)</td></tr>

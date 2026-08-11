@@ -328,17 +328,6 @@ class SaasTenantSessionRow(Base):
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
-class JwtReplayTokenRow(Base):
-    """Privacy-preserving, cluster-wide record of a consumed JWT ID."""
-
-    __tablename__ = "jwt_replay_tokens"
-    __table_args__ = (Index("ix_jwt_replay_tokens_expires_at", "expires_at"),)
-
-    token_digest: Mapped[str] = mapped_column(Text, primary_key=True)
-    expires_at: Mapped[str] = mapped_column(Text, nullable=False)
-    recorded_at: Mapped[str] = mapped_column(Text, nullable=False)
-
-
 class TenantIdentityProviderRow(Base):
     __tablename__ = "tenant_identity_providers"
     __table_args__ = (

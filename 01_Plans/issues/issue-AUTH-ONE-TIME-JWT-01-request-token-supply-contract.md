@@ -1,33 +1,49 @@
-# Issue: AUTH-ONE-TIME-JWT-01 one-time JWTの要求単位供給契約が未実装
+# Issue: AUTH-ONE-TIME-JWT-01 Bearer access tokenのreplay防御方式が未決
 
 - Type: Architecture / Security / Frontend
 - Status: Open
 - Source Issue: `SEC-AUTH-REPLAY-01`
 - Priority: P1
 - Owner: Unassigned
-- Scope: frontend auth client, Broker/BFF integration, retry coordinator, `ADR-0064`
+- Scope: auth edge, frontend auth client, Broker/BFF integration, `ADR-0064`
 - Related ADR/Spec: `ADR-0064`, `OPS-SAAS-SCALE-01`, `SEC-AUTH-REPLAY-01`
 - Expected verification level: integration
 
 ## 課題
 
-cluster-wide JWT replay拒否は、同じ`jti`のBearer tokenを2回目以降拒否する。backendとmock Brokerの契約は固定できたが、現行frontendは短命access tokenをmodule memoryへ保持する設計であり、API要求ごとに新しいtokenを取得・消費する供給経路がまだない。通常のOAuth access tokenを再利用する実装のままSaaS frontendを接続すると、2要求目が`token_replayed`になる。
+直前の実装はaccess token自身の`jti`を要求単位nonceとして消費し、同じBearer tokenの2回目以降を拒否した。しかしRFC 6750のBearer tokenは、所持者が有効期間中にresource serverへ提示するcredentialであり、現行frontendも同じ短命tokenを複数API要求へ使用する。RFC 7519の`jti`はJWTの一意識別子で、通常のBearer access tokenをone-time credentialへ変える規定ではない。
+
+このため、access token `jti`だけをDBへ一度登録して再送を拒否する方式は、正規clientと窃取者を区別できず、通常操作、並列fetch、network retryを壊す。sender-constrained tokenなしに「窃取Bearer tokenの再利用だけを拒否する」ことはできない。誤ったone-time実装は撤回し、通常のtoken再利用を復元した。
+
+## 三要素牽制
+
+- 業務設計: 利用者は一度のlogin後に複数の閲覧・保存要求を行える必要がある。要求ごとの再認証やtoken交換を通常業務へ持ち込まない。
+- データ設計: 生token、秘密鍵、生`jti`を永続化・log出力しない。sender constraintを採る場合も公開鍵thumbprintと短命proof replay stateだけを最小保持する。
+- 機能設計: Bearer方式を維持する間は署名、issuer、audience、期限、TLS、module-memory保持で防御する。強いreplay防御が必要ならaccess tokenの`jti`ではなく、HTTP method/URI/token hashへ結び付く要求単位proofを検証する。
 
 ## 対応方針
 
-- Brokerまたはsame-origin BFFが、要求ごとに一意な`jti`を持つ短命tokenを供給する境界を設計する。
-- token取得、API送信、消費済み破棄を1つのcoordinatorへ閉じ込め、並列fetchへ同じtokenを配らない。
-- network応答不明時は同じtokenをretryせず、新tokenとidempotency contractを使う。mutationの二重実行防止はJWT replay防御へ依存させない。
-- browser storage、log、diagnostic、error responseへtokenまたは生`jti`を残さない。
+- 候補A: RFC 9449 DPoP。client鍵へaccess tokenをsender-constrainし、要求ごとのDPoP proof `jti`、`htm`、`htu`、`ath`を検証する。
+- 候補B: same-origin BFF session。Bearer tokenをbrowserへ渡さずBFFへ閉じ込め、browser要求はHttpOnly sessionとCSRF防御で扱う。
+- 候補C: 現行Bearer方式を維持し、短い有効期限、TLS、module-memory保持、audience制限を保証範囲として明記する。
+- DPoPはclient鍵管理、proxy後のcanonical URI、proof replay TTL、clock skew、nonce、retryを含むため、L1では採択しない。Maintainer判断用の比較とprototypeを先に行う。
 
 ## 受入条件
 
-- [ ] 連続・並列API要求がそれぞれ異なる`jti`で成功する。
-- [ ] 同じtokenの意図的再送は、別workerへ到達しても`token_replayed`となる。
-- [ ] token供給失敗、timeout、応答不明retryがfail-closedし、mutationを重複実行しない。
+- [x] 通常のBearer access tokenを連続API要求へ使用できる契約を回帰testで復元する。
+- [x] `jti`欠損tokenをRFC 7519どおり通常Bearer JWTとして扱い、docstringとtestを一致させる。
+- [ ] DPoP、BFF、短命Bearer継続の業務・データ・機能trade-offをprototype根拠付きで比較し、方式をADRで決定する。
+- [ ] 強いreplay防御を採る場合、別worker間でも要求proof再利用を拒否し、通常のaccess token再利用を壊さない。
+- [ ] timeout、応答不明retryがfail-closedし、mutationを重複実行しない。
 - [ ] refresh tokenをSPAへ渡さず、XSS時のcredential露出範囲を拡大しない。
 - [ ] mock Broker、frontend統合、最低2 backend workerのE2Eで契約を固定する。
 
 ## 暫定運用
 
-本issue解消までは、`saas-multitenant`のbackend多worker保証は成立するが、現行frontendを本番SaaSの認証clientとして解禁しない。Broker/BFFが要求単位token供給を担う構成だけを対象とする。
+本issueの方式決定までは、共有tenant sessionによるbackend多worker運用は可能だが、JWT replay防御済みとは表明しない。Bearer tokenの保証範囲は短命、署名検証、issuer/audience制限、TLS、browser storage不使用までとする。
+
+## 根拠
+
+- RFC 7519 §4.1.7: `jti`はJWTの一意識別子でありoptional。access tokenの一回使用を意味しない。
+- RFC 6750 §1.2/1.3: Bearer tokenは所持者がresource serverへ提示するaccess credentialで、鍵所持証明を要求しない。
+- RFC 9449 §4.2: replay防御対象の要求単位`jti`はaccess tokenではなく、`htm`/`htu`等へ結び付くDPoP proof JWTに置かれる。
