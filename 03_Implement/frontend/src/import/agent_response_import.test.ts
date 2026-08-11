@@ -3,9 +3,21 @@ import { extractJsonPayload, parseAgentResponse } from "./agent_response_import"
 import { ZIP_MAX_TEXT_FILE_BYTES } from "./zip_import";
 
 function buildValidResponseJson(overrides: Record<string, unknown> = {}): string {
+  const taskId = "11111111-1111-1111-1111-111111111111";
   return JSON.stringify({
     schemaVersion: "agent-response.v1",
-    taskId: "11111111-1111-1111-1111-111111111111",
+    taskId,
+    correlation: {
+      schemaVersion: "agent-task.v1",
+      taskId,
+      createdAt: "2026-07-09T00:00:00.000Z",
+      docId: "doc1",
+      baseDocSignature: "doc1:2026-07-09T00:00:00.000Z",
+      bundleHash: "bundle-hash",
+      queryCanonicalHash: "query-hash",
+      taskKind: "critique_suggestions",
+      locale: "ja",
+    },
     respondedAt: "2026-07-09T00:00:00.000Z",
     agent: "test-agent",
     proposals: [
@@ -56,6 +68,26 @@ describe("parseAgentResponse", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors).toContain("payload.invalid_json");
+  });
+
+  it("accepts a legacy response as explicitly unverified in lenient mode", () => {
+    const result = parseAgentResponse(buildValidResponseJson({ correlation: undefined }), "lenient");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.response.correlation).toBeUndefined();
+    expect(result.warnings).toContain("payload.correlation_missing:unverified_provenance");
+  });
+
+  it("rejects a response without full correlation in strict mode", () => {
+    const result = parseAgentResponse(buildValidResponseJson({ correlation: undefined }), "strict");
+    expect(result).toEqual({ ok: false, errors: ["payload.missing_or_invalid_correlation"] });
+  });
+
+  it("rejects disagreement between top-level and correlation task ids", () => {
+    const response = JSON.parse(buildValidResponseJson()) as Record<string, unknown>;
+    response.taskId = "different-task";
+    const result = parseAgentResponse(JSON.stringify(response));
+    expect(result).toEqual({ ok: false, errors: ["payload.correlation_taskId_mismatch"] });
   });
 
   it("rejects a payload exceeding the ZIP text-file size limit", () => {

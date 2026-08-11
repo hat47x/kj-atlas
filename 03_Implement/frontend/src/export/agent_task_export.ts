@@ -234,6 +234,17 @@ const AGENT_TASK_RESPONSE_SCHEMA_JSON = JSON.stringify(
   {
     schemaVersion: "agent-response.v1",
     taskId: "uuid (依頼のエコーバック・必須)",
+    correlation: {
+      schemaVersion: "agent-task.v1",
+      taskId: "相関ブロックの値",
+      createdAt: "相関ブロックの値",
+      docId: "相関ブロックの値",
+      baseDocSignature: "相関ブロックの値",
+      bundleHash: "相関ブロックの値",
+      queryCanonicalHash: "相関ブロックの値",
+      taskKind: "相関ブロックの値",
+      locale: "ja",
+    },
     respondedAt: "ISO8601 (任意)",
     agent: "string (例: copilot-studio:<agent名> / m365-copilot。自由記述)",
     proposals: [
@@ -255,6 +266,7 @@ const AGENT_TASK_RESPONSE_MINIMAL_EXAMPLE_JSON = JSON.stringify(
   {
     schemaVersion: "agent-response.v1",
     taskId: "<correlation.taskId をそのまま記入>",
+    correlation: "<依頼の相関ブロックをオブジェクトとしてそのまま記入>",
     proposals: [
       {
         proposalId: "p1",
@@ -327,7 +339,7 @@ export async function buildAgentTaskSheet(input: AgentTaskSheetInput): Promise<A
     "",
     "## 相関ブロック",
     "",
-    "以下のJSONを、応答にそのまま echo-back してください（taskId は必ず一致させてください）。",
+    "以下のJSONを、応答の correlation にそのまま echo-back してください（taskId も必ず一致させてください）。",
     "",
     "```json",
     correlationJson,

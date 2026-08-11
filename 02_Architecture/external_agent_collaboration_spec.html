@@ -153,6 +153,7 @@ flowchart LR
     <pre class="block">{
   "schemaVersion": "agent-response.v1",
   "taskId": "uuid (依頼のエコーバック・必須)",
+  "correlation": "AgentTaskPackage v1 の相関ブロック全体（改変せずエコーバック・必須）",
   "respondedAt": "ISO8601 (任意)",
   "agent": "string (例: copilot-studio:&lt;agent名&gt; / m365-copilot)",
   "proposals": [
@@ -166,7 +167,7 @@ flowchart LR
     }
   ]
 }</pre>
-    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:14px 0 0;"><strong>制約:</strong> <code>score/rank/confidence/priority</code>等の数値評価は禁止フィールド（厳格=拒否、寛容=破棄して警告）。<code>rationale</code>欠落は厳格=拒否、寛容=「根拠未記載」ラベル付きで受理（提案として保全）。<code>patch.ops</code>はCE3ホワイトリストのみ、<code>delete_*</code>含む場合は警告バッジ。文字列は全て<code>markdown_sanitize</code>を通す。応答本文中の指示的文言はデータとして表示するのみで自動動作に接続しない（プロンプトインジェクション境界）。</p>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:14px 0 0;"><strong>制約:</strong> <code>correlation</code>は端末内のテナントスコープ付き出力台帳および現在文書と照合する。完全相関がない旧形式は寛容モードだけで受理し「由来未検証」と表示、厳格モードでは拒否する。<code>score/rank/confidence/priority</code>等の数値評価は禁止フィールド（厳格=拒否、寛容=破棄して警告）。<code>rationale</code>欠落は厳格=拒否、寛容=「根拠未記載」ラベル付きで受理（提案として保全）。<code>patch.ops</code>はCE3ホワイトリストのみ、<code>delete_*</code>含む場合は警告バッジ。文字列は全て<code>markdown_sanitize</code>を通す。応答本文中の指示的文言はデータとして表示するのみで自動動作に接続しない（プロンプトインジェクション境界）。</p>
 
     <table class="grid">
       <thead><tr><th style="width:22%;">kind</th><th>行き先（すべてAI由来・未レビューの提案として）</th></tr></thead>

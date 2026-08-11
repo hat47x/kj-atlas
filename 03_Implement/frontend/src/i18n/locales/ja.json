@@ -1437,6 +1437,8 @@
   "agent_response_import.parse": "解析する",
   "agent_response_import.warnings_summary": "警告 {count} 件（禁止フィールドの破棄・根拠未記載などを含みます）",
   "agent_response_import.ai_proposal": "AI提案（未レビュー）",
+  "agent_response_import.provenance.verified-local-export": "由来確認済み（この端末から出力したタスクと一致）",
+  "agent_response_import.provenance.unverified-legacy": "由来未検証（旧形式または出力記録なし）",
   "agent_response_import.rationale_label": "根拠",
   "agent_response_import.target_none": "対象なし",
   "agent_response_import.orphaned_note": "参照先が見つかりません（孤立提案として保持しています）",

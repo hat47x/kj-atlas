@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, type KeyboardEvent } from "react";
 import { t } from "../i18n/translate";
 import type { ParsedAgentProposal, AgentResponseImportMode } from "../import/agent_response_import";
+import type { AgentResponseProvenance } from "../storage/agent_task_ledger";
 
 // EXT-AGENT-02 (ADR-0049 D3): review surface for a pasted external AI
 // agent's agent-response.v1 JSON. Parsing/validating never touches the
@@ -11,6 +12,9 @@ import type { ParsedAgentProposal, AgentResponseImportMode } from "../import/age
 export type ImportedProposalStatus = "pending" | "adopted" | "rejected";
 
 export type ImportedProposalReview = ParsedAgentProposal & {
+  reviewKey: string;
+  taskId: string;
+  provenance: AgentResponseProvenance;
   status: ImportedProposalStatus;
   orphaned: boolean;
   patchSignatureMismatch?: boolean;
@@ -28,9 +32,9 @@ type AgentResponseImportPanelProps = {
   parseErrors: string[];
   parseWarnings: string[];
   reviews: ImportedProposalReview[];
-  onAdopt: (proposalId: string) => void;
-  onReject: (proposalId: string) => void;
-  onExportPatchFile: (proposalId: string) => void;
+  onAdopt: (reviewKey: string) => void;
+  onReject: (reviewKey: string) => void;
+  onExportPatchFile: (reviewKey: string) => void;
 };
 
 const focusableSelector = [
@@ -202,7 +206,7 @@ export function AgentResponseImportPanel({
         <div style={{ display: "grid", gap: 8 }}>
           {reviews.map((review) => (
             <div
-              key={review.proposalId}
+              key={review.reviewKey}
               data-testid={`agent-response-proposal-${review.proposalId}`}
               data-proposal-status={review.status}
               style={{
@@ -217,6 +221,9 @@ export function AgentResponseImportPanel({
               <div style={{ fontSize: 11, color: "#1e3a8a" }}>
                 {t("agent_response_import.ai_proposal")} <strong>{t(`agent_response_import.kind.${review.kind}`)}</strong> ·{" "}
                 {proposalTargetLabel(review)}
+              </div>
+              <div style={{ fontSize: 11, color: review.provenance === "verified-local-export" ? "#166534" : "#92400e" }}>
+                {t(`agent_response_import.provenance.${review.provenance}`)}
               </div>
               <div style={{ fontSize: 12, color: "#1e293b" }}>{proposalContentPreview(review)}</div>
               <div style={{ fontSize: 11, color: "#475569" }}>
@@ -234,15 +241,15 @@ export function AgentResponseImportPanel({
               {review.status === "pending" ? (
                 <div style={{ display: "flex", gap: 6 }}>
                   {review.orphaned ? null : review.patchSignatureMismatch ? (
-                    <button type="button" onClick={() => onExportPatchFile(review.proposalId)} style={{ ...buttonStyle, flex: 1 }}>
+                    <button type="button" onClick={() => onExportPatchFile(review.reviewKey)} style={{ ...buttonStyle, flex: 1 }}>
                       {t("agent_response_import.export_patch_file")}
                     </button>
                   ) : (
-                    <button type="button" onClick={() => onAdopt(review.proposalId)} style={{ ...buttonStyle, flex: 1 }}>
+                    <button type="button" onClick={() => onAdopt(review.reviewKey)} style={{ ...buttonStyle, flex: 1 }}>
                       {t("agent_response_import.adopt")}
                     </button>
                   )}
-                  <button type="button" onClick={() => onReject(review.proposalId)} style={{ ...buttonStyle, flex: 1 }}>
+                  <button type="button" onClick={() => onReject(review.reviewKey)} style={{ ...buttonStyle, flex: 1 }}>
                     {t("agent_response_import.reject")}
                   </button>
                 </div>

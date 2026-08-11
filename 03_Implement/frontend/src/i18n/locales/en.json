@@ -1435,6 +1435,8 @@
   "agent_response_import.parse": "Parse",
   "agent_response_import.warnings_summary": "{count} warning(s) (includes discarded forbidden fields, missing rationale, etc.)",
   "agent_response_import.ai_proposal": "AI proposal (unreviewed)",
+  "agent_response_import.provenance.verified-local-export": "Provenance verified (matches a task exported from this device)",
+  "agent_response_import.provenance.unverified-legacy": "Provenance unverified (legacy response or no export record)",
   "agent_response_import.rationale_label": "Rationale",
   "agent_response_import.target_none": "No target",
   "agent_response_import.orphaned_note": "Target not found (kept as an orphaned proposal)",

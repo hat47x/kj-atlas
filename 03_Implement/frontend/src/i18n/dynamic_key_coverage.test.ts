@@ -27,6 +27,7 @@ const DYNAMIC_KEY_CASES: Record<string, readonly string[]> = {
     "island_title", "merge_candidate", "narrative_draft", "opposing_viewpoint", "critique", "patch",
   ]),
   "agent_response_import.status.${}": family("agent_response_import.status.", ["adopted", "rejected"]),
+  "agent_response_import.provenance.${}": family("agent_response_import.provenance.", ["verified-local-export", "unverified-legacy"]),
   "agent_task_export.task_kind.${}": family("agent_task_export.task_kind.", [
     "island_titles", "merge_candidates", "narrative_draft", "opposing_viewpoints", "critique_suggestions", "free_analysis",
   ]),

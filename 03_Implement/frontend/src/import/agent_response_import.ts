@@ -2,6 +2,7 @@ import { sanitizeMarkdownForDisplay } from "./markdown_sanitize";
 import { ZIP_MAX_TEXT_FILE_BYTES } from "./zip_import";
 import type { PatchOp, PatchV1 } from "../domain/patch/patch_types";
 import { parsePatchOp } from "../domain/patch/patch_apply";
+import { AGENT_TASK_KINDS, type AgentTaskCorrelation } from "../export/agent_task_export";
 
 // EXT-AGENT-02 (ADR-0049 D3, spec `02_Architecture/external_agent_collaboration_spec.md`
 // §4/§5): parses/validates/sanitizes an external AI agent's pasted "agent-response.v1"
@@ -50,10 +51,30 @@ export type ParsedAgentProposal = {
 export type ParsedAgentResponse = {
   schemaVersion: "agent-response.v1";
   taskId: string;
+  correlation?: AgentTaskCorrelation;
   respondedAt?: string;
   agent?: string;
   proposals: ParsedAgentProposal[];
 };
+
+function parseCorrelation(value: unknown): AgentTaskCorrelation | undefined {
+  if (!isRecord(value)) return undefined;
+  const fields = ["taskId", "createdAt", "docId", "baseDocSignature", "bundleHash", "queryCanonicalHash"] as const;
+  if (value.schemaVersion !== "agent-task.v1" || value.locale !== "ja") return undefined;
+  if (fields.some((field) => typeof value[field] !== "string" || value[field].length === 0)) return undefined;
+  if (typeof value.taskKind !== "string" || !(AGENT_TASK_KINDS as readonly string[]).includes(value.taskKind)) return undefined;
+  return {
+    schemaVersion: "agent-task.v1",
+    taskId: sanitizeMarkdownForDisplay(value.taskId as string),
+    createdAt: sanitizeMarkdownForDisplay(value.createdAt as string),
+    docId: sanitizeMarkdownForDisplay(value.docId as string),
+    baseDocSignature: sanitizeMarkdownForDisplay(value.baseDocSignature as string),
+    bundleHash: sanitizeMarkdownForDisplay(value.bundleHash as string),
+    queryCanonicalHash: sanitizeMarkdownForDisplay(value.queryCanonicalHash as string),
+    taskKind: value.taskKind as AgentTaskCorrelation["taskKind"],
+    locale: "ja",
+  };
+}
 
 export type AgentResponseImportMode = "strict" | "lenient";
 
@@ -210,7 +231,14 @@ export function parseAgentResponse(rawInput: string, mode: AgentResponseImportMo
     return { ok: false, errors: ["payload.missing_proposals_array"] };
   }
 
-  const allWarnings: string[] = [];
+  const correlation = parseCorrelation(parsedJson.correlation);
+  if (!correlation) {
+    if (mode === "strict") return { ok: false, errors: ["payload.missing_or_invalid_correlation"] };
+  } else if (correlation.taskId !== taskId) {
+    return { ok: false, errors: ["payload.correlation_taskId_mismatch"] };
+  }
+
+  const allWarnings: string[] = correlation ? [] : ["payload.correlation_missing:unverified_provenance"];
   const proposals: ParsedAgentProposal[] = [];
   for (const [index, rawProposal] of parsedJson.proposals.entries()) {
     const { proposal, errors, warnings } = parseProposal(rawProposal, mode);
@@ -232,6 +260,7 @@ export function parseAgentResponse(rawInput: string, mode: AgentResponseImportMo
     response: {
       schemaVersion: "agent-response.v1",
       taskId: sanitizeMarkdownForDisplay(taskId),
+      correlation,
       respondedAt: sanitizeString(parsedJson.respondedAt),
       agent: sanitizeString(parsedJson.agent),
       proposals,

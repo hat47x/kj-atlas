@@ -112,6 +112,7 @@ import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
 import { buildAgentTaskSheet, type AgentTaskKind } from "./export/agent_task_export";
 import { parseAgentResponse, type AgentResponseImportMode, type ParsedAgentProposal } from "./import/agent_response_import";
+import { recordAgentTaskExport, verifyAgentResponseCorrelation } from "./storage/agent_task_ledger";
 import { buildExportViewMetadata, type ExportViewMetadata } from "./export/view_metadata";
 import { buildBundleZipBlob, buildExportBundleWithWorkers, downloadBlobAsFile, formatBundleTimestamp, type BundleExportProgressStage } from "./export/bundle_export";
 import { computeVisibleBounds, getCardWorldBounds, getIslandWorldBounds } from "./domain/geometry/bounds";
@@ -8859,28 +8860,31 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     if (!output) return;
     try {
       await navigator.clipboard.writeText(output.taskSheetMd);
+      recordAgentTaskExport(output.correlation, appStorage.scope);
       setStatusMessage(t("agent_task_export.copied"));
       reportAgentTaskExportAudit();
     } catch {
       setStatusMessage(t("agent_task_export.copy_failed"));
     }
-  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
+  }, [appStorage.scope, buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
 
   const handleDownloadAgentTaskSheet = useCallback(async () => {
     const output = await runTenantScopedOptionalTask(buildCurrentAgentTaskSheet);
     if (!output) return;
     downloadTextFile("task-sheet.md", "text/markdown", output.taskSheetMd);
+    recordAgentTaskExport(output.correlation, appStorage.scope);
     setStatusMessage(t("agent_task_export.downloaded_md"));
     reportAgentTaskExportAudit();
-  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
+  }, [appStorage.scope, buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
 
   const handleDownloadAgentTaskJson = useCallback(async () => {
     const output = await runTenantScopedOptionalTask(buildCurrentAgentTaskSheet);
     if (!output) return;
     downloadTextFile("task.json", "application/json", output.taskJson);
+    recordAgentTaskExport(output.correlation, appStorage.scope);
     setStatusMessage(t("agent_task_export.downloaded_json"));
     reportAgentTaskExportAudit();
-  }, [buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
+  }, [appStorage.scope, buildCurrentAgentTaskSheet, reportAgentTaskExportAudit, runTenantScopedOptionalTask]);
 
   // EXT-AGENT-02: parsing/reviewing a pasted response never touches the
   // document (AC-6); only a per-proposal "Import" click does, one
@@ -8904,28 +8908,45 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return;
     }
     setAgentResponseParseErrors([]);
-    setAgentResponseParseWarnings(result.warnings);
+    const verification = verifyAgentResponseCorrelation(
+      result.response.taskId,
+      result.response.correlation,
+      document,
+      appStorage.scope,
+    );
+    if (!verification.ok) {
+      setAgentResponseParseErrors([verification.error]);
+      setAgentResponseParseWarnings(result.warnings);
+      return;
+    }
+    const warnings = verification.provenance === "unverified-legacy"
+      ? [...result.warnings, verification.warning]
+      : result.warnings;
+    setAgentResponseParseWarnings(warnings);
 
-    const existingIds = new Set(agentImportedProposalReviews.map((review) => review.proposalId));
-    if (result.response.proposals.length > 0 && result.response.proposals.every((proposal) => existingIds.has(proposal.proposalId))) {
+    const existingIds = new Set(agentImportedProposalReviews.map((review) => review.reviewKey));
+    if (result.response.proposals.length > 0 && result.response.proposals.every((proposal) => existingIds.has(`${result.response.taskId}:${proposal.proposalId}`))) {
       setStatusMessage(t("agent_response_import.duplicate_status_message"));
       return;
     }
 
     const newReviews: ImportedProposalReview[] = result.response.proposals
-      .filter((proposal) => !existingIds.has(proposal.proposalId))
+      .filter((proposal) => !existingIds.has(`${result.response.taskId}:${proposal.proposalId}`))
       .map((proposal) => ({
         ...proposal,
+        reviewKey: `${result.response.taskId}:${proposal.proposalId}`,
+        taskId: result.response.taskId,
+        provenance: verification.provenance,
         status: "pending" as const,
         ...computeAgentProposalReviewFlags(proposal, document),
       }));
     setAgentImportedProposalReviews((previous) => [...previous, ...newReviews]);
-  }, [document, agentResponsePastedText, agentResponseImportMode, agentImportedProposalReviews]);
+  }, [appStorage.scope, document, agentResponsePastedText, agentResponseImportMode, agentImportedProposalReviews]);
 
   const handleAdoptAgentImportedProposal = useCallback(
-    (proposalId: string) => {
+    (reviewKey: string) => {
       if (!document) return;
-      const review = agentImportedProposalReviews.find((item) => item.proposalId === proposalId);
+      const review = agentImportedProposalReviews.find((item) => item.reviewKey === reviewKey);
       if (!review || review.status !== "pending" || review.orphaned) return;
 
       let adopted = false;
@@ -9020,7 +9041,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }
 
       setAgentImportedProposalReviews((previous) =>
-        previous.map((item) => (item.proposalId === proposalId ? { ...item, status: "adopted" as const } : item))
+        previous.map((item) => (item.reviewKey === reviewKey ? { ...item, status: "adopted" as const } : item))
       );
       setStatusMessage(t("agent_response_import.adopted_status_message"));
     },
@@ -9031,18 +9052,18 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     ]
   );
 
-  const handleRejectAgentImportedProposal = useCallback((proposalId: string) => {
+  const handleRejectAgentImportedProposal = useCallback((reviewKey: string) => {
     setAgentImportedProposalReviews((previous) =>
-      previous.map((item) => (item.proposalId === proposalId ? { ...item, status: "rejected" as const } : item))
+      previous.map((item) => (item.reviewKey === reviewKey ? { ...item, status: "rejected" as const } : item))
     );
     setStatusMessage(t("agent_response_import.rejected_status_message"));
   }, []);
 
   const handleExportAgentImportedProposalPatchFile = useCallback(
-    (proposalId: string) => {
-      const review = agentImportedProposalReviews.find((item) => item.proposalId === proposalId);
+    (reviewKey: string) => {
+      const review = agentImportedProposalReviews.find((item) => item.reviewKey === reviewKey);
       if (!review?.patch) return;
-      downloadTextFile(`agent-patch-${proposalId}.json`, "application/json", JSON.stringify(review.patch, null, 2));
+      downloadTextFile(`agent-patch-${review.proposalId}.json`, "application/json", JSON.stringify(review.patch, null, 2));
       setStatusMessage(t("agent_response_import.exported_patch_file_status_message"));
     },
     [agentImportedProposalReviews]

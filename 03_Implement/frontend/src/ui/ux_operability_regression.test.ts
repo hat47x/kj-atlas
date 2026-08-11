@@ -980,7 +980,7 @@ describe("UX Operability regression contracts", () => {
     // applyDocumentChange call (except merge_candidate, which stages into
     // the existing ephemeral mergeSuggestions review surface instead).
     expect(appSource).toContain("const handleParseAgentResponse = useCallback(() => {");
-    const parseBlockEnd = appSource.indexOf("}, [document, agentResponsePastedText");
+    const parseBlockEnd = appSource.indexOf("const handleAdoptAgentImportedProposal");
     const parseBlock = appSource.slice(appSource.indexOf("const handleParseAgentResponse"), parseBlockEnd);
     expect(parseBlock).not.toContain("applyDocumentChange(");
     expect(appSource.match(/applyDocumentChange\(\{ \.\.\.document, islands: nextIslands \}, t\("app\.history\.agent_response\.island_title_imported"\)\)/g)).toHaveLength(1);
