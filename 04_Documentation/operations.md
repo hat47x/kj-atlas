@@ -59,15 +59,16 @@ profile の詳細は GitHub 上の [runtime_parameter_registry.md](https://githu
 
 ### SaaSの複数プロセス構成
 
-`saas-multitenant` はPostgreSQLを共有ストアとして使い、APIを2プロセス以上または2レプリカ以上で運用できます。全API instanceを同じDBへ接続し、起動前に最新migrationを適用してください。テナントセッション版数と使用済みJWT IDはDBで共有されるため、sticky sessionは不要です。
+`saas-multitenant` はPostgreSQLでテナントセッション版数をAPI instance間共有します。ただし現行表は`principal_id`単位のversionだけを保持し、認証セッション識別子とactive tenantを原子的に保存しません。このため、複数プロセスでversionを共有できることだけをもって本番SaaS運用可能とは判断しないでください。`SAAS-TENANT-SESSION-BINDING-01`が完了するまで、active tenant切替を含む共有SaaS profileは本番利用gate未充足です。sticky sessionをこの欠落の代替策にしてはいけません。
 
 - Bearer access tokenは短命にし、署名、issuer、audience、期限を検証します。`jti`は任意であり、同じ有効tokenを通常の連続API要求へ使用できます。
 - 現行方式はsender-constrained tokenではないため、窃取されたBearer tokenそのものの再利用を検出できません。DPoP/BFF等の採否は`AUTH-ONE-TIME-JWT-01`で未決です。
+- 現行の`Kj-Atlas-Tenant-Session-Version` cookieは切替時の発行とlogout時の削除に使われますが、DB session解決時には照合されません。認証session束縛やanti-forgery保証として扱わないでください。
 - 共有認証表が未migrationまたはDBへ接続できない場合、SaaS APIは起動に失敗します。
-- 稼働中に共有DBが利用不能になった場合、session解決・切替・JWT受理は503相当でfail-closedし、in-memory状態へfallbackしません。
+- 稼働中に共有DBが利用不能になった場合、session version解決・切替は503相当でfail-closedし、in-memory状態へfallbackしません。Bearer JWTの署名・issuer・audience・期限検証は別境界であり、共有DBを通常のtoken再送検出には使いません。
 - JWKS cacheだけはinstanceごとです。安全性は変わりませんが、instance数に応じてBrokerへの取得回数が増えます。
 
-更新時はmigration完了後にAPI instanceをrolling restartし、最低2つのinstanceが同じtenant session versionを共有できることを確認します。
+更新時はmigration完了後にAPI instanceをrolling restartし、最低2つのinstanceが同じprincipal単位versionを共有できることを確認します。これは水平スケール基盤の確認に限られ、認証セッション単位のactive tenant継続性を証明しません。
 
 ## 起動
 

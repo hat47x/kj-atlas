@@ -8,7 +8,7 @@
 
 ## Context
 
-ADR-0063 D9 により trusted auth edge（JWT 検証 → tenant 解決 → session persister）が実装完了し、`saas-multitenant` profile の起動が可能になった。しかし以下の認証フローは未検証・未実装である：
+ADR-0063 D9 により trusted auth edge（JWT 検証 → tenant 解決 → session persister）の基盤が実装された。ただし2026-08-11の再監査で、共有persisterはprincipal単位versionのみを保存し、認証セッション単位のactive tenant正本を持たないことが判明した。設定上の起動は可能でも、`SAAS-TENANT-SESSION-BINDING-01`完了まで共有SaaSの本番利用gateは未充足である。加えて以下の認証フローは未検証・未実装である：
 
 1. **SAML IdP → Broker (SAML→OIDC) → JWT → kj-atlas** のエンドツーエンド協調動作
 2. **OAuth 2.0 / OIDC によるログインフロー**（認可コードグラント、PKCE）
@@ -24,7 +24,7 @@ ADR-0063 D9 により trusted auth edge（JWT 検証 → tenant 解決 → sessi
 | `JwtSaasIdentityContextResolver` — JWT 検証 (RS256/ES256) | ✅ ADR-0063 D9-3 |
 | `JwksStore` — JWKS キャッシュ・ローテーション | ✅ ADR-0063 D9-2 |
 | `ClaimBasedTenantContextResolver` — claim → tenant 解決 | ✅ ADR-0063 D9-4 |
-| `DatabaseActiveTenantSessionPersister` — PostgreSQL共有セッション永続化 | ✅ OPS-SAAS-SCALE-01 |
+| `DatabaseActiveTenantSessionPersister` — PostgreSQL共有version永続化 | ⚠️ principal単位の暫定実装。active tenant/session束縛は`SAAS-TENANT-SESSION-BINDING-01` |
 | `main.py` SaaS bundle wiring | ✅ ADR-0063 D9-6 |
 | Level 2 mock IdP — RS256 JWT + `/jwks.json` | ✅ ADR-0063 D9-7 |
 | E2E HTTP tenant isolation test | ✅ ADR-0063 D9-8 (10 tests) |
@@ -165,7 +165,7 @@ Level 2 mock IdP に以下を追加する：
 #### Phase 3: 本番運用準備
 
 1. ✅ `TRUSTED_PROXIES` 実装
-2. ✅ PostgreSQL共有の`DatabaseActiveTenantSessionPersister`（2026-08-11）。Bearer replay防御方式は`AUTH-ONE-TIME-JWT-01`で未決
+2. ⚠️ PostgreSQL共有の`DatabaseActiveTenantSessionPersister`（2026-08-11）はprincipal単位version共有まで。認証session IDとactive tenantの原子的正本化は`SAAS-TENANT-SESSION-BINDING-01`、Bearer replay防御方式は`AUTH-ONE-TIME-JWT-01`で未決
 3. SCIM provisioning
 4. Audit logging for auth events
 
