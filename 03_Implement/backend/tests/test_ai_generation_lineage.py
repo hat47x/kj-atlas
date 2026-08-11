@@ -64,6 +64,7 @@ def _engine(tmp_path):
                     storage_state="ready",
                     schema_version="document-v1",
                     created_at=TIMESTAMP,
+                    payload_bytes=b"{}",
                 )
             )
         db.commit()

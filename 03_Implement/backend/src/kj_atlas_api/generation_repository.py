@@ -1,10 +1,12 @@
 from collections.abc import Callable
 from dataclasses import dataclass
+from hashlib import sha256
 
 from sqlalchemy import delete, exists, select, update
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm import Session
 
+from kj_atlas_api.generation_codec import EncodedGenerationBlob, restore_generation
 from kj_atlas_api.models import (
     CanvasRevisionHeadRow,
     CanvasRevisionParentRow,
@@ -25,10 +27,157 @@ class GenerationGcConflict(RuntimeError):
     pass
 
 
+class GenerationBlobConflict(RuntimeError):
+    pass
+
+
+class GenerationBlobUnavailable(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True)
 class EphemeralHistoryPruneResult:
     deleted_revision_ids: tuple[str, ...]
     cut_parent_edges: int
+
+
+def load_database_generation_blob(
+    db: Session,
+    *,
+    tenant: TenantContext,
+    content_digest: str,
+    max_delta_depth: int = 32,
+) -> bytes:
+    """Restore and integrity-check an inline generation blob and its delta ancestry."""
+    if max_delta_depth < 0:
+        raise ValueError("max delta depth must not be negative")
+    apply_database_tenant_context(db=db, tenant=tenant)
+
+    def _restore(digest: str, *, remaining_depth: int, ancestors: set[str]) -> bytes:
+        if digest in ancestors:
+            raise GenerationBlobUnavailable("generation blob delta cycle detected")
+        row = db.get(ContentBlobRow, (tenant.tenant_id, digest))
+        if (
+            row is None
+            or row.storage_backend != "database"
+            or row.storage_state != "ready"
+            or row.payload_bytes is None
+        ):
+            raise GenerationBlobUnavailable("generation blob is not materialized in database")
+        stored_bytes = bytes(row.payload_bytes)
+        if len(stored_bytes) != row.stored_byte_size:
+            raise GenerationBlobUnavailable("generation blob stored size does not match")
+        if row.representation == "full_json":
+            if len(stored_bytes) != row.byte_size or sha256(stored_bytes).hexdigest() != digest:
+                raise GenerationBlobUnavailable("generation blob integrity verification failed")
+            return stored_bytes
+        if row.delta_depth > max_delta_depth or remaining_depth < 0:
+            raise GenerationBlobUnavailable("generation blob delta depth exceeds policy")
+        base_bytes = None
+        if row.representation == "gzip_delta":
+            if row.base_digest is None or remaining_depth == 0:
+                raise GenerationBlobUnavailable("generation blob delta base is unavailable")
+            base_bytes = _restore(
+                row.base_digest,
+                remaining_depth=remaining_depth - 1,
+                ancestors=ancestors | {digest},
+            )
+        encoded = EncodedGenerationBlob(
+            content_digest=row.content_digest,
+            byte_size=row.byte_size,
+            stored_bytes=stored_bytes,
+            representation=row.representation,
+            base_digest=row.base_digest,
+            delta_depth=row.delta_depth,
+        )
+        try:
+            return restore_generation(encoded, base_bytes=base_bytes)
+        except ValueError as error:
+            raise GenerationBlobUnavailable(
+                "generation blob integrity verification failed"
+            ) from error
+
+    return _restore(content_digest, remaining_depth=max_delta_depth, ancestors=set())
+
+
+def save_database_generation_blob(
+    db: Session,
+    *,
+    tenant: TenantContext,
+    blob: EncodedGenerationBlob,
+    schema_version: str,
+    created_at: str,
+    max_delta_depth: int = 32,
+) -> ContentBlobRow:
+    """Persist codec output idempotently without allowing digest metadata collisions."""
+    apply_database_tenant_context(db=db, tenant=tenant)
+    if len(blob.stored_bytes) == 0 or len(blob.stored_bytes) > 2**31 - 1:
+        raise GenerationBlobConflict("generation blob stored size is invalid")
+    if blob.delta_depth > max_delta_depth:
+        raise GenerationBlobConflict("generation blob delta depth exceeds policy")
+
+    base_bytes = None
+    if blob.representation == "gzip_delta":
+        if blob.base_digest is None:
+            raise GenerationBlobConflict("generation blob delta base is missing")
+        base_bytes = load_database_generation_blob(
+            db,
+            tenant=tenant,
+            content_digest=blob.base_digest,
+            max_delta_depth=max_delta_depth,
+        )
+    try:
+        restore_generation(blob, base_bytes=base_bytes)
+    except ValueError as error:
+        raise GenerationBlobConflict("generation blob failed integrity verification") from error
+
+    existing = db.get(ContentBlobRow, (tenant.tenant_id, blob.content_digest))
+    expected_shape = (
+        "database",
+        None,
+        blob.representation,
+        blob.base_digest,
+        blob.delta_depth,
+        blob.byte_size,
+        len(blob.stored_bytes),
+        "ready",
+        schema_version,
+        bytes(blob.stored_bytes),
+    )
+    if existing is not None:
+        actual_shape = (
+            existing.storage_backend,
+            existing.locator,
+            existing.representation,
+            existing.base_digest,
+            existing.delta_depth,
+            existing.byte_size,
+            existing.stored_byte_size,
+            existing.storage_state,
+            existing.schema_version,
+            bytes(existing.payload_bytes) if existing.payload_bytes is not None else None,
+        )
+        if actual_shape != expected_shape:
+            raise GenerationBlobConflict("generation blob digest already has different content")
+        return existing
+
+    row = ContentBlobRow(
+        tenant_id=tenant.tenant_id,
+        content_digest=blob.content_digest,
+        storage_backend="database",
+        locator=None,
+        representation=blob.representation,
+        base_digest=blob.base_digest,
+        delta_depth=blob.delta_depth,
+        byte_size=blob.byte_size,
+        stored_byte_size=len(blob.stored_bytes),
+        storage_state="ready",
+        schema_version=schema_version,
+        created_at=created_at,
+        payload_bytes=bytes(blob.stored_bytes),
+    )
+    db.add(row)
+    return row
 
 
 def list_ephemeral_gc_candidates(
@@ -307,9 +456,7 @@ def prune_ephemeral_history_by_reachability(
     for edge in parents:
         parent_ids_by_child.setdefault(edge.revision_id, []).append(edge.parent_revision_id)
 
-    roots = {
-        row.revision_id for row in revisions if row.generation_tier != "ephemeral"
-    }
+    roots = {row.revision_id for row in revisions if row.generation_tier != "ephemeral"}
     roots.update(row.source_revision_id for row in revisions if row.source_revision_id)
     roots.update(
         db.scalars(

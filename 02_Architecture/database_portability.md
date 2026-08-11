@@ -109,4 +109,4 @@ CandidateをVerifiedへ変更するには、対象versionを固定した実DBに
 
 ## Current next step
 
-`DATA-GENERATION-01`でrevision／blob設計は確定し、当初候補だった全DBのinline contentも実証できた。外部storageのruntime接続優先度は引き続き低く保つ。新しいDB familyは具体的需要を起点にcandidate登録し、同じpromotion gateを通す。容量・複数instance共有要件が実測された環境だけ、NAS/S3等を`content_blobs`の物理backendとして再評価する。
+`DATA-GENERATION-01`でrevision／blob設計を確定し、`DATA-GENERATION-02` Phase 1で全Verified DBのportable binary LOBへinline codec bytesを保存・復元できることを実証した。ただしDocument GET/PUTは引き続き`documents.payload_json`を正本とし、revision head、保存reason、ETag互換を決定するPhase 2までrevision DAGをruntime正本とは表明しない。外部storageのruntime接続優先度は引き続き低く保つ。新しいDB familyは具体的需要を起点にcandidate登録し、同じpromotion gateを通す。容量・複数instance共有要件が実測された環境だけ、NAS/S3等を`content_blobs`の物理backendとして再評価する。

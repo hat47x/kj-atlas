@@ -6,7 +6,7 @@ from sqlalchemy import Boolean, CheckConstraint, Index, Integer, Text, text
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from kj_atlas_api.persistence_shapes import apply_persistent_text_shapes
+from kj_atlas_api.persistence_shapes import apply_persistent_text_shapes, portable_binary_lob_type
 
 
 RELATION_SUMMARY_TEXT_MAX_LENGTH = 4000
@@ -100,6 +100,13 @@ class ContentBlobRow(Base):
         CheckConstraint("byte_size >= 0", name="ck_content_blobs_byte_size"),
         CheckConstraint("stored_byte_size >= 0", name="ck_content_blobs_stored_byte_size"),
         CheckConstraint("length(content_digest) = 64", name="ck_content_blobs_digest_length"),
+        CheckConstraint(
+            "(storage_backend = 'database' AND locator IS NULL "
+            "AND (storage_state != 'ready' OR payload_bytes IS NOT NULL)) OR "
+            "(storage_backend IN ('nas', 's3', 'git') AND locator IS NOT NULL "
+            "AND length(trim(locator)) > 0 AND payload_bytes IS NULL)",
+            name="ck_content_blobs_payload_location",
+        ),
         ForeignKeyConstraint(
             ["tenant_id", "base_digest"],
             ["content_blobs.tenant_id", "content_blobs.content_digest"],
@@ -123,6 +130,7 @@ class ContentBlobRow(Base):
     storage_state: Mapped[str] = mapped_column(Text, nullable=False)
     schema_version: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    payload_bytes: Mapped[bytes | None] = mapped_column(portable_binary_lob_type(), nullable=True)
 
 
 class AiGenerationRunRow(Base):

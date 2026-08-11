@@ -4,6 +4,7 @@ from enum import Enum
 from sqlalchemy import (
     CheckConstraint,
     ForeignKeyConstraint,
+    LargeBinary,
     MetaData,
     String,
     Table,
@@ -12,7 +13,8 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.dialects.mysql import LONGTEXT
+from sqlalchemy.dialects.mysql import LONGBLOB, LONGTEXT
+from sqlalchemy.dialects.mssql import VARBINARY as MSSQL_VARBINARY
 from sqlalchemy.dialects.mssql import VARCHAR as MSSQL_VARCHAR
 
 
@@ -63,6 +65,16 @@ STATE = _bounded(32, "closed-set lifecycle, action, decision, or protocol discri
 OIDC_ISSUER_MAX_CHARS = 512
 OIDC_AUDIENCE_MAX_CHARS = 255
 URI_MAX_CHARS = 2048
+
+
+def portable_binary_lob_type() -> LargeBinary:
+    """Unbounded binary payload type for every Verified relational backend."""
+    return (
+        LargeBinary()
+        .with_variant(LONGBLOB(), "mysql")
+        .with_variant(LONGBLOB(), "mariadb")
+        .with_variant(MSSQL_VARBINARY(None), "mssql")
+    )
 
 
 def portable_check_constraint_sql(sql: str, backend: str) -> str:
@@ -300,8 +312,6 @@ def install_portable_text_ddl_hook() -> None:
         if _connection.dialect.name != "cockroachdb":
             return
         quote = _connection.dialect.identifier_preparer.quote
-        _connection.execute(
-            text(f"ALTER TABLE {quote(table.name)} SET (schema_locked = false)")
-        )
+        _connection.execute(text(f"ALTER TABLE {quote(table.name)} SET (schema_locked = false)"))
 
     setattr(install_portable_text_ddl_hook, "_installed", True)

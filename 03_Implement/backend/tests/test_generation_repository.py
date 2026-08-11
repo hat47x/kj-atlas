@@ -73,6 +73,7 @@ def test_revision_head_compare_and_swap_is_tenant_scoped(tmp_path) -> None:
                         storage_state="ready",
                         schema_version="document-v1",
                         created_at=timestamp,
+                        payload_bytes=b"{}",
                     )
                 )
                 for revision_id in ("rev-1", "rev-2"):
@@ -357,6 +358,7 @@ def test_reachability_pruning_keeps_each_branch_window_and_deletes_shared_ancest
                     storage_state="ready",
                     schema_version="document-v1",
                     created_at=old_timestamp,
+                    payload_bytes=b"retention",
                 )
             )
             db.commit()

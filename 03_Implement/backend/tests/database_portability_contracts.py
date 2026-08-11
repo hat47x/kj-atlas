@@ -7,7 +7,13 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.generation_repository import RevisionHeadConflict, advance_revision_head
+from kj_atlas_api.generation_codec import canonical_json_bytes, encode_generation
+from kj_atlas_api.generation_repository import (
+    RevisionHeadConflict,
+    advance_revision_head,
+    load_database_generation_blob,
+    save_database_generation_blob,
+)
 from kj_atlas_api.models import (
     AiGenerationRunRow,
     CanvasRevisionHeadRow,
@@ -69,6 +75,7 @@ def verify_revision_dag_contract(engine: Engine) -> None:
                     storage_state="ready",
                     schema_version="document-v1",
                     created_at=TIMESTAMP,
+                    payload_bytes=b'{"portable":true}',
                 )
             )
         db.commit()
@@ -188,3 +195,24 @@ def verify_revision_dag_contract(engine: Engine) -> None:
             select(CanvasRevisionRow.revision_id).where(CanvasRevisionRow.tenant_id == "tenant-b")
         ).all()
         assert tenant_b_revisions == ["portable-base"]
+
+        # Exercise the actual binary LOB, not only its metadata. Deterministic
+        # hash material remains larger than 1 MiB after gzip compression.
+        large_value = {
+            "entropy": "".join(sha256(str(index).encode()).hexdigest() for index in range(30_000))
+        }
+        large_blob = encode_generation(large_value)
+        assert len(large_blob.stored_bytes) > 1024 * 1024
+        save_database_generation_blob(
+            db,
+            tenant=tenant,
+            blob=large_blob,
+            schema_version="document-v1",
+            created_at=TIMESTAMP,
+        )
+        db.commit()
+        assert load_database_generation_blob(
+            db,
+            tenant=tenant,
+            content_digest=large_blob.content_digest,
+        ) == canonical_json_bytes(large_value)
