@@ -1,7 +1,7 @@
 # Issue: AI-EVAL-01 DeepSeek実APIでのKJ操作品質検証
 
 - Type: Feature
-- Status: Draft
+- Status: Done
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/tests/`, 新規評価用fixture
@@ -36,14 +36,18 @@
 
 ## 受入条件
 
-- [ ] DeepSeek APIで `refine_card_text` 10件の評価完了、3軸中2軸以上で合格 — **実行スクリプト準備完了（`run_ai_eval.py`、ドライラン10/10通過）**
-- [ ] DeepSeek APIで `suggest_island_summary` 3〜5件の評価完了、3軸中2軸以上で合格 — **実行スクリプト準備完了（ドライラン4/4通過）**
-- [ ] 評価結果が `01_Plans/dogfood/ai_eval_results.md` に記録されている — **テンプレート+モックリハーサル記録済み**
-- [ ] L2基準③が達成と判定され、AGENTS.mdのL2進捗が更新される — **実API実行後の最終判定待ち**
+- [x] DeepSeek APIで `refine_card_text` 10件の評価完了、3軸中2軸以上で合格 — **実API評価 10/10（3軸全合格・実用可）**
+- [x] DeepSeek APIで `suggest_island_summary` 3〜5件の評価完了、3軸中2軸以上で合格 — **実API評価 4/4（3軸全合格・実用可）**
+- [x] 評価結果が `01_Plans/dogfood/ai_eval_results.md` に記録されている — **実API結果をテーブルに記録済み**
+- [x] L2基準③が達成と判定され、AGENTS.mdのL2進捗が更新される — **L2昇格条件全達成（①1件・②75件・③2/2）**
 
-## 進捗（2026-08-12）
+## 完了記録（2026-08-12）
 
-評価パイプラインが完全に自動化された。`run_ai_eval.py` でワンコマンド評価可能（ドライラン検証済み）。残るは `KJ_ATLAS_DEEPSEEK_API_KEY` 投入で実API評価を実行するのみ。
+`run_ai_eval.py` を実APIモード（TestClient経由・実際のエンドポイント）で実行し、DeepSeek `deepseek-chat` の品質を検証した。
+- refine_card_text: 10/10 成功（元意味保持・名詞止め解除・過剰言い換えなし）
+- suggest_island_summary: 4/4 成功（島固有の代弁性・表札検査通過）
+
+**L2自律性の全基準が達成され、L1→L2昇格条件が満たされた。**
 
 ## 補足
 
