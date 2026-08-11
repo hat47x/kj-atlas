@@ -36,10 +36,14 @@
 
 ## 受入条件
 
-- [ ] DeepSeek APIで `refine_card_text` 10件の評価完了、3軸中2軸以上で合格
-- [ ] DeepSeek APIで `suggest_island_summary` 3〜5件の評価完了、3軸中2軸以上で合格
-- [ ] 評価結果が `01_Plans/dogfood/ai_eval_results.md` に記録されている
-- [ ] L2基準③が達成と判定され、AGENTS.mdのL2進捗が更新される
+- [ ] DeepSeek APIで `refine_card_text` 10件の評価完了、3軸中2軸以上で合格 — **実行スクリプト準備完了（`run_ai_eval.py`、ドライラン10/10通過）**
+- [ ] DeepSeek APIで `suggest_island_summary` 3〜5件の評価完了、3軸中2軸以上で合格 — **実行スクリプト準備完了（ドライラン4/4通過）**
+- [ ] 評価結果が `01_Plans/dogfood/ai_eval_results.md` に記録されている — **テンプレート+モックリハーサル記録済み**
+- [ ] L2基準③が達成と判定され、AGENTS.mdのL2進捗が更新される — **実API実行後の最終判定待ち**
+
+## 進捗（2026-08-12）
+
+評価パイプラインが完全に自動化された。`run_ai_eval.py` でワンコマンド評価可能（ドライラン検証済み）。残るは `KJ_ATLAS_DEEPSEEK_API_KEY` 投入で実API評価を実行するのみ。
 
 ## 補足
 
