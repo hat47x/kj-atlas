@@ -241,3 +241,29 @@ def test_ai_task_prompt_hint_generates_scaffold() -> None:
     assert result.returncode == 0, result.stderr
     assert "全体要約を生成してください" in result.stdout  # prompt hint embedded
     assert "# TODO: Customize prompt" not in result.stdout  # scaffold replaced
+
+
+def test_generated_pydantic_model_is_valid_python() -> None:
+    """Generated Pydantic model code must parse as valid Python (syntax-level)."""
+    import ast
+
+    decision = _verified({
+        "type": "data_boundary",
+        "typeName": "ValidBoundary",
+        "description": "構文検証用",
+        "saveScope": "server",
+        "fields": [
+            {"name": "id", "type": "str", "minLength": 1},
+            {"name": "note", "type": "str | None", "default": "None"},
+        ],
+    })
+    result = _run_script(decision, "--dry-run")
+    assert result.returncode == 0, result.stderr
+    # Extract the model code between '=== Generated Pydantic model ===' and
+    # the next '=== ' section header, then parse it.
+    block = result.stdout.split("=== Generated Pydantic model ===", 1)[1]
+    model_code = block.split("\n===", 1)[0]
+    # Drop any trailing "[Dry run — no files written]" marker.
+    model_code = model_code.split("[Dry run", 1)[0]
+    model_code = model_code.lstrip("\n").rstrip()
+    ast.parse(model_code)  # raises SyntaxError if invalid
