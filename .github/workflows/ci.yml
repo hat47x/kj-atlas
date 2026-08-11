@@ -354,6 +354,7 @@ jobs:
         env:
           KJ_ATLAS_RUN_PG_TESTS: "1"
           KJ_ATLAS_DATABASE_URL: postgresql+psycopg://kj_atlas:kj_atlas@localhost:5432/kj_atlas
+          KJ_ATLAS_TEST_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: pytest -m postgres
 
       - name: Test (MySQL family)

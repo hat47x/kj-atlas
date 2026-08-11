@@ -143,3 +143,9 @@
 - promotion gateはtransaction rollbackとconnection pool再利用を必須としていたが、MySQL/MariaDB共通matrixにはconstraint、LOB、migration往復、backup/restoreだけが実装され、transaction項目が欠落していた。
 - pool size 1の同一engineで未commit行をrollbackし、connection返却後にpoolから再取得した接続で行が存在しないことを検証する処理を共通matrixへ追加した。MySQLとMariaDBで同じテストを実行し、DB family共通化の境界を維持する。
 - 固定imageのMySQL 8.4.11とMariaDB 11.4.12で、fresh migration、rollback／pool再利用、constraint、LOB、migration往復、logical backup／別database restoreを含む各1件がpassした。一時containerは検証後に削除した。
+
+## PostgreSQL recovery CI checkpoint 2026-08-11
+
+- PostgreSQLの`pg_dump`／`pg_restore`隔離復元は`DATA-MAINT-02`の手動演習証跡に留まり、現行`postgres` marker／CIから退行を検出できなかった。
+- CI service containerをtestへ明示注入し、1 MiB超の固有Documentをsourceへ作成、custom-format dump、別databaseへの`pg_restore --exit-on-error --no-owner`、Document version／本文長／Alembic revision照合、source rowと一時databaseのcleanupまでを自動化した。
+- PostgreSQL 16.14の一時containerでfresh migrationと新しいrestore test 1件がpassし、test内cleanup後にcontainerも削除した。
