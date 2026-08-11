@@ -1,7 +1,7 @@
 # Issue: DX-CODEGEN-03 コード生成パイプラインのテスト生成への拡張
 
 - Type: Feature
-- Status: Draft
+- Status: Done
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/scripts/generate_from_design_decision.py`, `02_Architecture/code-generation-from-design-decisions.html`
@@ -39,11 +39,11 @@
 
 ## 受入条件
 
-- [ ] `data_boundary`型で生成したモデルが、roundtripテストと検証制約テストを含むテストファイルを生成する（ドライラン）
-- [ ] `ai_task`型で生成したエンドポイントが、モックLLMでの成功/エラーケーステストを生成する（ドライラン）
-- [ ] 生成テストが構文検証（ast.parse）を通過する
-- [ ] 既存のコード生成テスト（15 tests）がすべてパスする
-- [ ] `code-generation-from-design-decisions.html`にテスト生成パターンが追記されている
+- [x] `data_boundary`型で生成したモデルが、roundtripテストと検証制約テストを含むテストファイルを生成する（ドライラン）
+- [x] `ai_task`型で生成したエンドポイントが、モックLLMでの成功/エラーケーステストを生成する（ドライラン）
+- [x] 生成テストが構文検証（ast.parse）を通過する
+- [x] 既存のコード生成テスト（15 tests）がすべてパスする — 現在17 tests
+- [x] `code-generation-from-design-decisions.html`にテスト生成パターンが追記されている — §7
 
 ## 補足
 
