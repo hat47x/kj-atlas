@@ -49,6 +49,14 @@
 
 - **OpenAI互換（`/v1/chat/completions`）ワイヤ形式の追加/代替**: 現状 `/generate` 独自契約は「意図的な決定」であり、real-use での実際の摩擦（誰かが実際に Ollama 等を繋ごうとして失敗した記録）はまだ確認されていない。ADR-0047 の R-1 は「顕在化した」摩擦を要求するため、予測ベースでの契約変更は本ADRの範囲外とする。この Pending 事項は `ROADMAP.md` 要件C（LLMアダプタ基盤）に追記し、実際の摩擦が観測された時点で別ADRとして起票する。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 運用者とエンドユーザーは「AIが今使えるか、使えないなら意図的無効か障害か」を画面から判断できる必要がある。未翻訳の生例外文がエンドユーザー画面へ漏れるのは誤誘導であり実使用の摩擦（ADR-0047 R-1）に該当 | 機能: ランタイム切替UIは提供せず運用者設定＋再起動を維持。データ: 直近の呼び出し結果を非スコアリングの状態ラベルとして表示 |
+| **データ設計** | バックエンドの`ProviderError.to_contract()`（code: provider_unavailable/timeout/validation, disabled_reason）をHTTPレスポンスの構造化フィールドとして欠落なく伝播する。フロントエンド`ApiError`に`code`/`disabledReason`を追加 | 業務: ユーザー向けメッセージはcode別のi18nキーで提示し生例外文を出さない。機能: 詳細（trace_id等）は開発者コンソール/ログにのみ残す |
+| **機能設計** | ViewパネルにAIプロバイダ状態（読み取り専用）を追加。App.tsxの判定は正規表現でなく`error.code`/`disabledReason`を直接参照。`llm_provider_spec.md`§4を実装済み契約（LLMRequest{task,prompt,temperature,max_tokens}→LLMResponse{raw_text,metadata}）に是正 | 業務: provider変更は運用者制御のまま（SafeMode既定ONのガバナンス境界と同一）。データ: inputs/output_schema/usageはPhase-2（未配線）として明示分離 |
+
 ## Consequences
 
 - 期待される効果: 運用者・エンドユーザーとも「AIが今使えるか、使えないなら意図的無効か障害か」を画面から判断できるようになる。誤解を招く未翻訳例外文の露出が無くなる。`llm_provider_spec.md` が実装と一致し、以後の実装判断（IR配線等）の起点として信頼できる状態になる。

@@ -129,6 +129,14 @@ v1 では `identity_providers` 行の作成を Platform Control Plane（`ADR-005
 5. **identity 層にも `fail_safe_mode` 設定を置く**: 「誰か不明でも通す」設定は正しい運用が選ばない。存在すること自体が誤設定の入口になる（`ADR-0062` の教訓）。
 6. **`contextvars` で claim を運ぶ**: 型変更を避けられるが、安全境界のデータ経路が暗黙になり、async での取り違えを静的に検出できない。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 顧客ごとのIdP（Okta/Azure AD/SAML等）をidentity brokerが集約し、kj-atlasへは単一issuer・単一audienceのJWTとtenant識別claimを渡す。broker製品は固定しない（Keycloak/Authentik/WorkOS/Auth0 Organizations等） | 機能: アプリはSP/RPとしてredirect/callback/assertion交換を行わない（ADR-0020の責務境界を維持）。データ: tenantごとのIdP差異はbroker設定で吸収しアプリのコード分岐にしない |
+| **データ設計** | `identity_providers`行の作成はPlatform Control Planeの運用者操作に限定しtenant adminのself-service登録は提供しない。アプリが信頼する鍵の出所をtenant編集可能なデータにしない | 業務: アプリ側実装はissuerをハードコードせず検証済みissuerから`identity_providers`行を引くmulti-issuer構造。機能: migrationでtrust material列を追加 |
+| **機能設計** | 実HTTPリクエストのcredentialを検証して`VerifiedTenantClaim`を作る層を実装。multi-issuer JWT検証（PyJWT+cryptography）。`TenantContextResolver.resolve()`はrequest/claimを受け取る形に署名変更 | 業務: IdP/JWKS障害時は1800秒猶予後に全面停止（可用性より機密性、ADR-0059の帰結）。データ: single-tenant挙動は既定値により無変更 |
+
 ## Consequences
 
 - `saas-multitenant` の運用者は identity broker の設置・維持を負う。kj-atlas はその選定・同梱を行わない。

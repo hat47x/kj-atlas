@@ -175,6 +175,14 @@ Level 2 mock IdP に以下を追加する：
 2. **フロントエンドが JWT を直接保持しない**: セッション cookie のみで運用する方式。SPA の API 呼び出しに JWT が必要なため、フロントエンドが JWT をメモリに保持することは許容する。HttpOnly cookie との二重管理は複雑性を増すため不採用。
 3. **Broker なしで Google OAuth を直接検証**: ADR-0063 D1 で否決。multi-IdP 対応の拡張性を失う。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | SAML顧客はBrokerのSAML→OIDC変換を通じてkj-atlasを利用し、開発者はmockログインでE2E認証フローをテストできる。OAuth 2.0ログインフローはBrokerが担当しkj-atlas本体に実装しない | 機能: フロントエンドは最小限の認証状態管理（リダイレクト+JWT保持）で済む。データ: SAML assertion検証はbrokerに委譲 |
+| **データ設計** | SPAへ返す短命Bearer access tokenはmodule memoryだけに保持し`sessionStorage`/`localStorage`へ保存しない。reload後は再認証。refresh token grantはSPA clientで無効化 | 業務: tenant-session cookieは`HttpOnly; SameSite=Strict; Path=/`、`local-dev`以外では`Secure`必須。機能: ログアウトは同じ属性とpathで失効させる |
+| **機能設計** | JwtSaasIdentityContextResolver・JwksStore・ClaimBasedTenantContextResolver・mock IdP（/login /oauth/authorize /oauth/token /oauth/userinfo）・mock SPのOAuth login flow proxyを実装済み。共有persisterはprincipal単位の暫定実装 | 業務: active tenant/session束縛は`SAAS-TENANT-SESSION-BINDING-01`完了まで本番利用gate未充足。データ: sender-constrained replay防御は別ADRで方式決定 |
+
 ## Consequences
 
 - 開発者は mock ログインで E2E 認証フローをテストできる。
