@@ -74,6 +74,14 @@ BroadcastChannel、storage event、focus時再読込は利用者体験を改善�
 - client通知やUI cleanupが失敗しても、serverがstale requestとresponseを閉じる二重境界になる。
 - Claude Designのtenant切替レッドラインには、他タブへの影響、scope失効、bfcache/復帰、stale save拒否の状態が必要になる。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | 1つの認証セッションにactive tenantは1つだけ。切替は全タブへ波及し、異なるtenantの同時操作は別セッションまたは将来のper-tab契約で対応する | 切替確認UIは「このブラウザの他のタブも切り替わります」を常時表示。context変更検知時に本文・Admin metadata・dialog・未送信previewを非表示にして再確認状態へ移す |
+| **データ設計** | trusted auth/session adapterがactive tenant stateごとにopaqueな`tenantSessionVersion`を発行し切替時に必ず変更。versionはDocument・export・browser永続設定・URL・監査本文へ保存しない | versionは認可根拠ではなくexpected-context guard。実tenant・membership・capabilityはserver正本から解決。監査には`tenant_session_changed`結果だけを残し生versionを記録しない |
+| **機能設計** | `GET /session/context`はversionを返し、`POST /session/active-tenant`は`expectedTenantSessionVersion`を必須入力として一致時だけ切替保存。全tenant-scoped APIはresource lookup前にversion一致を検証し、欠損・不一致は`409`へfail-closed | stale requestを新contextで自動再送しない。PUT・import・share・export・Admin更新は利用者が新scopeを確認後にだけ再実行可。旧contextのresponse・worker結果・object URLはcommitしない |
+
 ## Non-goals
 
 - per-tab tenant session、複数tenant同時編集、support impersonationを導入しない。

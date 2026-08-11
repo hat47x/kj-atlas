@@ -58,6 +58,14 @@ UI/UX 品質を次の品質次元（UQ）で定義し、各次元の担保（既
   - `02_Architecture/value_traceability.md` に UQ-1..6 対応表（担保テスト＋充足度）を追記する。
   - a11y 拡充 issue（`UI-QUALITY-A11Y-01`）を起票候補とする（Draft、`ADR-0039` 軽量運用）。
 
+## Three-Element Verification（ADR-0067 遡及適用）
+
+| 次元 | このADRでの主張 | 他次元への制約 |
+|------|----------------|---------------|
+| **業務設計** | UI/UX品質をUQ-1..6の6次元で定義し、既存テストを担保として`value_traceability.md`に索引化。新機能の品質レビュー基準と薄い次元の可視化を実現する。個人OSS・プレリリース段階では物量での網羅追加はしない | UIを増やすissueは触れるUQ次元を明記しADR-0043の複雑性予算と合わせて自己申告。「薄い／未」の次元のみを改善issue化しUQ-2（a11y）を最優先改善対象とする |
+| **データ設計** | `value_traceability.md`のUQ対応表（担保テスト＋充足度）を正本とし、各次元を「充足 / 薄い / 未」で記録。現状はUQ-3（i18n）充足、UQ-1/UQ-4/UQ-5おおむね充足、UQ-2（a11y）は薄いと固定 | テストはUQ表の参照とし、UQと既存テストの対応がずれて二重管理にならないようにする。充足度判定の主観はe2eとsource-string contractの事実で裏づける |
+| **機能設計** | 各UQに既存テストを担保として割り当て: UQ-1（`ux_operability_regression.test.ts`・e2e focus order）、UQ-2（`IslandView.accessibility.test.ts`＝拡充対象）、UQ-3（`src/i18n/`テスト群＋`i18n_equivalence`）、UQ-4（e2e layout/大規模文書）、UQ-5（`safe_mode_status.test.ts`・selection-context）、UQ-6（複雑性予算申告＋UX回帰アンカー） | ビジュアルリグレッション基盤の新規導入、WCAG等の外部適合認証の取得、デザインシステム刷新をしない。a11y拡充issue（`UI-QUALITY-A11Y-01`）をDraftとして起票候補 |
+
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `ADR-0031-productization-screen-information-architecture.md`
