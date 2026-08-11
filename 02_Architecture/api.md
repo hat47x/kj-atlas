@@ -545,6 +545,70 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
     - `title: string`
 - 文書全体の内容を反映したタイトル候補を提案する。低品質許容・人間が書き換える前提。候補は並列提示し、順位付け・スコア表示は行わない。
 
+### 2.13 Document監査・検証系API
+
+**POST** `/docs/{doc_id}/context-audit`
+
+- 文書に対するAI文脈参照イベント（query/bundle）を監査記録する。proposal適用時にCE4の4点監査イベントを伴う。
+- Error: 404（doc_id不存在）、422（無効なpayload）
+
+**POST** `/docs/{doc_id}/export-audit`
+
+- 共有・書き出しイベント（exportKind を含む）を監査記録する。SafeMode適用後の書き出し境界を通過した場合のみ記録される。
+- Error: 404（doc_id不存在）
+
+**GET** `/docs/{doc_id}/similar-candidate-groups`
+
+- Response: `CandidateListViewModel`
+- 類似カード統合候補の一覧を返す派生ビュー。保存されたDocumentから導出される。
+
+**POST** `/docs/{doc_id}/polygon-handoff/verify-contract`
+
+- Response: `PolygonHandoffContractVerificationResponse`
+- 非矩形島の形状データを、保存契約との整合性で検証する。
+
+### 2.14 Session / Admin / システム系API
+
+**GET** `/session/context`
+
+- Response: `TenantSessionContextResponse`
+- 認証済みセッションのactive tenant・available tenants・effective capabilities・tenantSessionVersionを返す（§8参照）。
+
+**POST** `/session/active-tenant`
+
+- Request: active tenant切替（expectedTenantSessionVersion必須）
+- Response: `TenantSessionContextResponse`
+- 一致時のみ切替を保存。不一致・欠損は `409 tenant_session_changed`。
+
+**POST** `/session/logout`
+
+- セッションを終了し、サーバー側のセッション状態を破棄する。204 No Content。
+
+**POST** `/admin/provision/identity-providers`
+
+- strict provisioning: 外部IdPの登録。provider, issuer, audience を登録する。
+- 認可: Platform operator / admin capability
+
+**POST** `/admin/provision/tenant-identity-providers`
+
+- strict provisioning: tenantとIdPのbinding登録。
+
+**POST** `/admin/agent-registrations`
+
+- 将来のエージェント登録（EXT-CONN-02契約後）。登録・一覧・失効は別契約。
+
+**GET** `/healthz`
+
+- 未認証。プロセス生存確認。`200 {"status": "ok"}` を返す。
+
+**GET** `/redoc`
+
+- 未認証。ReDoc形式のAPIドキュメントUI。
+
+**GET** `/openapi.json`
+
+- 未認証。OpenAPIスキーマを返す。
+
 ---
 
 ## 3. レスポンス例（概要）

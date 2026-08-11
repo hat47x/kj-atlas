@@ -1,9 +1,9 @@
 {
-  "total_warnings": 41,
+  "total_warnings": 32,
   "total_errors": 0,
   "categories": {
     "adr_refs": 0,
-    "api_endpoints": 41,
+    "api_endpoints": 32,
     "agdmd_refs": 0,
     "mermaid": 0
   }
