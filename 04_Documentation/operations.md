@@ -208,7 +208,7 @@ RESTORE DATABASE [kj_atlas_restore]
 ```
 
 <a id="database-cockroachdb"></a>
-### CockroachDB 26.2
+### CockroachDB 26.2.3
 
 `BACKUP`権限と復元先作成権限が必要です。次はsingle-node検証で確認した`nodelocal`例です。multi-nodeやmanaged serviceでは共有object storage URIとKMS／IAMを組織側で定義します。
 
@@ -219,7 +219,7 @@ RESTORE DATABASE "kj_atlas" FROM LATEST IN 'nodelocal://1/kj_atlas-backup'
 ```
 
 <a id="database-oracle"></a>
-### Oracle AI Database 26ai
+### Oracle AI Database Free 23.26.2
 
 Data Pump directoryへのread/write権限、source schemaのexport権限、復元schemaの作成・quota設定が必要です。passwordを引数へ埋め込まず、walletまたは対話入力等の組織標準のsecret受渡しを使用します。復元先schemaを事前作成してから`REMAP_SCHEMA`で隔離します。
 

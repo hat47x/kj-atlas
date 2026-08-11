@@ -32,6 +32,7 @@ def test_every_external_verified_backend_declares_driver_and_real_db_marker() ->
             continue
         assert support.optional_dependency is not None, support.backend
         assert support.test_marker is not None, support.backend
+        assert support.ci_image is not None, support.backend
 
 
 def test_every_backend_declares_a_consistent_verified_driver_contract() -> None:
@@ -78,11 +79,22 @@ def test_canonical_support_matrix_lists_every_registered_backend_once() -> None:
 
     for support in registered_database_support():
         rows = re.findall(
-            rf"(?m)^\|[^\n|]+\|\s*{re.escape(support.backend)}\s*\|\s*"
+            rf"(?m)^\|\s*{re.escape(support.verification_target)}\s*\|\s*"
+            rf"{re.escape(support.backend)}\s*\|\s*"
             rf"{re.escape(support.family)}\s*\|\s*{support.support_level.title()}\s*\|",
             matrix,
         )
         assert len(rows) == 1, support.backend
+
+
+def test_every_external_verified_backend_ci_image_matches_registry() -> None:
+    workflow = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(
+        encoding="utf-8"
+    )
+
+    for support in registered_database_support():
+        if support.ci_image is not None:
+            assert workflow.count(support.ci_image) == 1, support.backend
 
 
 def test_public_configuration_delegates_database_support_to_canonical_matrix() -> None:

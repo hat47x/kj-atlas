@@ -22,7 +22,7 @@
   - 既定値: `sqlite:///./kj_atlas.db`
   - driverを省略したURL（例: `mysql://...`）と対応済みasync URLは、能力レジストリに記録した検証済み同期driverへ正規化して利用
   - 明示driverは検証済みの組合せだけを受理する。例としてMySQLは`mysql+pymysql`、SQL Serverは`mssql+pymssql`、Oracleは`oracle+oracledb`を使用し、未導入・未検証driverはengine生成前に拒否する
-  - 正式対応はSQLite、PostgreSQL、MySQL 8.4、MariaDB 11.4、SQL Server 2022、CockroachDB 26.2、Oracle AI Database Free 23.26.2
+  - 正式対応はSQLite、PostgreSQL 16、MySQL 8.4、MariaDB 11.4、SQL Server 2022、CockroachDB 26.2.3、Oracle AI Database Free 23.26.2
   - 対応状況と昇格条件: `02_Architecture/database_portability.md`
 - `KJ_ATLAS_LLM_PROVIDER`
   - 既定値: `none`
@@ -64,7 +64,7 @@ export KJ_ATLAS_DATABASE_URL="mssql+pymssql://user:password@localhost:1433/kj_at
 alembic upgrade head
 ```
 
-CockroachDB 26.2もoptional dialectを導入し、single-tenant構成で使用します。接続先databaseは事前に作成してください。
+CockroachDB 26.2.3もoptional dialectを導入し、single-tenant構成で使用します。接続先databaseは事前に作成してください。
 
 ```bash
 pip install -e ".[cockroachdb]"
@@ -74,7 +74,7 @@ alembic upgrade head
 
 `--insecure`はローカル試験専用です。本番ではCockroachDBのTLS構成と適切な`sslmode`を使用してください。
 
-Oracle AI Database 26aiもThin modeのoptional driverを導入し、single-tenant構成で使用します。URLのpathはSIDとして解釈されるため、PDBへ接続するときは`service_name` query parameterを使用してください。
+Oracle AI Database Free 23.26.2もThin modeのoptional driverを導入し、single-tenant構成で使用します。URLのpathはSIDとして解釈されるため、PDBへ接続するときは`service_name` query parameterを使用してください。
 
 ```bash
 pip install -e ".[oracle]"

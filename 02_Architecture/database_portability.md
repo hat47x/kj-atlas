@@ -7,12 +7,12 @@ DB対応の正本は本書とする。SQLAlchemyがdialectを提供している�
 | Database | SQLAlchemy backend | Family | 状態 | Migration strategy | Single-tenant | Shared-schema SaaS |
 | --- | --- | --- | --- | --- | --- | --- |
 | SQLite | sqlite | sqlite | Verified | table rebuild | 対応 | 非対応 |
-| PostgreSQL | postgresql | postgresql | Verified | named constraint DDL + RLS | 対応 | 対応 |
+| PostgreSQL 16 | postgresql | postgresql | Verified | named constraint DDL + RLS | 対応 | 対応 |
 | MySQL 8.4 | mysql | mysql | Verified | named constraint DDL | 対応 | 非対応 |
 | MariaDB 11.4 | mariadb | mysql | Verified | named constraint DDL | 対応 | 非対応 |
 | SQL Server 2022 | mssql | mssql | Verified | named constraint DDL | 対応 | 非対応 |
-| CockroachDB 26.2 | cockroachdb | cockroachdb | Verified | named constraint DDL + atomic PK replacement | 対応 | 非対応 |
-| Oracle AI Database 26ai | oracle | oracle | Verified | named constraint DDL | 対応 | 非対応 |
+| CockroachDB 26.2.3 | cockroachdb | cockroachdb | Verified | named constraint DDL + atomic PK replacement | 対応 | 非対応 |
+| Oracle AI Database Free 23.26.2 | oracle | oracle | Verified | named constraint DDL | 対応 | 非対応 |
 
 `Candidate`はロードマップ上の分類であり、接続許可や互換性保証ではない。candidate URLはengine生成・migration開始前に拒否する。
 
@@ -22,6 +22,7 @@ DB対応の正本は本書とする。SQLAlchemyがdialectを提供している�
 - repositoryとAPIはDB非依存に保つ。DB差分は能力レジストリ、migration strategy、実DB fixtureへ閉じ込める。
 - migration strategyは少数のclosed setとし、新DBごとにアプリ全体へbooleanや条件分岐を増やさない。
 - optional dependency、pytest marker、実DBtest、CI実行、公開support matrixは能力レジストリとの静的契約testで同期し、一覧文字列を手書きで複製しない。
+- Verifiedの検証対象名とCI imageも能力レジストリへ保持する。対応表のversion表記やCI tagだけを単独更新できないよう契約testで照合する。
 - SQLAlchemy backendだけでなく、検証済み同期driverと受理するdrivernameも能力レジストリで管理する。driver省略URLと既存async URLは検証済み同期driverへ正規化し、未導入・未検証driverの明示指定はengine生成前に拒否する。
 - identifier/index対象文字列、検索・表示用のbounded text、本文・bundle等のcontent objectを区別する。可搬性のために本文を不必要に短いVARCHARへ変換しない。
 - SQL方言のコンパイル成功だけでVerifiedへ昇格しない。
