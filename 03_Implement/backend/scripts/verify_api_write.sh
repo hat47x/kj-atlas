@@ -82,6 +82,39 @@ if [ "$get_code" = "200" ]; then
   check "card count roundtrips (2 cards)" "2" "$card_count"
 fi
 
+# 3. Update the document (PUT again with modified content) and verify the
+#    change is reflected on the next read — the full create→read→update→read
+#    lifecycle an admin script depends on.
+updated_payload="$(cat <<JSON
+{
+  "version": 1,
+  "id": "${DOC_ID}",
+  "title": "admin write probe (updated)",
+  "createdAt": "2026-08-12T00:00:00Z",
+  "updatedAt": "2026-08-12T00:00:01Z",
+  "transform": {"panX": 5, "panY": 5, "zoom": 1},
+  "cards": [
+    {"id": "card-1", "text": "alpha", "x": 0, "y": 0},
+    {"id": "card-2", "text": "beta", "x": 10, "y": 10},
+    {"id": "card-3", "text": "gamma", "x": 20, "y": 20}
+  ],
+  "edges": [],
+  "islands": [{"id": "island-1", "cardIds": ["card-1", "card-2", "card-3"]}]
+}
+JSON
+)"
+update_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} \
+  -X PUT "$BASE_URL/docs/$DOC_ID" -H 'Content-Type: application/json' -d "$updated_payload")
+check "PUT /docs/{id} updates document" "200" "$update_code"
+
+get_code2=$(curl -s -o /tmp/kj_write_get2.json -w '%{http_code}' ${auth_header} "$BASE_URL/docs/$DOC_ID")
+if [ "$get_code2" = "200" ]; then
+  title2=$(grep -o '"title":"[^"]*"' /tmp/kj_write_get2.json | head -1)
+  check "update reflected in title" "\"title\":\"admin write probe (updated)\"" "$title2"
+  card_count2=$(grep -o '"id":"card-[0-9]*"' /tmp/kj_write_get2.json | sort -u | wc -l | tr -d ' ')
+  check "update reflected in card count (3 cards)" "3" "$card_count2"
+fi
+
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
