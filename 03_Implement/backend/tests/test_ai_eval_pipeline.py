@@ -195,3 +195,41 @@ def test_suggest_island_summary_eval_covers_all_fixture_islands(
             resp = client.post("/ai/suggest-island-summary", json=payload)
             assert resp.status_code == 200, resp.text
     assert len(calls) == 4
+
+
+def test_ai_route_emits_routing_audit_event(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """AI-ROUTE-01 AC-6 (partial): an /ai route call emits an 'llm' audit event
+    with CE2-C5 fields (task/routingStage/provider/model/trace_id) via the
+    audit dispatcher — SEC-LLM-AUDIT-01 wiring end-to-end."""
+
+    class Recorder:
+        def __init__(self) -> None:
+            self.events: list[object] = []
+
+        def emit(self, event: object) -> None:
+            self.events.append(event)
+
+    def _fake_generate(req):
+        assert req.task == "refine_card_text"
+        return LLMResponse(
+            raw_text='{"refinedText": "高齢者が買い物に出られない", "reasoning": "mock"}',
+            metadata=_stub_metadata(),
+        )
+
+    monkeypatch.setattr(ai, "generate_with_fallback", _fake_generate)
+    recorder = Recorder()
+    with TestClient(app) as client:
+        client.app.state.audit_dispatcher = recorder
+        resp = client.post("/ai/refine-card-text", json={"cardText": "高齢者が買い物に出られない"})
+    assert resp.status_code == 200, resp.text
+
+    llm_events = [e for e in recorder.events if getattr(e, "eventType", None) == "llm"]
+    assert len(llm_events) >= 1, "expected an 'llm' audit event via the dispatcher"
+    meta = getattr(llm_events[0], "metadata", {})
+    assert meta.get("task") == "refine_card_text"
+    assert "routingStage" in meta  # MMR-05 routing stage recorded
+    assert meta.get("provider") == "deepseek"
+    assert meta.get("model_id") == "deepseek-chat"
+    assert meta.get("trace_id") == "llm-eval-mock"

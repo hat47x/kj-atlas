@@ -38,7 +38,7 @@
 - [x] 監査ログに MMR-05 の4項目が記録される。— `_audit_llm_trace` に `routingStage` 追加
 - [ ] final_judgement 利用不能時に held へ遷移し、auto-publish しない（MMR-06）。— 未実装（外部エージェント連携と連動）
 - [x] `provider=none` で中核操作が成立する。
-- [ ] integration test でルーティング・監査・安全停止が検証される。— 単体テスト2件追加済み（44 passed）、integrationは追加
+- [~] integration test でルーティング・監査・安全停止が検証される。— **部分**: `test_ai_eval_pipeline.py::test_ai_route_emits_routing_audit_event` を追加 — /ai ルート実走行で `llm` 監査イベントが CE2-C5 項目（task/routingStage/provider/model/trace_id）で dispatcher へ出ることを固定（SEC-LLM-AUDIT-01 配線の e2e）。**安全停止（MMR-06）は未実装のため integration 未追加**。単体テスト44件＋本統合テストで pass。
 
 ## 進捗（2026-08-12）
 
