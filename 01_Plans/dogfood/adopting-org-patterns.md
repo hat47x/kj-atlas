@@ -51,7 +51,7 @@ README の想定利用者を4つの具体的組織イメージへ分解する。
 | Org | 主経路 | 主操作 | 現在の検証状態 | 具体化の第一歩 |
 |-----|--------|--------|---------------|----------------|
 | A 自治体政策 | Web（大量カード） | バッチ投入・島形成・Critique | 未着手（Web の大量カード操作は既存 e2e でも未カバー） | 50枚自由記述投入のドッグフードログ |
-| B プロダクトUX | Web（Hold/Critique） | 保留・違和感の長期保存 | 部分（dogfood-log-2026-07-10 が Hold 操作を確認） | Hold/Critique を残したままの週跨ぎ利用 |
+| B プロダクトUX | Web（Hold/Critique） | 保留・違和感の長期保存 | **実走行済み（2026-08-12）**: APIでHold/Critique週跨ぎ保存→再読込を確認（held2/shelved1/critiqued2・テキスト無傷） | Hold/Critique を残したままの週跨ぎ利用。MCP面は作業状態非出力（DOGFOOD-08） |
 | C 研究共同 | API（非同時利用） | 文書共有・島形成合流 | **multi-org は ADR-0074/SAAS-TENANT-01 のゲート待ち** | single-tenant での共有導線の先行検証 |
 | D 新規事業 | MCP（AI委譲） | DeepSeek カード化・ナラティブ | 部分（ai_eval_results.md で 2 操作実用可） | MCP 経路での AI 提案活用の実走行 |
 
@@ -88,6 +88,23 @@ Org-Aのバッチ投入パターンを実走行した（`PUT /docs/dogfood_orga_
 現状のfail-closedを維持したまま、MCP経路が「初期探索では何も見られない」ことをドキュメント化し、
 AI委譲の対象を「レビュー済み以降の整理」に限定するか、または別途、未レビューを別の安全境界で
 扱う探索専用経路を設計するかが判断になる。
+
+## 3.6 実走行の知見（2026-08-12、Org-BのHold/Critique週跨ぎ）
+
+Org-Bの「保留・違和感を残したまま週跨ぎで開き直す」パターンを実走行した
+（`PUT/GET /docs/dogfood_orgb_hold_20260812`、5カード: held2/shelved1/critiqued2）。
+
+### 発見1: API（永続化）は価値経路を満たす
+
+- 保存→再読込で **Hold/Critique 作業状態が完全に維持**される（held2/shelved1/critiqued2・全テキスト無傷）。
+- 「確定させない状態を週跨ぎで保つ」根幹価値が API 経路で成立することを初めて実証。
+
+### 発見2: MCP（AI協働）は作業状態を出力しない → DOGFOOD-08 起票
+
+- `get_context_projection`（`safeMode:false`・`reviewed-only`）はレビュー済みカードの実テキストは返すが、
+  **`holdState` も `critique` も出力しない**（`ProjectedCard` スキーマに無いため）。
+- AI伴走者が「どのカードを確定させず残すか」を読めないため、Org-B の協働支援に使えない。
+- これは DOGFOOD-05（未レビュー不可視・fail-closed）とは独立のスキーマ欠落。→ `issue-DOGFOOD-08`
 
 ## 4. 複数組織の同時利用（multi-org）
 
