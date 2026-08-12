@@ -35,8 +35,30 @@ from kj_atlas_api.reviewer_ref import (
 from kj_atlas_api.runtime_bootstrap import resolve_tenant_session_bootstrap_mode
 from kj_atlas_api.settings import settings, _validate_trusted_http_endpoint
 from kj_atlas_api.tenant_foundation import ensure_local_default_membership
+from kj_atlas_api.rate_limit import DEFAULT_RATE_LIMITER, client_ip
 
-router = APIRouter(prefix="/admin/provision", tags=["admin"])
+
+def _require_provisioning_rate_limit(request: Request) -> None:
+    """SEC-RATE-LIMIT-01: rate-limit the admin provisioning surface per client
+    IP (60 req/min, matching the MCP transport) so unauthenticated write
+    endpoints cannot be hammered. Fail-open is NOT used here — the surface is
+    already loopback-only; exceeding the limit is a 429, not a bypass."""
+    if not DEFAULT_RATE_LIMITER.allow(client_ip(request)):
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "code": "rate_limit_exceeded",
+                "message": "Too many provisioning requests. Retry after the window resets.",
+            },
+            headers={"Retry-After": "60"},
+        )
+
+
+router = APIRouter(
+    prefix="/admin/provision",
+    tags=["admin"],
+    dependencies=[Depends(_require_provisioning_rate_limit)],
+)
 
 _IDENTITY_CONFLICT_CODE = "identity_already_provisioned_conflict"
 _IDENTITY_CONFLICT_MESSAGE = "Identity already provisioned with conflicting profile attributes."

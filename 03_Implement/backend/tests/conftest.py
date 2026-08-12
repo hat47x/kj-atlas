@@ -64,3 +64,21 @@ def fake_response():
     from starlette.responses import Response
 
     return Response()
+
+
+# ---------------------------------------------------------------------------
+# SEC-RATE-LIMIT-01: reset the in-process rate limiter between tests.
+# The limiter keys on client IP; TestClient reports a constant "testclient"
+# host, so all requests in the suite would otherwise share one bucket and
+# accumulate past the 60/min limit. Each test starts from a clean window.
+# ---------------------------------------------------------------------------
+
+from kj_atlas_api.rate_limit import DEFAULT_RATE_LIMITER  # noqa: E402
+
+
+def _reset_rate_limiter() -> None:
+    DEFAULT_RATE_LIMITER.reset()
+
+
+def pytest_runtest_setup() -> None:  # noqa: ANN401
+    _reset_rate_limiter()
