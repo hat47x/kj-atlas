@@ -1,7 +1,7 @@
 # Issue: DOGFOOD-06 検証経路の追加時は異常系をCIで固定する（結果分析からのプロセス改善）
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: `01_Plans/dogfood/dogfood-analysis-synthesis-2026-08-12.md`（DOGFOOD-02〜05の横断分析）
 - Priority: P2
 - Owner: Maintainer
@@ -30,9 +30,9 @@
 
 ## 受入条件
 
-- [ ] 既存 `verify_api.sh` / `verify_mcp.ts` が異常系（503 / not_found / 契約外version）を正しく区別して報告する。
-- [ ] 検証スクリプトの異常系を assert する unit テストが存在する。
-- [ ] このルールが `01_Plans/dogfood/README.md` または検証経路の追加規約として記録される。
+- [x] 既存 `verify_api.sh` / `verify_mcp.ts` が異常系（503 / not_found / 契約外version）を正しく区別して報告する。（verify_mcp.ts: DOGFOOD-03/06・verify_api.sh: DOGFOOD-04）
+- [x] 検証スクリプトの異常系を assert する unit テストが存在する。（`03_Implement/mcp/src/mcp_verify_result.test.ts` 6件）
+- [x] このルールが `01_Plans/dogfood/README.md` または検証経路の追加規約として記録される。（`01_Plans/dogfood/README.md`「検証経路の追加規約」節）
 
 ## 検証計画
 
@@ -45,3 +45,10 @@
 
 - 本 issue は「検証インフラの品質」を対象とする。プロダクトの安全境界変更は含まない。
 - 直近対応可能な範囲（DOGFOOD-03/04 のスクリプト修正＋unitテスト）と、将来の追加経路への規約化に分かれる。
+
+## 対応記録（2026-08-12）
+
+- **unit テスト**: `verify_mcp.ts` の isError/not_found 解釈を `src/mcp_verify_result.ts` へ抽出し、`mcp_verify_result.test.ts`（6件）で正常系・not_found・error・不正JSON・反スコアリング語彙なしを固定。
+- **検証スクリプトの更新**: `verify_mcp.mjs` → `verify_mcp.ts` へリネームし、tsx 実行（`npm run verify`）へ統一（Node 20 の素 `node` では .ts import / `as` 構文が起動不能のため）。
+- **規約化**: `01_Plans/dogfood/README.md` に「検証経路の追加規約」節を追加（異常系assert・スクリプト自身のunitテスト・実状態データの3点）。
+- **検証**: MCP vitest 55 tests pass・typecheck OK・`npm run verify -- nonexistent_doc` 実走行で isError 経路（error分類）終了を確認。
