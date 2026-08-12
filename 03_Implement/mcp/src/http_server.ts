@@ -4,8 +4,9 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
 import { metadataHandler } from "@modelcontextprotocol/sdk/server/auth/handlers/metadata.js";
 import type { OAuthProtectedResourceMetadata } from "@modelcontextprotocol/sdk/shared/auth.js";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { HttpTransportConfig } from "./oauth_config.js";
+import type { DocumentClientConfig } from "./document_client.js";
+import { createServer } from "./server.js";
 import { createRemoteBearerTokenVerifier } from "./oauth_verifier.js";
 
 // EXT-CONN-01 subslice C: read-only MCP over streamable HTTP, fronted by
@@ -24,7 +25,7 @@ const PROTECTED_RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource"
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 60;
 
-export function buildHttpApp(config: HttpTransportConfig, server: McpServer): Express {
+export function buildHttpApp(config: HttpTransportConfig, documentClientConfig: DocumentClientConfig): Express {
   const app = express();
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
@@ -64,11 +65,18 @@ export function buildHttpApp(config: HttpTransportConfig, server: McpServer): Ex
   // Stateless mode (sessionIdGenerator: undefined): this server has exactly
   // one read-only, idempotent tool and holds no per-client state worth
   // paying session-fixation/session-storage risk to keep across requests.
-  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-  const connectPromise = server.connect(transport);
-
+  // The SDK requires a FRESH transport per request in stateless mode
+  // (webStandardStreamableHttp.js: "each request must use a fresh transport")
+  // -- a single shared instance returns 500 for post-initialize requests, so
+  // a remote client could never complete a full MCP session over HTTP.
+  // Stateless mode requires a FRESH server + transport per request
+  // (SDK: "each request must use a fresh transport"; the Protocol cannot
+  // reconnect). A remote client can then complete a full MCP session over
+  // HTTP (initialize -> tools/list -> tools/call).
   app.post(MCP_PATH, requireAuth, async (req, res) => {
-    await connectPromise;
+    const server = createServer(documentClientConfig);
+    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+    await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   });
 
@@ -77,11 +85,15 @@ export function buildHttpApp(config: HttpTransportConfig, server: McpServer): Ex
   // session to notify on or tear down -- still gated behind auth so an
   // unauthenticated caller learns nothing from the response shape either way.
   app.get(MCP_PATH, requireAuth, async (req, res) => {
-    await connectPromise;
+    const server = createServer(documentClientConfig);
+    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+    await server.connect(transport);
     await transport.handleRequest(req, res);
   });
   app.delete(MCP_PATH, requireAuth, async (req, res) => {
-    await connectPromise;
+    const server = createServer(documentClientConfig);
+    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+    await server.connect(transport);
     await transport.handleRequest(req, res);
   });
 

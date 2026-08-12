@@ -21,8 +21,7 @@ async function main(): Promise<void> {
 
   if (transportKind === "http") {
     const httpConfig = loadHttpTransportConfigFromEnv();
-    const server = createServer(loadDocumentClientConfigFromEnv());
-    const app = buildHttpApp(httpConfig, server);
+    const app = buildHttpApp(httpConfig, loadDocumentClientConfigFromEnv());
     await new Promise<void>((resolve) => {
       app.listen(httpConfig.port, httpConfig.host, () => {
         process.stderr.write(

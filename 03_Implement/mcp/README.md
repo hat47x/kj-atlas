@@ -136,5 +136,8 @@ Behavior:
 - All routes (including the metadata endpoint) share a 60 requests/minute/IP
   rate limit.
 - The transport is stateless (`sessionIdGenerator: undefined`); there is no
-  per-client session state to fix or exhaust.
+  per-client session state to fix or exhaust. Stateless mode requires a FRESH
+  server + transport per request (SDK requirement), which this server does —
+  a remote client can complete a full MCP session over HTTP (initialize ->
+  tools/list -> tools/call), verified by `http_server.test.ts`.
 - See `THREAT_MODEL.md` §6-1 for the full threat analysis of this surface.

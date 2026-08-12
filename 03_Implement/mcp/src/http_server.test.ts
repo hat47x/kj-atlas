@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { SignJWT, exportJWK, generateKeyPair, createLocalJWKSet, type JWTVerifyGetKey } from "jose";
+import type { DocumentV1 } from "../../frontend/src/domain/types.js";
 import type { HttpTransportConfig } from "./oauth_config.js";
 
 // Full-stack test of the auth boundary: a real Express app on an OS-assigned
@@ -11,6 +14,18 @@ import type { HttpTransportConfig } from "./oauth_config.js";
 // `jose` mock -- no network access and no running IdP process required.
 
 const state = vi.hoisted(() => ({ getKey: undefined as JWTVerifyGetKey | undefined }));
+
+// Mock the document fetch so a full MCP tool call can complete over HTTP
+// without a running backend (the auth/transport layer is what's under test).
+const docState = vi.hoisted(() => ({ doc: null as DocumentV1 | null }));
+
+vi.mock("./document_client.js", () => ({
+  fetchDocument: async (): Promise<DocumentV1> => {
+    if (!docState.doc) throw new Error("no mock document configured");
+    return docState.doc;
+  },
+  DocumentNotFoundError: class extends Error {},
+}));
 
 vi.mock("jose", async (importOriginal) => {
   const actual = await importOriginal<typeof import("jose")>();
@@ -25,7 +40,6 @@ vi.mock("jose", async (importOriginal) => {
   };
 });
 
-const { createServer: createMcpServer } = await import("./server.js");
 const { buildHttpApp } = await import("./http_server.js");
 
 const TRUSTED_ISSUER = "https://idp.example/";
@@ -50,8 +64,7 @@ async function startServer(): Promise<{ baseUrl: string; server: Server; private
     authorizationServers: [TRUSTED_ISSUER],
   };
 
-  const mcpServer = createMcpServer({ baseUrl: "http://127.0.0.1:0" });
-  const app = buildHttpApp(config, mcpServer);
+  const app = buildHttpApp(config, { baseUrl: "http://127.0.0.1:0" });
 
   return await new Promise((resolve, reject) => {
     const server = app.listen(0, "127.0.0.1", () => {
@@ -150,5 +163,55 @@ describe("buildHttpApp", () => {
     });
 
     expect(response.status).not.toBe(401);
+  });
+
+  it("completes a full MCP session over HTTP: auth + initialize + tools/list + tool call", async () => {
+    // EXT-CONN-01 subslice C end-to-end: a remote generative-AI client connects
+    // over streamable HTTP with a bearer token and drives the actual tool. The
+    // document fetch is mocked so no backend is needed; the auth + transport
+    // layer is what's under test.
+    docState.doc = {
+      version: 1,
+      id: "doc_http_fixture",
+      title: "http e2e fixture",
+      createdAt: "2026-08-12T00:00:00.000Z",
+      updatedAt: "2026-08-12T00:00:00.000Z",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [
+        { id: "c1", text: "reviewed claim", x: 0, y: 0, claimType: "claim", textReviewed: true },
+        { id: "c2", text: "unreviewed draft", x: 100, y: 0, claimType: "unknown", textReviewed: false },
+      ],
+      edges: [],
+      islands: [],
+      readingOrder: ["c1", "c2"],
+      narratives: [],
+      evidenceLinks: [],
+      mergeSuggestionDecisions: [],
+    };
+
+    const token = await signToken(context.privateKey, RESOURCE);
+    const client = new Client({ name: "http-e2e", version: "1.0.0" });
+    const transport = new StreamableHTTPClientTransport(new URL(`${context.baseUrl}/mcp`), {
+      requestInit: { headers: { authorization: `Bearer ${token}` } },
+    });
+
+    try {
+      await client.connect(transport);
+      const { tools } = await client.listTools();
+      expect(tools.map((tool) => tool.name)).toEqual(["get_context_projection"]);
+
+      const result = await client.callTool({
+        name: "get_context_projection",
+        arguments: { docId: "doc_http_fixture", constraint: "reviewed-only", safeMode: false },
+      });
+      expect(result.isError).toBeFalsy();
+      const text = (result.content as Array<{ text?: string }>)[0]?.text ?? "";
+      const projection = JSON.parse(text) as { cards: Array<{ id: string; holdState?: string | null }> };
+      // reviewed-only + safeMode=false -> reviewed card text exposed, holdState carried.
+      expect(projection.cards.map((card) => card.id)).toEqual(["c1"]);
+      expect("holdState" in projection.cards[0]).toBe(true);
+    } finally {
+      await client.close();
+    }
   });
 });
