@@ -34,6 +34,8 @@ TYPES_TS_PATH = REPO_ROOT / "03_Implement" / "frontend" / "src" / "domain" / "ty
 INQUIRY_BUNDLE_IO_TS_PATH = (
     REPO_ROOT / "03_Implement" / "frontend" / "src" / "domain" / "inquiry_bundle_io.ts"
 )
+VALIDATE_DOC_TS_PATH = REPO_ROOT / "03_Implement" / "frontend" / "src" / "domain" / "validate_doc.ts"
+MODELS_PY_PATH = REPO_ROOT / "03_Implement" / "backend" / "src" / "kj_atlas_api" / "models.py"
 
 # TS type name -> Pydantic model class in kj_atlas_api.models. Names diverge in one case
 # (MergeSuggestionDecisionEntry / MergeSuggestionDecision) -- that mismatch is itself
@@ -75,6 +77,40 @@ def test_inquiry_bundle_absolute_byte_limit_matches_frontend_contract() -> None:
     )
     assert match is not None, "could not resolve frontend inquiry bundle absolute limit"
     assert MAX_INQUIRY_BUNDLE_PAYLOAD_BYTES == int(match.group(1)) * 1024 * 1024
+
+
+# DOMAIN-CARD-TEXT-01 (f54af7ac): content-field length limits shared by backend
+# models.py and frontend validate_doc.ts. validate_doc.ts carries the comment
+# "Keep in sync with the *_MAX_LENGTH constants there"; this test locks that
+# convention against one-sided drift. Backend-only (MERGE_DRAFT_MAX_LENGTH,
+# RELATION_SUMMARY_TEXT_MAX_LENGTH) and frontend-only (CRITIQUE_MAX_LENGTH,
+# DOCUMENT_TITLE_MAX_LENGTH) constants are intentionally not compared.
+SHARED_CONTENT_LIMIT_CONSTANTS = [
+    "CARD_TEXT_MAX_LENGTH",
+    "ISLAND_TITLE_MAX_LENGTH",
+    "ISLAND_SUMMARY_MAX_LENGTH",
+    "NARRATIVE_TITLE_MAX_LENGTH",
+    "NARRATIVE_TEXT_MAX_LENGTH",
+    "EVIDENCE_NOTE_MAX_LENGTH",
+]
+
+
+def test_content_field_max_length_constants_match_frontend_contract() -> None:
+    ts_source = VALIDATE_DOC_TS_PATH.read_text(encoding="utf-8")
+    py_source = MODELS_PY_PATH.read_text(encoding="utf-8")
+
+    def _extract(source: str, name: str) -> int:
+        match = re.search(rf"{re.escape(name)}\s*=\s*(\d+)", source)
+        assert match is not None, f"could not find {name} in source"
+        return int(match.group(1))
+
+    mismatches = []
+    for name in SHARED_CONTENT_LIMIT_CONSTANTS:
+        ts_value = _extract(ts_source, name)
+        py_value = _extract(py_source, name)
+        if ts_value != py_value:
+            mismatches.append(f"  {name}: frontend={ts_value}, backend={py_value}")
+    assert not mismatches, "content-field length limits drifted between frontend and backend:\n" + "\n".join(mismatches)
 
 
 def _extract_ts_type_fields(source: str, type_name: str) -> set[str]:
