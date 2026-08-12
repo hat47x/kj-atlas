@@ -451,6 +451,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 - Response: `SuggestIslandSummaryResponse`
   - `summaryText: string` — 表札候補文
 - 島の表札（ラベル）を提案する。表札は分類名ではなく、カード群の訴えを代弁する文でなければならない（kj_technique.md §3 表札検査）。
+- **DX-CLEANUP-07 案B**: この直接 route はフロントエンドの直接呼び出し元を持たない（UI は proposal-only の `POST /ai/proposals/island-summary` を使用）。**後方互換・外部 API クライアント用に維持**する。`suggest_island_summary` 関数本体は proposal route の内部実装として再利用されている。
 
 **POST** `/ai/proposals/island-summary`
 

@@ -1,7 +1,7 @@
 # Issue Draft: DX-CLEANUP-07 `POST /ai/suggest-island-summary` routeがfrontend呼び出し元を持たない（削除検討）
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: `SAAS-TENANT-SURFACE-01`（`issue-SAAS-TENANT-SURFACE-01-unclassified-frontend-caller-gap.md`の分類調査で発見）
 - Priority: P3
 - Owner: Maintainer
@@ -27,10 +27,10 @@
 
 ## 受入条件
 
-- [ ] `POST /ai/suggest-island-summary`のHTTP route公開を維持するか削除するかをMaintainerが決定する。
-- [ ] 削除する場合、`03_Implement/backend/tests/`内でこのrouteをHTTP経由で直接検証しているテスト（`propose_island_summary`経由の間接テストとは区別する）を洗い出し、削除または`propose_island_summary`経由のテストへ統合する。
-- [ ] 削除する場合、このrouteのpathを直接参照している既存文書（例: `02_Architecture/ai-prompt-core-redesign-2026-07-23.md:15`）の追随更新が必要か確認する。
-- [ ] 維持する場合（案B）、`api.md`に維持理由を記録する。
+- [x] `POST /ai/suggest-island-summary`のHTTP route公開を維持するか削除するかをMaintainerが決定する。— **案B（維持）を仮承認で採択**（ドッグフーディングループの仮承認方針。否認・補正可）。関数は proposal route の内部実装＋SEC-LLM-AUDIT-01 の監査配線済みで削除しない。
+- [ ] 削除する場合、`03_Implement/backend/tests/`内でこのrouteをHTTP経由で直接検証しているテスト（`propose_island_summary`経由の間接テストとは区別する）を洗い出し、削除または`propose_island_summary`経由のテストへ統合する。— 削除しないため該当なし。
+- [ ] 削除する場合、このrouteのpathを直接参照している既存文書（例: `02_Architecture/ai-prompt-core-redesign-2026-07-23.md:15`）の追随更新が必要か確認する。— 削除しないため該当なし。
+- [x] 維持する場合（案B）、`api.md`に維持理由を記録する。— `api.md` §446 に「後方互換・外部APIクライアント用に維持」を追記（DX-CLEANUP-07 案B）。
 
 ## 検証計画
 
