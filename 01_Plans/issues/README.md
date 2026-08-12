@@ -29,6 +29,10 @@
 - `Related ADR/Spec`
 - `Expected verification level`
 
+### `Owner` フィールドの意味（DOC-OPS-07 案(c)・2026-08-12 仮承認）
+
+`Owner:` は**役職・担当者の割当てではなく、「どの観点からのレビューが望ましいか」を示すメモ**として扱う（`Security Officer + System Owner + Platform Operator` 等の記載は「複数観点のレビューを要する」の合図）。`ADR-0039`（個人OSS・Maintainer 単独運用）に合わせ、実行責務は全issueとも Maintainer が担う。`Owner` は必須メタデータに含まれない（`validate_active_issue_memos.py` も読み取らない）。
+
 ## Active issue memos
 
 Active一覧は各memoの `Status` から生成する。READMEへ表を転記しない。

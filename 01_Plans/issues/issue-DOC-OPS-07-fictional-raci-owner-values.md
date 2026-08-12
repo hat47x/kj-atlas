@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-07 issue memoのOwnerに架空のRACI役職が32件残存
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -32,8 +32,8 @@
 
 ## Acceptance
 
-- [ ] 上記(a)/(b)/(c)のいずれかを選択し、32件のissue memoへ一貫して適用する。
-- [ ] `AGENTS.md` の運用ガイダンスが選択した方針と整合する。
+- [x] 上記(a)/(b)/(c)のいずれかを選択し、32件のissue memoへ一貫して適用する。— **案(c) を仮承認で採択**（ドッグフーディングループの仮承認方針。否認・補正可）。`Owner` を「どの観点からのレビューが望ましいか」のメモとして再定義し、`01_Plans/issues/README.md` に明記。32件の記載値はレビュー観点メモとして保持（架空役職ではなく観点の合図）。
+- [x] `AGENTS.md` の運用ガイダンスが選択した方針と整合する。— AGENTS.md §6 は Owner を最小メタデータに含めず、実行責務は Maintainer 単独（ADR-0039）。再定義はこの方針と整合（変更不要）。
 
 ## Validation
 
