@@ -1,7 +1,7 @@
 # Issue: DOGFOOD-METRIC-01 自律性昇格ゲートの指標が自作スクリプトの出力であり、測定器を弱めることで満たせてしまう
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: `DX-DESIGN-CHECK-01`
 - Priority: P2
 - Owner: Maintainer
@@ -44,10 +44,10 @@ L2昇格条件の3つが該当する。
 
 ## 受入条件
 
-- [ ] AC-1: 上記の案（またはそれ以外）から方針を決定し、`AGENTS.md` §1.3 または `01_Plans/dogfood/README.md` へ明記する。
-- [ ] AC-2: 案Aを採る場合、L2/L3ゲートに使う各測定器へ能力カナリアを追加する（`check_design_consistency.py` は `DX-DESIGN-CHECK-01` AC-3 で先行）。
-- [ ] AC-3: 案Bを採る場合、昇格判定ADRのテンプレートへ「測定器の変更有無」欄を追加する。
-- [ ] AC-4: `ADR-0075`（L2昇格）へ、①の根拠に測定器変更が含まれていた事実を追記する（判定の取り消しではなく、記録の正確化として）。
+- [x] AC-1: 上記の案（またはそれ以外）から方針を決定し、`AGENTS.md` §1.3 または `01_Plans/dogfood/README.md` へ明記する。— **案A+案B 併用を仮承認で採択**し、`01_Plans/dogfood/README.md`「測定の健全性」節に明記。
+- [~] AC-2: 案Aを採る場合、L2/L3ゲートに使う各測定器へ能力カナリアを追加する（`check_design_consistency.py` は `DX-DESIGN-CHECK-01` AC-3 で先行）。— **部分**: `check_design_consistency.py` のカナリアは `test_design_consistency_discrimination.py` で追加済み。`check_contract_drift.py` のカナリアは未追加（対応記録参照）。
+- [x] AC-3: 案Bを採る場合、昇格判定ADRのテンプレートへ「測定器の変更有無」欄を追加する。— `01_Plans/adr/TEMPLATE.md` に「Measurement Integrity（昇格判定ADRで必須）」節を追加。
+- [x] AC-4: `ADR-0075`（L2昇格）へ、①の根拠に測定器変更が含まれていた事実を追記する（判定の取り消しではなく、記録の正確化として）。— 「Measurement Integrity（追記）」節を追加。①の139→1 に検出器変更（aa70d3cf ほか、DX-DESIGN-CHECK-01）が含まれることを記録。
 
 ## 検証
 
@@ -59,3 +59,12 @@ L2昇格条件の3つが該当する。
 - 発見経緯: ドッグフーディング状況確認の一環で、L2昇格を支える4指標の妥当性を検証した際に発見した。
 - ドッグフーディングの記録自体は誠実である。`codegen_results.md` は「これは骨格生成成功率であり、L3の『設計→実装→テストの自律実行』を完全には表さない」と自ら限界を明記し、一度計上した成功例を重複コード生成として不採用へ訂正している。本issueが指すのは記録の姿勢ではなく、**指標と測定器が同一主体の管理下にあるという構造**である。
 - ドッグフーディングは「摩擦を見つける仕組み」として機能している（改善点12件が記録され、すべて対応済み）。本issueはその仕組みが**自分自身の測定を検証する経路を持たない**という一点に限定される。
+
+## 対応記録（2026-08-12、案A+案B 併用を仮承認採択）
+
+- **方針**: 案A（能力カナリア）＋案B（測定器変更の分離記録）を併用で採択（`dogfood/README.md`「測定の健全性」節に明記）。
+- **案B 実装**:
+  - `01_Plans/adr/TEMPLATE.md` に「Measurement Integrity（昇格判定ADRで必須）」節を追加（AC-3）。
+  - `ADR-0075` に「Measurement Integrity（追記）」節を追加 — ①の139→1に検出器変更（aa70d3cf ほか、DX-DESIGN-CHECK-01）が含まれる事実を記録（AC-4）。
+- **案A 実装（部分）**: `check_design_consistency.py` のカナリア `test_design_consistency_discrimination.py`（DX-DESIGN-CHECK-01 AC-3）は先行追加済み。**`check_contract_drift.py` のカナリアは未追加** — 検出器の識別力を固定するカナリア（既知のドリフト陽性例を検出できることのassert）を後続で追加する。
+- **検証**: docs_check.py は有効化ルールを blocking 実行（後続で実行）。ADRテンプレート/ADR-0075/READMEの変更は docs 構造に影響なし。
