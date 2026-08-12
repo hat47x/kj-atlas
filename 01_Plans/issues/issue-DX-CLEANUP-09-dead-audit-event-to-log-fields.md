@@ -1,7 +1,7 @@
 # Issue Draft: DX-CLEANUP-09 audit.event_to_log_fields が未使用
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -29,3 +29,9 @@
 
 - `git grep -rn "event_to_log_fields" 03_Implement/backend/` が期待どおりの結果。
 - `cd 03_Implement/backend && python -m pytest tests/ -x -q` が通る。
+
+## 対応記録（2026-08-12）
+
+- 検証: `event_to_log_fields` は現行 `audit.py` に**既に存在しない**（先行イテレーションで削除済み）。`git grep -rn "event_to_log_fields" 03_Implement/backend/` はゼロ件。
+- audit 関連テスト（`test_audit.py` + `test_docs_audit_integration.py`）37 tests pass を確認。
+- 受入条件（削除ゼロ件）は充足済み。Done に更新。
