@@ -2,11 +2,11 @@
 
 - Type: Process
 - Status: Draft
-- Source Issue: `01_Plans/dogfood/result-analysis-synthesis-2026-08-12.md`（DOGFOOD-02〜05の横断分析）
+- Source Issue: `01_Plans/dogfood/dogfood-analysis-synthesis-2026-08-12.md`（DOGFOOD-02〜05の横断分析）
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/scripts/verify_api.sh`, `03_Implement/mcp/scripts/verify_mcp.mjs`, 新規検証経路の追加規約
-- Related ADR/Spec: `01_Plans/dogfood/result-analysis-synthesis-2026-08-12.md` §4, `issue-DOGFOOD-03`, `issue-DOGFOOD-04`, `01_Plans/dogfood/README.md`（W型サイクル）
+- Related ADR/Spec: `01_Plans/dogfood/dogfood-analysis-synthesis-2026-08-12.md` §4, `issue-DOGFOOD-03`, `issue-DOGFOOD-04`, `01_Plans/dogfood/README.md`（W型サイクル）
 - Expected verification level: `docs-check`
 
 ## 課題

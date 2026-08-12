@@ -12,6 +12,8 @@ kj-atlas を使った kj-atlas 開発プロセスの管理。ADR-0042（ドッ�
 | `doc_kj_atlas_dogfood_r4.json` | R4 構想: 開発プロセスの理想像 | カード化完了 + 理想状態の達成状況反映 |
 | `doc_kj_atlas_dogfood_r5.json` | R5 具体策: 短期・中期・長期の3段階実行計画 | カード化完了 + 全期間の実行状況反映 |
 | `doc_kj_atlas_dogfood_r6.json` | R6 手順: 4フェーズ14ステップの依存関係付き実行計画 | カード化完了 + 14ステップ実行状況反映 |
+| `adopting-org-patterns.md` | 導入組織4種×利用経路×検証軸のパターン多様化分析（+MCP価値ギャップの実測） | 2026-08-12作成・DOGFOOD-05起票 |
+| `dogfood-analysis-synthesis-2026-08-12.md` | DOGFOOD-02〜06の横断分析（共通根本原因: 検証経路の正常系偏重） | 2026-08-12作成・DOGFOOD-06起票 |
 
 ## 使い方
 
@@ -89,3 +91,13 @@ AGENTS.md §1.3の昇格条件を四半期ごとに評価し、判定結果をAD
 | 2026-08-11 | 骨格生成成功率の解釈が不正確（完全コード生成と混同） | `codegen_results.md` で骨格生成成功率とロジック生成を分離計上（80%） |
 | 2026-08-12 | L2での三要素チェック実践: FieldworkRequestV1実組み込みを検証し「InquiryJourneyV1整合待ち」と指摘 | AIが自律検証し最終判断を人間へ（L2の動作実証） |
 | 2026-08-12 | Web以外の検証経路が未整備 | `verify_api.sh`（CLI/API・curlベース）+ `verify_mcp.mjs`（MCP・クライアントベース）を追加 |
+| 2026-08-12 | GET /docs/{id}が旧版文書（version≠1）で素の500を返す（GET/PUTの検証経路が非対称、ADR-0058のfail-closed意図は正しいが拒否方法が非対称） | `issue-DOGFOOD-02`起票（三要素分析済み・P1） |
+| 2026-08-12 | verify_mcp.mjsがnot_found/error応答（isError=true）をJSON.parseで破壊する（サーバー契約は正しく、クライアント側の仮定が誤り） | `issue-DOGFOOD-03`起票（三要素分析済み・P2） |
+| 2026-08-12 | verify_api.shの`/session/context`チェックが503を「reachable」と判定（local-devでは常に503のため無内容、saas-multitenantでは実障害を隠す） | `issue-DOGFOOD-04`起票（三要素分析済み・P2） |
+| 2026-08-12 | ドッグフーディングが「自己言及（kj-atlasでkj-atlas）」の単一パターンに偏っていた | `adopting-org-patterns.md`作成（4組織×経路×検証軸のパターン多様化分析） |
+| 2026-08-12 | MCP経路は未レビューカードを一切露出せず、Org-D「AI委譲による初期探索」が支援できない（SEC-CONTEXT-PROJECTION-01のfail-closedと業務価値の衝突） | `adopting-org-patterns.md` §3.5に三要素分析で記録（安全境界は緩和せず適用範囲を明示） |
+| 2026-08-12 | MCPの未レビュー不可視を issue 化し、適用範囲の明示(A)／探索専用経路(B)／現状維持(C)の判断材料を整理 | `issue-DOGFOOD-05`起票（設計判断・P2） |
+| 2026-08-12 | Web初回起動がデフォルト文書`doc_phase1_canvas`を自動ロードし、旧版文書では500エラー画面に（DOGFOOD-02のWeb増幅・allowCreateOnNotFoundは404のみ救済） | `issue-DOGFOOD-02`に実地確認・受入条件追記（P1） |
+| 2026-08-12 | Web経路のOrg-A検証スクリプトを追加（バッチ文書を実UIで開くPlaywright走行） | `03_Implement/frontend/scripts/dogfood_orga_web_20260812.mjs` |
+| 2026-08-12 | DOGFOOD-02〜05の横断分析から、共通根本原因を抽出（正常系偏重・理想状態前提・GET/PUT非対称・適用範囲未明示） | `dogfood-analysis-synthesis-2026-08-12.md`作成 |
+| 2026-08-12 | 検証経路の追加時に異常系をCIで固定するルールの欠如（DOGFOOD-03/04の共通原因） | `issue-DOGFOOD-06`起票（プロセス改善・P2） |
