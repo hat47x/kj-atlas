@@ -48,6 +48,18 @@ D2 が A 以外で採択された場合（3値維持＋写像表明記など）�
 - 写像が非可逆であること、および失われる情報
 - 逆方向（IR → キャンバス）の写像を行わないこと、または行う場合の規則
 
+### D2=A 採択時のドラフト（2026-08-12・判断材料。D2 決定を拘束しない）
+
+D2=A（IR をキャンバス語彙5値へ拡張）を採択する場合の、`llm_input_ir_spec.md` §2.3/§4.2 の変更ドラフト:
+
+- `relations.type` の列挙値を **`related` / `negate` / `causal` / `mutual` / `equivalence`** へ統一。
+- **`arrow` を廃止**: IR 独自値で、因果（causal）か方向（direction）か意図が曖昧。既存 IR データがある場合は `arrow` → `causal` への移行規則を明記（非可逆）。
+- **`negation` → `negate` へ統一**: 同義の綴り違い。旧 `negation` は `negate` へ写像。
+- **`unknown`（backend のみ）**: キャンバス語彙に存在しない。IR は「構造の正体」を渡す経路であり、未分類（unknown）は構造値として意味を持たないため、**IR には含めない**ことを推奨（backend の `relationType` は `unknown` を許容したまま、IR へは渡さない）。含める場合は D2 の明示的判断が必要。
+- 写像が非可逆であること（`arrow` の意味確定、`unknown` の除外）と、逆方向（IR → キャンバス）は行わないことを §2.3 に明記。
+
+このドラフトは `AI-IR-PROJECTION-01`（IR 実装）と同一 PR で適用可能。
+
 ## 受入条件
 
 - [ ] AC-1: `llm_input_ir_spec.md` §2.3 / §4.2 の `relations.type` 列挙値が、採択された D2 の決定と一致している。
