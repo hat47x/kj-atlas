@@ -71,3 +71,8 @@ git diff --check
 
 - 発見経緯: `対応を進めてください`（ドッグフーディング状況確認・課題対応の一環）で`dogfood-analysis-synthesis-2026-08-12.md` §5の横展開候補を検証した際に発見。
 - 三要素牽制の観点: 機能設計（api.md）とデータ設計（実装ルート）の照合手段そのものが機能不全だった、`DX-DESIGN-CHECK-01`と同型の事例。
+
+## 対応記録（2026-08-12・逆方向ドリフト）
+
+- **別枠の発見（api.md 記述先行の未実装エンドポイント）への対応**: `POST /ai/assess-card-importance` は `AI-ROUTE-01`（MMR final_judgement タスク）の計画として api.md §2.12 に文書化されているが、`models_ai.py` の `AssessCardImportanceRequest/Response` も `routes/ai.py` の `@router` も存在しないことを再確認。
+- **対応**: api.md の該当セクション先頭に「**未実装（計画）**」を明記（実装前の正本として契約を維持）。check_contract_drift.py は routes→api.md 方向のみのためこの逆方向は検出しないが、文書の誤解を防ぐ明示で対応した。

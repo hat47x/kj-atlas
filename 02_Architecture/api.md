@@ -577,6 +577,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 **POST** `/ai/assess-card-importance`
 
+- **DX-CONTRACT-DRIFT-01（逆方向ドリフト）: 未実装（計画）。** 本 route は `AI-ROUTE-01`（MMR final_judgement タスク `assess_card_importance`）の設計として文書化されているが、`models_ai.py` の `AssessCardImportanceRequest/Response` も `routes/ai.py` の対応する `@router` デコレータも現時点では存在しない。実装前にこの契約を正本として使用すること。
 - Request: `AssessCardImportanceRequest`
   - `cards: CardRef[]` — カードの配列（最大100件）
 - Response: `AssessCardImportanceResponse`
