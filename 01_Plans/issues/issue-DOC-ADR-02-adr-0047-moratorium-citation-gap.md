@@ -1,7 +1,7 @@
 # Issue Draft: DOC-ADR-02 ADR-0047モラトリアムの再起票条件を引用していないADRが9件
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
