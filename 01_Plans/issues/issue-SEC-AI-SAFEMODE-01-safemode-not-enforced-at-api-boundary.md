@@ -117,3 +117,15 @@ SafeMode の未レビュー本文保護は**フロントエンドのみの強制
 - タイトル提案の文脈（`cardTextsForSuggestion`、App.tsx:2379）は `textReviewed !== false` でフィルタするが、**`undefined`（未レビュー）は残る**ため実質保護していない。
 
 → つまり「未レビュー本文のAI入力保護」は backend にも frontend の提案経路にも**存在しない**。本文「フロントエンドのみの強制」は正確でなく、Web 利用者（SafeMode 既定ON）の未レビュー本文も LLM 提案時に外部へ送出され得る。SafeMode の意図的意味（共有時のみの保護か、AI入力常時禁止か）を含め、ADR-0068 の判断材料として要確認。
+
+### 判断要約（2026-08-12・保守者決定用の一覧）
+
+SafeMode の入力側強制を実装する経路は2つ（どちらも ADR は **Proposed** で、採択順序の判断が必要）:
+
+| 経路 | 内容 | コスト | 備考 |
+|---|---|---|---|
+| **ADR-0068** | `/ai/*` リクエストモデルへ `safeMode` を追加し、未レビュー本文を拒否（D1=C・D2=B・D3=A 推奨） | 小〜中 | 現行ルートに直接適用。フロントエンドは既に SafeMode 適用済み内容を送る想定 |
+| **ADR-0069** | 凍結仕様 `llm_input_ir_spec.md`（ADR-0009 Accepted）を AI 入力の実経路として実装。`constraints.safe_mode: const true` で SafeMode を IR 生成層で強制（D1=B・D2=A 推奨） | 大 | IR 全体（graph_summary/cluster_candidates/ir_version）が未実装。D2=A で関係語彙のドリフト（AI-REL-VOCAB-DRIFT-01）も同時解消 |
+
+- 両者は同じ SafeMode 境界を対象とするため**並行実装しない**（ADR-0068 の「追記（2026-08-09）」）。
+- **推奨**: 短期の SafeMode 強制は ADR-0068 を採択して `/ai/*` に適用し、ADR-0069/IR は別途（語彙ドリフト解決も含む）進める併用が現実的。ただし採択順序は保守者の判断。
