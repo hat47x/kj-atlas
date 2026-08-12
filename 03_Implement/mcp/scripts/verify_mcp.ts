@@ -69,10 +69,34 @@ try {
     console.log("  → This is a normal not_found/error signal, NOT an MCP path failure.");
     process.exit(0);
   }
-  const projection = interpreted.projection as { bundleHash: string; schemaVersion?: string; constraints?: unknown };
+  const projection = interpreted.projection as {
+    bundleHash: string;
+    schemaVersion?: string;
+    constraints?: unknown;
+    cards?: Array<{ holdState?: string | null }>;
+    counts?: { reviewed: number; unreviewed: number; redacted: number };
+  };
   console.log(`  → bundleHash: ${projection.bundleHash}`);
   console.log(`  → schemaVersion: ${projection.schemaVersion ?? "n/a"}`);
   console.log(`  → constraints applied: ${JSON.stringify(projection.constraints ?? "n/a")}`);
+  // DOGFOOD-08: surface working-state metadata so the generative-AI path
+  // can respect hold/shelve state. holdState is a structural value (no
+  // text), safe to project even in SafeMode.
+  const cards = Array.isArray(projection.cards) ? projection.cards : [];
+  const held = cards.filter((c) => c.holdState === "held").length;
+  const pending = cards.filter((c) => c.holdState === "pending").length;
+  const shelved = cards.filter((c) => c.holdState === "shelved").length;
+  console.log(
+    `  → cards: ${cards.length} (held:${held}, pending:${pending}, shelved:${shelved}, no-state:${cards.length - held - pending - shelved})`
+  );
+  if (projection.counts) {
+    console.log(
+      `  → counts: reviewed:${projection.counts.reviewed}, unreviewed:${projection.counts.unreviewed}, redacted:${projection.counts.redacted}`
+    );
+  }
+  if (held + pending + shelved > 0) {
+    console.log("  → work-state (holdState) projected ✅ (DOGFOOD-08)");
+  }
   console.log("  → projection returned ✅");
 
   // 3. Verify anti-scoring (no score/rank/confidence fields).

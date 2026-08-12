@@ -113,6 +113,7 @@ Web/API/MCP など検証経路を新規追加・拡張するときは、次の3�
 | 2026-08-12 | DOGFOOD-02（GET raw 500）の修正案を実機検証（`version:2`→A1 422）し、GETをA1契約検証へ通す具体案を issue に明記 | `issue-DOGFOOD-02`に修正案追記（proposal-only・P1） |
 | 2026-08-12 | CLI/API経路の実走行（`verify_api.sh`・実DB`kj_atlas.db`）: 旧版文書 GET が構造化422（DOGFOOD-02修正のe2e確認）、`/session/context` 503をINFO区別（DOGFOOD-04） | `verify_api.sh`実走行 3 pass 0 fail（exit 0）を確認 |
 | 2026-08-12 | API書込経路の検証スクリプトが無く、admin の「自前スクリプトで文書を作る」経路が未検証 | `verify_api_write.sh` 追加（PUT /docs/{id} 作成＋GET 読戻しの往復）。実走行 4 pass 0 fail（作成200・読戻し・title/card件数往復） |
+| 2026-08-12 | MCP 検証経路がカード作業状態（holdState）を表示せず、生成AIが保留状態を読めない | `verify_mcp.ts` に holdState/counts 表示を追加。Hold/Critique文書（held2/shelved1）を実走行し `cards: 3 (held:2, pending:0, shelved:1)`・SafeModeでも holdState 投影を確認（DOGFOOD-08 の e2e 検証） |
 | 2026-08-12 | `saas-multitenant` の起動ゲートが fail-fast で機能することを実地確認（必須アダプタ欠損→起動拒否） | `adopting-org-patterns.md` §4 に実地確認を記録 |
 | 2026-08-12 | Org-Bパターン（Hold/Critique週跨ぎ）を実走行。API保存→再読込で作業状態が完全維持（held2/shelved1/critiqued2） | `adopting-org-patterns.md` §3.6 に記録 |
 | 2026-08-12 | MCP/外部プロジェクションが Hold/Critique 作業状態をスキーマごと落とす（AI協働の基本情報欠落） | `issue-DOGFOOD-08`起票（三要素分析済み・P2） |
