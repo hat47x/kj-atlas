@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import cases from "./fb_p2c_deterministic_cases.json";
+// DX-CLEANUP-08 (option a): this adapter has no production caller -- it is
+// intentionally kept as a thin wrapper for THIS integration test, which runs
+// under tests/tiebreak/vitest.config.tiebreak.ts (a separate vitest config).
+// It verifies the domain's deterministic tie-break contract end-to-end
+// through the worker-shaped entry point. Do not delete it.
 import { runDeterministicTieBreakWorker } from "../../src/worker/tiebreak/deterministic_tiebreak_worker_adapter";
 
 const EXPECTED_ORDER = "padding>self_intersection>area_delta>vertex_count";
