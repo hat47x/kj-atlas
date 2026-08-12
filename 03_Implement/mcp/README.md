@@ -59,6 +59,37 @@ npm start   # runs src/index.ts (transport selected by KJ_ATLAS_MCP_TRANSPORT)
 KJ_ATLAS_MCP_API_BASE_URL=http://127.0.0.1:8000 npm run verify -- [docId] [constraint]
 ```
 
+### Connecting a generative-AI MCP client (config example)
+
+To let a generative-AI agent (Claude Desktop, IDE MCP client, etc.) use this
+server over stdio, add it to the client's MCP server config. The backend must
+be running first (`uvicorn kj_atlas_api.main:app --port 8000`).
+
+```jsonc
+{
+  "mcpServers": {
+    "kj-atlas": {
+      "command": "npx",
+      "args": ["tsx", "src/index.ts"],
+      "cwd": "/absolute/path/to/kj-atlas/03_Implement/mcp",
+      "env": {
+        "KJ_ATLAS_MCP_API_BASE_URL": "http://127.0.0.1:8000",
+        "KJ_ATLAS_MCP_TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+Notes for AI agents using this path:
+- One tool, `get_context_projection({ docId, constraint, safeMode })` — read-only.
+- **Unreviewed cards are never exposed on any constraint** (fail-closed, see
+  Scope above). Use it for already-reviewed content; `holdState` metadata tells
+  you which cards are held/pending/shelved (DOGFOOD-08).
+- For the HTTP + OAuth 2.1 resource-server transport, set `KJ_ATLAS_MCP_TRANSPORT=http`
+  and the required OAuth env vars (see Transport selection below); tokens must be
+  issued by the configured trusted issuer.
+
 ### Transport selection
 
 | Variable | Default | Purpose |
