@@ -722,3 +722,37 @@ def test_deepseek_empty_choices_error(monkeypatch: pytest.MonkeyPatch) -> None:
     finally:
         settings.deepseek_api_key = original_key
         settings.deepseek_base_url = original_url
+
+
+# --- AI-ROUTE-01 MMR routing tests ---
+
+def test_routing_stage_classification() -> None:
+    from kj_atlas_api.llm.provider import routing_stage_for_task
+
+    assert routing_stage_for_task("refine_card_text") == "intermediate"
+    assert routing_stage_for_task("suggest_document_title") == "intermediate"
+    assert routing_stage_for_task("check_narrative") == "final_judgement"
+    assert routing_stage_for_task("detect_contradiction") == "final_judgement"
+    assert routing_stage_for_task("unknown_task") == "unknown"
+
+
+def test_final_judgement_routes_to_high_reasoning_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    from kj_atlas_api.settings import settings
+
+    original_high = settings.llm_high_reasoning_model
+    original_local = settings.local_llm_model
+    original_map = settings.llm_task_model_map
+    try:
+        settings.llm_high_reasoning_model = "deepseek-reasoner"
+        settings.local_llm_model = "deepseek-chat"
+        settings.llm_task_model_map = ""
+        from kj_atlas_api.llm.provider import resolve_model_for_task
+
+        # final_judgement task → high-reasoning model
+        assert resolve_model_for_task("check_narrative") == "deepseek-reasoner"
+        # intermediate task → default model
+        assert resolve_model_for_task("refine_card_text") == "deepseek-chat"
+    finally:
+        settings.llm_high_reasoning_model = original_high
+        settings.local_llm_model = original_local
+        settings.llm_task_model_map = original_map

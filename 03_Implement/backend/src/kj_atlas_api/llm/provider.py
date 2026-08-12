@@ -34,10 +34,37 @@ class LLMRequest:
     model: str | None = None
 
 
-def resolve_model_for_task(task: str, request: LLMRequest | None = None) -> str:
-    """ADR-0065: resolve the model for a given task.
+# AI-ROUTE-01 MMR-01: tasks that are pure transformation (never a human
+# judgement). These are safe on cheaper (intermediate) tiers.
+_INTERMEDIATE_TASKS = frozenset({
+    "refine_card_text",
+    "suggest_card_groups",
+    "re_layout",
+    "suggest_merges",
+    "suggest_island_summary",
+    "summarize_island_relation",
+    "generate_narrative",
+    "suggest_document_title",
+})
+# AI-ROUTE-01 MMR-04: tasks that feed a human final judgement (accept/reject/
+# merge/finalize). These route to a high-reasoning tier by default.
+_FINAL_JUDGEMENT_TASKS = frozenset({
+    "check_narrative",
+    "detect_contradiction",
+    "assess_card_importance",
+})
 
-    Priority: request.model > KJ_ATLAS_LLM_TASK_MODEL_MAP > default model.
+
+def resolve_model_for_task(task: str, request: LLMRequest | None = None) -> str:
+    """ADR-0065 / AI-ROUTE-01 (MMR-01/02/03/04): resolve the model for a task.
+
+    Priority: request.model > KJ_ATLAS_LLM_TASK_MODEL_MAP > task-class model
+    (intermediate vs final_judgement) > default model.
+
+    - intermediate tasks (transformation only) never accept/reject/merge,
+      so they may use a cheaper tier.
+    - final_judgement tasks route to the high-reasoning tier model when no
+      explicit override is set.
     """
     from kj_atlas_api.settings import settings
 
@@ -55,8 +82,24 @@ def resolve_model_for_task(task: str, request: LLMRequest | None = None) -> str:
                 if t.strip() == task and m.strip():
                     return m.strip()
 
-    # 3. Default model
+    # 3. Task-class model (MMR-04: final_judgement → high-reasoning tier)
+    if task in _FINAL_JUDGEMENT_TASKS and settings.llm_high_reasoning_model:
+        return settings.llm_high_reasoning_model
+
+    # 4. Default model
     return settings.local_llm_model or "default"
+
+
+def routing_stage_for_task(task: str) -> str:
+    """AI-ROUTE-01 MMR-01/MMR-05: classify a task's routing stage.
+
+    Returns "intermediate" | "final_judgement" | "unknown".
+    """
+    if task in _INTERMEDIATE_TASKS:
+        return "intermediate"
+    if task in _FINAL_JUDGEMENT_TASKS:
+        return "final_judgement"
+    return "unknown"
 
 
 @dataclass(frozen=True)

@@ -69,9 +69,15 @@ logger = logging.getLogger(__name__)
 
 
 def _audit_llm_trace(task: str, llm_response) -> None:
+    from kj_atlas_api.llm.provider import routing_stage_for_task
+
     logger.info(
         "llm_generate",
-        extra={"task": task, **build_audit_fields(llm_response)},
+        extra={
+            "task": task,
+            "routingStage": routing_stage_for_task(task),
+            **build_audit_fields(llm_response),
+        },
     )
 
 
