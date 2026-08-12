@@ -213,10 +213,11 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# Nix / direnv
+# Nix / direnv (root-anchored so analysis docs named result-* are tracked:
+# DOGFOOD-07)
 .direnv/
-result
-result-*
+/result
+/result-*
 # Claude Code（個人ローカル設定。秘匿情報を含むため git 管理外。詳細は .claude/README.md / ADR-0045）
 .claude/settings.local.json
 .claude/worktrees/
