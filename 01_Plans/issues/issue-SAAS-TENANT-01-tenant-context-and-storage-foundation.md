@@ -69,7 +69,7 @@
 - [ ] AC-10: tenant A/Bへ同じdocIdを作成した越境negative matrixが、API/MCP/worker/browser cacheを含めて成功する。
 - [x] AC-11: single-tenantのlocal-dev/evaluation/enterprise-production互換テストが維持され、SafeMode既定ON、proposal-only、provider=`none`を弱めない。
 - [ ] AC-12: Round 8 R8-E/FはAC-1〜11完了後だけ有効化され、390/768/1440px、ja/en、keyboard/focus、tenant切替時の旧DOM/cache破棄を検証する。
-- [ ] AC-13: 同じ認証セッションの複数タブ、同時tenant切替、bfcache復帰、遅延responseで古い`tenantSessionVersion`を持つGET/PUT/export/import/Admin更新がresource lookup前に拒否され、client通知が欠落しても新tenantへ自動再送・commitされない。
+- [~] AC-13: 同じ認証セッションの複数タブ、同時tenant切替、bfcache復帰、遅延responseで古い`tenantSessionVersion`を持つGET/PUT/export/import/Admin更新がresource lookup前に拒否され、client通知が欠落しても新tenantへ自動再送・commitされない。— **部分**: 中核の **stale/missing/malformed/duplicate バージョンの resource lookup 前拒否**は `require_current_tenant_session_version` + `require_tenant_session_request_precondition` で実装・`test_tenant_session_precondition.py`（12 tests）で固定済み。**複数タブ・bfcache・export/import/Admin の negative matrix は未検証**（SaaS 起動ゲート解除後）。
 
 ## 検証計画
 
