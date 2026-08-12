@@ -142,6 +142,7 @@ Web/API/MCP など検証経路を新規追加・拡張するときは、次の3�
 | 2026-08-12 | MCP HTTP 経路の**実エンドツーエンド**（mock IdP の実JWT + 実backend の実文書）を走行 | `scripts/dogfood_mcp_http_e2e.mjs` 追加。mock JWKS サーバ＋署名JWT＋MCP HTTP サーバ＋実backend文書で `get_context_projection` 成功（bundleHash・cards:1）。**生成AIがMCP HTTPで検証する経路が実証完了** |
 | 2026-08-12 | L2/L3指標③（実API検証）の計測ハーネス `run_ai_eval.py --dry-run` を実行 | refine_card_text 10/10・suggest_island_summary 4/4 を stub provider でパイプライン検証（キー無し）。計測ハーネスが機能していることを確認（実API結果は `ai_eval_results.md`） |
 | 2026-08-12 | MCP HTTP トランスポートの**レート制限（60 req/min）**を実走行検証 | mock IdP + 実JWT で70連続リクエスト → 60件が受理され**10件が 429**。レート制限制御が機能（THREAT_MODEL §6 の制御を実証・fail-closed） |
+| 2026-08-13 | **backend の admin provisioning 面にレート制限を実装**（SEC-RATE-LIMIT-01） | `/admin/provision/*`（users/identity-providers/tenant-identity-providers）へ in-process・per-IP・60 req/min を適用。**61件目で 429 + Retry-After** を実機確認。MCP と対称になり非対称（issue の本題）を解消。フル backend 984 pass |
 | 2026-08-12 | `check_contract_drift.py` が抽出漏れ（複数行デコレータ・空パス）＋形状正規化で実装ルートの63%を見落とし、`/ai/external-*` 3ルートの api.md 未記載を隠していた | **DX-CONTRACT-DRIFT-01** で修正（構造的照合・カナリア追加・実3ルートを api.md へ追記）。`check_design_consistency.py` も構造的照合へ書き換え（DX-DESIGN-CHECK-01）。backend 979 tests pass |
 | 2026-08-12 | api.md 記述先行の未実装エンドポイント（`POST /ai/assess-card-importance`＝AI-ROUTE-01 MMR 計画タスク）が逆方向ドリフトとして存在 | api.md に「**未実装（計画）**」を明記（契約は実装前の正本として維持） |
 | 2026-08-12 | AI ルートのルーティング＋監査の統合検証が無い | `test_ai_eval_pipeline.py::test_ai_route_emits_routing_audit_event` を追加 — /ai 実走行で `llm` 監査イベントが CE2-C5 項目で dispatcher へ出ることを固定（AI-ROUTE-01 AC-6 部分） |
