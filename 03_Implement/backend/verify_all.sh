@@ -113,6 +113,24 @@ check "Documentation contract checks" \
   $VENV_PYTHON "$(git rev-parse --show-toplevel 2>/dev/null || echo '/mnt/d/GIT/kj-atlas')/01_Plans/docs_check.py"
 
 # ------------------------------------------------------------------
+# 9. API/MCP verification (non-Web paths; requires a running backend)
+# ------------------------------------------------------------------
+# These curl/tsx-based checks exercise the admin CLI/API and MCP paths an
+# operator actually uses. They need a live backend (uvicorn on :8000), so
+# they are skipped with a note when it is not reachable — never a failure.
+ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || echo '/mnt/d/GIT/kj-atlas')"
+API_BASE="${KJ_ATLAS_VERIFY_API_BASE:-http://127.0.0.1:8000}"
+if curl -s -o /dev/null -w '%{http_code}' --max-time 2 "$API_BASE/healthz" 2>/dev/null | grep -q 200; then
+  check "API read path (verify_api.sh)" \
+    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api.sh" "$API_BASE"
+  check "API write path (verify_api_write.sh)" \
+    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_write.sh" "$API_BASE"
+  echo "  INFO: backend reachable — API/MCP checks ran. MCP check requires KJ_ATLAS_MCP_API_BASE_URL (run via npm run verify)."
+else
+  echo "  SKIP: API/MCP verification — no backend at $API_BASE (start uvicorn kj_atlas_api.main:app --port 8000 to enable)"
+fi
+
+# ------------------------------------------------------------------
 # Summary
 # ------------------------------------------------------------------
 echo ""
