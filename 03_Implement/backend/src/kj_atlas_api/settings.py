@@ -386,7 +386,12 @@ class Settings(BaseSettings):
         validation_alias="KJ_ATLAS_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS",
     )
     allow_jit_provisioning: bool = Field(
-        default=True,
+        # SEC-RATE-LIMIT-01: fail-closed by default. The default-True config
+        # let an unauthenticated request with an unknown x-forwarded-user
+        # header auto-create a user (verified 2026-08-12). Production already
+        # recommends False (deploy/broker/README.md); local-dev / evaluation
+        # that want header-originated users must set it True explicitly.
+        default=False,
         validation_alias="KJ_ATLAS_ALLOW_JIT_PROVISIONING",
     )
     auth_provider_field: str = Field(
