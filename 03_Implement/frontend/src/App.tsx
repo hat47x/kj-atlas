@@ -26,6 +26,7 @@ import {
 } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
 import { ContextMenu, type ContextMenuItem } from "./ui/ContextMenu";
+import { AppErrorBoundary, clearEvictedDocument, loadEvictedDocument } from "./ui/AppErrorBoundary";
 import type { AggregatedEdgeMeta, CameraTransformRequest, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
@@ -1526,6 +1527,34 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const document = history?.present ?? null;
   const currentReviewerRefSource = inferReviewerRefSource(currentReviewerRef);
+
+  // UI-RESILIENCE-01: restore a document preserved by the error boundary
+  // (the app has no autosave; a render crash otherwise loses unsaved work).
+  const [pendingRecovery, setPendingRecovery] = useState<unknown | null>(() => loadEvictedDocument());
+
+  const applyRecoveredDocument = useCallback(
+    (restoredDoc: unknown) => {
+      const restored = normalizeDocument(restoredDoc as Document);
+      setHistory({
+        past: [],
+        present: cloneDocument(restored),
+        future: [],
+      });
+      setActiveDocumentId(restored.id);
+      setSelectedCardIds([]);
+      setSelectedIslandId(null);
+      setIsDirty(true);
+      setStatusMessage(t("app.status.document_recovered"));
+      setPendingRecovery(null);
+      clearEvictedDocument();
+    },
+    [normalizeDocument, cloneDocument, t],
+  );
+
+  const handleDismissRecovery = useCallback(() => {
+    setPendingRecovery(null);
+    clearEvictedDocument();
+  }, []);
   const outlineRecommendations = useMemo(() => {
     if (!document || !outlineQualityReport) {
       return [];
@@ -11547,6 +11576,20 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }
 
   return (
+    <AppErrorBoundary
+      getRecoverySnapshot={() => history?.present ?? null}
+      onRecover={applyRecoveredDocument}
+    >
+    {pendingRecovery != null ? (
+      <div
+        role="status"
+        style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 2000, padding: "8px 16px", background: "#fff8e1", borderBottom: "1px solid #e0c060", display: "flex", gap: "12px", alignItems: "center", justifyContent: "center" }}
+      >
+        <span>{t("app.error_boundary.message")}</span>
+        <button onClick={() => applyRecoveredDocument(pendingRecovery)}>{t("app.error_boundary.recover")}</button>
+        <button onClick={handleDismissRecovery}>{t("app.error_boundary.reload")}</button>
+      </div>
+    ) : null}
     <RepresentativeVisualCueAssetScopeProvider scope={appStorage.scope}>
     <Shell
       title={t("app.title")}
@@ -12371,5 +12414,6 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       />
     ) : null}
     </RepresentativeVisualCueAssetScopeProvider>
+    </AppErrorBoundary>
   );
 }

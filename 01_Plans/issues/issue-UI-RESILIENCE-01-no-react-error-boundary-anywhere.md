@@ -1,7 +1,7 @@
 # Issue: UI-RESILIENCE-01 React error boundaryが皆無で、未捕捉の描画例外が未保存作業を復旧不能に破棄する
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
@@ -23,9 +23,9 @@
 
 ## 受入条件
 
-- [ ] error boundaryの導入範囲（ルート全体 / パネル単位分割）が決定される。
-- [ ] 捕捉時の状態退避方針（何を・どこへ・いつ）が決定される。
-- [ ] 決定に応じてboundaryが実装され、`domain/core_value_guard.test.ts`（CVI群）または同等の回帰テストに、描画例外からの復旧を検証する項目が追加される。
+- [x] error boundaryの導入範囲（ルート全体 / パネル単位分割）が決定される。— **App 内部のルート render を1枚の `AppErrorBoundary` で包む**（App の state へ到達できる位置。分割境界は任意の強化として据え置き）。
+- [x] 捕捉時の状態退避方針（何を・どこへ・いつ）が決定される。— **`history.present`（現行文書）を例外捕捉時に `localStorage["kj-atlas/evicted-doc"]` へ退避**。マウント時に退避があれば復旧バナーを提示。
+- [x] 決定に応じてboundaryが実装され、`domain/core_value_guard.test.ts`（CVI群）または同等の回帰テストに、描画例外からの復旧を検証する項目が追加される。— `src/ui/AppErrorBoundary.tsx` 実装＋`AppErrorBoundary.test.ts`（退避/破棄の roundtrip・正常render 3件）。※実DOMでの描画例外トリガーは jsdom 不在のため unit 化（helpers）で固定。
 
 ## 検証計画
 
