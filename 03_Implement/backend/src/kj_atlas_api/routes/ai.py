@@ -743,7 +743,9 @@ def propose_island_summary(
     if get_document_row(db, tenant=tenant, doc_id=payload.doc.id) is None:
         raise HTTPException(status_code=404, detail="Document not found")
     summary_result = suggest_island_summary(
-        SuggestIslandSummaryRequest(doc=payload.doc, islandId=payload.islandId)
+        SuggestIslandSummaryRequest(doc=payload.doc, islandId=payload.islandId),
+        request,
+        db,
     )
     target_island = next(
         (item for item in payload.doc.islands if item.id == payload.islandId), None
@@ -1116,7 +1118,8 @@ def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Sessi
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
-    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "refine_card_text", llm_response)
+    # RefineCardTextRequest has no document context; audit with empty doc_id.
+    _audit_llm_trace(request, _resolve_audit_tenant(request, db), "(no-doc)", "refine_card_text", llm_response)
     return _parse_refine_card_text_response(llm_response.raw_text)
 
 
@@ -1137,7 +1140,8 @@ def suggest_card_groups(payload: SuggestCardGroupsRequest, request: Request, db:
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
-    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "suggest_card_groups", llm_response)
+    # SuggestCardGroupsRequest has no document context; audit with empty doc_id.
+    _audit_llm_trace(request, _resolve_audit_tenant(request, db), "(no-doc)", "suggest_card_groups", llm_response)
     return _parse_suggest_card_groups_response(llm_response.raw_text)
 
 
@@ -1158,7 +1162,8 @@ def detect_contradiction(payload: DetectContradictionRequest, request: Request, 
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
-    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "detect_contradiction", llm_response)
+    # DetectContradictionRequest has no document context; audit with empty doc_id.
+    _audit_llm_trace(request, _resolve_audit_tenant(request, db), "(no-doc)", "detect_contradiction", llm_response)
     return _parse_detect_contradiction_response(llm_response.raw_text)
 
 
@@ -1181,7 +1186,8 @@ def suggest_document_title(payload: SuggestDocumentTitleRequest, request: Reques
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
-    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "suggest_document_title", llm_response)
+    # SuggestDocumentTitleRequest has no document context; audit with empty doc_id.
+    _audit_llm_trace(request, _resolve_audit_tenant(request, db), "(no-doc)", "suggest_document_title", llm_response)
     return _parse_suggest_document_title_response(llm_response.raw_text)
 
 
