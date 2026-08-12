@@ -52,12 +52,14 @@ API経路の 500 は**Web初回起動のブロッカー**に増幅されるこ�
 
 - [x] `GET /docs/{doc_id}` が、旧版（`version ≠ 1`）文書に対して素の 500 を返さない。— `_validate_document_payload_with_a1_contract` をGET経路に適用（56ca9335）
 - [x] 版不一致の応答が構造化された 4xx（A1 契約）として返り、内部スタックトレースが漏れない。— version≠1 で A1_SCHEMA_VERSION_MISMATCH（422）
-- [ ] `verify_api.sh` が旧版文書を明示的に含む環境でも fail しない（または意図的な期待失敗として文書化される）。
+- [x] `verify_api.sh` が旧版文書を明示的に含む環境でも fail しない（または意図的な期待失敗として文書化される）。— 実DB（`kj_atlas.db` の `version:2` 文書）で `verify_api.sh` を実行し、`/docs/{id}` が 422 を reachable として PASS・3 pass 0 fail（exit 0）。
 - [ ] **Web 初回起動（デフォルト文書 `doc_phase1_canvas` の自動ロード）が 500 エラー画面にならない**（404 と同様に既知状態として扱うか、構造化エラーを回復可能な形で表示する）。
 
 ## 進捗（2026-08-12）
 
 backend GET読取経路のA1契約検証を実装（56ca9335）。version≠1文書は構造化422を返し、素の500が解消。docs関連テスト34 passed（回帰なし）。Web初回起動（frontend側のallowCreateOnNotFound拡張）は別途対応が必要。
+
+e2e確認（2026-08-12）: 実DB（`kj_atlas.db` の `version:2` `doc_phase1_canvas`）に対して backend 起動＋`verify_api.sh` を実行し、`GET /docs/doc_phase1_canvas` が構造化422（`A1_REQUIRED_FIELD_MISSING`・スタックトレース非漏洩）を返すことを確認。`verify_api.sh` は 3 pass 0 fail（exit 0）で旧版文書環境でも fail しない（受入条件3充足）。
 
 ## 検証計画
 
