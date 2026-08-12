@@ -51,23 +51,44 @@ def warn(msg: str) -> None:
 print("=== 1. Backend routes vs api.md ===")
 
 ROUTE_DECORATOR_RE = re.compile(
-    r'@router\.(get|post|put|delete|patch)\('
-    r'["\']([^"\']+)["\']'
+    r'@router\.(get|post|put|delete|patch)\(\s*'
+    r'["\']([^"\']*)["\']'
 )
 # router = APIRouter(prefix="/ai", tags=["ai"])
 ROUTER_PREFIX_RE = re.compile(r'APIRouter\([^)]*prefix=["\']([^"\']+)["\']')
-# Path-parameter canonicalization: {doc_id}/{journey_id}/{id} → {param}
+# Path-parameter token: {doc_id}, {journey_id}, {id}, ...
 _PARAM_TOKEN_RE = re.compile(r"\{[a-zA-Z_][a-zA-Z0-9_]*\}")
-# Concrete resource IDs (test fixtures) → {param}
-_CONCRETE_ID_RE = re.compile(r"([a-z][a-z0-9]+(?:[-_][a-z0-9]+)+)")
 
 
-def _canonical(path: str) -> str:
-    normalized = _PARAM_TOKEN_RE.sub("{param}", path)
-    normalized = _CONCRETE_ID_RE.sub("{param}", normalized)
-    while "{param}/{param}" in normalized:
-        normalized = normalized.replace("{param}/{param}", "{param}")
-    return normalized
+def _endpoint_segments(path: str) -> list[str]:
+    return [segment for segment in path.strip("/").split("/") if segment]
+
+
+def endpoint_matches_documented(referenced: str, documented: str) -> bool:
+    """Structural, segment-wise match against api.md's declared placeholders.
+
+    DX-DESIGN-CHECK-01 found the same defect class in
+    check_design_consistency.py: a shape-based regex (```{[a-z][a-z0-9]+
+    (?:[-_][a-z0-9]+)+}```-style kebab/snake matching) collapsed every
+    kebab-case path segment into a shared placeholder, so unrelated routes
+    that merely looked like fixture IDs became indistinguishable. Here that
+    collapsed 43 raw @router decorators down to 16 canonical strings before
+    deduplication ever compared anything to api.md. Matching structurally
+    against the placeholder positions api.md itself declares avoids guessing
+    from shape.
+    """
+    referenced_segments = _endpoint_segments(referenced)
+    documented_segments = _endpoint_segments(documented)
+    if len(referenced_segments) != len(documented_segments):
+        return False
+    for referenced_segment, documented_segment in zip(referenced_segments, documented_segments):
+        if _PARAM_TOKEN_RE.fullmatch(documented_segment):
+            continue
+        if _PARAM_TOKEN_RE.fullmatch(referenced_segment):
+            continue
+        if referenced_segment != documented_segment:
+            return False
+    return True
 
 
 def _router_prefix_for(content: str) -> str:
@@ -78,8 +99,8 @@ def _router_prefix_for(content: str) -> str:
 if API_MD.exists():
     api_md_content = API_MD.read_text(encoding="utf-8")
 
-    # Resolve each backend route with its router prefix, canonicalized.
-    backend_routes: set[str] = set()
+    # Resolve each backend route with its router prefix.
+    backend_routes: set[tuple[str, str]] = set()
     for py_file in BACKEND_SRC.rglob("*.py"):
         if py_file.name == "__init__.py":
             continue
@@ -92,23 +113,26 @@ if API_MD.exists():
             method = match.group(1).upper()
             path = match.group(2)
             full_path = f"{prefix.rstrip('/')}/{path.lstrip('/')}".rstrip("/") or "/"
-            backend_routes.add(f"{method} {_canonical(full_path)}")
+            backend_routes.add((method, full_path))
 
     # Extract documented endpoints from api.md (both `METHOD /path` and
-    # **METHOD** `/path` formats), canonicalized.
+    # **METHOD** `/path` formats).
     API_DOC_RE = re.compile(r'`(GET|POST|PUT|DELETE|PATCH)\s+(/\S+)`')
     API_DOC_BOLD_RE = re.compile(r"\*\*(GET|POST|PUT|DELETE|PATCH)\*\*\s+`(/\S+)`")
-    doc_endpoints: set[str] = set()
+    doc_endpoints: set[tuple[str, str]] = set()
     for pattern in (API_DOC_RE, API_DOC_BOLD_RE):
         for match in pattern.finditer(api_md_content):
-            doc_endpoints.add(f"{match.group(1)} {_canonical(match.group(2))}")
+            doc_endpoints.add((match.group(1), match.group(2)))
 
     # Check coverage
-    for route in sorted(backend_routes):
-        if route not in doc_endpoints:
-            warn(f"Backend route '{route}' not found in api.md")
+    for method, path in sorted(backend_routes):
+        if not any(
+            method == doc_method and endpoint_matches_documented(path, doc_path)
+            for doc_method, doc_path in doc_endpoints
+        ):
+            warn(f"Backend route '{method} {path}' not found in api.md")
 
-    print(f"  Backend routes: {len(backend_routes)}, api.md canonical endpoints: {len(doc_endpoints)}")
+    print(f"  Backend routes: {len(backend_routes)}, api.md documented endpoints: {len(doc_endpoints)}")
 else:
     warn("api.md not found — skipping route check")
 

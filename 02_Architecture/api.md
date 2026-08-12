@@ -486,6 +486,46 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 - proposalに対する人間の判断（Adopt/Reject/Hold）をtenant・Document・source bundleへ結合し、生成時registry`ai_proposals`との一致を確認して記録する。未登録IDや別Documentのproposalは404、source bundle不一致は409とする。reviewerはclient入力を信頼せず、serverが認証contextから解決する。追記イベントの正本は`ai_proposal_decision_events`、競合制御用の現在状態は`ai_proposal_decision_states`とする。
 - 同じidempotency keyと同じ内容の再送は同じreceiptを返す。`held`からは`accepted/rejected`へ一度だけ進められ、終端後の変更は409になる。
 
+**POST** `/ai/external-tasks/register`
+
+- Request: `ExternalAgentTaskRegistrationRequest`
+  - `docId: string`
+  - `taskId: string` — 依頼の一意識別子
+  - `baseDocSignature: string` — 依頼生成時点の文書シグネチャ（`{docId}:{updatedAt}`）
+  - `sourceBundleHash: string` — 依頼に渡したcontext bundleのハッシュ
+  - `queryCanonicalHash: string`
+  - `taskKind: "island_titles" | "merge_candidates" | "narrative_draft" | "opposing_viewpoints" | "critique_suggestions" | "free_analysis"`
+  - `provenanceLevel: "user_presented_unsigned"`
+- Response: `ExternalAgentTaskRegistrationResponse`
+  - `registered: true`
+  - `taskId: string`
+  - `provenanceLevel: "user_presented_unsigned"`
+- ADR-0049（外部定額課金AIエージェントとの成果物ベース・非同期協調）の依頼パッケージ登録。人間が依頼を外部エージェントへ手渡す前に、その依頼の起点をtenant側へ記録する。対象Documentが存在しない場合は404、`baseDocSignature`が現在の文書と一致しない場合は409（stale）を返す。仕様正本: `external_agent_collaboration_spec.html`。
+
+**POST** `/ai/external-proposals/register`
+
+- Request: `ExternalAgentProposalRegistrationRequest`
+  - `docId: string`
+  - `taskId: string` — `/ai/external-tasks/register` で登録した依頼ID
+  - `baseDocSignature: string`
+  - `sourceBundleHash: string`
+  - `queryCanonicalHash: string`
+  - `proposalId: string`
+  - `proposalKind: "island_title" | "merge_candidate" | "narrative_draft" | "opposing_viewpoint" | "critique" | "patch"`
+  - `proposalFingerprint: string`
+  - `provenanceLevel: "user_presented_unsigned"`
+- Response: `ExternalAgentProposalRegistrationResponse`
+  - `registered: true`
+  - `proposalId: string`
+  - `provenanceLevel: "user_presented_unsigned"`
+- 外部エージェントが返した成果物を、人間がDocumentへ貼り戻す前にtenant側へ`origin: external_agent`として登録する。対象Documentが存在しない場合は404、`baseDocSignature`不一致は409。ここで登録していないproposal IDに対して`/ai/external-proposals/audit`でdecisionを記録することはできない（404）。
+
+**POST** `/ai/external-proposals/audit`
+
+- Request: `ExternalAgentProposalDecisionRequest`（`ProposalDecisionAuditRequest`を継承し `provenanceLevel: "user_presented_unsigned"` を追加。他フィールドは本節「POST `/ai/proposals/audit`」のRequestと同一）
+- Response: `ProposalDecisionAuditResponse`（`/ai/proposals/audit`と同一形状）
+- `/ai/proposals/audit`と同じ判断記録APIだが、`/ai/external-proposals/register`で登録した`origin: external_agent`のproposalにのみ適用される。proposal未登録は404、`/ai/proposals/audit`側で登録された（origin不一致の）proposalに対して呼んだ場合は409（`proposal origin does not match endpoint`）。
+
 **POST** `/ai/generate-narrative`
 
 - Request: `GenerateNarrativeRequest`
