@@ -75,6 +75,20 @@ if "/" not in stripped or stripped.count("/") <= 1:
 - [ ] AC-2: `_is_external_or_wildcard()` によって実装ルートが除外されない（現状3本を0本にする）。外部IdP系（`/oauth/`, `/saml`, `/.well-known/`）とワイルドカードのみ除外する。
 - [ ] AC-3: **検出器の識別力を守る回帰テストを追加する。** 既知の相異なるエンドポイント集合（最低でも `/ai/*` 全10本）を与え、正規化後も全て相異なることをアサートする。この検査があれば、将来の正規化強化が識別力を落とした時点でCIが落ちる。
   - **進捗**: `tests/test_design_consistency_discrimination.py` を追加（LIVE の `_PARAM_TOKEN_RE`/`_CONCRETE_ID_RE` をソースから読んで検証。実装 `/ai/*` 9本が `1` キーへ潰れることを確認）。現状は検出器が欠陥のため **xfail(strict=False)** — 案A/B/C の修正が入ると XPASS になり、その時点で un-xfail してCIガード化する。
+
+### 案B の実測評価（2026-08-12・修正着手前の判断材料）
+
+実装ルート42本＋`routes/*.py` の実セグメント抽出による案B（実ルートセグメントを正規化対象から除外）をプロトタイプで計測した:
+
+| 方式 | 警告数 | AC-1 衝突グループ |
+|------|--------|------------------|
+| 現状（正規化あり） | 2（baseline） | 6（/ai/* 10本が1つに） |
+| **案A（`_CONCRETE_ID_RE` 廃止）** | **10** | —（fixture ID `e2e-qa-roundtrip`/`doc_phase1_canvas` 等が偽陽性で復活） |
+| **案B（実セグメント除外）** | **4** | **3**（/docs/{param}・/inquiry-bundles/{param}・/tenant-admin/document-access/{param}） |
+
+- 案B で **AC-1 の /ai/* 問題は解消**（カナリアが XPASS に転じる）。
+- 残る3グループは `{param}/{param}` 圧縮（正規化step 3）由来で、案B だけでは AC-1 の「0衝突」に達しない。AC-2（`_is_external_or_wildcard` が `/bundle` `/bundles:resolve` `/query` を除外）も未対応。
+- 案B 適用で警告は 2→4 へ増える（DATA-MAINT-05・DX-DESIGN-CHECK-01 本文の参照が検出される）。**設計整合警告数は昇格ゲートの指標のため、適用は保守者の判断待ち**（METRIC-01 案B の測定器変更記録を伴う）。案B 採択なら AC-5 の baseline 更新（2→4）が必要。
 - [ ] AC-4: 修正後の警告数を実測し、`DX-DOC-08` の受入条件2を**再検証**する。api.md未記載のルートが見つかった場合はそれを記録する（`DX-DOC-08` をReopenするか後続issueを立てるかは保守者判断）。
 - [ ] AC-5: `02_Architecture/design_consistency_baseline.json` の `total_warnings` を修正後の実測値へ更新する。
 
