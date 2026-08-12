@@ -11,6 +11,7 @@ from kj_atlas_api.main import app
 from kj_atlas_api.models import AIProposalDecisionEventRow, AIProposalRow, Base
 from kj_atlas_api.models_ai import ProposalEnvelope
 from kj_atlas_api.routes import ai
+from kj_atlas_api.settings import settings as _settings
 
 
 @pytest.fixture()
@@ -26,6 +27,11 @@ def sqlite_client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker]]:
             yield db
 
     app.dependency_overrides[get_db] = _get_test_db
+    # SEC-RATE-LIMIT-01: this suite drives header-originated users via JIT
+    # provisioning; pin it True so the tests are independent of the runtime
+    # default (which is under review to become fail-closed/False).
+    _original_allow_jit = _settings.allow_jit_provisioning
+    _settings.allow_jit_provisioning = True
     try:
         with TestClient(app) as client:
             client.headers.update({"x-forwarded-user": "ce2-reviewer", "x-auth-provider": "oidc"})
@@ -44,6 +50,7 @@ def sqlite_client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker]]:
                 db.commit()
             yield client, session_local
     finally:
+        _settings.allow_jit_provisioning = _original_allow_jit
         app.dependency_overrides.clear()
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
