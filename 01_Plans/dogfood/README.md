@@ -125,6 +125,7 @@ Web/API/MCP など検証経路を新規追加・拡張するときは、次の3�
 | 2026-08-12 | AI ルートの **fail-closed 挙動**（provider=none 時）をライブ検証 | `/ai/refine-card-text` → **構造化503**（`provider_unavailable`・provider/model/trace_id 付き・クラッシュなし）。AI 無効時に安全側で拒否されることを実証 |
 | 2026-08-12 | 非Web検証経路（CLI/API 読/書・MCP）がローカル検証ハーネスに未統合 | `verify_all.sh` check 9 を追加（backend 稼働時のみ実行・不稼働時 SKIP）。API 読取3 + 書込7 + MCP not_found を実走行確認（DOGFOOD-06 規則の適用） |
 | 2026-08-12 | 本番でも `/docs`・`/openapi.json`（全ルート・全ペイロードの偵察面）が無保護で公開（SEC-HEADERS-01） | **修正（案a）**: `enterprise-production`/`saas-multitenant` で無効化・`local-dev`/`evaluation` で維持。実機で prod 起動 OK・/docs と /openapi.json が 404 を確認 |
+| 2026-08-12 | 多数カード文書（500枚）の API 応答性能を実測 | PUT 0.13s・GET **0.03s**・52KB応答。PERF-BUDGET（PB-2: 同期処理 100ms 超なし）に適合。API 経路の大規模文書性能を実証 |
 | 2026-08-12 | MCP 検証経路がカード作業状態（holdState）を表示せず、生成AIが保留状態を読めない | `verify_mcp.ts` に holdState/counts 表示を追加。Hold/Critique文書（held2/shelved1）を実走行し `cards: 3 (held:2, pending:0, shelved:1)`・SafeModeでも holdState 投影を確認（DOGFOOD-08 の e2e 検証） |
 | 2026-08-12 | 生成AIがMCPサーバへ接続するためのクライアント設定例が無い（「準備」の不足） | `03_Implement/mcp/README.md` に「Connecting a generative-AI MCP client」節を追加（stdio 設定例＋AI向け注意: 未レビュー非表示・holdState・HTTP/OAuth） |
 | 2026-08-12 | MCP HTTP トランスポートのフルセッション（initialize→tools/list→tools/call）を検証したところ、2番目以降のリクエストが500（statelessモードで単一transportを再利用していた） | **修正**: `http_server.ts` を「リクエスト毎に fresh server+transport」へ変更（SDK要件）。`http_server.test.ts` にフルセッションe2eを追加（MCP 56 tests pass）。リモート生成AIが HTTP 経由でフルセッション可能に |
