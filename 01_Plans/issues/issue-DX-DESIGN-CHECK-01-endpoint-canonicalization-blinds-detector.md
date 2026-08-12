@@ -74,6 +74,7 @@ if "/" not in stripped or stripped.count("/") <= 1:
 - [ ] AC-1: 実装ルート42本のうち、正規化後に他ルートと衝突するものが0件になる（`/ai/*` の10本が個別に判定される）。
 - [ ] AC-2: `_is_external_or_wildcard()` によって実装ルートが除外されない（現状3本を0本にする）。外部IdP系（`/oauth/`, `/saml`, `/.well-known/`）とワイルドカードのみ除外する。
 - [ ] AC-3: **検出器の識別力を守る回帰テストを追加する。** 既知の相異なるエンドポイント集合（最低でも `/ai/*` 全10本）を与え、正規化後も全て相異なることをアサートする。この検査があれば、将来の正規化強化が識別力を落とした時点でCIが落ちる。
+  - **進捗**: `tests/test_design_consistency_discrimination.py` を追加（LIVE の `_PARAM_TOKEN_RE`/`_CONCRETE_ID_RE` をソースから読んで検証。実装 `/ai/*` 9本が `1` キーへ潰れることを確認）。現状は検出器が欠陥のため **xfail(strict=False)** — 案A/B/C の修正が入ると XPASS になり、その時点で un-xfail してCIガード化する。
 - [ ] AC-4: 修正後の警告数を実測し、`DX-DOC-08` の受入条件2を**再検証**する。api.md未記載のルートが見つかった場合はそれを記録する（`DX-DOC-08` をReopenするか後続issueを立てるかは保守者判断）。
 - [ ] AC-5: `02_Architecture/design_consistency_baseline.json` の `total_warnings` を修正後の実測値へ更新する。
 
