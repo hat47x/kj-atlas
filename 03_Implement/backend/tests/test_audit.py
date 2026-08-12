@@ -243,3 +243,48 @@ def test_http_transport_rejects_oversized_serialized_event(monkeypatch) -> None:
         assert str(exc) == "audit event exceeds the outbound size limit"
     else:
         assert False, "Expected oversized audit event to be rejected"
+
+
+def test_audit_llm_trace_emits_llm_event_via_dispatcher() -> None:
+    """SEC-LLM-AUDIT-01 AC-1/AC-3: LLM calls reach the audit dispatcher with
+    CE2-C5 fields (task/routingStage/provider/model/trace_id) and never
+    prompt/card text."""
+    import json
+
+    from kj_atlas_api.routes.ai import _audit_llm_trace
+    from kj_atlas_api.tenant_context import LOCAL_DEFAULT_TENANT_CONTEXT
+
+    class Recorder:
+        def __init__(self) -> None:
+            self.events: list[AuditEvent] = []
+
+        def emit(self, event: AuditEvent) -> None:
+            self.events.append(event)
+
+    recorder = Recorder()
+    state = type("State", (), {"audit_dispatcher": recorder})
+    app = type("App", (), {"state": state})
+    request = type("Request", (), {"app": app})
+
+    class FakeLLMResponse:
+        def as_audit_fields(self) -> dict[str, object]:
+            return {"provider": "mock", "model_id": "mock-model", "trace_id": "trace-1"}
+
+    _audit_llm_trace(request, LOCAL_DEFAULT_TENANT_CONTEXT, "doc-1", "re_layout", FakeLLMResponse())
+
+    assert len(recorder.events) == 1
+    event = recorder.events[0]
+    assert event.eventType == "llm"
+    assert event.docId == "doc-1"
+    assert event.tenantId == LOCAL_DEFAULT_TENANT_CONTEXT.tenant_id
+    assert event.metadata["task"] == "re_layout"
+    assert "routingStage" in event.metadata
+    assert event.metadata["provider"] == "mock"
+    assert event.metadata["model_id"] == "mock-model"
+    assert event.metadata["trace_id"] == "trace-1"
+
+    # AC-3: no prompt text, card text, or unreviewed info in the audit event.
+    serialized = json.dumps(event.metadata).lower()
+    assert "prompt" not in serialized
+    assert '"text"' not in serialized
+    assert "unreviewed" not in serialized

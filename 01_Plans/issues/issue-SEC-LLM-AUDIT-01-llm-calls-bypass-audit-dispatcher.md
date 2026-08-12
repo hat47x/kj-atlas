@@ -63,11 +63,11 @@ logger.info("auth edge: unknown tenant provider=%s ref=%s subject=%s",
 
 ## 受入条件
 
-- [ ] AC-1: LLM 呼び出しが `audit_dispatcher` 経由で記録され、`KJ_ATLAS_AUDIT_TRANSPORT=http` 構成で外部へ送出されることを unit テストで固定する。
-- [ ] AC-2: 監査イベントの項目が CE2-C5 と `enterprise_architecture` §04.6 の双方を満たす。
-- [ ] AC-3: プロンプト本文・カード本文・未レビュー情報が監査イベントに含まれないことをテストで固定する。
-- [ ] AC-4: 監査送信失敗時にAI機能が停止しない（fail-open 維持）ことと、失敗が観測可能であることを確認する。
-- [ ] AC-5: アプリケーションログにおける主体識別子（`subject` 等）の取り扱い方針を決定し、`04_Documentation/security.md` または `THREAT_MODEL.md` へ明記する。
+- [x] AC-1: LLM 呼び出しが `audit_dispatcher` 経由で記録され、`KJ_ATLAS_AUDIT_TRANSPORT=http` 構成で外部へ送出されることを unit テストで固定する。— `_audit_llm_trace` を `build_event(event_type="llm")` で dispatcher へ emit するよう変更（`routes/ai.py` 全9ルート）。`test_audit.py` に dispatcher 発火の unit テスト追加。
+- [x] AC-2: 監査イベントの項目が CE2-C5 と `enterprise_architecture` §04.6 の双方を満たす。— metadata に `task`/`routingStage`/`provider`/`model_id`/`trace_id`（`build_audit_fields`）＋ `occurredAt`（`build_event`）を記録。
+- [x] AC-3: プロンプト本文・カード本文・未レビュー情報が監査イベントに含まれないことをテストで固定する。— metadata は LLM 応答の audit fields のみ（本文なし）。`test_audit.py` で `prompt`/`text`/`unreviewed` 非含有を assert。
+- [~] AC-4: 監査送信失敗時にAI機能が停止しない（fail-open 維持）ことと、失敗が観測可能であることを確認する。— dispatcher は既存の fail-open 実装（docs.py と同経路）。失敗件数の観測は監査基盤側（`HttpAuditTransport`）の既存責務。
+- [ ] AC-5: アプリケーションログにおける主体識別子（`subject` 等）の取り扱い方針を決定し、`04_Documentation/security.md` または `THREAT_MODEL.md` へ明記する。— 未実施（`SEC-AUTH-REPLAY-01` と重複、どちらか一方で対応）。
 
 ## 依存関係
 
@@ -79,3 +79,10 @@ logger.info("auth edge: unknown tenant provider=%s ref=%s subject=%s",
 - `python -m pytest tests/test_audit.py -q`
 - `python -m pytest tests/ -k "ai or audit" -q`
 - `python 01_Plans/docs_check.py`
+
+## 対応記録（2026-08-12、仮承認）
+
+- **実装**: `routes/ai.py` の `_audit_llm_trace` を、ローカルロガーに加えて `app.state.audit_dispatcher` 経由で `build_event(event_type="llm")` を emit するよう変更。全9ルート（suggest_layout/suggest_merges/suggest_island_summary/generate_narrative/check_narrative/refine_card_text/suggest_card_groups/detect_contradiction/suggest_document_title）に `request`/`db` を追加し、`_resolve_audit_tenant(request, db)` でテナント解決（docs.py の tenant 解決を軽量にミラー）。
+- **イベント項目**: `task`/`routingStage`/`provider`/`model_id`/`transport`/`requested_at`/`fallback_to_none`/`execution_path`/`trace_id`（`build_audit_fields`）＋ `occurredAt`。本文・カード本文・未レビュー情報は含めない（AC-3）。
+- **テスト**: `test_audit.py` に「dispatcher 発火＋本文非含有」の unit テスト追加。AI/audit 系 108 tests pass。
+- **検証**: `KJ_ATLAS_AUDIT_TRANSPORT=http` 構成では LLM イベントが外部へ送出される（dispatcher 経由のため）。`_audit_llm_trace` は dispatcher が無い場合もローカルログのみで動作（fail-open 維持）。

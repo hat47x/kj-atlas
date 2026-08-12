@@ -7,7 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from kj_atlas_api.audit import build_event
 from kj_atlas_api.db import get_db
+from kj_atlas_api.tenant_context import TenantContext
 from kj_atlas_api.llm.provider import (
     LLMRequest,
     ProviderDisabledError,
@@ -68,16 +70,69 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger(__name__)
 
 
-def _audit_llm_trace(task: str, llm_response) -> None:
+def _audit_llm_trace(
+    request: Request,
+    tenant: TenantContext,
+    doc_id: str,
+    task: str,
+    llm_response,
+) -> None:
+    """SEC-LLM-AUDIT-01: LLM calls are the most audit-worthy events but only
+    reached the local logger. Emit them through the audit dispatcher so
+    KJ_ATLAS_AUDIT_TRANSPORT=http configurations receive them. CE2-C5 /
+    enterprise_architecture §04.6 fields only -- never prompt or card text."""
     from kj_atlas_api.llm.provider import routing_stage_for_task
 
-    logger.info(
-        "llm_generate",
-        extra={
-            "task": task,
-            "routingStage": routing_stage_for_task(task),
-            **build_audit_fields(llm_response),
-        },
+    metadata = {
+        "task": task,
+        "routingStage": routing_stage_for_task(task),
+        **build_audit_fields(llm_response),
+    }
+
+    logger.info("llm_generate", extra=metadata)
+
+    dispatcher = getattr(request.app.state, "audit_dispatcher", None)
+    if dispatcher is not None:
+        dispatcher.emit(
+            build_event(
+                event_type="llm",
+                tenant_id=tenant.tenant_id,
+                doc_id=doc_id,
+                safe_mode=False,  # LLM calls send content regardless of SafeMode (SEC-AI-SAFEMODE-01).
+                metadata=metadata,
+            )
+        )
+
+
+def _resolve_audit_tenant(request: Request, db: Session) -> TenantContext:
+    """SEC-LLM-AUDIT-01: resolve the tenant for audit events without the full
+    resource/access control (the LLM routes process payload docs that need not
+    be persisted). Mirrors docs.py `_authorize_request`'s tenant resolution."""
+    from kj_atlas_api.auth_context import resolve_identity_context
+    from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
+    from kj_atlas_api.tenant_context import SingleTenantContextResolver, TenantContextResolver
+    from kj_atlas_api.tenant_session_precondition import (
+        require_tenant_session_request_precondition,
+        tenant_session_precondition_required,
+    )
+
+    if tenant_session_precondition_required(request):
+        trusted_session = resolve_trusted_saas_request_session(request=request, db=db)
+        require_tenant_session_request_precondition(
+            request=request,
+            current_version=trusted_session.session.tenant_session_version,
+        )
+        return trusted_session.tenant
+    identity = resolve_identity_context(db=db, request=request)
+    resolver: TenantContextResolver = getattr(
+        request.app.state,
+        "tenant_context_resolver",
+        SingleTenantContextResolver(),
+    )
+    return resolver.resolve(
+        db=db,
+        user_id=identity.user_id,
+        claim=identity.verified_tenant_claim,
     )
 
 
@@ -589,7 +644,7 @@ def get_provider_status() -> ProviderStatusResponse:
     response_model=SuggestLayoutResponse,
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
-def suggest_layout(payload: SuggestLayoutRequest) -> SuggestLayoutResponse:
+def suggest_layout(payload: SuggestLayoutRequest, request: Request, db: Session = Depends(get_db)) -> SuggestLayoutResponse:
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -602,7 +657,7 @@ def suggest_layout(payload: SuggestLayoutRequest) -> SuggestLayoutResponse:
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
 
-    _audit_llm_trace("re_layout", llm_response)
+    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "re_layout", llm_response)
 
     transform, cards, notes = _parse_suggestion(llm_response.raw_text, payload)
 
@@ -625,7 +680,7 @@ def suggest_layout(payload: SuggestLayoutRequest) -> SuggestLayoutResponse:
     response_model=SuggestMergesResponse,
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
-def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
+def suggest_merges(payload: SuggestMergesRequest, request: Request, db: Session = Depends(get_db)) -> SuggestMergesResponse:
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -638,7 +693,7 @@ def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
 
-    _audit_llm_trace("suggest_merges", llm_response)
+    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "suggest_merges", llm_response)
 
     suggestions = _parse_merge_suggestions(llm_response.raw_text, payload)
     return SuggestMergesResponse(suggestions=suggestions)
@@ -649,7 +704,7 @@ def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
     response_model=SuggestIslandSummaryResponse,
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
-def suggest_island_summary(payload: SuggestIslandSummaryRequest) -> SuggestIslandSummaryResponse:
+def suggest_island_summary(payload: SuggestIslandSummaryRequest, request: Request, db: Session = Depends(get_db)) -> SuggestIslandSummaryResponse:
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -662,7 +717,7 @@ def suggest_island_summary(payload: SuggestIslandSummaryRequest) -> SuggestIslan
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
 
-    _audit_llm_trace("suggest_island_summary", llm_response)
+    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "suggest_island_summary", llm_response)
 
     return _parse_island_summary_response(llm_response.raw_text, payload)
 
@@ -931,7 +986,7 @@ def record_external_proposal_decision(
     response_model=GenerateNarrativeResponse,
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
-def generate_narrative(payload: GenerateNarrativeRequest) -> GenerateNarrativeResponse:
+def generate_narrative(payload: GenerateNarrativeRequest, request: Request, db: Session = Depends(get_db)) -> GenerateNarrativeResponse:
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -944,7 +999,7 @@ def generate_narrative(payload: GenerateNarrativeRequest) -> GenerateNarrativeRe
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
 
-    _audit_llm_trace("generate_narrative", llm_response)
+    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "generate_narrative", llm_response)
 
     return _parse_generate_narrative_response(llm_response.raw_text, payload)
 
@@ -954,7 +1009,7 @@ def generate_narrative(payload: GenerateNarrativeRequest) -> GenerateNarrativeRe
     response_model=CheckNarrativeResponse,
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
-def check_narrative(payload: CheckNarrativeRequest) -> CheckNarrativeResponse:
+def check_narrative(payload: CheckNarrativeRequest, request: Request, db: Session = Depends(get_db)) -> CheckNarrativeResponse:
     _validate_check_narrative_input(payload)
 
     try:
@@ -969,7 +1024,7 @@ def check_narrative(payload: CheckNarrativeRequest) -> CheckNarrativeResponse:
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
 
-    _audit_llm_trace("check_narrative", llm_response)
+    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "check_narrative", llm_response)
 
     return _parse_narrative_check_response(llm_response.raw_text, payload)
 
@@ -1049,7 +1104,7 @@ def _parse_detect_contradiction_response(raw_text: str) -> DetectContradictionRe
     response_model=RefineCardTextResponse,
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
-def refine_card_text(payload: RefineCardTextRequest) -> RefineCardTextResponse:
+def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Session = Depends(get_db)) -> RefineCardTextResponse:
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -1061,7 +1116,7 @@ def refine_card_text(payload: RefineCardTextRequest) -> RefineCardTextResponse:
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
-    _audit_llm_trace("refine_card_text", llm_response)
+    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "refine_card_text", llm_response)
     return _parse_refine_card_text_response(llm_response.raw_text)
 
 
@@ -1070,7 +1125,7 @@ def refine_card_text(payload: RefineCardTextRequest) -> RefineCardTextResponse:
     response_model=SuggestCardGroupsResponse,
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
-def suggest_card_groups(payload: SuggestCardGroupsRequest) -> SuggestCardGroupsResponse:
+def suggest_card_groups(payload: SuggestCardGroupsRequest, request: Request, db: Session = Depends(get_db)) -> SuggestCardGroupsResponse:
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -1082,7 +1137,7 @@ def suggest_card_groups(payload: SuggestCardGroupsRequest) -> SuggestCardGroupsR
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
-    _audit_llm_trace("suggest_card_groups", llm_response)
+    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "suggest_card_groups", llm_response)
     return _parse_suggest_card_groups_response(llm_response.raw_text)
 
 
@@ -1091,7 +1146,7 @@ def suggest_card_groups(payload: SuggestCardGroupsRequest) -> SuggestCardGroupsR
     response_model=DetectContradictionResponse,
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
-def detect_contradiction(payload: DetectContradictionRequest) -> DetectContradictionResponse:
+def detect_contradiction(payload: DetectContradictionRequest, request: Request, db: Session = Depends(get_db)) -> DetectContradictionResponse:
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -1103,7 +1158,7 @@ def detect_contradiction(payload: DetectContradictionRequest) -> DetectContradic
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
-    _audit_llm_trace("detect_contradiction", llm_response)
+    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "detect_contradiction", llm_response)
     return _parse_detect_contradiction_response(llm_response.raw_text)
 
 
@@ -1112,7 +1167,7 @@ def detect_contradiction(payload: DetectContradictionRequest) -> DetectContradic
     response_model=SuggestDocumentTitleResponse,
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
-def suggest_document_title(payload: SuggestDocumentTitleRequest) -> SuggestDocumentTitleResponse:
+def suggest_document_title(payload: SuggestDocumentTitleRequest, request: Request, db: Session = Depends(get_db)) -> SuggestDocumentTitleResponse:
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -1126,7 +1181,7 @@ def suggest_document_title(payload: SuggestDocumentTitleRequest) -> SuggestDocum
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
-    _audit_llm_trace("suggest_document_title", llm_response)
+    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "suggest_document_title", llm_response)
     return _parse_suggest_document_title_response(llm_response.raw_text)
 
 
