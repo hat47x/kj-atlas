@@ -10,6 +10,17 @@ from kj_atlas_api.persistence_shapes import apply_persistent_text_shapes, portab
 
 
 RELATION_SUMMARY_TEXT_MAX_LENGTH = 4000
+# DOMAIN-CARD-TEXT-01: content-field bounds. Chosen to preserve legitimate
+# long-quote/minutes use while bounding transfer/audit growth. Card.text
+# aligns with RefineCardTextRequest.cardText (2000). Narrative.text is large
+# to allow verbatim minutes.
+CARD_TEXT_MAX_LENGTH = 2000
+ISLAND_TITLE_MAX_LENGTH = 500
+ISLAND_SUMMARY_MAX_LENGTH = 2000
+NARRATIVE_TITLE_MAX_LENGTH = 500
+NARRATIVE_TEXT_MAX_LENGTH = 20000
+EVIDENCE_NOTE_MAX_LENGTH = 2000
+MERGE_DRAFT_MAX_LENGTH = 4000
 DOCUMENT_V1_MOCK_SCHEMA_VERSION = "mock-2026-05-19-dv1"
 LOCAL_DEFAULT_TENANT_ID = "local-default"
 
@@ -781,7 +792,7 @@ class Transform(BaseModel):
 
 class CardBase(BaseModel):
     id: str
-    text: str
+    text: str = Field(max_length=CARD_TEXT_MAX_LENGTH)
     x: float
     y: float
     claimType: Literal["fact", "claim", "hypothesis", "unknown"] | None = Field(
@@ -910,9 +921,9 @@ class Island(BaseModel):
     parentIslandId: str | None = Field(default=None, exclude_if=lambda value: value is None)
     placardCardId: str | None = Field(default=None, exclude_if=lambda value: value is None)
     collapsed: bool = False
-    title: str | None = None
+    title: str | None = Field(default=None, max_length=ISLAND_TITLE_MAX_LENGTH)
     titleReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
-    summaryText: str | None = None
+    summaryText: str | None = Field(default=None, max_length=ISLAND_SUMMARY_MAX_LENGTH)
     summaryReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     summaryGrounding: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     summaryHistory: list[SummaryHistoryEntry] | None = Field(
@@ -954,7 +965,9 @@ class EvidenceLink(BaseModel):
     type: Literal["supports", "contradicts"]
     fromCardId: str
     toCardId: str
-    note: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    note: str | None = Field(
+        default=None, max_length=EVIDENCE_NOTE_MAX_LENGTH, exclude_if=lambda value: value is None
+    )
     createdAt: datetime | None = Field(default=None, exclude_if=lambda value: value is None)
     # DOMAIN-EXPR-04 (2026-06-27): reversible contradiction review state
     contradictionState: Literal["unconfirmed", "confirmed", "held", "resolved"] | None = Field(
@@ -984,8 +997,8 @@ class NarrativeCheck(BaseModel):
 
 class Narrative(BaseModel):
     id: str
-    title: str
-    text: str
+    title: str = Field(max_length=NARRATIVE_TITLE_MAX_LENGTH)
+    text: str = Field(max_length=NARRATIVE_TEXT_MAX_LENGTH)
     createdAt: datetime | None = Field(default=None, exclude_if=lambda value: value is None)
     basedOnReadingOrder: list[str] | None = Field(
         default=None, exclude_if=lambda value: value is None
@@ -1086,7 +1099,7 @@ class MergeSuggestionDecision(BaseModel):
     decidedBy: str | None = Field(default=None, exclude_if=lambda value: value is None)
     cardIds: list[str]
     selectedCardIds: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
-    mergedTextDraft: str
+    mergedTextDraft: str = Field(max_length=MERGE_DRAFT_MAX_LENGTH)
     editedText: str
     note: str | None = Field(default=None, exclude_if=lambda value: value is None)
     snapshotVersion: str | None = Field(default=None, exclude_if=lambda value: value is None)
@@ -1447,7 +1460,7 @@ class SuggestLayoutResponse(BaseModel):
 class MergeSuggestion(BaseModel):
     groupId: str
     cardIds: list[str]
-    mergedTextDraft: str
+    mergedTextDraft: str = Field(max_length=MERGE_DRAFT_MAX_LENGTH)
     rationale: str | None = None
 
 

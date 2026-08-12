@@ -76,6 +76,16 @@ function validateClaimType(value: unknown): value is "fact" | "claim" | "hypothe
   return value === "fact" || value === "claim" || value === "hypothesis" || value === "unknown";
 }
 
+// DOMAIN-CARD-TEXT-01: content-field bounds mirroring backend models.py.
+// Keep in sync with the *_MAX_LENGTH constants there.
+const DOCUMENT_TITLE_MAX_LENGTH = 500;
+const CARD_TEXT_MAX_LENGTH = 2000;
+const CRITIQUE_MAX_LENGTH = 2000;
+const ISLAND_TITLE_MAX_LENGTH = 500;
+const ISLAND_SUMMARY_MAX_LENGTH = 2000;
+const NARRATIVE_TITLE_MAX_LENGTH = 500;
+const NARRATIVE_TEXT_MAX_LENGTH = 20000;
+const EVIDENCE_NOTE_MAX_LENGTH = 2000;
 const A1_TARGET_REF_PATTERN = /^(card|island|cluster|edge|proposal):[^:\s][^\s]*$/;
 // Mirrors ReviewAttribution.validate_reviewer_ref_opaque/validate_owner_ref_opaque
 // in backend models.py -- keep this prefix list in sync with that validator.
@@ -117,6 +127,13 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
   }
   if (typeof item.text !== "string") {
     errors.push(`${path}.text: must be a string`);
+    valid = false;
+  } else if (item.text.length > CARD_TEXT_MAX_LENGTH) {
+    errors.push(`${path}.text: must be ≤ ${CARD_TEXT_MAX_LENGTH} chars`);
+    valid = false;
+  }
+  if (typeof item.critique === "string" && item.critique.length > CRITIQUE_MAX_LENGTH) {
+    errors.push(`${path}.critique: must be ≤ ${CRITIQUE_MAX_LENGTH} chars`);
     valid = false;
   }
   if (!isFiniteNumber(item.x)) {
@@ -454,6 +471,14 @@ function validateIsland(item: unknown, index: number, errors: string[]): item is
     errors.push(`${path}.placardCardId: must be a string when provided`);
     valid = false;
   }
+  if (typeof item.title === "string" && item.title.length > ISLAND_TITLE_MAX_LENGTH) {
+    errors.push(`${path}.title: must be ≤ ${ISLAND_TITLE_MAX_LENGTH} chars`);
+    valid = false;
+  }
+  if (typeof item.summaryText === "string" && item.summaryText.length > ISLAND_SUMMARY_MAX_LENGTH) {
+    errors.push(`${path}.summaryText: must be ≤ ${ISLAND_SUMMARY_MAX_LENGTH} chars`);
+    valid = false;
+  }
   if (item.collapsed !== undefined && typeof item.collapsed !== "boolean") {
     errors.push(`${path}.collapsed: must be a boolean when provided`);
     valid = false;
@@ -762,6 +787,9 @@ function validateEvidenceLink(item: unknown, index: number, errors: string[]): i
   }
   if (item.note !== undefined && typeof item.note !== "string") {
     errors.push(`${path}.note: must be a string when provided`);
+    valid = false;
+  } else if (typeof item.note === "string" && item.note.length > EVIDENCE_NOTE_MAX_LENGTH) {
+    errors.push(`${path}.note: must be ≤ ${EVIDENCE_NOTE_MAX_LENGTH} chars`);
     valid = false;
   }
   if (item.createdAt !== undefined && typeof item.createdAt !== "string") {
@@ -1174,9 +1202,15 @@ function validateNarrative(item: unknown, index: number, errors: string[]): item
   if (typeof item.title !== "string") {
     errors.push(`${path}.title: must be a string`);
     valid = false;
+  } else if (item.title.length > NARRATIVE_TITLE_MAX_LENGTH) {
+    errors.push(`${path}.title: must be ≤ ${NARRATIVE_TITLE_MAX_LENGTH} chars`);
+    valid = false;
   }
   if (typeof item.text !== "string") {
     errors.push(`${path}.text: must be a string`);
+    valid = false;
+  } else if (item.text.length > NARRATIVE_TEXT_MAX_LENGTH) {
+    errors.push(`${path}.text: must be ≤ ${NARRATIVE_TEXT_MAX_LENGTH} chars`);
     valid = false;
   }
   if (item.createdAt !== undefined && typeof item.createdAt !== "string") {
@@ -1238,6 +1272,9 @@ export function validateDocumentV1Strict(value: unknown): ValidateDocumentV1Stri
   }
   if (value.title !== undefined && typeof value.title !== "string") {
     errors.push("document.title: must be a string when provided");
+  }
+  if (typeof value.title === "string" && value.title.length > DOCUMENT_TITLE_MAX_LENGTH) {
+    errors.push(`document.title: must be ≤ ${DOCUMENT_TITLE_MAX_LENGTH} chars`);
   }
   if (typeof value.createdAt !== "string") {
     errors.push("document.createdAt: must be a string");
