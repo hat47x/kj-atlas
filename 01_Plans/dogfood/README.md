@@ -101,3 +101,4 @@ AGENTS.md §1.3の昇格条件を四半期ごとに評価し、判定結果をAD
 | 2026-08-12 | Web経路のOrg-A検証スクリプトを追加（バッチ文書を実UIで開くPlaywright走行） | `03_Implement/frontend/scripts/dogfood_orga_web_20260812.mjs` |
 | 2026-08-12 | DOGFOOD-02〜05の横断分析から、共通根本原因を抽出（正常系偏重・理想状態前提・GET/PUT非対称・適用範囲未明示） | `dogfood-analysis-synthesis-2026-08-12.md`作成 |
 | 2026-08-12 | 検証経路の追加時に異常系をCIで固定するルールの欠如（DOGFOOD-03/04の共通原因） | `issue-DOGFOOD-06`起票（プロセス改善・P2） |
+| 2026-08-12 | `.gitignore` の `result-*`（Nix出力用）が無アンカーのため全階層のファイルを無視し、分析文書が git 管理外になった | `issue-DOGFOOD-07`起票（ルート限定 `/result` `/result-*` へアンカー案） |
