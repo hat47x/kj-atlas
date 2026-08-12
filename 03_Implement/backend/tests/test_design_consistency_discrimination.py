@@ -1,122 +1,153 @@
-"""DX-DESIGN-CHECK-01 AC-3: lock the design-consistency detector's endpoint
-discriminating power.
+"""DX-DESIGN-CHECK-01: capability canary for check_design_consistency.py.
 
-The detector's ``_canonicalize_endpoint`` must keep distinct real kebab-case
-routes (e.g. every ``/ai/*`` route) distinct after canonicalization, while
-still normalizing test-fixture IDs (e.g. ``e2e-qa-roundtrip``) to ``{param}``.
-The fix (案B) achieves this by excluding real backend route segments (from
-``routes/*.py``) from ``_CONCRETE_ID_RE`` substitution.
+This does not test that the checker reports few warnings -- a checker that
+reports nothing would pass such a test. It tests that the checker can still
+tell distinct endpoints apart, which is the property that a warning count is
+only meaningful on top of.
 
-This test mirrors that logic using the LIVE regexes read from the script
-source and the LIVE route segments, so a future change that reduces the
-detector's discriminating power (e.g. dropping segment-awareness, or a regex
-change that re-collapses real routes) fails CI here.
-
-Expected verification level: unit
+The defect this guards against: an earlier canonicalization rewrote every
+kebab/snake path segment into a shared placeholder, so all ten /ai/* endpoints
+became one token. The warning count fell, but so did the checker's ability to
+notice a design document referencing an endpoint that api.md never documented.
 """
 
 from __future__ import annotations
 
-import re
+import ast
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-DETECTOR_PATH = REPO_ROOT / "03_Implement" / "backend" / "scripts" / "check_design_consistency.py"
-ROUTES_DIR = REPO_ROOT / "03_Implement" / "backend" / "src" / "kj_atlas_api" / "routes"
+import pytest
 
-# Kebab-case single-segment POST routes on the /ai router (prefix="/ai"),
-# extracted from routes/ai.py. These are the ones that previously collapsed
-# into `POST /ai/{param}`.
-AI_KEBAB_ROUTES = [
-    "/ai/check-narrative",
-    "/ai/detect-contradiction",
-    "/ai/generate-narrative",
+REPO_ROOT = Path(__file__).resolve().parents[3]
+SCRIPT_PATH = REPO_ROOT / "03_Implement" / "backend" / "scripts" / "check_design_consistency.py"
+
+
+#: Names lifted out of the script for testing. Located by AST node name, so
+#: inserting or reordering definitions in the script does not break this -- an
+#: earlier text-slicing version broke the moment a helper was added between
+#: two of these.
+_WANTED = (
+    "_PARAM_TOKEN_RE",
+    "_strip_api_prefix",
+    "_endpoint_segments",
+    "endpoint_matches_documented",
+)
+
+
+def _load_matcher():
+    """Load the pure matching helpers without running the script body.
+
+    The script performs its checks at import time and calls sys.exit, so it
+    cannot simply be imported. Its relevant definitions are selected from the
+    parsed AST by name and compiled on their own.
+    """
+    tree = ast.parse(SCRIPT_PATH.read_text(encoding="utf-8"))
+    selected: list[ast.stmt] = [ast.Import(names=[ast.alias(name="re", asname=None)])]
+    found: set[str] = set()
+    for node in tree.body:
+        name = None
+        if isinstance(node, ast.FunctionDef):
+            name = node.name
+        elif isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target = node.targets[0]
+            if isinstance(target, ast.Name):
+                name = target.id
+        if name in _WANTED:
+            selected.append(node)
+            found.add(name)
+
+    missing = set(_WANTED) - found
+    assert not missing, (
+        f"check_design_consistency.py no longer defines {sorted(missing)}. If these were "
+        "renamed, update _WANTED -- do not delete this test, since it is what keeps the "
+        "checker's discriminating power from regressing (DX-DESIGN-CHECK-01)."
+    )
+
+    module = ast.fix_missing_locations(ast.Module(body=selected, type_ignores=[]))
+    namespace: dict[str, object] = {}
+    exec(compile(module, str(SCRIPT_PATH), "exec"), namespace)  # noqa: S102 - our own repo script
+    return namespace["endpoint_matches_documented"], namespace["_endpoint_segments"]
+
+
+ENDPOINT_MATCHES, ENDPOINT_SEGMENTS = _load_matcher()
+
+
+# Every AI endpoint defined in routes/ai.py. These are the ten that previously
+# collapsed into a single token.
+AI_ENDPOINTS = [
     "/ai/refine-card-text",
     "/ai/suggest-card-groups",
-    "/ai/suggest-document-title",
-    "/ai/suggest-island-summary",
+    "/ai/detect-contradiction",
+    "/ai/assess-card-importance",
     "/ai/suggest-layout",
     "/ai/suggest-merges",
-]
-
-# Fixture IDs that must still collapse to {param} (the original intent of
-# _CONCRETE_ID_RE).
-FIXTURE_IDS = [
-    "/docs/e2e-qa-roundtrip",
-    "/docs/doc_phase1_canvas",
+    "/ai/suggest-island-summary",
+    "/ai/generate-narrative",
+    "/ai/check-narrative",
+    "/ai/suggest-document-title",
 ]
 
 
-def _extract_regex(source: str, name: str) -> re.Pattern[str]:
-    match = re.search(
-        rf"{re.escape(name)}\s*=\s*re\.compile\(\s*r?['\"](.*?)['\"]\s*\)",
-        source,
-        re.DOTALL,
-    )
-    assert match is not None, f"could not find {name} in {DETECTOR_PATH.name}"
-    return re.compile(match.group(1))
+@pytest.mark.parametrize("endpoint", AI_ENDPOINTS)
+def test_ai_endpoint_matches_only_itself(endpoint: str) -> None:
+    """Each /ai/* endpoint must match itself and no sibling."""
+    assert ENDPOINT_MATCHES(endpoint, endpoint)
+    for other in AI_ENDPOINTS:
+        if other != endpoint:
+            assert not ENDPOINT_MATCHES(endpoint, other), (
+                f"{endpoint} was treated as equivalent to {other}: the checker can no longer "
+                "distinguish sibling AI endpoints, so a design document referencing an "
+                "undocumented one would be silently accepted"
+            )
 
 
-def _load_real_route_segments() -> set[str]:
-    """Mirror the detector's 案B segment extraction (must stay in sync)."""
-    segments: set[str] = set()
-    for py in ROUTES_DIR.glob("*.py"):
-        try:
-            content = py.read_text(encoding="utf-8")
-        except OSError:
-            continue
-        for match in re.finditer(r'"(/?[a-z0-9_{}/-]+)"', content):
-            for segment in match.group(1).split("/"):
-                if segment and not segment.startswith("{"):
-                    segments.add(segment)
-    return segments
+def test_admin_and_bundle_reads_stay_distinct() -> None:
+    """A tenant-admin access-control read must not look like an inquiry read.
+
+    These two previously both degraded to a bare single placeholder, because
+    every segment of each was kebab-case.
+    """
+    admin = "/tenant-admin/document-access/{doc_id}"
+    inquiry = "/inquiry-bundles/{journey_id}"
+    assert not ENDPOINT_MATCHES(admin, inquiry)
+    assert not ENDPOINT_MATCHES(inquiry, admin)
 
 
-def _canonicalize_endpoint(
-    path: str,
-    param_token_re: re.Pattern[str],
-    concrete_id_re: re.Pattern[str],
-    real_segments: set[str],
-) -> str:
-    if path.startswith("/api/"):
-        path = path[len("/api"):]
-    normalized = param_token_re.sub("{param}", path)
-    normalized = concrete_id_re.sub(
-        lambda m: "{param}" if m.group(1) not in real_segments else m.group(1),
-        normalized,
-    )
-    while "{param}/{param}" in normalized:
-        normalized = normalized.replace("{param}/{param}", "{param}")
-    return normalized
+def test_concrete_id_still_matches_a_declared_placeholder() -> None:
+    """The false-positive suppression this replaced must still hold.
+
+    A design document naming a concrete fixture document still has to match the
+    documented parameterized route -- that is why the shape-guessing existed,
+    and dropping it must not reintroduce those warnings.
+    """
+    assert ENDPOINT_MATCHES("/docs/e2e-qa-roundtrip", "/docs/{docId}")
+    assert ENDPOINT_MATCHES("/docs/{doc_id}", "/docs/{docId}")
+    assert ENDPOINT_MATCHES("/docs/doc-1/export-audit", "/docs/{docId}/export-audit")
 
 
-def test_ai_routes_remain_distinct_after_canonicalization() -> None:
-    """DX-DESIGN-CHECK-01 AC-3: real /ai/* routes stay distinct (42/42 for the
-    full set in the detector)."""
-    source = DETECTOR_PATH.read_text(encoding="utf-8")
-    param_token_re = _extract_regex(source, "_PARAM_TOKEN_RE")
-    concrete_id_re = _extract_regex(source, "_CONCRETE_ID_RE")
-    real_segments = _load_real_route_segments()
-
-    keys = {
-        _canonicalize_endpoint(r, param_token_re, concrete_id_re, real_segments)
-        for r in AI_KEBAB_ROUTES
-    }
-
-    assert len(keys) == len(AI_KEBAB_ROUTES), (
-        f"{len(AI_KEBAB_ROUTES) - len(keys)} route(s) collapsed: "
-        f"{len(AI_KEBAB_ROUTES)} routes -> {len(keys)} canonical key(s) {sorted(keys)}"
-    )
+def test_different_shapes_do_not_match() -> None:
+    assert not ENDPOINT_MATCHES("/docs", "/docs/{docId}")
+    assert not ENDPOINT_MATCHES("/docs/{docId}/export-audit", "/docs/{docId}")
 
 
-def test_fixture_ids_still_collapse_to_param() -> None:
-    """案B must preserve the original _CONCRETE_ID_RE intent: test-fixture IDs
-    still normalize to {param} so they match the api.md placeholder form."""
-    source = DETECTOR_PATH.read_text(encoding="utf-8")
-    param_token_re = _extract_regex(source, "_PARAM_TOKEN_RE")
-    concrete_id_re = _extract_regex(source, "_CONCRETE_ID_RE")
-    real_segments = _load_real_route_segments()
+def test_api_proxy_prefix_is_stripped_before_comparison() -> None:
+    """The frontend's /api proxy prefix must not defeat matching.
 
-    for fixture in FIXTURE_IDS:
-        canonical = _canonicalize_endpoint(fixture, param_token_re, concrete_id_re, real_segments)
-        assert "{param}" in canonical, f"fixture {fixture} did not collapse: {canonical}"
+    Added on main while this rewrite was in flight; kept here so the structural
+    matcher cannot silently drop it.
+    """
+    assert ENDPOINT_MATCHES("/api/docs/{docId}", "/docs/{docId}")
+    assert ENDPOINT_MATCHES("/api/ai/refine-card-text", "/ai/refine-card-text")
+    # Stripping the prefix must not make distinct endpoints equal.
+    assert not ENDPOINT_MATCHES("/api/ai/refine-card-text", "/ai/check-narrative")
+
+
+def test_single_segment_endpoint_is_in_scope() -> None:
+    """A one-segment path is a real collection endpoint, not a family prefix.
+
+    The previous exclusion dropped anything with at most one slash, which took
+    real endpoints out of the check entirely.
+    """
+    assert ENDPOINT_SEGMENTS("/docs") == ["docs"]
+    assert ENDPOINT_MATCHES("/docs", "/docs")
+    assert not ENDPOINT_MATCHES("/docs", "/query")

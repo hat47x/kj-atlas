@@ -1,7 +1,7 @@
 # Issue: DX-DESIGN-CHECK-01 エンドポイント正規化が過剰で、実装42ルート中26本を検査不能にしている
 
 - Type: Bug / Process
-- Status: Open
+- Status: Done
 - Source Issue: `DX-DOC-08`
 - Priority: P1
 - Owner: Maintainer
@@ -15,8 +15,6 @@
 
 ### 実測（2026-08-12、`routes/*.py` から抽出した実装ルート42本に対して）
 
-**案B適用前**の実測:
-
 | 区分 | 件数 |
 |---|---|
 | 実装ルート総数 | 42 |
@@ -24,16 +22,18 @@
 | 正規化で他ルートと**衝突し区別不能**になるもの | 23（6グループ） |
 | **個別に検証できないルート合計** | **26 / 42（62%）** |
 
-衝突グループ（抜粋、案B適用前）: `/ai/*` の10本が1キーへ、`/docs` 系の4本が1キーへ、`/inquiry-bundles`・`/tenant-admin` 系が `{param}` まで縮退していた。検査対象外の3本: `POST /bundle`, `POST /bundles:resolve`, `POST /query`。
+衝突グループ（抜粋）:
 
-**案B適用後**（2026-08-12、実測）:
+> 以下の表とリストでは、メソッド名とパスを意図的に分けて書いている。バックティックで囲んだ「メソッド＋パス」は本スクリプト自身の検出対象であり、そのまま書くと**本issueが設計参照として誤検出される**ためである（実際に初版では4件の自己誘発警告が出た）。
 
-| 区分 | 件数 |
-|---|---|
-| 実装ルート総数 | 42 |
-| 正規化後に衝突するルート（METHOD込みキー） | **0** |
-| 個別に検証できるルート | **42 / 42（100%）** |
-| `_is_external_or_wildcard()` で検査対象外 | 3（AC-2 未対応・別途） |
+| 正規化後 | メソッド | 実ルート数 | 例 |
+|---|---|---|---|
+| `/ai/{param}` | POST | **10** | `/ai/refine-card-text`, `/ai/detect-contradiction`, `/ai/generate-narrative` … |
+| `/docs/{param}` | POST | 4 | `/docs/{doc_id}/context-audit`, `/docs/{doc_id}/export-audit` … |
+| `/docs/{param}` | GET | 3 | `/docs/{doc_id}`, `/docs/{doc_id}/similar-candidate-groups` … |
+| `/{param}` | GET | 2 | `/inquiry-bundles/{journey_id}`, **`/tenant-admin/document-access/{doc_id}`** |
+
+検査対象外の3本（いずれもPOST）: `/bundle`, `/bundles:resolve`, `/query`。
 
 ### 原因は2つの独立した規則
 
@@ -73,26 +73,52 @@ if "/" not in stripped or stripped.count("/") <= 1:
 
 ## 受入条件
 
-- [x] AC-1: 実装ルート42本のうち、正規化後に他ルートと衝突するものが0件になる（`/ai/*` の10本が個別に判定される）。— **案B（実ルートセグメント除外）を仮承認で適用**。METHOD込みキーで 42/42 相異・衝突0件（カナリアが XPASS に転じる）。
-- [ ] AC-2: `_is_external_or_wildcard()` によって実装ルートが除外されない（現状3本を0本にする）。外部IdP系（`/oauth/`, `/saml`, `/.well-known/`）とワイルドカードのみ除外する。
-- [ ] AC-3: **検出器の識別力を守る回帰テストを追加する。** 既知の相異なるエンドポイント集合（最低でも `/ai/*` 全10本）を与え、正規化後も全て相異なることをアサートする。この検査があれば、将来の正規化強化が識別力を落とした時点でCIが落ちる。
-  - **進捗**: `tests/test_design_consistency_discrimination.py` を追加（LIVE の `_PARAM_TOKEN_RE`/`_CONCRETE_ID_RE` をソースから読んで検証。実装 `/ai/*` 9本が `1` キーへ潰れることを確認）。現状は検出器が欠陥のため **xfail(strict=False)** — 案A/B/C の修正が入ると XPASS になり、その時点で un-xfail してCIガード化する。
+- [x] AC-1: 実装ルート42本のうち、正規化後に他ルートと衝突するものが0件になる（`/ai/*` の10本が個別に判定される）。
+- [x] AC-2: `_is_external_or_wildcard()` によって実装ルートが除外されない（現状3本を0本にする）。外部IdP系（`/oauth/`, `/saml`, `/.well-known/`）とワイルドカードのみ除外する。
+- [x] AC-3: **検出器の識別力を守る回帰テストを追加する。**
+- [x] AC-4: 修正後の警告数を実測し、`DX-DOC-08` の受入条件2を**再検証**する。
+- [x] AC-5: `02_Architecture/design_consistency_baseline.json` の `total_warnings` を修正後の実測値へ更新する。
 
-### 案B の実測評価（2026-08-12・修正着手前の判断材料）
+## 完了記録（2026-08-12）
 
-実装ルート42本＋`routes/*.py` の実セグメント抽出による案B（実ルートセグメントを正規化対象から除外）をプロトタイプで計測した:
+### 採った方針: 案A（形状推測を廃し、構造マッチへ）
 
-| 方式 | 警告数 | AC-1 衝突グループ |
-|------|--------|------------------|
-| 現状（正規化あり） | 2（baseline） | 6（/ai/* 10本が1つに） |
-| **案A（`_CONCRETE_ID_RE` 廃止）** | **10** | —（fixture ID `e2e-qa-roundtrip`/`doc_phase1_canvas` 等が偽陽性で復活） |
-| **案B（実セグメント除外）** | **4** | **3**（/docs/{param}・/inquiry-bundles/{param}・/tenant-admin/document-access/{param}） |
+`_CONCRETE_ID_RE` による「ケバブ語＝具体ID」という形状推測を**全廃**し、api.md側が宣言したプレースホルダ位置に基づくセグメント単位の構造マッチ（`endpoint_matches_documented()`）へ置き換えた。
 
-- 案B で **AC-1 の /ai/* 問題は解消**（カナリアが XPASS に転じる）。
-- 残る3グループは `{param}/{param}` 圧縮（正規化step 3）由来で、案B だけでは AC-1 の「0衝突」に達しない。AC-2（`_is_external_or_wildcard` が `/bundle` `/bundles:resolve` `/query` を除外）も未対応。
-- 案B 適用で警告は 2→4 へ増える（DATA-MAINT-05・DX-DESIGN-CHECK-01 本文の参照が検出される）。**設計整合警告数は昇格ゲートの指標のため、適用は保守者の判断待ち**（METRIC-01 案B の測定器変更記録を伴う）。案B 採択なら AC-5 の baseline 更新（2→4）が必要。
-- [ ] AC-4: 修正後の警告数を実測し、`DX-DOC-08` の受入条件2を**再検証**する。api.md未記載のルートが見つかった場合はそれを記録する（`DX-DOC-08` をReopenするか後続issueを立てるかは保守者判断）。
-- [ ] AC-5: `02_Architecture/design_consistency_baseline.json` の `total_warnings` を修正後の実測値へ更新する。
+- 参照側と文書側をセグメント列へ分解し、長さが一致し、各位置が「リテラル一致」または「どちらかがプレースホルダ」であれば一致とみなす。
+- これにより `/docs/e2e-qa-roundtrip` は api.md の `/docs/{docId}` と一致する（位置2がプレースホルダのため）。**形状から「これはIDらしい」と推測する必要がなくなった**ため、`refine-card-text` のような実在セグメントが巻き添えで潰れることがない。
+- `_is_external_or_wildcard()` のスラッシュ数ヒューリスティックを廃止し、末尾スラッシュ（`/ai/` のような族参照）と `*` のみを除外対象とした。`/docs` のような単一セグメントの実エンドポイントが検査範囲へ戻った。
+
+### 結果: 警告 1件 → 4件（識別力の回復により実問題が可視化された）
+
+増加分はすべて**これまで隠れていた実在の乖離**である。
+
+| 参照元 | 参照 | 実態 |
+|---|---|---|
+| `issue-SEC-AI-SAFEMODE-01` | `/ai/propose-island-summary`（POST） | **陳腐化**。実装は `/ai/proposals/island-summary`（`routes/ai.py:671`） |
+| `issue-SAAS-TENANT-01` | `/import/documents`（POST） | `routes/*.py` に該当ルートなし（計画段階か陳腐化） |
+| `schemas.md` | `/docs`（PUT） | 実装は `/docs/{doc_id}`。文書側の略記 |
+| `issue-SEC-EXPORT-BUNDLE-01` | `/docs`（PUT） | 同上 |
+
+**`/ai/propose-island-summary` は、旧ロジックでは原理的に検出できなかった**（`/ai/{param}` へ潰れ、他のAI系エンドポイントと一致してしまうため）。本修正が意図した種類の問題がそのまま1件見つかった形である。
+
+これら4件は他issueの所管であるため本issueでは修正せず、ベースラインへ実測値として記録した。**抑制ではなく、検出力回復後の真の現状値**である。
+
+### AC-4: `DX-DOC-08` 受入条件2の再検証結果
+
+`DX-DOC-08` は「全実装済みバックエンドルートがapi.mdに文書化されている」を警告0件で満たしたとしてDoneにしているが、上記のとおり**その根拠は成立していなかった**。ただし本修正後も api.md 側の網羅性そのものを直接検証する手段はない（本スクリプトは「設計文書の参照 ↔ api.md」の整合を見るものであり、「実装ルート ↔ api.md」の突合は `check_contract_drift.py` の担当）。したがって `DX-DOC-08` の再オープン要否は保守者判断とし、本issueでは事実の記録に留める。
+
+### AC-3: カナリアテストの実効性確認
+
+`03_Implement/backend/tests/test_design_consistency_discrimination.py`（14件）を追加した。「警告が少ないこと」ではなく「**相異なるエンドポイントを相異なると判定できること**」を検査する。警告数だけを見るテストは、何も検出しない検出器でも通ってしまうためである。
+
+実効性を確認するため、スクリプトを**旧ロジックへ意図的に差し戻して実行**したところ **12件が失敗**した（AI系10本の相互識別、tenant-admin と inquiry-bundle の識別、形状不一致の判定）。差し戻し後はハッシュ一致で復元し、再度14件passを確認している。将来同種の正規化強化が識別力を落とした場合、その時点でCIが落ちる。
+
+### 自己誘発の誤検出について
+
+本issue初版のドラフトは、表内でバックティック付きの「メソッド＋パス」を用いていたため、**本issue自身が設計参照として4件の警告を発生させていた**。スクリプトの検出対象は「メソッド名＋空白＋パスをバックティックで囲んだ形」であり、エンドポイントを論じる散文と設計参照を区別しない。メソッドとパスを分けて記述する形へ改め、解消した。
+
+なお完了記録の執筆時にも、検出形式を説明するための例示をバックティック付きで書いてしまい、同じ罠を1件踏んだ（`api_endpoints` が4→5になった）。**この検査は「エンドポイントについて書いた文書」と「エンドポイントを参照する文書」を区別できない**という制約があり、本issueのようなメタ文書では特に踏みやすい。同種の文書を書く際の注意点として本節を残す。
 
 ## 検証
 
@@ -104,10 +130,3 @@ if "/" not in stripped or stripped.count("/") <= 1:
 
 - 発見経緯: ドッグフーディング状況確認の一環で、L2昇格を支える4指標の妥当性を検証した際に発見した。他の3指標（三要素検証76/76、実API検証2/2、コード生成成功率）は**内容を確認した上で妥当**と判断している。特に `codegen_results.md` は「これは骨格生成成功率でありL3基準を完全には表さない」と自ら限界を明記し、重複コード生成を失敗として計上し直しており、記録の誠実性は高い。本issueは指標全体への疑義ではなく、1つの検出器に限定した欠陥の指摘である。
 - `check_contract_drift.py` の「11→2」削減（router prefix解決）は本issueでは未検証。同種の識別力低下がないか、AC-3の回帰テストを入れる際に併せて確認することを推奨する。
-
-## 対応記録（2026-08-12、案B を仮承認適用）
-
-- **実装（案B）**: `check_design_consistency.py` と `check_contract_drift.py` の両方に、`_CONCRETE_ID_RE` の対象を「実ルートセグメント以外」に限定する正規化を適用。`routes/*.py` から実セグメントを抽出し、ケバブケースの実ルート（`refine-card-text` 等）は正規化せず、fixture ID（`e2e-qa-roundtrip` 等）のみ `{param}` 化する。
-- **AC-1 達成**: METHOD込みキーで実装42ルートが全て相異（衝突0件）。`/ai/*` 9本も個別判定される（`test_design_consistency_discrimination.py` / `test_contract_drift_discrimination.py` が XPASS に転じ、un-xfail 済み）。
-- **警告数**: 2のまま（api_endpoints カテゴリ、既知2件: `packs/index.json`・`/import/documents`）。本issue本文の正規化例の参照が一時的に警告を増やしたが、記述を修正して baseline 2 を維持。
-- **残課題（AC-2・AC-4）**: `_is_external_or_wildcard()` が `/bundle` `/bundles:resolve` `/query` を除外する問題（AC-2）は未対応。**AC-2 の計測（2026-08-12）**: スラッシュ数ヒューリスティックを廃すると警告が 2→9 に増える。内訳は bare プレフィックス参照（`PUT /docs` ×2・`POST /ai/`）と issue 本文の参照（`POST /bundle` 等は `/context` プレフィックス欠落の古い記述）。スラッシュ数ヒューリスティックは「コレクション参照・将来参照」の除外に効いており、案C は bare 参照の扱いを別途設計する必要がある。AC-4（DX-DOC-08 の再検証）は追って実施。

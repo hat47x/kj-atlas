@@ -100,55 +100,53 @@ for doc_path in all_md_files:
 
 # --- 2. API endpoint references ---
 
-# Path-parameter canonicalization: {id}/{docId}/{doc_id} all refer to the
-# same resource placeholder. Normalize before comparing.
+# Path-parameter placeholders: {id}/{docId}/{doc_id} all denote "some value
+# goes here". Recognized positionally rather than rewritten into a shared
+# token, so that two different literal segments never become equal.
 _PARAM_TOKEN_RE = re.compile(r"\{[a-zA-Z_][a-zA-Z0-9_]*\}")
-# Concrete resource IDs (test fixtures, sample docs) normalize to {param}.
-_CONCRETE_ID_RE = re.compile(r"([a-z][a-z0-9]+(?:[-_][a-z0-9]+)+)")
 
 
-# DX-DESIGN-CHECK-01 案B: real backend route segments must NOT be collapsed by
-# _CONCRETE_ID_RE (that regex is meant for test-fixture IDs). Extract concrete
-# segments from routes/*.py so kebab-case route names like 'refine-card-text'
-# stay distinct across api.md coverage, while fixture IDs like
-# 'e2e-qa-roundtrip' still normalize to {param}.
-ROUTES_DIR = REPO_ROOT / "03_Implement" / "backend" / "src" / "kj_atlas_api" / "routes"
-
-
-def _load_real_route_segments() -> set[str]:
-    segments: set[str] = set()
-    for py in ROUTES_DIR.glob("*.py"):
-        try:
-            content = py.read_text(encoding="utf-8")
-        except OSError:
-            continue
-        for match in re.finditer(r'"(/?[a-z0-9_{}/-]+)"', content):
-            for segment in match.group(1).split("/"):
-                if segment and not segment.startswith("{"):
-                    segments.add(segment)
-    return segments
-
-
-_REAL_ROUTE_SEGMENTS = _load_real_route_segments()
-
-
-def _canonicalize_endpoint(path: str) -> str:
-    # 0. Strip a leading /api proxy prefix (frontend API_BASE convention).
+def _strip_api_prefix(path: str) -> str:
+    """Drop the /api proxy prefix used by the frontend's API_BASE convention."""
     if path.startswith("/api/"):
-        path = path[len("/api"):]
-    # 1. Replace {named} placeholders
-    normalized = _PARAM_TOKEN_RE.sub("{param}", path)
-    # 2. Replace concrete resource ids (e.g. e2e-qa-roundtrip) with {param},
-    #    but never a real backend route segment (DX-DESIGN-CHECK-01 案B).
-    def _replace_concrete_id(match: re.Match[str]) -> str:
-        token = match.group(1)
-        return "{param}" if token not in _REAL_ROUTE_SEGMENTS else token
+        return path[len("/api"):]
+    return path
 
-    normalized = _CONCRETE_ID_RE.sub(_replace_concrete_id, normalized)
-    # 3. Collapse repeated {param} (GET /docs/{param}/{param} -> /docs/{param})
-    while "{param}/{param}" in normalized:
-        normalized = normalized.replace("{param}/{param}", "{param}")
-    return normalized
+
+def _endpoint_segments(path: str) -> list[str]:
+    return [segment for segment in _strip_api_prefix(path).strip("/").split("/") if segment]
+
+
+def endpoint_matches_documented(referenced: str, documented: str) -> bool:
+    """Does a design-doc endpoint reference match one documented in api.md?
+
+    Structural, segment-by-segment: the two must have the same shape, and each
+    segment must be literally equal or sit where one side declares a
+    placeholder. A concrete id (`/docs/e2e-qa-roundtrip`) therefore matches
+    `/docs/{docId}` because api.md declares a placeholder in that position --
+    without any need to guess from a token's shape whether it is an id.
+
+    That guessing is what this replaces. The previous implementation rewrote
+    every kebab/snake token into a shared `{param}`, which cannot tell a test
+    fixture id (`e2e-qa-roundtrip`) from a real path segment
+    (`refine-card-text`). Measured against the 42 routes defined in
+    routes/*.py, that collapsed 23 of them into 6 indistinguishable groups --
+    all ten /ai/* endpoints became a single `POST /ai/{param}` -- so a design
+    doc referencing an /ai/ endpoint absent from api.md matched any other one
+    and was silently accepted. See DX-DESIGN-CHECK-01.
+    """
+    referenced_segments = _endpoint_segments(referenced)
+    documented_segments = _endpoint_segments(documented)
+    if len(referenced_segments) != len(documented_segments):
+        return False
+    for referenced_segment, documented_segment in zip(referenced_segments, documented_segments):
+        if _PARAM_TOKEN_RE.fullmatch(documented_segment):
+            continue
+        if _PARAM_TOKEN_RE.fullmatch(referenced_segment):
+            continue
+        if referenced_segment != documented_segment:
+            return False
+    return True
 
 
 # Endpoints that are NOT kj-atlas's own API: external IdP/broker endpoints
@@ -159,6 +157,11 @@ EXTERNAL_ENDPOINT_PREFIXES = (
     "/oauth/",
     "/.well-known/",
     "/saml",
+    # Bundled public-pack assets served by the frontend origin, not the backend
+    # API. The client coverage contract in api/client.test.ts already treats
+    # these as a separate category for the same reason: they address no
+    # tenant-scoped resource and never reach the backend.
+    "/packs/",
 )
 WILDCARD_ENDPOINT_PATTERNS = ("/*", "/")  # trailing wildcard or bare prefix
 
@@ -166,27 +169,30 @@ WILDCARD_ENDPOINT_PATTERNS = ("/*", "/")  # trailing wildcard or bare prefix
 def _is_external_or_wildcard(path: str) -> bool:
     if any(path.startswith(p) for p in EXTERNAL_ENDPOINT_PREFIXES):
         return True
-    # Wildcard / future-reference forms: "/ai/*", "/context/*", "POST /ai/"
-    # (bare path with no sub-resource = collection reference, not an endpoint)
+    # Wildcard / future-reference forms: "/ai/*", "/context/*".
     if "*" in path:
         return True
-    # A path that consists only of a prefix (no trailing sub-path after the
-    # last slash token) is a collection/future reference, e.g. "/ai/" or "/docs"
-    stripped = path.rstrip("/")
-    if "/" not in stripped or stripped.count("/") <= 1:
+    # A bare prefix written with a trailing slash ("/ai/") names a family, not
+    # an endpoint. A path without one ("/docs") is a real collection endpoint
+    # and stays in scope: the previous rule excluded anything with at most one
+    # slash, which silently dropped real single-segment endpoints from the
+    # check entirely. See DX-DESIGN-CHECK-01.
+    if path.endswith("/"):
         return True
-    return False
+    return not _endpoint_segments(path)
 
 
 print("\n=== 2. API endpoint references ===")
 if API_MD.exists():
     api_content = API_MD.read_text(encoding="utf-8")
-    api_endpoints: set[str] = set()
+    # Kept as (method, path) pairs rather than pre-normalized strings: matching
+    # is structural, so the literal path has to survive to comparison time.
+    api_endpoints: set[tuple[str, str]] = set()
     for match in API_ENDPOINT_RE.finditer(api_content):
-        api_endpoints.add(f"{match.group(1)} {_canonicalize_endpoint(match.group(2))}")
+        api_endpoints.add((match.group(1), match.group(2)))
     # Also match api.md bold format: **METHOD** `/path`
     for match in API_MD_BOLD_RE.finditer(api_content):
-        api_endpoints.add(f"{match.group(1)} {_canonicalize_endpoint(match.group(2))}")
+        api_endpoints.add((match.group(1), match.group(2)))
 
     for doc_path in all_md_files:
         try:
@@ -194,9 +200,14 @@ if API_MD.exists():
         except Exception:
             continue
         for match in API_ENDPOINT_RE.finditer(content):
+            method = match.group(1)
             raw_path = match.group(2)
-            ep = f"{match.group(1)} {_canonicalize_endpoint(raw_path)}"
-            if ep in api_endpoints:
+            ep = f"{method} {raw_path}"
+            if any(
+                method == documented_method
+                and endpoint_matches_documented(raw_path, documented_path)
+                for documented_method, documented_path in api_endpoints
+            ):
                 continue
             # Skip external IdP endpoints and wildcard future references
             if _is_external_or_wildcard(raw_path):

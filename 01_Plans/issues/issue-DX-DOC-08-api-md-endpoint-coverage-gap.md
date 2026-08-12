@@ -39,8 +39,14 @@
 
 警告数を139→1件に削減（api.mdにAI/監査/session/admin/systemエンドポイントを追加 + スクリプトのパス正規化・prefix解決）。契約ドリフトのroute_docsも0件。残る1警告はmutationテストのシナリオ記述。
 
+## 再検証記録（2026-08-12・2回目）
+
+AC-2の根拠のうち `check_design_consistency.py` 側の無効性は `DX-DESIGN-CHECK-01` で指摘済みだったが、同じAC-2が引用していた**もう一方**の根拠「route_docs警告0件（check_contract_drift.py）」も、`DX-CONTRACT-DRIFT-01` の調査で同じ根本原因（測定器の識別力低下）により無効だったことが判明した。`check_contract_drift.py`は抽出漏れ（複数行`@router`デコレータ・空パス）と形状ベース正規化の複合で、実装43ルート中27本が比較対象外になっていた。修正・再検証の結果、3ルート（`/ai/external-tasks/register`, `/ai/external-proposals/register`, `/ai/external-proposals/audit`）が実際に未文書化だったため、api.mdへ追加して解消した。判定の取り消しではなく記録の正確化として付記する。
+
+また調査中、逆方向（api.mdが実装より先行・陳腐化）の未検証ドリフトも1件見つかった: `POST /ai/assess-card-importance`（§2.12）は文書化されているが、対応するPydanticモデル・ルートが実装に存在しない。`check_contract_drift.py`はこの方向を検出しない設計であり、本issueのAC-2「全実装済みバックエンドルートがapi.mdに文書化されている」は真だが、その逆（api.mdの全記載が実装済み）は未確認のまま。フォローアップが必要。
+
 ## 補足
 
 - 本issueはワークフロー wf_d53eaace-f3f のScan/Verifyフェーズで検出された
 - 三要素牽制の観点: 機能設計（api.md）が実装と設計文書の両方から乖離している状態。データ設計（schemas.md）との整合も要確認
-- `check_contract_drift.py` も12件のバックエンドルート未文書化を警告している
+- `check_contract_drift.py` も12件のバックエンドルート未文書化を警告している（この「12件」自体も上記再検証記録の対象——修正前の測定器で計測された数値であり、修正後の実態とは異なる）
