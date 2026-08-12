@@ -534,3 +534,43 @@ def test_lifespan_rejects_mismatched_component_before_database_initialization(
 
     assert init_db_called is False
     assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+
+
+def test_docs_endpoints_disabled_on_production_profiles() -> None:
+    """SEC-HEADERS-01 (option a): /docs, /redoc, /openapi.json are disabled on
+    production runtime profiles and kept for dev/evaluation convenience. Uses a
+    subprocess so the module-level FastAPI construction is exercised with a
+    clean profile env (the in-process main is imported under the test profile)."""
+    import os
+    import subprocess
+    import sys
+
+    cases = [
+        ("local-dev", True),
+        ("evaluation", True),
+        ("enterprise-production", False),
+        ("saas-multitenant", False),
+    ]
+    for profile, expected_enabled in cases:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "from kj_atlas_api.main import app; print(app.docs_url, app.openapi_url)",
+            ],
+            capture_output=True,
+            text=True,
+            env={
+                **os.environ,
+                "KJ_ATLAS_RUNTIME_PROFILE": profile,
+                "KJ_ATLAS_LLM_PROVIDER": "none",
+            },
+            timeout=30,
+        )
+        assert result.returncode == 0, f"{profile}: import failed: {result.stderr}"
+        stdout = result.stdout.strip()
+        if expected_enabled:
+            assert "/docs" in stdout, f"{profile}: docs should be enabled, got {stdout!r}"
+            assert "/openapi.json" in stdout, f"{profile}: openapi should be enabled, got {stdout!r}"
+        else:
+            assert stdout == "None None", f"{profile}: docs should be disabled, got {stdout!r}"

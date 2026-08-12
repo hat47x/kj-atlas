@@ -1,7 +1,7 @@
 # Issue: SEC-HEADERS-01 本番runtime_profileでも/docs・/redoc・/openapi.jsonが無制限に公開される
 
 - Type: Security
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
@@ -29,9 +29,9 @@
 
 ## 受入条件
 
-- [ ] 採用した方針に応じて、本番相当の `runtime_profile` では `/docs`・`/redoc`・`/openapi.json` への到達性、または読み込むスクリプトの信頼境界が明示的に制御される。
-- [ ] 関連する安全・互換性を損なわない（開発時の利便性を過度に損なわない）。
-- [ ] 宣言した検証を実行するか、未実施理由を記録する。
+- [x] 採用した方針に応じて、本番相当の `runtime_profile` では `/docs`・`/redoc`・`/openapi.json` への到達性、または読み込むスクリプトの信頼境界が明示的に制御される。— **案(a) を仮承認で採択**（ドッグフーディングループの仮承認方針。否認・補正可）。`main.py` で `enterprise-production` / `saas-multitenant` は `docs_url`/`redoc_url`/`openapi_url` を `None` に、`local-dev`/`evaluation` は維持。
+- [x] 関連する安全・互換性を損なわない（開発時の利便性を過度に損なわない）。— 開発/評価プロファイルは `/docs` を維持。本番のみ無効化。
+- [x] 宣言した検証を実行するか、未実施理由を記録する。— `test_trusted_saas_runtime.py::test_docs_endpoints_disabled_on_production_profiles`（subprocess で4プロファイルの有効/無効を固定）＋ docs/settings/trusted-saas 67 tests pass。
 
 ## 検証計画
 

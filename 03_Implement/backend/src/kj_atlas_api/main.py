@@ -111,7 +111,19 @@ async def lifespan(app: FastAPI):
         release_trusted_saas_runtime(app)
 
 
-app = FastAPI(title="kj-atlas API", lifespan=lifespan)
+# SEC-HEADERS-01 (option a): the FastAPI interactive docs and the OpenAPI
+# schema are a recon surface (every route + payload shape) with no API-key
+# protection in the default compose deploy. Keep them for dev/evaluation
+# convenience but disable them on production profiles (enterprise-production,
+# saas-multitenant) so the surface is not reachable there.
+_docs_enabled = settings.runtime_profile in {"local-dev", "evaluation"}
+app = FastAPI(
+    title="kj-atlas API",
+    lifespan=lifespan,
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
+)
 _saas_auth_state_store = DatabaseSaasAuthStateStore(SessionLocal)
 
 # ADR-0063 D9-6: install the trusted SaaS runtime adapter bundle at module
