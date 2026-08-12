@@ -452,7 +452,11 @@ def get_document(
             )
         )
 
-    return document_payload_adapter.validate_python(payload)
+    # DOGFOOD-02: read path must enforce the A1 contract the same way PUT
+    # does. A stored doc with version != 1 otherwise fails raw pydantic
+    # validation as a 500; here it becomes a structured 422
+    # (A1_SCHEMA_VERSION_MISMATCH) with no stack-trace leak.
+    return _validate_document_payload_with_a1_contract(payload)
 
 
 @router.put("/{doc_id}", response_model=DocumentPayload)
