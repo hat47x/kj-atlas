@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-08 Done issueに残る廃止済みガバナンスmeta-AC
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
