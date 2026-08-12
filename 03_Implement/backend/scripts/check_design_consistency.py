@@ -108,6 +108,9 @@ _CONCRETE_ID_RE = re.compile(r"([a-z][a-z0-9]+(?:[-_][a-z0-9]+)+)")
 
 
 def _canonicalize_endpoint(path: str) -> str:
+    # 0. Strip a leading /api proxy prefix (frontend API_BASE convention).
+    if path.startswith("/api/"):
+        path = path[len("/api"):]
     # 1. Replace {named} placeholders
     normalized = _PARAM_TOKEN_RE.sub("{param}", path)
     # 2. Replace concrete resource ids (e.g. e2e-qa-roundtrip) with {param}
