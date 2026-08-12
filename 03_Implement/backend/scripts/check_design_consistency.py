@@ -107,14 +107,44 @@ _PARAM_TOKEN_RE = re.compile(r"\{[a-zA-Z_][a-zA-Z0-9_]*\}")
 _CONCRETE_ID_RE = re.compile(r"([a-z][a-z0-9]+(?:[-_][a-z0-9]+)+)")
 
 
+# DX-DESIGN-CHECK-01 案B: real backend route segments must NOT be collapsed by
+# _CONCRETE_ID_RE (that regex is meant for test-fixture IDs). Extract concrete
+# segments from routes/*.py so kebab-case route names like 'refine-card-text'
+# stay distinct across api.md coverage, while fixture IDs like
+# 'e2e-qa-roundtrip' still normalize to {param}.
+ROUTES_DIR = REPO_ROOT / "03_Implement" / "backend" / "src" / "kj_atlas_api" / "routes"
+
+
+def _load_real_route_segments() -> set[str]:
+    segments: set[str] = set()
+    for py in ROUTES_DIR.glob("*.py"):
+        try:
+            content = py.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for match in re.finditer(r'"(/?[a-z0-9_{}/-]+)"', content):
+            for segment in match.group(1).split("/"):
+                if segment and not segment.startswith("{"):
+                    segments.add(segment)
+    return segments
+
+
+_REAL_ROUTE_SEGMENTS = _load_real_route_segments()
+
+
 def _canonicalize_endpoint(path: str) -> str:
     # 0. Strip a leading /api proxy prefix (frontend API_BASE convention).
     if path.startswith("/api/"):
         path = path[len("/api"):]
     # 1. Replace {named} placeholders
     normalized = _PARAM_TOKEN_RE.sub("{param}", path)
-    # 2. Replace concrete resource ids (e.g. e2e-qa-roundtrip) with {param}
-    normalized = _CONCRETE_ID_RE.sub("{param}", normalized)
+    # 2. Replace concrete resource ids (e.g. e2e-qa-roundtrip) with {param},
+    #    but never a real backend route segment (DX-DESIGN-CHECK-01 案B).
+    def _replace_concrete_id(match: re.Match[str]) -> str:
+        token = match.group(1)
+        return "{param}" if token not in _REAL_ROUTE_SEGMENTS else token
+
+    normalized = _CONCRETE_ID_RE.sub(_replace_concrete_id, normalized)
     # 3. Collapse repeated {param} (GET /docs/{param}/{param} -> /docs/{param})
     while "{param}/{param}" in normalized:
         normalized = normalized.replace("{param}/{param}", "{param}")

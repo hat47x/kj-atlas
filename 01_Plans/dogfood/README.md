@@ -58,7 +58,7 @@ R1〜R6の完全サイクルは初期構築として完了した。以後は短�
 
 | 指標 | 正本 | 直近値（2026-08-12） |
 |------|------|---------------------|
-| 設計整合警告数 | `check_design_consistency.py` | 1（目標50未満✅、139→1） |
+| 設計整合警告数 | `check_design_consistency.py` | 2（目標50未満✅・baseline一致。139→1の後、DX-DESIGN-CHECK-01 案B で識別力回復→2 で安定） |
 | 三要素検証済みADR数 | ADRの`Three-Element Verification`節 | 76/76（全ADR✅、目標10） |
 | 実API検証操作数 | `ai_eval_results.md` | **2/2達成**（refine_card_text 10/10・suggest_island_summary 4/4） |
 | 自律実行率 | 四半期判定ADR | **L2: 昇格済み（ADR-0075）** / L3: 基盤整備+①達成 |

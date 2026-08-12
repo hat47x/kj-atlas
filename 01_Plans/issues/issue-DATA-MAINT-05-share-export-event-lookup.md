@@ -31,7 +31,7 @@ A1（export event lookup）を実装するには、まず **export監査イベ�
 
 - `audit.py` の `AuditDispatcher` は `NoopAuditTransport`（破棄）または `HttpAuditTransport`（外部送信）で、`build_event` したイベントをローカルへ保存しない。
 - ローカル唯一の監査テーブル `document_access_admin_audit_events` は `action = 'document.policy.update'` に制約され、exportイベントを保存しない。
-- `routes/docs.py` の `POST /{doc_id}/export-audit` はイベントをdispatcherへemitするだけで、read APIで照会できる保存先を持たない。
+- `routes/docs.py` の `POST /docs/{doc_id}/export-audit` はイベントをdispatcherへemitするだけで、read APIで照会できる保存先を持たない。
 
 したがって本issueは **2段階** になる:
 

@@ -62,9 +62,35 @@ _PARAM_TOKEN_RE = re.compile(r"\{[a-zA-Z_][a-zA-Z0-9_]*\}")
 _CONCRETE_ID_RE = re.compile(r"([a-z][a-z0-9]+(?:[-_][a-z0-9]+)+)")
 
 
+# DX-DESIGN-CHECK-01 案B: same blind spot as check_design_consistency.py — real
+# kebab-case route segments (e.g. 'refine-card-text') must stay distinct while
+# fixture IDs ('e2e-qa-roundtrip') still normalize to {param}.
+ROUTES_DIR = BACKEND_SRC / "routes"
+
+
+def _load_real_route_segments() -> set[str]:
+    segments: set[str] = set()
+    for py in ROUTES_DIR.glob("*.py"):
+        try:
+            content = py.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for match in re.finditer(r'"(/?[a-z0-9_{}/-]+)"', content):
+            for segment in match.group(1).split("/"):
+                if segment and not segment.startswith("{"):
+                    segments.add(segment)
+    return segments
+
+
+_REAL_ROUTE_SEGMENTS = _load_real_route_segments()
+
+
 def _canonical(path: str) -> str:
     normalized = _PARAM_TOKEN_RE.sub("{param}", path)
-    normalized = _CONCRETE_ID_RE.sub("{param}", normalized)
+    def _replace_concrete_id(match: re.Match[str]) -> str:
+        token = match.group(1)
+        return "{param}" if token not in _REAL_ROUTE_SEGMENTS else token
+    normalized = _CONCRETE_ID_RE.sub(_replace_concrete_id, normalized)
     while "{param}/{param}" in normalized:
         normalized = normalized.replace("{param}/{param}", "{param}")
     return normalized

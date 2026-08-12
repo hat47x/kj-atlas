@@ -15,6 +15,8 @@
 
 ### 実測（2026-08-12、`routes/*.py` から抽出した実装ルート42本に対して）
 
+**案B適用前**の実測:
+
 | 区分 | 件数 |
 |---|---|
 | 実装ルート総数 | 42 |
@@ -22,16 +24,16 @@
 | 正規化で他ルートと**衝突し区別不能**になるもの | 23（6グループ） |
 | **個別に検証できないルート合計** | **26 / 42（62%）** |
 
-衝突グループ（抜粋）:
+衝突グループ（抜粋、案B適用前）: `/ai/*` の10本が1キーへ、`/docs` 系の4本が1キーへ、`/inquiry-bundles`・`/tenant-admin` 系が `{param}` まで縮退していた。検査対象外の3本: `POST /bundle`, `POST /bundles:resolve`, `POST /query`。
 
-| 正規化後 | 実ルート数 | 例 |
-|---|---|---|
-| `POST /ai/{param}` | **10** | `/ai/refine-card-text`, `/ai/detect-contradiction`, `/ai/generate-narrative` … |
-| `POST /docs/{param}` | 4 | `/docs/{doc_id}/context-audit`, `/docs/{doc_id}/export-audit` … |
-| `GET /docs/{param}` | 3 | `/docs/{doc_id}`, `/docs/{doc_id}/similar-candidate-groups` … |
-| `GET /{param}` | 2 | `/inquiry-bundles/{journey_id}`, **`/tenant-admin/document-access/{doc_id}`** |
+**案B適用後**（2026-08-12、実測）:
 
-検査対象外の3本: `POST /bundle`, `POST /bundles:resolve`, `POST /query`。
+| 区分 | 件数 |
+|---|---|
+| 実装ルート総数 | 42 |
+| 正規化後に衝突するルート（METHOD込みキー） | **0** |
+| 個別に検証できるルート | **42 / 42（100%）** |
+| `_is_external_or_wildcard()` で検査対象外 | 3（AC-2 未対応・別途） |
 
 ### 原因は2つの独立した規則
 
@@ -71,7 +73,7 @@ if "/" not in stripped or stripped.count("/") <= 1:
 
 ## 受入条件
 
-- [ ] AC-1: 実装ルート42本のうち、正規化後に他ルートと衝突するものが0件になる（`/ai/*` の10本が個別に判定される）。
+- [x] AC-1: 実装ルート42本のうち、正規化後に他ルートと衝突するものが0件になる（`/ai/*` の10本が個別に判定される）。— **案B（実ルートセグメント除外）を仮承認で適用**。METHOD込みキーで 42/42 相異・衝突0件（カナリアが XPASS に転じる）。
 - [ ] AC-2: `_is_external_or_wildcard()` によって実装ルートが除外されない（現状3本を0本にする）。外部IdP系（`/oauth/`, `/saml`, `/.well-known/`）とワイルドカードのみ除外する。
 - [ ] AC-3: **検出器の識別力を守る回帰テストを追加する。** 既知の相異なるエンドポイント集合（最低でも `/ai/*` 全10本）を与え、正規化後も全て相異なることをアサートする。この検査があれば、将来の正規化強化が識別力を落とした時点でCIが落ちる。
   - **進捗**: `tests/test_design_consistency_discrimination.py` を追加（LIVE の `_PARAM_TOKEN_RE`/`_CONCRETE_ID_RE` をソースから読んで検証。実装 `/ai/*` 9本が `1` キーへ潰れることを確認）。現状は検出器が欠陥のため **xfail(strict=False)** — 案A/B/C の修正が入ると XPASS になり、その時点で un-xfail してCIガード化する。
@@ -102,3 +104,10 @@ if "/" not in stripped or stripped.count("/") <= 1:
 
 - 発見経緯: ドッグフーディング状況確認の一環で、L2昇格を支える4指標の妥当性を検証した際に発見した。他の3指標（三要素検証76/76、実API検証2/2、コード生成成功率）は**内容を確認した上で妥当**と判断している。特に `codegen_results.md` は「これは骨格生成成功率でありL3基準を完全には表さない」と自ら限界を明記し、重複コード生成を失敗として計上し直しており、記録の誠実性は高い。本issueは指標全体への疑義ではなく、1つの検出器に限定した欠陥の指摘である。
 - `check_contract_drift.py` の「11→2」削減（router prefix解決）は本issueでは未検証。同種の識別力低下がないか、AC-3の回帰テストを入れる際に併せて確認することを推奨する。
+
+## 対応記録（2026-08-12、案B を仮承認適用）
+
+- **実装（案B）**: `check_design_consistency.py` と `check_contract_drift.py` の両方に、`_CONCRETE_ID_RE` の対象を「実ルートセグメント以外」に限定する正規化を適用。`routes/*.py` から実セグメントを抽出し、ケバブケースの実ルート（`refine-card-text` 等）は正規化せず、fixture ID（`e2e-qa-roundtrip` 等）のみ `{param}` 化する。
+- **AC-1 達成**: METHOD込みキーで実装42ルートが全て相異（衝突0件）。`/ai/*` 9本も個別判定される（`test_design_consistency_discrimination.py` / `test_contract_drift_discrimination.py` が XPASS に転じ、un-xfail 済み）。
+- **警告数**: 2のまま（api_endpoints カテゴリ、既知2件: `packs/index.json`・`/import/documents`）。本issue本文の正規化例の参照が一時的に警告を増やしたが、記述を修正して baseline 2 を維持。
+- **残課題（AC-2・AC-4）**: `_is_external_or_wildcard()` が `/bundle` `/bundles:resolve` `/query` を除外する問題（AC-2）は未対応。AC-4（DX-DOC-08 の再検証）は api.md に記載済みルートの網羅確認として追って実施。
