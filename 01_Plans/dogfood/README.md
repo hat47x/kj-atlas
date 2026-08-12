@@ -122,6 +122,7 @@ Web/API/MCP など検証経路を新規追加・拡張するときは、次の3�
 | 2026-08-12 | API書込経路の検証スクリプトが無く、admin の「自前スクリプトで文書を作る」経路が未検証 | `verify_api_write.sh` 追加（PUT /docs/{id} 作成＋GET 読戻しの往復）。実走行 4 pass 0 fail（作成200・読戻し・title/card件数往復） |
 | 2026-08-12 | MCP 検証経路がカード作業状態（holdState）を表示せず、生成AIが保留状態を読めない | `verify_mcp.ts` に holdState/counts 表示を追加。Hold/Critique文書（held2/shelved1）を実走行し `cards: 3 (held:2, pending:0, shelved:1)`・SafeModeでも holdState 投影を確認（DOGFOOD-08 の e2e 検証） |
 | 2026-08-12 | 生成AIがMCPサーバへ接続するためのクライアント設定例が無い（「準備」の不足） | `03_Implement/mcp/README.md` に「Connecting a generative-AI MCP client」節を追加（stdio 設定例＋AI向け注意: 未レビュー非表示・holdState・HTTP/OAuth） |
+| 2026-08-12 | W型探究（inquiry-bundles）の保存APIを実走行したところ local-dev で `503 tenant_admin_auth_unavailable`（SaaSセッション必須）・**frontend 呼び出し元なし**・`InquiryJourneyPrototypePanel` はプロトタイプのみ | **業務領域カバレッジ評価**: W型累積探究は「サポートL0: Planned」と整合（api.md §11 どおり）。API単体のdogfood不可。prototype→production 化の要件が判明 |
 | 2026-08-12 | `saas-multitenant` の起動ゲートが fail-fast で機能することを実地確認（必須アダプタ欠損→起動拒否） | `adopting-org-patterns.md` §4 に実地確認を記録 |
 | 2026-08-12 | Org-Bパターン（Hold/Critique週跨ぎ）を実走行。API保存→再読込で作業状態が完全維持（held2/shelved1/critiqued2） | `adopting-org-patterns.md` §3.6 に記録 |
 | 2026-08-12 | MCP/外部プロジェクションが Hold/Critique 作業状態をスキーマごと落とす（AI協働の基本情報欠落） | `issue-DOGFOOD-08`起票（三要素分析済み・P2） |
