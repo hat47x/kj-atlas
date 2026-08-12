@@ -161,7 +161,11 @@ describe("inquiry bundle local roundtrip", () => {
 
   it("does not export a bundle that the size boundary would reject on import", async () => {
     const source = createRepresentativeInquiryBundle();
-    source.snapshots[0].document.cards[0].text = "x".repeat(INQUIRY_BUNDLE_MAX_BYTES);
+    // DOMAIN-CARD-TEXT-01 (f54af7ac) bounds card.text to 2000 chars, so a
+    // single 20 MiB card text is now rejected as invalid_shape before the
+    // size boundary. Inflate via an unbounded card field (sources) instead —
+    // the serialized JSON must still exceed the 20 MiB import boundary.
+    source.snapshots[0].document.cards[0].sources = ["x".repeat(INQUIRY_BUNDLE_MAX_BYTES)];
 
     const serialized = await serializeInquiryBundle(source);
     expect(serialized).toEqual({
