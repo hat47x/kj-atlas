@@ -127,6 +127,9 @@ Web/API/MCP など検証経路を新規追加・拡張するときは、次の3�
 | 2026-08-12 | MCP HTTP 経路の**実エンドツーエンド**（mock IdP の実JWT + 実backend の実文書）を走行 | `scripts/dogfood_mcp_http_e2e.mjs` 追加。mock JWKS サーバ＋署名JWT＋MCP HTTP サーバ＋実backend文書で `get_context_projection` 成功（bundleHash・cards:1）。**生成AIがMCP HTTPで検証する経路が実証完了** |
 | 2026-08-12 | L2/L3指標③（実API検証）の計測ハーネス `run_ai_eval.py --dry-run` を実行 | refine_card_text 10/10・suggest_island_summary 4/4 を stub provider でパイプライン検証（キー無し）。計測ハーネスが機能していることを確認（実API結果は `ai_eval_results.md`） |
 | 2026-08-12 | MCP HTTP トランスポートの**レート制限（60 req/min）**を実走行検証 | mock IdP + 実JWT で70連続リクエスト → 60件が受理され**10件が 429**。レート制限制御が機能（THREAT_MODEL §6 の制御を実証・fail-closed） |
+| 2026-08-12 | `check_contract_drift.py` が抽出漏れ（複数行デコレータ・空パス）＋形状正規化で実装ルートの63%を見落とし、`/ai/external-*` 3ルートの api.md 未記載を隠していた | **DX-CONTRACT-DRIFT-01** で修正（構造的照合・カナリア追加・実3ルートを api.md へ追記）。`check_design_consistency.py` も構造的照合へ書き換え（DX-DESIGN-CHECK-01）。backend 979 tests pass |
+| 2026-08-12 | api.md 記述先行の未実装エンドポイント（`POST /ai/assess-card-importance`＝AI-ROUTE-01 MMR 計画タスク）が逆方向ドリフトとして存在 | api.md に「**未実装（計画）**」を明記（契約は実装前の正本として維持） |
+| 2026-08-12 | AI ルートのルーティング＋監査の統合検証が無い | `test_ai_eval_pipeline.py::test_ai_route_emits_routing_audit_event` を追加 — /ai 実走行で `llm` 監査イベントが CE2-C5 項目で dispatcher へ出ることを固定（AI-ROUTE-01 AC-6 部分） |
 | 2026-08-12 | W型探究（inquiry-bundles）の保存APIを実走行したところ local-dev で `503 tenant_admin_auth_unavailable`（SaaSセッション必須）・**frontend 呼び出し元なし**・`InquiryJourneyPrototypePanel` はプロトタイプのみ | **業務領域カバレッジ評価**: W型累積探究は「サポートL0: Planned」と整合（api.md §11 どおり）。API単体のdogfood不可。prototype→production 化の要件が判明 |
 | 2026-08-12 | `saas-multitenant` の起動ゲートが fail-fast で機能することを実地確認（必須アダプタ欠損→起動拒否） | `adopting-org-patterns.md` §4 に実地確認を記録 |
 | 2026-08-12 | Org-Bパターン（Hold/Critique週跨ぎ）を実走行。API保存→再読込で作業状態が完全維持（held2/shelved1/critiqued2） | `adopting-org-patterns.md` §3.6 に記録 |
