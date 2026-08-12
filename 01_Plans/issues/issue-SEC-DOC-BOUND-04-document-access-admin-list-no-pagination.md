@@ -36,6 +36,7 @@
 - **方式推奨: cursor方式**（`DocumentRow.id` をカーソルに）。offset/limit は deep-offset で DB 負荷が線形に増えるのに対し、`id` は主キーで O(log n)。`/tenant-admin/document-access` に `cursor`（前ページ末尾の `id`）と `limit` のクエリを追加する形。
 - **デフォルト/最大: limit 100 / 最大 500**。単一レスポンスのサイズ上限（ペイロード抑制）を担保。
 - レスポンスに `nextCursor`（次ページの `last_id`）を返し、クライアントはこれを渡す。レスポンス件数が limit 未満なら終端。
+- **実地確認（2026-08-12）**: `GET /tenant-admin/document-access` は local-dev で `503 tenant_admin_auth_unavailable`（trusted SaaS セッション必須）。つまり**無界応答は SaaS ランタイムでのみ到達可能**であり、単一テナント local-dev では曝露しない。SaaS 起動ゲート（SAAS-TENANT-01）解除時に本 issue の影響が顕在化するため、その前に方式を確定するのが適切。
 - 既存 `GET /docs` 一覧系に pagination 規約が無いため、**本エンドポイントが初の規約**になる（模倣元なし）。規約化したら兄弟エンドポイントへ横展開する。
 
 ## 受入条件
