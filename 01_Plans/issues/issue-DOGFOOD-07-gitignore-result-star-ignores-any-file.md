@@ -1,7 +1,7 @@
 # Issue: DOGFOOD-07 .gitignore の `result-*`（Nix出力用）が全階層のファイルを無視する
 
 - Type: Bug / Process
-- Status: Draft
+- Status: Done
 - Source Issue: DOGFOOD-01（ドッグフーディングの結果分析・文書化で発見）
 - Priority: P2
 - Owner: Maintainer
@@ -60,3 +60,11 @@ Nix の一般的な gitignore はルート限定の `/result` `/result-*` を用
 - 本 issue はドッグフーディング成果物が「自分自身の成果物名」で無視された実例であり、
   横断分析（dogfood-analysis-synthesis）の「検証経路・成果物の理想状態前提」とは別の、
   「成果物の追跡可能性」の摩擦である。
+
+## 対応記録（2026-08-12）
+
+- `.gitignore` の Nix ルールをルート限定へアンカーした（`/result` `/result-*`、commit 8baae86c）。
+- 検証:
+  - `git check-ignore -v 01_Plans/dogfood/result-analysis-2026-08-12.md` → ignore されない（exit 1）✓
+  - `git check-ignore -v ./result-link` → 引き続き ignore（`/result-*` 一致）✓
+- 受入条件 3件すべて充足（非Nix `result-*` の追跡可・ルートNix出力は無視維持・意図しない無視なし）。

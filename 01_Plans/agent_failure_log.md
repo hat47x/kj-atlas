@@ -453,3 +453,10 @@ Updated: 2026-08-03
 - 原因: 複数行fixtureへ字下げなしの長文を埋め込んだためdedentが働かず、先頭メタデータが字下げされたままになった。
 - 対応: fixtureを行頭が明示的な文字列連結へ変更し、長文部分だけを挿入する形へ単純化した。
 - 再発防止: 動的な複数行内容を含むmetadata fixtureではdedentに依存せず、生成後の先頭行とmetadata行がcolumn 0であることが明白な構築方法を使う。
+
+## 2026-08-12: verify_mcp が .ts モジュール import + TS構文で Node 20 から起動不能
+
+- 事象: `verify_mcp.mjs` が `import { interpretProjectionResult } from "../src/mcp_verify_result.ts"` と `as` キャストを含むため、素の `node`（.nvmrc は 20）で `ERR_UNKNOWN_FILE_EXTENSION`／`SyntaxError: Unexpected identifier 'as'` になった。
+- 原因: 検証スクリプトを `.mjs` のまま TS 機能（.ts import・型アサーション）へ移したが、Node 20 は型ストリップなし。さらに **tsx は `.mjs` を esbuild 変換せず Node ネイティブローダーへ渡す**ため、`tsx scripts/verify_mcp.mjs` でも `as` で構文エラーになった。
+- 対応: `verify_mcp.mjs` を `verify_mcp.ts` へリネームし、`package.json` に `"verify": "tsx scripts/verify_mcp.ts"` を追加、README/issue の起動コマンドを `npm run verify --` へ更新。vitest 55 pass・typecheck OK・`npm run verify` 実走行で isError 経路の終了を確認。
+- 再発防止: `.mjs` に TS 構文や `.ts` import を持ち込まない。tsx で動かすエントリは `.ts` にし、素 `node` 起動は `.mjs` のみ。検証スクリプトの起動コマンド変更時は README と起票 issue の両方を更新する。
