@@ -99,6 +99,23 @@ AI委譲の対象を「レビュー済み以降の整理」に限定するか、
   single-tenant のアクセス制御（ADR-0059 等）で先行検証する段階が残っている。
 - 推奨: multi-org の設計検証は ADR-0074 採択後に再開し、その前に「文書単位の共有境界」の dogfood を進める。
 
+### 実地確認（2026-08-12）: saas-multitenant の起動ゲートは fail-fast で機能する
+
+`KJ_ATLAS_RUNTIME_PROFILE=saas-multitenant` で backend を起動すると、必須アダプタ欠損時に
+起動拒否されることを実地確認した:
+
+```
+RuntimeError: trusted SaaS runtime policy is incomplete: PostgreSQL tenant DB guard,
+disabled JIT provisioning, external access control, deny fail-safe mode, external
+document policy binding, external tenant capability resolution
+```
+
+- ADR-0063 D9 の「不足時は fail-fast」と `runtime_parameter_registry.md` の「無視して local-dev や in-memory へ
+  fallback しない」が実装どおり機能することを確認。
+- **multi-org の実利用はここで確実に遮断されている**。つまり Org-C（研究共同）の同時利用は、このゲートを
+  満たす外部アダプタ一式（PostgreSQL + external PDP/binding/capability + JIT無効 + deny fail-safe）が揃うまで
+  実地検証できない。本確認は「選択不可」が文書上の言い分だけでなく実装の強制であることを実証する。
+
 ## 5. 三要素分析（パターン多様化における整合）
 
 | 次元 | 主張 | 制約 |
