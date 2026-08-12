@@ -1,7 +1,7 @@
 # Issue: DOGFOOD-05 MCP経路が未レビューカードを一切露出せず、Org-D「AI委譲による初期探索」を支援できない
 
 - Type: Design decision / Product
-- Status: Draft
+- Status: Done
 - Source Issue: DOGFOOD-01（ドッグフーディングのパターン多様化で発見）
 - Priority: P2
 - Owner: Maintainer
@@ -37,9 +37,9 @@
 
 ## 受入条件
 
-- [ ] 案A〜C のいずれかが維持者によって採択される。
-- [ ] MCP経路の適用範囲がドキュメント化され、Org-D 相当の利用者が誤った期待を持たない。
-- [ ] fail-closed（未レビュー内容のAI開示禁止）が維持される。
+- [x] 案A〜C のいずれかが維持者によって採択される。— **案A（適用範囲の明示）を仮承認で採択**（ドッグフーディングループの仮承認方針に基づき適用。維持者は否認・補正可。案B/C への変更は文書の差し替えのみで可逆）。
+- [x] MCP経路の適用範囲がドキュメント化され、Org-D 相当の利用者が誤った期待を持たない。— `context_projection_tool.ts` のツール description と `03_Implement/mcp/README.md` に「未レビューカードは全constraintで非表示（fail-closed）＝レビュー済み以降の整理・俯瞰向け」を明記。
+- [x] fail-closed（未レビュー内容のAI開示禁止）が維持される。— 変更は文書のみ。投影ロジック（`context_bundle_projection.ts`）は無変更で、fail-closed を維持。
 
 ## 検証計画
 
@@ -52,3 +52,11 @@
 
 - 実測データ: `reviewed-only`/`evidence`/`contradiction`/`summary` 全constraintで `cards=0`, `counts={"reviewed":0,"unreviewed":50,"redacted":50}`。レビュー済み3枚化後は `cards=3`（実テキスト）、`safeMode:true` で `[REDACTED]`。
 - このギャップは「バグ」ではなく「業務価値と安全境界の設計上の衝突」であり、方針判断を要する点で設計 issue とした。
+
+## 対応記録（2026-08-12、案A 仮承認採択）
+
+- **案A（適用範囲の明示）を採択**（ドッグフーディングループの仮承認方針に基づく。維持者の否認・補正待ち）。
+- 変更は文書のみ・投影ロジック無変更:
+  - `03_Implement/mcp/src/context_projection_tool.ts` — ツール description に「未レビューカードは全constraintで非表示（fail-closed）＝レビュー済み以降の整理・俯瞰向け」を追記。
+  - `03_Implement/mcp/README.md` — 「Scope (DOGFOOD-05)」節を追加。holdState（DOGFOOD-08）はレビュー済みカードの作業状態として扱えること、未レビューは読めないことを明記。
+- **検証**: MCP typecheck OK・`context_projection_tool.test.ts` 8 tests pass。fail-closed 維持（投影ロジック無変更）。

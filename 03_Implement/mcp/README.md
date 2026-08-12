@@ -18,6 +18,13 @@ One tool, `get_context_projection({ docId, constraint, safeMode? })`, wrapping
 one of `reviewed-only | evidence | contradiction | summary`. `safeMode`
 defaults to `true` (the safe default) when omitted.
 
+**Scope (DOGFOOD-05)**: unreviewed cards are never exposed on any constraint —
+even `safeMode: false` reports `cards=0` for them (`SEC-CONTEXT-PROJECTION-01`
+fail-closed). This path is for reviewing and structuring **already-reviewed**
+content, not for initial exploration of unreviewed material. An AI co-worker
+that needs to respect work-state on reviewed cards gets `holdState` metadata
+(DOGFOOD-08); it cannot use this server to read unreviewed content.
+
 No resources, no prompts, no other tools. `tools/list` and the absence of a
 `resources` capability in `initialize`'s response are locked by
 `src/context_projection_tool.test.ts` against a fixed snapshot — see that

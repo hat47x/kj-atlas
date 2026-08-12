@@ -23,7 +23,11 @@ export function registerContextProjectionTool(server: McpServer, documentClientC
         "Read-only, constraint-scoped, SafeMode-respecting projection of a kj-atlas document " +
         "(ADR-0054 stage 1). The output never includes a score, rank, confidence, or priority " +
         "value of any kind. When safeMode is true (the default), no card text is exposed -- only " +
-        "structure and counts.",
+        "structure and counts. " +
+        "Unreviewed cards are never exposed on ANY constraint (even safeMode=false reports " +
+        "cards=0 for them, SEC-CONTEXT-PROJECTION-01 fail-closed): use this tool for reviewing " +
+        "and structuring already-reviewed content, not for initial exploration of unreviewed " +
+        "material (DOGFOOD-05).",
       inputSchema: {
         docId: z.string().min(1).describe("Target Document id."),
         constraint: z
