@@ -31,6 +31,13 @@
 - 実施すること: pagination方式（offset/limit方式か、`DocumentRow.id`をcursorにしたcursor方式か）と、デフォルト/最大ページサイズをMaintainerが決定する。既存の`GET /docs`一覧系エンドポイント（もしpagination規約があれば）との整合も確認する。
 - 実施しないこと: pagination方式選定なしに特定のデフォルト値だけを機械的に追加すること（模倣できる既存規約が無いため）。
 
+## 判断支援（2026-08-12・L2 分析。最終判断は人間）
+
+- **方式推奨: cursor方式**（`DocumentRow.id` をカーソルに）。offset/limit は deep-offset で DB 負荷が線形に増えるのに対し、`id` は主キーで O(log n)。`GET /tenant-admin/document-access?cursor=<last_id>&limit=100` の形。
+- **デフォルト/最大: limit 100 / 最大 500**。単一レスポンスのサイズ上限（ペイロード抑制）を担保。
+- レスポンスに `nextCursor`（次ページの `last_id`）を返し、クライアントはこれを渡す。レスポンス件数が limit 未満なら終端。
+- 既存 `GET /docs` 一覧系に pagination 規約が無いため、**本エンドポイントが初の規約**になる（模倣元なし）。規約化したら兄弟エンドポイントへ横展開する。
+
 ## 受入条件
 
 - [ ] pagination方式（offset/limitまたはcursor）とデフォルト/最大ページサイズが決定される。
