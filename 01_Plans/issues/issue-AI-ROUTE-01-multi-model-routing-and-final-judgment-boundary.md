@@ -32,13 +32,17 @@
 
 ## 受入条件
 
-- [ ] intermediate と final_judgement の責務分離が契約（api.md/schemas.md）で固定される。
-- [ ] intermediate の許可タスク・禁止タスクが強制される（MMR-02/03）。
-- [ ] final_judgement が high-reasoning tier へルーティングされる（MMR-04）。
-- [ ] 監査ログに MMR-05 の4項目が記録される。
-- [ ] final_judgement 利用不能時に held へ遷移し、auto-publish しない（MMR-06）。
-- [ ] `provider=none` で中核操作が成立する。
-- [ ] integration test でルーティング・監査・安全停止が検証される。
+- [x] intermediate と final_judgement の責務分離が契約（api.md/schemas.md）で固定される。— `routing_stage_for_task()`（provider.py）で分類
+- [x] intermediate の許可タスク・禁止タスクが強制される（MMR-02/03）。— 分類で構造的に強制（変換系タスクのallowlist）
+- [x] final_judgement が high-reasoning tier へルーティングされる（MMR-04）。— `resolve_model_for_task()` + `KJ_ATLAS_LLM_HIGH_REASONING_MODEL`
+- [x] 監査ログに MMR-05 の4項目が記録される。— `_audit_llm_trace` に `routingStage` 追加
+- [ ] final_judgement 利用不能時に held へ遷移し、auto-publish しない（MMR-06）。— 未実装（外部エージェント連携と連動）
+- [x] `provider=none` で中核操作が成立する。
+- [ ] integration test でルーティング・監査・安全停止が検証される。— 単体テスト2件追加済み（44 passed）、integrationは追加
+
+## 進捗（2026-08-12）
+
+MMR-01/02/03/04/05を実装（46ec01aa）。MMR-06（final_judgement利用不能時のheld遷移）は外部エージェント連携（proposal/apply）と連動するため、別途対応。単体テスト2件追加（44 passed）。
 
 ## 検証計画
 
