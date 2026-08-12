@@ -45,7 +45,7 @@ L2昇格条件の3つが該当する。
 ## 受入条件
 
 - [x] AC-1: 上記の案（またはそれ以外）から方針を決定し、`AGENTS.md` §1.3 または `01_Plans/dogfood/README.md` へ明記する。— **案A+案B 併用を仮承認で採択**し、`01_Plans/dogfood/README.md`「測定の健全性」節に明記。
-- [~] AC-2: 案Aを採る場合、L2/L3ゲートに使う各測定器へ能力カナリアを追加する（`check_design_consistency.py` は `DX-DESIGN-CHECK-01` AC-3 で先行）。— **部分**: `check_design_consistency.py` のカナリアは `test_design_consistency_discrimination.py` で追加済み。`check_contract_drift.py` のカナリアは未追加（対応記録参照）。
+- [x] AC-2: 案Aを採る場合、L2/L3ゲートに使う各測定器へ能力カナリアを追加する（`check_design_consistency.py` は `DX-DESIGN-CHECK-01` AC-3 で先行）。— `check_design_consistency.py` は `test_design_consistency_discrimination.py`、`check_contract_drift.py` は `test_contract_drift_discrimination.py` でカナリア追加済み。後者は**同じ `_CONCRETE_ID_RE` の盲点**を持つことを検出（DX-DESIGN-CHECK-01 補足の予測どおり）。実API検証（手記録）はカナリア形式が適用困難なため、記録の誠実性確認（codegen_results.md の自己訂正）で担保。
 - [x] AC-3: 案Bを採る場合、昇格判定ADRのテンプレートへ「測定器の変更有無」欄を追加する。— `01_Plans/adr/TEMPLATE.md` に「Measurement Integrity（昇格判定ADRで必須）」節を追加。
 - [x] AC-4: `ADR-0075`（L2昇格）へ、①の根拠に測定器変更が含まれていた事実を追記する（判定の取り消しではなく、記録の正確化として）。— 「Measurement Integrity（追記）」節を追加。①の139→1 に検出器変更（aa70d3cf ほか、DX-DESIGN-CHECK-01）が含まれることを記録。
 
