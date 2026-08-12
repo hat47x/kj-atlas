@@ -45,3 +45,7 @@
 ## 補足
 
 - 発見経緯: 第31ラウンドの「backend unbounded-query/resource-exhaustion」観点監査で発見。独立検証者が`models.py`の一意制約（`group_id`/`snapshot_version`は一意制約対象外）を確認し、実際に行が積み上がりうることを裏付けた。`01_Plans/issues/`内の関連issue（`issue-FB-RM-MID-03`はフロントエンド側の監査JSONエクスポート生成器で無関係、直近コミット`13d68ec5`の「proposal audit trail上限」もフロントエンドのメモリ内配列（`App.tsx`の`proposalAuditTrail`）であり本issueが指すbackendの読み取り経路とは別）を確認し、本ギャップを扱う既存issueが無いことを確認済み。`SEC-DOC-BOUND-04`と同種（読み取り経路のレスポンスpagination欠如）だが対象テーブル・エンドポイントが異なるため別issueとして分離。
+
+## 判断支援（2026-08-12・L2 分析。最終判断は人間）
+
+`SEC-DOC-BOUND-04` の推奨（cursor pagination・limit 100/最大500・`nextCursor`）を**同一の規約として適用**するのが自然（両者とも読み取り経路のレスポンス無界・模倣可能な既存規約なし）。監査ログは append-only で無限に増えるため、cursor 方式（`MergeDecisionLogRow.id` をカーソル）が適する。`by-group` と `restore/{snapshot_version}` の両エンドポイントへ同じ規約を適用し、初の pagination 規約として `-04` と同時に確立する。
