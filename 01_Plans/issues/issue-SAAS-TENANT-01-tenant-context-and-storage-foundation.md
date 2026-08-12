@@ -60,7 +60,7 @@
 - [x] AC-1: `tenants`、`identity_providers`、`tenant_identity_providers`、`tenant_memberships`が実装され、identityは`identity_provider_id + subject`で一意になる。
 - [x] AC-2: 既存データが`local-default`へ損失なくbackfillされ、再実行しても結果が変わらない。
 - [x] AC-3: `documents`と全Document従属表がtenant複合制約を持ち、docIdだけのDB query/joinが静的検査またはtestで検出される。
-- [ ] AC-4: SaaS profileでtenant不明・不一致、membership停止、adapter欠損、PDP不達をreadも含めてdenyする。
+- [ ] AC-4: SaaS profileでtenant不明・不一致、membership停止、adapter欠損、PDP不達をreadも含めてdenyする。— **部分**: adapter欠損は `TrustedSaasRuntimePolicy.validate()`（main.py lifespan・fail-fast）で起動拒否＝deny（2026-08-12 実地確認済み）。tenant不明・不一致・membership停止・PDP不達の **runtime deny は SaaS 起動ゲート解除後にのみ検証可能**（現状は起動拒否を継続）。
 - [x] AC-5: shared schemaでDB側tenant guardが有効で、別tenant contextを使った直接SQLも行を取得・更新できない。→ 実PostgreSQL・非superuser/非BYPASSRLS runtime roleでの実地検証完了（2026-07-29チェックポイント）。
 - [x] AC-6: `GET /session/context`とactive tenant変更がmembership allowlistだけを返し、自由入力tenantの発見・切替を許可しない。— `switch_tenant_session_context`→`select_active_tenant_context`（membership 検証）・`test_session_context_routes.py` 70 tests pass で確認（allowlist のみ返す・未知/非membership tenant 拒否・stale version 拒否）。
 - [ ] AC-7: Workspace、Tenant Admin、Platform Control Planeのcapability/audienceが分離され、Platform operatorに文書readが暗黙付与されない。
