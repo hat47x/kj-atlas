@@ -53,9 +53,29 @@ else
   FAIL=$((FAIL+1))
 fi
 
-# 4. /session/context — session context (may require auth)
+# 4. /session/context — session context (may require auth).
+# DOGFOOD-04: do NOT treat every non-500 as "reachable". A 503 means the
+# endpoint is present but Service Unavailable (e.g. local-dev has no SaaS
+# identity resolver and returns 503 by design). Report status classes
+# distinctly so a real outage is not masked as reachable.
 code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} "$BASE_URL/session/context")
-check "/session/context reachable (non-500)" "reachable" "$([ "$code" = "500" ] && echo fail || echo reachable)"
+case "$code" in
+  500)
+    echo "  FAIL: /session/context returned 500 (server crash)"
+    FAIL=$((FAIL+1))
+    ;;
+  503)
+    echo "  INFO: /session/context returned 503 (Service Unavailable) —"
+    echo "        expected in local-dev (no SaaS identity resolver); NOT counted as reachable."
+    ;;
+  2*|3*|404)
+    check "/session/context reachable" "reachable" "reachable"
+    ;;
+  *)
+    echo "  FAIL: /session/context returned $code (unexpected)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
 
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="

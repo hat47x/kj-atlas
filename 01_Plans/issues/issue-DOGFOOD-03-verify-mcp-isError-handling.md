@@ -1,7 +1,7 @@
 # Issue: DOGFOOD-03 verify_mcp.mjs が not_found/error 応答を JSON.parse で破壊する
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Source Issue: DOGFOOD-01（ドッグフーディング検証経路の拡張で発見）
 - Priority: P2
 - Owner: Maintainer
@@ -43,3 +43,11 @@ MCP クライアント検証経路 `verify_mcp.mjs` を実走行したところ�
 
 - MCP サーバー側の契約（isError）は正しく、サーバーの変更は不要。検証スクリプト側の仮定（常に JSON）が誤り。
 - `verify_mcp.mjs` は 2026-08-12 に追加されたばかりの経路であり、not_found 系のエッジが CI 未カバーだった。
+
+## 対応記録（2026-08-12）
+
+- `verify_mcp.mjs` に `result.isError` の事前確認を追加。エラー時は outcome（not_found/error）とメッセージを表示して exit 0 とし、
+  「MCP 経路は生きているが対象文書が取得できない」ことを報告する（クラッシュしない）。
+- 検証: 実走行で not_found（`nonexistent_doc_xyz` → `outcome: "not_found"`、exit 0）と成功（`dogfood_orga_batch_20260812` → PASSED）の両方を通ることを確認。
+- 回帰: `npx vitest run`（MCP）で 49 tests passed。
+- DOGFOOD-06 の受入条件のうち「異常系を区別して報告する」を1件充足。

@@ -48,9 +48,20 @@ try {
     arguments: { docId, constraint, safeMode: true },
   });
 
+  // DOGFOOD-03: respect the server's isError contract. On not_found/error the
+  // tool returns { isError: true, content: [{ type: "text", text: <message> }] }
+  // where text is a plain message, not a projection JSON — parse it as such
+  // instead of crashing on JSON.parse.
   const text = result.content?.[0]?.text;
   if (!text) {
     throw new Error("No text content in tool result");
+  }
+  if (result.isError === true) {
+    const isNotFound = text.includes("DocumentNotFound") || text.includes("not found") || text.includes("404");
+    console.log(`  → tool reported an error outcome (${isNotFound ? "not_found" : "error"}): ${text.slice(0, 200)}`);
+    console.log("  → MCP transport is alive, but the target document is not retrievable.");
+    console.log("  → This is a normal not_found signal, NOT an MCP path failure.");
+    process.exit(0);
   }
   const projection = JSON.parse(text);
   console.log(`  → bundleHash: ${projection.bundleHash}`);

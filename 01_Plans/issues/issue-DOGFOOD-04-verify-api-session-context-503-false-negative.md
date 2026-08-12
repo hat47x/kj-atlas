@@ -1,7 +1,7 @@
 # Issue: DOGFOOD-04 verify_api.sh の /session/context チェックが 503 を reachable として見逃す
 
 - Type: Bug / Process
-- Status: Draft
+- Status: Done
 - Source Issue: DOGFOOD-01（ドッグフーディング検証経路の拡張で発見）
 - Priority: P2
 - Owner: Maintainer
@@ -55,3 +55,14 @@ check "/session/context reachable (non-500)" "reachable" "$([ "$code" = "500" ] 
 
 - MCP 検証経路の同種の問題（DOGFOOD-03、isError を JSON として誤解析）と同じく、**2026-08-12 に追加されたばかりの検証経路のエッジ**が CI 未カバーであることが背景。
 - 本 issue は検証経路自体の品質改善であり、プロダクトの安全境界変更は含まない。
+
+## 対応記録（2026-08-12）
+
+- `verify_api.sh` の `/session/context` チェックを case 分岐へ変更。
+  - 500 → FAIL（crash）
+  - 503 → INFO（Service Unavailable。local-dev では SaaS resolver 未初期化のため期待値。reachable として数えない）
+  - 2xx/3xx/404 → PASS（reachable）
+  - その他 → FAIL（予期しない status）
+- 検証: local-dev で実走行し、`/session/context` が INFO（503）として報告され、PASS 扱いされないことを確認。
+- これにより saas-multitenant で JWKS 取得失敗などが 503 を返した場合、誤って「reachable」とは報告されなくなる。
+- DOGFOOD-06 の受入条件のうち「503/not_found を区別して報告する」を1件充足（DOGFOOD-03 と合わせて）。
