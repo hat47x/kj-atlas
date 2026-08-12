@@ -93,7 +93,7 @@ DOGFOOD-03 / DOGFOOD-04 はどちらも**検証スクリプト自身のエッジ
 - DOGFOOD-02 の修正（GET を A1 契約検証へ）が着工されたら、`verify_api.sh` に「旧version文書で構造化4xxを返す」assertを追加。
 - DOGFOOD-05 の判断（案A/B/C）が下ったら、MCP の適用範囲を `04_Documentation` に明示。
 - 検証スクリプトの異常系カバレッジ（DOGFOOD-03/04）は、スクリプト自身の `unit` テストとして直近に対応可能。
-- **能力カナリアを他の測定器へ横展開する**（原因A/Bの一般形への対策）。`check_design_consistency.py` は `DX-DESIGN-CHECK-01` で導入済み。未対応は `check_contract_drift.py`（prefix解決で 11→2 に減っており、同種の識別力低下がないか未検証）と、`codegen_results.md` / `ai_eval_results.md` の手記録系指標。方針決定は `DOGFOOD-METRIC-01`。
+- **能力カナリアを他の測定器へ横展開する**（原因A/Bの一般形への対策）。`check_design_consistency.py` は `DX-DESIGN-CHECK-01` で導入済み。`check_contract_drift.py` は当初の懸念（prefix解決で 11→2 に減っており、同種の識別力低下がないか未検証）どおり同型の欠陥（＋独立した抽出漏れ）が実在すると確認し、`DX-CONTRACT-DRIFT-01` で修正・導入済み（43ルート中27本が比較対象外になっていた）。未対応は `codegen_results.md` / `ai_eval_results.md` の手記録系指標のみ。方針決定は `DOGFOOD-METRIC-01`。
 
 ## 6. 次回 R1（摩擦カード化）への供給素材
 
