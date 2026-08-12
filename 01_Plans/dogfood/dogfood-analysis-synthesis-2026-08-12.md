@@ -11,7 +11,7 @@
 | # | 発見 | 発見経路 | 性質 |
 |---|------|---------|------|
 | DOGFOOD-02 | GET /docs/{id} が旧版文書で素の500（GET/PUT検証非対称）→ Web初回起動で500エラー画面に増幅 | API経路 + Web経路の実走行 | 契約境界の不整合（機能×データ×業務） |
-| DOGFOOD-03 | verify_mcp.mjs が isError/not_found 応答を JSON.parse で破壊 | MCP経路の実走行 | 検証スクリプト自身のエッジ未検証 |
+| DOGFOOD-03 | verify_mcp.ts が isError/not_found 応答を JSON.parse で破壊 | MCP経路の実走行 | 検証スクリプト自身のエッジ未検証 |
 | DOGFOOD-04 | verify_api.sh が /session/context の503を「reachable」と誤判定 | API経路の実走行 | 検証スクリプト自身のエッジ未検証 |
 | DOGFOOD-05 | MCP経路が未レビューカードを一切露出せず、Org-DのAI委譲を支援不能 | MCP経路の実走行 | 安全境界と業務価値の衝突 |
 | （参考）DOGFOOD-01 | 検証経路（Web/API/MCP）が2026-08-12に追加された | — | 検証インフラの新規導入 |
@@ -23,7 +23,7 @@
 DOGFOOD-03 / DOGFOOD-04 はどちらも**検証スクリプト自身のエッジ未検証**である。
 
 - `verify_api.sh`: routeが500以外なら「reachable」と判定するため、503（実質的障害）を検出しない。
-- `verify_mcp.mjs`: サーバーの isError 契約（not_found/error）を想定せず、成功形の JSON だけを仮定。
+- `verify_mcp.ts`: サーバーの isError 契約（not_found/error）を想定せず、成功形の JSON だけを仮定。
 
 → 検証経路は「その経路が存在し、正常系で動く」ことだけを見る。**経路が「実際に使える状態か」は見ない**。
   これは R3 の既存知見「検出はできても修正の責任主体がない」と同型だが、さらに「検出対象の設定が正常系偏重」という
@@ -31,7 +31,7 @@ DOGFOOD-03 / DOGFOOD-04 はどちらも**検証スクリプト自身のエッジ
 
 ### 原因B: 検証経路の対象データが「正しい fixture」前提
 
-- `verify_api.sh` / `verify_mcp.mjs` は `doc_phase1_canvas` を既定対象にするが、
+- `verify_api.sh` / `verify_mcp.ts` は `doc_phase1_canvas` を既定対象にするが、
   **その文書が「現行契約で読める状態」であることを前提**にしている。
 - 実環境では旧version文書（DOGFOOD-02）や未レビューのみの文書（DOGFOOD-05）が存在し得る。
 - 検証経路は「移行済み・レビュー済みの理想状態」しか通らない。**検証が理想状態の自己確認になっている**。

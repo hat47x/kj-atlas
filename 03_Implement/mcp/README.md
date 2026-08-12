@@ -46,8 +46,10 @@ npm run typecheck
 npm test
 npm start   # runs src/index.ts (transport selected by KJ_ATLAS_MCP_TRANSPORT)
 
-# Client-based verification (generative-AI path; requires running backend):
-KJ_ATLAS_MCP_API_BASE_URL=http://127.0.0.1:8000 node scripts/verify_mcp.mjs [docId] [constraint]
+# Client-based verification (generative-AI path; requires running backend).
+# Run via tsx (npm run verify) — the script imports a .ts module and uses TS
+# `as` syntax, which plain Node 20 rejects:
+KJ_ATLAS_MCP_API_BASE_URL=http://127.0.0.1:8000 npm run verify -- [docId] [constraint]
 ```
 
 ### Transport selection

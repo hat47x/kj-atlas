@@ -59,7 +59,7 @@ README の想定利用者を4つの具体的組織イメージへ分解する。
 
 - Web 経路: 主として Org-A/B。UI の摩擦は QA-MONKEY-10 等で実証済み。
 - API 経路: Org-C の非同時利用・バッチ投入。`verify_api.sh` が route 存在チェックを提供（DOGFOOD-04 で 503 の見逃しを起票）。
-- MCP 経路: Org-D の AI 委譲。`verify_mcp.mjs` が isError 応答を正しく扱えない（DOGFOOD-03）。
+- MCP 経路: Org-D の AI 委譲。`verify_mcp.ts` が isError 応答を正しく扱えない（DOGFOOD-03）。
 
 ## 3.5 実走行の知見（2026-08-12、Org-Aバッチ投入 + Org-DのMCP委譲）
 

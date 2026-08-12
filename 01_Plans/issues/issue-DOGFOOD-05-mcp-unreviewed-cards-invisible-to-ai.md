@@ -44,7 +44,7 @@
 ## 検証計画
 
 - 実行コマンド（再現）:
-  - backend 起動後、50カード未レビュー文書を投入 → `KJ_ATLAS_MCP_API_BASE_URL=http://127.0.0.1:8000 node 03_Implement/mcp/scripts/verify_mcp.mjs <doc_id> reviewed-only`
+  - backend 起動後、50カード未レビュー文書を投入 → `cd 03_Implement/mcp && KJ_ATLAS_MCP_API_BASE_URL=http://127.0.0.1:8000 npm run verify -- <doc_id> reviewed-only`
   - もしくは `context_bundle_projection.test.ts` で「未レビュー文書の全constraintで cards=0」を固定
 - 期待結果: 再現が確認でき、採択された案に沿った文書・設計変更が行われる。
 

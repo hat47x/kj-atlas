@@ -5,13 +5,13 @@
 - Source Issue: `01_Plans/dogfood/dogfood-analysis-synthesis-2026-08-12.md`（DOGFOOD-02〜05の横断分析）
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/scripts/verify_api.sh`, `03_Implement/mcp/scripts/verify_mcp.mjs`, 新規検証経路の追加規約
+- Scope: `03_Implement/backend/scripts/verify_api.sh`, `03_Implement/mcp/scripts/verify_mcp.ts`, 新規検証経路の追加規約
 - Related ADR/Spec: `01_Plans/dogfood/dogfood-analysis-synthesis-2026-08-12.md` §4, `issue-DOGFOOD-03`, `issue-DOGFOOD-04`, `01_Plans/dogfood/README.md`（W型サイクル）
 - Expected verification level: `docs-check`
 
 ## 課題
 
-2026-08-12 に追加された検証経路（`verify_api.sh`, `verify_mcp.mjs`）が、いずれも**異常系のエッジを未検証**のまま
+2026-08-12 に追加された検証経路（`verify_api.sh`, `verify_mcp.ts`）が、いずれも**異常系のエッジを未検証**のまま
 追加されたことが、DOGFOOD-03（isError を JSON.parse で破壊）と DOGFOOD-04（503 を reachable と誤判定）の
 両方を生んだ。
 
@@ -30,7 +30,7 @@
 
 ## 受入条件
 
-- [ ] 既存 `verify_api.sh` / `verify_mcp.mjs` が異常系（503 / not_found / 契約外version）を正しく区別して報告する。
+- [ ] 既存 `verify_api.sh` / `verify_mcp.ts` が異常系（503 / not_found / 契約外version）を正しく区別して報告する。
 - [ ] 検証スクリプトの異常系を assert する unit テストが存在する。
 - [ ] このルールが `01_Plans/dogfood/README.md` または検証経路の追加規約として記録される。
 
@@ -38,7 +38,7 @@
 
 - 実行コマンド:
   - `verify_api.sh` を503環境（local-devの`/session/context`）で実行し、503が pass 扱いされないこと。
-  - `verify_mcp.mjs` を存在しない docId で実行し、クラッシュせず not_found を報告すること。
+  - `verify_mcp.ts` を存在しない docId で実行し、クラッシュせず not_found を報告すること。
   - 新規検証経路の追加時に本ルールが参照できること。
 
 ## 補足
