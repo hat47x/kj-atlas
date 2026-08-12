@@ -125,7 +125,14 @@ if curl -s -o /dev/null -w '%{http_code}' --max-time 2 "$API_BASE/healthz" 2>/de
     bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api.sh" "$API_BASE"
   check "API write path (verify_api_write.sh)" \
     bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_write.sh" "$API_BASE"
-  echo "  INFO: backend reachable — API/MCP checks ran. MCP check requires KJ_ATLAS_MCP_API_BASE_URL (run via npm run verify)."
+  # MCP client path (generative-AI verification). Requires the mcp package's
+  # tsx runtime; a missing/empty doc reports not_found (exit 0, valid signal).
+  if [ -x "$ROOT_DIR/03_Implement/mcp/node_modules/.bin/tsx" ]; then
+    check "MCP client path (verify_mcp.ts)" \
+      bash -c "cd '$ROOT_DIR/03_Implement/mcp' && KJ_ATLAS_MCP_API_BASE_URL='$API_BASE' npm run verify -- ${KJ_ATLAS_MCP_VERIFY_DOC:-doc_phase1_canvas} reviewed-only"
+  else
+    echo "  SKIP: MCP client path — mcp package deps not installed (cd 03_Implement/mcp && npm install)"
+  fi
 else
   echo "  SKIP: API/MCP verification — no backend at $API_BASE (start uvicorn kj_atlas_api.main:app --port 8000 to enable)"
 fi
