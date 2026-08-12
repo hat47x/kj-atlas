@@ -1,7 +1,7 @@
 # Issue: DOGFOOD-08 MCP/外部プロジェクションが Hold/Critique 作業状態を落とす
 
 - Type: Design decision / Product
-- Status: Draft
+- Status: Done
 - Source Issue: DOGFOOD-01（Org-Bパターンの実走行で発見）
 - Priority: P2
 - Owner: Maintainer
@@ -42,9 +42,9 @@ MCPの `get_context_projection` が **Hold/Critique 作業状態を一切出力�
 
 ## 受入条件
 
-- [ ] `ProjectedCard` に `holdState`（および必要なら `critique`）が追加されるか、意図的に除外する判断が記録される。
-- [ ] 追加する場合、SafeMode ON での `critique` 開示可否が `context_bundle_projection.test.ts` で固定される。
-- [ ] MCP 経路で Org-B 相当の AI 協働（保留状態を読んで提案）が可能になる、または非対応であることが明示される。
+- [x] `ProjectedCard` に `holdState`（および必要なら `critique`）が追加されるか、意図的に除外する判断が記録される。— ①（holdState のみ追加）を採択（69c122dc）。critique は SafeMode の「share」境界の一部とみなし、DOGFOOD-05 の案と合わせて別判断（除外判断を記録）。
+- [x] 追加する場合、SafeMode ON での `critique` 開示可否が `context_bundle_projection.test.ts` で固定される。— critique は追加しない①を採択したため該当なし。holdState は構造値（テキスト非含有）として `safeMode:true/false` 双方で出力されることを test で固定。
+- [x] MCP 経路で Org-B 相当の AI 協働（保留状態を読んで提案）が可能になる、または非対応であることが明示される。— `ProjectedCard.holdState` 出力により、AI 伴走者が「何を確定させず残すか」を読める。
 
 ## 検証計画
 
@@ -102,3 +102,9 @@ return {
 - 未レビューカードは現状どおり全constraintで出力されないこと（回帰なし）。
 - holdState 追加で bundleHash が変わるが、既存の「determinism」テストは同一入力での一致を検証しているため影響しない。
 - 反スコアリング語彙（score/rank/confidence/priority）が出力に含まれないことは引き続き満たされる（holdState は該当語彙ではない）。
+
+## 対応記録（2026-08-12）
+
+- **実装（69c122dc）**: `ProjectedCard` に `holdState: "held" | "pending" | "shelved" | null` を追加し、builder の `map` で `card.holdState ?? null` を出力。critique は①採択により含めない（SafeMode との整合設計は DOGFOOD-05 の判断と合わせる）。
+- **テスト**: `context_bundle_projection.test.ts` に「holdState が SafeMode でも出力される」「未レビューカードは従来どおり全constraintで出力されない」を追加。
+- **検証**: frontend 17 tests pass（`context_bundle_projection.test.ts` 含む）＋ MCP suite pass。反スコアリング語彙なしを維持。
