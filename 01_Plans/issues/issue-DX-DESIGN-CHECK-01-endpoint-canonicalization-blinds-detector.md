@@ -110,4 +110,4 @@ if "/" not in stripped or stripped.count("/") <= 1:
 - **実装（案B）**: `check_design_consistency.py` と `check_contract_drift.py` の両方に、`_CONCRETE_ID_RE` の対象を「実ルートセグメント以外」に限定する正規化を適用。`routes/*.py` から実セグメントを抽出し、ケバブケースの実ルート（`refine-card-text` 等）は正規化せず、fixture ID（`e2e-qa-roundtrip` 等）のみ `{param}` 化する。
 - **AC-1 達成**: METHOD込みキーで実装42ルートが全て相異（衝突0件）。`/ai/*` 9本も個別判定される（`test_design_consistency_discrimination.py` / `test_contract_drift_discrimination.py` が XPASS に転じ、un-xfail 済み）。
 - **警告数**: 2のまま（api_endpoints カテゴリ、既知2件: `packs/index.json`・`/import/documents`）。本issue本文の正規化例の参照が一時的に警告を増やしたが、記述を修正して baseline 2 を維持。
-- **残課題（AC-2・AC-4）**: `_is_external_or_wildcard()` が `/bundle` `/bundles:resolve` `/query` を除外する問題（AC-2）は未対応。AC-4（DX-DOC-08 の再検証）は api.md に記載済みルートの網羅確認として追って実施。
+- **残課題（AC-2・AC-4）**: `_is_external_or_wildcard()` が `/bundle` `/bundles:resolve` `/query` を除外する問題（AC-2）は未対応。**AC-2 の計測（2026-08-12）**: スラッシュ数ヒューリスティックを廃すると警告が 2→9 に増える。内訳は bare プレフィックス参照（`PUT /docs` ×2・`POST /ai/`）と issue 本文の参照（`POST /bundle` 等は `/context` プレフィックス欠落の古い記述）。スラッシュ数ヒューリスティックは「コレクション参照・将来参照」の除外に効いており、案C は bare 参照の扱いを別途設計する必要がある。AC-4（DX-DOC-08 の再検証）は追って実施。
