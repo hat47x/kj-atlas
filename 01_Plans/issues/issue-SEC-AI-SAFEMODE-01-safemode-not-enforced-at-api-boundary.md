@@ -100,3 +100,13 @@ SafeMode の未レビュー本文保護は**フロントエンドのみの強制
 - `python -m pytest tests/ -q`（backend 全体回帰）
 - frontend: `npx vitest run` および `npx tsc --noEmit -p .`
 - `python 01_Plans/docs_check.py`
+
+## 実地確認（2026-08-12、読取専用。ADR-0068 Proposed のため未実装）
+
+本issueの主張を HEAD のコードで確認した（変更は加えていない）。
+
+- **AI リクエストモデルに SafeMode パラメータは無い**。`SuggestLayoutRequest`（models.py:1449）/ `SuggestMergesRequest`（models.py:1467）等に `safeMode` なし。
+- **プロンプトへの本文投入は無条件**。`routes/ai.py` のカード行構築（`id/text/x/y`）に `textReviewed` 分岐なし。`test_ai_prompt.py::test_build_prompt_includes_critique_constraints_and_context` は `'text="alpha"'` と `'critique="too close"'` がプロンプトに含まれることを**現在の挙動として固定**している。
+- 入力側の SafeMode フィルタを assert するテストは存在しない（backend 941 tests は全て green＝保護の欠如を検知するテストが無い）。
+
+→ 主張どおり **API 直接呼び出しで未レビュー本文が外部LLMへ送出される**。対処は ADR-0068 採択待ち（本issue冒頭の「着手しない」条件に従い未実施）。
