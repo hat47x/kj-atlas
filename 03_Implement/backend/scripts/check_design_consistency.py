@@ -106,8 +106,15 @@ for doc_path in all_md_files:
 _PARAM_TOKEN_RE = re.compile(r"\{[a-zA-Z_][a-zA-Z0-9_]*\}")
 
 
+def _strip_api_prefix(path: str) -> str:
+    """Drop the /api proxy prefix used by the frontend's API_BASE convention."""
+    if path.startswith("/api/"):
+        return path[len("/api"):]
+    return path
+
+
 def _endpoint_segments(path: str) -> list[str]:
-    return [segment for segment in path.strip("/").split("/") if segment]
+    return [segment for segment in _strip_api_prefix(path).strip("/").split("/") if segment]
 
 
 def endpoint_matches_documented(referenced: str, documented: str) -> bool:
@@ -150,6 +157,11 @@ EXTERNAL_ENDPOINT_PREFIXES = (
     "/oauth/",
     "/.well-known/",
     "/saml",
+    # Bundled public-pack assets served by the frontend origin, not the backend
+    # API. The client coverage contract in api/client.test.ts already treats
+    # these as a separate category for the same reason: they address no
+    # tenant-scoped resource and never reach the backend.
+    "/packs/",
 )
 WILDCARD_ENDPOINT_PATTERNS = ("/*", "/")  # trailing wildcard or bare prefix
 

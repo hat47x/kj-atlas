@@ -12,6 +12,8 @@ kj-atlas を使った kj-atlas 開発プロセスの管理。ADR-0042（ドッ�
 | `doc_kj_atlas_dogfood_r4.json` | R4 構想: 開発プロセスの理想像 | カード化完了 + 理想状態の達成状況反映 |
 | `doc_kj_atlas_dogfood_r5.json` | R5 具体策: 短期・中期・長期の3段階実行計画 | カード化完了 + 全期間の実行状況反映 |
 | `doc_kj_atlas_dogfood_r6.json` | R6 手順: 4フェーズ14ステップの依存関係付き実行計画 | カード化完了 + 14ステップ実行状況反映 |
+| `adopting-org-patterns.md` | 導入組織4種×利用経路×検証軸のパターン多様化分析（+MCP価値ギャップの実測） | 2026-08-12作成・DOGFOOD-05起票 |
+| `dogfood-analysis-synthesis-2026-08-12.md` | DOGFOOD-02〜06の横断分析（共通根本原因: 検証経路の正常系偏重） | 2026-08-12作成・DOGFOOD-06起票 |
 
 ## 使い方
 
@@ -73,6 +75,14 @@ R1〜R6の完全サイクルは初期構築として完了した。以後は短�
 
 AGENTS.md §1.3の昇格条件を四半期ごとに評価し、判定結果をADRとして記録する。
 
+### 検証経路の追加規約（DOGFOOD-06、2026-08-12 制定）
+
+Web/API/MCP など検証経路を新規追加・拡張するときは、次の3点を守る（DOGFOOD-03/04 の「異常系未検証」再発防止）。
+
+1. **成功系だけでなく異常系も assert する**。最低限: not_found / 503相当 / 契約外version / 対象なし を検証入力に固定する。
+2. **検証スクリプト自身に unit テストを付ける**（スクリプトのロジックを直接 assert。`verify_mcp.ts` は `src/mcp_verify_result.ts` + `mcp_verify_result.test.ts` で固定済み）。
+3. **検証対象データを「理想状態」だけでなく「実状態」にする**（旧version・未レビューのみ・空DB を含める）。
+
 ## ドッグフーディングで発見された kj-atlas 改善点
 
 | 日付 | 発見 | 対応 |
@@ -88,4 +98,21 @@ AGENTS.md §1.3の昇格条件を四半期ごとに評価し、判定結果をAD
 | 2026-08-11 | コード生成が既存実装を検出せず重複コードを生成 | `generate_from_design_decision.py` 既存実装チェック追加 |
 | 2026-08-11 | 骨格生成成功率の解釈が不正確（完全コード生成と混同） | `codegen_results.md` で骨格生成成功率とロジック生成を分離計上（80%） |
 | 2026-08-12 | L2での三要素チェック実践: FieldworkRequestV1実組み込みを検証し「InquiryJourneyV1整合待ち」と指摘 | AIが自律検証し最終判断を人間へ（L2の動作実証） |
-| 2026-08-12 | Web以外の検証経路が未整備 | `verify_api.sh`（CLI/API・curlベース）+ `verify_mcp.mjs`（MCP・クライアントベース）を追加 |
+| 2026-08-12 | Web以外の検証経路が未整備 | `verify_api.sh`（CLI/API・curlベース）+ `verify_mcp.ts`（MCP・クライアントベース）を追加 |
+| 2026-08-12 | GET /docs/{id}が旧版文書（version≠1）で素の500を返す（GET/PUTの検証経路が非対称、ADR-0058のfail-closed意図は正しいが拒否方法が非対称） | `issue-DOGFOOD-02`起票（三要素分析済み・P1） |
+| 2026-08-12 | verify_mcp.tsがnot_found/error応答（isError=true）をJSON.parseで破壊する（サーバー契約は正しく、クライアント側の仮定が誤り） | `issue-DOGFOOD-03`起票→**修正済み**（isError事前確認・not_foundを区別報告。MCP 49 tests pass） |
+| 2026-08-12 | verify_api.shの`/session/context`チェックが503を「reachable」と判定（local-devでは常に503のため無内容、saas-multitenantでは実障害を隠す） | `issue-DOGFOOD-04`起票→**修正済み**（503をINFO・非reachableとして区別報告） |
+| 2026-08-12 | ドッグフーディングが「自己言及（kj-atlasでkj-atlas）」の単一パターンに偏っていた | `adopting-org-patterns.md`作成（4組織×経路×検証軸のパターン多様化分析） |
+| 2026-08-12 | MCP経路は未レビューカードを一切露出せず、Org-D「AI委譲による初期探索」が支援できない（SEC-CONTEXT-PROJECTION-01のfail-closedと業務価値の衝突） | `adopting-org-patterns.md` §3.5に三要素分析で記録（安全境界は緩和せず適用範囲を明示） |
+| 2026-08-12 | MCPの未レビュー不可視を issue 化し、適用範囲の明示(A)／探索専用経路(B)／現状維持(C)の判断材料を整理 | `issue-DOGFOOD-05`起票（設計判断・P2） |
+| 2026-08-12 | Web初回起動がデフォルト文書`doc_phase1_canvas`を自動ロードし、旧版文書では500エラー画面に（DOGFOOD-02のWeb増幅・allowCreateOnNotFoundは404のみ救済） | `issue-DOGFOOD-02`に実地確認・受入条件追記（P1） |
+| 2026-08-12 | Web経路のOrg-A検証スクリプトを追加（バッチ文書を実UIで開くPlaywright走行） | `03_Implement/frontend/scripts/dogfood_orga_web_20260812.mjs` |
+| 2026-08-12 | DOGFOOD-02〜05の横断分析から、共通根本原因を抽出（正常系偏重・理想状態前提・GET/PUT非対称・適用範囲未明示） | `dogfood-analysis-synthesis-2026-08-12.md`作成 |
+| 2026-08-12 | 検証経路の追加時に異常系をCIで固定するルールの欠如（DOGFOOD-03/04の共通原因） | `issue-DOGFOOD-06`起票（プロセス改善・P2） |
+| 2026-08-12 | `.gitignore` の `result-*`（Nix出力用）が無アンカーのため全階層のファイルを無視し、分析文書が git 管理外になった | `issue-DOGFOOD-07`起票（ルート限定 `/result` `/result-*` へアンカー案）→**修正済み**（`/result` `/result-*` へアンカー・`git check-ignore` で両方向を確認） |
+| 2026-08-12 | DOGFOOD-02（GET raw 500）の修正案を実機検証（`version:2`→A1 422）し、GETをA1契約検証へ通す具体案を issue に明記 | `issue-DOGFOOD-02`に修正案追記（proposal-only・P1） |
+| 2026-08-12 | CLI/API経路の実走行（`verify_api.sh`・実DB`kj_atlas.db`）: 旧版文書 GET が構造化422（DOGFOOD-02修正のe2e確認）、`/session/context` 503をINFO区別（DOGFOOD-04） | `verify_api.sh`実走行 3 pass 0 fail（exit 0）を確認 |
+| 2026-08-12 | `saas-multitenant` の起動ゲートが fail-fast で機能することを実地確認（必須アダプタ欠損→起動拒否） | `adopting-org-patterns.md` §4 に実地確認を記録 |
+| 2026-08-12 | Org-Bパターン（Hold/Critique週跨ぎ）を実走行。API保存→再読込で作業状態が完全維持（held2/shelved1/critiqued2） | `adopting-org-patterns.md` §3.6 に記録 |
+| 2026-08-12 | MCP/外部プロジェクションが Hold/Critique 作業状態をスキーマごと落とす（AI協働の基本情報欠落） | `issue-DOGFOOD-08`起票（三要素分析済み・P2） |
+| 2026-08-12 | DOGFOOD-08 の修正案（`ProjectedCard` へ holdState 追加・critique は SafeMode 判断と分離）を具体化 | `issue-DOGFOOD-08`に修正案追記（proposal-only・反スコアリング語彙との衝突なしを確認） |

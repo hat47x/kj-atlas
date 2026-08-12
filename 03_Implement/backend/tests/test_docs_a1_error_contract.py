@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 
 import pytest
@@ -9,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from kj_atlas_api.db import _normalize_database_url, get_db
 from kj_atlas_api.main import app
-from kj_atlas_api.models import Base
+from kj_atlas_api.models import Base, DocumentRow
 
 
 @pytest.fixture()
@@ -128,6 +129,44 @@ def test_put_document_returns_a1_error_contract_for_critique_schema_mismatch(sql
     assert detail["schemaVersion"] == "1.0.0"
     assert detail["errorEnvelope"]["errorCode"] == "A1_SCHEMA_VERSION_MISMATCH"
     assert detail["errorEnvelope"]["contractId"] == "A1-CRITIQUE-IF"
+    assert detail["errorEnvelope"]["retryable"] is False
+
+
+def test_get_document_returns_a1_error_contract_for_stale_version(
+    sqlite_client: TestClient, tmp_path
+) -> None:
+    # DOGFOOD-02: GET must reject a stored stale-version doc with the same
+    # structured A1 422 that PUT uses, not a raw 500. Replicate the exact
+    # legacy DB state that caused the bug: a DocumentRow whose payload
+    # declares version 2 and that has NO revision projection (pre-revision
+    # era sample, e.g. the 2026-06-20 kj_atlas.db).
+    doc_id = "doc-a1-error-stale-version"
+    payload = _sample_v2_payload(doc_id)
+    payload["version"] = 2
+
+    db_path = tmp_path / "docs_a1_error_contract.sqlite3"
+    engine = create_engine(_normalize_database_url(f"sqlite:///{db_path}"))
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    with session_local() as db:
+        db.add(
+            DocumentRow(
+                tenant_id="local-default",
+                id=doc_id,
+                version=2,
+                updated_at="2026-02-11T00:00:00Z",
+                payload_json=json.dumps(payload),
+            )
+        )
+        db.commit()
+    engine.dispose()
+
+    response = sqlite_client.get(f"/docs/{doc_id}")
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail["schemaVersion"] == "1.0.0"
+    assert detail["errorEnvelope"]["errorCode"] == "A1_REQUIRED_FIELD_MISSING"
+    assert isinstance(detail["errorEnvelope"]["message"], str)
     assert detail["errorEnvelope"]["retryable"] is False
 
 

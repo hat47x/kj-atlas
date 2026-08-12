@@ -13,6 +13,7 @@ notice a design document referencing an endpoint that api.md never documented.
 
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 import pytest
@@ -21,38 +22,51 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPT_PATH = REPO_ROOT / "03_Implement" / "backend" / "scripts" / "check_design_consistency.py"
 
 
+#: Names lifted out of the script for testing. Located by AST node name, so
+#: inserting or reordering definitions in the script does not break this -- an
+#: earlier text-slicing version broke the moment a helper was added between
+#: two of these.
+_WANTED = (
+    "_PARAM_TOKEN_RE",
+    "_strip_api_prefix",
+    "_endpoint_segments",
+    "endpoint_matches_documented",
+)
+
+
 def _load_matcher():
-    """Import endpoint_matches_documented without running the script body.
+    """Load the pure matching helpers without running the script body.
 
-    The script executes its checks at import time, so it is read and the two
-    pure helpers are exec'd in isolation rather than importing the module.
+    The script performs its checks at import time and calls sys.exit, so it
+    cannot simply be imported. Its relevant definitions are selected from the
+    parsed AST by name and compiled on their own.
     """
-    source = SCRIPT_PATH.read_text(encoding="utf-8")
-    namespace: dict[str, object] = {}
-    exec(  # noqa: S102 - executing our own repository script, not external input
-        "import re\n"
-        + _extract_block(source, "_PARAM_TOKEN_RE = ")
-        + _extract_block(source, "def _endpoint_segments")
-        + _extract_block(source, "def endpoint_matches_documented"),
-        namespace,
+    tree = ast.parse(SCRIPT_PATH.read_text(encoding="utf-8"))
+    selected: list[ast.stmt] = [ast.Import(names=[ast.alias(name="re", asname=None)])]
+    found: set[str] = set()
+    for node in tree.body:
+        name = None
+        if isinstance(node, ast.FunctionDef):
+            name = node.name
+        elif isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target = node.targets[0]
+            if isinstance(target, ast.Name):
+                name = target.id
+        if name in _WANTED:
+            selected.append(node)
+            found.add(name)
+
+    missing = set(_WANTED) - found
+    assert not missing, (
+        f"check_design_consistency.py no longer defines {sorted(missing)}. If these were "
+        "renamed, update _WANTED -- do not delete this test, since it is what keeps the "
+        "checker's discriminating power from regressing (DX-DESIGN-CHECK-01)."
     )
+
+    module = ast.fix_missing_locations(ast.Module(body=selected, type_ignores=[]))
+    namespace: dict[str, object] = {}
+    exec(compile(module, str(SCRIPT_PATH), "exec"), namespace)  # noqa: S102 - our own repo script
     return namespace["endpoint_matches_documented"], namespace["_endpoint_segments"]
-
-
-def _extract_block(source: str, marker: str) -> str:
-    """Take from `marker` up to the next top-level definition."""
-    start = source.index(marker)
-    rest = source[start:]
-    lines = rest.splitlines(keepends=True)
-    collected = [lines[0]]
-    for line in lines[1:]:
-        if line and not line[0].isspace() and not line.startswith(")"):
-            if line.startswith(("def ", "class ", "_", "@")) and not marker.startswith(line[:4]):
-                break
-            if line.startswith(("print(", "if ", "for ", "#")):
-                break
-        collected.append(line)
-    return "".join(collected) + "\n\n"
 
 
 ENDPOINT_MATCHES, ENDPOINT_SEGMENTS = _load_matcher()
@@ -114,6 +128,18 @@ def test_concrete_id_still_matches_a_declared_placeholder() -> None:
 def test_different_shapes_do_not_match() -> None:
     assert not ENDPOINT_MATCHES("/docs", "/docs/{docId}")
     assert not ENDPOINT_MATCHES("/docs/{docId}/export-audit", "/docs/{docId}")
+
+
+def test_api_proxy_prefix_is_stripped_before_comparison() -> None:
+    """The frontend's /api proxy prefix must not defeat matching.
+
+    Added on main while this rewrite was in flight; kept here so the structural
+    matcher cannot silently drop it.
+    """
+    assert ENDPOINT_MATCHES("/api/docs/{docId}", "/docs/{docId}")
+    assert ENDPOINT_MATCHES("/api/ai/refine-card-text", "/ai/refine-card-text")
+    # Stripping the prefix must not make distinct endpoints equal.
+    assert not ENDPOINT_MATCHES("/api/ai/refine-card-text", "/ai/check-narrative")
 
 
 def test_single_segment_endpoint_is_in_scope() -> None:

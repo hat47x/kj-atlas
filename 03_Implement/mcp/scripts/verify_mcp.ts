@@ -4,15 +4,22 @@
 // This is the "generative AI uses MCP to verify" path — a standalone MCP
 // client that starts the server over stdio and calls get_context_projection.
 //
-// Usage:
+// Usage (must run under tsx — a .ts script that imports a .ts module and uses
+// TS `as` syntax; plain Node 20 rejects these with ERR_UNKNOWN_FILE_EXTENSION
+// / SyntaxError):
 //   KJ_ATLAS_MCP_API_BASE_URL=http://127.0.0.1:8000 \
-//     node scripts/verify_mcp.mjs [docId] [constraint]
+//     npm run verify -- [docId] [constraint]     # from 03_Implement/mcp
+//   KJ_ATLAS_MCP_API_BASE_URL=http://127.0.0.1:8000 \
+//     npx tsx scripts/verify_mcp.ts [docId] [constraint]   # from this dir
 //
 // Requires a running backend (uvicorn kj_atlas_api.main:app --port 8000)
 // and a document id (default: doc_phase1_canvas).
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+// DOGFOOD-06: shared interpretation logic (unit-tested in
+// src/mcp_verify_result.test.ts) so the abnormal-case handling is locked.
+import { interpretProjectionResult } from "../src/mcp_verify_result.ts";
 
 const docId = process.argv[2] || "doc_phase1_canvas";
 const constraint = process.argv[3] || "reviewed-only";
@@ -48,11 +55,21 @@ try {
     arguments: { docId, constraint, safeMode: true },
   });
 
+  // DOGFOOD-03/06: respect the server's isError contract via the shared,
+  // unit-tested interpreter. On not_found/error the tool returns
+  // { isError: true, text: <plain message> } — never JSON.parsed here.
   const text = result.content?.[0]?.text;
   if (!text) {
     throw new Error("No text content in tool result");
   }
-  const projection = JSON.parse(text);
+  const interpreted = interpretProjectionResult(text, result.isError === true);
+  if (interpreted.outcome !== "ok") {
+    console.log(`  → tool reported ${interpreted.outcome}: ${interpreted.errorMessage?.slice(0, 200)}`);
+    console.log("  → MCP transport is alive, but the target document is not retrievable.");
+    console.log("  → This is a normal not_found/error signal, NOT an MCP path failure.");
+    process.exit(0);
+  }
+  const projection = interpreted.projection as { bundleHash: string; schemaVersion?: string; constraints?: unknown };
   console.log(`  → bundleHash: ${projection.bundleHash}`);
   console.log(`  → schemaVersion: ${projection.schemaVersion ?? "n/a"}`);
   console.log(`  → constraints applied: ${JSON.stringify(projection.constraints ?? "n/a")}`);

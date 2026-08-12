@@ -224,3 +224,21 @@ describe("buildContextProjection: invariants across all constraints", () => {
     }
   });
 });
+
+describe("buildContextProjection: work-state metadata (DOGFOOD-08)", () => {
+  it("projects holdState even in SafeMode (metadata, not text)", async () => {
+    const doc = buildDoc();
+    // Mark c1 as held, c2 as shelved (working states).
+    doc.cards[0] = { ...doc.cards[0], holdState: "held" };
+    doc.cards[1] = { ...doc.cards[1], holdState: "shelved" };
+    const projection = await buildContextProjection({ doc, constraint: "reviewed-only", safeMode: true });
+
+    const byId = new Map(projection.cards.map((c) => [c.id, c]));
+    expect(byId.get("c1")?.holdState).toBe("held");
+    expect(byId.get("c2")?.holdState).toBe("shelved");
+    // c3 is unreviewed → out of scope for reviewed-only (not present).
+    expect(byId.get("c3")).toBeUndefined();
+    // SafeMode still redacts text — holdState is metadata, not content.
+    expect(byId.get("c1")?.redacted).toBe(true);
+  });
+});

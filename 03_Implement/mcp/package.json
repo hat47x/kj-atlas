@@ -10,7 +10,8 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify": "tsx scripts/verify_mcp.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",

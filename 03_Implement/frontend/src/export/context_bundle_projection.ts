@@ -46,6 +46,10 @@ export type ContextProjectionConstraint = (typeof CONTEXT_PROJECTION_CONSTRAINTS
 export type ProjectedCard = {
   id: string;
   claimType: string | null;
+  /** Work-state metadata (DOGFOOD-08). Not text; safe to expose even in
+   * SafeMode — it is part of the structural/working-state projection that
+   * an AI co-worker needs to respect hold/critique without seeing content. */
+  holdState: "held" | "pending" | "shelved" | null;
   /** Exposed only when the card is reviewed AND SafeMode is OFF; otherwise a redaction placeholder. */
   text: string;
   reviewed: boolean;
@@ -169,6 +173,7 @@ export async function buildContextProjection(input: ContextProjectionInput): Pro
       return {
         id: card.id,
         claimType: card.claimType ?? null,
+        holdState: card.holdState ?? null,
         text: projected.text,
         reviewed,
         redacted: projected.redacted,
