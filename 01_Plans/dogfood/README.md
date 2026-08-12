@@ -129,6 +129,7 @@ Web/API/MCP など検証経路を新規追加・拡張するときは、次の3�
 | 2026-08-13 | 島要約（2000）の backend 強制を確認 | 2001文字の島要約 → **422**。主要コンテンツ上限（カード2000・ドキュメント/島タイトル500・島要約2000）の API 強制を全て実機確認（ナラティブ/エビデンスは同期テストで担保） |
 | 2026-08-13 | エビデンス注記（2000）の backend 強制を確認 | 2001文字の注記 → **422**・2000文字 → 200。**DOMAIN-CARD-TEXT-01 の全コンテンツ上限が API 境界で強制されることを実機検証完了** |
 | 2026-08-13 | PUT の id と URL パスの不一致（契約エッジ）を検証 | `PUT /docs/url_id` に `doc.id=mismatch_id` → **400**「Path doc_id and document.id must match」（部分保存なし）。文書の同一性が URL と整合することを保証 |
+| 2026-08-13 | 文書の DELETE（未実装メソッド）の挙動を検証 | `DELETE /docs/{id}` → **405**（文書削除エンドポイントなし・文書は保持）。誤削除の防止が API 境界で保証される |
 | 2026-08-12 | AI ルートの **fail-closed 挙動**（provider=none 時）をライブ検証 | `/ai/refine-card-text` → **構造化503**（`provider_unavailable`・provider/model/trace_id 付き・クラッシュなし）。AI 無効時に安全側で拒否されることを実証 |
 | 2026-08-12 | 非Web検証経路（CLI/API 読/書・MCP）がローカル検証ハーネスに未統合 | `verify_all.sh` check 9 を追加（backend 稼働時のみ実行・不稼働時 SKIP）。API 読取3 + 書込7 + MCP not_found を実走行確認（DOGFOOD-06 規則の適用） |
 | 2026-08-12 | 本番でも `/docs`・`/openapi.json`（全ルート・全ペイロードの偵察面）が無保護で公開（SEC-HEADERS-01） | **修正（案a）**: `enterprise-production`/`saas-multitenant` で無効化・`local-dev`/`evaluation` で維持。実機で prod 起動 OK・/docs と /openapi.json が 404 を確認 |
