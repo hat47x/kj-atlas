@@ -116,6 +116,13 @@ class _Handler(BaseHTTPRequestHandler):
     def log_message(self, *_args) -> None:  # keep the console quiet
         return
 
+    def do_GET(self) -> None:
+        # Health probe. The unified OpenAI-compatible adapter answers GET with 200,
+        # and CI's connectivity check (plus the readiness probes in the LLM test
+        # modules) rely on that. Mirror it so the mock and the adapter are
+        # interchangeable on the same port.
+        self._send(200, {"status": "ok", "type": "mock-local-llm", "model": "mock"})
+
     def do_POST(self) -> None:
         if self.path.rstrip("/") != "/generate":
             self._send(404, {"error": "not found"})
