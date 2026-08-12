@@ -110,3 +110,10 @@ SafeMode の未レビュー本文保護は**フロントエンドのみの強制
 - 入力側の SafeMode フィルタを assert するテストは存在しない（backend 941 tests は全て green＝保護の欠如を検知するテストが無い）。
 
 → 主張どおり **API 直接呼び出しで未レビュー本文が外部LLMへ送出される**。対処は ADR-0068 採択待ち（本issue冒頭の「着手しない」条件に従い未実施）。
+
+**追記（波及範囲は本文の記述より広い可能性）**: frontend の AI 提案経路も SafeMode フィルタが無い。
+- `suggestLayout`（`client.ts:447`）は `JSON.stringify({ doc, instruction })` で**全文書を送信**。呼び出し元 `App.tsx` `handleSuggestLayout`（L3071）は `document` をそのまま渡し、`safeMode` による分岐・`textReviewed` フィルタ無し。
+- `generateNarrative` も同形。`safeMode` の useState（App.tsx:1242、既定 true）は outline/export フラグのリセット（L8008）のみに使われ、**AI 機能をゲートしない**。
+- タイトル提案の文脈（`cardTextsForSuggestion`、App.tsx:2379）は `textReviewed !== false` でフィルタするが、**`undefined`（未レビュー）は残る**ため実質保護していない。
+
+→ つまり「未レビュー本文のAI入力保護」は backend にも frontend の提案経路にも**存在しない**。本文「フロントエンドのみの強制」は正確でなく、Web 利用者（SafeMode 既定ON）の未レビュー本文も LLM 提案時に外部へ送出され得る。SafeMode の意図的意味（共有時のみの保護か、AI入力常時禁止か）を含め、ADR-0068 の判断材料として要確認。
