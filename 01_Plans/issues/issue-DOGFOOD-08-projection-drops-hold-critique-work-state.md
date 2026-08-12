@@ -57,3 +57,48 @@ MCPの `get_context_projection` が **Hold/Critique 作業状態を一切出力�
 
 - 発見経路: Org-Bパターン（Hold/Critique週跨ぎ）のAPI保存→再読込は成功（5カード・held2/shelved1/critiqued2・テキスト無傷）。
   その直後に MCP 面を確認したところ本欠落を発見。API（永続化）は価値経路を満たすが、MCP（AI協働）は満たさない。
+
+## 修正案（proposal-only・L2: 最終判断は人間）
+
+**対象: `03_Implement/frontend/src/export/context_bundle_projection.ts` の `ProjectedCard` と builder**
+
+現状の型（`ProjectedCard`）と builder の `map` は `id/claimType/text/reviewed/redacted` のみ。
+
+提案の最小変更（holdState のみ追加、critique は別判断）:
+
+```ts
+export type ProjectedCard = {
+  id: string;
+  claimType: string | null;
+  text: string;
+  reviewed: boolean;
+  redacted: boolean;
+  /** held/pending/shelved を構造値として出力。SafeMode に関わらず開示（テキスト非含有） */
+  holdState: HoldState | null;
+};
+```
+
+builder の `map` に追加:
+```ts
+return {
+  id: card.id,
+  claimType: card.claimType ?? null,
+  text: projected.text,
+  reviewed,
+  redacted: projected.redacted,
+  holdState: card.holdState ?? null,
+};
+```
+
+**理由（三要素）**:
+- holdState は列挙型（held/pending/shelved）の**構造値**で、テキスト・主観メモを含まない。SafeMode が保護する対象
+  （カード本文）とは性質が異なるため、`safeMode:true` でも開示してよい（安全境界の緩和ではなく、非秘密構造値の追加）。
+- critique（主観メモ）は SafeMode の「share」境界の一部とみなすべき。追加する場合は `text` と同じ
+  `projectCardText` の分岐（reviewed AND safeMode OFF のときのみ実値）を適用し、`redacted` 相当の扱いを別途設計する。
+  本提案では critique は含めない（DOGFOOD-05 の案A/B/C と合わせて判断）。
+
+**テスト追加（`context_bundle_projection.test.ts`）**:
+- fixture のカードに `holdState` を付与し、`safeMode:true` / `false` 双方で `holdState` が保持されること。
+- 未レビューカードは現状どおり全constraintで出力されないこと（回帰なし）。
+- holdState 追加で bundleHash が変わるが、既存の「determinism」テストは同一入力での一致を検証しているため影響しない。
+- 反スコアリング語彙（score/rank/confidence/priority）が出力に含まれないことは引き続き満たされる（holdState は該当語彙ではない）。
