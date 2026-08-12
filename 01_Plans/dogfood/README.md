@@ -121,6 +121,7 @@ Web/API/MCP など検証経路を新規追加・拡張するときは、次の3�
 | 2026-08-12 | CLI/API経路の実走行（`verify_api.sh`・実DB`kj_atlas.db`）: 旧版文書 GET が構造化422（DOGFOOD-02修正のe2e確認）、`/session/context` 503をINFO区別（DOGFOOD-04） | `verify_api.sh`実走行 3 pass 0 fail（exit 0）を確認 |
 | 2026-08-12 | API書込経路の検証スクリプトが無く、admin の「自前スクリプトで文書を作る」経路が未検証 | `verify_api_write.sh` 追加（PUT /docs/{id} 作成＋GET 読戻しの往復）。実走行 4 pass 0 fail（作成200・読戻し・title/card件数往復） |
 | 2026-08-12 | 書込経路の **UPDATE ライフサイクル**（PUT 変更→GET 反映）が未検証 | `verify_api_write.sh` を create→read→**update→read** の7チェックへ拡張。実走行 7 pass 0 fail（更新反映・3カード化を確認） |
+| 2026-08-12 | コンテンツ上限（DOMAIN-CARD-TEXT-01: カード本文2000文字）の**実API 強制**をライブ検証 | 2001文字のカード本文を PUT → **422**（`String should have at most 2000 characters`・構造化 A1 エラー）。上限が API 境界で強制されることを実証 |
 | 2026-08-12 | MCP 検証経路がカード作業状態（holdState）を表示せず、生成AIが保留状態を読めない | `verify_mcp.ts` に holdState/counts 表示を追加。Hold/Critique文書（held2/shelved1）を実走行し `cards: 3 (held:2, pending:0, shelved:1)`・SafeModeでも holdState 投影を確認（DOGFOOD-08 の e2e 検証） |
 | 2026-08-12 | 生成AIがMCPサーバへ接続するためのクライアント設定例が無い（「準備」の不足） | `03_Implement/mcp/README.md` に「Connecting a generative-AI MCP client」節を追加（stdio 設定例＋AI向け注意: 未レビュー非表示・holdState・HTTP/OAuth） |
 | 2026-08-12 | MCP HTTP トランスポートのフルセッション（initialize→tools/list→tools/call）を検証したところ、2番目以降のリクエストが500（statelessモードで単一transportを再利用していた） | **修正**: `http_server.ts` を「リクエスト毎に fresh server+transport」へ変更（SDK要件）。`http_server.test.ts` にフルセッションe2eを追加（MCP 56 tests pass）。リモート生成AIが HTTP 経由でフルセッション可能に |
