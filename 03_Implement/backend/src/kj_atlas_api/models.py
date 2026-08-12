@@ -15,6 +15,10 @@ RELATION_SUMMARY_TEXT_MAX_LENGTH = 4000
 # aligns with RefineCardTextRequest.cardText (2000). Narrative.text is large
 # to allow verbatim minutes.
 CARD_TEXT_MAX_LENGTH = 2000
+# DOMAIN-CARD-TEXT-01 sync: the frontend validate_doc.ts bounds the document
+# title to 500; the backend was unbounded (verified 2026-08-13 — a 501-char
+# title was accepted with 200). Bound it here to keep the contract aligned.
+DOCUMENT_TITLE_MAX_LENGTH = 500
 ISLAND_TITLE_MAX_LENGTH = 500
 ISLAND_SUMMARY_MAX_LENGTH = 2000
 NARRATIVE_TITLE_MAX_LENGTH = 500
@@ -1404,7 +1408,7 @@ class ContradictionSignalDecision(BaseModel):
 class DocumentV1(BaseModel):
     version: Literal[1]
     id: str
-    title: str | None = None
+    title: str | None = Field(default=None, max_length=DOCUMENT_TITLE_MAX_LENGTH)
     createdAt: datetime
     updatedAt: datetime
     transform: Transform

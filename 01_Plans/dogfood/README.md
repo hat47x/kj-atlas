@@ -124,6 +124,7 @@ Web/API/MCP など検証経路を新規追加・拡張するときは、次の3�
 | 2026-08-12 | コンテンツ上限（DOMAIN-CARD-TEXT-01: カード本文2000文字）の**実API 強制**をライブ検証 | 2001文字のカード本文を PUT → **422**（`String should have at most 2000 characters`・構造化 A1 エラー）。上限が API 境界で強制されることを実証 |
 | 2026-08-13 | **JIT provisioning の濫用を実証**（無認証GETの未知ヘッダーでユーザー行自動作成）→ **既定値を fail-closed（false）に変更** | `KJ_ATLAS_ALLOW_JIT_PROVISIONING` 既定 `false`（SEC-RATE-LIMIT-01）。未知ユーザー→403・フルスイート 981 pass（JIT=false）・依存テストを既定非依存化・ドキュメント同期 |
 | 2026-08-13 | API の楽観的並行制御（ETag/If-Match）を実機検証 | 正しい If-Match → 200・stale If-Match → **409**（競合検出）。複数利用者の同時保存競合が安全に拒否されることを実証 |
+| 2026-08-13 | **ドキュメントタイトルの上限同期ギャップを検出**（DOMAIN-CARD-TEXT-01） | 501文字タイトルが PUT で **200（無界）** を実測。frontend は 500 上限・backend は無界だった。**backend に `DOCUMENT_TITLE_MAX_LENGTH=500` を追加**し、同期テストの対象にも追加（501→422・500→200 を実機確認） |
 | 2026-08-12 | AI ルートの **fail-closed 挙動**（provider=none 時）をライブ検証 | `/ai/refine-card-text` → **構造化503**（`provider_unavailable`・provider/model/trace_id 付き・クラッシュなし）。AI 無効時に安全側で拒否されることを実証 |
 | 2026-08-12 | 非Web検証経路（CLI/API 読/書・MCP）がローカル検証ハーネスに未統合 | `verify_all.sh` check 9 を追加（backend 稼働時のみ実行・不稼働時 SKIP）。API 読取3 + 書込7 + MCP not_found を実走行確認（DOGFOOD-06 規則の適用） |
 | 2026-08-12 | 本番でも `/docs`・`/openapi.json`（全ルート・全ペイロードの偵察面）が無保護で公開（SEC-HEADERS-01） | **修正（案a）**: `enterprise-production`/`saas-multitenant` で無効化・`local-dev`/`evaluation` で維持。実機で prod 起動 OK・/docs と /openapi.json が 404 を確認 |
