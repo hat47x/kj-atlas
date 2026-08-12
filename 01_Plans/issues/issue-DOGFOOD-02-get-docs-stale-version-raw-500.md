@@ -66,3 +66,39 @@ API経路の 500 は**Web初回起動のブロッカー**に増幅されるこ�
 
 - 再現環境の `kj_atlas.db` は gitignore 対象のローカル DB であり、2026-06-20 時点の `version: 2` サンプルが残っていた。新しい検証経路が「素の500」を検出できたことは、経路追加の効果の実証でもある。
 - 根本原因は GET/PUT の検証経路の非対称であり、ADR-0058 の fail-closed 意図自体は正しい。この issue は「拒否方法の非対称」の解消を求める。
+
+## 修正案（proposal-only・L2: 最終判断は人間）
+
+**対象1: backend GET 経路**（`03_Implement/backend/src/kj_atlas_api/routes/docs.py` `get_document` 末尾）
+
+現状:
+```python
+return document_payload_adapter.validate_python(payload)  # ValidationError → 素の500
+```
+
+提案: PUT と同じ A1 契約検証へ通す（`_validate_document_payload_with_a1_contract` は既に PUT で使用）。
+```python
+return _validate_document_payload_with_a1_contract(payload)  # 版不一致 → 構造化 A1 422
+```
+
+これにより GET も PUT と同じ A1 契約（422）を返し、pydantic スタックトレースが 500 から漏れなくなる。
+
+**検証済みの挙動（2026-08-12 確認）**: `version: 2` ペイロードを `_validate_document_payload_with_a1_contract` に通すと
+`HTTP 422`・`errorCode=A1_REQUIRED_FIELD_MISSING`・`message="Input should be 1"` を返す（素の 500 ではなくなる）。
+
+**留意点**: errorCode は汎用の `A1_REQUIRED_FIELD_MISSING` になる。これは `version` リテラル不一致が
+A1 の `schemaVersion`/`critiqueInputs`/`reviewAttribution` マッピングに該当しないためで、
+「版不一致」を明示する専用コードではない。fail-closed・構造化・トレース非漏洩の目的は達成されるが、
+errorCode を `A1_SCHEMA_VERSION_MISMATCH` 相当へ寄せる（`version` 不一致を明示的にマッピング）のは任意の改善。
+
+**対象2: frontend 起動時ロードの回復**（`03_Implement/frontend/src/App.tsx` `loadDocument` catch 節）
+
+現状: `allowCreateOnNotFound` は 404 のみ救済。A1 422 は `formatLoadDocumentFailure` でエラー画面になる。
+
+提案: A1 契約エラー（422 / `A1_SCHEMA_VERSION_MISMATCH`）を「文書が現行契約で読めない」既知状態として扱い、
+「サンプルを開く」への明示的な回復導線を提示する（404 と同列の分岐を追加するか、専用メッセージ＋既存のサンプル導線）。
+
+**対象3: 検証の固定**
+
+- backend: GET が `version: 2` 文書に対して 422（A1）を返す unit テストを追加。
+- `verify_api.sh`: 旧版文書投入環境で `/docs/{id}` が「500でない・構造化4xx」であることを assert（DOGFOOD-06 の異常系ルール適用）。
