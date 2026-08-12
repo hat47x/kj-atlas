@@ -2282,6 +2282,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           }
           if (error instanceof ApiError && error.status === 404) {
             setStatusMessage(t("app.status.document_not_found_recovery", { docId }));
+          } else if (error instanceof ApiError && error.status === 422) {
+            // DOGFOOD-02: a stored doc that fails the A1 contract (e.g. an
+            // older version) is a known state, not a server failure. Guide
+            // the user to a recovery path (built-in sample / another doc)
+            // instead of the generic load-failed message.
+            setStatusMessage(t("app.status.document_stale_version_recovery", { docId }));
           } else {
             setStatusMessage(formatLoadDocumentFailure(error));
           }
