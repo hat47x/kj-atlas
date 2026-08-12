@@ -33,7 +33,7 @@
 
 ## 判断支援（2026-08-12・L2 分析。最終判断は人間）
 
-- **方式推奨: cursor方式**（`DocumentRow.id` をカーソルに）。offset/limit は deep-offset で DB 負荷が線形に増えるのに対し、`id` は主キーで O(log n)。`GET /tenant-admin/document-access?cursor=<last_id>&limit=100` の形。
+- **方式推奨: cursor方式**（`DocumentRow.id` をカーソルに）。offset/limit は deep-offset で DB 負荷が線形に増えるのに対し、`id` は主キーで O(log n)。`/tenant-admin/document-access` に `cursor`（前ページ末尾の `id`）と `limit` のクエリを追加する形。
 - **デフォルト/最大: limit 100 / 最大 500**。単一レスポンスのサイズ上限（ペイロード抑制）を担保。
 - レスポンスに `nextCursor`（次ページの `last_id`）を返し、クライアントはこれを渡す。レスポンス件数が limit 未満なら終端。
 - 既存 `GET /docs` 一覧系に pagination 規約が無いため、**本エンドポイントが初の規約**になる（模倣元なし）。規約化したら兄弟エンドポイントへ横展開する。
