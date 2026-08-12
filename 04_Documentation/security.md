@@ -185,6 +185,10 @@ export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/d
 
 誰が判断するか不明な場合は、ログ共有を止めて [operations.md](operations.md) の停止条件に従います。
 
+### アプリケーションログの PII 方針（SEC-LLM-AUDIT-01 AC-5）
+
+アプリケーションログも監査イベントと同じ PII 最小化方針に従います。**主体識別子（`subject`）・外部テナント参照（`external_tenant_ref`）などの IdP 由来の生値をログに含めません。** 認証エッジ（`trusted_auth_edge.py`）は `provider.id` / `issuer` のみを記録し、`subject` の生値は記録していません（本方針の遵守例）。不具合診断で識別子が必要な場合は、ハッシュ化した値または最小化した断片のみを扱います。
+
 ## 保持してよい情報、避ける情報
 
 | 区分 | 例 | 方針 |

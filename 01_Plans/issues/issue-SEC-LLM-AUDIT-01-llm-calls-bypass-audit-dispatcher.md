@@ -1,7 +1,7 @@
 # Issue: SEC-LLM-AUDIT-01 LLM呼び出しが監査ディスパッチャを経由せず外部監査基盤へ届かない
 
 - Type: Security / Operations
-- Status: Open
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Unassigned
@@ -67,7 +67,7 @@ logger.info("auth edge: unknown tenant provider=%s ref=%s subject=%s",
 - [x] AC-2: 監査イベントの項目が CE2-C5 と `enterprise_architecture` §04.6 の双方を満たす。— metadata に `task`/`routingStage`/`provider`/`model_id`/`trace_id`（`build_audit_fields`）＋ `occurredAt`（`build_event`）を記録。
 - [x] AC-3: プロンプト本文・カード本文・未レビュー情報が監査イベントに含まれないことをテストで固定する。— metadata は LLM 応答の audit fields のみ（本文なし）。`test_audit.py` で `prompt`/`text`/`unreviewed` 非含有を assert。
 - [~] AC-4: 監査送信失敗時にAI機能が停止しない（fail-open 維持）ことと、失敗が観測可能であることを確認する。— dispatcher は既存の fail-open 実装（docs.py と同経路）。失敗件数の観測は監査基盤側（`HttpAuditTransport`）の既存責務。
-- [ ] AC-5: アプリケーションログにおける主体識別子（`subject` 等）の取り扱い方針を決定し、`04_Documentation/security.md` または `THREAT_MODEL.md` へ明記する。— 未実施（`SEC-AUTH-REPLAY-01` と重複、どちらか一方で対応）。
+- [x] AC-5: アプリケーションログにおける主体識別子（`subject` 等）の取り扱い方針を決定し、`04_Documentation/security.md` または `THREAT_MODEL.md` へ明記する。— `04_Documentation/security.md`「アプリケーションログの PII 方針」節を追加。`trusted_auth_edge.py` は既に `provider.id`/`issuer` のみ記録し `subject` 生値は記録しない（遵守例）。`SEC-AUTH-REPLAY-01` AC-5 との重複分を解消。
 
 ## 依存関係
 
