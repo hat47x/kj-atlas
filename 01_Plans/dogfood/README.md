@@ -152,6 +152,7 @@ Web/API/MCP など検証経路を新規追加・拡張するときは、次の3�
 | 2026-08-12 | api.md 記述先行の未実装エンドポイント（`POST /ai/assess-card-importance`＝AI-ROUTE-01 MMR 計画タスク）が逆方向ドリフトとして存在 | api.md に「**未実装（計画）**」を明記（契約は実装前の正本として維持） |
 | 2026-08-12 | AI ルートのルーティング＋監査の統合検証が無い | `test_ai_eval_pipeline.py::test_ai_route_emits_routing_audit_event` を追加 — /ai 実走行で `llm` 監査イベントが CE2-C5 項目で dispatcher へ出ることを固定（AI-ROUTE-01 AC-6 部分） |
 | 2026-08-12 | W型探究（inquiry-bundles）の保存APIを実走行したところ local-dev で `503 tenant_admin_auth_unavailable`（SaaSセッション必須）・**frontend 呼び出し元なし**・`InquiryJourneyPrototypePanel` はプロトタイプのみ | **業務領域カバレッジ評価**: W型累積探究は「サポートL0: Planned」と整合（api.md §11 どおり）。API単体のdogfood不可。prototype→production 化の要件が判明 |
+| 2026-08-13 | **W型 inquiry 保存 API を single-tenant 化**（G5・backend 側） | `_trusted_session` を `tenant_session_precondition_required` で分岐し、local-dev でも保存・読込・削除が可能に。実機 `POST 204 / GET 200 roundtrip / DELETE 204`。テストフィクスチャを header 由来 identity に改修（6 tests pass）。**frontend 接続（client+UI）は残** |
 | 2026-08-12 | `saas-multitenant` の起動ゲートが fail-fast で機能することを実地確認（必須アダプタ欠損→起動拒否） | `adopting-org-patterns.md` §4 に実地確認を記録 |
 | 2026-08-12 | Org-Bパターン（Hold/Critique週跨ぎ）を実走行。API保存→再読込で作業状態が完全維持（held2/shelved1/critiqued2） | `adopting-org-patterns.md` §3.6 に記録 |
 | 2026-08-12 | MCP/外部プロジェクションが Hold/Critique 作業状態をスキーマごと落とす（AI協働の基本情報欠落） | `issue-DOGFOOD-08`起票（三要素分析済み・P2） |
