@@ -58,7 +58,15 @@ _CONTROL_PLANE_ROUTES = (
 
 
 @contextmanager
-def _client(tmp_path) -> Iterator[TestClient]:
+def _client(tmp_path, *, profile: str | None = None) -> Iterator[TestClient]:
+    """A client over its own migrated SQLite file.
+
+    `profile` overrides `app.state.runtime_profile`. It must be applied *after*
+    the client starts: `main.py`'s lifespan assigns that attribute from settings
+    on startup, so setting it beforehand is silently discarded (two tests here
+    initially passed a profile that never took effect and asserted against the
+    default `local-dev` behaviour instead).
+    """
     engine = create_engine(f"sqlite:///{tmp_path / 'control_plane.sqlite3'}")
     session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     Base.metadata.create_all(bind=engine)
@@ -85,7 +93,14 @@ def _client(tmp_path) -> Iterator[TestClient]:
     app.dependency_overrides[get_db] = _get_test_db
     try:
         with TestClient(app) as client:
-            yield client
+            previous_profile = getattr(app.state, "runtime_profile", None)
+            if profile is not None:
+                app.state.runtime_profile = profile
+            try:
+                yield client
+            finally:
+                if profile is not None:
+                    app.state.runtime_profile = previous_profile
     finally:
         app.dependency_overrides.clear()
         Base.metadata.drop_all(bind=engine)
@@ -145,8 +160,7 @@ def test_rejection_does_not_reveal_whether_a_key_is_configured(tmp_path, monkeyp
         wrong = client.post(path, json=payload, headers={ADMIN_API_KEY_HEADER: "wrong"})
 
     monkeypatch.setattr(settings, "admin_api_key", None)
-    monkeypatch.setattr(app.state, "runtime_profile", "enterprise-production")
-    with _client(tmp_path) as client:
+    with _client(tmp_path, profile="enterprise-production") as client:
         unconfigured = client.post(path, json=payload, headers={ADMIN_API_KEY_HEADER: "wrong"})
 
     assert wrong.status_code == unconfigured.status_code == 401
@@ -175,9 +189,8 @@ def test_control_plane_is_reachable_on_saas_profile(tmp_path, monkeypatch) -> No
     startup warning instructed the operator to call that same endpoint.
     """
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
-    monkeypatch.setattr(app.state, "runtime_profile", "saas-multitenant")
     path, payload = _CONTROL_PLANE_ROUTES[1]
-    with _client(tmp_path) as client:
+    with _client(tmp_path, profile="saas-multitenant") as client:
         resp = client.post(path, json=payload, headers={ADMIN_API_KEY_HEADER: _ADMIN_KEY})
     assert resp.status_code != 404, resp.text
     assert resp.status_code < 400, resp.text
@@ -185,9 +198,8 @@ def test_control_plane_is_reachable_on_saas_profile(tmp_path, monkeypatch) -> No
 
 def test_unknown_runtime_profile_does_not_fall_through_to_open(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(settings, "admin_api_key", None)
-    monkeypatch.setattr(app.state, "runtime_profile", "not-a-profile")
     path, payload = _CONTROL_PLANE_ROUTES[1]
-    with _client(tmp_path) as client:
+    with _client(tmp_path, profile="not-a-profile") as client:
         resp = client.post(path, json=payload)
     assert resp.status_code == 503, resp.text
     assert resp.json()["detail"]["code"] == "runtime_policy_unavailable"
@@ -196,9 +208,8 @@ def test_unknown_runtime_profile_does_not_fall_through_to_open(tmp_path, monkeyp
 def test_local_dev_stays_open_when_unconfigured(tmp_path, monkeypatch) -> None:
     """Zero-configuration local use must not regress."""
     monkeypatch.setattr(settings, "admin_api_key", None)
-    monkeypatch.setattr(app.state, "runtime_profile", "local-dev")
     path, payload = _CONTROL_PLANE_ROUTES[1]
-    with _client(tmp_path) as client:
+    with _client(tmp_path, profile="local-dev") as client:
         resp = client.post(path, json=payload)
     assert resp.status_code < 400, resp.text
 

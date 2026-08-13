@@ -564,6 +564,11 @@ def test_docs_endpoints_disabled_on_production_profiles() -> None:
                 **os.environ,
                 "KJ_ATLAS_RUNTIME_PROFILE": profile,
                 "KJ_ATLAS_LLM_PROVIDER": "none",
+                # ADR-0072 D3=A: production profiles refuse to start without an
+                # authentication means. This test is about docs/openapi exposure,
+                # so satisfy the requirement instead of relaxing it.
+                "KJ_ATLAS_ADMIN_API_KEY": "admin-key",
+                "KJ_ATLAS_API_KEY": "business-key",
             },
             timeout=30,
         )
