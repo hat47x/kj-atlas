@@ -450,3 +450,87 @@ def test_all_rls_protected_document_tables_fail_closed_across_pool_reuse(
             db.rollback()
     finally:
         _cleanup(admin_engine=admin_engine, tenant_ids=tenant_ids)
+
+
+@pytest.mark.postgres
+def test_identical_doc_id_across_tenants_stays_isolated_under_rls(
+    postgres_rls_engines: tuple[Engine, Engine],
+) -> None:
+    """SAAS-TENANT-01 AC-10 names this scenario explicitly: two tenants each
+    holding a document under the same `id`. The test above always scopes its
+    queries by `tenant_id` in addition to `id`/`doc_id`, so it cannot tell
+    RLS-enforced isolation apart from the query's own WHERE clause doing the
+    filtering. This test omits `tenant_id` from every query and write below,
+    so only the database's row-level security policy - not application code
+    remembering to filter - can be what keeps the two tenants' same-`id`
+    rows apart.
+    """
+    admin_engine, runtime_engine = postgres_rls_engines
+    suffix = uuid4().hex
+    tenant_ids = (f"rls-shared-a-{suffix}", f"rls-shared-b-{suffix}")
+    shared_doc_id = f"shared-doc-{suffix}"
+
+    _seed_tenant_documents(
+        admin_engine=admin_engine,
+        runtime_engine=runtime_engine,
+        tenant_ids=tenant_ids,
+        doc_ids=(shared_doc_id, shared_doc_id),
+    )
+    try:
+        for owner_index in (0, 1):
+            owner_tenant_id = tenant_ids[owner_index]
+            with Session(runtime_engine) as db:
+                apply_database_tenant_context(db=db, tenant=_tenant(owner_tenant_id))
+
+                documents = db.scalars(
+                    select(DocumentRow).where(DocumentRow.id == shared_doc_id)
+                ).all()
+                merge_decisions = db.scalars(
+                    select(MergeDecisionLogRow).where(MergeDecisionLogRow.doc_id == shared_doc_id)
+                ).all()
+                metadata = db.scalars(
+                    select(DocumentAccessMetadataRow).where(
+                        DocumentAccessMetadataRow.doc_id == shared_doc_id
+                    )
+                ).all()
+                audit_events = db.scalars(
+                    select(DocumentAccessAdminAuditEventRow).where(
+                        DocumentAccessAdminAuditEventRow.doc_id == shared_doc_id
+                    )
+                ).all()
+                assert [(row.tenant_id, row.id) for row in documents] == [
+                    (owner_tenant_id, shared_doc_id)
+                ]
+                assert [(row.tenant_id, row.doc_id) for row in merge_decisions] == [
+                    (owner_tenant_id, shared_doc_id)
+                ]
+                assert [(row.tenant_id, row.doc_id) for row in metadata] == [
+                    (owner_tenant_id, shared_doc_id)
+                ]
+                assert [(row.tenant_id, row.doc_id) for row in audit_events] == [
+                    (owner_tenant_id, shared_doc_id)
+                ]
+
+                # id-only write, no tenant_id in the WHERE clause: must touch
+                # exactly the caller's own row, never the other tenant's.
+                update_result = db.execute(
+                    update(DocumentRow)
+                    .where(DocumentRow.id == shared_doc_id)
+                    .values(payload_json=f'{{"touchedBy":"{owner_tenant_id}"}}')
+                )
+                assert update_result.rowcount == 1
+                db.commit()
+
+        with Session(runtime_engine) as db:
+            apply_database_tenant_context(db=db, tenant=_tenant(tenant_ids[0]))
+            tenant_a_doc = db.scalar(select(DocumentRow).where(DocumentRow.id == shared_doc_id))
+            assert tenant_a_doc is not None
+            assert tenant_a_doc.payload_json == f'{{"touchedBy":"{tenant_ids[0]}"}}'
+
+        with Session(runtime_engine) as db:
+            apply_database_tenant_context(db=db, tenant=_tenant(tenant_ids[1]))
+            tenant_b_doc = db.scalar(select(DocumentRow).where(DocumentRow.id == shared_doc_id))
+            assert tenant_b_doc is not None
+            assert tenant_b_doc.payload_json == f'{{"touchedBy":"{tenant_ids[1]}"}}'
+    finally:
+        _cleanup(admin_engine=admin_engine, tenant_ids=tenant_ids)
