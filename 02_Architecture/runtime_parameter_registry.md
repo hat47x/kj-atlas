@@ -33,6 +33,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `false` | `false` または `true` | 未認証の未知ヘッダー由来ユーザー自動作成（濫用可能）を防ぐため既定は `false`（SEC-RATE-LIMIT-01・2026-08-13）。`local-dev` / `evaluation` でヘッダー由来ユーザーを使う場合は明示 `true`。本番は `false` 固定推奨。 |
 | `KJ_ATLAS_MAX_DOCUMENT_BYTES` | `20971520`（20 MiB） | 任意の正整数 | DocumentV1 保存ペイロードの UTF-8 バイト上限（SEC-DOC-BOUND-01・2026-08-13）。inquiry bundle の 20 MiB と対称。超えると 413 `document_too_large`。 |
 | `KJ_ATLAS_MAX_DOCUMENT_CARDS` | `10000` | 任意の正整数 | DocumentV1 のカード件数上限（SEC-DOC-BOUND-01・2026-08-13）。バイト上限の二次防御（小さいカード本文で 20 MiB 未満に収まる病態的件数を抑止）。超えると 413 `document_too_many_cards`。 |
+| `KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT` | `false` | `false` または `true` | SEC-AI-SAFEMODE-01（ADR-0068 D1=C）の緩和ゲート。`true` のときのみ、AI リクエストの `allowUnreviewedText: true`（未レビュー本文の送出許可）が有効になる。既定 `false` は fail-closed（未レビュー本文は常に 422 で拒否）。 |
 | `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | `read_only` または `deny` | 障害時の安全側挙動を明示的に選べるようにするため。 |
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`（必要時のみ opt-in） | 外部共有の既定無効を維持するため。 |
 

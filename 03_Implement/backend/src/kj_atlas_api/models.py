@@ -1457,6 +1457,9 @@ DocumentPayload = DocumentV1
 class SuggestLayoutRequest(BaseModel):
     doc: DocumentV1
     instruction: str | None = None
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): explicit relaxation request,
+    # optional and fail-closed (None = unreviewed text is rejected).
+    allowUnreviewedText: bool | None = None
 
 
 class SuggestLayoutResponse(BaseModel):
@@ -1475,6 +1478,8 @@ class MergeSuggestion(BaseModel):
 class SuggestMergesRequest(BaseModel):
     doc: DocumentV1
     instruction: str | None = None
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): see SuggestLayoutRequest.
+    allowUnreviewedText: bool | None = None
 
 
 class SuggestMergesResponse(BaseModel):

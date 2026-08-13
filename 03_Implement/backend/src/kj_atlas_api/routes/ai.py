@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from kj_atlas_api.audit import build_event
 from kj_atlas_api.db import get_db
+from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_context import TenantContext
 from kj_atlas_api.llm.provider import (
     LLMRequest,
@@ -134,6 +135,22 @@ def _resolve_audit_tenant(request: Request, db: Session) -> TenantContext:
         user_id=identity.user_id,
         claim=identity.verified_tenant_claim,
     )
+
+
+def _reject_unreviewed_text(document, allow_unreviewed_text: bool | None) -> None:
+    """SEC-AI-SAFEMODE-01 (ADR-0068 D2=B): reject a document with unreviewed
+    card text unless the caller explicitly requests relaxation AND the profile
+    permits it. None (unspecified) is fail-closed — the request is rejected."""
+    if allow_unreviewed_text is True and settings.allow_unreviewed_ai_text:
+        return
+    if any(card.textReviewed is not True for card in document.cards):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "unreviewed_text_not_allowed",
+                "message": "Document contains unreviewed card text, which cannot be sent to the LLM under SafeMode.",
+            },
+        )
 
 
 def _raise_llm_http_error(exc: ProviderDisabledError | ProviderRequestError) -> None:
@@ -645,6 +662,7 @@ def get_provider_status() -> ProviderStatusResponse:
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_layout(payload: SuggestLayoutRequest, request: Request, db: Session = Depends(get_db)) -> SuggestLayoutResponse:
+    _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -681,6 +699,7 @@ def suggest_layout(payload: SuggestLayoutRequest, request: Request, db: Session 
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_merges(payload: SuggestMergesRequest, request: Request, db: Session = Depends(get_db)) -> SuggestMergesResponse:
+    _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -705,6 +724,7 @@ def suggest_merges(payload: SuggestMergesRequest, request: Request, db: Session 
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_island_summary(payload: SuggestIslandSummaryRequest, request: Request, db: Session = Depends(get_db)) -> SuggestIslandSummaryResponse:
+    _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -743,7 +763,11 @@ def propose_island_summary(
     if get_document_row(db, tenant=tenant, doc_id=payload.doc.id) is None:
         raise HTTPException(status_code=404, detail="Document not found")
     summary_result = suggest_island_summary(
-        SuggestIslandSummaryRequest(doc=payload.doc, islandId=payload.islandId),
+        SuggestIslandSummaryRequest(
+            doc=payload.doc,
+            islandId=payload.islandId,
+            allowUnreviewedText=payload.allowUnreviewedText,
+        ),
         request,
         db,
     )
@@ -989,6 +1013,7 @@ def record_external_proposal_decision(
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def generate_narrative(payload: GenerateNarrativeRequest, request: Request, db: Session = Depends(get_db)) -> GenerateNarrativeResponse:
+    _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -1013,6 +1038,7 @@ def generate_narrative(payload: GenerateNarrativeRequest, request: Request, db: 
 )
 def check_narrative(payload: CheckNarrativeRequest, request: Request, db: Session = Depends(get_db)) -> CheckNarrativeResponse:
     _validate_check_narrative_input(payload)
+    _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
 
     try:
         llm_response = generate_with_fallback(

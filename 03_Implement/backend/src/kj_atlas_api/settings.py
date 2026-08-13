@@ -410,6 +410,14 @@ class Settings(BaseSettings):
         default=10_000,
         validation_alias="KJ_ATLAS_MAX_DOCUMENT_CARDS",
     )
+    allow_unreviewed_ai_text: bool = Field(
+        # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C): gate the allowUnreviewedText
+        # relaxation. The request may ASK to relax, but it is only honored when
+        # this profile setting is true; otherwise the request's relaxation is
+        # ignored and unreviewed text is still rejected (fail-closed).
+        default=False,
+        validation_alias="KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT",
+    )
     auth_provider_field: str = Field(
         default="x-auth-provider",
         validation_alias="KJ_ATLAS_AUTH_PROVIDER_FIELD",

@@ -15,8 +15,8 @@ def _merge_payload() -> dict:
             "updatedAt": "2026-02-11T00:00:00Z",
             "transform": {"panX": 0, "panY": 0, "zoom": 1},
             "cards": [
-                {"id": "c1", "text": "alpha", "x": 0, "y": 0},
-                {"id": "c2", "text": "beta", "x": 10, "y": 10},
+                {"id": "c1", "text": "alpha", "x": 0, "y": 0, "textReviewed": True},
+                {"id": "c2", "text": "beta", "x": 10, "y": 10, "textReviewed": True},
             ],
             "edges": [{"id": "e1", "fromId": "c1", "toId": "c2", "type": "related"}],
             "islands": [{"id": "i1", "cardIds": ["c1", "c2"]}],
@@ -33,8 +33,8 @@ def _relation_payload() -> dict:
             "updatedAt": "2026-02-11T00:00:00Z",
             "transform": {"panX": 0, "panY": 0, "zoom": 1},
             "cards": [
-                {"id": "c1", "text": "alpha", "x": 0, "y": 0},
-                {"id": "c2", "text": "beta", "x": 10, "y": 10},
+                {"id": "c1", "text": "alpha", "x": 0, "y": 0, "textReviewed": True},
+                {"id": "c2", "text": "beta", "x": 10, "y": 10, "textReviewed": True},
             ],
             "edges": [{"id": "e1", "fromId": "c1", "toId": "c2", "type": "related"}],
             "islands": [

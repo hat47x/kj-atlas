@@ -1,8 +1,8 @@
 # ADR-0068: SafeMode の未レビュー本文保護を API 境界で強制する
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-09
-- Deciders: Maintainer（本ADRは提案。採択判断は保守者が行う）
+- Deciders: Maintainer（仮承認 2026-08-13。ドッグフーディングループの仮承認方針に基づく。否認・補正可）
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `models.py`, `models_ai.py`, `02_Architecture/api.md`, `02_Architecture/architecture.html`, `02_Architecture/llm_escalation_policy.html`, `03_Implement/frontend/src/api/client.ts`
 
 ## Context

@@ -43,6 +43,8 @@ class CheckNarrativeRequest(BaseModel):
     doc: DocumentV1
     narrativeText: str = Field(min_length=1)
     basedOnReadingOrder: list[str] | None = None
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
 
 
 class CheckNarrativeResponse(BaseModel):
@@ -56,6 +58,8 @@ class GenerateNarrativeRequest(BaseModel):
 
     doc: DocumentV1
     narrativeTitle: str | None = None
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
 
 
 class GenerateNarrativeResponse(BaseModel):
@@ -71,6 +75,8 @@ class SuggestIslandSummaryRequest(BaseModel):
 
     doc: DocumentV1
     islandId: str = Field(min_length=1)
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
 
 
 class SuggestIslandSummaryResponse(BaseModel):
@@ -150,6 +156,8 @@ class ProposeIslandSummaryRequest(BaseModel):
     doc: DocumentV1
     islandId: str = Field(min_length=1)
     sourceBundleHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
 
 
 class ProposalDecisionAuditRequest(BaseModel):
