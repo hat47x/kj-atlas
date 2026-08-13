@@ -31,7 +31,7 @@ export type AppErrorBoundaryProps = {
   getRecoverySnapshot: () => unknown | null;
   /** Called with the recovered document when the user chooses to recover. */
   onRecover: (doc: unknown) => void;
-  children: ReactNode;
+  children?: ReactNode;
 };
 
 type AppErrorBoundaryState = {

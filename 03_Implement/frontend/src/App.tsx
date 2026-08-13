@@ -2408,7 +2408,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const cardTextsForSuggestion = useMemo(
     () =>
       (document?.cards ?? [])
-        .filter((c) => (c as { textReviewed?: boolean }).textReviewed !== false)
+        // SEC-AI-SAFEMODE-01: only reviewed card text may inform the title
+        // suggestion (previously !== false also kept unreviewed/undefined).
+        .filter((c) => (c as { textReviewed?: boolean }).textReviewed === true)
         .slice(0, 30)
         .map((c) => c.text),
     [document],
@@ -2931,6 +2933,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     if (!document || !selectedIslandId || isSuggestingIslandSummary) {
       return;
     }
+    if (aiBlockedByUnreviewed()) {
+      return;
+    }
 
     const targetIsland = document.islands.find((island) => island.id === selectedIslandId);
     if (!targetIsland) {
@@ -3083,8 +3088,24 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     verifiedTenantSession,
   ]);
 
+  // SEC-AI-SAFEMODE-01 (ADR-0068 D2=B): the backend rejects unreviewed card
+  // text with 422. Proactively block the AI suggestion here (before the call)
+  // and tell the user to review first, so the SPA does not depend on surfacing
+  // the raw 422.
+  const aiBlockedByUnreviewed = useCallback((): boolean => {
+    const unreviewed = (document?.cards ?? []).filter((card) => card.textReviewed !== true).length;
+    if (unreviewed > 0) {
+      setStatusMessage(t("app.status.ai_requires_review", { count: unreviewed }));
+      return true;
+    }
+    return false;
+  }, [document, setStatusMessage, t]);
+
   const handleSuggestLayout = useCallback(async (mode: "suggest" | "resuggest" = "suggest") => {
     if (!document || isSuggesting) {
+      return;
+    }
+    if (aiBlockedByUnreviewed()) {
       return;
     }
     if (mode === "resuggest" && resuggestStopperEnabled) {
@@ -3164,6 +3185,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const handleSuggestMerges = useCallback(async () => {
     if (!document || isSuggestingMerges) {
+      return;
+    }
+    if (aiBlockedByUnreviewed()) {
       return;
     }
 
@@ -7773,6 +7797,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       if (!document || narrativeText.trim().length === 0) {
         return;
       }
+      if (aiBlockedByUnreviewed()) {
+        return;
+      }
 
       setIsCheckingNarrative(true);
       setNarrativeCheckError(null);
@@ -7840,6 +7867,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const handleGenerateNarrativeFromReadingOrder = useCallback(async () => {
     if (!document) {
+      return;
+    }
+    if (aiBlockedByUnreviewed()) {
       return;
     }
 

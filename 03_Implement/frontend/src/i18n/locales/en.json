@@ -435,6 +435,7 @@
   "app.status.save_failed_recovery": "Failed to save document ({detail}). The current content remains on screen. Retry after recovery or export JSON to preserve your changes. Remove API keys and tokens before sharing diagnostics.",
   "app.status.document_not_found_recovery": "Document {docId} was not found. Check the ID, or reopen it from recent documents if available.",
   "app.status.document_stale_version_recovery": "Document {docId} uses an incompatible (older) document format and cannot be opened in the current version. Open the built-in sample or choose another document.",
+  "app.status.ai_requires_review": "{count} card(s) are not reviewed yet. Review them before using AI suggestions (unreviewed text is never sent to the model).",
   "app.status.document_loading": "Loading document...",
   "app.status.document_reloading": "Reloading document...",
   "app.status.edit.moved_card": "Moved card",

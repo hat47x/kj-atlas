@@ -435,6 +435,7 @@
   "app.status.save_failed_recovery": "ドキュメントを保存できませんでした（{detail}）。内容は画面上に残っています。復旧後に再試行するか、JSONを書き出して保全してください。診断情報を共有する場合は API key や token を除外してください。",
   "app.status.document_not_found_recovery": "ドキュメント {docId} は見つかりませんでした。IDを確認し、必要に応じて最近のドキュメントから開き直してください。",
   "app.status.document_stale_version_recovery": "ドキュメント {docId} は現在の形式と互換性のない（旧版の）文書形式のため開けません。組み込みサンプルを開くか、別のドキュメントを選択してください。",
+  "app.status.ai_requires_review": "{count} 枚のカードが未レビューです。AI 提案を使う前にレビューしてください（未レビュー本文はモデルへ送信されません）。",
   "app.status.document_loading": "ドキュメントを読み込んでいます...",
   "app.status.document_reloading": "ドキュメントを再読み込みしています...",
   "app.status.edit.moved_card": "カードを移動しました",
