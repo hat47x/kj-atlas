@@ -62,6 +62,48 @@ curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 
 > 注意: 標準 Docker Compose はこのキーをホスト環境から pass-through 配送します（ホスト側で未設定の場合はコンテナ内でも未設定のままで、既定の無効状態を維持します。[runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照）。
 
+## 管理面（Control Plane）の保護
+
+管理面（`/admin/provision/**`）は**業務面とは別の資格情報**で保護します。`KJ_ATLAS_API_KEY`（業務面）では到達できません。
+
+この分離は必須です。`POST /admin/provision/identity-providers` は**信頼するJWT発行者とJWKS URIを登録する**エンドポイントであり、ここへ到達できる主体は自分の鍵でIdPを登録し、それに一致するトークンを自作して**任意の利用者・任意のテナントとして認証できます**。文書を読めることと、信頼の起点を書き換えられることを、同じ資格情報で守ってはなりません。
+
+### 二段構成（ADR-0072 D1=A+B）
+
+| 段 | 経路 | 使う場面 |
+| --- | --- | --- |
+| **A** | `KJ_ATLAS_ADMIN_API_KEY` を `X-Admin-Api-Key` ヘッダーで提示 | **ブートストラップ専用**。IdPが1件も登録されていない状態で使える唯一の経路。静的な秘密であり主体を特定しないため、監査には載りません |
+| **B** | 検証済みセッションの `tenant.provision` capability | **通常運用**。主体が特定でき監査に載ります。IdP登録後はこちらを使います |
+
+```bash
+curl -X POST -H "X-Admin-Api-Key: $KJ_ATLAS_ADMIN_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{"issuer":"https://idp.example.com","audience":"kj-atlas","jwksUri":"https://idp.example.com/jwks"}' \
+  http://localhost:8080/api/admin/provision/identity-providers
+```
+
+### 本番相当プロファイルでの必須化（ADR-0072 D3=A）
+
+`enterprise-production` と `saas-multitenant` は、認証手段が未設定なら**起動しません**（`Settings()` 構築時に失敗します）。
+
+- `enterprise-production`: `KJ_ATLAS_ADMIN_API_KEY` と `KJ_ATLAS_API_KEY` の**両方**が必須です。業務面の識別を前段 proxy の header に依存するため、業務面キーが唯一の防御線になります。
+- `saas-multitenant`: `KJ_ATLAS_ADMIN_API_KEY` が必須です。業務面は trusted auth edge の検証済み JWT が担います。
+
+これは `ADR-0062` が外部連携に対して既に採っている「明示選択したのに設定が無ければ起動を止める」方針を、認証そのものへ一貫適用したものです。以前は `enterprise-production` が**既定で完全に無認証のまま起動でき**、構築ミスがそのまま全面公開になりました（`SEC-ADMIN-PLANE-01`）。
+
+### アプリ側の保証と前段委譲の責務境界
+
+上記はいずれも**アプリ側の最低保証**です。企業・行政の運用では、これに加えて管理面をネットワーク層で分離する構成（別 listen port、別ホスト、IAP 配下など）を推奨します。`ADR-0072` は D1=C としてこれを deployment 側の選択と位置づけており、アプリ側の A+B と排他ではありません。**前段で閉じている場合もアプリ側の資格情報は外さないでください。** 前段の設定ミスが直接公開になる状態を作らないためです。
+
+### SaaS でのテナント発行について
+
+`saas-multitenant` でも管理面の API には到達できます（`ADR-0072` D2=A）。ただし**API の到達性と、テナント発行の業務的正当性は別問題です。**
+
+- `enterprise-production`（自己ホスト）: 最初の管理者はそのインスタンスをデプロイした人物であり、サーバへの到達権が所有権を意味します。制御プレーン資格情報による bootstrap でここは閉じます。
+- `saas-multitenant`（共有基盤）: 最初の管理者は「テナントを申し込んだ組織の代表者」であり、これは自明ではありません。組織の実在とドメイン所有の確認が必要で、**静的な資格情報だけでは「申込者が本当にその組織の人か」を担保できません。**
+
+したがって共有基盤としてテナントを発行する運用では、申込・審査・ドメイン所有確認を伴う別工程を前段に置いてください。kj-atlas はその工程を実装しません。制御プレーン資格情報を知る者が任意の組織名でテナントを作れる状態を、正規手順にしないでください。
+
 ## ブラウザ認証トークン
 
 SaaS認証では、短命のaccess tokenを画面の実行中メモリだけに保持します。`localStorage`や`sessionStorage`には保存せず、画面を再読み込みした場合はbrokerで再認証します。SPA用clientではrefresh tokenを発行しないでください。想定外にrefresh tokenを含む応答を受け取った場合、画面はそのtoken応答全体を拒否します。
