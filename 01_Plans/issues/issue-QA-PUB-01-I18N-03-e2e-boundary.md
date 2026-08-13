@@ -326,3 +326,15 @@ Pending-1/2は2026-07-16にMaintainer承認済み。残るB-ENV-01は技術的�
 - 実行環境: WSL Node 20.20.2（`.nvmrc`指定）、`/mnt/d/GIT/kj-atlas`を直接操作（別checkoutへのrsyncなし、`02_Architecture/`・`04_Documentation/`が実在するため環境依存failureが発生しない構成）。
 
 **適用範囲についての限定**: 今回是正したのはカード**位置**（drag & drop）のreadOnly保護のみである。同ソース調査記録（前回バッチ）が個別に指摘したdblclick編集**開始**自体（`onBeginEdit`）の未ゲート状態は、コミット時ゲートで実害が閉じているため対象外のまま維持する。カード以外の要素（island境界、edge等）のdrag操作は本バッチの棚卸し対象に含めていない。
+
+### 追補（同日）: Undo/RedoへのisReadOnly補強（defense-in-depth、実exploit未確認）
+
+上記のドラッグ欠落を見つけた手法（`applyDocumentChange`を経由しない`setHistory`直呼び出しの全数列挙、`App.tsx`の`setHistory(`全17箇所をgrep）を横展開した。ほとんどは既にゲート済み（`applyDocumentChange`経由、または初期ロード系で readOnly と無関係）だったが、`handleUndo`/`handleRedo`（`App.tsx:6566`/`6585`）は、toolbarボタンとcommand-palette項目こそ`disabled={isReadOnly || ...}`で守られているものの、関数自体は`isReadOnly`を一切参照しておらず、Ctrl+Z/Ctrl+Y専用のグローバル`keydown`リスナー（`App.tsx:6624`、依存配列`[canRedo, canUndo, handleRedo, handleUndo]`に`isReadOnly`が無い）もボタンのdisabled状態を経由しない独立した呼び出し経路になっていた。
+
+**ドラッグの事例と違う点（重要）**: 調査の結果、readOnlyセッションでは`history.past`/`.future`が実質的に常に空であることを確認した——ドキュメント読み込み系（`setHistory({past: [], ...})`各所）はreadOnlyと無関係に毎回履歴を空でリセットし、唯一の非ゲート済み変異経路だったカードdragは今回のバッチで塞いだため、他に履歴へ項目を積む経路が見当たらない。したがって`wantsUndo && canUndo`の`canUndo`が`false`のままとなり、**現状のコードでは実際に到達可能な悪用経路を実測で示せなかった**。ドラッグの欠落（`before.x=120→after.x=240`で実測済み）とは確信度が異なる。
+
+**それでも是正した理由**: `SAAS-TENANT-01`の2026-08-13チェックポイント「request-time adapter-missing deny」が採った判断と同じ理由による——「契約がenforcement点からは読み取れないため、どちらかがrefactorされてもlocalには何も落ちない」。`handleUndo`/`handleRedo`がボタンのdisabled状態だけに依存する設計は、将来別の呼び出し経路（新しいショートカット、command palette項目、他コンポーネントからの直接呼び出し等）が追加された時点で無防備になる。`applyDocumentChange`が全mutationに要求している「呼び出し元に関わらずmutationの入口でisReadOnlyを見る」という不変条件を、この2関数にも一致させた。
+
+**変更**: `handleUndo`/`handleRedo`の先頭に`if (isReadOnly) return;`を追加し、`useCallback`依存配列へ`isReadOnly`を追加した。
+
+**検証**: E2Eでの新規追加は行っていない（上記のとおり、現状の到達可能性では「before/afterの差」を実測できないテストは意味のある回帰検知にならないと判断した）。既存のCtrl+Z関連E2E（`island_tidy.spec.ts`、`retention_keyboard_shortcuts.spec.ts`、`shortcut_cheatsheet.spec.ts`、`menu_bar.spec.ts`、計16件）と`npx tsc --noEmit`・`npx vitest run`（239 file/1,435 tests）・`npm run build`を実行し、通常（非readOnly）のundo/redoに回帰がないことを確認した。
