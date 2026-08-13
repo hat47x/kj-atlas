@@ -303,3 +303,26 @@ Pending-1/2は2026-07-16にMaintainer承認済み。残るB-ENV-01は技術的�
 
 ### ガードレール適用結果
 - 製品挙動・SafeMode・公開文書は変更していない（テスト追加のみ）。上記のソース調査で判明したdblclick編集開始自体の未ゲート状態は、テスト対象であるコミット時ゲート（`applyDocumentChange`）とは別の実装詳細であり、本issueのスコープ外として着手していない。
+
+## 第2バッチ 実装記録（2026-08-13）: 安全境界の再棚卸しと、テストのみでは塞げなかった実欠落の是正
+
+前回バッチが3軸のうち最薄と判定した安全境界（readOnly + SafeMode）を再度棚卸しした。`App.tsx`で`isReadOnly`を参照する全箇所（`grep -n "isReadOnly" App.tsx`、約45件）を洗い出し、undo/redo・save・create island・new document等のtoolbar操作はすべて`disabled={isReadOnly || ...}`で個別にゲートされている一方、カードdrag&dropによる位置変更だけがどのゲートも経由していないことを発見した。
+
+**発見した実欠落**: `handleCardMove`（`App.tsx:2530`、pointer moveのたびに呼ばれてカード位置を直接`setHistory`へ書き込む関数）は、他の全mutation（`handleCommitCardText`、`handleCreateIsland`、`applyLayoutOperation`等）が経由する中央ゲート`applyDocumentChange`（`isReadOnly`時に`buildReadOnlyBlockedMessage`を表示し`false`を返す、`App.tsx:2345`）を通らず、`document`・`isPreviewingSuggestion`・deltaゼロの3条件しか見ていなかった。`CanvasShell`への`onCardMove={handleCardMove}`渡しも無条件で、`readingOrderEditMode={!isReadOnly && ...}`や`polygonVertexEditIslandId={!isReadOnly && ...}`のように同コンポーネントの他propが払っている`!isReadOnly`ガードがこの1経路だけ欠けていた。
+
+**なぜ「テスト追加のみ」で閉じなかったか**: 本issueのガードレールは製品挙動変更を禁じるが、これは無関係な機能変更を防ぐためのものであり、まさにこの軸（禁止操作の遮断）が主張している不変条件そのものが破れているケースまでは想定していない。ドラッグはテキスト編集と異なり離散的な「コミット」操作を持たず（pointer move毎に位置を書き込む連続操作）、ブロックメッセージを模した回避策でテストだけ通すことはできても実際の欠落は残る。既存の類似判断（`AppErrorBoundary`のtenant scope欠落、`SAAS-TENANT-01` 2026-08-13チェックポイント参照）と同じく、既存の保護パターン（`applyDocumentChange`ゲート）を1経路だけ迂回していた1行相当の欠落であり、無関係な設計判断を要さないため直接是正した。
+
+**是正内容**: `handleCardMove`の早期returnガードへ`isReadOnly`を追加した（`App.tsx:2532`、`useCallback`依存配列も同期）。ドラッグ開始時点（最初のpointer move）で即座にno-opとなり、`pendingCardDragSnapshotRef`も`lastDraggedCardIdRef`も設定されないため、drag-end側の`commitCardDragSnapshot`（`App.tsx:2624`）も既存の「snapshotなし」no-op経路（ゼロ移動ドラッグと同じ経路）を通る。pointer move毎のメッセージ表示は行わない（連続イベントでの表示スパムを避けるため。カードが一切動かないこと自体が、テキスト編集のブロックメッセージとは別の形の、リアルタイムなフィードバックになる）。
+
+**追加した検証**: `pub_visibility_i18n_readonly_flow.spec.ts`へ`"fixture-backed readOnly blocks card drag repositioning"`を追加した。カードの初期bounding boxを記録し、`page.mouse`でpointer down→move→upのドラッグジェスチャーを実行後、bounding boxが完全に一致すること（x/yとも変化なし）、および成功時にのみ出る`"Moved card" / "カードを移動しました"`メッセージが出現しないことを確認する。
+
+**契約が実際にfail-closedであることの確認（mutation）**: 上記ガード追加を一時的に取り消して同testを実行し、**実際に失敗する**ことを確認した（`before.x=120` → `after.x=240`、ドラッグ量120pxがそのまま位置へ反映され、readOnlyでの保護が無かったことを実測で裏付けた）。ガードを復元して再実行し、6/6 pass（既存5件を含む）へ戻ることを確認した。
+
+**検証結果**:
+- `npx tsc --noEmit`: 0 errors。
+- `npx playwright test e2e/pub_visibility_i18n_readonly_flow.spec.ts e2e/realistic_user_journey_expansion.spec.ts`: 8/8 pass（新規1件＋既存7件、回帰なし）。
+- `npx vitest run`: 239 file / 1,435 tests 全pass（環境依存の既知失敗は今回発生せず）。
+- `npm run build`: pass。
+- 実行環境: WSL Node 20.20.2（`.nvmrc`指定）、`/mnt/d/GIT/kj-atlas`を直接操作（別checkoutへのrsyncなし、`02_Architecture/`・`04_Documentation/`が実在するため環境依存failureが発生しない構成）。
+
+**適用範囲についての限定**: 今回是正したのはカード**位置**（drag & drop）のreadOnly保護のみである。同ソース調査記録（前回バッチ）が個別に指摘したdblclick編集**開始**自体（`onBeginEdit`）の未ゲート状態は、コミット時ゲートで実害が閉じているため対象外のまま維持する。カード以外の要素（island境界、edge等）のdrag操作は本バッチの棚卸し対象に含めていない。
