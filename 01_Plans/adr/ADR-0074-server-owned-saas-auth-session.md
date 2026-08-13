@@ -1,8 +1,8 @@
 # ADR-0074: SaaS active tenantをserver-owned認証sessionへ束縛する
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-11
-- Deciders: Project Maintainer
+- Deciders: Maintainer（承認 2026-08-13。ドッグフーディングループの承認方針に基づく。「Acceptance Gate 回答案」節の4項目を含め、個別確認なしで承認。否認・補正可）
 - Source Issue: `SAAS-TENANT-SESSION-BINDING-01`
 - Scope: `03_Implement/backend/`, `03_Implement/frontend/`, Identity Broker連携、SaaS session persistence
 
@@ -67,6 +67,41 @@
 - **Broker `sid`を直ちに採用**: 現行APIが受けるaccess tokenに標準必須ではなく、Broker固有claim契約を共通安全境界にするため見送る。BFF内部で検証済みlogout相関値として使う余地は残す。
 - **principal単位のままactive tenant列だけ追加**: 別session非干渉を満たさない。
 - **version cookieをsession IDへ昇格**: 現在はserver ownership検証なしに発行され、active tenant正本とも結び付かない。移行時に新規sessionとして再発行する。
+
+## Acceptance Gate 回答（2026-08-13、Maintainer承認済み）
+
+Maintainerの要請により以下4項目への回答案を作成し、個別確認なしで承認された（上記Deciders参照）。本節が「Acceptance Gate」の正式な充足内容である。
+
+### 回答案1: BFFの配置 — kj-atlas backend自身に内蔵する（別gatewayは新設しない）
+
+根拠:
+- `main.py`に`CORSMiddleware`が存在しない。これは現状が同一origin／reverse proxy前提の構成であることを示す。BFFを内蔵すれば、OAuth callback・cookie発行・API呼び出しがすべて同一originのまま維持され、**新規CORS設定が不要**になる。
+- `ADR-0072`でも同種の論点（D1=C「ネットワーク分離gateway」）を「単一プロセス前提の現行構成から乖離する」という理由で見送り、アプリ内認可（D1=A+B）を選んだばかりである。同じ理由がBFFにも当てはまる。
+- 別gatewayを新設すると、デプロイ構成・TLS終端・health check・監視対象が増え、個人OSS・プレリリース段階（`ADR-0039`）が求める複雑性予算に見合わない。
+
+### 回答案2: cookie/CSRF/timeout/鍵管理 — 既存cookie属性を継承し、寿命は提案値として明示する
+
+既存の`tenantSessionVersion` cookie（`active_tenant_session.py:259-265, 336-342`）は既に`httponly=True`、`secure=<local-dev以外でTrue>`、`samesite="strict"`、`max_age=3600`を採用している。新設する認証session cookieもこの属性をそのまま継承することを提案する。
+
+- **domain/path**: `Path=/`。`Domain`属性は付与しない（発行元originに限定し、subdomain間共有は行わない）。
+- **SameSite**: `Strict`（既存踏襲）。BFFが受けるOAuth callbackはBrokerからのGETリダイレクト応答であり、そこでの`Set-Cookie`はSameSite属性の影響を受けない（SameSiteが制限するのは「そのcookieを添えて送るか」であり「受け取れるか」ではない）。したがってStrictのままcallbackを処理できる。
+- **CSRF方式**: session cookieへ束縛したsynchronizer token（非HttpOnlyの別cookieまたはresponse bodyで払い出し、state変更requestではheader経由で送らせて一致検証）を提案する。SameSite=Strictを主防御、token検証を第二防御とする多層防御とする。
+- **絶対/idleタイムアウト（提案値・要確認）**: 絶対session寿命 **12時間**、idle失効 **60分**。既存`tenantSessionVersion`の`max_age=3600`（1時間）とidle 60分は整合する。絶対12時間は「1営業日単位で必ず再認証させる」運用を意図した値であり、コンプライアンス要件次第で調整可能な提案値である。
+- **refresh token保管・暗号鍵管理**: refresh tokenはBFFプロセスの外（browser）へは一切渡さない（本ADR決定1に整合）。DB保存時は対称鍵暗号（AES-GCM等）で暗号化し、鍵はプロセス起動時に既存の`KJ_ATLAS_*`環境変数規約に沿って注入する。鍵ローテーション手順は別途運用issueで定義する（本ADRのスコープ外とする）。
+
+### 回答案3: Brokerごとのlogout連携範囲 — Keycloakのback-channel logoutを優先し、非対応Brokerには既存決定6のフォールバックを適用する
+
+- `ADR-0064` Phase 2が推奨するBroker（Keycloak）はOIDC Back-Channel Logout 1.0に対応しているため、`sid`相当のsession識別子を受け取れる場合はback-channel logout通知経路を実装する。
+- back-channel logout非対応のBrokerでは、本ADR決定6が既に規定する「`issuer + subject`索引からの全session失効」を汎用フォールバックとする（新規提案ではなく、本文の既存決定をそのまま適用する）。
+- Phase 2（実Broker連携）着手までは、mock IdP/SPハーネス（`tests/level2/mock_idp.py`）へback-channel logoutのmock要素を追加し、フロントエンド実装なしに契約だけを先に固定する。
+
+### 回答案4: 既存E2E/CORS/運用手順の移行範囲
+
+回答案1（BFF内蔵）を採る場合、**CORS設定の新規追加は不要**。影響を受ける既存資産は次の3点:
+
+- **SaaS向けE2E**（`playwright.saas.config.ts`、`tenant_session_multitab.spec.ts`等）: 現状は`KJ-Atlas-Tenant-Session-Version`ヘッダーとmock session objectを直接注入している。BFF移行後はOAuth callbackを経由したcookie発行を模擬する経路へ書き換えが必要。
+- **Level 1/2テストハーネス**（`tests/federation/mock_sp.py`、`tests/level2/mock_idp.py`）: 現状はJWTを`X-Kj-Atlas-Authorization`ヘッダーで直接転送する構成（`ADR-0064` D4-4）。BFF移行後は「BFFがtoken交換を代行し、browserにはcookieだけを返す」経路への拡張が必要。
+- **frontend `api/client.ts`**: 現状のBearerヘッダー送信から、cookie送信（`credentials`指定）への切替が必要。tenant session precondition headerの扱い（`KJ-Atlas-Tenant-Session-Version`）自体は維持可能。
 
 ## Traceability
 

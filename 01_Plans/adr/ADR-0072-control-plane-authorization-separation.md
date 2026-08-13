@@ -1,9 +1,9 @@
 # ADR-0072: 管理面（Control Plane）の認可を業務面から分離し、SaaSでも到達可能にする
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-09
 - Renumbered: 2026-08-10（起票時に ADR-0067 を採番したが、同番号が `ADR-0067-three-element-constraint-design-method.md`（2026-08-08、先行）と衝突していた。`docs_check` の DC-ADR-001 の指示どおり、先行分を維持し本ADRを次の未使用番号へ改番した。判断内容は無変更。）
-- Deciders: Maintainer（本ADRは提案。採択判断は保守者が行う）
+- Deciders: Maintainer（承認 2026-08-13。ドッグフーディングループの承認方針に基づく。推奨どおり D1=A+B、D2=A、D3=A を採択。否認・補正可）
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/admin.py`, `main.py`, `settings.py`, `runtime_bootstrap.py`, `02_Architecture/enterprise_architecture.html`, `04_Documentation/security.md`, `THREAT_MODEL.md`
 
 ## Context
