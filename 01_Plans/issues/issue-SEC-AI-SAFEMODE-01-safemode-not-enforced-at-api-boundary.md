@@ -1,7 +1,7 @@
 # Issue: SEC-AI-SAFEMODE-01 SafeModeの未レビュー本文保護がAPI境界で強制されていない
 
 - Type: Security
-- Status: In Progress
+- Status: Done
 - Source Issue: N/A
 - Priority: P0
 - Owner: Unassigned
@@ -89,7 +89,7 @@ SafeMode の未レビュー本文保護は**フロントエンドのみの強制
 - [x] AC-1: SafeMode 有効時に未レビュー本文を含むリクエストが、採択された D2 の挙動（推奨: 422 拒否）で処理されることを、全対象エンドポイントについて integration テストで固定する。— `_reject_unreviewed_text` を6ルート（suggest_layout/suggest_merges/suggest_island_summary/generate_narrative/check_narrative/propose_island_summary）へ配線。`test_ai_safemode.py` で実走行（未レビュー→422）。
 - [x] AC-2: パラメータ未指定のリクエストが安全側（SafeMode ON）に倒れることをテストで固定する。— `allowUnreviewedText=None`（未指定）は fail-closed で拒否（test_ai_safemode.py の default 拒否テスト）。
 - [x] AC-3: 拒否・マスク時の応答に未レビュー本文が含まれないことを確認する。— 422 応答は `unreviewed_text_not_allowed` コード＋固定メッセージのみ（本文非含有）。
-- [~] AC-4: 既存フロントエンドが改修なしで動作する（後方互換）。または必要な改修を同一 PR に含める。— **frontend は現状、全文書（未レビュー含む）を送るため、未レビューカードを含む文書では AI 提案が 422 になる**。frontend 側の「未レビュー本文を除外して送る（または拒否を明示）」改修が別途必要。
+- [x] AC-4: 既存フロントエンドが改修なしで動作する（後方互換）。または必要な改修を同一 PR に含める。— **frontend 側で AI 提案（layout/merges/island-summary/narrative-check/narrative-generate）を未レビューカード存在時に「レビューしてから」メッセージでブロック**（`b8a03df0`）。タイトル提案のカード本文フィルタも `textReviewed === true` に強化。
 - [x] AC-5: `02_Architecture/api.md` のリクエスト契約を実装と同期する。— §2.12 共通条項と `/ai/suggest-layout` の Request に `allowUnreviewedText` と 422 拒否を追記。
 - [x] AC-6: `THREAT_MODEL.md` に「API 直接呼び出しによる SafeMode 迂回」の緩和策を記載する。— LLM 対策節に SafeMode の API 境界強制（ADR-0068）を追記。
 - [x] AC-7: 外部送出ガード（opt-in・allowlist・trusted-HTTP）が変更されていないことを既存テストで確認する。— `test_trusted_http_settings.py` / `test_llm_settings.py` 60 tests pass。SafeMode 追加は外部送出ガードに触れていない（`_reject_unreviewed_text` は prompt 構築前の入力検証のみ）。
