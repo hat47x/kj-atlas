@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/active_tenant_session.py`, `03_Implement/backend/src/kj_atlas_api/saas_auth_state.py`, `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/saas_request_context.py`, `03_Implement/backend/src/kj_atlas_api/routes/session.py`
-- Related ADR/Spec: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`, `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（Proposed）, `02_Architecture/api.md` §10
+- Related ADR/Spec: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`, `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（Accepted 2026-08-13）, `02_Architecture/api.md` §10
 - Expected verification level: `integration`
 
 ## 課題
@@ -60,6 +60,18 @@
 - **Back-Channel Logout未実装**: `/backchannel-logout`相当のendpointと、IdP側からLogout Tokenを能動的に送出する経路が無い。
 - **`sid` claim未発行**: `_issue_jwt`（`mock_idp.py:71-108`）がclaimに`sid`を含まない。Logout Tokenと既存sessionの紐付けができない。
 - **confidential client検証が無い**: `/oauth/token`（`mock_idp.py:368`）は`client_id`のみを見ており、`client_secret`を検証しない。現状はpublic client + PKCE（既存SPA直接方式）を模した設計であり、BFFが持つべきconfidential client契約のテストには使えない。
+
+### Implementation checkpoint 2026-08-13: モックIdPの3点整備（着手前提の充足）
+
+上記3点を`tests/level2/mock_idp.py`へ追加した。いずれもopt-in設計とし、既存の呼び出し元（`test_saas_oauth_login_e2e.py`等、`client_id="mock-client"`を無登録のまま使う）の挙動は変更していない。
+
+- **`sid` claim**: `authorize_approve`が`mock_idp_session` cookie（`login_submit`が発行）を読み、無ければ新規発行して`_pending_codes[code]["sid"]`へ格納する。`token_exchange`はこれを claims へ含めて`_issue_jwt`へ渡す。同一ブラウザ session（cookie）から複数tokenを発行しても`sid`は一致し、別sessionでは一致しないことをtestで固定した。
+- **confidential client検証**: `POST /admin/register-client-secret`で`client_id`ごとに`client_secret`を登録できるようにした。`/oauth/token`は登録済み`client_id`だけ`client_secret`必須（`secrets.compare_digest`で比較、不一致・欠損は`401 invalid_client`）とし、未登録`client_id`（既定の`mock-client`を含む）は従来どおりpublic client + PKCEのまま検証しない。
+- **Back-Channel Logout**: OIDC Back-Channel Logout 1.0準拠のLogout Token（`events`claim必須、`nonce`禁止、`sub`/`sid`のいずれかを含む）を構築する`_issue_logout_token`を追加した。`POST /admin/register-backchannel-logout-uri`で`client_id`ごとの配送先を登録でき、`POST /admin/trigger-backchannel-logout`がLogout Tokenを構築し、配送先が登録済みならhttpxで実際にPOSTする（未登録なら`delivery.attempted=false`を返すのみ）。配送失敗（到達不能URI等）は例外を投げず`delivery.ok=false`＋`error`として返す設計とし、ADR-0074決定6が要求する「back-channel logoutが届かない場合は全session失効へフォールバックする」経路をテスト側で組み立てられるようにした。
+
+**検証**: 新規`tests/test_mock_idp_backchannel_logout.py`12件（sid一貫性・sid分離・confidential client成功/失敗3種・Logout Tokenの`events`/`nonce`/署名検証・配送成功/失敗）を追加し全pass。既存の呼び出し元3ファイル（`test_saas_oauth_login_e2e.py`・`test_saml_broker_jwt_coordinated_flow.py`・`test_auth_federation_level2.py`、計20件）に回帰なし。配送成功のtestは`test_access_control_adapter_contracts.py`と同じ実ローカルHTTPサーバ（`http.server.HTTPServer`+`threading.Thread`）パターンを踏襲した。`ruff check`・`ruff format --check`両方pass。backend全体回帰は別途実行中。
+
+**まだ実装していないもの**: kj-atlas backend側の`/backchannel-logout`受信endpoint（このissue本体のAC-1〜9）、BFF、confidential clientとしての実token交換、cookieベースsession。今回はテスト基盤の整備のみである。
 
 ## 検証計画
 
