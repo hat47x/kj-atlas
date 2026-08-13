@@ -916,3 +916,52 @@ export async function generateNarrative(
 
   return body;
 }
+
+export async function putInquiryBundle(
+  journeyId: string,
+  payload: unknown,
+  options: TenantScopedRequestOptions = {},
+): Promise<void> {
+  // G5 (W型 single-tenant 化): store an opaque W型 inquiry journey. The backend
+  // treats the body as an opaque JSON value; the frontend owns the schema.
+  const response = await fetch(`${API_BASE}/inquiry-bundles/${encodeURIComponent(journeyId)}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...tenantSessionPreconditionHeaders(options),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
+  }
+}
+
+export async function getInquiryBundle(
+  journeyId: string,
+  options: TenantScopedRequestOptions = {},
+): Promise<unknown> {
+  const response = await fetch(`${API_BASE}/inquiry-bundles/${encodeURIComponent(journeyId)}`, {
+    headers: tenantSessionPreconditionHeaders(options),
+  });
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
+  }
+  return (await response.json()) as unknown;
+}
+
+export async function deleteInquiryBundle(
+  journeyId: string,
+  options: TenantScopedRequestOptions = {},
+): Promise<void> {
+  const response = await fetch(`${API_BASE}/inquiry-bundles/${encodeURIComponent(journeyId)}`, {
+    method: "DELETE",
+    headers: tenantSessionPreconditionHeaders(options),
+  });
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
+  }
+}

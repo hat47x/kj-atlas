@@ -20,6 +20,9 @@ import {
   summarizeIslandRelation,
   suggestMerges,
   suggestLayout,
+  putInquiryBundle,
+  getInquiryBundle,
+  deleteInquiryBundle,
 } from "./client";
 import type { DocumentV1 } from "../domain/types";
 import { InvalidTenantSessionContextError } from "./session_context";
@@ -1192,5 +1195,48 @@ describe("PROV-ERROR-01: structured provider error propagation", () => {
     expect(error).toBeInstanceOf(ApiError);
     expect((error as ApiError).message).toBe("narrativeText must not be empty");
     expect((error as ApiError).code).toBeUndefined();
+  });
+});
+
+describe("inquiry-bundle client (G5 W型 single-tenant)", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("putInquiryBundle POSTs the opaque payload to the journey endpoint", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 204 })
+    );
+    const payload = { schemaVersion: "inquiry-journey.v1", rounds: [{ roundId: "r1" }] };
+
+    await putInquiryBundle("journey-1", payload);
+
+    const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("/inquiry-bundles/journey-1");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual(payload);
+  });
+
+  it("getInquiryBundle returns the stored opaque payload", async () => {
+    const stored = { schemaVersion: "inquiry-journey.v1", rounds: [{ roundId: "r1" }] };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(stored), { status: 200, headers: { "Content-Type": "application/json" } })
+    );
+
+    const result = await getInquiryBundle("journey-1");
+
+    expect(result).toEqual(stored);
+  });
+
+  it("deleteInquiryBundle DELETEs the journey endpoint", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 204 })
+    );
+
+    await deleteInquiryBundle("journey-1");
+
+    const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("/inquiry-bundles/journey-1");
+    expect(init.method).toBe("DELETE");
   });
 });
