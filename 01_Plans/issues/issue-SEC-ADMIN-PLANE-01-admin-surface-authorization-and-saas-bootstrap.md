@@ -1,15 +1,17 @@
 # Issue: SEC-ADMIN-PLANE-01 管理APIに業務面と分離された認可がなく、かつSaaSではブートストラップ不能
 
 - Type: Security / Bug
-- Status: Draft
-- Source Issue: TBD
+- Status: In Progress
+- Source Issue: `SAAS-TENANT-AUTHEDGE-01`
 - Priority: P0
-- Owner: Unassigned
+- Owner: Maintainer
 - Scope: `01_Plans/adr/ADR-0072-control-plane-authorization-separation.md`, `03_Implement/backend/src/kj_atlas_api/routes/admin.py`, `03_Implement/backend/src/kj_atlas_api/main.py`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `04_Documentation/security.md`, `04_Documentation/configuration.md`, `THREAT_MODEL.md`, `02_Architecture/enterprise_architecture.html`
 - Related ADR/Spec: `01_Plans/adr/ADR-0072-control-plane-authorization-separation.md`, `01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md`, `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`, `02_Architecture/enterprise_architecture.html`
 - Expected verification level: `integration`
 
-> **本issueは `ADR-0072` の採択を前提とする。** ADR が Proposed の間は着手しないこと。ADR が Rejected の場合、本issueも取り下げる。
+> **2026-08-13: `ADR-0072` は Accepted（D1=A+B の二段 / D2=A / D3=A）。着手可能。**
+>
+> 採択内容と、採択時に加えられた D2 の profile 差の分離（`enterprise-production` は静的 bearer で閉じるが `saas-multitenant` は閉じない）は `ADR-0072`「採択記録（2026-08-13）」を正とする。D3=A（本番相当 profile で認証手段未設定なら `Settings()` 構築時に fail-fast）が、本issueが扱う「`enterprise-production` が既定で完全無認証起動する」欠陥の直接の対策にあたる。
 
 ## 課題
 
@@ -59,7 +61,7 @@ saas-multitenant      -> HTTP 404 {'code': 'strict_provisioning_unavailable', ..
 
 ## 対応方針
 
-`ADR-0072` の D1 / D2 / D3 の決定に従う。ADR の推奨は D1=A+B の二段、D2=A、D3=A だが、**採択された決定を正とする**。
+`ADR-0072` の D1 / D2 / D3 の決定に従う。**2026-08-13 に D1=A+B の二段 / D2=A / D3=A が採択された**（推奨どおり）。加えて D2=A の実装は profile 差で2段に分ける——`enterprise-production` は静的 admin bearer による bootstrap で閉じるが、`saas-multitenant` は「組織の実在確認を伴う別工程」を前提とするため、テナント発行経路は運用手順として閉じたままとし API の到達性のみ D1 の認可で担保する。詳細は `ADR-0072`「採択記録」。
 
 実装時の注意:
 
@@ -69,13 +71,18 @@ saas-multitenant      -> HTTP 404 {'code': 'strict_provisioning_unavailable', ..
 
 ## 受入条件
 
-- [ ] AC-1: `enterprise-production` および `saas-multitenant` は、認証手段が未設定なら起動時に fail-fast する（D3=A 採択時）。または採択された D3 案の挙動をテストで固定する。
-- [ ] AC-2: `/admin/provision/**` が業務API と分離された認可を要求し、業務面の資格情報だけでは到達できないことを integration テストで固定する。
-- [ ] AC-3: `saas-multitenant` で IdP 登録が実行可能な経路が存在し、その手順が `04_Documentation/` に記載されている。手順どおりに空DBから認証成立まで到達できることを検証する。
-- [ ] AC-4: `trusted_saas_runtime.py` の起動時警告が、実際に到達可能な手順を案内している（文言と実装の一致）。
-- [ ] AC-5: 管理面操作が監査証跡に記録される（主体・時刻・対象）。`SEC-LLM-AUDIT-01` と重複しない範囲で、既存 audit dispatcher を用いる。
-- [ ] AC-6: `THREAT_MODEL.md` と `04_Documentation/security.md` に、管理面の保護要件（アプリ側保証と前段委譲の責務境界）を追記する。
-- [ ] AC-7: 越境の negative matrix — 業務面キーで `/admin/provision/*` へ到達不可、他テナントの `tenant-identity-providers` を登録不可 — を integration テストで固定する。
+- [x] AC-1: `enterprise-production` および `saas-multitenant` は、認証手段が未設定なら起動時に fail-fast する（D3=A）。`Settings()` 構築時に `ValueError`。`test_control_plane_authorization.py` で固定。
+- [x] AC-2: `/admin/provision/**` が業務API と分離された認可を要求し、業務面の資格情報だけでは到達できない。3ルート全てについて `X-Api-Key` 提示時に 401 `control_plane_unauthorized` を返すことを固定。
+- [x] AC-3: `saas-multitenant` で IdP 登録が実行可能な経路が存在する（D2=A。旧実装は 404 だった）。手順は `04_Documentation/security.md`「管理面（Control Plane）の保護」に記載。**空DBから認証成立までの通し検証は未実施**（下記「残作業」）。
+- [x] AC-4: `trusted_saas_runtime.py` の起動時警告が、実際に到達可能な手順を案内している。`X-Admin-Api-Key` と `KJ_ATLAS_ADMIN_API_KEY` を明記し、業務面キーが使えないことも記載。文言と実装の一致をテストで固定。
+- [ ] AC-5: 管理面操作の監査証跡（主体・時刻・対象）。**未着手**（下記「残作業」）。
+- [x] AC-6: `THREAT_MODEL.md` と `04_Documentation/security.md` に管理面の保護要件を追記した。アプリ側保証と前段委譲（D1=C）の責務境界、および SaaS でのテナント発行の業務的正当性が範囲外であることを明記。
+- [x] AC-7: 越境の negative matrix を integration テストで固定した — 業務面キーで到達不可、資格情報なしで到達不可、誤った資格情報で到達不可、拒否応答が「未設定」と「誤り」を区別しない、提示値・設定値を反射しない、未知 profile が open へ fall through しない。
+
+## 残作業（本issueを Open のまま残す理由）
+
+- **AC-5（管理面の監査証跡）**: 未着手。既存 audit dispatcher は既定 `noop` で、かつ `view` 相当のイベントは SafeMode 既定で捨てられる（`OPS-OBSERV-01` 参照）。**監査の宛先が存在しない状態で emit を足しても証跡にならない**ため、`DATA-MAINT-06`（監査イベントのローカル永続化、Draft）の方針決定と併せて着手するのが妥当と判断した。ブートストラップ経路（stage A）は静的資格情報のため主体を特定できず、原理的に「誰が」を記録できない点も設計判断を要する。
+- **AC-3 の通し検証**: 空DBから `saas-multitenant` を起動し、制御プレーン資格情報で IdP 登録 → テナント紐付け → 実JWT で認証成立まで到達する E2E は未実施。`QA-E2E-SAAS-01` の範囲と重複するため、そちらへ寄せるか本issueで持つかの判断が要る。
 
 ## 依存関係
 

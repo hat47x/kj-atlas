@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/active_tenant_session.py`, `03_Implement/backend/src/kj_atlas_api/saas_auth_state.py`, `03_Implement/backend/src/kj_atlas_api/main.py`, `04_Documentation/operations.md`
-- Related ADR/Spec: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`, `01_Plans/adr/ADR-0064-saml-oidc-broker-jwt-coordinated-auth-flow.md`, `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（Proposed）
+- Related ADR/Spec: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`, `01_Plans/adr/ADR-0064-saml-oidc-broker-jwt-coordinated-auth-flow.md`, `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（**Accepted 2026-08-13**: 案2 server-owned BFF session）
 - Expected verification level: `integration`
 
 ## 現在の課題
@@ -41,7 +41,7 @@ JWKS cacheはinstanceごとでよい。これはBrokerへの取得負荷には�
 
 ## 依存関係
 
-- `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（採択が前提）
+- `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（**2026-08-13 採択済み**。AC-4〜8 は着手可能）
 - `01_Plans/issues/issue-SAAS-TENANT-SESSION-BINDING-01-principal-keyed-session-state.md`（認証session正本の実装）
 
 ## 非目標

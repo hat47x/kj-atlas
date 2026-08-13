@@ -2,7 +2,8 @@
 
 - Status: Accepted
 - Date: 2026-08-11
-- Deciders: Maintainer（承認 2026-08-13。ドッグフーディングループの承認方針に基づく。「Acceptance Gate 回答案」節の4項目を含め、個別確認なしで承認。否認・補正可）
+- Accepted: 2026-08-13（**案2 server-owned BFF session を採用**。保守者による明示承認。仮承認ではない）
+- Deciders: Maintainer（承認 2026-08-13。ドッグフーディングループの承認方針に基づく。「Acceptance Gate 回答案」節の4項目を含め、個別確認なしで承認）
 - Source Issue: `SAAS-TENANT-SESSION-BINDING-01`
 - Scope: `03_Implement/backend/`, `03_Implement/frontend/`, Identity Broker連携、SaaS session persistence
 
@@ -20,9 +21,33 @@
 
 参考仕様: OpenID Connect Back-Channel Logout 1.0は`sid`をissuer内で一意なUser Agent/deviceのopaque session IDとして定義する。OAuth 2.0 for Browser-Based Applicationsの現行IETF draftはBFFを、browserからtokenを隠し全API requestをbackend経由にする最も強い構成として整理している。
 
-## Proposed Decision
+## 採択記録（2026-08-13）
 
-**案2のserver-owned BFF sessionを採用候補とする。** ただし本ADRがAcceptedになるまで実装しない。
+保守者の明示承認により Proposed → Accepted。**案2 の server-owned BFF session を採用**する。下記 Decision の7項目がそのまま実装要件になる。
+
+### 実装の解禁
+
+本ADR採択により、**1つの判断で3本の Open P1 が同時に着手可能**になる。
+
+| issue | 本ADRが与える前提 |
+|---|---|
+| `OPS-SAAS-SCALE-01`（Open P1） | AC-4〜8 が未達で本ADR待ちだった。session 失効の正本が DB 側の `session_key_hash` 行に定まることで、水平スケール時の失効伝播が設計可能になる |
+| `SAAS-TENANT-SESSION-BINDING-01` | 詳細なデータ/API修正の正本。本ADRの Decision 3（session row のキー設計）が前提 |
+| `AUTH-ONE-TIME-JWT-01` | Decision 7（access token `jti` を session 主キーへ流用しない）が方針を確定させる |
+
+### 採択時に確認した現行実装との差分
+
+現行の `saas_tenant_sessions`（`models.py`）は `principal_id` をキーとし version のみを保持する。本ADR採択は次の3点を**破壊的変更として認める**ことを含む。
+
+1. `principal_id` 主キー → `session_key_hash` 主キー（別 device 非干渉のため。Decision 3）
+2. SPA の Bearer 直接送信を廃止し、HttpOnly cookie ＋ anti-CSRF へ移行（Decision 2/5）
+3. logout は提示 session のみ失効。全 session logout は明示的な別操作（Decision 6）
+
+`direction-review-2026-08-13.md` が「session model is principal-scoped, not session-scoped」として記録した問題群（別browser/deviceで切替とlogoutが干渉する、次のrequestでJWTのclaim tenantへ戻り得る、cookieがDB行と照合されない、行が失効しない）はすべて 1 の帰結であり、本採択がその根本対策にあたる。
+
+## Decision（採択済み）
+
+**案2のserver-owned BFF sessionを採用する。**
 
 1. kj-atlasまたは同一trust boundaryのgatewayをconfidential OAuth clientとし、access/refresh tokenをbrowserへ渡さない。
 2. browserには128-bit以上のentropyを持つopaque session IDをHttpOnly、Secure、SameSite=LaxまたはStrict cookieで発行する。DBには生cookie値ではなくkeyed hashを保存し、key rotation手順を持つ。

@@ -1,8 +1,10 @@
 # ADR-0067: 三要素分析法に基づく設計方法論の採用
 
-- Status: Draft
+- Status: Accepted
 - Type: Process / Architecture
 - Date: 2026-08-08
+- Accepted: 2026-08-13
+- Deciders: Maintainer（**保守者による明示承認**。ドッグフーディングループの仮承認方針によるものではない）
 
 ## Context
 
@@ -80,8 +82,30 @@
 | データ | 設計判断の記録はADR/issue/設計文書のいずれかに残る | 業務: 記録形式が統一されていないと検索性が低い |
 | 機能 | 反復チェック手順は人間とAIの両方が実行可能である | データ: チェック結果の記録形式が必要 |
 
+## 採択記録（2026-08-13）
+
+保守者の明示承認により Draft → Accepted。
+
+### 採択の経緯
+
+本ADRは 2026-08-08 起票以降 Draft のまま、`AGENTS.md:18` が「三者が揃わない設計判断は着工しない」として必須ルール化し、`ADR-0075` のL2自律性の定義（三要素18項目チェックの自律実行）もこの方法論への依存で書かれていた。その間に ADR-0068〜0075 が次々に採否判断され、**方法論だけが取り残されている**状態が続いていた。`01_Plans/direction-review-2026-08-13.md` §4「優先0」がこれを最優先の未決事項として指摘し、同日承認された。
+
+### 採択時に併せて記録する既知の弱点
+
+`direction-review-2026-08-13.md` §2 の実査で、本方法論の適用に3つの弱点が確認されている。**採択はこれらの解消を前提としない**が、方法論の有効性を語る際にこの記録を参照すること。
+
+1. **網羅率は遡及適用で達成された。** 全78 ADR中77件が三要素検証節を持つが、その約9割が「ADR-0067 遡及適用」であり、着工前ゲートとして機能した実績ではない。`ADR-0075` のL2昇格条件②（適用10件以上→75/75）は**節の存在数**を測っており、遡及適用によって構造上100%へ飽和する指標だった。
+2. **データ設計の行が退化しやすい。** プロセス系ADRでは「どのMarkdownがどの段落を持つか」という文書分割の話がデータ設計の行に書かれる傾向がある。本ADR自身の自己適用（上表のデータ行「設計判断の記録はADR/issue/設計文書のいずれかに残る」）がその起点になっている。業務設計は journey / value_traceability、機能設計は api.md / capability 表という参照可能な正本を持つが、プロセス系ADRにはデータ面の正本が無いため、行を空欄（N/A）にせず即興で埋めてしまう。
+3. **ゲートが落ちた記録が無い。** `three-element-constraint-checklist.html` §4 の適用記録は3件のみで、すべて 12/12 ✓ である。これはゲートが効いている証拠ではなく、**効いているか分からない状態の徴候**である。
+
+### 弱点3への対策方針（`DOGFOOD-METRIC-01` 案Aの適用）
+
+`DOGFOOD-METRIC-01` が採択した能力カナリア（既知の陽性を検出し続けられることの検査）は、検出器スクリプト2本（`check_design_consistency.py` / `check_contract_drift.py`）に適用済みだが、**三要素ゲート自身には未適用**である。ゲートに対するカナリアは「既知の不良な設計判断を、チェックリストが実際に落とすか」の検査になる。適用形式の決定は `DOGFOOD-METRIC-01` AC-1 に含める。
+
 ## Traceability
 
+- `01_Plans/direction-review-2026-08-13.md` §2/§4 — 採択の契機と、上記弱点の実査記録
+- `01_Plans/issues/issue-DOGFOOD-METRIC-01-self-measured-gates-need-capability-canaries.md` — 弱点3への対策（能力カナリア）
 - `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md` — データ境界クラス定義
 - `02_Architecture/non-canvas-ui-flow-design.html` — 三者牽制モデルの初出
 - `02_Architecture/design/admin-surface-metadata-display-correction.html` — 三者牽制による補正の実例

@@ -288,6 +288,16 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="KJ_ATLAS_API_KEY",
     )
+    # ADR-0072 D1=A: the control-plane bootstrap credential. Deliberately a
+    # separate key from `api_key` (the business plane): SEC-ADMIN-PLANE-01 found
+    # that one shared static key protected document, AI, and provisioning
+    # surfaces alike, so anyone able to read a document could also register a
+    # trusted JWT issuer. Bootstrap-only by intent -- normal operation goes
+    # through the capability claim (D1=B).
+    admin_api_key: str | None = Field(
+        default=None,
+        validation_alias="KJ_ATLAS_ADMIN_API_KEY",
+    )
     audit_export_enabled: bool = Field(
         default=False,
         validation_alias="KJ_ATLAS_AUDIT_EXPORT_ENABLED",
@@ -499,6 +509,48 @@ class Settings(BaseSettings):
         hide_input_in_errors=True,
     )
 
+    #: Profiles that must not start without an authentication means configured.
+    #: ADR-0072 D3=A applies ADR-0062's fail-fast rule ("explicitly selected but
+    #: unconfigured means refuse to start") to authentication itself.
+    _AUTH_REQUIRED_PROFILES = ("enterprise-production", "saas-multitenant")
+
+    def _validate_production_authentication_configured(self, profile: str) -> None:
+        """ADR-0072 D3=A: refuse to start a production profile with no auth.
+
+        SEC-ADMIN-PLANE-01: `enterprise-production` started fully unauthenticated
+        at defaults, because `api_key` defaults to None and the middleware simply
+        passes through when it is unset. A deployment mistake therefore exposed
+        every surface rather than failing closed.
+
+        The two profiles differ in what "authentication is configured" means:
+
+        - `enterprise-production` resolves business-plane identity from proxy
+          headers, so the shared `api_key` is the only thing standing between the
+          internet and the document API. It is required.
+        - `saas-multitenant` authenticates the business plane through the trusted
+          auth edge (verified JWT), which `TrustedSaasRuntimePolicy.validate()`
+          already enforces at startup, so `api_key` is not the gate there.
+
+        Both need the control plane credential: it is the bootstrap path that
+        exists precisely for the state where no IdP is registered yet.
+        """
+        if profile not in self._AUTH_REQUIRED_PROFILES:
+            return
+
+        missing: list[str] = []
+        if self.admin_api_key is None:
+            missing.append("KJ_ATLAS_ADMIN_API_KEY")
+        if profile == "enterprise-production" and self.api_key is None:
+            missing.append("KJ_ATLAS_API_KEY")
+
+        if missing:
+            raise ValueError(
+                f"KJ_ATLAS_RUNTIME_PROFILE={profile} requires an authentication "
+                f"means to be configured, but these are unset: {', '.join(missing)}. "
+                "Set them, or select local-dev/evaluation for an unauthenticated "
+                "runtime (ADR-0072 D3)."
+            )
+
     @model_validator(mode="after")
     def validate_llm_provider_guards(self) -> "Settings":
         detected_legacy = sorted(key for key in LEGACY_ENV_KEYS if key in os.environ)
@@ -525,6 +577,11 @@ class Settings(BaseSettings):
         # Startup validation is handled by TrustedSaasRuntimePolicy.validate() and
         # validate_trusted_saas_runtime_preflight() in main.py lifespan.
         self.runtime_profile = normalized_runtime_profile
+
+        _validate_canonical_bearer(
+            api_key=self.admin_api_key, api_key_key="KJ_ATLAS_ADMIN_API_KEY"
+        )
+        self._validate_production_authentication_configured(normalized_runtime_profile)
 
         # A SQLAlchemy dialect being importable does not mean kj-atlas migrations
         # and safety invariants are verified for it. Candidate databases remain

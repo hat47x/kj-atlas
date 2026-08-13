@@ -34,6 +34,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_MAX_DOCUMENT_BYTES` | `20971520`（20 MiB） | 任意の正整数 | DocumentV1 保存ペイロードの UTF-8 バイト上限（SEC-DOC-BOUND-01・2026-08-13）。inquiry bundle の 20 MiB と対称。超えると 413 `document_too_large`。 |
 | `KJ_ATLAS_MAX_DOCUMENT_CARDS` | `10000` | 任意の正整数 | DocumentV1 のカード件数上限（SEC-DOC-BOUND-01・2026-08-13）。バイト上限の二次防御（小さいカード本文で 20 MiB 未満に収まる病態的件数を抑止）。超えると 413 `document_too_many_cards`。 |
 | `KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT` | `false` | `false` または `true` | SEC-AI-SAFEMODE-01（ADR-0068 D1=C）の緩和ゲート。`true` のときのみ、AI リクエストの `allowUnreviewedText: true`（未レビュー本文の送出許可）が有効になる。既定 `false` は fail-closed（未レビュー本文は常に 422 で拒否）。 |
+| `KJ_ATLAS_ADMIN_API_KEY` | 未設定 | **必須** | ADR-0072 D3=A: `enterprise-production` / `saas-multitenant` では未設定なら `Settings()` 構築時に fail-fast する。`enterprise-production` は加えて `KJ_ATLAS_API_KEY` も必須（業務面の識別を前段proxyのheaderに依存するため）。`saas-multitenant` の業務面は trusted auth edge のJWTが担うため `KJ_ATLAS_API_KEY` は必須としない |
 | `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | `read_only` または `deny` | 障害時の安全側挙動を明示的に選べるようにするため。 |
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`（必要時のみ opt-in） | 外部共有の既定無効を維持するため。 |
 
@@ -113,6 +114,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | DeepSeek API のbase URL。credential/query/fragmentなしのHTTPS | direct | 通常値（接続先URL。認証情報は別キー） | リクエストが正しいURLへ送信されることを確認する |
 | `KJ_ATLAS_DEEPSEEK_MODEL` | `deepseek-chat` | DeepSeek API に渡すmodel ID。256文字以下のcanonical | direct | 通常値 | 呼び出しペイロードの model フィールドが設定値と一致することを確認する |
 | `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護する | direct / base Compose | 秘密値 | 未設定時は `/healthz` 以外も無防備。設定時: キーなしは 401、正しい `X-API-Key` は成功、誤ったキーも 401（値自体は出力しない） |
+| `KJ_ATLAS_ADMIN_API_KEY` | 未設定 | ADR-0072 D1=A: 管理面（`/admin/provision/**`）専用の制御プレーン資格情報。`X-Admin-Api-Key` で提示する。**業務面の `KJ_ATLAS_API_KEY` は管理面へ到達できない**。IdP未登録状態（bootstrap）で使える唯一の経路 | direct | 秘密値 | 業務面キーで `/admin/provision/*` が 401 になること、正しい `X-Admin-Api-Key` が成功することを確認する（値自体は出力しない） |
 | `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit event のHTTP連携を有効化する | direct | 通常値 | `true` 時に監査イベントが transport 経由で送出されること（内容は出力せず送信有無のみ確認） |
 | `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | audit transport。`noop` または `http` | direct | 通常値 | `http` 指定時に HTTP transport が選択されることをログで確認する |
 | `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログHTTP連携の接続先。`KJ_ATLAS_AUDIT_TRANSPORT=http` 時は必須 | direct | 通常値（接続先URL。認証情報は別キー） | test double への到達確認（実サービスへは送らない） |

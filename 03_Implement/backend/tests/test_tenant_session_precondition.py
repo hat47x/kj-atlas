@@ -13,7 +13,7 @@ from starlette.routing import Route as StarletteRoute
 from kj_atlas_api.active_tenant_session import require_current_tenant_session_version
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app as main_app
-from kj_atlas_api.routes.admin import require_single_tenant_provisioning_surface
+from kj_atlas_api.control_plane_auth import require_control_plane_authorization
 from kj_atlas_api.routes.docs import _authorize_request
 from kj_atlas_api.routes.document_access_admin import _authorize_document_policy_management
 from kj_atlas_api.routes.inquiry_bundles import _trusted_session as _inquiry_bundle_trusted_session
@@ -182,8 +182,11 @@ _TENANT_SCOPED_BOUNDARY_CALLS = frozenset(
 
 # Route touches no tenant-scoped resource and cannot reach the database.
 _NO_TENANT_RESOURCE = "no-tenant-resource"
-# Route is refused outright before any DB work on tenant-session runtimes.
-_SAAS_SURFACE_BLOCKED = "saas-surface-blocked"
+# Control plane route: authorized by ADR-0072 D1=A+B (control-plane bearer or
+# tenant.provision capability) rather than by tenant session. D2=A removed the
+# former profile gate that refused these outright on SaaS runtimes, because it
+# made SaaS bootstrap impossible (SEC-ADMIN-PLANE-01).
+_CONTROL_PLANE_AUTHORIZED = "control-plane-authorized"
 # Route issues the opaque version, so it cannot also require it as a header.
 _TENANT_SESSION_VERSION_SOURCE = "tenant-session-version-source"
 # Route carries the expected version in its request body instead of a header.
@@ -195,11 +198,11 @@ _UNGUARDED_ROUTE_EXEMPTIONS: dict[tuple[str, str], str] = {
     ("POST", "/admin/provision/hil-rs/a2a3-gate:validate"): _NO_TENANT_RESOURCE,
     ("GET", "/session/bootstrap-policy"): _NO_TENANT_RESOURCE,
     ("POST", "/session/logout"): _NO_TENANT_RESOURCE,
-    ("POST", "/admin/provision/users"): _SAAS_SURFACE_BLOCKED,
+    ("POST", "/admin/provision/users"): _CONTROL_PLANE_AUTHORIZED,
     # ADR-0063/0064: Platform Control Plane — IdP registration is an admin
     # operation, not a tenant-scoped resource.
-    ("POST", "/admin/provision/identity-providers"): _SAAS_SURFACE_BLOCKED,
-    ("POST", "/admin/provision/tenant-identity-providers"): _SAAS_SURFACE_BLOCKED,
+    ("POST", "/admin/provision/identity-providers"): _CONTROL_PLANE_AUTHORIZED,
+    ("POST", "/admin/provision/tenant-identity-providers"): _CONTROL_PLANE_AUTHORIZED,
     ("GET", "/session/context"): _TENANT_SESSION_VERSION_SOURCE,
     ("POST", "/session/active-tenant"): _BODY_BORNE_EXPECTED_VERSION,
 }
@@ -312,13 +315,13 @@ def test_no_tenant_resource_exemptions_cannot_reach_the_database() -> None:
         assert get_db not in _endpoint_called_objects(route), route_key
 
 
-def test_saas_blocked_exemption_keeps_its_runtime_surface_guard() -> None:
-    exempt_routes = _exempt_routes(_SAAS_SURFACE_BLOCKED)
+def test_control_plane_exemption_requires_control_plane_authorization() -> None:
+    exempt_routes = _exempt_routes(_CONTROL_PLANE_AUTHORIZED)
     assert exempt_routes
 
     for route_key, route in exempt_routes.items():
         dependency_calls = _flattened_dependency_calls(route.dependant)
-        assert require_single_tenant_provisioning_surface in dependency_calls, route_key
+        assert require_control_plane_authorization in dependency_calls, route_key
 
 
 def test_session_route_exemptions_resolve_the_trusted_session_themselves() -> None:
