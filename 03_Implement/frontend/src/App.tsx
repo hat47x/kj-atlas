@@ -11367,6 +11367,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
               onRestoreDocument={(snapshotDocument) => applyDocumentChange(snapshotDocument)}
               onDiscardRestoredDocument={discardLatestDocumentChange}
               runTenantScopedOptionalTask={runTenantScopedOptionalTask}
+              runTenantScopedApiRequest={runTenantScopedApiRequest}
+              verifiedTenantSession={verifiedTenantSession}
             />
           ),
         },

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 
+import { getInquiryBundle, putInquiryBundle } from "../api/client";
+
 import {
   ROUND_STAGES,
   nextRoundIteration,
@@ -32,12 +34,15 @@ import { downloadTextFile } from "../export/narrative_export";
 import { t } from "../i18n/translate";
 import { InquiryBundleWorkerClient } from "../worker/inquiry_bundle_client";
 import { InquiryEndConfirmationDialog, type InquiryEndDecision } from "./InquiryEndConfirmationDialog";
+import type { TenantSessionContextV1 } from "../api/session_context";
 
 type InquiryJourneyPrototypePanelProps = {
   document: DocumentV1 | null;
   onRestoreDocument: (document: DocumentV1) => boolean;
   onDiscardRestoredDocument: () => boolean;
   runTenantScopedOptionalTask?: <T>(task: () => Promise<T>) => Promise<T | undefined>;
+  runTenantScopedApiRequest?: <T>(request: () => Promise<T>) => Promise<T>;
+  verifiedTenantSession?: TenantSessionContextV1;
 };
 
 const runWithoutTenantScope = <T,>(task: () => Promise<T>): Promise<T> => task();
@@ -210,6 +215,8 @@ export function InquiryJourneyPrototypePanel({
   onRestoreDocument,
   onDiscardRestoredDocument,
   runTenantScopedOptionalTask = runWithoutTenantScope,
+  runTenantScopedApiRequest = runWithoutTenantScope,
+  verifiedTenantSession,
 }: InquiryJourneyPrototypePanelProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const importClientRef = useRef<InquiryBundleWorkerClient | null>(null);
@@ -477,6 +484,31 @@ export function InquiryJourneyPrototypePanel({
     }
   };
 
+  // G5 (W型 single-tenant 化): persist the serialized inquiry bundle to the
+  // backend, keyed by journey.journeyId, instead of only downloading a file.
+  const handleSaveToBackend = async (): Promise<void> => {
+    if (!bundle || !document) return;
+    setIsBusy(true);
+    setMessage({ kind: "status", text: t("inquiry_journey.prototype.saving_backend") });
+    try {
+      const serialized = await serializeInquiryBundle(bundle);
+      if (!serialized.ok) {
+        setMessage({ kind: "error", text: t("inquiry_journey.prototype.export_error") });
+        return;
+      }
+      await runTenantScopedApiRequest(() => putInquiryBundle(
+        bundle.journey.journeyId,
+        JSON.parse(serialized.json),
+        { tenantSessionContext: verifiedTenantSession },
+      ));
+      setMessage({ kind: "status", text: t("inquiry_journey.prototype.saved_backend") });
+    } catch {
+      setMessage({ kind: "error", text: t("inquiry_journey.prototype.backend_error") });
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
   const handleShareExport = async (): Promise<void> => {
     if (!bundle) return;
     setIsBusy(true);
@@ -597,6 +629,47 @@ export function InquiryJourneyPrototypePanel({
       setMessage({ kind: "status", text: t("inquiry_journey.prototype.imported") });
     } finally {
       if (importAbortRef.current === controller) importAbortRef.current = null;
+      setIsBusy(false);
+      setIsImporting(false);
+    }
+  };
+
+  // G5: reload the current journey's bundle from the backend (same journeyId),
+  // so a persisted journey survives a page reload / session restart.
+  const handleLoadFromBackend = async (): Promise<void> => {
+    if (!bundle || !document) return;
+    setIsBusy(true);
+    setIsImporting(true);
+    setMessage({ kind: "status", text: t("inquiry_journey.prototype.loading_backend") });
+    try {
+      importClientRef.current ??= new InquiryBundleWorkerClient();
+      const importClient = importClientRef.current;
+      const stored = await runTenantScopedApiRequest(() => getInquiryBundle(
+        bundle.journey.journeyId,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
+      if (stored === undefined) {
+        return;
+      }
+      const parsed = await runTenantScopedOptionalTask(async () => (
+        importClient.parse(JSON.stringify(stored))
+      ));
+      if (parsed === undefined || parsed.status === "cancelled") {
+        return;
+      }
+      if (!parsed.result.ok) {
+        setMessage({ kind: "error", text: t("inquiry_journey.prototype.import_error") });
+        return;
+      }
+      if (!inquiryBundleOriginatesFromDocument(parsed.result.bundle, document.id)) {
+        setMessage({ kind: "error", text: t("inquiry_journey.prototype.origin_mismatch") });
+        return;
+      }
+      setBundle(parsed.result.bundle);
+      setMessage({ kind: "status", text: t("inquiry_journey.prototype.loaded_backend") });
+    } catch {
+      setMessage({ kind: "error", text: t("inquiry_journey.prototype.backend_error") });
+    } finally {
       setIsBusy(false);
       setIsImporting(false);
     }
@@ -953,6 +1026,12 @@ export function InquiryJourneyPrototypePanel({
             </button>
             <button type="button" disabled={isBusy} onClick={() => inputRef.current?.click()} style={{ whiteSpace: "normal" }}>
               {t("inquiry_journey.prototype.import")}
+            </button>
+            <button type="button" disabled={isBusy} onClick={() => void handleSaveToBackend()} style={{ whiteSpace: "normal" }}>
+              {t("inquiry_journey.prototype.save_backend")}
+            </button>
+            <button type="button" disabled={isBusy} onClick={() => void handleLoadFromBackend()} style={{ whiteSpace: "normal" }}>
+              {t("inquiry_journey.prototype.load_backend")}
             </button>
           </div>
           {!isConfirmingEnd ? (
