@@ -100,6 +100,19 @@
 
 ### 優先0 — 決定キューを空ける。これが唯一の律速である
 
+> **【2026-08-13 追記: 実施済み】** 保守者が本節の提言を承認し、**ADR-0067 / 0072 / 0073 / 0074 の4本が同日 Accepted となった**（仮承認ではなく明示承認）。採択内容は各ADRの「採択記録（2026-08-13）」を正とする。
+>
+> | ADR | 採択 | 解禁されたもの |
+> |---|---|---|
+> | ADR-0067 | 方法論を採用（選択肢なし） | 方法論自身の未採択という矛盾が解消。既知の弱点3件も採択時に記録した |
+> | ADR-0072 | D1=A+B / D2=A / D3=A ＋ D2のprofile差分離 | `SEC-ADMIN-PLANE-01`（**Draft P0**） |
+> | ADR-0073 | D1=C / D2=A / D3=A | `DATA-DOC-LIFECYCLE-01`（プログラム**第2反復の起点**） |
+> | ADR-0074 | 案2 server-owned BFF session | `OPS-SAAS-SCALE-01` / `SAAS-TENANT-SESSION-BINDING-01` / `AUTH-ONE-TIME-JWT-01` |
+>
+> 残る Proposed は `ADR-0069`（`AI-IR-PROJECTION-01` を塞ぐ）と `ADR-0049`（`EXT-CONN-02/03/04` を塞ぐ）、および依存元が Done で事実上放置の `ADR-0034` / `ADR-0051`。
+>
+> **本節の主張は残す。** 律速が判断であったことは、この4本が1日で採択され6件の issue が同時に着手可能になった事実そのものが示している。同じ滞留は再発しうるため、以下の記述は当時の観測として保持する。
+
 **active な計画在庫の3分の1以上が、実装能力ではなく1人の判断で止まっている。**
 
 そしてこの主張は、本レビュー実施中に**実証された**。調査開始時点で `ADR-0068`（SafeModeのAPI境界強制）は Proposed であり、`SEC-AI-SAFEMODE-01` は「ADRが Proposed の間は着手しない」と明記された **Draft P0** だった。レビュー作成中に `ADR-0068` が D1=C で **Accepted** となり、`SEC-AI-SAFEMODE-01` は数日で全AC達成の **Done** へ到達した（`KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT` の追加、Web側AI提案のブロック、api.md と THREAT_MODEL の同期まで含む）。

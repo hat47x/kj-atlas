@@ -9,7 +9,9 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0072-control-plane-authorization-separation.md`, `01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md`, `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`, `02_Architecture/enterprise_architecture.html`
 - Expected verification level: `integration`
 
-> **本issueは `ADR-0072` の採択を前提とする。** ADR が Proposed の間は着手しないこと。ADR が Rejected の場合、本issueも取り下げる。
+> **2026-08-13: `ADR-0072` は Accepted（D1=A+B の二段 / D2=A / D3=A）。着手可能。**
+>
+> 採択内容と、採択時に加えられた D2 の profile 差の分離（`enterprise-production` は静的 bearer で閉じるが `saas-multitenant` は閉じない）は `ADR-0072`「採択記録（2026-08-13）」を正とする。D3=A（本番相当 profile で認証手段未設定なら `Settings()` 構築時に fail-fast）が、本issueが扱う「`enterprise-production` が既定で完全無認証起動する」欠陥の直接の対策にあたる。
 
 ## 課題
 
@@ -59,7 +61,7 @@ saas-multitenant      -> HTTP 404 {'code': 'strict_provisioning_unavailable', ..
 
 ## 対応方針
 
-`ADR-0072` の D1 / D2 / D3 の決定に従う。ADR の推奨は D1=A+B の二段、D2=A、D3=A だが、**採択された決定を正とする**。
+`ADR-0072` の D1 / D2 / D3 の決定に従う。**2026-08-13 に D1=A+B の二段 / D2=A / D3=A が採択された**（推奨どおり）。加えて D2=A の実装は profile 差で2段に分ける——`enterprise-production` は静的 admin bearer による bootstrap で閉じるが、`saas-multitenant` は「組織の実在確認を伴う別工程」を前提とするため、テナント発行経路は運用手順として閉じたままとし API の到達性のみ D1 の認可で担保する。詳細は `ADR-0072`「採択記録」。
 
 実装時の注意:
 
