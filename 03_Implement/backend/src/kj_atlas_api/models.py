@@ -335,7 +335,16 @@ class IdentityProviderRow(Base):
 
 
 class SaasTenantSessionRow(Base):
-    """Shared auth-session version used by every SaaS API worker."""
+    """Shared auth-session version used by every SaaS API worker.
+
+    ADR-0074 / SAAS-TENANT-SESSION-BINDING-01: this table is principal-keyed,
+    so independent authenticated sessions of the same principal share one
+    active-tenant generation -- violating ADR-0061's "1 auth session = 1
+    active tenant". SaasAuthSessionRow below is its server-owned-session
+    successor. This table remains the active persister (via
+    DatabaseActiveTenantSessionPersister) until BFF cookie issuance and
+    cutover land; expand-only for now.
+    """
 
     __tablename__ = "saas_tenant_sessions"
     __table_args__ = (
@@ -345,6 +354,46 @@ class SaasTenantSessionRow(Base):
     principal_id: Mapped[str] = mapped_column(Text, primary_key=True)
     session_version: Mapped[str] = mapped_column(Text, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class SaasAuthSessionRow(Base):
+    """ADR-0074 decision 3: server-owned auth session bound to one BFF login.
+
+    Row identity is the login session (``session_key_hash``), not the
+    principal, so independent logins of the same principal never share an
+    ``active_tenant_id`` / ``tenant_session_version`` generation (ADR-0061).
+    ``session_key_hash`` stores a keyed hash of the opaque session cookie
+    value, never the raw value (decision 2) -- the hashing key and its
+    rotation are implemented where the cookie itself is issued, not here.
+    ``issuer`` + ``subject`` are stored redundantly (also reachable via
+    ``principal_id`` -> ``user_identities``) because decision 6's
+    back-channel-logout fallback revokes by issuer+subject directly, without
+    a join.
+
+    Expand-only: nothing constructs or reads this table yet. Application
+    wiring (BFF cookie issuance, CAS active-tenant updates, anti-CSRF,
+    cutover from SaasTenantSessionRow) is later SAAS-TENANT-SESSION-BINDING-01
+    work.
+    """
+
+    __tablename__ = "saas_auth_sessions"
+    __table_args__ = (
+        Index("ix_saas_auth_sessions_principal_id", "principal_id"),
+        Index("ix_saas_auth_sessions_issuer_subject", "issuer", "subject"),
+    )
+
+    session_key_hash: Mapped[str] = mapped_column(Text, primary_key=True)
+    principal_id: Mapped[str] = mapped_column(Text, nullable=False)
+    issuer: Mapped[str] = mapped_column(Text, nullable=False)
+    subject: Mapped[str] = mapped_column(Text, nullable=False)
+    active_tenant_id: Mapped[str | None] = mapped_column(
+        Text, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True
+    )
+    tenant_session_version: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    last_used_at: Mapped[str] = mapped_column(Text, nullable=False)
+    absolute_expires_at: Mapped[str] = mapped_column(Text, nullable=False)
+    revoked_at: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class TenantIdentityProviderRow(Base):
