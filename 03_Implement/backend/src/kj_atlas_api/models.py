@@ -19,6 +19,10 @@ CARD_TEXT_MAX_LENGTH = 2000
 # title to 500; the backend was unbounded (verified 2026-08-13 — a 501-char
 # title was accepted with 200). Bound it here to keep the contract aligned.
 DOCUMENT_TITLE_MAX_LENGTH = 500
+# DOMAIN-CARD-TEXT-01 sync (R2 symmetry, 2026-08-13): frontend bounds
+# card/island critique to 2000; backend Card.critique / Island.critique were
+# unbounded. Bound here to keep read/write + frontend/backend symmetric.
+CRITIQUE_MAX_LENGTH = 2000
 ISLAND_TITLE_MAX_LENGTH = 500
 ISLAND_SUMMARY_MAX_LENGTH = 2000
 NARRATIVE_TITLE_MAX_LENGTH = 500
@@ -806,7 +810,7 @@ class CardBase(BaseModel):
     repOf: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     canonicalId: str | None = Field(default=None, exclude_if=lambda value: value is None)
     sources: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
-    critique: str | None = None
+    critique: str | None = Field(default=None, max_length=CRITIQUE_MAX_LENGTH)
     critiqueTags: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
@@ -935,7 +939,7 @@ class Island(BaseModel):
     )
     imageUrl: str | None = None
     imageReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
-    critique: str | None = None
+    critique: str | None = Field(default=None, max_length=CRITIQUE_MAX_LENGTH)
     critiqueTags: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     geometry: IslandGeometry | None = Field(default=None, exclude_if=lambda value: value is None)
     shape: IslandShape | None = Field(default=None, exclude_if=lambda value: value is None)

@@ -88,6 +88,7 @@ def test_inquiry_bundle_absolute_byte_limit_matches_frontend_contract() -> None:
 SHARED_CONTENT_LIMIT_CONSTANTS = [
     "DOCUMENT_TITLE_MAX_LENGTH",
     "CARD_TEXT_MAX_LENGTH",
+    "CRITIQUE_MAX_LENGTH",
     "ISLAND_TITLE_MAX_LENGTH",
     "ISLAND_SUMMARY_MAX_LENGTH",
     "NARRATIVE_TITLE_MAX_LENGTH",
