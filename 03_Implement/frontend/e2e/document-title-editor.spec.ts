@@ -40,8 +40,10 @@ test("displays the document title and enters edit mode on click", async ({ page 
   await page.getByRole("button", { name: "Create new document" }).click();
   await expect(page.getByTestId("document-title-display")).toBeVisible();
 
-  // Placeholder shown when no title is set.
-  await expect(page.getByTestId("document-title-display")).toHaveText("無題");
+  // Placeholder shown when no title is set (English, matching the ?locale=en
+  // navigation above -- QA-MONKEY-19: this previously asserted the Japanese
+  // "無題" string while the page was loaded under the English locale).
+  await expect(page.getByTestId("document-title-display")).toHaveText("Untitled");
 
   // Click enters inline edit mode.
   await page.getByTestId("document-title-display").click();

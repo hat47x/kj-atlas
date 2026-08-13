@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { PointerEvent, ReactNode, WheelEvent } from "react";
+import type { PointerEvent, ReactNode } from "react";
 
 import { getEdgesToRender } from "../domain/edge_aggregate";
 import { getDerivedIslandEdges } from "../domain/island_edge_aggregate";
@@ -1224,33 +1224,46 @@ export function CanvasShell({
     return targetIsland.shape;
   }, [document.islands, polygonVertexEditIslandId]);
 
-  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
-    event.preventDefault();
-
+  // QA-MONKEY-18: a JSX `onWheel` handler is registered by React as a passive
+  // listener, so `event.preventDefault()` inside it is a silent no-op and logs
+  // "Unable to preventDefault inside passive event listener invocation." on
+  // every wheel tick. Zoom needs to block the browser's native wheel behavior
+  // (page scroll / ctrl+wheel page zoom), so this attaches a real, non-passive
+  // DOM listener instead.
+  useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) {
       return;
     }
 
-    const rect = viewport.getBoundingClientRect();
-    const screenPoint = {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
+    const handleWheelNative = (event: globalThis.WheelEvent) => {
+      event.preventDefault();
+
+      const rect = viewport.getBoundingClientRect();
+      const screenPoint = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+
+      setTransform((prev) => {
+        const factor = Math.exp(-event.deltaY * ZOOM_SENSITIVITY);
+        const unclampedZoom = prev.zoom * factor;
+        const nextZoom = clamp(unclampedZoom, MIN_ZOOM, MAX_ZOOM);
+        const actualFactor = nextZoom / prev.zoom;
+
+        if (actualFactor === 1) {
+          return prev;
+        }
+
+        return applyZoomAtScreenPoint(prev, actualFactor, screenPoint);
+      });
     };
 
-    setTransform((prev) => {
-      const factor = Math.exp(-event.deltaY * ZOOM_SENSITIVITY);
-      const unclampedZoom = prev.zoom * factor;
-      const nextZoom = clamp(unclampedZoom, MIN_ZOOM, MAX_ZOOM);
-      const actualFactor = nextZoom / prev.zoom;
-
-      if (actualFactor === 1) {
-        return prev;
-      }
-
-      return applyZoomAtScreenPoint(prev, actualFactor, screenPoint);
-    });
-  };
+    viewport.addEventListener("wheel", handleWheelNative, { passive: false });
+    return () => {
+      viewport.removeEventListener("wheel", handleWheelNative);
+    };
+  }, []);
 
   return (
     <div
@@ -1259,7 +1272,6 @@ export function CanvasShell({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
-      onWheel={handleWheel}
       onContextMenu={(event) => {
         if (!onBackgroundContextMenu) {
           return;

@@ -134,6 +134,9 @@ async function snapshot() {
           (f.getAttribute("title") ?? "");
         return n.length === 0;
       }).map((f) => `${f.tagName.toLowerCase()}${f.type ? "[" + f.type + "]" : ""}`),
+      nanTransforms: [...document.querySelectorAll("[style]")].filter((el) =>
+        /NaN|Infinity/.test(el.getAttribute("style") ?? "")
+      ).length,
     };
   });
 }
@@ -151,6 +154,8 @@ function checkInvariants(snap, action) {
   if (snap.namelessFields.length > 0)
     finding("field-without-name", `accessible nameのない可視入力欄: ${[...new Set(snap.namelessFields)].join(", ")} (after ${action})`);
   if (snap.docScrollX > 2) finding("horizontal-overflow", `viewport ${WIDTH}px で横スクロールが発生 (${snap.docScrollX}px, after ${action})`);
+  if (snap.nanTransforms > 0)
+    finding("nan-transform", `座標にNaN/Infinityを含む要素が${snap.nanTransforms}件 (after ${action})`);
 }
 
 const keyActions = [
@@ -216,12 +221,43 @@ try {
           action = "key:Escape";
           await page.keyboard.press("Escape");
         }
-      } else {
+      } else if (roll < 0.96) {
         const boxes = await page.locator('input[type="checkbox"]:visible').all();
         if (boxes.length) {
           action = "toggle-checkbox";
           await boxes[Math.floor(rnd() * boxes.length)].click({ timeout: 2000 });
         }
+      } else if (roll < 0.985) {
+        // drag a random card by a random offset (may land on empty canvas or on the island).
+        const cards = await page.getByRole("button", { name: /モンキー対象カード/ }).all();
+        if (cards.length) {
+          const c = cards[Math.floor(rnd() * cards.length)];
+          const box = await c.boundingBox();
+          if (box) {
+            const dx = Math.floor((rnd() - 0.5) * 400);
+            const dy = Math.floor((rnd() - 0.5) * 300);
+            action = `drag-card(${dx},${dy})`;
+            await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+            await page.mouse.down();
+            await page.mouse.move(box.x + box.width / 2 + dx, box.y + box.height / 2 + dy, { steps: 6 });
+            await page.mouse.up();
+          }
+        }
+      } else if (roll < 0.995) {
+        // rubber-band select: drag on empty canvas background.
+        action = "rubber-band-select";
+        const startX = 900 + rnd() * 200;
+        const startY = 500 + rnd() * 200;
+        await page.mouse.move(startX, startY);
+        await page.mouse.down();
+        await page.mouse.move(startX - 300, startY - 200, { steps: 8 });
+        await page.mouse.up();
+      } else {
+        // wheel zoom in/out at a random point.
+        action = "wheel-zoom";
+        const dy = rnd() < 0.5 ? 400 : -400;
+        await page.mouse.move(600 + rnd() * 400, 400 + rnd() * 300);
+        await page.mouse.wheel(0, dy);
       }
     } catch (error) {
       const msg = String(error).split("\n")[0].slice(0, 200);
