@@ -1,7 +1,7 @@
 # Issue: AI-REL-VOCAB-DRIFT-01 LLM投入IRとキャンバスで関係型の語彙が食い違っている
 
 - Type: Contract Drift
-- Status: Open
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Unassigned

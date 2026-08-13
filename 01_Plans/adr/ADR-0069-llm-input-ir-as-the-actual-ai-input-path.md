@@ -94,6 +94,8 @@ IR は本問題提起に既に答えを出しているが、その答えは提�
 
 **推奨は A。** あわせて `unknown`（`models.py:605`）の扱いを決めること。
 
+**決定（2026-08-13・仮承認）**: **D2=A を採択**。`llm_input_ir_spec.md` の `relations.type` をキャンバス5値 `related | negate | causal | mutual | equivalence` へ統一（`arrow`→`causal`、`negation`→`negate`）。`unknown` は IR に含めない（未分類は構造値として意味を持たない）。逆方向（IR→キャンバス）写像は行わない。
+
 ### D3: 島階層の表現
 
 | 案 | 内容 | 評価 |

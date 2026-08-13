@@ -43,7 +43,8 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 
 - **canonical card id**: `Card.id` の正規ID。
 - **relation id**: `"<type>:<fromId>:<toId>"`（文字列連結）で決定論生成。
-- **negation relation**: `relations[*].type == "negation"`。
+- **negation relation**: `relations[*].type == "negate"`。
+- **関係型語彙（AI-REL-VOCAB-DRIFT-01 / ADR-0069 D2=A）**: `relations[*].type` はキャンバス語彙5値 `related | negate | causal | mutual | equivalence` に統一する。IR 独自の `arrow`（因果か方向か曖昧）は `causal` へ、綴り違いの `negation` は `negate` へ写像する。backend のみの `unknown`（未分類）は IR に含めない。逆方向（IR → キャンバス）の写像は行わない。
 - **IR**: `LLMRequest.inputs` に格納する JSON。
 - **structured text only**: JSONで表現可能な文字列・数値・配列・オブジェクトのみを許可し、バイナリを禁止する。
 - **queryCanonicalHash**: canonical 化した `ContextQuery` から算出する sha256 16進小文字。
@@ -185,7 +186,7 @@ A2 contract test では次を機械判定する。
   "id": "string",
   "from": "string",
   "to": "string",
-  "type": "related|arrow|negation"
+  "type": "related|negate|causal|mutual|equivalence"
 }
 ```
 
@@ -194,7 +195,7 @@ A2 contract test では次を機械判定する。
 1. `from`, `to` は `cards.id` に存在すること。
 2. `type` は列挙値のみ許可。
 3. 重複判定キー `(from, to, type)` が重複した場合は1件へ重複排除する。
-4. 自己ループ（`from == to`）は `negation` 以外は reject。
+4. 自己ループ（`from == to`）は `negate` 以外は reject。
 5. 正規化後の並び順は `(type, from, to)` 昇順。
 
 ### 2.4 meta
@@ -236,7 +237,7 @@ A2 contract test では次を機械判定する。
 
 計算規則:
 
-1. relation-based 候補: `related|arrow` 辺で連結な部分集合を列挙。
+1. relation-based 候補: `related|causal` 辺で連結な部分集合を列挙。
 2. spatial-based 候補: 座標距離の近傍グラフ（k=3）で連結な集合を列挙。
 3. 同一 `card_ids` は `basis` を統合し1件にする（`relation` 優先）。
 4. `score` は `round(min(1.0, density + cohesion) / 2, 4)`。
@@ -271,7 +272,7 @@ A2 contract test では次を機械判定する。
 
 計算規則:
 
-1. `related|arrow|negation` を全て無向辺として成分分解する。
+1. `related|negate|causal|mutual|equivalence` を全て無向辺として成分分解する。
 2. `component_id` は card_ids の最小ID順に `cmp-001` から連番。
 3. `card_ids` は昇順ソート。
 4. `edge_count` は当該成分内の正規化 relation 数。
@@ -282,14 +283,14 @@ A2 contract test では次を機械判定する。
 {
   "subgraph_id": "neg-001",
   "card_ids": ["c3", "c7"],
-  "negation_edges": ["negation:c3:c7"],
+  "negation_edges": ["negate:c3:c7"],
   "summary": "string"
 }
 ```
 
 計算規則:
 
-1. `negation` 辺を含む成分ごとに1サブグラフを作る。
+1. `negate` 辺を含む成分ごとに1サブグラフを作る。
 2. `summary` はテンプレート生成のみ許可する。
    - 形式: `"<n> negation edges across <m> cards"`
 3. LLM要約は禁止（前処理は純決定論）。
@@ -369,7 +370,7 @@ A2 contract test では次を機械判定する。
           "id": { "type": "string", "minLength": 1 },
           "from": { "type": "string", "minLength": 1 },
           "to": { "type": "string", "minLength": 1 },
-          "type": { "type": "string", "enum": ["related", "arrow", "negation"] }
+          "type": { "type": "string", "enum": ["related", "negate", "causal", "mutual", "equivalence"] }
         }
       }
     },
