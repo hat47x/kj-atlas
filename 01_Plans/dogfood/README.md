@@ -145,6 +145,9 @@ Web/API/MCP など検証経路を新規追加・拡張するときは、次の3�
 | 2026-08-12 | L2/L3指標③（実API検証）の計測ハーネス `run_ai_eval.py --dry-run` を実行 | refine_card_text 10/10・suggest_island_summary 4/4 を stub provider でパイプライン検証（キー無し）。計測ハーネスが機能していることを確認（実API結果は `ai_eval_results.md`） |
 | 2026-08-12 | MCP HTTP トランスポートの**レート制限（60 req/min）**を実走行検証 | mock IdP + 実JWT で70連続リクエスト → 60件が受理され**10件が 429**。レート制限制御が機能（THREAT_MODEL §6 の制御を実証・fail-closed） |
 | 2026-08-13 | **backend の admin provisioning 面にレート制限を実装**（SEC-RATE-LIMIT-01） | `/admin/provision/*`（users/identity-providers/tenant-identity-providers）へ in-process・per-IP・60 req/min を適用。**61件目で 429 + Retry-After** を実機確認。MCP と対称になり非対称（issue の本題）を解消。フル backend 984 pass |
+| 2026-08-13 | **P0: 未レビュー本文が API 境界で外部 LLM へ送出される**（SEC-AI-SAFEMODE-01） | **修正**: ADR-0068 D1=C/D2=B/D3=A を採択。backend `/ai/*` 6ルートが未レビュー本文を **422 拒否**（fail-closed）。frontend も事前ブロック＋「レビューしてから」案内。api.md/THREAT_MODEL 同期。**全 AC 完了** |
+| 2026-08-13 | ドキュメントのサイズ/カード件数上限が無い（SEC-DOC-BOUND-01・実証済み） | **修正**: `KJ_ATLAS_MAX_DOCUMENT_BYTES`（既定20MiB）・`KJ_ATLAS_MAX_DOCUMENT_CARDS`（既定10,000）を設定ベースで導入（413 拒否） |
+| 2026-08-13 | IR とキャンバスの関係型語彙ドリフト（AI-REL-VOCAB-DRIFT-01） | **修正（ADR-0069 D2=A）**: `llm_input_ir_spec.md` をキャンバス5値へ統一（`arrow`→`causal`・`negation`→`negate`） |
 | 2026-08-12 | `check_contract_drift.py` が抽出漏れ（複数行デコレータ・空パス）＋形状正規化で実装ルートの63%を見落とし、`/ai/external-*` 3ルートの api.md 未記載を隠していた | **DX-CONTRACT-DRIFT-01** で修正（構造的照合・カナリア追加・実3ルートを api.md へ追記）。`check_design_consistency.py` も構造的照合へ書き換え（DX-DESIGN-CHECK-01）。backend 979 tests pass |
 | 2026-08-12 | api.md 記述先行の未実装エンドポイント（`POST /ai/assess-card-importance`＝AI-ROUTE-01 MMR 計画タスク）が逆方向ドリフトとして存在 | api.md に「**未実装（計画）**」を明記（契約は実装前の正本として維持） |
 | 2026-08-12 | AI ルートのルーティング＋監査の統合検証が無い | `test_ai_eval_pipeline.py::test_ai_route_emits_routing_audit_event` を追加 — /ai 実走行で `llm` 監査イベントが CE2-C5 項目で dispatcher へ出ることを固定（AI-ROUTE-01 AC-6 部分） |
