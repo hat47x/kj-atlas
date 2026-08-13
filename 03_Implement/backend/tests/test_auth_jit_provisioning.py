@@ -581,11 +581,21 @@ def test_admin_provision_contract_rejects_blank_provider_or_external_uid(tmp_pat
 @pytest.mark.parametrize(
     ("runtime_profile", "expected_status", "expected_code"),
     [
-        ("saas-multitenant", 404, "strict_provisioning_unavailable"),
+        # ADR-0072 D2=A: the control plane is no longer refused by profile. It is
+        # reachable on SaaS and protected by authorization instead, so an
+        # unauthorized caller gets 401 rather than the former 404
+        # "strict_provisioning_unavailable". The old behaviour made SaaS
+        # bootstrap impossible: IdP registration was the one thing that had to
+        # happen before authentication could work, and it 404'd on that profile
+        # while the startup warning told the operator to call it
+        # (SEC-ADMIN-PLANE-01 課題2).
+        ("saas-multitenant", 401, "control_plane_unauthorized"),
+        # An unknown profile still refuses outright: it must not fall through to
+        # the unconfigured-and-open branch.
         ("unknown", 503, "runtime_policy_unavailable"),
     ],
 )
-def test_strict_provisioning_is_unavailable_outside_known_single_tenant_profiles(
+def test_strict_provisioning_outside_single_tenant_refuses_before_touching_the_database(
     tmp_path,
     runtime_profile: str,
     expected_status: int,
