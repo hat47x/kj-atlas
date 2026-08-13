@@ -420,7 +420,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 全エンドポイント共通:
 - tenant-scoped precondition必須（§10 参照）
 - proposal-only: AI出力は候補生成に留まり、人間の明示操作なしに文書へ反映されない
-- SafeMode ON時は未レビューカード本文をAIへ送信しない
+- **SafeMode は API 境界で強制（SEC-AI-SAFEMODE-01 / ADR-0068）**: 文書を伴う全エンドポイント（suggest-layout / suggest-merges / suggest-island-summary / generate-narrative / check-narrative / proposals/island-summary）は、未レビューカード（`textReviewed ≠ true`）を含む場合に **422 `unreviewed_text_not_allowed`** で拒否する。`allowUnreviewedText=true` かつ profile の `KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT=true` のときのみ緩和（監査へ記録）
 - `KJ_ATLAS_LLM_PROVIDER=none` 時は全エンドポイントが503（provider disabled）を返す
 - モデル選択は操作別モデルレベル定義（AGENTS.md §1.2）に従う
 
@@ -429,6 +429,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 - Request: `SuggestLayoutRequest`
   - `doc: DocumentV1` — 現在の文書全体
   - `instruction?: string` — 配置指示（任意）
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）。未レビューカード（`textReviewed ≠ true`）を含む文書は、この値が `true` かつ profile の `KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT=true` でない限り **422 `unreviewed_text_not_allowed`** で拒否される。
 - Response: `SuggestLayoutResponse`
   - `suggestionId: string` — 提案の一意識別子
   - `suggestedDoc: DocumentV1` — 再配置後の文書

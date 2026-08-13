@@ -193,6 +193,7 @@ stdio段階では listen port を開かず外部到達不可だったが、strea
 - LLM HTTP provider応答を1MiB以下のclosed-world `text` objectへ限定し、不正応答は値を反射せずprovider validationで停止する
 - LLM HTTP requestを1MiB以下、canonical task、finite temperature、bounded max tokensへ限定し、過大prompt・不正数値はtransport前に値を反射せず停止する。validation失敗をfallbackで隠さない
 - LLM base URLをtrusted HTTPSまたはloopback HTTPへ限定し、large-scaleは完全なmodel/host allowlist設定と宛先一致を起動時に検証してlocal-first・opt-in境界の設定迂回を防ぐ
+- **SafeMode の未レビュー本文保護を API 境界で強制する（SEC-AI-SAFEMODE-01 / ADR-0068）**: 文書を伴う `/ai/*` は未レビューカード（`textReviewed ≠ true`）を含む場合に 422 `unreviewed_text_not_allowed` で拒否し、`allowUnreviewedText=true` は profile の `KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT=true` を必要とする（fail-closed）。これにより、API 直接呼び出し（curl・別クライアント・将来の MCP/エージェント連携）による SafeMode 迂回で未レビュー本文が外部 LLM へ送出される経路を塞ぐ
 - SPAの短命access tokenはmodule memoryだけに保持し、browser storageへ保存しない。SPA clientにはrefresh tokenを発行せず、token応答に`refresh_token`が混入した場合はaccess tokenも採用しない。reload後はbrokerで再認証する
 - tenant-session cookieはHttpOnly・SameSite=Strict・Path=/を明示し、`local-dev`以外はSecureを必須にする。ログアウトはJWT期限切れ時にもcookieを同じscopeで失効できるようにする
 - recent/QueryPreset等のApp永続状態をmount時に検証・snapshotしたdeployment origin + tenantId + userId scopeへbindingし、同一mount内のscope変更を拒否する。App unmountはrequest abort、task cancel、worker disposeを失敗分離して実行し、切替時はmemory/DOM/cacheを破棄してhard replacementする

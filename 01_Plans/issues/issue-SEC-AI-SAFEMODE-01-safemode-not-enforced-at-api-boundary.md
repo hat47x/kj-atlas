@@ -90,8 +90,8 @@ SafeMode の未レビュー本文保護は**フロントエンドのみの強制
 - [x] AC-2: パラメータ未指定のリクエストが安全側（SafeMode ON）に倒れることをテストで固定する。— `allowUnreviewedText=None`（未指定）は fail-closed で拒否（test_ai_safemode.py の default 拒否テスト）。
 - [x] AC-3: 拒否・マスク時の応答に未レビュー本文が含まれないことを確認する。— 422 応答は `unreviewed_text_not_allowed` コード＋固定メッセージのみ（本文非含有）。
 - [~] AC-4: 既存フロントエンドが改修なしで動作する（後方互換）。または必要な改修を同一 PR に含める。— **frontend は現状、全文書（未レビュー含む）を送るため、未レビューカードを含む文書では AI 提案が 422 になる**。frontend 側の「未レビュー本文を除外して送る（または拒否を明示）」改修が別途必要。
-- [ ] AC-5: `02_Architecture/api.md` のリクエスト契約を実装と同期する。— 未実施。
-- [ ] AC-6: `THREAT_MODEL.md` に「API 直接呼び出しによる SafeMode 迂回」の緩和策を記載する。— 未実施。
+- [x] AC-5: `02_Architecture/api.md` のリクエスト契約を実装と同期する。— §2.12 共通条項と `/ai/suggest-layout` の Request に `allowUnreviewedText` と 422 拒否を追記。
+- [x] AC-6: `THREAT_MODEL.md` に「API 直接呼び出しによる SafeMode 迂回」の緩和策を記載する。— LLM 対策節に SafeMode の API 境界強制（ADR-0068）を追記。
 - [ ] AC-7: 外部送出ガード（opt-in・allowlist・trusted-HTTP）が変更されていないことを既存テストで確認する。— 未実施（既存テスト 94 pass は確認済み）。
 
 ## 検証
