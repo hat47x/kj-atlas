@@ -69,9 +69,22 @@
 - **confidential client検証**: `POST /admin/register-client-secret`で`client_id`ごとに`client_secret`を登録できるようにした。`/oauth/token`は登録済み`client_id`だけ`client_secret`必須（`secrets.compare_digest`で比較、不一致・欠損は`401 invalid_client`）とし、未登録`client_id`（既定の`mock-client`を含む）は従来どおりpublic client + PKCEのまま検証しない。
 - **Back-Channel Logout**: OIDC Back-Channel Logout 1.0準拠のLogout Token（`events`claim必須、`nonce`禁止、`sub`/`sid`のいずれかを含む）を構築する`_issue_logout_token`を追加した。`POST /admin/register-backchannel-logout-uri`で`client_id`ごとの配送先を登録でき、`POST /admin/trigger-backchannel-logout`がLogout Tokenを構築し、配送先が登録済みならhttpxで実際にPOSTする（未登録なら`delivery.attempted=false`を返すのみ）。配送失敗（到達不能URI等）は例外を投げず`delivery.ok=false`＋`error`として返す設計とし、ADR-0074決定6が要求する「back-channel logoutが届かない場合は全session失効へフォールバックする」経路をテスト側で組み立てられるようにした。
 
-**検証**: 新規`tests/test_mock_idp_backchannel_logout.py`12件（sid一貫性・sid分離・confidential client成功/失敗3種・Logout Tokenの`events`/`nonce`/署名検証・配送成功/失敗）を追加し全pass。既存の呼び出し元3ファイル（`test_saas_oauth_login_e2e.py`・`test_saml_broker_jwt_coordinated_flow.py`・`test_auth_federation_level2.py`、計20件）に回帰なし。配送成功のtestは`test_access_control_adapter_contracts.py`と同じ実ローカルHTTPサーバ（`http.server.HTTPServer`+`threading.Thread`）パターンを踏襲した。`ruff check`・`ruff format --check`両方pass。backend全体回帰は別途実行中。
+**検証**: 新規`tests/test_mock_idp_backchannel_logout.py`12件（sid一貫性・sid分離・confidential client成功/失敗3種・Logout Tokenの`events`/`nonce`/署名検証・配送成功/失敗）を追加し全pass。既存の呼び出し元3ファイル（`test_saas_oauth_login_e2e.py`・`test_saml_broker_jwt_coordinated_flow.py`・`test_auth_federation_level2.py`、計20件）に回帰なし。配送成功のtestは`test_access_control_adapter_contracts.py`と同じ実ローカルHTTPサーバ（`http.server.HTTPServer`+`threading.Thread`）パターンを踏襲した。`ruff check`・`ruff format --check`両方pass。backend全体回帰は1,003 passed・34 skipped・8 deselected・failed 1（`test_alembic_has_single_head`、原因は本checkpointとは無関係な他セッションの未コミットmigrationによる一時的なhead不一致で、後続checkpointで解消）で確認した。
 
 **まだ実装していないもの**: kj-atlas backend側の`/backchannel-logout`受信endpoint（このissue本体のAC-1〜9）、BFF、confidential clientとしての実token交換、cookieベースsession。今回はテスト基盤の整備のみである。
+
+### Implementation checkpoint 2026-08-13: `saas_auth_sessions`のexpand migration（AC-2の器のみ）
+
+ADR-0074決定3の列構成で、server-owned auth sessionテーブルを追加した。`SAAS-TENANT-01`が`documents`等で使った「まずexpand、cutoverは後」の手順を踏襲する: 既存`saas_tenant_sessions`（principal単位）はそのまま残し、`DatabaseActiveTenantSessionPersister`も引き続きそちらを使う。新テーブルは**何からも読み書きされない**——AC-1（trusted auth edgeのsession識別子解決）が先に要る。
+
+- `SaasAuthSessionRow`（`models.py`）: PK`session_key_hash`（cookie生値ではなくkeyed hashを想定、hashingとkey rotationはcookie発行側の実装時に追加）、`principal_id`/`issuer`/`subject`/`active_tenant_id`（nullable、`tenants.id`へFK、`ON DELETE SET NULL`）/`tenant_session_version`/`created_at`/`last_used_at`/`absolute_expires_at`/`revoked_at`。`issuer`+`subject`を`principal_id`と別に持つのは、決定6のback-channel logoutフォールバック（`issuer + subject`索引での全session失効）がjoinなしで引けるようにするため。
+- Alembic `20260813_0027`（`upgrade`/`downgrade`とも実装、他consumerが無いためdowngradeにデータ損失リスクなし）。
+- **他セッションとの migration chain 調整**: 作業時点のalembic headは他セッションが未コミットで追加した`20260813_0026`（`inquiry_bundles.revision`列追加、本issueと無関係）だった。競合するbranchを作らないよう、本migrationはその上に`down_revision`を明示的に繋いだ。コミット順序が入れ替わっても、両方が揃った時点のheadは`20260813_0027`になるよう設計している。
+- **`models.py`の編集分離**: 同ファイルに他セッションの未コミット変更（`InquiryBundleRow.revision`列）が既に存在したため、`git diff`のhunk境界を確認した上で`git apply --cached`で自分の hunk だけをindexへ適用し、他セッションの変更は working tree に未コミットのまま残した（`git add`による全体ステージは行っていない）。
+
+**検証**: 新規`tests/test_saas_auth_sessions_migration.py`2件（テーブル構造・FK・NOT NULL制約・PK重複拒否・downgradeでの`saas_tenant_sessions`非破壊を確認）を追加し全pass。`test_alembic_lineage.py`（他セッションが並行して`20260813_0027`へ更新済みだったheadの期待値、既存の历史順序assertionを含む）とtenant foundation migration近接、計7件pass。`ruff check`・`ruff format --check`（新規ファイルのみ、pre-existingな`models.py`の無関係フォーマット差分は変更していない）pass。
+
+**まだ実装していないもの**: AC-1（trusted auth edgeのsession識別子解決）〜AC-9の全て。今回は器（テーブル）を追加しただけであり、このテーブルへ実際に書き込む経路（BFF cookie発行、hashing、CAS更新）は未着手。
 
 ## 検証計画
 
