@@ -20,6 +20,7 @@ from kj_atlas_api.models import (
     InquiryBundleRow,
     TenantMembershipRow,
     TenantRow,
+    UserIdentityRow,
     UserRow,
 )
 from kj_atlas_api.session_context import CapabilitySnapshot
@@ -73,6 +74,9 @@ class StaticTenantSessionPersister:
 
 def _seed(db: Session) -> None:
     db.add(UserRow(id="user-1", display_name=None, email=None, lifecycle_state="active", created_at=TIMESTAMP, updated_at=TIMESTAMP))
+    # G5 (W型 single-tenant 化): pre-provision the header-originated identity so
+    # resolve_identity_context (single-tenant) resolves x-forwarded-user to user-1.
+    db.add(UserIdentityRow(user_id="user-1", provider="oidc", external_uid="user-1", identity_provider_id=None, created_at=TIMESTAMP))
     for tenant_id in ("tenant-a", "tenant-b"):
         db.add(TenantRow(id=tenant_id, display_name=tenant_id, lifecycle_state="active", created_at=TIMESTAMP, updated_at=TIMESTAMP))
         db.add(TenantMembershipRow(tenant_id=tenant_id, user_id="user-1", lifecycle_state="active", created_at=TIMESTAMP, updated_at=TIMESTAMP))
@@ -102,6 +106,9 @@ def _client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker[Session], Mutab
             client.app.state.tenant_context_resolver = resolver
             client.app.state.tenant_capability_resolver = StaticCapabilityResolver()
             client.app.state.active_tenant_session_persister = StaticTenantSessionPersister()
+            # G5: single-tenant header-originated identity (resolve_identity_context
+            # reads these; the SaaS resolver above is unused in single-tenant).
+            client.headers.update({"x-forwarded-user": "user-1", "x-auth-provider": "oidc"})
             yield client, session_local, resolver
     finally:
         app.dependency_overrides.clear()
@@ -189,14 +196,15 @@ def test_payload_above_warning_boundary_but_below_absolute_limit_is_stored(tmp_p
     assert json.loads(row.payload_json) == payload
 
 
-def test_routes_fail_closed_without_trusted_server_resolved_tenant(tmp_path) -> None:
+def test_single_tenant_resolution_stores_bundle(tmp_path) -> None:
+    # G5 (W型 single-tenant 化): a single-tenant adapter (no trusted SaaS
+    # session) still stores the bundle under the resolved tenant.
     with _client(tmp_path) as fixture:
         client, _, resolver = fixture
         resolver.resolved_by = "single_tenant_adapter"
         response = client.post("/inquiry-bundles/journey-1", json={"version": 1})
 
-    assert response.status_code == 403
-    assert response.json()["detail"]["code"] == "tenant_context_untrusted"
+    assert response.status_code == 204
 
 
 def test_missing_delete_does_not_create_audit_or_mutate_existing_bundles(tmp_path) -> None:

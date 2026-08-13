@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from typing import cast
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -17,8 +16,10 @@ from kj_atlas_api.inquiry_bundle_repository import (
 )
 from kj_atlas_api.models import InquiryBundleDeletionAuditEventRow
 from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
+from kj_atlas_api.tenant_context import TenantContext
 from kj_atlas_api.tenant_session_precondition import (
     require_tenant_session_request_precondition,
+    tenant_session_precondition_required,
 )
 
 
@@ -65,14 +66,46 @@ def _serialize_opaque_payload(payload: object) -> str:
     return encoded
 
 
-def _trusted_session(*, request: Request, db: Session):
-    """Use only server-resolved identity and tenant evidence; never request input."""
-    trusted_session = resolve_trusted_saas_request_session(request=request, db=db)
-    require_tenant_session_request_precondition(
-        request=request,
-        current_version=trusted_session.session.tenant_session_version,
+class _InquirySession:
+    """Resolved tenant + principal for inquiry-bundle storage (G5: W型
+    single-tenant 化 — SaaS and single-tenant resolve to the same shape)."""
+
+    def __init__(self, *, tenant: TenantContext, principal_id: str | None) -> None:
+        self.tenant = tenant
+        self.principal_id = principal_id
+
+
+def _trusted_session(*, request: Request, db: Session) -> _InquirySession:
+    """Use only server-resolved identity and tenant evidence; never request input.
+
+    SaaS: trusted session. single-tenant (local-dev/evaluation): the
+    tenant via the app's tenant_context_resolver, so W型 inquiry bundles can
+    be saved and re-read without a SaaS session (G5, DOMAIN-W-ITERATION-01)."""
+    if tenant_session_precondition_required(request):
+        trusted_session = resolve_trusted_saas_request_session(request=request, db=db)
+        require_tenant_session_request_precondition(
+            request=request,
+            current_version=trusted_session.session.tenant_session_version,
+        )
+        return _InquirySession(
+            tenant=trusted_session.tenant,
+            principal_id=trusted_session.identity.user_id,
+        )
+    from kj_atlas_api.auth_context import resolve_identity_context
+    from kj_atlas_api.tenant_context import SingleTenantContextResolver, TenantContextResolver
+
+    identity = resolve_identity_context(db=db, request=request)
+    resolver: TenantContextResolver = getattr(
+        request.app.state,
+        "tenant_context_resolver",
+        SingleTenantContextResolver(),
     )
-    return trusted_session
+    tenant = resolver.resolve(
+        db=db,
+        user_id=identity.user_id,
+        claim=identity.verified_tenant_claim,
+    )
+    return _InquirySession(tenant=tenant, principal_id=identity.user_id)
 
 
 @router.post("/{journey_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -129,7 +162,7 @@ def delete_inquiry_bundle_route(
             event_id=f"audit-{uuid4()}",
             tenant_id=trusted_session.tenant.tenant_id,
             journey_id=journey_id,
-            principal_id=cast(str, trusted_session.identity.user_id),
+            principal_id=trusted_session.principal_id or "anonymous",
             action="inquiry_bundle.delete",
             outcome="deleted",
             occurred_at=datetime.now(timezone.utc).isoformat(),
