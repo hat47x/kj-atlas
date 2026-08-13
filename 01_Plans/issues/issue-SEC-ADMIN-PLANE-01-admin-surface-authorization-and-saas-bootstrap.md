@@ -2,7 +2,7 @@
 
 - Type: Security / Bug
 - Status: In Progress
-- Source Issue: TBD
+- Source Issue: `SAAS-TENANT-AUTHEDGE-01`
 - Priority: P0
 - Owner: Maintainer
 - Scope: `01_Plans/adr/ADR-0072-control-plane-authorization-separation.md`, `03_Implement/backend/src/kj_atlas_api/routes/admin.py`, `03_Implement/backend/src/kj_atlas_api/main.py`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `04_Documentation/security.md`, `04_Documentation/configuration.md`, `THREAT_MODEL.md`, `02_Architecture/enterprise_architecture.html`
