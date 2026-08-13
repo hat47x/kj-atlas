@@ -6564,6 +6564,16 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, [canCreateIsland, handleCreateIsland]);
 
   const handleUndo = useCallback(() => {
+    // Belt-and-suspenders: the Undo button and menu item are already disabled
+    // via isReadOnly, and history.past should be empty in a readOnly session
+    // since every mutation path is gated upstream. This checks isReadOnly
+    // here too so a future caller (e.g. a new keyboard shortcut or command)
+    // can't reach this mutation without independently re-deriving that gate,
+    // matching the pattern applyDocumentChange already uses for every other
+    // document mutation.
+    if (isReadOnly) {
+      return;
+    }
     pendingCardDragSnapshotRef.current = null;
 
     setHistory((previousHistory) => {
@@ -6580,9 +6590,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     });
     setIsDirty(true);
     setStatusMessage(t("app.status.edit.undo"));
-  }, [abstractMapView, summaryView]);
+  }, [abstractMapView, isReadOnly, summaryView]);
 
   const handleRedo = useCallback(() => {
+    // See handleUndo above: same belt-and-suspenders isReadOnly check.
+    if (isReadOnly) {
+      return;
+    }
     pendingCardDragSnapshotRef.current = null;
 
     setHistory((previousHistory) => {
@@ -6603,7 +6617,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     });
     setIsDirty(true);
     setStatusMessage(t("app.status.edit.redo"));
-  }, [abstractMapView, summaryView]);
+  }, [abstractMapView, isReadOnly, summaryView]);
 
   const discardLatestDocumentChange = useCallback((): boolean => {
     if (!canUndo) return false;
