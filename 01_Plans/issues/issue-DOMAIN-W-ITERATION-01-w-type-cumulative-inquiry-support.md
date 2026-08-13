@@ -310,3 +310,17 @@ The independent backend lifecycle boundary is now implemented for tenant-scoped 
 - Card quality: `00_Prompt/qualitative_card_quality_requirements.md`
 - Value coverage: `02_Architecture/value_traceability.md`
 - Derived-from: 2026-07-15 ユーザー指摘「KJ法は6ラウンドのW型進行に見られるように、高度実務ではイテレーションで思考を深める」
+
+## single-tenant 化の設計メモ（2026-08-13・着手前に要判断）
+
+W型 inquiry の保存 API（`/inquiry-bundles/*`）は現状 SaaS セッション必須（`_trusted_session` が `resolve_trusted_saas_request_session` を呼ぶ）で、local-dev では 503。業務領域カバレッジを埋めるため **single-tenant 化（案A: backend 分岐先行）** を検討したが、テストフィクスチャが SaaS 結合のため、一度着手して巻き戻した。
+
+**backend 分岐の設計**（`routes/inquiry_bundles.py` `_trusted_session`）:
+- `tenant_session_precondition_required(request)` で分岐。SaaS は現状どおり trusted session、single-tenant は `resolve_identity_context` + `app.state.tenant_context_resolver`（無ければ `SingleTenantContextResolver`）で tenant を解決。
+- 削除監査の `principal_id` は single-tenant（認証なし）で None になり得るため `or "anonymous"` のフォールバックが必要。
+
+**未解決の依存（これが巻き戻しの理由）**:
+1. `test_inquiry_bundle_routes.py` の `_client` フィクスチャは `saas_identity_context_resolver`（StaticIdentityResolver）に依存しており、single-tenant の header 由来 identity（`resolve_identity_context`）をテストしていない。single-tenant 化には `x-forwarded-user` ヘッダー＋identity 事前プロビジョニングのフィクスチャ改修が必要（SAAS-TENANT-01 の identity 解決と絡む）。
+2. frontend は `InquiryJourneyPrototypePanel`（試作のみ）で、`putInquiryBundle` の client 呼び出しが無い。backend を single-tenant 化しても UI 導線が無いと実価値が検証できない。
+
+**着手には**: (a) フィクスチャ改修（header 由来 identity）の設計、(b) frontend 接続（client + UI）のスコープ、の2点の判断が必要。案A の backend 分岐だけでは「保存 API が local-dev で使える」だけで、業務領域カバレッジの実質回復には frontend 接続まで含める必要がある。
