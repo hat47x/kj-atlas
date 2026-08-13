@@ -135,7 +135,10 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT` | 未設定 | capability resolverの接続先。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 | direct | 通常値（接続先URL。認証情報は別キー） | test double への到達確認（実サービスへは送らない） |
 | `KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY` | 未設定 | capability resolver専用の固定bearer token。DB・監査・diagnosticsへ出力しない | direct | 秘密値 | 送信ヘッダにキーが付与されることを確認する（値はマスクして確認） |
 | `KJ_ATLAS_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS` | `1.5` | capability resolverのtimeout秒数。`0 < value <= 30` | direct | 通常値 | timeout 超過時に resolver が fail-closed へ倒れることを確認する |
-| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `true` | 未登録 identity の JIT provisioning を許可する | direct / base Compose | 通常値 | `false` 時、未登録 identity でのアクセスが拒否され新規作成されないことを確認する |
+| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `false` | 未登録 identity の JIT provisioning を許可する（SEC-RATE-LIMIT-01: 既定 fail-closed） | direct / base Compose | 通常値 | `false` 時、未登録 identity でのアクセスが拒否され新規作成されないことを確認する |
+| `KJ_ATLAS_MAX_DOCUMENT_BYTES` | `20971520` | DocumentV1 保存ペイロードの UTF-8 バイト上限（20 MiB・SEC-DOC-BOUND-01） | direct | 通常値 | 超えるペイロードで 413 `document_too_large` を確認する |
+| `KJ_ATLAS_MAX_DOCUMENT_CARDS` | `10000` | DocumentV1 のカード件数上限（SEC-DOC-BOUND-01） | direct | 通常値 | 超えるカード件数で 413 `document_too_many_cards` を確認する |
+| `KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT` | `false` | AI リクエストの `allowUnreviewedText` 緩和を許可するか（SEC-AI-SAFEMODE-01 / ADR-0068） | direct | 通常値 | `false` 時、未レビュー本文を含む `/ai/*` リクエストが 422 で拒否されることを確認する |
 | `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | auth provider を受け取る header 名 | direct | 通常値 | 指定 header から provider 値が読み取られることを確認する |
 | `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | user id を受け取る header 名 | direct | 通常値 | 指定 header から user id が読み取られ、identity へ反映されることを確認する |
 | `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | email を受け取る header 名 | direct | 通常値 | 指定 header から email が読み取られ、identity へ反映されることを確認する |

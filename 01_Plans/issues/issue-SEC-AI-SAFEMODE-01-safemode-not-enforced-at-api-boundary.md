@@ -2,7 +2,7 @@
 
 - Type: Security
 - Status: In Progress
-- Source Issue: TBD
+- Source Issue: N/A
 - Priority: P0
 - Owner: Unassigned
 - Scope: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/models_ai.py`, `03_Implement/frontend/src/api/client.ts`, `02_Architecture/api.md`, `THREAT_MODEL.md`
