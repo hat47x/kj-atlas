@@ -1362,6 +1362,7 @@
   "inquiry_journey.prototype.loading_backend": "Loading the inquiry from the backend...",
   "inquiry_journey.prototype.loaded_backend": "Inquiry loaded from the backend.",
   "inquiry_journey.prototype.backend_error": "Backend inquiry storage failed. Check the API connection.",
+  "inquiry_journey.prototype.conflict_backend": "The inquiry changed on the server. Reload it from the backend before saving to avoid overwriting newer work.",
   "inquiry_journey.prototype.exported": "Inquiry file saved.",
   "inquiry_journey.prototype.exported_round": "A derived file through the selected round was saved. The source inquiry is unchanged.",
   "inquiry_journey.prototype.share_exported": "SafeMode share copy saved for the entire inquiry.",

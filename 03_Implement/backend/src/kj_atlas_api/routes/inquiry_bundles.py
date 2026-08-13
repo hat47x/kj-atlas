@@ -4,16 +4,13 @@ import json
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.content_store import ContentBlob
 from kj_atlas_api.database_content_store import DatabaseBundleContentStore
 from kj_atlas_api.db import get_db
-from kj_atlas_api.inquiry_bundle_repository import (
-    delete_inquiry_bundle,
-    get_inquiry_bundle_row,
-)
+from kj_atlas_api.inquiry_bundle_repository import get_inquiry_bundle_row
 from kj_atlas_api.models import InquiryBundleDeletionAuditEventRow
 from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
 from kj_atlas_api.tenant_context import TenantContext
@@ -66,6 +63,62 @@ def _serialize_opaque_payload(payload: object) -> str:
     return encoded
 
 
+def _format_etag(revision: int) -> str:
+    """Opaque ETag for a server-owned row revision (DATA-INQUIRY-CONCURRENCY-01)."""
+    return f'"{revision}"'
+
+
+def _parse_if_match(if_match: str) -> set[str]:
+    values: set[str] = set()
+    for raw_part in if_match.split(","):
+        part = raw_part.strip()
+        if part.startswith("W/"):
+            part = part[2:].strip()
+        if part.startswith('"') and part.endswith('"') and len(part) >= 2:
+            part = part[1:-1]
+        if part:
+            values.add(part)
+    return values
+
+
+def _parse_single_cas_revision(if_match: str) -> int:
+    """AC-2 fail-closed precondition parse: exactly one canonical revision.
+
+    A single quoted revision (`If-Match: "3"`) is the only accepted form for
+    update/delete. A wildcard `*`, a comma list, or a non-positive value fails
+    closed with 422 so a CAS write is never issued against an unknown expected
+    revision."""
+    values = _parse_if_match(if_match)
+    if len(values) != 1:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "invalid_if_match",
+                "message": "If-Match must carry exactly one revision.",
+            },
+        )
+    raw = next(iter(values))
+    try:
+        revision = int(raw)
+    except ValueError:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "invalid_if_match",
+                "message": "If-Match must be a revision integer.",
+            },
+        ) from None
+    if revision < 1:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "invalid_if_match",
+                "message": "If-Match revision must be positive.",
+            },
+        )
+    return revision
+
+
 class _InquirySession:
     """Resolved tenant + principal for inquiry-bundle storage (G5: W型
     single-tenant 化 — SaaS and single-tenant resolve to the same shape)."""
@@ -108,31 +161,101 @@ def _trusted_session(*, request: Request, db: Session) -> _InquirySession:
     return _InquirySession(tenant=tenant, principal_id=identity.user_id)
 
 
-@router.post("/{journey_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{journey_id}")
 def put_inquiry_bundle(
     journey_id: str,
     request: Request,
     payload: object = Body(...),
+    if_match: str | None = Header(default=None, alias="If-Match"),
+    if_none_match: str | None = Header(default=None, alias="If-None-Match"),
     db: Session = Depends(get_db),
 ) -> Response:
     journey_id = _canonical_journey_id(journey_id)
     payload_json = _serialize_opaque_payload(payload)
     trusted_session = _trusted_session(request=request, db=db)
     recorded_at = datetime.now(timezone.utc).isoformat()
-    DatabaseBundleContentStore(db).replace(
-        tenant=trusted_session.tenant,
-        journey_id=journey_id,
-        updated_at=recorded_at,
-        content=ContentBlob.from_text(payload_json),
+    content = ContentBlob.from_text(payload_json)
+    store = DatabaseBundleContentStore(db)
+
+    if if_match is not None and if_none_match is not None:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "conflicting_preconditions",
+                "message": "If-Match and If-None-Match are mutually exclusive.",
+            },
+        )
+
+    if if_none_match is not None:
+        # Create-only path: `If-None-Match: *` (the row must not exist yet).
+        if if_none_match.strip() != "*":
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "invalid_if_none_match",
+                    "message": "If-None-Match must be '*' for create.",
+                },
+            )
+        if get_inquiry_bundle_row(
+            db, tenant=trusted_session.tenant, journey_id=journey_id
+        ) is not None:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "inquiry_bundle_conflict",
+                    "message": "Inquiry bundle already exists.",
+                },
+            )
+        store.create(
+            tenant=trusted_session.tenant,
+            journey_id=journey_id,
+            updated_at=recorded_at,
+            content=content,
+        )
+        db.commit()
+        return Response(
+            status_code=status.HTTP_201_CREATED,
+            headers={"ETag": _format_etag(1)},
+        )
+
+    if if_match is not None:
+        # Update-only path: a single canonical expected revision, atomic CAS.
+        expected_revision = _parse_single_cas_revision(if_match)
+        if not store.update_cas(
+            tenant=trusted_session.tenant,
+            journey_id=journey_id,
+            expected_revision=expected_revision,
+            updated_at=recorded_at,
+            content=content,
+        ):
+            db.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "inquiry_bundle_conflict",
+                    "message": "Inquiry bundle changed concurrently.",
+                },
+            )
+        db.commit()
+        return Response(
+            status_code=status.HTTP_204_NO_CONTENT,
+            headers={"ETag": _format_etag(expected_revision + 1)},
+        )
+
+    raise HTTPException(
+        status_code=428,
+        detail={
+            "code": "precondition_required",
+            "message": "If-Match (update) or If-None-Match: * (create) is required.",
+        },
     )
-    db.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{journey_id}")
 def get_inquiry_bundle(
     journey_id: str,
     request: Request,
+    response: Response,
     db: Session = Depends(get_db),
 ) -> object:
     journey_id = _canonical_journey_id(journey_id)
@@ -140,6 +263,7 @@ def get_inquiry_bundle(
     row = get_inquiry_bundle_row(db, tenant=trusted_session.tenant, journey_id=journey_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Inquiry bundle not found")
+    response.headers["ETag"] = _format_etag(row.revision)
     return json.loads(row.payload_json)
 
 
@@ -147,13 +271,33 @@ def get_inquiry_bundle(
 def delete_inquiry_bundle_route(
     journey_id: str,
     request: Request,
+    if_match: str | None = Header(default=None, alias="If-Match"),
     db: Session = Depends(get_db),
 ) -> Response:
     journey_id = _canonical_journey_id(journey_id)
     trusted_session = _trusted_session(request=request, db=db)
-    if not delete_inquiry_bundle(db, tenant=trusted_session.tenant, journey_id=journey_id):
+    if if_match is None:
+        raise HTTPException(
+            status_code=428,
+            detail={
+                "code": "precondition_required",
+                "message": "If-Match is required to delete.",
+            },
+        )
+    expected_revision = _parse_single_cas_revision(if_match)
+    if not DatabaseBundleContentStore(db).delete_cas(
+        tenant=trusted_session.tenant,
+        journey_id=journey_id,
+        expected_revision=expected_revision,
+    ):
         db.rollback()
-        raise HTTPException(status_code=404, detail="Inquiry bundle not found")
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "inquiry_bundle_conflict",
+                "message": "Inquiry bundle changed concurrently.",
+            },
+        )
 
     # The row deletion and this deliberately content-free evidence share one DB
     # transaction, so neither can succeed without the other.

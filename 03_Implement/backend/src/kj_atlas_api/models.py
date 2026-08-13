@@ -550,6 +550,9 @@ class InquiryBundleRow(Base):
     journey_id: Mapped[str] = mapped_column(Text, primary_key=True)
     payload_json: Mapped[str] = mapped_column(Text, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+    # DATA-INQUIRY-CONCURRENCY-01 (案A): server-owned monotonic revision for
+    # optimistic-concurrency (If-Match) on update/delete. Client-agnostic.
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
 
 
 class InquiryBundleDeletionAuditEventRow(Base):

@@ -1364,6 +1364,7 @@
   "inquiry_journey.prototype.loading_backend": "探究をバックエンドから読み込んでいます...",
   "inquiry_journey.prototype.loaded_backend": "探究をバックエンドから読み込みました。",
   "inquiry_journey.prototype.backend_error": "バックエンドの探究保存に失敗しました。API 接続を確認してください。",
+  "inquiry_journey.prototype.conflict_backend": "サーバー上の探究が変更されています。上書きを避けるため、保存前にバックエンドから再読み込みしてください。",
   "inquiry_journey.prototype.exported": "探究ファイルを保存しました。",
   "inquiry_journey.prototype.exported_round": "選択したラウンドまでの派生ファイルを保存しました。元の探究は変更していません。",
   "inquiry_journey.prototype.share_exported": "探究全体のSafeMode共有用コピーを保存しました。",

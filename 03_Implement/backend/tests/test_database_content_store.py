@@ -1,3 +1,4 @@
+import json
 from hashlib import sha256
 
 import pytest
@@ -220,6 +221,149 @@ def test_database_store_leaves_transaction_control_to_the_caller(tmp_path) -> No
         with session_local() as db:
             assert (
                 DatabaseDocumentContentStore(db).load(tenant=tenant, doc_id="rolled-back") is None
+            )
+    finally:
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+
+def test_bundle_cas_is_atomic_and_revision_is_tenant_scoped(tmp_path) -> None:
+    # DATA-INQUIRY-CONCURRENCY-01 (案A): create/update_cas/delete_cas use a
+    # server-owned revision and single atomic statements (AC-3, AC-4, AC-7).
+    engine = create_engine(f"sqlite:///{tmp_path / 'bundle-cas.sqlite3'}")
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+    tenant_a = _tenant("tenant-a")
+    tenant_b = _tenant("tenant-b")
+
+    try:
+        with session_local() as db:
+            db.add_all([_tenant_row("tenant-a"), _tenant_row("tenant-b")])
+            db.commit()
+
+        # create() starts the server-owned revision at 1.
+        with session_local() as db:
+            DatabaseBundleContentStore(db).create(
+                tenant=tenant_a,
+                journey_id="same-id",
+                updated_at="2026-08-13T00:00:00Z",
+                content=ContentBlob.from_text('{"round":1}'),
+            )
+            db.commit()
+
+        # A stale expected revision is a no-op (single UPDATE matches 0 rows).
+        with session_local() as db:
+            store = DatabaseBundleContentStore(db)
+            assert store.update_cas(
+                tenant=tenant_a,
+                journey_id="same-id",
+                expected_revision=99,
+                updated_at="2026-08-13T00:01:00Z",
+                content=ContentBlob.from_text('{"round":"stale"}'),
+            ) is False
+            db.rollback()
+
+        # The correct expected revision wins and bumps the revision.
+        with session_local() as db:
+            store = DatabaseBundleContentStore(db)
+            assert store.update_cas(
+                tenant=tenant_a,
+                journey_id="same-id",
+                expected_revision=1,
+                updated_at="2026-08-13T00:02:00Z",
+                content=ContentBlob.from_text('{"round":2}'),
+            ) is True
+            db.commit()
+
+        with session_local() as db:
+            loaded = DatabaseBundleContentStore(db).load(
+                tenant=tenant_a, journey_id="same-id"
+            )
+            assert loaded is not None
+            assert loaded.row.revision == 2
+            assert json.loads(loaded.row.payload_json) == {"round": 2}
+
+        # AC-4: two writers holding the same old revision — only one wins and
+        # the loser changes no payload, audit, or revision.
+        with session_local() as db:
+            assert DatabaseBundleContentStore(db).update_cas(
+                tenant=tenant_a,
+                journey_id="same-id",
+                expected_revision=2,
+                updated_at="2026-08-13T00:03:00Z",
+                content=ContentBlob.from_text('{"round":"winner"}'),
+            ) is True
+            db.commit()
+        with session_local() as db:
+            assert DatabaseBundleContentStore(db).update_cas(
+                tenant=tenant_a,
+                journey_id="same-id",
+                expected_revision=2,
+                updated_at="2026-08-13T00:04:00Z",
+                content=ContentBlob.from_text('{"round":"loser"}'),
+            ) is False
+            db.rollback()
+
+        with session_local() as db:
+            loaded = DatabaseBundleContentStore(db).load(
+                tenant=tenant_a, journey_id="same-id"
+            )
+            assert loaded is not None
+            assert loaded.row.revision == 3
+            assert json.loads(loaded.row.payload_json) == {"round": "winner"}
+
+        # AC-7: the same journey id in tenant B keeps its own revision counter;
+        # tenant A's CAS operations never touch tenant B's row.
+        with session_local() as db:
+            b_store = DatabaseBundleContentStore(db)
+            b_store.create(
+                tenant=tenant_b,
+                journey_id="same-id",
+                updated_at="2026-08-13T00:05:00Z",
+                content=ContentBlob.from_text('{"owner":"b"}'),
+            )
+            db.commit()
+        with session_local() as db:
+            store = DatabaseBundleContentStore(db)
+            assert store.update_cas(
+                tenant=tenant_a,
+                journey_id="same-id",
+                expected_revision=3,
+                updated_at="2026-08-13T00:06:00Z",
+                content=ContentBlob.from_text('{"round":"next"}'),
+            ) is True
+            db.commit()
+        with session_local() as db:
+            assert (
+                DatabaseBundleContentStore(db)
+                .load(tenant=tenant_b, journey_id="same-id")
+                .row.revision
+                == 1
+            )
+            assert json.loads(
+                DatabaseBundleContentStore(db)
+                .load(tenant=tenant_b, journey_id="same-id")
+                .row.payload_json
+            ) == {"owner": "b"}
+
+        # CAS delete: a correct revision deletes; a stale revision is a no-op.
+        with session_local() as db:
+            store = DatabaseBundleContentStore(db)
+            assert store.delete_cas(
+                tenant=tenant_b, journey_id="same-id", expected_revision=1
+            ) is True
+            assert store.delete_cas(
+                tenant=tenant_a, journey_id="same-id", expected_revision=999
+            ) is False
+            db.commit()
+        with session_local() as db:
+            assert (
+                DatabaseBundleContentStore(db).load(tenant=tenant_b, journey_id="same-id")
+                is None
+            )
+            assert (
+                DatabaseBundleContentStore(db).load(tenant=tenant_a, journey_id="same-id")
+                is not None
             )
     finally:
         Base.metadata.drop_all(bind=engine)

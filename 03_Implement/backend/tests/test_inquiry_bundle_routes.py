@@ -119,29 +119,156 @@ def _client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker[Session], Mutab
         engine.dispose()
 
 
-def test_save_get_and_overwrite_keep_payload_opaque(tmp_path) -> None:
+def _create(client: TestClient, journey_id: str, payload: object, headers: dict[str, str] | None = None) -> object:
+    return client.post(
+        f"/inquiry-bundles/{journey_id}",
+        json=payload,
+        headers={"If-None-Match": "*", **(headers or {})},
+    )
+
+
+def test_create_requires_if_none_match_and_get_returns_server_etag(tmp_path) -> None:
     bundle = {"version": 1, "journey": {"title": "private inquiry"}, "rounds": [1]}
     with _client(tmp_path) as fixture:
         client, session_local, _ = fixture
-        assert client.post("/inquiry-bundles/journey-1", json=bundle).status_code == 204
-        assert client.get("/inquiry-bundles/journey-1").json() == bundle
-        replacement = {"version": 1, "foreignFutureField": {"keep": True}}
-        assert client.post("/inquiry-bundles/journey-1", json=replacement).status_code == 204
+        missing = client.post("/inquiry-bundles/journey-1", json=bundle)
+        created = _create(client, "journey-1", bundle)
+        assert missing.status_code == 428
+        assert created.status_code == 201
+        assert created.headers["ETag"] == '"1"'
+
+        fetched = client.get("/inquiry-bundles/journey-1")
+        assert fetched.status_code == 200
+        assert fetched.headers["ETag"] == '"1"'
+        assert fetched.json() == bundle
         with session_local() as db:
-            rows = db.scalars(select(InquiryBundleRow)).all()
-
-    assert len(rows) == 1
-    assert rows[0].journey_id == "journey-1"
-    assert "foreignFutureField" in rows[0].payload_json
+            row = db.get(InquiryBundleRow, ("tenant-a", "journey-1"))
+        assert row is not None
+        assert row.revision == 1
 
 
-def test_get_and_delete_are_tenant_scoped_and_delete_writes_content_free_audit(tmp_path) -> None:
+def test_update_requires_single_canonical_if_match_and_increments_revision(tmp_path) -> None:
+    with _client(tmp_path) as fixture:
+        client, session_local, _ = fixture
+        assert _create(client, "journey-1", {"version": 1}).status_code == 201
+
+        # Missing / wildcard / comma list / non-integer If-Match all fail closed.
+        assert client.post("/inquiry-bundles/journey-1", json={"v": 2}).status_code == 428
+        assert (
+            client.post(
+                "/inquiry-bundles/journey-1",
+                json={"v": 2},
+                headers={"If-Match": "*"},
+            ).status_code
+            == 422
+        )
+        assert (
+            client.post(
+                "/inquiry-bundles/journey-1",
+                json={"v": 2},
+                headers={"If-Match": '"1", "2"'},
+            ).status_code
+            == 422
+        )
+        assert (
+            client.post(
+                "/inquiry-bundles/journey-1",
+                json={"v": 2},
+                headers={"If-Match": '"abc"'},
+            ).status_code
+            == 422
+        )
+        # If-Match and If-None-Match together are ambiguous.
+        assert (
+            client.post(
+                "/inquiry-bundles/journey-1",
+                json={"v": 2},
+                headers={"If-Match": '"1"', "If-None-Match": "*"},
+            ).status_code
+            == 422
+        )
+
+        # Correct expected revision wins and bumps the revision.
+        updated = client.post(
+            "/inquiry-bundles/journey-1",
+            json={"version": 2},
+            headers={"If-Match": '"1"'},
+        )
+        assert updated.status_code == 204
+        assert updated.headers["ETag"] == '"2"'
+        with session_local() as db:
+            row = db.get(InquiryBundleRow, ("tenant-a", "journey-1"))
+        assert row is not None
+        assert row.revision == 2
+        assert json.loads(row.payload_json) == {"version": 2}
+
+
+def test_stale_or_missing_update_fails_with_409_and_changes_nothing(tmp_path) -> None:
+    with _client(tmp_path) as fixture:
+        client, session_local, _ = fixture
+        assert _create(client, "journey-1", {"version": 1}).status_code == 201
+
+        stale = client.post(
+            "/inquiry-bundles/journey-1",
+            json={"version": 99},
+            headers={"If-Match": '"1"'},
+        )
+        assert stale.status_code == 204
+        # Second writer with the same old revision loses (AC-4 route view).
+        loser = client.post(
+            "/inquiry-bundles/journey-1",
+            json={"version": 100},
+            headers={"If-Match": '"1"'},
+        )
+        assert loser.status_code == 409
+        assert loser.json()["detail"]["code"] == "inquiry_bundle_conflict"
+
+        missing = client.post(
+            "/inquiry-bundles/never-created",
+            json={"version": 1},
+            headers={"If-Match": '"1"'},
+        )
+        assert missing.status_code == 409
+
+        with session_local() as db:
+            row = db.get(InquiryBundleRow, ("tenant-a", "journey-1"))
+        assert row is not None
+        assert row.revision == 2
+        assert json.loads(row.payload_json) == {"version": 99}
+
+
+def test_create_when_row_exists_conflicts(tmp_path) -> None:
+    with _client(tmp_path) as fixture:
+        client, session_local, _ = fixture
+        assert _create(client, "journey-1", {"version": 1}).status_code == 201
+        again = client.post(
+            "/inquiry-bundles/journey-1",
+            json={"version": 2},
+            headers={"If-None-Match": "*"},
+        )
+        assert again.status_code == 409
+        with session_local() as db:
+            row = db.get(InquiryBundleRow, ("tenant-a", "journey-1"))
+        assert row is not None
+        assert row.revision == 1
+        assert json.loads(row.payload_json) == {"version": 1}
+
+
+def test_delete_requires_if_match_and_writes_content_free_audit(tmp_path) -> None:
     with _client(tmp_path) as fixture:
         client, session_local, resolver = fixture
-        assert client.post("/inquiry-bundles/shared", json={"secret": "tenant-a-only"}).status_code == 204
+        assert _create(client, "shared", {"secret": "tenant-a-only"}).status_code == 201
         resolver.tenant_id = "tenant-b"
-        assert client.post("/inquiry-bundles/shared", json={"secret": "tenant-b-only"}).status_code == 204
-        assert client.delete("/inquiry-bundles/shared").status_code == 204
+        assert _create(client, "shared", {"secret": "tenant-b-only"}).status_code == 201
+
+        # Missing precondition is rejected before touching the row.
+        assert client.delete("/inquiry-bundles/shared").status_code == 428
+        # Stale revision leaves the row intact and writes no audit.
+        stale = client.delete("/inquiry-bundles/shared", headers={"If-Match": '"9"'})
+        assert stale.status_code == 409
+
+        deleted = client.delete("/inquiry-bundles/shared", headers={"If-Match": '"1"'})
+        assert deleted.status_code == 204
         assert client.get("/inquiry-bundles/shared").status_code == 404
         resolver.tenant_id = "tenant-a"
         response = client.get("/inquiry-bundles/shared")
@@ -150,18 +277,33 @@ def test_get_and_delete_are_tenant_scoped_and_delete_writes_content_free_audit(t
             b_row = db.get(InquiryBundleRow, ("tenant-b", "shared"))
             events = db.scalars(select(InquiryBundleDeletionAuditEventRow)).all()
 
-    assert response.status_code == 200
-    assert response.json() == {"secret": "tenant-a-only"}
-    assert a_row is not None
-    assert b_row is None
-    assert len(events) == 1
-    assert events[0].tenant_id == "tenant-b"
-    assert events[0].journey_id == "shared"
-    assert events[0].principal_id == "user-1"
-    assert events[0].action == "inquiry_bundle.delete"
-    assert events[0].outcome == "deleted"
-    assert "secret" not in str(events[0].__dict__)
-    assert "tenant-b-only" not in str(events[0].__dict__)
+        assert response.status_code == 200
+        assert response.json() == {"secret": "tenant-a-only"}
+        assert a_row is not None
+        assert b_row is None
+        assert len(events) == 1
+        assert events[0].tenant_id == "tenant-b"
+        assert events[0].journey_id == "shared"
+        assert events[0].principal_id == "user-1"
+        assert events[0].action == "inquiry_bundle.delete"
+        assert events[0].outcome == "deleted"
+        assert "secret" not in str(events[0].__dict__)
+        assert "tenant-b-only" not in str(events[0].__dict__)
+
+
+def test_missing_delete_with_if_match_conflicts_and_leaves_audit_empty(tmp_path) -> None:
+    with _client(tmp_path) as fixture:
+        client, session_local, _ = fixture
+        assert _create(client, "retained", {"body": "keep"}).status_code == 201
+        response = client.delete("/inquiry-bundles/missing", headers={"If-Match": '"1"'})
+        with session_local() as db:
+            retained = db.get(InquiryBundleRow, ("tenant-a", "retained"))
+            events = db.scalars(select(InquiryBundleDeletionAuditEventRow)).all()
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "inquiry_bundle_conflict"
+    assert retained is not None
+    assert events == []
 
 
 def test_missing_journey_id_and_payload_over_absolute_limit_are_rejected(tmp_path) -> None:
@@ -187,11 +329,15 @@ def test_payload_above_warning_boundary_but_below_absolute_limit_is_stored(tmp_p
         client, session_local, _ = fixture
         payload = {"data": "x" * (5 * 1024 * 1024)}
 
-        response = client.post("/inquiry-bundles/large-valid", json=payload)
+        response = client.post(
+            "/inquiry-bundles/large-valid",
+            json=payload,
+            headers={"If-None-Match": "*"},
+        )
         with session_local() as db:
             row = db.get(InquiryBundleRow, ("tenant-a", "large-valid"))
 
-    assert response.status_code == 204
+    assert response.status_code == 201
     assert row is not None
     assert json.loads(row.payload_json) == payload
 
@@ -202,21 +348,49 @@ def test_single_tenant_resolution_stores_bundle(tmp_path) -> None:
     with _client(tmp_path) as fixture:
         client, _, resolver = fixture
         resolver.resolved_by = "single_tenant_adapter"
-        response = client.post("/inquiry-bundles/journey-1", json={"version": 1})
+        response = client.post(
+            "/inquiry-bundles/journey-1",
+            json={"version": 1},
+            headers={"If-None-Match": "*"},
+        )
 
-    assert response.status_code == 204
+    assert response.status_code == 201
 
 
-def test_missing_delete_does_not_create_audit_or_mutate_existing_bundles(tmp_path) -> None:
+def test_etag_known_in_one_tenant_cannot_touch_another_tenants_bundle(tmp_path) -> None:
+    # AC-7: the same journey id and revision exist in tenant A and B. Tenant
+    # B's writes/deletes always carry tenant_id=tenant-b in the CAS predicate,
+    # so even a known revision never reaches tenant A's row.
     with _client(tmp_path) as fixture:
-        client, session_local, _ = fixture
-        assert client.post("/inquiry-bundles/retained", json={"body": "keep"}).status_code == 204
-        response = client.delete("/inquiry-bundles/missing")
-        with session_local() as db:
-            retained = db.get(InquiryBundleRow, ("tenant-a", "retained"))
-            events = db.scalars(select(InquiryBundleDeletionAuditEventRow)).all()
+        client, session_local, resolver = fixture
+        assert _create(client, "same-id", {"owner": "a"}).status_code == 201
+        a_etag = client.get("/inquiry-bundles/same-id").headers["ETag"]  # '"1"'
+        resolver.tenant_id = "tenant-b"
+        assert _create(client, "same-id", {"owner": "b"}).status_code == 201
 
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Inquiry bundle not found"
-    assert retained is not None
-    assert events == []
+        # tenant B updates and deletes its own row using the same revision
+        # value it observed in tenant A — tenant A's row is never touched.
+        assert (
+            client.post(
+                "/inquiry-bundles/same-id",
+                json={"owner": "b2"},
+                headers={"If-Match": a_etag},
+            ).status_code
+            == 204
+        )
+        assert (
+            client.delete("/inquiry-bundles/same-id", headers={"If-Match": '"2"'}).status_code
+            == 204
+        )
+
+        resolver.tenant_id = "tenant-a"
+        a_get = client.get("/inquiry-bundles/same-id")
+        assert a_get.status_code == 200
+        assert a_get.json() == {"owner": "a"}
+        assert a_get.headers["ETag"] == '"1"'
+        with session_local() as db:
+            a_row = db.get(InquiryBundleRow, ("tenant-a", "same-id"))
+            b_row = db.get(InquiryBundleRow, ("tenant-b", "same-id"))
+        assert a_row is not None
+        assert a_row.revision == 1
+        assert b_row is None
