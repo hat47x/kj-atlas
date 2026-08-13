@@ -484,7 +484,26 @@ def put_document(
 
     _validate_review_attribution_identity(document=document, identity=access_request.auth)
 
+    # SEC-DOC-BOUND-01: bound card count (secondary to the byte ceiling below).
+    # Generous default; realistic KJ canvases are tens to low hundreds of cards.
+    if len(document.cards) > settings.max_document_cards:
+        raise HTTPException(
+            status_code=413,
+            detail={
+                "code": "document_too_many_cards",
+                "message": f"Document exceeds the card count limit of {settings.max_document_cards}.",
+            },
+        )
+
     payload_json = document.model_dump_json()
+    if len(payload_json.encode("utf-8")) > settings.max_document_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail={
+                "code": "document_too_large",
+                "message": f"Document exceeds the storage size limit of {settings.max_document_bytes} bytes.",
+            },
+        )
     doc_row = get_document_row(
         db,
         tenant=tenant,

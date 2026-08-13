@@ -394,6 +394,22 @@ class Settings(BaseSettings):
         default=False,
         validation_alias="KJ_ATLAS_ALLOW_JIT_PROVISIONING",
     )
+    max_document_bytes: int = Field(
+        # SEC-DOC-BOUND-01: bound DocumentV1 payload size, matching the inquiry
+        # bundle's 20 MiB cap. Verified live: ~2MB / 20,000 cards were accepted
+        # unbounded before this. Configurable for organizations that need a
+        # different ceiling.
+        default=20 * 1024 * 1024,
+        validation_alias="KJ_ATLAS_MAX_DOCUMENT_BYTES",
+    )
+    max_document_cards: int = Field(
+        # SEC-DOC-BOUND-01: bound card count as a secondary defense (the byte
+        # ceiling already bounds total size; this bounds pathological card
+        # counts that stay under 20 MiB via tiny card texts). Generous default
+        # (10,000) — realistic KJ canvases are tens to low hundreds of cards.
+        default=10_000,
+        validation_alias="KJ_ATLAS_MAX_DOCUMENT_CARDS",
+    )
     auth_provider_field: str = Field(
         default="x-auth-provider",
         validation_alias="KJ_ATLAS_AUTH_PROVIDER_FIELD",
