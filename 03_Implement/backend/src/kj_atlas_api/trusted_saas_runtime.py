@@ -297,11 +297,19 @@ def validate_saas_providers_exist() -> None:
                 .count()
             )
             if count == 0:
+                # SEC-ADMIN-PLANE-01 AC-4: this warning previously named an
+                # endpoint that returned 404 on this very profile. ADR-0072 D2=A
+                # opened the surface and replaced the profile gate with
+                # authorization, so the instruction is now reachable -- but only
+                # with the control-plane credential, which the text must say.
                 logger.warning(
                     "SaaS profile: no active identity providers with JWKS URI "
                     "found. Register at least one via "
-                    "POST /admin/provision/identity-providers before "
-                    "authentication requests will succeed."
+                    "POST /admin/provision/identity-providers, presenting the "
+                    "control-plane credential as the X-Admin-Api-Key header "
+                    "(KJ_ATLAS_ADMIN_API_KEY). The business-plane key is not "
+                    "accepted. Authentication requests fail until an identity "
+                    "provider exists."
                 )
         finally:
             db.close()

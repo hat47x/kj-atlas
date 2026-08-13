@@ -211,6 +211,11 @@ LOCALHOST_PROBE_ALLOWLIST_EXACT = frozenset(
         "http://localhost:8001",  # mock adapter / local LLM base URL example
         "http://localhost:4173/api/healthz",  # vite preview server, e2e_testing.md
         "http://localhost:8080",  # web entry point (nginx-fronted SPA)
+        # SEC-ADMIN-PLANE-01 / ADR-0072 D1: control-plane bootstrap example in
+        # 04_Documentation/security.md. Verified against nginx.conf
+        # (location /api/ -> proxy_pass http://api:8000/, which strips /api) and
+        # routes/admin.py (APIRouter prefix="/admin/provision" + "/identity-providers").
+        "http://localhost:8080/api/admin/provision/identity-providers",
     }
 )
 LOCALHOST_PROBE_ALLOWLIST_PREFIX = (

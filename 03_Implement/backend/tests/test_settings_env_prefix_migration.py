@@ -126,6 +126,11 @@ def test_settings_uses_prefixed_key(monkeypatch) -> None:  # type: ignore[no-unt
 def test_settings_normalizes_available_runtime_profile(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
     monkeypatch.setenv("KJ_ATLAS_RUNTIME_PROFILE", "  ENTERPRISE-PRODUCTION ")
+    # ADR-0072 D3=A: this profile refuses to construct without an authentication
+    # means. This test is about profile-string normalization, so supply the keys
+    # rather than weaken the fail-fast.
+    monkeypatch.setenv("KJ_ATLAS_ADMIN_API_KEY", "admin-key")
+    monkeypatch.setenv("KJ_ATLAS_API_KEY", "business-key")
 
     loaded = Settings()
 
@@ -138,6 +143,10 @@ def test_settings_accepts_saas_runtime_profile(monkeypatch) -> None:  # type: ig
     # and the main.py lifespan preflight instead.
     _unset_related_envs()
     monkeypatch.setenv("KJ_ATLAS_RUNTIME_PROFILE", "saas-multitenant")
+    # ADR-0072 D3=A: still not *unconditionally* blocked, but it does require a
+    # control-plane credential. The business-plane key is not required here --
+    # the trusted auth edge authenticates the business plane on this profile.
+    monkeypatch.setenv("KJ_ATLAS_ADMIN_API_KEY", "admin-key")
 
     loaded = Settings()
 
