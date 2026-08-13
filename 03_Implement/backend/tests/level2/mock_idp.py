@@ -19,6 +19,13 @@ Legacy (ADR-0063 D9-7):
   POST /oidc/token                 — direct JWT issuance (no OAuth flow)
   GET  /jwks.json                  — ephemeral public key
   GET  /healthz                    — liveness
+
+Test-only admin (ADR-0074 SAAS-TENANT-SESSION-BINDING-01 harness prep):
+  POST /admin/register-client-secret         — opt in a client_id to
+                                               confidential-client verification
+  POST /admin/register-backchannel-logout-uri — where to POST Logout Tokens
+  POST /admin/trigger-backchannel-logout      — build+send a Logout Token
+                                               (OIDC Back-Channel Logout 1.0)
 """
 
 from __future__ import annotations
@@ -28,6 +35,7 @@ import secrets
 import time
 from urllib.parse import urlencode
 
+import httpx
 import jwt
 from fastapi import Cookie, FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -43,6 +51,12 @@ _MOCK_BASE = "http://mock-idp.local"
 # In-memory stores.
 _pending_codes: dict[str, dict[str, object]] = {}  # code → {claims, code_challenge}
 _mock_sessions: dict[str, dict[str, str]] = {}  # session_id → {username, tenant_ref}
+# Test harness opt-in stores (ADR-0074 prep). Empty by default so existing
+# public-client + PKCE callers (e.g. test_saas_oauth_login_e2e.py) see no
+# behavior change: a client_id only gets confidential-client / back-channel
+# logout treatment once a test explicitly registers it.
+_registered_client_secrets: dict[str, str] = {}  # client_id → secret
+_registered_backchannel_logout_uris: dict[str, str] = {}  # client_id → RP URI
 
 
 # ---------------------------------------------------------------------------
@@ -334,6 +348,7 @@ def authorize_approve(
     code_challenge_method: str = Form(""),
     approve: str | None = Form(None),
     deny: str | None = Form(None),
+    session_id: str | None = Cookie(default=None, alias="mock_idp_session"),
 ) -> RedirectResponse:
     """Issue authorization code. Store PKCE code_challenge for later
     verification at /oauth/token."""
@@ -342,6 +357,12 @@ def authorize_approve(
         return RedirectResponse(url=f"{redirect_uri}?{params}", status_code=302)
 
     code = secrets.token_urlsafe(32)
+    # The OIDC `sid` claim identifies this IdP login session so a later
+    # back-channel Logout Token can name it. Reuse the mock_idp_session
+    # cookie's id (the login already minted one via _new_session()) when
+    # present so every token from the same browser session shares one sid;
+    # fall back to a fresh id for token-endpoint-only callers with no cookie.
+    sid = session_id or secrets.token_urlsafe(16)
     entry: dict[str, object] = {
         "sub": username,
         "tenant_ref": tenant_ref,
@@ -349,6 +370,7 @@ def authorize_approve(
         "client_id": client_id,
         "redirect_uri": redirect_uri,
         "exp": time.time() + 600,
+        "sid": sid,
     }
     # Store PKCE challenge if provided.
     if code_challenge and code_challenge_method.upper() == "S256":
@@ -371,11 +393,22 @@ def token_exchange(
     code: str | None = Form(None),
     redirect_uri: str = Form(f"{_MOCK_BASE}/callback"),
     client_id: str = Form("mock-client"),
+    client_secret: str | None = Form(None),
     code_verifier: str | None = Form(None),
 ) -> dict[str, object]:
     """Exchange an authorization code for a short-lived JWT."""
     if grant_type != "authorization_code":
         raise HTTPException(status_code=400, detail="unsupported grant_type")
+
+    # Confidential-client verification is opt-in: only a client_id a test
+    # has registered a secret for (see /admin/register-client-secret) is
+    # held to it. Unregistered client_ids -- including the default
+    # "mock-client" every existing test uses -- keep today's public-client
+    # + PKCE behavior unchanged.
+    expected_secret = _registered_client_secrets.get(client_id)
+    if expected_secret is not None:
+        if not client_secret or not secrets.compare_digest(client_secret, expected_secret):
+            raise HTTPException(status_code=401, detail="invalid_client")
 
     # Authorization code grant (with PKCE).
     if not code:
@@ -404,6 +437,7 @@ def token_exchange(
         "tenant_ref": str(pending["tenant_ref"]),
         "email": f"{pending['sub']}@mock-idp.local",
         "name": str(pending["sub"]).title(),
+        "sid": str(pending["sid"]),
     }
     result = _issue_jwt(provider=str(pending["client_id"]), claims=claims)
     result["scope"] = pending.get("scope", "openid")
@@ -439,6 +473,113 @@ def logout(
         )
     response.delete_cookie(key="mock_idp_session")  # type: ignore[union-attr]
     return response  # type: ignore[return-value]
+
+
+# ---------------------------------------------------------------------------
+# Back-Channel Logout (OIDC Back-Channel Logout 1.0) -- test-only admin API
+#
+# Real IdPs push a Logout Token to a Relying Party's registered
+# backchannel_logout_uri when a session ends elsewhere (SSO logout, admin
+# revocation). This mock has no persistent client registration, so tests
+# register a target URI and a client_secret explicitly via the /admin
+# endpoints below, then call /admin/trigger-backchannel-logout to have the
+# mock build a spec-shaped Logout Token and (best-effort) POST it -- mirroring
+# how a Broker like Keycloak would notify kj-atlas's BFF.
+# ---------------------------------------------------------------------------
+
+
+def _issue_logout_token(*, issuer: str, audience: str, sub: str | None, sid: str | None) -> str:
+    """Build a signed OIDC Logout Token (Back-Channel Logout 1.0 draft §3).
+
+    Must carry the `events` claim naming the backchannel-logout event, at
+    least one of sub/sid, and must NOT carry `nonce` (the spec forbids it to
+    keep Logout Tokens from being mistaken for ID Tokens).
+    """
+    now = int(time.time())
+    payload: dict[str, object] = {
+        "iss": issuer,
+        "aud": audience,
+        "iat": now,
+        "jti": secrets.token_urlsafe(24),
+        "events": {"http://schemas.openid.net/event/backchannel-logout": {}},
+    }
+    if sub is not None:
+        payload["sub"] = sub
+    if sid is not None:
+        payload["sid"] = sid
+    return jwt.encode(
+        payload,
+        _SIGNING_KEY.private_key_pem,
+        algorithm="RS256",
+        headers={"kid": _SIGNING_KEY.kid},
+    )
+
+
+@app.post("/admin/register-client-secret")
+def register_client_secret(
+    client_id: str = Form(...), client_secret: str = Form(...)
+) -> dict[str, str]:
+    """Test-only: opt a client_id into confidential-client verification at
+    /oauth/token. Unregistered client_ids stay public-client (unchanged)."""
+    if not client_id.strip() or not client_secret.strip():
+        raise HTTPException(status_code=400, detail="client_id_and_secret_required")
+    _registered_client_secrets[client_id] = client_secret
+    return {"status": "registered", "client_id": client_id}
+
+
+@app.post("/admin/register-backchannel-logout-uri")
+def register_backchannel_logout_uri(
+    client_id: str = Form(...), uri: str = Form(...)
+) -> dict[str, str]:
+    """Test-only: where trigger-backchannel-logout should POST Logout Tokens
+    for this client_id."""
+    if not client_id.strip() or not uri.strip():
+        raise HTTPException(status_code=400, detail="client_id_and_uri_required")
+    _registered_backchannel_logout_uris[client_id] = uri
+    return {"status": "registered", "client_id": client_id, "uri": uri}
+
+
+@app.post("/admin/trigger-backchannel-logout")
+def trigger_backchannel_logout(
+    client_id: str = Form("mock-client"),
+    sub: str | None = Form(None),
+    sid: str | None = Form(None),
+) -> dict[str, object]:
+    """Test-only: build a Logout Token and attempt delivery to the URI
+    registered for client_id. Always returns the token (callers that want to
+    assert on delivery failure -- e.g. the ADR-0074 decision-6 fallback to
+    full-session revocation when back-channel logout can't reach the RP --
+    can register an unreachable/no URI and inspect delivery.ok themselves)."""
+    if not sub and not sid:
+        raise HTTPException(status_code=400, detail="sub_or_sid_required")
+
+    logout_token = _issue_logout_token(
+        issuer=f"{_MOCK_BASE}/{client_id}",
+        audience=client_id,
+        sub=sub,
+        sid=sid,
+    )
+
+    uri = _registered_backchannel_logout_uris.get(client_id)
+    if uri is None:
+        return {"logout_token": logout_token, "delivery": {"attempted": False, "ok": False}}
+
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            response = client.post(uri, data={"logout_token": logout_token})
+        return {
+            "logout_token": logout_token,
+            "delivery": {
+                "attempted": True,
+                "ok": response.status_code == 200,
+                "status_code": response.status_code,
+            },
+        }
+    except httpx.HTTPError as exc:
+        return {
+            "logout_token": logout_token,
+            "delivery": {"attempted": True, "ok": False, "error": str(exc)},
+        }
 
 
 # ---------------------------------------------------------------------------
