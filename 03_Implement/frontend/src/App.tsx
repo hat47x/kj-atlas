@@ -2529,7 +2529,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const handleCardMove = useCallback(
     (cardId: string, deltaWorldX: number, deltaWorldY: number) => {
-      if (!document || isPreviewingSuggestion || (deltaWorldX === 0 && deltaWorldY === 0)) {
+      if (!document || isReadOnly || isPreviewingSuggestion || (deltaWorldX === 0 && deltaWorldY === 0)) {
         return;
       }
 
@@ -2573,7 +2573,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         };
       });
     },
-    [document, isGridSnapEnabled, isPreviewingSuggestion]
+    [document, isGridSnapEnabled, isReadOnly, isPreviewingSuggestion]
   );
 
   const applyLayoutOperation = useCallback(

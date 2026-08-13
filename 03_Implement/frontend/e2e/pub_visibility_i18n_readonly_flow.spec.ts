@@ -153,3 +153,43 @@ test("fixture-backed readOnly + safe-mode blocks a committed card text edit in t
   await expect(card).toBeVisible();
   await expect(page.getByText("attempted edit while read-only")).toHaveCount(0);
 });
+
+test("fixture-backed readOnly blocks card drag repositioning", async ({ page }) => {
+  await routeFrontendDependencies(page, buildDocument("doc_phase1_canvas", "readonly drag card"));
+  await page.goto("/?readOnly=1");
+
+  await expect(page.getByText(READ_ONLY_INDICATOR).first()).toBeVisible();
+
+  const startPanel = page.locator(START_PANEL);
+  await expect(startPanel).toBeVisible();
+  await startPanel.getByRole("button", { name: /Open sample|サンプルを開く/ }).click();
+  await expect(startPanel).toBeHidden();
+
+  const card = page.locator(`${PRIMARY_FLOW} [role="button"]`, { hasText: "readonly drag card" });
+  await expect(card).toBeVisible();
+  const before = await card.boundingBox();
+  if (!before) {
+    throw new Error("card bounding box unavailable before drag attempt");
+  }
+
+  // handleCardMove (App.tsx) used to write straight to history/isDirty on every
+  // pointer move, bypassing the applyDocumentChange() gate that every other
+  // mutation (including the card-text-edit test above) goes through. Unlike a
+  // click, a drag has no separate "commit" step to intercept -- so the only way
+  // to prove the position boundary holds is to actually attempt the drag
+  // gesture and check the card never moves, rather than asserting a blocked
+  // message (there is deliberately no per-pointer-move message; it would fire
+  // on every mouse-move event of the gesture).
+  await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(before.x + before.width / 2 + 120, before.y + before.height / 2 + 90, { steps: 6 });
+  await page.mouse.up();
+
+  const after = await card.boundingBox();
+  if (!after) {
+    throw new Error("card bounding box unavailable after drag attempt");
+  }
+  expect(after.x).toBe(before.x);
+  expect(after.y).toBe(before.y);
+  await expect(page.getByText(/Moved card|カードを移動しました/)).toHaveCount(0);
+});
