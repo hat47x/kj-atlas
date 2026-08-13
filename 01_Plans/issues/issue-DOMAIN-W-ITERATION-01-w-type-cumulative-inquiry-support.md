@@ -325,9 +325,10 @@ W型 inquiry の保存 API（`/inquiry-bundles/*`）は現状 SaaS セッショ�
 
 **着手には**: (a) フィクスチャ改修（header 由来 identity）の設計、(b) frontend 接続（client + UI）のスコープ、の2点の判断が必要。案A の backend 分岐だけでは「保存 API が local-dev で使える」だけで、業務領域カバレッジの実質回復には frontend 接続まで含める必要がある。
 
-## single-tenant 化の対応記録（2026-08-13・backend 完了）
+## single-tenant 化の対応記録（2026-08-13・backend + frontend 完了）
 
 - **backend 分岐を実装**（`8ce650e2`）: `_trusted_session` を `tenant_session_precondition_required` で分岐し、single-tenant は `resolve_identity_context` + `app.state.tenant_context_resolver` で tenant 解決。削除監査 `principal_id` は `"anonymous"` フォールバック。
-- **テストフィクスチャ改修**: `_seed` に `UserIdentityRow`（header 由来 identity の事前プロビジョニング）を追加、`_client` に `x-forwarded-user: user-1` / `x-auth-provider: oidc` ヘッダーを追加、`test_routes_fail_closed...` を `test_single_tenant_resolution_stores_bundle`（204）へ変更。
-- **検証**: 6 tests pass。実機で local-dev `POST 204 / GET 200 roundtrip / DELETE 204` を確認。
-- **残課題**: frontend 接続（`putInquiryBundle` client 呼び出し + `InquiryJourneyPrototypePanel` の実接続）は未着手。backend 保存は local-dev で使えるが、UI 導線が無いと実価値は未回復。
+- **client 関数**（`a8695a08`）: `putInquiryBundle` / `getInquiryBundle` / `deleteInquiryBundle`（契約テスト3件）。
+- **frontend UI**（`818b55d3`）: `InquiryJourneyPrototypePanel` に「バックエンドへ保存」「バックエンドから再読込」を追加。`runTenantScopedApiRequest` + `verifiedTenantSession` で tenant-scoped に配線。
+- **テストフィクスチャ改修**: `_seed` に `UserIdentityRow`、`_client` に header を追加、`test_routes_fail_closed...` を single-tenant 成功テストへ変更。
+- **検証**: backend 6 tests pass・実機 `POST 204 / GET 200 / DELETE 204`、frontend 1435 tests pass。
