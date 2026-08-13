@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setActiveLocale } from "../i18n/translate";
+import { buildTenantStorageKey } from "../storage/tenant_scope";
 import { AppErrorBoundary, clearEvictedDocument, loadEvictedDocument } from "./AppErrorBoundary";
 
 function makeLocalStorageMock(): Storage {
@@ -59,5 +60,40 @@ describe("AppErrorBoundary", () => {
     Object.defineProperty(globalThis, "window", { value: {}, configurable: true });
     expect(loadEvictedDocument()).toBeNull();
     clearEvictedDocument(); // must not throw
+  });
+
+  // SAAS-TENANT-01 AC-8: a document evicted during one tenant's session must
+  // never surface as a recovery offer to a different tenant sharing the same
+  // browser profile after an active-tenant switch.
+  it("keeps documents evicted under one tenant scope invisible to another tenant's scope", () => {
+    const tenantA = { deployment: "evaluation", tenantId: "tenant-a", principalId: "user-1" };
+    const tenantB = { deployment: "evaluation", tenantId: "tenant-b", principalId: "user-1" };
+    const doc = { version: 1, id: "doc-1", title: "tenant-a confidential draft" };
+
+    window.localStorage.setItem(
+      buildTenantStorageKey("kj-atlas/evicted-doc", tenantA),
+      JSON.stringify(doc),
+    );
+
+    expect(loadEvictedDocument(tenantA)).toEqual(doc);
+    expect(loadEvictedDocument(tenantB)).toBeNull();
+    expect(loadEvictedDocument()).toBeNull(); // unscoped (single-tenant) key is separate too
+
+    clearEvictedDocument(tenantB);
+    expect(loadEvictedDocument(tenantA)).toEqual(doc); // clearing B must not touch A's copy
+
+    clearEvictedDocument(tenantA);
+    expect(loadEvictedDocument(tenantA)).toBeNull();
+  });
+
+  it("scopes the recovered-document storage key the same way as other tenant-scoped storage", () => {
+    const scope = { deployment: "evaluation", tenantId: "tenant-a", principalId: "user-1" };
+    const doc = { version: 1, id: "doc-1" };
+
+    window.localStorage.setItem(buildTenantStorageKey("kj-atlas/evicted-doc", scope), JSON.stringify(doc));
+
+    // loadEvictedDocument must read the exact key buildTenantStorageKey produces,
+    // not a hand-rolled prefix that happens to look similar.
+    expect(loadEvictedDocument(scope)).toEqual(doc);
   });
 });

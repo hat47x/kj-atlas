@@ -1,26 +1,36 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { t } from "../i18n/translate";
+import { buildTenantStorageKey, type TenantBrowserStorageScope } from "../storage/tenant_scope";
 
 // UI-RESILIENCE-01: React error boundary with emergency state eviction.
 // The app has no autosave and keeps the in-progress document in App's
 // history state; an uncaught render error unmounts the whole tree and loses
 // it. This boundary preserves the current document to localStorage before the
 // tree goes down, and offers reload / recover.
+//
+// SAAS-TENANT-01 AC-8: the key must carry the same tenant/principal scope as
+// every other storage helper (see storage/agent_task_ledger.ts). Without it,
+// a document evicted during Tenant A's session would be offered for recovery
+// to Tenant B after an active-tenant switch on the same browser profile.
 
 const EVICTED_DOC_KEY = "kj-atlas/evicted-doc";
 
-export function loadEvictedDocument(): unknown | null {
+function key(scope?: TenantBrowserStorageScope): string {
+  return scope ? buildTenantStorageKey(EVICTED_DOC_KEY, scope) : EVICTED_DOC_KEY;
+}
+
+export function loadEvictedDocument(scope?: TenantBrowserStorageScope): unknown | null {
   try {
-    const raw = window.localStorage.getItem(EVICTED_DOC_KEY);
+    const raw = window.localStorage.getItem(key(scope));
     return raw ? (JSON.parse(raw) as unknown) : null;
   } catch {
     return null;
   }
 }
 
-export function clearEvictedDocument(): void {
+export function clearEvictedDocument(scope?: TenantBrowserStorageScope): void {
   try {
-    window.localStorage.removeItem(EVICTED_DOC_KEY);
+    window.localStorage.removeItem(key(scope));
   } catch {
     // storage unavailable — nothing to clear
   }
@@ -31,6 +41,8 @@ export type AppErrorBoundaryProps = {
   getRecoverySnapshot: () => unknown | null;
   /** Called with the recovered document when the user chooses to recover. */
   onRecover: (doc: unknown) => void;
+  /** Same tenant/principal scope as the rest of this App instance's storage. */
+  storageScope?: TenantBrowserStorageScope;
   children?: ReactNode;
 };
 
@@ -51,7 +63,7 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
     try {
       const snapshot = this.props.getRecoverySnapshot();
       if (snapshot != null) {
-        window.localStorage.setItem(EVICTED_DOC_KEY, JSON.stringify(snapshot));
+        window.localStorage.setItem(key(this.props.storageScope), JSON.stringify(snapshot));
       }
     } catch {
       // storage full/unavailable — fall through to the reload fallback
@@ -63,11 +75,11 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
   };
 
   private handleRecover = (): void => {
-    const doc = loadEvictedDocument();
+    const doc = loadEvictedDocument(this.props.storageScope);
     if (doc != null) {
       this.props.onRecover(doc);
     }
-    clearEvictedDocument();
+    clearEvictedDocument(this.props.storageScope);
     this.setState({ hasError: false, message: null });
   };
 

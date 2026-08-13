@@ -1530,7 +1530,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   // UI-RESILIENCE-01: restore a document preserved by the error boundary
   // (the app has no autosave; a render crash otherwise loses unsaved work).
-  const [pendingRecovery, setPendingRecovery] = useState<unknown | null>(() => loadEvictedDocument());
+  const [pendingRecovery, setPendingRecovery] = useState<unknown | null>(() =>
+    loadEvictedDocument(appStorage.scope),
+  );
 
   const applyRecoveredDocument = useCallback(
     (restoredDoc: unknown) => {
@@ -1546,15 +1548,15 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setIsDirty(true);
       setStatusMessage(t("app.status.document_recovered"));
       setPendingRecovery(null);
-      clearEvictedDocument();
+      clearEvictedDocument(appStorage.scope);
     },
-    [normalizeDocument, cloneDocument, t],
+    [normalizeDocument, cloneDocument, t, appStorage.scope],
   );
 
   const handleDismissRecovery = useCallback(() => {
     setPendingRecovery(null);
-    clearEvictedDocument();
-  }, []);
+    clearEvictedDocument(appStorage.scope);
+  }, [appStorage.scope]);
   const outlineRecommendations = useMemo(() => {
     if (!document || !outlineQualityReport) {
       return [];
@@ -11609,6 +11611,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     <AppErrorBoundary
       getRecoverySnapshot={() => history?.present ?? null}
       onRecover={applyRecoveredDocument}
+      storageScope={appStorage.scope}
     >
     {pendingRecovery != null ? (
       <div
