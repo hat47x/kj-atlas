@@ -51,7 +51,6 @@ _INTERMEDIATE_TASKS = frozenset({
 _FINAL_JUDGEMENT_TASKS = frozenset({
     "check_narrative",
     "detect_contradiction",
-    "assess_card_importance",
 })
 
 

@@ -182,6 +182,20 @@ def _is_external_or_wildcard(path: str) -> bool:
     return not _endpoint_segments(path)
 
 
+#: Machine-readable retirement declaration in api.md (see api.md §13):
+#:     - 廃止: POST /ai/assess-card-importance — ISSUE-ID（date、direction）
+#: DX-CANON-INTENT-01: drift detection finds the difference between docs and
+#: code but carries no information about *why* it exists, so "removed on
+#: principle" and "not built yet" look identical. That ambiguity already
+#: produced a wrong correction (a deliberately deleted endpoint was re-labelled
+#: "unimplemented (planned) -- use this contract as canonical"). Deleting the
+#: contract outright is not sufficient either: every design document that
+#: legitimately discusses the retirement -- including the issue that decided it
+#: -- then warns as referencing an undocumented endpoint (7 measured).
+#: A retired endpoint is documented, not missing.
+RETIRED_ENDPOINT_RE = re.compile(r"^-\s*廃止:\s*(GET|POST|PUT|DELETE|PATCH)\s+(/\S+)", re.M)
+
+
 print("\n=== 2. API endpoint references ===")
 if API_MD.exists():
     api_content = API_MD.read_text(encoding="utf-8")
@@ -193,6 +207,10 @@ if API_MD.exists():
     # Also match api.md bold format: **METHOD** `/path`
     for match in API_MD_BOLD_RE.finditer(api_content):
         api_endpoints.add((match.group(1), match.group(2)))
+
+    retired_endpoints: set[tuple[str, str]] = {
+        (match.group(1), match.group(2)) for match in RETIRED_ENDPOINT_RE.finditer(api_content)
+    }
 
     for doc_path in all_md_files:
         try:
@@ -209,6 +227,14 @@ if API_MD.exists():
                 for documented_method, documented_path in api_endpoints
             ):
                 continue
+            # Deliberately retired endpoints are documented as retired, so a
+            # design document discussing one is not referencing a gap.
+            if any(
+                method == retired_method
+                and endpoint_matches_documented(raw_path, retired_path)
+                for retired_method, retired_path in retired_endpoints
+            ):
+                continue
             # Skip external IdP endpoints and wildcard future references
             if _is_external_or_wildcard(raw_path):
                 continue
@@ -217,6 +243,7 @@ if API_MD.exists():
                 warn(f"{doc_path.relative_to(REPO_ROOT)}: references API endpoint '{ep}' not found in api.md")
 
     print(f"  Found {len(api_endpoints)} canonical endpoints in api.md")
+    print(f"  Found {len(retired_endpoints)} retired endpoints in api.md (api.md §13)")
 else:
     warn("api.md not found — skipping API check")
 

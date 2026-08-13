@@ -576,17 +576,17 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `explanation?: string`
 - 2枚のカード間の論理的矛盾を検出する。異なる意見（単なる相違）は矛盾として扱わない。
 
-**POST** `/ai/assess-card-importance`
+#### 廃止済み: カード重要度評価（再実装禁止）
 
-- **DX-CONTRACT-DRIFT-01（逆方向ドリフト）: 未実装（計画）。** 本 route は `AI-ROUTE-01`（MMR final_judgement タスク `assess_card_importance`）の設計として文書化されているが、`models_ai.py` の `AssessCardImportanceRequest/Response` も `routes/ai.py` の対応する `@router` デコレータも現時点では存在しない。実装前にこの契約を正本として使用すること。
-- Request: `AssessCardImportanceRequest`
-  - `cards: CardRef[]` — カードの配列（最大100件）
-- Response: `AssessCardImportanceResponse`
-  - `assessments: CardAssessment[]`
-    - `cardId: string`
-    - `importance: "high" | "medium" | "low"`
-    - `rationale?: string`
-- カード群の中での相対的重要度を評価する。重要度は表示補助であり、スコアリングや自動フィルタリングには使用しない（反スコアリング原則）。
+- 廃止: POST /ai/assess-card-importance — `AI-IMPORTANCE-SCORING-01`（2026-08-11、方向D-a）
+
+上の1行は機械可読な廃止宣言である（`check_design_consistency.py` が読む。書式は §13 参照）。**2026-08-11 に意図的に廃止した**ものであり、未実装でも計画でもない。
+
+`AI-IMPORTANCE-SCORING-01`（Status: Done、方向 D-a）が、カード本文を `high` / `medium` / `low` へ序列化する動作を `00_Prompt/domain.md` の無条件の不変条件「AIは内容を採点せず」との抵触と判定し、route・Pydantic型・prompt/parser・mock応答・デモ工程を削除した。`03_Implement/backend/tests/test_ai_anti_scoring_contract.py` が採点surfaceの復活を禁じている。
+
+**この契約を実装の正本として使用してはならない。** 代替が必要な場合は順位・等級を含まない構造的観測（`llm_input_ir_spec.md` §4 の `graph_summary`）に限定し、`ADR-0069` の後に置くこと。
+
+> 記録: 2026-08-12 に本節へ「未実装（計画）。実装前にこの契約を正本として使用すること」という誤った注記が入った。`DX-CONTRACT-DRIFT-01` が検出した「api.md に記載があるが実装が無い」というドリフトに対し、**廃止によるものか未着手によるものかを区別せずに** 後者と解釈したことが原因である。ドリフト検出は差分を見つけるが意図は見分けない。詳細は `DX-CANON-INTENT-01`。
 
 **POST** `/ai/summarize-island-relation`
 
@@ -1183,3 +1183,40 @@ Inquiry bundle は `DocumentV1` の optional field ではなく、W型累積探�
 ## 12. 形成履歴（Informative）
 
 2026-04-30〜2026-05-19のCE0/CE1/CE4 mock-first、Stream同期、freeze/handoff形成記録は [API contract formation history](history/api-contract-formation-2026-04-to-05.md) へ分離した。現在の型は`schemas.md`、責務・信頼境界は`02_Architecture/architecture.html`、endpoint/status/error/認証/副作用は本書を正本とする。
+
+## 13. 廃止済みエンドポイントの記録規約（DX-CANON-INTENT-01）
+
+### 13.1 なぜ規約が要るか
+
+ドリフト検出器は「本書に記載があるが実装に無い」という**差分**を見つけるが、その差分が **まだ作っていないから** 生じたのか、**作ったが原則違反として捨てたから** 生じたのかを見分ける情報を持たない。両者は検出器から見て同じ形をしている。
+
+このため実際に事故が起きた。カード重要度評価は `AI-IMPORTANCE-SCORING-01` が製品不変条件（`00_Prompt/domain.md`「AIは内容を採点せず」）との抵触として意図的に削除したのに、2026-08-12 に本書へ「未実装（計画）。実装前にこの契約を正本として使用すること」という**誤った注記**が入った。検出結果に意図が乗っていなかったことが原因である。
+
+さらに、契約を本書から単に削除するだけでも別の副作用が出る。**廃止された機能を正当に論じている設計文書（廃止を決めた issue 自身を含む）が、一律に「api.md に無いエンドポイントを参照している」警告になる。** 実測で7件発生した。
+
+### 13.2 書式
+
+廃止した endpoint は、本書の該当箇所に次の1行を置く。
+
+```
+- 廃止: <METHOD> <path> — <廃止を決めたissue ID>（<廃止日>、<採択した方向>）
+```
+
+この行は `check_design_consistency.py` が `RETIRED_ENDPOINT_RE` で読む。効果は次の2点である。
+
+1. 当該 endpoint を参照する設計文書は警告されない（**廃止として文書化されている**ため、未文書化ではない）。
+2. 実装が復活した場合は検出対象として残る（`check_contract_drift.py` の routes→api.md 方向、および不変条件由来の廃止については専用の回帰テスト）。
+
+### 13.3 併記すべきこと
+
+機械可読な1行に加えて、散文で次を書く。**実装可能なrequest/responseスキーマは残さない。** スキーマが残っていれば、それは仕様として読まれる（13.1 の事故の直接原因）。
+
+- 廃止の理由（どの不変条件・どの判断に抵触したか）
+- 再実装の可否。禁止する場合は、それを固定しているテスト
+- 代替手段があればその方針と前提
+
+### 13.4 現在の廃止済み一覧
+
+| endpoint | 廃止日 | 根拠 | 再実装 |
+|---|---|---|---|
+| POST /ai/assess-card-importance | 2026-08-11 | `AI-IMPORTANCE-SCORING-01`（D-a）。カード本文の序列化が `domain.md` の無条件の不変条件に抵触 | **禁止**。`test_ai_anti_scoring_contract.py` が固定。代替は順位・等級を含まない構造的観測（`llm_input_ir_spec.md` §4 `graph_summary`）に限り、`ADR-0069` の後 |
