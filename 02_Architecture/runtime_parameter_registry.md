@@ -102,7 +102,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLM のbase URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 | direct / llm-stub overlay のみ | 通常値（接続先ホスト名。認証情報は含まない） | overlay 使用時、`local` provider 経由のリクエストが stub へ到達すること（成否のみ確認、payload は出力しない） |
 | `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLM に渡す256文字以下のcanonical model ID | direct / llm-stub overlay のみ | 通常値 | stub 側ログの model 欄が設定値と一致することを確認する |
 | `KJ_ATLAS_LLM_TASK_MODEL_MAP` | 未設定（空文字） | ADR-0065: タスク別モデル割当（`task=model,...`）。未設定タスクは既定モデル。 | direct | 通常値 | 指定 task のリクエスト model が設定値と一致することをログで確認する |
-| `KJ_ATLAS_LLM_HIGH_REASONING_MODEL` | 未設定 | AI-ROUTE-01 MMR-04: final_judgement系タスク（check_narrative/detect_contradiction/assess_card_importance）の既定モデル。未設定時は既定モデルへフォールバック。 | direct | 通常値 | final_judgementタスクのリクエスト model が設定値と一致することをログで確認する |
+| `KJ_ATLAS_LLM_HIGH_REASONING_MODEL` | 未設定 | AI-ROUTE-01 MMR-04: final_judgement系タスク（check_narrative/detect_contradiction）の既定モデル。未設定時は既定モデルへフォールバック。 | direct | 通常値 | final_judgementタスクのリクエスト model が設定値と一致することをログで確認する |
 | `KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL` | 未設定 | large-scale LLM のbase URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 | direct | 通常値（接続先ホスト名。認証情報は別キー） | allowlist 外ホストを設定した場合に呼び出しが拒否されることを確認する |
 | `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | 未設定 | large-scale LLM に渡す256文字以下のcanonical model ID | direct | 通常値 | 呼び出しペイロードの model フィールドが設定値と一致することを確認する |
 | `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale LLM への昇格許可 | direct | 通常値 | `false` のとき large-scale provider への昇格が拒否されることを確認する |
