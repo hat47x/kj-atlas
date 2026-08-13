@@ -128,7 +128,7 @@ def test_migration_downgrade_removes_saas_auth_sessions_table(tmp_path: Path) ->
     upgrade = _run_alembic(db_path, "upgrade", "head")
     assert upgrade.returncode == 0, upgrade.stderr
 
-    downgrade = _run_alembic(db_path, "downgrade", "20260813_0026")
+    downgrade = _run_alembic(db_path, "downgrade", "20260811_0025")
     assert downgrade.returncode == 0, downgrade.stderr
 
     con = sqlite3.connect(db_path)
