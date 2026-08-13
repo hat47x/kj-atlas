@@ -1,7 +1,7 @@
 # Issue: SEC-AI-SAFEMODE-01 SafeModeの未レビュー本文保護がAPI境界で強制されていない
 
 - Type: Security
-- Status: Draft
+- Status: In Progress
 - Source Issue: TBD
 - Priority: P0
 - Owner: Unassigned
@@ -86,13 +86,13 @@ SafeMode の未レビュー本文保護は**フロントエンドのみの強制
 
 ## 受入条件
 
-- [ ] AC-1: SafeMode 有効時に未レビュー本文を含むリクエストが、採択された D2 の挙動（推奨: 422 拒否）で処理されることを、全対象エンドポイントについて integration テストで固定する。
-- [ ] AC-2: パラメータ未指定のリクエストが安全側（SafeMode ON）に倒れることをテストで固定する。
-- [ ] AC-3: 拒否・マスク時の応答に未レビュー本文が含まれないことを確認する。
-- [ ] AC-4: 既存フロントエンドが改修なしで動作する（後方互換）。または必要な改修を同一 PR に含める。
-- [ ] AC-5: `02_Architecture/api.md` のリクエスト契約を実装と同期する。
-- [ ] AC-6: `THREAT_MODEL.md` に「API 直接呼び出しによる SafeMode 迂回」の緩和策を記載する。
-- [ ] AC-7: 外部送出ガード（opt-in・allowlist・trusted-HTTP）が変更されていないことを既存テストで確認する。
+- [x] AC-1: SafeMode 有効時に未レビュー本文を含むリクエストが、採択された D2 の挙動（推奨: 422 拒否）で処理されることを、全対象エンドポイントについて integration テストで固定する。— `_reject_unreviewed_text` を6ルート（suggest_layout/suggest_merges/suggest_island_summary/generate_narrative/check_narrative/propose_island_summary）へ配線。`test_ai_safemode.py` で実走行（未レビュー→422）。
+- [x] AC-2: パラメータ未指定のリクエストが安全側（SafeMode ON）に倒れることをテストで固定する。— `allowUnreviewedText=None`（未指定）は fail-closed で拒否（test_ai_safemode.py の default 拒否テスト）。
+- [x] AC-3: 拒否・マスク時の応答に未レビュー本文が含まれないことを確認する。— 422 応答は `unreviewed_text_not_allowed` コード＋固定メッセージのみ（本文非含有）。
+- [~] AC-4: 既存フロントエンドが改修なしで動作する（後方互換）。または必要な改修を同一 PR に含める。— **frontend は現状、全文書（未レビュー含む）を送るため、未レビューカードを含む文書では AI 提案が 422 になる**。frontend 側の「未レビュー本文を除外して送る（または拒否を明示）」改修が別途必要。
+- [ ] AC-5: `02_Architecture/api.md` のリクエスト契約を実装と同期する。— 未実施。
+- [ ] AC-6: `THREAT_MODEL.md` に「API 直接呼び出しによる SafeMode 迂回」の緩和策を記載する。— 未実施。
+- [ ] AC-7: 外部送出ガード（opt-in・allowlist・trusted-HTTP）が変更されていないことを既存テストで確認する。— 未実施（既存テスト 94 pass は確認済み）。
 
 ## 検証
 
