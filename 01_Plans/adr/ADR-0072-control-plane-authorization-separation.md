@@ -1,9 +1,10 @@
 # ADR-0072: 管理面（Control Plane）の認可を業務面から分離し、SaaSでも到達可能にする
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-09
+- Accepted: 2026-08-13（**D1=A+B の二段 / D2=A / D3=A**。保守者による明示承認。仮承認ではない）
 - Renumbered: 2026-08-10（起票時に ADR-0067 を採番したが、同番号が `ADR-0067-three-element-constraint-design-method.md`（2026-08-08、先行）と衝突していた。`docs_check` の DC-ADR-001 の指示どおり、先行分を維持し本ADRを次の未使用番号へ改番した。判断内容は無変更。）
-- Deciders: Maintainer（本ADRは提案。採択判断は保守者が行う）
+- Deciders: Maintainer（2026-08-13 採択済み。採択内容は下記「採択記録」を正とする）
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/admin.py`, `main.py`, `settings.py`, `runtime_bootstrap.py`, `02_Architecture/enterprise_architecture.html`, `04_Documentation/security.md`, `THREAT_MODEL.md`
 
 ## Context
@@ -62,9 +63,41 @@ saas-multitenant       -> HTTP 404 {'code': 'strict_provisioning_unavailable'}
 - 管理面と業務面が同一 origin・同一認証（あるいは無認証）で提供され、前段で分離するための要件が運用文書に記載されていない。
 - `THREAT_MODEL.md` と `04_Documentation/security.md` に「/admin を別経路で保護せよ」という運用要件の記述が見当たらない。
 
-## 決定すべき論点
+## 採択記録（2026-08-13）
 
-本ADRは以下を決める。**採択前に実装へ着手しない。**
+保守者の明示承認により Proposed → Accepted。採択内容は推奨どおり **D1=A+B の二段 / D2=A / D3=A**。
+
+| 論点 | 採択 | 内容 |
+|---|---|---|
+| **D1** | **A+B の二段** | 静的 admin bearer（`KJ_ATLAS_ADMIN_API_KEY`）を**ブートストラップ専用の最小権限経路**として `/admin/**` のみに適用し、IdP登録後の通常運用は trusted auth edge の JWT ＋ platform-operator capability claim で行う。D1=C（ネットワーク分離）は**アプリ側の保証ではなく deployment 側の推奨構成**として文書化し、A+B と排他にしない |
+| **D2** | **A** | 管理面を SaaS でも開放し、D1 の認可で保護する。`require_single_tenant_provisioning_surface` を認可判定へ置き換える |
+| **D3** | **A** | `enterprise-production` / `saas-multitenant` で認証手段が未設定なら `Settings()` 構築時に fail-fast（`ADR-0062` と同じ方針を認証そのものへ一貫適用） |
+
+### 採択時の補正: D2 における profile 差の分離（必須）
+
+`02_Architecture/post-mvp-business-scope-design-program.html` §5.2 が、本ADR採択時に反映すべき欠落として次を指摘している。**D2=A を採るにあたり、この分離を実装要件に含める。**
+
+本ADRは「管理面をどう認可するか」を論じていたが、「**最初の管理者は誰であり、その人物の正当性はどう確認されるか**」という業務次元の問いを扱っていなかった。そしてこの問いの答えは profile によって異なる。同じ「bootstrap」という語で二つの異なる業務要件を指していたため、D2 のいずれの案を採っても SaaS 側は解ききれない。
+
+| profile | 最初の管理者とは誰か | 正当性の根拠 | bootstrap token で足りるか |
+|---|---|---|---|
+| `enterprise-production`（自己ホスト） | そのインスタンスをデプロイした人物 | 物理的に自明。サーバへの到達権＝所有権 | **足りる** |
+| `saas-multitenant`（共有基盤） | テナントを申し込んだ組織の代表者 | 自明でない。組織の実在とドメイン所有の確認が要る | **足りない**。「申込者が本当にその組織の人か」を担保できない |
+
+したがって D2=A の実装は次の2段に分ける。
+
+1. **`enterprise-production`**: D1=A の静的 admin bearer による bootstrap を正規手順とする。到達権＝所有権の前提が成立するため、これで閉じる。
+2. **`saas-multitenant`**: 静的 bearer による bootstrap だけでは**閉じない**。テナント発行は「組織の実在確認を伴う別工程」の帰結として行われるべきものであり、`/admin/provision/*` を SaaS で開放することは**その別工程の存在を前提とする**。本ADRはこの別工程（申込・審査・ドメイン所有確認）を設計対象としない。SaaS でのテナント発行経路は、この前提が満たされるまで**運用手順として閉じたまま**とし、API の到達性のみ D1 の認可で担保する。
+
+この分離を明示しないまま SaaS で管理面を開放すると、「静的 bearer を知る者が任意の組織名でテナントを作れる」状態になる。API の認可（本ADRの範囲）と、テナント発行の業務的正当性（本ADRの範囲外）は別問題である。
+
+### 実装の解禁
+
+本ADR採択により `SEC-ADMIN-PLANE-01`（**Draft P0**）の「ADR が Proposed の間は着手しないこと」という制約が解除される。同issueは `enterprise-production` が既定で完全無認証起動する欠陥を扱っており、D3=A がその直接の対策である。
+
+## 決定すべき論点（採択済み・記録として残す）
+
+本ADRは以下を決めた。**採択内容は上記「採択記録」を正とする。**
 
 - **D1**: 管理面の認可方式。
 - **D2**: SaaS プロファイルにおける管理面の到達性とブートストラップ手順。
