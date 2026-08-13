@@ -51,7 +51,15 @@
 
 ## 依存関係
 
-- `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（採択が前提。Proposed中はschema/API実装へ着手しない）
+- `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md` — **2026-08-13 Maintainer承認によりAccepted**。「Acceptance Gate 回答」節（BFF内蔵、cookie/CSRF/timeout、Broker logout連携、E2E/CORS移行範囲）が実装方針の正本となる。着手可能。
+
+### テストハーネスの前提整備（2026-08-13、着手前に必要）
+
+`tests/level2/mock_idp.py`をADR-0074の回答案③（Brokerごとのlogout連携）の検証に使うには、現状3点が不足している。実装着手前にこの節を満たすこと。
+
+- **Back-Channel Logout未実装**: `/backchannel-logout`相当のendpointと、IdP側からLogout Tokenを能動的に送出する経路が無い。
+- **`sid` claim未発行**: `_issue_jwt`（`mock_idp.py:71-108`）がclaimに`sid`を含まない。Logout Tokenと既存sessionの紐付けができない。
+- **confidential client検証が無い**: `/oauth/token`（`mock_idp.py:368`）は`client_id`のみを見ており、`client_secret`を検証しない。現状はpublic client + PKCE（既存SPA直接方式）を模した設計であり、BFFが持つべきconfidential client契約のテストには使えない。
 
 ## 検証計画
 
