@@ -333,6 +333,16 @@ def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:
                 "The new placard must address why each objecting card disagrees, or the summary is not a true advocacy for the island.",
             ]
         )
+    # ADR-0069: the placard should reflect the island's position in the logical
+    # structure — its typed relations to OTHER islands (causal / negation / ...).
+    island_relations: list[str] = []
+    for edge in payload.doc.edges:
+        if edge.fromKind != "island" or edge.toKind != "island":
+            continue
+        if edge.fromId == island.id:
+            island_relations.append(f'this island --{edge.type}--> island "{edge.toId}"')
+        elif edge.toId == island.id:
+            island_relations.append(f'island "{edge.fromId}" --{edge.type}--> this island')
     lines.extend(
         [
             "If evidence is weak, sparse, or contradictory, include warnings.",
@@ -342,6 +352,8 @@ def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:
             "groundingIds must contain 1-10 unique card ids chosen from the input cards.",
             "Prefer the strongest supporting card ids.",
             f'Island id="{island.id}", title={json.dumps(island.title or "")}',
+            "Relations to other islands (the placard may reflect them):",
+            *(island_relations or ["- (none)"]),
             "Member cards:",
             *card_lines,
         ]

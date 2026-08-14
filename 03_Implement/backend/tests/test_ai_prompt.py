@@ -440,3 +440,19 @@ def test_generate_narrative_prompt_includes_logical_relations() -> None:
     assert "Logical relations:" in prompt
     assert '--evidence:supports-->' in prompt
     assert "causal, negation, evidence" in prompt
+
+
+def test_island_summary_prompt_includes_island_relations() -> None:
+    """ADR-0069: the island-summary placard receives the island's typed
+    relations to other islands so it reflects the structural position."""
+    doc = _sample_payload().doc
+    # Add a second island and an island-to-island edge so the placard can see
+    # its structural position.
+    doc.islands.append(Island(id="i2", cardIds=[], title="B", critique="belongs together"))
+    doc.edges.append(Edge(id="e2", fromId="i1", toId="i2", type="related", fromKind="island", toKind="island"))
+    payload = SuggestIslandSummaryRequest(doc=doc, islandId="i1")
+
+    prompt = _build_island_summary_prompt(payload)
+
+    assert "Relations to other islands" in prompt
+    assert 'this island --related--> island "i2"' in prompt
