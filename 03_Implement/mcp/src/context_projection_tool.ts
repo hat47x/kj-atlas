@@ -4,7 +4,7 @@ import {
   buildContextProjection,
   CONTEXT_PROJECTION_CONSTRAINTS,
 } from "../../frontend/src/export/context_bundle_projection.js";
-import { DocumentNotFoundError, fetchDocument, type DocumentClientConfig } from "./document_client.js";
+import { DocumentNotFoundError, fetchDocument, fetchDocumentMetadata, type DocumentClientConfig } from "./document_client.js";
 import { computeQueryCanonicalHash, logAuditEntry } from "./audit_log.js";
 
 // EXT-CONN-01 subslice B: the ONLY capability this server registers. Read-only
@@ -51,6 +51,12 @@ export function registerContextProjectionTool(server: McpServer, documentClientC
       try {
         const doc = await fetchDocument(documentClientConfig, docId);
         const projection = await buildContextProjection({ doc, constraint, safeMode });
+        // 第2反復: expose the document's lifecycle metadata (created_by /
+        // lifecycle_state) so a generative-AI can verify the lifecycle features.
+        // Advisory — null when the list endpoint is unavailable or the doc is
+        // absent from it; the projection itself remains the authority.
+        const documentMetadata = await fetchDocumentMetadata(documentClientConfig, docId);
+        const payload = { ...projection, documentMetadata };
 
         logAuditEntry({
           schemaVersion: "mcp-context-read.v1",
@@ -64,7 +70,7 @@ export function registerContextProjectionTool(server: McpServer, documentClientC
         });
 
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(projection, null, 2) }],
+          content: [{ type: "text" as const, text: JSON.stringify(payload, null, 2) }],
         };
       } catch (error) {
         logAuditEntry({

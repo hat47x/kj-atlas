@@ -77,6 +77,7 @@ try {
     counts?: { reviewed: number; unreviewed: number; redacted: number };
     voids?: Array<{ id: string; kind: string; resolved: boolean }>;
     narrativeChecks?: Array<{ id: string; issueDirections: string[] }>;
+    documentMetadata?: { id: string; title?: string; created_by?: string; lifecycle_state: string; updated_at: string } | null;
   };
   console.log(`  → bundleHash: ${projection.bundleHash}`);
   console.log(`  → schemaVersion: ${projection.schemaVersion ?? "n/a"}`);
@@ -112,6 +113,16 @@ try {
     console.log(`  → narrative checks: ${narrativeChecks.length} (directions: ${dirs.length ? dirs.join(", ") : "none"}) ✅ (KJ-AB-CROSS-CHECK-01)`);
   } else {
     console.log("  → narrative checks: 0 (none stored)");
+  }
+  // 第2反復: lifecycle metadata (created_by / lifecycle_state) for lifecycle
+  // verification. Advisory — null when the list endpoint is unavailable.
+  const documentMetadata = projection.documentMetadata;
+  if (documentMetadata) {
+    console.log(
+      `  → lifecycle: ${documentMetadata.lifecycle_state}${documentMetadata.created_by ? `, created_by=${documentMetadata.created_by}` : ""} ✅ (ADR-0073)`,
+    );
+  } else {
+    console.log("  → lifecycle metadata: n/a (list endpoint unavailable or doc absent)");
   }
   console.log("  → projection returned ✅");
 

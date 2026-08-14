@@ -3,6 +3,7 @@ import {
   DocumentFetchError,
   DocumentNotFoundError,
   fetchDocument,
+  fetchDocumentMetadata,
   loadDocumentClientConfigFromEnv,
   validateMcpRuntimeProfile,
 } from "./document_client.js";
@@ -102,5 +103,33 @@ describe("fetchDocument", () => {
     vi.stubGlobal("fetch", vi.fn(async () => mockResponse(200, body)));
     const result = await fetchDocument({ baseUrl: "http://127.0.0.1:8000" }, "doc1");
     expect(result).toEqual(body);
+  });
+});
+
+describe("fetchDocumentMetadata", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("requests GET /docs and finds the document by id", async () => {
+    const list = [
+      { id: "doc1", title: "Alpha", lifecycle_state: "archived", updated_at: "2026-08-15T00:00:00Z" },
+      { id: "doc2", lifecycle_state: "active", updated_at: "2026-08-14T00:00:00Z" },
+    ];
+    const fetchSpy = vi.fn(async () => mockResponse(200, list));
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const metadata = await fetchDocumentMetadata({ baseUrl: "http://127.0.0.1:8000" }, "doc1");
+
+    expect(fetchSpy).toHaveBeenCalledWith("http://127.0.0.1:8000/docs", { headers: {} });
+    expect(metadata).toEqual(list[0]);
+  });
+
+  it("returns null when the list is unavailable (advisory, never breaks the projection)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => mockResponse(500, {})));
+    expect(await fetchDocumentMetadata({ baseUrl: "http://127.0.0.1:8000" }, "doc1")).toBeNull();
+
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("not json", { status: 200 })));
+    expect(await fetchDocumentMetadata({ baseUrl: "http://127.0.0.1:8000" }, "doc1")).toBeNull();
   });
 });

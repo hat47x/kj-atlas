@@ -24,6 +24,7 @@ vi.mock("./document_client.js", () => ({
     if (!docState.doc) throw new Error("no mock document configured");
     return docState.doc;
   },
+  fetchDocumentMetadata: async (): Promise<null> => null,
   DocumentNotFoundError: class extends Error {},
 }));
 

@@ -67,3 +67,38 @@ export async function fetchDocument(config: DocumentClientConfig, docId: string)
 
   return (await response.json()) as DocumentV1;
 }
+
+// ADR-0073 / 第2反復: the document's row lifecycle metadata (creator and
+// lifecycle state) — payload-independent, exposed so a generative-AI client can
+// verify the lifecycle features (created_by / archive) via MCP.
+export type DocumentLifecycleMetadata = {
+  id: string;
+  title?: string;
+  created_by?: string;
+  lifecycle_state: string;
+  updated_at: string;
+};
+
+/** Fetch the document's lifecycle metadata via GET /docs (list), matching by id. */
+export async function fetchDocumentMetadata(
+  config: DocumentClientConfig,
+  docId: string,
+): Promise<DocumentLifecycleMetadata | null> {
+  const url = `${config.baseUrl}/docs`;
+  const headers: Record<string, string> = {};
+  if (config.apiKey) {
+    headers["X-API-Key"] = config.apiKey;
+  }
+
+  try {
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      return null; // metadata is advisory — the content fetch remains authoritative
+    }
+    const list = (await response.json()) as DocumentLifecycleMetadata[];
+    if (!Array.isArray(list)) return null;
+    return list.find((item) => item.id === docId) ?? null;
+  } catch {
+    return null; // never break the main projection over an advisory metadata fetch
+  }
+}
