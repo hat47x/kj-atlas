@@ -1190,6 +1190,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const [isCanvasListLoading, setIsCanvasListLoading] = useState(false);
   const [myDocumentsOnly, setMyDocumentsOnly] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  // ADR-0073 D2=A (第2反復): the active document is archived, so the editor
+  // is review-only. Derived from the canvas list (GET /docs lifecycle_state)
+  // when opening; the server 423 backstop remains the source of truth.
+  const [isActiveDocumentArchived, setIsActiveDocumentArchived] = useState(false);
   const [agentTaskKind, setAgentTaskKind] = useState<AgentTaskKind>("island_titles");
   const [agentTaskDesiredCount, setAgentTaskDesiredCount] = useState(3);
   const [agentTaskIncludeUnreviewedDrafts, setAgentTaskIncludeUnreviewedDrafts] = useState(false);
@@ -1226,7 +1230,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const [hasSaveConflict, setHasSaveConflict] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const locationSearch = window.location.search;
-  const isReadOnly = useMemo(() => resolveReadOnlyFromSearch(locationSearch), [locationSearch]);
+  const isReadOnly = useMemo(
+    () => resolveReadOnlyFromSearch(locationSearch) || isActiveDocumentArchived,
+    [locationSearch, isActiveDocumentArchived],
+  );
   const [activeDocumentId, setActiveDocumentId] = useState(DEFAULT_DOCUMENT_ID);
   const [recentDocumentIds, setRecentDocumentIds] = useState<string[]>(
     appStorage.loadRecentDocumentIds,
@@ -2214,12 +2221,17 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         : runTenantScopedApiRequest(() => unarchiveDocument(docId, { tenantSessionContext: verifiedTenantSession }));
       await call;
       setCanvasDocuments(null); // force refetch on the next open
+      // Reflect the lifecycle change on the currently-open document without
+      // waiting for a refetch (archive -> review-only now, unarchive -> editable).
+      if (docId === activeDocumentId) {
+        setIsActiveDocumentArchived(action === "archive");
+      }
     } catch {
       setStatusMessage(t("app.status.lifecycle_transition_failed"));
     } finally {
       setIsArchiving(false);
     }
-  }, [archiveDocument, isArchiving, runTenantScopedApiRequest, t, unarchiveDocument, verifiedTenantSession]);
+  }, [activeDocumentId, archiveDocument, isArchiving, runTenantScopedApiRequest, t, unarchiveDocument, verifiedTenantSession]);
 
   const handleArchiveDocument = useCallback((docId: string) => {
     void applyLifecycleTransition(docId, "archive");
@@ -2250,17 +2262,26 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setActiveLocale(resolved.locale);
   }, [isReadOnly, locationSearch]);
 
-  // FB-RM-UX-01: loadPublicPack must not re-run on isReadOnly/locationSearch
-  // changes (it feeds a mount-only effect), but it calls the latest
-  // applyResolvedLocaleForView. Keep the latest callback in a ref so the
-  // closure stays fresh without widening loadPublicPack's deps.
+  // FB-RM-UX-01: loadPublicPack and loadDocument must not re-run on
+  // isReadOnly/locationSearch changes (they feed a mount-only effect), but
+  // they call the latest applyResolvedLocaleForView. Keep the latest callback
+  // in a ref so the closure stays fresh without widening their deps. Without
+  // this, opening an archived document (isReadOnly flip) re-ran the mount
+  // effect and reloaded the default document mid-session.
   const applyResolvedLocaleForViewRef = useRef(applyResolvedLocaleForView);
   applyResolvedLocaleForViewRef.current = applyResolvedLocaleForView;
 
   const loadDocument = useCallback(
-    async (docId: string, options?: { allowCreateOnNotFound?: boolean; isReload?: boolean }): Promise<boolean> => {
+    async (
+      docId: string,
+      options?: { allowCreateOnNotFound?: boolean; isReload?: boolean; isArchived?: boolean },
+    ): Promise<boolean> => {
       const allowCreateOnNotFound = options?.allowCreateOnNotFound ?? false;
       const isReload = options?.isReload ?? false;
+      // ADR-0073 D2=A: an archived document opens in review-only mode. The
+      // caller (canvas list) knows lifecycle_state; other open paths default
+      // to editable and the server 423 backstop guards any miss.
+      setIsActiveDocumentArchived(options?.isArchived ?? false);
       loadDocumentGenerationRef.current += 1;
       const generation = loadDocumentGenerationRef.current;
       const isStale = () => loadDocumentGenerationRef.current !== generation;
@@ -2287,7 +2308,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         setActiveDocumentId(loadedDocument.id);
         const loadedViewMode = appStorage.loadViewModeForDocument(loadedDocument.id) ?? "explore";
         setViewMode(loadedViewMode);
-        applyResolvedLocaleForView({
+        applyResolvedLocaleForViewRef.current({
           docId: loadedDocument.id,
           viewMode: loadedViewMode,
           persistedLocale: appStorage.loadViewLocaleForDocumentView(loadedDocument.id, loadedViewMode),
@@ -2336,7 +2357,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
             setActiveDocumentId(savedDocument.id);
             const loadedViewMode = appStorage.loadViewModeForDocument(savedDocument.id) ?? "explore";
             setViewMode(loadedViewMode);
-            applyResolvedLocaleForView({
+            applyResolvedLocaleForViewRef.current({
               docId: savedDocument.id,
               viewMode: loadedViewMode,
               persistedLocale: appStorage.loadViewLocaleForDocumentView(savedDocument.id, loadedViewMode),
@@ -2401,8 +2422,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }
     },
     [
+      // FB-RM-UX-01: keep loadDocument identity stable across isReadOnly /
+      // locationSearch changes (applyResolvedLocaleForView depends on both) so
+      // the mount-only effect it feeds does not re-run and reload the default
+      // document mid-session. The latest callback is read via the ref above.
       appStorage,
-      applyResolvedLocaleForView,
       rememberRecentDocumentId,
       runTenantScopedApiRequest,
       verifiedTenantSession,
@@ -2994,9 +3018,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     if (!selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId) {
       return;
     }
-
-    void loadDocument(selectedRecentDocumentId);
-  }, [activeDocumentId, loadDocument, selectedRecentDocumentId]);
+    // ADR-0073 D2=A: an archived canvas opens review-only. The canvas list is
+    // the only surface that knows lifecycle_state, so it drives the flag.
+    const selectedDoc = canvasDocuments?.find((doc) => doc.id === selectedRecentDocumentId);
+    void loadDocument(selectedRecentDocumentId, { isArchived: selectedDoc?.lifecycle_state === "archived" });
+  }, [activeDocumentId, canvasDocuments, loadDocument, selectedRecentDocumentId]);
 
   const handleSuggestIslandSummary = useCallback(async () => {
     if (!document || !selectedIslandId || isSuggestingIslandSummary) {
@@ -3644,7 +3670,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       requestSeq: (previousRequest?.requestSeq ?? 0) + 1,
     }));
 
-    applyResolvedLocaleForView({
+    applyResolvedLocaleForViewRef.current({
       docId: targetDocument.id,
       viewMode,
       metadataLocale: metadata.viewState.locale,
@@ -3659,7 +3685,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
     setFocusTarget(metadata.viewState.focusIslandId ? { focusIslandId: metadata.viewState.focusIslandId } : {});
     setStatusMessage(t("app.status.import.view_loaded", { statusPrefix, visibility: metadata.visibility }));
-  }, [appStorage, applyResolvedLocaleForView]);
+    // FB-RM-UX-01: applyResolvedLocaleForView depends on isReadOnly/locationSearch.
+    // Read it via the ref so this callback (and loadPublicPack, which depends on
+    // it) keeps a stable identity and the mount-only effect does not re-run.
+  }, [appStorage]);
 
   const loadPublicPack = useCallback(async (
     requestedPackId: string | null,

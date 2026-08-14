@@ -1282,7 +1282,7 @@ export function SidePanel({
       }}
     >
       {isReadOnly ? (
-        <div style={{ fontSize: 12, color: "#9a3412", backgroundColor: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 6, padding: 8, marginBottom: 12 }}>
+        <div data-ui-region="read-only-banner" style={{ fontSize: 12, color: "#9a3412", backgroundColor: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 6, padding: 8, marginBottom: 12 }}>
           {t("read_only.banner.active")}
         </div>
       ) : null}

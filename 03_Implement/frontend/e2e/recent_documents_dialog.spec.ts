@@ -203,3 +203,59 @@ test("canvas list shows all tenant documents with titles, filters by mine, and a
   await dialog.getByRole("button", { name: "Archive", exact: true }).click();
   await expect.poll(() => archiveCalled).toBe("doc-alpha");
 });
+
+test("opening an archived canvas from the list enters review-only mode", async ({ page }) => {
+  // iteration 31 / ADR-0073 D2=A: an archived document opens with the
+  // read-only banner (editing disabled) instead of silently accepting edits
+  // and failing on save with a 423. Also guards FB-RM-UX-01: the isReadOnly
+  // flip must not re-run the mount effect (which would reload the default
+  // document and discard the open).
+  await page.route("**/docs", async (route) => {
+    const list = [
+      { id: "doc-alpha", title: "Alpha canvas", lifecycle_state: "active", updated_at: "2026-08-15T00:00:00Z" },
+      { id: "doc-archived", title: "Old canvas", lifecycle_state: "archived", updated_at: "2026-08-14T00:00:00Z" },
+    ];
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(list) });
+  });
+  await page.route("**/docs/doc-alpha", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { ETag: '"alpha-doc"' },
+      body: JSON.stringify(buildDocument("doc-alpha", "Alpha canvas")),
+    });
+  });
+  await page.route("**/docs/doc-archived", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { ETag: '"archived-doc"' },
+      body: JSON.stringify(buildDocument("doc-archived", "Old canvas")),
+    });
+  });
+  await page.addInitScript((key) => window.localStorage.removeItem(key), RECENT_STORAGE_KEY);
+  await page.goto("/?locale=en");
+  await openSample(page);
+  await openRecentDocumentsDialog(page);
+
+  const dialog = page.locator('[data-ui-region="recent-documents-dialog"]');
+  await expect(dialog).toBeVisible();
+  const allSelect = dialog.locator('label:has-text("All canvases")').getByRole("combobox");
+
+  // Opening an ACTIVE canvas from the list switches the document (sanity
+  // check for the canvas-list Open path).
+  await allSelect.selectOption("doc-alpha");
+  await dialog.getByRole("button", { name: "Open" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator("h1").filter({ hasText: "Alpha canvas" })).toBeVisible();
+  await expect(page.locator('[data-ui-region="read-only-banner"]')).toHaveCount(0);
+
+  // Opening an ARCHIVED canvas enters review-only mode.
+  await openRecentDocumentsDialog(page);
+  await expect(dialog).toBeVisible();
+  await allSelect.selectOption("doc-archived");
+  await dialog.getByRole("button", { name: "Open" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator("h1").filter({ hasText: "Old canvas" })).toBeVisible();
+  await expect(page.locator('[data-ui-region="read-only-banner"]')).toBeVisible();
+});
