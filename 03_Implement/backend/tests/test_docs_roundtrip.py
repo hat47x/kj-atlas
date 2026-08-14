@@ -1468,6 +1468,42 @@ def test_docs_archive_lifecycle(sqlite_client: TestClient) -> None:
     assert sqlite_client.post("/docs/missing-archive/archive").status_code == 404
 
 
+def test_docs_archived_write_blocked(sqlite_client: TestClient) -> None:
+    """ADR-0073 D2=A enforcement: an archived document is read-only. PUT on an
+    archived doc -> 423 Locked (code document_archived) even with a correct
+    ETag; GET stays 200 (still reviewable); unarchive restores writability."""
+    doc_id = "arch-write-block-probe"
+    payload = _sample_payload(doc_id)
+    resp = sqlite_client.put(f"/docs/{doc_id}", json=payload)
+    assert resp.status_code in (200, 201), resp.text
+    etag = resp.headers.get("ETag")
+    assert etag, "initial PUT must return an ETag"
+
+    resp = sqlite_client.post(f"/docs/{doc_id}/archive")
+    assert resp.status_code == 204, resp.text
+
+    # PUT on archived is locked (fail-closed), even with a current ETag.
+    mutated = _sample_payload(doc_id)
+    mutated["title"] = "should not persist"
+    resp = sqlite_client.put(f"/docs/{doc_id}", json=mutated, headers={"If-Match": etag})
+    assert resp.status_code == 423, resp.text
+    assert resp.json()["detail"]["code"] == "document_archived"
+
+    # Content unchanged after the rejected write.
+    resp = sqlite_client.get(f"/docs/{doc_id}")
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["title"] == "roundtrip"
+
+    # Unarchive restores writability.
+    resp = sqlite_client.post(f"/docs/{doc_id}/unarchive")
+    assert resp.status_code == 204, resp.text
+    resp = sqlite_client.get(f"/docs/{doc_id}")
+    etag = resp.headers.get("ETag")
+    resp = sqlite_client.put(f"/docs/{doc_id}", json=mutated, headers={"If-Match": etag})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["title"] == "should not persist"
+
+
 def test_docs_list_filters_by_creator(sqlite_client: TestClient, tmp_path) -> None:
     """第2反復: GET /docs?createdBy= filters to one creator ("my documents");
     migrated docs with NULL created_by are never matched."""

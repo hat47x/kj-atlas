@@ -157,13 +157,42 @@ else
 fi
 
 # 5. Lifecycle transition (ADR-0073 D2=A): archive -> list shows archived ->
-#    unarchive -> list shows active. 404 for a missing doc.
+#    unarchive -> list shows active. 404 for a missing doc. An archived
+#    document is READ-ONLY: PUT is rejected 423 Locked (fail-closed, even
+#    with a current ETag) until unarchived.
 arch_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} -X POST \
   "$BASE_URL/docs/$DOC_ID/archive")
 check "POST /docs/{id}/archive -> 204" "204" "$arch_code"
+
+arch_headers=/tmp/kj_write_arch_headers.txt
+curl -s -o /dev/null -D "$arch_headers" ${auth_header} "$BASE_URL/docs/$DOC_ID"
+arch_etag=$(grep -i '^etag:' "$arch_headers" 2>/dev/null | tr -d '\r' | awk '{print $2}')
+if [ -n "$arch_etag" ]; then
+  blocked_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} \
+    -X PUT "$BASE_URL/docs/$DOC_ID" -H 'Content-Type: application/json' \
+    -H "If-Match: $arch_etag" -d "$cas_payload")
+  check "PUT on archived doc rejected (423 Locked)" "423" "$blocked_code"
+else
+  echo "  FAIL: archived GET did not return an ETag (write-block unverifiable)"
+  FAIL=$((FAIL+1))
+fi
+
 unarch_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} -X POST \
   "$BASE_URL/docs/$DOC_ID/unarchive")
 check "POST /docs/{id}/unarchive -> 204" "204" "$unarch_code"
+
+restore_headers=/tmp/kj_write_restore_headers.txt
+curl -s -o /dev/null -D "$restore_headers" ${auth_header} "$BASE_URL/docs/$DOC_ID"
+restore_etag=$(grep -i '^etag:' "$restore_headers" 2>/dev/null | tr -d '\r' | awk '{print $2}')
+if [ -n "$restore_etag" ]; then
+  restored_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} \
+    -X PUT "$BASE_URL/docs/$DOC_ID" -H 'Content-Type: application/json' \
+    -H "If-Match: $restore_etag" -d "$cas_payload")
+  check "PUT after unarchive succeeds (200)" "200" "$restored_code"
+else
+  echo "  FAIL: unarchived GET did not return an ETag (restore unverifiable)"
+  FAIL=$((FAIL+1))
+fi
 missing_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} -X POST \
   "$BASE_URL/docs/verify-missing-archive/archive")
 check "archive of missing doc -> 404" "404" "$missing_code"

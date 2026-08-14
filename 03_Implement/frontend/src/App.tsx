@@ -335,6 +335,12 @@ function formatCreateDocumentFailure(error: unknown): string {
 }
 
 function formatSaveDocumentFailure(error: unknown): string {
+  // ADR-0073 D2=A (第2反復): the server refuses writes to an archived document
+  // with 423 Locked (code document_archived) -- fail-closed. Surface a clear,
+  // actionable message instead of the raw HTTP/backtrace detail.
+  if (error instanceof ApiError && error.status === 423 && error.code === "document_archived") {
+    return t("app.status.save_archived_document");
+  }
   return t("app.status.save_failed_recovery", {
     detail: describeRecoverableError(error),
   });

@@ -585,6 +585,20 @@ def put_document(
         doc_id=doc_id,
     )
 
+    # ADR-0073 D2=A enforcement (第2反復): an archived document is read-only.
+    # Fail-closed regardless of ETag -- archive is a lifecycle gate, so the
+    # document content must not be mutable until unarchived. Audit/derived
+    # writes (context-audit, merge-decision-logs, ...) stay allowed: they do
+    # not mutate the document payload and archived docs remain reviewable.
+    if doc_row is not None and doc_row.lifecycle_state == "archived":
+        raise HTTPException(
+            status_code=423,
+            detail={
+                "code": "document_archived",
+                "message": "Document is archived and cannot be modified.",
+            },
+        )
+
     if if_match is not None:
         if doc_row is None:
             raise HTTPException(status_code=409, detail="ETag mismatch")
