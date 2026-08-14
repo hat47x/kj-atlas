@@ -1,7 +1,7 @@
 # Issue: DX-CANON-INTENT-01 ドリフト検出は差分を見つけるが意図を見分けないため、意図的に廃止した機能が「未実装（計画）」として設計正本へ復活した
 
 - Type: Process / Product Invariant
-- Status: Open
+- Status: Done
 - Source Issue: `DX-CONTRACT-DRIFT-01`, `AI-IMPORTANCE-SCORING-01`
 - Priority: P1
 - Owner: Maintainer
@@ -84,9 +84,9 @@
 - [x] AC-1: `assess_card_importance` / `AssessCardImportance*` が実装・設計正本の双方から消えている。
 - [x] AC-2: 保護テストが `llm/provider.py` と設計正本を走査対象に含み、契約の復活でfailする。
 - [x] AC-6: 廃止宣言が機械可読であり、廃止されたエンドポイントを論じる設計文書が偽陽性を生まない（警告数がベースライン4件のまま）。
-- [ ] AC-3: 過去に廃止された他の機能について、同種の残存が無いか棚卸しする（`ADR-0041` CVI に関わるものを優先）。
-- [ ] AC-4: 上記案から方針を決定し、廃止レジストリの置き場所（api.md内 / 独立ファイル）を確定して `AGENTS.md` または `02_Architecture/contract_reading_guide.md` へ明記する。
-- [ ] AC-5: `02_Architecture/canvas-projection-asymmetry-2026-08-09.html:168` が既に存在しない `ai.py:763` を参照している。日付入り分析文書のため履歴として許容するか注記するかを決める。
+- [x] AC-3: 過去に廃止された他の機能について、同種の残存が無いか棚卸しする（`ADR-0041` CVI に関わるものを優先）。— **棚卸し実施（2026-08-14）**: 公式の廃止宣言は `POST /ai/assess-card-importance` のみ。実残存として `settings.py:295` のコメント（削除済みタスクを列挙）を検出・修正。`llm/provider.py::_FINAL_JUDGEMENT_TASKS` はクリーン。`01_Plans/` の参照は履歴記録（正当な監査跡）。設計正本への実装可能なスキーマ残存は無し。
+- [x] AC-4: 上記案から方針を決定し、廃止レジストリの置き場所（api.md内 / 独立ファイル）を確定して `AGENTS.md` または `02_Architecture/contract_reading_guide.md` へ明記する。— **案A（api.md内・現行形式）を採択**。`contract_reading_guide.md` §5-6 に廃止宣言の規約を明記（機械可読宣言・設計正本に実装可能スキーマを残さない）。
+- [x] AC-5: `02_Architecture/canvas-projection-asymmetry-2026-08-09.html:168` が既に存在しない `ai.py:763` を参照している。日付入り分析文書のため履歴として許容するか注記するかを決める。— **履歴として許容し、注記を追加**（3箇所に「廃止済み — 履歴参照」を明記）。日付入り分析文書の分析当時の事実として読める。
 
 ## 検証
 

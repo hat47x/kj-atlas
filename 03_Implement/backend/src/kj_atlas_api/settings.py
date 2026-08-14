@@ -292,7 +292,7 @@ class Settings(BaseSettings):
         validation_alias="KJ_ATLAS_DEEPSEEK_MODEL",
     )
     # AI-ROUTE-01 MMR-04: high-reasoning model for final_judgement tasks
-    # (check_narrative, detect_contradiction, assess_card_importance).
+    # (check_narrative, detect_contradiction).
     llm_high_reasoning_model: str | None = Field(
         default=None,
         validation_alias="KJ_ATLAS_LLM_HIGH_REASONING_MODEL",
