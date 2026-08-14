@@ -63,6 +63,7 @@
     <tr class="biz"><td>B2</td><td>業務</td><td>既存の「侵してはならない核」と衝突しない（SafeMode・proposal-only・反スコアリング・キャンバス主従・保留の健全性）</td><td>ui_design_handoff.md の6核すべてとの整合を確認</td></tr>
     <tr class="biz"><td>B3</td><td>業務</td><td>画面を純増させず、既存画面の置換・包含・モード分離で収まっている</td><td>ADR-0043 複雑性予算を参照。新規操作を既定表示へ追加していない</td></tr>
     <tr class="biz"><td>B4</td><td>業務</td><td>利用者種別（Standard user / Tenant Admin / Platform operator）とcapabilityが明確</td><td>誰が操作できるか、capability不足時の挙動が定義されている</td></tr>
+    <tr class="biz"><td>B5</td><td>業務</td><td>利用者・テナントの無効化時の振る舞いが定義されている（無効化された主体の文書・権限・共有リンクの扱い）</td><td>無効化時の文書の可視性・所有移管・削除・共有失効が一貫して定義されている（post-mvp-business-scope-design-program.html §3 / §7-3）</td></tr>
     <tr class="data"><td>D1</td><td>データ</td><td>この設計判断が扱うデータの正本と保存範囲（サーバー/文書内/端末のみ/環境変数）が明確</td><td>正本が不明なデータをUIが表示・編集しようとしていない</td></tr>
     <tr class="data"><td>D2</td><td>データ</td><td>表示する情報が「識別メタデータ」か「知的成果物本体」か区別され、管理面で後者を表示していない</td><td>admin-surface-metadata-display-correction.html の境界定義を参照</td></tr>
     <tr class="data"><td>D3</td><td>データ</td><td>データ境界クラス（L1運用〜L0計画）と実装状態が一致している</td><td>data_model_operations_overview.html のCRUD表と照合</td></tr>
