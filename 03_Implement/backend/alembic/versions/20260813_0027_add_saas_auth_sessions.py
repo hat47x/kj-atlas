@@ -1,7 +1,7 @@
 """add server-owned saas_auth_sessions table (ADR-0074 expand step)
 
 Revision ID: 20260813_0027
-Revises: 20260811_0025
+Revises: 20260813_0026
 
 SAAS-TENANT-SESSION-BINDING-01: expand-only. Adds the login-session-keyed
 table ADR-0074 decision 3 specifies, alongside the existing principal-keyed
@@ -24,7 +24,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "20260813_0027"
-down_revision: str | None = "20260811_0025"
+down_revision: str | None = "20260813_0026"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
