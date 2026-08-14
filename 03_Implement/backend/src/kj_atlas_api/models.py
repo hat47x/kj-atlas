@@ -458,6 +458,15 @@ class DocumentRow(Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
     payload_json: Mapped[str] = mapped_column(Text, nullable=False)
+    # ADR-0073 D1=C: the creator is an immutable fact (nullable for migrated docs,
+    # D3=A); the document belongs to the tenant; management rights are a
+    # capability. Never mixed into a single mutable owner column.
+    created_by: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # ADR-0073 D2=A: lifecycle is active/archived only — no trash/purge
+    # (consistent with ADR-0033 which excludes a delete UI as standard).
+    lifecycle_state: Mapped[str] = mapped_column(
+        Text, nullable=False, default="active", server_default="active"
+    )
 
 
 class DocumentAccessMetadataRow(Base):

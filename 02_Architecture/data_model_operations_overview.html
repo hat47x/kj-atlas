@@ -179,6 +179,8 @@ erDiagram
         integer version
         text updated_at
         text payload_json
+        text created_by null  # ADR-0073 D1=C/D3=A: immutable creator fact, nullable for migrated docs
+        text lifecycle_state  # ADR-0073 D2=A: active / archived
     }
 
     MERGE_DECISION_LOG_ROW {

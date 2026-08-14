@@ -524,12 +524,16 @@ def put_document(
             raise HTTPException(status_code=409, detail="ETag mismatch")
 
     try:
+        # ADR-0073 D1=C: the creator is recorded on creation as an immutable
+        # fact (never overwritten on update). NULL when no identity is present
+        # (D3=A: migrated docs stay "unknown").
         DatabaseDocumentContentStore(db).save(
             tenant=tenant,
             doc_id=doc_id,
             version=document.version,
             updated_at=document.updatedAt.isoformat(),
             content=ContentBlob.from_text(payload_json),
+            created_by=access_request.auth.user_id,
         )
         db.commit()
     except (IntegrityError, RevisionHeadConflict) as error:

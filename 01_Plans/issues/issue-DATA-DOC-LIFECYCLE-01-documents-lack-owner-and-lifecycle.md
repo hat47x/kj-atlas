@@ -1,7 +1,7 @@
 # Issue: DATA-DOC-LIFECYCLE-01 documentsに所有者とライフサイクルが無く、post-MVP要件4領域が設計できない
 
 - Type: Feature / Data model
-- Status: Draft
+- Status: In Progress
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
@@ -76,11 +76,23 @@ payload_json
 
 ## 受入条件
 
-- [ ] 所有の単位（個人／チーム）が決定される。
-- [ ] 作成者と所有者を分けるか統合するかが決定される。
-- [ ] ライフサイクル状態の語彙が決定され、`ADR-0033` の削除方針と矛盾しないことが確認される。
-- [ ] 既存文書のmigration時の初期値が決定される。
-- [ ] 決定に基づく列追加・migrationが実装され、`schemas.md` と `data_model_operations_overview.html` が同期される。
+- [x] 所有の単位（個人／チーム）が決定される。— **ADR-0073 D1=C**（テナント所有・管理権はcapability・作成者は不変事実）。
+- [x] 作成者と所有者を分けるか統合するかが決定される。— **D1=C**（`created_by` は不変・帰属はテナント。1列に混ぜない）。
+- [x] ライフサイクル状態の語彙が決定され、`ADR-0033` の削除方針と矛盾しないことが確認される。— **D2=A**（`active` / `archived` のみ・trash/purgeなし。ADR-0033 の削除UI非標準と整合）。
+- [x] 既存文書のmigration時の初期値が決定される。— **D3=A**（`created_by=NULL` = 不明のまま・`lifecycle_state='active'`）。
+- [x] 決定に基づく列追加・migrationが実装され、`schemas.md` と `data_model_operations_overview.html` が同期される。— 実装済み（下記対応記録）。
+
+## 対応記録（2026-08-15）
+
+第2反復（作業の器）の起点として実装した。
+
+- `models.py` `DocumentRow`: `created_by`（nullable・不変）と `lifecycle_state`（既定 active・active/archived のみ）を追加（ADR-0073 D1=C/D2=A/D3=A）。
+- migration `20260815_0028`: 両列を追加（server_default で既存文書を backfill: created_by=NULL・lifecycle_state='active'）。
+- `persistence_shapes.py`: `documents.created_by` / `documents.lifecycle_state` の data shape を追加。
+- `database_content_store.py::save`: `created_by` 引数を追加し、**create時のみ**設定（updateでは上書きしない・不変事実）。
+- `routes/docs.py::put_document`: `created_by=access_request.auth.user_id` を渡す。
+- `data_model_operations_overview.html`: DOCUMENT_ROW に両列を反映。
+- テスト: 作成時に lifecycle_state='active' を固定、migration upgrade/downgrade/upgrade roundtrip を追加。docs回帰 57 tests pass。
 
 ## 検証計画
 

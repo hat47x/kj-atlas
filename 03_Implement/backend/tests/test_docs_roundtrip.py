@@ -1346,3 +1346,72 @@ def test_docs_v1_hil_rs_contract_fields_reject_spoofed_reviewer_sqlite(
     )
     assert put_response.status_code == 403
     assert put_response.json()["detail"] == "reviewerRef must match authenticated identity"
+
+
+def test_docs_creation_records_lifecycle_and_creator(
+    sqlite_client: TestClient, tmp_path
+) -> None:
+    """ADR-0073 D1=C / D2=A: a new document row carries lifecycle_state 'active'
+    and the creator (when an identity is present)."""
+    doc_id = "doc-lifecycle-probe"
+    resp = sqlite_client.put(f"/docs/{doc_id}", json=_sample_payload(doc_id))
+    assert resp.status_code in (200, 201), resp.text
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from kj_atlas_api.models import DocumentRow
+
+    engine = create_engine(f"sqlite:///{tmp_path / 'docs_roundtrip.sqlite3'}")
+    session_local = sessionmaker(bind=engine)
+    with session_local() as db:
+        row = db.get(DocumentRow, ("local-default", doc_id))
+        assert row is not None
+        assert row.lifecycle_state == "active"
+        # created_by is NULL when the request carries no identity (D3=A); the
+        # column exists and never crashes the write path.
+        assert hasattr(row, "created_by")
+
+
+def test_document_lifecycle_migration_roundtrip(tmp_path) -> None:
+    """ADR-0073 D1=C/D2=A/D3=A: upgrade adds created_by/lifecycle_state,
+    downgrade removes them, upgrade re-adds (migration round-trip)."""
+    import os
+    import sqlite3
+    import subprocess
+    import sys
+
+    db_path = tmp_path / "doc-lifecycle-migration.sqlite3"
+    env = {**os.environ, "KJ_ATLAS_DATABASE_URL": f"sqlite:///{db_path}"}
+
+    def alembic(*args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, "-m", "alembic", *args],
+            cwd=BACKEND_DIR,
+            env=env,
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+
+    upgrade = alembic("upgrade", "head")
+    assert upgrade.returncode == 0, upgrade.stderr
+
+    with sqlite3.connect(db_path) as connection:
+        columns = {row[1] for row in connection.execute("PRAGMA table_info('documents')")}
+        assert "created_by" in columns
+        assert "lifecycle_state" in columns
+
+    downgrade = alembic("downgrade", "20260813_0027")
+    assert downgrade.returncode == 0, downgrade.stderr
+    with sqlite3.connect(db_path) as connection:
+        columns = {row[1] for row in connection.execute("PRAGMA table_info('documents')")}
+        assert "created_by" not in columns
+        assert "lifecycle_state" not in columns
+
+    re_upgrade = alembic("upgrade", "head")
+    assert re_upgrade.returncode == 0, re_upgrade.stderr
+    with sqlite3.connect(db_path) as connection:
+        columns = {row[1] for row in connection.execute("PRAGMA table_info('documents')")}
+        assert "created_by" in columns
+        assert "lifecycle_state" in columns

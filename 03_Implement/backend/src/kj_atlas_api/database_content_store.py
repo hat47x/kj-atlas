@@ -161,6 +161,7 @@ class DatabaseDocumentContentStore:
         version: int,
         updated_at: str,
         content: ContentBlob,
+        created_by: str | None = None,
     ) -> VersionedDocumentContent:
         stored = self.load(tenant=tenant, doc_id=doc_id)
         if stored is None:
@@ -170,6 +171,9 @@ class DatabaseDocumentContentStore:
                 version=version,
                 updated_at=updated_at,
                 payload_json=content.text,
+                # ADR-0073 D1=C / D3=A: the creator is an immutable creation-time
+                # fact; nullable for migrated/legacy docs.
+                created_by=created_by,
             )
             self._db.add(row)
             self._db.flush()

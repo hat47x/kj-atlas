@@ -231,6 +231,10 @@ PERSISTENT_TEXT_SPECS: dict[str, PersistentTextSpec] = {
     "documents.id": INTERNAL_ID,
     "documents.updated_at": TIMESTAMP,
     "documents.payload_json": CONTENT_OBJECT,
+    # ADR-0073 D1=C / D2=A: creator is an immutable external id (nullable for
+    # migrated docs); lifecycle_state is the two-state vocabulary.
+    "documents.created_by": EXTERNAL_ID,
+    "documents.lifecycle_state": _bounded(16, "active/archived lifecycle state (ADR-0073 D2=A)"),
     "inquiry_bundle_deletion_audit_events.event_id": INTERNAL_ID,
     "inquiry_bundle_deletion_audit_events.tenant_id": INTERNAL_ID,
     "inquiry_bundle_deletion_audit_events.journey_id": _identifier(
