@@ -371,5 +371,9 @@ class TestTrustedSaasRuntimePolicyJwt:
             tenant_capability_resolver="external_http",
             jwt_algorithms="ES256,RS256",
             tenant_claim_name="org_id",
+            # SAAS-TENANT-SESSION-BINDING-01 AC-1 (ADR-0074): required by
+            # validate() since the BFF OAuth broker / session-hash work landed.
+            saas_oauth_broker_http_authorize_endpoint="https://broker.example/authorize",
+            saas_auth_session_hash_key="test-session-hash-key",
         )
         policy.validate()  # Should not raise

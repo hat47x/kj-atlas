@@ -199,7 +199,6 @@ _PRE_SESSION_OAUTH_FLOW = "pre-session-oauth-flow"
 _UNGUARDED_ROUTE_EXEMPTIONS: dict[tuple[str, str], str] = {
     ("GET", "/healthz"): _NO_TENANT_RESOURCE,
     ("GET", "/ai/provider-status"): _NO_TENANT_RESOURCE,
-    ("POST", "/admin/provision/hil-rs/a2a3-gate:validate"): _NO_TENANT_RESOURCE,
     ("GET", "/session/bootstrap-policy"): _NO_TENANT_RESOURCE,
     # ADR-0074 BFF: OAuth login flow runs before any tenant session exists.
     ("GET", "/session/login"): _NO_TENANT_RESOURCE,
@@ -208,8 +207,12 @@ _UNGUARDED_ROUTE_EXEMPTIONS: dict[tuple[str, str], str] = {
     ("GET", "/session/callback"): _PRE_SESSION_OAUTH_FLOW,
     ("POST", "/session/logout"): _NO_TENANT_RESOURCE,
     ("POST", "/admin/provision/users"): _CONTROL_PLANE_AUTHORIZED,
-    # ADR-0063/0064: Platform Control Plane — IdP registration is an admin
-    # operation, not a tenant-scoped resource.
+    # ADR-0063/0064: Platform Control Plane — IdP registration and the A2/A3
+    # contract-freeze gate are admin operations, not tenant-scoped resources.
+    # SEC-ADMIN-PLANE-02: a2a3-gate:validate now requires control-plane auth
+    # (which uses the DB to resolve provision capability), so it is classified
+    # with the other control-plane routes rather than _NO_TENANT_RESOURCE.
+    ("POST", "/admin/provision/hil-rs/a2a3-gate:validate"): _CONTROL_PLANE_AUTHORIZED,
     ("POST", "/admin/provision/identity-providers"): _CONTROL_PLANE_AUTHORIZED,
     ("POST", "/admin/provision/tenant-identity-providers"): _CONTROL_PLANE_AUTHORIZED,
     ("GET", "/session/context"): _TENANT_SESSION_VERSION_SOURCE,

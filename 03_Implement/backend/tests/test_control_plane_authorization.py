@@ -50,8 +50,23 @@ _CONTROL_PLANE_ROUTES = (
         "/admin/provision/tenant-identity-providers",
         {
             "tenantId": "tenant-a",
-            "issuer": "https://idp.example.com",
+            "identityProviderId": "idp-1",
             "externalTenantRef": "ext-a",
+        },
+    ),
+    (
+        "/admin/provision/hil-rs/a2a3-gate:validate",
+        {
+            "freezeContractId": "HIL-RS-02-A1-CONTRACT-FREEZE-v1",
+            "schemaVersion": "1.0.0",
+            "overridePolicy": "human_dual_control_only",
+            "contractLinkLocked": True,
+            "sharedResourceFreeze": True,
+            "a1Status": "Done",
+            "pendingDecisionQueueCount": 0,
+            "hasUndefinedContractChangeRequest": False,
+            "hasSafeModeRegressionRequest": False,
+            "hasShareExportLeakageRelaxationRequest": False,
         },
     ),
 )
@@ -149,6 +164,25 @@ def test_admin_credential_reaches_the_control_plane(tmp_path, monkeypatch) -> No
     with _client(tmp_path) as client:
         resp = client.post(path, json=payload, headers={ADMIN_API_KEY_HEADER: _ADMIN_KEY})
     assert resp.status_code < 400, resp.text
+
+
+@pytest.mark.parametrize(("path", "payload"), _CONTROL_PLANE_ROUTES)
+def test_admin_credential_alone_reaches_control_plane_when_business_key_also_set(tmp_path, monkeypatch, path, payload) -> None:
+    """SEC-ADMIN-PLANE-02 (D-a): when BOTH keys are configured, the control-plane
+    credential ALONE must not be blocked at the auth layer for /admin/provision/*.
+    The business-plane key must not be a prerequisite for the control plane —
+    re-coupling them would defeat ADR-0072's separation. Fixed by the /admin/*
+    bypass in require_api_key.
+
+    The claim is specifically about AUTH: any status other than 401/403 (e.g. a
+    201 success, or a 404/422 business-logic rejection like an unknown
+    identityProviderId) proves the request passed both the middleware and
+    require_control_plane_authorization and reached the route handler."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    with _client(tmp_path) as client:
+        resp = client.post(path, json=payload, headers={ADMIN_API_KEY_HEADER: _ADMIN_KEY})
+    assert resp.status_code not in (401, 403), resp.text
 
 
 def test_rejection_does_not_reveal_whether_a_key_is_configured(tmp_path, monkeypatch) -> None:

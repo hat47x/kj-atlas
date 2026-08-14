@@ -260,7 +260,11 @@ def provision_user(
     )
 
 
-@router.post("/hil-rs/a2a3-gate:validate", response_model=A2A3GateValidationResponse)
+@router.post(
+    "/hil-rs/a2a3-gate:validate",
+    response_model=A2A3GateValidationResponse,
+    dependencies=[Depends(require_control_plane_authorization)],
+)
 def validate_a2_a3_gate(payload: A2A3GateValidationRequest) -> A2A3GateValidationResponse:
     frozen_values = {
         "freezeContractId": "HIL-RS-02-A1-CONTRACT-FREEZE-v1",

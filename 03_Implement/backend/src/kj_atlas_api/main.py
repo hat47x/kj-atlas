@@ -208,7 +208,14 @@ app.add_middleware(JsonRequestBodySafetyMiddleware)
 
 @app.middleware("http")
 async def require_api_key(request: Request, call_next):
-    if request.url.path == "/healthz":
+    # SEC-ADMIN-PLANE-02 (D-a): the /admin/* control plane is authorized solely
+    # by require_control_plane_authorization (X-Admin-Api-Key or a provision
+    # capability), never by the business-plane X-API-Key. Skipping /admin/*
+    # here is what makes "admin key alone" work when BOTH keys are configured —
+    # otherwise the business-key middleware re-couples the control plane to the
+    # business plane, the exact separation ADR-0072 established. Every
+    # /admin/provision/* route must carry the control-plane dependency.
+    if request.url.path == "/healthz" or request.url.path.startswith("/admin/"):
         return await call_next(request)
 
     if settings.api_key:
