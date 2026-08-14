@@ -121,19 +121,43 @@ check "Documentation contract checks" \
 ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || echo '/mnt/d/GIT/kj-atlas')"
 API_BASE="${KJ_ATLAS_VERIFY_API_BASE:-http://127.0.0.1:8000}"
 if curl -s -o /dev/null -w '%{http_code}' --max-time 2 "$API_BASE/healthz" 2>/dev/null | grep -q 200; then
-  check "API read path (verify_api.sh)" \
-    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api.sh" "$API_BASE"
-  check "API write path (verify_api_write.sh)" \
-    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_write.sh" "$API_BASE"
-  check "API inquiry CAS path (verify_api_inquiry.sh)" \
-    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_inquiry.sh" "$API_BASE"
-  # MCP client path (generative-AI verification). Requires the mcp package's
-  # tsx runtime; a missing/empty doc reports not_found (exit 0, valid signal).
-  if [ -x "$ROOT_DIR/03_Implement/mcp/node_modules/.bin/tsx" ]; then
-    check "MCP client path (verify_mcp.ts)" \
-      bash -c "cd '$ROOT_DIR/03_Implement/mcp' && KJ_ATLAS_MCP_API_BASE_URL='$API_BASE' npm run verify -- ${KJ_ATLAS_MCP_VERIFY_DOC:-doc_phase1_canvas} reviewed-only"
-  else
-    echo "  SKIP: MCP client path — mcp package deps not installed (cd 03_Implement/mcp && npm install)"
+  # DOGFOOD-09: a backend running against a DB that is behind the alembic head
+  # yields confusing raw 500s ("no such column: ...") on document/inquiry
+  # writes instead of a clear signal. Check migration state before the
+  # curl/MCP checks and report it as a precondition skip — never a failure.
+  migrated=1
+  if [ -x "$VENV_PYTHON" ] && [ -f alembic.ini ]; then
+    cur=$("$VENV_PYTHON" -m alembic current 2>/dev/null | grep -oE '^[0-9_]+' | head -1)
+    head=$("$VENV_PYTHON" -m alembic heads 2>/dev/null | grep -oE '^[0-9_]+' | head -1)
+    if [ -n "$cur" ] && [ -n "$head" ] && [ "$cur" != "$head" ]; then
+      echo "  SKIP: API/MCP verification — DB migration state ($cur) != alembic head ($head)."
+      echo "        Run 'alembic upgrade head' first (DOGFOOD-09) so the checks exercise a migrated DB."
+      migrated=0
+    fi
+  fi
+  if [ "$migrated" -eq 1 ]; then
+    check "API read path (verify_api.sh)" \
+      bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api.sh" "$API_BASE"
+    check "API write path (verify_api_write.sh)" \
+      bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_write.sh" "$API_BASE"
+    check "API inquiry CAS path (verify_api_inquiry.sh)" \
+      bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_inquiry.sh" "$API_BASE"
+    check "API admin plane path (verify_api_admin.sh)" \
+      bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_admin.sh" "$API_BASE"
+    # MCP client path (generative-AI verification). Requires the mcp package's
+    # tsx runtime; a missing/empty doc reports not_found (exit 0, valid signal).
+    if [ -x "$ROOT_DIR/03_Implement/mcp/node_modules/.bin/tsx" ]; then
+      check "MCP client path (verify_mcp.ts)" \
+        bash -c "cd '$ROOT_DIR/03_Implement/mcp' && KJ_ATLAS_MCP_API_BASE_URL='$API_BASE' npm run verify -- ${KJ_ATLAS_MCP_VERIFY_DOC:-doc_phase1_canvas} reviewed-only"
+      # MCP HTTP transport e2e (remote generative-AI path): mock IdP + real
+      # signed JWT + real backend document over streamable HTTP. Uses ephemeral
+      # ports so it is safe to run alongside other harness jobs. Defaults to the
+      # document created by verify_api_write.sh above.
+      check "MCP HTTP transport e2e (dogfood_mcp_http_e2e.mjs)" \
+        bash -c "cd '$ROOT_DIR/03_Implement/mcp' && KJ_ATLAS_MCP_API_BASE_URL='$API_BASE' timeout 90 node ./node_modules/.bin/tsx scripts/dogfood_mcp_http_e2e.mjs ${KJ_ATLAS_MCP_VERIFY_DOC:-admin_write_probe}"
+    else
+      echo "  SKIP: MCP client path — mcp package deps not installed (cd 03_Implement/mcp && npm install)"
+    fi
   fi
 else
   echo "  SKIP: API/MCP verification — no backend at $API_BASE (start uvicorn kj_atlas_api.main:app --port 8000 to enable)"

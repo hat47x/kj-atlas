@@ -2,6 +2,7 @@
 // real backend document. Proves a remote generative-AI client can connect
 // over streamable HTTP and call get_context_projection end-to-end.
 import http from "node:http";
+import { createServer as netCreateServer } from "node:net";
 import { connect } from "node:net";
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -12,9 +13,22 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 const TRUSTED_ISSUER = "https://dogfood-idp.example/";
 const RESOURCE = "https://mcp.kj-atlas.example/";
 const KID = "dogfood-key-1";
-const JWKS_PORT = 8799;
-const MCP_PORT = 8788;
 const DOC_ID = process.argv[2] || "dogfood_probe";
+
+// Pick free ephemeral ports (0 = kernel-assigned) so this e2e is safe to run
+// in parallel with other harness jobs (verify_all.sh check 9).
+async function freePort() {
+  return await new Promise((resolve, reject) => {
+    const srv = netCreateServer();
+    srv.once("error", reject);
+    srv.listen(0, "127.0.0.1", () => {
+      const { port } = srv.address();
+      srv.close(() => resolve(port));
+    });
+  });
+}
+const JWKS_PORT = await freePort();
+const MCP_PORT = await freePort();
 
 // 1. Generate keypair + serve JWKS (mock IdP).
 const { privateKey, publicKey } = await generateKeyPair("RS256");
@@ -49,7 +63,7 @@ const mcp = spawn("node", ["./node_modules/.bin/tsx", "src/index.ts"], {
     KJ_ATLAS_MCP_TRUSTED_ISSUER: TRUSTED_ISSUER,
     KJ_ATLAS_MCP_JWKS_URI: JWKS_URI,
     KJ_ATLAS_MCP_AUTHORIZATION_SERVERS: TRUSTED_ISSUER,
-    KJ_ATLAS_MCP_API_BASE_URL: "http://127.0.0.1:8000",
+    KJ_ATLAS_MCP_API_BASE_URL: process.env.KJ_ATLAS_MCP_API_BASE_URL || "http://127.0.0.1:8000",
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
