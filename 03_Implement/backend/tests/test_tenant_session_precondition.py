@@ -198,6 +198,10 @@ _PRE_SESSION_OAUTH_FLOW = "pre-session-oauth-flow"
 
 _UNGUARDED_ROUTE_EXEMPTIONS: dict[tuple[str, str], str] = {
     ("GET", "/healthz"): _NO_TENANT_RESOURCE,
+    # OPS-OBSERV-01: readiness probe and build-revision endpoint are liveness/
+    # version surfaces with no tenant-scoped resource.
+    ("GET", "/readyz"): _NO_TENANT_RESOURCE,
+    ("GET", "/version"): _NO_TENANT_RESOURCE,
     ("GET", "/ai/provider-status"): _NO_TENANT_RESOURCE,
     ("GET", "/session/bootstrap-policy"): _NO_TENANT_RESOURCE,
     # ADR-0074 BFF: OAuth login flow runs before any tenant session exists.

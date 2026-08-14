@@ -66,6 +66,9 @@ def test_api_key_rejection_precedes_json_body_inspection() -> None:
             )
 
             assert response.status_code == 401
-            assert response.json() == {"detail": "Unauthorized"}
+            # OPS-OBSERV-01 AC-2: the 401 body additionally carries a requestId
+            # (same value as the X-Request-Id header) for log correlation.
+            assert response.json()["detail"] == "Unauthorized"
+            assert response.json()["requestId"] == response.headers.get("X-Request-Id")
     finally:
         settings.api_key = original_api_key

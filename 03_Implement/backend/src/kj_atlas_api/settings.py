@@ -450,6 +450,20 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY",
     )
+    log_level: str = Field(
+        # OPS-OBSERV-01 AC-1: structured (JSON) logging level. The JSON
+        # formatter renders every `extra=` payload (tenantId/docId/queueLength/
+        # LLM trace_id) that the default formatter silently drops.
+        default="INFO",
+        validation_alias="KJ_ATLAS_LOG_LEVEL",
+    )
+    app_revision: str = Field(
+        # OPS-OBSERV-01 AC-4: build revision surfaced by /version and attached to
+        # structured log records so diagnostics bundles become addressable
+        # server-side. Wired from the Docker build; "unknown" when unset.
+        default="unknown",
+        validation_alias="KJ_ATLAS_APP_REVISION",
+    )
     allow_jit_provisioning: bool = Field(
         # SEC-RATE-LIMIT-01: fail-closed by default. The default-True config
         # let an unauthenticated request with an unknown x-forwarded-user
