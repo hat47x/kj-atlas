@@ -38,6 +38,29 @@ echo "=== kj-atlas API verification (base: $BASE_URL) ==="
 code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/healthz")
 check "/healthz" "200" "$code"
 
+# 1b. /readyz — unauthenticated readiness (DB reachable + schema at migration head).
+# A 503 with reason database_unavailable / schema_mismatch is the correct
+# non-200; anything else (e.g. a 500) is a server crash.
+code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/readyz")
+case "$code" in
+  200)
+    echo "  PASS: /readyz ready"
+    PASS=$((PASS+1))
+    ;;
+  503)
+    echo "  INFO: /readyz returned 503 (DB unavailable or schema mismatch) —"
+    echo "        expected when the DB is stopped or migrations are not applied."
+    ;;
+  *)
+    echo "  FAIL: /readyz returned $code (expected 200 or 503)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 1c. /version — build revision (OPS-OBSERV-01). Unauthenticated.
+code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/version")
+check "/version" "200" "$code"
+
 # 2. /ai/provider-status — read-only provider echo
 code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} "$BASE_URL/ai/provider-status")
 check "/ai/provider-status" "200" "$code"

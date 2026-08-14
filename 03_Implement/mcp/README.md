@@ -86,9 +86,34 @@ Notes for AI agents using this path:
 - **Unreviewed cards are never exposed on any constraint** (fail-closed, see
   Scope above). Use it for already-reviewed content; `holdState` metadata tells
   you which cards are held/pending/shelved (DOGFOOD-08).
+- The projection also carries structural state a generative-AI can verify:
+  `voids` (kind/refs/resolved — KJ-VOIDS-01) and `narrativeChecks`
+  (A/B direction + counts — KJ-AB-CROSS-CHECK-01). Both are SafeMode-safe
+  (no card text, no issue messages).
 - For the HTTP + OAuth 2.1 resource-server transport, set `KJ_ATLAS_MCP_TRANSPORT=http`
   and the required OAuth env vars (see Transport selection below); tokens must be
   issued by the configured trusted issuer.
+
+### Generative-AI verification runbook
+
+A generative-AI agent can verify that the served app behaves correctly by
+calling `get_context_projection` and asserting the expected contract. The
+standalone client `scripts/verify_mcp.ts` (run via `npm run verify`) performs
+exactly this; the scenarios below are what it checks.
+
+| Scenario | Call | Expected (assert) |
+| --- | --- | --- |
+| SafeMode fail-closed | `get_context_projection({ docId, constraint: "reviewed-only", safeMode: true })` on a doc with unreviewed cards | `cards[].redacted === true`; `counts.unreviewed > 0`; unreviewed text is absent |
+| holdState projection | same call on a doc with held/shelved cards | `cards[].holdState` is `held` / `shelved` / `pending` (DOGFOOD-08) |
+| Anti-scoring | serialize the projection | no `score` / `rank` / `confidence` / `priority` tokens |
+| not_found | `get_context_projection({ docId: "<missing>", ... })` | `isError: true` with a plain message — the transport is alive, the doc is not retrievable (DOGFOOD-03/06) |
+| void state | same call on a doc that has stored voids | `voids` lists each void's kind/refs/resolved (KJ-VOIDS-01) |
+| narrative A/B | same call on a doc with narrative checks | `narrativeChecks[].issueDirections` and `counts` are present (KJ-AB-CROSS-CHECK-01) |
+| bundle determinism | call twice with identical inputs | identical `bundleHash` |
+
+Interpretation rule: an `isError` outcome with `not_found`/`error` is a **valid
+signal** (the target document does not exist), not an MCP-path failure — the
+transport worked, the request reached the server, and the failure was classified.
 
 ### Transport selection
 

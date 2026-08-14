@@ -60,6 +60,24 @@ export type ProjectedCard = {
 export type ProjectedRelation = { from: string; to: string; type: string };
 export type ProjectedLink = { from: string; to: string };
 
+// kj_technique.md §4 (優先3-1): structural void state — SafeMode-safe (only
+// kind/refs/resolved, never the title/detail which can quote card text).
+export type ProjectedVoid = {
+  id: string;
+  kind: string;
+  resolved: boolean;
+  cardIds?: string[];
+  islandIds?: string[];
+};
+
+// Narrative A/B cross-check state (kj_technique.md §5, 優先3): per-check counts
+// and the directions present. Structural only — no issue messages.
+export type ProjectedNarrativeCheck = {
+  id: string;
+  counts?: { bMissingInA: number; aMissingInB: number };
+  issueDirections: string[];
+};
+
 export type ContextProjectionV1 = {
   schemaVersion: "context-projection.v1";
   docId: string;
@@ -73,6 +91,8 @@ export type ContextProjectionV1 = {
   evidence: ProjectedLink[];
   contradictions: ProjectedLink[];
   counts: { reviewed: number; unreviewed: number; redacted: number };
+  voids: ProjectedVoid[];
+  narrativeChecks: ProjectedNarrativeCheck[];
   /** sha256 hex over the canonical-JSON projection payload (deterministic; excludes no-op fields). */
   bundleHash: string;
 };
@@ -203,6 +223,22 @@ export async function buildContextProjection(input: ContextProjectionInput): Pro
   // otherwise let a SafeMode toggle change the hash for the same real content
   // -- but exposure state IS part of what was shared, so we hash id + reviewed
   // + redacted + the exposed text, and never the withheld original).
+  const voids = (doc.voids ?? []).map((v) => ({
+    id: v.id,
+    kind: v.kind,
+    resolved: v.resolved === true,
+    ...(v.cardIds && v.cardIds.length > 0 ? { cardIds: v.cardIds } : {}),
+    ...(v.islandIds && v.islandIds.length > 0 ? { islandIds: v.islandIds } : {}),
+  }));
+  const narrativeChecks = (doc.narratives ?? []).flatMap((narrative) =>
+    (narrative.checks ?? []).map((check) => ({
+      id: check.id,
+      ...(check.counts ? { counts: check.counts } : {}),
+      issueDirections: (check.issues ?? []).flatMap((issue) =>
+        issue.direction ? [issue.direction] : [],
+      ),
+    })),
+  );
   const hashPayload = {
     schemaVersion: "context-projection.v1",
     docId: doc.id,
@@ -221,6 +257,8 @@ export async function buildContextProjection(input: ContextProjectionInput): Pro
     evidence,
     contradictions,
     counts: { reviewed: reviewedCount, unreviewed: unreviewedCount, redacted: redactedCount },
+    voids,
+    narrativeChecks,
   };
   const bundleHash = await sha256Hex(canonicalizeJson(hashPayload));
 
@@ -236,6 +274,8 @@ export async function buildContextProjection(input: ContextProjectionInput): Pro
     evidence,
     contradictions,
     counts: { reviewed: reviewedCount, unreviewed: unreviewedCount, redacted: redactedCount },
+    voids,
+    narrativeChecks,
     bundleHash,
   };
 }

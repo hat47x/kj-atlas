@@ -242,3 +242,76 @@ describe("buildContextProjection: work-state metadata (DOGFOOD-08)", () => {
     expect(byId.get("c1")?.redacted).toBe(true);
   });
 });
+
+describe("buildContextProjection: structural void and narrative-check state", () => {
+  it("exposes voids (kind/refs/resolved) and narrative A/B direction/counts without text", async () => {
+    const doc: DocumentV1 = {
+      version: 1,
+      id: "doc-insights",
+      createdAt: "2026-08-14T00:00:00.000Z",
+      updatedAt: "2026-08-14T00:00:00.000Z",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "reviewed", x: 0, y: 0, textReviewed: true }],
+      edges: [],
+      islands: [{ id: "i1", cardIds: ["c1"], title: "A", summaryText: "s", summaryReviewed: true }],
+      voids: [
+        {
+          id: "v1",
+          kind: "orphaned_island",
+          title: "孤立島",
+          detail: "contains card text",
+          islandIds: ["i1"],
+          resolved: false,
+          createdAt: "2026-08-14T00:00:00.000Z",
+        },
+      ],
+      narratives: [
+        {
+          id: "n1",
+          title: "N",
+          text: "reviewed",
+          reviewed: true,
+          checks: [
+            {
+              id: "check-1",
+              createdAt: "2026-08-14T00:00:00.000Z",
+              kind: "consistency",
+              issues: [
+                { severity: "warn", message: "x", direction: "b_missing_in_a" },
+              ],
+              counts: { bMissingInA: 1, aMissingInB: 0 },
+            },
+          ],
+        },
+      ],
+    };
+
+    const projection = await buildContextProjection({ doc, constraint: "reviewed-only", safeMode: true });
+
+    // Void: structural only — title/detail (can quote card text) are NOT exposed.
+    expect(projection.voids).toEqual([
+      { id: "v1", kind: "orphaned_island", resolved: false, islandIds: ["i1"] },
+    ]);
+    // Narrative check: direction + counts, no issue messages.
+    expect(projection.narrativeChecks).toEqual([
+      { id: "check-1", counts: { bMissingInA: 1, aMissingInB: 0 }, issueDirections: ["b_missing_in_a"] },
+    ]);
+  });
+
+  it("returns empty arrays when the document has no voids or narrative checks", async () => {
+    const doc: DocumentV1 = {
+      version: 1,
+      id: "doc-plain",
+      createdAt: "2026-08-14T00:00:00.000Z",
+      updatedAt: "2026-08-14T00:00:00.000Z",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "reviewed", x: 0, y: 0, textReviewed: true }],
+      edges: [],
+      islands: [{ id: "i1", cardIds: ["c1"], title: "A", summaryText: "s", summaryReviewed: true }],
+    };
+
+    const projection = await buildContextProjection({ doc, constraint: "reviewed-only", safeMode: true });
+    expect(projection.voids).toEqual([]);
+    expect(projection.narrativeChecks).toEqual([]);
+  });
+});

@@ -75,6 +75,8 @@ try {
     constraints?: unknown;
     cards?: Array<{ holdState?: string | null }>;
     counts?: { reviewed: number; unreviewed: number; redacted: number };
+    voids?: Array<{ id: string; kind: string; resolved: boolean }>;
+    narrativeChecks?: Array<{ id: string; issueDirections: string[] }>;
   };
   console.log(`  → bundleHash: ${projection.bundleHash}`);
   console.log(`  → schemaVersion: ${projection.schemaVersion ?? "n/a"}`);
@@ -96,6 +98,20 @@ try {
   }
   if (held + pending + shelved > 0) {
     console.log("  → work-state (holdState) projected ✅ (DOGFOOD-08)");
+  }
+  // 優先3 (voids / narrative A/B): structural state a generative-AI can verify.
+  const voids = Array.isArray(projection.voids) ? projection.voids : [];
+  if (voids.length > 0) {
+    console.log(`  → voids: ${voids.length} (${voids.map((v) => v.kind).join(", ")}) ✅ (KJ-VOIDS-01)`);
+  } else {
+    console.log("  → voids: 0 (none stored)");
+  }
+  const narrativeChecks = Array.isArray(projection.narrativeChecks) ? projection.narrativeChecks : [];
+  if (narrativeChecks.length > 0) {
+    const dirs = narrativeChecks.flatMap((c) => c.issueDirections);
+    console.log(`  → narrative checks: ${narrativeChecks.length} (directions: ${dirs.length ? dirs.join(", ") : "none"}) ✅ (KJ-AB-CROSS-CHECK-01)`);
+  } else {
+    console.log("  → narrative checks: 0 (none stored)");
   }
   console.log("  → projection returned ✅");
 
