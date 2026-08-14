@@ -1,7 +1,7 @@
 # Issue: QA-TENANT-ISOLATION-01 テナント分離の二層防御が、二つの独立に検証された半分でしかない
 
 - Type: Quality / Security
-- Status: Open
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
@@ -52,10 +52,10 @@
 
 ## 受入条件
 
-- [ ] AC-1: `test_saas_e2e_tenant_isolation.py` の全ケースがPostgreSQL（非superuser・`NOBYPASSRLS`）に対しても実行され、CIで緑になる。
-- [ ] AC-2: アプリ層のテナントフィルタを外した状態でRLSが越境を止めることを、能力カナリアとして固定する（ミューテーションで実際にfailすることを確認する）。
-- [ ] AC-3: CIのDBマトリクスに組み込まれ、SQLite専用だった分離検証がPostgreSQLでも回っている。
-- [ ] AC-4: `THREAT_MODEL.md:203` の留保を、本件について解消済みとして更新する。
+- [x] AC-1: `test_saas_e2e_tenant_isolation.py` の全ケースがPostgreSQL（非superuser・`NOBYPASSRLS`）に対しても実行され、CIで緑になる。— `test_tenant_isolation_postgres_rls.py::test_http_tenant_isolation_fires_both_layers_on_postgres` を新設。実際のHTTP経路（PUT→GET）をPostgreSQL + runtime role（NOBYPASSRLS）で実行し、二層が同時に発火することを固定。fresh DBで RLS スイート + 本テスト 6 pass。
+- [x] AC-2: アプリ層のテナントフィルタを外した状態でRLSが越境を止めることを、能力カナリアとして固定する（ミューテーションで実際にfailすることを確認する）。— `test_rls_alone_blocks_cross_tenant_without_app_where` を新設。アプリ層の WHERE を介さない生 SELECT を runtime role で実行し、他tenantの行が0件であることを固定（RLS無効化ならfailするカナリア）。
+- [x] AC-3: CIのDBマトリクスに組み込まれ、SQLite専用だった分離検証がPostgreSQLでも回っている。— 新テストは `@pytest.mark.postgres` で、既存 CI の PostgreSQL matrix（`pytest -m postgres`）が自動で実行する。
+- [x] AC-4: `THREAT_MODEL.md:203` の留保を、本件について解消済みとして更新する。— THREAT_MODEL.md の適用限界節に「二層テナント分離の同時検証は完了」を追記。
 
 ## 検証
 
