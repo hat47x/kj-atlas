@@ -350,12 +350,16 @@ const NARRATIVE_CHECK_FIELDS = {
   createdAt: "preserve",
   kind: "preserve",
   issues: "rebuild",
+  // A/B cross-check totals are structural (no text), safe to project.
+  counts: "preserve",
 } satisfies Record<keyof NarrativeCheck, FieldPolicy>;
 
 const NARRATIVE_ISSUE_FIELDS = {
   severity: "preserve",
   message: "redact",
   references: "rebuild",
+  // A/B cross-check direction is a structural classification (no text).
+  direction: "preserve",
 } satisfies Record<keyof NarrativeCheckIssue, FieldPolicy>;
 
 const NARRATIVE_REFERENCE_FIELDS = {

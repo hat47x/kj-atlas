@@ -7843,6 +7843,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           createdAt: new Date().toISOString(),
           kind: "consistency" as const,
           issues: result.issues,
+          // A/B cross-check totals (kj_technique.md §5 優先3). Undefined when the
+          // provider did not return them; a 0/0 is a valid, reportable value.
+          ...("counts" in result && result.counts ? { counts: result.counts } : {}),
         };
 
         const nextNarratives = (document.narratives ?? []).map((entry) =>

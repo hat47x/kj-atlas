@@ -1040,10 +1040,26 @@ class NarrativeCheckReference(BaseModel):
     kind: Literal["card", "island"]
 
 
+#: A/B cross-check direction (kj_technique.md §5): whether the mismatch is a
+#: narrative claim with no diagram counterpart (b_missing_in_a) or a diagram
+#: island the narrative never mentions (a_missing_in_b).
+NarrativeCheckDirection = Literal["b_missing_in_a", "a_missing_in_b"]
+
+
+class NarrativeCheckCounts(BaseModel):
+    bMissingInA: int = Field(ge=0)
+    aMissingInB: int = Field(ge=0)
+
+
 class NarrativeCheckIssue(BaseModel):
     severity: Literal["info", "warn", "error"]
     message: str
     references: list[NarrativeCheckReference] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    # A/B cross-check classification when this issue is an A/B mismatch
+    # (kj_technique.md §5, 優先3).
+    direction: NarrativeCheckDirection | None = Field(
         default=None, exclude_if=lambda value: value is None
     )
 
@@ -1053,6 +1069,12 @@ class NarrativeCheck(BaseModel):
     createdAt: datetime
     kind: Literal["consistency"]
     issues: list[NarrativeCheckIssue]
+    # A/B cross-check totals per direction. A zero is a VALID, reportable value:
+    # kj_technique.md:185 treats a zero as "the cross-check did not actually run",
+    # so omitting counts vs reporting 0/0 is a meaningful distinction.
+    counts: NarrativeCheckCounts | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
 
 
 class Narrative(BaseModel):

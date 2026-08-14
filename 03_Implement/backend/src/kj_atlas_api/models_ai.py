@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from kj_atlas_api.models import DocumentV1
+from kj_atlas_api.models import DocumentV1, NarrativeCheckCounts
 
 
 SOURCE_BUNDLE_HASH_PATTERN = r"^(?:[0-9a-f]{64}|mock:[0-9a-f]{64})$"
@@ -35,6 +35,10 @@ class NarrativeIssue(BaseModel):
     severity: Literal["info", "warn", "error"]
     message: str = Field(min_length=1)
     references: list[NarrativeIssueReference] | None = None
+    # A/B cross-check direction when this issue is an A/B mismatch
+    # (kj_technique.md §5). Optional for backward compatibility with older
+    # model responses.
+    direction: Literal["b_missing_in_a", "a_missing_in_b"] | None = None
 
 
 class CheckNarrativeRequest(BaseModel):
@@ -51,6 +55,8 @@ class CheckNarrativeResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     issues: list[NarrativeIssue]
+    # A/B cross-check totals per direction (kj_technique.md §5: 報告は件数で).
+    counts: NarrativeCheckCounts | None = None
 
 
 class GenerateNarrativeRequest(BaseModel):

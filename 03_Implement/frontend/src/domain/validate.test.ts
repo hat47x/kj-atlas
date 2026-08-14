@@ -542,4 +542,49 @@ describe("validateImportedDocument", () => {
 
     expect(result.document.islands[0]?.geometry).toEqual(source.islands[0].geometry);
   });
+
+  it("keeps narrative check A/B direction and counts (優先3, kj_technique.md §5)", () => {
+    const source = {
+      version: 1,
+      id: "doc_narrative_ab",
+      createdAt: "2026-08-14T00:00:00.000Z",
+      updatedAt: "2026-08-14T00:00:00.000Z",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "alpha", x: 0, y: 0 }],
+      edges: [],
+      islands: [{ id: "i1", cardIds: ["c1"], title: "A", summaryText: "s", summaryReviewed: true }],
+      narratives: [
+        {
+          id: "n1",
+          title: "Narrative",
+          text: "alpha",
+          reviewed: true,
+          checks: [
+            {
+              id: "check-1",
+              createdAt: "2026-08-14T00:00:00.000Z",
+              kind: "consistency",
+              issues: [
+                {
+                  severity: "warn",
+                  message: "claim with no diagram counterpart",
+                  references: [{ id: "i1", kind: "island" }],
+                  direction: "b_missing_in_a",
+                },
+              ],
+              counts: { bMissingInA: 1, aMissingInB: 0 },
+            },
+          ],
+        },
+      ],
+    };
+
+    const result = validateImportedDocument(JSON.parse(JSON.stringify(source)));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const check = result.document.narratives?.[0]?.checks?.[0];
+    expect(check?.issues[0]?.direction).toBe("b_missing_in_a");
+    expect(check?.counts).toEqual({ bMissingInA: 1, aMissingInB: 0 });
+  });
 });

@@ -255,10 +255,21 @@ export type NarrativeCheckReference = {
   kind: "card" | "island";
 };
 
+// kj_technique.md §5: A/B cross-check direction — a narrative claim with no
+// diagram counterpart (b_missing_in_a) or a diagram island the narrative never
+// mentions (a_missing_in_b).
+export type NarrativeCheckDirection = "b_missing_in_a" | "a_missing_in_b";
+
+export type NarrativeCheckCounts = {
+  bMissingInA: number;
+  aMissingInB: number;
+};
+
 export type NarrativeCheckIssue = {
   severity: "info" | "warn" | "error";
   message: string;
   references?: NarrativeCheckReference[];
+  direction?: NarrativeCheckDirection;
 };
 
 export type NarrativeCheck = {
@@ -266,6 +277,7 @@ export type NarrativeCheck = {
   createdAt: string;
   kind: "consistency";
   issues: NarrativeCheckIssue[];
+  counts?: NarrativeCheckCounts;
 };
 
 

@@ -12,6 +12,8 @@ import type {
   MergeSuggestionDecisionEntry,
   Narrative,
   NarrativeCheck,
+  NarrativeCheckCounts,
+  NarrativeCheckDirection,
   NarrativeCheckIssue,
   NarrativeCheckReference,
   PatchApplyLogEntry,
@@ -598,6 +600,25 @@ function parseNarrativeCheckReference(value: unknown): NarrativeCheckReference |
   return { id: value.id, kind: value.kind };
 }
 
+function parseNarrativeCheckDirection(value: unknown): NarrativeCheckDirection | null {
+  return value === "b_missing_in_a" || value === "a_missing_in_b" ? value : null;
+}
+
+function parseNarrativeCheckCounts(value: unknown): NarrativeCheckCounts | null {
+  if (
+    !isRecord(value)
+    || typeof value.bMissingInA !== "number"
+    || !Number.isInteger(value.bMissingInA)
+    || value.bMissingInA < 0
+    || typeof value.aMissingInB !== "number"
+    || !Number.isInteger(value.aMissingInB)
+    || value.aMissingInB < 0
+  ) {
+    return null;
+  }
+  return { bMissingInA: value.bMissingInA, aMissingInB: value.aMissingInB };
+}
+
 function parseNarrativeCheckIssue(value: unknown): NarrativeCheckIssue | null {
   if (
     !isRecord(value)
@@ -607,12 +628,15 @@ function parseNarrativeCheckIssue(value: unknown): NarrativeCheckIssue | null {
     return null;
   }
 
+  const direction = parseNarrativeCheckDirection(value.direction);
+
   return {
     severity: value.severity,
     message: value.message,
     ...(Array.isArray(value.references)
       ? { references: value.references.map(parseNarrativeCheckReference).filter((ref): ref is NarrativeCheckReference => ref !== null) }
       : {}),
+    ...(direction ? { direction } : {}),
   };
 }
 
@@ -627,11 +651,14 @@ function parseNarrativeCheck(value: unknown): NarrativeCheck | null {
     return null;
   }
 
+  const counts = parseNarrativeCheckCounts(value.counts);
+
   return {
     id: value.id,
     createdAt: value.createdAt,
     kind: "consistency",
     issues: value.issues.map(parseNarrativeCheckIssue).filter((issue): issue is NarrativeCheckIssue => issue !== null),
+    ...(counts ? { counts } : {}),
   };
 }
 

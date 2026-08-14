@@ -90,6 +90,43 @@ def test_build_narrative_check_prompt_includes_required_checks() -> None:
     assert 'card id="c2"' in prompt
 
 
+def test_build_narrative_check_prompt_requires_bidirectional_ab_cross_check() -> None:
+    """kj_technique.md §5 (優先3): the A/B cross-check must run in BOTH
+    directions and report per-direction counts (0 is a valid value)."""
+    payload = CheckNarrativeRequest(
+        doc=_sample_payload().doc,
+        narrativeText="First island explains alpha. Then they transition.",
+        basedOnReadingOrder=["i1", "c2"],
+    )
+
+    prompt = _build_narrative_check_prompt(payload)
+
+    assert 'direction "b_missing_in_a"' in prompt
+    assert 'direction "a_missing_in_b"' in prompt
+    assert '"counts" with the number of issues per direction' in prompt
+    assert '{"bMissingInA":number,"aMissingInB":number}' in prompt
+    assert '0/0 means the cross-check did not actually run' in prompt
+
+
+def test_parse_narrative_check_response_accepts_direction_and_counts() -> None:
+    payload = CheckNarrativeRequest(
+        doc=_sample_payload().doc,
+        narrativeText="text",
+        basedOnReadingOrder=["i1"],
+    )
+
+    response = _parse_narrative_check_response(
+        '{"issues":[{"severity":"warn","message":"claim with no diagram counterpart","references":[{"id":"i1","kind":"island"}],"direction":"b_missing_in_a"}],'
+        '"counts":{"bMissingInA":1,"aMissingInB":0}}',
+        payload,
+    )
+
+    assert response.issues[0].direction == "b_missing_in_a"
+    assert response.counts is not None
+    assert response.counts.bMissingInA == 1
+    assert response.counts.aMissingInB == 0
+
+
 def test_parse_narrative_check_response_rejects_unknown_reference() -> None:
     payload = CheckNarrativeRequest(
         doc=_sample_payload().doc,

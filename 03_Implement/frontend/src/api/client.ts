@@ -849,6 +849,12 @@ export type NarrativeIssue = {
   severity: "info" | "warn" | "error";
   message: string;
   references?: NarrativeIssueReference[];
+  direction?: "b_missing_in_a" | "a_missing_in_b";
+};
+
+export type NarrativeCheckCounts = {
+  bMissingInA: number;
+  aMissingInB: number;
 };
 
 export async function checkNarrative(
@@ -856,7 +862,7 @@ export async function checkNarrative(
   narrativeText: string,
   basedOnReadingOrder?: string[],
   requestOptions: TenantScopedRequestOptions = {},
-): Promise<{ issues: NarrativeIssue[] }> {
+): Promise<{ issues: NarrativeIssue[]; counts?: NarrativeCheckCounts }> {
   const response = await fetch(`${API_BASE}/ai/check-narrative`, {
     method: "POST",
     headers: {
@@ -871,12 +877,12 @@ export async function checkNarrative(
     throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 
-  const body = (await response.json()) as { issues?: NarrativeIssue[] };
+  const body = (await response.json()) as { issues?: NarrativeIssue[]; counts?: NarrativeCheckCounts };
   if (!Array.isArray(body.issues)) {
     throw new ApiError(500, "Invalid narrative consistency response");
   }
 
-  return { issues: body.issues };
+  return { issues: body.issues, ...(body.counts ? { counts: body.counts } : {}) };
 }
 
 
