@@ -1,11 +1,21 @@
 from fastapi import HTTPException
 
 from kj_atlas_api.models import Card, DocumentV1, Edge, Island, SuggestLayoutRequest, Transform
-from kj_atlas_api.models_ai import CheckNarrativeRequest, GenerateNarrativeRequest, SummarizeIslandRelationRequest
+from kj_atlas_api.models_ai import (
+    CheckNarrativeRequest,
+    GenerateNarrativeRequest,
+    RefineCardTextRequest,
+    SuggestCardGroupsRequest,
+    SuggestIslandSummaryRequest,
+    SummarizeIslandRelationRequest,
+)
 from kj_atlas_api.routes.ai import (
     _build_generate_narrative_prompt,
+    _build_island_summary_prompt,
     _build_narrative_check_prompt,
     _build_prompt,
+    _build_refine_card_text_prompt,
+    _build_suggest_card_groups_prompt,
     _parse_generate_narrative_response,
     _parse_narrative_check_response,
 )
@@ -321,3 +331,68 @@ def test_parse_relation_summary_response_accepts_valid_payload() -> None:
     assert parsed.text == "draft"
     assert parsed.groundingCardIds == ["c1"]
     assert parsed.warnings == ["missing context"]
+
+
+# ---------------------------------------------------------------------------
+# 優先3-4: runtime prompts aligned with ai_kj_execution_procedures.md
+# ---------------------------------------------------------------------------
+
+
+def test_refine_card_text_prompt_prohibits_noun_stops() -> None:
+    prompt = _build_refine_card_text_prompt(RefineCardTextRequest(cardText="users lost time"))
+
+    assert "predicate-bearing sentence" in prompt
+    assert "名詞止め" in prompt
+    assert "動詞で終わる文" in prompt
+
+
+def test_suggest_card_groups_prompt_aligned_with_bundling_procedures() -> None:
+    from kj_atlas_api.models_ai import _CardRef
+
+    prompt = _build_suggest_card_groups_prompt(
+        SuggestCardGroupsRequest(
+            cards=[
+                _CardRef(id="c1", text="alpha"),
+                _CardRef(id="c2", text="beta"),
+                _CardRef(id="c3", text="gamma"),
+            ]
+        )
+    )
+
+    # "thematic" was the framing the review flagged; it must be gone.
+    assert "thematic" not in prompt
+    assert "similarity of what they are appealing for" in prompt
+    assert "2-3 cards (rarely 4)" in prompt
+    assert "Do not force a card into a bundle" in prompt
+
+
+def test_island_summary_prompt_includes_placard_checks() -> None:
+    doc = _sample_payload().doc
+    payload = SuggestIslandSummaryRequest(
+        doc=doc,
+        islandId=doc.islands[0].id,
+    )
+
+    prompt = _build_island_summary_prompt(payload)
+
+    # ai_kj_execution_procedures.md §3: 表札検査 — transposition + return check,
+    # advocacy not classification, no noun-stops.
+    assert "Transposition" in prompt
+    assert "Return check" in prompt
+    assert "classification name (分類名)" in prompt
+    assert "predicate-bearing advocacy sentence" in prompt
+    assert "名詞止め" in prompt
+
+
+def test_generate_narrative_prompt_self_performs_ab_cross_check() -> None:
+    payload = GenerateNarrativeRequest(
+        doc=_sample_payload().doc.model_copy(update={"readingOrder": ["i1", "c2"]}),
+        narrativeTitle="Draft title",
+    )
+
+    prompt = _build_generate_narrative_prompt(payload)
+
+    assert "A/B cross-check" in prompt
+    assert "b_missing_in_a" in prompt
+    assert "a_missing_in_b" in prompt
+    assert "warnings" in prompt

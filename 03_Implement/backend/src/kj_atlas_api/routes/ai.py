@@ -304,9 +304,16 @@ def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:
 
     return "\n".join(
         [
-            "You generate a draft island summary from evidence cards.",
+            "You write the placard (表札) for this island as a draft island summary.",
             "Use only the direct member cards provided below. Ignore nested islands for this MVP.",
             "Do not add facts beyond the card texts.",
+            # ai_kj_execution_procedures.md §3: the summaryText is advocacy for the
+            # island (代弁), not a classification name; never a noun-phrase stop.
+            "summaryText must be a predicate-bearing advocacy sentence (述語を伴う代弁文), never a classification name (分類名) or noun-phrase stop (名詞止め).",
+            # 表札検査: transposition check + return check (kj_technique.md §3).
+            "Perform the placard checks before answering:",
+            "  1. Transposition: if you placed this placard on a DIFFERENT island, would it still hold? If yes, it is a classification name — fail and rewrite.",
+            "  2. Return check: read the placard back to each member card — 'is this what you meant to say?'. If even one card says 'no', rewrite.",
             "If evidence is weak, sparse, or contradictory, include warnings.",
             "Return strict JSON only. No markdown. No extra text.",
             "Use this exact schema:",
@@ -401,6 +408,11 @@ def _build_generate_narrative_prompt(payload: GenerateNarrativeRequest) -> str:
             "Use reading order as the narrative spine. Follow the order exactly.",
             "For each reading-order item, describe what it appears to contain and what it might mean.",
             "Explicitly label the output as draft and unreviewed.",
+            # ai_kj_execution_procedures.md §7: self-perform the A/B照合 and report
+            # the mismatches as warnings so the 3+ threshold can be evaluated.
+            "Self-perform the A/B cross-check (kj_technique.md §5) and report each mismatch as a warning:",
+            "  - 'b_missing_in_a': a statement in the narrative with no counterpart in the diagram.",
+            "  - 'a_missing_in_b': a diagram island that the narrative never mentions.",
             "Return strict JSON only. No markdown. No extra keys.",
             "Use this exact schema:",
             '{"text":string,"basedOnReadingOrder":[string,...],"warnings":[string,...]?}',
@@ -1074,6 +1086,9 @@ def _build_refine_card_text_prompt(payload: RefineCardTextRequest) -> str:
     return (
         f"Refine the wording of this KJ-method card. "
         f"Make it clearer and more concise while preserving the original meaning. "
+        # ai_kj_execution_procedures.md §1: 名詞止め禁止 — a card must be a
+        # predicate-bearing sentence, never a bare noun-phrase stop.
+        f"Output must be a predicate-bearing sentence (動詞で終わる文), never a noun-phrase stop (名詞止め). "
         f'Return JSON: {{"refinedText": "...", "reasoning": "..."}}\n'
         f"Card text: {payload.cardText}{ctx}"
     )
@@ -1090,7 +1105,12 @@ def _parse_refine_card_text_response(raw_text: str) -> RefineCardTextResponse:
 def _build_suggest_card_groups_prompt(payload: SuggestCardGroupsRequest) -> str:
     cards = "\n".join(f'  - id="{c.id}", text="{c.text}"' for c in payload.cards)
     return (
-        f"Group these KJ-method cards into thematic islands. "
+        # ai_kj_execution_procedures.md §2: bundle by the similarity of what the
+        # cards are APPEALING for (訴えの類似性), not by classification; first
+        # level bundles are 2-3 cards (rarely 4); never force a lone card in.
+        f"Group these KJ-method cards into islands. "
+        f"Bundle cards by the similarity of what they are appealing for, not by classification labels. "
+        f"Each first-level bundle is 2-3 cards (rarely 4). Do not force a card into a bundle it does not belong to. "
         f'Return JSON: {{"groups": [{{"label": "...", "cardIds": ["..."], '
         f'"rationale": "..."}}]}}\nCards:\n{cards}'
     )
