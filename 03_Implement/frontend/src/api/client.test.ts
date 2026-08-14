@@ -1203,40 +1203,56 @@ describe("inquiry-bundle client (G5 W型 single-tenant)", () => {
     vi.restoreAllMocks();
   });
 
-  it("putInquiryBundle POSTs the opaque payload to the journey endpoint", async () => {
+  it("putInquiryBundle creates with If-None-Match: * and returns the new ETag", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(null, { status: 204 })
+      new Response(null, { status: 201, headers: { ETag: '"1"' } })
     );
     const payload = { schemaVersion: "inquiry-journey.v1", rounds: [{ roundId: "r1" }] };
 
-    await putInquiryBundle("journey-1", payload);
+    const etag = await putInquiryBundle("journey-1", payload, {}, { createIfAbsent: true });
 
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
     expect(url).toContain("/inquiry-bundles/journey-1");
     expect(init.method).toBe("POST");
+    expect((init.headers as Record<string, string>)["If-None-Match"]).toBe("*");
     expect(JSON.parse(init.body as string)).toEqual(payload);
+    expect(etag).toBe("1");
   });
 
-  it("getInquiryBundle returns the stored opaque payload", async () => {
+  it("putInquiryBundle updates with If-Match carrying the observed revision", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 204, headers: { ETag: '"2"' } })
+    );
+
+    const etag = await putInquiryBundle("journey-1", { v: 2 }, {}, { etag: "1" });
+
+    const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(init.method).toBe("POST");
+    expect((init.headers as Record<string, string>)["If-Match"]).toBe('"1"');
+    expect(etag).toBe("2");
+  });
+
+  it("getInquiryBundle returns the stored opaque payload and ETag", async () => {
     const stored = { schemaVersion: "inquiry-journey.v1", rounds: [{ roundId: "r1" }] };
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify(stored), { status: 200, headers: { "Content-Type": "application/json" } })
+      new Response(JSON.stringify(stored), { status: 200, headers: { "Content-Type": "application/json", ETag: '"3"' } })
     );
 
     const result = await getInquiryBundle("journey-1");
 
-    expect(result).toEqual(stored);
+    expect(result).toEqual({ payload: stored, etag: "3" });
   });
 
-  it("deleteInquiryBundle DELETEs the journey endpoint", async () => {
+  it("deleteInquiryBundle DELETEs with If-Match", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(null, { status: 204 })
     );
 
-    await deleteInquiryBundle("journey-1");
+    await deleteInquiryBundle("journey-1", "3");
 
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
     expect(url).toContain("/inquiry-bundles/journey-1");
     expect(init.method).toBe("DELETE");
+    expect((init.headers as Record<string, string>)["If-Match"]).toBe('"3"');
   });
 });

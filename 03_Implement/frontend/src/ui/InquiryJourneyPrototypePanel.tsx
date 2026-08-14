@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 
-import { getInquiryBundle, putInquiryBundle } from "../api/client";
+import { ApiError, getInquiryBundle, putInquiryBundle } from "../api/client";
 
 import {
   ROUND_STAGES,
@@ -221,6 +221,9 @@ export function InquiryJourneyPrototypePanel({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const importClientRef = useRef<InquiryBundleWorkerClient | null>(null);
   const importAbortRef = useRef<AbortController | null>(null);
+  // DATA-INQUIRY-CONCURRENCY-01 (案A): the server-owned revision observed on
+  // the last load/save, sent back as If-Match on the next save.
+  const backendEtagRef = useRef<string | undefined>(undefined);
   const resumePreviewRef = useRef<HTMLElement | null>(null);
   const [bundle, setBundle] = useState<InquiryBundleV1 | null>(null);
   const [selectedStage, setSelectedStage] = useState<RoundStage>("r1_problem_setting");
@@ -496,13 +499,29 @@ export function InquiryJourneyPrototypePanel({
         setMessage({ kind: "error", text: t("inquiry_journey.prototype.export_error") });
         return;
       }
-      await runTenantScopedApiRequest(() => putInquiryBundle(
+      // DATA-INQUIRY-CONCURRENCY-01 (案A): save carries the last server-owned
+      // revision as If-Match, or If-None-Match: * when this journey was never
+      // persisted here, so a stale client can never overwrite newer work.
+      const precondition = backendEtagRef.current
+        ? { etag: backendEtagRef.current }
+        : { createIfAbsent: true };
+      const newEtag = await runTenantScopedApiRequest(() => putInquiryBundle(
         bundle.journey.journeyId,
         JSON.parse(serialized.json),
         { tenantSessionContext: verifiedTenantSession },
+        precondition,
       ));
+      if (newEtag) {
+        backendEtagRef.current = newEtag;
+      }
       setMessage({ kind: "status", text: t("inquiry_journey.prototype.saved_backend") });
-    } catch {
+    } catch (error) {
+      // AC-6: a 409 is a real conflict — never auto-retry/merge into the newer
+      // bundle and never treat the stale save as successful.
+      if (error instanceof ApiError && error.status === 409) {
+        setMessage({ kind: "error", text: t("inquiry_journey.prototype.conflict_backend") });
+        return;
+      }
       setMessage({ kind: "error", text: t("inquiry_journey.prototype.backend_error") });
     } finally {
       setIsBusy(false);
@@ -648,11 +667,11 @@ export function InquiryJourneyPrototypePanel({
         bundle.journey.journeyId,
         { tenantSessionContext: verifiedTenantSession },
       ));
-      if (stored === undefined) {
-        return;
-      }
+      // DATA-INQUIRY-CONCURRENCY-01 (案A): remember the server-owned revision
+      // so the next save carries it back as If-Match.
+      backendEtagRef.current = stored.etag;
       const parsed = await runTenantScopedOptionalTask(async () => (
-        importClient.parse(JSON.stringify(stored))
+        importClient.parse(JSON.stringify(stored.payload))
       ));
       if (parsed === undefined || parsed.status === "cancelled") {
         return;

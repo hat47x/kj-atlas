@@ -1,7 +1,7 @@
 # Issue: DATA-INQUIRY-CONCURRENCY-01 探究bundleの無条件上書き・削除をCAS化する
 
 - Type: Data / API / Security
-- Status: Draft
+- Status: In Progress
 - Source Issue: `DOMAIN-W-ITERATION-01`
 - Priority: P1
 - Owner: Maintainer
@@ -44,15 +44,31 @@ frontendローカルbundleは不変snapshot DAGを持つが、backend row全体�
 
 ## 受入条件
 
-- [ ] AC-1: create、同一内容再保存、update、delete、missing resource、concurrent updateのprecondition semanticsが決定される。
-- [ ] AC-2: GETがserver-owned ETagを返し、update/deleteは`If-Match`欠損を428、不正・複数・wildcard・不一致をstableな409/422へfail-closedにする。
-- [ ] AC-3: update/deleteが`tenant_id + journey_id + expected revision`の単一atomic文で確定し、事前SELECTだけのcheck-then-writeにしない。
-- [ ] AC-4: 同じ旧revisionを使う2 workerの同時updateは一方だけ成功し、敗者がpayload、監査、revisionを変更しない。
-- [ ] AC-5: delete確認後に更新されたbundleを古いDELETEが削除せず、削除成功時だけcontent-free監査を同一transactionへ追加する。
-- [ ] AC-6: frontendは409を新しいbundleへの自動retry／mergeへ倒さず、旧画面を操作可能な成功状態として扱わない。
-- [ ] AC-7: tenant A/Bに同じjourney IDとrevisionを作り、ETagを知っていても越境read/update/deleteできない。
-- [ ] AC-8: SQLiteと全Verified server DBでmigration往復、atomic CAS、connection pool再利用、backup/restoreが通る。
-- [ ] AC-9: API文書、frontend/backend client、E2Eが同期し、offline/local-only bundle I/Oは既存どおり動作する。
+- [x] AC-1: create、同一内容再保存、update、delete、missing resource、concurrent updateのprecondition semanticsが決定される。
+- [x] AC-2: GETがserver-owned ETagを返し、update/deleteは`If-Match`欠損を428、不正・複数・wildcard・不一致をstableな409/422へfail-closedにする。
+- [x] AC-3: update/deleteが`tenant_id + journey_id + expected revision`の単一atomic文で確定し、事前SELECTだけのcheck-then-writeにしない。
+- [x] AC-4: 同じ旧revisionを使う2 workerの同時updateは一方だけ成功し、敗者がpayload、監査、revisionを変更しない。
+- [x] AC-5: delete確認後に更新されたbundleを古いDELETEが削除せず、削除成功時だけcontent-free監査を同一transactionへ追加する。
+- [x] AC-6: frontendは409を新しいbundleへの自動retry／mergeへ倒さず、旧画面を操作可能な成功状態として扱わない。
+- [x] AC-7: tenant A/Bに同じjourney IDとrevisionを作り、ETagを知っていても越境read/update/deleteできない。
+- [ ] AC-8: SQLiteと全Verified server DBでmigration往復、atomic CAS、connection pool再利用、backup/restoreが通る。— **SQLite往復・atomic CASは実証済み**。Verified server DB（PostgreSQL系）での往復検証は残務。
+- [ ] AC-9: API文書、frontend/backend client、E2Eが同期し、offline/local-only bundle I/Oは既存どおり動作する。— **API文書・frontend/backend client同期は完了**。ブラウザE2E（409後に保存成功表示が出ないこと）は残務。offline/local-only I/Oは既存どおり。
+
+## 対応記録（2026-08-13）
+
+案A（server生成row revision）を実装した。
+
+- `models.py` / `20260813_0026_add_inquiry_bundle_revision`：`inquiry_bundles.revision`（正整数、既定1）を追加。
+- `database_content_store.py`：`create()`（revision 1）、`update_cas()`（単一UPDATEでrevision=n→n+1）、`delete_cas()`（単一DELETE）を追加。既存の無条件`replace`/`delete`は残置（非CAS呼び出し用）。
+- `routes/inquiry_bundles.py`：
+  - GET が `ETag: "<revision>"` を返す。
+  - POST は `If-None-Match: *`（create、201+ETag）／`If-Match: "<n>"`（update、204+ETag）、前提条件なしは428、`If-Match`不正（wildcard・複数・非正整数）や両header併用は422。
+  - DELETE は `If-Match` 必須（欠損428、不一致409）、成功時のみcontent-free監査を同一transactionで記録。
+- frontend `client.ts`：`putInquiryBundle` が `If-Match`／`If-None-Match` を送り新ETagを返す。`getInquiryBundle` が `{ payload, etag }` を返す。`deleteInquiryBundle` が `If-Match` を要求。
+- frontend `InquiryJourneyPrototypePanel.tsx`：保存時に観測済みrevisionをIf-Matchで送り、409はコンフリクト表示（自動retry/mergeしない、成功扱いにしない）。
+- テスト：store CASテスト（AC-3/4/7）、ルート統合テスト（428/409/422/ETag/tenant隔離/audit）、migration往復テスト（AC-8 SQLite）を追加。frontend clientテスト・型チェックも更新。
+
+残務：Verified server DBでのmigration往復・connection pool再利用・backup/restore（AC-8）、ブラウザE2E（AC-9）。
 
 ## 非目標
 

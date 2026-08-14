@@ -1150,29 +1150,32 @@ Inquiry bundle は `DocumentV1` の optional field ではなく、W型累積探�
 **POST** `/inquiry-bundles/{journey_id}`
 
 - Request body: JSON object/value（opaque Inquiry bundle payload）
-- Response: `204 No Content`
-- 同じ server-resolved tenant と `journey_id` の組が存在する場合は payload と `updated_at` を置換する（tenant-local upsert）。
+- 前提条件（DATA-INQUIRY-CONCURRENCY-01、案A）:
+  - `If-None-Match: *` — **create only**。`tenant_id + journey_id` の行が存在しなければ revision 1 で作成し `201 Created` + `ETag: "1"` を返す。既に存在すれば `409`（`inquiry_bundle_conflict`）で上書きしない。
+  - `If-Match: "<n>"` — **update only**。`tenant_id + journey_id + revision == n` の単一 atomic UPDATE で置換し revision を n+1 へ増加、`204 No Content` + `ETag: "<n+1>"` を返す。revision 不一致・行欠損は `409`（`inquiry_bundle_conflict`）で何も変更しない。
+  - 前提条件なし — `428`（`precondition_required`）。
+  - `If-Match` が wildcard `*`・複数値・非正整数、または `If-Match` と `If-None-Match` の両方 — `422`（`invalid_if_match` / `invalid_if_none_match` / `conflicting_preconditions`）。
 - validation error: `422`（JSONでない、非有限値、または不正な `journey_id`）
 - size error: `413`（serialized payload が5 MiB超）
 
 **GET** `/inquiry-bundles/{journey_id}`
 
-- Response: 保存時の opaque JSON payload（`DocumentV1` ではない）
+- Response: 保存時の opaque JSON payload（`DocumentV1` ではない）＋ `ETag: "<revision>"` header（server-owned revision のopaque表現）。
 - Not found: `404 Inquiry bundle not found`
 - `journey_id` validation、trusted tenant resolution、tenant session precondition はPOSTと同じである。
 
 **DELETE** `/inquiry-bundles/{journey_id}`
 
-- Response: `204 No Content`
+- 前提条件（DATA-INQUIRY-CONCURRENCY-01、案A）: `If-Match: "<n>"` を要求。欠損は `428`（`precondition_required`）、wildcard・複数値・非正整数は `422`。
+- `tenant_id + journey_id + revision == n` の単一 atomic DELETE で成功したときのみ `204 No Content`。revision 不一致・行欠損は `409`（`inquiry_bundle_conflict`）で何も変更しない。
 - 削除単位は一つの探究全体（`tenant_id + journey_id`）であり、ラウンド単体や `DocumentV1` の一部は削除しない。
-- 対象がない場合は `404` とし、既存bundleを変更せず、削除監査も生成しない。
 - 対象行の削除と本文なしの削除監査イベントは同一DB transactionで原子的に確定する。監査には `event_id`、server-resolved `tenant_id`、`journey_id`、`principal_id`、action=`inquiry_bundle.delete`、outcome=`deleted`、`occurred_at` のみを記録し、payload本文・カード本文・秘密情報を複製しない。
 
 ### 11.3 Migration / persistence model
 
-- `inquiry_bundles`: primary key `(tenant_id, journey_id)`、`payload_json`、`updated_at`。`tenant_id` は `tenants.id` を参照し、PostgreSQLではRLSを有効化して tenant setting と一致する行だけを許可する。
+- `inquiry_bundles`: primary key `(tenant_id, journey_id)`、`payload_json`、`updated_at`、`revision`（server-owned 正整数、既定1、DATA-INQUIRY-CONCURRENCY-01 案A）。`tenant_id` は `tenants.id` を参照し、PostgreSQLではRLSを有効化して tenant setting と一致する行だけを許可する。
 - `inquiry_bundle_deletion_audit_events`: deletion evidence専用のappend record。`tenant_id` は `tenants.id` を参照し、action/outcomeを固定値制約で制限する。PostgreSQLではこの表にもRLSを適用する。
-- migration revision: `20260806_0014_add_inquiry_bundle_storage`（前 revision `20260720_0013`）。
+- migration revision: `20260806_0014_add_inquiry_bundle_storage`（前 revision `20260720_0013`）。`revision` カラム追加は `20260813_0026_add_inquiry_bundle_revision`（前 revision `20260811_0025`）。
 - retention期限、保持件数、backend上の履歴削除・purge job はこの追加だけでは定義・実装しない。したがってInquiry/W型のsupport levelは **`L0: Planned`** のままであり、AC-11を完了扱いにしない。
 
 ### 11.4 非対象・互換性

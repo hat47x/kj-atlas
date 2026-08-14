@@ -917,31 +917,56 @@ export async function generateNarrative(
   return body;
 }
 
+export type InquiryBundleWithEtag = {
+  payload: unknown;
+  etag?: string;
+};
+
+/**
+ * DATA-INQUIRY-CONCURRENCY-01 (案A): update/delete carry a single server-owned
+ * revision (If-Match); create carries `If-None-Match: *`. The server returns a
+ * 428 when the precondition is absent and a 409 when it is stale or the row is
+ * missing. The caller must surface a 409 as a conflict — never auto-retry or
+ * auto-merge into the newer bundle (AC-6).
+ */
+export type InquiryBundlePrecondition = {
+  etag?: string;
+  createIfAbsent?: boolean;
+};
+
 export async function putInquiryBundle(
   journeyId: string,
   payload: unknown,
   options: TenantScopedRequestOptions = {},
-): Promise<void> {
+  precondition?: InquiryBundlePrecondition,
+): Promise<string | undefined> {
   // G5 (W型 single-tenant 化): store an opaque W型 inquiry journey. The backend
   // treats the body as an opaque JSON value; the frontend owns the schema.
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...tenantSessionPreconditionHeaders(options),
+  };
+  if (precondition?.createIfAbsent) {
+    headers["If-None-Match"] = "*";
+  } else if (precondition?.etag) {
+    headers["If-Match"] = formatIfMatchHeader(precondition.etag);
+  }
   const response = await fetch(`${API_BASE}/inquiry-bundles/${encodeURIComponent(journeyId)}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...tenantSessionPreconditionHeaders(options),
-    },
+    headers,
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
     const errorDetail = await parseErrorDetail(response);
     throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
+  return normalizeEtag(response.headers.get("ETag"));
 }
 
 export async function getInquiryBundle(
   journeyId: string,
   options: TenantScopedRequestOptions = {},
-): Promise<unknown> {
+): Promise<InquiryBundleWithEtag> {
   const response = await fetch(`${API_BASE}/inquiry-bundles/${encodeURIComponent(journeyId)}`, {
     headers: tenantSessionPreconditionHeaders(options),
   });
@@ -949,16 +974,24 @@ export async function getInquiryBundle(
     const errorDetail = await parseErrorDetail(response);
     throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
-  return (await response.json()) as unknown;
+  return {
+    payload: (await response.json()) as unknown,
+    etag: normalizeEtag(response.headers.get("ETag")),
+  };
 }
 
 export async function deleteInquiryBundle(
   journeyId: string,
+  etag: string,
   options: TenantScopedRequestOptions = {},
 ): Promise<void> {
+  const headers: Record<string, string> = {
+    ...tenantSessionPreconditionHeaders(options),
+  };
+  headers["If-Match"] = formatIfMatchHeader(etag);
   const response = await fetch(`${API_BASE}/inquiry-bundles/${encodeURIComponent(journeyId)}`, {
     method: "DELETE",
-    headers: tenantSessionPreconditionHeaders(options),
+    headers,
   });
   if (!response.ok) {
     const errorDetail = await parseErrorDetail(response);

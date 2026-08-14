@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from uuid import uuid4
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.content_store import (
@@ -238,6 +238,7 @@ class DatabaseBundleContentStore:
         updated_at: str,
         content: ContentBlob,
     ) -> ReplaceableBundleContent:
+        # Legacy unconditional upsert (kept for any non-CAS caller).
         stored = self.load(tenant=tenant, journey_id=journey_id)
         if stored is None:
             row = InquiryBundleRow(
@@ -252,6 +253,74 @@ class DatabaseBundleContentStore:
             row.payload_json = content.text
             row.updated_at = updated_at
         return ReplaceableBundleContent(row=row, content=content)
+
+    def create(
+        self,
+        *,
+        tenant: TenantContext,
+        journey_id: str,
+        updated_at: str,
+        content: ContentBlob,
+    ) -> ReplaceableBundleContent:
+        """DATA-INQUIRY-CONCURRENCY-01 (案A): create with revision 1. The caller
+        must guarantee the row does not already exist (If-None-Match: *)."""
+        apply_database_tenant_context(db=self._db, tenant=tenant)
+        row = InquiryBundleRow(
+            tenant_id=tenant.tenant_id,
+            journey_id=journey_id,
+            payload_json=content.text,
+            updated_at=updated_at,
+            revision=1,
+        )
+        self._db.add(row)
+        return ReplaceableBundleContent(row=row, content=content)
+
+    def update_cas(
+        self,
+        *,
+        tenant: TenantContext,
+        journey_id: str,
+        expected_revision: int,
+        updated_at: str,
+        content: ContentBlob,
+    ) -> bool:
+        """DATA-INQUIRY-CONCURRENCY-01 (案A): atomic compare-and-swap update.
+        Single UPDATE ... WHERE revision == expected, incrementing to +1, so a
+        concurrent writer with the same expected_revision loses without a
+        read-then-write race."""
+        apply_database_tenant_context(db=self._db, tenant=tenant)
+        result = self._db.execute(
+            update(InquiryBundleRow)
+            .where(
+                InquiryBundleRow.tenant_id == tenant.tenant_id,
+                InquiryBundleRow.journey_id == journey_id,
+                InquiryBundleRow.revision == expected_revision,
+            )
+            .values(
+                payload_json=content.text,
+                updated_at=updated_at,
+                revision=expected_revision + 1,
+            )
+        )
+        return result.rowcount == 1
+
+    def delete_cas(
+        self,
+        *,
+        tenant: TenantContext,
+        journey_id: str,
+        expected_revision: int,
+    ) -> bool:
+        """DATA-INQUIRY-CONCURRENCY-01 (案A): atomic compare-and-swap delete."""
+        apply_database_tenant_context(db=self._db, tenant=tenant)
+        result = self._db.execute(
+            delete(InquiryBundleRow).where(
+                InquiryBundleRow.tenant_id == tenant.tenant_id,
+                InquiryBundleRow.journey_id == journey_id,
+                InquiryBundleRow.revision == expected_revision,
+            )
+        )
+        return result.rowcount == 1
 
     def delete(self, *, tenant: TenantContext, journey_id: str) -> bool:
         apply_database_tenant_context(db=self._db, tenant=tenant)
