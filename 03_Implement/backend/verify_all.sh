@@ -140,6 +140,8 @@ if curl -s -o /dev/null -w '%{http_code}' --max-time 2 "$API_BASE/healthz" 2>/de
       bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api.sh" "$API_BASE"
     check "API write path (verify_api_write.sh)" \
       bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_write.sh" "$API_BASE"
+    check "API AI fail-closed path (verify_api_ai.sh)" \
+      bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_ai.sh" "$API_BASE"
     check "API inquiry CAS path (verify_api_inquiry.sh)" \
       bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_inquiry.sh" "$API_BASE"
     check "API W-type journey path (verify_api_inquiry_journey.sh)" \
