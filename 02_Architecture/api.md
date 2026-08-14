@@ -1144,6 +1144,7 @@ Inquiry bundle は `DocumentV1` の optional field ではなく、W型累積探�
 - `journey_id` は空でない、前後に空白がない、printable、最大256文字の canonical文字列でなければならない。不正値は `422`（`invalid_journey_id`）とする。
 - request body は JSON として有限値だけを受け付け、UTF-8 serialized payload が **5 MiBを超える場合は保存せず `413`**（`inquiry_bundle_too_large`）とする。
 - backend は payload の未知keyや将来versionを解釈・変換しない。Inquiry bundle のstrict import/export、SafeMode projection、DocumentV1との関係は既存のfrontend/domain契約が保持する。
+- **保持契約（DATA-INQUIRY-RETENTION-01 D1=案A）**: 探究bundleは **明示DELETEまで永続** する。自動期限・purge・保持例外（legal hold等）は**存在しない**。期限切れと長期停止は区別されず、backendはpayload内の日時・stage・個人情報有無から期限を推測しない。明示DELETEのみが削除経路で、削除時は本文なし監査を同一transactionで記録する。
 
 ### 11.2 Endpoint契約
 

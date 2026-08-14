@@ -1767,5 +1767,6 @@
   "document_title.suggest": "タイトルを提案",
   "side_panel.outline.detect_voids": "空白を検出",
   "app.status.voids.detected": "空白 {count} 件を検出・保存しました",
-  "side_panel.critique.placard_return_check_hint": "「同じものではない」「違和感がある」は表札への異議（戻し検査）として記録され、島要約の再提案に反映されます（kj_technique.md §3）。"
+  "side_panel.critique.placard_return_check_hint": "「同じものではない」「違和感がある」は表札への異議（戻し検査）として記録され、島要約の再提案に反映されます（kj_technique.md §3）。",
+  "inquiry_journey.prototype.retention_note": "探究は明示削除まで保存されます（自動期限・自動purgeはありません・DATA-INQUIRY-RETENTION-01 案A）"
 }

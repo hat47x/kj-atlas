@@ -1077,6 +1077,9 @@ export function InquiryJourneyPrototypePanel({
           {message.text}
         </div>
       ) : null}
+      <div style={{ fontSize: 11, color: "#64748b" }}>
+        {t("inquiry_journey.prototype.retention_note")}
+      </div>
       {isImporting ? (
         <button type="button" onClick={() => importAbortRef.current?.abort()}>
           {t("inquiry_journey.prototype.cancel_import")}

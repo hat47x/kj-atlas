@@ -142,6 +142,8 @@ if curl -s -o /dev/null -w '%{http_code}' --max-time 2 "$API_BASE/healthz" 2>/de
       bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_write.sh" "$API_BASE"
     check "API inquiry CAS path (verify_api_inquiry.sh)" \
       bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_inquiry.sh" "$API_BASE"
+    check "API W-type journey path (verify_api_inquiry_journey.sh)" \
+      bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_inquiry_journey.sh" "$API_BASE"
     check "API admin plane path (verify_api_admin.sh)" \
       bash "$ROOT_DIR/03_Implement/backend/scripts/verify_api_admin.sh" "$API_BASE"
     # MCP client path (generative-AI verification). Requires the mcp package's

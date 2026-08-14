@@ -91,7 +91,7 @@
 - [x] AC-8: 中断後の再開ブリーフから、問い、未解決点、次の行動、元成果へ移動できる。
 - [x] AC-9: 引継ぎ確認を一件ずつ採用・修正・見送り・保留でき、未回答でも保存できる。
 - [x] AC-10: `KJ_ATLAS_LLM_PROVIDER=none` で中核操作を完了できる。
-- [ ] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。SafeMode適用結果と共有範囲を受信側で検証できるbundle metadata、tenant-scoped backend保存、探究全体削除とcontent-free監査は実装済み。保持期限、expiry enforcement、purge/history-retention operationが未実装のため未完了とする。
+- [ ] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。SafeMode適用結果と共有範囲を受信側で検証できるbundle metadata、tenant-scoped backend保存、探究全体削除とcontent-free監査は実装済み。— **保持期限・expiry・purgeは DATA-INQUIRY-RETENTION-01 案A（自動期限なし・明示DELETEまで永続）を採択**し、非保証を api.md / UI / 運用文書に明記した。残る部分共有・履歴削除の境界は未完了（別issueで追跡）。
 - [x] AC-12: マウス・キーボード・390px・代表規模のE2Eが通る。
 - [x] AC-13: 探究終了（破壊的操作）の確認は、A-1（エージェント連携）と同型の保存・破棄・取消の3択とし、SafeMode既定ONの継承と出典・文面のサニタイズを満たす。→ 2026-07-29チェックポイントで完了。
 
