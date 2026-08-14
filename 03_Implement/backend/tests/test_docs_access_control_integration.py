@@ -327,3 +327,38 @@ def test_adapter_denial_prevents_role_header_privilege_escalation(tmp_path) -> N
 
     assert response.status_code == 403
     assert "blocked:write" in response.json()["detail"]
+
+
+class CapturingAdapter:
+    """Records the last AccessRequest so tests can assert what reached the PDP."""
+
+    name = "capturing"
+    last_request: SimpleNamespace | None = None
+
+    def authorize(self, request):  # noqa: ANN001
+        CapturingAdapter.last_request = request
+        return AccessDecision(allow=True)
+
+
+def test_client_supplied_roles_groups_never_reach_the_pdp(tmp_path) -> None:
+    """SEC-AUTH-ATTRIB-01 AC-2/AC-3: x-auth-roles / x-auth-groups are client
+    supplied; the server must not forward them to its own authorization service.
+    The PDP receives the verified identity's roles/groups — empty today, and
+    never the header values."""
+    CapturingAdapter.last_request = None
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = CapturingAdapter()
+        resp = client.put(
+            "/docs/doc-roles",
+            json=_sample_payload("doc-roles"),
+            headers={
+                "x-auth-roles": "admin,superuser",
+                "x-auth-groups": "security",
+            },
+        )
+        assert resp.status_code == 200, resp.text
+
+    assert CapturingAdapter.last_request is not None
+    captured_auth = CapturingAdapter.last_request.auth
+    assert captured_auth.roles == ()
+    assert captured_auth.groups == ()

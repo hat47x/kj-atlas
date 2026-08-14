@@ -19,7 +19,6 @@ from kj_atlas_api.access_control import (
     FailSafeMode,
     apply_tenant_boundary_guard,
     enforce_access,
-    parse_csv_header,
     resolve_access_decision,
 )
 from kj_atlas_api.audit import build_event
@@ -275,8 +274,13 @@ def _authorize_request(
             user_id=identity.auth_context.user_id,
             provider=identity.auth_context.provider,
             external_uid=identity.auth_context.external_uid,
-            roles=parse_csv_header(request.headers.get("x-auth-roles")),
-            groups=parse_csv_header(request.headers.get("x-auth-groups")),
+            # SEC-AUTH-ATTRIB-01 (D-a): authorization attributes must come from a
+            # VERIFIED identity, never from client-supplied headers. Neither the
+            # single-tenant header identity nor the SaaS JWT identity populates
+            # roles/groups yet, so these are empty (fail-closed) — the server
+            # does not assert attributes it cannot verify.
+            roles=identity.auth_context.roles,
+            groups=identity.auth_context.groups,
             trace_id=request.headers.get("x-trace-id"),
             amr=identity.auth_context.amr,
             acr=identity.auth_context.acr,
