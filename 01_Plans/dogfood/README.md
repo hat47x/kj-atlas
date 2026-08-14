@@ -157,3 +157,8 @@ Web/API/MCP など検証経路を新規追加・拡張するときは、次の3�
 | 2026-08-12 | Org-Bパターン（Hold/Critique週跨ぎ）を実走行。API保存→再読込で作業状態が完全維持（held2/shelved1/critiqued2） | `adopting-org-patterns.md` §3.6 に記録 |
 | 2026-08-12 | MCP/外部プロジェクションが Hold/Critique 作業状態をスキーマごと落とす（AI協働の基本情報欠落） | `issue-DOGFOOD-08`起票（三要素分析済み・P2） |
 | 2026-08-12 | DOGFOOD-08 の修正案（`ProjectedCard` へ holdState 追加・critique は SafeMode 判断と分離）を具体化 | `issue-DOGFOOD-08`に修正案追記（proposal-only・反スコアリング語彙との衝突なしを確認） |
+| 2026-08-13 | **inquiry-bundle CAS ライフサイクルを実API経路で検証**（CLI/API経路の拡充） | `verify_api_inquiry.sh` を新設 — create(If-None-Match 201)→read→update(If-Match 204)→stale 409→欠損428→不正422→delete 204→re-delete 409 の17チェックを実走行（**17 pass**）。DOGFOOD-06規約（成功＋異常系）に準拠し `verify_all.sh` check 9 へ統合（read/write/inquiry/MCP の4経路化） |
+| 2026-08-13 | MCP HTTP 経路のフルセッションe2eを実backend・実DBで再確認 | `dogfood_mcp_http_e2e.mjs`（mock IdP＋実JWT）を live 走行 — initialize→tools/list→tools/call が成功。生成AIがMCP HTTPで検証する経路の実証が継続 |
+| 2026-08-13 | **local main の alembic lineage が broken**（0027が存在しない0026を参照 → `alembic heads` KeyError・バックエンド起動不能） | 0027のdown_revisionを0026（マージ済み）へ再チェーンで修復（0025→0026→0027の単一head）。migration追加と検証経路の前提（DB=head）の関係が **DOGFOOD-09** として浮上 |
+| 2026-08-13 | 出荷中不変条件違反: 画面の「健全性 N%」・接続スコア・impact等級（DOMAIN-SCORING-SURFACE-01・P1） | **修正（案A）**: `health`(0-100)削除・Q007中立事実化・**Q009**（ゼロ孤立カード＝forced grouping警告）追加・connectivityScore/impactバッジ/高影響フィルタ撤去・UI反スコアリング検査をテスト固定。frontend 1439 tests pass |
+| 2026-08-13 | 検証ハーネスが DB migration 未適用を 500 としてしか見せない | `issue-DOGFOOD-09`起票（P2）: `verify_all.sh` check 9 が前提（DB=alembic head）を事前検査する案。`alembic upgrade head` 後に 17/17 pass へ回復した実地記録 |
