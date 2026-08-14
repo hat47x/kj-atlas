@@ -14,7 +14,7 @@ from kj_atlas_api.active_tenant_session import require_current_tenant_session_ve
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app as main_app
 from kj_atlas_api.control_plane_auth import require_control_plane_authorization
-from kj_atlas_api.routes.docs import _authorize_request
+from kj_atlas_api.routes.docs import _authorize_request, _resolve_request_tenant, _transition_lifecycle
 from kj_atlas_api.routes.document_access_admin import _authorize_document_policy_management
 from kj_atlas_api.routes.inquiry_bundles import _trusted_session as _inquiry_bundle_trusted_session
 from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
@@ -147,11 +147,14 @@ def test_all_tenant_content_ai_and_context_routes_install_precondition() -> None
 
 def test_all_document_and_document_admin_routes_use_shared_authorization_boundaries() -> None:
     route_boundaries = {
-        "/docs/": "_authorize_request",
-        "/tenant-admin/document-access": "_authorize_document_policy_management",
+        # 第2反復: the archive/unarchive endpoints delegate authorization to
+        # _transition_lifecycle (which resolves the tenant + session
+        # precondition internally), so both shared boundaries are accepted.
+        "/docs/": {"_authorize_request", "_transition_lifecycle"},
+        "/tenant-admin/document-access": {"_authorize_document_policy_management"},
     }
 
-    for path_prefix, boundary_call in route_boundaries.items():
+    for path_prefix, boundary_calls in route_boundaries.items():
         routes = [
             route
             for route in main_app.routes
@@ -165,7 +168,7 @@ def test_all_document_and_document_admin_routes_use_shared_authorization_boundar
                 for node in ast.walk(endpoint_tree)
                 if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
             }
-            assert boundary_call in called_functions, route.path
+            assert boundary_calls & called_functions, route.path
 
 
 # The prefix-scoped coverage guards above only inspect routes under the four
@@ -177,7 +180,16 @@ def test_all_document_and_document_admin_routes_use_shared_authorization_boundar
 # is itself mechanically re-checked.
 
 _TENANT_SCOPED_BOUNDARY_CALLS = frozenset(
-    {_authorize_request, _authorize_document_policy_management, _inquiry_bundle_trusted_session}
+    {
+        _authorize_request,
+        _authorize_document_policy_management,
+        _inquiry_bundle_trusted_session,
+        # 第2反復: metadata-only / lifecycle routes resolve the tenant + session
+        # precondition without a per-document read (no SafeMode/card decision
+        # applies), via these two shared helpers.
+        _resolve_request_tenant,
+        _transition_lifecycle,
+    }
 )
 
 # Route touches no tenant-scoped resource and cannot reach the database.
@@ -227,7 +239,7 @@ _UNGUARDED_ROUTE_EXEMPTIONS: dict[tuple[str, str], str] = {
 # routes rather than APIRoute instances. Nothing else may hide there: a mounted
 # ASGI sub-application would also skip APIRoute inspection, and with it every
 # tenant boundary assertion in this module.
-_NON_API_ROUTE_PATHS = frozenset({"/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"})
+_NON_API_ROUTE_PATHS = frozenset({"/openapi.json", "/api-docs", "/api-redoc", "/docs/oauth2-redirect"})
 
 
 def _flattened_dependency_calls(dependant: object) -> set[object]:
