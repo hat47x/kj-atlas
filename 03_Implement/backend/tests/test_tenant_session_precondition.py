@@ -191,12 +191,21 @@ _CONTROL_PLANE_AUTHORIZED = "control-plane-authorized"
 _TENANT_SESSION_VERSION_SOURCE = "tenant-session-version-source"
 # Route carries the expected version in its request body instead of a header.
 _BODY_BORNE_EXPECTED_VERSION = "body-borne-expected-version"
+# ADR-0074 BFF OAuth flow that runs before any tenant session exists. Unlike
+# _NO_TENANT_RESOURCE it may reach the database (it reads IdP rows and persists
+# the minted auth session) but must never touch a tenant-scoped resource.
+_PRE_SESSION_OAUTH_FLOW = "pre-session-oauth-flow"
 
 _UNGUARDED_ROUTE_EXEMPTIONS: dict[tuple[str, str], str] = {
     ("GET", "/healthz"): _NO_TENANT_RESOURCE,
     ("GET", "/ai/provider-status"): _NO_TENANT_RESOURCE,
     ("POST", "/admin/provision/hil-rs/a2a3-gate:validate"): _NO_TENANT_RESOURCE,
     ("GET", "/session/bootstrap-policy"): _NO_TENANT_RESOURCE,
+    # ADR-0074 BFF: OAuth login flow runs before any tenant session exists.
+    ("GET", "/session/login"): _NO_TENANT_RESOURCE,
+    # The callback persists the minted auth session, so it may reach the DB but
+    # still owns no tenant-scoped resource.
+    ("GET", "/session/callback"): _PRE_SESSION_OAUTH_FLOW,
     ("POST", "/session/logout"): _NO_TENANT_RESOURCE,
     ("POST", "/admin/provision/users"): _CONTROL_PLANE_AUTHORIZED,
     # ADR-0063/0064: Platform Control Plane — IdP registration is an admin
@@ -313,6 +322,17 @@ def test_no_tenant_resource_exemptions_cannot_reach_the_database() -> None:
     for route_key, route in exempt_routes.items():
         assert get_db not in _flattened_dependency_calls(route.dependant), route_key
         assert get_db not in _endpoint_called_objects(route), route_key
+
+
+def test_pre_session_oauth_flow_exemptions_use_the_database_without_a_tenant_boundary() -> None:
+    exempt_routes = _exempt_routes(_PRE_SESSION_OAUTH_FLOW)
+    assert exempt_routes
+
+    for route_key, route in exempt_routes.items():
+        # Distinguishes from _NO_TENANT_RESOURCE: the OAuth callback reads IdP
+        # rows and persists the minted auth session, so get_db is expected.
+        assert get_db in _flattened_dependency_calls(route.dependant), route_key
+        assert not _installs_tenant_scoped_boundary(route), route_key
 
 
 def test_control_plane_exemption_requires_control_plane_authorization() -> None:

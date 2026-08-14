@@ -73,6 +73,10 @@ def _runtime_policy(**overrides: object) -> TrustedSaasRuntimePolicy:
         "access_control_fail_safe_mode": "deny",
         "document_policy_binding_resolver": "external_http",
         "tenant_capability_resolver": "external_http",
+        # SAAS-TENANT-SESSION-BINDING-01 AC-1 (ADR-0074): required for
+        # saas-multitenant policy validation.
+        "saas_oauth_broker_http_authorize_endpoint": "https://broker.example/authorize",
+        "saas_auth_session_hash_key": "test-session-hash-key",
     }
     values.update(overrides)
     return TrustedSaasRuntimePolicy(**values)  # type: ignore[arg-type]
@@ -124,6 +128,18 @@ def _configure_main_saas_policy(
         main_module.settings,
         "tenant_capability_http_endpoint",
         "https://capability.invalid/resolve",
+    )
+    # SAAS-TENANT-SESSION-BINDING-01 AC-1 (ADR-0074): required for
+    # saas-multitenant policy validation.
+    monkeypatch.setattr(
+        main_module.settings,
+        "saas_oauth_broker_http_authorize_endpoint",
+        "https://broker.invalid/authorize",
+    )
+    monkeypatch.setattr(
+        main_module.settings,
+        "saas_auth_session_hash_key",
+        "test-session-hash-key",
     )
 
 
