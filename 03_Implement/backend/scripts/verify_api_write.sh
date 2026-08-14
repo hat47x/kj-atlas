@@ -115,6 +115,47 @@ if [ "$get_code2" = "200" ]; then
   check "update reflected in card count (3 cards)" "3" "$card_count2"
 fi
 
+# 4. Optimistic concurrency (ETag / If-Match): a GET returns an ETag; a PUT
+#    with the CURRENT ETag succeeds; a PUT with a STALE ETag is rejected 409
+#    (lost-update prevention an admin script relies on).
+curl -s -o /dev/null -D /tmp/kj_write_headers.txt ${auth_header} "$BASE_URL/docs/$DOC_ID"
+etag=$(grep -i '^etag:' /tmp/kj_write_headers.txt 2>/dev/null | tr -d '\r' | awk '{print $2}')
+if [ -n "$etag" ]; then
+  echo "  PASS: GET /docs/{id} returns ETag"
+  PASS=$((PASS+1))
+
+  cas_payload="$(cat <<JSON
+{
+  "version": 1,
+  "id": "${DOC_ID}",
+  "title": "admin write probe (cas)",
+  "createdAt": "2026-08-12T00:00:00Z",
+  "updatedAt": "2026-08-12T00:00:02Z",
+  "transform": {"panX": 5, "panY": 5, "zoom": 1},
+  "cards": [
+    {"id": "card-1", "text": "alpha", "x": 0, "y": 0},
+    {"id": "card-2", "text": "beta", "x": 10, "y": 10},
+    {"id": "card-3", "text": "gamma", "x": 20, "y": 20}
+  ],
+  "edges": [],
+  "islands": [{"id": "island-1", "cardIds": ["card-1", "card-2", "card-3"]}]
+}
+JSON
+)"
+  ok_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} \
+    -X PUT "$BASE_URL/docs/$DOC_ID" -H 'Content-Type: application/json' \
+    -H "If-Match: $etag" -d "$cas_payload")
+  check "PUT with current If-Match succeeds" "200" "$ok_code"
+
+  stale_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} \
+    -X PUT "$BASE_URL/docs/$DOC_ID" -H 'Content-Type: application/json' \
+    -H 'If-Match: "stale-etag"' -d "$cas_payload")
+  check "PUT with stale If-Match rejected (409)" "409" "$stale_code"
+else
+  echo "  FAIL: GET /docs/{id} did not return an ETag (optimistic concurrency unverifiable)"
+  FAIL=$((FAIL+1))
+fi
+
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
