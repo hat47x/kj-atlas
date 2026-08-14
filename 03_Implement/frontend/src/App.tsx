@@ -41,6 +41,7 @@ import {
 } from "./domain/geometry/polygon_edit";
 import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geometry/polygon_stale";
 import { computeTidyIslandLayout, generateOrthogonalIslandOutline } from "./domain/geometry/orthogonal_island_outline";
+import { detectVoidCandidates } from "./domain/void_detection";
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
@@ -8202,6 +8203,22 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     });
   }, [collapsedIslandIds, document, readingMode, reviewedOnly, runTenantScopedTask]);
 
+  const handleDetectVoids = useCallback(() => {
+    if (!document) {
+      setStatusMessage(t("app.status.diagnostics.no_document"));
+      return;
+    }
+    const result = detectVoidCandidates(document, { nowIso: new Date().toISOString() });
+    applyDocumentChange(
+      withUpdatedTimestamp({ ...document, voids: result.voids }),
+      t("app.status.voids.detected", { count: result.voids.length }),
+    );
+    // Zero-void is itself a signal (kj_technique.md §4/§6): 探索が足りない.
+    if (result.warning) {
+      setStatusMessage(result.warning);
+    }
+  }, [document, applyDocumentChange, t]);
+
   useEffect(() => {
     setOutlineQualityReport(null);
     setContradictionReport(null);
@@ -12045,6 +12062,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           evidenceGapReport={evidenceGapReport}
           dialecticBalanceReport={dialecticBalanceReport}
           onRunOutlineDiagnostics={handleRunOutlineDiagnostics}
+          onDetectVoids={handleDetectVoids}
           isDiagnosticsRunning={isDiagnosticsRunning}
           onCancelDiagnostics={() => diagnosticsAbortRef.current?.abort()}
           computeProgressMessage={computeProgressMessage}

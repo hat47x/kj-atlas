@@ -49,6 +49,7 @@ TYPE_MAP: dict[str, str] = {
     "NarrativeCheck": "NarrativeCheck",
     "NarrativeCheckIssue": "NarrativeCheckIssue",
     "NarrativeCheckCounts": "NarrativeCheckCounts",
+    "VoidEntry": "VoidEntry",
     "RelationSummary": "RelationSummary",
     "RelationSummaryHistoryEntry": "RelationSummaryHistoryEntry",
     "PatchApplyLogEntry": "PatchApplyLogEntry",

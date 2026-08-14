@@ -227,6 +227,8 @@ type SidePanelProps = {
   evidenceGapReport: EvidenceGapReport | null;
   dialecticBalanceReport: DialecticBalanceReport | null;
   onRunOutlineDiagnostics: () => void;
+  /** kj_technique.md §4 (優先3-1): run deterministic void detection and store results. */
+  onDetectVoids: () => void;
   isDiagnosticsRunning: boolean;
   onCancelDiagnostics: () => void;
   computeProgressMessage: string | null;
@@ -413,6 +415,7 @@ export function SidePanel({
   evidenceGapReport,
   dialecticBalanceReport,
   onRunOutlineDiagnostics,
+  onDetectVoids,
   isDiagnosticsRunning,
   onCancelDiagnostics,
   computeProgressMessage,
@@ -1781,6 +1784,7 @@ export function SidePanel({
           {isAdvancedUiEnabled ? (
             <>
               <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>
+              <button type="button" onClick={onDetectVoids}>{t("side_panel.outline.detect_voids")}</button>
               {isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}
               {isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
             </>
@@ -2114,6 +2118,7 @@ export function SidePanel({
           {isAdvancedUiEnabled ? (
             <>
               <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>
+              <button type="button" onClick={onDetectVoids}>{t("side_panel.outline.detect_voids")}</button>
               {isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}
               {isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
             </>

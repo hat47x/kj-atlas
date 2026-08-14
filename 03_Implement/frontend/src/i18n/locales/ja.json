@@ -1764,5 +1764,7 @@
   "tenant_session.change_confirm.processing": "変更を確認しています…",
   "document_title.untitled": "無題",
   "document_title.click_to_edit": "クリックしてタイトルを編集",
-  "document_title.suggest": "タイトルを提案"
+  "document_title.suggest": "タイトルを提案",
+  "side_panel.outline.detect_voids": "空白を検出",
+  "app.status.voids.detected": "空白 {count} 件を検出・保存しました"
 }

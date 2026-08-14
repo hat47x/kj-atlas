@@ -25,6 +25,8 @@ import type {
   ShelfEntry,
   SummaryHistoryEntry,
   Transform,
+  VoidEntry,
+  VoidKind,
 } from "./types";
 import { KNOWN_EDGE_TYPES } from "./types";
 import { canUsePolygonPoints } from "./geometry/polygon_edit";
@@ -545,6 +547,55 @@ function parseShelf(value: unknown, cardIds: Set<string>): ShelfEntry[] | undefi
   return shelf.length > 0 ? shelf : undefined;
 }
 
+const VOID_KINDS: readonly VoidKind[] = [
+  "unintegrated_card",
+  "orphaned_island",
+  "unspoken_island",
+  "unexplained_relation",
+  "unreviewed_content",
+];
+
+function parseVoids(value: unknown): VoidEntry[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const voids: VoidEntry[] = [];
+  const seenIds = new Set<string>();
+  for (const item of value) {
+    if (
+      !isRecord(item)
+      || typeof item.id !== "string"
+      || seenIds.has(item.id)
+      || typeof item.title !== "string"
+      || typeof item.detail !== "string"
+      || !VOID_KINDS.includes(item.kind as VoidKind)
+      || typeof item.createdAt !== "string"
+      || Number.isNaN(Date.parse(item.createdAt))
+    ) {
+      continue;
+    }
+
+    seenIds.add(item.id);
+    voids.push({
+      id: item.id,
+      kind: item.kind as VoidKind,
+      title: item.title,
+      detail: item.detail,
+      ...(Array.isArray(item.cardIds)
+        ? { cardIds: item.cardIds.filter((ref): ref is string => typeof ref === "string") }
+        : {}),
+      ...(Array.isArray(item.islandIds)
+        ? { islandIds: item.islandIds.filter((ref): ref is string => typeof ref === "string") }
+        : {}),
+      ...(typeof item.resolved === "boolean" ? { resolved: item.resolved } : {}),
+      createdAt: new Date(item.createdAt).toISOString(),
+    });
+  }
+
+  return voids.length > 0 ? voids : undefined;
+}
+
 function parseReproposalDiffs(value: unknown): DocumentV1["reproposalDiffs"] | undefined {
   if (!Array.isArray(value)) {
     return undefined;
@@ -1030,6 +1081,7 @@ export function validateImportedDocument(value: unknown): ValidateResult {
   const mergeSuggestionDecisions = parseMergeSuggestionDecisions(value.mergeSuggestionDecisions);
   const contradictionSignalDecisions = parseContradictionSignalDecisions(value.contradictionSignalDecisions);
   const shelf = parseShelf(value.shelf, new Set(cards.map((card) => card.id)));
+  const voids = parseVoids(value.voids);
   const shelvedCardIds = new Set((shelf ?? []).map((entry) => entry.cardId));
   const normalizedCards = shelvedCardIds.size === 0
     ? cards
@@ -1059,6 +1111,7 @@ export function validateImportedDocument(value: unknown): ValidateResult {
       ...(mergeSuggestionDecisions !== undefined ? { mergeSuggestionDecisions } : {}),
       ...(contradictionSignalDecisions !== undefined ? { contradictionSignalDecisions } : {}),
       ...(shelf !== undefined ? { shelf } : {}),
+      ...(voids !== undefined ? { voids } : {}),
     },
   };
 }

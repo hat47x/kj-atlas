@@ -345,6 +345,30 @@ export type DocumentV1 = {
   shelf?: ShelfEntry[];
   /** DOMAIN-EXPR-04 (schemas.md §16): human review decisions on analyzeContradictions() signals. */
   contradictionSignalDecisions?: ContradictionSignalDecision[];
+  /** KJ-PROMPT-ALIGN / kj_technique.md §4 (優先3-1): enumerated structural gaps
+   * that become next-stage material. Optional; stored only when the user runs
+   * void detection. */
+  voids?: VoidEntry[];
+};
+
+// kj_technique.md §4 (優先3-1): a "空白" — a place where a bundle that should
+// be there is missing. Stored so the gap can be tracked and resolved.
+export type VoidKind =
+  | "unintegrated_card"
+  | "orphaned_island"
+  | "unspoken_island"
+  | "unexplained_relation"
+  | "unreviewed_content";
+
+export type VoidEntry = {
+  id: string;
+  kind: VoidKind;
+  title: string;
+  detail: string;
+  cardIds?: string[];
+  islandIds?: string[];
+  resolved?: boolean;
+  createdAt: string;
 };
 
 // DOMAIN-EXPR-04 (schemas.md §16): reuses CE2-PROPOSAL-IF's ProposalStatus vocabulary —

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createRepresentativeInquiryBundle } from "./inquiry_journey.fixture";
 import { parseInquiryBundleJson, serializeInquiryBundle } from "./inquiry_bundle_io";
-import { deriveInquirySafeModeBundle } from "./inquiry_bundle_safe_mode";
+import { deriveDocumentSafeModeProjection, deriveInquirySafeModeBundle } from "./inquiry_bundle_safe_mode";
 import type { DocumentV1 } from "./types";
 
 const CREATED_AT = "2026-07-19T00:00:00.000Z";
@@ -335,5 +335,43 @@ describe("deriveInquirySafeModeBundle", () => {
         }),
       ])
     );
+  });
+});
+
+describe("deriveDocumentSafeModeProjection", () => {
+  it("redacts void title/detail while preserving structural fields (kj_technique.md §4)", () => {
+    const document: DocumentV1 = {
+      version: 1,
+      id: "doc-voids-safe",
+      createdAt: "2026-08-14T00:00:00.000Z",
+      updatedAt: "2026-08-14T00:00:00.000Z",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "SECRET_CARD_TEXT", x: 0, y: 0 }],
+      edges: [],
+      islands: [{ id: "i1", cardIds: ["c1"], title: "A", summaryText: "s", summaryReviewed: true }],
+      voids: [
+        {
+          id: "v1",
+          kind: "orphaned_island",
+          title: "SECRET_VOID_TITLE",
+          detail: "SECRET_VOID_DETAIL quoting card text",
+          islandIds: ["i1"],
+          resolved: false,
+          createdAt: "2026-08-14T00:00:00.000Z",
+        },
+      ],
+    };
+
+    const projected = deriveDocumentSafeModeProjection(document);
+
+    expect(projected.voids).toBeDefined();
+    const voidEntry = projected.voids![0];
+    expect(voidEntry.kind).toBe("orphaned_island");
+    expect(voidEntry.id).toBe("v1");
+    expect(voidEntry.islandIds).toEqual(["i1"]);
+    expect(voidEntry.createdAt).toBe("2026-08-14T00:00:00.000Z");
+    expect(voidEntry.title).not.toContain("SECRET");
+    expect(voidEntry.detail).not.toContain("SECRET");
+    expect(voidEntry.resolved).toBe(false);
   });
 });

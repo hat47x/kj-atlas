@@ -587,4 +587,37 @@ describe("validateImportedDocument", () => {
     expect(check?.issues[0]?.direction).toBe("b_missing_in_a");
     expect(check?.counts).toEqual({ bMissingInA: 1, aMissingInB: 0 });
   });
+
+  it("keeps stored voids (kj_technique.md §4, 優先3-1)", () => {
+    const source = {
+      version: 1,
+      id: "doc_voids",
+      createdAt: "2026-08-14T00:00:00.000Z",
+      updatedAt: "2026-08-14T00:00:00.000Z",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "alpha", x: 0, y: 0 }],
+      edges: [],
+      islands: [{ id: "i1", cardIds: ["c1"], title: "A", summaryText: "s", summaryReviewed: true }],
+      voids: [
+        {
+          id: "v1",
+          kind: "orphaned_island",
+          title: "孤立島",
+          detail: "i1 に接続がありません",
+          islandIds: ["i1"],
+          resolved: false,
+          createdAt: "2026-08-14T00:00:00.000Z",
+        },
+      ],
+    };
+
+    const result = validateImportedDocument(JSON.parse(JSON.stringify(source)));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const voidEntry = result.document.voids?.[0];
+    expect(voidEntry?.kind).toBe("orphaned_island");
+    expect(voidEntry?.islandIds).toEqual(["i1"]);
+    expect(voidEntry?.resolved).toBe(false);
+  });
 });

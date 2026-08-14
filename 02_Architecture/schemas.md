@@ -564,6 +564,30 @@ export type DocumentV1 = {
   deterministicTieBreak?: DeterministicTieBreak;
   shelf?: ShelfEntry[];
   contradictionSignalDecisions?: ContradictionSignalDecision[];
+  // kj_technique.md §4 (優先3-1): enumerated structural gaps. Optional; stored
+  // only when the user runs void detection.
+  voids?: VoidEntry[];
+};
+```
+
+`VoidEntry`:
+
+```ts
+export type VoidKind =
+  | "unintegrated_card"   // どの島にも属さないカード
+  | "orphaned_island"     // 島間の関係線が無い島
+  | "unspoken_island"     // 表札（title/summary）が無い島
+  | "unexplained_relation" // 接続の理由（relation summary）が無い
+  | "unreviewed_content"; // 未レビューの内容（共有・AI入力の対象外）
+export type VoidEntry = {
+  id: string;
+  kind: VoidKind;
+  title: string;
+  detail: string;
+  cardIds?: string[];
+  islandIds?: string[];
+  resolved?: boolean;
+  createdAt: string; // ISO 8601
 };
 ```
 

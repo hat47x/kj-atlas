@@ -1764,5 +1764,7 @@
   "tenant_session.change_confirm.processing": "Checking your changes…",
   "document_title.untitled": "Untitled",
   "document_title.click_to_edit": "Click to edit title",
-  "document_title.suggest": "Suggest title"
+  "document_title.suggest": "Suggest title",
+  "side_panel.outline.detect_voids": "Detect voids",
+  "app.status.voids.detected": "Detected and stored {count} void(s)"
 }

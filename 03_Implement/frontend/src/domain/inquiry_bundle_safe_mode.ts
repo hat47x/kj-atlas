@@ -42,6 +42,7 @@ import {
   type ShelfEntry,
   type SummaryHistoryEntry,
   type Transform,
+  type VoidEntry,
 } from "./types";
 
 type FieldPolicy = "preserve" | "redact" | "omit" | "rebuild";
@@ -190,6 +191,7 @@ const DOCUMENT_FIELDS = {
   deterministicTieBreak: "rebuild",
   shelf: "rebuild",
   contradictionSignalDecisions: "omit",
+  voids: "rebuild",
 } satisfies Record<keyof DocumentV1, FieldPolicy>;
 
 const CARD_FIELDS = {
@@ -464,6 +466,18 @@ const SHELF_FIELDS = {
   reason: "redact",
 } satisfies Record<keyof ShelfEntry, FieldPolicy>;
 
+const VOID_FIELDS = {
+  id: "preserve",
+  kind: "preserve",
+  // title/detail can quote card text — redact, keep the structural refs.
+  title: "redact",
+  detail: "redact",
+  cardIds: "preserve",
+  islandIds: "preserve",
+  resolved: "preserve",
+  createdAt: "preserve",
+} satisfies Record<keyof VoidEntry, FieldPolicy>;
+
 // Keep the compile-time policy declarations live without using them as a
 // second runtime source of truth.
 void [
@@ -510,6 +524,7 @@ void [
   PATCH_CONFLICT_FIELDS,
   TIE_BREAK_FIELDS,
   SHELF_FIELDS,
+  VOID_FIELDS,
 ];
 
 export type InquirySafeModeBundleResult =
@@ -1000,6 +1015,19 @@ function sanitizeShelfEntry(entry: ShelfEntry): ShelfEntry {
   };
 }
 
+function sanitizeVoidEntry(entry: VoidEntry): VoidEntry {
+  return {
+    id: entry.id,
+    kind: entry.kind,
+    title: redact(entry.title),
+    detail: redact(entry.detail),
+    ...(entry.cardIds !== undefined ? { cardIds: entry.cardIds } : {}),
+    ...(entry.islandIds !== undefined ? { islandIds: entry.islandIds } : {}),
+    ...(typeof entry.resolved === "boolean" ? { resolved: entry.resolved } : {}),
+    createdAt: entry.createdAt,
+  };
+}
+
 /**
  * Builds a structurally importable SafeMode projection without changing the
  * working Document. The exhaustive field maps above make newly persisted
@@ -1048,6 +1076,7 @@ export function deriveDocumentSafeModeProjection(
       ? { deterministicTieBreak: cloneTieBreak(document.deterministicTieBreak) }
       : {}),
     ...(document.shelf !== undefined ? { shelf: document.shelf.map(sanitizeShelfEntry) } : {}),
+    ...(document.voids !== undefined ? { voids: document.voids.map(sanitizeVoidEntry) } : {}),
   };
 }
 

@@ -1483,6 +1483,23 @@ class ContradictionSignalDecision(BaseModel):
     decidedAt: datetime
 
 
+class VoidEntry(BaseModel):
+    id: str
+    kind: Literal[
+        "unintegrated_card",
+        "orphaned_island",
+        "unspoken_island",
+        "unexplained_relation",
+        "unreviewed_content",
+    ]
+    title: str = Field(min_length=1)
+    detail: str = Field(min_length=1)
+    cardIds: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    islandIds: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    resolved: bool = False
+    createdAt: datetime
+
+
 class DocumentV1(BaseModel):
     version: Literal[1]
     id: str
@@ -1508,6 +1525,11 @@ class DocumentV1(BaseModel):
         default=None, exclude_if=lambda value: value is None
     )
     contradictionSignalDecisions: list[ContradictionSignalDecision] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    # kj_technique.md §4 (優先3-1): enumerated structural gaps. Optional; stored
+    # only when the user runs void detection.
+    voids: list[VoidEntry] | None = Field(
         default=None, exclude_if=lambda value: value is None
     )
     critiqueInputs: list[CritiqueInput] | None = Field(
