@@ -1766,5 +1766,6 @@
   "document_title.click_to_edit": "Click to edit title",
   "document_title.suggest": "Suggest title",
   "side_panel.outline.detect_voids": "Detect voids",
-  "app.status.voids.detected": "Detected and stored {count} void(s)"
+  "app.status.voids.detected": "Detected and stored {count} void(s)",
+  "side_panel.critique.placard_return_check_hint": "\"Not the same\" / \"Feels off\" record a placard objection (return check); the island-summary re-suggestion will address it (kj_technique.md §3)."
 }

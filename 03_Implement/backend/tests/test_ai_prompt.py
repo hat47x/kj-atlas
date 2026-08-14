@@ -396,3 +396,26 @@ def test_generate_narrative_prompt_self_performs_ab_cross_check() -> None:
     assert "b_missing_in_a" in prompt
     assert "a_missing_in_b" in prompt
     assert "warnings" in prompt
+
+
+def test_island_summary_prompt_includes_objecting_cards_from_return_check() -> None:
+    """kj_technique.md §3 (優先3-3): cards marked not_the_same/feels_off record a
+    placard objection (戻し検査) that the re-suggestion must address."""
+    doc = _sample_payload().doc
+    doc.cards[0].critiqueTags = ["not_the_same"]  # type: ignore[attr-defined]
+    payload = SuggestIslandSummaryRequest(doc=doc, islandId=doc.islands[0].id)
+
+    prompt = _build_island_summary_prompt(payload)
+
+    assert "OBJECTED to the previous placard" in prompt
+    assert 'id="c1"' in prompt
+    assert "must address why each objecting card disagrees" in prompt
+
+
+def test_island_summary_prompt_omits_objection_block_when_no_card_objects() -> None:
+    doc = _sample_payload().doc
+    payload = SuggestIslandSummaryRequest(doc=doc, islandId=doc.islands[0].id)
+
+    prompt = _build_island_summary_prompt(payload)
+
+    assert "OBJECTED to the previous placard" not in prompt

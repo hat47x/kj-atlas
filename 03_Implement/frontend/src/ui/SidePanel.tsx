@@ -4197,6 +4197,9 @@ export function SidePanel({
                   </label>
                 ))}
               </div>
+              <div style={{ fontSize: 11, color: "#b45309", marginBottom: 12 }}>
+                {t("side_panel.critique.placard_return_check_hint")}
+              </div>
               {providerUnavailableMessage ? (
                 <div
                   role="alert"

@@ -302,18 +302,39 @@ def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:
 
     card_lines = [f'- id="{card.id}", text={json.dumps(card.text)}' for card in member_cards]
 
-    return "\n".join(
+    # 戻し検査 (kj_technique.md §3, 優先3-3): cards that OBJECTED to the previous
+    # placard carry critiqueTags not_the_same / feels_off (recorded via the UI's
+    # card critique-tag controls). The re-suggestion must address each objection.
+    objecting_cards = [
+        card
+        for card in member_cards
+        if card.critiqueTags
+        and any(tag in card.critiqueTags for tag in ("not_the_same", "feels_off"))
+    ]
+
+    lines = [
+        "You write the placard (表札) for this island as a draft island summary.",
+        "Use only the direct member cards provided below. Ignore nested islands for this MVP.",
+        "Do not add facts beyond the card texts.",
+        # ai_kj_execution_procedures.md §3: the summaryText is advocacy for the
+        # island (代弁), not a classification name; never a noun-phrase stop.
+        "summaryText must be a predicate-bearing advocacy sentence (述語を伴う代弁文), never a classification name (分類名) or noun-phrase stop (名詞止め).",
+        # 表札検査: transposition check + return check (kj_technique.md §3).
+        "Perform the placard checks before answering:",
+        "  1. Transposition: if you placed this placard on a DIFFERENT island, would it still hold? If yes, it is a classification name — fail and rewrite.",
+        "  2. Return check: read the placard back to each member card — 'is this what you meant to say?'. If even one card says 'no', rewrite.",
+    ]
+    if objecting_cards:
+        objecting_lines = [f'    - id="{card.id}", text={json.dumps(card.text)}' for card in objecting_cards]
+        lines.extend(
+            [
+                "The following member cards OBJECTED to the previous placard (戻し検査):",
+                *objecting_lines,
+                "The new placard must address why each objecting card disagrees, or the summary is not a true advocacy for the island.",
+            ]
+        )
+    lines.extend(
         [
-            "You write the placard (表札) for this island as a draft island summary.",
-            "Use only the direct member cards provided below. Ignore nested islands for this MVP.",
-            "Do not add facts beyond the card texts.",
-            # ai_kj_execution_procedures.md §3: the summaryText is advocacy for the
-            # island (代弁), not a classification name; never a noun-phrase stop.
-            "summaryText must be a predicate-bearing advocacy sentence (述語を伴う代弁文), never a classification name (分類名) or noun-phrase stop (名詞止め).",
-            # 表札検査: transposition check + return check (kj_technique.md §3).
-            "Perform the placard checks before answering:",
-            "  1. Transposition: if you placed this placard on a DIFFERENT island, would it still hold? If yes, it is a classification name — fail and rewrite.",
-            "  2. Return check: read the placard back to each member card — 'is this what you meant to say?'. If even one card says 'no', rewrite.",
             "If evidence is weak, sparse, or contradictory, include warnings.",
             "Return strict JSON only. No markdown. No extra text.",
             "Use this exact schema:",
@@ -325,6 +346,7 @@ def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:
             *card_lines,
         ]
     )
+    return "\n".join(lines)
 
 
 def _parse_island_summary_response(
