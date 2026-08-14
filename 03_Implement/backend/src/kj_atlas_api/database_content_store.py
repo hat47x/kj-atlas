@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from typing import Literal
 from uuid import uuid4
 
 from sqlalchemy import delete, select, update
@@ -249,6 +250,25 @@ class DatabaseDocumentContentStore:
             )
         items.sort(key=lambda item: item.updated_at, reverse=True)
         return items
+
+    def set_lifecycle_state(
+        self, *, tenant: TenantContext, doc_id: str, state: Literal["active", "archived"]
+    ) -> bool:
+        """ADR-0073 D2=A: transition a document between active / archived.
+
+        Tenant-scoped single UPDATE (apply_database_tenant_context + row guard).
+        Returns False when the document does not exist for this tenant.
+        """
+        apply_database_tenant_context(db=self._db, tenant=tenant)
+        result = self._db.execute(
+            update(DocumentRow)
+            .where(
+                DocumentRow.tenant_id == tenant.tenant_id,
+                DocumentRow.id == doc_id,
+            )
+            .values(lifecycle_state=state)
+        )
+        return result.rowcount > 0
 
 
 class DatabaseBundleContentStore:

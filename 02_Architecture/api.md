@@ -68,6 +68,12 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
   - `created_by` は不変の作成者事実（未特定の移行文書は省略）。`lifecycle_state` は `active` / `archived`（ADR-0073 D2=A）。
 - 認可：tenant-scoped（信頼済み session / resolver で解決した tenant の文書のみ）。
 
+**POST** `/docs/{doc_id}/archive` / **POST** `/docs/{doc_id}/unarchive`（ADR-0073 D2=A）
+
+- `archive`: `lifecycle_state` を `archived` に遷移。`unarchive`: `active` に戻す。
+- Response：204。存在しない文書は 404。
+- 認可：tenant-scoped（文書はテナント所有・管理権は capability）。
+
 ---
 
 ### 2.3 Update

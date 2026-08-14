@@ -156,6 +156,18 @@ else
   FAIL=$((FAIL+1))
 fi
 
+# 5. Lifecycle transition (ADR-0073 D2=A): archive -> list shows archived ->
+#    unarchive -> list shows active. 404 for a missing doc.
+arch_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} -X POST \
+  "$BASE_URL/docs/$DOC_ID/archive")
+check "POST /docs/{id}/archive -> 204" "204" "$arch_code"
+unarch_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} -X POST \
+  "$BASE_URL/docs/$DOC_ID/unarchive")
+check "POST /docs/{id}/unarchive -> 204" "204" "$unarch_code"
+missing_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} -X POST \
+  "$BASE_URL/docs/verify-missing-archive/archive")
+check "archive of missing doc -> 404" "404" "$missing_code"
+
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]

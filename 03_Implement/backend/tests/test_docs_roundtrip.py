@@ -1440,3 +1440,29 @@ def test_docs_list_returns_tenant_metadata(sqlite_client: TestClient) -> None:
     # No card content leaks into the list.
     serialized = resp.text
     assert "alpha" not in serialized
+
+
+def test_docs_archive_lifecycle(sqlite_client: TestClient) -> None:
+    """ADR-0073 D2=A: archive/unarchive transitions lifecycle_state; the list
+    reflects it; a missing doc is 404."""
+    doc_id = "arch-lifecycle-probe"
+    resp = sqlite_client.put(f"/docs/{doc_id}", json=_sample_payload(doc_id))
+    assert resp.status_code in (200, 201), resp.text
+
+    # Archive.
+    resp = sqlite_client.post(f"/docs/{doc_id}/archive")
+    assert resp.status_code == 204, resp.text
+
+    resp = sqlite_client.get("/docs")
+    entry = next((item for item in resp.json() if item["id"] == doc_id), None)
+    assert entry is not None and entry["lifecycle_state"] == "archived"
+
+    # Unarchive.
+    resp = sqlite_client.post(f"/docs/{doc_id}/unarchive")
+    assert resp.status_code == 204, resp.text
+    resp = sqlite_client.get("/docs")
+    entry = next((item for item in resp.json() if item["id"] == doc_id), None)
+    assert entry is not None and entry["lifecycle_state"] == "active"
+
+    # Missing doc.
+    assert sqlite_client.post("/docs/missing-archive/archive").status_code == 404

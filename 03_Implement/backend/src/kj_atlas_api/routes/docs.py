@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from threading import Lock
 from typing import Literal, cast
 
-from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, Response
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -442,6 +442,35 @@ def list_documents(
     """
     tenant = _resolve_request_tenant(request=request, db=db)
     return DatabaseDocumentContentStore(db).list_documents(tenant=tenant)
+
+
+def _transition_lifecycle(request: Request, db: Session, doc_id: str, state: Literal["active", "archived"]) -> Response:
+    tenant = _resolve_request_tenant(request=request, db=db)
+    changed = DatabaseDocumentContentStore(db).set_lifecycle_state(tenant=tenant, doc_id=doc_id, state=state)
+    if not changed:
+        raise HTTPException(status_code=404, detail="Document not found")
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{doc_id}/archive", status_code=status.HTTP_204_NO_CONTENT)
+def archive_document(
+    doc_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> Response:
+    """ADR-0073 D2=A: mark the document archived (canvas list management)."""
+    return _transition_lifecycle(request, db, doc_id, "archived")
+
+
+@router.post("/{doc_id}/unarchive", status_code=status.HTTP_204_NO_CONTENT)
+def unarchive_document(
+    doc_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> Response:
+    """ADR-0073 D2=A: return the document to active."""
+    return _transition_lifecycle(request, db, doc_id, "active")
 
 
 @router.get("/{doc_id}", response_model=DocumentPayload)
