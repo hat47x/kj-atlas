@@ -71,6 +71,9 @@ class ProvisionUserRequest(BaseModel):
     externalUid: str
     displayName: str | None = None
     email: str | None = None
+    # SEC-AUTH-ATTRIB-01: server-verified roles stored on the user row; the
+    # authorization service reads them from there, never from client headers.
+    roles: list[str] | None = Field(default=None, max_length=16)
 
 
 class ProvisionUserResponse(BaseModel):
@@ -169,6 +172,8 @@ def provision_user(
                     "message": _IDENTITY_CONFLICT_MESSAGE,
                 },
             )
+        if payload.roles is not None:
+            user_row.roles = ",".join(payload.roles)
 
         user_id = user_row.id
         resolution = reviewer_ref_adapter.resolve(
@@ -223,6 +228,8 @@ def provision_user(
         display_name=display_name,
         email=email,
         lifecycle_state="active",
+        # SEC-AUTH-ATTRIB-01: store server-verified roles (comma-separated).
+        roles=",".join(payload.roles) if payload.roles else None,
         created_at=now_iso,
         updated_at=now_iso,
     )

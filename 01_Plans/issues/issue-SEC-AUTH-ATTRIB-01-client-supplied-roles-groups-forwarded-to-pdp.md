@@ -53,3 +53,13 @@ D-a を実装した。
 - テスト: `CapturingAdapter` を追加し、クライアント供給 `x-auth-roles` / `x-auth-groups` が PDP へ到達しない（roles/groups が空）ことを固定。
 - 既存の roles/groups ヘッダ送信テスト（`test_adapter_denial_prevents_role_header_privilege_escalation` 他）はすべて PASS（403 断言のため挙動不変）。
 - 単一tenant・SaaSとも roles/groups は空のため fail-closed（PDP は検証済み属性のみ受領）。回帰 85 tests pass。
+
+## 対応記録2（2026-08-15）— rolesのサーバ側導出
+
+fail-closed（空）から、**server-verified rolesの導出**へ拡張した（SEC-AUTH-ATTRIB-01 完結）。
+
+- `UserRow.roles`（カンマ区切り・migration `20260815_0029`・persistence shape）を追加。
+- `POST /admin/provision/users` が `roles?: list[str]` を受理し、user row へ保存（create・update 両経路）。
+- `resolve_identity_context` が user row から roles を読み出し、`AuthContext.roles` へ設定 — **クライアントヘッダではなく server 側の正本から導出**。
+- `_authorize_request` は既に `identity.auth_context.roles` を使用（前対応）。
+- テスト: provisioned user の roles が identity 解決で運ばれ、クライアント供給 `x-auth-roles` が無視されることを `CapturingAdapter` で固定。回帰 90 tests pass。

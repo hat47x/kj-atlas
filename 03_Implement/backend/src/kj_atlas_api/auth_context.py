@@ -267,12 +267,21 @@ def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdenti
         )
     )
 
+    # SEC-AUTH-ATTRIB-01: derive roles from the server-side user row (set by
+    # admin provisioning), never from client headers. Missing row -> no roles.
+    user_roles: tuple[str, ...] = ()
+    user_row = db.get(UserRow, user_id)
+    if user_row is not None and user_row.roles:
+        user_roles = tuple(
+            role.strip() for role in user_row.roles.split(",") if role.strip()
+        )
+
     auth = AuthContext(
         actor_ref=resolution.reviewer_ref,
         user_id=user_id,
         provider=provider,
         external_uid=external_uid,
-        roles=(),
+        roles=user_roles,
         groups=(),
         trace_id=_header(request, "x-trace-id"),
         amr=amr,

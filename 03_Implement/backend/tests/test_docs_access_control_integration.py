@@ -362,3 +362,30 @@ def test_client_supplied_roles_groups_never_reach_the_pdp(tmp_path) -> None:
     captured_auth = CapturingAdapter.last_request.auth
     assert captured_auth.roles == ()
     assert captured_auth.groups == ()
+
+
+def test_server_derived_roles_from_provisioned_user(tmp_path) -> None:
+    """SEC-AUTH-ATTRIB-01: roles set via admin provisioning are carried by the
+    identity resolution (server-side), not read from client headers."""
+    CapturingAdapter.last_request = None
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = CapturingAdapter()
+
+        # Provision a user with server-verified roles.
+        provision = client.post(
+            "/admin/provision/users",
+            json={"provider": "oidc", "externalUid": "role-user", "displayName": "Role User", "roles": ["admin", "reviewer"]},
+        )
+        assert provision.status_code == 201, provision.text
+
+        # Request as that user; the client-supplied roles header must be ignored,
+        # and the provisioned roles must be present.
+        resp = client.put(
+            "/docs/doc-roles-prov",
+            json=_sample_payload("doc-roles-prov"),
+            headers={"x-forwarded-user": "role-user", "x-auth-provider": "oidc", "x-auth-roles": "superuser"},
+        )
+        assert resp.status_code == 200, resp.text
+
+    captured_auth = CapturingAdapter.last_request.auth
+    assert set(captured_auth.roles) == {"admin", "reviewer"}

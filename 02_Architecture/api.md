@@ -914,7 +914,8 @@ export type StrictProvisioningError = {
 ### 9.3 事前プロビジョニング API（最小）
 
 - `POST /admin/provision/users`
-  - request: `{ provider, externalUid, displayName?, email? }`
+  - request: `{ provider, externalUid, displayName?, email?, roles? }`
+  - `roles?`: **server-verified ロール識別子の配列**（SEC-AUTH-ATTRIB-01）。この列から identity 解決が読み出し、認可サービスはクライアントヘッダ由来ではなく server 導出の roles を受領する。
   - `201` response (created): `{ userId, reviewerRef, ownerRef, provisioned=true }`
   - `200` response (idempotent retry): `{ userId, reviewerRef, ownerRef, provisioned=false }`
   - 冪等: 同一 `provider+externalUid` の再試行は `provisioned=false` を返す

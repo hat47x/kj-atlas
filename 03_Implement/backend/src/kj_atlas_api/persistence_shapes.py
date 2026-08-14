@@ -225,6 +225,7 @@ PERSISTENT_TEXT_SPECS: dict[str, PersistentTextSpec] = {
     "users.display_name": _bounded(255, "human-readable user label"),
     "users.email": _bounded(320, "email address acceptance bound"),
     "users.lifecycle_state": STATE,
+    "users.roles": _bounded(255, "comma-separated server-verified role identifiers (SEC-AUTH-ATTRIB-01)"),
     "users.created_at": TIMESTAMP,
     "users.updated_at": TIMESTAMP,
     "documents.tenant_id": INTERNAL_ID,

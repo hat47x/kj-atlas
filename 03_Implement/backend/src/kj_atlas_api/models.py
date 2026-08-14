@@ -617,6 +617,10 @@ class UserRow(Base):
     display_name: Mapped[str | None] = mapped_column(Text, nullable=True)
     email: Mapped[str | None] = mapped_column(Text, nullable=True)
     lifecycle_state: Mapped[str] = mapped_column(Text, nullable=False, default="active")
+    # SEC-AUTH-ATTRIB-01: server-verified roles (comma-separated identifiers),
+    # set via admin provisioning and read from THIS row — never from client
+    # headers. The authorization service receives server-derived roles.
+    roles: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
 
