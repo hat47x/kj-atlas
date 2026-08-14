@@ -43,6 +43,7 @@ from kj_atlas_api.generation_repository import RevisionHeadConflict
 from kj_atlas_api.models import (
     Card,
     CandidateListViewModel,
+    DocumentListItem,
     DocumentPayload,
     MergeDecisionRecord,
     A1ErrorResponse,
@@ -402,6 +403,45 @@ def _parse_if_match(if_match: str) -> set[str]:
         if part:
             values.add(part)
     return values
+
+
+def _resolve_request_tenant(*, request: Request, db: Session) -> TenantContext:
+    """Resolve the tenant for a request that has no document id (e.g. a list).
+    Mirrors the single-tenant / SaaS branches of _authorize_request without the
+    per-document resource/decision parts."""
+    tenant_scoped_session_required = tenant_session_precondition_required(request)
+    if tenant_scoped_session_required:
+        trusted_session = resolve_trusted_saas_request_session(request=request, db=db)
+        require_tenant_session_request_precondition(
+            request=request,
+            current_version=trusted_session.session.tenant_session_version,
+        )
+        return trusted_session.tenant
+    identity = resolve_identity_context(db=db, request=request)
+    resolver: TenantContextResolver = getattr(
+        request.app.state,
+        "tenant_context_resolver",
+        SingleTenantContextResolver(),
+    )
+    return resolver.resolve(
+        db=db,
+        user_id=identity.user_id,
+        claim=identity.verified_tenant_claim,
+    )
+
+
+@router.get("", response_model=list[DocumentListItem])
+def list_documents(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> list[DocumentListItem]:
+    """第2反復: list the tenant's document metadata (canvas list foundation).
+
+    Row metadata only — never card content (the per-document read path is the
+    SafeMode-scoped GET /docs/{doc_id}). Payload-independent and tenant-scoped.
+    """
+    tenant = _resolve_request_tenant(request=request, db=db)
+    return DatabaseDocumentContentStore(db).list_documents(tenant=tenant)
 
 
 @router.get("/{doc_id}", response_model=DocumentPayload)

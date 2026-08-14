@@ -65,7 +65,21 @@ check "/version" "200" "$code"
 code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} "$BASE_URL/ai/provider-status")
 check "/ai/provider-status" "200" "$code"
 
-# 3. /docs/{id} — read a document (sample fixture id)
+# 3. /docs — list the tenant's document metadata (第2反復 canvas-list foundation).
+#    Row metadata only (never card content). 200 with a JSON array.
+code=$(curl -s -o /tmp/kj_docs_list.json -w '%{http_code}' ${auth_header} "$BASE_URL/docs")
+check "/docs (list)" "200" "$code"
+if [ "$code" = "200" ]; then
+  if head -c1 /tmp/kj_docs_list.json | grep -q '^\['; then
+    echo "  PASS: /docs returns a JSON array"
+    PASS=$((PASS+1))
+  else
+    echo "  FAIL: /docs did not return a JSON array"
+    FAIL=$((FAIL+1))
+  fi
+fi
+
+# 3b. /docs/{id} — read a document (sample fixture id)
 code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} "$BASE_URL/docs/doc_phase1_canvas")
 # 404 is acceptable (document may not be seeded); non-5xx means route works
 if [ "$code" != "500" ] && [ "$code" != "503" ]; then

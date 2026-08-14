@@ -1415,3 +1415,28 @@ def test_document_lifecycle_migration_roundtrip(tmp_path) -> None:
         columns = {row[1] for row in connection.execute("PRAGMA table_info('documents')")}
         assert "created_by" in columns
         assert "lifecycle_state" in columns
+
+
+def test_docs_list_returns_tenant_metadata(sqlite_client: TestClient) -> None:
+    """第2反復: GET /docs lists the tenant's document metadata (id/title/
+    lifecycle/updated_at), never card content, sorted updated_at descending."""
+    for index, doc_id in enumerate(("list-a", "list-b")):
+        payload = _sample_payload(doc_id)
+        payload["title"] = f"List {index}"
+        payload["updatedAt"] = f"2026-08-15T00:00:0{index}Z"
+        resp = sqlite_client.put(f"/docs/{doc_id}", json=payload)
+        assert resp.status_code in (200, 201), resp.text
+
+    resp = sqlite_client.get("/docs")
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    by_id = {entry["id"]: entry for entry in body}
+    assert by_id["list-a"]["title"] == "List 0"
+    assert by_id["list-b"]["title"] == "List 1"
+    assert by_id["list-a"]["lifecycle_state"] == "active"
+    # List is sorted updated_at descending (list-b is newest).
+    ids = [entry["id"] for entry in body]
+    assert ids.index("list-b") < ids.index("list-a")
+    # No card content leaks into the list.
+    serialized = resp.text
+    assert "alpha" not in serialized

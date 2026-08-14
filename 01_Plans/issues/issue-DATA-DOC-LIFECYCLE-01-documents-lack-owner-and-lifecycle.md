@@ -94,6 +94,12 @@ payload_json
 - `data_model_operations_overview.html`: DOCUMENT_ROW に両列を反映。
 - テスト: 作成時に lifecycle_state='active' を固定、migration upgrade/downgrade/upgrade roundtrip を追加。docs回帰 57 tests pass。
 
+### 機能次元の土台（同日）
+
+- **`GET /docs` 一覧API** を新設（`DocumentListItem`・`list_documents`）。tenant-scoped・行メタデータのみ（id/title/lifecycle_state/created_by/updated_at・**本文カード非露出**・updated_at 降順）。キャンバス一覧「自分の文書」フィルタの土台。
+- Swagger UI を `/docs`（documents APIが所有）から `/api-docs` へ移動（衝突解消）。
+- `verify_api.sh` に一覧チェックを追加。docs回帰 66 tests pass。
+
 ## 検証計画
 
 - 実行する確認: 列追加後、`python -m pytest tests/test_docs_roundtrip.py tests/test_data_model_operations_contract.py -q` と migration の upgrade/downgrade 往復。

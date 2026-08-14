@@ -22,6 +22,7 @@ from kj_atlas_api.models import (
     CanvasRevisionHeadRow,
     CanvasRevisionParentRow,
     CanvasRevisionRow,
+    DocumentListItem,
     DocumentRow,
     InquiryBundleRow,
     MergeDecisionLogRow,
@@ -216,6 +217,38 @@ class DatabaseDocumentContentStore:
                 created_at=updated_at,
             )
         return VersionedDocumentContent(row=row, content=content)
+
+    def list_documents(self, *, tenant: TenantContext) -> list[DocumentListItem]:
+        """List the tenant's document metadata (第2反復: キャンバス一覧の土台).
+
+        SafeMode-independent — only row metadata is exposed (id, title from the
+        payload snapshot, creator, lifecycle state, updated_at). Never the card
+        content, which the caller must fetch per-document through the normal
+        SafeMode-scoped read path.
+        """
+        apply_database_tenant_context(db=self._db, tenant=tenant)
+        rows = self._db.execute(
+            select(DocumentRow).where(DocumentRow.tenant_id == tenant.tenant_id)
+        ).scalars().all()
+        items: list[DocumentListItem] = []
+        for row in rows:
+            try:
+                title = json.loads(row.payload_json).get("title")
+                if not isinstance(title, str):
+                    title = None
+            except (json.JSONDecodeError, TypeError):
+                title = None
+            items.append(
+                DocumentListItem(
+                    id=row.id,
+                    title=title,
+                    created_by=row.created_by,
+                    lifecycle_state=row.lifecycle_state,
+                    updated_at=row.updated_at,
+                )
+            )
+        items.sort(key=lambda item: item.updated_at, reverse=True)
+        return items
 
 
 class DatabaseBundleContentStore:

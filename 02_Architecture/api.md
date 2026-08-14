@@ -60,6 +60,14 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 - Response：`DocumentV1`
 - Not found：404
 
+**GET** `/docs`（第2反復・キャンバス一覧の土台）
+
+- tenant-scoped な文書の**行メタデータ一覧**を返す（SafeMode非依存 — 本文カードは含まない。本文は `GET /docs/{doc_id}` の SafeMode 経路で取得する）。
+- Response：`DocumentListItem[]`、`updated_at` 降順
+  - `{ id, title?, created_by?, lifecycle_state, updated_at }`
+  - `created_by` は不変の作成者事実（未特定の移行文書は省略）。`lifecycle_state` は `active` / `archived`（ADR-0073 D2=A）。
+- 認可：tenant-scoped（信頼済み session / resolver で解決した tenant の文書のみ）。
+
 ---
 
 ### 2.3 Update

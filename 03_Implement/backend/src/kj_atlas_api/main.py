@@ -153,12 +153,14 @@ async def lifespan(app: FastAPI):
 # protection in the default compose deploy. Keep them for dev/evaluation
 # convenience but disable them on production profiles (enterprise-production,
 # saas-multitenant) so the surface is not reachable there.
+# /docs is owned by the documents API (GET /docs list + /docs/{id}); the
+# interactive API UI is served at /api-docs so the two never collide.
 _docs_enabled = settings.runtime_profile in {"local-dev", "evaluation"}
 app = FastAPI(
     title="kj-atlas API",
     lifespan=lifespan,
-    docs_url="/docs" if _docs_enabled else None,
-    redoc_url="/redoc" if _docs_enabled else None,
+    docs_url="/api-docs" if _docs_enabled else None,
+    redoc_url="/api-redoc" if _docs_enabled else None,
     openapi_url="/openapi.json" if _docs_enabled else None,
 )
 

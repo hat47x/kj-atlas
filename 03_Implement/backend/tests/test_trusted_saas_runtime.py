@@ -591,7 +591,9 @@ def test_docs_endpoints_disabled_on_production_profiles() -> None:
         assert result.returncode == 0, f"{profile}: import failed: {result.stderr}"
         stdout = result.stdout.strip()
         if expected_enabled:
-            assert "/docs" in stdout, f"{profile}: docs should be enabled, got {stdout!r}"
+            # /docs is the documents API (GET /docs list + /docs/{id}); the
+            # interactive UI moved to /api-docs so the two never collide.
+            assert "/api-docs" in stdout, f"{profile}: docs UI should be enabled, got {stdout!r}"
             assert "/openapi.json" in stdout, f"{profile}: openapi should be enabled, got {stdout!r}"
         else:
             assert stdout == "None None", f"{profile}: docs should be disabled, got {stdout!r}"

@@ -469,6 +469,19 @@ class DocumentRow(Base):
     )
 
 
+class DocumentListItem(BaseModel):
+    """Row metadata for a tenant's document (GET /docs list; 第2反復).
+
+    Payload-independent: never card content, only identity/lifecycle metadata.
+    """
+
+    id: str
+    title: str | None = None
+    created_by: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    lifecycle_state: str = "active"
+    updated_at: str
+
+
 class DocumentAccessMetadataRow(Base):
     __tablename__ = "document_access_metadata"
     __table_args__ = (
