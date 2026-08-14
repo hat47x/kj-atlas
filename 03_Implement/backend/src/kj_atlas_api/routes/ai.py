@@ -422,6 +422,20 @@ def _build_generate_narrative_prompt(payload: GenerateNarrativeRequest) -> str:
         payload.narrativeTitle.strip() if payload.narrativeTitle else "Untitled draft narrative"
     )
 
+    # ADR-0069 (D2=A): the narrative's spine is the logical structure — pass the
+    # typed relations (edges + evidenceLinks) so the draft uses the causal /
+    # contradiction vocabulary instead of inventing it.
+    relation_lines: list[str] = []
+    for edge in payload.doc.edges:
+        if edge.fromKind == "island" and edge.toKind == "island":
+            relation_lines.append(
+                f'island "{edge.fromId}" --{edge.type}--> island "{edge.toId}"'
+            )
+    for link in payload.doc.evidenceLinks or []:
+        relation_lines.append(
+            f'card "{link.fromCardId}" --evidence:{link.type}--> card "{link.toCardId}"'
+        )
+
     return "\n".join(
         [
             "You generate a narrative draft from diagram reading order.",
@@ -430,6 +444,9 @@ def _build_generate_narrative_prompt(payload: GenerateNarrativeRequest) -> str:
             "Use reading order as the narrative spine. Follow the order exactly.",
             "For each reading-order item, describe what it appears to contain and what it might mean.",
             "Explicitly label the output as draft and unreviewed.",
+            "Use the typed relations below as the logical skeleton (causal, negation, evidence).",
+            "Logical relations:",
+            *(relation_lines or ["- (none)"]),
             # ai_kj_execution_procedures.md §7: self-perform the A/B照合 and report
             # the mismatches as warnings so the 3+ threshold can be evaluated.
             "Self-perform the A/B cross-check (kj_technique.md §5) and report each mismatch as a warning:",

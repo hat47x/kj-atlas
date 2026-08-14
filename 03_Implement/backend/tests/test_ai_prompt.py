@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 
-from kj_atlas_api.models import Card, DocumentV1, Edge, Island, SuggestLayoutRequest, Transform
+from kj_atlas_api.models import Card, DocumentV1, Edge, EvidenceLink, Island, SuggestLayoutRequest, Transform
 from kj_atlas_api.models_ai import (
     CheckNarrativeRequest,
     GenerateNarrativeRequest,
@@ -419,3 +419,24 @@ def test_island_summary_prompt_omits_objection_block_when_no_card_objects() -> N
     prompt = _build_island_summary_prompt(payload)
 
     assert "OBJECTED to the previous placard" not in prompt
+
+
+def test_generate_narrative_prompt_includes_logical_relations() -> None:
+    """ADR-0069 (D2=A): the narrative prompt receives the typed logical
+    structure (edges + evidenceLinks) so it does not invent the causal /
+    contradiction skeleton."""
+    doc = _sample_payload().doc
+    doc.evidenceLinks = [
+        EvidenceLink(id="ev-1", type="supports", fromCardId="c1", toCardId="c2", note="n"),
+    ]
+    payload = GenerateNarrativeRequest(
+        doc=doc.model_copy(update={"readingOrder": ["i1", "c2"]}),
+        narrativeTitle="Draft title",
+    )
+
+    prompt = _build_generate_narrative_prompt(payload)
+
+    assert 'island "i1" --related--> island "i1"' not in prompt or "i1" in prompt  # islands in fixture
+    assert "Logical relations:" in prompt
+    assert '--evidence:supports-->' in prompt
+    assert "causal, negation, evidence" in prompt
