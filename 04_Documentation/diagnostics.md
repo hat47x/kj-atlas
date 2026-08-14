@@ -57,6 +57,8 @@ docker compose logs api --tail=200
 curl -fsS http://127.0.0.1:8000/healthz
 ```
 
+> **ヘルスチェックの意味（OPS-OBSERV-01）**: `/healthz` は **liveness（プロセス生存）のみ**で、DB には触れません。DB 到達性・migration の適用状態（schema が head と一致しているか）まで確認するには `/readyz` を使います（DB 停止・schema 不一致時に 503）。ビルドリビジョンは `/version` で確認できます。
+
 ## ブラウザで見る場所
 
 - Console: JavaScript error、worker error、failed fetch。

@@ -86,12 +86,12 @@ Prometheus / OpenTelemetry / statsd / `/metrics` のいずれも存在しない�
 
 ## 受入条件
 
-- [ ] AC-1: JSON formatter と `KJ_ATLAS_LOG_LEVEL` が出荷され、既存の `extra` ペイロードが出力に現れることをテストで固定する。
-- [ ] AC-2: 全リクエストに `X-Request-Id` が付与され、ログレコードとエラーボディの双方から同じ値が取れることをテストで固定する。
-- [ ] AC-3: `/readyz` がDB到達不能時とスキーマ齟齬時に非200を返すことをテストで固定する。`/healthz` の意味を `operations.md` / `diagnostics.md` / `SUPPORT.md` で liveness のみに訂正する。
-- [ ] AC-4: 標準Compose構成で診断バンドルの `app.revision` が実際のリビジョンを示す。
-- [ ] AC-5: `03_Implement/backend/README.md:146-153` の構造化ログの記述が事実と一致する。
-- [ ] AC-6: `04_Documentation/` に観測ガイドが追加され、`operations.md` の「ログを見る」節から参照されている。
+- [x] AC-1: JSON formatter と `KJ_ATLAS_LOG_LEVEL` が出荷され、既存の `extra` ペイロードが出力に現れることをテストで固定する。— `logging_config.py` / `tests/test_observability.py::test_json_formatter_renders_extra_payload_keys`。
+- [x] AC-2: 全リクエストに `X-Request-Id` が付与され、ログレコードとエラーボディの双方から同じ値が取れることをテストで固定する。— middleware 追加。`test_every_response_echoes_x_request_id` / `test_error_body_carries_the_same_request_id_as_the_header` / `test_json_formatter_injects_the_inflight_request_id`。
+- [x] AC-3: `/readyz` がDB到達不能時とスキーマ齟齬時に非200を返すことをテストで固定する。`/healthz` の意味を `operations.md` / `diagnostics.md` / `SUPPORT.md` で liveness のみに訂正する。— `test_readyz_503_when_database_unavailable` / `test_readyz_503_when_schema_behind_head`。3文書へ注記を追加。
+- [x] AC-4: 標準Compose構成で診断バンドルの `app.revision` が実際のリビジョンを示す。— frontend `Dockerfile` ARG/ENV・compose build-arg + api environment へ `KJ_ATLAS_APP_REVISION` を配線（既定 `unknown`）。
+- [x] AC-5: `03_Implement/backend/README.md:146-153` の構造化ログの記述が事実と一致する。— JSON形式・`requestId`・`KJ_ATLAS_LOG_LEVEL` を追記し整合。
+- [x] AC-6: `04_Documentation/` に観測ガイドが追加され、`operations.md` の「ログを見る」節から参照されている。— `04_Documentation/observability.md` を新設・参照。
 
 ## 検証
 
@@ -102,6 +102,19 @@ docker compose -f 03_Implement/deploy/docker-compose.yml up --build
 curl -i http://127.0.0.1:8000/api/healthz    # X-Request-Id ヘッダの存在
 curl -s http://127.0.0.1:8000/api/readyz     # DB停止時に非200
 ```
+
+## 対応記録（2026-08-14）
+
+項目1〜4（ログ設定・リクエストID・/readyz・/version）と文書5を実装した。メトリクス基盤と主体の擬似識別子は「実施しないこと」のまま（判断待ち）。
+
+- **AC-1（ログ設定）**: `logging_config.py` を新設 — JSON formatter が `extra={...}` ペイロード（`tenantId`/`docId`/`queueLength`/`eventType`/`error`/LLM `trace_id` 等）を描画。`KJ_ATLAS_LOG_LEVEL` を settings へ追加（未知値は INFO へフォールバック）。`main.py` が `configure_logging(settings.log_level)` を module 読込時に呼ぶ。実走行で監査失敗 warning が `requestId` 込みの JSON 1行として出力されることを確認。
+- **AC-2（リクエストID）**: `add_request_id` middleware を追加 — inbound `x-trace-id`（安全形式 `^[A-Za-z0-9._:-]{1,128}$`）を尊重、contextvar でログへ注入、全レスポンスへ `X-Request-Id` をエコー、エラーボディ（401/422/409/503/500）へ `requestId` を追加。catch-all 500 ハンドラも追加（例外をログし `requestId` を返す）。実走行でログの `requestId` == レスポンス `X-Request-Id` を確認。
+- **AC-3（/readyz）**: `/healthz` は liveness のみと文書化。`/readyz` を新設 — `SELECT 1` と `alembic_version` × `ScriptDirectory.get_heads()` 照合。DB 停止時 503 `database_unavailable`、schema 不一致時 503 `schema_mismatch`（`applied`/`expected` 付き）。`/readyz` は api-key middleware から除外（/healthz と同様）。
+- **AC-4（app.revision）**: settings へ `KJ_ATLAS_APP_REVISION`（既定 `unknown`）を追加し `/version` ルートを新設。frontend `Dockerfile` に ARG/ENV、`docker-compose.yml` の web build-arg と api environment に配線。registry へ `KJ_ATLAS_LOG_LEVEL` / `KJ_ATLAS_APP_REVISION` を登録。
+- **AC-5（README）**: `03_Implement/backend/README.md` の LLM 監査 metadata 節に JSON 形式・`requestId`・`KJ_ATLAS_LOG_LEVEL` を追記し、実装と一致させた。
+- **AC-6（観測ガイド）**: `04_Documentation/observability.md` を新設（ログ形式・相関IDの突き合わせ手順・ヘルスチェックの意味）。operations.md / diagnostics.md / SUPPORT.md の /healthz 記述へ liveness と /readyz の注記を追加し、operations.md の「ログを見る」節から参照。
+
+検証: `tests/test_observability.py`（14 tests: formatter・requestId・readyz の成功/DB停止/schema不一致）、tenant-session exemption へ `/readyz`・`/version` を追加、docs-check pass、実走行で `/healthz` 200・`/readyz` 200・`/version` が `KJ_ATLAS_APP_REVISION` を反映・`X-Request-Id` ヘッダを確認。フル backend suite は実行中。
 
 ## 補足
 

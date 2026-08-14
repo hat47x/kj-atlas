@@ -151,3 +151,5 @@ tests/scripts/run_auth_level2.sh
 - `transport`
 - `trace_id`
 - `fallback_to_none`
+
+ログは JSON 形式（OPS-OBSERV-01）で stdout へ出力されます。1行が1レコードで、上記の `extra` キーに加えて `ts` / `level` / `logger` / `message`、および処理中リクエストの `requestId`（レスポンスの `X-Request-Id` と同一）を含みます。出力レベルは `KJ_ATLAS_LOG_LEVEL`（既定 `INFO`、`CRITICAL`/`ERROR`/`WARNING`/`INFO`/`DEBUG`/`NOTSET`）で変更できます。

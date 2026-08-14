@@ -92,6 +92,8 @@ docker compose logs api --tail=100
 - `web` が `KJ_ATLAS_WEB_PORT` のポートで公開されている。
 - `/api/healthz` が `{"status":"ok"}` を返す。
 
+> **ヘルスチェックの意味（OPS-OBSERV-01）**: `/healthz` は **liveness（プロセス生存）のみ**で、DB には触れません（DB を失っても `{"status":"ok"}` を返します）。依存（DB 到達性・migration の適用状態）まで確認するには `/readyz` を使います。DB 停止時に `/readyz` は 503、schema が migration head より古い場合も 503 `schema_mismatch` を返します。ビルドリビジョンは `/version` で確認できます。
+
 `docker compose ps` はサービスの生死を見るコマンドです。`curl` は API の応答を見るコマンドです。どちらか片方だけでは原因を絞り切れないため、両方を確認します。
 
 ## 停止
@@ -291,6 +293,8 @@ docker compose logs db --tail=100
 ```
 
 障害調査では、最初に発生時刻、操作内容、対象ドキュメント ID、HTTP status、画面上のエラーを控えます。ログやスクリーンショットを共有する前に、秘密情報を除外してください。診断 worker の見方は [diagnostics.md](diagnostics.md)、残してよい情報の判断は [data_handling.md](data_handling.md) を参照してください。
+
+**ログの形式・相関ID・ヘルスチェックの意味**は [observability.md](observability.md) を参照してください。`X-Request-Id` を使って障害報告をサーバ側ログへ突き合わせます。
 
 ## 障害時の初動
 

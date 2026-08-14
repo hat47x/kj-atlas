@@ -137,6 +137,8 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT` | 未設定 | capability resolverの接続先。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 | direct | 通常値（接続先URL。認証情報は別キー） | test double への到達確認（実サービスへは送らない） |
 | `KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY` | 未設定 | capability resolver専用の固定bearer token。DB・監査・diagnosticsへ出力しない | direct | 秘密値 | 送信ヘッダにキーが付与されることを確認する（値はマスクして確認） |
 | `KJ_ATLAS_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS` | `1.5` | capability resolverのtimeout秒数。`0 < value <= 30` | direct | 通常値 | timeout 超過時に resolver が fail-closed へ倒れることを確認する |
+| `KJ_ATLAS_LOG_LEVEL` | `INFO` | 構造化（JSON）ログの出力レベル（OPS-OBSERV-01）。`CRITICAL`/`ERROR`/`WARNING`/`INFO`/`DEBUG`/`NOTSET` を受理し、未知値は INFO へフォールバック | direct | 通常値 | 設定レベル以下の `logger.*` 呼び出しが JSON 行として stdout へ出ることを確認する |
+| `KJ_ATLAS_APP_REVISION` | `unknown` | ビルドリビジョン（OPS-OBSERV-01）。`/version` と構造化ログ、frontend 診断バンドルの `app.revision` に反映。api コンテナは env pass-through、web コンテナは build-arg で配線 | direct / base Compose | 通常値（公開ビルド識別子） | `/version` が設定値と一致する revision を返すことを確認する |
 | `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `false` | 未登録 identity の JIT provisioning を許可する（SEC-RATE-LIMIT-01: 既定 fail-closed） | direct / base Compose | 通常値 | `false` 時、未登録 identity でのアクセスが拒否され新規作成されないことを確認する |
 | `KJ_ATLAS_MAX_DOCUMENT_BYTES` | `20971520` | DocumentV1 保存ペイロードの UTF-8 バイト上限（20 MiB・SEC-DOC-BOUND-01） | direct | 通常値 | 超えるペイロードで 413 `document_too_large` を確認する |
 | `KJ_ATLAS_MAX_DOCUMENT_CARDS` | `10000` | DocumentV1 のカード件数上限（SEC-DOC-BOUND-01） | direct | 通常値 | 超えるカード件数で 413 `document_too_many_cards` を確認する |

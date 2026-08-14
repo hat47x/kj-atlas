@@ -36,7 +36,7 @@ GitHub Issuesは現在運用していません。開始時は`CONTRIBUTING.md`�
 ## 障害時の最初の確認
 
 1. 画面だけの問題か、API も失敗しているかを分けます。
-2. `curl -fsS http://localhost:8080/api/healthz` で API の応答を確認します。
+2. `curl -fsS http://localhost:8080/api/healthz` で API の応答を確認します（これは liveness のみ。DB まで含めた準備状態は `curl -fsS http://localhost:8080/api/readyz` で確認し、503 なら DB・migration を調査します）。
 3. Docker Compose を使っている場合は `docker compose ps` と `docker compose logs api --tail=200` を確認します。
 4. 保存に失敗した場合は、画面上の内容を残したまま再試行し、必要であれば JSON 書き出しで変更を保全します。
 5. 共有前確認や SafeMode の警告が出ている場合は、警告内容を確認してから操作を続けます。
