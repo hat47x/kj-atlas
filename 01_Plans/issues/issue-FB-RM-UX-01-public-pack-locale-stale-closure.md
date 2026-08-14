@@ -33,3 +33,11 @@
 ## 補足
 
 - 発見経緯: 第13ラウンドの棚卸し（stale closure観点）で発見。同じ観点で見つかった`downloadViewMetadata`（LOD/根拠オーバーレイ関連6値の依存漏れ）・`handleExportBundleZip`（`reviewEvents`依存漏れ）・`handleLoadViewMetadataFile`（`viewMode`依存漏れ）は、いずれも依存対象のコールバックがeffectの依存になっていないことを確認済みで、依存配列への追加だけで安全に直せたため本ラウンドで直接修正済み。本issueのみ、マウント時専用effectとの結合があるため機械的な追加が安全でないと判断した。
+
+## 追記（2026-08-15・iteration 31）
+
+**当初の修正は transitivity で不完全だった。** AC-2 は `loadPublicPack` の直接の依存配列 `[appStorage, applyImportedViewMetadata, runTenantScopedOptionalTask]` が不変なことしか確認していないが、**`applyImportedViewMetadata` 自身が `applyResolvedLocaleForView`（`[isReadOnly, locationSearch]` 依存）を依存配列に含んでいた**ため、`isReadOnly`/`locationSearch` が実行時に変化すると `loadPublicPack` の identity が変わってマウント時専用effectが再実行され、既定文書の再ロードが起きる。
+
+- **実証（iteration 31）**: アーカイブ済み文書を開いて `isReadOnly` が実行時反転すると、マウント時 effect の `loadForMount` が既定文書 `doc_phase1_canvas` を再取得（dev StrictMode で2回）。開いた文書が破棄され既定文書に戻る。E2E（`recent_documents_dialog.spec.ts`）がこの現象を2回の余剰GETとして検出。
+- **対応**: 既存の `applyResolvedLocaleForViewRef` パターンを `loadDocument` と `applyImportedViewMetadata` へ延長（両者の適用箇所を `applyResolvedLocaleForViewRef.current(...)` に変更し、依存配列から `applyResolvedLocaleForView` を除去）。これで `loadDocument`・`loadPublicPack`（マウント時専用effectの deps）が `isReadOnly` 反転で再生成されなくなり、余剰GETが消えた。frontend 1451 tests・recent_documents_dialog 7 tests pass。
+- 教訓: 依存関係は「直接 deps の不変」だけでは保証できず、**transitive closure 全体**で確認する必要がある。修正時の検証は direct deps のdiffではなく、対象 effect の発火回数（余剰リクエスト）をE2Eで固定すべきだった。
