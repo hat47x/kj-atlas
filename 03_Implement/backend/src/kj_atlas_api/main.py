@@ -31,7 +31,8 @@ from kj_atlas_api.routes.inquiry_bundles import router as inquiry_bundles_router
 from kj_atlas_api.routes.session import router as session_router
 from kj_atlas_api.request_body_safety import JsonRequestBodySafetyMiddleware
 from kj_atlas_api.settings import settings
-from kj_atlas_api.saas_auth_state import DatabaseSaasAuthStateStore
+from kj_atlas_api.oauth_broker_client import ExternalOauthBrokerConfig
+from kj_atlas_api.saas_auth_state import DatabaseSaasAuthSessionStore, DatabaseSaasAuthStateStore
 from kj_atlas_api.tenant_capability import build_tenant_capability_resolver
 from kj_atlas_api.trusted_saas_runtime import (
     TrustedSaasRuntimeComponents,
@@ -64,7 +65,38 @@ def _trusted_saas_runtime_policy() -> TrustedSaasRuntimePolicy:
         # ADR-0063 D9-6: auth-edge settings
         jwt_algorithms=settings.jwt_algorithms,
         tenant_claim_name=settings.tenant_claim_name,
+        # SAAS-TENANT-SESSION-BINDING-01 AC-1 (ADR-0074): BFF OAuth broker settings
+        saas_oauth_broker_http_authorize_endpoint=settings.saas_oauth_broker_http_authorize_endpoint,
+        saas_oauth_broker_http_token_endpoint=settings.saas_oauth_broker_http_token_endpoint,
+        saas_oauth_broker_http_redirect_uri=settings.saas_oauth_broker_http_redirect_uri,
+        saas_oauth_broker_http_client_id=settings.saas_oauth_broker_http_client_id,
+        saas_oauth_broker_http_client_secret=settings.saas_oauth_broker_http_client_secret,
+        saas_oauth_broker_http_timeout_seconds=settings.saas_oauth_broker_http_timeout_seconds,
+        saas_auth_session_hash_key=settings.saas_auth_session_hash_key,
     )
+
+
+def _saas_oauth_broker_config() -> ExternalOauthBrokerConfig | None:
+    """None when any required field is unset -- handle_callback (oauth_bff.py)
+    fails closed with 503 rather than construct a config with missing fields."""
+    token_endpoint = settings.saas_oauth_broker_http_token_endpoint
+    redirect_uri = settings.saas_oauth_broker_http_redirect_uri
+    client_id = settings.saas_oauth_broker_http_client_id
+    client_secret = settings.saas_oauth_broker_http_client_secret
+    if token_endpoint is None or redirect_uri is None or client_id is None or client_secret is None:
+        return None
+    return ExternalOauthBrokerConfig(
+        token_endpoint=token_endpoint,
+        client_id=client_id,
+        client_secret=client_secret,
+        redirect_uri=redirect_uri,
+        timeout_seconds=settings.saas_oauth_broker_http_timeout_seconds,
+    )
+
+
+def _saas_auth_session_hash_key_bytes() -> bytes | None:
+    raw = settings.saas_auth_session_hash_key
+    return bytes.fromhex(raw) if raw else None
 
 
 def _trusted_saas_runtime_components() -> TrustedSaasRuntimeComponents:
@@ -91,6 +123,7 @@ async def lifespan(app: FastAPI):
     init_db()
     if settings.runtime_profile == "saas-multitenant":
         _saas_auth_state_store.preflight()
+        _saas_auth_session_store.preflight()
     # ADR-0063 D9-6: post-DB-init check for active identity providers.
     if settings.runtime_profile == "saas-multitenant":
         validate_saas_providers_exist()
@@ -125,6 +158,7 @@ app = FastAPI(
     openapi_url="/openapi.json" if _docs_enabled else None,
 )
 _saas_auth_state_store = DatabaseSaasAuthStateStore(SessionLocal)
+_saas_auth_session_store = DatabaseSaasAuthSessionStore(SessionLocal)
 
 # ADR-0063 D9-6: install the trusted SaaS runtime adapter bundle at module
 # scope so that initialize_trusted_saas_runtime() can find it during lifespan.
@@ -142,11 +176,22 @@ if settings.runtime_profile == "saas-multitenant":
         install_trusted_saas_runtime,
     )
 
+    # SAAS-TENANT-SESSION-BINDING-01 AC-1 (ADR-0074): oauth_bff.py's
+    # handle_callback and the resolver's cookie-fallback branch must agree on
+    # this key -- computed once and shared, matching ac1_final_design.md SS7.
+    _saas_auth_session_hash_key = _saas_auth_session_hash_key_bytes()
+    app.state.saas_oauth_broker_config = _saas_oauth_broker_config()
+    app.state.saas_auth_session_store = _saas_auth_session_store
+    app.state.saas_auth_state_store = _saas_auth_state_store
+    app.state.saas_auth_session_hash_key = _saas_auth_session_hash_key
+
     install_trusted_saas_runtime(
         app,
         TrustedSaasRuntimeAdapters(
             identity_context_resolver=JwtSaasIdentityContextResolver(
                 jwks_store=JwksStore(),
+                auth_session_store=_saas_auth_session_store,
+                auth_session_hash_key=_saas_auth_session_hash_key,
             ),
             tenant_context_resolver=ClaimBasedTenantContextResolver(),
             active_tenant_session_persister=DatabaseActiveTenantSessionPersister(

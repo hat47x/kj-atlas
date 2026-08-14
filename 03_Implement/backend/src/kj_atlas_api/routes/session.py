@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
@@ -13,6 +14,7 @@ from kj_atlas_api.active_tenant_session import (
     require_current_tenant_session_version,
 )
 from kj_atlas_api.db import get_db
+from kj_atlas_api.oauth_bff import handle_callback, initiate_login
 from kj_atlas_api.runtime_bootstrap import (
     TenantSessionBootstrapMode,
     resolve_tenant_session_bootstrap_mode,
@@ -137,6 +139,24 @@ def get_session_bootstrap_policy(
         ) from None
     response.headers.update(no_cache_headers)
     return policy
+
+
+@router.get("/login")
+def session_login(request: Request, next: str | None = None) -> RedirectResponse:
+    """AC-1 (ADR-0074): start the BFF's authorization-code+PKCE login flow."""
+    return initiate_login(request=request, next_query=next)
+
+
+@router.get("/callback")
+def session_callback(
+    request: Request,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
+    """AC-1 (ADR-0074): exchange the code and mint the auth-session cookie."""
+    return handle_callback(request=request, db=db, code=code, state=state, error=error)
 
 
 @router.post("/logout", status_code=204)

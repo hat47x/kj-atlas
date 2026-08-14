@@ -96,6 +96,19 @@ def _validate_optional_http_integration(
     _validate_canonical_bearer(api_key=api_key, api_key_key=api_key_key)
 
 
+_HEX_KEY_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _validate_hex_key(*, value: str | None, value_key: str) -> None:
+    """64 lowercase hex chars = 32 bytes, for an HMAC signing/hashing key.
+
+    No prior *_SIGNING_KEY/*_HASH_KEY settings exist in this codebase to
+    reuse a validator from -- this is new (SAAS-TENANT-SESSION-BINDING-01).
+    """
+    if value is not None and not _HEX_KEY_PATTERN.fullmatch(value):
+        raise ValueError(f"{value_key} must be 64 lowercase hex characters (32 bytes)")
+
+
 def _validate_optional_header_value(*, value: str | None, value_key: str) -> None:
     if value is not None and (
         not value
@@ -394,6 +407,48 @@ class Settings(BaseSettings):
         gt=0,
         le=30,
         validation_alias="KJ_ATLAS_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS",
+    )
+    # SAAS-TENANT-SESSION-BINDING-01 AC-1 (ADR-0074): confidential-client OAuth
+    # broker used by the BFF to exchange an authorization code for tokens.
+    # Format-only validated here (like local_llm_base_url); requiredness for
+    # saas-multitenant lives solely in TrustedSaasRuntimePolicy (ADR-0063 D9-6
+    # comment at the top of validate_llm_provider_guards) -- no runtime_profile
+    # branch is added here.
+    saas_oauth_broker_http_authorize_endpoint: str | None = Field(
+        default=None,
+        validation_alias="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT",
+    )
+    saas_oauth_broker_http_token_endpoint: str | None = Field(
+        default=None,
+        validation_alias="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT",
+    )
+    saas_oauth_broker_http_redirect_uri: str | None = Field(
+        default=None,
+        validation_alias="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI",
+    )
+    saas_oauth_broker_http_client_id: str | None = Field(
+        default=None,
+        validation_alias="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID",
+    )
+    saas_oauth_broker_http_client_secret: str | None = Field(
+        default=None,
+        validation_alias="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET",
+    )
+    saas_oauth_broker_http_timeout_seconds: float = Field(
+        default=5.0,
+        gt=0,
+        le=30,
+        validation_alias="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TIMEOUT_SECONDS",
+    )
+    # Keyed HMAC-SHA256 key for hashing the opaque auth-session cookie value
+    # before it is stored (ADR-0074 decision 2: never persist the raw value).
+    # 64 lowercase hex chars = 32 bytes. Rotation procedure: set a new key and
+    # restart the fleet; every existing session_key_hash stops matching and
+    # every browser is forced through a fresh GET /session/login. A seamless
+    # dual-key rollover is a distinct future feature, not part of AC-1.
+    saas_auth_session_hash_key: str | None = Field(
+        default=None,
+        validation_alias="KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY",
     )
     allow_jit_provisioning: bool = Field(
         # SEC-RATE-LIMIT-01: fail-closed by default. The default-True config
@@ -741,6 +796,42 @@ class Settings(BaseSettings):
             endpoint_key="KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT",
             api_key=self.tenant_capability_http_api_key,
             api_key_key="KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY",
+        )
+
+        # SAAS-TENANT-SESSION-BINDING-01 AC-1: format-only, like
+        # local_llm_base_url above -- requiredness for saas-multitenant is
+        # TrustedSaasRuntimePolicy's job (ADR-0063 D9-6), not Settings'.
+        if self.saas_oauth_broker_http_authorize_endpoint is not None:
+            _validate_trusted_http_endpoint(
+                endpoint=self.saas_oauth_broker_http_authorize_endpoint,
+                endpoint_key="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT",
+            )
+        if self.saas_oauth_broker_http_token_endpoint is not None:
+            _validate_trusted_http_endpoint(
+                endpoint=self.saas_oauth_broker_http_token_endpoint,
+                endpoint_key="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT",
+            )
+        if self.saas_oauth_broker_http_redirect_uri is not None:
+            _validate_trusted_http_endpoint(
+                endpoint=self.saas_oauth_broker_http_redirect_uri,
+                endpoint_key="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI",
+            )
+            if urlsplit(self.saas_oauth_broker_http_redirect_uri).path != "/session/callback":
+                raise ValueError(
+                    "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI path must be "
+                    "/session/callback"
+                )
+        _validate_optional_header_value(
+            value=self.saas_oauth_broker_http_client_id,
+            value_key="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID",
+        )
+        _validate_canonical_bearer(
+            api_key=self.saas_oauth_broker_http_client_secret,
+            api_key_key="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET",
+        )
+        _validate_hex_key(
+            value=self.saas_auth_session_hash_key,
+            value_key="KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY",
         )
 
         normalized_reviewer_ref_adapter = self.reviewer_ref_resolver_adapter.strip().lower()

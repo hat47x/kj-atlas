@@ -199,6 +199,20 @@ PERSISTENT_TEXT_SPECS: dict[str, PersistentTextSpec] = {
     "identity_providers.jwks_uri": _bounded(URI_MAX_CHARS, "JWKS URI"),
     "identity_providers.created_at": TIMESTAMP,
     "identity_providers.updated_at": TIMESTAMP,
+    "saas_auth_sessions.session_key_hash": _bounded(
+        256, "server-owned keyed hash of the opaque session cookie value"
+    ),
+    "saas_auth_sessions.principal_id": EXTERNAL_ID,
+    "saas_auth_sessions.issuer": _bounded(
+        OIDC_ISSUER_MAX_CHARS, "OIDC issuer URI acceptance bound"
+    ),
+    "saas_auth_sessions.subject": EXTERNAL_ID,
+    "saas_auth_sessions.active_tenant_id": INTERNAL_ID,
+    "saas_auth_sessions.tenant_session_version": VERSION_ID,
+    "saas_auth_sessions.created_at": TIMESTAMP,
+    "saas_auth_sessions.last_used_at": TIMESTAMP,
+    "saas_auth_sessions.absolute_expires_at": TIMESTAMP,
+    "saas_auth_sessions.revoked_at": TIMESTAMP,
     "saas_tenant_sessions.principal_id": EXTERNAL_ID,
     "saas_tenant_sessions.session_version": VERSION_ID,
     "saas_tenant_sessions.updated_at": TIMESTAMP,

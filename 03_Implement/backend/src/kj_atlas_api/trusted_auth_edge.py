@@ -26,8 +26,10 @@ from fastapi import Request
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.auth_context import AuthContext, ResolvedIdentity
+from kj_atlas_api.auth_session_hash import derive_session_key_hash
 from kj_atlas_api.jwks_store import JwksStore
 from kj_atlas_api.models import IdentityProviderRow, TenantIdentityProviderRow
+from kj_atlas_api.saas_auth_state import DatabaseSaasAuthSessionStore
 from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_context import VerifiedTenantClaim
 
@@ -37,6 +39,9 @@ _JWT_CLOCK_SKEW_SECONDS = 60
 _JWKS_MAX_RESPONSE_BYTES = 128 * 1024
 # Allowed JWK key types. HMAC ('oct') is always rejected.
 _ALLOWED_JWK_KEY_TYPES = frozenset({"RSA", "EC"})
+# ADR-0074 decision 1/3: the BFF-issued opaque session cookie, read only when
+# no bearer token is present (AC-1 cookie-fallback branch, ac1_final_design.md SS4).
+_AUTH_SESSION_COOKIE = "Kj-Atlas-Auth-Session"
 
 
 # ---------------------------------------------------------------------------
@@ -94,6 +99,31 @@ def _resolve_identity_provider(db: Session, issuer: str, audience: str) -> Ident
         )
         .one_or_none()
     )
+
+
+def _resolve_identity_provider_by_issuer(db: Session, issuer: str) -> IdentityProviderRow:
+    """Look up the single active identity provider for an issuer (no audience
+    to filter on -- an auth-session row only carries the issuer, ac1_final_design.md
+    SS4). Zero or more than one match is a deployment-configuration error, not a
+    per-request authorization decision, so it fails closed with 503 rather than 401.
+    """
+    providers = (
+        db.query(IdentityProviderRow)
+        .filter(
+            IdentityProviderRow.issuer == issuer,
+            IdentityProviderRow.lifecycle_state == "active",
+            IdentityProviderRow.protocol.in_({"oidc"}),
+        )
+        .all()
+    )
+    if len(providers) != 1:
+        logger.info(
+            "auth edge: ambiguous provider for auth-session issuer=%s count=%d",
+            issuer,
+            len(providers),
+        )
+        raise JwtIdentityError(status_code=503, code="configuration_error")
+    return providers[0]
 
 
 def _resolve_key_by_kid(
@@ -316,8 +346,16 @@ class JwtSaasIdentityContextResolver:
     resolves the token subject to a kj-atlas user, and returns a ResolvedIdentity.
     """
 
-    def __init__(self, *, jwks_store: JwksStore):
+    def __init__(
+        self,
+        *,
+        jwks_store: JwksStore,
+        auth_session_store: DatabaseSaasAuthSessionStore | None = None,
+        auth_session_hash_key: bytes | None = None,
+    ):
         self._jwks = jwks_store
+        self._auth_session_store = auth_session_store
+        self._auth_session_hash_key = auth_session_hash_key
 
     def resolve(self, *, db: Session, request: Request) -> ResolvedIdentity:
         """Verify the bearer token and resolve to a kj-atlas identity.
@@ -327,8 +365,7 @@ class JwtSaasIdentityContextResolver:
         """
         token = _extract_bearer_token(request)
         if token is None:
-            logger.info("auth edge: missing bearer token")
-            raise JwtIdentityError(status_code=401, code="missing_token")
+            return self._resolve_from_auth_session_cookie(db=db, request=request)
 
         # Peek at issuer / audience without trusting the signature yet.
         try:
@@ -403,6 +440,58 @@ class JwtSaasIdentityContextResolver:
                 user_id=user_id,
                 provider=provider.id,
                 external_uid=subject,
+            ),
+            verified_tenant_claim=verified_tenant_claim,
+        )
+
+    def _resolve_from_auth_session_cookie(self, *, db: Session, request: Request) -> ResolvedIdentity:
+        """AC-1 cookie-fallback branch (ac1_final_design.md SS4): no bearer token
+        present, try the BFF-issued Kj-Atlas-Auth-Session cookie instead.
+
+        The resolved row is re-verified against ClaimBasedTenantContextResolver
+        by the caller via the same VerifiedTenantClaim the bearer path builds --
+        active_tenant_id here is never itself an authorization decision.
+        """
+        if self._auth_session_store is None or self._auth_session_hash_key is None:
+            logger.info("auth edge: missing bearer token")
+            raise JwtIdentityError(status_code=401, code="missing_token")
+
+        raw_session_id = request.cookies.get(_AUTH_SESSION_COOKIE)
+        if not raw_session_id:
+            logger.info("auth edge: missing bearer token")
+            raise JwtIdentityError(status_code=401, code="missing_token")
+
+        session_key_hash = derive_session_key_hash(raw_session_id, key=self._auth_session_hash_key)
+        resolved_session = self._auth_session_store.resolve_auth_session(session_key_hash=session_key_hash)
+        if resolved_session is None:
+            logger.info("auth edge: auth-session cookie invalid or expired")
+            raise JwtIdentityError(status_code=401, code="session_invalid")
+        if resolved_session.active_tenant_id is None:
+            # The row's tenant FK was SET NULL (models.py) -- the tenant bound
+            # at login no longer exists/is no longer active. Fail closed rather
+            # than resolve a claim with no tenant to bind to.
+            logger.info("auth edge: auth-session has no active tenant")
+            raise JwtIdentityError(status_code=401, code="session_invalid")
+
+        provider = _resolve_identity_provider_by_issuer(db, resolved_session.issuer)
+
+        verified_tenant_claim = VerifiedTenantClaim(
+            tenant_id=resolved_session.active_tenant_id,
+            identity_provider_id=provider.id,
+            issuer=provider.issuer,
+            audience=provider.audience,
+            subject=resolved_session.subject,
+        )
+
+        return ResolvedIdentity(
+            user_id=resolved_session.principal_id,
+            reviewer_ref=resolved_session.principal_id,
+            owner_ref=resolved_session.principal_id,
+            auth_context=AuthContext(
+                actor_ref=resolved_session.principal_id,
+                user_id=resolved_session.principal_id,
+                provider=provider.id,
+                external_uid=resolved_session.subject,
             ),
             verified_tenant_claim=verified_tenant_claim,
         )

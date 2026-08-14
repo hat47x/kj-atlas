@@ -69,6 +69,16 @@ class TrustedSaasRuntimePolicy:
     # ADR-0063 D9-6: JWT auth-edge settings
     jwt_algorithms: str = "RS256,ES256"
     tenant_claim_name: str = "tenant_ref"
+    # SAAS-TENANT-SESSION-BINDING-01 AC-1 (ADR-0074): BFF OAuth broker + auth-
+    # session hash key. Settings does format-only validation (settings.py);
+    # requiredness for saas-multitenant lives here (ac1_final_design.md SS3).
+    saas_oauth_broker_http_authorize_endpoint: str | None = None
+    saas_oauth_broker_http_token_endpoint: str | None = None
+    saas_oauth_broker_http_redirect_uri: str | None = None
+    saas_oauth_broker_http_client_id: str | None = None
+    saas_oauth_broker_http_client_secret: str | None = None
+    saas_oauth_broker_http_timeout_seconds: float = 5.0
+    saas_auth_session_hash_key: str | None = None
 
     def validate(self) -> None:
         requirements = (
@@ -88,6 +98,14 @@ class TrustedSaasRuntimePolicy:
             # validates no-HMAC, known-algorithms-only, but cross-check here).
             (bool(self.jwt_algorithms.strip()), "JWT algorithm allowlist set"),
             (bool(self.tenant_claim_name.strip()), "tenant claim name set"),
+            (
+                self.saas_oauth_broker_http_authorize_endpoint is not None,
+                "SaaS OAuth broker authorize endpoint configured",
+            ),
+            (
+                self.saas_auth_session_hash_key is not None,
+                "SaaS auth-session hash key configured",
+            ),
         )
         missing = [label for available, label in requirements if not available]
         if missing:
