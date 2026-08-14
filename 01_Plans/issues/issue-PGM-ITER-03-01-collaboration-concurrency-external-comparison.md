@@ -34,10 +34,24 @@
 
 ## 受入条件
 
-- [ ] AC-1: 類似製品の共同編集並行性モデルの比較調査が完了し、設計正本として記録される。
-- [ ] AC-2: 比較結果が第3反復の並行性モデル選定（ADR化）の判断材料を供給する。
+- [x] AC-1: 類似製品の共同編集並行性モデルの比較調査が完了し、設計正本として記録される。
+- [x] AC-2: 比較結果が第3反復の並行性モデル選定（ADR化）の判断材料を供給する。
 
 ## 検証
 
 - `python 01_Plans/docs_check.py`
 - 調査結果の設計正本がリンク切れ検査を通る。
+
+## 調査記録（2026-08-14、deep-research 105エージェント・3票反証検証）
+
+設計正本: `02_Architecture/collaboration-concurrency-comparison-2026-08-14.html`
+
+検証済みの主要事実:
+
+- **Figma**: サーバ権威・property-level LWW（CRDT/OTではない・OTを明示的に却下）。ordered list は分数インデックス（base-95）。利用者に見えるマージUIなし。durability は S3 checkpoint（最大~60s喪失）→ DynamoDB journal（<1s喪失・2.2B changes/day）。
+- **Miro**: ボード単一owner・譲渡可・5段階ロール（Owner/Co-owner/Editor/Commenter/Viewer）。ボード作成はチームMemberのみ。
+- **Confluence**: 保存時コンフリクト検出（LWW）＋手動 Overwrite/Merge/Discard。文書化された履歴破損障害 CONFSERVER-32286。
+- **OT vs CRDT**: Sun et al.（OTキャンプ・COI）の反論は陳腐化気味。Automerge（クライアント側merge・順序非依存）は P2P/E2EE に適合。
+- **Notion / Slack / Jira**: 一次ソースが検証を通過せず未確認（open questions として記録）。
+
+**第3反復への勧告（判断材料）**: サーバ権威 LWW＋既存CAS（ETag/If-Match 拡張）を推奨（選択肢A）。クライアントCRDTはオフライン/P2P/E2EE要件時のみ。Miro の単一owner・5段階ロールは第2反復（documents所有）の参照。選択肢は ADR として採否判断（本issueは材料供給・決定ではない）。
