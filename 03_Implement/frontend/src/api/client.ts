@@ -362,6 +362,36 @@ export async function changeActiveTenant(
   return nextSession;
 }
 
+export type DocumentListItem = {
+  id: string;
+  title?: string;
+  created_by?: string;
+  lifecycle_state: string;
+  updated_at: string;
+};
+
+/** GET /docs — the tenant's document metadata (第2反復 canvas-list foundation).
+ * Row metadata only; fetch a specific document for SafeMode-scoped content. */
+export async function listDocuments(
+  options: TenantScopedRequestOptions = {},
+): Promise<DocumentListItem[]> {
+  const headers = tenantSessionPreconditionHeaders(options);
+  const response = headers
+    ? await fetch(`${API_BASE}/docs`, { headers })
+    : await fetch(`${API_BASE}/docs`);
+
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
+  }
+
+  const body = (await response.json()) as DocumentListItem[];
+  if (!Array.isArray(body)) {
+    throw new ApiError(500, "Invalid document list response shape");
+  }
+  return body;
+}
+
 export async function getDocument(
   docId: string,
   options: TenantScopedRequestOptions = {},

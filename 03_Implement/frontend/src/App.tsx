@@ -19,6 +19,8 @@ import {
   summarizeIslandRelation,
   suggestLayout,
   type IslandSummaryProposal,
+  listDocuments,
+  type DocumentListItem,
   type MergeSuggestion,
   type NarrativeIssue,
   type NarrativeIssueReference,
@@ -1173,6 +1175,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const diagnosticsBundleTriggerRef = useRef<HTMLButtonElement>(null);
   const [isRecentDocumentsDialogOpen, setIsRecentDocumentsDialogOpen] = useState(false);
   const recentDocumentsDialogTriggerRef = useRef<HTMLElement | null>(null);
+  // 第2反復: the tenant's full canvas list (GET /docs), fetched when the
+  // recent-documents dialog opens so the "canvas list" is not limited to
+  // recently-opened ids.
+  const [canvasDocuments, setCanvasDocuments] = useState<DocumentListItem[] | null>(null);
+  const [isCanvasListLoading, setIsCanvasListLoading] = useState(false);
   const [agentTaskKind, setAgentTaskKind] = useState<AgentTaskKind>("island_titles");
   const [agentTaskDesiredCount, setAgentTaskDesiredCount] = useState(3);
   const [agentTaskIncludeUnreviewedDrafts, setAgentTaskIncludeUnreviewedDrafts] = useState(false);
@@ -2162,6 +2169,28 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const rememberRecentDocumentId = useCallback((docId: string) => {
     setRecentDocumentIds(appStorage.pushRecentDocumentId(docId));
   }, [appStorage]);
+
+  // 第2反復: fetch the full canvas list when the recent-documents dialog opens.
+  useEffect(() => {
+    if (!isRecentDocumentsDialogOpen) return;
+    let cancelled = false;
+    setIsCanvasListLoading(true);
+    void runTenantScopedApiRequest(() => listDocuments({ tenantSessionContext: verifiedTenantSession }))
+      .then((documents) => {
+        if (cancelled) return;
+        setCanvasDocuments(documents);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCanvasDocuments(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsCanvasListLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isRecentDocumentsDialogOpen, runTenantScopedApiRequest, verifiedTenantSession]);
 
   const applyResolvedLocaleForView = useCallback((args: {
     docId: string;
@@ -12468,6 +12497,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       onOpenRecent={handleOpenRecent}
       isLoading={isLoading}
       activeDocumentId={activeDocumentId}
+      documents={canvasDocuments}
+      isCanvasListLoading={isCanvasListLoading}
     />
     {isCommandPaletteOpen ? (
       <CommandPalette

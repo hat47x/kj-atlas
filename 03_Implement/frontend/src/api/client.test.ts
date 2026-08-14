@@ -9,6 +9,7 @@ import {
   generateNarrative,
   getDocument,
   getTenantSessionBootstrapPolicy,
+  listDocuments,
   getTenantSessionContext,
   postExportAudit,
   proposeIslandSummary,
@@ -1254,5 +1255,25 @@ describe("inquiry-bundle client (G5 W型 single-tenant)", () => {
     expect(url).toContain("/inquiry-bundles/journey-1");
     expect(init.method).toBe("DELETE");
     expect((init.headers as Record<string, string>)["If-Match"]).toBe('"3"');
+  });
+});
+
+describe("listDocuments", () => {
+  it("fetches GET /docs and returns the metadata array", async () => {
+    const body = [
+      { id: "doc-1", title: "Alpha", lifecycle_state: "active", updated_at: "2026-08-15T00:00:00Z" },
+      { id: "doc-2", lifecycle_state: "archived", updated_at: "2026-08-14T00:00:00Z" },
+    ];
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify(body), { status: 200 }));
+
+    const result = await listDocuments();
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/docs", { headers: {} });
+    expect(result).toEqual(body);
+  });
+
+  it("rejects a non-array list response", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ not: "a list" }), { status: 200 }));
+    await expect(listDocuments()).rejects.toThrow("Invalid document list response shape");
   });
 });

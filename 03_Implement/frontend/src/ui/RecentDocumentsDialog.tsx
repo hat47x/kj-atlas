@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ChangeEvent, type KeyboardEvent } from "react";
 import { t } from "../i18n/translate";
+import type { DocumentListItem } from "../api/client";
 
 // ADR-0052: the File menu's recent-documents form used to render as
 // `extraContent` directly inside MenuBar's role="menu" dropdown -- ARIA
@@ -18,6 +19,11 @@ type RecentDocumentsDialogProps = {
   onOpenRecent: () => void;
   isLoading: boolean;
   activeDocumentId: string;
+  /** GET /docs server list (第2反復): the tenant's documents with titles. When
+   * present, shown above the localStorage recent ids so "canvas list" is not
+   * limited to recently-opened documents. */
+  documents?: DocumentListItem[] | null;
+  isCanvasListLoading?: boolean;
 };
 
 const focusableSelector = [
@@ -56,6 +62,8 @@ export function RecentDocumentsDialog({
   onOpenRecent,
   isLoading,
   activeDocumentId,
+  documents,
+  isCanvasListLoading,
 }: RecentDocumentsDialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const canOpen = selectedRecentDocumentId.length > 0 && selectedRecentDocumentId !== activeDocumentId && !isLoading;
@@ -150,9 +158,32 @@ export function RecentDocumentsDialog({
         </button>
       </div>
 
-      {recentDocumentIds.length === 0 ? (
+      {documents && documents.length > 0 ? (
+        <label style={{ display: "grid", gap: 4 }}>
+          <span style={fieldLabelStyle}>{t("recent_documents_dialog.all_documents")}</span>
+          <select
+            value={selectedRecentDocumentId}
+            onChange={handleSelectChange}
+            disabled={isCanvasListLoading || isLoading}
+            style={{ ...buttonStyle, cursor: "pointer" }}
+          >
+            <option value="">{t("recent_documents_dialog.placeholder")}</option>
+            {documents.map((doc) => (
+              <option key={doc.id} value={doc.id}>
+                {doc.title ? `${doc.title} (${doc.id})` : doc.id}
+                {doc.lifecycle_state === "archived" ? ` — ${t("recent_documents_dialog.archived")}` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+      {isCanvasListLoading ? (
+        <div style={{ fontSize: 11, color: "#64748b" }}>{t("recent_documents_dialog.loading")}</div>
+      ) : null}
+      {recentDocumentIds.length === 0 && !(documents && documents.length > 0) ? (
         <div style={{ fontSize: 12, color: "#64748b" }}>{t("recent_documents_dialog.empty")}</div>
-      ) : (
+      ) : null}
+      {recentDocumentIds.length > 0 ? (
         <>
           <label style={{ display: "grid", gap: 4 }}>
             <span style={fieldLabelStyle}>{t("app.toolbar.recent_documents")}</span>
@@ -174,7 +205,7 @@ export function RecentDocumentsDialog({
             {t("app.toolbar.open")}
           </button>
         </>
-      )}
+      ) : null}
     </div>
   );
 }
