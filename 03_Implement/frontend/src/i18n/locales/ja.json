@@ -1772,5 +1772,8 @@
   "recent_documents_dialog.all_documents": "全キャンバス",
   "recent_documents_dialog.archived": "アーカイブ済み",
   "recent_documents_dialog.loading": "読み込み中…",
-  "recent_documents_dialog.my_documents": "自分の文書のみ"
+  "recent_documents_dialog.my_documents": "自分の文書のみ",
+  "recent_documents_dialog.archive": "アーカイブ",
+  "recent_documents_dialog.unarchive": "アーカイブ解除",
+  "app.status.lifecycle_transition_failed": "アーカイブ状態の変更に失敗しました"
 }

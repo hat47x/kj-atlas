@@ -19,6 +19,8 @@ import {
   summarizeIslandRelation,
   suggestLayout,
   type IslandSummaryProposal,
+  archiveDocument,
+  unarchiveDocument,
   listDocuments,
   type DocumentListItem,
   type MergeSuggestion,
@@ -1181,6 +1183,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const [canvasDocuments, setCanvasDocuments] = useState<DocumentListItem[] | null>(null);
   const [isCanvasListLoading, setIsCanvasListLoading] = useState(false);
   const [myDocumentsOnly, setMyDocumentsOnly] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const [agentTaskKind, setAgentTaskKind] = useState<AgentTaskKind>("island_titles");
   const [agentTaskDesiredCount, setAgentTaskDesiredCount] = useState(3);
   const [agentTaskIncludeUnreviewedDrafts, setAgentTaskIncludeUnreviewedDrafts] = useState(false);
@@ -2194,6 +2197,31 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       cancelled = true;
     };
   }, [isRecentDocumentsDialogOpen, myDocumentsOnly, runTenantScopedApiRequest, storageScope?.principalId, verifiedTenantSession]);
+
+  // 第2反復: archive / unarchive the selected document, then refresh the list.
+  const applyLifecycleTransition = useCallback(async (docId: string, action: "archive" | "unarchive") => {
+    if (isArchiving) return;
+    setIsArchiving(true);
+    try {
+      const call = action === "archive"
+        ? runTenantScopedApiRequest(() => archiveDocument(docId, { tenantSessionContext: verifiedTenantSession }))
+        : runTenantScopedApiRequest(() => unarchiveDocument(docId, { tenantSessionContext: verifiedTenantSession }));
+      await call;
+      setCanvasDocuments(null); // force refetch on the next open
+    } catch {
+      setStatusMessage(t("app.status.lifecycle_transition_failed"));
+    } finally {
+      setIsArchiving(false);
+    }
+  }, [archiveDocument, isArchiving, runTenantScopedApiRequest, t, unarchiveDocument, verifiedTenantSession]);
+
+  const handleArchiveDocument = useCallback((docId: string) => {
+    void applyLifecycleTransition(docId, "archive");
+  }, [applyLifecycleTransition]);
+
+  const handleUnarchiveDocument = useCallback((docId: string) => {
+    void applyLifecycleTransition(docId, "unarchive");
+  }, [applyLifecycleTransition]);
 
   const applyResolvedLocaleForView = useCallback((args: {
     docId: string;
@@ -12504,6 +12532,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       isCanvasListLoading={isCanvasListLoading}
       myDocumentsOnly={myDocumentsOnly}
       onMyDocumentsOnlyChange={setMyDocumentsOnly}
+      isArchiving={isArchiving}
+      onArchiveDocument={handleArchiveDocument}
+      onUnarchiveDocument={handleUnarchiveDocument}
     />
     {isCommandPaletteOpen ? (
       <CommandPalette

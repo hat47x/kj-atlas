@@ -1037,3 +1037,33 @@ export async function deleteInquiryBundle(
     throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 }
+
+/** POST /docs/{id}/archive — set lifecycle_state to archived (ADR-0073 D2=A). */
+export async function archiveDocument(
+  docId: string,
+  options: TenantScopedRequestOptions = {},
+): Promise<void> {
+  const headers = tenantSessionPreconditionHeaders(options);
+  const response = headers
+    ? await fetch(`${API_BASE}/docs/${encodeURIComponent(docId)}/archive`, { method: "POST", headers })
+    : await fetch(`${API_BASE}/docs/${encodeURIComponent(docId)}/archive`, { method: "POST" });
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
+  }
+}
+
+/** POST /docs/{id}/unarchive — set lifecycle_state to active (ADR-0073 D2=A). */
+export async function unarchiveDocument(
+  docId: string,
+  options: TenantScopedRequestOptions = {},
+): Promise<void> {
+  const headers = tenantSessionPreconditionHeaders(options);
+  const response = headers
+    ? await fetch(`${API_BASE}/docs/${encodeURIComponent(docId)}/unarchive`, { method: "POST", headers })
+    : await fetch(`${API_BASE}/docs/${encodeURIComponent(docId)}/unarchive`, { method: "POST" });
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
+  }
+}

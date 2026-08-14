@@ -27,6 +27,10 @@ type RecentDocumentsDialogProps = {
   /** "my documents" filter (created_by == current principal). */
   myDocumentsOnly: boolean;
   onMyDocumentsOnlyChange: (value: boolean) => void;
+  /** ADR-0073 D2=A lifecycle actions for the selected document. */
+  onArchiveDocument: (docId: string) => void;
+  onUnarchiveDocument: (docId: string) => void;
+  isArchiving: boolean;
 };
 
 const focusableSelector = [
@@ -69,6 +73,9 @@ export function RecentDocumentsDialog({
   isCanvasListLoading,
   myDocumentsOnly,
   onMyDocumentsOnlyChange,
+  onArchiveDocument,
+  onUnarchiveDocument,
+  isArchiving,
 }: RecentDocumentsDialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const canOpen = selectedRecentDocumentId.length > 0 && selectedRecentDocumentId !== activeDocumentId && !isLoading;
@@ -218,6 +225,26 @@ export function RecentDocumentsDialog({
             {t("app.toolbar.open")}
           </button>
         </>
+      ) : null}
+      {selectedRecentDocumentId && !isArchiving ? (
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => onArchiveDocument(selectedRecentDocumentId)}
+            disabled={isArchiving}
+            style={buttonStyle}
+          >
+            {t("recent_documents_dialog.archive")}
+          </button>
+          <button
+            type="button"
+            onClick={() => onUnarchiveDocument(selectedRecentDocumentId)}
+            disabled={isArchiving}
+            style={buttonStyle}
+          >
+            {t("recent_documents_dialog.unarchive")}
+          </button>
+        </div>
       ) : null}
     </div>
   );

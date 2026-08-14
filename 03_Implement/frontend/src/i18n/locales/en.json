@@ -1772,5 +1772,8 @@
   "recent_documents_dialog.all_documents": "All canvases",
   "recent_documents_dialog.archived": "archived",
   "recent_documents_dialog.loading": "Loading…",
-  "recent_documents_dialog.my_documents": "My documents only"
+  "recent_documents_dialog.my_documents": "My documents only",
+  "recent_documents_dialog.archive": "Archive",
+  "recent_documents_dialog.unarchive": "Unarchive",
+  "app.status.lifecycle_transition_failed": "Failed to change the archive state"
 }
