@@ -113,7 +113,7 @@ function summarizeRecommendations(doc: DocumentV1, report: OutlineQualityReport,
   const recommendations = generateRecommendations(report, doc, { readingMode, reviewedOnly });
   lines.push(`- count: ${recommendations.length}`);
   for (const recommendation of recommendations) {
-    lines.push(`- [${recommendation.impactLevel}] ${recommendation.id}: ${recommendation.title}`);
+    lines.push(`- ${recommendation.id}: ${recommendation.title}`);
     const sortedTargets = [...(recommendation.targetEntities ?? [])].sort((left, right) => {
       if (left.kind !== right.kind) {
         return left.kind.localeCompare(right.kind);

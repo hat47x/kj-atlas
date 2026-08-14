@@ -6,23 +6,25 @@
 - totalIslands: 1
 - totalCardsInPath: 3
 - pathLength: 4
-- findings: 3
+- findings: 4
 - [WARN] Q002: Many islands are missing summaries
   - detail: [REDACTED] (len:51)
   - refs: island:i1
 - [WARN] Q003: Unreviewed summaries dominate
   - detail: [REDACTED] (len:54)
   - refs: island:i1
-- [WARN] Q005: Many islands are disconnected
+- [INFO] Q005: Many islands are not connected to other islands
   - detail: [REDACTED] (len:67)
   - refs: island:i1
+- [WARN] Q009: No cards outside islands (possible forced grouping)
+  - detail: [REDACTED] (len:164)
 
 ## Recommendations (I11)
 
 - count: 2
-- [high] rec-q003-review-unreviewed-summaries: 未承認サマリのレビューを優先する
+- rec-q003-review-unreviewed-summaries: 未承認サマリのレビューを優先する
   - targets: island:i1
-- [high] rec-q005-reconnect-islands: 島間の関係を再検討する
+- rec-q005-reconnect-islands: 島間の関係を再検討する
   - targets: island:i1
 
 ## Contradiction signals (I12)
@@ -56,7 +58,6 @@
 | isolationRate | 0 |
 | connectedComponentCount | 1 |
 | largestComponentRatio | 1 |
-| connectivityScore | 1 |
 | averageDegree | 1.3333 |
 | degreeP95 | 2 |
 | degreeSkewRatio | 1.5 |

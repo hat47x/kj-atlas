@@ -66,12 +66,22 @@ describe("worker compute goldens", () => {
     const output = computeDiagnostics({ doc, view: { readingMode: "islands+cards", reviewedOnly: false }, options: { safeMode: true } });
     expect(output.diagnosticsMd).toContain("| connectedComponentCount | 2 |");
     expect(output.diagnosticsMd).toContain("| largestComponentRatio | 0.75 |");
-    expect(output.diagnosticsMd).toContain("| connectivityScore | 0.6667 |");
     expect(output.diagnosticsMd).toContain("| averageDegree | 1 |");
     expect(output.diagnosticsMd).toContain("| degreeP95 | 2 |");
     expect(output.diagnosticsMd).toContain("| degreeSkewRatio | 2 |");
     expect(output.diagnosticsMd).toContain("| isolationRate | 0.25 |");
     expect(output.diagnosticsMd).toContain("| bridgeEdgeCount | 2 |");
+  });
+
+  it("diagnostics UI/export surface carries no scoring vocabulary (DOMAIN-SCORING-SURFACE-01 AC-5)", () => {
+    // The diagnostics markdown is the surface users read in the SidePanel and
+    // the "append diagnostics" / bundle-export path. Mirror the export-boundary
+    // anti-scoring check (agent_task_export.test.ts) against it: no
+    // score/rank/confidence/priority tokens anywhere in the emitted text.
+    const output = computeDiagnostics({ doc: fixtureDoc, view: { readingMode: "islands+cards", reviewedOnly: false } });
+    expect(output.diagnosticsMd).not.toMatch(/score|rank|confidence|priority|readiness|優先度の数値|点数|順位/i);
+    // The report surface itself must not carry a 0-100 health score field.
+    expect(output.diagnosticsData.outlineReport).not.toHaveProperty("health");
   });
 
   it("diagnostics metrics remain safe and omit unavailable optional rows", () => {
@@ -94,7 +104,6 @@ describe("worker compute goldens", () => {
     expect(output.diagnosticsMd).toContain("| evidenceLinkCount | 0 |");
     expect(output.diagnosticsMd).toContain("| connectedComponentCount | 2 |");
     expect(output.diagnosticsMd).toContain("| largestComponentRatio | 0.5 |");
-    expect(output.diagnosticsMd).toContain("| connectivityScore | 0 |");
     expect(output.diagnosticsMd).toContain("| averageDegree | 0 |");
     expect(output.diagnosticsMd).toContain("| degreeP95 | 0 |");
     expect(output.diagnosticsMd).toContain("| degreeSkewRatio | 0 |");

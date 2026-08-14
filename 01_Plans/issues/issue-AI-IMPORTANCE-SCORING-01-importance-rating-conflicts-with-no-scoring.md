@@ -120,3 +120,14 @@ D-b を選ぶ場合のみ、`01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input
 - `test_ai_anti_scoring_contract.py`でroute、型、実装、デモから採点surfaceが復活しないことと、`domain.md`の明文不変条件を固定した。
 - 将来の代替はADR-0069の`graph_summary`による、順位・等級を含まない構造的観測に限定する。
 - 検証: backend全体 `909 passed, 33 skipped, 8 deselected`、対象回帰30件、ruff、docs-check、mock demo完走（9タスク・6フェーズ、終了後port解放）を確認した。
+
+## 記録の正確化（2026-08-13、DOMAIN-SCORING-SURFACE-01 AC-6）
+
+本issueの防御は**バックエンドのAI経路にしか及んでいなかった**。利用者が見る画面側（クライアント決定論計算）には、同一不変条件（`00_Prompt/domain.md`「AIは内容を採点せず」）に抵触する採点面が残存しており、`DOMAIN-SCORING-SURFACE-01`（P1）で検出・修正した。
+
+| 経路 | 採点 | 状態 |
+|---|---|---|
+| AI（サーバ） | カード重要度 high/medium/low | 本issueで削除・テスト固定 |
+| 画面（クライアント決定論） | 健全性 N%・接続スコア・impact等級 | **DOMAIN-SCORING-SURFACE-01（案A）で件数・種別へ転換** |
+
+これは本issueの判断（D-a採択）の取り消しではなく、**同一不変条件の防御が経路ごとに個別実装されており、横断的に効く機構が無かった**事実の記録である（`ADR-0041`「single guard」の再検討材料）。防御がサーバ経路だけで完結していたと読める既存記録を正確化する。

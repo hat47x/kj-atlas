@@ -65,12 +65,6 @@ function diagnosticSeverityLabel(severity: DiagnosticSeverity): string {
   return t("side_panel.outline.severity.info");
 }
 
-function recommendationImpactLabel(level: Recommendation["impactLevel"]): string {
-  if (level === "high") return t("side_panel.outline.impact.high");
-  if (level === "medium") return t("side_panel.outline.impact.medium");
-  return t("side_panel.outline.impact.low");
-}
-
 type SidePanelProps = {
   isReadOnly?: boolean;
   isAdvancedUiEnabled?: boolean;
@@ -466,7 +460,6 @@ export function SidePanel({
   const [relationSummaryFeedback, setRelationSummaryFeedback] = useState<string | null>(null);
   const [domainFilter, setDomainFilter] = useState<DomainStateFilter>({});
   const [copyExplanationFeedback, setCopyExplanationFeedback] = useState<"idle" | "copied" | "failed">("idle");
-  const [showOnlyHighImpactRecommendations, setShowOnlyHighImpactRecommendations] = useState(false);
   const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState(false);
   const [pendingEvidenceType, setPendingEvidenceType] = useState<EvidenceLink["type"]>("supports");
   const [evidenceTargetQuery, setEvidenceTargetQuery] = useState("");
@@ -674,13 +667,7 @@ export function SidePanel({
   const selectedCardReviewState = selectedCard?.textReviewed === true ? t("side_panel.reviewed") : t("side_panel.unreviewed");
   const selectedIslandReviewState = selectedIsland?.summaryReviewed === true ? t("side_panel.reviewed") : t("side_panel.unreviewed");
 
-  const visibleRecommendations = useMemo(() => {
-    if (!showOnlyHighImpactRecommendations) {
-      return outlineRecommendations;
-    }
-
-    return outlineRecommendations.filter((recommendation) => recommendation.impactLevel === "high");
-  }, [outlineRecommendations, showOnlyHighImpactRecommendations]);
+  const visibleRecommendations = outlineRecommendations;
 
   const outgoingEvidenceLinks = useMemo(() => {
     if (!document || !selectedCard) return [];
@@ -1159,7 +1146,6 @@ export function SidePanel({
         <div>{t("side_panel.metrics.isolation_rate", { value: structuralMetrics.isolationRate.toFixed(4) })}</div>
         <div>{t("side_panel.metrics.connected_components", { value: structuralMetrics.connectedComponentCount })}</div>
         <div>{t("side_panel.metrics.largest_component_ratio", { value: structuralMetrics.largestComponentRatio.toFixed(4) })}</div>
-        <div>{t("side_panel.metrics.connectivity_score", { value: structuralMetrics.connectivityScore.toFixed(4) })}</div>
         <div>{t("side_panel.metrics.average_degree", { value: structuralMetrics.averageDegree.toFixed(4) })}</div>
         <div>{t("side_panel.metrics.degree_p95", { value: structuralMetrics.degreeP95 })}</div>
         <div>{t("side_panel.metrics.degree_skew_ratio", { value: structuralMetrics.degreeSkewRatio.toFixed(4) })}</div>
@@ -1814,7 +1800,6 @@ export function SidePanel({
               <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>{t("side_panel.outline.quality_report")}</div>
               <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>
                 {t("side_panel.outline.findings_summary", { errors: outlineDiagnosticsCounts.error, warnings: outlineDiagnosticsCounts.warn, infos: outlineDiagnosticsCounts.info })}
-                {outlineQualityReport.health !== undefined ? t("side_panel.outline.health", { health: outlineQualityReport.health }) : ""}
               </div>
               <details style={{ marginTop: 6 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>{t("side_panel.outline.show_findings")}</summary>
@@ -1901,16 +1886,6 @@ export function SidePanel({
               {metricsSection}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>{t("side_panel.outline.suggested_next_steps")}</summary>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
-                  <input
-                    type="checkbox"
-                    checked={showOnlyHighImpactRecommendations}
-                    onChange={(event) => {
-                      setShowOnlyHighImpactRecommendations(event.target.checked);
-                    }}
-                  />
-                  {t("side_panel.outline.high_impact_only")}
-                </label>
                 {visibleRecommendations.length === 0 ? (
                   <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>{t("side_panel.outline.no_recommendations")}</div>
                 ) : (
@@ -1921,9 +1896,6 @@ export function SidePanel({
                         <li key={recommendation.id} style={{ fontSize: 11, color: "#0f172a" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600 }}>
                             <span>{recommendation.title}</span>
-                            <span style={{ fontSize: 10, border: "1px solid #cbd5e1", borderRadius: 999, padding: "0 6px", color: "#334155" }}>
-                              {recommendationImpactLabel(recommendation.impactLevel)}
-                            </span>
                           </div>
                           <div>{recommendation.description}</div>
                           <details style={{ marginTop: 4 }}>
@@ -2161,7 +2133,6 @@ export function SidePanel({
               <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>{t("side_panel.outline.quality_report")}</div>
               <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>
                 {t("side_panel.outline.findings_summary", { errors: outlineDiagnosticsCounts.error, warnings: outlineDiagnosticsCounts.warn, infos: outlineDiagnosticsCounts.info })}
-                {outlineQualityReport.health !== undefined ? t("side_panel.outline.health", { health: outlineQualityReport.health }) : ""}
               </div>
               <details style={{ marginTop: 6 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>{t("side_panel.outline.show_findings")}</summary>
@@ -2248,16 +2219,6 @@ export function SidePanel({
               {metricsSection}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>{t("side_panel.outline.suggested_next_steps")}</summary>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
-                  <input
-                    type="checkbox"
-                    checked={showOnlyHighImpactRecommendations}
-                    onChange={(event) => {
-                      setShowOnlyHighImpactRecommendations(event.target.checked);
-                    }}
-                  />
-                  {t("side_panel.outline.high_impact_only")}
-                </label>
                 {visibleRecommendations.length === 0 ? (
                   <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>{t("side_panel.outline.no_recommendations")}</div>
                 ) : (
@@ -2268,9 +2229,6 @@ export function SidePanel({
                         <li key={recommendation.id} style={{ fontSize: 11, color: "#0f172a" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600 }}>
                             <span>{recommendation.title}</span>
-                            <span style={{ fontSize: 10, border: "1px solid #cbd5e1", borderRadius: 999, padding: "0 6px", color: "#334155" }}>
-                              {recommendationImpactLabel(recommendation.impactLevel)}
-                            </span>
                           </div>
                           <div>{recommendation.description}</div>
                           <details style={{ marginTop: 4 }}>

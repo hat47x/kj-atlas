@@ -1,7 +1,7 @@
 # Issue: DOMAIN-SCORING-SURFACE-01 利用者の図解に「健全性 N%」が表示されており、孤立カードが欠陥として扱われている
 
 - Type: Product Invariant
-- Status: Open
+- Status: In Progress
 - Source Issue: `AI-IMPORTANCE-SCORING-01`, `DX-CANON-INTENT-01`
 - Priority: P1
 - Owner: Maintainer
@@ -94,12 +94,25 @@ suggestedAction: "Group lone cards into islands when they should be part of the 
 
 ## 受入条件
 
-- [ ] AC-1: 上記案から方針を決定する。
-- [ ] AC-2: `outline_quality.ts` の提示が採択案に従っている。案Aの場合、0〜100の数値が画面に現れない。
-- [ ] AC-3: Q007 が孤立カードを欠陥として提示していない。孤立カードがゼロの場合の注意喚起が方法論（`kj_technique.md:195`）に従って存在する。
-- [ ] AC-4: `recommendations.ts` / `structural_metrics.ts` の数値提示が棚卸しされ、採択案に従っている。
-- [ ] AC-5: UI層への反スコアリング検査がテストで固定されている（書き出し境界の既存検査と同形式）。
-- [ ] AC-6: `AI-IMPORTANCE-SCORING-01` へ、同一不変条件の防御がクライアント側に及んでいなかった事実を追記する（判断の取り消しではなく記録の正確化として）。
+- [x] AC-1: 上記案から方針を決定する。— **案A（点数を廃し、件数と種別で提示）を採択**。方向性レビュー優先2と方法論（`kj_technique.md:185`「報告は件数で」）が同一の指針を指定しており、検査ロジックを失わずに不変条件と整合できるため。仮承認に基づき採択。
+- [x] AC-2: `outline_quality.ts` の提示が採択案に従っている。案Aの場合、0〜100の数値が画面に現れない。— `health` フィールドを `OutlineQualityReport` から削除し、`SidePanel` の描画と i18n キーを撤去。
+- [x] AC-3: Q007 が孤立カードを欠陥として提示していない。孤立カードがゼロの場合の注意喚起が方法論（`kj_technique.md:195`）に従って存在する。— Q007 を `info` の中立事実へ変更（`suggestedAction` 撤去・`kj_technique.md:109`「孤立した1枚が最も重要なことがある」を明記）。ゼロ枚時は新コード **Q009**（`warn`・forced-grouping の失敗徴候）を発行。
+- [x] AC-4: `recommendations.ts` / `structural_metrics.ts` の数値提示が棚卸しされ、採択案に従っている。— 棚卸し結果: `connectivityScore` は表示（SidePanel metrics・`diagnostics.md`）から撤去（内部計算は維持・`structural_metrics.test.ts` は継続）。`recommendations.impactLevel` / `priority` は内部ソート用に維持し、表示（バッジ・エクスポートタグ・高影響フィルタ）を撤去。Q005 は `info` の中立観察へ変更（島の独立性を価値とする方法論 §4 と整合）。
+- [x] AC-5: UI層への反スコアリング検査がテストで固定されている（書き出し境界の既存検査と同形式）。— `worker_golden.test.ts` に `diagnosticsMd`（SidePanel表示・診断追記・bundle export の表面）が `/score|rank|confidence|priority|readiness|優先度の数値|点数|順位/i` に一致しないことを固定。`outlineReport` に `health` が存在しないことも固定。
+- [ ] AC-6: `AI-IMPORTANCE-SCORING-01` へ、同一不変条件の防御がクライアント側に及んでいなかった事実を追記する（判断の取り消しではなく記録の正確化として）。— **本issueの対応記録に追記する形で実施（下記）**。AI-IMPORTANCE-SCORING-01 への追記は後述。
+
+## 対応記録（2026-08-13）
+
+案Aを採択し、出荷中の採点面を件数・種別へ転換した。
+
+- `outline_quality.ts`: `health`（0〜100点数）を削除。Q007 を中立事実化。Q009（ゼロ孤立カードの注意喚起）を追加。Q005 を中立観察（`info`）化。
+- `SidePanel.tsx`: health / `connectivity_score` / 推奨の impact バッジ / 高インパクトフィルタを撤去。
+- `diagnostics_compute.ts` / `bundle_export.ts`: `connectivityScore` 行・推奨の impact タグを撤去。
+- `recommendations.ts`: rec-q007 を「孤立カードの意図を確認する」へ再構成（方法論に整合・解消誘導を外す）。
+- i18n: 未使用キー（`health`・`connectivity_score`・`impact.*`・`high_impact_only`）を ja/en から削除。
+- テスト: `worker_golden.test.ts` に UI 反スコアリング検査を追加。ゴールデンフィクスチャ `diagnostics.md` を更新。`outline_quality.test.ts` / `translate.test.ts` を更新。フロントエンド全 1439 tests pass、typecheck・build 成功。
+
+検証: `cd 03_Implement/frontend && npm run test && npm run typecheck && npm run build`、`python 01_Plans/docs_check.py`（pass）。
 
 ## 検証
 

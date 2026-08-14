@@ -156,14 +156,14 @@ export function generateRecommendations(
 
   if (hasFinding(report, "Q007")) {
     recommendations.push({
-      id: "rec-q007-handle-lone-cards",
+      id: "rec-q007-confirm-lone-cards-intent",
       priority: 4,
       category: "structure",
-      title: "孤立カードの扱いを明確にする",
-      description: "島に属していないカードが存在し、読解導線が分断されています。",
+      title: "孤立カードの意図を確認する",
+      description: "島に属していないカードがあります。孤立した1枚が最も重要なことがあります（kj_technique.md）。属すべき島があるかを確認してください。",
       targetEntities: pickTargets(report, "Q007", loneCards),
       rationaleCodes: ["Q007"],
-      suggestedActions: ["島へ編入する", "不要なら削除する"],
+      suggestedActions: ["意図的な孤立なら、そのまま保持する", "属すべき島があるなら編入する"],
       impactLevel: "medium",
     });
   }

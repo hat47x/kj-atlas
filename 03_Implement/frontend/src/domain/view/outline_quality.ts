@@ -30,7 +30,6 @@ export type OutlineQualityReport = {
     pathLength: number;
   };
   findings: Finding[];
-  health?: number;
 };
 
 export type AnalyzeOutlineQualityOptions = {
@@ -157,12 +156,15 @@ export function analyzeOutlineQuality(
 
   if (islandCount > 0 && disconnectedIslands / islandCount > 0.2) {
     findings.push({
-      severity: "warn",
+      severity: "info",
       code: "Q005",
-      title: "Many islands are disconnected",
+      title: "Many islands are not connected to other islands",
       detail: `${disconnectedIslands}/${islandCount} islands have no island-to-island connections (threshold: >20%).`,
       entityRefs: pickIslandRefs(islands, (island) => (degreeByIslandId.get(island.id) ?? 0) === 0),
-      suggestedAction: "Connect isolated islands or add relation summaries to clarify independence.",
+      // DOMAIN-SCORING-SURFACE-01 (案A): island independence is a value in
+      // the method (kj_technique.md §4), so disconnectedness is a neutral
+      // observation, not a defect to resolve. No resolution-oriented action.
+      suggestedAction: "If the independence is intentional, make it explicit with a relation summary or edge label.",
     });
   }
 
@@ -176,15 +178,29 @@ export function analyzeOutlineQuality(
     });
   }
 
-  if (readingState.readingMode === "islands+cards" && loneCards.length > 0) {
-    findings.push({
-      severity: "info",
-      code: "Q007",
-      title: "Lone cards are present",
-      detail: `${loneCards.length} card(s) are not assigned to any island.`,
-      entityRefs: loneCards.slice(0, 10).map((card) => ({ kind: "card" as const, id: card.id })),
-      suggestedAction: "Group lone cards into islands when they should be part of the explainable structure.",
-    });
+  if (readingState.readingMode === "islands+cards" && islandCount > 0 && doc.cards.length > 0) {
+    if (loneCards.length > 0) {
+      // DOMAIN-SCORING-SURFACE-01 (案A): a lone card is a neutral fact, not a
+      // defect — kj_technique.md:109 "孤立した1枚が最も重要なことがある". So
+      // this is reported as a neutral observation without a resolution action.
+      findings.push({
+        severity: "info",
+        code: "Q007",
+        title: "Lone cards are present",
+        detail: `${loneCards.length} card(s) are not assigned to any island. A lone card can carry the most important meaning — keep it ungrouped unless it belongs.`,
+        entityRefs: loneCards.slice(0, 10).map((card) => ({ kind: "card" as const, id: card.id })),
+      });
+    } else {
+      // kj_technique.md:195 — "どの束にも入らないカードがゼロ枚（無理に入れた
+      // 疑い）". Zero ungrouped cards is itself a failure signal: cards may have
+      // been forced into islands. Surface it instead of treating it as ideal.
+      findings.push({
+        severity: "warn",
+        code: "Q009",
+        title: "No cards outside islands (possible forced grouping)",
+        detail: `Every card is assigned to an island. kj_technique.md lists zero ungrouped cards as a failure signal — cards may have been forced into islands they do not belong to.`,
+      });
+    }
   }
 
   if (reviewedIslands.length > 0 && reviewedSummaryEmptyCount / reviewedIslands.length > 0.1) {
@@ -197,16 +213,6 @@ export function analyzeOutlineQuality(
       suggestedAction: "Either fill the reviewed summaries or set them back to unreviewed.",
     });
   }
-
-  const severityPenalty = findings.reduce((sum, finding) => {
-    if (finding.severity === "error") {
-      return sum + 25;
-    }
-    if (finding.severity === "warn") {
-      return sum + 12;
-    }
-    return sum + 4;
-  }, 0);
 
   return {
     generatedAt: options.nowIso ?? new Date().toISOString(),
@@ -222,6 +228,5 @@ export function analyzeOutlineQuality(
       pathLength,
     },
     findings,
-    health: Math.max(0, 100 - severityPenalty),
   };
 }

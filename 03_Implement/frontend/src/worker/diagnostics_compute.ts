@@ -39,7 +39,7 @@ function buildDiagnosticsMd(data: DiagnosticsData, safeMode: boolean): string {
   lines.push("", "## Recommendations (I11)", "", `- count: ${data.recommendations.length}`);
   for (const recommendation of data.recommendations) {
     const targets = [...(recommendation.targetEntities ?? [])].sort((a, b) => `${a.kind}:${a.id}`.localeCompare(`${b.kind}:${b.id}`));
-    lines.push(`- [${recommendation.impactLevel}] ${recommendation.id}: ${recommendation.title}`);
+    lines.push(`- ${recommendation.id}: ${recommendation.title}`);
     if (targets.length > 0) {
       lines.push(`  - targets: ${targets.map((target) => `${target.kind}:${target.id}`).join(", ")}`);
     }
@@ -75,7 +75,6 @@ function buildDiagnosticsMd(data: DiagnosticsData, safeMode: boolean): string {
   lines.push(`| isolationRate | ${data.structuralMetrics.isolationRate} |`);
   lines.push(`| connectedComponentCount | ${data.structuralMetrics.connectedComponentCount} |`);
   lines.push(`| largestComponentRatio | ${data.structuralMetrics.largestComponentRatio} |`);
-  lines.push(`| connectivityScore | ${data.structuralMetrics.connectivityScore} |`);
   lines.push(`| averageDegree | ${data.structuralMetrics.averageDegree} |`);
   lines.push(`| degreeP95 | ${data.structuralMetrics.degreeP95} |`);
   lines.push(`| degreeSkewRatio | ${data.structuralMetrics.degreeSkewRatio} |`);

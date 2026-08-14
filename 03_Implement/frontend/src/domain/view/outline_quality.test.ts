@@ -84,4 +84,37 @@ describe("outline quality", () => {
     expect(finding?.detail).toContain("No relation summary store found in document");
   });
 
+  it("reports lone cards as a neutral fact, not a defect (DOMAIN-SCORING-SURFACE-01 案A)", () => {
+    const report = analyzeOutlineQuality(
+      buildDoc(),
+      { readingMode: "islands+cards", reviewedOnly: false },
+      { nowIso: "2026-01-02T00:00:00.000Z", collapsedIslandIds: new Set() },
+    );
+    const q007 = report.findings.find((finding) => finding.code === "Q007");
+    expect(q007?.severity).toBe("info");
+    expect(q007?.suggestedAction).toBeUndefined();
+    // The report must not carry a 0-100 "health" score anywhere.
+    expect(report).not.toHaveProperty("health");
+  });
+
+  it("warns when zero lone cards exist (kj_technique.md:195 forced-grouping signal)", () => {
+    const doc = buildDoc();
+    // Place every card into an island so no card is ungrouped.
+    doc.cards = [
+      { id: "c1", text: "Card 1", x: 10, y: 10 },
+      { id: "c2", text: "Card 2", x: 20, y: 20 },
+      { id: "c3", text: "Card 3", x: 30, y: 30 },
+    ];
+    doc.islands = [
+      { id: "i1", cardIds: ["c1"], title: "I1", summaryText: "s", summaryReviewed: true },
+      { id: "i2", cardIds: ["c2", "c3"], title: "I2", summaryText: "s", summaryReviewed: true },
+    ];
+
+    const report = analyzeOutlineQuality(doc, { readingMode: "islands+cards", reviewedOnly: false }, { collapsedIslandIds: new Set() });
+    const q009 = report.findings.find((finding) => finding.code === "Q009");
+    expect(q009?.severity).toBe("warn");
+    expect(q009?.title).toContain("possible forced grouping");
+    expect(report.findings.some((finding) => finding.code === "Q007")).toBe(false);
+  });
+
 });
