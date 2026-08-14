@@ -1771,5 +1771,6 @@
   "inquiry_journey.prototype.retention_note": "Journey bundles persist until explicitly deleted (no automatic expiry or purge — DATA-INQUIRY-RETENTION-01 option A)",
   "recent_documents_dialog.all_documents": "All canvases",
   "recent_documents_dialog.archived": "archived",
-  "recent_documents_dialog.loading": "Loading…"
+  "recent_documents_dialog.loading": "Loading…",
+  "recent_documents_dialog.my_documents": "My documents only"
 }

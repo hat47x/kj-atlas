@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from threading import Lock
 from typing import Literal, cast
 
-from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, Response, status
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -433,15 +433,17 @@ def _resolve_request_tenant(*, request: Request, db: Session) -> TenantContext:
 @router.get("", response_model=list[DocumentListItem])
 def list_documents(
     request: Request,
+    created_by: str | None = Query(default=None, max_length=512, alias="createdBy"),
     db: Session = Depends(get_db),
 ) -> list[DocumentListItem]:
     """第2反復: list the tenant's document metadata (canvas list foundation).
 
     Row metadata only — never card content (the per-document read path is the
     SafeMode-scoped GET /docs/{doc_id}). Payload-independent and tenant-scoped.
+    `createdBy` filters to one creator ("my documents").
     """
     tenant = _resolve_request_tenant(request=request, db=db)
-    return DatabaseDocumentContentStore(db).list_documents(tenant=tenant)
+    return DatabaseDocumentContentStore(db).list_documents(tenant=tenant, created_by=created_by)
 
 
 def _transition_lifecycle(request: Request, db: Session, doc_id: str, state: Literal["active", "archived"]) -> Response:

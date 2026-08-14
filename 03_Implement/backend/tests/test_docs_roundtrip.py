@@ -1466,3 +1466,32 @@ def test_docs_archive_lifecycle(sqlite_client: TestClient) -> None:
 
     # Missing doc.
     assert sqlite_client.post("/docs/missing-archive/archive").status_code == 404
+
+
+def test_docs_list_filters_by_creator(sqlite_client: TestClient, tmp_path) -> None:
+    """第2反復: GET /docs?createdBy= filters to one creator ("my documents");
+    migrated docs with NULL created_by are never matched."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from kj_atlas_api.models import DocumentRow
+
+    engine = create_engine(f"sqlite:///{tmp_path / 'docs_roundtrip.sqlite3'}")
+    session_local = sessionmaker(bind=engine)
+    with session_local() as db:
+        db.add_all(
+            [
+                DocumentRow(tenant_id="local-default", id="creator-a", version=1,
+                            updated_at="2026-08-15T00:00:00Z", payload_json="{}", created_by="user-a"),
+                DocumentRow(tenant_id="local-default", id="creator-b", version=1,
+                            updated_at="2026-08-15T00:00:01Z", payload_json="{}", created_by="user-b"),
+                DocumentRow(tenant_id="local-default", id="creator-null", version=1,
+                            updated_at="2026-08-15T00:00:02Z", payload_json="{}", created_by=None),
+            ]
+        )
+        db.commit()
+
+    mine = sqlite_client.get("/docs", params={"createdBy": "user-a"}).json()
+    assert {entry["id"] for entry in mine} == {"creator-a"}
+    all_docs = sqlite_client.get("/docs").json()
+    assert {entry["id"] for entry in all_docs} == {"creator-a", "creator-b", "creator-null"}

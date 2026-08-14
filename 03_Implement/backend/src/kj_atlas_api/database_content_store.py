@@ -219,18 +219,22 @@ class DatabaseDocumentContentStore:
             )
         return VersionedDocumentContent(row=row, content=content)
 
-    def list_documents(self, *, tenant: TenantContext) -> list[DocumentListItem]:
+    def list_documents(
+        self, *, tenant: TenantContext, created_by: str | None = None
+    ) -> list[DocumentListItem]:
         """List the tenant's document metadata (第2反復: キャンバス一覧の土台).
 
         SafeMode-independent — only row metadata is exposed (id, title from the
         payload snapshot, creator, lifecycle state, updated_at). Never the card
         content, which the caller must fetch per-document through the normal
-        SafeMode-scoped read path.
+        SafeMode-scoped read path. `created_by` filters to one creator ("my
+        documents"); NULL rows are never matched (migrated docs are "unknown").
         """
         apply_database_tenant_context(db=self._db, tenant=tenant)
-        rows = self._db.execute(
-            select(DocumentRow).where(DocumentRow.tenant_id == tenant.tenant_id)
-        ).scalars().all()
+        query = select(DocumentRow).where(DocumentRow.tenant_id == tenant.tenant_id)
+        if created_by is not None:
+            query = query.where(DocumentRow.created_by == created_by)
+        rows = self._db.execute(query).scalars().all()
         items: list[DocumentListItem] = []
         for row in rows:
             try:

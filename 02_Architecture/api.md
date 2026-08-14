@@ -63,6 +63,7 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 **GET** `/docs`（第2反復・キャンバス一覧の土台）
 
 - tenant-scoped な文書の**行メタデータ一覧**を返す（SafeMode非依存 — 本文カードは含まない。本文は `GET /docs/{doc_id}` の SafeMode 経路で取得する）。
+- Query：`createdBy`（任意・作成者フィルタ。「自分の文書」。`created_by=NULL` の移行文書は一致しない）。
 - Response：`DocumentListItem[]`、`updated_at` 降順
   - `{ id, title?, created_by?, lifecycle_state, updated_at }`
   - `created_by` は不変の作成者事実（未特定の移行文書は省略）。`lifecycle_state` は `active` / `archived`（ADR-0073 D2=A）。

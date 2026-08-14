@@ -371,14 +371,17 @@ export type DocumentListItem = {
 };
 
 /** GET /docs — the tenant's document metadata (第2反復 canvas-list foundation).
- * Row metadata only; fetch a specific document for SafeMode-scoped content. */
+ * Row metadata only; fetch a specific document for SafeMode-scoped content.
+ * `createdBy` filters to one creator ("my documents"). */
 export async function listDocuments(
   options: TenantScopedRequestOptions = {},
+  createdBy?: string,
 ): Promise<DocumentListItem[]> {
   const headers = tenantSessionPreconditionHeaders(options);
+  const query = createdBy ? `?createdBy=${encodeURIComponent(createdBy)}` : "";
   const response = headers
-    ? await fetch(`${API_BASE}/docs`, { headers })
-    : await fetch(`${API_BASE}/docs`);
+    ? await fetch(`${API_BASE}/docs${query}`, { headers })
+    : await fetch(`${API_BASE}/docs${query}`);
 
   if (!response.ok) {
     const errorDetail = await parseErrorDetail(response);

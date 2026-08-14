@@ -99,8 +99,8 @@ payload_json
 - **`GET /docs` 一覧API** を新設（`DocumentListItem`・`list_documents`）。tenant-scoped・行メタデータのみ（id/title/lifecycle_state/created_by/updated_at・**本文カード非露出**・updated_at 降順）。キャンバス一覧「自分の文書」フィルタの土台。
 - Swagger UI を `/docs`（documents APIが所有）から `/api-docs` へ移動（衝突解消）。
 - **`POST /docs/{id}/archive` / `unarchive`** を追加（ADR-0073 D2=A の機能化・キャンバス無効化。204・欠損404）。`set_lifecycle_state` は tenant-scoped 単一UPDATE。
-- frontend: `listDocuments()` + `RecentDocumentsDialog` に全キャンバス表示（タイトル・アーカイブ印）。
-- `verify_api.sh` に一覧・`verify_api_write.sh` にアーカイブ検証（13チェック）。docs回帰 36 tests・frontend 1450 tests pass。
+- frontend: `listDocuments()` + `RecentDocumentsDialog` に全キャンバス表示（タイトル・アーカイブ印）と**「自分の文書のみ」トグル**（`createdBy` フィルタ・`storageScope.principalId`）。
+- `verify_api.sh` に一覧・`verify_api_write.sh` にアーカイブ検証（13チェック）。docs回帰 37 tests・frontend 1451 tests pass。
 
 ## 検証計画
 

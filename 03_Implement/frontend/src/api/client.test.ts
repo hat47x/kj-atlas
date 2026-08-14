@@ -1272,6 +1272,12 @@ describe("listDocuments", () => {
     expect(result).toEqual(body);
   });
 
+  it("passes createdBy as a query param for the my-documents filter", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("[]", { status: 200 }));
+    await listDocuments({}, "principal-1");
+    expect(fetchMock).toHaveBeenCalledWith("/api/docs?createdBy=principal-1", { headers: {} });
+  });
+
   it("rejects a non-array list response", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ not: "a list" }), { status: 200 }));
     await expect(listDocuments()).rejects.toThrow("Invalid document list response shape");

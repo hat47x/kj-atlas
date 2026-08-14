@@ -24,6 +24,9 @@ type RecentDocumentsDialogProps = {
    * limited to recently-opened documents. */
   documents?: DocumentListItem[] | null;
   isCanvasListLoading?: boolean;
+  /** "my documents" filter (created_by == current principal). */
+  myDocumentsOnly: boolean;
+  onMyDocumentsOnlyChange: (value: boolean) => void;
 };
 
 const focusableSelector = [
@@ -64,6 +67,8 @@ export function RecentDocumentsDialog({
   activeDocumentId,
   documents,
   isCanvasListLoading,
+  myDocumentsOnly,
+  onMyDocumentsOnlyChange,
 }: RecentDocumentsDialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const canOpen = selectedRecentDocumentId.length > 0 && selectedRecentDocumentId !== activeDocumentId && !isLoading;
@@ -158,6 +163,14 @@ export function RecentDocumentsDialog({
         </button>
       </div>
 
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+        <input
+          type="checkbox"
+          checked={myDocumentsOnly}
+          onChange={(event) => onMyDocumentsOnlyChange(event.target.checked)}
+        />
+        {t("recent_documents_dialog.my_documents")}
+      </label>
       {documents && documents.length > 0 ? (
         <label style={{ display: "grid", gap: 4 }}>
           <span style={fieldLabelStyle}>{t("recent_documents_dialog.all_documents")}</span>

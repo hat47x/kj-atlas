@@ -1180,6 +1180,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   // recently-opened ids.
   const [canvasDocuments, setCanvasDocuments] = useState<DocumentListItem[] | null>(null);
   const [isCanvasListLoading, setIsCanvasListLoading] = useState(false);
+  const [myDocumentsOnly, setMyDocumentsOnly] = useState(false);
   const [agentTaskKind, setAgentTaskKind] = useState<AgentTaskKind>("island_titles");
   const [agentTaskDesiredCount, setAgentTaskDesiredCount] = useState(3);
   const [agentTaskIncludeUnreviewedDrafts, setAgentTaskIncludeUnreviewedDrafts] = useState(false);
@@ -2171,11 +2172,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, [appStorage]);
 
   // 第2反復: fetch the full canvas list when the recent-documents dialog opens.
+  // "my documents" filters by the current principal's created_by.
   useEffect(() => {
     if (!isRecentDocumentsDialogOpen) return;
     let cancelled = false;
     setIsCanvasListLoading(true);
-    void runTenantScopedApiRequest(() => listDocuments({ tenantSessionContext: verifiedTenantSession }))
+    const createdBy = myDocumentsOnly ? (storageScope?.principalId ?? undefined) : undefined;
+    void runTenantScopedApiRequest(() => listDocuments({ tenantSessionContext: verifiedTenantSession }, createdBy))
       .then((documents) => {
         if (cancelled) return;
         setCanvasDocuments(documents);
@@ -2190,7 +2193,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     return () => {
       cancelled = true;
     };
-  }, [isRecentDocumentsDialogOpen, runTenantScopedApiRequest, verifiedTenantSession]);
+  }, [isRecentDocumentsDialogOpen, myDocumentsOnly, runTenantScopedApiRequest, storageScope?.principalId, verifiedTenantSession]);
 
   const applyResolvedLocaleForView = useCallback((args: {
     docId: string;
@@ -12499,6 +12502,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       activeDocumentId={activeDocumentId}
       documents={canvasDocuments}
       isCanvasListLoading={isCanvasListLoading}
+      myDocumentsOnly={myDocumentsOnly}
+      onMyDocumentsOnlyChange={setMyDocumentsOnly}
     />
     {isCommandPaletteOpen ? (
       <CommandPalette
