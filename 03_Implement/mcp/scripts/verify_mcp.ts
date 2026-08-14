@@ -135,6 +135,28 @@ try {
   }
   console.log("  → no scoring vocabulary present ✅");
 
+  // 4. Bundle determinism (runbook scenario): identical inputs -> identical
+  //    bundleHash. The projection is deterministic given the document.
+  const second = await client.callTool({
+    name: "get_context_projection",
+    arguments: { docId, constraint, safeMode: true },
+  });
+  const secondText = second.content?.[0]?.text;
+  if (typeof secondText !== "string") {
+    throw new Error("No text content in second projection result");
+  }
+  const secondInterpreted = interpretProjectionResult(secondText, second.isError === true);
+  if (secondInterpreted.outcome !== "ok") {
+    throw new Error(`Second projection failed: ${secondInterpreted.outcome}`);
+  }
+  const secondProjection = secondInterpreted.projection as { bundleHash: string };
+  if (secondProjection.bundleHash !== projection.bundleHash) {
+    throw new Error(
+      `Bundle not deterministic: ${projection.bundleHash} != ${secondProjection.bundleHash}`,
+    );
+  }
+  console.log(`  → bundle deterministic (hash stable across calls) ✅`);
+
   console.log("\nMCP verification PASSED ✅");
   process.exit(0);
 } catch (err) {
