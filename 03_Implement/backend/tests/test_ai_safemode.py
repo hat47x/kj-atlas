@@ -228,10 +228,11 @@ _CONTENT_ROUTE_CASES = [
         "/ai/check-narrative",
         {"doc": _doc_with_cards_covered([{"id": "c1", "text": "a"}]), "narrativeText": "n"},
     ),
-    # NOTE: /ai/proposals/island-summary is deliberately NOT in this list — it
-    # is CE4 proposal machinery that requires a persisted document (404
-    # otherwise), so its SafeMode gate is exercised by the proposal-route tests
-    # (test_ce2_*).
+    # NOTE: /ai/proposals/island-summary and /ai/proposals/opposing-viewpoint
+    # are deliberately NOT in this list — they are CE4 proposal machinery that
+    # requires a persisted document (404 otherwise), so their SafeMode gates are
+    # exercised by the proposal-route tests (test_ce2_*, test_ai_oppose.py) and
+    # by the business-flow E2E scenarios 9/16/18.
     (
         "/ai/summarize-island-relation",
         {
