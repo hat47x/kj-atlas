@@ -114,6 +114,20 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 これで **AI 操作 8 種（refine / card-groups / island-summary / narrative / detect-contradiction / check-narrative / island-relation / document-title）を全カバー**。
 **32/32 pass**（シナリオ1〜8・8業態）。
 
+### シナリオ9（iteration 50 追加・人事マネージャーのAI提案レビュー）
+
+| 軸 | 内容 |
+|----|------|
+| 業態 | 人事・人材開発 |
+| 想定人物 | 人事マネージャー（360度評価のとりまとめ） |
+| 業務領域 | AI提案（島要約）のレビューと採択/保留決定（value_traceability V3） |
+| 操作内容 | 文書作成 → **propose-island-summary（AI提案・proposal-only）** → 提案の受領 → **record-decision（採択・idempotencyKey）** → 再送の冪等確認 → 未登録提案への決定が 404 → **文書が自動適用されない**ことを確認 |
+| 注意事項 | 提案は **proposal-only（自動適用なし・人間の決定が必須）**。決定は idempotencyKey で再送しても重複記録しない（ただし **理由まで同一ペイロード** を要求・409で検出）。未登録 proposal への決定は 404。レビューアは認証済み identity（`x-forwarded-user`＋JIT）で server が解決 |
+
+シナリオ9は **CE4 proposal 連鎖（proposal-only → 人間決定 → 監査）** を固定。`value_traceability.md` V3（レビュー価値）の中核 =「AI が人間の判断を先取りしない」を E2E で保証する。
+実走行で **`mock:` プレフィックス付き bundle hash の契約不整合**（API は許可・DB は拒否）を発見し `DATA-CONTRACT-02` を起票。
+**39/39 pass**（シナリオ1〜9・9業態）。
+
 ## E2E の固定方法
 
 ### バックエンド全層フロー（初回・curl ベース）
@@ -161,6 +175,6 @@ bash scripts/verify_business_flow_e2e.sh 8000   # 7 チェック（作成/読戻
 - [x] バックエンド全層の標準業務フロー E2E を固定（**シナリオ1+2 で 10/10 pass**・モックLLM）
 - [x] 別業態のシナリオ追加（iteration 42: 新規事業企画ワークショップ・suggest-card-groups を追加）
 - [x] シナリオ3〜6（iteration 44〜47: 品質管理・detect-contradiction / 管理者CLI/API・文書ライフサイクル/監査/キー分離 / 報道編集・check-narrative / 調査研究員・W型探究 CAS）を追加
-- [x] シナリオ7（iteration 48: 学術研究・summarize-island-relation）・シナリオ8（iteration 49: ナレッジベース管理者・suggest-document-title）を追加 — **シナリオ1〜8 で 32/32 pass・AI 操作 8 種を全カバー**
+- [x] シナリオ7（iteration 48: 学術研究・summarize-island-relation）・シナリオ8（iteration 49: ナレッジベース管理者・suggest-document-title）・シナリオ9（iteration 50: 人事マネージャー・CE4 proposal 連鎖）を追加 — **シナリオ1〜9 で 39/39 pass・AI 操作 8 種＋CE4 proposal 連鎖をカバー**
 - [ ] UI 層 E2E（フロントエンド AI 操作・CE4 proposal 連鎖）
 - [ ] さらに別業態のシナリオ追加（イテレーション毎に拡大）

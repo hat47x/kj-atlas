@@ -67,9 +67,14 @@ TMP_DB="$(mktemp /tmp/kj_biz_XXXXXX.sqlite3)"
   "$VENV_PYTHON" -m alembic upgrade head > /tmp/kj_biz_migrate.log 2>&1)
 
 # 3. Start the backend with KJ_ATLAS_LLM_PROVIDER=local pointed at the mock.
+#    KJ_ATLAS_ALLOW_JIT_PROVISIONING=true: scenario 9's CE4 proposal decision
+#    needs an authenticated reviewer identity, provided via x-forwarded-user
+#    (JIT provisioning, same as test_ce2_proposal_api.py). Scenarios 1-8 send
+#    no such header, so they are unaffected.
 KJ_ATLAS_LLM_PROVIDER=local \
 KJ_ATLAS_LOCAL_LLM_BASE_URL="http://127.0.0.1:${STUB_PORT}" \
 KJ_ATLAS_DATABASE_URL="sqlite:///$TMP_DB" \
+KJ_ATLAS_ALLOW_JIT_PROVISIONING=true \
   "$VENV_PYTHON" -m uvicorn kj_atlas_api.main:app --port "$BACKEND_PORT" --host 127.0.0.1 \
   > /tmp/kj_biz_backend.log 2>&1 &
 BACKEND_PID=$!
@@ -427,6 +432,86 @@ kb_unreviewed_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/a
   -H 'Content-Type: application/json' \
   -d '{"islandTitles":["島"],"cardTexts":["確認前の内容"]}')
 check "KB suggest-document-title unreviewed text blocked (422, SEC-AI-SAFEMODE-02)" "422" "$kb_unreviewed_code"
+
+echo ""
+echo "--- シナリオ9: 人事マネージャーのAI提案レビュー（CE4 proposal連鎖） ---"
+# 業態: 人事・人材開発
+# 想定人物: 人事マネージャー（360度評価のとりまとめ）
+# 業務領域: AI提案（島要約）のレビューと採択/保留決定（value_traceability V3）
+# 操作内容: 文書作成 -> propose-island-summary(AI提案・proposal-only)
+#          -> 提案の受領 -> record-decision(採択・idempotencyKey) -> 再送の冪等確認
+#          -> 未登録提案への決定が404 -> 文書が自動適用されないことを確認
+# 注意事項: 提案は proposal-only（自動適用なし）。決定は idempotencyKey で再送しても
+#          重複記録しない。未登録 proposal への決定は 404・bundle 不一致は 409。
+REV_H="x-forwarded-user: e2e-reviewer"
+REV_H2="x-auth-provider: oidc"
+P9_ID="biz-flow-review"
+# NOTE: use a plain 64-hex bundle hash. The API accepts a `mock:`-prefixed hash
+# too, but AIProposalRow's CheckConstraint requires exactly 64 chars, so the
+# mock: variant 409s on registration (contract inconsistency, see dogfood README).
+P9_HASH="$(printf 'a%.0s' $(seq 1 64))"
+P9_DOC='{"version":1,"id":"'$P9_ID'","title":"360度評価のとりまとめ","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"r1","text":"課題解決力が高い","x":0,"y":0,"textReviewed":true},{"id":"r2","text":"報告が丁寧","x":10,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"i1","cardIds":["r1","r2"],"summaryText":"旧要約"}],"readingOrder":["i1"]}'
+
+p9_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$P9_ID" \
+  -H 'Content-Type: application/json' -d "$P9_DOC")
+check "P9 PUT document (作成)" "200" "$p9_put"
+
+# AI提案（proposal-only・自動適用しない）。
+p9_propose=$(curl -s -X POST "$BASE_URL/ai/proposals/island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$P9_DOC,\"islandId\":\"i1\",\"sourceBundleHash\":\"$P9_HASH\"}")
+case "$p9_propose" in
+  *'"status":"proposed"'*)
+    echo "  PASS: P9 propose-island-summary returns proposal (proposal-only)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: P9 propose-island-summary (got ${p9_propose:0:200})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+p9_pid=$(echo "$p9_propose" | grep -oE '"proposalId":"[^"]+"' | head -1 | cut -d'"' -f4)
+
+# 人間の決定（採択・idempotencyKey 付き・認証済みレビューア）。
+p9_adopt=$(curl -s -X POST "$BASE_URL/ai/proposals/audit" -H 'Content-Type: application/json' \
+  -H "$REV_H" -H "$REV_H2" \
+  -d "{\"docId\":\"$P9_ID\",\"proposalId\":\"$p9_pid\",\"sourceBundleHash\":\"$P9_HASH\",\"idempotencyKey\":\"p9-k1\",\"decision\":\"adopt\",\"reason\":\"妥当\"}")
+case "$p9_adopt" in
+  *'"recorded":true'*'"status":"accepted"'*)
+    echo "  PASS: P9 record-decision adopt recorded (reviewer identity resolved)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: P9 record-decision adopt (got ${p9_adopt:0:200})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+p9_event=$(echo "$p9_adopt" | grep -oE '"eventId":"[^"]+"' | head -1 | cut -d'"' -f4)
+
+# 再送の冪等確認（同じ idempotencyKey + 同一ペイロード -> 同じ eventId・重複記録なし）。
+# ※冪等性は key だけでなく提案/バンドル/決定/理由の完全一致を要求する（409で検出）。
+p9_repeat=$(curl -s -X POST "$BASE_URL/ai/proposals/audit" -H 'Content-Type: application/json' \
+  -H "$REV_H" -H "$REV_H2" \
+  -d "{\"docId\":\"$P9_ID\",\"proposalId\":\"$p9_pid\",\"sourceBundleHash\":\"$P9_HASH\",\"idempotencyKey\":\"p9-k1\",\"decision\":\"adopt\",\"reason\":\"妥当\"}")
+case "$p9_repeat" in
+  *"\"eventId\":\"$p9_event\""*)
+    echo "  PASS: P9 再送は冪等（同じ eventId・重複記録なし）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: P9 idempotent resubmit (got ${p9_repeat:0:150})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 未登録 proposal への決定は 404。
+p9_unreg=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/proposals/audit" \
+  -H 'Content-Type: application/json' -H "$REV_H" -H "$REV_H2" \
+  -d "{\"docId\":\"$P9_ID\",\"proposalId\":\"proposal-none\",\"sourceBundleHash\":\"$P9_HASH\",\"idempotencyKey\":\"p9-k2\",\"decision\":\"hold\"}")
+check "P9 未登録 proposal への決定 (404)" "404" "$p9_unreg"
+
+# proposal-only: 文書の summaryText は提案で自動適用されない。
+p9_doc_summary=$(curl -s "$BASE_URL/docs/$P9_ID" | grep -oE '"summaryText":"[^"]*"' | head -1)
+check "P9 文書は自動適用されない（旧要約のまま）" '"summaryText":"旧要約"' "$p9_doc_summary"
 
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
