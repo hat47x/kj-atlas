@@ -1,7 +1,7 @@
 # Issue: AI-MODEL-GOVERNANCE-01 機能・操作毎のモデル選択（画面指定）・テナント/部署別制限・モデル/サービスの動的追加
 
 - Type: Feature / AI capability / Security
-- Status: In Progress
+- Status: Done
 - Source Issue: ドッグフーディング指令（2026-08-15）。「機能・操作毎の生成AIモデルの使い分けを画面上で指定可能にし、適宜切り替えて呼び出せるようにする。テナントや部署ごとに利用可能なモデルには制限を設ける。新規の生成AIモデル・サービスも管理者UI/CLI等から動的に追加できるようにする」
 - Priority: P1
 - Owner: Maintainer
