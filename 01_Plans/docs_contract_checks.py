@@ -547,6 +547,85 @@ def _collect_norm_definitions(root: Path) -> dict[str, Path]:
     return definitions
 
 
+#: Controlled Status vocabulary for 00_Prompt (DOC-NORM-01).
+#: Normative  = states rules that bind
+#: Informative = orientation and rationale; binding rules live elsewhere
+#: On-demand  = read only when the situation calls for it
+#: Superseded = retained for history; do not follow
+PROMPT_STATUS_VALUES = ("Normative", "Informative", "On-demand", "Superseded")
+PROMPT_STATUS_RE = re.compile(r"^- Status:[ \t]*(?P<value>.+?)[ \t]*$", re.M)
+PROMPT_STATUS_RULE_ID = "DC-NORM-004"
+
+
+def check_prompt_status_vocabulary(root: Path) -> list[DocsCheckFinding]:
+    """Every 00_Prompt document declares exactly one controlled Status.
+
+    A parenthetical such as `Normative（ADR-0057 Accepted、…で追跡）` is rejected:
+    a status is a controlled value, and a tracking pointer is a different fact.
+    Put the pointer in `- Tracked-by:`.
+    """
+    repository_root = root.resolve()
+    prompt_dir = repository_root / "00_Prompt"
+    if not prompt_dir.is_dir():
+        return []
+
+    findings: list[DocsCheckFinding] = []
+    for source in sorted(prompt_dir.glob("*.md")):
+        relative = source.relative_to(repository_root)
+        try:
+            text = source.read_text(encoding="utf-8")
+        except OSError:
+            continue
+
+        matches = list(PROMPT_STATUS_RE.finditer(text))
+        if not matches:
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=PROMPT_STATUS_RULE_ID,
+                    path=relative.as_posix(),
+                    line=1,
+                    target="Status",
+                    message="00_Prompt document has no `- Status:` field",
+                    fix_hint=(
+                        "Add `- Status: " + " | ".join(PROMPT_STATUS_VALUES) + "` below the title."
+                    ),
+                )
+            )
+            continue
+
+        if len(matches) > 1:
+            second = text[: matches[1].start()].count("\n") + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=PROMPT_STATUS_RULE_ID,
+                    path=relative.as_posix(),
+                    line=second,
+                    target="Status",
+                    message="00_Prompt document declares Status more than once",
+                    fix_hint="Keep exactly one Status field.",
+                )
+            )
+
+        value = matches[0].group("value").strip()
+        if value not in PROMPT_STATUS_VALUES:
+            line_number = text[: matches[0].start()].count("\n") + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=PROMPT_STATUS_RULE_ID,
+                    path=relative.as_posix(),
+                    line=line_number,
+                    target=value,
+                    message=(
+                        f"Status {value!r} is not one of {'/'.join(PROMPT_STATUS_VALUES)}"
+                    ),
+                    fix_hint=(
+                        "Use a controlled value. Move tracking information (ADR numbers, "
+                        "implementing issues) to a separate `- Tracked-by:` line."
+                    ),
+                )
+            )
+    return findings
+
 def check_norm_identifier_uniqueness(root: Path) -> list[DocsCheckFinding]:
     """An identifier must name exactly one norm, forever."""
     repository_root = root.resolve()

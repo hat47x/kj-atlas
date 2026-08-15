@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from docs_contract_checks import (  # noqa: E402
     check_norm_identifier_resolution,
+    check_prompt_status_vocabulary,
     check_norm_identifier_uniqueness,
     check_norm_line_references,
 )
@@ -90,6 +91,35 @@ try:
     report("valid reference not flagged", not hit)
 finally:
     probe.unlink()
+
+# --- DC-NORM-004: controlled Status vocabulary ----------------------------
+status = check_prompt_status_vocabulary(ROOT)
+report(
+    "baseline status vocabulary clean",
+    not status,
+    "; ".join(f"{f.path} {f.target}" for f in status[:5]),
+)
+
+bad = PROMPT / "_status_probe.md"
+bad.write_text("# probe\n\n- Status: Normative（追跡情報つき）\n", encoding="utf-8")
+try:
+    found = check_prompt_status_vocabulary(ROOT)
+    report(
+        "mutation: uncontrolled Status value detected",
+        any(f.path.endswith("_status_probe.md") for f in found),
+    )
+finally:
+    bad.unlink()
+
+bad.write_text("# probe\n\n（Status なし）\n", encoding="utf-8")
+try:
+    found = check_prompt_status_vocabulary(ROOT)
+    report(
+        "mutation: missing Status detected",
+        any(f.path.endswith("_status_probe.md") for f in found),
+    )
+finally:
+    bad.unlink()
 
 print()
 print("FAILURES:", failures)

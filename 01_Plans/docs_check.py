@@ -11,6 +11,7 @@ from pathlib import Path
 from docs_contract_checks import (
     check_adr_id_uniqueness,
     check_norm_identifier_resolution,
+    check_prompt_status_vocabulary,
     check_norm_identifier_uniqueness,
     check_norm_line_references,
     check_adr_traceability_paths,
@@ -103,6 +104,7 @@ def run_docs_check(
     # DOC-NORM-01: the constitution layer's identifiers only mean something if
     # references to them are checked. Without DC-NORM-002 the scheme is decorative.
     errors.extend(finding.render() for finding in check_norm_identifier_uniqueness(repository_root))
+    errors.extend(finding.render() for finding in check_prompt_status_vocabulary(repository_root))
     errors.extend(
         finding.render()
         for finding in check_norm_identifier_resolution(repository_root, markdown_paths)

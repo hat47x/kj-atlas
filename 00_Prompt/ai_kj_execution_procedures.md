@@ -1,6 +1,7 @@
 # KJ操作のAI実行手順
 
-- Status: Normative（AGENTS.md §1.2 操作別モデルレベルの実行参照）
+- Status: Normative
+- Tracked-by: `AGENTS.md` §1.2（操作別モデルレベルの実行参照）
 - Updated: 2026-08-08
 - Scope: 生成AIが各KJ操作を自律実行する際の入力・出力・判断基準・停止条件
 - 位置づけ: `00_Prompt/kj_technique.md`（技法の正本）の実行補完。技法の原理を変更しない。操作別モデルレベルは `AGENTS.md` §1.2 を正本とする。

@@ -1,5 +1,8 @@
 # agent_collaboration — 三エージェント協働ガイド（Cowork / Claude Code / Codex）
 
+- Status: Normative
+- Tracked-by: `ADR-0045`
+
 本書は `ADR-0045` に基づく **エージェント間の責務分担と協働プロトコルの運用正本** です。
 
 - 決定の背景・理由: `01_Plans/adr/ADR-0045-agent-division-of-labor-cowork-code-codex.md`

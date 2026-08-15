@@ -1,5 +1,7 @@
 # 生成AIの認知外在化機能としての kj-atlas 拡張要件
 
+- Status: Normative
+
 **English summary**  
 This document defines kj-atlas as a cognitive externalization framework for human–AI collaborative reasoning.  
 Its goal is not to let AI decide for humans, but to provide an external structured workspace that enables deeper, safer, and more context-sensitive information processing than current generative AI can sustain on its own.
