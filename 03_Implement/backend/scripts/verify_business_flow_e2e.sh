@@ -1453,5 +1453,43 @@ mf_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MF_ID")
 check "MF 読戻し (200)" "200" "$mf_read"
 
 echo ""
+echo "--- シナリオ30: 人事評価・360度フィードバックの統合 ---"
+# 業態: 人事・人材開発
+# 想定人物: 人事マネージャー（360度評価の統合）
+# 業務領域: 360度フィードバックのKJ統合と矛盾フィードバックの検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: フィードバックは逐語（refineで変えない）。矛盾する評価は表面化する。
+HR_ID="biz-flow-hr360"
+HR_DOC='{"version":1,"id":"'$HR_ID'","title":"360度評価の統合","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"h1","text":"リーダーシップが高い","x":0,"y":0,"textReviewed":true},{"id":"h2","text":"決断が遅い","x":10,"y":0,"textReviewed":true},{"id":"h3","text":"チームへの配慮が十分","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"hr-i","cardIds":["h1","h2","h3"]}],"readingOrder":["hr-i"]}'
+
+hr_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$HR_ID" \
+  -H 'Content-Type: application/json' -d "$HR_DOC")
+check "HR PUT document (作成)" "200" "$hr_put"
+
+# ① AI束ね
+hr_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"h1","text":"リーダーシップが高い","textReviewed":true},{"id":"h2","text":"決断が遅い","textReviewed":true},{"id":"h3","text":"チームへの配慮が十分","textReviewed":true}]}')
+case "$hr_groups" in *'"groups":'*) echo "  PASS: HR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: HR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+hr_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$HR_DOC,\"islandId\":\"hr-i\"}")
+case "$hr_summary" in *'"groundingIds":["h1","h2","h3"]'*) echo "  PASS: HR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: HR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 評価者間の矛盾検出（リーダーシップ高い vs 決断が遅い）
+hr_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"h1","text":"リーダーシップが高い","textReviewed":true},"cardB":{"id":"h2","text":"決断が遅い","textReviewed":true}}')
+case "$hr_contra" in *'"hasContradiction"'*) echo "  PASS: HR ③評価者間の矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: HR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+hr_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$HR_DOC}")
+case "$hr_narr" in *'"basedOnReadingOrder":["hr-i"]'*) echo "  PASS: HR ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: HR ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+hr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HR_ID")
+check "HR 読戻し (200)" "200" "$hr_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
