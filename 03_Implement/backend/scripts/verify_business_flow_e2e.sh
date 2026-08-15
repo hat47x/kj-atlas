@@ -1645,5 +1645,43 @@ en_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EN_ID")
 check "EN 読戻し (200)" "200" "$en_read"
 
 echo ""
+echo "--- シナリオ35: 農業・生産者レポートの整理 ---"
+# 業態: 農業・アグリテック
+# 想定人物: 営農アドバイザー（生産者レポートを分析）
+# 業務領域: 圃場レポートのKJ整理と栽培課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 生産者の声は逐語（refineで変えない）。矛盾する報告は表面化する。
+AG_ID="biz-flow-agriculture"
+AG_DOC='{"version":1,"id":"'$AG_ID'","title":"圃場レポート分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"a1","text":"収量が昨年より増えた","x":0,"y":0,"textReviewed":true},{"id":"a2","text":"病害が広がっている","x":10,"y":0,"textReviewed":true},{"id":"a3","text":"灌漑設備が十分機能する","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ag-i","cardIds":["a1","a2","a3"]}],"readingOrder":["ag-i"]}'
+
+ag_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$AG_ID" \
+  -H 'Content-Type: application/json' -d "$AG_DOC")
+check "AG PUT document (作成)" "200" "$ag_put"
+
+# ① AI束ね
+ag_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"a1","text":"収量が昨年より増えた","textReviewed":true},{"id":"a2","text":"病害が広がっている","textReviewed":true},{"id":"a3","text":"灌漑設備が十分機能する","textReviewed":true}]}')
+case "$ag_groups" in *'"groups":'*) echo "  PASS: AG ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: AG ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ag_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$AG_DOC,\"islandId\":\"ag-i\"}")
+case "$ag_summary" in *'"groundingIds":["a1","a2","a3"]'*) echo "  PASS: AG ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: AG ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（収量増 vs 病害拡大）
+ag_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"a1","text":"収量が昨年より増えた","textReviewed":true},"cardB":{"id":"a2","text":"病害が広がっている","textReviewed":true}}')
+case "$ag_contra" in *'"hasContradiction"'*) echo "  PASS: AG ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: AG ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ag_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$AG_DOC}")
+case "$ag_narr" in *'"basedOnReadingOrder":["ag-i"]'*) echo "  PASS: AG ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: AG ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ag_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AG_ID")
+check "AG 読戻し (200)" "200" "$ag_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
