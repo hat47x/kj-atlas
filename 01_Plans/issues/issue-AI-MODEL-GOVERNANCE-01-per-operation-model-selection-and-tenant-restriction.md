@@ -107,7 +107,7 @@
 - [x] final_judgement はユーザー自由選択から除外され、管理者ポリシーへ固定される（MMR-04）。→ **実装済み（iteration 49）**: `get_available_models` が `_is_user_selectable_model`（intermediate/generate 層のみ・final_judgement専用モデル除外）でフィルタ。選択子に final_judgement 専用モデルは表示されず、final_judgement タスクは管理者ポリシー（allowlist＋タスク階層解決）へ固定。`test_available_models_excludes_final_judgement_only`。
 - [x] モデル/サービス CRUD と allowlist 変更・制限違反が admin 監査に記録される。→ **R4 実装済み（iteration 46）**: モデルCRUD/allowlist変更は `record_admin_plane_audit` middleware（`admin_audit_events`）が記録（`test_model_crud_and_allowlist_changes_are_audited`）。`model_not_allowed` 違反は構造化ログ（tenantId/modelId/allowedModels）で記録。
 - [x] `member_groups` のデータモデル設計が本issueに記録される（Phase 2 実装の土台）。→ **記録済み（iteration 51）**: `member_groups` / `member_group_members` / `member_group_model_allowlist` の3テーブル（tenant-scoped・RLS）と、実効モデル解決（所属グループallowlist交差→テナント→タスク階層→既定）への組み込み・admin設定経路を本issue「member_groups データモデル設計」節に確定。Phase 2 で実装。
-- [ ] `python 01_Plans/docs_check.py`・backend/frontend 回帰が通る。
+- [x] `python 01_Plans/docs_check.py`・backend/frontend 回帰が通る。→ **検証済み（iteration 51）**: docs-check pass・backend governance 46 tests・frontend 1456 tests。
 
 ## 検証計画
 
