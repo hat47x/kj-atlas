@@ -1298,5 +1298,43 @@ lg_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$LG_ID")
 check "LG 読戻し (200)" "200" "$lg_read"
 
 echo ""
+echo "--- シナリオ26: 政策立案・パブリックコメントの整理 ---"
+# 業態: 公的機関・政策立案
+# 想定人物: 政策担当（パブリックコメントを整理）
+# 業務領域: パブリックコメントのKJ整理と対立意見の矛盾検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 意見は逐語（refineで変えない）。対立意見は隠さず表面化する。未レビューは422。
+PC_ID="biz-flow-policy"
+PC_DOC='{"version":1,"id":"'$PC_ID'","title":"パブリックコメント整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"p1","text":"料金値上げに反対する","x":0,"y":0,"textReviewed":true},{"id":"p2","text":"サービス改善には財源が必要","x":10,"y":0,"textReviewed":true},{"id":"p3","text":"手続きの簡素化を求める","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"pc-i","cardIds":["p1","p2","p3"]}],"readingOrder":["pc-i"]}'
+
+pc_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$PC_ID" \
+  -H 'Content-Type: application/json' -d "$PC_DOC")
+check "PC PUT document (作成)" "200" "$pc_put"
+
+# ① AI束ね
+pc_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"p1","text":"料金値上げに反対する","textReviewed":true},{"id":"p2","text":"サービス改善には財源が必要","textReviewed":true},{"id":"p3","text":"手続きの簡素化を求める","textReviewed":true}]}')
+case "$pc_groups" in *'"groups":'*) echo "  PASS: PC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: PC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+pc_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$PC_DOC,\"islandId\":\"pc-i\"}")
+case "$pc_summary" in *'"groundingIds":["p1","p2","p3"]'*) echo "  PASS: PC ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: PC ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 対立意見の矛盾検出（値上げ反対 vs 財源必要）
+pc_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"p1","text":"料金値上げに反対する","textReviewed":true},"cardB":{"id":"p2","text":"サービス改善には財源が必要","textReviewed":true}}')
+case "$pc_contra" in *'"hasContradiction"'*) echo "  PASS: PC ③対立意見の矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: PC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ草稿
+pc_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$PC_DOC}")
+case "$pc_narr" in *'"basedOnReadingOrder":["pc-i"]'*) echo "  PASS: PC ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: PC ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+pc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PC_ID")
+check "PC 読戻し (200)" "200" "$pc_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
