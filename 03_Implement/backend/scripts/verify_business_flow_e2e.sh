@@ -2066,5 +2066,61 @@ uv_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$UV_ID")
 check "UV 読戻し (200)" "200" "$uv_read"
 
 echo ""
+echo "--- シナリオ46: 医療・診断・診断確定前の反対視点レビュー（保留接続） ---"
+# 業態: 医療・診断（診断確定前レビュー）
+# 想定人物: 診断医（確定前に反対視点・根拠不足をレビューし、保留する）
+# 業務領域: 診断カルテのKJ整理と、確定前の反対視点・根拠不足の検出・保留接続
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 反対視点提案(propose-opposing-viewpoint) -> 保留接続(holdState=held)
+#          -> ナラティブ(generate-narrative) -> 読戻し（非自動適用の確認）
+# 注意事項: 反対視点はproposal-only（status=proposed・reviewState=unreviewed・自動適用なし）。
+#          AI提案はカード文面を書き換えない。人間が「保留して再確認」で holdState=held に
+#          接続し、違和感・根拠不足を作業状態として残す（AI-OPPOSE-01 R2・非破壊接続）。
+DX_ID="biz-flow-diagnosis"
+DX_DOC='{"version":1,"id":"'$DX_ID'","title":"診断確定前レビュー","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"dx1","text":"検査値は基準範囲内","x":0,"y":0,"textReviewed":true},{"id":"dx2","text":"症状は軽症で経過観察が妥当","x":10,"y":0,"textReviewed":true},{"id":"dx3","text":"問診で夜間の呼吸困難を訴えている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"dx-i","cardIds":["dx1","dx2","dx3"]}],"readingOrder":["dx-i"]}'
+# 人間の「保留して再確認」を文書へ反映した版（dx2 を holdState=held へ・文面は不変）
+DX_DOC_HELD='{"version":1,"id":"'$DX_ID'","title":"診断確定前レビュー","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"dx1","text":"検査値は基準範囲内","x":0,"y":0,"textReviewed":true},{"id":"dx2","text":"症状は軽症で経過観察が妥当","x":10,"y":0,"textReviewed":true,"holdState":"held"},{"id":"dx3","text":"問診で夜間の呼吸困難を訴えている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"dx-i","cardIds":["dx1","dx2","dx3"]}],"readingOrder":["dx-i"]}'
+
+dx_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$DX_ID" \
+  -H 'Content-Type: application/json' -d "$DX_DOC")
+check "DX PUT document (作成)" "200" "$dx_put"
+
+# ① AI束ね
+dx_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"dx1","text":"検査値は基準範囲内","textReviewed":true},{"id":"dx2","text":"症状は軽症で経過観察が妥当","textReviewed":true},{"id":"dx3","text":"問診で夜間の呼吸困難を訴えている","textReviewed":true}]}')
+case "$dx_groups" in *'"groups":'*) echo "  PASS: DX ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: DX ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+dx_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DX_DOC,\"islandId\":\"dx-i\"}")
+case "$dx_summary" in *'"groundingIds":["dx1","dx2","dx3"]'*) echo "  PASS: DX ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: DX ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 反対視点提案（AI-OPPOSE-01: 軽症判断への反対視点・根拠不足・proposal-only境界）
+dx_oppose=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DX_DOC,\"targetCardId\":\"dx2\"}")
+case "$dx_oppose" in
+  *'"status":"proposed"'*'"reviewState":"unreviewed"'*) echo "  PASS: DX ③反対視点提案(proposal-only)"; PASS=$((PASS+1));;
+  *) echo "  FAIL: DX ③反対視点提案(proposal-only)"; FAIL=$((FAIL+1));; esac
+case "$dx_oppose" in
+  *'"opposingText"'*'"evidenceGap":true'*'"rationale"'*) echo "  PASS: DX ③b根拠不足(evidenceGap)"; PASS=$((PASS+1));;
+  *) echo "  FAIL: DX ③b根拠不足(evidenceGap)"; FAIL=$((FAIL+1));; esac
+
+# ④ 保留接続（人間の「保留して再確認」を文書へ反映・AI-OPPOSE-01 R2 非破壊接続）
+dx_hold=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$DX_ID" \
+  -H 'Content-Type: application/json' -d "$DX_DOC_HELD")
+check "DX ④保留接続 (holdState=held を反映)" "200" "$dx_hold"
+
+# ⑤ ナラティブ
+dx_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$DX_DOC_HELD}")
+case "$dx_narr" in *'"basedOnReadingOrder":["dx-i"]'*) echo "  PASS: DX ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: DX ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し：保留状態が永続し、カード文面が自動適用で書き換わらない（非自動適用）
+dx_read=$(curl -s "$BASE_URL/docs/$DX_ID")
+case "$dx_read" in *'"holdState":"held"'*) echo "  PASS: DX ⑥保留状態が永続"; PASS=$((PASS+1));; *) echo "  FAIL: DX ⑥保留状態が永続"; FAIL=$((FAIL+1));; esac
+case "$dx_read" in
+  *'"text":"症状は軽症で経過観察が妥当"'*) echo "  PASS: DX ⑥b非自動適用（文面不変）"; PASS=$((PASS+1));;
+  *) echo "  FAIL: DX ⑥b非自動適用（文面不変）"; FAIL=$((FAIL+1));; esac
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
