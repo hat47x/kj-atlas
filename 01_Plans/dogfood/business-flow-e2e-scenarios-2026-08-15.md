@@ -598,6 +598,18 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 
 シナリオ48は **文化・芸術（美術館）**という新業態で、来場者声の整理と展示コンセプトの統合を固定。**refine-card-text**（逐語性・ADR-0064）・**summarize-island-relation**（島間関係の示唆）・**suggest-merges**（統合提案・人間が採否）という、カード単位/島間の**下書き提案系操作**を業務フローE2Eとして拡充（scenario 1-2 の refine・scenario 7 の relation・scenario 11 の merges とは別業態で凍結）。**268/268 pass**（シナリオ1〜48・48業態）。
 
+### シナリオ49（iteration 113 追加・IT運用・AIサービス監視）
+
+| 軸 | 内容 |
+|----|------|
+| 業態 | IT運用・AIサービス監視 |
+| 想定人物 | AI運用担当（サービスのAI状態・コストを監視） |
+| 業務領域 | AIプロバイダの状態確認とLLM呼び出し量（コスト指標）の確認 |
+| 操作内容 | 文書作成 → **プロバイダ状態取得(provider-status・前)** → **AI操作実行(generate-narrative)** → **プロバイダ状態取得(後)** → 読戻し |
+| 注意事項 | provider-status は **read-only エコー**（ADR-0050 D1・稼働中スイッチなし）。**LLM呼び出し回数（OPS-LLM-COST-01）は実呼び出し後にインクリメント**される |
+
+シナリオ49は **IT運用・AIサービス監視**という新業態で、AIプロバイダ状態とLLM呼び出し量の確認を固定。**GET /ai/provider-status**（PROV-VIS-01・ADR-0050 D1）を業務フローE2Eとして初固定 — read-only エコー（`providerKind=local`）に加え、**LLM呼び出し回数（OPS-LLM-COST-01）が実呼び出し後にインクリメント**されることを実走行で確認（generate-narrative 1回で 127→128）。**273/273 pass**（シナリオ1〜49・49業態）。
+
 ## E2E の固定方法
 
 ### バックエンド全層フロー（初回・curl ベース）
@@ -646,13 +658,13 @@ bash scripts/verify_business_flow_e2e.sh 8000   # 7 チェック（作成/読戻
 - [x] 別業態のシナリオ追加（iteration 42: 新規事業企画ワークショップ・suggest-card-groups を追加）
 - [x] シナリオ3〜6（iteration 44〜47: 品質管理・detect-contradiction / 管理者CLI/API・文書ライフサイクル/監査/キー分離 / 報道編集・check-narrative / 調査研究員・W型探究 CAS）を追加
 - [x] シナリオ7〜9（iteration 48〜50: 学術研究・summarize-island-relation / ナレッジベース管理者・suggest-document-title / 人事マネージャー・CE4 proposal 連鎖）を追加
-- [x] シナリオ10〜43（iteration 52〜104: フィールドワーカー・W型×AI / 会議ファシリテーター・layout/merge / ライブラリアン・コレクション / 共同編集者・並行制御 / コンテンツQA・上限検証 / 編集者・統合決定ガバナンス / 外部エージェント連携・Org-D / マーケティングアナリスト・全行程分析 / リスクレビューア・反対視点 / 多職種ケース会議 / 品質監査官・批判的検証 / 生成AI連携・CE4コンテキスト解決 / 共同研究チーム・W型×並行制御 / 教育研修・カリキュラム改善 / 災害対応・現場報告整理 / 法務レビュー・契約条項整理 / 政策立案・パブリックコメント整理 / 金融・融資審査リスク評価 / 観光・宿泊フィードバック整理 / 製造・生産現場改善 / 人事評価・360度フィードバック / NPO・市民活動 / 不動産・物件情報整理 / 通信・ITのサポート問い合わせ分析 / エネルギー・設備点検レポート整理 / 農業・生産者レポート整理 / 物流・配送現場報告整理 / 食品・飲食のメニュー改善 / 編集者のA/B不整合検出 / スポーツ・コーチング / 研究開発・製薬の治験データ整理 / 保険・事故・請求データ分析 / 環境・環境影響評価整理 / 建設・施工現場進捗整理）・シナリオ44（iteration 105: 通信・キャリアのネットワーク障害分析）・シナリオ45（iteration 107: 教育・大学の研究プロジェクト振り返り）・シナリオ46（iteration 108: 医療・診断の反対視点レビュー・保留接続）・シナリオ47（iteration 109: AI運用・ITガバナンスのモデル選択・許容制限）・シナリオ48（iteration 112: 文化・芸術・美術館の展示企画・refine/relation/merges）を追加し、iteration 110 で **AI-MODEL-GOVERNANCE-02**（未登録モデルID→403 model_not_registered）、iteration 112 で scenario 47 に**許容リスト復元⑥**を追加 — **シナリオ1〜48 で 268/268 pass・AI タスク全11種＋A/B不整合＋CE4＋W型×AI＋コレクション＋並行制御＋内容上限＋統合ガバナンス＋外部Agent連携＋全行程＋反対視点＋批判的検証＋コンテキスト解決＋W型×並行制御＋反対視点提案・保留接続＋モデル選択・許容制限・未登録拒否・リスト復元＋文面整え・島間関係・統合提案をカバー**
+- [x] シナリオ10〜43（iteration 52〜104: フィールドワーカー・W型×AI / 会議ファシリテーター・layout/merge / ライブラリアン・コレクション / 共同編集者・並行制御 / コンテンツQA・上限検証 / 編集者・統合決定ガバナンス / 外部エージェント連携・Org-D / マーケティングアナリスト・全行程分析 / リスクレビューア・反対視点 / 多職種ケース会議 / 品質監査官・批判的検証 / 生成AI連携・CE4コンテキスト解決 / 共同研究チーム・W型×並行制御 / 教育研修・カリキュラム改善 / 災害対応・現場報告整理 / 法務レビュー・契約条項整理 / 政策立案・パブリックコメント整理 / 金融・融資審査リスク評価 / 観光・宿泊フィードバック整理 / 製造・生産現場改善 / 人事評価・360度フィードバック / NPO・市民活動 / 不動産・物件情報整理 / 通信・ITのサポート問い合わせ分析 / エネルギー・設備点検レポート整理 / 農業・生産者レポート整理 / 物流・配送現場報告整理 / 食品・飲食のメニュー改善 / 編集者のA/B不整合検出 / スポーツ・コーチング / 研究開発・製薬の治験データ整理 / 保険・事故・請求データ分析 / 環境・環境影響評価整理 / 建設・施工現場進捗整理）・シナリオ44（iteration 105: 通信・キャリアのネットワーク障害分析）・シナリオ45（iteration 107: 教育・大学の研究プロジェクト振り返り）・シナリオ46（iteration 108: 医療・診断の反対視点レビュー・保留接続）・シナリオ47（iteration 109: AI運用・ITガバナンスのモデル選択・許容制限）・シナリオ48（iteration 112: 文化・芸術・美術館の展示企画・refine/relation/merges）・シナリオ49（iteration 113: IT運用・AIサービス監視・provider-status/呼び出し量）を追加し、iteration 110 で **AI-MODEL-GOVERNANCE-02**（未登録モデルID→403 model_not_registered）、iteration 112 で scenario 47 に**許容リスト復元⑥**を追加 — **シナリオ1〜49 で 273/273 pass・AI タスク全11種＋A/B不整合＋CE4＋W型×AI＋コレクション＋並行制御＋内容上限＋統合ガバナンス＋外部Agent連携＋全行程＋反対視点＋批判的検証＋コンテキスト解決＋W型×並行制御＋反対視点提案・保留接続＋モデル選択・許容制限・未登録拒否・リスト復元＋文面整え・島間関係・統合提案＋プロバイダ状態・呼び出し量をカバー**
 - [x] UI 層 E2E（フロントエンド AI 操作・CE4 proposal 連鎖）— `e2e/ce4_island_summary_proposal.spec.ts`（iteration 111）: 島要約提案（CE4 propose → proposal-only 表示 → adopt）をUIで凍結。提案は **status=proposed のまま自動適用されず**、人間の **adopt** が決定記録（`/ai/proposals/audit`）後に下書き要約として適用される。`opposing_viewpoint_proposal.spec.ts`（反対視点・保留接続）と併せて AI proposal の UI 表面を固定
 - [ ] さらに別業態のシナリオ追加（イテレーション毎に拡大）
 
-## カバレッジ集約（2026-08-16・iteration 112 時点）
+## カバレッジ集約（2026-08-16・iteration 113 時点）
 
-**シナリオ48・チェック268**（E2E 実走行で確認）。業態カバレッジの集約:
+**シナリオ49・チェック273**（E2E 実走行で確認）。業態カバレッジの集約:
 
 | 領域 | 業態シナリオ |
 |------|-------------|
@@ -660,7 +672,7 @@ bash scripts/verify_business_flow_e2e.sh 8000   # 7 チェック（作成/読戻
 | 品質・監査 | 品質管理（クレーム真因）/ 品質監査官（批判的検証）/ コンテンツQA（上限） |
 | 編集・知 | 報道編集（A/B照合）/ 学術研究（島間関係）/ ナレッジベース（タイトル）/ 編集者（統合決定ガバナンス）/ ナラティブA/B不整合 |
 | W型探究 | 調査研究員（W型×CAS）/ フィールドワーカー（W型×AI）/ 共同研究チーム（W型×並行制御）/ 生成AI連携（CE4コンテキスト解決） |
-| 管理・運営 | 管理者（CLI/API・ライフサイクル・監査・キー分離）/ ライブラリアン（コレクション）/ 人事（CE4 proposal）/ AI運用・ITガバナンス（モデル選択・許容制限）|
+| 管理・運営 | 管理者（CLI/API・ライフサイクル・監査・キー分離）/ ライブラリアン（コレクション）/ 人事（CE4 proposal）/ AI運用・ITガバナンス（モデル選択・許容制限）/ IT運用・AIサービス監視（プロバイダ状態・呼び出し量）|
 | 組織・人 | 人事評価（360度）/ 教育研修（カリキュラム改善）/ スポーツ（コーチング）/ 教育・大学（研究プロジェクト振り返り）|
 | 公共・社会 | 政策立案（パブコメ）/ 災害対応（現場報告）/ NPO（ボランティア報告）|
 | 金融・法務 | 金融（融資審査リスク）/ 保険（事故・請求）/ 法務（契約条項）|
@@ -669,4 +681,4 @@ bash scripts/verify_business_flow_e2e.sh 8000   # 7 チェック（作成/読戻
 | サービス | 観光（宿泊フィードバック）/ 飲食（メニュー改善）/ 不動産（物件情報）/ 文化・芸術（美術館・展示企画）|
 | 医療・研究 | 多職種ケース会議 / 製薬（治験データ）/ 医療・診断（診断確定前レビュー）|
 
-**AI操作カバー**: refine / island-summary / narrative / card-groups / detect-contradiction / check-narrative / summarize-island-relation / suggest-document-title / propose-island-summary / **propose-opposing-viewpoint** / layout / merge / A/B不整合（方向+件数）／ **モデル選択・許容制限（available-models・model_not_allowed・model_not_registered）**／ CE4・W型×AI・並行制御・内容上限・統合ガバナンス・外部Agent連携・監査・キー分離。
+**AI操作カバー**: refine / island-summary / narrative / card-groups / detect-contradiction / check-narrative / summarize-island-relation / suggest-document-title / propose-island-summary / **propose-opposing-viewpoint** / layout / merge / A/B不整合（方向+件数）／ **モデル選択・許容制限（available-models・model_not_allowed・model_not_registered）**／ **プロバイダ状態・呼び出し量（provider-status・callCounts）**／ CE4・W型×AI・並行制御・内容上限・統合ガバナンス・外部Agent連携・監査・キー分離。

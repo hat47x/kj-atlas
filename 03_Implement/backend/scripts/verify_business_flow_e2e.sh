@@ -2234,5 +2234,48 @@ mu_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MU_ID")
 check "MU 読戻し (200)" "200" "$mu_read"
 
 echo ""
+echo "--- シナリオ49: IT運用・AIサービス監視（プロバイダ状態とLLM呼び出し量の確認） ---"
+# 業態: IT運用・AIサービス監視
+# 想定人物: AI運用担当（サービスのAI状態・コストを監視）
+# 業務領域: AIプロバイダの状態確認とLLM呼び出し量（コスト指標）の確認
+# 操作内容: 文書作成 -> プロバイダ状態取得(GET /ai/provider-status・前)
+#          -> AI操作実行(generate-narrative) -> プロバイダ状態取得(後)
+#          -> 読戻し
+# 注意事項: provider-status は read-only エコー（ADR-0050 D1・稼働中スイッチなし）。
+#          LLM呼び出し回数（OPS-LLM-COST-01）は実呼び出し後にインクリメントされる。
+SV_ID="biz-flow-supervise"
+SV_DOC='{"version":1,"id":"'$SV_ID'","title":"AIサービス監視","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"sv1","text":"AI要約の利用頻度が高い","x":0,"y":0,"textReviewed":true},{"id":"sv2","text":"モデル呼び出し量の監視が必要","x":10,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sv-i","cardIds":["sv1","sv2"]}],"readingOrder":["sv-i"]}'
+
+sv_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SV_ID" \
+  -H 'Content-Type: application/json' -d "$SV_DOC")
+check "SV PUT document (作成)" "200" "$sv_put"
+
+# ① プロバイダ状態（前）: read-only エコー（providerKind=local）+ callCounts 存在
+sv_before=$(curl -s "$BASE_URL/ai/provider-status")
+case "$sv_before" in
+  *'"providerKind":"local"'*'"callCounts"'*) echo "  PASS: SV ①プロバイダ状態(前)"; PASS=$((PASS+1));;
+  *) echo "  FAIL: SV ①プロバイダ状態(前)"; FAIL=$((FAIL+1));; esac
+
+# ② AI操作実行（LLM実呼び出し・コスト指標の分母）
+sv_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SV_DOC}")
+case "$sv_narr" in *'"basedOnReadingOrder":["sv-i"]'*) echo "  PASS: SV ②AI操作実行"; PASS=$((PASS+1));; *) echo "  FAIL: SV ②AI操作実行"; FAIL=$((FAIL+1));; esac
+
+# ③ プロバイダ状態（後）: LLM呼び出し回数が増加（OPS-LLM-COST-01）
+sv_after=$(curl -s "$BASE_URL/ai/provider-status")
+sv_before_total=$(printf '%s' "$sv_before" | sed -n 's/.*"total":\([0-9]*\).*/\1/p')
+sv_after_total=$(printf '%s' "$sv_after" | sed -n 's/.*"total":\([0-9]*\).*/\1/p')
+if [ -n "$sv_before_total" ] && [ -n "$sv_after_total" ] && [ "$sv_after_total" -gt "$sv_before_total" ]; then
+  echo "  PASS: SV ③呼び出し回数が増加 ($sv_before_total -> $sv_after_total)"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: SV ③呼び出し回数が増加 (before=$sv_before_total after=$sv_after_total)"
+  FAIL=$((FAIL+1))
+fi
+
+# ④ 読戻し
+sv_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SV_ID")
+check "SV 読戻し (200)" "200" "$sv_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
