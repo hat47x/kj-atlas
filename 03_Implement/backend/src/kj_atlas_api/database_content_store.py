@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from typing import Literal
+from urllib.parse import unquote
 from uuid import uuid4
 
 from sqlalchemy import delete, select, update
@@ -220,8 +221,13 @@ class DatabaseDocumentContentStore:
         return VersionedDocumentContent(row=row, content=content)
 
     def list_documents(
-        self, *, tenant: TenantContext, created_by: str | None = None
-    ) -> list[DocumentListItem]:
+        self,
+        *,
+        tenant: TenantContext,
+        created_by: str | None = None,
+        cursor: str | None = None,
+        limit: int = 500,
+    ) -> tuple[list[DocumentListItem], bool]:
         """List the tenant's document metadata (第2反復: キャンバス一覧の土台).
 
         SafeMode-independent — only row metadata is exposed (id, title from the
@@ -229,12 +235,38 @@ class DatabaseDocumentContentStore:
         content, which the caller must fetch per-document through the normal
         SafeMode-scoped read path. `created_by` filters to one creator ("my
         documents"); NULL rows are never matched (migrated docs are "unknown").
+
+        SEC-DOC-BOUND-05: keyset pagination. Ordered by (updated_at DESC, id
+        ASC); `cursor` is the opaque `"{updated_at}:{id}"` of the previous
+        page's last row. Returns (items, has_more) — has_more is True when a
+        `limit + 1`th row existed, so the caller can emit a next-cursor.
         """
         apply_database_tenant_context(db=self._db, tenant=tenant)
         query = select(DocumentRow).where(DocumentRow.tenant_id == tenant.tenant_id)
         if created_by is not None:
             query = query.where(DocumentRow.created_by == created_by)
+        if cursor is not None:
+            # "{urlencoded(updated_at)}:{id}" — the previous page's last row.
+            # The ISO updated_at contains colons (time + tz offset), so the
+            # updated_at half is URL-encoded; the raw ":" separator is the last
+            # one (ids have no colons). Comparing the updated_at string works
+            # for the ISO formats the app's clients persist; an inconsistent
+            # client format still bounds the response.
+            cursor_updated_enc, _, cursor_id = cursor.rpartition(":")
+            cursor_updated = unquote(cursor_updated_enc)
+            query = query.where(
+                (DocumentRow.updated_at < cursor_updated)
+                | (
+                    (DocumentRow.updated_at == cursor_updated)
+                    & (DocumentRow.id > cursor_id)
+                )
+            )
+        query = query.order_by(
+            DocumentRow.updated_at.desc(), DocumentRow.id.asc()
+        ).limit(limit + 1)
         rows = self._db.execute(query).scalars().all()
+        has_more = len(rows) > limit
+        rows = rows[:limit]
         items: list[DocumentListItem] = []
         for row in rows:
             try:
@@ -252,8 +284,7 @@ class DatabaseDocumentContentStore:
                     updated_at=row.updated_at,
                 )
             )
-        items.sort(key=lambda item: item.updated_at, reverse=True)
-        return items
+        return items, has_more
 
     def set_lifecycle_state(
         self, *, tenant: TenantContext, doc_id: str, state: Literal["active", "archived"]

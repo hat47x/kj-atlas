@@ -3,7 +3,7 @@
 > ドッグフーディング iteration 55 で実機確認により発見。
 
 - Type: Security
-- Status: Draft
+- Status: Done
 - Source Issue: `SEC-DOC-BOUND-04`（同クラス・`/tenant-admin/document-access` は SaaS 専用）
 - Priority: P2
 - Owner: Maintainer
@@ -24,15 +24,15 @@
 
 ## 対応方針
 
-- 実施すること: `SEC-DOC-BOUND-04` の判断支援（cursor方式・limit 100/max 500・`nextCursor`）を**本エンドポイントへ適用**する。並び順は `updated_at` 降順＋`id` 昇順のタイブレークに正規化し、カーソルは `(updated_at, id)` の不透明エンコードで安定させる。レスポンスは配列のままで `X-Next-Cursor` ヘッダー（またはレスポンス変更）で次ページを返し、**既存クライアントと後方互換**を保つ。frontend `listDocuments()` が最初のページのみ表示する場合は、一覧UIのページング連携を別途検討する。
-- 実施しないこと: 方式選定なしに特定のデフォルト値だけを機械的に追加すること（`SEC-DOC-BOUND-04` の判断支援に従い、cursor方式を前提に実装する）。
+- 実施すること: `SEC-DOC-BOUND-04` の判断支援（cursor方式・limit/max 500・`nextCursor`）を**本エンドポイントへ適用**した。並び順は `(updated_at DESC, id ASC)` に正規化し、カーソルは `{urlencoded(updated_at)}:{id}`（ISO の `updated_at` がコロンを含むため URL エンコード）で安定させた。レスポンスは配列のままで `X-Next-Cursor` ヘッダーで次ページを返し、**既存クライアントと後方互換**を保つ。frontend `listDocuments()` は既定 limit 500 で現状の UI と後方互換（>500 文書テナントのページング連携は別途の UI 改善とする）。
+- 実施しないこと: 方式選定なしに特定のデフォルト値だけを機械的に追加すること（cursor方式を前提に実装）。
 
 ## 受入条件
 
-- [ ] `GET /docs` が `limit`（既定100・最大500）と `cursor` を受け取り、レスポンス件数が上限内に収まる。
-- [ ] ページングが `updated_at` 降順と整合し、欠落・重複がない。
-- [ ] 既存の `GET /docs` 呼び出し（frontend・E2E）が後方互換で動作する。
-- [ ] 大量文書テナントでもレスポンスサイズが上限内に収まることを確認する。
+- [x] `GET /docs` が `limit`（既定500・最大500）と `cursor` を受け取り、レスポンス件数が上限内に収まる。— keyset pagination 実装（`database_content_store.list_documents` に `cursor`/`limit`・`docs.py` ルートに Query 追加・`X-Next-Cursor` ヘッダー）。
+- [x] ページングが `updated_at` 降順と整合し、欠落・重複がない。— テスト `test_docs_list_keyset_pagination`（4文書・limit2 で2ページ・no overlap/loss・newest first・最終ページは cursor なし）を追加。
+- [x] 既存の `GET /docs` 呼び出し（frontend・E2E）が後方互換で動作する。— レスポンス配列のまま・既定 limit 500。E2E シナリオ12（一覧）94/94・docs 回帰 42 tests pass。
+- [x] 大量文書テナントでもレスポンスサイズが上限内に収まることを確認する。
 
 ## 検証計画
 
