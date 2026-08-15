@@ -185,5 +185,54 @@ case "$ws_summary" in
 esac
 
 echo ""
+echo "--- シナリオ3: カスタマーサポート品質管理（クレーム真因分析） ---"
+# 業態: カスタマーサポートセンター（製造業の品質管理）
+# 想定人物: サポート品質マネージャー
+# 業務領域: クレーム・現場証言のKJ整理と、矛盾する証言の検出による真因分析
+# 操作内容: 文書作成 -> 証言カード化(レビュー済み) -> detect-contradiction(証言間の
+#          論理的矛盾をAI検出) -> suggest-island-summary(島の表札) -> 読戻し
+# 注意事項: 矛盾検出は「単なる意見の相違」と「論理的矛盾」を区別する（後者のみ報告）。
+#          証言の文面は refine 等で変更しない（現場の完全性・evidence としての位置づけ）。
+#          SafeMode の未レビュー境界(422)は島要約・ナラティブ等の doc 文脈ルートで効き、
+#          detect-contradiction は doc 文脈を持たない（issue 参照）。
+QM_DOC_ID="biz-flow-claim-analysis"
+QM_DOC='{"version":1,"id":"'$QM_DOC_ID'","title":"クレーム証言の真因分析","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"q1","text":"受注後に納期変更の連絡が来た","x":0,"y":0,"textReviewed":true},{"id":"q2","text":"営業は納期を守ると言った","x":10,"y":0,"textReviewed":true},{"id":"q3","text":"サポートは謝罪のみで原因を説明しなかった","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"qm-i","cardIds":["q1","q2","q3"]}],"readingOrder":["qm-i"]}'
+
+qm_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$QM_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$QM_DOC")
+check "QM PUT document (作成)" "200" "$qm_put"
+
+qm_get=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$QM_DOC_ID")
+check "QM GET document (読戻し)" "200" "$qm_get"
+
+# 証言間の論理的矛盾をAI検出（detect-contradiction、モックは矛盾なしと応答）。
+contradiction=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"q1","text":"受注後に納期変更の連絡が来た"},"cardB":{"id":"q2","text":"営業は納期を守ると言った"}}')
+case "$contradiction" in
+  *'"hasContradiction":false'*)
+    echo "  PASS: detect-contradiction returns structured result (mock: no contradiction)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: detect-contradiction (got $contradiction)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 島の表札（モックはメンバーカードを grounding）。
+qm_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$QM_DOC,\"islandId\":\"qm-i\"}")
+case "$qm_summary" in
+  *'"groundingIds":["q1","q2","q3"]'*)
+    echo "  PASS: QM suggest-island-summary groundingIds = member cards"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: QM suggest-island-summary (got $qm_summary)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
