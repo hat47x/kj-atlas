@@ -415,6 +415,13 @@ case "$kb_title" in
     ;;
 esac
 
+# AI-MODEL-GOVERNANCE-01 (R2): a model override flows through and is accepted
+# under platform-default allowlist (empty = all active registered models).
+kb_model_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/suggest-document-title" \
+  -H 'Content-Type: application/json' \
+  -d "{\"islandTitles\":[\"入社手続き\"],\"cardTexts\":[\"入社手続きの一覧\"],\"textReviewed\":true,\"model\":\"default\"}")
+check "suggest-document-title with model override accepted (200, platform-default)" "200" "$kb_model_code"
+
 # 注意事項: 未レビュー入力は 422（textReviewed fail-closed・SEC-AI-SAFEMODE-02）。
 kb_unreviewed_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/suggest-document-title" \
   -H 'Content-Type: application/json' \
