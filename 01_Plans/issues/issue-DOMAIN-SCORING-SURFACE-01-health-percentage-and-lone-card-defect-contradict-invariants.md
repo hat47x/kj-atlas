@@ -44,7 +44,7 @@ suggestedAction: "Group lone cards into islands when they should be part of the 
 
 方法論の正本は逆を述べている。
 
-> `00_Prompt/kj_technique.md` §2 束ねる（グループ編成）
+> `00_Prompt/kj_technique.md` §2 束ねる（グループ編成）。孤立カードをゼロにすることは `KJT-SIGN-03` が失敗の徴候として挙げている
 > 孤立した1枚が最も重要なことがある。
 
 さらに `kj_technique.md:195` は**孤立カードがゼロであること自体を失敗の徴候**として挙げている。つまり Q007 は、方法論が「探索が足りない証拠」と呼ぶ状態へ利用者を誘導している。`suggestedAction` には "when they should be" という留保が付いているが、**所見（finding）として提示されている時点で「解消すべきもの」という枠組みを与えている**。
