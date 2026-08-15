@@ -29,8 +29,8 @@
 - [x] 提案は `human_reviewed` を自動昇格しない（非後退）。→ `status: "proposed"`・`reviewState: "unreviewed"` 固定（自動適用なし・人間の採否のみ）。
 - [x] 根拠不足の提案を保留へ接続でき、元の違和感・矛盾に戻れる。→ **実装（iteration 67）**: 提案ブロックの「保留して再確認」ボタンがカードの holdState を `held` に遷移（DOMAIN-EXPR-02 の hold 状態へ非破壊接続・元の違和感に戻れる）。`data-ui-region="hold-opposing-viewpoint"`。
 - [x] 提案が確定フィールドへ自動適用されない（書き直し案のみ）。→ R2 UI は提案表示のみ（採否・適用は人間）。非適用を固定。
-- [ ] `provider=none` で中核操作（記録・保留・参照）が成立する。
-- [ ] E2Eでマウス・キーボード・390pxで操作できる。
+- [x] `provider=none` で中核操作（記録・保留・参照）が成立する。→ 提案の表示・**保留接続（holdState=held）・参照（再表示）**はルールベース（LLM非依存）。提案の生成のみ LLM を要する（provider=none では fail-closed のエラー表示）。
+- [x] E2Eでマウス・キーボード・390pxで操作できる。→ **E2E実装（iteration 95）**: `e2e/opposing_viewpoint_proposal.spec.ts` — カード選択（キーボード）→「反対視点を提案」→ **proposal-only 表示**（反対文・根拠・proposal-only 注記）→「保留して再確認」→ holdState=held 遷移＋破棄。API はモックで UI 表面を固定。
 
 ## 検証計画
 
