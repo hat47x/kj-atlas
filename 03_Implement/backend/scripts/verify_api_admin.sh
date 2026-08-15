@@ -152,6 +152,16 @@ if [ "$mode" = "auth" ]; then
       echo "  FAIL: audit event lacks compliance evidence fields"
       FAIL=$((FAIL+1))
     fi
+    # SEC-ADMIN-PLANE-03 (DOGFOOD-06 abnormal case): a rejected /admin/*
+    # request (wrong admin key -> 401) must ALSO be recorded with result=denied
+    # so the trail reflects both allowed and denied operations.
+    if grep -q '"result":"denied"' /tmp/kj_admin_audit.json; then
+      echo "  PASS: audit trail records a denied /admin/* operation"
+      PASS=$((PASS+1))
+    else
+      echo "  FAIL: audit trail lacks a denied-operation event (wrong key 401)"
+      FAIL=$((FAIL+1))
+    fi
   else
     echo "  FAIL: GET /admin/provision/audit (expected 200, got $audit_code)"
     FAIL=$((FAIL+1))
