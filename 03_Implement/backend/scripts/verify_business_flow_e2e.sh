@@ -2638,5 +2638,45 @@ sp_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SP_ID")
 check "SP 読戻し (200)" "200" "$sp_read"
 
 echo ""
+echo "--- シナリオ58: ソフトウェア開発チームのスプリント振り返り（個人の声と全体の認識の乖離） ---"
+# 業態: IT・ソフトウェア開発（開発チーム）
+# 想定人物: スクラムマスター／開発チームリーダー（スプリント振り返り）
+# 業務領域: スプリントの振り返り（良かった点・課題）のKJ整理と、改善アクションの検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 個人の懸念（コードレビューの形式化など・心理的安全性）とチーム全体の
+#          認識（計画通り）の乖離を矛盾検出で表面化（少数意見の外在化・V2）。
+SW_ID="biz-flow-sprint"
+SW_DOC='{"version":1,"id":"'$SW_ID'","title":"スプリント振り返り","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"sw1","text":"スプリントは計画通りに進んでいる","x":0,"y":0,"textReviewed":true},{"id":"sw2","text":"コードレビューが形式的で品質が下がっていると感じる","x":10,"y":0,"textReviewed":true},{"id":"sw3","text":"デプロイ後に不具合が増えた","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sw-i","cardIds":["sw1","sw2","sw3"]}],"readingOrder":["sw-i"]}'
+
+sw_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SW_ID" \
+  -H 'Content-Type: application/json' -d "$SW_DOC")
+check "SW PUT document (作成)" "200" "$sw_put"
+
+# ① AI束ね
+sw_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"sw1","text":"スプリントは計画通りに進んでいる","textReviewed":true},{"id":"sw2","text":"コードレビューが形式的で品質が下がっていると感じる","textReviewed":true},{"id":"sw3","text":"デプロイ後に不具合が増えた","textReviewed":true}]}')
+case "$sw_groups" in *'"groups":'*) echo "  PASS: SW ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SW ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+sw_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SW_DOC,\"islandId\":\"sw-i\"}")
+case "$sw_summary" in *'"groundingIds":["sw1","sw2","sw3"]'*) echo "  PASS: SW ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SW ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（チーム全体の認識 vs 個人の懸念・心理的安全性）
+sw_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"sw1","text":"スプリントは計画通りに進んでいる","textReviewed":true},"cardB":{"id":"sw2","text":"コードレビューが形式的で品質が下がっていると感じる","textReviewed":true}}')
+case "$sw_contra" in *'"hasContradiction"'*) echo "  PASS: SW ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: SW ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+sw_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SW_DOC}")
+case "$sw_narr" in *'"basedOnReadingOrder":["sw-i"]'*) echo "  PASS: SW ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SW ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+sw_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SW_ID")
+check "SW 読戻し (200)" "200" "$sw_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
