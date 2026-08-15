@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from kj_atlas_api.model_registry_repository import register_model, register_provider
 from kj_atlas_api.routes import ai
 from kj_atlas_api.db import get_db
 from kj_atlas_api.llm.provider import LLMCallMetadata, LLMResponse
@@ -51,6 +52,12 @@ def _client(tmp_path) -> Iterator[TestClient]:
     Base.metadata.create_all(bind=engine)
     with session_local() as db:
         db.add(TenantRow(id="local-default", display_name="Local Default", lifecycle_state="active", created_at=_NOW, updated_at=_NOW))
+        # AI-MODEL-GOVERNANCE-02: the AI route resolves the default model and
+        # _assert_model_allowed now requires an active registered model, so the
+        # fixture must register the provider + default model (as the env seed
+        # does in production).
+        register_provider(db, provider_id="local", provider_kind="local", display_name="Local LLM (test)", base_url=None, api_key_ref=None, occurred_at=_NOW)
+        register_model(db, model_id="default", provider_id="local", display_name="default", capabilities="intermediate,generate", occurred_at=_NOW)
         db.commit()
 
     def _get_test_db():

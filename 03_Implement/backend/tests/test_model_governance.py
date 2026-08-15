@@ -209,6 +209,53 @@ def test_allowlist_enforced_on_ai_route(tmp_path, monkeypatch) -> None:
         assert allowed.json()["detail"]["code"] != "model_not_allowed"
 
 
+def test_unregistered_model_rejected_under_platform_default(tmp_path, monkeypatch) -> None:
+    """AI-MODEL-GOVERNANCE-02: even with an empty tenant allowlist
+    (platform-default = "all active registered models allowed"), an unregistered
+    or inactive model id must fail closed (403 model_not_registered) before any
+    LLM call. The registry, not the allowlist, is the source of truth for what
+    is callable."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "local")
+
+    doc = {
+        "version": 1,
+        "id": "platform-default-doc",
+        "title": "platform default",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "updatedAt": "2026-08-15T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [{"id": "c1", "text": "alpha", "x": 0, "y": 0, "textReviewed": True}],
+        "edges": [],
+        "islands": [{"id": "i1", "cardIds": ["c1"]}],
+        "readingOrder": ["i1"],
+    }
+
+    with _client(tmp_path) as (client, _session_local):
+        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "local", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        client.post("/admin/provision/models", json={"id": "m1", "providerId": "p", "displayName": "M1"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+
+        # No allowlist set -> platform-default. Unregistered id -> 403 model_not_registered.
+        denied = client.post(
+            "/ai/suggest-island-summary",
+            json={"doc": doc, "islandId": "i1", "model": "totally-bogus-model"},
+            headers={"X-API-Key": _BUSINESS_KEY},
+        )
+        assert denied.status_code == 403, denied.text
+        assert denied.json()["detail"]["code"] == "model_not_registered"
+
+        # Registered active model passes the gate (then fails only because no
+        # local LLM base URL is configured -> 503 provider_unavailable, NOT 403).
+        allowed = client.post(
+            "/ai/suggest-island-summary",
+            json={"doc": doc, "islandId": "i1", "model": "m1"},
+            headers={"X-API-Key": _BUSINESS_KEY},
+        )
+        assert allowed.status_code == 503, allowed.text
+        assert allowed.json()["detail"]["code"] != "model_not_registered"
+
+
 def test_model_crud_and_allowlist_changes_are_audited(tmp_path, monkeypatch) -> None:
     """R4: model/provider CRUD and allowlist changes land in the admin audit trail."""
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)

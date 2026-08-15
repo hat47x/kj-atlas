@@ -142,12 +142,21 @@ def _resolve_audit_tenant(request: Request, db: Session) -> TenantContext:
 
 
 def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
-    """AI-MODEL-GOVERNANCE-01 R3: enforce the tenant model allowlist.
+    """AI-MODEL-GOVERNANCE-01 R3 + AI-MODEL-GOVERNANCE-02: enforce the tenant
+    model allowlist AND that the model is an active registered model.
 
-    A non-empty allowlist is fail-closed: a requested/resolved model outside it
-    is rejected with 403 model_not_allowed before any LLM call. Empty allowlist
-    = platform-default (all active registered models allowed)."""
-    from kj_atlas_api.model_registry_repository import tenant_allowlist_effective_model_ids
+    - A non-empty allowlist is fail-closed: a requested/resolved model outside
+      it is rejected with 403 model_not_allowed before any LLM call.
+    - Empty allowlist = platform-default: "all active registered models allowed".
+      AI-MODEL-GOVERNANCE-02 closes the gap where the platform-default was a
+      no-op, letting unregistered / disabled model ids reach the LLM provider.
+      An id that is not an active registered model (active provider included)
+      is rejected with 403 model_not_registered."""
+    from kj_atlas_api.model_registry_repository import (
+        list_models,
+        list_providers,
+        tenant_allowlist_effective_model_ids,
+    )
 
     tenant = _resolve_audit_tenant(request, db)
     effective = tenant_allowlist_effective_model_ids(db, tenant_id=tenant.tenant_id)
@@ -169,6 +178,33 @@ def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
                 "code": "model_not_allowed",
                 "message": f"Model '{model_id}' is not in the tenant's allowed model set.",
                 "allowedModels": sorted(effective),
+            },
+        )
+
+    # AI-MODEL-GOVERNANCE-02: the registry is the source of truth for what is
+    # callable. Even under platform-default (empty allowlist), a model id that
+    # is not an active registered model (active provider included) must fail
+    # closed before any LLM call. Distinguishes "tenant-restricted" (above)
+    # from "does not exist / disabled" (here) for operator triage.
+    active_provider_ids = {row.id for row in list_providers(db) if row.lifecycle_state == "active"}
+    active_registered_ids = {
+        row.id
+        for row in list_models(db)
+        if row.lifecycle_state == "active" and row.provider_id in active_provider_ids
+    }
+    if model_id not in active_registered_ids:
+        logger.warning(
+            "model_not_registered",
+            extra={
+                "tenantId": tenant.tenant_id,
+                "modelId": model_id,
+            },
+        )
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "model_not_registered",
+                "message": f"Model '{model_id}' is not an active registered model.",
             },
         )
 

@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
 from kj_atlas_api.models import AIProposalDecisionEventRow, AIProposalRow, Base
+from kj_atlas_api.model_registry_repository import register_model, register_provider
 from kj_atlas_api.models_ai import ProposalEnvelope
 from kj_atlas_api.routes import ai
 from kj_atlas_api.settings import settings as _settings
@@ -37,6 +38,12 @@ def sqlite_client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker]]:
             client.headers.update({"x-forwarded-user": "ce2-reviewer", "x-auth-provider": "oidc"})
             assert client.put("/docs/doc-1", json=_payload()["doc"]).status_code == 200
             with session_local() as db:
+                # AI-MODEL-GOVERNANCE-02: the proposal route resolves the default
+                # model and _assert_model_allowed now requires an active registered
+                # model, so register the provider + default model (as env seed does).
+                register_provider(db, provider_id="local", provider_kind="local", display_name="Local LLM (test)", base_url=None, api_key_ref=None, occurred_at="2026-08-11T00:00:00Z")
+                register_model(db, model_id="default", provider_id="local", display_name="default", capabilities="intermediate,generate", occurred_at="2026-08-11T00:00:00Z")
+                db.commit()
                 db.add(
                     AIProposalRow(
                         tenant_id="local-default",

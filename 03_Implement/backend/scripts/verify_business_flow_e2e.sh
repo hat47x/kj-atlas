@@ -2153,6 +2153,15 @@ mg_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: ap
   -d "{\"doc\":$MG_DOC,\"model\":\"$MG_MODEL_ID\"}")
 case "$mg_narr" in *'"basedOnReadingOrder":["mg-i"]'*) echo "  PASS: MG ②許容モデル明示選択(200)"; PASS=$((PASS+1));; *) echo "  FAIL: MG ②許容モデル明示選択"; FAIL=$((FAIL+1));; esac
 
+# ②b 未登録モデルIDはプラットフォーム既定でも 403（AI-MODEL-GOVERNANCE-02:
+#     空allowlist=active登録済みのみ許可・未登録は LLM 呼び出し前に遮断）
+mg_bogus=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MG_DOC,\"model\":\"totally-bogus-model\"}")
+mg_bogus_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/generate-narrative" \
+  -H 'Content-Type: application/json' -d "{\"doc\":$MG_DOC,\"model\":\"totally-bogus-model\"}")
+check "MG ②b未登録モデル -> 403 (model_not_registered)" "403" "$mg_bogus_code"
+case "$mg_bogus" in *'"model_not_registered"'*) echo "  PASS: MG ②b code=model_not_registered"; PASS=$((PASS+1));; *) echo "  FAIL: MG ②b code=model_not_registered"; FAIL=$((FAIL+1));; esac
+
 # ③ テナント許容リストを制限（local-dev の control-plane は無キーで開放）
 mg_allow=$(curl -s -o /dev/null -w '%{http_code}' -X PUT \
   "$BASE_URL/admin/provision/models/tenants/local-default/allowlist" \

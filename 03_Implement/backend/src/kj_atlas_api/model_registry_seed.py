@@ -45,11 +45,12 @@ def seed_registry_from_env(session_factory=SessionLocal) -> None:
                     api_key_ref="KJ_ATLAS_DEEPSEEK_API_KEY",
                     occurred_at=occurred_at,
                 )
+                default_model = settings.deepseek_model
                 register_model(
                     db,
-                    model_id=settings.deepseek_model,
+                    model_id=default_model,
                     provider_id=provider_id,
-                    display_name=settings.deepseek_model,
+                    display_name=default_model,
                     capabilities="intermediate,generate",
                     occurred_at=occurred_at,
                 )
@@ -71,6 +72,20 @@ def seed_registry_from_env(session_factory=SessionLocal) -> None:
                     provider_id=provider_id,
                     display_name=default_model,
                     capabilities="intermediate,generate",
+                    occurred_at=occurred_at,
+                )
+            # AI-MODEL-GOVERNANCE-02: the high-reasoning tier (final_judgement
+            # tasks: check_narrative / detect_contradiction) must also be
+            # registered so _assert_model_allowed's active-registered check
+            # does not fail-closed reject it when routed by MMR-04.
+            high = settings.llm_high_reasoning_model
+            if high and high != default_model:
+                register_model(
+                    db,
+                    model_id=high,
+                    provider_id=provider_id,
+                    display_name=high,
+                    capabilities="final_judgement",
                     occurred_at=occurred_at,
                 )
             db.commit()
