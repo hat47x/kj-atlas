@@ -2510,5 +2510,46 @@ fs_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FS_ID")
 check "FS 読戻し (200)" "200" "$fs_read"
 
 echo ""
+echo "--- シナリオ55: NGO・国際協力の人道支援ニーズ整理（発言力の非対称性の表面化） ---"
+# 業態: NGO・国際協力（人道支援）
+# 想定人物: 支援調整員（被災地・コミュニティのニーズを整理）
+# 業務領域: 支援ニーズのKJ分類と、支援優先の判断（リソース配分）
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 声の大きい主体（大口ドナー）と声の小さな受益者のニーズを区別し、
+#          発言力の非対称性を矛盾検出で表面化（少数意見の外在化・V2）。支援計画は
+#          受益者視点を欠落させない。
+NG_ID="biz-flow-ngo"
+NG_DOC='{"version":1,"id":"'$NG_ID'","title":"支援ニーズ整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ng1","text":"大口ドナーの要望が支援計画に強く反映されている","x":0,"y":0,"textReviewed":true},{"id":"ng2","text":"現地の小規模コミュニティは安全な水へのニーズを訴えている","x":10,"y":0,"textReviewed":true},{"id":"ng3","text":"物流コストの高騰で支援物資の到達が遅れている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ng-i","cardIds":["ng1","ng2","ng3"]}],"readingOrder":["ng-i"]}'
+
+ng_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$NG_ID" \
+  -H 'Content-Type: application/json' -d "$NG_DOC")
+check "NG PUT document (作成)" "200" "$ng_put"
+
+# ① AI束ね
+ng_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ng1","text":"大口ドナーの要望が支援計画に強く反映されている","textReviewed":true},{"id":"ng2","text":"現地の小規模コミュニティは安全な水へのニーズを訴えている","textReviewed":true},{"id":"ng3","text":"物流コストの高騰で支援物資の到達が遅れている","textReviewed":true}]}')
+case "$ng_groups" in *'"groups":'*) echo "  PASS: NG ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: NG ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ng_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$NG_DOC,\"islandId\":\"ng-i\"}")
+case "$ng_summary" in *'"groundingIds":["ng1","ng2","ng3"]'*) echo "  PASS: NG ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: NG ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（大口ドナー優先 vs 声の小さな受益者のニーズ・発言力の非対称性）
+ng_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ng1","text":"大口ドナーの要望が支援計画に強く反映されている","textReviewed":true},"cardB":{"id":"ng2","text":"現地の小規模コミュニティは安全な水へのニーズを訴えている","textReviewed":true}}')
+case "$ng_contra" in *'"hasContradiction"'*) echo "  PASS: NG ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: NG ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ng_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$NG_DOC}")
+case "$ng_narr" in *'"basedOnReadingOrder":["ng-i"]'*) echo "  PASS: NG ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: NG ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ng_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$NG_ID")
+check "NG 読戻し (200)" "200" "$ng_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
