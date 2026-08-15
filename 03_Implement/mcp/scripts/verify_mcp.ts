@@ -76,7 +76,11 @@ try {
     cards?: Array<{ holdState?: string | null }>;
     counts?: { reviewed: number; unreviewed: number; redacted: number };
     voids?: Array<{ id: string; kind: string; resolved: boolean }>;
-    narrativeChecks?: Array<{ id: string; issueDirections: string[] }>;
+    narrativeChecks?: Array<{
+      id: string;
+      issueDirections: string[];
+      counts?: { bMissingInA: number; aMissingInB: number };
+    }>;
     documentMetadata?: { id: string; title?: string; created_by?: string; lifecycle_state: string; updated_at: string } | null;
   };
   console.log(`  → bundleHash: ${projection.bundleHash}`);
@@ -110,7 +114,23 @@ try {
   const narrativeChecks = Array.isArray(projection.narrativeChecks) ? projection.narrativeChecks : [];
   if (narrativeChecks.length > 0) {
     const dirs = narrativeChecks.flatMap((c) => c.issueDirections);
+    const withCounts = narrativeChecks.filter((c) => c.counts && typeof c.counts.bMissingInA === "number");
     console.log(`  → narrative checks: ${narrativeChecks.length} (directions: ${dirs.length ? dirs.join(", ") : "none"}) ✅ (KJ-AB-CROSS-CHECK-01)`);
+    // KJ-AB-CROSS-CHECK-01: the per-check counts (bMissingInA / aMissingInB)
+    // are projected too; assert they are present so a generative-AI verifier
+    // can rely on the A/B totals, not just the directions.
+    if (withCounts.length === narrativeChecks.length) {
+      const totals = narrativeChecks.reduce(
+        (acc, c) => ({
+          bMissingInA: acc.bMissingInA + (c.counts?.bMissingInA ?? 0),
+          aMissingInB: acc.aMissingInB + (c.counts?.aMissingInB ?? 0),
+        }),
+        { bMissingInA: 0, aMissingInB: 0 },
+      );
+      console.log(`  → narrative check counts: bMissingInA=${totals.bMissingInA}, aMissingInB=${totals.aMissingInB} ✅ (KJ-AB-CROSS-CHECK-01)`);
+    } else {
+      throw new Error("narrative checks exist but a check is missing its counts (bMissingInA/aMissingInB)");
+    }
   } else {
     console.log("  → narrative checks: 0 (none stored)");
   }

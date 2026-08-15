@@ -108,7 +108,7 @@ exactly this; the scenarios below are what it checks.
 | Anti-scoring | serialize the projection | no `score` / `rank` / `confidence` / `priority` tokens |
 | not_found | `get_context_projection({ docId: "<missing>", ... })` | `isError: true` with a plain message — the transport is alive, the doc is not retrievable (DOGFOOD-03/06) |
 | void state | same call on a doc that has stored voids | `voids` lists each void's kind/refs/resolved (KJ-VOIDS-01) |
-| narrative A/B | same call on a doc with narrative checks | `narrativeChecks[].issueDirections` and `counts` are present (KJ-AB-CROSS-CHECK-01) |
+| narrative A/B | same call on a doc with narrative checks | `narrativeChecks[].issueDirections` and `counts` are present — and `verify_mcp.ts` **asserts the per-check counts** (`bMissingInA`/`aMissingInB`) so a generative-AI verifier can rely on the A/B totals, not just the directions (KJ-AB-CROSS-CHECK-01) |
 | lifecycle | same call on a doc | `documentMetadata.lifecycle_state` (`active` / `archived`) and `created_by` are present (ADR-0073 / 第2反復) |
 | archived read-only | same call on an archived doc | `documentMetadata.lifecycle_state === "archived"`; the server enforces review-only (`PUT /docs/{id}` → **423 Locked**, code `document_archived`, even with a current ETag — ADR-0073 D2=A). A generative-AI can cross-check the write contract directly over the HTTP API or via `verify_api_write.sh` (checks 12–14) |
 | bundle determinism | call twice with identical inputs | identical `bundleHash` |
