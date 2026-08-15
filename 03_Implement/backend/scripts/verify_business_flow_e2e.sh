@@ -1606,5 +1606,44 @@ it_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$IT_ID")
 check "IT 読戻し (200)" "200" "$it_read"
 
 echo ""
+echo "--- シナリオ34: エネルギー・設備点検レポートの整理 ---"
+# 業態: エネルギー・インフラ
+# 想定人物: 設備点検リーダー（点検レポートを整理）
+# 業務領域: 設備点検レポートのKJ整理と異常の優先順位付けの基礎
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 島間関係要約(summarize-island-relation) -> タイトル提案(suggest-document-title)
+# 注意事項: 点検記録は逐語（refineで変えない）。異常の因果は提案のみ。
+EN_ID="biz-flow-energy"
+EN_DOC='{"version":1,"id":"'$EN_ID'","title":"設備点検レポート","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"e1","text":"冷却系の温度が高い","x":0,"y":0,"textReviewed":true},{"id":"e2","text":"振動が大きくなっている","x":10,"y":0,"textReviewed":true},{"id":"e3","text":"潤滑油の量が少ない","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"en-a","cardIds":["e1","e2"]},{"id":"en-b","cardIds":["e3"]}],"readingOrder":["en-a","en-b"]}'
+
+en_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EN_ID" \
+  -H 'Content-Type: application/json' -d "$EN_DOC")
+check "EN PUT document (作成)" "200" "$en_put"
+
+# ① AI束ね
+en_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"e1","text":"冷却系の温度が高い","textReviewed":true},{"id":"e2","text":"振動が大きくなっている","textReviewed":true},{"id":"e3","text":"潤滑油の量が少ない","textReviewed":true}]}')
+case "$en_groups" in *'"groups":'*) echo "  PASS: EN ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: EN ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+en_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EN_DOC,\"islandId\":\"en-a\"}")
+case "$en_summary" in *'"groundingIds":["e1","e2"]'*) echo "  PASS: EN ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: EN ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 島間関係の要約（潤滑油不足 → 振動・温度上昇 の因果）
+en_rel=$(curl -s -X POST "$BASE_URL/ai/summarize-island-relation" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EN_DOC,\"islandAId\":\"en-b\",\"islandBId\":\"en-a\",\"relationType\":\"causal\",\"derived\":false,\"groundingCardIds\":[\"e1\"],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"e1\",\"text\":\"冷却系の温度が高い\"}]}")
+case "$en_rel" in *'"text"'*) echo "  PASS: EN ③島間関係の要約 (causal)"; PASS=$((PASS+1));; *) echo "  FAIL: EN ③関係要約 (${en_rel:0:100})"; FAIL=$((FAIL+1));; esac
+
+# ④ タイトル提案
+en_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["設備"],"cardTexts":["冷却系の温度が高い","振動が大きくなっている","潤滑油の量が少ない"],"textReviewed":true}')
+case "$en_title" in *'"candidates"'*) echo "  PASS: EN ④タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: EN ④タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+en_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EN_ID")
+check "EN 読戻し (200)" "200" "$en_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
