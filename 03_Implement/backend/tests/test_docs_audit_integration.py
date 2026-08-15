@@ -18,6 +18,8 @@ from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
 from kj_atlas_api.models import Base
 from kj_atlas_api.routes.docs import (
+    _ce4_audit_event_tracker,
+    _evict_stale_ce4_tracker_entries,
     _record_ce4_event_and_validate_completeness,
     reset_ce4_audit_event_tracker,
 )
@@ -914,3 +916,53 @@ def test_cli_apply_forces_dry_run(tmp_path, monkeypatch) -> None:
     assert captured_payload["operation"] == "apply"
     assert captured_payload["dryRun"] is True
     assert captured_payload["command"] == "apply --dry-run"
+
+
+def test_ce4_tracker_evicts_entries_stale_beyond_ttl(monkeypatch) -> None:
+    # DX-BACKEND-CE4-01: entries untouched for > TTL are evicted so the tracker
+    # cannot grow for the process lifetime.
+    reset_ce4_audit_event_tracker()
+    now = [1_000_000.0]
+    monkeypatch.setattr("kj_atlas_api.routes.docs.time.time", lambda: now[0])
+
+    for doc_id in ("d1", "d2"):
+        _record_ce4_event_and_validate_completeness(
+            tenant_id="t",
+            doc_id=doc_id,
+            equivalence_key="k1",
+            bundle_hash="b1",
+            operation="query",
+            source_bundle_hash=None,
+        )
+    assert len(_ce4_audit_event_tracker) == 2
+
+    # Advance well past the 24h TTL and sweep.
+    now[0] = 1_000_000.0 + 24 * 3600 + 1
+    _evict_stale_ce4_tracker_entries(now[0])
+
+    assert len(_ce4_audit_event_tracker) == 0
+
+
+def test_ce4_tracker_caps_at_max_entries_keeping_newest(monkeypatch) -> None:
+    # DX-BACKEND-CE4-01: the LRU cap drops the oldest entries once the tracker
+    # exceeds the bound.
+    reset_ce4_audit_event_tracker()
+    now = [1_000_000.0]
+    monkeypatch.setattr("kj_atlas_api.routes.docs.time.time", lambda: now[0])
+    monkeypatch.setattr("kj_atlas_api.routes.docs._CE4_TRACKER_MAX_ENTRIES", 3)
+
+    for index in range(5):
+        now[0] += 1.0  # each new entry is strictly newer
+        _record_ce4_event_and_validate_completeness(
+            tenant_id="t",
+            doc_id=f"d{index}",
+            equivalence_key="k1",
+            bundle_hash="b1",
+            operation="query",
+            source_bundle_hash=None,
+        )
+
+    # Cap to the 3 newest (d2/d3/d4); d0/d1 are evicted.
+    _evict_stale_ce4_tracker_entries(now[0])
+    remaining = {key[1] for key in _ce4_audit_event_tracker}
+    assert remaining == {"d2", "d3", "d4"}

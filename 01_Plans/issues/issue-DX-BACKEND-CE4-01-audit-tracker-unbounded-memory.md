@@ -1,7 +1,7 @@
 # Issue: DX-BACKEND-CE4-01 CE4監査追跡辞書がプロセス寿命全体で無制限に蓄積
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -25,13 +25,20 @@
 
 ## 受入条件
 
-- [ ] 上記(a)〜(c)のいずれかの方針が決定される。
-- [ ] 決定した方針に応じた実装またはデプロイ制約の文書化が行われる。
+- [x] 上記(a)〜(c)のいずれかの方針が決定される。→ **案(a) TTL/eviction を採択**（2026-08-15・仮承認）。TTL 24h・LRU上限10,000で bounded 化（`_CE4_TRACKER_TTL_SECONDS` / `_CE4_TRACKER_MAX_ENTRIES`）。CE4シーケンス（query→bundle→proposal→apply）は単一ワークセッション内で完結するため24hは実用上十分であり、`missing_event`誤検知を実ワークフローで誘発しない。
+- [x] 決定した方針に応じた実装またはデプロイ制約の文書化が行われる。→ `_Ce4AuditTrackerState` に `last_touched` を追加、`_record_ce4_event_and_validate_completeness` が256件ごとにTTL/上限evictionを実行。`reset_ce4_audit_event_tracker` は従来通り。CE4監査完全性チェックの挙動は不変。
+
+## 対応記録（2026-08-15・iteration 39）
+
+- `routes/docs.py`: `_Ce4AuditTrackerState.last_touched`（`time.time`）、`_evict_stale_ce4_tracker_entries`（TTL超過を一括除去＋LRU cap）を追加。記録パスで256件ごとに実行（ホットパスでO(n)掃引しない）。
+- マルチワーカー時の追跡state共有問題（issueの将来懸念）は共有ストア移行（案b）として残るが、本iterationの範囲外。単一プロセス運用の制約は既存デプロイに一致。
+- テスト: `test_docs_audit_integration.py` に2件追加（TTL超過のevict・上限capで最古drop）。CE4監査統合 28 tests pass。
 
 ## 検証計画
 
 - 実行する確認: 対応後、`python3 -m pytest tests/test_docs_audit_integration.py`（backend）。
 - 期待結果: 既存のCE4監査完全性チェックの挙動を壊さないことを確認する。
+- 実績（2026-08-15）: `test_docs_audit_integration.py` 28 tests pass（既存CE4完全性テスト含む・挙動不変）。
 
 ## 補足
 

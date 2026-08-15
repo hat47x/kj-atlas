@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import time
 from hashlib import sha256
 from datetime import datetime, timezone
 from threading import Lock
@@ -675,15 +676,39 @@ def _ce4_validation_error(code: str, message: str) -> HTTPException:
 class _Ce4AuditTrackerState(BaseModel):
     seen_operations: set[str] = Field(default_factory=set)
     proposal_source_bundle_hash: str | None = None
+    # DX-BACKEND-CE4-01: last event timestamp so the tracker can evict stale
+    # entries instead of growing for the process lifetime.
+    last_touched: float = Field(default_factory=time.time)
 
 
 _ce4_audit_event_tracker: dict[tuple[str, str, str, str], _Ce4AuditTrackerState] = {}
 _ce4_audit_tracker_lock = Lock()
+# DX-BACKEND-CE4-01 (option a adopted): a CE4 sequence (query -> bundle ->
+# proposal -> apply) completes within a single work session, so a 24h TTL is
+# far longer than any legitimate in-flight sequence. The LRU cap bounds memory
+# even under sustained load. Both are generous enough not to false-trigger the
+# `missing_event` completeness check for real workflows.
+_CE4_TRACKER_TTL_SECONDS = 24 * 60 * 60
+_CE4_TRACKER_MAX_ENTRIES = 10_000
+_ce4_eviction_counter = 0
 
 
 def reset_ce4_audit_event_tracker() -> None:
     with _ce4_audit_tracker_lock:
         _ce4_audit_event_tracker.clear()
+
+
+def _evict_stale_ce4_tracker_entries(now: float) -> None:
+    stale = [
+        key
+        for key, state in _ce4_audit_event_tracker.items()
+        if now - state.last_touched > _CE4_TRACKER_TTL_SECONDS
+    ]
+    for key in stale:
+        del _ce4_audit_event_tracker[key]
+    while len(_ce4_audit_event_tracker) > _CE4_TRACKER_MAX_ENTRIES:
+        oldest_key = min(_ce4_audit_event_tracker, key=lambda k: _ce4_audit_event_tracker[k].last_touched)
+        del _ce4_audit_event_tracker[oldest_key]
 
 
 def _record_ce4_event_and_validate_completeness(
@@ -695,9 +720,16 @@ def _record_ce4_event_and_validate_completeness(
     operation: str,
     source_bundle_hash: str | None,
 ) -> None:
+    global _ce4_eviction_counter
     with _ce4_audit_tracker_lock:
         tracker_key = (tenant_id, doc_id, equivalence_key, bundle_hash)
         state = _ce4_audit_event_tracker.setdefault(tracker_key, _Ce4AuditTrackerState())
+        # DX-BACKEND-CE4-01: bounded eviction, amortized over every 256 events
+        # so the O(n) sweep does not run on the hot path.
+        if _ce4_eviction_counter % 256 == 0:
+            _evict_stale_ce4_tracker_entries(time.time())
+        _ce4_eviction_counter += 1
+        state.last_touched = time.time()
         state.seen_operations.add(operation)
         if operation == "proposal":
             state.proposal_source_bundle_hash = source_bundle_hash
