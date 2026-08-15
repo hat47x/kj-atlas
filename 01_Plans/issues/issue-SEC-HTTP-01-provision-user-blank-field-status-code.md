@@ -1,7 +1,7 @@
 # Issue: SEC-HTTP-01 provision_userの必須文字列空チェックが400、他は422
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -22,13 +22,21 @@
 
 ## 受入条件
 
-- [ ] `api.md` §4と§9.3の関係が明確化される。
-- [ ] `admin.py`と`ai.py`/`ai_relations.py`が同じステータスコード規約に揃う。
+- [x] `api.md` §4と§9.3の関係が明確化される。→ §4のtaxonomyを明文化（400＝トランスポート/パース境界のみ、422＝ドメイン契約違反＝必須フィールド空・enum・operation/command不一致等）。§9.3のprovision_users契約は2xx/403/409のみ規定で400/422とも非文書化のため、どちらへ揃えても文書契約を壊さない。
+- [x] `admin.py`と`ai.py`/`ai_relations.py`が同じステータスコード規約に揃う。→ **422へ統一**（2026-08-15・仮承認）。ai.py `narrativeText must not be empty` 等と同一クラス。`admin.py:142` の `provider and externalUid must be non-empty` を 400→422 へ変更。
+
+## 対応記録（2026-08-15・iteration 38）
+
+- 判断: §4の「入力スキーマ不正→400」と既存多数派の「必須フィールド空→422」の矛盾は、**400はトランスポート/パース境界のみ**とtaxonomyを整理して解決。Pydantic body validation の既定が FastAPI では422である点も§4に明記。
+- `routes/admin.py:142`: provision_users の必須文字列空チェックを 400→422 へ変更（コメントでSEC-HTTP-01根拠を明記）。
+- `api.md` §4: taxonomy追記＋SEC-HTTP-01注記（IdP登録系の `unsupported_protocol`/`invalid_jwks_uri` は構造化コードを持つ別クラスとして400のまま・将来標準化対象）。
+- テスト: `test_auth_jit_provisioning.py` の blank_provider / blank_external_uid アサーションを 400→422 へ更新。`test_auth_jit_provisioning.py` 19 pass・`test_control_plane_authorization.py` 31 pass・docs-check pass。
 
 ## 検証計画
 
 - 実行する確認: 対応後、`python3 -m pytest`（backend、該当route）。
 - 期待結果: 既存のprovisioning/narrative関連テストが新しい規約と整合する。
+- 実績（2026-08-15）: 上記の通り。ai.py/ai_relations.py は変更不要（既に422）。
 
 ## 補足
 

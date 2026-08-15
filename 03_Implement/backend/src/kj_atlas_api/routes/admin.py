@@ -139,7 +139,10 @@ def provision_user(
     display_name = _normalize_optional_field(payload.displayName)
     email = _normalize_optional_field(payload.email)
     if not provider or not external_uid:
-        raise HTTPException(status_code=400, detail="provider and externalUid must be non-empty")
+        # SEC-HTTP-01: blank required field is a domain contract violation --
+        # 422, matching ai.py/ai_relations.py for the same class (api.md §4
+        # taxonomy: 400 is reserved for transport/parse-level failures).
+        raise HTTPException(status_code=422, detail="provider and externalUid must be non-empty")
 
     identity = _resolve_identity_row(db=db, provider=provider, external_uid=external_uid)
     if identity is not None:

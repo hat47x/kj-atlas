@@ -566,13 +566,14 @@ def test_admin_provision_contract_rejects_blank_provider_or_external_uid(tmp_pat
                 "/admin/provision/users",
                 json={"provider": "   ", "externalUid": "user-a", "displayName": "A"},
             )
-            assert blank_provider.status_code == 400
+            # SEC-HTTP-01: blank required field is a domain contract violation (422).
+            assert blank_provider.status_code == 422
 
             blank_external_uid = client.post(
                 "/admin/provision/users",
                 json={"provider": "oidc", "externalUid": "   ", "displayName": "B"},
             )
-            assert blank_external_uid.status_code == 400
+            assert blank_external_uid.status_code == 422
     finally:
         settings.allow_jit_provisioning = original_allow_jit
 

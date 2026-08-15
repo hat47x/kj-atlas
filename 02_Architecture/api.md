@@ -717,12 +717,14 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 MVPでは、エラーを過度に作り込まない。ただし、実装済みの安全境界と契約境界は区別して返す。
 
-- 400：入力スキーマ不正（Pydanticのvalidation errorを整形）
+- 400：**トランスポート/パース境界** — リクエストを解釈できない段階の失敗（JSON構造ネスト深さ超過、closed-world の未知キー、`json_nesting_too_deep` / `unknown_contract_key` 等）。Pydantic body validation の既定は422へ整形するため、400は明示的に上げる安全境界のみ。
 - 403：認可、readOnly、review attribution identity などの安全境界違反
 - 404：doc not found
 - 409：`If-Match` 不一致、重複する判断ログなどの競合
-- 422：A1契約フィールドや enum などの契約違反
+- 422：**ドメイン契約違反** — well-formed だが契約を満たさない（必須フィールドが trim 後空、enum 違反、operation/command 不一致、A1契約フィールド違反、Pydantic body validation の既定）。
 - 500：内部エラー
+
+（SEC-HTTP-01・2026-08-15）`POST /admin/provision/users` の必須文字列空チェックを **422** へ統一（従来 400 だったが、ai.py/ai_relations.py の同種チェックは 422。IdP登録系の `unsupported_protocol` / `invalid_jwks_uri` は構造化コードを持つ別クラスとして 400 のまま・将来の標準化対象）。
 
 ---
 
