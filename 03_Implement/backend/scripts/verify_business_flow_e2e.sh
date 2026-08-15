@@ -1376,5 +1376,44 @@ fn_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FN_ID")
 check "FN 読戻し (200)" "200" "$fn_read"
 
 echo ""
+echo "--- シナリオ28: 観光・宿泊・訪問者フィードバックの整理 ---"
+# 業態: 観光・宿泊
+# 想定人物: 宿泊施設マネージャー（訪問者フィードバックを分析）
+# 業務領域: 訪問者フィードバックのKJ整理と満足/不満の要因分析
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> タイトル提案(suggest-document-title)
+# 注意事項: 訪問者の声は逐語（refineで変えない）。矛盾する評価は隠さず表面化。
+TR_ID="biz-flow-tourism"
+TR_DOC='{"version":1,"id":"'$TR_ID'","title":"宿泊施設の改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"t1","text":"眺望が素晴らしい","x":0,"y":0,"textReviewed":true},{"id":"t2","text":"朝食の選択肢が少ない","x":10,"y":0,"textReviewed":true},{"id":"t3","text":"スタッフの対応が丁寧","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"tr-i","cardIds":["t1","t2","t3"]}],"readingOrder":["tr-i"]}'
+
+tr_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TR_ID" \
+  -H 'Content-Type: application/json' -d "$TR_DOC")
+check "TR PUT document (作成)" "200" "$tr_put"
+
+# ① AI束ね
+tr_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"t1","text":"眺望が素晴らしい","textReviewed":true},{"id":"t2","text":"朝食の選択肢が少ない","textReviewed":true},{"id":"t3","text":"スタッフの対応が丁寧","textReviewed":true}]}')
+case "$tr_groups" in *'"groups":'*) echo "  PASS: TR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+tr_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TR_DOC,\"islandId\":\"tr-i\"}")
+case "$tr_summary" in *'"groundingIds":["t1","t2","t3"]'*) echo "  PASS: TR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（満足要因 vs 不満要因）
+tr_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"t1","text":"眺望が素晴らしい","textReviewed":true},"cardB":{"id":"t2","text":"朝食の選択肢が少ない","textReviewed":true}}')
+case "$tr_contra" in *'"hasContradiction"'*) echo "  PASS: TR ③満足/不満の矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: TR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ タイトル提案
+tr_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["宿泊"],"cardTexts":["眺望が素晴らしい","朝食の選択肢が少ない","スタッフの対応が丁寧"],"textReviewed":true}')
+case "$tr_title" in *'"candidates"'*) echo "  PASS: TR ④タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: TR ④タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+tr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TR_ID")
+check "TR 読戻し (200)" "200" "$tr_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
