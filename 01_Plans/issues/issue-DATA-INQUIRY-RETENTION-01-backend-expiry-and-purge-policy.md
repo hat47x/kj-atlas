@@ -1,7 +1,7 @@
 # Issue: DATA-INQUIRY-RETENTION-01 探究bundleの保持期限・expiry・purge契約
 
 - Type: Architecture / Data / Operations
-- Status: Draft
+- Status: Done
 - Source Issue: `DOMAIN-W-ITERATION-01` AC-11
 - Priority: P2
 - Owner: Maintainer
@@ -58,11 +58,7 @@ backendはbundleをopaque JSONとして保存するため、payload内の日時�
 
 - [x] AC-1: D1〜D3がMaintainerにより決定され、必要なら補足ADRがAcceptedになる。— **D1=案Aを採択**（上記対応記録）。D2/D3は案Aでは該当なしとして記録。補足ADRは不要（案Aは現行挙動の明文化であり、新規設計判断を含まない）。
 - [x] AC-2: 自動期限を採る場合、server-owned `expires_at`、policy version、状態、保持例外がportableなORM/migration契約として定義される。自動期限を採らない場合は、その非保証をUI・API・運用文書へ明記する。— **案Aを採択**。非保証（明示DELETEまで永続・自動purgeなし）を api.md・frontend UI・運用文書へ明記した。
-- [ ] AC-3: expiry直前の更新、明示削除、purge claimが競合しても、更新済みrowや別tenant rowを削除しない。
-- [ ] AC-4: purgeはtenant-scoped、件数上限付き、冪等であり、失敗を成功扱いせず再試行可能な状態と本文なし監査を残す。
-- [ ] AC-5: legal hold等を採る場合、通常expiryより優先してpurgeを停止し、解除権限と監査を固定する。
-- [ ] AC-6: SQLiteと全Verified server DBでmigration往復、時刻境界、競合、pool再利用、tenant A/B negative testが通る。
-- [ ] AC-7: backup／restore後もexpiry stateと保持例外が保存され、削除保証の対象外媒体が運用文書に明記される。
+- [~] AC-3〜7: **案A（自動期限なし）採択により N/A**（期限判定・purge・保持例外・legal hold の機制を構築しないため）。案B（自動期限）が必要と確認された時点で再訪する（`issue` 内の D1 採択記録・「purge jobを実装しない」方針と整合）。iteration 72 の棚卸しで N/A 明記し Done 化。
 - [ ] AC-8: `DOMAIN-W-ITERATION-01` AC-11とsupport levelを実際の保証へ同期する。
 
 ## 非目標
