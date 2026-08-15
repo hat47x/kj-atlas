@@ -1408,6 +1408,7 @@ def detect_contradiction(payload: DetectContradictionRequest, request: Request, 
 )
 def suggest_document_title(payload: SuggestDocumentTitleRequest, request: Request, db: Session = Depends(get_db)) -> SuggestDocumentTitleResponse:
     _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_document_title"))
+    _reject_unreviewed_cards([payload], payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(

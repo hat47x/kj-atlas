@@ -4,6 +4,7 @@ permits it."""
 
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from kj_atlas_api.main import app
@@ -86,6 +87,10 @@ def _stub_generate_by_task(req):
         raw = '{"groups": [{"label": "A", "cardIds": ["c1", "c2"]}]}'
     elif task == "detect_contradiction":
         raw = '{"hasContradiction": false, "explanation": "e"}'
+    elif task == "suggest_document_title":
+        raw = '{"candidates": [{"title": "（モック）タイトル案"}]}'
+    elif task == "summarize_island_relation":
+        raw = '{"text": "（モック）関係の要約", "groundingCardIds": [], "groundingEdgeIds": [], "warnings": []}'
     else:
         raw = "{}"
     return type("R", (), {"raw_text": raw})()
@@ -176,3 +181,126 @@ def test_nodoc_relaxation_honored_when_profile_allows(monkeypatch) -> None:
             json={"cardText": "alpha", "textReviewed": False, "allowUnreviewedText": True},
         )
     assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# SEC-AI-SAFEMODE-01/02 coverage canary: EVERY AI route that forwards card text
+# to the LLM must reject an unreviewed payload with 422. A route added without
+# joining this list is a boundary hole — the test fails until it is classified
+# (either gated, or proven not to forward card text).
+# ---------------------------------------------------------------------------
+
+
+def _doc_with_cards_covered(cards: list[dict]) -> dict:
+    return {
+        "version": 1,
+        "id": "coverage-doc",
+        "createdAt": "2026-02-11T00:00:00Z",
+        "updatedAt": "2026-02-11T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [{**c, "x": c.get("x", 0), "y": c.get("y", 0)} for c in cards],
+        "edges": [],
+        "islands": [
+            {
+                "id": "i1",
+                "cardIds": [c["id"] for c in cards],
+                "summaryText": "s",
+            }
+        ],
+    }
+
+
+#: Every content-bearing AI route, with an UNREVIEWED payload. The gate must
+#: fire (422) before any LLM call. Keep in sync when routes are added/removed.
+_CONTENT_ROUTE_CASES = [
+    # doc-context routes (SEC-AI-SAFEMODE-01): doc cards without textReviewed.
+    ("/ai/suggest-layout", {"doc": _doc_with_cards_covered([{"id": "c1", "text": "a"}])}),
+    ("/ai/suggest-merges", {"doc": _doc_with_cards_covered([{"id": "c1", "text": "a"}])}),
+    (
+        "/ai/suggest-island-summary",
+        {"doc": _doc_with_cards_covered([{"id": "c1", "text": "a"}]), "islandId": "i1"},
+    ),
+    (
+        "/ai/generate-narrative",
+        {"doc": _doc_with_cards_covered([{"id": "c1", "text": "a"}])},
+    ),
+    (
+        "/ai/check-narrative",
+        {"doc": _doc_with_cards_covered([{"id": "c1", "text": "a"}]), "narrativeText": "n"},
+    ),
+    # NOTE: /ai/proposals/island-summary is deliberately NOT in this list — it
+    # is CE4 proposal machinery that requires a persisted document (404
+    # otherwise), so its SafeMode gate is exercised by the proposal-route tests
+    # (test_ce2_*).
+    (
+        "/ai/summarize-island-relation",
+        {
+            "doc": _doc_with_cards_covered([{"id": "c1", "text": "a"}]),
+            "islandAId": "i1",
+            "islandBId": "i1",
+            "relationType": "related",
+            "derived": True,
+            "groundingCardIds": [],
+            "groundingEdgeIds": [],
+            "cardTexts": [{"id": "c1", "text": "a"}],
+        },
+    ),
+    # no-doc routes (SEC-AI-SAFEMODE-02): textReviewed defaults false.
+    ("/ai/refine-card-text", {"cardText": "alpha"}),
+    (
+        "/ai/suggest-card-groups",
+        {"cards": [{"id": "c1", "text": "alpha"}, {"id": "c2", "text": "beta"}]},
+    ),
+    (
+        "/ai/detect-contradiction",
+        {"cardA": {"id": "c1", "text": "alpha"}, "cardB": {"id": "c2", "text": "beta"}},
+    ),
+    ("/ai/suggest-document-title", {"islandTitles": [], "cardTexts": ["alpha"]}),
+]
+
+
+@pytest.mark.parametrize("path,payload", _CONTENT_ROUTE_CASES, ids=[c[0] for c in _CONTENT_ROUTE_CASES])
+def test_every_content_ai_route_rejects_unreviewed_text(monkeypatch, path, payload) -> None:
+    """Coverage canary: unreviewed text must be rejected at every content route.
+
+    The 422 body's code asserts it is the SafeMode gate (not request validation),
+    so a route that returns 422 for another reason fails here — forcing any newly
+    added content route to be classified (gated or proven content-free)."""
+    monkeypatch.setattr(ai, "generate_with_fallback", _stub_generate_by_task)
+    monkeypatch.setattr(settings, "allow_unreviewed_ai_text", False)
+    with TestClient(app) as client:
+        resp = client.post(path, json=payload)
+        assert resp.status_code == 422, f"{path}: {resp.status_code} {resp.text[:200]}"
+        assert resp.json()["detail"]["code"] == "unreviewed_text_not_allowed", path
+
+
+def test_newly_gated_routes_accept_reviewed_text(monkeypatch) -> None:
+    """The two routes closed in iteration 48 accept reviewed content (200)."""
+    from kj_atlas_api.routes import ai_relations
+
+    monkeypatch.setattr(ai, "generate_with_fallback", _stub_generate_by_task)
+    # ai_relations imports generate_with_fallback directly, so stub its module.
+    monkeypatch.setattr(ai_relations, "generate_with_fallback", _stub_generate_by_task)
+    with TestClient(app) as client:
+        # suggest-document-title (no-doc, textReviewed certified).
+        resp = client.post(
+            "/ai/suggest-document-title",
+            json={"islandTitles": ["島A"], "cardTexts": ["alpha"], "textReviewed": True},
+        )
+        assert resp.status_code == 200, resp.text
+        # summarize-island-relation (doc-context, doc cards reviewed).
+        doc = _doc_with_cards([{"id": "c1", "text": "alpha", "x": 0, "y": 0, "textReviewed": True}])
+        resp = client.post(
+            "/ai/summarize-island-relation",
+            json={
+                "doc": doc,
+                "islandAId": "i1",
+                "islandBId": "i1",
+                "relationType": "related",
+                "derived": True,
+                "groundingCardIds": [],
+                "groundingEdgeIds": [],
+                "cardTexts": [{"id": "c1", "text": "alpha"}],
+            },
+        )
+        assert resp.status_code == 200, resp.text

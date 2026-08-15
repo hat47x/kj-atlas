@@ -125,6 +125,8 @@ class SummarizeIslandRelationRequest(BaseModel):
     groundingEdgeIds: list[str]
     edgeTexts: list[RelationEdgeText] | None = None
     cardTexts: list[RelationCardText]
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
 
 
 class SummarizeIslandRelationResponse(BaseModel):
@@ -346,6 +348,13 @@ class SuggestDocumentTitleRequest(BaseModel):
     islandTitles: list[str] = Field(min_length=0, max_length=50)
     cardTexts: list[str] = Field(min_length=0, max_length=50)
     currentTitle: str | None = Field(default=None, max_length=500)
+    # SEC-AI-SAFEMODE-02: this no-doc route forwards cardTexts to the LLM, so
+    # the review state travels with the request. textReviewed certifies the
+    # input texts are human-reviewed; defaults False (fail-closed, ADR-0068
+    # D3=A).
+    textReviewed: bool = False
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
     # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
     model: str | None = Field(default=None, max_length=256)
 
