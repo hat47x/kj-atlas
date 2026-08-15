@@ -567,6 +567,8 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 - Request: `RefineCardTextRequest`
   - `cardText: string` — 元のカード本文
   - `context?: string` — 周辺カードの本文（任意）
+  - `textReviewed?: boolean` — 入力本文が人間レビュー済みか（`SEC-AI-SAFEMODE-02`。**既定 false = fail-closed**。未指定・false は 422）
+  - `allowUnreviewedText?: boolean` — 未レビュー本文の送信を明示的に許可（`SEC-AI-SAFEMODE-01`。`KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT=true` のときのみ有効）
 - Response: `RefineCardTextResponse`
   - `refinedText: string` — 改善された文
   - `reasoning?: string` — 変更理由
@@ -575,23 +577,27 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 **POST** `/ai/suggest-card-groups`
 
 - Request: `SuggestCardGroupsRequest`
-  - `cards: CardRef[]` — カードの配列（id + text、最大100件）
+  - `cards: CardRef[]` — カードの配列（id + text + textReviewed、最大100件）
+  - `allowUnreviewedText?: boolean` — 未レビュー本文の送信を明示的に許可（`SEC-AI-SAFEMODE-01`）
 - Response: `SuggestCardGroupsResponse`
   - `groups: SuggestedGroup[]` — グループの配列
     - `label: string`
     - `cardIds: string[]`
     - `rationale?: string`
 - カード群のテーマ別グループ化（島候補）を提案する。1段目の束は2〜3枚が原則。
+- `CardRef.textReviewed` は **既定 false = fail-closed**（`SEC-AI-SAFEMODE-02`）。1件でも未レビューのカードを含むと 422（`unreviewed_text_not_allowed`）。
 
 **POST** `/ai/detect-contradiction`
 
 - Request: `DetectContradictionRequest`
-  - `cardA: CardRef`
+  - `cardA: CardRef`（id + text + textReviewed）
   - `cardB: CardRef`
+  - `allowUnreviewedText?: boolean` — 未レビュー本文の送信を明示的に許可（`SEC-AI-SAFEMODE-01`）
 - Response: `DetectContradictionResponse`
   - `hasContradiction: boolean`
   - `explanation?: string`
 - 2枚のカード間の論理的矛盾を検出する。異なる意見（単なる相違）は矛盾として扱わない。
+- `CardRef.textReviewed` は **既定 false = fail-closed**（`SEC-AI-SAFEMODE-02`）。どちらかが未レビューなら 422。
 
 #### 廃止済み: カード重要度評価（再実装禁止）
 

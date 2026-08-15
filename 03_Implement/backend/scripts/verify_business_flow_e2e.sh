@@ -95,7 +95,7 @@ check "GET document (読戻し)" "200" "$get_code"
 
 # 3c. 文面整え（refine-card-text、ローカルLLM経由）。
 refined=$(curl -s -X POST "$BASE_URL/ai/refine-card-text" -H 'Content-Type: application/json' \
-  -d '{"cardText":"待ち時間が長いと感じた","context":"店舗"}' )
+  -d '{"cardText":"待ち時間が長いと感じた","context":"店舗","textReviewed":true}' )
 case "$refined" in
   *'"refinedText"'*)
     echo "  PASS: refine-card-text via local LLM"
@@ -158,7 +158,7 @@ check "WS PUT document (作成)" "200" "$ws_put"
 
 # 発言の束ね提案（suggest-card-groups、モックは2グループに分割）。
 groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
-  -d '{"cards":[{"id":"w1","text":"顧客の待ち時間を可視化する"},{"id":"w2","text":"予約の空き状況を通知する"},{"id":"w3","text":"スタッフの負荷を平準化する"},{"id":"w4","text":"再来店を促す施策を打つ"}]}')
+  -d '{"cards":[{"id":"w1","text":"顧客の待ち時間を可視化する","textReviewed":true},{"id":"w2","text":"予約の空き状況を通知する","textReviewed":true},{"id":"w3","text":"スタッフの負荷を平準化する","textReviewed":true},{"id":"w4","text":"再来店を促す施策を打つ","textReviewed":true}]}')
 case "$groups" in
   *'"groups":'*'"cardIds":["w1","w2"]'*'"cardIds":["w3","w4"]'*)
     echo "  PASS: suggest-card-groups splits all 4 cards into 2 groups"
@@ -207,7 +207,7 @@ check "QM GET document (読戻し)" "200" "$qm_get"
 
 # 証言間の論理的矛盾をAI検出（detect-contradiction、モックは矛盾なしと応答）。
 contradiction=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
-  -d '{"cardA":{"id":"q1","text":"受注後に納期変更の連絡が来た"},"cardB":{"id":"q2","text":"営業は納期を守ると言った"}}')
+  -d '{"cardA":{"id":"q1","text":"受注後に納期変更の連絡が来た","textReviewed":true},"cardB":{"id":"q2","text":"営業は納期を守ると言った","textReviewed":true}}')
 case "$contradiction" in
   *'"hasContradiction":false'*)
     echo "  PASS: detect-contradiction returns structured result (mock: no contradiction)"
@@ -232,6 +232,13 @@ case "$qm_summary" in
     FAIL=$((FAIL+1))
     ;;
 esac
+
+# 注意事項（SEC-AI-SAFEMODE-02）: 文書非依存AIルートも未レビュー本文を
+# 422 で拒否する（textReviewed は fail-closed 既定で未指定=未レビュー扱い）。
+unreviewed_contradiction=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/detect-contradiction" \
+  -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"q-u1","text":"確認前の証言","textReviewed":false},"cardB":{"id":"q-u2","text":"別の確認前証言","textReviewed":true}}')
+check "QM detect-contradiction unreviewed text blocked (422, SEC-AI-SAFEMODE-02)" "422" "$unreviewed_contradiction"
 
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="

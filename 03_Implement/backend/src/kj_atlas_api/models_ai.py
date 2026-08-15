@@ -168,6 +168,8 @@ class ProposeIslandSummaryRequest(BaseModel):
     sourceBundleHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
     # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
     allowUnreviewedText: bool | None = None
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
 
 
 class ProposalDecisionAuditRequest(BaseModel):
@@ -264,6 +266,13 @@ class RefineCardTextRequest(BaseModel):
 
     cardText: str = Field(min_length=1, max_length=2000)
     context: str | None = Field(default=None, max_length=2000)
+    # SEC-AI-SAFEMODE-02: this route has no document context, so the review
+    # state travels with the request. textReviewed certifies the caller has
+    # human-reviewed the input text; it defaults False (fail-closed) per
+    # ADR-0068 D3=A (unspecified = SafeMode ON).
+    textReviewed: bool = False
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
     # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
     model: str | None = Field(default=None, max_length=256)
 
@@ -281,6 +290,8 @@ class SuggestCardGroupsRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     cards: list[_CardRef] = Field(min_length=2, max_length=100)
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
     # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
     model: str | None = Field(default=None, max_length=256)
 
@@ -289,6 +300,10 @@ class _CardRef(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(min_length=1, max_length=256)
     text: str = Field(min_length=1, max_length=2000)
+    # SEC-AI-SAFEMODE-02: no-doc routes take card text directly, so the review
+    # state travels with each card. Defaults False (unreviewed, fail-closed) per
+    # ADR-0068 D3=A.
+    textReviewed: bool = False
 
 
 class SuggestCardGroupsResponse(BaseModel):
@@ -311,6 +326,8 @@ class DetectContradictionRequest(BaseModel):
 
     cardA: _CardRef
     cardB: _CardRef
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
 
 
 class DetectContradictionResponse(BaseModel):

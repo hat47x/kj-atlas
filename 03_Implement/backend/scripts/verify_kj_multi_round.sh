@@ -87,7 +87,7 @@ R1_DOC='{"version":1,"id":"kj-collab-r1","title":"カスタマーサポートの
 check "R1 PUT document (人間がカード作成)" "200" "$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/kj-collab-r1" -H 'Content-Type: application/json' -d "$R1_DOC")"
 
 r1_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
-  -d '{"cards":[{"id":"k1","text":"問い合わせの回答に時間がかかる"},{"id":"k2","text":"FAQにたどり着けない"},{"id":"k3","text":"チャットで解決できると早い"},{"id":"k4","text":"担当者ごとに回答が違う"}]}')
+  -d '{"cards":[{"id":"k1","text":"問い合わせの回答に時間がかかる","textReviewed":true},{"id":"k2","text":"FAQにたどり着けない","textReviewed":true},{"id":"k3","text":"チャットで解決できると早い","textReviewed":true},{"id":"k4","text":"担当者ごとに回答が違う","textReviewed":true}]}')
 case "$r1_groups" in
   *'"groups":'*)
     echo "  PASS: R1 AI 束ね提案 (suggest-card-groups)"
@@ -118,7 +118,7 @@ esac
 
 # ============ R3 深化: AI が文面を整え、ナラティブ草稿 ============
 r3_refined=$(curl -s -X POST "$BASE_URL/ai/refine-card-text" -H 'Content-Type: application/json' \
-  -d '{"cardText":"問い合わせの回答に時間がかかる","context":"サポート改善"}' )
+  -d '{"cardText":"問い合わせの回答に時間がかかる","context":"サポート改善","textReviewed":true}' )
 case "$r3_refined" in
   *'"refinedText"'*)
     echo "  PASS: R3 AI 文面整え (refine-card-text)"

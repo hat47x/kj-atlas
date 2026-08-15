@@ -117,7 +117,7 @@ def test_refine_card_text_endpoint_mock_eval(monkeypatch: pytest.MonkeyPatch, ev
     monkeypatch.setattr(ai, "generate_with_fallback", _fake_generate)
     card = eval_doc.cards[0]
     with TestClient(app) as client:
-        resp = client.post("/ai/refine-card-text", json={"cardText": card.text})
+        resp = client.post("/ai/refine-card-text", json={"cardText": card.text, "textReviewed": True})
     assert resp.status_code == 200, resp.text
     body = resp.json()
     assert body["refinedText"] == "高齢者が買い物に出られない"
@@ -140,7 +140,7 @@ def test_refine_card_text_eval_covers_all_fixture_cards(
     monkeypatch.setattr(ai, "generate_with_fallback", _fake_generate)
     with TestClient(app) as client:
         for card in eval_doc.cards[:10]:
-            resp = client.post("/ai/refine-card-text", json={"cardText": card.text})
+            resp = client.post("/ai/refine-card-text", json={"cardText": card.text, "textReviewed": True})
             assert resp.status_code == 200, resp.text
     assert len(calls) == 10
 
@@ -222,7 +222,7 @@ def test_ai_route_emits_routing_audit_event(
     recorder = Recorder()
     with TestClient(app) as client:
         client.app.state.audit_dispatcher = recorder
-        resp = client.post("/ai/refine-card-text", json={"cardText": "高齢者が買い物に出られない"})
+        resp = client.post("/ai/refine-card-text", json={"cardText": "高齢者が買い物に出られない", "textReviewed": True})
     assert resp.status_code == 200, resp.text
 
     llm_events = [e for e in recorder.events if getattr(e, "eventType", None) == "llm"]

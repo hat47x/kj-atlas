@@ -3,7 +3,7 @@
 > ドッグフーディング iteration 44（カスタマーサポート品質管理シナリオ）で実機検証により発見。
 
 - Type: Security
-- Status: Draft
+- Status: In Progress
 - Source Issue: `SEC-AI-SAFEMODE-01`（Done・6ルート配線の残余）
 - Priority: P1
 - Owner: Maintainer
@@ -45,9 +45,9 @@
 
 ## 受入条件
 
-- [ ] 案a を採択する場合: 3ルートが未レビュー文で 422（`unreviewed_text_not_allowed`）を返し、レビュー済み文で 200 を返すことを integration テストで固定する。
-- [ ] 案b を採択する場合: api.md の該当3ルート節と SafeMode 文書に「適用範囲外」を明記し、frontend で未レビューカードを選択不可であることをテストで固定する。
-- [ ] どの案でも、SEC-AI-SAFEMODE-01 の既存6ルートの回帰を壊さない（`test_ai_safemode.py` 全pass）。
+- [x] 案a を採択: 3ルートが未レビュー文で 422（`unreviewed_text_not_allowed`）を返し、レビュー済み文で 200 を返すことを integration テストで固定した。— `models_ai.py` に `textReviewed`（既定 false = fail-closed）＋`allowUnreviewedText` を追加。`routes/ai.py` に `_reject_unreviewed_cards` を追加し3ルートへ配線。`test_ai_safemode.py` に5テスト追加（**9 pass**）。api.md にフィールドと fail-closed 既定を明記。呼出側（`verify_business_flow_e2e.sh` シナリオ1〜3・`verify_kj_multi_round.sh`・`run_ai_eval.py`・`test_ai_eval_pipeline.py`）へ `textReviewed: true` を追加し、E2E に未レビュー→422 の負例を固定（**15/15 pass**）。
+- [ ] 案b（適用範囲外の文書化）は 案a 採択により不要。
+- [ ] SEC-AI-SAFEMODE-01 の既存6ルートの回帰を壊さないことをフルスイートで確認する。
 
 ## 検証計画
 

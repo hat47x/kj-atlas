@@ -187,6 +187,25 @@ def _reject_unreviewed_text(document, allow_unreviewed_text: bool | None) -> Non
         )
 
 
+def _reject_unreviewed_cards(cards, allow_unreviewed_text: bool | None) -> None:
+    """SEC-AI-SAFEMODE-02: the no-document AI routes take card text directly, so
+    the review state travels with the request (`textReviewed`). Reject any card
+    whose text is not certified reviewed unless the caller explicitly requests
+    relaxation AND the profile permits it. Defaults False (fail-closed), so an
+    unspecified `textReviewed` is treated as unreviewed — the request is
+    rejected — matching ADR-0068 D3=A (unspecified = SafeMode ON)."""
+    if allow_unreviewed_text is True and settings.allow_unreviewed_ai_text:
+        return
+    if any(getattr(card, "textReviewed", False) is not True for card in cards):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "unreviewed_text_not_allowed",
+                "message": "Request contains unreviewed card text, which cannot be sent to the LLM under SafeMode.",
+            },
+        )
+
+
 def _raise_llm_http_error(exc: ProviderDisabledError | ProviderRequestError) -> None:
     if isinstance(exc, ProviderDisabledError):
         raise HTTPException(status_code=503, detail=exc.to_contract()) from exc
@@ -917,6 +936,7 @@ def propose_island_summary(
             doc=payload.doc,
             islandId=payload.islandId,
             allowUnreviewedText=payload.allowUnreviewedText,
+            model=payload.model,
         ),
         request,
         db,
@@ -1294,6 +1314,7 @@ def _parse_detect_contradiction_response(raw_text: str) -> DetectContradictionRe
 )
 def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Session = Depends(get_db)) -> RefineCardTextResponse:
     _assert_model_allowed(request, db, payload.model or resolve_model_for_task("refine_card_text"))
+    _reject_unreviewed_cards([payload], payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -1318,6 +1339,7 @@ def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Sessi
 )
 def suggest_card_groups(payload: SuggestCardGroupsRequest, request: Request, db: Session = Depends(get_db)) -> SuggestCardGroupsResponse:
     _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_card_groups"))
+    _reject_unreviewed_cards(payload.cards, payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -1341,6 +1363,7 @@ def suggest_card_groups(payload: SuggestCardGroupsRequest, request: Request, db:
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def detect_contradiction(payload: DetectContradictionRequest, request: Request, db: Session = Depends(get_db)) -> DetectContradictionResponse:
+    _reject_unreviewed_cards([payload.cardA, payload.cardB], payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
