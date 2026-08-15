@@ -806,6 +806,13 @@ case "$qa_error_body" in
     ;;
 esac
 
+# 島要約2001文字 → 422（島要約の上限・ISLAND_SUMMARY_MAX_LENGTH=2000）。
+QA_LONG_SUMMARY=$(printf 'う%.0s' $(seq 1 2001))
+qa_over_summary=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/qa-doc-over-summary" \
+  -H 'Content-Type: application/json' \
+  -d '{"version":1,"id":"qa-doc-over-summary","title":"QA","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[],"edges":[],"islands":[{"id":"i1","cardIds":[],"summaryText":"'"$QA_LONG_SUMMARY"'"}]}')
+check "QA 島要約2001文字 → 422（上限違反）" "422" "$qa_over_summary"
+
 echo ""
 echo "--- シナリオ15: 編集者の統合決定ガバナンス（マージ決定の記録と復元） ---"
 # 業態: 出版・編集（ナレッジ統合）
