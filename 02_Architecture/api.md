@@ -1211,7 +1211,7 @@ Inquiry bundle は `DocumentV1` の optional field ではなく、W型累積探�
 - tenant は request body、path、query、header の利用者入力から決定しない。server-resolved identity と active membership から解決された trusted `TenantContext` のみを使用する。
 - tenant session precondition がある構成では、既存の `tenantSessionVersion` guard を適用する。trusted tenant context を解決できない場合は fail-closed（`403 tenant_context_untrusted`）とする。
 - `journey_id` は空でない、前後に空白がない、printable、最大256文字の canonical文字列でなければならない。不正値は `422`（`invalid_journey_id`）とする。
-- request body は JSON として有限値だけを受け付け、UTF-8 serialized payload が **5 MiBを超える場合は保存せず `413`**（`inquiry_bundle_too_large`）とする。
+- request body は JSON として有限値だけを受け付け、UTF-8 serialized payload が **20 MiBを超える場合は保存せず `413`**（`inquiry_bundle_too_large`）とする（`MAX_INQUIRY_BUNDLE_PAYLOAD_BYTES`。`KJ_ATLAS_MAX_DOCUMENT_BYTES` の文書サイズ上限 20 MiB と整合。**ドッグフーディング iteration 83 で実装値と契約の乖離を検出し api.md を修正**）。
 - backend は payload の未知keyや将来versionを解釈・変換しない。Inquiry bundle のstrict import/export、SafeMode projection、DocumentV1との関係は既存のfrontend/domain契約が保持する。
 - **保持契約（DATA-INQUIRY-RETENTION-01 D1=案A）**: 探究bundleは **明示DELETEまで永続** する。自動期限・purge・保持例外（legal hold等）は**存在しない**。期限切れと長期停止は区別されず、backendはpayload内の日時・stage・個人情報有無から期限を推測しない。明示DELETEのみが削除経路で、削除時は本文なし監査を同一transactionで記録する。
 
@@ -1226,7 +1226,7 @@ Inquiry bundle は `DocumentV1` の optional field ではなく、W型累積探�
   - 前提条件なし — `428`（`precondition_required`）。
   - `If-Match` が wildcard `*`・複数値・非正整数、または `If-Match` と `If-None-Match` の両方 — `422`（`invalid_if_match` / `invalid_if_none_match` / `conflicting_preconditions`）。
 - validation error: `422`（JSONでない、非有限値、または不正な `journey_id`）
-- size error: `413`（serialized payload が5 MiB超）
+- size error: `413`（serialized payload が20 MiB超）
 
 **GET** `/inquiry-bundles/{journey_id}`
 

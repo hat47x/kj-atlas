@@ -125,6 +125,21 @@ resp=$(curl -s -o /dev/null -w '%{http_code}' "${auth_header[@]}" -X DELETE \
   "$BASE_URL/inquiry-bundles/$JOURNEY_ID" -H 'If-Match: "2"')
 check "re-delete returns 409 (row missing)" "409" "$resp"
 
+# 12. Size bound: a payload over the 20 MiB ceiling is refused with 413
+#     (inquiry_bundle_too_large), matching api.md — discovered via dogfooding
+#     that the documented 5 MiB was stale vs the enforced 20 MiB.
+if command -v python3 >/dev/null 2>&1; then
+  BIG_FILE="$(mktemp /tmp/kj_inquiry_big_XXXXXX.json)"
+  python3 -c "import json,sys; json.dump({'big':'a'*21000000}, open(sys.argv[1],'w'))" "$BIG_FILE"
+  big_code=$(curl -s -o /dev/null -w '%{http_code}' "${auth_header[@]}" \
+    -X POST "$BASE_URL/inquiry-bundles/verify-inquiry-too-big" \
+    -H 'Content-Type: application/json' -H 'If-None-Match: *' --data-binary @"$BIG_FILE")
+  rm -f "$BIG_FILE"
+  check "payload >20MiB refused (413 inquiry_bundle_too_large)" "413" "$big_code"
+else
+  echo "  SKIP: size-bound check — python3 not available"
+fi
+
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
