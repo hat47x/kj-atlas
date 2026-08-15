@@ -1,7 +1,7 @@
 # Issue Draft: AI-OPPOSE-01 反対視点・根拠不足のproposal-only提案
 
 - Type: Feature request / AI capability
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
