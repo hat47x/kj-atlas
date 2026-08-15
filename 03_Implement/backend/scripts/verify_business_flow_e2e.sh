@@ -61,9 +61,15 @@ echo "  mock LLM: http://127.0.0.1:${STUB_PORT} ($MOCK_LLM)"
 STUB_PID=$!
 sleep 2
 
-# 2. Start the backend with KJ_ATLAS_LLM_PROVIDER=local pointed at the stub.
+# 2. Fresh migrated DB (deterministic run, independent of local state).
+TMP_DB="$(mktemp /tmp/kj_biz_XXXXXX.sqlite3)"
+(cd "$BACKEND_DIR" && KJ_ATLAS_DATABASE_URL="sqlite:///$TMP_DB" \
+  "$VENV_PYTHON" -m alembic upgrade head > /tmp/kj_biz_migrate.log 2>&1)
+
+# 3. Start the backend with KJ_ATLAS_LLM_PROVIDER=local pointed at the mock.
 KJ_ATLAS_LLM_PROVIDER=local \
 KJ_ATLAS_LOCAL_LLM_BASE_URL="http://127.0.0.1:${STUB_PORT}" \
+KJ_ATLAS_DATABASE_URL="sqlite:///$TMP_DB" \
   "$VENV_PYTHON" -m uvicorn kj_atlas_api.main:app --port "$BACKEND_PORT" --host 127.0.0.1 \
   > /tmp/kj_biz_backend.log 2>&1 &
 BACKEND_PID=$!
@@ -135,6 +141,48 @@ curl -s -o /dev/null -X PUT "$BASE_URL/docs/biz-unreviewed" -H 'Content-Type: ap
 unreviewed_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/suggest-island-summary" \
   -H 'Content-Type: application/json' -d "{\"doc\":$UNREVIEWED,\"islandId\":\"u-i\"}")
 check "unreviewed text blocked (422, SafeMode)" "422" "$unreviewed_code"
+
+echo ""
+echo "--- シナリオ2: 新規事業企画ワークショップ（ファシリテーター） ---"
+# 業態: 事業企画コンサルティング / 想定人物: ファシリテーター
+# 業務領域: 参加者のアイデア発言を KJ 法で構造化（カード→グループ→島）
+# 操作内容: 文書作成 -> 発言カード化 -> suggest-card-groups(発言の束ね提案)
+#           -> suggest-island-summary(島の表札) -> generate-narrative
+# 注意事項: refine 等で参加者の意図を変えない（mock は元文面を保持）
+WS_DOC_ID="biz-flow-workshop"
+WS_DOC='{"version":1,"id":"'$WS_DOC_ID'","title":"新規事業アイデア出し","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"w1","text":"顧客の待ち時間を可視化する","x":0,"y":0,"textReviewed":true},{"id":"w2","text":"予約の空き状況を通知する","x":10,"y":0,"textReviewed":true},{"id":"w3","text":"スタッフの負荷を平準化する","x":20,"y":0,"textReviewed":true},{"id":"w4","text":"再来店を促す施策を打つ","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ws-i","cardIds":["w1","w2","w3","w4"]}],"readingOrder":["ws-i"]}'
+
+ws_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$WS_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$WS_DOC")
+check "WS PUT document (作成)" "200" "$ws_put"
+
+# 発言の束ね提案（suggest-card-groups、モックは2グループに分割）。
+groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"w1","text":"顧客の待ち時間を可視化する"},{"id":"w2","text":"予約の空き状況を通知する"},{"id":"w3","text":"スタッフの負荷を平準化する"},{"id":"w4","text":"再来店を促す施策を打つ"}]}')
+case "$groups" in
+  *'"groups":'*'"cardIds":["w1","w2"]'*'"cardIds":["w3","w4"]'*)
+    echo "  PASS: suggest-card-groups splits all 4 cards into 2 groups"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: suggest-card-groups (got $groups)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 島の表札（モックはメンバーカードを grounding）。
+ws_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$WS_DOC,\"islandId\":\"ws-i\"}")
+case "$ws_summary" in
+  *'"groundingIds":["w1","w2","w3"]'*)
+    echo "  PASS: WS suggest-island-summary groundingIds = member cards"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: WS suggest-island-summary (got $ws_summary)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
 
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="

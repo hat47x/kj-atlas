@@ -29,7 +29,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 # Card lines in the layout / island-summary prompts:  - id="<id>", text=...
 # (island lines use `, title=` instead of `, text=`, so they are not matched.)
-_CARD_LINE = re.compile(r'^- id="([^"]+)", text=', re.MULTILINE)
+_CARD_LINE = re.compile(r'^\s*- id="([^"]+)", text=', re.MULTILINE)
 # Reading-order lines in the narrative prompt:  - 1. card id="<id>", ...
 _READING_ORDER_LINE = re.compile(r'^- \d+\. \w+ id="([^"]+)"', re.MULTILINE)
 
