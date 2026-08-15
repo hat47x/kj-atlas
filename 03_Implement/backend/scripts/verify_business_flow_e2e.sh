@@ -1415,5 +1415,43 @@ tr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TR_ID")
 check "TR 読戻し (200)" "200" "$tr_read"
 
 echo ""
+echo "--- シナリオ29: 製造・生産現場の改善提案整理 ---"
+# 業態: 製造・生産
+# 想定人物: 生産改善リーダー（現場の改善提案を整理）
+# 業務領域: 現場改善提案のKJ整理と課題の因果関係の要約
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 島間関係要約(summarize-island-relation) -> ナラティブ(generate-narrative)
+# 注意事項: 現場の声は逐語（refineで変えない）。関係要約は提案のみ（自動適用なし）。
+MF_ID="biz-flow-manufacturing"
+MF_DOC='{"version":1,"id":"'$MF_ID'","title":"生産現場の改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"m1","text":"段取り替えに時間がかかる","x":0,"y":0,"textReviewed":true},{"id":"m2","text":"部品の在庫管理が煩雑","x":10,"y":0,"textReviewed":true},{"id":"m3","text":"設備の稼働率が低い","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"mf-a","cardIds":["m1","m2"]},{"id":"mf-b","cardIds":["m3"]}],"readingOrder":["mf-a","mf-b"]}'
+
+mf_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MF_ID" \
+  -H 'Content-Type: application/json' -d "$MF_DOC")
+check "MF PUT document (作成)" "200" "$mf_put"
+
+# ① AI束ね
+mf_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"m1","text":"段取り替えに時間がかかる","textReviewed":true},{"id":"m2","text":"部品の在庫管理が煩雑","textReviewed":true},{"id":"m3","text":"設備の稼働率が低い","textReviewed":true}]}')
+case "$mf_groups" in *'"groups":'*) echo "  PASS: MF ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: MF ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+mf_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MF_DOC,\"islandId\":\"mf-a\"}")
+case "$mf_summary" in *'"groundingIds":["m1","m2"]'*) echo "  PASS: MF ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: MF ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 島間関係の要約（段取り・在庫 → 稼働率 の因果）
+mf_rel=$(curl -s -X POST "$BASE_URL/ai/summarize-island-relation" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MF_DOC,\"islandAId\":\"mf-a\",\"islandBId\":\"mf-b\",\"relationType\":\"causal\",\"derived\":false,\"groundingCardIds\":[\"m3\"],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"m3\",\"text\":\"設備の稼働率が低い\"}]}")
+case "$mf_rel" in *'"text"'*) echo "  PASS: MF ③島間関係の要約 (causal)"; PASS=$((PASS+1));; *) echo "  FAIL: MF ③関係要約 (${mf_rel:0:100})"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+mf_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$MF_DOC}")
+case "$mf_narr" in *'"basedOnReadingOrder":["mf-a","mf-b"]'*) echo "  PASS: MF ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: MF ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+mf_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MF_ID")
+check "MF 読戻し (200)" "200" "$mf_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
