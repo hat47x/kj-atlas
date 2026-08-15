@@ -911,5 +911,50 @@ ext_stale_sig=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/ext
 check "EXT stale baseDocSignature (409)" "409" "$ext_stale_sig"
 
 echo ""
+echo "--- シナリオ17: マーケティングアナリストの顧客レビュー全行程分析 ---"
+# 業態: eコマース・マーケティング
+# 想定人物: マーケティングアナリスト（顧客レビューを分析）
+# 業務領域: 顧客レビューの全行程KJ分析（束ね→島→ナラティブ→矛盾検出→タイトル）
+# 操作内容: レビューをカード化(PUT) -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> ナラティブ(generate-narrative) -> 矛盾検出(detect-contradiction)
+#          -> タイトル提案(suggest-document-title) -> 読戻し
+# 注意事項: 全AI操作は未レビュー入力で 422（SafeMode・textReviewed fail-closed）。
+#          レビュー発言は逐語（refine で変えない）。
+MK_ID="biz-flow-marketing"
+MK_DOC='{"version":1,"id":"'$MK_ID'","title":"顧客レビュー分析","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"k1","text":"配送が遅い","x":0,"y":0,"textReviewed":true},{"id":"k2","text":"梱包が丁寧","x":10,"y":0,"textReviewed":true},{"id":"k3","text":"返品手続きが面倒","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"mk-i","cardIds":["k1","k2","k3"]}],"readingOrder":["mk-i"]}'
+
+mk_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MK_ID" \
+  -H 'Content-Type: application/json' -d "$MK_DOC")
+check "MK PUT document (作成)" "200" "$mk_put"
+
+# ① AI束ね
+mk_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"k1","text":"配送が遅い","textReviewed":true},{"id":"k2","text":"梱包が丁寧","textReviewed":true},{"id":"k3","text":"返品手続きが面倒","textReviewed":true}]}')
+case "$mk_groups" in *'"groups":'*) echo "  PASS: MK ①束ね (card-groups)"; PASS=$((PASS+1));; *) echo "  FAIL: MK ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+mk_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MK_DOC,\"islandId\":\"mk-i\"}")
+case "$mk_summary" in *'"groundingIds":["k1","k2","k3"]'*) echo "  PASS: MK ②島要約 (grounding=member)"; PASS=$((PASS+1));; *) echo "  FAIL: MK ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ ナラティブ
+mk_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$MK_DOC}")
+case "$mk_narr" in *'"basedOnReadingOrder":["mk-i"]'*) echo "  PASS: MK ③ナラティブ (reading order)"; PASS=$((PASS+1));; *) echo "  FAIL: MK ③ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ④ 矛盾検出
+mk_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"k1","text":"配送が遅い","textReviewed":true},"cardB":{"id":"k2","text":"梱包が丁寧","textReviewed":true}}')
+case "$mk_contra" in *'"hasContradiction":false'*) echo "  PASS: MK ④矛盾検出 (structured)"; PASS=$((PASS+1));; *) echo "  FAIL: MK ④矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ⑤ タイトル提案
+mk_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["配送"],"cardTexts":["配送が遅い","梱包が丁寧","返品手続きが面倒"],"textReviewed":true}')
+case "$mk_title" in *'"candidates"'*) echo "  PASS: MK ⑤タイトル提案 (candidates)"; PASS=$((PASS+1));; *) echo "  FAIL: MK ⑤タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し（全行程後も文書は保持）。
+mk_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MK_ID")
+check "MK 読戻し (200)" "200" "$mk_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
