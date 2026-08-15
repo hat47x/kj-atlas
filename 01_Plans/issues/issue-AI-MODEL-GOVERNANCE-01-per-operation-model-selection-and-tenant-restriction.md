@@ -104,7 +104,7 @@
 - [x] AI リクエストが `model` を露出し、`resolve_model_for_task()` が allowlist を強制する（未許可モデル → 403 `model_not_allowed`）。→ **R3 実装済み（iteration 45）**: 5ルート（ナラティブ/表札/文面/束ね/初期タイトル）に `model` を露出し、`_assert_model_allowed()` が tenant allowlist を強制（未許可 → 403・`allowedModels` を返す）。
 - [x] テナント allowlist が fail-closed で適用される（グループ allowlist はデータモデル設計まで・Phase 2 実装）。→ `tenant_allowlist_effective_model_ids()`（空=プラットフォーム既定・非空=fail-closed）を `_assert_model_allowed` で適用。`test_allowlist_enforced_on_ai_route` で固定。
 - [x] 主要 AI 操作（ナラティブ生成・島の表札・カード文面整え・**初期タイトル生成**）の UI にモデル選択子が露出し、選択肢が利用可能モデルに限定される。→ **R2 UI 実装済み（iteration 47）**: `ModelSelector` コンポーネント（`GET /ai/available-models` でテナント許可モデルのみ・"auto"既定）を**島の表札提案**面に露出。`proposeIslandSummary`→proposals/island-summary→suggest_island_summary へ `model` を通し、backend の allowlist 強制（403）が効く。他操作（ナラティブ/文面/束ね/初期タイトル）の選択子は同コンポーネントを各面に露出する拡張として残る。
-- [ ] final_judgement はユーザー自由選択から除外され、管理者ポリシーへ固定される（MMR-04）。
+- [x] final_judgement はユーザー自由選択から除外され、管理者ポリシーへ固定される（MMR-04）。→ **実装済み（iteration 49）**: `get_available_models` が `_is_user_selectable_model`（intermediate/generate 層のみ・final_judgement専用モデル除外）でフィルタ。選択子に final_judgement 専用モデルは表示されず、final_judgement タスクは管理者ポリシー（allowlist＋タスク階層解決）へ固定。`test_available_models_excludes_final_judgement_only`。
 - [x] モデル/サービス CRUD と allowlist 変更・制限違反が admin 監査に記録される。→ **R4 実装済み（iteration 46）**: モデルCRUD/allowlist変更は `record_admin_plane_audit` middleware（`admin_audit_events`）が記録（`test_model_crud_and_allowlist_changes_are_audited`）。`model_not_allowed` 違反は構造化ログ（tenantId/modelId/allowedModels）で記録。
 - [ ] `member_groups` のデータモデル設計が本issueに記録される（Phase 2 実装の土台）。
 - [ ] `python 01_Plans/docs_check.py`・backend/frontend 回帰が通る。

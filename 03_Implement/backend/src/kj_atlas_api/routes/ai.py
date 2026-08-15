@@ -782,13 +782,29 @@ class AvailableModelsResponse(BaseModel):
     models: list[AvailableModelItem]
 
 
+def _is_user_selectable_model(capabilities: str | None) -> bool:
+    """AI-MODEL-GOVERNANCE-01 MMR-04: a model is user-selectable for the D5
+    per-operation selectors only if it serves an intermediate/generate tier.
+    final_judgement-only models (check_narrative / detect_contradiction etc.) are
+    fixed by admin policy and must NOT be offered for user selection."""
+    if not capabilities:
+        return True
+    lower = capabilities.strip().lower()
+    if "intermediate" in lower or "generate" in lower:
+        return True
+    if "final_judgement" in lower:
+        return False
+    return True
+
+
 @router.get("/available-models", response_model=AvailableModelsResponse)
 def get_available_models(request: Request, db: Session = Depends(get_db)) -> AvailableModelsResponse:
     """AI-MODEL-GOVERNANCE-01 R2: the active registered models this tenant is
     allowed to use (registry active models intersected with the tenant allowlist;
     empty allowlist = platform-default = all active registered models). The UI
-    model selector offers exactly this set. Never includes disabled models or
-    provider secrets."""
+    model selector offers exactly this set -- user-selectable (intermediate/
+    generate) models only, never final_judgement-only ones (MMR-04) and never
+    disabled models or provider secrets."""
     from kj_atlas_api.model_registry_repository import (
         list_models,
         list_providers,
@@ -802,6 +818,7 @@ def get_available_models(request: Request, db: Session = Depends(get_db)) -> Ava
     allowed = [row for row in active_models if row.provider_id in active_provider_ids]
     if effective is not None:
         allowed = [row for row in allowed if row.id in effective]
+    allowed = [row for row in allowed if _is_user_selectable_model(row.capabilities)]
     return AvailableModelsResponse(
         models=[
             AvailableModelItem(

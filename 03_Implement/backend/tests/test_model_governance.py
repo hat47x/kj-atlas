@@ -245,3 +245,24 @@ def test_available_models_reflects_tenant_allowlist(tmp_path, monkeypatch) -> No
         client.put("/admin/provision/models/tenants/local-default/allowlist", json={"modelIds": ["m2"]}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
         filtered = client.get("/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY}).json()["models"]
         assert [m["id"] for m in filtered] == ["m2"]
+
+
+def test_available_models_excludes_final_judgement_only(tmp_path, monkeypatch) -> None:
+    """MMR-04: final_judgement-only models are not offered for user selection."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+
+    with _client(tmp_path) as (client, _session_local):
+        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "external", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        for model_id, caps in (
+            ("intermediate-model", "intermediate,generate"),
+            ("judgement-only", "final_judgement"),
+            ("mixed-model", "intermediate,final_judgement"),
+        ):
+            client.post("/admin/provision/models", json={"id": model_id, "providerId": "p", "displayName": model_id, "capabilities": caps}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+
+        available = client.get("/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY}).json()["models"]
+        ids = {m["id"] for m in available}
+        assert "intermediate-model" in ids
+        assert "mixed-model" in ids  # intermediate tier present -> selectable
+        assert "judgement-only" not in ids  # final_judgement-only -> excluded (MMR-04)
