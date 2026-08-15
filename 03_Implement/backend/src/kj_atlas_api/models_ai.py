@@ -7,7 +7,13 @@ from pydantic import BaseModel, ConfigDict, Field
 from kj_atlas_api.models import DocumentV1, NarrativeCheckCounts
 
 
-SOURCE_BUNDLE_HASH_PATTERN = r"^(?:[0-9a-f]{64}|mock:[0-9a-f]{64})$"
+# DATA-CONTRACT-02 (案b): align the API contract with the persistence bound.
+# The ai_proposals / decision tables enforce `length(source_bundle_hash) = 64`,
+# so a `mock:`-prefixed (69-char) hash passed the request pattern but failed at
+# DB flush with a misleading 409. The docs CE4 path keeps its OWN mock: gate
+# (runtime policy `ce4_source_bundle_hash_allow_mock`); the proposal path now
+# accepts only the 64-char SHA-256 form, matching what can be persisted.
+SOURCE_BUNDLE_HASH_PATTERN = r"^[0-9a-f]{64}$"
 
 
 class ProviderStatusResponse(BaseModel):
