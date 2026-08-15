@@ -172,6 +172,25 @@ else
   echo "  SKIP: API/MCP verification — no backend at $API_BASE (start uvicorn kj_atlas_api.main:app --port 8000 to enable)"
 fi
 
+# 10. Self-contained business-flow E2Es (standard scenarios 1-12).
+# ------------------------------------------------------------------
+# These scripts start their OWN backend + mock LLM on a dedicated port (they
+# do not reuse the running $API_BASE), so they are safe to run alongside the
+# API/MCP checks above. They freeze the dogfooding standard business flows
+# (業態×操作) against the deterministic local LLM mock — the CI-enforced
+# regression that a plain curl probe cannot give. Requires the venv and free
+# ports 8005-8007.
+if [ -x "$VENV_PYTHON" ] && [ -f alembic.ini ]; then
+  check "Business-flow E2E (scenarios 1-12, mock LLM)" \
+    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_business_flow_e2e.sh" 8005
+  check "Admin CLI/API ops flow E2E (scenario 4)" \
+    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_admin_ops_flow_e2e.sh" 8006
+  check "KJ multi-round collaboration E2E (mock LLM)" \
+    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_kj_multi_round.sh" 8007
+else
+  echo "  SKIP: business-flow E2Es — backend venv/alembic.ini not found"
+fi
+
 # ------------------------------------------------------------------
 # Summary
 # ------------------------------------------------------------------
