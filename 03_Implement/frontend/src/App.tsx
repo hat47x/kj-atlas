@@ -13,6 +13,7 @@ import {
   recordProposalDecision,
   registerExternalAgentProposal,
   registerExternalAgentTask,
+  fetchAvailableModels,
   proposeIslandSummary,
   suggestDocumentTitle,
   suggestMerges,
@@ -22,6 +23,7 @@ import {
   archiveDocument,
   unarchiveDocument,
   listDocuments,
+  type AvailableModelItem,
   type DocumentListItem,
   type MergeSuggestion,
   type NarrativeIssue,
@@ -1374,6 +1376,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const [isRecordingIslandSummaryDecision, setIsRecordingIslandSummaryDecision] = useState(false);
   const [islandSummarySuggestionWarningsByIslandId, setIslandSummarySuggestionWarningsByIslandId] = useState<Record<string, string[]>>({});
   const [islandSummaryProposal, setIslandSummaryProposal] = useState<IslandSummaryProposal | null>(null);
+  // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override for the island
+  // summary suggestion. "" = auto (platform default); the selector offers the
+  // tenant's allowed active models.
+  const [islandSummaryModel, setIslandSummaryModel] = useState<string>("");
+  // Tenant-allowed active models for the selector (guarded fetch, owned here).
+  const [availableModels, setAvailableModels] = useState<AvailableModelItem[] | null>(null);
   const [proposalAuditTrail, setProposalAuditTrail] = useState<string[]>([]);
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
   const [connectEdgeType, setConnectEdgeType] = useState<KnownEdgeType>("related");
@@ -2186,6 +2194,24 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const rememberRecentDocumentId = useCallback((docId: string) => {
     setRecentDocumentIds(appStorage.pushRecentDocumentId(docId));
   }, [appStorage]);
+
+  // AI-MODEL-GOVERNANCE-01 (R2): load the tenant's allowed active models for
+  // the model selector. The fetch goes through the guarded tenant-session
+  // wrapper so a stale session cannot leak the listing. Advisory: on failure
+  // the selector collapses (backend default applies).
+  useEffect(() => {
+    let cancelled = false;
+    void runTenantScopedApiRequest(() => fetchAvailableModels({ tenantSessionContext: verifiedTenantSession }))
+      .then((models) => {
+        if (!cancelled) setAvailableModels(models);
+      })
+      .catch(() => {
+        if (!cancelled) setAvailableModels([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [runTenantScopedApiRequest, verifiedTenantSession]);
 
   // 第2反復: fetch the full canvas list when the recent-documents dialog opens.
   // "my documents" filters by the current principal's created_by.
@@ -3045,6 +3071,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         document,
         targetIsland.id,
         `${document.id}:${document.updatedAt}`,
+        islandSummaryModel,
         { tenantSessionContext: verifiedTenantSession },
       ));
       setIslandSummaryProposal(proposal);
@@ -3060,6 +3087,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
   }, [
     document,
+    islandSummaryModel,
     isSuggestingIslandSummary,
     runTenantScopedApiRequest,
     selectedIslandId,
@@ -11943,6 +11971,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           onSuggestIslandSummary={() => {
             void handleSuggestIslandSummary();
           }}
+          islandSummaryModel={islandSummaryModel}
+          onIslandSummaryModelChange={setIslandSummaryModel}
+          availableModels={availableModels}
           islandSummaryProposal={islandSummaryProposal}
           proposalAuditTrail={proposalAuditTrail}
           onAdoptIslandSummaryProposal={() => {

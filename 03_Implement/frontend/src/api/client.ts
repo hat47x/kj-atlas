@@ -694,6 +694,7 @@ export async function proposeIslandSummary(
   doc: DocumentV1,
   islandId: string,
   sourceBundleHash: string,
+  model: string | undefined,
   requestOptions: TenantScopedRequestOptions = {},
 ): Promise<IslandSummaryProposal> {
   const response = await fetch(`${API_BASE}/ai/proposals/island-summary`, {
@@ -702,7 +703,7 @@ export async function proposeIslandSummary(
       "Content-Type": "application/json",
       ...tenantSessionPreconditionHeaders(requestOptions),
     },
-    body: JSON.stringify({ doc, islandId, sourceBundleHash }),
+    body: JSON.stringify({ doc, islandId, sourceBundleHash, model: model ?? null }),
   });
 
   if (!response.ok) {

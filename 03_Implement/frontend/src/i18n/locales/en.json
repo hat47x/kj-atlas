@@ -473,6 +473,8 @@
   "app.status.island_tidy.already_dense": "The island is already arranged as densely as possible",
   "canvas.polygon.vertex_handle": "Move polygon vertex {index}",
   "canvas.polygon.vertex_handle_help": "Drag or use arrow keys to move; press Delete or Alt+Click to remove",
+  "model_selector.auto": "Auto (default)",
+  "model_selector.label": "Model",
   "app.status.island_summary.requesting": "Generating an island summary draft...",
   "app.status.island_summary.ready_unreviewed": "Island summary draft generated. It is unreviewed; verify it against the grounding cards",
   "app.status.island_summary.failed": "Failed to generate island summary draft: {detail}",

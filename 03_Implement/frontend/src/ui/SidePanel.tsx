@@ -7,6 +7,8 @@ import { CRITIQUE_TAGS, KNOWN_EDGE_TYPES, resolveKnownEdgeType } from "../domain
 import type { EdgeType, KnownEdgeType } from "../domain/types";
 import { cardQualityRestoreTarget, currentCardQualityQuestion, type CardQualityAssistState, type CardQualityDecision } from "../domain/card_quality";
 import { DomainStateSummary } from "./DomainStateSummary";
+import type { AvailableModelItem } from "../api/client";
+import { ModelSelector } from "./ModelSelector";
 import { DomainStateFilterBar } from "./DomainStateFilterBar";
 import type { DomainStateFilter } from "../domain/domain_state_filter";
 import { ShelfPanel } from "./ShelfPanel";
@@ -109,6 +111,12 @@ type SidePanelProps = {
   onShowSummaryHistoryGrounding: (groundingIds: string[]) => void;
   onSummaryReviewedChange: (value: boolean) => void;
   onSuggestIslandSummary: () => void;
+  // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override for the island
+  // summary suggestion ("" = auto / platform default).
+  islandSummaryModel: string;
+  onIslandSummaryModelChange: (model: string) => void;
+  /** Tenant-allowed active models (guarded fetch owned by App); null = loading. */
+  availableModels: AvailableModelItem[] | null;
   islandSummaryProposal: {
     proposalId: string;
     status: "proposed";
@@ -303,6 +311,9 @@ export function SidePanel({
   onShowSummaryHistoryGrounding,
   onSummaryReviewedChange,
   onSuggestIslandSummary,
+  islandSummaryModel,
+  onIslandSummaryModelChange,
+  availableModels,
   islandSummaryProposal,
   proposalAuditTrail,
   onAdoptIslandSummaryProposal,
@@ -2555,14 +2566,24 @@ export function SidePanel({
             {t("side_panel.summary.label")}
           </label>
           {isAdvancedUiEnabled ? (
-            <button
-              type="button"
-              onClick={onSuggestIslandSummary}
-              disabled={isSuggestingIslandSummary}
-              style={{ width: "100%", marginBottom: 8, cursor: isSuggestingIslandSummary ? "not-allowed" : "pointer" }}
-            >
-              {isSuggestingIslandSummary ? t("side_panel.summary.suggesting") : t("side_panel.summary.suggest_ai")}
-            </button>
+            <>
+              <ModelSelector
+                label={t("model_selector.label")}
+                value={islandSummaryModel}
+                onChange={onIslandSummaryModelChange}
+                disabled={isSuggestingIslandSummary}
+                dataUiRegion="model-selector"
+                models={availableModels}
+              />
+              <button
+                type="button"
+                onClick={onSuggestIslandSummary}
+                disabled={isSuggestingIslandSummary}
+                style={{ width: "100%", marginBottom: 8, cursor: isSuggestingIslandSummary ? "not-allowed" : "pointer" }}
+              >
+                {isSuggestingIslandSummary ? t("side_panel.summary.suggesting") : t("side_panel.summary.suggest_ai")}
+              </button>
+            </>
           ) : null}
           {islandSummaryProposal ? (
             <div style={{ border: "1px solid #bfdbfe", borderRadius: 6, backgroundColor: "#eff6ff", padding: 8, marginBottom: 8, display: "grid", gap: 6 }}>
