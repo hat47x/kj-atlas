@@ -583,5 +583,53 @@ fw_journey_del=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "$BASE_URL/inq
 check "FW ジャーニー破棄 (204)" "204" "$fw_journey_del"
 
 echo ""
+echo "--- シナリオ11: 会議ファシリテーターの配置・統合提案 ---"
+# 業態: オンライン会議ファシリテーション
+# 想定人物: ファシリテーター（多人数の議事を整理）
+# 業務領域: 議事カードの配置提案（suggest-layout）と島統合提案（suggest-merges）
+# 操作内容: 文書作成 -> suggest-layout(配置のAI提案) -> suggest-merges(島統合のAI提案) -> 読戻し
+# 注意事項: 配置・統合は提案であり自動適用しない。未レビューカードは 422（SafeMode）。
+MTG_DOC_ID="biz-flow-meeting"
+MTG_DOC='{"version":1,"id":"'$MTG_DOC_ID'","title":"定例ミーティング議事","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"m1","text":"予算の見直しが必要","x":0,"y":0,"textReviewed":true},{"id":"m2","text":"来期の体制を検討","x":10,"y":0,"textReviewed":true},{"id":"m3","text":"顧客対応の改善","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"mtg-a","cardIds":["m1","m2"]},{"id":"mtg-b","cardIds":["m3"]}],"readingOrder":["mtg-a","mtg-b"]}'
+
+mtg_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MTG_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$MTG_DOC")
+check "MTG PUT document (作成)" "200" "$mtg_put"
+
+# 配置提案（suggest-layout、モックはグリッド配置）。
+layout=$(curl -s -X POST "$BASE_URL/ai/suggest-layout" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MTG_DOC}")
+case "$layout" in
+  *'"transform"'*'"cards"'*)
+    echo "  PASS: suggest-layout returns transform + card positions (mock grid)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: suggest-layout (got ${layout:0:120})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 島統合提案（suggest-merges、モックは空提案）。
+merges=$(curl -s -X POST "$BASE_URL/ai/suggest-merges" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MTG_DOC}")
+case "$merges" in
+  *'"suggestions"'*)
+    echo "  PASS: suggest-merges returns suggestions list (mock: empty)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: suggest-merges (got ${merges:0:120})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 注意事項: 未レビューカードを含む文書は 422（SafeMode）。
+MTG_UNREVIEWED='{"version":1,"id":"biz-flow-meeting-unr","title":"未レビュー議事","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"mu1","text":"確認前の議事メモ","x":0,"y":0}],"edges":[],"islands":[{"id":"mtg-u","cardIds":["mu1"]}],"readingOrder":["mtg-u"]}'
+mtg_unreviewed=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/suggest-layout" \
+  -H 'Content-Type: application/json' -d "{\"doc\":$MTG_UNREVIEWED}")
+check "MTG suggest-layout unreviewed text blocked (422, SafeMode)" "422" "$mtg_unreviewed"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]

@@ -142,6 +142,18 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 フィールドノートを AI で整理 → その整理済み文書を snapshot として inquiry-bundle に保存、という
 実際の調査ワークフローを一気通貫で検証する（アプリの二つの差別化価値の統合）。**45/45 pass**（シナリオ1〜10・10業態）。
 
+### シナリオ11（iteration 53 追加・会議ファシリテーターの配置・統合提案）
+
+| 軸 | 内容 |
+|----|------|
+| 業態 | オンライン会議ファシリテーション |
+| 想定人物 | ファシリテーター（多人数の議事を整理） |
+| 業務領域 | 議事カードの配置提案（suggest-layout）と島統合提案（suggest-merges） |
+| 操作内容 | 文書作成 → **suggest-layout（配置のAI提案）** → **suggest-merges（島統合のAI提案）** → 読戻し |
+| 注意事項 | 配置・統合は提案であり自動適用しない。未レビューカードは 422（SafeMode） |
+
+シナリオ11は最後の未固定 AI 操作 **suggest-layout / suggest-merges** を固定し、**AI タスク全10種**（re_layout / suggest_merges / island-summary / island-relation / narrative / check-narrative / refine / card-groups / detect-contradiction / document-title）を E2E で全カバーした。**49/49 pass**（シナリオ1〜11・11業態）。
+
 ## E2E の固定方法
 
 ### バックエンド全層フロー（初回・curl ベース）
@@ -190,6 +202,6 @@ bash scripts/verify_business_flow_e2e.sh 8000   # 7 チェック（作成/読戻
 - [x] 別業態のシナリオ追加（iteration 42: 新規事業企画ワークショップ・suggest-card-groups を追加）
 - [x] シナリオ3〜6（iteration 44〜47: 品質管理・detect-contradiction / 管理者CLI/API・文書ライフサイクル/監査/キー分離 / 報道編集・check-narrative / 調査研究員・W型探究 CAS）を追加
 - [x] シナリオ7〜9（iteration 48〜50: 学術研究・summarize-island-relation / ナレッジベース管理者・suggest-document-title / 人事マネージャー・CE4 proposal 連鎖）を追加
-- [x] シナリオ10（iteration 52: フィールドワーカー・W型探究 × AI支援の複合フロー）を追加 — **シナリオ1〜10 で 45/45 pass・AI 操作 8 種＋CE4 proposal 連鎖＋W型×AI 統合をカバー**
+- [x] シナリオ10（iteration 52: フィールドワーカー・W型探究 × AI支援の複合フロー）・シナリオ11（iteration 53: 会議ファシリテーター・suggest-layout/suggest-merges）を追加 — **シナリオ1〜11 で 49/49 pass・AI タスク全10種＋CE4 proposal 連鎖＋W型×AI 統合をカバー**
 - [ ] UI 層 E2E（フロントエンド AI 操作・CE4 proposal 連鎖）
 - [ ] さらに別業態のシナリオ追加（イテレーション毎に拡大）
