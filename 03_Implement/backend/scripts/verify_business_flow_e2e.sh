@@ -2551,5 +2551,47 @@ ng_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$NG_ID")
 check "NG 読戻し (200)" "200" "$ng_read"
 
 echo ""
+echo "--- シナリオ56: 自治体・行政窓口の市民問い合わせ整理（頻出/ロングテールの島分離） ---"
+# 業態: 自治体・行政（市民窓口）
+# 想定人物: 窓口サービス改善担当
+# 業務領域: 市民からの問い合わせのKJ分類と、FAQ・窓口改善の根拠
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 島間関係要約(summarize-island-relation) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 頻出問い合わせ（手続き案内の分かりにくさ）とロングテール問い合わせ
+#          （個別の複合事情）を島として分離し、島間関係を整理して改善の全体像を見る。
+CM_ID="biz-flow-citizen"
+CM_DOC='{"version":1,"id":"'$CM_ID'","title":"市民問い合わせ整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"cm1","text":"住民票の取得手続きの案内が分かりにくい","x":0,"y":0,"textReviewed":true},{"id":"cm2","text":"窓口が混雑していて待ち時間が長い","x":10,"y":0,"textReviewed":true},{"id":"cm3","text":"相続に伴う手続きが複数絡み合って分からない","x":20,"y":0,"textReviewed":true},{"id":"cm4","text":"引っ越しに伴う住所変更の一括手続きを知りたい","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cm-1","cardIds":["cm1","cm2"]},{"id":"cm-2","cardIds":["cm3","cm4"]}],"readingOrder":["cm-1","cm-2"]}'
+
+cm_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CM_ID" \
+  -H 'Content-Type: application/json' -d "$CM_DOC")
+check "CM PUT document (作成)" "200" "$cm_put"
+
+# ① AI束ね
+cm_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"cm1","text":"住民票の取得手続きの案内が分かりにくい","textReviewed":true},{"id":"cm2","text":"窓口が混雑していて待ち時間が長い","textReviewed":true},{"id":"cm3","text":"相続に伴う手続きが複数絡み合って分からない","textReviewed":true},{"id":"cm4","text":"引っ越しに伴う住所変更の一括手続きを知りたい","textReviewed":true}]}')
+case "$cm_groups" in *'"groups":'*) echo "  PASS: CM ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CM ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（頻出問い合わせの島）
+cm_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CM_DOC,\"islandId\":\"cm-1\"}")
+case "$cm_summary" in *'"groundingIds":["cm1","cm2"]'*) echo "  PASS: CM ②島要約(頻出)"; PASS=$((PASS+1));; *) echo "  FAIL: CM ②島要約(頻出)"; FAIL=$((FAIL+1));; esac
+
+# ③ 島間関係要約（頻出 vs ロングテール・改善の全体像）
+cm_relation=$(curl -s -X POST "$BASE_URL/ai/summarize-island-relation" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CM_DOC,\"islandAId\":\"cm-1\",\"islandBId\":\"cm-2\",\"relationType\":\"causal\",\"derived\":false,\"groundingCardIds\":[\"cm3\"],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"cm3\",\"text\":\"相続に伴う手続きが複数絡み合って分からない\"}]}")
+case "$cm_relation" in
+  *'"text"'*'"warnings":[]'*) echo "  PASS: CM ③島間関係要約"; PASS=$((PASS+1));;
+  *) echo "  FAIL: CM ③島間関係要約"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cm_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CM_DOC}")
+case "$cm_narr" in *'"basedOnReadingOrder":["cm-1","cm-2"]'*) echo "  PASS: CM ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CM ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cm_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CM_ID")
+check "CM 読戻し (200)" "200" "$cm_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
