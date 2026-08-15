@@ -308,13 +308,6 @@ class Settings(BaseSettings):
         default=True,
         validation_alias="KJ_ATLAS_LOG_JSON",
     )
-    # OPS-OBSERV-01: what build is actually running. Surfaced by GET /version and
-    # by the frontend support bundle, which reported "unknown" in every standard
-    # Compose deploy because this was never passed through.
-    app_revision: str | None = Field(
-        default=None,
-        validation_alias="KJ_ATLAS_APP_REVISION",
-    )
     api_key: str | None = Field(
         default=None,
         validation_alias="KJ_ATLAS_API_KEY",
@@ -472,13 +465,6 @@ class Settings(BaseSettings):
     saas_auth_session_hash_key: str | None = Field(
         default=None,
         validation_alias="KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY",
-    )
-    log_level: str = Field(
-        # OPS-OBSERV-01 AC-1: structured (JSON) logging level. The JSON
-        # formatter renders every `extra=` payload (tenantId/docId/queueLength/
-        # LLM trace_id) that the default formatter silently drops.
-        default="INFO",
-        validation_alias="KJ_ATLAS_LOG_LEVEL",
     )
     app_revision: str = Field(
         # OPS-OBSERV-01 AC-4: build revision surfaced by /version and attached to

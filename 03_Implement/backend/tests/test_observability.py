@@ -181,9 +181,15 @@ def test_unsafe_inbound_trace_id_is_replaced_not_rejected(unsafe: str) -> None:
 
 
 def test_error_body_carries_the_request_id(tmp_path) -> None:
-    """Without this the user has nothing to quote to an operator."""
+    """Without this the user has nothing to quote to an operator.
+
+    A body-parsing validation error (wrong type for `provider`) reaches
+    handle_validation_error, whose 422 body must carry the same request id as
+    the X-Request-Id header. (The docs routes' A1 contract errors are a separate
+    structured envelope that deliberately does not add requestId.)
+    """
     with _client(tmp_path) as client:
-        resp = client.put("/docs/observ-bad", json={"version": 999})
+        resp = client.post("/admin/provision/users", json={"provider": 123})
     assert resp.status_code == 422
     body = resp.json()
     assert body["requestId"] == resp.headers[REQUEST_ID_HEADER]
@@ -297,7 +303,8 @@ def test_log_settings_have_observable_defaults(monkeypatch) -> None:
     built = Settings()
     assert built.log_level == "INFO"
     assert built.log_json is True
-    assert built.app_revision is None
+    # main's convention: "unknown" when unset (diagnostics bundles addressable).
+    assert built.app_revision == "unknown"
 
 
 def test_backend_readme_structured_log_claim_is_now_true() -> None:

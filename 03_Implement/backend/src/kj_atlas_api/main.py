@@ -237,33 +237,6 @@ if settings.runtime_profile == "saas-multitenant":
 app.add_middleware(JsonRequestBodySafetyMiddleware)
 
 
-@app.middleware("http")
-async def assign_request_id(request: Request, call_next):
-    """OPS-OBSERV-01: mint a correlation id for every request.
-
-    Registered last so it runs first (Starlette applies middleware in reverse
-    registration order), which means rejections from the body-safety and API-key
-    middlewares are correlated too -- those are exactly the failures an operator
-    gets asked about.
-
-    An inbound `x-trace-id` is honoured when it is a safe opaque token so that a
-    caller-side id survives into our logs; otherwise a server id is minted. The
-    id is echoed in the response header and, for the error handlers below, in the
-    body: without it the user has nothing to quote and the operator has nothing
-    to grep.
-    """
-    inbound = resolve_inbound_request_id(request.headers.get(INBOUND_TRACE_HEADER))
-    request_id = inbound or new_request_id()
-    token = request_id_var.set(request_id)
-    request.state.request_id = request_id
-    try:
-        response = await call_next(request)
-    finally:
-        request_id_var.reset(token)
-    response.headers[REQUEST_ID_HEADER] = request_id
-    return response
-
-
 #: Unauthenticated operational endpoints. A probe must work before credentials
 #: are configured, and none of these expose tenant data: /healthz is a constant,
 #: /readyz reports dependency state plus Alembic revision ids, /version reports
@@ -348,6 +321,33 @@ async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
+    return response
+
+
+@app.middleware("http")
+async def assign_request_id(request: Request, call_next):
+    """OPS-OBSERV-01: mint a correlation id for every request.
+
+    Registered last so it runs first (Starlette applies middleware in reverse
+    registration order), which means rejections from the body-safety and API-key
+    middlewares are correlated too -- those are exactly the failures an operator
+    gets asked about.
+
+    An inbound `x-trace-id` is honoured when it is a safe opaque token so that a
+    caller-side id survives into our logs; otherwise a server id is minted. The
+    id is echoed in the response header and, for the error handlers below, in the
+    body: without it the user has nothing to quote and the operator has nothing
+    to grep.
+    """
+    inbound = resolve_inbound_request_id(request.headers.get(INBOUND_TRACE_HEADER))
+    request_id = inbound or new_request_id()
+    token = request_id_var.set(request_id)
+    request.state.request_id = request_id
+    try:
+        response = await call_next(request)
+    finally:
+        request_id_var.reset(token)
+    response.headers[REQUEST_ID_HEADER] = request_id
     return response
 
 
