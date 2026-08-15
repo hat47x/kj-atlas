@@ -510,6 +510,153 @@ def check_adr_id_uniqueness(root: Path, markdown_paths: list[Path]) -> list[Docs
     return findings
 
 
+#: Constitution-layer identifiers (DOC-NORM-01). Definitions are headings or
+#: top-level list items; anything else mentioning the token is a reference.
+NORM_ID_RE = re.compile(r"\b(DOM|KJT|AKP|WIR|VC|CQ)-[A-Z]*-?\d{2}\b")
+NORM_ID_DEFINITION_RE = re.compile(
+    r"^(?:#{2,4}\s+|-\s+\*\*)((?:DOM|KJT|AKP|WIR|VC|CQ)-[A-Z]*-?\d{2})\b", re.M
+)
+#: A line-number reference into the constitution layer, e.g. `domain.md:88`.
+#: These rot the moment the file is edited, which is why identifiers exist.
+NORM_LINE_REFERENCE_RE = re.compile(r"00_Prompt/[A-Za-z0-9_.-]+\.md:\d+")
+
+NORM_ID_UNIQUENESS_RULE_ID = "DC-NORM-001"
+NORM_ID_RESOLUTION_RULE_ID = "DC-NORM-002"
+NORM_LINE_REFERENCE_RULE_ID = "DC-NORM-003"
+
+
+def _collect_norm_definitions(root: Path) -> dict[str, Path]:
+    """Map every constitution-layer identifier to the file that defines it."""
+    definitions: dict[str, Path] = {}
+    duplicates: list[tuple[str, Path, Path]] = []
+    prompt_dir = root / "00_Prompt"
+    if not prompt_dir.is_dir():
+        return definitions
+    for source in sorted(prompt_dir.rglob("*.md")):
+        relative = source.relative_to(root)
+        try:
+            text = source.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for identifier in NORM_ID_DEFINITION_RE.findall(text):
+            if identifier in definitions and definitions[identifier] != relative:
+                duplicates.append((identifier, definitions[identifier], relative))
+            else:
+                definitions.setdefault(identifier, relative)
+    _collect_norm_definitions.duplicates = duplicates  # type: ignore[attr-defined]
+    return definitions
+
+
+def check_norm_identifier_uniqueness(root: Path) -> list[DocsCheckFinding]:
+    """An identifier must name exactly one norm, forever."""
+    repository_root = root.resolve()
+    _collect_norm_definitions(repository_root)
+    duplicates = getattr(_collect_norm_definitions, "duplicates", [])
+    findings: list[DocsCheckFinding] = []
+    for identifier, first, second in duplicates:
+        findings.append(
+            DocsCheckFinding(
+                rule_id=NORM_ID_UNIQUENESS_RULE_ID,
+                path=second.as_posix(),
+                line=1,
+                target=identifier,
+                message=(
+                    f"{identifier} is defined in both {first.as_posix()} and {second.as_posix()}"
+                ),
+                fix_hint=(
+                    "Identifiers are append-only and are never reused. Give the newer norm the "
+                    "next unused number in its prefix."
+                ),
+            )
+        )
+    return findings
+
+
+def check_norm_identifier_resolution(
+    root: Path, markdown_paths: list[Path]
+) -> list[DocsCheckFinding]:
+    """A reference to a norm must resolve to a norm that exists.
+
+    This is the rule the whole identifier scheme exists for. Without it, plans
+    can cite norms that were renamed or never existed, and the constitution
+    cannot be changed with any knowledge of what depends on it.
+    """
+    repository_root = root.resolve()
+    definitions = _collect_norm_definitions(repository_root)
+    if not definitions:
+        return []
+
+    findings: list[DocsCheckFinding] = []
+    for supplied_path in sorted(markdown_paths, key=lambda p: p.as_posix()):
+        relative = (
+            supplied_path
+            if not supplied_path.is_absolute()
+            else supplied_path.relative_to(repository_root)
+        )
+        source = repository_root / relative
+        try:
+            text = source.read_text(encoding="utf-8")
+        except OSError:
+            continue
+
+        defined_here = set(NORM_ID_DEFINITION_RE.findall(text))
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            for match in NORM_ID_RE.finditer(line):
+                token = match.group(0)
+                if token in definitions or token in defined_here:
+                    continue
+                findings.append(
+                    DocsCheckFinding(
+                        rule_id=NORM_ID_RESOLUTION_RULE_ID,
+                        path=relative.as_posix(),
+                        line=line_number,
+                        target=token,
+                        message=f"{token} does not resolve to any norm defined in 00_Prompt",
+                        fix_hint=(
+                            "Cite an identifier that exists, or define it in the owning "
+                            "00_Prompt document. Do not invent per-document identifiers."
+                        ),
+                    )
+                )
+    return findings
+
+
+def check_norm_line_references(
+    root: Path, markdown_paths: list[Path]
+) -> list[DocsCheckFinding]:
+    """Line-number citations into 00_Prompt rot on the next edit."""
+    repository_root = root.resolve()
+    findings: list[DocsCheckFinding] = []
+    for supplied_path in sorted(markdown_paths, key=lambda p: p.as_posix()):
+        relative = (
+            supplied_path
+            if not supplied_path.is_absolute()
+            else supplied_path.relative_to(repository_root)
+        )
+        source = repository_root / relative
+        try:
+            text = source.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            for match in NORM_LINE_REFERENCE_RE.finditer(line):
+                findings.append(
+                    DocsCheckFinding(
+                        rule_id=NORM_LINE_REFERENCE_RULE_ID,
+                        path=relative.as_posix(),
+                        line=line_number,
+                        target=match.group(0),
+                        message=(
+                            f"{match.group(0)} cites 00_Prompt by line number, which breaks on edit"
+                        ),
+                        fix_hint=(
+                            "Cite the norm identifier (e.g. DOM-CORE-02) instead. If the passage "
+                            "has no identifier, add one in the owning document."
+                        ),
+                    )
+                )
+    return findings
+
 def check_current_history_headings(
     root: Path, markdown_paths: tuple[Path, ...] = CURRENT_ONLY_PATHS
 ) -> list[DocsCheckFinding]:

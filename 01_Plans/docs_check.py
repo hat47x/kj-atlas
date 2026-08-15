@@ -10,6 +10,9 @@ from pathlib import Path
 
 from docs_contract_checks import (
     check_adr_id_uniqueness,
+    check_norm_identifier_resolution,
+    check_norm_identifier_uniqueness,
+    check_norm_line_references,
     check_adr_traceability_paths,
     check_ci_job_timeouts,
     check_cli_option_commands,
@@ -97,6 +100,16 @@ def run_docs_check(
     link_paths = markdown_paths + contract_tracked_documentation_html_paths(repository_root)
     errors.extend(finding.render() for finding in check_relative_links(repository_root, link_paths))
     errors.extend(finding.render() for finding in check_adr_id_uniqueness(repository_root, markdown_paths))
+    # DOC-NORM-01: the constitution layer's identifiers only mean something if
+    # references to them are checked. Without DC-NORM-002 the scheme is decorative.
+    errors.extend(finding.render() for finding in check_norm_identifier_uniqueness(repository_root))
+    errors.extend(
+        finding.render()
+        for finding in check_norm_identifier_resolution(repository_root, markdown_paths)
+    )
+    errors.extend(
+        finding.render() for finding in check_norm_line_references(repository_root, markdown_paths)
+    )
     errors.extend(finding.render() for finding in check_adr_traceability_paths(repository_root, markdown_paths))
     errors.extend(finding.render() for finding in check_ci_job_timeouts(repository_root))
     errors.extend(finding.render() for finding in check_current_history_headings(repository_root))

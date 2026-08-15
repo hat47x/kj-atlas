@@ -13,7 +13,7 @@
 
 方法論の表札検査は「書いた表札を島の各カードへ戻し、『あなたが言いたかったのはこれか』と照合する。1枚でも『ちがう』が返ってくるカードがあれば書き直す」（`kj_technique.md` §3）。
 
-> `00_Prompt/ai_kj_execution_procedures.md:95-96`
+> `00_Prompt/ai_kj_execution_procedures.md` §3 表札作成（島ラベル）
 > 2. 書いた表札を島の各カードへ戻し、「あなたが言いたかったのはこれか」と照合する
 
 カードの `critiqueTags` には `not_the_same` / `feels_off` が既に存在し、UI のカード critique-tag チェックボックスで記録できる（録記は可能）。しかし**島要約の再提案プロンプトが、この異議を一切考慮していなかった**。方向性レビュー優先3-3「表札の戻し検査 — カード→表札の異議記録（既存の CRITIQUE_TAGS の not_the_same/feels_off を再利用可能）」のうち、録記は既存・フィードバックが欠落。
