@@ -105,7 +105,7 @@
 - [x] テナント allowlist が fail-closed で適用される（グループ allowlist はデータモデル設計まで・Phase 2 実装）。→ `tenant_allowlist_effective_model_ids()`（空=プラットフォーム既定・非空=fail-closed）を `_assert_model_allowed` で適用。`test_allowlist_enforced_on_ai_route` で固定。
 - [ ] 主要 AI 操作（ナラティブ生成・島の表札・カード文面整え・**初期タイトル生成**）の UI にモデル選択子が露出し、選択肢が利用可能モデルに限定される。
 - [ ] final_judgement はユーザー自由選択から除外され、管理者ポリシーへ固定される（MMR-04）。
-- [ ] モデル/サービス CRUD と allowlist 変更・制限違反が admin 監査に記録される。
+- [x] モデル/サービス CRUD と allowlist 変更・制限違反が admin 監査に記録される。→ **R4 実装済み（iteration 46）**: モデルCRUD/allowlist変更は `record_admin_plane_audit` middleware（`admin_audit_events`）が記録（`test_model_crud_and_allowlist_changes_are_audited`）。`model_not_allowed` 違反は構造化ログ（tenantId/modelId/allowedModels）で記録。
 - [ ] `member_groups` のデータモデル設計が本issueに記録される（Phase 2 実装の土台）。
 - [ ] `python 01_Plans/docs_check.py`・backend/frontend 回帰が通る。
 

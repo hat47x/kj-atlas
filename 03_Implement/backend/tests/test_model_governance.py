@@ -50,6 +50,8 @@ def _client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker]]:
     app.dependency_overrides[get_db] = _get_test_db
     try:
         with TestClient(app) as client:
+            # Point the admin-audit recording middleware at the test DB.
+            client.app.state.admin_audit_session_factory = session_local
             yield client, session_local
     finally:
         app.dependency_overrides.clear()
@@ -205,3 +207,20 @@ def test_allowlist_enforced_on_ai_route(tmp_path, monkeypatch) -> None:
         allowed = client.post("/ai/suggest-island-summary", json={"doc": doc, "islandId": "i1", "model": "m1"}, headers={"X-API-Key": _BUSINESS_KEY})
         assert allowed.status_code == 503, allowed.text
         assert allowed.json()["detail"]["code"] != "model_not_allowed"
+
+
+def test_model_crud_and_allowlist_changes_are_audited(tmp_path, monkeypatch) -> None:
+    """R4: model/provider CRUD and allowlist changes land in the admin audit trail."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+
+    with _client(tmp_path) as (client, _session_local):
+        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "external", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        client.post("/admin/provision/models", json={"id": "m1", "providerId": "p", "displayName": "M1"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        client.put("/admin/provision/models/tenants/tenant-a/allowlist", json={"modelIds": ["m1"]}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+
+        audit = client.get("/admin/provision/audit", headers={"X-Admin-Api-Key": _ADMIN_KEY}).json()
+        routes = {event["route"] for event in audit["events"]}
+        assert "/admin/provision/models/providers" in routes
+        assert "/admin/provision/models" in routes
+        assert "/admin/provision/models/tenants/tenant-a/allowlist" in routes

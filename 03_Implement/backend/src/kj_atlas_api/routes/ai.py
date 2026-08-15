@@ -149,6 +149,17 @@ def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
     tenant = _resolve_audit_tenant(request, db)
     effective = tenant_allowlist_effective_model_ids(db, tenant_id=tenant.tenant_id)
     if effective is not None and model_id not in effective:
+        # R4: a model_not_allowed violation is a governance-relevant event --
+        # structured-log it (with the request id already attached by the logging
+        # substrate) so an operator can investigate repeated denials per tenant.
+        logger.warning(
+            "model_not_allowed",
+            extra={
+                "tenantId": tenant.tenant_id,
+                "modelId": model_id,
+                "allowedModels": ",".join(sorted(effective)),
+            },
+        )
         raise HTTPException(
             status_code=403,
             detail={
