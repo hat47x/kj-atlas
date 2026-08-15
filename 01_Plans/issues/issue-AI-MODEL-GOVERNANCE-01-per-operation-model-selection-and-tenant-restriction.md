@@ -106,7 +106,7 @@
 - [x] 主要 AI 操作（ナラティブ生成・島の表札・カード文面整え・**初期タイトル生成**）の UI にモデル選択子が露出し、選択肢が利用可能モデルに限定される。→ **R2 UI 実装済み（iteration 47）**: `ModelSelector` コンポーネント（`GET /ai/available-models` でテナント許可モデルのみ・"auto"既定）を**島の表札提案**面に露出。`proposeIslandSummary`→proposals/island-summary→suggest_island_summary へ `model` を通し、backend の allowlist 強制（403）が効く。他操作（ナラティブ/文面/束ね/初期タイトル）の選択子は同コンポーネントを各面に露出する拡張として残る。
 - [x] final_judgement はユーザー自由選択から除外され、管理者ポリシーへ固定される（MMR-04）。→ **実装済み（iteration 49）**: `get_available_models` が `_is_user_selectable_model`（intermediate/generate 層のみ・final_judgement専用モデル除外）でフィルタ。選択子に final_judgement 専用モデルは表示されず、final_judgement タスクは管理者ポリシー（allowlist＋タスク階層解決）へ固定。`test_available_models_excludes_final_judgement_only`。
 - [x] モデル/サービス CRUD と allowlist 変更・制限違反が admin 監査に記録される。→ **R4 実装済み（iteration 46）**: モデルCRUD/allowlist変更は `record_admin_plane_audit` middleware（`admin_audit_events`）が記録（`test_model_crud_and_allowlist_changes_are_audited`）。`model_not_allowed` 違反は構造化ログ（tenantId/modelId/allowedModels）で記録。
-- [ ] `member_groups` のデータモデル設計が本issueに記録される（Phase 2 実装の土台）。
+- [x] `member_groups` のデータモデル設計が本issueに記録される（Phase 2 実装の土台）。→ **記録済み（iteration 51）**: `member_groups` / `member_group_members` / `member_group_model_allowlist` の3テーブル（tenant-scoped・RLS）と、実効モデル解決（所属グループallowlist交差→テナント→タスク階層→既定）への組み込み・admin設定経路を本issue「member_groups データモデル設計」節に確定。Phase 2 で実装。
 - [ ] `python 01_Plans/docs_check.py`・backend/frontend 回帰が通る。
 
 ## 検証計画
@@ -114,6 +114,34 @@
 - `cd 03_Implement/backend && python -m pytest tests/test_model_governance.py -q`（レジストリ CRUD・allowlist 強制・優先順位・fail-closed）
 - 実バックエンドで `bash scripts/verify_api_admin.sh`（モデル CRUD チェック追加後）
 - `cd 03_Implement/frontend && npm run test`（モデル選択子・allowlist フィルタ）
+
+## member_groups データモデル設計（Phase 2 実装の土台・2026-08-15 記録）
+
+テナント配下のメンバー集合グループを、ポリシー適用単位として定義する（D1・②の深掘り参照。roles=権限、グループ=ポリシー適用範囲）。
+
+### テーブル設計
+
+- **`member_groups`**（tenant-scoped・RLS）:
+  - `tenant_id`（PK・FK tenants）, `id`（PK）, `display_name`, `lifecycle_state`（active/disabled）, `created_at`, `updated_at`
+  - 組織階層（報告線・親子）を持たない任意のメンバー集合（チーム・プロジェクト・探究グループ等）
+- **`member_group_members`**（tenant-scoped・RLS）:
+  - `tenant_id`, `group_id`（FK member_groups）, `user_id`（FK users）, `created_at` — 複合PK `(tenant_id, group_id, user_id)`
+- **`member_group_model_allowlist`**（tenant-scoped・RLS）:
+  - `tenant_id`, `group_id`, `model_id`（FK llm_model_registry）, `lifecycle_state`, `created_at`, `updated_at` — 複合PK `(tenant_id, group_id, model_id)`
+
+### 実効モデル解決への組み込み（Phase 2 で `_assert_model_allowed` を拡張）
+
+優先順位（D4）: **リクエスト指定 → ユーザー所属グループの allowlist 交差 → テナント allowlist → タスク階層（MMR-04）→ グローバル既定**。
+
+- グループ allowlist は「より狭い方が勝つ」: ユーザーが複数グループに属する場合は**交差**、テナント allowlist より**狭い**場合のみ制約（テナント allowlist ⊆ プラットフォーム既定と同じ関係）。
+- 未許可 → 403 `model_not_allowed`（既存の構造化エラー＋`allowedModels` を流用）。
+- 管理者UI/CLI: `/admin/provision/models/groups/{group_id}/allowlist`（control-plane 認可・SEC-ADMIN-PLANE-03 監査）で設定。
+
+### 設計上の決定点（Phase 2 実装時に確定）
+
+- ユーザーが**グループ未所属**の場合: グループ層をスキップ（テナント allowlist のみ）。
+- グループ allowlist が空: そのグループは制約しない（テナント層へ委譲）— 空=制約なしはテナント allowlist のセマンティクスと同じ。
+- 監査: グループ allowlist 変更は `admin_audit_events` へ（R4 の middleware が /admin/* を既に記録）。
 
 ## 関連する未計画要件の検査（2026-08-15・ユーザー指示）
 
