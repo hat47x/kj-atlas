@@ -1382,6 +1382,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const [islandSummaryModel, setIslandSummaryModel] = useState<string>("");
   // Tenant-allowed active models for the selector (guarded fetch, owned here).
   const [availableModels, setAvailableModels] = useState<AvailableModelItem[] | null>(null);
+  // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override for document-title
+  // generation ("" = auto / platform default).
+  const [documentTitleModel, setDocumentTitleModel] = useState<string>("");
   const [proposalAuditTrail, setProposalAuditTrail] = useState<string[]>([]);
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
   const [connectEdgeType, setConnectEdgeType] = useState<KnownEdgeType>("related");
@@ -2512,11 +2515,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const handleSuggestDocumentTitle = useCallback(
     async (islandTitles: string[], cardTexts: string[], currentTitle: string | undefined) => {
-      return runTenantScopedApiRequest(() => suggestDocumentTitle(islandTitles, cardTexts, currentTitle, {
+      return runTenantScopedApiRequest(() => suggestDocumentTitle(islandTitles, cardTexts, currentTitle, documentTitleModel, {
         tenantSessionContext: verifiedTenantSession,
       }));
     },
-    [runTenantScopedApiRequest, verifiedTenantSession],
+    [documentTitleModel, runTenantScopedApiRequest, verifiedTenantSession],
   );
 
   const islandTitlesForSuggestion = useMemo(
@@ -8852,6 +8855,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         isReadOnly={isReadOnly}
         onSuggestTitle={handleSuggestDocumentTitle}
         providerEnabled={providerKind !== null && providerKind !== "none"}
+        documentTitleModel={documentTitleModel}
+        onDocumentTitleModelChange={setDocumentTitleModel}
+        availableModels={availableModels}
       />
       <SearchBar
         query={searchQuery}

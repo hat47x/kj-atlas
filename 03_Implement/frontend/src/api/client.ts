@@ -660,6 +660,7 @@ export async function suggestDocumentTitle(
   islandTitles: string[],
   cardTexts: string[],
   currentTitle: string | undefined,
+  model: string | undefined,
   requestOptions: TenantScopedRequestOptions = {},
 ): Promise<SuggestDocumentTitleResponse> {
   const response = await fetch(`${API_BASE}/ai/suggest-document-title`, {
@@ -672,6 +673,7 @@ export async function suggestDocumentTitle(
       islandTitles,
       cardTexts,
       currentTitle: currentTitle ?? null,
+      model: model ?? null,
     }),
   });
 
