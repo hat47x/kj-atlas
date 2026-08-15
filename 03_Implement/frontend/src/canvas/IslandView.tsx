@@ -572,14 +572,26 @@ function IslandViewComponent({
             onPointerDown={(event) => {
               event.stopPropagation();
               onPeekStart?.(island.id);
-
-              window.addEventListener(
-                "mouseup",
-                () => {
-                  onPeekEnd?.();
-                },
-                { once: true }
-              );
+              // UI-CANVAS-01: capture the pointer so onPeekEnd is guaranteed on
+              // pointerup OR pointercancel. The old `window.addEventListener(
+              // "mouseup", ..., { once: true })` leaked one listener per peek
+              // when mouseup never fired (touch -> scroll emits pointercancel,
+              // not mouseup) and could leave isPeeking stuck.
+              event.currentTarget.setPointerCapture(event.pointerId);
+            }}
+            onPointerUp={(event) => {
+              event.stopPropagation();
+              if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                event.currentTarget.releasePointerCapture(event.pointerId);
+              }
+              onPeekEnd?.();
+            }}
+            onPointerCancel={(event) => {
+              event.stopPropagation();
+              if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                event.currentTarget.releasePointerCapture(event.pointerId);
+              }
+              onPeekEnd?.();
             }}
             onDoubleClick={(event) => {
               event.stopPropagation();

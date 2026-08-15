@@ -1,7 +1,7 @@
 # Issue: UI-CANVAS-01 折りたたみ島のピーク操作がwindowリスナーに依存し、蓄積・固着しうる
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
@@ -28,10 +28,10 @@
 
 ## 受入条件
 
-- [ ] タッチのスクロール移行や `mouseup` がwindowに届かないケースを含め、ピーク操作のたびに `window` リスナーが確実に解放される。
-- [ ] `onPeekEnd` が呼ばれずに `isPeeking` 相当の状態が固着するケースがなくなる。
-- [ ] 関連する安全・互換性を損なわない。
-- [ ] 宣言した検証を実行するか、未実施理由を記録する。
+- [x] タッチのスクロール移行や `mouseup` がwindowに届かないケースを含め、ピーク操作のたびに `window` リスナーが確実に解放される。→ `IslandView.tsx` のピークボタンが `window.addEventListener("mouseup", ..., { once: true })` を**廃止**し、`CanvasShell` と同じ `setPointerCapture` + `onPointerUp` / `onPointerCancel` へ移行（2026-08-15）。window リスナーを一切登録しないため、蓄積は構造的に起きない。
+- [x] `onPeekEnd` が呼ばれずに `isPeeking` 相当の状態が固着するケースがなくなる。→ `onPointerCancel` が `onPeekEnd?.()` を呼ぶ（`mouseup` が発火しない touch→scroll 移行も解除）。App 側 `handleIslandPeekEnd` → `setPeekIslandId(undefined)` へ正しく連鎖することを確認。
+- [x] 関連する安全・互換性を損なわない。→ App 側の補助 `mouseup` リスナー（`App.tsx:6639`）は `useEffect` 内で `removeEventListener` 付きのため無害なまま。full suite 1451 tests・typecheck pass。
+- [x] 宣言した検証を実行するか、未実施理由を記録する。→ **自動化の未実施理由を記録**: vitest 環境は `node`（jsdom 未導入・testing-library 未使用）のため、pointer イベントの対話的単体テストは現行基盤では不可。代わりに (a) 構造的検証（window リスナー登録の消滅＝蓄積不可能）と (b) 全suite回帰（1451 tests pass）で固定した。対話的検証は将来 jsdom/Playwright のピークE2Eで補う。
 
 ## 検証計画
 
@@ -39,6 +39,7 @@
   - ピーク操作を複数回行った後に `window` のイベントリスナー数が増え続けないことを確認する単体テスト（可能であれば）、またはブラウザでの手動確認（ピーク→タッチスクロールで中断→再度ピーク、を繰り返し `isPeeking` が固着しないことを確認）。
 - 期待結果:
   - リスナーが蓄積せず、`isPeeking` が正しく解除される。
+- 実績（2026-08-15）: 上記 AC-4 の通り、構造的検証＋full suite 1451 tests pass で固定。対話的ピークE2Eは既存E2E群のピークカバレッジ拡張として将来課題。
 
 ## 補足
 
