@@ -44,6 +44,21 @@ suggest-card-groups を追加で固定しており、**AI 操作のカバー領�
 シナリオ1〜3で **refine / island-summary / narrative / suggest-card-groups / detect-contradiction** と
 AI 操作のカバー領域を拡大しており、業態・想定人物も調査会社→事業企画コンサル→品質管理へ広がっている。
 
+### シナリオ4（iteration 45 追加・個人OSS管理者のCLI/API運用）
+
+| 軸 | 内容 |
+|----|------|
+| 業態 | 個人OSSソフトウェア運用 |
+| 想定人物 | 運用管理者（自前スクリプトを書く） |
+| 業務領域 | 文書ライフサイクルと管理面の API 運用（Web を介さない CLI/API 経路） |
+| 操作内容 | 文書一覧(GET /docs) → 文書作成(PUT) → アーカイブ(POST archive) → アーカイブ中書込の **423** 確認 → 解除(unarchive) → 解除後書込 → 管理面監査の照会(GET /admin/provision/audit) → **キー分離**の確認 |
+| 注意事項 | 管理面（/admin/*）は業務キー（X-API-Key）では到達不可。専用キー（X-Admin-Api-Key）で control-plane 認可を通す。アーカイブ文書は読み取り専用（PUT 423・GET 可）。監査は fail-open で記録され control-plane 認可でのみ照会できる |
+
+シナリオ4は **非Web経路（管理者が自前スクリプトで CLI/API を利用）** を業務フローとして固定した点で、
+シナリオ1〜3（Web を想定した AI 操作）と並ぶ 4 本目の固定である。`verify_admin_ops_flow_e2e.sh` が
+業務キー＋管理キー両方設定の実バックエンド上で **11/11 pass**。文書ライフサイクル（第2反復・ADR-0073）と
+管理面監査（SEC-ADMIN-PLANE-03）・キー分離（SEC-ADMIN-PLANE-02）を一気通貫で検証する。
+
 ## E2E の固定方法
 
 ### バックエンド全層フロー（初回・curl ベース）
