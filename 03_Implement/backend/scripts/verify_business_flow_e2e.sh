@@ -759,5 +759,53 @@ case "$ce_readback" in
 esac
 
 echo ""
+echo "--- シナリオ14: 出版・コンテンツQA（内容上限の検証ゲート） ---"
+# 業態: 出版・コンテンツ制作（QA）
+# 想定人物: コンテンツ品質担当（校正者）
+# 業務領域: コンテンツ上限の検証と品質ゲート（DOMAIN-CARD-TEXT-01）
+# 操作内容: カード本文2001文字->422(上限違反) -> 2000文字で保存(200) -> タイトル501文字->422
+#          -> 500文字タイトルで保存(200) -> 読戻し
+# 注意事項: 上限は API 境界で強制（カード本文2000・タイトル500・島要約2000）。
+#          A1 構造化エラー（schemaVersion/errorEnvelope）で返る。
+QA_LONG_CARD=$(printf 'あ%.0s' $(seq 1 2001))
+QA_OK_CARD=$(printf 'あ%.0s' $(seq 1 2000))
+QA_LONG_TITLE=$(printf 'い%.0s' $(seq 1 501))
+QA_OK_TITLE=$(printf 'い%.0s' $(seq 1 500))
+
+qa_over_card=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/qa-doc-over-card" \
+  -H 'Content-Type: application/json' \
+  -d '{"version":1,"id":"qa-doc-over-card","title":"QA","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"q1","text":"'"$QA_LONG_CARD"'","x":0,"y":0}],"edges":[],"islands":[]}')
+check "QA カード2001文字 → 422（上限違反）" "422" "$qa_over_card"
+
+qa_ok_card=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/qa-doc-ok-card" \
+  -H 'Content-Type: application/json' \
+  -d '{"version":1,"id":"qa-doc-ok-card","title":"QA","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"q1","text":"'"$QA_OK_CARD"'","x":0,"y":0}],"edges":[],"islands":[]}')
+check "QA カード2000文字 → 200（境界内）" "200" "$qa_ok_card"
+
+qa_over_title=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/qa-doc-over-title" \
+  -H 'Content-Type: application/json' \
+  -d '{"version":1,"id":"qa-doc-over-title","title":"'"$QA_LONG_TITLE"'","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[],"edges":[],"islands":[]}')
+check "QA タイトル501文字 → 422（上限違反）" "422" "$qa_over_title"
+
+qa_ok_title=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/qa-doc-ok-title" \
+  -H 'Content-Type: application/json' \
+  -d '{"version":1,"id":"qa-doc-ok-title","title":"'"$QA_OK_TITLE"'","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[],"edges":[],"islands":[]}')
+check "QA タイトル500文字 → 200（境界内）" "200" "$qa_ok_title"
+
+# 構造化 A1 エラー確認（上限違反の応答形式）。
+qa_error_body=$(curl -s -X PUT "$BASE_URL/docs/qa-doc-error" -H 'Content-Type: application/json' \
+  -d '{"version":1,"id":"qa-doc-error","title":"QA","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"q1","text":"'"$QA_LONG_CARD"'","x":0,"y":0}],"edges":[],"islands":[]}')
+case "$qa_error_body" in
+  *'"errorEnvelope"'*)
+    echo "  PASS: QA 上限違反は構造化A1エラーで返る（errorEnvelope）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: QA A1エラー形式（got ${qa_error_body:0:120}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
