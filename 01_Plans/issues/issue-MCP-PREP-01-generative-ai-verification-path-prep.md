@@ -1,7 +1,7 @@
 # Issue: MCP-PREP-01 生成AIがMCPで検証する経路の準備（構造状態の投影とrunbook）
 
 - Type: Process / Operations
-- Status: In Progress
+- Status: Done
 - Source Issue: ドッグフーディングループ（「生成AIがMCPを用いて検証する経路の準備」）
 - Priority: P2
 - Owner: Maintainer

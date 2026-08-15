@@ -1,7 +1,7 @@
 # Issue: KJ-VOIDS-01 文書に空白（voids）を保持する場所が無い
 
 - Type: Product Invariant / Data
-- Status: In Progress
+- Status: Done
 - Source Issue: `01_Plans/direction-review-2026-08-13.md` 優先3-1
 - Priority: P1
 - Owner: Maintainer

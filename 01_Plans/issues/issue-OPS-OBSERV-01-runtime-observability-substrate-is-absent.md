@@ -1,7 +1,7 @@
 # Issue: OPS-OBSERV-01 全ての運用手順が「ログを見る」で終わるが、そのログに情報が無い
 
 - Type: Operations
-- Status: Open
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer

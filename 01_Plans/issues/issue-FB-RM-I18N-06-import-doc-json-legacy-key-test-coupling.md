@@ -1,7 +1,7 @@
 # Issue: FB-RM-I18N-06 `app.toolbar.import_doc_json_legacy`がproductionで未使用だがtestに直結している
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer

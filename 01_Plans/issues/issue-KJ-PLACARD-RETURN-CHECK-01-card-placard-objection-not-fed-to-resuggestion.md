@@ -1,7 +1,7 @@
 # Issue: KJ-PLACARD-RETURN-CHECK-01 表札の戻し検査（カード→表札の異議）が再提案に反映されない
 
 - Type: Product Invariant / AI Integration
-- Status: In Progress
+- Status: Done
 - Source Issue: `01_Plans/direction-review-2026-08-13.md` 優先3-3
 - Priority: P2
 - Owner: Maintainer

@@ -1,7 +1,7 @@
 # Issue: SEC-RATE-LIMIT-01 backend APIにrate limitが一切ない（MCP transportとの非対称）
 
 - Type: Security
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer

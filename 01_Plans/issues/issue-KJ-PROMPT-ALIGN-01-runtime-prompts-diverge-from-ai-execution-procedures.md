@@ -1,7 +1,7 @@
 # Issue: KJ-PROMPT-ALIGN-01 実行時プロンプトが ai_kj_execution_procedures.md と乖離している
 
 - Type: Product Invariant / AI Integration
-- Status: In Progress
+- Status: Done
 - Source Issue: `01_Plans/direction-review-2026-08-13.md` 優先3-4
 - Priority: P2
 - Owner: Maintainer

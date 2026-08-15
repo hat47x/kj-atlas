@@ -1,7 +1,7 @@
 # Issue: DATA-DOC-LIFECYCLE-01 documentsに所有者とライフサイクルが無く、post-MVP要件4領域が設計できない
 
 - Type: Feature / Data model
-- Status: In Progress
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer

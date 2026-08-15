@@ -1,7 +1,7 @@
 # Issue: KJ-AB-CROSS-CHECK-01 ナラティブ検査が A/B 照合の方向と件数を落としている
 
 - Type: Product Invariant / AI Integration
-- Status: In Progress
+- Status: Done
 - Source Issue: `01_Plans/direction-review-2026-08-13.md` 優先3-2
 - Priority: P2
 - Owner: Maintainer

@@ -1,7 +1,7 @@
 # Issue: SEC-AUTH-ATTRIB-01 クライアント供給の x-auth-roles / x-auth-groups が外部PDPへ転送される
 
 - Type: Security
-- Status: In Progress
+- Status: Done
 - Source Issue: `QA-TENANT-ISOLATION-01` の周辺観測（別issue化推奨）
 - Priority: P1
 - Owner: Maintainer

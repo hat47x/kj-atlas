@@ -1,7 +1,7 @@
 # Issue: PGM-ITER-03-01 第3反復（共同編集）の並行性モデル選定に必要な外部比較調査
 
 - Type: Planning / Research
-- Status: Open
+- Status: Done
 - Source Issue: `02_Architecture/post-mvp-business-scope-design-program.html` §7-4, `01_Plans/direction-review-2026-08-13.md` 優先4
 - Priority: P2
 - Owner: Maintainer
