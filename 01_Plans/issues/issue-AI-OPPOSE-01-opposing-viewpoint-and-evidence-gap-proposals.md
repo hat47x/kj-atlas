@@ -42,3 +42,25 @@
 
 - 本issueは要件固定を目的とし、実装は `CE2` の基盤を再利用する。
 - AI有効時のみ提案し、無効時は中核操作を変更しない（`ADR-0040` 段階開示）。
+
+## 具体スコープ（2026-08-15・計画起票）
+
+### 既存インフラのマッピング
+
+| M4 要件 | 既存資産 | ギャップ |
+|---------|---------|---------|
+| contradiction 構造からの提案 | `detect-contradiction`（AIルート・`_reject_unreviewed_cards` 適用済み）・`contradictionSignalDecisions`（domain） | **proposal-only の UI 表面が無い**（判定は表示されるが「反対視点の候補」として提案されない） |
+| evidence 構造からの根拠不足 | `evidenceLinks`（domain types・文書スキーマ） | 根拠不足の**仮説抽出**（証拠の無いカードを候補化）は未実装 |
+| proposal-only・非自動適用 | CE2 proposal 基盤・`human_reviewed` 不変条件（value_traceability §2.5） | 反対視点を proposal として取り込む経路が無い |
+| hold/保留への非破壊接続 | hold / 保留状態（DOMAIN-EXPR-02） | 根拠不足の提案を保留へ接続する導線が無い |
+
+### 実装の積み順（提案・仮承認）
+
+1. **R1（backend）**: `POST /ai/proposals/opposing-viewpoint`（新規）— contradiction / evidenceLinks 構造から反対視点・根拠不足を提案（proposal-only・CE2 envelop 再利用・`_assert_model_allowed` 適用）。detect-contradiction は判定のみ・本ルートは**提案**を担う。
+2. **R2（frontend）**: contradiction 判定結果を「反対視点の候補」として proposal 表面に表示（proposal-only・採否のみ・自動適用なし）。根拠不足カードを hold/保留へ接続する導線。
+3. **検証**: `test_ai_oppose.py`（backend・提案スキーマ・proposal-only 境界）＋ E2E（提案表示・採否・保留接続・非適用）。
+
+### 判断保留
+
+- 反対視点の自動トリガー（判定→自動提案）はしない（人間が「反対視点を提案」を明示操作したときのみ）。
+- 根拠不足の判定はエビデンス重み付けを導入しない（反スコアリング不変条件・既存の evidenceLinks の有無のみで候補化）。
