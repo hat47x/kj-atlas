@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { resolveIslandDisplayTitle } from "../i18n/island_title";
+import { inspectIslandTitle } from "../domain/island_title_quality";
 import { t } from "../i18n/translate";
 
 import { formatTimestamp } from "../domain/format_timestamp";
@@ -2490,6 +2491,36 @@ export function SidePanel({
               marginBottom: 10,
             }}
           />
+          {(() => {
+            // AI-TITLE-01: surface a universal-phrase placard (a title that
+            // would fit ANY island) as a proposal-only warning. The rewrite
+            // proposal itself is AI-assisted and lives on the suggestion
+            // surface; here we only flag the risk, never auto-apply.
+            const title = selectedIsland.title?.trim();
+            if (!title || !document) return null;
+            const memberTexts = selectedIsland.cardIds
+              .map((cardId) => document.cards.find((card) => card.id === cardId))
+              .filter((card): card is (typeof document.cards)[number] => Boolean(card))
+              .map((card) => card.text);
+            const inspection = inspectIslandTitle(title, memberTexts);
+            if (!inspection.isUniversal) return null;
+            return (
+              <div
+                data-ui-region="universal-title-warning"
+                style={{
+                  fontSize: 11,
+                  color: "#9a3412",
+                  backgroundColor: "#fff7ed",
+                  border: "1px solid #fed7aa",
+                  borderRadius: 6,
+                  padding: "6px 8px",
+                  marginBottom: 10,
+                }}
+              >
+                {t("side_panel.island_editor.universal_title_warning")}
+              </div>
+            );
+          })()}
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             {t("side_panel.island_editor.placard_card")}

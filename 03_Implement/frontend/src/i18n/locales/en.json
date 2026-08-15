@@ -1152,6 +1152,7 @@
   "side_panel.island_editor.parent": "Parent island",
   "side_panel.island_editor.collapsed": "Collapsed",
   "side_panel.island_editor.title_label": "Title",
+  "side_panel.island_editor.universal_title_warning": "This title could fit any island (universal phrase). AI can propose a rewrite that only this island's cards support — propose, never auto-apply.",
   "side_panel.island_editor.placard_card": "Placard card",
   "side_panel.island_editor.placard_card_text": "Placard card text",
   "side_panel.island_editor.focus": "Focus this island",

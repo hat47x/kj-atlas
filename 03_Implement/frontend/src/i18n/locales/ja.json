@@ -1152,6 +1152,7 @@
   "side_panel.island_editor.parent": "親の島",
   "side_panel.island_editor.collapsed": "折りたたむ",
   "side_panel.island_editor.title_label": "タイトル",
+  "side_panel.island_editor.universal_title_warning": "このタイトルはどの島にも当てはまる普遍語の可能性があります。この島のカードにしか書けない一文への書き直し案をAIが提案できます（提案のみ・自動適用はしません）。",
   "side_panel.island_editor.placard_card": "代表カード",
   "side_panel.island_editor.placard_card_text": "代表カードの本文",
   "side_panel.island_editor.focus": "この島を表示",
