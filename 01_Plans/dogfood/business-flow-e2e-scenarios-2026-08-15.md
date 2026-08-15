@@ -128,6 +128,20 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 実走行で **`mock:` プレフィックス付き bundle hash の契約不整合**（API は許可・DB は拒否）を発見し `DATA-CONTRACT-02` を起票。
 **39/39 pass**（シナリオ1〜9・9業態）。
 
+### シナリオ10（iteration 52 追加・フィールドワーカーのW型探究 × AI支援）
+
+| 軸 | 内容 |
+|----|------|
+| 業態 | 社会調査・フィールドワーク |
+| 想定人物 | フィールドワーカー（現地調査） |
+| 業務領域 | フィールドノートの KJ 整理と探究ジャーニー（W型）への保存 |
+| 操作内容 | ノートをカード化(PUT) → **AI束ね(suggest-card-groups)** → **島要約(suggest-island-summary)** → **ジャーニー保存(inquiry-bundle create)** → 読戻し → 破棄 |
+| 注意事項 | ノートは逐語（refine で変えない）。ジャーニーは CAS（If-Match/If-None-Match）で並行編集を保護。未レビューカードは AI 経路で 422（SafeMode） |
+
+シナリオ10は **AI 支援（束ね・島要約）と W型探究ジャーニー保存を組み合わせた複合フロー**を固定した。
+フィールドノートを AI で整理 → その整理済み文書を snapshot として inquiry-bundle に保存、という
+実際の調査ワークフローを一気通貫で検証する（アプリの二つの差別化価値の統合）。**45/45 pass**（シナリオ1〜10・10業態）。
+
 ## E2E の固定方法
 
 ### バックエンド全層フロー（初回・curl ベース）
@@ -175,6 +189,7 @@ bash scripts/verify_business_flow_e2e.sh 8000   # 7 チェック（作成/読戻
 - [x] バックエンド全層の標準業務フロー E2E を固定（**シナリオ1+2 で 10/10 pass**・モックLLM）
 - [x] 別業態のシナリオ追加（iteration 42: 新規事業企画ワークショップ・suggest-card-groups を追加）
 - [x] シナリオ3〜6（iteration 44〜47: 品質管理・detect-contradiction / 管理者CLI/API・文書ライフサイクル/監査/キー分離 / 報道編集・check-narrative / 調査研究員・W型探究 CAS）を追加
-- [x] シナリオ7（iteration 48: 学術研究・summarize-island-relation）・シナリオ8（iteration 49: ナレッジベース管理者・suggest-document-title）・シナリオ9（iteration 50: 人事マネージャー・CE4 proposal 連鎖）を追加 — **シナリオ1〜9 で 39/39 pass・AI 操作 8 種＋CE4 proposal 連鎖をカバー**
+- [x] シナリオ7〜9（iteration 48〜50: 学術研究・summarize-island-relation / ナレッジベース管理者・suggest-document-title / 人事マネージャー・CE4 proposal 連鎖）を追加
+- [x] シナリオ10（iteration 52: フィールドワーカー・W型探究 × AI支援の複合フロー）を追加 — **シナリオ1〜10 で 45/45 pass・AI 操作 8 種＋CE4 proposal 連鎖＋W型×AI 統合をカバー**
 - [ ] UI 層 E2E（フロントエンド AI 操作・CE4 proposal 連鎖）
 - [ ] さらに別業態のシナリオ追加（イテレーション毎に拡大）

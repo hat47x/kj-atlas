@@ -514,5 +514,74 @@ p9_doc_summary=$(curl -s "$BASE_URL/docs/$P9_ID" | grep -oE '"summaryText":"[^"]
 check "P9 文書は自動適用されない（旧要約のまま）" '"summaryText":"旧要約"' "$p9_doc_summary"
 
 echo ""
+echo "--- シナリオ10: フィールドワーカーのW型探究 × AI支援（複合フロー） ---"
+# 業態: 社会調査・フィールドワーク
+# 想定人物: フィールドワーカー（現地調査）
+# 業務領域: フィールドノートのKJ整理と探究ジャーニー（W型）への保存
+# 操作内容: ノートをカード化(PUT) -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> ジャーニー保存(inquiry-bundle create) -> 読戻し -> ラウンド深化(update)
+# 注意事項: ノートは逐語（refine で変えない）。ジャーニーは CAS（If-Match/If-None-Match）で
+#          並行編集を保護。未レビューカードは AI 経路で 422（SafeMode）。
+FW_ID="biz-flow-fieldwork"
+FW_DOC='{"version":1,"id":"'$FW_ID'","title":"現地調査ノート","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"f1","text":"朝の通勤時間帯が最も混雑する","x":0,"y":0,"textReviewed":true},{"id":"f2","text":"改札の前に滞留が起きる","x":10,"y":0,"textReviewed":true},{"id":"f3","text":"案内表示は見えにくい位置にある","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"fw-i","cardIds":["f1","f2","f3"]}],"readingOrder":["fw-i"]}'
+
+fw_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FW_ID" \
+  -H 'Content-Type: application/json' -d "$FW_DOC")
+check "FW PUT document (フィールドノート作成)" "200" "$fw_put"
+
+# AI束ね（ノートの束ね提案・モックは2グループ）。
+fw_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"f1","text":"朝の通勤時間帯が最も混雑する","textReviewed":true},{"id":"f2","text":"改札の前に滞留が起きる","textReviewed":true},{"id":"f3","text":"案内表示は見えにくい位置にある","textReviewed":true}]}')
+case "$fw_groups" in
+  *'"groups":'*)
+    echo "  PASS: FW AI束ね (suggest-card-groups)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: FW suggest-card-groups (got ${fw_groups:0:120})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 島要約（モックはメンバーカードを grounding）。
+fw_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FW_DOC,\"islandId\":\"fw-i\"}")
+case "$fw_summary" in
+  *'"groundingIds":["f1","f2","f3"]'*)
+    echo "  PASS: FW 島要約 (suggest-island-summary grounding = member cards)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: FW suggest-island-summary (got ${fw_summary:0:120})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# ジャーニー保存（フィールドノートを snapshot として inquiry-bundle へ）。
+FW_JOURNEY_ID="biz-flow-fw-journey"
+FW_BUNDLE='{"schemaVersion":"1.0.0","journey":{"schemaVersion":"1.0.0","journeyId":"'$FW_JOURNEY_ID'","title":"駅の混雑を捉え直す","originSnapshotIds":["snapshot-fw"],"roundRecords":[{"roundId":"fw-r1","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","stage":"r2_situation_grasp","iteration":1,"parentRoundIds":[],"status":"in_progress","theme":"滞留はいつどこで起きるか","inputSnapshotIds":["snapshot-fw"],"outputSnapshotId":"snapshot-fw","handoff":{"carryoverRefs":[],"heldRefs":[],"unresolvedQuestions":["案内表示の視認性"],"fieldworkRequests":[]}}],"resolvedFieldworkQuestionIds":[],"status":"in_progress"},"snapshots":[{"schemaVersion":"1.0.0","snapshotId":"snapshot-fw","createdAt":"2026-08-15T00:00:00Z","canonicalDigest":"sha256:fw","document":'$FW_DOC'}]}'
+fw_journey_create=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/inquiry-bundles/$FW_JOURNEY_ID" \
+  -H 'Content-Type: application/json' -H 'If-None-Match: *' -d "$FW_BUNDLE")
+check "FW ジャーニー保存 (201 + CAS create)" "201" "$fw_journey_create"
+
+# ジャーニー読戻し（フィールドノートが snapshot として保持されている）。
+fw_journey_get=$(curl -s "$BASE_URL/inquiry-bundles/$FW_JOURNEY_ID")
+case "$fw_journey_get" in
+  *'"roundRecords"'*'"現地調査ノート"'*)
+    echo "  PASS: FW ジャーニー読戻し（フィールドノート snapshot 保持）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: FW ジャーニー読戻し（got ${fw_journey_get:0:120}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# ジャーニー破棄。
+fw_journey_del=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "$BASE_URL/inquiry-bundles/$FW_JOURNEY_ID" \
+  -H "If-Match: 1")
+check "FW ジャーニー破棄 (204)" "204" "$fw_journey_del"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
