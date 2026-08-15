@@ -2277,5 +2277,50 @@ sv_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SV_ID")
 check "SV 読戻し (200)" "200" "$sv_read"
 
 echo ""
+echo "--- シナリオ50: 小売・ECの返品クレーム根本原因分析 ---"
+# 業態: 小売・EC（通販・カスタマーサービス）
+# 想定人物: ECカスタマーサポートチームリーダー
+# 業務領域: 返品・クレームのKJ分類と根本原因の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> レイアウト(suggest-layout)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: クレームは逐語で保持。多数意見（最多理由）に埋もれる少数・急増シグナル
+#          （商品説明ギャップ）を矛盾検出で表面化する（少数意見の外在化・V2）。
+EC_ID="biz-flow-ec"
+EC_DOC='{"version":1,"id":"'$EC_ID'","title":"返品クレーム分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ec1","text":"返品理由で最も多いのはサイズ不一致","x":0,"y":0,"textReviewed":true},{"id":"ec2","text":"商品説明と実物のギャップを指摘する声が急増","x":10,"y":0,"textReviewed":true},{"id":"ec3","text":"配送遅延による返品は減少傾向","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ec-i","cardIds":["ec1","ec2","ec3"]}],"readingOrder":["ec-i"]}'
+
+ec_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EC_ID" \
+  -H 'Content-Type: application/json' -d "$EC_DOC")
+check "EC PUT document (作成)" "200" "$ec_put"
+
+# ① AI束ね
+ec_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ec1","text":"返品理由で最も多いのはサイズ不一致","textReviewed":true},{"id":"ec2","text":"商品説明と実物のギャップを指摘する声が急増","textReviewed":true},{"id":"ec3","text":"配送遅延による返品は減少傾向","textReviewed":true}]}')
+case "$ec_groups" in *'"groups":'*) echo "  PASS: EC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: EC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ec_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EC_DOC,\"islandId\":\"ec-i\"}")
+case "$ec_summary" in *'"groundingIds":["ec1","ec2","ec3"]'*) echo "  PASS: EC ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: EC ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（最多理由 vs 急増シグナル・少数意見の表面化）
+ec_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ec1","text":"返品理由で最も多いのはサイズ不一致","textReviewed":true},"cardB":{"id":"ec2","text":"商品説明と実物のギャップを指摘する声が急増","textReviewed":true}}')
+case "$ec_contra" in *'"hasContradiction"'*) echo "  PASS: EC ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: EC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ レイアウト（配置提案・モックはグリッド配置）
+ec_layout=$(curl -s -X POST "$BASE_URL/ai/suggest-layout" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EC_DOC}")
+case "$ec_layout" in *'"transform"'*'"cards"'*) echo "  PASS: EC ④レイアウト"; PASS=$((PASS+1));; *) echo "  FAIL: EC ④レイアウト"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+ec_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$EC_DOC}")
+case "$ec_narr" in *'"basedOnReadingOrder":["ec-i"]'*) echo "  PASS: EC ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: EC ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+ec_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EC_ID")
+check "EC 読戻し (200)" "200" "$ec_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
