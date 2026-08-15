@@ -25,7 +25,7 @@ Docker Compose の標準構成は次の3サービスです。
 kj-atlas の運用確認は、次の順で見ると切り分けやすくなります。
 
 1. 画面が開くか。
-2. API が `/api/healthz` に応答するか。
+2. API が `/api/healthz` に応答するか（liveness）。応答するのに動作がおかしい場合は `/api/readyz` でDBとスキーマを確認します。
 3. DB が healthy か。
 4. 保存と再読み込みができるか。
 5. LLM や audit など、外部接続を有効にした部分だけ追加で確認する。
@@ -90,7 +90,8 @@ docker compose logs api --tail=100
 - `db` が healthy になっている。
 - `api` が migration 後に起動している。
 - `web` が `KJ_ATLAS_WEB_PORT` のポートで公開されている。
-- `/api/healthz` が `{"status":"ok"}` を返す。
+- `/api/healthz` が `{"status":"ok"}` を返す（**liveness のみ。DBの状態は見ていません**）。
+- `/api/readyz` が `{"status":"ready"}` を返す（DB到達性とスキーマ世代を検査します）。DBを失った状態でも `/api/healthz` は成功するため、依存の確認はこちらを使ってください。
 
 `docker compose ps` はサービスの生死を見るコマンドです。`curl` は API の応答を見るコマンドです。どちらか片方だけでは原因を絞り切れないため、両方を確認します。
 
@@ -291,6 +292,15 @@ docker compose logs db --tail=100
 ```
 
 障害調査では、最初に発生時刻、操作内容、対象ドキュメント ID、HTTP status、画面上のエラーを控えます。ログやスクリーンショットを共有する前に、秘密情報を除外してください。診断 worker の見方は [diagnostics.md](diagnostics.md)、残してよい情報の判断は [data_handling.md](data_handling.md) を参照してください。
+
+ログは既定で1行1JSONです。エラー応答の `requestId`（`X-Request-Id` ヘッダーと同じ値）でログ行を絞り込めます。
+
+```bash
+docker compose logs api | grep '"requestId":"<利用者から聞いたID>'
+```
+
+ログの形式、突き合わせ手順、および**まだ観測できないこと**（メトリクス、監査イベントのローカル保存）は
+[observability.md](observability.md) にまとめています。
 
 ## 障害時の初動
 

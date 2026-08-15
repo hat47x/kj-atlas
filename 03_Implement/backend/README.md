@@ -151,3 +151,9 @@ tests/scripts/run_auth_level2.sh
 - `transport`
 - `trace_id`
 - `fallback_to_none`
+
+これらは `extra={...}` で渡され、`KJ_ATLAS_LOG_JSON=true`（既定）のとき JSON の1行として
+出力されます。OPS-OBSERV-01 以前はログ設定が存在せず、`logging.Formatter` の既定書式が
+`extra` を描画しないため **上記の項目は実際には出力されていませんでした**。出力レベルは
+`KJ_ATLAS_LOG_LEVEL` で変更できます。全リクエストには `X-Request-Id` が付与され、ログ行の
+`requestId` フィールドと突き合わせられます。

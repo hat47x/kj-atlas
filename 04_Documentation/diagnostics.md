@@ -27,7 +27,7 @@
 | 層 | 見るもの |
 | --- | --- |
 | 画面 | ブラウザ console、表示崩れ、操作不能 |
-| API | HTTP status、`/healthz`、backend logs |
+| API | HTTP status、`/healthz`（liveness）と `/readyz`（DB到達性・スキーマ世代）、backend logs |
 | DB | `db` health、migration、保存結果 |
 | 外部接続 | LLM provider、監査ログ連携の接続先、access control の接続先（endpoint） |
 
@@ -46,7 +46,8 @@
 Docker Compose:
 
 ```bash
-curl -fsS http://localhost:8080/api/healthz
+curl -fsS http://localhost:8080/api/healthz   # liveness のみ（何も検査しません）
+curl -s http://localhost:8080/api/readyz      # DB到達性とスキーマ世代
 docker compose ps
 docker compose logs api --tail=200
 ```

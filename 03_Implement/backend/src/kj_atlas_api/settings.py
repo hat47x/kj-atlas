@@ -284,6 +284,24 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="KJ_ATLAS_LLM_HIGH_REASONING_MODEL",
     )
+    # OPS-OBSERV-01: no logging configuration existed, so `extra={...}` payloads
+    # were silently discarded by the default formatter. These two keys install
+    # one.
+    log_level: str = Field(
+        default="INFO",
+        validation_alias="KJ_ATLAS_LOG_LEVEL",
+    )
+    log_json: bool = Field(
+        default=True,
+        validation_alias="KJ_ATLAS_LOG_JSON",
+    )
+    # OPS-OBSERV-01: what build is actually running. Surfaced by GET /version and
+    # by the frontend support bundle, which reported "unknown" in every standard
+    # Compose deploy because this was never passed through.
+    app_revision: str | None = Field(
+        default=None,
+        validation_alias="KJ_ATLAS_APP_REVISION",
+    )
     api_key: str | None = Field(
         default=None,
         validation_alias="KJ_ATLAS_API_KEY",

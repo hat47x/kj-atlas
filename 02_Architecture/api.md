@@ -665,6 +665,23 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 **GET** `/healthz`
 
 - 未認証。プロセス生存確認。`200 {"status": "ok"}` を返す。
+- **liveness のみで、何も検査しない。** OPS-OBSERV-01: 以前はこれが唯一のAPI確認手段として全runbookで案内されていたため、DBを失った状態でも `ok` を返すことが運用上の落とし穴になっていた。依存の状態は `/readyz` を使う。
+
+**GET** `/readyz`
+
+- 未認証。依存の readiness を検査する（OPS-OBSERV-01）。
+- Response: `{ status: "ready" | "not_ready", checks: { [name: string]: string } }`
+- `checks.database`: `ok` | `unreachable`。到達不能時の理由は接続文字列を含みうるため応答へ出さない。
+- `checks.schema`: `ok` | `mismatch`。DBの `alembic_version` とビルドが期待するAlembic head の一致を見る。`mismatch` のとき `checks.schemaExpected` と `checks.schemaApplied` にリビジョンIDを併記する（いずれも秘密ではなく、roll-forward と restore の判断に必要）。
+- 準備完了なら `200`、そうでなければ `503`。例外を投げず必ず status で答える。
+- 起動時検査はAlembicの**スクリプト側**の分岐しか見ておらずDBの適用済みリビジョンを読まないため、古いスキーマのDBでも正常起動する。その隙間をこのendpointが埋める。
+
+**GET** `/version`
+
+- 未認証。稼働中のビルドを返す（OPS-OBSERV-01）。
+- Response: `{ revision: string, runtimeProfile: string }`
+- `revision` は `KJ_ATLAS_APP_REVISION`。未設定時は `"unknown"`。
+- `runtimeProfile` はprofile名をそのまま返す。`GET /session/bootstrap-policy` が profile 名を隠してbootstrap modeへ写像するのとは**意図的に異なる**——運用者はどのprofileで動いているかを知る必要があり、profile名自体は秘密ではない。
 
 **GET** `/redoc`
 
