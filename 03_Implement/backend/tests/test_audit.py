@@ -142,6 +142,124 @@ def test_dispatcher_fail_open_on_transport_failure() -> None:
     assert result.reason == "send_failed"
 
 
+def _emit_event(dispatcher: AuditDispatcher, *, key: tuple[str, ...], event_type: str = "export") -> object:
+    event = build_event(
+        event_type=event_type,
+        tenant_id="tenant-a",
+        doc_id="doc-2",
+        safe_mode=False,
+    )
+    return dispatcher.emit(event, dedup_key=key)
+
+
+def test_dispatcher_dedups_repeated_logical_operation() -> None:
+    # SEC-AUDIT-DUP-01: the same logical operation emitted twice within the
+    # window (client retry / double-click) reaches the sink only once.
+    transport = RecordingTransport()
+    dispatcher = AuditDispatcher(
+        enabled=True,
+        allow_in_safe_mode=True,
+        transport=transport,
+        queue_size=10,
+    )
+
+    first = _emit_event(dispatcher, key=("export-audit", "tenant-a", "doc-2", "json"))
+    second = _emit_event(dispatcher, key=("export-audit", "tenant-a", "doc-2", "json"))
+
+    assert first.sent is True
+    assert second.sent is False
+    assert second.reason == "duplicate"
+    assert len(transport.events) == 1
+
+
+def test_dispatcher_distinct_logical_operations_both_dispatch() -> None:
+    transport = RecordingTransport()
+    dispatcher = AuditDispatcher(
+        enabled=True,
+        allow_in_safe_mode=True,
+        transport=transport,
+        queue_size=10,
+    )
+
+    _emit_event(dispatcher, key=("export-audit", "tenant-a", "doc-2", "json"))
+    _emit_event(dispatcher, key=("export-audit", "tenant-a", "doc-3", "json"))
+
+    assert len(transport.events) == 2
+
+
+def test_dispatcher_dedup_disabled_when_window_is_zero() -> None:
+    transport = RecordingTransport()
+    dispatcher = AuditDispatcher(
+        enabled=True,
+        allow_in_safe_mode=True,
+        transport=transport,
+        queue_size=10,
+        dedup_window_seconds=0,
+    )
+
+    _emit_event(dispatcher, key=("export-audit", "tenant-a", "doc-2", "json"))
+    _emit_event(dispatcher, key=("export-audit", "tenant-a", "doc-2", "json"))
+
+    assert len(transport.events) == 2
+
+
+def test_dispatcher_failed_send_retry_is_not_falsely_deduped() -> None:
+    # SEC-AUDIT-DUP-01: a first attempt that FAILED is not recorded, so a
+    # retry of the same logical operation is allowed (fail-open recovery).
+    class FlakyTransport:
+        name = "flaky"
+
+        def __init__(self) -> None:
+            self.calls = 0
+            self.events: list[AuditEvent] = []
+
+        def send(self, event: AuditEvent) -> None:
+            self.calls += 1
+            if self.calls == 1:
+                raise RuntimeError("boom")
+            self.events.append(event)
+
+    transport = FlakyTransport()
+    dispatcher = AuditDispatcher(
+        enabled=True,
+        allow_in_safe_mode=True,
+        transport=transport,
+        queue_size=10,
+    )
+
+    first = _emit_event(dispatcher, key=("export-audit", "tenant-a", "doc-2", "json"))
+    assert first.sent is False
+    assert first.reason == "send_failed"
+
+    # The retry is NOT a duplicate; the flush delivers the pending copy, and no
+    # second copy is sent (the logical operation reaches the sink exactly once).
+    second = _emit_event(dispatcher, key=("export-audit", "tenant-a", "doc-2", "json"))
+    assert second.sent is True
+    assert second.reason == "queued_pending"
+    assert len(transport.events) == 1
+
+
+def test_dispatcher_no_dedup_key_bypasses_dedup() -> None:
+    transport = RecordingTransport()
+    dispatcher = AuditDispatcher(
+        enabled=True,
+        allow_in_safe_mode=True,
+        transport=transport,
+        queue_size=10,
+    )
+
+    event = build_event(
+        event_type="export",
+        tenant_id="tenant-a",
+        doc_id="doc-2",
+        safe_mode=False,
+    )
+    dispatcher.emit(event)
+    dispatcher.emit(event)
+
+    assert len(transport.events) == 2
+
+
 def test_build_audit_dispatcher_http_rejects_missing_endpoint(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.setattr("kj_atlas_api.audit.settings.audit_transport", "http")
     monkeypatch.setattr("kj_atlas_api.audit.settings.audit_http_endpoint", None)

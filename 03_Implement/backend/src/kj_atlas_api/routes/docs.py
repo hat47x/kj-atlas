@@ -838,7 +838,18 @@ def post_context_audit(
                     "schemaVersion": payload.schemaVersion,
                     **build_auth_assurance_metadata(access_request.auth),
                 },
-            )
+            ),
+            # SEC-AUDIT-DUP-01: the logical identity of the operation, so a
+            # client retry of the identical CE4 event is not double-counted at
+            # the external audit sink within the dedup window.
+            dedup_key=(
+                "context-audit",
+                tenant.tenant_id,
+                doc_id,
+                payload.operation,
+                payload.equivalenceKey,
+                payload.bundleHash,
+            ),
         )
 
     return {"status": "accepted"}
@@ -885,7 +896,15 @@ def post_export_audit(
                     "traceId": access_request.auth.trace_id,
                     **build_auth_assurance_metadata(access_request.auth),
                 },
-            )
+            ),
+            # SEC-AUDIT-DUP-01: same logical export suppressed within the dedup
+            # window (client retry / double-click on the export action).
+            dedup_key=(
+                "export-audit",
+                tenant.tenant_id,
+                doc_id,
+                payload.exportKind,
+            ),
         )
 
     return {"status": "accepted"}

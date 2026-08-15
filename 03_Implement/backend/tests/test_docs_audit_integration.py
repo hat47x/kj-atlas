@@ -12,7 +12,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from kj_atlas_api import cli
-from kj_atlas_api.audit import resolve_ce4_query_hash
+from kj_atlas_api.audit import AuditDispatcher, resolve_ce4_query_hash
 from kj_atlas_api.access_control import AccessDecision
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
@@ -28,9 +28,19 @@ class SpyAuditDispatcher:
     def __init__(self) -> None:
         self.events: list[object] = []
 
-    def emit(self, event: object):
+    def emit(self, event: object, *, dedup_key=None):  # noqa: ANN001
         self.events.append(event)
         return None
+
+
+class RecordingAuditTransport:
+    name = "recording"
+
+    def __init__(self) -> None:
+        self.events: list[object] = []
+
+    def send(self, event: object) -> None:
+        self.events.append(event)
 
 
 class AllowAllAdapter:
@@ -174,6 +184,66 @@ def test_post_export_audit_emits_export_event(tmp_path) -> None:
     assert event.metadata["amrClass"] == "single_factor"
     assert event.metadata["assuranceLevel"] == "low"
     assert event.metadata["authAgeBucket"] == "unknown"
+
+
+def test_export_audit_double_post_reaches_sink_once(tmp_path) -> None:
+    # SEC-AUDIT-DUP-01: the route passes a logical dedup_key, so a client
+    # retry / double-click of the identical export is not double-counted at
+    # the external sink. Both HTTP responses stay 200 (accepted).
+    transport = RecordingAuditTransport()
+    dispatcher = AuditDispatcher(
+        enabled=True,
+        allow_in_safe_mode=True,
+        transport=transport,
+        queue_size=10,
+    )
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.audit_dispatcher = dispatcher
+        client.app.state.access_control_adapter = AllowAllAdapter()
+
+        body = {"safeMode": False, "exportKind": "bundle"}
+        first = client.post(
+            "/docs/doc-export/export-audit",
+            json=body,
+            headers={"x-actor-ref": "user-2", "x-trace-id": "trace-export-1"},
+        )
+        second = client.post(
+            "/docs/doc-export/export-audit",
+            json=body,
+            headers={"x-actor-ref": "user-2", "x-trace-id": "trace-export-1"},
+        )
+
+        assert first.status_code == 200
+        assert second.status_code == 200
+        assert first.json() == {"status": "accepted"}
+        assert second.json() == {"status": "accepted"}
+
+    assert len(transport.events) == 1
+    assert transport.events[0].docId == "doc-export"
+
+
+def test_export_audit_distinct_kinds_both_reach_sink(tmp_path) -> None:
+    # SEC-AUDIT-DUP-01: different logical exports (exportKind) are not deduped.
+    transport = RecordingAuditTransport()
+    dispatcher = AuditDispatcher(
+        enabled=True,
+        allow_in_safe_mode=True,
+        transport=transport,
+        queue_size=10,
+    )
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.audit_dispatcher = dispatcher
+        client.app.state.access_control_adapter = AllowAllAdapter()
+
+        for export_kind in ("bundle", "json"):
+            response = client.post(
+                "/docs/doc-export/export-audit",
+                json={"safeMode": False, "exportKind": export_kind},
+                headers={"x-actor-ref": "user-2"},
+            )
+            assert response.status_code == 200
+
+    assert len(transport.events) == 2
 
 
 def test_context_audit_rejects_stale_session_before_tracker_mutation(

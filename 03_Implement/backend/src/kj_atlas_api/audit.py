@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import logging
 import math
-from collections import deque
+import time
+from collections import OrderedDict, deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -283,22 +284,72 @@ class AuditDispatcher:
         allow_in_safe_mode: bool,
         transport: AuditTransport,
         queue_size: int,
+        dedup_window_seconds: float = 5.0,
     ):
         self._enabled = enabled
         self._allow_in_safe_mode = allow_in_safe_mode
         self._transport = transport
-        self._queue: deque[AuditEvent] = deque(maxlen=max(queue_size, 0))
+        # (event, dedup_key) pairs so a flush can release the pending key.
+        self._queue: deque[tuple[AuditEvent, tuple[str, ...] | None]] = deque(maxlen=max(queue_size, 0))
+        # SEC-AUDIT-DUP-01: bounded recent-emit dedup keyed on a caller-supplied
+        # logical identity (tenant/doc/operation/hash). A client retry or
+        # double-click that repeats the SAME logical operation within the window
+        # is suppressed so the external audit sink is not double-counted.
+        # Bounded (LRU) so it can never grow without limit (DX-BACKEND-CE4-01
+        # concern applied); the window is short, so legitimately distinct events
+        # are unaffected.
+        self._dedup_window_seconds = max(dedup_window_seconds, 0.0)
+        self._recent_emit_keys: OrderedDict[tuple[str, ...], float] = OrderedDict()
+        self._recent_emit_max = 4096
+        # Logical keys of events still pending delivery in the fail-open queue.
+        # Mirrors the bounded queue (never grows beyond queue_size distinct keys),
+        # so a retry of an as-yet-undelivered operation flushes the pending copy
+        # instead of sending a second one.
+        self._queued_dedup_keys: set[tuple[str, ...]] = set()
 
     @property
     def enabled(self) -> bool:
         return self._enabled
 
-    def emit(self, event: AuditEvent) -> AuditDispatchResult:
+    def _is_recent_duplicate(self, key: tuple[str, ...]) -> bool:
+        if self._dedup_window_seconds <= 0:
+            return False
+        now = time.time()
+        # Opportunistically drop expired entries while we are here.
+        expired = [k for k, at in self._recent_emit_keys.items() if now - at >= self._dedup_window_seconds]
+        for k in expired:
+            del self._recent_emit_keys[k]
+        for seen_key, seen_at in self._recent_emit_keys.items():
+            if seen_key == key and now - seen_at < self._dedup_window_seconds:
+                self._recent_emit_keys.move_to_end(seen_key)
+                return True
+        return False
+
+    def _record_emitted_key(self, key: tuple[str, ...]) -> None:
+        self._recent_emit_keys[key] = time.time()
+        self._recent_emit_keys.move_to_end(key)
+        while len(self._recent_emit_keys) > self._recent_emit_max:
+            self._recent_emit_keys.popitem(last=False)
+
+    def emit(self, event: AuditEvent, *, dedup_key: tuple[str, ...] | None = None) -> AuditDispatchResult:
         if not self._enabled:
             return AuditDispatchResult(sent=False, reason="disabled")
 
         if event.safeMode and not self._allow_in_safe_mode:
             return AuditDispatchResult(sent=False, reason="safe_mode_blocked")
+
+        # SEC-AUDIT-DUP-01: suppress a repeat of the SAME logical operation.
+        # A retry whose key is still pending in the fail-open queue means the
+        # first attempt never reached the sink: flush delivers that pending
+        # copy instead of sending a second one. Otherwise a key emitted
+        # successfully within the window is a duplicate (client retry /
+        # double-click). Only successful sends record the key, so a failed
+        # first attempt is not falsely deduped away.
+        if dedup_key is not None and dedup_key in self._queued_dedup_keys:
+            self._flush_queue()
+            return AuditDispatchResult(sent=True, reason="queued_pending")
+        if dedup_key is not None and self._is_recent_duplicate(dedup_key):
+            return AuditDispatchResult(sent=False, reason="duplicate")
 
         if self._queue:
             self._flush_queue()
@@ -306,7 +357,7 @@ class AuditDispatcher:
         try:
             self._transport.send(event)
         except Exception as exc:  # fail-open
-            self._enqueue(event)
+            self._enqueue(event, dedup_key)
             logger.warning(
                 "audit event send failed; keep fail-open",
                 extra={
@@ -320,16 +371,22 @@ class AuditDispatcher:
             )
             return AuditDispatchResult(sent=False, reason="send_failed")
 
+        # Only a SUCCESSFUL send counts for dedup: a failed first attempt must
+        # be retryable (the fail-open flush path is the recovery route).
+        if dedup_key is not None:
+            self._record_emitted_key(dedup_key)
         return AuditDispatchResult(sent=True)
 
     def _flush_queue(self) -> None:
         pending = list(self._queue)
         self._queue.clear()
-        for queued in pending:
+        for queued, queued_key in pending:
             try:
                 self._transport.send(queued)
+                if queued_key is not None:
+                    self._queued_dedup_keys.discard(queued_key)
             except Exception as exc:  # fail-open
-                self._enqueue(queued)
+                self._enqueue(queued, queued_key)
                 logger.warning(
                     "audit event flush failed; keep fail-open",
                     extra={
@@ -343,12 +400,18 @@ class AuditDispatcher:
                 )
                 break
 
-    def _enqueue(self, event: AuditEvent) -> None:
+    def _enqueue(self, event: AuditEvent, dedup_key: tuple[str, ...] | None = None) -> None:
+        if dedup_key is not None:
+            self._queued_dedup_keys.add(dedup_key)
         before = len(self._queue)
-        self._queue.append(event)
+        self._queue.append((event, dedup_key))
         after = len(self._queue)
         dropped = before == after and after > 0
         if dropped:
+            # The oldest event was evicted; drop any pending key it carried so
+            # the pending-key set stays aligned with the bounded queue.
+            current_keys = {key for _, key in self._queue if key is not None}
+            self._queued_dedup_keys.intersection_update(current_keys)
             logger.warning(
                 "audit queue is full; dropped oldest event",
                 extra={
@@ -364,6 +427,7 @@ def build_audit_dispatcher() -> AuditDispatcher:
     enabled = settings.audit_export_enabled
     allow_in_safe_mode = settings.audit_allow_in_safe_mode
     queue_size = settings.audit_queue_size
+    dedup_window_seconds = settings.audit_dedup_window_seconds
     endpoint = settings.audit_http_endpoint
 
     if settings.audit_transport == "http" and endpoint is None:
@@ -377,6 +441,7 @@ def build_audit_dispatcher() -> AuditDispatcher:
             allow_in_safe_mode=allow_in_safe_mode,
             transport=NoopAuditTransport(),
             queue_size=queue_size,
+            dedup_window_seconds=dedup_window_seconds,
         )
 
     if settings.audit_transport == "http":
@@ -393,4 +458,5 @@ def build_audit_dispatcher() -> AuditDispatcher:
         allow_in_safe_mode=allow_in_safe_mode,
         transport=transport,
         queue_size=queue_size,
+        dedup_window_seconds=dedup_window_seconds,
     )

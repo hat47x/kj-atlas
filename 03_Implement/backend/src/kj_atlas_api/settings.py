@@ -338,6 +338,11 @@ class Settings(BaseSettings):
         gt=0,
         validation_alias="KJ_ATLAS_AUDIT_QUEUE_SIZE",
     )
+    audit_dedup_window_seconds: float = Field(
+        default=5.0,
+        ge=0,
+        validation_alias="KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS",
+    )
     audit_allow_in_safe_mode: bool = Field(
         default=False,
         validation_alias="KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE",
