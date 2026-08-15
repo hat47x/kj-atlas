@@ -37,6 +37,11 @@ RLS_EXEMPT_TENANT_TABLES = {
     # than the workspace data-plane RLS policy.
     "tenant_identity_providers": "control-plane identity-to-tenant resolution",
     "tenant_memberships": "control-plane user-to-tenant resolution",
+    # SEC-ADMIN-PLANE-03: the control-plane audit trail is read exclusively via
+    # control-plane auth (GET /admin/provision/audit), never under a tenant
+    # context, and pre-tenant bootstrap rows carry a NULL tenant_id. Applying
+    # data-plane RLS would hide those rows from the control-plane reader.
+    "admin_audit_events": "control-plane audit trail (bootstrap rows have NULL tenant)",
 }
 
 
