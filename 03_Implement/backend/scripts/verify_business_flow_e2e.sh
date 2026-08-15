@@ -1259,5 +1259,44 @@ dr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$DR_ID")
 check "DR 読戻し (200)" "200" "$dr_read"
 
 echo ""
+echo "--- シナリオ25: 法務レビュー（契約条項の整理と整合性検証） ---"
+# 業態: 法務・コンプライアンス
+# 想定人物: 法務担当（契約レビュー）
+# 業務領域: 契約条項のKJ整理と整合性検証（条項間の矛盾・法務意見のA/B照合）
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブA/B照合(check-narrative)
+# 注意事項: 条項の文面は逐語（refineで変えない）。整合性検証は提案のみ（自動適用なし）。
+LG_ID="biz-flow-legal"
+LG_DOC='{"version":1,"id":"'$LG_ID'","title":"契約レビュー","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"l1","text":"解約は30日前の通知で可能","x":0,"y":0,"textReviewed":true},{"id":"l2","text":"違約金は契約額の20%","x":10,"y":0,"textReviewed":true},{"id":"l3","text":"個人情報は目的外利用しない","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"lg-i","cardIds":["l1","l2","l3"]}],"readingOrder":["lg-i"]}'
+
+lg_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$LG_ID" \
+  -H 'Content-Type: application/json' -d "$LG_DOC")
+check "LG PUT document (作成)" "200" "$lg_put"
+
+# ① AI束ね
+lg_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"l1","text":"解約は30日前の通知で可能","textReviewed":true},{"id":"l2","text":"違約金は契約額の20%","textReviewed":true},{"id":"l3","text":"個人情報は目的外利用しない","textReviewed":true}]}')
+case "$lg_groups" in *'"groups":'*) echo "  PASS: LG ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: LG ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+lg_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$LG_DOC,\"islandId\":\"lg-i\"}")
+case "$lg_summary" in *'"groundingIds":["l1","l2","l3"]'*) echo "  PASS: LG ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: LG ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 条項間の矛盾検出
+lg_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"l1","text":"解約は30日前の通知で可能","textReviewed":true},"cardB":{"id":"l2","text":"違約金は契約額の20%","textReviewed":true}}')
+case "$lg_contra" in *'"hasContradiction"'*) echo "  PASS: LG ③条項間の矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: LG ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 法務意見のナラティブA/B照合
+lg_narr=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$LG_DOC,\"narrativeText\":\"（草稿）解約には30日前の通知を要し、違約金は契約額の20%とし、個人情報は目的外利用しない。\",\"basedOnReadingOrder\":[\"lg-i\"]}")
+case "$lg_narr" in *'"issues":[]'*) echo "  PASS: LG ④法務意見のA/B照合"; PASS=$((PASS+1));; *) echo "  FAIL: LG ④A/B照合 (${lg_narr:0:100})"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+lg_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$LG_ID")
+check "LG 読戻し (200)" "200" "$lg_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
