@@ -1,7 +1,7 @@
 # Issue: SEC-ADMIN-PLANE-02 両キー設定時に管理面が業務キーを前提とし、a2a3-gate:validate は control-plane 認可を持たない
 
 - Type: Security
-- Status: Open
+- Status: Done
 - Source Issue: SEC-ADMIN-PLANE-01（分離の残余ギャップ。ドッグフーディングで実測）
 - Priority: P1
 - Owner: Maintainer
@@ -53,11 +53,15 @@
 
 ## 受入条件
 
-- [ ] 両キー設定時に `X-Admin-Api-Key` 単独で /admin/provision/* へ到達できる（201）。
-- [ ] 業務キー単独では /admin/provision/* 全4ルートへ到達できない（401 `control_plane_unauthorized`）。
-- [ ] a2a3-gate:validate が control-plane 認可を要求し、`_CONTROL_PLANE_ROUTES` で分離テストの対象になる。
-- [ ] 業務面（非 /admin/）は従来どおり業務キーで保護される。
-- [ ] `verify_api_admin.sh` が DOGFOOD-06 規約（成功＋異常系）で管理面を検証する。
+- [x] 両キー設定時に `X-Admin-Api-Key` 単独で /admin/provision/* へ到達できる（201）。→ 4ルート全て `require_control_plane_authorization`（`routes/admin.py:126/276/349/445`）。`verify_api_admin.sh` が admin key で a2a3-gate 200 を固定。
+- [x] 業務キー単独では /admin/provision/* 全4ルートへ到達できない（401 `control_plane_unauthorized`）。→ `test_control_plane_authorization.py`（4ルート・業務キーのみ401・`control_plane_unauthorized`）。`verify_api_admin.sh` も業務キーのみ401を固定。
+- [x] a2a3-gate:validate が control-plane 認可を要求し、`_CONTROL_PLANE_ROUTES` で分離テストの対象になる。→ `routes/admin.py:274` の `hil-rs/a2a3-gate:validate` が `require_control_plane_authorization` 配下（test 58行目が4ルートに含む）。
+- [x] 業務面（非 /admin/）は従来どおり業務キーで保護される。→ `test_control_plane_authorization.py` が業務面の既存キー保護と分離を固定。
+- [x] `verify_api_admin.sh` が DOGFOOD-06 規約（成功＋異常系）で管理面を検証する。→ 無key401・誤key401・業務キーのみ401・admin key 200・drift 409/422 を実走行（verify_all.sh 統合済み）。
+
+## 対応記録（2026-08-15・iteration 40）
+
+本issueはコード実装済みだった（AC全項目が既存テスト/スクリプトで満たされていることを本日再検証）。`test_control_plane_authorization.py` 31 tests pass・`verify_api_admin.sh` 実走行で管理面分離を確認したため、Status を Done へ更新（iteration 34の棚卸しの取りこぼし）。実装の実体は `SEC-ADMIN-PLANE-01`（P0・AC-1〜4,6,7）および `verify_api_admin.sh` の導入時に同時に成立していた。
 
 ## 検証計画
 
