@@ -455,11 +455,21 @@ export async function putDocument(
 
 export type ProviderKind = "none" | "local" | "large-scale";
 
+/** OPS-LLM-COST-02: the provider-status snapshot (kind + in-process LLM call
+ * counts per provider kind plus "total"). callCounts is empty until the first
+ * LLM call. */
+export type ProviderStatusSnapshot = {
+  providerKind: ProviderKind;
+  callCounts: Record<string, number>;
+};
+
 /**
  * PROV-VIS-01 (ADR-0050 D1): read-only echo of the configured LLM provider.
- * This is a static config echo, not a connectivity check.
+ * This is a static config echo, not a connectivity check. OPS-LLM-COST-02
+ * carries the in-process LLM call counts through so an operator can see call
+ * volume (especially external / large-scale) in the UI.
  */
-export async function getProviderStatus(): Promise<ProviderKind> {
+export async function getProviderStatus(): Promise<ProviderStatusSnapshot> {
   const response = await fetch(`${API_BASE}/ai/provider-status`);
 
   if (!response.ok) {
@@ -467,8 +477,8 @@ export async function getProviderStatus(): Promise<ProviderKind> {
     throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 
-  const body = (await response.json()) as { providerKind: ProviderKind };
-  return body.providerKind;
+  const body = (await response.json()) as ProviderStatusSnapshot;
+  return { providerKind: body.providerKind, callCounts: body.callCounts ?? {} };
 }
 
 export type SuggestLayoutResult = {

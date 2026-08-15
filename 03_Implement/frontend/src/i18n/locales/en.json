@@ -753,6 +753,7 @@
   "view_controls.ai_provider.outcome.validation": "Last call: response could not be validated",
   "view_controls.ai_provider.outcome.unavailable": "Last call: could not connect",
   "view_controls.ai_provider.outcome.unknown": "Last call: unknown error",
+  "view_controls.ai_provider.call_counts": "LLM calls: {total} ({breakdown})",
   "command_palette.title": "Search commands",
   "command_palette.placeholder": "Type a command...",
   "command_palette.no_results": "No matching commands",

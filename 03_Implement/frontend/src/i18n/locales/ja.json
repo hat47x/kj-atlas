@@ -753,6 +753,7 @@
   "view_controls.ai_provider.outcome.validation": "直近の呼び出し: 応答を検証できず",
   "view_controls.ai_provider.outcome.unavailable": "直近の呼び出し: 接続できず",
   "view_controls.ai_provider.outcome.unknown": "直近の呼び出し: 不明なエラー",
+  "view_controls.ai_provider.call_counts": "LLM呼び出し: {total} 回（{breakdown}）",
   "command_palette.title": "コマンドを検索",
   "command_palette.placeholder": "コマンドを入力...",
   "command_palette.no_results": "該当するコマンドがありません",

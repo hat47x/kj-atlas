@@ -23,7 +23,7 @@ function buildDocument() {
   };
 }
 
-async function routeDocument(page: Page, providerKind: string): Promise<void> {
+async function routeDocument(page: Page, providerKind: string, callCounts?: Record<string, number>): Promise<void> {
   await page.route("**/packs/index.json", async (route) => {
     await route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
   });
@@ -39,13 +39,13 @@ async function routeDocument(page: Page, providerKind: string): Promise<void> {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ providerKind }),
+      body: JSON.stringify({ providerKind, callCounts: callCounts ?? {} }),
     });
   });
 }
 
 test("View panel shows the configured provider read-only, with no switch control", async ({ page }) => {
-  await routeDocument(page, "local");
+  await routeDocument(page, "local", { local: 7, total: 7 });
   await page.goto("/?locale=en");
 
   const startPanel = page.locator(START_PANEL);
@@ -57,6 +57,12 @@ test("View panel shows the configured provider read-only, with no switch control
 
   await expect(page.getByText("AI provider", { exact: true })).toBeVisible();
   await expect(page.getByText("Local", { exact: true })).toBeVisible();
+
+  // OPS-LLM-COST-02: in-process LLM call counts are surfaced read-only.
+  const callCounts = page.locator('[data-ui-region="llm-call-counts"]');
+  await expect(callCounts).toBeVisible();
+  await expect(callCounts).toContainText("7");
+  await expect(callCounts).toContainText("local");
 
   // No runtime switch: no select/combobox/radiogroup for provider anywhere in the panel.
   await expect(page.getByRole("combobox", { name: /provider/i })).toHaveCount(0);
@@ -75,4 +81,6 @@ test("View panel shows 'disabled' when the provider is none", async ({ page }) =
   await page.getByRole("button", { name: "View", exact: true }).click();
 
   await expect(page.getByText("Disabled (none)", { exact: false })).toBeVisible();
+  // OPS-LLM-COST-02: empty call counts (provider disabled) -> no counts line.
+  await expect(page.locator('[data-ui-region="llm-call-counts"]')).toHaveCount(0);
 });

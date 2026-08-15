@@ -1284,6 +1284,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   // fetched once from the backend config echo; lastAiCallOutcome is tracked
   // client-side from the actual result of the most recent AI call.
   const [providerKind, setProviderKind] = useState<ProviderKind | null>(null);
+  // OPS-LLM-COST-02: in-process LLM call counts (per provider kind + total),
+  // surfaced read-only in the View panel next to the provider kind.
+  const [llmCallCounts, setLlmCallCounts] = useState<Record<string, number>>({});
   const [lastAiCallOutcome, setLastAiCallOutcome] = useState<"ok" | AiProviderErrorKind | null>(null);
   // UX-CMDK-01 (ADR-0048 D2, layer 5): command palette. Default OFF, opened
   // only via Cmd/Ctrl+K; no persistent trigger element (CB-1, AC-5).
@@ -1557,9 +1560,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     // the badge simply stays unknown rather than surfacing a spurious error.
     let cancelled = false;
     void getProviderStatus()
-      .then((kind) => {
+      .then(({ providerKind: kind, callCounts }) => {
         if (!cancelled) {
           setProviderKind(kind);
+          setLlmCallCounts(callCounts);
         }
       })
       .catch(() => {
@@ -10922,6 +10926,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
             showSeqNumbers={showSeqNumbers}
             onShowSeqNumbersChange={setShowSeqNumbers}
             providerKind={providerKind}
+            llmCallCounts={llmCallCounts}
             lastAiCallOutcome={lastAiCallOutcome}
             lodEnabled={lodEnabled}
             onLodEnabledChange={setLodEnabled}
