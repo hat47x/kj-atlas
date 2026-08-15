@@ -1336,5 +1336,45 @@ pc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PC_ID")
 check "PC 読戻し (200)" "200" "$pc_read"
 
 echo ""
+echo "--- シナリオ27: 金融・融資審査のリスク評価 ---"
+# 業態: 金融・融資審査
+# 想定人物: 融資審査担当（リスク情報を評価）
+# 業務領域: リスク情報のKJ整理と矛盾リスク信号の検出・反対視点の確認
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> 反対視点提案(propose-opposing-viewpoint)
+# 注意事項: リスク情報は逐語（refineで変えない）。矛盾するリスク信号は隠さず表面化。
+#          全AI操作は未レビュー入力で422（SafeMode）。
+FN_ID="biz-flow-finance"
+FN_DOC='{"version":1,"id":"'$FN_ID'","title":"融資審査のリスク評価","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"f1","text":"売上は堅調に推移","x":0,"y":0,"textReviewed":true},{"id":"f2","text":"在庫が過剰に増えている","x":10,"y":0,"textReviewed":true},{"id":"f3","text":"仕入先との取引は安定","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"fn-i","cardIds":["f1","f2","f3"]}],"readingOrder":["fn-i"]}'
+
+fn_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FN_ID" \
+  -H 'Content-Type: application/json' -d "$FN_DOC")
+check "FN PUT document (作成)" "200" "$fn_put"
+
+# ① AI束ね
+fn_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"f1","text":"売上は堅調に推移","textReviewed":true},{"id":"f2","text":"在庫が過剰に増えている","textReviewed":true},{"id":"f3","text":"仕入先との取引は安定","textReviewed":true}]}')
+case "$fn_groups" in *'"groups":'*) echo "  PASS: FN ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: FN ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+fn_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FN_DOC,\"islandId\":\"fn-i\"}")
+case "$fn_summary" in *'"groundingIds":["f1","f2","f3"]'*) echo "  PASS: FN ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: FN ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾リスク信号の検出（売上堅調 vs 在庫過剰）
+fn_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"f1","text":"売上は堅調に推移","textReviewed":true},"cardB":{"id":"f2","text":"在庫が過剰に増えている","textReviewed":true}}')
+case "$fn_contra" in *'"hasContradiction"'*) echo "  PASS: FN ③矛盾リスク信号の検出"; PASS=$((PASS+1));; *) echo "  FAIL: FN ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 反対視点提案（融資判断に対する反対視点・proposal-only）
+fn_opp=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FN_DOC,\"targetCardId\":\"f2\"}")
+case "$fn_opp" in *'"status":"proposed"'*'"opposingText"'*) echo "  PASS: FN ④反対視点提案 (proposal-only)"; PASS=$((PASS+1));; *) echo "  FAIL: FN ④反対視点"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+fn_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FN_ID")
+check "FN 読戻し (200)" "200" "$fn_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
