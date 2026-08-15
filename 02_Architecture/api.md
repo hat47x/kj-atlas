@@ -459,6 +459,8 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 - Request: `SuggestMergesRequest`
   - `doc: DocumentV1` — 現在の文書全体
+  - `instruction?: string` — 提案方針の指示（任意）
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
 - Response: `SuggestMergesResponse`
   - `suggestions: MergeSuggestion[]` — 統合候補の配列
 - 類似カードの統合候補を提案する。各候補は統合対象カード群と統合理由を含む。
@@ -645,6 +647,9 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `islandAId: string`, `islandBId: string`
   - `relationType: "related" | "negate" | "causal" | "mutual" | "equivalence" | "unknown"`
   - `derived: bool`, `groundingCardIds: string[]`, `groundingEdgeIds: string[]`
+  - `cardTexts: RelationCardText[]` — 根拠カードの本文（id + text）
+  - `edgeTexts?: RelationEdgeText[]` — 根拠エッジの本文（edgeId/type/from/to）
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
 - Response: `SummarizeIslandRelationResponse`
   - `text: string`, `groundingCardIds: string[]`, `groundingEdgeIds: string[]`, `warnings: string[]`
 - 2つの島間の関係を要約する。関係種別は5語彙（related/negate/causal/mutual/equivalence）から選ぶ。
