@@ -1529,5 +1529,44 @@ np_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$NP_ID")
 check "NP 読戻し (200)" "200" "$np_read"
 
 echo ""
+echo "--- シナリオ32: 不動産・物件情報と内見フィードバックの整理 ---"
+# 業態: 不動産・物件管理
+# 想定人物: 物件マネージャー（内見フィードバックを分析）
+# 業務領域: 物件情報のKJ整理と内見フィードバックの課題検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> タイトル提案(suggest-document-title)
+# 注意事項: 内見者の声は逐語（refineで変えない）。矛盾する評価は表面化する。
+RE_ID="biz-flow-realestate"
+RE_DOC='{"version":1,"id":"'$RE_ID'","title":"物件改善の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"r1","text":"駅から近い","x":0,"y":0,"textReviewed":true},{"id":"r2","text":"日当たりが良い","x":10,"y":0,"textReviewed":true},{"id":"r3","text":"設備が古い","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"re-i","cardIds":["r1","r2","r3"]}],"readingOrder":["re-i"]}'
+
+re_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$RE_ID" \
+  -H 'Content-Type: application/json' -d "$RE_DOC")
+check "RE PUT document (作成)" "200" "$re_put"
+
+# ① AI束ね
+re_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"r1","text":"駅から近い","textReviewed":true},{"id":"r2","text":"日当たりが良い","textReviewed":true},{"id":"r3","text":"設備が古い","textReviewed":true}]}')
+case "$re_groups" in *'"groups":'*) echo "  PASS: RE ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: RE ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+re_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$RE_DOC,\"islandId\":\"re-i\"}")
+case "$re_summary" in *'"groundingIds":["r1","r2","r3"]'*) echo "  PASS: RE ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: RE ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（立地・日照が良い vs 設備が古い）
+re_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"r1","text":"駅から近い","textReviewed":true},"cardB":{"id":"r3","text":"設備が古い","textReviewed":true}}')
+case "$re_contra" in *'"hasContradiction"'*) echo "  PASS: RE ③矛盾検出（立地 vs 設備）"; PASS=$((PASS+1));; *) echo "  FAIL: RE ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ タイトル提案
+re_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["物件"],"cardTexts":["駅から近い","日当たりが良い","設備が古い"],"textReviewed":true}')
+case "$re_title" in *'"candidates"'*) echo "  PASS: RE ④タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: RE ④タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+re_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$RE_ID")
+check "RE 読戻し (200)" "200" "$re_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
