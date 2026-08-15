@@ -8,7 +8,7 @@ import { CRITIQUE_TAGS, KNOWN_EDGE_TYPES, resolveKnownEdgeType } from "../domain
 import type { EdgeType, KnownEdgeType } from "../domain/types";
 import { cardQualityRestoreTarget, currentCardQualityQuestion, type CardQualityAssistState, type CardQualityDecision } from "../domain/card_quality";
 import { DomainStateSummary } from "./DomainStateSummary";
-import type { AvailableModelItem } from "../api/client";
+import type { AvailableModelItem, OpposingViewpointProposal } from "../api/client";
 import { ModelSelector } from "./ModelSelector";
 import { DomainStateFilterBar } from "./DomainStateFilterBar";
 import type { DomainStateFilter } from "../domain/domain_state_filter";
@@ -110,6 +110,11 @@ type SidePanelProps = {
   onSummaryTextChange: (value: string) => void;
   onRestoreSummaryHistoryEntry: (historyEntryId: string) => void;
   onShowSummaryHistoryGrounding: (groundingIds: string[]) => void;
+  // AI-OPPOSE-01 (M4): proposal-only opposing-viewpoint surface.
+  opposingViewpointProposal: OpposingViewpointProposal | null;
+  isProposingOpposingViewpoint: boolean;
+  onProposeOpposingViewpoint: (cardId: string) => void;
+  onDismissOpposingViewpointProposal: () => void;
   onSummaryReviewedChange: (value: boolean) => void;
   onSuggestIslandSummary: () => void;
   // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override for the island
@@ -310,6 +315,10 @@ export function SidePanel({
   onSummaryTextChange,
   onRestoreSummaryHistoryEntry,
   onShowSummaryHistoryGrounding,
+  opposingViewpointProposal,
+  isProposingOpposingViewpoint,
+  onProposeOpposingViewpoint,
+  onDismissOpposingViewpointProposal,
   onSummaryReviewedChange,
   onSuggestIslandSummary,
   islandSummaryModel,
@@ -3586,6 +3595,50 @@ export function SidePanel({
               >
                 {t("side_panel.card_inspector.focus")}
               </button>
+              {opposingViewpointProposal && opposingViewpointProposal.targetCardId === selectedCard.id ? (
+                <div
+                  data-ui-region="opposing-viewpoint-proposal"
+                  style={{
+                    border: "1px solid #fed7aa",
+                    borderRadius: 6,
+                    backgroundColor: "#fff7ed",
+                    padding: 8,
+                    marginBottom: 10,
+                    display: "grid",
+                    gap: 6,
+                  }}
+                >
+                  <div style={{ fontSize: 11, color: "#9a3412", fontWeight: 700 }}>
+                    {opposingViewpointProposal.evidenceGap
+                      ? t("side_panel.card_inspector.evidence_gap")
+                      : t("side_panel.card_inspector.opposing_viewpoint")}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#0f172a" }}>{opposingViewpointProposal.opposingText}</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>{opposingViewpointProposal.rationale}</div>
+                  <div style={{ fontSize: 10, color: "#9a3412" }}>
+                    {t("side_panel.card_inspector.proposal_only")}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onDismissOpposingViewpointProposal}
+                    style={{ justifySelf: "start", fontSize: 11 }}
+                  >
+                    {t("side_panel.card_inspector.dismiss_proposal")}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  data-ui-region="propose-opposing-viewpoint"
+                  onClick={() => onProposeOpposingViewpoint(selectedCard.id)}
+                  disabled={isProposingOpposingViewpoint}
+                  style={{ width: "100%", marginBottom: 10, fontWeight: 600 }}
+                >
+                  {isProposingOpposingViewpoint
+                    ? t("side_panel.card_inspector.proposing_opposing")
+                    : t("side_panel.card_inspector.propose_opposing")}
+                </button>
+              )}
               <div style={{ marginBottom: 12 }}>
                 <button
                   ref={cardQualityAssistTriggerRef}

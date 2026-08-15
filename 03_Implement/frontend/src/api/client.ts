@@ -716,6 +716,45 @@ export async function proposeIslandSummary(
   return (await response.json()) as IslandSummaryProposal;
 }
 
+// AI-OPPOSE-01 (M4): proposal-only opposing-viewpoint / evidence-gap
+// observation for a target card, grounded in the doc's contradiction/evidence
+// structure. Never auto-applied (status stays "proposed").
+export type OpposingViewpointProposal = {
+  proposalId: string;
+  type: "opposing_viewpoint";
+  status: "proposed";
+  reviewState: "unreviewed";
+  targetCardId: string;
+  opposingText: string;
+  evidenceGap: boolean;
+  rationale: string;
+  warnings: string[];
+};
+
+export async function proposeOpposingViewpoint(
+  doc: DocumentV1,
+  targetCardId: string,
+  model: string | undefined,
+  requestOptions: TenantScopedRequestOptions = {},
+): Promise<OpposingViewpointProposal> {
+  const response = await fetch(`${API_BASE}/ai/proposals/opposing-viewpoint`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...tenantSessionPreconditionHeaders(requestOptions),
+    },
+    body: JSON.stringify({ doc, targetCardId, model: model ?? null }),
+  });
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, {
+      code: errorDetail.code,
+      disabledReason: errorDetail.disabledReason,
+    });
+  }
+  return (await response.json()) as OpposingViewpointProposal;
+}
+
 export async function recordProposalDecision(
   input: {
     docId: string;
