@@ -632,6 +632,8 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `islandTitles: string[]` — 島の表札一覧（最大50件）
   - `cardTexts: string[]` — レビュー済みカード本文（最大50件）
   - `currentTitle?: string` — 現在のタイトル
+  - `textReviewed?: boolean` — `cardTexts` が人間レビュー済みか（`SEC-AI-SAFEMODE-02`。**既定 false = fail-closed**。未指定・false は 422）
+  - `allowUnreviewedText?: boolean` — 未レビュー本文の送出許可（`SEC-AI-SAFEMODE-01`）
 - Response: `SuggestDocumentTitleResponse`
   - `candidates: DocumentTitleCandidate[]` — タイトル候補（1〜3件）
     - `title: string`
