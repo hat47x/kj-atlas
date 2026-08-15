@@ -1102,5 +1102,48 @@ qa2_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$QA2_ID")
 check "QA2 読戻し (200)" "200" "$qa2_read"
 
 echo ""
+echo "--- シナリオ21: 生成AI連携のコンテキスト解決（CE4 context bundle） ---"
+# 業態: AI連携サービス（コンテキスト基盤）
+# 想定人物: 生成AIエージェント（文書のコンテキストを解決）
+# 業務領域: CE4 context bundle の解決（AIが文書コンテキストを取得する基盤）
+# 操作内容: context/bundles:resolve(コンテキスト解決) -> 応答の確認(equivalenceKey/bundleHash)
+#          -> safeMode=false は 422 -> proposalLifecycle は proposal-only の意味を持つ
+# 注意事項: sourceBundleHash は sha256: または mock: 形式。safeMode 既定 true。
+#          解決は契約ベース（ドキュメント永続化は不要）。
+CB_H64="mock:$(printf 'a%.0s' $(seq 1 64))"
+
+# ① コンテキスト解決（safeMode=true・既定）。
+cb_resolve=$(curl -s -X POST "$BASE_URL/context/bundles:resolve" -H 'Content-Type: application/json' \
+  -d "{\"query\":\"課題は何か\",\"dryRun\":true,\"sourceBundleHash\":\"$CB_H64\",\"safeMode\":true}")
+case "$cb_resolve" in
+  *'"equivalenceKey"'*'"bundleHash"'*)
+    echo "  PASS: CB コンテキスト解決 (equivalenceKey/bundleHash)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: CB resolve (got ${cb_resolve:0:150})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# ② proposalLifecycle が proposal-only の意味を持つ。
+case "$cb_resolve" in
+  *'"proposalLifecycle":"proposed"'*)
+    echo "  PASS: CB proposalLifecycle=proposed (proposal-only)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: CB proposalLifecycle (got ${cb_resolve:0:150})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# ③ safeMode=false は 422（SafeMode 既定・fail-closed）。
+cb_unsafe=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/context/bundles:resolve" \
+  -H 'Content-Type: application/json' \
+  -d "{\"query\":\"課題は何か\",\"dryRun\":true,\"sourceBundleHash\":\"$CB_H64\",\"safeMode\":false}")
+check "CB safeMode=false → 422 (SafeMode fail-closed)" "422" "$cb_unsafe"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]

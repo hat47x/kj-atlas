@@ -262,6 +262,18 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 
 シナリオ20は **「批判的検証」系の操作（矛盾検出・反対視点・A/B照合）を一つのレビュー・パイプラインとして**使用。業務プロセス改善の決定を、多角的な視点から提案のみで検証する。**101/101 pass**（シナリオ1〜20・20業態）。
 
+### シナリオ21（iteration 74 追加・生成AI連携のコンテキスト解決）
+
+| 軸 | 内容 |
+|----|------|
+| 業態 | AI連携サービス（コンテキスト基盤） |
+| 想定人物 | 生成AIエージェント（文書のコンテキストを解決） |
+| 業務領域 | CE4 context bundle の解決（AIが文書コンテキストを取得する基盤） |
+| 操作内容 | **context/bundles:resolve（コンテキスト解決）** → 応答（equivalenceKey/bundleHash）確認 → **proposalLifecycle=proposed（proposal-only）** → safeMode=false は 422 |
+| 注意事項 | sourceBundleHash は sha256: または mock: 形式。safeMode 既定 true。解決は契約ベース（ドキュメント永続化は不要） |
+
+シナリオ21は **CE4 context bundle の解決**（生成AI・Agentが文書コンテキストを取得する基盤・`context/bundles:resolve`）を固定。`equivalenceKey`/`bundleHash` の決定性応答と SafeMode fail-closed（safeMode=false→422）を検証。**104/104 pass**（シナリオ1〜21・21業態）。
+
 ## E2E の固定方法
 
 ### バックエンド全層フロー（初回・curl ベース）
@@ -310,6 +322,6 @@ bash scripts/verify_business_flow_e2e.sh 8000   # 7 チェック（作成/読戻
 - [x] 別業態のシナリオ追加（iteration 42: 新規事業企画ワークショップ・suggest-card-groups を追加）
 - [x] シナリオ3〜6（iteration 44〜47: 品質管理・detect-contradiction / 管理者CLI/API・文書ライフサイクル/監査/キー分離 / 報道編集・check-narrative / 調査研究員・W型探究 CAS）を追加
 - [x] シナリオ7〜9（iteration 48〜50: 学術研究・summarize-island-relation / ナレッジベース管理者・suggest-document-title / 人事マネージャー・CE4 proposal 連鎖）を追加
-- [x] シナリオ10〜19（iteration 52〜66: フィールドワーカー・W型×AI / 会議ファシリテーター・layout/merge / ライブラリアン・コレクション / 共同編集者・並行制御 / コンテンツQA・上限検証 / 編集者・統合決定ガバナンス / 外部エージェント連携・Org-D / マーケティングアナリスト・全行程分析 / リスクレビューア・反対視点 / 多職種ケース会議）・シナリオ20（iteration 73: 品質監査官・批判的検証）を追加 — **シナリオ1〜20 で 101/101 pass・AI タスク全11種＋CE4＋W型×AI＋コレクション＋並行制御＋内容上限＋統合ガバナンス＋外部Agent連携＋全行程＋反対視点＋批判的検証をカバー**
+- [x] シナリオ10〜20（iteration 52〜73: フィールドワーカー・W型×AI / 会議ファシリテーター・layout/merge / ライブラリアン・コレクション / 共同編集者・並行制御 / コンテンツQA・上限検証 / 編集者・統合決定ガバナンス / 外部エージェント連携・Org-D / マーケティングアナリスト・全行程分析 / リスクレビューア・反対視点 / 多職種ケース会議 / 品質監査官・批判的検証）・シナリオ21（iteration 74: 生成AI連携・CE4コンテキスト解決）を追加 — **シナリオ1〜21 で 104/104 pass・AI タスク全11種＋CE4＋W型×AI＋コレクション＋並行制御＋内容上限＋統合ガバナンス＋外部Agent連携＋全行程＋反対視点＋批判的検証＋コンテキスト解決をカバー**
 - [ ] UI 層 E2E（フロントエンド AI 操作・CE4 proposal 連鎖）
 - [ ] さらに別業態のシナリオ追加（イテレーション毎に拡大）
