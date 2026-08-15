@@ -1876,5 +1876,43 @@ rd_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$RD_ID")
 check "RD 読戻し (200)" "200" "$rd_read"
 
 echo ""
+echo "--- シナリオ41: 保険・事故・請求データの分析 ---"
+# 業態: 保険・損害保険
+# 想定人物: 保険査定担当（事故・請求データを分析）
+# 業務領域: 事故・請求データのKJ整理とリスク要因の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 請求データは逐語（refineで変えない）。矛盾する報告は表面化する。
+IN_ID="biz-flow-insurance"
+IN_DOC='{"version":1,"id":"'$IN_ID'","title":"事故・請求データ分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"n1","text":"事故の報告が減少している","x":0,"y":0,"textReviewed":true},{"id":"n2","text":"保険金請求が増えている","x":10,"y":0,"textReviewed":true},{"id":"n3","text":"対応プロセスは円滑","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"in-i","cardIds":["n1","n2","n3"]}],"readingOrder":["in-i"]}'
+
+in_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$IN_ID" \
+  -H 'Content-Type: application/json' -d "$IN_DOC")
+check "IN PUT document (作成)" "200" "$in_put"
+
+# ① AI束ね
+in_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"n1","text":"事故の報告が減少している","textReviewed":true},{"id":"n2","text":"保険金請求が増えている","textReviewed":true},{"id":"n3","text":"対応プロセスは円滑","textReviewed":true}]}')
+case "$in_groups" in *'"groups":'*) echo "  PASS: IN ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: IN ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+in_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$IN_DOC,\"islandId\":\"in-i\"}")
+case "$in_summary" in *'"groundingIds":["n1","n2","n3"]'*) echo "  PASS: IN ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: IN ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（事故減少 vs 請求増加）
+in_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"n1","text":"事故の報告が減少している","textReviewed":true},"cardB":{"id":"n2","text":"保険金請求が増えている","textReviewed":true}}')
+case "$in_contra" in *'"hasContradiction"'*) echo "  PASS: IN ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: IN ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+in_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$IN_DOC}")
+case "$in_narr" in *'"basedOnReadingOrder":["in-i"]'*) echo "  PASS: IN ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: IN ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+in_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$IN_ID")
+check "IN 読戻し (200)" "200" "$in_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
