@@ -1722,5 +1722,43 @@ lg2_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$LG2_ID")
 check "LG2 読戻し (200)" "200" "$lg2_read"
 
 echo ""
+echo "--- シナリオ37: 食品・飲食・メニュー改善の顧客声分析 ---"
+# 業態: 食品・飲食
+# 想定人物: メニュー開発担当（顧客の声を分析）
+# 業務領域: メニュー改善の顧客声KJ整理と改善課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 顧客の声は逐語（refineで変えない）。矛盾する評価は表面化する。
+FD_ID="biz-flow-food"
+FD_DOC='{"version":1,"id":"'$FD_ID'","title":"メニュー改善の分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"d1","text":"味付けは好評","x":0,"y":0,"textReviewed":true},{"id":"d2","text":"提供時間が長い","x":10,"y":0,"textReviewed":true},{"id":"d3","text":"価格は妥当","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"fd-i","cardIds":["d1","d2","d3"]}],"readingOrder":["fd-i"]}'
+
+fd_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FD_ID" \
+  -H 'Content-Type: application/json' -d "$FD_DOC")
+check "FD PUT document (作成)" "200" "$fd_put"
+
+# ① AI束ね
+fd_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"d1","text":"味付けは好評","textReviewed":true},{"id":"d2","text":"提供時間が長い","textReviewed":true},{"id":"d3","text":"価格は妥当","textReviewed":true}]}')
+case "$fd_groups" in *'"groups":'*) echo "  PASS: FD ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: FD ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+fd_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FD_DOC,\"islandId\":\"fd-i\"}")
+case "$fd_summary" in *'"groundingIds":["d1","d2","d3"]'*) echo "  PASS: FD ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: FD ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（味好評 vs 提供時間長い）
+fd_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"d1","text":"味付けは好評","textReviewed":true},"cardB":{"id":"d2","text":"提供時間が長い","textReviewed":true}}')
+case "$fd_contra" in *'"hasContradiction"'*) echo "  PASS: FD ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: FD ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+fd_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$FD_DOC}")
+case "$fd_narr" in *'"basedOnReadingOrder":["fd-i"]'*) echo "  PASS: FD ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: FD ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+fd_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FD_ID")
+check "FD 読戻し (200)" "200" "$fd_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
