@@ -2464,5 +2464,51 @@ tr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TR_ID")
 check "TR 読戻し (200)" "200" "$tr_read"
 
 echo ""
+echo "--- シナリオ54: ファッション・アパレルのトレンド分析（イノベーターの少数先行シグナル） ---"
+# 業態: ファッション・アパレル（ブランド運営）
+# 想定人物: ブランド企画担当（トレンドを読み取る）
+# 業務領域: 顧客声・バイヤー意見のKJ分類と、次シーズンの方向性
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> タイトル提案(suggest-document-title) -> 読戻し
+# 注意事項: トレンド先行者（イノベーター）の少数の声と多数の後追いの声を区別し、
+#          少数の先行シグナルを矛盾検出で表面化（V2・少数意見の外在化がトレンド検出の鍵）。
+#          タイトル候補は proposal（自動確定しない）。
+FS_ID="biz-flow-fashion"
+FS_DOC='{"version":1,"id":"'$FS_ID'","title":"トレンド分析（仮）","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"fs1","text":"少数の先行購入者が生地の質感の変化を指摘","x":0,"y":0,"textReviewed":true},{"id":"fs2","text":"売れ筋は定番のベーシックアイテムが大半","x":10,"y":0,"textReviewed":true},{"id":"fs3","text":"SNSでビンテージ調スタイルへの関心が高まり始めている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"fs-i","cardIds":["fs1","fs2","fs3"]}],"readingOrder":["fs-i"]}'
+
+fs_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FS_ID" \
+  -H 'Content-Type: application/json' -d "$FS_DOC")
+check "FS PUT document (作成)" "200" "$fs_put"
+
+# ① AI束ね
+fs_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"fs1","text":"少数の先行購入者が生地の質感の変化を指摘","textReviewed":true},{"id":"fs2","text":"売れ筋は定番のベーシックアイテムが大半","textReviewed":true},{"id":"fs3","text":"SNSでビンテージ調スタイルへの関心が高まり始めている","textReviewed":true}]}')
+case "$fs_groups" in *'"groups":'*) echo "  PASS: FS ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: FS ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+fs_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FS_DOC,\"islandId\":\"fs-i\"}")
+case "$fs_summary" in *'"groundingIds":["fs1","fs2","fs3"]'*) echo "  PASS: FS ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: FS ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（少数先行シグナル vs 多数後追い・イノベーターの声の表面化）
+fs_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"fs1","text":"少数の先行購入者が生地の質感の変化を指摘","textReviewed":true},"cardB":{"id":"fs2","text":"売れ筋は定番のベーシックアイテムが大半","textReviewed":true}}')
+case "$fs_contra" in *'"hasContradiction"'*) echo "  PASS: FS ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: FS ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+fs_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$FS_DOC}")
+case "$fs_narr" in *'"basedOnReadingOrder":["fs-i"]'*) echo "  PASS: FS ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: FS ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ タイトル提案（分析レポートのタイトル候補・proposalで自動確定しない）
+fs_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["トレンド動向"],"cardTexts":["少数の先行購入者が生地の質感の変化を指摘","売れ筋は定番のベーシックアイテムが大半","SNSでビンテージ調スタイルへの関心が高まり始めている"],"currentTitle":"トレンド分析（仮）","textReviewed":true}')
+case "$fs_title" in *'"candidates"'*) echo "  PASS: FS ⑤タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: FS ⑤タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+fs_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FS_ID")
+check "FS 読戻し (200)" "200" "$fs_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
