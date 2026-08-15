@@ -807,5 +807,58 @@ case "$qa_error_body" in
 esac
 
 echo ""
+echo "--- シナリオ15: 編集者の統合決定ガバナンス（マージ決定の記録と復元） ---"
+# 業態: 出版・編集（ナレッジ統合）
+# 想定人物: 編集者（AIの統合提案を採否する）
+# 業務領域: マージ提案の決定記録（traceability・監査）と復元ログ参照
+# 操作内容: 文書作成 -> 統合決定を記録(POST merge-decision-logs) -> グループ別ログ確認
+#          (GET by-group) -> 復元ログ参照(GET restore) -> 重複決定が409
+# 注意事項: 決定は append のみ（更新不可・traceability の正本）。同一 decisionId は 409。
+#          action は accept/partial/reject/defer の enum。
+MD_DOC_ID="biz-flow-merge-gov"
+MD_DOC='{"version":1,"id":"'$MD_DOC_ID'","title":"ナレッジ統合の編集","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"草案","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+MD_REC='{"record":{"decisionId":"md-1","groupId":"g-merge","action":"accept","selectedCardIds":["c1"],"note":"統合を採択","decidedBy":"editor","decidedAt":"2026-08-15T00:00:00Z","snapshotVersion":"v1"}}'
+
+md_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MD_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$MD_DOC")
+check "MD PUT document (作成)" "200" "$md_put"
+
+# 統合決定を記録（append・201）。
+md_post=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/docs/$MD_DOC_ID/merge-decision-logs" \
+  -H 'Content-Type: application/json' -d "$MD_REC")
+check "MD 決定記録 (201)" "201" "$md_post"
+
+# 重複 decisionId は 409（決定の唯一性）。
+md_dup=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/docs/$MD_DOC_ID/merge-decision-logs" \
+  -H 'Content-Type: application/json' -d "$MD_REC")
+check "MD 重複決定 (409)" "409" "$md_dup"
+
+# グループ別ログ確認。
+md_group=$(curl -s "$BASE_URL/docs/$MD_DOC_ID/merge-decision-logs/by-group/g-merge")
+case "$md_group" in
+  *'"decisionId":"md-1"'*'"action":"accept"'*)
+    echo "  PASS: MD グループ別ログ（append 順・決定内容保持）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: MD by-group（got ${md_group:0:120}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 復元ログ参照。
+md_restore=$(curl -s "$BASE_URL/docs/$MD_DOC_ID/merge-decision-logs/restore/v1")
+case "$md_restore" in
+  *'"decisionId":"md-1"'*)
+    echo "  PASS: MD 復元ログ（snapshotVersion で参照）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: MD restore（got ${md_restore:0:120}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]

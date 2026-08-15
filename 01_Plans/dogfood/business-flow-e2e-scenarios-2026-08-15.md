@@ -190,6 +190,18 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 
 シナリオ14は **コンテンツ上限の API 境界強制**（`verify_api_write.sh` の機械的チェックを業務フロー化）を、校正者による品質ゲートとして固定。**66/66 pass**（シナリオ1〜14・14業態）。
 
+### シナリオ15（iteration 60 追加・編集者の統合決定ガバナンス）
+
+| 軸 | 内容 |
+|----|------|
+| 業態 | 出版・編集（ナレッジ統合） |
+| 想定人物 | 編集者（AIの統合提案を採否する） |
+| 業務領域 | マージ提案の決定記録（traceability・監査）と復元ログ参照 |
+| 操作内容 | 文書作成 → 統合決定を記録(POST merge-decision-logs) → **グループ別ログ確認(GET by-group)** → **復元ログ参照(GET restore)** → 重複決定が409 |
+| 注意事項 | 決定は append のみ（更新不可・traceability の正本）。同一 `decisionId` は 409。action は accept/partial/reject/defer の enum |
+
+シナリオ15は **マージ決定のガバナンス（記録・グループ別参照・復元ログ・決定の唯一性）** を固定。AI の統合提案（suggest-merges）に対する**人間の採否を append 専用ログとして残す** traceability の実地。**71/71 pass**（シナリオ1〜15・15業態）。
+
 ## E2E の固定方法
 
 ### バックエンド全層フロー（初回・curl ベース）
@@ -238,6 +250,6 @@ bash scripts/verify_business_flow_e2e.sh 8000   # 7 チェック（作成/読戻
 - [x] 別業態のシナリオ追加（iteration 42: 新規事業企画ワークショップ・suggest-card-groups を追加）
 - [x] シナリオ3〜6（iteration 44〜47: 品質管理・detect-contradiction / 管理者CLI/API・文書ライフサイクル/監査/キー分離 / 報道編集・check-narrative / 調査研究員・W型探究 CAS）を追加
 - [x] シナリオ7〜9（iteration 48〜50: 学術研究・summarize-island-relation / ナレッジベース管理者・suggest-document-title / 人事マネージャー・CE4 proposal 連鎖）を追加
-- [x] シナリオ10〜13（iteration 52〜58: フィールドワーカー・W型×AI / 会議ファシリテーター・layout/merge / ライブラリアン・コレクション / 共同編集者・並行制御）・シナリオ14（iteration 59: コンテンツQA・上限検証）を追加 — **シナリオ1〜14 で 66/66 pass・AI タスク全10種＋CE4＋W型×AI＋コレクション＋並行制御＋内容上限をカバー**
+- [x] シナリオ10〜14（iteration 52〜59: フィールドワーカー・W型×AI / 会議ファシリテーター・layout/merge / ライブラリアン・コレクション / 共同編集者・並行制御 / コンテンツQA・上限検証）・シナリオ15（iteration 60: 編集者・統合決定ガバナンス）を追加 — **シナリオ1〜15 で 71/71 pass・AI タスク全10種＋CE4＋W型×AI＋コレクション＋並行制御＋内容上限＋統合ガバナンスをカバー**
 - [ ] UI 層 E2E（フロントエンド AI 操作・CE4 proposal 連鎖）
 - [ ] さらに別業態のシナリオ追加（イテレーション毎に拡大）
