@@ -999,5 +999,48 @@ op_badcard=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/propos
 check "OP 存在しない targetCardId → 422" "422" "$op_badcard"
 
 echo ""
+echo "--- シナリオ19: 多職種ケース会議（医療・介護・反対視点確認） ---"
+# 業態: 医療・介護（ケース会議）
+# 想定人物: ケースワーカー（多職種会議のとりまとめ）
+# 業務領域: ケース情報の整理と意思決定の反対視点確認
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 反対視点提案(propose-opposing-viewpoint) -> 読戻し
+# 注意事項: 反対視点は proposal-only（自動適用なし・status=proposed）。未レビューは422（SafeMode）。
+CW_ID="biz-flow-care"
+CW_DOC='{"version":1,"id":"'$CW_ID'","title":"ケース会議の整理","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"w1","text":"在宅ケアを継続できる","x":0,"y":0,"textReviewed":true},{"id":"w2","text":"家族の負担が増えている","x":10,"y":0,"textReviewed":true},{"id":"w3","text":"訪問頻度を増やすべき","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cw-i","cardIds":["w1","w2","w3"]}],"readingOrder":["cw-i"]}'
+
+cw_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CW_ID" \
+  -H 'Content-Type: application/json' -d "$CW_DOC")
+check "CW PUT document (作成)" "200" "$cw_put"
+
+# ① AI束ね
+cw_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"w1","text":"在宅ケアを継続できる","textReviewed":true},{"id":"w2","text":"家族の負担が増えている","textReviewed":true},{"id":"w3","text":"訪問頻度を増やすべき","textReviewed":true}]}')
+case "$cw_groups" in *'"groups":'*) echo "  PASS: CW ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CW ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cw_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CW_DOC,\"islandId\":\"cw-i\"}")
+case "$cw_summary" in *'"groundingIds":["w1","w2","w3"]'*) echo "  PASS: CW ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CW ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 反対視点提案（在宅ケア継続の意思決定に対する反対視点・proposal-only）
+cw_opp=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CW_DOC,\"targetCardId\":\"w1\"}")
+case "$cw_opp" in
+  *'"status":"proposed"'*'"opposingText"'*)
+    echo "  PASS: CW ③反対視点提案 (proposal-only)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: CW ③反対視点提案 (got ${cw_opp:0:150})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# ④ 読戻し
+cw_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CW_ID")
+check "CW 読戻し (200)" "200" "$cw_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
