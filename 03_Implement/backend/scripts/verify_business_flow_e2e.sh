@@ -2417,5 +2417,52 @@ hh_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HH_ID")
 check "HH 読戻し (200)" "200" "$hh_read"
 
 echo ""
+echo "--- シナリオ53: 交通・インフラの運行トラブル分析（複合要因の表面化と矮小化への反対視点） ---"
+# 業態: 交通・インフラ（公共交通・鉄道/バス運営）
+# 想定人物: 運行管理担当（ダイヤ乱れの原因整理と再発防止）
+# 業務領域: 運行トラブル（遅延・運休）のKJ整理と、複合要因の表面化
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> 反対視点提案(propose-opposing-viewpoint)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: 運行トラブルの原因を単一に矮小化しない（信号・気象・点検の複合要因を
+#          表面化）。単一原因への反対視点を proposal-only で提案し、人間が判断。
+TR_ID="biz-flow-transit"
+TR_DOC='{"version":1,"id":"'$TR_ID'","title":"運行トラブル分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"tr1","text":"信号故障が主因と発表された","x":0,"y":0,"textReviewed":true},{"id":"tr2","text":"強風と大雨が重なった時間帯に遅延が集中した","x":10,"y":0,"textReviewed":true},{"id":"tr3","text":"乗客報告で車両点検の遅れが指摘された","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"tr-i","cardIds":["tr1","tr2","tr3"]}],"readingOrder":["tr-i"]}'
+
+tr_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TR_ID" \
+  -H 'Content-Type: application/json' -d "$TR_DOC")
+check "TR PUT document (作成)" "200" "$tr_put"
+
+# ① AI束ね
+tr_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"tr1","text":"信号故障が主因と発表された","textReviewed":true},{"id":"tr2","text":"強風と大雨が重なった時間帯に遅延が集中した","textReviewed":true},{"id":"tr3","text":"乗客報告で車両点検の遅れが指摘された","textReviewed":true}]}')
+case "$tr_groups" in *'"groups":'*) echo "  PASS: TR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+tr_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TR_DOC,\"islandId\":\"tr-i\"}")
+case "$tr_summary" in *'"groundingIds":["tr1","tr2","tr3"]'*) echo "  PASS: TR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（単一原因 vs 複合要因・矮小化の防止）
+tr_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"tr1","text":"信号故障が主因と発表された","textReviewed":true},"cardB":{"id":"tr2","text":"強風と大雨が重なった時間帯に遅延が集中した","textReviewed":true}}')
+case "$tr_contra" in *'"hasContradiction"'*) echo "  PASS: TR ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: TR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 反対視点提案（単一原因発表への反対視点・複合要因の指摘・proposal-only）
+tr_oppose=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TR_DOC,\"targetCardId\":\"tr1\"}")
+case "$tr_oppose" in
+  *'"status":"proposed"'*'"reviewState":"unreviewed"'*) echo "  PASS: TR ④反対視点提案(proposal-only)"; PASS=$((PASS+1));;
+  *) echo "  FAIL: TR ④反対視点提案(proposal-only)"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+tr_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$TR_DOC}")
+case "$tr_narr" in *'"basedOnReadingOrder":["tr-i"]'*) echo "  PASS: TR ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: TR ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+tr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TR_ID")
+check "TR 読戻し (200)" "200" "$tr_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
