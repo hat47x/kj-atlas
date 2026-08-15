@@ -1799,5 +1799,43 @@ case "$ab_narr" in
 esac
 
 echo ""
+echo "--- シナリオ39: スポーツ・コーチング・選手フィードバックの整理 ---"
+# 業態: スポーツ・コーチング
+# 想定人物: コーチ（選手フィードバックを整理）
+# 業務領域: 選手フィードバックのKJ整理と強化課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 選手の声は逐語（refineで変えない）。矛盾する評価は表面化する。
+SP_ID="biz-flow-sports"
+SP_DOC='{"version":1,"id":"'$SP_ID'","title":"チーム強化の分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"s1","text":"フィジカルが向上している","x":0,"y":0,"textReviewed":true},{"id":"s2","text":"戦術理解が不足している","x":10,"y":0,"textReviewed":true},{"id":"s3","text":"連携は良好","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sp-i","cardIds":["s1","s2","s3"]}],"readingOrder":["sp-i"]}'
+
+sp_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SP_ID" \
+  -H 'Content-Type: application/json' -d "$SP_DOC")
+check "SP PUT document (作成)" "200" "$sp_put"
+
+# ① AI束ね
+sp_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"s1","text":"フィジカルが向上している","textReviewed":true},{"id":"s2","text":"戦術理解が不足している","textReviewed":true},{"id":"s3","text":"連携は良好","textReviewed":true}]}')
+case "$sp_groups" in *'"groups":'*) echo "  PASS: SP ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SP ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+sp_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SP_DOC,\"islandId\":\"sp-i\"}")
+case "$sp_summary" in *'"groundingIds":["s1","s2","s3"]'*) echo "  PASS: SP ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SP ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（フィジカル向上 vs 戦術理解不足）
+sp_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"s1","text":"フィジカルが向上している","textReviewed":true},"cardB":{"id":"s2","text":"戦術理解が不足している","textReviewed":true}}')
+case "$sp_contra" in *'"hasContradiction"'*) echo "  PASS: SP ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: SP ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+sp_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SP_DOC}")
+case "$sp_narr" in *'"basedOnReadingOrder":["sp-i"]'*) echo "  PASS: SP ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SP ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+sp_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SP_ID")
+check "SP 読戻し (200)" "200" "$sp_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
