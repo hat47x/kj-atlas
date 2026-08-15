@@ -797,7 +797,11 @@ def _is_user_selectable_model(capabilities: str | None) -> bool:
     return True
 
 
-@router.get("/available-models", response_model=AvailableModelsResponse)
+@router.get(
+    "/available-models",
+    response_model=AvailableModelsResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
 def get_available_models(request: Request, db: Session = Depends(get_db)) -> AvailableModelsResponse:
     """AI-MODEL-GOVERNANCE-01 R2: the active registered models this tenant is
     allowed to use (registry active models intersected with the tenant allowlist;
