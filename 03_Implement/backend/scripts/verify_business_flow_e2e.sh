@@ -351,5 +351,41 @@ wt_del=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "$BASE_URL/inquiry-bun
 check "WT ジャーニー破棄 (204, If-Match)" "204" "$wt_del"
 
 echo ""
+echo "--- シナリオ7: 学術研究・概念関係の要約（島間関係の構造化） ---"
+# 業態: 学術研究 / ナレッジマネジメント
+# 想定人物: 研究者（概念間の関係を構造化する）
+# 業務領域: 複数概念（島）間の関係の要約・根拠付き接続
+# 操作内容: 文書作成 -> 島形成 -> summarize-island-relation(島間関係の要約) -> 読戻し
+# 注意事項: 関係種別は5語彙（related/negate/causal/mutual/equivalence）。derived=false は
+#          人間が指定した根拠ある関係のみ要約。未レビューカードは doc 文脈ルートで 422（SafeMode）。
+SR_DOC_ID="biz-flow-research"
+SR_DOC='{"version":1,"id":"'$SR_DOC_ID'","title":"概念関係の整理","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"r1","text":"外部環境の変化が需要に影響する","x":0,"y":0,"textReviewed":true},{"id":"r2","text":"需要の変動が生産計画を変える","x":10,"y":0,"textReviewed":true},{"id":"r3","text":"在庫過多は資金繰りを圧迫する","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ri-a","cardIds":["r1","r2"]},{"id":"ri-b","cardIds":["r3"]}],"readingOrder":["ri-a","ri-b"]}'
+
+sr_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SR_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$SR_DOC")
+check "SR PUT document (作成)" "200" "$sr_put"
+
+# 島間関係の要約（summarize-island-relation、モックは下書き要約＋warnings空）。
+relation=$(curl -s -X POST "$BASE_URL/ai/summarize-island-relation" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SR_DOC,\"islandAId\":\"ri-a\",\"islandBId\":\"ri-b\",\"relationType\":\"causal\",\"derived\":false,\"groundingCardIds\":[\"r3\"],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"r3\",\"text\":\"在庫過多は資金繰りを圧迫する\"}]}")
+case "$relation" in
+  *'"text"'*'"warnings":[]'*)
+    echo "  PASS: summarize-island-relation returns draft summary with empty warnings"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: summarize-island-relation (got $relation)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 注意事項: 未レビューカードを含む文書は 422（SafeMode・doc 文脈ルート）。
+SR_UNREVIEWED='{"version":1,"id":"biz-flow-research-unr","title":"未レビュー概念","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ru1","text":"確認前の概念メモ","x":0,"y":0}],"edges":[],"islands":[{"id":"ri-u1","cardIds":["ru1"]}],"readingOrder":["ri-u1"]}'
+sr_unreviewed_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/summarize-island-relation" \
+  -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SR_UNREVIEWED,\"islandAId\":\"ri-u1\",\"islandBId\":\"ri-u1\",\"relationType\":\"related\",\"derived\":true,\"groundingCardIds\":[],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"ru1\",\"text\":\"確認前の概念メモ\"}]}")
+check "SR summarize-island-relation unreviewed text blocked (422, SafeMode)" "422" "$sr_unreviewed_code"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
