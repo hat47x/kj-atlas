@@ -710,5 +710,54 @@ lib_locked=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/biz-f
 check "LIB アーカイブ中 PUT (423 Locked)" "423" "$lib_locked"
 
 echo ""
+echo "--- シナリオ13: 共同編集者の楽観的並行制御（ETag/If-Match 競合検出） ---"
+# 業態: コンサルティングファーム（共同編集）
+# 想定人物: 共同編集者A/B（同一文書を並行編集）
+# 業務領域: 文書の並行編集と競合検出（lost-update 防止・ADR-0076 サーバ権威LWW+CAS）
+# 操作内容: 文書作成 -> GET(ETag取得) -> Aが編集PUT(If-Match) -> Bが古いETagで編集PUT
+#          -> **409(競合検出・lost-update防止)** -> 最新ETag再取得 -> Bが再編集PUT -> 200
+# 注意事項: ETag/If-Match で楽観的並行制御。stale な保存は 409 で拒否（部分保存なし）。
+CE_DOC_ID="biz-flow-coedit"
+CE_DOC='{"version":1,"id":"'$CE_DOC_ID'","title":"提案書の共同編集","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"初版","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+CE_DOC_A='{"version":1,"id":"'$CE_DOC_ID'","title":"提案書の共同編集","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"Aの修正案","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+
+ce_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CE_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$CE_DOC")
+check "CE PUT document (作成)" "200" "$ce_put"
+
+# 初回 ETag 取得。
+ce_etag1=$(curl -s -D - -o /dev/null "$BASE_URL/docs/$CE_DOC_ID" | tr -d '\r' | grep -i '^ETag:' | sed 's/ETag: *//I')
+[ -n "$ce_etag1" ] && { echo "  PASS: CE ETag取得 ($(echo "$ce_etag1" | cut -c1-16)...)"; PASS=$((PASS+1)); } || { echo "  FAIL: CE ETag 未取得"; FAIL=$((FAIL+1)); }
+
+# A が編集（正しい If-Match で保存成功）。
+ce_a=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CE_DOC_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $ce_etag1" -d "$CE_DOC_A")
+check "CE A編集 (If-Match 正 → 200)" "200" "$ce_a"
+
+# B が古い ETag で編集 → 409（lost-update 防止・部分保存なし）。
+ce_b_stale=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CE_DOC_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $ce_etag1" -d "$CE_DOC_A")
+check "CE B編集 (stale If-Match → 409 競合検出)" "409" "$ce_b_stale"
+
+# 最新 ETag 再取得 → B が再編集 → 200。
+ce_etag2=$(curl -s -D - -o /dev/null "$BASE_URL/docs/$CE_DOC_ID" | tr -d '\r' | grep -i '^ETag:' | sed 's/ETag: *//I')
+ce_b_retry=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CE_DOC_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $ce_etag2" -d "$CE_DOC_A")
+check "CE B再編集 (最新If-Match → 200)" "200" "$ce_b_retry"
+
+# 競合検出後に文書が壊れていない（読戻しで最新状態）。
+ce_readback=$(curl -s "$BASE_URL/docs/$CE_DOC_ID")
+case "$ce_readback" in
+  *'"text":"Aの修正案"'*)
+    echo "  PASS: CE 読戻し（Aの修正が反映・部分保存なし）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: CE 読戻し（got ${ce_readback:0:120}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]

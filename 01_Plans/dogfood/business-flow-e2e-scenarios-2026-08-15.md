@@ -166,6 +166,18 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 
 シナリオ12は **複数文書のコレクション運用**（一覧・`createdBy` 絞り込み・アーカイブ反映）を固定。シナリオ4（単一文書のライフサイクル＋管理面）とは異なり、**文書集合の管理**を検証する。`created_by` が JIT 解決 UUID であることを実走行で確認し、「自分の文書」セマンティクス（frontend の principalId 相当）を固定。**55/55 pass**（シナリオ1〜12・12業態）。
 
+### シナリオ13（iteration 58 追加・共同編集者の楽観的並行制御）
+
+| 軸 | 内容 |
+|----|------|
+| 業態 | コンサルティングファーム（共同編集） |
+| 想定人物 | 共同編集者A/B（同一文書を並行編集） |
+| 業務領域 | 文書の並行編集と競合検出（lost-update 防止・ADR-0076 サーバ権威 LWW+CAS） |
+| 操作内容 | 文書作成 → GET(ETag取得) → Aが編集PUT(If-Match) → Bが古いETagで編集PUT → **409(競合検出)** → 最新ETag再取得 → Bが再編集PUT → 200 |
+| 注意事項 | ETag/If-Match で楽観的並行制御。stale な保存は 409 で拒否（部分保存なし）。競合検出後も文書は最新状態を保持 |
+
+シナリオ13は **共同編集の楽観的並行制御（ETag/If-Match）** を業務フローとして固定。`verify_api_write.sh` の機械的チェックとは別に、**複数編集者の並行作業における lost-update 防止**を一気通貫で検証する（ADR-0076 のサーバ権威 LWW + 既存 CAS の実地）。**61/61 pass**（シナリオ1〜13・13業態）。
+
 ## E2E の固定方法
 
 ### バックエンド全層フロー（初回・curl ベース）
@@ -214,6 +226,6 @@ bash scripts/verify_business_flow_e2e.sh 8000   # 7 チェック（作成/読戻
 - [x] 別業態のシナリオ追加（iteration 42: 新規事業企画ワークショップ・suggest-card-groups を追加）
 - [x] シナリオ3〜6（iteration 44〜47: 品質管理・detect-contradiction / 管理者CLI/API・文書ライフサイクル/監査/キー分離 / 報道編集・check-narrative / 調査研究員・W型探究 CAS）を追加
 - [x] シナリオ7〜9（iteration 48〜50: 学術研究・summarize-island-relation / ナレッジベース管理者・suggest-document-title / 人事マネージャー・CE4 proposal 連鎖）を追加
-- [x] シナリオ10（iteration 52: フィールドワーカー・W型探究 × AI支援の複合フロー）・シナリオ11（iteration 53: 会議ファシリテーター・suggest-layout/suggest-merges）を追加 — **シナリオ1〜11 で 49/49 pass・AI タスク全10種＋CE4 proposal 連鎖＋W型×AI 統合をカバー**
+- [x] シナリオ10（iteration 52: フィールドワーカー・W型探究 × AI支援の複合フロー）・シナリオ11（iteration 53: 会議ファシリテーター・suggest-layout/suggest-merges）・シナリオ12（iteration 56: ライブラリアン・コレクション管理）・シナリオ13（iteration 58: 共同編集者・楽観的並行制御）を追加 — **シナリオ1〜13 で 61/61 pass・AI タスク全10種＋CE4＋W型×AI＋コレクション＋並行制御をカバー**
 - [ ] UI 層 E2E（フロントエンド AI 操作・CE4 proposal 連鎖）
 - [ ] さらに別業態のシナリオ追加（イテレーション毎に拡大）
