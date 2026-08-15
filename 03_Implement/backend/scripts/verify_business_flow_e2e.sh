@@ -1990,5 +1990,43 @@ cs_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CS_ID")
 check "CS 読戻し (200)" "200" "$cs_read"
 
 echo ""
+echo "--- シナリオ44: 通信・キャリア・ネットワーク障害分析 ---"
+# 業態: 通信・キャリア
+# 想定人物: ネットワーク運用担当（障害報告を整理）
+# 業務領域: ネットワーク障害報告のKJ整理と障害要因の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 障害報告は逐語（refineで変えない）。矛盾する報告は表面化する。
+TC_ID="biz-flow-telecom"
+TC_DOC='{"version":1,"id":"'$TC_ID'","title":"ネットワーク障害の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"t1","text":"光回線は安定している","x":0,"y":0,"textReviewed":true},{"id":"t2","text":"モバイル網で遅延が増えている","x":10,"y":0,"textReviewed":true},{"id":"t3","text":"サポート対応は迅速","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"tc-i","cardIds":["t1","t2","t3"]}],"readingOrder":["tc-i"]}'
+
+tc_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TC_ID" \
+  -H 'Content-Type: application/json' -d "$TC_DOC")
+check "TC PUT document (作成)" "200" "$tc_put"
+
+# ① AI束ね
+tc_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"t1","text":"光回線は安定している","textReviewed":true},{"id":"t2","text":"モバイル網で遅延が増えている","textReviewed":true},{"id":"t3","text":"サポート対応は迅速","textReviewed":true}]}')
+case "$tc_groups" in *'"groups":'*) echo "  PASS: TC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+tc_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TC_DOC,\"islandId\":\"tc-i\"}")
+case "$tc_summary" in *'"groundingIds":["t1","t2","t3"]'*) echo "  PASS: TC ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TC ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（光回線安定 vs モバイル網遅延）
+tc_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"t1","text":"光回線は安定している","textReviewed":true},"cardB":{"id":"t2","text":"モバイル網で遅延が増えている","textReviewed":true}}')
+case "$tc_contra" in *'"hasContradiction"'*) echo "  PASS: TC ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: TC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+tc_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$TC_DOC}")
+case "$tc_narr" in *'"basedOnReadingOrder":["tc-i"]'*) echo "  PASS: TC ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: TC ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+tc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TC_ID")
+check "TC 読戻し (200)" "200" "$tc_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
