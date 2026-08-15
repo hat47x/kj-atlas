@@ -22,6 +22,22 @@ export type ImportedProposalReview = ParsedAgentProposal & {
   patchSignatureMismatch?: boolean;
 };
 
+// FB-RM-UX-02: bound the review list without ever dropping unresolved work.
+// A pending review must survive (the user still has to act on it); only the
+// most recent `resolvedLimit` adopted/rejected entries are retained, so the
+// DOM/heap cannot grow without limit across repeated agent-response imports.
+export function boundResolvedAgentImportedProposalReviews(
+  reviews: ImportedProposalReview[],
+  resolvedLimit = 50,
+): ImportedProposalReview[] {
+  const pending: ImportedProposalReview[] = [];
+  const resolved: ImportedProposalReview[] = [];
+  for (const review of reviews) {
+    (review.status === "pending" ? pending : resolved).push(review);
+  }
+  return [...pending, ...resolved.slice(-Math.max(resolvedLimit, 0))];
+}
+
 type AgentResponseImportPanelProps = {
   isOpen: boolean;
   onClose: () => void;

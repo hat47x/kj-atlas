@@ -1,7 +1,7 @@
 # Issue: FB-RM-UX-02 エージェント取込レビュー一覧が無制限に蓄積
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -22,13 +22,20 @@
 
 ## 受入条件
 
-- [ ] 排出方針が決定される。
-- [ ] 決定した方針に沿って実装される。
+- [x] 排出方針が決定される。→ **「pendingは一切dropしない・解決済み（adopted/rejected）のみ直近50件に上限」** を採択（2026-08-15・仮承認）。未対応のユーザー作業を失わないことが最優先であり、解決済みは集計/参照価値が薄いため件数上限で足りる。
+- [x] 決定した方針に沿って実装される。→ `AgentResponseImportPanel` に `boundResolvedAgentImportedProposalReviews(reviews, resolvedLimit=50)` を追加し、`App.tsx` の `handleParseAgentResponse` の append 時に適用（pending全保持＋解決済みは直近50件）。
+
+## 対応記録（2026-08-15・iteration 37）
+
+- `src/ui/AgentResponseImportPanel.tsx`: `boundResolvedAgentImportedProposalReviews` — pending は全て保持、adopted/rejected は末尾（最新）`resolvedLimit` 件のみ残す純関数。
+- `src/App.tsx` (`handleParseAgentResponse`): `setAgentImportedProposalReviews` を `boundResolvedAgentImportedProposalReviews([...previous, ...newReviews])` 経由に変更（パースのたびに解決済みがトリムされる）。
+- テスト: `AgentResponseImportPanel.test.ts` に3件（大量pendingでも全保持・解決済み超過時は最古からdrop・pending混在時の最古解決済みdrop）。frontend 1453 tests pass・typecheck pass。
 
 ## 検証計画
 
 - 実行する確認: 実装後、`npm run test`（frontend、AgentResponseImportPanel関連）。
 - 期待結果: `pending`状態のレビューが誤って失われないことを確認する。
+- 実績（2026-08-15）: `AgentResponseImportPanel.test.ts` 4 tests pass・frontend 全 1453 tests pass。
 
 ## 補足
 

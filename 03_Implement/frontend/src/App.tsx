@@ -87,7 +87,7 @@ import { PatchWorkspacePanel } from "./ui/workspace/PatchWorkspacePanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { WorkModePanel } from "./ui/WorkModePanel";
 import { AgentTaskExportPanel } from "./ui/AgentTaskExportPanel";
-import { AgentResponseImportPanel, type ImportedProposalReview } from "./ui/AgentResponseImportPanel";
+import { AgentResponseImportPanel, boundResolvedAgentImportedProposalReviews, type ImportedProposalReview } from "./ui/AgentResponseImportPanel";
 import { DiagnosticsBundlePanel } from "./ui/DiagnosticsBundlePanel";
 import { RecentDocumentsDialog } from "./ui/RecentDocumentsDialog";
 import { DocumentTitleEditor } from "./ui/DocumentTitleEditor";
@@ -9198,7 +9198,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       status: "pending" as const,
       ...computeAgentProposalReviewFlags(proposal, document),
     }));
-    setAgentImportedProposalReviews((previous) => [...previous, ...newReviews]);
+    // FB-RM-UX-02: bound the review list — pending reviews are never dropped;
+    // only the most recent resolved (adopted/rejected) entries are retained.
+    setAgentImportedProposalReviews((previous) =>
+      boundResolvedAgentImportedProposalReviews([...previous, ...newReviews]),
+    );
   }, [appStorage.scope, document, agentResponsePastedText, agentResponseImportMode, agentImportedProposalReviews, runTenantScopedApiRequest, verifiedTenantSession]);
 
   const handleAdoptAgentImportedProposal = useCallback(

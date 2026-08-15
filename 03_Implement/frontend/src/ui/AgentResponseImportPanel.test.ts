@@ -1,7 +1,25 @@
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { AgentResponseImportPanel } from "./AgentResponseImportPanel";
+import { AgentResponseImportPanel, boundResolvedAgentImportedProposalReviews, type ImportedProposalReview } from "./AgentResponseImportPanel";
+
+function buildReview(status: ImportedProposalReview["status"], key: string): ImportedProposalReview {
+  return {
+    proposalId: key,
+    kind: "island_title",
+    targetRef: {},
+    content: { title: `proposal ${key}` },
+    rationale: "test",
+    rationaleStated: true,
+    patchHasDeleteOps: false,
+    warnings: [],
+    reviewKey: key,
+    taskId: "task-1",
+    status,
+    orphaned: false,
+    provenance: "unverified-legacy",
+  };
+}
 
 function buildProps(overrides: Partial<React.ComponentProps<typeof AgentResponseImportPanel>> = {}) {
   return {
@@ -47,5 +65,31 @@ describe("AgentResponseImportPanel accessibility", () => {
     const errorDivId = describedByMatch![1];
     expect(html).toContain(`id="${errorDivId}"`);
     expect(html).toContain("payload.missing_taskId");
+  });
+});
+
+describe("boundResolvedAgentImportedProposalReviews (FB-RM-UX-02)", () => {
+  it("never drops pending reviews even when the list is large", () => {
+    const manyPending = Array.from({ length: 70 }, (_, i) => buildReview("pending", `p-${i}`));
+    const bounded = boundResolvedAgentImportedProposalReviews(manyPending, 50);
+    expect(bounded).toHaveLength(70);
+    expect(bounded.every((review) => review.status === "pending")).toBe(true);
+  });
+
+  it("drops the oldest resolved entries when they exceed the limit", () => {
+    const reviews = [
+      buildReview("adopted", "old-1"),
+      buildReview("adopted", "old-2"),
+      buildReview("adopted", "old-3"),
+      buildReview("adopted", "old-4"),
+      ...Array.from({ length: 2 }, (_, i) => buildReview("pending", `p-${i}`)),
+    ];
+    const bounded = boundResolvedAgentImportedProposalReviews(reviews, 2);
+    const boundedKeys = new Set(bounded.map((review) => review.reviewKey));
+    expect(boundedKeys).toHaveLength(4); // 2 pending + newest 2 of 4 resolved
+    expect(boundedKeys).toContain("old-3");
+    expect(boundedKeys).toContain("old-4");
+    expect(boundedKeys).not.toContain("old-1");
+    expect(boundedKeys).not.toContain("old-2");
   });
 });
