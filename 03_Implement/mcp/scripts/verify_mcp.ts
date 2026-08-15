@@ -118,9 +118,16 @@ try {
   // verification. Advisory — null when the list endpoint is unavailable.
   const documentMetadata = projection.documentMetadata;
   if (documentMetadata) {
+    const lifecycleState = documentMetadata.lifecycle_state;
+    if (lifecycleState !== "active" && lifecycleState !== "archived") {
+      throw new Error(`Unexpected lifecycle_state: ${lifecycleState}`);
+    }
     console.log(
-      `  → lifecycle: ${documentMetadata.lifecycle_state}${documentMetadata.created_by ? `, created_by=${documentMetadata.created_by}` : ""} ✅ (ADR-0073)`,
+      `  → lifecycle: ${lifecycleState}${documentMetadata.created_by ? `, created_by=${documentMetadata.created_by}` : ""} ✅ (ADR-0073)`,
     );
+    if (lifecycleState === "archived") {
+      console.log("  → archived documents are read-only: PUT /docs/{id} is rejected 423 Locked (ADR-0073 D2=A, verified in verify_api_write.sh)");
+    }
   } else {
     console.log("  → lifecycle metadata: n/a (list endpoint unavailable or doc absent)");
   }
