@@ -111,6 +111,13 @@ def build_text_for_task(task: str, prompt: str) -> str:
             "explanation": "（モック）2枚のカード間に明示的な矛盾は検出されませんでした。"})
     if task == "suggest_document_title":
         return json.dumps({"candidates": [{"title": "（モック）タイトル候補"}]})
+    if task == "propose_opposing_viewpoint":
+        return json.dumps({
+            "opposingText": "（モック）この主張は、逆の状況（待ち時間が短い）でも同じ帰結が起きる可能性があり、根拠の一般性が不足しています。",
+            "evidenceGap": True,
+            "rationale": "（モック）主張の根拠となるカードに、反例・補強の証拠が接続されていません。",
+            "warnings": [],
+        })
     return json.dumps({})
 
 

@@ -33,10 +33,12 @@ from kj_atlas_api.models_ai import (
     ExternalAgentTaskRegistrationResponse,
     GenerateNarrativeRequest,
     GenerateNarrativeResponse,
+    OpposingViewpointProposal,
     ProposalDecisionAuditRequest,
     ProposalDecisionAuditResponse,
     ProposalEnvelope,
     ProposeIslandSummaryRequest,
+    ProposeOpposingViewpointRequest,
     ProviderStatusResponse,
     RefineCardTextRequest,
     RefineCardTextResponse,
@@ -1003,6 +1005,92 @@ def propose_island_summary(
     except IntegrityError as exc:
         db.rollback()
         raise HTTPException(status_code=409, detail="Proposal registration conflicted") from exc
+    return proposal
+
+
+def _build_opposing_viewpoint_prompt(payload: ProposeOpposingViewpointRequest) -> str:
+    """AI-OPPOSE-01 (M4): prompt the model to propose an opposing viewpoint or
+    evidence gap for a target card, using the doc's contradiction / evidence
+    structure. proposal-only -- the model never decides; the human does."""
+    target = next((card for card in payload.doc.cards if card.id == payload.targetCardId), None)
+    if target is None:
+        raise HTTPException(status_code=422, detail="targetCardId does not exist")
+    card_lines = "\n".join(f'  - id="{card.id}", text={json.dumps(card.text)}' for card in payload.doc.cards)
+    evidence_lines = "\n".join(
+        f'  - source "{link.fromCardId}" --{link.type}--> target "{link.toCardId}"'
+        for link in payload.doc.evidenceLinks or []
+    ) or "- (none)"
+    return "\n".join(
+        [
+            "You propose an OPPOSING viewpoint or an evidence-gap note for the target card.",
+            "Use only the provided cards and evidence links. Do not add outside facts.",
+            "The proposal is a candidate for human review -- it is never applied automatically.",
+            "Ground every claim in the card text. If the target's evidence is missing or weak, set evidenceGap=true.",
+            'Return strict JSON only: {"opposingText": string, "evidenceGap": boolean, "rationale": string, "warnings": [string,...]}',
+            f"Target card: {json.dumps({'id': target.id, 'text': target.text})}",
+            "Cards:",
+            card_lines,
+            "Evidence links:",
+            evidence_lines,
+        ]
+    )
+
+
+@router.post(
+    "/proposals/opposing-viewpoint",
+    response_model=OpposingViewpointProposal,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def propose_opposing_viewpoint(
+    payload: ProposeOpposingViewpointRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> OpposingViewpointProposal:
+    """AI-OPPOSE-01 (M4): proposal-only opposing-viewpoint / evidence-gap
+    proposal for a target card, derived from the doc's contradiction and
+    evidence structure. Never auto-applied (status stays "proposed")."""
+    _, _, tenant = _authorize_request(
+        request,
+        db,
+        action="write",
+        doc_id=payload.doc.id,
+        safe_mode=False,
+        read_only=False,
+    )
+    if get_document_row(db, tenant=tenant, doc_id=payload.doc.id) is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if next((card for card in payload.doc.cards if card.id == payload.targetCardId), None) is None:
+        raise HTTPException(status_code=422, detail="targetCardId does not exist")
+    _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("propose_opposing_viewpoint"))
+
+    try:
+        llm_response = generate_with_fallback(
+            LLMRequest(
+                task="propose_opposing_viewpoint",
+                prompt=_build_opposing_viewpoint_prompt(payload),
+                model=payload.model,
+            )
+        )
+    except ProviderDisabledError as exc:
+        _raise_llm_http_error(exc)
+    except ProviderRequestError as exc:
+        _raise_llm_http_error(exc)
+
+    try:
+        data = json.loads(llm_response.raw_text)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail="LLM response is not valid JSON") from exc
+    proposal = OpposingViewpointProposal(
+        proposalId=f"proposal-{uuid4()}",
+        targetCardId=payload.targetCardId,
+        opposingText=str(data.get("opposingText", data.get("opposing_text", ""))),
+        evidenceGap=bool(data.get("evidenceGap", data.get("evidence_gap", False))),
+        rationale=str(data.get("rationale", "")),
+        warnings=[str(w) for w in (data.get("warnings") or [])],
+    )
+    if not proposal.opposingText:
+        raise HTTPException(status_code=422, detail="LLM response missing opposingText")
     return proposal
 
 

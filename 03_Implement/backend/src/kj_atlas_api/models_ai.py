@@ -172,6 +172,37 @@ class ProposalEnvelope(BaseModel):
     rationale: str = Field(min_length=1)
 
 
+class ProposeOpposingViewpointRequest(BaseModel):
+    """AI-OPPOSE-01 (M4): propose an opposing viewpoint or evidence gap for a
+    target card, derived from the doc's contradiction / evidence structure.
+    proposal-only -- never auto-applied."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    doc: DocumentV1
+    targetCardId: str = Field(min_length=1, max_length=128)
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
+
+
+class OpposingViewpointProposal(BaseModel):
+    """Proposal-only opposing-viewpoint / evidence-gap observation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    proposalId: str = Field(min_length=1)
+    type: Literal["opposing_viewpoint"] = "opposing_viewpoint"
+    status: Literal["proposed"] = "proposed"
+    reviewState: Literal["unreviewed"] = "unreviewed"
+    targetCardId: str = Field(min_length=1)
+    opposingText: str = Field(min_length=1)
+    evidenceGap: bool
+    rationale: str = Field(min_length=1)
+    warnings: list[str] = Field(default_factory=list)
+
+
 class ProposeIslandSummaryRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
