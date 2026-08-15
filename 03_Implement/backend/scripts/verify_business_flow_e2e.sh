@@ -1219,5 +1219,45 @@ edu_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EDU_ID")
 check "EDU 読戻し (200)" "200" "$edu_read"
 
 echo ""
+echo "--- シナリオ24: 災害対応・現場報告の整理と矛盾検出（安全クリティカル） ---"
+# 業態: 防災・災害対応
+# 想定人物: 災害対策本部スタッフ（現場報告を整理）
+# 業務領域: 現場報告のKJ整理と矛盾報告の検出・反対視点の確認
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> 反対視点提案(propose-opposing-viewpoint)
+# 注意事項: 矛盾する現場報告は隠さず表面化する（安全クリティカル）。全て proposal-only。
+#          未レビューは422（SafeMode）。
+DR_ID="biz-flow-disaster"
+DR_DOC='{"version":1,"id":"'$DR_ID'","title":"現場報告の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"d1","text":"避難所に食料が届いている","x":0,"y":0,"textReviewed":true},{"id":"d2","text":"避難所の食料が不足している","x":10,"y":0,"textReviewed":true},{"id":"d3","text":"道路が通行止め","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"dr-i","cardIds":["d1","d2","d3"]}],"readingOrder":["dr-i"]}'
+
+dr_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$DR_ID" \
+  -H 'Content-Type: application/json' -d "$DR_DOC")
+check "DR PUT document (作成)" "200" "$dr_put"
+
+# ① AI束ね
+dr_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"d1","text":"避難所に食料が届いている","textReviewed":true},{"id":"d2","text":"避難所の食料が不足している","textReviewed":true},{"id":"d3","text":"道路が通行止め","textReviewed":true}]}')
+case "$dr_groups" in *'"groups":'*) echo "  PASS: DR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: DR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+dr_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DR_DOC,\"islandId\":\"dr-i\"}")
+case "$dr_summary" in *'"groundingIds":["d1","d2","d3"]'*) echo "  PASS: DR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: DR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（食料が届いている vs 不足している — 矛盾する現場報告を表面化）
+dr_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"d1","text":"避難所に食料が届いている","textReviewed":true},"cardB":{"id":"d2","text":"避難所の食料が不足している","textReviewed":true}}')
+case "$dr_contra" in *'"hasContradiction"'*) echo "  PASS: DR ③矛盾検出（矛盾報告を表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: DR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 反対視点提案（食料対応の意思決定に対する反対視点・proposal-only）
+dr_opp=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DR_DOC,\"targetCardId\":\"d1\"}")
+case "$dr_opp" in *'"status":"proposed"'*'"opposingText"'*) echo "  PASS: DR ④反対視点提案 (proposal-only)"; PASS=$((PASS+1));; *) echo "  FAIL: DR ④反対視点"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+dr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$DR_ID")
+check "DR 読戻し (200)" "200" "$dr_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
