@@ -27,7 +27,7 @@
 
 - [x] 反対視点・根拠不足の提案が、contradiction / evidence 構造から生成され、proposal-onlyで表示される。→ **R1 実装（iteration 64）**: `POST /ai/proposals/opposing-viewpoint` を新設 — ターゲットカード・全カード・evidenceLinks（contradicts/supports）をプロンプトに接地し、`propose_opposing_viewpoint` タスクで反対視点/根拠不足を提案。`OpposingViewpointProposal`（proposal-only）を返す。mock_local_llm にタスク応答を追加。`test_ai_oppose.py` 4件 pass。**UI 表示（R2）は未実装**（backend 経路のみ）。
 - [x] 提案は `human_reviewed` を自動昇格しない（非後退）。→ `status: "proposed"`・`reviewState: "unreviewed"` 固定（自動適用なし・人間の採否のみ）。
-- [x] 根拠不足の提案を保留へ接続でき、元の違和感・矛盾に戻れる。→ **R2 部分実装（iteration 66）**: 提案をカード検査部に表示し「破棄」で保持状態に留める（proposal-only）。**保留状態への接続（hold 遷移）は残**。
+- [x] 根拠不足の提案を保留へ接続でき、元の違和感・矛盾に戻れる。→ **実装（iteration 67）**: 提案ブロックの「保留して再確認」ボタンがカードの holdState を `held` に遷移（DOMAIN-EXPR-02 の hold 状態へ非破壊接続・元の違和感に戻れる）。`data-ui-region="hold-opposing-viewpoint"`。
 - [x] 提案が確定フィールドへ自動適用されない（書き直し案のみ）。→ R2 UI は提案表示のみ（採否・適用は人間）。非適用を固定。
 - [ ] `provider=none` で中核操作（記録・保留・参照）が成立する。
 - [ ] E2Eでマウス・キーボード・390pxで操作できる。

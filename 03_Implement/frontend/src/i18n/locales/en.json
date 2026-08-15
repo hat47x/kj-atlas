@@ -1541,6 +1541,7 @@
   "side_panel.card_inspector.opposing_viewpoint": "Opposing viewpoint (proposal)",
   "side_panel.card_inspector.proposal_only": "Proposal only — never auto-applied; the human decides.",
   "side_panel.card_inspector.dismiss_proposal": "Dismiss",
+  "side_panel.card_inspector.hold_for_review": "Hold for review",
   "side_panel.card_quality.open": "Tidy this card",
   "side_panel.card_quality.done": "Self-check complete.",
   "side_panel.card_quality.close": "Close",

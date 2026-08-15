@@ -3618,13 +3618,29 @@ export function SidePanel({
                   <div style={{ fontSize: 10, color: "#9a3412" }}>
                     {t("side_panel.card_inspector.proposal_only")}
                   </div>
-                  <button
-                    type="button"
-                    onClick={onDismissOpposingViewpointProposal}
-                    style={{ justifySelf: "start", fontSize: 11 }}
-                  >
-                    {t("side_panel.card_inspector.dismiss_proposal")}
-                  </button>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      type="button"
+                      data-ui-region="hold-opposing-viewpoint"
+                      onClick={() => {
+                        // AI-OPPOSE-01: connect the evidence-gap proposal to the
+                        // card's hold state so the concern is kept and can be
+                        // returned to (元の違和感・矛盾に戻れる).
+                        onCardHoldStateChange("held");
+                        onDismissOpposingViewpointProposal();
+                      }}
+                      style={{ fontSize: 11 }}
+                    >
+                      {t("side_panel.card_inspector.hold_for_review")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onDismissOpposingViewpointProposal}
+                      style={{ fontSize: 11 }}
+                    >
+                      {t("side_panel.card_inspector.dismiss_proposal")}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <button

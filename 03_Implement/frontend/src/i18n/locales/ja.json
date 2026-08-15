@@ -1541,6 +1541,7 @@
   "side_panel.card_inspector.opposing_viewpoint": "反対視点（提案）",
   "side_panel.card_inspector.proposal_only": "提案のみ — 自動適用はされません。判断するのは人間です。",
   "side_panel.card_inspector.dismiss_proposal": "破棄",
+  "side_panel.card_inspector.hold_for_review": "保留して再確認",
   "side_panel.card_quality.open": "カードを整える",
   "side_panel.card_quality.done": "確認が完了しました。",
   "side_panel.card_quality.close": "閉じる",
