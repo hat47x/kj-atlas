@@ -554,6 +554,35 @@ class DocumentAccessAdminAuditEventRow(Base):
     occurred_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class AdminAuditEventRow(Base):
+    """SEC-ADMIN-PLANE-03: control-plane operation audit trail.
+
+    Records who (credential fingerprint), what (route / operation / target),
+    when, and the result (allowed / denied) for /admin/* requests. Fail-open:
+    recording must never block the operation. `tenant_id` is NULL for the
+    pre-tenant bootstrap stage (static control-plane credential); tenant-scoped
+    admin operations record the tenant. Never stores request bodies, secrets,
+    raw IdP identifiers, or raw policy references (ADR-0035).
+    """
+
+    __tablename__ = "admin_audit_events"
+    __table_args__ = (
+        Index("ix_admin_audit_events_occurred", "occurred_at"),
+        Index("ix_admin_audit_events_route_result", "route", "result"),
+    )
+
+    event_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    tenant_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    actor_ref_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    route: Mapped[str] = mapped_column(Text, nullable=False)
+    operation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    target: Mapped[str | None] = mapped_column(Text, nullable=True)
+    result: Mapped[str] = mapped_column(Text, nullable=False)
+    status_code: Mapped[int] = mapped_column(Integer, nullable=False)
+    request_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    occurred_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class InquiryBundleRow(Base):
     """Tenant-scoped opaque InquiryBundleV1 storage.
 

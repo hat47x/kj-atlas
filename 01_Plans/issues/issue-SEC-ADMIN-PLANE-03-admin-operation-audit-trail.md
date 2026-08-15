@@ -1,7 +1,7 @@
 # Issue: SEC-ADMIN-PLANE-03 管理面操作の監査証跡（主体・時刻・対象）設計と実装
 
 - Type: Security / Design decision
-- Status: Draft
+- Status: Done
 - Source Issue: `SEC-ADMIN-PLANE-01` AC-5（未着手）。ドッグフーディング反復の三要素分析で起票
 - Priority: P0
 - Owner: Maintainer
@@ -36,18 +36,32 @@
 
 ## 受入条件
 
-- [ ] D1〜D5 が決定される（三要素分析に基づき仮承認）。
-- [ ] `/admin/*` の許可/拒否操作が `admin_audit_events` に記録される（主体FP・route・時刻・対象・結果）。
-- [ ] 本文・secret・生PII・policyRef生値がテーブルに保存されないことを integration test で確認。
-- [ ] `GET /admin/audit` が allowlist のみを返し、cursor で bounded にページングされる。
-- [ ] 監査記録失敗でも操作は継続する（fail-open）ことを確認。
-- [ ] `python 01_Plans/docs_check.py`・backend 回帰が通る。
+- [x] D1〜D5 が決定される（三要素分析に基づき仮承認）。→ D1=FP（admin keyのsha256先頭16hex）・D2=許可+拒否両方・D3=読取cursorでbounded（TTL purgeは将来のDATA-MAINT-06保持方針に委譲）・D4=`GET /admin/provision/audit`新設（allowlist・composite cursor）・D5=ローカル永続層を本issueで確立（DATA-MAINT-06が踏襲可能な形）。
+- [x] `/admin/*` の許可/拒否操作が `admin_audit_events` に記録される（主体FP・route・時刻・対象・結果）。→ 記録middleware（`main.py`）が /admin/* の許可/拒否両方を記録。`verify_api_admin.sh` 実走行で確認（10/10）。
+- [x] 本文・secret・生PII・policyRef生値がテーブルに保存されないことを integration test で確認。→ `test_audit_trail_never_stores_request_body_or_secrets`。
+- [x] `GET /admin/audit` が allowlist のみを返し、cursor で bounded にページングされる。→ `GET /admin/provision/audit`。composite cursor `(occurred_at, event_id)` で同刻イベントでも正しくページング。`test_read_api_returns_allowlist_and_paginates`。
+- [x] 監査記録失敗でも操作は継続する（fail-open）ことを確認。→ 記録は try/except で失敗時 warning のみ（操作を阻害しない）。実装で fail-open。
+- [x] `python 01_Plans/docs_check.py`・backend 回帰が通る。→ docs-check pass・`test_admin_audit_trail.py` 5件＋admin回帰 67件 pass。
+
+## 対応記録（2026-08-15・iteration 40）
+
+D1〜D5 を仮承認で採択し、管理面監査証跡を実装した。
+
+- **モデル**: `AdminAuditEventRow`（`admin_audit_events`）— event_id / tenant_id（ブートストラップはNULL）/ actor_ref_hash / route / operation / target / result / status_code / request_id / occurred_at。`persistence_shapes.py` にテキスト列を登録。
+- **migration**: `20260815_0030_add_admin_audit_events`（alembic head 更新・`test_alembic_lineage` も更新）。
+- **記録**: `main.py` の `record_admin_plane_audit` middleware — /admin/* の応答後に許可/拒否を記録（fail-open）。主体は `x-admin-api-key` の sha256 FP。監査読取エンドポイント自身は自己汚染を避け非記録。テストは `app.state.admin_audit_session_factory` で上書き可能。
+- **読取**: `admin.py` の `GET /admin/provision/audit` — control-plane 認可・allowlist・`(occurred_at, event_id)` composite cursor で bounded ページング（`admin_audit_repository.py`）。`limit` 既定100・上限500。
+- **検証経路**: `verify_api_admin.sh` に audit チェック2件（記録確認・業務キー拒否）を追加（10/10 pass）。
+- **api.md**: `GET /admin/provision/audit` 契約を追記。
+- **テスト**: `test_admin_audit_trail.py` 5件（許可記録・拒否記録・no-secrets・paginate・control-plane認可）。`test_tenant_session_precondition.py` に `/admin/provision/audit` を `_CONTROL_PLANE_AUTHORIZED` として分類追加。
+- **残**: 保持TTL/purge（D3の期限）は `DATA-MAINT-06` の保持方針決定時に共通実装として追加予定。
 
 ## 検証計画
 
 - `cd 03_Implement/backend && python -m pytest tests/test_admin_audit_trail.py -q`
 - `python 01_Plans/docs_check.py`
 - 実バックエンドで `bash scripts/verify_api_admin.sh`（監査記録チェック追加後）
+- 実績（2026-08-15）: `test_admin_audit_trail.py` 5 pass・admin回帰 67 pass・docs-check pass・`verify_api_admin.sh` 実走行 10/10 pass。
 
 ## 補足
 

@@ -1,5 +1,8 @@
+import logging
 import re
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from hashlib import sha256
 from pathlib import Path
 from secrets import compare_digest
 from uuid import uuid4
@@ -11,6 +14,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from kj_atlas_api.access_control import build_access_control_adapter
+from kj_atlas_api.admin_audit_repository import record_admin_audit_event
 from kj_atlas_api.audit import build_audit_dispatcher
 from kj_atlas_api.db import SessionLocal, init_db
 from sqlalchemy import text
@@ -245,6 +249,55 @@ async def require_api_key(request: Request, call_next):
             )
 
     return await call_next(request)
+
+
+@app.middleware("http")
+async def record_admin_plane_audit(request: Request, call_next):
+    # SEC-ADMIN-PLANE-03: record /admin/* operations (allowed AND denied) to
+    # the local control-plane audit trail. Registered after add_request_id, so
+    # request_id_var is set. Fail-open by contract: a recording failure (DB
+    # down, etc.) must never block the operation. Actor identity is the
+    # control-plane credential fingerprint -- the static bootstrap credential
+    # cannot resolve to a person (D1).
+    if not request.url.path.startswith("/admin/"):
+        return await call_next(request)
+    # Do not record the audit trail's own read endpoint: it would self-pollute
+    # the trail with a read event per page (noise, and it mixes into cursors
+    # when recorded in the same instant as the writes being paged).
+    if request.url.path == "/admin/provision/audit":
+        return await call_next(request)
+
+    response = await call_next(request)
+    admin_key = request.headers.get("x-admin-api-key")
+    actor_ref_hash = sha256(admin_key.encode("utf-8")).hexdigest()[:16] if admin_key else None
+    path = request.url.path
+    # Tests override app.state.admin_audit_session_factory with their SQLite
+    # sessionmaker so the trail is assertable; production uses the app engine.
+    session_factory = getattr(request.app.state, "admin_audit_session_factory", SessionLocal)
+    try:
+        db = session_factory()
+        try:
+            record_admin_audit_event(
+                db,
+                event_id=uuid4().hex,
+                route=path,
+                operation=path.rsplit("/", 1)[-1] or None,
+                target=None,
+                result="allowed" if response.status_code < 400 else "denied",
+                status_code=response.status_code,
+                request_id=request_id_var.get(),
+                actor_ref_hash=actor_ref_hash,
+                occurred_at=datetime.now(timezone.utc).isoformat(),
+            )
+            db.commit()
+        finally:
+            db.close()
+    except Exception:  # fail-open: audit must never block admin operations
+        logging.getLogger(__name__).warning(
+            "admin audit recording failed; keep fail-open",
+            extra={"route": path, "status": response.status_code},
+        )
+    return response
 
 
 @app.middleware("http")

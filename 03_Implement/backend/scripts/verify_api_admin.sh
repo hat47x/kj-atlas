@@ -127,6 +127,26 @@ if [ "$mode" = "auth" ]; then
     "$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/admin/provision/users" \
       -H 'Content-Type: application/json' \
       -d '{"provider":"verify_admin","externalUid":"probe-admin-y"}')"
+
+  # 9. SEC-ADMIN-PLANE-03: the control-plane audit trail recorded the
+  #    provision/users operation (success + abnormal case).
+  audit_code=$(curl -s -o /tmp/kj_admin_audit.json -w '%{http_code}' \
+    "$BASE_URL/admin/provision/audit?limit=10" -H "X-Admin-Api-Key: $ADMIN_KEY")
+  if [ "$audit_code" = "200" ]; then
+    if grep -q '"route":"/admin/provision/users"' /tmp/kj_admin_audit.json; then
+      echo "  PASS: audit trail records provision/users (200)"
+      PASS=$((PASS+1))
+    else
+      echo "  FAIL: audit trail lacks the provision/users event"
+      FAIL=$((FAIL+1))
+    fi
+  else
+    echo "  FAIL: GET /admin/provision/audit (expected 200, got $audit_code)"
+    FAIL=$((FAIL+1))
+  fi
+  check "audit trail with business key only -> 401" "401" \
+    "$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/admin/provision/audit" \
+      -H 'X-API-Key: business-key')"
 else
   # ---- Open mode (no admin key configured: local-dev / evaluation) ----
   check "a2a3-gate (open) -> 200" "200" "$(gate_code)"

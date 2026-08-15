@@ -231,6 +231,9 @@ _UNGUARDED_ROUTE_EXEMPTIONS: dict[tuple[str, str], str] = {
     ("POST", "/admin/provision/hil-rs/a2a3-gate:validate"): _CONTROL_PLANE_AUTHORIZED,
     ("POST", "/admin/provision/identity-providers"): _CONTROL_PLANE_AUTHORIZED,
     ("POST", "/admin/provision/tenant-identity-providers"): _CONTROL_PLANE_AUTHORIZED,
+    # SEC-ADMIN-PLANE-03: control-plane audit trail read, authorized by
+    # require_control_plane_authorization (not a tenant-scoped resource).
+    ("GET", "/admin/provision/audit"): _CONTROL_PLANE_AUTHORIZED,
     ("GET", "/session/context"): _TENANT_SESSION_VERSION_SOURCE,
     ("POST", "/session/active-tenant"): _BODY_BORNE_EXPECTED_VERSION,
 }

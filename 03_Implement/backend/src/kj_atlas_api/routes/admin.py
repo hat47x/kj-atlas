@@ -3,10 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
+from kj_atlas_api.admin_audit_repository import list_admin_audit_events
 from kj_atlas_api.db import get_db
 from kj_atlas_api.identity_binding import (
     IdentityMappingConflictError,
@@ -508,3 +509,56 @@ def register_tenant_identity_provider(
         externalTenantRef=external_ref,
     )
     return A2A3GateValidationResponse(go=True)
+
+
+class AdminAuditEventItem(BaseModel):
+    eventId: str
+    occurredAt: str
+    route: str
+    operation: str | None = None
+    result: str
+    statusCode: int
+    requestId: str | None = None
+    actorRefHash: str | None = None
+    # tenant_id is omitted from the allowlist: pre-tenant bootstrap is NULL and
+    # tenant-scoped rows are already scoped by the control-plane caller.
+
+
+class AdminAuditPage(BaseModel):
+    events: list[AdminAuditEventItem]
+    nextCursor: str | None = None
+
+
+@router.get(
+    "/audit",
+    response_model=AdminAuditPage,
+    dependencies=[Depends(require_control_plane_authorization)],
+)
+def list_admin_audit(
+    db: Session = Depends(get_db),
+    cursor: str | None = Query(default=None, max_length=128),
+    limit: int = Query(default=100, ge=1, le=500),
+) -> AdminAuditPage:
+    """SEC-ADMIN-PLANE-03: control-plane operation audit trail (allowlist read).
+
+    Returns only bounded, non-sensitive fields; never request bodies, secrets,
+    raw IdP identifiers, or raw policy references. Cursor-paginated by event_id
+    so a large trail cannot be returned in one unbounded response.
+    """
+    rows, next_cursor = list_admin_audit_events(db, cursor=cursor, limit=limit)
+    return AdminAuditPage(
+        events=[
+            AdminAuditEventItem(
+                eventId=row.event_id,
+                occurredAt=row.occurred_at,
+                route=row.route,
+                operation=row.operation,
+                result=row.result,
+                statusCode=row.status_code,
+                requestId=row.request_id,
+                actorRefHash=row.actor_ref_hash,
+            )
+            for row in rows
+        ],
+        nextCursor=next_cursor,
+    )

@@ -679,6 +679,13 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 - 将来のエージェント登録（EXT-CONN-02契約後）。登録・一覧・失効は別契約。
 
+**GET** `/admin/provision/audit`
+
+- SEC-ADMIN-PLANE-03: 制御プレーン操作の監査証跡（allowlist 読取）。`X-Admin-Api-Key`（または provision capability）の control-plane 認可必須。
+- Response: `{ "events": [{ "eventId", "occurredAt", "route", "operation?", "result", "statusCode", "requestId?", "actorRefHash?" }], "nextCursor?" }`。`limit`（既定100・上限500）と `cursor`（前ページの `nextCursor`）で bounded にページング。
+- allowlist に `tenant_id`・本文・secret・生PII・policyRef生値は含めない（ADR-0035）。
+- 監査記録は fail-open（記録失敗でも管理操作を阻害しない）。
+
 **GET** `/healthz`
 
 - 未認証。プロセス生存確認。`200 {"status": "ok"}` を返す。

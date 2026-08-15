@@ -75,7 +75,7 @@ saas-multitenant      -> HTTP 404 {'code': 'strict_provisioning_unavailable', ..
 - [x] AC-2: `/admin/provision/**` が業務API と分離された認可を要求し、業務面の資格情報だけでは到達できない。3ルート全てについて `X-Api-Key` 提示時に 401 `control_plane_unauthorized` を返すことを固定。
 - [x] AC-3: `saas-multitenant` で IdP 登録が実行可能な経路が存在する（D2=A。旧実装は 404 だった）。手順は `04_Documentation/security.md`「管理面（Control Plane）の保護」に記載。**空DBから認証成立までの通し検証は未実施**（下記「残作業」）。
 - [x] AC-4: `trusted_saas_runtime.py` の起動時警告が、実際に到達可能な手順を案内している。`X-Admin-Api-Key` と `KJ_ATLAS_ADMIN_API_KEY` を明記し、業務面キーが使えないことも記載。文言と実装の一致をテストで固定。
-- [ ] AC-5: 管理面操作の監査証跡（主体・時刻・対象）。**未着手** → `issue-SEC-ADMIN-PLANE-03`（三要素分析済み・D1〜D5設計判断）の採択と実装でクローズする。
+- [x] AC-5: 管理面操作の監査証跡（主体・時刻・対象）。→ **`issue-SEC-ADMIN-PLANE-03` で完了**（2026-08-15・iteration 40）。`admin_audit_events` テーブル＋記録middleware＋`GET /admin/provision/audit`（allowlist・composite cursor）。`verify_api_admin.sh` 実走行10/10。
 - [x] AC-6: `THREAT_MODEL.md` と `04_Documentation/security.md` に管理面の保護要件を追記した。アプリ側保証と前段委譲（D1=C）の責務境界、および SaaS でのテナント発行の業務的正当性が範囲外であることを明記。
 - [x] AC-7: 越境の negative matrix を integration テストで固定した — 業務面キーで到達不可、資格情報なしで到達不可、誤った資格情報で到達不可、拒否応答が「未設定」と「誤り」を区別しない、提示値・設定値を反射しない、未知 profile が open へ fall through しない。
 
