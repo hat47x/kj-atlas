@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 
 from kj_atlas_api.access_control import build_access_control_adapter
 from kj_atlas_api.admin_audit_repository import record_admin_audit_event
+from kj_atlas_api.model_registry_seed import seed_registry_from_env
 from kj_atlas_api.audit import build_audit_dispatcher
 from kj_atlas_api.db import SessionLocal, init_db
 from sqlalchemy import text
@@ -35,6 +36,7 @@ from kj_atlas_api.routes.document_access_admin import (
     router as document_access_admin_router,
 )
 from kj_atlas_api.routes.inquiry_bundles import router as inquiry_bundles_router
+from kj_atlas_api.routes.model_registry import router as model_registry_router
 from kj_atlas_api.routes.session import router as session_router
 from kj_atlas_api.logging_config import configure_logging, request_id_var
 from kj_atlas_api.request_body_safety import JsonRequestBodySafetyMiddleware
@@ -129,6 +131,9 @@ async def lifespan(app: FastAPI):
         runtime_components=runtime_components,
     )
     init_db()
+    # AI-MODEL-GOVERNANCE-01 U4: seed the env-configured provider/model into the
+    # registry so an admin CLI/UI can see and manage what env vars configured.
+    seed_registry_from_env()
     if settings.runtime_profile == "saas-multitenant":
         _saas_auth_state_store.preflight()
         _saas_auth_session_store.preflight()
@@ -460,4 +465,5 @@ app.include_router(ai_relations_router)
 app.include_router(context_router)
 app.include_router(document_access_admin_router)
 app.include_router(inquiry_bundles_router)
+app.include_router(model_registry_router)
 app.include_router(session_router)

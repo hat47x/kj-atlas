@@ -234,6 +234,14 @@ _UNGUARDED_ROUTE_EXEMPTIONS: dict[tuple[str, str], str] = {
     # SEC-ADMIN-PLANE-03: control-plane audit trail read, authorized by
     # require_control_plane_authorization (not a tenant-scoped resource).
     ("GET", "/admin/provision/audit"): _CONTROL_PLANE_AUTHORIZED,
+    # AI-MODEL-GOVERNANCE-01: model/provider registry + tenant allowlist
+    # management, control-plane authorized (not tenant-scoped).
+    ("GET", "/admin/provision/models"): _CONTROL_PLANE_AUTHORIZED,
+    ("POST", "/admin/provision/models"): _CONTROL_PLANE_AUTHORIZED,
+    ("POST", "/admin/provision/models/providers"): _CONTROL_PLANE_AUTHORIZED,
+    ("PATCH", "/admin/provision/models/{model_id}"): _CONTROL_PLANE_AUTHORIZED,
+    ("GET", "/admin/provision/models/tenants/{tenant_id}/allowlist"): _CONTROL_PLANE_AUTHORIZED,
+    ("PUT", "/admin/provision/models/tenants/{tenant_id}/allowlist"): _CONTROL_PLANE_AUTHORIZED,
     ("GET", "/session/context"): _TENANT_SESSION_VERSION_SOURCE,
     ("POST", "/session/active-tenant"): _BODY_BORNE_EXPECTED_VERSION,
 }

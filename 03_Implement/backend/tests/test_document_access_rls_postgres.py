@@ -73,6 +73,7 @@ def test_rls_scope_is_derived_from_every_tenant_scoped_model() -> None:
         "inquiry_bundle_deletion_audit_events",
         "inquiry_bundles",
         "merge_decision_logs",
+        "tenant_model_allowlist",
     }
 
 

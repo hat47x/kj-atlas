@@ -686,6 +686,20 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 - allowlist に `tenant_id`・本文・secret・生PII・policyRef生値は含めない（ADR-0035）。
 - 監査記録は fail-open（記録失敗でも管理操作を阻害しない）。
 
+**GET** `/admin/provision/models`
+
+- AI-MODEL-GOVERNANCE-01（R1）: モデル/プロバイダレジストリ一覧。`X-Admin-Api-Key`（または provision capability）の control-plane 認可必須。
+- Response: `{ "providers": [{ "id", "providerKind", "displayName", "lifecycleState" }], "models": [{ "id", "providerId", "displayName", "capabilities?", "lifecycleState" }] }`。プラットフォーム共有資産（tenant 非依存）。
+
+**POST** `/admin/provision/models/providers` / **POST** `/admin/provision/models`
+
+- プロバイダ/モデルを**動的に登録**（control-plane 認可）。`apiKeyRef` は秘密管理キー参照のみ（平文のAPIキーを保存しない・ADR-0035）。`capabilities` は `intermediate`/`final_judgement` 等のタグ。
+- モデル無効化: `PATCH /admin/provision/models/{model_id}` で `lifecycleState: disabled`。無効モデルへの呼び出しは fail-closed。
+
+**GET/PUT** `/admin/provision/models/tenants/{tenant_id}/allowlist`
+
+- AI-MODEL-GOVERNANCE-01（R3）: テナントの利用可能モデル allowlist（fail-closed）。空 = プラットフォーム既定。適用は Phase 2 の実効モデル解決で交差（より狭い方が勝つ）。
+
 **GET** `/healthz`
 
 - 未認証。プロセス生存確認。`200 {"status": "ok"}` を返す。
