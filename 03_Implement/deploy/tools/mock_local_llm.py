@@ -109,6 +109,8 @@ def build_text_for_task(task: str, prompt: str) -> str:
         return json.dumps({
             "hasContradiction": False,
             "explanation": "（モック）2枚のカード間に明示的な矛盾は検出されませんでした。"})
+    if task == "suggest_document_title":
+        return json.dumps({"candidates": [{"title": "（モック）タイトル候補"}]})
     return json.dumps({})
 
 

@@ -88,6 +88,32 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 `verify_api_inquiry_journey.sh`（機械的な opaque round-trip）とは別に、**探究の進行＝ラウンド追加の更新**と
 **並行編集の保護（409）・破棄のCAS** を一気通貫で検証する。**26/26 pass**（シナリオ1〜6）。
 
+### シナリオ7（iteration 48 追加・学術研究の概念関係要約）
+
+| 軸 | 内容 |
+|----|------|
+| 業態 | 学術研究 / ナレッジマネジメント |
+| 想定人物 | 研究者（概念間の関係を構造化する） |
+| 業務領域 | 複数概念（島）間の関係の要約・根拠付き接続 |
+| 操作内容 | 文書作成 → 島形成 → **summarize-island-relation（島間関係の要約）** → 読戻し |
+| 注意事項 | 関係種別は5語彙（related/negate/causal/mutual/equivalence）。derived=false は根拠ある関係のみ要約。未レビューカードは 422（SafeMode） |
+
+シナリオ7は **summarize-island-relation** を固定。E2E 実走行で本ルートが SafeMode ゲート未配線（doc文脈なのに `_reject_unreviewed_text` なし）であることを発見し、SEC-AI-SAFEMODE-02 拡張として修正・**全コンテンツAIルートのカバレッジカナリア**を追加（詳細は dogfood README）。
+
+### シナリオ8（iteration 49 追加・ナレッジベース管理者のタイトル命名）
+
+| 軸 | 内容 |
+|----|------|
+| 業態 | ナレッジマネジメント / 図書館情報学 |
+| 想定人物 | ナレッジベース管理者（文書の検索性を確保する） |
+| 業務領域 | 文書タイトルの命名・改名（検索・整理の要） |
+| 操作内容 | 文書作成 → 島・カード確認 → **suggest-document-title（タイトル候補のAI提案）** → 読戻し |
+| 注意事項 | タイトル候補は proposal であり自動確定しない。未レビュー入力は textReviewed fail-closed で 422（SEC-AI-SAFEMODE-02） |
+
+シナリオ8は **suggest-document-title**（最後の未固定 AI 操作）を固定。モックLLMに `suggest_document_title` 応答を追加。
+これで **AI 操作 8 種（refine / card-groups / island-summary / narrative / detect-contradiction / check-narrative / island-relation / document-title）を全カバー**。
+**32/32 pass**（シナリオ1〜8・8業態）。
+
 ## E2E の固定方法
 
 ### バックエンド全層フロー（初回・curl ベース）
@@ -134,6 +160,7 @@ bash scripts/verify_business_flow_e2e.sh 8000   # 7 チェック（作成/読戻
 
 - [x] バックエンド全層の標準業務フロー E2E を固定（**シナリオ1+2 で 10/10 pass**・モックLLM）
 - [x] 別業態のシナリオ追加（iteration 42: 新規事業企画ワークショップ・suggest-card-groups を追加）
-- [x] シナリオ3（iteration 44: 品質管理・detect-contradiction）・シナリオ4（iteration 45: 管理者CLI/API・文書ライフサイクル/監査/キー分離）・シナリオ5（iteration 46: 報道編集・check-narrative A/B照合）・シナリオ6（iteration 47: 調査研究員・W型探究 CAS）を追加 — **シナリオ1〜6 で 26/26 pass**
+- [x] シナリオ3〜6（iteration 44〜47: 品質管理・detect-contradiction / 管理者CLI/API・文書ライフサイクル/監査/キー分離 / 報道編集・check-narrative / 調査研究員・W型探究 CAS）を追加
+- [x] シナリオ7（iteration 48: 学術研究・summarize-island-relation）・シナリオ8（iteration 49: ナレッジベース管理者・suggest-document-title）を追加 — **シナリオ1〜8 で 32/32 pass・AI 操作 8 種を全カバー**
 - [ ] UI 層 E2E（フロントエンド AI 操作・CE4 proposal 連鎖）
 - [ ] さらに別業態のシナリオ追加（イテレーション毎に拡大）

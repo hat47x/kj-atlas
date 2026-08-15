@@ -387,5 +387,40 @@ sr_unreviewed_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/a
 check "SR summarize-island-relation unreviewed text blocked (422, SafeMode)" "422" "$sr_unreviewed_code"
 
 echo ""
+echo "--- シナリオ8: ナレッジベース管理者の文書タイトル命名提案 ---"
+# 業態: ナレッジマネジメント / 図書館情報学
+# 想定人物: ナレッジベース管理者（文書の検索性を確保する）
+# 業務領域: 文書タイトルの命名・改名（検索・整理の要）
+# 操作内容: 文書作成 -> 島・カード確認 -> suggest-document-title(タイトル候補のAI提案) -> 読戻し
+# 注意事項: タイトル候補は proposal であり自動確定しない。未レビューカードは
+#          textReviewed fail-closed で 422（SEC-AI-SAFEMODE-02）。
+KB_DOC_ID="biz-flow-knowledgebase"
+KB_DOC='{"version":1,"id":"'$KB_DOC_ID'","title":"新規採用ガイド（仮）","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"k1","text":"入社手続きの一覧","x":0,"y":0,"textReviewed":true},{"id":"k2","text":"研修スケジュール","x":10,"y":0,"textReviewed":true},{"id":"k3","text":"社内ツールの初期設定","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"kb-i","cardIds":["k1","k2","k3"]}],"readingOrder":["kb-i"]}'
+
+kb_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$KB_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$KB_DOC")
+check "KB PUT document (作成)" "200" "$kb_put"
+
+# タイトル候補のAI提案（suggest-document-title、textReviewed を明示）。
+kb_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d "{\"islandTitles\":[\"入社手続き\"],\"cardTexts\":[\"入社手続きの一覧\",\"研修スケジュール\",\"社内ツールの初期設定\"],\"currentTitle\":\"新規採用ガイド（仮）\",\"textReviewed\":true}")
+case "$kb_title" in
+  *'"candidates"'*)
+    echo "  PASS: suggest-document-title returns title candidates (mock)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: suggest-document-title (got $kb_title)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 注意事項: 未レビュー入力は 422（textReviewed fail-closed・SEC-AI-SAFEMODE-02）。
+kb_unreviewed_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/suggest-document-title" \
+  -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["島"],"cardTexts":["確認前の内容"]}')
+check "KB suggest-document-title unreviewed text blocked (422, SEC-AI-SAFEMODE-02)" "422" "$kb_unreviewed_code"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
