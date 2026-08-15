@@ -4,6 +4,7 @@ import math
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -749,6 +750,50 @@ def _parse_merge_suggestions(
         parsed_suggestions.append(suggestion)
 
     return parsed_suggestions
+
+
+class AvailableModelItem(BaseModel):
+    id: str
+    displayName: str
+    providerId: str
+    capabilities: str | None = None
+
+
+class AvailableModelsResponse(BaseModel):
+    models: list[AvailableModelItem]
+
+
+@router.get("/available-models", response_model=AvailableModelsResponse)
+def get_available_models(request: Request, db: Session = Depends(get_db)) -> AvailableModelsResponse:
+    """AI-MODEL-GOVERNANCE-01 R2: the active registered models this tenant is
+    allowed to use (registry active models intersected with the tenant allowlist;
+    empty allowlist = platform-default = all active registered models). The UI
+    model selector offers exactly this set. Never includes disabled models or
+    provider secrets."""
+    from kj_atlas_api.model_registry_repository import (
+        list_models,
+        list_providers,
+        tenant_allowlist_effective_model_ids,
+    )
+
+    tenant = _resolve_audit_tenant(request, db)
+    active_models = [row for row in list_models(db) if row.lifecycle_state == "active"]
+    active_provider_ids = {row.id for row in list_providers(db) if row.lifecycle_state == "active"}
+    effective = tenant_allowlist_effective_model_ids(db, tenant_id=tenant.tenant_id)
+    allowed = [row for row in active_models if row.provider_id in active_provider_ids]
+    if effective is not None:
+        allowed = [row for row in allowed if row.id in effective]
+    return AvailableModelsResponse(
+        models=[
+            AvailableModelItem(
+                id=row.id,
+                displayName=row.display_name,
+                providerId=row.provider_id,
+                capabilities=row.capabilities,
+            )
+            for row in allowed
+        ]
+    )
 
 
 @router.get("/provider-status", response_model=ProviderStatusResponse)

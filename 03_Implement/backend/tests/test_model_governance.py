@@ -224,3 +224,24 @@ def test_model_crud_and_allowlist_changes_are_audited(tmp_path, monkeypatch) -> 
         assert "/admin/provision/models/providers" in routes
         assert "/admin/provision/models" in routes
         assert "/admin/provision/models/tenants/tenant-a/allowlist" in routes
+
+
+def test_available_models_reflects_tenant_allowlist(tmp_path, monkeypatch) -> None:
+    """R2: GET /ai/available-models returns the tenant's allowed active models."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+
+    with _client(tmp_path) as (client, _session_local):
+        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "external", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        for model_id, state in (("m1", "active"), ("m2", "active"), ("m3", "disabled")):
+            client.post("/admin/provision/models", json={"id": model_id, "providerId": "p", "displayName": model_id}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        client.patch("/admin/provision/models/m3", json={"lifecycleState": "disabled"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+
+        # No allowlist -> platform-default: m1 + m2 (m3 disabled excluded).
+        default_models = client.get("/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY}).json()["models"]
+        assert {m["id"] for m in default_models} == {"m1", "m2"}
+
+        # Allowlist [m2] -> only m2 offered.
+        client.put("/admin/provision/models/tenants/local-default/allowlist", json={"modelIds": ["m2"]}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        filtered = client.get("/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY}).json()["models"]
+        assert [m["id"] for m in filtered] == ["m2"]
