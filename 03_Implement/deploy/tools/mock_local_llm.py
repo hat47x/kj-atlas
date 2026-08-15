@@ -57,7 +57,7 @@ def build_text_for_task(task: str, prompt: str) -> str:
 
     if task == "suggest_island_summary":
         member_ids = _CARD_LINE.findall(prompt)
-        grounding = member_ids[:1] if member_ids else []
+        grounding = member_ids[:3] if member_ids else []
         return json.dumps(
             {
                 "summaryText": "（モック）メンバーカードに基づく下書き要約です。レビュー前の暫定です。",
