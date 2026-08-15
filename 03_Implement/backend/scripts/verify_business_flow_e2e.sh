@@ -1568,5 +1568,43 @@ re_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$RE_ID")
 check "RE 読戻し (200)" "200" "$re_read"
 
 echo ""
+echo "--- シナリオ33: 通信・IT・サポート問い合わせの分析 ---"
+# 業態: 通信・ITサービス
+# 想定人物: サポート品質マネージャー（問い合わせを分析）
+# 業務領域: サポート問い合わせのKJ整理と対応課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 利用者の声は逐語（refineで変えない）。矛盾する報告は表面化する。
+IT_ID="biz-flow-it-support"
+IT_DOC='{"version":1,"id":"'$IT_ID'","title":"サポート問い合わせ分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"i1","text":"ログインが頻繁に失敗する","x":0,"y":0,"textReviewed":true},{"id":"i2","text":"応答速度は満足","x":10,"y":0,"textReviewed":true},{"id":"i3","text":"設定画面が分かりにくい","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"it-i","cardIds":["i1","i2","i3"]}],"readingOrder":["it-i"]}'
+
+it_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$IT_ID" \
+  -H 'Content-Type: application/json' -d "$IT_DOC")
+check "IT PUT document (作成)" "200" "$it_put"
+
+# ① AI束ね
+it_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"i1","text":"ログインが頻繁に失敗する","textReviewed":true},{"id":"i2","text":"応答速度は満足","textReviewed":true},{"id":"i3","text":"設定画面が分かりにくい","textReviewed":true}]}')
+case "$it_groups" in *'"groups":'*) echo "  PASS: IT ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: IT ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+it_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$IT_DOC,\"islandId\":\"it-i\"}")
+case "$it_summary" in *'"groundingIds":["i1","i2","i3"]'*) echo "  PASS: IT ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: IT ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（ログイン失敗 vs 応答速度満足）
+it_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"i1","text":"ログインが頻繁に失敗する","textReviewed":true},"cardB":{"id":"i2","text":"応答速度は満足","textReviewed":true}}')
+case "$it_contra" in *'"hasContradiction"'*) echo "  PASS: IT ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: IT ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+it_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$IT_DOC}")
+case "$it_narr" in *'"basedOnReadingOrder":["it-i"]'*) echo "  PASS: IT ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: IT ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+it_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$IT_ID")
+check "IT 読戻し (200)" "200" "$it_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
