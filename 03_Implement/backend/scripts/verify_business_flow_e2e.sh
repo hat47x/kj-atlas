@@ -860,5 +860,50 @@ case "$md_restore" in
 esac
 
 echo ""
+echo "--- シナリオ16: 外部エージェント連携（Org-D・外部AI成果物の提案受領） ---"
+# 業態: AI連携サービス（外部エージェント）
+# 想定人物: 外部エージェント（トリガー型AI）+ 人間レビューア
+# 業務領域: 外部AIの成果物を提案として受領・人間がレビュー決定（EXT-AGENT-02 proposal-only）
+# 操作内容: 文書作成 -> 外部タスク登録(/ai/external-tasks/register)
+#          -> 外部提案登録(/ai/external-proposals/register) -> 人間が決定(/ai/external-proposals/audit)
+#          -> 未登録提案への決定404
+# 注意事項: 提案は未レビューで着地（自動適用なし）。baseDocSignature（{docId}:{updatedAt}）不一致は409。
+#          登録していない proposal への決定は404。hash は64hex（DATA-CONTRACT-02）。
+EXT_H="x-forwarded-user: ext-agent"
+EXT_H2="x-auth-provider: oidc"
+EXT_ID="biz-flow-ext-agent"
+EXT_DOC='{"version":1,"id":"'$EXT_ID'","title":"外部統合","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"v1","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+EXT_SIG="biz-flow-ext-agent:2026-08-15T00:00:00Z"
+EXT_H64="$(printf 'a%.0s' $(seq 1 64))"
+
+ext_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EXT_ID" \
+  -H 'Content-Type: application/json' -H "$EXT_H" -H "$EXT_H2" -d "$EXT_DOC")
+check "EXT PUT document (作成)" "200" "$ext_put"
+
+# 外部タスク登録（依頼の正本）。
+ext_task=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/external-tasks/register" \
+  -H 'Content-Type: application/json' -H "$EXT_H" -H "$EXT_H2" \
+  -d "{\"docId\":\"$EXT_ID\",\"taskId\":\"ext-task-1\",\"baseDocSignature\":\"$EXT_SIG\",\"sourceBundleHash\":\"$EXT_H64\",\"queryCanonicalHash\":\"$EXT_H64\",\"taskKind\":\"narrative_draft\",\"provenanceLevel\":\"user_presented_unsigned\"}")
+check "EXT 外部タスク登録 (200)" "200" "$ext_task"
+
+# 外部提案登録（proposal-only・未レビュー着地）。
+ext_prop=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/external-proposals/register" \
+  -H 'Content-Type: application/json' -H "$EXT_H" -H "$EXT_H2" \
+  -d "{\"docId\":\"$EXT_ID\",\"taskId\":\"ext-task-1\",\"baseDocSignature\":\"$EXT_SIG\",\"sourceBundleHash\":\"$EXT_H64\",\"queryCanonicalHash\":\"$EXT_H64\",\"proposalId\":\"ext-prop-1\",\"proposalKind\":\"narrative_draft\",\"proposalFingerprint\":\"$EXT_H64\",\"provenanceLevel\":\"user_presented_unsigned\"}")
+check "EXT 外部提案登録 (200・未レビュー着地)" "200" "$ext_prop"
+
+# 人間の決定（hold・保留）。
+ext_audit=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/external-proposals/audit" \
+  -H 'Content-Type: application/json' -H "$EXT_H" -H "$EXT_H2" \
+  -d "{\"docId\":\"$EXT_ID\",\"proposalId\":\"ext-prop-1\",\"sourceBundleHash\":\"$EXT_H64\",\"idempotencyKey\":\"ext-k1\",\"decision\":\"hold\",\"reason\":\"要確認\",\"provenanceLevel\":\"user_presented_unsigned\"}")
+check "EXT 人間の決定 (hold・200)" "200" "$ext_audit"
+
+# 未登録 proposal への決定は404。
+ext_unreg=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/external-proposals/audit" \
+  -H 'Content-Type: application/json' -H "$EXT_H" -H "$EXT_H2" \
+  -d "{\"docId\":\"$EXT_ID\",\"proposalId\":\"ext-prop-none\",\"sourceBundleHash\":\"$EXT_H64\",\"idempotencyKey\":\"ext-k2\",\"decision\":\"reject\",\"provenanceLevel\":\"user_presented_unsigned\"}")
+check "EXT 未登録提案への決定 (404)" "404" "$ext_unreg"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
