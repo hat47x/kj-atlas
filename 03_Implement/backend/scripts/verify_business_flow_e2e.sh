@@ -2593,5 +2593,50 @@ cm_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CM_ID")
 check "CM 読戻し (200)" "200" "$cm_read"
 
 echo ""
+echo "--- シナリオ57: スポーツチーム運営のファン声分析（勝敗と独立した体験の声と統合提案） ---"
+# 業態: スポーツ・チーム運営（プロスポーツクラブ）
+# 想定人物: マーケティング責任者（ファンエンゲージメントを分析）
+# 業務領域: ファンからの声（満足・不満・要望）のKJ分類と、エンゲージメント施策の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> 統合提案(suggest-merges)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: 重複するファンの要望を統合提案で整理（人間が採否・自動適用しない）。
+#          試合結果（勝敗）に左右されないスタジアム体験の声を矛盾検出で表面化。
+SP_ID="biz-flow-sports"
+SP_DOC='{"version":1,"id":"'$SP_ID'","title":"ファン声分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"sp1","text":"試合に勝ってもスタジアムの混雑が不満","x":0,"y":0,"textReviewed":true},{"id":"sp2","text":"チケットの再販システムを導入してほしい","x":10,"y":0,"textReviewed":true},{"id":"sp3","text":"試合に負けたときの雰囲気が沈むのは仕方ない","x":20,"y":0,"textReviewed":true},{"id":"sp4","text":"スタジアムの案内表示が分かりにくい","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sp-i","cardIds":["sp1","sp2","sp3","sp4"]}],"readingOrder":["sp-i"]}'
+
+sp_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SP_ID" \
+  -H 'Content-Type: application/json' -d "$SP_DOC")
+check "SP PUT document (作成)" "200" "$sp_put"
+
+# ① AI束ね
+sp_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"sp1","text":"試合に勝ってもスタジアムの混雑が不満","textReviewed":true},{"id":"sp2","text":"チケットの再販システムを導入してほしい","textReviewed":true},{"id":"sp3","text":"試合に負けたときの雰囲気が沈むのは仕方ない","textReviewed":true},{"id":"sp4","text":"スタジアムの案内表示が分かりにくい","textReviewed":true}]}')
+case "$sp_groups" in *'"groups":'*) echo "  PASS: SP ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SP ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+sp_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SP_DOC,\"islandId\":\"sp-i\"}")
+case "$sp_summary" in *'"groundingIds":["sp1","sp2","sp3"]'*) echo "  PASS: SP ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SP ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（勝敗と独立した体験の不満 vs 勝敗依存の許容）
+sp_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"sp1","text":"試合に勝ってもスタジアムの混雑が不満","textReviewed":true},"cardB":{"id":"sp3","text":"試合に負けたときの雰囲気が沈むのは仕方ない","textReviewed":true}}')
+case "$sp_contra" in *'"hasContradiction"'*) echo "  PASS: SP ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: SP ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 統合提案（重複する要望の整理・人間が採否）
+sp_merges=$(curl -s -X POST "$BASE_URL/ai/suggest-merges" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SP_DOC}")
+case "$sp_merges" in *'"suggestions"'*) echo "  PASS: SP ④統合提案(merges)"; PASS=$((PASS+1));; *) echo "  FAIL: SP ④統合提案(merges)"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+sp_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SP_DOC}")
+case "$sp_narr" in *'"basedOnReadingOrder":["sp-i"]'*) echo "  PASS: SP ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SP ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+sp_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SP_ID")
+check "SP 読戻し (200)" "200" "$sp_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
