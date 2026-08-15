@@ -87,6 +87,19 @@ def build_text_for_task(task: str, prompt: str) -> str:
         )
 
     if task == "check_narrative":
+        # Deterministic A/B mismatch path (iteration 99): when the narrative
+        # carries the marker phrase, report an a_missing_in_b issue with counts,
+        # so the E2E freezes the A/B direction + totals reporting.
+        if "未検証の主張" in prompt:
+            return json.dumps({
+                "issues": [{
+                    "severity": "info",
+                    "message": "ナラティブが島i1に触れていない（a_missing_in_b）",
+                    "references": [{"id": "i1", "kind": "island"}],
+                    "direction": "a_missing_in_b",
+                }],
+                "counts": {"bMissingInA": 0, "aMissingInB": 1},
+            })
         return json.dumps({"issues": []})
 
     # ADR-0064: KJ-method card-level operations

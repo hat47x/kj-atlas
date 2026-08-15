@@ -1760,5 +1760,44 @@ fd_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FD_ID")
 check "FD 読戻し (200)" "200" "$fd_read"
 
 echo ""
+echo "--- シナリオ38: 編集者・ナラティブA/B不整合の検出 ---"
+# 業態: 出版・報道（シナリオ5のA/B不整合検出の拡張）
+# 想定人物: 編集者（ナラティブと図解の不整合を検出）
+# 業務領域: ナラティブのA/B照合で不整合の方向と件数を報告
+# 操作内容: 文書作成 -> check-narrative（A/B不整合の検出・direction/counts）
+# 注意事項: 不整合は「カードにない主張（b_missing_in_a）」と「触れていない島
+#          （a_missing_in_b）」を方向で報告。件数（counts）は報告の正本。
+AB_ID="biz-flow-ab-mismatch"
+AB_DOC='{"version":1,"id":"'$AB_ID'","title":"A/B照合検証","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"事実A","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"i1","cardIds":["c1"],"summaryText":"s"}],"readingOrder":["i1"]}'
+
+ab_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$AB_ID" \
+  -H 'Content-Type: application/json' -d "$AB_DOC")
+check "AB PUT document (作成)" "200" "$ab_put"
+
+# A/B不整合の検出（モックは marker「未検証の主張」で a_missing_in_b を報告）。
+ab_narr=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$AB_DOC,\"narrativeText\":\"（草稿）事実Aに加えて、未検証の主張が含まれている。\",\"basedOnReadingOrder\":[\"i1\"]}")
+case "$ab_narr" in
+  *'"direction":"a_missing_in_b"'*)
+    echo "  PASS: AB ①A/B不整合の方向（a_missing_in_b）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: AB ①A/B不整合の方向（got ${ab_narr:0:150}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+case "$ab_narr" in
+  *'"counts"'*'"bMissingInA":0'*'"aMissingInB":1'*)
+    echo "  PASS: AB ②A/B件数（counts: bMissingInA=0/aMissingInB=1）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: AB ②A/B件数（got ${ab_narr:0:150}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
