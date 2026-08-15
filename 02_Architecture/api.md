@@ -1180,6 +1180,7 @@ Tenant Admin向けに次のrouteを実装する。ただし、application lifecy
 - `GET /tenant-admin/document-access`
   - active tenant内の文書IDと`visibility`、設定有無、binding状態、policy version、更新時刻、opaque revisionだけを返す。
   - title、本文、card、review集計、tenantId、binding IDを一覧responseへ含めない。metadata未登録は`Restricted / unconfigured`として返す。
+  - **SEC-DOC-BOUND-04・keyset pagination**: `limit`（既定100・最大500）と `cursor`（前ページ末尾の文書ID）。`DocumentRow.id` 昇順。次ページがある場合 `X-Next-Cursor` ヘッダーで返す。
 - `GET /tenant-admin/document-access/{doc_id}`
   - 一覧項目に加えて、編集対象の非秘密`policyBindingId`だけを返す。responseの`ETag`はbodyの`revision`と一致させる。
 - `PUT /tenant-admin/document-access/{doc_id}`

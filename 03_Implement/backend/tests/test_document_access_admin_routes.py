@@ -340,6 +340,42 @@ def test_list_is_tenant_scoped_and_omits_document_content_and_binding_id(tmp_pat
     assert "tenantId" not in serialized
 
 
+def test_list_keyset_pagination_bounds_response(tmp_path) -> None:
+    """SEC-DOC-BOUND-04: the tenant-admin list is bounded by limit and pages
+    via the X-Next-Cursor id cursor, without overlap or loss."""
+    with _tenant_admin_client(tmp_path) as fixture:
+        client, session_local, tenant_resolver, _ = fixture
+        with session_local() as db:
+            for suffix in ("pag-1", "pag-2", "pag-3"):
+                db.add(_document(tenant_id="tenant-a", doc_id=f"z-{suffix}", title="pag"))
+            db.commit()
+
+        tenant_resolver.tenant_id = "tenant-a"
+        # tenant-a has 5 docs total (draft-doc, shared-doc + 3 z-pag docs).
+        all_ids: list[str] = []
+        cursor: str | None = None
+        pages = 0
+        while True:
+            url = "/tenant-admin/document-access?limit=2"
+            if cursor is not None:
+                url += f"&cursor={cursor}"
+            response = client.get(url)
+            assert response.status_code == 200
+            items = response.json()["items"]
+            assert len(items) <= 2, "response bounded by limit"
+            all_ids.extend(item["docId"] for item in items)
+            pages += 1
+            cursor = response.headers.get("X-Next-Cursor")
+            if cursor is None:
+                break
+            assert pages < 10, "pagination did not terminate"
+
+        assert pages == 3  # 5 docs / limit 2
+        assert len(set(all_ids)) == len(all_ids), "no overlap across pages"
+        assert len(all_ids) == 5
+        assert "z-pag-1" in all_ids and "z-pag-3" in all_ids
+
+
 def test_detail_exposes_only_editable_nonsecret_binding_metadata(tmp_path) -> None:
     with _tenant_admin_client(tmp_path) as fixture:
         client, _, _, _ = fixture
