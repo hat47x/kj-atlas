@@ -26,6 +26,10 @@ class ProviderStatusResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     providerKind: Literal["none", "local", "large-scale"]
+    # OPS-LLM-COST-01 (段階2): in-process LLM call counts per provider kind
+    # (plus "total"). Referenceable so an operator can see external
+    # (large-scale) call volume. Empty until the first LLM call.
+    callCounts: dict[str, int] = Field(default_factory=dict)
 
 
 class NarrativeIssueReference(BaseModel):

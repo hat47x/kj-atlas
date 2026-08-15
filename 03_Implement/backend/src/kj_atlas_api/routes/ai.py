@@ -840,8 +840,14 @@ def get_available_models(request: Request, db: Session = Depends(get_db)) -> Ava
 def get_provider_status() -> ProviderStatusResponse:
     """PROV-VIS-01 (ADR-0050 D1): read-only echo of the configured provider
     kind for display in the View panel. No connectivity check is performed;
-    "last known outcome" is tracked client-side from real AI-call results."""
-    return ProviderStatusResponse(providerKind=get_provider().provider_kind)
+    "last known outcome" is tracked client-side from real AI-call results.
+    OPS-LLM-COST-01 (段階2): also reports the in-process LLM call counts."""
+    from kj_atlas_api.llm.provider import llm_call_counts
+
+    return ProviderStatusResponse(
+        providerKind=get_provider().provider_kind,
+        callCounts=llm_call_counts(),
+    )
 
 
 @router.post(
