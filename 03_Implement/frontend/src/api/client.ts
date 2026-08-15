@@ -628,6 +628,34 @@ export type SuggestDocumentTitleResponse = {
   candidates: DocumentTitleCandidate[];
 };
 
+// AI-MODEL-GOVERNANCE-01 (R2): the models the current tenant is allowed to use,
+// for the per-operation model selector. Never includes disabled models.
+export type AvailableModelItem = {
+  id: string;
+  displayName: string;
+  providerId: string;
+  capabilities?: string | null;
+};
+
+export async function fetchAvailableModels(
+  requestOptions: TenantScopedRequestOptions = {},
+): Promise<AvailableModelItem[]> {
+  const response = await fetch(`${API_BASE}/ai/available-models`, {
+    headers: {
+      ...tenantSessionPreconditionHeaders(requestOptions),
+    },
+  });
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, {
+      code: errorDetail.code,
+      disabledReason: errorDetail.disabledReason,
+    });
+  }
+  const body = (await response.json()) as { models: AvailableModelItem[] };
+  return body.models;
+}
+
 export async function suggestDocumentTitle(
   islandTitles: string[],
   cardTexts: string[],
