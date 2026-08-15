@@ -2322,5 +2322,52 @@ ec_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EC_ID")
 check "EC 読戻し (200)" "200" "$ec_read"
 
 echo ""
+echo "--- シナリオ51: ゲーム・エンタメ運営のプレイヤー声整理（バグ/要望分離と修正優先の反対視点） ---"
+# 業態: ゲーム・エンタメ（オンラインゲーム運営）
+# 想定人物: ゲーム運営プロデューサー（プレイヤー声の整理と修正優先判断）
+# 業務領域: プレイヤーのバグ報告・要望・不満のKJ分類と、修正優先の判断材料
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> 反対視点提案(propose-opposing-viewpoint)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: バグ報告と要望・不満を混在させず分離する。修正優先への反対視点（既存
+#          機能の安定性）を proposal-only で提案し、人間が採否する（AIは先取りしない）。
+GM_ID="biz-flow-game"
+GM_DOC='{"version":1,"id":"'$GM_ID'","title":"プレイヤー声整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"gm1","text":"サーバー遅延でログインできない報告が多い","x":0,"y":0,"textReviewed":true},{"id":"gm2","text":"新マップ追加を望む声がある","x":10,"y":0,"textReviewed":true},{"id":"gm3","text":"既存機能の安定性を優先すべきとの意見","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"gm-i","cardIds":["gm1","gm2","gm3"]}],"readingOrder":["gm-i"]}'
+
+gm_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$GM_ID" \
+  -H 'Content-Type: application/json' -d "$GM_DOC")
+check "GM PUT document (作成)" "200" "$gm_put"
+
+# ① AI束ね
+gm_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"gm1","text":"サーバー遅延でログインできない報告が多い","textReviewed":true},{"id":"gm2","text":"新マップ追加を望む声がある","textReviewed":true},{"id":"gm3","text":"既存機能の安定性を優先すべきとの意見","textReviewed":true}]}')
+case "$gm_groups" in *'"groups":'*) echo "  PASS: GM ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: GM ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+gm_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$GM_DOC,\"islandId\":\"gm-i\"}")
+case "$gm_summary" in *'"groundingIds":["gm1","gm2","gm3"]'*) echo "  PASS: GM ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: GM ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（バグ修正優先 vs 既存安定優先・修正判断の相克）
+gm_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"gm1","text":"サーバー遅延でログインできない報告が多い","textReviewed":true},"cardB":{"id":"gm3","text":"既存機能の安定性を優先すべきとの意見","textReviewed":true}}')
+case "$gm_contra" in *'"hasContradiction"'*) echo "  PASS: GM ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: GM ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 反対視点提案（新マップ要望への反対視点・proposal-only境界）
+gm_oppose=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$GM_DOC,\"targetCardId\":\"gm2\"}")
+case "$gm_oppose" in
+  *'"status":"proposed"'*'"reviewState":"unreviewed"'*) echo "  PASS: GM ④反対視点提案(proposal-only)"; PASS=$((PASS+1));;
+  *) echo "  FAIL: GM ④反対視点提案(proposal-only)"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+gm_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$GM_DOC}")
+case "$gm_narr" in *'"basedOnReadingOrder":["gm-i"]'*) echo "  PASS: GM ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: GM ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+gm_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$GM_ID")
+check "GM 読戻し (200)" "200" "$gm_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
