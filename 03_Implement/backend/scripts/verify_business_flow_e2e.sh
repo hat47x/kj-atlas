@@ -1914,5 +1914,43 @@ in_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$IN_ID")
 check "IN 読戻し (200)" "200" "$in_read"
 
 echo ""
+echo "--- シナリオ42: 環境・環境影響評価の整理 ---"
+# 業態: 環境・コンサルティング
+# 想定人物: 環境影響評価担当（環境評価データを整理）
+# 業務領域: 環境影響評価のKJ整理と影響要因の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 調査データは逐語（refineで変えない）。矛盾する影響要因は表面化する。
+EV_ID="biz-flow-env"
+EV_DOC='{"version":1,"id":"'$EV_ID'","title":"環境影響評価の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"e1","text":"水質は基準を満たす","x":0,"y":0,"textReviewed":true},{"id":"e2","text":"騒音の苦情が増えている","x":10,"y":0,"textReviewed":true},{"id":"e3","text":"植生は保全されている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ev-i","cardIds":["e1","e2","e3"]}],"readingOrder":["ev-i"]}'
+
+ev_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EV_ID" \
+  -H 'Content-Type: application/json' -d "$EV_DOC")
+check "EV PUT document (作成)" "200" "$ev_put"
+
+# ① AI束ね
+ev_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"e1","text":"水質は基準を満たす","textReviewed":true},{"id":"e2","text":"騒音の苦情が増えている","textReviewed":true},{"id":"e3","text":"植生は保全されている","textReviewed":true}]}')
+case "$ev_groups" in *'"groups":'*) echo "  PASS: EV ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: EV ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ev_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EV_DOC,\"islandId\":\"ev-i\"}")
+case "$ev_summary" in *'"groundingIds":["e1","e2","e3"]'*) echo "  PASS: EV ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: EV ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（水質基準充足 vs 騒音苦情増加）
+ev_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"e1","text":"水質は基準を満たす","textReviewed":true},"cardB":{"id":"e2","text":"騒音の苦情が増えている","textReviewed":true}}')
+case "$ev_contra" in *'"hasContradiction"'*) echo "  PASS: EV ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: EV ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ev_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$EV_DOC}")
+case "$ev_narr" in *'"basedOnReadingOrder":["ev-i"]'*) echo "  PASS: EV ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: EV ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ev_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EV_ID")
+check "EV 読戻し (200)" "200" "$ev_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
