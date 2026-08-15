@@ -466,10 +466,14 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 **POST** `/ai/suggest-island-summary`
 
 - Request: `SuggestIslandSummaryRequest`
+  - `doc: DocumentV1` — 現在の文書全体（対象島を含む）
   - `islandId: string` — 対象の島ID
-  - `cardTexts: string[]` — 島に属するカードの本文（レビュー済みのみ）
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
+  - `model?: string` — タスク別モデル override（AI-MODEL-GOVERNANCE-01 R2・allowlist 検査付き）
 - Response: `SuggestIslandSummaryResponse`
   - `summaryText: string` — 表札候補文
+  - `groundingIds: string[]` — 根拠としたメンバーカードのID
+  - `warnings?: string[]`
 - 島の表札（ラベル）を提案する。表札は分類名ではなく、カード群の訴えを代弁する文でなければならない（kj_technique.md §3 表札検査）。
 - **DX-CLEANUP-07 案B**: この直接 route はフロントエンドの直接呼び出し元を持たない（UI は proposal-only の `POST /ai/proposals/island-summary` を使用）。**後方互換・外部 API クライアント用に維持**する。`suggest_island_summary` 関数本体は proposal route の内部実装として再利用されている。
 
@@ -487,6 +491,19 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `reviewState: "unreviewed"`
 - `/ai/suggest-island-summary` のproposalラッパー。人間の明示的Adopt/Reject/Hold操作を経て文書へ反映される。
 - 成功時は本文を持たないproposal相関行を`ai_proposals`へ保存する。対象Documentが存在しない、またはwrite認可されない場合はproposalを生成・登録しない。
+
+**POST** `/ai/proposals/opposing-viewpoint`（AI-OPPOSE-01・iteration 65 以降で契約化）
+
+- Request: `ProposeOpposingViewpointRequest`
+  - `doc: DocumentV1` — 現在の文書全体（contradiction / evidence 構造を含む）
+  - `targetCardId: string` — 反対視点・根拠不足を検討する対象カード
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
+  - `model?: string` — タスク別モデル override（AI-MODEL-GOVERNANCE-01 R2・allowlist 検査付き）
+- Response: `OpposingViewpointProposal`（proposal-only）
+  - `proposalId: string`
+  - `type: "opposing_viewpoint"`, `status: "proposed"`, `reviewState: "unreviewed"`
+  - `targetCardId: string`, `opposingText: string`, `evidenceGap: boolean`, `rationale: string`, `warnings: string[]`
+- contradiction / evidence 構造をもとに、対象カードの**反対視点・根拠不足**を提案する（value_traceability V1/V3）。**proposal-only（自動適用なし・人間の判断を先取りしない）**。対象カードが存在しない場合は 422、対象Documentが永続化されていない場合は 404。判定（Adopt/Reject/Hold）は `/ai/proposals/audit` と同経路。
 
 **POST** `/ai/proposals/audit`
 
@@ -551,8 +568,13 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 - Request: `GenerateNarrativeRequest`
   - `doc: DocumentV1` — 現在の文書全体
+  - `narrativeTitle?: string` — ナラティブのタイトル（任意）
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
+  - `model?: string` — タスク別モデル override（AI-MODEL-GOVERNANCE-01 R2・allowlist 検査付き）
 - Response: `GenerateNarrativeResponse`
-  - `narrative: Narrative` — 生成された文章
+  - `text: string` — 生成された文章
+  - `basedOnReadingOrder: string[]` — 参照した読取順
+  - `warnings?: string[]`
 - A型図解（空間配置）からB型叙述（文章）を生成する。生成後はA/B照合（kj_technique.md §5）を人間が実施する必要がある。
 
 **POST** `/ai/check-narrative`
@@ -561,6 +583,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `doc: DocumentV1` — 検証対象のA型図解
   - `narrativeText: string` — 検証対象のナラティブ本文
   - `basedOnReadingOrder?: string[]` — ナラティブが従った読取順（A/B照合のA側）
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
 - Response: `CheckNarrativeResponse`
   - `issues: NarrativeIssue[]` — A/B照合で検出された不整合
     - `direction: "b_missing_in_a" | "a_missing_in_b"` — B型（ナラティブ）にあるのにA型にない記述 / A型にあるのにB型で落ちた島
