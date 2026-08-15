@@ -39,7 +39,7 @@ suggest-card-groups を追加で固定しており、**AI 操作のカバー領�
 | 想定人物 | サポート品質マネージャー（クレーム・現場証言の真因分析） |
 | 業務領域 | クレームと現場証言の KJ 整理、矛盾する証言の検出による真因分析 |
 | 操作内容 | 文書作成 → 証言カード化（レビュー済み） → **detect-contradiction（証言間の論理的矛盾を AI 検出）** → 島の表札（island-summary） → 読戻し |
-| 注意事項 | 矛盾検出は「単なる意見の相違」と「論理的矛盾」を区別する（後者のみ報告）。証言の文面は refine 等で変更しない（現場の完全性・evidence としての位置づけ）。SafeMode の未レビュー境界(422)は島要約・ナラティブ等の doc 文脈ルートで効き、detect-contradiction は doc 文脈を持たない（→ 起票済み issue） |
+| 注意事項 | 矛盾検出は「単なる意見の相違」と「論理的矛盾」を区別する（後者のみ報告）。証言の文面は refine 等で変更しない（現場の完全性・evidence としての位置づけ）。文書非依存ルートも `textReviewed` で未レビュー本文を 422 拒否する（SEC-AI-SAFEMODE-02、iteration 45 で実装） |
 
 シナリオ1〜3で **refine / island-summary / narrative / suggest-card-groups / detect-contradiction** と
 AI 操作のカバー領域を拡大しており、業態・想定人物も調査会社→事業企画コンサル→品質管理へ広がっている。
@@ -58,6 +58,21 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 シナリオ1〜3（Web を想定した AI 操作）と並ぶ 4 本目の固定である。`verify_admin_ops_flow_e2e.sh` が
 業務キー＋管理キー両方設定の実バックエンド上で **11/11 pass**。文書ライフサイクル（第2反復・ADR-0073）と
 管理面監査（SEC-ADMIN-PLANE-03）・キー分離（SEC-ADMIN-PLANE-02）を一気通貫で検証する。
+
+### シナリオ5（iteration 46 追加・報道・編集のナラティブA/B照合）
+
+| 軸 | 内容 |
+|----|------|
+| 業態 | 報道・メディア（論説・編集） |
+| 想定人物 | 編集者（ナラティブの正確性を検証） |
+| 業務領域 | カード（事実）とナラティブ草稿の A/B 照合による整合性検証 |
+| 操作内容 | 文書作成 → カードレビュー済み化 → ナラティブ草稿（generate-narrative） → **check-narrative（A/B照合: カードにない主張・触れていない島を検出）** → 読戻し |
+| 注意事項 | ナラティブはカードの事実を超える主張をしない。check-narrative は `direction`（b_missing_in_a / a_missing_in_b）で不整合を報告する。未レビューカードを含む文書はナラティブ経路で 422（SafeMode） |
+
+シナリオ5は **check-narrative（A/B照合）** を固定した点で、AI 操作のカバー領域を
+**refine / island-summary / narrative / card-groups / detect-contradiction / check-narrative** の 6 操作に
+拡大した。業態・人物も調査会社→コンサル→品質管理→OSS管理者→報道編集へ広がっている。
+**19/19 pass**。
 
 ## E2E の固定方法
 
@@ -105,5 +120,6 @@ bash scripts/verify_business_flow_e2e.sh 8000   # 7 チェック（作成/読戻
 
 - [x] バックエンド全層の標準業務フロー E2E を固定（**シナリオ1+2 で 10/10 pass**・モックLLM）
 - [x] 別業態のシナリオ追加（iteration 42: 新規事業企画ワークショップ・suggest-card-groups を追加）
+- [x] シナリオ3（iteration 44: 品質管理・detect-contradiction）・シナリオ4（iteration 45: 管理者CLI/API・文書ライフサイクル/監査/キー分離）・シナリオ5（iteration 46: 報道編集・check-narrative A/B照合）を追加 — **シナリオ1〜5 で 19/19 pass**
 - [ ] UI 層 E2E（フロントエンド AI 操作・CE4 proposal 連鎖）
 - [ ] さらに別業態のシナリオ追加（イテレーション毎に拡大）

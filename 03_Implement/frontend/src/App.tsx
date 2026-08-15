@@ -1385,6 +1385,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override for document-title
   // generation ("" = auto / platform default).
   const [documentTitleModel, setDocumentTitleModel] = useState<string>("");
+  // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override for narrative
+  // generation ("" = auto / platform default).
+  const [narrativeModel, setNarrativeModel] = useState<string>("");
   const [proposalAuditTrail, setProposalAuditTrail] = useState<string[]>([]);
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
   const [connectEdgeType, setConnectEdgeType] = useState<KnownEdgeType>("related");
@@ -8026,6 +8029,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       const result = await runTenantScopedApiRequest(() => generateNarrative(
         document,
         `Draft ${draftIndex}`,
+        narrativeModel,
         { tenantSessionContext: verifiedTenantSession },
       ));
       const nextNarrative: Narrative = {
@@ -8061,6 +8065,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     applyDocumentChange,
     document,
     generatedNarratives.length,
+    narrativeModel,
     runTenantScopedApiRequest,
     verifiedTenantSession,
   ]);
@@ -11587,6 +11592,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
               onGenerateFromReadingOrder={() => {
                 void handleGenerateNarrativeFromReadingOrder();
               }}
+              narrativeModel={narrativeModel}
+              onNarrativeModelChange={setNarrativeModel}
+              availableModels={availableModels}
               isChecking={isCheckingNarrative}
               isGenerating={isGeneratingNarrative}
               errorMessage={narrativeCheckError}

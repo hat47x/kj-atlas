@@ -186,7 +186,7 @@ describe("tenant-scoped document request precondition", () => {
       cardTexts: [],
     }, requestOptions);
     await checkNarrative(createDocument(), "narrative", undefined, requestOptions);
-    await generateNarrative(createDocument(), undefined, requestOptions);
+    await generateNarrative(createDocument(), undefined, undefined, requestOptions);
 
     expect(fetchMock).toHaveBeenCalledTimes(10);
     for (const [, init] of fetchMock.mock.calls) {

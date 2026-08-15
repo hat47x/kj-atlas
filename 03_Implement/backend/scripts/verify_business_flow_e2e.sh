@@ -241,5 +241,58 @@ unreviewed_contradiction=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE
 check "QM detect-contradiction unreviewed text blocked (422, SEC-AI-SAFEMODE-02)" "422" "$unreviewed_contradiction"
 
 echo ""
+echo "--- シナリオ5: 報道・編集（ナラティブのA/B照合検証） ---"
+# 業態: 報道・メディア（論説・編集）
+# 想定人物: 編集者（ナラティブの正確性を検証）
+# 業務領域: カード（事実）とナラティブ草稿の A/B 照合による整合性検証
+# 操作内容: 文書作成 -> カードレビュー済み化 -> ナラティブ草稿(generate-narrative)
+#          -> check-narrative(A/B照合: カードにない主張・触れていない島を検出) -> 読戻し
+# 注意事項: ナラティブはカードの事実を超える主張をしない。check-narrative は
+#          direction（b_missing_in_a / a_missing_in_b）で不整合を報告する。
+#          未レビューカードを含む文書はナラティブ経路で 422（SafeMode）。
+ED_DOC_ID="biz-flow-editorial"
+ED_DOC='{"version":1,"id":"'$ED_DOC_ID'","title":"市議会補正予算の記事草稿","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"e1","text":"市議会は補正予算案を可決した","x":0,"y":0,"textReviewed":true},{"id":"e2","text":"財源には予備費を充てる","x":10,"y":0,"textReviewed":true},{"id":"e3","text":"委員長は賛成の立場を表明した","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ed-i","cardIds":["e1","e2","e3"]}],"readingOrder":["ed-i"]}'
+
+ed_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$ED_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$ED_DOC")
+check "ED PUT document (作成)" "200" "$ed_put"
+
+# ナラティブ草稿（モックは reading order を spine に）。
+ed_narrative=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$ED_DOC}")
+case "$ed_narrative" in
+  *'"basedOnReadingOrder":["ed-i"]'*)
+    echo "  PASS: ED generate-narrative basedOnReadingOrder = reading order"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: ED generate-narrative (got $ed_narrative)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# A/B照合（check-narrative、モックは不整合なしと応答）。
+ED_NARR_TEXT="（草稿）市議会は補正予算案を可決し、財源には予備費を充てる。委員長は賛成の立場を表明した。"
+narrative_check=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$ED_DOC,\"narrativeText\":\"$ED_NARR_TEXT\",\"basedOnReadingOrder\":[\"ed-i\"]}")
+case "$narrative_check" in
+  *'"issues":[]'*)
+    echo "  PASS: check-narrative A/B照合 returns no issues (mock)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: check-narrative (got $narrative_check)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 注意事項: 未レビューカードを含む文書は check-narrative で 422（SafeMode）。
+ED_UNREVIEWED='{"version":1,"id":"biz-flow-editorial-unr","title":"未レビュー記事","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"eu1","text":"確認前の事実メモ","x":0,"y":0}],"edges":[],"islands":[{"id":"ed-u","cardIds":["eu1"]}],"readingOrder":["ed-u"]}'
+ed_unreviewed_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/check-narrative" \
+  -H 'Content-Type: application/json' \
+  -d "{\"doc\":$ED_UNREVIEWED,\"narrativeText\":\"$ED_NARR_TEXT\"}")
+check "ED check-narrative unreviewed text blocked (422, SafeMode)" "422" "$ed_unreviewed_code"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]

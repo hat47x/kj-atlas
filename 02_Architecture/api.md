@@ -556,10 +556,12 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 **POST** `/ai/check-narrative`
 
 - Request: `CheckNarrativeRequest`
-  - `narrative: Narrative`
-  - `doc: DocumentV1`
+  - `doc: DocumentV1` — 検証対象のA型図解
+  - `narrativeText: string` — 検証対象のナラティブ本文
+  - `basedOnReadingOrder?: string[]` — ナラティブが従った読取順（A/B照合のA側）
 - Response: `CheckNarrativeResponse`
   - `issues: NarrativeIssue[]` — A/B照合で検出された不整合
+    - `direction: "b_missing_in_a" | "a_missing_in_b"` — B型（ナラティブ）にあるのにA型にない記述 / A型にあるのにB型で落ちた島
 - 生成されたナラティブとA型図解の整合性をチェックする。A型にあってB型で落ちた島、B型にあってA型にない記述を検出する。
 
 **POST** `/ai/refine-card-text`

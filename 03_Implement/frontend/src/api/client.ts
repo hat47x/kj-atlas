@@ -959,6 +959,7 @@ export type GenerateNarrativeResult = {
 export async function generateNarrative(
   doc: DocumentV1,
   narrativeTitle?: string,
+  model?: string,
   requestOptions: TenantScopedRequestOptions = {},
 ): Promise<GenerateNarrativeResult> {
   const response = await fetch(`${API_BASE}/ai/generate-narrative`, {
@@ -967,7 +968,7 @@ export async function generateNarrative(
       "Content-Type": "application/json",
       ...tenantSessionPreconditionHeaders(requestOptions),
     },
-    body: JSON.stringify({ doc, narrativeTitle }),
+    body: JSON.stringify({ doc, narrativeTitle, model: model ?? null }),
   });
 
   if (!response.ok) {
