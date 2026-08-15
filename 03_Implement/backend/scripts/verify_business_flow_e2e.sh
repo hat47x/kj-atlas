@@ -2369,5 +2369,53 @@ gm_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$GM_ID")
 check "GM 読戻し (200)" "200" "$gm_read"
 
 echo ""
+echo "--- シナリオ52: 介護施設のヒヤリハット報告のKJ分析（A/B照合で取りこぼし防止） ---"
+# 業態: 介護・ヘルスケア（介護施設運営）
+# 想定人物: 介護施設の安全管理者（インシデント報告を整理）
+# 業務領域: ヒヤリハット（事故寸前）報告のKJ分類と、重大事故化の防止
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> A/B照合(check-narrative) -> 読戻し
+# 注意事項: ヒヤリハット報告は逐語で保持（報告者の意図を変えない）。ナラティブが
+#          重要な報告を取りこぼしていないかを A/B照合（KJ-AB-CROSS-CHECK-01）で確認。
+HH_ID="biz-flow-care"
+HH_DOC='{"version":1,"id":"'$HH_ID'","title":"ヒヤリハット報告分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"hh1","text":"転倒の報告が今月増えている","x":0,"y":0,"textReviewed":true},{"id":"hh2","text":"夜間帯にベッドからの転落が発生しやすい","x":10,"y":0,"textReviewed":true},{"id":"hh3","text":"軽微な事例は記録されない傾向がある","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"hh-i","cardIds":["hh1","hh2","hh3"]}],"readingOrder":["hh-i"]}'
+
+hh_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$HH_ID" \
+  -H 'Content-Type: application/json' -d "$HH_DOC")
+check "HH PUT document (作成)" "200" "$hh_put"
+
+# ① AI束ね
+hh_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"hh1","text":"転倒の報告が今月増えている","textReviewed":true},{"id":"hh2","text":"夜間帯にベッドからの転落が発生しやすい","textReviewed":true},{"id":"hh3","text":"軽微な事例は記録されない傾向がある","textReviewed":true}]}')
+case "$hh_groups" in *'"groups":'*) echo "  PASS: HH ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: HH ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+hh_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$HH_DOC,\"islandId\":\"hh-i\"}")
+case "$hh_summary" in *'"groundingIds":["hh1","hh2","hh3"]'*) echo "  PASS: HH ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: HH ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（転倒報告の増加 vs 軽微事例の未記録・記録体制の相克）
+hh_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"hh1","text":"転倒の報告が今月増えている","textReviewed":true},"cardB":{"id":"hh3","text":"軽微な事例は記録されない傾向がある","textReviewed":true}}')
+case "$hh_contra" in *'"hasContradiction"'*) echo "  PASS: HH ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: HH ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+hh_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$HH_DOC}")
+case "$hh_narr" in *'"basedOnReadingOrder":["hh-i"]'*) echo "  PASS: HH ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: HH ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ A/B照合（check-narrative・ナラティブが重要報告を取りこぼさない）
+HH_NARR_TEXT="（草稿）転倒報告が増えており、夜間帯のベッド転落が一因とみられる。軽微な事例の記録漏れが課題である。"
+hh_check=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$HH_DOC,\"narrativeText\":\"$HH_NARR_TEXT\",\"basedOnReadingOrder\":[\"hh-i\"]}")
+case "$hh_check" in
+  *'"issues":[]'*) echo "  PASS: HH ⑤A/B照合(取りこぼしなし)"; PASS=$((PASS+1));;
+  *) echo "  FAIL: HH ⑤A/B照合(取りこぼしなし)"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+hh_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HH_ID")
+check "HH 読戻し (200)" "200" "$hh_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
