@@ -956,5 +956,48 @@ mk_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MK_ID")
 check "MK 読戻し (200)" "200" "$mk_read"
 
 echo ""
+echo "--- シナリオ18: リスクレビューアの反対視点提案（AI-OPPOSE-01） ---"
+# 業態: リスク管理・監査
+# 想定人物: リスクレビューア（意思決定の前提を検証）
+# 業務領域: 意思決定の反対視点・根拠不足の提案（AI-OPPOSE-01 M4・proposal-only）
+# 操作内容: 文書作成 -> propose-opposing-viewpoint(反対視点のproposal-only提案)
+#          -> 未レビューdocで422(SafeMode) -> 存在しないtargetCardIdで422
+# 注意事項: 提案は proposal-only（自動適用なし・status=proposed）。contradiction/evidence
+#          構造から導出。doc は永続化必須（未永続化は404）。
+OP_ID="biz-flow-risk"
+OP_DOC='{"version":1,"id":"'$OP_ID'","title":"配送改善の意思決定","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"r1","text":"配送が遅いという声は多い","x":0,"y":0,"textReviewed":true},{"id":"r2","text":"遅延の原因は倉庫処理にある","x":10,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+OP_UNREV='{"version":1,"id":"biz-flow-risk-unrev","title":"未レビュー","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"u1","text":"確認前の前提","x":0,"y":0}],"edges":[],"islands":[]}'
+
+op_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$OP_ID" \
+  -H 'Content-Type: application/json' -d "$OP_DOC")
+check "OP PUT document (作成)" "200" "$op_put"
+
+# 反対視点の提案（proposal-only・自動適用なし）。
+op_prop=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$OP_DOC,\"targetCardId\":\"r1\"}")
+case "$op_prop" in
+  *'"status":"proposed"'*'"opposingText"'*)
+    echo "  PASS: OP 反対視点提案 (proposal-only・opposingText)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: OP propose-opposing-viewpoint (got ${op_prop:0:150})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 未レビュー doc で 422（SafeMode 門禁・doc を永続化してから）。
+curl -s -o /dev/null -X PUT "$BASE_URL/docs/biz-flow-risk-unrev" \
+  -H 'Content-Type: application/json' -d "$OP_UNREV"
+op_unrev=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" \
+  -H 'Content-Type: application/json' -d "{\"doc\":$OP_UNREV,\"targetCardId\":\"u1\"}")
+check "OP 未レビューdoc → 422 (SafeMode)" "422" "$op_unrev"
+
+# 存在しない targetCardId は 422。
+op_badcard=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" \
+  -H 'Content-Type: application/json' -d "{\"doc\":$OP_DOC,\"targetCardId\":\"no-such-card\"}")
+check "OP 存在しない targetCardId → 422" "422" "$op_badcard"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
