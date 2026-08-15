@@ -709,6 +709,25 @@ lib_locked=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/biz-f
   -H 'Content-Type: application/json' -d "$LIB_B")
 check "LIB アーカイブ中 PUT (423 Locked)" "423" "$lib_locked"
 
+# keyset pagination（SEC-DOC-BOUND-05）: limit=1 で1件＋X-Next-Cursor → cursor で残りを取得。
+lib_page1=$(curl -s -D /tmp/kj_lib_page1.hdr "$BASE_URL/docs?limit=1")
+lib_next=$(grep -i '^X-Next-Cursor:' /tmp/kj_lib_page1.hdr | tr -d '\r' | sed 's/^[Xx]-[Nn]ext-[Cc]ursor: *//I')
+case "$lib_page1" in
+  *'"id":"'*'"id":"'*) echo "  FAIL: LIB pagination limit=1 が複数件を返した"; FAIL=$((FAIL+1));;
+  *'"id":"'*) echo "  PASS: LIB limit=1 で1件（レスポンスが上限内）"; PASS=$((PASS+1));;
+  *) echo "  FAIL: LIB pagination 応答（got ${lib_page1:0:100}）"; FAIL=$((FAIL+1));;
+esac
+if [ -n "$lib_next" ]; then
+  lib_page2=$(curl -s "$BASE_URL/docs?limit=1&cursor=$lib_next")
+  case "$lib_page2" in
+    *'"id":"'*) echo "  PASS: LIB X-Next-Cursor で次ページ取得成功"; PASS=$((PASS+1));;
+    *) echo "  FAIL: LIB cursor 次ページ（got ${lib_page2:0:100}）"; FAIL=$((FAIL+1));;
+  esac
+else
+  echo "  FAIL: LIB 複数文書なのに X-Next-Cursor が無い"; FAIL=$((FAIL+1))
+fi
+rm -f /tmp/kj_lib_page1.hdr
+
 echo ""
 echo "--- シナリオ13: 共同編集者の楽観的並行制御（ETag/If-Match 競合検出） ---"
 # 業態: コンサルティングファーム（共同編集）
