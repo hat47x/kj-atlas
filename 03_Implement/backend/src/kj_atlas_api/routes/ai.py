@@ -18,6 +18,7 @@ from kj_atlas_api.llm.provider import (
     build_audit_fields,
     generate_with_fallback,
     get_provider,
+    resolve_model_for_task,
 )
 from kj_atlas_api.models_ai import (
     CheckNarrativeRequest,
@@ -135,6 +136,27 @@ def _resolve_audit_tenant(request: Request, db: Session) -> TenantContext:
         user_id=identity.user_id,
         claim=identity.verified_tenant_claim,
     )
+
+
+def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
+    """AI-MODEL-GOVERNANCE-01 R3: enforce the tenant model allowlist.
+
+    A non-empty allowlist is fail-closed: a requested/resolved model outside it
+    is rejected with 403 model_not_allowed before any LLM call. Empty allowlist
+    = platform-default (all active registered models allowed)."""
+    from kj_atlas_api.model_registry_repository import tenant_allowlist_effective_model_ids
+
+    tenant = _resolve_audit_tenant(request, db)
+    effective = tenant_allowlist_effective_model_ids(db, tenant_id=tenant.tenant_id)
+    if effective is not None and model_id not in effective:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "model_not_allowed",
+                "message": f"Model '{model_id}' is not in the tenant's allowed model set.",
+                "allowedModels": sorted(effective),
+            },
+        )
 
 
 def _reject_unreviewed_text(document, allow_unreviewed_text: bool | None) -> None:
@@ -795,11 +817,13 @@ def suggest_merges(payload: SuggestMergesRequest, request: Request, db: Session 
 )
 def suggest_island_summary(payload: SuggestIslandSummaryRequest, request: Request, db: Session = Depends(get_db)) -> SuggestIslandSummaryResponse:
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_island_summary"))
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="suggest_island_summary",
                 prompt=_build_island_summary_prompt(payload),
+                model=payload.model,
             )
         )
     except ProviderDisabledError as exc:
@@ -1084,11 +1108,13 @@ def record_external_proposal_decision(
 )
 def generate_narrative(payload: GenerateNarrativeRequest, request: Request, db: Session = Depends(get_db)) -> GenerateNarrativeResponse:
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("generate_narrative"))
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="generate_narrative",
                 prompt=_build_generate_narrative_prompt(payload),
+                model=payload.model,
             )
         )
     except ProviderDisabledError as exc:
@@ -1211,11 +1237,13 @@ def _parse_detect_contradiction_response(raw_text: str) -> DetectContradictionRe
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Session = Depends(get_db)) -> RefineCardTextResponse:
+    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("refine_card_text"))
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="refine_card_text",
                 prompt=_build_refine_card_text_prompt(payload),
+                model=payload.model,
             )
         )
     except ProviderDisabledError as exc:
@@ -1233,11 +1261,13 @@ def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Sessi
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_card_groups(payload: SuggestCardGroupsRequest, request: Request, db: Session = Depends(get_db)) -> SuggestCardGroupsResponse:
+    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_card_groups"))
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="suggest_card_groups",
                 prompt=_build_suggest_card_groups_prompt(payload),
+                model=payload.model,
             )
         )
     except ProviderDisabledError as exc:
@@ -1277,6 +1307,7 @@ def detect_contradiction(payload: DetectContradictionRequest, request: Request, 
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_document_title(payload: SuggestDocumentTitleRequest, request: Request, db: Session = Depends(get_db)) -> SuggestDocumentTitleResponse:
+    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_document_title"))
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -1284,6 +1315,7 @@ def suggest_document_title(payload: SuggestDocumentTitleRequest, request: Reques
                 prompt=_build_suggest_document_title_prompt(payload),
                 temperature=0.4,
                 max_tokens=300,
+                model=payload.model,
             )
         )
     except ProviderDisabledError as exc:

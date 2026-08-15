@@ -167,3 +167,41 @@ def test_allowlist_repository_semantics(tmp_path, monkeypatch) -> None:
         set_tenant_model_allowlist(db, tenant_id="t1", model_ids=[], occurred_at=_NOW)
         db.commit()
         assert list_tenant_allowed_model_ids(db, tenant_id="t1") == set()
+
+
+def test_allowlist_enforced_on_ai_route(tmp_path, monkeypatch) -> None:
+    """R3: a disallowed model override is rejected 403 before any LLM call."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "local")
+
+    doc = {
+        "version": 1,
+        "id": "allow-doc",
+        "title": "allowlist test",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "updatedAt": "2026-08-15T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [{"id": "c1", "text": "alpha", "x": 0, "y": 0, "textReviewed": True}],
+        "edges": [],
+        "islands": [{"id": "i1", "cardIds": ["c1"]}],
+        "readingOrder": ["i1"],
+    }
+
+    with _client(tmp_path) as (client, _session_local):
+        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "local", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        for model_id in ("m1", "m2"):
+            client.post("/admin/provision/models", json={"id": model_id, "providerId": "p", "displayName": model_id}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        client.put("/admin/provision/models/tenants/local-default/allowlist", json={"modelIds": ["m1"]}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+
+        # Disallowed override -> 403 model_not_allowed (fail-closed, no LLM call).
+        denied = client.post("/ai/suggest-island-summary", json={"doc": doc, "islandId": "i1", "model": "m2"}, headers={"X-API-Key": _BUSINESS_KEY})
+        assert denied.status_code == 403, denied.text
+        assert denied.json()["detail"]["code"] == "model_not_allowed"
+        assert denied.json()["detail"]["allowedModels"] == ["m1"]
+
+        # Allowed override passes the allowlist gate (then fails only because no
+        # local LLM base URL is configured -> 503 provider_unavailable, NOT 403).
+        allowed = client.post("/ai/suggest-island-summary", json={"doc": doc, "islandId": "i1", "model": "m1"}, headers={"X-API-Key": _BUSINESS_KEY})
+        assert allowed.status_code == 503, allowed.text
+        assert allowed.json()["detail"]["code"] != "model_not_allowed"

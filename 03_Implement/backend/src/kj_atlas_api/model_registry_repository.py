@@ -93,6 +93,17 @@ def list_tenant_allowed_model_ids(db: Session, *, tenant_id: str) -> set[str]:
     )
 
 
+def tenant_allowlist_effective_model_ids(db: Session, *, tenant_id: str) -> set[str] | None:
+    """Return the tenant's effective allowed model ids, or None for the
+    platform-default (allowlist empty = all active registered models allowed).
+
+    R3 semantics: a non-empty allowlist is fail-closed -- only the listed models
+    may be used; anything else is rejected with 403 model_not_allowed.
+    """
+    allowed = list_tenant_allowed_model_ids(db, tenant_id=tenant_id)
+    return allowed if allowed else None
+
+
 def set_tenant_model_allowlist(
     db: Session,
     *,

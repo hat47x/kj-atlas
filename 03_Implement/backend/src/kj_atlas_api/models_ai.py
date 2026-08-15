@@ -66,6 +66,8 @@ class GenerateNarrativeRequest(BaseModel):
     narrativeTitle: str | None = None
     # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
     allowUnreviewedText: bool | None = None
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
 
 
 class GenerateNarrativeResponse(BaseModel):
@@ -83,6 +85,8 @@ class SuggestIslandSummaryRequest(BaseModel):
     islandId: str = Field(min_length=1)
     # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
     allowUnreviewedText: bool | None = None
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
 
 
 class SuggestIslandSummaryResponse(BaseModel):
@@ -260,6 +264,8 @@ class RefineCardTextRequest(BaseModel):
 
     cardText: str = Field(min_length=1, max_length=2000)
     context: str | None = Field(default=None, max_length=2000)
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
 
 
 class RefineCardTextResponse(BaseModel):
@@ -275,6 +281,8 @@ class SuggestCardGroupsRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     cards: list[_CardRef] = Field(min_length=2, max_length=100)
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
 
 
 class _CardRef(BaseModel):
@@ -321,6 +329,8 @@ class SuggestDocumentTitleRequest(BaseModel):
     islandTitles: list[str] = Field(min_length=0, max_length=50)
     cardTexts: list[str] = Field(min_length=0, max_length=50)
     currentTitle: str | None = Field(default=None, max_length=500)
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
 
 
 class _DocumentTitleCandidate(BaseModel):
