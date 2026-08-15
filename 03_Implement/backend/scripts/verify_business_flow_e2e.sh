@@ -1145,5 +1145,40 @@ cb_unsafe=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/context/bu
 check "CB safeMode=false → 422 (SafeMode fail-closed)" "422" "$cb_unsafe"
 
 echo ""
+echo "--- シナリオ22: 共同研究チームのW型探索（ジャーニーの並行編集・CAS競合検出） ---"
+# 業態: 共同研究（アカデミア）
+# 想定人物: 共同研究者A/B（同一の探究ジャーニーを並行編集）
+# 業務領域: 探究ジャーニーの共同編集と楽観的並行制御（lost-update 防止）
+# 操作内容: 文書作成 -> ジャーニー開始(If-None-Match:*) -> Aがラウンド更新(If-Match)
+#          -> Bが古いIf-Matchで更新(**409**) -> 最新ETagでBが再更新(200)
+# 注意事項: ジャーニーは CAS（If-Match/If-None-Match）で楽観的並行制御。stale 更新は 409。
+CR_ID="biz-flow-collab-journey"
+CR_BUNDLE='{"schemaVersion":"1.0.0","journey":{"schemaVersion":"1.0.0","journeyId":"'$CR_ID'","title":"共同探究","originSnapshotIds":["snap-orig"],"roundRecords":[{"roundId":"cr-r1","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","stage":"r2_situation_grasp","iteration":1,"parentRoundIds":[],"status":"in_progress","theme":"共同テーマ","inputSnapshotIds":["snap-orig"],"outputSnapshotId":"snap-orig","handoff":{"carryoverRefs":[],"heldRefs":[],"unresolvedQuestions":[],"fieldworkRequests":[]}}],"resolvedFieldworkQuestionIds":[],"status":"in_progress"},"snapshots":[{"schemaVersion":"1.0.0","snapshotId":"snap-orig","createdAt":"2026-08-16T00:00:00Z","canonicalDigest":"sha256:orig","document":{"version":1,"id":"cr-doc","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"観察","x":0,"y":0}],"edges":[],"islands":[]}}]}'
+CR_BUNDLE_V2='{"schemaVersion":"1.0.0","journey":{"schemaVersion":"1.0.0","journeyId":"'$CR_ID'","title":"共同探究","originSnapshotIds":["snap-orig"],"roundRecords":[{"roundId":"cr-r1","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","stage":"r2_situation_grasp","iteration":1,"parentRoundIds":[],"status":"handed_off","theme":"共同テーマ（Aが更新）","inputSnapshotIds":["snap-orig"],"outputSnapshotId":"snap-orig","handoff":{"carryoverRefs":[],"heldRefs":[],"unresolvedQuestions":[],"fieldworkRequests":[]}}],"resolvedFieldworkQuestionIds":[],"status":"in_progress"},"snapshots":[{"schemaVersion":"1.0.0","snapshotId":"snap-orig","createdAt":"2026-08-16T00:00:00Z","canonicalDigest":"sha256:orig","document":{"version":1,"id":"cr-doc","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"観察","x":0,"y":0}],"edges":[],"islands":[]}}]}'
+
+# ジャーニー開始（If-None-Match:* で作成・201＋ETag）。
+cr_create=$(curl -s -i -X POST "$BASE_URL/inquiry-bundles/$CR_ID" \
+  -H 'Content-Type: application/json' -H 'If-None-Match: *' -d "$CR_BUNDLE")
+cr_code=$(echo "$cr_create" | head -1 | grep -oE '[0-9]{3}')
+cr_etag1=$(echo "$cr_create" | tr -d '\r' | grep -i '^ETag:' | sed 's/ETag: *//I')
+check "CR ジャーニー開始 (201)" "201" "$cr_code"
+
+# A がラウンド更新（正しい If-Match で成功）。
+cr_a=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/inquiry-bundles/$CR_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $cr_etag1" -d "$CR_BUNDLE_V2")
+check "CR A更新 (If-Match 正 → 204)" "204" "$cr_a"
+
+# B が古い ETag で更新 → 409（lost-update 防止）。
+cr_b_stale=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/inquiry-bundles/$CR_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $cr_etag1" -d "$CR_BUNDLE_V2")
+check "CR B更新 (stale If-Match → 409 競合検出)" "409" "$cr_b_stale"
+
+# 最新 ETag 取得 → B が再更新 → 204。
+cr_etag2=$(curl -s -D - -o /dev/null "$BASE_URL/inquiry-bundles/$CR_ID" | tr -d '\r' | grep -i '^ETag:' | sed 's/ETag: *//I')
+cr_b_retry=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/inquiry-bundles/$CR_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $cr_etag2" -d "$CR_BUNDLE_V2")
+check "CR B再更新 (最新If-Match → 204)" "204" "$cr_b_retry"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
