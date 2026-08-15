@@ -1068,5 +1068,39 @@ cw_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CW_ID")
 check "CW 読戻し (200)" "200" "$cw_read"
 
 echo ""
+echo "--- シナリオ20: 品質監査官の批判的検証（多角的な意思決定レビュー） ---"
+# 業態: 品質監査（内部統制）
+# 想定人物: 品質監査官（意思決定を多角的に検証）
+# 業務領域: 矛盾検出・反対視点・ナラティブ整合の批判的レビュー
+# 操作内容: 文書作成 -> 矛盾検出(detect-contradiction) -> 反対視点提案(opposing-viewpoint)
+#          -> ナラティブA/B照合(check-narrative) -> 読戻し
+# 注意事項: 全て proposal-only（自動適用なし）。未レビューは422（SafeMode）。
+QA2_ID="biz-flow-audit"
+QA2_DOC='{"version":1,"id":"'$QA2_ID'","title":"業務プロセス改善の決定","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"a1","text":"改善により工数が減る","x":0,"y":0,"textReviewed":true},{"id":"a2","text":"初期導入コストが高い","x":10,"y":0,"textReviewed":true},{"id":"a3","text":"リスクは許容範囲","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"qa2-i","cardIds":["a1","a2","a3"]}],"readingOrder":["qa2-i"]}'
+
+qa2_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$QA2_ID" \
+  -H 'Content-Type: application/json' -d "$QA2_DOC")
+check "QA2 PUT document (作成)" "200" "$qa2_put"
+
+# ① 矛盾検出（改善の工数削減 vs 導入コスト）
+qa2_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"a1","text":"改善により工数が減る","textReviewed":true},"cardB":{"id":"a2","text":"初期導入コストが高い","textReviewed":true}}')
+case "$qa2_contra" in *'"hasContradiction"'*) echo "  PASS: QA2 ①矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: QA2 ①矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ② 反対視点提案（proposal-only）
+qa2_opp=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$QA2_DOC,\"targetCardId\":\"a1\"}")
+case "$qa2_opp" in *'"status":"proposed"'*'"opposingText"'*) echo "  PASS: QA2 ②反対視点提案 (proposal-only)"; PASS=$((PASS+1));; *) echo "  FAIL: QA2 ②反対視点"; FAIL=$((FAIL+1));; esac
+
+# ③ ナラティブA/B照合（モックは不整合なし）
+qa2_narr=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$QA2_DOC,\"narrativeText\":\"（草稿）業務プロセス改善により工数が減る一方、初期導入コストが高い。\",\"basedOnReadingOrder\":[\"qa2-i\"]}")
+case "$qa2_narr" in *'"issues":[]'*) echo "  PASS: QA2 ③ナラティブA/B照合"; PASS=$((PASS+1));; *) echo "  FAIL: QA2 ③A/B照合 (${qa2_narr:0:100})"; FAIL=$((FAIL+1));; esac
+
+# ④ 読戻し
+qa2_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$QA2_ID")
+check "QA2 読戻し (200)" "200" "$qa2_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
