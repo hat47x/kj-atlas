@@ -1,7 +1,7 @@
 # Issue Draft: AI-TITLE-01 島タイトルの普遍語検査（proposal-only書き直し案）
 
 - Type: Feature request / AI capability
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
