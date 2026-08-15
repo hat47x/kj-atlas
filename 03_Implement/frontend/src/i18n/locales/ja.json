@@ -307,7 +307,6 @@
   "side_panel.reading_path.include_card_texts": "カード本文を含める",
   "side_panel.reading_path.include_relation_summaries": "関係サマリーを含める",
   "side_panel.reading_path.include_unreviewed": "未レビューを含める",
-  "app.toolbar.import_doc_json_legacy": "ドキュメントJSONを取り込む（旧式、共有と再現で確認）",
   "app.toolbar.import_doc_json_legacy_short": "JSON取り込み",
   "app.toolbar.export_doc_json_legacy_short": "JSON書き出し",
   "view_controls.perspective.review_view": "レビュー表示",

@@ -22,14 +22,16 @@
 
 ## 受入条件
 
-- [ ] `app.toolbar.import_doc_json_legacy`の扱い（削除 or 維持）が決定される。
-- [ ] 決定に応じて、カタログとテストの整合が取れている。
+- [x] `app.toolbar.import_doc_json_legacy`の扱い（削除 or 維持）が決定される。→ **案(a) 削除**を採択（2026-08-15・仮承認）。UIは `_short` 版のみを使用しており（`App.tsx` toolbar label）、テストの意図は「表示中の toolbar/export ラベルのローカライズ検査」であって、未使用キーの文字列品質ではないため。
+- [x] 決定に応じて、カタログとテストの整合が取れている。→ テストを `app.toolbar.import_doc_json_legacy_short`（en "Import JSON"・ja "JSON取り込み"）へ差し替え、legacyキーを en/ja カタログから削除。`export_legacy.title`・`trace.export_analytics` は実使用中（`ViewControlsPanel.tsx`・`SidePanel.tsx`）なのでアサーションを維持。test名を「legacy toolbar/export」→「toolbar/export」へ更新。
 
 ## 検証計画
 
 - 実行する確認: 変更する場合、`vitest run src/ui/i18n_equivalence.integration.test.ts`および`vitest run src/i18n`。
 - 期待結果: 決定した方針とカタログ・テストの内容が一致し、`key_consistency.test.ts`のen/ja key parityが崩れない。
+- 実績（2026-08-15）: `vitest run src/i18n src/ui/i18n_equivalence.integration.test.ts` 71 tests pass・frontend 全 1451 tests pass・typecheck pass。
 
 ## 補足
 
 - 発見経緯: 第16ラウンドの孤立i18nキー監査で発見。同時に見つかった10件の完全孤立キー（productionにもtestにも参照なし）は本ラウンドで直接カタログから削除済み。このキーだけがtestに直結しているため判断保留とした。
+- 本件は2026-08-15の iteration 33 で解決。

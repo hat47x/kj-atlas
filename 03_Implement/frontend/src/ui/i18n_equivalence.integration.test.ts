@@ -280,19 +280,22 @@ describe("i18n functional equivalence", () => {
     expect(enClaimTypeUnknown).toBe("Unknown");
   });
 
-  it("localizes legacy toolbar/export labels and trace analytics export action", () => {
+  it("localizes toolbar/export labels and trace analytics export action", () => {
+    // FB-RM-I18N-06: the toolbar import action uses the _short label (the long
+    // "legacy" key was removed as production-unused); export_legacy and trace
+    // analytics remain legacy-era labels that are still shown in the UI.
     setActiveLocale("ja");
-    const jaImportLegacy = t("app.toolbar.import_doc_json_legacy");
+    const jaImportShort = t("app.toolbar.import_doc_json_legacy_short");
     const jaExportLegacy = t("view_controls.export_legacy.title");
     const jaTraceAnalytics = t("side_panel.trace.export_analytics");
 
     setActiveLocale("en");
-    const enImportLegacy = t("app.toolbar.import_doc_json_legacy");
+    const enImportShort = t("app.toolbar.import_doc_json_legacy_short");
     const enExportLegacy = t("view_controls.export_legacy.title");
     const enTraceAnalytics = t("side_panel.trace.export_analytics");
 
-    expect(jaImportLegacy).toContain("旧式");
-    expect(enImportLegacy).toContain("Import doc JSON");
+    expect(jaImportShort).toContain("取り込み");
+    expect(enImportShort).toBe("Import JSON");
     expect(jaExportLegacy).toBe("書き出し（旧式）");
     expect(enExportLegacy).toBe("Export (legacy)");
     expect(jaTraceAnalytics).toContain("書き出す");

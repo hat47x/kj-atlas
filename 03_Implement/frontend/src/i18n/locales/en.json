@@ -307,7 +307,6 @@
   "side_panel.reading_path.include_card_texts": "Include card texts",
   "side_panel.reading_path.include_relation_summaries": "Include relation summaries",
   "side_panel.reading_path.include_unreviewed": "Include unreviewed",
-  "app.toolbar.import_doc_json_legacy": "Import doc JSON (legacy, confirm in Share)",
   "app.toolbar.import_doc_json_legacy_short": "Import JSON",
   "app.toolbar.export_doc_json_legacy_short": "Export JSON",
   "view_controls.perspective.review_view": "Review view",
