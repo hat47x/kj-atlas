@@ -212,7 +212,7 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 | 操作内容 | 文書作成 → **外部タスク登録(/ai/external-tasks/register)** → **外部提案登録(/ai/external-proposals/register)** → **人間が決定(/ai/external-proposals/audit)** → 未登録提案への決定404 |
 | 注意事項 | 提案は未レビューで着地（自動適用なし）。`baseDocSignature`（`{docId}:{updatedAt}`）不一致は 409。登録していない proposal への決定は 404。hash は 64hex（DATA-CONTRACT-02） |
 
-シナリオ16は **外部エージェント（トリガー型AI）の成果物を提案として受領し、人間がレビュー決定する非Web連携**（Org-D・EXT-AGENT-02 の proposal-only 原則）を固定。`verify_api_*.sh` に無い**外部エージェントの受領経路**を業務フローとして検証する。**76/76 pass**（シナリオ1〜16・16業態）。
+シナリオ16は **外部エージェント（トリガー型AI）の成果物を提案として受領し、人間がレビュー決定する非Web連携**（Org-D・EXT-AGENT-02 の proposal-only 原則）を固定。`verify_api_*.sh` に無い**外部エージェントの受領経路**を業務フローとして検証する。**stale な `baseDocSignature` が 409 で拒否される**ことも固定（依頼時点の文書シグネチャ検証）。**77/77 pass**（シナリオ1〜16・16業態）。
 
 ## E2E の固定方法
 
@@ -262,6 +262,6 @@ bash scripts/verify_business_flow_e2e.sh 8000   # 7 チェック（作成/読戻
 - [x] 別業態のシナリオ追加（iteration 42: 新規事業企画ワークショップ・suggest-card-groups を追加）
 - [x] シナリオ3〜6（iteration 44〜47: 品質管理・detect-contradiction / 管理者CLI/API・文書ライフサイクル/監査/キー分離 / 報道編集・check-narrative / 調査研究員・W型探究 CAS）を追加
 - [x] シナリオ7〜9（iteration 48〜50: 学術研究・summarize-island-relation / ナレッジベース管理者・suggest-document-title / 人事マネージャー・CE4 proposal 連鎖）を追加
-- [x] シナリオ10〜15（iteration 52〜60: フィールドワーカー・W型×AI / 会議ファシリテーター・layout/merge / ライブラリアン・コレクション / 共同編集者・並行制御 / コンテンツQA・上限検証 / 編集者・統合決定ガバナンス）・シナリオ16（iteration 62: 外部エージェント連携・Org-D）を追加 — **シナリオ1〜16 で 76/76 pass・AI タスク全10種＋CE4＋W型×AI＋コレクション＋並行制御＋内容上限＋統合ガバナンス＋外部Agent連携をカバー**
+- [x] シナリオ10〜15（iteration 52〜60: フィールドワーカー・W型×AI / 会議ファシリテーター・layout/merge / ライブラリアン・コレクション / 共同編集者・並行制御 / コンテンツQA・上限検証 / 編集者・統合決定ガバナンス）・シナリオ16（iteration 62〜63: 外部エージェント連携・Org-D＋stale baseDocSignature 409）を追加 — **シナリオ1〜16 で 77/77 pass・AI タスク全10種＋CE4＋W型×AI＋コレクション＋並行制御＋内容上限＋統合ガバナンス＋外部Agent連携をカバー**
 - [ ] UI 層 E2E（フロントエンド AI 操作・CE4 proposal 連鎖）
 - [ ] さらに別業態のシナリオ追加（イテレーション毎に拡大）

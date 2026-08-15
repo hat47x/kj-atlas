@@ -904,6 +904,12 @@ ext_unreg=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/externa
   -d "{\"docId\":\"$EXT_ID\",\"proposalId\":\"ext-prop-none\",\"sourceBundleHash\":\"$EXT_H64\",\"idempotencyKey\":\"ext-k2\",\"decision\":\"reject\",\"provenanceLevel\":\"user_presented_unsigned\"}")
 check "EXT 未登録提案への決定 (404)" "404" "$ext_unreg"
 
+# baseDocSignature 不一致は409（依頼時点の文書シグネチャを検証・stale な依頼を拒否）。
+ext_stale_sig=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/external-tasks/register" \
+  -H 'Content-Type: application/json' -H "$EXT_H" -H "$EXT_H2" \
+  -d "{\"docId\":\"$EXT_ID\",\"taskId\":\"ext-task-stale\",\"baseDocSignature\":\"$EXT_ID:1999-01-01T00:00:00Z\",\"sourceBundleHash\":\"$EXT_H64\",\"queryCanonicalHash\":\"$EXT_H64\",\"taskKind\":\"narrative_draft\",\"provenanceLevel\":\"user_presented_unsigned\"}")
+check "EXT stale baseDocSignature (409)" "409" "$ext_stale_sig"
+
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
