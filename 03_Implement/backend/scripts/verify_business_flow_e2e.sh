@@ -2182,6 +2182,57 @@ mg_block_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/gen
 check "MG ⑤非許容モデル -> 403 (model_not_allowed)" "403" "$mg_block_code"
 case "$mg_block" in *'"model_not_allowed"'*) echo "  PASS: MG ⑤b code=model_not_allowed"; PASS=$((PASS+1));; *) echo "  FAIL: MG ⑤b code=model_not_allowed"; FAIL=$((FAIL+1));; esac
 
+# ⑥ 許容リストをプラットフォーム既定（空=active登録済み全許可）へ復元。
+#    scenario 47 の制限が後続シナリオのモデル検査（card-groups/refine 等）を
+#    汚染しないよう、状態を後片付けする（admin での空リスト設定=既定復帰）。
+mg_restore=$(curl -s -o /dev/null -w '%{http_code}' -X PUT \
+  "$BASE_URL/admin/provision/models/tenants/local-default/allowlist" \
+  -H 'Content-Type: application/json' -d '{"modelIds":[]}')
+check "MG ⑥許容リスト復元(空=既定)" "200" "$mg_restore"
+
+echo ""
+echo "--- シナリオ48: 文化・芸術・美術館の展示企画（来場者声の整理と統合） ---"
+# 業態: 文化・芸術（美術館・展示企画）
+# 想定人物: キュレーター（展示企画者）
+# 業務領域: 来場者フィードバックのKJ整理と、展示コンセプトの統合
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 文面整え(refine-card-text)
+#          -> 島間関係要約(summarize-island-relation) -> 統合提案(suggest-merges)
+#          -> 読戻し
+# 注意事項: refine は来場者の声を逐語で保持（意図を変えない・ADR-0064）。
+#          島間関係は示唆（確証でなく・proposal-only）。統合提案は提案（人間が採否）。
+MU_ID="biz-flow-museum"
+MU_DOC='{"version":1,"id":"'$MU_ID'","title":"展示企画フィードバック","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"cu1","text":"静寂な空間が好評だった","x":0,"y":0,"textReviewed":true},{"id":"cu2","text":"音声ガイドの案内が多すぎるとの声","x":10,"y":0,"textReviewed":true},{"id":"cu3","text":"順路が分かりにくい","x":20,"y":0,"textReviewed":true},{"id":"cu4","text":"企画展のテーマは共感を呼んだ","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"m-1","cardIds":["cu1","cu2"]},{"id":"m-2","cardIds":["cu3","cu4"]}],"readingOrder":["m-1","m-2"]}'
+
+mu_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MU_ID" \
+  -H 'Content-Type: application/json' -d "$MU_DOC")
+check "MU PUT document (作成)" "200" "$mu_put"
+
+# ① AI束ね
+mu_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"cu1","text":"静寂な空間が好評だった","textReviewed":true},{"id":"cu2","text":"音声ガイドの案内が多すぎるとの声","textReviewed":true},{"id":"cu3","text":"順路が分かりにくい","textReviewed":true},{"id":"cu4","text":"企画展のテーマは共感を呼んだ","textReviewed":true}]}')
+case "$mu_groups" in *'"groups":'*) echo "  PASS: MU ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: MU ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 文面整え（refine-card-text・逐語性を保持・ADR-0064）
+mu_refined=$(curl -s -X POST "$BASE_URL/ai/refine-card-text" -H 'Content-Type: application/json' \
+  -d '{"cardText":"音声ガイドの案内が多すぎるとの声","context":"展示鑑賞環境","textReviewed":true}')
+case "$mu_refined" in *'"refinedText"'*) echo "  PASS: MU ②文面整え(refine)"; PASS=$((PASS+1));; *) echo "  FAIL: MU ②文面整え(refine)"; FAIL=$((FAIL+1));; esac
+
+# ③ 島間関係要約（summarize-island-relation・モックは下書き示唆＋warnings空）
+mu_relation=$(curl -s -X POST "$BASE_URL/ai/summarize-island-relation" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MU_DOC,\"islandAId\":\"m-1\",\"islandBId\":\"m-2\",\"relationType\":\"causal\",\"derived\":false,\"groundingCardIds\":[\"cu2\"],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"cu2\",\"text\":\"音声ガイドの案内が多すぎるとの声\"}]}")
+case "$mu_relation" in
+  *'"text"'*'"warnings":[]'*) echo "  PASS: MU ③島間関係要約"; PASS=$((PASS+1));;
+  *) echo "  FAIL: MU ③島間関係要約"; FAIL=$((FAIL+1));; esac
+
+# ④ 統合提案（suggest-merges・モックは空提案・人間が採否）
+mu_merges=$(curl -s -X POST "$BASE_URL/ai/suggest-merges" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MU_DOC}")
+case "$mu_merges" in *'"suggestions"'*) echo "  PASS: MU ④統合提案(merges)"; PASS=$((PASS+1));; *) echo "  FAIL: MU ④統合提案(merges)"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+mu_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MU_ID")
+check "MU 読戻し (200)" "200" "$mu_read"
+
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
