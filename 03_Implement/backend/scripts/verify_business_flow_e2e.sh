@@ -1837,5 +1837,44 @@ sp_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SP_ID")
 check "SP 読戻し (200)" "200" "$sp_read"
 
 echo ""
+echo "--- シナリオ40: 研究開発・製薬・治験データの整理 ---"
+# 業態: 研究開発・製薬
+# 想定人物: 治験データアナリスト（治験結果を整理）
+# 業務領域: 治験データのKJ整理と安全性シグナルの検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> タイトル提案(suggest-document-title)
+# 注意事項: 治験データは逐語（refineで変えない）。矛盾する安全性シグナルは表面化する。
+RD_ID="biz-flow-pharma"
+RD_DOC='{"version":1,"id":"'$RD_ID'","title":"治験データの整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"p1","text":"有効性は高い","x":0,"y":0,"textReviewed":true},{"id":"p2","text":"有害事象が報告されている","x":10,"y":0,"textReviewed":true},{"id":"p3","text":"服薬コンプライアンスは良好","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"rd-i","cardIds":["p1","p2","p3"]}],"readingOrder":["rd-i"]}'
+
+rd_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$RD_ID" \
+  -H 'Content-Type: application/json' -d "$RD_DOC")
+check "RD PUT document (作成)" "200" "$rd_put"
+
+# ① AI束ね
+rd_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"p1","text":"有効性は高い","textReviewed":true},{"id":"p2","text":"有害事象が報告されている","textReviewed":true},{"id":"p3","text":"服薬コンプライアンスは良好","textReviewed":true}]}')
+case "$rd_groups" in *'"groups":'*) echo "  PASS: RD ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: RD ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+rd_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$RD_DOC,\"islandId\":\"rd-i\"}")
+case "$rd_summary" in *'"groundingIds":["p1","p2","p3"]'*) echo "  PASS: RD ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: RD ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（有効性 vs 有害事象 — 安全性シグナル）
+rd_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"p1","text":"有効性は高い","textReviewed":true},"cardB":{"id":"p2","text":"有害事象が報告されている","textReviewed":true}}')
+case "$rd_contra" in *'"hasContradiction"'*) echo "  PASS: RD ③安全性シグナルの矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: RD ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ タイトル提案
+rd_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["治験"],"cardTexts":["有効性は高い","有害事象が報告されている","服薬コンプライアンスは良好"],"textReviewed":true}')
+case "$rd_title" in *'"candidates"'*) echo "  PASS: RD ④タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: RD ④タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+rd_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$RD_ID")
+check "RD 読戻し (200)" "200" "$rd_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
