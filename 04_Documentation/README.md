@@ -16,7 +16,7 @@
 | 区分 | 文書 | 公開配布での扱い |
 | --- | --- | --- |
 | 一般利用者向け公開入口 | `public_index.md` | Gist や外部共有の先頭に使う |
-| 一般利用者/運用者向け公開文書 | `getting_started.md`, `installation.md`, `configuration.md`, `data_handling.md`, `operations.md`, `security.md`, `security_operational_guidelines.md`, `acceptance_check.md`, `ui_catalog.md`, `diagnostics.md`, `canonicalization.md`, `ce2_low_risk_ai_assist.md`, `local_llm_ops_guide.md`, `narratives.md`, `external_agent_workflow.md` | 公開候補。実装済み事実、安全境界、手動確認に限定する |
+| 一般利用者/運用者向け公開文書 | `getting_started.md`, `installation.md`, `configuration.md`, `data_handling.md`, `operations.md`, `security.md`, `security_operational_guidelines.md`, `acceptance_check.md`, `ui_catalog.md`, `diagnostics.md`, `canonicalization.md`, `ce2_low_risk_ai_assist.md`, `local_llm_ops_guide.md`, `narratives.md`, `external_agent_workflow.md`, `observability.md` | 公開候補。実装済み事実、安全境界、手動確認に限定する |
 | 04文書保守者向け | `README.md`, `release.md` | 公開準備やリリース確認の管理用。Gist本文には原則含めない |
 | 開発者/AIエージェント向け | `codex_skill_operations.md`（移転案内のみ）, `e2e_testing.md`（移転案内のみ）, `e2e_verification_log_2026-03-03.md`（移転案内のみ） | 公開利用ガイドには含めず、開発・検証・AI運用の文脈で参照する。正本は `00_Prompt/codex_skill_operations.md`、`01_Plans/issues/e2e_verification_logs/e2e_verification_log_2026-03-03.md`、`03_Implement/frontend/docs/e2e_testing.md`（2026-08-07移転） |
 | 内部計画/判断ログ | `../01_Plans/issues/*.md`, `../01_Plans/adr/*.md`, `../00_Prompt/*.md` | 公開本文へ混入しない。必要な場合も利用者向けに確定済み事実へ要約してから別途反映する |
@@ -50,6 +50,7 @@
 | 日常運用 | [operations.md](operations.md) |
 | セキュリティ | [security.md](security.md), [security_operational_guidelines.md](security_operational_guidelines.md) |
 | 変更後の確認 | [acceptance_check.md](acceptance_check.md), [diagnostics.md](diagnostics.md) |
+| 観測と相関 | [observability.md](observability.md) |
 | 画面UIの一覧 | [ui_catalog.md](ui_catalog.md) |
 | AI 提案・文章化 | [ce2_low_risk_ai_assist.md](ce2_low_risk_ai_assist.md), [local_llm_ops_guide.md](local_llm_ops_guide.md), [narratives.md](narratives.md) |
 | 比較・再現性 | [canonicalization.md](canonicalization.md) |

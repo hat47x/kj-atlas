@@ -1,11 +1,11 @@
 # Issue: OPS-OBSERV-01 全ての運用手順が「ログを見る」で終わるが、そのログに情報が無い
 
 - Type: Operations
-- Status: Done
+- Status: In Progress
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/main.py`, `03_Implement/backend/src/kj_atlas_api/logging_config.py`（新規）, `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/frontend/Dockerfile`, `03_Implement/deploy/docker-compose.yml`, `04_Documentation/operations.md`, `04_Documentation/diagnostics.md`, `03_Implement/backend/README.md`
+- Scope: `03_Implement/backend/src/kj_atlas_api/main.py`, `03_Implement/backend/src/kj_atlas_api/observability.py`（新規）, `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/frontend/Dockerfile`, `03_Implement/deploy/docker-compose.yml`, `04_Documentation/operations.md`, `04_Documentation/diagnostics.md`, `03_Implement/backend/README.md`
 - Related ADR/Spec: `01_Plans/adr/ADR-0053-support-diagnostics-bundle.md`, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`, `04_Documentation/security.md`（ログのPII方針）
 - Expected verification level: `integration`
 
@@ -86,12 +86,18 @@ Prometheus / OpenTelemetry / statsd / `/metrics` のいずれも存在しない�
 
 ## 受入条件
 
-- [x] AC-1: JSON formatter と `KJ_ATLAS_LOG_LEVEL` が出荷され、既存の `extra` ペイロードが出力に現れることをテストで固定する。— `logging_config.py` / `tests/test_observability.py::test_json_formatter_renders_extra_payload_keys`。
-- [x] AC-2: 全リクエストに `X-Request-Id` が付与され、ログレコードとエラーボディの双方から同じ値が取れることをテストで固定する。— middleware 追加。`test_every_response_echoes_x_request_id` / `test_error_body_carries_the_same_request_id_as_the_header` / `test_json_formatter_injects_the_inflight_request_id`。
-- [x] AC-3: `/readyz` がDB到達不能時とスキーマ齟齬時に非200を返すことをテストで固定する。`/healthz` の意味を `operations.md` / `diagnostics.md` / `SUPPORT.md` で liveness のみに訂正する。— `test_readyz_503_when_database_unavailable` / `test_readyz_503_when_schema_behind_head`。3文書へ注記を追加。
-- [x] AC-4: 標準Compose構成で診断バンドルの `app.revision` が実際のリビジョンを示す。— frontend `Dockerfile` ARG/ENV・compose build-arg + api environment へ `KJ_ATLAS_APP_REVISION` を配線（既定 `unknown`）。
-- [x] AC-5: `03_Implement/backend/README.md:146-153` の構造化ログの記述が事実と一致する。— JSON形式・`requestId`・`KJ_ATLAS_LOG_LEVEL` を追記し整合。
-- [x] AC-6: `04_Documentation/` に観測ガイドが追加され、`operations.md` の「ログを見る」節から参照されている。— `04_Documentation/observability.md` を新設・参照。
+- [x] AC-1: JSON formatter と `KJ_ATLAS_LOG_LEVEL` を出荷し、既存の `extra` ペイロードが出力に現れることを固定した（`test_observability.py::test_extra_fields_are_rendered`）。`KJ_ATLAS_LOG_JSON=false` の人間可読書式でも `requestId` を保持することも固定。秘密名のフィールドは `[redacted]` へ落とす。
+- [x] AC-2: 全リクエストに `X-Request-Id` を付与し、ログレコードとエラーボディの双方から同じ値が取れることを固定した。inbound `x-trace-id` は安全な形式のみ採用し、不正値は**リクエストを失敗させず**サーバ発行へ倒す。
+- [x] AC-3: `/readyz` を追加し、DB到達不能時に 503 かつ接続文字列を反射しないことを固定した。`/healthz` の意味を `operations.md` / `diagnostics.md` / `SUPPORT.md` で liveness のみに訂正し、docstring にも明記した。
+- [x] AC-4: `KJ_ATLAS_APP_REVISION` を frontend build ARG と compose build arg へ配線した（`vite.config.ts` の `envPrefix` は既に通っていたため配線のみ）。併せて `GET /version` を追加した。
+- [x] AC-5: `03_Implement/backend/README.md` の構造化ログ記述を事実へ合わせた（`extra` 経由であること、以前は出力されていなかったこと、レベル変更方法）。
+- [x] AC-6: `04_Documentation/observability.md` を追加し、`operations.md` の「ログを見る」節と `04_Documentation/README.md` の公開一覧から参照した。**まだ観測できないこと**（メトリクス皆無、監査イベントが既定で捨てられること、ローカル保存と照会APIの不在、ログのローテーション未設定）も明記した。※管理面操作の監査は `SEC-ADMIN-PLANE-03`（マージ時点で実装済み・`GET /admin/provision/audit`）に委譲しているため観測ガイドからは「未監査」を削除した。
+
+## 残作業（本issueを In Progress のまま残す理由）
+
+- **メトリクス基盤（`/metrics`）は未着手。** 本issueの「実施しないこと」に挙げたとおり、依存の追加と `ADR-0039`（個人OSSの運用規模）との整合が保守者判断を要する。**「入れない」も正当な判断であり、その場合は規模拡大を非目標として明示する必要がある**（`direction-review-2026-08-13.md` §5）。これが決まるまで「障害の検知は利用者からの申告のみ」という状態は変わらない。
+- **主体の擬似識別子は未導入。** 現行方針（ログに主体識別子を出さない）は維持したが、代替の擬似識別子を置いていないため「エラーの主体が一切分からない」状態は残る。監査イベントが既に `actorRefHash` を使っているので同じハッシュをログにも使うのが一貫するが、方針の完成として保守者判断を要する。
+- **監査イベントのローカル永続化との接続は未着手**（`DATA-MAINT-05` / `DATA-MAINT-06`）。観測ガイドの「まだ観測できないこと」節は、これが決まったら更新する。
 
 ## 検証
 

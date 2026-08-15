@@ -1,5 +1,4 @@
 import logging
-import re
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -12,13 +11,13 @@ from alembic.script import ScriptDirectory
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 from kj_atlas_api.access_control import build_access_control_adapter
 from kj_atlas_api.admin_audit_repository import record_admin_audit_event
 from kj_atlas_api.model_registry_seed import seed_registry_from_env
 from kj_atlas_api.audit import build_audit_dispatcher
 from kj_atlas_api.db import SessionLocal, init_db
-from sqlalchemy import text
 from kj_atlas_api.database_content_store import DocumentRevisionDivergence
 from kj_atlas_api.database_support import database_support_for_url
 from kj_atlas_api.document_policy_binding import build_document_policy_binding_resolver
@@ -38,7 +37,14 @@ from kj_atlas_api.routes.document_access_admin import (
 from kj_atlas_api.routes.inquiry_bundles import router as inquiry_bundles_router
 from kj_atlas_api.routes.model_registry import router as model_registry_router
 from kj_atlas_api.routes.session import router as session_router
-from kj_atlas_api.logging_config import configure_logging, request_id_var
+from kj_atlas_api.observability import (
+    INBOUND_TRACE_HEADER,
+    REQUEST_ID_HEADER,
+    configure_logging,
+    new_request_id,
+    request_id_var,
+    resolve_inbound_request_id,
+)
 from kj_atlas_api.request_body_safety import JsonRequestBodySafetyMiddleware
 from kj_atlas_api.settings import settings
 from kj_atlas_api.oauth_broker_client import ExternalOauthBrokerConfig
@@ -54,12 +60,21 @@ from kj_atlas_api.trusted_saas_runtime import (
 )
 
 
-def _assert_linear_migration_history() -> None:
+configure_logging(level=settings.log_level, json_format=settings.log_json)
+
+logger = logging.getLogger(__name__)
+
+
+def _migration_script_heads() -> tuple[str, ...]:
     backend_dir = Path(__file__).resolve().parents[2]
     cfg = Config(str(backend_dir / "alembic.ini"))
     cfg.set_main_option("script_location", str(backend_dir / "alembic"))
     script = ScriptDirectory.from_config(cfg)
-    heads = script.get_heads()
+    return tuple(script.get_heads())
+
+
+def _assert_linear_migration_history() -> None:
+    heads = _migration_script_heads()
     if len(heads) != 1:
         raise RuntimeError(f"Migration conflict detected; expected single head but got {heads}")
 
@@ -173,11 +188,6 @@ app = FastAPI(
     openapi_url="/openapi.json" if _docs_enabled else None,
 )
 
-# OPS-OBSERV-01 AC-1: install the JSON formatter before any logger emits, so the
-# `extra={...}` payloads (audit dispatch, LLM metadata) are rendered instead of
-# silently dropped. Level comes from KJ_ATLAS_LOG_LEVEL.
-configure_logging(settings.log_level)
-
 _saas_auth_state_store = DatabaseSaasAuthStateStore(SessionLocal)
 _saas_auth_session_store = DatabaseSaasAuthSessionStore(SessionLocal)
 
@@ -228,6 +238,40 @@ app.add_middleware(JsonRequestBodySafetyMiddleware)
 
 
 @app.middleware("http")
+async def assign_request_id(request: Request, call_next):
+    """OPS-OBSERV-01: mint a correlation id for every request.
+
+    Registered last so it runs first (Starlette applies middleware in reverse
+    registration order), which means rejections from the body-safety and API-key
+    middlewares are correlated too -- those are exactly the failures an operator
+    gets asked about.
+
+    An inbound `x-trace-id` is honoured when it is a safe opaque token so that a
+    caller-side id survives into our logs; otherwise a server id is minted. The
+    id is echoed in the response header and, for the error handlers below, in the
+    body: without it the user has nothing to quote and the operator has nothing
+    to grep.
+    """
+    inbound = resolve_inbound_request_id(request.headers.get(INBOUND_TRACE_HEADER))
+    request_id = inbound or new_request_id()
+    token = request_id_var.set(request_id)
+    request.state.request_id = request_id
+    try:
+        response = await call_next(request)
+    finally:
+        request_id_var.reset(token)
+    response.headers[REQUEST_ID_HEADER] = request_id
+    return response
+
+
+#: Unauthenticated operational endpoints. A probe must work before credentials
+#: are configured, and none of these expose tenant data: /healthz is a constant,
+#: /readyz reports dependency state plus Alembic revision ids, /version reports
+#: the build revision and the bootstrap-mode-equivalent profile name.
+_UNAUTHENTICATED_PATHS = frozenset({"/healthz", "/readyz", "/version"})
+
+
+@app.middleware("http")
 async def require_api_key(request: Request, call_next):
     # SEC-ADMIN-PLANE-02 (D-a): the /admin/* control plane is authorized solely
     # by require_control_plane_authorization (X-Admin-Api-Key or a provision
@@ -236,22 +280,16 @@ async def require_api_key(request: Request, call_next):
     # otherwise the business-key middleware re-couples the control plane to the
     # business plane, the exact separation ADR-0072 established. Every
     # /admin/provision/* route must carry the control-plane dependency.
-    # /healthz and /readyz are liveness/readiness probes used by orchestration
-    # (compose healthchecks), so they are unauthenticated like /admin/* is
-    # control-plane-only. /version remains gated by the business key.
-    if request.url.path in {"/healthz", "/readyz"} or request.url.path.startswith("/admin/"):
+    # /healthz /readyz /version are liveness/readiness/version probes used by
+    # orchestration, so they are unauthenticated (OPS-OBSERV-01).
+    if request.url.path in _UNAUTHENTICATED_PATHS or request.url.path.startswith("/admin/"):
         return await call_next(request)
 
     if settings.api_key:
         provided_key = request.headers.get("x-api-key")
         normalized_key = provided_key.strip() if provided_key is not None else None
         if not normalized_key or not compare_digest(normalized_key, settings.api_key):
-            # OPS-OBSERV-01 AC-2: the 401 body carries the same request ID that
-            # appears in the log record and the X-Request-Id header.
-            return JSONResponse(
-                status_code=401,
-                content={"detail": "Unauthorized", "requestId": request_id_var.get()},
-            )
+            return JSONResponse(status_code=401, content=_error_body("Unauthorized"))
 
     return await call_next(request)
 
@@ -313,37 +351,19 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
-#: OPS-OBSERV-01 AC-2: a safe, bounded opaque request-ID form. Inbound
-#: x-trace-id is respected only when it matches this — anything else is replaced
-#: with a fresh ID rather than echoed (header-injection safe).
-_REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
+def _error_body(detail: object) -> dict[str, object]:
+    """Attach the correlation id to an error body.
 
-
-@app.middleware("http")
-async def add_request_id(request: Request, call_next):
-    # Registered last so it is the outermost middleware: the correlation ID is
-    # minted before the api-key check and the route run, every log record during
-    # the request carries it (via the contextvar), and every response echoes it
-    # so the client can tie a reported failure to a server-side log line.
-    inbound = request.headers.get("x-trace-id")
-    request_id = inbound if inbound and _REQUEST_ID_PATTERN.fullmatch(inbound) else uuid4().hex
-    token = request_id_var.set(request_id)
-    try:
-        response = await call_next(request)
-    finally:
-        request_id_var.reset(token)
-    response.headers["X-Request-Id"] = request_id
-    return response
-
-
-def _with_request_id(content: dict[str, object]) -> dict[str, object]:
-    """OPS-OBSERV-01 AC-2: tag an error body with the in-flight request ID so the
-    client can join a reported failure to the server-side log line."""
-    merged = dict(content)
+    OPS-OBSERV-01: the user's screen showed only a status and a message, so a
+    report could not be joined to a log line. The id is server-minted and opaque,
+    carries no user content, and is already in the X-Request-Id response header --
+    putting it in the body is what makes it quotable.
+    """
+    body: dict[str, object] = {"detail": detail}
     request_id = request_id_var.get()
     if request_id:
-        merged["requestId"] = request_id
-    return merged
+        body["requestId"] = request_id
+    return body
 
 
 @app.exception_handler(RequestValidationError)
@@ -356,15 +376,12 @@ def handle_validation_error(_, exc: RequestValidationError) -> JSONResponse:
         {key: error[key] for key in ("type", "loc", "msg") if key in error}
         for error in exc.errors()
     ]
-    return JSONResponse(status_code=422, content=_with_request_id({"detail": errors}))
+    return JSONResponse(status_code=422, content=_error_body(errors))
 
 
 @app.exception_handler(RevisionHeadConflict)
 def handle_revision_head_conflict(_, _exc: RevisionHeadConflict) -> JSONResponse:
-    return JSONResponse(
-        status_code=409,
-        content=_with_request_id({"detail": "Document changed concurrently"}),
-    )
+    return JSONResponse(status_code=409, content=_error_body("Document changed concurrently"))
 
 
 @app.exception_handler(DocumentRevisionDivergence)
@@ -373,9 +390,7 @@ def handle_revision_head_conflict(_, _exc: RevisionHeadConflict) -> JSONResponse
 def handle_revision_storage_failure(_, _exc: Exception) -> JSONResponse:
     return JSONResponse(
         status_code=503,
-        content=_with_request_id(
-            {"detail": "Document revision storage failed integrity verification"}
-        ),
+        content=_error_body("Document revision storage failed integrity verification"),
     )
 
 
@@ -389,73 +404,90 @@ def handle_unhandled(request: Request, exc: Exception) -> JSONResponse:
     logging.getLogger(__name__).exception("unhandled error", exc_info=exc)
     return JSONResponse(
         status_code=500,
-        content=_with_request_id({"detail": "Internal server error"}),
+        content=_error_body("Internal server error"),
     )
-
-
-def _migration_heads() -> list[str]:
-    backend_dir = Path(__file__).resolve().parents[2]
-    cfg = Config(str(backend_dir / "alembic.ini"))
-    cfg.set_main_option("script_location", str(backend_dir / "alembic"))
-    return sorted(ScriptDirectory.from_config(cfg).get_heads())
 
 
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
-    # OPS-OBSERV-01 AC-3: liveness ONLY — the process is up. It deliberately does
-    # not probe the DB; use /readyz for dependency readiness.
+    """Liveness only: the process is up and serving.
+
+    OPS-OBSERV-01: this deliberately checks nothing, and that is now documented
+    rather than implied. It previously returned a constant while every runbook
+    presented it as *the* API health check, so a backend that had lost its
+    database still answered `{"status": "ok"}` -- and `docker-compose.yml` gated
+    the web container on it. Use `/readyz` for dependency state.
+    """
     return {"status": "ok"}
 
 
 @app.get("/readyz")
 def readyz() -> JSONResponse:
-    # OPS-OBSERV-01 AC-3: readiness — DB reachable AND the schema is at the
-    # migration head (so a stale-DB backend does not answer "ok" and then fail
-    # on the first query).
-    try:
-        with SessionLocal() as db:
-            db.execute(text("SELECT 1"))
-            applied = (
-                db.execute(text("SELECT version_num FROM alembic_version"))
-                .scalars()
-                .all()
-            )
-    except Exception as exc:  # noqa: BLE001 - readiness must not 500
-        import logging
+    """Readiness: the database is reachable and its schema is the expected one.
 
-        logging.getLogger(__name__).warning(
-            "readyz database check failed",
-            exc_info=exc,
-            extra={"error": str(exc)},
-        )
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "not_ready",
-                "reason": "database_unavailable",
-                "requestId": request_id_var.get(),
-            },
-        )
-    expected = set(_migration_heads())
-    if set(applied) != expected:
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "not_ready",
-                "reason": "schema_mismatch",
-                "applied": sorted(applied),
-                "expected": sorted(expected),
-                "requestId": request_id_var.get(),
-            },
-        )
-    return JSONResponse(status_code=200, content={"status": "ready"})
+    The schema comparison closes a second gap. `_assert_linear_migration_history`
+    runs at startup but inspects only the Alembic *script* directory -- it never
+    reads `alembic_version` from the database -- so an application booted against
+    a stale schema started cleanly and failed later at query time.
+
+    Reports `not_ready` rather than raising: a readiness probe must answer with a
+    status code, and the reason must not echo connection strings or driver text.
+    """
+    checks: dict[str, str] = {}
+
+    try:
+        expected_heads = set(_migration_script_heads())
+    except Exception:
+        expected_heads = set()
+        checks["migrations"] = "unavailable"
+
+    session = SessionLocal()
+    try:
+        session.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+
+        if expected_heads:
+            applied = {
+                row[0]
+                for row in session.execute(text("SELECT version_num FROM alembic_version"))
+            }
+            if applied == expected_heads:
+                checks["schema"] = "ok"
+            else:
+                # Neither value is secret -- both are Alembic revision ids -- and
+                # an operator cannot decide roll-forward vs restore without them.
+                checks["schema"] = "mismatch"
+                checks["schemaExpected"] = ",".join(sorted(expected_heads))
+                checks["schemaApplied"] = ",".join(sorted(applied)) or "none"
+    except Exception:
+        logger.warning("readiness check failed", extra={"check": "database"})
+        checks["database"] = "unreachable"
+    finally:
+        session.close()
+
+    ready = checks.get("database") == "ok" and checks.get("schema") == "ok"
+    return JSONResponse(
+        status_code=200 if ready else 503,
+        content={"status": "ready" if ready else "not_ready", "checks": checks},
+    )
 
 
 @app.get("/version")
 def version() -> dict[str, str]:
-    # OPS-OBSERV-01 AC-4: build revision so a diagnostics bundle or an operator
-    # can address exactly which build is serving.
-    return {"revision": settings.app_revision, "runtimeProfile": settings.runtime_profile}
+    """What is actually deployed.
+
+    OPS-OBSERV-01: there was no way to ask a running instance what it was running
+    -- no git tags exist, no build metadata is baked into either image, and the
+    support diagnostics bundle reported `revision: "unknown"` because
+    `KJ_ATLAS_APP_REVISION` was never wired through the frontend build. An
+    operator handling a report could not tell which build produced it.
+    """
+    return {
+        "revision": settings.app_revision or "unknown",
+        "runtimeProfile": app.state.runtime_profile
+        if hasattr(app.state, "runtime_profile")
+        else settings.runtime_profile,
+    }
 
 
 app.include_router(docs_router)

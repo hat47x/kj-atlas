@@ -152,4 +152,8 @@ tests/scripts/run_auth_level2.sh
 - `trace_id`
 - `fallback_to_none`
 
-ログは JSON 形式（OPS-OBSERV-01）で stdout へ出力されます。1行が1レコードで、上記の `extra` キーに加えて `ts` / `level` / `logger` / `message`、および処理中リクエストの `requestId`（レスポンスの `X-Request-Id` と同一）を含みます。出力レベルは `KJ_ATLAS_LOG_LEVEL`（既定 `INFO`、`CRITICAL`/`ERROR`/`WARNING`/`INFO`/`DEBUG`/`NOTSET`）で変更できます。
+これらは `extra={...}` で渡され、`KJ_ATLAS_LOG_JSON=true`（既定）のとき JSON の1行として
+出力されます。OPS-OBSERV-01 以前はログ設定が存在せず、`logging.Formatter` の既定書式が
+`extra` を描画しないため **上記の項目は実際には出力されていませんでした**。出力レベルは
+`KJ_ATLAS_LOG_LEVEL` で変更できます。全リクエストには `X-Request-Id` が付与され、ログ行の
+`requestId` フィールドと突き合わせられます。
