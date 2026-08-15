@@ -2028,5 +2028,43 @@ tc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TC_ID")
 check "TC 読戻し (200)" "200" "$tc_read"
 
 echo ""
+echo "--- シナリオ45: 教育・大学・研究プロジェクトの振り返り整理 ---"
+# 業態: 教育・大学（研究プロジェクト）
+# 想定人物: 研究プロジェクトリーダー（プロジェクト振り返りを整理）
+# 業務領域: 研究プロジェクトの振り返りのKJ整理と課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: メンバーの声は逐語（refineで変えない）。矛盾する報告は表面化する。
+UV_ID="biz-flow-university"
+UV_DOC='{"version":1,"id":"'$UV_ID'","title":"研究プロジェクト振り返り","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"u1","text":"成果は計画通り","x":0,"y":0,"textReviewed":true},{"id":"u2","text":"人員が不足している","x":10,"y":0,"textReviewed":true},{"id":"u3","text":"国際連携は進んでいる","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"uv-i","cardIds":["u1","u2","u3"]}],"readingOrder":["uv-i"]}'
+
+uv_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$UV_ID" \
+  -H 'Content-Type: application/json' -d "$UV_DOC")
+check "UV PUT document (作成)" "200" "$uv_put"
+
+# ① AI束ね
+uv_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"u1","text":"成果は計画通り","textReviewed":true},{"id":"u2","text":"人員が不足している","textReviewed":true},{"id":"u3","text":"国際連携は進んでいる","textReviewed":true}]}')
+case "$uv_groups" in *'"groups":'*) echo "  PASS: UV ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: UV ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+uv_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$UV_DOC,\"islandId\":\"uv-i\"}")
+case "$uv_summary" in *'"groundingIds":["u1","u2","u3"]'*) echo "  PASS: UV ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: UV ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（成果計画通り vs 人員不足）
+uv_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"u1","text":"成果は計画通り","textReviewed":true},"cardB":{"id":"u2","text":"人員が不足している","textReviewed":true}}')
+case "$uv_contra" in *'"hasContradiction"'*) echo "  PASS: UV ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: UV ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+uv_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$UV_DOC}")
+case "$uv_narr" in *'"basedOnReadingOrder":["uv-i"]'*) echo "  PASS: UV ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: UV ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+uv_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$UV_ID")
+check "UV 読戻し (200)" "200" "$uv_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
