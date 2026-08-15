@@ -1180,5 +1180,44 @@ cr_b_retry=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/inquiry-b
 check "CR B再更新 (最新If-Match → 204)" "204" "$cr_b_retry"
 
 echo ""
+echo "--- シナリオ23: 教育研修・カリキュラム改善（受講者フィードバック分析） ---"
+# 業態: 教育・研修（カリキュラム改善）
+# 想定人物: 教育企画担当（受講者フィードバックを分析）
+# 業務領域: 受講者フィードバックのKJ分析によるカリキュラム改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> タイトル提案(suggest-document-title)
+# 注意事項: 全AI操作は未レビュー入力で422（SafeMode）。受講者の発言は逐語（refineで変えない）。
+EDU_ID="biz-flow-edu"
+EDU_DOC='{"version":1,"id":"'$EDU_ID'","title":"研修改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"e1","text":"演習時間が足りない","x":0,"y":0,"textReviewed":true},{"id":"e2","text":"事例が実務に近い","x":10,"y":0,"textReviewed":true},{"id":"e3","text":"資料が多すぎる","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"edu-i","cardIds":["e1","e2","e3"]}],"readingOrder":["edu-i"]}'
+
+edu_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EDU_ID" \
+  -H 'Content-Type: application/json' -d "$EDU_DOC")
+check "EDU PUT document (作成)" "200" "$edu_put"
+
+# ① AI束ね
+edu_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"e1","text":"演習時間が足りない","textReviewed":true},{"id":"e2","text":"事例が実務に近い","textReviewed":true},{"id":"e3","text":"資料が多すぎる","textReviewed":true}]}')
+case "$edu_groups" in *'"groups":'*) echo "  PASS: EDU ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: EDU ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+edu_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EDU_DOC,\"islandId\":\"edu-i\"}")
+case "$edu_summary" in *'"groundingIds":["e1","e2","e3"]'*) echo "  PASS: EDU ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: EDU ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（演習不足 vs 資料過多）
+edu_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"e1","text":"演習時間が足りない","textReviewed":true},"cardB":{"id":"e3","text":"資料が多すぎる","textReviewed":true}}')
+case "$edu_contra" in *'"hasContradiction"'*) echo "  PASS: EDU ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: EDU ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ タイトル提案
+edu_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["研修"],"cardTexts":["演習時間が足りない","事例が実務に近い","資料が多すぎる"],"textReviewed":true}')
+case "$edu_title" in *'"candidates"'*) echo "  PASS: EDU ④タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: EDU ④タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+edu_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EDU_ID")
+check "EDU 読戻し (200)" "200" "$edu_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
