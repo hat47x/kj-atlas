@@ -129,7 +129,12 @@ if curl -s -o /dev/null -w '%{http_code}' --max-time 2 "$API_BASE/healthz" 2>/de
   if [ -x "$VENV_PYTHON" ] && [ -f alembic.ini ]; then
     cur=$("$VENV_PYTHON" -m alembic current 2>/dev/null | grep -oE '^[0-9_]+' | head -1)
     head=$("$VENV_PYTHON" -m alembic heads 2>/dev/null | grep -oE '^[0-9_]+' | head -1)
-    if [ -n "$cur" ] && [ -n "$head" ] && [ "$cur" != "$head" ]; then
+    # DOGFOOD-09: an empty `alembic current` means the DB has NO alembic_version
+    # row (never migrated) — that is also "not migrated" and must skip the API
+    # checks instead of running them into raw 500s.
+    cur="${cur:-none}"
+    head="${head:-none}"
+    if [ "$cur" != "$head" ]; then
       echo "  SKIP: API/MCP verification — DB migration state ($cur) != alembic head ($head)."
       echo "        Run 'alembic upgrade head' first (DOGFOOD-09) so the checks exercise a migrated DB."
       migrated=0

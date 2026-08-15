@@ -1,7 +1,7 @@
 # Issue: DOGFOOD-09 verify_all.sh の API/MCP 検証が DB migration 未適用を 500 としてしか見せない
 
 - Type: Process / Bug
-- Status: Open
+- Status: Done
 - Source Issue: DOGFOOD-01（ドッグフーディング検証経路の拡張で発見、2026-08-13）
 - Priority: P2
 - Owner: Maintainer
@@ -48,9 +48,9 @@ sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: inqu
 
 ## 受入条件
 
-- [ ] `verify_all.sh` check 9 が、migration 未適用の DB に対して「migrations not applied」と明確に報告し、無意味な 500 の羅列を出さない。
-- [ ] migration 適用済み（`alembic upgrade head` 後）では従来どおり全チェックが pass する。
-- [ ] DOGFOOD-06 の規約（検証は前提条件も assert する）と整合している。
+- [x] `verify_all.sh` check 9 が、migration 未適用の DB に対して「migrations not applied」と明確に報告し、無意味な 500 の羅列を出さない。— `verify_all.sh` 冒頭で `alembic current` vs `alembic heads` を比較し不一致時は SKIP＋`alembic upgrade head` を案内。**iteration 48 で空DB（`alembic_version` 行なし）の場合に pre-check が発火しない穴を修正**（`cur` 空を `none` へ正規化。空DB→SKIP・適用済み→RUN を実機確認）。
+- [x] migration 適用済み（`alembic upgrade head` 後）では従来どおり全チェックが pass する。
+- [x] DOGFOOD-06 の規約（検証は前提条件も assert する）と整合している。
 
 ## 検証計画
 
