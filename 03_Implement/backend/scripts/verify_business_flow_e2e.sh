@@ -1952,5 +1952,43 @@ ev_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EV_ID")
 check "EV 読戻し (200)" "200" "$ev_read"
 
 echo ""
+echo "--- シナリオ43: 建設・施工現場進捗の整理 ---"
+# 業態: 建設・施工
+# 想定人物: 現場監督（施工進捗を整理）
+# 業務領域: 施工現場報告のKJ整理と工程課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 現場報告は逐語（refineで変えない）。矛盾する工程報告は表面化する。
+CS_ID="biz-flow-construction"
+CS_DOC='{"version":1,"id":"'$CS_ID'","title":"施工進捗の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"基礎工事は予定通り","x":0,"y":0,"textReviewed":true},{"id":"c2","text":"資材の納入が遅れている","x":10,"y":0,"textReviewed":true},{"id":"c3","text":"安全対策は徹底されている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cs-i","cardIds":["c1","c2","c3"]}],"readingOrder":["cs-i"]}'
+
+cs_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CS_ID" \
+  -H 'Content-Type: application/json' -d "$CS_DOC")
+check "CS PUT document (作成)" "200" "$cs_put"
+
+# ① AI束ね
+cs_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"c1","text":"基礎工事は予定通り","textReviewed":true},{"id":"c2","text":"資材の納入が遅れている","textReviewed":true},{"id":"c3","text":"安全対策は徹底されている","textReviewed":true}]}')
+case "$cs_groups" in *'"groups":'*) echo "  PASS: CS ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CS ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cs_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CS_DOC,\"islandId\":\"cs-i\"}")
+case "$cs_summary" in *'"groundingIds":["c1","c2","c3"]'*) echo "  PASS: CS ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CS ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（基礎工事順調 vs 資材納入遅延）
+cs_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"c1","text":"基礎工事は予定通り","textReviewed":true},"cardB":{"id":"c2","text":"資材の納入が遅れている","textReviewed":true}}')
+case "$cs_contra" in *'"hasContradiction"'*) echo "  PASS: CS ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: CS ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cs_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CS_DOC}")
+case "$cs_narr" in *'"basedOnReadingOrder":["cs-i"]'*) echo "  PASS: CS ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CS ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cs_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CS_ID")
+check "CS 読戻し (200)" "200" "$cs_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
