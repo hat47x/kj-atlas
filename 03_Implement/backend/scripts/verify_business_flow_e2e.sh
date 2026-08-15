@@ -1683,5 +1683,44 @@ ag_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AG_ID")
 check "AG 読戻し (200)" "200" "$ag_read"
 
 echo ""
+echo "--- シナリオ36: 物流・配送現場報告の整理 ---"
+# 業態: 物流・配送
+# 想定人物: 配送管理者（現場報告を分析）
+# 業務領域: 配送現場報告のKJ整理と配送課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> タイトル提案(suggest-document-title)
+# 注意事項: 現場の声は逐語（refineで変えない）。矛盾する報告は表面化する。
+LG2_ID="biz-flow-logistics"
+LG2_DOC='{"version":1,"id":"'$LG2_ID'","title":"配送現場の報告","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"l1","text":"配送時間が守られている","x":0,"y":0,"textReviewed":true},{"id":"l2","text":"荷物の破損が増えている","x":10,"y":0,"textReviewed":true},{"id":"l3","text":"ルートの最適化が進む","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"lg2-i","cardIds":["l1","l2","l3"]}],"readingOrder":["lg2-i"]}'
+
+lg2_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$LG2_ID" \
+  -H 'Content-Type: application/json' -d "$LG2_DOC")
+check "LG2 PUT document (作成)" "200" "$lg2_put"
+
+# ① AI束ね
+lg2_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"l1","text":"配送時間が守られている","textReviewed":true},{"id":"l2","text":"荷物の破損が増えている","textReviewed":true},{"id":"l3","text":"ルートの最適化が進む","textReviewed":true}]}')
+case "$lg2_groups" in *'"groups":'*) echo "  PASS: LG2 ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: LG2 ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+lg2_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$LG2_DOC,\"islandId\":\"lg2-i\"}")
+case "$lg2_summary" in *'"groundingIds":["l1","l2","l3"]'*) echo "  PASS: LG2 ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: LG2 ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（時間厳守 vs 破損増加）
+lg2_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"l1","text":"配送時間が守られている","textReviewed":true},"cardB":{"id":"l2","text":"荷物の破損が増えている","textReviewed":true}}')
+case "$lg2_contra" in *'"hasContradiction"'*) echo "  PASS: LG2 ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: LG2 ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ タイトル提案
+lg2_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["配送"],"cardTexts":["配送時間が守られている","荷物の破損が増えている","ルートの最適化が進む"],"textReviewed":true}')
+case "$lg2_title" in *'"candidates"'*) echo "  PASS: LG2 ④タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: LG2 ④タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+lg2_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$LG2_ID")
+check "LG2 読戻し (200)" "200" "$lg2_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
