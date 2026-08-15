@@ -74,6 +74,20 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 拡大した。業態・人物も調査会社→コンサル→品質管理→OSS管理者→報道編集へ広がっている。
 **19/19 pass**。
 
+### シナリオ6（iteration 47 追加・調査研究員のW型探究）
+
+| 軸 | 内容 |
+|----|------|
+| 業態 | 調査・研究（社会科学 / 市場調査） |
+| 想定人物 | 調査研究員（W型探究でラウンドを重ねる） |
+| 業務領域 | 複数ラウンドの探究ジャーニー（問いの深化）の保存・継続・並行編集の保護 |
+| 操作内容 | ジャーニー開始(POST If-None-Match:*) → 読戻し(GET) → **ラウンド深化(POST If-Match 更新)** → **並行編集の検出(古い If-Match → 409)** → 破棄(DELETE If-Match) |
+| 注意事項 | inquiry-bundle は **CAS（If-Match/If-None-Match）で楽観的並行制御**。前条件なしは 428、並行更新は 409、**破棄も現在の ETag が必要**。ラウンドの不変条件（iteration 単調）はクライアント責務 |
+
+シナリオ6は **W型探究（DOMAIN-W-ITERATION-01・アプリの差別化価値）** を業務フローとして固定した。
+`verify_api_inquiry_journey.sh`（機械的な opaque round-trip）とは別に、**探究の進行＝ラウンド追加の更新**と
+**並行編集の保護（409）・破棄のCAS** を一気通貫で検証する。**26/26 pass**（シナリオ1〜6）。
+
 ## E2E の固定方法
 
 ### バックエンド全層フロー（初回・curl ベース）
@@ -120,6 +134,6 @@ bash scripts/verify_business_flow_e2e.sh 8000   # 7 チェック（作成/読戻
 
 - [x] バックエンド全層の標準業務フロー E2E を固定（**シナリオ1+2 で 10/10 pass**・モックLLM）
 - [x] 別業態のシナリオ追加（iteration 42: 新規事業企画ワークショップ・suggest-card-groups を追加）
-- [x] シナリオ3（iteration 44: 品質管理・detect-contradiction）・シナリオ4（iteration 45: 管理者CLI/API・文書ライフサイクル/監査/キー分離）・シナリオ5（iteration 46: 報道編集・check-narrative A/B照合）を追加 — **シナリオ1〜5 で 19/19 pass**
+- [x] シナリオ3（iteration 44: 品質管理・detect-contradiction）・シナリオ4（iteration 45: 管理者CLI/API・文書ライフサイクル/監査/キー分離）・シナリオ5（iteration 46: 報道編集・check-narrative A/B照合）・シナリオ6（iteration 47: 調査研究員・W型探究 CAS）を追加 — **シナリオ1〜6 で 26/26 pass**
 - [ ] UI 層 E2E（フロントエンド AI 操作・CE4 proposal 連鎖）
 - [ ] さらに別業態のシナリオ追加（イテレーション毎に拡大）

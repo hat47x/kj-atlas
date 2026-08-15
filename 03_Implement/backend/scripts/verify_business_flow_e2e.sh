@@ -294,5 +294,62 @@ ed_unreviewed_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/a
 check "ED check-narrative unreviewed text blocked (422, SafeMode)" "422" "$ed_unreviewed_code"
 
 echo ""
+echo "--- シナリオ6: 調査研究員のW型探究（多ラウンドジャーニーの保存・継続） ---"
+# 業態: 調査・研究（社会科学 / 市場調査）
+# 想定人物: 調査研究員（W型探究でラウンドを重ねる）
+# 業務領域: 複数ラウンドの探究ジャーニー（問いの深化）の保存・継続・並行編集の保護
+# 操作内容: ジャーニー開始(POST If-None-Match:*) -> 読戻し(GET) ->
+#          ラウンド深化(POST If-Match 更新) -> 並行編集の検出(古いIf-Match->409) -> 破棄(DELETE)
+# 注意事項: inquiry-bundle は CAS（If-Match/If-None-Match）で楽観的並行制御。
+#          前条件なしは 428・並行更新は 409。ラウンドの不変条件（iteration 単調）はクライアント責務。
+WT_ID="biz-flow-wtype"
+WT_BUNDLE='{"schemaVersion":"1.0.0","journey":{"schemaVersion":"1.0.0","journeyId":"'$WT_ID'","title":"窓口待ち時間を捉え直す","originSnapshotIds":["snapshot-origin"],"roundRecords":[{"roundId":"r1","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","stage":"r2_situation_grasp","iteration":1,"parentRoundIds":[],"status":"handed_off","theme":"来庁者は何を見て待つか","inputSnapshotIds":["snapshot-origin"],"outputSnapshotId":"snapshot-r1","handoff":{"carryoverRefs":[],"heldRefs":[],"unresolvedQuestions":["案内表示を読むか"],"fieldworkRequests":[{"fieldworkRequestId":"fw-1","question":"注視状況を観察する"}]}}],"resolvedFieldworkQuestionIds":[],"status":"in_progress"},"snapshots":[{"schemaVersion":"1.0.0","snapshotId":"snapshot-origin","createdAt":"2026-08-15T00:00:00Z","canonicalDigest":"sha256:origin","document":{"version":1,"id":"doc-wtype","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"obs-1","text":"観察メモ","x":0,"y":0}],"edges":[],"islands":[]}}]}'
+# ラウンド2を追加した更新版（探究の深化）。
+WT_BUNDLE_V2='{"schemaVersion":"1.0.0","journey":{"schemaVersion":"1.0.0","journeyId":"'$WT_ID'","title":"窓口待ち時間を捉え直す","originSnapshotIds":["snapshot-origin"],"roundRecords":[{"roundId":"r1","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","stage":"r2_situation_grasp","iteration":1,"parentRoundIds":[],"status":"handed_off","theme":"来庁者は何を見て待つか","inputSnapshotIds":["snapshot-origin"],"outputSnapshotId":"snapshot-r1","handoff":{"carryoverRefs":[],"heldRefs":[],"unresolvedQuestions":["案内表示を読むか"],"fieldworkRequests":[{"fieldworkRequestId":"fw-1","question":"注視状況を観察する"}]}},{"roundId":"r2","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","stage":"r3_essence_pursuit","iteration":2,"parentRoundIds":["r1"],"status":"in_progress","theme":"負担の正体を捉える","inputSnapshotIds":["snapshot-r1"],"outputSnapshotId":"snapshot-r2","handoff":{"carryoverRefs":[],"heldRefs":[],"unresolvedQuestions":[],"fieldworkRequests":[]}}],"resolvedFieldworkQuestionIds":["fw-1"],"status":"in_progress"},"snapshots":[{"schemaVersion":"1.0.0","snapshotId":"snapshot-origin","createdAt":"2026-08-15T00:00:00Z","canonicalDigest":"sha256:origin","document":{"version":1,"id":"doc-wtype","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"obs-1","text":"観察メモ","x":0,"y":0}],"edges":[],"islands":[]}},{"schemaVersion":"1.0.0","snapshotId":"snapshot-r1","createdAt":"2026-08-15T00:00:00Z","canonicalDigest":"sha256:r1","document":{"version":1,"id":"doc-wtype-r1","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[],"edges":[],"islands":[]}}]}'
+
+# 6a. ジャーニー開始（If-None-Match: * で作成、201 + ETag）。
+wt_create=$(curl -s -i -X POST "$BASE_URL/inquiry-bundles/$WT_ID" \
+  -H 'Content-Type: application/json' -H 'If-None-Match: *' -d "$WT_BUNDLE")
+wt_create_code=$(echo "$wt_create" | head -1 | grep -oE '[0-9]{3}')
+wt_etag=$(echo "$wt_create" | tr -d '\r' | grep -i '^ETag:' | sed 's/ETag: *//I')
+check "WT ジャーニー開始 (201 + ETag)" "201" "$wt_create_code"
+[ -n "$wt_etag" ] && { echo "  PASS: WT ETag acquired ($wt_etag)"; PASS=$((PASS+1)); } || { echo "  FAIL: WT ETag missing"; FAIL=$((FAIL+1)); }
+
+# 6b. 読戻し（ジャーニー構造が保持されている）。
+wt_get=$(curl -s -X GET "$BASE_URL/inquiry-bundles/$WT_ID")
+case "$wt_get" in
+  *'"roundRecords"'*'"theme":"来庁者は何を見て待つか"'*)
+    echo "  PASS: WT 読戻し（roundRecords 保持）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: WT 読戻し（got ${wt_get:0:120}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 6c. ラウンド深化（If-Match で更新、204 + ETag 繰り上げ）。
+wt_update=$(curl -s -i -X POST "$BASE_URL/inquiry-bundles/$WT_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $wt_etag" -d "$WT_BUNDLE_V2")
+wt_update_code=$(echo "$wt_update" | head -1 | grep -oE '[0-9]{3}')
+check "WT ラウンド深化 (204)" "204" "$wt_update_code"
+wt_etag2=$(echo "$wt_update" | tr -d '\r' | grep -i '^ETag:' | sed 's/ETag: *//I')
+
+# 6d. 並行編集の検出（古い ETag で更新 -> 409）。
+wt_stale_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/inquiry-bundles/$WT_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $wt_etag" -d "$WT_BUNDLE_V2")
+check "WT 並行編集を検出 (古いIf-Match -> 409)" "409" "$wt_stale_code"
+
+# 6e. 前条件なしは 428（CAS 必須）。
+wt_no_precond=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/inquiry-bundles/$WT_ID" \
+  -H 'Content-Type: application/json' -d "$WT_BUNDLE_V2")
+check "WT 前条件なし (428)" "428" "$wt_no_precond"
+
+# 6f. 破棄（DELETe も CAS: 現在の ETag が必要）。
+wt_del=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "$BASE_URL/inquiry-bundles/$WT_ID" \
+  -H "If-Match: $wt_etag2")
+check "WT ジャーニー破棄 (204, If-Match)" "204" "$wt_del"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
