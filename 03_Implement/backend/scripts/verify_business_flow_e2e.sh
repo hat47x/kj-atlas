@@ -2122,5 +2122,57 @@ case "$dx_read" in
   *) echo "  FAIL: DX ⑥b非自動適用（文面不変）"; FAIL=$((FAIL+1));; esac
 
 echo ""
+echo "--- シナリオ47: AI運用・ITガバナンスのモデル選択とテナント許容制限 ---"
+# 業態: AI運用・ITガバナンス
+# 想定人物: AI機能利用者（業務ユーザーがモデルを選択）
+# 業務領域: 文書整理AIのモデル選択とテナント許容制限の適用
+# 操作内容: 文書作成 -> モデル一覧取得(GET /ai/available-models・R2データ源)
+#          -> 許容モデル明示選択で生成(generate-narrative+model)
+#          -> テナント許容リスト設定(admin) -> 一覧が制限を反映
+#          -> 非許容モデルは403(model_not_allowed・R3 fail-closed)
+# 注意事項: モデル選択はテナント許容リストに制限される（空=プラットフォーム既定=全許可）。
+#          非許容モデルは LLM 呼び出し前に fail-closed(403) で遮断される（自動降格しない）。
+MG_ID="biz-flow-model-gov"
+MG_DOC='{"version":1,"id":"'$MG_ID'","title":"モデル選択検証","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"m1","text":"モデルAの要約精度は高い","x":0,"y":0,"textReviewed":true},{"id":"m2","text":"モデルBはコストが低い","x":10,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"mg-i","cardIds":["m1","m2"]}],"readingOrder":["mg-i"]}'
+
+mg_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MG_ID" \
+  -H 'Content-Type: application/json' -d "$MG_DOC")
+check "MG PUT document (作成)" "200" "$mg_put"
+
+# ① モデル一覧取得（AI-MODEL-GOVERNANCE R2: モデルセレクタのデータ源）
+mg_models=$(curl -s "$BASE_URL/ai/available-models")
+MG_MODEL_ID=$(printf '%s' "$mg_models" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p' | head -1)
+case "$mg_models" in
+  *'"models":['*)
+    if [ -n "$MG_MODEL_ID" ]; then echo "  PASS: MG ①モデル一覧取得 (id=$MG_MODEL_ID)"; PASS=$((PASS+1));
+    else echo "  FAIL: MG ①モデル一覧取得 (models 空)"; FAIL=$((FAIL+1)); fi;;
+  *) echo "  FAIL: MG ①モデル一覧取得"; FAIL=$((FAIL+1));; esac
+
+# ② 許容モデル明示選択で生成（R2: 操作単位モデル上書き・有効モデルは 200）
+mg_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MG_DOC,\"model\":\"$MG_MODEL_ID\"}")
+case "$mg_narr" in *'"basedOnReadingOrder":["mg-i"]'*) echo "  PASS: MG ②許容モデル明示選択(200)"; PASS=$((PASS+1));; *) echo "  FAIL: MG ②許容モデル明示選択"; FAIL=$((FAIL+1));; esac
+
+# ③ テナント許容リストを制限（local-dev の control-plane は無キーで開放）
+mg_allow=$(curl -s -o /dev/null -w '%{http_code}' -X PUT \
+  "$BASE_URL/admin/provision/models/tenants/local-default/allowlist" \
+  -H 'Content-Type: application/json' -d '{"modelIds":["bogus-restricted-only"]}')
+check "MG ③テナント許容リスト設定(制限)" "200" "$mg_allow"
+
+# ④ 一覧が制限を反映（許容リスト外のモデルは選択候補から消える）
+mg_models2=$(curl -s "$BASE_URL/ai/available-models")
+case "$mg_models2" in
+  *'"id":"'$MG_MODEL_ID'"'*) echo "  FAIL: MG ④制限反映（$MG_MODEL_ID が残存）"; FAIL=$((FAIL+1));;
+  *) echo "  PASS: MG ④制限反映（選択候補から除外）"; PASS=$((PASS+1));; esac
+
+# ⑤ 非許容モデルは 403（R3 fail-closed・LLM 呼び出し前に遮断・code=model_not_allowed）
+mg_block=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MG_DOC,\"model\":\"$MG_MODEL_ID\"}")
+mg_block_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/generate-narrative" \
+  -H 'Content-Type: application/json' -d "{\"doc\":$MG_DOC,\"model\":\"$MG_MODEL_ID\"}")
+check "MG ⑤非許容モデル -> 403 (model_not_allowed)" "403" "$mg_block_code"
+case "$mg_block" in *'"model_not_allowed"'*) echo "  PASS: MG ⑤b code=model_not_allowed"; PASS=$((PASS+1));; *) echo "  FAIL: MG ⑤b code=model_not_allowed"; FAIL=$((FAIL+1));; esac
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
