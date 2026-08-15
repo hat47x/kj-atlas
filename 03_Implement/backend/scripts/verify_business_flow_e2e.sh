@@ -631,5 +631,84 @@ mtg_unreviewed=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/su
 check "MTG suggest-layout unreviewed text blocked (422, SafeMode)" "422" "$mtg_unreviewed"
 
 echo ""
+echo "--- シナリオ12: ライブラリアンのコレクション管理（複数文書・一覧・絞り込み・アーカイブ） ---"
+# 業態: ナレッジベース・図書館（コレクション管理）
+# 想定人物: ライブラリアン（文書コレクションの管理者）
+# 業務領域: 複数文書の作成・一覧・作成者絞り込み・アーカイブ管理
+# 操作内容: 複数文書作成(PUT ×N) -> 一覧(GET /docs) -> 自分の文書で絞り込み
+#          (GET /docs?createdBy=<作成者UUID>) -> アーカイブ(POST archive) -> 一覧に反映確認
+# 注意事項: 一覧はメタデータのみ（カード本文非露出）。created_by は JIT 解決された UUID
+#          （ヘッダー値ではない）。アーカイブ文書は読み取り専用（PUT 423）。
+LIB_H="x-forwarded-user: librarian"
+LIB_H2="x-auth-provider: oidc"
+LIB_A='{"version":1,"id":"biz-flow-lib-a","title":"ライブラリアン文書A","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"la1","text":"カタログ方針","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+LIB_B='{"version":1,"id":"biz-flow-lib-b","title":"匿名作成文書B","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"lb1","text":"移行メモ","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+
+lib_a_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/biz-flow-lib-a" \
+  -H 'Content-Type: application/json' -H "$LIB_H" -H "$LIB_H2" -d "$LIB_A")
+lib_b_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/biz-flow-lib-b" \
+  -H 'Content-Type: application/json' -d "$LIB_B")
+check "LIB PUT 複数文書 (A=200,B=200)" "200200" "$lib_a_put$lib_b_put"
+
+# 一覧（全件・メタデータのみ）。
+lib_list=$(curl -s "$BASE_URL/docs")
+case "$lib_list" in
+  *'"id":"biz-flow-lib-a"'*'"id":"biz-flow-lib-b"'*)
+    echo "  PASS: LIB 一覧に複数文書が含まれる（メタデータ）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: LIB 一覧（got ${lib_list:0:150}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# ライブラリアンの文書UUIDを取得し、自分の文書で絞り込み。
+lib_creator=$(echo "$lib_list" | grep -oE '"id":"biz-flow-lib-a"[^}]*"created_by":"[^"]*"' | grep -oE '"created_by":"[^"]*"' | head -1 | cut -d'"' -f4)
+if [ -n "$lib_creator" ]; then
+  lib_mine=$(curl -s "$BASE_URL/docs?createdBy=$lib_creator")
+  case "$lib_mine" in
+    *'"id":"biz-flow-lib-a"'*)
+      mine_has_b=$(echo "$lib_mine" | grep -c "biz-flow-lib-b")
+      if [ "$mine_has_b" = "0" ]; then
+        echo "  PASS: LIB createdBy 絞り込み（自分の文書のみ・匿名文書は除外）"
+        PASS=$((PASS+1))
+      else
+        echo "  FAIL: LIB createdBy 絞り込みに匿名文書が混入"
+        FAIL=$((FAIL+1))
+      fi
+      ;;
+    *)
+      echo "  FAIL: LIB createdBy 絞り込み（got ${lib_mine:0:120}）"
+      FAIL=$((FAIL+1))
+      ;;
+  esac
+else
+  echo "  FAIL: LIB created_by 取得不能（一覧からUUIDを抽出）"
+  FAIL=$((FAIL+1))
+fi
+
+# アーカイブ運用（一覧へ反映）。
+lib_arch=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/docs/biz-flow-lib-b/archive" \
+  -H 'Content-Type: application/json' -H "$LIB_H" -H "$LIB_H2" -d '{}')
+check "LIB アーカイブ (204)" "204" "$lib_arch"
+lib_list2=$(curl -s "$BASE_URL/docs")
+case "$lib_list2" in
+  *'"id":"biz-flow-lib-b"'*'"lifecycle_state":"archived"'*)
+    echo "  PASS: LIB 一覧に archived が反映"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: LIB 一覧への archived 反映（got ${lib_list2:0:150}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# アーカイブ中は読み取り専用（PUT 423）。
+lib_locked=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/biz-flow-lib-b" \
+  -H 'Content-Type: application/json' -d "$LIB_B")
+check "LIB アーカイブ中 PUT (423 Locked)" "423" "$lib_locked"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]

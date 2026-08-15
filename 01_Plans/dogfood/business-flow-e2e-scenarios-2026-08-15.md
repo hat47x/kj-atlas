@@ -154,6 +154,18 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 
 シナリオ11は最後の未固定 AI 操作 **suggest-layout / suggest-merges** を固定し、**AI タスク全10種**（re_layout / suggest_merges / island-summary / island-relation / narrative / check-narrative / refine / card-groups / detect-contradiction / document-title）を E2E で全カバーした。**49/49 pass**（シナリオ1〜11・11業態）。
 
+### シナリオ12（iteration 56 追加・ライブラリアンのコレクション管理）
+
+| 軸 | 内容 |
+|----|------|
+| 業態 | ナレッジベース・図書館（コレクション管理） |
+| 想定人物 | ライブラリアン（文書コレクションの管理者） |
+| 業務領域 | 複数文書の作成・一覧・作成者絞り込み・アーカイブ管理 |
+| 操作内容 | 複数文書作成(PUT ×N) → 一覧(GET /docs) → **自分の文書で絞り込み(GET /docs?createdBy=)** → アーカイブ → 一覧に反映確認 |
+| 注意事項 | 一覧はメタデータのみ（カード本文非露出）。`created_by` は JIT 解決された **UUID**（ヘッダー値ではない）。アーカイブ文書は読み取り専用（PUT 423） |
+
+シナリオ12は **複数文書のコレクション運用**（一覧・`createdBy` 絞り込み・アーカイブ反映）を固定。シナリオ4（単一文書のライフサイクル＋管理面）とは異なり、**文書集合の管理**を検証する。`created_by` が JIT 解決 UUID であることを実走行で確認し、「自分の文書」セマンティクス（frontend の principalId 相当）を固定。**55/55 pass**（シナリオ1〜12・12業態）。
+
 ## E2E の固定方法
 
 ### バックエンド全層フロー（初回・curl ベース）
