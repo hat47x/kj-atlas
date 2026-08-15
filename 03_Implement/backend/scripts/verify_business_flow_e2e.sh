@@ -1491,5 +1491,43 @@ hr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HR_ID")
 check "HR 読戻し (200)" "200" "$hr_read"
 
 echo ""
+echo "--- シナリオ31: NPO・市民活動のボランティア報告整理 ---"
+# 業態: NPO・市民活動
+# 想定人物: 活動コーディネーター（ボランティア報告を整理）
+# 業務領域: ボランティア報告のKJ整理と活動課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 報告は逐語（refineで変えない）。矛盾する報告は表面化する。
+NP_ID="biz-flow-npo"
+NP_DOC='{"version":1,"id":"'$NP_ID'","title":"ボランティア活動報告","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"n1","text":"参加者のモチベーションが高い","x":0,"y":0,"textReviewed":true},{"id":"n2","text":"資材が不足している","x":10,"y":0,"textReviewed":true},{"id":"n3","text":"告知が行き届いていない","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"np-i","cardIds":["n1","n2","n3"]}],"readingOrder":["np-i"]}'
+
+np_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$NP_ID" \
+  -H 'Content-Type: application/json' -d "$NP_DOC")
+check "NP PUT document (作成)" "200" "$np_put"
+
+# ① AI束ね
+np_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"n1","text":"参加者のモチベーションが高い","textReviewed":true},{"id":"n2","text":"資材が不足している","textReviewed":true},{"id":"n3","text":"告知が行き届いていない","textReviewed":true}]}')
+case "$np_groups" in *'"groups":'*) echo "  PASS: NP ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: NP ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+np_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$NP_DOC,\"islandId\":\"np-i\"}")
+case "$np_summary" in *'"groundingIds":["n1","n2","n3"]'*) echo "  PASS: NP ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: NP ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（モチベーション高い vs 資材不足・告知不足）
+np_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"n1","text":"参加者のモチベーションが高い","textReviewed":true},"cardB":{"id":"n2","text":"資材が不足している","textReviewed":true}}')
+case "$np_contra" in *'"hasContradiction"'*) echo "  PASS: NP ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: NP ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+np_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$NP_DOC}")
+case "$np_narr" in *'"basedOnReadingOrder":["np-i"]'*) echo "  PASS: NP ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: NP ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+np_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$NP_ID")
+check "NP 読戻し (200)" "200" "$np_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
