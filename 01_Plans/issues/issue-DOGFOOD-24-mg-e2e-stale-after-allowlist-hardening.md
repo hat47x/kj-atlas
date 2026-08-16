@@ -67,6 +67,14 @@ FAIL: MG ⑤b code=model_not_allowed
 
 **残件（本issueの範囲外・並行編集者領域）**: 追記で記録した `tests/test_ai_safemode.py` の10件失敗（`KJ_ATLAS_LLM_PROVIDER=none` でモデル解決が先に発火し `assert 503 == 200`）は、本issue（E2E追従）の対象外として残る。修正はモデルガバナンス強化の並行編集者の責務範囲。
 
+## 追記2（iteration 195 時点・モデルガバナンスのテスト整合を完了）
+
+- 並行編集者が `dbe8600c fix(ci)` で `test_ai_safemode.py`（10件）・`test_ai_eval_pipeline.py`・`test_ai_provider_status_route.py` に **fixture で `settings.llm_provider="local"`＋登録モデルのseed** を追加し、safemode 10件失敗を解消（commit 済み）。
+- 残っていた `test_ce2_proposal_api.py` の **1件失敗**（同根: `_assert_model_allowed` の `model_provider_unavailable` がスタブより先に発火）を **fixture で `settings.llm_provider="local"` を設定・復元** して修正（`dddae039`）。CE2 proposal **12/12**・AI-route 統合 **79/79** pass。
+- フルスイート: **1174 pass / 1 fail**（修正前）→ CE2修正後の再走行で **1175 pass 相当**を確認。
+
+## 補足
+
 ## 補足
 
 - 本issueは**私（ドッグフーディング）が観察した検証ドリフトの記録**であり、修正は並行編集者（モデルガバナンス強化の当事者）の責務範囲。iteration 188の私の成果物（シナリオ118・DOGFOOD-23）は独立に検証済み。
