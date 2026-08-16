@@ -3646,5 +3646,45 @@ el_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EL_ID")
 check "EL 読戻し (200)" "200" "$el_read"
 
 echo ""
+echo "--- シナリオ83: 広告・マーケティングのキャンペーン効果検証（感性と成果の乖離） ---"
+# 業態: 広告・マーケティング（広告代理店）
+# 想定人物: アカウントプランナー（キャンペーン振り返りを整理）
+# 業務領域: クライアント要望・クリエイティブ評価・効果指標への声のKJ分類と、次期キャンペーン改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: クリエイティブの主観評価（社内の好き嫌い）と、広告効果の客観指標（成果）
+#          の乖離を矛盾検出で表面化し、次期キャンペーンの判断根拠にする（感性と成果の乖離）。
+AD_ID="biz-flow-advertising"
+AD_DOC='{"version":1,"id":"'$AD_ID'","title":"キャンペーン効果検証","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ad1","text":"社内ではクリエイティブの評価が分かれ、好き嫌いで議論になった","x":0,"y":0,"textReviewed":true},{"id":"ad2","text":"配信後の効果指標では、特定セグメントに反響が集中している","x":10,"y":0,"textReviewed":true},{"id":"ad3","text":"クライアントはブランド認知向上を期待し、即効的な売上を求めていない","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ad-i","cardIds":["ad1","ad2","ad3"]}],"readingOrder":["ad-i"]}'
+
+ad_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$AD_ID" \
+  -H 'Content-Type: application/json' -d "$AD_DOC")
+check "AD PUT document (作成)" "200" "$ad_put"
+
+# ① AI束ね
+ad_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ad1","text":"社内ではクリエイティブの評価が分かれ、好き嫌いで議論になった","textReviewed":true},{"id":"ad2","text":"配信後の効果指標では、特定セグメントに反響が集中している","textReviewed":true},{"id":"ad3","text":"クライアントはブランド認知向上を期待し、即効的な売上を求めていない","textReviewed":true}]}')
+case "$ad_groups" in *'"groups":'*) echo "  PASS: AD ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: AD ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ad_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$AD_DOC,\"islandId\":\"ad-i\"}")
+case "$ad_summary" in *'"groundingIds":["ad1","ad2","ad3"]'*) echo "  PASS: AD ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: AD ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（社内の好き嫌い vs 効果指標・感性と成果の乖離）
+ad_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ad1","text":"社内ではクリエイティブの評価が分かれ、好き嫌いで議論になった","textReviewed":true},"cardB":{"id":"ad2","text":"配信後の効果指標では、特定セグメントに反響が集中している","textReviewed":true}}')
+case "$ad_contra" in *'"hasContradiction"'*) echo "  PASS: AD ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: AD ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ad_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$AD_DOC}")
+case "$ad_narr" in *'"basedOnReadingOrder":["ad-i"]'*) echo "  PASS: AD ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: AD ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ad_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AD_ID")
+check "AD 読戻し (200)" "200" "$ad_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
