@@ -6082,5 +6082,47 @@ elec_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$ELEC_ID")
 check "ELEC 読戻し (200)" "200" "$elec_read"
 
 echo ""
+echo "--- シナリオ140: 宝飾・ジュエリー（品質・信頼と価格・採算のトレードオフ） ---"
+# 業態: 宝飾・ジュエリー（宝石・貴金属小売）
+# 想定人物: ジュエリーショップ店長／バイヤー
+# 業務領域: 商品・接客・価格・信頼への声のKJ分類と、ジュエリー店の運営改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 品質の保証と生涯のアフターケア・丁寧な接客による信頼（品質・信頼）と仕入れコストや
+#          流行への対応（価格・採算）のトレードオフを矛盾検出（正パス）で表面化し、ジュエリー店の
+#          運営改善根拠にする（品質と採算の相克・婚約・記念日などの特別な場面を支え長く付き合う
+#          顧客との関係を築く動きも指摘）。
+JEW_ID="biz-flow-jewelry"
+JEW_DOC='{"version":1,"id":"'$JEW_ID'","title":"ジュエリー店の運営改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"j1","text":"品質の保証と生涯のアフターケア、丁寧な接客で信頼を築くことを重視する声（品質・信頼）","x":0,"y":0,"textReviewed":true},{"id":"j2","text":"仕入れコストや流行への対応など、品質・信頼と価格・採算のトレードオフに悩む声（価格・採算）","x":10,"y":0,"textReviewed":true},{"id":"j3","text":"婚約・記念日などの特別な場面を支え、長く付き合う顧客との関係を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"jew-i","cardIds":["j1","j2","j3"]}],"readingOrder":["jew-i"]}'
+
+jew_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$JEW_ID" \
+  -H 'Content-Type: application/json' -d "$JEW_DOC")
+check "JEW PUT document (作成)" "200" "$jew_put"
+
+# ① AI束ね
+jew_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"j1","text":"品質の保証と生涯のアフターケア、丁寧な接客で信頼を築くことを重視する声（品質・信頼）","textReviewed":true},{"id":"j2","text":"仕入れコストや流行への対応など、品質・信頼と価格・採算のトレードオフに悩む声（価格・採算）","textReviewed":true},{"id":"j3","text":"婚約・記念日などの特別な場面を支え、長く付き合う顧客との関係を築く動き","textReviewed":true}]}')
+case "$jew_groups" in *'"groups":'*) echo "  PASS: JEW ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: JEW ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+jew_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$JEW_DOC,\"islandId\":\"jew-i\"}")
+case "$jew_summary" in *'"groundingIds":["j1","j2","j3"]'*) echo "  PASS: JEW ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: JEW ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（品質・信頼 vs 価格・採算・品質と採算の相克・正パス）
+jew_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"j1","text":"品質の保証と生涯のアフターケア、丁寧な接客で信頼を築くことを重視する声（品質・信頼）","textReviewed":true},"cardB":{"id":"j2","text":"仕入れコストや流行への対応など、品質・信頼と価格・採算のトレードオフに悩む声（価格・採算）","textReviewed":true}}')
+case "$jew_contra" in *'"hasContradiction":true'*) echo "  PASS: JEW ③矛盾検出（品質・信頼と価格・採算のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: JEW ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+jew_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$JEW_DOC}")
+case "$jew_narr" in *'"basedOnReadingOrder":["jew-i"]'*) echo "  PASS: JEW ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: JEW ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+jew_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$JEW_ID")
+check "JEW 読戻し (200)" "200" "$jew_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
