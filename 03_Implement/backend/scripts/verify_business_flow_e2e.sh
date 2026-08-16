@@ -3321,5 +3321,45 @@ vt_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$VT_ID")
 check "VT 読戻し (200)" "200" "$vt_read"
 
 echo ""
+echo "--- シナリオ75: 生命保険の営業提案振り返り（顧客ニーズと販売目標の乖離） ---"
+# 業態: 生命保険（営業・提案）
+# 想定人物: 営業マネージャー（営業提案の振り返り）
+# 業務領域: 営業提案の成否・顧客反応・商品要望のKJ分類と、提案力改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 顧客の求める保障（商品ニーズ）と営業の売りたい商品（販売目標）の乖離を
+#          矛盾検出で表面化し、提案改善の根拠にする（ニーズと目標の乖離）。
+IN_ID="biz-flow-insurance"
+IN_DOC='{"version":1,"id":"'$IN_ID'","title":"営業提案振り返り","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"in1","text":"顧客は保障内容の柔軟性を重視している","x":0,"y":0,"textReviewed":true},{"id":"in2","text":"営業は販売目標達成のため主力商品を優先している","x":10,"y":0,"textReviewed":true},{"id":"in3","text":"契約後のフォローが不十分という声がある","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"in-i","cardIds":["in1","in2","in3"]}],"readingOrder":["in-i"]}'
+
+in_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$IN_ID" \
+  -H 'Content-Type: application/json' -d "$IN_DOC")
+check "IN PUT document (作成)" "200" "$in_put"
+
+# ① AI束ね
+in_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"in1","text":"顧客は保障内容の柔軟性を重視している","textReviewed":true},{"id":"in2","text":"営業は販売目標達成のため主力商品を優先している","textReviewed":true},{"id":"in3","text":"契約後のフォローが不十分という声がある","textReviewed":true}]}')
+case "$in_groups" in *'"groups":'*) echo "  PASS: IN ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: IN ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+in_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$IN_DOC,\"islandId\":\"in-i\"}")
+case "$in_summary" in *'"groundingIds":["in1","in2","in3"]'*) echo "  PASS: IN ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: IN ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（顧客ニーズ vs 販売目標・ニーズと目標の乖離）
+in_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"in1","text":"顧客は保障内容の柔軟性を重視している","textReviewed":true},"cardB":{"id":"in2","text":"営業は販売目標達成のため主力商品を優先している","textReviewed":true}}')
+case "$in_contra" in *'"hasContradiction"'*) echo "  PASS: IN ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: IN ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+in_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$IN_DOC}")
+case "$in_narr" in *'"basedOnReadingOrder":["in-i"]'*) echo "  PASS: IN ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: IN ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+in_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$IN_ID")
+check "IN 読戻し (200)" "200" "$in_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
