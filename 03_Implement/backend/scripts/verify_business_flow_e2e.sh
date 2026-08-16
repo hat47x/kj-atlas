@@ -6963,5 +6963,47 @@ foodtruck_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FOODTRU
 check "FOODTRUCK 読戻し (200)" "200" "$foodtruck_read"
 
 echo ""
+echo "--- シナリオ161: 介護・福祉用具（利用者本位・適合と効率・収益のトレードオフ） ---"
+# 業態: 介護・福祉用具（福祉用具レンタル・販売）
+# 想定人物: 福祉用具専門相談員／事業者
+# 業務領域: 用具の提案・レンタル・調整・利用者への声のKJ分類と、福祉用具事業の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 利用者一人ひとりに合った福祉用具の提案と丁寧な調整（利用者本位・適合）と在庫管理や
+#          コストへの圧力（効率・収益）のトレードオフを矛盾検出（正パス）で表面化し、福祉用具事業の
+#          改善根拠にする（利用者本位と効率の相克・介護する家族への相談支援や地域のケアマネとの連携
+#          で支える動きも指摘）。
+WELFARE_ID="biz-flow-welfare"
+WELFARE_DOC='{"version":1,"id":"'$WELFARE_ID'","title":"福祉用具事業の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"wl1","text":"利用者一人ひとりに合った福祉用具の提案と丁寧な調整を重視する声（利用者本位・適合）","x":0,"y":0,"textReviewed":true},{"id":"wl2","text":"在庫管理やコストへの圧力など、利用者本位と効率・収益のトレードオフに悩む声（効率・収益）","x":10,"y":0,"textReviewed":true},{"id":"wl3","text":"介護する家族への相談支援や地域のケアマネとの連携で支える動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"welf-i","cardIds":["wl1","wl2","wl3"]}],"readingOrder":["welf-i"]}'
+
+welfare_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$WELFARE_ID" \
+  -H 'Content-Type: application/json' -d "$WELFARE_DOC")
+check "WELFARE PUT document (作成)" "200" "$welfare_put"
+
+# ① AI束ね
+welfare_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"wl1","text":"利用者一人ひとりに合った福祉用具の提案と丁寧な調整を重視する声（利用者本位・適合）","textReviewed":true},{"id":"wl2","text":"在庫管理やコストへの圧力など、利用者本位と効率・収益のトレードオフに悩む声（効率・収益）","textReviewed":true},{"id":"wl3","text":"介護する家族への相談支援や地域のケアマネとの連携で支える動き","textReviewed":true}]}')
+case "$welfare_groups" in *'"groups":'*) echo "  PASS: WELFARE ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: WELFARE ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+welfare_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$WELFARE_DOC,\"islandId\":\"welf-i\"}")
+case "$welfare_summary" in *'"groundingIds":["wl1","wl2","wl3"]'*) echo "  PASS: WELFARE ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: WELFARE ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（利用者本位・適合 vs 効率・収益・利用者本位と効率の相克・正パス）
+welfare_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"wl1","text":"利用者一人ひとりに合った福祉用具の提案と丁寧な調整を重視する声（利用者本位・適合）","textReviewed":true},"cardB":{"id":"wl2","text":"在庫管理やコストへの圧力など、利用者本位と効率・収益のトレードオフに悩む声（効率・収益）","textReviewed":true}}')
+case "$welfare_contra" in *'"hasContradiction":true'*) echo "  PASS: WELFARE ③矛盾検出（利用者本位・適合と効率・収益のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: WELFARE ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+welfare_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$WELFARE_DOC}")
+case "$welfare_narr" in *'"basedOnReadingOrder":["welf-i"]'*) echo "  PASS: WELFARE ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: WELFARE ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+welfare_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$WELFARE_ID")
+check "WELFARE 読戻し (200)" "200" "$welfare_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
