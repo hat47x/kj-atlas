@@ -3766,5 +3766,46 @@ sa_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SA_ID")
 check "SA 読戻し (200)" "200" "$sa_read"
 
 echo ""
+echo "--- シナリオ86: 人材派遣のスタッフ声と派遣先評価の整理（働きやすさと成果の乖離） ---"
+# 業態: 人材派遣（派遣会社）
+# 想定人物: 営業・派遣コーディネーター（スタッフと派遣先の声を整理）
+# 業務領域: 派遣スタッフの声・派遣先の評価・契約更新の判断材料のKJ分類と、派遣マッチング改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 派遣スタッフの働きやすさ（主観・職場環境）と、派遣先の評価（客観・業務成果）
+#          の乖離を矛盾検出で表面化し、派遣マッチングと契約更新の判断根拠にする
+#          （働きやすさと成果の乖離）。
+DP_ID="biz-flow-dispatch"
+DP_DOC='{"version":1,"id":"'$DP_ID'","title":"スタッフ声と派遣先評価","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"dp1","text":"派遣スタッフは職場の雰囲気は良いと話すが、業務内容に不満がある","x":0,"y":0,"textReviewed":true},{"id":"dp2","text":"派遣先からは業務成果の評価が高いが、コミュニケーションに課題があるとの声","x":10,"y":0,"textReviewed":true},{"id":"dp3","text":"契約更新の判断がスタッフと派遣先で分かれている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"dp-i","cardIds":["dp1","dp2","dp3"]}],"readingOrder":["dp-i"]}'
+
+dp_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$DP_ID" \
+  -H 'Content-Type: application/json' -d "$DP_DOC")
+check "DP PUT document (作成)" "200" "$dp_put"
+
+# ① AI束ね
+dp_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"dp1","text":"派遣スタッフは職場の雰囲気は良いと話すが、業務内容に不満がある","textReviewed":true},{"id":"dp2","text":"派遣先からは業務成果の評価が高いが、コミュニケーションに課題があるとの声","textReviewed":true},{"id":"dp3","text":"契約更新の判断がスタッフと派遣先で分かれている","textReviewed":true}]}')
+case "$dp_groups" in *'"groups":'*) echo "  PASS: DP ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: DP ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+dp_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DP_DOC,\"islandId\":\"dp-i\"}")
+case "$dp_summary" in *'"groundingIds":["dp1","dp2","dp3"]'*) echo "  PASS: DP ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: DP ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（働きやすさ vs 業務成果・働きやすさと成果の乖離）
+dp_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"dp1","text":"派遣スタッフは職場の雰囲気は良いと話すが、業務内容に不満がある","textReviewed":true},"cardB":{"id":"dp2","text":"派遣先からは業務成果の評価が高いが、コミュニケーションに課題があるとの声","textReviewed":true}}')
+case "$dp_contra" in *'"hasContradiction"'*) echo "  PASS: DP ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: DP ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+dp_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$DP_DOC}")
+case "$dp_narr" in *'"basedOnReadingOrder":["dp-i"]'*) echo "  PASS: DP ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: DP ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+dp_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$DP_ID")
+check "DP 読戻し (200)" "200" "$dp_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
