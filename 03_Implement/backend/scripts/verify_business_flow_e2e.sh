@@ -3483,5 +3483,46 @@ ho_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HO_ID")
 check "HO 読戻し (200)" "200" "$ho_read"
 
 echo ""
+echo "--- シナリオ79: 観光・地域振興の来訪者声と住民受容の整理（賑わいと暮らしのバランス） ---"
+# 業態: 観光・地域振興（観光協会）
+# 想定人物: 観光協会スタッフ（来訪者と住民の声を整理）
+# 業務領域: 観光客の声・地域住民の声・観光施策へのフィードバックのKJ分類と、観光振興のバランス
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 観光客の期待（賑わい・新たな体験）と、地域住民の受容（混雑・生活への
+#          影響）の乖離を矛盾検出で表面化し、持続可能な観光振興の根拠にする
+#          （賑わいと暮らしのバランス）。
+TO_ID="biz-flow-tourism"
+TO_DOC='{"version":1,"id":"'$TO_ID'","title":"来訪者声と住民受容の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"to1","text":"観光客は新しい体験を求めて賑わいを歓迎する声が多い","x":0,"y":0,"textReviewed":true},{"id":"to2","text":"地域住民からは混雑と生活への影響を懸念する声がある","x":10,"y":0,"textReviewed":true},{"id":"to3","text":"土産物店の売上は伸び、経済効果は実感されている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"to-i","cardIds":["to1","to2","to3"]}],"readingOrder":["to-i"]}'
+
+to_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TO_ID" \
+  -H 'Content-Type: application/json' -d "$TO_DOC")
+check "TO PUT document (作成)" "200" "$to_put"
+
+# ① AI束ね
+to_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"to1","text":"観光客は新しい体験を求めて賑わいを歓迎する声が多い","textReviewed":true},{"id":"to2","text":"地域住民からは混雑と生活への影響を懸念する声がある","textReviewed":true},{"id":"to3","text":"土産物店の売上は伸び、経済効果は実感されている","textReviewed":true}]}')
+case "$to_groups" in *'"groups":'*) echo "  PASS: TO ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TO ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+to_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TO_DOC,\"islandId\":\"to-i\"}")
+case "$to_summary" in *'"groundingIds":["to1","to2","to3"]'*) echo "  PASS: TO ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TO ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（観光客の賑わい歓迎 vs 住民の混雑懸念・賑わいと暮らしの相克）
+to_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"to1","text":"観光客は新しい体験を求めて賑わいを歓迎する声が多い","textReviewed":true},"cardB":{"id":"to2","text":"地域住民からは混雑と生活への影響を懸念する声がある","textReviewed":true}}')
+case "$to_contra" in *'"hasContradiction"'*) echo "  PASS: TO ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: TO ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+to_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$TO_DOC}")
+case "$to_narr" in *'"basedOnReadingOrder":["to-i"]'*) echo "  PASS: TO ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: TO ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+to_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TO_ID")
+check "TO 読戻し (200)" "200" "$to_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
