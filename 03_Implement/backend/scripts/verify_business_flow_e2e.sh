@@ -2798,5 +2798,45 @@ be_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BE_ID")
 check "BE 読戻し (200)" "200" "$be_read"
 
 echo ""
+echo "--- シナリオ62: セキュリティ・SOCのインシデント対応振り返り（封じ込めと証拠保全の相克） ---"
+# 業態: セキュリティ・SOC（セキュリティ運用センター）
+# 想定人物: セキュリティアナリスト（インシデント対応の振り返り）
+# 業務領域: セキュリティインシデント対応の記録整理と、再発防止の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: インシデント対応では封じ込め（即時遮断）と証拠保全（調査継続）の相克を
+#          矛盾検出で表面化し、判断の根拠を残す。タイムライン記録の欠落も指摘。
+CY_ID="biz-flow-soc"
+CY_DOC='{"version":1,"id":"'$CY_ID'","title":"インシデント対応振り返り","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"cy1","text":"被害拡大を防ぐため即時遮断を主張する声","x":0,"y":0,"textReviewed":true},{"id":"cy2","text":"証拠保全のため調査を続けるべきとの意見","x":10,"y":0,"textReviewed":true},{"id":"cy3","text":"初動のタイムライン記録に欠落がある","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cy-i","cardIds":["cy1","cy2","cy3"]}],"readingOrder":["cy-i"]}'
+
+cy_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CY_ID" \
+  -H 'Content-Type: application/json' -d "$CY_DOC")
+check "CY PUT document (作成)" "200" "$cy_put"
+
+# ① AI束ね
+cy_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"cy1","text":"被害拡大を防ぐため即時遮断を主張する声","textReviewed":true},{"id":"cy2","text":"証拠保全のため調査を続けるべきとの意見","textReviewed":true},{"id":"cy3","text":"初動のタイムライン記録に欠落がある","textReviewed":true}]}')
+case "$cy_groups" in *'"groups":'*) echo "  PASS: CY ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CY ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cy_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CY_DOC,\"islandId\":\"cy-i\"}")
+case "$cy_summary" in *'"groundingIds":["cy1","cy2","cy3"]'*) echo "  PASS: CY ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CY ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（封じ込め vs 証拠保全・対応判断の相克）
+cy_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"cy1","text":"被害拡大を防ぐため即時遮断を主張する声","textReviewed":true},"cardB":{"id":"cy2","text":"証拠保全のため調査を続けるべきとの意見","textReviewed":true}}')
+case "$cy_contra" in *'"hasContradiction"'*) echo "  PASS: CY ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: CY ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cy_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CY_DOC}")
+case "$cy_narr" in *'"basedOnReadingOrder":["cy-i"]'*) echo "  PASS: CY ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CY ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cy_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CY_ID")
+check "CY 読戻し (200)" "200" "$cy_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
