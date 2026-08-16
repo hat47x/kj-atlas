@@ -33,6 +33,12 @@ def sqlite_client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker]]:
     # default (which is under review to become fail-closed/False).
     _original_allow_jit = _settings.allow_jit_provisioning
     _settings.allow_jit_provisioning = True
+    # AI-MODEL-GOVERNANCE-02: _assert_model_allowed requires the model's
+    # registered provider to match the runtime provider. The fixture registers
+    # "default" under provider "local", so pin the runtime provider to "local"
+    # (same alignment as test_ai_safemode/test_ai_eval_pipeline etc.).
+    _original_llm_provider = _settings.llm_provider
+    _settings.llm_provider = "local"
     try:
         with TestClient(app) as client:
             client.headers.update({"x-forwarded-user": "ce2-reviewer", "x-auth-provider": "oidc"})
@@ -58,6 +64,7 @@ def sqlite_client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker]]:
             yield client, session_local
     finally:
         _settings.allow_jit_provisioning = _original_allow_jit
+        _settings.llm_provider = _original_llm_provider
         app.dependency_overrides.clear()
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
