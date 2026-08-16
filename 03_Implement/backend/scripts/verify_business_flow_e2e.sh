@@ -5998,5 +5998,47 @@ med_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MED_ID")
 check "MED 読戻し (200)" "200" "$med_read"
 
 echo ""
+echo "--- シナリオ138: 石油・ガス（供給の安定・保安と料金・効率のトレードオフ） ---"
+# 業態: 石油・ガス（エネルギー供給・販売）
+# 想定人物: エネルギー供給責任者／営業所長
+# 業務領域: 供給・保安・料金・顧客への声のKJ分類と、エネルギー供給の在り方の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 供給の安定と保安（ガス漏れ防止・点検・停供防止）の確保（安定・保安）と料金競争や
+#          コスト削減への対応（料金・効率）のトレードオフを矛盾検出（正パス）で表面化し、
+#          エネルギー供給の在り方の根拠にする（安定・保安と効率の相克・省エネや機器の提案、
+#          脱炭素対応を模索する動きも指摘）。
+ENER_ID="biz-flow-energy-supply"
+ENER_DOC='{"version":1,"id":"'$ENER_ID'","title":"エネルギー供給の在り方","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"g1","text":"供給の安定と保安（ガス漏れ防止・点検）を最優先する声（安定・保安）","x":0,"y":0,"textReviewed":true},{"id":"g2","text":"料金競争やコスト削減への対応など、保安・安定と料金・効率のトレードオフに悩む声（料金・効率）","x":10,"y":0,"textReviewed":true},{"id":"g3","text":"省エネや機器の提案など、顧客との長い関係と脱炭素対応を模索する動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ener-i","cardIds":["g1","g2","g3"]}],"readingOrder":["ener-i"]}'
+
+ener_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$ENER_ID" \
+  -H 'Content-Type: application/json' -d "$ENER_DOC")
+check "ENER PUT document (作成)" "200" "$ener_put"
+
+# ① AI束ね
+ener_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"g1","text":"供給の安定と保安（ガス漏れ防止・点検）を最優先する声（安定・保安）","textReviewed":true},{"id":"g2","text":"料金競争やコスト削減への対応など、保安・安定と料金・効率のトレードオフに悩む声（料金・効率）","textReviewed":true},{"id":"g3","text":"省エネや機器の提案など、顧客との長い関係と脱炭素対応を模索する動き","textReviewed":true}]}')
+case "$ener_groups" in *'"groups":'*) echo "  PASS: ENER ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: ENER ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ener_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$ENER_DOC,\"islandId\":\"ener-i\"}")
+case "$ener_summary" in *'"groundingIds":["g1","g2","g3"]'*) echo "  PASS: ENER ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: ENER ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（安定・保安 vs 料金・効率・安定・保安と効率の相克・正パス）
+ener_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"g1","text":"供給の安定と保安（ガス漏れ防止・点検）を最優先する声（安定・保安）","textReviewed":true},"cardB":{"id":"g2","text":"料金競争やコスト削減への対応など、保安・安定と料金・効率のトレードオフに悩む声（料金・効率）","textReviewed":true}}')
+case "$ener_contra" in *'"hasContradiction":true'*) echo "  PASS: ENER ③矛盾検出（供給の安定・保安と料金・効率のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: ENER ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ener_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$ENER_DOC}")
+case "$ener_narr" in *'"basedOnReadingOrder":["ener-i"]'*) echo "  PASS: ENER ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: ENER ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ener_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$ENER_ID")
+check "ENER 読戻し (200)" "200" "$ener_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
