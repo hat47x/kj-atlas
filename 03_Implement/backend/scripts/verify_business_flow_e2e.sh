@@ -6334,5 +6334,47 @@ live_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$LIVE_ID")
 check "LIVE 読戻し (200)" "200" "$live_read"
 
 echo ""
+echo "--- シナリオ146: 神社・寺（伝統・信仰と運営・収支のトレードオフ） ---"
+# 業態: 神社・寺（宗教施設・寺院運営）
+# 想定人物: 宮司／住職（寺院運営）
+# 業務領域: 参拝者・檀家・行事・維持管理への声のKJ分類と、宗教施設の持続的運営の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 伝統的な儀式や文化・信仰の継承・檀家・氏子との関係を大切にする（伝統・信仰）と
+#          建物の維持管理コストや人手不足への対応（運営・収支）のトレードオフを矛盾検出（正パス）
+#          で表面化し、宗教施設の持続的運営の根拠にする（伝統と運営の相克・参拝者や観光客への
+#          おもてなし・体験イベントで地域に開かれた場をつくる動きも指摘）。
+SHRI_ID="biz-flow-shrine"
+SHRI_DOC='{"version":1,"id":"'$SHRI_ID'","title":"宗教施設の持続的運営","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"sh1","text":"伝統的な儀式や文化・信仰の継承、檀家・氏子との関係を大切にする声（伝統・信仰）","x":0,"y":0,"textReviewed":true},{"id":"sh2","text":"建物の維持管理コストや人手不足など、伝統の維持と運営・収支のトレードオフに悩む声（運営・収支）","x":10,"y":0,"textReviewed":true},{"id":"sh3","text":"参拝者や観光客へのおもてなし、体験イベントで地域に開かれた場をつくる動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"shri-i","cardIds":["sh1","sh2","sh3"]}],"readingOrder":["shri-i"]}'
+
+shri_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SHRI_ID" \
+  -H 'Content-Type: application/json' -d "$SHRI_DOC")
+check "SHRI PUT document (作成)" "200" "$shri_put"
+
+# ① AI束ね
+shri_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"sh1","text":"伝統的な儀式や文化・信仰の継承、檀家・氏子との関係を大切にする声（伝統・信仰）","textReviewed":true},{"id":"sh2","text":"建物の維持管理コストや人手不足など、伝統の維持と運営・収支のトレードオフに悩む声（運営・収支）","textReviewed":true},{"id":"sh3","text":"参拝者や観光客へのおもてなし、体験イベントで地域に開かれた場をつくる動き","textReviewed":true}]}')
+case "$shri_groups" in *'"groups":'*) echo "  PASS: SHRI ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SHRI ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+shri_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SHRI_DOC,\"islandId\":\"shri-i\"}")
+case "$shri_summary" in *'"groundingIds":["sh1","sh2","sh3"]'*) echo "  PASS: SHRI ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SHRI ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（伝統・信仰 vs 運営・収支・伝統と運営の相克・正パス）
+shri_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"sh1","text":"伝統的な儀式や文化・信仰の継承、檀家・氏子との関係を大切にする声（伝統・信仰）","textReviewed":true},"cardB":{"id":"sh2","text":"建物の維持管理コストや人手不足など、伝統の維持と運営・収支のトレードオフに悩む声（運営・収支）","textReviewed":true}}')
+case "$shri_contra" in *'"hasContradiction":true'*) echo "  PASS: SHRI ③矛盾検出（伝統・信仰と運営・収支のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: SHRI ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+shri_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SHRI_DOC}")
+case "$shri_narr" in *'"basedOnReadingOrder":["shri-i"]'*) echo "  PASS: SHRI ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SHRI ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+shri_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SHRI_ID")
+check "SHRI 読戻し (200)" "200" "$shri_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
