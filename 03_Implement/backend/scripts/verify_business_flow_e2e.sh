@@ -3928,5 +3928,45 @@ sc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SC_ID")
 check "SC 読戻し (200)" "200" "$sc_read"
 
 echo ""
+echo "--- シナリオ90: 不動産管理の賃貸入居者対応（入居者満足とオーナー収益のトレードオフ） ---"
+# 業態: 不動産管理（賃貸オーナー/管理会社）
+# 想定人物: 物件管理担当（入居者フィードバックを整理）
+# 業務領域: 入居者からのクレーム・要望・契約更新の声のKJ分類と、物件管理改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 入居者満足（維持管理への投資）とオーナーの収益（修繕コスト）のトレードオフを
+#          矛盾検出で表面化し、管理判断の根拠にする（満足と収益のトレードオフ）。
+PM_ID="biz-flow-property"
+PM_DOC='{"version":1,"id":"'$PM_ID'","title":"賃貸入居者対応整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"pm1","text":"入居者は設備の老朽化への対応を求めている","x":0,"y":0,"textReviewed":true},{"id":"pm2","text":"オーナーは修繕コストを抑えたいと考えている","x":10,"y":0,"textReviewed":true},{"id":"pm3","text":"入居者の契約更新率が低下している","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"pm-i","cardIds":["pm1","pm2","pm3"]}],"readingOrder":["pm-i"]}'
+
+pm_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$PM_ID" \
+  -H 'Content-Type: application/json' -d "$PM_DOC")
+check "PM PUT document (作成)" "200" "$pm_put"
+
+# ① AI束ね
+pm_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"pm1","text":"入居者は設備の老朽化への対応を求めている","textReviewed":true},{"id":"pm2","text":"オーナーは修繕コストを抑えたいと考えている","textReviewed":true},{"id":"pm3","text":"入居者の契約更新率が低下している","textReviewed":true}]}')
+case "$pm_groups" in *'"groups":'*) echo "  PASS: PM ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: PM ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+pm_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$PM_DOC,\"islandId\":\"pm-i\"}")
+case "$pm_summary" in *'"groundingIds":["pm1","pm2","pm3"]'*) echo "  PASS: PM ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: PM ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（老朽化対応の要求 vs 修繕コスト抑制・満足と収益のトレードオフ）
+pm_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"pm1","text":"入居者は設備の老朽化への対応を求めている","textReviewed":true},"cardB":{"id":"pm2","text":"オーナーは修繕コストを抑えたいと考えている","textReviewed":true}}')
+case "$pm_contra" in *'"hasContradiction"'*) echo "  PASS: PM ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: PM ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+pm_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$PM_DOC}")
+case "$pm_narr" in *'"basedOnReadingOrder":["pm-i"]'*) echo "  PASS: PM ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: PM ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+pm_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PM_ID")
+check "PM 読戻し (200)" "200" "$pm_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
