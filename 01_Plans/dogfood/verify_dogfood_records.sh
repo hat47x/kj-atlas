@@ -89,7 +89,7 @@ for entry in \
   fi
 done
 
-# 7. 総チェック数の算術照合（マニフェスト主張: 609 = 567 + 12 + 7 + 8 + 15）
+# 7. 総チェック数の算術照合（マニフェスト主張: 615 = 573 + 12 + 7 + 8 + 15）
 BUSINESS_CHECKS=573
 ADMIN_CHECKS=12
 MULTI_ROUND_CHECKS=7
