@@ -2998,5 +2998,45 @@ ar_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AR_ID")
 check "AR 読戻し (200)" "200" "$ar_read"
 
 echo ""
+echo "--- シナリオ67: アグリ・食品製造の品質トレーサビリティ（コストと品質のトレードオフ） ---"
+# 業態: 食品製造・アグリフード（加工食品メーカー）
+# 想定人物: 品質保証責任者（品質クレームを整理）
+# 業務領域: 品質クレーム・原材料トレーサビリティ報告のKJ分類と、再発防止
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: コスト削減（原材料調達の切り替え）と品質保証（トレーサビリティ）の
+#          トレードオフを矛盾検出で表面化し、再発防止の根拠にする（調達と品質の相克）。
+AG_ID="biz-flow-agrifood"
+AG_DOC='{"version":1,"id":"'$AG_ID'","title":"品質クレーム整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ag1","text":"コスト削減のため原材料の調達先を切り替えた","x":0,"y":0,"textReviewed":true},{"id":"ag2","text":"切り替え後の原材料で品質クレームが発生した","x":10,"y":0,"textReviewed":true},{"id":"ag3","text":"ロットの追跡に時間がかかり原因特定が遅れた","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ag-i","cardIds":["ag1","ag2","ag3"]}],"readingOrder":["ag-i"]}'
+
+ag_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$AG_ID" \
+  -H 'Content-Type: application/json' -d "$AG_DOC")
+check "AG PUT document (作成)" "200" "$ag_put"
+
+# ① AI束ね
+ag_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ag1","text":"コスト削減のため原材料の調達先を切り替えた","textReviewed":true},{"id":"ag2","text":"切り替え後の原材料で品質クレームが発生した","textReviewed":true},{"id":"ag3","text":"ロットの追跡に時間がかかり原因特定が遅れた","textReviewed":true}]}')
+case "$ag_groups" in *'"groups":'*) echo "  PASS: AG ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: AG ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ag_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$AG_DOC,\"islandId\":\"ag-i\"}")
+case "$ag_summary" in *'"groundingIds":["ag1","ag2","ag3"]'*) echo "  PASS: AG ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: AG ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（調達コスト削減 vs 品質クレーム・調達と品質の相克）
+ag_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ag1","text":"コスト削減のため原材料の調達先を切り替えた","textReviewed":true},"cardB":{"id":"ag2","text":"切り替え後の原材料で品質クレームが発生した","textReviewed":true}}')
+case "$ag_contra" in *'"hasContradiction"'*) echo "  PASS: AG ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: AG ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ag_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$AG_DOC}")
+case "$ag_narr" in *'"basedOnReadingOrder":["ag-i"]'*) echo "  PASS: AG ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: AG ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ag_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AG_ID")
+check "AG 読戻し (200)" "200" "$ag_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
