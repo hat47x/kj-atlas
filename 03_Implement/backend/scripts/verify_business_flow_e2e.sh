@@ -3807,5 +3807,45 @@ dp_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$DP_ID")
 check "DP 読戻し (200)" "200" "$dp_read"
 
 echo ""
+echo "--- シナリオ87: 自治体・健康増進の市民の声整理（効果と実感の乖離） ---"
+# 業態: 自治体・健康増進（市の健康施策）
+# 想定人物: 保健師・健康増進担当（市民の声を整理）
+# 業務領域: 健康診査・健康教室・健康相談への市民の声のKJ分類と、健康施策改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 健康施策の効果（客観・健診結果の改善）と、市民の実感（主観・参加の
+#          負担感）の乖離を矛盾検出で表面化し、健康施策の改善根拠にする（効果と実感の乖離）。
+HW_ID="biz-flow-health"
+HW_DOC='{"version":1,"id":"'$HW_ID'","title":"市民の健康施策の声","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"hw1","text":"健診の受診率は上がり、要指導者の早期発見が増えている","x":0,"y":0,"textReviewed":true},{"id":"hw2","text":"健康教室の参加負担（時間・場所）を理由に参加を控える声がある","x":10,"y":0,"textReviewed":true},{"id":"hw3","text":"健康相談は丁寧だと評価され、リピート利用は増えている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"hw-i","cardIds":["hw1","hw2","hw3"]}],"readingOrder":["hw-i"]}'
+
+hw_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$HW_ID" \
+  -H 'Content-Type: application/json' -d "$HW_DOC")
+check "HW PUT document (作成)" "200" "$hw_put"
+
+# ① AI束ね
+hw_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"hw1","text":"健診の受診率は上がり、要指導者の早期発見が増えている","textReviewed":true},{"id":"hw2","text":"健康教室の参加負担（時間・場所）を理由に参加を控える声がある","textReviewed":true},{"id":"hw3","text":"健康相談は丁寧だと評価され、リピート利用は増えている","textReviewed":true}]}')
+case "$hw_groups" in *'"groups":'*) echo "  PASS: HW ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: HW ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+hw_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$HW_DOC,\"islandId\":\"hw-i\"}")
+case "$hw_summary" in *'"groundingIds":["hw1","hw2","hw3"]'*) echo "  PASS: HW ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: HW ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（施策の効果 vs 市民の実感・効果と実感の乖離）
+hw_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"hw1","text":"健診の受診率は上がり、要指導者の早期発見が増えている","textReviewed":true},"cardB":{"id":"hw2","text":"健康教室の参加負担（時間・場所）を理由に参加を控える声がある","textReviewed":true}}')
+case "$hw_contra" in *'"hasContradiction"'*) echo "  PASS: HW ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: HW ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+hw_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$HW_DOC}")
+case "$hw_narr" in *'"basedOnReadingOrder":["hw-i"]'*) echo "  PASS: HW ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: HW ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+hw_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HW_ID")
+check "HW 読戻し (200)" "200" "$hw_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
