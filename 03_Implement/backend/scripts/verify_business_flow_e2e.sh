@@ -6544,5 +6544,47 @@ cemy_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CEMY_ID")
 check "CEMY 読戻し (200)" "200" "$cemy_read"
 
 echo ""
+echo "--- シナリオ151: 公営競技（公正性・信頼と収益・集客のトレードオフ） ---"
+# 業態: 公営競技（競馬・競輪・競艇場運営）
+# 想定人物: 場長／運営責任者
+# 業務領域: 運営・観客・公正性・収益への声のKJ分類と、公営競技の運営改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 勝敗の公正性とファンが安心して楽しめる運営（公正性・信頼）と売上・集客への圧力
+#          （収益・集客）のトレードオフを矛盾検出（正パス）で表面化し、公営競技の運営改善根拠に
+#          する（公正性と収益の相克・若年層や初心者向けのイベント・地域の観光資源としての活用を
+#          模索する動きも指摘）。
+BET_ID="biz-flow-racing"
+BET_DOC='{"version":1,"id":"'$BET_ID'","title":"公営競技の運営改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"bt1","text":"勝敗の公正性とファンが安心して楽しめる運営を重視する声（公正性・信頼）","x":0,"y":0,"textReviewed":true},{"id":"bt2","text":"売上や集客への圧力など、公正性と収益・集客のトレードオフに悩む声（収益・集客）","x":10,"y":0,"textReviewed":true},{"id":"bt3","text":"若年層や初心者向けのイベント、地域の観光資源としての活用を模索する動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"bet-i","cardIds":["bt1","bt2","bt3"]}],"readingOrder":["bet-i"]}'
+
+bet_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$BET_ID" \
+  -H 'Content-Type: application/json' -d "$BET_DOC")
+check "BET PUT document (作成)" "200" "$bet_put"
+
+# ① AI束ね
+bet_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"bt1","text":"勝敗の公正性とファンが安心して楽しめる運営を重視する声（公正性・信頼）","textReviewed":true},{"id":"bt2","text":"売上や集客への圧力など、公正性と収益・集客のトレードオフに悩む声（収益・集客）","textReviewed":true},{"id":"bt3","text":"若年層や初心者向けのイベント、地域の観光資源としての活用を模索する動き","textReviewed":true}]}')
+case "$bet_groups" in *'"groups":'*) echo "  PASS: BET ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: BET ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+bet_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BET_DOC,\"islandId\":\"bet-i\"}")
+case "$bet_summary" in *'"groundingIds":["bt1","bt2","bt3"]'*) echo "  PASS: BET ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: BET ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（公正性・信頼 vs 収益・集客・公正性と収益の相克・正パス）
+bet_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"bt1","text":"勝敗の公正性とファンが安心して楽しめる運営を重視する声（公正性・信頼）","textReviewed":true},"cardB":{"id":"bt2","text":"売上や集客への圧力など、公正性と収益・集客のトレードオフに悩む声（収益・集客）","textReviewed":true}}')
+case "$bet_contra" in *'"hasContradiction":true'*) echo "  PASS: BET ③矛盾検出（公正性・信頼と収益・集客のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: BET ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+bet_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$BET_DOC}")
+case "$bet_narr" in *'"basedOnReadingOrder":["bet-i"]'*) echo "  PASS: BET ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: BET ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+bet_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BET_ID")
+check "BET 読戻し (200)" "200" "$bet_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
