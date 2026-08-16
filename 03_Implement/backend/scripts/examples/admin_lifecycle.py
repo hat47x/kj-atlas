@@ -150,6 +150,17 @@ def main() -> int:
         expect_status=200,
     )
 
+    # 5. CE4 proposal lifecycle read (GET /ai/proposals/status, read-only).
+    #    A self-written script can confirm the proposal state is readable over
+    #    the API (proposal-only vs decided) without mutating anything. The doc
+    #    here has no proposals, so an empty list is the valid signal.
+    _, proposal_status = request("GET", f"/ai/proposals/status?docId={DOC_ID}", BIZ_KEY, expect_status=200)
+    check(
+        "CE4 proposal status readable (proposals list)",
+        True,
+        isinstance(proposal_status, dict) and isinstance(proposal_status.get("proposals"), list),
+    )
+
     print(f"=== admin self-script result: {PASS} passed, {FAIL} failed ===")
     return 0 if FAIL == 0 else 1
 
