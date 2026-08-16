@@ -4209,5 +4209,45 @@ tr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TR_ID")
 check "TR 読戻し (200)" "200" "$tr_read"
 
 echo ""
+echo "--- シナリオ97: 製薬・ヘルスケアのMR医療営業（情報の質と営業効率のトレードオフ） ---"
+# 業態: 製薬・ヘルスケア（MR・医療営業）
+# 想定人物: MR（医薬情報担当者）
+# 業務領域: 医師・医療機関からのフィードバック（製品情報・学術・価格）のKJ分類と、営業・情報提供改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 製品の学術情報提供（エビデンスの正確性）と営業効率（訪問回数・コスト）の
+#          トレードオフを矛盾検出で表面化し、情報提供戦略の根拠にする（情報の質と効率のトレードオフ）。
+MR_ID="biz-flow-mr"
+MR_DOC='{"version":1,"id":"'$MR_ID'","title":"MR医療営業フィードバック","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"mr1","text":"医師は最新の臨床データに基づく情報提供を求めている","x":0,"y":0,"textReviewed":true},{"id":"mr2","text":"営業効率のため訪問回数の見直しを検討する社内意見","x":10,"y":0,"textReviewed":true},{"id":"mr3","text":"医師からは医薬品の安全性に関する質問が増えている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"mr-i","cardIds":["mr1","mr2","mr3"]}],"readingOrder":["mr-i"]}'
+
+mr_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MR_ID" \
+  -H 'Content-Type: application/json' -d "$MR_DOC")
+check "MR PUT document (作成)" "200" "$mr_put"
+
+# ① AI束ね
+mr_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"mr1","text":"医師は最新の臨床データに基づく情報提供を求めている","textReviewed":true},{"id":"mr2","text":"営業効率のため訪問回数の見直しを検討する社内意見","textReviewed":true},{"id":"mr3","text":"医師からは医薬品の安全性に関する質問が増えている","textReviewed":true}]}')
+case "$mr_groups" in *'"groups":'*) echo "  PASS: MR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: MR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+mr_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MR_DOC,\"islandId\":\"mr-i\"}")
+case "$mr_summary" in *'"groundingIds":["mr1","mr2","mr3"]'*) echo "  PASS: MR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: MR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（臨床データの情報提供 vs 訪問回数の見直し・情報の質と効率のトレードオフ）
+mr_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"mr1","text":"医師は最新の臨床データに基づく情報提供を求めている","textReviewed":true},"cardB":{"id":"mr2","text":"営業効率のため訪問回数の見直しを検討する社内意見","textReviewed":true}}')
+case "$mr_contra" in *'"hasContradiction"'*) echo "  PASS: MR ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: MR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+mr_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$MR_DOC}")
+case "$mr_narr" in *'"basedOnReadingOrder":["mr-i"]'*) echo "  PASS: MR ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: MR ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+mr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MR_ID")
+check "MR 読戻し (200)" "200" "$mr_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
