@@ -6418,5 +6418,47 @@ school_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SCHOOL_ID"
 check "SCHOOL 読戻し (200)" "200" "$school_read"
 
 echo ""
+echo "--- シナリオ148: 陶磁器・工芸品（技法・品質と効率・販路のトレードオフ） ---"
+# 業態: 陶磁器・工芸品（陶磁器メーカー・工房）
+# 想定人物: 陶芸家／工房オーナー
+# 業務領域: 製作・販売・後継者・伝統への声のKJ分類と、工房の持続的運営の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 伝統的な技法と手仕事の品質・一つひとつの作品へのこだわり（技法・品質）と生産効率や
+#          販路・価格への圧力（効率・販路）のトレードオフを矛盾検出（正パス）で表面化し、
+#          工房の持続的運営の根拠にする（技法と効率の相克・後継者の育成や体験教室・現代の暮らしに
+#          合うデザインで伝統をつなぐ動きも指摘）。
+CRAFT_ID="biz-flow-craft"
+CRAFT_DOC='{"version":1,"id":"'$CRAFT_ID'","title":"工房の持続的運営","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"cr1","text":"伝統的な技法と手仕事の品質、一つひとつの作品へのこだわりを重視する声（技法・品質）","x":0,"y":0,"textReviewed":true},{"id":"cr2","text":"生産効率や販路・価格への圧力など、技法・品質と効率・販路のトレードオフに悩む声（効率・販路）","x":10,"y":0,"textReviewed":true},{"id":"cr3","text":"後継者の育成や体験教室、現代の暮らしに合うデザインで伝統をつなぐ動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"craft-i","cardIds":["cr1","cr2","cr3"]}],"readingOrder":["craft-i"]}'
+
+craft_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CRAFT_ID" \
+  -H 'Content-Type: application/json' -d "$CRAFT_DOC")
+check "CRAFT PUT document (作成)" "200" "$craft_put"
+
+# ① AI束ね
+craft_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"cr1","text":"伝統的な技法と手仕事の品質、一つひとつの作品へのこだわりを重視する声（技法・品質）","textReviewed":true},{"id":"cr2","text":"生産効率や販路・価格への圧力など、技法・品質と効率・販路のトレードオフに悩む声（効率・販路）","textReviewed":true},{"id":"cr3","text":"後継者の育成や体験教室、現代の暮らしに合うデザインで伝統をつなぐ動き","textReviewed":true}]}')
+case "$craft_groups" in *'"groups":'*) echo "  PASS: CRAFT ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CRAFT ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+craft_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CRAFT_DOC,\"islandId\":\"craft-i\"}")
+case "$craft_summary" in *'"groundingIds":["cr1","cr2","cr3"]'*) echo "  PASS: CRAFT ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CRAFT ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（技法・品質 vs 効率・販路・技法と効率の相克・正パス）
+craft_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"cr1","text":"伝統的な技法と手仕事の品質、一つひとつの作品へのこだわりを重視する声（技法・品質）","textReviewed":true},"cardB":{"id":"cr2","text":"生産効率や販路・価格への圧力など、技法・品質と効率・販路のトレードオフに悩む声（効率・販路）","textReviewed":true}}')
+case "$craft_contra" in *'"hasContradiction":true'*) echo "  PASS: CRAFT ③矛盾検出（技法・品質と効率・販路のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: CRAFT ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+craft_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CRAFT_DOC}")
+case "$craft_narr" in *'"basedOnReadingOrder":["craft-i"]'*) echo "  PASS: CRAFT ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CRAFT ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+craft_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CRAFT_ID")
+check "CRAFT 読戻し (200)" "200" "$craft_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
