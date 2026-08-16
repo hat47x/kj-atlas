@@ -6711,5 +6711,47 @@ ir_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$IR_ID")
 check "IR 読戻し (200)" "200" "$ir_read"
 
 echo ""
+echo "--- シナリオ155: ネイル・エステサロン（品質・衛生と効率・収益のトレードオフ） ---"
+# 業態: ネイル・エステ（ネイルサロン運営）
+# 想定人物: サロンオーナー／ネイリスト
+# 業務領域: 施術・技術・衛生・価格への声のKJ分類と、サロン運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 技術と衛生管理・丁寧なカウンセリングによる施術の質（品質・衛生）と予約の回転率や
+#          価格競争への対応（効率・収益）のトレードオフを矛盾検出（正パス）で表面化し、サロン運営の
+#          改善根拠にする（品質・衛生と効率の相克・ネイリストの育成や技術向上への投資・リピーター
+#          づくりで信頼を築く動きも指摘）。
+NAIL_ID="biz-flow-nail"
+NAIL_DOC='{"version":1,"id":"'$NAIL_ID'","title":"ネイルサロンの運営改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"na1","text":"技術と衛生管理・丁寧なカウンセリングによる施術の質を重視する声（品質・衛生）","x":0,"y":0,"textReviewed":true},{"id":"na2","text":"予約の回転率や価格競争への対応など、品質・衛生と効率・収益のトレードオフに悩む声（効率・収益）","x":10,"y":0,"textReviewed":true},{"id":"na3","text":"ネイリストの育成や技術向上への投資、リピーターづくりで信頼を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"nail-i","cardIds":["na1","na2","na3"]}],"readingOrder":["nail-i"]}'
+
+nail_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$NAIL_ID" \
+  -H 'Content-Type: application/json' -d "$NAIL_DOC")
+check "NAIL PUT document (作成)" "200" "$nail_put"
+
+# ① AI束ね
+nail_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"na1","text":"技術と衛生管理・丁寧なカウンセリングによる施術の質を重視する声（品質・衛生）","textReviewed":true},{"id":"na2","text":"予約の回転率や価格競争への対応など、品質・衛生と効率・収益のトレードオフに悩む声（効率・収益）","textReviewed":true},{"id":"na3","text":"ネイリストの育成や技術向上への投資、リピーターづくりで信頼を築く動き","textReviewed":true}]}')
+case "$nail_groups" in *'"groups":'*) echo "  PASS: NAIL ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: NAIL ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+nail_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$NAIL_DOC,\"islandId\":\"nail-i\"}")
+case "$nail_summary" in *'"groundingIds":["na1","na2","na3"]'*) echo "  PASS: NAIL ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: NAIL ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（品質・衛生 vs 効率・収益・品質・衛生と効率の相克・正パス）
+nail_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"na1","text":"技術と衛生管理・丁寧なカウンセリングによる施術の質を重視する声（品質・衛生）","textReviewed":true},"cardB":{"id":"na2","text":"予約の回転率や価格競争への対応など、品質・衛生と効率・収益のトレードオフに悩む声（効率・収益）","textReviewed":true}}')
+case "$nail_contra" in *'"hasContradiction":true'*) echo "  PASS: NAIL ③矛盾検出（品質・衛生と効率・収益のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: NAIL ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+nail_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$NAIL_DOC}")
+case "$nail_narr" in *'"basedOnReadingOrder":["nail-i"]'*) echo "  PASS: NAIL ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: NAIL ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+nail_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$NAIL_ID")
+check "NAIL 読戻し (200)" "200" "$nail_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
